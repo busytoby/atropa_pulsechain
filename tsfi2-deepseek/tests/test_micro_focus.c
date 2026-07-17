@@ -662,6 +662,24 @@ int main(void) {
     assert(mock_pool[48] == 0xBB);
     printf("  [PASS] CICS FREEMAIN verified.\n");
 
+    // 50. Verify Majordomo Moderation Action Handler
+    printf("[TEST] Validating Majordomo Moderation...\n");
+    char mod_verdict[32] = {0};
+    int mod_res = tsfi_mf_majordomo_moderate(12345, "ACCEPT", mod_verdict, sizeof(mod_verdict));
+    assert(mod_res == 0);
+    assert(strcmp(mod_verdict, "APPROVED:12345") == 0);
+    printf("  [PASS] Majordomo Moderation verified.\n");
+
+    // 51. Verify CICS Dump Control Emulator
+    printf("[TEST] Validating CICS Dump Control...\n");
+    uint8_t dump_pay[4] = {0xDE, 0xAD, 0xBE, 0xEF};
+    char dump_buf[128] = {0};
+    int dump_res = tsfi_mf_cics_dump("TRAN", 0x20, dump_pay, 4, dump_buf, sizeof(dump_buf));
+    assert(dump_res == 0);
+    assert(strstr(dump_buf, "DUMP TRAN CODE 0020") != NULL);
+    assert(strstr(dump_buf, "DE AD BE EF") != NULL);
+    printf("  [PASS] CICS Dump Control verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

@@ -1156,3 +1156,30 @@ int tsfi_mf_cics_freemain(uint32_t offset, uint32_t length, uint8_t *storage_poo
     memset(storage_pool + offset, 0, length);
     return 0;
 }
+
+int tsfi_mf_majordomo_moderate(uint32_t cookie, const char *action, char *verdict_out, int max_len) {
+    if (!action || !verdict_out || max_len <= 0) return -1;
+
+    if (strcmp(action, "ACCEPT") == 0 || strcmp(action, "APPROVE") == 0) {
+        snprintf(verdict_out, max_len, "APPROVED:%u", cookie);
+    } else {
+        snprintf(verdict_out, max_len, "REJECTED:%u", cookie);
+    }
+    return 0;
+}
+
+int tsfi_mf_cics_dump(const char *dump_id, uint32_t code, const uint8_t *payload, int len, char *dump_out, int max_len) {
+    if (!dump_id || !payload || len < 0 || !dump_out || max_len <= 0) return -1;
+
+    int offset = snprintf(dump_out, max_len, "DUMP %s CODE %04X: ", dump_id, code);
+    if (offset < 0 || offset >= max_len) return -2;
+
+    for (int i = 0; i < len; i++) {
+        if (offset + 3 >= max_len) break;
+        int bytes = snprintf(dump_out + offset, max_len - offset, "%02X ", payload[i]);
+        if (bytes < 0) return -2;
+        offset += bytes;
+    }
+
+    return 0;
+}

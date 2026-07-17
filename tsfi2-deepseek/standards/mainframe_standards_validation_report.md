@@ -91,5 +91,7 @@
 | 157 | CICS Query Command Security | PASS | Transaction resource access authorization | Volume 33 |
 | 158 | Majordomo List Unsubscriber | PASS | Subscriber address removal handler | Volume 33 |
 | 159 | CICS Storage Control FREEMAIN | PASS | Dynamic memory block release emulator | Volume 33 |
+| 160 | Majordomo Moderation Action Handler | PASS | Request accept and reject verdict resolver | Volume 33 |
+| 161 | CICS Dump Control Emulator | PASS | Transaction storage block hexadecimal dump | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 159 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 161 Scenarios validated successfully)
