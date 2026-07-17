@@ -11,6 +11,10 @@ int main(int argc, char **argv) {
         printf("  %s --power <nominal> <actual>  Audit FIPS 94 power quality\n", argv[0]);
         printf("  %s --numeric <string>          Audit FIPS 69 string format\n", argv[0]);
         printf("  %s --label <80_char_block>     Audit FIPS 79 tape labels\n", argv[0]);
+        printf("  %s --auth <user> <lau> <pin>   Verify FIPS 48 user badge auth\n", argv[0]);
+        printf("  %s --basic <file_path>         Execute FIPS 68 Minimal BASIC script\n", argv[0]);
+        printf("  %s --cipher <plain_text>       Run FIPS 81 CBC mode validation\n", argv[0]);
+        printf("  %s --app <record> <value>      Audit FIPS 73 application controls\n", argv[0]);
         return 0;
     }
 
@@ -65,6 +69,60 @@ int main(int argc, char **argv) {
             printf("RESULT: VALID LABEL (ID: %s, Serial: %u, Blocks: %d)\n", file_id, serial, block_count);
         } else {
             printf("RESULT: INVALID LABEL STRUCTURE (Error Code: %d)\n", res);
+        }
+    } else if (strcmp(argv[1], "--auth") == 0 && argc >= 5) {
+        tsfi_fips48_authenticator auth;
+        tsfi_fips48_init(&auth);
+        uint32_t lau = (uint32_t)strtoul(argv[3], NULL, 0);
+        uint16_t pin = (uint16_t)atoi(argv[4]);
+        tsfi_fips48_register_lau_badge(&auth, argv[2], lau, pin);
+        int out_status = 0;
+        int res = tsfi_fips48_authenticate(&auth, lau, pin, &out_status);
+        printf("[FIPS 48 AUDIT] User: %s, Badge ID: %u\n", argv[2], lau);
+        if (res == 0 && out_status == 0) {
+            printf("RESULT: AUTHENTICATION GRANTED\n");
+        } else {
+            printf("RESULT: ACCESS DENIED\n");
+        }
+    } else if (strcmp(argv[1], "--basic") == 0 && argc >= 3) {
+        FILE *f = fopen(argv[2], "r");
+        if (!f) {
+            printf("Error: Could not open BASIC file %s\n", argv[2]);
+            return 1;
+        }
+        char code[1024];
+        size_t len = fread(code, 1, sizeof(code) - 1, f);
+        code[len] = '\0';
+        fclose(f);
+
+        tsfi_fips68_basic interpreter;
+        tsfi_fips68_basic_init(&interpreter);
+        char out_buf[512];
+        tsfi_fips68_basic_run(&interpreter, code, out_buf, sizeof(out_buf));
+        printf("[FIPS 68 AUDIT] Executing minimal BASIC program:\n%s", out_buf);
+    } else if (strcmp(argv[1], "--cipher") == 0 && argc >= 3) {
+        tsfi_crypto_subsystem crypto;
+        tsfi_crypto_init(&crypto);
+        tsfi_crypto_load_master_key(&crypto, 0x1122334455667788ULL);
+        uint8_t iv[8] = {0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08};
+        uint8_t plain[16] = {0};
+        snprintf((char*)plain, sizeof(plain), "%s", argv[2]);
+        uint8_t cipher[16] = {0};
+        uint8_t decrypted[16] = {0};
+        tsfi_fips81_encrypt_cbc(&crypto, plain, cipher, 2, iv, 1);
+        tsfi_fips81_decrypt_cbc(&crypto, cipher, decrypted, 2, iv, 1);
+        printf("[FIPS 81 AUDIT] Testing Plaintext: '%s'\n", argv[2]);
+        printf("RESULT: Decrypted recovered string: '%.16s'\n", (char*)decrypted);
+    } else if (strcmp(argv[1], "--app") == 0 && argc >= 4) {
+        tsfi_fips73_auditor auditor;
+        tsfi_fips73_audit_init(&auditor);
+        int val = atoi(argv[3]);
+        int res = tsfi_fips73_audit_transaction(&auditor, argv[2], val);
+        printf("[FIPS 73 AUDIT] Record: '%s', Payload: %d\n", argv[2], val);
+        if (res == 0) {
+            printf("RESULT: VALID TRANSACTION\n");
+        } else {
+            printf("RESULT: VALIDATION FAILURE\n");
         }
     } else {
         printf("Unknown option or insufficient arguments.\n");
