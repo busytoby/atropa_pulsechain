@@ -858,4 +858,26 @@ typedef struct {
 uint32_t tsfi_jovial_table_read(const tsfi_jovial_table *table, int item_idx, int word_idx);
 void tsfi_jovial_table_write(tsfi_jovial_table *table, int item_idx, int word_idx, uint32_t val);
 
+#include <pthread.h>
+#include "tsfi_zmm_vm.h"
+
+typedef struct {
+    pthread_t thread_id;
+    TsfiZmmVmState *zmm;
+    int voice_id;
+    int active;
+    uint8_t buffer[256];
+} tsfi_zmm_voice_thread;
+
+typedef struct {
+    tsfi_zmm_voice_thread voices[4];
+    pthread_mutex_t mix_mutex;
+    int mix_buffer[256];
+} tsfi_zmm_ctss_scheduler;
+
+void tsfi_zmm_ctss_init(tsfi_zmm_ctss_scheduler *sched, TsfiZmmVmState *zmm);
+void tsfi_zmm_ctss_start(tsfi_zmm_ctss_scheduler *sched);
+void tsfi_zmm_ctss_stop(tsfi_zmm_ctss_scheduler *sched);
+void tsfi_zmm_ctss_mix(tsfi_zmm_ctss_scheduler *sched, int *output_mix, int max_len);
+
 #endif // TSFI_RAMAC_LAYOUT_H

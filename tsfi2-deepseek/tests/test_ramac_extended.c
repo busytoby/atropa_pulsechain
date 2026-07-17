@@ -357,6 +357,24 @@ int main(void) {
     assert(tsfi_jovial_table_read(&parallel_tbl, 1, 0) == 888);
     printf("  [PASS] JOVIAL parallel and serial table layouts verified.\n");
 
+    // 19. Multithreaded CTSS Audio Voice Scheduler Verification
+    printf("[Test] Verifying multithreaded CTSS audio voice scheduler...\n");
+    TsfiZmmVmState ctss_zmm;
+    tsfi_zmm_vm_init(&ctss_zmm);
+    
+    tsfi_zmm_ctss_scheduler ctss_sched;
+    tsfi_zmm_ctss_init(&ctss_sched, &ctss_zmm);
+    
+    tsfi_zmm_ctss_start(&ctss_sched);
+    tsfi_zmm_ctss_stop(&ctss_sched);
+    
+    int mixed_out[256];
+    tsfi_zmm_ctss_mix(&ctss_sched, mixed_out, 256);
+    assert(mixed_out[0] != 0 || mixed_out[1] != 0);
+    
+    tsfi_zmm_vm_destroy(&ctss_zmm);
+    printf("  [PASS] Multithreaded CTSS audio voice scheduler and parallel mixing verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

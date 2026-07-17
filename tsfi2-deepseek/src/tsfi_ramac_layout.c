@@ -3961,3 +3961,64 @@ void tsfi_jovial_table_write(tsfi_jovial_table *table, int item_idx, int word_id
     }
     table->data[index] = val;
 }
+
+#include <math.h>
+
+static void *tsfi_zmm_ctss_worker(void *arg) {
+    tsfi_zmm_voice_thread *voice = (tsfi_zmm_voice_thread *)arg;
+    
+    // Calculate the base pointer of the scheduler structure
+    tsfi_zmm_ctss_scheduler *sched = (tsfi_zmm_ctss_scheduler *)((char *)voice - voice->voice_id * sizeof(tsfi_zmm_voice_thread));
+    
+    for (int i = 0; i < 256; i++) {
+        voice->buffer[i] = (uint8_t)(128 + 30 * sin((double)i * (voice->voice_id + 1) * 0.1));
+    }
+    
+    pthread_mutex_lock(&sched->mix_mutex);
+    for (int i = 0; i < 256; i++) {
+        sched->mix_buffer[i] += (int)voice->buffer[i] - 128;
+    }
+    pthread_mutex_unlock(&sched->mix_mutex);
+    
+    return NULL;
+}
+
+void tsfi_zmm_ctss_init(tsfi_zmm_ctss_scheduler *sched, TsfiZmmVmState *zmm) {
+    if (!sched) return;
+    pthread_mutex_init(&sched->mix_mutex, NULL);
+    memset(sched->mix_buffer, 0, sizeof(sched->mix_buffer));
+    for (int i = 0; i < 4; i++) {
+        sched->voices[i].zmm = zmm;
+        sched->voices[i].voice_id = i;
+        sched->voices[i].active = 0;
+        memset(sched->voices[i].buffer, 0, sizeof(sched->voices[i].buffer));
+    }
+}
+
+void tsfi_zmm_ctss_start(tsfi_zmm_ctss_scheduler *sched) {
+    if (!sched) return;
+    for (int i = 0; i < 4; i++) {
+        sched->voices[i].active = 1;
+        pthread_create(&sched->voices[i].thread_id, NULL, tsfi_zmm_ctss_worker, &sched->voices[i]);
+    }
+}
+
+void tsfi_zmm_ctss_stop(tsfi_zmm_ctss_scheduler *sched) {
+    if (!sched) return;
+    for (int i = 0; i < 4; i++) {
+        if (sched->voices[i].active) {
+            pthread_join(sched->voices[i].thread_id, NULL);
+            sched->voices[i].active = 0;
+        }
+    }
+}
+
+void tsfi_zmm_ctss_mix(tsfi_zmm_ctss_scheduler *sched, int *output_mix, int max_len) {
+    if (!sched || !output_mix || max_len <= 0) return;
+    pthread_mutex_lock(&sched->mix_mutex);
+    int len = max_len > 256 ? 256 : max_len;
+    for (int i = 0; i < len; i++) {
+        output_mix[i] = sched->mix_buffer[i];
+    }
+    pthread_mutex_unlock(&sched->mix_mutex);
+}
