@@ -2327,6 +2327,35 @@ int main(void) {
     assert(tsfi_cp_iucv_mp_send(&iucv_mp, 30, "SYSMSG", msg_target) == -1);
     printf("  [PASS] VM/370 CP IUCV multi-path connection resolution verified.\n");
 
+    // 126. VM/370 Release 5 CMS Command Resolution Engine Verification
+    printf("[Test] Verifying VM/370 Release 5 CMS Command Resolution...\n");
+    tsfi_cp_nucleus_table nuc_tbl;
+    tsfi_cp_nucleus_init(&nuc_tbl);
+    assert(tsfi_cp_nucleus_register(&nuc_tbl, "FILEDEF", 0x803000) == 0);
+    assert(tsfi_cp_nucleus_register(&nuc_tbl, "LISTFILE", 0x804200) == 0);
+    assert(nuc_tbl.count == 2);
+    
+    tsfi_cp_dcss_manager cmd_dcss_mgr;
+    tsfi_cp_dcss_init(&cmd_dcss_mgr);
+    assert(tsfi_cp_dcss_register(&cmd_dcss_mgr, "CMSVSAM", 0x100000, 0x1FFFFF) == 0);
+    
+    char loc[16];
+    uint32_t addr = 0;
+    
+    // Resolve nucleus command
+    assert(tsfi_cp_resolve_command(&nuc_tbl, &cmd_dcss_mgr, "FILEDEF", loc, &addr) == 0);
+    assert(strcmp(loc, "NUCLEUS") == 0);
+    assert(addr == 0x803000);
+    
+    // Resolve DCSS command
+    assert(tsfi_cp_resolve_command(&nuc_tbl, &cmd_dcss_mgr, "CMSVSAM", loc, &addr) == 1);
+    assert(strcmp(loc, "DCSS") == 0);
+    assert(addr == 0x100000);
+    
+    // Resolve nonexistent command
+    assert(tsfi_cp_resolve_command(&nuc_tbl, &cmd_dcss_mgr, "ERASE", loc, &addr) == -1);
+    printf("  [PASS] VM/370 CP command resolution hierarchy verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

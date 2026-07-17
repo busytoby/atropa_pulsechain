@@ -2024,4 +2024,20 @@ int tsfi_cp_iucv_mp_connect(tsfi_cp_iucv_multipath *mp, int path_id, const char 
 int tsfi_cp_iucv_mp_send(const tsfi_cp_iucv_multipath *mp, int path_id, const char *msg, char *out_target);
 int tsfi_cp_iucv_mp_disconnect(tsfi_cp_iucv_multipath *mp, int path_id);
 
+// VM/370 Release 5 CMS Command Resolution Engine
+#define MAX_NUCLEUS_EXTENSIONS 4
+typedef struct {
+    char cmd_name[16];
+    uint32_t entry_point;
+} tsfi_cp_nucleus_ext;
+
+typedef struct {
+    tsfi_cp_nucleus_ext extensions[MAX_NUCLEUS_EXTENSIONS];
+    int count;
+} tsfi_cp_nucleus_table;
+
+void tsfi_cp_nucleus_init(tsfi_cp_nucleus_table *tbl);
+int tsfi_cp_nucleus_register(tsfi_cp_nucleus_table *tbl, const char *name, uint32_t entry_addr);
+int tsfi_cp_resolve_command(const tsfi_cp_nucleus_table *nuc_tbl, const tsfi_cp_dcss_manager *dcss_mgr, const char *cmd, char *out_loc, uint32_t *out_addr);
+
 #endif // TSFI_RAMAC_LAYOUT_H

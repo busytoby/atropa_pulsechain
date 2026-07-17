@@ -7255,3 +7255,42 @@ int tsfi_cp_iucv_mp_disconnect(tsfi_cp_iucv_multipath *mp, int path_id) {
     }
     return -1;
 }
+
+void tsfi_cp_nucleus_init(tsfi_cp_nucleus_table *tbl) {
+    if (!tbl) return;
+    memset(tbl, 0, sizeof(tsfi_cp_nucleus_table));
+}
+
+int tsfi_cp_nucleus_register(tsfi_cp_nucleus_table *tbl, const char *name, uint32_t entry_addr) {
+    if (!tbl || !name || tbl->count >= MAX_NUCLEUS_EXTENSIONS) return -1;
+    strncpy(tbl->extensions[tbl->count].cmd_name, name, sizeof(tbl->extensions[tbl->count].cmd_name) - 1);
+    tbl->extensions[tbl->count].cmd_name[sizeof(tbl->extensions[tbl->count].cmd_name) - 1] = '\0';
+    tbl->extensions[tbl->count].entry_point = entry_addr;
+    tbl->count++;
+    return 0;
+}
+
+int tsfi_cp_resolve_command(const tsfi_cp_nucleus_table *nuc_tbl, const tsfi_cp_dcss_manager *dcss_mgr, const char *cmd, char *out_loc, uint32_t *out_addr) {
+    if (!cmd || !out_loc || !out_addr) return -1;
+    
+    if (nuc_tbl) {
+        for (int i = 0; i < nuc_tbl->count; i++) {
+            if (strcmp(nuc_tbl->extensions[i].cmd_name, cmd) == 0) {
+                strcpy(out_loc, "NUCLEUS");
+                *out_addr = nuc_tbl->extensions[i].entry_point;
+                return 0;
+            }
+        }
+    }
+    
+    if (dcss_mgr) {
+        int idx = tsfi_cp_dcss_diagnose_find(dcss_mgr, cmd);
+        if (idx >= 0) {
+            strcpy(out_loc, "DCSS");
+            *out_addr = dcss_mgr->segments[idx].start_address;
+            return 1;
+        }
+    }
+    
+    return -1;
+}
