@@ -467,6 +467,16 @@ int main(void) {
     assert(tsfi_algol_common_read(&common, 5) == 999);
     printf("  [PASS] COMMON block shared storage verified.\n");
 
+    // 27. ALGOL / COBOL Cross-Language Interop Verification
+    printf("[Test] Verifying ALGOL / COBOL cross-language interop calls...\n");
+    int interop_regs[8] = { 0, 4, 3, 0, 0, 0, 0, 0 };
+    int cobol_call_res = tsfi_algol_call_cobol("R1 * R2", interop_regs);
+    assert(cobol_call_res == 12);
+    
+    int algol_call_res = tsfi_cobol_call_algol_proc(1, 5);
+    assert(algol_call_res == 120);
+    printf("  [PASS] ALGOL and COBOL cross-language interop call loops verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

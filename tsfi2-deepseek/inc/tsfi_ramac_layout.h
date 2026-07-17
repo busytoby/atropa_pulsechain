@@ -931,4 +931,8 @@ typedef struct {
 int tsfi_algol_common_write(tsfi_algol_common_block *block, int offset, int val);
 int tsfi_algol_common_read(const tsfi_algol_common_block *block, int offset);
 
+// ALGOL / COBOL Cross-Language Interop
+int tsfi_algol_call_cobol(const char *cobol_expr, int regs[8]);
+int tsfi_cobol_call_algol_proc(int proc_id, int param);
+
 #endif // TSFI_RAMAC_LAYOUT_H

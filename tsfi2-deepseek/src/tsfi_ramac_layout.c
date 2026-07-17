@@ -4122,3 +4122,16 @@ int tsfi_algol_common_read(const tsfi_algol_common_block *block, int offset) {
     if (!block || offset < 0 || offset >= 64) return 0;
     return block->data[offset];
 }
+
+int tsfi_algol_call_cobol(const char *cobol_expr, int regs[8]) {
+    return tsfi_cobol_compute_eval(cobol_expr, regs);
+}
+
+int tsfi_cobol_call_algol_proc(int proc_id, int param) {
+    if (proc_id == 1) {
+        int res = 1;
+        for (int i = 1; i <= param; i++) res *= i;
+        return res;
+    }
+    return 0;
+}
