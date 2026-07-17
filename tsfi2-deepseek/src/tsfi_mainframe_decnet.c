@@ -2310,3 +2310,42 @@ int tsfi_ramac_join_dp_roscoe(const tsfi_dp_registry *dp_reg, const tsfi_roscoe_
     *out_count = count;
     return 0;
 }
+
+void tsfi_eft_batch_init(tsfi_eft_batch *batch) {
+    if (!batch) return;
+    batch->batch_count = 0;
+    memset(batch->batch_txs, 0, sizeof(batch->batch_txs));
+}
+
+int tsfi_eft_batch_add(tsfi_eft_batch *batch, const tsfi_eft_transaction *tx) {
+    if (!batch || !tx || batch->batch_count >= 8) return -1;
+    batch->batch_txs[batch->batch_count] = *tx;
+    batch->batch_count++;
+    return 0;
+}
+
+int tsfi_eft_batch_settle(tsfi_eft_batch *batch, float *total_amount_out) {
+    if (!batch || !total_amount_out) return -1;
+    float sum = 0.0f;
+    for (int i = 0; i < batch->batch_count; i++) {
+        sum += batch->batch_txs[i].amount;
+    }
+    *total_amount_out = sum;
+    batch->batch_count = 0;
+    return 0;
+}
+
+float tsfi_market_calculate_growth(const tsfi_market_company *company) {
+    if (!company || company->previous_revenue == 0.0) return 0.0f;
+    return (float)((company->revenue - company->previous_revenue) / company->previous_revenue);
+}
+
+float tsfi_market_calculate_share(const tsfi_market_company *companies, size_t count, size_t index) {
+    if (!companies || count == 0 || index >= count) return 0.0f;
+    double total = 0.0;
+    for (size_t i = 0; i < count; i++) {
+        total += companies[i].revenue;
+    }
+    if (total == 0.0) return 0.0f;
+    return (float)(companies[index].revenue / total);
+}

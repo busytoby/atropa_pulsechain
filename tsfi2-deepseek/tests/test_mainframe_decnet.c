@@ -1514,6 +1514,44 @@ int main(void) {
     assert(join_rows[0].locked == 1);
     printf("  [PASS] Relational database joins between DP registry and Roscoe library verified.\n");
 
+    // 81. EFT Batch Settlement & Market Share Analyzer Verification
+    printf("[Test] Verifying EFT Batch & Market share stats...\n");
+    tsfi_eft_batch batch;
+    tsfi_eft_batch_init(&batch);
+    assert(batch.batch_count == 0);
+    
+    tsfi_eft_transaction t1 = {101, 150.0f, 0x03, 10.0};
+    tsfi_eft_transaction t2 = {102, 350.0f, 0x03, 12.0};
+    assert(tsfi_eft_batch_add(&batch, &t1) == 0);
+    assert(tsfi_eft_batch_add(&batch, &t2) == 0);
+    assert(batch.batch_count == 2);
+    
+    float total_amt = 0.0f;
+    assert(tsfi_eft_batch_settle(&batch, &total_amt) == 0);
+    assert(total_amt == 500.0f);
+    assert(batch.batch_count == 0);
+    
+    // Market Share
+    tsfi_market_company companies[3];
+    strncpy(companies[0].company_name, "IBM", 31);
+    companies[0].revenue = 120.0;
+    companies[0].previous_revenue = 100.0;
+    
+    strncpy(companies[1].company_name, "DEC", 31);
+    companies[1].revenue = 60.0;
+    companies[1].previous_revenue = 50.0;
+    
+    strncpy(companies[2].company_name, "UNIVAC", 31);
+    companies[2].revenue = 20.0;
+    companies[2].previous_revenue = 25.0;
+    
+    float ibm_growth = tsfi_market_calculate_growth(&companies[0]);
+    assert(ibm_growth > 0.19f && ibm_growth < 0.21f); // 20% growth
+    
+    float dec_share = tsfi_market_calculate_share(companies, 3, 1);
+    assert(dec_share > 0.29f && dec_share < 0.31f); // 30% share
+    printf("  [PASS] EFT batch settlement queues and market growth stats verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

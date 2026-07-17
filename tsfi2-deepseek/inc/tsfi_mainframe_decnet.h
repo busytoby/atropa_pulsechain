@@ -1073,4 +1073,24 @@ typedef struct {
 
 int tsfi_ramac_join_dp_roscoe(const tsfi_dp_registry *dp_reg, const tsfi_roscoe_library *roscoe_lib, tsfi_dp_roscoe_join_row *out_rows, size_t *out_count);
 
+// EFT Batch Settlement
+typedef struct {
+    tsfi_eft_transaction batch_txs[8];
+    int batch_count;
+} tsfi_eft_batch;
+
+void tsfi_eft_batch_init(tsfi_eft_batch *batch);
+int tsfi_eft_batch_add(tsfi_eft_batch *batch, const tsfi_eft_transaction *tx);
+int tsfi_eft_batch_settle(tsfi_eft_batch *batch, float *total_amount_out);
+
+// Market Share Analyzer
+typedef struct {
+    char company_name[32];
+    double revenue;
+    double previous_revenue;
+} tsfi_market_company;
+
+float tsfi_market_calculate_growth(const tsfi_market_company *company);
+float tsfi_market_calculate_share(const tsfi_market_company *companies, size_t count, size_t index);
+
 #endif // TSFI_MAINFRAME_DECNET_H
