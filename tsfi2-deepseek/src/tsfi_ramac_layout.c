@@ -4799,3 +4799,67 @@ int tsfi_zerocopy_dispatch(cdc_ppu_system *sys, cdc_scoreboard *sb, int ppu_id, 
     sys->ppus[ppu_id].bytes_processed = 0;
     return 0;
 }
+
+void tsfi_rmag_init(rmag_processor *proc) {
+    if (!proc) return;
+    proc->count = 0;
+    for (int i = 0; i < 8; i++) {
+        proc->macros[i].macro_name[0] = '\0';
+        proc->macros[i].macro_template[0] = '\0';
+    }
+}
+
+int tsfi_rmag_define(rmag_processor *proc, const char *name, const char *template_str) {
+    if (!proc || proc->count >= 8 || !name || !template_str) return -1;
+    rmag_macro *m = &proc->macros[proc->count];
+    strncpy(m->macro_name, name, sizeof(m->macro_name) - 1);
+    m->macro_name[sizeof(m->macro_name) - 1] = '\0';
+    strncpy(m->macro_template, template_str, sizeof(m->macro_template) - 1);
+    m->macro_template[sizeof(m->macro_template) - 1] = '\0';
+    proc->count++;
+    return 0;
+}
+
+int tsfi_rmag_expand(rmag_processor *proc, const char *input, const char *arg, char *output, size_t max_len) {
+    if (!proc || !input || !output || max_len == 0) return -1;
+    
+    for (int i = 0; i < proc->count; i++) {
+        const char *found = strstr(input, proc->macros[i].macro_name);
+        if (found) {
+            size_t prefix_len = found - input;
+            if (prefix_len >= max_len) prefix_len = max_len - 1;
+            strncpy(output, input, prefix_len);
+            output[prefix_len] = '\0';
+            
+            const char *tpl = proc->macros[i].macro_template;
+            const char *placeholder = strstr(tpl, "$1");
+            if (placeholder && arg) {
+                size_t sub_len = placeholder - tpl;
+                if (strlen(output) + sub_len < max_len) {
+                    strncat(output, tpl, sub_len);
+                }
+                if (strlen(output) + strlen(arg) < max_len) {
+                    strcat(output, arg);
+                }
+                const char *suffix = placeholder + 2;
+                if (strlen(output) + strlen(suffix) < max_len) {
+                    strcat(output, suffix);
+                }
+            } else {
+                if (strlen(output) + strlen(tpl) < max_len) {
+                    strcat(output, tpl);
+                }
+            }
+            
+            const char *input_suffix = found + strlen(proc->macros[i].macro_name);
+            if (strlen(output) + strlen(input_suffix) < max_len) {
+                strcat(output, input_suffix);
+            }
+            return 0;
+        }
+    }
+    
+    strncpy(output, input, max_len - 1);
+    output[max_len - 1] = '\0';
+    return -2;
+}

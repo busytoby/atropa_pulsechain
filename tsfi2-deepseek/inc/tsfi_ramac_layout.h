@@ -1136,4 +1136,19 @@ void tsfi_pli_exception_init(pli_exception_system *sys);
 int tsfi_pli_exception_register(pli_exception_system *sys, const char *type, const char *action);
 int tsfi_pli_exception_trigger(pli_exception_system *sys, const char *type, int regs[8]);
 
+// Robert Magnuson RMAG Macroprocessor
+typedef struct {
+    char macro_name[32];
+    char macro_template[256];
+} rmag_macro;
+
+typedef struct {
+    rmag_macro macros[8];
+    int count;
+} rmag_processor;
+
+void tsfi_rmag_init(rmag_processor *proc);
+int tsfi_rmag_define(rmag_processor *proc, const char *name, const char *template_str);
+int tsfi_rmag_expand(rmag_processor *proc, const char *input, const char *arg, char *output, size_t max_len);
+
 #endif // TSFI_RAMAC_LAYOUT_H

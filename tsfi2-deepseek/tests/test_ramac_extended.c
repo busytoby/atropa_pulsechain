@@ -836,6 +836,20 @@ int main(void) {
     assert(zc_sys.ppus[4].shared_instruction->stage == STAGE_ISSUE);
     printf("  [PASS] Zero-copy shared memory pointer referencing verified successfully.\n");
 
+    // 47. Robert Magnuson RMAG Macroprocessor Verification
+    printf("[Test] Verifying RMAG macroprocessor expansions...\n");
+    rmag_processor rmag;
+    tsfi_rmag_init(&rmag);
+    
+    int def_res = tsfi_rmag_define(&rmag, "SET_REG_VAL", "SET R0 $1");
+    assert(def_res == 0);
+    
+    char expanded_out[128];
+    int exp_res = tsfi_rmag_expand(&rmag, "SET_REG_VAL", "777", expanded_out, sizeof(expanded_out));
+    assert(exp_res == 0);
+    assert(strcmp(expanded_out, "SET R0 777") == 0);
+    printf("  [PASS] RMAG macro expansions verified successfully.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
