@@ -1338,6 +1338,25 @@ int main(void) {
     assert(strstr(taxpayer_registry, "STATUS:3") != NULL);
     printf("  [PASS] IRS CADE Taxpayer Status Updater verified.\n");
 
+    // 124. Verify IRS IMF Document Locator Number (DLN) Parser
+    printf("[TEST] Validating IRS IMF DLN Parser...\n");
+    int site = 0, tax_class = 0, doc_code = 0, julian = 0, serial = 0;
+    int parse_dln_res = tsfi_mf_imf_parse_dln("29110214400123", &site, &tax_class, &doc_code, &julian, &serial);
+    assert(parse_dln_res == 0);
+    assert(site == 29);
+    assert(tax_class == 1);
+    assert(doc_code == 10);
+    assert(julian == 214);
+    assert(serial == 400123);
+    printf("  [PASS] IRS IMF DLN Parser verified.\n");
+
+    // 125. Verify IRS CADE Taxpayer Balance Adjuster
+    printf("[TEST] Validating IRS CADE Balance Adjuster...\n");
+    int adj_bal_res = tsfi_mf_cade_adjust_balance(taxpayer_registry, -150.00);
+    assert(adj_bal_res == 0);
+    assert(strstr(taxpayer_registry, "BAL:1100.00") != NULL);
+    printf("  [PASS] IRS CADE Balance Adjuster verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

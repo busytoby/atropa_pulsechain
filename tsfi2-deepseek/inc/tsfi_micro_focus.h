@@ -149,5 +149,7 @@ int tsfi_mf_cade_lookup_taxpayer(const char *ssn, const char *registry_pool, dou
 int tsfi_mf_imf_encode_cycle_code(int year, int week, int day, char *cycle_out, int max_len);
 int tsfi_mf_imf_decode_cycle_code(const char *cycle_code, int *year, int *week, int *day);
 int tsfi_mf_cade_update_taxpayer_status(char *registry_entry, int new_status);
+int tsfi_mf_imf_parse_dln(const char *dln, int *site_code, int *tax_class, int *doc_code, int *julian_date, int *serial_num);
+int tsfi_mf_cade_adjust_balance(char *registry_entry, double offset_amount);
 
 #endif // TSFI_MICRO_FOCUS_H

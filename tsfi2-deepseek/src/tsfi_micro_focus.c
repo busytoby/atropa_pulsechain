@@ -2024,3 +2024,46 @@ int tsfi_mf_cade_update_taxpayer_status(char *registry_entry, int new_status) {
     }
     return -2;
 }
+
+int tsfi_mf_imf_parse_dln(const char *dln, int *site_code, int *tax_class, int *doc_code, int *julian_date, int *serial_num) {
+    if (!dln || !site_code || !tax_class || !doc_code || !julian_date || !serial_num) return -1;
+
+    if (sscanf(dln, "%2d%1d%2d%3d%6d", site_code, tax_class, doc_code, julian_date, serial_num) == 5) {
+        return 0;
+    }
+    return -2;
+}
+
+int tsfi_mf_cade_adjust_balance(char *registry_entry, double offset_amount) {
+    if (!registry_entry) return -1;
+
+    char *bal_ptr = strstr(registry_entry, "BAL:");
+    if (bal_ptr) {
+        double current_bal = 0.0;
+        if (sscanf(bal_ptr, "BAL:%lf", &current_bal) == 1) {
+            current_bal += offset_amount;
+            char temp_buf[64];
+            snprintf(temp_buf, sizeof(temp_buf), "BAL:%.2f", current_bal);
+            char *bar_ptr = strchr(bal_ptr, '|');
+            if (bar_ptr) {
+                char suffix[64];
+                strcpy(suffix, bar_ptr);
+                // bal_ptr is inside registry_entry, so writing to it modifies registry_entry.
+                // We use sprintf/strcpy with care.
+                int prefix_len = bal_ptr - registry_entry;
+                char prefix[128];
+                memcpy(prefix, registry_entry, prefix_len);
+                prefix[prefix_len] = '\0';
+                sprintf(registry_entry, "%s%s%s", prefix, temp_buf, suffix);
+            } else {
+                int prefix_len = bal_ptr - registry_entry;
+                char prefix[128];
+                memcpy(prefix, registry_entry, prefix_len);
+                prefix[prefix_len] = '\0';
+                sprintf(registry_entry, "%s%s", prefix, temp_buf);
+            }
+            return 0;
+        }
+    }
+    return -2;
+}

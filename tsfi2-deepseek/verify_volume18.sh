@@ -187,8 +187,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 232 | IRS CADE Taxpayer Lookup | PASS | Queries balance and status fields from registry maps | Volume 33 |
 | 233 | IRS IMF Cycle Code Conversions | PASS | Encodes and decodes Year/Week/Day cycle code configurations | Volume 33 |
 | 234 | IRS CADE Taxpayer Status Updater | PASS | Modifies current status state parameters on account strings | Volume 33 |
+| 235 | IRS IMF DLN Parser | PASS | Extracts processing site, tax class, and date parameters from locator code | Volume 33 |
+| 236 | IRS CADE Taxpayer Balance Adjuster | PASS | Mutates registered account balance fields with manual offsets | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 234 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 236 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"
