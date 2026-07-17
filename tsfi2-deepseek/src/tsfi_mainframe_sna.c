@@ -748,3 +748,70 @@ int tsfi_appc_syncpoint_commit(tsfi_appc_conversation *conv, int phase) {
     return -4;
 }
 
+int tsfi_appc_cnos_negotiate(int local_lu, int partner_lu, int session_limit) {
+    if (local_lu == 0 || partner_lu == 0 || session_limit < 0) return -1;
+    return 0;
+}
+
+int tsfi_appc_rollback(tsfi_appc_conversation *conv) {
+    if (!conv) return -1;
+    if (conv->state == 3) return -2; // Deallocated
+    conv->sync_state = 0; // Roll back to NONE
+    conv->state = 2; // Receive mode
+    return 0;
+}
+
+int tsfi_appc_send_fmh7(tsfi_appc_conversation *conv, uint16_t sense_code) {
+    if (!conv) return -1;
+    if (conv->state == 3) return -2; // Deallocated
+    conv->state = 3; // DEALLOCATED
+    return (int)sense_code;
+}
+
+void cminit(const char *sym_dest, tsfi_appc_conversation *conv, int *rc) {
+    if (!conv || !sym_dest) {
+        if (rc) *rc = 19;
+        return;
+    }
+    int local = 1;
+    int partner = 2;
+    if (strstr(sym_dest, "REMOTE")) {
+        partner = 8;
+    }
+    int res = tsfi_appc_allocate(conv, local, partner);
+    if (rc) {
+        *rc = (res == 0) ? 0 : 20;
+    }
+}
+
+void cmall(tsfi_appc_conversation *conv, int *rc) {
+    if (!conv) {
+        if (rc) *rc = 19;
+        return;
+    }
+    conv->state = 1;
+    if (rc) *rc = 0;
+}
+
+void cmsend(tsfi_appc_conversation *conv, const uint8_t *buf, size_t *len, int *rc) {
+    if (!conv || !buf || !len) {
+        if (rc) *rc = 19;
+        return;
+    }
+    int res = tsfi_appc_send_data(conv, buf, *len);
+    if (rc) {
+        *rc = (res == 0) ? 0 : 20;
+    }
+}
+
+void cmrcv(tsfi_appc_conversation *conv, uint8_t *buf, size_t *len, int *rc) {
+    if (!conv || !buf || !len) {
+        if (rc) *rc = 19;
+        return;
+    }
+    int res = tsfi_appc_receive_data(conv, buf, len);
+    if (rc) {
+        *rc = (res == 0) ? 0 : 20;
+    }
+}
+

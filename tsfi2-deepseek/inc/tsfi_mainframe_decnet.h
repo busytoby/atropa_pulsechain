@@ -722,6 +722,13 @@ int tsfi_appc_security_validate(tsfi_appc_conversation *conv, const char *userna
 int tsfi_appc_spawn_tp(tsfi_appc_conversation *conv, const char *tp_name);
 int tsfi_appc_pacing_adjust(tsfi_appc_conversation *conv, int congestion_flag);
 int tsfi_appc_syncpoint_commit(tsfi_appc_conversation *conv, int phase);
+int tsfi_appc_cnos_negotiate(int local_lu, int partner_lu, int session_limit);
+int tsfi_appc_rollback(tsfi_appc_conversation *conv);
+int tsfi_appc_send_fmh7(tsfi_appc_conversation *conv, uint16_t sense_code);
+void cminit(const char *sym_dest, tsfi_appc_conversation *conv, int *rc);
+void cmall(tsfi_appc_conversation *conv, int *rc);
+void cmsend(tsfi_appc_conversation *conv, const uint8_t *buf, size_t *len, int *rc);
+void cmrcv(tsfi_appc_conversation *conv, uint8_t *buf, size_t *len, int *rc);
 
 // 3270 EBCDIC Screen Map Generator
 int tsfi_3270_format_usenet_list(const tsfi_usenet_article *articles, size_t count, uint8_t *ebcdic_buf, size_t *len_out);
