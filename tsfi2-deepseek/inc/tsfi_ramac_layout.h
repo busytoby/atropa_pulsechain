@@ -1275,4 +1275,7 @@ int tsfi_ach_add(ach_batch *batch, const char *routing, double amount);
 uint64_t tsfi_ach_calc_hash_total(const ach_batch *batch);
 int tsfi_ach_verify_routing(const char *routing);
 
+int tsfi_nacha_generate_entry(char *record_out, size_t max_len, uint8_t tx_code, const char *routing, const char *account, double amount);
+int tsfi_nacha_validate_record(const char *record);
+
 #endif // TSFI_RAMAC_LAYOUT_H

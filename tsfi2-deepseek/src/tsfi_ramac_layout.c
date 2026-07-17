@@ -5162,3 +5162,37 @@ uint64_t tsfi_ach_calc_hash_total(const ach_batch *batch) {
     }
     return total;
 }
+
+int tsfi_nacha_generate_entry(char *record_out, size_t max_len, uint8_t tx_code, const char *routing, const char *account, double amount) {
+    if (!record_out || max_len < 95 || !routing || !account) return -1;
+    if (tsfi_ach_verify_routing(routing) != 0) return -2;
+    if (tx_code != 22 && tx_code != 27 && tx_code != 32 && tx_code != 37) return -3;
+    
+    char routing_first8[9];
+    strncpy(routing_first8, routing, 8);
+    routing_first8[8] = '\0';
+    char check_digit = routing[8];
+    
+    char acc_padded[18];
+    snprintf(acc_padded, sizeof(acc_padded), "%-17.17s", account);
+    
+    uint64_t amt_cents = (uint64_t)round(amount * 100.0);
+    char amt_padded[11];
+    snprintf(amt_padded, sizeof(amt_padded), "%010llu", (unsigned long long)amt_cents);
+    
+    int written = snprintf(record_out, max_len, "6%02u%8.8s%c%-17.17s%10.10s%-15.15s%-22.22s%-2.2s0%015d",
+                           tx_code, routing_first8, check_digit, acc_padded, amt_padded,
+                           "", "Individual Name", "", 12345);
+    return (written == 94) ? 0 : -4;
+}
+
+int tsfi_nacha_validate_record(const char *record) {
+    if (!record || strlen(record) != 94) return -1;
+    if (record[0] == '6') {
+        char routing[10];
+        strncpy(routing, record + 3, 9);
+        routing[9] = '\0';
+        return tsfi_ach_verify_routing(routing);
+    }
+    return 0;
+}

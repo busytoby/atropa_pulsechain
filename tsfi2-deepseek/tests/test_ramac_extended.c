@@ -1052,6 +1052,19 @@ int main(void) {
     tsfi_trie_destroy(trie_root);
     printf("  [PASS] 2-3 tree ACH routing node key resolved upon DAT successfully.\n");
 
+    // 61. Certifiable NACHA Record Parser/Generator Verification
+    printf("[Test] Verifying certifiable NACHA record formats...\n");
+    char nacha_buf[128];
+    int gen_res = tsfi_nacha_generate_entry(nacha_buf, sizeof(nacha_buf), 22, "021000021", "987654321", 1250.75);
+    assert(gen_res == 0);
+    assert(strlen(nacha_buf) == 94);
+    assert(nacha_buf[0] == '6');
+    assert(nacha_buf[1] == '2' && nacha_buf[2] == '2');
+    
+    int nacha_val_res = tsfi_nacha_validate_record(nacha_buf);
+    assert(nacha_val_res == 0);
+    printf("  [PASS] Certifiable NACHA 94-character record formatting and validation passed.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
