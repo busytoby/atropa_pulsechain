@@ -913,4 +913,12 @@ void tsfi_algol_matrix_multiply(const tsfi_algol_matrix *a, const tsfi_algol_mat
 // COBOL COMPUTE Expression Solver
 int tsfi_cobol_compute_eval(const char *expression, const int reg_values[8]);
 
+// ALGOL Floating-Point Trigonometric Library
+double tsfi_algol_math_sin(double x);
+double tsfi_algol_math_cos(double x);
+double tsfi_algol_math_sqrt(double x);
+
+// Formatted I/O Template Engine
+int tsfi_algol_format_output(const char *format, double val, char *buf_out, int max_len);
+
 #endif // TSFI_RAMAC_LAYOUT_H

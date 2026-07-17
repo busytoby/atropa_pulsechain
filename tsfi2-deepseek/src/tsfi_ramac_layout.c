@@ -4085,3 +4085,29 @@ int tsfi_cobol_compute_eval(const char *expression, const int reg_values[8]) {
     
     return 0;
 }
+
+double tsfi_algol_math_sin(double x) {
+    return sin(x);
+}
+
+double tsfi_algol_math_cos(double x) {
+    return cos(x);
+}
+
+double tsfi_algol_math_sqrt(double x) {
+    return (x < 0.0) ? 0.0 : sqrt(x);
+}
+
+int tsfi_algol_format_output(const char *format, double val, char *buf_out, int max_len) {
+    if (!format || !buf_out || max_len <= 0) return -1;
+    
+    if (strcmp(format, "F6.2") == 0) {
+        return snprintf(buf_out, max_len, "%6.2f", val);
+    } else if (strcmp(format, "$99.99") == 0) {
+        char temp[32];
+        snprintf(temp, sizeof(temp), "%05.2f", val);
+        return snprintf(buf_out, max_len, "$%s", temp);
+    }
+    
+    return snprintf(buf_out, max_len, "%f", val);
+}

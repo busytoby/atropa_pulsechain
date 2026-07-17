@@ -439,6 +439,22 @@ int main(void) {
     assert(comp_res == 58);
     printf("  [PASS] COBOL COMPUTE evaluations verified.\n");
 
+    // 24. ALGOL Floating-Point Trigonometric Library Verification
+    printf("[Test] Verifying ALGOL trig library wrappers...\n");
+    assert(tsfi_algol_math_sin(0.0) == 0.0);
+    assert(tsfi_algol_math_sqrt(16.0) == 4.0);
+    printf("  [PASS] ALGOL math wrappers verified.\n");
+    
+    // 25. Formatted I/O Template Engine Verification
+    printf("[Test] Verifying Formatted I/O templates...\n");
+    char fmt_buf[32];
+    tsfi_algol_format_output("F6.2", 12.345, fmt_buf, sizeof(fmt_buf));
+    assert(strcmp(fmt_buf, " 12.35") == 0);
+    
+    tsfi_algol_format_output("$99.99", 5.67, fmt_buf, sizeof(fmt_buf));
+    assert(strcmp(fmt_buf, "$05.67") == 0);
+    printf("  [PASS] Output format templates verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
