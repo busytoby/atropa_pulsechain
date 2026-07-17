@@ -611,4 +611,20 @@ int tsfi_s370_rca501_card_read(const uint16_t *card_columns, int col_count, char
 // Charles W. Adams NJCC "logic, not hardware" structural prediction report
 int tsfi_s370_charles_adams_stored_logic_report(char *report_out, int max_len);
 
+// GPS Newell & Simon General Problem Solver structures and functions
+typedef struct {
+    char name[32];
+    int condition_diff; // Difference index it requires (must be present in state, or -1 if none)
+    int add_feature;    // Feature index it sets
+} tsfi_gps_operator;
+
+typedef struct {
+    int current_features; // bitmask of current state features
+    int goal_features;    // bitmask of goal state features
+    tsfi_gps_operator operators[8];
+    int operator_count;
+} tsfi_gps_state;
+
+int tsfi_s370_gps_solve(tsfi_gps_state *gps, int *applied_ops_out, int max_ops);
+
 #endif // TSFI_RAMAC_LAYOUT_H

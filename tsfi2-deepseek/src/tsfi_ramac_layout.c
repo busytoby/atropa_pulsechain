@@ -3132,3 +3132,49 @@ int tsfi_s370_charles_adams_stored_logic_report(char *report_out, int max_len) {
     report_out[max_len - 1] = '\0';
     return 0;
 }
+
+static int gps_solve_recursive(tsfi_gps_state *gps, int goal_feature, int *applied_ops, int *ops_count, int max_ops, int depth) {
+    if (depth > 10) return -1; // Prevent infinite loops
+    
+    // If we already have the feature, we are done
+    if (gps->current_features & (1 << goal_feature)) {
+        return 0;
+    }
+    
+    // Find an operator that sets this feature
+    for (int i = 0; i < gps->operator_count; i++) {
+        tsfi_gps_operator op = gps->operators[i];
+        if (op.add_feature == goal_feature) {
+            // Check condition
+            if (op.condition_diff != -1) {
+                // Try to satisfy condition recursively
+                if (gps_solve_recursive(gps, op.condition_diff, applied_ops, ops_count, max_ops, depth + 1) != 0) {
+                    continue; // try another operator if this path fails
+                }
+            }
+            // Apply operator
+            if (*ops_count >= max_ops) return -1;
+            applied_ops[(*ops_count)++] = i;
+            gps->current_features |= (1 << goal_feature);
+            return 0;
+        }
+    }
+    return -1; // No operator can set this feature
+}
+
+int tsfi_s370_gps_solve(tsfi_gps_state *gps, int *applied_ops_out, int max_ops) {
+    if (!gps || !applied_ops_out || max_ops <= 0) return -1;
+    
+    int ops_count = 0;
+    // For each feature in goal_features, if it's missing in current_features, reduce difference
+    for (int f = 0; f < 32; f++) {
+        if (gps->goal_features & (1 << f)) {
+            if (!(gps->current_features & (1 << f))) {
+                if (gps_solve_recursive(gps, f, applied_ops_out, &ops_count, max_ops, 0) != 0) {
+                    return -1; // Failed to solve a goal feature
+                }
+            }
+        }
+    }
+    return ops_count;
+}

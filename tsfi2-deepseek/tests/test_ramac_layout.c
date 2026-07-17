@@ -1930,6 +1930,39 @@ int main(void) {
     assert(strstr(adams_rep, "Hardware") != NULL);
     printf("  [PASS] Charles W. Adams stored logic report successfully verified:\n%s", adams_rep);
 
+    // Test Scenario 33: Newell & Simon General Problem Solver (GPS) Simulation
+    printf("[Test] Verifying General Problem Solver (GPS) simulation...\n");
+    tsfi_gps_state gps;
+    gps.current_features = (1 << 0); // Has money
+    gps.goal_features = (1 << 3);    // At destination
+    gps.operator_count = 3;
+    
+    // Op 0: Buy car (requires Has money, sets Has car)
+    strcpy(gps.operators[0].name, "Buy car");
+    gps.operators[0].condition_diff = 0;
+    gps.operators[0].add_feature = 1;
+    
+    // Op 1: Drive to airport (requires Has car, sets At airport)
+    strcpy(gps.operators[1].name, "Drive to airport");
+    gps.operators[1].condition_diff = 1;
+    gps.operators[1].add_feature = 2;
+    
+    // Op 2: Fly to destination (requires At airport, sets At destination)
+    strcpy(gps.operators[2].name, "Fly to destination");
+    gps.operators[2].condition_diff = 2;
+    gps.operators[2].add_feature = 3;
+    
+    int applied_ops[8];
+    int ops_solved = tsfi_s370_gps_solve(&gps, applied_ops, 8);
+    assert(ops_solved == 3);
+    assert(applied_ops[0] == 0); // Buy car
+    assert(applied_ops[1] == 1); // Drive to airport
+    assert(applied_ops[2] == 2); // Fly to destination
+    printf("  [PASS] GPS resolved plan successfully: %s -> %s -> %s\n", 
+           gps.operators[applied_ops[0]].name, 
+           gps.operators[applied_ops[1]].name, 
+           gps.operators[applied_ops[2]].name);
+
     // 4. Layout Optimization Verification
     printf("[Test] Verifying layout serialization...\n");
     tsfi_dat mock_dat;
