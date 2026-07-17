@@ -478,6 +478,16 @@ int main(void) {
     assert(strstr(vsam_buffer, "J. WESSLER") != NULL);
     printf("  [PASS] CICS VSAM Key-Sequenced File Control Emulator verified.\n");
 
+    // 32. Verify CICS VSAM PMG Inventory Registration
+    printf("[TEST] Validating CICS VSAM PMG Inventory Registration...\n");
+    int write_res = tsfi_mf_cics_vsam_write("USERFILE", "P0_INV", "SPRITE_SHIELD_0xFA");
+    assert(write_res == 0);
+    char pmg_inv[128] = {0};
+    int read_res = tsfi_mf_cics_vsam_read("USERFILE", "P0_INV", pmg_inv, sizeof(pmg_inv));
+    assert(read_res == 0);
+    assert(strcmp(pmg_inv, "SPRITE_SHIELD_0xFA") == 0);
+    printf("  [PASS] CICS VSAM PMG Inventory Registration verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

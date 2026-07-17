@@ -73,5 +73,6 @@
 | 139 | PMG Collision Handler Coordinator | PASS | Player-Missile contact LINK event route | Volume 33 |
 | 140 | Majordomo Help Resolver | PASS | Command listing instruction string formatter | Volume 33 |
 | 141 | CICS VSAM Key-Sequenced File Control | PASS | KSDS database index key record reader | Volume 33 |
+| 142 | CICS VSAM PMG Inventory Registry | PASS | Key-value record insertion and overwrite | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 141 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 142 Scenarios validated successfully)

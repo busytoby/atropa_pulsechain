@@ -857,19 +857,57 @@ int tsfi_mf_majordomo_help(char *help_out, int max_len) {
     return 0;
 }
 
+typedef struct {
+    char dataset[16];
+    char key[16];
+    char value[64];
+} TSFIVsamRecord;
+
+static TSFIVsamRecord g_vsam_db[32] = {
+    {"USERFILE", "K001", "NAME: J. WESSLER | DEPT: mainframe-systems"},
+    {"USERFILE", "K002", "NAME: A. TURING   | DEPT: zmm-development"}
+};
+static int g_vsam_db_count = 2;
+
 int tsfi_mf_cics_vsam_read(const char *dataset_name, const char *record_key, char *record_out, int max_len) {
     if (!dataset_name || !record_key || !record_out || max_len <= 0) return -1;
 
-    if (strcmp(dataset_name, "USERFILE") == 0) {
-        if (strcmp(record_key, "K001") == 0) {
-            snprintf(record_out, max_len, "NAME: J. WESSLER | DEPT: mainframe-systems");
-            return 0;
-        } else if (strcmp(record_key, "K002") == 0) {
-            snprintf(record_out, max_len, "NAME: A. TURING   | DEPT: zmm-development");
+    for (int i = 0; i < g_vsam_db_count; i++) {
+        if (strcmp(g_vsam_db[i].dataset, dataset_name) == 0 &&
+            strcmp(g_vsam_db[i].key, record_key) == 0) {
+            snprintf(record_out, max_len, "%s", g_vsam_db[i].value);
             return 0;
         }
     }
 
     snprintf(record_out, max_len, "RECORD NOT FOUND");
     return -2;
+}
+
+int tsfi_mf_cics_vsam_write(const char *dataset_name, const char *record_key, const char *record_data) {
+    if (!dataset_name || !record_key || !record_data) return -1;
+
+    // Check if record exists, overwrite it
+    for (int i = 0; i < g_vsam_db_count; i++) {
+        if (strcmp(g_vsam_db[i].dataset, dataset_name) == 0 &&
+            strcmp(g_vsam_db[i].key, record_key) == 0) {
+            strncpy(g_vsam_db[i].value, record_data, sizeof(g_vsam_db[i].value) - 1);
+            g_vsam_db[i].value[sizeof(g_vsam_db[i].value) - 1] = '\0';
+            return 0;
+        }
+    }
+
+    if (g_vsam_db_count >= 32) return -3; // Overflow
+
+    strncpy(g_vsam_db[g_vsam_db_count].dataset, dataset_name, sizeof(g_vsam_db[g_vsam_db_count].dataset) - 1);
+    g_vsam_db[g_vsam_db_count].dataset[sizeof(g_vsam_db[g_vsam_db_count].dataset) - 1] = '\0';
+
+    strncpy(g_vsam_db[g_vsam_db_count].key, record_key, sizeof(g_vsam_db[g_vsam_db_count].key) - 1);
+    g_vsam_db[g_vsam_db_count].key[sizeof(g_vsam_db[g_vsam_db_count].key) - 1] = '\0';
+
+    strncpy(g_vsam_db[g_vsam_db_count].value, record_data, sizeof(g_vsam_db[g_vsam_db_count].value) - 1);
+    g_vsam_db[g_vsam_db_count].value[sizeof(g_vsam_db[g_vsam_db_count].value) - 1] = '\0';
+
+    g_vsam_db_count++;
+    return 0;
 }
