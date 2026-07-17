@@ -6582,3 +6582,50 @@ void tsfi_cp_term_opts_process(const tsfi_cp_terminal_options *opts, const char 
     }
     out_buf[write_idx] = '\0';
 }
+
+void tsfi_cp_link_init(tsfi_cp_link_manager *mgr) {
+    if (!mgr) return;
+    memset(mgr, 0, sizeof(tsfi_cp_link_manager));
+}
+
+int tsfi_cp_link_register(tsfi_cp_link_manager *mgr, const char *owner, uint32_t vdev, const char *pwd) {
+    if (!mgr || !owner || mgr->disk_count >= MAX_MINIDISKS) return -1;
+    strncpy(mgr->disks[mgr->disk_count].owner_uid, owner, sizeof(mgr->disks[mgr->disk_count].owner_uid) - 1);
+    mgr->disks[mgr->disk_count].owner_uid[sizeof(mgr->disks[mgr->disk_count].owner_uid) - 1] = '\0';
+    mgr->disks[mgr->disk_count].owner_vdev = vdev;
+    if (pwd) {
+        strncpy(mgr->disks[mgr->disk_count].read_write_pwd, pwd, sizeof(mgr->disks[mgr->disk_count].read_write_pwd) - 1);
+        mgr->disks[mgr->disk_count].read_write_pwd[sizeof(mgr->disks[mgr->disk_count].read_write_pwd) - 1] = '\0';
+    }
+    mgr->disk_count++;
+    return 0;
+}
+
+int tsfi_cp_link_execute(tsfi_cp_link_manager *mgr, const char *requester, const char *owner, uint32_t owner_vdev, uint32_t my_vdev, const char *mode, const char *provided_pwd) {
+    if (!mgr || !requester || !owner || !mode) return -1;
+    if (mgr->link_count >= MAX_MINIDISK_LINKS) return -3;
+    
+    int disk_idx = -1;
+    for (int i = 0; i < mgr->disk_count; i++) {
+        if (strcmp(mgr->disks[i].owner_uid, owner) == 0 && mgr->disks[i].owner_vdev == owner_vdev) {
+            disk_idx = i;
+            break;
+        }
+    }
+    if (disk_idx == -1) return -1;
+    
+    int write_access = 0;
+    if (strcasecmp(mode, "MR") == 0) {
+        if (!provided_pwd || strcmp(mgr->disks[disk_idx].read_write_pwd, provided_pwd) != 0) {
+            return -2;
+        }
+        write_access = 1;
+    }
+    
+    strncpy(mgr->links[mgr->link_count].target_uid, owner, sizeof(mgr->links[mgr->link_count].target_uid) - 1);
+    mgr->links[mgr->link_count].target_uid[sizeof(mgr->links[mgr->link_count].target_uid) - 1] = '\0';
+    mgr->links[mgr->link_count].my_vdev = my_vdev;
+    mgr->links[mgr->link_count].has_write_access = write_access;
+    mgr->link_count++;
+    return 0;
+}

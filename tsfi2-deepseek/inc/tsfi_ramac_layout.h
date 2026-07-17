@@ -1781,4 +1781,30 @@ void tsfi_cp_term_opts_init(tsfi_cp_terminal_options *opts);
 int tsfi_cp_term_opts_config(tsfi_cp_terminal_options *opts, const char *param, int enable);
 void tsfi_cp_term_opts_process(const tsfi_cp_terminal_options *opts, const char *in_buf, char *out_buf, int out_max);
 
+// VM/370 CP Minidisk Link Manager
+typedef struct {
+    char owner_uid[16];
+    uint32_t owner_vdev;
+    char read_write_pwd[16];
+} tsfi_cp_minidisk;
+
+typedef struct {
+    char target_uid[16];
+    uint32_t my_vdev;
+    int has_write_access;
+} tsfi_cp_minidisk_link;
+
+#define MAX_MINIDISKS 8
+#define MAX_MINIDISK_LINKS 8
+typedef struct {
+    tsfi_cp_minidisk disks[MAX_MINIDISKS];
+    int disk_count;
+    tsfi_cp_minidisk_link links[MAX_MINIDISK_LINKS];
+    int link_count;
+} tsfi_cp_link_manager;
+
+void tsfi_cp_link_init(tsfi_cp_link_manager *mgr);
+int tsfi_cp_link_register(tsfi_cp_link_manager *mgr, const char *owner, uint32_t vdev, const char *pwd);
+int tsfi_cp_link_execute(tsfi_cp_link_manager *mgr, const char *requester, const char *owner, uint32_t owner_vdev, uint32_t my_vdev, const char *mode, const char *provided_pwd);
+
 #endif // TSFI_RAMAC_LAYOUT_H

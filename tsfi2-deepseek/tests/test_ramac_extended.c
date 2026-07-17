@@ -1928,6 +1928,27 @@ int main(void) {
     assert(strcmp(processed, "CMS@ COMMAND") == 0);
     printf("  [PASS] VM/370 CP terminal CHARDEL/LINEDEL option filters verified.\n");
 
+    // 108. VM/370 CP Minidisk Link Manager Verification
+    printf("[Test] Verifying VM/370 CP Minidisk Linkages...\n");
+    tsfi_cp_link_manager link_mgr;
+    tsfi_cp_link_init(&link_mgr);
+    
+    // Register disks
+    assert(tsfi_cp_link_register(&link_mgr, "MAINT", 191, "MAINT_WRITE") == 0);
+    assert(link_mgr.disk_count == 1);
+    
+    // RR link (should succeed without password)
+    assert(tsfi_cp_link_execute(&link_mgr, "USER1", "MAINT", 191, 291, "RR", NULL) == 0);
+    assert(link_mgr.links[0].has_write_access == 0);
+    
+    // MR link password mismatch
+    assert(tsfi_cp_link_execute(&link_mgr, "USER1", "MAINT", 191, 292, "MR", "WRONG_PWD") == -2);
+    
+    // MR link correct password
+    assert(tsfi_cp_link_execute(&link_mgr, "USER1", "MAINT", 191, 292, "MR", "MAINT_WRITE") == 0);
+    assert(link_mgr.links[1].has_write_access == 1);
+    printf("  [PASS] VM/370 CP minidisk sharing linkages and permissions verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
