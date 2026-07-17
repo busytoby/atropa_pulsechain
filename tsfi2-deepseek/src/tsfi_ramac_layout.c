@@ -5752,3 +5752,21 @@ int tsfi_dbtg_validate_action(tsfi_dbtg_exception_context *ctx, const tsfi_dbtg_
     ctx->exception_triggered = 1;
     return -4;
 }
+
+void tsfi_dbtg_set_membership_init(tsfi_dbtg_set_membership *sm, const char *name, int ins_mode, int ret_mode) {
+    if (!sm) return;
+    memset(sm, 0, sizeof(tsfi_dbtg_set_membership));
+    if (name) strncpy(sm->set_name, name, sizeof(sm->set_name) - 1);
+    sm->insertion_mode = ins_mode;
+    sm->retention_mode = ret_mode;
+}
+
+int tsfi_dbtg_validate_disconnect(const tsfi_dbtg_set_membership *sm, int *db_status_out) {
+    if (!sm || !db_status_out) return -1;
+    if (sm->retention_mode == DBTG_RETENTION_MANDATORY) {
+        *db_status_out = DB_STATUS_MEMBER_ERR;
+        return -2;
+    }
+    *db_status_out = DB_STATUS_OK;
+    return 0;
+}

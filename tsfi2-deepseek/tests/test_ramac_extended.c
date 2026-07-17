@@ -1330,6 +1330,25 @@ int main(void) {
     assert(db_exc_ctx.exception_triggered == 0);
     printf("  [PASS] DB-EXCEPTION declarative lock and status validation verified.\n");
 
+    // 76. DBTG Set Membership Invariants Verification
+    printf("[Test] Verifying DBTG Set Membership constraints...\n");
+    tsfi_dbtg_set_membership mandatory_mem;
+    tsfi_dbtg_set_membership_init(&mandatory_mem, "LEDGER-SET", DBTG_INSERT_AUTOMATIC, DBTG_RETENTION_MANDATORY);
+    assert(mandatory_mem.insertion_mode == DBTG_INSERT_AUTOMATIC);
+    assert(mandatory_mem.retention_mode == DBTG_RETENTION_MANDATORY);
+    
+    int db_stat = 0;
+    int disc_res = tsfi_dbtg_validate_disconnect(&mandatory_mem, &db_stat);
+    assert(disc_res == -2);
+    assert(db_stat == DB_STATUS_MEMBER_ERR);
+    
+    tsfi_dbtg_set_membership optional_mem;
+    tsfi_dbtg_set_membership_init(&optional_mem, "TEMP-SET", DBTG_INSERT_MANUAL, DBTG_RETENTION_OPTIONAL);
+    disc_res = tsfi_dbtg_validate_disconnect(&optional_mem, &db_stat);
+    assert(disc_res == 0);
+    assert(db_stat == DB_STATUS_OK);
+    printf("  [PASS] DBTG Set Membership mandatory retention bounds verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

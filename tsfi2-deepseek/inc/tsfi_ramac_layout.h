@@ -1412,4 +1412,20 @@ typedef struct {
 void tsfi_dbtg_exception_init(tsfi_dbtg_exception_context *ctx);
 int tsfi_dbtg_validate_action(tsfi_dbtg_exception_context *ctx, const tsfi_dbtg_realm_registry *reg, const char *realm_name, int is_write_action);
 
+// DBTG Set Membership Invariants
+#define DBTG_INSERT_MANUAL      0
+#define DBTG_INSERT_AUTOMATIC   1
+#define DBTG_RETENTION_OPTIONAL  0
+#define DBTG_RETENTION_MANDATORY 1
+#define DB_STATUS_MEMBER_ERR    1805
+
+typedef struct {
+    char set_name[32];
+    int insertion_mode;
+    int retention_mode;
+} tsfi_dbtg_set_membership;
+
+void tsfi_dbtg_set_membership_init(tsfi_dbtg_set_membership *sm, const char *name, int ins_mode, int ret_mode);
+int tsfi_dbtg_validate_disconnect(const tsfi_dbtg_set_membership *sm, int *db_status_out);
+
 #endif // TSFI_RAMAC_LAYOUT_H
