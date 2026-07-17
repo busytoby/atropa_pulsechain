@@ -304,6 +304,16 @@ int main(void) {
     assert(marauder_buffer[15 * 80 + 50] == '*');
     printf("  [PASS] CICS BMS Marauder Map Formatter verified.\n");
 
+    // 15. Verify 3D First-Person CICS BMS Viewport
+    printf("[TEST] Validating 3D First-Person CICS BMS Viewport...\n");
+    char fp_buffer[80 * 24];
+    int fp_res = tsfi_mf_cics_bms_first_person_render(1.5f, 1.5f, 0.0f, fp_buffer);
+    assert(fp_res == 0);
+    assert(strchr(fp_buffer, '.') != NULL);
+    assert(strchr(fp_buffer, '#') != NULL);
+    assert(strchr(fp_buffer, '_') != NULL);
+    printf("  [PASS] 3D First-Person CICS BMS Viewport verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

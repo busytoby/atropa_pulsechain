@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 
 // COMP-5 Encoding: Native binary representation (little-endian on x86/ARM)
 int tsfi_mf_comp5_encode(int64_t value, uint8_t *buffer, int size_bytes) {
@@ -440,6 +441,72 @@ int tsfi_mf_cics_bms_marauder_map(const char *map_name, const uint32_t *active_n
 
         if (line >= 1 && line < 24 && col < 80) {
             terminal_buffer[line * 80 + col] = '*';
+        }
+    }
+
+    return 0;
+}
+
+static const char TSFI_MAZE_GRID[8][8] = {
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 1, 1, 0, 1, 0, 1},
+    {1, 0, 1, 0, 0, 1, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 1, 1, 1, 1, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1}
+};
+
+int tsfi_mf_cics_bms_first_person_render(float player_x, float player_y, float player_angle, char *terminal_buffer) {
+    if (!terminal_buffer) return -1;
+
+    memset(terminal_buffer, ' ', 80 * 24);
+    float fov = 1.04719f;
+
+    for (int col = 0; col < 80; col++) {
+        float ray_angle = (player_angle - fov / 2.0f) + ((float)col / 80.0f) * fov;
+        float distance = 0.0f;
+        float max_distance = 16.0f;
+        int hit_wall = 0;
+
+        float dx = cosf(ray_angle);
+        float dy = sinf(ray_angle);
+
+        while (!hit_wall && distance < max_distance) {
+            distance += 0.1f;
+            int check_x = (int)(player_x + dx * distance);
+            int check_y = (int)(player_y + dy * distance);
+
+            if (check_x < 0 || check_x >= 8 || check_y < 0 || check_y >= 8) {
+                hit_wall = 1;
+                distance = max_distance;
+            } else if (TSFI_MAZE_GRID[check_y][check_x]) {
+                hit_wall = 1;
+            }
+        }
+
+        float corrected_dist = distance * cosf(ray_angle - player_angle);
+        if (corrected_dist < 0.1f) corrected_dist = 0.1f;
+
+        int wall_height = (int)(24.0f / corrected_dist);
+        if (wall_height > 24) wall_height = 24;
+
+        int ceiling = (24 - wall_height) / 2;
+        int floor = 24 - ceiling;
+
+        char wall_char = '#';
+        if (distance > 6.0f) wall_char = '=';
+        else if (distance > 10.0f) wall_char = ':';
+
+        for (int row = 0; row < 24; row++) {
+            if (row < ceiling) {
+                terminal_buffer[row * 80 + col] = '.';
+            } else if (row >= ceiling && row < floor) {
+                terminal_buffer[row * 80 + col] = wall_char;
+            } else {
+                terminal_buffer[row * 80 + col] = '_';
+            }
         }
     }
 
