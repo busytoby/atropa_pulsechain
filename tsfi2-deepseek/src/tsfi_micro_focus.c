@@ -594,3 +594,21 @@ int tsfi_mf_cics_deq(const char *resource_name, uint32_t task_id, uint32_t *lock
 
     return -3;
 }
+
+int tsfi_mf_zmachine_bms_room_render(uint32_t room_id, float player_angle, char *terminal_buffer) {
+    if (!terminal_buffer) return -1;
+
+    float px = 1.5f + (float)(room_id % 3);
+    float py = 1.5f + (float)((room_id / 3) % 3);
+
+    int render_res = tsfi_mf_cics_bms_first_person_render(px, py, player_angle, terminal_buffer);
+    if (render_res != 0) return render_res;
+
+    char hud[80];
+    int hud_len = snprintf(hud, sizeof(hud), "ZMACHINE ROOM %u | VIEWPORT RESOLVED AT POS (%.1f, %.1f)", room_id, px, py);
+    if (hud_len > 0 && hud_len < 80) {
+        memcpy(terminal_buffer + 23 * 80, hud, hud_len);
+    }
+
+    return 0;
+}

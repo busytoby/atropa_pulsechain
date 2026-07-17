@@ -340,6 +340,14 @@ int main(void) {
     assert(enq_res3 == 0);
     printf("  [PASS] CICS ENQ/DEQ Task locks verified.\n");
 
+    // 18. Verify ZMachine CICS 3D Room Renderer
+    printf("[TEST] Validating ZMachine CICS 3D Room Renderer...\n");
+    char zm_buffer[80 * 24];
+    int zm_res = tsfi_mf_zmachine_bms_room_render(4, 0.5f, zm_buffer);
+    assert(zm_res == 0);
+    assert(strstr(zm_buffer + 23 * 80, "ZMACHINE ROOM 4") != NULL);
+    printf("  [PASS] ZMachine CICS 3D Room Renderer verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

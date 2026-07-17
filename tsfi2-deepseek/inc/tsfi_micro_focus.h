@@ -42,5 +42,6 @@ int tsfi_mf_cics_bms_first_person_render(float player_x, float player_y, float p
 int tsfi_mf_cics_bms_pmg_render(const uint8_t *pmg_base, int player_x, int player_y, char *terminal_buffer);
 int tsfi_mf_cics_enq(const char *resource_name, uint32_t task_id, uint32_t *lock_table, int max_locks);
 int tsfi_mf_cics_deq(const char *resource_name, uint32_t task_id, uint32_t *lock_table, int max_locks);
+int tsfi_mf_zmachine_bms_room_render(uint32_t room_id, float player_angle, char *terminal_buffer);
 
 #endif // TSFI_MICRO_FOCUS_H
