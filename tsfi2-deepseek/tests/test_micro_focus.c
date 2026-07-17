@@ -461,6 +461,15 @@ int main(void) {
     assert(pmg_pool[13] == 4);
     printf("  [PASS] PMG Collision Handler Coordinator verified.\n");
 
+    // 30. Verify Majordomo Help Resolver
+    printf("[TEST] Validating Majordomo Help Resolver...\n");
+    char help_buffer[256] = {0};
+    int help_res = tsfi_mf_majordomo_help(help_buffer, sizeof(help_buffer));
+    assert(help_res == 0);
+    assert(strstr(help_buffer, "MAJORDOMO HELP") != NULL);
+    assert(strstr(help_buffer, "subscribe") != NULL);
+    printf("  [PASS] Majordomo Help Resolver verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

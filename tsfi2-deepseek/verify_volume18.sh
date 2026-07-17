@@ -92,8 +92,9 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 137 | CICS Program Control LINK Emulator | PASS | Dynamic sub-program calling simulation | Volume 33 |
 | 138 | Vulkan APPC/Majordomo UX Coordinator | PASS | LU6.2 flow layout buffer renderer | Volume 33 |
 | 139 | PMG Collision Handler Coordinator | PASS | Player-Missile contact LINK event route | Volume 33 |
+| 140 | Majordomo Help Resolver | PASS | Command listing instruction string formatter | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 139 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 140 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

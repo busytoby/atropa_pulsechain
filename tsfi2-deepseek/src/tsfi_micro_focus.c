@@ -843,3 +843,16 @@ int tsfi_mf_pmg_handle_collision(uint8_t player_id, uint8_t playfield_id, uint8_
 
     return tsfi_mf_cics_link("COLDETCT", comm_block, 2, storage_pool, allocated_offset);
 }
+
+int tsfi_mf_majordomo_help(char *help_out, int max_len) {
+    if (!help_out || max_len <= 0) return -1;
+
+    snprintf(help_out, max_len,
+             "MAJORDOMO HELP\n"
+             "  subscribe <list> [<addr>]\n"
+             "  unsubscribe <list> [<addr>]\n"
+             "  info <list>\n"
+             "  lists\n"
+             "  help\n");
+    return 0;
+}
