@@ -5976,3 +5976,36 @@ int tsfi_vtam_session_send(tsfi_vtam_session *session, const char *data, int dat
     session->bytes_transmitted += data_len;
     return data_len;
 }
+
+void tsfi_cms_session_init(tsfi_cms_session *sess) {
+    if (!sess) return;
+    memset(sess, 0, sizeof(tsfi_cms_session));
+}
+
+int tsfi_cms_execute_command(tsfi_cms_session *sess, const char *cmd) {
+    if (!sess || !cmd) return -1;
+    if (strcasecmp(cmd, "IPL CMS") == 0) {
+        sess->is_booted = 1;
+        sess->last_command_status = 0;
+        return 0;
+    }
+    if (strcasecmp(cmd, "ACCESS 191 A") == 0) {
+        if (!sess->is_booted) {
+            sess->last_command_status = -2;
+            return -2;
+        }
+        sess->disk_mounted_191 = 1;
+        sess->last_command_status = 0;
+        return 0;
+    }
+    if (strcasecmp(cmd, "LISTFILE") == 0) {
+        if (!sess->disk_mounted_191) {
+            sess->last_command_status = -3;
+            return -3;
+        }
+        sess->last_command_status = 0;
+        return 0;
+    }
+    sess->last_command_status = -1;
+    return -1;
+}

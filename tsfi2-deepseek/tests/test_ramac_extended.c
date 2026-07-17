@@ -1521,6 +1521,23 @@ int main(void) {
     assert(lu_session.bytes_transmitted == 17);
     printf("  [PASS] VTAM LU-LU session binds and data traffic verified.\n");
 
+    // 88. VM/370 Conversational Monitor System (CMS) Verification
+    printf("[Test] Verifying VM/370 CMS commands...\n");
+    tsfi_cms_session cms_sess;
+    tsfi_cms_session_init(&cms_sess);
+    assert(cms_sess.is_booted == 0);
+    
+    assert(tsfi_cms_execute_command(&cms_sess, "ACCESS 191 A") == -2);
+    
+    assert(tsfi_cms_execute_command(&cms_sess, "IPL CMS") == 0);
+    assert(cms_sess.is_booted == 1);
+    
+    assert(tsfi_cms_execute_command(&cms_sess, "ACCESS 191 A") == 0);
+    assert(cms_sess.disk_mounted_191 == 1);
+    
+    assert(tsfi_cms_execute_command(&cms_sess, "LISTFILE") == 0);
+    printf("  [PASS] VM/370 CMS boot, access, and file catalog commands verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

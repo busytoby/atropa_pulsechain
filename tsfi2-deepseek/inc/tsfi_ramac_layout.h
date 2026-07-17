@@ -1519,4 +1519,14 @@ void tsfi_vtam_session_init(tsfi_vtam_session *session, const char *lu_name);
 int tsfi_vtam_session_handshake(tsfi_vtam_session *session, int event);
 int tsfi_vtam_session_send(tsfi_vtam_session *session, const char *data, int data_len);
 
+// VM/370 Conversational Monitor System (CMS)
+typedef struct {
+    int is_booted;
+    int disk_mounted_191;
+    int last_command_status;
+} tsfi_cms_session;
+
+void tsfi_cms_session_init(tsfi_cms_session *sess);
+int tsfi_cms_execute_command(tsfi_cms_session *sess, const char *cmd);
+
 #endif // TSFI_RAMAC_LAYOUT_H
