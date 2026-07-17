@@ -224,8 +224,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 269 | IRS CADE Taxpayer Active Or Under Audit Checker | PASS | Asserves if account status matches active or under audit codes | Volume 33 |
 | 270 | IRS IMF Form 706 Verifier | PASS | Restricts estate filings to Form 706 estate tax return ranges | Volume 33 |
 | 271 | IRS CADE Taxpayer Active Or Audit Pending Checker | PASS | Asserves if account status matches active or pending audit codes | Volume 33 |
+| 272 | IRS IMF Form 709 Verifier | PASS | Restricts gift filings to Form 709 gift tax return ranges | Volume 33 |
+| 273 | IRS CADE Taxpayer Under Audit Or Suspended Checker | PASS | Asserves if account status matches under audit or suspended codes | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 271 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 273 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

@@ -584,3 +584,23 @@ int tsfi_mf_cade_is_active_or_audit_pending(int status_code, int *is_active_or_p
     }
     return 0;
 }
+
+int tsfi_mf_imf_is_form_709(int doc_code, int *result) {
+    if (!result) return -1;
+
+    *result = 0;
+    if (doc_code == 28) {
+        *result = 1;
+    }
+    return 0;
+}
+
+int tsfi_mf_cade_is_under_audit_or_suspended(int status_code, int *is_audit_or_suspended) {
+    if (!is_audit_or_suspended) return -1;
+
+    *is_audit_or_suspended = 0;
+    if (status_code == 2 || status_code == 3) {
+        *is_audit_or_suspended = 1;
+    }
+    return 0;
+}

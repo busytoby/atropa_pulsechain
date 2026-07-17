@@ -49,5 +49,7 @@ int tsfi_mf_imf_is_fiduciary_form(int doc_code, int *result);
 int tsfi_mf_cade_is_active_or_under_audit(int status_code, int *is_active_or_audit);
 int tsfi_mf_imf_is_form_706(int doc_code, int *result);
 int tsfi_mf_cade_is_active_or_audit_pending(int status_code, int *is_active_or_pending);
+int tsfi_mf_imf_is_form_709(int doc_code, int *result);
+int tsfi_mf_cade_is_under_audit_or_suspended(int status_code, int *is_audit_or_suspended);
 
 #endif // TSFI_CADE_IMF_H
