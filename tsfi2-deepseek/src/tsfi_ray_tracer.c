@@ -247,3 +247,19 @@ int tsfi_oscar_trace_to_ray_tracer(const float *coefficients, int order, float x
 
     return 0;
 }
+
+int tsfi_fips54_com_to_ray_tracer(int rows, int cols, float spacing, tsfi_cgm_scene *scene) {
+    if (rows <= 0 || cols <= 0 || spacing <= 0.0f || !scene) return -1;
+
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            float x = ((float)c - (float)(cols - 1) * 0.5f) * spacing;
+            float y = ((float)r - (float)(rows - 1) * 0.5f) * spacing;
+            tsfi_rt_vec3 pos = { x, y, 7.0f };
+            tsfi_rt_vec3 color = { 0.8f, 0.8f, 0.0f }; // Yellow COM grid markers
+            tsfi_cgm_scene_add_primitive(scene, CGM_PRIM_SPHERE, pos, color, 0.15f, (tsfi_rt_vec3){0,0,0});
+        }
+    }
+
+    return 0;
+}

@@ -125,6 +125,18 @@ int main(void) {
     assert(oscar_scene.primitives[2].position.y == 1.0f);
     printf("  [PASS] Benson-Lehner OSCAR trace coordinate mapping verified.\n");
 
+    // 6. Verify FIPS 54 Computer Output Microform Grid Conversion
+    printf("[TEST] Validating FIPS 54 COM grid conversion...\n");
+    tsfi_cgm_scene com_scene;
+    tsfi_cgm_scene_init(&com_scene);
+    int com_res = tsfi_fips54_com_to_ray_tracer(3, 4, 1.0f, &com_scene);
+    assert(com_res == 0);
+    assert(com_scene.primitive_count == 12);
+    // Center column at index 5 should be at y=-0.5, x=0.5
+    assert(com_scene.primitives[5].position.x == 0.5f);
+    assert(com_scene.primitives[5].position.y == -0.5f);
+    printf("  [PASS] FIPS 54 COM layout grid coordinate mapping verified.\n");
+
     free(img_buf);
     printf("[SUCCESS] CGI/CGM Ray Tracer validation completed successfully!\n");
     return 0;
