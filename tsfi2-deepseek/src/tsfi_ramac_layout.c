@@ -6149,3 +6149,31 @@ int tsfi_cp_scheduler_dispatch(tsfi_cp_scheduler *sched, int task_idx, int cycle
     }
     return 0;
 }
+
+void tsfi_cp_directory_init(tsfi_cp_directory *dir) {
+    if (!dir) return;
+    memset(dir, 0, sizeof(tsfi_cp_directory));
+}
+
+int tsfi_cp_directory_add(tsfi_cp_directory *dir, const char *uid, char priv, uint32_t max_store) {
+    if (!dir || !uid || dir->entry_count >= 8) return -1;
+    strncpy(dir->entries[dir->entry_count].userid, uid, sizeof(dir->entries[dir->entry_count].userid) - 1);
+    dir->entries[dir->entry_count].userid[sizeof(dir->entries[dir->entry_count].userid) - 1] = '\0';
+    dir->entries[dir->entry_count].privilege_class = priv;
+    dir->entries[dir->entry_count].max_storage_kb = max_store;
+    dir->entry_count++;
+    return 0;
+}
+
+int tsfi_cp_directory_check(const tsfi_cp_directory *dir, const char *uid, char required_priv) {
+    if (!dir || !uid) return -1;
+    for (int i = 0; i < dir->entry_count; i++) {
+        if (strcmp(dir->entries[i].userid, uid) == 0) {
+            if (required_priv == 'A' && dir->entries[i].privilege_class != 'A') {
+                return -2;
+            }
+            return 0;
+        }
+    }
+    return -1;
+}

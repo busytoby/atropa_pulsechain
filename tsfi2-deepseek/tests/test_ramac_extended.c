@@ -1627,6 +1627,21 @@ int main(void) {
     assert(scheduler.tasks[1].queue_type == VM_QUEUE_Q2);
     printf("  [PASS] VM/370 multi-level queue CPU time allocation scheduler verified.\n");
 
+    // 94. VM/370 CP Directory Privilege Controller Verification
+    printf("[Test] Verifying VM/370 CP Directory user privileges...\n");
+    tsfi_cp_directory directory;
+    tsfi_cp_directory_init(&directory);
+    
+    assert(tsfi_cp_directory_add(&directory, "ADMIN", 'A', 65536) == 0);
+    assert(tsfi_cp_directory_add(&directory, "OPERATOR", 'G', 16384) == 0);
+    
+    assert(tsfi_cp_directory_check(&directory, "ADMIN", 'A') == 0);
+    
+    assert(tsfi_cp_directory_check(&directory, "OPERATOR", 'A') == -2);
+    
+    assert(tsfi_cp_directory_check(&directory, "GUEST", 'G') == -1);
+    printf("  [PASS] VM/370 hypervisor directory user privileges verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

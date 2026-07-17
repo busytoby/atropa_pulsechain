@@ -1610,4 +1610,20 @@ void tsfi_cp_scheduler_init(tsfi_cp_scheduler *sched);
 int tsfi_cp_scheduler_register(tsfi_cp_scheduler *sched, const char *name, int initial_q);
 int tsfi_cp_scheduler_dispatch(tsfi_cp_scheduler *sched, int task_idx, int cycles);
 
+// VM/370 CP Directory Controller
+typedef struct {
+    char userid[16];
+    char privilege_class;
+    uint32_t max_storage_kb;
+} tsfi_cp_directory_entry;
+
+typedef struct {
+    tsfi_cp_directory_entry entries[8];
+    int entry_count;
+} tsfi_cp_directory;
+
+void tsfi_cp_directory_init(tsfi_cp_directory *dir);
+int tsfi_cp_directory_add(tsfi_cp_directory *dir, const char *uid, char priv, uint32_t max_store);
+int tsfi_cp_directory_check(const tsfi_cp_directory *dir, const char *uid, char required_priv);
+
 #endif // TSFI_RAMAC_LAYOUT_H

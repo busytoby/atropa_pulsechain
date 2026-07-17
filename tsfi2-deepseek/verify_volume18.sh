@@ -38,8 +38,9 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 91 | VM/370 IUCV Communication Broker | PASS | Inter-User Message path | Volume 19 |
 | 92 | VM/370 CP Console Spool Logger | PASS | Console Audit Logger | Volume 19 |
 | 93 | VM/370 CP Scheduler Q1 & Q2 CPU Queues | PASS | CPU Dispatcher | Volume 19 |
+| 94 | VM/370 CP Directory Privilege Controller | PASS | Directory Privilege | Volume 19 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 93 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 94 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"
