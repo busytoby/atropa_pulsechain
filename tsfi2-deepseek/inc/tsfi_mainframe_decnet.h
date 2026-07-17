@@ -708,6 +708,8 @@ typedef struct {
     int pacing_window;
     int sync_state; // 0=NONE, 1=PREPARED, 2=COMMITTED
     void *crypto_session;
+    int conversation_type; // 0=MAPPED, 1=BASIC
+    char tp_name[64];
 } tsfi_appc_conversation;
 
 int tsfi_appc_allocate(tsfi_appc_conversation *conv, int local_lu, int partner_lu);
@@ -746,6 +748,14 @@ int tsfi_appc_synclog_archive(tsfi_appc_conversation *conv);
 int tsfi_appc_bind_negotiate(tsfi_appc_conversation *conv, uint32_t capabilities);
 int tsfi_appc_resolve_cpic_rc(uint16_t sense_code);
 int tsfi_appc_check_key_rotation(tsfi_appc_conversation *conv, size_t bytes_processed);
+int tsfi_appc_set_conversation_type(tsfi_appc_conversation *conv, int conv_type);
+void cmsctpn(tsfi_appc_conversation *conv, const char *tpn, int *rc);
+void cmectpn(tsfi_appc_conversation *conv, char *tpn_out, int *rc);
+int tsfi_appc_teardown_session(tsfi_appc_conversation *conv, tsfi_sscp_lu_session *sscp);
+
+#define APPC_SEC_NONE    0
+#define APPC_SEC_SAME    1
+#define APPC_SEC_PROGRAM 2
 
 // 3270 EBCDIC Screen Map Generator
 int tsfi_3270_format_usenet_list(const tsfi_usenet_article *articles, size_t count, uint8_t *ebcdic_buf, size_t *len_out);

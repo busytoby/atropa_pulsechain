@@ -611,6 +611,8 @@ int tsfi_appc_allocate(tsfi_appc_conversation *conv, int local_lu, int partner_l
     conv->pacing_window = 4;
     conv->sync_state = 0;
     conv->crypto_session = NULL;
+    conv->conversation_type = 0;
+    conv->tp_name[0] = '\0';
     return 0;
 }
 
@@ -992,5 +994,37 @@ int tsfi_appc_check_key_rotation(tsfi_appc_conversation *conv, size_t bytes_proc
         }
     }
     return 0;
+}
+
+int tsfi_appc_set_conversation_type(tsfi_appc_conversation *conv, int conv_type) {
+    if (!conv) return -1;
+    if (conv->state == 3) return -2;
+    conv->conversation_type = conv_type;
+    return 0;
+}
+
+void cmsctpn(tsfi_appc_conversation *conv, const char *tpn, int *rc) {
+    if (!conv || !tpn) {
+        if (rc) *rc = 19;
+        return;
+    }
+    strncpy(conv->tp_name, tpn, 63);
+    conv->tp_name[63] = '\0';
+    if (rc) *rc = 0;
+}
+
+void cmectpn(tsfi_appc_conversation *conv, char *tpn_out, int *rc) {
+    if (!conv || !tpn_out) {
+        if (rc) *rc = 19;
+        return;
+    }
+    strcpy(tpn_out, conv->tp_name);
+    if (rc) *rc = 0;
+}
+
+int tsfi_appc_teardown_session(tsfi_appc_conversation *conv, tsfi_sscp_lu_session *sscp) {
+    if (!conv || !sscp) return -1;
+    conv->state = 3;
+    return tsfi_sscp_lu_control(sscp, 0x0F);
 }
 
