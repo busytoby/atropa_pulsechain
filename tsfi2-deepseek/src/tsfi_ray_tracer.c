@@ -1,6 +1,7 @@
 #include "tsfi_ray_tracer.h"
 #include <math.h>
 #include <string.h>
+#include <stdio.h>
 
 static tsfi_rt_vec3 vec3_sub(tsfi_rt_vec3 a, tsfi_rt_vec3 b) {
     return (tsfi_rt_vec3){a.x - b.x, a.y - b.y, a.z - b.z};
@@ -174,4 +175,35 @@ int tsfi_ray_tracer_render(const tsfi_cgm_scene *scene, uint32_t *image_out, int
     }
 
     return 0;
+}
+
+int tsfi_cad_parse_punched_card(tsfi_cgm_scene *scene, const char *card_80) {
+    if (!scene || !card_80) return -1;
+
+    char card_copy[81];
+    strncpy(card_copy, card_80, 80);
+    card_copy[80] = '\0';
+
+    if (strncmp(card_copy, "CAD_SPHERE", 10) == 0) {
+        float x = 0.0f, y = 0.0f, z = 0.0f, rad = 1.0f;
+        char col_char = 'R';
+        // Format: CAD_SPHERE X:-0.5 Y:1.0 Z:4.0 R:1.2 COLOR:R
+        int parsed = sscanf(card_copy, "CAD_SPHERE X:%f Y:%f Z:%f R:%f COLOR:%c", &x, &y, &z, &rad, &col_char);
+        if (parsed < 5) return -2;
+
+        tsfi_rt_vec3 color = {1.0f, 0.0f, 0.0f}; // Default red
+        if (col_char == 'G') color = (tsfi_rt_vec3){0.0f, 1.0f, 0.0f};
+        else if (col_char == 'B') color = (tsfi_rt_vec3){0.0f, 0.0f, 1.0f};
+
+        return tsfi_cgm_scene_add_primitive(scene, CGM_PRIM_SPHERE, (tsfi_rt_vec3){x, y, z}, color, rad, (tsfi_rt_vec3){0,0,0});
+    } else if (strncmp(card_copy, "CAD_LIGHT", 9) == 0) {
+        float x = 0.0f, y = 1.0f, z = -0.5f;
+        int parsed = sscanf(card_copy, "CAD_LIGHT X:%f Y:%f Z:%f", &x, &y, &z);
+        if (parsed < 3) return -2;
+        scene->light_dir.x = x;
+        scene->light_dir.y = y;
+        scene->light_dir.z = z;
+        return 0;
+    }
+    return -2;
 }

@@ -80,6 +80,25 @@ int main(void) {
     assert(g == 0);
     assert(b == 0);
 
+    // 3. Verify Punched Card CAD System Parsing
+    printf("[TEST] Validating CAD Punched Card parsing...\n");
+    tsfi_cgm_scene cad_scene;
+    tsfi_cgm_scene_init(&cad_scene);
+
+    const char *sphere_card = "CAD_SPHERE X:0.5 Y:-0.2 Z:6.0 R:1.8 COLOR:B";
+    int cad_res1 = tsfi_cad_parse_punched_card(&cad_scene, sphere_card);
+    assert(cad_res1 == 0);
+    assert(cad_scene.primitive_count == 1);
+    assert(cad_scene.primitives[0].type == CGM_PRIM_SPHERE);
+    assert(cad_scene.primitives[0].position.x == 0.5f);
+    assert(cad_scene.primitives[0].param1 == 1.8f);
+    assert(cad_scene.primitives[0].color.z == 1.0f); // Green / Blue
+
+    const char *light_card = "CAD_LIGHT X:0.1 Y:0.9 Z:-0.3";
+    int cad_res2 = tsfi_cad_parse_punched_card(&cad_scene, light_card);
+    assert(cad_res2 == 0);
+    assert(cad_scene.light_dir.x == 0.1f);
+
     free(img_buf);
     printf("[SUCCESS] CGI/CGM Ray Tracer validation completed successfully!\n");
     return 0;
