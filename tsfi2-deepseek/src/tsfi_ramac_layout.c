@@ -3807,3 +3807,40 @@ void tsfi_codasyl_checkpoint_rollback(tsfi_codasyl_dbtg_set *sets, int *count, c
         sets[i].relation_id = checkpoint->saved_relation_ids[i];
     }
 }
+
+int tsfi_rca501_parse_items(const uint8_t *message, int len, uint8_t items_out[8][64], int max_items) {
+    if (!message || len <= 0 || max_items <= 0) return -1;
+    
+    int item_idx = 0;
+    int char_idx = 0;
+    
+    for (int i = 0; i < len; i++) {
+        if (message[i] == RCA501_EI || message[i] == RCA501_EM) {
+            items_out[item_idx][char_idx] = '\0';
+            item_idx++;
+            char_idx = 0;
+            if (message[i] == RCA501_EM || item_idx >= max_items) {
+                break;
+            }
+        } else {
+            if (char_idx < 63) {
+                items_out[item_idx][char_idx++] = message[i];
+            }
+        }
+    }
+    return item_idx;
+}
+
+void tsfi_rca501_set_channel_busy(tsfi_rca501_controller *ctrl, int channel, int busy) {
+    if (!ctrl || channel < 0 || channel > 7) return;
+    if (busy) {
+        ctrl->channels_busy |= (1 << channel);
+    } else {
+        ctrl->channels_busy &= ~(1 << channel);
+    }
+}
+
+int tsfi_rca501_check_channel(const tsfi_rca501_controller *ctrl, int channel) {
+    if (!ctrl || channel < 0 || channel > 7) return -1;
+    return (ctrl->channels_busy & (1 << channel)) ? 1 : 0;
+}

@@ -801,4 +801,16 @@ typedef struct {
 void tsfi_codasyl_checkpoint_save(const tsfi_codasyl_dbtg_set *sets, int count, tsfi_codasyl_checkpoint *checkpoint);
 void tsfi_codasyl_checkpoint_rollback(tsfi_codasyl_dbtg_set *sets, int *count, const tsfi_codasyl_checkpoint *checkpoint);
 
+// RCA 501 Variable-Length Control Separators
+#define RCA501_EI 0x03  // End of Item
+#define RCA501_EM 0x04  // End of Message
+
+typedef struct {
+    uint8_t channels_busy; // Bitmask of busy channels (0-7)
+} tsfi_rca501_controller;
+
+int tsfi_rca501_parse_items(const uint8_t *message, int len, uint8_t items_out[8][64], int max_items);
+void tsfi_rca501_set_channel_busy(tsfi_rca501_controller *ctrl, int channel, int busy);
+int tsfi_rca501_check_channel(const tsfi_rca501_controller *ctrl, int channel);
+
 #endif // TSFI_RAMAC_LAYOUT_H

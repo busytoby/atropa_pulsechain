@@ -190,6 +190,26 @@ int main(void) {
     assert(sets[0].relation_id == 101);
     printf("  [PASS] CODASYL DML and transaction rollback verified successfully.\n");
 
+    // 10. RCA 501 Variable-Length Item Separator and Channel Interlocks
+    printf("[Test] Verifying RCA 501 variable separators & channel interlocks...\n");
+    uint8_t rca_msg[] = { 'I', 'T', 'E', 'M', '1', RCA501_EI, 'I', 'T', 'E', 'M', '2', RCA501_EM };
+    uint8_t items[8][64];
+    int rca_parsed = tsfi_rca501_parse_items(rca_msg, sizeof(rca_msg), items, 8);
+    assert(rca_parsed == 2);
+    assert(strcmp((char*)items[0], "ITEM1") == 0);
+    assert(strcmp((char*)items[1], "ITEM2") == 0);
+    
+    tsfi_rca501_controller rca_ctrl;
+    rca_ctrl.channels_busy = 0;
+    
+    tsfi_rca501_set_channel_busy(&rca_ctrl, 3, 1);
+    assert(tsfi_rca501_check_channel(&rca_ctrl, 3) == 1);
+    assert(tsfi_rca501_check_channel(&rca_ctrl, 2) == 0);
+    
+    tsfi_rca501_set_channel_busy(&rca_ctrl, 3, 0);
+    assert(tsfi_rca501_check_channel(&rca_ctrl, 3) == 0);
+    printf("  [PASS] RCA 501 items parser and channel interlocks verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
