@@ -4741,3 +4741,40 @@ int tsfi_interrupt_dispatch(tsfi_cobol_interrupt_controller *ctrl, int code, int
     }
     return -2;
 }
+
+void tsfi_pli_exception_init(pli_exception_system *sys) {
+    if (!sys) return;
+    sys->count = 0;
+    for (int i = 0; i < 8; i++) {
+        sys->units[i].exception_type[0] = '\0';
+        sys->units[i].handler_action[0] = '\0';
+        sys->units[i].active = 0;
+    }
+}
+
+int tsfi_pli_exception_register(pli_exception_system *sys, const char *type, const char *action) {
+    if (!sys || sys->count >= 8 || !type || !action) return -1;
+    pli_on_unit *unit = &sys->units[sys->count];
+    strncpy(unit->exception_type, type, sizeof(unit->exception_type) - 1);
+    unit->exception_type[sizeof(unit->exception_type) - 1] = '\0';
+    strncpy(unit->handler_action, action, sizeof(unit->handler_action) - 1);
+    unit->handler_action[sizeof(unit->handler_action) - 1] = '\0';
+    unit->active = 1;
+    sys->count++;
+    return 0;
+}
+
+int tsfi_pli_exception_trigger(pli_exception_system *sys, const char *type, int regs[8]) {
+    if (!sys || !type || !regs) return -1;
+    for (int i = sys->count - 1; i >= 0; i--) {
+        if (sys->units[i].active && strcmp(sys->units[i].exception_type, type) == 0) {
+            const char *action = sys->units[i].handler_action;
+            int rx = -1, val = -1;
+            if (sscanf(action, "SET R%d %d", &rx, &val) == 2) {
+                if (rx >= 0 && rx < 8) regs[rx] = val;
+                return 0;
+            }
+        }
+    }
+    return -2;
+}

@@ -795,6 +795,20 @@ int main(void) {
     assert(int_regs[2] == 300);
     printf("  [PASS] Asynchronous COBOL interrupt dispatcher verified successfully.\n");
 
+    // 45. PL/I Exception System Verification
+    printf("[Test] Verifying PL/I structured exception handling...\n");
+    pli_exception_system pli_sys;
+    tsfi_pli_exception_init(&pli_sys);
+    
+    tsfi_pli_exception_register(&pli_sys, "OVERFLOW", "SET R5 777");
+    tsfi_pli_exception_register(&pli_sys, "OVERFLOW", "SET R5 888");
+    
+    int pli_regs[8] = { 0 };
+    int trig_res = tsfi_pli_exception_trigger(&pli_sys, "OVERFLOW", pli_regs);
+    assert(trig_res == 0);
+    assert(pli_regs[5] == 888);
+    printf("  [PASS] PL/I exception handler stack matching verified successfully.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

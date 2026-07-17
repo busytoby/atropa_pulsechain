@@ -1117,4 +1117,20 @@ void tsfi_interrupt_init(tsfi_cobol_interrupt_controller *ctrl);
 int tsfi_interrupt_register(tsfi_cobol_interrupt_controller *ctrl, int code, const char *handler);
 int tsfi_interrupt_dispatch(tsfi_cobol_interrupt_controller *ctrl, int code, int regs[8]);
 
+// PL/I Exception System
+typedef struct {
+    char exception_type[16];
+    char handler_action[64];
+    int active;
+} pli_on_unit;
+
+typedef struct {
+    pli_on_unit units[8];
+    int count;
+} pli_exception_system;
+
+void tsfi_pli_exception_init(pli_exception_system *sys);
+int tsfi_pli_exception_register(pli_exception_system *sys, const char *type, const char *action);
+int tsfi_pli_exception_trigger(pli_exception_system *sys, const char *type, int regs[8]);
+
 #endif // TSFI_RAMAC_LAYOUT_H
