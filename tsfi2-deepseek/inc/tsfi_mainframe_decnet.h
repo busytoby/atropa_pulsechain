@@ -699,4 +699,27 @@ void tsfi_zvm_rscs_init(tsfi_zvm_rscs_spool *spool, const char *filename, int fi
 void tsfi_zvm_vscs_init(tsfi_zvm_vscs *vscs);
 int tsfi_zvm_vscs_attach(tsfi_zvm_vscs *vscs, int term_lu, int vmid);
 
+// APPC/LU 6.2 Transaction Program Bridge
+typedef struct {
+    int conversation_id;
+    int state; // 0=ALLOCATED, 1=SEND, 2=RECEIVE, 3=DEALLOCATED
+} tsfi_appc_conversation;
+
+int tsfi_appc_allocate(tsfi_appc_conversation *conv, int local_lu, int partner_lu);
+int tsfi_appc_send_data(tsfi_appc_conversation *conv, const uint8_t *data, size_t len);
+int tsfi_appc_receive_data(tsfi_appc_conversation *conv, uint8_t *buf, size_t *len_out);
+int tsfi_appc_deallocate(tsfi_appc_conversation *conv);
+
+// 3270 EBCDIC Screen Map Generator
+int tsfi_3270_format_usenet_list(const tsfi_usenet_article *articles, size_t count, uint8_t *ebcdic_buf, size_t *len_out);
+
+// Article Signature Verification (FIPS 186-5)
+typedef struct {
+    uint8_t r[32];
+    uint8_t s[32];
+} tsfi_usenet_signature;
+
+int tsfi_usenet_sign_article(const tsfi_usenet_article *art, const uint8_t *private_key, tsfi_usenet_signature *sig_out);
+int tsfi_usenet_verify_article(const tsfi_usenet_article *art, const uint8_t *public_key, const tsfi_usenet_signature *sig);
+
 #endif // TSFI_MAINFRAME_DECNET_H

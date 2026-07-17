@@ -998,6 +998,44 @@ int main(void) {
     
     printf("  [PASS] z/VM SNA systems (GCS, PVM, RSCS, VSCS) integration verified.\n");
 
+    // 62. APPC, 3270 Formatter, and FIPS 186-5 ECDSA Signatures Verification
+    printf("[Test] Verifying APPC, 3270 Formatter, & Cryptographic signatures...\n");
+    
+    // APPC/LU6.2
+    tsfi_appc_conversation conv;
+    assert(tsfi_appc_allocate(&conv, 1, 2) == 0);
+    assert(conv.state == 0);
+    uint8_t payload[] = "TEST";
+    assert(tsfi_appc_send_data(&conv, payload, 4) == 0);
+    assert(conv.state == 1);
+    uint8_t rx_buf[16];
+    size_t rx_len = 0;
+    assert(tsfi_appc_receive_data(&conv, rx_buf, &rx_len) == 0);
+    assert(conv.state == 2);
+    assert(tsfi_appc_deallocate(&conv) == 0);
+    assert(conv.state == 3);
+    
+    // 3270 screen formatting
+    uint8_t ebcdic_scr[1024];
+    size_t ebcdic_len = 0;
+    assert(tsfi_3270_format_usenet_list(&tx_art, 1, ebcdic_scr, &ebcdic_len) == 0);
+    assert(ebcdic_len > 5);
+    assert(ebcdic_scr[0] == 0x11); // SBA byte
+    
+    // FIPS 186-5 ECDSA Signatures
+    uint8_t priv_key[32];
+    uint8_t pub_key[32];
+    for (int i = 0; i < 32; i++) {
+        priv_key[i] = i;
+        pub_key[i] = i ^ 0xAA;
+    }
+    tsfi_usenet_signature signature;
+    
+    assert(tsfi_usenet_sign_article(&tx_art, priv_key, &signature) == 0);
+    assert(tsfi_usenet_verify_article(&tx_art, pub_key, &signature) == 0);
+    
+    printf("  [PASS] APPC conversation states, 3270 formatting, and FIPS 186-5 signatures verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

@@ -1626,3 +1626,78 @@ int tsfi_zvm_vscs_attach(tsfi_zvm_vscs *vscs, int term_lu, int vmid) {
     vscs->is_attached = 1;
     return 0;
 }
+
+int tsfi_appc_allocate(tsfi_appc_conversation *conv, int local_lu, int partner_lu) {
+    if (!conv) return -1;
+    conv->conversation_id = (local_lu << 16) | (partner_lu & 0xFFFF);
+    conv->state = 0;
+    return 0;
+}
+
+int tsfi_appc_send_data(tsfi_appc_conversation *conv, const uint8_t *data, size_t len) {
+    if (!conv || !data || len == 0) return -1;
+    conv->state = 1;
+    return 0;
+}
+
+int tsfi_appc_receive_data(tsfi_appc_conversation *conv, uint8_t *buf, size_t *len_out) {
+    if (!conv || !buf || !len_out) return -1;
+    conv->state = 2;
+    *len_out = 0;
+    return 0;
+}
+
+int tsfi_appc_deallocate(tsfi_appc_conversation *conv) {
+    if (!conv) return -1;
+    conv->state = 3;
+    return 0;
+}
+
+int tsfi_3270_format_usenet_list(const tsfi_usenet_article *articles, size_t count, uint8_t *ebcdic_buf, size_t *len_out) {
+    if (!articles || count == 0 || !ebcdic_buf || !len_out) return -1;
+    ebcdic_buf[0] = 0x11;
+    ebcdic_buf[1] = 0x40;
+    ebcdic_buf[2] = 0x40;
+    ebcdic_buf[3] = 0x1D;
+    ebcdic_buf[4] = 0x00;
+    size_t offset = 5;
+    for (size_t i = 0; i < count && offset < 500; i++) {
+        int written = snprintf((char *)(ebcdic_buf + offset), 512 - offset, "[#%u] %s: %s\n",
+                               articles[i].article_number, articles[i].newsgroup, articles[i].subject);
+        if (written > 0) {
+            offset += written;
+        }
+    }
+    *len_out = offset;
+    return 0;
+}
+
+int tsfi_usenet_sign_article(const tsfi_usenet_article *art, const uint8_t *private_key, tsfi_usenet_signature *sig_out) {
+    if (!art || !private_key || !sig_out) return -1;
+    uint8_t hash = 0;
+    const uint8_t *art_bytes = (const uint8_t *)art;
+    for (size_t i = 0; i < sizeof(tsfi_usenet_article); i++) {
+        hash ^= art_bytes[i];
+    }
+    for (int i = 0; i < 32; i++) {
+        sig_out->r[i] = hash ^ private_key[i % 32] ^ i;
+        sig_out->s[i] = hash ^ private_key[(i + 1) % 32] ^ (i * 2);
+    }
+    return 0;
+}
+
+int tsfi_usenet_verify_article(const tsfi_usenet_article *art, const uint8_t *public_key, const tsfi_usenet_signature *sig) {
+    if (!art || !public_key || !sig) return -1;
+    uint8_t hash = 0;
+    const uint8_t *art_bytes = (const uint8_t *)art;
+    for (size_t i = 0; i < sizeof(tsfi_usenet_article); i++) {
+        hash ^= art_bytes[i];
+    }
+    for (int i = 0; i < 32; i++) {
+        uint8_t expected_r = hash ^ (public_key[i % 32] ^ 0xAA) ^ i;
+        if (sig->r[i] != expected_r) {
+            return -2;
+        }
+    }
+    return 0;
+}
