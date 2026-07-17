@@ -1200,3 +1200,93 @@ int tsfi_mcp_mux_query(const tsfi_mcp_multiplexer *mux, int channel_id, int *out
     }
     return -1;
 }
+
+void tsfi_codasyl_dml_init(tsfi_codasyl_dml_runtime *rt, tsfi_codasyl_schema *schema, tsfi_dbtg_currency *currency) {
+    if (!rt) return;
+    rt->schema = schema;
+    rt->currency = currency;
+    rt->mock_records_stored = 0;
+}
+
+int tsfi_codasyl_dml_execute(tsfi_codasyl_dml_runtime *rt, const char *dml_statement, int *out_db_status) {
+    if (!rt || !rt->schema || !dml_statement || !out_db_status) return -1;
+    *out_db_status = 0;
+    
+    char rec_name[32];
+    char set_name[32];
+    
+    if (sscanf(dml_statement, "STORE %31s", rec_name) == 1) {
+        int len = strlen(rec_name);
+        if (len > 0 && rec_name[len - 1] == '.') rec_name[len - 1] = '\0';
+        
+        int rec_found = 0;
+        for (int i = 0; i < rt->schema->record_count; i++) {
+            if (strcmp(rt->schema->records[i].record_name, rec_name) == 0) {
+                rec_found = 1;
+                break;
+            }
+        }
+        if (!rec_found) {
+            *out_db_status = 117;
+            return -2;
+        }
+        rt->mock_records_stored++;
+        if (rt->currency) {
+            tsfi_dbtg_currency_update(rt->currency, 100, 1, 0);
+        }
+        return 0;
+    }
+    
+    if (sscanf(dml_statement, "GET %31s", rec_name) == 1) {
+        int len = strlen(rec_name);
+        if (len > 0 && rec_name[len - 1] == '.') rec_name[len - 1] = '\0';
+        
+        int rec_found = 0;
+        for (int i = 0; i < rt->schema->record_count; i++) {
+            if (strcmp(rt->schema->records[i].record_name, rec_name) == 0) {
+                rec_found = 1;
+                break;
+            }
+        }
+        if (!rec_found) {
+            *out_db_status = 117;
+            return -2;
+        }
+        if (rt->currency) {
+            tsfi_dbtg_currency_update(rt->currency, 100, 1, 0);
+        }
+        return 0;
+    }
+    
+    if (sscanf(dml_statement, "FIND FIRST %31s WITHIN %31s", rec_name, set_name) == 2) {
+        int len = strlen(rec_name);
+        if (len > 0 && rec_name[len - 1] == '.') rec_name[len - 1] = '\0';
+        len = strlen(set_name);
+        if (len > 0 && set_name[len - 1] == '.') set_name[len - 1] = '\0';
+        
+        int rec_found = 0;
+        for (int i = 0; i < rt->schema->record_count; i++) {
+            if (strcmp(rt->schema->records[i].record_name, rec_name) == 0) {
+                rec_found = 1;
+                break;
+            }
+        }
+        int set_found = 0;
+        for (int i = 0; i < rt->schema->set_count; i++) {
+            if (strcmp(rt->schema->sets[i].set_name, set_name) == 0) {
+                set_found = 1;
+                break;
+            }
+        }
+        if (!rec_found || !set_found) {
+            *out_db_status = 117;
+            return -2;
+        }
+        if (rt->currency) {
+            tsfi_dbtg_currency_update(rt->currency, 100, 1, 1);
+        }
+        return 0;
+    }
+    
+    return -1;
+}

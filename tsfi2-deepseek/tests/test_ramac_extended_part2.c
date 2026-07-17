@@ -1281,6 +1281,30 @@ int main(void) {
     assert(tsfi_mcp_mux_send_request(&mcp_mux, 3, "tools/list", 1) == -1);
     printf("  [PASS] MCP client channel registration and request auditing verified.\n");
 
+    // 134. CODASYL DML Execution Engine Verification
+    printf("[Test] Verifying CODASYL DML Execution Engine...\n");
+    tsfi_codasyl_dml_runtime dml_rt;
+    tsfi_dbtg_currency dml_cur;
+    tsfi_dbtg_currency_init(&dml_cur);
+    
+    tsfi_codasyl_dml_init(&dml_rt, &schema, &dml_cur);
+    
+    int db_status = 0;
+    // Execute store statement for valid record
+    assert(tsfi_codasyl_dml_execute(&dml_rt, "STORE CUSTREC", &db_status) == 0);
+    assert(db_status == 0);
+    assert(dml_rt.mock_records_stored == 1);
+    assert(dml_cur.current_run_unit == 100);
+    
+    // Execute find first statement
+    assert(tsfi_codasyl_dml_execute(&dml_rt, "FIND FIRST ORDERREC WITHIN CUST-ORDER", &db_status) == 0);
+    assert(db_status == 0);
+    
+    // Execute store on invalid record should return failure and status code
+    assert(tsfi_codasyl_dml_execute(&dml_rt, "STORE INVALIDREC", &db_status) == -2);
+    assert(db_status == 117);
+    printf("  [PASS] CODASYL DML compiler runtime and syntax validation verified.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 

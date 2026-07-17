@@ -422,4 +422,14 @@ int tsfi_mcp_mux_register(tsfi_mcp_multiplexer *mux, int channel_id, const char 
 int tsfi_mcp_mux_send_request(tsfi_mcp_multiplexer *mux, int channel_id, const char *method, int is_secure_token_valid);
 int tsfi_mcp_mux_query(const tsfi_mcp_multiplexer *mux, int channel_id, int *out_requests, int *out_violations);
 
+// Scenario 134: CODASYL DML Execution Engine
+typedef struct {
+    tsfi_codasyl_schema *schema;
+    tsfi_dbtg_currency *currency;
+    int mock_records_stored;
+} tsfi_codasyl_dml_runtime;
+
+void tsfi_codasyl_dml_init(tsfi_codasyl_dml_runtime *rt, tsfi_codasyl_schema *schema, tsfi_dbtg_currency *currency);
+int tsfi_codasyl_dml_execute(tsfi_codasyl_dml_runtime *rt, const char *dml_statement, int *out_db_status);
+
 #endif // TSFI_MAINFRAME_V370_H
