@@ -1734,3 +1734,48 @@ int tsfi_fips60_status_in(const tsfi_fips60_interface *fips, uint8_t *out_status
     *out_status = fips->bus_in_status;
     return 0;
 }
+
+void tsfi_com_init(tsfi_com_formatter *fmt) {
+    if (!fmt) return;
+    memset(fmt, 0, sizeof(tsfi_com_formatter));
+    fmt->current_frame = 1;
+}
+
+int tsfi_com_format_record(tsfi_com_formatter *fmt, const char *record_text, uint8_t *out_frame, uint16_t *out_len) {
+    if (!fmt || !record_text || !out_frame || !out_len) return -1;
+    
+    // Auto-advance frames after page frame length limits (e.g. 4 lines per grid frame)
+    if (fmt->line_count >= 4) {
+        fmt->current_frame++;
+        fmt->line_count = 0;
+    }
+    
+    // Format microform line layout block
+    int len = snprintf((char*)out_frame, 256, "[COM-F%03d-L%d] %s", fmt->current_frame, fmt->line_count, record_text);
+    *out_len = (uint16_t)len;
+    
+    // Register index keys for the first record on each new frame
+    if (fmt->line_count == 0 && fmt->index_count < MAX_COM_INDEX_ENTRIES) {
+        tsfi_com_index_entry *entry = &fmt->index_table[fmt->index_count];
+        snprintf(entry->key, sizeof(entry->key), "%.15s", record_text);
+        entry->frame_number = fmt->current_frame;
+        fmt->index_count++;
+    }
+    
+    fmt->line_count++;
+    return 0;
+}
+
+int tsfi_com_generate_index_frame(const tsfi_com_formatter *fmt, char *out_index_data, int max_len) {
+    if (!fmt || !out_index_data || max_len <= 0) return -1;
+    
+    int written = 0;
+    written += snprintf(out_index_data + written, max_len - written, "=== COM MICROFICHE INDEX FRAME ===\n");
+    for (int i = 0; i < fmt->index_count; i++) {
+        if (written < max_len) {
+            written += snprintf(out_index_data + written, max_len - written, "Key: %-15s -> Frame: %03d\n",
+                                fmt->index_table[i].key, fmt->index_table[i].frame_number);
+        }
+    }
+    return 0;
+}

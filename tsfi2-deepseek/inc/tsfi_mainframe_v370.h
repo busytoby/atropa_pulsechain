@@ -582,4 +582,22 @@ void tsfi_fips60_init(tsfi_fips60_interface *fips);
 int tsfi_fips60_bus_out(tsfi_fips60_interface *fips, uint8_t command_byte, const uint8_t *data, uint16_t data_len);
 int tsfi_fips60_status_in(const tsfi_fips60_interface *fips, uint8_t *out_status);
 
+// Scenario 144: NBS FIPS PUB 54 Computer Output Microform (COM) Spool Formatter
+#define MAX_COM_INDEX_ENTRIES 32
+typedef struct {
+    char key[16];
+    int frame_number;
+} tsfi_com_index_entry;
+
+typedef struct {
+    int current_frame;
+    int line_count;
+    tsfi_com_index_entry index_table[MAX_COM_INDEX_ENTRIES];
+    int index_count;
+} tsfi_com_formatter;
+
+void tsfi_com_init(tsfi_com_formatter *fmt);
+int tsfi_com_format_record(tsfi_com_formatter *fmt, const char *record_text, uint8_t *out_frame, uint16_t *out_len);
+int tsfi_com_generate_index_frame(const tsfi_com_formatter *fmt, char *out_index_data, int max_len);
+
 #endif // TSFI_MAINFRAME_V370_H

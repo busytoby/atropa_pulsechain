@@ -1510,6 +1510,34 @@ int main(void) {
     assert(memcmp(plaintext, decrypted, 8) == 0);
     printf("  [PASS] 3848 Cryptographic Feistel encryption and supervisor state locks validated.\n");
 
+    // 144. NBS FIPS PUB 54 Computer Output Microform (COM) Spool Formatter Verification
+    printf("[Test] Verifying NBS FIPS PUB 54 Computer Output Microform Spool Formatter...\n");
+    tsfi_com_formatter com_fmt;
+    tsfi_com_init(&com_fmt);
+    assert(com_fmt.current_frame == 1);
+    
+    uint8_t frame_buf[256];
+    uint16_t frame_len = 0;
+    
+    // Write 5 records to trigger a microfiche frame advance (4 lines limit)
+    assert(tsfi_com_format_record(&com_fmt, "RECORD 001", frame_buf, &frame_len) == 0);
+    assert(com_fmt.current_frame == 1);
+    assert(tsfi_com_format_record(&com_fmt, "RECORD 002", frame_buf, &frame_len) == 0);
+    assert(tsfi_com_format_record(&com_fmt, "RECORD 003", frame_buf, &frame_len) == 0);
+    assert(tsfi_com_format_record(&com_fmt, "RECORD 004", frame_buf, &frame_len) == 0);
+    assert(com_fmt.current_frame == 1);
+    
+    // 5th record should advance frame count
+    assert(tsfi_com_format_record(&com_fmt, "RECORD 005", frame_buf, &frame_len) == 0);
+    assert(com_fmt.current_frame == 2);
+    
+    // Generate COM index frame metadata
+    char index_out[512];
+    assert(tsfi_com_generate_index_frame(&com_fmt, index_out, sizeof(index_out)) == 0);
+    assert(strstr(index_out, "RECORD 001") != NULL);
+    assert(strstr(index_out, "RECORD 005") != NULL);
+    printf("  [PASS] Computer Output Microform frame mapping and index generation verified.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 
