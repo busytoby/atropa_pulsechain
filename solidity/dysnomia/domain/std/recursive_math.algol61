@@ -1,0 +1,11 @@
+begin
+  integer procedure factorial(n);
+  value n; integer n;
+  begin
+    if n = 0 then factorial := 1
+    else factorial := n * factorial(n - 1)
+  end;
+
+  integer result;
+  result := factorial(5)
+end
