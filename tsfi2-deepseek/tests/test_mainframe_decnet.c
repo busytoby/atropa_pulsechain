@@ -1968,6 +1968,27 @@ int main(void) {
     assert(cache.cache_hits == 1);
     printf("  [PASS] IBM 3880 cache hit-miss counting and staging loops verified.\n");
 
+    // 97. Cached Content-Addressable Storage (Cached-CAS) Verification
+    printf("[Test] Verifying Cached-CAS parallel filter coordinator...\n");
+    tsfi_ibm3880_cache c_cache;
+    tsfi_ibm3880_init(&c_cache);
+    
+    assert(tsfi_ibm3880_access(&c_cache, 2, 0) == 1);
+    
+    tsfi_cas_page c_pages[3];
+    c_pages[0].page_id = 1;
+    strcpy(c_pages[0].data_payload, "MATCH_YES_ONE");
+    c_pages[1].page_id = 2;
+    strcpy(c_pages[1].data_payload, "MATCH_YES_TWO");
+    c_pages[2].page_id = 3;
+    strcpy(c_pages[2].data_payload, "MATCH_NO_THREE");
+    
+    int cache_hits = 0;
+    int filter_matches = tsfi_cached_cas_filter(&c_cache, c_pages, 3, "MATCH_YES", &cache_hits);
+    assert(filter_matches == 2);
+    assert(cache_hits == 1);
+    printf("  [PASS] Cached-CAS parallel search optimization verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

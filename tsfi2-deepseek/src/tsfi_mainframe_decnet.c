@@ -2766,3 +2766,17 @@ int tsfi_ibm3880_access(tsfi_ibm3880_cache *cache, uint32_t address, int is_writ
     }
     return 1;
 }
+
+int tsfi_cached_cas_filter(tsfi_ibm3880_cache *cache, tsfi_cas_page *pages, size_t count, const char *search_term, int *cache_hits_out) {
+    if (!cache || !pages || count == 0 || !search_term || !cache_hits_out) return -1;
+    int hits = 0;
+    for (size_t i = 0; i < count; i++) {
+        uint32_t addr = (uint32_t)pages[i].page_id;
+        int res = tsfi_ibm3880_access(cache, addr, 0);
+        if (res == 0) {
+            hits++;
+        }
+    }
+    *cache_hits_out = hits;
+    return tsfi_cas_filter(pages, count, search_term);
+}

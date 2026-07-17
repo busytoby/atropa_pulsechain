@@ -1270,4 +1270,7 @@ typedef struct {
 void tsfi_ibm3880_init(tsfi_ibm3880_cache *cache);
 int tsfi_ibm3880_access(tsfi_ibm3880_cache *cache, uint32_t address, int is_write);
 
+// Cached Content-Addressable Storage (Cached-CAS)
+int tsfi_cached_cas_filter(tsfi_ibm3880_cache *cache, tsfi_cas_page *pages, size_t count, const char *search_term, int *cache_hits_out);
+
 #endif // TSFI_MAINFRAME_DECNET_H
