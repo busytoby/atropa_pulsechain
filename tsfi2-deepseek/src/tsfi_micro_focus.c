@@ -644,3 +644,22 @@ int tsfi_mf_majordomo_process(const char *cmd_line, char *out_response, int max_
     snprintf(out_response, max_len, "Majordomo command not recognized.");
     return -2;
 }
+
+int tsfi_mf_majordomo_approve(uint32_t cookie, const char *action, uint32_t *pending_cookies, int max_pending) {
+    if (!action || !pending_cookies || max_pending <= 0) return -1;
+
+    for (int i = 0; i < max_pending; i++) {
+        if (pending_cookies[i] == cookie) {
+            if (strcmp(action, "APPROVE") == 0) {
+                pending_cookies[i] = 0;
+                return 0;
+            } else if (strcmp(action, "REJECT") == 0) {
+                pending_cookies[i] = 0;
+                return 1;
+            }
+            return -2;
+        }
+    }
+
+    return -3;
+}

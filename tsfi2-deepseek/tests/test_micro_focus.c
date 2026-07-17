@@ -356,6 +356,14 @@ int main(void) {
     assert(strcmp(majordomo_out, "Succeeded subscribing admin@dysnomia.org to list zmm-dev.") == 0);
     printf("  [PASS] Majordomo Mailing List Coordinator verified.\n");
 
+    // 20. Verify Majordomo Moderation Approval Queue
+    printf("[TEST] Validating Majordomo Approval Queue...\n");
+    uint32_t pending_list[4] = {0xEA51, 0, 0, 0};
+    int app_res = tsfi_mf_majordomo_approve(0xEA51, "APPROVE", pending_list, 4);
+    assert(app_res == 0);
+    assert(pending_list[0] == 0);
+    printf("  [PASS] Majordomo Moderation Approval Queue verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
