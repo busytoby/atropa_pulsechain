@@ -130,8 +130,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 175 | CICS Program Control RELEASE Emulator | PASS | Dynamic memory resource freeing scheduler | Volume 33 |
 | 176 | Majordomo Password Hash Calculator | PASS | Cryptographic digest password hasher | Volume 33 |
 | 177 | CICS Abend Handler Registry | PASS | Custom transaction crash interceptor callback | Volume 33 |
+| 178 | Majordomo Welcome Guidelines | PASS | Welcome message template text generator | Volume 33 |
+| 179 | CICS Abend Handler Canceller | PASS | Registered failure recovery disabling scheduler | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 177 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 179 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

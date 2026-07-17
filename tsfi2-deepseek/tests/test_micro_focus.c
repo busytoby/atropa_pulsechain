@@ -838,6 +838,23 @@ int main(void) {
     assert(mock_active == 1);
     printf("  [PASS] CICS HANDLE ABEND verified.\n");
 
+    // 68. Verify Majordomo List Welcome Guidelines
+    printf("[TEST] Validating Majordomo Welcome Guidelines...\n");
+    char wel_buf[128] = {0};
+    int wel_res = tsfi_mf_majordomo_welcome("zmm-dev", "owner@dysnomia.org", wel_buf, sizeof(wel_buf));
+    assert(wel_res == 0);
+    assert(strstr(wel_buf, "WELCOME TO LIST zmm-dev") != NULL);
+    assert(strstr(wel_buf, "CONTACT OWNER AT owner@dysnomia.org") != NULL);
+    printf("  [PASS] Majordomo Welcome Guidelines verified.\n");
+
+    // 69. Verify CICS Command Level Program Control ABEND Handler Canceller
+    printf("[TEST] Validating CICS HANDLE ABEND CANCEL...\n");
+    int ca_res = tsfi_mf_cics_cancel_abend(&mock_registry, &mock_active);
+    assert(ca_res == 0);
+    assert(mock_registry == 0);
+    assert(mock_active == 0);
+    printf("  [PASS] CICS HANDLE ABEND CANCEL verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

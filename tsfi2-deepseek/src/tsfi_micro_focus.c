@@ -1404,3 +1404,18 @@ int tsfi_mf_cics_handle_abend(uint64_t handler_addr, uint64_t *abend_handler_reg
     *registry_active = 1;
     return 0;
 }
+
+int tsfi_mf_majordomo_welcome(const char *list_name, const char *owner_email, char *welcome_out, int max_len) {
+    if (!list_name || !owner_email || !welcome_out || max_len <= 0) return -1;
+
+    snprintf(welcome_out, max_len, "WELCOME TO LIST %s. CONTACT OWNER AT %s.", list_name, owner_email);
+    return 0;
+}
+
+int tsfi_mf_cics_cancel_abend(uint64_t *abend_handler_registry, int *registry_active) {
+    if (!abend_handler_registry || !registry_active) return -1;
+
+    *abend_handler_registry = 0;
+    *registry_active = 0;
+    return 0;
+}
