@@ -5091,3 +5091,32 @@ int tsfi_cobol_ledger_transaction(cobol_ledger *ledger, uint32_t acc_id, double 
     }
     return -3;
 }
+
+double tsfi_cobol_round(double value, int decimals, int mode) {
+    double factor = pow(10.0, decimals);
+    double scaled = value * factor;
+    if (mode == COBOL_ROUND_TRUNC) {
+        return trunc(scaled) / factor;
+    } else if (mode == COBOL_ROUND_STANDARD) {
+        return round(scaled) / factor;
+    } else if (mode == COBOL_ROUND_BANKERS) {
+        double r = round(scaled);
+        double diff = scaled - r;
+        if (fabs(diff) == 0.5) {
+            double integer_part;
+            modf(scaled, &integer_part);
+            if (((int)integer_part % 2) == 0) {
+                return integer_part / factor;
+            } else {
+                return (integer_part + (scaled > 0 ? 1.0 : -1.0)) / factor;
+            }
+        }
+        return r / factor;
+    }
+    return value;
+}
+
+double tsfi_cobol_calc_interest(double principal, double rate, int periods, int mode) {
+    double interest = principal * pow(1.0 + rate, periods) - principal;
+    return tsfi_cobol_round(interest, 2, mode);
+}

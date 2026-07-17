@@ -1251,4 +1251,12 @@ void tsfi_cobol_ledger_init(cobol_ledger *ledger);
 int tsfi_cobol_ledger_add(cobol_ledger *ledger, uint32_t acc_id, const char *holder, double initial_balance);
 int tsfi_cobol_ledger_transaction(cobol_ledger *ledger, uint32_t acc_id, double amount, char *audit_out, size_t max_len);
 
+// COBOL Financial Rounding modes
+#define COBOL_ROUND_TRUNC 0
+#define COBOL_ROUND_STANDARD 1
+#define COBOL_ROUND_BANKERS 2
+
+double tsfi_cobol_round(double value, int decimals, int mode);
+double tsfi_cobol_calc_interest(double principal, double rate, int periods, int mode);
+
 #endif // TSFI_RAMAC_LAYOUT_H

@@ -995,6 +995,18 @@ int main(void) {
     assert(strcmp(audit_log, "ACC=1001; HOLDER=Account_Zero; OLD=10000.00; NEW=9749.50; DELTA=-250.50") == 0);
     printf("  [PASS] COBOL ledger transactional audit logs verified successfully.\n");
 
+    // 58. COBOL Rounding & Interest Calculator Verification
+    printf("[Test] Verifying COBOL financial rounding and interest calculations...\n");
+    double tr_val = tsfi_cobol_round(123.456, 2, COBOL_ROUND_TRUNC);
+    assert(tr_val == 123.45);
+    
+    double st_val = tsfi_cobol_round(123.456, 2, COBOL_ROUND_STANDARD);
+    assert(st_val == 123.46);
+    
+    double interest = tsfi_cobol_calc_interest(1000.0, 0.05, 5, COBOL_ROUND_STANDARD);
+    assert(interest == 276.28);
+    printf("  [PASS] COBOL interest calculation and rounding variants verified successfully.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
