@@ -3844,3 +3844,35 @@ int tsfi_rca501_check_channel(const tsfi_rca501_controller *ctrl, int channel) {
     if (!ctrl || channel < 0 || channel > 7) return -1;
     return (ctrl->channels_busy & (1 << channel)) ? 1 : 0;
 }
+
+int tsfi_compile_decision_table_from_text(const char *text, uint8_t *bytecode_out, int max_len) {
+    if (!text || !bytecode_out || max_len <= 0) return -1;
+    tsfi_decision_table table;
+    memset(&table, 0, sizeof(table));
+    
+    int reg_a = 0, reg_b = 0, action_reg = 0, val = 0;
+    if (sscanf(text, "IF R%d == R%d MOVE %d TO R%d", &reg_a, &reg_b, &val, &action_reg) == 4) {
+        strcpy(table.condition_op[0], "==");
+        table.condition_reg_a[0] = reg_a;
+        table.condition_reg_b[0] = reg_b;
+        strcpy(table.action_op[0], "MOVE");
+        table.action_reg[0] = action_reg;
+        table.action_val[0] = val;
+        table.rule_count = 1;
+        return tsfi_compile_decision_table(&table, bytecode_out, max_len);
+    }
+    return -2;
+}
+
+int tsfi_winchester_socket_route_to_zmm(tsfi_winchester_socket_bridge *bridge, const uint8_t *event_data, int len, TsfiZmmVmState *zmm) {
+    if (!bridge || !event_data || len <= 0 || !zmm) return -1;
+    if (!bridge->connection_active) return -2;
+    
+    uint8_t keycode = event_data[0];
+    
+    if (zmm->telem) {
+        zmm->telem->zmm_val = keycode;
+    }
+    bridge->processed_packets++;
+    return 0;
+}

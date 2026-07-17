@@ -813,4 +813,8 @@ int tsfi_rca501_parse_items(const uint8_t *message, int len, uint8_t items_out[8
 void tsfi_rca501_set_channel_busy(tsfi_rca501_controller *ctrl, int channel, int busy);
 int tsfi_rca501_check_channel(const tsfi_rca501_controller *ctrl, int channel);
 
+#include "tsfi_zmm_vm.h"
+int tsfi_compile_decision_table_from_text(const char *text, uint8_t *bytecode_out, int max_len);
+int tsfi_winchester_socket_route_to_zmm(tsfi_winchester_socket_bridge *bridge, const uint8_t *event_data, int len, TsfiZmmVmState *zmm);
+
 #endif // TSFI_RAMAC_LAYOUT_H
