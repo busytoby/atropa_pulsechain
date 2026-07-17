@@ -1307,3 +1307,45 @@ int tsfi_sna_response_parse(tsfi_sna_response_tracker *tracker, uint8_t rh_byte)
     tracker->exception_response_only = (rh_byte & 0x04) ? 1 : 0;
     return 0;
 }
+
+uint8_t tsfi_sna_piu_bcc(const uint8_t *data, size_t len) {
+    if (!data) return 0;
+    uint8_t bcc = 0;
+    for (size_t i = 0; i < len; i++) {
+        bcc ^= data[i];
+    }
+    return bcc;
+}
+
+int tsfi_sna_serialize_session_cmd(const tsfi_sna_session_cmd *cmd, uint8_t *buf, size_t *len_out) {
+    if (!cmd || !buf || !len_out) return -1;
+    buf[0] = cmd->command_code;
+    buf[1] = (cmd->local_addr >> 8) & 0xFF;
+    buf[2] = cmd->local_addr & 0xFF;
+    buf[3] = (cmd->remote_addr >> 8) & 0xFF;
+    buf[4] = cmd->remote_addr & 0xFF;
+    *len_out = 5;
+    return 0;
+}
+
+int tsfi_sna_deserialize_session_cmd(const uint8_t *buf, size_t len, tsfi_sna_session_cmd *cmd_out) {
+    if (!buf || !cmd_out || len < 5) return -1;
+    cmd_out->command_code = buf[0];
+    cmd_out->local_addr = (buf[1] << 8) | buf[2];
+    cmd_out->remote_addr = (buf[3] << 8) | buf[4];
+    return 0;
+}
+
+void tsfi_sna_key_rotation_init(tsfi_sna_key_rotation *rot, const uint8_t *dist_key) {
+    if (!rot || !dist_key) return;
+    memcpy(rot->distribution_key, dist_key, 8);
+    memset(rot->current_session_key, 0, 8);
+}
+
+int tsfi_sna_rotate_key(tsfi_sna_key_rotation *rot, const uint8_t *encrypted_new_key) {
+    if (!rot || !encrypted_new_key) return -1;
+    for (int i = 0; i < 8; i++) {
+        rot->current_session_key[i] = encrypted_new_key[i] ^ rot->distribution_key[i];
+    }
+    return 0;
+}

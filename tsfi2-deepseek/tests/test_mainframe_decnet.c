@@ -720,6 +720,49 @@ int main(void) {
     assert(tracker.exception_response_only == 1);
     printf("  [PASS] Response request state tracking verified.\n");
 
+    // 51. SNA PIU Block Check Character Verification
+    printf("[Test] Verifying SNA PIU BCC Checksum...\n");
+    uint8_t sample_piu[] = { 0x11, 0x22, 0x33, 0x44 };
+    // 0x11 ^ 0x22 ^ 0x33 ^ 0x44 = 0x44
+    assert(tsfi_sna_piu_bcc(sample_piu, 4) == 0x44);
+    printf("  [PASS] PIU block check character checksums verified.\n");
+
+    // 52. SNA BIND/UNBIND Command Codec Verification
+    printf("[Test] Verifying SNA BIND/UNBIND Codecs...\n");
+    tsfi_sna_session_cmd tx_cmd;
+    tx_cmd.command_code = SNA_CMD_BIND;
+    tx_cmd.local_addr = 0x1234;
+    tx_cmd.remote_addr = 0x5678;
+    
+    uint8_t cmd_buf[16];
+    size_t cmd_len = 0;
+    assert(tsfi_sna_serialize_session_cmd(&tx_cmd, cmd_buf, &cmd_len) == 0);
+    assert(cmd_len == 5);
+    
+    tsfi_sna_session_cmd rx_cmd;
+    assert(tsfi_sna_deserialize_session_cmd(cmd_buf, cmd_len, &rx_cmd) == 0);
+    assert(rx_cmd.command_code == SNA_CMD_BIND);
+    assert(rx_cmd.local_addr == 0x1234);
+    assert(rx_cmd.remote_addr == 0x5678);
+    printf("  [PASS] BIND/UNBIND command packet codecs verified.\n");
+
+    // 53. SNA Session Key Rotation Verification
+    printf("[Test] Verifying SNA Session Key Rotations...\n");
+    uint8_t dist_key[8] = { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x11, 0x22 };
+    uint8_t raw_new_key[8] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 };
+    uint8_t encrypted_new_key[8];
+    
+    // Encrypt the new key with master distribution key via XOR
+    for (int i = 0; i < 8; i++) {
+        encrypted_new_key[i] = raw_new_key[i] ^ dist_key[i];
+    }
+    
+    tsfi_sna_key_rotation rot;
+    tsfi_sna_key_rotation_init(&rot, dist_key);
+    assert(tsfi_sna_rotate_key(&rot, encrypted_new_key) == 0);
+    assert(memcmp(rot.current_session_key, raw_new_key, 8) == 0);
+    printf("  [PASS] Session key rotation and master wrapping verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

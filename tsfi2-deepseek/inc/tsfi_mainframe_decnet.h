@@ -567,4 +567,29 @@ typedef struct {
 void tsfi_sna_response_init(tsfi_sna_response_tracker *tracker);
 int tsfi_sna_response_parse(tsfi_sna_response_tracker *tracker, uint8_t rh_byte);
 
+// SNA PIU Block Check Character (BCC)
+uint8_t tsfi_sna_piu_bcc(const uint8_t *data, size_t len);
+
+// SNA BIND/UNBIND Command Codec
+#define SNA_CMD_BIND   0x31
+#define SNA_CMD_UNBIND 0x32
+
+typedef struct {
+    uint8_t command_code;
+    uint16_t local_addr;
+    uint16_t remote_addr;
+} tsfi_sna_session_cmd;
+
+int tsfi_sna_serialize_session_cmd(const tsfi_sna_session_cmd *cmd, uint8_t *buf, size_t *len_out);
+int tsfi_sna_deserialize_session_cmd(const uint8_t *buf, size_t len, tsfi_sna_session_cmd *cmd_out);
+
+// SNA Session Key Rotation
+typedef struct {
+    uint8_t distribution_key[8];
+    uint8_t current_session_key[8];
+} tsfi_sna_key_rotation;
+
+void tsfi_sna_key_rotation_init(tsfi_sna_key_rotation *rot, const uint8_t *dist_key);
+int tsfi_sna_rotate_key(tsfi_sna_key_rotation *rot, const uint8_t *encrypted_new_key);
+
 #endif // TSFI_MAINFRAME_DECNET_H
