@@ -1,0 +1,1 @@
+SET keyword LIABILITY; COMPUTE R1 = R2 * R3; EVAL;

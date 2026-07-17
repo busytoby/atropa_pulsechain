@@ -405,10 +405,11 @@ int main(void) {
         "../solidity/dysnomia/domain/std/procedure_param.algol61",
         "../solidity/dysnomia/domain/std/computed_goto.algol61",
         "../solidity/dysnomia/domain/std/designational_goto.algol61",
-        "../solidity/dysnomia/domain/std/variable_shadowing.algol61"
+        "../solidity/dysnomia/domain/std/variable_shadowing.algol61",
+        "../solidity/dysnomia/domain/std/ai_bench.algol61"
     };
     
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < 8; i++) {
         FILE *f = fopen(files[i], "r");
         assert(f != NULL);
         
