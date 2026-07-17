@@ -4,6 +4,14 @@
 #include "tsfi_ramac_layout.h"
 #include "tsfi_mainframe_v370.h"
 
+static void strip_trailing_period(char *str) {
+    if (!str) return;
+    int len = strlen(str);
+    if (len > 0 && str[len - 1] == '.') {
+        str[len - 1] = '\0';
+    }
+}
+
 void tsfi_cp_term_opts_init(tsfi_cp_terminal_options *opts) {
     if (!opts) return;
     opts->chardel_char = '@';
@@ -1006,8 +1014,7 @@ int tsfi_codasyl_schema_parse(tsfi_codasyl_schema *schema, const char *ddl_state
     const char *ptr = strstr(ddl_statement, "SCHEMA NAME IS");
     if (ptr) {
         if (sscanf(ptr, "SCHEMA NAME IS %31s", token) == 1) {
-            int len = strlen(token);
-            if (len > 0 && token[len - 1] == '.') token[len - 1] = '\0';
+            strip_trailing_period(token);
             snprintf(schema->schema_name, sizeof(schema->schema_name), "%s", token);
             parsed = 1;
         }
@@ -1016,8 +1023,7 @@ int tsfi_codasyl_schema_parse(tsfi_codasyl_schema *schema, const char *ddl_state
     ptr = strstr(ddl_statement, "AREA NAME IS");
     if (ptr) {
         if (sscanf(ptr, "AREA NAME IS %31s", token) == 1) {
-            int len = strlen(token);
-            if (len > 0 && token[len - 1] == '.') token[len - 1] = '\0';
+            strip_trailing_period(token);
             snprintf(schema->area_name, sizeof(schema->area_name), "%s", token);
             parsed = 1;
         }
@@ -1028,8 +1034,7 @@ int tsfi_codasyl_schema_parse(tsfi_codasyl_schema *schema, const char *ddl_state
         char rec_name[32];
         int rec_len = 0;
         if (sscanf(ptr, "RECORD NAME IS %31s LENGTH IS %d", rec_name, &rec_len) == 2) {
-            int len = strlen(rec_name);
-            if (len > 0 && rec_name[len - 1] == '.') rec_name[len - 1] = '\0';
+            strip_trailing_period(rec_name);
             if (schema->record_count < MAX_DDL_RECORDS) {
                 tsfi_codasyl_ddl_record *rec = &schema->records[schema->record_count];
                 snprintf(rec->record_name, sizeof(rec->record_name), "%s", rec_name);
@@ -1044,12 +1049,9 @@ int tsfi_codasyl_schema_parse(tsfi_codasyl_schema *schema, const char *ddl_state
     if (ptr) {
         char s_name[32], o_name[32], m_name[32];
         if (sscanf(ptr, "SET NAME IS %31s OWNER IS %31s MEMBER IS %31s", s_name, o_name, m_name) == 3) {
-            int len = strlen(s_name);
-            if (len > 0 && s_name[len - 1] == '.') s_name[len - 1] = '\0';
-            len = strlen(o_name);
-            if (len > 0 && o_name[len - 1] == '.') o_name[len - 1] = '\0';
-            len = strlen(m_name);
-            if (len > 0 && m_name[len - 1] == '.') m_name[len - 1] = '\0';
+            strip_trailing_period(s_name);
+            strip_trailing_period(o_name);
+            strip_trailing_period(m_name);
             
             if (schema->set_count < MAX_DDL_SETS) {
                 tsfi_codasyl_ddl_set *set = &schema->sets[schema->set_count];
@@ -1216,8 +1218,7 @@ int tsfi_codasyl_dml_execute(tsfi_codasyl_dml_runtime *rt, const char *dml_state
     char set_name[32];
     
     if (sscanf(dml_statement, "STORE %31s", rec_name) == 1) {
-        int len = strlen(rec_name);
-        if (len > 0 && rec_name[len - 1] == '.') rec_name[len - 1] = '\0';
+        strip_trailing_period(rec_name);
         
         int rec_found = 0;
         for (int i = 0; i < rt->schema->record_count; i++) {
@@ -1238,8 +1239,7 @@ int tsfi_codasyl_dml_execute(tsfi_codasyl_dml_runtime *rt, const char *dml_state
     }
     
     if (sscanf(dml_statement, "GET %31s", rec_name) == 1) {
-        int len = strlen(rec_name);
-        if (len > 0 && rec_name[len - 1] == '.') rec_name[len - 1] = '\0';
+        strip_trailing_period(rec_name);
         
         int rec_found = 0;
         for (int i = 0; i < rt->schema->record_count; i++) {
@@ -1259,10 +1259,8 @@ int tsfi_codasyl_dml_execute(tsfi_codasyl_dml_runtime *rt, const char *dml_state
     }
     
     if (sscanf(dml_statement, "FIND FIRST %31s WITHIN %31s", rec_name, set_name) == 2) {
-        int len = strlen(rec_name);
-        if (len > 0 && rec_name[len - 1] == '.') rec_name[len - 1] = '\0';
-        len = strlen(set_name);
-        if (len > 0 && set_name[len - 1] == '.') set_name[len - 1] = '\0';
+        strip_trailing_period(rec_name);
+        strip_trailing_period(set_name);
         
         int rec_found = 0;
         for (int i = 0; i < rt->schema->record_count; i++) {
