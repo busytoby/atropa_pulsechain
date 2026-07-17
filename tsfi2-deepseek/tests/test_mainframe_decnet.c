@@ -2322,6 +2322,25 @@ int main(void) {
     assert(tsfi_appc_consensus_commit(&commit_conv, 1) == 0);
     assert(commit_conv.state == 3);
     printf("  [PASS] APPC transaction consensus state machine verified.\n");
+    
+    // 115. APPC Lockstep Abort verification
+    printf("[Test] Verifying APPC Lockstep abort checks...\n");
+    tsfi_appc_conversation fault_conv;
+    fault_conv.conversation_id = 8882;
+    fault_conv.state = 1; // SEND
+    
+    tsfi_lockstep_cpu fault_cpu;
+    fault_cpu.divergence_detected = 0;
+    
+    // In-sync -> no abort
+    assert(tsfi_appc_lockstep_abort_check(&fault_conv, &fault_cpu) == 0);
+    assert(fault_conv.state == 1);
+    
+    // Diverged -> triggers abort
+    fault_cpu.divergence_detected = 1;
+    assert(tsfi_appc_lockstep_abort_check(&fault_conv, &fault_cpu) == 1);
+    assert(fault_conv.state == 3); // DEALLOCATED
+    printf("  [PASS] APPC lockstep fault abort trigger verified.\n");
 
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");

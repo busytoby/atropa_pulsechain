@@ -3073,3 +3073,12 @@ int tsfi_appc_consensus_commit(tsfi_appc_conversation *conv, int consensus_succe
     }
     return 0;
 }
+
+int tsfi_appc_lockstep_abort_check(tsfi_appc_conversation *conv, const tsfi_lockstep_cpu *cpu) {
+    if (!conv || !cpu) return -1;
+    if (cpu->divergence_detected) {
+        conv->state = 3;
+        return 1;
+    }
+    return 0;
+}
