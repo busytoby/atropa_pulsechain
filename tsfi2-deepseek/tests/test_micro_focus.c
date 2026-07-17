@@ -500,6 +500,16 @@ int main(void) {
     assert(strstr(map_buffer, "-> ROOM 11") != NULL);
     printf("  [PASS] ZMachine Vulkan Map Renderer verified.\n");
 
+    // 34. Verify Majordomo subscription query (which)
+    printf("[TEST] Validating Majordomo which Subscriptions...\n");
+    const char *list_names[3] = {"zmm-dev", "cics-admin", "atropa-pulse"};
+    char which_buf[256] = {0};
+    int which_res = tsfi_mf_majordomo_which("admin@dysnomia.org", list_names, 3, which_buf, sizeof(which_buf));
+    assert(which_res == 0);
+    assert(strstr(which_buf, "zmm-dev") != NULL);
+    assert(strstr(which_buf, "cics-admin") != NULL);
+    printf("  [PASS] Majordomo which Subscriptions verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

@@ -75,5 +75,6 @@
 | 141 | CICS VSAM Key-Sequenced File Control | PASS | KSDS database index key record reader | Volume 33 |
 | 142 | CICS VSAM PMG Inventory Registry | PASS | Key-value record insertion and overwrite | Volume 33 |
 | 143 | ZMachine Vulkan 3D Space Map Renderer | PASS | ZMachine room connections perspective mapper | Volume 33 |
+| 144 | Majordomo Subscription Query | PASS | Active user list memberships locator | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 143 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 144 Scenarios validated successfully)

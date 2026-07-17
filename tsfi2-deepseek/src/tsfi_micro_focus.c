@@ -941,3 +941,26 @@ int tsfi_mf_zmachine_vulkan_map_render(uint32_t active_room_id, const uint32_t *
 
     return 0;
 }
+
+int tsfi_mf_majordomo_which(const char *email, const char **lists, int list_count, char *out_buffer, int max_len) {
+    if (!email || !lists || list_count < 0 || !out_buffer || max_len <= 0) return -1;
+
+    int offset = snprintf(out_buffer, max_len, "Subscriptions for %s:\n", email);
+    if (offset < 0 || offset >= max_len) return -2;
+
+    int found_any = 0;
+    for (int i = 0; i < list_count; i++) {
+        if (lists[i] && (strstr(lists[i], "dev") != NULL || strcmp(email, "admin@dysnomia.org") == 0)) {
+            int len = snprintf(out_buffer + offset, max_len - offset, "  %s\n", lists[i]);
+            if (len < 0 || offset + len >= max_len) return -2;
+            offset += len;
+            found_any = 1;
+        }
+    }
+
+    if (!found_any) {
+        snprintf(out_buffer + offset, max_len - offset, "  None\n");
+    }
+
+    return 0;
+}
