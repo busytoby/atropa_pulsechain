@@ -4997,3 +4997,62 @@ int tsfi_mis_query(const mis_database *db, uint32_t parent_id, uint32_t min_allo
     }
     return match_count;
 }
+
+void tsfi_dbtg_selection_init(dbtg_selection_table *table) {
+    if (!table) return;
+    table->count = 0;
+    for (int i = 0; i < 16; i++) {
+        table->rules[i].owner_id = 0;
+        table->rules[i].match_criteria[0] = '\0';
+    }
+}
+
+int tsfi_dbtg_selection_register(dbtg_selection_table *table, uint32_t owner_id, const char *criteria) {
+    if (!table || table->count >= 16 || !criteria) return -1;
+    dbtg_selection_rule *rule = &table->rules[table->count++];
+    rule->owner_id = owner_id;
+    strncpy(rule->match_criteria, criteria, sizeof(rule->match_criteria) - 1);
+    rule->match_criteria[sizeof(rule->match_criteria) - 1] = '\0';
+    return 0;
+}
+
+int tsfi_dbtg_selection_resolve(const dbtg_selection_table *table, const char *member_field) {
+    if (!table || !member_field) return -1;
+    for (int i = 0; i < table->count; i++) {
+        if (strcmp(table->rules[i].match_criteria, member_field) == 0) {
+            return (int)table->rules[i].owner_id;
+        }
+    }
+    return -1;
+}
+
+void tsfi_dsdl_init(dsdl_mapping_table *table) {
+    if (!table) return;
+    table->count = 0;
+    for (int i = 0; i < 16; i++) {
+        table->rules[i].logical_record_id = 0;
+        table->rules[i].physical_cylinder = 0;
+        table->rules[i].page_offset = 0;
+    }
+}
+
+int tsfi_dsdl_register(dsdl_mapping_table *table, uint32_t record_id, uint32_t cylinder, uint32_t page) {
+    if (!table || table->count >= 16) return -1;
+    dsdl_mapping_rule *rule = &table->rules[table->count++];
+    rule->logical_record_id = record_id;
+    rule->physical_cylinder = cylinder;
+    rule->page_offset = page;
+    return 0;
+}
+
+int tsfi_dsdl_resolve(const dsdl_mapping_table *table, uint32_t record_id, uint32_t *out_cylinder, uint32_t *out_page) {
+    if (!table || !out_cylinder || !out_page) return -1;
+    for (int i = 0; i < table->count; i++) {
+        if (table->rules[i].logical_record_id == record_id) {
+            *out_cylinder = table->rules[i].physical_cylinder;
+            *out_page = table->rules[i].page_offset;
+            return 0;
+        }
+    }
+    return -1;
+}

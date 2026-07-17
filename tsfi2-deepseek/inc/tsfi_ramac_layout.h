@@ -1205,4 +1205,34 @@ void tsfi_mis_init(mis_database *db);
 int tsfi_mis_insert(mis_database *db, const char *name, uint32_t allocation, uint32_t parent_id);
 int tsfi_mis_query(const mis_database *db, uint32_t parent_id, uint32_t min_alloc, char *result_out, size_t max_len);
 
+// 1970 Volume 16: Olle DBTG Set Selection & DSDL Mapper
+typedef struct {
+    uint32_t owner_id;
+    char match_criteria[32];
+} dbtg_selection_rule;
+
+typedef struct {
+    dbtg_selection_rule rules[16];
+    int count;
+} dbtg_selection_table;
+
+typedef struct {
+    uint32_t logical_record_id;
+    uint32_t physical_cylinder;
+    uint32_t page_offset;
+} dsdl_mapping_rule;
+
+typedef struct {
+    dsdl_mapping_rule rules[16];
+    int count;
+} dsdl_mapping_table;
+
+void tsfi_dbtg_selection_init(dbtg_selection_table *table);
+int tsfi_dbtg_selection_register(dbtg_selection_table *table, uint32_t owner_id, const char *criteria);
+int tsfi_dbtg_selection_resolve(const dbtg_selection_table *table, const char *member_field);
+
+void tsfi_dsdl_init(dsdl_mapping_table *table);
+int tsfi_dsdl_register(dsdl_mapping_table *table, uint32_t record_id, uint32_t cylinder, uint32_t page);
+int tsfi_dsdl_resolve(const dsdl_mapping_table *table, uint32_t record_id, uint32_t *out_cylinder, uint32_t *out_page);
+
 #endif // TSFI_RAMAC_LAYOUT_H

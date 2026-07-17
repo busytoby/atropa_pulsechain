@@ -953,6 +953,34 @@ int main(void) {
     assert(strcmp(mis_out, "ledger_01,ledger_02") == 0);
     printf("  [PASS] MIS query path filtering and data retrieval verified successfully.\n");
 
+    // 55. Olle DBTG Set Selection Verification
+    printf("[Test] Verifying Olle DBTG set selection engine...\n");
+    dbtg_selection_table dbtg_table;
+    tsfi_dbtg_selection_init(&dbtg_table);
+    
+    int sel_reg = tsfi_dbtg_selection_register(&dbtg_table, 999, "DEPT_45");
+    assert(sel_reg == 0);
+    
+    int resolved_owner = tsfi_dbtg_selection_resolve(&dbtg_table, "DEPT_45");
+    assert(resolved_owner == 999);
+    int unresolved_owner = tsfi_dbtg_selection_resolve(&dbtg_table, "DEPT_99");
+    assert(unresolved_owner == -1);
+    printf("  [PASS] DBTG set selection matching criteria verified successfully.\n");
+    
+    // 56. Olle DSDL Physical Mapper Verification
+    printf("[Test] Verifying Olle DSDL physical storage layouts...\n");
+    dsdl_mapping_table dsdl_table;
+    tsfi_dsdl_init(&dsdl_table);
+    
+    int map_reg = tsfi_dsdl_register(&dsdl_table, 12345, 12, 100);
+    assert(map_reg == 0);
+    
+    uint32_t cyl = 0, pg = 0;
+    int resolve_res = tsfi_dsdl_resolve(&dsdl_table, 12345, &cyl, &pg);
+    assert(resolve_res == 0);
+    assert(cyl == 12 && pg == 100);
+    printf("  [PASS] DSDL device page mapping coordinates verified successfully.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
