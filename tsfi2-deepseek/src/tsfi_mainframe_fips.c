@@ -708,3 +708,48 @@ int tsfi_fips41_authorize(const char *user_role, const char *action) {
     
     return -2; // Privilege violation
 }
+
+int tsfi_fips113_generate_mac(tsfi_crypto_subsystem *crypto, const uint8_t *data, int len, uint8_t *out_mac, int supervisor_state) {
+    if (!crypto || !data || len <= 0 || !out_mac) return -1;
+    if (!supervisor_state) return -2;
+    
+    // Determine block counts, zero pad last block if needed
+    int num_blocks = (len + 7) / 8;
+    uint8_t zero_iv[8] = { 0 };
+    uint8_t prev[8];
+    memcpy(prev, zero_iv, 8);
+    
+    for (int b = 0; b < num_blocks; b++) {
+        uint8_t block_in[8] = { 0 };
+        int bytes_to_copy = (b == num_blocks - 1) ? (len - b * 8) : 8;
+        memcpy(block_in, data + b * 8, bytes_to_copy);
+        
+        uint8_t xor_in[8];
+        for (int i = 0; i < 8; i++) {
+            xor_in[i] = block_in[i] ^ prev[i];
+        }
+        
+        uint8_t block_out[8];
+        int res = tsfi_crypto_encrypt(crypto, xor_in, block_out, supervisor_state);
+        if (res != 0) return res;
+        
+        memcpy(prev, block_out, 8);
+    }
+    
+    memcpy(out_mac, prev, 8);
+    return 0;
+}
+
+int tsfi_fips113_verify_mac(tsfi_crypto_subsystem *crypto, const uint8_t *data, int len, const uint8_t *expected_mac, int supervisor_state) {
+    if (!crypto || !data || len <= 0 || !expected_mac) return -1;
+    
+    uint8_t computed_mac[8];
+    int res = tsfi_fips113_generate_mac(crypto, data, len, computed_mac, supervisor_state);
+    if (res != 0) return res;
+    
+    if (memcmp(computed_mac, expected_mac, 8) == 0) {
+        return 0; // Verified successfully
+    }
+    
+    return -3; // MAC mismatch
+}

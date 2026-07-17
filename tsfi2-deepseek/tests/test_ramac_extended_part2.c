@@ -1842,6 +1842,18 @@ int main(void) {
     assert(strcmp(recovered_ascii, payload) == 0);
     printf("  [PASS] FIPS compliant coaxial transfer integration successful.\n");
 
+    // 158. NBS FIPS PUB 113 Computer Data Authentication Verification
+    printf("[Test] Verifying NBS FIPS PUB 113 Computer Data Authentication (CBC-MAC)...\n");
+    tsfi_crypto_subsystem fips113_crypto;
+    tsfi_crypto_init(&fips113_crypto);
+    assert(tsfi_crypto_load_master_key(&fips113_crypto, 0xAABBCCDDEEFF0011ULL) == 0);
+    
+    uint8_t mac_out[8];
+    uint8_t test_data[16] = "SECURE DATA CHNK";
+    assert(tsfi_fips113_generate_mac(&fips113_crypto, test_data, 16, mac_out, 1) == 0);
+    assert(tsfi_fips113_verify_mac(&fips113_crypto, test_data, 16, mac_out, 1) == 0);
+    printf("  [PASS] FIPS 113 DAA message authentication codes and verification checks verified.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 

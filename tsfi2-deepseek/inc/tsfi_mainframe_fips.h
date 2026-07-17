@@ -151,4 +151,8 @@ int tsfi_fips16_deserialize(uint16_t bits, int use_even_parity, uint8_t *out_byt
 // Scenario 157: NBS FIPS PUB 41 Access Control Security Levels
 int tsfi_fips41_authorize(const char *user_role, const char *action);
 
+// Scenario 158: NBS FIPS PUB 113 Computer Data Authentication (DAA / DES-MAC)
+int tsfi_fips113_generate_mac(tsfi_crypto_subsystem *crypto, const uint8_t *data, int len, uint8_t *out_mac, int supervisor_state);
+int tsfi_fips113_verify_mac(tsfi_crypto_subsystem *crypto, const uint8_t *data, int len, const uint8_t *expected_mac, int supervisor_state);
+
 #endif // TSFI_MAINFRAME_FIPS_H
