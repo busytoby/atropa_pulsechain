@@ -797,4 +797,29 @@ typedef struct {
 void tsfi_sdc_init(tsfi_sdc_crypto *sdc, uint32_t mask, const uint8_t *m_key);
 int tsfi_sdc_validate_record(const tsfi_sdc_crypto *sdc, const uint8_t *record_data, size_t len, uint32_t signature);
 
+#define SDC_CLEARANCE_UNCLASSIFIED 0
+#define SDC_CLEARANCE_CONFIDENTIAL 1
+#define SDC_CLEARANCE_SECRET       2
+#define SDC_CLEARANCE_TOPSECRET    3
+
+// SDC Access Control Matrix
+typedef struct {
+    int clearance_level;
+    int write_privilege;
+} tsfi_sdc_acm;
+
+int tsfi_sdc_acm_authorize(const tsfi_sdc_acm *user_acm, int record_classification, int request_write);
+
+// SDC Secure Handshake
+typedef struct {
+    uint32_t private_secret;
+    uint32_t derived_session_key;
+} tsfi_sdc_handshake;
+
+void tsfi_sdc_handshake_init(tsfi_sdc_handshake *hs, uint32_t secret);
+uint32_t tsfi_sdc_handshake_exchange(tsfi_sdc_handshake *hs, uint32_t foreign_derived);
+
+// SDC LISP-based database query filter
+int tsfi_sdc_lisp_filter(const char *query_expr, const char *record_key, const char *record_val);
+
 #endif // TSFI_MAINFRAME_DECNET_H

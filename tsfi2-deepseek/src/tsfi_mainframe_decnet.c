@@ -1842,3 +1842,37 @@ int tsfi_sdc_validate_record(const tsfi_sdc_crypto *sdc, const uint8_t *record_d
     }
     return (checksum == signature) ? 0 : -2;
 }
+
+int tsfi_sdc_acm_authorize(const tsfi_sdc_acm *user_acm, int record_classification, int request_write) {
+    if (!user_acm) return -1;
+    if (user_acm->clearance_level < record_classification) {
+        return -2;
+    }
+    if (request_write && !user_acm->write_privilege) {
+        return -3;
+    }
+    return 0;
+}
+
+void tsfi_sdc_handshake_init(tsfi_sdc_handshake *hs, uint32_t secret) {
+    if (!hs) return;
+    hs->private_secret = secret;
+    hs->derived_session_key = 0;
+}
+
+uint32_t tsfi_sdc_handshake_exchange(tsfi_sdc_handshake *hs, uint32_t foreign_derived) {
+    if (!hs) return 0;
+    uint64_t session = ((uint64_t)hs->private_secret * foreign_derived) % 953467954114363ULL;
+    hs->derived_session_key = (uint32_t)(session & 0xFFFFFFFF);
+    return hs->derived_session_key;
+}
+
+int tsfi_sdc_lisp_filter(const char *query_expr, const char *record_key, const char *record_val) {
+    if (!query_expr || !record_key || !record_val) return -1;
+    if (strstr(query_expr, "EQUAL") != NULL) {
+        if (strstr(query_expr, record_key) != NULL && strstr(query_expr, record_val) != NULL) {
+            return 1;
+        }
+    }
+    return 0;
+}

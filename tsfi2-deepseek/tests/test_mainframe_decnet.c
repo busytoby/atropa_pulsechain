@@ -1124,6 +1124,29 @@ int main(void) {
     
     printf("  [PASS] Sojka's extended systems (MIS Budget, SDC Cryptography) verified.\n");
 
+    // 66. SDC Advanced Features Verification (ACM, Handshake, LISP Filter)
+    printf("[Test] Verifying SDC Advanced Security & Query Features...\n");
+    
+    // SDC ACM
+    tsfi_sdc_acm user_acm;
+    user_acm.clearance_level = SDC_CLEARANCE_SECRET;
+    user_acm.write_privilege = 0;
+    assert(tsfi_sdc_acm_authorize(&user_acm, SDC_CLEARANCE_UNCLASSIFIED, 0) == 0);
+    assert(tsfi_sdc_acm_authorize(&user_acm, SDC_CLEARANCE_TOPSECRET, 0) == -2);
+    assert(tsfi_sdc_acm_authorize(&user_acm, SDC_CLEARANCE_UNCLASSIFIED, 1) == -3);
+    
+    // SDC Handshake
+    tsfi_sdc_handshake hs;
+    tsfi_sdc_handshake_init(&hs, 12345);
+    uint32_t session_key = tsfi_sdc_handshake_exchange(&hs, 67890);
+    assert(session_key > 0);
+    
+    // SDC LISP Filter
+    assert(tsfi_sdc_lisp_filter("(EQUAL author mariarahel)", "author", "mariarahel") == 1);
+    assert(tsfi_sdc_lisp_filter("(EQUAL author mariarahel)", "title", "pulsechain") == 0);
+    
+    printf("  [PASS] SDC advanced features (ACM, Handshake, LISP filter) verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;
