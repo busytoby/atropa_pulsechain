@@ -1807,4 +1807,6 @@ void tsfi_cp_link_init(tsfi_cp_link_manager *mgr);
 int tsfi_cp_link_register(tsfi_cp_link_manager *mgr, const char *owner, uint32_t vdev, const char *pwd);
 int tsfi_cp_link_execute(tsfi_cp_link_manager *mgr, const char *requester, const char *owner, uint32_t owner_vdev, uint32_t my_vdev, const char *mode, const char *provided_pwd);
 
+int tsfi_cp_query_disk(const tsfi_cp_link_manager *mgr, char *out_buf, int out_max);
+
 #endif // TSFI_RAMAC_LAYOUT_H

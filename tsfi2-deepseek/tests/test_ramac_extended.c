@@ -1949,6 +1949,23 @@ int main(void) {
     assert(link_mgr.links[1].has_write_access == 1);
     printf("  [PASS] VM/370 CP minidisk sharing linkages and permissions verified.\n");
 
+    // 109. VM/370 CP QUERY DISK Command Verification
+    printf("[Test] Verifying VM/370 CP QUERY DISK Command...\n");
+    char disk_report[256];
+    
+    // Verify query output with registered links
+    assert(tsfi_cp_query_disk(&link_mgr, disk_report, sizeof(disk_report)) == 0);
+    assert(strstr(disk_report, "OWNER=MAINT") != NULL);
+    assert(strstr(disk_report, "ACCESS=RW") != NULL);
+    assert(strstr(disk_report, "ACCESS=RO") != NULL);
+    
+    // Verify empty link manager reports correct warning
+    tsfi_cp_link_manager empty_mgr;
+    tsfi_cp_link_init(&empty_mgr);
+    assert(tsfi_cp_query_disk(&empty_mgr, disk_report, sizeof(disk_report)) == 0);
+    assert(strcmp(disk_report, "NO ACTIVE MINIDISKS") == 0);
+    printf("  [PASS] VM/370 CP minidisk status queries parsed and listed successfully.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

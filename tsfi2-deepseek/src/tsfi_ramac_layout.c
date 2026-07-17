@@ -6629,3 +6629,30 @@ int tsfi_cp_link_execute(tsfi_cp_link_manager *mgr, const char *requester, const
     mgr->link_count++;
     return 0;
 }
+
+int tsfi_cp_query_disk(const tsfi_cp_link_manager *mgr, char *out_buf, int out_max) {
+    if (!mgr || !out_buf || out_max <= 0) return -1;
+    if (mgr->link_count == 0) {
+        snprintf(out_buf, out_max, "NO ACTIVE MINIDISKS");
+        return 0;
+    }
+    
+    int write_idx = 0;
+    out_buf[0] = '\0';
+    for (int i = 0; i < mgr->link_count; i++) {
+        char temp[64];
+        snprintf(temp, sizeof(temp), "%03X: OWNER=%s, ACCESS=%s; ",
+                 mgr->links[i].my_vdev,
+                 mgr->links[i].target_uid,
+                 mgr->links[i].has_write_access ? "RW" : "RO");
+        
+        int temp_len = strlen(temp);
+        if (write_idx + temp_len < out_max - 1) {
+            strcpy(out_buf + write_idx, temp);
+            write_idx += temp_len;
+        } else {
+            break;
+        }
+    }
+    return 0;
+}
