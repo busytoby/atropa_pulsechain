@@ -103,4 +103,8 @@ typedef struct {
 void tsfi_fips68_basic_init(tsfi_fips68_basic *basic);
 int tsfi_fips68_basic_run(tsfi_fips68_basic *basic, const char *source_code, char *out_buffer, int max_len);
 
+// Scenario 149: NBS FIPS PUB 69 Numeric Value Parser/Formatter
+int tsfi_fips69_parse_numeric(const char *numeric_str, double *out_val);
+int tsfi_fips69_format_numeric(double val, char *out_str, int max_len);
+
 #endif // TSFI_MAINFRAME_FIPS_H

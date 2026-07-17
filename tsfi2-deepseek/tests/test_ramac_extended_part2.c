@@ -1668,6 +1668,19 @@ int main(void) {
     assert(strstr(basic_output, "HELLO BASIC\n") != NULL);
     printf("  [PASS] FIPS 68 Minimal BASIC interpreter parser and variables validated.\n");
 
+    // 149. NBS FIPS PUB 69 Numeric Value Parser/Formatter Verification
+    printf("[Test] Verifying NBS FIPS PUB 69 Numeric Value Parser/Formatter...\n");
+    double parsed_val = 0.0;
+    assert(tsfi_fips69_parse_numeric("+123.45", &parsed_val) == 0);
+    assert(parsed_val == 123.45);
+    
+    assert(tsfi_fips69_parse_numeric("INVALID", &parsed_val) == -2);
+    
+    char formatted_out[64];
+    assert(tsfi_fips69_format_numeric(12.34, formatted_out, sizeof(formatted_out)) == 0);
+    assert(strcmp(formatted_out, "+12.34") == 0);
+    printf("  [PASS] FIPS 69 explicit sign parsing and string representations validated.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 

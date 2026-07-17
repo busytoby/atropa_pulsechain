@@ -387,3 +387,51 @@ int tsfi_fips68_basic_run(tsfi_fips68_basic *basic, const char *source_code, cha
     
     return 0;
 }
+
+int tsfi_fips69_parse_numeric(const char *numeric_str, double *out_val) {
+    if (!numeric_str || !out_val) return -1;
+    
+    // FIPS 69 mandates that a valid numeric string must start with a sign ('+' or '-') or a digit
+    // Let's strip leading spaces
+    while (*numeric_str == ' ') numeric_str++;
+    
+    if (*numeric_str != '+' && *numeric_str != '-' && (*numeric_str < '0' || *numeric_str > '9') && *numeric_str != '.') {
+        return -2; // Structural compliance error
+    }
+    
+    // Parse using standard strtod
+    char *endptr = NULL;
+    double val = strtod(numeric_str, &endptr);
+    if (endptr == numeric_str) {
+        return -3; // Parsing failure
+    }
+    
+    *out_val = val;
+    return 0;
+}
+
+int tsfi_fips69_format_numeric(double val, char *out_str, int max_len) {
+    if (!out_str || max_len <= 0) return -1;
+    
+    // FIPS 69 mandates explicit signs for non-negative values as well
+    int len;
+    if (val >= 0.0) {
+        len = snprintf(out_str, max_len, "+%.6f", val);
+    } else {
+        len = snprintf(out_str, max_len, "%.6f", val);
+    }
+    
+    // Remove trailing zeros to normalize
+    if (len > 0) {
+        int idx = len - 1;
+        while (idx > 0 && out_str[idx] == '0') {
+            out_str[idx] = '\0';
+            idx--;
+        }
+        if (out_str[idx] == '.') {
+            out_str[idx] = '\0';
+        }
+    }
+    
+    return 0;
+}
