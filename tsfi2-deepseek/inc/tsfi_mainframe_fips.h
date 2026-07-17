@@ -6,15 +6,43 @@
 #include "tsfi_ramac_layout.h"
 
 // Scenario 142: IBM 3848 Cryptographic Subsystem Simulation
+enum {
+    FIPS_ROLE_NONE = 0,
+    FIPS_ROLE_USER = 1,
+    FIPS_ROLE_CO = 2
+};
+
+enum {
+    FIPS_POLICY_ENCRYPT = 1,
+    FIPS_POLICY_DECRYPT = 2
+};
+
 typedef struct {
     uint64_t master_key;
     int is_key_loaded;
+    int current_role;
+    int tamper_signalled;
+    int approved_mode;
+    int bypass_enabled;
+    int error_state;
+    uint32_t allowed_policies;
+    int remaining_uses;
+    uint64_t split_shares[2];
+    int split_shares_entered;
 } tsfi_crypto_subsystem;
 
 void tsfi_crypto_init(tsfi_crypto_subsystem *crypto);
 int tsfi_crypto_load_master_key(tsfi_crypto_subsystem *crypto, uint64_t master_key);
 int tsfi_crypto_encrypt(tsfi_crypto_subsystem *crypto, const uint8_t *plain, uint8_t *cipher, int supervisor_state);
 int tsfi_crypto_decrypt(tsfi_crypto_subsystem *crypto, const uint8_t *cipher, uint8_t *plain, int supervisor_state);
+
+int tsfi_fips140_set_role(tsfi_crypto_subsystem *crypto, int role);
+int tsfi_fips140_signal_tamper(tsfi_crypto_subsystem *crypto);
+int tsfi_fips140_is_approved_mode(const tsfi_crypto_subsystem *crypto);
+int tsfi_fips140_set_bypass(tsfi_crypto_subsystem *crypto, int bypass_enabled);
+int tsfi_fips140_enter_split_key(tsfi_crypto_subsystem *crypto, uint64_t key_share);
+int tsfi_fips140_trigger_error(tsfi_crypto_subsystem *crypto);
+int tsfi_fips140_set_key_policy(tsfi_crypto_subsystem *crypto, uint32_t policies, int max_uses);
 
 // Scenario 143: NBS FIPS PUB 60 Standard I/O Channel Interface
 typedef struct tsfi_fips60_interface {
@@ -199,5 +227,87 @@ int tsfi_fips86_monitor_latency(double measured_delay_ms, double deadline_ms, in
 
 // Scenario 172: NBS FIPS PUB 19-2 Data Code Dictionary Validator
 int tsfi_fips19_validate_data_code(const char *data_code, const char *category_flag);
+
+// FIPS 140-3 Cryptographic Standards (AES-256 and SHA-256)
+int tsfi_fips140_aes256_encrypt(const uint8_t *key, const uint8_t *plain, uint8_t *cipher);
+int tsfi_fips140_aes256_decrypt(const uint8_t *key, const uint8_t *cipher, uint8_t *plain);
+int tsfi_fips140_sha256(const uint8_t *data, size_t len, uint8_t *hash_out);
+
+// FIPS 201-3 Personal Identity Verification (PIV) Standards
+typedef struct {
+    char pin_number[8];
+    int card_inserted;
+    int authenticated;
+} tsfi_fips201_piv;
+
+void tsfi_fips201_piv_init(tsfi_fips201_piv *piv);
+int tsfi_fips201_piv_authenticate(tsfi_fips201_piv *piv, const char *pin, const uint8_t *card_hash, const uint8_t *expected_hash);
+
+// FIPS 140-3 Operational & Integrity Requirements
+int tsfi_fips140_self_test(void);
+void tsfi_fips140_zeroize(void *ptr, size_t len);
+
+// Hash-DRBG (FIPS 140-3 §4.7.2)
+typedef struct {
+    uint8_t V[32];
+    uint8_t C[32];
+    uint64_t reseed_counter;
+} tsfi_fips140_drbg;
+
+int tsfi_fips140_drbg_instantiate(tsfi_fips140_drbg *drbg, const uint8_t *entropy, size_t entropy_len, const uint8_t *nonce, size_t nonce_len);
+int tsfi_fips140_drbg_generate(tsfi_fips140_drbg *drbg, uint8_t *out, size_t out_len);
+
+// Elliptic Curve Diffie-Hellman (FIPS 140-3 §4.7.3)
+int tsfi_fips140_ecdh_agree(const uint8_t *priv_key_raw, size_t priv_len, const uint8_t *pub_key_raw, size_t pub_len, uint8_t *shared_secret_out, size_t *shared_secret_len);
+
+// ECDSA Digital Signatures (FIPS 186-5)
+int tsfi_fips186_ecdsa_sign(const uint8_t *priv_key_raw, size_t priv_len, const uint8_t *dgst, size_t dgst_len, uint8_t *sig_out, size_t *sig_len);
+int tsfi_fips186_ecdsa_verify(const uint8_t *pub_key_raw, size_t pub_len, const uint8_t *dgst, size_t dgst_len, const uint8_t *sig, size_t sig_len);
+
+// FIPS 140-3 Key Wrapping, Bypass and Integrity checks (FIPS 140-3 §4.6, §4.7.4, §4.9.1)
+int tsfi_fips140_aes_key_wrap(const uint8_t *kek, const uint8_t *input, size_t input_len, uint8_t *output, size_t *output_len);
+int tsfi_fips140_aes_key_unwrap(const uint8_t *kek, const uint8_t *input, size_t input_len, uint8_t *output, size_t *output_len);
+int tsfi_fips140_verify_firmware_integrity(const uint8_t *image, size_t image_len, const uint8_t *expected_hmac);
+
+// Triple-DES (FIPS 46-3)
+int tsfi_fips46_3des_encrypt(const uint8_t *key3, const uint8_t *plain, uint8_t *cipher, int supervisor_state);
+int tsfi_fips46_3des_decrypt(const uint8_t *key3, const uint8_t *cipher, uint8_t *plain, int supervisor_state);
+
+// Key Distribution Center (FIPS 74)
+typedef struct {
+    uint8_t master_kek[32];
+    int session_keys_generated;
+} tsfi_fips74_kdc;
+
+int tsfi_fips74_kdc_init(tsfi_fips74_kdc *kdc, const uint8_t *master_kek);
+int tsfi_fips74_kdc_request_session_key(tsfi_fips74_kdc *kdc, uint8_t *wrapped_session_key, size_t *wrapped_len);
+
+// AES-256 CBC Mode (FIPS 197)
+int tsfi_fips197_aes256_cbc_encrypt(const uint8_t *key, const uint8_t *iv, const uint8_t *plain, size_t plain_len, uint8_t *cipher, size_t *cipher_len);
+int tsfi_fips197_aes256_cbc_decrypt(const uint8_t *key, const uint8_t *iv, const uint8_t *cipher, size_t cipher_len, uint8_t *plain, size_t *plain_len);
+
+// SHA-512 (FIPS 180-4)
+int tsfi_fips180_sha512(const uint8_t *input, size_t len, uint8_t *output);
+
+// Automated Hot Standby Failover (FIPS 87)
+typedef struct {
+    int primary_active;
+    int backup_ready;
+    int failover_triggered;
+} tsfi_fips87_failover;
+
+void tsfi_fips87_init(tsfi_fips87_failover *fips);
+int tsfi_fips87_check_heartbeat(tsfi_fips87_failover *fips, int primary_status);
+
+// System Integrity Checksums (FIPS 88)
+int tsfi_fips88_verify_integrity(const uint8_t *data, size_t len, uint32_t expected_crc32);
+
+// Accreditation Report Certification (FIPS 102)
+int tsfi_fips102_certify_report(const uint8_t *report, size_t report_len, const uint8_t *priv_key, size_t priv_len, uint8_t *sig_out, size_t *sig_len);
+
+// Keyed-Hash Message Authentication Code (FIPS 198-1)
+int tsfi_fips198_hmac_sha256(const uint8_t *key, size_t key_len, const uint8_t *data, size_t data_len, uint8_t *mac_out);
+
+#include "tsfi_mainframe_decnet.h"
 
 #endif // TSFI_MAINFRAME_FIPS_H

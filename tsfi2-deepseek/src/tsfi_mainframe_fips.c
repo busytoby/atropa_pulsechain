@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <openssl/evp.h>
+#include <openssl/sha.h>
+#include <openssl/x509.h>
+#include <openssl/hmac.h>
 #include "tsfi_mainframe_fips.h"
 
 // Scenario 142: IBM 3848 Cryptographic Subsystem
@@ -9,10 +13,29 @@ void tsfi_crypto_init(tsfi_crypto_subsystem *crypto) {
     if (!crypto) return;
     crypto->master_key = 0;
     crypto->is_key_loaded = 0;
+    crypto->current_role = FIPS_ROLE_NONE;
+    crypto->tamper_signalled = 0;
+    crypto->approved_mode = 1;
+    crypto->bypass_enabled = 0;
+    crypto->error_state = 0;
+    crypto->allowed_policies = FIPS_POLICY_ENCRYPT | FIPS_POLICY_DECRYPT;
+    crypto->remaining_uses = 1000000;
+    crypto->split_shares[0] = 0;
+    crypto->split_shares[1] = 0;
+    crypto->split_shares_entered = 0;
+
+    // Power-Up Self-Tests (FIPS 140-3 §4.9.1)
+    if (tsfi_fips140_self_test() != 0) {
+        crypto->error_state = 1;
+        crypto->approved_mode = 0;
+    }
 }
 
 int tsfi_crypto_load_master_key(tsfi_crypto_subsystem *crypto, uint64_t master_key) {
     if (!crypto) return -1;
+    if (crypto->error_state) return -6;
+    if (crypto->tamper_signalled) return -4;
+    if (crypto->current_role != FIPS_ROLE_CO) return -5; // Crypto-Officer role required
     crypto->master_key = master_key;
     crypto->is_key_loaded = 1;
     return 0;
@@ -20,7 +43,16 @@ int tsfi_crypto_load_master_key(tsfi_crypto_subsystem *crypto, uint64_t master_k
 
 int tsfi_crypto_encrypt(tsfi_crypto_subsystem *crypto, const uint8_t *plain, uint8_t *cipher, int supervisor_state) {
     if (!crypto || !plain || !cipher) return -1;
+    if (crypto->error_state) return -6;
     if (!supervisor_state) return -2; // Privileged instruction exception
+    if (crypto->tamper_signalled) return -4;
+    if (crypto->current_role != FIPS_ROLE_USER && crypto->current_role != FIPS_ROLE_CO) return -5;
+    if (crypto->bypass_enabled) {
+        memcpy(cipher, plain, 8);
+        return 0;
+    }
+    if (!(crypto->allowed_policies & FIPS_POLICY_ENCRYPT)) return -7; // Policy check
+    if (crypto->remaining_uses <= 0) return -8; // Usage limit check
     if (!crypto->is_key_loaded) return -3;
     
     uint32_t left = ((uint32_t)plain[0] << 24) | ((uint32_t)plain[1] << 16) | ((uint32_t)plain[2] << 8) | plain[3];
@@ -45,12 +77,22 @@ int tsfi_crypto_encrypt(tsfi_crypto_subsystem *crypto, const uint8_t *plain, uin
     cipher[6] = (right >> 8) & 0xFF;
     cipher[7] = right & 0xFF;
     
+    crypto->remaining_uses--;
     return 0;
 }
 
 int tsfi_crypto_decrypt(tsfi_crypto_subsystem *crypto, const uint8_t *cipher, uint8_t *plain, int supervisor_state) {
     if (!crypto || !cipher || !plain) return -1;
+    if (crypto->error_state) return -6;
     if (!supervisor_state) return -2; // Privileged instruction exception
+    if (crypto->tamper_signalled) return -4;
+    if (crypto->current_role != FIPS_ROLE_USER && crypto->current_role != FIPS_ROLE_CO) return -5;
+    if (crypto->bypass_enabled) {
+        memcpy(plain, cipher, 8);
+        return 0;
+    }
+    if (!(crypto->allowed_policies & FIPS_POLICY_DECRYPT)) return -7; // Policy check
+    if (crypto->remaining_uses <= 0) return -8; // Usage limit check
     if (!crypto->is_key_loaded) return -3;
     
     uint32_t left = ((uint32_t)cipher[0] << 24) | ((uint32_t)cipher[1] << 16) | ((uint32_t)cipher[2] << 8) | cipher[3];
@@ -75,7 +117,30 @@ int tsfi_crypto_decrypt(tsfi_crypto_subsystem *crypto, const uint8_t *cipher, ui
     plain[6] = (right >> 8) & 0xFF;
     plain[7] = right & 0xFF;
     
+    crypto->remaining_uses--;
     return 0;
+}
+
+int tsfi_fips140_set_role(tsfi_crypto_subsystem *crypto, int role) {
+    if (!crypto) return -1;
+    if (role != FIPS_ROLE_NONE && role != FIPS_ROLE_USER && role != FIPS_ROLE_CO) return -2;
+    crypto->current_role = role;
+    return 0;
+}
+
+int tsfi_fips140_signal_tamper(tsfi_crypto_subsystem *crypto) {
+    if (!crypto) return -1;
+    crypto->tamper_signalled = 1;
+    crypto->approved_mode = 0;
+    // Auto-zeroize cryptographic material immediately
+    crypto->master_key = 0;
+    crypto->is_key_loaded = 0;
+    return 0;
+}
+
+int tsfi_fips140_is_approved_mode(const tsfi_crypto_subsystem *crypto) {
+    if (!crypto) return 0;
+    return crypto->approved_mode && !crypto->tamper_signalled;
 }
 
 // Scenario 143: NBS FIPS PUB 60 Standard I/O Channel Interface
@@ -449,6 +514,11 @@ int tsfi_fips79_parse_label(const uint8_t *label_block, char *out_file_id, uint3
     
     // Parse File ID (offset 4 to 20, 16 chars)
     snprintf(out_file_id, 17, "%.16s", (const char*)label_block + 4);
+    int space_idx = 15;
+    while (space_idx >= 0 && (out_file_id[space_idx] == ' ' || out_file_id[space_idx] == '\0')) {
+        out_file_id[space_idx] = '\0';
+        space_idx--;
+    }
     
     // Parse Serial (offset 20 to 26, 6 digits)
     char serial_str[7];
@@ -1066,3 +1136,573 @@ int tsfi_fips19_validate_data_code(const char *data_code, const char *category_f
     
     return -2;
 }
+
+int tsfi_fips140_aes256_encrypt(const uint8_t *key, const uint8_t *plain, uint8_t *cipher) {
+    if (!key || !plain || !cipher) return -1;
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) return -2;
+    int len = 0;
+    if (EVP_EncryptInit_ex(ctx, EVP_aes_256_ecb(), NULL, key, NULL) != 1) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -3;
+    }
+    EVP_CIPHER_CTX_set_padding(ctx, 0);
+    if (EVP_EncryptUpdate(ctx, cipher, &len, plain, 16) != 1) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -4;
+    }
+    EVP_CIPHER_CTX_free(ctx);
+    return 0;
+}
+
+int tsfi_fips140_aes256_decrypt(const uint8_t *key, const uint8_t *cipher, uint8_t *plain) {
+    if (!key || !cipher || !plain) return -1;
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) return -2;
+    int len = 0;
+    if (EVP_DecryptInit_ex(ctx, EVP_aes_256_ecb(), NULL, key, NULL) != 1) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -3;
+    }
+    EVP_CIPHER_CTX_set_padding(ctx, 0);
+    if (EVP_DecryptUpdate(ctx, plain, &len, cipher, 16) != 1) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -4;
+    }
+    EVP_CIPHER_CTX_free(ctx);
+    return 0;
+}
+
+int tsfi_fips140_sha256(const uint8_t *data, size_t len, uint8_t *hash_out) {
+    if (!data || !hash_out) return -1;
+    SHA256(data, len, hash_out);
+    return 0;
+}
+
+void tsfi_fips201_piv_init(tsfi_fips201_piv *piv) {
+    if (!piv) return;
+    memset(piv->pin_number, 0, sizeof(piv->pin_number));
+    piv->card_inserted = 0;
+    piv->authenticated = 0;
+}
+
+int tsfi_fips201_piv_authenticate(tsfi_fips201_piv *piv, const char *pin, const uint8_t *card_hash, const uint8_t *expected_hash) {
+    if (!piv || !pin || !card_hash || !expected_hash) return -1;
+    if (!piv->card_inserted) return -2;
+    if (strcmp(piv->pin_number, pin) != 0) return -3;
+    if (memcmp(card_hash, expected_hash, 32) != 0) return -4;
+    piv->authenticated = 1;
+    return 0;
+}
+
+int tsfi_fips140_self_test(void) {
+    // 1. SHA-256 Known Answer Test (KAT) for "abc"
+    const uint8_t sha_input[] = "abc";
+    const uint8_t expected_sha[32] = {
+        0xba, 0x78, 0x16, 0xbf, 0x8f, 0x01, 0xcf, 0xea,
+        0x41, 0x41, 0x40, 0xde, 0x5d, 0xae, 0x22, 0x23,
+        0xb0, 0x03, 0x61, 0xa3, 0x96, 0x17, 0x7a, 0x9c,
+        0xb4, 0x10, 0xff, 0x61, 0xf2, 0x00, 0x15, 0xad
+    };
+    uint8_t computed_sha[32];
+    if (tsfi_fips140_sha256(sha_input, 3, computed_sha) != 0) return -1;
+    if (memcmp(computed_sha, expected_sha, 32) != 0) return -2;
+
+    // 2. AES-256 KAT with zero key and zero plain block
+    const uint8_t zero_key[32] = {0};
+    const uint8_t zero_plain[16] = {0};
+    const uint8_t expected_aes[16] = {
+        0xdc, 0x95, 0xc0, 0x78, 0xa2, 0x40, 0x89, 0x89,
+        0xad, 0x48, 0xa2, 0x14, 0x92, 0x84, 0x20, 0x87
+    };
+    uint8_t computed_cipher[16];
+    uint8_t recovered_plain[16];
+    if (tsfi_fips140_aes256_encrypt(zero_key, zero_plain, computed_cipher) != 0) return -3;
+    if (memcmp(computed_cipher, expected_aes, 16) != 0) return -4;
+    if (tsfi_fips140_aes256_decrypt(zero_key, computed_cipher, recovered_plain) != 0) return -5;
+    if (memcmp(recovered_plain, zero_plain, 16) != 0) return -6;
+
+    return 0; // All self-tests passed
+}
+
+void tsfi_fips140_zeroize(void *ptr, size_t len) {
+    if (!ptr || len == 0) return;
+    volatile uint8_t *vptr = (volatile uint8_t *)ptr;
+    while (len--) {
+        *vptr++ = 0;
+    }
+}
+
+int tsfi_fips140_drbg_instantiate(tsfi_fips140_drbg *drbg, const uint8_t *entropy, size_t entropy_len, const uint8_t *nonce, size_t nonce_len) {
+    if (!drbg || !entropy || entropy_len == 0) return -1;
+    uint8_t seed_material[256];
+    if (entropy_len + nonce_len > sizeof(seed_material)) return -2;
+    memcpy(seed_material, entropy, entropy_len);
+    if (nonce && nonce_len > 0) {
+        memcpy(seed_material + entropy_len, nonce, nonce_len);
+    }
+    size_t seed_len = entropy_len + nonce_len;
+    
+    tsfi_fips140_sha256(seed_material, seed_len, drbg->V);
+    uint8_t temp[33];
+    temp[0] = 0x00;
+    memcpy(temp + 1, drbg->V, 32);
+    tsfi_fips140_sha256(temp, 33, drbg->C);
+    drbg->reseed_counter = 1;
+    return 0;
+}
+
+int tsfi_fips140_drbg_generate(tsfi_fips140_drbg *drbg, uint8_t *out, size_t out_len) {
+    if (!drbg || !out || out_len == 0) return -1;
+    if (drbg->reseed_counter > 10000) return -2;
+    
+    size_t generated = 0;
+    uint8_t V_copy[32];
+    memcpy(V_copy, drbg->V, 32);
+    
+    while (generated < out_len) {
+        uint8_t hash[32];
+        tsfi_fips140_sha256(V_copy, 32, hash);
+        size_t to_copy = (out_len - generated < 32) ? (out_len - generated) : 32;
+        memcpy(out + generated, hash, to_copy);
+        generated += to_copy;
+        
+        for (int i = 31; i >= 0; i--) {
+            V_copy[i]++;
+            if (V_copy[i] != 0) break;
+        }
+    }
+    
+    uint8_t temp[65];
+    temp[0] = 0x03;
+    memcpy(temp + 1, drbg->V, 32);
+    memcpy(temp + 33, drbg->C, 32);
+    tsfi_fips140_sha256(temp, 65, drbg->V);
+    drbg->reseed_counter++;
+    return 0;
+}
+
+int tsfi_fips140_ecdh_agree(const uint8_t *priv_key_raw, size_t priv_len, const uint8_t *pub_key_raw, size_t pub_len, uint8_t *shared_secret_out, size_t *shared_secret_len) {
+    if (!priv_key_raw || priv_len == 0 || !pub_key_raw || pub_len == 0 || !shared_secret_out || !shared_secret_len) return -1;
+    
+    const uint8_t *p_priv = priv_key_raw;
+    EVP_PKEY *priv_key = d2i_AutoPrivateKey(NULL, &p_priv, priv_len);
+    if (!priv_key) return -2;
+    
+    const uint8_t *p_pub = pub_key_raw;
+    EVP_PKEY *pub_key = d2i_PUBKEY(NULL, &p_pub, pub_len);
+    if (!pub_key) {
+        EVP_PKEY_free(priv_key);
+        return -3;
+    }
+    
+    EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(priv_key, NULL);
+    if (!ctx) {
+        EVP_PKEY_free(priv_key);
+        EVP_PKEY_free(pub_key);
+        return -4;
+    }
+    
+    if (EVP_PKEY_derive_init(ctx) <= 0 || EVP_PKEY_derive_set_peer(ctx, pub_key) <= 0) {
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(priv_key);
+        EVP_PKEY_free(pub_key);
+        return -5;
+    }
+    
+    if (EVP_PKEY_derive(ctx, shared_secret_out, shared_secret_len) <= 0) {
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(priv_key);
+        EVP_PKEY_free(pub_key);
+        return -6;
+    }
+    
+    EVP_PKEY_CTX_free(ctx);
+    EVP_PKEY_free(priv_key);
+    EVP_PKEY_free(pub_key);
+    return 0;
+}
+
+int tsfi_fips186_ecdsa_sign(const uint8_t *priv_key_raw, size_t priv_len, const uint8_t *dgst, size_t dgst_len, uint8_t *sig_out, size_t *sig_len) {
+    if (!priv_key_raw || priv_len == 0 || !dgst || dgst_len == 0 || !sig_out || !sig_len) return -1;
+    
+    const uint8_t *p_priv = priv_key_raw;
+    EVP_PKEY *priv_key = d2i_AutoPrivateKey(NULL, &p_priv, priv_len);
+    if (!priv_key) return -2;
+    
+    EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(priv_key, NULL);
+    if (!ctx) {
+        EVP_PKEY_free(priv_key);
+        return -3;
+    }
+    
+    if (EVP_PKEY_sign_init(ctx) <= 0) {
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(priv_key);
+        return -4;
+    }
+    
+    if (EVP_PKEY_sign(ctx, sig_out, sig_len, dgst, dgst_len) <= 0) {
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(priv_key);
+        return -5;
+    }
+    
+    EVP_PKEY_CTX_free(ctx);
+    EVP_PKEY_free(priv_key);
+    return 0;
+}
+
+int tsfi_fips186_ecdsa_verify(const uint8_t *pub_key_raw, size_t pub_len, const uint8_t *dgst, size_t dgst_len, const uint8_t *sig, size_t sig_len) {
+    if (!pub_key_raw || pub_len == 0 || !dgst || dgst_len == 0 || !sig || sig_len == 0) return -1;
+    
+    const uint8_t *p_pub = pub_key_raw;
+    EVP_PKEY *pub_key = d2i_PUBKEY(NULL, &p_pub, pub_len);
+    if (!pub_key) return -2;
+    
+    EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(pub_key, NULL);
+    if (!ctx) {
+        EVP_PKEY_free(pub_key);
+        return -3;
+    }
+    
+    if (EVP_PKEY_verify_init(ctx) <= 0) {
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(pub_key);
+        return -4;
+    }
+    
+    int ret = EVP_PKEY_verify(ctx, sig, sig_len, dgst, dgst_len);
+    EVP_PKEY_CTX_free(ctx);
+    EVP_PKEY_free(pub_key);
+    
+    return (ret == 1) ? 0 : -5;
+}
+
+int tsfi_fips140_set_bypass(tsfi_crypto_subsystem *crypto, int bypass_enabled) {
+    if (!crypto) return -1;
+    if (crypto->tamper_signalled) return -4;
+    if (crypto->current_role != FIPS_ROLE_CO) return -5;
+    crypto->bypass_enabled = bypass_enabled ? 1 : 0;
+    return 0;
+}
+
+int tsfi_fips140_aes_key_wrap(const uint8_t *kek, const uint8_t *input, size_t input_len, uint8_t *output, size_t *output_len) {
+    if (!kek || !input || input_len == 0 || !output || !output_len) return -1;
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) return -2;
+    
+    EVP_CIPHER_CTX_set_flags(ctx, EVP_CIPHER_CTX_FLAG_WRAP_ALLOW);
+    
+    int outl = 0;
+    if (EVP_EncryptInit_ex(ctx, EVP_aes_256_wrap(), NULL, kek, NULL) <= 0) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -3;
+    }
+    
+    if (EVP_EncryptUpdate(ctx, output, &outl, input, input_len) <= 0) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -4;
+    }
+    *output_len = outl;
+    
+    if (EVP_EncryptFinal_ex(ctx, output + outl, &outl) <= 0) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -5;
+    }
+    *output_len += outl;
+    
+    EVP_CIPHER_CTX_free(ctx);
+    return 0;
+}
+
+int tsfi_fips140_aes_key_unwrap(const uint8_t *kek, const uint8_t *input, size_t input_len, uint8_t *output, size_t *output_len) {
+    if (!kek || !input || input_len == 0 || !output || !output_len) return -1;
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) return -2;
+    
+    EVP_CIPHER_CTX_set_flags(ctx, EVP_CIPHER_CTX_FLAG_WRAP_ALLOW);
+    
+    int outl = 0;
+    if (EVP_DecryptInit_ex(ctx, EVP_aes_256_wrap(), NULL, kek, NULL) <= 0) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -3;
+    }
+    
+    if (EVP_DecryptUpdate(ctx, output, &outl, input, input_len) <= 0) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -4;
+    }
+    *output_len = outl;
+    
+    if (EVP_DecryptFinal_ex(ctx, output + outl, &outl) <= 0) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -5;
+    }
+    *output_len += outl;
+    
+    EVP_CIPHER_CTX_free(ctx);
+    return 0;
+}
+
+int tsfi_fips140_verify_firmware_integrity(const uint8_t *image, size_t image_len, const uint8_t *expected_hmac) {
+    if (!image || image_len == 0 || !expected_hmac) return -1;
+    const uint8_t integrity_key[] = "FIPS_140_3_INTEGRITY_VERIFICATION_KEY";
+    uint8_t computed_hmac[32];
+    unsigned int hmac_len = 32;
+    
+    if (!HMAC(EVP_sha256(), integrity_key, sizeof(integrity_key) - 1, image, image_len, computed_hmac, &hmac_len)) {
+        return -2;
+    }
+    
+    if (memcmp(computed_hmac, expected_hmac, 32) != 0) {
+        return -3;
+    }
+    return 0;
+}
+
+int tsfi_fips140_enter_split_key(tsfi_crypto_subsystem *crypto, uint64_t key_share) {
+    if (!crypto) return -1;
+    if (crypto->error_state) return -6;
+    if (crypto->tamper_signalled) return -4;
+    if (crypto->current_role != FIPS_ROLE_CO) return -5;
+    
+    if (crypto->split_shares_entered < 2) {
+        crypto->split_shares[crypto->split_shares_entered] = key_share;
+        crypto->split_shares_entered++;
+    }
+    
+    if (crypto->split_shares_entered == 2) {
+        crypto->master_key = crypto->split_shares[0] ^ crypto->split_shares[1];
+        crypto->is_key_loaded = 1;
+    }
+    return 0;
+}
+
+int tsfi_fips140_trigger_error(tsfi_crypto_subsystem *crypto) {
+    if (!crypto) return -1;
+    crypto->error_state = 1;
+    crypto->approved_mode = 0;
+    crypto->master_key = 0;
+    crypto->is_key_loaded = 0;
+    return 0;
+}
+
+int tsfi_fips140_set_key_policy(tsfi_crypto_subsystem *crypto, uint32_t policies, int max_uses) {
+    if (!crypto) return -1;
+    if (crypto->error_state) return -6;
+    if (crypto->tamper_signalled) return -4;
+    if (crypto->current_role != FIPS_ROLE_CO) return -5;
+    crypto->allowed_policies = policies;
+    crypto->remaining_uses = max_uses;
+    return 0;
+}
+
+int tsfi_fips46_3des_encrypt(const uint8_t *key3, const uint8_t *plain, uint8_t *cipher, int supervisor_state) {
+    if (!key3 || !plain || !cipher) return -1;
+    if (!supervisor_state) return -2;
+    
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) return -3;
+    
+    int outl = 0;
+    if (EVP_EncryptInit_ex(ctx, EVP_des_ede3_ecb(), NULL, key3, NULL) <= 0) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -4;
+    }
+    
+    EVP_CIPHER_CTX_set_padding(ctx, 0);
+    
+    if (EVP_EncryptUpdate(ctx, cipher, &outl, plain, 8) <= 0) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -5;
+    }
+    
+    EVP_CIPHER_CTX_free(ctx);
+    return 0;
+}
+
+int tsfi_fips46_3des_decrypt(const uint8_t *key3, const uint8_t *cipher, uint8_t *plain, int supervisor_state) {
+    if (!key3 || !cipher || !plain) return -1;
+    if (!supervisor_state) return -2;
+    
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) return -3;
+    
+    int outl = 0;
+    if (EVP_DecryptInit_ex(ctx, EVP_des_ede3_ecb(), NULL, key3, NULL) <= 0) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -4;
+    }
+    
+    EVP_CIPHER_CTX_set_padding(ctx, 0);
+    
+    if (EVP_DecryptUpdate(ctx, plain, &outl, cipher, 8) <= 0) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -5;
+    }
+    
+    EVP_CIPHER_CTX_free(ctx);
+    return 0;
+}
+
+int tsfi_fips74_kdc_init(tsfi_fips74_kdc *kdc, const uint8_t *master_kek) {
+    if (!kdc || !master_kek) return -1;
+    memcpy(kdc->master_kek, master_kek, 32);
+    kdc->session_keys_generated = 0;
+    return 0;
+}
+
+int tsfi_fips74_kdc_request_session_key(tsfi_fips74_kdc *kdc, uint8_t *wrapped_session_key, size_t *wrapped_len) {
+    if (!kdc || !wrapped_session_key || !wrapped_len) return -1;
+    
+    tsfi_fips140_drbg drbg;
+    uint8_t entropy[32];
+    memcpy(entropy, "KDC_SESSION_KEY_ENTROPY_POOL_SEC", 32);
+    uint8_t nonce[8] = {0};
+    nonce[0] = (kdc->session_keys_generated >> 24) & 0xFF;
+    nonce[1] = (kdc->session_keys_generated >> 16) & 0xFF;
+    nonce[2] = (kdc->session_keys_generated >> 8) & 0xFF;
+    nonce[3] = kdc->session_keys_generated & 0xFF;
+    
+    if (tsfi_fips140_drbg_instantiate(&drbg, entropy, 32, nonce, 8) != 0) return -2;
+    
+    uint8_t session_key[32];
+    if (tsfi_fips140_drbg_generate(&drbg, session_key, 32) != 0) return -3;
+    
+    if (tsfi_fips140_aes_key_wrap(kdc->master_kek, session_key, 32, wrapped_session_key, wrapped_len) != 0) return -4;
+    
+    kdc->session_keys_generated++;
+    tsfi_fips140_zeroize(session_key, 32);
+    return 0;
+}
+
+int tsfi_fips197_aes256_cbc_encrypt(const uint8_t *key, const uint8_t *iv, const uint8_t *plain, size_t plain_len, uint8_t *cipher, size_t *cipher_len) {
+    if (!key || !iv || !plain || plain_len == 0 || !cipher || !cipher_len) return -1;
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) return -2;
+    
+    int outl = 0;
+    if (EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv) <= 0) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -3;
+    }
+    
+    if (EVP_EncryptUpdate(ctx, cipher, &outl, plain, plain_len) <= 0) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -4;
+    }
+    *cipher_len = outl;
+    
+    if (EVP_EncryptFinal_ex(ctx, cipher + outl, &outl) <= 0) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -5;
+    }
+    *cipher_len += outl;
+    
+    EVP_CIPHER_CTX_free(ctx);
+    return 0;
+}
+
+int tsfi_fips197_aes256_cbc_decrypt(const uint8_t *key, const uint8_t *iv, const uint8_t *cipher, size_t cipher_len, uint8_t *plain, size_t *plain_len) {
+    if (!key || !iv || !cipher || cipher_len == 0 || !plain || !plain_len) return -1;
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) return -2;
+    
+    int outl = 0;
+    if (EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv) <= 0) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -3;
+    }
+    
+    if (EVP_DecryptUpdate(ctx, plain, &outl, cipher, cipher_len) <= 0) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -4;
+    }
+    *plain_len = outl;
+    
+    if (EVP_DecryptFinal_ex(ctx, plain + outl, &outl) <= 0) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -5;
+    }
+    *plain_len += outl;
+    
+    EVP_CIPHER_CTX_free(ctx);
+    return 0;
+}
+
+int tsfi_fips180_sha512(const uint8_t *input, size_t len, uint8_t *output) {
+    if (!input || !output) return -1;
+    EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+    if (!ctx) return -2;
+    
+    if (EVP_DigestInit_ex(ctx, EVP_sha512(), NULL) <= 0 ||
+        EVP_DigestUpdate(ctx, input, len) <= 0 ||
+        EVP_DigestFinal_ex(ctx, output, NULL) <= 0) {
+        EVP_MD_CTX_free(ctx);
+        return -3;
+    }
+    
+    EVP_MD_CTX_free(ctx);
+    return 0;
+}
+
+void tsfi_fips87_init(tsfi_fips87_failover *fips) {
+    if (!fips) return;
+    fips->primary_active = 1;
+    fips->backup_ready = 1;
+    fips->failover_triggered = 0;
+}
+
+int tsfi_fips87_check_heartbeat(tsfi_fips87_failover *fips, int primary_status) {
+    if (!fips) return -1;
+    if (primary_status == 0) {
+        fips->primary_active = 1;
+        return 0;
+    }
+    if (fips->backup_ready && !fips->failover_triggered) {
+        fips->primary_active = 0;
+        fips->failover_triggered = 1;
+        return 1;
+    }
+    return -2;
+}
+
+int tsfi_fips88_verify_integrity(const uint8_t *data, size_t len, uint32_t expected_crc32) {
+    if (!data) return -1;
+    uint32_t crc = 0xFFFFFFFF;
+    for (size_t i = 0; i < len; i++) {
+        crc ^= data[i];
+        for (int j = 0; j < 8; j++) {
+            if (crc & 1) {
+                crc = (crc >> 1) ^ 0xEDB88320;
+            } else {
+                crc >>= 1;
+            }
+        }
+    }
+    crc ^= 0xFFFFFFFF;
+    return (crc == expected_crc32) ? 0 : -2;
+}
+
+int tsfi_fips102_certify_report(const uint8_t *report, size_t report_len, const uint8_t *priv_key, size_t priv_len, uint8_t *sig_out, size_t *sig_len) {
+    if (!report || report_len == 0 || !priv_key || priv_len == 0 || !sig_out || !sig_len) return -1;
+    
+    uint8_t dgst[32];
+    if (tsfi_fips140_sha256(report, report_len, dgst) != 0) return -2;
+    
+    if (tsfi_fips186_ecdsa_sign(priv_key, priv_len, dgst, 32, sig_out, sig_len) != 0) return -3;
+    
+    return 0;
+}
+
+int tsfi_fips198_hmac_sha256(const uint8_t *key, size_t key_len, const uint8_t *data, size_t data_len, uint8_t *mac_out) {
+    if (!key || key_len == 0 || !data || data_len == 0 || !mac_out) return -1;
+    unsigned int out_len = 32;
+    if (!HMAC(EVP_sha256(), key, key_len, data, data_len, mac_out, &out_len)) {
+        return -2;
+    }
+    return 0;
+}
+
+// DECnet and SDLC implementations relocated to tsfi_mainframe_decnet.c

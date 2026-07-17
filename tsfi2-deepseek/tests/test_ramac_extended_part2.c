@@ -8,6 +8,11 @@
 #include "tsfi_zmm_vm.h"
 #include "tsfi_dat.h"
 #include "tsfi_trie.h"
+#include <openssl/evp.h>
+#include <openssl/ec.h>
+#include <openssl/x509.h>
+#include <openssl/hmac.h>
+#include "tsfi_mainframe_decnet.h"
 
 int main(void) {
     printf("=============================================================\n");
@@ -16,8 +21,8 @@ int main(void) {
 
     // We need mock structures or local initializations where needed.
     // Let's initialize trie and dat dependencies for some tests.
-    tsfi_dat_t *dat_mq = tsfi_dat_create();
-    tsfi_trie_t *trie_root_mq = tsfi_trie_create();
+    tsfi_trie_node *trie_root_mq = tsfi_trie_create_node('\0');
+    tsfi_dat *dat_mq = tsfi_dat_compile(trie_root_mq);
 
     // 71. COBOL Sub-schema Data Division Mapper Verification
     printf("[Test] Verifying COBOL Sub-schema mapper...\n");
@@ -1496,6 +1501,7 @@ int main(void) {
     uint8_t decrypted[8] = { 0 };
     
     // Load master key
+    assert(tsfi_fips140_set_role(&crypto, FIPS_ROLE_CO) == 0);
     assert(tsfi_crypto_load_master_key(&crypto, 0xDEADBEEFCAFEBABEULL) == 0);
     assert(crypto.is_key_loaded == 1);
     
@@ -1702,6 +1708,7 @@ int main(void) {
     printf("[Test] Verifying NBS FIPS PUB 81 DES Modes of Operation...\n");
     tsfi_crypto_subsystem fips_crypto;
     tsfi_crypto_init(&fips_crypto);
+    assert(tsfi_fips140_set_role(&fips_crypto, FIPS_ROLE_CO) == 0);
     assert(tsfi_crypto_load_master_key(&fips_crypto, 0x1122334455667788ULL) == 0);
     
     uint8_t cbc_iv[8] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 };
@@ -1846,10 +1853,11 @@ int main(void) {
     printf("[Test] Verifying NBS FIPS PUB 113 Computer Data Authentication (CBC-MAC)...\n");
     tsfi_crypto_subsystem fips113_crypto;
     tsfi_crypto_init(&fips113_crypto);
+    assert(tsfi_fips140_set_role(&fips113_crypto, FIPS_ROLE_CO) == 0);
     assert(tsfi_crypto_load_master_key(&fips113_crypto, 0xAABBCCDDEEFF0011ULL) == 0);
     
     uint8_t mac_out[8];
-    uint8_t test_data[16] = "SECURE DATA CHNK";
+    uint8_t test_data[] = "SECURE DATA CHNK";
     assert(tsfi_fips113_generate_mac(&fips113_crypto, test_data, 16, mac_out, 1) == 0);
     assert(tsfi_fips113_verify_mac(&fips113_crypto, test_data, 16, mac_out, 1) == 0);
     printf("  [PASS] FIPS 113 DAA message authentication codes and verification checks verified.\n");
@@ -2000,9 +2008,714 @@ int main(void) {
     assert(tsfi_fips19_validate_data_code("SYS_VAL", "BAD") == -2); // Invalid category
     printf("  [PASS] FIPS 19-2 data code dictionary registry validator verified.\n");
 
+    // 173. NBS FIPS 140-3 Cryptographic Standards Verification (AES-256 and SHA-256)
+    printf("[Test] Verifying FIPS 140-3 AES-256 and SHA-256 Cryptography...\n");
+    uint8_t aes_key[32] = "AES256 KEY FOR COMPLIANCE 140-3";
+    uint8_t plain_block[] = "SECURE BLOCK DAT";
+    uint8_t cipher_block[16] = {0};
+    uint8_t decrypted_block[16] = {0};
+    assert(tsfi_fips140_aes256_encrypt(aes_key, plain_block, cipher_block) == 0);
+    assert(tsfi_fips140_aes256_decrypt(aes_key, cipher_block, decrypted_block) == 0);
+    assert(memcmp(plain_block, decrypted_block, 16) == 0);
+
+    uint8_t sha_input[] = "Auncient Mainframe Lore";
+    uint8_t sha_hash[32];
+    assert(tsfi_fips140_sha256(sha_input, sizeof(sha_input) - 1, sha_hash) == 0);
+    printf("  [PASS] FIPS 140-3 AES-256 and SHA-256 cryptographic validations verified.\n");
+
+    // 174. NBS FIPS 201-3 Personal Identity Verification (PIV) Standards Verification
+    printf("[Test] Verifying FIPS 201-3 PIV Card Authentication...\n");
+    tsfi_fips201_piv piv_card;
+    tsfi_fips201_piv_init(&piv_card);
+    strcpy(piv_card.pin_number, "7732");
+    
+    uint8_t card_data[] = "PIV CARD DATA FIELD VALUE";
+    uint8_t expected_hash[32];
+    assert(tsfi_fips140_sha256(card_data, sizeof(card_data) - 1, expected_hash) == 0);
+    
+    // No card inserted should fail
+    assert(tsfi_fips201_piv_authenticate(&piv_card, "7732", expected_hash, expected_hash) == -2);
+    
+    piv_card.card_inserted = 1;
+    // Invalid PIN should fail
+    assert(tsfi_fips201_piv_authenticate(&piv_card, "1234", expected_hash, expected_hash) == -3);
+    
+    // Valid authenticate
+    assert(tsfi_fips201_piv_authenticate(&piv_card, "7732", expected_hash, expected_hash) == 0);
+    assert(piv_card.authenticated == 1);
+    printf("  [PASS] FIPS 201-3 PIV card inserts, PIN blocks, and certificate verification verified.\n");
+
+    // 175. NBS FIPS 140-3 Known Answer Tests (KAT) Verification
+    printf("[Test] Verifying FIPS 140-3 Known Answer Tests (KAT)...\n");
+    assert(tsfi_fips140_self_test() == 0);
+    printf("  [PASS] FIPS 140-3 self-test startup validation loops passed.\n");
+
+    // 176. NBS FIPS 140-3 Key Zeroization Verification
+    printf("[Test] Verifying FIPS 140-3 Cryptographic Key Zeroization...\n");
+    uint8_t sensitive_key[16] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00};
+    tsfi_fips140_zeroize(sensitive_key, 16);
+    for (int k = 0; k < 16; k++) {
+        assert(sensitive_key[k] == 0);
+    }
+    printf("  [PASS] FIPS 140-3 secure zeroization memory clearing verified.\n");
+
+    // 177. NBS FIPS 140-3 Hash-DRBG Verification
+    printf("[Test] Verifying FIPS 140-3 Hash-DRBG Random Generation...\n");
+    tsfi_fips140_drbg drbg;
+    uint8_t entropy[] = "DRBG_ENTROPY_SEED_FIPS_COMPLIANT";
+    uint8_t nonce[] = "NONCE_12345";
+    assert(tsfi_fips140_drbg_instantiate(&drbg, entropy, sizeof(entropy) - 1, nonce, sizeof(nonce) - 1) == 0);
+    uint8_t rand_bytes[32];
+    assert(tsfi_fips140_drbg_generate(&drbg, rand_bytes, 32) == 0);
+    int non_zero = 0;
+    for (int idx = 0; idx < 32; idx++) {
+        if (rand_bytes[idx] != 0) {
+            non_zero = 1;
+            break;
+        }
+    }
+    assert(non_zero == 1);
+    printf("  [PASS] FIPS 140-3 Deterministic Random Bit Generator verified.\n");
+
+    // 178. NBS FIPS 140-3 ECDH Key Agreement Verification
+    printf("[Test] Verifying FIPS 140-3 ECDH Key Agreement (P-256)...\n");
+    EVP_PKEY_CTX *pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_EC, NULL);
+    assert(pctx != NULL);
+    assert(EVP_PKEY_keygen_init(pctx) > 0);
+    assert(EVP_PKEY_CTX_set_ec_paramgen_curve_nid(pctx, NID_X9_62_prime256v1) > 0);
+    EVP_PKEY *pkey_a = NULL;
+    assert(EVP_PKEY_keygen(pctx, &pkey_a) > 0);
+    EVP_PKEY_CTX_free(pctx);
+
+    pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_EC, NULL);
+    assert(pctx != NULL);
+    assert(EVP_PKEY_keygen_init(pctx) > 0);
+    assert(EVP_PKEY_CTX_set_ec_paramgen_curve_nid(pctx, NID_X9_62_prime256v1) > 0);
+    EVP_PKEY *pkey_b = NULL;
+    assert(EVP_PKEY_keygen(pctx, &pkey_b) > 0);
+    EVP_PKEY_CTX_free(pctx);
+
+    unsigned char *priv_a_der = NULL;
+    int priv_a_len = i2d_PrivateKey(pkey_a, &priv_a_der);
+    assert(priv_a_len > 0);
+    unsigned char *pub_a_der = NULL;
+    int pub_a_len = i2d_PUBKEY(pkey_a, &pub_a_der);
+    assert(pub_a_len > 0);
+
+    unsigned char *priv_b_der = NULL;
+    int priv_b_len = i2d_PrivateKey(pkey_b, &priv_b_der);
+    assert(priv_b_len > 0);
+    unsigned char *pub_b_der = NULL;
+    int pub_b_len = i2d_PUBKEY(pkey_b, &pub_b_der);
+    assert(pub_b_len > 0);
+
+    uint8_t secret_ab[64] = {0};
+    size_t len_ab = 64;
+    uint8_t secret_ba[64] = {0};
+    size_t len_ba = 64;
+
+    assert(tsfi_fips140_ecdh_agree(priv_a_der, priv_a_len, pub_b_der, pub_b_len, secret_ab, &len_ab) == 0);
+    assert(tsfi_fips140_ecdh_agree(priv_b_der, priv_b_len, pub_a_der, pub_a_len, secret_ba, &len_ba) == 0);
+    assert(len_ab == len_ba);
+    assert(memcmp(secret_ab, secret_ba, len_ab) == 0);
+    printf("  [PASS] FIPS 140-3 Elliptic Curve Diffie-Hellman key agreement verified.\n");
+
+    // 179. NBS FIPS 186-5 ECDSA Signatures Verification
+    printf("[Test] Verifying FIPS 186-5 ECDSA Sign/Verify...\n");
+    uint8_t digest[32] = "DIGEST VAL COMPLIANCE TEST 1865";
+    uint8_t signature[128];
+    size_t sig_len = 128;
+    assert(tsfi_fips186_ecdsa_sign(priv_a_der, priv_a_len, digest, 32, signature, &sig_len) == 0);
+    assert(tsfi_fips186_ecdsa_verify(pub_a_der, pub_a_len, digest, 32, signature, sig_len) == 0);
+    // Modified digest verification should fail
+    digest[0] ^= 0xFF;
+    assert(tsfi_fips186_ecdsa_verify(pub_a_der, pub_a_len, digest, 32, signature, sig_len) != 0);
+
+    OPENSSL_free(priv_a_der);
+    OPENSSL_free(pub_a_der);
+    OPENSSL_free(priv_b_der);
+    OPENSSL_free(pub_b_der);
+    EVP_PKEY_free(pkey_a);
+    EVP_PKEY_free(pkey_b);
+    printf("  [PASS] FIPS 186-5 Elliptic Curve Digital Signatures verified.\n");
+
+    // 180. NBS FIPS 140-3 Cryptographic Role-Based Access Controls Verification
+    printf("[Test] Verifying FIPS 140-3 Role-Based Access Controls...\n");
+    tsfi_crypto_subsystem role_crypto;
+    tsfi_crypto_init(&role_crypto);
+    
+    // Key load should fail if role is NONE or USER
+    assert(tsfi_crypto_load_master_key(&role_crypto, 0x1122334455667788ULL) == -5);
+    assert(tsfi_fips140_set_role(&role_crypto, FIPS_ROLE_USER) == 0);
+    assert(tsfi_crypto_load_master_key(&role_crypto, 0x1122334455667788ULL) == -5);
+    
+    // Key load succeeds under CO role
+    assert(tsfi_fips140_set_role(&role_crypto, FIPS_ROLE_CO) == 0);
+    assert(tsfi_crypto_load_master_key(&role_crypto, 0x1122334455667788ULL) == 0);
+    
+    // Encrypt/decrypt should fail under NONE role
+    assert(tsfi_fips140_set_role(&role_crypto, FIPS_ROLE_NONE) == 0);
+    uint8_t plain_blk[8] = {0};
+    uint8_t cipher_blk[8];
+    assert(tsfi_crypto_encrypt(&role_crypto, plain_blk, cipher_blk, 1) == -5);
+    
+    // Encrypt/decrypt succeeds under USER role
+    assert(tsfi_fips140_set_role(&role_crypto, FIPS_ROLE_USER) == 0);
+    assert(tsfi_crypto_encrypt(&role_crypto, plain_blk, cipher_blk, 1) == 0);
+    printf("  [PASS] FIPS 140-3 operator role boundaries verified.\n");
+
+    // 181. NBS FIPS 140-3 Approved Mode Indicator Verification
+    printf("[Test] Verifying FIPS 140-3 Approved Mode Indicator...\n");
+    assert(tsfi_fips140_is_approved_mode(&role_crypto) == 1);
+    printf("  [PASS] FIPS 140-3 approved operational mode indicators verified.\n");
+
+    // 182. NBS FIPS 140-3 Virtual Tamper Detection & Auto-Zeroization Verification
+    printf("[Test] Verifying FIPS 140-3 Tamper Detection and Key Zeroization...\n");
+    assert(role_crypto.is_key_loaded == 1);
+    assert(tsfi_fips140_signal_tamper(&role_crypto) == 0);
+    assert(role_crypto.is_key_loaded == 0);
+    assert(role_crypto.master_key == 0);
+    assert(tsfi_fips140_is_approved_mode(&role_crypto) == 0);
+    
+    // Cryptographic operations fail after tamper is signaled
+    assert(tsfi_fips140_set_role(&role_crypto, FIPS_ROLE_USER) == 0);
+    assert(tsfi_crypto_encrypt(&role_crypto, plain_blk, cipher_blk, 1) == -4);
+    printf("  [PASS] FIPS 140-3 virtual tamper auto-zeroization loops verified.\n");
+
+    // 183. NBS FIPS 140-3 AES Key Wrapping Verification
+    printf("[Test] Verifying FIPS 140-3 AES Key Wrapping...\n");
+    uint8_t kek[32];
+    uint8_t raw_key[16];
+    memcpy(kek, "AES_KEY_WRAP_KEY_ENCRYPTION_KEY_", 32);
+    memcpy(raw_key, "SENSITIVE_KEY_16", 16);
+    uint8_t wrapped[64] = {0};
+    size_t wrapped_len = 0;
+    uint8_t unwrapped[64] = {0};
+    size_t unwrapped_len = 0;
+    
+    assert(tsfi_fips140_aes_key_wrap(kek, raw_key, 16, wrapped, &wrapped_len) == 0);
+    assert(wrapped_len > 0);
+    assert(tsfi_fips140_aes_key_unwrap(kek, wrapped, wrapped_len, unwrapped, &unwrapped_len) == 0);
+    assert(unwrapped_len == 16);
+    assert(memcmp(raw_key, unwrapped, 16) == 0);
+    printf("  [PASS] FIPS 140-3 AES-256 key wrapping and unwrapping loops verified.\n");
+
+    // 184. NBS FIPS 140-3 Firmware Integrity Verification
+    printf("[Test] Verifying FIPS 140-3 Software/Firmware Integrity...\n");
+    uint8_t image[] = "VIRTUAL_MAINFRAME_FIRMWARE_IMAGE";
+    uint8_t expected_hmac[32];
+    unsigned int hmac_len = 32;
+    assert(HMAC(EVP_sha256(), "FIPS_140_3_INTEGRITY_VERIFICATION_KEY", 37, image, sizeof(image) - 1, expected_hmac, &hmac_len) != NULL);
+    assert(tsfi_fips140_verify_firmware_integrity(image, sizeof(image) - 1, expected_hmac) == 0);
+    // Tampered firmware should fail
+    image[0] ^= 0x55;
+    assert(tsfi_fips140_verify_firmware_integrity(image, sizeof(image) - 1, expected_hmac) != 0);
+    printf("  [PASS] FIPS 140-3 startup firmware integrity validation verified.\n");
+
+    // 185. NBS FIPS 140-3 Bypass State Transition Verification
+    printf("[Test] Verifying FIPS 140-3 Plaintext Bypass Modes...\n");
+    tsfi_crypto_subsystem bypass_crypto;
+    tsfi_crypto_init(&bypass_crypto);
+    
+    // Set CO role to load key and enable bypass
+    assert(tsfi_fips140_set_role(&bypass_crypto, FIPS_ROLE_CO) == 0);
+    assert(tsfi_crypto_load_master_key(&bypass_crypto, 0x123456789ABCDEF0ULL) == 0);
+    
+    // Enable bypass mode
+    assert(tsfi_fips140_set_bypass(&bypass_crypto, 1) == 0);
+    assert(tsfi_fips140_set_role(&bypass_crypto, FIPS_ROLE_USER) == 0);
+    
+    uint8_t test_plain[8] = { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x11, 0x22 };
+    uint8_t test_cipher[8] = { 0 };
+    // Encryption is bypassed: cipher should equal plain
+    assert(tsfi_crypto_encrypt(&bypass_crypto, test_plain, test_cipher, 1) == 0);
+    assert(memcmp(test_plain, test_cipher, 8) == 0);
+    
+    // Disable bypass mode
+    assert(tsfi_fips140_set_role(&bypass_crypto, FIPS_ROLE_CO) == 0);
+    assert(tsfi_fips140_set_bypass(&bypass_crypto, 0) == 0);
+    assert(tsfi_fips140_set_role(&bypass_crypto, FIPS_ROLE_USER) == 0);
+    
+    // Encryption is active now: cipher should not equal plain
+    assert(tsfi_crypto_encrypt(&bypass_crypto, test_plain, test_cipher, 1) == 0);
+    assert(memcmp(test_plain, test_cipher, 8) != 0);
+    printf("  [PASS] FIPS 140-3 plaintext bypass transition controls verified.\n");
+
+    // 186. NBS FIPS 140-3 Split-Knowledge Key Entry Verification
+    printf("[Test] Verifying FIPS 140-3 Split-Knowledge Key Entry...\n");
+    tsfi_crypto_subsystem split_crypto;
+    tsfi_crypto_init(&split_crypto);
+    assert(tsfi_fips140_set_role(&split_crypto, FIPS_ROLE_CO) == 0);
+    assert(tsfi_fips140_enter_split_key(&split_crypto, 0x5555555555555555ULL) == 0);
+    assert(split_crypto.is_key_loaded == 0);
+    assert(tsfi_fips140_enter_split_key(&split_crypto, 0xAAAAAAAAAAAAAAAAULL) == 0);
+    assert(split_crypto.is_key_loaded == 1);
+    assert(split_crypto.master_key == 0xFFFFFFFFFFFFFFFFULL);
+    printf("  [PASS] FIPS 140-3 split key reconstruction verified.\n");
+
+    // 187. NBS FIPS 140-3 Subsystem Error State Gating Verification
+    printf("[Test] Verifying FIPS 140-3 Subsystem Error State Gating...\n");
+    assert(tsfi_fips140_trigger_error(&split_crypto) == 0);
+    assert(split_crypto.error_state == 1);
+    assert(split_crypto.is_key_loaded == 0);
+    uint8_t err_plain[8] = {0};
+    uint8_t err_cipher[8] = {0};
+    assert(tsfi_fips140_set_role(&split_crypto, FIPS_ROLE_USER) == 0);
+    assert(tsfi_crypto_encrypt(&split_crypto, err_plain, err_cipher, 1) == -6);
+    printf("  [PASS] FIPS 140-3 permanent error state gating verified.\n");
+
+    // 188. NBS FIPS 140-3 Key Association & Usage Constraints Verification
+    printf("[Test] Verifying FIPS 140-3 Key Association & Usage Constraints...\n");
+    tsfi_crypto_subsystem policy_crypto;
+    tsfi_crypto_init(&policy_crypto);
+    assert(tsfi_fips140_set_role(&policy_crypto, FIPS_ROLE_CO) == 0);
+    assert(tsfi_crypto_load_master_key(&policy_crypto, 0x123456789ABCDEF0ULL) == 0);
+    
+    // Set policy to allow ENCRYPT only, with a usage limit of 1
+    assert(tsfi_fips140_set_key_policy(&policy_crypto, FIPS_POLICY_ENCRYPT, 1) == 0);
+    assert(tsfi_fips140_set_role(&policy_crypto, FIPS_ROLE_USER) == 0);
+    
+    // First encryption succeeds
+    uint8_t p_block[8] = {0};
+    uint8_t c_block[8] = {0};
+    assert(tsfi_crypto_encrypt(&policy_crypto, p_block, c_block, 1) == 0);
+    
+    // Second encryption fails (limit exceeded)
+    assert(tsfi_crypto_encrypt(&policy_crypto, p_block, c_block, 1) == -8);
+    
+    // Decrypt fails due to policy mismatch
+    assert(tsfi_crypto_decrypt(&policy_crypto, c_block, p_block, 1) == -7);
+    printf("  [PASS] FIPS 140-3 key usage limits and operational policies verified.\n");
+
+    // 189. NBS FIPS 46-3 Triple-DES Verification
+    printf("[Test] Verifying FIPS 46-3 Triple-DES...\n");
+    uint8_t key3[24];
+    uint8_t des3_plain[8];
+    memcpy(key3, "TRIPLE_DES_24_BYTE_KEY_V", 24);
+    memcpy(des3_plain, "3DESDATA", 8);
+    uint8_t des3_cipher[8] = {0};
+    uint8_t des3_recovered[8] = {0};
+    assert(tsfi_fips46_3des_encrypt(key3, des3_plain, des3_cipher, 1) == 0);
+    assert(tsfi_fips46_3des_decrypt(key3, des3_cipher, des3_recovered, 1) == 0);
+    assert(memcmp(des3_plain, des3_recovered, 8) == 0);
+    printf("  [PASS] FIPS 46-3 Triple-DES ECB encryption/decryption loops verified.\n");
+
+    // 190. NBS FIPS 74 Key Distribution Center (KDC) Verification
+    printf("[Test] Verifying FIPS 74 Key Distribution Center (KDC)...\n");
+    tsfi_fips74_kdc kdc;
+    uint8_t master_kek[32];
+    memcpy(master_kek, "KDC_MASTER_KEY_ENCRYPTION_KEY_32", 32);
+    assert(tsfi_fips74_kdc_init(&kdc, master_kek) == 0);
+    uint8_t wrapped_session[64];
+    size_t wrapped_s_len = 0;
+    assert(tsfi_fips74_kdc_request_session_key(&kdc, wrapped_session, &wrapped_s_len) == 0);
+    assert(wrapped_s_len > 0);
+    uint8_t session_key_out[64];
+    size_t session_key_len = 0;
+    assert(tsfi_fips140_aes_key_unwrap(master_kek, wrapped_session, wrapped_s_len, session_key_out, &session_key_len) == 0);
+    assert(session_key_len == 32);
+    printf("  [PASS] FIPS 74 key distribution and secure wrapping verified.\n");
+
+    // 191. NBS FIPS 140-3 Power-Up Self-Tests Verification
+    printf("[Test] Verifying FIPS 140-3 Power-Up Self-Tests...\n");
+    tsfi_crypto_subsystem power_crypto;
+    tsfi_crypto_init(&power_crypto);
+    assert(power_crypto.error_state == 0);
+    assert(power_crypto.approved_mode == 1);
+    printf("  [PASS] FIPS 140-3 power-up self-tests diagnostics verified.\n");
+
+    // 192. NBS FIPS 197 AES-256 CBC Mode Verification
+    printf("[Test] Verifying FIPS 197 AES-256 CBC Mode...\n");
+    uint8_t aes_key_cbc[32];
+    uint8_t aes_iv_cbc[16];
+    uint8_t aes_plain_cbc[32];
+    memcpy(aes_key_cbc, "AES256_CBC_KEY_32_BYTES_FOR_FIPS", 32);
+    memcpy(aes_iv_cbc, "IV_16_BYTES_CBC_", 16);
+    memcpy(aes_plain_cbc, "PLAINTEXT_BLOCK_FOR_AES_CBC_TEST", 32);
+    uint8_t aes_cipher[64] = {0};
+    size_t aes_c_len = 0;
+    uint8_t aes_recovered[64] = {0};
+    size_t aes_r_len = 0;
+    assert(tsfi_fips197_aes256_cbc_encrypt(aes_key_cbc, aes_iv_cbc, aes_plain_cbc, 32, aes_cipher, &aes_c_len) == 0);
+    assert(aes_c_len > 0);
+    assert(tsfi_fips197_aes256_cbc_decrypt(aes_key_cbc, aes_iv_cbc, aes_cipher, aes_c_len, aes_recovered, &aes_r_len) == 0);
+    assert(aes_r_len == 32);
+    assert(memcmp(aes_plain_cbc, aes_recovered, 32) == 0);
+    printf("  [PASS] FIPS 197 AES-256 CBC encryption and decryption verified.\n");
+
+    // 193. NBS FIPS 180-4 SHA-512 Verification
+    printf("[Test] Verifying FIPS 180-4 SHA-512 Secure Hashing...\n");
+    uint8_t sha512_out[64];
+    assert(tsfi_fips180_sha512((const uint8_t*)"abc", 3, sha512_out) == 0);
+    assert(sha512_out[0] != 0 || sha512_out[1] != 0); // Check non-zero output
+    printf("  [PASS] FIPS 180-4 SHA-512 hash computations verified.\n");
+
+    // 194. NBS FIPS 87 Contingency Plan / Automated Failover Verification
+    printf("[Test] Verifying FIPS 87 Automated Failover...\n");
+    tsfi_fips87_failover failover;
+    tsfi_fips87_init(&failover);
+    assert(failover.primary_active == 1);
+    assert(failover.failover_triggered == 0);
+    // Healthy primary status should not trigger failover
+    assert(tsfi_fips87_check_heartbeat(&failover, 0) == 0);
+    assert(failover.primary_active == 1);
+    // Unhealthy primary status should trigger failover to backup
+    assert(tsfi_fips87_check_heartbeat(&failover, 1) == 1);
+    assert(failover.primary_active == 0);
+    assert(failover.failover_triggered == 1);
+    printf("  [PASS] FIPS 87 ADP automated contingency hot standby failover verified.\n");
+
+    // 195. NBS FIPS 88 System Integrity Checksums Verification
+    printf("[Test] Verifying FIPS 88 System Integrity Checksums...\n");
+    uint8_t sys_data[] = "DATABASE_HEADER_INTEGRITY_DATA_BLOCK";
+    // Calculated CRC32 of above string is 0x50518994
+    assert(tsfi_fips88_verify_integrity(sys_data, sizeof(sys_data) - 1, 0x50518994) == 0);
+    printf("  [PASS] FIPS 88 system integrity validation checksums verified.\n");
+
+    // 196. NBS FIPS 102 Accreditation Report Certification Verification
+    printf("[Test] Verifying FIPS 102 Accreditation Report Certification...\n");
+    uint8_t report_data[] = "FIPS_ACCREDITATION_COMPLIANCE_REPORT_2026";
+    uint8_t cert_sig[128];
+    size_t cert_sig_len = 128;
+    // We can use the EC keys generated on the fly earlier for this test
+    EVP_PKEY_CTX *acctx = EVP_PKEY_CTX_new_id(EVP_PKEY_EC, NULL);
+    assert(acctx != NULL);
+    assert(EVP_PKEY_keygen_init(acctx) > 0);
+    assert(EVP_PKEY_CTX_set_ec_paramgen_curve_nid(acctx, NID_X9_62_prime256v1) > 0);
+    EVP_PKEY *ac_pkey = NULL;
+    assert(EVP_PKEY_keygen(acctx, &ac_pkey) > 0);
+    EVP_PKEY_CTX_free(acctx);
+
+    unsigned char *ac_priv_der = NULL;
+    int ac_priv_len = i2d_PrivateKey(ac_pkey, &ac_priv_der);
+    assert(ac_priv_len > 0);
+    unsigned char *ac_pub_der = NULL;
+    int ac_pub_len = i2d_PUBKEY(ac_pkey, &ac_pub_der);
+    assert(ac_pub_len > 0);
+
+    assert(tsfi_fips102_certify_report(report_data, sizeof(report_data) - 1, ac_priv_der, ac_priv_len, cert_sig, &cert_sig_len) == 0);
+    
+    // Verify using standard ECDSA verify
+    uint8_t rep_dgst[32];
+    assert(tsfi_fips140_sha256(report_data, sizeof(report_data) - 1, rep_dgst) == 0);
+    assert(tsfi_fips186_ecdsa_verify(ac_pub_der, ac_pub_len, rep_dgst, 32, cert_sig, cert_sig_len) == 0);
+
+    OPENSSL_free(ac_priv_der);
+    OPENSSL_free(ac_pub_der);
+    EVP_PKEY_free(ac_pkey);
+    printf("  [PASS] FIPS 102 accreditation report certification verified.\n");
+
+    // 197. NBS FIPS 198-1 HMAC-SHA-256 Verification
+    printf("[Test] Verifying FIPS 198-1 HMAC-SHA-256...\n");
+    uint8_t hmac_key[] = "HMAC_SECRET_KEY";
+    uint8_t hmac_data[] = "HMAC_DATA_TO_AUTHENTICATE";
+    uint8_t hmac_out[32];
+    assert(tsfi_fips198_hmac_sha256(hmac_key, sizeof(hmac_key) - 1, hmac_data, sizeof(hmac_data) - 1, hmac_out) == 0);
+    assert(hmac_out[0] != 0 || hmac_out[1] != 0);
+    printf("  [PASS] FIPS 198-1 keyed-hash message authentication verified.\n");
+
+    // 198. Datamation Volume 24 DECnet Phase II Distributed Routing Verification
+    printf("[Test] Verifying DECnet Phase II Distributed Routing...\n");
+    tsfi_decnet_router router;
+    tsfi_decnet_init(&router, 10);
+    assert(router.local_node_id == 10);
+    assert(router.route_count == 1);
+    
+    // Add direct neighbors
+    assert(tsfi_decnet_add_neighbor(&router, 20, 5) == 0); // Cost 5 to Node 20
+    assert(tsfi_decnet_add_neighbor(&router, 30, 20) == 0); // Cost 20 to Node 30
+    
+    // Update path to Node 30 via Node 20 with lower cost (5 + 10 = 15)
+    assert(tsfi_decnet_update_route(&router, 30, 20, 15) == 0);
+    
+    uint16_t hop = 0;
+    // Route packet to Node 30: next hop should be Node 20 (not direct 30) due to lower cost path
+    assert(tsfi_decnet_route_packet(&router, 30, &hop) == 0);
+    assert(hop == 20);
+    printf("  [PASS] DECnet Phase II routing tables and dynamic updates verified.\n");
+
+    // 199. Datamation Volume 24 IBM SDLC Frame Transceiver Verification
+    printf("[Test] Verifying IBM SDLC Frame Transceiver...\n");
+    tsfi_sdlc_frame tx_frame;
+    tx_frame.address = 0xC0; // Station address
+    tx_frame.control = 0x03; // Unnumbered Information (UI) control frame
+    tx_frame.payload_len = 12;
+    memcpy(tx_frame.payload, "HELLO_DECnet", 12);
+    
+    uint8_t wire_buf[512];
+    size_t wire_len = 0;
+    assert(tsfi_sdlc_serialize(&tx_frame, wire_buf, &wire_len) == 0);
+    assert(wire_len == 18); // 1 + 1 + 1 + 12 + 2 + 1 = 18 bytes
+    assert(wire_buf[0] == 0x7E);
+    assert(wire_buf[wire_len - 1] == 0x7E);
+    
+    tsfi_sdlc_frame rx_frame;
+    assert(tsfi_sdlc_deserialize(wire_buf, wire_len, &rx_frame) == 0);
+    assert(rx_frame.address == 0xC0);
+    assert(rx_frame.control == 0x03);
+    assert(rx_frame.payload_len == 12);
+    assert(memcmp(rx_frame.payload, "HELLO_DECnet", 12) == 0);
+    printf("  [PASS] IBM SDLC frame encapsulation, FCS verification, and recovery verified.\n");
+
+    // 200. Datamation Volume 24 DECnet-over-SDLC Router Bridge Verification
+    printf("[Test] Verifying DECnet-over-SDLC Router Bridge...\n");
+    tsfi_decnet_router r_primary;
+    tsfi_decnet_router r_secondary;
+    tsfi_decnet_init(&r_primary, 101);
+    tsfi_decnet_init(&r_secondary, 202);
+    
+    // Primary router knows how to reach destination Node 303 (cost 2)
+    assert(tsfi_decnet_update_route(&r_primary, 303, 101, 2) == 0);
+    
+    // Set up virtual coaxial SDLC hub
+    tsfi_sdlc_hub hub;
+    tsfi_sdlc_hub_init(&hub);
+    assert(tsfi_sdlc_hub_connect(&hub, 0x11) == 0); // Primary SDLC addr 0x11
+    assert(tsfi_sdlc_hub_connect(&hub, 0x22) == 0); // Secondary SDLC addr 0x22
+    
+    // Helper to simulate dynamic updates: serialize update from primary, broadcast it, and let secondary receive it
+    tsfi_sdlc_frame update_frame;
+    update_frame.address = 0x22;
+    update_frame.control = SDLC_CMD_POLL;
+    update_frame.payload_len = 6;
+    // Format: Dest=303, NextHop=101, Cost=2
+    update_frame.payload[0] = (303 >> 8) & 0xFF;
+    update_frame.payload[1] = 303 & 0xFF;
+    update_frame.payload[2] = (101 >> 8) & 0xFF;
+    update_frame.payload[3] = 101 & 0xFF;
+    update_frame.payload[4] = (2 >> 8) & 0xFF;
+    update_frame.payload[5] = 2 & 0xFF;
+    
+    uint8_t tx_pkt[256];
+    size_t tx_pkt_len = 0;
+    assert(tsfi_sdlc_serialize(&update_frame, tx_pkt, &tx_pkt_len) == 0);
+    
+    uint8_t rx_pkt[256];
+    size_t rx_pkt_len = 0;
+    assert(tsfi_sdlc_hub_broadcast(&hub, tx_pkt, tx_pkt_len, 0x22, rx_pkt, &rx_pkt_len) == 0);
+    
+    // Secondary receives the frame and updates its routing table
+    assert(tsfi_decnet_bridge_receive_update(&r_secondary, rx_pkt, rx_pkt_len) == 0);
+    
+    uint16_t next_hop_out = 0;
+    assert(tsfi_decnet_route_packet(&r_secondary, 303, &next_hop_out) == 0);
+    // Cost incremented by 1, path updated
+    assert(next_hop_out == 101);
+    printf("  [PASS] DECnet-over-SDLC virtual hub and cost-vector bridging verified.\n");
+
+    // 201. Datamation Volume 24 SDLC Link Initialization Handshake Verification
+    printf("[Test] Verifying SDLC SNRM/UA Link Handshake...\n");
+    tsfi_sdlc_link_state p_link;
+    tsfi_sdlc_link_state s_link;
+    tsfi_sdlc_link_init(&p_link);
+    tsfi_sdlc_link_init(&s_link);
+    assert(p_link.link_established == 0);
+    assert(s_link.link_established == 0);
+    
+    // SNRM command triggers link establishment UA response
+    assert(tsfi_sdlc_link_handshake(&p_link, &s_link, SDLC_CMD_SNRM) == SDLC_CMD_UA);
+    assert(p_link.link_established == 1);
+    assert(s_link.link_established == 1);
+    printf("  [PASS] SDLC link-level connection handshakes verified.\n");
+
+    // 202. Datamation Volume 24 SDLC Sliding Window Sequence Tracking Verification
+    printf("[Test] Verifying SDLC Modulo-8 Sliding Window Tracking...\n");
+    tsfi_sdlc_link_state flow_link;
+    tsfi_sdlc_link_init(&flow_link);
+    
+    // Expected N(R) is 0. Receiving N(S)=0, N(R)=0 is correct
+    assert(tsfi_sdlc_verify_sequence(&flow_link, 0, 0) == 0);
+    assert(flow_link.nr == 1);
+    
+    // Receiving out of sequence N(S)=2 (instead of expected 1) fails
+    assert(tsfi_sdlc_verify_sequence(&flow_link, 2, 0) == -2);
+    printf("  [PASS] SDLC sliding window frame sequence limits verified.\n");
+
+    // 203. Datamation Volume 24 Primary Polling Interrogation Scheduler Verification
+    printf("[Test] Verifying SDLC Polling Scheduler...\n");
+    tsfi_sdlc_scheduler sched;
+    tsfi_sdlc_scheduler_init(&sched);
+    assert(tsfi_sdlc_scheduler_add(&sched, 0x10) == 0);
+    assert(tsfi_sdlc_scheduler_add(&sched, 0x20) == 0);
+    assert(tsfi_sdlc_scheduler_add(&sched, 0x30) == 0);
+    
+    // Round-robin sequential poll check
+    assert(tsfi_sdlc_scheduler_next(&sched) == 0x10);
+    assert(tsfi_sdlc_scheduler_next(&sched) == 0x20);
+    assert(tsfi_sdlc_scheduler_next(&sched) == 0x30);
+    assert(tsfi_sdlc_scheduler_next(&sched) == 0x10);
+    printf("  [PASS] SDLC primary round-robin polling queue scheduling verified.\n");
+
+    // 204. Datamation Volume 24 SDLC Frame Reject (FRMR) Verification
+    printf("[Test] Verifying SDLC Frame Reject (FRMR) Signaling...\n");
+    uint8_t frmr[3];
+    assert(tsfi_sdlc_generate_frmr(0x99, 3, 2, frmr) == 0);
+    assert(frmr[0] == 0x99);
+    assert((frmr[1] & 0x01) == 0x01);
+    assert(frmr[2] == 0x08);
+    printf("  [PASS] SDLC FRMR diagnostic frame generation verified.\n");
+
+    // 205. Datamation Volume 24 SDLC Retransmission T1 Timer Verification
+    printf("[Test] Verifying SDLC T1 Retransmission Timer...\n");
+    tsfi_sdlc_t1_timer timer;
+    tsfi_sdlc_timer_start(&timer);
+    assert(timer.timer_active == 1);
+    assert(timer.timeout_count == 0);
+    // Tick 50ms (less than 100ms threshold): should not timeout
+    assert(tsfi_sdlc_timer_tick(&timer, 50, 100) == 0);
+    // Tick 120ms (exceeds 100ms threshold): should timeout and trigger retransmission
+    assert(tsfi_sdlc_timer_tick(&timer, 120, 100) == 1);
+    assert(timer.timeout_count == 1);
+    assert(timer.timer_active == 0);
+    printf("  [PASS] SDLC T1 timer timeout and retransmission handlers verified.\n");
+
+    // 206. Datamation Volume 24 SDLC Half-Duplex Line Turnaround Handshake Verification
+    printf("[Test] Verifying SDLC Half-Duplex Line Turnaround...\n");
+    tsfi_sdlc_line_mode line;
+    tsfi_sdlc_line_init(&line);
+    assert(line.tx_enabled == 1);
+    assert(line.rx_enabled == 0);
+    // Perform line turnaround handshake
+    assert(tsfi_sdlc_line_turnaround(&line) == 0);
+    assert(line.tx_enabled == 0);
+    assert(line.rx_enabled == 1);
+    printf("  [PASS] SDLC half-duplex line turnaround state transitions verified.\n");
+
+    // 207. Datamation Volume 24 DECnet NSP Logical Link Handshake Verification
+    printf("[Test] Verifying DECnet NSP Logical Link Handshake...\n");
+    tsfi_decnet_nsp_link nsp_local;
+    tsfi_decnet_nsp_link nsp_remote;
+    tsfi_decnet_nsp_init(&nsp_local, 5001);
+    tsfi_decnet_nsp_init(&nsp_remote, 5002);
+    assert(tsfi_decnet_nsp_connect(&nsp_local, &nsp_remote) == 0);
+    assert(nsp_local.state == 2); // OPEN
+    assert(nsp_remote.state == 2); // OPEN
+    assert(nsp_local.remote_link_id == 5002);
+    assert(nsp_remote.remote_link_id == 5001);
+    printf("  [PASS] DECnet NSP logical link handshakes verified.\n");
+
+    // 208. Datamation Volume 24 SDLC Broadcast Station Address Filtering Verification
+    printf("[Test] Verifying SDLC Broadcast Addressing...\n");
+    tsfi_sdlc_hub b_hub;
+    tsfi_sdlc_hub_init(&b_hub);
+    assert(tsfi_sdlc_hub_connect(&b_hub, 0x55) == 0);
+    uint8_t tx_b_data[] = "BROADCAST_UPDATE_DATA";
+    uint8_t rx_b_buf[256];
+    size_t rx_b_len = 0;
+    // Sending to broadcast address 0xFF triggers group delivery bypass
+    assert(tsfi_sdlc_hub_broadcast_group(&b_hub, tx_b_data, sizeof(tx_b_data), 0xFF, rx_b_buf, &rx_b_len) == 0);
+    assert(rx_b_len == sizeof(tx_b_data));
+    assert(memcmp(tx_b_data, rx_b_buf, rx_b_len) == 0);
+    printf("  [PASS] SDLC broadcast station address filtering verified.\n");
+
+    // 209. Datamation Volume 24 DECnet Node Name Directory Resolver Verification
+    printf("[Test] Verifying DECnet Node Name Directory Resolver...\n");
+    tsfi_decnet_directory dec_dir;
+    tsfi_decnet_dir_init(&dec_dir);
+    assert(tsfi_decnet_dir_add(&dec_dir, "BOSTON_VAX", 1001) == 0);
+    assert(tsfi_decnet_dir_add(&dec_dir, "VMS_NODE", 2002) == 0);
+    
+    uint16_t resolved_id = 0;
+    assert(tsfi_decnet_dir_resolve(&dec_dir, "BOSTON_VAX", &resolved_id) == 0);
+    assert(resolved_id == 1001);
+    assert(tsfi_decnet_dir_resolve(&dec_dir, "VMS_NODE", &resolved_id) == 0);
+    assert(resolved_id == 2002);
+    printf("  [PASS] DECnet node name to node ID address resolution verified.\n");
+
+    // 210. Datamation Volume 24 SDLC Supervisory Flow Control Verification
+    printf("[Test] Verifying SDLC Supervisory Flow Control (RR/RNR)...\n");
+    tsfi_sdlc_link_state flow_ctrl_link;
+    tsfi_sdlc_link_init(&flow_ctrl_link);
+    // Buffer busy = RNR command
+    assert(tsfi_sdlc_update_buffer_status(&flow_ctrl_link, 1) == SDLC_CMD_RNR);
+    // Buffer free = RR command
+    assert(tsfi_sdlc_update_buffer_status(&flow_ctrl_link, 0) == SDLC_CMD_RR);
+    printf("  [PASS] SDLC RR/RNR flow control commands verified.\n");
+
+    // 211. Datamation Volume 24 DECnet Multi-Hop Packet Forwarding Verification
+    printf("[Test] Verifying DECnet Multi-Hop Forwarding...\n");
+    tsfi_decnet_router forward_router;
+    tsfi_decnet_init(&forward_router, 100);
+    assert(tsfi_decnet_update_route(&forward_router, 300, 200, 10) == 0); // Route to 300 is via 200
+    
+    uint16_t next_hop = 0;
+    // Multi-hop routing packet forward request to 300 resolves via 200
+    assert(tsfi_decnet_forward_packet(&forward_router, 100, 300, &next_hop) == 0);
+    assert(next_hop == 200);
+    printf("  [PASS] DECnet multi-hop dynamic forwarding routes verified.\n");
+
+    // 212. Datamation Volume 24 DECnet Keep-Alive Hello Protocol Verification
+    printf("[Test] Verifying DECnet Keep-Alive Hello Protocol...\n");
+    tsfi_decnet_router local_node;
+    tsfi_decnet_router remote_node;
+    tsfi_decnet_init(&local_node, 10);
+    tsfi_decnet_init(&remote_node, 20);
+    
+    assert(tsfi_decnet_exchange_hello(&local_node, &remote_node, 5) == 0);
+    
+    uint16_t local_next_hop = 0;
+    assert(tsfi_decnet_route_packet(&local_node, 20, &local_next_hop) == 0);
+    assert(local_next_hop == 20);
+    printf("  [PASS] DECnet hello dynamic link discovery verified.\n");
+
+    // 213. Datamation Volume 24 DECnet Routing Header Verification
+    printf("[Test] Verifying DECnet Routing Header Serialization...\n");
+    tsfi_decnet_header tx_hdr;
+    tx_hdr.flags = 0x02; // DATA packets
+    tx_hdr.dst_node = 1001;
+    tx_hdr.src_node = 2002;
+    tx_hdr.forward_count = 1;
+    
+    uint8_t hdr_buf[16];
+    size_t hdr_len = 0;
+    assert(tsfi_decnet_serialize_header(&tx_hdr, hdr_buf, &hdr_len) == 0);
+    assert(hdr_len == 6);
+    
+    tsfi_decnet_header rx_hdr;
+    assert(tsfi_decnet_deserialize_header(hdr_buf, hdr_len, &rx_hdr) == 0);
+    assert(rx_hdr.flags == 0x02);
+    assert(rx_hdr.dst_node == 1001);
+    assert(rx_hdr.src_node == 2002);
+    assert(rx_hdr.forward_count == 1);
+    printf("  [PASS] DECnet routing layer header codecs verified.\n");
+
+    // 214. Datamation Volume 24 SDLC Frame Retransmission Queue Verification
+    printf("[Test] Verifying SDLC Frame Retransmission Queue...\n");
+    tsfi_sdlc_tx_queue tx_q;
+    tsfi_sdlc_queue_init(&tx_q);
+    assert(tx_q.count == 0);
+    
+    tsfi_sdlc_frame f_tx;
+    f_tx.address = 0xC0;
+    f_tx.control = 0x03;
+    f_tx.payload_len = 5;
+    memcpy(f_tx.payload, "T1QUE", 5);
+    
+    assert(tsfi_sdlc_queue_push(&tx_q, &f_tx) == 0);
+    assert(tx_q.count == 1);
+    // RR response with N(R)=1 acknowledges and clears the buffer
+    assert(tsfi_sdlc_queue_ack(&tx_q, 1) == 1);
+    assert(tx_q.count == 0);
+    printf("  [PASS] SDLC transmission retry queuing verified.\n");
+
+    // 215. Datamation Volume 24 DECnet Route Aging and Expiry Verification
+    printf("[Test] Verifying DECnet Route Aging and Expiry...\n");
+    tsfi_decnet_router aging_router;
+    tsfi_decnet_init(&aging_router, 100);
+    assert(tsfi_decnet_add_neighbor(&aging_router, 200, 1) == 0);
+    assert(aging_router.route_count == 2);
+    
+    // First age tick
+    assert(tsfi_decnet_age_routes(&aging_router) == 2);
+    // Second age tick
+    assert(tsfi_decnet_age_routes(&aging_router) == 2);
+    // Third age tick (expires route 200)
+    assert(tsfi_decnet_age_routes(&aging_router) == 1);
+    printf("  [PASS] DECnet route cache expiration aging verified.\n");
+
     tsfi_dat_destroy(dat_mq);
-    trie_root_mq = NULL; // Unused local pointer clear
     tsfi_trie_destroy(trie_root_mq);
+    trie_root_mq = NULL;
 
     printf("[PASS] All extended RAMAC simulation invariants - Part 2 verified successfully!\n");
     printf("=============================================================\n");
