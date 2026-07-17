@@ -1337,6 +1337,22 @@ int main(void) {
     assert(strstr(sql_buf, "ALTER TABLE ORDERREC ADD FOREIGN KEY (OWNER_ID) REFERENCES CUSTREC (ID);") != NULL);
     printf("  [PASS] CODASYL schema successfully translated into relational SQL schemas.\n");
 
+    // 137. CODASYL Schema Administration Audit Trail Manager Verification
+    printf("[Test] Verifying CODASYL Schema Administration Audit Trail Manager...\n");
+    tsfi_schema_audit_tracker audit_tracker;
+    tsfi_schema_audit_init(&audit_tracker);
+    assert(audit_tracker.count == 0);
+    assert(tsfi_schema_audit_checksum(&audit_tracker) == 2166136261U);
+    
+    // Log structural edits
+    assert(tsfi_schema_audit_log(&audit_tracker, "ADD_RECORD", "EMPREC", 100) == 0);
+    assert(audit_tracker.count == 1);
+    assert(tsfi_schema_audit_checksum(&audit_tracker) != 2166136261U);
+    
+    assert(tsfi_schema_audit_log(&audit_tracker, "ADD_SET", "EMP-JOB", 200) == 0);
+    assert(audit_tracker.count == 2);
+    printf("  [PASS] Schema structural change logs and hash-chained audit trails validated.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 

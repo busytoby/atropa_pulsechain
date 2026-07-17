@@ -453,4 +453,23 @@ int tsfi_zvm_23_tree_call(tsfi_zvm_23_tree *tree, int key, const char *client_ip
 
 int tsfi_codasyl_to_relational_translate(const tsfi_codasyl_schema *schema, char *out_sql, int max_len);
 
+// Scenario 137: CODASYL Schema Administration Audit Trail Manager
+#define MAX_AUDIT_LOGS 16
+typedef struct {
+    char op[16];
+    char elem_name[32];
+    uint32_t hash_before;
+    uint32_t hash_after;
+} tsfi_schema_audit_entry;
+
+typedef struct {
+    tsfi_schema_audit_entry entries[MAX_AUDIT_LOGS];
+    int count;
+    uint32_t running_checksum;
+} tsfi_schema_audit_tracker;
+
+void tsfi_schema_audit_init(tsfi_schema_audit_tracker *tracker);
+int tsfi_schema_audit_log(tsfi_schema_audit_tracker *tracker, const char *op, const char *elem_name, uint32_t hash_before);
+uint32_t tsfi_schema_audit_checksum(const tsfi_schema_audit_tracker *tracker);
+
 #endif // TSFI_MAINFRAME_V370_H

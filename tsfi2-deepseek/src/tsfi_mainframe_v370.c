@@ -1394,3 +1394,40 @@ int tsfi_codasyl_to_relational_translate(const tsfi_codasyl_schema *schema, char
     
     return 0;
 }
+
+void tsfi_schema_audit_init(tsfi_schema_audit_tracker *tracker) {
+    if (!tracker) return;
+    memset(tracker, 0, sizeof(tsfi_schema_audit_tracker));
+    tracker->running_checksum = 2166136261U;
+}
+
+int tsfi_schema_audit_log(tsfi_schema_audit_tracker *tracker, const char *op, const char *elem_name, uint32_t hash_before) {
+    if (!tracker || !op || !elem_name || tracker->count >= MAX_AUDIT_LOGS) return -1;
+    
+    tsfi_schema_audit_entry *entry = &tracker->entries[tracker->count];
+    snprintf(entry->op, sizeof(entry->op), "%s", op);
+    snprintf(entry->elem_name, sizeof(entry->elem_name), "%s", elem_name);
+    entry->hash_before = hash_before;
+    
+    uint32_t hash = hash_before;
+    for (int i = 0; op[i] != '\0'; i++) {
+        hash ^= (uint8_t)op[i];
+        hash *= 16777619U;
+    }
+    for (int i = 0; elem_name[i] != '\0'; i++) {
+        hash ^= (uint8_t)elem_name[i];
+        hash *= 16777619U;
+    }
+    entry->hash_after = hash;
+    
+    tracker->running_checksum ^= entry->hash_after;
+    tracker->running_checksum *= 16777619U;
+    
+    tracker->count++;
+    return 0;
+}
+
+uint32_t tsfi_schema_audit_checksum(const tsfi_schema_audit_tracker *tracker) {
+    if (!tracker) return 0;
+    return tracker->running_checksum;
+}
