@@ -157,3 +157,38 @@ int tsfi_mf_screen_section_render(const char *screen_def, char *terminal_buffer,
     }
     return -2;
 }
+
+int tsfi_mf_sif_serialize(const tsfi_cgm_scene *scene, char *out_buffer, size_t max_len) {
+    if (!scene || !out_buffer || max_len == 0) return -1;
+
+    out_buffer[0] = '\0';
+    size_t current_len = 0;
+
+    for (int i = 0; i < scene->primitive_count; i++) {
+        const tsfi_cgm_primitive *p = &scene->primitives[i];
+        char line[256];
+        char col_char = 'R';
+        if (p->color.y > 0.5f) col_char = 'G';
+        else if (p->color.z > 0.5f) col_char = 'B';
+
+        if (p->type == CGM_PRIM_SPHERE) {
+            snprintf(line, sizeof(line), "SIF_SPHERE X:%.1f Y:%.1f Z:%.1f R:%.1f COLOR:%c\n",
+                     p->position.x, p->position.y, p->position.z, p->param1, col_char);
+        } else if (p->type == CGM_PRIM_PLANE) {
+            snprintf(line, sizeof(line), "SIF_PLANE NX:%.1f NY:%.1f NZ:%.1f D:%.1f COLOR:%c\n",
+                     p->position.x, p->position.y, p->position.z, p->param1, col_char);
+        } else {
+            continue;
+        }
+
+        size_t line_len = strlen(line);
+        if (current_len + line_len + 1 > max_len) {
+            return -2;
+        }
+
+        strcat(out_buffer, line);
+        current_len += line_len;
+    }
+
+    return 0;
+}

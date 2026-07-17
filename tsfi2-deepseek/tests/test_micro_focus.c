@@ -104,6 +104,14 @@ int main(void) {
     assert(sif_scene.primitives[12].color.y == 1.0f); // Green
     printf("  [PASS] SIF CAD plane primitive parser verified.\n");
 
+    // Verify SIF serialization
+    char serialize_buf[1024];
+    int ser_res = tsfi_mf_sif_serialize(&sif_scene, serialize_buf, sizeof(serialize_buf));
+    assert(ser_res == 0);
+    assert(strstr(serialize_buf, "SIF_SPHERE X:2.5 Y:-1.0 Z:8.0 R:3.5 COLOR:B") != NULL);
+    assert(strstr(serialize_buf, "SIF_PLANE NX:0.0 NY:1.0 NZ:0.0 D:-5.0 COLOR:G") != NULL);
+    printf("  [PASS] SIF CAD serialization verified.\n");
+
     // 4. Verify Screen Section Terminal Layout
     printf("[TEST] Validating Screen Section rendering...\n");
     char term_buf[80 * 24];
