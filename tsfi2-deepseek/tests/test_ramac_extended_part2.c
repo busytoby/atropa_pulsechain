@@ -1874,6 +1874,15 @@ int main(void) {
     assert(memcmp(recovered_payload, x25_payload, 8) == 0);
     printf("  [PASS] FIPS 100 X.25 packet encapsulation, logical channel routing, and header checks verified.\n");
 
+    // 160. NBS FIPS PUB 112 Password Security Validator Verification
+    printf("[Test] Verifying NBS FIPS PUB 112 Password Security Validator...\n");
+    int score = 0;
+    assert(tsfi_fips112_validate_password("Secret1!", &score) == 0);
+    assert(score == 4); // upper, lower, digit, symbol
+    
+    assert(tsfi_fips112_validate_password("short", &score) == -2); // too short
+    printf("  [PASS] FIPS 112 password length constraints and character class scoring validated.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 

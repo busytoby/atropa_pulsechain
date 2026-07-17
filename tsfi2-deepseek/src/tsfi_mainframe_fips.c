@@ -790,3 +790,29 @@ int tsfi_fips100_decapsulate(const uint8_t *packet, int len, uint8_t *out_payloa
     
     return 0;
 }
+
+int tsfi_fips112_validate_password(const char *password, int *out_complexity_score) {
+    if (!password || !out_complexity_score) return -1;
+    
+    int len = strlen(password);
+    if (len < 6) {
+        *out_complexity_score = 0;
+        return -2; // Standard minimum length failure
+    }
+    
+    int has_lower = 0;
+    int has_upper = 0;
+    int has_digit = 0;
+    int has_symbol = 0;
+    
+    for (int i = 0; i < len; i++) {
+        char c = password[i];
+        if (c >= 'a' && c <= 'z') has_lower = 1;
+        else if (c >= 'A' && c <= 'Z') has_upper = 1;
+        else if (c >= '0' && c <= '9') has_digit = 1;
+        else has_symbol = 1;
+    }
+    
+    *out_complexity_score = has_lower + has_upper + has_digit + has_symbol;
+    return 0;
+}

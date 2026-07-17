@@ -159,4 +159,7 @@ int tsfi_fips113_verify_mac(tsfi_crypto_subsystem *crypto, const uint8_t *data, 
 int tsfi_fips100_encapsulate(const uint8_t *payload, int len, uint16_t channel, uint8_t *out_packet, int *out_len);
 int tsfi_fips100_decapsulate(const uint8_t *packet, int len, uint8_t *out_payload, int *out_len, uint16_t *out_channel);
 
+// Scenario 160: NBS FIPS PUB 112 Password Security Validator
+int tsfi_fips112_validate_password(const char *password, int *out_complexity_score);
+
 #endif // TSFI_MAINFRAME_FIPS_H
