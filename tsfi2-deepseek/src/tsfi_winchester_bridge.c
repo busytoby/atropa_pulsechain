@@ -20,37 +20,43 @@ TSFiWinchesterBridge* tsfi_winchester_bridge_create(TSFiSynthPerfEngine *perf_en
 int tsfi_winchester_bridge_handshake(TSFiWinchesterBridge *bridge) {
     if (!bridge || !bridge->perf_engine) return -1;
 
-    // 1. Read frequency of primary tone-wheel (wheel index 0)
     float freq = bridge->perf_engine->synth->wheels[0].frequency;
-    
-    // 2. Map frequency to keycode (e.g. 440Hz -> Key 'D' keycode 32, 880Hz -> Key 'A' keycode 30)
-    uint32_t keycode = 0;
-    if (freq >= 800.0f) {
-        keycode = 30; // Key 'A'
-    } else if (freq >= 400.0f) {
-        keycode = 32; // Key 'D'
-    } else {
-        keycode = 10; // Default keycode
+    uint32_t keycode = bridge->registers.keycode_reg & 0xFFFF;
+    if (keycode == 0) {
+        if (freq >= 800.0f) {
+            keycode = 30;
+        } else if (freq >= 400.0f) {
+            keycode = 32;
+        } else {
+            keycode = 10;
+        }
+        bridge->registers.keycode_reg |= keycode;
     }
 
-    // Push keycode to event ring buffer lock-free
     tsfi_ring_push(&bridge->event_ring, 1, keycode);
 
-    // 3. Perform WinchesterMQ SCSI register status handshake loop
-    bridge->registers.status_reg = 1; // Request
-    bridge->registers.keycode_reg = keycode;
+    uint8_t mcs_indicator = (bridge->registers.keycode_reg >> 16) & 0xFF;
+    uint8_t mcs_status = (bridge->registers.keycode_reg >> 24) & 0xFF;
+    uint8_t mcs_dest = (bridge->registers.status_reg >> 8) & 0xFF;
+    (void)mcs_status;
+    (void)mcs_dest;
+    
+    bridge->registers.status_reg = (bridge->registers.status_reg & 0xFFFFFF00) | 1;
 
-    // Simulate SCSI loop handshake transitions (Req -> Ack -> Complete)
-    if (bridge->registers.status_reg == 1) {
-        bridge->registers.status_reg = 2; // Ack received
-        bridge->registers.data_reg = keycode * 2; // Process data modification
+    if ((bridge->registers.status_reg & 0xFF) == 1) {
+        bridge->registers.status_reg = (bridge->registers.status_reg & 0xFFFFFF00) | 2;
+        if (mcs_indicator == 0x01) {
+            bridge->registers.data_reg += 1;
+        } else if (mcs_indicator == 0x02) {
+            bridge->registers.data_reg += 2;
+        }
     }
 
-    if (bridge->registers.status_reg == 2) {
-        bridge->registers.status_reg = 3; // Complete
+    if ((bridge->registers.status_reg & 0xFF) == 2) {
+        bridge->registers.status_reg = (bridge->registers.status_reg & 0xFFFFFF00) | 3;
     }
 
-    return (bridge->registers.status_reg == 3) ? 0 : -2;
+    return ((bridge->registers.status_reg & 0xFF) == 3) ? 0 : -2;
 }
 
 void tsfi_winchester_bridge_destroy(TSFiWinchesterBridge *bridge) {
