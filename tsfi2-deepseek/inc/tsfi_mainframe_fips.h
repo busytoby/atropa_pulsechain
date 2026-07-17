@@ -107,4 +107,8 @@ int tsfi_fips68_basic_run(tsfi_fips68_basic *basic, const char *source_code, cha
 int tsfi_fips69_parse_numeric(const char *numeric_str, double *out_val);
 int tsfi_fips69_format_numeric(double val, char *out_str, int max_len);
 
+// Scenario 150: NBS FIPS PUB 79 Magnetic Tape Label Parser/Validator
+int tsfi_fips79_parse_label(const uint8_t *label_block, char *out_file_id, uint32_t *out_serial, int *out_block_count);
+int tsfi_fips79_format_label(uint8_t *out_block, const char *file_id, uint32_t serial, int block_count, const char *label_type);
+
 #endif // TSFI_MAINFRAME_FIPS_H

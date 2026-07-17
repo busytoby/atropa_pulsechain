@@ -435,3 +435,42 @@ int tsfi_fips69_format_numeric(double val, char *out_str, int max_len) {
     
     return 0;
 }
+
+int tsfi_fips79_parse_label(const uint8_t *label_block, char *out_file_id, uint32_t *out_serial, int *out_block_count) {
+    if (!label_block || !out_file_id || !out_serial || !out_block_count) return -1;
+    
+    // Label identifiers must match VOL1, HDR1, or EOF1
+    if (strncmp((const char*)label_block, "VOL1", 4) != 0 &&
+        strncmp((const char*)label_block, "HDR1", 4) != 0 &&
+        strncmp((const char*)label_block, "EOF1", 4) != 0) {
+        return -2; // Unknown or invalid label structure
+    }
+    
+    // Parse File ID (offset 4 to 20, 16 chars)
+    snprintf(out_file_id, 17, "%.16s", (const char*)label_block + 4);
+    
+    // Parse Serial (offset 20 to 26, 6 digits)
+    char serial_str[7];
+    snprintf(serial_str, sizeof(serial_str), "%.6s", (const char*)label_block + 20);
+    *out_serial = (uint32_t)atoi(serial_str);
+    
+    // Parse Block Count (offset 26 to 32, 6 digits)
+    char count_str[7];
+    snprintf(count_str, sizeof(count_str), "%.6s", (const char*)label_block + 26);
+    *out_block_count = atoi(count_str);
+    
+    return 0;
+}
+
+int tsfi_fips79_format_label(uint8_t *out_block, const char *file_id, uint32_t serial, int block_count, const char *label_type) {
+    if (!out_block || !file_id || !label_type) return -1;
+    
+    // Format EBCDIC/ASCII 80-character standard label record
+    int len = snprintf((char*)out_block, 81, "%-4s%-16.16s%06u%06d%-48s", label_type, file_id, serial, block_count, "");
+    if (len < 80) {
+        // Space pad up to 80 characters
+        memset(out_block + len, ' ', 80 - len);
+    }
+    out_block[80] = '\0';
+    return 0;
+}

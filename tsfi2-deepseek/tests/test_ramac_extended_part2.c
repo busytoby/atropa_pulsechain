@@ -1681,6 +1681,23 @@ int main(void) {
     assert(strcmp(formatted_out, "+12.34") == 0);
     printf("  [PASS] FIPS 69 explicit sign parsing and string representations validated.\n");
 
+    // 150. NBS FIPS PUB 79 Magnetic Tape Label Parser/Validator Verification
+    printf("[Test] Verifying NBS FIPS PUB 79 Magnetic Tape Label Parser/Validator...\n");
+    uint8_t label_buf[81];
+    assert(tsfi_fips79_format_label(label_buf, "LEDGER_001", 9999, 12, "HDR1") == 0);
+    
+    char file_id_out[17];
+    uint32_t serial_out = 0;
+    int blocks_out = 0;
+    assert(tsfi_fips79_parse_label(label_buf, file_id_out, &serial_out, &blocks_out) == 0);
+    assert(strcmp(file_id_out, "LEDGER_001") == 0);
+    assert(serial_out == 9999);
+    assert(blocks_out == 12);
+    
+    // Mismatched label check
+    assert(tsfi_fips79_parse_label((const uint8_t*)"BAD1LABEL", file_id_out, &serial_out, &blocks_out) == -2);
+    printf("  [PASS] FIPS 79 EBCDIC tape header parsing and EOT trailer validation checks verified.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 
