@@ -1539,4 +1539,21 @@ typedef struct {
 void tsfi_cp_session_init(tsfi_cp_session *sess);
 int tsfi_cp_execute_command(tsfi_cp_session *sess, const char *cmd);
 
+// VM/370 CP Virtual Reader & Spool Queue
+typedef struct {
+    char card_data[80];
+} tsfi_cp_spool_card;
+
+#define MAX_SPOOL_CARDS 16
+typedef struct {
+    tsfi_cp_spool_card queue[MAX_SPOOL_CARDS];
+    int head;
+    int tail;
+    int count;
+} tsfi_cp_spool_queue;
+
+void tsfi_cp_spool_queue_init(tsfi_cp_spool_queue *q);
+int tsfi_cp_spool_push(tsfi_cp_spool_queue *q, const char *data);
+int tsfi_cp_spool_pop(tsfi_cp_spool_queue *q, char *data_out);
+
 #endif // TSFI_RAMAC_LAYOUT_H

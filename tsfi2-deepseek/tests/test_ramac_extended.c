@@ -1554,6 +1554,24 @@ int main(void) {
     assert(tsfi_cp_execute_command(&cp_sess, "QUERY VIRTUAL") == 0);
     printf("  [PASS] VM/370 CP storage resizing and virtual device spooling verified.\n");
 
+    // 90. VM/370 CP Virtual Reader & Spool Queue Verification
+    printf("[Test] Verifying VM/370 CP Virtual Reader Spool Queue...\n");
+    tsfi_cp_spool_queue spool_q;
+    tsfi_cp_spool_queue_init(&spool_q);
+    assert(spool_q.count == 0);
+    
+    assert(tsfi_cp_spool_push(&spool_q, "CARD RECORD 1") == 0);
+    assert(tsfi_cp_spool_push(&spool_q, "CARD RECORD 2") == 0);
+    assert(spool_q.count == 2);
+    
+    char card_buf[80];
+    assert(tsfi_cp_spool_pop(&spool_q, card_buf) == 0);
+    assert(strcmp(card_buf, "CARD RECORD 1") == 0);
+    assert(tsfi_cp_spool_pop(&spool_q, card_buf) == 0);
+    assert(strcmp(card_buf, "CARD RECORD 2") == 0);
+    assert(spool_q.count == 0);
+    printf("  [PASS] VM/370 card queue spool push and pop verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

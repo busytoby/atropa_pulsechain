@@ -6037,3 +6037,26 @@ int tsfi_cp_execute_command(tsfi_cp_session *sess, const char *cmd) {
     sess->last_cp_status = -1;
     return -1;
 }
+
+void tsfi_cp_spool_queue_init(tsfi_cp_spool_queue *q) {
+    if (!q) return;
+    memset(q, 0, sizeof(tsfi_cp_spool_queue));
+}
+
+int tsfi_cp_spool_push(tsfi_cp_spool_queue *q, const char *data) {
+    if (!q || !data || q->count >= MAX_SPOOL_CARDS) return -1;
+    strncpy(q->queue[q->tail].card_data, data, sizeof(q->queue[q->tail].card_data) - 1);
+    q->queue[q->tail].card_data[sizeof(q->queue[q->tail].card_data) - 1] = '\0';
+    q->tail = (q->tail + 1) % MAX_SPOOL_CARDS;
+    q->count++;
+    return 0;
+}
+
+int tsfi_cp_spool_pop(tsfi_cp_spool_queue *q, char *data_out) {
+    if (!q || !data_out || q->count <= 0) return -1;
+    strncpy(data_out, q->queue[q->head].card_data, 79);
+    data_out[79] = '\0';
+    q->head = (q->head + 1) % MAX_SPOOL_CARDS;
+    q->count--;
+    return 0;
+}
