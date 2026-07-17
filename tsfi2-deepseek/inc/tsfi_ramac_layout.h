@@ -921,4 +921,14 @@ double tsfi_algol_math_sqrt(double x);
 // Formatted I/O Template Engine
 int tsfi_algol_format_output(const char *format, double val, char *buf_out, int max_len);
 
+// FORTRAN-like COMMON Block Broker for ALGOL/COBOL
+typedef struct {
+    char block_name[32];
+    int size;
+    int data[64];
+} tsfi_algol_common_block;
+
+int tsfi_algol_common_write(tsfi_algol_common_block *block, int offset, int val);
+int tsfi_algol_common_read(const tsfi_algol_common_block *block, int offset);
+
 #endif // TSFI_RAMAC_LAYOUT_H

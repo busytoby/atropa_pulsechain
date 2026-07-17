@@ -455,6 +455,18 @@ int main(void) {
     assert(strcmp(fmt_buf, "$05.67") == 0);
     printf("  [PASS] Output format templates verified.\n");
 
+    // 26. FORTRAN-like COMMON Block Broker Verification
+    printf("[Test] Verifying COMMON block shared storage...\n");
+    tsfi_algol_common_block common;
+    strcpy(common.block_name, "STRAT_SHARE");
+    common.size = 64;
+    memset(common.data, 0, sizeof(common.data));
+    
+    int write_res = tsfi_algol_common_write(&common, 5, 999);
+    assert(write_res == 0);
+    assert(tsfi_algol_common_read(&common, 5) == 999);
+    printf("  [PASS] COMMON block shared storage verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

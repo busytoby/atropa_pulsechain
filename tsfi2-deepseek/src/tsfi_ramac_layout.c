@@ -4111,3 +4111,14 @@ int tsfi_algol_format_output(const char *format, double val, char *buf_out, int 
     
     return snprintf(buf_out, max_len, "%f", val);
 }
+
+int tsfi_algol_common_write(tsfi_algol_common_block *block, int offset, int val) {
+    if (!block || offset < 0 || offset >= 64) return -1;
+    block->data[offset] = val;
+    return 0;
+}
+
+int tsfi_algol_common_read(const tsfi_algol_common_block *block, int offset) {
+    if (!block || offset < 0 || offset >= 64) return 0;
+    return block->data[offset];
+}
