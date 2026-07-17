@@ -375,19 +375,19 @@ int tsfi_strategy_vm_execute_bytecode(TSFiStrategyVM *vm, TSFiPriorityQueue *pq,
 int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int max_len, int *len_out) {
     if (!script || !bytecode_out || !len_out || max_len <= 0) return -1;
 
-    char script_copy[512];
-    strncpy(script_copy, script, 511);
-    script_copy[511] = '\0';
+    char script_copy[2048];
+    strncpy(script_copy, script, 2047);
+    script_copy[2047] = '\0';
 
     // Delimiters include whitespace, periods, parens, braces, commas, quotes, and semicolons
     const char *delims = " ;(),{}\"\n\r\t.";
     
     // Store tokens in an array for multi-token lookahead parsing
-    char *tokens[128];
+    char *tokens[256];
     int token_count = 0;
     
     char *tok = strtok(script_copy, delims);
-    while (tok && token_count < 128) {
+    while (tok && token_count < 256) {
         tokens[token_count++] = tok;
         tok = strtok(NULL, delims);
     }
