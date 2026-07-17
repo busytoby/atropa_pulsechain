@@ -2737,6 +2737,21 @@ int main(void) {
     assert(tsfi_afips_evaluate_certification(&grades) == -2);
     printf("  [PASS] AFIPS workload metrics and examiner certifications verified.\n");
 
+    // 217. Ameritech CUA Terminal Dashboard Node Transfer Verification
+    printf("[Test] Verifying Ameritech CUA Terminal Dashboard...\n");
+    tsfi_cua_terminal cua_term;
+    tsfi_cua_terminal_init(&cua_term);
+    assert(tsfi_cua_terminal_add_node(&cua_term, "HUB_CHICAGO", 5, 10) == 0);
+    assert(tsfi_cua_terminal_add_node(&cua_term, "NODE_DETROIT", 10, 10) == 0);
+    assert(tsfi_cua_terminal_set_transfer(&cua_term, "HUB_CHICAGO", 1) == 0);
+    assert(tsfi_cua_terminal_set_transfer(&cua_term, "NODE_DETROIT", 2) == 0);
+
+    char screen[2500];
+    assert(tsfi_cua_terminal_render(&cua_term, screen, sizeof(screen)) == 0);
+    assert(strstr(screen, "HUB_CHICAGO [RED_TRANSFER]") != NULL);
+    assert(strstr(screen, "NODE_DETROIT [BUSY_SIGNAL]") != NULL);
+    printf("  [PASS] Ameritech CUA Terminal layout rendering verified.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
     trie_root_mq = NULL;

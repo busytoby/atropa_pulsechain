@@ -1460,4 +1460,23 @@ int tsfi_appc_consensus_commit(tsfi_appc_conversation *conv, int consensus_succe
 int tsfi_appc_lockstep_abort_check(tsfi_appc_conversation *conv, const tsfi_lockstep_cpu *cpu);
 int tsfi_appc_audit_transaction(tsfi_appc_conversation *conv, const tsfi_dictionary_constraint *constraints, size_t count, int column_id, int val);
 
+// Ameritech Common User Access (CUA) Terminal Monitor
+typedef struct {
+    char name[16];
+    int state; // 0=IDLE (black block), 1=TRANSFER (red block), 2=BUSY (Ameritech busy status)
+    int row;
+    int col;
+} tsfi_cua_node;
+
+typedef struct {
+    tsfi_cua_node nodes[16];
+    int node_count;
+    int active_transfers;
+} tsfi_cua_terminal;
+
+void tsfi_cua_terminal_init(tsfi_cua_terminal *term);
+int tsfi_cua_terminal_add_node(tsfi_cua_terminal *term, const char *name, int row, int col);
+int tsfi_cua_terminal_set_transfer(tsfi_cua_terminal *term, const char *node_name, int state);
+int tsfi_cua_terminal_render(const tsfi_cua_terminal *term, char *screen_buf, size_t max_len);
+
 #endif // TSFI_MAINFRAME_DECNET_H

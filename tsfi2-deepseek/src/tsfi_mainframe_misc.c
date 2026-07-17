@@ -1028,6 +1028,96 @@ int tsfi_appc_audit_transaction(tsfi_appc_conversation *conv, const tsfi_diction
         conv->state = 3;
         return res;
     }
+    return tsfi_audit_constraint(constraints, count, column_id, val);
+}
+
+void tsfi_cua_terminal_init(tsfi_cua_terminal *term) {
+    if (!term) return;
+    term->node_count = 0;
+    term->active_transfers = 0;
+    memset(term->nodes, 0, sizeof(term->nodes));
+}
+
+int tsfi_cua_terminal_add_node(tsfi_cua_terminal *term, const char *name, int row, int col) {
+    if (!term || !name || term->node_count >= 16) return -1;
+    strncpy(term->nodes[term->node_count].name, name, 15);
+    term->nodes[term->node_count].name[15] = '\0';
+    term->nodes[term->node_count].state = 0; // IDLE
+    term->nodes[term->node_count].row = row;
+    term->nodes[term->node_count].col = col;
+    term->node_count++;
+    return 0;
+}
+
+int tsfi_cua_terminal_set_transfer(tsfi_cua_terminal *term, const char *node_name, int state) {
+    if (!term || !node_name) return -1;
+    for (int i = 0; i < term->node_count; i++) {
+        if (strcmp(term->nodes[i].name, node_name) == 0) {
+            term->nodes[i].state = state;
+            if (state == 1) {
+                term->active_transfers++;
+            }
+            return 0;
+        }
+    }
+    return -2;
+}
+
+int tsfi_cua_terminal_render(const tsfi_cua_terminal *term, char *screen_buf, size_t max_len) {
+    if (!term || !screen_buf || max_len < 2000) return -1;
+
+    char grid[24][80];
+    memset(grid, ' ', sizeof(grid));
+
+    // Draw CUA window borders
+    for (int c = 0; c < 80; c++) {
+        grid[0][c] = '=';
+        grid[2][c] = '-';
+        grid[22][c] = '-';
+        grid[23][c] = '=';
+    }
+
+    // Titles and Headers
+    const char *title = " AMERITECH CUA NODE MONITOR - S/370 NETWORK STATUS ";
+    size_t title_len = strlen(title);
+    memcpy(&grid[0][(80 - title_len) / 2], title, title_len);
+
+    const char *action_bar = " F1=Help   F3=Exit   F5=Refresh   F9=Transfer ";
+    memcpy(&grid[1][2], action_bar, strlen(action_bar));
+
+    // Render nodes onto the grid
+    for (int i = 0; i < term->node_count; i++) {
+        const tsfi_cua_node *n = &term->nodes[i];
+        if (n->row >= 3 && n->row < 22 && n->col >= 0 && n->col < 70) {
+            // Write name
+            size_t name_len = strlen(n->name);
+            memcpy(&grid[n->row][n->col], n->name, name_len);
+            
+            // Draw state block next to the name
+            int block_col = n->col + (int)name_len + 1;
+            if (n->state == 1) {
+                // RED TRANSFER block
+                memcpy(&grid[n->row][block_col], "[RED_TRANSFER]", 14);
+            } else if (n->state == 2) {
+                // AMERITECH BUSY block
+                memcpy(&grid[n->row][block_col], "[BUSY_SIGNAL]", 13);
+            } else {
+                // IDLE BLACK block
+                memcpy(&grid[n->row][block_col], "[BLACK_NODE]", 12);
+            }
+        }
+    }
+
+    // Convert grid to flat buffer
+    char *p = screen_buf;
+    for (int r = 0; r < 24; r++) {
+        memcpy(p, grid[r], 80);
+        p += 80;
+        *p = '\n';
+        p++;
+    }
+    *p = '\0';
+
     return 0;
 }
 
