@@ -1185,6 +1185,16 @@ int main(void) {
     
     printf("  [PASS] Vin McLellan's systems (S.240, CPA, Apollo Frame) verified.\n");
 
+    // 68. Apollo Synthesizer Bird Call Sweep Verification
+    printf("[Test] Verifying Apollo Synthesizer Bird Call Sweep Control...\n");
+    float frequency_sweep[100];
+    size_t sweep_points = 0;
+    assert(tsfi_apollo_control_synth_bird_call(&tx_frame, frequency_sweep, &sweep_points) == 0);
+    assert(sweep_points == 100);
+    assert(frequency_sweep[0] == 2010.0f); // 2000.0 + (1 * 10.0)
+    assert(frequency_sweep[99] == 6040.0f); // 6000.0 + (2 * 20.0)
+    printf("  [PASS] Apollo synthesizer bird call sweep generation verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

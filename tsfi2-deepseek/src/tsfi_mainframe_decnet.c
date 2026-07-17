@@ -1914,3 +1914,16 @@ int tsfi_apollo_deserialize(const uint8_t *buf, size_t len, tsfi_apollo_frame *f
     frame_out->control_token = buf[4];
     return 0;
 }
+
+int tsfi_apollo_control_synth_bird_call(const tsfi_apollo_frame *frame, float *frequency_sweep_out, size_t *sweep_points_out) {
+    if (!frame || !frequency_sweep_out || !sweep_points_out) return -1;
+    size_t points = 100;
+    float start_freq = 2000.0f + (frame->source_node * 10.0f);
+    float end_freq = 6000.0f + (frame->dest_node * 20.0f);
+    for (size_t i = 0; i < points; i++) {
+        float t = (float)i / (float)(points - 1);
+        frequency_sweep_out[i] = start_freq + (end_freq - start_freq) * t;
+    }
+    *sweep_points_out = points;
+    return 0;
+}

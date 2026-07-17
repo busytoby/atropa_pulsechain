@@ -848,4 +848,7 @@ typedef struct {
 int tsfi_apollo_serialize(const tsfi_apollo_frame *frame, uint8_t *buf, size_t *len_out);
 int tsfi_apollo_deserialize(const uint8_t *buf, size_t len, tsfi_apollo_frame *frame_out);
 
+// Apollo synthesizer interface for bird call generation
+int tsfi_apollo_control_synth_bird_call(const tsfi_apollo_frame *frame, float *frequency_sweep_out, size_t *sweep_points_out);
+
 #endif // TSFI_MAINFRAME_DECNET_H
