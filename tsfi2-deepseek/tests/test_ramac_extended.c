@@ -848,6 +848,15 @@ int main(void) {
     int exp_res = tsfi_rmag_expand(&rmag, "SET_REG_VAL", "777", expanded_out, sizeof(expanded_out));
     assert(exp_res == 0);
     assert(strcmp(expanded_out, "SET R0 777") == 0);
+    // Test pre-registered macros
+    int exp_res2 = tsfi_rmag_expand(&rmag, "COBOL_COMPUTE", "R3", expanded_out, sizeof(expanded_out));
+    assert(exp_res2 == 0);
+    assert(strcmp(expanded_out, "COMPUTE R3 = R0 + R1") == 0);
+    
+    int exp_res3 = tsfi_rmag_expand(&rmag, "YUL_SSTORE", "0xabc", expanded_out, sizeof(expanded_out));
+    assert(exp_res3 == 0);
+    assert(strcmp(expanded_out, "sstore(0xabc, 1)") == 0);
+    
     printf("  [PASS] RMAG macro expansions verified successfully.\n");
 
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");

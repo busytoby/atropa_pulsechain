@@ -4807,6 +4807,11 @@ void tsfi_rmag_init(rmag_processor *proc) {
         proc->macros[i].macro_name[0] = '\0';
         proc->macros[i].macro_template[0] = '\0';
     }
+    // Pre-registered VM and Language macros
+    tsfi_rmag_define(proc, "COBOL_COMPUTE", "COMPUTE $1 = R0 + R1");
+    tsfi_rmag_define(proc, "ALGOL_FOR", "for i := 1 step 1 until $1 do");
+    tsfi_rmag_define(proc, "YUL_SSTORE", "sstore($1, 1)");
+    tsfi_rmag_define(proc, "JOVIAL_TAB", "TABLE $1 STATUS PACKED");
 }
 
 int tsfi_rmag_define(rmag_processor *proc, const char *name, const char *template_str) {
