@@ -167,8 +167,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 212 | CICS System Queued Tasks Inquirer | PASS | Checks count of pending scheduler tasks | Volume 33 |
 | 213 | Majordomo Config Comments Stripper | PASS | Removes comment lines starting with comments marker | Volume 33 |
 | 214 | CICS Transaction Class Capacity Inquirer | PASS | Checks execution limits on transaction classes | Volume 33 |
+| 215 | Majordomo Moderation Checker | PASS | Verification utility checking list moderation settings | Volume 33 |
+| 216 | CICS Transaction Class Active Tasks Inquirer | PASS | Checks count of active tasks for transaction class | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 214 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 216 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

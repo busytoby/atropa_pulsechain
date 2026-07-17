@@ -1165,6 +1165,22 @@ int main(void) {
     assert(class_limit_val == 15);
     printf("  [PASS] CICS INQUIRE SYSTEM TRANCLASS verified.\n");
 
+    // 105. Verify Majordomo List Config Moderation State Checker
+    printf("[TEST] Validating Majordomo Moderation Checker...\n");
+    int config_moderated = -1;
+    int is_mod_res = tsfi_mf_majordomo_is_moderated(stripped_cfg_buf, &config_moderated);
+    assert(is_mod_res == 0);
+    assert(config_moderated == 1);
+    printf("  [PASS] Majordomo Moderation Checker verified.\n");
+
+    // 106. Verify CICS System Inquire Transaction Class Active Tasks Count Emulator
+    printf("[TEST] Validating CICS INQUIRE SYSTEM TRANCLASS ACTTASKS...\n");
+    int class_acttasks_val = 0;
+    int inq_cls_act_res = tsfi_mf_cics_inquire_tranclass_acttasks("FASTTRAN", 3, &class_acttasks_val);
+    assert(inq_cls_act_res == 0);
+    assert(class_acttasks_val == 3);
+    printf("  [PASS] CICS INQUIRE SYSTEM TRANCLASS ACTTASKS verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

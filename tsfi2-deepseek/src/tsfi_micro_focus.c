@@ -1807,3 +1807,23 @@ int tsfi_mf_cics_inquire_tranclass(const char *class_name, int class_limit_regis
     *class_limit_out = class_limit_registry;
     return 0;
 }
+
+int tsfi_mf_majordomo_is_moderated(const char *config, int *is_mod) {
+    if (!config || !is_mod) return -1;
+
+    *is_mod = 0;
+    char val[64];
+    int get_res = tsfi_mf_majordomo_get_config("moderate", config, val, sizeof(val));
+    if (get_res == 0 && strcmp(val, "yes") == 0) {
+        *is_mod = 1;
+    }
+    return 0;
+}
+
+int tsfi_mf_cics_inquire_tranclass_acttasks(const char *class_name, int acttasks_registry, int *acttasks_out) {
+    (void)class_name;
+    if (!acttasks_out) return -1;
+
+    *acttasks_out = acttasks_registry;
+    return 0;
+}
