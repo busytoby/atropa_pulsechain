@@ -86,3 +86,8 @@ int tsfi_winchester_bridge_send_packet(TSFiWinchesterBridge *bridge, const TSFiW
     tsfi_winchester_bridge_handshake(bridge);
     return 0;
 }
+
+void tsfi_winchester_bridge_map_dbtg_exception(TSFiWinchesterBridge *bridge, int db_status) {
+    if (!bridge) return;
+    bridge->registers.status_reg = (bridge->registers.status_reg & 0x0000FFFF) | ((uint32_t)db_status << 16);
+}

@@ -1416,6 +1416,38 @@ int main(void) {
     assert(dml_track.disconnect_count == 1);
     printf("  [PASS] DBTG DML verb call volume metrics tracking verified.\n");
 
+    // 81. ZMM VM Strategy DBTG integration Verification
+    printf("[Test] Verifying ZMM VM Strategy DBTG integration...\n");
+    TSFiStrategyVM strat_vm;
+    tsfi_strategy_vm_init(&strat_vm);
+    
+    tsfi_dbtg_currency int_cur;
+    tsfi_dbtg_currency_init(&int_cur);
+    int_cur.current_run_unit = 2048;
+    
+    tsfi_dbtg_realm_registry int_realm;
+    tsfi_dbtg_realm_init(&int_realm);
+    tsfi_dbtg_realm_register(&int_realm, "MAIN-REALM");
+    tsfi_dbtg_realm_open(&int_realm, "MAIN-REALM", DBTG_LOCK_EXCLUSIVE_UPDATE);
+    
+    tsfi_strategy_vm_bind_dbtg(&strat_vm, &int_cur, &int_realm);
+    assert(strat_vm.registers[0] == 2048);
+    assert(strat_vm.registers[1] == DBTG_LOCK_EXCLUSIVE_UPDATE);
+    printf("  [PASS] DBTG currency and locks bound to Strategy registers verified.\n");
+
+    // 82. WinchesterMQ DBTG Exception Register Mapping Verification
+    printf("[Test] Verifying WinchesterMQ hardware mapping for DBTG exceptions...\n");
+    TSFiSynthPerfEngine *perf_engine_exc = tsfi_synth_perf_create(dat_mq, trie_root_mq);
+    TSFiWinchesterBridge *bridge_exc = tsfi_winchester_bridge_create(perf_engine_exc);
+    assert(bridge_exc != NULL);
+    
+    tsfi_winchester_bridge_map_dbtg_exception(bridge_exc, DB_STATUS_LOCK_VIOLATION);
+    assert((bridge_exc->registers.status_reg >> 16) == DB_STATUS_LOCK_VIOLATION);
+    
+    tsfi_winchester_bridge_destroy(bridge_exc);
+    tsfi_synth_perf_destroy(perf_engine_exc);
+    printf("  [PASS] WinchesterMQ hardware register mapping for DBTG exceptions verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

@@ -31,5 +31,6 @@ typedef struct {
 } TSFiStrategyTelemetry;
 
 void tsfi_strategy_vm_broadcast(TSFiStrategyVM *vm, TSFiPriorityQueue *pq, TSFiStrategyTelemetry *telemetry);
+void tsfi_strategy_vm_bind_dbtg(TSFiStrategyVM *vm, const void *cur, const void *realm_reg);
 
 #endif // TSFI_STRATEGY_LANG_H

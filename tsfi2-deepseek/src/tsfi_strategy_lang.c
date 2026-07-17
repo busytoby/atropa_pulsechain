@@ -3,6 +3,7 @@
 #include <string.h>
 #include "tsfi_strategy_lang.h"
 #include "tsfi_anvil_vm.h"
+#include "tsfi_ramac_layout.h"
 
 void tsfi_strategy_vm_init(TSFiStrategyVM *vm) {
     if (!vm) return;
@@ -1141,4 +1142,18 @@ void tsfi_strategy_vm_broadcast(TSFiStrategyVM *vm, TSFiPriorityQueue *pq, TSFiS
         telemetry->registers[i] = vm->registers[i];
     }
     telemetry->queue_size = pq ? pq->size : 0;
+}
+
+void tsfi_strategy_vm_bind_dbtg(TSFiStrategyVM *vm, const void *cur, const void *realm_reg) {
+    if (!vm) return;
+    if (cur) {
+        const tsfi_dbtg_currency *dbtg_cur = (const tsfi_dbtg_currency*)cur;
+        vm->registers[0] = dbtg_cur->current_run_unit;
+    }
+    if (realm_reg) {
+        const tsfi_dbtg_realm_registry *d_reg = (const tsfi_dbtg_realm_registry*)realm_reg;
+        if (d_reg->area_count > 0) {
+            vm->registers[1] = d_reg->areas[0].lock_mode;
+        }
+    }
 }
