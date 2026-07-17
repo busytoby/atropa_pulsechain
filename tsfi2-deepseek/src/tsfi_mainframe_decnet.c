@@ -3063,3 +3063,13 @@ int tsfi_appc_coax_bridge_coordinate(tsfi_appc_conversation *conv, tsfi_scsi_tra
     }
     return res;
 }
+
+int tsfi_appc_consensus_commit(tsfi_appc_conversation *conv, int consensus_success) {
+    if (!conv) return -1;
+    if (consensus_success) {
+        conv->state = 3; // DEALLOCATED
+    } else {
+        conv->state = 0; // ALLOCATED
+    }
+    return 0;
+}

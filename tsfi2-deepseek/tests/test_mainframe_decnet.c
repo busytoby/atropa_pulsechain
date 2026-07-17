@@ -2307,6 +2307,21 @@ int main(void) {
     assert(appc_conv.state == 1); // SEND state transition
     assert(broker_frame.payload[0] == (0x77 ^ 0xFF));
     printf("  [PASS] APPC-Coaxial coordination broker verified.\n");
+    
+    // 114. APPC Consensus Commit state changes verification
+    printf("[Test] Verifying APPC Consensus state transitions...\n");
+    tsfi_appc_conversation commit_conv;
+    commit_conv.conversation_id = 9991;
+    commit_conv.state = 1; // SEND
+    
+    // Failed consensus -> Rollback to ALLOCATED state (0)
+    assert(tsfi_appc_consensus_commit(&commit_conv, 0) == 0);
+    assert(commit_conv.state == 0);
+    
+    // Successful consensus -> Deallocate conversation (3)
+    assert(tsfi_appc_consensus_commit(&commit_conv, 1) == 0);
+    assert(commit_conv.state == 3);
+    printf("  [PASS] APPC transaction consensus state machine verified.\n");
 
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
