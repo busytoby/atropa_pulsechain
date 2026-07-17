@@ -1,0 +1,20 @@
+# COBOL Item Ledger Strategy Example
+# Controls execution priority scales and limits for sequential record I/O loops.
+
+DATA DIVISION.
+01 ITEM-ID      PIC 9 USAGE R0.
+01 ITEM-BALANCE PIC 9 USAGE R1.
+01 THRESHOLD    PIC 9 USAGE R2.
+
+PROCEDURE DIVISION.
+    MOVE 100 TO ITEM-BALANCE.
+    MOVE 50 TO THRESHOLD.
+    
+    IF ITEM-BALANCE > THRESHOLD
+        SET depth 5.
+    ELSE
+        SET depth 2.
+    END-IF.
+    
+    # Evaluate priority adjustments
+    EVAL.
