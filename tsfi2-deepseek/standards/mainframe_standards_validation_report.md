@@ -89,5 +89,7 @@
 | 155 | CICS Task Suspend Emulator | PASS | Cooperative task scheduler suspend log | Volume 33 |
 | 156 | Majordomo Confirmation Cookie Builder | PASS | Cryptographic subscription request token | Volume 33 |
 | 157 | CICS Query Command Security | PASS | Transaction resource access authorization | Volume 33 |
+| 158 | Majordomo List Unsubscriber | PASS | Subscriber address removal handler | Volume 33 |
+| 159 | CICS Storage Control FREEMAIN | PASS | Dynamic memory block release emulator | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 157 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 159 Scenarios validated successfully)

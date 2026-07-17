@@ -1133,3 +1133,26 @@ int tsfi_mf_cics_query_security(const char *user_id, const char *resource_name, 
     }
     return 0;
 }
+
+int tsfi_mf_majordomo_unsubscribe(const char *list_name, const char *email, const char **members, int *member_count) {
+    if (!list_name || !email || !members || !member_count || *member_count < 0) return -1;
+
+    for (int i = 0; i < *member_count; i++) {
+        if (members[i] && strcmp(members[i], email) == 0) {
+            for (int j = i; j < *member_count - 1; j++) {
+                members[j] = members[j + 1];
+            }
+            *member_count -= 1;
+            return 0;
+        }
+    }
+
+    return -2;
+}
+
+int tsfi_mf_cics_freemain(uint32_t offset, uint32_t length, uint8_t *storage_pool) {
+    if (!storage_pool || length == 0) return -1;
+
+    memset(storage_pool + offset, 0, length);
+    return 0;
+}

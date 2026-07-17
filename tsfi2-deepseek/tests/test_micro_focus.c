@@ -640,6 +640,28 @@ int main(void) {
     assert(auth_status == -2);
     printf("  [PASS] CICS Command Security verified.\n");
 
+    // 48. Verify Majordomo List Unsubscriber
+    printf("[TEST] Validating Majordomo Unsubscriber...\n");
+    const char *list_membs[4] = {"user1@dysnomia.org", "user2@dysnomia.org", "user3@dysnomia.org"};
+    int list_membs_count = 3;
+    int unsub_res = tsfi_mf_majordomo_unsubscribe("zmm-dev", "user2@dysnomia.org", list_membs, &list_membs_count);
+    assert(unsub_res == 0);
+    assert(list_membs_count == 2);
+    assert(strcmp(list_membs[1], "user3@dysnomia.org") == 0);
+    printf("  [PASS] Majordomo Unsubscriber verified.\n");
+
+    // 49. Verify CICS Storage Release Emulator (FREEMAIN)
+    printf("[TEST] Validating CICS FREEMAIN...\n");
+    uint8_t mock_pool[128];
+    memset(mock_pool, 0xBB, sizeof(mock_pool));
+    int free_res = tsfi_mf_cics_freemain(16, 32, mock_pool);
+    assert(free_res == 0);
+    assert(mock_pool[15] == 0xBB);
+    assert(mock_pool[16] == 0x00);
+    assert(mock_pool[47] == 0x00);
+    assert(mock_pool[48] == 0xBB);
+    printf("  [PASS] CICS FREEMAIN verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

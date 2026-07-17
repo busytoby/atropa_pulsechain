@@ -53,6 +53,7 @@ int tsfi_mf_majordomo_help(char *help_out, int max_len);
 int tsfi_mf_majordomo_lists(char *lists_out, int max_len);
 int tsfi_mf_majordomo_intro(const char *list_name, char *intro_out, int max_len);
 int tsfi_mf_majordomo_parse_config(const char *config_content, const char *key, char *val_out, int max_len);
+int tsfi_mf_majordomo_unsubscribe(const char *list_name, const char *email, const char **members, int *member_count);
 int tsfi_mf_majordomo_gen_cookie(const char *email, const char *list_name, uint32_t salt, char *cookie_out, int max_len);
 int tsfi_mf_cics_suspend(uint32_t task_id, uint32_t *suspend_log, int *log_count, int max_log);
 int tsfi_mf_cics_query_security(const char *user_id, const char *resource_name, const char *access_type, int *auth_verdict);
@@ -73,5 +74,6 @@ const char *tsfi_mf_get_agent_handle(void);
 int tsfi_mf_cics_link(const char *program_name, const uint8_t *commarea, int commarea_len, uint8_t *storage_pool, uint32_t *allocated_offset);
 int tsfi_mf_vulkan_appc_layout(uint32_t transaction_id, uint32_t state_flags, char *terminal_buffer);
 int tsfi_mf_pmg_handle_collision(uint8_t player_id, uint8_t playfield_id, uint8_t *storage_pool, uint32_t *allocated_offset);
+int tsfi_mf_cics_freemain(uint32_t offset, uint32_t length, uint8_t *storage_pool);
 
 #endif // TSFI_MICRO_FOCUS_H
