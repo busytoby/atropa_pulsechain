@@ -1,5 +1,7 @@
 #include "tsfi_micro_focus.h"
 #include "tsfi_ramac_layout.h"
+#include "tsfi_strategy_lang.h"
+#include "tsfi_priority_queue.h"
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
@@ -229,6 +231,32 @@ int main(void) {
     assert(next_dsa[1] == (uint32_t)(uintptr_t)current_dsa);
     assert(current_dsa[2] == (uint32_t)(uintptr_t)next_dsa);
     printf("  [PASS] Wessler DSA Linker save area forward/backward chains verified.\n");
+
+    // 10. Verify Domain Strategy Execution
+    printf("[TEST] Validating Domain Strategy Execution...\n");
+    FILE *f_strat = fopen("tests/test_micro_focus.strategy", "r");
+    if (!f_strat) {
+        f_strat = fopen("tsfi2-deepseek/tests/test_micro_focus.strategy", "r");
+    }
+    assert(f_strat != NULL);
+    char strat_script[1024] = {0};
+    size_t read_bytes = fread(strat_script, 1, sizeof(strat_script) - 1, f_strat);
+    (void)read_bytes;
+    fclose(f_strat);
+
+    TSFiStrategyVM strat_vm;
+    tsfi_strategy_vm_init(&strat_vm);
+    TSFiPriorityQueue strat_pq;
+    tsfi_priority_queue_init(&strat_pq);
+
+    tsfi_priority_queue_push(&strat_pq, 5, 30, "AUNC_NODE_A");
+    tsfi_priority_queue_push(&strat_pq, 15, 32, "AUNC_NODE_B");
+
+    int strat_res = tsfi_strategy_vm_execute(&strat_vm, &strat_pq, strat_script, NULL);
+    assert(strat_res == 0);
+    assert(strat_vm.depth_priority_scale == 5);
+    assert(strat_vm.abductive_priority_scale == 10);
+    printf("  [PASS] Domain .strategy script parsed and executed successfully.\n");
 
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;

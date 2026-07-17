@@ -1,0 +1,6 @@
+SET depth 5;
+SET abductive 10;
+WEIGHT 30 2;
+WEIGHT 32 8;
+EVAL;
+PRUNE 50;
