@@ -116,9 +116,47 @@ int main(void) {
     // Tick for 0.01 seconds -> decrements by 192 (new value will be negative)
     tsfi_s370_tick_interval_timer(&cpu, real_memory, 1024, 0.01);
     assert(g_dat_stats.timer_interrupt_pending == 1);
-    // Instruction address must swap to external handler
     assert(cpu.current_psw.instruction_address == 0x5555);
 
-    printf("[SUCCESS] All 31-bit DAT Extensions & CPU security verification validated successfully!\n");
+    // --- 256-bit Dynamic Address Translation (DAT) validation ---
+    printf("[TEST] Validating 256-bit Dynamic Address Translation (DAT)...\n");
+
+    tsfi_s370_segment_entry_256 seg_table_256[2];
+    memset(seg_table_256, 0, sizeof(seg_table_256));
+    seg_table_256[0].page_table_origin = 0;
+    seg_table_256[0].invalid = 0;
+    seg_table_256[1].invalid = 1;
+
+    tsfi_s370_page_entry_256 page_table_256[2];
+    memset(page_table_256, 0, sizeof(page_table_256));
+    
+    // Set real page frame to 0xAA00BB00CC00DD00
+    page_table_256[0].real_page_frame.parts[3] = 0xAA00;
+    page_table_256[0].real_page_frame.parts[2] = 0xBB00;
+    page_table_256[0].real_page_frame.parts[1] = 0xCC00;
+    page_table_256[0].real_page_frame.parts[0] = 0xDD000000ULL;
+    page_table_256[0].invalid = 0;
+    page_table_256[0].write_protect = 1;
+
+    // Set virtual address: Segment Index = 0 (parts 2 & 3), Page Index = 0 (part 1), Offset = 0xFFULL (part 0)
+    tsfi_s370_addr_256 virt_addr_256;
+    virt_addr_256.parts[3] = 0x00;
+    virt_addr_256.parts[2] = 0x00;
+    virt_addr_256.parts[1] = 0;
+    virt_addr_256.parts[0] = 0xFFULL;
+
+    tsfi_s370_addr_256 phys_addr_256;
+    int wp_256 = 0;
+
+    int ret_256 = tsfi_s370_dat_translate_256(&virt_addr_256, seg_table_256, 2, page_table_256, &phys_addr_256, &wp_256);
+    assert(ret_256 == 0);
+    assert(phys_addr_256.parts[3] == 0xAA00);
+    assert(phys_addr_256.parts[2] == 0xBB00);
+    assert(phys_addr_256.parts[1] == 0xCC00);
+    assert(phys_addr_256.parts[0] == 0xDD0000FFULL);
+    assert(wp_256 == 1);
+    assert(g_dat_stats.translation_256_count == 1);
+
+    printf("[SUCCESS] All 31-bit DAT Extensions, CPU security, and 256-bit DAT validated successfully!\n");
     return 0;
 }

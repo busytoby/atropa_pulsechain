@@ -201,3 +201,36 @@ void tsfi_s370_tick_interval_timer(tsfi_s370_cpu_state *cpu, uint8_t *real_memor
         cpu->supervisor_state = !new_problem_state;
     }
 }
+
+// 256-bit Dynamic Address Translation (DAT)
+int tsfi_s370_dat_translate_256(const tsfi_s370_addr_256 *virtual_addr,
+                                 const tsfi_s370_segment_entry_256 *seg_table, int seg_count,
+                                 const tsfi_s370_page_entry_256 *page_tables,
+                                 tsfi_s370_addr_256 *out_physical_addr, int *out_write_protected) {
+    if (!virtual_addr || !seg_table || !page_tables || !out_physical_addr || !out_write_protected) return -1;
+
+    // Hashing high parts for Segment Index
+    uint64_t sx_hash = virtual_addr->parts[2] ^ virtual_addr->parts[3];
+    int sx = (int)(sx_hash % (uint64_t)seg_count);
+
+    if (seg_table[sx].invalid) {
+        return -1;
+    }
+
+    uint64_t px = virtual_addr->parts[1];
+    uint64_t pte_idx = seg_table[sx].page_table_origin + px;
+
+    if (page_tables[pte_idx].invalid) {
+        return -2;
+    }
+
+    out_physical_addr->parts[3] = page_tables[pte_idx].real_page_frame.parts[3];
+    out_physical_addr->parts[2] = page_tables[pte_idx].real_page_frame.parts[2];
+    out_physical_addr->parts[1] = page_tables[pte_idx].real_page_frame.parts[1];
+    out_physical_addr->parts[0] = page_tables[pte_idx].real_page_frame.parts[0] + virtual_addr->parts[0];
+
+    *out_write_protected = page_tables[pte_idx].write_protect;
+    g_dat_stats.translation_256_count++;
+
+    return 0;
+}

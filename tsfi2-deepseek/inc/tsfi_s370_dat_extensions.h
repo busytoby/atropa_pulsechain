@@ -4,6 +4,24 @@
 #include "tsfi_ramac_layout.h"
 #include <stdint.h>
 
+// 256-bit Virtual/Real Address representation
+typedef struct {
+    uint64_t parts[4]; // [0]=BX, [1]=PX, [2]=SX_low, [3]=SX_high
+} tsfi_s370_addr_256;
+
+// 256-bit Segment Table Entry
+typedef struct {
+    uint64_t page_table_origin;
+    int invalid;
+} tsfi_s370_segment_entry_256;
+
+// 256-bit Page Table Entry
+typedef struct {
+    tsfi_s370_addr_256 real_page_frame;
+    int invalid;
+    int write_protect;
+} tsfi_s370_page_entry_256;
+
 // Extended 31-bit address translation stats
 typedef struct {
     uint64_t tlb_hits;
@@ -16,6 +34,7 @@ typedef struct {
     uint64_t key_violations;
     uint64_t ccw_violations;
     int timer_interrupt_pending;
+    uint64_t translation_256_count;
 } tsfi_s370_dat_stats;
 
 extern tsfi_s370_dat_stats g_dat_stats;
@@ -42,5 +61,11 @@ int tsfi_s370_check_storage_key_audit(uint8_t psw_key, uint32_t real_addr, int i
                                       tsfi_s370_storage_key *block_keys, int block_count);
 
 void tsfi_s370_tick_interval_timer(tsfi_s370_cpu_state *cpu, uint8_t *real_memory, int mem_size, double elapsed_seconds);
+
+// 256-bit Dynamic Address Translation (DAT)
+int tsfi_s370_dat_translate_256(const tsfi_s370_addr_256 *virtual_addr,
+                                 const tsfi_s370_segment_entry_256 *seg_table, int seg_count,
+                                 const tsfi_s370_page_entry_256 *page_tables,
+                                 tsfi_s370_addr_256 *out_physical_addr, int *out_write_protected);
 
 #endif // TSFI_S370_DAT_EXTENSIONS_H
