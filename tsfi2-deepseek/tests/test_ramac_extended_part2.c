@@ -1814,6 +1814,34 @@ int main(void) {
     assert(tsfi_fips41_authorize("Auditor", "audit") == 0);
     printf("  [PASS] FIPS 41 role-based dataset access authorizations verified.\n");
 
+    // Integration Test: FIPS Compliant Coaxial Transfer
+    printf("[Test] Verifying FIPS compliant coaxial transfer integration...\n");
+    const char *payload = "FIPSCOAX";
+    uint8_t ebcdic_stream[8];
+    uint16_t serial_stream[8];
+    uint8_t recovered_ebcdic[8];
+    char recovered_ascii[9];
+    
+    // 1. FIPS 1-1 Translate ASCII payload to EBCDIC
+    assert(tsfi_fips1_ascii_to_ebcdic(payload, ebcdic_stream, 8) == 0);
+    
+    // 2. FIPS 16-1 Serialize with LSB-first even parity checks
+    for (int i = 0; i < 8; i++) {
+        assert(tsfi_fips16_serialize(ebcdic_stream[i], 1, &serial_stream[i]) == 0);
+    }
+    
+    // 3. FIPS 16-1 Deserialize and verify parity at receiver end
+    for (int i = 0; i < 8; i++) {
+        assert(tsfi_fips16_deserialize(serial_stream[i], 1, &recovered_ebcdic[i]) == 0);
+    }
+    
+    // 4. FIPS 1-1 Translate EBCDIC back to ASCII
+    assert(tsfi_fips1_ebcdic_to_ascii(recovered_ebcdic, recovered_ascii, 8) == 0);
+    recovered_ascii[8] = '\0';
+    
+    assert(strcmp(recovered_ascii, payload) == 0);
+    printf("  [PASS] FIPS compliant coaxial transfer integration successful.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 
