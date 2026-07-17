@@ -1466,6 +1466,34 @@ int main(void) {
     assert(index_cost == 51.0f);
     printf("  [PASS] Gibson Mix, CAD vector pipeline, and relational query optimizer verified.\n");
 
+    // 79. EFT Regulatory Auditing & DP Professional Registry Verification
+    printf("[Test] Verifying EFT Auditing & DP Professional Registry...\n");
+    tsfi_eft_transaction eft_tx;
+    eft_tx.transaction_id = 9001;
+    eft_tx.amount = 12500.0f;
+    eft_tx.auth_flags = 0x03; // Compliance & KYC set
+    eft_tx.latency_ms = 45.5f;
+    
+    assert(tsfi_eft_audit_transaction(&eft_tx, 50.0f) == 0);
+    eft_tx.latency_ms = 60.0f;
+    assert(tsfi_eft_audit_transaction(&eft_tx, 50.0f) == -2); // Latency failure
+    
+    eft_tx.latency_ms = 45.5f;
+    eft_tx.auth_flags = 0x01; // KYC missing
+    assert(tsfi_eft_audit_transaction(&eft_tx, 50.0f) == -2); // Auth failure
+    
+    // DP Registry
+    tsfi_dp_registry dp_reg;
+    tsfi_dp_registry_init(&dp_reg);
+    assert(dp_reg.count == 0);
+    assert(tsfi_dp_registry_add(&dp_reg, "Alice Smith", 8, 1, 1) == 0);
+    assert(dp_reg.count == 1);
+    assert(strcmp(dp_reg.professionals[0].employee_name, "Alice Smith") == 0);
+    assert(dp_reg.professionals[0].years_experience == 8);
+    assert(dp_reg.professionals[0].strategic_lang_proficient == 1);
+    assert(dp_reg.professionals[0].certified == 1);
+    printf("  [PASS] EFT regulatory latency checks and DP skills database verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

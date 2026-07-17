@@ -2266,3 +2266,28 @@ float tsfi_optimizer_estimate_cost(const tsfi_optimizer_input *input) {
         return (float)input->total_pages;
     }
 }
+
+int tsfi_eft_audit_transaction(const tsfi_eft_transaction *tx, float max_latency_ms) {
+    if (!tx) return -1;
+    if (tx->latency_ms <= max_latency_ms && (tx->auth_flags & 0x03) == 0x03) {
+        return 0;
+    }
+    return -2;
+}
+
+void tsfi_dp_registry_init(tsfi_dp_registry *reg) {
+    if (!reg) return;
+    reg->count = 0;
+    memset(reg->professionals, 0, sizeof(reg->professionals));
+}
+
+int tsfi_dp_registry_add(tsfi_dp_registry *reg, const char *name, int years, int lang_prof, int cert) {
+    if (!reg || !name || reg->count >= 16) return -1;
+    strncpy(reg->professionals[reg->count].employee_name, name, 31);
+    reg->professionals[reg->count].employee_name[31] = '\0';
+    reg->professionals[reg->count].years_experience = years;
+    reg->professionals[reg->count].strategic_lang_proficient = lang_prof;
+    reg->professionals[reg->count].certified = cert;
+    reg->count++;
+    return 0;
+}

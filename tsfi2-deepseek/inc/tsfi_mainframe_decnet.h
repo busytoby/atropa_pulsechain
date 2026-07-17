@@ -1038,4 +1038,30 @@ typedef struct {
 
 float tsfi_optimizer_estimate_cost(const tsfi_optimizer_input *input);
 
+// EFT Regulatory Audit
+typedef struct {
+    uint32_t transaction_id;
+    float amount;
+    int auth_flags;
+    double latency_ms;
+} tsfi_eft_transaction;
+
+int tsfi_eft_audit_transaction(const tsfi_eft_transaction *tx, float max_latency_ms);
+
+// DP Professional Skills Inventory
+typedef struct {
+    char employee_name[32];
+    int years_experience;
+    int strategic_lang_proficient;
+    int certified;
+} tsfi_dp_professional;
+
+typedef struct {
+    tsfi_dp_professional professionals[16];
+    int count;
+} tsfi_dp_registry;
+
+void tsfi_dp_registry_init(tsfi_dp_registry *reg);
+int tsfi_dp_registry_add(tsfi_dp_registry *reg, const char *name, int years, int lang_prof, int cert);
+
 #endif // TSFI_MAINFRAME_DECNET_H
