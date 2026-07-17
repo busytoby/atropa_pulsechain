@@ -71,7 +71,27 @@ int main(void) {
     assert(sif_scene.primitives[0].position.x == 2.5f);
     assert(sif_scene.primitives[0].param1 == 3.5f);
     assert(sif_scene.primitives[0].color.z == 1.0f); // Blue
-    printf("  [PASS] SIF CAD coordinate translation verified.\n");
+
+    // Load multi-primitive Teddy Bear model
+    const char *teddy_sif[] = {
+        "SIF_SPHERE X:0.0 Y:1.5 Z:8.0 R:1.5 COLOR:G",   // Head
+        "SIF_SPHERE X:0.0 Y:-0.5 Z:8.0 R:2.0 COLOR:G",  // Body
+        "SIF_SPHERE X:-1.2 Y:2.7 Z:8.0 R:0.6 COLOR:B",  // Left Ear
+        "SIF_SPHERE X:1.2 Y:2.7 Z:8.0 R:0.6 COLOR:B",   // Right Ear
+        "SIF_SPHERE X:-0.5 Y:1.8 Z:6.6 R:0.15 COLOR:B", // Left Eye
+        "SIF_SPHERE X:0.5 Y:1.8 Z:6.6 R:0.15 COLOR:B",  // Right Eye
+        "SIF_SPHERE X:0.0 Y:1.3 Z:6.5 R:0.4 COLOR:G",   // Nose
+        "SIF_SPHERE X:-1.8 Y:-0.2 Z:8.0 R:0.8 COLOR:G", // Left Arm
+        "SIF_SPHERE X:1.8 Y:-0.2 Z:8.0 R:0.8 COLOR:G",  // Right Arm
+        "SIF_SPHERE X:-1.2 Y:-2.2 Z:8.0 R:0.9 COLOR:G", // Left Leg
+        "SIF_SPHERE X:1.2 Y:-2.2 Z:8.0 R:0.9 COLOR:G"   // Right Leg
+    };
+    for (int i = 0; i < 11; i++) {
+        int res = tsfi_mf_sif_parse(teddy_sif[i], &sif_scene);
+        assert(res == 0);
+    }
+    assert(sif_scene.primitive_count == 12);
+    printf("  [PASS] SIF CAD Teddy Bear model parser verified (12 primitives).\n");
 
     // 4. Verify Screen Section Terminal Layout
     printf("[TEST] Validating Screen Section rendering...\n");
