@@ -944,3 +944,159 @@ int tsfi_zvm_vswitch_query(const tsfi_zvm_vswitch_manager *mgr, const char *name
     }
     return -1;
 }
+
+void tsfi_zvm_sipl_init(tsfi_zvm_sipl_controller *ctrl) {
+    if (!ctrl) return;
+    memset(ctrl, 0, sizeof(tsfi_zvm_sipl_controller));
+}
+
+int tsfi_zvm_sipl_register_cpu(tsfi_zvm_sipl_controller *ctrl, uint32_t cpu_id) {
+    if (!ctrl || ctrl->cpu_count >= MAX_CPUS) return -1;
+    for (int i = 0; i < ctrl->cpu_count; i++) {
+        if (ctrl->cpus[i].cpu_id == cpu_id) {
+            return -2;
+        }
+    }
+    ctrl->cpus[ctrl->cpu_count].cpu_id = cpu_id;
+    ctrl->cpus[ctrl->cpu_count].pending_interrupts = 0;
+    ctrl->cpus[ctrl->cpu_count].last_signal_code = 0;
+    ctrl->cpu_count++;
+    return 0;
+}
+
+int tsfi_zvm_sipl_send(tsfi_zvm_sipl_controller *ctrl, uint32_t source_id, uint32_t target_id, uint32_t signal_code) {
+    if (!ctrl) return -1;
+    int src_idx = -1, dst_idx = -1;
+    for (int i = 0; i < ctrl->cpu_count; i++) {
+        if (ctrl->cpus[i].cpu_id == source_id) src_idx = i;
+        if (ctrl->cpus[i].cpu_id == target_id) dst_idx = i;
+    }
+    if (src_idx == -1 || dst_idx == -1) return -1;
+    
+    ctrl->cpus[dst_idx].pending_interrupts++;
+    ctrl->cpus[dst_idx].last_signal_code = signal_code;
+    return 0;
+}
+
+int tsfi_zvm_sipl_receive(tsfi_zvm_sipl_controller *ctrl, uint32_t cpu_id, uint32_t *out_signal_code) {
+    if (!ctrl || !out_signal_code) return -1;
+    for (int i = 0; i < ctrl->cpu_count; i++) {
+        if (ctrl->cpus[i].cpu_id == cpu_id) {
+            if (ctrl->cpus[i].pending_interrupts <= 0) {
+                return -2; // No interrupts pending
+            }
+            *out_signal_code = ctrl->cpus[i].last_signal_code;
+            ctrl->cpus[i].pending_interrupts--;
+            return 0;
+        }
+    }
+    return -1;
+}
+
+void tsfi_codasyl_schema_init(tsfi_codasyl_schema *schema) {
+    if (!schema) return;
+    memset(schema, 0, sizeof(tsfi_codasyl_schema));
+}
+
+int tsfi_codasyl_schema_parse(tsfi_codasyl_schema *schema, const char *ddl_statement) {
+    if (!schema || !ddl_statement) return -1;
+    char token[32];
+    int parsed = 0;
+    
+    const char *ptr = strstr(ddl_statement, "SCHEMA NAME IS");
+    if (ptr) {
+        if (sscanf(ptr, "SCHEMA NAME IS %31s", token) == 1) {
+            int len = strlen(token);
+            if (len > 0 && token[len - 1] == '.') token[len - 1] = '\0';
+            snprintf(schema->schema_name, sizeof(schema->schema_name), "%s", token);
+            parsed = 1;
+        }
+    }
+    
+    ptr = strstr(ddl_statement, "AREA NAME IS");
+    if (ptr) {
+        if (sscanf(ptr, "AREA NAME IS %31s", token) == 1) {
+            int len = strlen(token);
+            if (len > 0 && token[len - 1] == '.') token[len - 1] = '\0';
+            snprintf(schema->area_name, sizeof(schema->area_name), "%s", token);
+            parsed = 1;
+        }
+    }
+    
+    ptr = strstr(ddl_statement, "RECORD NAME IS");
+    if (ptr) {
+        char rec_name[32];
+        int rec_len = 0;
+        if (sscanf(ptr, "RECORD NAME IS %31s LENGTH IS %d", rec_name, &rec_len) == 2) {
+            int len = strlen(rec_name);
+            if (len > 0 && rec_name[len - 1] == '.') rec_name[len - 1] = '\0';
+            if (schema->record_count < MAX_DDL_RECORDS) {
+                tsfi_codasyl_ddl_record *rec = &schema->records[schema->record_count];
+                snprintf(rec->record_name, sizeof(rec->record_name), "%s", rec_name);
+                rec->record_len = rec_len;
+                schema->record_count++;
+                parsed = 1;
+            }
+        }
+    }
+    
+    ptr = strstr(ddl_statement, "SET NAME IS");
+    if (ptr) {
+        char s_name[32], o_name[32], m_name[32];
+        if (sscanf(ptr, "SET NAME IS %31s OWNER IS %31s MEMBER IS %31s", s_name, o_name, m_name) == 3) {
+            int len = strlen(s_name);
+            if (len > 0 && s_name[len - 1] == '.') s_name[len - 1] = '\0';
+            len = strlen(o_name);
+            if (len > 0 && o_name[len - 1] == '.') o_name[len - 1] = '\0';
+            len = strlen(m_name);
+            if (len > 0 && m_name[len - 1] == '.') m_name[len - 1] = '\0';
+            
+            if (schema->set_count < MAX_DDL_SETS) {
+                tsfi_codasyl_ddl_set *set = &schema->sets[schema->set_count];
+                snprintf(set->set_name, sizeof(set->set_name), "%s", s_name);
+                snprintf(set->owner_record, sizeof(set->owner_record), "%s", o_name);
+                snprintf(set->member_record, sizeof(set->member_record), "%s", m_name);
+                schema->set_count++;
+                parsed = 1;
+            }
+        }
+    }
+    
+    return parsed ? 0 : -1;
+}
+
+int tsfi_codasyl_schema_validate(const tsfi_codasyl_schema *schema, char *out_error, int max_err_len) {
+    if (!schema || !out_error || max_err_len <= 0) return -1;
+    out_error[0] = '\0';
+    
+    if (strlen(schema->schema_name) == 0) {
+        snprintf(out_error, max_err_len, "MISSING SCHEMA NAME");
+        return -2;
+    }
+    
+    for (int i = 0; i < schema->set_count; i++) {
+        const tsfi_codasyl_ddl_set *set = &schema->sets[i];
+        
+        int owner_found = 0;
+        int member_found = 0;
+        for (int r = 0; r < schema->record_count; r++) {
+            if (strcmp(schema->records[r].record_name, set->owner_record) == 0) {
+                owner_found = 1;
+            }
+            if (strcmp(schema->records[r].record_name, set->member_record) == 0) {
+                member_found = 1;
+            }
+        }
+        
+        if (!owner_found) {
+            snprintf(out_error, max_err_len, "SET %s REFERS TO UNDEFINED OWNER %s", set->set_name, set->owner_record);
+            return -3;
+        }
+        if (!member_found) {
+            snprintf(out_error, max_err_len, "SET %s REFERS TO UNDEFINED MEMBER %s", set->set_name, set->member_record);
+            return -4;
+        }
+    }
+    
+    return 0;
+}

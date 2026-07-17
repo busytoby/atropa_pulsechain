@@ -1165,6 +1165,62 @@ int main(void) {
     assert(tsfi_zvm_vswitch_couple(&vsw_mgr, "VSWITCH2", "LINUX01", 0x0600) == -1);
     printf("  [PASS] z/VM VSwitch definition, guest coupling, and packet transmission verified.\n");
 
+    // 130. IBM 3031/3032 SIPL Controller Verification
+    printf("[Test] Verifying IBM 3031/3032 SIPL Controller...\n");
+    tsfi_zvm_sipl_controller sipl;
+    tsfi_zvm_sipl_init(&sipl);
+    
+    // Register processors
+    assert(tsfi_zvm_sipl_register_cpu(&sipl, 0) == 0);
+    assert(tsfi_zvm_sipl_register_cpu(&sipl, 1) == 0);
+    // Duplicate registration should fail
+    assert(tsfi_zvm_sipl_register_cpu(&sipl, 0) == -2);
+    
+    // Send inter-processor signal
+    assert(tsfi_zvm_sipl_send(&sipl, 0, 1, 0x000E0001) == 0);
+    
+    // Receive signal
+    uint32_t signal_code = 0;
+    assert(tsfi_zvm_sipl_receive(&sipl, 1, &signal_code) == 0);
+    assert(signal_code == 0x000E0001);
+    
+    // Double receive should fail (no interrupts pending)
+    assert(tsfi_zvm_sipl_receive(&sipl, 1, &signal_code) == -2);
+    
+    // Send to invalid processor should fail
+    assert(tsfi_zvm_sipl_send(&sipl, 0, 3, 0x000E0001) == -1);
+    printf("  [PASS] IBM 3031/3032 CPU registration and SIPL interrupt signalling verified.\n");
+
+    // 131. CODASYL DDL Schema Analyzer Verification
+    printf("[Test] Verifying CODASYL DDL Schema Analyzer...\n");
+    tsfi_codasyl_schema schema;
+    tsfi_codasyl_schema_init(&schema);
+    
+    // Parse valid blocks
+    assert(tsfi_codasyl_schema_parse(&schema, "SCHEMA NAME IS SALESDB.") == 0);
+    assert(tsfi_codasyl_schema_parse(&schema, "AREA NAME IS CORP-AREA.") == 0);
+    assert(tsfi_codasyl_schema_parse(&schema, "RECORD NAME IS CUSTREC LENGTH IS 128.") == 0);
+    assert(tsfi_codasyl_schema_parse(&schema, "RECORD NAME IS ORDERREC LENGTH IS 64.") == 0);
+    
+    // Parse valid set referring to valid records
+    assert(tsfi_codasyl_schema_parse(&schema, "SET NAME IS CUST-ORDER OWNER IS CUSTREC MEMBER IS ORDERREC.") == 0);
+    
+    char err_buf[128];
+    assert(tsfi_codasyl_schema_validate(&schema, err_buf, sizeof(err_buf)) == 0);
+    
+    // Test parsing a set with an undefined member record
+    tsfi_codasyl_schema invalid_schema;
+    tsfi_codasyl_schema_init(&invalid_schema);
+    assert(tsfi_codasyl_schema_parse(&invalid_schema, "SCHEMA NAME IS BADDB.") == 0);
+    assert(tsfi_codasyl_schema_parse(&invalid_schema, "RECORD NAME IS EMPREC LENGTH IS 80.") == 0);
+    assert(tsfi_codasyl_schema_parse(&invalid_schema, "SET NAME IS EMP-JOB OWNER IS EMPREC MEMBER IS JOBREC.") == 0);
+    
+    // Validate should detect undefined member record "JOBREC"
+    int val_res = tsfi_codasyl_schema_validate(&invalid_schema, err_buf, sizeof(err_buf));
+    assert(val_res == -4);
+    assert(strstr(err_buf, "UNDEFINED MEMBER JOBREC") != NULL);
+    printf("  [PASS] CODASYL schema parsed records, sets, and caught invalid references successfully.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 

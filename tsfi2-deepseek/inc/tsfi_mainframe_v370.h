@@ -336,4 +336,50 @@ int tsfi_zvm_vswitch_couple(tsfi_zvm_vswitch_manager *mgr, const char *name, con
 int tsfi_zvm_vswitch_transmit(tsfi_zvm_vswitch_manager *mgr, const char *name, int packets);
 int tsfi_zvm_vswitch_query(const tsfi_zvm_vswitch_manager *mgr, const char *name, int *out_ports, int *out_packets);
 
+// Scenario 130: IBM 3031/3032 SIPL Controller
+#define MAX_CPUS 4
+typedef struct {
+    uint32_t cpu_id;
+    int pending_interrupts;
+    uint32_t last_signal_code;
+} tsfi_zvm_cpu_state;
+
+typedef struct {
+    tsfi_zvm_cpu_state cpus[MAX_CPUS];
+    int cpu_count;
+} tsfi_zvm_sipl_controller;
+
+void tsfi_zvm_sipl_init(tsfi_zvm_sipl_controller *ctrl);
+int tsfi_zvm_sipl_register_cpu(tsfi_zvm_sipl_controller *ctrl, uint32_t cpu_id);
+int tsfi_zvm_sipl_send(tsfi_zvm_sipl_controller *ctrl, uint32_t source_id, uint32_t target_id, uint32_t signal_code);
+int tsfi_zvm_sipl_receive(tsfi_zvm_sipl_controller *ctrl, uint32_t cpu_id, uint32_t *out_signal_code);
+
+// Scenario 131: CODASYL DDL Schema Analyzer
+#define MAX_DDL_RECORDS 8
+#define MAX_DDL_SETS 8
+
+typedef struct {
+    char record_name[32];
+    int record_len;
+} tsfi_codasyl_ddl_record;
+
+typedef struct {
+    char set_name[32];
+    char owner_record[32];
+    char member_record[32];
+} tsfi_codasyl_ddl_set;
+
+typedef struct {
+    char schema_name[32];
+    char area_name[32];
+    tsfi_codasyl_ddl_record records[MAX_DDL_RECORDS];
+    int record_count;
+    tsfi_codasyl_ddl_set sets[MAX_DDL_SETS];
+    int set_count;
+} tsfi_codasyl_schema;
+
+void tsfi_codasyl_schema_init(tsfi_codasyl_schema *schema);
+int tsfi_codasyl_schema_parse(tsfi_codasyl_schema *schema, const char *ddl_statement);
+int tsfi_codasyl_schema_validate(const tsfi_codasyl_schema *schema, char *out_error, int max_err_len);
+
 #endif // TSFI_MAINFRAME_V370_H
