@@ -29,4 +29,9 @@ int tsfi_diyat_yul_excise_gas_taxes(uint64_t gas_amount, const char *user_addres
 #include "tsfi_ramac_layout.h"
 int tsfi_s370_yul_exec_bridge(const tsfi_uncol_instruction *program, int program_size);
 
+// 6. Winchester SCSI, DAT 2-3 Tree Node Write, and Accumulator Redirection
+int tsfi_mf_scsi_winchester_handshake(uint32_t keycode, uint8_t *storage_registers);
+int tsfi_mf_dat_write_23_node(const char *filepath_dat_bin, uint32_t node_id, const uint8_t *payload, int len);
+int tsfi_mf_redirect_space_charge(uint64_t empirical_power, uint64_t *accumulator_state);
+
 #endif // TSFI_MICRO_FOCUS_H

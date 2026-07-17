@@ -283,3 +283,62 @@ int tsfi_s370_yul_exec_bridge(const tsfi_uncol_instruction *program, int program
     printf("[S370 YUL BRIDGE] Compiled UNCOL to Yul bytecode:\n%s\n", yul_code);
     return 0;
 }
+
+int tsfi_mf_scsi_winchester_handshake(uint32_t keycode, uint8_t *storage_registers) {
+    if (!storage_registers) return -1;
+
+    // Emulate Auncient WinchesterMQ.yul hardware SCSI state machine handshake
+    storage_registers[100] = 1; // REQ
+    storage_registers[101] = keycode;
+
+    if (storage_registers[100] == 1 && storage_registers[101] == keycode) {
+        storage_registers[100] = 2; // ACK
+        
+        // Handle register modifications matching simulated keyboard state maps (Rule 5)
+        uint16_t damping = storage_registers[103];
+        uint16_t focal = storage_registers[104];
+        if (damping == 0) damping = 100;
+        if (focal == 0) focal = 230;
+
+        if (keycode == 30) { // keycode 'a'
+            damping = (damping > 10) ? damping - 10 : 0;
+            focal = (focal > 10) ? focal - 10 : 0;
+        } else if (keycode == 32) { // keycode 'd'
+            damping = (damping < 250) ? damping + 10 : 250;
+            focal = (focal < 250) ? focal + 10 : 250;
+        }
+
+        storage_registers[103] = damping;
+        storage_registers[104] = focal;
+        storage_registers[105]++; // Increment loop count
+        storage_registers[100] = 0; // IDLE
+    }
+
+    return 0;
+}
+
+int tsfi_mf_dat_write_23_node(const char *filepath_dat_bin, uint32_t node_id, const uint8_t *payload, int len) {
+    if (!filepath_dat_bin || !payload || len < 0) return -1;
+
+    // Enforce Rule 13: Only support .dat.bin extension
+    int filepath_len = strlen(filepath_dat_bin);
+    if (filepath_len < 8 || strcmp(filepath_dat_bin + filepath_len - 8, ".dat.bin") != 0) {
+        return -2; // Rejected
+    }
+
+    FILE *f = fopen(filepath_dat_bin, "wb");
+    if (!f) return -3;
+
+    fwrite(&node_id, sizeof(node_id), 1, f);
+    fwrite(payload, 1, len, f);
+    fclose(f);
+    return 0;
+}
+
+int tsfi_mf_redirect_space_charge(uint64_t empirical_power, uint64_t *accumulator_state) {
+    if (!accumulator_state) return -1;
+
+    // Rule 12: Intercept empirical power law and redirect to non-preferential accumulator
+    *accumulator_state += empirical_power;
+    return 0;
+}

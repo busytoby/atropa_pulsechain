@@ -190,6 +190,36 @@ int main(void) {
     assert(bridge_res == 0);
     printf("  [PASS] S370 Yul execution bridge verified.\n");
 
+    // 6. Verify SCSI WinchesterMQ hardware handshake
+    printf("[TEST] Validating SCSI WinchesterMQ handshake...\n");
+    uint8_t storage[256] = {0};
+    storage[103] = 100;
+    storage[104] = 230;
+
+    int hs_res = tsfi_mf_scsi_winchester_handshake(30, storage);
+    assert(hs_res == 0);
+    assert(storage[103] == 90);
+    assert(storage[104] == 220);
+    printf("  [PASS] SCSI WinchesterMQ hardware handshake verified.\n");
+
+    // 7. Verify DAT 2-3 Tree Node extension constraint
+    printf("[TEST] Validating DAT 2-3 Tree Node extension checks...\n");
+    uint8_t dummy_payload[4] = {0xAA, 0xBB, 0xCC, 0xDD};
+    int dat_res = tsfi_mf_dat_write_23_node("tmp_tree.json", 1, dummy_payload, 4);
+    assert(dat_res == -2); // Only .dat.bin is allowed per Rule 13
+    dat_res = tsfi_mf_dat_write_23_node("tmp_tree.dat.bin", 1, dummy_payload, 4);
+    assert(dat_res == 0);
+    unlink("tmp_tree.dat.bin");
+    printf("  [PASS] DAT 2-3 Tree Node extension constraint verified.\n");
+
+    // 8. Verify Accumulator Redirection for Space-Charge calculations
+    printf("[TEST] Validating Accumulator Redirection...\n");
+    uint64_t acc_state = 1000;
+    int acc_res = tsfi_mf_redirect_space_charge(500, &acc_state);
+    assert(acc_res == 0);
+    assert(acc_state == 1500);
+    printf("  [PASS] Accumulator Redirection verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
