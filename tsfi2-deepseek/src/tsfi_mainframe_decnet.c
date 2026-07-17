@@ -2664,3 +2664,58 @@ int tsfi_cyclades_ts_transition(tsfi_cyclades_ts_conn *conn, int event) {
     }
     return -2;
 }
+
+void tsfi_token_ring_init(tsfi_token_ring *ring) {
+    if (!ring) return;
+    ring->token_priority = 0;
+    ring->token_held = 0;
+    ring->active_station_id = -1;
+}
+
+int tsfi_token_ring_pass(tsfi_token_ring *ring, tsfi_tr_station *stations, size_t count) {
+    if (!ring || !stations || count == 0) return -1;
+    int start_idx = 0;
+    for (size_t i = 0; i < count; i++) {
+        if (stations[i].station_id == ring->active_station_id) {
+            start_idx = (int)(i + 1) % (int)count;
+            break;
+        }
+    }
+    for (size_t i = 0; i < count; i++) {
+        int idx = (start_idx + (int)i) % (int)count;
+        if (stations[idx].pending_frame && stations[idx].frame_priority >= ring->token_priority) {
+            ring->active_station_id = stations[idx].station_id;
+            ring->token_held = 1;
+            stations[idx].pending_frame = 0;
+            return 0;
+        }
+    }
+    ring->token_held = 0;
+    return 1;
+}
+
+void tsfi_sni_gateway_init(tsfi_sni_gateway *gw) {
+    if (!gw) return;
+    gw->map_count = 0;
+    memset(gw->maps, 0, sizeof(gw->maps));
+}
+
+int tsfi_sni_gateway_add(tsfi_sni_gateway *gw, uint16_t local_lu, uint16_t target_lu) {
+    if (!gw || gw->map_count >= 8) return -1;
+    gw->maps[gw->map_count].local_lu_address = local_lu;
+    gw->maps[gw->map_count].target_lu_address = target_lu;
+    gw->maps[gw->map_count].session_active = 1;
+    gw->map_count++;
+    return 0;
+}
+
+int tsfi_sni_gateway_translate(const tsfi_sni_gateway *gw, uint16_t local_lu, uint16_t *target_lu_out) {
+    if (!gw || !target_lu_out) return -1;
+    for (int i = 0; i < gw->map_count; i++) {
+        if (gw->maps[i].local_lu_address == local_lu && gw->maps[i].session_active) {
+            *target_lu_out = gw->maps[i].target_lu_address;
+            return 0;
+        }
+    }
+    return -2;
+}

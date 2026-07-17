@@ -1218,4 +1218,36 @@ typedef struct {
 void tsfi_cyclades_ts_init(tsfi_cyclades_ts_conn *conn, int conn_id, uint16_t port);
 int tsfi_cyclades_ts_transition(tsfi_cyclades_ts_conn *conn, int event);
 
+// IBM Token Ring Priority Balancer
+typedef struct {
+    int token_priority;
+    int token_held;
+    int active_station_id;
+} tsfi_token_ring;
+
+typedef struct {
+    int station_id;
+    int frame_priority;
+    int pending_frame;
+} tsfi_tr_station;
+
+void tsfi_token_ring_init(tsfi_token_ring *ring);
+int tsfi_token_ring_pass(tsfi_token_ring *ring, tsfi_tr_station *stations, size_t count);
+
+// SNA SNI Gateway Address Mapper
+typedef struct {
+    uint16_t local_lu_address;
+    uint16_t target_lu_address;
+    int session_active;
+} tsfi_sni_mapping;
+
+typedef struct {
+    tsfi_sni_mapping maps[8];
+    int map_count;
+} tsfi_sni_gateway;
+
+void tsfi_sni_gateway_init(tsfi_sni_gateway *gw);
+int tsfi_sni_gateway_add(tsfi_sni_gateway *gw, uint16_t local_lu, uint16_t target_lu);
+int tsfi_sni_gateway_translate(const tsfi_sni_gateway *gw, uint16_t local_lu, uint16_t *target_lu_out);
+
 #endif // TSFI_MAINFRAME_DECNET_H

@@ -1886,6 +1886,50 @@ int main(void) {
     assert(ts_conn.state == CYCLADES_STATE_FIN_WAIT);
     printf("  [PASS] CYCLADES Transport Station handshake states verified.\n");
 
+    // 93. Token Ring Priority frame transmission verification
+    printf("[Test] Verifying Token Ring priority loop...\n");
+    tsfi_token_ring tr;
+    tsfi_token_ring_init(&tr);
+    assert(tr.token_priority == 0);
+    assert(tr.token_held == 0);
+    
+    tsfi_tr_station stations[2];
+    stations[0].station_id = 1;
+    stations[0].frame_priority = 2;
+    stations[0].pending_frame = 1;
+    
+    stations[1].station_id = 2;
+    stations[1].frame_priority = 1;
+    stations[1].pending_frame = 1;
+    
+    // Pass token with priority 0 -> station 1 transmits first (next in rotation)
+    assert(tsfi_token_ring_pass(&tr, stations, 2) == 0);
+    assert(tr.active_station_id == 1);
+    assert(tr.token_held == 1);
+    assert(stations[0].pending_frame == 0);
+    
+    // Set token priority high (3) -> station 2 cannot transmit priority 1 frame
+    tr.token_priority = 3;
+    assert(tsfi_token_ring_pass(&tr, stations, 2) == 1); // No transmissions
+    assert(tr.token_held == 0);
+    printf("  [PASS] Token Ring priority access loops verified.\n");
+    
+    // 94. SNA Gateway SNI Address translations verification
+    printf("[Test] Verifying SNA Gateway SNI session mappings...\n");
+    tsfi_sni_gateway gw;
+    tsfi_sni_gateway_init(&gw);
+    assert(gw.map_count == 0);
+    
+    assert(tsfi_sni_gateway_add(&gw, 0x1000, 0x5000) == 0);
+    assert(gw.map_count == 1);
+    
+    uint16_t translated_lu = 0;
+    assert(tsfi_sni_gateway_translate(&gw, 0x1000, &translated_lu) == 0);
+    assert(translated_lu == 0x5000);
+    
+    assert(tsfi_sni_gateway_translate(&gw, 0x9999, &translated_lu) == -2); // Mapping missing
+    printf("  [PASS] SNA SNI gateway logical unit address translations verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;
