@@ -112,6 +112,19 @@ int main(void) {
     assert(gks_scene.primitives[0].position.y == 0.0f);  // 20 / 10.0 - 2.0 = 0.0
     printf("  [PASS] GKS to CGI/CGM ray tracer coordinate mapping verified.\n");
 
+    // 5. Verify Benson-Lehner OSCAR Trace Conversion
+    printf("[TEST] Validating Benson-Lehner OSCAR trace conversion...\n");
+    tsfi_cgm_scene oscar_scene;
+    tsfi_cgm_scene_init(&oscar_scene);
+    float coefs[3] = { 1.0f, 0.5f, -0.2f }; // y = 1.0 + 0.5x - 0.2x^2
+    int oscar_res = tsfi_oscar_trace_to_ray_tracer(coefs, 3, -1.0f, 1.0f, 4, &oscar_scene);
+    assert(oscar_res == 0);
+    assert(oscar_scene.primitive_count == 5);
+    // At x = 0.0 (index 2): y = 1.0 + 0 - 0 = 1.0
+    assert(oscar_scene.primitives[2].position.x == 0.0f);
+    assert(oscar_scene.primitives[2].position.y == 1.0f);
+    printf("  [PASS] Benson-Lehner OSCAR trace coordinate mapping verified.\n");
+
     free(img_buf);
     printf("[SUCCESS] CGI/CGM Ray Tracer validation completed successfully!\n");
     return 0;

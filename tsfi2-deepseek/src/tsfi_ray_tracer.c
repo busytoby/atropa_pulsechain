@@ -227,3 +227,23 @@ int tsfi_gks_to_ray_tracer(const uint8_t *gks_stream, int len, tsfi_cgm_scene *s
 
     return 0;
 }
+
+int tsfi_oscar_trace_to_ray_tracer(const float *coefficients, int order, float x_start, float x_end, int steps, tsfi_cgm_scene *scene) {
+    if (!coefficients || order <= 0 || steps <= 0 || !scene) return -1;
+
+    float dx = (x_end - x_start) / (float)steps;
+    for (int i = 0; i <= steps; i++) {
+        float x = x_start + dx * (float)i;
+        
+        float y = 0.0f;
+        for (int k = 0; k < order; k++) {
+            y += coefficients[k] * powf(x, (float)k);
+        }
+
+        tsfi_rt_vec3 pos = { x, y, 6.0f };
+        tsfi_rt_vec3 color = { 0.0f, 1.0f, 0.0f }; // Green OSCAR trace nodes
+        tsfi_cgm_scene_add_primitive(scene, CGM_PRIM_SPHERE, pos, color, 0.3f, (tsfi_rt_vec3){0,0,0});
+    }
+
+    return 0;
+}
