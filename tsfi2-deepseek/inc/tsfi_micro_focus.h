@@ -50,6 +50,7 @@ int tsfi_mf_wessler_macro_expand(const char *macro_line, char *hlasm_out, int ma
 int tsfi_mf_majordomo_restrict_post(const char *sender_email, const char **members, int member_count);
 int tsfi_mf_majordomo_info(const char *list_name, char *info_out, int max_len);
 int tsfi_mf_majordomo_help(char *help_out, int max_len);
+int tsfi_mf_majordomo_lists(char *lists_out, int max_len);
 int tsfi_mf_majordomo_which(const char *email, const char **lists, int list_count, char *out_buffer, int max_len);
 int tsfi_mf_cics_vsam_read(const char *dataset_name, const char *record_key, char *record_out, int max_len);
 int tsfi_mf_cics_vsam_write(const char *dataset_name, const char *record_key, const char *record_data);

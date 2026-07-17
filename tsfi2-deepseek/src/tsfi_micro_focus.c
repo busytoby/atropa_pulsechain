@@ -995,3 +995,14 @@ int tsfi_mf_cics_isc_route(const char *target_system, const char *transaction_id
     snprintf(route_log_buffer, max_log_len, "ISC_ROUTE: TARGET=%s | TRANS=%s | PAYLOAD_LEN=%d", target_system, transaction_id, payload_len);
     return 0;
 }
+
+int tsfi_mf_majordomo_lists(char *lists_out, int max_len) {
+    if (!lists_out || max_len <= 0) return -1;
+
+    snprintf(lists_out, max_len,
+             "MAJORDOMO ACTIVE MAILING LISTS:\n"
+             "  zmm-dev\n"
+             "  cics-admin\n"
+             "  atropa-pulse\n");
+    return 0;
+}

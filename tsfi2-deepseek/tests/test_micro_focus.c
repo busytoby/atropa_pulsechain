@@ -541,6 +541,15 @@ int main(void) {
     assert(strstr(route_log, "PAYLOAD_LEN=4") != NULL);
     printf("  [PASS] CICS Intersystem Communication PMG Router verified.\n");
 
+    // 38. Verify Majordomo Available Lists Resolver
+    printf("[TEST] Validating Majordomo lists Resolver...\n");
+    char lists_buffer[256] = {0};
+    int lists_res = tsfi_mf_majordomo_lists(lists_buffer, sizeof(lists_buffer));
+    assert(lists_res == 0);
+    assert(strstr(lists_buffer, "MAJORDOMO ACTIVE MAILING LISTS") != NULL);
+    assert(strstr(lists_buffer, "atropa-pulse") != NULL);
+    printf("  [PASS] Majordomo lists Resolver verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

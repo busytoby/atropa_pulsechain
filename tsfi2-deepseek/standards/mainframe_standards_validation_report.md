@@ -79,5 +79,6 @@
 | 145 | CICS Transient Data Queue Control | PASS | Log queue append message writer | Volume 33 |
 | 146 | PMG Ballistics Trajectory Logger | PASS | Transient Data queue flight path spooler | Volume 33 |
 | 147 | CICS Intersystem Communication PMG Router | PASS | Dynamic CICS-to-CICS transaction router | Volume 33 |
+| 148 | Majordomo Active Lists Resolver | PASS | Registered lists description resolver | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 147 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 148 Scenarios validated successfully)
