@@ -1363,6 +1363,36 @@ int main(void) {
     assert(strcmp(b1.seq_num, "543210") == 0);
     printf("  [PASS] CYCLADES sliding window verification and SWIFT Block 1 header parsing verified.\n");
 
+    // 76. Red-Black Gateway Routing Verification
+    printf("[Test] Verifying Red-Black Gateway Routing (CYCLADES/SWIFT)...\n");
+    tsfi_rb_packet red_pkt;
+    red_pkt.color = RB_COLOR_RED;
+    red_pkt.data_len = 5;
+    red_pkt.payload[0] = 5;   // src
+    red_pkt.payload[1] = 6;   // dest
+    red_pkt.payload[2] = 0x12; // seq msb
+    red_pkt.payload[3] = 0x34; // seq lsb
+    red_pkt.payload[4] = 0x02; // flags
+    
+    tsfi_cyclades_header rx_cyc_hdr;
+    assert(tsfi_rb_gateway_route(&red_pkt, &rx_cyc_hdr) == 0);
+    assert(rx_cyc_hdr.src_node == 5);
+    assert(rx_cyc_hdr.dest_node == 6);
+    assert(rx_cyc_hdr.seq_num == 0x1234);
+    assert(rx_cyc_hdr.flags == 0x02);
+    
+    tsfi_rb_packet black_pkt;
+    black_pkt.color = RB_COLOR_BLACK;
+    const char *swift_data = "{1:F01TESTBICXX09812345432100}";
+    black_pkt.data_len = strlen(swift_data);
+    memcpy(black_pkt.payload, swift_data, black_pkt.data_len + 1);
+    
+    tsfi_swift_block1 rx_b1;
+    assert(tsfi_rb_gateway_route(&black_pkt, &rx_b1) == 0);
+    assert(rx_b1.application_id == 'F');
+    assert(strcmp(rx_b1.sender_lt, "TESTBICXX098") == 0);
+    printf("  [PASS] Red-Black gateway routing of CYCLADES (Red) and SWIFT (Black) verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

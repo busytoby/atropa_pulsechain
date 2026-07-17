@@ -2188,3 +2188,13 @@ int tsfi_swift_parse_block1(const char *raw_block1, tsfi_swift_block1 *b1_out) {
     }
     return -2;
 }
+
+int tsfi_rb_gateway_route(const tsfi_rb_packet *pkt, void *out_struct) {
+    if (!pkt || !out_struct) return -1;
+    if (pkt->color == RB_COLOR_RED) {
+        return tsfi_cyclades_deserialize(pkt->payload, pkt->data_len, (tsfi_cyclades_header *)out_struct);
+    } else if (pkt->color == RB_COLOR_BLACK) {
+        return tsfi_swift_parse_block1((const char *)pkt->payload, (tsfi_swift_block1 *)out_struct);
+    }
+    return -2;
+}

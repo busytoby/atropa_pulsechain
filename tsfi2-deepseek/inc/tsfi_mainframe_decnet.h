@@ -981,4 +981,15 @@ typedef struct {
 
 int tsfi_swift_parse_block1(const char *raw_block1, tsfi_swift_block1 *b1_out);
 
+#define RB_COLOR_RED   0
+#define RB_COLOR_BLACK 1
+
+typedef struct {
+    int color;
+    size_t data_len;
+    uint8_t payload[256];
+} tsfi_rb_packet;
+
+int tsfi_rb_gateway_route(const tsfi_rb_packet *pkt, void *out_struct);
+
 #endif // TSFI_MAINFRAME_DECNET_H
