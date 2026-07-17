@@ -59,6 +59,7 @@ int tsfi_mf_majordomo_gen_cookie(const char *email, const char *list_name, uint3
 int tsfi_mf_majordomo_queue_post(const char *list_name, const char *sender, const char *subject, uint32_t *pending_cookies, int *cookie_count, int max_cookies);
 int tsfi_mf_majordomo_is_admin(const char *list_name, const char *email, const char **admin_registry, int admin_count);
 int tsfi_mf_majordomo_check_password(const char *list_name, const char *password, const char *stored_hash_or_pass);
+int tsfi_mf_majordomo_config_defaults(const char *list_name, char *defaults_out, int max_len);
 int tsfi_mf_majordomo_welcome(const char *list_name, const char *owner_email, char *welcome_out, int max_len);
 int tsfi_mf_majordomo_hash_password(const char *password, char *hash_out, int max_len);
 int tsfi_mf_majordomo_discard(uint32_t cookie, uint32_t *pending_cookies, int *cookie_count);
@@ -66,6 +67,7 @@ int tsfi_mf_majordomo_validate_config(const char *config_content, int *errors_fo
 int tsfi_mf_majordomo_update_info(const char *list_name, const char *new_info, char *info_store, int max_store);
 int tsfi_mf_majordomo_archive_index(const char *list_name, const char **archive_files, int archive_count, char *index_out, int max_len);
 int tsfi_mf_cics_suspend(uint32_t task_id, uint32_t *suspend_log, int *log_count, int max_log);
+int tsfi_mf_cics_reset_abend(int *registry_active);
 int tsfi_mf_cics_handle_abend_program(const char *program_name, char *abend_program_registry, int max_name);
 int tsfi_mf_cics_handle_pmg_hit_abend(uint32_t player_id, int hit_type, int *health_in_out, float *x_out, float *y_out, char *action_log, int max_log);
 int tsfi_mf_cics_handle_abend(uint64_t handler_addr, uint64_t *abend_handler_registry, int *registry_active);

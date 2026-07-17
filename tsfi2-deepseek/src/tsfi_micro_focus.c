@@ -1450,3 +1450,18 @@ int tsfi_mf_cics_handle_pmg_hit_abend(uint32_t player_id, int hit_type, int *hea
     }
     return 0;
 }
+
+int tsfi_mf_majordomo_config_defaults(const char *list_name, char *defaults_out, int max_len) {
+    (void)list_name;
+    if (!defaults_out || max_len <= 0) return -1;
+
+    snprintf(defaults_out, max_len, "reply_to = list\nmoderate = no\nsubscribe_policy = open\n");
+    return 0;
+}
+
+int tsfi_mf_cics_reset_abend(int *registry_active) {
+    if (!registry_active) return -1;
+
+    *registry_active = 1;
+    return 0;
+}

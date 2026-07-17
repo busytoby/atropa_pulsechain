@@ -135,8 +135,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 180 | Majordomo Info Editor | PASS | Stored list descriptions update handler | Volume 33 |
 | 181 | CICS Abend Program Registry | PASS | External failure recovery application interceptor | Volume 33 |
 | 182 | CICS PMG Abend Hit Physics Handler | PASS | Hit recovery action tracker supporting damage or respawn | Volume 33 |
+| 183 | Majordomo Config Defaults | PASS | Standard configuration parameters generator | Volume 33 |
+| 184 | CICS Abend Handler Resetter | PASS | Re-enables custom error recovery interceptor | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 182 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 184 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

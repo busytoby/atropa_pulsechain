@@ -890,6 +890,22 @@ int main(void) {
     assert(strstr(hit_log, "ACTION=RESPAWN") != NULL);
     printf("  [PASS] CICS PMG Abend Hit Handler verified.\n");
 
+    // 73. Verify Majordomo List Config Defaults
+    printf("[TEST] Validating Majordomo Config Defaults...\n");
+    char def_cfg[128] = {0};
+    int def_res = tsfi_mf_majordomo_config_defaults("zmm-dev", def_cfg, sizeof(def_cfg));
+    assert(def_res == 0);
+    assert(strstr(def_cfg, "moderate = no") != NULL);
+    printf("  [PASS] Majordomo Config Defaults verified.\n");
+
+    // 74. Verify CICS Command Level Program Control ABEND Resetter
+    printf("[TEST] Validating CICS HANDLE ABEND RESET...\n");
+    int ab_active_status = 0;
+    int ab_reset_res = tsfi_mf_cics_reset_abend(&ab_active_status);
+    assert(ab_reset_res == 0);
+    assert(ab_active_status == 1);
+    printf("  [PASS] CICS HANDLE ABEND RESET verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
