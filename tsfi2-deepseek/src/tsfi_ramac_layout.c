@@ -7337,3 +7337,70 @@ int tsfi_cms_plist_parse(tsfi_cms_plist *plist, const char *cmd_line) {
     plist->count = i;
     return i;
 }
+
+void tsfi_cms_tape_init(tsfi_cms_tape_drive *tape) {
+    if (!tape) return;
+    memset(tape, 0, sizeof(tsfi_cms_tape_drive));
+}
+
+int tsfi_cms_tape_write_record(tsfi_cms_tape_drive *tape, const char *record) {
+    if (!tape || !record || tape->block_count >= MAX_TAPE_BLOCKS) return -1;
+    strncpy(tape->blocks[tape->block_count].data, record, sizeof(tape->blocks[tape->block_count].data) - 1);
+    tape->blocks[tape->block_count].data[sizeof(tape->blocks[tape->block_count].data) - 1] = '\0';
+    tape->blocks[tape->block_count].is_tape_mark = 0;
+    tape->block_count++;
+    return 0;
+}
+
+int tsfi_cms_tape_write_mark(tsfi_cms_tape_drive *tape) {
+    if (!tape || tape->block_count >= MAX_TAPE_BLOCKS) return -1;
+    tape->blocks[tape->block_count].data[0] = '\0';
+    tape->blocks[tape->block_count].is_tape_mark = 1;
+    tape->block_count++;
+    return 0;
+}
+
+int tsfi_cms_tape_read_record(tsfi_cms_tape_drive *tape, char *out_record, int max_len, int *out_is_mark) {
+    if (!tape || !out_record || !out_is_mark || tape->current_pointer >= tape->block_count) {
+        return -1;
+    }
+    int ptr = tape->current_pointer;
+    *out_is_mark = tape->blocks[ptr].is_tape_mark;
+    if (tape->blocks[ptr].is_tape_mark) {
+        out_record[0] = '\0';
+    } else {
+        strncpy(out_record, tape->blocks[ptr].data, max_len - 1);
+        out_record[max_len - 1] = '\0';
+    }
+    tape->current_pointer++;
+    return 0;
+}
+
+int tsfi_cms_tape_rewind(tsfi_cms_tape_drive *tape) {
+    if (!tape) return -1;
+    tape->current_pointer = 0;
+    return 0;
+}
+
+int tsfi_cms_tape_skip_file(tsfi_cms_tape_drive *tape, int count) {
+    if (!tape) return -1;
+    if (count > 0) {
+        int marks_seen = 0;
+        while (tape->current_pointer < tape->block_count && marks_seen < count) {
+            if (tape->blocks[tape->current_pointer].is_tape_mark) {
+                marks_seen++;
+            }
+            tape->current_pointer++;
+        }
+    } else if (count < 0) {
+        int target_marks = -count;
+        int marks_seen = 0;
+        while (tape->current_pointer > 0 && marks_seen < target_marks) {
+            tape->current_pointer--;
+            if (tape->blocks[tape->current_pointer].is_tape_mark) {
+                marks_seen++;
+            }
+        }
+    }
+    return 0;
+}

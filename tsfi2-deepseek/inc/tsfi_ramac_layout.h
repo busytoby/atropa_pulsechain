@@ -2051,4 +2051,24 @@ typedef struct {
 void tsfi_cms_plist_init(tsfi_cms_plist *plist);
 int tsfi_cms_plist_parse(tsfi_cms_plist *plist, const char *cmd_line);
 
+// VM/370 Release 5 CMS Virtual Tape Utility Manager
+#define MAX_TAPE_BLOCKS 32
+typedef struct {
+    char data[80];
+    int is_tape_mark;
+} tsfi_cms_tape_block;
+
+typedef struct {
+    tsfi_cms_tape_block blocks[MAX_TAPE_BLOCKS];
+    int block_count;
+    int current_pointer;
+} tsfi_cms_tape_drive;
+
+void tsfi_cms_tape_init(tsfi_cms_tape_drive *tape);
+int tsfi_cms_tape_write_record(tsfi_cms_tape_drive *tape, const char *record);
+int tsfi_cms_tape_write_mark(tsfi_cms_tape_drive *tape);
+int tsfi_cms_tape_read_record(tsfi_cms_tape_drive *tape, char *out_record, int max_len, int *out_is_mark);
+int tsfi_cms_tape_rewind(tsfi_cms_tape_drive *tape);
+int tsfi_cms_tape_skip_file(tsfi_cms_tape_drive *tape, int count);
+
 #endif // TSFI_RAMAC_LAYOUT_H

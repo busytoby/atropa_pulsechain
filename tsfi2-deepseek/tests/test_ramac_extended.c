@@ -2370,6 +2370,38 @@ int main(void) {
     assert(memcmp(plist.words[3], "A       ", 8) == 0);
     printf("  [PASS] VM/370 CMS parameter list tokenization verified.\n");
 
+    // 128. VM/370 Release 5 CMS Virtual Tape Utility Manager Verification
+    printf("[Test] Verifying VM/370 CMS Virtual Tape Utility...\n");
+    tsfi_cms_tape_drive virtual_tape;
+    tsfi_cms_tape_init(&virtual_tape);
+    assert(virtual_tape.block_count == 0);
+    assert(virtual_tape.current_pointer == 0);
+    
+    // Write records and marks
+    assert(tsfi_cms_tape_write_record(&virtual_tape, "VOL1") == 0);
+    assert(tsfi_cms_tape_write_record(&virtual_tape, "HDR1") == 0);
+    assert(tsfi_cms_tape_write_mark(&virtual_tape) == 0);
+    assert(tsfi_cms_tape_write_record(&virtual_tape, "DATA RECORD 1") == 0);
+    assert(tsfi_cms_tape_write_mark(&virtual_tape) == 0);
+    assert(virtual_tape.block_count == 5);
+    
+    // Read sequentially
+    char r_buf[80];
+    int is_mark = 0;
+    assert(tsfi_cms_tape_read_record(&virtual_tape, r_buf, sizeof(r_buf), &is_mark) == 0);
+    assert(strcmp(r_buf, "VOL1") == 0);
+    assert(is_mark == 0);
+    
+    // Skip to next file (pass 1 tape mark)
+    assert(tsfi_cms_tape_skip_file(&virtual_tape, 1) == 0);
+    assert(tsfi_cms_tape_read_record(&virtual_tape, r_buf, sizeof(r_buf), &is_mark) == 0);
+    assert(strcmp(r_buf, "DATA RECORD 1") == 0);
+    
+    // Rewind tape
+    assert(tsfi_cms_tape_rewind(&virtual_tape) == 0);
+    assert(virtual_tape.current_pointer == 0);
+    printf("  [PASS] VM/370 CMS virtual tape write, marks, and skip actions verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
