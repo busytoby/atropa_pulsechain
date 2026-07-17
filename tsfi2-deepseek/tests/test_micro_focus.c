@@ -977,6 +977,24 @@ int main(void) {
     assert(strstr(task_inq_buf, "TASK:5002|STATUS=SUSPENDED") != NULL);
     printf("  [PASS] CICS INQUIRE TASK verified.\n");
 
+    // 83. Verify Majordomo List Archive Index Purger
+    printf("[TEST] Validating Majordomo Archive Index Purger...\n");
+    const char *prune_list[4] = {"archive_001.txt", "archive_tmp.bak", "archive_002.txt", "archive_tmp2.bak"};
+    int prune_count = 4;
+    int prune_res = tsfi_mf_majordomo_archive_prune("zmm-dev", prune_list, &prune_count, ".bak");
+    assert(prune_res == 0);
+    assert(prune_count == 2);
+    assert(strcmp(prune_list[1], "archive_002.txt") == 0);
+    printf("  [PASS] Majordomo Archive Index Purger verified.\n");
+
+    // 84. Verify CICS Task Execution Priority Changer
+    printf("[TEST] Validating CICS CHANGE TASK priority...\n");
+    int task_priority_reg = 100;
+    int prio_res = tsfi_mf_cics_change_priority(6001, 200, &task_priority_reg);
+    assert(prio_res == 0);
+    assert(task_priority_reg == 200);
+    printf("  [PASS] CICS CHANGE TASK priority verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

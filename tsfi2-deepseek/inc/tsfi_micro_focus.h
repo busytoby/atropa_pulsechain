@@ -60,10 +60,12 @@ int tsfi_mf_majordomo_queue_post(const char *list_name, const char *sender, cons
 int tsfi_mf_majordomo_is_admin(const char *list_name, const char *email, const char **admin_registry, int admin_count);
 int tsfi_mf_majordomo_check_password(const char *list_name, const char *password, const char *stored_hash_or_pass);
 int tsfi_mf_majordomo_archive_delete(const char *list_name, const char *file_name, const char **archive_files, int *archive_count);
+int tsfi_mf_majordomo_archive_prune(const char *list_name, const char **archive_files, int *archive_count, const char *prune_suffix);
 int tsfi_mf_majordomo_write_config(const char *key, const char *val, char *config_in_out, int max_len);
 int tsfi_mf_cics_suspend(uint32_t task_id, uint32_t *suspend_log, int *log_count, int max_log);
 int tsfi_mf_cics_inquire_task(uint32_t task_id, int is_suspended, char *status_out, int max_len);
 int tsfi_mf_cics_resume(uint32_t task_id, uint32_t *suspend_log, int *log_count);
+int tsfi_mf_cics_change_priority(uint32_t task_id, int new_priority, int *priority_registry_out);
 int tsfi_mf_majordomo_inject_mod_headers(const char *sender, const char *list_name, uint32_t cookie, char *msg_out, int max_len);
 int tsfi_mf_majordomo_config_defaults(const char *list_name, char *defaults_out, int max_len);
 int tsfi_mf_majordomo_welcome(const char *list_name, const char *owner_email, char *welcome_out, int max_len);

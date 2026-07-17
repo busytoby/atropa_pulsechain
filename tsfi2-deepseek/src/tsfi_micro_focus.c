@@ -1555,3 +1555,31 @@ int tsfi_mf_cics_inquire_task(uint32_t task_id, int is_suspended, char *status_o
     snprintf(status_out, max_len, "TASK:%u|STATUS=%s", task_id, is_suspended ? "SUSPENDED" : "RUNNING");
     return 0;
 }
+
+int tsfi_mf_majordomo_archive_prune(const char *list_name, const char **archive_files, int *archive_count, const char *prune_suffix) {
+    (void)list_name;
+    if (!archive_files || !archive_count || *archive_count < 0 || !prune_suffix) return -1;
+
+    int suffix_len = (int)strlen(prune_suffix);
+    int i = 0;
+    while (i < *archive_count) {
+        int file_len = (int)strlen(archive_files[i]);
+        if (file_len >= suffix_len && strcmp(archive_files[i] + file_len - suffix_len, prune_suffix) == 0) {
+            for (int j = i; j < *archive_count - 1; j++) {
+                archive_files[j] = archive_files[j + 1];
+            }
+            *archive_count -= 1;
+        } else {
+            i++;
+        }
+    }
+    return 0;
+}
+
+int tsfi_mf_cics_change_priority(uint32_t task_id, int new_priority, int *priority_registry_out) {
+    (void)task_id;
+    if (!priority_registry_out) return -1;
+
+    *priority_registry_out = new_priority;
+    return 0;
+}

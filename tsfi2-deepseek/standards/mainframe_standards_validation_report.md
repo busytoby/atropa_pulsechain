@@ -124,5 +124,7 @@
 | 190 | CICS Task Execution Resumer Emulator | PASS | Dynamic task reactivation handler | Volume 33 |
 | 191 | Majordomo Archive Message Deleter | PASS | Command removing message from list archives | Volume 33 |
 | 192 | CICS Task Execution Inquire Emulator | PASS | Dynamic task parameters query reporter | Volume 33 |
+| 193 | Majordomo Archive Index Purger | PASS | Removes stale log references from archives | Volume 33 |
+| 194 | CICS Task Execution Priority Changer | PASS | Alters current task execution priority level | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 192 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 194 Scenarios validated successfully)
