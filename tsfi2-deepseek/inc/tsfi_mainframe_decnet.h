@@ -1158,4 +1158,22 @@ void tsfi_vredestein_init(tsfi_vredestein_controller *ctrl);
 int tsfi_vredestein_commit(tsfi_vredestein_controller *ctrl);
 int tsfi_vredestein_rollback(tsfi_vredestein_controller *ctrl);
 
+// Distributed Database Dilemma Consensus Engine
+typedef struct {
+    int node_id;
+    int vote_commit;
+    int received_prepare;
+    int current_state; // 0: Idle, 1: Ready, 2: Committed, 3: Aborted
+} tsfi_consensus_node;
+
+typedef struct {
+    tsfi_consensus_node nodes[4];
+    int node_count;
+    int global_state; // 0: Prepare, 1: Commit, 2: Abort
+} tsfi_consensus_engine;
+
+void tsfi_consensus_init(tsfi_consensus_engine *eng);
+int tsfi_consensus_add_node(tsfi_consensus_engine *eng, int node_id, int vote);
+int tsfi_consensus_execute(tsfi_consensus_engine *eng);
+
 #endif // TSFI_MAINFRAME_DECNET_H

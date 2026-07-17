@@ -2497,3 +2497,43 @@ int tsfi_vredestein_rollback(tsfi_vredestein_controller *ctrl) {
     }
     return -2;
 }
+
+void tsfi_consensus_init(tsfi_consensus_engine *eng) {
+    if (!eng) return;
+    eng->node_count = 0;
+    eng->global_state = 0;
+    memset(eng->nodes, 0, sizeof(eng->nodes));
+}
+
+int tsfi_consensus_add_node(tsfi_consensus_engine *eng, int node_id, int vote) {
+    if (!eng || eng->node_count >= 4) return -1;
+    eng->nodes[eng->node_count].node_id = node_id;
+    eng->nodes[eng->node_count].vote_commit = vote;
+    eng->nodes[eng->node_count].received_prepare = 1;
+    eng->nodes[eng->node_count].current_state = 1;
+    eng->node_count++;
+    return 0;
+}
+
+int tsfi_consensus_execute(tsfi_consensus_engine *eng) {
+    if (!eng || eng->node_count == 0) return -1;
+    int all_commit = 1;
+    for (int i = 0; i < eng->node_count; i++) {
+        if (!eng->nodes[i].vote_commit) {
+            all_commit = 0;
+            break;
+        }
+    }
+    if (all_commit) {
+        eng->global_state = 1;
+        for (int i = 0; i < eng->node_count; i++) {
+            eng->nodes[i].current_state = 2;
+        }
+    } else {
+        eng->global_state = 2;
+        for (int i = 0; i < eng->node_count; i++) {
+            eng->nodes[i].current_state = 3;
+        }
+    }
+    return 0;
+}

@@ -1671,6 +1671,31 @@ int main(void) {
     assert(ctrl.rollback_executed == 1);
     printf("  [PASS] Mainframe migration stages and storage commit rollbacks verified.\n");
 
+    // 86. Distributed consensus coordinator & voting outcomes
+    printf("[Test] Verifying Consensus Engine coordinator...\n");
+    tsfi_consensus_engine eng;
+    tsfi_consensus_init(&eng);
+    assert(eng.node_count == 0);
+    
+    // Add nodes voting to Commit
+    assert(tsfi_consensus_add_node(&eng, 10, 1) == 0);
+    assert(tsfi_consensus_add_node(&eng, 20, 1) == 0);
+    assert(eng.node_count == 2);
+    
+    // Run execution (all Commit)
+    assert(tsfi_consensus_execute(&eng) == 0);
+    assert(eng.global_state == 1); // Commit
+    assert(eng.nodes[0].current_state == 2); // Committed
+    
+    // Test aborted consensus
+    tsfi_consensus_init(&eng);
+    assert(tsfi_consensus_add_node(&eng, 10, 1) == 0);
+    assert(tsfi_consensus_add_node(&eng, 20, 0) == 0); // Node 20 aborts
+    assert(tsfi_consensus_execute(&eng) == 0);
+    assert(eng.global_state == 2); // Abort
+    assert(eng.nodes[0].current_state == 3); // Aborted
+    printf("  [PASS] Distributed node consensus voting states verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;
