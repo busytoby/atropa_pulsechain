@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <math.h>
 
 #ifndef M_PI
@@ -5842,4 +5843,93 @@ int tsfi_dbtg_execute_dml(tsfi_dbtg_dml_tracker *tracker, int verb_opcode) {
             return -2;
     }
     return 0;
+}
+
+void tsfi_s370_vs_dat_init(tsfi_s370_vs_dat *dat) {
+    if (!dat) return;
+    memset(dat, 0, sizeof(tsfi_s370_vs_dat));
+}
+
+int tsfi_s370_vs_dat_translate(const tsfi_s370_vs_dat *dat, uint32_t virtual_address, uint32_t *physical_address_out) {
+    if (!dat || !physical_address_out) return -1;
+    uint32_t seg_idx = (virtual_address >> 12) & 0x0F;
+    uint32_t page_idx = (virtual_address >> 8) & 0x0F;
+    uint32_t offset = virtual_address & 0xFF;
+    if (dat->segment_table[seg_idx] == 0) {
+        return -2;
+    }
+    uint32_t page_frame = dat->page_tables[seg_idx][page_idx];
+    if (page_frame == 0) {
+        return -3;
+    }
+    *physical_address_out = page_frame + offset;
+    return 0;
+}
+
+void tsfi_relational_tuple_init(tsfi_relational_tuple *t, const char *rel, const char *key) {
+    if (!t) return;
+    memset(t, 0, sizeof(tsfi_relational_tuple));
+    if (rel) strncpy(t->relation_name, rel, sizeof(t->relation_name) - 1);
+    if (key) strncpy(t->tuple_key, key, sizeof(t->tuple_key) - 1);
+    t->resolved_record_id = -1;
+}
+
+int tsfi_relational_map_to_codasyl(const tsfi_relational_tuple *t, const tsfi_dbtg_realm_registry *realm_reg, int *db_status_out) {
+    if (!t || !realm_reg || !db_status_out) return -1;
+    int found_open_realm = 0;
+    for (int i = 0; i < realm_reg->area_count; i++) {
+        if (strcmp(realm_reg->areas[i].area_name, t->relation_name) == 0 && realm_reg->areas[i].is_open) {
+            found_open_realm = 1;
+            break;
+        }
+    }
+    if (!found_open_realm) {
+        *db_status_out = DB_STATUS_NOT_OPEN;
+        return -2;
+    }
+    *db_status_out = DB_STATUS_OK;
+    return 0;
+}
+
+void tsfi_structured_analyze_script(const char *script, tsfi_structured_analysis_report *report) {
+    if (!script || !report) return;
+    memset(report, 0, sizeof(tsfi_structured_analysis_report));
+    char script_copy[2048];
+    strncpy(script_copy, script, 2047);
+    script_copy[2047] = '\0';
+    const char *delims = " ;(),{}\"\n\r\t.";
+    char labels[32][32];
+    int label_count = 0;
+    char *tokens[256];
+    int token_count = 0;
+    char *tok = strtok(script_copy, delims);
+    while (tok && token_count < 256) {
+        tokens[token_count++] = tok;
+        tok = strtok(NULL, delims);
+    }
+    for (int i = 0; i < token_count; i++) {
+        size_t len = strlen(tokens[i]);
+        if (len > 1 && tokens[i][len - 1] == ':') {
+            char lbl[32];
+            size_t copy_len = (len - 1 < 31) ? len - 1 : 31;
+            memcpy(lbl, tokens[i], copy_len);
+            lbl[copy_len] = '\0';
+            if (label_count < 32) {
+                memcpy(labels[label_count], lbl, copy_len + 1);
+                label_count++;
+            }
+        }
+        if (i + 1 < token_count &&
+            ((strcasecmp(tokens[i], "GO") == 0 && strcasecmp(tokens[i + 1], "TO") == 0) ||
+             (strcasecmp(tokens[i], "GOTO") == 0))) {
+            report->goto_count++;
+            char *target = (strcasecmp(tokens[i], "GOTO") == 0) ? tokens[i + 1] : tokens[i + 2];
+            for (int k = 0; k < label_count; k++) {
+                if (strcmp(labels[k], target) == 0) {
+                    report->backward_jmp_detected = 1;
+                    break;
+                }
+            }
+        }
+    }
 }

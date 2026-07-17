@@ -1448,6 +1448,60 @@ int main(void) {
     tsfi_synth_perf_destroy(perf_engine_exc);
     printf("  [PASS] WinchesterMQ hardware register mapping for DBTG exceptions verified.\n");
 
+    // 83. Strategy Syntactic Compiler Bindings Verification
+    printf("[Test] Verifying Strategy Syntactic Compiler Bindings...\n");
+    uint8_t compiled_buf[256];
+    int compiled_len = 0;
+    int compile_res = tsfi_strategy_compile_script(
+        "PROCEDURE DIVISION. MOVE DBTG-CRU TO R2. MOVE DBTG-REALM-LOCK TO R3.",
+        compiled_buf, sizeof(compiled_buf), &compiled_len
+    );
+    assert(compile_res == 0);
+    assert(compiled_len > 0);
+    
+    TSFiStrategyVM bound_strat_vm;
+    tsfi_strategy_vm_init(&bound_strat_vm);
+    bound_strat_vm.registers[0] = 5005;
+    bound_strat_vm.registers[1] = 4;
+    
+    int exec_res = tsfi_strategy_vm_execute_bytecode(&bound_strat_vm, NULL, compiled_buf, compiled_len, NULL);
+    assert(exec_res == 0);
+    assert(bound_strat_vm.registers[2] == 5005);
+    assert(bound_strat_vm.registers[3] == 4);
+    printf("  [PASS] DBTG-CRU and DBTG-REALM-LOCK keywords successfully compiled to bytecode.\n");
+
+    // 84. S/370 Dynamic Address Translation (DAT) Verification
+    printf("[Test] Verifying S/370 Dynamic Address Translation (DAT)...\n");
+    tsfi_s370_vs_dat dat_s370;
+    tsfi_s370_vs_dat_init(&dat_s370);
+    dat_s370.segment_table[3] = 0x1000;
+    dat_s370.page_tables[3][5] = 0x50000;
+    
+    uint32_t phys_addr = 0;
+    int trans_res = tsfi_s370_vs_dat_translate(&dat_s370, (3 << 12) | (5 << 8) | 12, &phys_addr);
+    assert(trans_res == 0);
+    assert(phys_addr == 0x5000C);
+    printf("  [PASS] S/370 Virtual-to-Real dynamic address mapping verified.\n");
+
+    // 85. Relational Tuple-Space to CODASYL Mapper Verification
+    printf("[Test] Verifying Relational Tuple-Space mapping...\n");
+    tsfi_relational_tuple relational_t;
+    tsfi_relational_tuple_init(&relational_t, "MUTABLE-AREA", "USER_KEY_123");
+    
+    int rel_db_stat = 0;
+    int rel_map_res = tsfi_relational_map_to_codasyl(&relational_t, &exception_realm_reg, &rel_db_stat);
+    assert(rel_map_res == 0);
+    assert(rel_db_stat == DB_STATUS_OK);
+    printf("  [PASS] Relational query projection matrix mapper verified.\n");
+
+    // 86. Structured Programming Go-To-Less Static Analyzer Verification
+    printf("[Test] Verifying Structured Programming static analyzer...\n");
+    tsfi_structured_analysis_report struct_report;
+    tsfi_structured_analyze_script("LOOPSTART: ADD R1 TO R2. GOTO LOOPSTART.", &struct_report);
+    assert(struct_report.goto_count == 1);
+    assert(struct_report.backward_jmp_detected == 1);
+    printf("  [PASS] Go-To-Less structured static analysis checker verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

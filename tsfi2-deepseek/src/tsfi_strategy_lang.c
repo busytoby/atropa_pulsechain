@@ -476,9 +476,16 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
 
     // Resolve all variable tokens in the procedure division
     for (int i = idx; i < token_count; i++) {
-        for (int m = 0; m < var_map_count; m++) {
-            if (strcmp(tokens[i], var_maps[m].var_name) == 0) {
-                tokens[i] = var_maps[m].reg_name;
+        if (strcmp(tokens[i], "DBTG-CRU") == 0) {
+            tokens[i] = "R0";
+        } else if (strcmp(tokens[i], "DBTG-REALM-LOCK") == 0) {
+            tokens[i] = "R1";
+        } else {
+            for (int m = 0; m < var_map_count; m++) {
+                if (strcmp(tokens[i], var_maps[m].var_name) == 0) {
+                    tokens[i] = var_maps[m].reg_name;
+                    break;
+                }
             }
         }
     }

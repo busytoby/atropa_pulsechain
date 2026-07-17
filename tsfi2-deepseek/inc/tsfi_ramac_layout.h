@@ -1472,4 +1472,31 @@ typedef struct {
 void tsfi_dbtg_dml_tracker_init(tsfi_dbtg_dml_tracker *tracker);
 int tsfi_dbtg_execute_dml(tsfi_dbtg_dml_tracker *tracker, int verb_opcode);
 
+// S/370 Dynamic Address Translation (DAT)
+typedef struct {
+    uint32_t segment_table[16];
+    uint32_t page_tables[16][16];
+} tsfi_s370_vs_dat;
+
+void tsfi_s370_vs_dat_init(tsfi_s370_vs_dat *dat);
+int tsfi_s370_vs_dat_translate(const tsfi_s370_vs_dat *dat, uint32_t virtual_address, uint32_t *physical_address_out);
+
+// Relational Tuple-Space to CODASYL Mapper
+typedef struct {
+    char relation_name[32];
+    char tuple_key[32];
+    int resolved_record_id;
+} tsfi_relational_tuple;
+
+void tsfi_relational_tuple_init(tsfi_relational_tuple *t, const char *rel, const char *key);
+int tsfi_relational_map_to_codasyl(const tsfi_relational_tuple *t, const tsfi_dbtg_realm_registry *realm_reg, int *db_status_out);
+
+// Structured Programming Go-To-Less Static Analyzer
+typedef struct {
+    int goto_count;
+    int backward_jmp_detected;
+} tsfi_structured_analysis_report;
+
+void tsfi_structured_analyze_script(const char *script, tsfi_structured_analysis_report *report);
+
 #endif // TSFI_RAMAC_LAYOUT_H
