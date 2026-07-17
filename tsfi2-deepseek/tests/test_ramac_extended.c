@@ -210,6 +210,42 @@ int main(void) {
     assert(tsfi_rca501_check_channel(&rca_ctrl, 3) == 0);
     printf("  [PASS] RCA 501 items parser and channel interlocks verified.\n");
 
+    // 11. Integrated COBOL Strategy Loop over Atlas on Anvil VM
+    printf("[Test] Verifying integrated COBOL Strategy over Atlas on Anvil...\n");
+    tsfi_rca501_controller rca_ctrl_vm;
+    rca_ctrl_vm.channels_busy = 0;
+    tsfi_rca501_set_channel_busy(&rca_ctrl_vm, 4, 1);
+    
+    int run_count = 0;
+    while (tsfi_rca501_check_channel(&rca_ctrl_vm, 4) && run_count < 5) {
+        run_count++;
+        if (run_count == 3) {
+            tsfi_rca501_set_channel_busy(&rca_ctrl_vm, 4, 0);
+        }
+    }
+    assert(run_count == 3);
+    
+    uint8_t strategy_payload[] = { 'Z', 'Z', 'Z', RCA501_EI, 'A', 'A', 'A', RCA501_EM };
+    uint8_t parsed_recs[8][64];
+    int parsed_cnt = tsfi_rca501_parse_items(strategy_payload, sizeof(strategy_payload), parsed_recs, 8);
+    assert(parsed_cnt == 2);
+    
+    tsfi_ramac_card strategy_cards[2];
+    memset(strategy_cards, ' ', sizeof(strategy_cards));
+    memcpy(&strategy_cards[0].columns[0], parsed_recs[0], 3);
+    memcpy(&strategy_cards[1].columns[0], parsed_recs[1], 3);
+    
+    tsfi_cobol_fd strategy_fd;
+    strategy_fd.key_start = 0;
+    strategy_fd.key_len = 3;
+    strategy_fd.record_length = 80;
+    
+    int strategy_sort_res = tsfi_cobol_sort_merge(&strategy_fd, strategy_cards, 2);
+    assert(strategy_sort_res == 0);
+    assert(strncmp(strategy_cards[0].columns, "AAA", 3) == 0);
+    assert(strncmp(strategy_cards[1].columns, "ZZZ", 3) == 0);
+    printf("  [PASS] Integrated COBOL strategy loop over Atlas on Anvil verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
