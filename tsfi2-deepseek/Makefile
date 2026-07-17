@@ -111,7 +111,9 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_spec_queues.o \
             $(OBJ_DIR)/tsfi_coaxial_strategy.o \
             $(OBJ_DIR)/tsfi_coaxial_telemetry.o \
-            $(OBJ_DIR)/tsfi_ramac_layout.o
+            $(OBJ_DIR)/tsfi_ramac_layout.o \
+            $(OBJ_DIR)/tsfi_mainframe_v370.o
+
 
 # --- Plugin Objects ---
 VULKAN_PLUGIN_OBJS = $(OBJ_DIR)/vulkan_init.o $(OBJ_DIR)/vulkan_main.o $(OBJ_DIR)/vulkan_render.o \
