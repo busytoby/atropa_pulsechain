@@ -663,3 +663,28 @@ int tsfi_mf_majordomo_approve(uint32_t cookie, const char *action, uint32_t *pen
 
     return -3;
 }
+
+int tsfi_mf_majordomo_digest(const char **posts, int post_count, char *digest_out, int max_len) {
+    if (!posts || post_count <= 0 || !digest_out || max_len <= 0) return -1;
+
+    int offset = snprintf(digest_out, max_len, "MAJORDOMO DIGEST TABLE OF CONTENTS\n");
+    if (offset < 0 || offset >= max_len) return -2;
+
+    for (int i = 0; i < post_count; i++) {
+        int len = snprintf(digest_out + offset, max_len - offset, "  [%d] Post Entry %d\n", i + 1, i + 1);
+        if (len < 0 || offset + len >= max_len) return -2;
+        offset += len;
+    }
+
+    int sep_len = snprintf(digest_out + offset, max_len - offset, "\n-------------------------------------\n\n");
+    if (sep_len < 0 || offset + sep_len >= max_len) return -2;
+    offset += sep_len;
+
+    for (int i = 0; i < post_count; i++) {
+        int len = snprintf(digest_out + offset, max_len - offset, "[[ Post Entry %d ]]\n%s\n\n", i + 1, posts[i]);
+        if (len < 0 || offset + len >= max_len) return -2;
+        offset += len;
+    }
+
+    return 0;
+}

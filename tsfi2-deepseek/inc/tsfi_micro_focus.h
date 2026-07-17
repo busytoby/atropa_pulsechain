@@ -45,5 +45,6 @@ int tsfi_mf_cics_deq(const char *resource_name, uint32_t task_id, uint32_t *lock
 int tsfi_mf_zmachine_bms_room_render(uint32_t room_id, float player_angle, char *terminal_buffer);
 int tsfi_mf_majordomo_process(const char *cmd_line, char *out_response, int max_len);
 int tsfi_mf_majordomo_approve(uint32_t cookie, const char *action, uint32_t *pending_cookies, int max_pending);
+int tsfi_mf_majordomo_digest(const char **posts, int post_count, char *digest_out, int max_len);
 
 #endif // TSFI_MICRO_FOCUS_H

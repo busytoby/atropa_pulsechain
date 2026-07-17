@@ -364,6 +364,20 @@ int main(void) {
     assert(pending_list[0] == 0);
     printf("  [PASS] Majordomo Moderation Approval Queue verified.\n");
 
+    // 21. Verify Majordomo Digest Builder
+    printf("[TEST] Validating Majordomo Digest Builder...\n");
+    const char *posts[2] = {
+        "Hello World!",
+        "Mainframe operations active."
+    };
+    char digest_buffer[512] = {0};
+    int digest_res = tsfi_mf_majordomo_digest(posts, 2, digest_buffer, sizeof(digest_buffer));
+    assert(digest_res == 0);
+    assert(strstr(digest_buffer, "MAJORDOMO DIGEST TABLE OF CONTENTS") != NULL);
+    assert(strstr(digest_buffer, "Hello World!") != NULL);
+    assert(strstr(digest_buffer, "Mainframe operations active.") != NULL);
+    printf("  [PASS] Majordomo Digest Builder verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
