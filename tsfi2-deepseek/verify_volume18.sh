@@ -147,8 +147,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 192 | CICS Task Execution Inquire Emulator | PASS | Dynamic task parameters query reporter | Volume 33 |
 | 193 | Majordomo Archive Index Purger | PASS | Removes stale log references from archives | Volume 33 |
 | 194 | CICS Task Execution Priority Changer | PASS | Alters current task execution priority level | Volume 33 |
+| 195 | Majordomo Post Policy Checker | PASS | Verification utility checking list post policy | Volume 33 |
+| 196 | CICS Task Priority Inquire Emulator | PASS | Dynamic task execution priority query check | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 194 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 196 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

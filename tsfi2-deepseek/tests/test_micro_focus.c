@@ -995,6 +995,22 @@ int main(void) {
     assert(task_priority_reg == 200);
     printf("  [PASS] CICS CHANGE TASK priority verified.\n");
 
+    // 85. Verify Majordomo List Post Policy Checker
+    printf("[TEST] Validating Majordomo Post Policy Checker...\n");
+    int needs_moderation_val = -1;
+    int pol_res = tsfi_mf_majordomo_check_post_policy("closed", "user@dysnomia.org", 0, &needs_moderation_val);
+    assert(pol_res == 0);
+    assert(needs_moderation_val == 1);
+    printf("  [PASS] Majordomo Post Policy Checker verified.\n");
+
+    // 86. Verify CICS Task Execution Priority Inquire Emulator
+    printf("[TEST] Validating CICS INQUIRE TASK PRIORITY...\n");
+    int priority_out_val = 0;
+    int inq_prio_res = tsfi_mf_cics_inquire_priority(6001, 200, &priority_out_val);
+    assert(inq_prio_res == 0);
+    assert(priority_out_val == 200);
+    printf("  [PASS] CICS INQUIRE TASK PRIORITY verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

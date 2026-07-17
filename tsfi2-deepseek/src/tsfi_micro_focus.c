@@ -1583,3 +1583,27 @@ int tsfi_mf_cics_change_priority(uint32_t task_id, int new_priority, int *priori
     *priority_registry_out = new_priority;
     return 0;
 }
+
+int tsfi_mf_majordomo_check_post_policy(const char *policy, const char *sender, int is_subscriber, int *needs_moderation) {
+    (void)sender;
+    if (!policy || !needs_moderation) return -1;
+
+    if (strcmp(policy, "open") == 0) {
+        *needs_moderation = 0;
+    } else if (strcmp(policy, "moderated") == 0) {
+        *needs_moderation = 1;
+    } else if (strcmp(policy, "closed") == 0) {
+        *needs_moderation = is_subscriber ? 0 : 1;
+    } else {
+        return -2;
+    }
+    return 0;
+}
+
+int tsfi_mf_cics_inquire_priority(uint32_t task_id, int priority_registry, int *priority_out) {
+    (void)task_id;
+    if (!priority_out) return -1;
+
+    *priority_out = priority_registry;
+    return 0;
+}
