@@ -794,3 +794,54 @@ int tsfi_sna_route_prioritize(const tsfi_sna_route *route, int load_factor) {
     if (!route) return -1;
     return route->transmission_priority * 10 - load_factor;
 }
+
+void tsfi_ibm3705_ncp_init(tsfi_ibm3705_ncp *ncp) {
+    if (!ncp) return;
+    ncp->active_partition = 0;
+    for (int i = 0; i < 4; i++) {
+        ncp->partition_busy[i] = 0;
+    }
+}
+
+int tsfi_ibm3705_ncp_switch(tsfi_ibm3705_ncp *ncp, int partition_id) {
+    if (!ncp || partition_id < 0 || partition_id >= 4) return -1;
+    if (ncp->partition_busy[partition_id]) return -2;
+    ncp->active_partition = partition_id;
+    return 0;
+}
+
+void tsfi_sna_session_init(tsfi_sna_session *sess) {
+    if (!sess) return;
+    sess->session_active = 0;
+    sess->traffic_started = 0;
+}
+
+int tsfi_sna_session_handshake(tsfi_sna_session *sess, uint8_t cmd) {
+    if (!sess) return -1;
+    if (cmd == SNA_CMD_BIND) {
+        sess->session_active = 1;
+        sess->traffic_started = 0;
+        return 0;
+    } else if (cmd == SNA_CMD_UNBIND) {
+        sess->session_active = 0;
+        sess->traffic_started = 0;
+        return 0;
+    } else if (cmd == SNA_CMD_SDT) {
+        if (!sess->session_active) return -2;
+        sess->traffic_started = 1;
+        return 0;
+    }
+    return -3;
+}
+
+void tsfi_s370_channel_status_init(tsfi_s370_channel_status *chan) {
+    if (!chan) return;
+    chan->status_byte = 0x00;
+    chan->sense_byte = 0x00;
+}
+
+void tsfi_s370_channel_set_error(tsfi_s370_channel_status *chan, uint8_t sense) {
+    if (!chan) return;
+    chan->status_byte = 0x01;
+    chan->sense_byte = sense;
+}

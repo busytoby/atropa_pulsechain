@@ -310,4 +310,35 @@ typedef struct {
 void tsfi_sna_route_init(tsfi_sna_route *route, uint8_t vr, uint8_t er, int prio);
 int tsfi_sna_route_prioritize(const tsfi_sna_route *route, int load_factor);
 
+// IBM 3705 EP/NCP Partition State Machine
+typedef struct {
+    int active_partition;
+    int partition_busy[4];
+} tsfi_ibm3705_ncp;
+
+void tsfi_ibm3705_ncp_init(tsfi_ibm3705_ncp *ncp);
+int tsfi_ibm3705_ncp_switch(tsfi_ibm3705_ncp *ncp, int partition_id);
+
+// SNA Session BIND/SDT Handshake Engine
+typedef struct {
+    int session_active;
+    int traffic_started;
+} tsfi_sna_session;
+
+void tsfi_sna_session_init(tsfi_sna_session *sess);
+int tsfi_sna_session_handshake(tsfi_sna_session *sess, uint8_t cmd);
+
+#define SNA_CMD_BIND   0x31
+#define SNA_CMD_UNBIND 0x32
+#define SNA_CMD_SDT    0x33
+
+// S/370 Channel Status & Sense Byte Registers
+typedef struct {
+    uint8_t status_byte;
+    uint8_t sense_byte;
+} tsfi_s370_channel_status;
+
+void tsfi_s370_channel_status_init(tsfi_s370_channel_status *chan);
+void tsfi_s370_channel_set_error(tsfi_s370_channel_status *chan, uint8_t sense);
+
 #endif // TSFI_MAINFRAME_DECNET_H

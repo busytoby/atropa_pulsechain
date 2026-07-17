@@ -26,6 +26,7 @@ int main(int argc, char **argv) {
         printf("  %s --datetime <date> <time>    Validate date & time interchange (FIPS 4-1 / 58-1)\n", argv[0]);
         printf("  %s --risk-ale <val> <fq> <imp> Calculate Annual Loss Expectancy (FIPS 31)\n", argv[0]);
         printf("  %s --software-summary <t> <st> Validate program registry status (FIPS 30)\n", argv[0]);
+        printf("  %s --selftest                  Execute FIPS 140-3 Cryptographic Self-Tests\n", argv[0]);
         return 0;
     }
 
@@ -243,6 +244,14 @@ int main(int argc, char **argv) {
             printf("RESULT: COMPLIANT STATUS DESCRIPTOR\n");
         } else {
             printf("RESULT: COMPLIANCE VIOLATION (Error: %d)\n", res);
+        }
+    } else if (strcmp(argv[1], "--selftest") == 0) {
+        printf("[FIPS 140-3 AUDIT] Running Startup Known Answer Tests...\n");
+        int res = tsfi_fips140_self_test();
+        if (res == 0) {
+            printf("RESULT: ALL SELF-TESTS PASSED\n");
+        } else {
+            printf("RESULT: INTEGRITY FAILURE (Error Code: %d)\n", res);
         }
     } else {
         printf("Unknown option or insufficient arguments.\n");

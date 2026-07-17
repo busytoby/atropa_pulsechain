@@ -336,6 +336,44 @@ int main(void) {
     assert(tsfi_sna_route_prioritize(&route, 5) == 25);
     printf("  [PASS] SNA virtual route prioritization engines verified.\n");
 
+    // 25. IBM 3705 EP/NCP Partition State Machine Verification
+    printf("[Test] Verifying IBM 3705 NCP Partition Switching...\n");
+    tsfi_ibm3705_ncp ncp;
+    tsfi_ibm3705_ncp_init(&ncp);
+    assert(ncp.active_partition == 0);
+    ncp.partition_busy[2] = 1;
+    // Switching to busy partition fails
+    assert(tsfi_ibm3705_ncp_switch(&ncp, 2) == -2);
+    // Switching to free partition succeeds
+    assert(tsfi_ibm3705_ncp_switch(&ncp, 3) == 0);
+    assert(ncp.active_partition == 3);
+    printf("  [PASS] IBM 3705 EP/NCP partition states verified.\n");
+
+    // 26. SNA Session BIND/SDT Handshake Verification
+    printf("[Test] Verifying SNA Session Handshakes...\n");
+    tsfi_sna_session sess;
+    tsfi_sna_session_init(&sess);
+    assert(sess.session_active == 0);
+    // SDT before BIND fails
+    assert(tsfi_sna_session_handshake(&sess, SNA_CMD_SDT) == -2);
+    assert(tsfi_sna_session_handshake(&sess, SNA_CMD_BIND) == 0);
+    assert(sess.session_active == 1);
+    assert(tsfi_sna_session_handshake(&sess, SNA_CMD_SDT) == 0);
+    assert(sess.traffic_started == 1);
+    printf("  [PASS] SNA BIND and SDT session handshakes verified.\n");
+
+    // 27. S/370 Channel Status & Sense Bytes Verification
+    printf("[Test] Verifying S/370 Channel Registers...\n");
+    tsfi_s370_channel_status chan;
+    tsfi_s370_channel_status_init(&chan);
+    assert(chan.status_byte == 0x00);
+    assert(chan.sense_byte == 0x00);
+    // Trigger I/O channel error (Sense byte 0x10 = Bus Out Check)
+    tsfi_s370_channel_set_error(&chan, 0x10);
+    assert(chan.status_byte == 0x01); // Unit Check
+    assert(chan.sense_byte == 0x10);
+    printf("  [PASS] S/370 channel adapter status and sense registers verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;
