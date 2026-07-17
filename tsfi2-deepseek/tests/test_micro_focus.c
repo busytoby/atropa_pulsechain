@@ -1148,6 +1148,23 @@ int main(void) {
     assert(queuedtasks_val == 5);
     printf("  [PASS] CICS INQUIRE SYSTEM QUEUEDTASKS verified.\n");
 
+    // 103. Verify Majordomo List Config Strip Comments Utility
+    printf("[TEST] Validating Majordomo Config Comments Stripper...\n");
+    char stripped_cfg_buf[128] = {0};
+    int strip_res = tsfi_mf_majordomo_strip_comments("# comment line\nlist = zmm-dev\n  # indent comment\nmoderate = yes\n", stripped_cfg_buf, sizeof(stripped_cfg_buf));
+    assert(strip_res == 0);
+    assert(strstr(stripped_cfg_buf, "# comment") == NULL);
+    assert(strstr(stripped_cfg_buf, "list = zmm-dev") != NULL);
+    printf("  [PASS] Majordomo Config Comments Stripper verified.\n");
+
+    // 104. Verify CICS System Inquire Transaction Class Capacity Emulator
+    printf("[TEST] Validating CICS INQUIRE SYSTEM TRANCLASS...\n");
+    int class_limit_val = 0;
+    int inq_cls_res = tsfi_mf_cics_inquire_tranclass("FASTTRAN", 15, &class_limit_val);
+    assert(inq_cls_res == 0);
+    assert(class_limit_val == 15);
+    printf("  [PASS] CICS INQUIRE SYSTEM TRANCLASS verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

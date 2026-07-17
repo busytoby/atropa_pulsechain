@@ -1776,3 +1776,34 @@ int tsfi_mf_cics_inquire_queuedtasks(int queued_tasks_count, int *queued_tasks_o
     *queued_tasks_out = queued_tasks_count;
     return 0;
 }
+
+int tsfi_mf_majordomo_strip_comments(const char *config, char *config_out, int max_len) {
+    if (!config || !config_out || max_len <= 0) return -1;
+
+    int out_idx = 0;
+    const char *line = config;
+    while (*line != '\0' && out_idx < max_len - 1) {
+        while (*line == ' ' || *line == '\t') line++;
+        if (*line == '#' || *line == '\n' || *line == '\r') {
+            while (*line != '\n' && *line != '\0') line++;
+            if (*line == '\n') line++;
+        } else {
+            while (*line != '\n' && *line != '\0' && out_idx < max_len - 1) {
+                config_out[out_idx++] = *line++;
+            }
+            if (*line == '\n' && out_idx < max_len - 1) {
+                config_out[out_idx++] = *line++;
+            }
+        }
+    }
+    config_out[out_idx] = '\0';
+    return 0;
+}
+
+int tsfi_mf_cics_inquire_tranclass(const char *class_name, int class_limit_registry, int *class_limit_out) {
+    (void)class_name;
+    if (!class_limit_out) return -1;
+
+    *class_limit_out = class_limit_registry;
+    return 0;
+}

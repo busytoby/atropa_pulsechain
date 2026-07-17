@@ -144,5 +144,7 @@
 | 210 | CICS System Active Tasks Inquirer | PASS | Checks count of active emulator tasks | Volume 33 |
 | 211 | Majordomo KV Line Syntax Checker | PASS | Validates configuration line layout formats | Volume 33 |
 | 212 | CICS System Queued Tasks Inquirer | PASS | Checks count of pending scheduler tasks | Volume 33 |
+| 213 | Majordomo Config Comments Stripper | PASS | Removes comment lines starting with comments marker | Volume 33 |
+| 214 | CICS Transaction Class Capacity Inquirer | PASS | Checks execution limits on transaction classes | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 212 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 214 Scenarios validated successfully)
