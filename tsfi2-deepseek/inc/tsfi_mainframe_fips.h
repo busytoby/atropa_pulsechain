@@ -137,4 +137,7 @@ typedef struct {
 void tsfi_fips73_audit_init(tsfi_fips73_auditor *auditor);
 int tsfi_fips73_audit_transaction(tsfi_fips73_auditor *auditor, const char *record_name, int payload_val);
 
+// Scenario 154: NBS FIPS PUB 38 Automated Documentation Compliance Auditor
+int tsfi_fips38_audit_document(const char *doc_content, int *out_completeness_percent);
+
 #endif // TSFI_MAINFRAME_FIPS_H

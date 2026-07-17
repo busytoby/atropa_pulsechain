@@ -1765,6 +1765,28 @@ int main(void) {
     assert(fips_auditor.validation_failures == 1);
     printf("  [PASS] FIPS 73 input control range checks and processing audits verified.\n");
 
+    // 154. NBS FIPS PUB 38 Automated Documentation Compliance Auditor Verification
+    printf("[Test] Verifying NBS FIPS PUB 38 Automated Documentation Compliance Auditor...\n");
+    const char *compliant_doc = 
+        "# Project Design\n"
+        "## Functional Requirements\n"
+        "Standard functions details here.\n"
+        "## System Specifications\n"
+        "Detailed architecture mappings.\n"
+        "## Program Specifications\n"
+        "C modules definitions.\n"
+        "## User Manual\n"
+        "Getting started documentation.\n";
+        
+    int completeness = 0;
+    assert(tsfi_fips38_audit_document(compliant_doc, &completeness) == 0);
+    assert(completeness == 100);
+    
+    const char *non_compliant_doc = "# Simple notes\nNo headers here.";
+    assert(tsfi_fips38_audit_document(non_compliant_doc, &completeness) == 0);
+    assert(completeness == 0);
+    printf("  [PASS] FIPS 38 documentation phases and validation percentage checks verified.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 

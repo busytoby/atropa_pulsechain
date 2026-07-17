@@ -572,3 +572,32 @@ int tsfi_fips73_audit_transaction(tsfi_fips73_auditor *auditor, const char *reco
     auditor->valid_transactions++;
     return 0;
 }
+
+int tsfi_fips38_audit_document(const char *doc_content, int *out_completeness_percent) {
+    if (!doc_content || !out_completeness_percent) return -1;
+    
+    int score = 0;
+    
+    // Check for FIPS PUB 38 Phase 1: Functional Requirements
+    if (strstr(doc_content, "Functional Requirements") != NULL) {
+        score += 25;
+    }
+    
+    // Check for FIPS PUB 38 Phase 2: System/Subsystem Specifications
+    if (strstr(doc_content, "System Specifications") != NULL || strstr(doc_content, "Subsystem Specifications") != NULL) {
+        score += 25;
+    }
+    
+    // Check for FIPS PUB 38 Phase 3: Program Specifications
+    if (strstr(doc_content, "Program Specifications") != NULL) {
+        score += 25;
+    }
+    
+    // Check for FIPS PUB 38 Phase 4: User Manual
+    if (strstr(doc_content, "User Manual") != NULL) {
+        score += 25;
+    }
+    
+    *out_completeness_percent = score;
+    return 0;
+}
