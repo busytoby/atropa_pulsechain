@@ -62,6 +62,15 @@ static void* mpc_server_thread(void *arg) {
     assert(r2 > 0);
     printf("[MPC_SERVER] Received from Client 2: %s\n", buf2);
 
+    // Proxy/forward communications to the opposite clients
+    printf("[MPC_SERVER] Proxying Client 1 packet to Client 2...\n");
+    ssize_t w2 = write(client2_fd, buf1, strlen(buf1));
+    assert(w2 > 0);
+
+    printf("[MPC_SERVER] Proxying Client 2 packet to Client 1...\n");
+    ssize_t w1 = write(client1_fd, buf2, strlen(buf2));
+    assert(w1 > 0);
+
     TSFiAnvilVM vm;
     tsfi_anvil_vm_init(&vm);
     tsfi_anvil_vm_bind(&vm, "imp/route/status", "VERIFIED");
@@ -101,6 +110,15 @@ static void* client1_thread(void *arg) {
 
     ssize_t w = write(client_fd, out_buf, strlen(out_buf));
     assert(w > 0);
+
+    // Read proxied message from Client 2
+    char recv_buf[BUFFER_SIZE];
+    memset(recv_buf, 0, BUFFER_SIZE);
+    ssize_t r = read(client_fd, recv_buf, BUFFER_SIZE - 1);
+    assert(r > 0);
+    printf("[CLIENT_1] Received proxied message: %s\n", recv_buf);
+    assert(strstr(recv_buf, "CLIENT_2_HELLO") != NULL);
+
     close(client_fd);
     return NULL;
 }
@@ -129,6 +147,15 @@ static void* client2_thread(void *arg) {
 
     ssize_t w = write(client_fd, out_buf, strlen(out_buf));
     assert(w > 0);
+
+    // Read proxied message from Client 1
+    char recv_buf[BUFFER_SIZE];
+    memset(recv_buf, 0, BUFFER_SIZE);
+    ssize_t r = read(client_fd, recv_buf, BUFFER_SIZE - 1);
+    assert(r > 0);
+    printf("[CLIENT_2] Received proxied message: %s\n", recv_buf);
+    assert(strstr(recv_buf, "CLIENT_1_HELLO") != NULL);
+
     close(client_fd);
     return NULL;
 }
