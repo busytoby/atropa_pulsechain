@@ -1321,6 +1321,8 @@ int tsfi_rwcs_write_final(tsfi_rwcs_report *rep, char *out, size_t max_len);
 #define MCS_EMI 0x02
 #define MCS_EGI 0x04
 
+#include <pthread.h>
+
 typedef struct {
     char queue_name[16];
     char sub_queue1[16];
@@ -1332,6 +1334,7 @@ typedef struct {
     int tail;
     int count;
     char status_key[3];
+    pthread_mutex_t lock;
 } tsfi_mcs_queue;
 
 void tsfi_mcs_init(tsfi_mcs_queue *q, const char *name);

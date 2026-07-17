@@ -5488,6 +5488,7 @@ void tsfi_mcs_init(tsfi_mcs_queue *q, const char *name) {
     if (!q) return;
     memset(q, 0, sizeof(tsfi_mcs_queue));
     strcpy(q->status_key, "00");
+    pthread_mutex_init(&q->lock, NULL);
     if (name) {
         strncpy(q->queue_name, name, sizeof(q->queue_name) - 1);
     }
@@ -5495,8 +5496,13 @@ void tsfi_mcs_init(tsfi_mcs_queue *q, const char *name) {
 
 int tsfi_mcs_send(tsfi_mcs_queue *q, const char *msg, void *wmq_void) {
     if (!q || !msg) return -1;
+    if (pthread_mutex_trylock(&q->lock) != 0) {
+        strcpy(q->status_key, "40");
+        return -4;
+    }
     if (q->count >= 8) {
         strcpy(q->status_key, "10");
+        pthread_mutex_unlock(&q->lock);
         return -2;
     }
     strncpy(q->messages[q->tail], msg, sizeof(q->messages[q->tail]) - 1);
@@ -5504,6 +5510,7 @@ int tsfi_mcs_send(tsfi_mcs_queue *q, const char *msg, void *wmq_void) {
     q->tail = (q->tail + 1) % 8;
     q->count++;
     strcpy(q->status_key, "00");
+    pthread_mutex_unlock(&q->lock);
     TSFiWinchesterBridge *wmq = (TSFiWinchesterBridge *)wmq_void;
     if (wmq) {
         wmq->registers.status_reg = 1;
@@ -5518,8 +5525,13 @@ int tsfi_mcs_send(tsfi_mcs_queue *q, const char *msg, void *wmq_void) {
 
 int tsfi_mcs_receive(tsfi_mcs_queue *q, char *msg_out, size_t max_len) {
     if (!q || !msg_out || max_len == 0) return -1;
+    if (pthread_mutex_trylock(&q->lock) != 0) {
+        strcpy(q->status_key, "40");
+        return -4;
+    }
     if (q->count == 0) {
         strcpy(q->status_key, "20");
+        pthread_mutex_unlock(&q->lock);
         return -2;
     }
     strncpy(msg_out, q->messages[q->head], max_len - 1);
@@ -5527,6 +5539,7 @@ int tsfi_mcs_receive(tsfi_mcs_queue *q, char *msg_out, size_t max_len) {
     q->head = (q->head + 1) % 8;
     q->count--;
     strcpy(q->status_key, "00");
+    pthread_mutex_unlock(&q->lock);
     return 0;
 }
 
@@ -5534,6 +5547,7 @@ void tsfi_mcs_init_hierarchical(tsfi_mcs_queue *q, const char *q_name, const cha
     if (!q) return;
     memset(q, 0, sizeof(tsfi_mcs_queue));
     strcpy(q->status_key, "00");
+    pthread_mutex_init(&q->lock, NULL);
     if (q_name) strncpy(q->queue_name, q_name, sizeof(q->queue_name) - 1);
     if (sq1) strncpy(q->sub_queue1, sq1, sizeof(q->sub_queue1) - 1);
     if (sq2) strncpy(q->sub_queue2, sq2, sizeof(q->sub_queue2) - 1);
@@ -5542,8 +5556,13 @@ void tsfi_mcs_init_hierarchical(tsfi_mcs_queue *q, const char *q_name, const cha
 
 int tsfi_mcs_send_segment(tsfi_mcs_queue *q, const char *msg, uint8_t indicator, void *wmq_void) {
     if (!q || !msg) return -1;
+    if (pthread_mutex_trylock(&q->lock) != 0) {
+        strcpy(q->status_key, "40");
+        return -4;
+    }
     if (q->count >= 8) {
         strcpy(q->status_key, "10");
+        pthread_mutex_unlock(&q->lock);
         return -2;
     }
     strncpy(q->messages[q->tail], msg, sizeof(q->messages[q->tail]) - 1);
@@ -5551,6 +5570,7 @@ int tsfi_mcs_send_segment(tsfi_mcs_queue *q, const char *msg, uint8_t indicator,
     q->tail = (q->tail + 1) % 8;
     q->count++;
     strcpy(q->status_key, "00");
+    pthread_mutex_unlock(&q->lock);
     TSFiWinchesterBridge *wmq = (TSFiWinchesterBridge *)wmq_void;
     if (wmq) {
         wmq->registers.status_reg = 1;
@@ -5565,8 +5585,13 @@ int tsfi_mcs_send_segment(tsfi_mcs_queue *q, const char *msg, uint8_t indicator,
 
 int tsfi_mcs_receive_segment(tsfi_mcs_queue *q, char *msg_out, size_t max_len, uint8_t *indicator_out) {
     if (!q || !msg_out || max_len == 0) return -1;
+    if (pthread_mutex_trylock(&q->lock) != 0) {
+        strcpy(q->status_key, "40");
+        return -4;
+    }
     if (q->count == 0) {
         strcpy(q->status_key, "20");
+        pthread_mutex_unlock(&q->lock);
         return -2;
     }
     strncpy(msg_out, q->messages[q->head], max_len - 1);
@@ -5577,6 +5602,7 @@ int tsfi_mcs_receive_segment(tsfi_mcs_queue *q, char *msg_out, size_t max_len, u
     q->head = (q->head + 1) % 8;
     q->count--;
     strcpy(q->status_key, "00");
+    pthread_mutex_unlock(&q->lock);
     return 0;
 }
 

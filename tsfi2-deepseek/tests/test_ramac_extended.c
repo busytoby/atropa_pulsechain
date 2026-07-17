@@ -1184,6 +1184,19 @@ int main(void) {
     assert(strcmp(assembled_msg, "PART1_PART2") == 0);
     printf("  [PASS] CODASYL MCS segment assembly and message reconstruction passed.\n");
 
+    // 69. CODASYL MCS Queue Mutex Locking Verification
+    printf("[Test] Verifying CODASYL MCS queue mutex lock execution...\n");
+    tsfi_mcs_queue lock_q;
+    tsfi_mcs_init(&lock_q, "LOCK_Q");
+    
+    pthread_mutex_lock(&lock_q.lock);
+    int lock_send = tsfi_mcs_send(&lock_q, "LOCKED", NULL);
+    assert(lock_send == -4);
+    assert(strcmp(lock_q.status_key, "40") == 0);
+    
+    pthread_mutex_unlock(&lock_q.lock);
+    printf("  [PASS] CODASYL MCS queue mutex locking and status key realignment verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
