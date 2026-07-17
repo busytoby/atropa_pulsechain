@@ -7135,3 +7135,71 @@ int tsfi_cp_share_calculate_slice(const tsfi_cp_share_table *tbl, const char *ui
     }
     return -1;
 }
+
+void tsfi_cp_mss_init(tsfi_cp_mss_manager *mgr) {
+    if (!mgr) return;
+    memset(mgr, 0, sizeof(tsfi_cp_mss_manager));
+}
+
+int tsfi_cp_mss_register_group(tsfi_cp_mss_manager *mgr, const char *group_name) {
+    if (!mgr || !group_name || mgr->count >= MAX_MSS_GROUPS) return -1;
+    strncpy(mgr->groups[mgr->count].group_name, group_name, sizeof(mgr->groups[mgr->count].group_name) - 1);
+    mgr->groups[mgr->count].group_name[sizeof(mgr->groups[mgr->count].group_name) - 1] = '\0';
+    mgr->groups[mgr->count].is_mounted = 0;
+    mgr->groups[mgr->count].owner_vm[0] = '\0';
+    mgr->count++;
+    return 0;
+}
+
+int tsfi_cp_mss_mount(tsfi_cp_mss_manager *mgr, const char *group_name, const char *vm_name) {
+    if (!mgr || !group_name || !vm_name) return -1;
+    for (int i = 0; i < mgr->count; i++) {
+        if (strcmp(mgr->groups[i].group_name, group_name) == 0) {
+            if (mgr->groups[i].is_mounted) {
+                if (strcmp(mgr->groups[i].owner_vm, vm_name) == 0) {
+                    return 0;
+                }
+                return -2;
+            }
+            strncpy(mgr->groups[i].owner_vm, vm_name, sizeof(mgr->groups[i].owner_vm) - 1);
+            mgr->groups[i].owner_vm[sizeof(mgr->groups[i].owner_vm) - 1] = '\0';
+            mgr->groups[i].is_mounted = 1;
+            return 0;
+        }
+    }
+    return -1;
+}
+
+int tsfi_cp_mss_unmount(tsfi_cp_mss_manager *mgr, const char *group_name, const char *vm_name) {
+    if (!mgr || !group_name || !vm_name) return -1;
+    for (int i = 0; i < mgr->count; i++) {
+        if (strcmp(mgr->groups[i].group_name, group_name) == 0) {
+            if (!mgr->groups[i].is_mounted) {
+                return 0;
+            }
+            if (strcmp(mgr->groups[i].owner_vm, vm_name) != 0) {
+                return -2;
+            }
+            mgr->groups[i].is_mounted = 0;
+            mgr->groups[i].owner_vm[0] = '\0';
+            return 0;
+        }
+    }
+    return -1;
+}
+
+int tsfi_cp_mss_query(const tsfi_cp_mss_manager *mgr, const char *group_name, char *out_owner, int max_len) {
+    if (!mgr || !group_name || !out_owner || max_len <= 0) return -1;
+    for (int i = 0; i < mgr->count; i++) {
+        if (strcmp(mgr->groups[i].group_name, group_name) == 0) {
+            if (mgr->groups[i].is_mounted) {
+                strncpy(out_owner, mgr->groups[i].owner_vm, max_len - 1);
+                out_owner[max_len - 1] = '\0';
+                return 1;
+            }
+            out_owner[0] = '\0';
+            return 0;
+        }
+    }
+    return -1;
+}

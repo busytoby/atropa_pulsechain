@@ -1987,4 +1987,23 @@ void tsfi_cp_share_init(tsfi_cp_share_table *tbl);
 int tsfi_cp_share_set(tsfi_cp_share_table *tbl, const char *uid, int absolute, int val);
 int tsfi_cp_share_calculate_slice(const tsfi_cp_share_table *tbl, const char *uid, int total_weight_sum, int *slice_ms);
 
+// VM/370 Release 4 IBM 3850 Mass Storage System (MSS) Sharing Linker
+typedef struct {
+    char group_name[16];
+    char owner_vm[16];
+    int is_mounted;
+} tsfi_cp_mss_group;
+
+#define MAX_MSS_GROUPS 4
+typedef struct {
+    tsfi_cp_mss_group groups[MAX_MSS_GROUPS];
+    int count;
+} tsfi_cp_mss_manager;
+
+void tsfi_cp_mss_init(tsfi_cp_mss_manager *mgr);
+int tsfi_cp_mss_register_group(tsfi_cp_mss_manager *mgr, const char *group_name);
+int tsfi_cp_mss_mount(tsfi_cp_mss_manager *mgr, const char *group_name, const char *vm_name);
+int tsfi_cp_mss_unmount(tsfi_cp_mss_manager *mgr, const char *group_name, const char *vm_name);
+int tsfi_cp_mss_query(const tsfi_cp_mss_manager *mgr, const char *group_name, char *out_owner, int max_len);
+
 #endif // TSFI_RAMAC_LAYOUT_H

@@ -2274,6 +2274,35 @@ int main(void) {
     assert(share_slice_ms == 250); // 100 / 400 * 1000ms
     printf("  [PASS] VM/370 CP scheduler share timeslices verified.\n");
 
+    // 124. VM/370 Release 4 IBM 3850 Mass Storage System (MSS) Sharing Linker Verification
+    printf("[Test] Verifying VM/370 Release 4 IBM 3850 MSS Sharing...\n");
+    tsfi_cp_mss_manager mss;
+    tsfi_cp_mss_init(&mss);
+    assert(mss.count == 0);
+    
+    // Register groups
+    assert(tsfi_cp_mss_register_group(&mss, "MSSGRP01") == 0);
+    assert(tsfi_cp_mss_register_group(&mss, "MSSGRP02") == 0);
+    assert(mss.count == 2);
+    
+    // Query group (not mounted)
+    char owner[16];
+    assert(tsfi_cp_mss_query(&mss, "MSSGRP01", owner, sizeof(owner)) == 0);
+    
+    // Mount group
+    assert(tsfi_cp_mss_mount(&mss, "MSSGRP01", "GUESTVM1") == 0);
+    assert(tsfi_cp_mss_query(&mss, "MSSGRP01", owner, sizeof(owner)) == 1);
+    assert(strcmp(owner, "GUESTVM1") == 0);
+    
+    // Attempt mount by another VM should fail
+    assert(tsfi_cp_mss_mount(&mss, "MSSGRP01", "GUESTVM2") == -2);
+    
+    // Unmount group
+    assert(tsfi_cp_mss_unmount(&mss, "MSSGRP01", "GUESTVM2") == -2); // Not owner
+    assert(tsfi_cp_mss_unmount(&mss, "MSSGRP01", "GUESTVM1") == 0);
+    assert(tsfi_cp_mss_query(&mss, "MSSGRP01", owner, sizeof(owner)) == 0);
+    printf("  [PASS] VM/370 CP mass storage sharing mount locks verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
