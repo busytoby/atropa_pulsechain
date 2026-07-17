@@ -472,4 +472,26 @@ void tsfi_schema_audit_init(tsfi_schema_audit_tracker *tracker);
 int tsfi_schema_audit_log(tsfi_schema_audit_tracker *tracker, const char *op, const char *elem_name, uint32_t hash_before);
 uint32_t tsfi_schema_audit_checksum(const tsfi_schema_audit_tracker *tracker);
 
+// Scenario 138: CODASYL Subschema Authorization and Area Privilege Auditor
+#define MAX_PRIVILEGE_RULES 8
+#define PRIV_READ   0x01
+#define PRIV_WRITE  0x02
+
+typedef struct {
+    char subschema_name[32];
+    char target_element[32];
+    int allowed_mask;
+} tsfi_subschema_rule;
+
+typedef struct {
+    tsfi_subschema_rule rules[MAX_PRIVILEGE_RULES];
+    int rule_count;
+    int denied_attempts;
+    int authorized_attempts;
+} tsfi_subschema_auditor;
+
+void tsfi_subschema_audit_init(tsfi_subschema_auditor *auditor);
+int tsfi_subschema_add_rule(tsfi_subschema_auditor *auditor, const char *subschema, const char *element, int allowed_mask);
+int tsfi_subschema_authorize(tsfi_subschema_auditor *auditor, const char *subschema, const char *element, int priv_mask, int *out_authorized);
+
 #endif // TSFI_MAINFRAME_V370_H

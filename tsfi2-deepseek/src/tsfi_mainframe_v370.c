@@ -1431,3 +1431,36 @@ uint32_t tsfi_schema_audit_checksum(const tsfi_schema_audit_tracker *tracker) {
     if (!tracker) return 0;
     return tracker->running_checksum;
 }
+
+void tsfi_subschema_audit_init(tsfi_subschema_auditor *auditor) {
+    if (!auditor) return;
+    memset(auditor, 0, sizeof(tsfi_subschema_auditor));
+}
+
+int tsfi_subschema_add_rule(tsfi_subschema_auditor *auditor, const char *subschema, const char *element, int allowed_mask) {
+    if (!auditor || !subschema || !element || auditor->rule_count >= MAX_PRIVILEGE_RULES) return -1;
+    tsfi_subschema_rule *rule = &auditor->rules[auditor->rule_count];
+    snprintf(rule->subschema_name, sizeof(rule->subschema_name), "%s", subschema);
+    snprintf(rule->target_element, sizeof(rule->target_element), "%s", element);
+    rule->allowed_mask = allowed_mask;
+    auditor->rule_count++;
+    return 0;
+}
+
+int tsfi_subschema_authorize(tsfi_subschema_auditor *auditor, const char *subschema, const char *element, int priv_mask, int *out_authorized) {
+    if (!auditor || !subschema || !element || !out_authorized) return -1;
+    *out_authorized = 0;
+    
+    for (int i = 0; i < auditor->rule_count; i++) {
+        if (strcmp(auditor->rules[i].subschema_name, subschema) == 0 &&
+            strcmp(auditor->rules[i].target_element, element) == 0) {
+            if ((auditor->rules[i].allowed_mask & priv_mask) == priv_mask) {
+                *out_authorized = 1;
+                auditor->authorized_attempts++;
+                return 0;
+            }
+        }
+    }
+    auditor->denied_attempts++;
+    return 0;
+}

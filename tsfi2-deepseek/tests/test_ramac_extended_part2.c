@@ -1353,6 +1353,32 @@ int main(void) {
     assert(audit_tracker.count == 2);
     printf("  [PASS] Schema structural change logs and hash-chained audit trails validated.\n");
 
+    // 138. CODASYL Subschema Authorization and Area Privilege Auditor Verification
+    printf("[Test] Verifying Subschema Authorization and Area Privilege Auditor...\n");
+    tsfi_subschema_auditor sub_aud;
+    tsfi_subschema_audit_init(&sub_aud);
+    
+    // Add allowed rules
+    assert(tsfi_subschema_add_rule(&sub_aud, "SUBSCHEMA01", "CUSTREC", PRIV_READ) == 0);
+    assert(tsfi_subschema_add_rule(&sub_aud, "SUBSCHEMA01", "ORDERREC", PRIV_READ | PRIV_WRITE) == 0);
+    
+    int auth = 0;
+    // Check access: SUBSCHEMA01 reads CUSTREC (allowed)
+    assert(tsfi_subschema_authorize(&sub_aud, "SUBSCHEMA01", "CUSTREC", PRIV_READ, &auth) == 0);
+    assert(auth == 1);
+    assert(sub_aud.authorized_attempts == 1);
+    
+    // Check access: SUBSCHEMA01 writes CUSTREC (denied)
+    assert(tsfi_subschema_authorize(&sub_aud, "SUBSCHEMA01", "CUSTREC", PRIV_WRITE, &auth) == 0);
+    assert(auth == 0);
+    assert(sub_aud.denied_attempts == 1);
+    
+    // Check access: SUBSCHEMA01 writes ORDERREC (allowed)
+    assert(tsfi_subschema_authorize(&sub_aud, "SUBSCHEMA01", "ORDERREC", PRIV_WRITE, &auth) == 0);
+    assert(auth == 1);
+    assert(sub_aud.authorized_attempts == 2);
+    printf("  [PASS] Subschema database privileges and security attempts audited.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 
