@@ -1587,6 +1587,22 @@ int main(void) {
     assert(is_aop == 1);
     printf("  [PASS] IRS CADE Taxpayer Audit Or Pending Checker verified.\n");
 
+    // 154. Verify Z-machine MajorMUD integration for IRS Estate Tax
+    printf("[TEST] Validating Z-machine MajorMUD IRS Estate integration...\n");
+    char estate_mud_state[256] = {0};
+    int estate_mud_init = tsfi_mf_zmachine_majormud_init(estate_mud_state, sizeof(estate_mud_state));
+    assert(estate_mud_init == 0);
+    char estate_mud_resp[256] = {0};
+    int estate_mud_cmd_res = tsfi_mf_zmachine_majormud_command("estate_tax 25", estate_mud_state, estate_mud_resp, sizeof(estate_mud_resp));
+    assert(estate_mud_cmd_res == 0);
+    assert(strcmp(estate_mud_resp, "Estate form check: 1") == 0);
+
+    char estate_mud_resp2[256] = {0};
+    int estate_mud_cmd_res2 = tsfi_mf_zmachine_majormud_command("estate_status 4", estate_mud_state, estate_mud_resp2, sizeof(estate_mud_resp2));
+    assert(estate_mud_cmd_res2 == 0);
+    assert(strcmp(estate_mud_resp2, "Estate audit check: 1") == 0);
+    printf("  [PASS] Z-machine MajorMUD IRS Estate integration verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
