@@ -20,4 +20,8 @@ int tsfi_mf_sif_serialize(const tsfi_cgm_scene *scene, char *out_buffer, size_t 
 // 4. Screen Section Terminal Layout Engine
 int tsfi_mf_screen_section_render(const char *screen_def, char *terminal_buffer, int width, int height);
 
+// 5. Michael Coughlan Stock & Sales Processing
+int tsfi_mf_stock_inventory_process(const char *raw_record, char *report_line);
+int tsfi_mf_sales_commission_process(const char *raw_record, char *report_line);
+
 #endif // TSFI_MICRO_FOCUS_H

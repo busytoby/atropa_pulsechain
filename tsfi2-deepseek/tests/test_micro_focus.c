@@ -139,6 +139,21 @@ int main(void) {
     assert(strstr(report_line, "STATUS:LOW STOCK") != NULL);
     printf("  [PASS] Coughlan Stock record layout and explicit status verified.\n");
 
+    // Verify Michael Coughlan Sales Commission Processing
+    printf("[TEST] Validating Coughlan Sales Commission record processing...\n");
+    char sales_record[24];
+    memcpy(sales_record, "R999", 4);
+    memcpy(sales_record + 4, "SalesAgent  ", 12);
+    tsfi_mf_comp5_encode(15000, (uint8_t*)(sales_record + 16), 4);
+
+    char comm_line[128];
+    int comm_res = tsfi_mf_sales_commission_process(sales_record, comm_line);
+    assert(comm_res == 0);
+    assert(strstr(comm_line, "REP:R999") != NULL);
+    assert(strstr(comm_line, "SALES:015000") != NULL);
+    assert(strstr(comm_line, "COMM:000900") != NULL); // (10000*0.05) + (5000*0.08) = 500 + 400 = 900
+    printf("  [PASS] Coughlan Sales Commission calculation and record layout verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

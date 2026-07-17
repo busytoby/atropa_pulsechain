@@ -214,3 +214,24 @@ int tsfi_mf_stock_inventory_process(const char *raw_record, char *report_line) {
     sprintf(report_line, "ID:%s NAME:%-12s QTY:%04u VALUE:%08u STATUS:%s", id, name, qty, value, status_str);
     return 0;
 }
+
+int tsfi_mf_sales_commission_process(const char *raw_record, char *report_line) {
+    if (!raw_record || !report_line) return -1;
+
+    char id[5] = {0};
+    char name[13] = {0};
+    memcpy(id, raw_record, 4);
+    memcpy(name, raw_record + 4, 12);
+
+    uint32_t sales = tsfi_mf_comp5_decode((const uint8_t*)(raw_record + 16), 4, 0);
+
+    uint32_t commission = 0;
+    if (sales <= 10000) {
+        commission = (sales * 5) / 100;
+    } else {
+        commission = ((10000 * 5) / 100) + (((sales - 10000) * 8) / 100);
+    }
+
+    sprintf(report_line, "REP:%s NAME:%-12s SALES:%06u COMM:%06u", id, name, sales, commission);
+    return 0;
+}
