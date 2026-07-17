@@ -817,4 +817,24 @@ int tsfi_rca501_check_channel(const tsfi_rca501_controller *ctrl, int channel);
 int tsfi_compile_decision_table_from_text(const char *text, uint8_t *bytecode_out, int max_len);
 int tsfi_winchester_socket_route_to_zmm(tsfi_winchester_socket_bridge *bridge, const uint8_t *event_data, int len, TsfiZmmVmState *zmm);
 
+// JOVIAL COMPOOL & Item Status Map
+typedef struct {
+    char var_name[32];
+    uint32_t val;
+} tsfi_compool_entry;
+
+typedef struct {
+    tsfi_compool_entry entries[16];
+    int entry_count;
+} tsfi_jovial_compool;
+
+typedef struct {
+    char status_name[16];
+    int status_value;
+} tsfi_jovial_status;
+
+void tsfi_compool_init(tsfi_jovial_compool *cp);
+int tsfi_compool_register(tsfi_jovial_compool *cp, const char *name, uint32_t val);
+int tsfi_compool_lookup(const tsfi_jovial_compool *cp, const char *name, uint32_t *val_out);
+
 #endif // TSFI_RAMAC_LAYOUT_H

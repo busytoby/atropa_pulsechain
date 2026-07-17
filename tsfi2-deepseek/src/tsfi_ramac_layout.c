@@ -3876,3 +3876,40 @@ int tsfi_winchester_socket_route_to_zmm(tsfi_winchester_socket_bridge *bridge, c
     bridge->processed_packets++;
     return 0;
 }
+
+void tsfi_compool_init(tsfi_jovial_compool *cp) {
+    if (!cp) return;
+    cp->entry_count = 0;
+    for (int i = 0; i < 16; i++) {
+        cp->entries[i].var_name[0] = '\0';
+        cp->entries[i].val = 0;
+    }
+}
+
+int tsfi_compool_register(tsfi_jovial_compool *cp, const char *name, uint32_t val) {
+    if (!cp || !name || cp->entry_count >= 16) return -1;
+    
+    for (int i = 0; i < cp->entry_count; i++) {
+        if (strcmp(cp->entries[i].var_name, name) == 0) {
+            cp->entries[i].val = val;
+            return 0;
+        }
+    }
+    
+    strncpy(cp->entries[cp->entry_count].var_name, name, 31);
+    cp->entries[cp->entry_count].var_name[31] = '\0';
+    cp->entries[cp->entry_count].val = val;
+    cp->entry_count++;
+    return 0;
+}
+
+int tsfi_compool_lookup(const tsfi_jovial_compool *cp, const char *name, uint32_t *val_out) {
+    if (!cp || !name || !val_out) return -1;
+    for (int i = 0; i < cp->entry_count; i++) {
+        if (strcmp(cp->entries[i].var_name, name) == 0) {
+            *val_out = cp->entries[i].val;
+            return 0;
+        }
+    }
+    return -2;
+}

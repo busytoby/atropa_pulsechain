@@ -298,6 +298,29 @@ int main(void) {
     tsfi_zmm_vm_destroy(&route_zmm);
     printf("  [PASS] WinchesterMQ loopback socket telemetry bridged to ZMM registers successfully.\n");
 
+    // 15. JOVIAL COMPOOL Global variables registry Verification
+    printf("[Test] Verifying JOVIAL COMPOOL registry and lookup...\n");
+    tsfi_jovial_compool compool;
+    tsfi_compool_init(&compool);
+    
+    int register_res = tsfi_compool_register(&compool, "flux_jitter", 125);
+    assert(register_res == 0);
+    
+    uint32_t val_out = 0;
+    int lookup_res = tsfi_compool_lookup(&compool, "flux_jitter", &val_out);
+    assert(lookup_res == 0);
+    assert(val_out == 125);
+    
+    lookup_res = tsfi_compool_lookup(&compool, "nonexistent", &val_out);
+    assert(lookup_res == -2);
+    
+    tsfi_jovial_status stat;
+    strcpy(stat.status_name, "INTERLOCK");
+    stat.status_value = 3;
+    assert(strcmp(stat.status_name, "INTERLOCK") == 0);
+    assert(stat.status_value == 3);
+    printf("  [PASS] JOVIAL COMPOOL and status descriptors verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
