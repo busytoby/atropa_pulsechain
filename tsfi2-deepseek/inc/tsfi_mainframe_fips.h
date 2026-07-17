@@ -94,4 +94,13 @@ typedef struct {
 void tsfi_fips63_disk_init(tsfi_fips63_disk *disk);
 int tsfi_fips63_disk_command(tsfi_fips63_disk *disk, uint8_t cmd_code, uint32_t cylinder, uint32_t sector, uint8_t *out_status);
 
+// Scenario 148: NBS FIPS PUB 68 Minimal BASIC Interpreter
+typedef struct {
+    int variables[26]; // A to Z variables
+    int last_executed_line;
+} tsfi_fips68_basic;
+
+void tsfi_fips68_basic_init(tsfi_fips68_basic *basic);
+int tsfi_fips68_basic_run(tsfi_fips68_basic *basic, const char *source_code, char *out_buffer, int max_len);
+
 #endif // TSFI_MAINFRAME_FIPS_H

@@ -1650,6 +1650,24 @@ int main(void) {
     assert(fips_disk.recalibrate_requested == 1);
     printf("  [PASS] FIPS 63 rotating disk commands and status reporting validated.\n");
 
+    // 148. NBS FIPS PUB 68 Minimal BASIC Interpreter Verification
+    printf("[Test] Verifying NBS FIPS PUB 68 Minimal BASIC Interpreter...\n");
+    tsfi_fips68_basic basic_interpreter;
+    tsfi_fips68_basic_init(&basic_interpreter);
+    
+    const char *basic_source = 
+        "10 LET A = 42\n"
+        "20 LET B = 100\n"
+        "30 PRINT A\n"
+        "40 PRINT \"HELLO BASIC\"\n"
+        "50 END\n";
+        
+    char basic_output[256];
+    assert(tsfi_fips68_basic_run(&basic_interpreter, basic_source, basic_output, sizeof(basic_output)) == 0);
+    assert(strstr(basic_output, "42\n") != NULL);
+    assert(strstr(basic_output, "HELLO BASIC\n") != NULL);
+    printf("  [PASS] FIPS 68 Minimal BASIC interpreter parser and variables validated.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 

@@ -330,3 +330,60 @@ int tsfi_fips63_disk_command(tsfi_fips63_disk *disk, uint8_t cmd_code, uint32_t 
     
     return 0;
 }
+
+void tsfi_fips68_basic_init(tsfi_fips68_basic *basic) {
+    if (!basic) return;
+    memset(basic, 0, sizeof(tsfi_fips68_basic));
+}
+
+int tsfi_fips68_basic_run(tsfi_fips68_basic *basic, const char *source_code, char *out_buffer, int max_len) {
+    if (!basic || !source_code || !out_buffer || max_len <= 0) return -1;
+    
+    out_buffer[0] = '\0';
+    int out_pos = 0;
+    
+    // Copy source to tokenise lines safely
+    char source_copy[1024];
+    snprintf(source_copy, sizeof(source_copy), "%s", source_code);
+    
+    char *line = strtok(source_copy, "\n");
+    while (line != NULL) {
+        // Skip leading spaces or line numbers (standard BASIC has line numbers like "10 LET A = 5")
+        while (*line == ' ' || (*line >= '0' && *line <= '9')) {
+            if (*line >= '0' && *line <= '9') {
+                basic->last_executed_line = basic->last_executed_line * 10 + (*line - '0');
+            }
+            line++;
+        }
+        
+        while (*line == ' ') line++;
+        
+        if (strncmp(line, "LET ", 4) == 0) {
+            char var = line[4];
+            if (var >= 'A' && var <= 'Z') {
+                char *eq = strchr(line, '=');
+                if (eq) {
+                    basic->variables[var - 'A'] = atoi(eq + 1);
+                }
+            }
+        } else if (strncmp(line, "PRINT ", 6) == 0) {
+            char var = line[6];
+            if (var >= 'A' && var <= 'Z') {
+                int val = basic->variables[var - 'A'];
+                out_pos += snprintf(out_buffer + out_pos, max_len - out_pos, "%d\n", val);
+            } else if (line[6] == '"') {
+                char *end_quote = strchr(line + 7, '"');
+                if (end_quote) {
+                    *end_quote = '\0';
+                    out_pos += snprintf(out_buffer + out_pos, max_len - out_pos, "%s\n", line + 7);
+                }
+            }
+        } else if (strncmp(line, "END", 3) == 0) {
+            break;
+        }
+        
+        line = strtok(NULL, "\n");
+    }
+    
+    return 0;
+}
