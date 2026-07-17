@@ -1962,6 +1962,45 @@ int main(void) {
            gps.operators[applied_ops[0]].name, 
            gps.operators[applied_ops[1]].name, 
            gps.operators[applied_ops[2]].name);
+           
+    // Test Scenario 34: Burroughs B5000 VM Descriptor Memory Protection & Segment Loading
+    printf("[Test] Verifying Burroughs B5000 Descriptor Memory Protection...\n");
+    uint8_t b5000_memory[1024];
+    memset(b5000_memory, 0, sizeof(b5000_memory));
+    
+    tsfi_b5000_descriptor desc;
+    desc.address = 100;
+    desc.limit = 5;
+    desc.is_present = 1;
+    desc.read_only = 0;
+    
+    // Bounds check pass
+    int b5000_write_res = tsfi_b5000_descriptor_write(&desc, b5000_memory, 2, 42);
+    assert(b5000_write_res == 0);
+    uint8_t read_val = 0;
+    int b5000_read_res = tsfi_b5000_descriptor_read(&desc, b5000_memory, 2, &read_val);
+    assert(b5000_read_res == 0);
+    assert(read_val == 42);
+    
+    // Bounds check fail
+    b5000_write_res = tsfi_b5000_descriptor_write(&desc, b5000_memory, 5, 99);
+    assert(b5000_write_res != 0);
+    b5000_read_res = tsfi_b5000_descriptor_read(&desc, b5000_memory, 5, &read_val);
+    assert(b5000_read_res != 0);
+    
+    // Read-only violation
+    desc.read_only = 1;
+    b5000_write_res = tsfi_b5000_descriptor_write(&desc, b5000_memory, 2, 88);
+    assert(b5000_write_res != 0);
+    b5000_read_res = tsfi_b5000_descriptor_read(&desc, b5000_memory, 2, &read_val);
+    assert(b5000_read_res == 0 && read_val == 42); // unchanged
+    
+    // Not present
+    desc.is_present = 0;
+    b5000_read_res = tsfi_b5000_descriptor_read(&desc, b5000_memory, 2, &read_val);
+    assert(b5000_read_res != 0);
+    
+    printf("  [PASS] Memory descriptor protection bounds and permissions verified.\n");
 
     // 4. Layout Optimization Verification
     printf("[Test] Verifying layout serialization...\n");
@@ -1981,6 +2020,15 @@ int main(void) {
     int ret = tsfi_ramac_layout_optimize(&mock_dat, "tmp/test_ramac_layout.dat.bin");
     assert(ret == 0);
     printf("  [PASS] Saved RAMAC layout file to tmp/test_ramac_layout.dat.bin\n");
+
+    // Verify B5000 Segment Loading from the saved layout file
+    tsfi_b5000_descriptor seg_desc;
+    uint8_t segment_mem[2048];
+    int load_res = tsfi_b5000_segment_load("tmp/test_ramac_layout.dat.bin", &seg_desc, segment_mem, 0, 2048);
+    assert(load_res == 0);
+    assert(seg_desc.limit > 0);
+    assert(seg_desc.is_present == 1);
+    printf("  [PASS] Burroughs B5000 Dynamic Segment Allocation loaded %d bytes successfully.\n", seg_desc.limit);
 
     free(mock_dat.base);
     free(mock_dat.check);

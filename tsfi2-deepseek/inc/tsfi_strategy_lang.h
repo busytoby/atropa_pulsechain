@@ -11,6 +11,8 @@ typedef struct {
     int registers[4]; // General-purpose registers R0-R3
     int call_stack[8]; // Call stack for subroutine return PCs
     int stack_pointer; // Pointer to top of stack
+    int eval_stack[32]; // Evaluation stack for Burroughs B5000 stack-oriented instructions
+    int eval_stack_ptr; // Top pointer for evaluation stack
 } TSFiStrategyVM;
 
 // Initialize the Strategy VM

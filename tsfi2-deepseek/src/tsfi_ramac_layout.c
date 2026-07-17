@@ -3178,3 +3178,41 @@ int tsfi_s370_gps_solve(tsfi_gps_state *gps, int *applied_ops_out, int max_ops) 
     }
     return ops_count;
 }
+
+int tsfi_b5000_descriptor_read(const tsfi_b5000_descriptor *desc, const uint8_t *memory, uint32_t offset, uint8_t *val_out) {
+    if (!desc || !memory || !val_out) return -1;
+    if (!desc->is_present) return -2; // Segment not present
+    if (offset >= desc->limit) return -3; // Bounds check fail (Descriptor Protection)
+    
+    *val_out = memory[desc->address + offset];
+    return 0;
+}
+
+int tsfi_b5000_descriptor_write(const tsfi_b5000_descriptor *desc, uint8_t *memory, uint32_t offset, uint8_t val) {
+    if (!desc || !memory) return -1;
+    if (!desc->is_present) return -2; // Segment not present
+    if (desc->read_only) return -3; // Read-only violation
+    if (offset >= desc->limit) return -4; // Bounds check fail (Descriptor Protection)
+    
+    memory[desc->address + offset] = val;
+    return 0;
+}
+
+int tsfi_b5000_segment_load(const char *filepath, tsfi_b5000_descriptor *desc_out, uint8_t *memory, uint32_t mem_offset, uint32_t max_bytes) {
+    if (!filepath || !desc_out || !memory) return -1;
+    
+    FILE *f = fopen(filepath, "rb");
+    if (!f) return -2;
+    
+    size_t bytes_read = fread(memory + mem_offset, 1, max_bytes, f);
+    fclose(f);
+    
+    if (bytes_read == 0) return -3;
+    
+    desc_out->address = mem_offset;
+    desc_out->limit = (uint32_t)bytes_read;
+    desc_out->is_present = 1;
+    desc_out->read_only = 0; // Default readable/writable
+    
+    return 0;
+}

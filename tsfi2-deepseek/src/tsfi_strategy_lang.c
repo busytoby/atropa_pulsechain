@@ -12,6 +12,8 @@ void tsfi_strategy_vm_init(TSFiStrategyVM *vm) {
     memset(vm->registers, 0, sizeof(vm->registers));
     memset(vm->call_stack, 0, sizeof(vm->call_stack));
     vm->stack_pointer = 0;
+    memset(vm->eval_stack, 0, sizeof(vm->eval_stack));
+    vm->eval_stack_ptr = 0;
 }
 
 // Restore heap invariants after priority mutations
@@ -361,6 +363,39 @@ int tsfi_strategy_vm_execute_bytecode(TSFiStrategyVM *vm, TSFiPriorityQueue *pq,
                 }
                 if (dst_reg < 4) {
                     vm->registers[dst_reg] = atoi(concat_buf);
+                }
+            }
+        } else if (op == 0x30) { // PUSH_REG reg
+            if (pc < len) {
+                uint8_t reg = bytecode[pc++];
+                if (reg < 4 && vm->eval_stack_ptr < 32) {
+                    vm->eval_stack[vm->eval_stack_ptr++] = vm->registers[reg];
+                }
+            }
+        } else if (op == 0x31) { // POP_REG reg
+            if (pc < len) {
+                uint8_t reg = bytecode[pc++];
+                if (reg < 4 && vm->eval_stack_ptr > 0) {
+                    vm->registers[reg] = vm->eval_stack[--vm->eval_stack_ptr];
+                }
+            }
+        } else if (op == 0x32) { // STACK_ADD
+            if (vm->eval_stack_ptr >= 2) {
+                int b = vm->eval_stack[--vm->eval_stack_ptr];
+                int a = vm->eval_stack[--vm->eval_stack_ptr];
+                vm->eval_stack[vm->eval_stack_ptr++] = a + b;
+            }
+        } else if (op == 0x33) { // STACK_SUB
+            if (vm->eval_stack_ptr >= 2) {
+                int b = vm->eval_stack[--vm->eval_stack_ptr];
+                int a = vm->eval_stack[--vm->eval_stack_ptr];
+                vm->eval_stack[vm->eval_stack_ptr++] = a - b;
+            }
+        } else if (op == 0x34) { // PUSH_LIT val
+            if (pc < len) {
+                uint8_t val = bytecode[pc++];
+                if (vm->eval_stack_ptr < 32) {
+                    vm->eval_stack[vm->eval_stack_ptr++] = val;
                 }
             }
         }
@@ -929,6 +964,41 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
             } else {
                 idx++;
             }
+        } else if (strcmp(t, "PUSH") == 0 || strcmp(t, "push") == 0) {
+            if (idx + 1 < token_count && pc + 1 < max_len) {
+                char *arg = tokens[idx + 1];
+                if (arg[0] == 'R' && arg[1] >= '0' && arg[1] <= '3' && arg[2] == '\0') {
+                    bytecode_out[pc++] = 0x30;
+                    bytecode_out[pc++] = (uint8_t)(arg[1] - '0');
+                } else {
+                    bytecode_out[pc++] = 0x34;
+                    bytecode_out[pc++] = (uint8_t)atoi(arg);
+                }
+                idx += 2;
+            } else {
+                idx++;
+            }
+        } else if (strcmp(t, "POP") == 0 || strcmp(t, "pop") == 0) {
+            if (idx + 1 < token_count && pc + 1 < max_len) {
+                char *arg = tokens[idx + 1];
+                if (arg[0] == 'R' && arg[1] >= '0' && arg[1] <= '3' && arg[2] == '\0') {
+                    bytecode_out[pc++] = 0x31;
+                    bytecode_out[pc++] = (uint8_t)(arg[1] - '0');
+                }
+                idx += 2;
+            } else {
+                idx++;
+            }
+        } else if (strcmp(t, "STACK-ADD") == 0 || strcmp(t, "stack-add") == 0) {
+            if (pc < max_len) {
+                bytecode_out[pc++] = 0x32;
+            }
+            idx++;
+        } else if (strcmp(t, "STACK-SUB") == 0 || strcmp(t, "stack-sub") == 0) {
+            if (pc < max_len) {
+                bytecode_out[pc++] = 0x33;
+            }
+            idx++;
         } else if (strcmp(t, "if") == 0) {
             // if (R0 == R1) jump(16); or if (R0 < R1) jump(16);
             if (idx + 5 < token_count && pc + 3 < max_len) {
@@ -1028,7 +1098,8 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
                 "EVAL", "eval", "PRUNE", "prune", "WEIGHT", "weight", "SET_REG",
                 "GET_PRIO", "get_prio", "GET_SIZE", "get_size", "LOOP_UNTIL_EMPTY", "loop_until_empty",
                 "GET_LOGIC", "get_logic", "SET", "depth", "abductive", "==", "JEQ", "<", "JLT", "jump",
-                "DISPLAY", "display", "INSPECT", "inspect", "GO", "go", "STRING", "string"
+                "DISPLAY", "display", "INSPECT", "inspect", "GO", "go", "STRING", "string",
+                "PUSH", "push", "POP", "pop", "STACK-ADD", "stack-add", "STACK-SUB", "stack-sub"
             };
             for (size_t i = 0; i < sizeof(kws)/sizeof(kws[0]); i++) {
                 if (strcmp(t, kws[i]) == 0) {

@@ -627,4 +627,16 @@ typedef struct {
 
 int tsfi_s370_gps_solve(tsfi_gps_state *gps, int *applied_ops_out, int max_ops);
 
+// Burroughs B5000 style VM descriptor and memory protections
+typedef struct {
+    uint32_t address;
+    uint32_t limit;
+    int is_present;
+    int read_only;
+} tsfi_b5000_descriptor;
+
+int tsfi_b5000_descriptor_read(const tsfi_b5000_descriptor *desc, const uint8_t *memory, uint32_t offset, uint8_t *val_out);
+int tsfi_b5000_descriptor_write(const tsfi_b5000_descriptor *desc, uint8_t *memory, uint32_t offset, uint8_t val);
+int tsfi_b5000_segment_load(const char *filepath, tsfi_b5000_descriptor *desc_out, uint8_t *memory, uint32_t mem_offset, uint32_t max_bytes);
+
 #endif // TSFI_RAMAC_LAYOUT_H

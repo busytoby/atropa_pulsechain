@@ -361,6 +361,23 @@ int main(void) {
     printf("  [Strategy COBOL Parser] Compiled and verified COBOL STRING successfully.\n");
     fflush(stdout);
 
+    // Verify Burroughs B5000 Stack-Oriented VM instructions
+    uint8_t b5000_bc[64];
+    int b5000_len = 0;
+    res = tsfi_strategy_compile_script(
+        "PUSH 10; PUSH 5; STACK-ADD; POP R0; PUSH 12; PUSH R0; STACK-SUB; POP R1;",
+        b5000_bc, 64, &b5000_len);
+    assert(res == 0);
+    
+    TSFiStrategyVM b5000_vm;
+    tsfi_strategy_vm_init(&b5000_vm);
+    res = tsfi_strategy_vm_execute_bytecode(&b5000_vm, NULL, b5000_bc, b5000_len, NULL);
+    assert(res == 0);
+    assert(b5000_vm.registers[0] == 15); // 10 + 5
+    assert(b5000_vm.registers[1] == -3); // 12 - 15
+    printf("  [Strategy B5000 VM] Compiled and verified stack-oriented instructions successfully.\n");
+    fflush(stdout);
+
     printf("[PASS] Strategy script execution verified successfully!\n");
     fflush(stdout);
     return 0;
