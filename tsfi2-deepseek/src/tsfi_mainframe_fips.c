@@ -898,3 +898,29 @@ int tsfi_fips_peripheral_filter(const char *data_type, const uint8_t *data, int 
     free(buf);
     return 0;
 }
+
+int tsfi_fips54_generate_com_header(const char *title, int reduction_ratio, char *out_header, int max_len) {
+    if (!title || !out_header || max_len <= 0) return -1;
+    if (reduction_ratio != 24 && reduction_ratio != 48) return -2;
+    
+    snprintf(out_header, max_len, "COM-HDR:TITLE=%s:RATIO=%dx", title, reduction_ratio);
+    return 0;
+}
+
+int tsfi_fips54_calculate_grid_coords(int index, int reduction_ratio, int *out_row, int *out_col) {
+    if (index < 0 || !out_row || !out_col) return -1;
+    
+    if (reduction_ratio == 24) {
+        *out_row = index / 15;
+        *out_col = index % 15;
+        if (*out_row >= 14) return -3; // Beyond 24x grid boundaries
+    } else if (reduction_ratio == 48) {
+        *out_row = index / 18;
+        *out_col = index % 18;
+        if (*out_row >= 15) return -3; // Beyond 48x grid boundaries
+    } else {
+        return -2; // Unsupported reduction ratio
+    }
+    
+    return 0;
+}

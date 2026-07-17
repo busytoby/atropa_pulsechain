@@ -174,4 +174,8 @@ int tsfi_fips127_validate_sql(const char *sql_query);
 // Scenario 164: NBS FIPS Peripheral-Level Pre-Validation Filter
 int tsfi_fips_peripheral_filter(const char *data_type, const uint8_t *data, int len, int *out_dropped_flag);
 
+// Scenario 165: NBS FIPS PUB 54 Computer Output Microform (COM) Layout Generator
+int tsfi_fips54_generate_com_header(const char *title, int reduction_ratio, char *out_header, int max_len);
+int tsfi_fips54_calculate_grid_coords(int index, int reduction_ratio, int *out_row, int *out_col);
+
 #endif // TSFI_MAINFRAME_FIPS_H

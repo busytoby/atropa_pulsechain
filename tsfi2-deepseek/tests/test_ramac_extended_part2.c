@@ -1924,6 +1924,18 @@ int main(void) {
     assert(dropped == 0); // Valid SQL accepted
     printf("  [PASS] FIPS peripheral pre-validation query filtering and dropped flags verified.\n");
 
+    // 165. NBS FIPS PUB 54 Computer Output Microform (COM) Layout Generator Verification
+    printf("[Test] Verifying NBS FIPS PUB 54 Computer Output Microform Layout Generator...\n");
+    char com_hdr[64];
+    assert(tsfi_fips54_generate_com_header("ARCHIVE_2026", 24, com_hdr, sizeof(com_hdr)) == 0);
+    assert(strcmp(com_hdr, "COM-HDR:TITLE=ARCHIVE_2026:RATIO=24x") == 0);
+    
+    int r = 0, c = 0;
+    assert(tsfi_fips54_calculate_grid_coords(32, 24, &r, &c) == 0);
+    assert(r == 2); // Row 2 (0-indexed)
+    assert(c == 2); // Col 2 (0-indexed)
+    printf("  [PASS] FIPS 54 microform header formats and grid index structures verified.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 
