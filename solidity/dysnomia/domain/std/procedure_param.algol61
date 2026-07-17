@@ -1,0 +1,11 @@
+begin
+  real procedure sum(xi, i, n);
+  value n; real xi; integer i, n;
+  begin
+    real s;
+    s := 0.0;
+    for i := 1 step 1 until n do
+      s := s + xi;
+    sum := s
+  end
+end
