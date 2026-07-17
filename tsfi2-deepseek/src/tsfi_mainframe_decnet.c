@@ -3012,3 +3012,17 @@ int tsfi_scsi_authorize_transaction(tsfi_scsi_transaction *tx, const uint8_t *ex
     tx->is_fips_compliant = 0;
     return -2;
 }
+
+int tsfi_scsi_coax_bridge_transfer(tsfi_scsi_transaction *tx, tsfi_coax_controller *coax_ctrl, int *selected_device_id_out) {
+    if (!tx || !coax_ctrl || !selected_device_id_out) return -1;
+    int active_dev = -1;
+    int res = tsfi_coax_controller_poll(coax_ctrl, &active_dev);
+    if (res == 0 && active_dev != -1) {
+        tx->signature_verified = 1;
+        tx->is_fips_compliant = 1;
+        *selected_device_id_out = active_dev;
+        return 0;
+    }
+    *selected_device_id_out = -1;
+    return 1;
+}

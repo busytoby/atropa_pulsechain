@@ -2201,6 +2201,30 @@ int main(void) {
     assert(scsi_tx.signature_verified == 1);
     assert(scsi_tx.is_fips_compliant == 1);
     printf("  [PASS] LU-SCSI-FIPS transaction authorization and signature hashes verified.\n");
+    
+    // 110. SCSI-Coaxial Bridge Transfer Mode verification
+    printf("[Test] Verifying SCSI-Coaxial bridge transfer mode switching...\n");
+    tsfi_coax_controller bridge_ctrl;
+    tsfi_coax_controller_init(&bridge_ctrl);
+    
+    bridge_ctrl.devices[0].device_id = 99;
+    bridge_ctrl.devices[0].status_register = 0x00; // Not ready
+    bridge_ctrl.device_count = 1;
+    
+    tsfi_scsi_transaction bridge_tx;
+    memset(&bridge_tx, 0, sizeof(bridge_tx));
+    
+    int chosen_dev = -1;
+    // Fails transfer if terminal isn't ready
+    assert(tsfi_scsi_coax_bridge_transfer(&bridge_tx, &bridge_ctrl, &chosen_dev) == 1);
+    assert(chosen_dev == -1);
+    
+    // Terminal ready -> completes transfer mode switch
+    bridge_ctrl.devices[0].status_register = 0x01;
+    assert(tsfi_scsi_coax_bridge_transfer(&bridge_tx, &bridge_ctrl, &chosen_dev) == 0);
+    assert(chosen_dev == 99);
+    assert(bridge_tx.signature_verified == 1);
+    printf("  [PASS] SCSI-Coaxial bridge transfer mode scheduling verified.\n");
 
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
