@@ -2040,4 +2040,15 @@ void tsfi_cp_nucleus_init(tsfi_cp_nucleus_table *tbl);
 int tsfi_cp_nucleus_register(tsfi_cp_nucleus_table *tbl, const char *name, uint32_t entry_addr);
 int tsfi_cp_resolve_command(const tsfi_cp_nucleus_table *nuc_tbl, const tsfi_cp_dcss_manager *dcss_mgr, const char *cmd, char *out_loc, uint32_t *out_addr);
 
+// VM/370 Release 5 CMS Command Parameter List (PLIST) Parser
+#define MAX_PLIST_WORDS 8
+typedef struct {
+    char words[MAX_PLIST_WORDS][8];
+    int count;
+    uint64_t sentinel;
+} tsfi_cms_plist;
+
+void tsfi_cms_plist_init(tsfi_cms_plist *plist);
+int tsfi_cms_plist_parse(tsfi_cms_plist *plist, const char *cmd_line);
+
 #endif // TSFI_RAMAC_LAYOUT_H

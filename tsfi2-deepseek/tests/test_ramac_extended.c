@@ -2356,6 +2356,20 @@ int main(void) {
     assert(tsfi_cp_resolve_command(&nuc_tbl, &cmd_dcss_mgr, "ERASE", loc, &addr) == -1);
     printf("  [PASS] VM/370 CP command resolution hierarchy verified.\n");
 
+    // 127. VM/370 Release 5 CMS Command Parameter List (PLIST) Parser Verification
+    printf("[Test] Verifying VM/370 CMS Command Parameter List (PLIST)...\n");
+    tsfi_cms_plist plist;
+    assert(tsfi_cms_plist_parse(&plist, "filedef in disk a") == 4);
+    assert(plist.count == 4);
+    assert(plist.sentinel == 0xFFFFFFFFFFFFFFFFULL);
+    
+    // Check 8-byte space padding and capitalization
+    assert(memcmp(plist.words[0], "FILEDEF ", 8) == 0);
+    assert(memcmp(plist.words[1], "IN      ", 8) == 0);
+    assert(memcmp(plist.words[2], "DISK    ", 8) == 0);
+    assert(memcmp(plist.words[3], "A       ", 8) == 0);
+    printf("  [PASS] VM/370 CMS parameter list tokenization verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

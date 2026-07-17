@@ -7294,3 +7294,46 @@ int tsfi_cp_resolve_command(const tsfi_cp_nucleus_table *nuc_tbl, const tsfi_cp_
     
     return -1;
 }
+
+void tsfi_cms_plist_init(tsfi_cms_plist *plist) {
+    if (!plist) return;
+    memset(plist->words, ' ', sizeof(plist->words));
+    plist->count = 0;
+    plist->sentinel = 0xFFFFFFFFFFFFFFFFULL;
+}
+
+int tsfi_cms_plist_parse(tsfi_cms_plist *plist, const char *cmd_line) {
+    if (!plist || !cmd_line) return -1;
+    tsfi_cms_plist_init(plist);
+    
+    int i = 0;
+    const char *ptr = cmd_line;
+    while (*ptr && i < MAX_PLIST_WORDS) {
+        while (*ptr && (*ptr == ' ' || *ptr == '\t' || *ptr == '\r' || *ptr == '\n')) {
+            ptr++;
+        }
+        if (!*ptr) break;
+        
+        const char *start = ptr;
+        while (*ptr && *ptr != ' ' && *ptr != '\t' && *ptr != '\r' && *ptr != '\n') {
+            ptr++;
+        }
+        int len = ptr - start;
+        
+        for (int c = 0; c < 8; c++) {
+            if (c < len) {
+                char ch = start[c];
+                if (ch >= 'a' && ch <= 'z') {
+                    plist->words[i][c] = ch - 'a' + 'A';
+                } else {
+                    plist->words[i][c] = ch;
+                }
+            } else {
+                plist->words[i][c] = ' ';
+            }
+        }
+        i++;
+    }
+    plist->count = i;
+    return i;
+}
