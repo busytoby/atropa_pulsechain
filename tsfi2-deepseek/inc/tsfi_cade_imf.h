@@ -41,5 +41,7 @@ int tsfi_mf_imf_is_misc_form(int doc_code, int *result);
 int tsfi_mf_cade_is_unknown_status(int status_code, int *is_unknown);
 int tsfi_mf_imf_is_partnership_form(int doc_code, int *result);
 int tsfi_mf_cade_are_both_active(int status_a, int status_b, int *both_active);
+int tsfi_mf_imf_is_estate_form(int doc_code, int *result);
+int tsfi_mf_cade_is_audit_or_pending(int status_code, int *is_audit_or_pending);
 
 #endif // TSFI_CADE_IMF_H

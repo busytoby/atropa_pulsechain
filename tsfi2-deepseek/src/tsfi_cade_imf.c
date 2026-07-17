@@ -504,3 +504,23 @@ int tsfi_mf_cade_are_both_active(int status_a, int status_b, int *both_active) {
     }
     return 0;
 }
+
+int tsfi_mf_imf_is_estate_form(int doc_code, int *result) {
+    if (!result) return -1;
+
+    *result = 0;
+    if (doc_code == 25) {
+        *result = 1;
+    }
+    return 0;
+}
+
+int tsfi_mf_cade_is_audit_or_pending(int status_code, int *is_audit_or_pending) {
+    if (!is_audit_or_pending) return -1;
+
+    *is_audit_or_pending = 0;
+    if (status_code == 2 || status_code == 4) {
+        *is_audit_or_pending = 1;
+    }
+    return 0;
+}

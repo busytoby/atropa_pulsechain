@@ -1571,6 +1571,22 @@ int main(void) {
     assert(both_act == 1);
     printf("  [PASS] IRS CADE Taxpayer Dual Active Checker verified.\n");
 
+    // 152. Verify IRS IMF Estate Form Verifier
+    printf("[TEST] Validating IRS IMF Estate Form Verifier...\n");
+    int is_est = -1;
+    int est_res = tsfi_mf_imf_is_estate_form(25, &is_est);
+    assert(est_res == 0);
+    assert(is_est == 1);
+    printf("  [PASS] IRS IMF Estate Form Verifier verified.\n");
+
+    // 153. Verify IRS CADE Taxpayer Audit Or Pending Checker
+    printf("[TEST] Validating IRS CADE Taxpayer Audit Or Pending Checker...\n");
+    int is_aop = -1;
+    int aop_res = tsfi_mf_cade_is_audit_or_pending(4, &is_aop);
+    assert(aop_res == 0);
+    assert(is_aop == 1);
+    printf("  [PASS] IRS CADE Taxpayer Audit Or Pending Checker verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

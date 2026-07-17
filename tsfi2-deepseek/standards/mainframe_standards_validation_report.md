@@ -194,5 +194,7 @@
 | 260 | IRS CADE Taxpayer Unknown Status Verifier | PASS | Asserves if account status matches unrecognized codes | Volume 33 |
 | 261 | IRS IMF Partnership Form Verifier | PASS | Restricts partnership filings to valid partnership form ranges | Volume 33 |
 | 262 | IRS CADE Taxpayer Dual Active Checker | PASS | Asserves if both account status parameters match active codes | Volume 33 |
+| 263 | IRS IMF Estate Form Verifier | PASS | Restricts estate filings to valid estate form ranges | Volume 33 |
+| 264 | IRS CADE Taxpayer Audit Or Pending Checker | PASS | Asserves if account status matches active or pending audit codes | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 262 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 264 Scenarios validated successfully)
