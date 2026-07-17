@@ -596,6 +596,7 @@ int tsfi_sna_rotate_key(tsfi_sna_key_rotation *rot, const uint8_t *encrypted_new
 #define SNA_FID_TYPE2 0x02
 #define SNA_FID_TYPE3 0x03
 #define SNA_FID_TYPE4 0x04
+#define SNA_FID_TYPEF 0x0F
 
 // SNA Transmission Header (TH) Format
 typedef struct {
