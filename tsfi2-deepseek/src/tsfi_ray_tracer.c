@@ -207,3 +207,23 @@ int tsfi_cad_parse_punched_card(tsfi_cgm_scene *scene, const char *card_80) {
     }
     return -2;
 }
+
+int tsfi_gks_to_ray_tracer(const uint8_t *gks_stream, int len, tsfi_cgm_scene *scene) {
+    if (!gks_stream || !scene) return -1;
+
+    int prim_type = 0;
+    int point_count = 0;
+    extern int tsfi_fips120_parse_gks_primitive(const uint8_t *stream, int length, int *out_type, int *out_pts);
+    int res = tsfi_fips120_parse_gks_primitive(gks_stream, len, &prim_type, &point_count);
+    if (res != 0) return res;
+
+    for (int i = 0; i < point_count; i++) {
+        float x = (float)gks_stream[2 + 2 * i];
+        float y = (float)gks_stream[2 + 2 * i + 1];
+        tsfi_rt_vec3 pos = { x / 10.0f - 2.0f, y / 10.0f - 2.0f, 5.0f };
+        tsfi_rt_vec3 color = { 0.0f, 0.0f, 1.0f }; // Blue GKS nodes
+        tsfi_cgm_scene_add_primitive(scene, CGM_PRIM_SPHERE, pos, color, 0.5f, (tsfi_rt_vec3){0,0,0});
+    }
+
+    return 0;
+}

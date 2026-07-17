@@ -99,6 +99,19 @@ int main(void) {
     assert(cad_res2 == 0);
     assert(cad_scene.light_dir.x == 0.1f);
 
+    // 4. Verify GKS Stream to CGI/CGM Scene Conversion
+    printf("[TEST] Validating GKS to CGI/CGM conversion...\n");
+    tsfi_cgm_scene gks_scene;
+    tsfi_cgm_scene_init(&gks_scene);
+    uint8_t gks_stream[8] = { 0x01, 0x02, 10, 20, 30, 40, 0, 0 }; // Polyline, 2 points
+    int gks_conv_res = tsfi_gks_to_ray_tracer(gks_stream, 6, &gks_scene);
+    assert(gks_conv_res == 0);
+    assert(gks_scene.primitive_count == 2);
+    assert(gks_scene.primitives[0].type == CGM_PRIM_SPHERE);
+    assert(gks_scene.primitives[0].position.x == -1.0f); // 10 / 10.0 - 2.0 = -1.0
+    assert(gks_scene.primitives[0].position.y == 0.0f);  // 20 / 10.0 - 2.0 = 0.0
+    printf("  [PASS] GKS to CGI/CGM ray tracer coordinate mapping verified.\n");
+
     free(img_buf);
     printf("[SUCCESS] CGI/CGM Ray Tracer validation completed successfully!\n");
     return 0;
