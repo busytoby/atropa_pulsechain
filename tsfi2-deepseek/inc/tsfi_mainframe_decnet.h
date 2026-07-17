@@ -1176,4 +1176,7 @@ void tsfi_consensus_init(tsfi_consensus_engine *eng);
 int tsfi_consensus_add_node(tsfi_consensus_engine *eng, int node_id, int vote);
 int tsfi_consensus_execute(tsfi_consensus_engine *eng);
 
+// Decnet and Consensus Integration
+int tsfi_decnet_broadcast_consensus(const tsfi_decnet_router *router, tsfi_consensus_engine *eng);
+
 #endif // TSFI_MAINFRAME_DECNET_H

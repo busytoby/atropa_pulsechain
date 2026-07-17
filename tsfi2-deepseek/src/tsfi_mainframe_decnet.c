@@ -2537,3 +2537,25 @@ int tsfi_consensus_execute(tsfi_consensus_engine *eng) {
     }
     return 0;
 }
+
+int tsfi_decnet_broadcast_consensus(const tsfi_decnet_router *router, tsfi_consensus_engine *eng) {
+    if (!router || !eng) return -1;
+    int count = 0;
+    for (int i = 0; i < router->route_count; i++) {
+        if (eng->node_count >= 4) break;
+        int neighbor_node = router->routing_table[i].node_id;
+        if (neighbor_node == router->local_node_id) continue;
+        int exists = 0;
+        for (int k = 0; k < eng->node_count; k++) {
+            if (eng->nodes[k].node_id == neighbor_node) {
+                exists = 1;
+                break;
+            }
+        }
+        if (!exists) {
+            tsfi_consensus_add_node(eng, neighbor_node, 1);
+            count++;
+        }
+    }
+    return count;
+}

@@ -1696,6 +1696,23 @@ int main(void) {
     assert(eng.nodes[0].current_state == 3); // Aborted
     printf("  [PASS] Distributed node consensus voting states verified.\n");
 
+    // 87. DECnet node mapping to consensus slots verification
+    printf("[Test] Verifying DECnet nodes mapping to Consensus engine...\n");
+    tsfi_decnet_router router;
+    tsfi_decnet_init(&router, 100);
+    assert(tsfi_decnet_add_neighbor(&router, 200, 1) == 0);
+    assert(tsfi_decnet_add_neighbor(&router, 300, 2) == 0);
+    
+    tsfi_consensus_engine consensus_eng;
+    tsfi_consensus_init(&consensus_eng);
+    
+    int mapped = tsfi_decnet_broadcast_consensus(&router, &consensus_eng);
+    assert(mapped == 2);
+    assert(consensus_eng.node_count == 2);
+    assert(consensus_eng.nodes[0].node_id == 200);
+    assert(consensus_eng.nodes[1].node_id == 300);
+    printf("  [PASS] DECnet neighbor configuration auto-registration verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;
