@@ -474,3 +474,45 @@ int tsfi_fips79_format_label(uint8_t *out_block, const char *file_id, uint32_t s
     out_block[80] = '\0';
     return 0;
 }
+
+int tsfi_fips81_encrypt_cbc(tsfi_crypto_subsystem *crypto, const uint8_t *plain, uint8_t *cipher, int blocks, const uint8_t *iv, int supervisor_state) {
+    if (!crypto || !plain || !cipher || blocks <= 0 || !iv) return -1;
+    if (!supervisor_state) return -2;
+    
+    uint8_t prev[8];
+    memcpy(prev, iv, 8);
+    
+    for (int b = 0; b < blocks; b++) {
+        uint8_t block_in[8];
+        for (int i = 0; i < 8; i++) {
+            block_in[i] = plain[b * 8 + i] ^ prev[i];
+        }
+        
+        int res = tsfi_crypto_encrypt(crypto, block_in, cipher + b * 8, supervisor_state);
+        if (res != 0) return res;
+        
+        memcpy(prev, cipher + b * 8, 8);
+    }
+    return 0;
+}
+
+int tsfi_fips81_decrypt_cbc(tsfi_crypto_subsystem *crypto, const uint8_t *cipher, uint8_t *plain, int blocks, const uint8_t *iv, int supervisor_state) {
+    if (!crypto || !cipher || !plain || blocks <= 0 || !iv) return -1;
+    if (!supervisor_state) return -2;
+    
+    uint8_t prev[8];
+    memcpy(prev, iv, 8);
+    
+    for (int b = 0; b < blocks; b++) {
+        uint8_t decrypted[8];
+        int res = tsfi_crypto_decrypt(crypto, cipher + b * 8, decrypted, supervisor_state);
+        if (res != 0) return res;
+        
+        for (int i = 0; i < 8; i++) {
+            plain[b * 8 + i] = decrypted[i] ^ prev[i];
+        }
+        
+        memcpy(prev, cipher + b * 8, 8);
+    }
+    return 0;
+}

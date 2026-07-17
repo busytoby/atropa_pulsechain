@@ -1698,6 +1698,25 @@ int main(void) {
     assert(tsfi_fips79_parse_label((const uint8_t*)"BAD1LABEL", file_id_out, &serial_out, &blocks_out) == -2);
     printf("  [PASS] FIPS 79 EBCDIC tape header parsing and EOT trailer validation checks verified.\n");
 
+    // 151. NBS FIPS PUB 81 DES Modes of Operation (ECB/CBC) Verification
+    printf("[Test] Verifying NBS FIPS PUB 81 DES Modes of Operation...\n");
+    tsfi_crypto_subsystem fips_crypto;
+    tsfi_crypto_init(&fips_crypto);
+    assert(tsfi_crypto_load_master_key(&fips_crypto, 0x1122334455667788ULL) == 0);
+    
+    uint8_t cbc_iv[8] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 };
+    uint8_t multi_plain[16] = "HELLO WORLD CBC";
+    uint8_t multi_cipher[16] = { 0 };
+    uint8_t multi_decrypted[16] = { 0 };
+    
+    // Encrypt 2 blocks in CBC mode
+    assert(tsfi_fips81_encrypt_cbc(&fips_crypto, multi_plain, multi_cipher, 2, cbc_iv, 1) == 0);
+    
+    // Decrypt 2 blocks in CBC mode
+    assert(tsfi_fips81_decrypt_cbc(&fips_crypto, multi_cipher, multi_decrypted, 2, cbc_iv, 1) == 0);
+    assert(memcmp(multi_plain, multi_decrypted, 16) == 0);
+    printf("  [PASS] FIPS 81 Cipher Block Chaining (CBC) modes and IV feedback loops verified.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 

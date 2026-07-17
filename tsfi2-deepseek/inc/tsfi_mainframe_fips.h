@@ -111,4 +111,8 @@ int tsfi_fips69_format_numeric(double val, char *out_str, int max_len);
 int tsfi_fips79_parse_label(const uint8_t *label_block, char *out_file_id, uint32_t *out_serial, int *out_block_count);
 int tsfi_fips79_format_label(uint8_t *out_block, const char *file_id, uint32_t serial, int block_count, const char *label_type);
 
+// Scenario 151: NBS FIPS PUB 81 Block Cipher Modes of Operation (ECB/CBC)
+int tsfi_fips81_encrypt_cbc(tsfi_crypto_subsystem *crypto, const uint8_t *plain, uint8_t *cipher, int blocks, const uint8_t *iv, int supervisor_state);
+int tsfi_fips81_decrypt_cbc(tsfi_crypto_subsystem *crypto, const uint8_t *cipher, uint8_t *plain, int blocks, const uint8_t *iv, int supervisor_state);
+
 #endif // TSFI_MAINFRAME_FIPS_H
