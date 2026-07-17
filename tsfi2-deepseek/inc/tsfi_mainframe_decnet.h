@@ -1310,4 +1310,24 @@ typedef struct {
 
 int tsfi_cad_cache_projection(tsfi_ibm3880_cache *cache, tsfi_cad_projection *proj, uint32_t frame_address);
 
+// Coaxial Link Frame Assembler
+typedef struct {
+    uint8_t sync_pattern[4];
+    uint8_t payload[32];
+    uint16_t crc;
+} tsfi_coax_frame;
+
+void tsfi_coax_assemble(tsfi_coax_frame *frame, const uint8_t *data);
+int tsfi_coax_verify(const tsfi_coax_frame *frame);
+
+// Mainframe Cryptographic DES Session Key Generator
+typedef struct {
+    uint8_t master_kek[8];
+    uint8_t active_session_key[8];
+    int rotations_count;
+} tsfi_des_key_vault;
+
+void tsfi_des_vault_init(tsfi_des_key_vault *vault, const uint8_t *kek);
+int tsfi_des_rotate_session_key(tsfi_des_key_vault *vault);
+
 #endif // TSFI_MAINFRAME_DECNET_H

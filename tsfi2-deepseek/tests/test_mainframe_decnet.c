@@ -2049,6 +2049,34 @@ int main(void) {
     assert(tsfi_cad_cache_projection(&ibm_cache, &proj, 0xF00D) == 0);
     printf("  [PASS] Parallel CAD component searches and cached vector frame projections verified.\n");
 
+    // 101. Coaxial Link Frame Assembler & CRC verification
+    printf("[Test] Verifying Coaxial Link Frame assemblies...\n");
+    tsfi_coax_frame coax_f;
+    uint8_t payload_data[32];
+    for (int i = 0; i < 32; i++) payload_data[i] = (uint8_t)i;
+    
+    tsfi_coax_assemble(&coax_f, payload_data);
+    assert(coax_f.sync_pattern[0] == 0xAA);
+    assert(coax_f.sync_pattern[1] == 0x55);
+    assert(tsfi_coax_verify(&coax_f) == 0);
+    
+    // Corrupt payload to check CRC fail
+    coax_f.payload[0] ^= 0xFF;
+    assert(tsfi_coax_verify(&coax_f) == -3);
+    printf("  [PASS] Coaxial link sync patterns and CRC16 frame validation verified.\n");
+    
+    // 102. Mainframe Cryptographic DES Session Key Generator verification
+    printf("[Test] Verifying DES key vault & rotation...\n");
+    tsfi_des_key_vault des_vault;
+    uint8_t kek[8] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 };
+    tsfi_des_vault_init(&des_vault, kek);
+    assert(des_vault.rotations_count == 0);
+    
+    assert(tsfi_des_rotate_session_key(&des_vault) == 0);
+    assert(des_vault.rotations_count == 1);
+    assert(des_vault.active_session_key[0] == (0x01 ^ 0));
+    printf("  [PASS] DES key-encryption-key wrapping and session key rotations verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

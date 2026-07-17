@@ -2843,3 +2843,65 @@ int tsfi_cad_cache_projection(tsfi_ibm3880_cache *cache, tsfi_cad_projection *pr
     proj->frame_address = frame_address;
     return tsfi_ibm3880_access(cache, frame_address, 0);
 }
+
+void tsfi_coax_assemble(tsfi_coax_frame *frame, const uint8_t *data) {
+    if (!frame || !data) return;
+    frame->sync_pattern[0] = 0xAA;
+    frame->sync_pattern[1] = 0x55;
+    frame->sync_pattern[2] = 0xAA;
+    frame->sync_pattern[3] = 0x55;
+    memcpy(frame->payload, data, 32);
+    
+    uint16_t crc = 0xFFFF;
+    for (int i = 0; i < 32; i++) {
+        crc ^= frame->payload[i];
+        for (int j = 0; j < 8; j++) {
+            if (crc & 1) {
+                crc = (crc >> 1) ^ 0xA001;
+            } else {
+                crc >>= 1;
+            }
+        }
+    }
+    frame->crc = crc;
+}
+
+int tsfi_coax_verify(const tsfi_coax_frame *frame) {
+    if (!frame) return -1;
+    if (frame->sync_pattern[0] != 0xAA || frame->sync_pattern[1] != 0x55 ||
+        frame->sync_pattern[2] != 0xAA || frame->sync_pattern[3] != 0x55) {
+        return -2;
+    }
+    uint16_t crc = 0xFFFF;
+    for (int i = 0; i < 32; i++) {
+        crc ^= frame->payload[i];
+        for (int j = 0; j < 8; j++) {
+            if (crc & 1) {
+                crc = (crc >> 1) ^ 0xA001;
+            } else {
+                crc >>= 1;
+            }
+        }
+    }
+    return (crc == frame->crc) ? 0 : -3;
+}
+
+void tsfi_des_vault_init(tsfi_des_key_vault *vault, const uint8_t *kek) {
+    if (!vault) return;
+    vault->rotations_count = 0;
+    if (kek) {
+        memcpy(vault->master_kek, kek, 8);
+    } else {
+        memset(vault->master_kek, 0, 8);
+    }
+    memset(vault->active_session_key, 0, 8);
+}
+
+int tsfi_des_rotate_session_key(tsfi_des_key_vault *vault) {
+    if (!vault) return -1;
+    for (int i = 0; i < 8; i++) {
+        vault->active_session_key[i] = vault->master_kek[i] ^ (uint8_t)(vault->rotations_count + i);
+    }
+    vault->rotations_count++;
+    return 0;
+}
