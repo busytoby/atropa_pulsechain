@@ -2141,6 +2141,44 @@ int main(void) {
     assert(pat_report.bounds_violations == 1);
     printf("  [PASS] Patrick programming support gap diagnostics correctly flagged invalid states.\n");
 
+    // Test Scenario 40: Univac Selective Posting Interpreter
+    printf("[Test] Verifying Univac Selective Posting Interpreter...\n");
+    tsfi_univac_posting_interpreter univac;
+    tsfi_univac_posting_init(&univac);
+    
+    // Create master card: prefix with '*'
+    tsfi_ramac_card master_card;
+    memset(master_card.columns, ' ', 80);
+    master_card.columns[0] = '*';
+    strcpy(&master_card.columns[1], "MASTER_DATA_FIELD_RETAINED_POSTING_SEGMENT");
+    
+    tsfi_ramac_card out_card1;
+    int post_res = tsfi_univac_posting_process(&univac, &master_card, &out_card1);
+    assert(post_res == 1);
+    assert(univac.has_master_data == 1);
+    
+    // Create detail card: no prefix
+    tsfi_ramac_card detail_card;
+    memset(detail_card.columns, ' ', 80);
+    strcpy(&detail_card.columns[40], "DETAIL_DATA_POST");
+    
+    tsfi_ramac_card out_card2;
+    post_res = tsfi_univac_posting_process(&univac, &detail_card, &out_card2);
+    assert(post_res == 0);
+    // Detail card output should have master data in columns 0-39, and details in columns 40-79
+    assert(strncmp(out_card2.columns, "MASTER_DATA_FIELD_RETAINED_POSTING_SEGM", 39) == 0);
+    assert(strncmp(&out_card2.columns[40], "DETAIL_DATA_POST", 16) == 0);
+    
+    // Clear card: prefix with '!'
+    tsfi_ramac_card clear_card;
+    memset(clear_card.columns, ' ', 80);
+    clear_card.columns[0] = '!';
+    post_res = tsfi_univac_posting_process(&univac, &clear_card, &out_card1);
+    assert(post_res == 2);
+    assert(univac.has_master_data == 0);
+    
+    printf("  [PASS] Univac selective posting interpreter master/detail posting verified.\n");
+
     free(mock_dat.base);
     free(mock_dat.check);
 

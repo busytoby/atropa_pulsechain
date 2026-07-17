@@ -3452,3 +3452,42 @@ int tsfi_patrick_gap_validate(const uint8_t *bytecode, int len, tsfi_patrick_gap
     }
     return 0;
 }
+
+void tsfi_univac_posting_init(tsfi_univac_posting_interpreter *interp) {
+    if (!interp) return;
+    memset(interp->retained_data, ' ', 80);
+    interp->has_master_data = 0;
+}
+
+int tsfi_univac_posting_process(tsfi_univac_posting_interpreter *interp, const tsfi_ramac_card *card_in, tsfi_ramac_card *card_out) {
+    if (!interp || !card_in || !card_out) return -1;
+    
+    // Check for control punch tags:
+    // '*' = master card control punch: retain the data
+    if (card_in->columns[0] == '*') {
+        memcpy(interp->retained_data, &card_in->columns[1], 79);
+        interp->retained_data[79] = ' '; // ensure boundary space padding
+        interp->has_master_data = 1;
+        // Output card gets the input card directly
+        memcpy(card_out->columns, card_in->columns, 80);
+        return 1; // Handled master
+    }
+    
+    // '!' = clear control punch: clear the retained registers
+    if (card_in->columns[0] == '!') {
+        memset(interp->retained_data, ' ', 80);
+        interp->has_master_data = 0;
+        memcpy(card_out->columns, card_in->columns, 80);
+        return 2; // Cleared
+    }
+    
+    // Detail card: post the retained master data into columns 0-39, and details into columns 40-79
+    if (interp->has_master_data) {
+        memcpy(card_out->columns, interp->retained_data, 40);
+        memcpy(&card_out->columns[40], &card_in->columns[40], 40);
+    } else {
+        memcpy(card_out->columns, card_in->columns, 80);
+    }
+    
+    return 0; // Handled detail
+}

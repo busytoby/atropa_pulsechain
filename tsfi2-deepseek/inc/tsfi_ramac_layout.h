@@ -692,4 +692,13 @@ typedef struct {
 
 int tsfi_patrick_gap_validate(const uint8_t *bytecode, int len, tsfi_patrick_gap_report *report);
 
+// Univac Selective Posting Interpreter
+typedef struct {
+    char retained_data[80];
+    int has_master_data;
+} tsfi_univac_posting_interpreter;
+
+void tsfi_univac_posting_init(tsfi_univac_posting_interpreter *interp);
+int tsfi_univac_posting_process(tsfi_univac_posting_interpreter *interp, const tsfi_ramac_card *card_in, tsfi_ramac_card *card_out);
+
 #endif // TSFI_RAMAC_LAYOUT_H
