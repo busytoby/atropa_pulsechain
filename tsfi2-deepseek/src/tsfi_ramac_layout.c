@@ -5800,3 +5800,14 @@ int tsfi_dbtg_insert_sorted(tsfi_dbtg_sorted_record *records, int current_count,
     records[insert_idx].sort_key = sort_key;
     return current_count + 1;
 }
+
+void tsfi_dbtg_resolve_calc(const char *key, uint32_t total_pages, uint32_t slots_per_page, tsfi_dbtg_calc_address *address_out) {
+    if (!key || total_pages == 0 || slots_per_page == 0 || !address_out) return;
+    uint32_t hash = 2166136261U;
+    while (*key) {
+        hash ^= (uint8_t)*key++;
+        hash *= 16777619U;
+    }
+    address_out->target_page = hash % total_pages;
+    address_out->target_slot = (hash / total_pages) % slots_per_page;
+}

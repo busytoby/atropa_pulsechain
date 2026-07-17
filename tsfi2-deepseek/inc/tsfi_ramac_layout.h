@@ -1444,4 +1444,12 @@ typedef struct {
 
 int tsfi_dbtg_insert_sorted(tsfi_dbtg_sorted_record *records, int current_count, int max_capacity, int record_id, int sort_key);
 
+// DBTG CALC Location Address Resolver
+typedef struct {
+    uint32_t target_page;
+    uint32_t target_slot;
+} tsfi_dbtg_calc_address;
+
+void tsfi_dbtg_resolve_calc(const char *key, uint32_t total_pages, uint32_t slots_per_page, tsfi_dbtg_calc_address *address_out);
+
 #endif // TSFI_RAMAC_LAYOUT_H

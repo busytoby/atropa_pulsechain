@@ -1379,6 +1379,22 @@ int main(void) {
     assert(sorted_records[2].record_id == 101);
     printf("  [PASS] DBTG Set Sorted insertion key alignment verified.\n");
 
+    // 79. DBTG CALC Location Mode Verification
+    printf("[Test] Verifying DBTG CALC location hash mappings...\n");
+    tsfi_dbtg_calc_address addr1, addr2;
+    memset(&addr1, 0, sizeof(addr1));
+    memset(&addr2, 0, sizeof(addr2));
+    
+    tsfi_dbtg_resolve_calc("RECORD_KEY_A", 100, 16, &addr1);
+    tsfi_dbtg_resolve_calc("RECORD_KEY_B", 100, 16, &addr2);
+    
+    assert(addr1.target_page < 100);
+    assert(addr1.target_slot < 16);
+    assert(addr2.target_page < 100);
+    assert(addr2.target_slot < 16);
+    assert(addr1.target_page != addr2.target_page || addr1.target_slot != addr2.target_slot);
+    printf("  [PASS] DBTG CALC location hashing target page and slot resolver verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
