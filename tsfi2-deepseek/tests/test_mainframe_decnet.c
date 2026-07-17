@@ -957,6 +957,47 @@ int main(void) {
     
     printf("  [PASS] SNA TH MPF to RH chaining mappings verified.\n");
 
+    // 61. z/VM SNA Systems Verification (GCS, PVM, RSCS, VSCS)
+    printf("[Test] Verifying z/VM SNA Systems...\n");
+    
+    // GCS
+    tsfi_zvm_gcs test_gcs;
+    tsfi_zvm_gcs_init(&test_gcs, 12, "VTAMSEG");
+    assert(test_gcs.vmid == 12);
+    assert(strcmp(test_gcs.shared_segment_name, "VTAMSEG") == 0);
+    assert(test_gcs.vtam_active == 0);
+    tsfi_zvm_gcs_set_vtam(&test_gcs, 1);
+    assert(test_gcs.vtam_active == 1);
+    
+    // PVM
+    tsfi_zvm_pvm test_pvm;
+    tsfi_zvm_pvm_init(&test_pvm);
+    assert(test_pvm.is_active == 0);
+    assert(tsfi_zvm_pvm_route(&test_pvm, 2, 4) == 0);
+    assert(test_pvm.is_active == 1);
+    assert(test_pvm.source_lu == 2);
+    assert(test_pvm.target_lu == 4);
+    assert(test_pvm.session_id == 0x0204);
+    
+    // RSCS
+    tsfi_zvm_rscs_spool test_spool;
+    tsfi_zvm_rscs_init(&test_spool, "JOB001.TXT", 500, 1, 4096);
+    assert(test_spool.file_id == 500);
+    assert(test_spool.lu_type == 1);
+    assert(test_spool.size_bytes == 4096);
+    assert(strcmp(test_spool.spool_file_name, "JOB001.TXT") == 0);
+    
+    // VSCS
+    tsfi_zvm_vscs test_vscs;
+    tsfi_zvm_vscs_init(&test_vscs);
+    assert(test_vscs.is_attached == 0);
+    assert(tsfi_zvm_vscs_attach(&test_vscs, 3, 12) == 0);
+    assert(test_vscs.is_attached == 1);
+    assert(test_vscs.terminal_lu == 3);
+    assert(test_vscs.target_vmid == 12);
+    
+    printf("  [PASS] z/VM SNA systems (GCS, PVM, RSCS, VSCS) integration verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

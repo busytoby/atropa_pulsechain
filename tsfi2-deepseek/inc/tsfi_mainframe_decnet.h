@@ -661,4 +661,42 @@ int tsfi_usenet_retrieve_bin(const uint8_t *buf, size_t len, tsfi_usenet_article
 
 void tsfi_sna_map_th_mpf_to_rh_chain(uint8_t mpf, tsfi_sna_rh *rh);
 
+// z/VM SNA Multitasking / Shared Segment (VTAM in GCS)
+typedef struct {
+    int vmid;
+    int vtam_active;
+    char shared_segment_name[16];
+} tsfi_zvm_gcs;
+
+// z/VM Pass-Through (PVM) routing path mapping
+typedef struct {
+    int source_lu;
+    int target_lu;
+    int session_id;
+    int is_active;
+} tsfi_zvm_pvm;
+
+// z/VM Remote Spooling Communications Subsystem (RSCS) Spool Entry
+typedef struct {
+    char spool_file_name[32];
+    int file_id;
+    int lu_type;
+    int size_bytes;
+} tsfi_zvm_rscs_spool;
+
+// z/VM SNA Console Support (VSCS)
+typedef struct {
+    int terminal_lu;
+    int target_vmid;
+    int is_attached;
+} tsfi_zvm_vscs;
+
+void tsfi_zvm_gcs_init(tsfi_zvm_gcs *gcs, int vmid, const char *seg_name);
+void tsfi_zvm_gcs_set_vtam(tsfi_zvm_gcs *gcs, int active);
+void tsfi_zvm_pvm_init(tsfi_zvm_pvm *pvm);
+int tsfi_zvm_pvm_route(tsfi_zvm_pvm *pvm, int src, int target);
+void tsfi_zvm_rscs_init(tsfi_zvm_rscs_spool *spool, const char *filename, int file_id, int lu_type, int size);
+void tsfi_zvm_vscs_init(tsfi_zvm_vscs *vscs);
+int tsfi_zvm_vscs_attach(tsfi_zvm_vscs *vscs, int term_lu, int vmid);
+
 #endif // TSFI_MAINFRAME_DECNET_H

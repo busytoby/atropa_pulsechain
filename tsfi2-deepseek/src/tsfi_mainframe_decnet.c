@@ -1563,3 +1563,66 @@ void tsfi_sna_map_th_mpf_to_rh_chain(uint8_t mpf, tsfi_sna_rh *rh) {
             break;
     }
 }
+
+void tsfi_zvm_gcs_init(tsfi_zvm_gcs *gcs, int vmid, const char *seg_name) {
+    if (!gcs) return;
+    gcs->vmid = vmid;
+    gcs->vtam_active = 0;
+    if (seg_name) {
+        strncpy(gcs->shared_segment_name, seg_name, 15);
+        gcs->shared_segment_name[15] = '\0';
+    } else {
+        gcs->shared_segment_name[0] = '\0';
+    }
+}
+
+void tsfi_zvm_gcs_set_vtam(tsfi_zvm_gcs *gcs, int active) {
+    if (gcs) {
+        gcs->vtam_active = active;
+    }
+}
+
+void tsfi_zvm_pvm_init(tsfi_zvm_pvm *pvm) {
+    if (!pvm) return;
+    pvm->source_lu = 0;
+    pvm->target_lu = 0;
+    pvm->session_id = 0;
+    pvm->is_active = 0;
+}
+
+int tsfi_zvm_pvm_route(tsfi_zvm_pvm *pvm, int src, int target) {
+    if (!pvm) return -1;
+    pvm->source_lu = src;
+    pvm->target_lu = target;
+    pvm->session_id = (src << 8) | (target & 0xFF);
+    pvm->is_active = 1;
+    return 0;
+}
+
+void tsfi_zvm_rscs_init(tsfi_zvm_rscs_spool *spool, const char *filename, int file_id, int lu_type, int size) {
+    if (!spool) return;
+    spool->file_id = file_id;
+    spool->lu_type = lu_type;
+    spool->size_bytes = size;
+    if (filename) {
+        strncpy(spool->spool_file_name, filename, 31);
+        spool->spool_file_name[31] = '\0';
+    } else {
+        spool->spool_file_name[0] = '\0';
+    }
+}
+
+void tsfi_zvm_vscs_init(tsfi_zvm_vscs *vscs) {
+    if (!vscs) return;
+    vscs->terminal_lu = 0;
+    vscs->target_vmid = 0;
+    vscs->is_attached = 0;
+}
+
+int tsfi_zvm_vscs_attach(tsfi_zvm_vscs *vscs, int term_lu, int vmid) {
+    if (!vscs) return -1;
+    vscs->terminal_lu = term_lu;
+    vscs->target_vmid = vmid;
+    vscs->is_attached = 1;
+    return 0;
+}
