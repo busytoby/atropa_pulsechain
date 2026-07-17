@@ -1388,6 +1388,17 @@ int main(void) {
     assert(tsfi_db_tx_update(&tx_mgr, "test") == -1);
     int dummy_status = 0;
     assert(tsfi_db_tx_commit(&tx_mgr, &dummy_status) == -1);
+    assert(tsfi_db_tx_rollback(&tx_mgr, NULL, &dummy_status) == -1);
+    
+    // Robustness checks with NULL pointers
+    assert(tsfi_db_tx_begin(NULL, "CUSTREC", "Name: Alice") == -1);
+    assert(tsfi_db_tx_begin(&tx_mgr, NULL, "Name: Alice") == -1);
+    assert(tsfi_db_tx_update(NULL, "Name: Bob") == -1);
+    assert(tsfi_db_tx_update(&tx_mgr, NULL) == -1);
+    assert(tsfi_db_tx_commit(NULL, &dummy_status) == -1);
+    assert(tsfi_db_tx_commit(&tx_mgr, NULL) == -1);
+    assert(tsfi_db_tx_rollback(NULL, NULL, &dummy_status) == -1);
+    assert(tsfi_db_tx_rollback(&tx_mgr, NULL, NULL) == -1);
     
     // Begin transaction
     assert(tsfi_db_tx_begin(&tx_mgr, "CUSTREC", "Name: Alice") == 0);
