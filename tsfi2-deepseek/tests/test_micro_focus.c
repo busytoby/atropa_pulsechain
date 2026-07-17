@@ -1317,6 +1317,27 @@ int main(void) {
     assert(lookup_status == 1);
     printf("  [PASS] IRS CADE Taxpayer Lookup verified.\n");
 
+    // 122. Verify IRS IMF Cycle Code Conversions
+    printf("[TEST] Validating IRS IMF Cycle Code Conversions...\n");
+    char cycle_buf[16] = {0};
+    int enc_cyc_res = tsfi_mf_imf_encode_cycle_code(2026, 28, 4, cycle_buf, sizeof(cycle_buf));
+    assert(enc_cyc_res == 0);
+    assert(strcmp(cycle_buf, "20262804") == 0);
+    int dec_y = 0, dec_w = 0, dec_d = 0;
+    int dec_cyc_res = tsfi_mf_imf_decode_cycle_code(cycle_buf, &dec_y, &dec_w, &dec_d);
+    assert(dec_cyc_res == 0);
+    assert(dec_y == 2026);
+    assert(dec_w == 28);
+    assert(dec_d == 4);
+    printf("  [PASS] IRS IMF Cycle Code Conversions verified.\n");
+
+    // 123. Verify IRS CADE Taxpayer Status Updater
+    printf("[TEST] Validating IRS CADE Taxpayer Status Updater...\n");
+    int upd_status_res = tsfi_mf_cade_update_taxpayer_status(taxpayer_registry, 3);
+    assert(upd_status_res == 0);
+    assert(strstr(taxpayer_registry, "STATUS:3") != NULL);
+    printf("  [PASS] IRS CADE Taxpayer Status Updater verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

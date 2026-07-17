@@ -146,5 +146,8 @@ int tsfi_mf_imf_validate_transaction_code(int transaction_code, double amount, i
 int tsfi_mf_imf_set_freeze_code(const char *ssn, char freeze_code, char *account_state, int max_len);
 int tsfi_mf_imf_is_frozen(const char *account_state, int *is_frozen);
 int tsfi_mf_cade_lookup_taxpayer(const char *ssn, const char *registry_pool, double *balance_out, int *status_out);
+int tsfi_mf_imf_encode_cycle_code(int year, int week, int day, char *cycle_out, int max_len);
+int tsfi_mf_imf_decode_cycle_code(const char *cycle_code, int *year, int *week, int *day);
+int tsfi_mf_cade_update_taxpayer_status(char *registry_entry, int new_status);
 
 #endif // TSFI_MICRO_FOCUS_H

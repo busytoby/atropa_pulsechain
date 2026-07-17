@@ -1997,3 +1997,30 @@ int tsfi_mf_cade_lookup_taxpayer(const char *ssn, const char *registry_pool, dou
     }
     return -2;
 }
+
+int tsfi_mf_imf_encode_cycle_code(int year, int week, int day, char *cycle_out, int max_len) {
+    if (!cycle_out || max_len < 9) return -1;
+
+    snprintf(cycle_out, max_len, "%04d%02d%02d", year, week, day);
+    return 0;
+}
+
+int tsfi_mf_imf_decode_cycle_code(const char *cycle_code, int *year, int *week, int *day) {
+    if (!cycle_code || !year || !week || !day) return -1;
+
+    if (sscanf(cycle_code, "%4d%2d%2d", year, week, day) == 3) {
+        return 0;
+    }
+    return -2;
+}
+
+int tsfi_mf_cade_update_taxpayer_status(char *registry_entry, int new_status) {
+    if (!registry_entry) return -1;
+
+    char *status_ptr = strstr(registry_entry, "STATUS:");
+    if (status_ptr) {
+        snprintf(status_ptr, 16, "STATUS:%d", new_status);
+        return 0;
+    }
+    return -2;
+}
