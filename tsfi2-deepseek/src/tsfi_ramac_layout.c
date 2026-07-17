@@ -4040,3 +4040,48 @@ int tsfi_algol_stack_pop(tsfi_algol_call_stack *stack) {
     if (!stack || stack->sp <= 0) return -1;
     return stack->return_pcs[--stack->sp];
 }
+
+void tsfi_algol_matrix_multiply(const tsfi_algol_matrix *a, const tsfi_algol_matrix *b, tsfi_algol_matrix *result) {
+    if (!a || !b || !result) return;
+    if (a->cols != b->rows) return;
+    result->rows = a->rows;
+    result->cols = b->cols;
+    memset(result->data, 0, sizeof(result->data));
+    for (int r = 0; r < a->rows; r++) {
+        for (int c = 0; c < b->cols; c++) {
+            int sum = 0;
+            for (int k = 0; k < a->cols; k++) {
+                sum += a->data[r * a->cols + k] * b->data[k * b->cols + c];
+            }
+            result->data[r * b->cols + c] = sum;
+        }
+    }
+}
+
+int tsfi_cobol_compute_eval(const char *expression, const int reg_values[8]) {
+    if (!expression || !reg_values) return 0;
+    int rx = -1, ry = -1, rz = -1;
+    char op1 = '\0', op2 = '\0';
+    
+    int matched = sscanf(expression, "R%d %c R%d %c R%d", &rx, &op1, &ry, &op2, &rz);
+    if (matched == 5) {
+        int val1 = (rx >= 0 && rx < 8) ? reg_values[rx] : 0;
+        int val2 = (ry >= 0 && ry < 8) ? reg_values[ry] : 0;
+        int val3 = (rz >= 0 && rz < 8) ? reg_values[rz] : 0;
+        
+        if (op1 == '*' && op2 == '+') {
+            return val1 * val2 + val3;
+        }
+    }
+    
+    matched = sscanf(expression, "R%d %c R%d", &rx, &op1, &ry);
+    if (matched == 3) {
+        int val1 = (rx >= 0 && rx < 8) ? reg_values[rx] : 0;
+        int val2 = (ry >= 0 && ry < 8) ? reg_values[ry] : 0;
+        if (op1 == '+') return val1 + val2;
+        if (op1 == '-') return val1 - val2;
+        if (op1 == '*') return val1 * val2;
+    }
+    
+    return 0;
+}

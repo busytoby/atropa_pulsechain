@@ -422,6 +422,23 @@ int main(void) {
     }
     printf("  [PASS] All .algol61 files parsed and syntax bounds validated.\n");
 
+    // 22. ALGOL Multi-Dimensional Matrix transformations Verification
+    printf("[Test] Verifying ALGOL matrix transformations...\n");
+    tsfi_algol_matrix mat_a = { 2, 2, { 1, 2, 3, 4 } };
+    tsfi_algol_matrix mat_b = { 2, 2, { 5, 6, 7, 8 } };
+    tsfi_algol_matrix mat_res;
+    tsfi_algol_matrix_multiply(&mat_a, &mat_b, &mat_res);
+    assert(mat_res.data[0] == 19);
+    assert(mat_res.data[3] == 50);
+    printf("  [PASS] ALGOL matrix multiplication verified.\n");
+    
+    // 23. COBOL COMPUTE Expression Solver Verification
+    printf("[Test] Verifying COBOL COMPUTE formula translations...\n");
+    int regs[8] = { 0, 10, 5, 8, 0, 0, 0, 0 };
+    int comp_res = tsfi_cobol_compute_eval("R1 * R2 + R3", regs);
+    assert(comp_res == 58);
+    printf("  [PASS] COBOL COMPUTE evaluations verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

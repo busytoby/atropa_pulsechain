@@ -901,4 +901,16 @@ void tsfi_algol_scope_init(tsfi_algol_scope_frame *frame, int parent);
 void tsfi_algol_stack_push(tsfi_algol_call_stack *stack, int pc);
 int tsfi_algol_stack_pop(tsfi_algol_call_stack *stack);
 
+// ALGOL Dynamic Matrix Extensions
+typedef struct {
+    int rows;
+    int cols;
+    int data[16];
+} tsfi_algol_matrix;
+
+void tsfi_algol_matrix_multiply(const tsfi_algol_matrix *a, const tsfi_algol_matrix *b, tsfi_algol_matrix *result);
+
+// COBOL COMPUTE Expression Solver
+int tsfi_cobol_compute_eval(const char *expression, const int reg_values[8]);
+
 #endif // TSFI_RAMAC_LAYOUT_H
