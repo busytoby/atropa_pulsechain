@@ -523,6 +523,17 @@ int main(void) {
     assert(keycode_reg == 32); // 'd' keycode for Winchester MQ ACK compliance
     printf("  [PASS] Unified LU to WinchesterMQ SCSI bridge mappings verified.\n");
 
+    // 37. Unified LU to Coaxial Bridge Verification
+    printf("[Test] Verifying Unified LU to Coaxial Bridge...\n");
+    int coax_phase = 0;
+    int coax_signal = 0;
+    
+    // Route 0x5001 (address 0x5001 = 20481 dec, 20481 % 360 = 321, LU Type = 0x01)
+    assert(tsfi_vtam_lu_bridge_coaxial(&registry, 0x5001, &coax_phase, &coax_signal) == 0);
+    assert(coax_phase == 321);
+    assert(coax_signal == LU_TYPE_FILE);
+    printf("  [PASS] Unified LU to coaxial line signal bridge mappings verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

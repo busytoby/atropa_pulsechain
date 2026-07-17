@@ -1062,3 +1062,15 @@ int tsfi_vtam_lu_bridge_winchester(tsfi_vtam_lu_registry *reg, uint16_t addr, ui
     }
     return -2;
 }
+
+int tsfi_vtam_lu_bridge_coaxial(tsfi_vtam_lu_registry *reg, uint16_t addr, int *coax_phase, int *coax_signal) {
+    if (!reg || !coax_phase || !coax_signal) return -1;
+    for (int i = 0; i < reg->count; i++) {
+        if (reg->lus[i].lu_address == addr && reg->lus[i].active) {
+            *coax_phase = (int)(reg->lus[i].lu_address % 360);
+            *coax_signal = (int)reg->lus[i].lu_type;
+            return i;
+        }
+    }
+    return -2;
+}
