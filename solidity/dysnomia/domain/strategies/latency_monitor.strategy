@@ -1,0 +1,6 @@
+SET depth 2.
+SET_REG R0 15.
+SET_REG R1 5.
+ADD R1 TO R0.
+EVAL.
+PRUNE 20.
