@@ -1342,4 +1342,12 @@ void tsfi_mcs_init_hierarchical(tsfi_mcs_queue *q, const char *q_name, const cha
 int tsfi_mcs_send_segment(tsfi_mcs_queue *q, const char *msg, uint8_t indicator, void *wmq);
 int tsfi_mcs_receive_segment(tsfi_mcs_queue *q, char *msg_out, size_t max_len, uint8_t *indicator_out);
 
+typedef struct {
+    char assembly_buffer[512];
+    int assembly_len;
+} tsfi_mcs_assembly;
+
+void tsfi_mcs_assembly_init(tsfi_mcs_assembly *buf);
+int tsfi_mcs_assemble_next(tsfi_mcs_queue *q, tsfi_mcs_assembly *buf, char *msg_out, size_t max_len);
+
 #endif // TSFI_RAMAC_LAYOUT_H

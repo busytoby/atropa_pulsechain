@@ -1162,6 +1162,28 @@ int main(void) {
     assert(strcmp(h_mcs.status_key, "00") == 0);
     printf("  [PASS] Hierarchical CODASYL-compliant MCS segment routing verified.\n");
 
+    // 68. CODASYL MCS Segment Reconstruction and Assembly Verification
+    printf("[Test] Verifying CODASYL MCS segment reconstruction...\n");
+    tsfi_mcs_queue rec_q;
+    tsfi_mcs_init(&rec_q, "RECON_Q");
+    tsfi_mcs_assembly asm_buf;
+    tsfi_mcs_assembly_init(&asm_buf);
+    
+    int send_s = tsfi_mcs_send_segment(&rec_q, "PART1_", MCS_ESI, NULL);
+    assert(send_s == 0);
+    send_s = tsfi_mcs_send_segment(&rec_q, "PART2", MCS_EMI, NULL);
+    assert(send_s == 0);
+    assert(rec_q.count == 2);
+    
+    char assembled_msg[64];
+    int asm_res = tsfi_mcs_assemble_next(&rec_q, &asm_buf, assembled_msg, sizeof(assembled_msg));
+    assert(asm_res == 0);
+    
+    asm_res = tsfi_mcs_assemble_next(&rec_q, &asm_buf, assembled_msg, sizeof(assembled_msg));
+    assert(asm_res == 1);
+    assert(strcmp(assembled_msg, "PART1_PART2") == 0);
+    printf("  [PASS] CODASYL MCS segment assembly and message reconstruction passed.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

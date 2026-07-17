@@ -5579,3 +5579,32 @@ int tsfi_mcs_receive_segment(tsfi_mcs_queue *q, char *msg_out, size_t max_len, u
     strcpy(q->status_key, "00");
     return 0;
 }
+
+void tsfi_mcs_assembly_init(tsfi_mcs_assembly *buf) {
+    if (!buf) return;
+    memset(buf, 0, sizeof(tsfi_mcs_assembly));
+}
+
+int tsfi_mcs_assemble_next(tsfi_mcs_queue *q, tsfi_mcs_assembly *buf, char *msg_out, size_t max_len) {
+    if (!q || !buf || !msg_out || max_len == 0) return -1;
+    char temp_segment[128];
+    uint8_t indicator = 0;
+    int rx_res = tsfi_mcs_receive_segment(q, temp_segment, sizeof(temp_segment), &indicator);
+    if (rx_res != 0) return rx_res;
+    size_t seg_len = strlen(temp_segment);
+    if (buf->assembly_len + seg_len + 1 > sizeof(buf->assembly_buffer)) {
+        strcpy(q->status_key, "30");
+        return -3;
+    }
+    memcpy(buf->assembly_buffer + buf->assembly_len, temp_segment, seg_len);
+    buf->assembly_len += seg_len;
+    buf->assembly_buffer[buf->assembly_len] = '\0';
+    if (indicator == MCS_EMI || indicator == MCS_EGI) {
+        strncpy(msg_out, buf->assembly_buffer, max_len - 1);
+        msg_out[max_len - 1] = '\0';
+        buf->assembly_len = 0;
+        buf->assembly_buffer[0] = '\0';
+        return 1;
+    }
+    return 0;
+}
