@@ -403,10 +403,11 @@ int main(void) {
         "../solidity/dysnomia/domain/std/array_loop.algol61",
         "../solidity/dysnomia/domain/std/conditional_expression.algol61",
         "../solidity/dysnomia/domain/std/procedure_param.algol61",
-        "../solidity/dysnomia/domain/std/computed_goto.algol61"
+        "../solidity/dysnomia/domain/std/computed_goto.algol61",
+        "../solidity/dysnomia/domain/std/designational_goto.algol61"
     };
     
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 6; i++) {
         FILE *f = fopen(files[i], "r");
         assert(f != NULL);
         
