@@ -870,4 +870,17 @@ typedef struct {
 
 int tsfi_apollo_render_soundscape(const tsfi_apollo_soundscape_node *nodes, size_t node_count, float *mixed_signal_out, size_t points);
 
+// Apollo Domain File System (DFS) path resolver
+int tsfi_apollo_dfs_resolve(const char *global_path, char *resolved_node_out, char *local_path_out, size_t max_len);
+
+// Apollo Display Manager (DM) graphics pad
+typedef struct {
+    int pad_id;
+    int width;
+    int height;
+    char stream_association[32];
+} tsfi_apollo_dm_pad;
+
+void tsfi_apollo_dm_init(tsfi_apollo_dm_pad *pad, int id, int w, int h, const char *stream);
+
 #endif // TSFI_MAINFRAME_DECNET_H

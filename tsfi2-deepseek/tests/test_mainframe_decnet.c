@@ -1219,6 +1219,22 @@ int main(void) {
     assert(tsfi_apollo_render_soundscape(nodes, 2, mix, 50) == 0);
     printf("  [PASS] Apollo phoneme spooling and multi-node soundscape rendering verified.\n");
 
+    // 70. Apollo DFS & Display Manager Verification
+    printf("[Test] Verifying Apollo DFS & Display Manager...\n");
+    char node_res[32];
+    char path_res[64];
+    assert(tsfi_apollo_dfs_resolve("//NODE_A/sys/node_config", node_res, path_res, 32) == 0);
+    assert(strcmp(node_res, "NODE_A") == 0);
+    assert(strcmp(path_res, "/sys/node_config") == 0);
+    
+    tsfi_apollo_dm_pad pad;
+    tsfi_apollo_dm_init(&pad, 4, 1024, 768, "pad_stdout");
+    assert(pad.pad_id == 4);
+    assert(pad.width == 1024);
+    assert(pad.height == 768);
+    assert(strcmp(pad.stream_association, "pad_stdout") == 0);
+    printf("  [PASS] Apollo DFS path resolver and Display Manager pad configuration verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

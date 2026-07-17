@@ -1956,3 +1956,34 @@ int tsfi_apollo_render_soundscape(const tsfi_apollo_soundscape_node *nodes, size
     }
     return 0;
 }
+
+int tsfi_apollo_dfs_resolve(const char *global_path, char *resolved_node_out, char *local_path_out, size_t max_len) {
+    if (!global_path || !resolved_node_out || !local_path_out || max_len == 0) return -1;
+    if (global_path[0] == '/' && global_path[1] == '/') {
+        const char *node_start = global_path + 2;
+        const char *slash = strchr(node_start, '/');
+        if (slash) {
+            size_t node_len = slash - node_start;
+            if (node_len >= max_len) node_len = max_len - 1;
+            memcpy(resolved_node_out, node_start, node_len);
+            resolved_node_out[node_len] = '\0';
+            strncpy(local_path_out, slash, max_len - 1);
+            local_path_out[max_len - 1] = '\0';
+            return 0;
+        }
+    }
+    return -2;
+}
+
+void tsfi_apollo_dm_init(tsfi_apollo_dm_pad *pad, int id, int w, int h, const char *stream) {
+    if (!pad) return;
+    pad->pad_id = id;
+    pad->width = w;
+    pad->height = h;
+    if (stream) {
+        strncpy(pad->stream_association, stream, 31);
+        pad->stream_association[31] = '\0';
+    } else {
+        pad->stream_association[0] = '\0';
+    }
+}
