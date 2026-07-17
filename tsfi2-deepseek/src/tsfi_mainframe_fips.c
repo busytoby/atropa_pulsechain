@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include "tsfi_mainframe_fips.h"
 
 // Scenario 142: IBM 3848 Cryptographic Subsystem
@@ -851,4 +852,18 @@ int tsfi_fips95_resolve_agency(const char *agency_code, char *out_name, int max_
     }
     
     return 0;
+}
+
+int tsfi_fips127_validate_sql(const char *sql_query) {
+    if (!sql_query) return -1;
+    
+    // Check basic standard SQL statement verbs
+    if (strncasecmp(sql_query, "SELECT ", 7) == 0 ||
+        strncasecmp(sql_query, "INSERT ", 7) == 0 ||
+        strncasecmp(sql_query, "UPDATE ", 7) == 0 ||
+        strncasecmp(sql_query, "DELETE ", 7) == 0) {
+        return 0; // Compliant SQL verb
+    }
+    
+    return -2; // Syntax violation or unsupported statement verb
 }

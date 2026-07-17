@@ -1905,6 +1905,13 @@ int main(void) {
     assert(tsfi_fips95_resolve_agency("INVALID", name_buf, sizeof(name_buf)) == -2);
     printf("  [PASS] FIPS 95 administrative agency codes correctly parsed and resolved.\n");
 
+    // 163. NBS FIPS PUB 127 SQL Syntax Validator Verification
+    printf("[Test] Verifying NBS FIPS PUB 127 SQL Syntax Validator...\n");
+    assert(tsfi_fips127_validate_sql("SELECT * FROM schema.table;") == 0);
+    assert(tsfi_fips127_validate_sql("INSERT INTO table VALUES (1);") == 0);
+    assert(tsfi_fips127_validate_sql("DROP TABLE schema.table;") == -2); // Unsupported statement verb
+    printf("  [PASS] FIPS 127 standard SQL query statement verbs verified.\n");
+
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
 
