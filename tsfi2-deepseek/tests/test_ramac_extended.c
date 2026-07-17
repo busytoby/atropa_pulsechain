@@ -1007,6 +1007,23 @@ int main(void) {
     assert(interest == 276.28);
     printf("  [PASS] COBOL interest calculation and rounding variants verified successfully.\n");
 
+    // 59. COBOL ACH Batch Wire Validator Verification
+    printf("[Test] Verifying COBOL ACH batch wire validations...\n");
+    ach_batch batch;
+    tsfi_ach_init(&batch);
+    
+    int check_val = tsfi_ach_verify_routing("021000021");
+    assert(check_val == 0);
+    int check_fail = tsfi_ach_verify_routing("021000022");
+    assert(check_fail == -3);
+    
+    int add_entry1 = tsfi_ach_add(&batch, "021000021", 500.00);
+    assert(add_entry1 == 0);
+    
+    uint64_t hash_total = tsfi_ach_calc_hash_total(&batch);
+    assert(hash_total == 2100002ULL);
+    printf("  [PASS] COBOL ACH routing numbers and batch checksums verified successfully.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

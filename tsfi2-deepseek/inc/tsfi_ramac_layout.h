@@ -1259,4 +1259,20 @@ int tsfi_cobol_ledger_transaction(cobol_ledger *ledger, uint32_t acc_id, double 
 double tsfi_cobol_round(double value, int decimals, int mode);
 double tsfi_cobol_calc_interest(double principal, double rate, int periods, int mode);
 
+// 1971 Volume 17: COBOL ACH Batch Wire Validator
+typedef struct {
+    char routing_number[10];
+    double amount;
+} ach_entry;
+
+typedef struct {
+    ach_entry entries[16];
+    int count;
+} ach_batch;
+
+void tsfi_ach_init(ach_batch *batch);
+int tsfi_ach_add(ach_batch *batch, const char *routing, double amount);
+uint64_t tsfi_ach_calc_hash_total(const ach_batch *batch);
+int tsfi_ach_verify_routing(const char *routing);
+
 #endif // TSFI_RAMAC_LAYOUT_H

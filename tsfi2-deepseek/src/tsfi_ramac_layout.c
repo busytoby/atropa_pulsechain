@@ -5120,3 +5120,45 @@ double tsfi_cobol_calc_interest(double principal, double rate, int periods, int 
     double interest = principal * pow(1.0 + rate, periods) - principal;
     return tsfi_cobol_round(interest, 2, mode);
 }
+
+void tsfi_ach_init(ach_batch *batch) {
+    if (!batch) return;
+    batch->count = 0;
+    for (int i = 0; i < 16; i++) {
+        batch->entries[i].routing_number[0] = '\0';
+        batch->entries[i].amount = 0.0;
+    }
+}
+
+int tsfi_ach_verify_routing(const char *routing) {
+    if (!routing || strlen(routing) != 9) return -1;
+    int d[9];
+    for (int i = 0; i < 9; i++) {
+        if (routing[i] < '0' || routing[i] > '9') return -2;
+        d[i] = routing[i] - '0';
+    }
+    int sum = 3 * (d[0] + d[3] + d[6]) + 7 * (d[1] + d[4] + d[7]) + (d[2] + d[5] + d[8]);
+    return (sum % 10 == 0) ? 0 : -3;
+}
+
+int tsfi_ach_add(ach_batch *batch, const char *routing, double amount) {
+    if (!batch || batch->count >= 16 || !routing) return -1;
+    if (tsfi_ach_verify_routing(routing) != 0) return -2;
+    ach_entry *entry = &batch->entries[batch->count++];
+    strncpy(entry->routing_number, routing, sizeof(entry->routing_number) - 1);
+    entry->routing_number[sizeof(entry->routing_number) - 1] = '\0';
+    entry->amount = amount;
+    return 0;
+}
+
+uint64_t tsfi_ach_calc_hash_total(const ach_batch *batch) {
+    if (!batch) return 0;
+    uint64_t total = 0;
+    for (int i = 0; i < batch->count; i++) {
+        char first_eight[9];
+        strncpy(first_eight, batch->entries[i].routing_number, 8);
+        first_eight[8] = '\0';
+        total += strtoull(first_eight, NULL, 10);
+    }
+    return total;
+}
