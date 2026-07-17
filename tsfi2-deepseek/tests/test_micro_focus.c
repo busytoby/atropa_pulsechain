@@ -165,6 +165,17 @@ int main(void) {
     assert(tax_val == 50000);
     printf("  [PASS] Diyat Tax rates verified without level-88 indicators.\n");
 
+    // Verify Diyat Yul Gas Tax Excision
+    printf("[TEST] Validating Diyat Yul Gas Tax Excision...\n");
+    extern _Thread_local uint64_t g_transaction_diyat_tax_total;
+    uint64_t initial_tax = g_transaction_diyat_tax_total;
+    int excise_res = tsfi_diyat_yul_excise_gas_taxes(50000, "0xD32c39fEE49391c7952d1b30b15921b0D3b42E69");
+    assert(excise_res == 0);
+    extern uint64_t lau_yul_thunk_sload(uint64_t key);
+    assert(lau_yul_thunk_sload(0xF199) == 5000); // 10% of 50000 gas
+    assert(g_transaction_diyat_tax_total == initial_tax + 5000);
+    printf("  [PASS] Diyat Yul Gas Tax Excision on 2-3 tree blockchain verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

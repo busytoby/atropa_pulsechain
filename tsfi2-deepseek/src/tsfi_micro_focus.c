@@ -255,3 +255,19 @@ int tsfi_mf_calculate_diyat_tax(const char *event_code, uint32_t base_value, uin
 
     return -2;
 }
+
+int tsfi_diyat_yul_excise_gas_taxes(uint64_t gas_amount, const char *user_address_hex) {
+    if (!user_address_hex) return -1;
+
+    uint32_t tax_val = 0;
+    int tax_res = tsfi_mf_calculate_diyat_tax("MUTE", (uint32_t)gas_amount, &tax_val);
+    if (tax_res != 0) return -2;
+
+    extern void lau_yul_thunk_sstore(uint64_t key, uint64_t value);
+    lau_yul_thunk_sstore(0xF199, tax_val);
+
+    extern _Thread_local uint64_t g_transaction_diyat_tax_total;
+    g_transaction_diyat_tax_total += tax_val;
+
+    return 0;
+}
