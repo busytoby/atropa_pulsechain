@@ -694,6 +694,37 @@ int main(void) {
     assert(shared_sb.queue[0].inst_id == 5);
     printf("  [PASS] Asynchronous PPU scoreboard job offloading verified successfully.\n");
 
+    // 40. CDC 6600 PPU Scoreboard Pipeline Hazard Detection Verification
+    printf("[Test] Verifying PPU scoreboard pipeline hazard detection...\n");
+    cdc_ppu_system hazard_ppu;
+    tsfi_ppu_init(&hazard_ppu);
+    cdc_scoreboard hazard_sb;
+    tsfi_scoreboard_init(&hazard_sb);
+    
+    cdc_instruction i1 = { 0, "ADD", 2, 0, 1, STAGE_ISSUE };
+    cdc_instruction i2 = { 0, "MUL", 3, 2, 1, STAGE_ISSUE };
+    
+    tsfi_ppu_scoreboard_dispatch(&hazard_ppu, &hazard_sb, 1, &i1);
+    tsfi_ppu_scoreboard_dispatch(&hazard_ppu, &hazard_sb, 2, &i2);
+    
+    int hz_regs[8] = { 10, 20, 0, 0, 0, 0, 0, 0 };
+    
+    tsfi_scoreboard_step(&hazard_sb, hz_regs);
+    assert(hazard_sb.queue[0].stage == STAGE_READ_OPERANDS);
+    
+    tsfi_scoreboard_step(&hazard_sb, hz_regs);
+    assert(hazard_sb.queue[0].stage == STAGE_EXECUTE);
+    assert(hazard_sb.queue[1].stage == STAGE_READ_OPERANDS);
+    
+    tsfi_scoreboard_step(&hazard_sb, hz_regs);
+    assert(hazard_sb.queue[0].stage == STAGE_WRITE_BACK);
+    assert(hz_regs[2] == 30);
+    
+    tsfi_scoreboard_step(&hazard_sb, hz_regs);
+    assert(hazard_sb.queue[0].stage == STAGE_DONE);
+    assert(hazard_sb.queue[1].stage == STAGE_EXECUTE);
+    printf("  [PASS] RAW hazard blocking and release pipeline cycles verified successfully.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
