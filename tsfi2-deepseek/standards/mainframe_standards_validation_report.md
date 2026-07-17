@@ -205,5 +205,7 @@
 | 271 | IRS CADE Taxpayer Active Or Audit Pending Checker | PASS | Asserves if account status matches active or pending audit codes | Volume 33 |
 | 272 | IRS IMF Form 709 Verifier | PASS | Restricts gift filings to Form 709 gift tax return ranges | Volume 33 |
 | 273 | IRS CADE Taxpayer Under Audit Or Suspended Checker | PASS | Asserves if account status matches under audit or suspended codes | Volume 33 |
+| 274 | IRS IMF Form 1041 Verifier | PASS | Restricts fiduciary filings to Form 1041 fiduciary tax return ranges | Volume 33 |
+| 275 | IRS CADE Taxpayer Under Audit Or Audit Pending Checker | PASS | Asserves if account status matches under audit or pending audit codes | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 273 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 275 Scenarios validated successfully)
