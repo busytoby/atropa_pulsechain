@@ -528,4 +528,18 @@ int tsfi_mf_imf_verify_filing_status(int filing_status, int doc_code, int *is_al
     return 0;
 }
 
+int tsfi_mf_cade_classify_batch_error(int error_code, char *severity_out, int max_len) {
+    if (!severity_out || max_len <= 0) return -1;
+    if (error_code >= 500) {
+        snprintf(severity_out, max_len, "CRITICAL");
+    } else if (error_code >= 400) {
+        snprintf(severity_out, max_len, "REJECTED");
+    } else if (error_code >= 300) {
+        snprintf(severity_out, max_len, "WARNING");
+    } else {
+        snprintf(severity_out, max_len, "INFO");
+    }
+    return 0;
+}
+
 

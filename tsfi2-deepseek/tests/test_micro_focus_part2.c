@@ -322,6 +322,14 @@ int main(void) {
     assert(allowed == 0);
     printf("  [PASS] IRS IMF Filing Status Restriction verified.\n");
 
+    // 148. Verify IRS CADE Daily Batch Error Accounting
+    printf("[TEST] Validating IRS CADE Daily Batch Error Accounting...\n");
+    char severity[16] = {0};
+    int err_res = tsfi_mf_cade_classify_batch_error(503, severity, sizeof(severity));
+    assert(err_res == 0);
+    assert(strcmp(severity, "CRITICAL") == 0);
+    printf("  [PASS] IRS CADE Daily Batch Error Accounting verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }
