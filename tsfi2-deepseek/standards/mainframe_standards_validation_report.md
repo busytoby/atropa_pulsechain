@@ -257,5 +257,7 @@
 | 323 | IRS IMF Qualified Business Income (QBI) Deduction Threshold Checker | PASS | Audits taxable income thresholds mapping QBI deductibility | Volume 33 |
 | 324 | IRS CADE State Tax Withholding Matcher | PASS | Confirms state withholding amounts fall below local tax limits | Volume 33 |
 | 325 | IRS IMF Distributive Share K-1 Partnership Validator | PASS | Verifies partnership distributive share income calculations | Volume 33 |
+| 326 | IRS CADE Taxpayer Signature Witness Presence Indicator Checker | PASS | Validates form-specific witness signature presence requirements | Volume 33 |
+| 327 | IRS IMF Additional Child Tax Credit (ACTC) Refund Limit Matcher | PASS | Checks ACTC refundable parts fall within child count limitations | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 325 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 327 Scenarios validated successfully)

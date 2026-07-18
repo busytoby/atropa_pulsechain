@@ -973,4 +973,21 @@ int tsfi_mf_imf_verify_k1_share(double partner_share_pct, double partnership_inc
     return 0;
 }
 
+int tsfi_mf_cade_verify_witness_indicator(int doc_code, int has_witness_sig, int *is_valid) {
+    if (!is_valid) return -1;
+    if (doc_code == 8283) {
+        *is_valid = has_witness_sig ? 1 : 0;
+    } else {
+        *is_valid = 1;
+    }
+    return 0;
+}
+
+int tsfi_mf_imf_verify_actc_limit(int child_count, double claimed_actc, int *is_valid) {
+    if (!is_valid) return -1;
+    double limit = child_count * 1700.00;
+    *is_valid = (claimed_actc <= limit && claimed_actc >= 0.0) ? 1 : 0;
+    return 0;
+}
+
 

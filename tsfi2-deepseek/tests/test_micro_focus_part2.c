@@ -604,6 +604,22 @@ int main(void) {
     assert(k1_valid == 1);
     printf("  [PASS] IRS IMF K-1 Distributive Share Validator verified.\n");
 
+    // 182. Verify IRS CADE Taxpayer Signature Witness Presence Indicator Checker
+    printf("[TEST] Validating IRS CADE Witness Indicator Checker...\n");
+    int witness_valid = -1;
+    int witness_res = tsfi_mf_cade_verify_witness_indicator(8283, 1, &witness_valid);
+    assert(witness_res == 0);
+    assert(witness_valid == 1);
+    printf("  [PASS] IRS CADE Witness Indicator Checker verified.\n");
+
+    // 183. Verify IRS IMF Additional Child Tax Credit (ACTC) Refund Limit Matcher
+    printf("[TEST] Validating IRS IMF ACTC Limit Matcher...\n");
+    int actc_valid = -1;
+    int actc_res = tsfi_mf_imf_verify_actc_limit(2, 3400.00, &actc_valid);
+    assert(actc_res == 0);
+    assert(actc_valid == 1);
+    printf("  [PASS] IRS IMF ACTC Limit Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }
