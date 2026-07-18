@@ -572,6 +572,22 @@ int main(void) {
     assert(ss_valid == 1);
     printf("  [PASS] IRS CADE SS Benefits Taxability Range Checker verified.\n");
 
+    // 178. Verify IRS CADE Taxpayer Signature Date Chronological Validator
+    printf("[TEST] Validating IRS CADE Signature Date Chronological Validator...\n");
+    int date_valid = -1;
+    int date_res = tsfi_mf_cade_verify_signature_date(2027, 2026, &date_valid);
+    assert(date_res == 0);
+    assert(date_valid == 1);
+    printf("  [PASS] IRS CADE Signature Date Chronological Validator verified.\n");
+
+    // 179. Verify IRS IMF Qualified Business Income (QBI) Deduction Threshold Checker
+    printf("[TEST] Validating IRS IMF QBI Threshold Checker...\n");
+    int qbi_below = -1;
+    int qbi_res = tsfi_mf_imf_verify_qbi_threshold(150000.00, 1, &qbi_below);
+    assert(qbi_res == 0);
+    assert(qbi_below == 1);
+    printf("  [PASS] IRS IMF QBI Threshold Checker verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

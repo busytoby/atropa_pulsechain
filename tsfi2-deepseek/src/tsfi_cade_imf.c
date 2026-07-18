@@ -944,4 +944,17 @@ int tsfi_mf_cade_verify_ss_benefits(double modified_agi, double half_ss_benefits
     return 0;
 }
 
+int tsfi_mf_cade_verify_signature_date(int sign_year, int tax_year, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (sign_year >= tax_year && sign_year <= tax_year + 3) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_imf_verify_qbi_threshold(double taxable_income, int filing_status, int *is_below_threshold) {
+    if (!is_below_threshold) return -1;
+    double threshold = (filing_status == 2) ? 373200.00 : 186600.00;
+    *is_below_threshold = (taxable_income <= threshold) ? 1 : 0;
+    return 0;
+}
+
 

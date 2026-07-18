@@ -253,5 +253,7 @@
 | 319 | IRS IMF Student Loan Interest Deduction Ceiling Validator | PASS | Ensures student loan interest deductions do not exceed limits | Volume 33 |
 | 320 | IRS IMF Taxpayer Age / Blindness Standard Deduction Bonus Matcher | PASS | Verifies correct deduction bonus calculations for elderly/blind filers | Volume 33 |
 | 321 | IRS CADE Social Security Benefit Taxability Range Checker | PASS | Audits taxable reported social security benefits against thresholds | Volume 33 |
+| 322 | IRS CADE Taxpayer Signature Date Chronological Validator | PASS | Validates signing years relative to active tax processing years | Volume 33 |
+| 323 | IRS IMF Qualified Business Income (QBI) Deduction Threshold Checker | PASS | Audits taxable income thresholds mapping QBI deductibility | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 321 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 323 Scenarios validated successfully)
