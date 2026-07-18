@@ -1164,6 +1164,28 @@ static void test_new_mainframe_features(void) {
     // Y2K print diagnostic list check
     assert(tsfi_cw_y2k_print_diagnostic_violations_list(y2k_format_buf, sizeof(y2k_format_buf)) == 0);
     assert(strcmp(y2k_format_buf, "[Y2K Stats] Total Chronological Violations Tracked: 0") == 0);
+
+    // VSAM format and reset checksum stats
+    assert(tsfi_cw_vsam_format_and_reset_checksum_stats(vsam_fmt, sizeof(vsam_fmt)) == 0);
+    assert(strcmp(vsam_fmt, "VSAM Audits: 0, Mismatches: 0") == 0);
+
+    // COBOL padding configurations query
+    char query_pad_char = '\0';
+    int query_alignment = 0, query_max_size = 0;
+    assert(tsfi_cw_cobol_query_padding_alignment(&pad_cfg, &query_pad_char, &query_alignment, &query_max_size) == 0);
+    assert(query_pad_char == ' ');
+    assert(query_alignment == 4);
+
+    // EBCDIC diagnostics format and reset
+    assert(tsfi_cw_ebcdic_format_and_reset_parity_diagnostics(ebcdic_fmt, sizeof(ebcdic_fmt)) == 0);
+
+    // JCL query and reset substitution limit
+    assert(tsfi_cw_jcl_query_and_reset_substitution_limit(&jcl_sub_limit) == 0);
+    assert(jcl_sub_limit == 5);
+
+    // Y2K print and reset list check
+    assert(tsfi_cw_y2k_print_and_reset_violations_list(y2k_format_buf, sizeof(y2k_format_buf)) == 0);
+    assert(strcmp(y2k_format_buf, "[Y2K Stats] Total Chronological Violations Tracked: 0") == 0);
 }
 
 int main(void) {

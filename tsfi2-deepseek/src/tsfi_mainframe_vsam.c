@@ -671,3 +671,11 @@ int tsfi_cw_vsam_format_checksum_stats(char *buf_out, int max_len) {
     snprintf(buf_out, max_len, "VSAM Audits: %u, Mismatches: %u", global_vsam_checksum_audits_performed, global_vsam_checksum_mismatches);
     return 0;
 }
+
+int tsfi_cw_vsam_format_and_reset_checksum_stats(char *buf_out, int max_len) {
+    if (!buf_out || max_len <= 0) return -1;
+    snprintf(buf_out, max_len, "VSAM Audits: %u, Mismatches: %u", global_vsam_checksum_audits_performed, global_vsam_checksum_mismatches);
+    global_vsam_checksum_audits_performed = 0;
+    global_vsam_checksum_mismatches = 0;
+    return 0;
+}

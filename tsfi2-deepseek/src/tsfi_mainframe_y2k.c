@@ -404,3 +404,10 @@ int tsfi_cw_y2k_print_diagnostic_violations_list(char *buf_out, int max_len) {
     snprintf(buf_out, max_len, "[Y2K Stats] Total Chronological Violations Tracked: %u", global_y2k_chronological_violations);
     return 0;
 }
+
+int tsfi_cw_y2k_print_and_reset_violations_list(char *buf_out, int max_len) {
+    if (!buf_out || max_len <= 0) return -1;
+    snprintf(buf_out, max_len, "[Y2K Stats] Total Chronological Violations Tracked: %u", global_y2k_chronological_violations);
+    global_y2k_chronological_violations = 0;
+    return 0;
+}
