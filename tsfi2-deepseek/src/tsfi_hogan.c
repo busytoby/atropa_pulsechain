@@ -78,6 +78,7 @@ int tsfi_hogan_lfs_save(const hogan_umbrella_system *sys, const char *filepath) 
             fwrite(&sys->accounts[i].balance, sizeof(uint64_t), 1, f);
             fwrite(&sys->accounts[i].backup_account_id, sizeof(uint32_t), 1, f);
             fwrite(&sys->accounts[i].has_backup, sizeof(uint8_t), 1, f);
+            fwrite(&sys->accounts[i].balance_held, sizeof(uint64_t), 1, f);
         }
     }
     
@@ -127,10 +128,16 @@ int tsfi_hogan_lfs_load(hogan_umbrella_system *sys, const char *filepath) {
             fclose(f);
             return -2;
         }
+        uint64_t bal_held = 0;
+        if (fread(&bal_held, sizeof(uint64_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
         sys->accounts[i].account_id = acc_id;
         sys->accounts[i].balance = bal;
         sys->accounts[i].backup_account_id = backup_id;
         sys->accounts[i].has_backup = has_bk;
+        sys->accounts[i].balance_held = bal_held;
         sys->accounts[i].active = 1;
     }
     
@@ -563,6 +570,7 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
             EVP_DigestUpdate(mdctx, &sys->accounts[i].balance, sizeof(uint64_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].backup_account_id, sizeof(uint32_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].has_backup, sizeof(uint8_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].balance_held, sizeof(uint64_t));
         }
     }
     EVP_DigestFinal_ex(mdctx, sys->acab_epoch_root, &hash_len);
@@ -578,4 +586,40 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
     sys->live_processing_enabled = 1;
     
     return save_res;
+}
+
+int tsfi_hogan_authorize_card(hogan_umbrella_system *sys, const char *filepath, uint32_t card_id, uint32_t account_id, uint32_t merchant_id, uint64_t amount) {
+    // Enforce Rule 13: file extension must end with .dat.bin
+    const char *ext = strrchr(filepath, '.');
+    if (!ext || strcmp(ext, ".bin") != 0) {
+        if (!ext || strcmp(ext - 4, ".dat.bin") != 0) {
+            return -3; // Invalid extension
+        }
+    }
+
+    // Disable live queue during authorization calculation
+    uint8_t original_live_state = sys->live_processing_enabled;
+    sys->live_processing_enabled = 0;
+    
+    hogan_account *acc = NULL;
+    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
+        if (sys->accounts[i].active && sys->accounts[i].account_id == account_id) {
+            acc = &sys->accounts[i];
+            break;
+        }
+    }
+    
+    uint8_t approved = 0;
+    if (acc && (acc->balance >= acc->balance_held + amount)) {
+        acc->balance_held += amount;
+        approved = 1;
+    }
+    
+    hogan_card_entry entry = { card_id, account_id, merchant_id, amount, approved };
+    int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_card_entry));
+    
+    sys->live_processing_enabled = original_live_state;
+    
+    if (write_res != 0) return write_res;
+    return approved ? 0 : -1; // return 0 if approved, -1 if declined due to limit
 }

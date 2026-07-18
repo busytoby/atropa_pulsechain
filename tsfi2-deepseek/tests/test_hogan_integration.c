@@ -365,6 +365,54 @@ int main(void) {
     remove(overdraft_path); // clean up
     printf("  [PASS] Overdraft linkage, automatic balance transfer, and logging verified.\n");
 
+    // 17. Test Card Authorization Engine (Temporary Balance Holds)
+    printf("[E2E] Testing Card Authorization Engine...\n");
+    const char *card_path = "hogan_card.dat.bin";
+    remove(card_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system card_sys;
+    tsfi_hogan_init(&card_sys);
+    assert(tsfi_hogan_register_account(&card_sys, 1001, 1000) == 0); // Alice: 1,000 units
+    
+    // Authorize card transaction of 400 (leaves 600 available, held: 400)
+    assert(tsfi_hogan_authorize_card(&card_sys, card_path, 9901, 1001, 888, 400) == 0);
+    assert(tsfi_hogan_authorize_card(&card_sys, "hogan_card.json", 9901, 1001, 888, 400) == -3); // Rule 13 check
+    
+    // Try to authorize transaction of 700 (should be declined, balance_held remains 400)
+    assert(tsfi_hogan_authorize_card(&card_sys, card_path, 9902, 1001, 888, 700) == -1);
+    
+    // Verify holds
+    assert(card_sys.accounts[0].balance == 1000);
+    assert(card_sys.accounts[0].balance_held == 400);
+    
+    // Read sequential log file and verify entries
+    uint8_t read_cbuf[sizeof(hogan_card_entry)];
+    size_t csize = 0;
+    
+    // Check entry 0 (Approved hold of 400)
+    assert(tsfi_hogan_read_seq_record(card_path, 0, read_cbuf, &csize) == 0);
+    assert(csize == sizeof(hogan_card_entry));
+    const hogan_card_entry *centry0 = (const hogan_card_entry *)read_cbuf;
+    assert(centry0->card_id == 9901);
+    assert(centry0->account_id == 1001);
+    assert(centry0->merchant_id == 888);
+    assert(centry0->amount == 400);
+    assert(centry0->approved == 1);
+    
+    // Check entry 1 (Declined hold of 700)
+    assert(tsfi_hogan_read_seq_record(card_path, 1, read_cbuf, &csize) == 0);
+    assert(csize == sizeof(hogan_card_entry));
+    const hogan_card_entry *centry1 = (const hogan_card_entry *)read_cbuf;
+    assert(centry1->card_id == 9902);
+    assert(centry1->account_id == 1001);
+    assert(centry1->merchant_id == 888);
+    assert(centry1->amount == 700);
+    assert(centry1->approved == 0);
+    
+    remove(card_path); // clean up
+    printf("  [PASS] Card balance holds, limits, and authorization logging verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }

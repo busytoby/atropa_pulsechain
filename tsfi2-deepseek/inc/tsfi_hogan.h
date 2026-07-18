@@ -28,6 +28,7 @@ typedef struct {
     uint8_t active;
     uint32_t backup_account_id;
     uint8_t has_backup;
+    uint64_t balance_held;
 } hogan_account;
 
 typedef struct {
@@ -145,5 +146,16 @@ typedef struct {
 
 int tsfi_hogan_link_backup(hogan_umbrella_system *sys, uint32_t primary_id, uint32_t backup_id);
 int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const char *lfs_filepath, const char *overdraft_filepath);
+
+// Card Authorization Engine (Temporary Balance Holds)
+typedef struct {
+    uint32_t card_id;
+    uint32_t account_id;
+    uint32_t merchant_id;
+    uint64_t amount;
+    uint8_t approved;
+} hogan_card_entry;
+
+int tsfi_hogan_authorize_card(hogan_umbrella_system *sys, const char *filepath, uint32_t card_id, uint32_t account_id, uint32_t merchant_id, uint64_t amount);
 
 #endif // TSFI_HOGAN_H
