@@ -64,6 +64,7 @@ typedef struct {
     uint32_t card_fail_count_today;
     uint32_t card_fail_limit;
     uint64_t overdraft_fee_amount;
+    uint64_t max_interest_per_epoch;
 } hogan_account;
 
 #define HOGAN_MAX_BLOCKED_CARDS 32
@@ -445,5 +446,15 @@ typedef struct {
 } hogan_overdraft_fee_entry;
 
 int tsfi_hogan_update_overdraft_fee(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_fee_amount, uint32_t authority_id);
+
+// Batch Interest Limit Cap Manager
+typedef struct {
+    uint32_t account_id;
+    uint64_t previous_interest_cap;
+    uint64_t new_interest_cap;
+    uint32_t authority_id;
+} hogan_interest_cap_entry;
+
+int tsfi_hogan_update_interest_cap(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_interest_cap, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H

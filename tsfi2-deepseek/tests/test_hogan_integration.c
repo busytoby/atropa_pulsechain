@@ -1533,6 +1533,40 @@ int main(void) {
     remove(odfee_path); // clean up
     printf("  [PASS] Overdraft transaction fees, deductions, and override logs verified.\n");
 
+    // 43. Test Batch Interest Limit Cap Manager (Interest Cap Restriction)
+    printf("[E2E] Testing Batch Interest Limit Cap Manager...\n");
+    const char *intcap_path = "hogan_intcap.dat.bin";
+    remove(intcap_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system cap_sys;
+    tsfi_hogan_init(&cap_sys);
+    assert(tsfi_hogan_register_account(&cap_sys, 1001, 10000) == 0); // Alice: 10,000 units
+    
+    // Set Alice's maximum interest per epoch to 100 units
+    assert(tsfi_hogan_update_interest_cap(&cap_sys, intcap_path, 1001, 100, 999) == 0);
+    assert(tsfi_hogan_update_interest_cap(&cap_sys, "hogan_intcap.json", 1001, 100, 999) == -3); // Rule 13 check
+    
+    // Apply batch interest of 10% (1000 bps). Alice would get 1000 interest, but capped at 100.
+    assert(tsfi_hogan_apply_interest(&cap_sys, "hogan_interest.dat.bin", 1000) == 0);
+    assert(cap_sys.accounts[0].balance == 10100);
+    remove("hogan_interest.dat.bin");
+    
+    // Read sequential log file and verify entries
+    uint8_t read_icbuf[sizeof(hogan_interest_cap_entry)];
+    size_t ic_size = 0;
+    assert(tsfi_hogan_read_seq_record(intcap_path, 0, read_icbuf, &ic_size) == 0);
+    assert(ic_size == sizeof(hogan_interest_cap_entry));
+    
+    const hogan_interest_cap_entry *icentry = (const hogan_interest_cap_entry *)read_icbuf;
+    assert(icentry->account_id == 1001);
+    assert(icentry->previous_interest_cap == 0);
+    assert(icentry->new_interest_cap == 100);
+    assert(icentry->authority_id == 999);
+    
+    remove(intcap_path); // clean up
+    printf("  [PASS] Batch interest caps, limit validations, and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }
