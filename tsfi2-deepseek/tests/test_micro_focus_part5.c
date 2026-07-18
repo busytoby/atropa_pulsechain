@@ -511,7 +511,31 @@ int run_nato_stanag_tests_part5(void) {
     assert(reset_size == 2);
     assert(reset_pkt[0] == 0x8C);
     assert(reset_pkt[1] == 1);
-    printf("  [PASS] Hard Reset Primitive verified.\n");
+    // Verify Flow Clear
+    printf("[TEST] Validating NATO Flow Clear Primitive...\n");
+    uint8_t clear_pkt[8];
+    size_t clear_size = 0;
+    int clear_res = tsfi_mf_nato_generate_flow_clear(5, clear_pkt, &clear_size);
+    assert(clear_res == 0);
+    assert(clear_size == 2);
+    assert(clear_pkt[0] == 0x8E);
+    assert(clear_pkt[1] == 5);
+    printf("  [PASS] Flow Clear Primitive verified.\n");
+
+    // Verify Duplicate Detector
+    printf("[TEST] Validating NATO ARQ Duplicate Detector...\n");
+    uint8_t rec_mask[4] = {0x01, 0x00, 0x00, 0x00}; // Bit 0 set (corresponds to expected_seq)
+    int is_dup = -1;
+    int dup_valid = -1;
+    int dup_res = tsfi_mf_nato_arq_detect_duplicate(10, rec_mask, 10, &is_dup, &dup_valid); // seq 10 == expected 10, offset 0 -> bit 0 checked -> duplicate
+    assert(dup_res == 0);
+    assert(dup_valid == 1);
+    assert(is_dup == 1);
+
+    tsfi_mf_nato_arq_detect_duplicate(11, rec_mask, 10, &is_dup, &dup_valid); // seq 11 == expected 10 + 1 -> bit 1 checked -> not duplicate
+    assert(dup_valid == 1);
+    assert(is_dup == 0);
+    printf("  [PASS] ARQ Duplicate Detector verified.\n");
 
     return 0;
 }

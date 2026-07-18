@@ -1287,6 +1287,36 @@ int tsfi_mf_nato_generate_hard_reset(int reset_code, uint8_t *out_pkt, size_t *o
     return 0;
 }
 
+int tsfi_mf_nato_generate_flow_clear(int sap_id, uint8_t *out_pkt, size_t *out_size) {
+    if (!out_pkt || !out_size) return -1;
+    out_pkt[0] = 0x8E;
+    out_pkt[1] = sap_id & 0xFF;
+    *out_size = 2;
+    return 0;
+}
+
+int tsfi_mf_nato_arq_detect_duplicate(int seq_num, const uint8_t *received_mask, int expected_seq, int *is_duplicate, int *is_valid) {
+    if (!received_mask || !is_duplicate || !is_valid) return -1;
+    *is_valid = 0;
+    *is_duplicate = 0;
+    
+    if (seq_num < 0 || seq_num >= 128 || expected_seq < 0 || expected_seq >= 128) {
+        return 0;
+    }
+    
+    int diff = (seq_num - expected_seq + 128) % 128;
+    if (diff < 32) {
+        *is_valid = 1;
+        int byte_idx = diff / 8;
+        int bit_idx = diff % 8;
+        if (received_mask[byte_idx] & (1 << bit_idx)) {
+            *is_duplicate = 1;
+        }
+    }
+    return 0;
+}
+
+
 
 
 
