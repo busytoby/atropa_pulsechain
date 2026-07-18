@@ -40,6 +40,8 @@ typedef struct {
     uint64_t daily_transferred;
     uint8_t is_frozen;
     uint8_t fee_exempt;
+    uint32_t custom_interest_rate_bps;
+    uint8_t has_custom_rate;
 } hogan_account;
 
 #define HOGAN_MAX_BLOCKED_CARDS 32
@@ -261,5 +263,15 @@ typedef struct {
 } hogan_exemption_entry;
 
 int tsfi_hogan_apply_fee_exemption(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint8_t fee_exempt, uint32_t authority_id);
+
+// Interest Rate Override Manager (Custom Rates)
+typedef struct {
+    uint32_t account_id;
+    uint32_t previous_rate_bps;
+    uint32_t new_rate_bps;
+    uint32_t authority_id;
+} hogan_int_override_entry;
+
+int tsfi_hogan_apply_interest_override(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t new_rate_bps, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H

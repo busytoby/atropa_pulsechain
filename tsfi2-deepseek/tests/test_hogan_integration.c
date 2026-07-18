@@ -844,6 +844,44 @@ int main(void) {
     remove(exempts_path); // clean up
     printf("  [PASS] Fee waivers, waivers bypassing charging, and logs verified.\n");
 
+    // 27. Test Interest Rate Override Manager (Custom Rates)
+    printf("[E2E] Testing Interest Rate Override Manager...\n");
+    const char *overrides_path = "hogan_int_overrides.dat.bin";
+    remove(overrides_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system override_sys;
+    tsfi_hogan_init(&override_sys);
+    assert(tsfi_hogan_register_account(&override_sys, 1001, 10000) == 0); // Alice: 10,000 units
+    assert(tsfi_hogan_register_account(&override_sys, 2002, 10000) == 0); // Bob: 10,000 units
+    
+    // Set custom interest rate on Alice to 500 bps (5%)
+    assert(tsfi_hogan_apply_interest_override(&override_sys, overrides_path, 1001, 500, 777) == 0);
+    assert(tsfi_hogan_apply_interest_override(&override_sys, "hogan_int_overrides.json", 1001, 500, 777) == -3); // Rule 13 check
+    
+    // Apply batch interest rate of 200 bps (2%)
+    assert(tsfi_hogan_apply_interest(&override_sys, "hogan_dummy_interest.dat.bin", 200) == 0);
+    remove("hogan_dummy_interest.dat.bin"); // clean up
+    
+    // Verify balances (Alice balance gains 5% = 500 units, Bob balance gains 2% = 200 units)
+    assert(override_sys.accounts[0].balance == 10500);
+    assert(override_sys.accounts[1].balance == 10200);
+    
+    // Read sequential log file and verify entries
+    uint8_t read_ovbuf[sizeof(hogan_int_override_entry)];
+    size_t ov_size = 0;
+    assert(tsfi_hogan_read_seq_record(overrides_path, 0, read_ovbuf, &ov_size) == 0);
+    assert(ov_size == sizeof(hogan_int_override_entry));
+    
+    const hogan_int_override_entry *oventry = (const hogan_int_override_entry *)read_ovbuf;
+    assert(oventry->account_id == 1001);
+    assert(oventry->previous_rate_bps == 0);
+    assert(oventry->new_rate_bps == 500);
+    assert(oventry->authority_id == 777);
+    
+    remove(overrides_path); // clean up
+    printf("  [PASS] Custom interest rate overrides, custom rate postings, and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }
