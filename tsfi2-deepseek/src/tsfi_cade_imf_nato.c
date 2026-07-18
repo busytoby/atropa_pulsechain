@@ -573,3 +573,15 @@ int tsfi_mf_nato_verify_up_ramp_rate_threshold(int rate_db, int *is_valid) {
     *is_valid = (rate_db >= 3 && rate_db <= 15) ? 1 : 0;
     return 0;
 }
+
+int tsfi_mf_nato_verify_down_ramp_rate_threshold(int rate_db, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (rate_db >= 2 && rate_db <= 12) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_slot_boundary(int boundary_ms, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (boundary_ms >= 1 && boundary_ms <= 5) ? 1 : 0;
+    return 0;
+}
