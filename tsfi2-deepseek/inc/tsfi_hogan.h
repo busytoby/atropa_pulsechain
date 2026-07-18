@@ -75,6 +75,7 @@ typedef struct {
     uint32_t dormancy_threshold_epochs;
     uint8_t is_dormant;
     uint64_t min_interest_posting_threshold;
+    uint64_t min_balance_fee_waive_threshold;
 } hogan_account;
 
 #define HOGAN_MAX_BLOCKED_CARDS 32
@@ -528,5 +529,15 @@ typedef struct {
 } hogan_interest_threshold_entry;
 
 int tsfi_hogan_update_interest_threshold(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_threshold, uint32_t authority_id);
+
+// Batch Fee Minimum Balance Waive Manager
+typedef struct {
+    uint32_t account_id;
+    uint64_t previous_threshold;
+    uint64_t new_threshold;
+    uint32_t authority_id;
+} hogan_fee_waive_threshold_entry;
+
+int tsfi_hogan_update_fee_waive_threshold(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_threshold, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H

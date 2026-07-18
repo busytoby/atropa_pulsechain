@@ -1792,6 +1792,47 @@ int main(void) {
     remove(inthreshold_path); // clean up
     printf("  [PASS] Batch interest posting thresholds, suppression, and override logs verified.\n");
 
+    // 49. Test Batch Fee Minimum Balance Waive Manager (Fee Waive Threshold)
+    printf("[E2E] Testing Batch Fee Minimum Balance Waive Manager...\n");
+    const char *fwpath = "hogan_feewaive.dat.bin";
+    remove(fwpath); // ensure clean start
+    
+    hogan_umbrella_system fw_sys;
+    tsfi_hogan_init(&fw_sys);
+    assert(tsfi_hogan_register_account(&fw_sys, 1001, 100) == 0); // Alice: 100 balance
+    
+    // Set Alice's minimum balance fee waive threshold to 150 units
+    assert(tsfi_hogan_update_fee_waive_threshold(&fw_sys, fwpath, 1001, 150, 999) == 0);
+    assert(tsfi_hogan_update_fee_waive_threshold(&fw_sys, "hogan_feewaive.json", 1001, 150, 999) == -3); // Rule 13 check
+    
+    // Apply batch maintenance fees of 30 units
+    // Since Alice's balance (100) is below the threshold (150), the fee should be waived (balance remains 100)
+    assert(tsfi_hogan_apply_fees(&fw_sys, "hogan_fees.dat.bin", 30) == 0);
+    assert(fw_sys.accounts[0].balance == 100);
+    remove("hogan_fees.dat.bin");
+    
+    // Set Alice's balance to 200 (above threshold 150)
+    fw_sys.accounts[0].balance = 200;
+    
+    // Apply batch maintenance fees of 30 units (now Alice is charged, balance becomes 170)
+    assert(tsfi_hogan_apply_fees(&fw_sys, "hogan_fees.dat.bin", 30) == 0);
+    assert(fw_sys.accounts[0].balance == 170);
+    remove("hogan_fees.dat.bin");
+    
+    // Read override log files and verify entries
+    uint8_t read_fwbuf[sizeof(hogan_fee_waive_threshold_entry)];
+    size_t fw_size = 0;
+    assert(tsfi_hogan_read_seq_record(fwpath, 0, read_fwbuf, &fw_size) == 0);
+    assert(fw_size == sizeof(hogan_fee_waive_threshold_entry));
+    const hogan_fee_waive_threshold_entry *fwentry = (const hogan_fee_waive_threshold_entry *)read_fwbuf;
+    assert(fwentry->account_id == 1001);
+    assert(fwentry->previous_threshold == 0);
+    assert(fwentry->new_threshold == 150);
+    assert(fwentry->authority_id == 999);
+    
+    remove(fwpath); // clean up
+    printf("  [PASS] Batch fee minimum balance waiving, validations, and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }
