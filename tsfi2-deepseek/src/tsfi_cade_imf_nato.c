@@ -2267,6 +2267,35 @@ int tsfi_mf_cics_check_3270_buffer(const uint8_t *screen_buffer, size_t buffer_s
     return 0;
 }
 
+int tsfi_mf_es_evm_spool_guard(const char *jcl_content, int *is_valid) {
+    if (!jcl_content || !is_valid) return -1;
+    *is_valid = 1;
+    
+    size_t len = strlen(jcl_content);
+    int has_identity = 0;
+    for (size_t i = 0; i + 9 <= len; i++) {
+        int digits = 0;
+        for (size_t j = 0; j < 9; j++) {
+            if (jcl_content[i + j] >= '0' && jcl_content[i + j] <= '9') {
+                digits++;
+            }
+        }
+        if (digits == 9) {
+            has_identity = 1;
+            break;
+        }
+    }
+    
+    if (has_identity) {
+        *is_valid = 0;
+        tsfi_gost_emergency_defcon_level = 0;
+        tsfi_norad_lockout_active = 1;
+        tsfi_gost_is_broadcast_channel = 0;
+        return 1;
+    }
+    return 0;
+}
+
 
 
 

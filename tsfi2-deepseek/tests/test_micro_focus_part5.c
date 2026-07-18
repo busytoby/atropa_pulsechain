@@ -1312,5 +1312,28 @@ int run_nato_stanag_tests_part5(void) {
     assert(tsfi_norad_lockout_active == 1);
     printf("  [PASS] CICS 3270 Terminal Stream Guard verified.\n");
 
+    // Verify ES EVM JES Spool JCL Guard
+    printf("[TEST] Validating ES EVM JES Spool JCL Guard...\n");
+    int jcl_valid = -1;
+    const char *clean_jcl = 
+        "//ESEVJOB JOB (ES),'GOST RUN',CLASS=A\n"
+        "//STEP1 EXEC PGM=IEBGENER\n";
+    int spool_res = tsfi_mf_es_evm_spool_guard(clean_jcl, &jcl_valid);
+    assert(spool_res == 0);
+    assert(jcl_valid == 1);
+    
+    const char *dirty_jcl = 
+        "//ESEVJOB JOB (ES),'GOST RUN',CLASS=A\n"
+        "//SYSIN DD *\n"
+        "050051122\n"
+        "/*\n";
+    tsfi_mf_norad_reset_lockout();
+    spool_res = tsfi_mf_es_evm_spool_guard(dirty_jcl, &jcl_valid);
+    assert(spool_res == 1); // Intercepted
+    assert(jcl_valid == 0); // Invalidated
+    assert(tsfi_gost_emergency_defcon_level == 0);
+    assert(tsfi_norad_lockout_active == 1);
+    printf("  [PASS] ES EVM JES Spool JCL Guard verified.\n");
+
     return 0;
 }
