@@ -36,6 +36,8 @@ typedef struct {
     uint8_t status_code;
     uint64_t daily_limit;
     uint64_t daily_spent;
+    uint64_t daily_transfer_limit;
+    uint64_t daily_transferred;
 } hogan_account;
 
 typedef struct {
@@ -203,5 +205,15 @@ typedef struct {
 } hogan_closure_entry;
 
 int tsfi_hogan_close_account(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t authority_id);
+
+// Daily Transfer Limit Manager (Outbound Transfer Limits)
+typedef struct {
+    uint32_t account_id;
+    uint64_t previous_limit;
+    uint64_t new_limit;
+    uint32_t authority_id;
+} hogan_trans_limit_entry;
+
+int tsfi_hogan_update_transfer_limit(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_limit, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H

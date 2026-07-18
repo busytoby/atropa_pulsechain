@@ -603,6 +603,52 @@ int main(void) {
     remove(closure_path); // clean up
     printf("  [PASS] Account liquidation, hold verification, and closure logs verified.\n");
 
+    // 22. Test Daily Transfer Limit Manager (Outbound Transfer Limits)
+    printf("[E2E] Testing Daily Transfer Limit Manager...\n");
+    const char *tlimits_path = "hogan_tlimits.dat.bin";
+    remove(tlimits_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system tlimit_sys;
+    tsfi_hogan_init(&tlimit_sys);
+    assert(tsfi_hogan_register_account(&tlimit_sys, 1001, 10000) == 0); // Alice: 10,000 units
+    assert(tsfi_hogan_register_account(&tlimit_sys, 2002, 1000) == 0);  // Bob: 1,000 units
+    
+    // Set Alice's daily transfer limit to 2000
+    assert(tsfi_hogan_update_transfer_limit(&tlimit_sys, tlimits_path, 1001, 2000, 777) == 0);
+    assert(tsfi_hogan_update_transfer_limit(&tlimit_sys, "hogan_tlimits.json", 1001, 2000, 777) == -3); // Rule 13 check
+    
+    // Dispatch transfer of 1500 from Alice to Bob (succeeds)
+    assert(tsfi_hogan_dispatch_tx(&tlimit_sys, 1001, 2002, 1500, VM_EVM) == 0);
+    
+    // Dispatch transfer of 1000 from Alice to Bob (declined, exceeds 2000 daily limit)
+    assert(tsfi_hogan_dispatch_tx(&tlimit_sys, 1001, 2002, 1000, VM_EVM) == 0);
+    
+    // Run reconciliation
+    assert(tsfi_hogan_overnight_reconciliation(&tlimit_sys, "hogan_lfs.dat.bin") == 0);
+    
+    // Verify balances (only 1500 transfer succeeded, 1000 transfer was blocked)
+    assert(tlimit_sys.accounts[0].balance == 8500); // 10000 - 1500
+    assert(tlimit_sys.accounts[1].balance == 2500); // 1000 + 1500
+    
+    // Verify transfer metric reset overnight
+    assert(tlimit_sys.accounts[0].daily_transferred == 0);
+    
+    // Read sequential log file and verify entries
+    uint8_t read_tlbuf[sizeof(hogan_trans_limit_entry)];
+    size_t tlim_size = 0;
+    assert(tsfi_hogan_read_seq_record(tlimits_path, 0, read_tlbuf, &tlim_size) == 0);
+    assert(tlim_size == sizeof(hogan_trans_limit_entry));
+    
+    const hogan_trans_limit_entry *tlentry = (const hogan_trans_limit_entry *)read_tlbuf;
+    assert(tlentry->account_id == 1001);
+    assert(tlentry->previous_limit == 0);
+    assert(tlentry->new_limit == 2000);
+    assert(tlentry->authority_id == 777);
+    
+    remove(tlimits_path); // clean up
+    printf("  [PASS] Daily transfer limits, validations, and overnight resets verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }
