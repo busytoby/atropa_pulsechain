@@ -1107,6 +1107,55 @@ int main(void) {
     remove(depb_path); // clean up
     printf("  [PASS] Daily deposit limit velocity caps, resets, and override logs verified.\n");
 
+    // 33. Test Overdraft Limit Compliance Manager (Credit Line Capping)
+    printf("[E2E] Testing Overdraft Limit Compliance Manager...\n");
+    const char *ovlimit_path = "hogan_ovlimits.dat.bin";
+    remove(ovlimit_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system ov_sys;
+    tsfi_hogan_init(&ov_sys);
+    assert(tsfi_hogan_register_account(&ov_sys, 1001, 1000) == 0); // Alice primary: 1,000 units
+    assert(tsfi_hogan_register_account(&ov_sys, 2002, 10000) == 0); // Bob backup: 10,000 units
+    
+    // Link Bob as Alice's backup
+    assert(tsfi_hogan_link_backup(&ov_sys, 1001, 2002) == 0);
+    
+    // Set Alice's overdraft credit line limit to 500 units
+    assert(tsfi_hogan_update_overdraft_limit(&ov_sys, ovlimit_path, 1001, 500, 999) == 0);
+    assert(tsfi_hogan_update_overdraft_limit(&ov_sys, "hogan_ovlimits.json", 1001, 500, 999) == -3); // Rule 13 check
+    
+    // Alice transfers 1400 to Bob (deficit is 400 <= 500 limit; succeeds)
+    assert(tsfi_hogan_dispatch_tx(&ov_sys, 1001, 2002, 1400, VM_EVM) == 0);
+    
+    // Alice transfers another 200 to Bob (deficit 200 exceeds remaining 100 limit space; fails)
+    assert(tsfi_hogan_dispatch_tx(&ov_sys, 1001, 2002, 200, VM_EVM) == 0);
+    
+    // Run reconciliation
+    assert(tsfi_hogan_overnight_reconciliation(&ov_sys, "hogan_lfs.dat.bin") == 0);
+    
+    // Verify balances (Alice balance 0, Bob balance 10000 - 400 + 1400 = 11000)
+    assert(ov_sys.accounts[0].balance == 0);
+    assert(ov_sys.accounts[1].balance == 11000);
+    
+    // Verify overdraft drawn metric on Alice is 400
+    assert(ov_sys.accounts[0].overdraft_drawn == 400);
+    
+    // Read sequential log file and verify entries
+    uint8_t read_ovlbuf[sizeof(hogan_overdraft_limit_entry)];
+    size_t ovl_size = 0;
+    assert(tsfi_hogan_read_seq_record(ovlimit_path, 0, read_ovlbuf, &ovl_size) == 0);
+    assert(ovl_size == sizeof(hogan_overdraft_limit_entry));
+    
+    const hogan_overdraft_limit_entry *ovlentry = (const hogan_overdraft_limit_entry *)read_ovlbuf;
+    assert(ovlentry->account_id == 1001);
+    assert(ovlentry->previous_overdraft_limit == 0);
+    assert(ovlentry->new_overdraft_limit == 500);
+    assert(ovlentry->authority_id == 999);
+    
+    remove(ovlimit_path); // clean up
+    printf("  [PASS] Overdraft credit line capping, validations, and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }
