@@ -1841,4 +1841,16 @@ int tsfi_mf_nato_verify_packet_delay(int delay, int *is_valid) {
     return 0;
 }
 
+int tsfi_mf_nato_verify_high_water_mark(int percentage, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (percentage >= 50 && percentage <= 95) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_retransmit_timeout(int timeout, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (timeout >= 1 && timeout <= 600) ? 1 : 0;
+    return 0;
+}
+
 

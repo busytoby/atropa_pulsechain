@@ -269,5 +269,21 @@ int run_nato_stanag_tests(void) {
     assert(delay_valid == 1);
     printf("  [PASS] NATO STANAG 5066 Packet Delay Selector verified.\n");
 
+    // 283. Verify NATO STANAG 5066 Flow Control Buffer High-Water Mark Matcher
+    printf("[TEST] Validating NATO STANAG 5066 High-Water Mark Matcher...\n");
+    int high_water_valid = -1;
+    int high_water_res = tsfi_mf_nato_verify_high_water_mark(80, &high_water_valid);
+    assert(high_water_res == 0);
+    assert(high_water_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 High-Water Mark Matcher verified.\n");
+
+    // 284. Verify NATO STANAG 5066 Max Segment Retransmission Timeout Validator
+    printf("[TEST] Validating NATO STANAG 5066 Retransmit Timeout Validator...\n");
+    int retransmit_timeout_valid = -1;
+    int retransmit_timeout_res = tsfi_mf_nato_verify_retransmit_timeout(300, &retransmit_timeout_valid);
+    assert(retransmit_timeout_res == 0);
+    assert(retransmit_timeout_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Retransmit Timeout Validator verified.\n");
+
     return 0;
 }

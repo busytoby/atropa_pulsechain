@@ -178,5 +178,7 @@ int tsfi_mf_nato_verify_buffer_size(int size, int *is_valid);
 int tsfi_mf_nato_verify_segment_lifetime(int lifetime, int *is_valid);
 int tsfi_mf_nato_verify_rejection_reason(int reason, int *is_valid);
 int tsfi_mf_nato_verify_packet_delay(int delay, int *is_valid);
+int tsfi_mf_nato_verify_high_water_mark(int percentage, int *is_valid);
+int tsfi_mf_nato_verify_retransmit_timeout(int timeout, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

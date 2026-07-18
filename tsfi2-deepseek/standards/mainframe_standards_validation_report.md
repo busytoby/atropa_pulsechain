@@ -358,5 +358,7 @@
 | 424 | NATO STANAG 5066 Max Segment Lifetime Checker | PASS | Audits that packet transmission lifetimes stay within standard bounds | Volume 33 |
 | 425 | NATO STANAG 5066 Connection Rejection Reason Matcher | PASS | Validates subnetwork interface connection handshake rejection reason codes | Volume 33 |
 | 426 | NATO STANAG 5066 Link-Layer Packet Delay Selector | PASS | Audits that packet transmission delay parameters stay within standard limits | Volume 33 |
+| 427 | NATO STANAG 5066 Flow Control Buffer High-Water Mark Matcher | PASS | Validates flow control buffer percentage thresholds | Volume 33 |
+| 428 | NATO STANAG 5066 Max Segment Retransmission Timeout Validator | PASS | Audits segment retransmission time limit boundaries | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 426 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 428 Scenarios validated successfully)
