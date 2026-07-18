@@ -561,3 +561,15 @@ int tsfi_mf_nato_verify_down_ramp_samples(int samples, int *is_valid) {
     *is_valid = (samples >= 2 && samples <= 8) ? 1 : 0;
     return 0;
 }
+
+int tsfi_mf_nato_verify_slot_method(int method, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (method >= 0 && method <= 2) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_up_ramp_rate_threshold(int rate_db, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (rate_db >= 3 && rate_db <= 15) ? 1 : 0;
+    return 0;
+}

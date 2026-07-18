@@ -689,5 +689,21 @@ int run_nato_stanag_tests(void) {
     assert(down_ramp_samples_valid == 1);
     printf("  [PASS] NATO Broadcast Busy Down-Ramp Sample Count Checker verified.\n");
 
+    // 335. Verify NATO Link-Layer Broadcast Collision Backoff Slot Alignment Method Selector
+    printf("[TEST] Validating NATO Broadcast Backoff Slot Alignment Method Selector...\n");
+    int slot_method_valid = -1;
+    int slot_method_res = tsfi_mf_nato_verify_slot_method(1, &slot_method_valid);
+    assert(slot_method_res == 0);
+    assert(slot_method_valid == 1);
+    printf("  [PASS] NATO Broadcast Backoff Slot Alignment Method Selector verified.\n");
+
+    // 336. Verify NATO Link-Layer Broadcast Channel Busy Hysteresis Up-Ramp Rate Threshold Matcher
+    printf("[TEST] Validating NATO Broadcast Busy Up-Ramp Rate Threshold Matcher...\n");
+    int up_ramp_rate_threshold_valid = -1;
+    int up_ramp_rate_threshold_res = tsfi_mf_nato_verify_up_ramp_rate_threshold(6, &up_ramp_rate_threshold_valid);
+    assert(up_ramp_rate_threshold_res == 0);
+    assert(up_ramp_rate_threshold_valid == 1);
+    printf("  [PASS] NATO Broadcast Busy Up-Ramp Rate Threshold Matcher verified.\n");
+
     return 0;
 }

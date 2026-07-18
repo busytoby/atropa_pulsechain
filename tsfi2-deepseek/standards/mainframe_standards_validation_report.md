@@ -410,5 +410,7 @@
 | 476 | NATO Link-Layer Broadcast Channel Busy Hysteresis Up-Ramp Sample Count Checker | PASS | Audits required consecutive up-ramp samples to confirm channel activity | Volume 33 |
 | 477 | NATO Link-Layer Broadcast Collision Backoff Slot Alignment Offset Matcher | PASS | Validates backoff slot alignment boundary start timing offset options | Volume 33 |
 | 478 | NATO Link-Layer Broadcast Channel Busy Hysteresis Down-Ramp Sample Count Checker | PASS | Audits required consecutive down-ramp samples to confirm quiet channel state | Volume 33 |
+| 479 | NATO Link-Layer Broadcast Collision Backoff Slot Alignment Method Selector | PASS | Validates backoff slot alignment boundary algorithm index settings | Volume 33 |
+| 480 | NATO Link-Layer Broadcast Channel Busy Hysteresis Up-Ramp Rate Threshold Matcher | PASS | Audits RSSI rate trigger parameters for signal onset verification | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 478 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 480 Scenarios validated successfully)
