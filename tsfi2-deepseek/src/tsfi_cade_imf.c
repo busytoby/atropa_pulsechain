@@ -1731,4 +1731,16 @@ int tsfi_mf_nato_verify_frame_sequence(int current_seq, int next_seq, int *is_va
     return 0;
 }
 
+int tsfi_mf_nato_verify_data_rate(int rate, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (rate == 75 || rate == 150 || rate == 300 || rate == 600 || rate == 1200 || rate == 2400 || rate == 4800 || rate == 9600) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_retry_limit(int retries, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (retries >= 0 && retries <= 32) ? 1 : 0;
+    return 0;
+}
+
 

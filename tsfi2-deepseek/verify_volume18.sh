@@ -363,8 +363,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 406 | NATO Short-TIN IRS Exclusivity Matcher | PASS | Confirms IRS 9-digit TINs do not fall within the 26-bit NATO Short-TIN range | Volume 33 |
 | 407 | NATO STANAG 5066 SAP Prioritization Matcher | PASS | Audits high-priority SAP codes map to elevated subnetwork priority levels | Volume 33 |
 | 408 | NATO STANAG 5066 Frame Sequence wrap-Around Validator | PASS | Validates sliding window modulo increment tracking for frame sequences | Volume 33 |
+| 409 | NATO STANAG 5066 HF Modem Data Rate Matcher | PASS | Confirms modem speed parameters fit NATO standard data rates | Volume 33 |
+| 410 | NATO STANAG 5066 ARQ Frame Retry Limit Checker | PASS | Audits that packet retransmissions stay within retry bounds | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 408 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 410 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

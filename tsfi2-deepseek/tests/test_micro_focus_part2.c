@@ -1274,6 +1274,22 @@ int main(void) {
     assert(frame_seq_valid == 1);
     printf("  [PASS] NATO STANAG 5066 Frame Sequence wrap-Around Validator verified.\n");
 
+    // 265. Verify NATO STANAG 5066 HF Modem Data Rate Matcher
+    printf("[TEST] Validating NATO STANAG 5066 Data Rate Matcher...\n");
+    int rate_valid = -1;
+    int rate_res = tsfi_mf_nato_verify_data_rate(2400, &rate_valid);
+    assert(rate_res == 0);
+    assert(rate_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Data Rate Matcher verified.\n");
+
+    // 266. Verify NATO STANAG 5066 ARQ Frame Retry Limit Checker
+    printf("[TEST] Validating NATO STANAG 5066 Retry Limit Checker...\n");
+    int retry_valid = -1;
+    int retry_res = tsfi_mf_nato_verify_retry_limit(10, &retry_valid);
+    assert(retry_res == 0);
+    assert(retry_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Retry Limit Checker verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

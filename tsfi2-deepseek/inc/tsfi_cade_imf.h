@@ -160,5 +160,7 @@ int tsfi_mf_nato_verify_segment_offset(int offset, int segment_size, int total_s
 int tsfi_mf_cross_verify_tin_isolation(const char *irs_tin, int *is_isolated);
 int tsfi_mf_nato_verify_sap_priority(int sap, int priority, int *is_valid);
 int tsfi_mf_nato_verify_frame_sequence(int current_seq, int next_seq, int *is_valid);
+int tsfi_mf_nato_verify_data_rate(int rate, int *is_valid);
+int tsfi_mf_nato_verify_retry_limit(int retries, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H
