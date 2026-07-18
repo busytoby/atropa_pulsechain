@@ -1188,4 +1188,17 @@ int tsfi_mf_imf_check_ctc_phaseout_threshold(double agi, int filing_status, int 
     return 0;
 }
 
+int tsfi_mf_imf_verify_zero_rate_capital_gains(double taxable_income, int filing_status, int *qualifies_for_zero_rate) {
+    if (!qualifies_for_zero_rate) return -1;
+    double threshold = (filing_status == 2) ? 94050.00 : 47025.00;
+    *qualifies_for_zero_rate = (taxable_income <= threshold) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_cade_verify_hoh_dependent(int filing_status, int dependent_count, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (filing_status == 4 && dependent_count < 1) ? 0 : 1;
+    return 0;
+}
+
 

@@ -105,5 +105,7 @@ int tsfi_mf_imf_verify_adoption_credit(double claimed_credit, int *is_valid);
 int tsfi_mf_imf_verify_educator_expense(double claimed_deduction, int is_spouse_educator, int *is_valid);
 int tsfi_mf_imf_verify_lifetime_learning_credit(double claimed_credit, int *is_valid);
 int tsfi_mf_imf_check_ctc_phaseout_threshold(double agi, int filing_status, int *is_below_threshold);
+int tsfi_mf_imf_verify_zero_rate_capital_gains(double taxable_income, int filing_status, int *qualifies_for_zero_rate);
+int tsfi_mf_cade_verify_hoh_dependent(int filing_status, int dependent_count, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

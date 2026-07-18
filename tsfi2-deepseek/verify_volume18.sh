@@ -308,8 +308,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 351 | IRS IMF Educator Expense Deduction Cap Checker | PASS | Audits teacher classroom expense deductions against limits | Volume 33 |
 | 352 | IRS IMF Lifetime Learning Credit Limit Matcher | PASS | Verifies Lifetime Learning Credits do not exceed return caps | Volume 33 |
 | 353 | IRS IMF Child Tax Credit (CTC) Phase-Out Start Threshold Matcher | PASS | Flags AGI boundaries where CTC begins phase-out limits | Volume 33 |
+| 354 | IRS IMF Net Capital Gains 0% Preferential Rate Bracket Matcher | PASS | Checks taxable income bounds for 0% long term capital gains rate | Volume 33 |
+| 355 | IRS CADE Filing Status Head of Household Dependent Matcher | PASS | Enforces dependency checks for Head of Household filing claims | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 353 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 355 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

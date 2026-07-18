@@ -828,6 +828,22 @@ int main(void) {
     assert(ctc_below_threshold == 1);
     printf("  [PASS] IRS IMF CTC Phase-Out Threshold Matcher verified.\n");
 
+    // 210. Verify IRS IMF Net Capital Gains 0% Preferential Rate Bracket Matcher
+    printf("[TEST] Validating IRS IMF Capital Gains Zero Rate Matcher...\n");
+    int qualifies_zero = -1;
+    int cg_zero_res = tsfi_mf_imf_verify_zero_rate_capital_gains(40000.00, 1, &qualifies_zero);
+    assert(cg_zero_res == 0);
+    assert(qualifies_zero == 1);
+    printf("  [PASS] IRS IMF Capital Gains Zero Rate Matcher verified.\n");
+
+    // 211. Verify IRS CADE Filing Status Head of Household Dependent Matcher
+    printf("[TEST] Validating IRS CADE HoH Dependent Validator...\n");
+    int hoh_valid = -1;
+    int hoh_res = tsfi_mf_cade_verify_hoh_dependent(4, 2, &hoh_valid);
+    assert(hoh_res == 0);
+    assert(hoh_valid == 1);
+    printf("  [PASS] IRS CADE HoH Dependent Validator verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }
