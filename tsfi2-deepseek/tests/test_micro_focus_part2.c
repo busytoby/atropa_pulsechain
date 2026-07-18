@@ -958,6 +958,22 @@ int main(void) {
     assert(qss_year_valid == 1);
     printf("  [PASS] IRS IMF QSS Filing Year Matcher verified.\n");
 
+    // 226. Verify IRS IMF Section 1244 Small Business Stock Loss Matcher
+    printf("[TEST] Validating IRS IMF Section 1244 Loss Matcher...\n");
+    int s1244_valid = -1;
+    int s1244_res = tsfi_mf_imf_verify_section1244_loss(75000.00, 2, &s1244_valid);
+    assert(s1244_res == 0);
+    assert(s1244_valid == 1);
+    printf("  [PASS] IRS IMF Section 1244 Loss Matcher verified.\n");
+
+    // 227. Verify IRS CADE Schedule B Part I Seller-Financed Interest Disclosure Matcher
+    printf("[TEST] Validating IRS CADE Seller-Financed SSN Checker...\n");
+    int sfn_valid = -1;
+    int sfn_res = tsfi_mf_cade_verify_seller_financed_ssn(1, "123456789", &sfn_valid);
+    assert(sfn_res == 0);
+    assert(sfn_valid == 1);
+    printf("  [PASS] IRS CADE Seller-Financed SSN Checker verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

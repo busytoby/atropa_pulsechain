@@ -1316,4 +1316,31 @@ int tsfi_mf_imf_verify_qss_filing_year(int death_year, int tax_year, int *is_val
     return 0;
 }
 
+int tsfi_mf_imf_verify_section1244_loss(double claimed_loss, int filing_status, int *is_valid) {
+    if (!is_valid) return -1;
+    double cap = (filing_status == 2) ? 100000.00 : 50000.00;
+    *is_valid = (claimed_loss <= cap && claimed_loss >= 0.0) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_cade_verify_seller_financed_ssn(int is_seller_financed, const char *buyer_ssn, int *is_valid) {
+    if (!is_valid) return -1;
+    if (!is_seller_financed) {
+        *is_valid = 1;
+        return 0;
+    }
+    if (!buyer_ssn || strlen(buyer_ssn) != 9) {
+        *is_valid = 0;
+        return 0;
+    }
+    for (int i = 0; i < 9; i++) {
+        if (buyer_ssn[i] < '0' || buyer_ssn[i] > '9') {
+            *is_valid = 0;
+            return 0;
+        }
+    }
+    *is_valid = 1;
+    return 0;
+}
+
 

@@ -324,8 +324,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 367 | IRS CADE Schedule B Part I Interest Source Matcher | PASS | Sums detailed interest sources to verify cumulative reported total | Volume 33 |
 | 368 | IRS CADE Schedule B Part II Dividend Source Matcher | PASS | Sums detailed dividend sources to verify cumulative reported total | Volume 33 |
 | 369 | IRS IMF Qualifying Surviving Spouse Filing Year Matcher | PASS | Restricts widow filing status to two years post-spousal death | Volume 33 |
+| 370 | IRS IMF Section 1244 Small Business Stock Loss Matcher | PASS | Caps ordinary losses on small business stock ($50,000/$100,000) | Volume 33 |
+| 371 | IRS CADE Schedule B Part I Seller-Financed Interest Disclosure Matcher | PASS | Verifies buyer SSN/TIN presence for seller financed interest | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 369 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 371 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"
