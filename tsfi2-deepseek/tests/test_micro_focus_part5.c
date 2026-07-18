@@ -736,7 +736,27 @@ int run_nato_stanag_tests_part5(void) {
     assert(irs_pdu[1] == 10);
     assert(irs_pdu[2] == 0x12);
     assert(irs_pdu[5] == 0x78);
-    printf("  [PASS] IRS Query Formatter verified.\n");
+    // Verify IRS Response Decoder
+    printf("[TEST] Validating IRS Response Decoder...\n");
+    uint8_t resp_pdu[] = {0xFE, 0x02, 0x00};
+    int audit_status = -1;
+    int resp_val = -1;
+    int resp_res = tsfi_mf_cics_decode_irs_response(resp_pdu, sizeof(resp_pdu), &audit_status, &resp_val);
+    assert(resp_res == 0);
+    assert(resp_val == 1);
+    assert(audit_status == 2); // Rejected/audited flag
+    printf("  [PASS] IRS Response Decoder verified.\n");
+
+    // Verify NATO Relay Sequencer
+    printf("[TEST] Validating NATO Relay Sequencer...\n");
+    int in_seq = -1;
+    int seq_res = tsfi_mf_nato_relay_verify_sequence(5, 5, &in_seq);
+    assert(seq_res == 0);
+    assert(in_seq == 1);
+
+    tsfi_mf_nato_relay_verify_sequence(5, 6, &in_seq);
+    assert(in_seq == 0);
+    printf("  [PASS] NATO Relay Sequencer verified.\n");
 
     return 0;
 }

@@ -1591,6 +1591,29 @@ int tsfi_mf_cics_format_irs_query(uint32_t tax_record_id, int routing_code, uint
     return 0;
 }
 
+int tsfi_mf_cics_decode_irs_response(const uint8_t *in_pdu, size_t pdu_size, int *audit_status, int *is_valid) {
+    if (!in_pdu || !audit_status || !is_valid) return -1;
+    *is_valid = 0;
+    *audit_status = -1;
+    
+    if (pdu_size < 3 || in_pdu[0] != 0xFE) return 0;
+    
+    *is_valid = 1;
+    *audit_status = in_pdu[1] & 0xFF;
+    return 0;
+}
+
+int tsfi_mf_nato_relay_verify_sequence(int current_seq, int expected_seq, int *is_in_sequence) {
+    if (!is_in_sequence) return -1;
+    *is_in_sequence = 0;
+    
+    if (current_seq == expected_seq) {
+        *is_in_sequence = 1;
+    }
+    return 0;
+}
+
+
 
 
 

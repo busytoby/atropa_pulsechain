@@ -433,4 +433,7 @@ int tsfi_mf_janap_classify_precedence(char precedence_char, int *priority_level,
 int tsfi_mf_norad_is_irs_route(const char *routing_ind, int *is_irs, int *is_valid);
 int tsfi_mf_cics_format_irs_query(uint32_t tax_record_id, int routing_code, uint8_t *out_pdu, size_t *out_size);
 
+int tsfi_mf_cics_decode_irs_response(const uint8_t *in_pdu, size_t pdu_size, int *audit_status, int *is_valid);
+int tsfi_mf_nato_relay_verify_sequence(int current_seq, int expected_seq, int *is_in_sequence);
+
 #endif // TSFI_CADE_IMF_H
