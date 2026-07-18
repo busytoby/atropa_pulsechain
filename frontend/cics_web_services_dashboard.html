@@ -755,15 +755,24 @@
             if (atmPinInput.value.length < 4) {
                 atmPinInput.value += num;
                 atmScreen.textContent = "PIN: " + "*".repeat(atmPinInput.value.length);
+                
+                // Map number keys ('0'-'9') to ASCII codes (48-57) and route to CICS
+                const code = 48 + parseInt(num, 10);
+                sendRpc("input.keyboard", { keycode: code, state: 1 }).catch(() => {});
             }
         }
 
         function clearAtmPin() {
             atmPinInput.value = "";
             atmScreen.textContent = "ENTER PIN";
+            // Map CLR to Escape (keycode 27) and route to CICS
+            sendRpc("input.keyboard", { keycode: 27, state: 1 }).catch(() => {});
         }
 
         function submitAtmPin() {
+            // Map ENT to Enter (keycode 13) and route to CICS
+            sendRpc("input.keyboard", { keycode: 13, state: 1 }).catch(() => {});
+            
             if (atmPinInput.value.length === 4) {
                 atmScreen.textContent = "PIN ACCEPTED. CHOOSE WITHDRAWAL";
             } else {
