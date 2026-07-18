@@ -229,5 +229,7 @@
 | 295 | IRS CADE Refund Offset Delay Flag | PASS | Detects identity/address hold status preventing immediate refund posting | Volume 33 |
 | 296 | IRS IMF Required Signature presence verifier | PASS | Confirms that taxpayer and spouse signatures match joint return filings | Volume 33 |
 | 297 | IRS IMF Dependents SSN Duplication Checker | PASS | Validates that dependents' SSNs do not duplicate primary/spouse records | Volume 33 |
+| 298 | IRS IMF Filing Extension Date Matcher | PASS | Confirms standard/extended calendar deadlines for filings | Volume 33 |
+| 299 | IRS CADE Refund Direct Deposit vs Paper Check Router | PASS | Decides payment dispatch channels checking routing transit numbers | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 297 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 299 Scenarios validated successfully)

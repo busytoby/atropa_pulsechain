@@ -371,6 +371,22 @@ int main(void) {
     assert(dep_dups == 1);
     printf("  [PASS] IRS IMF Dependent Duplicate Checker verified.\n");
 
+    // 154. Verify IRS IMF Filing Extension Date Matcher
+    printf("[TEST] Validating IRS IMF Filing Deadline Matcher...\n");
+    int timely = -1;
+    int deadline_res = tsfi_mf_imf_verify_filing_deadline(120, 1, &timely);
+    assert(deadline_res == 0);
+    assert(timely == 1);
+    printf("  [PASS] IRS IMF Filing Deadline Matcher verified.\n");
+
+    // 155. Verify IRS CADE Refund Direct Deposit vs Paper Check Router
+    printf("[TEST] Validating IRS CADE Refund Disbursement Router...\n");
+    int method = -1;
+    int route_disb_res = tsfi_mf_cade_route_refund_disbursement("123456789", "987654321", &method);
+    assert(route_disb_res == 0);
+    assert(method == 1);
+    printf("  [PASS] IRS CADE Refund Disbursement Router verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

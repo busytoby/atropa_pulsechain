@@ -604,4 +604,31 @@ int tsfi_mf_imf_check_dependent_duplicates(const char *primary_ssn, const char *
     return 0;
 }
 
+int tsfi_mf_imf_verify_filing_deadline(int julian_date_filed, int has_approved_extension, int *is_timely) {
+    if (!is_timely) return -1;
+    int deadline = has_approved_extension ? 288 : 105;
+    *is_timely = (julian_date_filed <= deadline) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_cade_route_refund_disbursement(const char *routing_number, const char *account_number, int *method_out) {
+    if (!method_out) return -1;
+    if (!routing_number || !account_number || strlen(account_number) == 0) {
+        *method_out = 2;
+        return 0;
+    }
+    if (strlen(routing_number) != 9) {
+        *method_out = 2;
+        return 0;
+    }
+    for (int i = 0; i < 9; i++) {
+        if (routing_number[i] < '0' || routing_number[i] > '9') {
+            *method_out = 2;
+            return 0;
+        }
+    }
+    *method_out = 1;
+    return 0;
+}
+
 
