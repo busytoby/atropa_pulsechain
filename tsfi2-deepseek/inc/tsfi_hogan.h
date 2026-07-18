@@ -83,6 +83,8 @@ typedef struct {
     uint8_t merchant_exception_count;
     uint8_t posting_restriction;
     uint64_t dormancy_fee_surcharge;
+    uint64_t interest_tier_threshold;
+    uint32_t interest_tier_rate_bps;
 } hogan_account;
 
 #define HOGAN_MAX_BLOCKED_CARDS 32
@@ -604,5 +606,15 @@ typedef struct {
 } hogan_dormancy_surcharge_entry;
 
 int tsfi_hogan_update_dormancy_surcharge(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t surcharge_amount, uint32_t authority_id);
+
+// Batch Interest Rate Tier Manager
+typedef struct {
+    uint32_t account_id;
+    uint64_t threshold;
+    uint32_t rate_bps;
+    uint32_t authority_id;
+} hogan_interest_tier_entry;
+
+int tsfi_hogan_update_interest_tier(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t threshold, uint32_t rate_bps, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H

@@ -132,6 +132,8 @@ int tsfi_hogan_lfs_save(const hogan_umbrella_system *sys, const char *filepath) 
             }
             fwrite(&sys->accounts[i].posting_restriction, sizeof(uint8_t), 1, f);
             fwrite(&sys->accounts[i].dormancy_fee_surcharge, sizeof(uint64_t), 1, f);
+            fwrite(&sys->accounts[i].interest_tier_threshold, sizeof(uint64_t), 1, f);
+            fwrite(&sys->accounts[i].interest_tier_rate_bps, sizeof(uint32_t), 1, f);
         }
     }
     
@@ -495,6 +497,18 @@ int tsfi_hogan_lfs_load(hogan_umbrella_system *sys, const char *filepath) {
             return -2;
         }
         sys->accounts[i].dormancy_fee_surcharge = dorm_s;
+        uint64_t tier_th = 0;
+        if (fread(&tier_th, sizeof(uint64_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
+        sys->accounts[i].interest_tier_threshold = tier_th;
+        uint32_t tier_r = 0;
+        if (fread(&tier_r, sizeof(uint32_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
+        sys->accounts[i].interest_tier_rate_bps = tier_r;
         sys->accounts[i].active = 1;
     }
     
@@ -779,6 +793,10 @@ int tsfi_hogan_apply_interest(hogan_umbrella_system *sys, const char *filepath, 
             uint32_t active_rate = rate_bps;
             if (sys->accounts[i].has_custom_rate) {
                 active_rate = sys->accounts[i].custom_interest_rate_bps;
+            }
+            if (sys->accounts[i].interest_tier_threshold > 0 &&
+                sys->accounts[i].balance >= sys->accounts[i].interest_tier_threshold) {
+                active_rate = sys->accounts[i].interest_tier_rate_bps;
             }
             if (sys->accounts[i].grace_period_epochs > 0 && sys->current_epoch <= sys->accounts[i].grace_period_epochs) {
                 active_rate = 0;
@@ -1104,6 +1122,8 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
             }
             EVP_DigestUpdate(mdctx, &sys->accounts[i].posting_restriction, sizeof(uint8_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].dormancy_fee_surcharge, sizeof(uint64_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].interest_tier_threshold, sizeof(uint64_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].interest_tier_rate_bps, sizeof(uint32_t));
         }
     }
     EVP_DigestUpdate(mdctx, &sys->blocked_card_count, sizeof(size_t));
@@ -2833,6 +2853,42 @@ int tsfi_hogan_update_dormancy_surcharge(hogan_umbrella_system *sys, const char 
     acc->dormancy_fee_surcharge = surcharge_amount;
     
     int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_dormancy_surcharge_entry));
+    
+    sys->live_processing_enabled = original_live_state;
+    return write_res;
+}
+
+int tsfi_hogan_update_interest_tier(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t threshold, uint32_t rate_bps, uint32_t authority_id) {
+    // Enforce Rule 13: file extension must end with .dat.bin
+    const char *ext = strrchr(filepath, '.');
+    if (!ext || strcmp(ext, ".bin") != 0) {
+        if (!ext || strcmp(ext - 4, ".dat.bin") != 0) {
+            return -3; // Invalid extension
+        }
+    }
+
+    // Disable live queue during administrative action
+    uint8_t original_live_state = sys->live_processing_enabled;
+    sys->live_processing_enabled = 0;
+    
+    hogan_account *acc = NULL;
+    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
+        if (sys->accounts[i].active && sys->accounts[i].account_id == account_id) {
+            acc = &sys->accounts[i];
+            break;
+        }
+    }
+    
+    if (!acc) {
+        sys->live_processing_enabled = original_live_state;
+        return -1; // account not found
+    }
+    
+    hogan_interest_tier_entry entry = { account_id, threshold, rate_bps, authority_id };
+    acc->interest_tier_threshold = threshold;
+    acc->interest_tier_rate_bps = rate_bps;
+    
+    int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_interest_tier_entry));
     
     sys->live_processing_enabled = original_live_state;
     return write_res;

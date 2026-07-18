@@ -2058,6 +2058,42 @@ int main(void) {
     remove(ds_path); // clean up
     printf("  [PASS] Account dormancy fee surcharge calculations and override logs verified.\n");
 
+    // 55. Test Batch Interest Rate Tier Manager (Interest Rate Tiering)
+    printf("[E2E] Testing Batch Interest Rate Tier Manager...\n");
+    const char *it_path = "hogan_interest_tiers.dat.bin";
+    remove(it_path); // ensure clean start
+    
+    hogan_umbrella_system it_sys;
+    tsfi_hogan_init(&it_sys);
+    assert(tsfi_hogan_register_account(&it_sys, 1001, 20000) == 0); // Alice: 20000 balance
+    
+    // Set Alice's tier: if balance >= 15000, rate is 500 bps (5%)
+    assert(tsfi_hogan_update_interest_tier(&it_sys, it_path, 1001, 15000, 500, 999) == 0);
+    assert(tsfi_hogan_update_interest_tier(&it_sys, "hogan_it.json", 1001, 15000, 500, 999) == -3); // Rule 13 check
+    
+    // Apply batch interest: base rate is 100 bps (1%). Alice has 20000, so she matches the tier and gets 500 bps.
+    // Interest: 20000 * 500 / 10000 = 1000.
+    const char *int_log_path = "hogan_interest_test.dat.bin";
+    remove(int_log_path);
+    assert(tsfi_hogan_apply_interest(&it_sys, int_log_path, 100) == 0);
+    remove(int_log_path);
+    
+    assert(it_sys.accounts[0].balance == 21000); // 20000 + 1000 = 21000
+    
+    // Read override log files and verify entries
+    uint8_t read_itbuf[sizeof(hogan_interest_tier_entry)];
+    size_t it_size = 0;
+    assert(tsfi_hogan_read_seq_record(it_path, 0, read_itbuf, &it_size) == 0);
+    assert(it_size == sizeof(hogan_interest_tier_entry));
+    const hogan_interest_tier_entry *it_entry = (const hogan_interest_tier_entry *)read_itbuf;
+    assert(it_entry->account_id == 1001);
+    assert(it_entry->threshold == 15000);
+    assert(it_entry->rate_bps == 500);
+    assert(it_entry->authority_id == 999);
+    
+    remove(it_path); // clean up
+    printf("  [PASS] Batch interest rate tiering calculations and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }
