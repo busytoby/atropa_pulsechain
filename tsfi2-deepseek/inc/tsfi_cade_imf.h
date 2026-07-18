@@ -71,5 +71,7 @@ int tsfi_mf_cade_verify_state_code(const char *state_code, int *is_valid);
 int tsfi_mf_imf_verify_dependent_care_ceiling(int dependent_count, double claimed_expenses, int *is_valid);
 int tsfi_mf_cade_verify_street_parity(const char *address, int *parity_out);
 int tsfi_mf_imf_verify_student_loan_interest(double claimed_interest, int *is_valid);
+int tsfi_mf_imf_verify_deduction_bonus(int over_65_count, int blind_count, int filing_status, double claimed_bonus, int *is_valid);
+int tsfi_mf_cade_verify_ss_benefits(double modified_agi, double half_ss_benefits, double taxable_ss_reported, int filing_status, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

@@ -274,8 +274,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 317 | IRS IMF Child and Dependent Care Credit Ceiling Matcher | PASS | Verifies credit calculations satisfy statutory ceiling limits | Volume 33 |
 | 318 | IRS CADE Taxpayer Address Street Number Parity Checker | PASS | Decodes odd/even street address properties for routing | Volume 33 |
 | 319 | IRS IMF Student Loan Interest Deduction Ceiling Validator | PASS | Ensures student loan interest deductions do not exceed limits | Volume 33 |
+| 320 | IRS IMF Taxpayer Age / Blindness Standard Deduction Bonus Matcher | PASS | Verifies correct deduction bonus calculations for elderly/blind filers | Volume 33 |
+| 321 | IRS CADE Social Security Benefit Taxability Range Checker | PASS | Audits taxable reported social security benefits against thresholds | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 319 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 321 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

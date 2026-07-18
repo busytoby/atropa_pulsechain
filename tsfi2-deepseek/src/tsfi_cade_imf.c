@@ -925,4 +925,23 @@ int tsfi_mf_imf_verify_student_loan_interest(double claimed_interest, int *is_va
     return 0;
 }
 
+int tsfi_mf_imf_verify_deduction_bonus(int over_65_count, int blind_count, int filing_status, double claimed_bonus, int *is_valid) {
+    if (!is_valid) return -1;
+    double bonus_amt = (filing_status == 1 || filing_status == 4) ? 1950.00 : 1550.00;
+    double calculated = (over_65_count + blind_count) * bonus_amt;
+    *is_valid = (claimed_bonus == calculated) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_cade_verify_ss_benefits(double modified_agi, double half_ss_benefits, double taxable_ss_reported, int filing_status, int *is_valid) {
+    if (!is_valid) return -1;
+    double threshold = (filing_status == 2) ? 32000.00 : 25000.00;
+    if (modified_agi + half_ss_benefits <= threshold) {
+        *is_valid = (taxable_ss_reported == 0.0) ? 1 : 0;
+    } else {
+        *is_valid = (taxable_ss_reported >= 0.0) ? 1 : 0;
+    }
+    return 0;
+}
+
 

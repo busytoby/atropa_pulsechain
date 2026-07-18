@@ -556,6 +556,22 @@ int main(void) {
     assert(interest_valid == 1);
     printf("  [PASS] IRS IMF Student Loan Interest Validator verified.\n");
 
+    // 176. Verify IRS IMF Taxpayer Age / Blindness Standard Deduction Bonus Matcher
+    printf("[TEST] Validating IRS IMF Deduction Bonus Matcher...\n");
+    int bonus_valid = -1;
+    int bonus_res = tsfi_mf_imf_verify_deduction_bonus(1, 0, 1, 1950.00, &bonus_valid);
+    assert(bonus_res == 0);
+    assert(bonus_valid == 1);
+    printf("  [PASS] IRS IMF Deduction Bonus Matcher verified.\n");
+
+    // 177. Verify IRS CADE Social Security Benefit Taxability Range Checker
+    printf("[TEST] Validating IRS CADE SS Benefits Taxability Range Checker...\n");
+    int ss_valid = -1;
+    int ss_res = tsfi_mf_cade_verify_ss_benefits(18000.00, 3000.00, 0.00, 1, &ss_valid);
+    assert(ss_res == 0);
+    assert(ss_valid == 1);
+    printf("  [PASS] IRS CADE SS Benefits Taxability Range Checker verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }
