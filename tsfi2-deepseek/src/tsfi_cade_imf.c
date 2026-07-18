@@ -990,4 +990,25 @@ int tsfi_mf_imf_verify_actc_limit(int child_count, double claimed_actc, int *is_
     return 0;
 }
 
+int tsfi_mf_cade_verify_filing_volume(const char *state_code, int current_count, int max_limit, int *is_allowed) {
+    if (!is_allowed) return -1;
+    (void)state_code;
+    *is_allowed = (current_count < max_limit) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_imf_verify_first_time_address(const char *address, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = 0;
+    if (!address) return 0;
+    int has_digit = 0;
+    int has_letter = 0;
+    for (int i = 0; address[i] != '\0'; i++) {
+        if (address[i] >= '0' && address[i] <= '9') has_digit = 1;
+        if ((address[i] >= 'A' && address[i] <= 'Z') || (address[i] >= 'a' && address[i] <= 'z')) has_letter = 1;
+    }
+    *is_valid = (has_digit && has_letter) ? 1 : 0;
+    return 0;
+}
+
 

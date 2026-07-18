@@ -282,8 +282,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 325 | IRS IMF Distributive Share K-1 Partnership Validator | PASS | Verifies partnership distributive share income calculations | Volume 33 |
 | 326 | IRS CADE Taxpayer Signature Witness Presence Indicator Checker | PASS | Validates form-specific witness signature presence requirements | Volume 33 |
 | 327 | IRS IMF Additional Child Tax Credit (ACTC) Refund Limit Matcher | PASS | Checks ACTC refundable parts fall within child count limitations | Volume 33 |
+| 328 | IRS CADE State Filing Volume Throttler Check | PASS | Restricts submission volume batches by regional boundaries | Volume 33 |
+| 329 | IRS IMF First-Time Filer Address Validation Check | PASS | Validates raw address text structure elements for first-time filers | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 327 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 329 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

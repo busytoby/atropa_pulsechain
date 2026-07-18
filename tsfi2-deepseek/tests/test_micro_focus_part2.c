@@ -620,6 +620,22 @@ int main(void) {
     assert(actc_valid == 1);
     printf("  [PASS] IRS IMF ACTC Limit Matcher verified.\n");
 
+    // 184. Verify IRS CADE State Filing Volume Throttler Check
+    printf("[TEST] Validating IRS CADE Filing Volume Throttler...\n");
+    int vol_allowed = -1;
+    int volume_res = tsfi_mf_cade_verify_filing_volume("CA", 5000, 10000, &vol_allowed);
+    assert(volume_res == 0);
+    assert(vol_allowed == 1);
+    printf("  [PASS] IRS CADE Filing Volume Throttler verified.\n");
+
+    // 185. Verify IRS IMF First-Time Filer Address Validation Check
+    printf("[TEST] Validating IRS IMF First-Time Filer Address Checker...\n");
+    int addr_valid = -1;
+    int addr_res = tsfi_mf_imf_verify_first_time_address("123 Maple Street", &addr_valid);
+    assert(addr_res == 0);
+    assert(addr_valid == 1);
+    printf("  [PASS] IRS IMF First-Time Filer Address Checker verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

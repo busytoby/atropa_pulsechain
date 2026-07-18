@@ -79,5 +79,7 @@ int tsfi_mf_cade_verify_state_withholding(const char *state_code, double state_w
 int tsfi_mf_imf_verify_k1_share(double partner_share_pct, double partnership_income, double reported_share_amt, int *is_valid);
 int tsfi_mf_cade_verify_witness_indicator(int doc_code, int has_witness_sig, int *is_valid);
 int tsfi_mf_imf_verify_actc_limit(int child_count, double claimed_actc, int *is_valid);
+int tsfi_mf_cade_verify_filing_volume(const char *state_code, int current_count, int max_limit, int *is_allowed);
+int tsfi_mf_imf_verify_first_time_address(const char *address, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H
