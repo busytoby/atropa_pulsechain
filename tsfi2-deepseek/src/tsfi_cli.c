@@ -257,6 +257,28 @@ static int handle_alias_command(WaveSystem *ws, const char *new_d) {
     return 0;
 }
 
+#include "tsfi_micro_focus.h"
+
+static int handle_dispatch_command(WaveSystem *ws, const char *new_d) {
+    (void)ws;
+    char subsystem[32];
+    char action[32];
+    char payload[128];
+    if (sscanf(new_d, "DISPATCH %31s %31s %127s", subsystem, action, payload) == 3) {
+        uint8_t out_pdu[64] = {0};
+        size_t out_size = 0;
+        int res = tsfi_mf_unified_dispatch(subsystem, action, (const uint8_t *)payload, strlen(payload), out_pdu, &out_size);
+        if (res == 0) {
+            tsfi_io_printf(stdout, "[DISPATCH] Success. PDU Code: 0x%02X, Size: %zu\n", out_pdu[0], out_size);
+        } else {
+            tsfi_io_printf(stdout, "[DISPATCH] Failed with code %d\n", res);
+        }
+    } else {
+        tsfi_io_printf(stdout, "[DISPATCH] Usage: 0.0 DISPATCH <subsystem> <action> <payload>\n");
+    }
+    return 0;
+}
+
 static int handle_resolve_command(WaveSystem *ws, const char *new_d) {
     (void)ws;
     char name[256];
@@ -329,6 +351,9 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
         }
         if (strncmp(new_d, "ALIAS", 5) == 0) {
             return handle_alias_command(ws, new_d);
+        }
+        if (strncmp(new_d, "DISPATCH", 8) == 0) {
+            return handle_dispatch_command(ws, new_d);
         }
         if (strncmp(new_d, "RESOLVE", 7) == 0) {
             return handle_resolve_command(ws, new_d);

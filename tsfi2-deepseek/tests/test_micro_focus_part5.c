@@ -939,7 +939,13 @@ int run_nato_stanag_tests_part5(void) {
     assert(disp_res == 0);
     assert(disp_size == 5);
     assert(disp_pdu[0] == 0xFA);
-    printf("  [PASS] Micro Focus Unified Dispatch verified.\n");
+    // Verify CLI Dispatch Integration
+    printf("[TEST] Validating CLI DISPATCH Command Integration...\n");
+    char cli_cmd[128] = "0.0 DISPATCH IRS CLEARANCE \xDE\xAD\xC0\xDE";
+    int tsfi_cli_process_line(void *ws, char *input);
+    int cli_res = tsfi_cli_process_line(NULL, cli_cmd);
+    assert(cli_res == 0);
+    printf("  [PASS] CLI DISPATCH Command Integration verified.\n");
 
     return 0;
 }
