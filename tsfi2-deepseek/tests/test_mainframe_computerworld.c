@@ -1632,6 +1632,27 @@ static void test_new_mainframe_features(void) {
     // ROP = 1000 + 334.1 = 1334.1
     assert(fabs(safety_stock - 334.1) < 0.1);
     assert(fabs(rop - 1334.1) < 0.1);
+
+    // ICP Catalog & Award tests
+    tsfi_cw_icp_product catalog[32];
+    int catalog_size = 0;
+    tsfi_cw_icp_product prod1 = { "PROD01", "MARK IV", "Informatics", "IBM 360", 15000.0, 50 };
+    tsfi_cw_icp_product prod2 = { "PROD02", "AUTOFLOW", "ADR", "IBM 360", 8000.0, 150 };
+    
+    assert(tsfi_cw_icp_register_product(catalog, &catalog_size, &prod1) == 0);
+    assert(tsfi_cw_icp_register_product(catalog, &catalog_size, &prod2) == 0);
+    assert(catalog_size == 2);
+    
+    tsfi_cw_icp_award_status status;
+    // MARK IV: 15,000 * 50 = 750,000 (Does not qualify)
+    assert(tsfi_cw_icp_check_award(&catalog[0], &status) == 0);
+    assert(status.total_revenue == 750000.0);
+    assert(status.qualifies_for_million_dollar_award == 0);
+    
+    // AUTOFLOW: 8,000 * 150 = 1,200,000 (Qualifies)
+    assert(tsfi_cw_icp_check_award(&catalog[1], &status) == 0);
+    assert(status.total_revenue == 1200000.0);
+    assert(status.qualifies_for_million_dollar_award == 1);
 }
 
 int main(void) {

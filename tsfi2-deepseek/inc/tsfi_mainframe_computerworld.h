@@ -770,5 +770,24 @@ typedef struct {
 
 int tsfi_cw_rop_calculate(const tsfi_cw_rop_problem *prob, double *safety_stock_out, double *reorder_point_out);
 
+// ICP Directory Product Registry
+typedef struct {
+    char product_id[8];
+    char name[32];
+    char vendor[32];
+    char hardware_platform[16];
+    double unit_price;
+    int install_count;
+} tsfi_cw_icp_product;
+
+// ICP Million Dollar Award Status
+typedef struct {
+    double total_revenue;
+    int qualifies_for_million_dollar_award;
+} tsfi_cw_icp_award_status;
+
+int tsfi_cw_icp_register_product(tsfi_cw_icp_product *catalog, int *catalog_size, const tsfi_cw_icp_product *new_prod);
+int tsfi_cw_icp_check_award(const tsfi_cw_icp_product *prod, tsfi_cw_icp_award_status *status_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

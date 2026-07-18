@@ -753,6 +753,34 @@ int tsfi_cw_rop_calculate(const tsfi_cw_rop_problem *prob, double *safety_stock_
     return 0;
 }
 
+int tsfi_cw_icp_register_product(tsfi_cw_icp_product *catalog, int *catalog_size, const tsfi_cw_icp_product *new_prod) {
+    if (!catalog || !catalog_size || !new_prod) return -1;
+    
+    // Check if exists
+    for (int i = 0; i < *catalog_size; i++) {
+        if (strcmp(catalog[i].product_id, new_prod->product_id) == 0) {
+            catalog[i] = *new_prod;
+            return 0;
+        }
+    }
+    
+    // Append new
+    if (*catalog_size >= 32) return -3;
+    catalog[*catalog_size] = *new_prod;
+    (*catalog_size)++;
+    return 0;
+}
+
+int tsfi_cw_icp_check_award(const tsfi_cw_icp_product *prod, tsfi_cw_icp_award_status *status_out) {
+    if (!prod || !status_out) return -1;
+    
+    status_out->total_revenue = prod->unit_price * prod->install_count;
+    status_out->qualifies_for_million_dollar_award = (status_out->total_revenue >= 1000000.0) ? 1 : 0;
+    
+    return 0;
+}
+
+
 
 
 
