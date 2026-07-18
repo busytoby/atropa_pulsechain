@@ -1250,6 +1250,23 @@ int tsfi_mf_nato_generate_unbind_confirm(int reason, uint8_t *out_pkt, size_t *o
     return 0;
 }
 
+int tsfi_mf_nato_generate_warning(int warning_code, uint8_t *out_pkt, size_t *out_size) {
+    if (!out_pkt || !out_size) return -1;
+    out_pkt[0] = 0x8F;
+    out_pkt[1] = warning_code & 0xFF;
+    *out_size = 2;
+    return 0;
+}
+
+int tsfi_mf_nato_generate_connect_reject(int reject_reason, uint8_t *out_pkt, size_t *out_size) {
+    if (!out_pkt || !out_size) return -1;
+    out_pkt[0] = 0x83;
+    out_pkt[1] = reject_reason & 0xFF;
+    *out_size = 2;
+    return 0;
+}
+
+
 
 
 

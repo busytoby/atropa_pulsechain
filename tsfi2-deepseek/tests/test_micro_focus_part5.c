@@ -469,7 +469,27 @@ int run_nato_stanag_tests_part5(void) {
     assert(unbind_conf_size == 2);
     assert(unbind_conf[0] == 0x82);
     assert(unbind_conf[1] == 0);
-    printf("  [PASS] Unbind Confirmation verified.\n");
+    // Verify Warning Primitive
+    printf("[TEST] Validating NATO Warning Primitive...\n");
+    uint8_t warn_pkt[8];
+    size_t warn_size = 0;
+    int warn_res = tsfi_mf_nato_generate_warning(1, warn_pkt, &warn_size);
+    assert(warn_res == 0);
+    assert(warn_size == 2);
+    assert(warn_pkt[0] == 0x8F);
+    assert(warn_pkt[1] == 1);
+    printf("  [PASS] Warning Primitive verified.\n");
+
+    // Verify Connect Reject Primitive
+    printf("[TEST] Validating NATO Connect Reject Primitive...\n");
+    uint8_t reject_pkt[8];
+    size_t reject_size = 0;
+    int reject_res = tsfi_mf_nato_generate_connect_reject(2, reject_pkt, &reject_size);
+    assert(reject_res == 0);
+    assert(reject_size == 2);
+    assert(reject_pkt[0] == 0x83);
+    assert(reject_pkt[1] == 2);
+    printf("  [PASS] Connect Reject Primitive verified.\n");
 
     return 0;
 }
