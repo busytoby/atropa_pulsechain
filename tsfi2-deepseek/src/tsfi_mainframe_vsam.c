@@ -69,6 +69,12 @@ int tsfi_cw_vsam_write(tsfi_cw_vsam_ksds *ksds, const char *key, const uint8_t *
         if (ksds->entry_count > 2) {
             ksds->ci_splits++;
         }
+        ksds->raw_key_bytes += strlen(key);
+        char comp_key[32];
+        const char *prev_key = NULL;
+        if (idx > 0) prev_key = ksds->index[idx - 1].key;
+        tsfi_cw_vsam_compress_key(key, prev_key, comp_key, sizeof(comp_key));
+        ksds->compressed_key_bytes += strlen(comp_key);
         strncpy(ksds->index[idx].key, key, sizeof(ksds->index[idx].key) - 1);
         ksds->index[idx].key[sizeof(ksds->index[idx].key) - 1] = '\0';
         ksds->index[idx].active = 1;
@@ -506,5 +512,15 @@ int tsfi_cw_vsam_get_compression_ratio(tsfi_cw_vsam_ksds *ksds, float *ratio_out
         return 0;
     }
     *ratio_out = (float)ksds->compressed_bytes_written / (float)ksds->raw_bytes_written;
+    return 0;
+}
+
+int tsfi_cw_vsam_get_key_compression_ratio(tsfi_cw_vsam_ksds *ksds, float *ratio_out) {
+    if (!ksds || !ratio_out) return -1;
+    if (ksds->raw_key_bytes == 0) {
+        *ratio_out = 1.0f;
+        return 0;
+    }
+    *ratio_out = (float)ksds->compressed_key_bytes / (float)ksds->raw_key_bytes;
     return 0;
 }

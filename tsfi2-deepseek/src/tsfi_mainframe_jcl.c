@@ -86,11 +86,12 @@ int tsfi_cw_run_jcl_sysin(const char **cards, int card_count, char *sysin_out, i
     int sysin_active = 0;
     int bytes_written = 0;
     sysin_out[0] = '\0';
+    char dlm[3] = "/*";
     
     for (int i = 0; i < card_count; i++) {
         const char *card = cards[i];
         if (sysin_active) {
-            if (strncmp(card, "/*", 2) == 0 || strncmp(card, "//", 2) == 0) {
+            if (strncmp(card, dlm, strlen(dlm)) == 0 || (strcmp(dlm, "/*") == 0 && strncmp(card, "//", 2) == 0)) {
                 break; // End of inline SYSIN
             }
             int len = strlen(card);
@@ -101,6 +102,12 @@ int tsfi_cw_run_jcl_sysin(const char **cards, int card_count, char *sysin_out, i
         } else {
             if (strstr(card, "SYSIN DD *")) {
                 sysin_active = 1;
+                const char *dlm_ptr = strstr(card, "DLM=");
+                if (dlm_ptr) {
+                    dlm[0] = dlm_ptr[4];
+                    dlm[1] = dlm_ptr[5];
+                    dlm[2] = '\0';
+                }
             }
         }
     }

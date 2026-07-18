@@ -759,6 +759,36 @@ static void test_new_mainframe_features(void) {
     assert(m_days == 29);
     assert(tsfi_cw_y2k_get_month_days(2100, 2, &m_days) == 0);
     assert(m_days == 28);
+
+    // VSAM Key Compression Stats
+    float key_ratio = 0.0f;
+    assert(tsfi_cw_vsam_get_key_compression_ratio(&split_ksds, &key_ratio) == 0);
+    assert(key_ratio > 0.0f);
+
+    // COBOL REDEFINES Nested checks
+    assert(tsfi_cw_parse_copybook_line("05 F2 REDEFINES F1 PIC X(3).", &cb_red) == 0);
+    assert(tsfi_cw_parse_copybook_line("05 F3 REDEFINES F2 PIC X(2).", &cb_red) == 0);
+
+    // EBCDIC CP273 Sterling Map Expansion
+    assert(tsfi_cw_ascii_to_ebcdic_cp273_ex(0x9C) == 0x5B);
+    assert(tsfi_cw_ebcdic_to_ascii_cp273_ex(0x5B) == 0xA3);
+
+    // JCL Inline SYSIN DD * delimiter overrides
+    const char *jcl_dlm_deck[] = {
+        "//STEP1 EXEC PGM=IEFBR14",
+        "//SYSIN DD *,DLM=$$",
+        "DATA LINE 1",
+        "$$",
+        "//STEP2 EXEC PGM=IEFBR14"
+    };
+    char sysin_dlm_out[256];
+    assert(tsfi_cw_run_jcl_sysin(jcl_dlm_deck, 5, sysin_dlm_out, sizeof(sysin_dlm_out)) == 12);
+    assert(strcmp(sysin_dlm_out, "DATA LINE 1\n") == 0);
+
+    // Y2K Gregorian-to-Julian Date Converter
+    char jul_out[32];
+    assert(tsfi_cw_gregorian_to_julian_y2k("2000-02-29", 50, jul_out, sizeof(jul_out)) == 0);
+    assert(strcmp(jul_out, "00.060") == 0);
 }
 
 int main(void) {

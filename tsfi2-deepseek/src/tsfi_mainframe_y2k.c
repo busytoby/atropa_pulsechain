@@ -273,3 +273,24 @@ int tsfi_cw_y2k_get_month_days(uint32_t year, uint32_t month, int *days_out) {
     *days_out = days_in_months[month - 1];
     return 0;
 }
+
+int tsfi_cw_gregorian_to_julian_y2k(const char *greg_in, uint32_t pivot, char *julian_out, int max_len) {
+    if (!greg_in || !julian_out || max_len <= 0) return -1;
+    (void)pivot;
+    uint32_t year = 0, month = 0, day = 0;
+    if (sscanf(greg_in, "%u-%u-%u", &year, &month, &day) != 3) return -2;
+    if (month < 1 || month > 12 || day < 1 || day > 31) return -3;
+    
+    int is_leap = tsfi_cw_y2k_is_leap_year(year);
+    int days_in_months[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    if (is_leap) days_in_months[1] = 29;
+    
+    uint32_t day_of_year = day;
+    for (uint32_t m = 1; m < month; m++) {
+        day_of_year += days_in_months[m - 1];
+    }
+    
+    uint32_t yy = year % 100;
+    snprintf(julian_out, max_len, "%02u.%03u", yy, day_of_year);
+    return 0;
+}

@@ -221,3 +221,13 @@ int tsfi_cw_ebcdic_validate_dbcs_boundaries(const uint8_t *ebcdic_str, int len) 
     if (in_dbcs) return -4;
     return 0;
 }
+
+uint8_t tsfi_cw_ascii_to_ebcdic_cp273_ex(uint8_t ascii_char) {
+    if (ascii_char == 0x9C || ascii_char == 0xA3) return 0x5B;
+    return tsfi_cw_ascii_to_ebcdic_cp273(ascii_char);
+}
+
+uint8_t tsfi_cw_ebcdic_to_ascii_cp273_ex(uint8_t ebcdic_char) {
+    if (ebcdic_char == 0x5B) return 0xA3;
+    return tsfi_cw_ebcdic_to_ascii_cp273(ebcdic_char);
+}
