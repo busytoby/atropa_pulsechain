@@ -5,21 +5,6 @@
   <title>Auncient Lore Editor & Annotator</title>
   <!-- Google Fonts for Premium Visual Aesthetics -->
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Outfit:wght@300;400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-  <script src="mermaid.min.js?v=9"></script>
-  <script>
-    mermaid.initialize({
-      startOnLoad: false,
-      theme: 'dark',
-      gantt: {
-        sectionPercent: 45,
-        barHeight: 25,
-        barGap: 5,
-        topPadding: 50,
-        sidePadding: 50,
-        titlePadding: 15
-      }
-    });
-  </script>
   <style>
     :root {
       --bg-base: #0a0a0c;
@@ -1002,24 +987,6 @@
       if (mode === 'preview') {
         fileContent = editPane.value;
         previewPane.innerHTML = renderMarkdown(fileContent);
-        if (window.mermaid) {
-          setTimeout(() => {
-            try {
-              mermaid.init(undefined, '.mermaid');
-            } catch (err) {
-              console.error("Mermaid run error:", err);
-              fetch('/api/dilemma-log', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  event: 'Mermaid Error',
-                  source: 'lore_editor',
-                  details: err.message + '\n' + err.stack
-                })
-              }).catch(() => {});
-            }
-          }, 50);
-        }
         
         previewPane.style.display = 'block';
         editPane.style.display = 'none';
@@ -1053,13 +1020,7 @@
       const codeBlocks = [];
       html = html.replace(/```(\w*)\r?\n([\s\S]*?)\r?\n```/g, function(match, lang, code) {
           const index = codeBlocks.length;
-          let blockContent = '';
-          if (lang === 'mermaid') {
-              const cleanCode = code.trim().replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-              blockContent = `<div class="mermaid">${cleanCode}</div>`;
-          } else {
-              blockContent = `<pre><code class="language-${lang}">${code.trim()}</code></pre>`;
-          }
+          const blockContent = `<pre><code class="language-${lang}">${code.trim()}</code></pre>`;
           codeBlocks.push(blockContent);
           return `\n\n===CODEBLOCK_${index}===\n\n`;
       });
