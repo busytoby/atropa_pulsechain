@@ -76,5 +76,7 @@ int tsfi_mf_imf_is_form_1040sr(int doc_code, int *result);
 int tsfi_mf_cade_is_under_audit_or_suspended_ver3(int status_code, int *is_valid);
 int tsfi_mf_imf_is_form_1040nr(int doc_code, int *result);
 int tsfi_mf_cade_is_active_or_under_audit_or_suspended_or_pending_ver2(int status_code, int *is_valid);
+int tsfi_mf_imf_is_form_1040pr(int doc_code, int *result);
+int tsfi_mf_cade_is_active_or_under_audit_or_suspended_or_pending_ver3(int status_code, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

@@ -246,8 +246,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 291 | IRS CADE Taxpayer Under Audit Or Suspended Checker Ver3 | PASS | Asserves if account status matches under audit or suspended codes | Volume 33 |
 | 292 | IRS IMF Form 1040-NR Verifier | PASS | Restricts individual filings to Form 1040-NR non-resident tax return ranges | Volume 33 |
 | 293 | IRS CADE Taxpayer Active Or Under Audit Or Suspended Or Pending Checker Ver2 | PASS | Asserves if account status matches active, under audit, suspended, or pending audit codes | Volume 33 |
+| 294 | IRS IMF Form 1040-PR Verifier | PASS | Restricts individual filings to Form 1040-PR Puerto Rico return ranges | Volume 33 |
+| 295 | IRS CADE Taxpayer Active Or Under Audit Or Suspended Or Pending Checker Ver3 | PASS | Asserves if account status matches active, under audit, suspended, or pending audit codes | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 293 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 295 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"
