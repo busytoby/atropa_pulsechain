@@ -133,5 +133,7 @@ int tsfi_mf_cade_verify_foreign_country_code(int has_foreign_account, const char
 int tsfi_mf_imf_match_k1_dividends(double reported_1040_dividends, double k1_share_dividends, int *is_valid);
 int tsfi_mf_cade_verify_foreign_account_consistency(int has_foreign_account, const char *country_code, int *is_valid);
 int tsfi_mf_imf_match_k1_capital_gains(double reported_1040_capital_gains, double k1_share_capital_gains, int *is_valid);
+int tsfi_mf_cade_verify_div_payer_tin(const char *tin, int *is_valid);
+int tsfi_mf_imf_match_k1_interest(double reported_1040_interest, double k1_share_interest, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

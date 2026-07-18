@@ -1055,6 +1055,22 @@ int main(void) {
     assert(k1_cg_match == 1);
     printf("  [PASS] IRS IMF K-1 Capital Gains Share Matcher verified.\n");
 
+    // 238. Verify IRS CADE Form 1099-DIV Payer TIN Format Validator
+    printf("[TEST] Validating IRS CADE DIV Payer TIN Validator...\n");
+    int tin_valid = -1;
+    int tin_res = tsfi_mf_cade_verify_div_payer_tin("12-3456780", &tin_valid);
+    assert(tin_res == 0);
+    assert(tin_valid == 1);
+    printf("  [PASS] IRS CADE DIV Payer TIN Validator verified.\n");
+
+    // 239. Verify IRS IMF Schedule K-1 Partnership Distributive Interest Share Matcher
+    printf("[TEST] Validating IRS IMF K-1 Interest Share Matcher...\n");
+    int k1_int_match = -1;
+    int k1_int_res = tsfi_mf_imf_match_k1_interest(800.00, 800.00, &k1_int_match);
+    assert(k1_int_res == 0);
+    assert(k1_int_match == 1);
+    printf("  [PASS] IRS IMF K-1 Interest Share Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

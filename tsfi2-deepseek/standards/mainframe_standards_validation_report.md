@@ -313,5 +313,7 @@
 | 379 | IRS IMF Schedule K-1 Distributive Dividend Share Matcher | PASS | Matches 1040 ordinary dividend lines against distributive Schedule K-1 shares | Volume 33 |
 | 380 | IRS CADE Schedule B Foreign Account Yes/No and Country Code Consistency Matcher | PASS | Checks consistency between foreign account indicator and location codes | Volume 33 |
 | 381 | IRS IMF Schedule K-1 Partnership Distributive Capital Gains Share Matcher | PASS | Matches 1040 Schedule D capital gains against distributive K-1 shares | Volume 33 |
+| 382 | IRS CADE Form 1099-DIV Payer TIN Format Validator | PASS | Validates Employer Identification Number structure on Form 1099-DIV | Volume 33 |
+| 383 | IRS IMF Schedule K-1 Partnership Distributive Interest Share Matcher | PASS | Matches 1040 Schedule B taxable interest lines against K-1 distributive shares | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 381 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 383 Scenarios validated successfully)
