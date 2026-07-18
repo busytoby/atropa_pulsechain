@@ -1372,6 +1372,21 @@ static void test_new_mainframe_features(void) {
     assert(tsfi_algol_execute_b5500(&b5500_cpu, b5500_ops, 5) == 0);
     assert(b5500_cpu.sp == 1);
     assert(b5500_cpu.operand_stack[0] == 30.0);
+
+    // ALGOL DAT operation on 2-stack BTC Rails test
+    tsfi_algol_dynamic_array test_dat = { 100, 10, 5 }; // key_start=100, size=5
+    double btc_stack[32];
+    double btc_altstack[32];
+    int btc_sp = 0;
+    int btc_asp = 0;
+    assert(tsfi_algol_operate_btc_rails_dat(&b5500_cpu, &test_dat, btc_stack, &btc_sp, btc_altstack, &btc_asp, "LOAD_DAT_TO_BTC") == 0);
+    assert(btc_sp == 5);
+    assert(btc_stack[0] == 100.0);
+    assert(btc_stack[4] == 104.0);
+
+    assert(tsfi_algol_operate_btc_rails_dat(&b5500_cpu, &test_dat, btc_stack, &btc_sp, btc_altstack, &btc_asp, "STORE_BTC_TO_DAT") == 0);
+    assert(btc_sp == 0);
+    assert(test_dat.key_start == 100);
 }
 
 int main(void) {

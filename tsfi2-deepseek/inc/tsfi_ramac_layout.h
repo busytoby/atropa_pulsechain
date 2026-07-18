@@ -911,6 +911,7 @@ typedef struct {
 } tsfi_b5500_processor;
 
 int tsfi_algol_execute_b5500(tsfi_b5500_processor *cpu, const char **opcodes, int opcode_count);
+int tsfi_algol_operate_btc_rails_dat(tsfi_b5500_processor *cpu, tsfi_algol_dynamic_array *dat_arr, double *btc_stack, int *btc_sp, double *btc_altstack, int *btc_asp, const char *op);
 
 // ALGOL Dynamic Matrix Extensions
 typedef struct {

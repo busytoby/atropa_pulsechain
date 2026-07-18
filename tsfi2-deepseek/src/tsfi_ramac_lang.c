@@ -200,3 +200,28 @@ int tsfi_algol_execute_b5500(tsfi_b5500_processor *cpu, const char **opcodes, in
     return 0;
 }
 
+int tsfi_algol_operate_btc_rails_dat(tsfi_b5500_processor *cpu, tsfi_algol_dynamic_array *dat_arr, double *btc_stack, int *btc_sp, double *btc_altstack, int *btc_asp, const char *op) {
+    if (!cpu || !dat_arr || !btc_stack || !btc_sp || !btc_altstack || !btc_asp || !op) return -1;
+    
+    if (strcmp(op, "LOAD_DAT_TO_BTC") == 0) {
+        if (*btc_sp + dat_arr->size > 32) return -2;
+        for (int i = 0; i < dat_arr->size; i++) {
+            btc_stack[(*btc_sp)++] = (double)(dat_arr->key_start + i);
+        }
+    } else if (strcmp(op, "STORE_BTC_TO_DAT") == 0) {
+        if (*btc_sp < dat_arr->size) return -3;
+        for (int i = dat_arr->size - 1; i >= 0; i--) {
+            double val = btc_stack[--(*btc_sp)];
+            if (i == 0) dat_arr->key_start = (int)val;
+        }
+    } else if (strcmp(op, "LOAD_DAT_TO_ALT") == 0) {
+        if (*btc_asp + dat_arr->size > 32) return -2;
+        for (int i = 0; i < dat_arr->size; i++) {
+            btc_altstack[(*btc_asp)++] = (double)(dat_arr->key_start + i);
+        }
+    } else {
+        return -4;
+    }
+    return 0;
+}
+
