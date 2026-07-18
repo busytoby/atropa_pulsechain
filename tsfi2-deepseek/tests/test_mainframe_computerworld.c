@@ -2199,6 +2199,27 @@ static void test_new_mainframe_features(void) {
     tsfi_cw_chase_atm_transaction atm_tx_bad = { "4111222233334444", "123", "WITHDRAWAL", 200.0, 1000.0 }; // pin too short
     assert(tsfi_cw_chase_audit_atm(&atm_tx_bad, &atm_valid) == 0);
     assert(atm_valid == 0);
+
+    // OMP Feilong test
+    tsfi_cw_omp_feilong_guest guest;
+    assert(tsfi_cw_omp_feilong_provision("GUEST01", 4, 8192, &guest) == 0);
+    assert(strcmp(guest.guest_name, "GUEST01") == 0);
+    assert(guest.cpu_count == 4);
+    assert(guest.memory_mb == 8192);
+    assert(strcmp(guest.lifecycle_state, "PROVISIONING") == 0);
+    assert(tsfi_cw_omp_feilong_set_state(&guest, "ACTIVE") == 0);
+    assert(strcmp(guest.lifecycle_state, "ACTIVE") == 0);
+
+    // OMP Galasa test
+    tsfi_cw_omp_galasa_run run;
+    assert(tsfi_cw_omp_galasa_init_run("SuiteA", &run) == 0);
+    assert(strcmp(run.test_suite_name, "SuiteA") == 0);
+    assert(run.assertions_run == 0);
+    assert(tsfi_cw_omp_galasa_assert(&run, 1) == 0); // Pass
+    assert(tsfi_cw_omp_galasa_assert(&run, 0) == 0); // Fail
+    assert(run.assertions_run == 2);
+    assert(run.passes == 1);
+    assert(run.assertions_failed == 1);
 }
 
 int main(void) {

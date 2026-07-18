@@ -1233,5 +1233,27 @@ int tsfi_cw_chase_audit_atm(const tsfi_cw_chase_atm_transaction *tx, int *is_val
 
 int tsfi_cw_chase_issue_card(const char *card_number, const char *pin, double starting_balance, int *success_out);
 
+// OMP Feilong z/VM Guest Info
+typedef struct {
+    char guest_name[16];
+    int cpu_count;
+    int memory_mb;
+    char lifecycle_state[16];
+} tsfi_cw_omp_feilong_guest;
+
+int tsfi_cw_omp_feilong_provision(const char *guest_name, int cpus, int memory_mb, tsfi_cw_omp_feilong_guest *guest_out);
+int tsfi_cw_omp_feilong_set_state(tsfi_cw_omp_feilong_guest *guest, const char *state);
+
+// OMP Galasa Test Run Info
+typedef struct {
+    char test_suite_name[32];
+    int assertions_run;
+    int assertions_failed;
+    int passes;
+} tsfi_cw_omp_galasa_run;
+
+int tsfi_cw_omp_galasa_init_run(const char *suite_name, tsfi_cw_omp_galasa_run *run_out);
+int tsfi_cw_omp_galasa_assert(tsfi_cw_omp_galasa_run *run, int condition);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

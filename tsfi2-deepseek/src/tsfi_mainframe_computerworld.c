@@ -1808,6 +1808,60 @@ int tsfi_cw_chase_issue_card(const char *card_number, const char *pin, double st
     return 0;
 }
 
+int tsfi_cw_omp_feilong_provision(const char *guest_name, int cpus, int memory_mb, tsfi_cw_omp_feilong_guest *guest_out) {
+    if (!guest_name || cpus <= 0 || memory_mb <= 0 || !guest_out) return -1;
+    
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wstringop-truncation"
+    strncpy(guest_out->guest_name, guest_name, sizeof(guest_out->guest_name) - 1);
+    guest_out->guest_name[sizeof(guest_out->guest_name) - 1] = 0;
+    #pragma GCC diagnostic pop
+    
+    guest_out->cpu_count = cpus;
+    guest_out->memory_mb = memory_mb;
+    strcpy(guest_out->lifecycle_state, "PROVISIONING");
+    return 0;
+}
+
+int tsfi_cw_omp_feilong_set_state(tsfi_cw_omp_feilong_guest *guest, const char *state) {
+    if (!guest || !state) return -1;
+    
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wstringop-truncation"
+    strncpy(guest->lifecycle_state, state, sizeof(guest->lifecycle_state) - 1);
+    guest->lifecycle_state[sizeof(guest->lifecycle_state) - 1] = 0;
+    #pragma GCC diagnostic pop
+    return 0;
+}
+
+int tsfi_cw_omp_galasa_init_run(const char *suite_name, tsfi_cw_omp_galasa_run *run_out) {
+    if (!suite_name || !run_out) return -1;
+    
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wstringop-truncation"
+    strncpy(run_out->test_suite_name, suite_name, sizeof(run_out->test_suite_name) - 1);
+    run_out->test_suite_name[sizeof(run_out->test_suite_name) - 1] = 0;
+    #pragma GCC diagnostic pop
+    
+    run_out->assertions_run = 0;
+    run_out->assertions_failed = 0;
+    run_out->passes = 0;
+    return 0;
+}
+
+int tsfi_cw_omp_galasa_assert(tsfi_cw_omp_galasa_run *run, int condition) {
+    if (!run) return -1;
+    
+    run->assertions_run++;
+    if (condition) {
+        run->passes++;
+    } else {
+        run->assertions_failed++;
+    }
+    return 0;
+}
+
+
 
 
 
