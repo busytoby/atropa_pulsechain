@@ -1200,5 +1200,15 @@ typedef struct {
 
 int tsfi_cw_rmu_audit_ims(const tsfi_cw_rmu_ims_segment *segments, int segment_count, int *invalid_pointers_out);
 
+// RMU CICS Web request
+typedef struct {
+    char http_method[16];
+    int payload_bytes;
+    char header_content_type[32];
+    int is_authorized;
+} tsfi_cw_rmu_cics_web_request;
+
+int tsfi_cw_rmu_audit_cics_web_gateway(const tsfi_cw_rmu_cics_web_request *req, int *is_compliant_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

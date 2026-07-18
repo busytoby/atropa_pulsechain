@@ -1000,6 +1000,33 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
                  processed, queue.item_count, queue.total_bytes, alert, id);
         return 1;
     }
+    if (method_type == 73) {
+        char http_method[32] = {0};
+        char header_content_type[64] = {0};
+        extract_json_string(min_ptr, "\"http_method\"", http_method, sizeof(http_method));
+        extract_json_string(min_ptr, "\"header_content_type\"", header_content_type, sizeof(header_content_type));
+        int payload_bytes = extract_json_int(min_ptr, "\"payload_bytes\"", 0);
+        int is_authorized = extract_json_int(min_ptr, "\"is_authorized\"", 0);
+        
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wstringop-truncation"
+        tsfi_cw_rmu_cics_web_request req;
+        strncpy(req.http_method, http_method, sizeof(req.http_method) - 1);
+        req.http_method[sizeof(req.http_method) - 1] = 0;
+        strncpy(req.header_content_type, header_content_type, sizeof(req.header_content_type) - 1);
+        req.header_content_type[sizeof(req.header_content_type) - 1] = 0;
+        #pragma GCC diagnostic pop
+        
+        req.payload_bytes = payload_bytes;
+        req.is_authorized = is_authorized;
+        
+        int is_compliant = 0;
+        extern int tsfi_cw_rmu_audit_cics_web_gateway(const tsfi_cw_rmu_cics_web_request *req, int *is_compliant_out);
+        tsfi_cw_rmu_audit_cics_web_gateway(&req, &is_compliant);
+        
+        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"is_compliant\": %d}, \"id\": %d}\n", is_compliant, id);
+        return 1;
+    }
     snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"Method not found\", \"id\": %d}\n", id);
     return 1;
 }

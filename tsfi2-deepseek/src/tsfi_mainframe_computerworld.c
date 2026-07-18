@@ -1596,6 +1596,14 @@ int tsfi_cw_rmu_audit_ims(const tsfi_cw_rmu_ims_segment *segments, int segment_c
     return 0;
 }
 
+int tsfi_cw_rmu_audit_cics_web_gateway(const tsfi_cw_rmu_cics_web_request *req, int *is_compliant_out) {
+    if (!req || !is_compliant_out) return -1;
+    
+    *is_compliant_out = (req->is_authorized && req->payload_bytes <= 1048576 && strcmp(req->header_content_type, "application/json") == 0) ? 1 : 0;
+    return 0;
+}
+
+
 
 
 

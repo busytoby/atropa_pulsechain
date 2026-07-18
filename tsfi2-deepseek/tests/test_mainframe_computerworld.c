@@ -2169,6 +2169,16 @@ static void test_new_mainframe_features(void) {
     };
     assert(tsfi_cw_rmu_audit_ims(ims_db_bad, 2, &ims_violations) == 0);
     assert(ims_violations == 2);
+
+    // RMU CICS Web Services Gateway test
+    tsfi_cw_rmu_cics_web_request web_req_ok = { "POST", 5000, "application/json", 1 };
+    int web_compliant = 0;
+    assert(tsfi_cw_rmu_audit_cics_web_gateway(&web_req_ok, &web_compliant) == 0);
+    assert(web_compliant == 1);
+
+    tsfi_cw_rmu_cics_web_request web_req_bad = { "POST", 2000000, "application/json", 1 }; // too large (> 1MB)
+    assert(tsfi_cw_rmu_audit_cics_web_gateway(&web_req_bad, &web_compliant) == 0);
+    assert(web_compliant == 0);
 }
 
 int main(void) {
