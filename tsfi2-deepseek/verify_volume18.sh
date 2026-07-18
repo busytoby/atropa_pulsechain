@@ -318,8 +318,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 361 | IRS CADE Qualifying Widow(er) Dependent Child Matcher | PASS | Enforces child dependent validation for qualifying widow status | Volume 33 |
 | 362 | IRS IMF Section 179 Property Expense Limit Checker | PASS | Validates claimed Section 179 expenses do not exceed caps | Volume 33 |
 | 363 | IRS CADE Married Filing Separately (MFS) Spousal Name Validator | PASS | Enforces spousal name input requirement for MFS status | Volume 33 |
+| 364 | IRS IMF Section 179 Threshold Phase-Out Matcher | PASS | Checks placed-in-service asset costs against Section 179 floors | Volume 33 |
+| 365 | IRS CADE Schedule B Foreign Account Reporting Indicator Checker | PASS | Validates foreign disclosure requirements for interest/dividend filers | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 363 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 365 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

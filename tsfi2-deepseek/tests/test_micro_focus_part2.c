@@ -908,6 +908,22 @@ int main(void) {
     assert(mfs_name_valid == 1);
     printf("  [PASS] IRS CADE MFS Spousal Name Validator verified.\n");
 
+    // 220. Verify IRS IMF Section 179 Threshold Phase-Out Matcher
+    printf("[TEST] Validating IRS IMF Section 179 Phase-Out Matcher...\n");
+    int s179_phaseout = -1;
+    int s179_po_res = tsfi_mf_imf_check_section179_phaseout(3500000.00, &s179_phaseout);
+    assert(s179_po_res == 0);
+    assert(s179_phaseout == 1);
+    printf("  [PASS] IRS IMF Section 179 Phase-Out Matcher verified.\n");
+
+    // 221. Verify IRS CADE Schedule B Foreign Account Reporting Indicator Checker
+    printf("[TEST] Validating IRS CADE Schedule B Foreign Account Indicator Checker...\n");
+    int foreign_indicator_valid = -1;
+    int foreign_ind_res = tsfi_mf_cade_check_foreign_account_indicator(2000.00, 1, &foreign_indicator_valid);
+    assert(foreign_ind_res == 0);
+    assert(foreign_indicator_valid == 1);
+    printf("  [PASS] IRS CADE Schedule B Foreign Account Indicator Checker verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

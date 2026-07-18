@@ -1258,4 +1258,16 @@ int tsfi_mf_cade_verify_mfs_spouse_name(int filing_status, const char *spouse_fi
     return 0;
 }
 
+int tsfi_mf_imf_check_section179_phaseout(double total_property_cost, int *is_above_threshold) {
+    if (!is_above_threshold) return -1;
+    *is_above_threshold = (total_property_cost > 3050000.00) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_cade_check_foreign_account_indicator(double total_interest_dividends, int foreign_disclosure_flag, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (total_interest_dividends > 1500.00) ? (foreign_disclosure_flag != 0) : 1;
+    return 0;
+}
+
 
