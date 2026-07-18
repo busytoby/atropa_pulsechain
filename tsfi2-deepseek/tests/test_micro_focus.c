@@ -1811,6 +1811,22 @@ int main(void) {
     assert(is_uasp2 == 1);
     printf("  [PASS] IRS CADE Taxpayer Under Audit Or Suspended Or Pending Checker Ver2 verified.\n");
 
+    // 179. Verify IRS IMF Form 1040X Verifier
+    printf("[TEST] Validating IRS IMF Form 1040X Verifier...\n");
+    int is_1040x = -1;
+    int f1040x_res = tsfi_mf_imf_is_form_1040x(35, &is_1040x);
+    assert(f1040x_res == 0);
+    assert(is_1040x == 1);
+    printf("  [PASS] IRS IMF Form 1040X Verifier verified.\n");
+
+    // 180. Verify IRS CADE Taxpayer Active Or Under Audit Or Suspended Checker
+    printf("[TEST] Validating IRS CADE Taxpayer Active Or Under Audit Or Suspended Checker...\n");
+    int is_auas = -1;
+    int auas_res = tsfi_mf_cade_is_active_or_under_audit_or_suspended(3, &is_auas);
+    assert(auas_res == 0);
+    assert(is_auas == 1);
+    printf("  [PASS] IRS CADE Taxpayer Active Or Under Audit Or Suspended Checker verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

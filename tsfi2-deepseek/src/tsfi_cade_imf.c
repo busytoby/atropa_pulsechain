@@ -775,3 +775,23 @@ int tsfi_mf_cade_is_under_audit_or_suspended_or_pending_ver2(int status_code, in
     }
     return 0;
 }
+
+int tsfi_mf_imf_is_form_1040x(int doc_code, int *result) {
+    if (!result) return -1;
+
+    *result = 0;
+    if (doc_code == 35) {
+        *result = 1;
+    }
+    return 0;
+}
+
+int tsfi_mf_cade_is_active_or_under_audit_or_suspended(int status_code, int *is_valid) {
+    if (!is_valid) return -1;
+
+    *is_valid = 0;
+    if (status_code == 1 || status_code == 2 || status_code == 3) {
+        *is_valid = 1;
+    }
+    return 0;
+}
