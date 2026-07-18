@@ -561,5 +561,21 @@ int run_nato_stanag_tests(void) {
     assert(drop_samples_valid == 1);
     printf("  [PASS] NATO Collision Clear RSSI Drop Sample Matcher verified.\n");
 
+    // 319. Verify NATO Link-Layer Broadcast Collision Retry Backoff LFSR Size Matcher
+    printf("[TEST] Validating NATO Broadcast Backoff LFSR Size Matcher...\n");
+    int backoff_lfsr_valid = -1;
+    int backoff_lfsr_res = tsfi_mf_nato_verify_backoff_lfsr_size(12, &backoff_lfsr_valid);
+    assert(backoff_lfsr_res == 0);
+    assert(backoff_lfsr_valid == 1);
+    printf("  [PASS] NATO Broadcast Backoff LFSR Size Matcher verified.\n");
+
+    // 320. Verify NATO Link-Layer Broadcast Channel Status Report Interval Checker
+    printf("[TEST] Validating NATO Broadcast Status Interval Checker...\n");
+    int status_interval_valid = -1;
+    int status_interval_res = tsfi_mf_nato_verify_status_interval(30, &status_interval_valid);
+    assert(status_interval_res == 0);
+    assert(status_interval_valid == 1);
+    printf("  [PASS] NATO Broadcast Status Interval Checker verified.\n");
+
     return 0;
 }

@@ -214,5 +214,7 @@ int tsfi_mf_nato_verify_busy_hysteresis_time(int hysteresis_ms, int *is_valid);
 int tsfi_mf_nato_verify_rssi_drop_time(int drop_ms, int *is_valid);
 int tsfi_mf_nato_verify_busy_samples(int samples, int *is_valid);
 int tsfi_mf_nato_verify_rssi_drop_samples(int samples, int *is_valid);
+int tsfi_mf_nato_verify_backoff_lfsr_size(int bits, int *is_valid);
+int tsfi_mf_nato_verify_status_interval(int interval_sec, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

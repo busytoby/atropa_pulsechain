@@ -417,8 +417,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 460 | NATO Link-Layer Multi-Scan Collision Clear Signal Drop Time Matcher | PASS | Audits required constant durations for sustained RSSI drop checks | Volume 33 |
 | 461 | NATO Link-Layer Broadcast Channel Busy Hysteresis Sample Count Matcher | PASS | Validates required consecutive sample counts for busy evaluations | Volume 33 |
 | 462 | NATO Link-Layer Multi-Scan Collision Clear Signal Drop Sample Matcher | PASS | Audits required consecutive clear samples to confirm collision clearance | Volume 33 |
+| 463 | NATO Link-Layer Broadcast Collision Retry Backoff LFSR Size Matcher | PASS | Validates LFSR shift register bit capacities for random retry spacing | Volume 33 |
+| 464 | NATO Link-Layer Broadcast Channel Status Report Interval Checker | PASS | Audits telemetry periodic interval timings for status report transmission | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 462 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 464 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

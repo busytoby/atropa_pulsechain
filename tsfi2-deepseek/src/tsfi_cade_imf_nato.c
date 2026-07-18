@@ -465,3 +465,15 @@ int tsfi_mf_nato_verify_rssi_drop_samples(int samples, int *is_valid) {
     *is_valid = (samples >= 2 && samples <= 8) ? 1 : 0;
     return 0;
 }
+
+int tsfi_mf_nato_verify_backoff_lfsr_size(int bits, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (bits >= 8 && bits <= 16) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_status_interval(int interval_sec, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (interval_sec >= 1 && interval_sec <= 60) ? 1 : 0;
+    return 0;
+}
