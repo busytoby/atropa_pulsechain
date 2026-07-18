@@ -445,8 +445,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 488 | NATO Link-Layer Broadcast Channel Busy Hysteresis Up-Ramp Rate Limit Matcher | PASS | Audits RSSI signal up-ramp threshold rate limit parameters | Volume 33 |
 | 489 | NATO Link-Layer Broadcast Channel Busy Hysteresis Down-Ramp Rate Limit Matcher | PASS | Validates down-ramp decay RSSI rate limit parameter thresholds | Volume 33 |
 | 490 | NATO Link-Layer Broadcast Collision Backoff Slot Alignment Offset Boundary Matcher | PASS | Audits backoff slot start boundary offset alignment limits | Volume 33 |
+| 491 | NATO Link-Layer Broadcast Collision Backoff Slot Alignment Boundary Source Matcher | PASS | Validates backoff slot boundary reference source selectors | Volume 33 |
+| 492 | NATO Link-Layer Broadcast Channel Busy Hysteresis Up-Ramp Rate Factor Offset Matcher | PASS | Audits RSSI scaling factor offset configuration parameters | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 490 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 492 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"
