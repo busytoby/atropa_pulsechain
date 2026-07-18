@@ -475,4 +475,6 @@ int tsfi_mf_ssa_verify_ssn_exhaustive(const char *ssn, int *is_valid);
 int tsfi_mf_ssa_irs_sync_audit(const char *ssn, int dmf_deceased, int ssn_allocated, int *audit_action);
 int tsfi_mf_ssa_irs_format_fraud_alert(const char *ssn, int audit_action, char *msg_out, size_t max_len);
 
+int tsfi_mf_tri_agency_coordinate(const char *ssn, int dmf_deceased, int ssn_allocated, int *defcon_level, uint16_t *status_word);
+
 #endif // TSFI_CADE_IMF_H

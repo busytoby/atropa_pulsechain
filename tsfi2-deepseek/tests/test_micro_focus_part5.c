@@ -1099,7 +1099,15 @@ int run_nato_stanag_tests_part5(void) {
     assert(ssa_alert_res == 0);
     assert(strstr(alert_msg, "FRAUD ALERT: SSN 050051122 ACTION CODE 2") != NULL);
     assert(strstr(alert_msg, "NNNN") != NULL);
-    printf("  [PASS] SSA-IRS Fraud Alert Encoding verified.\n");
+    // Verify Tri-Agency Coordinator
+    printf("[TEST] Validating Tri-Agency Coordinator...\n");
+    int tri_defcon = 5;
+    uint16_t tri_status = 0;
+    int tri_res = tsfi_mf_tri_agency_coordinate("050051122", 1, 0, &tri_defcon, &tri_status); // Deceased + unallocated
+    assert(tri_res == 0);
+    assert(tri_defcon == 1);
+    assert((tri_status & (1 << 11)) != 0);
+    printf("  [PASS] Tri-Agency Coordinator verified.\n");
 
     return 0;
 }

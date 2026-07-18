@@ -1930,6 +1930,23 @@ int tsfi_mf_ssa_irs_format_fraud_alert(const char *ssn, int audit_action, char *
     return 0;
 }
 
+int tsfi_mf_tri_agency_coordinate(const char *ssn, int dmf_deceased, int ssn_allocated, int *defcon_level, uint16_t *status_word) {
+    if (!ssn || !defcon_level || !status_word) return -1;
+    
+    // Critical Threat: active duty identity is deceased (SSA) and unallocated (IRS)
+    if (dmf_deceased == 1 && ssn_allocated == 0) {
+        *defcon_level = 1;
+        *status_word |= (1 << 11); // Flag critical tactical threat alarm
+    } else if (dmf_deceased == 1 || ssn_allocated == 0) {
+        if (*defcon_level > 3) {
+            *defcon_level = 3;
+        }
+        *status_word |= (1 << 10); // Flag warning alarm
+    }
+    return 0;
+}
+
+
 
 
 
