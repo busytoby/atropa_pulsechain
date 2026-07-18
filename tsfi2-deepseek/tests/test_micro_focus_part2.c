@@ -1156,6 +1156,10 @@ int main(void) {
     int nato_res = run_nato_stanag_tests();
     assert(nato_res == 0);
 
+    extern int run_nato_stanag_tests_part4(void);
+    int nato_res_part4 = run_nato_stanag_tests_part4();
+    assert(nato_res_part4 == 0);
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }
