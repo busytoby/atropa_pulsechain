@@ -323,5 +323,7 @@
 | 389 | IRS CADE Form 1040 Joint Return Secondary Spouse Signature Validator | PASS | Audits presence of secondary spouse signature flag for joint status | Volume 33 |
 | 390 | IRS CADE Form 1099-DIV Payer Address Matcher | PASS | Verifies non-empty street address string for dividend payers | Volume 33 |
 | 391 | IRS CADE Form 1099-INT Payer Address Matcher | PASS | Verifies non-empty street address string for interest payers | Volume 33 |
+| 392 | IRS CADE Form 1099-DIV Recipient Name Matcher | PASS | Verifies non-empty recipient name string for dividend payers | Volume 33 |
+| 393 | IRS CADE Form 1099-INT Recipient Name Matcher | PASS | Verifies non-empty recipient name string for interest payers | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 391 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 393 Scenarios validated successfully)

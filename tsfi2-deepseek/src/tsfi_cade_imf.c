@@ -1583,4 +1583,16 @@ int tsfi_mf_cade_verify_int_payer_address(const char *address, int *is_valid) {
     return 0;
 }
 
+int tsfi_mf_cade_verify_div_recipient_name(const char *name, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (name && strlen(name) > 0) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_cade_verify_int_recipient_name(const char *name, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (name && strlen(name) > 0) ? 1 : 0;
+    return 0;
+}
+
 

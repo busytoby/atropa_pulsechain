@@ -1136,6 +1136,22 @@ int main(void) {
     assert(int_addr_valid == 1);
     printf("  [PASS] IRS CADE INT Payer Address Matcher verified.\n");
 
+    // 248. Verify IRS CADE Form 1099-DIV Recipient Name Matcher
+    printf("[TEST] Validating IRS CADE DIV Recipient Name Matcher...\n");
+    int div_rec_name_valid = -1;
+    int div_rec_name_res = tsfi_mf_cade_verify_div_recipient_name("Alice Smith", &div_rec_name_valid);
+    assert(div_rec_name_res == 0);
+    assert(div_rec_name_valid == 1);
+    printf("  [PASS] IRS CADE DIV Recipient Name Matcher verified.\n");
+
+    // 249. Verify IRS CADE Form 1099-INT Recipient Name Matcher
+    printf("[TEST] Validating IRS CADE INT Recipient Name Matcher...\n");
+    int int_rec_name_valid = -1;
+    int int_rec_name_res = tsfi_mf_cade_verify_int_recipient_name("Bob Jones", &int_rec_name_valid);
+    assert(int_rec_name_res == 0);
+    assert(int_rec_name_valid == 1);
+    printf("  [PASS] IRS CADE INT Recipient Name Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }
