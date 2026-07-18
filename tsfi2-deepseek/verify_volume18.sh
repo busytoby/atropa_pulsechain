@@ -288,8 +288,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 331 | IRS IMF Alternative Minimum Tax (AMT) Simple Liability Checker | PASS | Validates AGI values against AMT exemption limit thresholds | Volume 33 |
 | 332 | IRS IMF Federal Social Security Tax Cap Matcher | PASS | Verifies social security tax withholding respects statutory limits | Volume 33 |
 | 333 | IRS IMF Federal Qualified Dividend Tax Rate Matcher | PASS | Checks dividend tax rates conform to capital gains brackets | Volume 33 |
+| 334 | IRS IMF Schedule C Self-Employment Tax Threshold Matcher | PASS | Flags net self-employment profits above statutory limits | Volume 33 |
+| 335 | IRS IMF Federal Net Investment Income Tax (NIIT) Threshold Checker | PASS | Audits MAGI levels against investment tax liability thresholds | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 333 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 335 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

@@ -668,6 +668,22 @@ int main(void) {
     assert(div_rate_valid == 1);
     printf("  [PASS] IRS IMF Qualified Dividend Rate Matcher verified.\n");
 
+    // 190. Verify IRS IMF Schedule C Self-Employment Tax Threshold Matcher
+    printf("[TEST] Validating IRS IMF Schedule SE Tax Threshold Matcher...\n");
+    int se_required = -1;
+    int se_res = tsfi_mf_imf_check_se_tax_threshold(600.00, &se_required);
+    assert(se_res == 0);
+    assert(se_required == 1);
+    printf("  [PASS] IRS IMF Schedule SE Tax Threshold Matcher verified.\n");
+
+    // 191. Verify IRS IMF Federal Net Investment Income Tax (NIIT) Threshold Checker
+    printf("[TEST] Validating IRS IMF NIIT Threshold Checker...\n");
+    int niit_required = -1;
+    int niit_res = tsfi_mf_imf_check_niit_threshold(220000.00, 1, &niit_required);
+    assert(niit_res == 0);
+    assert(niit_required == 1);
+    printf("  [PASS] IRS IMF NIIT Threshold Checker verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

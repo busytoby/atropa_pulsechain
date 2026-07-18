@@ -1050,4 +1050,17 @@ int tsfi_mf_imf_verify_qualified_dividend_rate(double taxable_income, double qua
     return 0;
 }
 
+int tsfi_mf_imf_check_se_tax_threshold(double net_profit, int *se_required) {
+    if (!se_required) return -1;
+    *se_required = (net_profit >= 400.00) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_imf_check_niit_threshold(double magi, int filing_status, int *niit_required) {
+    if (!niit_required) return -1;
+    double threshold = (filing_status == 2) ? 250000.00 : 200000.00;
+    *niit_required = (magi > threshold) ? 1 : 0;
+    return 0;
+}
+
 
