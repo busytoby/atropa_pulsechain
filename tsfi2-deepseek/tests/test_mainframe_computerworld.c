@@ -392,6 +392,42 @@ static void test_new_mainframe_features(void) {
     int leap_sec_offset = 0;
     assert(tsfi_cw_y2k_adjust_leap_seconds(1985, &leap_sec_offset) == 0);
     assert(leap_sec_offset == 19);
+
+    // VSAM Relative Record Data Sets (RRDS)
+    tsfi_cw_vsam_rrds rrds;
+    tsfi_cw_vsam_rrds_init(&rrds, "test_rrds.dat.bin");
+    uint8_t rrds_data[10] = {0x11, 0x22};
+    assert(tsfi_cw_vsam_rrds_write(&rrds, 5, rrds_data, 2) == 0);
+    uint8_t rrds_out[10];
+    int rrds_out_len = 0;
+    assert(tsfi_cw_vsam_rrds_read(&rrds, 5, rrds_out, sizeof(rrds_out), &rrds_out_len) == 0);
+    assert(rrds_out_len == 2);
+    assert(rrds_out[0] == 0xEE);
+
+    // JCL Procedure overrides (SET)
+    const char *jcl_set_deck[] = {
+        "// SET VAR=PGM=COMP3",
+        "//STEP1 EXEC VAR"
+    };
+    char jcl_set_out[256];
+    int set_bytes = tsfi_cw_run_jcl_set(jcl_set_deck, 2, jcl_set_out, sizeof(jcl_set_out));
+    assert(set_bytes > 0);
+    assert(strstr(jcl_set_out, "EXEC PGM=COMP3") != NULL);
+
+    // EBCDIC CP 285 translation
+    assert(tsfi_cw_ascii_to_ebcdic_cp285(0xA3) == 0x5B);
+    assert(tsfi_cw_ebcdic_to_ascii_cp285(0x5B) == 0xA3);
+
+    // Nested COBOL Structures
+    rc = tsfi_cw_parse_copybook_line("01 GROUP-RECORD.", &cb);
+    assert(rc == 0);
+    assert(cb.field_count == 10);
+    assert(cb.fields[9].length == 0);
+
+    // Century Leap bounds
+    assert(tsfi_cw_y2k_is_century_leap(2000) == 1);
+    assert(tsfi_cw_y2k_is_century_leap(1900) == 0);
+    assert(tsfi_cw_y2k_is_century_leap(2024) == 1);
 }
 
 int main(void) {

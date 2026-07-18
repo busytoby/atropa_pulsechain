@@ -82,6 +82,13 @@ int tsfi_cw_y2k_check_date_ex(uint32_t yy, uint32_t mm, uint32_t dd, uint32_t pi
 // EBCDIC Control Character mappings
 int tsfi_cw_ebcdic_to_ascii_control(uint8_t ebcdic_char, uint8_t *ascii_char_out);
 
+// EBCDIC CP 285 (UK National) translation
+uint8_t tsfi_cw_ascii_to_ebcdic_cp285(uint8_t ascii_char);
+uint8_t tsfi_cw_ebcdic_to_ascii_cp285(uint8_t ebcdic_char);
+
+// Century leap boundary rule checks
+int tsfi_cw_y2k_is_century_leap(uint32_t year);
+
 // Julian date conversion utilities
 int tsfi_cw_gregorian_to_julian(uint32_t yy, uint32_t mm, uint32_t dd, char *julian_out, int max_len);
 int tsfi_cw_julian_to_gregorian(const char *julian_in, uint32_t *yy_out, uint32_t *mm_out, uint32_t *dd_out);
@@ -187,6 +194,26 @@ int tsfi_cw_block_fb80(const char *unix_stream, uint8_t *block_out, int max_bloc
 
 // Leap Second adjustments
 int tsfi_cw_y2k_adjust_leap_seconds(uint32_t year, int *seconds_offset);
+
+// VSAM Relative Record Data Sets (RRDS) Emulator
+typedef struct {
+    uint32_t rrn;
+    uint32_t length;
+    uint8_t active;
+} tsfi_cw_vsam_rrds_entry;
+
+typedef struct {
+    tsfi_cw_vsam_rrds_entry slots[64];
+    char filepath[256];
+    int max_rrn;
+} tsfi_cw_vsam_rrds;
+
+void tsfi_cw_vsam_rrds_init(tsfi_cw_vsam_rrds *rrds, const char *path);
+int tsfi_cw_vsam_rrds_write(tsfi_cw_vsam_rrds *rrds, uint32_t rrn, const uint8_t *data, int len);
+int tsfi_cw_vsam_rrds_read(tsfi_cw_vsam_rrds *rrds, uint32_t rrn, uint8_t *data_out, int max_len, int *out_len);
+
+// JCL Procedure Variable Substitutions
+int tsfi_cw_run_jcl_set(const char **cards, int card_count, char *jcl_out, int max_jcl_len);
 
 // 4. Job Control Language (JCL) Execution Simulator
 int tsfi_cw_run_jcl(const char **cards, int card_count);

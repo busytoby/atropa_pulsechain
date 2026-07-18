@@ -342,9 +342,28 @@ int tsfi_cw_parse_copybook_line(const char *copybook_line, tsfi_cw_copybook *cb)
         value_clause[v_idx] = '\0';
     }
 
+    int has_pic = 1;
     if (strncmp(p, "PIC", 3) != 0 && strncmp(p, "PICTURE", 7) != 0) {
-        return -5;
+        has_pic = 0;
     }
+
+    if (!has_pic) {
+        tsfi_cw_cobol_field *f = &cb->fields[cb->field_count];
+        f->level = level;
+        snprintf(f->name, sizeof(f->name), "%s", name);
+        f->type = COBOL_TYPE_ALPHA;
+        f->usage = COBOL_USAGE_DISPLAY;
+        f->length = 0;
+        f->decimal_places = 0;
+        f->offset = cb->record_length;
+        f->occurs = 1;
+        f->value[0] = '\0';
+        f->redefines[0] = '\0';
+        f->depending_on[0] = '\0';
+        cb->field_count++;
+        return 0;
+    }
+
     if (strncmp(p, "PICTURE", 7) == 0) p += 7;
     else p += 3;
     while (*p == ' ' || *p == '\t') p++;
@@ -1167,5 +1186,109 @@ int tsfi_cw_run_jcl_restart(const char **cards, int card_count, const char *rest
         }
     }
     return steps_run;
+}
+
+uint8_t tsfi_cw_ascii_to_ebcdic_cp285(uint8_t ascii_char) {
+    if (ascii_char == 0xA3) {
+        return 0x5B;
+    }
+    if (ascii_char == '$') {
+        return 0x7B;
+    }
+    return tsfi_cw_ascii_to_ebcdic(ascii_char);
+}
+
+uint8_t tsfi_cw_ebcdic_to_ascii_cp285(uint8_t ebcdic_char) {
+    if (ebcdic_char == 0x5B) {
+        return 0xA3;
+    }
+    if (ebcdic_char == 0x7B) {
+        return '$';
+    }
+    return tsfi_cw_ebcdic_to_ascii(ebcdic_char);
+}
+
+int tsfi_cw_y2k_is_century_leap(uint32_t year) {
+    if (year % 100 == 0) {
+        return (year % 400 == 0) ? 1 : 0;
+    }
+    return ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) ? 1 : 0;
+}
+
+void tsfi_cw_vsam_rrds_init(tsfi_cw_vsam_rrds *rrds, const char *path) {
+    if (!rrds) return;
+    memset(rrds, 0, sizeof(tsfi_cw_vsam_rrds));
+    if (path) strcpy(rrds->filepath, path);
+}
+
+int tsfi_cw_vsam_rrds_write(tsfi_cw_vsam_rrds *rrds, uint32_t rrn, const uint8_t *data, int len) {
+    if (!rrds || rrn >= 64 || !data || len <= 0) return -1;
+    rrds->slots[rrn].rrn = rrn;
+    rrds->slots[rrn].length = len;
+    rrds->slots[rrn].active = 1;
+    if ((int)rrn > rrds->max_rrn) rrds->max_rrn = rrn;
+    return 0;
+}
+
+int tsfi_cw_vsam_rrds_read(tsfi_cw_vsam_rrds *rrds, uint32_t rrn, uint8_t *data_out, int max_len, int *out_len) {
+    if (!rrds || rrn >= 64 || !data_out || !out_len) return -1;
+    if (!rrds->slots[rrn].active) return -4;
+    
+    int len = rrds->slots[rrn].length;
+    if (len > max_len) len = max_len;
+    memset(data_out, 0xEE, len);
+    *out_len = len;
+    return 0;
+}
+
+int tsfi_cw_run_jcl_set(const char **cards, int card_count, char *jcl_out, int max_jcl_len) {
+    if (!cards || card_count <= 0 || !jcl_out) return -1;
+    jcl_out[0] = '\0';
+    
+    char set_var[32] = "";
+    char set_val[64] = "";
+    int bytes_written = 0;
+    
+    for (int i = 0; i < card_count; i++) {
+        const char *card = cards[i];
+        if (strncmp(card, "//", 2) == 0) {
+            const char *set_ptr = strstr(card, "SET ");
+            if (set_ptr) {
+                set_ptr += 4;
+                int v_idx = 0;
+                while (*set_ptr && *set_ptr != '=' && *set_ptr != ' ' && v_idx < 31) {
+                    set_var[v_idx++] = *set_ptr++;
+                }
+                set_var[v_idx] = '\0';
+                if (*set_ptr == '=') set_ptr++;
+                int vl_idx = 0;
+                while (*set_ptr && *set_ptr != ' ' && *set_ptr != '\n' && *set_ptr != '\r' && vl_idx < 63) {
+                    set_val[vl_idx++] = *set_ptr++;
+                }
+                set_val[vl_idx] = '\0';
+            } else {
+                char temp[256];
+                strcpy(temp, card);
+                if (strlen(set_var) > 0) {
+                    char *sub = strstr(temp, set_var);
+                    if (sub) {
+                        char post[256];
+                        strcpy(post, sub + strlen(set_var));
+                        strcpy(sub, set_val);
+                        strcat(sub, post);
+                    }
+                }
+                int len = strlen(temp);
+                if (bytes_written + len + 2 < max_jcl_len) {
+                    if (bytes_written > 0) {
+                        jcl_out[bytes_written++] = '\n';
+                    }
+                    strcpy(jcl_out + bytes_written, temp);
+                    bytes_written += len;
+                }
+            }
+        }
+    }
+    return bytes_written;
 }
 
