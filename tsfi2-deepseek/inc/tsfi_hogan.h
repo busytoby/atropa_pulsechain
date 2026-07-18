@@ -123,4 +123,14 @@ typedef struct {
 
 int tsfi_hogan_apply_interest(hogan_umbrella_system *sys, const char *filepath, uint32_t rate_bps);
 
+// Batch Fee Application Engine (Ledger Maintenance Deductions)
+typedef struct {
+    uint32_t account_id;
+    uint64_t original_balance;
+    uint64_t fee_deducted;
+    uint64_t new_balance;
+} hogan_fee_entry;
+
+int tsfi_hogan_apply_fees(hogan_umbrella_system *sys, const char *filepath, uint64_t flat_fee);
+
 #endif // TSFI_HOGAN_H

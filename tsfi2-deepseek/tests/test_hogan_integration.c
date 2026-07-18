@@ -279,6 +279,50 @@ int main(void) {
     remove(interest_path); // clean up
     printf("  [PASS] Batch interest rates calculated, applied, and logged successfully.\n");
 
+    // 15. Test Batch Fee Application Engine (Ledger Maintenance Deductions)
+    printf("[E2E] Testing Batch Fee Application Engine...\n");
+    const char *fees_path = "hogan_fees.dat.bin";
+    remove(fees_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system fees_sys;
+    tsfi_hogan_init(&fees_sys);
+    assert(tsfi_hogan_register_account(&fees_sys, 1001, 1000) == 0); // 1,000 units
+    assert(tsfi_hogan_register_account(&fees_sys, 2002, 30) == 0);   // 30 units (insufficient for full fee)
+    
+    // Apply 50 units flat maintenance fee
+    assert(tsfi_hogan_apply_fees(&fees_sys, fees_path, 50) == 0);
+    assert(tsfi_hogan_apply_fees(&fees_sys, "hogan_fees.json", 50) == -3); // Rule 13 check
+    
+    // Verify updated balances
+    assert(fees_sys.accounts[0].balance == 950); // 1000 - 50
+    assert(fees_sys.accounts[1].balance == 0);   // 30 - 30 (clamped)
+    
+    // Read sequential log file and verify entries
+    uint8_t read_fbuf[sizeof(hogan_fee_entry)];
+    size_t fsize = 0;
+    
+    // Check entry 0
+    assert(tsfi_hogan_read_seq_record(fees_path, 0, read_fbuf, &fsize) == 0);
+    assert(fsize == sizeof(hogan_fee_entry));
+    const hogan_fee_entry *fentry0 = (const hogan_fee_entry *)read_fbuf;
+    assert(fentry0->account_id == 1001);
+    assert(fentry0->original_balance == 1000);
+    assert(fentry0->fee_deducted == 50);
+    assert(fentry0->new_balance == 950);
+    
+    // Check entry 1
+    assert(tsfi_hogan_read_seq_record(fees_path, 1, read_fbuf, &fsize) == 0);
+    assert(fsize == sizeof(hogan_fee_entry));
+    const hogan_fee_entry *fentry1 = (const hogan_fee_entry *)read_fbuf;
+    assert(fentry1->account_id == 2002);
+    assert(fentry1->original_balance == 30);
+    assert(fentry1->fee_deducted == 30); // clamped fee
+    assert(fentry1->new_balance == 0);
+    
+    remove(fees_path); // clean up
+    printf("  [PASS] Batch maintenance fees calculated, applied, and logged successfully.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }
