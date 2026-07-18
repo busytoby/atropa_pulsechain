@@ -401,8 +401,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 444 | NATO Link-Layer Multi-Scan Channel Busy Threshold Matcher | PASS | Audits carrier-sense busy RSSI thresholds for channel access | Volume 33 |
 | 445 | NATO Link-Layer Multi-Scan Channel Free RSSI Threshold Matcher | PASS | Validates carrier-sense free RSSI thresholds for channel status checks | Volume 33 |
 | 446 | NATO Link-Layer Broadcast Minimum Repeat Count Validator | PASS | Audits packet transmission repeat multipliers for broadcast packets | Volume 33 |
+| 447 | NATO Link-Layer Broadcast Collision Clear Wait Time Validator | PASS | Validates carrier-sense wait durations following collision clearance | Volume 33 |
+| 448 | NATO Link-Layer Broadcast Guard-Time Interval Matcher | PASS | Audits safety guard-time spacing gaps inserted before transmission | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 446 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 448 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

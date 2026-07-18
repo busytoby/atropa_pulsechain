@@ -1961,4 +1961,16 @@ int tsfi_mf_nato_verify_broadcast_repeats(int repeats, int *is_valid) {
     return 0;
 }
 
+int tsfi_mf_nato_verify_collision_clear_wait(int wait_ms, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (wait_ms >= 5 && wait_ms <= 120) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_broadcast_guard_time(int guard_ms, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (guard_ms >= 10 && guard_ms <= 500) ? 1 : 0;
+    return 0;
+}
+
 

@@ -433,5 +433,21 @@ int run_nato_stanag_tests(void) {
     assert(repeats_valid == 1);
     printf("  [PASS] NATO Broadcast Repeats Validator verified.\n");
 
+    // 303. Verify NATO Link-Layer Broadcast Collision Clear Wait Time Validator
+    printf("[TEST] Validating NATO Collision Clear Wait Time Validator...\n");
+    int clear_wait_valid = -1;
+    int clear_wait_res = tsfi_mf_nato_verify_collision_clear_wait(50, &clear_wait_valid);
+    assert(clear_wait_res == 0);
+    assert(clear_wait_valid == 1);
+    printf("  [PASS] NATO Collision Clear Wait Time Validator verified.\n");
+
+    // 304. Verify NATO Link-Layer Broadcast Guard-Time Interval Matcher
+    printf("[TEST] Validating NATO Broadcast Guard Time Matcher...\n");
+    int guard_time_valid = -1;
+    int guard_time_res = tsfi_mf_nato_verify_broadcast_guard_time(100, &guard_time_valid);
+    assert(guard_time_res == 0);
+    assert(guard_time_valid == 1);
+    printf("  [PASS] NATO Broadcast Guard Time Matcher verified.\n");
+
     return 0;
 }
