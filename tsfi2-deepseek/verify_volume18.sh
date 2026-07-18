@@ -326,8 +326,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 369 | IRS IMF Qualifying Surviving Spouse Filing Year Matcher | PASS | Restricts widow filing status to two years post-spousal death | Volume 33 |
 | 370 | IRS IMF Section 1244 Small Business Stock Loss Matcher | PASS | Caps ordinary losses on small business stock ($50,000/$100,000) | Volume 33 |
 | 371 | IRS CADE Schedule B Part I Seller-Financed Interest Disclosure Matcher | PASS | Verifies buyer SSN/TIN presence for seller financed interest | Volume 33 |
+| 372 | IRS CADE Schedule B Part I Seller-Financed Interest Buyer Address Matcher | PASS | Verifies buyer street address presence for seller financed interest | Volume 33 |
+| 373 | IRS CADE Schedule B Part II Foreign Dividend Source Matcher | PASS | Sums detailed foreign dividend sources to match Form 1040 | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 371 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 373 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

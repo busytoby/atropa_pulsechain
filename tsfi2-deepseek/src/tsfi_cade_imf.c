@@ -1343,4 +1343,24 @@ int tsfi_mf_cade_verify_seller_financed_ssn(int is_seller_financed, const char *
     return 0;
 }
 
+int tsfi_mf_cade_verify_seller_financed_address(int is_seller_financed, const char *buyer_address, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (!is_seller_financed || (buyer_address && strlen(buyer_address) > 0)) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_cade_match_foreign_dividends(const double *sources, int source_count, double total_foreign_dividends, int *is_valid) {
+    if (!is_valid) return -1;
+    double sum = 0.0;
+    if (sources && source_count > 0) {
+        for (int i = 0; i < source_count; i++) {
+            sum += sources[i];
+        }
+    }
+    double diff = sum - total_foreign_dividends;
+    if (diff < 0) diff = -diff;
+    *is_valid = (diff <= 1.00) ? 1 : 0;
+    return 0;
+}
+
 

@@ -974,6 +974,23 @@ int main(void) {
     assert(sfn_valid == 1);
     printf("  [PASS] IRS CADE Seller-Financed SSN Checker verified.\n");
 
+    // 228. Verify IRS CADE Schedule B Part I Seller-Financed Interest Buyer Address Matcher
+    printf("[TEST] Validating IRS CADE Seller-Financed Address Checker...\n");
+    int sfn_addr_valid = -1;
+    int sfn_addr_res = tsfi_mf_cade_verify_seller_financed_address(1, "123 Main St", &sfn_addr_valid);
+    assert(sfn_addr_res == 0);
+    assert(sfn_addr_valid == 1);
+    printf("  [PASS] IRS CADE Seller-Financed Address Checker verified.\n");
+
+    // 229. Verify IRS CADE Schedule B Part II Foreign Dividend Source Matcher
+    printf("[TEST] Validating IRS CADE Schedule B Foreign Dividend Matcher...\n");
+    double foreign_div_sources[] = {250.00, 350.00};
+    int foreign_div_match = -1;
+    int foreign_div_res = tsfi_mf_cade_match_foreign_dividends(foreign_div_sources, 2, 600.00, &foreign_div_match);
+    assert(foreign_div_res == 0);
+    assert(foreign_div_match == 1);
+    printf("  [PASS] IRS CADE Schedule B Foreign Dividend Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }
