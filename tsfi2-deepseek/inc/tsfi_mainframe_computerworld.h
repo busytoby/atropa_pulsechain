@@ -637,5 +637,33 @@ typedef struct {
 
 int tsfi_cw_simplex_optimize(const tsfi_cw_simplex_problem *prob, double *x1_opt, double *x2_opt, double *profit_opt);
 
+// Critical Path Method (CPM) structures and functions
+typedef struct {
+    int id;
+    int duration;
+    int predecessors[4];
+    int pred_count;
+    int early_start;
+    int early_finish;
+    int late_start;
+    int late_finish;
+    int slack;
+    int is_critical;
+} tsfi_cw_cpm_task;
+
+int tsfi_cw_cpm_schedule(tsfi_cw_cpm_task *tasks, int task_count);
+
+// Accounts Receivable Ledger structures and functions
+typedef struct {
+    char customer_id[8];
+    double balance_current;
+    double balance_30_days;
+    double balance_60_days;
+    double balance_90_days;
+    double total_balance;
+} tsfi_cw_ar_statement;
+
+int tsfi_cw_ar_process_ledger(const char **tx_cards, int card_count, const char *ref_date_yymmdd, tsfi_cw_ar_statement *statements_out, int *stmt_count_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

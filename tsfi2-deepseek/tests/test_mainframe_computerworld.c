@@ -1492,6 +1492,35 @@ static void test_new_mainframe_features(void) {
     assert(fabs(x1 - 8.0) < 0.01);
     assert(fabs(x2 - 4.0) < 0.01);
     assert(fabs(profit - 440.0) < 0.01);
+
+    // CPM Project Scheduler test
+    tsfi_cw_cpm_task cpm_tasks[3] = {
+        { 1, 5, {0}, 0, 0, 0, 0, 0, 0, 0 },           // Task 1: dur=5, no preds
+        { 2, 10, {1}, 1, 0, 0, 0, 0, 0, 0 },          // Task 2: dur=10, pred=1
+        { 3, 3, {1}, 1, 0, 0, 0, 0, 0, 0 }            // Task 3: dur=3, pred=1
+    };
+    assert(tsfi_cw_cpm_schedule(cpm_tasks, 3) == 0);
+    assert(cpm_tasks[0].early_start == 0 && cpm_tasks[0].early_finish == 5);
+    assert(cpm_tasks[1].early_start == 5 && cpm_tasks[1].early_finish == 15);
+    assert(cpm_tasks[2].early_start == 5 && cpm_tasks[2].early_finish == 8);
+    assert(cpm_tasks[1].is_critical == 1);
+    assert(cpm_tasks[2].is_critical == 0 && cpm_tasks[2].slack == 7);
+
+    // Accounts Receivable Ledger test
+    // Cards: customer_id (cols 1-6), Date YYMMDD (cols 8-13), type C/P (col 15), amount (cols 17-22)
+    const char *ar_cards[] = {
+        "CUST01 600601 C 000100",  // Charge $100 on 60/06/01 (over 90 days from 60/10/01)
+        "CUST01 600915 C 000050",  // Charge $50 on 60/09/15 (within 30 days)
+        "CUST01 600928 P 000020"   // Payment of $20 on 60/09/28 (deducts from the $100 first)
+    };
+    tsfi_cw_ar_statement ar_stmts[16];
+    int stmt_count = 0;
+    assert(tsfi_cw_ar_process_ledger(ar_cards, 3, "601001", ar_stmts, &stmt_count) == 0);
+    assert(stmt_count == 1);
+    assert(strcmp(ar_stmts[0].customer_id, "CUST01") == 0);
+    assert(ar_stmts[0].total_balance == 130.0);
+    assert(ar_stmts[0].balance_90_days == 80.0);
+    assert(ar_stmts[0].balance_current == 50.0);
 }
 
 int main(void) {

@@ -267,5 +267,164 @@ int tsfi_cw_simplex_optimize(const tsfi_cw_simplex_problem *prob, double *x1_opt
     return 0;
 }
 
+int tsfi_cw_cpm_schedule(tsfi_cw_cpm_task *tasks, int task_count) {
+    if (!tasks || task_count <= 0) return -1;
+    
+    // 1. Forward Pass
+    for (int i = 0; i < task_count; i++) {
+        if (tasks[i].pred_count == 0) {
+            tasks[i].early_start = 0;
+        } else {
+            int max_ef = 0;
+            for (int p = 0; p < tasks[i].pred_count; p++) {
+                int pred_id = tasks[i].predecessors[p];
+                for (int j = 0; j < i; j++) {
+                    if (tasks[j].id == pred_id && tasks[j].early_finish > max_ef) {
+                        max_ef = tasks[j].early_finish;
+                    }
+                }
+            }
+            tasks[i].early_start = max_ef;
+        }
+        tasks[i].early_finish = tasks[i].early_start + tasks[i].duration;
+    }
+    
+    // Find project completion time
+    int project_duration = 0;
+    for (int i = 0; i < task_count; i++) {
+        if (tasks[i].early_finish > project_duration) {
+            project_duration = tasks[i].early_finish;
+        }
+    }
+    
+    // 2. Backward Pass
+    for (int i = task_count - 1; i >= 0; i--) {
+        // Find if this task is a predecessor to any task
+        int is_pred = 0;
+        int min_ls = 999999;
+        for (int j = i + 1; j < task_count; j++) {
+            for (int p = 0; p < tasks[j].pred_count; p++) {
+                if (tasks[j].predecessors[p] == tasks[i].id) {
+                    is_pred = 1;
+                    if (tasks[j].late_start < min_ls) {
+                        min_ls = tasks[j].late_start;
+                    }
+                }
+            }
+        }
+        if (!is_pred) {
+            tasks[i].late_finish = project_duration;
+        } else {
+            tasks[i].late_finish = min_ls;
+        }
+        tasks[i].late_start = tasks[i].late_finish - tasks[i].duration;
+        tasks[i].slack = tasks[i].late_start - tasks[i].early_start;
+        tasks[i].is_critical = (tasks[i].slack == 0) ? 1 : 0;
+    }
+    
+    return 0;
+}
+
+int tsfi_cw_ar_process_ledger(const char **tx_cards, int card_count, const char *ref_date_yymmdd, tsfi_cw_ar_statement *statements_out, int *stmt_count_out) {
+    if (!tx_cards || !ref_date_yymmdd || !statements_out || !stmt_count_out || card_count < 0) return -1;
+    if (strlen(ref_date_yymmdd) < 6) return -3;
+    
+    char ry_str[3], rm_str[3], rd_str[3];
+    memcpy(ry_str, ref_date_yymmdd, 2); ry_str[2] = '\0';
+    memcpy(rm_str, ref_date_yymmdd + 2, 2); rm_str[2] = '\0';
+    memcpy(rd_str, ref_date_yymmdd + 4, 2); rd_str[2] = '\0';
+    int ref_yy = atoi(ry_str);
+    int ref_mm = atoi(rm_str);
+    int ref_dd = atoi(rd_str);
+    
+    int st_count = 0;
+    
+    for (int i = 0; i < card_count; i++) {
+        const char *card = tx_cards[i];
+        if (strlen(card) < 22) continue;
+        
+        char cust_id[7];
+        memcpy(cust_id, card, 6);
+        cust_id[6] = '\0';
+        
+        // Find existing statement
+        int st_idx = -1;
+        for (int s = 0; s < st_count; s++) {
+            if (strcmp(statements_out[s].customer_id, cust_id) == 0) {
+                st_idx = s;
+                break;
+            }
+        }
+        if (st_idx == -1) {
+            if (st_count >= 16) return -2; // Statement buffer limit
+            st_idx = st_count++;
+            strcpy(statements_out[st_idx].customer_id, cust_id);
+            statements_out[st_idx].balance_current = 0;
+            statements_out[st_idx].balance_30_days = 0;
+            statements_out[st_idx].balance_60_days = 0;
+            statements_out[st_idx].balance_90_days = 0;
+            statements_out[st_idx].total_balance = 0;
+        }
+        
+        char yy_str[3], mm_str[3], dd_str[3];
+        memcpy(yy_str, card + 7, 2); yy_str[2] = '\0';
+        memcpy(mm_str, card + 9, 2); mm_str[2] = '\0';
+        memcpy(dd_str, card + 11, 2); dd_str[2] = '\0';
+        int yy = atoi(yy_str);
+        int mm = atoi(mm_str);
+        int dd = atoi(dd_str);
+        
+        char type = card[14];
+        
+        char amt_str[7];
+        memcpy(amt_str, card + 16, 6);
+        amt_str[6] = '\0';
+        double amt = atof(amt_str);
+        
+        // Simple approximate date diff in days
+        int date_diff = (ref_yy - yy) * 360 + (ref_mm - mm) * 30 + (ref_dd - dd);
+        if (date_diff < 0) date_diff = 0;
+        
+        if (type == 'C') {
+            statements_out[st_idx].total_balance += amt;
+            if (date_diff <= 30) {
+                statements_out[st_idx].balance_current += amt;
+            } else if (date_diff <= 60) {
+                statements_out[st_idx].balance_30_days += amt;
+            } else if (date_diff <= 90) {
+                statements_out[st_idx].balance_60_days += amt;
+            } else {
+                statements_out[st_idx].balance_90_days += amt;
+            }
+        } else if (type == 'P') {
+            statements_out[st_idx].total_balance -= amt;
+            // Apply payment to reduce oldest buckets first
+            double pay_rem = amt;
+            if (pay_rem > 0) {
+                double red = (pay_rem < statements_out[st_idx].balance_90_days) ? pay_rem : statements_out[st_idx].balance_90_days;
+                statements_out[st_idx].balance_90_days -= red;
+                pay_rem -= red;
+            }
+            if (pay_rem > 0) {
+                double red = (pay_rem < statements_out[st_idx].balance_60_days) ? pay_rem : statements_out[st_idx].balance_60_days;
+                statements_out[st_idx].balance_60_days -= red;
+                pay_rem -= red;
+            }
+            if (pay_rem > 0) {
+                double red = (pay_rem < statements_out[st_idx].balance_30_days) ? pay_rem : statements_out[st_idx].balance_30_days;
+                statements_out[st_idx].balance_30_days -= red;
+                pay_rem -= red;
+            }
+            if (pay_rem > 0) {
+                statements_out[st_idx].balance_current -= pay_rem;
+            }
+        }
+    }
+    
+    *stmt_count_out = st_count;
+    return 0;
+}
+
+
 
 
