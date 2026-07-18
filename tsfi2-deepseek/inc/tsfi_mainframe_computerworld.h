@@ -579,5 +579,11 @@ int tsfi_cw_run_jcl_proc(const char **cards, int card_count, const char **proc_c
 int tsfi_cw_run_jcl_restart(const char **cards, int card_count, const char *restart_step);
 int tsfi_cw_run_jcl_proc_nested(const char **cards, int card_count, const char **proc_cards, int proc_card_count, int initial_rc, int depth);
 
+// B5500, Honeywell, and Univac historical mainframe conversions
+int tsfi_b5500_prt_resolve_descriptor(uint64_t descriptor, uint32_t offset, const uint64_t *memory_pool, uint32_t mem_size, uint64_t *val_out);
+int tsfi_cw_honeywell_bcd_to_ebcdic(const uint8_t *bcd_in, int bcd_len, uint8_t *ebcdic_out);
+double tsfi_cw_univac_to_double(uint64_t univac_val);
+uint64_t tsfi_cw_double_to_univac(double val);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

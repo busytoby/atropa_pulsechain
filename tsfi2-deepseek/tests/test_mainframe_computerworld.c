@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <math.h>
 #include "tsfi_ramac_layout.h"
 #include "tsfi_wire_firmware.h"
 #include "tsfi_mainframe_computerworld.h"
@@ -1414,6 +1415,27 @@ static void test_new_mainframe_features(void) {
     assert(tsfi_algol_prt_load_dat(&loaded_db, db_path) == 0);
     assert(tsfi_algol_mscw_exec(&loaded_db, "MSCW_FIND 42") == 999);
     remove(db_path);
+
+    // B5500 PRT descriptor resolver test
+    uint64_t mem[16] = { 0, 0, 12345678ULL, 0 };
+    // Descriptor: present (bit 47), limit=10 (bits 30-45), origin=2 (bits 0-29)
+    uint64_t desc = (1ULL << 47) | (10ULL << 30) | 2ULL;
+    uint64_t resolved = 0;
+    assert(tsfi_b5500_prt_resolve_descriptor(desc, 0, mem, 16, &resolved) == 0);
+    assert(resolved == 12345678ULL);
+
+    // Honeywell BCD translation test
+    uint8_t honey_bcd[4] = { 27, 28, 29, 30 }; // '0', '1', '2', '3'
+    uint8_t ibm_ebcdic[4];
+    assert(tsfi_cw_honeywell_bcd_to_ebcdic(honey_bcd, 4, ibm_ebcdic) == 0);
+    assert(ibm_ebcdic[0] == 0xF0); // '0' in EBCDIC
+    assert(ibm_ebcdic[3] == 0xF3); // '3' in EBCDIC
+
+    // Univac HFP conversion test
+    double test_val = 12.345;
+    uint64_t u_val = tsfi_cw_double_to_univac(test_val);
+    double test_val_back = tsfi_cw_univac_to_double(u_val);
+    assert(fabs(test_val_back - test_val) < 0.01);
 }
 
 int main(void) {
