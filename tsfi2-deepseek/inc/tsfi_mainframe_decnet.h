@@ -660,6 +660,33 @@ void tsfi_usenet_init(tsfi_usenet_article *art, const char *group, uint32_t art_
 int tsfi_usenet_store_bin(const tsfi_usenet_article *art, uint8_t *buf, size_t *len_out);
 int tsfi_usenet_retrieve_bin(const uint8_t *buf, size_t len, tsfi_usenet_article *art_out);
 
+typedef struct {
+    char newsgroup[64];
+    uint16_t lu_addr;
+    int active;
+} tsfi_usenet_subscription;
+
+typedef struct {
+    uint32_t last_packet_time;
+    uint32_t interval_ms;
+    int max_burst;
+    int current_tokens;
+} tsfi_usenet_pacing;
+
+int tsfi_usenet_article_to_piu(const tsfi_usenet_article *art, const tsfi_sna_th *th, const tsfi_sna_rh *rh, uint8_t *piu_out, size_t *piu_len);
+int tsfi_usenet_piu_to_article(const uint8_t *piu, size_t piu_len, tsfi_sna_th *th_out, tsfi_sna_rh *rh_out, tsfi_usenet_article *art_out);
+int tsfi_usenet_match_subscription(const tsfi_usenet_subscription *subs, size_t count, const char *newsgroup, uint16_t *lu_addr_out);
+int tsfi_usenet_pacing_check(tsfi_usenet_pacing *pacing, uint32_t current_time);
+
+typedef struct {
+    uint32_t article_history[256];
+    size_t count;
+} tsfi_usenet_history;
+
+int tsfi_usenet_cdrm_replicate(tsfi_msnf_cdrm *cdrm, const tsfi_usenet_article *art, uint8_t *piu_out, size_t *piu_len);
+void tsfi_usenet_history_init(tsfi_usenet_history *history);
+int tsfi_usenet_history_check_and_add(tsfi_usenet_history *history, uint32_t article_number);
+
 void tsfi_sna_map_th_mpf_to_rh_chain(uint8_t mpf, tsfi_sna_rh *rh);
 
 // z/VM SNA Multitasking / Shared Segment (VTAM in GCS)

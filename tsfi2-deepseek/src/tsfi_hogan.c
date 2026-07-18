@@ -136,6 +136,8 @@ int tsfi_hogan_lfs_save(const hogan_umbrella_system *sys, const char *filepath) 
             fwrite(&sys->accounts[i].interest_tier_rate_bps, sizeof(uint32_t), 1, f);
             fwrite(&sys->accounts[i].fee_tier_threshold, sizeof(uint64_t), 1, f);
             fwrite(&sys->accounts[i].fee_tier_amount, sizeof(uint64_t), 1, f);
+            fwrite(&sys->accounts[i].transfer_fee_bps, sizeof(uint32_t), 1, f);
+            fwrite(&sys->accounts[i].transfer_fee_flat, sizeof(uint64_t), 1, f);
         }
     }
     
@@ -523,6 +525,18 @@ int tsfi_hogan_lfs_load(hogan_umbrella_system *sys, const char *filepath) {
             return -2;
         }
         sys->accounts[i].fee_tier_amount = f_tier_amt;
+        uint32_t t_fee_bps = 0;
+        if (fread(&t_fee_bps, sizeof(uint32_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
+        sys->accounts[i].transfer_fee_bps = t_fee_bps;
+        uint64_t t_fee_flat = 0;
+        if (fread(&t_fee_flat, sizeof(uint64_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
+        sys->accounts[i].transfer_fee_flat = t_fee_flat;
         sys->accounts[i].active = 1;
     }
     
@@ -980,77 +994,77 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
                     tx->processed = 1; // blocked by recipient maximum balance limit
                 } else if (recipient->daily_deposit_limit > 0 && recipient->daily_deposited + tx->amount > recipient->daily_deposit_limit) {
                     tx->processed = 1; // blocked by daily deposit limit
-                } else if (sender->balance >= tx->amount + sender->min_balance) {
-                sender->balance -= tx->amount;
-                recipient->balance += tx->amount;
-                sender->daily_transferred += tx->amount;
-                sender->acc_spent_today_transfers += tx->amount;
-                sender->daily_tx_count++;
-                recipient->daily_deposited += tx->amount;
-                sender->last_activity_epoch = sys->current_epoch;
-                recipient->last_activity_epoch = sys->current_epoch;
-                tx->processed = 1;
-            } else if (sender->has_backup) {
-                // Determine overdraft backup account
-                uint64_t required = tx->amount + sender->min_balance;
-                uint64_t deficit = required - sender->balance;
-                
-                // Enforce overdraft limit check
-                if (sender->overdraft_limit > 0 && sender->overdraft_drawn + deficit > sender->overdraft_limit) {
-                    tx->processed = 1; // blocked by overdraft limit cap
-                    if (overdraft_filepath) {
-                        hogan_overdraft_entry o_entry = { sender->account_id, sender->backup_account_id, deficit, 0 };
-                        tsfi_hogan_write_seq_record(overdraft_filepath, (const uint8_t *)&o_entry, sizeof(hogan_overdraft_entry));
-                    }
                 } else {
-                    hogan_account *backup = NULL;
-                    for (int j = 0; j < HOGAN_MAX_ACCOUNTS; j++) {
-                        if (sys->accounts[j].active && sys->accounts[j].account_id == sender->backup_account_id) {
-                            backup = &sys->accounts[j];
-                            break;
-                        }
-                    }
+                uint64_t fee = sender->transfer_fee_flat + (tx->amount * (uint64_t)sender->transfer_fee_bps) / 10000;
+                uint64_t total_needed = tx->amount + fee;
+                if (sender->balance >= total_needed + sender->min_balance) {
+                    sender->balance -= total_needed;
+                    recipient->balance += tx->amount;
+                    sender->daily_transferred += tx->amount;
+                    sender->acc_spent_today_transfers += tx->amount;
+                    sender->daily_tx_count++;
+                    recipient->daily_deposited += tx->amount;
+                    sender->last_activity_epoch = sys->current_epoch;
+                    recipient->last_activity_epoch = sys->current_epoch;
+                    tx->processed = 1;
+                } else if (sender->has_backup) {
+                    // Determine overdraft backup account
+                    uint64_t required = total_needed + sender->min_balance;
+                    uint64_t deficit = required - sender->balance;
                     
-                    if (backup && backup->balance >= deficit) {
-                        backup->balance -= deficit;
-                        sender->balance += deficit;
-                        
-                         sender->balance -= tx->amount;
-                         recipient->balance += tx->amount;
-                         sender->daily_transferred += tx->amount;
-                         sender->acc_spent_today_transfers += tx->amount;
-                         sender->daily_tx_count++;
-                         recipient->daily_deposited += tx->amount;
-                         sender->overdraft_drawn += deficit;
-                         sender->last_activity_epoch = sys->current_epoch;
-                         recipient->last_activity_epoch = sys->current_epoch;
-                         tx->processed = 1;
-                        
-                        if (overdraft_filepath) {
-                            hogan_overdraft_entry o_entry = { sender->account_id, backup->account_id, deficit, 1 };
-                            tsfi_hogan_write_seq_record(overdraft_filepath, (const uint8_t *)&o_entry, sizeof(hogan_overdraft_entry));
-                        }
-                        
-                        // Charge overdraft fee if configured
-                        if (sender->overdraft_fee_amount > 0) {
-                            if (sender->balance >= sender->overdraft_fee_amount) {
-                                sender->balance -= sender->overdraft_fee_amount;
-                            } else {
-                                uint64_t remaining_fee = sender->overdraft_fee_amount - sender->balance;
-                                sender->balance = 0;
-                                sender->overdraft_drawn += remaining_fee;
-                            }
-                        }
-                    } else {
-                        tx->processed = 1;
+                    // Enforce overdraft limit check
+                    if (sender->overdraft_limit > 0 && sender->overdraft_drawn + deficit > sender->overdraft_limit) {
+                        tx->processed = 1; // blocked by overdraft limit cap
                         if (overdraft_filepath) {
                             hogan_overdraft_entry o_entry = { sender->account_id, sender->backup_account_id, deficit, 0 };
                             tsfi_hogan_write_seq_record(overdraft_filepath, (const uint8_t *)&o_entry, sizeof(hogan_overdraft_entry));
                         }
+                    } else {
+                        hogan_account *backup = NULL;
+                        for (int j = 0; j < HOGAN_MAX_ACCOUNTS; j++) {
+                            if (sys->accounts[j].active && sys->accounts[j].account_id == sender->backup_account_id) {
+                                backup = &sys->accounts[j];
+                                break;
+                            }
+                        }
+                        
+                        if (backup && backup->balance >= deficit) {
+                            backup->balance -= deficit;
+                            sender->balance += deficit;
+                            
+                            sender->balance -= total_needed;
+                            recipient->balance += tx->amount;
+                            sender->daily_transferred += tx->amount;
+                            sender->acc_spent_today_transfers += tx->amount;
+                            sender->daily_tx_count++;
+                            recipient->daily_deposited += tx->amount;
+                            sender->overdraft_drawn += deficit;
+                            sender->last_activity_epoch = sys->current_epoch;
+                            recipient->last_activity_epoch = sys->current_epoch;
+                            tx->processed = 1;
+                            
+                            if (overdraft_filepath) {
+                                hogan_overdraft_entry o_entry = { sender->account_id, backup->account_id, deficit, 1 };
+                                tsfi_hogan_write_seq_record(overdraft_filepath, (const uint8_t *)&o_entry, sizeof(hogan_overdraft_entry));
+                            }
+                            
+                            // Charge overdraft fee if configured
+                            if (sender->overdraft_fee_amount > 0) {
+                                if (sender->balance >= sender->overdraft_fee_amount) {
+                                    sender->balance -= sender->overdraft_fee_amount;
+                                } else {
+                                    uint64_t remaining_fee = sender->overdraft_fee_amount - sender->balance;
+                                    sender->balance = 0;
+                                    sender->overdraft_drawn += remaining_fee;
+                                }
+                            }
+                        } else {
+                            tx->processed = 1; // backup has insufficient balance
+                        }
                     }
+                } else {
+                    tx->processed = 1; // Fails, insufficient funds and no backup
                 }
-            } else {
-                tx->processed = 1; // Fails, insufficient funds and no backup
             }
         } else {
             tx->processed = 1; // Fails, sender or receiver missing
@@ -1144,6 +1158,8 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
             EVP_DigestUpdate(mdctx, &sys->accounts[i].interest_tier_rate_bps, sizeof(uint32_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].fee_tier_threshold, sizeof(uint64_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].fee_tier_amount, sizeof(uint64_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].transfer_fee_bps, sizeof(uint32_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].transfer_fee_flat, sizeof(uint64_t));
         }
     }
     EVP_DigestUpdate(mdctx, &sys->blocked_card_count, sizeof(size_t));
@@ -2945,6 +2961,42 @@ int tsfi_hogan_update_fee_tier(hogan_umbrella_system *sys, const char *filepath,
     acc->fee_tier_amount = fee_amount;
     
     int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_fee_tier_entry));
+    
+    sys->live_processing_enabled = original_live_state;
+    return write_res;
+}
+
+int tsfi_hogan_update_transfer_fee(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t fee_bps, uint64_t fee_flat, uint32_t authority_id) {
+    // Enforce Rule 13: file extension must end with .dat.bin
+    const char *ext = strrchr(filepath, '.');
+    if (!ext || strcmp(ext, ".bin") != 0) {
+        if (!ext || strcmp(ext - 4, ".dat.bin") != 0) {
+            return -3; // Invalid extension
+        }
+    }
+
+    // Disable live queue during administrative action
+    uint8_t original_live_state = sys->live_processing_enabled;
+    sys->live_processing_enabled = 0;
+    
+    hogan_account *acc = NULL;
+    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
+        if (sys->accounts[i].active && sys->accounts[i].account_id == account_id) {
+            acc = &sys->accounts[i];
+            break;
+        }
+    }
+    
+    if (!acc) {
+        sys->live_processing_enabled = original_live_state;
+        return -1; // account not found
+    }
+    
+    hogan_transfer_fee_entry entry = { account_id, fee_bps, fee_flat, authority_id };
+    acc->transfer_fee_bps = fee_bps;
+    acc->transfer_fee_flat = fee_flat;
+    
+    int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_transfer_fee_entry));
     
     sys->live_processing_enabled = original_live_state;
     return write_res;

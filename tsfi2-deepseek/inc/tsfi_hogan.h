@@ -87,6 +87,8 @@ typedef struct {
     uint32_t interest_tier_rate_bps;
     uint64_t fee_tier_threshold;
     uint64_t fee_tier_amount;
+    uint32_t transfer_fee_bps;
+    uint64_t transfer_fee_flat;
 } hogan_account;
 
 #define HOGAN_MAX_BLOCKED_CARDS 32
@@ -628,5 +630,15 @@ typedef struct {
 } hogan_fee_tier_entry;
 
 int tsfi_hogan_update_fee_tier(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t threshold, uint64_t fee_amount, uint32_t authority_id);
+
+// Account Transfer Fee Manager
+typedef struct {
+    uint32_t account_id;
+    uint32_t fee_bps;
+    uint64_t fee_flat;
+    uint32_t authority_id;
+} hogan_transfer_fee_entry;
+
+int tsfi_hogan_update_transfer_fee(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t fee_bps, uint64_t fee_flat, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H

@@ -3,6 +3,9 @@
 #include <assert.h>
 #include <string.h>
 #include "tsfi_hogan.h"
+#include "tsfi_zmm_vm.h"
+#include "tsfi_ramac_layout.h"
+#include "tsfi_wire_firmware.h"
 
 int main(void) {
     printf("=============================================================\n");
@@ -2127,6 +2130,140 @@ int main(void) {
     
     remove(ft_path); // clean up
     printf("  [PASS] Batch fee tiering calculations and override logs verified.\n");
+
+    // 57. Test Transfer Outbound Transaction Fee Manager (Transfer Outbound Transaction Fee)
+    printf("[E2E] Testing Transfer Outbound Transaction Fee Manager...\n");
+    const char *tf_path = "hogan_transfer_fees.dat.bin";
+    remove(tf_path); // ensure clean start
+    
+    hogan_umbrella_system tf_sys;
+    tsfi_hogan_init(&tf_sys);
+    assert(tsfi_hogan_register_account(&tf_sys, 1001, 5000) == 0); // Alice: 5000 balance
+    assert(tsfi_hogan_register_account(&tf_sys, 2002, 500) == 0);  // Bob: 500 balance
+    
+    // Set Alice's outbound transfer fee: 100 bps (1%) and flat fee of 5
+    assert(tsfi_hogan_update_transfer_fee(&tf_sys, tf_path, 1001, 100, 5, 999) == 0);
+    assert(tsfi_hogan_update_transfer_fee(&tf_sys, "hogan_tf.json", 1001, 100, 5, 999) == -3); // Rule 13 check
+    
+    // Dispatch transfer of 1000 from Alice to Bob
+    assert(tsfi_hogan_dispatch_tx(&tf_sys, 1001, 2002, 1000, VM_EVM) == 0);
+    
+    // Run overnight reconciliation
+    assert(tsfi_hogan_overnight_reconciliation(&tf_sys, "hogan_lfs.dat.bin") == 0);
+    remove("hogan_lfs.dat.bin");
+    
+    // Verify balances (Alice: 5000 - 1000 transfer - (10 + 5 fee) = 3985)
+    assert(tf_sys.accounts[0].balance == 3985);
+    assert(tf_sys.accounts[1].balance == 1500);
+    
+    // Read override log files and verify entries
+    uint8_t read_tfbuf[sizeof(hogan_transfer_fee_entry)];
+    size_t tf_size = 0;
+    assert(tsfi_hogan_read_seq_record(tf_path, 0, read_tfbuf, &tf_size) == 0);
+    assert(tf_size == sizeof(hogan_transfer_fee_entry));
+    const hogan_transfer_fee_entry *tf_entry = (const hogan_transfer_fee_entry *)read_tfbuf;
+    assert(tf_entry->account_id == 1001);
+    assert(tf_entry->fee_bps == 100);
+    assert(tf_entry->fee_flat == 5);
+    assert(tf_entry->authority_id == 999);
+    
+    remove(tf_path); // clean up
+    printf("  [PASS] Transfer outbound transaction fee calculation, application, and override logs verified.\n");
+
+    // 58. Test Hogan Multi-Epoch Simulation and RAMAC Disk Mapping Integration
+    printf("[E2E] Testing Hogan Multi-Epoch Simulation & RAMAC Disk Mapping...\n");
+    hogan_umbrella_system sim_sys;
+    tsfi_hogan_init(&sim_sys);
+    assert(tsfi_hogan_register_account(&sim_sys, 1001, 5000) == 0);
+    assert(tsfi_hogan_register_account(&sim_sys, 2002, 1000) == 0);
+    
+    tsfi_ramac_record ramac_disk[100];
+    memset(ramac_disk, 0, sizeof(ramac_disk));
+    
+    for (uint32_t epoch = 1; epoch <= 5; epoch++) {
+        uint64_t tx_amount = 100 * epoch;
+        assert(tsfi_hogan_dispatch_tx(&sim_sys, 1001, 2002, tx_amount, VM_RAMAC) == 0);
+        assert(tsfi_hogan_overnight_reconciliation(&sim_sys, "hogan_lfs.dat.bin") == 0);
+        remove("hogan_lfs.dat.bin");
+        
+        char key_alice[32], val_alice[32];
+        char key_bob[32], val_bob[32];
+        snprintf(key_alice, sizeof(key_alice), "acc_1001_epoch_%d", epoch);
+        snprintf(val_alice, sizeof(val_alice), "%lu", sim_sys.accounts[0].balance);
+        snprintf(key_bob, sizeof(key_bob), "acc_2002_epoch_%d", epoch);
+        snprintf(val_bob, sizeof(val_bob), "%lu", sim_sys.accounts[1].balance);
+        
+        double seek1 = 0, seek2 = 0;
+        int slot1 = tsfi_ramac_insert_record(ramac_disk, key_alice, val_alice, epoch, &seek1);
+        int slot2 = tsfi_ramac_insert_record(ramac_disk, key_bob, val_bob, epoch, &seek2);
+        assert(slot1 >= 0);
+        assert(slot2 >= 0);
+    }
+    printf("  [PASS] Hogan multi-epoch simulation and RAMAC disk layout mapping completed successfully.\n");
+
+    // 59. Test Hogan ZMM VM State Machine Integration
+    printf("[E2E] Testing Hogan ZMM VM State Machine Integration...\n");
+    // Clean previous storage state files
+    remove("evm_storage.dat.bin");
+    remove("tsfi2-deepseek/evm_storage.dat.bin");
+    
+    tsfi_wire_firmware_init();
+    
+    TsfiZmmVmState vm;
+    tsfi_zmm_vm_init(&vm);
+    
+    const char *yul_path = "solidity/bin/ramacSystem.yul";
+    FILE *f_yul = fopen(yul_path, "r");
+    if (f_yul) {
+        fclose(f_yul);
+    } else {
+        yul_path = "../solidity/bin/ramacSystem.yul";
+    }
+    
+    char init_cmd[256];
+    snprintf(init_cmd, sizeof(init_cmd), "YULINIT \"ramacSystem\", \"%s\", 1024", yul_path);
+    tsfi_zmm_vm_exec(&vm, init_cmd);
+    
+    // Execute WRT Inquiry key_test_123 -> val_test_999
+    const char *wrt_cmd = "YULEXEC \"ramacSystem\", \"e28e404f"
+                          "0000000000000000000000000000000000000000000000000000000000000020"
+                          "0000000000000000000000000000000000000000000000000000000000000044"
+                          "57525420"
+                          "6b65795f746573745f3132330000000000000000000000000000000000000000"
+                          "76616c5f746573745f3939390000000000000000000000000000000000000000\"";
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, wrt_cmd);
+    
+    // Execute QRY Inquiry to retrieve key_test_123
+    const char *qry_cmd = "YULEXEC \"ramacSystem\", \"e28e404f"
+                          "0000000000000000000000000000000000000000000000000000000000000020"
+                          "0000000000000000000000000000000000000000000000000000000000000024"
+                          "51525920"
+                          "6b65795f746573745f3132330000000000000000000000000000000000000000\"";
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, qry_cmd);
+    assert(strstr(vm.output_buffer, "76616c5f746573745f393939") != NULL);
+    
+    // WinchesterMQ Socket Bridge Telemetry loops to ZMM
+    tsfi_winchester_socket_bridge route_bridge;
+    tsfi_winchester_socket_init(&route_bridge, 9999);
+    
+    LauTelemetryState route_telem;
+    memset(&route_telem, 0, sizeof(route_telem));
+    vm.telem = &route_telem;
+    
+    // Verify keycode 32 (d/D) is routed over Auncient virtual SCSI hardware loopback bridge
+    uint8_t route_packet[1] = { 32 };
+    int route_res = tsfi_winchester_socket_route_to_zmm(&route_bridge, route_packet, 1, &vm);
+    assert(route_res == 0);
+    assert(route_telem.zmm_val == 32);
+    
+    tsfi_zmm_vm_destroy(&vm);
+    remove("evm_storage.dat.bin");
+    remove("tsfi2-deepseek/evm_storage.dat.bin");
+    printf("  [PASS] Auncient ZMM VM Yul execution, dynamic contract query, and WinchesterMQ hardware handshakes verified.\n");
 
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;

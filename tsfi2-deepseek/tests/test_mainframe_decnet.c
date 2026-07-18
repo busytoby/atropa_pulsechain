@@ -2362,6 +2362,82 @@ int main(void) {
     assert(audit_conv.state == 3); // DEALLOCATED / Aborted
     printf("  [PASS] APPC dictionary boundary schema check verified.\n");
 
+    // 100. Test Usenet over SNA Integration & Flow Pacing
+    printf("[Test] Verifying Usenet over SNA Integration & Pacing...\n");
+    tsfi_usenet_article art;
+    tsfi_usenet_init(&art, "net.general", 42, "Test Article", "Hello mainframe!");
+    
+    tsfi_sna_th th;
+    th.fid_type = SNA_FID_TYPE2;
+    th.daf = 0x01;
+    th.oaf = 0x02;
+    th.sn = 100;
+    th.mpf = 3;
+    
+    tsfi_sna_rh rh;
+    rh.begin_chain = 1;
+    rh.end_chain = 1;
+    rh.ru_category = 0;
+    rh.is_response = 0;
+    rh.format_indicator = 0;
+    rh.sense_data_included = 0;
+    rh.dr1_indicator = 0;
+    rh.dr2_indicator = 0;
+    rh.exception_response = 0;
+    rh.change_direction = 0;
+    rh.begin_bracket = 0;
+    rh.end_bracket = 0;
+    
+    uint8_t piu_buffer[1024];
+    size_t piu_length = 0;
+    assert(tsfi_usenet_article_to_piu(&art, &th, &rh, piu_buffer, &piu_length) == 0);
+    
+    tsfi_sna_th th_rx;
+    tsfi_sna_rh rh_rx;
+    tsfi_usenet_article art_rx;
+    assert(tsfi_usenet_piu_to_article(piu_buffer, piu_length, &th_rx, &rh_rx, &art_rx) == 0);
+    assert(art_rx.article_number == 42);
+    assert(strcmp(art_rx.newsgroup, "net.general") == 0);
+    assert(strcmp(art_rx.body, "Hello mainframe!") == 0);
+    
+    // Test subscription matching
+    tsfi_usenet_subscription subs[2] = {
+        {"net.general", 0x1001, 1},
+        {"net.talk", 0x2002, 0}
+    };
+    uint16_t matched_addr = 0;
+    assert(tsfi_usenet_match_subscription(subs, 2, "net.general", &matched_addr) == 0);
+    assert(matched_addr == 0x1001);
+    assert(tsfi_usenet_match_subscription(subs, 2, "net.talk", &matched_addr) == -2);
+    
+    // Test flow pacing checks
+    tsfi_usenet_pacing usenet_pacing = {1000, 100, 5, 2};
+    assert(tsfi_usenet_pacing_check(&usenet_pacing, 1050) == 0); // tokens becomes 1
+    assert(tsfi_usenet_pacing_check(&usenet_pacing, 1080) == 0); // tokens becomes 0
+    assert(tsfi_usenet_pacing_check(&usenet_pacing, 1090) == -2); // paced out
+    assert(tsfi_usenet_pacing_check(&usenet_pacing, 1250) == 0); // +2 tokens (becomes 2), consumes 1 -> remains 1
+    printf("  [PASS] Usenet SNA encapsulation, subscription maps, and pacing verified.\n");
+
+    // 101. Test CDRM replication and historical sequence checks
+    printf("[Test] Verifying Usenet CDRM Active Feed Replication & History...\n");
+    tsfi_msnf_cdrm usenet_cdrm;
+    tsfi_msnf_init(&usenet_cdrm, 0x1000);
+    assert(tsfi_msnf_establish_session(&usenet_cdrm, 0x2000) == 0);
+    
+    assert(tsfi_usenet_cdrm_replicate(&usenet_cdrm, &art, piu_buffer, &piu_length) == 0);
+    
+    assert(tsfi_usenet_piu_to_article(piu_buffer, piu_length, &th_rx, &rh_rx, &art_rx) == 0);
+    assert(th_rx.daf == 0x2000);
+    assert(th_rx.oaf == 0x1000);
+    assert(art_rx.article_number == 42);
+    
+    tsfi_usenet_history history;
+    tsfi_usenet_history_init(&history);
+    assert(tsfi_usenet_history_check_and_add(&history, 42) == 0);
+    assert(tsfi_usenet_history_check_and_add(&history, 42) == -2); // duplicate check
+    assert(tsfi_usenet_history_check_and_add(&history, 99) == 0);
+    printf("  [PASS] Usenet active feeds and sequence duplicate filtering verified.\n");
+
     printf("[PASS] All distributed networking unit tests executed successfully!\n");
     printf("=============================================================\n");
     return 0;

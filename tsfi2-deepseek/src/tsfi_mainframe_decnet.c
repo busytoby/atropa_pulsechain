@@ -1056,6 +1056,97 @@ int tsfi_usenet_retrieve_bin(const uint8_t *buf, size_t len, tsfi_usenet_article
     return 0;
 }
 
+int tsfi_usenet_article_to_piu(const tsfi_usenet_article *art, const tsfi_sna_th *th, const tsfi_sna_rh *rh, uint8_t *piu_out, size_t *piu_len) {
+    if (!art || !th || !rh || !piu_out || !piu_len) return -1;
+    uint8_t raw_buf[sizeof(tsfi_usenet_article)];
+    size_t raw_len = 0;
+    if (tsfi_usenet_store_bin(art, raw_buf, &raw_len) != 0) return -2;
+    return tsfi_sna_package_piu(th, rh, raw_buf, raw_len, piu_out, piu_len);
+}
+
+int tsfi_usenet_piu_to_article(const uint8_t *piu, size_t piu_len, tsfi_sna_th *th_out, tsfi_sna_rh *rh_out, tsfi_usenet_article *art_out) {
+    if (!piu || piu_len == 0 || !th_out || !rh_out || !art_out) return -1;
+    uint8_t raw_buf[1024];
+    size_t raw_len = 0;
+    int parse_res = tsfi_sna_parse_piu(piu, piu_len, th_out, rh_out, raw_buf, &raw_len);
+    if (parse_res != 0) return parse_res;
+    return tsfi_usenet_retrieve_bin(raw_buf, raw_len, art_out);
+}
+
+int tsfi_usenet_match_subscription(const tsfi_usenet_subscription *subs, size_t count, const char *newsgroup, uint16_t *lu_addr_out) {
+    if (!subs || !newsgroup || !lu_addr_out) return -1;
+    for (size_t i = 0; i < count; i++) {
+        if (subs[i].active && strcmp(subs[i].newsgroup, newsgroup) == 0) {
+            *lu_addr_out = subs[i].lu_addr;
+            return 0;
+        }
+    }
+    return -2;
+}
+
+int tsfi_usenet_pacing_check(tsfi_usenet_pacing *pacing, uint32_t current_time) {
+    if (!pacing) return -1;
+    uint32_t elapsed = current_time - pacing->last_packet_time;
+    if (pacing->interval_ms > 0) {
+        int gained = elapsed / pacing->interval_ms;
+        if (gained > 0) {
+            pacing->current_tokens += gained;
+            if (pacing->current_tokens > pacing->max_burst) {
+                pacing->current_tokens = pacing->max_burst;
+            }
+            pacing->last_packet_time += gained * pacing->interval_ms;
+        }
+    }
+    if (pacing->current_tokens <= 0) {
+        return -2;
+    }
+    pacing->current_tokens--;
+    return 0;
+}
+
+int tsfi_usenet_cdrm_replicate(tsfi_msnf_cdrm *cdrm, const tsfi_usenet_article *art, uint8_t *piu_out, size_t *piu_len) {
+    if (!cdrm || !art || !piu_out || !piu_len) return -1;
+    if (cdrm->session_state != 2) return -2;
+    
+    tsfi_sna_th th;
+    th.fid_type = SNA_FID_TYPE4;
+    th.mpf = 3;
+    th.daf = cdrm->remote_domain_id;
+    th.oaf = cdrm->local_domain_id;
+    th.sn = art->article_number;
+    
+    tsfi_sna_rh rh;
+    memset(&rh, 0, sizeof(rh));
+    rh.begin_chain = 1;
+    rh.end_chain = 1;
+    
+    return tsfi_usenet_article_to_piu(art, &th, &rh, piu_out, piu_len);
+}
+
+void tsfi_usenet_history_init(tsfi_usenet_history *history) {
+    if (!history) return;
+    memset(history->article_history, 0, sizeof(history->article_history));
+    history->count = 0;
+}
+
+int tsfi_usenet_history_check_and_add(tsfi_usenet_history *history, uint32_t article_number) {
+    if (!history) return -1;
+    for (size_t i = 0; i < history->count; i++) {
+        if (history->article_history[i] == article_number) {
+            return -2;
+        }
+    }
+    if (history->count < 256) {
+        history->article_history[history->count++] = article_number;
+    } else {
+        for (int i = 1; i < 256; i++) {
+            history->article_history[i - 1] = history->article_history[i];
+        }
+        history->article_history[255] = article_number;
+    }
+    return 0;
+}
+
 
 
 void tsfi_zvm_gcs_init(tsfi_zvm_gcs *gcs, int vmid, const char *seg_name) {
