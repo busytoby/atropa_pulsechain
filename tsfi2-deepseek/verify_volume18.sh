@@ -365,8 +365,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 408 | NATO STANAG 5066 Frame Sequence wrap-Around Validator | PASS | Validates sliding window modulo increment tracking for frame sequences | Volume 33 |
 | 409 | NATO STANAG 5066 HF Modem Data Rate Matcher | PASS | Confirms modem speed parameters fit NATO standard data rates | Volume 33 |
 | 410 | NATO STANAG 5066 ARQ Frame Retry Limit Checker | PASS | Audits that packet retransmissions stay within retry bounds | Volume 33 |
+| 411 | NATO STANAG 5066 Client Interface Version Matcher | PASS | Validates that C_PDU handshake versions match NATO standard layouts | Volume 33 |
+| 412 | NATO STANAG 5066 Frame Check Sequence (FCS) Type Checker | PASS | Verifies that FCS checksum selector flags match standard values | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 410 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 412 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

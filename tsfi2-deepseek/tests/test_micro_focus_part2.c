@@ -1290,6 +1290,22 @@ int main(void) {
     assert(retry_valid == 1);
     printf("  [PASS] NATO STANAG 5066 Retry Limit Checker verified.\n");
 
+    // 267. Verify NATO STANAG 5066 Client Interface Version Matcher
+    printf("[TEST] Validating NATO STANAG 5066 Client Interface Version Matcher...\n");
+    int version_valid = -1;
+    int version_res = tsfi_mf_nato_verify_interface_version(1, &version_valid);
+    assert(version_res == 0);
+    assert(version_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Client Interface Version Matcher verified.\n");
+
+    // 268. Verify NATO STANAG 5066 Frame Check Sequence (FCS) Type Checker
+    printf("[TEST] Validating NATO STANAG 5066 FCS Type Checker...\n");
+    int fcs_type_valid = -1;
+    int fcs_type_res = tsfi_mf_nato_verify_fcs_type(1, &fcs_type_valid);
+    assert(fcs_type_res == 0);
+    assert(fcs_type_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 FCS Type Checker verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

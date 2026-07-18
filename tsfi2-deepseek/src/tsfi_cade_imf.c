@@ -1743,4 +1743,16 @@ int tsfi_mf_nato_verify_retry_limit(int retries, int *is_valid) {
     return 0;
 }
 
+int tsfi_mf_nato_verify_interface_version(int version, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (version == 1) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_fcs_type(int fcs_type, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (fcs_type == 0 || fcs_type == 1) ? 1 : 0;
+    return 0;
+}
+
 
