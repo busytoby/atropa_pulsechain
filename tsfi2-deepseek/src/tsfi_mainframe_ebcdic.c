@@ -231,3 +231,17 @@ uint8_t tsfi_cw_ebcdic_to_ascii_cp273_ex(uint8_t ebcdic_char) {
     if (ebcdic_char == 0x5B) return 0xA3;
     return tsfi_cw_ebcdic_to_ascii_cp273(ebcdic_char);
 }
+
+uint8_t tsfi_cw_ascii_to_ebcdic_cp278(uint8_t ascii_char) {
+    if (ascii_char == 0xC5) return 0x5A;
+    if (ascii_char == 0xC4) return 0x7B;
+    if (ascii_char == 0xD6) return 0x7C;
+    return tsfi_cw_ascii_to_ebcdic(ascii_char);
+}
+
+uint8_t tsfi_cw_ebcdic_to_ascii_cp278(uint8_t ebcdic_char) {
+    if (ebcdic_char == 0x5A) return 0xC5;
+    if (ebcdic_char == 0x7B) return 0xC4;
+    if (ebcdic_char == 0x7C) return 0xD6;
+    return tsfi_cw_ebcdic_to_ascii(ebcdic_char);
+}

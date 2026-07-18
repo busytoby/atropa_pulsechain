@@ -258,8 +258,12 @@ int tsfi_cw_y2k_day_of_week(uint32_t yy, uint32_t mm, uint32_t dd, uint32_t pivo
     return 0;
 }
 
+static tsfi_cw_y2k_diagnostics global_y2k_diag = {0, 0};
+
 int tsfi_cw_y2k_is_leap_year(uint32_t year) {
+    global_y2k_diag.leap_checks_performed++;
     if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) {
+        global_y2k_diag.leap_year_hits++;
         return 1;
     }
     return 0;
@@ -293,4 +297,10 @@ int tsfi_cw_gregorian_to_julian_y2k(const char *greg_in, uint32_t pivot, char *j
     uint32_t yy = year % 100;
     snprintf(julian_out, max_len, "%02u.%03u", yy, day_of_year);
     return 0;
+}
+
+void tsfi_cw_y2k_get_diagnostics(tsfi_cw_y2k_diagnostics *diag) {
+    if (diag) {
+        *diag = global_y2k_diag;
+    }
 }

@@ -121,6 +121,18 @@ int tsfi_cw_vsam_read(tsfi_cw_vsam_ksds *ksds, const char *key, uint8_t *data_ou
     if (!ksds || !key || !data_out || !out_len) return -1;
     if (strlen(key) > 15) return -6;
 
+    for (int i = 0; i < 4; i++) {
+        if (strcmp(ksds->cache_keys[i], key) == 0) {
+            ksds->cache_hits++;
+            break;
+        }
+    }
+    for (int i = 3; i > 0; i--) {
+        strcpy(ksds->cache_keys[i], ksds->cache_keys[i - 1]);
+    }
+    strncpy(ksds->cache_keys[0], key, 15);
+    ksds->cache_keys[0][15] = '\0';
+
     // Fast O(log N) lookup in sorted keys
     int low = 0, high = ksds->entry_count - 1;
     while (low <= high) {
@@ -523,4 +535,9 @@ int tsfi_cw_vsam_get_key_compression_ratio(tsfi_cw_vsam_ksds *ksds, float *ratio
     }
     *ratio_out = (float)ksds->compressed_key_bytes / (float)ksds->raw_key_bytes;
     return 0;
+}
+
+int tsfi_cw_vsam_get_cache_hits(tsfi_cw_vsam_ksds *ksds) {
+    if (!ksds) return -1;
+    return ksds->cache_hits;
 }

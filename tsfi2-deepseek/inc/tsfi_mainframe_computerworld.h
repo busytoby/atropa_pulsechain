@@ -130,6 +130,8 @@ typedef struct {
     uint32_t compressed_bytes_written;
     uint32_t raw_key_bytes;
     uint32_t compressed_key_bytes;
+    char cache_keys[4][16];
+    int cache_hits;
 } tsfi_cw_vsam_ksds;
 
 int tsfi_cw_vsam_open(tsfi_cw_vsam_ksds *ksds, const char *filepath);
@@ -386,6 +388,7 @@ int tsfi_cw_y2k_day_of_week(uint32_t yy, uint32_t mm, uint32_t dd, uint32_t pivo
 int tsfi_cw_vsam_get_ci_splits(tsfi_cw_vsam_ksds *ksds);
 int tsfi_cw_vsam_get_compression_ratio(tsfi_cw_vsam_ksds *ksds, float *ratio_out);
 int tsfi_cw_vsam_get_key_compression_ratio(tsfi_cw_vsam_ksds *ksds, float *ratio_out);
+int tsfi_cw_vsam_get_cache_hits(tsfi_cw_vsam_ksds *ksds);
 
 // EBCDIC DBCS validation
 int tsfi_cw_ebcdic_validate_dbcs_boundaries(const uint8_t *ebcdic_str, int len);
@@ -398,6 +401,10 @@ uint8_t tsfi_cw_ebcdic_to_ascii_cp285(uint8_t ebcdic_char);
 uint8_t tsfi_cw_ascii_to_ebcdic_cp273_ex(uint8_t ascii_char);
 uint8_t tsfi_cw_ebcdic_to_ascii_cp273_ex(uint8_t ebcdic_char);
 
+// EBCDIC CP278 translation
+uint8_t tsfi_cw_ascii_to_ebcdic_cp278(uint8_t ascii_char);
+uint8_t tsfi_cw_ebcdic_to_ascii_cp278(uint8_t ebcdic_char);
+
 // JCL GDG resolver and COND chain evaluation
 int tsfi_cw_jcl_resolve_gdg(const char *dsn_str, int current_gen, char *resolved_out, int max_len);
 int tsfi_cw_jcl_eval_cond_chain(int step_rc, int cond_code_1, const char *op_1, int cond_code_2, const char *op_2);
@@ -407,10 +414,18 @@ int tsfi_cw_y2k_is_leap_year(uint32_t year);
 int tsfi_cw_y2k_get_month_days(uint32_t year, uint32_t month, int *days_out);
 int tsfi_cw_gregorian_to_julian_y2k(const char *greg_in, uint32_t pivot, char *julian_out, int max_len);
 
+typedef struct {
+    uint32_t leap_checks_performed;
+    uint32_t leap_year_hits;
+} tsfi_cw_y2k_diagnostics;
+
+void tsfi_cw_y2k_get_diagnostics(tsfi_cw_y2k_diagnostics *diag);
+
 // 4. Job Control Language (JCL) Execution Simulator
 int tsfi_cw_run_jcl(const char **cards, int card_count);
 int tsfi_cw_run_jcl_ex(const char **cards, int card_count, int initial_rc);
 int tsfi_cw_run_jcl_sysin(const char **cards, int card_count, char *sysin_out, int max_sysin_len);
+int tsfi_cw_run_jcl_sysin_ex(const char **cards, int card_count, char *sysin_out, int max_sysin_len, int *truncated_count);
 int tsfi_cw_run_jcl_proc(const char **cards, int card_count, const char **proc_cards, int proc_card_count, int initial_rc);
 int tsfi_cw_run_jcl_restart(const char **cards, int card_count, const char *restart_step);
 int tsfi_cw_run_jcl_proc_nested(const char **cards, int card_count, const char **proc_cards, int proc_card_count, int initial_rc, int depth);

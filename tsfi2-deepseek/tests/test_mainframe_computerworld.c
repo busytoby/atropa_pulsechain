@@ -789,6 +789,40 @@ static void test_new_mainframe_features(void) {
     char jul_out[32];
     assert(tsfi_cw_gregorian_to_julian_y2k("2000-02-29", 50, jul_out, sizeof(jul_out)) == 0);
     assert(strcmp(jul_out, "00.060") == 0);
+
+    // VSAM Key cache lookups
+    uint8_t cache_d[2];
+    int cache_out_len = 0;
+    assert(tsfi_cw_vsam_read(&split_ksds, "K1", cache_d, 2, &cache_out_len) == 0);
+    assert(tsfi_cw_vsam_read(&split_ksds, "K1", cache_d, 2, &cache_out_len) == 0);
+    assert(tsfi_cw_vsam_get_cache_hits(&split_ksds) >= 1);
+
+    // COBOL REDEFINES OCCURS Bounds Validator
+    tsfi_cw_copybook cb_occ;
+    memset(&cb_occ, 0, sizeof(cb_occ));
+    assert(tsfi_cw_parse_copybook_line("05 F1 PIC X(4).", &cb_occ) == 0);
+    assert(tsfi_cw_parse_copybook_line("05 F2 REDEFINES F1 PIC X(2) OCCURS 3.", &cb_occ) == -8);
+
+    // EBCDIC CP278 Swedish translation
+    assert(tsfi_cw_ascii_to_ebcdic_cp278(0xC5) == 0x5A);
+    assert(tsfi_cw_ebcdic_to_ascii_cp278(0x5A) == 0xC5);
+
+    // JCL SYSIN 80-Column Truncation warning
+    const char *jcl_trunc_deck[] = {
+        "//STEP1 EXEC PGM=IEFBR14",
+        "//SYSIN DD *",
+        "12345678901234567890123456789012345678901234567890123456789012345678901234567890EXTRA LONG PUNCH CARD LINE THAT WILL BE TRUNCATED",
+        "/*"
+    };
+    char sysin_trunc_out[256];
+    int truncated_count = 0;
+    assert(tsfi_cw_run_jcl_sysin_ex(jcl_trunc_deck, 4, sysin_trunc_out, sizeof(sysin_trunc_out), &truncated_count) == 81);
+    assert(truncated_count == 1);
+
+    // Y2K Leap diagnostics performance
+    tsfi_cw_y2k_diagnostics y2k_diag;
+    tsfi_cw_y2k_get_diagnostics(&y2k_diag);
+    assert(y2k_diag.leap_checks_performed > 0);
 }
 
 int main(void) {

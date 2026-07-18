@@ -387,3 +387,46 @@ int tsfi_cw_jcl_eval_cond_chain(int step_rc, int cond_code_1, const char *op_1, 
     int res2 = tsfi_cw_jcl_eval_cond(step_rc, cond_code_2, op_2);
     return res1 && res2;
 }
+
+int tsfi_cw_run_jcl_sysin_ex(const char **cards, int card_count, char *sysin_out, int max_sysin_len, int *truncated_count) {
+    if (!cards || card_count <= 0 || !sysin_out || max_sysin_len <= 0 || !truncated_count) return -1;
+    *truncated_count = 0;
+    
+    int sysin_active = 0;
+    int bytes_written = 0;
+    sysin_out[0] = '\0';
+    char dlm[3] = "/*";
+    
+    for (int i = 0; i < card_count; i++) {
+        const char *card = cards[i];
+        if (sysin_active) {
+            if (strncmp(card, dlm, strlen(dlm)) == 0 || (strcmp(dlm, "/*") == 0 && strncmp(card, "//", 2) == 0)) {
+                break;
+            }
+            int len = strlen(card);
+            char temp_card[256];
+            strncpy(temp_card, card, 255);
+            temp_card[255] = '\0';
+            if (len > 80) {
+                temp_card[80] = '\0';
+                (*truncated_count)++;
+                len = 80;
+            }
+            if (bytes_written + len + 2 > max_sysin_len) break;
+            strcat(sysin_out, temp_card);
+            strcat(sysin_out, "\n");
+            bytes_written += len + 1;
+        } else {
+            if (strstr(card, "SYSIN DD *")) {
+                sysin_active = 1;
+                const char *dlm_ptr = strstr(card, "DLM=");
+                if (dlm_ptr) {
+                    dlm[0] = dlm_ptr[4];
+                    dlm[1] = dlm_ptr[5];
+                    dlm[2] = '\0';
+                }
+            }
+        }
+    }
+    return bytes_written;
+}
