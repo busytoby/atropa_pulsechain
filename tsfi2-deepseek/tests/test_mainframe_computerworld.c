@@ -865,6 +865,22 @@ static void test_new_mainframe_features(void) {
     // Y2K Julian validator
     assert(tsfi_cw_y2k_validate_julian_day(2000, 366) == 0);
     assert(tsfi_cw_y2k_validate_julian_day(2100, 366) == -13);
+
+    // EBCDIC CP935 Chinese Translation
+    uint8_t cp935_buf[64];
+    char utf8_buf[64];
+    int cp935_len = tsfi_cw_utf8_to_ebcdic_cp935("中文", cp935_buf, sizeof(cp935_buf));
+    assert(cp935_len == 8);
+    assert(cp935_buf[0] == 0x0E); // Shift-Out
+    assert(cp935_buf[1] == 0x4C);
+    assert(cp935_buf[2] == 0x60); // 中
+    assert(cp935_buf[3] == 0x0F); // Shift-In
+    assert(cp935_buf[4] == 0x0E); // Shift-Out
+    assert(cp935_buf[5] == 0x4C);
+    assert(cp935_buf[6] == 0x64); // 文
+    assert(cp935_buf[7] == 0x0F); // Shift-In
+    assert(tsfi_cw_ebcdic_to_utf8_cp935(cp935_buf, cp935_len, utf8_buf, sizeof(utf8_buf)) == 6);
+    assert(strcmp(utf8_buf, "中文") == 0);
 }
 
 int main(void) {

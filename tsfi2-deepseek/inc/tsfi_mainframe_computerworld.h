@@ -408,6 +408,10 @@ uint8_t tsfi_cw_ebcdic_to_ascii_cp273_ex(uint8_t ebcdic_char);
 uint8_t tsfi_cw_ascii_to_ebcdic_cp278(uint8_t ascii_char);
 uint8_t tsfi_cw_ebcdic_to_ascii_cp278(uint8_t ebcdic_char);
 
+// EBCDIC CP935 Chinese DBCS translation
+int tsfi_cw_ebcdic_to_utf8_cp935(const uint8_t *ebcdic_str, int len, char *utf8_out, int max_len);
+int tsfi_cw_utf8_to_ebcdic_cp935(const char *utf8_str, uint8_t *ebcdic_out, int max_len);
+
 // JCL GDG resolver, COND chain evaluation, step parameter parser, and symbol substitution
 int tsfi_cw_jcl_resolve_gdg(const char *dsn_str, int current_gen, char *resolved_out, int max_len);
 int tsfi_cw_jcl_eval_cond_chain(int step_rc, int cond_code_1, const char *op_1, int cond_code_2, const char *op_2);
