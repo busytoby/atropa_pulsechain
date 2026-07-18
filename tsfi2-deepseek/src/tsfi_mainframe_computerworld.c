@@ -1167,6 +1167,30 @@ int tsfi_cw_marist_calc_cpu_shares(const tsfi_cw_marist_zvm_scheduler *sched, do
     return 0;
 }
 
+int tsfi_cw_marist_audit_rmf_cpu(const tsfi_cw_marist_rmf_cpu *cpus, int cpu_count, double *avg_busy_out, int *overloaded_out) {
+    if (!cpus || cpu_count <= 0 || !avg_busy_out || !overloaded_out) return -1;
+    
+    double total_busy = 0.0;
+    *overloaded_out = 0;
+    
+    for (int i = 0; i < cpu_count; i++) {
+        total_busy += cpus[i].busy_percent;
+        if (cpus[i].dispatch_delay_ms > 20 && cpus[i].busy_percent > 95.0) {
+            *overloaded_out = 1;
+        }
+    }
+    *avg_busy_out = total_busy / cpu_count;
+    return 0;
+}
+
+int tsfi_cw_marist_optimize_vswitch(const tsfi_cw_marist_vswitch *vsw, int *needs_failover_out) {
+    if (!vsw || !needs_failover_out) return -1;
+    
+    *needs_failover_out = (vsw->drop_rate_percent > 2.0 && vsw->backup_ports_configured > 0) ? 1 : 0;
+    return 0;
+}
+
+
 
 
 

@@ -1893,6 +1893,27 @@ static void test_new_mainframe_features(void) {
     assert(fabs(allocs[0] - 0.20) < 0.01);
     assert(fabs(allocs[1] - 0.40) < 0.01);
     assert(fabs(allocs[2] - 0.40) < 0.01);
+
+    // Marist RMF CPU test
+    tsfi_cw_marist_rmf_cpu cpus[2] = {
+        { 0, 10, 80.0, 0.0 },
+        { 1, 35, 98.0, 0.0 }
+    };
+    double avg_busy = 0.0;
+    int overloaded = 0;
+    assert(tsfi_cw_marist_audit_rmf_cpu(cpus, 2, &avg_busy, &overloaded) == 0);
+    assert(fabs(avg_busy - 89.0) < 0.1);
+    assert(overloaded == 1);
+
+    // Marist VSWITCH test
+    tsfi_cw_marist_vswitch vsw_ok = { "VSW01", 0.5, 4, 1 };
+    int needs_failover = 0;
+    assert(tsfi_cw_marist_optimize_vswitch(&vsw_ok, &needs_failover) == 0);
+    assert(needs_failover == 0);
+
+    tsfi_cw_marist_vswitch vsw_bad = { "VSW02", 3.2, 4, 1 };
+    assert(tsfi_cw_marist_optimize_vswitch(&vsw_bad, &needs_failover) == 0);
+    assert(needs_failover == 1);
 }
 
 int main(void) {

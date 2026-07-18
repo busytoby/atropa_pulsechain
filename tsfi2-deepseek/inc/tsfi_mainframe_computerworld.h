@@ -957,5 +957,24 @@ typedef struct {
 int tsfi_cw_marist_audit_sysplex(const tsfi_cw_marist_sysplex_cf *cf, int *alert_out);
 int tsfi_cw_marist_calc_cpu_shares(const tsfi_cw_marist_zvm_scheduler *sched, double share_allocs_out[16]);
 
+// Marist z/OS RMF CPU Workload Telemetry
+typedef struct {
+    int processor_id;
+    int dispatch_delay_ms;
+    double busy_percent;
+    double parked_percent;
+} tsfi_cw_marist_rmf_cpu;
+
+// Marist z/VM VSWITCH Telemetry
+typedef struct {
+    char switch_name[16];
+    double drop_rate_percent;
+    int active_ports;
+    int backup_ports_configured;
+} tsfi_cw_marist_vswitch;
+
+int tsfi_cw_marist_audit_rmf_cpu(const tsfi_cw_marist_rmf_cpu *cpus, int cpu_count, double *avg_busy_out, int *overloaded_out);
+int tsfi_cw_marist_optimize_vswitch(const tsfi_cw_marist_vswitch *vsw, int *needs_failover_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 
