@@ -469,8 +469,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 512 | NATO Link-Layer Broadcast Channel Busy Hysteresis RSSI Quiet Sample Threshold Limit Margin Range Option Selector Matcher | PASS | Audits RSSI quiet sample count limit margin range option selector parameters | Volume 33 |
 | 513 | NATO Link-Layer Broadcast Collision Backoff Slot Alignment Boundary Source Offset Range Limit Value Margin Range Option Selector Option Matcher | PASS | Validates slot boundary source alignment offset range limits value margin range option selectors | Volume 33 |
 | 514 | NATO Link-Layer Broadcast Channel Busy Hysteresis RSSI Quiet Sample Threshold Limit Margin Range Option Selector Margin Matcher | PASS | Audits RSSI quiet sample count limit margin range option selector margins | Volume 33 |
+| 515 | NATO Link-Layer Broadcast Collision Backoff Slot Alignment Boundary Source Offset Range Limit Value Margin Range Option Selector Option Margin Matcher | PASS | Validates slot boundary source alignment offset range limits value margin range option selector option margins | Volume 33 |
+| 516 | NATO Link-Layer Broadcast Channel Busy Hysteresis RSSI Quiet Sample Threshold Limit Margin Range Option Selector Margin Range Matcher | PASS | Audits RSSI quiet sample count limit margin range option selector margin ranges | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 514 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 516 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"
