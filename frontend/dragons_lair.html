@@ -1041,7 +1041,7 @@
     <div id="gameTab" class="tab-panel active">
         <div class="cabinet" id="arcadeCabinet">
             <div class="screen-container" id="screenContainer">
-                <img src="dragons_lair_title.png" alt="Dragon's Lair Title Screen" class="screen-img" id="gameScreen">
+                <img src="assets/dragons_lair/dragons_lair_title.png" alt="Dragon's Lair Title Screen" class="screen-img" id="gameScreen">
                 <div class="hud-overlay">
                     <div class="score">SCORE: <span id="scoreVal">00000</span></div>
                     <div class="lives">LIVES: <span id="livesVal">❤❤❤</span></div>
@@ -2842,35 +2842,35 @@
             
             if (currentStage === 1) {
                 appendStoryEntry("🏰 Dirk entered the Crumbling Hall. Giant burning stones began tumbling down, crushing everything in their path. There was no turning back!", "system");
-                document.getElementById("gameScreen").src = "dragons_lair_action.png";
+                document.getElementById("gameScreen").src = "assets/dragons_lair/dragons_lair_action.png";
                 document.getElementById("statusMessage").innerText = "Stage 1: Crumbling hall! Giant burning stones are falling. Find the escape route!";
                 setTimeout(() => {
                     triggerPrompt("RIGHT");
                 }, 2000);
             } else if (currentStage === 2) {
                 appendStoryEntry("🐲 Dirk crept into the dragon's cavern. The stench of sulfur filled the air. Suddenly, the beast lunged forward from the darkness!", "system");
-                document.getElementById("gameScreen").src = "dragons_lair_title.png";
+                document.getElementById("gameScreen").src = "assets/dragons_lair/dragons_lair_title.png";
                 document.getElementById("statusMessage").innerText = "Stage 2: Dirk enters the dragon's cavern! The beast attacks. Quick, draw your sword!";
                 setTimeout(() => {
                     triggerPrompt("SWORD");
                 }, 2500);
             } else if (currentStage === 3) {
                 appendStoryEntry("🌉 Dirk reached a fragile stone bridge suspended over an endless abyss, but the stones began to crack and fall away!", "system");
-                document.getElementById("gameScreen").src = "dragons_lair_action.png";
+                document.getElementById("gameScreen").src = "assets/dragons_lair/dragons_lair_action.png";
                 document.getElementById("statusMessage").innerText = "Stage 3: Falling bridge! Jump to the safe side!";
                 setTimeout(() => {
                     triggerPrompt("LEFT");
                 }, 2000);
             } else if (currentStage === 4) {
                 appendStoryEntry("⚡ Out of the shadows emerged the Electric Knight, crackling with pure static energy and raising his electrified sword!", "system");
-                document.getElementById("gameScreen").src = "dragons_lair_title.png";
+                document.getElementById("gameScreen").src = "assets/dragons_lair/dragons_lair_title.png";
                 document.getElementById("statusMessage").innerText = "Stage 4: The Electric Knight! Dodge his attack!";
                 setTimeout(() => {
                     triggerPrompt("LEFT");
                 }, 2200);
             } else if (currentStage === 5) {
                 appendStoryEntry("🐉 Dirk reached the treasure chamber and faced Singe, the gigantic red dragon guarding Princess Daphne. This was the final showdown!", "system");
-                document.getElementById("gameScreen").src = "dragons_lair_action.png";
+                document.getElementById("gameScreen").src = "assets/dragons_lair/dragons_lair_action.png";
                 document.getElementById("statusMessage").innerText = "Stage 5: Final confrontation with Singe the Dragon!";
                 setTimeout(() => {
                     triggerPrompt("SWORD");
@@ -2953,7 +2953,7 @@
             appendStoryEntry("👑 Victory! Dirk has defeated Singe the Dragon, rescued Princess Daphne, and escaped the lair. Their names will be sung in legend forever!", "success");
             playSound(1200, 'sine', 0.8);
             document.getElementById("statusMessage").innerText = "Victory! Dirk has defeated Singe the Dragon and rescued Princess Daphne!";
-            document.getElementById("gameScreen").src = "dragons_lair_title.png";
+            document.getElementById("gameScreen").src = "assets/dragons_lair/dragons_lair_title.png";
             setTimeout(openBook, 2000);
         }
 
@@ -2961,7 +2961,7 @@
             gameActive = false;
             appendStoryEntry("🪦 Alas! Dirk the Daring has met his tragic end. The Legend of the Dragon's Lair remains unfinished...", "fail");
             document.getElementById("statusMessage").innerText = "Game Over. Press any action to insert coin and try again.";
-            document.getElementById("gameScreen").src = "dragons_lair_title.png";
+            document.getElementById("gameScreen").src = "assets/dragons_lair/dragons_lair_title.png";
             setTimeout(openBook, 2000);
         }
 

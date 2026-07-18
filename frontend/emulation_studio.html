@@ -299,7 +299,7 @@
             <div class="panel">
                 <h2>🐉 DRAGON'S LAIR SIMULATOR</h2>
                 <div class="arcade-screen">
-                    <img id="dlScreen" src="dragons_lair_title.png" class="screen-img" alt="Arcade Screen">
+                    <img id="dlScreen" src="assets/dragons_lair/dragons_lair_title.png" class="screen-img" alt="Arcade Screen">
                     <div class="hud-overlay">
                         <span class="score" id="dlScore">SCORE: 0</span>
                         <span class="lives" id="dlLives">LIVES: ❤️❤️❤️</span>
@@ -504,7 +504,7 @@
         function inputSword() {
             if (dlState === "TITLE") {
                 dlState = "CAVERN";
-                dlScreen.src = "dragons_lair_action.png";
+                dlScreen.src = "assets/dragons_lair/dragons_lair_action.png";
                 dlPrompt.innerText = "DIRK ENTERS THE CAVERN! PRESS UP TO ESCAPE FALLING ROCKS!";
                 score = 1000;
                 dlScore.innerText = `SCORE: ${score}`;
@@ -545,7 +545,7 @@
             if (lives <= 0) {
                 dlState = "TITLE";
                 dlPrompt.innerText = "GAME OVER. PRESS SWORD TO RESTART";
-                dlScreen.src = "dragons_lair_title.png";
+                dlScreen.src = "assets/dragons_lair/dragons_lair_title.png";
                 lives = 3;
                 document.getElementById("dlLives").innerText = "LIVES: ❤️❤️❤️";
             } else {
