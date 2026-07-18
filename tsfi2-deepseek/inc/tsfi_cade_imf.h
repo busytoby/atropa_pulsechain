@@ -421,4 +421,7 @@ int tsfi_mf_norad_encode_defcon(int defcon_level, int radar_contacts, uint16_t *
 int tsfi_mf_norad_naap_update(int event, int *current_state, int *is_valid);
 int tsfi_mf_norad_detect_eom(const char *msg_buffer, size_t size, int *is_eom_detected);
 
+int tsfi_mf_cics_map_janap_transid(const char *routing_ind, char *out_transid, int *is_valid);
+int tsfi_mf_cics_generate_naap_broadcast(int defcon_level, uint16_t term_id, uint8_t *out_pdu, size_t *out_size);
+
 #endif // TSFI_CADE_IMF_H

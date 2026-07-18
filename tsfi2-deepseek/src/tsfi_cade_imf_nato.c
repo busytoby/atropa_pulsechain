@@ -1456,6 +1456,34 @@ int tsfi_mf_norad_detect_eom(const char *msg_buffer, size_t size, int *is_eom_de
     return 0;
 }
 
+int tsfi_mf_cics_map_janap_transid(const char *routing_ind, char *out_transid, int *is_valid) {
+    if (!routing_ind || !out_transid || !is_valid) return -1;
+    *is_valid = 0;
+    
+    if (strcmp(routing_ind, "RUMJTF") == 0) {
+        *is_valid = 1;
+        strcpy(out_transid, "NJTF");
+    } else if (strcmp(routing_ind, "RUMNDH") == 0) {
+        *is_valid = 1;
+        strcpy(out_transid, "NNDH");
+    } else {
+        *is_valid = 1;
+        strcpy(out_transid, "NDFT");
+    }
+    return 0;
+}
+
+int tsfi_mf_cics_generate_naap_broadcast(int defcon_level, uint16_t term_id, uint8_t *out_pdu, size_t *out_size) {
+    if (!out_pdu || !out_size) return -1;
+    out_pdu[0] = 0xBC; // Broadcast PDU marker
+    out_pdu[1] = defcon_level & 0xFF;
+    out_pdu[2] = (term_id >> 8) & 0xFF;
+    out_pdu[3] = term_id & 0xFF;
+    *out_size = 4;
+    return 0;
+}
+
+
 
 
 

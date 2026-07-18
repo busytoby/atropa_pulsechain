@@ -642,7 +642,28 @@ int run_nato_stanag_tests_part5(void) {
     int eom_res = tsfi_mf_norad_detect_eom(msg, strlen(msg), &eom_det);
     assert(eom_res == 0);
     assert(eom_det == 1);
-    printf("  [PASS] JANAP EOM Detector verified.\n");
+    // Verify CICS Transid Map
+    printf("[TEST] Validating CICS JANAP Transid Mapping...\n");
+    char transid[8];
+    int trans_val = -1;
+    int trans_res = tsfi_mf_cics_map_janap_transid("RUMJTF", transid, &trans_val);
+    assert(trans_res == 0);
+    assert(trans_val == 1);
+    assert(strcmp(transid, "NJTF") == 0);
+    printf("  [PASS] CICS JANAP Transid Mapping verified.\n");
+
+    // Verify CICS NAAP Alert Broadcast
+    printf("[TEST] Validating CICS NAAP Alert Broadcast...\n");
+    uint8_t bc_pkt[8];
+    size_t bc_size = 0;
+    int bc_res = tsfi_mf_cics_generate_naap_broadcast(2, 0x1234, bc_pkt, &bc_size);
+    assert(bc_res == 0);
+    assert(bc_size == 4);
+    assert(bc_pkt[0] == 0xBC);
+    assert(bc_pkt[1] == 2);
+    assert(bc_pkt[2] == 0x12);
+    assert(bc_pkt[3] == 0x34);
+    printf("  [PASS] CICS NAAP Alert Broadcast verified.\n");
 
     return 0;
 }
