@@ -270,8 +270,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 313 | IRS CADE Prior Refund Offset Query | PASS | Retrieves outstanding offset amounts from legacy cyclic databases | Volume 33 |
 | 314 | IRS CADE Taxpayer IP PIN Length Matcher | PASS | Validates security 6-digit identity protection PIN structures | Volume 33 |
 | 315 | IRS IMF Standard Mileage Rate Business Expense Matcher | PASS | Audits mileage deduction calculations against annual standard rates | Volume 33 |
+| 316 | IRS CADE Taxpayer Address State Abbreviation Validator | PASS | Validates two-letter address state code abbreviations | Volume 33 |
+| 317 | IRS IMF Child and Dependent Care Credit Ceiling Matcher | PASS | Verifies credit calculations satisfy statutory ceiling limits | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 315 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 317 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

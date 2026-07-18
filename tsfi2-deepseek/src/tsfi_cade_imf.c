@@ -870,4 +870,35 @@ int tsfi_mf_imf_verify_mileage_deduction(double miles, double claimed_deduction,
     return 0;
 }
 
+int tsfi_mf_cade_verify_state_code(const char *state_code, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = 0;
+    if (!state_code || strlen(state_code) != 2) return 0;
+    const char *list[] = {
+        "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
+        "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
+        "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
+        "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
+        "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"
+    };
+    for (int i = 0; i < 50; i++) {
+        if (strcmp(state_code, list[i]) == 0) {
+            *is_valid = 1;
+            return 0;
+        }
+    }
+    return 0;
+}
+
+int tsfi_mf_imf_verify_dependent_care_ceiling(int dependent_count, double claimed_expenses, int *is_valid) {
+    if (!is_valid) return -1;
+    if (dependent_count <= 0) {
+        *is_valid = (claimed_expenses <= 0.0) ? 1 : 0;
+        return 0;
+    }
+    double ceiling = (dependent_count == 1) ? 3000.00 : 6000.00;
+    *is_valid = (claimed_expenses <= ceiling) ? 1 : 0;
+    return 0;
+}
+
 

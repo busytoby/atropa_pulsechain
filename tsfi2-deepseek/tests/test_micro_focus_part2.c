@@ -524,6 +524,22 @@ int main(void) {
     assert(mileage_valid == 1);
     printf("  [PASS] IRS IMF Mileage Deduction Matcher verified.\n");
 
+    // 172. Verify IRS CADE Taxpayer Address State Abbreviation Validator
+    printf("[TEST] Validating IRS CADE State Code Validator...\n");
+    int state_valid = -1;
+    int state_res = tsfi_mf_cade_verify_state_code("CA", &state_valid);
+    assert(state_res == 0);
+    assert(state_valid == 1);
+    printf("  [PASS] IRS CADE State Code Validator verified.\n");
+
+    // 173. Verify IRS IMF Child and Dependent Care Credit Ceiling Matcher
+    printf("[TEST] Validating IRS IMF Dependent Care Ceiling Matcher...\n");
+    int care_valid = -1;
+    int care_res = tsfi_mf_imf_verify_dependent_care_ceiling(2, 5000.00, &care_valid);
+    assert(care_res == 0);
+    assert(care_valid == 1);
+    printf("  [PASS] IRS IMF Dependent Care Ceiling Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }
