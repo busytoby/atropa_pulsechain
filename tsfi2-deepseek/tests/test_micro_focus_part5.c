@@ -300,7 +300,32 @@ int run_nato_stanag_tests_part5(void) {
 
     tsfi_mf_nato_verify_segment_bounds(200, 100, 300, 0, &seg_valid); // Segment 200..300 of 300 (not last) -> invalid
     assert(seg_valid == 0);
-    printf("  [PASS] Segment Bounds verified.\n");
+    // Verify Helmholtz Physical Link
+    printf("[TEST] Validating NATO Helmholtz Physical Link...\n");
+    int epoch = 0; // EPOCH_INIT
+    int ev_valid = -1;
+    
+    // Apply HILBERT_ENCODE -> EPOCH_AVAIL
+    int h_res = tsfi_mf_nato_phy_link_evaluate_helmholtz(1, 0.0f, &epoch, &ev_valid);
+    assert(h_res == 0);
+    assert(ev_valid == 1);
+    assert(epoch == 1);
+    
+    // Apply BANACH_NORM (invalid from EPOCH_AVAIL)
+    tsfi_mf_nato_phy_link_evaluate_helmholtz(2, 0.0f, &epoch, &ev_valid);
+    assert(ev_valid == 0);
+    assert(epoch == 1);
+    
+    // Apply HILBERT_ENCODE -> EPOCH_FORM
+    tsfi_mf_nato_phy_link_evaluate_helmholtz(1, 0.0f, &epoch, &ev_valid);
+    assert(ev_valid == 1);
+    assert(epoch == 2);
+    
+    // Apply BANACH_NORM -> EPOCH_POLARIZE
+    tsfi_mf_nato_phy_link_evaluate_helmholtz(2, 0.0f, &epoch, &ev_valid);
+    assert(ev_valid == 1);
+    assert(epoch == 3);
+    printf("  [PASS] Helmholtz Physical Link verified.\n");
 
     return 0;
 }
