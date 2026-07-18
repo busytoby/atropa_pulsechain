@@ -488,6 +488,121 @@ int tsfi_cw_eoq_calculate(const tsfi_cw_eoq_problem *prob, double *eoq_out, doub
     return 0;
 }
 
+int tsfi_cw_pert_calculate(tsfi_cw_pert_task *tasks, int task_count, double *expected_project_length_out, double *project_variance_out) {
+    if (!tasks || task_count <= 0 || !expected_project_length_out || !project_variance_out) return -1;
+    
+    // Calculate expected duration and variance for each task
+    for (int i = 0; i < task_count; i++) {
+        tasks[i].expected_duration = (tasks[i].opt_duration + 4.0 * tasks[i].most_likely + tasks[i].pess_duration) / 6.0;
+        tasks[i].variance = pow((tasks[i].pess_duration - tasks[i].opt_duration) / 6.0, 2.0);
+    }
+    
+    // Forward Pass
+    double *es = (double *)calloc(task_count, sizeof(double));
+    double *ef = (double *)calloc(task_count, sizeof(double));
+    for (int i = 0; i < task_count; i++) {
+        if (tasks[i].pred_count == 0) {
+            es[i] = 0.0;
+        } else {
+            double max_ef = 0.0;
+            for (int p = 0; p < tasks[i].pred_count; p++) {
+                int pred_id = tasks[i].predecessors[p];
+                for (int j = 0; j < i; j++) {
+                    if (tasks[j].id == pred_id && ef[j] > max_ef) {
+                        max_ef = ef[j];
+                    }
+                }
+            }
+            es[i] = max_ef;
+        }
+        ef[i] = es[i] + tasks[i].expected_duration;
+    }
+    
+    double project_length = 0.0;
+    for (int i = 0; i < task_count; i++) {
+        if (ef[i] > project_length) {
+            project_length = ef[i];
+        }
+    }
+    
+    // Backward Pass
+    double *ls = (double *)calloc(task_count, sizeof(double));
+    double *lf = (double *)calloc(task_count, sizeof(double));
+    for (int i = task_count - 1; i >= 0; i--) {
+        int is_pred = 0;
+        double min_ls = 999999.0;
+        for (int j = i + 1; j < task_count; j++) {
+            for (int p = 0; p < tasks[j].pred_count; p++) {
+                if (tasks[j].predecessors[p] == tasks[i].id) {
+                    is_pred = 1;
+                    if (ls[j] < min_ls) {
+                        min_ls = ls[j];
+                    }
+                }
+            }
+        }
+        if (!is_pred) {
+            lf[i] = project_length;
+        } else {
+            lf[i] = min_ls;
+        }
+        ls[i] = lf[i] - tasks[i].expected_duration;
+    }
+    
+    // Sum variance of critical path tasks (slack is zero)
+    double total_variance = 0.0;
+    for (int i = 0; i < task_count; i++) {
+        double slack = lf[i] - ef[i];
+        if (fabs(slack) < 1e-5) {
+            total_variance += tasks[i].variance;
+        }
+    }
+    
+    *expected_project_length_out = project_length;
+    *project_variance_out = total_variance;
+    
+    free(es);
+    free(ef);
+    free(ls);
+    free(lf);
+    
+    return 0;
+}
+
+int tsfi_cw_depreciation_calculate(const tsfi_cw_depreciation_asset *asset, char method, int target_year, double *expense_out, double *book_value_out) {
+    if (!asset || !expense_out || !book_value_out || target_year <= 0) return -1;
+    if (target_year > asset->useful_life) {
+        *expense_out = 0.0;
+        *book_value_out = asset->salvage_value;
+        return 0;
+    }
+    
+    if (method == 'S') {
+        double dep_per_year = (asset->cost - asset->salvage_value) / asset->useful_life;
+        *expense_out = dep_per_year;
+        *book_value_out = asset->cost - (dep_per_year * target_year);
+    } else if (method == 'D') {
+        double rate = 2.0 / asset->useful_life;
+        double current_bv = asset->cost;
+        double exp = 0.0;
+        
+        for (int y = 1; y <= target_year; y++) {
+            exp = current_bv * rate;
+            if (current_bv - exp < asset->salvage_value) {
+                exp = current_bv - asset->salvage_value;
+            }
+            current_bv -= exp;
+        }
+        *expense_out = exp;
+        *book_value_out = current_bv;
+    } else {
+        return -2; // Invalid method code
+    }
+    
+    return 0;
+}
+
+
 
 
 

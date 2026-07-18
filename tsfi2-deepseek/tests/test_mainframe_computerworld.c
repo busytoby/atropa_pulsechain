@@ -1545,6 +1545,30 @@ static void test_new_mainframe_features(void) {
     // EOQ = sqrt((2 * 1000 * 50) / 4) = sqrt(25000) = 158.11
     assert(fabs(eoq - 158.11) < 0.01);
     assert(fabs(total_cost - 632.45) < 0.01);
+
+    // PERT Project Scheduler test
+    tsfi_cw_pert_task pert_tasks[3] = {
+        { 1, 2.0, 5.0, 8.0, {0}, 0, 0, 0 },         // Task 1: Expected=(2+20+8)/6 = 5, Var=((8-2)/6)^2 = 1
+        { 2, 6.0, 10.0, 14.0, {1}, 1, 0, 0 },       // Task 2: Expected=(6+40+14)/6 = 10, Var=((14-6)/6)^2 = 1.777
+        { 3, 1.0, 3.0, 5.0, {1}, 1, 0, 0 }          // Task 3: Expected=(1+12+5)/6 = 3, Var=((5-1)/6)^2 = 0.444
+    };
+    double pert_len = 0.0, pert_var = 0.0;
+    assert(tsfi_cw_pert_calculate(pert_tasks, 3, &pert_len, &pert_var) == 0);
+    assert(fabs(pert_len - 15.0) < 0.01);
+    // Critical path tasks are Task 1 and Task 2. Project variance = 1.0 + 1.777 = 2.777
+    assert(fabs(pert_var - 2.777) < 0.01);
+
+    // Punched Card Asset Depreciation test
+    tsfi_cw_depreciation_asset asset = { "ASSET1", 10000.0, 1000.0, 5 };
+    double dep_exp = 0.0, book_val = 0.0;
+    // Straight Line: Exp = (10000-1000)/5 = 1800 per year. Year 2 Book value = 10000 - 3600 = 6400
+    assert(tsfi_cw_depreciation_calculate(&asset, 'S', 2, &dep_exp, &book_val) == 0);
+    assert(fabs(dep_exp - 1800.0) < 0.01);
+    assert(fabs(book_val - 6400.0) < 0.01);
+    // Double Declining: Rate = 2/5 = 40%. Year 1 Exp = 4000, BV = 6000. Year 2 Exp = 2400, BV = 3600
+    assert(tsfi_cw_depreciation_calculate(&asset, 'D', 2, &dep_exp, &book_val) == 0);
+    assert(fabs(dep_exp - 2400.0) < 0.01);
+    assert(fabs(book_val - 3600.0) < 0.01);
 }
 
 int main(void) {

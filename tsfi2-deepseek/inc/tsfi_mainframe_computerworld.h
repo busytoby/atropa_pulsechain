@@ -684,5 +684,29 @@ typedef struct {
 
 int tsfi_cw_eoq_calculate(const tsfi_cw_eoq_problem *prob, double *eoq_out, double *total_cost_out);
 
+// PERT Estimator
+typedef struct {
+    int id;
+    double opt_duration;   // a
+    double most_likely;    // m
+    double pess_duration;  // b
+    int predecessors[4];
+    int pred_count;
+    double expected_duration; // calculated: (a + 4m + b)/6
+    double variance;          // calculated: ((b - a)/6)^2
+} tsfi_cw_pert_task;
+
+int tsfi_cw_pert_calculate(tsfi_cw_pert_task *tasks, int task_count, double *expected_project_length_out, double *project_variance_out);
+
+// Punched Card Asset Depreciation
+typedef struct {
+    char asset_id[8];
+    double cost;
+    double salvage_value;
+    int useful_life;
+} tsfi_cw_depreciation_asset;
+
+int tsfi_cw_depreciation_calculate(const tsfi_cw_depreciation_asset *asset, char method, int target_year, double *expense_out, double *book_value_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 
