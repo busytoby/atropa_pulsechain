@@ -833,5 +833,59 @@ int tsfi_mf_nato_encode_u_pdu_header(int dest_sap, int src_sap, int priority, in
     return 0;
 }
 
+int tsfi_mf_nato_decode_d_pdu(const uint8_t *frame, size_t size, int *type, uint8_t *payload_out, size_t *pay_size_out, int *is_valid) {
+    if (!frame || !type || !payload_out || !pay_size_out || !is_valid) return -1;
+    
+    *is_valid = 0;
+    if (size < 5) return 0;
+    
+    int extracted_type = frame[0] & 0x0F;
+    size_t pay_size = (frame[1] << 8) | frame[2];
+    
+    if (size != 3 + pay_size + 2) return 0;
+    
+    // Verify CRC CCITT-FALSE
+    uint16_t crc = 0xFFFF;
+    for (size_t i = 0; i < 3 + pay_size; i++) {
+        crc ^= (uint16_t)frame[i] << 8;
+        for (int j = 0; j < 8; j++) {
+            if (crc & 0x8000) {
+                crc = (crc << 1) ^ 0x1021;
+            } else {
+                crc <<= 1;
+            }
+        }
+    }
+    
+    uint16_t frame_crc = (frame[3 + pay_size] << 8) | frame[3 + pay_size + 1];
+    if (crc == frame_crc) {
+        *type = extracted_type;
+        *pay_size_out = pay_size;
+        for (size_t i = 0; i < pay_size; i++) {
+            payload_out[i] = frame[3 + i];
+        }
+        *is_valid = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_mf_nato_encode_address(int node_addr, int sub_node_addr, uint8_t *out_byte) {
+    if (!out_byte) return -1;
+    if (node_addr < 0 || node_addr > 7 || sub_node_addr < 0 || sub_node_addr > 15) {
+        return -2;
+    }
+    *out_byte = ((node_addr & 0x07) << 4) | (sub_node_addr & 0x0F);
+    return 0;
+}
+
+int tsfi_mf_nato_decode_address(uint8_t addr_byte, int *node_addr, int *sub_node_addr) {
+    if (!node_addr || !sub_node_addr) return -1;
+    *node_addr = (addr_byte >> 4) & 0x07;
+    *sub_node_addr = addr_byte & 0x0F;
+    return 0;
+}
+
+
 
 

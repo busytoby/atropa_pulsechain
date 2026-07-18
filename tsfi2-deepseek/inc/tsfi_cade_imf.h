@@ -369,4 +369,8 @@ int tsfi_mf_nato_encode_d_pdu(int type, const uint8_t *payload, size_t pay_size,
 int tsfi_mf_nato_arq_update(int event, int seq_num, int window_size, int *next_expected, int *is_valid);
 int tsfi_mf_nato_encode_u_pdu_header(int dest_sap, int src_sap, int priority, int is_segment, uint8_t *out_hdr, size_t *out_size);
 
+int tsfi_mf_nato_decode_d_pdu(const uint8_t *frame, size_t size, int *type, uint8_t *payload_out, size_t *pay_size_out, int *is_valid);
+int tsfi_mf_nato_encode_address(int node_addr, int sub_node_addr, uint8_t *out_byte);
+int tsfi_mf_nato_decode_address(uint8_t addr_byte, int *node_addr, int *sub_node_addr);
+
 #endif // TSFI_CADE_IMF_H

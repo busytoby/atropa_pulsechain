@@ -205,7 +205,44 @@ int run_nato_stanag_tests_part5(void) {
     assert(hdr_size == 2);
     assert(hdr_buf[0] == 0x34); // (3 << 4) | 4
     assert(hdr_buf[1] == 0x87); // 7 | 0x80
-    printf("  [PASS] U_PDU Header Encoder verified.\n");
+    // Verify D_PDU Decoder
+    printf("[TEST] Validating NATO D_PDU Decoder...\n");
+    uint8_t enc_frame[64];
+    size_t enc_size = 0;
+    uint8_t payload_in[] = {'P', 'a', 's', 's'};
+    tsfi_mf_nato_encode_d_pdu(0x02, payload_in, sizeof(payload_in), enc_frame, &enc_size);
+    
+    int dec_type = -1;
+    uint8_t dec_payload[64];
+    size_t dec_pay_size = 0;
+    int dec_valid = -1;
+    int dec_res = tsfi_mf_nato_decode_d_pdu(enc_frame, enc_size, &dec_type, dec_payload, &dec_pay_size, &dec_valid);
+    assert(dec_res == 0);
+    assert(dec_valid == 1);
+    assert(dec_type == 0x02);
+    assert(dec_pay_size == sizeof(payload_in));
+    assert(dec_payload[0] == 'P');
+    
+    // Test corrupt frame
+    enc_frame[4] ^= 0xFF; // flip bit in payload
+    tsfi_mf_nato_decode_d_pdu(enc_frame, enc_size, &dec_type, dec_payload, &dec_pay_size, &dec_valid);
+    assert(dec_valid == 0); // CRC mismatch
+    printf("  [PASS] D_PDU Decoder verified.\n");
+
+    // Verify Address Encoder/Decoder
+    printf("[TEST] Validating NATO Address Encoder/Decoder...\n");
+    uint8_t addr_byte = 0;
+    int addr_res = tsfi_mf_nato_encode_address(5, 10, &addr_byte);
+    assert(addr_res == 0);
+    assert(addr_byte == 0x5A); // (5 << 4) | 10
+    
+    int node_out = -1;
+    int sub_node_out = -1;
+    int dec_addr_res = tsfi_mf_nato_decode_address(0x5A, &node_out, &sub_node_out);
+    assert(dec_addr_res == 0);
+    assert(node_out == 5);
+    assert(sub_node_out == 10);
+    printf("  [PASS] Address Encoder/Decoder verified.\n");
 
     return 0;
 }
