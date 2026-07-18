@@ -1861,6 +1861,58 @@ int tsfi_cw_omp_galasa_assert(tsfi_cw_omp_galasa_run *run, int condition) {
     return 0;
 }
 
+int tsfi_cw_omp_feilong_dispatch(const char *cmd_line, tsfi_cw_omp_feilong_guest *guest_io_out, char *err_msg_out, size_t err_max) {
+    if (!cmd_line || !guest_io_out || !err_msg_out || err_max == 0) return -1;
+    
+    err_msg_out[0] = 0;
+    
+    if (strncmp(cmd_line, "PROVISION ", 10) == 0) {
+        char name[32] = {0};
+        int cpus = 0;
+        int mem = 0;
+        if (sscanf(cmd_line + 10, "%31s %d %d", name, &cpus, &mem) != 3) {
+            snprintf(err_msg_out, err_max, "PARSE_ERROR: Invalid provision arguments");
+            return 1;
+        }
+        return tsfi_cw_omp_feilong_provision(name, cpus, mem, guest_io_out);
+    } else if (strncmp(cmd_line, "SETSTATE ", 9) == 0) {
+        char name[32] = {0};
+        char state[32] = {0};
+        if (sscanf(cmd_line + 9, "%31s %31s", name, state) != 2) {
+            snprintf(err_msg_out, err_max, "PARSE_ERROR: Invalid setstate arguments");
+            return 1;
+        }
+        if (strcmp(guest_io_out->guest_name, name) != 0) {
+            snprintf(err_msg_out, err_max, "TARGET_MISMATCH: Guest name does not match memory instance");
+            return 1;
+        }
+        return tsfi_cw_omp_feilong_set_state(guest_io_out, state);
+    }
+    
+    snprintf(err_msg_out, err_max, "UNKNOWN_COMMAND: %s", cmd_line);
+    return 1;
+}
+
+int tsfi_cw_omp_galasa_run_diagnostics(const tsfi_cw_omp_galasa_run *run, char *report_out, size_t report_max) {
+    if (!run || !report_out || report_max == 0) return -1;
+    
+    snprintf(report_out, report_max,
+             "OMP GALASA DIAGNOSTIC REPORT\n"
+             "============================\n"
+             "SUITE NAME : %s\n"
+             "ASSERTIONS : %d\n"
+             "PASSES     : %d\n"
+             "FAILURES   : %d\n"
+             "STATUS     : %s\n",
+             run->test_suite_name,
+             run->assertions_run,
+             run->passes,
+             run->assertions_failed,
+             (run->assertions_failed > 0) ? "RED_ALERT" : "STABLE_GREEN");
+    return 0;
+}
+
+
 
 
 

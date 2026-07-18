@@ -2220,6 +2220,18 @@ static void test_new_mainframe_features(void) {
     assert(run.assertions_run == 2);
     assert(run.passes == 1);
     assert(run.assertions_failed == 1);
+
+    // OMP Feilong Dispatch test
+    char err_buf[128] = {0};
+    assert(tsfi_cw_omp_feilong_dispatch("SETSTATE GUEST01 ACTIVE", &guest, err_buf, sizeof(err_buf)) == 0);
+    assert(strcmp(guest.lifecycle_state, "ACTIVE") == 0);
+    assert(tsfi_cw_omp_feilong_dispatch("INVALID_CMD", &guest, err_buf, sizeof(err_buf)) == 1);
+    assert(strlen(err_buf) > 0);
+
+    // OMP Galasa Diagnostics test
+    char report_buf[256] = {0};
+    assert(tsfi_cw_omp_galasa_run_diagnostics(&run, report_buf, sizeof(report_buf)) == 0);
+    assert(strstr(report_buf, "RED_ALERT") != NULL);
 }
 
 int main(void) {
