@@ -75,5 +75,7 @@ int tsfi_mf_imf_verify_deduction_bonus(int over_65_count, int blind_count, int f
 int tsfi_mf_cade_verify_ss_benefits(double modified_agi, double half_ss_benefits, double taxable_ss_reported, int filing_status, int *is_valid);
 int tsfi_mf_cade_verify_signature_date(int sign_year, int tax_year, int *is_valid);
 int tsfi_mf_imf_verify_qbi_threshold(double taxable_income, int filing_status, int *is_below_threshold);
+int tsfi_mf_cade_verify_state_withholding(const char *state_code, double state_wages, double claimed_withholding, int *is_valid);
+int tsfi_mf_imf_verify_k1_share(double partner_share_pct, double partnership_income, double reported_share_amt, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

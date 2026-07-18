@@ -588,6 +588,22 @@ int main(void) {
     assert(qbi_below == 1);
     printf("  [PASS] IRS IMF QBI Threshold Checker verified.\n");
 
+    // 180. Verify IRS CADE State Tax Withholding Matcher
+    printf("[TEST] Validating IRS CADE State Withholding Matcher...\n");
+    int withholding_valid = -1;
+    int withholding_res = tsfi_mf_cade_verify_state_withholding("CA", 50000.00, 2500.00, &withholding_valid);
+    assert(withholding_res == 0);
+    assert(withholding_valid == 1);
+    printf("  [PASS] IRS CADE State Withholding Matcher verified.\n");
+
+    // 181. Verify IRS IMF Distributive Share K-1 Partnership Validator
+    printf("[TEST] Validating IRS IMF K-1 Distributive Share Validator...\n");
+    int k1_valid = -1;
+    int k1_res = tsfi_mf_imf_verify_k1_share(10.0, 100000.00, 10000.00, &k1_valid);
+    assert(k1_res == 0);
+    assert(k1_valid == 1);
+    printf("  [PASS] IRS IMF K-1 Distributive Share Validator verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

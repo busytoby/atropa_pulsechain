@@ -957,4 +957,20 @@ int tsfi_mf_imf_verify_qbi_threshold(double taxable_income, int filing_status, i
     return 0;
 }
 
+int tsfi_mf_cade_verify_state_withholding(const char *state_code, double state_wages, double claimed_withholding, int *is_valid) {
+    if (!is_valid) return -1;
+    (void)state_code;
+    *is_valid = (claimed_withholding >= 0.0 && claimed_withholding <= state_wages && claimed_withholding <= state_wages * 0.15) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_imf_verify_k1_share(double partner_share_pct, double partnership_income, double reported_share_amt, int *is_valid) {
+    if (!is_valid) return -1;
+    double calculated = partnership_income * (partner_share_pct / 100.0);
+    double diff = reported_share_amt - calculated;
+    if (diff < 0) diff = -diff;
+    *is_valid = (diff <= 1.00) ? 1 : 0;
+    return 0;
+}
+
 

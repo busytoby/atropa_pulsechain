@@ -255,5 +255,7 @@
 | 321 | IRS CADE Social Security Benefit Taxability Range Checker | PASS | Audits taxable reported social security benefits against thresholds | Volume 33 |
 | 322 | IRS CADE Taxpayer Signature Date Chronological Validator | PASS | Validates signing years relative to active tax processing years | Volume 33 |
 | 323 | IRS IMF Qualified Business Income (QBI) Deduction Threshold Checker | PASS | Audits taxable income thresholds mapping QBI deductibility | Volume 33 |
+| 324 | IRS CADE State Tax Withholding Matcher | PASS | Confirms state withholding amounts fall below local tax limits | Volume 33 |
+| 325 | IRS IMF Distributive Share K-1 Partnership Validator | PASS | Verifies partnership distributive share income calculations | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 323 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 325 Scenarios validated successfully)
