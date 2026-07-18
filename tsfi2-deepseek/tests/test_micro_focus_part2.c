@@ -700,6 +700,22 @@ int main(void) {
     assert(qbi_valid == 1);
     printf("  [PASS] IRS IMF QBI Rate Matcher verified.\n");
 
+    // 194. Verify IRS IMF Standard vs Itemized Deduction Selector
+    printf("[TEST] Validating IRS IMF Deduction Selector...\n");
+    int select_valid = -1;
+    int select_res = tsfi_mf_imf_select_deduction(13850.00, 15000.00, 15000.00, &select_valid);
+    assert(select_res == 0);
+    assert(select_valid == 1);
+    printf("  [PASS] IRS IMF Deduction Selector verified.\n");
+
+    // 195. Verify IRS IMF Charitable Cash Contribution Cap Validator
+    printf("[TEST] Validating IRS IMF Charitable Cash Cap Checker...\n");
+    int charity_valid = -1;
+    int charity_res = tsfi_mf_imf_verify_charity_cap(100000.00, 50000.00, &charity_valid);
+    assert(charity_res == 0);
+    assert(charity_valid == 1);
+    printf("  [PASS] IRS IMF Charitable Cash Cap Checker verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

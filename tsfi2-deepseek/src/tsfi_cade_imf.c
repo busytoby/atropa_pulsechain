@@ -1084,4 +1084,18 @@ int tsfi_mf_imf_verify_qbi_deduction(double qbi, double taxable_income, double c
     return 0;
 }
 
+int tsfi_mf_imf_select_deduction(double standard_ded, double itemized_ded, double claimed_ded, int *is_valid) {
+    if (!is_valid) return -1;
+    double expected = (standard_ded > itemized_ded) ? standard_ded : itemized_ded;
+    *is_valid = (claimed_ded == expected) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_imf_verify_charity_cap(double agi, double claimed_charity, int *is_valid) {
+    if (!is_valid) return -1;
+    double cap = agi * 0.60;
+    *is_valid = (claimed_charity <= cap && claimed_charity >= 0.0) ? 1 : 0;
+    return 0;
+}
+
 

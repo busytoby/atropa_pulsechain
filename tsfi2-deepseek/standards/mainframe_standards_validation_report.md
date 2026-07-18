@@ -269,5 +269,7 @@
 | 335 | IRS IMF Federal Net Investment Income Tax (NIIT) Threshold Checker | PASS | Audits MAGI levels against investment tax liability thresholds | Volume 33 |
 | 336 | IRS IMF Schedule A Medical Expense Floor Matcher | PASS | Checks Schedule A medical deductions apply the 7.5% floor | Volume 33 |
 | 337 | IRS IMF Federal Qualified Business Income (QBI) Deduction Rate Matcher | PASS | Verifies QBI deduction calculation matches standard 20% limits | Volume 33 |
+| 338 | IRS IMF Standard vs. Itemized Deduction Selector | PASS | Compares and verifies the larger of standard vs. itemized deductions | Volume 33 |
+| 339 | IRS IMF Charitable Cash Contribution Cap Validator | PASS | Ensures cash charitable contributions do not exceed AGI limits | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 337 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 339 Scenarios validated successfully)
