@@ -92,6 +92,9 @@ int tsfi_cw_vsam_write(tsfi_cw_vsam_ksds *ksds, const char *key, const uint8_t *
             ksds->key_prefix_savings += savings;
         }
         tsfi_cw_vsam_compress_key(key, prev_key, comp_key, sizeof(comp_key));
+        if (tsfi_cw_vsam_validate_compressed_key_len(key, comp_key) != 0) {
+            return -9;
+        }
         char decomp_key[32];
         tsfi_cw_vsam_decompress_key(comp_key, prev_key, decomp_key, sizeof(decomp_key));
         if (strcmp(key, decomp_key) != 0) {
@@ -587,4 +590,10 @@ int tsfi_cw_vsam_lock_record_ex(tsfi_cw_vsam_ksds *ksds, const char *key, uint32
 uint32_t tsfi_cw_vsam_get_key_prefix_savings(tsfi_cw_vsam_ksds *ksds) {
     if (!ksds) return 0;
     return ksds->key_prefix_savings;
+}
+
+int tsfi_cw_vsam_validate_compressed_key_len(const char *raw_key, const char *comp_key) {
+    if (!raw_key || !comp_key) return -1;
+    if (strlen(raw_key) >= 6 && strlen(comp_key) > strlen(raw_key)) return -9;
+    return 0;
 }

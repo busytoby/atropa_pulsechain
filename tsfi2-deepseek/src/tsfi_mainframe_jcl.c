@@ -503,3 +503,8 @@ int tsfi_cw_jcl_substitute_symbol(const char *card, const char *sym_name, const 
     resolved_out[max_len - 1] = '\0';
     return -2;
 }
+
+int tsfi_cw_jcl_sysin_limit_check(int card_count) {
+    if (card_count < 0 || card_count > 500) return -20;
+    return 0;
+}

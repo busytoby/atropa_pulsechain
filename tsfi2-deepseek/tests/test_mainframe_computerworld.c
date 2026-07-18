@@ -933,6 +933,33 @@ static void test_new_mainframe_features(void) {
 
     // Y2K leap adjustments count check
     assert(tsfi_cw_y2k_count_leap_adjustments(2000, 2004) == 2);
+
+    // EBCDIC Zhumadian Cantonese Translation
+    uint8_t zhumadian_buf[64];
+    char utf8_zhumadian[64];
+    int zhumadian_len = tsfi_cw_utf8_to_ebcdic_zhumadian_cantonese("駐馬店粵", zhumadian_buf, sizeof(zhumadian_buf));
+    assert(zhumadian_len == 16);
+    assert(tsfi_cw_ebcdic_to_utf8_zhumadian_cantonese(zhumadian_buf, zhumadian_len, utf8_zhumadian, sizeof(utf8_zhumadian)) == 12);
+    assert(strcmp(utf8_zhumadian, "駐馬店粵") == 0);
+
+    // EBCDIC CP935 Extended Single-byte translator
+    assert(tsfi_cw_ebcdic_cp935_extended_translate(0xAD) == '[');
+
+    // VSAM key length validator
+    assert(tsfi_cw_vsam_validate_compressed_key_len("HELLOWORLD", "HW") == 0);
+    assert(tsfi_cw_vsam_validate_compressed_key_len("HELLOWORLD", "LONGERHELLOWORLD") == -9);
+
+    // JCL card limit check
+    assert(tsfi_cw_jcl_sysin_limit_check(450) == 0);
+    assert(tsfi_cw_jcl_sysin_limit_check(550) == -20);
+
+    // COBOL record offset limits
+    assert(tsfi_cw_cobol_validate_record_offset(100, 200) == 0);
+    assert(tsfi_cw_cobol_validate_record_offset(250, 200) == -19);
+
+    // Y2K Pivot Validation
+    assert(tsfi_cw_y2k_validate_pivot_range(50) == 0);
+    assert(tsfi_cw_y2k_validate_pivot_range(5) == -21);
 }
 
 int main(void) {

@@ -741,3 +741,8 @@ int tsfi_cw_cobol_validate_picture_numeric_bounds(const char *pic_str, double va
     }
     return 0;
 }
+
+int tsfi_cw_cobol_validate_record_offset(int calculated_offset, int max_buffer_limit) {
+    if (calculated_offset < 0 || calculated_offset > max_buffer_limit) return -19;
+    return 0;
+}

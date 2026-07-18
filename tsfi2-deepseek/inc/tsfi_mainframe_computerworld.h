@@ -422,26 +422,39 @@ int tsfi_cw_utf8_to_ebcdic_cp937(const char *utf8_str, uint8_t *ebcdic_out, int 
 int tsfi_cw_ebcdic_to_utf8_cp939(const uint8_t *ebcdic_str, int len, char *utf8_out, int max_len);
 int tsfi_cw_utf8_to_ebcdic_cp939(const char *utf8_str, uint8_t *ebcdic_out, int max_len);
 
-// JCL GDG resolver, COND chain evaluation, step parameter parser, symbol substitution, name validator, and quotes validator
+// EBCDIC Zhumadian Cantonese dialect translation
+int tsfi_cw_ebcdic_to_utf8_zhumadian_cantonese(const uint8_t *ebcdic_str, int len, char *utf8_out, int max_len);
+int tsfi_cw_utf8_to_ebcdic_zhumadian_cantonese(const char *utf8_str, uint8_t *ebcdic_out, int max_len);
+
+// EBCDIC CP935 Extended Single-byte translator
+uint8_t tsfi_cw_ebcdic_cp935_extended_translate(uint8_t ebcdic_char);
+
+// JCL GDG resolver, COND chain evaluation, step parameter parser, symbol substitution, name validator, quotes validator, and card limit check
 int tsfi_cw_jcl_resolve_gdg(const char *dsn_str, int current_gen, char *resolved_out, int max_len);
 int tsfi_cw_jcl_eval_cond_chain(int step_rc, int cond_code_1, const char *op_1, int cond_code_2, const char *op_2);
 int tsfi_cw_jcl_parse_parm(const char *card, char *parm_out, int max_len);
 int tsfi_cw_jcl_substitute_symbol(const char *card, const char *sym_name, const char *sym_val, char *resolved_out, int max_len);
 int tsfi_cw_jcl_validate_symbol_name(const char *sym_name);
 int tsfi_cw_jcl_check_parm_quotes(const char *card);
+int tsfi_cw_jcl_sysin_limit_check(int card_count);
 
-// COBOL occurs, justified right, and picture clause validators
+// COBOL occurs, justified right, picture clause, and record offset validators
 int tsfi_cw_cobol_validate_occurs_range(int current_occurs, int max_occurs);
 int tsfi_cw_cobol_validate_justified_right_dynamic(tsfi_cw_cobol_field *f, int dynamic_occurs, const char *val);
 int tsfi_cw_cobol_validate_picture_numeric_bounds(const char *pic_str, double val);
+int tsfi_cw_cobol_validate_record_offset(int calculated_offset, int max_buffer_limit);
 
-// Y2K leap year checker, Month days resolver, Julian day validator, and leap adjustments counter
+// Y2K leap year checker, Month days resolver, Julian day validator, leap adjustments counter, and pivot year range validator
 int tsfi_cw_y2k_is_leap_year(uint32_t year);
 int tsfi_cw_y2k_get_month_days(uint32_t year, uint32_t month, int *days_out);
 int tsfi_cw_gregorian_to_julian_y2k(const char *greg_in, uint32_t pivot, char *julian_out, int max_len);
 int tsfi_cw_y2k_validate_format(const char *date_str);
 int tsfi_cw_y2k_validate_julian_day(uint32_t year, uint32_t day_of_year);
 int tsfi_cw_y2k_count_leap_adjustments(uint32_t year1, uint32_t year2);
+int tsfi_cw_y2k_validate_pivot_range(uint32_t pivot);
+
+// VSAM key length validator
+int tsfi_cw_vsam_validate_compressed_key_len(const char *raw_key, const char *comp_key);
 
 typedef struct {
     uint32_t leap_checks_performed;

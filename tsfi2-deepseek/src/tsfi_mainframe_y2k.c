@@ -339,3 +339,8 @@ int tsfi_cw_y2k_count_leap_adjustments(uint32_t year1, uint32_t year2) {
     }
     return leap_count;
 }
+
+int tsfi_cw_y2k_validate_pivot_range(uint32_t pivot) {
+    if (pivot < 10 || pivot > 90) return -21;
+    return 0;
+}
