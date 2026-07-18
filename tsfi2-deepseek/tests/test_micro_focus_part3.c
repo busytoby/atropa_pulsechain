@@ -721,5 +721,21 @@ int run_nato_stanag_tests(void) {
     assert(slot_boundary_valid == 1);
     printf("  [PASS] NATO Broadcast Backoff Slot Alignment Boundary Matcher verified.\n");
 
+    // 339. Verify NATO Link-Layer Broadcast Collision Backoff Slot Clock Source Selector
+    printf("[TEST] Validating NATO Broadcast Backoff Slot Clock Source Selector...\n");
+    int slot_clock_valid = -1;
+    int slot_clock_res = tsfi_mf_nato_verify_slot_clock_source(1, &slot_clock_valid);
+    assert(slot_clock_res == 0);
+    assert(slot_clock_valid == 1);
+    printf("  [PASS] NATO Broadcast Backoff Slot Clock Source Selector verified.\n");
+
+    // 340. Verify NATO Link-Layer Broadcast Channel Busy Hysteresis Up-Ramp Rate Factor Matcher
+    printf("[TEST] Validating NATO Broadcast Busy Up-Ramp Rate Factor Matcher...\n");
+    int up_ramp_factor_valid = -1;
+    int up_ramp_factor_res = tsfi_mf_nato_verify_up_ramp_rate_factor(3, &up_ramp_factor_valid);
+    assert(up_ramp_factor_res == 0);
+    assert(up_ramp_factor_valid == 1);
+    printf("  [PASS] NATO Broadcast Busy Up-Ramp Rate Factor Matcher verified.\n");
+
     return 0;
 }

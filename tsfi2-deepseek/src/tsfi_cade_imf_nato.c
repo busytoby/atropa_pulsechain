@@ -585,3 +585,15 @@ int tsfi_mf_nato_verify_slot_boundary(int boundary_ms, int *is_valid) {
     *is_valid = (boundary_ms >= 1 && boundary_ms <= 5) ? 1 : 0;
     return 0;
 }
+
+int tsfi_mf_nato_verify_slot_clock_source(int source, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (source >= 0 && source <= 2) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_up_ramp_rate_factor(int factor, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (factor >= 1 && factor <= 5) ? 1 : 0;
+    return 0;
+}
