@@ -676,3 +676,12 @@ int tsfi_cw_jcl_query_and_reset_substitution_stats_ex(uint32_t *substitutions_ou
     global_jcl_substitutions_performed = 0;
     return 0;
 }
+
+int tsfi_cw_jcl_query_and_reset_substitution_stats_ex2(uint32_t *substitutions_out, int *limit_out, int *boundary_out) {
+    if (!substitutions_out || !limit_out || !boundary_out) return -1;
+    *substitutions_out = global_jcl_substitutions_performed;
+    *limit_out = global_jcl_substitution_depth_limit;
+    *boundary_out = global_jcl_substitution_depth_boundary;
+    global_jcl_substitutions_performed = 0;
+    return 0;
+}

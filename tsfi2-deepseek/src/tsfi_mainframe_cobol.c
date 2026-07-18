@@ -870,3 +870,25 @@ int tsfi_cw_cobol_verify_field_alignment_ex5(int offset, int size, int alignment
     if ((offset + size) % alignment != 0) return -34;
     return 0;
 }
+
+int tsfi_cw_cobol_verify_field_alignment_ex6(int offset, int size, int alignment, int max_size, char pad_char, int margin, int fallback_pad, int offset_limit, int *failure_offset_out) {
+    if (alignment <= 0 || max_size <= 0 || !failure_offset_out) return -1;
+    *failure_offset_out = 0;
+    if (offset > offset_limit) {
+        *failure_offset_out = offset;
+        return -28;
+    }
+    if (offset + size + margin > max_size) {
+        *failure_offset_out = offset + size + margin;
+        return -30;
+    }
+    if (pad_char == '\0' && fallback_pad == 0) {
+        *failure_offset_out = -1;
+        return -32;
+    }
+    if ((offset + size) % alignment != 0) {
+        *failure_offset_out = (offset + size) % alignment;
+        return -34;
+    }
+    return 0;
+}

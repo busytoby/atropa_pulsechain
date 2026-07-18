@@ -453,3 +453,12 @@ int tsfi_cw_y2k_format_and_reset_violations_ex2(char *buf_out, int max_len, uint
     global_y2k_chronological_violations = 0;
     return 0;
 }
+
+int tsfi_cw_y2k_format_and_reset_violations_ex3(char *buf_out, int max_len, uint32_t pivot, const char *prefix, int *len_out, uint32_t *violations_out) {
+    if (!buf_out || max_len <= 0 || !prefix || !len_out || !violations_out) return -1;
+    *violations_out = global_y2k_chronological_violations;
+    int rc = snprintf(buf_out, max_len, "%s [Pivot %u] Chronological Violations: %u", prefix, pivot, global_y2k_chronological_violations);
+    *len_out = rc;
+    global_y2k_chronological_violations = 0;
+    return 0;
+}
