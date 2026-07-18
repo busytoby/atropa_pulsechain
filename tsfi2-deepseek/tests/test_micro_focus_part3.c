@@ -817,5 +817,21 @@ int run_nato_stanag_tests(void) {
     assert(slot_boundary_selector_valid == 1);
     printf("  [PASS] NATO Broadcast Backoff Slot Boundary Selector Matcher verified.\n");
 
+    // 351. Verify NATO Link-Layer Broadcast Collision Backoff Slot Alignment Boundary Source Offset Matcher
+    printf("[TEST] Validating NATO Broadcast Backoff Slot Boundary Source Offset Matcher...\n");
+    int slot_boundary_source_offset_valid = -1;
+    int slot_boundary_source_offset_res = tsfi_mf_nato_verify_slot_boundary_source_offset(6, &slot_boundary_source_offset_valid);
+    assert(slot_boundary_source_offset_res == 0);
+    assert(slot_boundary_source_offset_valid == 1);
+    printf("  [PASS] NATO Broadcast Backoff Slot Boundary Source Offset Matcher verified.\n");
+
+    // 352. Verify NATO Link-Layer Broadcast Channel Busy Hysteresis Up-Ramp Duration Threshold Matcher
+    printf("[TEST] Validating NATO Broadcast Busy Up-Ramp Duration Threshold Matcher...\n");
+    int up_ramp_duration_threshold_valid = -1;
+    int up_ramp_duration_threshold_res = tsfi_mf_nato_verify_up_ramp_duration_threshold(5, &up_ramp_duration_threshold_valid);
+    assert(up_ramp_duration_threshold_res == 0);
+    assert(up_ramp_duration_threshold_valid == 1);
+    printf("  [PASS] NATO Broadcast Busy Up-Ramp Duration Threshold Matcher verified.\n");
+
     return 0;
 }
