@@ -2099,6 +2099,27 @@ static void test_new_mainframe_features(void) {
     double discrepancy = 0.0;
     assert(tsfi_cw_raf_audit_ridels(items, 2, &discrepancy) == 0);
     assert(fabs(discrepancy - 100.0) < 0.01);
+
+    // UNT PDS test
+    tsfi_cw_unt_pds_status pds_ok = { "SOURCE.PDS", 20, 10, 50 };
+    int needs_compress = 0;
+    assert(tsfi_cw_unt_audit_pds(&pds_ok, &needs_compress) == 0);
+    assert(needs_compress == 0);
+
+    tsfi_cw_unt_pds_status pds_bad = { "SOURCE.PDS", 20, 18, 90 }; // 90% full
+    assert(tsfi_cw_unt_audit_pds(&pds_bad, &needs_compress) == 0);
+    assert(needs_compress == 1);
+
+    // UNT CICS test
+    tsfi_cw_unt_cics_tran trans[2] = {
+        { "TRN1", 500, 10, 50 },
+        { "TRN2", 1500, 30, 150 } // slow (> 1000)
+    };
+    double avg_resp = 0.0;
+    int slow_cnt = 0;
+    assert(tsfi_cw_unt_profile_cics(trans, 2, &avg_resp, &slow_cnt) == 0);
+    assert(fabs(avg_resp - 1000.0) < 0.1);
+    assert(slow_cnt == 1);
 }
 
 int main(void) {

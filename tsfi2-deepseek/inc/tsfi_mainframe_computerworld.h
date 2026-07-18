@@ -1150,5 +1150,24 @@ typedef struct {
 int tsfi_cw_raf_allocate_vital(const tsfi_cw_raf_vital_request *req, int *approved_out, int *priority_score_out);
 int tsfi_cw_raf_audit_ridels(const tsfi_cw_raf_ridels_audit *items, int item_count, double *total_discrepancy_value_out);
 
+// UNT Denton PDS Status
+typedef struct {
+    char dataset_name[32];
+    int total_directory_blocks;
+    int used_directory_blocks;
+    int members_count;
+} tsfi_cw_unt_pds_status;
+
+// UNT Denton CICS Transaction
+typedef struct {
+    char transaction_id[8];
+    int response_time_ms;
+    int db_calls_count;
+    int cpu_time_ms;
+} tsfi_cw_unt_cics_tran;
+
+int tsfi_cw_unt_audit_pds(const tsfi_cw_unt_pds_status *pds, int *needs_compress_out);
+int tsfi_cw_unt_profile_cics(const tsfi_cw_unt_cics_tran *trans, int tran_count, double *avg_response_time_out, int *slow_count_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

@@ -1507,6 +1507,29 @@ int tsfi_cw_raf_audit_ridels(const tsfi_cw_raf_ridels_audit *items, int item_cou
     return 0;
 }
 
+int tsfi_cw_unt_audit_pds(const tsfi_cw_unt_pds_status *pds, int *needs_compress_out) {
+    if (!pds || !needs_compress_out) return -1;
+    
+    *needs_compress_out = (pds->total_directory_blocks > 0 && (double)pds->used_directory_blocks / (double)pds->total_directory_blocks >= 0.9) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_cw_unt_profile_cics(const tsfi_cw_unt_cics_tran *trans, int tran_count, double *avg_response_time_out, int *slow_count_out) {
+    if (!trans || tran_count <= 0 || !avg_response_time_out || !slow_count_out) return -1;
+    
+    double total_res = 0.0;
+    *slow_count_out = 0;
+    for (int i = 0; i < tran_count; i++) {
+        total_res += trans[i].response_time_ms;
+        if (trans[i].response_time_ms > 1000) {
+            (*slow_count_out)++;
+        }
+    }
+    *avg_response_time_out = total_res / tran_count;
+    return 0;
+}
+
+
 
 
 
