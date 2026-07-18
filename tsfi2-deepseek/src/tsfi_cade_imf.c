@@ -1149,4 +1149,17 @@ int tsfi_mf_imf_verify_simple_ira_contribution(double elective_contribution, int
     return 0;
 }
 
+int tsfi_mf_imf_check_actc_income_floor(double earned_income, int *is_above_floor) {
+    if (!is_above_floor) return -1;
+    *is_above_floor = (earned_income > 2500.00) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_imf_verify_simple_ira_match(double employee_comp, double claimed_match, int *is_valid) {
+    if (!is_valid) return -1;
+    double max_match = employee_comp * 0.03;
+    *is_valid = (claimed_match <= max_match && claimed_match >= 0.0) ? 1 : 0;
+    return 0;
+}
+
 

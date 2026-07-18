@@ -302,8 +302,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 345 | IRS IMF Federal Simple Student Loan Interest AGI Phase-Out Checker | PASS | Audits taxpayer AGI to determine phase-out bounds for student loan | Volume 33 |
 | 346 | IRS IMF Earned Income Credit Investment Income Limit Matcher | PASS | Checks total Schedule B investment income is under EITC bounds | Volume 33 |
 | 347 | IRS IMF SIMPLE IRA Elective Contribution Limit Matcher | PASS | Enforces standard contribution limit ceilings ($16,000) for SIMPLE | Volume 33 |
+| 348 | IRS IMF Additional Child Tax Credit (ACTC) Income Threshold Checker | PASS | Checks earned income floor bounds calculating refundable ACTC | Volume 33 |
+| 349 | IRS IMF SIMPLE IRA Employer Match Matcher | PASS | Verifies employer matching contributions up to employee caps | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 347 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 349 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

@@ -780,6 +780,22 @@ int main(void) {
     assert(ira_contrib_valid == 1);
     printf("  [PASS] IRS IMF SIMPLE IRA Contribution Matcher verified.\n");
 
+    // 204. Verify IRS IMF Additional Child Tax Credit (ACTC) Income Threshold Checker
+    printf("[TEST] Validating IRS IMF ACTC Income Floor Checker...\n");
+    int actc_above_floor = -1;
+    int actc_floor_res = tsfi_mf_imf_check_actc_income_floor(5000.00, &actc_above_floor);
+    assert(actc_floor_res == 0);
+    assert(actc_above_floor == 1);
+    printf("  [PASS] IRS IMF ACTC Income Floor Checker verified.\n");
+
+    // 205. Verify IRS IMF SIMPLE IRA Employer Match Matcher
+    printf("[TEST] Validating IRS IMF SIMPLE IRA Match Matcher...\n");
+    int ira_match_valid = -1;
+    int ira_match_res = tsfi_mf_imf_verify_simple_ira_match(50000.00, 1500.00, &ira_match_valid);
+    assert(ira_match_res == 0);
+    assert(ira_match_valid == 1);
+    printf("  [PASS] IRS IMF SIMPLE IRA Match Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

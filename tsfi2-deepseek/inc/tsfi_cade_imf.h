@@ -99,5 +99,7 @@ int tsfi_mf_imf_verify_capital_loss_cap(double claimed_loss, int filing_status, 
 int tsfi_mf_imf_check_student_loan_phaseout(double agi, int filing_status, int *is_below_threshold);
 int tsfi_mf_imf_verify_eitc_investment_income(double interest_income, double dividend_income, int *is_eligible);
 int tsfi_mf_imf_verify_simple_ira_contribution(double elective_contribution, int *is_valid);
+int tsfi_mf_imf_check_actc_income_floor(double earned_income, int *is_above_floor);
+int tsfi_mf_imf_verify_simple_ira_match(double employee_comp, double claimed_match, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H
