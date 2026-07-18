@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "tsfi_cade_imf.h"
+
 
 // 1. COMP-5 Native Binary Format Encoders/Decoders
 int tsfi_mf_comp5_encode(int64_t value, uint8_t *buffer, int size_bytes);
