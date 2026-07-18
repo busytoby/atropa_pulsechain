@@ -685,7 +685,33 @@ int run_nato_stanag_tests_part5(void) {
 
     tsfi_mf_cics_authorize_transaction("NDFT", 5, &authorized); // Allowed at DEFCON 5
     assert(authorized == 1);
-    printf("  [PASS] CICS NAAP Transaction Authorization verified.\n");
+    // Verify 3270 Map Formatter
+    printf("[TEST] Validating CICS 3270 Map Formatter...\n");
+    char display_buf[128];
+    size_t display_size = 0;
+    int fmt_res = tsfi_mf_cics_format_3270_map(1, display_buf, &display_size);
+    assert(fmt_res == 0);
+    assert(display_size > 0);
+    assert(display_buf[0] == '\x11');
+    assert(display_buf[display_size - 1] == '*');
+    printf("  [PASS] CICS 3270 Map Formatter verified.\n");
+
+    // Verify Precedence Classifier
+    printf("[TEST] Validating JANAP Precedence Classifier...\n");
+    int priority = -1;
+    int prec_val = -1;
+    int prec_res = tsfi_mf_janap_classify_precedence('Z', &priority, &prec_val); // Flash -> priority 4
+    assert(prec_res == 0);
+    assert(prec_val == 1);
+    assert(priority == 4);
+
+    tsfi_mf_janap_classify_precedence('R', &priority, &prec_val); // Routine -> priority 1
+    assert(prec_val == 1);
+    assert(priority == 1);
+
+    tsfi_mf_janap_classify_precedence('X', &priority, &prec_val); // Invalid -> invalid
+    assert(prec_val == 0);
+    printf("  [PASS] JANAP Precedence Classifier verified.\n");
 
     return 0;
 }

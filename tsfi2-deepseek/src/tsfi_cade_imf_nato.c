@@ -1531,6 +1531,40 @@ int tsfi_mf_cics_authorize_transaction(const char *transid, uint16_t naap_status
     return 0;
 }
 
+int tsfi_mf_cics_format_3270_map(int defcon_level, char *out_stream, size_t *out_size) {
+    if (!out_stream || !out_size) return -1;
+    int written = sprintf(out_stream, "\x11\x40\x40\x1D\x08*** SYSTEM DEFCON ALERT: %d ***", defcon_level);
+    if (written < 0) return -2;
+    *out_size = (size_t)written;
+    return 0;
+}
+
+int tsfi_mf_janap_classify_precedence(char precedence_char, int *priority_level, int *is_valid) {
+    if (!priority_level || !is_valid) return -1;
+    *is_valid = 0;
+    
+    switch (precedence_char) {
+        case 'Z': // Flash
+            *priority_level = 4;
+            *is_valid = 1;
+            break;
+        case 'O': // Immediate
+            *priority_level = 3;
+            *is_valid = 1;
+            break;
+        case 'P': // Priority
+            *priority_level = 2;
+            *is_valid = 1;
+            break;
+        case 'R': // Routine
+            *priority_level = 1;
+            *is_valid = 1;
+            break;
+    }
+    return 0;
+}
+
+
 
 
 

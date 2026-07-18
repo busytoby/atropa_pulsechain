@@ -427,4 +427,7 @@ int tsfi_mf_cics_generate_naap_broadcast(int defcon_level, uint16_t term_id, uin
 int tsfi_mf_cics_extract_janap_payload(const char *janap_msg, size_t msg_size, char *out_payload, size_t *out_size);
 int tsfi_mf_cics_authorize_transaction(const char *transid, uint16_t naap_status, int *is_authorized);
 
+int tsfi_mf_cics_format_3270_map(int defcon_level, char *out_stream, size_t *out_size);
+int tsfi_mf_janap_classify_precedence(char precedence_char, int *priority_level, int *is_valid);
+
 #endif // TSFI_CADE_IMF_H
