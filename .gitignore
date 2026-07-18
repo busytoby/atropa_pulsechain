@@ -64,6 +64,7 @@ state.json
 *.wav
 *.mp3
 *.tar.gz
+/tmp/
 
 # Ignore compiled binaries and solidity binary builds
 /solidity/bin/*

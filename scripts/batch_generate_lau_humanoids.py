@@ -10,7 +10,7 @@ def main():
     
     # 1. Load active (non-ignored) addresses
     active_tokens = {}
-    for path in glob.glob("treasury_tokens_*.json"):
+    for path in glob.glob("assets/treasury_tokens_*.json"):
         try:
             with open(path, "r") as f:
                 data = json.load(f)

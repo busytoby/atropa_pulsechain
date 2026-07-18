@@ -194,7 +194,7 @@ def main():
     with open(roster_path, "w") as f:
         json.dump(delegates, f, indent=4)
         
-    registry_path = "treasury_tokens_cho_registry.json"
+    registry_path = "assets/treasury_tokens_cho_registry.json"
     with open(registry_path, "w") as f:
         json.dump(delegates, f, indent=4)
 

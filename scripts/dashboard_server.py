@@ -807,7 +807,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             treasury_tokens = {}
             import glob
             with IGNORE_LOCK:
-                for fpath in glob.glob("treasury_tokens_*.json"):
+                for fpath in glob.glob("assets/treasury_tokens_*.json"):
                     try:
                         with open(fpath, "r") as f:
                             t_data = json.load(f)
@@ -1330,7 +1330,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 
                 # Search all files to find which files have the token and update them
                 found_any = False
-                for fpath in glob.glob("treasury_tokens_*.json"):
+                for fpath in glob.glob("assets/treasury_tokens_*.json"):
                     try:
                         with open(fpath, "r") as f:
                             data = json.load(f)
@@ -1344,7 +1344,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 
                 if not found_any:
                     # Default to unknown_minter if not found anywhere
-                    target_fpath = "treasury_tokens_unknown_minter.json"
+                    target_fpath = "assets/treasury_tokens_unknown_minter.json"
                     tokens = None
                     if os.path.exists(target_fpath):
                         try:

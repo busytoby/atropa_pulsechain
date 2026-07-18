@@ -160,12 +160,13 @@ class TestNoNukesDashboardAdversarial(unittest.TestCase):
         cls.write_sandbox_json("nonukes_pulsex_reserves.json", reserves)
 
         # Clear any treasury files
-        for fpath in os.listdir(cls.sandbox_dir):
-            if fpath.startswith("treasury_tokens_"):
-                try:
-                    os.remove(os.path.join(cls.sandbox_dir, fpath))
-                except Exception:
-                    pass
+        for root, dirs, files in os.walk(cls.sandbox_dir):
+            for fpath in files:
+                if fpath.startswith("treasury_tokens_"):
+                    try:
+                        os.remove(os.path.join(root, fpath))
+                    except Exception:
+                        pass
 
     @classmethod
     def find_free_port(cls):
@@ -177,7 +178,9 @@ class TestNoNukesDashboardAdversarial(unittest.TestCase):
 
     @classmethod
     def write_sandbox_json(cls, filename, data):
-        with open(os.path.join(cls.sandbox_dir, filename), "w", encoding="utf-8") as f:
+        fpath = os.path.join(cls.sandbox_dir, filename)
+        os.makedirs(os.path.dirname(fpath), exist_ok=True)
+        with open(fpath, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
 
     def setUp(self):
@@ -289,7 +292,7 @@ class TestNoNukesDashboardAdversarial(unittest.TestCase):
 
     def test_10_api_ignore_corrupt_unknown_minter_json(self):
         """Verify /api/ignore handles treasury_tokens_unknown_minter.json type confusion gracefully."""
-        self.write_sandbox_json("treasury_tokens_unknown_minter.json", [])
+        self.write_sandbox_json("assets/treasury_tokens_unknown_minter.json", [])
         # Trigger default minter logic by ignoring an address not registered anywhere
         status, response = self.get_api_response("/api/ignore?address=0x1234567890123456789012345678901234567890&ignored=true")
         self.assertIn(status, [400, 500])

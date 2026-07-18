@@ -131,13 +131,13 @@ def main():
 
     # Load token to minter mapping
     token_to_minter = {}
-    if os.path.exists("token_to_minter.json"):
+    if os.path.exists("assets/token_to_minter.json"):
         try:
-            with open("token_to_minter.json", "r") as f:
+            with open("assets/token_to_minter.json", "r") as f:
                 token_to_minter = {k.lower(): v.lower() for k, v in json.load(f).items()}
-            print(f"Loaded {len(token_to_minter)} mappings from token_to_minter.json.")
+            print(f"Loaded {len(token_to_minter)} mappings from assets/token_to_minter.json.")
         except Exception as e:
-            print(f"Error reading token_to_minter.json: {e}")
+            print(f"Error reading assets/token_to_minter.json: {e}")
 
     print(f"Sample addresses_to_check: {addresses_to_check[:15]}")
 
@@ -461,14 +461,14 @@ def main():
     # Load existing registry (merge split files + legacy)
     registry = {}
     import glob
-    for fpath in glob.glob("treasury_tokens_*.json"):
+    for fpath in glob.glob("assets/treasury_tokens_*.json"):
         try:
             with open(fpath, "r") as f:
                 registry.update(json.load(f))
         except Exception as e:
             print(f"Error reading {fpath}: {e}")
             
-    legacy_file = "treasury_tokens.json"
+    legacy_file = "assets/treasury_tokens.json"
     if os.path.exists(legacy_file):
         try:
             with open(legacy_file, "r") as f:
@@ -560,7 +560,7 @@ def main():
         m_name = val.get("minter_name") or "Unknown Minter"
         # Sanitize filename (lowercase and replace spaces with underscore)
         safe_name = m_name.lower().replace(" ", "_")
-        fpath = f"treasury_tokens_{safe_name}.json"
+        fpath = f"assets/treasury_tokens_{safe_name}.json"
         if fpath not in split_registries:
             split_registries[fpath] = {}
         split_registries[fpath][addr] = val
