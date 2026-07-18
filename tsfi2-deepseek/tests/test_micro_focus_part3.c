@@ -529,5 +529,21 @@ int run_nato_stanag_tests(void) {
     assert(rssi_hysteresis_valid == 1);
     printf("  [PASS] NATO Broadcast Busy RSSI Hysteresis Matcher verified.\n");
 
+    // 315. Verify NATO Link-Layer Broadcast Channel Busy Hysteresis Time Matcher
+    printf("[TEST] Validating NATO Broadcast Busy Hysteresis Time Matcher...\n");
+    int busy_hysteresis_time_valid = -1;
+    int busy_hysteresis_time_res = tsfi_mf_nato_verify_busy_hysteresis_time(20, &busy_hysteresis_time_valid);
+    assert(busy_hysteresis_time_res == 0);
+    assert(busy_hysteresis_time_valid == 1);
+    printf("  [PASS] NATO Broadcast Busy Hysteresis Time Matcher verified.\n");
+
+    // 316. Verify NATO Link-Layer Multi-Scan Collision Clear Signal Drop Time Matcher
+    printf("[TEST] Validating NATO Collision Clear RSSI Drop Time Matcher...\n");
+    int rssi_drop_time_valid = -1;
+    int rssi_drop_time_res = tsfi_mf_nato_verify_rssi_drop_time(5, &rssi_drop_time_valid);
+    assert(rssi_drop_time_res == 0);
+    assert(rssi_drop_time_valid == 1);
+    printf("  [PASS] NATO Collision Clear RSSI Drop Time Matcher verified.\n");
+
     return 0;
 }
