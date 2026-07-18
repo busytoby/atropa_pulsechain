@@ -1920,6 +1920,44 @@ int main(void) {
     remove(feexp_path); // clean up
     printf("  [PASS] Batch fee exemption expirations, validations, and override logs verified.\n");
 
+    // 52. Test Card Merchant Exception Whitelist Manager (Merchant Exception)
+    printf("[E2E] Testing Card Merchant Exception Whitelist Manager...\n");
+    const char *mex_path = "hogan_merchant_exceptions.dat.bin";
+    remove(mex_path); // ensure clean start
+    
+    hogan_umbrella_system me_sys;
+    tsfi_hogan_init(&me_sys);
+    assert(tsfi_hogan_register_account(&me_sys, 1001, 1000) == 0); // Alice: 1000 balance
+    
+    // Block merchant 7777 for Alice
+    assert(tsfi_hogan_update_merchant_block(&me_sys, "hogan_mblock.dat.bin", 1001, 7777, 1, 999) == 0);
+    remove("hogan_mblock.dat.bin");
+    
+    // Auth should fail because merchant 7777 is blocked
+    assert(tsfi_hogan_authorize_card(&me_sys, "hogan_holds.dat.bin", 2002, 1001, 7777, 100) == -5);
+    
+    // Whitelist merchant 7777 as an exception for Alice
+    assert(tsfi_hogan_add_merchant_exception(&me_sys, mex_path, 1001, 7777, 999) == 0);
+    assert(tsfi_hogan_add_merchant_exception(&me_sys, "hogan_mwhitelist.json", 1001, 7777, 999) == -3); // Rule 13 check
+    
+    // Auth should now succeed with whitelist exception bypassing blocked merchant check
+    assert(tsfi_hogan_authorize_card(&me_sys, "hogan_holds.dat.bin", 2002, 1001, 7777, 100) == 0);
+    remove("hogan_holds.dat.bin");
+    
+    // Read override log files and verify entries
+    uint8_t read_mebuf[sizeof(hogan_merchant_exception_entry)];
+    size_t me_size = 0;
+    assert(tsfi_hogan_read_seq_record(mex_path, 0, read_mebuf, &me_size) == 0);
+    assert(me_size == sizeof(hogan_merchant_exception_entry));
+    const hogan_merchant_exception_entry *me_entry = (const hogan_merchant_exception_entry *)read_mebuf;
+    assert(me_entry->account_id == 1001);
+    assert(me_entry->merchant_id == 7777);
+    assert(me_entry->was_added == 1);
+    assert(me_entry->authority_id == 999);
+    
+    remove(mex_path); // clean up
+    printf("  [PASS] Card merchant block whitelist overrides and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }

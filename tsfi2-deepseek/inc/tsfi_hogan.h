@@ -79,6 +79,8 @@ typedef struct {
     uint32_t pin_change_fail_count;
     uint32_t pin_change_fail_limit;
     uint32_t fee_exempt_expiry_epoch;
+    uint32_t merchant_exceptions[16];
+    uint8_t merchant_exception_count;
 } hogan_account;
 
 #define HOGAN_MAX_BLOCKED_CARDS 32
@@ -570,5 +572,15 @@ typedef struct {
 } hogan_fee_exempt_expiry_entry;
 
 int tsfi_hogan_update_fee_exempt_expiry(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t expiry_epoch, uint32_t authority_id);
+
+// Card Merchant Exception Whitelist Manager
+typedef struct {
+    uint32_t account_id;
+    uint32_t merchant_id;
+    uint8_t was_added;
+    uint32_t authority_id;
+} hogan_merchant_exception_entry;
+
+int tsfi_hogan_add_merchant_exception(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t merchant_id, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H

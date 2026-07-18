@@ -126,6 +126,10 @@ int tsfi_hogan_lfs_save(const hogan_umbrella_system *sys, const char *filepath) 
             fwrite(&sys->accounts[i].pin_change_fail_count, sizeof(uint32_t), 1, f);
             fwrite(&sys->accounts[i].pin_change_fail_limit, sizeof(uint32_t), 1, f);
             fwrite(&sys->accounts[i].fee_exempt_expiry_epoch, sizeof(uint32_t), 1, f);
+            fwrite(&sys->accounts[i].merchant_exception_count, sizeof(uint8_t), 1, f);
+            if (sys->accounts[i].merchant_exception_count > 0) {
+                fwrite(sys->accounts[i].merchant_exceptions, sizeof(uint32_t), sys->accounts[i].merchant_exception_count, f);
+            }
         }
     }
     
@@ -465,6 +469,18 @@ int tsfi_hogan_lfs_load(hogan_umbrella_system *sys, const char *filepath) {
             return -2;
         }
         sys->accounts[i].fee_exempt_expiry_epoch = fe_exp;
+        uint8_t me_cnt = 0;
+        if (fread(&me_cnt, sizeof(uint8_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
+        sys->accounts[i].merchant_exception_count = me_cnt;
+        if (me_cnt > 0) {
+            if (fread(sys->accounts[i].merchant_exceptions, sizeof(uint32_t), me_cnt, f) != me_cnt) {
+                fclose(f);
+                return -2;
+            }
+        }
         sys->accounts[i].active = 1;
     }
     
@@ -1061,6 +1077,10 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
             EVP_DigestUpdate(mdctx, &sys->accounts[i].pin_change_fail_count, sizeof(uint32_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].pin_change_fail_limit, sizeof(uint32_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].fee_exempt_expiry_epoch, sizeof(uint32_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].merchant_exception_count, sizeof(uint8_t));
+            if (sys->accounts[i].merchant_exception_count > 0) {
+                EVP_DigestUpdate(mdctx, sys->accounts[i].merchant_exceptions, sizeof(uint32_t) * sys->accounts[i].merchant_exception_count);
+            }
         }
     }
     EVP_DigestUpdate(mdctx, &sys->blocked_card_count, sizeof(size_t));
@@ -1112,10 +1132,19 @@ int tsfi_hogan_authorize_card(hogan_umbrella_system *sys, const char *filepath, 
     }
     
     if (acc) {
-        for (uint8_t i = 0; i < acc->blocked_merchant_count; i++) {
-            if (acc->blocked_merchants[i] == merchant_id) {
-                sys->live_processing_enabled = original_live_state;
-                return -5; // Merchant is blocked
+        uint8_t is_excepted = 0;
+        for (uint8_t i = 0; i < acc->merchant_exception_count; i++) {
+            if (acc->merchant_exceptions[i] == merchant_id) {
+                is_excepted = 1;
+                break;
+            }
+        }
+        if (!is_excepted) {
+            for (uint8_t i = 0; i < acc->blocked_merchant_count; i++) {
+                if (acc->blocked_merchants[i] == merchant_id) {
+                    sys->live_processing_enabled = original_live_state;
+                    return -5; // Merchant is blocked
+                }
             }
         }
         if (acc->card_tx_limit > 0 && acc->card_tx_count_today >= acc->card_tx_limit) {
@@ -1138,10 +1167,19 @@ int tsfi_hogan_authorize_card(hogan_umbrella_system *sys, const char *filepath, 
     
     int decline_reason = 0;
     if (acc) {
-        for (uint8_t i = 0; i < acc->blocked_merchant_count; i++) {
-            if (acc->blocked_merchants[i] == merchant_id) {
-                decline_reason = -5; // Merchant is blocked
+        uint8_t is_excepted = 0;
+        for (uint8_t i = 0; i < acc->merchant_exception_count; i++) {
+            if (acc->merchant_exceptions[i] == merchant_id) {
+                is_excepted = 1;
                 break;
+            }
+        }
+        if (!is_excepted) {
+            for (uint8_t i = 0; i < acc->blocked_merchant_count; i++) {
+                if (acc->blocked_merchants[i] == merchant_id) {
+                    decline_reason = -5; // Merchant is blocked
+                    break;
+                }
             }
         }
         if (decline_reason == 0 && acc->card_tx_limit > 0 && acc->card_tx_count_today >= acc->card_tx_limit) {
@@ -2654,6 +2692,47 @@ int tsfi_hogan_update_fee_exempt_expiry(hogan_umbrella_system *sys, const char *
     acc->fee_exempt_expiry_epoch = expiry_epoch;
     
     int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_fee_exempt_expiry_entry));
+    
+    sys->live_processing_enabled = original_live_state;
+    return write_res;
+}
+
+int tsfi_hogan_add_merchant_exception(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t merchant_id, uint32_t authority_id) {
+    // Enforce Rule 13: file extension must end with .dat.bin
+    const char *ext = strrchr(filepath, '.');
+    if (!ext || strcmp(ext, ".bin") != 0) {
+        if (!ext || strcmp(ext - 4, ".dat.bin") != 0) {
+            return -3; // Invalid extension
+        }
+    }
+
+    // Disable live queue during administrative action
+    uint8_t original_live_state = sys->live_processing_enabled;
+    sys->live_processing_enabled = 0;
+    
+    hogan_account *acc = NULL;
+    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
+        if (sys->accounts[i].active && sys->accounts[i].account_id == account_id) {
+            acc = &sys->accounts[i];
+            break;
+        }
+    }
+    
+    if (!acc) {
+        sys->live_processing_enabled = original_live_state;
+        return -1; // account not found
+    }
+    
+    if (acc->merchant_exception_count >= 16) {
+        sys->live_processing_enabled = original_live_state;
+        return -2; // whitelist full
+    }
+    
+    // Add to exceptions
+    acc->merchant_exceptions[acc->merchant_exception_count++] = merchant_id;
+    
+    hogan_merchant_exception_entry entry = { account_id, merchant_id, 1, authority_id };
+    int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_merchant_exception_entry));
     
     sys->live_processing_enabled = original_live_state;
     return write_res;
