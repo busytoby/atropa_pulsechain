@@ -13,7 +13,7 @@ import urllib.parse
 import threading
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-REAL_POOLS_PATH = os.path.join(PROJECT_ROOT, "nonukes_pools.json")
+REAL_POOLS_PATH = os.path.join(PROJECT_ROOT, "assets", "nonukes_pools.json")
 REAL_PRICE_CACHE_PATH = os.path.join(PROJECT_ROOT, "price_cache.json")
 REAL_RESOLVED_SWAPS_PATH = os.path.join(PROJECT_ROOT, "resolved_swaps.json")
 REAL_UNRESOLVED_SWAPS_PATH = os.path.join(PROJECT_ROOT, "unresolved_swaps.json")
@@ -153,7 +153,7 @@ class TestNoNukesDashboardAdversarial(unittest.TestCase):
             }
         }
 
-        cls.write_sandbox_json("nonukes_pools.json", pools)
+        cls.write_sandbox_json("assets/nonukes_pools.json", pools)
         cls.write_sandbox_json("price_cache.json", prices)
         cls.write_sandbox_json("resolved_swaps.json", resolved)
         cls.write_sandbox_json("unresolved_swaps.json", [])
@@ -262,7 +262,7 @@ class TestNoNukesDashboardAdversarial(unittest.TestCase):
 
     def test_06_corrupt_pools_json_type_confusion(self):
         """Verify /api/nonukes/pools handles nonukes_pools.json type confusion (list instead of dict) gracefully."""
-        self.write_sandbox_json("nonukes_pools.json", [])
+        self.write_sandbox_json("assets/nonukes_pools.json", [])
         status, response = self.get_api_response("/api/nonukes/pools")
         self.assertIn(status, [400, 500])
         self.assert_no_traceback()

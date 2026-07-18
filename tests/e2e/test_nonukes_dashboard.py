@@ -15,7 +15,7 @@ from html.parser import HTMLParser
 # Setup project root and configuration
 import glob
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-REAL_POOLS_PATH = os.path.join(PROJECT_ROOT, "nonukes_pools.json")
+REAL_POOLS_PATH = os.path.join(PROJECT_ROOT, "assets", "nonukes_pools.json")
 REAL_PRICE_CACHE_PATH = os.path.join(PROJECT_ROOT, "price_cache.json")
 REAL_RESOLVED_SWAPS_PATH = os.path.join(PROJECT_ROOT, "resolved_swaps.json")
 REAL_UNRESOLVED_SWAPS_PATH = os.path.join(PROJECT_ROOT, "unresolved_swaps.json")
@@ -88,13 +88,14 @@ class TestNoNukesDashboard(unittest.TestCase):
 
         # Create frontend dir inside sandbox
         os.makedirs(os.path.join(cls.sandbox_dir, "frontend"), exist_ok=True)
+        os.makedirs(os.path.join(cls.sandbox_dir, "assets"), exist_ok=True)
 
         # 2. Populate sandbox with copies of data files
         if os.path.exists(REAL_POOLS_PATH):
-            shutil.copy(REAL_POOLS_PATH, os.path.join(cls.sandbox_dir, "nonukes_pools.json"))
+            shutil.copy(REAL_POOLS_PATH, os.path.join(cls.sandbox_dir, "assets/nonukes_pools.json"))
         else:
             # Create minimal mock pools file
-            with open(os.path.join(cls.sandbox_dir, "nonukes_pools.json"), "w") as f:
+            with open(os.path.join(cls.sandbox_dir, "assets/nonukes_pools.json"), "w") as f:
                 json.dump({}, f)
 
         if os.path.exists(REAL_PRICE_CACHE_PATH):
@@ -216,7 +217,9 @@ class TestNoNukesDashboard(unittest.TestCase):
             return json.load(f)
 
     def write_sandbox_json(self, filename, data):
-        with open(os.path.join(self.sandbox_dir, filename), "w", encoding="utf-8") as f:
+        fpath = os.path.join(self.sandbox_dir, filename)
+        os.makedirs(os.path.dirname(fpath), exist_ok=True)
+        with open(fpath, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
 
     # Base helper to query endpoints using urllib
@@ -312,7 +315,7 @@ class TestNoNukesDashboard(unittest.TestCase):
     def test_05_api_nonukes_pool_details_success(self):
         """Verifies backend API /api/nonukes/pool_details?address=<addr> returns correct details."""
         # Get a valid address from our pools configuration
-        pools_config = self.read_sandbox_json("nonukes_pools.json")
+        pools_config = self.read_sandbox_json("assets/nonukes_pools.json")
         if not pools_config:
             self.skipTest("No pools available in configuration to query details.")
             
@@ -333,17 +336,17 @@ class TestNoNukesDashboard(unittest.TestCase):
 
     def test_06_empty_or_missing_pools_json_graceful(self):
         """Verifies server handles empty/missing pools JSON gracefully (returns success: false, pools: [])."""
-        pools_backup = self.read_sandbox_json("nonukes_pools.json")
+        pools_backup = self.read_sandbox_json("assets/nonukes_pools.json")
         try:
             # Overwrite pools file with empty dict
-            self.write_sandbox_json("nonukes_pools.json", {})
+            self.write_sandbox_json("assets/nonukes_pools.json", {})
             status, content_str = self.get_api_response("/api/nonukes/pools")
             self.assertEqual(status, 200)
             data = json.loads(content_str)
             self.assertFalse(data.get("success"))
             self.assertEqual(data.get("pools"), [])
         finally:
-            self.write_sandbox_json("nonukes_pools.json", pools_backup)
+            self.write_sandbox_json("assets/nonukes_pools.json", pools_backup)
 
     def test_07_corrupt_price_cache_graceful(self):
         """Verifies server handles malformed/corrupted price cache JSON without crashing."""
@@ -354,7 +357,7 @@ class TestNoNukesDashboard(unittest.TestCase):
                 f.write("{invalid json: price_cache}")
             
             # Request details which parses price_cache
-            pools_config = self.read_sandbox_json("nonukes_pools.json")
+            pools_config = self.read_sandbox_json("assets/nonukes_pools.json")
             if pools_config:
                 valid_addr = list(pools_config.keys())[0]
                 status, content_str = self.get_api_response(f"/api/nonukes/pool_details?address={valid_addr}")
@@ -440,7 +443,7 @@ class TestNoNukesDashboard(unittest.TestCase):
         """Verifies interactive table rendering for all pools."""
         if not SELENIUM_AVAILABLE or not self.driver:
             raise unittest.SkipTest("Selenium is not available to run interactive browser checks")
-        pools_config = self.read_sandbox_json("nonukes_pools.json")
+        pools_config = self.read_sandbox_json("assets/nonukes_pools.json")
         expected_count = len(pools_config)
 
         self.driver.get(f"{self.server_url}/nonukes/")
@@ -454,7 +457,7 @@ class TestNoNukesDashboard(unittest.TestCase):
         """Search query combined with group filter renders correct subset of pools."""
         if not SELENIUM_AVAILABLE or not self.driver:
             raise unittest.SkipTest("Selenium is not available to run interactive browser checks")
-        pools_config = self.read_sandbox_json("nonukes_pools.json")
+        pools_config = self.read_sandbox_json("assets/nonukes_pools.json")
         
         # Find a pool with a specific target_group
         target_group = None
@@ -594,7 +597,7 @@ class TestNoNukesDashboard(unittest.TestCase):
         if not SELENIUM_AVAILABLE or not self.driver:
             raise unittest.SkipTest("Selenium is not available to run interactive browser checks")
             
-        pools_config = self.read_sandbox_json("nonukes_pools.json")
+        pools_config = self.read_sandbox_json("assets/nonukes_pools.json")
         if not pools_config:
             self.skipTest("No pools configured for User Journey.")
             
@@ -635,7 +638,7 @@ class TestNoNukesDashboard(unittest.TestCase):
     def test_17_telemetry_sync_workflow(self):
         """Simulate telemetry updates: append swaps, trigger refresh, verify volume updates."""
         reserves_backup = self.read_sandbox_json("nonukes_pulsex_reserves.json")
-        pools_config = self.read_sandbox_json("nonukes_pools.json")
+        pools_config = self.read_sandbox_json("assets/nonukes_pools.json")
         if not pools_config:
             self.skipTest("No pools configured for telemetry test.")
             
@@ -719,12 +722,12 @@ class TestNoNukesDashboard(unittest.TestCase):
         status, _ = self.get_api_response("/api/nonukes/pool_details?address=../../../../etc/passwd")
         self.assertEqual(status, 400)
         
-        status, _ = self.get_api_response("/api/nonukes/pool_details?address=../../../nonukes_pools.json")
+        status, _ = self.get_api_response("/api/nonukes/pool_details?address=../../../assets/nonukes_pools.json")
         self.assertEqual(status, 400)
 
     def test_20_interactive_table_renders_all_480_pools_exactly(self):
         """Double check that exact count matching is correct."""
-        pools_config = self.read_sandbox_json("nonukes_pools.json")
+        pools_config = self.read_sandbox_json("assets/nonukes_pools.json")
         self.assertEqual(len(pools_config), 480, f"Expected 480 pools, found {len(pools_config)}")
 
     def test_21_interactive_sorting(self):

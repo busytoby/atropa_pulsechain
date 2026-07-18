@@ -753,9 +753,9 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             
             pools_data = {}
-            if os.path.exists("nonukes_pools.json"):
+            if os.path.exists("assets/nonukes_pools.json"):
                 try:
-                    with open("nonukes_pools.json", "r") as f:
+                    with open("assets/nonukes_pools.json", "r") as f:
                         pools_data = json.load(f)
                 except Exception:
                     pass
@@ -825,9 +825,9 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps(response, indent=2).encode('utf-8'))
         elif self.path == '/api/nonukes/pools':
             pools_data = None
-            if os.path.exists("nonukes_pools.json"):
+            if os.path.exists("assets/nonukes_pools.json"):
                 try:
-                    with open("nonukes_pools.json", "r") as f:
+                    with open("assets/nonukes_pools.json", "r") as f:
                         pools_data = json.load(f)
                 except Exception:
                     pass
@@ -951,9 +951,9 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             address_lower = address.lower() if address else ""
             
             pools_data = {}
-            if os.path.exists("nonukes_pools.json"):
+            if os.path.exists("assets/nonukes_pools.json"):
                 try:
-                    with open("nonukes_pools.json", "r") as f:
+                    with open("assets/nonukes_pools.json", "r") as f:
                         pools_data = json.load(f)
                 except Exception:
                     pass
@@ -1158,9 +1158,9 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             pools = {}
             reserves = {}
-            if os.path.exists("nonukes_pools.json"):
+            if os.path.exists("assets/nonukes_pools.json"):
                 try:
-                    with open("nonukes_pools.json", "r") as f:
+                    with open("assets/nonukes_pools.json", "r") as f:
                         pools = json.load(f)
                 except Exception:
                     pass
@@ -1429,9 +1429,9 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             
             if not card_data:
                 pools_data = {}
-                if os.path.exists("nonukes_pools.json"):
+                if os.path.exists("assets/nonukes_pools.json"):
                     try:
-                        with open("nonukes_pools.json", "r") as f:
+                        with open("assets/nonukes_pools.json", "r") as f:
                             pools_data = json.load(f)
                     except Exception:
                         pass

@@ -85,7 +85,7 @@ def main():
             pass
 
     # Merge with published addresses
-    published_path = "published_addresses.json"
+    published_path = "assets/published_addresses.json"
     if os.path.exists(published_path):
         try:
             with open(published_path, "r") as f:

@@ -27,7 +27,8 @@ class TestNoNukesDashboardSPA(unittest.TestCase):
         os.makedirs(os.path.join(cls.sandbox_dir, "frontend", "nonukes_dashboard"), exist_ok=True)
 
         # Copy data files
-        with open(os.path.join(cls.sandbox_dir, "nonukes_pools.json"), "w") as f:
+        os.makedirs(os.path.join(cls.sandbox_dir, "assets"), exist_ok=True)
+        with open(os.path.join(cls.sandbox_dir, "assets", "nonukes_pools.json"), "w") as f:
             json.dump({
                 "0x326f7e37bef85c7f74a5a2b8c10b99a47e575cda": {
                     "target_group": "NoNukes",

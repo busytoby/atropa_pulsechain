@@ -119,14 +119,14 @@ def main():
     
     # Set addresses to check strictly to Published log events to achieve 100% precision and instant speed
     addresses_to_check = []
-    published_path = "published_addresses.json"
+    published_path = "assets/published_addresses.json"
     if os.path.exists(published_path):
         try:
             with open(published_path, "r") as f:
                 addresses_to_check = sorted(list(set(addr.lower() for addr in json.load(f))))
             print(f"Instantly loading {len(addresses_to_check)} published log addresses to scan.")
         except Exception as e:
-            print(f"Error reading published_addresses.json: {e}")
+            print(f"Error reading assets/published_addresses.json: {e}")
             addresses_to_check = []
 
     # Load token to minter mapping
