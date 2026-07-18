@@ -585,5 +585,30 @@ int tsfi_cw_honeywell_bcd_to_ebcdic(const uint8_t *bcd_in, int bcd_len, uint8_t 
 double tsfi_cw_univac_to_double(uint64_t univac_val);
 uint64_t tsfi_cw_double_to_univac(double val);
 
+// Punched Card Payroll Processing structures and functions
+typedef struct {
+    char employee_id[8];
+    double hours_worked;
+    double hourly_rate;
+    int exemptions;
+    double gross_pay;
+    double fica_withholding;
+    double fed_withholding;
+    double net_pay;
+} tsfi_cw_payroll_record;
+
+int tsfi_cw_payroll_process_card(const char *card_line, tsfi_cw_payroll_record *rec_out);
+
+// IBM RAMAC Inventory Control structures and functions
+typedef struct {
+    char part_id[8];
+    char description[24];
+    int quantity_on_hand;
+    double unit_cost;
+    int reorder_point;
+} tsfi_cw_ramac_stock;
+
+int tsfi_cw_ramac_process_transaction(tsfi_cw_ramac_stock *stock, const char *tx_card_line, int *reorder_triggered);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

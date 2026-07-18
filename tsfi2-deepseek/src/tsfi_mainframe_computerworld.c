@@ -71,3 +71,86 @@ uint64_t tsfi_cw_double_to_univac(double val) {
     return sign | ((uint64_t)biased_exp << 27) | mantissa;
 }
 
+int tsfi_cw_payroll_process_card(const char *card_line, tsfi_cw_payroll_record *rec_out) {
+    if (!card_line || !rec_out) return -1;
+    if (strlen(card_line) < 20) return -2;
+    
+    // Parse fields
+    char emp_id[7];
+    memcpy(emp_id, card_line, 6);
+    emp_id[6] = '\0';
+    strcpy(rec_out->employee_id, emp_id);
+    
+    char hrs_str[6];
+    memcpy(hrs_str, card_line + 9, 5);
+    hrs_str[5] = '\0';
+    rec_out->hours_worked = atof(hrs_str);
+    
+    char rate_str[6];
+    memcpy(rate_str, card_line + 14, 5);
+    rate_str[5] = '\0';
+    rec_out->hourly_rate = atof(rate_str);
+    
+    rec_out->exemptions = card_line[19] - '0';
+    
+    // Calculate Gross Pay (with time-and-a-half overtime over 40 hours)
+    if (rec_out->hours_worked > 40.0) {
+        double regular_pay = 40.0 * rec_out->hourly_rate;
+        double overtime_pay = (rec_out->hours_worked - 40.0) * rec_out->hourly_rate * 1.5;
+        rec_out->gross_pay = regular_pay + overtime_pay;
+    } else {
+        rec_out->gross_pay = rec_out->hours_worked * rec_out->hourly_rate;
+    }
+    
+    // FICA withholding (3.0%)
+    rec_out->fica_withholding = rec_out->gross_pay * 0.03;
+    
+    // Federal withholding (18% of gross minus exemptions allowance of 13.0 per exemption)
+    double taxable = rec_out->gross_pay - (rec_out->exemptions * 13.0);
+    if (taxable < 0.0) taxable = 0.0;
+    rec_out->fed_withholding = taxable * 0.18;
+    
+    // Net Pay
+    rec_out->net_pay = rec_out->gross_pay - rec_out->fica_withholding - rec_out->fed_withholding;
+    
+    return 0;
+}
+
+int tsfi_cw_ramac_process_transaction(tsfi_cw_ramac_stock *stock, const char *tx_card_line, int *reorder_triggered) {
+    if (!stock || !tx_card_line || !reorder_triggered) return -1;
+    if (strlen(tx_card_line) < 16) return -2;
+    
+    char part_id[7];
+    memcpy(part_id, tx_card_line, 6);
+    part_id[6] = '\0';
+    if (strcmp(stock->part_id, part_id) != 0) return -3; // Mismatched part ID
+    
+    char action = tx_card_line[9];
+    
+    char qty_str[6];
+    memcpy(qty_str, tx_card_line + 11, 5);
+    qty_str[5] = '\0';
+    int qty = atoi(qty_str);
+    
+    *reorder_triggered = 0;
+    
+    if (action == 'Q') {
+        // Query only, do nothing
+    } else if (action == 'S') {
+        // Sale / Decrement
+        if (stock->quantity_on_hand < qty) return -4; // Out of stock / underflow
+        stock->quantity_on_hand -= qty;
+        if (stock->quantity_on_hand < stock->reorder_point) {
+            *reorder_triggered = 1;
+        }
+    } else if (action == 'R') {
+        // Receipt / Increment
+        stock->quantity_on_hand += qty;
+    } else {
+        return -5; // Invalid action code
+    }
+    
+    return 0;
+}
+
+

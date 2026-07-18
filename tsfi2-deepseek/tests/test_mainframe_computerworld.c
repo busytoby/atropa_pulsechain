@@ -1436,6 +1436,30 @@ static void test_new_mainframe_features(void) {
     uint64_t u_val = tsfi_cw_double_to_univac(test_val);
     double test_val_back = tsfi_cw_univac_to_double(u_val);
     assert(fabs(test_val_back - test_val) < 0.01);
+
+    // Punched Card Payroll Processing test
+    // Columns: 1-6 = "EMP123", 10-14 = "042.5" (42.5 hours), 15-19 = "010.0" ($10.00/hr), 20 = "2" (2 exemptions)
+    const char *payroll_card = "EMP123   042.5010.02";
+    tsfi_cw_payroll_record pay_rec;
+    assert(tsfi_cw_payroll_process_card(payroll_card, &pay_rec) == 0);
+    // Gross: 40 * 10 + 2.5 * 15 = 400 + 37.5 = 437.5
+    assert(pay_rec.gross_pay == 437.5);
+    // FICA: 437.5 * 0.03 = 13.125
+    assert(pay_rec.fica_withholding == 13.125);
+    // Fed Tax: (437.5 - 26) * 0.18 = 411.5 * 0.18 = 74.07
+    assert(fabs(pay_rec.fed_withholding - 74.07) < 0.01);
+
+    // IBM RAMAC Inventory Control test
+    tsfi_cw_ramac_stock stock = { "PART99", "GEAR ASM", 100, 5.50, 20 };
+    int reorder = 0;
+    // Query card
+    assert(tsfi_cw_ramac_process_transaction(&stock, "PART99   Q 00000", &reorder) == 0);
+    assert(stock.quantity_on_hand == 100);
+    assert(reorder == 0);
+    // Sale card triggering reorder
+    assert(tsfi_cw_ramac_process_transaction(&stock, "PART99   S 00085", &reorder) == 0);
+    assert(stock.quantity_on_hand == 15);
+    assert(reorder == 1);
 }
 
 int main(void) {
