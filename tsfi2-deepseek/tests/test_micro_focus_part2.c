@@ -476,6 +476,22 @@ int main(void) {
     assert(strcmp(dml_out, "BALANCE:1500.00") == 0);
     printf("  [PASS] DML Record Operations verified.\n");
 
+    // 166. Verify IRS CADE Taxpayer Zip Code State Matcher
+    printf("[TEST] Validating IRS CADE Zip Code State Matcher...\n");
+    int zip_match = -1;
+    int zip_res = tsfi_mf_cade_verify_zip_state("90210", "CA", &zip_match);
+    assert(zip_res == 0);
+    assert(zip_match == 1);
+    printf("  [PASS] IRS CADE Zip Code State Matcher verified.\n");
+
+    // 167. Verify IRS IMF EITC Qualifying Child Matcher
+    printf("[TEST] Validating IRS IMF EITC Child Matcher...\n");
+    int eitc_eligible = -1;
+    int eitc_res = tsfi_mf_imf_verify_eitc_qualifying_child("daughter", 200, &eitc_eligible);
+    assert(eitc_res == 0);
+    assert(eitc_eligible == 1);
+    printf("  [PASS] IRS IMF EITC Child Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

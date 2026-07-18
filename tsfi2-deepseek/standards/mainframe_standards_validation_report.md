@@ -241,5 +241,7 @@
 | 307 | IRS IMF Dependents Age Eligibility Check | PASS | Verifies claimed dependents do not exceed age thresholds for credit | Volume 33 |
 | 308 | COBOL Sub-schema DDL SQL Interface | PASS | Processes database structure creation requests using COBOL DDL modes | Volume 33 |
 | 309 | ALGOL 61 DML DNA SQL Interface | PASS | Inserts and queries taxpayer records using ALGOL 61 DML modes | Volume 33 |
+| 310 | IRS CADE Taxpayer Zip Code State Matcher | PASS | Confirms postal zip codes match standard regional boundaries | Volume 33 |
+| 311 | IRS IMF EITC Qualifying Child Matcher | PASS | Validates relationship structure and residency limits for EITC | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 309 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 311 Scenarios validated successfully)

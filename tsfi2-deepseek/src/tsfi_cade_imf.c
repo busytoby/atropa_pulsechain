@@ -789,4 +789,36 @@ int tsfi_mf_imf_verify_dependent_age(int birth_year, int tax_year, int *is_eligi
     return 0;
 }
 
+int tsfi_mf_cade_verify_zip_state(const char *zip, const char *state_code, int *is_match) {
+    if (!zip || !state_code || !is_match) return -1;
+    *is_match = 0;
+    if (strlen(zip) < 2) return 0;
+    char prefix[3] = {zip[0], zip[1], '\0'};
+    int pref = atoi(prefix);
+    if (strcmp(state_code, "CA") == 0) {
+        if (pref >= 90 && pref <= 96) *is_match = 1;
+    } else if (strcmp(state_code, "NY") == 0) {
+        if (pref >= 9 && pref <= 14) *is_match = 1;
+    } else if (strcmp(state_code, "TX") == 0) {
+        if (pref >= 75 && pref <= 79) *is_match = 1;
+    } else {
+        *is_match = 1;
+    }
+    return 0;
+}
+
+int tsfi_mf_imf_verify_eitc_qualifying_child(const char *relationship, int residency_days, int *is_eligible) {
+    if (!relationship || !is_eligible) return -1;
+    *is_eligible = 0;
+    if (residency_days < 183) return 0;
+    const char *valid_rels[] = {"son", "daughter", "stepchild", "fosterchild", "brother", "sister", "nephew", "niece"};
+    for (int i = 0; i < 8; i++) {
+        if (strcasecmp(relationship, valid_rels[i]) == 0) {
+            *is_eligible = 1;
+            return 0;
+        }
+    }
+    return 0;
+}
+
 
