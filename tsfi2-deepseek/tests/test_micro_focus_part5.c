@@ -711,7 +711,32 @@ int run_nato_stanag_tests_part5(void) {
 
     tsfi_mf_janap_classify_precedence('X', &priority, &prec_val); // Invalid -> invalid
     assert(prec_val == 0);
-    printf("  [PASS] JANAP Precedence Classifier verified.\n");
+    // Verify IRS Route Matcher
+    printf("[TEST] Validating IRS Route Identification...\n");
+    int is_irs = -1;
+    int irs_val = -1;
+    int irs_res = tsfi_mf_norad_is_irs_route("RUMIRS", &is_irs, &irs_val);
+    assert(irs_res == 0);
+    assert(irs_val == 1);
+    assert(is_irs == 1);
+
+    tsfi_mf_norad_is_irs_route("RUMNDH", &is_irs, &irs_val);
+    assert(irs_val == 1);
+    assert(is_irs == 0);
+    printf("  [PASS] IRS Route Identification verified.\n");
+
+    // Verify IRS Query Formatter
+    printf("[TEST] Validating IRS Query Formatter...\n");
+    uint8_t irs_pdu[8];
+    size_t irs_size = 0;
+    int irs_q_res = tsfi_mf_cics_format_irs_query(0x12345678, 10, irs_pdu, &irs_size);
+    assert(irs_q_res == 0);
+    assert(irs_size == 6);
+    assert(irs_pdu[0] == 0xFD);
+    assert(irs_pdu[1] == 10);
+    assert(irs_pdu[2] == 0x12);
+    assert(irs_pdu[5] == 0x78);
+    printf("  [PASS] IRS Query Formatter verified.\n");
 
     return 0;
 }

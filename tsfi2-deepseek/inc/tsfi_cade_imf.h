@@ -430,4 +430,7 @@ int tsfi_mf_cics_authorize_transaction(const char *transid, uint16_t naap_status
 int tsfi_mf_cics_format_3270_map(int defcon_level, char *out_stream, size_t *out_size);
 int tsfi_mf_janap_classify_precedence(char precedence_char, int *priority_level, int *is_valid);
 
+int tsfi_mf_norad_is_irs_route(const char *routing_ind, int *is_irs, int *is_valid);
+int tsfi_mf_cics_format_irs_query(uint32_t tax_record_id, int routing_code, uint8_t *out_pdu, size_t *out_size);
+
 #endif // TSFI_CADE_IMF_H

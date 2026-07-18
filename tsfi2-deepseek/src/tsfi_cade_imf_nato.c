@@ -1564,6 +1564,34 @@ int tsfi_mf_janap_classify_precedence(char precedence_char, int *priority_level,
     return 0;
 }
 
+int tsfi_mf_norad_is_irs_route(const char *routing_ind, int *is_irs, int *is_valid) {
+    if (!routing_ind || !is_irs || !is_valid) return -1;
+    *is_valid = 0;
+    *is_irs = 0;
+    
+    size_t len = strlen(routing_ind);
+    if (len < 3 || len > 8) return 0;
+    
+    *is_valid = 1;
+    if (strcmp(routing_ind, "RUMIRS") == 0 || strcmp(routing_ind, "RUMTAX") == 0) {
+        *is_irs = 1;
+    }
+    return 0;
+}
+
+int tsfi_mf_cics_format_irs_query(uint32_t tax_record_id, int routing_code, uint8_t *out_pdu, size_t *out_size) {
+    if (!out_pdu || !out_size) return -1;
+    out_pdu[0] = 0xFD; // IRS Query PDU marker
+    out_pdu[1] = routing_code & 0xFF;
+    out_pdu[2] = (tax_record_id >> 24) & 0xFF;
+    out_pdu[3] = (tax_record_id >> 16) & 0xFF;
+    out_pdu[4] = (tax_record_id >> 8) & 0xFF;
+    out_pdu[5] = tax_record_id & 0xFF;
+    *out_size = 6;
+    return 0;
+}
+
+
 
 
 
