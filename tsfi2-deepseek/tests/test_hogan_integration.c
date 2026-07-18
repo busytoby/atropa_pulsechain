@@ -560,6 +560,49 @@ int main(void) {
     remove(limits_path); // clean up
     printf("  [PASS] Daily spending limit overrides, validations, and resets verified.\n");
 
+    // 21. Test Account Closure and Liquidation Engine (Status Termination)
+    printf("[E2E] Testing Account Closure and Liquidation Engine...\n");
+    const char *closure_path = "hogan_closures.dat.bin";
+    remove(closure_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system closure_sys;
+    tsfi_hogan_init(&closure_sys);
+    assert(tsfi_hogan_register_account(&closure_sys, 1001, 1000) == 0); // Alice: 1,000 units
+    
+    // Place a hold of 100 (held: 100)
+    assert(tsfi_hogan_authorize_card(&closure_sys, "hogan_dummy_card.dat.bin", 9901, 1001, 888, 100) == 0);
+    remove("hogan_dummy_card.dat.bin"); // clean up
+    
+    // Try to close account (should fail with -2 due to active holds)
+    assert(tsfi_hogan_close_account(&closure_sys, closure_path, 1001, 999) == -2);
+    
+    // Release card hold (held: 0)
+    assert(tsfi_hogan_release_hold(&closure_sys, "hogan_dummy_rel.dat.bin", 9901, 1001, 100) == 0);
+    remove("hogan_dummy_rel.dat.bin"); // clean up
+    
+    // Close account (should succeed and liquidate 1000 balance)
+    assert(tsfi_hogan_close_account(&closure_sys, closure_path, 1001, 999) == 0);
+    assert(tsfi_hogan_close_account(&closure_sys, "hogan_closures.json", 1001, 999) == -3); // Rule 13 check
+    
+    // Verify account is closed
+    assert(closure_sys.accounts[0].active == 0);
+    assert(closure_sys.accounts[0].balance == 0);
+    
+    // Read sequential log file and verify entries
+    uint8_t read_clbuf[sizeof(hogan_closure_entry)];
+    size_t cl_size = 0;
+    assert(tsfi_hogan_read_seq_record(closure_path, 0, read_clbuf, &cl_size) == 0);
+    assert(cl_size == sizeof(hogan_closure_entry));
+    
+    const hogan_closure_entry *clentry = (const hogan_closure_entry *)read_clbuf;
+    assert(clentry->account_id == 1001);
+    assert(clentry->liquidated_balance == 1000);
+    assert(clentry->authority_id == 999);
+    
+    remove(closure_path); // clean up
+    printf("  [PASS] Account liquidation, hold verification, and closure logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }

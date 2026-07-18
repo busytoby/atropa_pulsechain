@@ -195,4 +195,13 @@ typedef struct {
 
 int tsfi_hogan_update_daily_limit(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_limit, uint32_t authority_id);
 
+// Account Closure and Liquidation Engine (Status Termination)
+typedef struct {
+    uint32_t account_id;
+    uint64_t liquidated_balance;
+    uint32_t authority_id;
+} hogan_closure_entry;
+
+int tsfi_hogan_close_account(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t authority_id);
+
 #endif // TSFI_HOGAN_H
