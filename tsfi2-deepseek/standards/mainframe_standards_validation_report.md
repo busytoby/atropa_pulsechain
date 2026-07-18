@@ -432,5 +432,7 @@
 | 498 | NATO Link-Layer Broadcast Collision Backoff Slot Alignment Boundary Source Offset Limit Matcher | PASS | Audits slot boundary clock reference alignment offset limits | Volume 33 |
 | 499 | NATO Link-Layer Broadcast Collision Backoff Slot Alignment Boundary Source Offset Range Matcher | PASS | Validates slot boundary source alignment offset range bounds | Volume 33 |
 | 500 | NATO Link-Layer Broadcast Channel Busy Hysteresis RSSI Quiet Sample Threshold Matcher | PASS | Audits RSSI quiet sample thresholds for busy-to-quiet channel shifts | Volume 33 |
+| 501 | NATO Link-Layer Broadcast Collision Backoff Slot Alignment Boundary Source Offset Range Limit Matcher | PASS | Validates slot boundary source alignment offset range limits | Volume 33 |
+| 502 | NATO Link-Layer Broadcast Channel Busy Hysteresis RSSI Quiet Sample Threshold Limit Matcher | PASS | Audits RSSI quiet sample count limits for channel state confirmations | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 500 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 502 Scenarios validated successfully)

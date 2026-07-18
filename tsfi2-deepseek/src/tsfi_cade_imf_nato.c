@@ -693,3 +693,15 @@ int tsfi_mf_nato_verify_rssi_quiet_sample_threshold(int samples, int *is_valid) 
     *is_valid = (samples >= 1 && samples <= 10) ? 1 : 0;
     return 0;
 }
+
+int tsfi_mf_nato_verify_slot_boundary_source_offset_range_limit(int limit_ms, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (limit_ms >= 0 && limit_ms <= 30) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_rssi_quiet_sample_threshold_limit(int limit_samples, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (limit_samples >= 2 && limit_samples <= 12) ? 1 : 0;
+    return 0;
+}
