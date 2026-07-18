@@ -88,6 +88,11 @@ int tsfi_hogan_lfs_save(const hogan_umbrella_system *sys, const char *filepath) 
         }
     }
     
+    fwrite(&sys->blocked_card_count, sizeof(size_t), 1, f);
+    if (sys->blocked_card_count > 0) {
+        fwrite(sys->blocked_cards, sizeof(uint32_t), sys->blocked_card_count, f);
+    }
+    
     fclose(f);
     return 0;
 }
@@ -180,7 +185,19 @@ int tsfi_hogan_lfs_load(hogan_umbrella_system *sys, const char *filepath) {
             return -2;
         }
         sys->accounts[i].is_frozen = frozen_val;
+        sys->accounts[i].is_frozen = frozen_val;
         sys->accounts[i].active = 1;
+    }
+    
+    if (fread(&sys->blocked_card_count, sizeof(size_t), 1, f) != 1) {
+        fclose(f);
+        return -2;
+    }
+    if (sys->blocked_card_count > 0) {
+        if (fread(sys->blocked_cards, sizeof(uint32_t), sys->blocked_card_count, f) != sys->blocked_card_count) {
+            fclose(f);
+            return -2;
+        }
     }
     
     fclose(f);
@@ -637,6 +654,10 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
             EVP_DigestUpdate(mdctx, &sys->accounts[i].is_frozen, sizeof(uint8_t));
         }
     }
+    EVP_DigestUpdate(mdctx, &sys->blocked_card_count, sizeof(size_t));
+    if (sys->blocked_card_count > 0) {
+        EVP_DigestUpdate(mdctx, sys->blocked_cards, sizeof(uint32_t) * sys->blocked_card_count);
+    }
     EVP_DigestFinal_ex(mdctx, sys->acab_epoch_root, &hash_len);
     EVP_MD_CTX_free(mdctx);
     
@@ -664,6 +685,14 @@ int tsfi_hogan_authorize_card(hogan_umbrella_system *sys, const char *filepath, 
     // Disable live queue during authorization calculation
     uint8_t original_live_state = sys->live_processing_enabled;
     sys->live_processing_enabled = 0;
+    
+    // Check if card is blocked
+    for (size_t i = 0; i < sys->blocked_card_count; i++) {
+        if (sys->blocked_cards[i] == card_id) {
+            sys->live_processing_enabled = original_live_state;
+            return -4; // Card is blocked
+        }
+    }
     
     hogan_account *acc = NULL;
     for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
@@ -952,6 +981,55 @@ int tsfi_hogan_apply_account_freeze(hogan_umbrella_system *sys, const char *file
     acc->is_frozen = is_frozen;
     
     int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_freeze_entry));
+    
+    sys->live_processing_enabled = original_live_state;
+    return write_res;
+}
+
+int tsfi_hogan_apply_card_status(hogan_umbrella_system *sys, const char *filepath, uint32_t card_id, uint8_t new_status, uint32_t authority_id) {
+    // Enforce Rule 13: file extension must end with .dat.bin
+    const char *ext = strrchr(filepath, '.');
+    if (!ext || strcmp(ext, ".bin") != 0) {
+        if (!ext || strcmp(ext - 4, ".dat.bin") != 0) {
+            return -3; // Invalid extension
+        }
+    }
+
+    // Disable live queue during administrative action
+    uint8_t original_live_state = sys->live_processing_enabled;
+    sys->live_processing_enabled = 0;
+    
+    uint8_t prev_status = CARD_STATUS_ACTIVE;
+    size_t found_idx = (size_t)-1;
+    for (size_t i = 0; i < sys->blocked_card_count; i++) {
+        if (sys->blocked_cards[i] == card_id) {
+            prev_status = CARD_STATUS_BLOCKED;
+            found_idx = i;
+            break;
+        }
+    }
+    
+    if (new_status == CARD_STATUS_BLOCKED) {
+        if (prev_status == CARD_STATUS_ACTIVE) {
+            if (sys->blocked_card_count < HOGAN_MAX_BLOCKED_CARDS) {
+                sys->blocked_cards[sys->blocked_card_count++] = card_id;
+            } else {
+                sys->live_processing_enabled = original_live_state;
+                return -2; // blocked cards registry overflow
+            }
+        }
+    } else {
+        if (prev_status == CARD_STATUS_BLOCKED && found_idx != (size_t)-1) {
+            // Remove from blocked list by shifting remaining elements
+            for (size_t i = found_idx; i < sys->blocked_card_count - 1; i++) {
+                sys->blocked_cards[i] = sys->blocked_cards[i + 1];
+            }
+            sys->blocked_card_count--;
+        }
+    }
+    
+    hogan_card_status_entry entry = { card_id, prev_status, new_status, authority_id };
+    int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_card_status_entry));
     
     sys->live_processing_enabled = original_live_state;
     return write_res;

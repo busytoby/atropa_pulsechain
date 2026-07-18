@@ -758,6 +758,55 @@ int main(void) {
     remove(freezes_path); // clean up
     printf("  [PASS] Compliance freezes, legal holds, and logging verified.\n");
 
+    // 25. Test Card Status Compliance Manager (Card Locks)
+    printf("[E2E] Testing Card Status Compliance Manager...\n");
+    const char *cardlocks_path = "hogan_cardlocks.dat.bin";
+    remove(cardlocks_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system card_comp_sys;
+    tsfi_hogan_init(&card_comp_sys);
+    assert(tsfi_hogan_register_account(&card_comp_sys, 1001, 10000) == 0); // Alice: 10,000 units
+    
+    // Block card 9901
+    assert(tsfi_hogan_apply_card_status(&card_comp_sys, cardlocks_path, 9901, CARD_STATUS_BLOCKED, 888) == 0);
+    assert(tsfi_hogan_apply_card_status(&card_comp_sys, "hogan_cardlocks.json", 9901, CARD_STATUS_BLOCKED, 888) == -3); // Rule 13 check
+    
+    // Attempt card authorization on blocked card 9901 (should fail with -4)
+    assert(tsfi_hogan_authorize_card(&card_comp_sys, "hogan_dummy_auth.dat.bin", 9901, 1001, 777, 1000) == -4);
+    
+    // Unblock card 9901
+    assert(tsfi_hogan_apply_card_status(&card_comp_sys, cardlocks_path, 9901, CARD_STATUS_ACTIVE, 888) == 0);
+    
+    // Attempt card authorization on active card 9901 (should now succeed)
+    assert(tsfi_hogan_authorize_card(&card_comp_sys, "hogan_dummy_auth.dat.bin", 9901, 1001, 777, 1000) == 0);
+    remove("hogan_dummy_auth.dat.bin"); // clean up
+    
+    // Read sequential log file and verify entries
+    uint8_t read_cardlbuf[sizeof(hogan_card_status_entry)];
+    size_t cardl_size = 0;
+    
+    // Check entry 0 (Blocked)
+    assert(tsfi_hogan_read_seq_record(cardlocks_path, 0, read_cardlbuf, &cardl_size) == 0);
+    assert(cardl_size == sizeof(hogan_card_status_entry));
+    const hogan_card_status_entry *clentry0 = (const hogan_card_status_entry *)read_cardlbuf;
+    assert(clentry0->card_id == 9901);
+    assert(clentry0->previous_status == CARD_STATUS_ACTIVE);
+    assert(clentry0->new_status == CARD_STATUS_BLOCKED);
+    assert(clentry0->authority_id == 888);
+    
+    // Check entry 1 (Activated)
+    assert(tsfi_hogan_read_seq_record(cardlocks_path, 1, read_cardlbuf, &cardl_size) == 0);
+    assert(cardl_size == sizeof(hogan_card_status_entry));
+    const hogan_card_status_entry *clentry1 = (const hogan_card_status_entry *)read_cardlbuf;
+    assert(clentry1->card_id == 9901);
+    assert(clentry1->previous_status == CARD_STATUS_BLOCKED);
+    assert(clentry1->new_status == CARD_STATUS_ACTIVE);
+    assert(clentry1->authority_id == 888);
+    
+    remove(cardlocks_path); // clean up
+    printf("  [PASS] Card status compliance blocks and logging verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }

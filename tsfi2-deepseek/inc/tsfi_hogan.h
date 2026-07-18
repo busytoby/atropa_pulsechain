@@ -41,6 +41,10 @@ typedef struct {
     uint8_t is_frozen;
 } hogan_account;
 
+#define HOGAN_MAX_BLOCKED_CARDS 32
+#define CARD_STATUS_ACTIVE      0
+#define CARD_STATUS_BLOCKED     1
+
 typedef struct {
     hogan_account accounts[HOGAN_MAX_ACCOUNTS];
     hogan_transaction tx_log[HOGAN_MAX_TRANSACTIONS];
@@ -48,6 +52,8 @@ typedef struct {
     uint8_t live_processing_enabled;
     uint32_t current_epoch;
     uint8_t acab_epoch_root[32];
+    uint32_t blocked_cards[HOGAN_MAX_BLOCKED_CARDS];
+    size_t blocked_card_count;
 } hogan_umbrella_system;
 
 // 1. Unified Umbrella Architecture
@@ -235,5 +241,15 @@ typedef struct {
 } hogan_freeze_entry;
 
 int tsfi_hogan_apply_account_freeze(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint8_t is_frozen, uint32_t authority_id);
+
+// Card Status Compliance Manager (Card Locks)
+typedef struct {
+    uint32_t card_id;
+    uint8_t previous_status;
+    uint8_t new_status;
+    uint32_t authority_id;
+} hogan_card_status_entry;
+
+int tsfi_hogan_apply_card_status(hogan_umbrella_system *sys, const char *filepath, uint32_t card_id, uint8_t new_status, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H
