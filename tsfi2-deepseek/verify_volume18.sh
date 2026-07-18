@@ -5,6 +5,7 @@ echo "=== MAINFRAME STANDARDS AUTO-VALIDATION PIPELINE ==="
 echo "Compiling system binaries..."
 make bin/test_ramac_extended
 make bin/test_ramac_extended_part2
+make bin/test_hogan_integration
 
 ## Compile test validation binaries
 make bin/test_ray_tracer
@@ -14,6 +15,7 @@ make bin/test_micro_focus_part2
 echo "Running extended RAMAC simulation checks..."
 ./bin/test_ramac_extended > validation_run.log
 ./bin/test_ramac_extended_part2 >> validation_run.log
+./bin/test_hogan_integration >> validation_run.log
 ./bin/test_ray_tracer >> validation_run.log
 ./bin/test_micro_focus >> validation_run.log
 ./bin/test_micro_focus_part2 >> validation_run.log
