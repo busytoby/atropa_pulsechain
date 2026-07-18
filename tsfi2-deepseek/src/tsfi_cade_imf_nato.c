@@ -1963,6 +1963,41 @@ int tsfi_mf_nato_format_ssa_irs_broadcast(const char *ssn, int audit_action, uin
     return 0;
 }
 
+int tsfi_mf_ussr_gost_scramble(uint32_t *left_word, uint32_t *right_word, uint32_t key_word) {
+    if (!left_word || !right_word) return -1;
+    
+    // One basic round of GOST 28147-89 addition-rotation-XOR
+    uint32_t temp = (*left_word + key_word);
+    // Rotate left by 11
+    temp = (temp << 11) | (temp >> 21);
+    *right_word ^= temp;
+    
+    // Swap left/right
+    uint32_t swap = *left_word;
+    *left_word = *right_word;
+    *right_word = swap;
+    return 0;
+}
+
+int tsfi_mf_ussr_gost_transliterate(const char *in_latin, char *out_cyrillic, int max_len) {
+    if (!in_latin || !out_cyrillic || max_len < 1) return -1;
+    
+    int out_idx = 0;
+    for (int i = 0; in_latin[i] != '\0' && out_idx < max_len - 1; i++) {
+        char c = in_latin[i];
+        // Simple mapping representing basic Latin to Cyrillic characters
+        if (c == 'A') out_cyrillic[out_idx++] = 'A';
+        else if (c == 'B') out_cyrillic[out_idx++] = 'B'; // В
+        else if (c == 'R') out_cyrillic[out_idx++] = 'P'; // Р
+        else if (c == 'M') out_cyrillic[out_idx++] = 'M';
+        else if (c == 'S') out_cyrillic[out_idx++] = 'C'; // С
+        else out_cyrillic[out_idx++] = c;
+    }
+    out_cyrillic[out_idx] = '\0';
+    return 0;
+}
+
+
 
 
 

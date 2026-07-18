@@ -1120,7 +1120,22 @@ int run_nato_stanag_tests_part5(void) {
     assert(nato_frame[1] == 0x55);
     assert(nato_frame[2] == 2);
     assert(nato_frame[12] == 0x7E);
-    printf("  [PASS] SSA-IRS-NATO STANAG Broadcast verified.\n");
+    // Verify Soviet GOST Scrambler
+    printf("[TEST] Validating Soviet GOST Scrambler...\n");
+    uint32_t left = 0x11111111;
+    uint32_t right = 0x22222222;
+    int gost_res = tsfi_mf_ussr_gost_scramble(&left, &right, 0x33333333);
+    assert(gost_res == 0);
+    assert(left != 0x11111111);
+    printf("  [PASS] Soviet GOST Scrambler verified.\n");
+
+    // Verify Soviet GOST Transliteration
+    printf("[TEST] Validating Soviet GOST Transliteration...\n");
+    char cyrillic[32];
+    gost_res = tsfi_mf_ussr_gost_transliterate("RUMIRS", cyrillic, sizeof(cyrillic));
+    assert(gost_res == 0);
+    assert(strcmp(cyrillic, "PUMIPC") == 0); // R->P, S->C transliterated
+    printf("  [PASS] Soviet GOST Transliteration verified.\n");
 
     return 0;
 }

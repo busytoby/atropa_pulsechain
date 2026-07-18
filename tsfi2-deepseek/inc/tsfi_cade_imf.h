@@ -479,4 +479,7 @@ int tsfi_mf_tri_agency_coordinate(const char *ssn, int dmf_deceased, int ssn_all
 
 int tsfi_mf_nato_format_ssa_irs_broadcast(const char *ssn, int audit_action, uint8_t *out_frame, size_t *out_size);
 
+int tsfi_mf_ussr_gost_scramble(uint32_t *left_word, uint32_t *right_word, uint32_t key_word);
+int tsfi_mf_ussr_gost_transliterate(const char *in_latin, char *out_cyrillic, int max_len);
+
 #endif // TSFI_CADE_IMF_H
