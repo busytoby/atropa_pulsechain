@@ -238,5 +238,7 @@ int tsfi_mf_nato_verify_slot_clock_source(int source, int *is_valid);
 int tsfi_mf_nato_verify_up_ramp_rate_factor(int factor, int *is_valid);
 int tsfi_mf_nato_verify_down_ramp_rate_factor(int factor, int *is_valid);
 int tsfi_mf_nato_verify_slot_method_option(int option, int *is_valid);
+int tsfi_mf_nato_verify_slot_boundary_option(int option, int *is_valid);
+int tsfi_mf_nato_verify_up_ramp_rate_limit(int limit_db, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

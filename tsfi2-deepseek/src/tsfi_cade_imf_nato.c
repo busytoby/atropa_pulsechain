@@ -609,3 +609,15 @@ int tsfi_mf_nato_verify_slot_method_option(int option, int *is_valid) {
     *is_valid = (option >= 0 && option <= 3) ? 1 : 0;
     return 0;
 }
+
+int tsfi_mf_nato_verify_slot_boundary_option(int option, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (option >= 0 && option <= 2) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_up_ramp_rate_limit(int limit_db, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (limit_db >= 5 && limit_db <= 25) ? 1 : 0;
+    return 0;
+}
