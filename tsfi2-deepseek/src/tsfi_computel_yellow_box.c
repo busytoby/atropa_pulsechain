@@ -48,18 +48,25 @@ int tsfi_mf_yellow_box_secure_telegram_route(const char *ssn, int dmf_deceased, 
     if (!ssn || !out_telegram || !out_size) return -1;
     if (strlen(ssn) != 9) return -2;
     
+    // Hash the SSN to prevent raw SSN/TIN engaging by the GOST cipher
+    uint32_t ssn_hash = 2166136261U;
+    for (int i = 0; i < 9; i++) {
+        ssn_hash = (ssn_hash ^ (uint8_t)ssn[i]) * 16777619;
+    }
+    
     // 16 bytes raw payload
     uint8_t payload[16];
     payload[0] = 0xAA; // Yellow Box Header
-    for (int i = 0; i < 9; i++) {
-        payload[i + 1] = ssn[i];
-    }
-    payload[10] = (uint8_t)dmf_deceased;
-    payload[11] = (uint8_t)ssn_allocated;
-    payload[12] = (uint8_t)defcon_level;
-    payload[13] = 0x00;
-    payload[14] = 0x00;
-    payload[15] = 0x00;
+    payload[1] = (ssn_hash >> 24) & 0xFF;
+    payload[2] = (ssn_hash >> 16) & 0xFF;
+    payload[3] = (ssn_hash >> 8) & 0xFF;
+    payload[4] = ssn_hash & 0xFF;
+    
+    // Fill remaining fields
+    payload[5] = (uint8_t)dmf_deceased;
+    payload[6] = (uint8_t)ssn_allocated;
+    payload[7] = (uint8_t)defcon_level;
+    memset(&payload[8], 0, 8); // Padding
     
     // Encrypt in 2 blocks using 32-round GOST block cipher
     uint32_t keys[8] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
