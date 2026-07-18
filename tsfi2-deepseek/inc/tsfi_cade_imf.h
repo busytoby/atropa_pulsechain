@@ -260,5 +260,7 @@ int tsfi_mf_nato_verify_slot_boundary_source_offset_range_limit_val(int val_ms, 
 int tsfi_mf_nato_verify_rssi_quiet_sample_threshold_limit_margin_range(int range_samples, int *is_valid);
 int tsfi_mf_nato_verify_slot_boundary_source_offset_range_limit_val_boundary(int boundary_ms, int *is_valid);
 int tsfi_mf_nato_verify_rssi_quiet_sample_threshold_limit_margin_range_option(int option, int *is_valid);
+int tsfi_mf_nato_verify_slot_boundary_source_offset_range_limit_val_margin(int margin_ms, int *is_valid);
+int tsfi_mf_nato_verify_rssi_quiet_sample_threshold_limit_margin_range_val(int val_samples, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H
