@@ -1189,5 +1189,15 @@ int tsfi_cw_unt_cics_audit_session(const tsfi_cw_unt_cics_session *session, int 
 int tsfi_cw_unt_cics_audit_queue(const tsfi_cw_unt_cics_queue *queue, int *alert_out);
 int tsfi_cw_unt_cics_inject_ballistic(const char *data, int data_len, tsfi_cw_unt_cics_queue *queue, int *processed_bytes_out);
 
+// RMU IMS database segment
+typedef struct {
+    char segment_name[16];
+    char parent_segment_name[16];
+    uint32_t pointer_address;
+    int is_valid;
+} tsfi_cw_rmu_ims_segment;
+
+int tsfi_cw_rmu_audit_ims(const tsfi_cw_rmu_ims_segment *segments, int segment_count, int *invalid_pointers_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

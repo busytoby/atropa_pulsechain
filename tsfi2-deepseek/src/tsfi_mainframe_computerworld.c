@@ -1552,6 +1552,32 @@ int tsfi_cw_unt_cics_inject_ballistic(const char *data, int data_len, tsfi_cw_un
     return 0;
 }
 
+int tsfi_cw_rmu_audit_ims(const tsfi_cw_rmu_ims_segment *segments, int segment_count, int *invalid_pointers_out) {
+    if (!segments || segment_count < 0 || !invalid_pointers_out) return -1;
+    
+    *invalid_pointers_out = 0;
+    for (int i = 0; i < segment_count; i++) {
+        if (segments[i].pointer_address == 0 || !segments[i].is_valid) {
+            (*invalid_pointers_out)++;
+            continue;
+        }
+        if (strcmp(segments[i].parent_segment_name, "ROOT") != 0) {
+            int found = 0;
+            for (int j = 0; j < segment_count; j++) {
+                if (strcmp(segments[j].segment_name, segments[i].parent_segment_name) == 0) {
+                    found = 1;
+                    break;
+                }
+            }
+            if (!found) {
+                (*invalid_pointers_out)++;
+            }
+        }
+    }
+    return 0;
+}
+
+
 
 
 

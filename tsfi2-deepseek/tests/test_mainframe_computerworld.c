@@ -2147,6 +2147,22 @@ static void test_new_mainframe_features(void) {
     assert(processed == 17);
     assert(q_ballistic.item_count == 11);
     assert(q_ballistic.total_bytes == 517);
+
+    // RMU IMS test
+    tsfi_cw_rmu_ims_segment ims_db[2] = {
+        { "ROOTSEG", "ROOT", 0x1000, 1 },
+        { "CHILDSEG", "ROOTSEG", 0x2000, 1 }
+    };
+    int ims_violations = 0;
+    assert(tsfi_cw_rmu_audit_ims(ims_db, 2, &ims_violations) == 0);
+    assert(ims_violations == 0);
+
+    tsfi_cw_rmu_ims_segment ims_db_bad[2] = {
+        { "ROOTSEG", "ROOT", 0, 1 }, // Invalid pointer (0)
+        { "CHILDSEG", "ORPHAN", 0x2000, 1 } // Parent not found in array
+    };
+    assert(tsfi_cw_rmu_audit_ims(ims_db_bad, 2, &ims_violations) == 0);
+    assert(ims_violations == 2);
 }
 
 int main(void) {
