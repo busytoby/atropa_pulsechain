@@ -1567,6 +1567,47 @@ int main(void) {
     remove(intcap_path); // clean up
     printf("  [PASS] Batch interest caps, limit validations, and override logs verified.\n");
 
+    // 44. Test Account Cumulative Transaction Amount Cap Manager (Account spend caps)
+    printf("[E2E] Testing Account Cumulative Transaction Amount Cap Manager...\n");
+    const char *acc_spend_path = "hogan_acc_spend.dat.bin";
+    remove(acc_spend_path); // ensure clean start
+    
+    hogan_umbrella_system spend_sys;
+    tsfi_hogan_init(&spend_sys);
+    assert(tsfi_hogan_register_account(&spend_sys, 1001, 10000) == 0); // Alice: 10000 balance
+    assert(tsfi_hogan_register_account(&spend_sys, 2002, 500) == 0);   // Bob: 500 balance
+    
+    // Set Alice's account cumulative transaction spend limit to 3000 units
+    assert(tsfi_hogan_update_acc_spend_limit(&spend_sys, acc_spend_path, 1001, 3000, 999) == 0);
+    assert(tsfi_hogan_update_acc_spend_limit(&spend_sys, "hogan_acc_spend.json", 1001, 3000, 999) == -3); // Rule 13 check
+    
+    // Dispatch standard transfer for 2000 units (succeeds because 2000 <= 3000 limit)
+    assert(tsfi_hogan_dispatch_tx(&spend_sys, 1001, 2002, 2000, VM_EVM) == 0);
+    
+    // Dispatch standard transfer for 1500 units (should fail because total debits 3500 > 3000 limit)
+    assert(tsfi_hogan_dispatch_tx(&spend_sys, 1001, 2002, 1500, VM_EVM) == 0);
+    
+    // Run overnight reconciliation
+    assert(tsfi_hogan_overnight_reconciliation(&spend_sys, "hogan_lfs.dat.bin") == 0);
+    
+    // Verify Alice's balance (10000 - 2000 = 8000. Second tx was rejected)
+    assert(spend_sys.accounts[0].balance == 8000);
+    
+    // Read sequential log file and verify entries
+    uint8_t read_asbuf[sizeof(hogan_acc_spend_limit_entry)];
+    size_t as_size = 0;
+    assert(tsfi_hogan_read_seq_record(acc_spend_path, 0, read_asbuf, &as_size) == 0);
+    assert(as_size == sizeof(hogan_acc_spend_limit_entry));
+    
+    const hogan_acc_spend_limit_entry *asentry = (const hogan_acc_spend_limit_entry *)read_asbuf;
+    assert(asentry->account_id == 1001);
+    assert(asentry->previous_spend_limit == 0);
+    assert(asentry->new_spend_limit == 3000);
+    assert(asentry->authority_id == 999);
+    
+    remove(acc_spend_path); // clean up
+    printf("  [PASS] Account cumulative transaction amount caps, volume validation, and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }

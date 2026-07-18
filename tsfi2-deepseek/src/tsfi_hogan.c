@@ -111,6 +111,8 @@ int tsfi_hogan_lfs_save(const hogan_umbrella_system *sys, const char *filepath) 
             fwrite(&sys->accounts[i].card_fail_limit, sizeof(uint32_t), 1, f);
             fwrite(&sys->accounts[i].overdraft_fee_amount, sizeof(uint64_t), 1, f);
             fwrite(&sys->accounts[i].max_interest_per_epoch, sizeof(uint64_t), 1, f);
+            fwrite(&sys->accounts[i].acc_spend_limit_today, sizeof(uint64_t), 1, f);
+            fwrite(&sys->accounts[i].acc_spent_today_transfers, sizeof(uint64_t), 1, f);
         }
     }
     
@@ -366,6 +368,18 @@ int tsfi_hogan_lfs_load(hogan_umbrella_system *sys, const char *filepath) {
             return -2;
         }
         sys->accounts[i].max_interest_per_epoch = max_int_cap;
+        uint64_t acc_spl_tod = 0;
+        if (fread(&acc_spl_tod, sizeof(uint64_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
+        sys->accounts[i].acc_spend_limit_today = acc_spl_tod;
+        uint64_t acc_sp_trans = 0;
+        if (fread(&acc_sp_trans, sizeof(uint64_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
+        sys->accounts[i].acc_spent_today_transfers = acc_sp_trans;
         sys->accounts[i].active = 1;
     }
     
@@ -779,6 +793,8 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
                 tx->processed = 1; // blocked by daily velocity/tx count limit
                 } else if (sender->daily_transfer_limit > 0 && sender->daily_transferred + tx->amount > sender->daily_transfer_limit) {
                     tx->processed = 1; // blocked by daily transfer limit
+                } else if (sender->acc_spend_limit_today > 0 && sender->acc_spent_today_transfers + tx->amount > sender->acc_spend_limit_today) {
+                    tx->processed = 1; // blocked by account cumulative transfer amount limit
                 } else if (recipient->max_balance > 0 && recipient->balance + tx->amount > recipient->max_balance) {
                     tx->processed = 1; // blocked by recipient maximum balance limit
                 } else if (recipient->daily_deposit_limit > 0 && recipient->daily_deposited + tx->amount > recipient->daily_deposit_limit) {
@@ -787,6 +803,7 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
                 sender->balance -= tx->amount;
                 recipient->balance += tx->amount;
                 sender->daily_transferred += tx->amount;
+                sender->acc_spent_today_transfers += tx->amount;
                 sender->daily_tx_count++;
                 recipient->daily_deposited += tx->amount;
                 tx->processed = 1;
@@ -818,6 +835,7 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
                         sender->balance -= tx->amount;
                         recipient->balance += tx->amount;
                         sender->daily_transferred += tx->amount;
+                        sender->acc_spent_today_transfers += tx->amount;
                         sender->daily_tx_count++;
                         recipient->daily_deposited += tx->amount;
                         sender->overdraft_drawn += deficit;
@@ -868,6 +886,7 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
             sys->accounts[j].card_spent_today = 0;
             sys->accounts[j].card_tx_count_today = 0;
             sys->accounts[j].card_fail_count_today = 0;
+            sys->accounts[j].acc_spent_today_transfers = 0;
         }
     }
     
@@ -916,6 +935,8 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
             EVP_DigestUpdate(mdctx, &sys->accounts[i].card_fail_limit, sizeof(uint32_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].overdraft_fee_amount, sizeof(uint64_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].max_interest_per_epoch, sizeof(uint64_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].acc_spend_limit_today, sizeof(uint64_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].acc_spent_today_transfers, sizeof(uint64_t));
         }
     }
     EVP_DigestUpdate(mdctx, &sys->blocked_card_count, sizeof(size_t));
@@ -2041,6 +2062,41 @@ int tsfi_hogan_update_interest_cap(hogan_umbrella_system *sys, const char *filep
     acc->max_interest_per_epoch = new_interest_cap;
     
     int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_interest_cap_entry));
+    
+    sys->live_processing_enabled = original_live_state;
+    return write_res;
+}
+
+int tsfi_hogan_update_acc_spend_limit(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_spend_limit, uint32_t authority_id) {
+    // Enforce Rule 13: file extension must end with .dat.bin
+    const char *ext = strrchr(filepath, '.');
+    if (!ext || strcmp(ext, ".bin") != 0) {
+        if (!ext || strcmp(ext - 4, ".dat.bin") != 0) {
+            return -3; // Invalid extension
+        }
+    }
+
+    // Disable live queue during administrative action
+    uint8_t original_live_state = sys->live_processing_enabled;
+    sys->live_processing_enabled = 0;
+    
+    hogan_account *acc = NULL;
+    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
+        if (sys->accounts[i].active && sys->accounts[i].account_id == account_id) {
+            acc = &sys->accounts[i];
+            break;
+        }
+    }
+    
+    if (!acc) {
+        sys->live_processing_enabled = original_live_state;
+        return -1; // account not found
+    }
+    
+    hogan_acc_spend_limit_entry entry = { account_id, acc->acc_spend_limit_today, new_spend_limit, authority_id };
+    acc->acc_spend_limit_today = new_spend_limit;
+    
+    int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_acc_spend_limit_entry));
     
     sys->live_processing_enabled = original_live_state;
     return write_res;
