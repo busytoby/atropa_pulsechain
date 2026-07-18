@@ -739,3 +739,27 @@ int tsfi_bgp_proxy_route(const imp_header *hdr, const char *bgp_payload, char *r
     return (bytes > 0 && (size_t)bytes < max_len) ? 0 : -2;
 }
 
+int tsfi_imp_monitor_link_quality(uint8_t neighbor_imp_id, int response_time_ms, int *link_quality_metric_out) {
+    if (!link_quality_metric_out) return -1;
+    
+    if (neighbor_imp_id == 0 || response_time_ms < 0 || response_time_ms > 1000) {
+        *link_quality_metric_out = 0;
+    } else {
+        int q = 100 - (response_time_ms / 10);
+        *link_quality_metric_out = (q < 0) ? 0 : q;
+    }
+    return 0;
+}
+
+int tsfi_imp_update_routing_table(int current_table[4], const int neighbor_table[4], int link_delay) {
+    if (!current_table || !neighbor_table || link_delay < 0) return -1;
+    
+    for (int i = 0; i < 4; i++) {
+        if (neighbor_table[i] + link_delay < current_table[i]) {
+            current_table[i] = neighbor_table[i] + link_delay;
+        }
+    }
+    return 0;
+}
+
+

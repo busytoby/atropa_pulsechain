@@ -1195,6 +1195,8 @@ typedef struct {
 void tsfi_imp_format(imp_header *hdr, uint8_t src, uint8_t dest, uint8_t link, uint8_t type);
 int tsfi_imp_route(const imp_header *hdr, int active_nodes[4]);
 int tsfi_bgp_proxy_route(const imp_header *hdr, const char *bgp_payload, char *routed_output, size_t max_len);
+int tsfi_imp_monitor_link_quality(uint8_t neighbor_imp_id, int response_time_ms, int *link_quality_metric_out);
+int tsfi_imp_update_routing_table(int current_table[4], const int neighbor_table[4], int link_delay);
 
 // 1969 Multics Segment Access Control
 #define MULTICS_R 1

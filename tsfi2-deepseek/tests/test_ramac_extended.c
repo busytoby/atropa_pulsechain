@@ -1226,6 +1226,24 @@ int main(void) {
     tsfi_dat_destroy(dat_mq);
     tsfi_trie_destroy(trie_root_mq);
     printf("  [PASS] WinchesterMQ MCS structured packet header handshakes verified.\n");
+
+    // ARPANET Honeywell extensions verification
+    printf("[Test] Verifying ARPANET Honeywell extensions...\n");
+    int quality = 0;
+    assert(tsfi_imp_monitor_link_quality(1, 150, &quality) == 0);
+    assert(quality == 85); // 100 - 15
+    assert(tsfi_imp_monitor_link_quality(0, 50, &quality) == 0);
+    assert(quality == 0);
+
+    int cur_table[4] = { 0, 10, 50, 100 };
+    int neighbor_table[4] = { 10, 0, 20, 30 };
+    assert(tsfi_imp_update_routing_table(cur_table, neighbor_table, 5) == 0);
+    assert(cur_table[0] == 0);
+    assert(cur_table[1] == 5);  // 0 + 5 < 10
+    assert(cur_table[2] == 25); // 20 + 5 < 50
+    assert(cur_table[3] == 35); // 30 + 5 < 100
+    printf("  [PASS] ARPANET Honeywell link quality monitor and delay table routing verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;
