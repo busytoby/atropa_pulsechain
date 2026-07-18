@@ -1316,6 +1316,54 @@ int main(void) {
     remove("hogan_tx.dat.bin"); // clean up
     printf("  [PASS] Card expiry validations, epoch advances, and override logs verified.\n");
 
+    // 38. Test Account Grace Period Interest Rate Manager (Grace Period Restriction)
+    printf("[E2E] Testing Account Grace Period Interest Rate Manager...\n");
+    const char *gp_path = "hogan_grace.dat.bin";
+    remove(gp_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system gp_sys;
+    tsfi_hogan_init(&gp_sys);
+    assert(tsfi_hogan_register_account(&gp_sys, 1001, 10000) == 0); // Alice: 10,000 units
+    
+    // Set Alice's grace period to epoch 2
+    assert(tsfi_hogan_update_grace_period(&gp_sys, gp_path, 1001, 2, 888) == 0);
+    assert(tsfi_hogan_update_grace_period(&gp_sys, "hogan_grace.json", 1001, 2, 888) == -3); // Rule 13 check
+    
+    // Apply batch interest rate of 10% (1000 bps). At current_epoch 1, Alice is in grace period (1 <= 2), so interest added should be 0.
+    assert(tsfi_hogan_apply_interest(&gp_sys, "hogan_interest.dat.bin", 1000) == 0);
+    assert(gp_sys.accounts[0].balance == 10000);
+    remove("hogan_interest.dat.bin");
+    
+    // Advance epoch to 2. Alice is still in grace period (2 <= 2), so interest should still be 0.
+    assert(tsfi_hogan_overnight_reconciliation(&gp_sys, "hogan_lfs.dat.bin") == 0);
+    assert(gp_sys.current_epoch == 2);
+    assert(tsfi_hogan_apply_interest(&gp_sys, "hogan_interest.dat.bin", 1000) == 0);
+    assert(gp_sys.accounts[0].balance == 10000);
+    remove("hogan_interest.dat.bin");
+    
+    // Advance epoch to 3. Alice is now past grace period (3 > 2), so 10% interest should be applied (10,000 * 10% = 1,000 added).
+    assert(tsfi_hogan_overnight_reconciliation(&gp_sys, "hogan_lfs.dat.bin") == 0);
+    assert(gp_sys.current_epoch == 3);
+    assert(tsfi_hogan_apply_interest(&gp_sys, "hogan_interest.dat.bin", 1000) == 0);
+    assert(gp_sys.accounts[0].balance == 11000);
+    remove("hogan_interest.dat.bin");
+    
+    // Read sequential log file and verify entries
+    uint8_t read_gpbuf[sizeof(hogan_grace_period_entry)];
+    size_t gp_size = 0;
+    assert(tsfi_hogan_read_seq_record(gp_path, 0, read_gpbuf, &gp_size) == 0);
+    assert(gp_size == sizeof(hogan_grace_period_entry));
+    
+    const hogan_grace_period_entry *gpentry = (const hogan_grace_period_entry *)read_gpbuf;
+    assert(gpentry->account_id == 1001);
+    assert(gpentry->previous_grace_period == 0);
+    assert(gpentry->new_grace_period == 2);
+    assert(gpentry->authority_id == 888);
+    
+    remove(gp_path); // clean up
+    printf("  [PASS] Account interest grace periods, suppression checks, and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }

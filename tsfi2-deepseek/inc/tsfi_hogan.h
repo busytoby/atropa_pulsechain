@@ -58,6 +58,7 @@ typedef struct {
     uint32_t card_tx_limit;
     uint32_t card_tx_count_today;
     uint32_t card_expiry_epoch;
+    uint32_t grace_period_epochs;
 } hogan_account;
 
 #define HOGAN_MAX_BLOCKED_CARDS 32
@@ -389,5 +390,15 @@ typedef struct {
 } hogan_card_expiry_entry;
 
 int tsfi_hogan_update_card_expiry(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t new_expiry_epoch, uint32_t authority_id);
+
+// Account Grace Period Interest Rate Manager (Grace Period Restriction)
+typedef struct {
+    uint32_t account_id;
+    uint32_t previous_grace_period;
+    uint32_t new_grace_period;
+    uint32_t authority_id;
+} hogan_grace_period_entry;
+
+int tsfi_hogan_update_grace_period(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t new_grace_period, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H
