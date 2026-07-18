@@ -1963,14 +1963,51 @@ int tsfi_mf_nato_format_ssa_irs_broadcast(const char *ssn, int audit_action, uin
     return 0;
 }
 
+static const uint8_t gost_sbox_kgb[8][16] = {
+    { 1, 15, 13, 0, 5, 7, 10, 4, 9, 2, 3, 14, 6, 11, 8, 12 },
+    { 13, 11, 4, 1, 3, 15, 5, 9, 0, 10, 14, 7, 6, 8, 2, 12 },
+    { 4, 11, 10, 0, 7, 2, 1, 13, 3, 6, 8, 5, 9, 12, 15, 14 },
+    { 6, 12, 7, 1, 5, 15, 13, 8, 4, 10, 9, 14, 0, 3, 11, 2 },
+    { 7, 13, 10, 1, 0, 8, 9, 15, 14, 4, 6, 12, 11, 2, 5, 3 },
+    { 5, 8, 1, 13, 10, 3, 4, 2, 14, 15, 12, 7, 6, 0, 9, 11 },
+    { 14, 11, 4, 12, 6, 13, 15, 10, 2, 3, 8, 1, 0, 7, 5, 9 },
+    { 4, 10, 9, 2, 13, 8, 0, 14, 6, 11, 1, 12, 7, 15, 5, 3 }
+};
+
+static const uint8_t gost_sbox_test[8][16] = {
+    { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 },
+    { 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 },
+    { 3, 6, 0, 10, 14, 7, 6, 8, 2, 12, 1, 15, 13, 0, 5, 7 },
+    { 1, 15, 13, 0, 5, 7, 10, 4, 9, 2, 3, 14, 6, 11, 8, 12 },
+    { 13, 11, 4, 1, 3, 15, 5, 9, 0, 10, 14, 7, 6, 8, 2, 12 },
+    { 4, 11, 10, 0, 7, 2, 1, 13, 3, 6, 8, 5, 9, 12, 15, 14 },
+    { 6, 12, 7, 1, 5, 15, 13, 8, 4, 10, 9, 14, 0, 3, 11, 2 },
+    { 7, 13, 10, 1, 0, 8, 9, 15, 14, 4, 6, 12, 11, 2, 5, 3 }
+};
+
+static int active_gost_sbox_profile = 0;
+
 int tsfi_mf_ussr_gost_scramble(uint32_t *left_word, uint32_t *right_word, uint32_t key_word) {
     if (!left_word || !right_word) return -1;
     
-    // One basic round of GOST 28147-89 addition-rotation-XOR
     uint32_t temp = (*left_word + key_word);
+    
+    // Substitution using S-Boxes
+    uint32_t substituted = 0;
+    for (int i = 0; i < 8; i++) {
+        uint8_t nibble = (temp >> (i * 4)) & 0x0F;
+        uint8_t sub_val = 0;
+        if (active_gost_sbox_profile == 0) {
+            sub_val = gost_sbox_kgb[i][nibble];
+        } else {
+            sub_val = gost_sbox_test[i][nibble];
+        }
+        substituted |= ((uint32_t)sub_val << (i * 4));
+    }
+    
     // Rotate left by 11
-    temp = (temp << 11) | (temp >> 21);
-    *right_word ^= temp;
+    substituted = (substituted << 11) | (substituted >> 21);
+    *right_word ^= substituted;
     
     // Swap left/right
     uint32_t swap = *left_word;
@@ -1985,7 +2022,6 @@ int tsfi_mf_ussr_gost_transliterate(const char *in_latin, char *out_cyrillic, in
     int out_idx = 0;
     for (int i = 0; in_latin[i] != '\0' && out_idx < max_len - 1; i++) {
         char c = in_latin[i];
-        // Simple mapping representing basic Latin to Cyrillic characters
         if (c == 'A') out_cyrillic[out_idx++] = 'A';
         else if (c == 'B') out_cyrillic[out_idx++] = 'B'; // В
         else if (c == 'R') out_cyrillic[out_idx++] = 'P'; // Р
@@ -2000,12 +2036,9 @@ int tsfi_mf_ussr_gost_transliterate(const char *in_latin, char *out_cyrillic, in
 int tsfi_mf_ussr_gost_encrypt_32(uint32_t *left, uint32_t *right, const uint32_t *key_8words) {
     if (!left || !right || !key_8words) return -1;
     
-    // 32 rounds of GOST 28147-89
-    // Rounds 1-24: Key sequence 0, 1, 2, 3, 4, 5, 6, 7 repeated 3 times
     for (int r = 0; r < 24; r++) {
         tsfi_mf_ussr_gost_scramble(left, right, key_8words[r % 8]);
     }
-    // Rounds 25-32: Key sequence in reverse order (7, 6, 5, 4, 3, 2, 1, 0)
     for (int r = 0; r < 8; r++) {
         tsfi_mf_ussr_gost_scramble(left, right, key_8words[7 - r]);
     }
@@ -2016,6 +2049,22 @@ int tsfi_mf_ussr_red_phone_scramble(const uint8_t *in_signal, size_t size, uint8
     if (!in_signal || !out_signal) return -1;
     for (size_t i = 0; i < size; i++) {
         out_signal[i] = in_signal[i] ^ inversion_key;
+    }
+    return 0;
+}
+
+int tsfi_mf_gost_set_sbox(int profile_id) {
+    if (profile_id < 0 || profile_id > 1) return -1;
+    active_gost_sbox_profile = profile_id;
+    return 0;
+}
+
+int tsfi_mf_gost_hash_step(const uint8_t *block, uint8_t *h_state) {
+    if (!block || !h_state) return -1;
+    
+    // Emulate modular 256-bit hash compression (XOR block, add state)
+    for (int i = 0; i < 32; i++) {
+        h_state[i] = (h_state[i] ^ block[i]) + 0x11;
     }
     return 0;
 }

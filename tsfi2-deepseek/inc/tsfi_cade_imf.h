@@ -485,4 +485,7 @@ int tsfi_mf_ussr_gost_transliterate(const char *in_latin, char *out_cyrillic, in
 int tsfi_mf_ussr_gost_encrypt_32(uint32_t *left, uint32_t *right, const uint32_t *key_8words);
 int tsfi_mf_ussr_red_phone_scramble(const uint8_t *in_signal, size_t size, uint8_t inversion_key, uint8_t *out_signal);
 
+int tsfi_mf_gost_set_sbox(int profile_id);
+int tsfi_mf_gost_hash_step(const uint8_t *block, uint8_t *h_state);
+
 #endif // TSFI_CADE_IMF_H

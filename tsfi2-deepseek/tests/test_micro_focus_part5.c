@@ -1152,7 +1152,22 @@ int run_nato_stanag_tests_part5(void) {
     int phone_res = tsfi_mf_ussr_red_phone_scramble(raw_signal, sizeof(raw_signal), 0x99, scr_signal);
     assert(phone_res == 0);
     assert(scr_signal[0] != raw_signal[0]);
-    printf("  [PASS] Soviet Red Telephone Scrambler verified.\n");
+    // Verify GOST S-Box Setting
+    printf("[TEST] Validating GOST Custom S-Box Selector...\n");
+    int sbox_res = tsfi_mf_gost_set_sbox(1); // Set test profile
+    assert(sbox_res == 0);
+    sbox_res = tsfi_mf_gost_set_sbox(0); // Set KGB profile
+    assert(sbox_res == 0);
+    printf("  [PASS] GOST Custom S-Box Selector verified.\n");
+
+    // Verify GOST Hash step
+    printf("[TEST] Validating GOST Hash Compression Step...\n");
+    uint8_t dummy_block[32] = {0x01};
+    uint8_t hash_st[32] = {0xAB};
+    int hash_res = tsfi_mf_gost_hash_step(dummy_block, hash_st);
+    assert(hash_res == 0);
+    assert(hash_st[0] != 0xAB);
+    printf("  [PASS] GOST Hash Compression Step verified.\n");
 
     return 0;
 }
