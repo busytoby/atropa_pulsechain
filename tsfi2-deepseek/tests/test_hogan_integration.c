@@ -1018,6 +1018,49 @@ int main(void) {
     remove(priority_path); // clean up
     printf("  [PASS] Priority queuing, double-pass execution, and override logs verified.\n");
 
+    // 31. Test Maximum Balance Compliance Manager (Deposit Caps)
+    printf("[E2E] Testing Maximum Balance Compliance Manager...\n");
+    const char *maxb_path = "hogan_maxb.dat.bin";
+    remove(maxb_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system maxb_sys;
+    tsfi_hogan_init(&maxb_sys);
+    assert(tsfi_hogan_register_account(&maxb_sys, 1001, 1000) == 0); // Alice: 1,000 units
+    assert(tsfi_hogan_register_account(&maxb_sys, 2002, 1000) == 0); // Bob: 1,000 units
+    
+    // Set Bob's maximum balance threshold to 1500 units
+    assert(tsfi_hogan_update_max_balance(&maxb_sys, maxb_path, 2002, 1500, 888) == 0);
+    assert(tsfi_hogan_update_max_balance(&maxb_sys, "hogan_maxb.json", 2002, 1500, 888) == -3); // Rule 13 check
+    
+    // Alice transfers 400 to Bob (succeeds, Bob balance becomes 1400 <= 1500)
+    assert(tsfi_hogan_dispatch_tx(&maxb_sys, 1001, 2002, 400, VM_EVM) == 0);
+    
+    // Alice transfers 200 to Bob (should fail because Bob balance would be 1600 > 1500)
+    assert(tsfi_hogan_dispatch_tx(&maxb_sys, 1001, 2002, 200, VM_EVM) == 0);
+    
+    // Run reconciliation
+    assert(tsfi_hogan_overnight_reconciliation(&maxb_sys, "hogan_lfs.dat.bin") == 0);
+    
+    // Verify balances (only 400 transfer processed, 200 transfer blocked)
+    assert(maxb_sys.accounts[0].balance == 600);
+    assert(maxb_sys.accounts[1].balance == 1400);
+    
+    // Read sequential log file and verify entries
+    uint8_t read_maxbuf[sizeof(hogan_max_balance_entry)];
+    size_t max_size = 0;
+    assert(tsfi_hogan_read_seq_record(maxb_path, 0, read_maxbuf, &max_size) == 0);
+    assert(max_size == sizeof(hogan_max_balance_entry));
+    
+    const hogan_max_balance_entry *maxentry = (const hogan_max_balance_entry *)read_maxbuf;
+    assert(maxentry->account_id == 2002);
+    assert(maxentry->previous_max_balance == 0);
+    assert(maxentry->new_max_balance == 1500);
+    assert(maxentry->authority_id == 888);
+    
+    remove(maxb_path); // clean up
+    printf("  [PASS] Deposit cap compliance, validations, and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }

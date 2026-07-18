@@ -46,6 +46,7 @@ typedef struct {
     uint32_t daily_tx_limit;
     uint32_t daily_tx_count;
     uint8_t priority_tier;
+    uint64_t max_balance;
 } hogan_account;
 
 #define HOGAN_MAX_BLOCKED_CARDS 32
@@ -307,5 +308,15 @@ typedef struct {
 } hogan_priority_entry;
 
 int tsfi_hogan_update_priority_tier(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint8_t new_priority, uint32_t authority_id);
+
+// Maximum Balance Compliance Manager (Deposit Caps)
+typedef struct {
+    uint32_t account_id;
+    uint64_t previous_max_balance;
+    uint64_t new_max_balance;
+    uint32_t authority_id;
+} hogan_max_balance_entry;
+
+int tsfi_hogan_update_max_balance(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_max_balance, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H
