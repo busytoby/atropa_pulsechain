@@ -679,4 +679,20 @@ int tsfi_mf_cade_verify_designee_record(int has_designee, const char *designee_p
     return 0;
 }
 
+int tsfi_mf_cade_verify_filing_method(int method_code, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (method_code >= 1 && method_code <= 3) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_imf_check_first_time_filer(const char *ssn, const char *registry_pool, int *is_first_time) {
+    if (!ssn || !is_first_time) return -1;
+    if (!registry_pool || strstr(registry_pool, ssn) == NULL) {
+        *is_first_time = 1;
+    } else {
+        *is_first_time = 0;
+    }
+    return 0;
+}
+
 

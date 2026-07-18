@@ -419,6 +419,22 @@ int main(void) {
     assert(designee_valid == 1);
     printf("  [PASS] IRS CADE Designee PIN Verifier verified.\n");
 
+    // 160. Verify IRS CADE Filing Method Indicator Validator
+    printf("[TEST] Validating IRS CADE Filing Method Validator...\n");
+    int method_valid = -1;
+    int method_chk_res = tsfi_mf_cade_verify_filing_method(2, &method_valid);
+    assert(method_chk_res == 0);
+    assert(method_valid == 1);
+    printf("  [PASS] IRS CADE Filing Method Validator verified.\n");
+
+    // 161. Verify IRS IMF First-Time Filer Flag Selector
+    printf("[TEST] Validating IRS IMF First-Time Filer Checker...\n");
+    int first_time = -1;
+    int first_time_res = tsfi_mf_imf_check_first_time_filer("999-12-9999", "SSN:999-12-3456 | SSN:999-12-7890", &first_time);
+    assert(first_time_res == 0);
+    assert(first_time == 1);
+    printf("  [PASS] IRS IMF First-Time Filer Checker verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

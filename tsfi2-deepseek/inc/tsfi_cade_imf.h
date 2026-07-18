@@ -57,5 +57,7 @@ int tsfi_mf_imf_verify_refund_threshold(double refund_amount, double limit, int 
 int tsfi_mf_cade_verify_prior_year_agi(double input_agi, double actual_prior_agi, int *is_match);
 int tsfi_mf_imf_classify_agi_bracket(double agi, int *bracket_out);
 int tsfi_mf_cade_verify_designee_record(int has_designee, const char *designee_pin, int *is_valid);
+int tsfi_mf_cade_verify_filing_method(int method_code, int *is_valid);
+int tsfi_mf_imf_check_first_time_filer(const char *ssn, const char *registry_pool, int *is_first_time);
 
 #endif // TSFI_CADE_IMF_H

@@ -258,8 +258,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 301 | IRS CADE Prior Year AGI Identity Verifier | PASS | Asserts self-selected PIN registration matches legacy AGI entries | Volume 33 |
 | 302 | IRS IMF AGI Bracket Classifier | PASS | Segments reported incomes into standard routing brackets | Volume 33 |
 | 303 | IRS CADE Third-Party Designee Presence Check | PASS | Validates authorization PIN inputs when preparer flag is checked | Volume 33 |
+| 304 | IRS CADE Filing Method Indicator Validator | PASS | Validates transmission format codes matching accepted input pathways | Volume 33 |
+| 305 | IRS IMF First-Time Filer Flag Selector | PASS | Detects new SSN entries to trigger initial identity check parameters | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 303 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 305 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"
