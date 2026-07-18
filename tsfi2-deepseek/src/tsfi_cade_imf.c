@@ -1751,6 +1751,8 @@ int tsfi_mf_nato_verify_interface_version(int version, int *is_valid) {
 
 int tsfi_mf_nato_verify_fcs_type(int fcs_type, int *is_valid) {
     if (!is_valid) return -1;
+    /* Invariant: FCS checksum verification does not override or ignore
+     * the exclusive incompatibility requirement between NATO Short-TIN and IRS TINs. */
     *is_valid = (fcs_type == 0 || fcs_type == 1) ? 1 : 0;
     return 0;
 }
