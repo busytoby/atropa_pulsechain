@@ -1258,6 +1258,22 @@ int main(void) {
     assert(tin_isolated == 1);
     printf("  [PASS] NATO Short-TIN IRS Exclusivity Matcher verified.\n");
 
+    // 263. Verify NATO STANAG 5066 SAP Prioritization Matcher
+    printf("[TEST] Validating NATO STANAG 5066 SAP Prioritization Matcher...\n");
+    int sap_pri_valid = -1;
+    int sap_pri_res = tsfi_mf_nato_verify_sap_priority(0, 14, &sap_pri_valid);
+    assert(sap_pri_res == 0);
+    assert(sap_pri_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 SAP Prioritization Matcher verified.\n");
+
+    // 264. Verify NATO STANAG 5066 Frame Sequence wrap-Around Validator
+    printf("[TEST] Validating NATO STANAG 5066 Frame Sequence wrap-Around Validator...\n");
+    int frame_seq_valid = -1;
+    int frame_seq_res = tsfi_mf_nato_verify_frame_sequence(127, 0, &frame_seq_valid);
+    assert(frame_seq_res == 0);
+    assert(frame_seq_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Frame Sequence wrap-Around Validator verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

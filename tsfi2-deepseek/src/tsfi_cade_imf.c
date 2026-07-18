@@ -1719,4 +1719,16 @@ int tsfi_mf_cross_verify_tin_isolation(const char *irs_tin, int *is_isolated) {
     return 0;
 }
 
+int tsfi_mf_nato_verify_sap_priority(int sap, int priority, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (sap == 0) ? (priority >= 12) : 1;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_frame_sequence(int current_seq, int next_seq, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (next_seq == (current_seq + 1) % 128) ? 1 : 0;
+    return 0;
+}
+
 
