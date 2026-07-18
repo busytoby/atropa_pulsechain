@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 #include "tsfi_cade_imf.h"
 
 int run_nato_stanag_tests_part5(void) {
@@ -604,7 +605,27 @@ int run_nato_stanag_tests_part5(void) {
     assert(dpdu3[0] == 0x03);
     assert(dpdu3[1] == 0x26);
     assert(dpdu3[2] == 0xDE);
-    printf("  [PASS] D_PDU Type 3 verified.\n");
+    // Verify JANAP 128
+    printf("[TEST] Validating NORAD JANAP 128 Envelope...\n");
+    char janap_pkt[64];
+    size_t janap_size = 0;
+    int janap_res = tsfi_mf_norad_encode_janap128("RUMJTF", 123, 'S', janap_pkt, &janap_size);
+    assert(janap_res == 0);
+    assert(janap_size > 0);
+    assert(strncmp(janap_pkt, "R RUMJTF 0123 S\r\n", janap_size) == 0);
+    printf("  [PASS] JANAP 128 Envelope verified.\n");
+
+    // Verify DEFCON Status
+    printf("[TEST] Validating NORAD DEFCON Status Word...\n");
+    uint16_t defcon_status = 0;
+    int defcon_valid = -1;
+    int defcon_res = tsfi_mf_norad_encode_defcon(3, 12, &defcon_status, &defcon_valid); // DEFCON 3, 12 contacts -> alert active (bit 10 set)
+    assert(defcon_res == 0);
+    assert(defcon_valid == 1);
+    assert((defcon_status & 0x07) == 3);
+    assert(((defcon_status >> 3) & 0x7F) == 12);
+    assert((defcon_status & (1 << 10)) != 0); // Alert set
+    printf("  [PASS] DEFCON Status Word verified.\n");
 
     return 0;
 }
