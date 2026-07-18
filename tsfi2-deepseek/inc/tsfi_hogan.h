@@ -38,6 +38,7 @@ typedef struct {
     uint64_t daily_spent;
     uint64_t daily_transfer_limit;
     uint64_t daily_transferred;
+    uint8_t is_frozen;
 } hogan_account;
 
 typedef struct {
@@ -225,5 +226,14 @@ typedef struct {
 
 int tsfi_hogan_register_standing_order(const char *filepath, uint32_t sender_id, uint32_t recipient_id, uint64_t amount);
 int tsfi_hogan_execute_standing_orders(hogan_umbrella_system *sys, const char *filepath);
+
+// Account Compliance Freeze Manager (Legal Holds)
+typedef struct {
+    uint32_t account_id;
+    uint8_t is_frozen;
+    uint32_t authority_id;
+} hogan_freeze_entry;
+
+int tsfi_hogan_apply_account_freeze(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint8_t is_frozen, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H

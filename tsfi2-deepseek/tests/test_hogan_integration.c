@@ -695,6 +695,69 @@ int main(void) {
     remove(standing_path); // clean up
     printf("  [PASS] Standing order registration, execution dispatch, and logging verified.\n");
 
+    // 24. Test Account Compliance Freeze Manager (Legal Holds)
+    printf("[E2E] Testing Account Compliance Freeze Manager...\n");
+    const char *freezes_path = "hogan_freezes.dat.bin";
+    remove(freezes_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system freeze_sys;
+    tsfi_hogan_init(&freeze_sys);
+    assert(tsfi_hogan_register_account(&freeze_sys, 1001, 10000) == 0); // Alice: 10,000 units
+    assert(tsfi_hogan_register_account(&freeze_sys, 2002, 1000) == 0);  // Bob: 1,000 units
+    
+    // Freeze Alice's account
+    assert(tsfi_hogan_apply_account_freeze(&freeze_sys, freezes_path, 1001, 1, 999) == 0);
+    assert(tsfi_hogan_apply_account_freeze(&freeze_sys, "hogan_freezes.json", 1001, 1, 999) == -3); // Rule 13 check
+    
+    // Alice attempts to transfer 1500 to Bob (should fail because Alice is frozen)
+    assert(tsfi_hogan_dispatch_tx(&freeze_sys, 1001, 2002, 1500, VM_EVM) == 0);
+    
+    // Bob attempts to transfer 500 to Alice (should fail because Alice is frozen - blocks incoming credits too)
+    assert(tsfi_hogan_dispatch_tx(&freeze_sys, 2002, 1001, 500, VM_EVM) == 0);
+    
+    // Run reconciliation
+    assert(tsfi_hogan_overnight_reconciliation(&freeze_sys, "hogan_lfs.dat.bin") == 0);
+    
+    // Verify balances remain unchanged (both transfers blocked)
+    assert(freeze_sys.accounts[0].balance == 10000);
+    assert(freeze_sys.accounts[1].balance == 1000);
+    
+    // Unfreeze Alice's account
+    assert(tsfi_hogan_apply_account_freeze(&freeze_sys, freezes_path, 1001, 0, 999) == 0);
+    
+    // Alice attempts to transfer 1500 to Bob again (should succeed)
+    assert(tsfi_hogan_dispatch_tx(&freeze_sys, 1001, 2002, 1500, VM_EVM) == 0);
+    
+    assert(tsfi_hogan_overnight_reconciliation(&freeze_sys, "hogan_lfs.dat.bin") == 0);
+    
+    // Verify updated balances
+    assert(freeze_sys.accounts[0].balance == 8500); // 10000 - 1500
+    assert(freeze_sys.accounts[1].balance == 2500); // 1000 + 1500
+    
+    // Read sequential log file and verify entries
+    uint8_t read_frbuf[sizeof(hogan_freeze_entry)];
+    size_t fr_size = 0;
+    
+    // Check entry 0 (Frozen)
+    assert(tsfi_hogan_read_seq_record(freezes_path, 0, read_frbuf, &fr_size) == 0);
+    assert(fr_size == sizeof(hogan_freeze_entry));
+    const hogan_freeze_entry *frentry0 = (const hogan_freeze_entry *)read_frbuf;
+    assert(frentry0->account_id == 1001);
+    assert(frentry0->is_frozen == 1);
+    assert(frentry0->authority_id == 999);
+    
+    // Check entry 1 (Unfrozen)
+    assert(tsfi_hogan_read_seq_record(freezes_path, 1, read_frbuf, &fr_size) == 0);
+    assert(fr_size == sizeof(hogan_freeze_entry));
+    const hogan_freeze_entry *frentry1 = (const hogan_freeze_entry *)read_frbuf;
+    assert(frentry1->account_id == 1001);
+    assert(frentry1->is_frozen == 0);
+    assert(frentry1->authority_id == 999);
+    
+    remove(freezes_path); // clean up
+    printf("  [PASS] Compliance freezes, legal holds, and logging verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }
