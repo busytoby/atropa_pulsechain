@@ -774,7 +774,92 @@ int run_nato_stanag_tests_part5(void) {
 
     tsfi_mf_cics_check_irs_timeout(1000, 1500, 1000, &is_to); // 500ms elapsed <= 1000ms limit -> no timeout
     assert(is_to == 0);
-    printf("  [PASS] CICS Timeout Monitor verified.\n");
+    // Exhaustive Emergency Broadcast System (EBS) Integration Test
+    printf("[TEST] Executing Exhaustive Emergency Broadcast System (EBS) Integration Test...\n");
+    
+    // 1. Initial State (Normal Operations)
+    int ebs_defcon = 5;
+    uint16_t ebs_status = 0;
+    int ebs_valid = -1;
+    int ebs_res = tsfi_mf_norad_encode_defcon(ebs_defcon, 0, &ebs_status, &ebs_valid);
+    assert(ebs_res == 0);
+    assert(ebs_valid == 1);
+    assert((ebs_status & 0x07) == 5); // DEFCON 5
+    assert((ebs_status & (1 << 10)) == 0); // No alert active
+
+    int ebs_authorized = -1;
+    ebs_res = tsfi_mf_cics_authorize_transaction("NDFT", ebs_status, &ebs_authorized);
+    assert(ebs_res == 0);
+    assert(ebs_authorized == 1); // Routine transactions authorized at DEFCON 5
+
+    // 2. Incoming Flash Message Classification & Route Matcher
+    int ebs_priority = -1;
+    int ebs_prec_val = -1;
+    ebs_res = tsfi_mf_janap_classify_precedence('Z', &ebs_priority, &ebs_prec_val); // Flash precedence
+    assert(ebs_res == 0);
+    assert(ebs_prec_val == 1);
+    assert(ebs_priority == 4);
+
+    int ebs_is_irs = -1;
+    int ebs_route_val = -1;
+    ebs_res = tsfi_mf_norad_is_irs_route("RUMIRS", &ebs_is_irs, &ebs_route_val);
+    assert(ebs_res == 0);
+    assert(ebs_route_val == 1);
+    assert(ebs_is_irs == 1); // IRS route confirmed
+
+    // 3. Alert Event Received -> Escalation to DEFCON 1
+    int ebs_naap_state = 0; // IDLE
+    int ebs_naap_valid = -1;
+    ebs_res = tsfi_mf_norad_naap_update(0, &ebs_naap_state, &ebs_naap_valid); // TRIGGER_ALERT -> ALERT_ISSUED
+    assert(ebs_res == 0);
+    assert(ebs_naap_valid == 1);
+    assert(ebs_naap_state == 1);
+
+    ebs_res = tsfi_mf_norad_naap_update(1, &ebs_naap_state, &ebs_naap_valid); // SEND_ACK -> ACK_PENDING
+    assert(ebs_res == 0);
+    assert(ebs_naap_state == 2);
+
+    ebs_res = tsfi_mf_norad_naap_update(2, &ebs_naap_state, &ebs_naap_valid); // CONFIRM_ALERT -> CONFIRMED
+    assert(ebs_res == 0);
+    assert(ebs_naap_state == 3);
+
+    // 4. Encode DEFCON 1 Alert Status Word (Radar contacts detected)
+    ebs_res = tsfi_mf_norad_encode_defcon(1, 15, &ebs_status, &ebs_valid);
+    assert(ebs_res == 0);
+    assert(ebs_valid == 1);
+    assert((ebs_status & 0x07) == 1); // DEFCON 1
+    assert(((ebs_status >> 3) & 0x7F) == 15); // 15 radar contacts
+    assert((ebs_status & (1 << 10)) != 0); // Alert Active
+
+    // 5. CICS Authorization Block Verification (DEFCON 1)
+    ebs_res = tsfi_mf_cics_authorize_transaction("NDFT", ebs_status, &ebs_authorized); // Routine transaction
+    assert(ebs_res == 0);
+    assert(ebs_authorized == 0); // Routine transaction BLOCKED during DEFCON 1
+
+    ebs_res = tsfi_mf_cics_authorize_transaction("NJTF", ebs_status, &ebs_authorized); // Critical transaction
+    assert(ebs_res == 0);
+    assert(ebs_authorized == 1); // Critical transaction ALLOWED during DEFCON 1
+
+    // 6. Broadcast Alert PDU Generation
+    uint8_t ebs_bc_pdu[8];
+    size_t ebs_bc_size = 0;
+    ebs_res = tsfi_mf_cics_generate_naap_broadcast(1, 0xAA55, ebs_bc_pdu, &ebs_bc_size);
+    assert(ebs_res == 0);
+    assert(ebs_bc_size == 4);
+    assert(ebs_bc_pdu[0] == 0xBC); // Broadcast indicator
+    assert(ebs_bc_pdu[1] == 1);    // DEFCON 1
+    assert(ebs_bc_pdu[2] == 0xAA);
+    assert(ebs_bc_pdu[3] == 0x55);
+
+    // 7. Format 3270 Screen Alert Map
+    char ebs_3270_stream[128];
+    size_t ebs_3270_size = 0;
+    ebs_res = tsfi_mf_cics_format_3270_map(1, ebs_3270_stream, &ebs_3270_size);
+    assert(ebs_res == 0);
+    assert(ebs_3270_size > 0);
+    assert(ebs_3270_stream[0] == '\x11');
+
+    printf("  [PASS] Exhaustive Emergency Broadcast System (EBS) verified.\n");
 
     return 0;
 }
