@@ -72,6 +72,7 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_zener.o \
             $(OBJ_DIR)/drm-lease-v1-protocol.o \
             $(OBJ_DIR)/tsfi_computel_blue_box.o \
+            $(OBJ_DIR)/tsfi_computel_yellow_box.o \
             $(OBJ_DIR)/tsfi_computel_bb_index.o \
             $(OBJ_DIR)/tsfi_computel_bb_signal.o \
             $(OBJ_DIR)/tsfi_computel_bb_quad.o \
@@ -808,6 +809,9 @@ tests/test_computel_blue_box: tests/test_computel_blue_box.c $(CORE_OBJS) $(OBJ_
 tests/test_computel_red_box: tests/test_computel_red_box.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+tests/test_computel_yellow_box: tests/test_computel_yellow_box.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 tests/test_pdp11_mounts: ../tests/test_pdp11_mounts.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
@@ -1043,7 +1047,7 @@ bin/test_micro_focus_part2: bin/test_micro_focus
 	ln -sf test_micro_focus bin/test_micro_focus_part2
 
 
-test: bin/test_vulkan_teddy tests/test_rooted_browser_wmq_collision tests/test_ac_compositor_interop tests/test_computel_carrier_monitor tests/test_computel_trunk_selector tests/test_computel_dtmf_decoder tests/test_computel_dtmf_loopback tests/test_computel_dtmf_sequencer tests/test_computel_yul_firewall tests/test_computel_dtmf_progress_tones tests/test_computel_rotary_decoder tests/test_computel_secure_kermit tests/test_computel_udp_mcp tests/test_computel_advanced_kermit tests/test_computel_controller_thunk tests/test_computel_dmt_udp_benchmark tests/test_computel_fsk_modulator tests/test_computel_secure_tty tests/test_computel_blue_box tests/test_computel_red_box tests/test_pdp11_mounts tests/test_pdp11_encrypted_tunnel tests/test_mcp_tcp_proxy tests/test_mcp_multiplexed_encrypted_proxy tests/test_level_up_scheduler
+test: bin/test_vulkan_teddy tests/test_rooted_browser_wmq_collision tests/test_ac_compositor_interop tests/test_computel_carrier_monitor tests/test_computel_trunk_selector tests/test_computel_dtmf_decoder tests/test_computel_dtmf_loopback tests/test_computel_dtmf_sequencer tests/test_computel_yul_firewall tests/test_computel_dtmf_progress_tones tests/test_computel_rotary_decoder tests/test_computel_secure_kermit tests/test_computel_udp_mcp tests/test_computel_advanced_kermit tests/test_computel_controller_thunk tests/test_computel_dmt_udp_benchmark tests/test_computel_fsk_modulator tests/test_computel_secure_tty tests/test_computel_blue_box tests/test_computel_red_box tests/test_computel_yellow_box tests/test_pdp11_mounts tests/test_pdp11_encrypted_tunnel tests/test_mcp_tcp_proxy tests/test_mcp_multiplexed_encrypted_proxy tests/test_level_up_scheduler
 	bin/test_vulkan_teddy --test
 	./tests/test_rooted_browser_wmq_collision
 	./tests/test_ac_compositor_interop
@@ -1064,6 +1068,7 @@ test: bin/test_vulkan_teddy tests/test_rooted_browser_wmq_collision tests/test_a
 	./tests/test_computel_secure_tty
 	./tests/test_computel_blue_box
 	./tests/test_computel_red_box
+	./tests/test_computel_yellow_box
 	./tests/test_pdp11_mounts
 	./tests/test_pdp11_encrypted_tunnel
 	./tests/test_mcp_tcp_proxy
