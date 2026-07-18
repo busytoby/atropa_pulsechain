@@ -442,4 +442,7 @@ int tsfi_mf_cics_check_irs_timeout(uint32_t send_time_ms, uint32_t current_time_
 int tsfi_mf_norad_auth_hash(const uint8_t *payload, size_t size, uint32_t *out_hash);
 int tsfi_mf_janap_validate_message(const char *msg_buffer, size_t size, int *is_valid);
 
+int tsfi_mf_norad_link_irs_alarm(int audit_status, int *defcon_level, uint16_t *status_word);
+int tsfi_mf_irs_calculate_retry_backoff(int retry_count, int base_backoff_ms, int *next_backoff_ms);
+
 #endif // TSFI_CADE_IMF_H

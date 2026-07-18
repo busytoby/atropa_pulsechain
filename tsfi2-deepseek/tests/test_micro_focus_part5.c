@@ -874,7 +874,23 @@ int run_nato_stanag_tests_part5(void) {
     int val_res = tsfi_mf_janap_validate_message(msg, strlen(msg), &janap_valid_flag);
     assert(val_res == 0);
     assert(janap_valid_flag == 1);
-    printf("  [PASS] JANAP Message Validator verified.\n");
+    // Verify IRS Alarm Link
+    printf("[TEST] Validating IRS Alarm Link...\n");
+    int test_defcon = 5;
+    uint16_t test_status = 0;
+    int ebs_link_res = tsfi_mf_norad_link_irs_alarm(2, &test_defcon, &test_status); // Audit status 2 (rejection) -> defcon 2 + alarm set
+    assert(ebs_link_res == 0);
+    assert(test_defcon == 2);
+    assert((test_status & (1 << 10)) != 0);
+    printf("  [PASS] IRS Alarm Link verified.\n");
+
+    // Verify IRS Retry Backoff
+    printf("[TEST] Validating IRS Retry Backoff...\n");
+    int next_bo = 0;
+    int bo_res = tsfi_mf_irs_calculate_retry_backoff(3, 1000, &next_bo); // 1000 * 2^3 = 8000
+    assert(bo_res == 0);
+    assert(next_bo == 8000);
+    printf("  [PASS] IRS Retry Backoff verified.\n");
 
     return 0;
 }

@@ -1665,6 +1665,28 @@ int tsfi_mf_janap_validate_message(const char *msg_buffer, size_t size, int *is_
     return 0;
 }
 
+int tsfi_mf_norad_link_irs_alarm(int audit_status, int *defcon_level, uint16_t *status_word) {
+    if (!defcon_level || !status_word) return -1;
+    if (audit_status == 2) {
+        if (*defcon_level > 2) {
+            *defcon_level = 2;
+        }
+        *status_word |= (1 << 10); // Trigger local alarm
+    }
+    return 0;
+}
+
+int tsfi_mf_irs_calculate_retry_backoff(int retry_count, int base_backoff_ms, int *next_backoff_ms) {
+    if (!next_backoff_ms) return -1;
+    int backoff = base_backoff_ms * (1 << retry_count);
+    if (backoff > 30000) {
+        backoff = 30000;
+    }
+    *next_backoff_ms = backoff;
+    return 0;
+}
+
+
 
 
 
