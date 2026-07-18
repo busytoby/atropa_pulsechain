@@ -468,6 +468,37 @@ static void test_new_mainframe_features(void) {
     assert(myy == 26);
     assert(mmm == 7);
     assert(mdd == 18);
+
+    // COBOL Level 66 RENAMES Clause
+    rc = tsfi_cw_parse_copybook_line("66 RENAMED-VAR RENAMES COMP-VAR THRU TABLE-A.", &cb);
+    assert(rc == 0);
+    assert(cb.field_count == 12);
+    assert(strcmp(cb.fields[11].renames_start, "COMP-VAR") == 0);
+    assert(strcmp(cb.fields[11].renames_end, "TABLE-A") == 0);
+
+    // VSAM Key Compression
+    char compressed_k[16];
+    assert(tsfi_cw_vsam_compress_key("KEY12345", "KEY12000", compressed_k, sizeof(compressed_k)) == 0);
+    assert(strcmp(compressed_k, "5345") == 0);
+    char decompressed_k[16];
+    assert(tsfi_cw_vsam_decompress_key(compressed_k, "KEY12000", decompressed_k, sizeof(decompressed_k)) == 0);
+    assert(strcmp(decompressed_k, "KEY12345") == 0);
+
+    // JCL Temporary Datasets (SYSUT1)
+    tsfi_cw_jcl_temp_pool t_pool;
+    tsfi_cw_jcl_temp_pool_init(&t_pool);
+    assert(tsfi_cw_jcl_temp_pool_add(&t_pool, "SYSUT1", "temp1.dat.bin") == 0);
+    assert(strcmp(tsfi_cw_jcl_temp_pool_get(&t_pool, "SYSUT1"), "temp1.dat.bin") == 0);
+
+    // Packed decimal decimal-alignment
+    char aligned_val[32];
+    assert(tsfi_cw_align_comp3_fractional("123.4", 3, aligned_val, sizeof(aligned_val)) == 0);
+    assert(strcmp(aligned_val, "123.400") == 0);
+
+    // Julian Year Century Standardizer
+    char std_julian[16];
+    assert(tsfi_cw_julian_standardize("26.199", 50, std_julian, sizeof(std_julian)) == 0);
+    assert(strcmp(std_julian, "2026.199") == 0);
 }
 
 int main(void) {

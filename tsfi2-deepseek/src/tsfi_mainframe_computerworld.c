@@ -320,6 +320,73 @@ int tsfi_cw_parse_copybook_line(const char *copybook_line, tsfi_cw_copybook *cb)
     if (name_idx == 0) return -4;
     while (*p == ' ' || *p == '\t') p++;
 
+    if (level == 66) {
+        char ren_start[32] = "";
+        char ren_end[32] = "";
+        const char *ren_ptr = strstr(p, "RENAMES");
+        if (ren_ptr) {
+            ren_ptr += 7;
+            while (*ren_ptr == ' ' || *ren_ptr == '\t') ren_ptr++;
+            int s_idx = 0;
+            while (*ren_ptr && *ren_ptr != ' ' && *ren_ptr != '\t' && *ren_ptr != '.' && s_idx < 31) {
+                ren_start[s_idx++] = *ren_ptr++;
+            }
+            ren_start[s_idx] = '\0';
+            
+            while (*ren_ptr == ' ' || *ren_ptr == '\t') ren_ptr++;
+            if (strncmp(ren_ptr, "THRU", 4) == 0 || strncmp(ren_ptr, "THROUGH", 7) == 0) {
+                if (strncmp(ren_ptr, "THRU", 4) == 0) ren_ptr += 4;
+                else ren_ptr += 7;
+                while (*ren_ptr == ' ' || *ren_ptr == '\t') ren_ptr++;
+                int e_idx = 0;
+                while (*ren_ptr && *ren_ptr != ' ' && *ren_ptr != '\t' && *ren_ptr != '.' && e_idx < 31) {
+                    ren_end[e_idx++] = *ren_ptr++;
+                }
+                ren_end[e_idx] = '\0';
+            }
+        }
+        
+        tsfi_cw_cobol_field *f = &cb->fields[cb->field_count];
+        f->level = 66;
+        snprintf(f->name, sizeof(f->name), "%s", name);
+        f->type = COBOL_TYPE_ALPHA;
+        f->usage = COBOL_USAGE_DISPLAY;
+        f->length = 0;
+        f->offset = 0;
+        f->occurs = 1;
+        f->value[0] = '\0';
+        f->redefines[0] = '\0';
+        f->depending_on[0] = '\0';
+        f->indexed_by[0] = '\0';
+        strcpy(f->renames_start, ren_start);
+        strcpy(f->renames_end, ren_end);
+        
+        int start_offset = -1, end_offset = -1;
+        for (int i = 0; i < cb->field_count; i++) {
+            if (strcmp(cb->fields[i].name, ren_start) == 0) {
+                start_offset = cb->fields[i].offset;
+            }
+            if (strlen(ren_end) > 0 && strcmp(cb->fields[i].name, ren_end) == 0) {
+                end_offset = cb->fields[i].offset + cb->fields[i].length;
+            }
+        }
+        if (start_offset != -1) {
+            f->offset = start_offset;
+            if (end_offset != -1) {
+                f->length = end_offset - start_offset;
+            } else {
+                for (int i = 0; i < cb->field_count; i++) {
+                    if (strcmp(cb->fields[i].name, ren_start) == 0) {
+                        f->length = cb->fields[i].length;
+                        break;
+                    }
+                }
+            }
+        }
+        cb->field_count++;
+        return 0;
+    }
+
     char redefines_target[32] = "";
     if (strncmp(p, "REDEFINES", 9) == 0) {
         p += 9;
@@ -1373,5 +1440,100 @@ int tsfi_cw_parse_multi_format_date(const char *date_str, const char *format, ui
         return 0;
     }
     return -3;
+}
+
+int tsfi_cw_vsam_compress_key(const char *key, const char *prev_key, char *compressed_out, int max_len) {
+    if (!key || !compressed_out || max_len <= 0) return -1;
+    compressed_out[0] = '\0';
+    
+    int shared_prefix = 0;
+    if (prev_key) {
+        while (key[shared_prefix] && prev_key[shared_prefix] && key[shared_prefix] == prev_key[shared_prefix] && shared_prefix < 9) {
+            shared_prefix++;
+        }
+    }
+    
+    snprintf(compressed_out, max_len, "%d%s", shared_prefix, key + shared_prefix);
+    return 0;
+}
+
+int tsfi_cw_vsam_decompress_key(const char *compressed, const char *prev_key, char *decompressed_out, int max_len) {
+    if (!compressed || !decompressed_out || max_len <= 0) return -1;
+    int shared_prefix = compressed[0] - '0';
+    if (shared_prefix < 0 || shared_prefix > 9) return -2;
+    
+    decompressed_out[0] = '\0';
+    if (shared_prefix > 0 && prev_key) {
+        strncpy(decompressed_out, prev_key, shared_prefix);
+        decompressed_out[shared_prefix] = '\0';
+    }
+    strncat(decompressed_out, compressed + 1, max_len - shared_prefix - 1);
+    return 0;
+}
+
+void tsfi_cw_jcl_temp_pool_init(tsfi_cw_jcl_temp_pool *pool) {
+    if (pool) memset(pool, 0, sizeof(tsfi_cw_jcl_temp_pool));
+}
+
+int tsfi_cw_jcl_temp_pool_add(tsfi_cw_jcl_temp_pool *pool, const char *name, const char *path) {
+    if (!pool || !name || !path) return -1;
+    if (pool->count >= 8) return -2;
+    int idx = pool->count++;
+    strcpy(pool->datasets[idx].name, name);
+    strcpy(pool->datasets[idx].filepath, path);
+    pool->datasets[idx].active = 1;
+    return 0;
+}
+
+const char *tsfi_cw_jcl_temp_pool_get(tsfi_cw_jcl_temp_pool *pool, const char *name) {
+    if (!pool || !name) return NULL;
+    for (int i = 0; i < pool->count; i++) {
+        if (pool->datasets[i].active && strcmp(pool->datasets[i].name, name) == 0) {
+            return pool->datasets[i].filepath;
+        }
+    }
+    return NULL;
+}
+
+int tsfi_cw_align_comp3_fractional(const char *ascii_num, int decimal_places, char *aligned_out, int max_len) {
+    if (!ascii_num || !aligned_out || max_len <= 0) return -1;
+    
+    const char *dot = strchr(ascii_num, '.');
+    if (!dot) {
+        strcpy(aligned_out, ascii_num);
+        if (decimal_places > 0) {
+            strcat(aligned_out, ".");
+            for (int i = 0; i < decimal_places; i++) {
+                strcat(aligned_out, "0");
+            }
+        }
+        return 0;
+    }
+    
+    int int_part_len = dot - ascii_num;
+    int frac_part_len = strlen(dot + 1);
+    
+    strncpy(aligned_out, ascii_num, int_part_len);
+    aligned_out[int_part_len] = '\0';
+    
+    if (decimal_places > 0) {
+        strcat(aligned_out, ".");
+        strncat(aligned_out, dot + 1, decimal_places);
+        int added = decimal_places - frac_part_len;
+        for (int i = 0; i < added; i++) {
+            strcat(aligned_out, "0");
+        }
+    }
+    return 0;
+}
+
+int tsfi_cw_julian_standardize(const char *julian_in, uint32_t pivot, char *julian_out, int max_len) {
+    if (!julian_in || !julian_out || max_len <= 0) return -1;
+    uint32_t yy = 0, ddd = 0;
+    if (sscanf(julian_in, "%u.%u", &yy, &ddd) != 2) return -2;
+    
+    uint32_t full_year = tsfi_cw_y2k_resolve_year_ex(yy, pivot);
+    snprintf(julian_out, max_len, "%04u.%03u", full_year, ddd);
+    return 0;
 }
 

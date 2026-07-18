@@ -66,6 +66,8 @@ typedef struct {
     int occurs;
     char depending_on[32];
     char indexed_by[32];
+    char renames_start[32];
+    char renames_end[32];
 } tsfi_cw_cobol_field;
 
 typedef struct {
@@ -237,6 +239,32 @@ int tsfi_cw_vsam_rrds_read(tsfi_cw_vsam_rrds *rrds, uint32_t rrn, uint8_t *data_
 
 // JCL Procedure Variable Substitutions
 int tsfi_cw_run_jcl_set(const char **cards, int card_count, char *jcl_out, int max_jcl_len);
+
+// VSAM Key Compression Emulator
+int tsfi_cw_vsam_compress_key(const char *key, const char *prev_key, char *compressed_out, int max_len);
+int tsfi_cw_vsam_decompress_key(const char *compressed, const char *prev_key, char *decompressed_out, int max_len);
+
+// JCL Temporary Workspace pool
+typedef struct {
+    char name[32];
+    char filepath[256];
+    int active;
+} tsfi_cw_jcl_temp_ds;
+
+typedef struct {
+    tsfi_cw_jcl_temp_ds datasets[8];
+    int count;
+} tsfi_cw_jcl_temp_pool;
+
+void tsfi_cw_jcl_temp_pool_init(tsfi_cw_jcl_temp_pool *pool);
+int tsfi_cw_jcl_temp_pool_add(tsfi_cw_jcl_temp_pool *pool, const char *name, const char *path);
+const char *tsfi_cw_jcl_temp_pool_get(tsfi_cw_jcl_temp_pool *pool, const char *name);
+
+// Packed Decimal decimal-alignment
+int tsfi_cw_align_comp3_fractional(const char *ascii_num, int decimal_places, char *aligned_out, int max_len);
+
+// Julian date century standardizer
+int tsfi_cw_julian_standardize(const char *julian_in, uint32_t pivot, char *julian_out, int max_len);
 
 // 4. Job Control Language (JCL) Execution Simulator
 int tsfi_cw_run_jcl(const char **cards, int card_count);
