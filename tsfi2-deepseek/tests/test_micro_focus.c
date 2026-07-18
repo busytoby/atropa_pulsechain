@@ -1232,5 +1232,7 @@ int main(void) {
     printf("  [PASS] CICS INQUIRE SYSTEM TRANCLASS ACTPERCENT verified.\n");
 
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 1 completed successfully!\n");
-    return 0;
+    
+    int run_micro_focus_tests_part2(void);
+    return run_micro_focus_tests_part2();
 }

@@ -9,7 +9,7 @@
 #include <string.h>
 #include <unistd.h>
 
-int main(void) {
+int run_micro_focus_tests_part2(void) {
     printf("[TEST] Running Micro Focus COBOL standard compatibility checks part 2...\n");
 
     // 113. Verify MajorMUD Mainframe Z-machine Init
