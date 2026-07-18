@@ -222,5 +222,6 @@
 | 288 | IRS IMF Audit Selection Discrepancy Classifier | PASS | Flags returns for audit based on income mismatch or missing forms | Volume 33 |
 | 289 | IRS IMF Refund Scheduler | PASS | Schedules refund disbursements based on cycle code calendar offsets | Volume 33 |
 | 290 | IRS IMF Liability Offset Processor | PASS | Adjusts net refunds by deducting outstanding tax liabilities | Volume 33 |
+| 291 | IRS IMF Filing Status Restriction checks | PASS | Restricts certain forms and credits based on joint/separate returns | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 290 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 291 Scenarios validated successfully)

@@ -314,6 +314,14 @@ int main(void) {
     assert(remaining_liability == 0.0);
     printf("  [PASS] IRS IMF Liability Offset Processor verified.\n");
 
+    // 147. Verify IRS IMF Filing Status Restriction checks
+    printf("[TEST] Validating IRS IMF Filing Status Restriction...\n");
+    int allowed = -1;
+    int status_res = tsfi_mf_imf_verify_filing_status(3, 88, &allowed);
+    assert(status_res == 0);
+    assert(allowed == 0);
+    printf("  [PASS] IRS IMF Filing Status Restriction verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

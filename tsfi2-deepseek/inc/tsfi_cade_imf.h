@@ -44,5 +44,6 @@ int tsfi_mf_imf_verify_ssn_check_digit(const char *ssn, int *is_valid);
 int tsfi_mf_imf_evaluate_audit_discrepancy(double reported_income, double documented_income, int missing_schedules, int *audit_flag);
 int tsfi_mf_imf_schedule_refund(const char *cycle_code, int transaction_code, char *schedule_date_out, int max_len);
 int tsfi_mf_imf_apply_liability_offset(double refund_amt, double liability_amt, double *net_refund_out, double *remaining_liability_out);
+int tsfi_mf_imf_verify_filing_status(int filing_status, int doc_code, int *is_allowed);
 
 #endif // TSFI_CADE_IMF_H

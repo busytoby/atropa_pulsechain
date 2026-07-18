@@ -518,4 +518,14 @@ int tsfi_mf_imf_apply_liability_offset(double refund_amt, double liability_amt, 
     return 0;
 }
 
+int tsfi_mf_imf_verify_filing_status(int filing_status, int doc_code, int *is_allowed) {
+    if (!is_allowed) return -1;
+    if (filing_status == 3 && doc_code == 88) {
+        *is_allowed = 0;
+    } else {
+        *is_allowed = 1;
+    }
+    return 0;
+}
+
 
