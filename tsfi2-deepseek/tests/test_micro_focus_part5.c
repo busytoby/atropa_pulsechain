@@ -1113,13 +1113,11 @@ int run_nato_stanag_tests_part5(void) {
     printf("[TEST] Validating SSA-IRS-NATO STANAG Broadcast...\n");
     uint8_t nato_frame[16];
     size_t nato_size = 0;
+    tsfi_gost_emergency_defcon_level = 5; // Reset
     int ssa_nato_res = tsfi_mf_nato_format_ssa_irs_broadcast("050051122", 2, nato_frame, &nato_size);
-    assert(ssa_nato_res == 0);
-    assert(nato_size == 13);
-    assert(nato_frame[0] == 0x7E);
-    assert(nato_frame[1] == 0x55);
-    assert(nato_frame[2] == 2);
-    assert(nato_frame[12] == 0x7E);
+    assert(ssa_nato_res == -5); // Prohibited
+    assert(tsfi_gost_emergency_defcon_level == 1); // Alarm triggered
+    printf("  [PASS] SSA-IRS-NATO STANAG Broadcast blocked raw accessors successfully.\n");
     // Verify Soviet GOST Scrambler
     printf("[TEST] Validating Soviet GOST Scrambler...\n");
     tsfi_gost_is_broadcast_channel = 1;
