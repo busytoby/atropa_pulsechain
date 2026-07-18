@@ -2020,6 +2020,44 @@ int main(void) {
     remove(pr_path); // clean up
     printf("  [PASS] Account posting restriction blocks and override logs verified.\n");
 
+    // 54. Test Account Dormancy Fee Surcharge Manager (Dormancy Fee Surcharge)
+    printf("[E2E] Testing Account Dormancy Fee Surcharge Manager...\n");
+    const char *ds_path = "hogan_dormancy_surcharges.dat.bin";
+    remove(ds_path); // ensure clean start
+    
+    hogan_umbrella_system ds_sys;
+    tsfi_hogan_init(&ds_sys);
+    assert(tsfi_hogan_register_account(&ds_sys, 1001, 1000) == 0); // Alice: 1000 balance
+    
+    // Set Alice as dormant
+    ds_sys.accounts[0].is_dormant = 1;
+    
+    // Update dormancy fee surcharge to 50
+    assert(tsfi_hogan_update_dormancy_surcharge(&ds_sys, ds_path, 1001, 50, 999) == 0);
+    assert(tsfi_hogan_update_dormancy_surcharge(&ds_sys, "hogan_ds.json", 1001, 50, 999) == -3); // Rule 13 check
+    
+    // Apply batch fees: flat fee of 10. Dormant Alice should be charged 10 (flat) + 50 (surcharge) = 60.
+    const char *fee_log_path = "hogan_fees_test.dat.bin";
+    remove(fee_log_path);
+    assert(tsfi_hogan_apply_fees(&ds_sys, fee_log_path, 10) == 0);
+    remove(fee_log_path);
+    
+    assert(ds_sys.accounts[0].balance == 940); // 1000 - 60 = 940
+    
+    // Read override log files and verify entries
+    uint8_t read_dsbuf[sizeof(hogan_dormancy_surcharge_entry)];
+    size_t ds_size = 0;
+    assert(tsfi_hogan_read_seq_record(ds_path, 0, read_dsbuf, &ds_size) == 0);
+    assert(ds_size == sizeof(hogan_dormancy_surcharge_entry));
+    const hogan_dormancy_surcharge_entry *ds_entry = (const hogan_dormancy_surcharge_entry *)read_dsbuf;
+    assert(ds_entry->account_id == 1001);
+    assert(ds_entry->previous_surcharge == 0);
+    assert(ds_entry->new_surcharge == 50);
+    assert(ds_entry->authority_id == 999);
+    
+    remove(ds_path); // clean up
+    printf("  [PASS] Account dormancy fee surcharge calculations and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }

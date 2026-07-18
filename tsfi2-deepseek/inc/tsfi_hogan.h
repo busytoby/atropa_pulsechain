@@ -82,6 +82,7 @@ typedef struct {
     uint32_t merchant_exceptions[16];
     uint8_t merchant_exception_count;
     uint8_t posting_restriction;
+    uint64_t dormancy_fee_surcharge;
 } hogan_account;
 
 #define HOGAN_MAX_BLOCKED_CARDS 32
@@ -593,5 +594,15 @@ typedef struct {
 } hogan_posting_restriction_entry;
 
 int tsfi_hogan_update_posting_restriction(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint8_t restriction_code, uint32_t authority_id);
+
+// Account Dormancy Fee Surcharge Manager
+typedef struct {
+    uint32_t account_id;
+    uint64_t previous_surcharge;
+    uint64_t new_surcharge;
+    uint32_t authority_id;
+} hogan_dormancy_surcharge_entry;
+
+int tsfi_hogan_update_dormancy_surcharge(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t surcharge_amount, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H
