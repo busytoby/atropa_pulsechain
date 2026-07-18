@@ -1571,6 +1571,8 @@ int tsfi_cw_unt_cics_inject_ballistic(const char *data, int data_len, tsfi_cw_un
     return 0;
 }
 
+int g_ims_violations = 0;
+
 int tsfi_cw_rmu_audit_ims(const tsfi_cw_rmu_ims_segment *segments, int segment_count, int *invalid_pointers_out) {
     if (!segments || segment_count < 0 || !invalid_pointers_out) return -1;
     
@@ -1593,6 +1595,7 @@ int tsfi_cw_rmu_audit_ims(const tsfi_cw_rmu_ims_segment *segments, int segment_c
             }
         }
     }
+    g_ims_violations = *invalid_pointers_out;
     return 0;
 }
 
@@ -1718,6 +1721,90 @@ int tsfi_cw_chase_audit_atm(const tsfi_cw_chase_atm_transaction *tx, int *is_val
     }
     
     *is_valid_out = 1;
+    return 0;
+}
+
+int tsfi_cw_chase_issue_card(const char *card_number, const char *pin, double starting_balance, int *success_out) {
+    if (!card_number || !pin || !success_out) return -1;
+    
+    *success_out = 0;
+    if (strlen(pin) != 4) return 0;
+    if (strlen(card_number) < 12) return 0;
+    
+    // Hash/convert card number to key
+    uint64_t card_key = 0;
+    for (int i = 0; card_number[i] != '\0'; i++) {
+        if (card_number[i] >= '0' && card_number[i] <= '9') {
+            card_key = card_key * 10 + (card_number[i] - '0');
+        }
+    }
+    
+    // Attempt to load from evm_storage.dat.bin
+    typedef struct {
+        uint64_t key[4];
+        uint64_t val[4];
+        uint64_t addr;
+    } EvmStorageRowAtm;
+    
+    static EvmStorageRowAtm rows[4096];
+    uint32_t row_count = 0;
+    
+    const char *path = "evm_storage.dat.bin";
+    FILE *fp = fopen(path, "rb");
+    if (!fp) {
+        path = "tsfi2-deepseek/evm_storage.dat.bin";
+        fp = fopen(path, "rb");
+    }
+    
+    if (fp) {
+        if (fread(&row_count, sizeof(row_count), 1, fp) == 1) {
+            if (row_count > 4096) row_count = 4096;
+            size_t read_bytes = fread(rows, sizeof(EvmStorageRowAtm), row_count, fp);
+            (void)read_bytes;
+        }
+        fclose(fp);
+    }
+    
+    // Find or create card entry in btc_rails_vm storage (address 0x9419441970718915ULL)
+    uint64_t btc_rails_addr = 0x9419441970718915ULL;
+    int found_index = -1;
+    for (uint32_t i = 0; i < row_count; i++) {
+        if (rows[i].addr == btc_rails_addr && rows[i].key[0] == card_key) {
+            found_index = (int)i;
+            break;
+        }
+    }
+    
+    if (found_index != -1) {
+        // Update balance
+        rows[found_index].val[0] = (uint64_t)starting_balance;
+    } else {
+        // Create card row
+        if (row_count < 4096) {
+            found_index = (int)row_count;
+            rows[found_index].addr = btc_rails_addr;
+            rows[found_index].key[0] = card_key;
+            rows[found_index].key[1] = 0;
+            rows[found_index].key[2] = 0;
+            rows[found_index].key[3] = 0;
+            rows[found_index].val[0] = (uint64_t)starting_balance;
+            rows[found_index].val[1] = 0;
+            rows[found_index].val[2] = 0;
+            rows[found_index].val[3] = 0;
+            row_count++;
+        }
+    }
+    
+    // Write back to database
+    fp = fopen(path, "wb");
+    if (fp) {
+        fwrite(&row_count, sizeof(row_count), 1, fp);
+        size_t written_bytes = fwrite(rows, sizeof(EvmStorageRowAtm), row_count, fp);
+        (void)written_bytes;
+        fclose(fp);
+        *success_out = 1;
+    }
+    
     return 0;
 }
 

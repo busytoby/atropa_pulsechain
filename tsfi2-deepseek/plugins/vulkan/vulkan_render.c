@@ -420,20 +420,35 @@ void draw_ui_elements(VulkanSystem *s) {
     draw_debug_text(s->paint_buffer, 610, 65, "SCAN STATUS: OK", 0xFF00FF00, true);
 
     // Draw RMU IMS DB Structural Navigator Map in Vulkan
+    extern int g_ims_violations;
+    static uint64_t frame_cnt = 0;
+    frame_cnt++;
+    uint32_t map_color = 0xFF00FFFF;
+    uint32_t node_color = 0xFF00FF00;
+    if (g_ims_violations > 0) {
+        if ((frame_cnt / 15) % 2 == 0) {
+            node_color = 0xFF0000FF; // Red in ABGR
+            map_color = 0xFF0000FF;
+        } else {
+            node_color = 0xFF000088;
+            map_color = 0xFF000088;
+        }
+    }
+
     draw_rounded_rect(s->paint_buffer, 600, 95, 180, 100, 4, 0xFF050515);
-    draw_rounded_rect(s->paint_buffer, 605, 100, 170, 90, 2, 0xFF00FFFF);
-    draw_debug_text(s->paint_buffer, 610, 105, "RMU IMS STRUCT MAP", 0xFF00FFFF, true);
+    draw_rounded_rect(s->paint_buffer, 605, 100, 170, 90, 2, map_color);
+    draw_debug_text(s->paint_buffer, 610, 105, "RMU IMS STRUCT MAP", map_color, true);
     
     // Draw ROOTSEG node
-    draw_rounded_rect(s->paint_buffer, 640, 120, 60, 20, 2, 0xFF00FF00);
-    draw_debug_text(s->paint_buffer, 645, 123, "ROOTSEG", 0xFF00FF00, true);
+    draw_rounded_rect(s->paint_buffer, 640, 120, 60, 20, 2, node_color);
+    draw_debug_text(s->paint_buffer, 645, 123, "ROOTSEG", node_color, true);
 
     // Draw CHILDSEG node
-    draw_rounded_rect(s->paint_buffer, 640, 160, 60, 20, 2, 0xFF00FF00);
-    draw_debug_text(s->paint_buffer, 645, 163, "CHILDSEG", 0xFF00FF00, true);
+    draw_rounded_rect(s->paint_buffer, 640, 160, 60, 20, 2, node_color);
+    draw_debug_text(s->paint_buffer, 645, 163, "CHILDSEG", node_color, true);
 
     // Draw connection line
-    draw_rounded_rect(s->paint_buffer, 668, 140, 4, 20, 0, 0xFF00FF00);
+    draw_rounded_rect(s->paint_buffer, 668, 140, 4, 20, 0, node_color);
 
     // Draw live Vulkan knowledge graph of LP connections
     extern void draw_vulkan_knowledge_graph(VulkanSystem *s);

@@ -1231,5 +1231,7 @@ typedef struct {
 
 int tsfi_cw_chase_audit_atm(const tsfi_cw_chase_atm_transaction *tx, int *is_valid_out);
 
+int tsfi_cw_chase_issue_card(const char *card_number, const char *pin, double starting_balance, int *success_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

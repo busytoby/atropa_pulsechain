@@ -442,6 +442,35 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Chase Manhattan Card Issuer Card -->
+            <div class="card">
+                <div class="card-title">
+                    <span>Chase Manhattan Card Issuer</span>
+                    <span class="card-accent-tag">cics.issue_atm_card</span>
+                </div>
+                <div class="grid-inputs">
+                    <div class="input-group">
+                        <label for="newCardNumber">New Card Number</label>
+                        <input type="text" id="newCardNumber" value="4111222233334444">
+                    </div>
+                    <div class="input-group">
+                        <label for="newCardPin">New PIN (4 Digits)</label>
+                        <input type="text" id="newCardPin" value="1234">
+                    </div>
+                    <div class="input-group" style="grid-column: span 2;">
+                        <label for="newCardBalance">Starting Balance ($)</label>
+                        <input type="number" id="newCardBalance" value="5000">
+                    </div>
+                </div>
+                <button class="btn" onclick="issueAtmCard()">Issue &amp; Deploy Card to Ledger</button>
+                <div style="margin-top: 1.2rem; display: grid; grid-template-columns: 1fr; gap: 1rem;">
+                    <div class="metric-badge" style="border-color: rgba(56, 239, 125, 0.2);">
+                        <span class="metric-val" id="issueStatus" style="color: var(--accent-green);">INACTIVE</span>
+                        <span class="metric-label">Issuer Status</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="section-column">
@@ -807,6 +836,27 @@
                 atmScreen.textContent = "COMMUNICATION FAILURE";
                 atmScreen.style.color = "var(--accent-red)";
             }
+        }
+
+        async function issueAtmCard() {
+            try {
+                const res = await sendRpc("cics.issue_atm_card", {
+                    card_number: document.getElementById("newCardNumber").value,
+                    pin: document.getElementById("newCardPin").value,
+                    starting_balance: document.getElementById("newCardBalance").value
+                });
+
+                if (res && res.result) {
+                    const status = res.result.success ? "SUCCESS: DEPLOYED TO LEDGER" : "FAILED";
+                    const field = document.getElementById("issueStatus");
+                    field.textContent = status;
+                    if (res.result.success) {
+                        field.style.color = "var(--accent-green)";
+                    } else {
+                        field.style.color = "var(--accent-red)";
+                    }
+                }
+            } catch (e) {}
         }
 
         // Interactive Capture Pad Logic

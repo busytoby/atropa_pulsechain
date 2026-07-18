@@ -1093,6 +1093,22 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
         snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"is_valid\": %d}, \"id\": %d}\n", is_valid, id);
         return 1;
     }
+    if (method_type == 76) {
+        char card_number[32] = {0};
+        char pin[16] = {0};
+        char balance_str[32] = {0};
+        extract_json_string(min_ptr, "\"card_number\"", card_number, sizeof(card_number));
+        extract_json_string(min_ptr, "\"pin\"", pin, sizeof(pin));
+        extract_json_string(min_ptr, "\"starting_balance\"", balance_str, sizeof(balance_str));
+        double starting_balance = atof(balance_str);
+        
+        int success = 0;
+        extern int tsfi_cw_chase_issue_card(const char *card_number, const char *pin, double starting_balance, int *success_out);
+        tsfi_cw_chase_issue_card(card_number, pin, starting_balance, &success);
+        
+        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"success\": %d}, \"id\": %d}\n", success, id);
+        return 1;
+    }
     snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"Method not found\", \"id\": %d}\n", id);
     return 1;
 }
