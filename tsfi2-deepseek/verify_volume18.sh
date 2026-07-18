@@ -340,8 +340,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 383 | IRS IMF Schedule K-1 Partnership Distributive Interest Share Matcher | PASS | Matches 1040 Schedule B taxable interest lines against K-1 distributive shares | Volume 33 |
 | 384 | IRS CADE Form 1099-DIV Recipient TIN Format Validator | PASS | Validates recipient Social Security/TIN structure on Form 1099-DIV | Volume 33 |
 | 385 | IRS CADE Form 1040 Primary and Secondary SSN Matcher | PASS | Verifies primary and secondary spouses do not list identical SSNs | Volume 33 |
+| 386 | IRS CADE Form 1099-INT Payer TIN Format Validator | PASS | Validates Employer Identification Number structure on Form 1099-INT | Volume 33 |
+| 387 | IRS CADE Form 1099-INT Recipient TIN Format Validator | PASS | Validates recipient Social Security/TIN structure on Form 1099-INT | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 385 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 387 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

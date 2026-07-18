@@ -1550,4 +1550,12 @@ int tsfi_mf_cade_verify_distinct_ssns(const char *primary_ssn, const char *secon
     return 0;
 }
 
+int tsfi_mf_cade_verify_int_payer_tin(const char *tin, int *is_valid) {
+    return tsfi_mf_cade_verify_div_payer_tin(tin, is_valid);
+}
+
+int tsfi_mf_cade_verify_int_recipient_tin(const char *tin, int *is_valid) {
+    return tsfi_mf_cade_verify_div_recipient_tin(tin, is_valid);
+}
+
 

@@ -1087,6 +1087,22 @@ int main(void) {
     assert(distinct_ssns_valid == 1);
     printf("  [PASS] IRS CADE Distinct SSNs Matcher verified.\n");
 
+    // 242. Verify IRS CADE Form 1099-INT Payer TIN Format Validator
+    printf("[TEST] Validating IRS CADE INT Payer TIN Validator...\n");
+    int int_payer_valid = -1;
+    int int_payer_res = tsfi_mf_cade_verify_int_payer_tin("12-3456780", &int_payer_valid);
+    assert(int_payer_res == 0);
+    assert(int_payer_valid == 1);
+    printf("  [PASS] IRS CADE INT Payer TIN Validator verified.\n");
+
+    // 243. Verify IRS CADE Form 1099-INT Recipient TIN Format Validator
+    printf("[TEST] Validating IRS CADE INT Recipient TIN Validator...\n");
+    int int_rec_valid = -1;
+    int int_rec_res = tsfi_mf_cade_verify_int_recipient_tin("555-12-3456", &int_rec_valid);
+    assert(int_rec_res == 0);
+    assert(int_rec_valid == 1);
+    printf("  [PASS] IRS CADE INT Recipient TIN Validator verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }
