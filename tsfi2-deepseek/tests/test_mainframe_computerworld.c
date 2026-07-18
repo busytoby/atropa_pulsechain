@@ -1669,6 +1669,20 @@ static void test_new_mainframe_features(void) {
     assert(tsfi_cw_icp_audit_contract(&contract, &tot_val, &rem_val) == 0);
     assert(tot_val == 6000.0);
     assert(rem_val == 4000.0);
+
+    // ICP Compatibility Matrix Auditor test
+    tsfi_cw_icp_product comp_prod = { "PROD03", "System/360 OS", "IBM", "IBM 360", 45000.0, 300 };
+    int is_compatible = 0;
+    assert(tsfi_cw_icp_audit_compatibility(&comp_prod, "IBM 360 Model 40", &is_compatible) == 0);
+    assert(is_compatible == 1);
+    assert(tsfi_cw_icp_audit_compatibility(&comp_prod, "Burroughs B5500", &is_compatible) == 0);
+    assert(is_compatible == 0);
+
+    // ICP Software Royalty Distributor test
+    double royalty_amt = 0.0;
+    // System/360 OS: 45,000 * 300 = 13,500,000. 10% royalty = 1,350,000
+    assert(tsfi_cw_icp_distribute_royalties(&comp_prod, 0.10, &royalty_amt) == 0);
+    assert(royalty_amt == 1350000.0);
 }
 
 int main(void) {

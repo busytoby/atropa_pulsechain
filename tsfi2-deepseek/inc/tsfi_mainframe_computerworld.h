@@ -811,5 +811,9 @@ typedef struct {
 
 int tsfi_cw_icp_audit_contract(const tsfi_cw_icp_contract *contract, double *total_value_out, double *remaining_value_out);
 
+// ICP Compatibility Matrix Auditor and Royalty Distributor
+int tsfi_cw_icp_audit_compatibility(const tsfi_cw_icp_product *prod, const char *target_hardware, int *is_compatible_out);
+int tsfi_cw_icp_distribute_royalties(const tsfi_cw_icp_product *prod, double rate, double *royalty_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

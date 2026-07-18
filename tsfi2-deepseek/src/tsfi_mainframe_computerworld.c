@@ -819,6 +819,26 @@ int tsfi_cw_icp_audit_contract(const tsfi_cw_icp_contract *contract, double *tot
     return 0;
 }
 
+int tsfi_cw_icp_audit_compatibility(const tsfi_cw_icp_product *prod, const char *target_hardware, int *is_compatible_out) {
+    if (!prod || !target_hardware || !is_compatible_out) return -1;
+    
+    if (strstr(target_hardware, prod->hardware_platform) || strstr(prod->hardware_platform, target_hardware)) {
+        *is_compatible_out = 1;
+    } else {
+        *is_compatible_out = 0;
+    }
+    return 0;
+}
+
+int tsfi_cw_icp_distribute_royalties(const tsfi_cw_icp_product *prod, double rate, double *royalty_out) {
+    if (!prod || !royalty_out || rate < 0.0 || rate > 1.0) return -1;
+    
+    double revenue = prod->unit_price * prod->install_count;
+    *royalty_out = revenue * rate;
+    return 0;
+}
+
+
 
 
 
