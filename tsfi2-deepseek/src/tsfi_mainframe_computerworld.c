@@ -864,6 +864,26 @@ int tsfi_cw_icp_migration_audit(const tsfi_cw_icp_product *old_prod, const tsfi_
     return 0;
 }
 
+int tsfi_cw_icp_audit_license_compliance(int purchased, int active, int *warning_out) {
+    if (!warning_out) return -1;
+    *warning_out = (active > purchased) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_cw_icp_track_quota(double target, double actual, double *bonus_payout_out) {
+    if (!bonus_payout_out || target <= 0.0) return -1;
+    
+    if (actual < target) {
+        *bonus_payout_out = 0.0;
+    } else if (actual < target * 1.20) {
+        *bonus_payout_out = actual * 0.02;
+    } else {
+        *bonus_payout_out = actual * 0.05;
+    }
+    return 0;
+}
+
+
 
 
 

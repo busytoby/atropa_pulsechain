@@ -1700,6 +1700,22 @@ static void test_new_mainframe_features(void) {
     int upgrade_allowed = 0;
     assert(tsfi_cw_icp_migration_audit(&old_v, &new_v, &upgrade_allowed) == 0);
     assert(upgrade_allowed == 1);
+
+    // ICP Compliance test
+    int warning = 0;
+    assert(tsfi_cw_icp_audit_license_compliance(100, 120, &warning) == 0);
+    assert(warning == 1);
+    assert(tsfi_cw_icp_audit_license_compliance(100, 90, &warning) == 0);
+    assert(warning == 0);
+
+    // ICP Sales Quota test
+    double bonus = 0.0;
+    assert(tsfi_cw_icp_track_quota(10000.0, 8000.0, &bonus) == 0);
+    assert(bonus == 0.0);
+    assert(tsfi_cw_icp_track_quota(10000.0, 11000.0, &bonus) == 0);
+    assert(bonus == 220.0); // 11000 * 0.02
+    assert(tsfi_cw_icp_track_quota(10000.0, 12500.0, &bonus) == 0);
+    assert(bonus == 625.0); // 12500 * 0.05
 }
 
 int main(void) {
