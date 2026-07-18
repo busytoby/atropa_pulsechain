@@ -1987,9 +1987,15 @@ static const uint8_t gost_sbox_test[8][16] = {
 
 static int active_gost_sbox_profile = 0;
 int tsfi_gost_emergency_defcon_level = 5;
+int tsfi_gost_is_broadcast_channel = 0;
 
 int tsfi_mf_ussr_gost_scramble(uint32_t *left_word, uint32_t *right_word, uint32_t key_word) {
     if (!left_word || !right_word) return -1;
+    
+    // Restriction check: GOST is restricted to open broadcast channels only
+    if (tsfi_gost_is_broadcast_channel == 0) {
+        return -4; // Operation blocked: GOST restricted to broadcast channels only
+    }
     
     // Security check: intercept direct SSN/TIN engagement (ASCII digits footprint)
     uint32_t val = *left_word;

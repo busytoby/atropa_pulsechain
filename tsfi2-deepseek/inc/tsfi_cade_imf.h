@@ -493,6 +493,7 @@ int tsfi_mf_usss_verify_auth_pdu(const uint8_t *in_pdu, size_t pdu_size, int *is
 int tsfi_mf_ussr_spec_svyaz_cipher(const uint8_t *in, size_t size, uint8_t rotor_setting, uint8_t *out);
 
 extern int tsfi_gost_emergency_defcon_level;
+extern int tsfi_gost_is_broadcast_channel;
 
 int tsfi_mf_gost_is_tin_pattern(uint32_t val);
 

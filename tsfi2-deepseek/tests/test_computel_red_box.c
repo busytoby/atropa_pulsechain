@@ -657,12 +657,14 @@ int main(void) {
 
     // 47. Test USSR GOST Red Telephone integration with conference session keys
     printf("[TEST] Validating USSR GOST Red Telephone key scrambling for Red Box...\n");
+    tsfi_gost_is_broadcast_channel = 1;
     uint32_t key_left = session_key;
     uint32_t key_right = 0x55555555;
     uint32_t custom_keys[8] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
     int secure_res = tsfi_mf_ussr_gost_encrypt_32(&key_left, &key_right, custom_keys);
     assert(secure_res == 0);
     assert(key_left != session_key);
+    tsfi_gost_is_broadcast_channel = 0;
     printf("[TEST] Red Box session key securely scrambled via USSR Red Telephone GOST cipher.\n");
 
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");

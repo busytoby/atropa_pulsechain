@@ -20,6 +20,8 @@ int yellow_box_scramble_signal(const uint8_t *in, size_t size, uint8_t *out) {
     
     // Process input in 8-byte blocks using GOST scramble
     size_t i = 0;
+    int prev_bcast = tsfi_gost_is_broadcast_channel;
+    tsfi_gost_is_broadcast_channel = 1;
     for (; i + 8 <= size; i += 8) {
         uint32_t left = ((uint32_t)in[i] << 24) | ((uint32_t)in[i+1] << 16) | ((uint32_t)in[i+2] << 8) | in[i+3];
         uint32_t right = ((uint32_t)in[i+4] << 24) | ((uint32_t)in[i+5] << 16) | ((uint32_t)in[i+6] << 8) | in[i+7];
@@ -35,6 +37,7 @@ int yellow_box_scramble_signal(const uint8_t *in, size_t size, uint8_t *out) {
         out[i+6] = (right >> 8) & 0xFF;
         out[i+7] = right & 0xFF;
     }
+    tsfi_gost_is_broadcast_channel = prev_bcast;
     
     // Copy remainder
     for (; i < size; i++) {
@@ -71,6 +74,8 @@ int tsfi_mf_yellow_box_secure_telegram_route(const char *ssn, int dmf_deceased, 
     // Encrypt in 2 blocks using 32-round GOST block cipher
     uint32_t keys[8] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
     
+    int prev_bcast = tsfi_gost_is_broadcast_channel;
+    tsfi_gost_is_broadcast_channel = 1;
     for (int block = 0; block < 2; block++) {
         int offset = block * 8;
         uint32_t left = ((uint32_t)payload[offset] << 24) | ((uint32_t)payload[offset+1] << 16) | ((uint32_t)payload[offset+2] << 8) | payload[offset+3];
@@ -87,6 +92,7 @@ int tsfi_mf_yellow_box_secure_telegram_route(const char *ssn, int dmf_deceased, 
         payload[offset+6] = (right >> 8) & 0xFF;
         payload[offset+7] = right & 0xFF;
     }
+    tsfi_gost_is_broadcast_channel = prev_bcast;
     
     // Encapsulate inside STANAG 5066 broadcast frame
     out_telegram[0] = 0x7E; // Start
@@ -102,7 +108,10 @@ int tsfi_mf_yellow_box_scramble_keypad(uint8_t raw_keycode, uint8_t *scrambled_k
     if (!scrambled_keycode) return -1;
     uint32_t left = raw_keycode;
     uint32_t right = 0x55;
+    int prev_bcast = tsfi_gost_is_broadcast_channel;
+    tsfi_gost_is_broadcast_channel = 1;
     tsfi_mf_ussr_gost_scramble(&left, &right, 0x1234);
+    tsfi_gost_is_broadcast_channel = prev_bcast;
     *scrambled_keycode = (uint8_t)(left & 0xFF);
     return 0;
 }
@@ -113,6 +122,8 @@ int tsfi_mf_gost_encrypt_cfb(const uint8_t *iv, const uint8_t *in, size_t size, 
     uint32_t left = ((uint32_t)iv[0] << 24) | ((uint32_t)iv[1] << 16) | ((uint32_t)iv[2] << 8) | iv[3];
     uint32_t right = ((uint32_t)iv[4] << 24) | ((uint32_t)iv[5] << 16) | ((uint32_t)iv[6] << 8) | iv[7];
     
+    int prev_bcast = tsfi_gost_is_broadcast_channel;
+    tsfi_gost_is_broadcast_channel = 1;
     for (size_t i = 0; i < size; i++) {
         uint32_t temp_l = left;
         uint32_t temp_r = right;
@@ -124,6 +135,7 @@ int tsfi_mf_gost_encrypt_cfb(const uint8_t *iv, const uint8_t *in, size_t size, 
         left = (left << 8) | (right >> 24);
         right = (right << 8) | out[i];
     }
+    tsfi_gost_is_broadcast_channel = prev_bcast;
     return 0;
 }
 
@@ -132,7 +144,10 @@ int tsfi_mf_yellow_box_pbx_route(uint32_t extension_in, uint32_t *extension_out)
     
     uint32_t left = extension_in;
     uint32_t right = 0xAA55AA55;
+    int prev_bcast = tsfi_gost_is_broadcast_channel;
+    tsfi_gost_is_broadcast_channel = 1;
     tsfi_mf_ussr_gost_scramble(&left, &right, 0x9999);
+    tsfi_gost_is_broadcast_channel = prev_bcast;
     
     // Map to a secure 3-digit PBX extension path
     *extension_out = (left % 900) + 100;

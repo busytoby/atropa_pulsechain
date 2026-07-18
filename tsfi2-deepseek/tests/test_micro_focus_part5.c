@@ -1122,11 +1122,13 @@ int run_nato_stanag_tests_part5(void) {
     assert(nato_frame[12] == 0x7E);
     // Verify Soviet GOST Scrambler
     printf("[TEST] Validating Soviet GOST Scrambler...\n");
+    tsfi_gost_is_broadcast_channel = 1;
     uint32_t left = 0x11111111;
     uint32_t right = 0x22222222;
     int gost_res = tsfi_mf_ussr_gost_scramble(&left, &right, 0x33333333);
     assert(gost_res == 0);
     assert(left != 0x11111111);
+    tsfi_gost_is_broadcast_channel = 0;
     printf("  [PASS] Soviet GOST Scrambler verified.\n");
 
     // Verify Soviet GOST Transliteration
@@ -1137,12 +1139,14 @@ int run_nato_stanag_tests_part5(void) {
     assert(strcmp(cyrillic, "PUMIPC") == 0); // R->P, S->C transliterated
     // Verify Soviet GOST 32-Round Block Cipher
     printf("[TEST] Validating Soviet GOST 32-Round Cipher...\n");
+    tsfi_gost_is_broadcast_channel = 1;
     uint32_t c_left = 0xAAAAAAAA;
     uint32_t c_right = 0x55555555;
     uint32_t keys_8[8] = {1, 2, 3, 4, 5, 6, 7, 8};
     int cipher_res = tsfi_mf_ussr_gost_encrypt_32(&c_left, &c_right, keys_8);
     assert(cipher_res == 0);
     assert(c_left != 0xAAAAAAAA);
+    tsfi_gost_is_broadcast_channel = 0;
     printf("  [PASS] Soviet GOST 32-Round Cipher verified.\n");
 
     // Verify Soviet Red Telephone Scrambler
@@ -1189,8 +1193,18 @@ int run_nato_stanag_tests_part5(void) {
     int spec_res = tsfi_mf_ussr_spec_svyaz_cipher(spec_raw, sizeof(spec_raw), 5, spec_enc);
     assert(spec_res == 0);
     assert(spec_enc[0] != spec_raw[0]);
+    // Verify GOST broadcast-only restriction
+    printf("[TEST] Validating GOST broadcast-only restriction...\n");
+    tsfi_gost_is_broadcast_channel = 0; // Set to restricted/non-broadcast state
+    uint32_t test_l = 0xAA;
+    uint32_t test_r = 0xBB;
+    int bcast_res = tsfi_mf_ussr_gost_scramble(&test_l, &test_r, 0);
+    assert(bcast_res == -4); // Denied
+    printf("  [PASS] GOST broadcast-only restriction verified.\n");
+
     // Verify GOST emergency DEFCON override (intrusion detection)
     printf("[TEST] Validating GOST Emergency DEFCON override...\n");
+    tsfi_gost_is_broadcast_channel = 1; // Mark as broadcast-enabled for execution
     tsfi_gost_emergency_defcon_level = 5; // Reset
     uint32_t bad_left = 0x31323334; // "1234" (ASCII digits)
     uint32_t bad_right = 0;
@@ -1200,6 +1214,7 @@ int run_nato_stanag_tests_part5(void) {
 
     // Verify TIN pattern blocking
     printf("[TEST] Validating TIN range blocking inside GOST...\n");
+    tsfi_gost_is_broadcast_channel = 1; // Mark as broadcast-enabled
     tsfi_gost_emergency_defcon_level = 5; // Reset
     uint32_t itin_val = 950000000; // ITIN range
     uint32_t normal_val = 0;
@@ -1207,6 +1222,9 @@ int run_nato_stanag_tests_part5(void) {
     assert(block_res == -3); // Blocked
     assert(tsfi_gost_emergency_defcon_level == 1); // Alarm triggered
     printf("  [PASS] TIN range blocking inside GOST verified.\n");
+    
+    // Restore default
+    tsfi_gost_is_broadcast_channel = 0;
 
     return 0;
 }
