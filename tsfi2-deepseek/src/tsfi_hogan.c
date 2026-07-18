@@ -322,3 +322,37 @@ int tsfi_hogan_replay_journal(hogan_umbrella_system *sys, const char *filepath) 
     sys->live_processing_enabled = original_live_state;
     return 0;
 }
+
+int tsfi_hogan_write_audit_log(const char *filepath, uint32_t epoch, uint32_t account_id, const char *activity_type, uint8_t status) {
+    hogan_audit_entry entry;
+    entry.epoch = epoch;
+    entry.account_id = account_id;
+    strncpy(entry.activity_type, activity_type, sizeof(entry.activity_type) - 1);
+    entry.activity_type[sizeof(entry.activity_type) - 1] = '\0';
+    entry.status = status;
+    
+    return tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_audit_entry));
+}
+
+int tsfi_hogan_print_audit_trail(const char *filepath, size_t *entries_count_out) {
+    uint8_t buf[sizeof(hogan_audit_entry)];
+    size_t size = 0;
+    size_t index = 0;
+    
+    printf("--- HOGAN SYSTEMS MAINFRAME AUDIT TRAIL REPORT ---\n");
+    while (tsfi_hogan_read_seq_record(filepath, index, buf, &size) == 0) {
+        if (size != sizeof(hogan_audit_entry)) {
+            return -2; // Corrupt record size
+        }
+        
+        const hogan_audit_entry *entry = (const hogan_audit_entry *)buf;
+        printf("  [Epoch %03u] Account: %04u | Activity: %-12s | Status: %s\n",
+               entry->epoch, entry->account_id, entry->activity_type,
+               entry->status ? "SUCCESS" : "FAILED");
+               
+        index++;
+    }
+    
+    *entries_count_out = index;
+    return 0;
+}

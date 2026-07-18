@@ -82,4 +82,15 @@ int tsfi_hogan_resolve_uint64(const hogan_record_dict *dict, const uint8_t *payl
 int tsfi_hogan_write_journal(const char *filepath, const hogan_transaction *tx);
 int tsfi_hogan_replay_journal(hogan_umbrella_system *sys, const char *filepath);
 
+// Sequential Activity Audit Log (System Auditing)
+typedef struct {
+    uint32_t epoch;
+    uint32_t account_id;
+    char activity_type[16];
+    uint8_t status;
+} hogan_audit_entry;
+
+int tsfi_hogan_write_audit_log(const char *filepath, uint32_t epoch, uint32_t account_id, const char *activity_type, uint8_t status);
+int tsfi_hogan_print_audit_trail(const char *filepath, size_t *entries_count_out);
+
 #endif // TSFI_HOGAN_H

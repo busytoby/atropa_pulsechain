@@ -171,6 +171,25 @@ int main(void) {
     remove(journal_path); // clean up
     printf("  [PASS] Journal transaction playback and system state recovery verified.\n");
 
+    // 11. Test Sequential Activity Audit Log (System Auditing)
+    printf("[E2E] Testing Sequential Activity Audit Log...\n");
+    const char *audit_path = "hogan_audit.dat.bin";
+    remove(audit_path); // ensure clean start
+    
+    assert(tsfi_hogan_write_audit_log(audit_path, 1, 1001, "REGISTER", 1) == 0);
+    assert(tsfi_hogan_write_audit_log(audit_path, 1, 2002, "REGISTER", 1) == 0);
+    assert(tsfi_hogan_write_audit_log(audit_path, 1, 1001, "TRANSFER", 1) == 0);
+    assert(tsfi_hogan_write_audit_log(audit_path, 1, 3003, "TRANSFER", 0) == 0); // failed
+    
+    assert(tsfi_hogan_write_audit_log("hogan_audit.json", 1, 1001, "REGISTER", 1) == -3); // Rule 13 check
+    
+    size_t count = 0;
+    assert(tsfi_hogan_print_audit_trail(audit_path, &count) == 0);
+    assert(count == 4);
+    
+    remove(audit_path); // clean up
+    printf("  [PASS] Mainframe audit log trails correctly written and formatted.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }
