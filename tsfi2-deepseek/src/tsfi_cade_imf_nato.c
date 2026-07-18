@@ -886,6 +886,34 @@ int tsfi_mf_nato_decode_address(uint8_t addr_byte, int *node_addr, int *sub_node
     return 0;
 }
 
+int tsfi_mf_nato_encode_eot(int reason, uint8_t *out_frame, size_t *out_size) {
+    if (!out_frame || !out_size) return -1;
+    out_frame[0] = 0x0F;
+    out_frame[1] = reason & 0xFF;
+    *out_size = 2;
+    return 0;
+}
+
+int tsfi_mf_nato_decode_eot(const uint8_t *frame, size_t size, int *reason, int *is_valid) {
+    if (!frame || !reason || !is_valid) return -1;
+    *is_valid = 0;
+    if (size == 2 && frame[0] == 0x0F) {
+        *reason = frame[1];
+        *is_valid = 1;
+    }
+    return 0;
+}
+
+int tsfi_mf_nato_generate_bind_confirm(int status, int max_saps, uint8_t *out_pkt, size_t *out_size) {
+    if (!out_pkt || !out_size) return -1;
+    out_pkt[0] = 0x81;
+    out_pkt[1] = status & 0xFF;
+    out_pkt[2] = max_saps & 0xFF;
+    *out_size = 3;
+    return 0;
+}
+
+
 
 
 

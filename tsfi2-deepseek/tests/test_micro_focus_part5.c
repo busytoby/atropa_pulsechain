@@ -242,7 +242,35 @@ int run_nato_stanag_tests_part5(void) {
     assert(dec_addr_res == 0);
     assert(node_out == 5);
     assert(sub_node_out == 10);
-    printf("  [PASS] Address Encoder/Decoder verified.\n");
+    // Verify EOT Handshake
+    printf("[TEST] Validating NATO EOT Handshake...\n");
+    uint8_t eot_frame[8];
+    size_t eot_size = 0;
+    int eot_res = tsfi_mf_nato_encode_eot(2, eot_frame, &eot_size); // reason 2
+    assert(eot_res == 0);
+    assert(eot_size == 2);
+    assert(eot_frame[0] == 0x0F);
+    assert(eot_frame[1] == 2);
+
+    int dec_reason = -1;
+    int eot_valid = -1;
+    eot_res = tsfi_mf_nato_decode_eot(eot_frame, eot_size, &dec_reason, &eot_valid);
+    assert(eot_res == 0);
+    assert(eot_valid == 1);
+    assert(dec_reason == 2);
+    printf("  [PASS] EOT Handshake verified.\n");
+
+    // Verify Bind Confirmation
+    printf("[TEST] Validating NATO Bind Confirmation...\n");
+    uint8_t bind_conf[8];
+    size_t bind_conf_size = 0;
+    int conf_res = tsfi_mf_nato_generate_bind_confirm(0, 16, bind_conf, &bind_conf_size); // Success, 16 SAPs
+    assert(conf_res == 0);
+    assert(bind_conf_size == 3);
+    assert(bind_conf[0] == 0x81);
+    assert(bind_conf[1] == 0);
+    assert(bind_conf[2] == 16);
+    printf("  [PASS] Bind Confirmation verified.\n");
 
     return 0;
 }

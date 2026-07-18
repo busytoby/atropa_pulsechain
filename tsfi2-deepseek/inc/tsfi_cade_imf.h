@@ -373,4 +373,8 @@ int tsfi_mf_nato_decode_d_pdu(const uint8_t *frame, size_t size, int *type, uint
 int tsfi_mf_nato_encode_address(int node_addr, int sub_node_addr, uint8_t *out_byte);
 int tsfi_mf_nato_decode_address(uint8_t addr_byte, int *node_addr, int *sub_node_addr);
 
+int tsfi_mf_nato_encode_eot(int reason, uint8_t *out_frame, size_t *out_size);
+int tsfi_mf_nato_decode_eot(const uint8_t *frame, size_t size, int *reason, int *is_valid);
+int tsfi_mf_nato_generate_bind_confirm(int status, int max_saps, uint8_t *out_pkt, size_t *out_size);
+
 #endif // TSFI_CADE_IMF_H
