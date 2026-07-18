@@ -1699,4 +1699,24 @@ int tsfi_mf_nato_verify_segment_offset(int offset, int segment_size, int total_s
     return 0;
 }
 
+int tsfi_mf_cross_verify_tin_isolation(const char *irs_tin, int *is_isolated) {
+    if (!is_isolated) return -1;
+    if (!irs_tin) {
+        *is_isolated = 1;
+        return 0;
+    }
+    long val = 0;
+    for (int i = 0; irs_tin[i] != '\0'; i++) {
+        if (irs_tin[i] >= '0' && irs_tin[i] <= '9') {
+            val = val * 10 + (irs_tin[i] - '0');
+        }
+    }
+    if (val < (1 << 26)) {
+        *is_isolated = 0;
+    } else {
+        *is_isolated = 1;
+    }
+    return 0;
+}
+
 

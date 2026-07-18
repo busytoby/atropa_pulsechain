@@ -1250,6 +1250,14 @@ int main(void) {
     assert(seg_offset_valid == 1);
     printf("  [PASS] NATO STANAG 5066 Segmented Offset Matcher verified.\n");
 
+    // 262. Verify NATO Short-TIN IRS Exclusivity Matcher
+    printf("[TEST] Validating NATO Short-TIN IRS Exclusivity Matcher...\n");
+    int tin_isolated = -1;
+    int tin_isol_res = tsfi_mf_cross_verify_tin_isolation("777665555", &tin_isolated);
+    assert(tin_isol_res == 0);
+    assert(tin_isolated == 1);
+    printf("  [PASS] NATO Short-TIN IRS Exclusivity Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

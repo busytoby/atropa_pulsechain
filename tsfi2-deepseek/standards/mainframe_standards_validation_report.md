@@ -337,5 +337,6 @@
 | 403 | NATO STANAG 5066 Transmission Mode Selector | PASS | Audits transmission mode flags match standard ARQ/Non-ARQ/Broadcast values | Volume 33 |
 | 404 | NATO STANAG 5066 Short-TIN Node Address Validator | PASS | Audits node address boundaries match 26-bit Short-TIN layouts | Volume 33 |
 | 405 | NATO STANAG 5066 Segmented Transfer Offset Matcher | PASS | Verifies segmented transfer offsets stay within file size boundaries | Volume 33 |
+| 406 | NATO Short-TIN IRS Exclusivity Matcher | PASS | Confirms IRS 9-digit TINs do not fall within the 26-bit NATO Short-TIN range | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 405 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 406 Scenarios validated successfully)
