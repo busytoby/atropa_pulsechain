@@ -764,6 +764,22 @@ int main(void) {
     assert(below_phaseout == 1);
     printf("  [PASS] IRS IMF Student Loan Phase-Out Checker verified.\n");
 
+    // 202. Verify IRS IMF Earned Income Credit Investment Income Limit Matcher
+    printf("[TEST] Validating IRS IMF EITC Investment Income Matcher...\n");
+    int eitc_inv_eligible = -1;
+    int eitc_inv_res = tsfi_mf_imf_verify_eitc_investment_income(3000.00, 2000.00, &eitc_inv_eligible);
+    assert(eitc_inv_res == 0);
+    assert(eitc_inv_eligible == 1);
+    printf("  [PASS] IRS IMF EITC Investment Income Matcher verified.\n");
+
+    // 203. Verify IRS IMF SIMPLE IRA Elective Contribution Limit Matcher
+    printf("[TEST] Validating IRS IMF SIMPLE IRA Contribution Matcher...\n");
+    int ira_contrib_valid = -1;
+    int ira_contrib_res = tsfi_mf_imf_verify_simple_ira_contribution(12000.00, &ira_contrib_valid);
+    assert(ira_contrib_res == 0);
+    assert(ira_contrib_valid == 1);
+    printf("  [PASS] IRS IMF SIMPLE IRA Contribution Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

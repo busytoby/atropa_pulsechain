@@ -1136,4 +1136,17 @@ int tsfi_mf_imf_check_student_loan_phaseout(double agi, int filing_status, int *
     return 0;
 }
 
+int tsfi_mf_imf_verify_eitc_investment_income(double interest_income, double dividend_income, int *is_eligible) {
+    if (!is_eligible) return -1;
+    double total = interest_income + dividend_income;
+    *is_eligible = (total <= 11000.00 && total >= 0.0) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_imf_verify_simple_ira_contribution(double elective_contribution, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (elective_contribution <= 16000.00 && elective_contribution >= 0.0) ? 1 : 0;
+    return 0;
+}
+
 

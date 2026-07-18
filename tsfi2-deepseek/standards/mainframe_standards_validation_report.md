@@ -277,5 +277,7 @@
 | 343 | IRS IMF Federal Earned Income Bracket Matcher | PASS | Checks earned income boundaries to filter EITC eligibility | Volume 33 |
 | 344 | IRS IMF Federal Capital Loss Deduction Cap Checker | PASS | Enforces standard capital loss deductibility limits ($3,000/$1,500) | Volume 33 |
 | 345 | IRS IMF Federal Simple Student Loan Interest AGI Phase-Out Checker | PASS | Audits taxpayer AGI to determine phase-out bounds for student loan | Volume 33 |
+| 346 | IRS IMF Earned Income Credit Investment Income Limit Matcher | PASS | Checks total Schedule B investment income is under EITC bounds | Volume 33 |
+| 347 | IRS IMF SIMPLE IRA Elective Contribution Limit Matcher | PASS | Enforces standard contribution limit ceilings ($16,000) for SIMPLE | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 345 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 347 Scenarios validated successfully)
