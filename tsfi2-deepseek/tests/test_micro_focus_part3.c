@@ -317,5 +317,21 @@ int run_nato_stanag_tests(void) {
     assert(delay_interval_valid == 1);
     printf("  [PASS] NATO STANAG 5066 Transmit Delay Interval Validator verified.\n");
 
+    // 289. Verify NATO STANAG 5066 Flow Control Buffer Low-Water Mark Mode Selector
+    printf("[TEST] Validating NATO STANAG 5066 Low-Water Mode Selector...\n");
+    int low_water_mode_valid = -1;
+    int low_water_mode_res = tsfi_mf_nato_verify_low_water_mode(1, &low_water_mode_valid);
+    assert(low_water_mode_res == 0);
+    assert(low_water_mode_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Low-Water Mode Selector verified.\n");
+
+    // 290. Verify NATO STANAG 5066 Dynamic Segment Lifetime Adaptation Selector
+    printf("[TEST] Validating NATO STANAG 5066 Lifetime Adaptation Selector...\n");
+    int adapt_mode_valid = -1;
+    int adapt_mode_res = tsfi_mf_nato_verify_adaptation_mode(2, &adapt_mode_valid);
+    assert(adapt_mode_res == 0);
+    assert(adapt_mode_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Lifetime Adaptation Selector verified.\n");
+
     return 0;
 }

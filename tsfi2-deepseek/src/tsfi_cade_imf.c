@@ -1877,4 +1877,16 @@ int tsfi_mf_nato_verify_delay_interval(int interval, int *is_valid) {
     return 0;
 }
 
+int tsfi_mf_nato_verify_low_water_mode(int mode, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (mode >= 0 && mode <= 2) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_adaptation_mode(int mode, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (mode >= 0 && mode <= 2) ? 1 : 0;
+    return 0;
+}
+
 

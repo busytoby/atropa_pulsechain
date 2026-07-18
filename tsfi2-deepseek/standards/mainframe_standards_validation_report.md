@@ -364,5 +364,7 @@
 | 430 | NATO STANAG 5066 Multi-Scan Frame Count Validator | PASS | Audits maximum frame count settings per multi-scan transmission | Volume 33 |
 | 431 | NATO STANAG 5066 Client Idle Timeout Matcher | PASS | Validates client subnetwork interface socket idle timeout limits | Volume 33 |
 | 432 | NATO STANAG 5066 Transmit Delay Interval Validator | PASS | Audits delay spacing intervals inserted between transmit bursts | Volume 33 |
+| 433 | NATO STANAG 5066 Flow Control Buffer Low-Water Mark Mode Selector | PASS | Validates low-water flow control restore mode settings | Volume 33 |
+| 434 | NATO STANAG 5066 Dynamic Segment Lifetime Adaptation Selector | PASS | Audits lifetime adaptive scaling configurations | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 432 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 434 Scenarios validated successfully)

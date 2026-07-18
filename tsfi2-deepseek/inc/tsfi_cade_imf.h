@@ -184,5 +184,7 @@ int tsfi_mf_nato_verify_low_water_mark(int percentage, int *is_valid);
 int tsfi_mf_nato_verify_multiscan_frame_count(int count, int *is_valid);
 int tsfi_mf_nato_verify_idle_timeout(int timeout, int *is_valid);
 int tsfi_mf_nato_verify_delay_interval(int interval, int *is_valid);
+int tsfi_mf_nato_verify_low_water_mode(int mode, int *is_valid);
+int tsfi_mf_nato_verify_adaptation_mode(int mode, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H
