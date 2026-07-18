@@ -807,6 +807,43 @@ int main(void) {
     remove(cardlocks_path); // clean up
     printf("  [PASS] Card status compliance blocks and logging verified.\n");
 
+    // 26. Test Batch Fee Exemption Manager (Fee Waivers)
+    printf("[E2E] Testing Batch Fee Exemption Manager...\n");
+    const char *exempts_path = "hogan_exempts.dat.bin";
+    remove(exempts_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system exempt_sys;
+    tsfi_hogan_init(&exempt_sys);
+    assert(tsfi_hogan_register_account(&exempt_sys, 1001, 1000) == 0); // Alice: 1,000 units
+    assert(tsfi_hogan_register_account(&exempt_sys, 2002, 1000) == 0); // Bob: 1,000 units
+    
+    // Exempt Alice from fee charging
+    assert(tsfi_hogan_apply_fee_exemption(&exempt_sys, exempts_path, 1001, 1, 999) == 0);
+    assert(tsfi_hogan_apply_fee_exemption(&exempt_sys, "hogan_exempts.json", 1001, 1, 999) == -3); // Rule 13 check
+    
+    // Apply batch maintenance fee of 150 flat
+    assert(tsfi_hogan_apply_fees(&exempt_sys, "hogan_dummy_fees.dat.bin", 150) == 0);
+    remove("hogan_dummy_fees.dat.bin"); // clean up
+    
+    // Verify balances (Alice balance remains 1000, Bob balance is 850)
+    assert(exempt_sys.accounts[0].balance == 1000);
+    assert(exempt_sys.accounts[1].balance == 850);
+    
+    // Read sequential log file and verify entries
+    uint8_t read_exbuf[sizeof(hogan_exemption_entry)];
+    size_t ex_size = 0;
+    assert(tsfi_hogan_read_seq_record(exempts_path, 0, read_exbuf, &ex_size) == 0);
+    assert(ex_size == sizeof(hogan_exemption_entry));
+    
+    const hogan_exemption_entry *exentry = (const hogan_exemption_entry *)read_exbuf;
+    assert(exentry->account_id == 1001);
+    assert(exentry->fee_exempt == 1);
+    assert(exentry->authority_id == 999);
+    
+    remove(exempts_path); // clean up
+    printf("  [PASS] Fee waivers, waivers bypassing charging, and logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }

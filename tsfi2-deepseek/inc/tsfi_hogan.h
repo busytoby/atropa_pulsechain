@@ -39,6 +39,7 @@ typedef struct {
     uint64_t daily_transfer_limit;
     uint64_t daily_transferred;
     uint8_t is_frozen;
+    uint8_t fee_exempt;
 } hogan_account;
 
 #define HOGAN_MAX_BLOCKED_CARDS 32
@@ -251,5 +252,14 @@ typedef struct {
 } hogan_card_status_entry;
 
 int tsfi_hogan_apply_card_status(hogan_umbrella_system *sys, const char *filepath, uint32_t card_id, uint8_t new_status, uint32_t authority_id);
+
+// Batch Fee Exemption Manager (Fee Waivers)
+typedef struct {
+    uint32_t account_id;
+    uint8_t fee_exempt;
+    uint32_t authority_id;
+} hogan_exemption_entry;
+
+int tsfi_hogan_apply_fee_exemption(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint8_t fee_exempt, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H
