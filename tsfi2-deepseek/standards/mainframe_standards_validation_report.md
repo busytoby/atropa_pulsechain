@@ -271,5 +271,7 @@
 | 337 | IRS IMF Federal Qualified Business Income (QBI) Deduction Rate Matcher | PASS | Verifies QBI deduction calculation matches standard 20% limits | Volume 33 |
 | 338 | IRS IMF Standard vs. Itemized Deduction Selector | PASS | Compares and verifies the larger of standard vs. itemized deductions | Volume 33 |
 | 339 | IRS IMF Charitable Cash Contribution Cap Validator | PASS | Ensures cash charitable contributions do not exceed AGI limits | Volume 33 |
+| 340 | IRS IMF Premium Tax Credit (PTC) Simple Eligibility Checker | PASS | Checks AGI against federal poverty line limits for PTC eligibility | Volume 33 |
+| 341 | IRS IMF Federal Foreign Tax Credit Limit Matcher | PASS | Confirms claimed foreign tax credits do not exceed tax liability | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 339 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 341 Scenarios validated successfully)

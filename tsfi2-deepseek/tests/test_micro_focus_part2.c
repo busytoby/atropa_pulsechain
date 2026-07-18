@@ -716,6 +716,22 @@ int main(void) {
     assert(charity_valid == 1);
     printf("  [PASS] IRS IMF Charitable Cash Cap Checker verified.\n");
 
+    // 196. Verify IRS IMF Premium Tax Credit (PTC) Simple Eligibility Checker
+    printf("[TEST] Validating IRS IMF PTC Eligibility Checker...\n");
+    int ptc_eligible = -1;
+    int ptc_res = tsfi_mf_imf_verify_ptc_eligibility(45000.00, 15000.00, &ptc_eligible);
+    assert(ptc_res == 0);
+    assert(ptc_eligible == 1);
+    printf("  [PASS] IRS IMF PTC Eligibility Checker verified.\n");
+
+    // 197. Verify IRS IMF Federal Foreign Tax Credit Limit Matcher
+    printf("[TEST] Validating IRS IMF Foreign Tax Credit Limit Matcher...\n");
+    int ftc_valid = -1;
+    int ftc_res = tsfi_mf_imf_verify_foreign_tax_credit(2000.00, 5000.00, 1500.00, &ftc_valid);
+    assert(ftc_res == 0);
+    assert(ftc_valid == 1);
+    printf("  [PASS] IRS IMF Foreign Tax Credit Limit Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

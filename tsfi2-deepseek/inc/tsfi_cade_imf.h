@@ -91,5 +91,7 @@ int tsfi_mf_imf_verify_medical_floor(double agi, double total_expenses, double c
 int tsfi_mf_imf_verify_qbi_deduction(double qbi, double taxable_income, double claimed_qbi_deduction, int *is_valid);
 int tsfi_mf_imf_select_deduction(double standard_ded, double itemized_ded, double claimed_ded, int *is_valid);
 int tsfi_mf_imf_verify_charity_cap(double agi, double claimed_charity, int *is_valid);
+int tsfi_mf_imf_verify_ptc_eligibility(double agi, double fpl_limit, int *is_eligible);
+int tsfi_mf_imf_verify_foreign_tax_credit(double foreign_taxes_paid, double total_tax_liability, double claimed_credit, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

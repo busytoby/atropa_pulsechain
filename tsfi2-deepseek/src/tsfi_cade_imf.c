@@ -1098,4 +1098,17 @@ int tsfi_mf_imf_verify_charity_cap(double agi, double claimed_charity, int *is_v
     return 0;
 }
 
+int tsfi_mf_imf_verify_ptc_eligibility(double agi, double fpl_limit, int *is_eligible) {
+    if (!is_eligible) return -1;
+    *is_eligible = (agi <= fpl_limit * 4.0) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_imf_verify_foreign_tax_credit(double foreign_taxes_paid, double total_tax_liability, double claimed_credit, int *is_valid) {
+    if (!is_valid) return -1;
+    double allowed = (foreign_taxes_paid < total_tax_liability) ? foreign_taxes_paid : total_tax_liability;
+    *is_valid = (claimed_credit <= allowed && claimed_credit >= 0.0) ? 1 : 0;
+    return 0;
+}
+
 
