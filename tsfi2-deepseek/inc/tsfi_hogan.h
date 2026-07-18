@@ -71,6 +71,9 @@ typedef struct {
     uint32_t pin_fail_count;
     uint32_t pin_fail_limit;
     uint64_t max_fee_per_epoch;
+    uint32_t last_activity_epoch;
+    uint32_t dormancy_threshold_epochs;
+    uint8_t is_dormant;
 } hogan_account;
 
 #define HOGAN_MAX_BLOCKED_CARDS 32
@@ -503,5 +506,16 @@ typedef struct {
 } hogan_fee_cap_entry;
 
 int tsfi_hogan_update_fee_cap(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_fee_cap, uint32_t authority_id);
+
+// Account Dormancy and Activity Status Manager
+typedef struct {
+    uint32_t account_id;
+    uint8_t previous_dormant_state;
+    uint8_t new_dormant_state;
+    uint32_t authority_id;
+} hogan_dormancy_entry;
+
+int tsfi_hogan_reactivate_dormant_account(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t authority_id);
+int tsfi_hogan_set_dormancy_threshold(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t threshold_epochs, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H

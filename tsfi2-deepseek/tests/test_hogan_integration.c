@@ -1696,6 +1696,63 @@ int main(void) {
     remove(feecap_path); // clean up
     printf("  [PASS] Maintenance fee caps, cap validations, and override logs verified.\n");
 
+    // 47. Test Account Dormancy and Activity Status Manager (Dormancy)
+    printf("[E2E] Testing Account Dormancy and Activity Status Manager...\n");
+    const char *dorm_path = "hogan_dorm.dat.bin";
+    remove(dorm_path); // ensure clean start
+    
+    hogan_umbrella_system dorm_sys;
+    tsfi_hogan_init(&dorm_sys);
+    assert(tsfi_hogan_register_account(&dorm_sys, 1001, 10000) == 0); // Alice: 10000 balance
+    assert(tsfi_hogan_register_account(&dorm_sys, 2002, 500) == 0);   // Bob: 500 balance
+    
+    // Set Alice's dormancy threshold to 3 epochs
+    assert(tsfi_hogan_set_dormancy_threshold(&dorm_sys, dorm_path, 1001, 3, 999) == 0);
+    assert(tsfi_hogan_set_dormancy_threshold(&dorm_sys, "hogan_dorm.json", 1001, 3, 999) == -3); // Rule 13 check
+    
+    // Dispatch a transaction in epoch 1 (succeeds)
+    assert(tsfi_hogan_dispatch_tx(&dorm_sys, 1001, 2002, 100, VM_EVM) == 0);
+    assert(tsfi_hogan_overnight_reconciliation(&dorm_sys, "hogan_lfs.dat.bin") == 0);
+    assert(dorm_sys.accounts[0].balance == 9900);
+    
+    // Advance epoch to 5 (dorm_sys.current_epoch = 5, Alice last active at 1. Inactivity = 4 epochs > threshold 3)
+    dorm_sys.current_epoch = 5;
+    
+    // Try to dispatch a transaction (should be blocked due to dormancy since epoch gap 4 > threshold 3)
+    assert(tsfi_hogan_dispatch_tx(&dorm_sys, 1001, 2002, 100, VM_EVM) == 0);
+    assert(tsfi_hogan_overnight_reconciliation(&dorm_sys, "hogan_lfs.dat.bin") == 0);
+    assert(dorm_sys.accounts[0].balance == 9900); // Alice's balance remains unchanged
+    
+    // Reactivate dormant account administratively
+    assert(tsfi_hogan_reactivate_dormant_account(&dorm_sys, dorm_path, 1001, 999) == 0);
+    
+    // Verify transaction now succeeds
+    assert(tsfi_hogan_dispatch_tx(&dorm_sys, 1001, 2002, 100, VM_EVM) == 0);
+    assert(tsfi_hogan_overnight_reconciliation(&dorm_sys, "hogan_lfs.dat.bin") == 0);
+    assert(dorm_sys.accounts[0].balance == 9800); // Alice's balance correctly decremented
+    
+    // Read override log files and verify reactivation entries
+    uint8_t read_dormbuf[sizeof(hogan_dormancy_entry)];
+    size_t dorm_size = 0;
+    assert(tsfi_hogan_read_seq_record(dorm_path, 0, read_dormbuf, &dorm_size) == 0);
+    assert(dorm_size == sizeof(hogan_dormancy_entry));
+    
+    // The first record in dorm_path is the threshold setting
+    const hogan_dormancy_entry *th_entry = (const hogan_dormancy_entry *)read_dormbuf;
+    assert(th_entry->account_id == 1001);
+    assert(th_entry->previous_dormant_state == 0); // initial threshold 0
+    assert(th_entry->new_dormant_state == 3);      // new threshold 3
+    
+    // The second record in dorm_path is the reactivation
+    assert(tsfi_hogan_read_seq_record(dorm_path, 1, read_dormbuf, &dorm_size) == 0);
+    const hogan_dormancy_entry *react_entry = (const hogan_dormancy_entry *)read_dormbuf;
+    assert(react_entry->account_id == 1001);
+    assert(react_entry->previous_dormant_state == 1); // was dormant
+    assert(react_entry->new_dormant_state == 0);      // now active
+    
+    remove(dorm_path); // clean up
+    printf("  [PASS] Account dormancy thresholds, gap validations, reactivations, and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }

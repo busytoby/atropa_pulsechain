@@ -20,6 +20,7 @@ int tsfi_hogan_register_account(hogan_umbrella_system *sys, uint32_t account_id,
         if (!sys->accounts[i].active) {
             sys->accounts[i].account_id = account_id;
             sys->accounts[i].balance = initial_balance;
+            sys->accounts[i].last_activity_epoch = sys->current_epoch;
             sys->accounts[i].active = 1;
             return 0;
         }
@@ -117,6 +118,9 @@ int tsfi_hogan_lfs_save(const hogan_umbrella_system *sys, const char *filepath) 
             fwrite(&sys->accounts[i].pin_fail_count, sizeof(uint32_t), 1, f);
             fwrite(&sys->accounts[i].pin_fail_limit, sizeof(uint32_t), 1, f);
             fwrite(&sys->accounts[i].max_fee_per_epoch, sizeof(uint64_t), 1, f);
+            fwrite(&sys->accounts[i].last_activity_epoch, sizeof(uint32_t), 1, f);
+            fwrite(&sys->accounts[i].dormancy_threshold_epochs, sizeof(uint32_t), 1, f);
+            fwrite(&sys->accounts[i].is_dormant, sizeof(uint8_t), 1, f);
         }
     }
     
@@ -408,6 +412,24 @@ int tsfi_hogan_lfs_load(hogan_umbrella_system *sys, const char *filepath) {
             return -2;
         }
         sys->accounts[i].max_fee_per_epoch = max_f_cap;
+        uint32_t last_act = 0;
+        if (fread(&last_act, sizeof(uint32_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
+        sys->accounts[i].last_activity_epoch = last_act;
+        uint32_t dorm_th = 0;
+        if (fread(&dorm_th, sizeof(uint32_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
+        sys->accounts[i].dormancy_threshold_epochs = dorm_th;
+        uint8_t is_dorm = 0;
+        if (fread(&is_dorm, sizeof(uint8_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
+        sys->accounts[i].is_dormant = is_dorm;
         sys->accounts[i].active = 1;
     }
     
@@ -816,7 +838,16 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
                 if (pass == 0 && !is_vip) continue;
                 if (pass == 1 && is_vip) continue;
                 
-                if (sender->is_frozen || recipient->is_frozen) {
+                if (sender->dormancy_threshold_epochs > 0 && (sys->current_epoch - sender->last_activity_epoch > sender->dormancy_threshold_epochs)) {
+                    sender->is_dormant = 1;
+                }
+                if (recipient->dormancy_threshold_epochs > 0 && (sys->current_epoch - recipient->last_activity_epoch > recipient->dormancy_threshold_epochs)) {
+                    recipient->is_dormant = 1;
+                }
+                
+                if (sender->is_dormant || recipient->is_dormant) {
+                    tx->processed = 1; // transaction blocked due to account dormancy
+                } else if (sender->is_frozen || recipient->is_frozen) {
                 tx->processed = 1; // transaction blocked by compliance hold / freeze
             } else if (sender->status_code == STATUS_STOP_ALL || sender->status_code == STATUS_STOP_DEBIT || recipient->status_code == STATUS_STOP_ALL) {
                 tx->processed = 1; // transaction blocked by administrative hold
@@ -837,6 +868,8 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
                 sender->acc_spent_today_transfers += tx->amount;
                 sender->daily_tx_count++;
                 recipient->daily_deposited += tx->amount;
+                sender->last_activity_epoch = sys->current_epoch;
+                recipient->last_activity_epoch = sys->current_epoch;
                 tx->processed = 1;
             } else if (sender->has_backup) {
                 // Determine overdraft backup account
@@ -863,14 +896,16 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
                         backup->balance -= deficit;
                         sender->balance += deficit;
                         
-                        sender->balance -= tx->amount;
-                        recipient->balance += tx->amount;
-                        sender->daily_transferred += tx->amount;
-                        sender->acc_spent_today_transfers += tx->amount;
-                        sender->daily_tx_count++;
-                        recipient->daily_deposited += tx->amount;
-                        sender->overdraft_drawn += deficit;
-                        tx->processed = 1;
+                         sender->balance -= tx->amount;
+                         recipient->balance += tx->amount;
+                         sender->daily_transferred += tx->amount;
+                         sender->acc_spent_today_transfers += tx->amount;
+                         sender->daily_tx_count++;
+                         recipient->daily_deposited += tx->amount;
+                         sender->overdraft_drawn += deficit;
+                         sender->last_activity_epoch = sys->current_epoch;
+                         recipient->last_activity_epoch = sys->current_epoch;
+                         tx->processed = 1;
                         
                         if (overdraft_filepath) {
                             hogan_overdraft_entry o_entry = { sender->account_id, backup->account_id, deficit, 1 };
@@ -972,6 +1007,9 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
             EVP_DigestUpdate(mdctx, &sys->accounts[i].pin_fail_count, sizeof(uint32_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].pin_fail_limit, sizeof(uint32_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].max_fee_per_epoch, sizeof(uint64_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].last_activity_epoch, sizeof(uint32_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].dormancy_threshold_epochs, sizeof(uint32_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].is_dormant, sizeof(uint8_t));
         }
     }
     EVP_DigestUpdate(mdctx, &sys->blocked_card_count, sizeof(size_t));
@@ -2302,6 +2340,78 @@ int tsfi_hogan_update_fee_cap(hogan_umbrella_system *sys, const char *filepath, 
     acc->max_fee_per_epoch = new_fee_cap;
     
     int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_fee_cap_entry));
+    
+    sys->live_processing_enabled = original_live_state;
+    return write_res;
+}
+
+int tsfi_hogan_reactivate_dormant_account(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t authority_id) {
+    // Enforce Rule 13: file extension must end with .dat.bin
+    const char *ext = strrchr(filepath, '.');
+    if (!ext || strcmp(ext, ".bin") != 0) {
+        if (!ext || strcmp(ext - 4, ".dat.bin") != 0) {
+            return -3; // Invalid extension
+        }
+    }
+
+    // Disable live queue during administrative action
+    uint8_t original_live_state = sys->live_processing_enabled;
+    sys->live_processing_enabled = 0;
+    
+    hogan_account *acc = NULL;
+    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
+        if (sys->accounts[i].active && sys->accounts[i].account_id == account_id) {
+            acc = &sys->accounts[i];
+            break;
+        }
+    }
+    
+    if (!acc) {
+        sys->live_processing_enabled = original_live_state;
+        return -1; // account not found
+    }
+    
+    hogan_dormancy_entry entry = { account_id, acc->is_dormant, 0, authority_id };
+    acc->is_dormant = 0;
+    acc->last_activity_epoch = sys->current_epoch;
+    
+    int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_dormancy_entry));
+    
+    sys->live_processing_enabled = original_live_state;
+    return write_res;
+}
+
+int tsfi_hogan_set_dormancy_threshold(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t threshold_epochs, uint32_t authority_id) {
+    // Enforce Rule 13: file extension must end with .dat.bin
+    const char *ext = strrchr(filepath, '.');
+    if (!ext || strcmp(ext, ".bin") != 0) {
+        if (!ext || strcmp(ext - 4, ".dat.bin") != 0) {
+            return -3; // Invalid extension
+        }
+    }
+
+    // Disable live queue during administrative action
+    uint8_t original_live_state = sys->live_processing_enabled;
+    sys->live_processing_enabled = 0;
+    
+    hogan_account *acc = NULL;
+    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
+        if (sys->accounts[i].active && sys->accounts[i].account_id == account_id) {
+            acc = &sys->accounts[i];
+            break;
+        }
+    }
+    
+    if (!acc) {
+        sys->live_processing_enabled = original_live_state;
+        return -1; // account not found
+    }
+    
+    // Log previous dormancy threshold to "new" parameter placeholder, authority_id is logged
+    hogan_dormancy_entry entry = { account_id, (uint8_t)acc->dormancy_threshold_epochs, (uint8_t)threshold_epochs, authority_id };
+    acc->dormancy_threshold_epochs = threshold_epochs;
+    
+    int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_dormancy_entry));
     
     sys->live_processing_enabled = original_live_state;
     return write_res;
