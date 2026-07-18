@@ -499,6 +499,46 @@ static void test_new_mainframe_features(void) {
     char std_julian[16];
     assert(tsfi_cw_julian_standardize("26.199", 50, std_julian, sizeof(std_julian)) == 0);
     assert(strcmp(std_julian, "2026.199") == 0);
+
+    // VSAM Linear Data Sets (LDS)
+    tsfi_cw_vsam_lds lds;
+    tsfi_cw_vsam_lds_init(&lds, "test_lds.dat.bin");
+    uint8_t lds_w_data[4096];
+    memset(lds_w_data, 0xBB, 4096);
+    assert(tsfi_cw_vsam_lds_write_page(&lds, 2, lds_w_data) == 0);
+    uint8_t lds_r_data[4096];
+    assert(tsfi_cw_vsam_lds_read_page(&lds, 2, lds_r_data) == 0);
+    assert(lds_r_data[0] == 0xBB);
+
+    // COBOL BLANK WHEN ZERO Clause
+    rc = tsfi_cw_parse_copybook_line("05 ZERO-VAR PIC 9(4) BLANK WHEN ZERO.", &cb);
+    assert(rc == 0);
+    assert(cb.field_count == 13);
+    assert(cb.fields[12].blank_when_zero == 1);
+
+    // EBCDIC DBCS CP930
+    uint8_t dbcs_str[6] = {0x0E, 0xC1, 0xC2, 0x0F, 0x40};
+    int dbcs_count = 0;
+    assert(tsfi_cw_ebcdic_is_dbcs(dbcs_str, 5, &dbcs_count) == 0);
+    assert(dbcs_count == 2);
+
+    // JCL Nested Procedure loops
+    const char *jcl_nested_deck[] = {
+        "//TESTJOB JOB (ACCT)",
+        "//MYSTEP EXEC MYPROC"
+    };
+    const char *proc_nested_deck[] = {
+        "//SUBSTEP EXEC MYPROC"
+    };
+    int nested_rc = tsfi_cw_run_jcl_proc_nested(jcl_nested_deck, 2, proc_nested_deck, 1, 0, 1);
+    assert(nested_rc == -9);
+
+    // Century boundary (2100) Leap year
+    int leap_2100 = 0;
+    assert(tsfi_cw_y2k_check_century_leap_2100(2100, &leap_2100) == 0);
+    assert(leap_2100 == 0);
+    assert(tsfi_cw_y2k_check_century_leap_2100(2000, &leap_2100) == 0);
+    assert(leap_2100 == 1);
 }
 
 int main(void) {

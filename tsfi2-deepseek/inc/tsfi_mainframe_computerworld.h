@@ -68,6 +68,7 @@ typedef struct {
     char indexed_by[32];
     char renames_start[32];
     char renames_end[32];
+    int blank_when_zero;
 } tsfi_cw_cobol_field;
 
 typedef struct {
@@ -266,12 +267,30 @@ int tsfi_cw_align_comp3_fractional(const char *ascii_num, int decimal_places, ch
 // Julian date century standardizer
 int tsfi_cw_julian_standardize(const char *julian_in, uint32_t pivot, char *julian_out, int max_len);
 
+// VSAM Linear Data Sets (LDS) Emulator
+typedef struct {
+    uint8_t pages[4][4096];
+    char filepath[256];
+    int page_count;
+} tsfi_cw_vsam_lds;
+
+void tsfi_cw_vsam_lds_init(tsfi_cw_vsam_lds *lds, const char *path);
+int tsfi_cw_vsam_lds_write_page(tsfi_cw_vsam_lds *lds, int page_idx, const uint8_t *page_data);
+int tsfi_cw_vsam_lds_read_page(tsfi_cw_vsam_lds *lds, int page_idx, uint8_t *page_data_out);
+
+// EBCDIC Double-Byte Character Set (DBCS) CP930
+int tsfi_cw_ebcdic_is_dbcs(const uint8_t *ebcdic_str, int len, int *dbcs_count);
+
+// Century leap check 2100
+int tsfi_cw_y2k_check_century_leap_2100(uint32_t year, int *is_leap);
+
 // 4. Job Control Language (JCL) Execution Simulator
 int tsfi_cw_run_jcl(const char **cards, int card_count);
 int tsfi_cw_run_jcl_ex(const char **cards, int card_count, int initial_rc);
 int tsfi_cw_run_jcl_sysin(const char **cards, int card_count, char *sysin_out, int max_sysin_len);
 int tsfi_cw_run_jcl_proc(const char **cards, int card_count, const char **proc_cards, int proc_card_count, int initial_rc);
 int tsfi_cw_run_jcl_restart(const char **cards, int card_count, const char *restart_step);
+int tsfi_cw_run_jcl_proc_nested(const char **cards, int card_count, const char **proc_cards, int proc_card_count, int initial_rc, int depth);
 
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

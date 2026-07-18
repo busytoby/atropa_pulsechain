@@ -555,6 +555,11 @@ int tsfi_cw_parse_copybook_line(const char *copybook_line, tsfi_cw_copybook *cb)
         indexed_by[i_idx] = '\0';
     }
 
+    int blank_when_zero = 0;
+    if (strstr(copybook_line, "BLANK WHEN ZERO") || strstr(copybook_line, "BLANK ZERO")) {
+        blank_when_zero = 1;
+    }
+
     tsfi_cw_cobol_field *f = &cb->fields[cb->field_count];
     f->level = level;
     snprintf(f->name, sizeof(f->name), "%s", name);
@@ -565,6 +570,7 @@ int tsfi_cw_parse_copybook_line(const char *copybook_line, tsfi_cw_copybook *cb)
     f->occurs = occurs;
     snprintf(f->depending_on, sizeof(f->depending_on), "%s", depending_on);
     snprintf(f->indexed_by, sizeof(f->indexed_by), "%s", indexed_by);
+    f->blank_when_zero = blank_when_zero;
     
     int byte_len = length + decimal_places;
     int base_length = 0;
@@ -1535,5 +1541,79 @@ int tsfi_cw_julian_standardize(const char *julian_in, uint32_t pivot, char *juli
     uint32_t full_year = tsfi_cw_y2k_resolve_year_ex(yy, pivot);
     snprintf(julian_out, max_len, "%04u.%03u", full_year, ddd);
     return 0;
+}
+
+void tsfi_cw_vsam_lds_init(tsfi_cw_vsam_lds *lds, const char *path) {
+    if (!lds) return;
+    memset(lds, 0, sizeof(tsfi_cw_vsam_lds));
+    if (path) strcpy(lds->filepath, path);
+    lds->page_count = 4;
+}
+
+int tsfi_cw_vsam_lds_write_page(tsfi_cw_vsam_lds *lds, int page_idx, const uint8_t *page_data) {
+    if (!lds || page_idx < 0 || page_idx >= lds->page_count || !page_data) return -1;
+    memcpy(lds->pages[page_idx], page_data, 4096);
+    return 0;
+}
+
+int tsfi_cw_vsam_lds_read_page(tsfi_cw_vsam_lds *lds, int page_idx, uint8_t *page_data_out) {
+    if (!lds || page_idx < 0 || page_idx >= lds->page_count || !page_data_out) return -1;
+    memcpy(page_data_out, lds->pages[page_idx], 4096);
+    return 0;
+}
+
+int tsfi_cw_ebcdic_is_dbcs(const uint8_t *ebcdic_str, int len, int *dbcs_count) {
+    if (!ebcdic_str || len <= 0 || !dbcs_count) return -1;
+    *dbcs_count = 0;
+    
+    int in_dbcs = 0;
+    for (int i = 0; i < len; i++) {
+        if (ebcdic_str[i] == 0x0E) {
+            in_dbcs = 1;
+        } else if (ebcdic_str[i] == 0x0F) {
+            in_dbcs = 0;
+        } else if (in_dbcs) {
+            (*dbcs_count)++;
+        }
+    }
+    return 0;
+}
+
+int tsfi_cw_y2k_check_century_leap_2100(uint32_t year, int *is_leap) {
+    if (!is_leap) return -1;
+    if (year % 100 == 0) {
+        *is_leap = (year % 400 == 0) ? 1 : 0;
+    } else {
+        *is_leap = (year % 4 == 0) ? 1 : 0;
+    }
+    return 0;
+}
+
+int tsfi_cw_run_jcl_proc_nested(const char **cards, int card_count, const char **proc_cards, int proc_card_count, int initial_rc, int depth) {
+    if (depth > 5) return -9;
+    if (!cards || card_count <= 0) return -1;
+    
+    int steps_run = 0;
+    int current_rc = initial_rc;
+    
+    for (int i = 0; i < card_count; i++) {
+        const char *card = cards[i];
+        if (strncmp(card, "//", 2) == 0) {
+            const char *exec = strstr(card, "EXEC ");
+            if (exec) {
+                exec += 5;
+                if (strncmp(exec, "PGM=", 4) == 0) {
+                    steps_run++;
+                } else {
+                    int proc_steps = tsfi_cw_run_jcl_proc_nested(proc_cards, proc_card_count, proc_cards, proc_card_count, current_rc, depth + 1);
+                    if (proc_steps < 0) {
+                        return proc_steps;
+                    }
+                    steps_run += proc_steps;
+                }
+            }
+        }
+    }
+    return steps_run;
 }
 
