@@ -971,6 +971,53 @@ int main(void) {
     remove(txcounts_path); // clean up
     printf("  [PASS] Daily transaction count velocity caps, overnight resets, and logs verified.\n");
 
+    // 30. Test Account Priority Routing Manager (Priority Queuing)
+    printf("[E2E] Testing Account Priority Routing Manager...\n");
+    const char *priority_path = "hogan_priority.dat.bin";
+    remove(priority_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system prio_sys;
+    tsfi_hogan_init(&prio_sys);
+    assert(tsfi_hogan_register_account(&prio_sys, 1001, 1000) == 0); // Alice (Standard): 1,000 units
+    assert(tsfi_hogan_register_account(&prio_sys, 2002, 1000) == 0); // Bob (High Priority): 1,000 units
+    assert(tsfi_hogan_register_account(&prio_sys, 3003, 100) == 0);  // Charlie: 100 units
+    
+    // Elevate Bob's priority to 1 (High Priority / VIP)
+    assert(tsfi_hogan_update_priority_tier(&prio_sys, priority_path, 2002, 1, 777) == 0);
+    assert(tsfi_hogan_update_priority_tier(&prio_sys, "hogan_priority.json", 2002, 1, 777) == -3); // Rule 13 check
+    
+    // Alice (Standard) dispatches transfer of 100 from Charlie first
+    assert(tsfi_hogan_dispatch_tx(&prio_sys, 3003, 1001, 100, VM_EVM) == 0);
+    
+    // Bob (High Priority) dispatches transfer of 100 from Charlie second
+    assert(tsfi_hogan_dispatch_tx(&prio_sys, 3003, 2002, 100, VM_EVM) == 0);
+    
+    // Run overnight reconciliation.
+    // Because Charlie has only 100 balance, the high priority transfer (Bob's) should execute first,
+    // causing Alice's standard priority transfer to fail due to insufficient funds.
+    assert(tsfi_hogan_overnight_reconciliation(&prio_sys, "hogan_lfs.dat.bin") == 0);
+    
+    // Verify balances (Bob succeeded, Alice remained unchanged)
+    assert(prio_sys.accounts[0].balance == 1000); // Alice: unchanged
+    assert(prio_sys.accounts[1].balance == 1100); // Bob: 1000 + 100
+    assert(prio_sys.accounts[2].balance == 0);    // Charlie: 0
+    
+    // Read sequential log file and verify entries
+    uint8_t read_pbuf[sizeof(hogan_priority_entry)];
+    size_t p_size = 0;
+    assert(tsfi_hogan_read_seq_record(priority_path, 0, read_pbuf, &p_size) == 0);
+    assert(p_size == sizeof(hogan_priority_entry));
+    
+    const hogan_priority_entry *pentry = (const hogan_priority_entry *)read_pbuf;
+    assert(pentry->account_id == 2002);
+    assert(pentry->previous_priority == 0);
+    assert(pentry->new_priority == 1);
+    assert(pentry->authority_id == 777);
+    
+    remove(priority_path); // clean up
+    printf("  [PASS] Priority queuing, double-pass execution, and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }

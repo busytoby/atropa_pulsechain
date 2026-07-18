@@ -45,6 +45,7 @@ typedef struct {
     uint64_t min_balance;
     uint32_t daily_tx_limit;
     uint32_t daily_tx_count;
+    uint8_t priority_tier;
 } hogan_account;
 
 #define HOGAN_MAX_BLOCKED_CARDS 32
@@ -296,5 +297,15 @@ typedef struct {
 } hogan_tx_count_entry;
 
 int tsfi_hogan_update_tx_count_limit(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t new_limit, uint32_t authority_id);
+
+// Account Priority Routing Manager (Priority Queuing)
+typedef struct {
+    uint32_t account_id;
+    uint8_t previous_priority;
+    uint8_t new_priority;
+    uint32_t authority_id;
+} hogan_priority_entry;
+
+int tsfi_hogan_update_priority_tier(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint8_t new_priority, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H
