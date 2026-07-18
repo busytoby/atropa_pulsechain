@@ -625,7 +625,24 @@ int run_nato_stanag_tests_part5(void) {
     assert((defcon_status & 0x07) == 3);
     assert(((defcon_status >> 3) & 0x7F) == 12);
     assert((defcon_status & (1 << 10)) != 0); // Alert set
-    printf("  [PASS] DEFCON Status Word verified.\n");
+    // Verify NAAP State Machine
+    printf("[TEST] Validating NORAD NAAP State Machine...\n");
+    int naap_state = 0; // IDLE
+    int naap_valid = -1;
+    int naap_res = tsfi_mf_norad_naap_update(0, &naap_state, &naap_valid); // TRIGGER_ALERT
+    assert(naap_res == 0);
+    assert(naap_valid == 1);
+    assert(naap_state == 1); // ALERT_ISSUED
+    printf("  [PASS] NAAP State Machine verified.\n");
+
+    // Verify EOM Detector
+    printf("[TEST] Validating NORAD JANAP EOM Detector...\n");
+    const char *msg = "R RUMJTF 0123 U\r\nHello World\r\nNNNN\r\n";
+    int eom_det = -1;
+    int eom_res = tsfi_mf_norad_detect_eom(msg, strlen(msg), &eom_det);
+    assert(eom_res == 0);
+    assert(eom_det == 1);
+    printf("  [PASS] JANAP EOM Detector verified.\n");
 
     return 0;
 }

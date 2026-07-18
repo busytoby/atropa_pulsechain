@@ -415,4 +415,10 @@ int tsfi_mf_nato_encode_d_pdu_type8(int dest_sap, int src_sap, int is_ack, uint8
 int tsfi_mf_nato_encode_d_pdu_type9(int dest_sap, int src_sap, int ack_seq, const uint8_t *ack_mask, uint8_t *out_frame, size_t *out_size);
 int tsfi_mf_nato_encode_d_pdu_type3(int dest_sap, int src_sap, const uint8_t *payload, size_t pay_size, uint8_t *out_frame, size_t *out_size);
 
+int tsfi_mf_norad_encode_janap128(const char *routing_ind, int chan_seq, char classification, char *out_pkt, size_t *out_size);
+int tsfi_mf_norad_encode_defcon(int defcon_level, int radar_contacts, uint16_t *out_status, int *is_valid);
+
+int tsfi_mf_norad_naap_update(int event, int *current_state, int *is_valid);
+int tsfi_mf_norad_detect_eom(const char *msg_buffer, size_t size, int *is_eom_detected);
+
 #endif // TSFI_CADE_IMF_H

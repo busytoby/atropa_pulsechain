@@ -1377,6 +1377,87 @@ int tsfi_mf_nato_encode_d_pdu_type3(int dest_sap, int src_sap, const uint8_t *pa
     return 0;
 }
 
+int tsfi_mf_norad_encode_janap128(const char *routing_ind, int chan_seq, char classification, char *out_pkt, size_t *out_size) {
+    if (!routing_ind || !out_pkt || !out_size) return -1;
+    
+    size_t ri_len = strlen(routing_ind);
+    if (ri_len < 3 || ri_len > 8) return -2;
+    if (chan_seq < 0 || chan_seq > 9999) return -3;
+    if (classification != 'U' && classification != 'C' && classification != 'S' && classification != 'T') return -4;
+    
+    int written = sprintf(out_pkt, "R %s %04d %c\r\n", routing_ind, chan_seq, classification);
+    if (written < 0) return -5;
+    
+    *out_size = (size_t)written;
+    return 0;
+}
+
+int tsfi_mf_norad_encode_defcon(int defcon_level, int radar_contacts, uint16_t *out_status, int *is_valid) {
+    if (!out_status || !is_valid) return -1;
+    *is_valid = 0;
+    
+    if (defcon_level < 1 || defcon_level > 5 || radar_contacts < 0 || radar_contacts > 99) {
+        return 0;
+    }
+    
+    *is_valid = 1;
+    int alert = (defcon_level <= 3) ? 1 : 0;
+    *out_status = (defcon_level & 0x07) | ((radar_contacts & 0x7F) << 3) | (alert << 10);
+    return 0;
+}
+
+int tsfi_mf_norad_naap_update(int event, int *current_state, int *is_valid) {
+    if (!current_state || !is_valid) return -1;
+    *is_valid = 0;
+    
+    switch (*current_state) {
+        case 0: // IDLE
+            if (event == 0) { // TRIGGER_ALERT
+                *current_state = 1; // ALERT_ISSUED
+                *is_valid = 1;
+            }
+            break;
+        case 1: // ALERT_ISSUED
+            if (event == 1) { // SEND_ACK
+                *current_state = 2; // ACK_PENDING
+                *is_valid = 1;
+            }
+            break;
+        case 2: // ACK_PENDING
+            if (event == 2) { // CONFIRM_ALERT
+                *current_state = 3; // CONFIRMED
+                *is_valid = 1;
+            }
+            break;
+        case 3: // CONFIRMED
+            if (event == 3) { // RESET_ALERT
+                *current_state = 0; // IDLE
+                *is_valid = 1;
+            }
+            break;
+    }
+    return 0;
+}
+
+int tsfi_mf_norad_detect_eom(const char *msg_buffer, size_t size, int *is_eom_detected) {
+    if (!msg_buffer || !is_eom_detected) return -1;
+    *is_eom_detected = 0;
+    
+    // Scan for standard teletype message terminal sequence "NNNN"
+    if (size >= 4) {
+        for (size_t i = 0; i <= size - 4; i++) {
+            if (msg_buffer[i] == 'N' && msg_buffer[i+1] == 'N' &&
+                msg_buffer[i+2] == 'N' && msg_buffer[i+3] == 'N') {
+                *is_eom_detected = 1;
+                break;
+            }
+        }
+    }
+    return 0;
+}
+
+
+
 
 
 
