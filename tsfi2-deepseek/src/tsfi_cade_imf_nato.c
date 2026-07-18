@@ -549,3 +549,15 @@ int tsfi_mf_nato_verify_up_ramp_samples(int samples, int *is_valid) {
     *is_valid = (samples >= 2 && samples <= 6) ? 1 : 0;
     return 0;
 }
+
+int tsfi_mf_nato_verify_slot_offset(int offset_ms, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (offset_ms >= 0 && offset_ms <= 10) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_down_ramp_samples(int samples, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (samples >= 2 && samples <= 8) ? 1 : 0;
+    return 0;
+}
