@@ -296,6 +296,14 @@ int main(void) {
     assert(audit_flag == 1);
     printf("  [PASS] IRS IMF Audit Selection Discrepancy Classifier verified.\n");
 
+    // 145. Verify IRS IMF Refund Scheduler
+    printf("[TEST] Validating IRS IMF Refund Scheduler...\n");
+    char refund_date[32] = {0};
+    int schedule_res = tsfi_mf_imf_schedule_refund("20262804", 846, refund_date, sizeof(refund_date));
+    assert(schedule_res == 0);
+    assert(strcmp(refund_date, "2026-W29") == 0);
+    printf("  [PASS] IRS IMF Refund Scheduler verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

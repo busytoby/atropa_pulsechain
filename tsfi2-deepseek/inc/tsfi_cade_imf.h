@@ -42,5 +42,6 @@ int tsfi_mf_cade_check_status_mask(int status_code, unsigned int mask, int *is_v
 int tsfi_mf_cade_route_partition(const char *ssn, int *partition_out);
 int tsfi_mf_imf_verify_ssn_check_digit(const char *ssn, int *is_valid);
 int tsfi_mf_imf_evaluate_audit_discrepancy(double reported_income, double documented_income, int missing_schedules, int *audit_flag);
+int tsfi_mf_imf_schedule_refund(const char *cycle_code, int transaction_code, char *schedule_date_out, int max_len);
 
 #endif // TSFI_CADE_IMF_H

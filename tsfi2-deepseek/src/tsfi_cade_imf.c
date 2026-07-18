@@ -490,4 +490,19 @@ int tsfi_mf_imf_evaluate_audit_discrepancy(double reported_income, double docume
     return 0;
 }
 
+int tsfi_mf_imf_schedule_refund(const char *cycle_code, int transaction_code, char *schedule_date_out, int max_len) {
+    if (!cycle_code || !schedule_date_out || max_len <= 0) return -1;
+    if (transaction_code != 846) {
+        snprintf(schedule_date_out, max_len, "N/A");
+        return 0;
+    }
+    int year = 0, week = 0, day = 0;
+    if (tsfi_mf_imf_decode_cycle_code(cycle_code, &year, &week, &day) != 0) {
+        return -1;
+    }
+    int refund_week = week + 1;
+    snprintf(schedule_date_out, max_len, "%d-W%02d", year, refund_week);
+    return 0;
+}
+
 
