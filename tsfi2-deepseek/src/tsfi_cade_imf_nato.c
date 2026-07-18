@@ -1218,6 +1218,39 @@ int tsfi_mf_nato_csm_evaluate(int noise_floor_dbm, int carrier_lock_ms, int *sta
     return 0;
 }
 
+int tsfi_mf_nato_fragment_payload(const uint8_t *payload, size_t pay_size, size_t mtu, int frag_idx, uint8_t *out_frag, size_t *out_frag_size, int *is_last) {
+    if (!payload || !out_frag || !out_frag_size || !is_last) return -1;
+    if (pay_size == 0 || mtu == 0) return -2;
+    
+    size_t offset = (size_t)frag_idx * mtu;
+    if (offset >= pay_size) {
+        *out_frag_size = 0;
+        *is_last = 0;
+        return 0;
+    }
+    
+    size_t chunk_size = pay_size - offset;
+    if (chunk_size > mtu) {
+        chunk_size = mtu;
+        *is_last = 0;
+    } else {
+        *is_last = 1;
+    }
+    
+    memcpy(out_frag, payload + offset, chunk_size);
+    *out_frag_size = chunk_size;
+    return 0;
+}
+
+int tsfi_mf_nato_generate_unbind_confirm(int reason, uint8_t *out_pkt, size_t *out_size) {
+    if (!out_pkt || !out_size) return -1;
+    out_pkt[0] = 0x82;
+    out_pkt[1] = reason & 0xFF;
+    *out_size = 2;
+    return 0;
+}
+
+
 
 
 

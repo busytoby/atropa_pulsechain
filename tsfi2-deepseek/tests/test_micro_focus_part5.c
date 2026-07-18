@@ -442,7 +442,34 @@ int run_nato_stanag_tests_part5(void) {
     tsfi_mf_nato_csm_evaluate(-80, 100, &csm_flags, &csm_valid); // Noise -80, lock 100 -> flags should be 0
     assert(csm_valid == 1);
     assert(csm_flags == 0x00);
-    printf("  [PASS] Channel State Monitor verified.\n");
+    // Verify Payload Fragmenter
+    printf("[TEST] Validating NATO Payload Fragmenter...\n");
+    uint8_t payload_data[] = {1, 2, 3, 4, 5, 6, 7, 8};
+    uint8_t chunk[4];
+    size_t chunk_size = 0;
+    int is_lst = -1;
+    int frag_res = tsfi_mf_nato_fragment_payload(payload_data, sizeof(payload_data), 3, 0, chunk, &chunk_size, &is_lst); // chunk 0 (1,2,3) -> not last
+    assert(frag_res == 0);
+    assert(chunk_size == 3);
+    assert(is_lst == 0);
+    assert(chunk[0] == 1);
+
+    tsfi_mf_nato_fragment_payload(payload_data, sizeof(payload_data), 3, 2, chunk, &chunk_size, &is_lst); // chunk 2 (7,8) -> last
+    assert(chunk_size == 2);
+    assert(is_lst == 1);
+    assert(chunk[0] == 7);
+    printf("  [PASS] Payload Fragmenter verified.\n");
+
+    // Verify Unbind Confirmation
+    printf("[TEST] Validating NATO Unbind Confirmation...\n");
+    uint8_t unbind_conf[8];
+    size_t unbind_conf_size = 0;
+    int unbind_res = tsfi_mf_nato_generate_unbind_confirm(0, unbind_conf, &unbind_conf_size); // Success/Normal close
+    assert(unbind_res == 0);
+    assert(unbind_conf_size == 2);
+    assert(unbind_conf[0] == 0x82);
+    assert(unbind_conf[1] == 0);
+    printf("  [PASS] Unbind Confirmation verified.\n");
 
     return 0;
 }

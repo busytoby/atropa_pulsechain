@@ -394,4 +394,7 @@ int tsfi_mf_nato_reorder_buffer_insert(int seq_num, int expected_seq, int *is_va
 int tsfi_mf_nato_hmtp_encode_envelope(const char *sender, const char *recipient, uint8_t *out_pkt, size_t *out_size);
 int tsfi_mf_nato_csm_evaluate(int noise_floor_dbm, int carrier_lock_ms, int *status_flags, int *is_valid);
 
+int tsfi_mf_nato_fragment_payload(const uint8_t *payload, size_t pay_size, size_t mtu, int frag_idx, uint8_t *out_frag, size_t *out_frag_size, int *is_last);
+int tsfi_mf_nato_generate_unbind_confirm(int reason, uint8_t *out_pkt, size_t *out_size);
+
 #endif // TSFI_CADE_IMF_H
