@@ -83,7 +83,14 @@ int tsfi_cw_vsam_write(tsfi_cw_vsam_ksds *ksds, const char *key, const uint8_t *
         ksds->raw_key_bytes += strlen(key);
         char comp_key[32];
         const char *prev_key = NULL;
-        if (idx > 0) prev_key = ksds->index[idx - 1].key;
+        if (idx > 0) {
+            prev_key = ksds->index[idx - 1].key;
+            int savings = 0;
+            while (key[savings] && prev_key[savings] && key[savings] == prev_key[savings]) {
+                savings++;
+            }
+            ksds->key_prefix_savings += savings;
+        }
         tsfi_cw_vsam_compress_key(key, prev_key, comp_key, sizeof(comp_key));
         ksds->compressed_key_bytes += strlen(comp_key);
         strncpy(ksds->index[idx].key, key, sizeof(ksds->index[idx].key) - 1);
@@ -570,4 +577,9 @@ int tsfi_cw_vsam_lock_record_ex(tsfi_cw_vsam_ksds *ksds, const char *key, uint32
         }
     }
     return -4;
+}
+
+uint32_t tsfi_cw_vsam_get_key_prefix_savings(tsfi_cw_vsam_ksds *ksds) {
+    if (!ksds) return 0;
+    return ksds->key_prefix_savings;
 }

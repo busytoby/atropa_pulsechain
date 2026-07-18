@@ -133,6 +133,7 @@ typedef struct {
     uint32_t compressed_key_bytes;
     char cache_keys[4][16];
     int cache_hits;
+    uint32_t key_prefix_savings;
 } tsfi_cw_vsam_ksds;
 
 int tsfi_cw_vsam_open(tsfi_cw_vsam_ksds *ksds, const char *filepath);
@@ -390,6 +391,7 @@ int tsfi_cw_vsam_get_ci_splits(tsfi_cw_vsam_ksds *ksds);
 int tsfi_cw_vsam_get_compression_ratio(tsfi_cw_vsam_ksds *ksds, float *ratio_out);
 int tsfi_cw_vsam_get_key_compression_ratio(tsfi_cw_vsam_ksds *ksds, float *ratio_out);
 int tsfi_cw_vsam_get_cache_hits(tsfi_cw_vsam_ksds *ksds);
+uint32_t tsfi_cw_vsam_get_key_prefix_savings(tsfi_cw_vsam_ksds *ksds);
 
 int tsfi_cw_vsam_lock_record_ex(tsfi_cw_vsam_ksds *ksds, const char *key, uint32_t max_attempts);
 
@@ -412,14 +414,20 @@ uint8_t tsfi_cw_ebcdic_to_ascii_cp278(uint8_t ebcdic_char);
 int tsfi_cw_ebcdic_to_utf8_cp935(const uint8_t *ebcdic_str, int len, char *utf8_out, int max_len);
 int tsfi_cw_utf8_to_ebcdic_cp935(const char *utf8_str, uint8_t *ebcdic_out, int max_len);
 
-// JCL GDG resolver, COND chain evaluation, step parameter parser, and symbol substitution
+// EBCDIC CP937 Chinese DBCS translation
+int tsfi_cw_ebcdic_to_utf8_cp937(const uint8_t *ebcdic_str, int len, char *utf8_out, int max_len);
+int tsfi_cw_utf8_to_ebcdic_cp937(const char *utf8_str, uint8_t *ebcdic_out, int max_len);
+
+// JCL GDG resolver, COND chain evaluation, step parameter parser, symbol substitution, and name validation
 int tsfi_cw_jcl_resolve_gdg(const char *dsn_str, int current_gen, char *resolved_out, int max_len);
 int tsfi_cw_jcl_eval_cond_chain(int step_rc, int cond_code_1, const char *op_1, int cond_code_2, const char *op_2);
 int tsfi_cw_jcl_parse_parm(const char *card, char *parm_out, int max_len);
 int tsfi_cw_jcl_substitute_symbol(const char *card, const char *sym_name, const char *sym_val, char *resolved_out, int max_len);
+int tsfi_cw_jcl_validate_symbol_name(const char *sym_name);
 
-// COBOL occurs validator
+// COBOL occurs and justified right validators
 int tsfi_cw_cobol_validate_occurs_range(int current_occurs, int max_occurs);
+int tsfi_cw_cobol_validate_justified_right_dynamic(tsfi_cw_cobol_field *f, int dynamic_occurs, const char *val);
 
 // Y2K leap year checker, Month days resolver, and Julian day validator
 int tsfi_cw_y2k_is_leap_year(uint32_t year);

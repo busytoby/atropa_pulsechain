@@ -220,6 +220,10 @@ int tsfi_cw_y2k_date_diff(uint32_t yy1, uint32_t mm1, uint32_t dd1, uint32_t yy2
     uint32_t year1 = tsfi_cw_y2k_resolve_year_ex(yy1, pivot);
     uint32_t year2 = tsfi_cw_y2k_resolve_year_ex(yy2, pivot);
     
+    int year_diff = (int)year2 - (int)year1;
+    if (year_diff < 0) year_diff = -year_diff;
+    if (year_diff > 100) return -16;
+
     int d1 = tsfi_cw_days_from_epoch(year1, mm1, dd1);
     int d2 = tsfi_cw_days_from_epoch(year2, mm2, dd2);
     

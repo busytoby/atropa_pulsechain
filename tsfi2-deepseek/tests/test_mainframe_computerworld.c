@@ -881,6 +881,36 @@ static void test_new_mainframe_features(void) {
     assert(cp935_buf[7] == 0x0F); // Shift-In
     assert(tsfi_cw_ebcdic_to_utf8_cp935(cp935_buf, cp935_len, utf8_buf, sizeof(utf8_buf)) == 6);
     assert(strcmp(utf8_buf, "中文") == 0);
+
+    // VSAM Key Prefix Savings
+    assert(tsfi_cw_vsam_get_key_prefix_savings(&split_ksds) > 0);
+
+    // COBOL justified right dynamic check
+    tsfi_cw_cobol_field f_dyn;
+    memset(&f_dyn, 0, sizeof(f_dyn));
+    f_dyn.justified_right = 1;
+    f_dyn.length = 6;
+    f_dyn.occurs = 2;
+    assert(tsfi_cw_cobol_validate_justified_right_dynamic(&f_dyn, 1, "ABC") == 0);
+    assert(tsfi_cw_cobol_validate_justified_right_dynamic(&f_dyn, 1, "ABCD") == -14);
+
+    // EBCDIC CP937 Chinese Translation
+    uint8_t cp937_buf[64];
+    char utf8_cp937[64];
+    int cp937_len = tsfi_cw_utf8_to_ebcdic_cp937("繁體", cp937_buf, sizeof(cp937_buf));
+    assert(cp937_len == 8);
+    assert(tsfi_cw_ebcdic_to_utf8_cp937(cp937_buf, cp937_len, utf8_cp937, sizeof(utf8_cp937)) == 6);
+    assert(strcmp(utf8_cp937, "繁體") == 0);
+
+    // JCL symbol validation rules
+    assert(tsfi_cw_jcl_validate_symbol_name("VALID1") == 0);
+    assert(tsfi_cw_jcl_validate_symbol_name("1INVALID") == -15);
+    assert(tsfi_cw_jcl_substitute_symbol("//SYSIN DD DSN=&1INVALID", "1INVALID", "VAL", subst_out, sizeof(subst_out)) == -15);
+
+    // Y2K Date difference century span check
+    int diff_span = 0;
+    assert(tsfi_cw_y2k_date_diff(0, 1, 1, 99, 1, 1, 50, &diff_span) == 0);
+    assert(tsfi_cw_y2k_date_diff(0, 1, 1, 201, 1, 1, 50, &diff_span) == -16);
 }
 
 int main(void) {

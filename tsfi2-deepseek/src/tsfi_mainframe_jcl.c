@@ -454,8 +454,23 @@ int tsfi_cw_jcl_parse_parm(const char *card, char *parm_out, int max_len) {
     return -2;
 }
 
+int tsfi_cw_jcl_validate_symbol_name(const char *sym_name) {
+    if (!sym_name || strlen(sym_name) == 0) return -15;
+    if (!((sym_name[0] >= 'A' && sym_name[0] <= 'Z') || (sym_name[0] >= 'a' && sym_name[0] <= 'z'))) {
+        return -15;
+    }
+    for (int i = 0; sym_name[i]; i++) {
+        char c = sym_name[i];
+        if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9'))) {
+            return -15;
+        }
+    }
+    return 0;
+}
+
 int tsfi_cw_jcl_substitute_symbol(const char *card, const char *sym_name, const char *sym_val, char *resolved_out, int max_len) {
     if (!card || !sym_name || !sym_val || !resolved_out || max_len <= 0) return -1;
+    if (tsfi_cw_jcl_validate_symbol_name(sym_name) != 0) return -15;
     char sym_placeholder[64];
     snprintf(sym_placeholder, sizeof(sym_placeholder), "&%s", sym_name);
     

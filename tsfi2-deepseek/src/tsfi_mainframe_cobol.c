@@ -704,3 +704,13 @@ int tsfi_cw_cobol_validate_occurs_range(int current_occurs, int max_occurs) {
     if (current_occurs < 0 || current_occurs > max_occurs) return -12;
     return 0;
 }
+
+int tsfi_cw_cobol_validate_justified_right_dynamic(tsfi_cw_cobol_field *f, int dynamic_occurs, const char *val) {
+    if (f->justified_right && val) {
+        int base_len = f->length / f->occurs;
+        if (strlen(val) > (size_t)(base_len * dynamic_occurs)) {
+            return -14;
+        }
+    }
+    return 0;
+}
