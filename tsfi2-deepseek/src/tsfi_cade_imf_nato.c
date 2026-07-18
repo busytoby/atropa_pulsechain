@@ -1910,6 +1910,27 @@ int tsfi_mf_ssa_verify_ssn_exhaustive(const char *ssn, int *is_valid) {
     return 0;
 }
 
+int tsfi_mf_ssa_irs_sync_audit(const char *ssn, int dmf_deceased, int ssn_allocated, int *audit_action) {
+    if (!ssn || !audit_action) return -1;
+    *audit_action = 0; // 0 = Clear, 1 = Hold Refund, 2 = Escalate Audit
+    
+    if (dmf_deceased == 1) {
+        *audit_action = 2;
+    } else if (ssn_allocated == 0) {
+        *audit_action = 1;
+    }
+    return 0;
+}
+
+int tsfi_mf_ssa_irs_format_fraud_alert(const char *ssn, int audit_action, char *msg_out, size_t max_len) {
+    if (!ssn || !msg_out || max_len < 64) return -1;
+    
+    int written = snprintf(msg_out, max_len, "R RUMIRS 9999 S\r\nFRAUD ALERT: SSN %s ACTION CODE %d\r\nNNNN\r\n", ssn, audit_action);
+    if (written < 0 || (size_t)written >= max_len) return -2;
+    return 0;
+}
+
+
 
 
 

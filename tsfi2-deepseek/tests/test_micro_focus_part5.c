@@ -1080,7 +1080,26 @@ int run_nato_stanag_tests_part5(void) {
     tsfi_mf_ssa_verify_ssn_exhaustive("050050000", &ssn_ok);
     assert(ssn_ok == 0);
     
-    printf("  [PASS] SSA Exhaustive SSN Validator verified.\n");
+    // Verify SSA-IRS Joint Sync
+    printf("[TEST] Validating SSA-IRS Joint Sync...\n");
+    int audit_act = -1;
+    int sync_res = tsfi_mf_ssa_irs_sync_audit("050051122", 1, 1, &audit_act); // Deceased dependent
+    assert(sync_res == 0);
+    assert(audit_act == 2); // Escalate to Audit
+
+    sync_res = tsfi_mf_ssa_irs_sync_audit("050051122", 0, 0, &audit_act); // Unallocated SSN
+    assert(sync_res == 0);
+    assert(audit_act == 1); // Hold Refund
+    printf("  [PASS] SSA-IRS Joint Sync verified.\n");
+
+    // Verify SSA-IRS Fraud Alert Encoding
+    printf("[TEST] Validating SSA-IRS Fraud Alert Encoding...\n");
+    char alert_msg[128];
+    int ssa_alert_res = tsfi_mf_ssa_irs_format_fraud_alert("050051122", 2, alert_msg, sizeof(alert_msg));
+    assert(ssa_alert_res == 0);
+    assert(strstr(alert_msg, "FRAUD ALERT: SSN 050051122 ACTION CODE 2") != NULL);
+    assert(strstr(alert_msg, "NNNN") != NULL);
+    printf("  [PASS] SSA-IRS Fraud Alert Encoding verified.\n");
 
     return 0;
 }
