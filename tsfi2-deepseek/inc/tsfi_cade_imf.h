@@ -192,5 +192,7 @@ int tsfi_mf_nato_verify_profile_override(int flag, int *is_valid);
 int tsfi_mf_nato_verify_backoff_multiplier(int multiplier, int *is_valid);
 int tsfi_mf_nato_verify_broadcast_address(int address, int *is_valid);
 int tsfi_mf_nato_verify_broadcast_window(int mode, int window_size, int *is_valid);
+int tsfi_mf_nato_verify_broadcast_backoff_limit(int limit, int *is_valid);
+int tsfi_mf_nato_verify_broadcast_queue_capacity(int capacity, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

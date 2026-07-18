@@ -372,5 +372,7 @@
 | 438 | NATO Link-Layer Multi-Scan Collision Backoff Multiplier Validator | PASS | Audits retry backoff collision exponent multiplier limits | Volume 33 |
 | 439 | NATO Link-Layer Broadcast Multi-Cast Address Validator | PASS | Validates broadcast target address structure | Volume 33 |
 | 440 | NATO Link-Layer Broadcast Window Constraint Matcher | PASS | Audits sliding window size boundaries for non-ARQ broadcast mode | Volume 33 |
+| 441 | NATO Link-Layer Broadcast Collision Backoff Limit Validator | PASS | Validates retry backoff limit thresholds for broadcast frame collisions | Volume 33 |
+| 442 | NATO Link-Layer Broadcast Queue Capacity Checker | PASS | Audits maximum outbound queue capacity sizing limits for broadcast streams | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 440 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 442 Scenarios validated successfully)

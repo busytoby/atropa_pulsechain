@@ -1925,4 +1925,16 @@ int tsfi_mf_nato_verify_broadcast_window(int mode, int window_size, int *is_vali
     return 0;
 }
 
+int tsfi_mf_nato_verify_broadcast_backoff_limit(int limit, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (limit >= 2 && limit <= 16) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_broadcast_queue_capacity(int capacity, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (capacity >= 10 && capacity <= 1000) ? 1 : 0;
+    return 0;
+}
+
 

@@ -385,5 +385,21 @@ int run_nato_stanag_tests(void) {
     assert(broadcast_window_valid == 1);
     printf("  [PASS] NATO Broadcast Window Constraint Matcher verified.\n");
 
+    // 297. Verify NATO Link-Layer Broadcast Collision Backoff Limit Validator
+    printf("[TEST] Validating NATO Broadcast Collision Backoff Limit Validator...\n");
+    int backoff_limit_valid = -1;
+    int backoff_limit_res = tsfi_mf_nato_verify_broadcast_backoff_limit(8, &backoff_limit_valid);
+    assert(backoff_limit_res == 0);
+    assert(backoff_limit_valid == 1);
+    printf("  [PASS] NATO Broadcast Collision Backoff Limit Validator verified.\n");
+
+    // 298. Verify NATO Link-Layer Broadcast Queue Capacity Checker
+    printf("[TEST] Validating NATO Broadcast Queue Capacity Checker...\n");
+    int queue_capacity_valid = -1;
+    int queue_capacity_res = tsfi_mf_nato_verify_broadcast_queue_capacity(100, &queue_capacity_valid);
+    assert(queue_capacity_res == 0);
+    assert(queue_capacity_valid == 1);
+    printf("  [PASS] NATO Broadcast Queue Capacity Checker verified.\n");
+
     return 0;
 }
