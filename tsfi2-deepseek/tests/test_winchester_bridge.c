@@ -27,6 +27,7 @@ int main(void) {
     fflush(stdout);
     assert(res == 0);
     assert(bridge->registers.keycode_reg == 32);
+    assert(tsfi_winchester_bridge_loopback_verify(bridge, 32) == 0);
 
     // 2. Verify mapping frequency 880Hz -> keycode 30 (Key 'A')
     perf_engine->synth->wheels[0].frequency = 880.0f;
@@ -36,6 +37,7 @@ int main(void) {
     fflush(stdout);
     assert(res == 0);
     assert(bridge->registers.keycode_reg == 30);
+    assert(tsfi_winchester_bridge_loopback_verify(bridge, 30) == 0);
 
     // Cleanup
     tsfi_winchester_bridge_destroy(bridge);

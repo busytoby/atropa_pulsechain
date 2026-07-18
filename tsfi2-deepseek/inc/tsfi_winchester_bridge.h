@@ -37,5 +37,6 @@ typedef struct {
 
 int tsfi_winchester_bridge_send_packet(TSFiWinchesterBridge *bridge, const TSFiWinchesterMCSHeader *header, const char *payload);
 void tsfi_winchester_bridge_map_dbtg_exception(TSFiWinchesterBridge *bridge, int db_status);
+int tsfi_winchester_bridge_loopback_verify(TSFiWinchesterBridge *bridge, int keycode);
 
 #endif // TSFI_WINCHESTER_BRIDGE_H

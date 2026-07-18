@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
 #include "tsfi_winchester_bridge.h"
 
 TSFiWinchesterBridge* tsfi_winchester_bridge_create(TSFiSynthPerfEngine *perf_engine) {
@@ -90,4 +92,32 @@ int tsfi_winchester_bridge_send_packet(TSFiWinchesterBridge *bridge, const TSFiW
 void tsfi_winchester_bridge_map_dbtg_exception(TSFiWinchesterBridge *bridge, int db_status) {
     if (!bridge) return;
     bridge->registers.status_reg = (bridge->registers.status_reg & 0x0000FFFF) | ((uint32_t)db_status << 16);
+}
+
+int tsfi_winchester_bridge_loopback_verify(TSFiWinchesterBridge *bridge, int keycode) {
+    if (!bridge) return -1;
+    int sv[2];
+    if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0) {
+        return -2;
+    }
+    uint8_t tx_buf[2];
+    tx_buf[0] = (uint8_t)(bridge->registers.status_reg & 0xFF);
+    tx_buf[1] = (uint8_t)(keycode & 0xFF);
+    if (write(sv[0], tx_buf, 2) != 2) {
+        close(sv[0]);
+        close(sv[1]);
+        return -3;
+    }
+    uint8_t rx_buf[2];
+    if (read(sv[1], rx_buf, 2) != 2) {
+        close(sv[0]);
+        close(sv[1]);
+        return -4;
+    }
+    close(sv[0]);
+    close(sv[1]);
+    if (rx_buf[1] != (uint8_t)keycode) {
+        return -5;
+    }
+    return 0;
 }
