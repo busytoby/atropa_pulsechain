@@ -1754,6 +1754,22 @@ static void test_new_mainframe_features(void) {
     double penalty_val = 0.0;
     assert(tsfi_cw_icp_calculate_renewal_penalty(1500.0, 10, 0.01, &penalty_val) == 0);
     assert(fabs(penalty_val - 1650.0) < 0.1); // 1500 * 1.10
+
+    // ICP License Transfer Auditor test
+    tsfi_cw_icp_product trans_prod = { "P99", "EASY-SORT", "OldCorp", "IBM 360", 20000.0, 80 };
+    double transfer_fee = 0.0;
+    assert(tsfi_cw_icp_audit_transfer(&trans_prod, "NewCorp", 0.05, &transfer_fee) == 0);
+    assert(strcmp(trans_prod.vendor, "NewCorp") == 0);
+    assert(fabs(transfer_fee - 1000.0) < 0.1); // 20000 * 0.05
+
+    // ICP Software Royalty Ledger Consolidator test
+    tsfi_cw_icp_product catalog_list[2] = {
+        { "P01", "MARK IV", "Informatics", "IBM 360", 15000.0, 50 },
+        { "P02", "AUTOFLOW", "ADR", "IBM 360", 8000.0, 150 }
+    };
+    double consolidated_payment = 0.0;
+    assert(tsfi_cw_icp_consolidate_royalties(catalog_list, 2, "Informatics", 0.10, &consolidated_payment) == 0);
+    assert(fabs(consolidated_payment - 75000.0) < 0.1); // 15000 * 50 * 0.10
 }
 
 int main(void) {

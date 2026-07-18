@@ -844,5 +844,9 @@ int tsfi_cw_icp_calculate_transfer_tax(double license_amount, double tax_rate, d
 int tsfi_cw_icp_calculate_software_depreciation(double cost, double salvage_value, int lifespan_years, int target_year, double *depreciated_value_out);
 int tsfi_cw_icp_calculate_renewal_penalty(double renewal_fee, int days_late, double penalty_rate_per_day, double *total_due_out);
 
+// ICP License Transfer Auditor and Royalty Ledger Consolidator
+int tsfi_cw_icp_audit_transfer(tsfi_cw_icp_product *prod, const char *new_vendor, double transfer_fee_rate, double *transfer_fee_out);
+int tsfi_cw_icp_consolidate_royalties(const tsfi_cw_icp_product *catalog, int catalog_size, const char *vendor, double royalty_rate, double *consolidated_payment_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

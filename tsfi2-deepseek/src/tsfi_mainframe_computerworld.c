@@ -951,6 +951,28 @@ int tsfi_cw_icp_calculate_renewal_penalty(double renewal_fee, int days_late, dou
     return 0;
 }
 
+int tsfi_cw_icp_audit_transfer(tsfi_cw_icp_product *prod, const char *new_vendor, double transfer_fee_rate, double *transfer_fee_out) {
+    if (!prod || !new_vendor || transfer_fee_rate < 0.0 || !transfer_fee_out) return -1;
+    
+    *transfer_fee_out = prod->unit_price * transfer_fee_rate;
+    strncpy(prod->vendor, new_vendor, sizeof(prod->vendor) - 1);
+    prod->vendor[sizeof(prod->vendor) - 1] = '\0';
+    return 0;
+}
+
+int tsfi_cw_icp_consolidate_royalties(const tsfi_cw_icp_product *catalog, int catalog_size, const char *vendor, double royalty_rate, double *consolidated_payment_out) {
+    if (!catalog || catalog_size < 0 || !vendor || royalty_rate < 0.0 || !consolidated_payment_out) return -1;
+    
+    *consolidated_payment_out = 0.0;
+    for (int i = 0; i < catalog_size; i++) {
+        if (strcmp(catalog[i].vendor, vendor) == 0) {
+            *consolidated_payment_out += (catalog[i].unit_price * catalog[i].install_count * royalty_rate);
+        }
+    }
+    return 0;
+}
+
+
 
 
 
