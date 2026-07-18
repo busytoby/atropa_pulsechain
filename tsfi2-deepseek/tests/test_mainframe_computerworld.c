@@ -709,6 +709,40 @@ static void test_new_mainframe_features(void) {
     int dow = -1;
     assert(tsfi_cw_y2k_day_of_week(26, 7, 19, 50, &dow) == 0);
     assert(dow == 0);
+
+    // VSAM Control Interval Split
+    tsfi_cw_vsam_ksds split_ksds;
+    memset(&split_ksds, 0, sizeof(split_ksds));
+    strcpy(split_ksds.filepath, "split_test.dat.bin");
+    assert(tsfi_cw_vsam_write(&split_ksds, "K1", base_d, 2) == 0);
+    assert(tsfi_cw_vsam_write(&split_ksds, "K2", base_d, 2) == 0);
+    assert(tsfi_cw_vsam_write(&split_ksds, "K3", base_d, 2) == 0);
+    assert(tsfi_cw_vsam_get_ci_splits(&split_ksds) == 1);
+
+    // COBOL OCCURS DEPENDING ON clause
+    tsfi_cw_copybook cb_dep;
+    memset(&cb_dep, 0, sizeof(cb_dep));
+    rc = tsfi_cw_parse_copybook_line("05 DEPEND-VAR PIC 9(2) OCCURS 5 DEPENDING ON DEP-FLD.", &cb_dep);
+    assert(rc == 0);
+    assert(cb_dep.field_count == 1);
+    assert(strcmp(cb_dep.fields[0].depending_on, "DEP-FLD") == 0);
+    int dynamic_len = tsfi_cw_cobol_get_dynamic_record_length(&cb_dep, "DEP-FLD", 3);
+    assert(dynamic_len == 6);
+
+    // EBCDIC DBCS Shift-In/Shift-Out checks
+    uint8_t dbcs_valid[] = {0x0E, 0x41, 0x42, 0x0F};
+    uint8_t dbcs_invalid[] = {0x0E, 0x41, 0x42};
+    assert(tsfi_cw_ebcdic_validate_dbcs_boundaries(dbcs_valid, sizeof(dbcs_valid)) == 0);
+    assert(tsfi_cw_ebcdic_validate_dbcs_boundaries(dbcs_invalid, sizeof(dbcs_invalid)) == -4);
+
+    // JCL GDG resolver
+    char gdg_res[256];
+    assert(tsfi_cw_jcl_resolve_gdg("MY.DATA.GDG(+1)", 4, gdg_res, sizeof(gdg_res)) == 0);
+    assert(strcmp(gdg_res, "MY.DATA.GDG.G0005V00") == 0);
+
+    // Y2K Leap century overrides
+    assert(tsfi_cw_y2k_is_leap_year(2000) == 1);
+    assert(tsfi_cw_y2k_is_leap_year(2100) == 0);
 }
 
 int main(void) {

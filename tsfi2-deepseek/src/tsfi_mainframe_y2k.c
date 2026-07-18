@@ -257,3 +257,10 @@ int tsfi_cw_y2k_day_of_week(uint32_t yy, uint32_t mm, uint32_t dd, uint32_t pivo
     *dow_out = days % 7;
     return 0;
 }
+
+int tsfi_cw_y2k_is_leap_year(uint32_t year) {
+    if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) {
+        return 1;
+    }
+    return 0;
+}

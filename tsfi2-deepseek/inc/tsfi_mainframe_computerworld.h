@@ -74,15 +74,17 @@ typedef struct {
     int sign_leading;
     int sign_separate;
     char cond_value[32];
+    char occurs_depending_on[32];
 } tsfi_cw_cobol_field;
 
 typedef struct {
-    tsfi_cw_cobol_field fields[16];
+    tsfi_cw_cobol_field fields[32];
     int field_count;
     int record_length;
 } tsfi_cw_copybook;
 
 int tsfi_cw_parse_copybook_line(const char *copybook_line, tsfi_cw_copybook *cb);
+int tsfi_cw_cobol_get_dynamic_record_length(tsfi_cw_copybook *cb, const char *dep_field_name, int dep_field_value);
 
 // Dynamic Y2K date windowing functions
 uint32_t tsfi_cw_y2k_resolve_year_ex(uint32_t two_digit_year, uint32_t pivot);
@@ -124,6 +126,7 @@ typedef struct {
     tsfi_cw_vsam_entry index[128];
     int entry_count;
     uint32_t current_file_size;
+    uint32_t ci_splits;
 } tsfi_cw_vsam_ksds;
 
 int tsfi_cw_vsam_open(tsfi_cw_vsam_ksds *ksds, const char *filepath);
@@ -375,6 +378,18 @@ int tsfi_cw_run_jcl_override(const char **cards, int card_count, const char *ste
 
 // Y2K Day of Week calculator
 int tsfi_cw_y2k_day_of_week(uint32_t yy, uint32_t mm, uint32_t dd, uint32_t pivot, int *dow_out);
+
+// VSAM Control Interval Split tracker
+int tsfi_cw_vsam_get_ci_splits(tsfi_cw_vsam_ksds *ksds);
+
+// EBCDIC DBCS validation
+int tsfi_cw_ebcdic_validate_dbcs_boundaries(const uint8_t *ebcdic_str, int len);
+
+// JCL GDG resolver
+int tsfi_cw_jcl_resolve_gdg(const char *dsn_str, int current_gen, char *resolved_out, int max_len);
+
+// Y2K leap year checker
+int tsfi_cw_y2k_is_leap_year(uint32_t year);
 
 // 4. Job Control Language (JCL) Execution Simulator
 int tsfi_cw_run_jcl(const char **cards, int card_count);

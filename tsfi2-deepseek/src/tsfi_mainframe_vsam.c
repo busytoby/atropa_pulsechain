@@ -66,6 +66,9 @@ int tsfi_cw_vsam_write(tsfi_cw_vsam_ksds *ksds, const char *key, const uint8_t *
         }
         idx = insert_pos;
         ksds->entry_count++;
+        if (ksds->entry_count > 2) {
+            ksds->ci_splits++;
+        }
         strncpy(ksds->index[idx].key, key, sizeof(ksds->index[idx].key) - 1);
         ksds->index[idx].key[sizeof(ksds->index[idx].key) - 1] = '\0';
         ksds->index[idx].active = 1;
@@ -483,4 +486,9 @@ int tsfi_cw_vsam_unlock_record(tsfi_cw_vsam_ksds *ksds, const char *key) {
         }
     }
     return -4;
+}
+
+int tsfi_cw_vsam_get_ci_splits(tsfi_cw_vsam_ksds *ksds) {
+    if (!ksds) return -1;
+    return (int)ksds->ci_splits;
 }

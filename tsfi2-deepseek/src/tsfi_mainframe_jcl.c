@@ -355,3 +355,22 @@ int tsfi_cw_run_jcl_override(const char **cards, int card_count, const char *ste
     }
     return -4;
 }
+
+int tsfi_cw_jcl_resolve_gdg(const char *dsn_str, int current_gen, char *resolved_out, int max_len) {
+    if (!dsn_str || !resolved_out || max_len <= 0) return -1;
+    const char *p = strstr(dsn_str, "(");
+    if (p) {
+        int relative_gen = atoi(p + 1);
+        int target_gen = current_gen + relative_gen;
+        int base_len = p - dsn_str;
+        char base_dsn[256];
+        if (base_len >= 255) base_len = 255;
+        strncpy(base_dsn, dsn_str, base_len);
+        base_dsn[base_len] = '\0';
+        snprintf(resolved_out, max_len, "%s.G%04dV00", base_dsn, target_gen);
+        return 0;
+    }
+    strncpy(resolved_out, dsn_str, max_len - 1);
+    resolved_out[max_len - 1] = '\0';
+    return 0;
+}

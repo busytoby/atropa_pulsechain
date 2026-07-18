@@ -102,7 +102,7 @@ int tsfi_cw_unpack_comp3(const uint8_t *comp3_in, int comp3_len, char *ascii_out
 
 int tsfi_cw_parse_copybook_line(const char *copybook_line, tsfi_cw_copybook *cb) {
     if (!copybook_line || !cb) return -1;
-    if (cb->field_count >= 16) return -2;
+    if (cb->field_count >= 32) return -2;
 
     const char *p = copybook_line;
     while (*p == ' ' || *p == '\t') p++;
@@ -703,4 +703,22 @@ int tsfi_cw_unpack_sign_separate(const char *separate_in, char *ascii_out, int m
         }
     }
     return 0;
+}
+
+int tsfi_cw_cobol_get_dynamic_record_length(tsfi_cw_copybook *cb, const char *dep_field_name, int dep_field_value) {
+    if (!cb || !dep_field_name) return -1;
+    int length = 0;
+    for (int i = 0; i < cb->field_count; i++) {
+        tsfi_cw_cobol_field *f = &cb->fields[i];
+        if (f->level == 88) continue;
+        int field_len = f->length;
+        if (strcmp(f->depending_on, dep_field_name) == 0) {
+            int base_len = f->length / f->occurs;
+            field_len = base_len * dep_field_value;
+        }
+        if (f->offset + field_len > length) {
+            length = f->offset + field_len;
+        }
+    }
+    return length;
 }

@@ -205,3 +205,19 @@ uint8_t tsfi_cw_ebcdic_to_ascii_cp850(uint8_t ebcdic_char) {
     if (ebcdic_char == 0xD0) return '}';
     return tsfi_cw_ebcdic_to_ascii(ebcdic_char);
 }
+
+int tsfi_cw_ebcdic_validate_dbcs_boundaries(const uint8_t *ebcdic_str, int len) {
+    if (!ebcdic_str || len <= 0) return -1;
+    int in_dbcs = 0;
+    for (int i = 0; i < len; i++) {
+        if (ebcdic_str[i] == 0x0E) {
+            if (in_dbcs) return -2;
+            in_dbcs = 1;
+        } else if (ebcdic_str[i] == 0x0F) {
+            if (!in_dbcs) return -3;
+            in_dbcs = 0;
+        }
+    }
+    if (in_dbcs) return -4;
+    return 0;
+}
