@@ -374,5 +374,7 @@
 | 440 | NATO Link-Layer Broadcast Window Constraint Matcher | PASS | Audits sliding window size boundaries for non-ARQ broadcast mode | Volume 33 |
 | 441 | NATO Link-Layer Broadcast Collision Backoff Limit Validator | PASS | Validates retry backoff limit thresholds for broadcast frame collisions | Volume 33 |
 | 442 | NATO Link-Layer Broadcast Queue Capacity Checker | PASS | Audits maximum outbound queue capacity sizing limits for broadcast streams | Volume 33 |
+| 443 | NATO Link-Layer Broadcast Collision Backoff Algorithm Selector | PASS | Validates backoff algorithm option selections for broadcast collisions | Volume 33 |
+| 444 | NATO Link-Layer Multi-Scan Channel Busy Threshold Matcher | PASS | Audits carrier-sense busy RSSI thresholds for channel access | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 442 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 444 Scenarios validated successfully)

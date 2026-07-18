@@ -401,5 +401,21 @@ int run_nato_stanag_tests(void) {
     assert(queue_capacity_valid == 1);
     printf("  [PASS] NATO Broadcast Queue Capacity Checker verified.\n");
 
+    // 299. Verify NATO Link-Layer Broadcast Collision Backoff Algorithm Selector
+    printf("[TEST] Validating NATO Broadcast Backoff Algorithm Selector...\n");
+    int backoff_algo_valid = -1;
+    int backoff_algo_res = tsfi_mf_nato_verify_backoff_algorithm(1, &backoff_algo_valid);
+    assert(backoff_algo_res == 0);
+    assert(backoff_algo_valid == 1);
+    printf("  [PASS] NATO Broadcast Backoff Algorithm Selector verified.\n");
+
+    // 300. Verify NATO Link-Layer Multi-Scan Channel Busy Threshold Matcher
+    printf("[TEST] Validating NATO Channel Busy Threshold Matcher...\n");
+    int busy_threshold_valid = -1;
+    int busy_threshold_res = tsfi_mf_nato_verify_channel_busy_threshold(-85, &busy_threshold_valid);
+    assert(busy_threshold_res == 0);
+    assert(busy_threshold_valid == 1);
+    printf("  [PASS] NATO Channel Busy Threshold Matcher verified.\n");
+
     return 0;
 }

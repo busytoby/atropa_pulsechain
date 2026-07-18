@@ -1937,4 +1937,16 @@ int tsfi_mf_nato_verify_broadcast_queue_capacity(int capacity, int *is_valid) {
     return 0;
 }
 
+int tsfi_mf_nato_verify_backoff_algorithm(int algorithm, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (algorithm >= 0 && algorithm <= 2) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_channel_busy_threshold(int threshold_dbm, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (threshold_dbm >= -110 && threshold_dbm <= -70) ? 1 : 0;
+    return 0;
+}
+
 
