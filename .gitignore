@@ -91,11 +91,9 @@ price_cache.json
 resolved_swaps.json
 unresolved_swaps.json
 
-# Ignore generated art assets
-assets/**/*.png
-assets/*.png
-assets/*.img
-assets/**/*.json
+# Ignore assets directories recursively
+assets/
+**/assets/
 found_addresses.txt
 
 # Root tests binaries
