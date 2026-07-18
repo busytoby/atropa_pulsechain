@@ -289,5 +289,7 @@
 | 355 | IRS CADE Filing Status Head of Household Dependent Matcher | PASS | Enforces dependency checks for Head of Household filing claims | Volume 33 |
 | 356 | IRS IMF Taxable Social Security Formula Checker | PASS | Audits high-taxability bands for Social Security benefits on MAGI | Volume 33 |
 | 357 | IRS IMF Tax-Exempt Interest Reporting Matcher | PASS | Matches tax-exempt interest amounts to Schedule K-1 shares | Volume 33 |
+| 358 | IRS IMF Net Capital Gains 15% Preferential Rate Bracket Matcher | PASS | Checks taxable income bounds for 15% long term capital gains rate | Volume 33 |
+| 359 | IRS CADE Married Filing Jointly (MFJ) Spousal Signature Matcher | PASS | Verifies spousal signature fields on joint filing submissions | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 357 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 359 Scenarios validated successfully)

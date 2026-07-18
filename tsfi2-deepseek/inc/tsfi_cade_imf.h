@@ -109,5 +109,7 @@ int tsfi_mf_imf_verify_zero_rate_capital_gains(double taxable_income, int filing
 int tsfi_mf_cade_verify_hoh_dependent(int filing_status, int dependent_count, int *is_valid);
 int tsfi_mf_imf_check_ss_high_taxability(double modified_agi, double ss_benefits, int filing_status, int *is_subject_to_85);
 int tsfi_mf_imf_match_tax_exempt_interest(double reported_1040, double k1_share, int *is_valid);
+int tsfi_mf_imf_verify_fifteen_rate_capital_gains(double taxable_income, int filing_status, int *qualifies_for_fifteen_rate);
+int tsfi_mf_cade_verify_mfj_signatures(int filing_status, int spouse_primary_sig, int spouse_secondary_sig, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

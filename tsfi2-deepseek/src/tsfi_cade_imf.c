@@ -1215,4 +1215,18 @@ int tsfi_mf_imf_match_tax_exempt_interest(double reported_1040, double k1_share,
     return 0;
 }
 
+int tsfi_mf_imf_verify_fifteen_rate_capital_gains(double taxable_income, int filing_status, int *qualifies_for_fifteen_rate) {
+    if (!qualifies_for_fifteen_rate) return -1;
+    double upper_bound = (filing_status == 2) ? 583750.00 : 518900.00;
+    double lower_bound = (filing_status == 2) ? 94050.00 : 47025.00;
+    *qualifies_for_fifteen_rate = (taxable_income > lower_bound && taxable_income <= upper_bound) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_cade_verify_mfj_signatures(int filing_status, int spouse_primary_sig, int spouse_secondary_sig, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (filing_status == 2) ? (spouse_primary_sig && spouse_secondary_sig) : 1;
+    return 0;
+}
+
 
