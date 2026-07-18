@@ -39,7 +39,10 @@ double tsfi_ramac_calculate_seek(int from_index, int to_index) {
 
     double cylinder_seek = abs(c1.cylinder - c2.cylinder) * 1.5;
     double head_swap = (c1.head != c2.head) ? 0.8 : 0.0;
-    double rotational_delay = abs(c1.sector - c2.sector) * 5.0;
+    
+    // One-directional modular rotational delay representing physical disk spin
+    int sector_dist = (c2.sector - c1.sector + 20) % 20;
+    double rotational_delay = sector_dist * 5.0;
 
     return (cylinder_seek + head_swap + rotational_delay) * 1000.0; // Return in microseconds
 }

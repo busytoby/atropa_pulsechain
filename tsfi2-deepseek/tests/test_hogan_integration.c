@@ -2372,6 +2372,52 @@ int main(void) {
     assert(strstr(batch_console, "HOGAN BATCH STATUS") != NULL);
     printf("  [PASS] Vulkan Batch Status Console layout verified.\n");
 
+    // 9. Test Double-Entry General Ledger (GL) Reconciliation
+    int64_t gl_variance = 0;
+    assert(tsfi_hogan_gl_reconciliation(&test_sys, "gl_reconciliation_report.dat.bin", &gl_variance) == 0);
+    remove("gl_reconciliation_report.dat.bin");
+    printf("  [PASS] Double-Entry GL Reconciliation verified.\n");
+
+    // 10. Test FDIC Insurance Warning System
+    char alert_buf[1024];
+    test_sys.accounts[0].balance = 300000; // Above 250,000 threshold
+    assert(tsfi_hogan_fdic_insurance_warnings(&test_sys, alert_buf, sizeof(alert_buf)) == 0);
+    assert(strstr(alert_buf, "[FDIC WARNING]") != NULL);
+    printf("  [PASS] FDIC Insurance Warning System verified.\n");
+
+    // 11. Test COBOL Copybook Serializer/Parser
+    uint8_t copybook_buf[64];
+    hogan_account test_acc;
+    memset(&test_acc, 0, sizeof(hogan_account));
+    test_acc.account_id = 99123;
+    test_acc.balance = 56789;
+    test_acc.currency_code = 2; // GBP
+    test_acc.card_expiry_epoch = 123456;
+    
+    int cobol_len = tsfi_hogan_to_cobol_copybook(&test_acc, copybook_buf, sizeof(copybook_buf));
+    assert(cobol_len == 17);
+    
+    hogan_account parsed_acc;
+    memset(&parsed_acc, 0, sizeof(parsed_acc));
+    assert(tsfi_hogan_from_cobol_copybook(&parsed_acc, copybook_buf, cobol_len) == 0);
+    assert(parsed_acc.account_id == 99123);
+    assert(parsed_acc.balance == 56789);
+    assert(parsed_acc.currency_code == 2);
+    assert(parsed_acc.card_expiry_epoch == 123456);
+    printf("  [PASS] COBOL Copybook Serializer/Parser verified.\n");
+
+    // 12. Test Compound Interest & Daily Limit Alerts
+    test_sys.accounts[0].balance = 10000;
+    test_sys.accounts[0].has_custom_rate = 1;
+    test_sys.accounts[0].custom_interest_rate_bps = 250; // 2.5%
+    test_sys.accounts[0].daily_transferred = 60000; // Trigger alert threshold (>50,000)
+
+    tsfi_hogan_process_integrations_overnight(&test_sys);
+    
+    // Balance should have interest added: 10000 + 250 = 10250
+    assert(test_sys.accounts[0].balance == 10250);
+    printf("  [PASS] Compound Interest & Daily Limit Alerts verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }

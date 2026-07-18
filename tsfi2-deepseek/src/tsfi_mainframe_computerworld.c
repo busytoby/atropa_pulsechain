@@ -1,0 +1,927 @@
+#include "tsfi_mainframe_computerworld.h"
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+
+// Y2K Date Windowing Strategy: Pivot year 50
+uint32_t tsfi_cw_y2k_resolve_year(uint32_t two_digit_year) {
+    if (two_digit_year < 50) {
+        return 2000 + two_digit_year;
+    } else {
+        return 1900 + two_digit_year;
+    }
+}
+
+int tsfi_cw_y2k_check_date(uint32_t yy, uint32_t mm, uint32_t dd, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = 0;
+    
+    if (mm < 1 || mm > 12) return 0;
+    if (dd < 1 || dd > 31) return 0;
+
+    uint32_t full_year = tsfi_cw_y2k_resolve_year(yy);
+
+    // Leap year rules (Auncient mainframe compliance)
+    int is_leap = 0;
+    if ((full_year % 4 == 0 && full_year % 100 != 0) || (full_year % 400 == 0)) {
+        is_leap = 1;
+    }
+
+    uint32_t days_in_month[] = { 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+    if (is_leap) days_in_month[2] = 29;
+
+    if (dd <= days_in_month[mm]) {
+        *is_valid = 1;
+    }
+
+    return 0;
+}
+
+// IBM 80-Column Punch Card Record Parser (Cols 1-80)
+int tsfi_cw_parse_punch_card(const char *card_line, tsfi_cw_punch_card *card_out) {
+    if (!card_line || !card_out) return -1;
+    
+    int len = strlen(card_line);
+    if (len < 80) return -2; // Standard mainframe punch cards must be exactly 80 columns
+
+    // Copy Columns 1-6: Sequence Number
+    memcpy(card_out->sequence, card_line, 6);
+    card_out->sequence[6] = '\0';
+
+    // Copy Column 7: Indicator
+    card_out->indicator = card_line[6];
+
+    // Copy Columns 8-11: Area A
+    memcpy(card_out->area_a, card_line + 7, 4);
+    card_out->area_a[4] = '\0';
+
+    // Copy Columns 12-72: Area B
+    memcpy(card_out->area_b, card_line + 11, 61);
+    card_out->area_b[61] = '\0';
+
+    // Copy Columns 73-80: Identification / Program Name
+    memcpy(card_out->identification, card_line + 72, 8);
+    card_out->identification[8] = '\0';
+
+    return 0;
+}
+
+int tsfi_cw_card_is_continuation(const tsfi_cw_punch_card *card) {
+    if (!card) return 0;
+    return (card->indicator == '-');
+}
+
+int tsfi_cw_card_is_comment(const tsfi_cw_punch_card *card) {
+    if (!card) return 0;
+    return (card->indicator == '*' || card->indicator == '/');
+}
+
+// Full translation mappings (IBM Code Page 1047 / CP037)
+static const uint8_t ascii_to_ebcdic_table[256] = {
+    0x00, 0x01, 0x02, 0x03, 0x37, 0x2D, 0x2E, 0x2F, 0x16, 0x05, 0x25, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
+    0x10, 0x11, 0x12, 0x13, 0x3C, 0x3D, 0x32, 0x26, 0x18, 0x19, 0x3F, 0x27, 0x1C, 0x1D, 0x1E, 0x1F,
+    0x40, 0x5A, 0x7F, 0x7B, 0x5B, 0x6C, 0x50, 0x7D, 0x4D, 0x5D, 0x5C, 0x4E, 0x6B, 0x60, 0x4B, 0x61,
+    0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0x7A, 0x5E, 0x4C, 0x7E, 0x6E, 0x6F,
+    0x7C, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xC8, 0xC9, 0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6,
+    0xD7, 0xD8, 0xD9, 0xE2, 0xE3, 0xE4, 0xE5, 0xE6, 0xE7, 0xE8, 0xE9, 0xAD, 0xE0, 0xBD, 0x5F, 0x6D,
+    0x79, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96,
+    0x97, 0x98, 0x99, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xC0, 0x4F, 0xD0, 0xA1, 0x07,
+    0x20, 0x21, 0x22, 0x23, 0x24, 0x15, 0x06, 0x17, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x09, 0x0A, 0x1B,
+    0x30, 0x31, 0x1A, 0x33, 0x34, 0x35, 0x36, 0x08, 0x38, 0x39, 0x3A, 0x3B, 0x04, 0x14, 0x3E, 0xE1,
+    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57,
+    0x58, 0x59, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x70, 0x71, 0x72, 0x73, 0x74, 0x75,
+    0x76, 0x77, 0x78, 0x80, 0x8A, 0x8B, 0x8C, 0x8D, 0x8E, 0x8F, 0x90, 0x9A, 0x9B, 0x9C, 0x9D, 0x9E,
+    0x9F, 0xA0, 0xAA, 0xAB, 0xAC, 0xAE, 0xAF, 0xB0, 0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, 0xB7, 0xB8,
+    0xB9, 0xBA, 0xBB, 0xBC, 0xBE, 0xBF, 0xCA, 0xCB, 0xCC, 0xCD, 0xCE, 0xCF, 0xDA, 0xDB, 0xDC, 0xDD,
+    0xDE, 0xDF, 0xEA, 0xEB, 0xEC, 0xED, 0xEE, 0xEF, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF, 0x00, 0x00
+};
+
+static const uint8_t ebcdic_to_ascii_table[256] = {
+    0x00, 0x01, 0x02, 0x03, 0x9C, 0x09, 0x86, 0x7F, 0x97, 0x8D, 0x8E, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
+    0x10, 0x11, 0x12, 0x13, 0x9D, 0x85, 0x08, 0x87, 0x18, 0x19, 0x92, 0x8F, 0x1C, 0x1D, 0x1E, 0x1F,
+    0x80, 0x81, 0x82, 0x83, 0x84, 0x0A, 0x17, 0x1B, 0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x05, 0x06, 0x07,
+    0x90, 0x91, 0x16, 0x93, 0x94, 0x95, 0x96, 0x04, 0x98, 0x99, 0x9A, 0x9B, 0x14, 0x15, 0x9E, 0x1A,
+    0x20, 0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0x5B, 0x2E, 0x3C, 0x28, 0x2B, 0x21,
+    0x26, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF, 0xB0, 0xB1, 0x5D, 0x24, 0x2A, 0x29, 0x3B, 0x5E,
+    0x2D, 0x2F, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, 0xB7, 0xB8, 0xB9, 0x7C, 0x2C, 0x25, 0x5F, 0x3E, 0x3F,
+    0xBA, 0xBB, 0xBC, 0xBD, 0xBE, 0xBF, 0xC0, 0xC1, 0xC2, 0x60, 0x3A, 0x23, 0x40, 0x27, 0x3D, 0x22,
+    0xC3, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0xC4, 0xC5, 0xC6, 0xC7, 0xC8, 0xC9,
+    0xCA, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E, 0x6F, 0x70, 0x71, 0x72, 0xCB, 0xCC, 0xCD, 0xCE, 0xCF, 0xD0,
+    0xD1, 0x7E, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xD7,
+    0xD8, 0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE, 0xDF, 0xE0, 0xE1, 0xE2, 0xE3, 0xE4, 0xE5, 0xE6, 0xE7,
+    0x7B, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0xE8, 0xE9, 0xEA, 0xEB, 0xEC, 0xED,
+    0x7D, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50, 0x51, 0x52, 0xEE, 0xEF, 0xF0, 0xF1, 0xF2, 0xF3,
+    0x5C, 0x9F, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5A, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9,
+    0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF
+};
+
+uint8_t tsfi_cw_ascii_to_ebcdic(uint8_t ascii_char) {
+    return ascii_to_ebcdic_table[ascii_char];
+}
+
+uint8_t tsfi_cw_ebcdic_to_ascii(uint8_t ebcdic_char) {
+    return ebcdic_to_ascii_table[ebcdic_char];
+}
+
+int tsfi_cw_ascii_to_ebcdic_buf(const char *ascii_in, uint8_t *ebcdic_out, int len) {
+    if (!ascii_in || !ebcdic_out || len <= 0) return -1;
+    for (int i = 0; i < len; i++) {
+        ebcdic_out[i] = ascii_to_ebcdic_table[(uint8_t)ascii_in[i]];
+    }
+    return 0;
+}
+
+int tsfi_cw_ebcdic_to_ascii_buf(const uint8_t *ebcdic_in, char *ascii_out, int len) {
+    if (!ebcdic_in || !ascii_out || len <= 0) return -1;
+    for (int i = 0; i < len; i++) {
+        ascii_out[i] = (char)ebcdic_to_ascii_table[ebcdic_in[i]];
+    }
+    ascii_out[len] = '\0';
+    return 0;
+}
+
+int tsfi_cw_pack_comp3(const char *ascii_num, uint8_t *comp3_out, int max_out_len, int *out_len) {
+    if (!ascii_num || !comp3_out || !out_len) return -1;
+    int len = strlen(ascii_num);
+    if (len == 0) return -2;
+
+    int is_negative = 0;
+    int start_idx = 0;
+    if (ascii_num[0] == '-') {
+        is_negative = 1;
+        start_idx = 1;
+    } else if (ascii_num[0] == '+') {
+        start_idx = 1;
+    }
+
+    int digits_len = len - start_idx;
+    int total_nibbles = digits_len + 1; // digits + sign nibble
+    int required_bytes = (total_nibbles + 1) / 2;
+    if (required_bytes > max_out_len) return -3;
+
+    memset(comp3_out, 0, required_bytes);
+    *out_len = required_bytes;
+
+    int digit_pos = 0;
+    if (digits_len % 2 == 0) {
+        digit_pos = 1; // leading zero pad
+    }
+
+    for (int i = start_idx; i < len; i++) {
+        char c = ascii_num[i];
+        if (c < '0' || c > '9') return -4;
+        int digit = c - '0';
+        int byte_idx = digit_pos / 2;
+        int nibble_idx = digit_pos % 2;
+        if (nibble_idx == 0) {
+            comp3_out[byte_idx] |= (digit << 4);
+        } else {
+            comp3_out[byte_idx] |= digit;
+        }
+        digit_pos++;
+    }
+
+    int last_byte_idx = required_bytes - 1;
+    uint8_t sign_nibble = is_negative ? 0x0D : 0x0C;
+    comp3_out[last_byte_idx] |= sign_nibble;
+
+    return 0;
+}
+
+int tsfi_cw_unpack_comp3(const uint8_t *comp3_in, int comp3_len, char *ascii_out, int max_ascii_len) {
+    if (!comp3_in || !ascii_out || comp3_len <= 0) return -1;
+
+    int max_digits = 2 * comp3_len - 1;
+    if (max_digits + 2 > max_ascii_len) return -2;
+
+    int write_idx = 0;
+    uint8_t last_byte = comp3_in[comp3_len - 1];
+    uint8_t sign_nibble = last_byte & 0x0F;
+    if (sign_nibble == 0x0D || sign_nibble == 0x0B) {
+        ascii_out[write_idx++] = '-';
+    }
+
+    int skip_leading_zero = 1;
+
+    for (int i = 0; i < comp3_len; i++) {
+        uint8_t b = comp3_in[i];
+        uint8_t high = (b >> 4) & 0x0F;
+        uint8_t low = b & 0x0F;
+
+        if (high > 9) return -3;
+
+        if (i == 0 && high == 0 && skip_leading_zero) {
+            // skip
+        } else {
+            ascii_out[write_idx++] = '0' + high;
+            skip_leading_zero = 0;
+        }
+
+        if (i == comp3_len - 1) {
+            if (low < 0x0A) return -4;
+        } else {
+            if (low > 9) return -3;
+            ascii_out[write_idx++] = '0' + low;
+            skip_leading_zero = 0;
+        }
+    }
+
+    if (write_idx == 0 || (write_idx == 1 && ascii_out[0] == '-')) {
+        write_idx = 0;
+        ascii_out[write_idx++] = '0';
+    }
+
+    ascii_out[write_idx] = '\0';
+    return 0;
+}
+
+// 1. IBM Hexadecimal Floating-Point (HFP) Conversions
+float tsfi_cw_ibm_to_ieee_float(uint32_t ibm_float) {
+    if (ibm_float == 0) return 0.0f;
+    uint32_t sign = (ibm_float >> 31) & 1;
+    int exponent = (int)((ibm_float >> 24) & 0x7F) - 64;
+    uint32_t fraction = ibm_float & 0x00FFFFFF;
+    
+    double val = (double)fraction / 16777216.0;
+    double scale = 1.0;
+    if (exponent > 0) {
+        for (int i = 0; i < exponent; i++) scale *= 16.0;
+    } else {
+        for (int i = 0; i < -exponent; i++) scale /= 16.0;
+    }
+    float result = (float)(val * scale);
+    return sign ? -result : result;
+}
+
+uint32_t tsfi_cw_ieee_to_ibm_float(float ieee_float) {
+    if (ieee_float == 0.0f) return 0;
+    uint32_t sign = 0;
+    if (ieee_float < 0.0f) {
+        sign = 1;
+        ieee_float = -ieee_float;
+    }
+    
+    int exponent = 64;
+    double val = (double)ieee_float;
+    if (val >= 1.0) {
+        while (val >= 1.0 && exponent < 127) {
+            val /= 16.0;
+            exponent++;
+        }
+    } else {
+        while (val < 0.0625 && exponent > 0) {
+            val *= 16.0;
+            exponent--;
+        }
+    }
+    
+    uint32_t fraction = (uint32_t)(val * 16777216.0 + 0.5);
+    if (fraction >= 0x01000000) {
+        fraction >>= 4;
+        exponent++;
+    }
+    return (sign << 31) | ((uint32_t)exponent << 24) | (fraction & 0x00FFFFFF);
+}
+
+// 2. COBOL Copybook Parsing & Structured Data Layouts
+int tsfi_cw_parse_copybook_line(const char *copybook_line, tsfi_cw_copybook *cb) {
+    if (!copybook_line || !cb) return -1;
+    if (cb->field_count >= 16) return -2;
+
+    const char *p = copybook_line;
+    while (*p == ' ' || *p == '\t') p++;
+    
+    if (*p < '0' || *p > '9') return -3;
+    int level = 0;
+    while (*p >= '0' && *p <= '9') {
+        level = level * 10 + (*p - '0');
+        p++;
+    }
+    while (*p == ' ' || *p == '\t') p++;
+
+    char name[32];
+    int name_idx = 0;
+    while (*p && *p != ' ' && *p != '\t' && *p != '.') {
+        if (name_idx < 31) name[name_idx++] = *p;
+        p++;
+    }
+    name[name_idx] = '\0';
+    if (name_idx == 0) return -4;
+    while (*p == ' ' || *p == '\t') p++;
+
+    char redefines_target[32] = "";
+    if (strncmp(p, "REDEFINES", 9) == 0) {
+        p += 9;
+        while (*p == ' ' || *p == '\t') p++;
+        int r_idx = 0;
+        while (*p && *p != ' ' && *p != '\t' && *p != '.') {
+            if (r_idx < 31) redefines_target[r_idx++] = *p;
+            p++;
+        }
+        redefines_target[r_idx] = '\0';
+        while (*p == ' ' || *p == '\t') p++;
+    }
+
+    char value_clause[32] = "";
+    const char *val_ptr = strstr(p, "VALUE");
+    if (val_ptr) {
+        val_ptr += 5;
+        while (*val_ptr == ' ' || *val_ptr == '\t') val_ptr++;
+        int v_idx = 0;
+        if (*val_ptr == '\'' || *val_ptr == '\"') {
+            char quote = *val_ptr++;
+            while (*val_ptr && *val_ptr != quote && v_idx < 31) {
+                value_clause[v_idx++] = *val_ptr++;
+            }
+        } else {
+            while (*val_ptr && *val_ptr != ' ' && *val_ptr != '.' && v_idx < 31) {
+                value_clause[v_idx++] = *val_ptr++;
+            }
+        }
+        value_clause[v_idx] = '\0';
+    }
+
+    if (strncmp(p, "PIC", 3) != 0 && strncmp(p, "PICTURE", 7) != 0) {
+        return -5;
+    }
+    if (strncmp(p, "PICTURE", 7) == 0) p += 7;
+    else p += 3;
+    while (*p == ' ' || *p == '\t') p++;
+
+    tsfi_cw_cobol_type type = COBOL_TYPE_ALPHA;
+    int length = 0;
+    int decimal_places = 0;
+    
+    if (*p == 'S' || *p == 's') {
+        p++;
+    }
+
+    if (*p == 'X' || *p == 'x') {
+        type = COBOL_TYPE_ALPHA;
+        p++;
+        if (*p == '(') {
+            p++;
+            length = atoi(p);
+            while (*p && *p != ')') p++;
+            if (*p == ')') p++;
+        } else {
+            length = 1;
+        }
+    } else if (*p == '9') {
+        type = COBOL_TYPE_NUMERIC;
+        p++;
+        if (*p == '(') {
+            p++;
+            length = atoi(p);
+            while (*p && *p != ')') p++;
+            if (*p == ')') p++;
+        } else {
+            length = 1;
+            while (*p == '9') { length++; p++; }
+        }
+        if (*p == 'V' || *p == 'v') {
+            p++;
+            if (*p == '9') {
+                p++;
+                if (*p == '(') {
+                    p++;
+                    decimal_places = atoi(p);
+                    while (*p && *p != ')') p++;
+                    if (*p == ')') p++;
+                } else {
+                    decimal_places = 1;
+                    while (*p == '9') { decimal_places++; p++; }
+                }
+            }
+        }
+    }
+
+    int occurs = 1;
+    const char *occ_ptr = strstr(copybook_line, "OCCURS");
+    if (occ_ptr) {
+        occ_ptr += 6;
+        while (*occ_ptr == ' ' || *occ_ptr == '\t') occ_ptr++;
+        occurs = atoi(occ_ptr);
+        if (occurs <= 0) occurs = 1;
+    }
+
+    while (*p && *p != '.') {
+        if (strncmp(p, "COMP-5", 6) == 0) {
+            type = COBOL_TYPE_COMP5;
+            p += 6;
+        } else if (strncmp(p, "COMP-3", 6) == 0) {
+            type = COBOL_TYPE_COMP3;
+            p += 6;
+        } else if (strncmp(p, "COMP", 4) == 0) {
+            type = COBOL_TYPE_COMP3;
+            p += 4;
+        } else {
+            p++;
+        }
+    }
+
+    tsfi_cw_cobol_field *f = &cb->fields[cb->field_count];
+    f->level = level;
+    snprintf(f->name, sizeof(f->name), "%s", name);
+    f->type = type;
+    snprintf(f->value, sizeof(f->value), "%s", value_clause);
+    snprintf(f->redefines, sizeof(f->redefines), "%s", redefines_target);
+    f->occurs = occurs;
+    
+    int byte_len = length + decimal_places;
+    int base_length = 0;
+    if (type == COBOL_TYPE_COMP3) {
+        base_length = (byte_len / 2) + 1;
+    } else if (type == COBOL_TYPE_COMP5) {
+        if (byte_len <= 4) {
+            base_length = 2;
+        } else if (byte_len <= 9) {
+            base_length = 4;
+        } else {
+            base_length = 8;
+        }
+    } else {
+        base_length = byte_len;
+    }
+    f->length = base_length * occurs;
+    f->decimal_places = decimal_places;
+    
+    int final_offset = cb->record_length;
+    if (strlen(redefines_target) > 0) {
+        for (int i = 0; i < cb->field_count; i++) {
+            if (strcmp(cb->fields[i].name, redefines_target) == 0) {
+                final_offset = cb->fields[i].offset;
+                break;
+            }
+        }
+    }
+    f->offset = final_offset;
+
+    if (strlen(redefines_target) == 0) {
+        cb->record_length += f->length;
+    }
+    cb->field_count++;
+    return 0;
+}
+
+// 3. VSAM Key-Sequenced Data Set (KSDS) Index Emulator
+int tsfi_cw_vsam_open(tsfi_cw_vsam_ksds *ksds, const char *filepath) {
+    if (!ksds || !filepath) return -1;
+    
+    // Rule 13: only .dat.bin extension is supported
+    int len = strlen(filepath);
+    if (len < 8 || strcmp(filepath + len - 8, ".dat.bin") != 0) {
+        return -5;
+    }
+
+    memset(ksds, 0, sizeof(tsfi_cw_vsam_ksds));
+    strncpy(ksds->filepath, filepath, sizeof(ksds->filepath) - 1);
+
+    FILE *f = fopen(filepath, "rb");
+    if (!f) {
+        ksds->entry_count = 0;
+        ksds->current_file_size = 0;
+        return 0;
+    }
+
+    if (fread(&ksds->entry_count, sizeof(int), 1, f) != 1) {
+        fclose(f);
+        return 0;
+    }
+    if (fread(ksds->index, sizeof(tsfi_cw_vsam_entry), 128, f) != 128) {
+        fclose(f);
+        return 0;
+    }
+    if (fread(&ksds->current_file_size, sizeof(uint32_t), 1, f) != 1) {
+        fclose(f);
+        return 0;
+    }
+    fclose(f);
+    return 0;
+}
+
+int tsfi_cw_vsam_write(tsfi_cw_vsam_ksds *ksds, const char *key, const uint8_t *data, int len) {
+    if (!ksds || !key || !data || len <= 0) return -1;
+    if (ksds->entry_count >= 128) return -2;
+
+    int idx = -1;
+    for (int i = 0; i < ksds->entry_count; i++) {
+        if (ksds->index[i].active && strcmp(ksds->index[i].key, key) == 0) {
+            idx = i;
+            break;
+        }
+    }
+
+    if (idx == -1) {
+        // Find correct insertion position to keep key sequence sorted (KSDS sequencing)
+        int insert_pos = ksds->entry_count;
+        for (int i = 0; i < ksds->entry_count; i++) {
+            if (strcmp(key, ksds->index[i].key) < 0) {
+                insert_pos = i;
+                break;
+            }
+        }
+        // Shift elements to make room
+        for (int i = ksds->entry_count; i > insert_pos; i--) {
+            ksds->index[i] = ksds->index[i - 1];
+        }
+        idx = insert_pos;
+        ksds->entry_count++;
+        strncpy(ksds->index[idx].key, key, sizeof(ksds->index[idx].key) - 1);
+        ksds->index[idx].key[sizeof(ksds->index[idx].key) - 1] = '\0';
+        ksds->index[idx].active = 1;
+    }
+
+    uint32_t header_size = sizeof(int) + sizeof(tsfi_cw_vsam_entry) * 128 + sizeof(uint32_t);
+    if (ksds->current_file_size == 0) {
+        ksds->current_file_size = header_size;
+    }
+
+    ksds->index[idx].offset = ksds->current_file_size;
+    ksds->index[idx].length = len;
+
+    FILE *f = fopen(ksds->filepath, "r+b");
+    if (!f) {
+        f = fopen(ksds->filepath, "w+b");
+    }
+    if (!f) return -3;
+
+    fseek(f, ksds->index[idx].offset, SEEK_SET);
+    if (fwrite(data, 1, len, f) != (size_t)len) {
+        fclose(f);
+        return -4;
+    }
+
+    ksds->current_file_size += len;
+
+    fseek(f, 0, SEEK_SET);
+    fwrite(&ksds->entry_count, sizeof(int), 1, f);
+    fwrite(ksds->index, sizeof(tsfi_cw_vsam_entry), 128, f);
+    fwrite(&ksds->current_file_size, sizeof(uint32_t), 1, f);
+
+    fclose(f);
+    return 0;
+}
+
+int tsfi_cw_vsam_read(tsfi_cw_vsam_ksds *ksds, const char *key, uint8_t *data_out, int max_len, int *out_len) {
+    if (!ksds || !key || !data_out || !out_len) return -1;
+
+    // Fast $O(\log N)$ binary search lookup in sorted key set
+    int low = 0, high = ksds->entry_count - 1;
+    while (low <= high) {
+        int mid = low + (high - low) / 2;
+        int cmp = strcmp(ksds->index[mid].key, key);
+        if (cmp == 0) {
+            if (ksds->index[mid].active) {
+                int read_len = ksds->index[mid].length;
+                if (read_len > max_len) read_len = max_len;
+
+                FILE *f = fopen(ksds->filepath, "rb");
+                if (!f) return -2;
+
+                fseek(f, ksds->index[mid].offset, SEEK_SET);
+                if (fread(data_out, 1, read_len, f) != (size_t)read_len) {
+                    fclose(f);
+                    return -3;
+                }
+                fclose(f);
+                *out_len = read_len;
+                return 0;
+            }
+            return -4;
+        } else if (cmp < 0) {
+            low = mid + 1;
+        } else {
+            high = mid - 1;
+        }
+    }
+    return -4;
+}
+
+// 4. Job Control Language (JCL) Execution Simulator
+int tsfi_cw_run_jcl(const char **cards, int card_count) {
+    return tsfi_cw_run_jcl_ex(cards, card_count, 0);
+}
+
+int tsfi_cw_run_jcl_ex(const char **cards, int card_count, int initial_rc) {
+    if (!cards || card_count <= 0) return -1;
+    
+    int steps_run = 0;
+    int current_rc = initial_rc;
+    
+    for (int i = 0; i < card_count; i++) {
+        const char *card = cards[i];
+        if (strncmp(card, "//", 2) == 0) {
+            const char *exec = strstr(card, "EXEC PGM=");
+            if (exec) {
+                const char *cond = strstr(card, "COND=");
+                int bypass = 0;
+                if (cond) {
+                    cond += 5;
+                    if (*cond == '(') cond++;
+                    int cond_val = atoi(cond);
+                    const char *op = strchr(cond, ',');
+                    if (op) {
+                        op++;
+                        if (strncmp(op, "EQ", 2) == 0) {
+                            if (current_rc == cond_val) bypass = 1;
+                        } else if (strncmp(op, "LT", 2) == 0) {
+                            if (current_rc < cond_val) bypass = 1;
+                        } else if (strncmp(op, "GT", 2) == 0) {
+                            if (current_rc > cond_val) bypass = 1;
+                        }
+                    }
+                }
+                if (!bypass) {
+                    steps_run++;
+                    if (strstr(exec, "PGM=ERR")) {
+                        current_rc = 12;
+                    } else {
+                        current_rc = 0;
+                    }
+                }
+            }
+        }
+    }
+    return steps_run;
+}
+
+int tsfi_cw_run_jcl_sysin(const char **cards, int card_count, char *sysin_out, int max_sysin_len) {
+    if (!cards || card_count <= 0 || !sysin_out || max_sysin_len <= 0) return -1;
+    sysin_out[0] = '\0';
+    
+    int in_sysin = 0;
+    int bytes_written = 0;
+    
+    for (int i = 0; i < card_count; i++) {
+        const char *card = cards[i];
+        if (in_sysin) {
+            if (strncmp(card, "/*", 2) == 0 || strncmp(card, "//", 2) == 0) {
+                break;
+            }
+            int len = strlen(card);
+            if (bytes_written + len + 2 < max_sysin_len) {
+                if (bytes_written > 0) {
+                    sysin_out[bytes_written++] = '\n';
+                }
+                strcpy(sysin_out + bytes_written, card);
+                bytes_written += len;
+            }
+        } else {
+            if (strstr(card, "SYSIN DD *")) {
+                in_sysin = 1;
+            }
+        }
+    }
+    return bytes_written;
+}
+
+int tsfi_cw_gregorian_to_julian(uint32_t yy, uint32_t mm, uint32_t dd, char *julian_out, int max_len) {
+    int is_valid = 0;
+    if (tsfi_cw_y2k_check_date(yy, mm, dd, &is_valid) != 0 || !is_valid) return -1;
+    
+    uint32_t full_year = tsfi_cw_y2k_resolve_year(yy);
+    int is_leap = ((full_year % 4 == 0 && full_year % 100 != 0) || (full_year % 400 == 0)) ? 1 : 0;
+    uint32_t days_in_month[] = { 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+    if (is_leap) days_in_month[2] = 29;
+
+    uint32_t ddd = 0;
+    for (uint32_t i = 1; i < mm; i++) {
+        ddd += days_in_month[i];
+    }
+    ddd += dd;
+
+    snprintf(julian_out, max_len, "%02u.%03u", yy % 100, ddd);
+    return 0;
+}
+
+int tsfi_cw_julian_to_gregorian(const char *julian_in, uint32_t *yy_out, uint32_t *mm_out, uint32_t *dd_out) {
+    if (!julian_in || !yy_out || !mm_out || !dd_out) return -1;
+    uint32_t yy = 0, ddd = 0;
+    if (sscanf(julian_in, "%u.%u", &yy, &ddd) != 2) return -2;
+
+    uint32_t full_year = tsfi_cw_y2k_resolve_year(yy);
+    int is_leap = ((full_year % 4 == 0 && full_year % 100 != 0) || (full_year % 400 == 0)) ? 1 : 0;
+    uint32_t days_in_month[] = { 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+    if (is_leap) days_in_month[2] = 29;
+
+    if (ddd < 1 || ddd > (is_leap ? 366 : 365)) return -3;
+
+    uint32_t mm = 1;
+    while (ddd > days_in_month[mm]) {
+        ddd -= days_in_month[mm];
+        mm++;
+    }
+
+    *yy_out = yy;
+    *mm_out = mm;
+    *dd_out = ddd;
+    return 0;
+}
+
+int tsfi_cw_ebcdic_pad_record(const char *ascii_in, uint8_t *ebcdic_out, int target_len) {
+    if (!ascii_in || !ebcdic_out || target_len <= 0) return -1;
+    int input_len = strlen(ascii_in);
+    int copy_len = (input_len > target_len) ? target_len : input_len;
+    
+    for (int i = 0; i < copy_len; i++) {
+        ebcdic_out[i] = tsfi_cw_ascii_to_ebcdic((uint8_t)ascii_in[i]);
+    }
+    for (int i = copy_len; i < target_len; i++) {
+        ebcdic_out[i] = 0x40; // EBCDIC space
+    }
+    return 0;
+}
+
+int tsfi_cw_ebcdic_strip_record(const uint8_t *ebcdic_in, int input_len, char *ascii_out, int max_ascii_len) {
+    if (!ebcdic_in || !ascii_out || input_len <= 0 || max_ascii_len <= 0) return -1;
+    
+    int right = input_len - 1;
+    while (right >= 0 && ebcdic_in[right] == 0x40) {
+        right--;
+    }
+    
+    int actual_len = right + 1;
+    if (actual_len >= max_ascii_len) actual_len = max_ascii_len - 1;
+    
+    for (int i = 0; i < actual_len; i++) {
+        ascii_out[i] = (char)tsfi_cw_ebcdic_to_ascii(ebcdic_in[i]);
+    }
+    ascii_out[actual_len] = '\0';
+    return 0;
+}
+
+void tsfi_cw_vsam_ci_init(tsfi_cw_vsam_ci_set *set) {
+    if (!set) return;
+    memset(set, 0, sizeof(tsfi_cw_vsam_ci_set));
+    set->ci_count = 1;
+    set->cis[0].ci_id = 100;
+}
+
+int tsfi_cw_vsam_ci_insert(tsfi_cw_vsam_ci_set *set, uint32_t ci_idx, const char *key) {
+    if (!set || ci_idx >= (uint32_t)set->ci_count) return -1;
+    tsfi_cw_vsam_ci *ci = &set->cis[ci_idx];
+    
+    if (ci->record_count < 4) {
+        int insert_pos = ci->record_count;
+        for (uint32_t i = 0; i < ci->record_count; i++) {
+            if (strcmp(key, ci->keys[i]) < 0) {
+                insert_pos = i;
+                break;
+            }
+        }
+        for (int i = ci->record_count; i > insert_pos; i--) {
+            strcpy(ci->keys[i], ci->keys[i - 1]);
+        }
+        strcpy(ci->keys[insert_pos], key);
+        ci->record_count++;
+        return 0;
+    }
+    
+    if (set->ci_count >= 8) return -2; // Out of CI slots
+    
+    uint32_t new_ci_idx = set->ci_count++;
+    tsfi_cw_vsam_ci *new_ci = &set->cis[new_ci_idx];
+    new_ci->ci_id = ci->ci_id + 1;
+    
+    char temp_keys[5][16];
+    int insert_pos = 4;
+    for (int i = 0; i < 4; i++) {
+        if (strcmp(key, ci->keys[i]) < 0) {
+            insert_pos = i;
+            break;
+        }
+    }
+    int k_idx = 0;
+    for (int i = 0; i < 5; i++) {
+        if (i == insert_pos) {
+            strcpy(temp_keys[i], key);
+        } else {
+            strcpy(temp_keys[i], ci->keys[k_idx++]);
+        }
+    }
+    
+    ci->record_count = 2;
+    strcpy(ci->keys[0], temp_keys[0]);
+    strcpy(ci->keys[1], temp_keys[1]);
+    
+    new_ci->record_count = 3;
+    strcpy(new_ci->keys[0], temp_keys[2]);
+    strcpy(new_ci->keys[1], temp_keys[3]);
+    strcpy(new_ci->keys[2], temp_keys[4]);
+    
+    return 1;
+}
+
+uint32_t tsfi_cw_y2k_resolve_year_ex(uint32_t two_digit_year, uint32_t pivot) {
+    if (two_digit_year < pivot) {
+        return 2000 + two_digit_year;
+    } else {
+        return 1900 + two_digit_year;
+    }
+}
+
+int tsfi_cw_y2k_check_date_ex(uint32_t yy, uint32_t mm, uint32_t dd, uint32_t pivot, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = 0;
+    
+    if (mm < 1 || mm > 12) return 0;
+    if (dd < 1 || dd > 31) return 0;
+
+    uint32_t full_year = tsfi_cw_y2k_resolve_year_ex(yy, pivot);
+    int is_leap = 0;
+    if ((full_year % 4 == 0 && full_year % 100 != 0) || (full_year % 400 == 0)) {
+        is_leap = 1;
+    }
+
+    uint32_t days_in_month[] = { 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+    if (is_leap) days_in_month[2] = 29;
+
+    if (dd <= days_in_month[mm]) {
+        *is_valid = 1;
+    }
+    return 0;
+}
+
+int tsfi_cw_ebcdic_to_ascii_control(uint8_t ebcdic_char, uint8_t *ascii_char_out) {
+    if (!ascii_char_out) return -1;
+    if (ebcdic_char == 0x15) {
+        *ascii_char_out = 0x0A; // NL
+        return 0;
+    } else if (ebcdic_char == 0x25) {
+        *ascii_char_out = 0x0A; // LF
+        return 0;
+    } else if (ebcdic_char == 0x05) {
+        *ascii_char_out = 0x09; // HT
+        return 0;
+    } else if (ebcdic_char == 0x0D) {
+        *ascii_char_out = 0x0D; // CR
+        return 0;
+    }
+    return -2;
+}
+
+void tsfi_cw_vsam_aix_init(tsfi_cw_vsam_aix *aix) {
+    if (aix) memset(aix, 0, sizeof(tsfi_cw_vsam_aix));
+}
+
+int tsfi_cw_vsam_aix_add(tsfi_cw_vsam_aix *aix, const char *alt_key, const char *primary_key) {
+    if (!aix || !alt_key || !primary_key) return -1;
+    if (aix->entry_count >= 64) return -2;
+    int idx = aix->entry_count++;
+    strncpy(aix->entries[idx].alt_key, alt_key, 15);
+    aix->entries[idx].alt_key[15] = '\0';
+    strncpy(aix->entries[idx].primary_key, primary_key, 15);
+    aix->entries[idx].primary_key[15] = '\0';
+    aix->entries[idx].active = 1;
+    return 0;
+}
+
+int tsfi_cw_vsam_aix_resolve(tsfi_cw_vsam_aix *aix, const char *alt_key, char *primary_key_out) {
+    if (!aix || !alt_key || !primary_key_out) return -1;
+    for (int i = 0; i < aix->entry_count; i++) {
+        if (aix->entries[i].active && strcmp(aix->entries[i].alt_key, alt_key) == 0) {
+            strcpy(primary_key_out, aix->entries[i].primary_key);
+            return 0;
+        }
+    }
+    return -4;
+}
+
+int tsfi_cw_jcl_parse_disp(const char *disp_str, tsfi_cw_jcl_disp *disp_out) {
+    if (!disp_str || !disp_out) return -1;
+    memset(disp_out, 0, sizeof(tsfi_cw_jcl_disp));
+    
+    const char *p = strstr(disp_str, "DISP=");
+    if (!p) return -2;
+    p += 5;
+    
+    if (*p == '(') p++;
+    
+    int s_idx = 0;
+    while (*p && *p != ',' && *p != ')' && *p != ' ' && s_idx < 7) {
+        disp_out->status[s_idx++] = *p++;
+    }
+    disp_out->status[s_idx] = '\0';
+    
+    if (*p == ',') {
+        p++;
+        int n_idx = 0;
+        while (*p && *p != ',' && *p != ')' && *p != ' ' && n_idx < 7) {
+            disp_out->normal[n_idx++] = *p++;
+        }
+        disp_out->normal[n_idx] = '\0';
+        
+        if (*p == ',') {
+            p++;
+            int a_idx = 0;
+            while (*p && *p != ',' && *p != ')' && *p != ' ' && a_idx < 7) {
+                disp_out->abnormal[a_idx++] = *p++;
+            }
+            disp_out->abnormal[a_idx] = '\0';
+        }
+    }
+    return 0;
+}
+

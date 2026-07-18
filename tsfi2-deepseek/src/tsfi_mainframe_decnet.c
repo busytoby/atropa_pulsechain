@@ -34,7 +34,7 @@ int tsfi_decnet_update_route(tsfi_decnet_router *router, uint16_t dest_id, uint1
     if (!router) return -1;
     for (int i = 0; i < router->route_count; i++) {
         if (router->routing_table[i].node_id == dest_id) {
-            if (cost < router->routing_table[i].cost) {
+            if (cost < router->routing_table[i].cost || router->routing_table[i].next_hop == next_hop) {
                 router->routing_table[i].next_hop = next_hop;
                 router->routing_table[i].cost = cost;
                 router->routing_table[i].age = 0;

@@ -177,6 +177,22 @@ void tsfi_hogan_process_integrations_overnight(hogan_umbrella_system *sys) {
             }
         }
     }
+
+    // 4. Overnight Compound Interest Calculations
+    for (int j = 0; j < HOGAN_MAX_ACCOUNTS; j++) {
+        if (sys->accounts[j].active && sys->accounts[j].has_custom_rate) {
+            uint64_t interest = (sys->accounts[j].balance * sys->accounts[j].custom_interest_rate_bps) / 10000;
+            sys->accounts[j].balance += interest;
+        }
+    }
+
+    // 5. Transaction Daily Limit Regulatory Alerts
+    for (int j = 0; j < HOGAN_MAX_ACCOUNTS; j++) {
+        if (sys->accounts[j].active && sys->accounts[j].daily_transferred > 50000) {
+            printf("[REGULATORY ALERT] Account %u exceeded daily transfer threshold with %lu\n",
+                sys->accounts[j].account_id, sys->accounts[j].daily_transferred);
+        }
+    }
 }
 
 // 1. RAMAC Cylinder Seek/Latency Emulator
@@ -286,4 +302,97 @@ int tsfi_hogan_render_vulkan_batch_status(hogan_umbrella_system *sys, char *rend
     );
     
     return (len > 0 && len < max_len) ? 0 : -2;
+}
+
+// 5. Double-Entry General Ledger (GL) Reconciliation
+int tsfi_hogan_gl_reconciliation(hogan_umbrella_system *sys, const char *gl_report_filepath, int64_t *out_gl_variance) {
+    if (!sys || !gl_report_filepath || !out_gl_variance) return -1;
+    uint64_t total_balances = 0;
+    uint64_t total_loans = 0;
+    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
+        if (sys->accounts[i].active) {
+            total_balances += sys->accounts[i].balance;
+        }
+    }
+    for (uint32_t i = 0; i < sys->loan_count; i++) {
+        if (sys->loans[i].active) {
+            total_loans += sys->loans[i].principal_remaining;
+        }
+    }
+    int64_t variance = (int64_t)total_balances - (int64_t)total_loans;
+    *out_gl_variance = variance;
+
+    FILE *f = fopen(gl_report_filepath, "w");
+    if (!f) return -2;
+    fprintf(f, "--- HOGAN GENERAL LEDGER RECONCILIATION REPORT ---\n");
+    fprintf(f, "TOTAL LIABILITIES (BALANCES): %lu\n", total_balances);
+    fprintf(f, "TOTAL ASSETS (LOAN PRINCIPALS): %lu\n", total_loans);
+    fprintf(f, "GL VARIANCE: %ld\n", variance);
+    fclose(f);
+    return 0;
+}
+
+// 6. FDIC Insurance Warning System
+int tsfi_hogan_fdic_insurance_warnings(hogan_umbrella_system *sys, char *alert_buffer, int max_len) {
+    if (!sys || !alert_buffer || max_len < 64) return -1;
+    int offset = 0;
+    alert_buffer[0] = '\0';
+    uint32_t usd_factor = 10000;
+
+    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
+        if (sys->accounts[i].active) {
+            uint32_t acc_factor = 10000; // default USD
+            switch (sys->accounts[i].currency_code) {
+                case 0: acc_factor = 10000; break; // USD
+                case 1: acc_factor = 11000; break; // EUR
+                case 2: acc_factor = 13000; break; // GBP
+                case 3: acc_factor = 500;   break; // PLS
+            }
+            uint64_t balance_usd = (sys->accounts[i].balance * acc_factor) / usd_factor;
+            if (balance_usd > 250000) {
+                int written = snprintf(alert_buffer + offset, max_len - offset,
+                    "[FDIC WARNING] Account %u exceeds limit: %lu USD equiv\n",
+                    sys->accounts[i].account_id, balance_usd);
+                if (written > 0) {
+                    offset += written;
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+// 7. COBOL Copybook Serializer/Parser
+int tsfi_hogan_to_cobol_copybook(const hogan_account *account, uint8_t *copybook_buf, int max_len) {
+    if (!account || !copybook_buf || max_len < 32) return -1;
+    memset(copybook_buf, 0, max_len);
+    // Big-endian serialization for COBOL field compatibility
+    uint32_t id_be = __builtin_bswap32(account->account_id);
+    uint64_t bal_be = __builtin_bswap64(account->balance);
+    uint32_t exp_be = __builtin_bswap32(account->card_expiry_epoch);
+    
+    memcpy(copybook_buf, &id_be, 4);
+    memcpy(copybook_buf + 4, &bal_be, 8);
+    copybook_buf[12] = account->currency_code;
+    memcpy(copybook_buf + 13, &exp_be, 4);
+    
+    return 17; // exact size of serialized payload
+}
+
+int tsfi_hogan_from_cobol_copybook(hogan_account *account, const uint8_t *copybook_buf, int len) {
+    if (!account || !copybook_buf || len < 17) return -1;
+    
+    uint32_t id_be, exp_be;
+    uint64_t bal_be;
+    
+    memcpy(&id_be, copybook_buf, 4);
+    memcpy(&bal_be, copybook_buf + 4, 8);
+    account->currency_code = copybook_buf[12];
+    memcpy(&exp_be, copybook_buf + 13, 4);
+    
+    account->account_id = __builtin_bswap32(id_be);
+    account->balance = __builtin_bswap64(bal_be);
+    account->card_expiry_epoch = __builtin_bswap32(exp_be);
+    
+    return 0;
 }
