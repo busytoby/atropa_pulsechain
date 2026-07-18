@@ -246,7 +246,7 @@
 | 312 | IRS IMF Homebuyer Recapture Validator | PASS | Computes mandatory 15-year recapture payments for legacy 2008 credits | Volume 33 |
 | 313 | IRS CADE Prior Refund Offset Query | PASS | Retrieves outstanding offset amounts from legacy cyclic databases | Volume 33 |
 | 314 | IRS CADE Taxpayer IP PIN Length Matcher | PASS | Validates security 6-digit identity protection PIN structures | Volume 33 |
-| 315 | IRS IMF Standard Mileage Rate Business Expense Matcher | PASS | Audits mileage deduction calculations against annual standard rates | Volume 33 |
+| 315 | IRS IMF Single Standard Deduction Amount Matcher | PASS | Asserts standard deduction matches the basic single statutory rate | Volume 33 |
 | 316 | IRS CADE Taxpayer Address State Abbreviation Validator | PASS | Validates two-letter address state code abbreviations | Volume 33 |
 | 317 | IRS IMF Child and Dependent Care Credit Ceiling Matcher | PASS | Verifies credit calculations satisfy statutory ceiling limits | Volume 33 |
 | 318 | IRS CADE Taxpayer Address Street Number Parity Checker | PASS | Decodes odd/even street address properties for routing | Volume 33 |
@@ -273,7 +273,7 @@
 | 339 | IRS IMF Charitable Cash Contribution Cap Validator | PASS | Ensures cash charitable contributions do not exceed AGI limits | Volume 33 |
 | 340 | IRS IMF Premium Tax Credit (PTC) Simple Eligibility Checker | PASS | Checks AGI against federal poverty line limits for PTC eligibility | Volume 33 |
 | 341 | IRS IMF Federal Foreign Tax Credit Limit Matcher | PASS | Confirms claimed foreign tax credits do not exceed tax liability | Volume 33 |
-| 342 | IRS IMF Standard Mileage Rate Medical Travel Matcher | PASS | Verifies medical travel mileage claims against statutory rates | Volume 33 |
+| 342 | IRS IMF Federal Simple Interest Income Taxability Range Checker | PASS | Checks investment income limits to preserve EITC eligibility | Volume 33 |
 | 343 | IRS IMF Federal Earned Income Bracket Matcher | PASS | Checks earned income boundaries to filter EITC eligibility | Volume 33 |
 
 **System Invariant Validation Verdict:** SUCCESS (All 343 Scenarios validated successfully)

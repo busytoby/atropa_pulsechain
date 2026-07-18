@@ -861,12 +861,9 @@ int tsfi_mf_cade_verify_ip_pin(const char *ip_pin, int *is_valid) {
     return 0;
 }
 
-int tsfi_mf_imf_verify_mileage_deduction(double miles, double claimed_deduction, double rate_per_mile, int *is_valid) {
+int tsfi_mf_imf_verify_single_standard_deduction(double claimed_deduction, int *is_valid) {
     if (!is_valid) return -1;
-    double calculated = miles * rate_per_mile;
-    double diff = claimed_deduction - calculated;
-    if (diff < 0) diff = -diff;
-    *is_valid = (diff <= 1.00) ? 1 : 0;
+    *is_valid = (claimed_deduction == 13850.00) ? 1 : 0;
     return 0;
 }
 
@@ -1111,12 +1108,9 @@ int tsfi_mf_imf_verify_foreign_tax_credit(double foreign_taxes_paid, double tota
     return 0;
 }
 
-int tsfi_mf_imf_verify_medical_mileage(double miles, double claimed_deduction, double rate_per_mile, int *is_valid) {
-    if (!is_valid) return -1;
-    double expected = miles * rate_per_mile;
-    double diff = claimed_deduction - expected;
-    if (diff < 0) diff = -diff;
-    *is_valid = (diff <= 1.00) ? 1 : 0;
+int tsfi_mf_imf_check_interest_limit_for_eitc(double interest_income, int *is_eligible) {
+    if (!is_eligible) return -1;
+    *is_eligible = (interest_income <= 11000.00 && interest_income >= 0.0) ? 1 : 0;
     return 0;
 }
 

@@ -66,7 +66,7 @@ int tsfi_mf_imf_verify_eitc_qualifying_child(const char *relationship, int resid
 int tsfi_mf_imf_verify_homebuyer_recapture(int acquisition_year, double credit_received, double *recapture_amount);
 int tsfi_mf_cade_query_prior_refund_offset(const char *ssn, const char *offset_registry, double *offset_amount);
 int tsfi_mf_cade_verify_ip_pin(const char *ip_pin, int *is_valid);
-int tsfi_mf_imf_verify_mileage_deduction(double miles, double claimed_deduction, double rate_per_mile, int *is_valid);
+int tsfi_mf_imf_verify_single_standard_deduction(double claimed_deduction, int *is_valid);
 int tsfi_mf_cade_verify_state_code(const char *state_code, int *is_valid);
 int tsfi_mf_imf_verify_dependent_care_ceiling(int dependent_count, double claimed_expenses, int *is_valid);
 int tsfi_mf_cade_verify_street_parity(const char *address, int *parity_out);
@@ -93,7 +93,7 @@ int tsfi_mf_imf_select_deduction(double standard_ded, double itemized_ded, doubl
 int tsfi_mf_imf_verify_charity_cap(double agi, double claimed_charity, int *is_valid);
 int tsfi_mf_imf_verify_ptc_eligibility(double agi, double fpl_limit, int *is_eligible);
 int tsfi_mf_imf_verify_foreign_tax_credit(double foreign_taxes_paid, double total_tax_liability, double claimed_credit, int *is_valid);
-int tsfi_mf_imf_verify_medical_mileage(double miles, double claimed_deduction, double rate_per_mile, int *is_valid);
+int tsfi_mf_imf_check_interest_limit_for_eitc(double interest_income, int *is_eligible);
 int tsfi_mf_imf_verify_eitc_income_limit(double earned_income, int child_count, int filing_status, int *is_eligible);
 
 #endif // TSFI_CADE_IMF_H

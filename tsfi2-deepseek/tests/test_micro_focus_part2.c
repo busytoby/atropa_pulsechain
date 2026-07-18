@@ -516,13 +516,13 @@ int main(void) {
     assert(pin_valid == 1);
     printf("  [PASS] IRS CADE IP PIN Length Matcher verified.\n");
 
-    // 171. Verify IRS IMF Standard Mileage Rate Business Expense Matcher
-    printf("[TEST] Validating IRS IMF Mileage Deduction Matcher...\n");
-    int mileage_valid = -1;
-    int mileage_res = tsfi_mf_imf_verify_mileage_deduction(100.0, 67.00, 0.67, &mileage_valid);
-    assert(mileage_res == 0);
-    assert(mileage_valid == 1);
-    printf("  [PASS] IRS IMF Mileage Deduction Matcher verified.\n");
+    // 171. Verify IRS IMF Single Standard Deduction Amount Matcher
+    printf("[TEST] Validating IRS IMF Single Standard Deduction Matcher...\n");
+    int single_ded_valid = -1;
+    int single_ded_res = tsfi_mf_imf_verify_single_standard_deduction(13850.00, &single_ded_valid);
+    assert(single_ded_res == 0);
+    assert(single_ded_valid == 1);
+    printf("  [PASS] IRS IMF Single Standard Deduction Matcher verified.\n");
 
     // 172. Verify IRS CADE Taxpayer Address State Abbreviation Validator
     printf("[TEST] Validating IRS CADE State Code Validator...\n");
@@ -732,13 +732,13 @@ int main(void) {
     assert(ftc_valid == 1);
     printf("  [PASS] IRS IMF Foreign Tax Credit Limit Matcher verified.\n");
 
-    // 198. Verify IRS IMF Standard Mileage Rate Medical Travel Matcher
-    printf("[TEST] Validating IRS IMF Medical Mileage Matcher...\n");
-    int medical_mileage_valid = -1;
-    int med_mil_res = tsfi_mf_imf_verify_medical_mileage(100.0, 21.00, 0.21, &medical_mileage_valid);
-    assert(med_mil_res == 0);
-    assert(medical_mileage_valid == 1);
-    printf("  [PASS] IRS IMF Medical Mileage Matcher verified.\n");
+    // 198. Verify IRS IMF Federal Simple Interest Income Taxability Range Checker
+    printf("[TEST] Validating IRS IMF EITC Interest Limit Matcher...\n");
+    int eitc_interest_eligible = -1;
+    int eitc_interest_res = tsfi_mf_imf_check_interest_limit_for_eitc(5000.00, &eitc_interest_eligible);
+    assert(eitc_interest_res == 0);
+    assert(eitc_interest_eligible == 1);
+    printf("  [PASS] IRS IMF EITC Interest Limit Matcher verified.\n");
 
     // 199. Verify IRS IMF Federal Earned Income Bracket Matcher
     printf("[TEST] Validating IRS IMF EITC Income Limit Matcher...\n");
