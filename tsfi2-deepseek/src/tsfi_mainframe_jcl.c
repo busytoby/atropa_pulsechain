@@ -596,6 +596,8 @@ int tsfi_cw_jcl_substitute_symbols_multi_limit(const char *card, const char **sy
                 strncpy(temp, next_resolved, sizeof(temp) - 1);
                 temp[sizeof(temp) - 1] = '\0';
                 replaced = 1;
+                extern uint32_t global_jcl_substitutions_performed;
+                global_jcl_substitutions_performed++;
             }
         }
         if (replaced) depth++;
@@ -649,5 +651,13 @@ int tsfi_cw_jcl_get_substitution_depth_limit_boundary_ex(int *limit_out, int *bo
     *limit_out = global_jcl_substitution_depth_limit;
     *boundary_out = global_jcl_substitution_depth_boundary;
     *fallback_out = 5;
+    return 0;
+}
+
+uint32_t global_jcl_substitutions_performed = 0;
+
+int tsfi_cw_jcl_get_substitution_stats(uint32_t *substitutions_out) {
+    if (!substitutions_out) return -1;
+    *substitutions_out = global_jcl_substitutions_performed;
     return 0;
 }

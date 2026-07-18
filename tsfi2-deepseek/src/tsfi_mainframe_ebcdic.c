@@ -658,3 +658,13 @@ int tsfi_cw_ebcdic_format_and_reset_parity_metrics_ex(const tsfi_cw_ebcdic_parit
     return 0;
 }
 
+int tsfi_cw_ebcdic_format_and_reset_parity_metrics_ex2(tsfi_cw_ebcdic_parity_metrics *metrics, char *buf_out, int max_len) {
+    if (!metrics || !buf_out || max_len <= 0) return -1;
+    metrics->total_parity_checks = global_ebcdic_parity_checks_count;
+    metrics->current_so = global_ebcdic_so_marker;
+    metrics->current_si = global_ebcdic_si_marker;
+    snprintf(buf_out, max_len, "Total Parity Checks: %u, SO: 0x%02X, SI: 0x%02X", metrics->total_parity_checks, metrics->current_so, metrics->current_si);
+    global_ebcdic_parity_checks_count = 0;
+    return 0;
+}
+
