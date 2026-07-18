@@ -604,3 +604,15 @@ int tsfi_cw_jcl_substitute_symbols_multi_limit(const char *card, const char **sy
     resolved_out[max_len - 1] = '\0';
     return 0;
 }
+
+static int global_jcl_substitution_depth_limit = 5;
+
+void tsfi_cw_jcl_set_substitution_depth_limit(int limit) {
+    global_jcl_substitution_depth_limit = limit;
+}
+
+int tsfi_cw_jcl_get_substitution_depth_limit(int *limit_out) {
+    if (!limit_out) return -1;
+    *limit_out = global_jcl_substitution_depth_limit;
+    return 0;
+}

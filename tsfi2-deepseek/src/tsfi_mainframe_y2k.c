@@ -391,3 +391,10 @@ int tsfi_cw_y2k_format_chronological_violations(char *buf_out, int max_len) {
     snprintf(buf_out, max_len, "Chronological violations: %u", global_y2k_chronological_violations);
     return 0;
 }
+
+int tsfi_cw_y2k_format_and_reset_violations(char *buf_out, int max_len) {
+    if (!buf_out || max_len <= 0) return -1;
+    snprintf(buf_out, max_len, "Chronological violations: %u", global_y2k_chronological_violations);
+    global_y2k_chronological_violations = 0;
+    return 0;
+}

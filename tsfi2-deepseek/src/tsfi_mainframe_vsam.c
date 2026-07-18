@@ -660,3 +660,8 @@ int tsfi_cw_vsam_get_checksum_audit_stats(uint32_t *audits_out, uint32_t *mismat
     *mismatches_out = global_vsam_checksum_mismatches;
     return 0;
 }
+
+void tsfi_cw_vsam_reset_checksum_audit_stats(void) {
+    global_vsam_checksum_audits_performed = 0;
+    global_vsam_checksum_mismatches = 0;
+}
