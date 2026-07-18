@@ -86,5 +86,7 @@ int tsfi_mf_imf_is_form_1040nrez(int doc_code, int *result);
 int tsfi_mf_cade_is_active_or_under_audit_or_suspended_or_pending_ver6(int status_code, int *is_valid);
 int tsfi_mf_imf_is_form_1040prez(int doc_code, int *result);
 int tsfi_mf_cade_is_active_or_under_audit_or_suspended_or_pending_ver7(int status_code, int *is_valid);
+int tsfi_mf_imf_is_form_1040ssez(int doc_code, int *result);
+int tsfi_mf_cade_is_active_or_under_audit_or_suspended_or_pending_ver8(int status_code, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H
