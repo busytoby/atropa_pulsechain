@@ -1186,6 +1186,26 @@ static void test_new_mainframe_features(void) {
     // Y2K print and reset list check
     assert(tsfi_cw_y2k_print_and_reset_violations_list(y2k_format_buf, sizeof(y2k_format_buf)) == 0);
     assert(strcmp(y2k_format_buf, "[Y2K Stats] Total Chronological Violations Tracked: 0") == 0);
+
+    // VSAM record checksum query-and-reset
+    assert(tsfi_cw_vsam_query_and_reset_checksum_audit_stats(&aud_p, &aud_m) == 0);
+    assert(aud_p == 0);
+
+    // COBOL padding config reset
+    assert(tsfi_cw_cobol_reset_padding_alignment(&pad_cfg) == 0);
+    assert(pad_cfg.pad_char == '\0');
+
+    // EBCDIC metrics ex query
+    tsfi_cw_ebcdic_parity_metrics ebcdic_met;
+    assert(tsfi_cw_ebcdic_get_parity_metrics_ex(&ebcdic_met) == 0);
+    assert(ebcdic_met.total_parity_checks == 0);
+
+    // JCL set substitution depth limit boundary
+    assert(tsfi_cw_jcl_set_substitution_depth_limit_boundary(10, 20) == 0);
+
+    // Y2K violations print ex
+    assert(tsfi_cw_y2k_print_diagnostic_violations_list_ex(y2k_format_buf, sizeof(y2k_format_buf), 50) == 0);
+    assert(strcmp(y2k_format_buf, "[Y2K Pivot 50] Chronological Violations: 0") == 0);
 }
 
 int main(void) {

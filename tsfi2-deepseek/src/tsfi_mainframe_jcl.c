@@ -627,3 +627,9 @@ int tsfi_cw_jcl_query_and_reset_substitution_limit(int *limit_out) {
     global_jcl_substitution_depth_limit = 5;
     return 0;
 }
+
+int tsfi_cw_jcl_set_substitution_depth_limit_boundary(int limit, int max_allowed_boundary) {
+    if (limit <= 0 || limit > max_allowed_boundary) return -1;
+    global_jcl_substitution_depth_limit = limit;
+    return 0;
+}

@@ -635,3 +635,11 @@ int tsfi_cw_ebcdic_format_and_reset_parity_diagnostics(char *buf_out, int max_le
     return 0;
 }
 
+int tsfi_cw_ebcdic_get_parity_metrics_ex(tsfi_cw_ebcdic_parity_metrics *metrics_out) {
+    if (!metrics_out) return -1;
+    metrics_out->total_parity_checks = global_ebcdic_parity_checks_count;
+    metrics_out->current_so = global_ebcdic_so_marker;
+    metrics_out->current_si = global_ebcdic_si_marker;
+    return 0;
+}
+

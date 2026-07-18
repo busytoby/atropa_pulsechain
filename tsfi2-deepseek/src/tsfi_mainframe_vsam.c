@@ -679,3 +679,12 @@ int tsfi_cw_vsam_format_and_reset_checksum_stats(char *buf_out, int max_len) {
     global_vsam_checksum_mismatches = 0;
     return 0;
 }
+
+int tsfi_cw_vsam_query_and_reset_checksum_audit_stats(uint32_t *audits_out, uint32_t *mismatches_out) {
+    if (!audits_out || !mismatches_out) return -1;
+    *audits_out = global_vsam_checksum_audits_performed;
+    *mismatches_out = global_vsam_checksum_mismatches;
+    global_vsam_checksum_audits_performed = 0;
+    global_vsam_checksum_mismatches = 0;
+    return 0;
+}

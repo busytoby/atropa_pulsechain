@@ -822,3 +822,11 @@ int tsfi_cw_cobol_query_padding_alignment(const tsfi_cw_cobol_padding_config *cf
     *max_size_out = cfg->max_size;
     return 0;
 }
+
+int tsfi_cw_cobol_reset_padding_alignment(tsfi_cw_cobol_padding_config *cfg) {
+    if (!cfg) return -1;
+    cfg->pad_char = '\0';
+    cfg->alignment = 1;
+    cfg->max_size = 0;
+    return 0;
+}
