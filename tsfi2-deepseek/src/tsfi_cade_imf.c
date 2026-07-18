@@ -1949,4 +1949,16 @@ int tsfi_mf_nato_verify_channel_busy_threshold(int threshold_dbm, int *is_valid)
     return 0;
 }
 
+int tsfi_mf_nato_verify_channel_free_threshold(int threshold_dbm, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (threshold_dbm >= -120 && threshold_dbm <= -80) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_broadcast_repeats(int repeats, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (repeats >= 1 && repeats <= 5) ? 1 : 0;
+    return 0;
+}
+
 

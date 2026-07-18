@@ -417,5 +417,21 @@ int run_nato_stanag_tests(void) {
     assert(busy_threshold_valid == 1);
     printf("  [PASS] NATO Channel Busy Threshold Matcher verified.\n");
 
+    // 301. Verify NATO Link-Layer Multi-Scan Channel Free RSSI Threshold Matcher
+    printf("[TEST] Validating NATO Channel Free Threshold Matcher...\n");
+    int free_threshold_valid = -1;
+    int free_threshold_res = tsfi_mf_nato_verify_channel_free_threshold(-95, &free_threshold_valid);
+    assert(free_threshold_res == 0);
+    assert(free_threshold_valid == 1);
+    printf("  [PASS] NATO Channel Free Threshold Matcher verified.\n");
+
+    // 302. Verify NATO Link-Layer Broadcast Minimum Repeat Count Validator
+    printf("[TEST] Validating NATO Broadcast Repeats Validator...\n");
+    int repeats_valid = -1;
+    int repeats_res = tsfi_mf_nato_verify_broadcast_repeats(3, &repeats_valid);
+    assert(repeats_res == 0);
+    assert(repeats_valid == 1);
+    printf("  [PASS] NATO Broadcast Repeats Validator verified.\n");
+
     return 0;
 }
