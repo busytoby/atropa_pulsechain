@@ -400,4 +400,7 @@ int tsfi_mf_nato_generate_unbind_confirm(int reason, uint8_t *out_pkt, size_t *o
 int tsfi_mf_nato_generate_warning(int warning_code, uint8_t *out_pkt, size_t *out_size);
 int tsfi_mf_nato_generate_connect_reject(int reject_reason, uint8_t *out_pkt, size_t *out_size);
 
+int tsfi_mf_nato_encode_d_pdu_type1(int dest_sap, int src_sap, const uint8_t *payload, size_t pay_size, uint8_t *out_frame, size_t *out_size);
+int tsfi_mf_nato_generate_hard_reset(int reset_code, uint8_t *out_pkt, size_t *out_size);
+
 #endif // TSFI_CADE_IMF_H

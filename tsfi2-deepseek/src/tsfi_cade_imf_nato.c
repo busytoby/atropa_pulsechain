@@ -1266,6 +1266,28 @@ int tsfi_mf_nato_generate_connect_reject(int reject_reason, uint8_t *out_pkt, si
     return 0;
 }
 
+int tsfi_mf_nato_encode_d_pdu_type1(int dest_sap, int src_sap, const uint8_t *payload, size_t pay_size, uint8_t *out_frame, size_t *out_size) {
+    if (!out_frame || !out_size) return -1;
+    if (pay_size > 0 && !payload) return -2;
+    
+    out_frame[0] = 0x01; // D_PDU Type 1
+    out_frame[1] = ((dest_sap & 0x0F) << 4) | (src_sap & 0x0F);
+    if (pay_size > 0) {
+        memcpy(out_frame + 2, payload, pay_size);
+    }
+    *out_size = 2 + pay_size;
+    return 0;
+}
+
+int tsfi_mf_nato_generate_hard_reset(int reset_code, uint8_t *out_pkt, size_t *out_size) {
+    if (!out_pkt || !out_size) return -1;
+    out_pkt[0] = 0x8C;
+    out_pkt[1] = reset_code & 0xFF;
+    *out_size = 2;
+    return 0;
+}
+
+
 
 
 

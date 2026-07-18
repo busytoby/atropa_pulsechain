@@ -489,7 +489,29 @@ int run_nato_stanag_tests_part5(void) {
     assert(reject_size == 2);
     assert(reject_pkt[0] == 0x83);
     assert(reject_pkt[1] == 2);
-    printf("  [PASS] Connect Reject Primitive verified.\n");
+    // Verify D_PDU Type 1
+    printf("[TEST] Validating NATO D_PDU Type 1 Encoder...\n");
+    uint8_t pdu_payload[] = {0xAA, 0xBB};
+    uint8_t dpdu[16];
+    size_t dpdu_size = 0;
+    int dpdu_res = tsfi_mf_nato_encode_d_pdu_type1(3, 4, pdu_payload, sizeof(pdu_payload), dpdu, &dpdu_size);
+    assert(dpdu_res == 0);
+    assert(dpdu_size == 4);
+    assert(dpdu[0] == 0x01);
+    assert(dpdu[1] == 0x34); // (3 << 4) | 4 = 0x34
+    assert(dpdu[2] == 0xAA);
+    printf("  [PASS] D_PDU Type 1 verified.\n");
+
+    // Verify Hard Reset
+    printf("[TEST] Validating NATO Hard Reset Primitive...\n");
+    uint8_t reset_pkt[8];
+    size_t reset_size = 0;
+    int reset_res = tsfi_mf_nato_generate_hard_reset(1, reset_pkt, &reset_size);
+    assert(reset_res == 0);
+    assert(reset_size == 2);
+    assert(reset_pkt[0] == 0x8C);
+    assert(reset_pkt[1] == 1);
+    printf("  [PASS] Hard Reset Primitive verified.\n");
 
     return 0;
 }
