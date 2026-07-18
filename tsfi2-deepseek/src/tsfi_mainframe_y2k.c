@@ -329,6 +329,7 @@ int tsfi_cw_y2k_validate_julian_day(uint32_t year, uint32_t day_of_year) {
 }
 
 int tsfi_cw_y2k_count_leap_adjustments(uint32_t year1, uint32_t year2) {
+    if (year1 > year2) return -24;
     uint32_t start = year1 < year2 ? year1 : year2;
     uint32_t end = year1 < year2 ? year2 : year1;
     int leap_count = 0;

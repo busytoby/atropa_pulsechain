@@ -444,6 +444,9 @@ int tsfi_cw_vsam_decompress_key(const char *compressed, const char *prev_key, ch
     if (!compressed || !decompressed_out || max_len <= 0) return -1;
     int shared_prefix = compressed[0] - '0';
     if (shared_prefix < 0 || shared_prefix > 9) return -2;
+    if (shared_prefix > 0 && (!prev_key || (int)strlen(prev_key) < shared_prefix)) {
+        return -22;
+    }
     
     decompressed_out[0] = '\0';
     if (shared_prefix > 0 && prev_key) {

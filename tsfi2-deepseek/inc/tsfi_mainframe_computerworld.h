@@ -426,23 +426,26 @@ int tsfi_cw_utf8_to_ebcdic_cp939(const char *utf8_str, uint8_t *ebcdic_out, int 
 int tsfi_cw_ebcdic_to_utf8_zhumadian_cantonese(const uint8_t *ebcdic_str, int len, char *utf8_out, int max_len);
 int tsfi_cw_utf8_to_ebcdic_zhumadian_cantonese(const char *utf8_str, uint8_t *ebcdic_out, int max_len);
 
-// EBCDIC CP935 Extended Single-byte translator
+// EBCDIC CP935 Extended Single-byte translator and control escape sequence mapper
 uint8_t tsfi_cw_ebcdic_cp935_extended_translate(uint8_t ebcdic_char);
+uint8_t tsfi_cw_ebcdic_translate_control_escape(uint8_t ebcdic_char);
 
-// JCL GDG resolver, COND chain evaluation, step parameter parser, symbol substitution, name validator, quotes validator, and card limit check
+// JCL GDG resolver, COND chain evaluation, step parameter parser, symbol substitution, name validator, quotes validator, card limit check, and multi symbol substituter
 int tsfi_cw_jcl_resolve_gdg(const char *dsn_str, int current_gen, char *resolved_out, int max_len);
 int tsfi_cw_jcl_eval_cond_chain(int step_rc, int cond_code_1, const char *op_1, int cond_code_2, const char *op_2);
 int tsfi_cw_jcl_parse_parm(const char *card, char *parm_out, int max_len);
 int tsfi_cw_jcl_substitute_symbol(const char *card, const char *sym_name, const char *sym_val, char *resolved_out, int max_len);
+int tsfi_cw_jcl_substitute_symbols_multi(const char *card, const char **sym_names, const char **sym_vals, int sym_count, char *resolved_out, int max_len);
 int tsfi_cw_jcl_validate_symbol_name(const char *sym_name);
 int tsfi_cw_jcl_check_parm_quotes(const char *card);
 int tsfi_cw_jcl_sysin_limit_check(int card_count);
 
-// COBOL occurs, justified right, picture clause, and record offset validators
+// COBOL occurs, justified right, picture clause, record offset, and overlap validators
 int tsfi_cw_cobol_validate_occurs_range(int current_occurs, int max_occurs);
 int tsfi_cw_cobol_validate_justified_right_dynamic(tsfi_cw_cobol_field *f, int dynamic_occurs, const char *val);
 int tsfi_cw_cobol_validate_picture_numeric_bounds(const char *pic_str, double val);
 int tsfi_cw_cobol_validate_record_offset(int calculated_offset, int max_buffer_limit);
+int tsfi_cw_cobol_validate_offset_overlap(int field_offset, int preceding_field_end);
 
 // Y2K leap year checker, Month days resolver, Julian day validator, leap adjustments counter, and pivot year range validator
 int tsfi_cw_y2k_is_leap_year(uint32_t year);

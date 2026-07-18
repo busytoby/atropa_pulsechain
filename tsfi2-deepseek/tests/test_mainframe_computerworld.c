@@ -960,6 +960,27 @@ static void test_new_mainframe_features(void) {
     // Y2K Pivot Validation
     assert(tsfi_cw_y2k_validate_pivot_range(50) == 0);
     assert(tsfi_cw_y2k_validate_pivot_range(5) == -21);
+
+    // VSAM key prefix decompression integrity validator
+    char decomp_out_fail[32];
+    assert(tsfi_cw_vsam_decompress_key("4KEY", "K1", decomp_out_fail, sizeof(decomp_out_fail)) == -22);
+
+    // COBOL offset overlap
+    assert(tsfi_cw_cobol_validate_offset_overlap(10, 8) == 0);
+    assert(tsfi_cw_cobol_validate_offset_overlap(10, 12) == -23);
+
+    // EBCDIC Escape translation
+    assert(tsfi_cw_ebcdic_translate_control_escape(0x25) == '\n');
+
+    // JCL multi symbol substitutions
+    const char *names[] = {"S1", "S2"};
+    const char *vals[] = {"VAL1", "VAL2"};
+    char multi_out[128];
+    assert(tsfi_cw_jcl_substitute_symbols_multi("//DD DSN=&S1.&S2", names, vals, 2, multi_out, sizeof(multi_out)) == 0);
+    assert(strcmp(multi_out, "//DD DSN=VAL1.VAL2") == 0);
+
+    // Y2K leap span chronological check
+    assert(tsfi_cw_y2k_count_leap_adjustments(2004, 2000) == -24);
 }
 
 int main(void) {

@@ -560,3 +560,10 @@ uint8_t tsfi_cw_ebcdic_cp935_extended_translate(uint8_t ebcdic_char) {
     return tsfi_cw_ebcdic_to_ascii(ebcdic_char);
 }
 
+uint8_t tsfi_cw_ebcdic_translate_control_escape(uint8_t ebcdic_char) {
+    if (ebcdic_char == 0x25) return '\n';
+    if (ebcdic_char == 0x0D) return '\r';
+    if (ebcdic_char == 0x05) return '\t';
+    return 0;
+}
+

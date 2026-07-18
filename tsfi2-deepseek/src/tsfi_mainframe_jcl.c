@@ -508,3 +508,22 @@ int tsfi_cw_jcl_sysin_limit_check(int card_count) {
     if (card_count < 0 || card_count > 500) return -20;
     return 0;
 }
+
+int tsfi_cw_jcl_substitute_symbols_multi(const char *card, const char **sym_names, const char **sym_vals, int sym_count, char *resolved_out, int max_len) {
+    if (!card || !resolved_out || max_len <= 0) return -1;
+    char temp[256];
+    strncpy(temp, card, sizeof(temp) - 1);
+    temp[sizeof(temp) - 1] = '\0';
+    
+    for (int i = 0; i < sym_count; i++) {
+        char next_resolved[256];
+        int rc = tsfi_cw_jcl_substitute_symbol(temp, sym_names[i], sym_vals[i], next_resolved, sizeof(next_resolved));
+        if (rc == 0) {
+            strncpy(temp, next_resolved, sizeof(temp) - 1);
+            temp[sizeof(temp) - 1] = '\0';
+        }
+    }
+    strncpy(resolved_out, temp, max_len - 1);
+    resolved_out[max_len - 1] = '\0';
+    return 0;
+}

@@ -746,3 +746,8 @@ int tsfi_cw_cobol_validate_record_offset(int calculated_offset, int max_buffer_l
     if (calculated_offset < 0 || calculated_offset > max_buffer_limit) return -19;
     return 0;
 }
+
+int tsfi_cw_cobol_validate_offset_overlap(int field_offset, int preceding_field_end) {
+    if (field_offset < preceding_field_end) return -23;
+    return 0;
+}
