@@ -1355,6 +1355,29 @@ int tsfi_mf_nato_encode_d_pdu_type8(int dest_sap, int src_sap, int is_ack, uint8
     return 0;
 }
 
+int tsfi_mf_nato_encode_d_pdu_type9(int dest_sap, int src_sap, int ack_seq, const uint8_t *ack_mask, uint8_t *out_frame, size_t *out_size) {
+    if (!out_frame || !out_size || !ack_mask) return -1;
+    out_frame[0] = 0x09; // D_PDU Type 9
+    out_frame[1] = ((dest_sap & 0x0F) << 4) | (src_sap & 0x0F);
+    out_frame[2] = ack_seq & 0xFF;
+    memcpy(out_frame + 3, ack_mask, 4);
+    *out_size = 7;
+    return 0;
+}
+
+int tsfi_mf_nato_encode_d_pdu_type3(int dest_sap, int src_sap, const uint8_t *payload, size_t pay_size, uint8_t *out_frame, size_t *out_size) {
+    if (!out_frame || !out_size) return -1;
+    if (pay_size > 0 && !payload) return -2;
+    out_frame[0] = 0x03; // D_PDU Type 3
+    out_frame[1] = ((dest_sap & 0x0F) << 4) | (src_sap & 0x0F);
+    if (pay_size > 0) {
+        memcpy(out_frame + 2, payload, pay_size);
+    }
+    *out_size = 2 + pay_size;
+    return 0;
+}
+
+
 
 
 

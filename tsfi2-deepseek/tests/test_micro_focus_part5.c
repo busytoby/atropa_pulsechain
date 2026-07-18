@@ -579,7 +579,32 @@ int run_nato_stanag_tests_part5(void) {
     assert(dpdu8[0] == 0x08);
     assert(dpdu8[1] == 0x24); // (2 << 4) | 4 = 0x24
     assert(dpdu8[2] == 1);
-    printf("  [PASS] D_PDU Type 8 verified.\n");
+    // Verify D_PDU Type 9
+    printf("[TEST] Validating NATO D_PDU Type 9 Encoder...\n");
+    uint8_t mask[4] = {0x12, 0x34, 0x56, 0x78};
+    uint8_t dpdu9[16];
+    size_t dpdu9_size = 0;
+    int dpdu9_res = tsfi_mf_nato_encode_d_pdu_type9(1, 3, 5, mask, dpdu9, &dpdu9_size);
+    assert(dpdu9_res == 0);
+    assert(dpdu9_size == 7);
+    assert(dpdu9[0] == 0x09);
+    assert(dpdu9[1] == 0x13);
+    assert(dpdu9[2] == 5);
+    assert(dpdu9[3] == 0x12);
+    printf("  [PASS] D_PDU Type 9 verified.\n");
+
+    // Verify D_PDU Type 3
+    printf("[TEST] Validating NATO D_PDU Type 3 Encoder...\n");
+    uint8_t pdu_payload3[] = {0xDE, 0xAD};
+    uint8_t dpdu3[16];
+    size_t dpdu3_size = 0;
+    int dpdu3_res = tsfi_mf_nato_encode_d_pdu_type3(2, 6, pdu_payload3, sizeof(pdu_payload3), dpdu3, &dpdu3_size);
+    assert(dpdu3_res == 0);
+    assert(dpdu3_size == 4);
+    assert(dpdu3[0] == 0x03);
+    assert(dpdu3[1] == 0x26);
+    assert(dpdu3[2] == 0xDE);
+    printf("  [PASS] D_PDU Type 3 verified.\n");
 
     return 0;
 }
