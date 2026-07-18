@@ -1364,6 +1364,42 @@ int main(void) {
     remove(gp_path); // clean up
     printf("  [PASS] Account interest grace periods, suppression checks, and override logs verified.\n");
 
+    // 39. Test Card Minimum Transaction Amount Validator (Minimum Amount Validation)
+    printf("[E2E] Testing Card Minimum Transaction Amount Validator...\n");
+    const char *minauth_path = "hogan_minauth.dat.bin";
+    remove(minauth_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system min_sys;
+    tsfi_hogan_init(&min_sys);
+    assert(tsfi_hogan_register_account(&min_sys, 1001, 10000) == 0); // Alice: 10,000 units
+    
+    // Set Alice's card minimum authorization amount to 50
+    assert(tsfi_hogan_update_min_card_auth(&min_sys, minauth_path, 1001, 50, 999) == 0);
+    assert(tsfi_hogan_update_min_card_auth(&min_sys, "hogan_minauth.json", 1001, 50, 999) == -3); // Rule 13 check
+    
+    // First card authorization for 100 (succeeds because 100 >= 50 threshold)
+    assert(tsfi_hogan_authorize_card(&min_sys, "hogan_tx.dat.bin", 5005, 1001, 9009, 100) == 0);
+    
+    // Second card authorization for 20 (should fail because 20 < 50 threshold; returns -8)
+    assert(tsfi_hogan_authorize_card(&min_sys, "hogan_tx.dat.bin", 5005, 1001, 9009, 20) == -8);
+    
+    // Read sequential log file and verify entries
+    uint8_t read_minbuf[sizeof(hogan_min_card_auth_entry)];
+    size_t min_size = 0;
+    assert(tsfi_hogan_read_seq_record(minauth_path, 0, read_minbuf, &min_size) == 0);
+    assert(min_size == sizeof(hogan_min_card_auth_entry));
+    
+    const hogan_min_card_auth_entry *minentry = (const hogan_min_card_auth_entry *)read_minbuf;
+    assert(minentry->account_id == 1001);
+    assert(minentry->previous_min_amount == 0);
+    assert(minentry->new_min_amount == 50);
+    assert(minentry->authority_id == 999);
+    
+    remove(minauth_path); // clean up
+    remove("hogan_tx.dat.bin"); // clean up
+    printf("  [PASS] Card minimum authorization thresholds, amount checks, and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }
