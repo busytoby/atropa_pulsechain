@@ -68,5 +68,7 @@ int tsfi_mf_cade_verify_address(const char *addr_a, const char *addr_b, int *is_
 int tsfi_mf_imf_get_cycle_week(const char *cycle_code, int *week_out);
 int tsfi_mf_imf_is_form_1040a(int doc_code, int *result);
 int tsfi_mf_cade_is_active_or_suspended_or_audit_or_pending(int status_code, int *is_valid);
+int tsfi_mf_imf_is_form_1040ez(int doc_code, int *result);
+int tsfi_mf_cade_is_under_audit_or_suspended_or_pending_ver2(int status_code, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

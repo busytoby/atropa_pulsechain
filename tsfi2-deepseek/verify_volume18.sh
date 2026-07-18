@@ -238,8 +238,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 283 | IRS IMF Cycle Week Calculator | PASS | Extracts weekly cycle intervals from cycle code timestamps | Volume 33 |
 | 284 | IRS IMF Form 1040A Verifier | PASS | Restricts individual filings to Form 1040A individual tax return ranges | Volume 33 |
 | 285 | IRS CADE Taxpayer Active Or Suspended Or Audit Or Pending Checker | PASS | Asserves if account status matches active, suspended, under audit, or pending audit codes | Volume 33 |
+| 286 | IRS IMF Form 1040EZ Verifier | PASS | Restricts individual filings to Form 1040EZ individual tax return ranges | Volume 33 |
+| 287 | IRS CADE Taxpayer Under Audit Or Suspended Or Pending Checker Ver2 | PASS | Asserves if account status matches under audit, suspended, or pending audit codes | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 285 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 287 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"
