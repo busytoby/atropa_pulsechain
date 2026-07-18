@@ -382,5 +382,7 @@
 | 448 | NATO Link-Layer Broadcast Guard-Time Interval Matcher | PASS | Audits safety guard-time spacing gaps inserted before transmission | Volume 33 |
 | 449 | NATO Link-Layer Broadcast Guard-Time Flag Matcher | PASS | Validates guard-time configuration option settings | Volume 33 |
 | 450 | NATO Link-Layer Broadcast Packet Expiry Checker | PASS | Audits packet lifetime timeout boundaries for broadcast frames | Volume 33 |
+| 451 | NATO Link-Layer Broadcast Channel Busy Detection Timeout Validator | PASS | Validates carrier-sense busy channel detection timeouts | Volume 33 |
+| 452 | NATO Link-Layer Multi-Scan Channel Quality Estimate Matcher | PASS | Audits quality metric percentage indicators for subnetwork link estimation | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 450 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 452 Scenarios validated successfully)

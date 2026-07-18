@@ -1985,4 +1985,16 @@ int tsfi_mf_nato_verify_broadcast_expiry(int expiry_sec, int *is_valid) {
     return 0;
 }
 
+int tsfi_mf_nato_verify_busy_detection_timeout(int timeout_sec, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (timeout_sec >= 5 && timeout_sec <= 30) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_channel_quality(int quality, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (quality >= 0 && quality <= 100) ? 1 : 0;
+    return 0;
+}
+
 

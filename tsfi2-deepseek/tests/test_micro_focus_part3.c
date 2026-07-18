@@ -465,5 +465,21 @@ int run_nato_stanag_tests(void) {
     assert(broadcast_expiry_valid == 1);
     printf("  [PASS] NATO Broadcast Packet Expiry Checker verified.\n");
 
+    // 307. Verify NATO Link-Layer Broadcast Channel Busy Detection Timeout Validator
+    printf("[TEST] Validating NATO Broadcast Channel Busy Detection Timeout Validator...\n");
+    int busy_detection_timeout_valid = -1;
+    int busy_detection_timeout_res = tsfi_mf_nato_verify_busy_detection_timeout(15, &busy_detection_timeout_valid);
+    assert(busy_detection_timeout_res == 0);
+    assert(busy_detection_timeout_valid == 1);
+    printf("  [PASS] NATO Broadcast Channel Busy Detection Timeout Validator verified.\n");
+
+    // 308. Verify NATO Link-Layer Multi-Scan Channel Quality Estimate Matcher
+    printf("[TEST] Validating NATO Channel Quality Estimate Matcher...\n");
+    int channel_quality_valid = -1;
+    int channel_quality_res = tsfi_mf_nato_verify_channel_quality(85, &channel_quality_valid);
+    assert(channel_quality_res == 0);
+    assert(channel_quality_valid == 1);
+    printf("  [PASS] NATO Channel Quality Estimate Matcher verified.\n");
+
     return 0;
 }
