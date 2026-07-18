@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <string.h>
 #include "tsfi_cade_imf.h"
+#include "tsfi_eer_emergency.h"
 
 int run_nato_stanag_tests_part5(void) {
     // 416. Verify NATO Link-Layer Broadcast Collision Backoff Slot Alignment Boundary Source Offset Range Limit Value Margin Range Option Selector Option Margin Range Option Selector Option Margin Limit Range Option Selector Margin Range Option Selector Margin Range Option Selector Margin Range Option Matcher
@@ -945,8 +946,26 @@ int run_nato_stanag_tests_part5(void) {
     int tsfi_cli_process_line(void *ws, char *input);
     int cli_res = tsfi_cli_process_line(NULL, cli_cmd);
     assert(cli_res == 0);
-    printf("  [PASS] CLI DISPATCH Command Integration verified.\n");
+    // Verify EER Emergency Database
+    printf("[TEST] Validating EER Emergency Database...\n");
+    TSFiEerDatabase eer_db;
+    int eer_res = tsfi_eer_db_init(&eer_db);
+    assert(eer_res == 0);
+    
+    eer_res = tsfi_eer_insert_incident(&eer_db, 101, 1, 1690000000, 1); // Nuclear Alert
+    assert(eer_res == 0);
+    
+    eer_res = tsfi_eer_insert_agency(&eer_db, 201, "NORAD_TOKEN", 10, 1); // NORAD
+    assert(eer_res == 0);
+    
+    eer_res = tsfi_eer_link_response(&eer_db, 201, 101);
+    assert(eer_res == 0);
+    
+    int active_alerts = -1;
+    eer_res = tsfi_eer_get_active_alerts(&eer_db, 201, &active_alerts);
+    assert(eer_res == 0);
+    assert(active_alerts == 1);
+    printf("  [PASS] EER Emergency Database verified.\n");
 
     return 0;
 }
-
