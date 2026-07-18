@@ -467,4 +467,7 @@ int tsfi_mf_ssa_decode_dmf_response(const uint8_t *in_pdu, size_t pdu_size, int 
 int tsfi_mf_ssa_resolve_issuance_site(const char *ssn, char *site_name_out, int max_len);
 int tsfi_mf_ssa_verify_checksum(const char *ssn, int *is_valid);
 
+int tsfi_mf_ssa_verify_high_group(int area, int group, int *is_allocated);
+int tsfi_mf_ssa_format_benefit_auth(uint32_t recipient_id, double amount, uint8_t *out_pdu, size_t *out_size);
+
 #endif // TSFI_CADE_IMF_H

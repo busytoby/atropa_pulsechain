@@ -1854,6 +1854,32 @@ int tsfi_mf_ssa_verify_checksum(const char *ssn, int *is_valid) {
     return 0;
 }
 
+int tsfi_mf_ssa_verify_high_group(int area, int group, int *is_allocated) {
+    if (!is_allocated) return -1;
+    int limit = (area < 100) ? 10 : 20;
+    *is_allocated = (group <= limit) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_ssa_format_benefit_auth(uint32_t recipient_id, double amount, uint8_t *out_pdu, size_t *out_size) {
+    if (!out_pdu || !out_size) return -1;
+    
+    uint32_t cents = (uint32_t)(amount * 100.0);
+    out_pdu[0] = 0xF9; // Benefit Auth PDU Marker
+    out_pdu[1] = (recipient_id >> 24) & 0xFF;
+    out_pdu[2] = (recipient_id >> 16) & 0xFF;
+    out_pdu[3] = (recipient_id >> 8) & 0xFF;
+    out_pdu[4] = recipient_id & 0xFF;
+    out_pdu[5] = (cents >> 24) & 0xFF;
+    out_pdu[6] = (cents >> 16) & 0xFF;
+    out_pdu[7] = (cents >> 8) & 0xFF;
+    out_pdu[8] = cents & 0xFF;
+    
+    *out_size = 9;
+    return 0;
+}
+
+
 
 
 

@@ -1035,7 +1035,27 @@ int run_nato_stanag_tests_part5(void) {
     // 1+2+3+4+5+6+7+8+4 = 40 -> 40 % 10 = 0 (valid)
     tsfi_mf_ssa_verify_checksum("123456784", &ssa_valid);
     assert(ssa_valid == 1);
-    printf("  [PASS] SSA Checksum verified.\n");
+    // Verify SSA High-Group allocation
+    printf("[TEST] Validating SSA High-Group Allocation...\n");
+    int alloc = -1;
+    ssa_res = tsfi_mf_ssa_verify_high_group(50, 5, &alloc);
+    assert(ssa_res == 0);
+    assert(alloc == 1);
+    
+    ssa_res = tsfi_mf_ssa_verify_high_group(50, 15, &alloc);
+    assert(ssa_res == 0);
+    assert(alloc == 0);
+    printf("  [PASS] SSA High-Group Allocation verified.\n");
+
+    // Verify SSA Benefit Auth Formatting
+    printf("[TEST] Validating SSA Benefit Auth Formatting...\n");
+    uint8_t ben_pdu[16];
+    size_t ben_size = 0;
+    ssa_res = tsfi_mf_ssa_format_benefit_auth(12345, 250.50, ben_pdu, &ben_size);
+    assert(ssa_res == 0);
+    assert(ben_size == 9);
+    assert(ben_pdu[0] == 0xF9);
+    printf("  [PASS] SSA Benefit Auth Formatting verified.\n");
 
     return 0;
 }
