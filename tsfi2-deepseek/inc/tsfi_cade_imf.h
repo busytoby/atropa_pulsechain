@@ -482,4 +482,7 @@ int tsfi_mf_nato_format_ssa_irs_broadcast(const char *ssn, int audit_action, uin
 int tsfi_mf_ussr_gost_scramble(uint32_t *left_word, uint32_t *right_word, uint32_t key_word);
 int tsfi_mf_ussr_gost_transliterate(const char *in_latin, char *out_cyrillic, int max_len);
 
+int tsfi_mf_ussr_gost_encrypt_32(uint32_t *left, uint32_t *right, const uint32_t *key_8words);
+int tsfi_mf_ussr_red_phone_scramble(const uint8_t *in_signal, size_t size, uint8_t inversion_key, uint8_t *out_signal);
+
 #endif // TSFI_CADE_IMF_H

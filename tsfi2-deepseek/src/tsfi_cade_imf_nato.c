@@ -1997,6 +1997,30 @@ int tsfi_mf_ussr_gost_transliterate(const char *in_latin, char *out_cyrillic, in
     return 0;
 }
 
+int tsfi_mf_ussr_gost_encrypt_32(uint32_t *left, uint32_t *right, const uint32_t *key_8words) {
+    if (!left || !right || !key_8words) return -1;
+    
+    // 32 rounds of GOST 28147-89
+    // Rounds 1-24: Key sequence 0, 1, 2, 3, 4, 5, 6, 7 repeated 3 times
+    for (int r = 0; r < 24; r++) {
+        tsfi_mf_ussr_gost_scramble(left, right, key_8words[r % 8]);
+    }
+    // Rounds 25-32: Key sequence in reverse order (7, 6, 5, 4, 3, 2, 1, 0)
+    for (int r = 0; r < 8; r++) {
+        tsfi_mf_ussr_gost_scramble(left, right, key_8words[7 - r]);
+    }
+    return 0;
+}
+
+int tsfi_mf_ussr_red_phone_scramble(const uint8_t *in_signal, size_t size, uint8_t inversion_key, uint8_t *out_signal) {
+    if (!in_signal || !out_signal) return -1;
+    for (size_t i = 0; i < size; i++) {
+        out_signal[i] = in_signal[i] ^ inversion_key;
+    }
+    return 0;
+}
+
+
 
 
 

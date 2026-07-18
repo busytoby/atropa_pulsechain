@@ -1135,7 +1135,24 @@ int run_nato_stanag_tests_part5(void) {
     gost_res = tsfi_mf_ussr_gost_transliterate("RUMIRS", cyrillic, sizeof(cyrillic));
     assert(gost_res == 0);
     assert(strcmp(cyrillic, "PUMIPC") == 0); // R->P, S->C transliterated
-    printf("  [PASS] Soviet GOST Transliteration verified.\n");
+    // Verify Soviet GOST 32-Round Block Cipher
+    printf("[TEST] Validating Soviet GOST 32-Round Cipher...\n");
+    uint32_t c_left = 0xAAAAAAAA;
+    uint32_t c_right = 0x55555555;
+    uint32_t keys_8[8] = {1, 2, 3, 4, 5, 6, 7, 8};
+    int cipher_res = tsfi_mf_ussr_gost_encrypt_32(&c_left, &c_right, keys_8);
+    assert(cipher_res == 0);
+    assert(c_left != 0xAAAAAAAA);
+    printf("  [PASS] Soviet GOST 32-Round Cipher verified.\n");
+
+    // Verify Soviet Red Telephone Scrambler
+    printf("[TEST] Validating Soviet Red Telephone Scrambler...\n");
+    uint8_t raw_signal[] = "TacticalAudioSignal";
+    uint8_t scr_signal[32] = {0};
+    int phone_res = tsfi_mf_ussr_red_phone_scramble(raw_signal, sizeof(raw_signal), 0x99, scr_signal);
+    assert(phone_res == 0);
+    assert(scr_signal[0] != raw_signal[0]);
+    printf("  [PASS] Soviet Red Telephone Scrambler verified.\n");
 
     return 0;
 }
