@@ -2,6 +2,7 @@
 #define TSFI_CADE_IMF_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 int tsfi_mf_cade_register_taxpayer(const char *ssn, double balance, int status, char *registry_out, int max_len);
 int tsfi_mf_imf_process_transaction(const char *ssn, int transaction_code, double amount, double *balance_in_out, char *log_out, int max_len);
@@ -59,5 +60,9 @@ int tsfi_mf_imf_is_form_1040(int doc_code, int *result);
 int tsfi_mf_cade_is_active_or_suspended_or_pending(int status_code, int *is_valid);
 int tsfi_mf_imf_is_form_941(int doc_code, int *result);
 int tsfi_mf_cade_is_under_audit_or_suspended_or_pending(int status_code, int *is_valid);
+int tsfi_mf_ddl_set_mode(int mode);
+int tsfi_mf_ddl_execute(const char *statement, char *output, size_t out_len);
+int tsfi_mf_dml_set_mode(int mode);
+int tsfi_mf_dml_execute(const char *statement, char *output, size_t out_len);
 
 #endif // TSFI_CADE_IMF_H

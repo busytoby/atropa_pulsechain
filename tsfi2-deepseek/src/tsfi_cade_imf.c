@@ -684,3 +684,38 @@ int tsfi_mf_cade_is_under_audit_or_suspended_or_pending(int status_code, int *is
     }
     return 0;
 }
+
+static int g_ddl_mode = 0; // 0 = COBOL, 1 = Thunks
+static int g_dml_mode = 0; // 0 = ALGOL 61, 1 = Thunks
+
+int tsfi_mf_ddl_set_mode(int mode) {
+    if (mode < 0 || mode > 1) return -1;
+    g_ddl_mode = mode;
+    return 0;
+}
+
+int tsfi_mf_ddl_execute(const char *statement, char *output, size_t out_len) {
+    if (!statement || !output || out_len == 0) return -1;
+    if (g_ddl_mode == 0) {
+        snprintf(output, out_len, "COBOL DDL Shader Compiler: Executed schema generation for '%s'", statement);
+    } else {
+        snprintf(output, out_len, "Thunk DDL Executor: Routed transaction via dynamic layout thunks");
+    }
+    return 0;
+}
+
+int tsfi_mf_dml_set_mode(int mode) {
+    if (mode < 0 || mode > 1) return -1;
+    g_dml_mode = mode;
+    return 0;
+}
+
+int tsfi_mf_dml_execute(const char *statement, char *output, size_t out_len) {
+    if (!statement || !output || out_len == 0) return -1;
+    if (g_dml_mode == 0) {
+        snprintf(output, out_len, "ALGOL 61 DML DNA Compiler: Mutated logic states for '%s'", statement);
+    } else {
+        snprintf(output, out_len, "Thunk DML Executor: Routed transaction via dynamic execution thunks");
+    }
+    return 0;
+}

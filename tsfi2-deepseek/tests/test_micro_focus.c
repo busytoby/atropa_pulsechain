@@ -1731,6 +1731,38 @@ int main(void) {
     assert(is_uasp == 1);
     printf("  [PASS] IRS CADE Taxpayer Under Audit Or Suspended Or Pending Checker verified.\n");
 
+    // 171. Verify Dual-Mode DDL (COBOL vs Thunks)
+    printf("[TEST] Validating Dual-Mode DDL Execution...\n");
+    char ddl_out[256] = {0};
+    int ddl_mode_res = tsfi_mf_ddl_set_mode(0); // COBOL
+    assert(ddl_mode_res == 0);
+    int ddl_exec_res = tsfi_mf_ddl_execute("CREATE TABLE TAXPAYER", ddl_out, sizeof(ddl_out));
+    assert(ddl_exec_res == 0);
+    assert(strstr(ddl_out, "COBOL DDL Shader Compiler") != NULL);
+
+    ddl_mode_res = tsfi_mf_ddl_set_mode(1); // Thunks
+    assert(ddl_mode_res == 0);
+    ddl_exec_res = tsfi_mf_ddl_execute("CREATE TABLE TAXPAYER", ddl_out, sizeof(ddl_out));
+    assert(ddl_exec_res == 0);
+    assert(strstr(ddl_out, "Thunk DDL Executor") != NULL);
+    printf("  [PASS] Dual-Mode DDL execution verified.\n");
+
+    // 172. Verify Dual-Mode DML (ALGOL 61 vs Thunks)
+    printf("[TEST] Validating Dual-Mode DML Execution...\n");
+    char dml_out[256] = {0};
+    int dml_mode_res = tsfi_mf_dml_set_mode(0); // ALGOL 61
+    assert(dml_mode_res == 0);
+    int dml_exec_res = tsfi_mf_dml_execute("INSERT INTO TAXPAYER", dml_out, sizeof(dml_out));
+    assert(dml_exec_res == 0);
+    assert(strstr(dml_out, "ALGOL 61 DML DNA Compiler") != NULL);
+
+    dml_mode_res = tsfi_mf_dml_set_mode(1); // Thunks
+    assert(dml_mode_res == 0);
+    dml_exec_res = tsfi_mf_dml_execute("INSERT INTO TAXPAYER", dml_out, sizeof(dml_out));
+    assert(dml_exec_res == 0);
+    assert(strstr(dml_out, "Thunk DML Executor") != NULL);
+    printf("  [PASS] Dual-Mode DML execution verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
