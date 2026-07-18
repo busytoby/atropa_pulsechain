@@ -1215,16 +1215,16 @@ int run_nato_stanag_tests_part5(void) {
     assert(tsfi_gost_emergency_defcon_level == 1);
     printf("  [PASS] GOST Emergency DEFCON override verified.\n");
 
-    // Verify TIN pattern blocking
-    printf("[TEST] Validating TIN range blocking inside GOST...\n");
+    // Verify TIN pattern alarm
+    printf("[TEST] Validating TIN range alarm inside GOST...\n");
     tsfi_gost_is_broadcast_channel = 1; // Mark as broadcast-enabled
     tsfi_gost_emergency_defcon_level = 5; // Reset
     uint32_t itin_val = 950000000; // ITIN range
     uint32_t normal_val = 0;
     int block_res = tsfi_mf_ussr_gost_scramble(&itin_val, &normal_val, 0);
-    assert(block_res == -3); // Blocked
+    assert(block_res == 0); // Permitted
     assert(tsfi_gost_emergency_defcon_level == 1); // Alarm triggered
-    printf("  [PASS] TIN range blocking inside GOST verified.\n");
+    printf("  [PASS] TIN range alarm inside GOST verified.\n");
     
     // Restore default
     tsfi_gost_is_broadcast_channel = 0;

@@ -2019,7 +2019,6 @@ int tsfi_mf_ussr_gost_scramble(uint32_t *left_word, uint32_t *right_word, uint32
         uint16_t status = 0;
         tsfi_mf_tri_agency_coordinate("999999999", 1, 0, &defcon, &status);
         tsfi_gost_emergency_defcon_level = 1;
-        return -3; // Permutation blocked due to TIN/SSN abuse policy
     }
     
     uint32_t temp = (*left_word + key_word);
