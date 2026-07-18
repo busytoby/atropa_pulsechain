@@ -1958,6 +1958,68 @@ int main(void) {
     remove(mex_path); // clean up
     printf("  [PASS] Card merchant block whitelist overrides and override logs verified.\n");
 
+    // 53. Test Account Posting Restriction Manager (Posting Restriction)
+    printf("[E2E] Testing Account Posting Restriction Manager...\n");
+    const char *pr_path = "hogan_post_restrictions.dat.bin";
+    remove(pr_path); // ensure clean start
+    
+    hogan_umbrella_system pr_sys;
+    tsfi_hogan_init(&pr_sys);
+    assert(tsfi_hogan_register_account(&pr_sys, 1001, 1000) == 0); // Alice: 1000 balance
+    assert(tsfi_hogan_register_account(&pr_sys, 2002, 1000) == 0); // Bob: 1000 balance
+    
+    // Set posting restriction on Alice to restrict debits (1)
+    assert(tsfi_hogan_update_posting_restriction(&pr_sys, pr_path, 1001, 1, 999) == 0);
+    assert(tsfi_hogan_update_posting_restriction(&pr_sys, "hogan_pr.json", 1001, 1, 999) == -3); // Rule 13 check
+    
+    // Card auth on Alice should fail with -10 (Debit restricted)
+    assert(tsfi_hogan_authorize_card(&pr_sys, "hogan_holds.dat.bin", 5005, 1001, 8888, 100) == -10);
+    
+    // Queue transfer from Alice to Bob (outbound from restricted account)
+    assert(tsfi_hogan_dispatch_tx(&pr_sys, 1001, 2002, 100, VM_EVM) == 0);
+    
+    // Run reconciliation to process transactions
+    assert(tsfi_hogan_overnight_reconciliation_ex(&pr_sys, "hogan_lfs.dat.bin", NULL) == 0);
+    remove("hogan_lfs.dat.bin");
+    
+    // Verify transaction was marked as processed (but failed/blocked inside dispatch)
+    assert(pr_sys.tx_log[0].processed == 1);
+    assert(pr_sys.accounts[0].balance == 1000); // balance unchanged
+    assert(pr_sys.accounts[1].balance == 1000);
+    
+    // Set posting restriction on Bob to restrict credits (2)
+    assert(tsfi_hogan_update_posting_restriction(&pr_sys, pr_path, 2002, 2, 999) == 0);
+    
+    // Clear Alice restriction so she can debit
+    assert(tsfi_hogan_update_posting_restriction(&pr_sys, pr_path, 1001, 0, 999) == 0);
+    
+    // Queue transfer from Alice to Bob (inbound to restricted account Bob)
+    assert(tsfi_hogan_dispatch_tx(&pr_sys, 1001, 2002, 100, VM_EVM) == 0);
+    
+    // Run reconciliation to process transactions
+    assert(tsfi_hogan_overnight_reconciliation_ex(&pr_sys, "hogan_lfs.dat.bin", NULL) == 0);
+    remove("hogan_lfs.dat.bin");
+    
+    assert(pr_sys.tx_log[0].processed == 1); // should block Bob receiving credits
+    assert(pr_sys.accounts[0].balance == 1000);
+    assert(pr_sys.accounts[1].balance == 1000);
+    
+    // Read override log files and verify entries
+    uint8_t read_prbuf[sizeof(hogan_posting_restriction_entry)];
+    size_t pr_size = 0;
+    // The last override update was Bob's restriction code being set to 2, followed by Alice being set to 0.
+    // Let's read the third entry (logical index 2) which is Alice being cleared to 0.
+    assert(tsfi_hogan_read_seq_record(pr_path, 2, read_prbuf, &pr_size) == 0);
+    assert(pr_size == sizeof(hogan_posting_restriction_entry));
+    const hogan_posting_restriction_entry *pr_entry = (const hogan_posting_restriction_entry *)read_prbuf;
+    assert(pr_entry->account_id == 1001);
+    assert(pr_entry->previous_restriction == 1);
+    assert(pr_entry->new_restriction == 0);
+    assert(pr_entry->authority_id == 999);
+    
+    remove(pr_path); // clean up
+    printf("  [PASS] Account posting restriction blocks and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }

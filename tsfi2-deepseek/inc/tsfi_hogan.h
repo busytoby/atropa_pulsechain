@@ -81,6 +81,7 @@ typedef struct {
     uint32_t fee_exempt_expiry_epoch;
     uint32_t merchant_exceptions[16];
     uint8_t merchant_exception_count;
+    uint8_t posting_restriction;
 } hogan_account;
 
 #define HOGAN_MAX_BLOCKED_CARDS 32
@@ -582,5 +583,15 @@ typedef struct {
 } hogan_merchant_exception_entry;
 
 int tsfi_hogan_add_merchant_exception(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t merchant_id, uint32_t authority_id);
+
+// Account Posting Restriction Manager
+typedef struct {
+    uint32_t account_id;
+    uint8_t previous_restriction;
+    uint8_t new_restriction;
+    uint32_t authority_id;
+} hogan_posting_restriction_entry;
+
+int tsfi_hogan_update_posting_restriction(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint8_t restriction_code, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H

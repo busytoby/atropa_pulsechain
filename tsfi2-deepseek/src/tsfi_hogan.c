@@ -130,6 +130,7 @@ int tsfi_hogan_lfs_save(const hogan_umbrella_system *sys, const char *filepath) 
             if (sys->accounts[i].merchant_exception_count > 0) {
                 fwrite(sys->accounts[i].merchant_exceptions, sizeof(uint32_t), sys->accounts[i].merchant_exception_count, f);
             }
+            fwrite(&sys->accounts[i].posting_restriction, sizeof(uint8_t), 1, f);
         }
     }
     
@@ -481,6 +482,12 @@ int tsfi_hogan_lfs_load(hogan_umbrella_system *sys, const char *filepath) {
                 return -2;
             }
         }
+        uint8_t post_r = 0;
+        if (fread(&post_r, sizeof(uint8_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
+        sys->accounts[i].posting_restriction = post_r;
         sys->accounts[i].active = 1;
     }
     
@@ -910,7 +917,11 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
                 if (sender->is_dormant || recipient->is_dormant) {
                     tx->processed = 1; // transaction blocked due to account dormancy
                 } else if (sender->is_frozen || recipient->is_frozen) {
-                tx->processed = 1; // transaction blocked by compliance hold / freeze
+                    tx->processed = 1; // transaction blocked by compliance hold / freeze
+                } else if (sender->posting_restriction & 1) {
+                    tx->processed = 1; // transaction blocked due to debit posting restriction
+                } else if (recipient->posting_restriction & 2) {
+                    tx->processed = 1; // transaction blocked due to credit posting restriction
             } else if (sender->status_code == STATUS_STOP_ALL || sender->status_code == STATUS_STOP_DEBIT || recipient->status_code == STATUS_STOP_ALL) {
                 tx->processed = 1; // transaction blocked by administrative hold
             } else if (sender->daily_tx_limit > 0 && sender->daily_tx_count >= sender->daily_tx_limit) {
@@ -1081,6 +1092,7 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
             if (sys->accounts[i].merchant_exception_count > 0) {
                 EVP_DigestUpdate(mdctx, sys->accounts[i].merchant_exceptions, sizeof(uint32_t) * sys->accounts[i].merchant_exception_count);
             }
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].posting_restriction, sizeof(uint8_t));
         }
     }
     EVP_DigestUpdate(mdctx, &sys->blocked_card_count, sizeof(size_t));
@@ -1147,6 +1159,10 @@ int tsfi_hogan_authorize_card(hogan_umbrella_system *sys, const char *filepath, 
                 }
             }
         }
+        if (acc->posting_restriction & 1) {
+            sys->live_processing_enabled = original_live_state;
+            return -10; // Debits restricted
+        }
         if (acc->card_tx_limit > 0 && acc->card_tx_count_today >= acc->card_tx_limit) {
             sys->live_processing_enabled = original_live_state;
             return -6; // Card transaction limit hit
@@ -1181,6 +1197,9 @@ int tsfi_hogan_authorize_card(hogan_umbrella_system *sys, const char *filepath, 
                     break;
                 }
             }
+        }
+        if (acc->posting_restriction & 1) {
+            decline_reason = -10; // Debits restricted
         }
         if (decline_reason == 0 && acc->card_tx_limit > 0 && acc->card_tx_count_today >= acc->card_tx_limit) {
             decline_reason = -6; // Card transaction limit hit
@@ -2733,6 +2752,41 @@ int tsfi_hogan_add_merchant_exception(hogan_umbrella_system *sys, const char *fi
     
     hogan_merchant_exception_entry entry = { account_id, merchant_id, 1, authority_id };
     int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_merchant_exception_entry));
+    
+    sys->live_processing_enabled = original_live_state;
+    return write_res;
+}
+
+int tsfi_hogan_update_posting_restriction(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint8_t restriction_code, uint32_t authority_id) {
+    // Enforce Rule 13: file extension must end with .dat.bin
+    const char *ext = strrchr(filepath, '.');
+    if (!ext || strcmp(ext, ".bin") != 0) {
+        if (!ext || strcmp(ext - 4, ".dat.bin") != 0) {
+            return -3; // Invalid extension
+        }
+    }
+
+    // Disable live queue during administrative action
+    uint8_t original_live_state = sys->live_processing_enabled;
+    sys->live_processing_enabled = 0;
+    
+    hogan_account *acc = NULL;
+    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
+        if (sys->accounts[i].active && sys->accounts[i].account_id == account_id) {
+            acc = &sys->accounts[i];
+            break;
+        }
+    }
+    
+    if (!acc) {
+        sys->live_processing_enabled = original_live_state;
+        return -1; // account not found
+    }
+    
+    hogan_posting_restriction_entry entry = { account_id, acc->posting_restriction, restriction_code, authority_id };
+    acc->posting_restriction = restriction_code;
+    
+    int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_posting_restriction_entry));
     
     sys->live_processing_enabled = original_live_state;
     return write_res;
