@@ -1189,7 +1189,14 @@ int run_nato_stanag_tests_part5(void) {
     int spec_res = tsfi_mf_ussr_spec_svyaz_cipher(spec_raw, sizeof(spec_raw), 5, spec_enc);
     assert(spec_res == 0);
     assert(spec_enc[0] != spec_raw[0]);
-    printf("  [PASS] Soviet Spec-Svyaz Rotor Cipher verified.\n");
+    // Verify GOST emergency DEFCON override (intrusion detection)
+    printf("[TEST] Validating GOST Emergency DEFCON override...\n");
+    tsfi_gost_emergency_defcon_level = 5; // Reset
+    uint32_t bad_left = 0x31323334; // "1234" (ASCII digits)
+    uint32_t bad_right = 0;
+    tsfi_mf_ussr_gost_scramble(&bad_left, &bad_right, 0);
+    assert(tsfi_gost_emergency_defcon_level == 1);
+    printf("  [PASS] GOST Emergency DEFCON override verified.\n");
 
     return 0;
 }

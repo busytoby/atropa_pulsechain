@@ -1986,9 +1986,27 @@ static const uint8_t gost_sbox_test[8][16] = {
 };
 
 static int active_gost_sbox_profile = 0;
+int tsfi_gost_emergency_defcon_level = 5;
 
 int tsfi_mf_ussr_gost_scramble(uint32_t *left_word, uint32_t *right_word, uint32_t key_word) {
     if (!left_word || !right_word) return -1;
+    
+    // Security check: intercept direct SSN/TIN engagement (ASCII digits footprint)
+    uint32_t val = *left_word;
+    int digit_count = 0;
+    for (int i = 0; i < 4; i++) {
+        uint8_t byte = (val >> (i * 8)) & 0xFF;
+        if (byte >= '0' && byte <= '9') {
+            digit_count++;
+        }
+    }
+    if (digit_count == 4) {
+        // Trigger emergency DEFCON 1 alarm!
+        int defcon = 5;
+        uint16_t status = 0;
+        tsfi_mf_tri_agency_coordinate("999999999", 1, 0, &defcon, &status);
+        tsfi_gost_emergency_defcon_level = 1;
+    }
     
     uint32_t temp = (*left_word + key_word);
     

@@ -492,4 +492,6 @@ int tsfi_mf_usss_format_auth_pdu(uint32_t agent_id, uint32_t auth_token, uint8_t
 int tsfi_mf_usss_verify_auth_pdu(const uint8_t *in_pdu, size_t pdu_size, int *is_valid);
 int tsfi_mf_ussr_spec_svyaz_cipher(const uint8_t *in, size_t size, uint8_t rotor_setting, uint8_t *out);
 
+extern int tsfi_gost_emergency_defcon_level;
+
 #endif // TSFI_CADE_IMF_H
