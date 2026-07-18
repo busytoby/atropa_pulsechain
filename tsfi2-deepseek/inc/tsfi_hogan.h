@@ -93,4 +93,13 @@ typedef struct {
 int tsfi_hogan_write_audit_log(const char *filepath, uint32_t epoch, uint32_t account_id, const char *activity_type, uint8_t status);
 int tsfi_hogan_print_audit_trail(const char *filepath, size_t *entries_count_out);
 
+// Master Account Index Resolver (Storage Record Pointer Addressing)
+typedef struct {
+    uint32_t account_id;
+    uint32_t sector_offset;
+} hogan_index_entry;
+
+int tsfi_hogan_write_account_index(const char *filepath, uint32_t account_id, uint32_t sector_offset);
+int tsfi_hogan_lookup_account_offset(const char *filepath, uint32_t account_id, uint32_t *sector_offset_out);
+
 #endif // TSFI_HOGAN_H

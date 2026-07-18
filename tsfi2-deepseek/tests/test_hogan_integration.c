@@ -190,6 +190,28 @@ int main(void) {
     remove(audit_path); // clean up
     printf("  [PASS] Mainframe audit log trails correctly written and formatted.\n");
 
+    // 12. Test Master Account Index Resolver (Storage Record Pointer Addressing)
+    printf("[E2E] Testing Master Account Index Resolver...\n");
+    const char *index_path = "hogan_index.dat.bin";
+    remove(index_path); // ensure clean start
+    
+    assert(tsfi_hogan_write_account_index(index_path, 1001, 50) == 0);
+    assert(tsfi_hogan_write_account_index(index_path, 2002, 120) == 0);
+    assert(tsfi_hogan_write_account_index(index_path, 3003, 300) == 0);
+    assert(tsfi_hogan_write_account_index("hogan_index.json", 3003, 300) == -3); // Rule 13 check
+    
+    uint32_t resolved_offset = 0;
+    assert(tsfi_hogan_lookup_account_offset(index_path, 2002, &resolved_offset) == 0);
+    assert(resolved_offset == 120);
+    
+    assert(tsfi_hogan_lookup_account_offset(index_path, 3003, &resolved_offset) == 0);
+    assert(resolved_offset == 300);
+    
+    assert(tsfi_hogan_lookup_account_offset(index_path, 9999, &resolved_offset) == -1); // not found
+    
+    remove(index_path); // clean up
+    printf("  [PASS] Master Account Index lookups and pointer resolutions verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }
