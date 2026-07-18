@@ -1122,4 +1122,18 @@ int tsfi_mf_imf_verify_eitc_income_limit(double earned_income, int child_count, 
     return 0;
 }
 
+int tsfi_mf_imf_verify_capital_loss_cap(double claimed_loss, int filing_status, int *is_valid) {
+    if (!is_valid) return -1;
+    double cap = (filing_status == 3) ? 1500.00 : 3000.00;
+    *is_valid = (claimed_loss <= cap && claimed_loss >= 0.0) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_imf_check_student_loan_phaseout(double agi, int filing_status, int *is_below_threshold) {
+    if (!is_below_threshold) return -1;
+    double threshold = (filing_status == 2) ? 165000.00 : 80000.00;
+    *is_below_threshold = (agi <= threshold) ? 1 : 0;
+    return 0;
+}
+
 

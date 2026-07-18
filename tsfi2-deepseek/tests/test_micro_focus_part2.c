@@ -748,6 +748,22 @@ int main(void) {
     assert(eitc_limit_eligible == 1);
     printf("  [PASS] IRS IMF EITC Income Limit Matcher verified.\n");
 
+    // 200. Verify IRS IMF Federal Capital Loss Deduction Cap Checker
+    printf("[TEST] Validating IRS IMF Capital Loss Cap Validator...\n");
+    int loss_valid = -1;
+    int loss_res = tsfi_mf_imf_verify_capital_loss_cap(2000.00, 1, &loss_valid);
+    assert(loss_res == 0);
+    assert(loss_valid == 1);
+    printf("  [PASS] IRS IMF Capital Loss Cap Validator verified.\n");
+
+    // 201. Verify IRS IMF Federal Simple Student Loan Interest AGI Phase-Out Checker
+    printf("[TEST] Validating IRS IMF Student Loan Phase-Out Checker...\n");
+    int below_phaseout = -1;
+    int phaseout_res = tsfi_mf_imf_check_student_loan_phaseout(75000.00, 1, &below_phaseout);
+    assert(phaseout_res == 0);
+    assert(below_phaseout == 1);
+    printf("  [PASS] IRS IMF Student Loan Phase-Out Checker verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

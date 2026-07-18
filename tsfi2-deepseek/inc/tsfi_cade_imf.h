@@ -95,5 +95,7 @@ int tsfi_mf_imf_verify_ptc_eligibility(double agi, double fpl_limit, int *is_eli
 int tsfi_mf_imf_verify_foreign_tax_credit(double foreign_taxes_paid, double total_tax_liability, double claimed_credit, int *is_valid);
 int tsfi_mf_imf_check_interest_limit_for_eitc(double interest_income, int *is_eligible);
 int tsfi_mf_imf_verify_eitc_income_limit(double earned_income, int child_count, int filing_status, int *is_eligible);
+int tsfi_mf_imf_verify_capital_loss_cap(double claimed_loss, int filing_status, int *is_valid);
+int tsfi_mf_imf_check_student_loan_phaseout(double agi, int filing_status, int *is_below_threshold);
 
 #endif // TSFI_CADE_IMF_H
