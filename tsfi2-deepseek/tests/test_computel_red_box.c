@@ -1,4 +1,5 @@
 #include "tsfi_computel_blue_box.h"
+#include "tsfi_cade_imf.h"
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
@@ -417,6 +418,7 @@ int main(void) {
     
     lau_yul_thunk_sstore(0xF199, 10000);
     
+    current_block_state.block_number = 500;
     bool tick_ok = blue_box_unified_tick(500);
     assert(tick_ok == true);
     
@@ -652,6 +654,16 @@ int main(void) {
     assert(blue_box_verify_pll_coalition_security(1000, 1050, &session_key) == false);
     assert(lau_yul_thunk_sload(0xF1D1) == 0);
     printf("[TEST] PLL-Driven multi-tenant conference security key rotation verified.\n");
+
+    // 47. Test USSR GOST Red Telephone integration with conference session keys
+    printf("[TEST] Validating USSR GOST Red Telephone key scrambling for Red Box...\n");
+    uint32_t key_left = session_key;
+    uint32_t key_right = 0x55555555;
+    uint32_t custom_keys[8] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
+    int secure_res = tsfi_mf_ussr_gost_encrypt_32(&key_left, &key_right, custom_keys);
+    assert(secure_res == 0);
+    assert(key_left != session_key);
+    printf("[TEST] Red Box session key securely scrambled via USSR Red Telephone GOST cipher.\n");
 
     printf("[SUCCESS] All Red Box Coin-to-ERC20 integration tests passed.\n");
     return 0;
