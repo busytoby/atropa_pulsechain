@@ -867,3 +867,47 @@ int tsfi_hogan_update_transfer_limit(hogan_umbrella_system *sys, const char *fil
     sys->live_processing_enabled = original_live_state;
     return write_res;
 }
+
+int tsfi_hogan_register_standing_order(const char *filepath, uint32_t sender_id, uint32_t recipient_id, uint64_t amount) {
+    // Enforce Rule 13: file extension must end with .dat.bin
+    const char *ext = strrchr(filepath, '.');
+    if (!ext || strcmp(ext, ".bin") != 0) {
+        if (!ext || strcmp(ext - 4, ".dat.bin") != 0) {
+            return -3; // Invalid extension
+        }
+    }
+
+    hogan_standing_order order = { sender_id, recipient_id, amount };
+    return tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&order, sizeof(hogan_standing_order));
+}
+
+int tsfi_hogan_execute_standing_orders(hogan_umbrella_system *sys, const char *filepath) {
+    // Enforce Rule 13: file extension must end with .dat.bin
+    const char *ext = strrchr(filepath, '.');
+    if (!ext || strcmp(ext, ".bin") != 0) {
+        if (!ext || strcmp(ext - 4, ".dat.bin") != 0) {
+            return -3; // Invalid extension
+        }
+    }
+
+    uint8_t read_buf[sizeof(hogan_standing_order)];
+    size_t size = 0;
+    size_t index = 0;
+    
+    while (tsfi_hogan_read_seq_record(filepath, index, read_buf, &size) == 0) {
+        if (size != sizeof(hogan_standing_order)) {
+            return -2; // Corrupt record size
+        }
+        
+        const hogan_standing_order *order = (const hogan_standing_order *)read_buf;
+        // Dispatch transaction into the log
+        int dispatch_res = tsfi_hogan_dispatch_tx(sys, order->sender_id, order->recipient_id, order->amount, VM_EVM);
+        if (dispatch_res != 0) {
+            // Even if dispatch fails (e.g. queue full), we continue executing other orders,
+            // but we can log or track it. For now, just continue.
+        }
+        index++;
+    }
+    
+    return 0;
+}

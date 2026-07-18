@@ -216,4 +216,14 @@ typedef struct {
 
 int tsfi_hogan_update_transfer_limit(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_limit, uint32_t authority_id);
 
+// Standing Order Scheduler (Scheduled Recurring Transfers)
+typedef struct {
+    uint32_t sender_id;
+    uint32_t recipient_id;
+    uint64_t amount;
+} hogan_standing_order;
+
+int tsfi_hogan_register_standing_order(const char *filepath, uint32_t sender_id, uint32_t recipient_id, uint64_t amount);
+int tsfi_hogan_execute_standing_orders(hogan_umbrella_system *sys, const char *filepath);
+
 #endif // TSFI_HOGAN_H

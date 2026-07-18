@@ -649,6 +649,52 @@ int main(void) {
     remove(tlimits_path); // clean up
     printf("  [PASS] Daily transfer limits, validations, and overnight resets verified.\n");
 
+    // 23. Test Standing Order Scheduler (Scheduled Recurring Transfers)
+    printf("[E2E] Testing Standing Order Scheduler...\n");
+    const char *standing_path = "hogan_standing.dat.bin";
+    remove(standing_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system standing_sys;
+    tsfi_hogan_init(&standing_sys);
+    assert(tsfi_hogan_register_account(&standing_sys, 1001, 10000) == 0); // Alice: 10,000 units
+    assert(tsfi_hogan_register_account(&standing_sys, 2002, 1000) == 0);  // Bob: 1,000 units
+    
+    // Register standing order: Alice transfers 2000 to Bob recurringly
+    assert(tsfi_hogan_register_standing_order(standing_path, 1001, 2002, 2000) == 0);
+    assert(tsfi_hogan_register_standing_order("hogan_standing.json", 1001, 2002, 2000) == -3); // Rule 13 check
+    
+    // Execute standing orders (dispatches pending transaction from Alice to Bob)
+    assert(tsfi_hogan_execute_standing_orders(&standing_sys, standing_path) == 0);
+    assert(tsfi_hogan_execute_standing_orders(&standing_sys, "hogan_standing.json") == -3); // Rule 13 check
+    
+    // Verify a transaction was dispatched into the system queue
+    assert(standing_sys.tx_count == 1);
+    assert(standing_sys.tx_log[0].sender_id == 1001);
+    assert(standing_sys.tx_log[0].recipient_id == 2002);
+    assert(standing_sys.tx_log[0].amount == 2000);
+    
+    // Run overnight reconciliation to apply the transfer
+    assert(tsfi_hogan_overnight_reconciliation(&standing_sys, "hogan_lfs.dat.bin") == 0);
+    
+    // Verify updated balances
+    assert(standing_sys.accounts[0].balance == 8000); // 10000 - 2000
+    assert(standing_sys.accounts[1].balance == 3000); // 1000 + 2000
+    
+    // Read sequential log file and verify entries
+    uint8_t read_stbuf[sizeof(hogan_standing_order)];
+    size_t st_size = 0;
+    assert(tsfi_hogan_read_seq_record(standing_path, 0, read_stbuf, &st_size) == 0);
+    assert(st_size == sizeof(hogan_standing_order));
+    
+    const hogan_standing_order *stentry = (const hogan_standing_order *)read_stbuf;
+    assert(stentry->sender_id == 1001);
+    assert(stentry->recipient_id == 2002);
+    assert(stentry->amount == 2000);
+    
+    remove(standing_path); // clean up
+    printf("  [PASS] Standing order registration, execution dispatch, and logging verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }
