@@ -69,6 +69,7 @@ typedef struct {
     char renames_start[32];
     char renames_end[32];
     int blank_when_zero;
+    int justified_right;
 } tsfi_cw_cobol_field;
 
 typedef struct {
@@ -283,6 +284,16 @@ int tsfi_cw_ebcdic_is_dbcs(const uint8_t *ebcdic_str, int len, int *dbcs_count);
 
 // Century leap check 2100
 int tsfi_cw_y2k_check_century_leap_2100(uint32_t year, int *is_leap);
+
+// COBOL SIGN SEPARATE (Display Sign) formats
+int tsfi_cw_pack_sign_separate(const char *ascii_num, char *separate_out, int max_len, int leading);
+int tsfi_cw_unpack_sign_separate(const char *separate_in, char *ascii_out, int max_len, int leading);
+
+// JCL DD statement concatenations
+int tsfi_cw_run_jcl_concat(const char **cards, int card_count, char *concat_out, int max_out_len);
+
+// Dynamic Century Epoch offset mapping
+uint32_t tsfi_cw_y2k_resolve_epoch_base(uint32_t two_digit_year, uint32_t base_epoch);
 
 // 4. Job Control Language (JCL) Execution Simulator
 int tsfi_cw_run_jcl(const char **cards, int card_count);

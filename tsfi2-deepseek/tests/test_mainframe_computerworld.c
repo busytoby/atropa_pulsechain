@@ -539,6 +539,45 @@ static void test_new_mainframe_features(void) {
     assert(leap_2100 == 0);
     assert(tsfi_cw_y2k_check_century_leap_2100(2000, &leap_2100) == 0);
     assert(leap_2100 == 1);
+
+    // COBOL JUSTIFIED RIGHT Clause
+    rc = tsfi_cw_parse_copybook_line("05 STR-VAR PIC X(10) JUSTIFIED RIGHT.", &cb);
+    assert(rc == 0);
+    assert(cb.field_count == 14);
+    assert(cb.fields[13].justified_right == 1);
+
+    // VSAM Key-Length checks
+    tsfi_cw_vsam_ksds ksds_lim;
+    tsfi_cw_vsam_open(&ksds_lim, "test_ksds_lim.dat.bin");
+    uint8_t dummy_d[4] = {0xAA};
+    assert(tsfi_cw_vsam_write(&ksds_lim, "VERYLONGKEYEXCEEDINGFIFTEENCHARS", dummy_d, 1) == -6);
+    int dummy_len = 0;
+    assert(tsfi_cw_vsam_read(&ksds_lim, "VERYLONGKEYEXCEEDINGFIFTEENCHARS", dummy_d, sizeof(dummy_d), &dummy_len) == -6);
+
+    // COBOL SIGN SEPARATE (Display Sign) formats
+    char sign_sep_out[16];
+    assert(tsfi_cw_pack_sign_separate("-123", sign_sep_out, sizeof(sign_sep_out), 1) == 0);
+    assert(strcmp(sign_sep_out, "-123") == 0);
+    assert(tsfi_cw_pack_sign_separate("-123", sign_sep_out, sizeof(sign_sep_out), 0) == 0);
+    assert(strcmp(sign_sep_out, "123-") == 0);
+    char sign_sep_dec[16];
+    assert(tsfi_cw_unpack_sign_separate("123-", sign_sep_dec, sizeof(sign_sep_dec), 0) == 0);
+    assert(strcmp(sign_sep_dec, "-123") == 0);
+
+    // JCL DD Statement Concatenations
+    const char *jcl_concat_deck[] = {
+        "//STEP1 EXEC PGM=IEBGENER",
+        "//SYSUT1 DD DSN=FILE1.DAT",
+        "//       DD DSN=FILE2.DAT",
+        "//       DD DSN=FILE3.DAT"
+    };
+    char concat_res[128];
+    assert(tsfi_cw_run_jcl_concat(jcl_concat_deck, 4, concat_res, sizeof(concat_res)) > 0);
+    assert(strcmp(concat_res, "FILE1.DAT,FILE2.DAT,FILE3.DAT") == 0);
+
+    // Century Epoch Offset Mapping
+    assert(tsfi_cw_y2k_resolve_epoch_base(26, 1950) == 2026);
+    assert(tsfi_cw_y2k_resolve_epoch_base(99, 1950) == 1999);
 }
 
 int main(void) {

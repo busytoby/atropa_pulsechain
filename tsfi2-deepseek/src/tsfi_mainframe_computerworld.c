@@ -560,6 +560,11 @@ int tsfi_cw_parse_copybook_line(const char *copybook_line, tsfi_cw_copybook *cb)
         blank_when_zero = 1;
     }
 
+    int justified_right = 0;
+    if (strstr(copybook_line, "JUSTIFIED RIGHT") || strstr(copybook_line, "JUST RIGHT")) {
+        justified_right = 1;
+    }
+
     tsfi_cw_cobol_field *f = &cb->fields[cb->field_count];
     f->level = level;
     snprintf(f->name, sizeof(f->name), "%s", name);
@@ -571,6 +576,7 @@ int tsfi_cw_parse_copybook_line(const char *copybook_line, tsfi_cw_copybook *cb)
     snprintf(f->depending_on, sizeof(f->depending_on), "%s", depending_on);
     snprintf(f->indexed_by, sizeof(f->indexed_by), "%s", indexed_by);
     f->blank_when_zero = blank_when_zero;
+    f->justified_right = justified_right;
     
     int byte_len = length + decimal_places;
     int base_length = 0;
@@ -646,6 +652,7 @@ int tsfi_cw_vsam_open(tsfi_cw_vsam_ksds *ksds, const char *filepath) {
 
 int tsfi_cw_vsam_write(tsfi_cw_vsam_ksds *ksds, const char *key, const uint8_t *data, int len) {
     if (!ksds || !key || !data || len <= 0) return -1;
+    if (strlen(key) > 15) return -6;
     if (ksds->entry_count >= 128) return -2;
 
     int idx = -1;
@@ -709,6 +716,7 @@ int tsfi_cw_vsam_write(tsfi_cw_vsam_ksds *ksds, const char *key, const uint8_t *
 
 int tsfi_cw_vsam_read(tsfi_cw_vsam_ksds *ksds, const char *key, uint8_t *data_out, int max_len, int *out_len) {
     if (!ksds || !key || !data_out || !out_len) return -1;
+    if (strlen(key) > 15) return -6;
 
     // Fast $O(\log N)$ binary search lookup in sorted key set
     int low = 0, high = ksds->entry_count - 1;
@@ -1615,5 +1623,126 @@ int tsfi_cw_run_jcl_proc_nested(const char **cards, int card_count, const char *
         }
     }
     return steps_run;
+}
+
+int tsfi_cw_pack_sign_separate(const char *ascii_num, char *separate_out, int max_len, int leading) {
+    if (!ascii_num || !separate_out || max_len <= 0) return -1;
+    int len = strlen(ascii_num);
+    if (len == 0) return -2;
+
+    int is_negative = 0;
+    int start_idx = 0;
+    if (ascii_num[0] == '-') {
+        is_negative = 1;
+        start_idx = 1;
+    } else if (ascii_num[0] == '+') {
+        start_idx = 1;
+    }
+
+    int digits_len = len - start_idx;
+    if (digits_len + 1 >= max_len) return -3;
+
+    if (leading) {
+        separate_out[0] = is_negative ? '-' : '+';
+        strcpy(separate_out + 1, ascii_num + start_idx);
+    } else {
+        strcpy(separate_out, ascii_num + start_idx);
+        separate_out[digits_len] = is_negative ? '-' : '+';
+        separate_out[digits_len + 1] = '\0';
+    }
+    return 0;
+}
+
+int tsfi_cw_unpack_sign_separate(const char *separate_in, char *ascii_out, int max_len, int leading) {
+    if (!separate_in || !ascii_out || max_len <= 0) return -1;
+    int len = strlen(separate_in);
+    if (len <= 1) return -2;
+
+    if (leading) {
+        char sign = separate_in[0];
+        if (sign == '-') {
+            ascii_out[0] = '-';
+            strcpy(ascii_out + 1, separate_in + 1);
+        } else if (sign == '+') {
+            strcpy(ascii_out, separate_in + 1);
+        } else {
+            strcpy(ascii_out, separate_in);
+        }
+    } else {
+        char sign = separate_in[len - 1];
+        if (sign == '-' || sign == '+') {
+            int write_idx = 0;
+            if (sign == '-') {
+                ascii_out[write_idx++] = '-';
+            }
+            strncpy(ascii_out + write_idx, separate_in, len - 1);
+            ascii_out[write_idx + len - 1] = '\0';
+        } else {
+            strcpy(ascii_out, separate_in);
+        }
+    }
+    return 0;
+}
+
+int tsfi_cw_run_jcl_concat(const char **cards, int card_count, char *concat_out, int max_out_len) {
+    if (!cards || card_count <= 0 || !concat_out || max_out_len <= 0) return -1;
+    concat_out[0] = '\0';
+    
+    int in_concat = 0;
+    int bytes_written = 0;
+    
+    for (int i = 0; i < card_count; i++) {
+        const char *card = cards[i];
+        if (in_concat) {
+            if (strncmp(card, "//", 2) == 0) {
+                const char *space = card + 2;
+                while (*space == ' ' || *space == '\t') space++;
+                if (strncmp(space, "DD ", 3) == 0) {
+                    const char *dsn = strstr(card, "DSN=");
+                    if (dsn) {
+                        dsn += 4;
+                        int d_len = 0;
+                        while (dsn[d_len] && dsn[d_len] != ',' && dsn[d_len] != ' ' && d_len < 31) {
+                            d_len++;
+                        }
+                        if (bytes_written + d_len + 2 < max_out_len) {
+                            if (bytes_written > 0) concat_out[bytes_written++] = ',';
+                            strncpy(concat_out + bytes_written, dsn, d_len);
+                            bytes_written += d_len;
+                            concat_out[bytes_written] = '\0';
+                        }
+                    }
+                } else {
+                    break;
+                }
+            }
+        } else {
+            if (strstr(card, "DD DSN=")) {
+                in_concat = 1;
+                const char *dsn = strstr(card, "DSN=");
+                if (dsn) {
+                    dsn += 4;
+                    int d_len = 0;
+                    while (dsn[d_len] && dsn[d_len] != ',' && dsn[d_len] != ' ' && d_len < 31) {
+                        d_len++;
+                    }
+                    strncpy(concat_out, dsn, d_len);
+                    bytes_written += d_len;
+                    concat_out[bytes_written] = '\0';
+                }
+            }
+        }
+    }
+    return bytes_written;
+}
+
+uint32_t tsfi_cw_y2k_resolve_epoch_base(uint32_t two_digit_year, uint32_t base_epoch) {
+    uint32_t pivot = base_epoch % 100;
+    uint32_t century = base_epoch / 100;
+    if (two_digit_year < pivot) {
+        return (century + 1) * 100 + two_digit_year;
+    } else {
+        return century * 100 + two_digit_year;
+    }
 }
 
