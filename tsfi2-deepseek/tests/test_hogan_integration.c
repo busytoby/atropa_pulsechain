@@ -512,6 +512,54 @@ int main(void) {
     remove(release_path); // clean up
     printf("  [PASS] Card balance hold settlements and release logs verified.\n");
 
+    // 20. Test Daily Spending Limit Manager (Credit Limit Overrides)
+    printf("[E2E] Testing Daily Spending Limit Manager...\n");
+    const char *limits_path = "hogan_limits.dat.bin";
+    remove(limits_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system limit_sys;
+    tsfi_hogan_init(&limit_sys);
+    assert(tsfi_hogan_register_account(&limit_sys, 1001, 10000) == 0); // Alice: 10,000 units
+    
+    // Set Alice's daily limit to 500
+    assert(tsfi_hogan_update_daily_limit(&limit_sys, limits_path, 1001, 500, 777) == 0);
+    assert(tsfi_hogan_update_daily_limit(&limit_sys, "hogan_limits.json", 1001, 500, 777) == -3); // Rule 13 check
+    
+    // Try to authorize card transaction of 400 (succeeds, spent: 400)
+    assert(tsfi_hogan_authorize_card(&limit_sys, "hogan_dummy_card.dat.bin", 9901, 1001, 888, 400) == 0);
+    
+    // Try to authorize card transaction of 200 (should be declined, exceeds 500 daily spent limit)
+    assert(tsfi_hogan_authorize_card(&limit_sys, "hogan_dummy_card.dat.bin", 9902, 1001, 888, 200) == -1);
+    
+    // Verify spending hold totals
+    assert(limit_sys.accounts[0].daily_spent == 400);
+    
+    // Run overnight reconciliation (should reset daily_spent to 0)
+    assert(tsfi_hogan_overnight_reconciliation(&limit_sys, "hogan_lfs.dat.bin") == 0);
+    
+    // Verify spent counter was reset to 0
+    assert(limit_sys.accounts[0].daily_spent == 0);
+    
+    // Now authorize card transaction of 200 (should succeed now spent is reset)
+    assert(tsfi_hogan_authorize_card(&limit_sys, "hogan_dummy_card.dat.bin", 9903, 1001, 888, 200) == 0);
+    remove("hogan_dummy_card.dat.bin"); // clean up
+    
+    // Read sequential log file and verify entries
+    uint8_t read_lbuf[sizeof(hogan_limit_entry)];
+    size_t lim_size = 0;
+    assert(tsfi_hogan_read_seq_record(limits_path, 0, read_lbuf, &lim_size) == 0);
+    assert(lim_size == sizeof(hogan_limit_entry));
+    
+    const hogan_limit_entry *lentry = (const hogan_limit_entry *)read_lbuf;
+    assert(lentry->account_id == 1001);
+    assert(lentry->previous_limit == 0);
+    assert(lentry->new_limit == 500);
+    assert(lentry->authority_id == 777);
+    
+    remove(limits_path); // clean up
+    printf("  [PASS] Daily spending limit overrides, validations, and resets verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }

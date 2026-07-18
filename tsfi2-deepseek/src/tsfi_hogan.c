@@ -80,6 +80,8 @@ int tsfi_hogan_lfs_save(const hogan_umbrella_system *sys, const char *filepath) 
             fwrite(&sys->accounts[i].has_backup, sizeof(uint8_t), 1, f);
             fwrite(&sys->accounts[i].balance_held, sizeof(uint64_t), 1, f);
             fwrite(&sys->accounts[i].status_code, sizeof(uint8_t), 1, f);
+            fwrite(&sys->accounts[i].daily_limit, sizeof(uint64_t), 1, f);
+            fwrite(&sys->accounts[i].daily_spent, sizeof(uint64_t), 1, f);
         }
     }
     
@@ -139,12 +141,24 @@ int tsfi_hogan_lfs_load(hogan_umbrella_system *sys, const char *filepath) {
             fclose(f);
             return -2;
         }
+        uint64_t d_limit = 0;
+        if (fread(&d_limit, sizeof(uint64_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
+        uint64_t d_spent = 0;
+        if (fread(&d_spent, sizeof(uint64_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
         sys->accounts[i].account_id = acc_id;
         sys->accounts[i].balance = bal;
         sys->accounts[i].backup_account_id = backup_id;
         sys->accounts[i].has_backup = has_bk;
         sys->accounts[i].balance_held = bal_held;
         sys->accounts[i].status_code = st_code;
+        sys->accounts[i].daily_limit = d_limit;
+        sys->accounts[i].daily_spent = d_spent;
         sys->accounts[i].active = 1;
     }
     
@@ -566,6 +580,13 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
     // Clear transaction log for next day
     sys->tx_count = 0;
     
+    // Reset daily spent metrics
+    for (int j = 0; j < HOGAN_MAX_ACCOUNTS; j++) {
+        if (sys->accounts[j].active) {
+            sys->accounts[j].daily_spent = 0;
+        }
+    }
+    
     // Compute new acab_epoch_root using OpenSSL EVP hash
     unsigned int hash_len = 32;
     EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
@@ -581,6 +602,8 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
             EVP_DigestUpdate(mdctx, &sys->accounts[i].has_backup, sizeof(uint8_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].balance_held, sizeof(uint64_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].status_code, sizeof(uint8_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].daily_limit, sizeof(uint64_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].daily_spent, sizeof(uint64_t));
         }
     }
     EVP_DigestFinal_ex(mdctx, sys->acab_epoch_root, &hash_len);
@@ -621,8 +644,11 @@ int tsfi_hogan_authorize_card(hogan_umbrella_system *sys, const char *filepath, 
     
     uint8_t approved = 0;
     if (acc && (acc->balance >= acc->balance_held + amount)) {
-        acc->balance_held += amount;
-        approved = 1;
+        if (acc->daily_limit == 0 || (acc->daily_spent + amount <= acc->daily_limit)) {
+            acc->balance_held += amount;
+            acc->daily_spent += amount;
+            approved = 1;
+        }
     }
     
     hogan_card_entry entry = { card_id, account_id, merchant_id, amount, approved };
@@ -707,4 +733,39 @@ int tsfi_hogan_release_hold(hogan_umbrella_system *sys, const char *filepath, ui
     
     if (write_res != 0) return write_res;
     return success ? 0 : -1;
+}
+
+int tsfi_hogan_update_daily_limit(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_limit, uint32_t authority_id) {
+    // Enforce Rule 13: file extension must end with .dat.bin
+    const char *ext = strrchr(filepath, '.');
+    if (!ext || strcmp(ext, ".bin") != 0) {
+        if (!ext || strcmp(ext - 4, ".dat.bin") != 0) {
+            return -3; // Invalid extension
+        }
+    }
+
+    // Disable live queue during administrative action
+    uint8_t original_live_state = sys->live_processing_enabled;
+    sys->live_processing_enabled = 0;
+    
+    hogan_account *acc = NULL;
+    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
+        if (sys->accounts[i].active && sys->accounts[i].account_id == account_id) {
+            acc = &sys->accounts[i];
+            break;
+        }
+    }
+    
+    if (!acc) {
+        sys->live_processing_enabled = original_live_state;
+        return -1; // account not found
+    }
+    
+    hogan_limit_entry entry = { account_id, acc->daily_limit, new_limit, authority_id };
+    acc->daily_limit = new_limit;
+    
+    int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_limit_entry));
+    
+    sys->live_processing_enabled = original_live_state;
+    return write_res;
 }

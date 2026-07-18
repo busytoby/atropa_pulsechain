@@ -34,6 +34,8 @@ typedef struct {
     uint8_t has_backup;
     uint64_t balance_held;
     uint8_t status_code;
+    uint64_t daily_limit;
+    uint64_t daily_spent;
 } hogan_account;
 
 typedef struct {
@@ -182,5 +184,15 @@ typedef struct {
 } hogan_release_entry;
 
 int tsfi_hogan_release_hold(hogan_umbrella_system *sys, const char *filepath, uint32_t card_id, uint32_t account_id, uint64_t amount_released);
+
+// Daily Spending Limit Manager (Credit Limit Overrides)
+typedef struct {
+    uint32_t account_id;
+    uint64_t previous_limit;
+    uint64_t new_limit;
+    uint32_t authority_id;
+} hogan_limit_entry;
+
+int tsfi_hogan_update_daily_limit(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_limit, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H
