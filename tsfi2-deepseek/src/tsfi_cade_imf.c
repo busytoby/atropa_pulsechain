@@ -869,3 +869,13 @@ int tsfi_mf_imf_is_form_1040prss(int doc_code, int *result) {
 int tsfi_mf_cade_is_active_or_under_audit_or_suspended_or_pending_ver9(int status_code, int *is_valid) {
     return tsfi_mf_cade_check_status_mask(status_code, 15, is_valid);
 }
+
+int tsfi_mf_imf_is_form_1040ssss(int doc_code, int *result) {
+    if (!result) return -1;
+    *result = (doc_code == 45) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_cade_is_active_or_under_audit_or_suspended_or_pending_ver10(int status_code, int *is_valid) {
+    return tsfi_mf_cade_check_status_mask(status_code, 15, is_valid);
+}
