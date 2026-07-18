@@ -1210,5 +1210,15 @@ typedef struct {
 
 int tsfi_cw_rmu_audit_cics_web_gateway(const tsfi_cw_rmu_cics_web_request *req, int *is_compliant_out);
 
+// Chase Manhattan MICR Check Info
+typedef struct {
+    char routing_number[16];
+    char account_number[16];
+    char check_number[16];
+    double amount_dollars;
+} tsfi_cw_chase_micr_check;
+
+int tsfi_cw_chase_audit_micr(const tsfi_cw_chase_micr_check *check, int *is_valid_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

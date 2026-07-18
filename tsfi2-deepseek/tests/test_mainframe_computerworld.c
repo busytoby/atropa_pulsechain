@@ -2179,6 +2179,16 @@ static void test_new_mainframe_features(void) {
     tsfi_cw_rmu_cics_web_request web_req_bad = { "POST", 2000000, "application/json", 1 }; // too large (> 1MB)
     assert(tsfi_cw_rmu_audit_cics_web_gateway(&web_req_bad, &web_compliant) == 0);
     assert(web_compliant == 0);
+
+    // Chase Manhattan MICR test
+    tsfi_cw_chase_micr_check check_ok = { "021000021", "123456789", "1001", 1500.50 };
+    int check_valid = 0;
+    assert(tsfi_cw_chase_audit_micr(&check_ok, &check_valid) == 0);
+    assert(check_valid == 1);
+
+    tsfi_cw_chase_micr_check check_bad = { "021000022", "123456789", "1001", 1500.50 }; // invalid routing check digit
+    assert(tsfi_cw_chase_audit_micr(&check_bad, &check_valid) == 0);
+    assert(check_valid == 0);
 }
 
 int main(void) {

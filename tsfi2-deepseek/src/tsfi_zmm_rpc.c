@@ -1027,6 +1027,37 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
         snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"is_compliant\": %d}, \"id\": %d}\n", is_compliant, id);
         return 1;
     }
+    if (method_type == 74) {
+        char routing_number[32] = {0};
+        char account_number[32] = {0};
+        char check_number[32] = {0};
+        char amount_str[32] = {0};
+        extract_json_string(min_ptr, "\"routing_number\"", routing_number, sizeof(routing_number));
+        extract_json_string(min_ptr, "\"account_number\"", account_number, sizeof(account_number));
+        extract_json_string(min_ptr, "\"check_number\"", check_number, sizeof(check_number));
+        extract_json_string(min_ptr, "\"amount_dollars\"", amount_str, sizeof(amount_str));
+        double amount_dollars = atof(amount_str);
+        
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wstringop-truncation"
+        tsfi_cw_chase_micr_check check;
+        strncpy(check.routing_number, routing_number, sizeof(check.routing_number) - 1);
+        check.routing_number[sizeof(check.routing_number) - 1] = 0;
+        strncpy(check.account_number, account_number, sizeof(check.account_number) - 1);
+        check.account_number[sizeof(check.account_number) - 1] = 0;
+        strncpy(check.check_number, check_number, sizeof(check.check_number) - 1);
+        check.check_number[sizeof(check.check_number) - 1] = 0;
+        #pragma GCC diagnostic pop
+        
+        check.amount_dollars = amount_dollars;
+        
+        int is_valid = 0;
+        extern int tsfi_cw_chase_audit_micr(const tsfi_cw_chase_micr_check *check, int *is_valid_out);
+        tsfi_cw_chase_audit_micr(&check, &is_valid);
+        
+        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"is_valid\": %d}, \"id\": %d}\n", is_valid, id);
+        return 1;
+    }
     snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"Method not found\", \"id\": %d}\n", id);
     return 1;
 }

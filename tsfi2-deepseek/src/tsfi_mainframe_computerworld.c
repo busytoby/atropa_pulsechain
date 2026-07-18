@@ -1603,6 +1603,27 @@ int tsfi_cw_rmu_audit_cics_web_gateway(const tsfi_cw_rmu_cics_web_request *req, 
     return 0;
 }
 
+int tsfi_cw_chase_audit_micr(const tsfi_cw_chase_micr_check *check, int *is_valid_out) {
+    if (!check || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    if (strlen(check->routing_number) != 9) return 0;
+    if (check->amount_dollars <= 0.0) return 0;
+    
+    int d[9];
+    for (int i = 0; i < 9; i++) {
+        if (check->routing_number[i] < '0' || check->routing_number[i] > '9') return 0;
+        d[i] = check->routing_number[i] - '0';
+    }
+    
+    int sum = 3 * (d[0] + d[3] + d[6]) + 7 * (d[1] + d[4] + d[7]) + (d[2] + d[5] + d[8]);
+    if (sum % 10 == 0) {
+        *is_valid_out = 1;
+    }
+    return 0;
+}
+
+
 
 
 

@@ -372,6 +372,39 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Chase Manhattan MICR Check Auditor Card -->
+            <div class="card">
+                <div class="card-title">
+                    <span>Chase Manhattan MICR Check Auditor</span>
+                    <span class="card-accent-tag">cics.audit_micr</span>
+                </div>
+                <div class="grid-inputs">
+                    <div class="input-group">
+                        <label for="routingNum">Routing Number (9 Digits)</label>
+                        <input type="text" id="routingNum" value="021000021">
+                    </div>
+                    <div class="input-group">
+                        <label for="accountNum">Account Number</label>
+                        <input type="text" id="accountNum" value="123456789">
+                    </div>
+                    <div class="input-group">
+                        <label for="checkNum">Check Number</label>
+                        <input type="text" id="checkNum" value="1001">
+                    </div>
+                    <div class="input-group">
+                        <label for="checkAmount">Amount (USD)</label>
+                        <input type="number" id="checkAmount" value="1500.50" step="0.01">
+                    </div>
+                </div>
+                <button class="btn" onclick="auditMicrCheck()">Verify MICR Transit Check Digit</button>
+                <div style="margin-top: 1.2rem; display: grid; grid-template-columns: 1fr; gap: 1rem;">
+                    <div class="metric-badge" style="border-color: rgba(0, 242, 254, 0.2);">
+                        <span class="metric-val" id="checkValidation" style="color: var(--accent-cyan);">UNKNOWN</span>
+                        <span class="metric-label">MICR Transit Validation Status</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="section-column">
@@ -565,6 +598,28 @@
                         alertField.style.color = "var(--accent-red)";
                     } else {
                         alertField.style.color = "var(--text-main)";
+                    }
+                }
+            } catch (e) {}
+        }
+
+        async function auditMicrCheck() {
+            try {
+                const res = await sendRpc("cics.audit_micr", {
+                    routing_number: document.getElementById("routingNum").value,
+                    account_number: document.getElementById("accountNum").value,
+                    check_number: document.getElementById("checkNum").value,
+                    amount_dollars: document.getElementById("checkAmount").value
+                });
+
+                if (res && res.result) {
+                    const isValid = res.result.is_valid ? "VALID" : "INVALID";
+                    const field = document.getElementById("checkValidation");
+                    field.textContent = isValid;
+                    if (res.result.is_valid) {
+                        field.style.color = "var(--accent-green)";
+                    } else {
+                        field.style.color = "var(--accent-red)";
                     }
                 }
             } catch (e) {}

@@ -115,6 +115,7 @@ tsfi_tst_node* tsfi_tst_init_rpc_router(void) {
     root = tsfi_tst_insert(root, "cics.audit_queue", "71");
     root = tsfi_tst_insert(root, "cics.inject_ballistic_data", "72");
     root = tsfi_tst_insert(root, "cics.audit_web_gateway", "73");
+    root = tsfi_tst_insert(root, "cics.audit_micr", "74");
 
     return root;
 }
