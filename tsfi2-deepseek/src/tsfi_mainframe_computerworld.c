@@ -838,6 +838,32 @@ int tsfi_cw_icp_distribute_royalties(const tsfi_cw_icp_product *prod, double rat
     return 0;
 }
 
+int tsfi_cw_icp_search_directory(const tsfi_cw_icp_product *catalog, int catalog_size, const char *hardware_filter, tsfi_cw_icp_product *results_out, int *results_count_out) {
+    if (!catalog || catalog_size < 0 || !results_out || !results_count_out) return -1;
+    
+    *results_count_out = 0;
+    for (int i = 0; i < catalog_size; i++) {
+        if (!hardware_filter || strlen(hardware_filter) == 0 ||
+            strstr(catalog[i].hardware_platform, hardware_filter) ||
+            strstr(hardware_filter, catalog[i].hardware_platform)) {
+            results_out[*results_count_out] = catalog[i];
+            (*results_count_out)++;
+        }
+    }
+    return 0;
+}
+
+int tsfi_cw_icp_migration_audit(const tsfi_cw_icp_product *old_prod, const tsfi_cw_icp_product *new_prod, int *upgrade_allowed_out) {
+    if (!old_prod || !new_prod || !upgrade_allowed_out) return -1;
+    
+    if (strcmp(old_prod->vendor, new_prod->vendor) == 0 && new_prod->unit_price >= old_prod->unit_price) {
+        *upgrade_allowed_out = 1;
+    } else {
+        *upgrade_allowed_out = 0;
+    }
+    return 0;
+}
+
 
 
 

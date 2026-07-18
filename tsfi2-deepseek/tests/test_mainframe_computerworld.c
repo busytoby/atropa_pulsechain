@@ -1683,6 +1683,23 @@ static void test_new_mainframe_features(void) {
     // System/360 OS: 45,000 * 300 = 13,500,000. 10% royalty = 1,350,000
     assert(tsfi_cw_icp_distribute_royalties(&comp_prod, 0.10, &royalty_amt) == 0);
     assert(royalty_amt == 1350000.0);
+
+    // ICP Directory Search Engine test
+    tsfi_cw_icp_product s_catalog[2] = {
+        { "P01", "MARK IV", "Informatics", "IBM 360", 15000.0, 50 },
+        { "P02", "AUTOFLOW", "ADR", "IBM 360", 8000.0, 150 }
+    };
+    tsfi_cw_icp_product search_res[2];
+    int search_cnt = 0;
+    assert(tsfi_cw_icp_search_directory(s_catalog, 2, "IBM 360", search_res, &search_cnt) == 0);
+    assert(search_cnt == 2);
+
+    // ICP Version Upgrade Auditor test
+    tsfi_cw_icp_product old_v = { "V1", "AUTOFLOW v1", "ADR", "IBM 360", 8000.0, 150 };
+    tsfi_cw_icp_product new_v = { "V2", "AUTOFLOW v2", "ADR", "IBM 360", 9500.0, 200 };
+    int upgrade_allowed = 0;
+    assert(tsfi_cw_icp_migration_audit(&old_v, &new_v, &upgrade_allowed) == 0);
+    assert(upgrade_allowed == 1);
 }
 
 int main(void) {

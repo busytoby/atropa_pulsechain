@@ -815,5 +815,9 @@ int tsfi_cw_icp_audit_contract(const tsfi_cw_icp_contract *contract, double *tot
 int tsfi_cw_icp_audit_compatibility(const tsfi_cw_icp_product *prod, const char *target_hardware, int *is_compatible_out);
 int tsfi_cw_icp_distribute_royalties(const tsfi_cw_icp_product *prod, double rate, double *royalty_out);
 
+// ICP Directory Search and Version Upgrade Auditor
+int tsfi_cw_icp_search_directory(const tsfi_cw_icp_product *catalog, int catalog_size, const char *hardware_filter, tsfi_cw_icp_product *results_out, int *results_count_out);
+int tsfi_cw_icp_migration_audit(const tsfi_cw_icp_product *old_prod, const tsfi_cw_icp_product *new_prod, int *upgrade_allowed_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 
