@@ -1653,6 +1653,22 @@ static void test_new_mainframe_features(void) {
     assert(tsfi_cw_icp_check_award(&catalog[1], &status) == 0);
     assert(status.total_revenue == 1200000.0);
     assert(status.qualifies_for_million_dollar_award == 1);
+
+    // ICP Licensing Commission Ledger test
+    tsfi_cw_icp_agent agent = { "AGNT99", 0.0, 3000.0, 0.0, 3000.0 };
+    // Sale card: agent ID "AGNT99" (cols 1-6), sale amount "060000" (cols 8-13)
+    assert(tsfi_cw_icp_process_agent_sale(&agent, "AGNT99 060000") == 0);
+    assert(agent.total_sales == 60000.0);
+    // Commission: 50,000 * 0.05 + 10,000 * 0.10 = 2500 + 1000 = 3500
+    assert(agent.commission_earned == 3500.0);
+    assert(agent.total_payout == 6500.0);
+
+    // ICP Maintenance Contract Auditor test
+    tsfi_cw_icp_contract contract = { "CON888", "PROD02", 500.0, 12, 4 };
+    double tot_val = 0.0, rem_val = 0.0;
+    assert(tsfi_cw_icp_audit_contract(&contract, &tot_val, &rem_val) == 0);
+    assert(tot_val == 6000.0);
+    assert(rem_val == 4000.0);
 }
 
 int main(void) {

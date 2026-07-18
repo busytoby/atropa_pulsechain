@@ -780,6 +780,46 @@ int tsfi_cw_icp_check_award(const tsfi_cw_icp_product *prod, tsfi_cw_icp_award_s
     return 0;
 }
 
+int tsfi_cw_icp_process_agent_sale(tsfi_cw_icp_agent *agent, const char *sale_card_line) {
+    if (!agent || !sale_card_line) return -1;
+    if (strlen(sale_card_line) < 13) return -2;
+    
+    char agent_id[7];
+    memcpy(agent_id, sale_card_line, 6);
+    agent_id[6] = '\0';
+    if (strcmp(agent->agent_id, agent_id) != 0) return -3;
+    
+    char amt_str[7];
+    memcpy(amt_str, sale_card_line + 7, 6);
+    amt_str[6] = '\0';
+    double sale_amt = atof(amt_str);
+    
+    agent->total_sales += sale_amt;
+    
+    // Tiered commission: 5% up to 50,000, 10% on remainder
+    if (agent->total_sales <= 50000.0) {
+        agent->commission_earned = agent->total_sales * 0.05;
+    } else {
+        agent->commission_earned = (50000.0 * 0.05) + ((agent->total_sales - 50000.0) * 0.10);
+    }
+    
+    agent->total_payout = agent->base_salary + agent->commission_earned;
+    return 0;
+}
+
+int tsfi_cw_icp_audit_contract(const tsfi_cw_icp_contract *contract, double *total_value_out, double *remaining_value_out) {
+    if (!contract || !total_value_out || !remaining_value_out) return -1;
+    
+    *total_value_out = contract->monthly_fee * contract->contract_months;
+    
+    int rem_months = contract->contract_months - contract->months_elapsed;
+    if (rem_months < 0) rem_months = 0;
+    *remaining_value_out = contract->monthly_fee * rem_months;
+    
+    return 0;
+}
+
+
 
 
 

@@ -789,5 +789,27 @@ typedef struct {
 int tsfi_cw_icp_register_product(tsfi_cw_icp_product *catalog, int *catalog_size, const tsfi_cw_icp_product *new_prod);
 int tsfi_cw_icp_check_award(const tsfi_cw_icp_product *prod, tsfi_cw_icp_award_status *status_out);
 
+// ICP Licensing Commission Ledger
+typedef struct {
+    char agent_id[8];
+    double total_sales;
+    double base_salary;
+    double commission_earned;
+    double total_payout;
+} tsfi_cw_icp_agent;
+
+int tsfi_cw_icp_process_agent_sale(tsfi_cw_icp_agent *agent, const char *sale_card_line);
+
+// ICP Maintenance Contract Auditor
+typedef struct {
+    char contract_id[8];
+    char product_id[8];
+    double monthly_fee;
+    int contract_months;
+    int months_elapsed;
+} tsfi_cw_icp_contract;
+
+int tsfi_cw_icp_audit_contract(const tsfi_cw_icp_contract *contract, double *total_value_out, double *remaining_value_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 
