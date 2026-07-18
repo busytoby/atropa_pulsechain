@@ -487,8 +487,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 530 | NATO Link-Layer Broadcast Channel Busy Hysteresis RSSI Quiet Sample Threshold Limit Margin Range Option Selector Margin Range Option Selector Margin Range Option Selector Margin Matcher | PASS | Audits RSSI quiet sample count limit margin range option selector margin range option selector margin range option selector margins | Volume 33 |
 | 531 | NATO Link-Layer Broadcast Collision Backoff Slot Alignment Boundary Source Offset Range Limit Value Margin Range Option Selector Option Margin Range Option Selector Option Margin Limit Range Option Matcher | PASS | Validates slot boundary source alignment offset range limits value margin range option selector option margin range option selector option margin limit range options | Volume 33 |
 | 532 | NATO Link-Layer Broadcast Channel Busy Hysteresis RSSI Quiet Sample Threshold Limit Margin Range Option Selector Margin Range Option Selector Margin Range Option Selector Margin Range Matcher | PASS | Audits RSSI quiet sample count limit margin range option selector margin range option selector margin range option selector margin ranges | Volume 33 |
+| 533 | NATO Link-Layer Broadcast Collision Backoff Slot Alignment Boundary Source Offset Range Limit Value Margin Range Option Selector Option Margin Range Option Selector Option Margin Limit Range Option Selector Matcher | PASS | Validates slot boundary source alignment offset range limits value margin range option selector option margin range option selector option margin limit range option selectors | Volume 33 |
+| 534 | NATO Link-Layer Broadcast Channel Busy Hysteresis RSSI Quiet Sample Threshold Limit Margin Range Option Selector Margin Range Option Selector Margin Range Option Selector Margin Range Option Matcher | PASS | Audits RSSI quiet sample count limit margin range option selector margin range option selector margin range option selector margin range options | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 532 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 534 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

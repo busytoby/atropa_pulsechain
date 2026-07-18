@@ -107,5 +107,37 @@ int run_nato_stanag_tests_part4(void) {
     assert(rssi_quiet_sample_threshold_limit_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_valid == 1);
     printf("  [PASS] NATO Broadcast Busy RSSI Quiet Sample Threshold Limit Margin Range Option Selector Margin Range Option Selector Margin Range Option Selector Margin Range Matcher verified.\n");
 
+    // 390. Verify NATO Link-Layer Broadcast Collision Backoff Slot Alignment Boundary Source Offset Range Limit Value Margin Range Option Selector Option Margin Range Option Selector Option Margin Limit Range Option Selector Matcher
+    printf("[TEST] Validating NATO Broadcast Backoff Slot Boundary Source Offset Range Limit Value Margin Range Option Selector Option Margin Range Option Selector Option Margin Limit Range Option Selector Matcher...\n");
+    int slot_boundary_source_offset_range_limit_val_margin_range_option_selector_option_margin_range_option_selector_option_margin_limit_range_option_selector_valid = -1;
+    int slot_boundary_source_offset_range_limit_val_margin_range_option_selector_option_margin_range_option_selector_option_margin_limit_range_option_selector_res = tsfi_mf_nato_verify_slot_boundary_source_offset_range_limit_val_margin_range_option_selector_option_margin_range_option_selector_option_margin_limit_range_option_selector(3, &slot_boundary_source_offset_range_limit_val_margin_range_option_selector_option_margin_range_option_selector_option_margin_limit_range_option_selector_valid);
+    assert(slot_boundary_source_offset_range_limit_val_margin_range_option_selector_option_margin_range_option_selector_option_margin_limit_range_option_selector_res == 0);
+    assert(slot_boundary_source_offset_range_limit_val_margin_range_option_selector_option_margin_range_option_selector_option_margin_limit_range_option_selector_valid == 1);
+    printf("  [PASS] NATO Broadcast Backoff Slot Boundary Source Offset Range Limit Value Margin Range Option Selector Option Margin Range Option Selector Option Margin Limit Range Option Selector Matcher verified.\n");
+
+    // 391. Verify NATO Link-Layer Broadcast Channel Busy Hysteresis RSSI Quiet Sample Threshold Limit Margin Range Option Selector Margin Range Option Selector Margin Range Option Selector Margin Range Option Matcher
+    printf("[TEST] Validating NATO Broadcast Busy RSSI Quiet Sample Threshold Limit Margin Range Option Selector Margin Range Option Selector Margin Range Option Selector Margin Range Option Matcher...\n");
+    int rssi_quiet_sample_threshold_limit_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_valid = -1;
+    int rssi_quiet_sample_threshold_limit_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_res = tsfi_mf_nato_verify_rssi_quiet_sample_threshold_limit_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option(1, &rssi_quiet_sample_threshold_limit_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_valid);
+    assert(rssi_quiet_sample_threshold_limit_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_res == 0);
+    assert(rssi_quiet_sample_threshold_limit_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_valid == 1);
+    printf("  [PASS] NATO Broadcast Busy RSSI Quiet Sample Threshold Limit Margin Range Option Selector Margin Range Option Selector Margin Range Option Selector Margin Range Option Matcher verified.\n");
+
+    // 392. Verify NATO Link-Layer Broadcast Collision Backoff Slot Alignment Boundary Source Offset Range Limit Value Margin Range Option Selector Option Margin Range Option Selector Option Margin Limit Range Option Selector Matcher (Dispatcher version)
+    printf("[TEST] Validating NATO Parameter Dispatcher for Slot Offset Limit Range Option Selector...\n");
+    int dispatch_valid_opt_sel = -1;
+    int dispatch_res_opt_sel = tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT_VAL_MARGIN_RANGE_OPTION_SELECTOR_OPTION_MARGIN_RANGE_OPTION_SELECTOR_OPTION_MARGIN_LIMIT_RANGE_OPTION_SELECTOR, 4, &dispatch_valid_opt_sel);
+    assert(dispatch_res_opt_sel == 0);
+    assert(dispatch_valid_opt_sel == 1);
+    printf("  [PASS] Parameter Dispatcher for Slot Offset Limit Range Option Selector verified.\n");
+
+    // 393. Verify NATO Link-Layer Broadcast Channel Busy Hysteresis RSSI Quiet Sample Threshold Limit Margin Range Option Selector Margin Range Option Selector Margin Range Option Selector Margin Range Option Matcher (Dispatcher version)
+    printf("[TEST] Validating NATO Parameter Dispatcher for RSSI Quiet Limit Margin Range Option Selector Margin Range Option verified.\n");
+    int dispatch_valid_range_opt = -1;
+    int dispatch_res_range_opt = tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION, 1, &dispatch_valid_range_opt);
+    assert(dispatch_res_range_opt == 0);
+    assert(dispatch_valid_range_opt == 1);
+    printf("  [PASS] Parameter Dispatcher for RSSI Quiet Limit Margin Range Option Selector Margin Range Option verified.\n");
+
     return 0;
 }
