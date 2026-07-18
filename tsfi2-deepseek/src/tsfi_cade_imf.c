@@ -1,6 +1,8 @@
 #include "tsfi_cade_imf.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <strings.h>
 
 int tsfi_mf_cade_register_taxpayer(const char *ssn, double balance, int status, char *registry_out, int max_len) {
     if (!ssn || !registry_out || max_len <= 0) return -1;
@@ -717,5 +719,19 @@ int tsfi_mf_dml_execute(const char *statement, char *output, size_t out_len) {
     } else {
         snprintf(output, out_len, "Thunk DML Executor: Routed transaction via dynamic execution thunks");
     }
+    return 0;
+}
+
+int tsfi_mf_cade_verify_address(const char *addr_a, const char *addr_b, int *is_match) {
+    if (!addr_a || !addr_b || !is_match) return -1;
+    *is_match = (strcasecmp(addr_a, addr_b) == 0) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_imf_get_cycle_week(const char *cycle_code, int *week_out) {
+    if (!cycle_code || !week_out) return -1;
+    if (strlen(cycle_code) < 6) return -1;
+    char week_str[3] = { cycle_code[4], cycle_code[5], '\0' };
+    *week_out = atoi(week_str);
     return 0;
 }

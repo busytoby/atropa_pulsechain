@@ -1763,6 +1763,22 @@ int main(void) {
     assert(strstr(dml_out, "Thunk DML Executor") != NULL);
     printf("  [PASS] Dual-Mode DML execution verified.\n");
 
+    // 173. Verify IRS CADE Taxpayer Address Matching
+    printf("[TEST] Validating IRS CADE Taxpayer Address Matching...\n");
+    int addr_match = -1;
+    int addr_res = tsfi_mf_cade_verify_address("123 Main St", "123 main st", &addr_match);
+    assert(addr_res == 0);
+    assert(addr_match == 1);
+    printf("  [PASS] IRS CADE Taxpayer Address Matching verified.\n");
+
+    // 174. Verify IRS IMF Cycle Week Calculator
+    printf("[TEST] Validating IRS IMF Cycle Week Calculator...\n");
+    int cycle_week = -1;
+    int cycle_res = tsfi_mf_imf_get_cycle_week("20261504", &cycle_week);
+    assert(cycle_res == 0);
+    assert(cycle_week == 15);
+    printf("  [PASS] IRS IMF Cycle Week Calculator verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
