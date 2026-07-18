@@ -565,6 +565,11 @@ int tsfi_cw_parse_copybook_line(const char *copybook_line, tsfi_cw_copybook *cb)
         justified_right = 1;
     }
 
+    int sync_align = 0;
+    if (strstr(copybook_line, "SYNCHRONIZED") || strstr(copybook_line, "SYNC")) {
+        sync_align = 4;
+    }
+
     tsfi_cw_cobol_field *f = &cb->fields[cb->field_count];
     f->level = level;
     snprintf(f->name, sizeof(f->name), "%s", name);
@@ -577,6 +582,7 @@ int tsfi_cw_parse_copybook_line(const char *copybook_line, tsfi_cw_copybook *cb)
     snprintf(f->indexed_by, sizeof(f->indexed_by), "%s", indexed_by);
     f->blank_when_zero = blank_when_zero;
     f->justified_right = justified_right;
+    f->sync_align = sync_align;
     
     int byte_len = length + decimal_places;
     int base_length = 0;
@@ -604,6 +610,9 @@ int tsfi_cw_parse_copybook_line(const char *copybook_line, tsfi_cw_copybook *cb)
                 break;
             }
         }
+    }
+    if (sync_align > 0 && final_offset % sync_align != 0) {
+        final_offset += (sync_align - (final_offset % sync_align));
     }
     f->offset = final_offset;
 
@@ -1744,5 +1753,89 @@ uint32_t tsfi_cw_y2k_resolve_epoch_base(uint32_t two_digit_year, uint32_t base_e
     } else {
         return century * 100 + two_digit_year;
     }
+}
+
+void tsfi_cw_vsam_pds_init(tsfi_cw_vsam_pds *pds, const char *path) {
+    if (!pds) return;
+    memset(pds, 0, sizeof(tsfi_cw_vsam_pds));
+    if (path) strcpy(pds->filepath, path);
+}
+
+int tsfi_cw_vsam_pds_add_member(tsfi_cw_vsam_pds *pds, const char *name, uint32_t offset, uint32_t length) {
+    if (!pds || !name) return -1;
+    if (pds->member_count >= 16) return -2;
+    int idx = pds->member_count++;
+    strncpy(pds->members[idx].name, name, 11);
+    pds->members[idx].name[11] = '\0';
+    pds->members[idx].offset = offset;
+    pds->members[idx].length = length;
+    pds->members[idx].active = 1;
+    return 0;
+}
+
+int tsfi_cw_vsam_pds_find_member(tsfi_cw_vsam_pds *pds, const char *name, uint32_t *offset_out, uint32_t *length_out) {
+    if (!pds || !name || !offset_out || !length_out) return -1;
+    for (int i = 0; i < pds->member_count; i++) {
+        if (pds->members[i].active && strcmp(pds->members[i].name, name) == 0) {
+            *offset_out = pds->members[i].offset;
+            *length_out = pds->members[i].length;
+            return 0;
+        }
+    }
+    return -4;
+}
+
+int tsfi_cw_ascii_to_ebcdic_pad(const char *ascii_in, uint8_t *ebcdic_out, int len, uint8_t pad_char) {
+    if (!ascii_in || !ebcdic_out || len <= 0) return -1;
+    int src_len = strlen(ascii_in);
+    for (int i = 0; i < len; i++) {
+        if (i < src_len) {
+            ebcdic_out[i] = tsfi_cw_ascii_to_ebcdic((uint8_t)ascii_in[i]);
+        } else {
+            ebcdic_out[i] = pad_char;
+        }
+    }
+    return 0;
+}
+
+int tsfi_cw_jcl_eval_cond(int step_rc, int cond_code, const char *operator) {
+    if (!operator) return 0;
+    if (strcmp(operator, "LT") == 0) {
+        return (cond_code < step_rc) ? 1 : 0;
+    } else if (strcmp(operator, "GT") == 0) {
+        return (cond_code > step_rc) ? 1 : 0;
+    } else if (strcmp(operator, "EQ") == 0) {
+        return (cond_code == step_rc) ? 1 : 0;
+    }
+    return 0;
+}
+
+int tsfi_cw_julian_to_gregorian_y2k(const char *julian_in, uint32_t pivot, char *greg_out, int max_len) {
+    if (!julian_in || !greg_out || max_len <= 0) return -1;
+    uint32_t yy = 0, ddd = 0;
+    if (sscanf(julian_in, "%u.%u", &yy, &ddd) != 2) return -2;
+    if (ddd < 1 || ddd > 366) return -3;
+    
+    uint32_t year = tsfi_cw_y2k_resolve_year_ex(yy, pivot);
+    int is_leap = 0;
+    tsfi_cw_y2k_check_century_leap_2100(year, &is_leap);
+    
+    int days_in_months[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    if (is_leap) days_in_months[1] = 29;
+    
+    uint32_t day_sum = 0;
+    uint32_t month = 0;
+    uint32_t day = 0;
+    for (int m = 0; m < 12; m++) {
+        if (day_sum + days_in_months[m] >= ddd) {
+            month = m + 1;
+            day = ddd - day_sum;
+            break;
+        }
+        day_sum += days_in_months[m];
+    }
+    
+    snprintf(greg_out, max_len, "%04u-%02u-%02u", year, month, day);
+    return 0;
 }
 

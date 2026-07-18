@@ -70,6 +70,7 @@ typedef struct {
     char renames_end[32];
     int blank_when_zero;
     int justified_right;
+    int sync_align;
 } tsfi_cw_cobol_field;
 
 typedef struct {
@@ -294,6 +295,33 @@ int tsfi_cw_run_jcl_concat(const char **cards, int card_count, char *concat_out,
 
 // Dynamic Century Epoch offset mapping
 uint32_t tsfi_cw_y2k_resolve_epoch_base(uint32_t two_digit_year, uint32_t base_epoch);
+
+// VSAM Partitioned Data Sets (PDS) Emulator
+typedef struct {
+    char name[12];
+    uint32_t offset;
+    uint32_t length;
+    int active;
+} tsfi_cw_pds_member;
+
+typedef struct {
+    tsfi_cw_pds_member members[16];
+    char filepath[256];
+    int member_count;
+} tsfi_cw_vsam_pds;
+
+void tsfi_cw_vsam_pds_init(tsfi_cw_vsam_pds *pds, const char *path);
+int tsfi_cw_vsam_pds_add_member(tsfi_cw_vsam_pds *pds, const char *name, uint32_t offset, uint32_t length);
+int tsfi_cw_vsam_pds_find_member(tsfi_cw_vsam_pds *pds, const char *name, uint32_t *offset_out, uint32_t *length_out);
+
+// EBCDIC Custom Padding character converter
+int tsfi_cw_ascii_to_ebcdic_pad(const char *ascii_in, uint8_t *ebcdic_out, int len, uint8_t pad_char);
+
+// JCL step evaluation
+int tsfi_cw_jcl_eval_cond(int step_rc, int cond_code, const char *operator);
+
+// Julian to Gregorian Y2K date converter
+int tsfi_cw_julian_to_gregorian_y2k(const char *julian_in, uint32_t pivot, char *greg_out, int max_len);
 
 // 4. Job Control Language (JCL) Execution Simulator
 int tsfi_cw_run_jcl(const char **cards, int card_count);

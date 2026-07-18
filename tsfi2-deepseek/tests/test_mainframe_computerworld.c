@@ -578,6 +578,36 @@ static void test_new_mainframe_features(void) {
     // Century Epoch Offset Mapping
     assert(tsfi_cw_y2k_resolve_epoch_base(26, 1950) == 2026);
     assert(tsfi_cw_y2k_resolve_epoch_base(99, 1950) == 1999);
+
+    // VSAM Partitioned Data Sets (PDS)
+    tsfi_cw_vsam_pds pds;
+    tsfi_cw_vsam_pds_init(&pds, "test_pds.dat.bin");
+    assert(tsfi_cw_vsam_pds_add_member(&pds, "MEM1", 100, 50) == 0);
+    uint32_t p_offset = 0, p_len = 0;
+    assert(tsfi_cw_vsam_pds_find_member(&pds, "MEM1", &p_offset, &p_len) == 0);
+    assert(p_offset == 100);
+    assert(p_len == 50);
+
+    // COBOL SYNCHRONIZED (SYNC) Clause
+    rc = tsfi_cw_parse_copybook_line("05 HALF-WORD PIC S9(4) COMP-5 SYNC.", &cb);
+    assert(rc == 0);
+    assert(cb.field_count == 15);
+    assert(cb.fields[14].sync_align == 4);
+
+    // EBCDIC Custom Padding Character Converter
+    uint8_t pad_out[8];
+    assert(tsfi_cw_ascii_to_ebcdic_pad("ABC", pad_out, 5, 0x40) == 0);
+    assert(pad_out[0] == tsfi_cw_ascii_to_ebcdic('A'));
+    assert(pad_out[4] == 0x40);
+
+    // JCL COND Step Evaluation
+    assert(tsfi_cw_jcl_eval_cond(12, 8, "LT") == 1);
+    assert(tsfi_cw_jcl_eval_cond(4, 8, "LT") == 0);
+
+    // Julian to Gregorian Y2K date conversion
+    char greg_out_d[16];
+    assert(tsfi_cw_julian_to_gregorian_y2k("26.200", 50, greg_out_d, sizeof(greg_out_d)) == 0);
+    assert(strcmp(greg_out_d, "2026-07-19") == 0);
 }
 
 int main(void) {
