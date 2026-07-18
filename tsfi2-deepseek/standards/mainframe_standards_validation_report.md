@@ -335,5 +335,7 @@
 | 401 | NATO STANAG 5066 Sync Sequence Type Matcher | PASS | Validates sync sequences against standard and maintenance patterns | Volume 33 |
 | 402 | NATO STANAG 5066 Client Protocol Data Unit (C_PDU) Length Checker | PASS | Validates C_PDU total length values stay within memory limits | Volume 33 |
 | 403 | NATO STANAG 5066 Transmission Mode Selector | PASS | Audits transmission mode flags match standard ARQ/Non-ARQ/Broadcast values | Volume 33 |
+| 404 | NATO STANAG 5066 Short-TIN Node Address Validator | PASS | Audits node address boundaries match 26-bit Short-TIN layouts | Volume 33 |
+| 405 | NATO STANAG 5066 Segmented Transfer Offset Matcher | PASS | Verifies segmented transfer offsets stay within file size boundaries | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 403 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 405 Scenarios validated successfully)

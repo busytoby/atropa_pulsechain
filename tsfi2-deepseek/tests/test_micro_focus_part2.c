@@ -1234,6 +1234,22 @@ int main(void) {
     assert(tx_mode_valid == 1);
     printf("  [PASS] NATO STANAG 5066 Tx Mode Validator verified.\n");
 
+    // 260. Verify NATO STANAG 5066 Short-TIN Node Address Validator
+    printf("[TEST] Validating NATO STANAG 5066 Short-TIN Address Matcher...\n");
+    int short_tin_valid = -1;
+    int short_tin_res = tsfi_mf_nato_verify_short_tin(50000, &short_tin_valid);
+    assert(short_tin_res == 0);
+    assert(short_tin_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Short-TIN Address Matcher verified.\n");
+
+    // 261. Verify NATO STANAG 5066 Segmented Transfer Offset Matcher
+    printf("[TEST] Validating NATO STANAG 5066 Segmented Offset Matcher...\n");
+    int seg_offset_valid = -1;
+    int seg_offset_res = tsfi_mf_nato_verify_segment_offset(1000, 500, 2000, &seg_offset_valid);
+    assert(seg_offset_res == 0);
+    assert(seg_offset_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Segmented Offset Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

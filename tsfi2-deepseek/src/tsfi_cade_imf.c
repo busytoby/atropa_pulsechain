@@ -1687,4 +1687,16 @@ int tsfi_mf_nato_verify_tx_mode(int mode, int *is_valid) {
     return 0;
 }
 
+int tsfi_mf_nato_verify_short_tin(int address, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (address >= 0 && address < (1 << 26)) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_segment_offset(int offset, int segment_size, int total_size, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (offset >= 0 && segment_size >= 0 && total_size >= 0 && offset + segment_size <= total_size) ? 1 : 0;
+    return 0;
+}
+
 
