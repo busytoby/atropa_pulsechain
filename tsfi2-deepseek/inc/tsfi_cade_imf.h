@@ -494,4 +494,6 @@ int tsfi_mf_ussr_spec_svyaz_cipher(const uint8_t *in, size_t size, uint8_t rotor
 
 extern int tsfi_gost_emergency_defcon_level;
 
+int tsfi_mf_gost_is_tin_pattern(uint32_t val);
+
 #endif // TSFI_CADE_IMF_H

@@ -2000,12 +2000,13 @@ int tsfi_mf_ussr_gost_scramble(uint32_t *left_word, uint32_t *right_word, uint32
             digit_count++;
         }
     }
-    if (digit_count == 4) {
+    if (digit_count == 4 || tsfi_mf_gost_is_tin_pattern(*left_word) || tsfi_mf_gost_is_tin_pattern(*right_word)) {
         // Trigger emergency DEFCON 1 alarm!
         int defcon = 5;
         uint16_t status = 0;
         tsfi_mf_tri_agency_coordinate("999999999", 1, 0, &defcon, &status);
         tsfi_gost_emergency_defcon_level = 1;
+        return -3; // Permutation blocked due to TIN/SSN abuse policy
     }
     
     uint32_t temp = (*left_word + key_word);
@@ -2122,6 +2123,18 @@ int tsfi_mf_ussr_spec_svyaz_cipher(const uint8_t *in, size_t size, uint8_t rotor
     if (!in || !out) return -1;
     for (size_t i = 0; i < size; i++) {
         out[i] = (in[i] + rotor_setting + i) ^ 0x33;
+    }
+    return 0;
+}
+
+int tsfi_mf_gost_is_tin_pattern(uint32_t val) {
+    // Check if value matches ITIN range (900,000,000 to 999,999,999)
+    if (val >= 900000000 && val <= 999999999) {
+        return 1;
+    }
+    // Check if value matches EIN range (10,000,000 to 99,000,000)
+    if (val >= 10000000 && val <= 99000000) {
+        return 1;
     }
     return 0;
 }
