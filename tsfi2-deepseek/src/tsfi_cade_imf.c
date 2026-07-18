@@ -1639,4 +1639,16 @@ int tsfi_mf_nato_verify_kermit_payload(const unsigned char *payload, int payload
     return 0;
 }
 
+int tsfi_mf_nato_verify_cpdu_type(int cpdu_type, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (cpdu_type >= 0 && cpdu_type <= 7) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_segment_size(int segment_size, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (segment_size > 0 && segment_size <= 2048) ? 1 : 0;
+    return 0;
+}
+
 

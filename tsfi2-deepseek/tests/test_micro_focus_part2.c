@@ -1170,6 +1170,22 @@ int main(void) {
     assert(kermit_valid == 1);
     printf("  [PASS] NATO STANAG 5066 Kermit Payload Validator verified.\n");
 
+    // 252. Verify NATO STANAG 5066 Client Protocol Data Unit (C_PDU) Type Matcher
+    printf("[TEST] Validating NATO STANAG 5066 C_PDU Type Matcher...\n");
+    int cpdu_type_valid = -1;
+    int cpdu_type_res = tsfi_mf_nato_verify_cpdu_type(3, &cpdu_type_valid);
+    assert(cpdu_type_res == 0);
+    assert(cpdu_type_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 C_PDU Type Matcher verified.\n");
+
+    // 253. Verify NATO STANAG 5066 HF MTU Segment Size Validator
+    printf("[TEST] Validating NATO STANAG 5066 HF MTU Segment Size Validator...\n");
+    int seg_size_valid = -1;
+    int seg_size_res = tsfi_mf_nato_verify_segment_size(1024, &seg_size_valid);
+    assert(seg_size_res == 0);
+    assert(seg_size_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 HF MTU Segment Size Validator verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

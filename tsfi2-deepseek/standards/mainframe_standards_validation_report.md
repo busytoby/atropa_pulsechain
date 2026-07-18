@@ -327,5 +327,7 @@
 | 393 | IRS CADE Form 1099-INT Recipient Name Matcher | PASS | Verifies non-empty recipient name string for interest payers | Volume 33 |
 | 394 | NATO STANAG 5066 Header Validator | PASS | Validates sync structure and type fields on STANAG 5066 frames | Volume 33 |
 | 395 | NATO STANAG 5066 Kermit Payload Validator | PASS | Validates Kermit checksums encapsulated in STANAG 5066 envelopes | Volume 33 |
+| 396 | NATO STANAG 5066 Client Protocol Data Unit (C_PDU) Type Matcher | PASS | Validates C_PDU service type codes match NATO interface definitions | Volume 33 |
+| 397 | NATO STANAG 5066 HF MTU Segment Size Validator | PASS | Verifies segment size does not exceed HF MTU limits | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 395 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 397 Scenarios validated successfully)
