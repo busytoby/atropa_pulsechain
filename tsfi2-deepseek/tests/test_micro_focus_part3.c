@@ -801,5 +801,21 @@ int run_nato_stanag_tests(void) {
     assert(up_ramp_factor_offset_valid == 1);
     printf("  [PASS] NATO Broadcast Busy Up-Ramp Rate Factor Offset Matcher verified.\n");
 
+    // 349. Verify NATO Link-Layer Broadcast Channel Busy Hysteresis Down-Ramp Rate Factor Offset Matcher
+    printf("[TEST] Validating NATO Broadcast Busy Down-Ramp Rate Factor Offset Matcher...\n");
+    int down_ramp_factor_offset_valid = -1;
+    int down_ramp_factor_offset_res = tsfi_mf_nato_verify_down_ramp_rate_factor_offset(4, &down_ramp_factor_offset_valid);
+    assert(down_ramp_factor_offset_res == 0);
+    assert(down_ramp_factor_offset_valid == 1);
+    printf("  [PASS] NATO Broadcast Busy Down-Ramp Rate Factor Offset Matcher verified.\n");
+
+    // 350. Verify NATO Link-Layer Broadcast Collision Backoff Slot Alignment Boundary Selector Matcher
+    printf("[TEST] Validating NATO Broadcast Backoff Slot Boundary Selector Matcher...\n");
+    int slot_boundary_selector_valid = -1;
+    int slot_boundary_selector_res = tsfi_mf_nato_verify_slot_boundary_selector(2, &slot_boundary_selector_valid);
+    assert(slot_boundary_selector_res == 0);
+    assert(slot_boundary_selector_valid == 1);
+    printf("  [PASS] NATO Broadcast Backoff Slot Boundary Selector Matcher verified.\n");
+
     return 0;
 }

@@ -645,3 +645,15 @@ int tsfi_mf_nato_verify_up_ramp_rate_factor_offset(int offset_db, int *is_valid)
     *is_valid = (offset_db >= 0 && offset_db <= 5) ? 1 : 0;
     return 0;
 }
+
+int tsfi_mf_nato_verify_down_ramp_rate_factor_offset(int offset_db, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (offset_db >= 0 && offset_db <= 5) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_slot_boundary_selector(int selector, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (selector >= 0 && selector <= 2) ? 1 : 0;
+    return 0;
+}
