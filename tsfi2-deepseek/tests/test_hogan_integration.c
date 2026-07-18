@@ -2177,14 +2177,47 @@ int main(void) {
     assert(tsfi_hogan_register_account(&sim_sys, 1001, 5000) == 0);
     assert(tsfi_hogan_register_account(&sim_sys, 2002, 1000) == 0);
     
+    sim_sys.accounts[0].min_balance = 1000;
+    sim_sys.accounts[0].min_balance_fee_waive_threshold = 2000;
+    sim_sys.accounts[0].card_expiry_epoch = 5;
+    
     tsfi_ramac_record ramac_disk[100];
     memset(ramac_disk, 0, sizeof(ramac_disk));
     
-    for (uint32_t epoch = 1; epoch <= 5; epoch++) {
-        uint64_t tx_amount = 100 * epoch;
-        assert(tsfi_hogan_dispatch_tx(&sim_sys, 1001, 2002, tx_amount, VM_RAMAC) == 0);
+    for (uint32_t epoch = 1; epoch <= 10; epoch++) {
+        if (epoch <= 3) {
+            uint64_t tx_amount = 100 * epoch;
+            assert(tsfi_hogan_dispatch_tx(&sim_sys, 1001, 2002, tx_amount, VM_RAMAC) == 0);
+        } else if (epoch == 4) {
+            assert(tsfi_hogan_apply_fees(&sim_sys, "hogan_fees.dat.bin", 50) == 0);
+            remove("hogan_fees.dat.bin");
+        } else if (epoch == 6) {
+            assert(tsfi_hogan_authorize_card(&sim_sys, "hogan_tx.dat.bin", 5005, 1001, 9009, 100) == -7);
+            remove("hogan_tx.dat.bin");
+        } else if (epoch == 7) {
+            assert(tsfi_hogan_update_card_expiry(&sim_sys, "hogan_expiry.dat.bin", 1001, 10, 999) == 0);
+            remove("hogan_expiry.dat.bin");
+            assert(tsfi_hogan_authorize_card(&sim_sys, "hogan_tx.dat.bin", 5005, 1001, 9009, 100) == 0);
+            remove("hogan_tx.dat.bin");
+        } else if (epoch == 8) {
+            assert(tsfi_hogan_update_deposit_limit(&sim_sys, "hogan_dep.dat.bin", 2002, 50, 999) == 0);
+            remove("hogan_dep.dat.bin");
+            assert(tsfi_hogan_dispatch_tx(&sim_sys, 1001, 2002, 100, VM_RAMAC) == 0);
+        } else if (epoch == 9) {
+            sim_sys.accounts[1].dormancy_threshold_epochs = 3;
+            sim_sys.accounts[1].last_activity_epoch = 5;
+        } else if (epoch == 10) {
+            assert(tsfi_hogan_reactivate_dormant_account(&sim_sys, "hogan_react.dat.bin", 2002, 999) == 0);
+            remove("hogan_react.dat.bin");
+        }
+
         assert(tsfi_hogan_overnight_reconciliation(&sim_sys, "hogan_lfs.dat.bin") == 0);
         remove("hogan_lfs.dat.bin");
+        
+        if (epoch == 8) {
+            assert(sim_sys.accounts[0].balance == 4350);
+            assert(sim_sys.accounts[1].balance == 1550);
+        }
         
         char key_alice[32], val_alice[32];
         char key_bob[32], val_bob[32];
