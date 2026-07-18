@@ -138,6 +138,39 @@ int main(void) {
     
     remove(seq_filepath); // clean up
 
+    // 10. Test Sequential Journal Recovery (Transaction Playback)
+    printf("[E2E] Testing Sequential Journal Recovery...\n");
+    const char *journal_path = "hogan_journal.dat.bin";
+    remove(journal_path); // ensure clean start
+    
+    // Write transactions to journal
+    hogan_transaction tx1 = { 1, 1001, 2002, 1000, VM_EVM, 0 };
+    hogan_transaction tx2 = { 2, 2002, 3003, 500, VM_ZMM, 0 };
+    
+    assert(tsfi_hogan_write_journal(journal_path, &tx1) == 0);
+    assert(tsfi_hogan_write_journal(journal_path, &tx2) == 0);
+    
+    // Reset/Reinitialize state to simulate system crash recovery
+    hogan_umbrella_system recovery_sys;
+    tsfi_hogan_init(&recovery_sys);
+    assert(tsfi_hogan_register_account(&recovery_sys, 1001, 7500) == 0);
+    assert(tsfi_hogan_register_account(&recovery_sys, 2002, 6500) == 0);
+    assert(tsfi_hogan_register_account(&recovery_sys, 3003, 3000) == 0);
+    
+    // Replay journal log
+    assert(tsfi_hogan_replay_journal(&recovery_sys, journal_path) == 0);
+    
+    // Assert balances are correctly recovered
+    // Alice: 7500 - 1000 = 6500
+    // Bob: 6500 + 1000 - 500 = 7000
+    // Charlie: 3000 + 500 = 3500
+    assert(recovery_sys.accounts[0].balance == 6500);
+    assert(recovery_sys.accounts[1].balance == 7000);
+    assert(recovery_sys.accounts[2].balance == 3500);
+    
+    remove(journal_path); // clean up
+    printf("  [PASS] Journal transaction playback and system state recovery verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }

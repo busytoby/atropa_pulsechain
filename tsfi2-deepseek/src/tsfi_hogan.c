@@ -279,3 +279,46 @@ int tsfi_hogan_resolve_uint64(const hogan_record_dict *dict, const uint8_t *payl
     }
     return -2; // Not found
 }
+
+int tsfi_hogan_write_journal(const char *filepath, const hogan_transaction *tx) {
+    return tsfi_hogan_write_seq_record(filepath, (const uint8_t *)tx, sizeof(hogan_transaction));
+}
+
+int tsfi_hogan_replay_journal(hogan_umbrella_system *sys, const char *filepath) {
+    uint8_t buf[sizeof(hogan_transaction)];
+    size_t size = 0;
+    size_t index = 0;
+    
+    // Disable live queue during replay recovery
+    uint8_t original_live_state = sys->live_processing_enabled;
+    sys->live_processing_enabled = 0;
+    
+    while (tsfi_hogan_read_seq_record(filepath, index, buf, &size) == 0) {
+        if (size != sizeof(hogan_transaction)) {
+            sys->live_processing_enabled = original_live_state;
+            return -2; // Corrupt record size
+        }
+        
+        const hogan_transaction *tx = (const hogan_transaction *)buf;
+        
+        // Find sender and recipient accounts and apply transaction directly
+        hogan_account *sender = NULL;
+        hogan_account *recipient = NULL;
+        for (int j = 0; j < HOGAN_MAX_ACCOUNTS; j++) {
+            if (sys->accounts[j].active) {
+                if (sys->accounts[j].account_id == tx->sender_id) sender = &sys->accounts[j];
+                if (sys->accounts[j].account_id == tx->recipient_id) recipient = &sys->accounts[j];
+            }
+        }
+        
+        if (sender && recipient && sender->balance >= tx->amount) {
+            sender->balance -= tx->amount;
+            recipient->balance += tx->amount;
+        }
+        
+        index++;
+    }
+    
+    sys->live_processing_enabled = original_live_state;
+    return 0;
+}

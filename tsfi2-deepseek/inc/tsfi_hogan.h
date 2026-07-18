@@ -78,4 +78,8 @@ int tsfi_hogan_add_field(hogan_record_dict *dict, const char *name, uint32_t off
 int tsfi_hogan_resolve_uint32(const hogan_record_dict *dict, const uint8_t *payload, const char *field_name, uint32_t *val_out);
 int tsfi_hogan_resolve_uint64(const hogan_record_dict *dict, const uint8_t *payload, const char *field_name, uint64_t *val_out);
 
+// Sequential Journal Recovery (Transaction Playback)
+int tsfi_hogan_write_journal(const char *filepath, const hogan_transaction *tx);
+int tsfi_hogan_replay_journal(hogan_umbrella_system *sys, const char *filepath);
+
 #endif // TSFI_HOGAN_H
