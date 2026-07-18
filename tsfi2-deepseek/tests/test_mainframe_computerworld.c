@@ -641,6 +641,41 @@ static void test_new_mainframe_features(void) {
     // Dynamic Gregorian Day-of-Month bounds
     assert(tsfi_cw_y2k_check_date_bounds(24, 2, 29, 50) == 0);
     assert(tsfi_cw_y2k_check_date_bounds(25, 2, 29, 50) == -2);
+
+    // VSAM Alternate Index Paths
+    tsfi_cw_vsam_ksds base_ksds;
+    tsfi_cw_vsam_open(&base_ksds, "test_base.dat.bin");
+    tsfi_cw_vsam_aix aix_path;
+    tsfi_cw_vsam_aix_init(&aix_path);
+    uint8_t base_d[4] = {0x11, 0x22};
+    assert(tsfi_cw_vsam_write(&base_ksds, "BKEY1", base_d, 2) == 0);
+    assert(tsfi_cw_vsam_aix_add(&aix_path, "AKEY1", "BKEY1") == 0);
+    uint8_t path_out_d[4];
+    int path_out_len = 0;
+    assert(tsfi_cw_vsam_path_read(&base_ksds, &aix_path, "AKEY1", path_out_d, sizeof(path_out_d), &path_out_len) == 0);
+    assert(path_out_len == 2);
+
+    // COBOL SIGN LEADING/TRAILING SEPARATE Clause
+    rc = tsfi_cw_parse_copybook_line("05 SIGN-VAR PIC S9(5) SIGN LEADING SEPARATE.", &cb);
+    assert(rc == 0);
+    assert(cb.field_count == 16);
+    assert(cb.fields[15].sign_leading == 1);
+    assert(cb.fields[15].sign_separate == 1);
+
+    // EBCDIC CP500 Translation
+    assert(tsfi_cw_ascii_to_ebcdic_cp500('[') == 0x4A);
+    assert(tsfi_cw_ebcdic_to_ascii_cp500(0x4A) == '[');
+
+    // JCL SYSOUT print capture
+    tsfi_cw_jcl_sysout sout;
+    tsfi_cw_jcl_sysout_init(&sout);
+    assert(tsfi_cw_jcl_sysout_write(&sout, "LOG LINE\n") == 0);
+    assert(strcmp(sout.buffer, "LOG LINE\n") == 0);
+
+    // Y2K Date difference
+    int diff_days = 0;
+    assert(tsfi_cw_y2k_date_diff(26, 7, 19, 26, 7, 21, 50, &diff_days) == 0);
+    assert(diff_days == 2);
 }
 
 int main(void) {

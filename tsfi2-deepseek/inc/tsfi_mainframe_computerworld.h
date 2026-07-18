@@ -71,6 +71,8 @@ typedef struct {
     int blank_when_zero;
     int justified_right;
     int sync_align;
+    int sign_leading;
+    int sign_separate;
 } tsfi_cw_cobol_field;
 
 typedef struct {
@@ -338,6 +340,25 @@ int tsfi_cw_run_jcl_export(const char **cards, int card_count, char *exp_name, c
 
 // Dynamic Gregorian Day-of-Month bounds
 int tsfi_cw_y2k_check_date_bounds(uint32_t yy, uint32_t mm, uint32_t dd, uint32_t pivot);
+
+// VSAM Alternate Index Paths
+int tsfi_cw_vsam_path_read(tsfi_cw_vsam_ksds *ksds, tsfi_cw_vsam_aix *aix, const char *alt_key, uint8_t *data_out, int max_len, int *out_len);
+
+// EBCDIC CP500 (International) translation map
+uint8_t tsfi_cw_ascii_to_ebcdic_cp500(uint8_t ascii_char);
+uint8_t tsfi_cw_ebcdic_to_ascii_cp500(uint8_t ebcdic_char);
+
+// JCL SYSOUT print redirect buffers
+typedef struct {
+    char buffer[1024];
+    int length;
+} tsfi_cw_jcl_sysout;
+
+void tsfi_cw_jcl_sysout_init(tsfi_cw_jcl_sysout *sysout);
+int tsfi_cw_jcl_sysout_write(tsfi_cw_jcl_sysout *sysout, const char *text);
+
+// Y2K Date Duration calculator
+int tsfi_cw_y2k_date_diff(uint32_t yy1, uint32_t mm1, uint32_t dd1, uint32_t yy2, uint32_t mm2, uint32_t dd2, uint32_t pivot, int *days_out);
 
 // 4. Job Control Language (JCL) Execution Simulator
 int tsfi_cw_run_jcl(const char **cards, int card_count);

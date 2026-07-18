@@ -570,6 +570,15 @@ int tsfi_cw_parse_copybook_line(const char *copybook_line, tsfi_cw_copybook *cb)
         sync_align = 4;
     }
 
+    int sign_leading = 0;
+    int sign_separate = 0;
+    if (strstr(copybook_line, "SIGN IS LEADING") || strstr(copybook_line, "SIGN LEADING")) {
+        sign_leading = 1;
+        if (strstr(copybook_line, "SEPARATE")) sign_separate = 1;
+    } else if (strstr(copybook_line, "SIGN IS TRAILING") || strstr(copybook_line, "SIGN TRAILING")) {
+        if (strstr(copybook_line, "SEPARATE")) sign_separate = 1;
+    }
+
     tsfi_cw_cobol_field *f = &cb->fields[cb->field_count];
     f->level = level;
     snprintf(f->name, sizeof(f->name), "%s", name);
@@ -583,6 +592,8 @@ int tsfi_cw_parse_copybook_line(const char *copybook_line, tsfi_cw_copybook *cb)
     f->blank_when_zero = blank_when_zero;
     f->justified_right = justified_right;
     f->sync_align = sync_align;
+    f->sign_leading = sign_leading;
+    f->sign_separate = sign_separate;
     
     int byte_len = length + decimal_places;
     int base_length = 0;
@@ -1937,6 +1948,73 @@ int tsfi_cw_y2k_check_date_bounds(uint32_t yy, uint32_t mm, uint32_t dd, uint32_
     if (is_leap) days_in_months[1] = 29;
     
     if (dd > (uint32_t)days_in_months[mm - 1]) return -2;
+    return 0;
+}
+
+int tsfi_cw_vsam_path_read(tsfi_cw_vsam_ksds *ksds, tsfi_cw_vsam_aix *aix, const char *alt_key, uint8_t *data_out, int max_len, int *out_len) {
+    if (!ksds || !aix || !alt_key || !data_out || !out_len) return -1;
+    char base_key[16] = "";
+    int found = tsfi_cw_vsam_aix_resolve(aix, alt_key, base_key);
+    if (found != 0) return -4;
+    return tsfi_cw_vsam_read(ksds, base_key, data_out, max_len, out_len);
+}
+
+uint8_t tsfi_cw_ascii_to_ebcdic_cp500(uint8_t ascii_char) {
+    if (ascii_char == '[') return 0x4A;
+    if (ascii_char == ']') return 0x5A;
+    return tsfi_cw_ascii_to_ebcdic(ascii_char);
+}
+
+uint8_t tsfi_cw_ebcdic_to_ascii_cp500(uint8_t ebcdic_char) {
+    if (ebcdic_char == 0x4A) return '[';
+    if (ebcdic_char == 0x5A) return ']';
+    return tsfi_cw_ebcdic_to_ascii(ebcdic_char);
+}
+
+void tsfi_cw_jcl_sysout_init(tsfi_cw_jcl_sysout *sysout) {
+    if (sysout) memset(sysout, 0, sizeof(tsfi_cw_jcl_sysout));
+}
+
+int tsfi_cw_jcl_sysout_write(tsfi_cw_jcl_sysout *sysout, const char *text) {
+    if (!sysout || !text) return -1;
+    int len = strlen(text);
+    if (sysout->length + len >= 1024) len = 1024 - sysout->length - 1;
+    if (len <= 0) return 0;
+    strncpy(sysout->buffer + sysout->length, text, len);
+    sysout->length += len;
+    sysout->buffer[sysout->length] = '\0';
+    return 0;
+}
+
+static int tsfi_cw_days_from_epoch(uint32_t year, uint32_t month, uint32_t day) {
+    int days = day;
+    int days_in_months[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    for (uint32_t y = 1900; y < year; y++) {
+        int leap = 0;
+        if (y % 100 == 0) leap = (y % 400 == 0) ? 1 : 0;
+        else leap = (y % 4 == 0) ? 1 : 0;
+        days += leap ? 366 : 365;
+    }
+    int is_leap = 0;
+    if (year % 100 == 0) is_leap = (year % 400 == 0) ? 1 : 0;
+    else is_leap = (year % 4 == 0) ? 1 : 0;
+    if (is_leap) days_in_months[1] = 29;
+    
+    for (uint32_t m = 1; m < month; m++) {
+        days += days_in_months[m - 1];
+    }
+    return days;
+}
+
+int tsfi_cw_y2k_date_diff(uint32_t yy1, uint32_t mm1, uint32_t dd1, uint32_t yy2, uint32_t mm2, uint32_t dd2, uint32_t pivot, int *days_out) {
+    if (!days_out) return -1;
+    uint32_t year1 = tsfi_cw_y2k_resolve_year_ex(yy1, pivot);
+    uint32_t year2 = tsfi_cw_y2k_resolve_year_ex(yy2, pivot);
+    
+    int d1 = tsfi_cw_days_from_epoch(year1, mm1, dd1);
+    int d2 = tsfi_cw_days_from_epoch(year2, mm2, dd2);
+    
+    *days_out = d2 - d1;
     return 0;
 }
 
