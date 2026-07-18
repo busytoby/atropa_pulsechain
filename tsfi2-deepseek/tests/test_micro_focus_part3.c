@@ -285,5 +285,21 @@ int run_nato_stanag_tests(void) {
     assert(retransmit_timeout_valid == 1);
     printf("  [PASS] NATO STANAG 5066 Retransmit Timeout Validator verified.\n");
 
+    // 285. Verify NATO STANAG 5066 Flow Control Buffer Low-Water Mark Matcher
+    printf("[TEST] Validating NATO STANAG 5066 Low-Water Mark Matcher...\n");
+    int low_water_valid = -1;
+    int low_water_res = tsfi_mf_nato_verify_low_water_mark(30, &low_water_valid);
+    assert(low_water_res == 0);
+    assert(low_water_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Low-Water Mark Matcher verified.\n");
+
+    // 286. Verify NATO STANAG 5066 Multi-Scan Frame Count Validator
+    printf("[TEST] Validating NATO STANAG 5066 Multi-Scan Frame Count Validator...\n");
+    int multiscan_count_valid = -1;
+    int multiscan_count_res = tsfi_mf_nato_verify_multiscan_frame_count(16, &multiscan_count_valid);
+    assert(multiscan_count_res == 0);
+    assert(multiscan_count_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Multi-Scan Frame Count Validator verified.\n");
+
     return 0;
 }

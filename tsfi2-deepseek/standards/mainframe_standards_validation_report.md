@@ -360,5 +360,7 @@
 | 426 | NATO STANAG 5066 Link-Layer Packet Delay Selector | PASS | Audits that packet transmission delay parameters stay within standard limits | Volume 33 |
 | 427 | NATO STANAG 5066 Flow Control Buffer High-Water Mark Matcher | PASS | Validates flow control buffer percentage thresholds | Volume 33 |
 | 428 | NATO STANAG 5066 Max Segment Retransmission Timeout Validator | PASS | Audits segment retransmission time limit boundaries | Volume 33 |
+| 429 | NATO STANAG 5066 Flow Control Buffer Low-Water Mark Matcher | PASS | Validates flow control buffer resume percentage thresholds | Volume 33 |
+| 430 | NATO STANAG 5066 Multi-Scan Frame Count Validator | PASS | Audits maximum frame count settings per multi-scan transmission | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 428 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 430 Scenarios validated successfully)

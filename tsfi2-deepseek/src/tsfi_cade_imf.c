@@ -1853,4 +1853,16 @@ int tsfi_mf_nato_verify_retransmit_timeout(int timeout, int *is_valid) {
     return 0;
 }
 
+int tsfi_mf_nato_verify_low_water_mark(int percentage, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (percentage >= 10 && percentage <= 49) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_multiscan_frame_count(int count, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (count >= 1 && count <= 32) ? 1 : 0;
+    return 0;
+}
+
 
