@@ -2139,6 +2139,14 @@ static void test_new_mainframe_features(void) {
     tsfi_cw_unt_cics_queue queue_bad = { "TSQ02", 15000, "TSQ", 1000000 };
     assert(tsfi_cw_unt_cics_audit_queue(&queue_bad, &cics_alert) == 0);
     assert(cics_alert == 1);
+
+    // Ballistic inject test
+    tsfi_cw_unt_cics_queue q_ballistic = { "TDQ01", 10, "TDQ", 500 };
+    int processed = 0;
+    assert(tsfi_cw_unt_cics_inject_ballistic("BALLISTIC_PAYLOAD", 17, &q_ballistic, &processed) == 0);
+    assert(processed == 17);
+    assert(q_ballistic.item_count == 11);
+    assert(q_ballistic.total_bytes == 517);
 }
 
 int main(void) {

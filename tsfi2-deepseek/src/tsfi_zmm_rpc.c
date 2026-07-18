@@ -966,6 +966,40 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
         snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"alert\": %d}, \"id\": %d}\n", alert, id);
         return 1;
     }
+    if (method_type == 72) {
+        char queue_name[32] = {0};
+        char queue_type[32] = {0};
+        char data[1024] = {0};
+        extract_json_string(min_ptr, "\"queue_name\"", queue_name, sizeof(queue_name));
+        extract_json_string(min_ptr, "\"queue_type\"", queue_type, sizeof(queue_type));
+        extract_json_string(min_ptr, "\"data\"", data, sizeof(data));
+        int item_count = extract_json_int(min_ptr, "\"item_count\"", 0);
+        int total_bytes = extract_json_int(min_ptr, "\"total_bytes\"", 0);
+        
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wstringop-truncation"
+        tsfi_cw_unt_cics_queue queue;
+        strncpy(queue.queue_name, queue_name, sizeof(queue.queue_name) - 1);
+        queue.queue_name[sizeof(queue.queue_name) - 1] = 0;
+        strncpy(queue.queue_type, queue_type, sizeof(queue.queue_type) - 1);
+        queue.queue_type[sizeof(queue.queue_type) - 1] = 0;
+        #pragma GCC diagnostic pop
+        
+        queue.item_count = item_count;
+        queue.total_bytes = total_bytes;
+        
+        int processed = 0;
+        extern int tsfi_cw_unt_cics_inject_ballistic(const char *data, int data_len, tsfi_cw_unt_cics_queue *queue, int *processed_bytes_out);
+        tsfi_cw_unt_cics_inject_ballistic(data, (int)strlen(data), &queue, &processed);
+        
+        int alert = 0;
+        extern int tsfi_cw_unt_cics_audit_queue(const tsfi_cw_unt_cics_queue *queue, int *alert_out);
+        tsfi_cw_unt_cics_audit_queue(&queue, &alert);
+        
+        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"processed_bytes\": %d, \"item_count\": %d, \"total_bytes\": %d, \"alert\": %d}, \"id\": %d}\n",
+                 processed, queue.item_count, queue.total_bytes, alert, id);
+        return 1;
+    }
     snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"Method not found\", \"id\": %d}\n", id);
     return 1;
 }

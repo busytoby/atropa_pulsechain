@@ -1187,6 +1187,7 @@ typedef struct {
 
 int tsfi_cw_unt_cics_audit_session(const tsfi_cw_unt_cics_session *session, int *needs_reset_out);
 int tsfi_cw_unt_cics_audit_queue(const tsfi_cw_unt_cics_queue *queue, int *alert_out);
+int tsfi_cw_unt_cics_inject_ballistic(const char *data, int data_len, tsfi_cw_unt_cics_queue *queue, int *processed_bytes_out);
 
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

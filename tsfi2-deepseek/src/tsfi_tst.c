@@ -113,6 +113,7 @@ tsfi_tst_node* tsfi_tst_init_rpc_router(void) {
     root = tsfi_tst_insert(root, "wave64.get_dexscreener_pairs", "64");
     root = tsfi_tst_insert(root, "cics.audit_terminal_session", "70");
     root = tsfi_tst_insert(root, "cics.audit_queue", "71");
+    root = tsfi_tst_insert(root, "cics.inject_ballistic_data", "72");
 
     return root;
 }

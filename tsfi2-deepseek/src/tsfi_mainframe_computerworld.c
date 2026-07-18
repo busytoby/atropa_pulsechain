@@ -1543,6 +1543,16 @@ int tsfi_cw_unt_cics_audit_queue(const tsfi_cw_unt_cics_queue *queue, int *alert
     return 0;
 }
 
+int tsfi_cw_unt_cics_inject_ballistic(const char *data, int data_len, tsfi_cw_unt_cics_queue *queue, int *processed_bytes_out) {
+    if (!data || data_len <= 0 || !queue || !processed_bytes_out) return -1;
+    
+    queue->item_count++;
+    queue->total_bytes += data_len;
+    *processed_bytes_out = data_len;
+    return 0;
+}
+
+
 
 
 
