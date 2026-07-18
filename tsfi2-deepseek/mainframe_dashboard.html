@@ -227,6 +227,52 @@
             </div>
         </div>
 
+        <!-- TEMPEST Panel -->
+        <div class="panel" style="margin-top: 20px;">
+            <h2>TEMPEST Red-Black Shielding Control Panel</h2>
+            <div style="margin: 15px 0;">
+                <label for="tempestDbSlider" style="display: block; margin-bottom: 5px; color: var(--glow-blue);">Simulated Attenuation: <span id="tempestDbVal" style="color: var(--glow-amber); font-weight: bold;">80</span> dB</label>
+                <input type="range" id="tempestDbSlider" min="0" max="120" value="80" style="width: 100%; accent-color: var(--glow-blue);" oninput="updateTempestShielding(this.value)">
+            </div>
+            <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                <div style="flex: 1; border: 1px solid rgba(209, 244, 255, 0.1); padding: 10px; border-radius: 4px; background: rgba(0,0,0,0.2);">
+                    <div style="font-size: 10px; color: #8ab4f8; text-transform: uppercase;">Shield Status</div>
+                    <div id="tempestStatusBadge" style="font-weight: bold; margin-top: 5px; color: var(--glow-green);">EXCELLENT</div>
+                </div>
+                <div style="flex: 1; border: 1px solid rgba(209, 244, 255, 0.1); padding: 10px; border-radius: 4px; background: rgba(0,0,0,0.2);">
+                    <div style="font-size: 10px; color: #8ab4f8; text-transform: uppercase;">Zone Routing</div>
+                    <div style="margin-top: 5px; font-size: 11px;">
+                        RED: <span id="tempestRedLight" style="color: var(--glow-green);">ACTIVE</span><br>
+                        BLACK: <span id="tempestBlackLight" style="color: var(--glow-green);">ACTIVE</span>
+                    </div>
+                </div>
+                <div style="flex: 1; border: 1px solid rgba(209, 244, 255, 0.1); padding: 10px; border-radius: 4px; background: rgba(0,0,0,0.2);">
+                    <div style="font-size: 10px; color: #8ab4f8; text-transform: uppercase;">Signal Leakage</div>
+                    <div id="tempestLeakageVal" style="font-weight: bold; margin-top: 5px; color: var(--glow-amber);">0.05 mV</div>
+                </div>
+            </div>
+            
+            <h3 style="font-size: 14px; margin-top: 20px; color: var(--glow-blue);">WinchesterMQ SCSI Loopback Bridge</h3>
+            <div style="margin-bottom: 10px; font-size: 12px; display: flex; align-items: center; gap: 5px;">
+                <input type="checkbox" id="tempestSynthCheck">
+                <label for="tempestSynthCheck" style="color: #ff6666; cursor: pointer;">Inject Synthetic Driver Signature</label>
+            </div>
+            <div class="controls" style="margin-top: 10px;">
+                <button class="success" style="font-size: 11px; padding: 8px;" onclick="runScsiHandshake(30)">Handshake Keycode 30 (a)</button>
+                <button class="success" style="font-size: 11px; padding: 8px;" onclick="runScsiHandshake(32)">Handshake Keycode 32 (d)</button>
+            </div>
+            
+            <div style="margin-top: 15px; background: #020408; border: 1px solid rgba(209, 244, 255, 0.1); padding: 10px; border-radius: 4px; font-family: monospace; font-size: 11px;">
+                <div style="color: #8ab4f8; text-transform: uppercase; font-size: 10px; margin-bottom: 5px;">SCSI Loopback Registers</div>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px;">
+                    <div>status_reg: <span id="scsiStatusVal" style="color: var(--glow-amber);">0</span></div>
+                    <div>keycode_reg: <span id="scsiKeycodeVal" style="color: var(--glow-amber);">0</span></div>
+                    <div>data_reg: <span id="scsiDataVal" style="color: var(--glow-amber);">0</span></div>
+                    <div>loopback_cnt: <span id="scsiCountVal" style="color: var(--glow-amber);">0</span></div>
+                </div>
+            </div>
+        </div>
+
         <!-- Column 2: Registers & Scoreboard States -->
         <div class="panel">
             <h2>VM State Registers</h2>
@@ -332,11 +378,82 @@
         </div>
     </div>
 
+    <!-- ICP Registry Monitor Panel -->
+    <div class="panel" style="margin-top: 25px; border-color: rgba(0, 210, 255, 0.3);">
+        <h2 style="text-shadow: 0 0 10px rgba(0, 210, 255, 0.5); color: var(--glow-blue);">International Computer Programs (ICP) Registry Monitor</h2>
+        <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px; margin-top: 15px;">
+            
+            <!-- Left: Directory search and results -->
+            <div>
+                <h3 style="font-size: 14px; color: var(--glow-green);">Catalog Directory Search</h3>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <input type="text" id="icpSearchInput" placeholder="Filter by Hardware or Vendor..." style="flex: 1; background: #020508; border: 1px solid rgba(0, 210, 255, 0.4); color: var(--text-color); padding: 8px; font-family: inherit; border-radius: 4px;">
+                    <button onclick="searchIcpCatalog()" style="flex: 0 0 120px;">Search</button>
+                </div>
+                
+                <table style="font-size: 12px;">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Vendor</th>
+                            <th>Platform</th>
+                            <th>Price</th>
+                            <th>Installs</th>
+                            <th>Award</th>
+                        </tr>
+                    </thead>
+                    <tbody id="icpCatalogBody">
+                        <!-- Populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Right: Interactive Audits and Registrations -->
+            <div style="border-left: 1px solid rgba(209, 244, 255, 0.1); padding-left: 20px;">
+                <h3 style="font-size: 14px; color: var(--glow-amber);">Register Software Package</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                    <input type="text" id="regIcpId" placeholder="ID (e.g., P01)" style="background: #020508; border: 1px solid rgba(209, 244, 255, 0.2); color: var(--text-color); padding: 5px; font-size: 11px; font-family: inherit;">
+                    <input type="text" id="regIcpName" placeholder="Name" style="background: #020508; border: 1px solid rgba(209, 244, 255, 0.2); color: var(--text-color); padding: 5px; font-size: 11px; font-family: inherit;">
+                    <input type="text" id="regIcpVendor" placeholder="Vendor" style="background: #020508; border: 1px solid rgba(209, 244, 255, 0.2); color: var(--text-color); padding: 5px; font-size: 11px; font-family: inherit;">
+                    <input type="text" id="regIcpPlatform" placeholder="Platform" style="background: #020508; border: 1px solid rgba(209, 244, 255, 0.2); color: var(--text-color); padding: 5px; font-size: 11px; font-family: inherit;">
+                    <input type="number" id="regIcpPrice" placeholder="Unit Price" style="background: #020508; border: 1px solid rgba(209, 244, 255, 0.2); color: var(--text-color); padding: 5px; font-size: 11px; font-family: inherit;">
+                    <input type="number" id="regIcpInstalls" placeholder="Install Count" style="background: #020508; border: 1px solid rgba(209, 244, 255, 0.2); color: var(--text-color); padding: 5px; font-size: 11px; font-family: inherit;">
+                </div>
+                <button class="success" onclick="addIcpProduct()" style="width: 100%; font-size: 12px; padding: 8px;">Register Product</button>
+                
+                <h3 style="font-size: 14px; color: var(--glow-blue); margin-top: 20px;">Audits & Compliance</h3>
+                <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(209, 244, 255, 0.1); padding: 10px; border-radius: 4px; font-size: 11px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>Compliance Status:</span>
+                        <span id="icpComplianceStatus" style="font-weight: bold; color: var(--glow-green);">NOMINAL (100%)</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>Vendor Standing:</span>
+                        <span id="icpVendorStanding" style="font-weight: bold; color: var(--glow-green);">COMPLIANT</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Total Catalog Revenue:</span>
+                        <span id="icpTotalRevenue" style="font-weight: bold; color: var(--glow-amber);">$0.00</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
     <script>
         const canvas = document.getElementById('scopeCanvas');
         const ctx = canvas.getContext('2d');
         const consoleEl = document.getElementById('logConsole');
         let angle = 0;
+
+        let tempestAttenuation = 80;
+        let tempestStatus = "EXCELLENT";
+        let loopbackStatusReg = 0;
+        let loopbackKeycodeReg = 0;
+        let loopbackDataReg = 0;
+        let loopbackCountVal = 0;
 
         function addLog(msg) {
             const entry = document.createElement('div');
@@ -344,6 +461,91 @@
             entry.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
             consoleEl.appendChild(entry);
             consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        function updateTempestShielding(val) {
+            tempestAttenuation = parseFloat(val);
+            document.getElementById('tempestDbVal').innerText = val;
+            
+            const leakage = 5.0 * Math.pow(10, -tempestAttenuation / 20.0);
+            document.getElementById('tempestLeakageVal').innerText = leakage.toFixed(4) + " mV";
+            
+            const badge = document.getElementById('tempestStatusBadge');
+            const redLight = document.getElementById('tempestRedLight');
+            const blackLight = document.getElementById('tempestBlackLight');
+            
+            if (tempestAttenuation >= 80) {
+                tempestStatus = "EXCELLENT";
+                badge.innerText = "EXCELLENT";
+                badge.style.color = "var(--glow-green)";
+                redLight.innerText = "ACTIVE";
+                redLight.style.color = "var(--glow-green)";
+                blackLight.innerText = "ACTIVE";
+                blackLight.style.color = "var(--glow-green)";
+            } else if (tempestAttenuation >= 40) {
+                tempestStatus = "DEGRADED";
+                badge.innerText = "DEGRADED";
+                badge.style.color = "var(--glow-amber)";
+                redLight.innerText = "ACTIVE";
+                redLight.style.color = "var(--glow-amber)";
+                blackLight.innerText = "ACTIVE";
+                blackLight.style.color = "var(--glow-amber)";
+            } else {
+                tempestStatus = "COMPROMISED";
+                badge.innerText = "COMPROMISED";
+                badge.style.color = "#ff3333";
+                redLight.innerText = "LOCKED OUT";
+                redLight.style.color = "#ff3333";
+                blackLight.innerText = "LOCKED OUT";
+                blackLight.style.color = "#ff3333";
+            }
+        }
+
+        function runScsiHandshake(keycode) {
+            if (tempestStatus === "COMPROMISED") {
+                addLog("TEMPEST SHIELD FAULT: Handshake aborted due to compromised isolation!");
+                return;
+            }
+            if (document.getElementById('tempestSynthCheck').checked) {
+                addLog("SCSI BRIDGE FAULT: Access denied. Synthetic driver signature detected!");
+                return;
+            }
+            
+            loopbackKeycodeReg = keycode;
+            document.getElementById('scsiKeycodeVal').innerText = keycode;
+            
+            let step = 0;
+            const interval = setInterval(() => {
+                switch (step) {
+                    case 0:
+                        loopbackStatusReg = 1; // REQ
+                        addLog(`SCSI loopback: status_reg=1 (REQ) [Keycode=${keycode}]`);
+                        break;
+                    case 1:
+                        loopbackStatusReg = 2; // ACK
+                        addLog("SCSI loopback: status_reg=2 (ACK)");
+                        break;
+                    case 2:
+                        loopbackStatusReg = 3; // DATA_IN
+                        addLog("SCSI loopback: status_reg=3 (DATA_IN)");
+                        break;
+                    case 3:
+                        loopbackDataReg = keycode;
+                        loopbackStatusReg = 4; // DATA_OUT
+                        document.getElementById('scsiDataVal').innerText = keycode;
+                        addLog(`SCSI loopback: status_reg=4 (DATA_OUT) // data_reg loaded: ${keycode}`);
+                        break;
+                    case 4:
+                        loopbackCountVal++;
+                        loopbackStatusReg = 0; // IDLE
+                        document.getElementById('scsiCountVal').innerText = loopbackCountVal;
+                        addLog(`SCSI loopback: Handshake completed successfully. loopback_cnt=${loopbackCountVal}`);
+                        clearInterval(interval);
+                        break;
+                }
+                document.getElementById('scsiStatusVal').innerText = loopbackStatusReg;
+                step++;
+            }, 100);
         }
 
         // Simulating the 19D Lissajous figure projection on the CRT tube
@@ -360,9 +562,26 @@
                 ctx.stroke();
             }
 
-            ctx.strokeStyle = '#00ff66';
+            // Distort oscilloscope scan trace under compromised or degraded TEMPEST shielding
+            let noise = 0;
+            if (tempestStatus === "DEGRADED") {
+                noise = 4;
+            } else if (tempestStatus === "COMPROMISED") {
+                noise = 30;
+            }
+
+            if (tempestStatus === "COMPROMISED") {
+                ctx.strokeStyle = '#ff3333';
+                ctx.shadowColor = '#ff3333';
+            } else if (tempestStatus === "DEGRADED") {
+                ctx.strokeStyle = 'var(--glow-amber)';
+                ctx.shadowColor = 'var(--glow-amber)';
+            } else {
+                ctx.strokeStyle = '#00ff66';
+                ctx.shadowColor = '#00ff66';
+            }
+            
             ctx.shadowBlur = 10;
-            ctx.shadowColor = '#00ff66';
             ctx.lineWidth = 2;
             ctx.beginPath();
 
@@ -372,9 +591,14 @@
 
             for (let i = 0; i < 400; i++) {
                 const theta = (i * 2.0 * Math.PI) / 100;
-                // Modulated by Base and Dynamo registers
-                const x = Math.sin(theta * 3 + angle) * Math.cos(theta * 2 + angle * 0.5) * scale;
-                const y = Math.cos(theta * 5 + angle * 0.7) * Math.sin(theta * 3 + angle) * scale;
+                // Modulated by Base and Dynamo registers + RF noise leakage
+                let x = Math.sin(theta * 3 + angle) * Math.cos(theta * 2 + angle * 0.5) * scale;
+                let y = Math.cos(theta * 5 + angle * 0.7) * Math.sin(theta * 3 + angle) * scale;
+
+                if (noise > 0) {
+                    x += (Math.random() - 0.5) * noise;
+                    y += (Math.random() - 0.5) * noise;
+                }
 
                 if (i === 0) {
                     ctx.moveTo(cx + x, cy + y);
@@ -410,6 +634,107 @@
             `;
             scBody.appendChild(row);
         }
+
+        // --- ICP Catalog Telemetry Handlers ---
+        let icpProducts = [
+            { id: "PROD01", name: "MARK IV", vendor: "Informatics", platform: "IBM 360", price: 15000, installs: 80 },
+            { id: "PROD02", name: "AUTOFLOW", vendor: "ADR", platform: "IBM 360", price: 8000, installs: 150 },
+            { id: "PROD03", name: "System/360 OS", vendor: "IBM", platform: "IBM 360", price: 45000, installs: 300 }
+        ];
+
+        function renderIcpProducts(filterText = "") {
+            const body = document.getElementById('icpCatalogBody');
+            body.innerHTML = "";
+            let totalRev = 0;
+            let totalInstalls = 0;
+            let compliantCount = 0;
+
+            const filtered = icpProducts.filter(p => {
+                const matchText = (p.name + " " + p.vendor + " " + p.platform + " " + p.id).toLowerCase();
+                return filterText === "" || matchText.includes(filterText.toLowerCase());
+            });
+
+            filtered.forEach(p => {
+                const rev = p.price * p.installs;
+                totalRev += rev;
+                totalInstalls += p.installs;
+
+                const qualifies = rev >= 1000000;
+                const awardText = qualifies ? `<span style="color: var(--glow-amber);">🏆 MILLION $</span>` : `<span style="color: #666;">-</span>`;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${p.id}</td>
+                    <td style="color: var(--glow-blue); font-weight: bold;">${p.name}</td>
+                    <td>${p.vendor}</td>
+                    <td>${p.platform}</td>
+                    <td>$${p.price.toLocaleString()}</td>
+                    <td>${p.installs}</td>
+                    <td>${awardText}</td>
+                `;
+                body.appendChild(row);
+            });
+
+            document.getElementById('icpTotalRevenue').innerText = "$" + totalRev.toLocaleString();
+            
+            // Calculate a synthetic compliance ratio
+            const overInstallationRatio = totalInstalls > 600 ? "WARNING (OVER LIMIT)" : "NOMINAL (100%)";
+            const complianceEl = document.getElementById('icpComplianceStatus');
+            complianceEl.innerText = overInstallationRatio;
+            complianceEl.style.color = totalInstalls > 600 ? "#ff3333" : "var(--glow-green)";
+
+            // Vendor standing
+            const compliantStanding = filtered.every(p => p.vendor !== "UnregulatedCorp") ? "COMPLIANT" : "SUSPENDED";
+            const standingEl = document.getElementById('icpVendorStanding');
+            standingEl.innerText = compliantStanding;
+            standingEl.style.color = compliantStanding === "COMPLIANT" ? "var(--glow-green)" : "#ff3333";
+        }
+
+        function searchIcpCatalog() {
+            const val = document.getElementById('icpSearchInput').value;
+            renderIcpProducts(val);
+            addLog(`ICP_SEARCH: Filtered catalog registry with query: "${val}"`);
+        }
+
+        function addIcpProduct() {
+            const id = document.getElementById('regIcpId').value.trim();
+            const name = document.getElementById('regIcpName').value.trim();
+            const vendor = document.getElementById('regIcpVendor').value.trim();
+            const platform = document.getElementById('regIcpPlatform').value.trim();
+            const price = parseFloat(document.getElementById('regIcpPrice').value);
+            const installs = parseInt(document.getElementById('regIcpInstalls').value);
+
+            if (!id || !name || !vendor || !platform || isNaN(price) || isNaN(installs)) {
+                addLog("ICP_REGISTRY FAULT: Invalid product registration inputs!");
+                return;
+            }
+
+            const existing = icpProducts.find(p => p.id === id);
+            if (existing) {
+                existing.name = name;
+                existing.vendor = vendor;
+                existing.platform = platform;
+                existing.price = price;
+                existing.installs = installs;
+                addLog(`ICP_REGISTRY: Updated existing product ID ${id}`);
+            } else {
+                icpProducts.push({ id, name, vendor, platform, price, installs });
+                addLog(`ICP_REGISTRY: Successfully registered software product "${name}" [ID: ${id}]`);
+            }
+
+            // Clear inputs
+            document.getElementById('regIcpId').value = "";
+            document.getElementById('regIcpName').value = "";
+            document.getElementById('regIcpVendor').value = "";
+            document.getElementById('regIcpPlatform').value = "";
+            document.getElementById('regIcpPrice').value = "";
+            document.getElementById('regIcpInstalls').value = "";
+
+            renderIcpProducts();
+        }
+
+        // Initialize table representation
+        renderIcpProducts();
 
         drawLissajous();
     </script>
