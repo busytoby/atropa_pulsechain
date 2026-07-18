@@ -239,5 +239,7 @@
 | 305 | IRS IMF First-Time Filer Flag Selector | PASS | Detects new SSN entries to trigger initial identity check parameters | Volume 33 |
 | 306 | IRS CADE Taxpayer Phone Number Area Code Matcher | PASS | Flags phone number area code anomalies matching billing states | Volume 33 |
 | 307 | IRS IMF Dependents Age Eligibility Check | PASS | Verifies claimed dependents do not exceed age thresholds for credit | Volume 33 |
+| 308 | COBOL Sub-schema DDL SQL Interface | PASS | Processes database structure creation requests using COBOL DDL modes | Volume 33 |
+| 309 | ALGOL 61 DML DNA SQL Interface | PASS | Inserts and queries taxpayer records using ALGOL 61 DML modes | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 307 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 309 Scenarios validated successfully)

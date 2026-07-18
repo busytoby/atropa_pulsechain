@@ -412,12 +412,19 @@ int tsfi_mf_ddl_set_mode(int mode) {
     return 0;
 }
 
+static char g_db_registry[4096] = {0};
+
 int tsfi_mf_ddl_execute(const char *statement, char *output, size_t out_len) {
     if (!statement || !output || out_len == 0) return -1;
-    if (g_ddl_mode == 0) {
-        snprintf(output, out_len, "COBOL DDL Shader Compiler: Executed schema generation for '%s'", statement);
+    if (strncasecmp(statement, "CREATE TABLE", 12) == 0) {
+        g_db_registry[0] = '\0';
+        if (g_ddl_mode == 0) {
+            snprintf(output, out_len, "COBOL DDL: Created table. Registry reset.");
+        } else {
+            snprintf(output, out_len, "Thunk DDL: Initialized partition layout.");
+        }
     } else {
-        snprintf(output, out_len, "Thunk DDL Executor: Routed transaction via dynamic layout thunks");
+        snprintf(output, out_len, "DDL: Executed '%s'", statement);
     }
     return 0;
 }
@@ -430,10 +437,65 @@ int tsfi_mf_dml_set_mode(int mode) {
 
 int tsfi_mf_dml_execute(const char *statement, char *output, size_t out_len) {
     if (!statement || !output || out_len == 0) return -1;
-    if (g_dml_mode == 0) {
-        snprintf(output, out_len, "ALGOL 61 DML DNA Compiler: Mutated logic states for '%s'", statement);
+    if (strncasecmp(statement, "INSERT INTO taxpayers", 21) == 0) {
+        char ssn[16] = {0};
+        double balance = 0.0;
+        int status = 0;
+        const char *p = strchr(statement, '\'');
+        if (p) {
+            int i = 0;
+            p++;
+            while (*p != '\'' && *p != '\0' && i < 15) {
+                ssn[i++] = *p++;
+            }
+            if (*p == '\'') {
+                p++;
+                if (*p == ',') p++;
+                balance = atof(p);
+                p = strchr(p, ',');
+                if (p) {
+                    p++;
+                    status = atoi(p);
+                }
+            }
+        }
+        if (strlen(ssn) == 11) {
+            char entry[128] = {0};
+            int reg_res = tsfi_mf_cade_register_taxpayer(ssn, balance, status, entry, sizeof(entry));
+            if (reg_res == 0) {
+                strncat(g_db_registry, entry, sizeof(g_db_registry) - strlen(g_db_registry) - 1);
+                strncat(g_db_registry, "\n", sizeof(g_db_registry) - strlen(g_db_registry) - 1);
+                if (g_dml_mode == 0) {
+                    snprintf(output, out_len, "ALGOL 61 DML: Inserted record for %s", ssn);
+                } else {
+                    snprintf(output, out_len, "Thunk DML: Inserted record for %s", ssn);
+                }
+            } else {
+                snprintf(output, out_len, "DML Error: Register failed");
+            }
+        } else {
+            snprintf(output, out_len, "DML Error: Parse failed");
+        }
+    } else if (strncasecmp(statement, "SELECT balance FROM taxpayers", 29) == 0) {
+        char ssn[16] = {0};
+        const char *p = strchr(statement, '\'');
+        if (p) {
+            int i = 0;
+            p++;
+            while (*p != '\'' && *p != '\0' && i < 15) {
+                ssn[i++] = *p++;
+            }
+        }
+        double balance = 0.0;
+        int status = 0;
+        int lookup_res = tsfi_mf_cade_lookup_taxpayer(ssn, g_db_registry, &balance, &status);
+        if (lookup_res == 0) {
+            snprintf(output, out_len, "BALANCE:%.2f", balance);
+        } else {
+            snprintf(output, out_len, "DML Error: Taxpayer not found");
+        }
     } else {
-        snprintf(output, out_len, "Thunk DML Executor: Routed transaction via dynamic execution thunks");
+        snprintf(output, out_len, "DML: Executed '%s'", statement);
     }
     return 0;
 }

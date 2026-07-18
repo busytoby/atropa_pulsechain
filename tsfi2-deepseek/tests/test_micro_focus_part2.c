@@ -451,6 +451,31 @@ int main(void) {
     assert(age_eligible == 1);
     printf("  [PASS] IRS IMF Dependent Age Checker verified.\n");
 
+    // 164. Verify DDL Schema Executions
+    printf("[TEST] Validating DDL Schema Builder...\n");
+    char ddl_out[128] = {0};
+    int set_ddl_res = tsfi_mf_ddl_set_mode(0);
+    assert(set_ddl_res == 0);
+    int ddl_res = tsfi_mf_ddl_execute("CREATE TABLE taxpayers", ddl_out, sizeof(ddl_out));
+    assert(ddl_res == 0);
+    assert(strstr(ddl_out, "Created table") != NULL);
+    printf("  [PASS] DDL Schema Builder verified.\n");
+
+    // 165. Verify DML Operations
+    printf("[TEST] Validating DML Record Operations...\n");
+    char dml_out[128] = {0};
+    int set_dml_res = tsfi_mf_dml_set_mode(0);
+    assert(set_dml_res == 0);
+    int dml_res1 = tsfi_mf_dml_execute("INSERT INTO taxpayers VALUES ('999-12-3456', 1500.00, 1)", dml_out, sizeof(dml_out));
+    assert(dml_res1 == 0);
+    assert(strstr(dml_out, "Inserted record") != NULL);
+
+    memset(dml_out, 0, sizeof(dml_out));
+    int dml_res2 = tsfi_mf_dml_execute("SELECT balance FROM taxpayers WHERE ssn = '999-12-3456'", dml_out, sizeof(dml_out));
+    assert(dml_res2 == 0);
+    assert(strcmp(dml_out, "BALANCE:1500.00") == 0);
+    printf("  [PASS] DML Record Operations verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }
