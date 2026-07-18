@@ -1901,4 +1901,16 @@ int tsfi_mf_nato_verify_retry_delay(int delay_ms, int *is_valid) {
     return 0;
 }
 
+int tsfi_mf_nato_verify_profile_override(int flag, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (flag >= 0 && flag <= 2) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_backoff_multiplier(int multiplier, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (multiplier >= 1 && multiplier <= 4) ? 1 : 0;
+    return 0;
+}
+
 

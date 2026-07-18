@@ -368,5 +368,7 @@
 | 434 | NATO STANAG 5066 Dynamic Segment Lifetime Adaptation Selector | PASS | Audits lifetime adaptive scaling configurations | Volume 33 |
 | 435 | NATO Link-Layer Subnetwork Profile Identifier Validator | PASS | Validates link-layer profile configuration settings | Volume 33 |
 | 436 | NATO Link-Layer Multi-Scan Retry Delay Matcher | PASS | Audits backoff retry intervals following scan collisions | Volume 33 |
+| 437 | NATO Link-Layer Subnetwork Profile Override Flag Matcher | PASS | Validates profile override configuration settings | Volume 33 |
+| 438 | NATO Link-Layer Multi-Scan Collision Backoff Multiplier Validator | PASS | Audits retry backoff collision exponent multiplier limits | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 436 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 438 Scenarios validated successfully)

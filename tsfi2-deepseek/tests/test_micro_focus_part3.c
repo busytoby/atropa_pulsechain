@@ -349,5 +349,21 @@ int run_nato_stanag_tests(void) {
     assert(retry_delay_valid == 1);
     printf("  [PASS] NATO Multi-Scan Retry Delay Matcher verified.\n");
 
+    // 293. Verify NATO Link-Layer Subnetwork Profile Override Flag Matcher
+    printf("[TEST] Validating NATO Subnetwork Profile Override Flag Matcher...\n");
+    int override_valid = -1;
+    int override_res = tsfi_mf_nato_verify_profile_override(1, &override_valid);
+    assert(override_res == 0);
+    assert(override_valid == 1);
+    printf("  [PASS] NATO Subnetwork Profile Override Flag Matcher verified.\n");
+
+    // 294. Verify NATO Link-Layer Multi-Scan Collision Backoff Multiplier Validator
+    printf("[TEST] Validating NATO Multi-Scan Collision Backoff Multiplier Validator...\n");
+    int backoff_multiplier_valid = -1;
+    int backoff_multiplier_res = tsfi_mf_nato_verify_backoff_multiplier(2, &backoff_multiplier_valid);
+    assert(backoff_multiplier_res == 0);
+    assert(backoff_multiplier_valid == 1);
+    printf("  [PASS] NATO Multi-Scan Collision Backoff Multiplier Validator verified.\n");
+
     return 0;
 }
