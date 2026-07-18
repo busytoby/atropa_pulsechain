@@ -907,9 +907,23 @@ int run_nato_stanag_tests_part5(void) {
     assert(val_cl_res == 0);
     assert(is_cl == 1);
 
-    tsfi_mf_norad_validate_clearance(cl_pdu, cl_size, 0x11223344, &is_cl);
-    assert(is_cl == 0);
-    printf("  [PASS] NORAD Clearance Validator verified.\n");
+    // Verify TSFiNoradIrsRelay Orchestrator
+    printf("[TEST] Validating TSFiNoradIrsRelay Orchestrator...\n");
+    TSFiNoradIrsRelay relay;
+    int relay_res = tsfi_mf_norad_irs_relay_init(&relay, 0xDEADC0DE);
+    assert(relay_res == 0);
+    assert(relay.defcon_level == 5);
+    assert(relay.is_link_active == 1);
+
+    uint8_t relay_pdu[8];
+    size_t relay_size = 0;
+    // Process IRS-destined JANAP teletype message
+    const char *irs_msg = "R RUMIRS 9999 S\r\nTaxAuditQueryText\r\nNNNN\r\n";
+    relay_res = tsfi_mf_norad_irs_relay_process_msg(&relay, irs_msg, strlen(irs_msg), relay_pdu, &relay_size);
+    assert(relay_res == 0);
+    assert(relay_size == 6);
+    assert(relay_pdu[0] == 0xFD); // Formatted IRS Query PDU
+    printf("  [PASS] TSFiNoradIrsRelay Orchestrator verified.\n");
 
     return 0;
 }

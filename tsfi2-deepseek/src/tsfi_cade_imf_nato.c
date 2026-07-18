@@ -1714,6 +1714,46 @@ int tsfi_mf_norad_validate_clearance(const uint8_t *in_pdu, size_t pdu_size, uin
     return 0;
 }
 
+int tsfi_mf_norad_irs_relay_init(TSFiNoradIrsRelay *relay, uint32_t clearance_token) {
+    if (!relay) return -1;
+    relay->defcon_level = 5;
+    relay->status_word = 0;
+    relay->naap_state = 0; // IDLE
+    relay->expected_clearance_token = clearance_token;
+    relay->is_link_active = 1;
+    return 0;
+}
+
+int tsfi_mf_norad_irs_relay_process_msg(TSFiNoradIrsRelay *relay, const char *msg_buffer, size_t size, uint8_t *out_pdu, size_t *out_size) {
+    if (!relay || !msg_buffer || !out_pdu || !out_size) return -1;
+    
+    int is_valid = 0;
+    int res = tsfi_mf_janap_validate_message(msg_buffer, size, &is_valid);
+    if (res != 0 || !is_valid) return -2;
+    
+    // Extract Routing Indicator (assume it's the second field)
+    char ri[16];
+    if (sscanf(msg_buffer, "R %15s", ri) != 1) return -3;
+    
+    int is_irs = 0;
+    int route_val = 0;
+    tsfi_mf_norad_is_irs_route(ri, &is_irs, &route_val);
+    if (!is_irs) return -4; // Not destined for IRS
+    
+    // Extract payload text
+    char payload[128];
+    size_t pay_size = 0;
+    tsfi_mf_cics_extract_janap_payload(msg_buffer, sizeof(payload), payload, &pay_size);
+    
+    // Compute authentication hash
+    uint32_t auth = 0;
+    tsfi_mf_norad_auth_hash((const uint8_t *)payload, pay_size, &auth);
+    
+    // Format IRS Query PDU carrying hash as the tax record ID reference
+    return tsfi_mf_cics_format_irs_query(auth, 1, out_pdu, out_size);
+}
+
+
 
 
 

@@ -448,4 +448,15 @@ int tsfi_mf_irs_calculate_retry_backoff(int retry_count, int base_backoff_ms, in
 int tsfi_mf_irs_format_clearance(uint32_t auth_token, uint8_t *out_pdu, size_t *out_size);
 int tsfi_mf_norad_validate_clearance(const uint8_t *in_pdu, size_t pdu_size, uint32_t expected_token, int *is_cleared);
 
+typedef struct {
+    int defcon_level;
+    uint16_t status_word;
+    int naap_state;
+    uint32_t expected_clearance_token;
+    int is_link_active;
+} TSFiNoradIrsRelay;
+
+int tsfi_mf_norad_irs_relay_init(TSFiNoradIrsRelay *relay, uint32_t clearance_token);
+int tsfi_mf_norad_irs_relay_process_msg(TSFiNoradIrsRelay *relay, const char *msg_buffer, size_t size, uint8_t *out_pdu, size_t *out_size);
+
 #endif // TSFI_CADE_IMF_H
