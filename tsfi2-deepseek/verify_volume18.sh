@@ -334,8 +334,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 377 | IRS IMF Section 179 Property Eligible Expense Allocation Validator | PASS | Enforces business income caps on Section 179 asset deduction limits | Volume 33 |
 | 378 | IRS CADE Schedule B Part III Foreign Account Country Code Matcher | PASS | Checks foreign account locations list valid 2-letter ISO country codes | Volume 33 |
 | 379 | IRS IMF Schedule K-1 Distributive Dividend Share Matcher | PASS | Matches 1040 ordinary dividend lines against distributive Schedule K-1 shares | Volume 33 |
+| 380 | IRS CADE Schedule B Foreign Account Yes/No and Country Code Consistency Matcher | PASS | Checks consistency between foreign account indicator and location codes | Volume 33 |
+| 381 | IRS IMF Schedule K-1 Partnership Distributive Capital Gains Share Matcher | PASS | Matches 1040 Schedule D capital gains against distributive K-1 shares | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 379 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 381 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

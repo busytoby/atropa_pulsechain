@@ -1039,6 +1039,22 @@ int main(void) {
     assert(k1_div_match == 1);
     printf("  [PASS] IRS IMF K-1 Dividend Share Matcher verified.\n");
 
+    // 236. Verify IRS CADE Schedule B Foreign Account Yes/No and Country Code Consistency Matcher
+    printf("[TEST] Validating IRS CADE Foreign Account Consistency Matcher...\n");
+    int consistency_valid = -1;
+    int consistency_res = tsfi_mf_cade_verify_foreign_account_consistency(1, "FR", &consistency_valid);
+    assert(consistency_res == 0);
+    assert(consistency_valid == 1);
+    printf("  [PASS] IRS CADE Foreign Account Consistency Matcher verified.\n");
+
+    // 237. Verify IRS IMF Schedule K-1 Partnership Distributive Capital Gains Share Matcher
+    printf("[TEST] Validating IRS IMF K-1 Capital Gains Share Matcher...\n");
+    int k1_cg_match = -1;
+    int k1_cg_res = tsfi_mf_imf_match_k1_capital_gains(2500.00, 2500.00, &k1_cg_match);
+    assert(k1_cg_res == 0);
+    assert(k1_cg_match == 1);
+    printf("  [PASS] IRS IMF K-1 Capital Gains Share Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

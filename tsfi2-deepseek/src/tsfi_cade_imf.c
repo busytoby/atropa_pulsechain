@@ -1434,4 +1434,20 @@ int tsfi_mf_imf_match_k1_dividends(double reported_1040_dividends, double k1_sha
     return 0;
 }
 
+int tsfi_mf_cade_verify_foreign_account_consistency(int has_foreign_account, const char *country_code, int *is_valid) {
+    if (!is_valid) return -1;
+    if (has_foreign_account == 1) {
+        *is_valid = (country_code && strlen(country_code) > 0) ? 1 : 0;
+    } else {
+        *is_valid = (!country_code || strlen(country_code) == 0) ? 1 : 0;
+    }
+    return 0;
+}
+
+int tsfi_mf_imf_match_k1_capital_gains(double reported_1040_capital_gains, double k1_share_capital_gains, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (reported_1040_capital_gains == k1_share_capital_gains) ? 1 : 0;
+    return 0;
+}
+
 
