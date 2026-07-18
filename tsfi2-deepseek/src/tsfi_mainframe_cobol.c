@@ -792,3 +792,9 @@ int tsfi_cw_cobol_get_alignment_padding(int offset, int alignment_modulus, int *
     *padding_out = (rem == 0) ? 0 : (alignment_modulus - rem);
     return 0;
 }
+
+int tsfi_cw_cobol_verify_field_alignment(int offset, int size, int alignment) {
+    if (alignment <= 0) return -1;
+    if ((offset + size) % alignment != 0) return -34;
+    return 0;
+}

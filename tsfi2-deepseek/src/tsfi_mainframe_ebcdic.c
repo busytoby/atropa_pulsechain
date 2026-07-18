@@ -611,3 +611,7 @@ int tsfi_cw_ebcdic_get_parity_checks_count(uint32_t *count_out) {
     return 0;
 }
 
+void tsfi_cw_ebcdic_reset_parity_checks_count(void) {
+    global_ebcdic_parity_checks_count = 0;
+}
+

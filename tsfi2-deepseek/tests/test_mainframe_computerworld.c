@@ -1096,6 +1096,27 @@ static void test_new_mainframe_features(void) {
     // Y2K query and reset check
     assert(tsfi_cw_y2k_query_and_reset_violations(&v_count) == 0);
     assert(v_count == 0);
+
+    // VSAM checksum audit query check
+    uint32_t aud_p = 0, aud_m = 0;
+    assert(tsfi_cw_vsam_get_checksum_audit_stats(&aud_p, &aud_m) == 0);
+
+    // COBOL field alignment check
+    assert(tsfi_cw_cobol_verify_field_alignment(8, 4, 4) == 0);
+    assert(tsfi_cw_cobol_verify_field_alignment(9, 4, 4) == -34);
+
+    // EBCDIC reset parity checks
+    tsfi_cw_ebcdic_reset_parity_checks_count();
+    assert(tsfi_cw_ebcdic_get_parity_checks_count(&parity_cnt) == 0);
+    assert(parity_cnt == 0);
+
+    // JCL multi symbol substitution limit check
+    assert(tsfi_cw_jcl_substitute_symbols_multi_limit("//DD DSN=&A", circ_names, circ_vals, 2, multi_out, sizeof(multi_out), 5) == -29);
+
+    // Y2K formatting violations check
+    char y2k_format_buf[64];
+    assert(tsfi_cw_y2k_format_chronological_violations(y2k_format_buf, sizeof(y2k_format_buf)) == 0);
+    assert(strcmp(y2k_format_buf, "Chronological violations: 0") == 0);
 }
 
 int main(void) {

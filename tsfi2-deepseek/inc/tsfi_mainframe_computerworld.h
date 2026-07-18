@@ -457,40 +457,45 @@ int tsfi_cw_y2k_validate_julian_day(uint32_t year, uint32_t day_of_year);
 int tsfi_cw_y2k_count_leap_adjustments(uint32_t year1, uint32_t year2);
 int tsfi_cw_y2k_validate_pivot_range(uint32_t pivot);
 
-// VSAM key length validator, checksum tools, cached verifier, and index validator
+// VSAM key length validator, checksum tools, cached verifier, index validator, and checksum audit stats query
 int tsfi_cw_vsam_validate_compressed_key_len(const char *raw_key, const char *comp_key);
 uint32_t tsfi_cw_vsam_calculate_checksum(const uint8_t *data, int len);
 int tsfi_cw_vsam_verify_record_checksum(const uint8_t *data, int len, uint32_t expected_checksum);
 int tsfi_cw_vsam_verify_checksum_cached(tsfi_cw_vsam_ksds *ksds, int mid, const uint8_t *data_out, int read_len);
 int tsfi_cw_vsam_verify_index_checksums(tsfi_cw_vsam_ksds *ksds);
+int tsfi_cw_vsam_get_checksum_audit_stats(uint32_t *audits_out, uint32_t *mismatches_out);
 
-// COBOL custom padding validator, alignment checker, padding limits validator, and alignment padding mapper
+// COBOL custom padding validator, alignment checker, padding limits validator, alignment padding mapper, and field alignment verifier
 int tsfi_cw_cobol_validate_custom_padding(char pad_char);
 int tsfi_cw_cobol_validate_custom_padding_ex(char pad_char, int pad_len, int max_len);
 int tsfi_cw_cobol_map_custom_padding_byte(char input_char, char *mapped_out);
 int tsfi_cw_cobol_validate_padding_alignment(int field_offset, int alignment_modulus);
 int tsfi_cw_cobol_validate_padding_limits(int pad_len, int max_allowed);
 int tsfi_cw_cobol_get_alignment_padding(int offset, int alignment_modulus, int *padding_out);
+int tsfi_cw_cobol_verify_field_alignment(int offset, int size, int alignment);
 
-// EBCDIC nesting validator, escape override, custom markers override, and parity checks counter query
+// EBCDIC nesting validator, escape override, custom markers override, parity checks counter query, and parity checks reset tool
 int tsfi_cw_ebcdic_check_dbcs_nesting(const uint8_t *ebcdic_str, int len);
 uint8_t tsfi_cw_ebcdic_translate_control_escape_override(uint8_t ebcdic_char, uint8_t custom_lf, uint8_t custom_cr);
 void tsfi_cw_ebcdic_override_dbcs_markers(uint8_t new_so, uint8_t new_si);
 int tsfi_cw_ebcdic_get_parity_checks_count(uint32_t *count_out);
+void tsfi_cw_ebcdic_reset_parity_checks_count(void);
 
-// JCL circular dependency checker, recursion depth validator, PROC recursion depth checker, recursion limit setter, and limit query
+// JCL circular dependency checker, recursion depth validator, PROC recursion depth checker, recursion limit setter, limit query, and substitution with custom depth limit
 int tsfi_cw_jcl_detect_circular_symbols(const char **sym_names, const char **sym_vals, int sym_count);
 int tsfi_cw_jcl_validate_substitution_depth(int current_depth, int max_depth);
 int tsfi_cw_jcl_validate_proc_recursion_depth(int depth, int max_depth);
 void tsfi_cw_jcl_set_custom_proc_recursion_limit(int limit);
 int tsfi_cw_jcl_query_recursion_limit(int *limit_out);
+int tsfi_cw_jcl_substitute_symbols_multi_limit(const char *card, const char **sym_names, const char **sym_vals, int sym_count, char *resolved_out, int max_len, int max_depth);
 
-// Y2K dates chronological order check, reset tool, query interface, and query-and-reset tool
+// Y2K dates chronological order check, reset tool, query interface, query-and-reset tool, and violations query formatter
 int tsfi_cw_y2k_validate_chronological_order(uint32_t yy1, uint32_t mm1, uint32_t dd1, uint32_t yy2, uint32_t mm2, uint32_t dd2, uint32_t pivot);
 uint32_t tsfi_cw_y2k_get_chronological_violations(void);
 void tsfi_cw_y2k_reset_chronological_violations(void);
 int tsfi_cw_y2k_query_chronological_violations(uint32_t *violations_out);
 int tsfi_cw_y2k_query_and_reset_violations(uint32_t *violations_out);
+int tsfi_cw_y2k_format_chronological_violations(char *buf_out, int max_len);
 
 typedef struct {
     uint32_t leap_checks_performed;

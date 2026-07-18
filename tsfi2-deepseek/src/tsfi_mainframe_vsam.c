@@ -626,9 +626,16 @@ uint32_t tsfi_cw_vsam_calculate_checksum(const uint8_t *data, int len) {
     return checksum;
 }
 
+static uint32_t global_vsam_checksum_audits_performed = 0;
+static uint32_t global_vsam_checksum_mismatches = 0;
+
 int tsfi_cw_vsam_verify_record_checksum(const uint8_t *data, int len, uint32_t expected_checksum) {
+    global_vsam_checksum_audits_performed++;
     uint32_t actual = tsfi_cw_vsam_calculate_checksum(data, len);
-    if (actual != expected_checksum) return -25;
+    if (actual != expected_checksum) {
+        global_vsam_checksum_mismatches++;
+        return -25;
+    }
     return 0;
 }
 
@@ -644,5 +651,12 @@ int tsfi_cw_vsam_verify_index_checksums(tsfi_cw_vsam_ksds *ksds) {
             return -25;
         }
     }
+    return 0;
+}
+
+int tsfi_cw_vsam_get_checksum_audit_stats(uint32_t *audits_out, uint32_t *mismatches_out) {
+    if (!audits_out || !mismatches_out) return -1;
+    *audits_out = global_vsam_checksum_audits_performed;
+    *mismatches_out = global_vsam_checksum_mismatches;
     return 0;
 }

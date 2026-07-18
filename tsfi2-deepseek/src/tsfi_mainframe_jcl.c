@@ -574,3 +574,33 @@ int tsfi_cw_jcl_query_recursion_limit(int *limit_out) {
     *limit_out = global_jcl_proc_recursion_limit;
     return 0;
 }
+
+int tsfi_cw_jcl_substitute_symbols_multi_limit(const char *card, const char **sym_names, const char **sym_vals, int sym_count, char *resolved_out, int max_len, int max_depth) {
+    if (!card || !resolved_out || max_len <= 0) return -1;
+    if (tsfi_cw_jcl_detect_circular_symbols(sym_names, sym_vals, sym_count) != 0) return -29;
+    char temp[256];
+    strncpy(temp, card, sizeof(temp) - 1);
+    temp[sizeof(temp) - 1] = '\0';
+    
+    int replaced = 1;
+    int depth = 0;
+    while (replaced) {
+        replaced = 0;
+        if (tsfi_cw_jcl_validate_substitution_depth(depth, max_depth) != 0) {
+            return -31;
+        }
+        for (int i = 0; i < sym_count; i++) {
+            char next_resolved[256];
+            int rc = tsfi_cw_jcl_substitute_symbol(temp, sym_names[i], sym_vals[i], next_resolved, sizeof(next_resolved));
+            if (rc == 0) {
+                strncpy(temp, next_resolved, sizeof(temp) - 1);
+                temp[sizeof(temp) - 1] = '\0';
+                replaced = 1;
+            }
+        }
+        if (replaced) depth++;
+    }
+    strncpy(resolved_out, temp, max_len - 1);
+    resolved_out[max_len - 1] = '\0';
+    return 0;
+}
