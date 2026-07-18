@@ -1995,9 +1995,16 @@ static const uint8_t gost_sbox_test[8][16] = {
 static int active_gost_sbox_profile = 0;
 int tsfi_gost_emergency_defcon_level = 5;
 int tsfi_gost_is_broadcast_channel = 0;
+int tsfi_norad_lockout_active = 0;
+static int tsfi_norad_alarm_counter = 0;
 
 int tsfi_mf_ussr_gost_scramble(uint32_t *left_word, uint32_t *right_word, uint32_t key_word) {
     if (!left_word || !right_word) return -1;
+    
+    // Lockout check: block if NORAD lockout is active due to abusive GOST attempts
+    if (tsfi_norad_lockout_active) {
+        return -6; // Locked out
+    }
     
     // Restriction check: GOST is restricted to open broadcast channels only
     if (tsfi_gost_is_broadcast_channel == 0) {
@@ -2019,6 +2026,11 @@ int tsfi_mf_ussr_gost_scramble(uint32_t *left_word, uint32_t *right_word, uint32
         uint16_t status = 0;
         tsfi_mf_tri_agency_coordinate("999999999", 1, 0, &defcon, &status);
         tsfi_gost_emergency_defcon_level = 0;
+        tsfi_norad_alarm_counter++;
+        if (tsfi_norad_alarm_counter >= 3) {
+            tsfi_norad_lockout_active = 1;
+            tsfi_gost_is_broadcast_channel = 0; // Force broadcast blackout
+        }
     }
     
     uint32_t temp = (*left_word + key_word);
@@ -2189,6 +2201,12 @@ int tsfi_mf_tin_verify_group_exhaustive(const char *tin, int *is_valid) {
         }
     }
     *is_valid = 1;
+    return 0;
+}
+
+int tsfi_mf_norad_reset_lockout(void) {
+    tsfi_norad_lockout_active = 0;
+    tsfi_norad_alarm_counter = 0;
     return 0;
 }
 

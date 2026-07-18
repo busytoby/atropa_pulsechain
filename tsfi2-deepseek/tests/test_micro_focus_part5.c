@@ -1244,5 +1244,40 @@ int run_nato_stanag_tests_part5(void) {
     assert(verify_group_valid == 1);
     printf("  [PASS] TIN Group Resolution and Validation verified.\n");
 
+    // Verify NORAD GOST Lockout
+    printf("[TEST] Validating NORAD GOST Lockout and Reset...\n");
+    tsfi_mf_norad_reset_lockout();
+    tsfi_gost_is_broadcast_channel = 1;
+    
+    // Trigger alarm 1
+    uint32_t itin_val_1 = 950000000;
+    uint32_t normal_val_1 = 0;
+    tsfi_mf_ussr_gost_scramble(&itin_val_1, &normal_val_1, 0);
+    assert(tsfi_norad_lockout_active == 0);
+    
+    // Trigger alarm 2
+    itin_val_1 = 950000000;
+    normal_val_1 = 0;
+    tsfi_mf_ussr_gost_scramble(&itin_val_1, &normal_val_1, 0);
+    assert(tsfi_norad_lockout_active == 0);
+    
+    // Trigger alarm 3 (lockout triggers)
+    itin_val_1 = 950000000;
+    normal_val_1 = 0;
+    tsfi_mf_ussr_gost_scramble(&itin_val_1, &normal_val_1, 0);
+    assert(tsfi_norad_lockout_active == 1);
+    assert(tsfi_gost_is_broadcast_channel == 0); // Blackout
+    
+    // Sub-sequent scramble should be blocked by lockout with -6
+    itin_val_1 = 950000000;
+    normal_val_1 = 0;
+    int lockout_res = tsfi_mf_ussr_gost_scramble(&itin_val_1, &normal_val_1, 0);
+    assert(lockout_res == -6);
+    
+    // Reset lockout
+    tsfi_mf_norad_reset_lockout();
+    assert(tsfi_norad_lockout_active == 0);
+    printf("  [PASS] NORAD GOST Lockout and Reset verified.\n");
+
     return 0;
 }
