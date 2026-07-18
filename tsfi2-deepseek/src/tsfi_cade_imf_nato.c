@@ -489,3 +489,15 @@ int tsfi_mf_nato_verify_down_ramp_rate(int rate_db, int *is_valid) {
     *is_valid = (rate_db >= 1 && rate_db <= 15) ? 1 : 0;
     return 0;
 }
+
+int tsfi_mf_nato_verify_backoff_base(int base, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (base >= 2 && base <= 4) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_busy_decay_rate(int rate_db, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (rate_db >= 1 && rate_db <= 10) ? 1 : 0;
+    return 0;
+}

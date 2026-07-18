@@ -218,5 +218,7 @@ int tsfi_mf_nato_verify_backoff_lfsr_size(int bits, int *is_valid);
 int tsfi_mf_nato_verify_status_interval(int interval_sec, int *is_valid);
 int tsfi_mf_nato_verify_up_ramp_rate(int rate_db, int *is_valid);
 int tsfi_mf_nato_verify_down_ramp_rate(int rate_db, int *is_valid);
+int tsfi_mf_nato_verify_backoff_base(int base, int *is_valid);
+int tsfi_mf_nato_verify_busy_decay_rate(int rate_db, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

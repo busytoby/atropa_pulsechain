@@ -593,5 +593,21 @@ int run_nato_stanag_tests(void) {
     assert(down_ramp_valid == 1);
     printf("  [PASS] NATO Collision Clear Down-Ramp Rate Matcher verified.\n");
 
+    // 323. Verify NATO Link-Layer Broadcast Collision Backoff Exponential Base Matcher
+    printf("[TEST] Validating NATO Broadcast Backoff Exponential Base Matcher...\n");
+    int backoff_base_valid = -1;
+    int backoff_base_res = tsfi_mf_nato_verify_backoff_base(2, &backoff_base_valid);
+    assert(backoff_base_res == 0);
+    assert(backoff_base_valid == 1);
+    printf("  [PASS] NATO Broadcast Backoff Exponential Base Matcher verified.\n");
+
+    // 324. Verify NATO Link-Layer Broadcast Channel Busy Hysteresis Decay Rate Matcher
+    printf("[TEST] Validating NATO Broadcast Busy Decay Rate Matcher...\n");
+    int busy_decay_valid = -1;
+    int busy_decay_res = tsfi_mf_nato_verify_busy_decay_rate(5, &busy_decay_valid);
+    assert(busy_decay_res == 0);
+    assert(busy_decay_valid == 1);
+    printf("  [PASS] NATO Broadcast Busy Decay Rate Matcher verified.\n");
+
     return 0;
 }
