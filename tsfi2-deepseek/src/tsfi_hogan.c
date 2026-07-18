@@ -106,6 +106,7 @@ int tsfi_hogan_lfs_save(const hogan_umbrella_system *sys, const char *filepath) 
             fwrite(&sys->accounts[i].card_expiry_epoch, sizeof(uint32_t), 1, f);
             fwrite(&sys->accounts[i].grace_period_epochs, sizeof(uint32_t), 1, f);
             fwrite(&sys->accounts[i].min_card_auth_amount, sizeof(uint64_t), 1, f);
+            fwrite(&sys->accounts[i].max_card_auth_amount, sizeof(uint64_t), 1, f);
         }
     }
     
@@ -331,6 +332,12 @@ int tsfi_hogan_lfs_load(hogan_umbrella_system *sys, const char *filepath) {
             return -2;
         }
         sys->accounts[i].min_card_auth_amount = min_auth_amt;
+        uint64_t max_auth_amt = 0;
+        if (fread(&max_auth_amt, sizeof(uint64_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
+        sys->accounts[i].max_card_auth_amount = max_auth_amt;
         sys->accounts[i].active = 1;
     }
     
@@ -861,6 +868,7 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
             EVP_DigestUpdate(mdctx, &sys->accounts[i].card_expiry_epoch, sizeof(uint32_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].grace_period_epochs, sizeof(uint32_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].min_card_auth_amount, sizeof(uint64_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].max_card_auth_amount, sizeof(uint64_t));
         }
     }
     EVP_DigestUpdate(mdctx, &sys->blocked_card_count, sizeof(size_t));
@@ -929,6 +937,10 @@ int tsfi_hogan_authorize_card(hogan_umbrella_system *sys, const char *filepath, 
         if (acc->min_card_auth_amount > 0 && amount < acc->min_card_auth_amount) {
             sys->live_processing_enabled = original_live_state;
             return -8; // Amount below minimum card authorization threshold
+        }
+        if (acc->max_card_auth_amount > 0 && amount > acc->max_card_auth_amount) {
+            sys->live_processing_enabled = original_live_state;
+            return -9; // Amount exceeds maximum card authorization threshold
         }
     }
     
@@ -1784,6 +1796,41 @@ int tsfi_hogan_update_min_card_auth(hogan_umbrella_system *sys, const char *file
     acc->min_card_auth_amount = new_min_amount;
     
     int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_min_card_auth_entry));
+    
+    sys->live_processing_enabled = original_live_state;
+    return write_res;
+}
+
+int tsfi_hogan_update_max_card_auth(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_max_amount, uint32_t authority_id) {
+    // Enforce Rule 13: file extension must end with .dat.bin
+    const char *ext = strrchr(filepath, '.');
+    if (!ext || strcmp(ext, ".bin") != 0) {
+        if (!ext || strcmp(ext - 4, ".dat.bin") != 0) {
+            return -3; // Invalid extension
+        }
+    }
+
+    // Disable live queue during administrative action
+    uint8_t original_live_state = sys->live_processing_enabled;
+    sys->live_processing_enabled = 0;
+    
+    hogan_account *acc = NULL;
+    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
+        if (sys->accounts[i].active && sys->accounts[i].account_id == account_id) {
+            acc = &sys->accounts[i];
+            break;
+        }
+    }
+    
+    if (!acc) {
+        sys->live_processing_enabled = original_live_state;
+        return -1; // account not found
+    }
+    
+    hogan_max_card_auth_entry entry = { account_id, acc->max_card_auth_amount, new_max_amount, authority_id };
+    acc->max_card_auth_amount = new_max_amount;
+    
+    int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_max_card_auth_entry));
     
     sys->live_processing_enabled = original_live_state;
     return write_res;

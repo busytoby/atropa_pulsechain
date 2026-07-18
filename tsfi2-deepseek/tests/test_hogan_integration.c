@@ -1400,6 +1400,42 @@ int main(void) {
     remove("hogan_tx.dat.bin"); // clean up
     printf("  [PASS] Card minimum authorization thresholds, amount checks, and override logs verified.\n");
 
+    // 40. Test Card Single Transaction Maximum Limit Manager (Maximum Amount Validation)
+    printf("[E2E] Testing Card Single Transaction Maximum Limit Manager...\n");
+    const char *maxauth_path = "hogan_maxauth.dat.bin";
+    remove(maxauth_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system max_sys;
+    tsfi_hogan_init(&max_sys);
+    assert(tsfi_hogan_register_account(&max_sys, 1001, 10000) == 0); // Alice: 10,000 units
+    
+    // Set Alice's card maximum authorization amount to 1000
+    assert(tsfi_hogan_update_max_card_auth(&max_sys, maxauth_path, 1001, 1000, 999) == 0);
+    assert(tsfi_hogan_update_max_card_auth(&max_sys, "hogan_maxauth.json", 1001, 1000, 999) == -3); // Rule 13 check
+    
+    // First card authorization for 100 (succeeds because 100 <= 1000 threshold)
+    assert(tsfi_hogan_authorize_card(&max_sys, "hogan_tx.dat.bin", 5005, 1001, 9009, 100) == 0);
+    
+    // Second card authorization for 2000 (should fail because 2000 > 1000 threshold; returns -9)
+    assert(tsfi_hogan_authorize_card(&max_sys, "hogan_tx.dat.bin", 5005, 1001, 9009, 2000) == -9);
+    
+    // Read sequential log file and verify entries
+    uint8_t read_mcabuf[sizeof(hogan_max_card_auth_entry)];
+    size_t mca_size = 0;
+    assert(tsfi_hogan_read_seq_record(maxauth_path, 0, read_mcabuf, &mca_size) == 0);
+    assert(mca_size == sizeof(hogan_max_card_auth_entry));
+    
+    const hogan_max_card_auth_entry *mcaentry = (const hogan_max_card_auth_entry *)read_mcabuf;
+    assert(mcaentry->account_id == 1001);
+    assert(mcaentry->previous_max_amount == 0);
+    assert(mcaentry->new_max_amount == 1000);
+    assert(mcaentry->authority_id == 999);
+    
+    remove(maxauth_path); // clean up
+    remove("hogan_tx.dat.bin"); // clean up
+    printf("  [PASS] Card maximum authorization thresholds, amount checks, and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }

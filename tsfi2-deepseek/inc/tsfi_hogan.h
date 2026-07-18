@@ -60,6 +60,7 @@ typedef struct {
     uint32_t card_expiry_epoch;
     uint32_t grace_period_epochs;
     uint64_t min_card_auth_amount;
+    uint64_t max_card_auth_amount;
 } hogan_account;
 
 #define HOGAN_MAX_BLOCKED_CARDS 32
@@ -411,5 +412,15 @@ typedef struct {
 } hogan_min_card_auth_entry;
 
 int tsfi_hogan_update_min_card_auth(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_min_amount, uint32_t authority_id);
+
+// Card Single Transaction Maximum Limit Manager (Maximum Amount Validation)
+typedef struct {
+    uint32_t account_id;
+    uint64_t previous_max_amount;
+    uint64_t new_max_amount;
+    uint32_t authority_id;
+} hogan_max_card_auth_entry;
+
+int tsfi_hogan_update_max_card_auth(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_max_amount, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H
