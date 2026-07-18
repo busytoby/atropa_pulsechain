@@ -476,4 +476,18 @@ int tsfi_mf_imf_verify_ssn_check_digit(const char *ssn, int *is_valid) {
     return 0;
 }
 
+int tsfi_mf_imf_evaluate_audit_discrepancy(double reported_income, double documented_income, int missing_schedules, int *audit_flag) {
+    if (!audit_flag) return -1;
+    double difference = documented_income - reported_income;
+    if (difference < 0) {
+        difference = -difference;
+    }
+    if ((reported_income > 0 && (difference / reported_income) > 0.10) || missing_schedules > 0) {
+        *audit_flag = 1;
+    } else {
+        *audit_flag = 0;
+    }
+    return 0;
+}
+
 

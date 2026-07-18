@@ -219,5 +219,6 @@
 | 285 | IRS CADE Generic Taxpayer Status Mask Checker | PASS | Unified account status mask validator | Volume 33 |
 | 286 | IRS CADE Taxpayer SSN Partition Routing | PASS | Routes SSNs to partitions based on suffix digits | Volume 33 |
 | 287 | IRS IMF SSN Check Digit Validator | PASS | Computes and validates SSN check digit checksums | Volume 33 |
+| 288 | IRS IMF Audit Selection Discrepancy Classifier | PASS | Flags returns for audit based on income mismatch or missing forms | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 287 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 288 Scenarios validated successfully)

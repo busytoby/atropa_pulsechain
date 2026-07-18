@@ -288,6 +288,14 @@ int main(void) {
     assert(ssn_valid == 1);
     printf("  [PASS] IRS IMF SSN Check Digit Validator verified.\n");
 
+    // 144. Verify IRS IMF Audit Selection Discrepancy Classifier
+    printf("[TEST] Validating IRS IMF Audit Selection Discrepancy Classifier...\n");
+    int audit_flag = -1;
+    int discrepancy_res = tsfi_mf_imf_evaluate_audit_discrepancy(50000.00, 60000.00, 0, &audit_flag);
+    assert(discrepancy_res == 0);
+    assert(audit_flag == 1);
+    printf("  [PASS] IRS IMF Audit Selection Discrepancy Classifier verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }
