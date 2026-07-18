@@ -1052,5 +1052,24 @@ typedef struct {
 int tsfi_cw_isu_leap_defense_audit(const tsfi_cw_isu_leap_app *app, int defcon_level, double *criticality_risk_out);
 int tsfi_cw_isu_ulid_ssa_match(const char *ulid, const char *ssn_last4, int *is_match_out);
 
+// ISU Normal legacy email log
+typedef struct {
+    char sender_ulid[16];
+    char recipient_addr[64];
+    int message_bytes;
+    int is_mf_crossover;
+} tsfi_cw_isu_email_log;
+
+// ISU Normal State Farm SLA monitor
+typedef struct {
+    char batch_job_name[16];
+    int elapsed_seconds;
+    int max_allowed_seconds;
+    int micro_focus_compat_flags;
+} tsfi_cw_isu_state_farm_sla;
+
+int tsfi_cw_isu_audit_email(const tsfi_cw_isu_email_log *log, int *is_valid_out);
+int tsfi_cw_isu_audit_sf_sla(const tsfi_cw_isu_state_farm_sla *sla, int *is_compliant_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

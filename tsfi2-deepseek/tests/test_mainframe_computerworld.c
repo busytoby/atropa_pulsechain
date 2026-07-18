@@ -2011,6 +2011,26 @@ static void test_new_mainframe_features(void) {
     assert(ssa_match == 1);
     assert(tsfi_cw_isu_ulid_ssa_match("gdecke4", "1235", &ssa_match) == 0);
     assert(ssa_match == 0);
+
+    // ISU legacy email test
+    tsfi_cw_isu_email_log mail = { "jqsmith", "test@ilstu.edu", 1000, 1 };
+    int email_valid = 0;
+    assert(tsfi_cw_isu_audit_email(&mail, &email_valid) == 0);
+    assert(email_valid == 1);
+
+    tsfi_cw_isu_email_log mail_bad = { "jqsmith", "test@ilstu.edu", 70000, 1 }; // > 64KB
+    assert(tsfi_cw_isu_audit_email(&mail_bad, &email_valid) == 0);
+    assert(email_valid == 0);
+
+    // ISU State Farm SLA test
+    tsfi_cw_isu_state_farm_sla sla = { "SFJOB01", 90, 100, 0 }; // elapsed (90) <= max (100)
+    int sf_compliant = 0;
+    assert(tsfi_cw_isu_audit_sf_sla(&sla, &sf_compliant) == 0);
+    assert(sf_compliant == 1);
+
+    tsfi_cw_isu_state_farm_sla sla_strict = { "SFJOB02", 90, 100, 1 }; // strict: limit reduced to 80 -> elapsed (90) > limit (80)
+    assert(tsfi_cw_isu_audit_sf_sla(&sla_strict, &sf_compliant) == 0);
+    assert(sf_compliant == 0);
 }
 
 int main(void) {

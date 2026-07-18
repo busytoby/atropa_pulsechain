@@ -1388,6 +1388,40 @@ int tsfi_cw_isu_ulid_ssa_match(const char *ulid, const char *ssn_last4, int *is_
     return 0;
 }
 
+int tsfi_cw_isu_audit_email(const tsfi_cw_isu_email_log *log, int *is_valid_out) {
+    if (!log || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    const char *at = strchr(log->recipient_addr, '@');
+    if (!at) return 0;
+    if (strcmp(at, "@ilstu.edu") != 0 && strcmp(at, "@rs6000.cmp.ilstu.edu") != 0) return 0;
+    
+    if (log->is_mf_crossover) {
+        // Enforce Micro Focus bounds: message size <= 64KB and non-empty sender
+        size_t ulid_len = strlen(log->sender_ulid);
+        if (log->message_bytes > 65536 || ulid_len < 2 || ulid_len > 8) {
+            return 0;
+        }
+    }
+    
+    *is_valid_out = 1;
+    return 0;
+}
+
+int tsfi_cw_isu_audit_sf_sla(const tsfi_cw_isu_state_farm_sla *sla, int *is_compliant_out) {
+    if (!sla || !is_compliant_out) return -1;
+    
+    int limit = sla->max_allowed_seconds;
+    if (sla->micro_focus_compat_flags & 0x01) {
+        // Strict Mode: Max allowed is reduced by 20%
+        limit = (int)(limit * 0.8);
+    }
+    
+    *is_compliant_out = (sla->elapsed_seconds <= limit) ? 1 : 0;
+    return 0;
+}
+
+
 
 
 
