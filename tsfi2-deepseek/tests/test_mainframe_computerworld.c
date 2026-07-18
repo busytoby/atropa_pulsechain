@@ -2051,6 +2051,22 @@ static void test_new_mainframe_features(void) {
     tsfi_cw_isu_gateway_status gw_bad = { "10.0.0.1", 1000, 80, 45 }; // 8% drop rate (> 5%)
     assert(tsfi_cw_isu_audit_gateway(&gw_bad, &gw_alert) == 0);
     assert(gw_alert == 1);
+
+    // UNT Master the Mainframe test
+    tsfi_cw_unt_mtm_contestant stud = { "McKee", 1, 1, 4, 1, 0 }; // 10 + 30 + 80 + 10 = 130
+    int score = 0;
+    assert(tsfi_cw_unt_score_contestant(&stud, &score) == 0);
+    assert(score == 130);
+
+    // UNT Cryptographic Pipeline test
+    tsfi_cw_unt_crypto_pipeline pipe_ok = { 101, "AES-256", 0, 1 };
+    int pipe_compliant = 0;
+    assert(tsfi_cw_unt_audit_pipeline(&pipe_ok, &pipe_compliant) == 0);
+    assert(pipe_compliant == 1);
+
+    tsfi_cw_unt_crypto_pipeline pipe_bad = { 102, "DES", 0, 1 }; // DES encryption
+    assert(tsfi_cw_unt_audit_pipeline(&pipe_bad, &pipe_compliant) == 0);
+    assert(pipe_compliant == 0);
 }
 
 int main(void) {

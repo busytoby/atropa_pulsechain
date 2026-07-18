@@ -1436,6 +1436,28 @@ int tsfi_cw_isu_audit_gateway(const tsfi_cw_isu_gateway_status *gw, int *alert_o
     return 0;
 }
 
+int tsfi_cw_unt_score_contestant(const tsfi_cw_unt_mtm_contestant *student, int *score_out) {
+    if (!student || !score_out) return -1;
+    
+    int score = 0;
+    if (student->part1_completed) score += 10;
+    if (student->part2_completed) score += 30;
+    score += student->part3_completed_tasks * 20;
+    if (student->vsam_modified) score += 10;
+    score -= student->jcl_errors * 15;
+    
+    *score_out = (score < 0) ? 0 : score;
+    return 0;
+}
+
+int tsfi_cw_unt_audit_pipeline(const tsfi_cw_unt_crypto_pipeline *pipe, int *is_compliant_out) {
+    if (!pipe || !is_compliant_out) return -1;
+    
+    *is_compliant_out = (strcmp(pipe->encryption_protocol, "AES-256") == 0 && pipe->unencrypted_fields_count == 0 && pipe->checksum_verified == 1) ? 1 : 0;
+    return 0;
+}
+
+
 
 
 

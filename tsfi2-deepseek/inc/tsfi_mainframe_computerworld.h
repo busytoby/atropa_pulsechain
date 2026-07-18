@@ -1091,5 +1091,26 @@ typedef struct {
 int tsfi_cw_isu_audit_enrollment(const tsfi_cw_isu_course_enrollment *enroll, int *can_register_out);
 int tsfi_cw_isu_audit_gateway(const tsfi_cw_isu_gateway_status *gw, int *alert_out);
 
+// UNT Denton Master the Mainframe Contestant
+typedef struct {
+    char name[32];
+    int part1_completed;
+    int part2_completed;
+    int part3_completed_tasks; // 0..5
+    int vsam_modified;
+    int jcl_errors;
+} tsfi_cw_unt_mtm_contestant;
+
+// UNT Denton Mainframe-to-Cloud Cryptographic Pipeline
+typedef struct {
+    int pipeline_id;
+    char encryption_protocol[16];
+    int unencrypted_fields_count;
+    int checksum_verified;
+} tsfi_cw_unt_crypto_pipeline;
+
+int tsfi_cw_unt_score_contestant(const tsfi_cw_unt_mtm_contestant *student, int *score_out);
+int tsfi_cw_unt_audit_pipeline(const tsfi_cw_unt_crypto_pipeline *pipe, int *is_compliant_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 
