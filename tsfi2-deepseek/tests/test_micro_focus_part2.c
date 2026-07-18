@@ -1338,6 +1338,22 @@ int main(void) {
     assert(scan_valid == 1);
     printf("  [PASS] NATO STANAG 5066 Multi-Scan Selector verified.\n");
 
+    // 273. Verify NATO STANAG 5066 Interface Data Type Selector
+    printf("[TEST] Validating NATO STANAG 5066 Data Type Matcher...\n");
+    int type_valid = -1;
+    int type_res = tsfi_mf_nato_verify_data_type(1, &type_valid);
+    assert(type_res == 0);
+    assert(type_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Data Type Matcher verified.\n");
+
+    // 274. Verify NATO STANAG 5066 Link-Layer Compression Mode Validator
+    printf("[TEST] Validating NATO STANAG 5066 Compression Mode Validator...\n");
+    int compression_valid = -1;
+    int compression_res = tsfi_mf_nato_verify_compression_mode(1, &compression_valid);
+    assert(compression_res == 0);
+    assert(compression_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Compression Mode Validator verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

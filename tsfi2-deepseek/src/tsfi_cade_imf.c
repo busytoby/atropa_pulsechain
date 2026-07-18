@@ -1781,4 +1781,16 @@ int tsfi_mf_nato_verify_multiscan_mode(int mode, int *is_valid) {
     return 0;
 }
 
+int tsfi_mf_nato_verify_data_type(int type, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (type >= 0 && type <= 2) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_compression_mode(int mode, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (mode >= 0 && mode <= 2) ? 1 : 0;
+    return 0;
+}
+
 

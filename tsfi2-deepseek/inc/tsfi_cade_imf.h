@@ -168,5 +168,7 @@ int tsfi_mf_nato_verify_handshake_confirmation(int status, int *is_valid);
 int tsfi_mf_nato_verify_burst_limit(int segment_count, int *is_valid);
 int tsfi_mf_nato_verify_flow_direction(int direction, int *is_valid);
 int tsfi_mf_nato_verify_multiscan_mode(int mode, int *is_valid);
+int tsfi_mf_nato_verify_data_type(int type, int *is_valid);
+int tsfi_mf_nato_verify_compression_mode(int mode, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H
