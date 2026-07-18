@@ -703,3 +703,11 @@ int tsfi_mf_imf_is_form_1040ssss(int doc_code, int *result) {
 int tsfi_mf_cade_is_active_or_under_audit_or_suspended_or_pending_ver10(int status_code, int *is_valid) {
     return tsfi_mf_cade_check_status_mask(status_code, 15, is_valid);
 }
+
+int tsfi_mf_imf_is_form_1040ssss_ver2(int doc_code, int *result) {
+    return tsfi_mf_imf_verify_document_form(doc_code, 46, result);
+}
+
+int tsfi_mf_cade_is_active_or_under_audit_or_suspended_or_pending_ver11(int status_code, int *is_valid) {
+    return tsfi_mf_cade_check_status_mask(status_code, 15, is_valid);
+}
