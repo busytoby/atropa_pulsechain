@@ -513,3 +513,15 @@ int tsfi_mf_nato_verify_busy_hysteresis_threshold(int threshold_dbm, int *is_val
     *is_valid = (threshold_dbm >= -90 && threshold_dbm <= -50) ? 1 : 0;
     return 0;
 }
+
+int tsfi_mf_nato_verify_jitter_dist(int dist, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (dist == 0 || dist == 1) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_up_ramp_duration(int duration_ms, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (duration_ms >= 1 && duration_ms <= 10) ? 1 : 0;
+    return 0;
+}

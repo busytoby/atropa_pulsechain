@@ -402,5 +402,7 @@
 | 468 | NATO Link-Layer Broadcast Channel Busy Hysteresis Decay Rate Matcher | PASS | Audits RSSI decay rate filter coefficients for busy channel transitions | Volume 33 |
 | 469 | NATO Link-Layer Broadcast Collision Backoff Scale Factor Validator | PASS | Validates retry slot time scaling multiplier configurations | Volume 33 |
 | 470 | NATO Link-Layer Broadcast Channel Busy Hysteresis Signal Threshold Matcher | PASS | Audits absolute RSSI trigger levels to flag channel activity | Volume 33 |
+| 471 | NATO Link-Layer Broadcast Collision Backoff Jitter Distribution Matcher | PASS | Validates retry backoff jitter distribution algorithm selections | Volume 33 |
+| 472 | NATO Link-Layer Broadcast Channel Busy Hysteresis Up-Ramp Duration Matcher | PASS | Audits up-ramp sustained duration triggers to flag channel busy state | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 470 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 472 Scenarios validated successfully)

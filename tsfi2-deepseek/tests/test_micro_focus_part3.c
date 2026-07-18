@@ -625,5 +625,21 @@ int run_nato_stanag_tests(void) {
     assert(busy_hysteresis_threshold_valid == 1);
     printf("  [PASS] NATO Broadcast Busy RSSI Hysteresis Trigger Matcher verified.\n");
 
+    // 327. Verify NATO Link-Layer Broadcast Collision Backoff Jitter Distribution Matcher
+    printf("[TEST] Validating NATO Broadcast Backoff Jitter Distribution Matcher...\n");
+    int jitter_dist_valid = -1;
+    int jitter_dist_res = tsfi_mf_nato_verify_jitter_dist(1, &jitter_dist_valid);
+    assert(jitter_dist_res == 0);
+    assert(jitter_dist_valid == 1);
+    printf("  [PASS] NATO Broadcast Backoff Jitter Distribution Matcher verified.\n");
+
+    // 328. Verify NATO Link-Layer Broadcast Channel Busy Hysteresis Up-Ramp Duration Matcher
+    printf("[TEST] Validating NATO Broadcast Busy Up-Ramp Duration Matcher...\n");
+    int up_ramp_duration_valid = -1;
+    int up_ramp_duration_res = tsfi_mf_nato_verify_up_ramp_duration(5, &up_ramp_duration_valid);
+    assert(up_ramp_duration_res == 0);
+    assert(up_ramp_duration_valid == 1);
+    printf("  [PASS] NATO Broadcast Busy Up-Ramp Duration Matcher verified.\n");
+
     return 0;
 }
