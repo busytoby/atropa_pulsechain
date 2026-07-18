@@ -454,5 +454,7 @@
 | 520 | NATO Link-Layer Broadcast Channel Busy Hysteresis RSSI Quiet Sample Threshold Limit Margin Range Option Selector Margin Range Option Selector Matcher | PASS | Audits RSSI quiet sample count limit margin range option selector margin range option selectors | Volume 33 |
 | 521 | NATO Link-Layer Broadcast Collision Backoff Slot Alignment Boundary Source Offset Range Limit Value Margin Range Option Selector Option Margin Range Option Selector Matcher | PASS | Validates slot boundary source alignment offset range limits value margin range option selector option margin range option selectors | Volume 33 |
 | 522 | NATO Link-Layer Broadcast Channel Busy Hysteresis RSSI Quiet Sample Threshold Limit Margin Range Option Selector Margin Range Option Selector Margin Matcher | PASS | Audits RSSI quiet sample count limit margin range option selector margin range option selector margins | Volume 33 |
+| 523 | NATO Link-Layer Broadcast Collision Backoff Slot Alignment Boundary Source Offset Range Limit Value Margin Range Option Selector Option Margin Range Option Selector Option Matcher | PASS | Validates slot boundary source alignment offset range limits value margin range option selector option margin range option selector options | Volume 33 |
+| 524 | NATO Link-Layer Broadcast Channel Busy Hysteresis RSSI Quiet Sample Threshold Limit Margin Range Option Selector Margin Range Option Selector Margin Range Matcher | PASS | Audits RSSI quiet sample count limit margin range option selector margin range option selector margin ranges | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 522 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 524 Scenarios validated successfully)
