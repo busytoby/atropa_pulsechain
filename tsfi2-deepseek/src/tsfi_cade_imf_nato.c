@@ -525,3 +525,15 @@ int tsfi_mf_nato_verify_up_ramp_duration(int duration_ms, int *is_valid) {
     *is_valid = (duration_ms >= 1 && duration_ms <= 10) ? 1 : 0;
     return 0;
 }
+
+int tsfi_mf_nato_verify_slot_map(int map, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (map >= 0 && map <= 2) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_down_ramp_duration(int duration_ms, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (duration_ms >= 1 && duration_ms <= 15) ? 1 : 0;
+    return 0;
+}

@@ -427,8 +427,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 470 | NATO Link-Layer Broadcast Channel Busy Hysteresis Signal Threshold Matcher | PASS | Audits absolute RSSI trigger levels to flag channel activity | Volume 33 |
 | 471 | NATO Link-Layer Broadcast Collision Backoff Jitter Distribution Matcher | PASS | Validates retry backoff jitter distribution algorithm selections | Volume 33 |
 | 472 | NATO Link-Layer Broadcast Channel Busy Hysteresis Up-Ramp Duration Matcher | PASS | Audits up-ramp sustained duration triggers to flag channel busy state | Volume 33 |
+| 473 | NATO Link-Layer Broadcast Collision Backoff Slot Map Matcher | PASS | Validates backoff slot alignment boundary index configurations | Volume 33 |
+| 474 | NATO Link-Layer Broadcast Channel Busy Hysteresis Down-Ramp Duration Matcher | PASS | Audits down-ramp sustained decay duration triggers to clear channel busy state | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 472 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 474 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"
