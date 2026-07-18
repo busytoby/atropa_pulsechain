@@ -266,8 +266,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 311 | IRS CADE Taxpayer Active Or Under Audit Or Suspended Or Pending Checker Ver11 | PASS | Asserves if account status matches active, under audit, suspended, or pending audit codes | Volume 33 |
 | 312 | IRS IMF Form 1040-SS-SS Ver3 Verifier | PASS | Restricts individual filings to Form 1040-SS-SS territory return ranges | Volume 33 |
 | 313 | IRS CADE Taxpayer Active Or Under Audit Or Suspended Or Pending Checker Ver12 | PASS | Asserves if account status matches active, under audit, suspended, or pending audit codes | Volume 33 |
+| 314 | IRS IMF Form 1040-SS-SS Ver4 Verifier | PASS | Restricts individual filings to Form 1040-SS-SS territory return ranges | Volume 33 |
+| 315 | IRS CADE Taxpayer Active Or Under Audit Or Suspended Or Pending Checker Ver13 | PASS | Asserves if account status matches active, under audit, suspended, or pending audit codes | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 313 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 315 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

@@ -2019,6 +2019,22 @@ int main(void) {
     assert(is_auasp12 == 1);
     printf("  [PASS] IRS CADE Taxpayer Active Or Under Audit Or Suspended Or Pending Checker Ver12 verified.\n");
 
+    // 205. Verify IRS IMF Form 1040-SS-SS Ver4 Verifier
+    printf("[TEST] Validating IRS IMF Form 1040-SS-SS Ver4 Verifier...\n");
+    int is_1040ssss_ver4 = -1;
+    int f1040ssss_ver4_res = tsfi_mf_imf_is_form_1040ssss_ver4(48, &is_1040ssss_ver4);
+    assert(f1040ssss_ver4_res == 0);
+    assert(is_1040ssss_ver4 == 1);
+    printf("  [PASS] IRS IMF Form 1040-SS-SS Ver4 Verifier verified.\n");
+
+    // 206. Verify IRS CADE Taxpayer Active Or Under Audit Or Suspended Or Pending Checker Ver13
+    printf("[TEST] Validating IRS CADE Taxpayer Active Or Under Audit Or Suspended Or Pending Checker Ver13...\n");
+    int is_auasp13 = -1;
+    int auasp13_res = tsfi_mf_cade_is_active_or_under_audit_or_suspended_or_pending_ver13(4, &is_auasp13);
+    assert(auasp13_res == 0);
+    assert(is_auasp13 == 1);
+    printf("  [PASS] IRS CADE Taxpayer Active Or Under Audit Or Suspended Or Pending Checker Ver13 verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }
