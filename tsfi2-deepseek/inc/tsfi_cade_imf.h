@@ -488,4 +488,8 @@ int tsfi_mf_ussr_red_phone_scramble(const uint8_t *in_signal, size_t size, uint8
 int tsfi_mf_gost_set_sbox(int profile_id);
 int tsfi_mf_gost_hash_step(const uint8_t *block, uint8_t *h_state);
 
+int tsfi_mf_usss_format_auth_pdu(uint32_t agent_id, uint32_t auth_token, uint8_t *out_pdu, size_t *out_size);
+int tsfi_mf_usss_verify_auth_pdu(const uint8_t *in_pdu, size_t pdu_size, int *is_valid);
+int tsfi_mf_ussr_spec_svyaz_cipher(const uint8_t *in, size_t size, uint8_t rotor_setting, uint8_t *out);
+
 #endif // TSFI_CADE_IMF_H

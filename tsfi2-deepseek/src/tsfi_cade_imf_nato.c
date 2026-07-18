@@ -2069,6 +2069,46 @@ int tsfi_mf_gost_hash_step(const uint8_t *block, uint8_t *h_state) {
     return 0;
 }
 
+int tsfi_mf_usss_format_auth_pdu(uint32_t agent_id, uint32_t auth_token, uint8_t *out_pdu, size_t *out_size) {
+    if (!out_pdu || !out_size) return -1;
+    
+    out_pdu[0] = 0xF7; // USSS PDU marker
+    out_pdu[1] = (agent_id >> 24) & 0xFF;
+    out_pdu[2] = (agent_id >> 16) & 0xFF;
+    out_pdu[3] = (agent_id >> 8) & 0xFF;
+    out_pdu[4] = agent_id & 0xFF;
+    
+    out_pdu[5] = (auth_token >> 24) & 0xFF;
+    out_pdu[6] = (auth_token >> 16) & 0xFF;
+    out_pdu[7] = (auth_token >> 8) & 0xFF;
+    out_pdu[8] = auth_token & 0xFF;
+    
+    *out_size = 9;
+    return 0;
+}
+
+int tsfi_mf_usss_verify_auth_pdu(const uint8_t *in_pdu, size_t pdu_size, int *is_valid) {
+    if (!in_pdu || !is_valid) return -1;
+    *is_valid = 0;
+    
+    if (pdu_size == 9 && in_pdu[0] == 0xF7) {
+        uint32_t agent_id = ((uint32_t)in_pdu[1] << 24) | ((uint32_t)in_pdu[2] << 16) | ((uint32_t)in_pdu[3] << 8) | in_pdu[4];
+        if (agent_id != 0) {
+            *is_valid = 1;
+        }
+    }
+    return 0;
+}
+
+int tsfi_mf_ussr_spec_svyaz_cipher(const uint8_t *in, size_t size, uint8_t rotor_setting, uint8_t *out) {
+    if (!in || !out) return -1;
+    for (size_t i = 0; i < size; i++) {
+        out[i] = (in[i] + rotor_setting + i) ^ 0x33;
+    }
+    return 0;
+}
+
+
 
 
 

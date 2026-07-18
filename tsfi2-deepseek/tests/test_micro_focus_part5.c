@@ -1167,7 +1167,29 @@ int run_nato_stanag_tests_part5(void) {
     int hash_res = tsfi_mf_gost_hash_step(dummy_block, hash_st);
     assert(hash_res == 0);
     assert(hash_st[0] != 0xAB);
-    printf("  [PASS] GOST Hash Compression Step verified.\n");
+    // Verify USSS Auth PDU Formatting and Verification
+    printf("[TEST] Validating USSS Auth PDU...\n");
+    uint8_t usss_pdu[16];
+    size_t usss_size = 0;
+    int usss_res = tsfi_mf_usss_format_auth_pdu(99, 12345, usss_pdu, &usss_size);
+    assert(usss_res == 0);
+    assert(usss_size == 9);
+    assert(usss_pdu[0] == 0xF7);
+
+    int usss_valid = -1;
+    usss_res = tsfi_mf_usss_verify_auth_pdu(usss_pdu, usss_size, &usss_valid);
+    assert(usss_res == 0);
+    assert(usss_valid == 1);
+    printf("  [PASS] USSS Auth PDU verified.\n");
+
+    // Verify Soviet Spec-Svyaz Rotor Cipher
+    printf("[TEST] Validating Soviet Spec-Svyaz Rotor Cipher...\n");
+    uint8_t spec_raw[] = "SpecSvyazMessage";
+    uint8_t spec_enc[32] = {0};
+    int spec_res = tsfi_mf_ussr_spec_svyaz_cipher(spec_raw, sizeof(spec_raw), 5, spec_enc);
+    assert(spec_res == 0);
+    assert(spec_enc[0] != spec_raw[0]);
+    printf("  [PASS] Soviet Spec-Svyaz Rotor Cipher verified.\n");
 
     return 0;
 }
