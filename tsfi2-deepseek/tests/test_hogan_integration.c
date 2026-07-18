@@ -1061,6 +1061,52 @@ int main(void) {
     remove(maxb_path); // clean up
     printf("  [PASS] Deposit cap compliance, validations, and override logs verified.\n");
 
+    // 32. Test Daily Deposit Limit Manager (Inbound Velocity Capping)
+    printf("[E2E] Testing Daily Deposit Limit Manager...\n");
+    const char *depb_path = "hogan_depb.dat.bin";
+    remove(depb_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system depb_sys;
+    tsfi_hogan_init(&depb_sys);
+    assert(tsfi_hogan_register_account(&depb_sys, 1001, 10000) == 0); // Alice: 10,000 units
+    assert(tsfi_hogan_register_account(&depb_sys, 2002, 1000) == 0);  // Bob: 1,000 units
+    
+    // Set Bob's daily deposit limit to 500 units
+    assert(tsfi_hogan_update_deposit_limit(&depb_sys, depb_path, 2002, 500, 777) == 0);
+    assert(tsfi_hogan_update_deposit_limit(&depb_sys, "hogan_depb.json", 2002, 500, 777) == -3); // Rule 13 check
+    
+    // Alice transfers 400 to Bob (succeeds, Bob daily_deposited becomes 400)
+    assert(tsfi_hogan_dispatch_tx(&depb_sys, 1001, 2002, 400, VM_EVM) == 0);
+    
+    // Alice transfers 200 to Bob (should fail because Bob daily_deposited would be 600 > 500)
+    assert(tsfi_hogan_dispatch_tx(&depb_sys, 1001, 2002, 200, VM_EVM) == 0);
+    
+    // Run reconciliation
+    assert(tsfi_hogan_overnight_reconciliation(&depb_sys, "hogan_lfs.dat.bin") == 0);
+    
+    // Verify balances (only 400 transfer processed, 200 transfer blocked)
+    assert(depb_sys.accounts[0].balance == 9600);
+    assert(depb_sys.accounts[1].balance == 1400);
+    
+    // Verify daily_deposited resets overnight
+    assert(depb_sys.accounts[1].daily_deposited == 0);
+    
+    // Read sequential log file and verify entries
+    uint8_t read_depbuf[sizeof(hogan_deposit_limit_entry)];
+    size_t dep_size = 0;
+    assert(tsfi_hogan_read_seq_record(depb_path, 0, read_depbuf, &dep_size) == 0);
+    assert(dep_size == sizeof(hogan_deposit_limit_entry));
+    
+    const hogan_deposit_limit_entry *depentry = (const hogan_deposit_limit_entry *)read_depbuf;
+    assert(depentry->account_id == 2002);
+    assert(depentry->previous_deposit_limit == 0);
+    assert(depentry->new_deposit_limit == 500);
+    assert(depentry->authority_id == 777);
+    
+    remove(depb_path); // clean up
+    printf("  [PASS] Daily deposit limit velocity caps, resets, and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }
