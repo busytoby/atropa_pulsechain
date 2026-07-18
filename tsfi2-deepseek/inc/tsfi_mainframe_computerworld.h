@@ -73,7 +73,6 @@ typedef struct {
     int sync_align;
     int sign_leading;
     int sign_separate;
-    char cond_value[32];
     char occurs_depending_on[32];
 } tsfi_cw_cobol_field;
 

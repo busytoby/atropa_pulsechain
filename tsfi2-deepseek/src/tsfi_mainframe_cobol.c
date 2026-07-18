@@ -125,38 +125,6 @@ int tsfi_cw_parse_copybook_line(const char *copybook_line, tsfi_cw_copybook *cb)
     if (name_idx == 0) return -4;
     while (*p == ' ' || *p == '\t') p++;
 
-    if (level == 88) {
-        char cond_val[32] = "";
-        const char *val_ptr = strstr(p, "VALUE '");
-        if (val_ptr) {
-            val_ptr += 7;
-            int v_idx = 0;
-            while (*val_ptr && *val_ptr != '\'' && v_idx < 31) {
-                cond_val[v_idx++] = *val_ptr++;
-            }
-            cond_val[v_idx] = '\0';
-        } else {
-            val_ptr = strstr(p, "VALUE ");
-            if (val_ptr) {
-                val_ptr += 6;
-                int v_idx = 0;
-                while (*val_ptr && *val_ptr != ' ' && *val_ptr != '.' && v_idx < 31) {
-                    cond_val[v_idx++] = *val_ptr++;
-                }
-                cond_val[v_idx] = '\0';
-            }
-        }
-        tsfi_cw_cobol_field *f = &cb->fields[cb->field_count];
-        memset(f, 0, sizeof(tsfi_cw_cobol_field));
-        f->level = 88;
-        snprintf(f->name, sizeof(f->name), "%s", name);
-        f->type = COBOL_TYPE_ALPHA;
-        f->usage = COBOL_USAGE_DISPLAY;
-        strcpy(f->cond_value, cond_val);
-        cb->field_count++;
-        return 0;
-    }
-
     if (level == 66) {
         char ren_start[32] = "";
         char ren_end[32] = "";
