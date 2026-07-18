@@ -1175,4 +1175,17 @@ int tsfi_mf_imf_verify_educator_expense(double claimed_deduction, int is_spouse_
     return 0;
 }
 
+int tsfi_mf_imf_verify_lifetime_learning_credit(double claimed_credit, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (claimed_credit <= 2000.00 && claimed_credit >= 0.0) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_imf_check_ctc_phaseout_threshold(double agi, int filing_status, int *is_below_threshold) {
+    if (!is_below_threshold) return -1;
+    double threshold = (filing_status == 2) ? 400000.00 : 200000.00;
+    *is_below_threshold = (agi <= threshold) ? 1 : 0;
+    return 0;
+}
+
 

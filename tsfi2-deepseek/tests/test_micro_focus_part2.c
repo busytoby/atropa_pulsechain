@@ -812,6 +812,22 @@ int main(void) {
     assert(educator_valid == 1);
     printf("  [PASS] IRS IMF Educator Expense Cap Checker verified.\n");
 
+    // 208. Verify IRS IMF Lifetime Learning Credit Limit Matcher
+    printf("[TEST] Validating IRS IMF Lifetime Learning Credit Matcher...\n");
+    int llc_valid = -1;
+    int llc_res = tsfi_mf_imf_verify_lifetime_learning_credit(1500.00, &llc_valid);
+    assert(llc_res == 0);
+    assert(llc_valid == 1);
+    printf("  [PASS] IRS IMF Lifetime Learning Credit Matcher verified.\n");
+
+    // 209. Verify IRS IMF Child Tax Credit (CTC) Phase-Out Start Threshold Matcher
+    printf("[TEST] Validating IRS IMF CTC Phase-Out Threshold Matcher...\n");
+    int ctc_below_threshold = -1;
+    int ctc_threshold_res = tsfi_mf_imf_check_ctc_phaseout_threshold(150000.00, 1, &ctc_below_threshold);
+    assert(ctc_threshold_res == 0);
+    assert(ctc_below_threshold == 1);
+    printf("  [PASS] IRS IMF CTC Phase-Out Threshold Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

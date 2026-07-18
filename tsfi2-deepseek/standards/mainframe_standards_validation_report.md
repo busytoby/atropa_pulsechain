@@ -283,5 +283,7 @@
 | 349 | IRS IMF SIMPLE IRA Employer Match Matcher | PASS | Verifies employer matching contributions up to employee caps | Volume 33 |
 | 350 | IRS IMF Adoption Tax Credit Limit Matcher | PASS | Verifies claimed adoption credit does not exceed statutory caps | Volume 33 |
 | 351 | IRS IMF Educator Expense Deduction Cap Checker | PASS | Audits teacher classroom expense deductions against limits | Volume 33 |
+| 352 | IRS IMF Lifetime Learning Credit Limit Matcher | PASS | Verifies Lifetime Learning Credits do not exceed return caps | Volume 33 |
+| 353 | IRS IMF Child Tax Credit (CTC) Phase-Out Start Threshold Matcher | PASS | Flags AGI boundaries where CTC begins phase-out limits | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 351 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 353 Scenarios validated successfully)

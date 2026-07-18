@@ -103,5 +103,7 @@ int tsfi_mf_imf_check_actc_income_floor(double earned_income, int *is_above_floo
 int tsfi_mf_imf_verify_simple_ira_match(double employee_comp, double claimed_match, int *is_valid);
 int tsfi_mf_imf_verify_adoption_credit(double claimed_credit, int *is_valid);
 int tsfi_mf_imf_verify_educator_expense(double claimed_deduction, int is_spouse_educator, int *is_valid);
+int tsfi_mf_imf_verify_lifetime_learning_credit(double claimed_credit, int *is_valid);
+int tsfi_mf_imf_check_ctc_phaseout_threshold(double agi, int filing_status, int *is_below_threshold);
 
 #endif // TSFI_CADE_IMF_H
