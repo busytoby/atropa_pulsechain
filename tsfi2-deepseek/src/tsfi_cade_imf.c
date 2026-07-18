@@ -387,304 +387,144 @@ int tsfi_mf_cade_get_status_name(int status_code, char *name_out, int max_len) {
     return 0;
 }
 
-int tsfi_mf_imf_is_corporate_form(int doc_code, int *result) {
+static int tsfi_mf_imf_verify_document_form(int doc_code, int target_code, int *result) {
     if (!result) return -1;
+    *result = (doc_code == target_code) ? 1 : 0;
+    return 0;
+}
 
-    *result = 0;
-    if (doc_code == 20) {
-        *result = 1;
+static int tsfi_mf_cade_check_status_mask(int status_code, unsigned int mask, int *is_valid) {
+    if (!is_valid) return -1;
+    if (status_code >= 1 && status_code <= 4) {
+        *is_valid = (mask & (1U << (status_code - 1))) ? 1 : 0;
+    } else {
+        *is_valid = 0;
     }
     return 0;
+}
+
+int tsfi_mf_imf_is_corporate_form(int doc_code, int *result) {
+    return tsfi_mf_imf_verify_document_form(doc_code, 20, result);
 }
 
 int tsfi_mf_cade_is_under_audit(int status_code, int *is_audit) {
-    if (!is_audit) return -1;
-
-    *is_audit = 0;
-    if (status_code == 2) {
-        *is_audit = 1;
-    }
-    return 0;
+    return tsfi_mf_cade_check_status_mask(status_code, 2, is_audit);
 }
 
 int tsfi_mf_imf_is_individual_form(int doc_code, int *result) {
-    if (!result) return -1;
-
-    *result = 0;
-    if (doc_code == 10) {
-        *result = 1;
-    }
-    return 0;
+    return tsfi_mf_imf_verify_document_form(doc_code, 10, result);
 }
 
 int tsfi_mf_cade_is_active(int status_code, int *is_active) {
-    if (!is_active) return -1;
-
-    *is_active = 0;
-    if (status_code == 1) {
-        *is_active = 1;
-    }
-    return 0;
+    return tsfi_mf_cade_check_status_mask(status_code, 1, is_active);
 }
 
 int tsfi_mf_imf_is_fica_form(int doc_code, int *result) {
-    if (!result) return -1;
-
-    *result = 0;
-    if (doc_code == 30) {
-        *result = 1;
-    }
-    return 0;
+    return tsfi_mf_imf_verify_document_form(doc_code, 30, result);
 }
 
 int tsfi_mf_cade_is_suspended(int status_code, int *is_suspended) {
-    if (!is_suspended) return -1;
-
-    *is_suspended = 0;
-    if (status_code == 3) {
-        *is_suspended = 1;
-    }
-    return 0;
+    return tsfi_mf_cade_check_status_mask(status_code, 4, is_suspended);
 }
 
 int tsfi_mf_imf_is_excise_form(int doc_code, int *result) {
-    if (!result) return -1;
-
-    *result = 0;
-    if (doc_code == 40) {
-        *result = 1;
-    }
-    return 0;
+    return tsfi_mf_imf_verify_document_form(doc_code, 40, result);
 }
 
 int tsfi_mf_cade_is_audit_pending(int status_code, int *is_pending) {
-    if (!is_pending) return -1;
-
-    *is_pending = 0;
-    if (status_code == 4) {
-        *is_pending = 1;
-    }
-    return 0;
+    return tsfi_mf_cade_check_status_mask(status_code, 8, is_pending);
 }
 
 int tsfi_mf_imf_is_misc_form(int doc_code, int *result) {
-    if (!result) return -1;
-
-    *result = 0;
-    if (doc_code == 50) {
-        *result = 1;
-    }
-    return 0;
+    return tsfi_mf_imf_verify_document_form(doc_code, 50, result);
 }
 
 int tsfi_mf_cade_is_unknown_status(int status_code, int *is_unknown) {
     if (!is_unknown) return -1;
-
-    *is_unknown = 0;
-    if (status_code < 1 || status_code > 4) {
-        *is_unknown = 1;
-    }
+    *is_unknown = (status_code < 1 || status_code > 4) ? 1 : 0;
     return 0;
 }
 
 int tsfi_mf_imf_is_partnership_form(int doc_code, int *result) {
-    if (!result) return -1;
-
-    *result = 0;
-    if (doc_code == 15) {
-        *result = 1;
-    }
-    return 0;
+    return tsfi_mf_imf_verify_document_form(doc_code, 15, result);
 }
 
 int tsfi_mf_cade_are_both_active(int status_a, int status_b, int *both_active) {
     if (!both_active) return -1;
-
-    *both_active = 0;
-    if (status_a == 1 && status_b == 1) {
-        *both_active = 1;
-    }
+    *both_active = (status_a == 1 && status_b == 1) ? 1 : 0;
     return 0;
 }
 
 int tsfi_mf_imf_is_estate_form(int doc_code, int *result) {
-    if (!result) return -1;
-
-    *result = 0;
-    if (doc_code == 25) {
-        *result = 1;
-    }
-    return 0;
+    return tsfi_mf_imf_verify_document_form(doc_code, 25, result);
 }
 
 int tsfi_mf_cade_is_audit_or_pending(int status_code, int *is_audit_or_pending) {
-    if (!is_audit_or_pending) return -1;
-
-    *is_audit_or_pending = 0;
-    if (status_code == 2 || status_code == 4) {
-        *is_audit_or_pending = 1;
-    }
-    return 0;
+    return tsfi_mf_cade_check_status_mask(status_code, 10, is_audit_or_pending);
 }
 
 int tsfi_mf_imf_is_gift_form(int doc_code, int *result) {
-    if (!result) return -1;
-
-    *result = 0;
-    if (doc_code == 26) {
-        *result = 1;
-    }
-    return 0;
+    return tsfi_mf_imf_verify_document_form(doc_code, 26, result);
 }
 
 int tsfi_mf_cade_is_active_or_suspended(int status_code, int *is_active_or_suspended) {
-    if (!is_active_or_suspended) return -1;
-
-    *is_active_or_suspended = 0;
-    if (status_code == 1 || status_code == 3) {
-        *is_active_or_suspended = 1;
-    }
-    return 0;
+    return tsfi_mf_cade_check_status_mask(status_code, 5, is_active_or_suspended);
 }
 
 int tsfi_mf_imf_is_fiduciary_form(int doc_code, int *result) {
-    if (!result) return -1;
-
-    *result = 0;
-    if (doc_code == 11) {
-        *result = 1;
-    }
-    return 0;
+    return tsfi_mf_imf_verify_document_form(doc_code, 11, result);
 }
 
 int tsfi_mf_cade_is_active_or_under_audit(int status_code, int *is_active_or_audit) {
-    if (!is_active_or_audit) return -1;
-
-    *is_active_or_audit = 0;
-    if (status_code == 1 || status_code == 2) {
-        *is_active_or_audit = 1;
-    }
-    return 0;
+    return tsfi_mf_cade_check_status_mask(status_code, 3, is_active_or_audit);
 }
 
 int tsfi_mf_imf_is_form_706(int doc_code, int *result) {
-    if (!result) return -1;
-
-    *result = 0;
-    if (doc_code == 27) {
-        *result = 1;
-    }
-    return 0;
+    return tsfi_mf_imf_verify_document_form(doc_code, 27, result);
 }
 
 int tsfi_mf_cade_is_active_or_audit_pending(int status_code, int *is_active_or_pending) {
-    if (!is_active_or_pending) return -1;
-
-    *is_active_or_pending = 0;
-    if (status_code == 1 || status_code == 4) {
-        *is_active_or_pending = 1;
-    }
-    return 0;
+    return tsfi_mf_cade_check_status_mask(status_code, 9, is_active_or_pending);
 }
 
 int tsfi_mf_imf_is_form_709(int doc_code, int *result) {
-    if (!result) return -1;
-
-    *result = 0;
-    if (doc_code == 28) {
-        *result = 1;
-    }
-    return 0;
+    return tsfi_mf_imf_verify_document_form(doc_code, 28, result);
 }
 
 int tsfi_mf_cade_is_under_audit_or_suspended(int status_code, int *is_audit_or_suspended) {
-    if (!is_audit_or_suspended) return -1;
-
-    *is_audit_or_suspended = 0;
-    if (status_code == 2 || status_code == 3) {
-        *is_audit_or_suspended = 1;
-    }
-    return 0;
+    return tsfi_mf_cade_check_status_mask(status_code, 6, is_audit_or_suspended);
 }
 
 int tsfi_mf_imf_is_form_1041(int doc_code, int *result) {
-    if (!result) return -1;
-
-    *result = 0;
-    if (doc_code == 29) {
-        *result = 1;
-    }
-    return 0;
+    return tsfi_mf_imf_verify_document_form(doc_code, 29, result);
 }
 
 int tsfi_mf_cade_is_under_audit_or_pending(int status_code, int *is_audit_or_pending) {
-    if (!is_audit_or_pending) return -1;
-
-    *is_audit_or_pending = 0;
-    if (status_code == 2 || status_code == 4) {
-        *is_audit_or_pending = 1;
-    }
-    return 0;
+    return tsfi_mf_cade_check_status_mask(status_code, 10, is_audit_or_pending);
 }
 
 int tsfi_mf_imf_is_form_1065(int doc_code, int *result) {
-    if (!result) return -1;
-
-    *result = 0;
-    if (doc_code == 31) {
-        *result = 1;
-    }
-    return 0;
+    return tsfi_mf_imf_verify_document_form(doc_code, 31, result);
 }
 
 int tsfi_mf_cade_is_active_or_under_audit_or_pending(int status_code, int *is_valid) {
-    if (!is_valid) return -1;
-
-    *is_valid = 0;
-    if (status_code == 1 || status_code == 2 || status_code == 4) {
-        *is_valid = 1;
-    }
-    return 0;
+    return tsfi_mf_cade_check_status_mask(status_code, 11, is_valid);
 }
 
 int tsfi_mf_imf_is_form_1040(int doc_code, int *result) {
-    if (!result) return -1;
-
-    *result = 0;
-    if (doc_code == 10) {
-        *result = 1;
-    }
-    return 0;
+    return tsfi_mf_imf_verify_document_form(doc_code, 10, result);
 }
 
 int tsfi_mf_cade_is_active_or_suspended_or_pending(int status_code, int *is_valid) {
-    if (!is_valid) return -1;
-
-    *is_valid = 0;
-    if (status_code == 1 || status_code == 3 || status_code == 4) {
-        *is_valid = 1;
-    }
-    return 0;
+    return tsfi_mf_cade_check_status_mask(status_code, 13, is_valid);
 }
 
 int tsfi_mf_imf_is_form_941(int doc_code, int *result) {
-    if (!result) return -1;
-
-    *result = 0;
-    if (doc_code == 30) {
-        *result = 1;
-    }
-    return 0;
+    return tsfi_mf_imf_verify_document_form(doc_code, 30, result);
 }
 
 int tsfi_mf_cade_is_under_audit_or_suspended_or_pending(int status_code, int *is_valid) {
-    if (!is_valid) return -1;
-
-    *is_valid = 0;
-    if (status_code == 2 || status_code == 3 || status_code == 4) {
-        *is_valid = 1;
-    }
-    return 0;
+    return tsfi_mf_cade_check_status_mask(status_code, 14, is_valid);
 }
 
 static int g_ddl_mode = 0; // 0 = COBOL, 1 = Thunks
@@ -737,23 +577,7 @@ int tsfi_mf_imf_get_cycle_week(const char *cycle_code, int *week_out) {
 }
 
 int tsfi_mf_imf_is_form_1040a(int doc_code, int *result) {
-    if (!result) return -1;
-
-    *result = 0;
-    if (doc_code == 33) {
-        *result = 1;
-    }
-    return 0;
-}
-
-static int tsfi_mf_cade_check_status_mask(int status_code, unsigned int mask, int *is_valid) {
-    if (!is_valid) return -1;
-    if (status_code >= 1 && status_code <= 4) {
-        *is_valid = (mask & (1U << (status_code - 1))) ? 1 : 0;
-    } else {
-        *is_valid = 0;
-    }
-    return 0;
+    return tsfi_mf_imf_verify_document_form(doc_code, 33, result);
 }
 
 int tsfi_mf_cade_is_active_or_suspended_or_audit_or_pending(int status_code, int *is_valid) {
