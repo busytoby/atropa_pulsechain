@@ -120,4 +120,17 @@ int tsfi_mf_gost_encrypt_cfb(const uint8_t *iv, const uint8_t *in, size_t size, 
     return 0;
 }
 
+int tsfi_mf_yellow_box_pbx_route(uint32_t extension_in, uint32_t *extension_out) {
+    if (!extension_out) return -1;
+    
+    uint32_t left = extension_in;
+    uint32_t right = 0xAA55AA55;
+    tsfi_mf_ussr_gost_scramble(&left, &right, 0x9999);
+    
+    // Map to a secure 3-digit PBX extension path
+    *extension_out = (left % 900) + 100;
+    return 0;
+}
+
+
 

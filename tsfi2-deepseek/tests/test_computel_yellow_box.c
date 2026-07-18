@@ -60,6 +60,14 @@ int main(void) {
     assert(stream_out[0] != stream_in[0]);
     printf("[TEST] GOST CFB stream encryption completed successfully.\n");
 
+    // Test Yellow Box PBX Switchboard routing
+    printf("[TEST] Validating Yellow Box PBX Switchboard routing...\n");
+    uint32_t ext_out = 0;
+    rc = tsfi_mf_yellow_box_pbx_route(500, &ext_out);
+    assert(rc == 0);
+    assert(ext_out >= 100 && ext_out <= 999);
+    printf("[TEST] Yellow Box PBX Switchboard routed extension 500 to secure extension %d.\n", ext_out);
+
     printf("[SUCCESS] All Yellow Box S-Box scrambler integration tests passed.\n");
     return 0;
 }
