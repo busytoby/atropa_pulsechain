@@ -1836,6 +1836,25 @@ static void test_new_mainframe_features(void) {
     tsfi_cw_esj_paging_metrics metric2 = { 100, 200, 15, 1000, 200 }; // uic under 30. Alert!
     assert(tsfi_cw_esj_analyze_paging(&metric2, &thrash, &alert) == 0);
     assert(alert == 1);
+
+    // Marist z/VM migration test
+    tsfi_cw_marist_zvm_migration mig_config = { 2048.0, 50.0, 1000.0, 30.0 }; // memory: 2048MB, dirty: 50MB/s, network: 1000Mbps -> 125MB/s. Net: 75MB/s. Time: 27.3s. Nominal!
+    double est_time = 0.0;
+    int can_mig = 0;
+    assert(tsfi_cw_marist_optimize_migration(&mig_config, &est_time, &can_mig) == 0);
+    assert(fabs(est_time - 27.3) < 0.1);
+    assert(can_mig == 1);
+
+    // Marist SDN Flow Auditor test
+    tsfi_cw_marist_sdn_rule rules[2] = {
+        { 1, "10.0.0.1", "10.0.0.2", 1, 100 },
+        { 2, "10.0.0.3", "10.0.0.4", 2, 50 }
+    };
+    int action = 0;
+    assert(tsfi_cw_marist_audit_sdn(rules, 2, "10.0.0.1", "10.0.0.2", &action) == 0);
+    assert(action == 1); // FORWARD
+    assert(tsfi_cw_marist_audit_sdn(rules, 2, "10.0.0.5", "10.0.0.6", &action) == 0);
+    assert(action == 2); // Default DROP
 }
 
 int main(void) {

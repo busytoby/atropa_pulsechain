@@ -1094,6 +1094,37 @@ int tsfi_cw_esj_analyze_paging(const tsfi_cw_esj_paging_metrics *metrics, double
     return 0;
 }
 
+int tsfi_cw_marist_optimize_migration(const tsfi_cw_marist_zvm_migration *config, double *est_time_out, int *can_migrate_out) {
+    if (!config || !est_time_out || !can_migrate_out) return -1;
+    if (config->vm_memory_mb <= 0.0 || config->network_speed_mbps <= 0.0) return -2;
+    
+    double net_speed_mb = config->network_speed_mbps / 8.0;
+    double net_rate = net_speed_mb - config->dirty_rate_mb_per_sec;
+    
+    if (net_rate <= 0.0) {
+        *est_time_out = -1.0;
+        *can_migrate_out = 0;
+    } else {
+        *est_time_out = config->vm_memory_mb / net_rate;
+        *can_migrate_out = (*est_time_out <= config->max_migration_time_sec) ? 1 : 0;
+    }
+    return 0;
+}
+
+int tsfi_cw_marist_audit_sdn(const tsfi_cw_marist_sdn_rule *rules, int rule_count, const char *src_ip, const char *dest_ip, int *action_out) {
+    if (!rules || rule_count < 0 || !src_ip || !dest_ip || !action_out) return -1;
+    
+    for (int i = 0; i < rule_count; i++) {
+        if (strcmp(rules[i].src_ip, src_ip) == 0 && strcmp(rules[i].dest_ip, dest_ip) == 0) {
+            *action_out = rules[i].action;
+            return 0;
+        }
+    }
+    *action_out = 2; // Default DROP
+    return 0;
+}
+
+
 
 
 

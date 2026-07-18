@@ -899,5 +899,25 @@ typedef struct {
 
 int tsfi_cw_esj_analyze_paging(const tsfi_cw_esj_paging_metrics *metrics, double *thrashing_index_out, int *alert_flag_out);
 
+// Marist ECR z/VM Live Guest Migration
+typedef struct {
+    double vm_memory_mb;
+    double dirty_rate_mb_per_sec;
+    double network_speed_mbps;
+    double max_migration_time_sec;
+} tsfi_cw_marist_zvm_migration;
+
+// Marist ECR SDN Flow Rule
+typedef struct {
+    int rule_id;
+    char src_ip[16];
+    char dest_ip[16];
+    int action; // 1 = FORWARD, 2 = DROP
+    int packet_count;
+} tsfi_cw_marist_sdn_rule;
+
+int tsfi_cw_marist_optimize_migration(const tsfi_cw_marist_zvm_migration *config, double *est_time_out, int *can_migrate_out);
+int tsfi_cw_marist_audit_sdn(const tsfi_cw_marist_sdn_rule *rules, int rule_count, const char *src_ip, const char *dest_ip, int *action_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 
