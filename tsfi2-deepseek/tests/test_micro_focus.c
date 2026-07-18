@@ -1779,6 +1779,22 @@ int main(void) {
     assert(cycle_week == 15);
     printf("  [PASS] IRS IMF Cycle Week Calculator verified.\n");
 
+    // 175. Verify IRS IMF Form 1040A Verifier
+    printf("[TEST] Validating IRS IMF Form 1040A Verifier...\n");
+    int is_1040a = -1;
+    int f1040a_res = tsfi_mf_imf_is_form_1040a(33, &is_1040a);
+    assert(f1040a_res == 0);
+    assert(is_1040a == 1);
+    printf("  [PASS] IRS IMF Form 1040A Verifier verified.\n");
+
+    // 176. Verify IRS CADE Taxpayer Active Or Suspended Or Audit Or Pending Checker
+    printf("[TEST] Validating IRS CADE Taxpayer Active Or Suspended Or Audit Or Pending Checker...\n");
+    int is_asap = -1;
+    int asap_res = tsfi_mf_cade_is_active_or_suspended_or_audit_or_pending(4, &is_asap);
+    assert(asap_res == 0);
+    assert(is_asap == 1);
+    printf("  [PASS] IRS CADE Taxpayer Active Or Suspended Or Audit Or Pending Checker verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks completed successfully!\n");
     return 0;
 }

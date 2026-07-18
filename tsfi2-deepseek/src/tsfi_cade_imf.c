@@ -735,3 +735,23 @@ int tsfi_mf_imf_get_cycle_week(const char *cycle_code, int *week_out) {
     *week_out = atoi(week_str);
     return 0;
 }
+
+int tsfi_mf_imf_is_form_1040a(int doc_code, int *result) {
+    if (!result) return -1;
+
+    *result = 0;
+    if (doc_code == 33) {
+        *result = 1;
+    }
+    return 0;
+}
+
+int tsfi_mf_cade_is_active_or_suspended_or_audit_or_pending(int status_code, int *is_valid) {
+    if (!is_valid) return -1;
+
+    *is_valid = 0;
+    if (status_code == 1 || status_code == 2 || status_code == 3 || status_code == 4) {
+        *is_valid = 1;
+    }
+    return 0;
+}
