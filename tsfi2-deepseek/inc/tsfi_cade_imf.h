@@ -424,4 +424,7 @@ int tsfi_mf_norad_detect_eom(const char *msg_buffer, size_t size, int *is_eom_de
 int tsfi_mf_cics_map_janap_transid(const char *routing_ind, char *out_transid, int *is_valid);
 int tsfi_mf_cics_generate_naap_broadcast(int defcon_level, uint16_t term_id, uint8_t *out_pdu, size_t *out_size);
 
+int tsfi_mf_cics_extract_janap_payload(const char *janap_msg, size_t msg_size, char *out_payload, size_t *out_size);
+int tsfi_mf_cics_authorize_transaction(const char *transid, uint16_t naap_status, int *is_authorized);
+
 #endif // TSFI_CADE_IMF_H

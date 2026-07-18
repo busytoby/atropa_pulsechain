@@ -663,7 +663,29 @@ int run_nato_stanag_tests_part5(void) {
     assert(bc_pkt[1] == 2);
     assert(bc_pkt[2] == 0x12);
     assert(bc_pkt[3] == 0x34);
-    printf("  [PASS] CICS NAAP Alert Broadcast verified.\n");
+    // Verify JANAP Payload Extractor
+    printf("[TEST] Validating CICS JANAP Payload Extractor...\n");
+    char extracted_payload[64];
+    size_t ext_size = 0;
+    int ext_res = tsfi_mf_cics_extract_janap_payload(msg, sizeof(extracted_payload), extracted_payload, &ext_size);
+    assert(ext_res == 0);
+    assert(ext_size > 0);
+    assert(strcmp(extracted_payload, "Hello World") == 0);
+    printf("  [PASS] CICS JANAP Payload Extractor verified.\n");
+
+    // Verify Transaction Authorization Exit
+    printf("[TEST] Validating CICS NAAP Transaction Authorization...\n");
+    int authorized = -1;
+    int auth_res = tsfi_mf_cics_authorize_transaction("NJTF", 2, &authorized); // NJTF is critical -> allowed at DEFCON 2
+    assert(auth_res == 0);
+    assert(authorized == 1);
+
+    tsfi_mf_cics_authorize_transaction("NDFT", 2, &authorized); // NDFT is non-critical -> blocked at DEFCON 2
+    assert(authorized == 0);
+
+    tsfi_mf_cics_authorize_transaction("NDFT", 5, &authorized); // Allowed at DEFCON 5
+    assert(authorized == 1);
+    printf("  [PASS] CICS NAAP Transaction Authorization verified.\n");
 
     return 0;
 }

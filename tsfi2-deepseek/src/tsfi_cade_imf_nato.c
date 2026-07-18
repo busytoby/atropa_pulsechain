@@ -1483,6 +1483,55 @@ int tsfi_mf_cics_generate_naap_broadcast(int defcon_level, uint16_t term_id, uin
     return 0;
 }
 
+int tsfi_mf_cics_extract_janap_payload(const char *janap_msg, size_t msg_size, char *out_payload, size_t *out_size) {
+    if (!janap_msg || !out_payload || !out_size) return -1;
+    
+    // Find the end of the first line (header)
+    const char *newline = strchr(janap_msg, '\n');
+    if (!newline) return -2;
+    
+    const char *payload_start = newline + 1;
+    
+    // Find EOM NNNN
+    const char *eom = strstr(payload_start, "NNNN");
+    if (!eom) return -3;
+    
+    // Compute length
+    size_t len = eom - payload_start;
+    
+    // Trim trailing carriage return or newline
+    while (len > 0 && (payload_start[len - 1] == '\r' || payload_start[len - 1] == '\n')) {
+        len--;
+    }
+    
+    if (len >= msg_size) {
+        len = msg_size - 1;
+    }
+    
+    memcpy(out_payload, payload_start, len);
+    out_payload[len] = '\0';
+    *out_size = len;
+    return 0;
+}
+
+int tsfi_mf_cics_authorize_transaction(const char *transid, uint16_t naap_status, int *is_authorized) {
+    if (!transid || !is_authorized) return -1;
+    
+    int defcon_level = naap_status & 0x07;
+    if (defcon_level == 1 || defcon_level == 2) {
+        // Only allow critical transactions
+        if (strcmp(transid, "NJTF") == 0 || strcmp(transid, "NNDH") == 0) {
+            *is_authorized = 1;
+        } else {
+            *is_authorized = 0;
+        }
+    } else {
+        *is_authorized = 1;
+    }
+    return 0;
+}
+
+
 
 
 
