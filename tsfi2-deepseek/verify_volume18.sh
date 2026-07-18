@@ -415,8 +415,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 458 | NATO Link-Layer Broadcast Channel Busy RSSI Hysteresis Matcher | PASS | Audits noise filtering hysteresis parameters for busy evaluations | Volume 33 |
 | 459 | NATO Link-Layer Broadcast Channel Busy Hysteresis Time Matcher | PASS | Validates busy channel filter window durations for noise screening | Volume 33 |
 | 460 | NATO Link-Layer Multi-Scan Collision Clear Signal Drop Time Matcher | PASS | Audits required constant durations for sustained RSSI drop checks | Volume 33 |
+| 461 | NATO Link-Layer Broadcast Channel Busy Hysteresis Sample Count Matcher | PASS | Validates required consecutive sample counts for busy evaluations | Volume 33 |
+| 462 | NATO Link-Layer Multi-Scan Collision Clear Signal Drop Sample Matcher | PASS | Audits required consecutive clear samples to confirm collision clearance | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 460 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 462 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

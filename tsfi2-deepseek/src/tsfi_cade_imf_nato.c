@@ -453,3 +453,15 @@ int tsfi_mf_nato_verify_rssi_drop_time(int drop_ms, int *is_valid) {
     *is_valid = (drop_ms >= 1 && drop_ms <= 20) ? 1 : 0;
     return 0;
 }
+
+int tsfi_mf_nato_verify_busy_samples(int samples, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (samples >= 2 && samples <= 10) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_rssi_drop_samples(int samples, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (samples >= 2 && samples <= 8) ? 1 : 0;
+    return 0;
+}
