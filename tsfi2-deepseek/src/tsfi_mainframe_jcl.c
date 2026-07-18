@@ -661,3 +661,10 @@ int tsfi_cw_jcl_get_substitution_stats(uint32_t *substitutions_out) {
     *substitutions_out = global_jcl_substitutions_performed;
     return 0;
 }
+
+int tsfi_cw_jcl_query_and_reset_substitution_stats(uint32_t *substitutions_out) {
+    if (!substitutions_out) return -1;
+    *substitutions_out = global_jcl_substitutions_performed;
+    global_jcl_substitutions_performed = 0;
+    return 0;
+}

@@ -853,3 +853,11 @@ int tsfi_cw_cobol_verify_field_alignment_ex3(int offset, int size, int alignment
     if ((offset + size) % alignment != 0) return -34;
     return 0;
 }
+
+int tsfi_cw_cobol_verify_field_alignment_ex4(int offset, int size, int alignment, int max_size, char pad_char, int margin, int fallback_pad) {
+    if (alignment <= 0 || max_size <= 0) return -1;
+    if (offset + size + margin > max_size) return -30;
+    if (pad_char == '\0' && fallback_pad == 0) return -32;
+    if ((offset + size) % alignment != 0) return -34;
+    return 0;
+}

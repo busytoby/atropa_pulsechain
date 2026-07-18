@@ -438,3 +438,10 @@ int tsfi_cw_y2k_print_and_reset_violations_list_ex2(char *buf_out, int max_len, 
     global_y2k_chronological_violations = 0;
     return 0;
 }
+
+int tsfi_cw_y2k_format_diagnostic_violations_list_ex2(char *buf_out, int max_len, uint32_t pivot, const char *prefix, int *len_out) {
+    if (!buf_out || max_len <= 0 || !prefix || !len_out) return -1;
+    int rc = snprintf(buf_out, max_len, "%s [Pivot %u] Chronological Violations: %u", prefix, pivot, global_y2k_chronological_violations);
+    *len_out = rc;
+    return 0;
+}
