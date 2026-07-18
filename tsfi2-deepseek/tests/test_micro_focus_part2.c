@@ -387,6 +387,22 @@ int main(void) {
     assert(method == 1);
     printf("  [PASS] IRS CADE Refund Disbursement Router verified.\n");
 
+    // 156. Verify IRS IMF Refund Amount Ceiling Check
+    printf("[TEST] Validating IRS IMF Refund Ceiling Checker...\n");
+    int requires_review = -1;
+    int limit_res = tsfi_mf_imf_verify_refund_threshold(12500.00, 10000.00, &requires_review);
+    assert(limit_res == 0);
+    assert(requires_review == 1);
+    printf("  [PASS] IRS IMF Refund Ceiling Checker verified.\n");
+
+    // 157. Verify IRS CADE Prior Year AGI Identity Verifier
+    printf("[TEST] Validating IRS CADE Prior Year AGI Matcher...\n");
+    int prior_match = -1;
+    int prior_res = tsfi_mf_cade_verify_prior_year_agi(45000.00, 45000.00, &prior_match);
+    assert(prior_res == 0);
+    assert(prior_match == 1);
+    printf("  [PASS] IRS CADE Prior Year AGI Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

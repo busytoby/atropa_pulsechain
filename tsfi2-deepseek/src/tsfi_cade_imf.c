@@ -631,4 +631,18 @@ int tsfi_mf_cade_route_refund_disbursement(const char *routing_number, const cha
     return 0;
 }
 
+int tsfi_mf_imf_verify_refund_threshold(double refund_amount, double limit, int *requires_review) {
+    if (!requires_review) return -1;
+    *requires_review = (refund_amount > limit) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_cade_verify_prior_year_agi(double input_agi, double actual_prior_agi, int *is_match) {
+    if (!is_match) return -1;
+    double diff = input_agi - actual_prior_agi;
+    if (diff < 0) diff = -diff;
+    *is_match = (diff < 1.00) ? 1 : 0;
+    return 0;
+}
+
 

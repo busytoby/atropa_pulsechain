@@ -231,5 +231,7 @@
 | 297 | IRS IMF Dependents SSN Duplication Checker | PASS | Validates that dependents' SSNs do not duplicate primary/spouse records | Volume 33 |
 | 298 | IRS IMF Filing Extension Date Matcher | PASS | Confirms standard/extended calendar deadlines for filings | Volume 33 |
 | 299 | IRS CADE Refund Direct Deposit vs Paper Check Router | PASS | Decides payment dispatch channels checking routing transit numbers | Volume 33 |
+| 300 | IRS IMF Refund Amount Ceiling Check | PASS | Triggers manual review workflow when refund values exceed limit | Volume 33 |
+| 301 | IRS CADE Prior Year AGI Identity Verifier | PASS | Asserts self-selected PIN registration matches legacy AGI entries | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 299 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 301 Scenarios validated successfully)

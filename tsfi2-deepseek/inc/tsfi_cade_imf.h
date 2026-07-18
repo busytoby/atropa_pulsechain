@@ -53,5 +53,7 @@ int tsfi_mf_imf_verify_signatures(int filing_status, int has_taxpayer_sig, int h
 int tsfi_mf_imf_check_dependent_duplicates(const char *primary_ssn, const char *secondary_ssn, const char **dep_ssns, int dep_count, int *has_duplicates);
 int tsfi_mf_imf_verify_filing_deadline(int julian_date_filed, int has_approved_extension, int *is_timely);
 int tsfi_mf_cade_route_refund_disbursement(const char *routing_number, const char *account_number, int *method_out);
+int tsfi_mf_imf_verify_refund_threshold(double refund_amount, double limit, int *requires_review);
+int tsfi_mf_cade_verify_prior_year_agi(double input_agi, double actual_prior_agi, int *is_match);
 
 #endif // TSFI_CADE_IMF_H
