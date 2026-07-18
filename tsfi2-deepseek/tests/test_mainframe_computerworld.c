@@ -1968,6 +1968,20 @@ static void test_new_mainframe_features(void) {
     assert(jcl_ok == 1);
     assert(tsfi_cw_niu_validate_jcl("INVALID JCL", &jcl_ok) == 0);
     assert(jcl_ok == 0);
+
+    // NIU Macro preprocessor test
+    char macro_out[64];
+    assert(tsfi_cw_niu_expand_macro("LA 1, &PARAM", "MYVAL", macro_out, sizeof(macro_out)) == 0);
+    assert(strcmp(macro_out, "LA 1, MYVAL") == 0);
+
+    // NIU COBOL Copybook test
+    tsfi_cw_niu_copybook_field fields[2] = {
+        { "CUST-NAME", 5, "PIC X", 30 },
+        { "CUST-ID", 5, "PIC 9", 8 }
+    };
+    int total_bytes = 0;
+    assert(tsfi_cw_niu_audit_copybook(fields, 2, &total_bytes) == 0);
+    assert(total_bytes == 38);
 }
 
 int main(void) {

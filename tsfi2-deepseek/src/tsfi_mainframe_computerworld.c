@@ -1260,6 +1260,46 @@ int tsfi_cw_niu_validate_jcl(const char *jcl_line, int *is_valid_out) {
     return 0;
 }
 
+int tsfi_cw_niu_expand_macro(const char *macro_def, const char *param, char *output_out, size_t max_len) {
+    if (!macro_def || !param || !output_out || max_len == 0) return -1;
+    
+    const char *placeholder = "&PARAM";
+    const char *found = strstr(macro_def, placeholder);
+    if (!found) {
+        strncpy(output_out, macro_def, max_len - 1);
+        output_out[max_len - 1] = '\0';
+        return 0;
+    }
+    
+    size_t prefix_len = found - macro_def;
+    if (prefix_len >= max_len) prefix_len = max_len - 1;
+    
+    memcpy(output_out, macro_def, prefix_len);
+    output_out[prefix_len] = '\0';
+    
+    if (strlen(output_out) + strlen(param) < max_len) {
+        strcat(output_out, param);
+    }
+    
+    const char *suffix = found + strlen(placeholder);
+    if (strlen(output_out) + strlen(suffix) < max_len) {
+        strcat(output_out, suffix);
+    }
+    
+    return 0;
+}
+
+int tsfi_cw_niu_audit_copybook(const tsfi_cw_niu_copybook_field *fields, int field_count, int *total_bytes_out) {
+    if (!fields || field_count < 0 || !total_bytes_out) return -1;
+    
+    *total_bytes_out = 0;
+    for (int i = 0; i < field_count; i++) {
+        *total_bytes_out += fields[i].size_bytes;
+    }
+    return 0;
+}
+
+
 
 
 

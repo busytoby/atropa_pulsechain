@@ -1019,5 +1019,16 @@ int tsfi_cw_marist_audit_isglock(const tsfi_cw_marist_isglock *lock, int *alert_
 int tsfi_cw_niu_hlasm_exec(uint32_t regs[16], const char *op, int r1, int r2, int32_t immediate, int *overflow_out);
 int tsfi_cw_niu_validate_jcl(const char *jcl_line, int *is_valid_out);
 
+// NIU DeKalb HLASM Macro Preprocessor and COBOL Copybook structures
+typedef struct {
+    char name[16];
+    int level;
+    char type[8];
+    int size_bytes;
+} tsfi_cw_niu_copybook_field;
+
+int tsfi_cw_niu_expand_macro(const char *macro_def, const char *param, char *output_out, size_t max_len);
+int tsfi_cw_niu_audit_copybook(const tsfi_cw_niu_copybook_field *fields, int field_count, int *total_bytes_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 
