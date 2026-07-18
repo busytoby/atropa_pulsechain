@@ -540,6 +540,22 @@ int main(void) {
     assert(care_valid == 1);
     printf("  [PASS] IRS IMF Dependent Care Ceiling Matcher verified.\n");
 
+    // 174. Verify IRS CADE Taxpayer Address Street Number Parity Checker
+    printf("[TEST] Validating IRS CADE Street Parity Checker...\n");
+    int parity = -1;
+    int parity_res = tsfi_mf_cade_verify_street_parity("123 Maple Street", &parity);
+    assert(parity_res == 0);
+    assert(parity == 1);
+    printf("  [PASS] IRS CADE Street Parity Checker verified.\n");
+
+    // 175. Verify IRS IMF Student Loan Interest Deduction Ceiling Validator
+    printf("[TEST] Validating IRS IMF Student Loan Interest Validator...\n");
+    int interest_valid = -1;
+    int interest_res = tsfi_mf_imf_verify_student_loan_interest(1800.00, &interest_valid);
+    assert(interest_res == 0);
+    assert(interest_valid == 1);
+    printf("  [PASS] IRS IMF Student Loan Interest Validator verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

@@ -69,5 +69,7 @@ int tsfi_mf_cade_verify_ip_pin(const char *ip_pin, int *is_valid);
 int tsfi_mf_imf_verify_mileage_deduction(double miles, double claimed_deduction, double rate_per_mile, int *is_valid);
 int tsfi_mf_cade_verify_state_code(const char *state_code, int *is_valid);
 int tsfi_mf_imf_verify_dependent_care_ceiling(int dependent_count, double claimed_expenses, int *is_valid);
+int tsfi_mf_cade_verify_street_parity(const char *address, int *parity_out);
+int tsfi_mf_imf_verify_student_loan_interest(double claimed_interest, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

@@ -249,5 +249,7 @@
 | 315 | IRS IMF Standard Mileage Rate Business Expense Matcher | PASS | Audits mileage deduction calculations against annual standard rates | Volume 33 |
 | 316 | IRS CADE Taxpayer Address State Abbreviation Validator | PASS | Validates two-letter address state code abbreviations | Volume 33 |
 | 317 | IRS IMF Child and Dependent Care Credit Ceiling Matcher | PASS | Verifies credit calculations satisfy statutory ceiling limits | Volume 33 |
+| 318 | IRS CADE Taxpayer Address Street Number Parity Checker | PASS | Decodes odd/even street address properties for routing | Volume 33 |
+| 319 | IRS IMF Student Loan Interest Deduction Ceiling Validator | PASS | Ensures student loan interest deductions do not exceed limits | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 317 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 319 Scenarios validated successfully)

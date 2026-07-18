@@ -901,4 +901,28 @@ int tsfi_mf_imf_verify_dependent_care_ceiling(int dependent_count, double claime
     return 0;
 }
 
+int tsfi_mf_cade_verify_street_parity(const char *address, int *parity_out) {
+    if (!parity_out) return -1;
+    *parity_out = 0;
+    if (!address) return 0;
+    for (int i = 0; address[i] != '\0'; i++) {
+        if (address[i] >= '0' && address[i] <= '9') {
+            int val = 0;
+            while (address[i] >= '0' && address[i] <= '9') {
+                val = val * 10 + (address[i] - '0');
+                i++;
+            }
+            *parity_out = (val % 2 == 0) ? 2 : 1;
+            return 0;
+        }
+    }
+    return 0;
+}
+
+int tsfi_mf_imf_verify_student_loan_interest(double claimed_interest, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (claimed_interest <= 2500.00 && claimed_interest >= 0.0) ? 1 : 0;
+    return 0;
+}
+
 
