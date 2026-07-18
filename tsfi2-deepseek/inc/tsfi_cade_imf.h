@@ -164,5 +164,7 @@ int tsfi_mf_nato_verify_data_rate(int rate, int *is_valid);
 int tsfi_mf_nato_verify_retry_limit(int retries, int *is_valid);
 int tsfi_mf_nato_verify_interface_version(int version, int *is_valid);
 int tsfi_mf_nato_verify_fcs_type(int fcs_type, int *is_valid);
+int tsfi_mf_nato_verify_handshake_confirmation(int status, int *is_valid);
+int tsfi_mf_nato_verify_burst_limit(int segment_count, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

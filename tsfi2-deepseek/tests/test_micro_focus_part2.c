@@ -1306,6 +1306,22 @@ int main(void) {
     assert(fcs_type_valid == 1);
     printf("  [PASS] NATO STANAG 5066 FCS Type Checker verified.\n");
 
+    // 269. Verify NATO STANAG 5066 Client Handshake Confirmation Matcher
+    printf("[TEST] Validating NATO STANAG 5066 Handshake Confirmation Matcher...\n");
+    int handshake_status_valid = -1;
+    int handshake_status_res = tsfi_mf_nato_verify_handshake_confirmation(1, &handshake_status_valid);
+    assert(handshake_status_res == 0);
+    assert(handshake_status_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Handshake Confirmation Matcher verified.\n");
+
+    // 270. Verify NATO STANAG 5066 Burst Packet Segment Count Validator
+    printf("[TEST] Validating NATO STANAG 5066 Burst Limit Validator...\n");
+    int burst_valid = -1;
+    int burst_res = tsfi_mf_nato_verify_burst_limit(64, &burst_valid);
+    assert(burst_res == 0);
+    assert(burst_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Burst Limit Validator verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

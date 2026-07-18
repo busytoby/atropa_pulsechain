@@ -1755,4 +1755,16 @@ int tsfi_mf_nato_verify_fcs_type(int fcs_type, int *is_valid) {
     return 0;
 }
 
+int tsfi_mf_nato_verify_handshake_confirmation(int status, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (status == 0 || status == 1) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_burst_limit(int segment_count, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (segment_count >= 1 && segment_count <= 128) ? 1 : 0;
+    return 0;
+}
+
 
