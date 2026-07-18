@@ -456,12 +456,24 @@ int tsfi_cw_y2k_validate_julian_day(uint32_t year, uint32_t day_of_year);
 int tsfi_cw_y2k_count_leap_adjustments(uint32_t year1, uint32_t year2);
 int tsfi_cw_y2k_validate_pivot_range(uint32_t pivot);
 
-// VSAM key length validator
+// VSAM key length validator and checksum tools
 int tsfi_cw_vsam_validate_compressed_key_len(const char *raw_key, const char *comp_key);
+uint32_t tsfi_cw_vsam_calculate_checksum(const uint8_t *data, int len);
+int tsfi_cw_vsam_verify_record_checksum(const uint8_t *data, int len, uint32_t expected_checksum);
+
+// COBOL custom padding validator
+int tsfi_cw_cobol_validate_custom_padding(char pad_char);
+
+// EBCDIC nesting validator
+int tsfi_cw_ebcdic_check_dbcs_nesting(const uint8_t *ebcdic_str, int len);
+
+// JCL circular dependency checker
+int tsfi_cw_jcl_detect_circular_symbols(const char **sym_names, const char **sym_vals, int sym_count);
 
 typedef struct {
     uint32_t leap_checks_performed;
     uint32_t leap_year_hits;
+    uint32_t span_leap_adjustments_tracked;
 } tsfi_cw_y2k_diagnostics;
 
 void tsfi_cw_y2k_get_diagnostics(tsfi_cw_y2k_diagnostics *diag);

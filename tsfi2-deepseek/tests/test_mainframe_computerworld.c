@@ -981,6 +981,34 @@ static void test_new_mainframe_features(void) {
 
     // Y2K leap span chronological check
     assert(tsfi_cw_y2k_count_leap_adjustments(2004, 2000) == -24);
+
+    // VSAM block checksum audit check
+    uint8_t chk_data[4] = {0x01, 0x02, 0x03, 0x04};
+    uint32_t chk = tsfi_cw_vsam_calculate_checksum(chk_data, 4);
+    assert(chk == 10);
+    assert(tsfi_cw_vsam_verify_record_checksum(chk_data, 4, 10) == 0);
+    assert(tsfi_cw_vsam_verify_record_checksum(chk_data, 4, 9) == -25);
+
+    // COBOL custom padding validator
+    assert(tsfi_cw_cobol_validate_custom_padding('_') == 0);
+    assert(tsfi_cw_cobol_validate_custom_padding('\n') == -26);
+
+    // EBCDIC nesting validator
+    uint8_t nested_dbcs[4] = {0x0E, 0x0E, 0x0F, 0x0F};
+    assert(tsfi_cw_ebcdic_check_dbcs_nesting(nested_dbcs, 4) == -27);
+
+    // JCL circular dependency checker
+    const char *circ_names[] = {"A", "B"};
+    const char *circ_vals[] = {"&B", "&A"};
+    assert(tsfi_cw_jcl_detect_circular_symbols(circ_names, circ_vals, 2) == -29);
+    assert(tsfi_cw_jcl_substitute_symbols_multi("//DD DSN=&A", circ_names, circ_vals, 2, multi_out, sizeof(multi_out)) == -29);
+
+    // Y2K leap adjustments count diagnostics check
+    int d_dummy = 0;
+    tsfi_cw_y2k_diagnostics diag;
+    tsfi_cw_y2k_date_diff(0, 1, 1, 10, 1, 1, 50, &d_dummy);
+    tsfi_cw_y2k_get_diagnostics(&diag);
+    assert(diag.span_leap_adjustments_tracked > 0);
 }
 
 int main(void) {

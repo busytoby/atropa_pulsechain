@@ -215,6 +215,8 @@ static int tsfi_cw_days_from_epoch(uint32_t year, uint32_t month, uint32_t day) 
     return days;
 }
 
+static tsfi_cw_y2k_diagnostics global_y2k_diag = {0, 0, 0};
+
 int tsfi_cw_y2k_date_diff(uint32_t yy1, uint32_t mm1, uint32_t dd1, uint32_t yy2, uint32_t mm2, uint32_t dd2, uint32_t pivot, int *days_out) {
     if (!days_out) return -1;
     uint32_t year1 = tsfi_cw_y2k_resolve_year_ex(yy1, pivot);
@@ -223,6 +225,11 @@ int tsfi_cw_y2k_date_diff(uint32_t yy1, uint32_t mm1, uint32_t dd1, uint32_t yy2
     int year_diff = (int)year2 - (int)year1;
     if (year_diff < 0) year_diff = -year_diff;
     if (year_diff > 100) return -16;
+
+    int adjustments = tsfi_cw_y2k_count_leap_adjustments(year1 < year2 ? year1 : year2, year1 < year2 ? year2 : year1);
+    if (adjustments >= 0) {
+        global_y2k_diag.span_leap_adjustments_tracked += adjustments;
+    }
 
     int d1 = tsfi_cw_days_from_epoch(year1, mm1, dd1);
     int d2 = tsfi_cw_days_from_epoch(year2, mm2, dd2);
@@ -261,8 +268,6 @@ int tsfi_cw_y2k_day_of_week(uint32_t yy, uint32_t mm, uint32_t dd, uint32_t pivo
     *dow_out = days % 7;
     return 0;
 }
-
-static tsfi_cw_y2k_diagnostics global_y2k_diag = {0, 0};
 
 int tsfi_cw_y2k_is_leap_year(uint32_t year) {
     global_y2k_diag.leap_checks_performed++;

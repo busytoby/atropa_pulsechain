@@ -509,8 +509,23 @@ int tsfi_cw_jcl_sysin_limit_check(int card_count) {
     return 0;
 }
 
+int tsfi_cw_jcl_detect_circular_symbols(const char **sym_names, const char **sym_vals, int sym_count) {
+    if (!sym_names || !sym_vals || sym_count <= 0) return 0;
+    for (int i = 0; i < sym_count; i++) {
+        for (int j = 0; j < sym_count; j++) {
+            char placeholder[64];
+            snprintf(placeholder, sizeof(placeholder), "&%s", sym_names[i]);
+            if (strstr(sym_vals[j], placeholder) && strstr(sym_vals[i], sym_names[j])) {
+                return -29;
+            }
+        }
+    }
+    return 0;
+}
+
 int tsfi_cw_jcl_substitute_symbols_multi(const char *card, const char **sym_names, const char **sym_vals, int sym_count, char *resolved_out, int max_len) {
     if (!card || !resolved_out || max_len <= 0) return -1;
+    if (tsfi_cw_jcl_detect_circular_symbols(sym_names, sym_vals, sym_count) != 0) return -29;
     char temp[256];
     strncpy(temp, card, sizeof(temp) - 1);
     temp[sizeof(temp) - 1] = '\0';

@@ -751,3 +751,10 @@ int tsfi_cw_cobol_validate_offset_overlap(int field_offset, int preceding_field_
     if (field_offset < preceding_field_end) return -23;
     return 0;
 }
+
+int tsfi_cw_cobol_validate_custom_padding(char pad_char) {
+    if (pad_char == '\0' || pad_char == '\n' || pad_char == '\r') {
+        return -26;
+    }
+    return 0;
+}

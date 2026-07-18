@@ -600,3 +600,18 @@ int tsfi_cw_vsam_validate_compressed_key_len(const char *raw_key, const char *co
     if (strlen(raw_key) >= 6 && strlen(comp_key) > strlen(raw_key)) return -9;
     return 0;
 }
+
+uint32_t tsfi_cw_vsam_calculate_checksum(const uint8_t *data, int len) {
+    if (!data || len <= 0) return 0;
+    uint32_t checksum = 0;
+    for (int i = 0; i < len; i++) {
+        checksum += data[i];
+    }
+    return checksum;
+}
+
+int tsfi_cw_vsam_verify_record_checksum(const uint8_t *data, int len, uint32_t expected_checksum) {
+    uint32_t actual = tsfi_cw_vsam_calculate_checksum(data, len);
+    if (actual != expected_checksum) return -25;
+    return 0;
+}
