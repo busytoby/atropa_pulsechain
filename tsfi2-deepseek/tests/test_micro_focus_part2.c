@@ -304,6 +304,16 @@ int main(void) {
     assert(strcmp(refund_date, "2026-W29") == 0);
     printf("  [PASS] IRS IMF Refund Scheduler verified.\n");
 
+    // 146. Verify IRS IMF Taxpayer Account Balance Offset Rebuilder
+    printf("[TEST] Validating IRS IMF Liability Offset Processor...\n");
+    double net_refund = -1.0;
+    double remaining_liability = -1.0;
+    int offset_res = tsfi_mf_imf_apply_liability_offset(1000.00, 300.00, &net_refund, &remaining_liability);
+    assert(offset_res == 0);
+    assert(net_refund == 700.00);
+    assert(remaining_liability == 0.0);
+    printf("  [PASS] IRS IMF Liability Offset Processor verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

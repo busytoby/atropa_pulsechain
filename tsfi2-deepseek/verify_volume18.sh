@@ -244,8 +244,9 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 287 | IRS IMF SSN Check Digit Validator | PASS | Computes and validates SSN check digit checksums | Volume 33 |
 | 288 | IRS IMF Audit Selection Discrepancy Classifier | PASS | Flags returns for audit based on income mismatch or missing forms | Volume 33 |
 | 289 | IRS IMF Refund Scheduler | PASS | Schedules refund disbursements based on cycle code calendar offsets | Volume 33 |
+| 290 | IRS IMF Liability Offset Processor | PASS | Adjusts net refunds by deducting outstanding tax liabilities | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 289 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 290 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

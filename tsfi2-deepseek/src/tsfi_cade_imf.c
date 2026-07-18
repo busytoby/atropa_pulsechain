@@ -505,4 +505,17 @@ int tsfi_mf_imf_schedule_refund(const char *cycle_code, int transaction_code, ch
     return 0;
 }
 
+int tsfi_mf_imf_apply_liability_offset(double refund_amt, double liability_amt, double *net_refund_out, double *remaining_liability_out) {
+    if (!net_refund_out || !remaining_liability_out) return -1;
+    if (refund_amt < 0 || liability_amt < 0) return -1;
+    if (refund_amt >= liability_amt) {
+        *net_refund_out = refund_amt - liability_amt;
+        *remaining_liability_out = 0.0;
+    } else {
+        *net_refund_out = 0.0;
+        *remaining_liability_out = liability_amt - refund_amt;
+    }
+    return 0;
+}
+
 
