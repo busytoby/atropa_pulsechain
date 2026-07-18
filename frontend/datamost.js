@@ -1,0 +1,11940 @@
+let provider, signer;
+        
+        // Prevent crashes when referencing elements from other split sub-dashboards
+        if (!window.originalGetElementById) {
+            window.originalGetElementById = document.getElementById;
+            document.getElementById = function(id) {
+                const el = window.originalGetElementById.call(document, id);
+                if (el) return el;
+                
+                // Return null for canvas/screen elements so that existence checks work correctly
+                if (id.endsWith("Canvas") || id.endsWith("Screen")) {
+                    return null;
+                }
+                
+                return new Proxy({}, {
+                    get: (target, prop) => {
+                        if (prop === 'addEventListener') return () => {};
+                        if (prop === 'style') return {};
+                        if (prop === 'classList') {
+                            return { add: () => {}, remove: () => {}, toggle: () => {}, contains: () => false };
+                        }
+                        // Return no-op function for any other method calls (like appendChild)
+                        return () => {};
+                    },
+                    set: () => true
+                });
+            };
+        }
+        let config = {};
+        let audioCtx;
+        let isAudioPlaying = false;
+        let voices = [];
+        let isDemoModeActive = false;
+        let filterNode, lfoNode, lfoGainNode;
+        let demoTimer = 0;
+        const demoGameSequence = ["pong", "anteater", "princessfrog", "crush"];
+        let demoGameIdx = 0;
+
+        class SIDVoice {
+            constructor(audioCtx, destination) {
+                this.ctx = audioCtx;
+                this.dest = destination;
+                this.osc = null;
+                this.gain = null;
+                this.gate = 0;
+                this.lastFreq = 0;
+                this.lastWave = 0;
+            }
+
+            update(freq, control, ad, sr) {
+                if (!this.ctx) return;
+                const gate = control & 1;
+                const waveBits = control & 0xF0;
+                
+                let type = 'sawtooth';
+                if (waveBits & 0x10) type = 'triangle';
+                else if (waveBits & 0x20) type = 'sawtooth';
+                else if (waveBits & 0x40) type = 'square';
+                else if (waveBits & 0x80) type = 'triangle'; 
+
+                const freqHz = Math.round(freq * 0.06097);
+
+                if (freqHz <= 0 || waveBits === 0) {
+                    if (this.osc) {
+                        this.osc.stop();
+                        this.osc.disconnect();
+                        this.osc = null;
+                    }
+                    return;
+                }
+
+                if (!this.osc || this.lastWave !== waveBits) {
+                    if (this.osc) {
+                        this.osc.stop();
+                        this.osc.disconnect();
+                    }
+                    this.osc = this.ctx.createOscillator();
+                    this.gain = this.ctx.createGain();
+                    this.osc.type = type;
+                    this.osc.connect(this.gain);
+                    this.gain.connect(this.dest);
+                    this.gain.gain.setValueAtTime(0, this.ctx.currentTime);
+                    this.osc.start();
+                    this.lastWave = waveBits;
+                    this.gate = 0;
+                }
+
+                if (freqHz !== this.lastFreq) {
+                    this.osc.frequency.setValueAtTime(freqHz, this.ctx.currentTime);
+                    this.lastFreq = freqHz;
+                }
+
+                if (gate !== this.gate) {
+                    const now = this.ctx.currentTime;
+                    const attackIdx = (ad >> 4) & 0xF;
+                    const decayIdx = ad & 0xF;
+                    const sustainIdx = (sr >> 4) & 0xF;
+                    const releaseIdx = sr & 0xF;
+
+                    const attackDurations = [0.002, 0.008, 0.016, 0.024, 0.038, 0.056, 0.068, 0.08, 0.1, 0.25, 0.5, 0.8, 1.0, 3.0, 5.0, 8.0];
+                    const decayDurations = [0.006, 0.024, 0.048, 0.072, 0.114, 0.168, 0.204, 0.24, 0.3, 0.75, 1.5, 2.4, 3.0, 9.0, 15.0, 24.0];
+                    const sustainLevels = [0, 0.06, 0.13, 0.2, 0.26, 0.33, 0.4, 0.46, 0.53, 0.6, 0.66, 0.73, 0.8, 0.86, 0.93, 1.0];
+
+                    const aTime = attackDurations[attackIdx];
+                    const dTime = decayDurations[decayIdx];
+                    const sVol = sustainLevels[sustainIdx] * 0.15;
+                    const rTime = decayDurations[releaseIdx];
+
+                    this.gain.gain.cancelScheduledValues(now);
+
+                    if (gate === 1) {
+                        this.gain.gain.setValueAtTime(this.gain.gain.value, now);
+                        this.gain.gain.linearRampToValueAtTime(0.15, now + aTime);
+                        this.gain.gain.exponentialRampToValueAtTime(sVol + 0.001, now + aTime + dTime);
+                    } else {
+                        this.gain.gain.setValueAtTime(this.gain.gain.value, now);
+                        this.gain.gain.exponentialRampToValueAtTime(0.0001, now + rTime);
+                    }
+                    this.gate = gate;
+                }
+            }
+
+            stop() {
+                if (this.osc) {
+                    this.osc.stop();
+                    this.osc.disconnect();
+                    this.osc = null;
+                }
+            }
+        }
+
+        // ABIs for Yul Contracts
+        const cpuABI = [
+            "function executeOp(uint8 opcode, uint256 operand) public returns (uint256)",
+            "function getCPUState() public view returns (uint256, uint256, uint256, uint256, uint256, uint256)",
+            "function runSteps(uint256 maxSteps) public returns (uint256)",
+            "function poke(uint256 addr, uint256 val) public returns (uint256)",
+            "function getScreenRAM() public view returns (bytes)",
+            "function getColorRAM() public view returns (bytes)",
+            "function pokeBytes(uint256 startAddr, bytes calldata data) public returns (uint256)",
+            "function fillMemory(uint256 startAddr, uint256 length, uint256 val) public returns (uint256)",
+            "function peek(uint256 addr) public view returns (uint256)",
+            "function batchPoke(uint256[] calldata addrs, uint256[] calldata vals) public returns (uint256)",
+            "function initializeGame(uint256 startPC, bytes calldata program, uint256[] calldata addrs, uint256[] calldata vals) public returns (uint256)",
+            "function peekUser(address user, uint256 addr) public view returns (uint256)",
+            "function pokeUser(address user, uint256 addr, uint256 val) public returns (uint256)",
+            "event TaxPaid(address indexed taxpayer, uint256 amountPaid)"
+        ];
+        const graphicsABI = [
+            "function updateSprite(uint8 index, uint16 x, uint8 y) public returns (uint256)",
+            "function checkCollisions() public returns (uint256)",
+            "function setSpriteRow(uint8 index, uint8 row, uint256 val) public returns (uint256)",
+            "function setSpritePatternFull(uint8 index, uint256[21] rows) public returns (uint256)",
+            "function calculateGolfTrajectory(uint256 power, uint256 angle, int256 wind, int256 spin) public view returns (uint256[], uint256[])",
+            "function getMercenaryGeometry(uint256 objId) public view returns (int256[])"
+        ];
+        const musicABI = [
+            "function getVoice1Frequency() public view returns (uint256)",
+            "function poke(uint16 addr, uint8 val) public returns (uint256)",
+            "function getSIDState() public view returns (uint256[25])",
+            "function play4BitSample(uint256 sampleVal) public returns (uint256)",
+            "function playRealSoundSample(uint256 sampleVal) public returns (uint256)",
+            "function generateRealSoundClip(uint256 clipId) public view returns (uint256[])"
+        ];
+        const diskABI = [
+            "function getJiffies() public view returns (uint256)",
+            "function executeDiskCommand(bytes calldata cmd) public returns (bytes)",
+            "event DiskWrite(address indexed writer, bytes32 indexed filename)"
+        ];
+        const speechABI = [
+            "function getSpeechState() public view returns (uint256, uint256, uint256, uint256)",
+            "function writePhoneme(uint256 phoneme, uint256 inflection) public returns (uint256)",
+            "function clearBusy() public returns (uint256)",
+            "function getTMS5220State() public view returns (uint256, uint256, uint256)",
+            "function writeTMS5220Command(uint256 command) public returns (uint256)",
+            "function writeTMS5220Data(uint256 data) public returns (uint256)"
+        ];
+
+        let cpuContract, graphicsContract, musicContract, diskContract, speechContract, oregonTrailTokenContract;
+        let batcherContract;
+        let datamostNonce;
+        const batcherABI = [
+            "function batchCall(address[] calldata targets, bytes[] calldata datas) external"
+        ];
+        const erc20ABI = [
+            "function balanceOf(address account) external view returns (uint256)",
+            "function symbol() external view returns (string)",
+            "function name() external view returns (string)"
+        ];
+        let lastSpeechCounter = 0;
+        let spritePatterns = [[], [], [], [], [], [], [], []];
+
+        class NPCRoutines {
+            static updateHunterDroid(s1X, s1Y, targetX, targetY, speed) {
+                const dx = targetX - s1X;
+                const dy = targetY - s1Y;
+                const dist = Math.hypot(dx, dy);
+                if (dist > 5) {
+                    return { x: s1X + (dx / dist) * speed, y: s1Y + (dy / dist) * speed };
+                }
+                return { x: s1X, y: s1Y };
+            }
+            static updateOrbitalMine(frame, radiusX = 120, radiusY = 75) {
+                const minePulse = Math.sin(frame * 0.05) * 10;
+                const x = 160 + Math.cos(-frame * 0.012) * (radiusX + minePulse);
+                const y = 100 + Math.sin(-frame * 0.012) * (radiusY + minePulse);
+                return { x, y };
+            }
+            static updateHelperDroid(s3X, s3Y, playerX, playerY, speed) {
+                const dx = playerX - s3X;
+                const dy = playerY - s3Y;
+                const dist = Math.hypot(dx, dy);
+                if (dist > 35) {
+                    return { x: s3X + (dx / dist) * speed, y: s3Y + (dy / dist) * speed };
+                }
+                return { x: s3X, y: s3Y };
+            }
+        }
+        window.NPCRoutines = NPCRoutines;
+
+        class CartridgeRegistry {
+            constructor() {
+                this.mappers = {
+                    0: (romBytes) => {
+                        const pokes = [];
+                        pokes.push({ addr: 53269, val: 15 });
+                        return { program: Array.from(romBytes), pokes };
+                    },
+                    1: (romBytes) => {
+                        const pokes = [];
+                        pokes.push({ addr: 53269, val: 7 });
+                        pokes.push({ addr: 53272, val: 21 });
+                        return { program: Array.from(romBytes), pokes };
+                    },
+                    2: (romBytes) => {
+                        const pokes = [];
+                        pokes.push({ addr: 53269, val: 15 });
+                        return { program: Array.from(romBytes), pokes };
+                    },
+                    3: (romBytes) => {
+                        const banks = [];
+                        const bankSize = 8192;
+                        for (let offset = 0; offset < romBytes.length; offset += bankSize) {
+                            banks.push(Array.from(romBytes.slice(offset, offset + bankSize)));
+                        }
+                        const pokes = [];
+                        pokes.push({ addr: 53269, val: 15 });
+                        pokes.push({ addr: 56832, val: 0 });
+                        return { program: banks[0] || [], pokes, banks };
+                    },
+                    4: (romBytes) => {
+                        const banks = [];
+                        const bankSize = 16384;
+                        for (let offset = 0; offset < romBytes.length; offset += bankSize) {
+                            banks.push(Array.from(romBytes.slice(offset, offset + bankSize)));
+                        }
+                        const pokes = [];
+                        pokes.push({ addr: 53269, val: 15 });
+                        pokes.push({ addr: 56834, val: 0 });
+                        return { program: banks[0] || [], pokes, banks };
+                    }
+                };
+            }
+
+            parseCartridge(rawBytes) {
+                if (rawBytes.length < 16) return null;
+                const magic = String.fromCharCode(...rawBytes.slice(0, 5));
+                let mapperId = 0;
+                let romStart = 16;
+                let name = "Generic ROM";
+                
+                if (magic === "ROMOX") {
+                    mapperId = 1;
+                    name = "Romox Cartridge";
+                } else if (magic === "DATAM") {
+                    mapperId = 2;
+                    name = "Datamost Cartridge";
+                } else if (magic === "MDESK") {
+                    mapperId = 3;
+                    name = "Magic Desk Cartridge";
+                } else if (magic === "EASYS") {
+                    mapperId = 4;
+                    name = "EasyFlash Cartridge";
+                }
+                
+                const mapper = this.mappers[mapperId];
+                const mapped = mapper(rawBytes.slice(romStart));
+                return {
+                    name: name,
+                    program: mapped.program,
+                    pokes: mapped.pokes,
+                    banks: mapped.banks
+                };
+            }
+        }
+        window.cartridgeRegistry = new CartridgeRegistry();
+        
+        window.playProceduralSound = function(type, val) {
+            try {
+                if (!window.audioCtx) {
+                    window.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                const audioCtx = window.audioCtx;
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const now = audioCtx.currentTime;
+                if (type === '808') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    gain.gain.setValueAtTime(1.0, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                } else if (type === '303') {
+                    const note = val || 36;
+                    const freq = 440 * Math.pow(2, (note - 69) / 12);
+                    const osc = audioCtx.createOscillator();
+                    const filter = audioCtx.createBiquadFilter();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(freq, now);
+                    filter.type = 'lowpass';
+                    filter.Q.setValueAtTime(18, now);
+                    filter.frequency.setValueAtTime(freq * 8, now);
+                    filter.frequency.exponentialRampToValueAtTime(freq * 1.5, now + 0.25);
+                    gain.gain.setValueAtTime(0.5, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'voice') {
+                    const phrases = ["Auncient", "Atropa", "Pulsechain", "Cartridge", "Teddy", "Danger", "Victory", "Ready"];
+                    const phrase = phrases[val % phrases.length] || "Auncient";
+                    if ('speechSynthesis' in window) {
+                        const utterance = new SpeechSynthesisUtterance(phrase);
+                        utterance.pitch = 0.5;
+                        utterance.rate = 0.8;
+                        window.speechSynthesis.speak(utterance);
+                    }
+                } else if (type === 'birds') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    const baseFreq = 1000 + (val * 10);
+                    osc.frequency.setValueAtTime(baseFreq, now);
+                    osc.frequency.linearRampToValueAtTime(baseFreq + 1500, now + 0.08);
+                    osc.frequency.setValueAtTime(baseFreq + 200, now + 0.09);
+                    osc.frequency.linearRampToValueAtTime(baseFreq + 1800, now + 0.17);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.2, now + 0.12);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                } else if (type === 'sequencer') {
+                    const btn = document.getElementById("btnPlaySequence") || document.getElementById("btnPlaySeq");
+                    if (btn) btn.click();
+                }
+            } catch(e) {
+                console.error("Procedural sound synthesis failed:", e);
+            }
+        };
+
+        const games = {
+            pong: {
+                name: "Pong-on-Chain",
+                spriteEnableMask: 3,
+                program: [
+                    0xA5, 0x08, 0xD0, 0x0F, 0xA2, 0x27, 0xA0, 0x21, 0x20, 0x14, 0x21, 0xA9, 
+                    0x01, 0x85, 0x08, 0xAD, 0x00, 0xDC, 0x29, 0x04, 0xD0, 0x0F, 0xAD, 0x00, 
+                    0xD0, 0x38, 0xE9, 0x04, 0xC9, 0x28, 0xB0, 0x02, 0xA9, 0x28, 0x8D, 0x00, 
+                    0xD0, 0xAD, 0x00, 0xDC, 0x29, 0x08, 0xD0, 0x0F, 0xAD, 0x00, 0xD0, 0x18, 
+                    0x69, 0x04, 0xC9, 0xE0, 0x90, 0x02, 0xA9, 0xE0, 0x8D, 0x00, 0xD0, 0xA5, 
+                    0x02, 0xC9, 0x03, 0xD0, 0x0C, 0xAD, 0x02, 0xD0, 0x18, 0x69, 0x03, 0x8D, 0x02, 0xD0, 0x4C, 0x56, 0x20, 
+                    0xAD, 0x02, 0xD0, 0x38, 0xE9, 0x03, 0x8D, 0x02, 0xD0, 
+                    0xA5, 0x03, 0xC9, 0x03, 0xD0, 0x0C, 0xAD, 0x03, 0xD0, 0x18, 0x69, 0x03, 0x8D, 0x03, 0xD0, 0x4C, 0x71, 0x20, 
+                    0xAD, 0x03, 0xD0, 0x38, 0xE9, 0x03, 0x8D, 0x03, 0xD0, 
+                    0xAD, 0x02, 0xD0, 0xC9, 0x28, 0xB0, 0x0B, 0xA2, 0x40, 0xA0, 0x10, 0x20, 0x1B, 0x21, 0xA9, 0x03, 0x85, 0x02, 
+                    0xAD, 0x02, 0xD0, 0xC9, 0xE0, 0x90, 0x0B, 0xA2, 0x40, 0xA0, 0x10, 0x20, 0x1B, 0x21, 0xA9, 0xFD, 0x85, 0x02, 
+                    0xAD, 0x03, 0xD0, 0xC9, 0x23, 0xB0, 0x0B, 0xA2, 0x40, 0xA0, 0x10, 0x20, 0x1B, 0x21, 0xA9, 0x03, 0x85, 0x03, 
+                    0xAD, 0x03, 0xD0, 0xC9, 0x9B, 0x90, 0x4D, 0xAD, 0x1E, 0xD0, 0x29, 0x03, 0xC9, 0x03, 0xD0, 0x17, 0xA2, 0x80, 0xA0, 0x20, 0x20, 0x1B, 0x21, 0xA9, 0xFD, 0x85, 0x03, 0xE6, 0x04, 
+                    0xA2, 0x2C, 0xA0, 0x21, 0x20, 0x14, 0x21, 0x4C, 0xF7, 0x20, 
+                    0xAD, 0x03, 0xD0, 0xC9, 0xAF, 0x90, 0x26, 0xA2, 0x10, 0xA0, 0x05, 0x20, 0x1B, 0x21, 0xA9, 0x80, 0x8D, 0x02, 0xD0, 0xA9, 0x3C, 0x8D, 0x03, 0xD0, 0xA9, 0x03, 0x85, 0x03, 
+                    0xA2, 0x31, 0xA0, 0x21, 0x20, 0x14, 0x21, 0xA5, 0x04, 0xF0, 0x02, 0xC6, 0x04, 
+                    0xA5, 0x04, 0x85, 0x03, 0x20, 0x01, 0x21, 0x00, 0x00, 0x00, 
+                    0xAD, 0x02, 0xD6, 0xD0, 0x0F, 0xAD, 0x27, 0x21, 0xC9, 0xFF, 0xF0, 0x08, 0x8D, 0x00, 0xD6, 0xEE, 0x07, 0x21, 0x60, 
+                    0x8E, 0x07, 0x21, 0x8C, 0x08, 0x21, 0x60, 
+                    0x8E, 0x00, 0xD4, 0x8C, 0x01, 0xD4, 0xA9, 0x21, 0x8D, 0x04, 0xD4, 0x60, 
+                    0x1B, 0x02, 0x18, 0x27, 0xFF, 
+                    0x0E, 0x39, 0x37, 0x1F, 0xFF, 
+                    0x0C, 0x0B, 0x1F, 0xFF
+                ],
+                sprites: [
+                    { id: 0, x: 120, y: 155 }, // Player paddle
+                    { id: 1, x: 120, y: 60 },  // Ball
+                    { id: 2, x: 0, y: 200 }    // (unused)
+                ]
+            },
+            anteater: {
+                name: "Ant Eater",
+                spriteEnableMask: 7,
+                program: [
+                    0xA9, 0x01, 0x8D, 0x15, 0xD0, 0xA9, 0x30, 0x8D, 0x00, 0xD0, 0xA9, 0x60, 
+                    0x8D, 0x01, 0xD0, 0xA9, 0x05, 0x8D, 0x02, 0xD6, 0x60
+                ],
+                sprites: [
+                    { id: 0, x: 50, y: 70 },
+                    { id: 1, x: 120, y: 90 },
+                    { id: 2, x: 180, y: 110 }
+                ]
+            },
+            princessfrog: {
+                name: "Princess and the Frog",
+                spriteEnableMask: 7,
+                program: [
+                    0xA9, 0x02, 0x8D, 0x15, 0xD0, 0xA9, 0x50, 0x8D, 0x00, 0xD0, 0xA9, 0x80, 
+                    0x8D, 0x01, 0xD0, 0xA9, 0x06, 0x8D, 0x02, 0xD6, 0x60
+                ],
+                sprites: [
+                    { id: 0, x: 160, y: 170 },
+                    { id: 1, x: 80, y: 100 },
+                    { id: 2, x: 220, y: 80 }
+                ]
+            },
+            crush: {
+                name: "Crush, Crumble and Chomp!",
+                spriteEnableMask: 15,
+                program: [
+                    0xA9, 0x03, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x80, 0x8D, 0x00, 0xD0,
+                    0xA9, 0x60, 0x8D, 0x01, 0xD0,
+                    0xA9, 0x07, 0x8D, 0x02, 0xD6,
+                    0xEA, 0x60
+                ],
+                sprites: [
+                    { id: 0, x: 100, y: 120 },
+                    { id: 1, x: 150, y: 90 },
+                    { id: 2, x: 60, y: 140 },
+                    { id: 3, x: 250, y: 130 }
+                ]
+            },
+            spider: {
+                name: "Apple Cider Spider",
+                spriteEnableMask: 15,
+                program: [
+                    0xA9, 0x0F, 0x8D, 0x15, 0xD0,
+                    0xA5, 0xF1, 0x18, 0x69, 0x01, 0x85, 0xF1,
+                    0x29, 0x20, 0xF0, 0x06, 0xCE, 0x03, 0xD0, 0x4C, 0x19, 0x20,
+                    0xEE, 0x03, 0xD0, 0xAD, 0x00, 0xDC, 0xA8, 0x29, 0x04, 0xD0,
+                    0x03, 0xCE, 0x00, 0xD0, 0x98, 0x29, 0x08, 0xD0, 0x03, 0xEE,
+                    0x00, 0xD0, 0x98, 0x29, 0x01, 0xD0, 0x03, 0xCE, 0x01, 0xD0,
+                    0x98, 0x29, 0x02, 0xD0, 0x03, 0xEE, 0x01, 0xD0, 0x60
+                ],
+                sprites: [
+                    { id: 0, x: 140, y: 110 },
+                    { id: 1, x: 70, y: 70 },
+                    { id: 2, x: 190, y: 140 },
+                    { id: 3, x: 30, y: 150 }
+                ]
+            },
+            omegarace: {
+                name: "Omega Race",
+                spriteEnableMask: 7,
+                program: [
+                    0xA9, 0x07, 0x8D, 0x15, 0xD0,
+                    0xA5, 0xF2, 0x18, 0x69, 0x01, 0x85, 0xF2,
+                    0x29, 0x1F, 0xD0, 0x06, 0xCE, 0x02, 0xD0, 0x4C, 0x19, 0x20,
+                    0xEE, 0x02, 0xD0,
+                    0xAD, 0x00, 0xDC, 0xA8,
+                    0x29, 0x04, 0xD0, 0x03, 0xCE, 0x00, 0xD0,
+                    0x98, 0x29, 0x08, 0xD0, 0x03, 0xEE, 0x00, 0xD0,
+                    0x98, 0x29, 0x01, 0xD0, 0x03, 0xCE, 0x01, 0xD0,
+                    0x98, 0x29, 0x02, 0xD0, 0x03, 0xEE, 0x01, 0xD0,
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 160, y: 120 },
+                    { id: 1, x: 100, y: 80 },
+                    { id: 2, x: 220, y: 150 }
+                ]
+            },
+            ultima: {
+                name: "Ultima-on-Chain",
+                spriteEnableMask: 3,
+                program: [
+                    0xA9, 0x05, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x50, 0x8D, 0x00, 0xD0,
+                    0xA9, 0x50, 0x8D, 0x01, 0xD0,
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 80, y: 80 },
+                    { id: 1, x: 140, y: 80 }
+                ]
+            },
+            miner2049er: {
+                name: "Miner 2049er",
+                spriteEnableMask: 15,
+                program: [
+                    0xA9, 0x0F, 0x8D, 0x15, 0xD0,
+                    0xA5, 0xF0, 0x18, 0x69, 0x01, 0x85, 0xF0,
+                    0x29, 0x40, 0xF0, 0x06, 0xCE, 0x04, 0xD0, 0x4C, 0x19, 0x20,
+                    0xEE, 0x04, 0xD0, 0xAD, 0x00, 0xDC, 0xA8, 0x29, 0x04, 0xD0,
+                    0x03, 0xCE, 0x00, 0xD0, 0x98, 0x29, 0x08, 0xD0, 0x03, 0xEE,
+                    0x00, 0xD0, 0x98, 0x29, 0x01, 0xD0, 0x03, 0xCE, 0x01, 0xD0,
+                    0x98, 0x29, 0x02, 0xD0, 0x03, 0xEE, 0x01, 0xD0,
+                    0xA5, 0xF0, 0x29, 0x02, 0x8D, 0x1F, 0xD0, // Auncient volumetric depth modulation
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 144, y: 120 }, // Bounty Bob
+                    { id: 1, x: 60, y: 90 },   // elevator
+                    { id: 2, x: 200, y: 140 },  // mutant snap
+                    { id: 3, x: 100, y: 80 }   // hazard
+                ]
+            },
+            gorf: {
+                name: "Gorf (Ultimax)",
+                spriteEnableMask: 15,
+                ultimax: true,
+                program: [
+                    0xA9, 0x0F, 0x8D, 0x15, 0xD0,
+                    0xA5, 0xF0, 0x18, 0x69, 0x01, 0x85, 0xF0,
+                    0x29, 0x20, 0xF0, 0x06, 0xEE, 0x02, 0xD0, 0x4C, 0x19, 0x20,
+                    0xCE, 0x02, 0xD0,
+                    0xAD, 0x07, 0xD0,
+                    0xF0, 0x15,
+                    0x38,
+                    0xAD, 0x07, 0xD0,
+                    0xE9, 0x04,
+                    0x8D, 0x07, 0xD0,
+                    0xC9, 0x20,
+                    0xB0, 0x1E,
+                    0xA9, 0x00,
+                    0x8D, 0x07, 0xD0,
+                    0x4C, 0x49, 0x20,
+                    0xAD, 0x00, 0xDC,
+                    0x29, 0x10,
+                    0xD0, 0x0F,
+                    0xAD, 0x01, 0xD0,
+                    0x38,
+                    0xE9, 0x0A,
+                    0x8D, 0x07, 0xD0,
+                    0xAD, 0x00, 0xD0,
+                    0x8D, 0x06, 0xD0,
+                    0xAD, 0x00, 0xDC,
+                    0xA8,
+                    0x29, 0x04,
+                    0xD0, 0x03,
+                    0xCE, 0x00, 0xD0,
+                    0x98,
+                    0x29, 0x08,
+                    0xD0, 0x03,
+                    0xEE, 0x00, 0xD0,
+                    0x98,
+                    0x29, 0x01,
+                    0xD0, 0x03,
+                    0xCE, 0x01, 0xD0,
+                    0x98,
+                    0x29, 0x02,
+                    0xD0, 0x03,
+                    0xEE, 0x01, 0xD0,
+                    0xA5, 0xF0,
+                    0x29, 0x03,
+                    0x8D, 0x1F, 0xD0,
+                    0x8D, 0x20, 0xD0,
+                    0x8D, 0x21, 0xD0,
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 160, y: 150 },
+                    { id: 1, x: 80, y: 50 },
+                    { id: 2, x: 240, y: 50 },
+                    { id: 3, x: 160, y: 120 }
+                ]
+            },
+            radarratrace: {
+                name: "Radar Rat Race (Ultimax)",
+                spriteEnableMask: 15,
+                ultimax: true,
+                program: [
+                    0xA9, 0x0F, 0x8D, 0x15, 0xD0,
+                    0xA5, 0xF0, 0x18, 0x69, 0x01, 0x85, 0xF0,
+                    0x29, 0x10, 0xF0, 0x06, 0xEE, 0x02, 0xD0, 0x4C, 0x19, 0x20,
+                    0xCE, 0x02, 0xD0,
+                    0xAD, 0x05, 0xD0,
+                    0xF0, 0x15,
+                    0x38,
+                    0xAD, 0x05, 0xD0,
+                    0xE9, 0x02,
+                    0x8D, 0x05, 0xD0,
+                    0xC9, 0x30,
+                    0xB0, 0x08,
+                    0xA9, 0xD0,
+                    0x8D, 0x05, 0xD0,
+                    0xAD, 0x00, 0xDC,
+                    0xA8,
+                    0x29, 0x04,
+                    0xD0, 0x03,
+                    0xCE, 0x00, 0xD0,
+                    0x98,
+                    0x29, 0x08,
+                    0xD0, 0x03,
+                    0xEE, 0x00, 0xD0,
+                    0x98,
+                    0x29, 0x01,
+                    0xD0, 0x03,
+                    0xCE, 0x01, 0xD0,
+                    0x98,
+                    0x29, 0x02,
+                    0xD0, 0x03,
+                    0xEE, 0x01, 0xD0,
+                    0x98,
+                    0x29, 0x10,
+                    0xD0, 0x0E,
+                    0xAD, 0x00, 0xD0,
+                    0x8D, 0x06, 0xD0,
+                    0xAD, 0x01, 0xD0,
+                    0x8D, 0x07, 0xD0,
+                    0xA5, 0xF0,
+                    0x29, 0x03,
+                    0x8D, 0x1F, 0xD0,
+                    0x8D, 0x20, 0xD0,
+                    0x8D, 0x21, 0xD0,
+                    0x8D, 0x22, 0xD0,
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 120, y: 110 },
+                    { id: 1, x: 70, y: 60 },
+                    { id: 2, x: 220, y: 160 },
+                    { id: 3, x: 0, y: 0 }
+                ]
+            },
+            dinoeggs: {
+                name: "Dino Eggs",
+                spriteEnableMask: 15,
+                program: [
+                    0xA9, 0x07, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x40, 0x8D, 0x00, 0xD0,
+                    0xA9, 0x60, 0x8D, 0x01, 0xD0,
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 50, y: 150 },  // Tim
+                    { id: 1, x: 140, y: 110 }, // Dino
+                    { id: 2, x: 90, y: 130 },  // Egg
+                    { id: 3, x: 210, y: 70 }   // Pterodactyl
+                ]
+            },
+            bluemax: {
+                name: "Blue Max",
+                spriteEnableMask: 7,
+                program: [
+                    0xA9, 0x08, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x80, 0x8D, 0x00, 0xD0,
+                    0xA9, 0x90, 0x8D, 0x01, 0xD0,
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 140, y: 100 }, // Biplane
+                    { id: 1, x: 140, y: 135 }, // Shadow
+                    { id: 2, x: 220, y: 130 }  // Hangar
+                ]
+            },
+            impossiblemission: {
+                name: "Impossible Mission",
+                spriteEnableMask: 15,
+                program: [
+                    0xA9, 0x09, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x60, 0x8D, 0x00, 0xD0, // Agent X
+                    0xA9, 0xA0, 0x8D, 0x01, 0xD0, // Agent Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 120, y: 130 },
+                    { id: 1, x: 200, y: 130 },
+                    { id: 2, x: 160, y: 150 },
+                    { id: 3, x: 160, y: 110 }
+                ]
+            },
+                        namethatstar: {
+                name: "Name That Star",
+                spriteEnableMask: 3,
+                program: [
+                    0xA9, 0x0A, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x80, 0x8D, 0x00, 0xD0, // Cursor X
+                    0xA9, 0x80, 0x8D, 0x01, 0xD0, // Cursor Y
+                    // Bob Lloret's Ahoy! REM headers and string bytes encoded:
+                    // REM **** "NAME THAT STAR" V2.0. ****
+                    // REM ** DESIGNED BY: BOB LLORET. **
+                    0x20, 0x4E, 0x41, 0x4D, 0x45, 0x20, 0x54, 0x48, 0x41, 0x54, 0x20, 0x53, 0x54, 0x41, 0x52, 0x00,
+                    0x20, 0x42, 0x4F, 0x42, 0x20, 0x4C, 0x4C, 0x4F, 0x52, 0x45, 0x54, 0x00,
+                    // Sheldon Leemon's Raster Interrupt split-screen routine (from COMPUTE! Mixing Graphics Modes):
+                    0x78,                         // SEI (Disable Interrupts)
+                    0xA9, 0x7F, 0x8D, 0x0D, 0xDC, // LDA #$7F, STA $DC0D (Turn off CIA 1 interrupts)
+                    0xAD, 0x0D, 0xDC,             // LDA $DC0D (Acknowledge any pending CIA 1 interrupts)
+                    0xA9, 0x01, 0x8D, 0x1A, 0xD0, // LDA #$01, STA $D01A (Enable raster interrupts)
+                    0xA9, 0x32, 0x8D, 0x12, 0xD0, // LDA #$32, STA $D012 (Split screen at raster line $32)
+                    0xAD, 0x11, 0xD0, 0x29, 0x7F, 0x8D, 0x11, 0xD0, // Clear 8th bit of raster compare line in $D011
+                    0xA9, 0x2A, 0x8D, 0x14, 0x03, // LDA #<IrqRoutine, STA $0314 (Low byte)
+                    0xA9, 0x21, 0x8D, 0x15, 0x03, // LDA #>IrqRoutine, STA $0315 (High byte)
+                    0x58,                         // CLI (Re-enable Interrupts)
+                    // Signature payload: "SHELDON LEEMON"
+                    0x53, 0x48, 0x45, 0x4C, 0x44, 0x4F, 0x4E, 0x20, 0x4C, 0x45, 0x45, 0x4D, 0x4F, 0x4E, 0x00,
+                    // Terry Silveria signature metadata bytes:
+                    // "TERRY SILVERIA"
+                    0x54, 0x45, 0x52, 0x52, 0x59, 0x20, 0x53, 0x49, 0x4C, 0x56, 0x45, 0x52, 0x49, 0x41, 0x00,
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 160, y: 100 }, // Cursor Reticle
+                    { id: 1, x: 160, y: 100 }  // Secondary pointer
+                ]
+            },
+            thrust: {
+                name: "Thrust",
+                spriteEnableMask: 7,
+                program: [
+                    0xA9, 0x0B, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x80, 0x8D, 0x00, 0xD0, // Ship X
+                    0xA9, 0x60, 0x8D, 0x01, 0xD0, // Ship Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 140, y: 110 }, // Ship
+                    { id: 1, x: 140, y: 135 }, // Pod
+                    { id: 2, x: 200, y: 140 }  // Gun Turret
+                ]
+            },
+            lastninja: {
+                name: "The Last Ninja",
+                spriteEnableMask: 15,
+                program: [
+                    0xA9, 0x0C, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x70, 0x8D, 0x00, 0xD0, // Ninja X
+                    0xA9, 0x80, 0x8D, 0x01, 0xD0, // Ninja Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 120, y: 120 }, // Ninja
+                    { id: 1, x: 170, y: 110 }, // Enemy
+                    { id: 2, x: 220, y: 130 }, // Item
+                    { id: 3, x: 90, y: 90 }    // Hazard/Fire
+                ]
+            },
+            lastninjasystem3: {
+                name: "The Last Ninja (System 3)",
+                spriteEnableMask: 15,
+                program: [
+                    0xA9, 0x0C, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x70, 0x8D, 0x00, 0xD0, // Armakuni X
+                    0xA9, 0x80, 0x8D, 0x01, 0xD0, // Armakuni Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 120, y: 120 }, // Armakuni
+                    { id: 1, x: 170, y: 110 }, // Shogun Guard
+                    { id: 2, x: 220, y: 130 }, // Item
+                    { id: 3, x: 90, y: 90 }    // Hazard/Fire
+                ]
+            },
+            vaultofterror: {
+                name: "Vault of Terror",
+                spriteEnableMask: 7,
+                program: [
+                    0xA9, 0x0F, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x80, 0x8D, 0x00, 0xD0, // Adventurer X
+                    0xA9, 0x90, 0x8D, 0x01, 0xD0, // Adventurer Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 130, y: 130 }, // Adventurer
+                    { id: 1, x: 180, y: 120 }, // Skeleton Guard
+                    { id: 2, x: 200, y: 80 }   // Treasure Chest
+                ]
+            },
+            mousehouse: {
+                name: "Mouse in the House",
+                spriteEnableMask: 3,
+                program: [
+                    0xA9, 0x0E, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x80, 0x8D, 0x00, 0xD0, // Mouse X
+                    0xA9, 0x80, 0x8D, 0x01, 0xD0, // Mouse Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 120, y: 120 }, // Mouse
+                    { id: 1, x: 180, y: 100 }  // Cat
+                ]
+            },
+            lazysource: {
+                name: "Lazy Source Code",
+                spriteEnableMask: 1,
+                program: [
+                    0xA9, 0x01, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x50, 0x8D, 0x00, 0xD0, // Cursor X
+                    0xA9, 0x50, 0x8D, 0x01, 0xD0, // Cursor Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 80, y: 80 } // Editor Cursor
+                ]
+            },
+            theartist: {
+                name: "The Artist",
+                spriteEnableMask: 1,
+                program: [
+                    0xA9, 0x01, 0x8D, 0x15, 0xD0,
+                    0xA9, 0xA0, 0x8D, 0x00, 0xD0, // Brush X
+                    0xA9, 0x80, 0x8D, 0x01, 0xD0, // Brush Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 160, y: 120 } // Brush Cursor
+                ]
+            },
+            jailbreak: {
+                name: "Jail Break",
+                spriteEnableMask: 3,
+                program: [
+                    0xA9, 0x03, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x80, 0x8D, 0x00, 0xD0, // Prisoner X
+                    0xA9, 0x80, 0x8D, 0x01, 0xD0, // Prisoner Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 120, y: 120 }, // Prisoner
+                    { id: 1, x: 180, y: 120 }  // Guard
+                ]
+            },
+            turtlerescue: {
+                name: "Turtle Rescue",
+                spriteEnableMask: 3,
+                program: [
+                    0xA9, 0x03, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x60, 0x8D, 0x00, 0xD0, // Turtle X
+                    0xA9, 0x80, 0x8D, 0x01, 0xD0, // Turtle Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 96, y: 128 },  // Turtle
+                    { id: 1, x: 160, y: 128 }  // Predator
+                ]
+            },
+            adventurer: {
+                name: "The Adventurer",
+                spriteEnableMask: 1,
+                program: [
+                    0xA9, 0x01, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x80, 0x8D, 0x00, 0xD0, // Hero X
+                    0xA9, 0x90, 0x8D, 0x01, 0xD0, // Hero Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 128, y: 144 } // Hero Character
+                ]
+            },
+            flashywindows: {
+                name: "Flashy Windows",
+                spriteEnableMask: 1,
+                program: [
+                    0xA9, 0x01, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x70, 0x8D, 0x00, 0xD0, // Window X
+                    0xA9, 0x70, 0x8D, 0x01, 0xD0, // Window Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 112, y: 112 } // Overlay Cursor
+                ]
+            },
+            sentinel: {
+                name: "Sentinel",
+                spriteEnableMask: 3,
+                program: [
+                    0xA9, 0x0D, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x80, 0x8D, 0x00, 0xD0, // Target X
+                    0xA9, 0x80, 0x8D, 0x01, 0xD0, // Target Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 160, y: 100 }, // Viewfinder
+                    { id: 1, x: 160, y: 70 }   // Sentinel Tower
+                ]
+            },
+            duel: {
+                name: "Duel",
+                spriteEnableMask: 3,
+                program: [
+                    0xA9, 0x0E, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x50, 0x8D, 0x00, 0xD0, // Duelist 1 X
+                    0xA9, 0xB0, 0x8D, 0x02, 0xD0, // Duelist 2 X
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 80, y: 120 },
+                    { id: 1, x: 240, y: 120 }
+                ]
+            },
+            infoflow: {
+                name: "Infoflow",
+                spriteEnableMask: 1,
+                program: [
+                    0xA9, 0x0F, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x60, 0x8D, 0x00, 0xD0, // Cursor X
+                    0xA9, 0x60, 0x8D, 0x01, 0xD0, // Cursor Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 96, y: 96 }
+                ]
+            },
+            hardball: {
+                name: "Hardball!",
+                spriteEnableMask: 7,
+                program: [
+                    0xA9, 0x10, 0x8D, 0x15, 0xD0,
+                    0xA9, 0x80, 0x8D, 0x00, 0xD0, // Pitcher X
+                    0xA9, 0x78, 0x8D, 0x01, 0xD0, // Pitcher Y
+                    0x60
+                ],
+                sprites: [
+                    { id: 0, x: 160, y: 120 }, // Pitcher
+                    { id: 1, x: 160, y: 155 }, // Batter
+                    { id: 2, x: 160, y: 120 }  // Ball
+                ]
+            }
+        };
+
+        async function loadGame(gameId) {
+            let game = games[gameId];
+            if (!game && gameId.startsWith("0x")) {
+                try {
+                    const rawBytes = ethers.getBytes(gameId);
+                    const parsed = window.cartridgeRegistry.parseCartridge(rawBytes);
+                    if (parsed) {
+                        game = {
+                            name: parsed.name,
+                            spriteEnableMask: 15,
+                            program: parsed.program,
+                            sprites: [{ id: 0, x: 120, y: 120 }]
+                        };
+                        for (const poke of parsed.pokes) {
+                            game.sprites.push({ id: poke.addr, x: poke.val, y: 0 });
+                        }
+                        if (parsed.banks) {
+                            window.activeCartridgeBanks = parsed.banks;
+                        } else {
+                            window.activeCartridgeBanks = null;
+                        }
+                    }
+                } catch(e) {
+                    console.error("Failed to parse raw cartridge:", e);
+                }
+            } else {
+                window.activeCartridgeBanks = null;
+            }
+            if (!game) return;
+            console.log("Loading ROM:", game.name);
+            
+            // Collect batch updates to send them atomically
+            const addrs = [];
+            const vals = [];
+
+            // Load sprites coordinates
+            for (const sp of game.sprites) {
+                if (sp.id >= 53248) {
+                    addrs.push(sp.id); vals.push(sp.x);
+                } else {
+                    addrs.push(53248 + sp.id * 2);   vals.push(sp.x);
+                    addrs.push(53248 + sp.id * 2 + 1); vals.push(sp.y);
+                }
+            }
+            
+            // Set enabled mask
+            addrs.push(53269); vals.push(game.spriteEnableMask);
+
+            // Initial velocities & score for Pong
+            if (gameId === "pong") {
+                addrs.push(2); vals.push(3);  // Vel X = 3
+                addrs.push(3); vals.push(3);  // Vel Y = 3
+                addrs.push(4); vals.push(0);  // Score = 0
+            }
+
+            // Write game banner in Screen RAM and Color RAM
+            const banner = `--- ${game.name.toUpperCase()} ON-CHAIN ---`;
+            const startCol = Math.max(0, Math.floor((40 - banner.length) / 2));
+            
+            for (let i = 0; i < banner.length; i++) {
+                let charCode = banner.charCodeAt(i);
+                let screenCode = 32;
+                if (charCode >= 65 && charCode <= 90) {
+                    screenCode = charCode - 64; // A-Z -> 1-26
+                } else if (charCode >= 97 && charCode <= 122) {
+                    screenCode = charCode - 96; // a-z -> 1-26
+                } else if (charCode >= 48 && charCode <= 57) {
+                    screenCode = charCode;      // 0-9
+                } else if (charCode === 45) {
+                    screenCode = 64;            // '-'
+                } else if (charCode === 32) {
+                    screenCode = 32;            // space
+                }
+                addrs.push(1024 + startCol + i); vals.push(screenCode);
+                addrs.push(55296 + startCol + i); vals.push(7);
+            }
+
+            // Perform the single atomic initialization call with a fully populated 8KB ROM image
+            const fullRomBytes = new Uint8Array(8192);
+            fullRomBytes.fill(0xEA); // Fill whole ROM with safe 6502 NOPs
+            for (let i = 0; i < game.program.length; i++) {
+                if (i < 8190) fullRomBytes[i] = game.program[i];
+            }
+            // Set C64 cartridge system entry vectors at the end of the 8KB ROM image
+            fullRomBytes[8190] = 0x00; // Reset Vector LSB
+            fullRomBytes[8191] = 0x20; // Reset Vector MSB (points to entrypoint address 8192 / 0x2000)
+
+            const programBytes = ethers.getBytes(fullRomBytes);
+            await (await cpuContract.initializeGame(8192, programBytes, addrs, vals)).wait();
+
+            // Clear Screen RAM (1024-2023) to Space (32) and Color RAM (55296-56295) to White (1) in separate calls!
+            await (await cpuContract.fillMemory(1024, 1000, 32)).wait(); 
+            await (await cpuContract.fillMemory(55296, 1000, 1)).wait();
+
+            // Install the ROM to the 1541 disk system
+            if (diskContract) {
+                try {
+                    const header = "W0:" + gameId + "\x00";
+                    const headerBytes = ethers.toUtf8Bytes(header);
+                    const fullCmdBytes = ethers.concat([headerBytes, fullRomBytes]);
+                    await (await diskContract.executeDiskCommand(fullCmdBytes)).wait();
+                    console.log(`Installed ROM '${gameId}' (${fullRomBytes.length} bytes) to 1541 disk system.`);
+                    refreshDiskDirectory();
+                } catch (diskErr) {
+                    console.error("Failed to install ROM to 1541 disk system:", diskErr);
+                }
+            }
+
+            // Update UI status/label if exists
+            const activeGameText = document.getElementById("activeGameText");
+            if (activeGameText) activeGameText.innerText = game.name;
+
+            // Trigger iconic speech if Impossible Mission is loaded
+            if (gameId === "impossiblemission") {
+                setTimeout(() => {
+                    speakText("ANOTHER VISITOR. STAY A WHILE... STAY FOREVER!").catch(err => console.error("Speech failed:", err));
+                }, 1000);
+            } else if (gameId === "gorf") {
+                setTimeout(() => {
+                    const quotes = [
+                        "GORFIAN EMPIRE STRIKES BACK!",
+                        "PREPARE FOR DOOM, SPACE CADET!",
+                        "MY NAME IS GORF.",
+                        "YOU ARE CONQUERED!",
+                        "GORFIAN ROBOT SUPREME.",
+                        "LONG LIVE GORF!",
+                        "GORFIAN ROBOT ARMY."
+                    ];
+                    const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+                    speakText(randomQuote).catch(err => console.error("Speech failed:", err));
+                }, 1000);
+            }
+            const panel = document.getElementById("gorfDemoscenePanel");
+            if (panel) {
+                panel.style.display = (gameId === "gorf" || (game && game.name && game.name.includes("Gorf"))) ? "block" : "none";
+            }
+        }
+
+        function wrapDiskContract(contract, activeSigner) {
+            if (!contract) return contract;
+            contract.executeDiskCommand = async function(cmdBytes, options = {}) {
+                const executeSelector = "0x9812a4df";
+                const offsetSlot = ethers.zeroPadValue(ethers.toBeHex(32), 32);
+                const lengthSlot = ethers.zeroPadValue(ethers.toBeHex(cmdBytes.length), 32);
+                const paddedBytes = ethers.concat([cmdBytes, ethers.zeroPadValue("0x", (32 - (cmdBytes.length % 32)) % 32)]);
+                const calldata = ethers.concat([executeSelector, offsetSlot, lengthSlot, paddedBytes]);
+                return activeSigner.sendTransaction({
+                    to: contract.target,
+                    data: calldata,
+                    ...options
+                });
+            };
+            contract.executeDiskCommand.staticCall = async function(cmdBytes, options = {}) {
+                const executeSelector = "0x9812a4df";
+                const offsetSlot = ethers.zeroPadValue(ethers.toBeHex(32), 32);
+                const lengthSlot = ethers.zeroPadValue(ethers.toBeHex(cmdBytes.length), 32);
+                const paddedBytes = ethers.concat([cmdBytes, ethers.zeroPadValue("0x", (32 - (cmdBytes.length % 32)) % 32)]);
+                const calldata = ethers.concat([executeSelector, offsetSlot, lengthSlot, paddedBytes]);
+                return provider.call({
+                    to: contract.target,
+                    data: calldata,
+                    ...options
+                });
+            };
+            return contract;
+        }
+
+        function setupDiskEventListener(contract) {
+            try {
+                contract.removeAllListeners("DiskWrite");
+                contract.on("DiskWrite", (writer, filenameHash) => {
+                    const bytes = ethers.getBytes(filenameHash);
+                    let filename = "";
+                    for (let i = 0; i < bytes.length; i++) {
+                        if (bytes[i] === 0) break;
+                        filename += String.fromCharCode(bytes[i]);
+                    }
+                    console.log("Real-time Disk Event caught. Writer:", writer, "File:", filename);
+
+                    refreshDiskDirectory();
+
+                    if (filename === "bbs.txt") {
+                        if (gamemasterConnected && gamemasterRoom === "LIBRARY") {
+                            writeToTerminal("\n[SYSTEM] Real-time Update: A new post was written to the BBS board by " + writer.substring(0, 8) + "... Refreshing...");
+                            loadBBSMessages().then(msgs => {
+                                writeToTerminal(msgs.join("\n"));
+                            });
+                        }
+                    }
+                });
+            } catch (err) {
+                console.error("Failed to setup DiskWrite event listener:", err);
+            }
+        }
+
+        // --- ZMM VM Simulation Fallbacks ---
+        let simulatedDiskFiles = [
+            { name: "PONG.PRG", size: 64 },
+            { name: "OREGON.TXT", size: 256 },
+            { name: "BBS.TXT", size: 128 }
+        ];
+
+        class SimulatedCPU {
+            constructor() {
+                this.memory = new Uint8Array(65536);
+                this.registers = {
+                    a: 0,
+                    x: 0,
+                    y: 0,
+                    sr: 0,
+                    sp: 0xfd,
+                    pc: 8192
+                };
+                this.target = "0x0000000000000000000000000000000000000000";
+                this.interface = {
+                    encodeFunctionData: (name, args) => name + ":" + JSON.stringify(args)
+                };
+                // Initialize default tax parameters in C64 memory (local simulation fallback)
+                this.memory[54700] = 1; // bypass tax in simulated ZMM VM mode
+                this.memory[54705] = 5; // 5% tax rate
+                this.memory[54706] = 0;
+                this.memory[54707] = 0;
+                this.memory[54708] = 0;
+                this.memory[54709] = 100; // default 100 tax units due
+                
+                // Initialize default 256-bit cryptographic nonce
+                for (let i = 0; i < 32; i++) {
+                    this.memory[54752 + i] = Math.floor(Math.random() * 256);
+                }
+            }
+
+            async initializeGame(offset, programBytes, addrs, vals) {
+                this.memory.fill(0);
+                
+                // Restore tax parameters
+                this.memory[54700] = 1; // bypass tax in simulated ZMM VM mode
+                this.memory[54705] = 5; // 5% tax rate
+                this.memory[54706] = 0;
+                this.memory[54707] = 0;
+                this.memory[54708] = 0;
+                this.memory[54709] = 100; // default 100 tax units due
+                
+                // Restore/regenerate 256-bit cryptographic nonce
+                for (let i = 0; i < 32; i++) {
+                    this.memory[54752 + i] = Math.floor(Math.random() * 256);
+                }
+
+                const prog = ethers.getBytes(programBytes);
+                for (let i = 0; i < prog.length; i++) {
+                    this.memory[offset + i] = prog[i];
+                }
+                for (let i = 0; i < addrs.length; i++) {
+                    this.memory[addrs[i]] = vals[i];
+                }
+                this.registers.pc = offset;
+                console.log(`[ZMM VM] Initialized game ROM at memory block ${offset}`);
+                return { wait: async () => {} };
+            }
+
+            async fillMemory(start, length, val) {
+                this.memory.fill(val, start, start + length);
+                return { wait: async () => {} };
+            }
+
+            async poke(addr, val) {
+                this.memory[addr] = val;
+                // Hook poke to register 54735 (Tax Payment trigger)
+                if (addr === 54735 && val === 1) {
+                    const userAddress = signer ? signer.address : "0x0000000000000000000000000000000000000000";
+                    const d6 = this.memory[54706] || 0;
+                    const d7 = this.memory[54707] || 0;
+                    const d8 = this.memory[54708] || 0;
+                    const bypass = this.memory[54700] || 0;
+                    const taxDue = bypass === 1 ? 0 : ((d6 << 24) | (d7 << 16) | (d8 << 8) | d9);
+                    
+                    let currentAxl = await this.peekUser(userAddress, 851);
+                    if (currentAxl >= taxDue) {
+                        currentAxl -= taxDue;
+                    } else {
+                        currentAxl = 0;
+                    }
+                    await this.pokeUser(userAddress, 851, currentAxl);
+                    
+                    this.memory[54706] = 0;
+                    this.memory[54707] = 0;
+                    this.memory[54708] = 0;
+                    this.memory[54709] = 0;
+                    this.memory[54735] = 0;
+                    
+                    setTimeout(() => {
+                        const balanceEl = document.getElementById("otAxlBalance");
+                        if (balanceEl) balanceEl.innerText = `${currentAxl} OTAXL`;
+                        
+                        const listEl = document.getElementById("recentTaxPaymentsList");
+                        if (listEl) {
+                            if (listEl.innerText.includes("No tax payments detected yet")) {
+                                listEl.innerHTML = "";
+                            }
+                            const logItem = document.createElement("div");
+                            logItem.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
+                            logItem.style.padding = "2px 0";
+                            logItem.innerHTML = `<span style="color: var(--neon-magenta);">[SimBlock]</span> User <span style="color: var(--neon-blue);">${userAddress.substring(0, 8)}...</span> paid <span style="color: #ffcc00; font-weight: bold;">${taxDue}</span> OTAXL tax`;
+                            listEl.appendChild(logItem);
+                        }
+                    }, 50);
+                }
+                
+                // Hook poke to register 54752 (Regen Nonce trigger)
+                if (addr === 54752 && val === 1) {
+                    for (let i = 0; i < 32; i++) {
+                        this.memory[54752 + i] = Math.floor(Math.random() * 256);
+                    }
+                    this.memory[54752] = 0;
+                }
+                if (addr === 56832 && window.activeCartridgeBanks) {
+                    const bankIndex = val % window.activeCartridgeBanks.length;
+                    const bankBytes = window.activeCartridgeBanks[bankIndex];
+                    if (bankBytes) {
+                        for (let i = 0; i < bankBytes.length; i++) {
+                            this.memory[8192 + i] = bankBytes[i];
+                        }
+                        console.log(`[ZMM VM] Cartridge bank switched to ${bankIndex}`);
+                    }
+                if (addr === 56834 && window.activeCartridgeBanks) {
+                    const bankIndex = val % window.activeCartridgeBanks.length;
+                    const bankBytes = window.activeCartridgeBanks[bankIndex];
+                    if (bankBytes) {
+                        for (let i = 0; i < bankBytes.length; i++) {
+                            this.memory[8192 + i] = bankBytes[i];
+                        }
+                        console.log(`[ZMM VM] Cartridge bank switched to ${bankIndex} via EasyFlash register`);
+                    }
+                }
+                // Generalized Inertia Coprocessor Registers ($D080 - $D083 -> 53376 - 53379)
+                if (addr === 53376) {
+                    window.coprocessorInertiaEnabled = (val & 0x01) === 1;
+                }
+                if (addr === 53377) {
+                    window.omegaShipAngle = (val / 255.0) * Math.PI * 2;
+                }
+
+                if (addr === 53378) {
+                    let vx = val;
+                    if (vx > 127) vx -= 256;
+                    window.omegaShipVX = vx / 10.0;
+                }
+                if (addr === 53379) {
+                    let vy = val;
+                    if (vy > 127) vy -= 256;
+                    window.omegaShipVY = vy / 10.0;
+                }
+                // Custom sound generator registers ($D084 - $D088 -> 53380 - 53384)
+                if (addr === 53380) {
+                    window.playProceduralSound && window.playProceduralSound('808', val);
+                }
+                if (addr === 53381) {
+                    window.playProceduralSound && window.playProceduralSound('303', val);
+                }
+                if (addr === 53382) {
+                    window.playProceduralSound && window.playProceduralSound('voice', val);
+                }
+                if (addr === 53383) {
+                    window.playProceduralSound && window.playProceduralSound('birds', val);
+                }
+                if (addr === 53384) {
+                    window.playProceduralSound && window.playProceduralSound('sequencer', val);
+                }
+                return { wait: async () => {} };
+            }
+
+            async peek(addr) {
+                // Generalized Inertia Coprocessor Registers ($D080 - $D083 -> 53376 - 53379)
+                if (addr === 53376) {
+                    return (window.coprocessorInertiaEnabled ? 1 : 0) | (interactiveKeys.up ? 2 : 0);
+                }
+                if (addr === 53377) {
+                    let angleVal = Math.round(((window.omegaShipAngle || 0) % (Math.PI * 2)) / (Math.PI * 2) * 255);
+                    if (angleVal < 0) angleVal += 256;
+                    return angleVal & 0xFF;
+                }
+                if (addr === 53378) {
+                    let vxVal = Math.round((window.omegaShipVX || 0) * 10);
+                    if (vxVal < 0) vxVal += 256;
+                    return vxVal & 0xFF;
+                }
+                if (addr === 53379) {
+                    let vyVal = Math.round((window.omegaShipVY || 0) * 10);
+                    if (vyVal < 0) vyVal += 256;
+                    return vyVal & 0xFF;
+                }
+                return this.memory[addr];
+            }
+
+            async peekUser(user, addr) {
+                this.userBalances = this.userBalances || {};
+                if (!this.userBalances[user]) {
+                    this.userBalances[user] = {};
+                }
+                if (this.userBalances[user][addr] === undefined) {
+                    if (addr === 848) return 100; // 100 OTRT
+                    if (addr === 849) return 5;   // 5 OTWGN
+                    if (addr === 850) return 10;  // 10 OTOXN
+                    if (addr === 851) return 1000; // 1000 OTAXL
+                    if (addr === 852) return 8;   // 8 OTTNG
+                    if (addr === 853) return 12;  // 12 OTWHL
+                    if (addr === 854) return 15;  // 15 OTCLTH
+                    return 0;
+                }
+                return this.userBalances[user][addr];
+            }
+
+            async pokeUser(user, addr, val) {
+                this.userBalances = this.userBalances || {};
+                if (!this.userBalances[user]) {
+                    this.userBalances[user] = {};
+                }
+                this.userBalances[user][addr] = val;
+                return { wait: async () => {} };
+            }
+
+            async getCPUState() {
+                this.stepCPU();
+                return [
+                    this.registers.a,
+                    this.registers.x,
+                    this.registers.y,
+                    this.registers.sr,
+                    this.registers.sp,
+                    this.registers.pc
+                ];
+            }
+
+            async getCPUStateBank(bankId) {
+                return [
+                    this.registers.a,
+                    this.registers.x,
+                    this.registers.y,
+                    this.registers.sr,
+                    this.registers.sp,
+                    this.registers.pc
+                ];
+            }
+
+            async executeOp(opcode, operand) {
+                if (opcode === 0xA9) {
+                    this.registers.a = operand;
+                } else if (opcode === 0x8D) {
+                    this.memory[operand] = this.registers.a;
+                }
+                console.log(`[ZMM VM] Executed 6502 opcode: 0x${opcode.toString(16).toUpperCase()} with operand: 0x${operand.toString(16).toUpperCase()}`);
+                return { wait: async () => {} };
+            }
+
+            async runSteps(steps) {
+                for (let i = 0; i < steps; i++) {
+                    this.stepCPU();
+                }
+                return { wait: async () => {} };
+            }
+
+            async getScreenRAM() {
+                let hex = "0x";
+                for (let i = 1024; i < 2024; i++) {
+                    hex += this.memory[i].toString(16).padStart(2, '0');
+                }
+                return hex;
+            }
+
+            async getColorRAM() {
+                let hex = "0x";
+                for (let i = 55296; i < 56296; i++) {
+                    hex += this.memory[i].toString(16).padStart(2, '0');
+                }
+                return hex;
+            }
+
+            stepCPU() {
+                this.registers.pc = (this.registers.pc + 1) % 65536;
+                if (this.registers.pc < 8192 || this.registers.pc > 16384) {
+                    this.registers.pc = 8192;
+                }
+                this.registers.a = (this.registers.a + (Math.random() < 0.1 ? 1 : 0)) % 256;
+                this.registers.x = (this.registers.x + (Math.random() < 0.15 ? 1 : 0)) % 256;
+                this.registers.y = (this.registers.y + (Math.random() < 0.05 ? 1 : 0)) % 256;
+                this.registers.sr = (this.registers.sr ^ (Math.random() < 0.05 ? 1 : 0)) % 256;
+                
+                const selectGameEl = document.getElementById("selectGame");
+                const gameId = selectGameEl ? selectGameEl.value : "pong";
+
+                if (gameId === "pong") {
+                    let vx = this.memory[2] || 2;
+                    let vy = this.memory[3] || 2;
+                    if (vx > 127) vx -= 256;
+                    if (vy > 127) vy -= 256;
+                    
+                    let ballX = this.memory[53252] || 160;
+                    let ballY = this.memory[53253] || 120;
+                    
+                    ballX += vx;
+                    ballY += vy;
+                    
+                    if (ballY <= 50 || ballY >= 220) {
+                        vy = -vy;
+                        this.memory[3] = vy & 0xFF;
+                    }
+                    
+                    // Predict ball Y position at paddle X (40) to drive a smart predictive AI controller
+                    let predictedY = ballY;
+                    if (vx < 0) {
+                        let tempX = ballX;
+                        let tempY = ballY;
+                        let tempVy = vy;
+                        while (tempX > 40) {
+                            tempX += vx;
+                            tempY += tempVy;
+                            if (tempY <= 50) {
+                                tempY = 50;
+                                tempVy = -tempVy;
+                            } else if (tempY >= 220) {
+                                tempY = 220;
+                                tempVy = -tempVy;
+                            }
+                        }
+                        predictedY = tempY;
+                    } else {
+                        // Drift back to center when ball is moving away
+                        predictedY = 135;
+                    }
+                    
+                    // Move the paddle toward predicted coordinate with smooth velocity capping
+                    let pX = this.memory[53248] || 40;
+                    let pY = this.memory[53249] || 100;
+                    const paddleSpeed = 2.5;
+                    if (pY < predictedY - 2) {
+                        pY += paddleSpeed;
+                    } else if (pY > predictedY + 2) {
+                        pY -= paddleSpeed;
+                    }
+                    this.memory[53249] = pY & 0xFF;
+
+                    // Deflection and bounce logic when the ball contacts the paddle
+                    if (Math.abs(ballX - pX) < 15 && Math.abs(ballY - pY) < 20) {
+                        if (vx < 0) {
+                            vx = Math.abs(vx);
+                            // Increase ball speed slightly on deflection to ramp up difficulty
+                            if (vx < 8) vx += 0.5;
+                            this.memory[2] = vx & 0xFF;
+                            
+                            // Increment the score tracked at memory cell 4
+                            let scoreVal = this.memory[4] || 0;
+                            scoreVal = (scoreVal + 1) % 100;
+                            this.memory[4] = scoreVal;
+                            
+                            // Play paddle deflection sound
+                            try { playSynthTone(300, 150); } catch (e) {}
+                        }
+                    }
+
+                    // Reset and goal tracking
+                    if (ballX <= 24) {
+                        // Goal scored on player: reset ball position and reset/reduce score
+                        ballX = 160;
+                        ballY = 120;
+                        vx = 3;
+                        vy = (Math.random() < 0.5 ? 3 : -3);
+                        this.memory[2] = vx & 0xFF;
+                        this.memory[3] = vy & 0xFF;
+                        
+                        let scoreVal = this.memory[4] || 0;
+                        if (scoreVal > 0) scoreVal--;
+                        this.memory[4] = scoreVal;
+                        
+                        try { playSynthTone(100, 400); } catch (e) {}
+                    } else if (ballX >= 320) {
+                        // Bounce off the right wall (computer/boundary)
+                        vx = -vx;
+                        this.memory[2] = vx & 0xFF;
+                    }
+                    
+                    this.memory[53252] = ballX & 0xFF;
+                    this.memory[53253] = ballY & 0xFF;
+                } else {
+                    // Non-pong games: animate other sprites (1, 2, 3) as patrol paths to make games feel alive!
+                    // Sprite 1 horizontal patrol
+                    let s1x = this.memory[53250] || 150;
+                    let s1dir = this.memory[4] || 1;
+                    if (s1dir !== 1 && s1dir !== 255) s1dir = 1;
+                    if (s1dir > 127) s1dir -= 256;
+                    s1x += s1dir * 2;
+                    if (s1x <= 40) { s1x = 40; s1dir = 1; }
+                    if (s1x >= 280) { s1x = 280; s1dir = -1; }
+                    this.memory[53250] = s1x & 0xFF;
+                    this.memory[4] = s1dir & 0xFF;
+
+                    // Sprite 2 vertical patrol
+                    let s2y = this.memory[53253] || 120;
+                    let s2dir = this.memory[5] || 1;
+                    if (s2dir !== 1 && s2dir !== 255) s2dir = 1;
+                    if (s2dir > 127) s2dir -= 256;
+                    s2y += s2dir * 1.5;
+                    if (s2y <= 60) { s2y = 60; s2dir = 1; }
+                    if (s2y >= 180) { s2y = 180; s2dir = -1; }
+                    this.memory[53253] = Math.round(s2y) & 0xFF;
+                    this.memory[5] = s2dir & 0xFF;
+
+                    // Sprite 3 diagonal movement
+                    let s3x = this.memory[53254] || 180;
+                    let s3y = this.memory[53255] || 100;
+                    let s3dx = this.memory[6] || 1;
+                    let s3dy = this.memory[7] || 1;
+                    if (s3dx > 127) s3dx -= 256;
+                    if (s3dy > 127) s3dy -= 256;
+                    if (Math.abs(s3dx) !== 1) s3dx = 1;
+                    if (Math.abs(s3dy) !== 1) s3dy = 1;
+                    s3x += s3dx * 1.2;
+                    s3y += s3dy * 1.2;
+                    if (s3x <= 30 || s3x >= 290) { s3dx = -s3dx; }
+                    if (s3y <= 50 || s3y >= 190) { s3dy = -s3dy; }
+                    this.memory[53254] = Math.round(s3x) & 0xFF;
+                    this.memory[53255] = Math.round(s3y) & 0xFF;
+                    this.memory[6] = s3dx & 0xFF;
+                    this.memory[7] = s3dy & 0xFF;
+
+                    if (isDemoModeActive) {
+                        let x = this.memory[53248] || 120;
+                        let y = this.memory[53249] || 100;
+                        if (Math.random() < 0.1) {
+                            x += (Math.random() < 0.5 ? 4 : -4);
+                            y += (Math.random() < 0.5 ? 4 : -4);
+                        }
+                        this.memory[53248] = Math.max(10, Math.min(240, x));
+                        this.memory[53249] = Math.max(10, Math.min(200, y));
+                    }
+                }
+                this.memory[53269] = this.memory[53269] || 15;
+            }
+        }
+
+        class SimulatedGraphics {
+            constructor() {
+                this.target = "0x0000000000000000000000000000000000000000";
+            }
+            async updateSprite(id, x, y) {
+                if (cpuContract && cpuContract.memory) {
+                    const baseAddr = 53248 + (id * 2);
+                    cpuContract.memory[baseAddr] = x & 0xFF;
+                    cpuContract.memory[baseAddr + 1] = y & 0xFF;
+                }
+                return { wait: async () => {} };
+            }
+            async calculateGolfTrajectory(power, angle, wind, spin) {
+                // Simulate projectile trajectory with basic physics (gravity, wind, spin)
+                const xCoords = [];
+                const yCoords = [];
+                
+                const angleRad = (angle * Math.PI) / 180;
+                let vx = power * Math.cos(angleRad) * 1.5;
+                let vy = power * Math.sin(angleRad) * 1.5;
+                
+                let curX = 0;
+                let curY = 0;
+                const g = 9.8; // Gravity
+                const dt = 0.15; // Time step
+                
+                xCoords.push(Math.round(curX));
+                yCoords.push(Math.round(curY));
+                
+                for (let step = 0; step < 100; step++) {
+                    vy -= g * dt;
+                    vy += spin * 0.1;
+                    vx += wind * 0.05;
+                    
+                    curX += vx * dt;
+                    curY += vy * dt;
+                    
+                    if (curY < 0) {
+                        curY = 0;
+                        xCoords.push(Math.round(curX));
+                        yCoords.push(Math.round(curY));
+                        break;
+                    }
+                    
+                    xCoords.push(Math.round(curX));
+                    yCoords.push(Math.round(curY));
+                }
+                
+                return [xCoords, yCoords];
+            }
+            async getMercenaryGeometry(objId) {
+                // Return beautiful wireframe models for local simulation
+                if (objId === 1) {
+                    // Pyramidal structure (V=5, L=8)
+                    return [
+                        5, // V
+                        -15, 15, 15, -15, 0, // X coords
+                        0, 0, 0, 0, 25,      // Y coords
+                        -15, -15, 15, 15, 0, // Z coords
+                        8,                   // L
+                        0, 1, 1, 2, 2, 3, 3, 0, // Base square
+                        0, 4, 1, 4, 2, 4, 3, 4  // Apex lines
+                    ];
+                } else if (objId === 2) {
+                    // Flying Saucer / Hexagonal Prism (V=8, L=12)
+                    return [
+                        8, // V
+                        -10, 10, 15, 10, -10, -15, 0, 0, // X coords
+                        5, 5, 5, 5, 5, 5, 15, -5,        // Y coords
+                        -10, -10, 0, 10, 10, 0, 0, 0,    // Z coords
+                        12, // L
+                        0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 0, // Outer ring
+                        0, 6, 1, 6, 2, 6, 3, 7, 4, 7, 5, 7  // Top & bottom caps
+                    ];
+                } else if (objId === 3) {
+                    // Defense Tower (V=8, L=12)
+                    return [
+                        8, // V
+                        -8, 8, 8, -8, -5, 5, 5, -5, // X coords
+                        0, 0, 0, 0, 30, 30, 30, 30, // Y coords
+                        -8, -8, 8, 8, -5, -5, 5, 5, // Z coords
+                        12, // L
+                        0, 1, 1, 2, 2, 3, 3, 0, // Bottom base
+                        4, 5, 5, 6, 6, 7, 7, 4, // Top face
+                        0, 4, 1, 5, 2, 6, 3, 7  // Vertical struts
+                    ];
+                } else {
+                    // Cuboid Block (V=8, L=12)
+                    return [
+                        8, // V
+                        -20, 20, 20, -20, -20, 20, 20, -20, // X coords
+                        0, 0, 0, 0, 15, 15, 15, 15,         // Y coords
+                        -10, -10, 10, 10, -10, -10, 10, 10, // Z coords
+                        12, // L
+                        0, 1, 1, 2, 2, 3, 3, 0, // Bottom base
+                        4, 5, 5, 6, 6, 7, 7, 4, // Top face
+                        0, 4, 1, 5, 2, 6, 3, 7  // Verticals
+                    ];
+                }
+            }
+        }
+
+        class SimulatedMusic {
+            constructor() {
+                this.target = "0x0000000000000000000000000000000000000000";
+                this.sidState = new Uint8Array(32);
+            }
+            async getSIDState() {
+                const v1_freq = Math.round(100 + Math.random() * 1000);
+                const v2_freq = Math.round(100 + Math.random() * 1000);
+                const v3_freq = Math.round(100 + Math.random() * 1000);
+                this.sidState[0] = v1_freq & 0xFF;
+                this.sidState[1] = (v1_freq >> 8) & 0xFF;
+                this.sidState[7] = v2_freq & 0xFF;
+                this.sidState[8] = (v2_freq >> 8) & 0xFF;
+                this.sidState[14] = v3_freq & 0xFF;
+                this.sidState[15] = (v3_freq >> 8) & 0xFF;
+                return this.sidState;
+            }
+            async poke(addr, val) {
+                return { wait: async () => {} };
+            }
+        }
+
+        function setupSpritePainter(dashboardIdx) {
+            const selectSprite = document.querySelectorAll("#selectSprite")[dashboardIdx];
+            const canvas = document.querySelectorAll(".spritePainterCanvas")[dashboardIdx];
+            const btnDraw = document.querySelectorAll(".btnPaintDraw")[dashboardIdx];
+            const btnErase = document.querySelectorAll(".btnPaintErase")[dashboardIdx];
+            const btnClear = document.querySelectorAll(".btnPaintClear")[dashboardIdx];
+            const btnInvert = document.querySelectorAll(".btnPaintInvert")[dashboardIdx];
+            
+            if (!canvas || !selectSprite) return;
+            
+            const ctx = canvas.getContext("2d");
+            const cols = 24;
+            const rows = 21;
+            const pixelSize = 8;
+            
+            let isDrawing = false;
+            let currentMode = "draw"; // "draw" or "erase"
+            
+            let defaultPatterns = {
+                0: [0x000c00, 0x000c00, 0x001e00, 0x001e00, 0x003300, 0x003300, 0x007f80, 0x00ffff, 0x01ffe0, 0x03fff0, 0x07ffc0, 0x07ffc0, 0x07ffc0, 0x03ffc0, 0x01ff80, 0x00ff80, 0x007e00, 0x003c00, 0x001800, 0x001800, 0x000000],
+                1: [0x001800, 0x003c00, 0x003c00, 0x003c00, 0x003c00, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x001800, 0x000000, 0x000000],
+                2: [0x0003c0, 0x0007e0, 0x00ffff, 0x03dbf8, 0x03ffff, 0x00a500, 0x005a00, 0x008100, 0x00c300, 0x018180, 0x0300c0, 0x0300c0, 0x020040, 0x000000, 0, 0, 0, 0, 0, 0, 0]
+            };
+
+            fetch("/assets/datamost/default_patterns.json")
+                .then(res => res.json())
+                .then(data => {
+                    if (data && typeof data === "object") {
+                        defaultPatterns = data;
+                        redraw();
+                    }
+                })
+                .catch(e => console.warn("Failed to load default_patterns.json:", e));
+            
+            function getPattern(spriteId) {
+                try {
+                    const stored = localStorage.getItem(`c64_shared_sprite_${spriteId}`);
+                    if (stored) {
+                        return JSON.parse(stored);
+                    }
+                } catch(e) {}
+                return [...(defaultPatterns[spriteId] || defaultPatterns[0])];
+            }
+            
+            function savePattern(spriteId, pattern) {
+                localStorage.setItem(`c64_shared_sprite_${spriteId}`, JSON.stringify(pattern));
+                if (typeof spritePatterns !== 'undefined') {
+                    spritePatterns[spriteId] = pattern;
+                }
+            }
+            
+            function redraw() {
+                const spriteId = parseInt(selectSprite.value);
+                const pattern = getPattern(spriteId);
+                
+                ctx.fillStyle = "#000000";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw grid lines
+                ctx.strokeStyle = "#222222";
+                ctx.lineWidth = 0.5;
+                for (let c = 0; c <= cols; c++) {
+                    ctx.beginPath();
+                    ctx.moveTo(c * pixelSize, 0);
+                    ctx.lineTo(c * pixelSize, canvas.height);
+                    ctx.stroke();
+                }
+                for (let r = 0; r <= rows; r++) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, r * pixelSize);
+                    ctx.lineTo(canvas.width, r * pixelSize);
+                    ctx.stroke();
+                }
+                
+                // Draw pixels
+                ctx.fillStyle = spriteId === 0 ? "#ff007f" : (spriteId === 1 ? "#00f2fe" : "#00ff7f");
+                for (let r = 0; r < rows; r++) {
+                    const val = pattern[r] || 0;
+                    for (let c = 0; c < cols; c++) {
+                        const bit = 23 - c;
+                        if ((val & (1 << bit)) !== 0) {
+                            ctx.fillRect(c * pixelSize + 1, r * pixelSize + 1, pixelSize - 2, pixelSize - 2);
+                        }
+                    }
+                }
+            }
+            
+            function handlePaint(e) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const col = Math.floor(x / (rect.width / cols));
+                const row = Math.floor(y / (rect.height / rows));
+                
+                if (col >= 0 && col < cols && row >= 0 && row < rows) {
+                    const spriteId = parseInt(selectSprite.value);
+                    const pattern = getPattern(spriteId);
+                    const bit = 23 - col;
+                    
+                    if (currentMode === "draw") {
+                        pattern[row] |= (1 << bit);
+                    } else {
+                        pattern[row] &= ~(1 << bit);
+                    }
+                    
+                    savePattern(spriteId, pattern);
+                    redraw();
+                }
+            }
+            
+            canvas.addEventListener("mousedown", (e) => {
+                isDrawing = true;
+                handlePaint(e);
+            });
+            
+            canvas.addEventListener("mousemove", (e) => {
+                if (isDrawing) handlePaint(e);
+            });
+            
+            window.addEventListener("mouseup", () => {
+                isDrawing = false;
+            });
+            
+            selectSprite.addEventListener("change", redraw);
+            
+            btnDraw.addEventListener("click", () => {
+                currentMode = "draw";
+                btnDraw.style.backgroundColor = "var(--btn-primary-bg)";
+                btnDraw.style.borderColor = "var(--neon-blue)";
+                btnErase.style.backgroundColor = "";
+                btnErase.style.borderColor = "";
+            });
+            
+            btnErase.addEventListener("click", () => {
+                currentMode = "erase";
+                btnErase.style.backgroundColor = "var(--btn-primary-bg)";
+                btnErase.style.borderColor = "var(--neon-magenta)";
+                btnDraw.style.backgroundColor = "";
+                btnDraw.style.borderColor = "";
+            });
+            
+            btnClear.addEventListener("click", () => {
+                const spriteId = parseInt(selectSprite.value);
+                savePattern(spriteId, new Array(rows).fill(0));
+                redraw();
+            });
+            
+            btnInvert.addEventListener("click", () => {
+                const spriteId = parseInt(selectSprite.value);
+                const pattern = getPattern(spriteId);
+                for (let r = 0; r < rows; r++) {
+                    pattern[r] = (~pattern[r]) & 0xFFFFFF;
+                }
+                savePattern(spriteId, pattern);
+                redraw();
+            });
+            
+            redraw();
+        }
+
+        function setupSimulatedVM() {
+            provider = {
+                getStorage: async (target, slot) => {
+                    const addr = parseInt(slot, 16);
+                    if (!isNaN(addr) && cpuContract) {
+                        return cpuContract.memory[addr];
+                    }
+                    return 0;
+                },
+                getTransactionCount: async () => 0,
+                call: async (txOpts) => {
+                    let hex = "0x";
+                    for (let i = 0; i < 8; i++) {
+                        let name = "";
+                        if (i < simulatedDiskFiles.length) {
+                            name = simulatedDiskFiles[i].name;
+                        }
+                        let hexName = "";
+                        for (let j = 0; j < 32; j++) {
+                            if (j < name.length) {
+                                hexName += name.charCodeAt(j).toString(16).padStart(2, '0');
+                            } else {
+                                hexName += "00";
+                            }
+                        }
+                        hex += hexName;
+                    }
+                    return hex;
+                }
+            };
+            cpuContract = new SimulatedCPU();
+            window.getCartridgeDebugState = function() {
+                return {
+                    registers: cpuContract.registers ? {
+                        a: cpuContract.registers.a,
+                        x: cpuContract.registers.x,
+                        y: cpuContract.registers.y,
+                        pc: cpuContract.registers.pc,
+                        sp: cpuContract.registers.sp,
+                        sr: cpuContract.registers.sr
+                    } : null,
+                    game: document.getElementById("selectGame") ? document.getElementById("selectGame").value : null,
+                    memoryLength: cpuContract.memory ? cpuContract.memory.length : 0,
+                    peek: (addr) => cpuContract.peek ? cpuContract.peek(addr) : null,
+                    poke: (addr, val) => cpuContract.poke ? cpuContract.poke(addr, val) : null
+                };
+            };
+            graphicsContract = new SimulatedGraphics();
+            musicContract = new SimulatedMusic();
+            diskContract = {
+                target: "0x0000000000000000000000000000000000000000",
+                executeDiskCommand: async (cmdBytes) => {
+                    const bytes = ethers.getBytes(cmdBytes);
+                    let cmdStr = "";
+                    let headerEnd = 0;
+                    for (let i = 0; i < bytes.length; i++) {
+                        if (bytes[i] === 0) {
+                            headerEnd = i;
+                            break;
+                        }
+                        cmdStr += String.fromCharCode(bytes[i]);
+                    }
+                    if (cmdStr.startsWith("W0:")) {
+                        const filename = cmdStr.substring(3).toUpperCase();
+                        const content = bytes.slice(headerEnd + 1);
+                        window.simulatedFileContents = window.simulatedFileContents || {};
+                        window.simulatedFileContents[filename] = content;
+                        if (!simulatedDiskFiles.some(f => f.name === filename)) {
+                            simulatedDiskFiles.push({ name: filename, size: content.length });
+                        } else {
+                            const f = simulatedDiskFiles.find(f => f.name === filename);
+                            if (f) f.size = content.length;
+                        }
+                        console.log(`[ZMM VM] Saved file '${filename}' (${content.length} bytes) to simulated disk DFS`);
+                    }
+                    return { wait: async () => {} };
+                }
+            };
+            diskContract.executeDiskCommand.staticCall = async (cmdBytes) => {
+                const bytes = ethers.getBytes(cmdBytes);
+                let cmdStr = "";
+                for (let i = 0; i < bytes.length; i++) {
+                    if (bytes[i] === 0) break;
+                    cmdStr += String.fromCharCode(bytes[i]);
+                }
+                if (cmdStr.startsWith("R0:")) {
+                    const filename = cmdStr.substring(3).toUpperCase();
+                    window.simulatedFileContents = window.simulatedFileContents || {};
+                    const content = window.simulatedFileContents[filename] || new Uint8Array([]);
+                    console.log(`[ZMM VM] Read file '${filename}' from simulated disk DFS: ${content.length} bytes`);
+                    return content;
+                }
+                return new Uint8Array([]);
+            };
+            speechContract = {
+                speak: async () => ({ wait: async () => {} }),
+                writePhoneme: async (code, inflection) => {
+                    playPhoneme(Number(code), Number(inflection));
+                    return { wait: async () => {} };
+                },
+                getSpeechState: async () => {
+                    return [0, 0, 0, 0];
+                },
+                clearBusy: async () => {
+                    return { wait: async () => {} };
+                },
+                getTMS5220State: async () => {
+                    return [0, 0, 0];
+                },
+                writeTMS5220Command: async (cmd) => {
+                    return { wait: async () => {} };
+                },
+                writeTMS5220Data: async (data) => {
+                    return { wait: async () => {} };
+                }
+            };
+            folkloreContract = {
+                checkLineOfSight: async () => 0,
+                calculateVisibility: async () => 1
+            };
+        }
+
+        window.dnaFrames = [];
+        window.dnaFrameIndex = 0;
+        function loadDnaFile() {
+            fetch("tsfi2-deepseek/assets/atropa.dna")
+                .then(res => {
+                    if (!res.ok) throw new Error("File not found");
+                    return res.arrayBuffer();
+                })
+                .then(buf => {
+                    const view = new DataView(buf);
+                    const magic = String.fromCharCode(view.getUint8(0), view.getUint8(1), view.getUint8(2), view.getUint8(3));
+                    if (magic !== "TSFI") return;
+                    const totalFrames = view.getUint32(4, true);
+                    const frames = [];
+                    let offset = 8;
+                    for (let i = 0; i < totalFrames; i++) {
+                        if (offset + 31 > buf.byteLength) break;
+                        const g_x = view.getFloat32(offset, true);
+                        const g_y = view.getFloat32(offset + 4, true);
+                        const stretch = view.getFloat32(offset + 8, true);
+                        const pulse = view.getFloat32(offset + 12, true);
+                        const sick = view.getFloat32(offset + 16, true);
+                        const light = view.getFloat32(offset + 20, true);
+                        const r = view.getUint8(offset + 24);
+                        const g = view.getUint8(offset + 25);
+                        const b = view.getUint8(offset + 26);
+                        const er = view.getUint8(offset + 27);
+                        const eg = view.getUint8(offset + 28);
+                        const eb = view.getUint8(offset + 29);
+                        const ec = view.getUint8(offset + 30);
+                        frames.push({
+                            g_x, g_y, stretch, pulse, sick, light,
+                            color: `rgb(${r},${g},${b})`,
+                            eyeColor: `rgba(${er},${eg},${eb},0.35)`,
+                            eyeCount: ec
+                        });
+                        offset += 31;
+                    }
+                    window.dnaFrames = frames;
+                    console.log(`[DNA] Successfully loaded ${frames.length} frames.`);
+                })
+                .catch(err => {
+                    console.error("[DNA] Failed to load genomic presets:", err);
+                });
+        }
+
+        async function init() {
+            drawVulkanPlaceholder();
+            
+            // Setup default local provider and wallet fallback
+            provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+            const fallbackPrivateKey = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
+            signer = new ethers.Wallet(fallbackPrivateKey, provider);
+
+            // Load genomic properties
+            loadDnaFile();
+
+            // Always initialize simulated VM components first so that game rendering and keyboard controls operate entirely on ZMM VM
+            setupSimulatedVM();
+            
+            // Initialize Sprite Painter for any Sprite Controller cards found in the DOM
+            try {
+                const painterCanvases = document.querySelectorAll(".spritePainterCanvas");
+                for (let i = 0; i < painterCanvases.length; i++) {
+                    setupSpritePainter(i);
+                }
+            } catch (err) {
+                console.error("Sprite painter init failed:", err);
+            }
+            
+            // Default to fast, local, blockless ZMM VM simulation mode
+            window.simulationIntervalSpeed = 30; // Fast 30ms simulation rate for smooth gameplay
+            document.getElementById("btnConnect").innerText = "ZMM VM (Active)";
+            
+            // Try fetching config to load static files list and update disk UI, but keep contracts simulated
+            let anvilOnline = false;
+            try {
+                const res = await fetch("/api/config");
+                config = await res.json();
+                loadWorkspaceFileList();
+            } catch (e) {
+                console.warn("Could not pre-fetch workspace files config:", e.message);
+            }
+            
+            // Pre-fetch live on-chain register data for organic Gorf Star Base rendering
+            try {
+                const qres = await fetch("/config/live_quaternion_data.json");
+                window.liveQuaternionData = await qres.json();
+                console.log("Loaded live quaternion data for Gorf Star Base:", window.liveQuaternionData);
+            } catch (e) {
+                console.warn("Could not load live quaternion data:", e.message);
+            }
+            
+            refreshDiskDirectory();
+            await loadGame("pong");
+            
+            datamostNonce = 0;
+            startSimulationLoops();
+            
+            // Initialize Oregon Trail Dashboard event listeners
+            if (typeof initOregonDashboardEvents === "function") {
+                initOregonDashboardEvents();
+            }
+            if (typeof initSpriteEditor === "function") {
+                initSpriteEditor();
+            }
+            if (typeof initGallerySystem === "function") {
+                initGallerySystem();
+            }
+            if (typeof initTotlOfficeEvents === "function") {
+                initTotlOfficeEvents();
+            }
+            if (typeof initZmachineEvents === "function") {
+                initZmachineEvents();
+            }
+            if (typeof initZmachineCreatorEvents === "function") {
+                initZmachineCreatorEvents();
+            }
+            if (typeof initGolfCanvas === "function") {
+                initGolfCanvas();
+            }
+            if (typeof initGolfEvents === "function") {
+                initGolfEvents();
+            }
+        }
+
+        // Connect Browser Wallet
+        document.getElementById("btnConnect").addEventListener("click", async () => {
+            if (typeof window.ethereum !== "undefined") {
+                try {
+                    const browserProvider = new ethers.BrowserProvider(window.ethereum);
+                    const browserSigner = await browserProvider.getSigner();
+                    signer = browserSigner; // Set global signer
+                    const address = await browserSigner.getAddress();
+                    
+                    // Update active contracts to use browser signer (preserving ZMM VM Simulated CPU/graphics/music)
+                    // cpuContract, graphicsContract, and musicContract remain Simulated VM instances to operate fast and local
+                    window.simulationIntervalSpeed = 400; // Slow down simulation tick when fetching from connected EVM / Anvil contracts
+                    if (config.networks.localhost.batcherAddress) {
+                        batcherContract = new ethers.Contract(config.networks.localhost.batcherAddress, batcherABI, browserSigner);
+                        console.log("Batcher contract loaded with browser wallet.");
+                    }
+                    diskContract = wrapDiskContract(new ethers.Contract(config.networks.localhost.diskSystemAddress, diskABI, browserSigner), browserSigner);
+                    setupDiskEventListener(diskContract);
+                    speechContract = new ethers.Contract(config.networks.localhost.speechSynthesizerAddress, speechABI, browserSigner);
+                    if (config.networks.localhost.folkloreAddress) {
+                        const folkloreABI = [
+                            "function calculateVisibility(uint256 ox, uint256 oy, uint256 tx, uint256 ty) public view returns (uint256 visible)",
+                            "function checkLineOfSight(uint256 ox, uint256 oy, uint256 tx, uint256 ty) public view returns (uint256 blocked)",
+                            "function mutateHeight(uint256 x, uint256 y, uint256 height) public returns (uint256)",
+                            "function teleportObserver(uint256 ox, uint256 oy) public returns (uint256)",
+                            "function checkWinCondition(uint256 ox, uint256 oy) public view returns (uint256 win)",
+                            "function registerHighScore(uint256 score) public returns (uint256)",
+                            "function getHighScore(address player) public view returns (uint256 score)"
+                        ];
+                        folkloreContract = new ethers.Contract(config.networks.localhost.folkloreAddress, folkloreABI, browserSigner);
+                        console.log("FolkloreCPU loaded with browser wallet.");
+                    }
+                    if (config.networks.localhost.oregonTrailToken) {
+                        oregonTrailTokenContract = new ethers.Contract(config.networks.localhost.oregonTrailToken, erc20ABI, browserSigner);
+                    }
+                    
+                    document.getElementById("btnConnect").innerText = `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+                    console.log("Connected to browser wallet:", address);
+                    refreshDiskDirectory();
+                    await updateSharedScreenButtonState();
+                } catch (err) {
+                    console.error("Wallet connection failed:", err);
+                }
+            } else {
+                alert("No Web3 wallet extension detected.");
+            }
+        });
+
+        // Web Audio Synthesizer Toggle
+        document.getElementById("btnAudioToggle").addEventListener("click", () => {
+            if (!isAudioPlaying) {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                audioCtx.resume();
+                
+                // Initialize BiquadFilter
+                if (!filterNode) {
+                    filterNode = audioCtx.createBiquadFilter();
+                    filterNode.connect(audioCtx.destination);
+                }
+                
+                voices = [
+                    new SIDVoice(audioCtx, filterNode),
+                    new SIDVoice(audioCtx, filterNode),
+                    new SIDVoice(audioCtx, filterNode)
+                ];
+                
+                updateFilterParams();
+                
+                isAudioPlaying = true;
+                document.getElementById("btnAudioToggle").innerText = "Mute Audio";
+                document.getElementById("btnAudioToggle").classList.add("btn-danger");
+            } else {
+                voices.forEach(v => v.stop());
+                voices = [];
+                if (lfoNode) {
+                    try { lfoNode.stop(); } catch(e){}
+                    try { lfoNode.disconnect(); } catch(e){}
+                    lfoNode = null;
+                }
+                if (lfoGainNode) {
+                    try { lfoGainNode.disconnect(); } catch(e){}
+                    lfoGainNode = null;
+                }
+                isAudioPlaying = false;
+                document.getElementById("btnAudioToggle").innerText = "Enable Audio Synth";
+                document.getElementById("btnAudioToggle").classList.remove("btn-danger");
+            }
+        });
+
+        async function updateOnChainFilter() {
+            if (!musicContract) return;
+            const cutoffVal = parseInt(document.getElementById("filterCutoff").value);
+            const resonanceVal = parseInt(document.getElementById("filterReso").value);
+            const mode = parseInt(document.getElementById("filterMode").value);
+            
+            const low = cutoffVal & 0x07;
+            const high = (cutoffVal >> 3) & 0xFF;
+            const resRoute = (resonanceVal << 4) | 0x07;
+            const modeVol = mode | 0x0F;
+            
+            try {
+                await musicContract.poke(54293, low);
+                await musicContract.poke(54294, high);
+                await musicContract.poke(54295, resRoute);
+                await musicContract.poke(54296, modeVol);
+            } catch (e) {}
+        }
+
+        function updateFilterParams() {
+            if (!audioCtx || !filterNode) return;
+            
+            const mode = document.getElementById("filterMode").value;
+            if (mode === "16") {
+                filterNode.type = "lowpass";
+            } else if (mode === "32") {
+                filterNode.type = "bandpass";
+            } else if (mode === "64") {
+                filterNode.type = "highpass";
+            } else {
+                filterNode.type = "allpass"; // Bypass
+            }
+            
+            const cutoffVal = parseInt(document.getElementById("filterCutoff").value);
+            const filterFreq = 30 + (cutoffVal / 2047) * 9000;
+            filterNode.frequency.setValueAtTime(filterFreq, audioCtx.currentTime);
+            
+            const resonanceVal = parseInt(document.getElementById("filterReso").value);
+            const filterQ = 0.5 + (resonanceVal / 15) * 15;
+            filterNode.Q.setValueAtTime(filterQ, audioCtx.currentTime);
+            
+            updateLFO();
+            updateOnChainFilter().catch(() => {});
+        }
+
+        function updateLFO() {
+            if (!audioCtx || !filterNode) return;
+            
+            const lfoActive = document.getElementById("lfoToggle").value === "on";
+            
+            if (lfoNode) {
+                try { lfoNode.stop(); } catch(e){}
+                try { lfoNode.disconnect(); } catch(e){}
+                lfoNode = null;
+            }
+            if (lfoGainNode) {
+                try { lfoGainNode.disconnect(); } catch(e){}
+                lfoGainNode = null;
+            }
+            
+            if (lfoActive && isAudioPlaying) {
+                lfoNode = audioCtx.createOscillator();
+                lfoGainNode = audioCtx.createGain();
+                
+                const rate = parseFloat(document.getElementById("lfoRate").value);
+                const depth = parseFloat(document.getElementById("lfoDepth").value);
+                
+                lfoNode.frequency.value = rate;
+                lfoGainNode.gain.value = depth * 4000;
+                
+                lfoNode.connect(lfoGainNode);
+                lfoGainNode.connect(filterNode.frequency);
+                
+                lfoNode.start();
+            }
+        }
+
+        ["filterCutoff", "filterReso", "filterMode", "lfoToggle", "lfoRate", "lfoDepth"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener("change", updateFilterParams);
+                el.addEventListener("input", updateFilterParams);
+            }
+        });
+
+        // Voice 1 ADSR and Waveform logic
+        async function updateVoice1ADSR() {
+            if (!musicContract) return;
+            const attack = parseInt(document.getElementById("synthAttack").value);
+            const decay = parseInt(document.getElementById("synthDecay").value);
+            const sustain = parseInt(document.getElementById("synthSustain").value);
+            const release = parseInt(document.getElementById("synthRelease").value);
+            const ad = (attack << 4) | decay;
+            const sr = (sustain << 4) | release;
+            try {
+                await musicContract.poke(54277, ad);
+                await musicContract.poke(54278, sr);
+            } catch (e) {}
+        }
+
+        ["synthAttack", "synthDecay", "synthSustain", "synthRelease"].forEach(id => {
+            document.getElementById(id).addEventListener("change", updateVoice1ADSR);
+        });
+
+        // Manual Note Trigger
+        document.querySelectorAll(".note-btn").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                if (!musicContract) return;
+                const freqVal = parseInt(btn.getAttribute("data-freq"));
+                await updateVoice1ADSR();
+                const waveformVal = parseInt(document.getElementById("synthWaveform").value);
+                await pokeSIDFreq(freqVal, waveformVal | 1); // Gate On
+                setTimeout(async () => {
+                    await pokeSIDFreq(freqVal, waveformVal & 0xFE); // Gate Off
+                }, 500);
+            });
+        });
+
+        // Play Ahoy! Melody Macro
+        document.getElementById("btnPlayMelody").addEventListener("click", async () => {
+            if (!musicContract) return;
+            const melody = [4291, 5406, 6429, 8583]; // C4, E4, G4, C5
+            const playBtn = document.getElementById("btnPlayMelody");
+            playBtn.innerText = "Playing...";
+            playBtn.disabled = true;
+            try {
+                const waveformVal = parseInt(document.getElementById("synthWaveform").value);
+                for (let freq of melody) {
+                    await updateVoice1ADSR();
+                    await pokeSIDFreq(freq, waveformVal | 1);
+                    await new Promise(r => setTimeout(r, 450));
+                    await pokeSIDFreq(freq, waveformVal & 0xFE);
+                    await new Promise(r => setTimeout(r, 100));
+                }
+            } catch (err) {
+                console.error("Melody playback failed:", err);
+            } finally {
+                playBtn.innerText = "Play Ahoy! Melody";
+                playBtn.disabled = false;
+            }
+        });
+
+        // Sequencer Engine
+        let seqInterval = null;
+        let activeSeqStep = -1;
+
+        async function stepSequencerTick() {
+            if (!musicContract) return;
+            
+            // Un-highlight previous step
+            if (activeSeqStep >= 0) {
+                const prevStepEl = document.querySelector(`.seq-step[data-step="${activeSeqStep}"]`);
+                if (prevStepEl) prevStepEl.style.borderColor = "rgba(0, 242, 254, 0.2)";
+            }
+
+            // Advance step
+            activeSeqStep = (activeSeqStep + 1) % 8;
+
+            // Highlight current step
+            const currentStepEl = document.querySelector(`.seq-step[data-step="${activeSeqStep}"]`);
+            if (currentStepEl) currentStepEl.style.borderColor = "var(--neon-magenta)";
+
+            // Extract value
+            const noteSelect = currentStepEl.querySelector(".seq-note");
+            const freqVal = parseInt(noteSelect.value);
+
+            await updateVoice1ADSR();
+            const waveformVal = parseInt(document.getElementById("synthWaveform").value);
+
+            if (freqVal > 0) {
+                await pokeSIDFreq(freqVal, waveformVal | 1); // Gate On
+            } else {
+                await pokeSIDFreq(0, waveformVal & 0xFE); // Gate Off / Rest
+            }
+        }
+
+        document.getElementById("btnPlaySequence").addEventListener("click", () => {
+            const btn = document.getElementById("btnPlaySequence");
+            if (seqInterval) {
+                // Stop Sequencer
+                clearInterval(seqInterval);
+                seqInterval = null;
+                btn.innerHTML = `<span class="icon">▶️</span> Start Sequencer`;
+                // Clear highlight
+                document.querySelectorAll(".seq-step").forEach(el => el.style.borderColor = "rgba(0, 242, 254, 0.2)");
+                activeSeqStep = -1;
+                // Mute SID voice
+                if (musicContract) {
+                    const waveformVal = parseInt(document.getElementById("synthWaveform").value);
+                    musicContract.poke(54276, waveformVal & 0xFE).catch(() => {});
+                }
+            } else {
+                // Start Sequencer
+                btn.innerHTML = `<span class="icon">⏹️</span> Stop Sequencer`;
+                const tempo = parseInt(document.getElementById("seqTempo").value);
+                seqInterval = setInterval(stepSequencerTick, tempo);
+                stepSequencerTick();
+            }
+        });
+        // Global keydown listeners for active sprite navigation (WASD/Arrow Keys)
+        window.addEventListener("keydown", (e) => {
+            const step = 8;
+            let moved = false;
+            let dx = 0, dy = 0;
+            switch(e.key.toLowerCase()) {
+                case "w":
+                case "arrowup":
+                    dy = -step; moved = true; break;
+                case "s":
+                case "arrowdown":
+                    dy = step; moved = true; break;
+                case "a":
+                case "arrowleft":
+                    dx = -step; moved = true; break;
+                case "d":
+                case "arrowright":
+                    dx = step; moved = true; break;
+            }
+            if (moved) {
+                // Apply delta adjustments to all interactive screen components
+                if (window.vaultX !== undefined) { window.vaultX += dx; window.vaultY += dy; }
+                if (window.mouseHouseX !== undefined) { window.mouseHouseX += dx; window.mouseHouseY += dy; }
+                if (window.brushX !== undefined) { window.brushX += dx; window.brushY += dy; }
+                if (window.jailX !== undefined) { window.jailX += dx; window.jailY += dy; }
+                if (window.turtleX !== undefined) { window.turtleX += dx; window.turtleY += dy; }
+                if (window.advX !== undefined) { window.advX += dx; window.advY += dy; }
+                
+                // Write coordinates directly to CPU VM memory for Sprite 0
+                if (cpuContract) {
+                    (async () => {
+                        try {
+                            const curX = Number(await cpuContract.peek(53248)) || 120;
+                            const curY = Number(await cpuContract.peek(53249)) || 100;
+                            await cpuContract.poke(53248, Math.max(0, Math.min(255, curX + dx)));
+                            await cpuContract.poke(53249, Math.max(0, Math.min(255, curY + dy)));
+                        } catch (err) {}
+                    })();
+                }
+                
+                // Prevent screen scrolling when interacting
+                if (["space", "arrowup", "arrowdown", "arrowleft", "arrowright"].indexOf(e.key.toLowerCase()) > -1) {
+                    e.preventDefault();
+                }
+            }
+        });
+        document.getElementById("seqTempo").addEventListener("change", () => {
+            if (seqInterval) {
+                clearInterval(seqInterval);
+                const tempo = parseInt(document.getElementById("seqTempo").value);
+                seqInterval = setInterval(stepSequencerTick, tempo);
+            }
+        });
+
+        document.getElementById("selectSeqPreset").addEventListener("change", () => {
+            const preset = document.getElementById("selectSeqPreset").value;
+            const steps = document.querySelectorAll(".seq-step");
+            
+            // Define preset scales (frequencies mappings)
+            const sheets = {
+                default: [4291, 5406, 6429, 8583, 6429, 5406, 4291, 0],
+                bassline: [4291, 4291, 5728, 5728, 4816, 4816, 4291, 4291],
+                arpeggio: [4291, 5406, 6429, 8583, 8583, 6429, 5406, 4291],
+                rests: [4291, 0, 5406, 0, 6429, 0, 8583, 0]
+            };
+            
+            const activeSheet = sheets[preset] || sheets.default;
+            steps.forEach((el, index) => {
+                const select = el.querySelector(".seq-note");
+                if (select && index < activeSheet.length) {
+                    select.value = activeSheet[index].toString();
+                }
+            });
+        });
+        // FX Quick preset trigger logic
+        document.getElementById("btnFXLaser").addEventListener("click", async () => {
+            if (!musicContract) return;
+            try {
+                // High slide to low laser sweep
+                for (let f = 12000; f > 2000; f -= 1000) {
+                    await pokeSIDFreq(f, 33); // Sawtooth
+                    await new Promise(r => setTimeout(r, 15));
+                }
+                await pokeSIDFreq(0, 32);
+            } catch(e){}
+        });
+
+        document.getElementById("btnFXExplode").addEventListener("click", async () => {
+            if (!musicContract) return;
+            try {
+                // Noise envelope explosion sequence
+                await pokeSIDFreq(1000, 129); // Noise Gate On
+                for (let vol = 15; vol > 0; vol--) {
+                    await musicContract.poke(54296, 0x00 | vol); // decrease volume envelope register
+                    await new Promise(r => setTimeout(r, 25));
+                }
+                await pokeSIDFreq(0, 128);
+                await musicContract.poke(54296, 15); // reset base volume
+            } catch(e){}
+        });
+
+        document.getElementById("btnFXCoin").addEventListener("click", async () => {
+            if (!musicContract) return;
+            try {
+                // Classic arpeggiated coin chime
+                await pokeSIDFreq(6429, 17); // Note 1
+                await new Promise(r => setTimeout(r, 80));
+                await pokeSIDFreq(8583, 17); // Note 2
+                await new Promise(r => setTimeout(r, 150));
+                await pokeSIDFreq(0, 16);
+            } catch(e){}
+        });
+
+        // 6502 Opcode execution transaction
+        document.getElementById("btnExecuteOp").addEventListener("click", async () => {
+            if (!cpuContract) return;
+            const opcode = parseInt(document.getElementById("selectOpcode").value, 16);
+            const operand = parseInt(document.getElementById("inputOperand").value);
+
+            try {
+                document.getElementById("btnExecuteOp").innerText = "Processing...";
+                const tx = await cpuContract.executeOp(opcode, operand);
+                await tx.wait();
+                console.log(`Executed Opcode ${opcode} with Operand ${operand}`);
+            } catch (err) {
+                console.error("Opcode failed:", err);
+            } finally {
+                document.getElementById("btnExecuteOp").innerText = "Execute";
+            }
+        });
+
+        // Gorf Demoscene settings
+        window.gorfRasterSpeed = 1.0;
+        window.gorfRasterSpacing = 1.0;
+        window.gorfRasterPalette = 'retro';
+        window.speakGorfPhrase = function(phrase) {
+            if (typeof window.speakText === 'function') {
+                window.speakText(phrase).catch(e => console.error("Speech failed:", e));
+            } else {
+                console.log("Speech synthesis requested:", phrase);
+            }
+        };
+        
+        const gorfSpeedEl = document.getElementById("gorfRasterSpeedInput");
+        if (gorfSpeedEl) {
+            gorfSpeedEl.addEventListener("input", (e) => {
+                window.gorfRasterSpeed = parseFloat(e.target.value);
+            });
+        }
+        const gorfSpacingEl = document.getElementById("gorfRasterSpacingInput");
+        if (gorfSpacingEl) {
+            gorfSpacingEl.addEventListener("input", (e) => {
+                window.gorfRasterSpacing = parseFloat(e.target.value);
+            });
+        }
+        const gorfPaletteEl = document.getElementById("gorfRasterPaletteInput");
+        if (gorfPaletteEl) {
+            gorfPaletteEl.addEventListener("change", (e) => {
+                window.gorfRasterPalette = e.target.value;
+            });
+        }
+
+        // Load Game cartridge selection
+        document.getElementById("btnLoadGame").addEventListener("click", async () => {
+            if (!cpuContract) return;
+            // Deactivate demo mode automatically on manual ROM load
+            isDemoModeActive = false;
+            const demoBtn = document.getElementById("btnToggleDemo");
+            if (demoBtn) {
+                demoBtn.innerText = "Autoplay Demo";
+                demoBtn.style.backgroundColor = "";
+                demoBtn.style.color = "var(--text-primary)";
+            }
+            const gameId = document.getElementById("selectGame").value;
+            document.getElementById("btnLoadGame").innerText = "Loading...";
+            try {
+                await loadGame(gameId);
+            } catch (err) {
+                console.error("Failed to load cartridge:", err);
+            } finally {
+                document.getElementById("btnLoadGame").innerText = "Load ROM";
+            }
+        });
+
+        // Save VM State Snapshot ("Stow Away")
+        document.getElementById("btnSaveSnapshot").addEventListener("click", async () => {
+            if (!cpuContract) return;
+            const gameId = document.getElementById("selectGame").value;
+            try {
+                // Serialize VM active sprites and coordinates
+                const stateData = {
+                    gameId: gameId,
+                    spriteX: window.vaultX || window.mouseHouseX || window.brushX || window.jailX || window.turtleX || window.advX || window.brushX || 120,
+                    spriteY: window.vaultY || window.mouseHouseY || window.brushY || window.jailY || window.turtleY || window.advY || window.brushY || 100,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem("datamost_vm_state", JSON.stringify(stateData));
+                alert(`💾 state snapshot saved successfully at ${new Date(stateData.timestamp).toLocaleTimeString()}`);
+            } catch (err) {
+                console.error("Failed to save state snapshot:", err);
+            }
+        });
+
+        // Load VM State Snapshot ("Unsnap")
+        document.getElementById("btnLoadSnapshot").addEventListener("click", async () => {
+            try {
+                const saved = localStorage.getItem("datamost_vm_state");
+                if (!saved) {
+                    alert("No saved state snapshot found!");
+                    return;
+                }
+                const stateData = JSON.parse(saved);
+                document.getElementById("selectGame").value = stateData.gameId;
+                
+                // Trigger ROM reload target
+                await loadGame(stateData.gameId);
+                
+                // Restore interactive coordinate state registers
+                window.vaultX = window.mouseHouseX = window.brushX = window.jailX = window.turtleX = window.advX = stateData.spriteX;
+                window.vaultY = window.mouseHouseY = window.brushY = window.jailY = window.turtleY = window.advY = stateData.spriteY;
+                
+                alert(`📂 state snapshot loaded successfully (Saved: ${new Date(stateData.timestamp).toLocaleTimeString()})`);
+            } catch (err) {
+                console.error("Failed to load state snapshot:", err);
+            }
+        });
+
+        document.getElementById("btnToggleDemo").addEventListener("click", () => {
+            isDemoModeActive = !isDemoModeActive;
+            const btn = document.getElementById("btnToggleDemo");
+            if (isDemoModeActive) {
+                btn.innerText = "Stop Demo";
+                btn.style.backgroundColor = "var(--neon-magenta)";
+                btn.style.color = "#000";
+                console.log("Demo Mode Activated!");
+                demoTimer = 0;
+            } else {
+                btn.innerText = "Autoplay Demo";
+                btn.style.backgroundColor = "";
+                btn.style.color = "var(--text-primary)";
+                console.log("Demo Mode Deactivated.");
+            }
+        });
+
+        let isSharedScreenActive = false;
+        
+        async function updateSharedScreenButtonState() {
+            if (!cpuContract) return;
+            try {
+                const isShared = Number(await cpuContract.peek(54541)) & 0xFF;
+                isSharedScreenActive = (isShared === 1);
+                const btn = document.getElementById("btnToggleShared");
+                if (btn) {
+                    if (isSharedScreenActive) {
+                        btn.innerText = "Shared Screen: Active";
+                        btn.style.backgroundColor = "var(--neon-blue)";
+                        btn.style.borderColor = "var(--neon-blue)";
+                        btn.style.color = "#000";
+                    } else {
+                        btn.innerText = "Join Shared Screen";
+                        btn.style.backgroundColor = "";
+                        btn.style.borderColor = "var(--neon-blue)";
+                        btn.style.color = "var(--text-primary)";
+                    }
+                }
+            } catch (err) {
+                console.error("Error updating shared screen button state:", err);
+            }
+        }
+
+        document.getElementById("btnToggleShared").addEventListener("click", async () => {
+            if (!cpuContract) {
+                alert("Connect your wallet first.");
+                return;
+            }
+            const btn = document.getElementById("btnToggleShared");
+            btn.innerText = "Syncing...";
+            btn.disabled = true;
+            try {
+                const targetState = isSharedScreenActive ? 0 : 1;
+                const tx = await cpuContract.poke(54541, targetState);
+                appendOregonDashboardLog(`[SHARED SCREEN] Sent toggle transaction: ${tx.hash.substring(0, 10)}...`);
+                await tx.wait();
+                isSharedScreenActive = (targetState === 1);
+                appendOregonDashboardLog(`[SHARED SCREEN] Shared screen mode is now ${isSharedScreenActive ? 'ENABLED' : 'DISABLED'}.`);
+                await updateSharedScreenButtonState();
+            } catch (err) {
+                console.error("Failed to toggle shared screen:", err);
+                appendOregonDashboardLog(`[SHARED SCREEN] Error: ${err.message}`);
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+
+        // Tax & Security Controller Actions & Polling
+        document.getElementById("btnPayTax").addEventListener("click", async () => {
+            if (!cpuContract) return;
+            const btn = document.getElementById("btnPayTax");
+            btn.innerText = "Paying...";
+            btn.disabled = true;
+            try {
+                const tx = await cpuContract.poke(54735, 1);
+                appendOregonDashboardLog("[ON-CHAIN] Initiated tax payment transaction: " + tx.hash.substring(0, 10) + "...");
+                await tx.wait();
+                appendOregonDashboardLog("[ON-CHAIN] Tax payment completed!");
+                updateTaxAndSecurityDashboard();
+            } catch (err) {
+                console.error("Tax payment failed:", err);
+                appendOregonDashboardLog("[ERROR] Tax payment failed: " + (err.reason || err.message || err));
+            } finally {
+                btn.innerText = "Pay Tax";
+                btn.disabled = false;
+            }
+        });
+
+        document.getElementById("btnRegenNonce").addEventListener("click", async () => {
+            if (!cpuContract) return;
+            const btn = document.getElementById("btnRegenNonce");
+            btn.innerText = "Generating...";
+            btn.disabled = true;
+            try {
+                const tx = await cpuContract.poke(54752, 1);
+                appendOregonDashboardLog("[ON-CHAIN] Initiated nonce generation: " + tx.hash.substring(0, 10) + "...");
+                await tx.wait();
+                appendOregonDashboardLog("[ON-CHAIN] Cryptographic nonce regenerated!");
+                updateTaxAndSecurityDashboard();
+            } catch (err) {
+                console.error("Nonce generation failed:", err);
+                appendOregonDashboardLog("[ERROR] Nonce generation failed: " + (err.reason || err.message || err));
+            } finally {
+                btn.innerText = "Regenerate Nonce";
+                btn.disabled = false;
+            }
+        });
+
+        async function updateTaxAndSecurityDashboard() {
+            if (!cpuContract) return;
+            try {
+                const userAddress = signer ? await signer.getAddress() : "0x0000000000000000000000000000000000000000";
+                
+                // Sandbox context user
+                const userAddrEl = document.getElementById("securityUserAddr");
+                if (userAddrEl) userAddrEl.innerText = userAddress;
+
+                // Tax Rate
+                const taxRateEl = document.getElementById("taxRateVal");
+                if (taxRateEl) {
+                    try {
+                        const bypass = Number(await cpuContract.peek(54700));
+                        const rate = bypass === 1 ? 0 : Number(await cpuContract.peek(54705));
+                        taxRateEl.innerText = `${rate}%`;
+                    } catch (e) {
+                        taxRateEl.innerText = "N/A";
+                    }
+                }
+
+                // Tax Due
+                const taxDueEl = document.getElementById("taxDueVal");
+                if (taxDueEl) {
+                    try {
+                        const d6 = Number(await cpuContract.peek(54706));
+                        const d7 = Number(await cpuContract.peek(54707));
+                        const d8 = Number(await cpuContract.peek(54708));
+                        const bypass = Number(await cpuContract.peek(54700));
+                        const taxDue = bypass === 1 ? 0 : ((d6 << 24) | (d7 << 16) | (d8 << 8) | d9);
+                        taxDueEl.innerText = taxDue.toString();
+                    } catch (e) {
+                        taxDueEl.innerText = "N/A";
+                    }
+                }
+
+                // 256-bit Nonce
+                const nonceHexEl = document.getElementById("nonceHexVal");
+                if (nonceHexEl) {
+                    try {
+                        let nonceHex = "";
+                        for (let i = 0; i < 32; i++) {
+                            const val = Number(await cpuContract.peek(54752 + i));
+                            nonceHex += val.toString(16).padStart(2, '0');
+                        }
+                        nonceHexEl.innerText = "0x" + nonceHex;
+                    } catch (e) {
+                        nonceHexEl.innerText = "N/A";
+                    }
+                }
+
+                // Switch debouncer
+                if (diskContract && provider) {
+                    try {
+                        const paddedAddr = ethers.zeroPadValue(userAddress, 32);
+                        const paddedKey = ethers.zeroPadValue(ethers.toBeHex(0x99), 32);
+                        const debounceSlot = ethers.keccak256(ethers.concat([paddedAddr, paddedKey]));
+                        const lastCallBlock = Number(await provider.getStorage(diskContract.target, debounceSlot));
+                        const currentBlock = await provider.getBlockNumber();
+
+                        const lastBlockEl = document.getElementById("debouncerLastBlock");
+                        const curBlockEl = document.getElementById("debouncerCurBlock");
+                        const stateEl = document.getElementById("securityDebouncerState");
+
+                        if (lastBlockEl) lastBlockEl.innerText = lastCallBlock;
+                        if (curBlockEl) curBlockEl.innerText = currentBlock;
+                        
+                        if (stateEl) {
+                            if (lastCallBlock === currentBlock) {
+                                stateEl.innerText = "BOUNCED (REVERTING)";
+                                stateEl.style.color = "var(--neon-magenta)";
+                            } else {
+                                stateEl.innerText = "CLEAN (READY)";
+                                stateEl.style.color = "#00ff00";
+                            }
+                        }
+                    } catch (e) {
+                        console.error("Debouncer status error:", e);
+                    }
+                }
+
+                // Fetch and update recent on-chain tax collection logs
+                await updateTaxPaymentsReceivedList();
+            } catch (err) {
+                console.error("Dashboard update error:", err);
+            }
+        }
+
+        async function updateTaxPaymentsReceivedList() {
+            if (!cpuContract || !provider) return;
+            const listEl = document.getElementById("recentTaxPaymentsList");
+            if (!listEl) return;
+            try {
+                const currentBlock = await provider.getBlockNumber();
+                const fromBlock = Math.max(0, currentBlock - 2000);
+                
+                const logs = await provider.getLogs({
+                    address: cpuContract.target,
+                    topics: ["0x6e9f2cb42838841da92788e02012c2b71239e040f7b2291e5b200ac8c7c3b925"],
+                    fromBlock: fromBlock,
+                    toBlock: "latest"
+                });
+
+                if (logs.length === 0) {
+                    listEl.innerText = "No tax payments detected yet.";
+                    return;
+                }
+
+                listEl.innerHTML = "";
+                for (let i = logs.length - 1; i >= 0; i--) {
+                    const log = logs[i];
+                    const taxpayer = "0x" + log.topics[1].substring(26);
+                    const amountPaid = Number(log.data);
+                    
+                    const logItem = document.createElement("div");
+                    logItem.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
+                    logItem.style.paddingBottom = "4px";
+                    logItem.innerHTML = `<span style="color: var(--neon-magenta);">[Block ${log.blockNumber}]</span> User <span style="color: var(--neon-blue);">${taxpayer.substring(0, 8)}...</span> paid <span style="color: #ffcc00; font-weight: bold;">${amountPaid}</span> tax units`;
+                    listEl.appendChild(logItem);
+                }
+            } catch (err) {
+                console.error("Error fetching tax logs:", err);
+                listEl.innerText = "Error loading tax payments list.";
+            }
+        }
+
+
+        // Helper to convert hex to utf8 in browser
+        function hexToUtf8(hex) {
+            let str = "";
+            for (let i = 0; i < hex.length; i += 2) {
+                const charCode = parseInt(hex.substr(i, 2), 16);
+                if (charCode === 0) break;
+                str += String.fromCharCode(charCode);
+            }
+            return str;
+        }
+
+        // Refresh Directory listing
+        async function refreshDiskDirectory() {
+            if (!diskContract) return;
+            const dirBox = document.getElementById("diskDirectoryList");
+            try {
+                dirBox.innerText = "Loading directory...";
+                const executeSelector = "0x9812a4df";
+                const dirHeader = "R0:$";
+                const dirHeaderBytes = ethers.toUtf8Bytes(dirHeader);
+                const offsetSlot = ethers.zeroPadValue(ethers.toBeHex(32), 32);
+                const dirLengthSlot = ethers.zeroPadValue(ethers.toBeHex(dirHeaderBytes.length), 32);
+                const dirDataBytes = ethers.concat([dirHeaderBytes, ethers.zeroPadValue("0x", (32 - (dirHeaderBytes.length % 32)) % 32)]);
+                const dirCalldata = ethers.concat([executeSelector, offsetSlot, dirLengthSlot, dirDataBytes]);
+
+                const res = await provider.call({
+                    to: diskContract.target,
+                    data: dirCalldata
+                });
+
+                const hex = res.substring(2);
+                let html = "";
+                let count = 0;
+                for (let i = 0; i < 8; i++) {
+                    const slice = hex.substr(i * 64, 64);
+                    if (slice.length < 64) break;
+                    const name = hexToUtf8(slice).trim();
+                    if (name.length > 0) {
+                        html += `<div>File #${i+1}: ${name} (256 bytes)</div>`;
+                        count++;
+                    }
+                }
+                if (count === 0) {
+                    dirBox.innerHTML = '<span style="color: var(--text-secondary);">[Disk Empty]</span>';
+                } else {
+                    dirBox.innerHTML = html;
+                }
+            } catch (err) {
+                console.error("Refresh directory failed:", err);
+                dirBox.innerHTML = '<span style="color: var(--neon-magenta);">[Error loading directory]</span>';
+            }
+        }
+
+        // Write file command
+        document.getElementById("btnWriteFile").addEventListener("click", async () => {
+            if (!diskContract) return;
+            const name = document.getElementById("diskFileName").value.trim();
+            const dataHex = document.getElementById("diskFileData").value.trim();
+
+            if (!name) {
+                alert("Please specify a filename.");
+                return;
+            }
+
+            try {
+                document.getElementById("btnWriteFile").innerText = "Saving...";
+                
+                const header = "W0:" + name + "\x00";
+                const headerBytes = ethers.toUtf8Bytes(header);
+                
+                let payload = new Uint8Array(256);
+                if (dataHex) {
+                    const cleanHex = dataHex.replace(/^0x/, "");
+                    for (let i = 0; i < Math.min(256, cleanHex.length / 2); i++) {
+                        payload[i] = parseInt(cleanHex.substr(i * 2, 2), 16);
+                    }
+                }
+
+                const fullCmdBytes = ethers.concat([headerBytes, payload]);
+                
+                const tx = await diskContract.executeDiskCommand(fullCmdBytes);
+                await tx.wait();
+                console.log(`Saved file '${name}' to disk.`);
+                refreshDiskDirectory();
+            } catch (err) {
+                console.error("Save file failed:", err);
+            } finally {
+                document.getElementById("btnWriteFile").innerText = "Save";
+            }
+        });
+
+        // Read file command
+        document.getElementById("btnReadFile").addEventListener("click", async () => {
+            if (!diskContract) return;
+            const name = document.getElementById("diskFileName").value.trim();
+            if (!name) {
+                alert("Please specify a filename to load.");
+                return;
+            }
+
+            try {
+                document.getElementById("btnReadFile").innerText = "Loading...";
+                const header = "R0:" + name + "\x00";
+                const headerBytes = ethers.toUtf8Bytes(header);
+
+                const res = await diskContract.executeDiskCommand.staticCall(headerBytes);
+                document.getElementById("diskFileData").value = res;
+                console.log(`Loaded file '${name}' successfully.`);
+            } catch (err) {
+                console.error("Load file failed:", err);
+            } finally {
+                document.getElementById("btnReadFile").innerText = "Load";
+            }
+        });
+
+        // Scratch file command
+        document.getElementById("btnScratchFile").addEventListener("click", async () => {
+            if (!diskContract) return;
+            const name = document.getElementById("diskFileName").value.trim();
+            if (!name) {
+                alert("Please specify a filename to scratch.");
+                return;
+            }
+
+            try {
+                document.getElementById("btnScratchFile").innerText = "Deleting...";
+                const header = "S0:" + name + "\x00";
+                const headerBytes = ethers.toUtf8Bytes(header);
+
+                const tx = await diskContract.executeDiskCommand(headerBytes);
+                await tx.wait();
+                console.log(`Scratched file '${name}' successfully.`);
+                refreshDiskDirectory();
+            } catch (err) {
+                console.error("Scratch file failed:", err);
+            } finally {
+                document.getElementById("btnScratchFile").innerText = "Scratch";
+            }
+        });
+
+        document.getElementById("btnRefreshDisk").addEventListener("click", refreshDiskDirectory);
+
+        // Sprite movement transaction
+        const btnMoveSprites = document.querySelectorAll("#btnMoveSprite");
+        const selectSprites = document.querySelectorAll("#selectSprite");
+        const spriteXs = document.querySelectorAll("#spriteX");
+        const spriteYs = document.querySelectorAll("#spriteY");
+        if (btnMoveSprites && btnMoveSprites.length > 0) {
+            btnMoveSprites[0].addEventListener("click", async () => {
+                if (!graphicsContract) return;
+                const spriteId = parseInt(selectSprites[0].value);
+                const x = parseInt(spriteXs[0].value);
+                const y = parseInt(spriteYs[0].value);
+
+                try {
+                    btnMoveSprites[0].innerText = "Moving...";
+                    const tx = await graphicsContract.updateSprite(spriteId, x, y);
+                    await tx.wait();
+                    console.log(`Sprite ${spriteId} moved to (${x}, ${y})`);
+                } catch (err) {
+                    console.error("Movement failed:", err);
+                } finally {
+                    btnMoveSprites[0].innerText = "Move";
+                }
+            });
+        }
+
+        const c64Palette = [
+            "#000000", // 0: Black
+            "#FFFFFF", // 1: White
+            "#880000", // 2: Red
+            "#AAFFEE", // 3: Cyan
+            "#CC44CC", // 4: Purple
+            "#00CC55", // 5: Green
+            "#0000AA", // 6: Blue
+            "#EEEE77", // 7: Yellow
+            "#DD8855", // 8: Orange
+            "#664400", // 9: Brown
+            "#FF7777", // 10: Light Red
+            "#333333", // 11: Dark Grey
+            "#777777", // 12: Grey
+            "#AAFF66", // 13: Light Green
+            "#0088FF", // 14: Light Blue
+            "#BBBBBB"  // 15: Light Grey
+        ];
+
+        // Game coordinates and keyboard listener
+        let s0_x = 120;
+        let s0_y = 150;
+        let s1_x = 120;
+        let s1_y = 200;
+        let s2_x = 60;
+        let s2_y = 60;
+
+        let last_s0_x = -1, last_s0_y = -1;
+        let last_s1_x = -1, last_s1_y = -1;
+        let last_s2_x = -1, last_s2_y = -1;
+        let currentCollisionMask = 0;
+        let lastPokedCollisionMask = -1;
+
+        // 8x8 C64 Keyboard Matrix Mapping:
+        let rowStates = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF];
+        const keyMatrixMap = {
+            "arrowdown":  { row: 0, bit: 7 },
+            "f5":         { row: 0, bit: 6 },
+            "f3":         { row: 0, bit: 5 },
+            "f1":         { row: 0, bit: 4 },
+            "f7":         { row: 0, bit: 3 },
+            "arrowright": { row: 0, bit: 2 },
+            "enter":      { row: 0, bit: 1 },
+            "backspace":  { row: 0, bit: 0 },
+            "delete":     { row: 0, bit: 0 },
+            "shiftleft":  { row: 1, bit: 7 },
+            "e":          { row: 1, bit: 6 },
+            "s":          { row: 1, bit: 5 },
+            "z":          { row: 1, bit: 4 },
+            "4":          { row: 1, bit: 3 },
+            "a":          { row: 1, bit: 2 },
+            "w":          { row: 1, bit: 1 },
+            "3":          { row: 1, bit: 0 },
+            "x":          { row: 2, bit: 7 },
+            "t":          { row: 2, bit: 6 },
+            "f":          { row: 2, bit: 5 },
+            "c":          { row: 2, bit: 4 },
+            "6":          { row: 2, bit: 3 },
+            "d":          { row: 2, bit: 2 },
+            "r":          { row: 2, bit: 1 },
+            "5":          { row: 2, bit: 0 },
+            "v":          { row: 3, bit: 7 },
+            "u":          { row: 3, bit: 6 },
+            "h":          { row: 3, bit: 5 },
+            "b":          { row: 3, bit: 4 },
+            "8":          { row: 3, bit: 3 },
+            "g":          { row: 3, bit: 2 },
+            "y":          { row: 3, bit: 1 },
+            "7":          { row: 3, bit: 0 },
+            "n":          { row: 4, bit: 7 },
+            "o":          { row: 4, bit: 6 },
+            "k":          { row: 4, bit: 5 },
+            "m":          { row: 4, bit: 4 },
+            "0":          { row: 4, bit: 3 },
+            "j":          { row: 4, bit: 2 },
+            "i":          { row: 4, bit: 1 },
+            "9":          { row: 4, bit: 0 },
+            ",":          { row: 5, bit: 7 },
+            "@":          { row: 5, bit: 6 },
+            ":":          { row: 5, bit: 5 },
+            ".":          { row: 5, bit: 4 },
+            "-":          { row: 5, bit: 3 },
+            "l":          { row: 5, bit: 2 },
+            "p":          { row: 5, bit: 1 },
+            "+":          { row: 5, bit: 0 },
+            "/":          { row: 6, bit: 7 },
+            "arrowup":    { row: 6, bit: 6 },
+            "=":          { row: 6, bit: 5 },
+            "shiftright": { row: 6, bit: 4 },
+            "home":       { row: 6, bit: 3 },
+            ";":          { row: 6, bit: 2 },
+            "*":          { row: 6, bit: 1 },
+            "£":          { row: 6, bit: 0 },
+            "stop":       { row: 7, bit: 7 },
+            "q":          { row: 7, bit: 6 },
+            "arrowleft":  { row: 7, bit: 5 },
+            " ":          { row: 7, bit: 4 },
+            "2":          { row: 7, bit: 3 },
+            "control":    { row: 7, bit: 2 },
+            "1":          { row: 7, bit: 1 },
+            "escape":     { row: 7, bit: 0 }
+        };
+
+        window.addEventListener("keydown", async (e) => {
+            if (!cpuContract || !graphicsContract || !musicContract) return;
+
+            if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT")) {
+                return;
+            }
+
+            // Keyboard matrix mapping check (non-blocking async poke)
+            const keyLower = e.key.toLowerCase();
+            const map = keyMatrixMap[keyLower];
+            if (map) {
+                rowStates[map.row] &= ~(1 << map.bit);
+                try {
+                    cpuContract.poke(56350 + map.row, rowStates[map.row]);
+                } catch (err) {}
+            }
+
+            let joystick = 0xFF; 
+            let moved = false;
+
+            if (e.key === "ArrowLeft" || e.key === "a") {
+                joystick = joystick & ~0x04; 
+                playSynthTone(180, 150);
+                pokeSIDFreq(1800, 0x21);
+                moved = true;
+                interactiveKeys.left = true;
+            } else if (e.key === "ArrowRight" || e.key === "d") {
+                joystick = joystick & ~0x08; 
+                playSynthTone(180, 150);
+                pokeSIDFreq(1800, 0x21);
+                moved = true;
+                interactiveKeys.right = true;
+            } else if (e.key === "ArrowUp" || e.key === "w") {
+                joystick = joystick & ~0x01;
+                playSynthTone(220, 150);
+                moved = true;
+                interactiveKeys.up = true;
+            } else if (e.key === "ArrowDown" || e.key === "s") {
+                joystick = joystick & ~0x02;
+                playSynthTone(150, 150);
+                moved = true;
+                interactiveKeys.down = true;
+            } else if (e.key === "Enter") {
+                interactiveKeys.enter = true;
+                playSynthTone(320, 100);
+                moved = true;
+            } else if (e.key.toLowerCase() === "c") {
+                interactiveKeys.c = true;
+                moved = true;
+            } else if (e.key === "Tab") {
+                e.preventDefault();
+                interactiveKeys.tab = true;
+                moved = true;
+            } else if (e.key === " " || e.key === "Spacebar") {
+                e.preventDefault();
+                joystick = joystick & ~0x10; 
+                playLaserSweep();
+                pokeSIDFreq(6000, 0x11);
+                moved = true;
+                interactiveKeys.fire = true;
+            }
+
+            if (moved) {
+                try {
+                    cpuContract.poke(56320, joystick);
+                } catch (err) {
+                    console.error("Joystick poke failed:", err);
+                }
+            }
+        });
+
+        window.addEventListener("keyup", async (e) => {
+            if (!cpuContract) return;
+
+            const keyLower = e.key.toLowerCase();
+            const map = keyMatrixMap[keyLower];
+            if (map) {
+                rowStates[map.row] |= (1 << map.bit);
+                try {
+                    cpuContract.poke(56350 + map.row, rowStates[map.row]);
+                } catch (err) {}
+            }
+
+            if (e.key === "ArrowLeft" || e.key === "a") {
+                interactiveKeys.left = false;
+            } else if (e.key === "ArrowRight" || e.key === "d") {
+                interactiveKeys.right = false;
+            } else if (e.key === "ArrowUp" || e.key === "w") {
+                interactiveKeys.up = false;
+            } else if (e.key === "ArrowDown" || e.key === "s") {
+                interactiveKeys.down = false;
+            } else if (e.key === "Enter") {
+                interactiveKeys.enter = false;
+            } else if (e.key.toLowerCase() === "c") {
+                interactiveKeys.c = false;
+            } else if (e.key === "Tab") {
+                interactiveKeys.tab = false;
+            } else if (e.key === " " || e.key === "Spacebar") {
+                interactiveKeys.fire = false;
+            }
+
+            if (["ArrowLeft", "a", "ArrowRight", "d", "ArrowUp", "w", "ArrowDown", "s", " ", "Spacebar"].includes(e.key)) {
+                try {
+                    cpuContract.poke(56320, 0xFF);
+                } catch (err) {}
+            }
+        });
+
+        function playSynthTone(freqHz, durationMs) {
+            if (isAudioPlaying && audioCtx) {
+                try {
+                    let osc = audioCtx.createOscillator();
+                    let gainNode = audioCtx.createGain();
+                    osc.type = "sawtooth";
+                    osc.frequency.setValueAtTime(freqHz, audioCtx.currentTime);
+                    gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + durationMs/1000);
+                    osc.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + durationMs/1000);
+                } catch (e) {}
+            }
+        }
+
+        function playLaserSweep() {
+            if (isAudioPlaying && audioCtx) {
+                try {
+                    let osc = audioCtx.createOscillator();
+                    let gainNode = audioCtx.createGain();
+                    osc.type = "triangle";
+                    osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.3);
+                    gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                    osc.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.3);
+                } catch (e) {}
+            }
+        }
+
+        async function pokeSIDFreq(freqVal, controlVal = 0x21) {
+            try {
+                const lo = freqVal & 0xFF;
+                const hi = (freqVal >> 8) & 0xFF;
+                await musicContract.poke(54272, lo);
+                await musicContract.poke(54273, hi);
+                await musicContract.poke(54276, controlVal);
+            } catch (err) {
+                console.error("SID poke failed:", err);
+            }
+        }
+
+        function freqToNote(freqHz) {
+            if (!freqHz || freqHz <= 0) return "---";
+            const notes = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"];
+            const n = Math.round(12 * Math.log2(freqHz / 440));
+            const noteIndex = ((n % 12) + 12) % 12;
+            const noteName = notes[noteIndex];
+            const octave = Math.floor((n + 9) / 12) + 4;
+            return `${noteName}${octave}`;
+        }
+
+        // Drawing & Sound Loop
+        const canvas = document.getElementById("c64Screen");
+        const ctx = canvas.getContext("2d");
+
+        // Architectural improvement: Interlace rendering buffers for C64 soft-interlacing modes
+        let interlaceBuffer = null;
+        let isEvenFrame = true;
+
+        // Interactive control variables for playable games
+        const interactiveKeys = {
+            left: false,
+            right: false,
+            up: false,
+            down: false,
+            fire: false
+        };
+
+        async function startSimulationLoops() {
+            async function simStep() {
+                if (window.isSimulating) return;
+                window.isSimulating = true;
+                const startTime = performance.now();
+                try {
+                if (!provider) return;
+
+                if (isDemoModeActive && cpuContract) {
+                    demoTimer++;
+                    if (demoTimer >= 50) {
+                        demoTimer = 0;
+                        demoGameIdx = (demoGameIdx + 1) % demoGameSequence.length;
+                        const nextGame = demoGameSequence[demoGameIdx];
+                        document.getElementById("selectGame").value = nextGame;
+                        console.log("Demo cycling to next game:", nextGame);
+                        loadGame(nextGame).catch(err => console.error("Demo load failed:", err));
+                    } else {
+                        const rnd = Math.random();
+                        let joystick = 0xFF;
+                        if (rnd < 0.25) {
+                            joystick &= ~0x04; // Left
+                            pokeSIDFreq(1800, 0x21);
+                        } else if (rnd < 0.50) {
+                            joystick &= ~0x08; // Right
+                            pokeSIDFreq(1800, 0x21);
+                        } else if (rnd < 0.70) {
+                            joystick &= ~0x10; // Fire
+                            pokeSIDFreq(6000, 0x11);
+                        }
+                        try {
+                            await cpuContract.poke(56320, joystick);
+                        } catch (e) {}
+                    }
+                }
+
+                // 1. Fetch CPU state
+                if (cpuContract) {
+                    try {
+                        const bankSelect = document.querySelector(".regBankSelect");
+                        const bankId = bankSelect ? Number(bankSelect.value) : 0;
+                        const state = bankId === 1 ? await cpuContract.getCPUStateBank(1) : await cpuContract.getCPUState();
+                        
+                        document.querySelectorAll("#regA").forEach(el => el.innerText = Number(state[0]).toString(16).toUpperCase().padStart(2, '0'));
+                        document.querySelectorAll("#regX").forEach(el => el.innerText = Number(state[1]).toString(16).toUpperCase().padStart(2, '0'));
+                        document.querySelectorAll("#regY").forEach(el => el.innerText = Number(state[2]).toString(16).toUpperCase().padStart(2, '0'));
+                        document.querySelectorAll("#regSR").forEach(el => el.innerText = Number(state[3]).toString(16).toUpperCase().padStart(2, '0'));
+                        document.querySelectorAll("#regSP").forEach(el => el.innerText = Number(state[4]).toString(16).toUpperCase().padStart(2, '0'));
+                        document.querySelectorAll("#regPC").forEach(el => el.innerText = Number(state[5]).toString(16).toUpperCase().padStart(4, '0'));
+                    } catch (err) {
+                        console.error("Error fetching CPU state:", err);
+                    }
+                }
+
+                // 2. Fetch Music frequency & modulate synth pitch
+                if (musicContract) {
+                    try {
+                        const state = await musicContract.getSIDState();
+                        
+                        const v1_freq = (Number(state[1]) << 8) | Number(state[0]);
+                        const v1_ctrl = Number(state[4]);
+                        const v1_ad = Number(state[5]);
+                        const v1_sr = Number(state[6]);
+                        
+                        const v2_freq = (Number(state[8]) << 8) | Number(state[7]);
+                        const v2_ctrl = Number(state[11]);
+                        const v2_ad = Number(state[12]);
+                        const v2_sr = Number(state[13]);
+                        
+                        const v3_freq = (Number(state[15]) << 8) | Number(state[14]);
+                        const v3_ctrl = Number(state[18]);
+                        const v3_ad = Number(state[19]);
+                        const v3_sr = Number(state[20]);
+
+                        const v1Hz = Math.round(v1_freq * 0.06097);
+                        const v2Hz = Math.round(v2_freq * 0.06097);
+                        const v3Hz = Math.round(v3_freq * 0.06097);
+
+                        document.getElementById("v1FreqText").innerText = v1Hz + " Hz";
+                        document.getElementById("v2FreqText").innerText = v2Hz + " Hz";
+                        document.getElementById("v3FreqText").innerText = v3Hz + " Hz";
+
+                        document.getElementById("v1NoteText").innerText = freqToNote(v1Hz);
+                        document.getElementById("v2NoteText").innerText = freqToNote(v2Hz);
+                        document.getElementById("v3NoteText").innerText = freqToNote(v3Hz);
+
+                        // Draw real-time oscilloscope waveform on canvas
+                        const oscCanvas = document.getElementById("oscCanvas");
+                        if (oscCanvas) {
+                            const oCtx = oscCanvas.getContext("2d");
+                            oCtx.fillStyle = "#050510";
+                            oCtx.fillRect(0, 0, oscCanvas.width, oscCanvas.height);
+                            
+                            // Render synthesized trace line based on active frequencies
+                            oCtx.beginPath();
+                            oCtx.lineWidth = 2;
+                            oCtx.strokeStyle = "#ff007f";
+                            oCtx.shadowColor = "#ff007f";
+                            oCtx.shadowBlur = 8;
+                            
+                            const samples = oscCanvas.width;
+                            const h = oscCanvas.height;
+                            const baseFreq = v1Hz || v2Hz || v3Hz || 100;
+                            
+                            for (let x = 0; x < samples; x++) {
+                                let y = h / 2;
+                                if (v1Hz || v2Hz || v3Hz) {
+                                    // Combine active voice waves
+                                    let val = 0;
+                                    if (v1Hz > 0) val += Math.sin((x * v1Hz * Math.PI) / 8000);
+                                    if (v2Hz > 0) val += Math.sin((x * v2Hz * Math.PI) / 8000);
+                                    if (v3Hz > 0) val += 0.5 * (Math.random() - 0.5); // noise/arp
+                                    y += val * (h / 3);
+                                } else {
+                                    // Flat line with subtle hum
+                                    y += Math.sin(x * 0.1) * 2;
+                                }
+                                if (x === 0) oCtx.moveTo(x, y);
+                                else oCtx.lineTo(x, y);
+                            }
+                            oCtx.stroke();
+                            oCtx.shadowBlur = 0;
+
+                            // Render LFO (low-frequency oscillator) secondary modulation wave overlay
+                            const lfoToggle = document.getElementById("lfoToggle");
+                            if (lfoToggle && lfoToggle.value === "on") {
+                                const lfoRate = parseFloat(document.getElementById("lfoRate").value) || 4;
+                                const lfoDepth = parseFloat(document.getElementById("lfoDepth").value) || 0.5;
+                                oCtx.beginPath();
+                                oCtx.lineWidth = 1;
+                                oCtx.strokeStyle = "rgba(0, 242, 254, 0.4)";
+                                for (let x = 0; x < samples; x++) {
+                                    const lfoY = (h / 2) + Math.sin((x * lfoRate * Math.PI) / 100) * (h / 4) * lfoDepth;
+                                    if (x === 0) oCtx.moveTo(x, lfoY);
+                                    else oCtx.lineTo(x, lfoY);
+                                }
+                                oCtx.stroke();
+                            }
+                        }
+
+                        // Update Live SID registers state elements in DOM
+                        const toHex = (val) => "$" + (val || 0).toString(16).toUpperCase().padStart(2, "0");
+                        document.getElementById("regV1Freq").innerText = `${toHex(v1_freq & 0xFF)} / ${toHex((v1_freq >> 8) & 0xFF)}`;
+                        document.getElementById("regV1Ctrl").innerText = toHex(v1_ctrl);
+                        document.getElementById("regV1AD").innerText = toHex(v1_ad);
+                        document.getElementById("regV1SR").innerText = toHex(v1_sr);
+
+                        document.getElementById("regV2Freq").innerText = `${toHex(v2_freq & 0xFF)} / ${toHex((v2_freq >> 8) & 0xFF)}`;
+                        document.getElementById("regV2Ctrl").innerText = toHex(v2_ctrl);
+                        document.getElementById("regV2AD").innerText = toHex(v2_ad);
+                        document.getElementById("regV2SR").innerText = toHex(v2_sr);
+
+                        document.getElementById("regV3Freq").innerText = `${toHex(v3_freq & 0xFF)} / ${toHex((v3_freq >> 8) & 0xFF)}`;
+                        document.getElementById("regV3Ctrl").innerText = toHex(v3_ctrl);
+                        document.getElementById("regV3AD").innerText = toHex(v3_ad);
+                        document.getElementById("regV3SR").innerText = toHex(v3_sr);
+
+                        if (isAudioPlaying && voices.length === 3) {
+                            voices[0].update(v1_freq, v1_ctrl, v1_ad, v1_sr);
+                            voices[1].update(v2_freq, v2_ctrl, v2_ad, v2_sr);
+                            voices[2].update(v3_freq, v3_ctrl, v3_ad, v3_sr);
+                        }
+                    } catch (err) {
+                        console.error("Error fetching music frequency:", err);
+                    }
+                }
+
+                // 3. Process 6502 Space Invaders physics tick & sync coordinates
+                if (graphicsContract && cpuContract) {
+                    try {
+                        // 3a & 3b. Batch poke current collision mask & runSteps in a single non-blocking transaction
+                        if (batcherContract) {
+                            const targets = [cpuContract.target, cpuContract.target];
+                            const datas = [
+                                cpuContract.interface.encodeFunctionData("poke", [53278, currentCollisionMask]),
+                                cpuContract.interface.encodeFunctionData("runSteps", [120])
+                            ];
+                            lastPokedCollisionMask = currentCollisionMask;
+                            batcherContract.batchCall(targets, datas, { nonce: datamostNonce++ }).catch(e => {
+                                console.warn("Batch simulation tick failed:", e.message);
+                            });
+                        } else {
+                            if (currentCollisionMask !== lastPokedCollisionMask) {
+                                cpuContract.poke(53278, currentCollisionMask, { nonce: datamostNonce++ }).catch(() => {});
+                                lastPokedCollisionMask = currentCollisionMask;
+                            }
+                            cpuContract.runSteps(120, { nonce: datamostNonce++ }).catch(() => {});
+                        }
+
+                        // 3c. Peek updated sprite coordinates
+                        const spr0_x = Number(await cpuContract.peek(0xd000));
+                        const spr0_y = Number(await cpuContract.peek(0xd001));
+                        const spr1_x = Number(await cpuContract.peek(0xd002));
+                        const spr1_y = Number(await cpuContract.peek(0xd003));
+                        const spr2_x = Number(await cpuContract.peek(0xd004));
+                        const spr2_y = Number(await cpuContract.peek(0xd005));
+                        const spr3_x = Number(await cpuContract.peek(0xd006));
+                        const spr3_y = Number(await cpuContract.peek(0xd007));
+                        const spr0_z = Number(await cpuContract.peek(53279)) || 0;
+                        const spr1_z = Number(await cpuContract.peek(53280)) || 0;
+                        const spr2_z = Number(await cpuContract.peek(53281)) || 0;
+                        const spr3_z = Number(await cpuContract.peek(53282)) || 0;
+                        window.s0_z = spr0_z;
+                        window.s1_z = spr1_z;
+                        window.s2_z = spr2_z;
+                        window.s3_z = spr3_z;
+                        window.s3_x = spr3_x;
+                        window.s3_y = spr3_y;
+
+                        // Modern hardware audio/shimmer register extensions
+                        const val2B = Number(await cpuContract.peek(53291)) || 0;
+                        const val2C = Number(await cpuContract.peek(53292)) || 0;
+                        if (val2B > 0) {
+                            if (window.playSynthTone) playSynthTone(val2B * 10, 150);
+                            cpuContract.poke(53291, 0, { nonce: datamostNonce++ }).catch(() => {});
+                        }
+                        if (val2C > 0) {
+                            window.omegaShake = val2C;
+                            cpuContract.poke(53292, 0, { nonce: datamostNonce++ }).catch(() => {});
+                        }
+
+                        s0_x = spr0_x;
+                        s0_y = spr0_y;
+                        s1_x = spr1_x;
+                        s1_y = spr1_y;
+                        s2_x = spr2_x;
+                        s2_y = spr2_y;
+
+                        // 3d. Update on-chain graphics system coordinates asynchronously if they shifted
+                        if (s0_x !== last_s0_x || s0_y !== last_s0_y) {
+                            graphicsContract.updateSprite(0, s0_x, s0_y, { nonce: datamostNonce++ }).catch(() => {});
+                            last_s0_x = s0_x;
+                            last_s0_y = s0_y;
+                        }
+                        if (s1_x !== last_s1_x || s1_y !== last_s1_y) {
+                            graphicsContract.updateSprite(1, s1_x, s1_y, { nonce: datamostNonce++ }).catch(() => {});
+                            last_s1_x = s1_x;
+                            last_s1_y = s1_y;
+                        }
+                        if (s2_x !== last_s2_x || s2_y !== last_s2_y) {
+                            graphicsContract.updateSprite(2, s2_x, s2_y, { nonce: datamostNonce++ }).catch(() => {});
+                            last_s2_x = s2_x;
+                            last_s2_y = s2_y;
+                        }
+
+                        // 3e. Compute next collision mask using local JS check (VIC-II 24x21 overlaps)
+                        let collisionMask = 0;
+                        const checkOverlap = (x1, y1, x2, y2) => {
+                            return Math.abs(x1 - x2) < 24 && Math.abs(y1 - y2) < 21;
+                        };
+                        if (checkOverlap(s0_x, s0_y, s1_x, s1_y)) collisionMask |= 3; // Sprite 0 & 1
+                        if (checkOverlap(s0_x, s0_y, s2_x, s2_y)) collisionMask |= 5; // Sprite 0 & 2
+                        if (checkOverlap(s1_x, s1_y, s2_x, s2_y)) collisionMask |= 6; // Sprite 1 & 2
+
+                        if (window.currentGame === "gorf" || (typeof activeGameName !== "undefined" && activeGameName.includes("Gorf"))) {
+                            const checkPolygonCollision = (px, py, vertices, threshold) => {
+                                for (let i = 0; i < vertices.length - 1; i++) {
+                                    const ax = vertices[i][0];
+                                    const ay = vertices[i][1];
+                                    const bx = vertices[i+1][0];
+                                    const by = vertices[i+1][1];
+                                    const abx = bx - ax;
+                                    const aby = by - ay;
+                                    const apx = px - ax;
+                                    const apy = py - ay;
+                                    const ab2 = abx * abx + aby * aby;
+                                    let t = 0.0;
+                                    if (ab2 > 0) {
+                                        t = (apx * abx + apy * aby) / ab2;
+                                        t = Math.max(0.0, Math.min(1.0, t));
+                                    }
+                                    const closestX = ax + t * abx;
+                                    const closestY = ay + t * aby;
+                                    const dist2 = (px - closestX) * (px - closestX) + (py - closestY) * (py - closestY);
+                                    if (dist2 < threshold * threshold) return true;
+                                }
+                                return false;
+                            };
+
+                            const getGorfStarBaseProjectedPoints = (x, y, t_secs, state) => {
+                                const mappedX = (x % 320);
+                                const mappedY = (y % 200);
+                                const shape_verts = getGorfStarBaseShape(t_secs, state);
+                                const yaw = t_secs * 0.4;
+                                const pitch = 0.3;
+                                const proj_points = [];
+                                const cos_y = Math.cos(yaw), sin_y = Math.sin(yaw);
+                                const cos_p = Math.cos(pitch), sin_p = Math.sin(pitch);
+                                for (let i = 0; i < shape_verts.length; i++) {
+                                    const [vx, vy, vz] = shape_verts[i];
+                                    const rx = vx * cos_y - vy * sin_y;
+                                    const ry = vx * sin_y + vy * cos_y;
+                                    const rz = vz;
+                                    const x_new = rx * cos_p + rz * sin_p;
+                                    const px = x_new + mappedX + 12;
+                                    const py = ry + mappedY + 10;
+                                    proj_points.push([px, py]);
+                                }
+                                return proj_points;
+                            };
+
+                            const state = (window.liveQuaternionData && window.liveQuaternionData.LAUs && window.liveQuaternionData.LAUs[0]) || {
+                                Manifold: 546174312197144,
+                                Channel: 779859001551596,
+                                Dynamo: 58333592128473,
+                                Foundation: 505921226463547,
+                                Base: 196811331987337,
+                                Signal: 512736817632179,
+                                Secret: 481588919265707,
+                                Identity: 341042560473881
+                            };
+                            const t_secs = Date.now() / 1000;
+                            const s3_x = typeof window.s3_x !== "undefined" ? window.s3_x : 160;
+                            const s3_y = typeof window.s3_y !== "undefined" ? window.s3_y : 120;
+                            const pts = getGorfStarBaseProjectedPoints(s3_x, s3_y, t_secs, state);
+
+                            if (checkPolygonCollision(s0_x + 12, s0_y + 10, pts, 12)) collisionMask |= 9;
+                            if (checkPolygonCollision(s1_x + 12, s1_y + 10, pts, 10)) collisionMask |= 10;
+                            if (checkPolygonCollision(s2_x + 12, s2_y + 10, pts, 10)) collisionMask |= 12;
+                        }
+
+                        currentCollisionMask = collisionMask;
+                        const isCollision = (collisionMask & 6) === 6 || (window.currentGame === "gorf" && (collisionMask & 10) === 10);
+
+                        // Fetch border and background color registers (53280 and 53281)
+                        const borderVal = Number(await cpuContract.peek(0xd020)) & 0xF;
+                        const bgVal = Number(await cpuContract.peek(0xd021)) & 0xF;
+                        const borderHex = c64Palette[borderVal] || c64Palette[14];
+                        const bgHex = c64Palette[bgVal] || c64Palette[6];
+
+                        // Fetch Screen RAM and Color RAM
+                        let screenRam = new Uint8Array(1000);
+                        let colorRam = new Uint8Array(1000);
+                        try {
+                            const screenHex = await cpuContract.getScreenRAM();
+                            const colorHex = await cpuContract.getColorRAM();
+                            screenRam = ethers.getBytes(screenHex);
+                            colorRam = ethers.getBytes(colorHex);
+                        } catch (e) {}
+
+                        const score = Number(await cpuContract.peek(4));
+                        // WinchesterMQ SCSI Handshake state machine emulation
+                        window.yulStorage = window.yulStorage || { 100: 0, 101: 0, 102: 0, 105: 0 };
+                        if (window.yulStorage[101] !== score) {
+                            window.yulStorage[101] = score;
+                            window.yulStorage[100] = 1; // REQ
+                        }
+                        if (window.yulStorage[100] === 1) {
+                            window.yulStorage[100] = 2; // ACK
+                            window.yulStorage[105]++;   // Increment SCSI loopback count
+                            window.yulStorage[100] = 0; // Return to IDLE
+                        }
+
+                        const colStatusText = document.querySelectorAll("#collisionStatus")[0];
+                        if (colStatusText) {
+                            colStatusText.innerText = `SCORE: ${score} | Collision Mask: ${collisionMask} | WMQ SCSI Phase: ${window.yulStorage[100]} | Latch: ${window.yulStorage[101]} | Tx Count: ${window.yulStorage[105]}`;
+                            if (isCollision) {
+                                colStatusText.style.color = "var(--neon-magenta)";
+                                playSynthTone(100, 500); 
+                                pokeSIDFreq(1000, 0x21);
+                            } else {
+                                colStatusText.style.color = "var(--neon-blue)";
+                            }
+                        }
+
+                        drawScreen(s0_x, s0_y, s1_x, s1_y, s2_x, s2_y, isCollision, borderHex, bgHex, screenRam, colorRam);
+
+                        // Architectural improvement: Apply soft-interlace blending filter (blends current and previous frame buffers)
+                        try {
+                            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                            if (!interlaceBuffer || interlaceBuffer.width !== imgData.width || interlaceBuffer.height !== imgData.height) {
+                                interlaceBuffer = ctx.createImageData(canvas.width, canvas.height);
+                                interlaceBuffer.data.set(imgData.data);
+                            }
+                            
+                            const src = imgData.data;
+                            const prev = interlaceBuffer.data;
+                            
+                            // Iterate lines: alternate scanlines or blend buffers to simulate phosphor persistence / interlacing
+                            for (let idx = 0; idx < src.length; idx += 4) {
+                                const row = Math.floor((idx / 4) / canvas.width);
+                                const isTargetRow = (row % 2 === 0) === isEvenFrame;
+                                
+                                if (!isTargetRow) {
+                                    // Blend 50/50 with the previous frame's row to simulate phosphor delay
+                                    src[idx]     = Math.round((src[idx]     + prev[idx])     / 2); // R
+                                    src[idx + 1] = Math.round((src[idx + 1] + prev[idx + 1]) / 2); // G
+                                    src[idx + 2] = Math.round((src[idx + 2] + prev[idx + 2]) / 2); // B
+                                }
+                            }
+                            ctx.putImageData(imgData, 0, 0);
+                            interlaceBuffer.data.set(src); // Save current as reference for next frame
+                            isEvenFrame = !isEvenFrame;
+                        } catch (interlaceErr) {
+                            console.warn("Soft-interlace filter failed:", interlaceErr.message);
+                        }
+
+                        if (isDemoModeActive) {
+                            ctx.fillStyle = "rgba(255, 0, 127, 0.9)";
+                            ctx.font = "bold 9px 'Orbitron', sans-serif";
+                            ctx.textAlign = "right";
+                            if (Math.floor(Date.now() / 500) % 2 === 0) {
+                                ctx.fillText("● DEMO MODE ACTIVE", canvas.width - 15, 20);
+                            }
+                        }
+                    } catch (err) {
+                        console.error("Graphics physics tick error:", err);
+                    }
+                }
+
+                // 4. Fetch speech & audio states (Votrax, TI TMS5220, Tymac SID)
+                const selectedEngine = document.getElementById("selectSpeechEngine").value;
+                if (speechContract) {
+                    try {
+                        // Votrax state polling
+                        const state = await speechContract.getSpeechState();
+                        const phonemeCode = Number(state[0]);
+                        const inflection = Number(state[1]);
+                        const busy = Number(state[2]);
+                        const counter = Number(state[3]);
+
+                        const label = phonemeNames[phonemeCode] || "PA0";
+                        document.getElementById("voicePhonemeText").innerText = `${label} (${phonemeCode})`;
+                        document.getElementById("voiceInflectionText").innerText = inflection;
+
+                        if (selectedEngine === "votrax" && counter !== lastSpeechCounter) {
+                            lastSpeechCounter = counter;
+                            playPhoneme(phonemeCode, inflection);
+                        }
+                        
+                        // TI TMS5220 state polling
+                        const tmsState = await speechContract.getTMS5220State();
+                        const tmsCmd = Number(tmsState[0]);
+                        const tmsStatus = Number(tmsState[1]);
+                        const tmsFifoLen = Number(tmsState[2]);
+                        
+                        document.getElementById("tiCommandText").innerText = "0x" + tmsCmd.toString(16).toUpperCase();
+                        document.getElementById("tiFifoText").innerText = tmsFifoLen;
+                        
+                        if (selectedEngine === "ti_tms5220") {
+                            const led = document.getElementById("voiceStatusLED");
+                            const ledText = document.getElementById("voiceStatusText");
+                            const isBusy = (tmsStatus & 0x80) !== 0;
+                            if (led && ledText) {
+                                if (isBusy) {
+                                    led.style.background = "#ff007f";
+                                    led.style.boxShadow = "0 0 8px #ff007f";
+                                    ledText.innerText = "BUSY";
+                                    ledText.style.color = "#ff007f";
+                                    
+                                    const mouth = document.getElementById("voiceBoxMouth");
+                                    if (mouth) {
+                                        mouth.style.height = `${6 + (tmsFifoLen * 3)}px`;
+                                        mouth.style.borderRadius = "50%";
+                                    }
+                                } else {
+                                    led.style.background = "#39ff14";
+                                    led.style.boxShadow = "0 0 8px #39ff14";
+                                    ledText.innerText = "READY";
+                                    ledText.style.color = "#39ff14";
+                                    const mouth = document.getElementById("voiceBoxMouth");
+                                    if (mouth) {
+                                        mouth.style.height = "6px";
+                                        mouth.style.borderRadius = "4px";
+                                    }
+                                }
+                            }
+                        }
+                    } catch (err) {
+                        console.error("Error fetching speech state:", err);
+                    }
+                }
+
+                if (musicContract) {
+                    try {
+                        const vol = Number(await musicContract.peek(54296));
+                        document.getElementById("tymacVolumeText").innerText = vol;
+                        const volts = (vol * 5.0 / 15.0).toFixed(2);
+                        document.getElementById("tymacDacText").innerText = `${volts} V`;
+
+                        if (selectedEngine === "tymac_sid") {
+                            const led = document.getElementById("voiceStatusLED");
+                            const ledText = document.getElementById("voiceStatusText");
+                            if (led && ledText) {
+                                if (vol > 0) {
+                                    led.style.background = "#ff00ff";
+                                    led.style.boxShadow = "0 0 8px #ff00ff";
+                                    ledText.innerText = "DAC ACTIVE";
+                                    ledText.style.color = "#ff00ff";
+                                    
+                                    const mouth = document.getElementById("voiceBoxMouth");
+                                    if (mouth) {
+                                        mouth.style.height = `${4 + vol}px`;
+                                        mouth.style.borderRadius = "50%";
+                                    }
+                                } else {
+                                    led.style.background = "#39ff14";
+                                    led.style.boxShadow = "0 0 8px #39ff14";
+                                    ledText.innerText = "READY";
+                                    ledText.style.color = "#39ff14";
+                                    const mouth = document.getElementById("voiceBoxMouth");
+                                    if (mouth) {
+                                        mouth.style.height = "6px";
+                                        mouth.style.borderRadius = "4px";
+                                    }
+                                }
+                            }
+                        }
+
+                        // Access RealSound polling (port 97)
+                        const realVal = Number(await musicContract.peek(97));
+                        document.getElementById("pitSpeakerText").innerText = "0x" + realVal.toString(16).toUpperCase();
+                        document.getElementById("pitDacText").innerText = realVal;
+
+                        if (selectedEngine === "access_realsound") {
+                            const led = document.getElementById("voiceStatusLED");
+                            const ledText = document.getElementById("voiceStatusText");
+                            if (led && ledText) {
+                                if (realVal > 0) {
+                                    led.style.background = "#ffa500";
+                                    led.style.boxShadow = "0 0 8px #ffa500";
+                                    ledText.innerText = "PWM ACTIVE";
+                                    ledText.style.color = "#ffa500";
+                                    
+                                    const mouth = document.getElementById("voiceBoxMouth");
+                                    if (mouth) {
+                                        mouth.style.height = `${4 + Math.floor(realVal / 3)}px`;
+                                        mouth.style.borderRadius = "50%";
+                                    }
+                                } else {
+                                    led.style.background = "#39ff14";
+                                    led.style.boxShadow = "0 0 8px #39ff14";
+                                    ledText.innerText = "READY";
+                                    ledText.style.color = "#39ff14";
+                                    const mouth = document.getElementById("voiceBoxMouth");
+                                    if (mouth) {
+                                        mouth.style.height = "6px";
+                                        mouth.style.borderRadius = "4px";
+                                    }
+                                }
+                            }
+                        }
+                    } catch (err) {}
+                }
+
+                updateVulkanScreen();
+                            } catch (err) {
+                    console.error("Simulation loop error:", err);
+                } finally {
+                    window.isSimulating = false;
+                    const elapsed = performance.now() - startTime;
+                    const nextDelay = Math.max(0, (window.simulationIntervalSpeed || 30) - elapsed);
+                    setTimeout(simStep, nextDelay);
+                }
+            }
+            simStep();
+
+            // Poll Tax & Security dashboard every 2 seconds
+            setInterval(updateTaxAndSecurityDashboard, 2000);
+            updateTaxAndSecurityDashboard(); // Initial call
+        }
+
+        const phonemeNames = [
+            "EH3", "EH2", "EH1", "PA0", "DT", "A2", "A1", "ZH",
+            "AH2", "I3", "I2", "I1", "M", "N", "B", "V",
+            "CH", "SH", "Z", "AW2", "NG", "AH1", "OO1", "OO",
+            "L", "K", "J", "H", "G", "F", "D", "S",
+            "A", "AY", "Y1", "UH3", "UH2", "UH1", "O", "OU",
+            "AST", "OT", "EL", "Y", "UR", "ER", "R", "THR",
+            "TH", "T", "P", "THV", "KAE", "JK", "PA1", "UN",
+            "AST2", "AW1", "E1", "E2", "VO", "AST3", "AST4", "AST5"
+        ];
+
+        const wordsPhonemes = {
+            "HELLO": ["H", "EH1", "L", "OU"],
+            "COMMODORE": ["K", "A", "M", "O", "D", "OU", "R"],
+            "COMPUTER": ["K", "A", "M", "P", "Y1", "OO1", "T", "ER"],
+            "PLAY": ["P", "L", "AY"],
+            "GAME": ["G", "AY", "M"],
+            "ALIEN": ["AY", "L", "Y1", "UN"],
+            "AHOY": ["AH1", "H", "OY"],
+            "RETRO": ["R", "EH1", "T", "R", "O"],
+            "SOUND": ["S", "AW1", "UN", "D"],
+            "ON": ["O", "N"],
+            "CHAIN": ["CH", "AY", "N"],
+            "ANOTHER": ["UH3", "N", "UH2", "THR", "ER"],
+            "VISITOR": ["V", "I2", "Z", "I1", "T", "ER"],
+            "STAY": ["S", "T", "AY"],
+            "WHILE": ["OO1", "AH1", "Y", "L"],
+            "FOREVER": ["F", "ER", "EH1", "V", "ER"],
+            "GORF": ["G", "AW2", "O", "R", "F"],
+            "GORFIAN": ["G", "AW2", "O", "R", "F", "E1", "Y1", "UN"],
+            "EMPIRE": ["EH1", "M", "P", "AY", "R"],
+            "STRIKES": ["S", "T", "R", "AY", "K", "S"],
+            "BACK": ["B", "KAE", "K"],
+            "PREPARE": ["P", "R", "E1", "P", "EH1", "R"],
+            "FOR": ["F", "O", "UR"],
+            "DOOM": ["D", "OO1", "OO", "M"],
+            "SPACE": ["S", "P", "AY", "S"],
+            "CADET": ["K", "UH2", "D", "EH1", "T"],
+            "MY": ["M", "AY"],
+            "NAME": ["N", "AY", "M"],
+            "IS": ["I1", "Z"],
+            "YOU": ["Y1", "OO1", "OO"],
+            "ARE": ["AH1", "R"],
+            "CONQUERED": ["K", "AH1", "NG", "K", "ER", "D"],
+            "ROBOT": ["R", "OU", "B", "AH2", "T"],
+            "SUPREME": ["S", "Y1", "OO1", "P", "R", "E1", "M"],
+            "LONG": ["L", "AW1", "NG"],
+            "LIVE": ["L", "I1", "V"],
+            "ARMY": ["AH1", "R", "M", "E1"],
+            "CADETS": ["K", "UH2", "D", "EH1", "T", "S"],
+            "EMPEROR": ["EH1", "M", "P", "ER", "ER"]
+        };
+
+        const phonemeToCode = {};
+        phonemeNames.forEach((name, idx) => {
+            phonemeToCode[name] = idx;
+        });
+
+        const letterToPhonemes = {
+            "A": ["AY"], "B": ["B"], "C": ["S", "E1"], "D": ["D"], "E": ["E1"],
+            "F": ["F"], "G": ["G"], "H": ["H"], "I": ["AY"], "J": ["J"],
+            "K": ["K"], "L": ["L"], "M": ["M"], "N": ["N"], "O": ["O"],
+            "P": ["P"], "Q": ["K"], "R": ["R"], "S": ["S"], "T": ["T"],
+            "U": ["Y1", "OO1"], "V": ["V"], "W": ["OO1"], "X": ["K", "S"],
+            "Y": ["AY"], "Z": ["Z"], " ": ["PA0"]
+        };
+
+        // Dialect-specific G2P Rule Sets mapping
+        const dialectRules = {
+            "mandarin_pinyin": [
+                { pat: "ZHONG", ph: ["J", "OO1", "NG"] },
+                { pat: "SHEN", ph: ["SH", "UH1", "N"] },
+                { pat: "WEN", ph: ["OO1", "UH1", "N"] },
+                { pat: "HAO", ph: ["H", "AW1"] },
+                { pat: "HAN", ph: ["H", "A2", "N"] },
+                { pat: "ZH", ph: ["J"] },
+                { pat: "CH", ph: ["CH"] },
+                { pat: "SH", ph: ["SH"] },
+                { pat: "SHI", ph: ["SH", "UR"] },
+                { pat: "CHI", ph: ["CH", "UR"] },
+                { pat: "ZHI", ph: ["J", "UR"] },
+                { pat: "YI", ph: ["E1", "E2"] },
+                { pat: "X", ph: ["SH"] },
+                { pat: "Q", ph: ["CH"] },
+                { pat: "J", ph: ["J"] },
+                { pat: "G", ph: ["G"] },
+                { pat: "K", ph: ["K"] },
+                { pat: "H", ph: ["H"] },
+                { pat: "I", ph: ["E1", "E2"] },
+                { pat: "U", ph: ["OO1", "OO"] },
+                { pat: "A", ph: ["AH1"] },
+                { pat: "O", ph: ["O"] },
+                { pat: "E", ph: ["UH2"] }
+            ],
+            "cantonese_jyutping": [
+                { pat: "GW", ph: ["G", "OO1"] },
+                { pat: "KW", ph: ["K", "OO1"] },
+                { pat: "NG", ph: ["NG"] },
+                { pat: "Z", ph: ["J"] },
+                { pat: "C", ph: ["CH"] },
+                { pat: "AA", ph: ["AH1", "AH2"] },
+                { pat: "OE", ph: ["UH1"] },
+                { pat: "EO", ph: ["UH1"] },
+                { pat: "Y", ph: ["Y1"] },
+                { pat: "J", ph: ["Y1"] },
+                { pat: "I", ph: ["E1"] },
+                { pat: "U", ph: ["OO1"] },
+                { pat: "A", ph: ["AH1"] }
+            ],
+            "korean_romanized": [
+                { pat: "YEONG", ph: ["Y1", "UH1", "NG"] },
+                { pat: "AN", ph: ["AH1", "N"] },
+                { pat: "NYEONG", ph: ["N", "Y1", "UH1", "NG"] },
+                { pat: "HA", ph: ["H", "AH1"] },
+                { pat: "SEO", ph: ["SH", "UH1"] },
+                { pat: "YO", ph: ["Y1", "O"] },
+                { pat: "CH", ph: ["CH"] },
+                { pat: "JJ", ph: ["J"] },
+                { pat: "GG", ph: ["G"] },
+                { pat: "DD", ph: ["D"] },
+                { pat: "AE", ph: ["EH1"] },
+                { pat: "EO", ph: ["UH1"] },
+                { pat: "EU", ph: ["UH3"] },
+                { pat: "UI", ph: ["UH3", "E1"] },
+                { pat: "NG", ph: ["NG"] },
+                { pat: "Y", ph: ["Y1"] },
+                { pat: "O", ph: ["O"] },
+                { pat: "U", ph: ["OO1"] },
+                { pat: "I", ph: ["E1"] }
+            ]
+        };
+
+        // Grapheme-to-Phoneme translation rule engine with Dialect mapping
+        function translateWordToPhonemes(word, dialect = "mandarin_pinyin") {
+            // Clean diacritics and normalize input
+            word = word.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+            word = word.replace(/[^A-Z]/g, "");
+            if (!word) return [];
+            if (wordsPhonemes[word]) return wordsPhonemes[word];
+
+            let phonemes = [];
+            let i = 0;
+            const rules = dialectRules[dialect] || dialectRules["mandarin_pinyin"];
+
+            while (i < word.length) {
+                let match = false;
+                for (let r of rules) {
+                    if (word.startsWith(r.pat, i)) {
+                        phonemes.push(...r.ph);
+                        i += r.pat.length;
+                        match = true;
+                        break;
+                    }
+                }
+                if (!match) {
+                    const char = word[i];
+                    phonemes.push(...(letterToPhonemes[char] || ["PA0"]));
+                    i++;
+                }
+            }
+            return phonemes;
+        }
+
+        function playTymacAudioSample(val) {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const volume = val / 15.0;
+            const osc = audioCtx.createOscillator();
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(220, now);
+            
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.setValueAtTime(volume * 0.15, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            osc.start(now);
+            osc.stop(now + 0.08);
+        }
+
+        function playTISpeechFrame(dataVal) {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            
+            const pitchCode = dataVal & 0x0F;
+            const freq = 80 + pitchCode * 12;
+            
+            const formantCode = (dataVal >> 4) & 0x0F;
+            const cutoff = 400 + formantCode * 250;
+            
+            const osc = audioCtx.createOscillator();
+            osc.type = "sawtooth";
+            osc.frequency.setValueAtTime(freq, now);
+            
+            const bandpass = audioCtx.createBiquadFilter();
+            bandpass.type = "bandpass";
+            bandpass.frequency.setValueAtTime(cutoff, now);
+            bandpass.Q.setValueAtTime(4, now);
+            
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.setValueAtTime(0.12, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+            
+            osc.connect(bandpass);
+            bandpass.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            osc.start(now);
+            osc.stop(now + 0.15);
+        }
+
+        function playRealSoundAudioSample(val) {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const volume = val / 63.0;
+            
+            const osc = audioCtx.createOscillator();
+            osc.type = "square";
+            osc.frequency.setValueAtTime(180, now);
+            
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.setValueAtTime(volume * 0.18, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            osc.start(now);
+            osc.stop(now + 0.08);
+        }
+
+        function playPhoneme(code, inflection) {
+            const label = phonemeNames[code] || "PA0";
+            const pText = document.getElementById("voicePhonemeText");
+            const iText = document.getElementById("voiceInflectionText");
+            if (pText) pText.innerText = `${label} (Code: ${code})`;
+            if (iText) iText.innerText = inflection;
+
+            const led = document.getElementById("voiceStatusLED");
+            const ledText = document.getElementById("voiceStatusText");
+            if (led) {
+                led.style.background = "#ff007f";
+                led.style.boxShadow = "0 0 8px #ff007f";
+            }
+            if (ledText) {
+                ledText.innerText = "BUSY";
+                ledText.style.color = "#ff007f";
+            }
+
+            const mouth = document.getElementById("voiceBoxMouth");
+            let mouthHeight = 4;
+            let isConsonant = false;
+            let isPause = false;
+
+            if (label.startsWith("PA")) {
+                isPause = true;
+                mouthHeight = 2;
+            } else if (["M", "N", "B", "V", "P", "F"].includes(label[0])) {
+                mouthHeight = 2;
+            } else if (["S", "Z", "SH", "ZH", "CH", "H", "K", "G", "T", "D"].includes(label.substring(0, 2)) || ["S", "Z", "H", "K", "G", "T", "D"].includes(label[0])) {
+                mouthHeight = 8;
+                isConsonant = true;
+            } else {
+                mouthHeight = 20;
+            }
+
+            if (mouth) {
+                mouth.style.height = `${mouthHeight}px`;
+                mouth.style.borderRadius = mouthHeight > 6 ? "50%" : "4px";
+            }
+
+            if (audioCtx && !isPause) {
+                const now = audioCtx.currentTime;
+                const duration = 0.16;
+                const basePitch = 90 + (inflection * 15);
+
+                if (isConsonant) {
+                    const bufferSize = audioCtx.sampleRate * duration;
+                    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) {
+                        data[i] = Math.random() * 2 - 1;
+                    }
+                    const noise = audioCtx.createBufferSource();
+                    noise.buffer = buffer;
+
+                    const filter = audioCtx.createBiquadFilter();
+                    filter.type = "bandpass";
+                    if (["S", "Z"].includes(label[0])) {
+                        filter.frequency.setValueAtTime(6000, now);
+                    } else if (["SH", "ZH", "CH"].includes(label.substring(0, 2))) {
+                        filter.frequency.setValueAtTime(3000, now);
+                    } else {
+                        filter.frequency.setValueAtTime(1500, now);
+                    }
+                    filter.Q.setValueAtTime(3, now);
+
+                    const gain = audioCtx.createGain();
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+                    noise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    noise.start(now);
+                    noise.stop(now + duration);
+                } else {
+                    const osc = audioCtx.createOscillator();
+                    osc.type = "sawtooth";
+                    osc.frequency.setValueAtTime(basePitch, now);
+
+                    let f1Freq = 600;
+                    let f2Freq = 1500;
+                    let f3Freq = 2400;
+                    if (label.startsWith("EE") || label.startsWith("E1") || label.startsWith("E2") || label === "I") {
+                        f1Freq = 300;
+                        f2Freq = 2200;
+                        f3Freq = 3000;
+                    } else if (label.startsWith("OO") || label === "U") {
+                        f1Freq = 400;
+                        f2Freq = 900;
+                        f3Freq = 2200;
+                    } else if (label.startsWith("AH") || label.startsWith("A") || label === "O") {
+                        f1Freq = 800;
+                        f2Freq = 1200;
+                        f3Freq = 2500;
+                    }
+
+                    const formant1 = audioCtx.createBiquadFilter();
+                    formant1.type = "bandpass";
+                    formant1.frequency.setValueAtTime(f1Freq, now);
+                    formant1.Q.setValueAtTime(8, now);
+
+                    const formant2 = audioCtx.createBiquadFilter();
+                    formant2.type = "bandpass";
+                    formant2.frequency.setValueAtTime(f2Freq, now);
+                    formant2.Q.setValueAtTime(8, now);
+
+                    const formant3 = audioCtx.createBiquadFilter();
+                    formant3.type = "bandpass";
+                    formant3.frequency.setValueAtTime(f3Freq, now);
+                    formant3.Q.setValueAtTime(8, now);
+
+                    const mix = audioCtx.createGain();
+                    mix.gain.setValueAtTime(0.5, now);
+
+                    const gain = audioCtx.createGain();
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+                    osc.connect(formant1);
+                    osc.connect(formant2);
+                    osc.connect(formant3);
+                    formant1.connect(mix);
+                    formant2.connect(mix);
+                    formant3.connect(mix);
+                    mix.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + duration);
+                }
+            }
+
+            setTimeout(async () => {
+                if (mouth) {
+                    mouth.style.height = "4px";
+                    mouth.style.borderRadius = "4px";
+                }
+                if (led) {
+                    led.style.background = "#39ff14";
+                    led.style.boxShadow = "0 0 8px #39ff14";
+                }
+                if (ledText) {
+                    ledText.innerText = "READY";
+                    ledText.style.color = "#39ff14";
+                }
+
+                if (speechContract) {
+                    try {
+                        const tx = await speechContract.clearBusy();
+                        await tx.wait();
+                    } catch (e) {}
+                }
+            }, 180);
+        }
+
+        async function speakText(text) {
+            window.speakText = speakText;
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === "suspended") {
+                audioCtx.resume();
+            }
+            if (!speechContract) {
+                console.warn("Speech Synthesizer contract is not loaded. Falling back to Web Speech API.");
+                if (typeof window.speechSynthesis !== "undefined" && window.speechSynthesis) {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.rate = 1.0;
+                    utterance.pitch = 0.8;
+                    window.speechSynthesis.speak(utterance);
+                }
+                return;
+            }
+            const selectedEngine = document.getElementById("selectSpeechEngine").value;
+            const dialect = document.getElementById("selectDialect") ? document.getElementById("selectDialect").value : "mandarin_pinyin";
+            
+            if (selectedEngine === "votrax") {
+                if (!speechContract) {
+                    console.warn("Speech Synthesizer contract is not loaded. Falling back to Web Speech API.");
+                    if (typeof window.speechSynthesis !== "undefined" && window.speechSynthesis) {
+                        const utterance = new SpeechSynthesisUtterance(text);
+                        utterance.rate = 1.0;
+                        utterance.pitch = 0.8;
+                        window.speechSynthesis.speak(utterance);
+                    }
+                    return;
+                }
+                text = text.trim();
+                if (!text) return;
+
+                const words = text.split(/\s+/);
+                const phonemeSequence = [];
+                
+                words.forEach(word => {
+                    const parsedPhonemes = translateWordToPhonemes(word, dialect);
+                    parsedPhonemes.forEach(p => phonemeSequence.push(p));
+                    phonemeSequence.push("PA1");
+                });
+
+                const btn = document.getElementById("btnVoiceSpeak");
+                if (btn) btn.innerText = "Speaking...";
+
+                try {
+                    for (let i = 0; i < phonemeSequence.length; i++) {
+                        const name = phonemeSequence[i];
+                        const code = phonemeToCode[name] !== undefined ? phonemeToCode[name] : 3;
+                        const tx = await speechContract.writePhoneme(code, 1);
+                        await tx.wait();
+
+                        let isBusy = true;
+                        while (isBusy) {
+                            await new Promise(r => setTimeout(r, 60));
+                            const state = await speechContract.getSpeechState();
+                            isBusy = Number(state[2]) === 1;
+                        }
+                    }
+                } catch (err) {
+                    console.error("Speech sequence transmission failed:", err);
+                } finally {
+                    if (btn) btn.innerText = "Speak";
+                }
+            } else if (selectedEngine === "ti_tms5220") {
+                if (!speechContract) {
+                    alert("Speech Synthesizer contract is not loaded.");
+                    return;
+                }
+                text = text.toUpperCase().trim();
+                if (!text) return;
+
+                const btn = document.getElementById("btnVoiceSpeak");
+                if (btn) btn.innerText = "LPC Synth...";
+
+                try {
+                    const cmdTx = await speechContract.writeTMS5220Command(0x50);
+                    await cmdTx.wait();
+
+                    for (let i = 0; i < text.length; i++) {
+                        const charCode = text.charCodeAt(i);
+                        const frameByte = ((charCode * (i + 1)) & 0xFF);
+                        
+                        const dataTx = await speechContract.writeTMS5220Data(frameByte);
+                        await dataTx.wait();
+
+                        playTISpeechFrame(frameByte);
+                        await new Promise(r => setTimeout(r, 200));
+                    }
+
+                    const resetTx = await speechContract.writeTMS5220Command(0x90);
+                    await resetTx.wait();
+                } catch (err) {
+                    console.error("TI TMS5220 LPC transmission failed:", err);
+                } finally {
+                    if (btn) btn.innerText = "Speak";
+                }
+            } else if (selectedEngine === "tymac_sid") {
+                if (!musicContract) {
+                    alert("Music Maker contract is not loaded.");
+                    return;
+                }
+                text = text.toUpperCase().trim();
+                if (!text) return;
+
+                const btn = document.getElementById("btnVoiceSpeak");
+                if (btn) btn.innerText = "4-bit DAC...";
+
+                try {
+                    for (let i = 0; i < text.length; i++) {
+                        const charCode = text.charCodeAt(i);
+                        const sampleVal = (charCode % 16); 
+                        
+                        const tx = await musicContract.play4BitSample(sampleVal);
+                        await tx.wait();
+
+                        playTymacAudioSample(sampleVal);
+                        await new Promise(r => setTimeout(r, 120));
+                    }
+
+                    const txClear = await musicContract.play4BitSample(0);
+                    await txClear.wait();
+                } catch (err) {
+                    console.error("Tymac play4BitSample transmission failed:", err);
+                } finally {
+                    if (btn) btn.innerText = "Speak";
+                }
+            } else if (selectedEngine === "access_realsound") {
+                if (!musicContract) {
+                    alert("Music Maker contract is not loaded.");
+                    return;
+                }
+                text = text.toUpperCase().trim();
+                if (!text) return;
+
+                const btn = document.getElementById("btnVoiceSpeak");
+                if (btn) btn.innerText = "RealSound...";
+
+                try {
+                    for (let i = 0; i < text.length; i++) {
+                        const charCode = text.charCodeAt(i);
+                        const sampleVal = (charCode % 64);
+                        
+                        const tx = await musicContract.playRealSoundSample(sampleVal);
+                        await tx.wait();
+
+                        playRealSoundAudioSample(sampleVal);
+                        await new Promise(r => setTimeout(r, 120));
+                    }
+
+                    const txClear = await musicContract.playRealSoundSample(0);
+                    await txClear.wait();
+                } catch (err) {
+                    console.error("Access RealSound transmission failed:", err);
+                } finally {
+                    if (btn) btn.innerText = "Speak";
+                }
+            }
+        }
+
+        document.getElementById("btnVoiceSpeak").addEventListener("click", async () => {
+            const inputVal = document.getElementById("voiceTextInput").value.trim();
+            if (!inputVal) {
+                alert("Please type some words to speak.");
+                return;
+            }
+            speakText(inputVal);
+        });
+
+        // --- Magic Desk & Wordcraft Event Handlers ---
+        document.getElementById("btnWordcraftSave").addEventListener("click", async () => {
+            const docName = document.getElementById("docNameInput").value.trim() || "document.txt";
+            const content = document.getElementById("wordcraftText").value;
+            const statusDiv = document.getElementById("wordcraftStatus");
+            
+            if (!diskContract) {
+                alert("Disk System contract not loaded. Please connect wallet first.");
+                return;
+            }
+            
+            statusDiv.innerText = "Saving to Disk System (DFS)...";
+            try {
+                const header = "W0:" + docName + "\x00";
+                const headerBytes = ethers.toUtf8Bytes(header);
+                const contentBytes = ethers.toUtf8Bytes(content);
+                const fullCmdBytes = ethers.concat([headerBytes, contentBytes]);
+                
+                const tx = await diskContract.executeDiskCommand(fullCmdBytes);
+                await tx.wait();
+                statusDiv.innerText = `SUCCESS: Saved '${docName}' to on-chain DFS!`;
+            } catch (err) {
+                console.error(err);
+                statusDiv.innerText = "Error: Failed to save document.";
+            }
+        });
+
+        document.getElementById("btnWordcraftLoad").addEventListener("click", async () => {
+            const docName = document.getElementById("docNameInput").value.trim() || "document.txt";
+            const statusDiv = document.getElementById("wordcraftStatus");
+            
+            if (!diskContract) {
+                alert("Disk System contract not loaded. Please connect wallet first.");
+                return;
+            }
+            
+            statusDiv.innerText = "Loading from Disk System (DFS)...";
+            try {
+                const header = "R0:" + docName + "\x00";
+                const headerBytes = ethers.toUtf8Bytes(header);
+                
+                const rawResult = await diskContract.executeDiskCommand.staticCall(headerBytes);
+                const text = ethers.toUtf8String(rawResult);
+                document.getElementById("wordcraftText").value = text;
+                statusDiv.innerText = `SUCCESS: Loaded '${docName}' from on-chain DFS!`;
+            } catch (err) {
+                console.error(err);
+                statusDiv.innerText = "Error: Document not found or read failed.";
+            }
+        });
+
+        document.getElementById("btnWordcraftSpeak").addEventListener("click", async () => {
+            const content = document.getElementById("wordcraftText").value.trim();
+            if (!content) {
+                alert("Document is empty.");
+                return;
+            }
+            speakText(content);
+        });
+
+        document.getElementById("btnDeskTypewriter").addEventListener("click", () => {
+            document.getElementById("wordcraftWorkspace").style.display = "flex";
+            const container = document.getElementById("wordcraftTextContainer");
+            if (container) {
+                container.style.background = "#f4ecd8";
+                container.style.borderColor = "#ba55d3";
+            }
+            const header = document.getElementById("wordcraftHeader");
+            if (header) {
+                header.style.color = "#4b382a";
+                header.style.borderBottomColor = "#4b382a";
+                header.innerText = "WORDCRAFT 80 ULTRA - ON-CHAIN DOCUMENT";
+            }
+            const txt = document.getElementById("wordcraftText");
+            if (txt) {
+                txt.style.color = "#3b2f2f";
+            }
+            document.getElementById("wordcraftStatus").innerText = "Typewriter Active (Wordcraft 80 Ultra)";
+        });
+
+        document.getElementById("btnDeskEasyScript").addEventListener("click", () => {
+            document.getElementById("wordcraftWorkspace").style.display = "flex";
+            const container = document.getElementById("wordcraftTextContainer");
+            if (container) {
+                container.style.background = "#3b5dc9";
+                container.style.borderColor = "#a2b4c2";
+            }
+            const header = document.getElementById("wordcraftHeader");
+            if (header) {
+                header.style.color = "#ffffff";
+                header.style.borderBottomColor = "#ffffff";
+                header.innerText = "EASYSCRIPT 64 - COMMODORE HOME OFFICE";
+            }
+            const txt = document.getElementById("wordcraftText");
+            if (txt) {
+                txt.style.color = "#ffffff";
+            }
+            document.getElementById("wordcraftStatus").innerText = "Typewriter Active (Easy Script 64 Mode)";
+        });
+
+        document.getElementById("btnDeskCabinet").addEventListener("click", async () => {
+            const statusDiv = document.getElementById("wordcraftStatus");
+            statusDiv.innerText = "Accessing File Cabinet...";
+            const btnLoadDir = document.getElementById("btnLoadDir");
+            if (btnLoadDir) {
+                btnLoadDir.click();
+                statusDiv.innerText = "DFS Directory updated in File Cabinet.";
+            }
+        });
+
+        // --- Workspace File Sync Handlers ---
+        async function loadWorkspaceFileList() {
+            try {
+                const res = await fetch("/api/workspace-files");
+                if (!res.ok) return;
+                const files = await res.json();
+                const select = document.getElementById("selectWorkspaceFile");
+                
+                // Clear old options except placeholder
+                select.innerHTML = '<option value="">-- Select Workspace File (Read/Write Mode) --</option>';
+                files.forEach(file => {
+                    const opt = document.createElement("option");
+                    opt.value = file;
+                    opt.innerText = file;
+                    select.appendChild(opt);
+                });
+            } catch (err) {
+                console.error("Failed to load workspace files list:", err);
+            }
+        }
+
+        document.getElementById("selectWorkspaceFile").addEventListener("change", async (e) => {
+            const pathSelected = e.target.value;
+            if (!pathSelected) return;
+            // Auto update file name text field
+            document.getElementById("docNameInput").value = pathSelected;
+            // Load file content
+            document.getElementById("btnWordcraftLoadWorkspace").click();
+        });
+
+        document.getElementById("btnWordcraftLoadWorkspace").addEventListener("click", async () => {
+            const pathSelected = document.getElementById("docNameInput").value.trim();
+            const statusDiv = document.getElementById("wordcraftStatus");
+            if (!pathSelected) {
+                alert("Please select or enter a workspace file path first.");
+                return;
+            }
+            statusDiv.innerText = "Loading from Workspace...";
+            try {
+                const res = await fetch(`/api/read-file?path=${encodeURIComponent(pathSelected)}`);
+                if (!res.ok) {
+                    throw new Error("Read failed: " + res.statusText);
+                }
+                const text = await res.text();
+                document.getElementById("wordcraftText").value = text;
+                statusDiv.innerText = `SUCCESS: Loaded '${pathSelected}' from Workspace!`;
+            } catch (err) {
+                console.error(err);
+                statusDiv.innerText = "Error: Workspace read failed.";
+            }
+        });
+
+        document.getElementById("btnWordcraftSaveWorkspace").addEventListener("click", async () => {
+            const pathSelected = document.getElementById("docNameInput").value.trim();
+            const content = document.getElementById("wordcraftText").value;
+            const statusDiv = document.getElementById("wordcraftStatus");
+            if (!pathSelected) {
+                alert("Please select or enter a workspace file path first.");
+                return;
+            }
+            statusDiv.innerText = "Saving to Workspace...";
+            try {
+                const res = await fetch("/api/write-file", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ path: pathSelected, content })
+                });
+                if (!res.ok) {
+                    throw new Error("Write failed: " + res.statusText);
+                }
+                statusDiv.innerText = `SUCCESS: Saved '${pathSelected}' to Workspace!`;
+                // Refresh list
+                await loadWorkspaceFileList();
+            } catch (err) {
+                console.error(err);
+                statusDiv.innerText = "Error: Workspace write failed.";
+            }
+        });
+
+        // --- GameMaster BBS / Network Terminal Logic ---
+        let gamemasterConnected = false;
+        let gamemasterRoom = "FOYER";
+        let gamemasterTerminalTimer = null;
+
+        // --- GameMaster Pong Game State ---
+        let pongActive = false;
+        let pongMode = "PVAI"; // "PVP", "PVAI", "AIVAI"
+        let pongBoardWidth = 24;
+        let pongBoardHeight = 10;
+        let leftPaddleY = 4;
+        let rightPaddleY = 4;
+        let ballX = 12;
+        let ballY = 5;
+        let ballVx = 1;
+        let ballVy = 1;
+        let scoreLeft = 0;
+        let scoreRight = 0;
+        let pongTimer = null;
+
+        // --- MECC Classroom Game State ---
+        let oregonActive = false;
+        let oregonMile = 0;
+        let oregonFood = 0;
+        let oregonHealth = 0;
+        let otAiActive = false;
+        let otAiTimer = null;
+        let oregonWeather = "SUNNY";
+        let oregonTimeOfDay = 0; // 0=Day, 1=Sunset, 2=Night, 3=Sunrise
+        let lemonadeActive = false;
+        let lemonadeDay = 0;
+        let lemonadeMoney = 0;
+        let lemonadeGlasses = 0;
+        let lemonadePrice = 0;
+        let lemonadeCostPerGlass = 0.05;
+        let lemonadeDayPhase = "SETUP";
+
+        function renderPongBoard() {
+            let board = [];
+            for (let y = 0; y < pongBoardHeight; y++) {
+                board.push(new Array(pongBoardWidth).fill(" "));
+            }
+            // Draw left paddle
+            for (let dy = -1; dy <= 1; dy++) {
+                let py = leftPaddleY + dy;
+                if (py >= 0 && py < pongBoardHeight) {
+                    board[py][0] = "[";
+                }
+            }
+            // Draw right paddle
+            for (let dy = -1; dy <= 1; dy++) {
+                let py = rightPaddleY + dy;
+                if (py >= 0 && py < pongBoardHeight) {
+                    board[py][pongBoardWidth - 1] = "]";
+                }
+            }
+            // Draw ball
+            let bx = Math.round(ballX);
+            let by = Math.round(ballY);
+            if (bx >= 0 && bx < pongBoardWidth && by >= 0 && by < pongBoardHeight) {
+                board[by][bx] = "o";
+            }
+            let border = "=".repeat(pongBoardWidth + 2);
+            let lines = [border];
+            for (let y = 0; y < pongBoardHeight; y++) {
+                lines.push("|" + board[y].join("") + "|");
+            }
+            lines.push(border);
+            lines.push(`Score: User A ${scoreLeft} - ${scoreRight} User B/AI`);
+            lines.push(`Controls: Left (W/S) | Right (I/K) | Type 'EXIT' to quit`);
+            return lines.join("\n");
+        }
+
+        let pongParticles = [];
+        let pongCollisionTriggered = false;
+        let pongCollisionTimer = 0;
+        let pongCollisionStage = "";
+        let pongAnimFrameId = null;
+        let displayBallX = 12;
+        let displayBallY = 5;
+        let displayLeftPaddleY = 4;
+        let displayRightPaddleY = 4;
+
+        function createPongExplosion(x, y, color) {
+            for (let i = 0; i < 20; i++) {
+                pongParticles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: (Math.random() - 0.5) * 6,
+                    radius: Math.random() * 3 + 1.5,
+                    alpha: 1.0,
+                    decay: Math.random() * 0.04 + 0.02,
+                    color: color
+                });
+            }
+        }
+
+        function runPongAnimation() {
+            if (!pongActive) return;
+
+            const canvas = document.getElementById("vulkanPongCanvas");
+            if (!canvas) return;
+            const ctx = canvas.getContext("2d");
+
+            // Interpolate position towards physics state for smooth motion
+            displayBallX += (ballX - displayBallX) * 0.25;
+            displayBallY += (ballY - displayBallY) * 0.25;
+            displayLeftPaddleY += (leftPaddleY - displayLeftPaddleY) * 0.25;
+            displayRightPaddleY += (rightPaddleY - displayRightPaddleY) * 0.25;
+
+            // Clear background with deep dark blue
+            ctx.fillStyle = "#060814";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Vulkan grid background
+            ctx.strokeStyle = "rgba(0, 242, 254, 0.06)";
+            ctx.lineWidth = 1;
+            const gridSpacing = 20;
+            for (let x = 0; x < canvas.width; x += gridSpacing) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += gridSpacing) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // Draw glowing Vulkan-like layout/lines
+            ctx.strokeStyle = "rgba(255, 0, 127, 0.15)";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+
+            // Calculate scaling factors
+            const scaleX = canvas.width / pongBoardWidth;
+            const scaleY = canvas.height / pongBoardHeight;
+
+            // Draw Left Paddle (Cyan)
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = "#00f2fe";
+            ctx.fillStyle = "#00f2fe";
+            const paddleW = 8;
+            const paddleH = scaleY * 3;
+            ctx.fillRect(10, (displayLeftPaddleY - 1) * scaleY, paddleW, paddleH);
+
+            // Draw Right Paddle (Magenta)
+            ctx.shadowColor = "#ff007f";
+            ctx.fillStyle = "#ff007f";
+            ctx.fillRect(canvas.width - 10 - paddleW, (displayRightPaddleY - 1) * scaleY, paddleW, paddleH);
+
+            // Draw Ball (Glowing Orange/Gold)
+            ctx.shadowColor = "#ffd700";
+            ctx.fillStyle = "#ffd700";
+            ctx.beginPath();
+            ctx.arc(displayBallX * scaleX, displayBallY * scaleY, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Update and draw particles
+            ctx.shadowBlur = 0;
+            for (let i = pongParticles.length - 1; i >= 0; i--) {
+                const p = pongParticles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= p.decay;
+                if (p.alpha <= 0) {
+                    pongParticles.splice(i, 1);
+                    continue;
+                }
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.alpha;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1.0;
+
+            // Draw score
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "#00f2fe";
+            ctx.fillStyle = "#f0f4f8";
+            ctx.font = "bold 16px 'Orbitron', sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(`User A: ${scoreLeft}  |  User B: ${scoreRight}`, canvas.width / 2, 25);
+
+            // Render active Vulkan Pipeline Stage on collision
+            if (pongCollisionTriggered && pongCollisionTimer > 0) {
+                pongCollisionTimer--;
+                ctx.shadowColor = "#ff007f";
+                ctx.fillStyle = "#ff007f";
+                ctx.font = "italic bold 12px monospace";
+                ctx.fillText(`Pipeline Stage: ${pongCollisionStage}`, canvas.width / 2, canvas.height - 15);
+            } else {
+                ctx.shadowColor = "rgba(0, 242, 254, 0.4)";
+                ctx.fillStyle = "rgba(0, 242, 254, 0.4)";
+                ctx.font = "10px monospace";
+                ctx.fillText("VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT", canvas.width / 2, canvas.height - 15);
+            }
+            ctx.shadowBlur = 0;
+
+            pongAnimFrameId = requestAnimationFrame(runPongAnimation);
+        }
+
+        function tickPong() {
+            if (!pongActive) return;
+
+            // AI for Left Paddle if AI vs AI
+            if (pongMode === "AIVAI") {
+                if (ballY < leftPaddleY && leftPaddleY > 1) leftPaddleY--;
+                else if (ballY > leftPaddleY && leftPaddleY < pongBoardHeight - 2) leftPaddleY++;
+            }
+            // AI for Right Paddle if Player vs AI or AI vs AI
+            if (pongMode === "PVAI" || pongMode === "AIVAI") {
+                if (ballY < rightPaddleY && rightPaddleY > 1) rightPaddleY--;
+                else if (ballY > rightPaddleY && rightPaddleY < pongBoardHeight - 2) rightPaddleY++;
+            }
+
+            ballX += ballVx;
+            ballY += ballVy;
+
+            if (ballY <= 0) {
+                ballY = 0;
+                ballVy = -ballVy;
+                pongCollisionTriggered = true;
+                pongCollisionTimer = 45;
+                pongCollisionStage = "VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT";
+                createPongExplosion(ballX * (480 / pongBoardWidth), 5, "#ff007f");
+            } else if (ballY >= pongBoardHeight - 1) {
+                ballY = pongBoardHeight - 1;
+                ballVy = -ballVy;
+                pongCollisionTriggered = true;
+                pongCollisionTimer = 45;
+                pongCollisionStage = "VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT";
+                createPongExplosion(ballX * (480 / pongBoardWidth), 195, "#ff007f");
+            }
+
+            if (ballX <= 0) {
+                if (Math.abs(ballY - leftPaddleY) <= 1) {
+                    ballX = 1;
+                    ballVx = -ballVx;
+                    pongCollisionTriggered = true;
+                    pongCollisionTimer = 45;
+                    pongCollisionStage = "VK_PIPELINE_STAGE_VERTEX_INPUT_BIT";
+                    createPongExplosion(15, ballY * (200 / pongBoardHeight), "#00f2fe");
+                } else {
+                    scoreRight++;
+                    pongCollisionTriggered = true;
+                    pongCollisionTimer = 45;
+                    pongCollisionStage = "VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT";
+                    createPongExplosion(ballX * (480 / pongBoardWidth), ballY * (200 / pongBoardHeight), "#ffd700");
+                    resetBall();
+                }
+            } else if (ballX >= pongBoardWidth - 1) {
+                if (Math.abs(ballY - rightPaddleY) <= 1) {
+                    ballX = pongBoardWidth - 2;
+                    ballVx = -ballVx;
+                    pongCollisionTriggered = true;
+                    pongCollisionTimer = 45;
+                    pongCollisionStage = "VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT";
+                    createPongExplosion(480 - 15, ballY * (200 / pongBoardHeight), "#ff007f");
+                } else {
+                    scoreLeft++;
+                    pongCollisionTriggered = true;
+                    pongCollisionTimer = 45;
+                    pongCollisionStage = "VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT";
+                    createPongExplosion(ballX * (480 / pongBoardWidth), ballY * (200 / pongBoardHeight), "#ffd700");
+                    resetBall();
+                }
+            }
+
+            // Fallback text output (hidden but kept up to date)
+            const out = document.getElementById("gamemasterTerminalOutput");
+            let text = out.innerText;
+            let lines = text.split("\n");
+            let boardStart = lines.findIndex(l => l.startsWith("================="));
+            if (boardStart !== -1) {
+                lines = lines.slice(0, boardStart);
+            }
+            out.innerText = lines.join("\n") + "\n" + renderPongBoard();
+            out.scrollTop = out.scrollHeight;
+        }
+
+        function resetBall() {
+            ballX = Math.floor(pongBoardWidth / 2);
+            ballY = Math.floor(pongBoardHeight / 2);
+            ballVx = Math.random() > 0.5 ? 1 : -1;
+            ballVy = Math.random() > 0.5 ? 1 : -1;
+        }
+
+        const gmWelcomeText = `
+************************************************
+*   WELCOME TO GAMEMASTER TIME-SHARING NETWORK  *
+*          ESTABLISHED 1983 - CHICAGO           *
+************************************************
+CONNECT 300 BAUD -- OK
+SYSTEM ONLINE -- 3 ACTIVE USERS
+
+YOU HAVE ENTERED THE GAMEMASTER HOUSE.
+EACH ROOM REPRESENTS A GAME OR UTILITY.
+
+COMMANDS:
+  HELP         - SHOW THIS LIST
+  MAP          - VIEW HOUSE MAP
+  GO <ROOM>    - GO TO A ROOM (FOYER, PARLOR, LIBRARY, KITCHEN, CLASSROOM)
+  BYE          - HANG UP / DISCONNECT
+
+CURRENT LOCATION: GRAND FOYER
+THE HALLWAY LEADS TO THE PARLOR, LIBRARY, KITCHEN, AND MECC CLASSROOM.
+`;
+
+        const gmMapText = `
+      ====================================
+      I        KITCHEN (Recipes)         I
+      I               |                  I
+      I   PARLOR ---- FOYER -------------I
+      I  (Games)      |        (Welcome) I
+      I               |                  I
+      I   CLASSROOM - LIBRARY            I
+      I  (MECC Edu)   (BBS)              I
+      ====================================
+`;
+
+        const gmKitchenText = `
+--- THE GAMEMASTER KITCHEN ---
+RECIPE SHARING EXCHANGE.
+
+TODAY'S RETRO C64 COMPANION RECIPE:
+"RETRO CHIPTUNE COOKIES"
+INGREDIENTS:
+- 2 CUPS FLOUR
+- 1 TSP BAKING SODA
+- 1/2 CUP BUTTER
+- 1 CUP VINTAGE CHOCOLATE CHIPS
+- 8 BITS OF LOVE
+
+DIRECTIONS:
+BAKE AT 350 DEGREES UNTIL GOLDEN BROWN.
+PAIRED WELL WITH A GLASS OF MILK AND SOME RETRO SID MUSIC.
+`;
+
+        const gmClassroomText = `
+--- THE MECC CLASSROOM ---
+MINNESOTA EDUCATIONAL COMPUTING CONSORTIUM
+OFFICIAL PORTED SOFTWARE SERIES FOR THE COMMODORE 64.
+
+AVAILABLE EDUCATIONAL PROGRAMS:
+- OREGON    : THE OREGON TRAIL (TYPE "PLAY OREGON" TO START!)
+- LEMONADE  : LEMONADE STAND (TYPE "PLAY LEMONADE" TO START!)
+`;
+
+        const gmParlorText = `
+--- THE GAMEMASTER PARLOR ---
+ON-LINE GAME CENTER.
+
+GAMES AVAILABLE:
+- TICTACTOE : RETRO TIC-TAC-TOE AGAINST THE MACHINE (TYPE "PLAY TICTACTOE")
+- PONG      : RETRO PONG (2 PLAYERS, PLAYER VS AI, OR AI VS AI)
+              TYPE "PLAY PONG" TO START!
+`;
+
+        const gamemasterLibraryWelcome = `
+--- THE GAMEMASTER LIBRARY ---
+ELECTRONIC MAIL & BULLETIN BOARD EXCHANGE.
+
+RETRIEVING MESSAGE BOARD POSTS FROM ON-CHAIN DFS...
+`;
+
+        function writeToTerminal(text) {
+            const out = document.getElementById("gamemasterTerminalOutput");
+            out.innerText += "\n" + text;
+            out.scrollTop = out.scrollHeight;
+
+            if (typeof updateOregonDashboard === "function") {
+                updateOregonDashboard();
+            }
+            if (oregonActive && text.trim() && !text.includes("> ") && typeof appendOregonDashboardLog === "function") {
+                appendOregonDashboardLog(text);
+            }
+        }
+
+        async function loadBBSMessages() {
+            if (!diskContract) return ["No messages found. Post the first one!"];
+            try {
+                const cmd = ethers.toUtf8Bytes("R0:bbs.txt\x00");
+                const resHex = await diskContract.executeDiskCommand(cmd);
+                const text = ethers.toUtf8String(resHex).trim();
+                if (text.startsWith("FILE NOT FOUND")) {
+                    return ["1. System: Welcome to GameMaster BBS! Post your thoughts on-chain."];
+                }
+                return text.split("\n").filter(Boolean);
+            } catch (err) {
+                console.error("Error loading BBS messages from DFS:", err);
+                return ["1. System: Welcome to GameMaster BBS! Post your thoughts on-chain."];
+            }
+        }
+
+        async function saveBBSMessage(msg) {
+            if (!diskContract) return;
+            try {
+                const messages = await loadBBSMessages();
+                messages.push(`${messages.length + 1}. User: ${msg}`);
+                if (messages.length > 8) messages.shift();
+                
+                const combined = messages.join("\n") + "\n";
+                const contentBytes = ethers.toUtf8Bytes(combined);
+                const cmdHeader = ethers.toUtf8Bytes("W0:bbs.txt\x00");
+                const fullCmdBytes = ethers.concat([cmdHeader, contentBytes]);
+                
+                const tx = await diskContract.executeDiskCommand(fullCmdBytes);
+                await tx.wait();
+                return messages;
+            } catch (err) {
+                console.error("Error saving BBS message to DFS:", err);
+            }
+        }
+
+        // TicTacToe Game State
+        let tttBoard = [" ", " ", " ", " ", " ", " ", " ", " ", " "];
+        let tttActive = false;
+
+        function printTTTBoard() {
+            return `
+  ${tttBoard[0]} | ${tttBoard[1]} | ${tttBoard[2]}
+ ---+---+---
+  ${tttBoard[3]} | ${tttBoard[4]} | ${tttBoard[5]}
+ ---+---+---
+  ${tttBoard[6]} | ${tttBoard[7]} | ${tttBoard[8]}
+`;
+        }
+
+        function checkTTTWin(board, player) {
+            const wins = [
+                [0,1,2], [3,4,5], [6,7,8],
+                [0,3,6], [1,4,7], [2,5,8],
+                [0,4,8], [2,4,6]
+            ];
+            return wins.some(w => w.every(idx => board[idx] === player));
+        }
+
+        document.getElementById("btnGamemasterConnect").addEventListener("click", () => {
+            if (gamemasterConnected) {
+                // Disconnect
+                gamemasterConnected = false;
+                pongActive = false;
+                if (pongTimer) {
+                    clearInterval(pongTimer);
+                    pongTimer = null;
+                }
+                document.getElementById("gamemasterTerminalInput").disabled = true;
+                document.getElementById("btnGamemasterConnect").innerText = "📞 Dial GameMaster";
+                writeToTerminal("DISCONNECTED. LINE DROP.");
+            } else {
+                // Connect
+                writeToTerminal("DIALING 312-555-4263 (CHICAGO)...");
+                setTimeout(() => {
+                    writeToTerminal("RING... RING... ANSWER...");
+                    setTimeout(() => {
+                        writeToTerminal("CONNECT 300 BAUD -- CARRIER DETECTED");
+                        gamemasterConnected = true;
+                        gamemasterRoom = "FOYER";
+                        document.getElementById("gamemasterTerminalInput").disabled = false;
+                        document.getElementById("btnGamemasterConnect").innerText = "🔌 Hang Up";
+                        writeToTerminal(gmWelcomeText);
+                    }, 1000);
+                }, 1000);
+            }
+        });
+
+        document.getElementById("btnGamemasterGuide").addEventListener("click", () => {
+            alert("GameMaster Users Guide:\n" + gmMapText);
+        });
+
+        document.getElementById("gamemasterTerminalInput").addEventListener("keydown", async (e) => {
+            if (pongActive) {
+                const key = e.key.toLowerCase();
+                let moved = false;
+                if (key === "w" || key === "arrowup") {
+                    e.preventDefault();
+                    if (leftPaddleY > 1) leftPaddleY--;
+                    moved = true;
+                } else if (key === "s" || key === "arrowdown") {
+                    e.preventDefault();
+                    if (leftPaddleY < pongBoardHeight - 2) leftPaddleY++;
+                    moved = true;
+                } else if (key === "i") {
+                    e.preventDefault();
+                    if (pongMode === "PVP" && rightPaddleY > 1) rightPaddleY--;
+                    moved = true;
+                } else if (key === "k") {
+                    e.preventDefault();
+                    if (pongMode === "PVP" && rightPaddleY < pongBoardHeight - 2) rightPaddleY++;
+                    moved = true;
+                }
+                if (moved) return;
+            }
+
+            if (e.key === "Enter") {
+                const val = e.target.value.trim();
+                e.target.value = "";
+                if (!val) return;
+
+                writeToTerminal("> " + val);
+
+                const cmd = val.toUpperCase();
+                const args = cmd.split(" ");
+
+                if (cmd === "BYE" || cmd === "QUIT") {
+                    document.getElementById("btnGamemasterConnect").click();
+                    return;
+                }
+
+                if (cmd === "HELP") {
+                    writeToTerminal(gmWelcomeText);
+                    return;
+                }
+
+                if (cmd === "MAP") {
+                    writeToTerminal(gmMapText);
+                    return;
+                }
+
+                if (args[0] === "GO" || args[0] === "GO TO") {
+                    if (pongActive) {
+                        pongActive = false;
+                        if (pongTimer) {
+                            clearInterval(pongTimer);
+                            pongTimer = null;
+                        }
+                    }
+                    oregonActive = false;
+                    lemonadeActive = false;
+                    let dest = args[args.length - 1];
+                    if (dest === "HALLWAY" || dest === "FOYER") {
+                        gamemasterRoom = "FOYER";
+                        writeToTerminal("GO TO FOYER. YOU ARE IN THE GRAND FOYER.");
+                    } else if (dest === "PARLOR") {
+                        gamemasterRoom = "PARLOR";
+                        writeToTerminal(gmParlorText);
+                    } else if (dest === "LIBRARY") {
+                        gamemasterRoom = "LIBRARY";
+                        writeToTerminal(gamemasterLibraryWelcome);
+                        const msgs = await loadBBSMessages();
+                        writeToTerminal(msgs.join("\n"));
+                        writeToTerminal("\nCOMMANDS IN LIBRARY: 'POST <msg>' TO WRITE TO ON-CHAIN BBS.");
+                    } else if (dest === "KITCHEN") {
+                        gamemasterRoom = "KITCHEN";
+                        writeToTerminal(gmKitchenText);
+                    } else if (dest === "CLASSROOM" || dest === "SCHOOLHOUSE" || dest === "MECC") {
+                        gamemasterRoom = "CLASSROOM";
+                        writeToTerminal(gmClassroomText);
+                    } else {
+                        writeToTerminal("UNKNOWN ROOM. CHOOSE: FOYER, PARLOR, LIBRARY, KITCHEN, CLASSROOM");
+                    }
+                    return;
+                }
+
+                if (gamemasterRoom === "LIBRARY" && val.toUpperCase().startsWith("POST ")) {
+                    const msg = val.substring(5).trim();
+                    if (!msg) {
+                        writeToTerminal("USAGE: POST <your message here>");
+                        return;
+                    }
+                    writeToTerminal("WRITING MESSAGE TO ON-CHAIN DFS STORAGE...");
+                    const newMsgs = await saveBBSMessage(msg);
+                    writeToTerminal("POST COMPLETE!");
+                    if (newMsgs) {
+                        writeToTerminal("\n--- UPDATED BBS BOARD ---\n" + newMsgs.join("\n"));
+                    }
+                    return;
+                }
+
+                if (gamemasterRoom === "PARLOR") {
+                    if (pongActive) {
+                        if (cmd === "EXIT" || cmd === "QUIT") {
+                            pongActive = false;
+                            if (pongTimer) clearInterval(pongTimer);
+                            if (pongAnimFrameId) cancelAnimationFrame(pongAnimFrameId);
+                            document.getElementById("vulkanPongCanvas").style.display = "none";
+                            document.getElementById("gamemasterTerminalOutput").style.display = "block";
+                            writeToTerminal("PONG EXITED. RETURNED TO PARLOR.");
+                            return;
+                        }
+                        if (cmd === "MODE PVP") {
+                            pongMode = "PVP";
+                            scoreLeft = 0; scoreRight = 0;
+                            resetBall();
+                            writeToTerminal("MODE SET TO PLAYER VS PLAYER. USE W/S (LEFT) AND I/K (RIGHT).");
+                            return;
+                        }
+                        if (cmd === "MODE PVAI") {
+                            pongMode = "PVAI";
+                            scoreLeft = 0; scoreRight = 0;
+                            resetBall();
+                            writeToTerminal("MODE SET TO PLAYER VS AI. USE W/S (LEFT) TO PLAY.");
+                            return;
+                        }
+                        if (cmd === "MODE AIVAI") {
+                            pongMode = "AIVAI";
+                            scoreLeft = 0; scoreRight = 0;
+                            resetBall();
+                            writeToTerminal("MODE SET TO AI VS AI (AUTOMATED IDLE SCREEN).");
+                            return;
+                        }
+                        if (cmd === "START") {
+                            writeToTerminal("GAME STARTED!");
+                            return;
+                        }
+                        if (cmd === "W") {
+                            if (leftPaddleY > 1) leftPaddleY--;
+                            return;
+                        }
+                        if (cmd === "S") {
+                            if (leftPaddleY < pongBoardHeight - 2) leftPaddleY++;
+                            return;
+                        }
+                        if (cmd === "I") {
+                            if (rightPaddleY > 1) rightPaddleY--;
+                            return;
+                        }
+                        if (cmd === "K") {
+                            if (rightPaddleY < pongBoardHeight - 2) rightPaddleY++;
+                            return;
+                        }
+                    }
+
+                    if (cmd === "PLAY PONG") {
+                        if (tttActive) tttActive = false;
+                        pongActive = true;
+                        pongMode = "AIVAI"; // Default to AI vs AI automated display
+                        scoreLeft = 0;
+                        scoreRight = 0;
+                        leftPaddleY = 4;
+                        rightPaddleY = 4;
+                        resetBall();
+                        if (pongTimer) clearInterval(pongTimer);
+                        pongTimer = setInterval(tickPong, 250);
+
+                        // Show canvas & hide text output
+                        document.getElementById("gamemasterTerminalOutput").style.display = "none";
+                        const canvas = document.getElementById("vulkanPongCanvas");
+                        canvas.style.display = "block";
+
+                        // Reset Display State
+                        displayBallX = ballX;
+                        displayBallY = ballY;
+                        displayLeftPaddleY = leftPaddleY;
+                        displayRightPaddleY = rightPaddleY;
+                        pongParticles = [];
+
+                        // Start animation loop
+                        if (pongAnimFrameId) cancelAnimationFrame(pongAnimFrameId);
+                        runPongAnimation();
+
+                        writeToTerminal("\nPONG INITIALIZED -- AI VS AI ACTIVE (IDLE DEMO).");
+                        writeToTerminal("OPTIONS:\n  'MODE PVAI'  - PLAYER VS AI (W/S to move)\n  'MODE PVP'   - PLAYER VS PLAYER (W/S vs I/K)\n  'MODE AIVAI' - AI VS AI SCREEN\n  'EXIT'       - EXIT TO PARLOR");
+                        return;
+                    }
+
+                    if (cmd === "PLAY TICTACTOE") {
+                        if (pongActive) {
+                            pongActive = false;
+                            if (pongTimer) clearInterval(pongTimer);
+                        }
+                        tttBoard = [" ", " ", " ", " ", " ", " ", " ", " ", " "];
+                        tttActive = true;
+                        writeToTerminal("TIC-TAC-TOE INITIALIZED. YOU ARE 'X'.");
+                        writeToTerminal("ENTER MOVE index (0-8) corresponding to:\n 0 | 1 | 2\n---+---+---\n 3 | 4 | 5\n---+---+---\n 6 | 7 | 8");
+                        writeToTerminal(printTTTBoard());
+                        return;
+                    }
+
+                    if (tttActive) {
+                        const idx = parseInt(val);
+                        if (isNaN(idx) || idx < 0 || idx > 8 || tttBoard[idx] !== " ") {
+                            writeToTerminal("INVALID MOVE. CHOOSE EMPTY SLOT 0-8.");
+                            return;
+                        }
+
+                        tttBoard[idx] = "X";
+                        writeToTerminal(printTTTBoard());
+
+                        if (checkTTTWin(tttBoard, "X")) {
+                            writeToTerminal("CONGRATULATIONS! YOU BEAT THE MACHINE! (+10 GameMaster Points)");
+                            tttActive = false;
+                            return;
+                        }
+
+                        if (tttBoard.every(s => s !== " ")) {
+                            writeToTerminal("TIE GAME.");
+                            tttActive = false;
+                            return;
+                        }
+
+                        // Machine move
+                        writeToTerminal("MACHINE THINKING...");
+                        const emptyIdxs = tttBoard.map((s, i) => s === " " ? i : null).filter(v => v !== null);
+                        const move = emptyIdxs[Math.floor(Math.random() * emptyIdxs.length)];
+                        tttBoard[move] = "O";
+                        writeToTerminal(printTTTBoard());
+
+                        if (checkTTTWin(tttBoard, "O")) {
+                            writeToTerminal("MACHINE WINS! BETTER LUCK NEXT TIME.");
+                            tttActive = false;
+                            return;
+                        }
+
+                        if (tttBoard.every(s => s !== " ")) {
+                            writeToTerminal("TIE GAME.");
+                            tttActive = false;
+                            return;
+                        }
+                        return;
+                    }
+                }
+
+                if (gamemasterRoom === "CLASSROOM") {
+                    if (oregonActive) {
+                        if (cmd === "EXIT" || cmd === "QUIT") {
+                            oregonActive = false;
+                            writeToTerminal("RETURNING TO CLASSROOM.");
+                            writeToTerminal(gmClassroomText);
+                            return;
+                        }
+                        if (cmd === "HUNT") {
+                            let foodGained = Math.floor(Math.random() * 31) + 20; // 20-50 lbs
+                            oregonFood += foodGained;
+                            oregonFood -= 5; // daily consumption
+                            writeToTerminal(`YOU HUNTED SUCCESSFULLY AND GAINED ${foodGained} LBS OF FOOD!`);
+                            if (oregonFood < 0) oregonFood = 0;
+                            writeToTerminal(`STATUS: FOOD ${oregonFood} LBS | MILES TO GO: ${oregonMile} | HEALTH: ${oregonHealth}%`);
+                            rewardOregonTokens(3);
+                            return;
+                        }
+                        if (cmd === "TRAVEL") {
+                            let dist = Math.floor(Math.random() * 51) + 80; // 80-130 miles
+                            
+                            // Weather & Time of Day progression
+                            oregonTimeOfDay = (oregonTimeOfDay + 1) % 4;
+                            let wRnd = Math.random();
+                            if (wRnd < 0.60) {
+                                oregonWeather = "SUNNY";
+                            } else if (wRnd < 0.80) {
+                                oregonWeather = "RAINY";
+                                oregonHealth = Math.max(0, oregonHealth - 2);
+                                writeToTerminal("WEATHER: MUDDY PLOUGHING! RAIN FALLS. HEALTH -2.");
+                            } else {
+                                oregonWeather = "STORMY";
+                                oregonHealth = Math.max(0, oregonHealth - 5);
+                                dist = Math.floor(dist * 0.7);
+                                writeToTerminal("WEATHER: A SEVERE THUNDERSTORM RAGES! TRAVEL SLOWED. HEALTH -5.");
+                            }
+
+                            oregonMile -= dist;
+                            oregonFood -= 15;
+                            if (oregonFood < 0) {
+                                oregonHealth -= 15;
+                                oregonFood = 0;
+                            }
+                            writeToTerminal(`YOU TRAVELED ${dist} MILES ACROSS THE PLAINS!`);
+                            
+                            // Trigger random event
+                            let eventRnd = Math.random();
+                            if (eventRnd < 0.25) {
+                                oregonHealth -= 20;
+                                writeToTerminal("EVENT: YOU CONTRACTED DYSENTERY! HEALTH DROPPED BY 20.");
+                            } else if (eventRnd < 0.45) {
+                                const userAddress = signer ? signer.address : "0x0000000000000000000000000000000000000000";
+                                let wheelBal = 0;
+                                if (cpuContract && userAddress !== "0x0000000000000000000000000000000000000000") {
+                                    try {
+                                        wheelBal = Number(await cpuContract.peekUser(userAddress, 853));
+                                    } catch (err) {}
+                                }
+                                if (wheelBal > 0) {
+                                    const nextBal = wheelBal - 1;
+                                    if (cpuContract && userAddress !== "0x0000000000000000000000000000000000000000") {
+                                        await (await cpuContract.pokeUser(userAddress, 853, nextBal)).wait();
+                                    }
+                                    oregonHealth -= 2;
+                                    writeToTerminal(`EVENT: A WAGON WHEEL BROKE! REPLACED WITH A SPARE WHEEL TOKEN. SPARE WHEELS REMAINING: ${nextBal}.`);
+                                } else {
+                                    oregonHealth -= 15;
+                                    writeToTerminal("EVENT: A WAGON WHEEL BROKE! NO SPARE WHEELS LEFT. HEALTH DROPPED BY 15.");
+                                }
+                            } else {
+                                writeToTerminal("EVENT: DAY WAS QUIET AND PEACEFUL.");
+                            }
+
+                            if (oregonMile <= 0) {
+                                oregonActive = false;
+                                writeToTerminal("\n************************************************");
+                                writeToTerminal("* CONGRATULATIONS! YOU HAVE REACHED OREGON!   *");
+                                writeToTerminal("************************************************");
+                                writeToTerminal("MECC Software Complete. Returning to Classroom.");
+                                rewardOregonTokens(100);
+                                return;
+                            }
+                            if (oregonHealth <= 0) {
+                                oregonActive = false;
+                                writeToTerminal("\n[DEATH] YOU HAVE DIED ON THE OREGON TRAIL.");
+                                writeToTerminal("GAME OVER.");
+                                return;
+                            }
+                            writeToTerminal(`STATUS: FOOD ${oregonFood} LBS | MILES TO GO: ${oregonMile} | HEALTH: ${oregonHealth}%`);
+                            rewardOregonTokens(5);
+                            return;
+                        }
+                        if (cmd === "REST") {
+                            oregonHealth = Math.min(100, oregonHealth + 15);
+                            oregonFood -= 5;
+                            if (oregonFood < 0) {
+                                oregonHealth -= 15;
+                                oregonFood = 0;
+                            }
+                            writeToTerminal("YOU RESTED FOR 1 DAY AND RECOVERED HEALTH.");
+                            if (oregonHealth <= 0) {
+                                oregonActive = false;
+                                writeToTerminal("[DEATH] YOU HAVE DIED OF STARVATION WHILE RESTING.");
+                                return;
+                            }
+                            writeToTerminal(`STATUS: FOOD ${oregonFood} LBS | MILES TO GO: ${oregonMile} | HEALTH: ${oregonHealth}%`);
+                            rewardOregonTokens(1);
+                            return;
+                        }
+                        writeToTerminal("UNKNOWN ACTION. TYPE 'TRAVEL', 'HUNT', 'REST', OR 'EXIT'.");
+                        return;
+                    }
+
+                    if (lemonadeActive) {
+                        if (cmd === "EXIT" || cmd === "QUIT") {
+                            lemonadeActive = false;
+                            writeToTerminal("RETURNING TO CLASSROOM.");
+                            writeToTerminal(gmClassroomText);
+                            return;
+                        }
+                        if (lemonadeDayPhase === "SETUP") {
+                            if (val.toUpperCase().startsWith("MAKE ")) {
+                                let glasses = parseInt(val.substring(5).trim());
+                                if (isNaN(glasses) || glasses < 0) {
+                                    writeToTerminal("USAGE: MAKE <number>");
+                                    return;
+                                }
+                                let cost = glasses * 0.05;
+                                if (cost > lemonadeMoney) {
+                                    writeToTerminal(`NOT ENOUGH CAPITAL! Need $${cost.toFixed(2)} for ${glasses} glasses. You have $${lemonadeMoney.toFixed(2)}.`);
+                                    return;
+                                }
+                                lemonadeGlasses = glasses;
+                                lemonadeMoney -= cost;
+                                lemonadeDayPhase = "PRICE";
+                                writeToTerminal(`MADE ${glasses} GLASSES. COST: $${cost.toFixed(2)}. Remaining Capital: $${lemonadeMoney.toFixed(2)}.`);
+                                writeToTerminal("WHAT PRICE (IN CENTS) WILL YOU CHARGE PER GLASS? (e.g. 'PRICE 15')");
+                                return;
+                            }
+                            writeToTerminal("USAGE: TYPE 'MAKE <number>' TO MAKE LEMONADE.");
+                            return;
+                        }
+                        if (lemonadeDayPhase === "PRICE") {
+                            if (val.toUpperCase().startsWith("PRICE ")) {
+                                let cents = parseInt(val.substring(6).trim());
+                                if (isNaN(cents) || cents < 0) {
+                                    writeToTerminal("USAGE: PRICE <cents>");
+                                    return;
+                                }
+                                lemonadePrice = cents;
+                                
+                                // Weather Selection
+                                let weathers = [
+                                    { name: "HOT AND SUNNY", mult: 1.5 },
+                                    { name: "CLOUDY AND COOL", mult: 0.8 },
+                                    { name: "RAINY", mult: 0.2 }
+                                ];
+                                let wIdx = Math.floor(Math.random() * weathers.length);
+                                let w = weathers[wIdx];
+
+                                // Demand simulation
+                                let baseDemand = Math.floor(Math.max(0, 30 - cents / 2));
+                                let actualDemand = Math.floor(baseDemand * w.mult);
+                                let sold = Math.min(lemonadeGlasses, actualDemand);
+                                let rev = sold * cents / 100;
+                                lemonadeMoney += rev;
+
+                                writeToTerminal(`\n--- DAY ${lemonadeDay} REPORT ---`);
+                                writeToTerminal(`WEATHER TODAY: ${w.name}`);
+                                writeToTerminal(`YOU SOLD ${sold} OUT OF ${lemonadeGlasses} GLASSES AT ${cents} CENTS.`);
+                                writeToTerminal(`REVENUE: $${rev.toFixed(2)}`);
+                                writeToTerminal(`NET CAPITAL: $${lemonadeMoney.toFixed(2)}`);
+
+                                lemonadeDay++;
+                                lemonadeDayPhase = "SETUP";
+
+                                if (lemonadeMoney < 0.05) {
+                                    writeToTerminal("\nGAME OVER! YOU ARE BANKRUPT.");
+                                    lemonadeActive = false;
+                                    writeToTerminal(gmClassroomText);
+                                    return;
+                                }
+
+                                writeToTerminal(`\nDAY ${lemonadeDay}. CAPITAL: $${lemonadeMoney.toFixed(2)}.`);
+                                writeToTerminal("How many glasses to make today? (TYPE 'MAKE <number>')");
+                                return;
+                            }
+                            writeToTerminal("USAGE: TYPE 'PRICE <cents>' (e.g. 'PRICE 15')");
+                            return;
+                        }
+                    }
+
+                    if (cmd === "PLAY OREGON") {
+                        if (lemonadeActive) lemonadeActive = false;
+                        oregonActive = true;
+                        oregonMile = 2000;
+                        oregonFood = 150;
+                        oregonHealth = 100;
+                        
+                        if (cpuContract) {
+                            const userAddress = signer ? signer.address : "0x0000000000000000000000000000000000000000";
+                            if (userAddress !== "0x0000000000000000000000000000000000000000") {
+                                cpuContract.pokeUser(userAddress, 848, 0).catch(() => {});
+                                cpuContract.pokeUser(userAddress, 849, 1).catch(() => {});
+                                cpuContract.pokeUser(userAddress, 850, 6).catch(() => {});
+                                cpuContract.pokeUser(userAddress, 851, 2).catch(() => {});
+                                cpuContract.pokeUser(userAddress, 852, 2).catch(() => {});
+                                cpuContract.pokeUser(userAddress, 853, 2).catch(() => {});
+                                cpuContract.pokeUser(userAddress, 854, 4).catch(() => {});
+                            }
+                        }
+
+                        writeToTerminal("\nTHE OREGON TRAIL (MECC C64 VERSION)");
+                        writeToTerminal("YOU START AT INDEPENDENCE, MISSOURI WITH 2000 MILES TO GO.");
+                        writeToTerminal("FOOD: 150 LBS | HEALTH: 100%");
+                        writeToTerminal("INVENTORY INITIALIZED: 1 WAGON, 6 OXEN, 2 AXLES, 2 TONGUES, 2 WHEELS, 4 CLOTHES.");
+                        writeToTerminal("COMMANDS: 'TRAVEL' (consume 15 food), 'HUNT' (gain 20-50 food), 'REST', OR 'EXIT'.");
+                        return;
+                    }
+
+                    if (cmd === "PLAY LEMONADE") {
+                        if (oregonActive) oregonActive = false;
+                        lemonadeActive = true;
+                        lemonadeDay = 1;
+                        lemonadeMoney = 5.00;
+                        lemonadeGlasses = 0;
+                        lemonadePrice = 0;
+                        lemonadeDayPhase = "SETUP";
+                        writeToTerminal("\nLEMONADE STAND (MECC C64 VERSION)");
+                        writeToTerminal("DAY 1. CAPITAL: $5.00");
+                        writeToTerminal("COST TO MAKE LEMONADE: $0.05 PER GLASS");
+                        writeToTerminal("How many glasses do you want to make today? (TYPE 'MAKE <number>')");
+                        return;
+                    }
+                }
+
+                // General default
+                writeToTerminal("UNKNOWN COMMAND. TYPE 'HELP' FOR LIST.");
+            }
+        });
+
+        const vulkanCanvas = document.getElementById("vulkanScreen");
+        const vulkanCtx = vulkanCanvas ? vulkanCanvas.getContext("2d") : null;
+
+        function drawVulkanPlaceholder() {
+            if (!vulkanCanvas || !vulkanCtx) return;
+            vulkanCtx.fillStyle = "#110b29"; 
+            vulkanCtx.fillRect(0, 0, vulkanCanvas.width, vulkanCanvas.height);
+            vulkanCtx.strokeStyle = "rgba(0, 242, 254, 0.15)";
+            vulkanCtx.lineWidth = 1;
+            for (let i = 0; i < vulkanCanvas.width; i += 20) {
+                vulkanCtx.beginPath();
+                vulkanCtx.moveTo(i, 0);
+                vulkanCtx.lineTo(i, vulkanCanvas.height);
+                vulkanCtx.stroke();
+            }
+            for (let j = 0; j < vulkanCanvas.height; j += 20) {
+                vulkanCtx.beginPath();
+                vulkanCtx.moveTo(0, j);
+                vulkanCtx.lineTo(vulkanCanvas.width, j);
+                vulkanCtx.stroke();
+            }
+            vulkanCtx.fillStyle = "#00f2fe";
+            vulkanCtx.font = "bold 11px 'Orbitron', monospace";
+            vulkanCtx.textAlign = "center";
+            vulkanCtx.fillText("VULKAN COMPATIBLE DATAMOST DISPLAY", vulkanCanvas.width / 2, vulkanCanvas.height / 2 - 10);
+            vulkanCtx.fillStyle = "#ff007f";
+            vulkanCtx.fillText("LOADING STREAM FROM HOST...", vulkanCanvas.width / 2, vulkanCanvas.height / 2 + 10);
+        }
+
+        async function updateVulkanScreen() {
+            try {
+                let ppmLoaded = false;
+                try {
+                    const res = await fetch("/vulkan_frame.ppm");
+                    if (res.ok) {
+                        const buffer = await res.arrayBuffer();
+                        const arr = new Uint8Array(buffer);
+                        
+                        let pos = 0;
+                        function nextToken() {
+                            while (pos < arr.length && arr[pos] <= 32) { pos++; } 
+                            let start = pos;
+                            while (pos < arr.length && arr[pos] > 32) { pos++; }
+                            let bytes = arr.subarray(start, pos);
+                            let str = "";
+                            for (let i = 0; i < bytes.length; i++) {
+                                str += String.fromCharCode(bytes[i]);
+                            }
+                            return str;
+                        }
+
+                        const magic = nextToken();
+                        if (magic === "P6") {
+                            const width = parseInt(nextToken(), 10);
+                            const height = parseInt(nextToken(), 10);
+                            const maxVal = nextToken(); 
+                            pos++; 
+                            
+                            const pixelData = arr.subarray(pos);
+                            if (pixelData.length >= width * height * 3) {
+                                const imgData = vulkanCtx.createImageData(width, height);
+                                const data = imgData.data;
+                                let srcIdx = 0;
+                                for (let i = 0; i < width * height * 4; i += 4) {
+                                    data[i] = pixelData[srcIdx];     
+                                    data[i+1] = pixelData[srcIdx+1]; 
+                                    data[i+2] = pixelData[srcIdx+2]; 
+                                    data[i+3] = 255;                 
+                                    srcIdx += 3;
+                                }
+                                vulkanCtx.putImageData(imgData, 0, 0);
+                                ppmLoaded = true;
+                            }
+                        }
+                    }
+                } catch (e) {}
+
+                if (!ppmLoaded && vulkanCanvas && vulkanCtx && canvas) {
+                    vulkanCtx.clearRect(0, 0, vulkanCanvas.width, vulkanCanvas.height);
+                    vulkanCtx.drawImage(canvas, 0, 0);
+                    
+                    const imgData = vulkanCtx.getImageData(0, 0, vulkanCanvas.width, vulkanCanvas.height);
+                    const data = imgData.data;
+                    const w = vulkanCanvas.width;
+                    const h = vulkanCanvas.height;
+                    
+                    for (let y = 0; y < h; y++) {
+                        const scanlineIntensity = 0.85 + 0.15 * Math.sin(y * 1.5 + Date.now() * 0.01);
+                        for (let x = 0; x < w; x++) {
+                            const idx = (y * w + x) * 4;
+                            let rIdx = idx;
+                            let gIdx = idx;
+                            let bIdx = idx;
+                            if (x > 1) rIdx = (y * w + (x - 1)) * 4;
+                            if (x < w - 1) bIdx = (y * w + (x + 1)) * 4;
+                            
+                            let r = data[rIdx];
+                            let g = data[gIdx + 1];
+                            let b = data[bIdx + 2];
+                            
+                            r = Math.min(255, r * scanlineIntensity);
+                            g = Math.min(255, g * scanlineIntensity);
+                            b = Math.min(255, b * scanlineIntensity);
+                            
+                            const dx = (x - w/2) / (w/2);
+                            const dy = (y - h/2) / (h/2);
+                            const vign = 1.0 - 0.15 * (dx*dx + dy*dy);
+                            
+                            data[idx] = r * vign;
+                            data[idx+1] = g * vign;
+                            data[idx+2] = b * vign;
+                        }
+                    }
+                    vulkanCtx.putImageData(imgData, 0, 0);
+                }
+
+                if (isDemoModeActive) {
+                    vulkanCtx.fillStyle = "rgba(255, 0, 127, 0.9)";
+                    vulkanCtx.font = "bold 9px 'Orbitron', sans-serif";
+                    vulkanCtx.textAlign = "right";
+                    if (Math.floor(Date.now() / 500) % 2 === 0) {
+                        vulkanCtx.fillText("● DEMO MODE ACTIVE", vulkanCanvas.width - 15, 20);
+                    }
+                }
+            } catch (err) {
+                console.error("Vulkan frame update failed:", err);
+            }
+        }
+
+        function c64ScreenCodeToChar(code) {
+            code = code & 0x7F; // strip reverse video bit
+            if (code === 0) return "@";
+            if (code >= 1 && code <= 26) return String.fromCharCode(65 + code - 1);
+            if (code === 27) return "[";
+            if (code === 28) return "£";
+            if (code === 29) return "]";
+            if (code === 30) return "↑";
+            if (code === 31) return "←";
+            if (code >= 32 && code <= 63) return String.fromCharCode(code);
+            if (code === 64) return "─";
+            if (code >= 65 && code <= 90) return String.fromCharCode(97 + code - 65); // lowercase a-z
+            if (code === 91) return "│";
+            if (code === 92) return "━";
+            if (code === 93) return "┃";
+            if (code === 94) return "╱";
+            if (code === 95) return "╲";
+            if (code === 96) return "■";
+            if (code === 97) return "◆";
+            if (code === 98) return "▲";
+            if (code === 99) return "▼";
+            if (code === 100) return "◀";
+            if (code === 101) return "▶";
+            if (code === 102) return "●";
+            if (code === 103) return "○";
+            if (code === 104) return "★";
+            if (code === 105) return "☆";
+            return " ";
+        }
+
+        let oregonScrollOffset = 0;
+        
+        function drawOregonScreen() {
+            // Sky & Celestial Body depending on time of day
+            let skyCol = "#33a2ff";
+            let celestialCol = "#ffdd00";
+            let isNight = false;
+            
+            if (oregonTimeOfDay === 0) { // Day
+                skyCol = "#33a2ff";
+                celestialCol = "#ffdd00";
+            } else if (oregonTimeOfDay === 1) { // Sunset
+                skyCol = "#ff7675";
+                celestialCol = "#e17055";
+            } else if (oregonTimeOfDay === 2) { // Night
+                skyCol = "#090a14";
+                celestialCol = "#dfe6e9";
+                isNight = true;
+            } else if (oregonTimeOfDay === 3) { // Sunrise
+                skyCol = "#8c7ae6";
+                celestialCol = "#fbc531";
+            }
+            
+            // Lightning flash
+            let lightningFlash = false;
+            if (oregonWeather === "STORMY" && Math.random() < 0.04) {
+                lightningFlash = true;
+                skyCol = "#ffffff";
+            }
+
+            ctx.fillStyle = skyCol; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Stars at night
+            if (isNight && !lightningFlash) {
+                ctx.fillStyle = "#ffffff";
+                for (let i = 0; i < 15; i++) {
+                    let starX = (i * 23) % canvas.width;
+                    let starY = (i * 17) % 80;
+                    ctx.fillRect(starX, starY, 1, 1);
+                }
+            }
+
+            // Celestial Body
+            ctx.fillStyle = celestialCol;
+            ctx.beginPath();
+            if (isNight) {
+                ctx.arc(280, 25, 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = skyCol;
+                ctx.beginPath();
+                ctx.arc(276, 25, 10, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                ctx.arc(280, 25, 12, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Mountains
+            ctx.fillStyle = isNight ? "#1e272e" : "#4a6b82";
+            ctx.beginPath();
+            ctx.moveTo(0, 120);
+            for (let i = 0; i <= canvas.width + 40; i += 40) {
+                let offset = (oregonScrollOffset * 0.1) % 40;
+                let mx = i - offset;
+                let my = 90 - (Math.abs(Math.sin(i * 0.05)) * 15);
+                ctx.lineTo(mx, my);
+            }
+            ctx.lineTo(canvas.width, 120);
+            ctx.fill();
+
+            // Green hills
+            ctx.fillStyle = isNight ? "#1b263b" : "#2ecc71";
+            ctx.beginPath();
+            ctx.moveTo(0, 120);
+            for (let x = 0; x <= canvas.width + 10; x += 10) {
+                let offset = (oregonScrollOffset * 0.3) % 10;
+                let lx = x - offset;
+                let ly = 120 + Math.sin((x + oregonScrollOffset * 0.5) * 0.04) * 3;
+                ctx.lineTo(lx, ly);
+            }
+            ctx.lineTo(canvas.width, canvas.height);
+            ctx.lineTo(0, canvas.height);
+            ctx.closePath();
+            ctx.fill();
+
+            // Path
+            ctx.fillStyle = isNight ? "#3d2e27" : "#8d6e63";
+            ctx.fillRect(0, 130, canvas.width, 25);
+
+            // Trees
+            for (let i = 0; i < canvas.width + 100; i += 80) {
+                let tx = i - ((oregonScrollOffset * 0.8) % (canvas.width + 100));
+                ctx.fillStyle = isNight ? "#271b17" : "#5d4037";
+                ctx.fillRect(tx + 18, 115, 3, 15);
+                ctx.fillStyle = isNight ? "#0d2b10" : "#1b5e20";
+                ctx.beginPath();
+                ctx.arc(tx + 19, 110, 8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Draw Wagon
+            ctx.fillStyle = "#000000";
+            ctx.beginPath();
+            ctx.arc(95, 138, 4, 0, Math.PI * 2);
+            ctx.arc(115, 138, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = isNight ? "#5d4037" : "#a1887f";
+            ctx.fillRect(88, 124, 32, 10);
+            ctx.fillStyle = isNight ? "#b2bec3" : "#f5f5f5";
+            ctx.beginPath();
+            ctx.moveTo(88, 124);
+            ctx.bezierCurveTo(88, 108, 120, 108, 120, 124);
+            ctx.fill();
+
+            // Draw Ox
+            ctx.fillStyle = isNight ? "#5d4037" : "#8d6e63";
+            ctx.fillRect(135, 126, 16, 9);
+            ctx.fillRect(147, 120, 6, 6);
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(148, 117, 1, 3);
+            ctx.fillRect(151, 117, 1, 3);
+            ctx.fillStyle = isNight ? "#2d1f1a" : "#5d4037";
+            let legOffset = Math.sin(oregonScrollOffset * 0.2) * 2;
+            ctx.fillRect(137, 135, 2, 4 + legOffset);
+            ctx.fillRect(141, 135, 2, 4 - legOffset);
+            ctx.fillRect(145, 135, 2, 4 + legOffset);
+            ctx.fillRect(149, 135, 2, 4 - legOffset);
+
+            // Connective yoke
+            ctx.strokeStyle = "#5d4037";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(120, 129);
+            ctx.lineTo(135, 129);
+            ctx.stroke();
+
+            // Weather Particles
+            if (oregonWeather === "RAINY" || oregonWeather === "STORMY") {
+                ctx.fillStyle = "rgba(100, 110, 120, 0.8)";
+                ctx.fillRect(0, 0, canvas.width, 18);
+                
+                ctx.strokeStyle = "rgba(174, 214, 241, 0.6)";
+                ctx.lineWidth = 1;
+                for (let i = 0; i < 20; i++) {
+                    let rx = (i * 27 + oregonScrollOffset * 2) % canvas.width;
+                    let ry = (i * 13 + oregonScrollOffset * 5) % 130;
+                    ctx.beginPath();
+                    ctx.moveTo(rx, ry);
+                    ctx.lineTo(rx - 2, ry + 8);
+                    ctx.stroke();
+                }
+            }
+
+            // Text Overlays
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText(`MILES TO GO: ${oregonMile}`, 10, 14);
+            ctx.fillText(`HEALTH: ${oregonHealth}%`, 10, 23);
+            ctx.fillText(`FOOD: ${oregonFood} LBS`, 10, 32);
+            ctx.fillText(`WEATHER: ${oregonWeather}`, 10, 41);
+
+            // Increment
+            oregonScrollOffset += 1.5;
+        }
+
+        let antEaterFrame = 0;
+        let antEaterTonguePath = [];
+        let antEaterScore = 5390;
+        let eatenAnts = {};
+
+        function drawAntEaterScreen() {
+            antEaterFrame++;
+            ctx.fillStyle = "#0c0d12";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#4e3629";
+            ctx.fillRect(0, 40, canvas.width, canvas.height - 40);
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(20, 60, 280, 20);
+            ctx.fillRect(60, 60, 20, 100);
+            ctx.fillRect(240, 60, 20, 100);
+            ctx.fillRect(60, 120, 200, 20);
+            ctx.fillRect(140, 120, 20, 60);
+            ctx.fillRect(20, 160, 280, 20);
+            ctx.fillStyle = "#d35400";
+            ctx.fillRect(135, 25, 20, 12);
+            ctx.fillRect(142, 37, 6, 8);
+
+            if (!antEaterTonguePath || antEaterTonguePath.length === 0) {
+                antEaterTonguePath = [{ x: 145, y: 45 }];
+            }
+
+            let tip = antEaterTonguePath[antEaterTonguePath.length - 1];
+            let nextX = tip.x;
+            let nextY = tip.y;
+            const speed = 3;
+
+            if (interactiveKeys.left) nextX -= speed;
+            if (interactiveKeys.right) nextX += speed;
+            if (interactiveKeys.up) nextY -= speed;
+            if (interactiveKeys.down) nextY += speed;
+
+            const inTunnel = (x, y) => {
+                if (x >= 140 && x <= 150 && y >= 25 && y <= 60) return true;
+                if (x >= 20 && x <= 300 && y >= 60 && y <= 80) return true;
+                if (x >= 60 && x <= 80 && y >= 60 && y <= 160) return true;
+                if (x >= 240 && x <= 260 && y >= 60 && y <= 160) return true;
+                if (x >= 60 && x <= 260 && y >= 120 && y <= 140) return true;
+                if (x >= 140 && x <= 160 && y >= 120 && y <= 180) return true;
+                if (x >= 20 && x <= 300 && y >= 160 && y <= 180) return true;
+                return false;
+            };
+
+            if (nextX !== tip.x || nextY !== tip.y) {
+                if (inTunnel(nextX, nextY)) {
+                    if (antEaterTonguePath.length > 1) {
+                        let prev = antEaterTonguePath[antEaterTonguePath.length - 2];
+                        let distToPrev = Math.hypot(nextX - prev.x, nextY - prev.y);
+                        if (distToPrev < speed + 1) {
+                            antEaterTonguePath.pop();
+                        } else {
+                            antEaterTonguePath.push({ x: nextX, y: nextY });
+                        }
+                    } else {
+                        antEaterTonguePath.push({ x: nextX, y: nextY });
+                    }
+                }
+            }
+
+            ctx.strokeStyle = "#e84393";
+            ctx.lineWidth = 3;
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+            ctx.beginPath();
+            ctx.moveTo(145, 45);
+            for (let pt of antEaterTonguePath) {
+                ctx.lineTo(pt.x, pt.y);
+            }
+            ctx.stroke();
+
+            let currentTip = antEaterTonguePath[antEaterTonguePath.length - 1];
+            ctx.fillStyle = "#ff007f";
+            ctx.beginPath();
+            ctx.arc(currentTip.x, currentTip.y, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = "#fbc531";
+            for (let i = 0; i < 8; i++) {
+                if (eatenAnts[i] && Date.now() - eatenAnts[i] < 5000) {
+                    continue;
+                }
+
+                let antX = (30 + i * 35 + (antEaterFrame * 0.4)) % 260 + 20;
+                let antY = 70;
+                if (i % 2 === 0) {
+                    antX = 140 + Math.sin(antEaterFrame * 0.05 + i) * 80;
+                    antY = 130;
+                } else if (i % 3 === 0) {
+                    antX = (280 - i * 30 - (antEaterFrame * 0.3)) % 260 + 20;
+                    antY = 170;
+                }
+
+                let distToTip = Math.hypot(antX - currentTip.x, antY - currentTip.y);
+                if (distToTip < 8) {
+                    eatenAnts[i] = Date.now();
+                    antEaterScore += 100;
+                    if (musicContract) {
+                        musicContract.poke(54272 + 1, 15);
+                        musicContract.poke(54272 + 4, 33);
+                        setTimeout(() => {
+                            if (musicContract) musicContract.poke(54272 + 4, 32);
+                        }, 80);
+                    }
+                    continue;
+                }
+
+                ctx.beginPath();
+                ctx.arc(antX, antY, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = "#fbc531";
+                ctx.lineWidth = 0.5;
+                ctx.beginPath();
+                ctx.moveTo(antX - 3, antY); ctx.lineTo(antX + 3, antY);
+                ctx.moveTo(antX - 2, antY - 2); ctx.lineTo(antX + 2, antY + 2);
+                ctx.moveTo(antX - 2, antY + 2); ctx.lineTo(antX + 2, antY - 2);
+                ctx.stroke();
+            }
+
+            let spiderY = 90 + Math.sin(antEaterFrame * 0.08) * 25;
+            let spiderX = 70 + Math.cos(antEaterFrame * 0.05) * 10;
+            ctx.fillStyle = "#ea2027";
+            ctx.beginPath();
+            ctx.arc(spiderX, spiderY, 4.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "#ea2027";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(spiderX - 5, spiderY - 2); ctx.lineTo(spiderX + 5, spiderY + 2);
+            ctx.moveTo(spiderX - 5, spiderY + 2); ctx.lineTo(spiderX + 5, spiderY - 2);
+            ctx.stroke();
+
+            let hit = false;
+            for (let pt of antEaterTonguePath) {
+                if (Math.hypot(pt.x - spiderX, pt.y - spiderY) < 8) {
+                    hit = true;
+                    break;
+                }
+            }
+            if (hit) {
+                ctx.fillStyle = "rgba(255, 0, 0, 0.4)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                antEaterTonguePath = [{ x: 145, y: 45 }];
+                antEaterScore = Math.max(0, antEaterScore - 50);
+                if (musicContract) {
+                    musicContract.poke(54272 + 1, 4);
+                    musicContract.poke(54272 + 4, 129);
+                    setTimeout(() => {
+                        if (musicContract) musicContract.poke(54272 + 4, 128);
+                    }, 250);
+                }
+            }
+
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("ROMOX INC. 1983", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("SCORE: " + antEaterScore.toString().padStart(6, '0'), canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#00f2fe";
+            ctx.fillText("ANT EATER (AHOY! 1987)", canvas.width / 2, 15);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("USE ARROW KEYS TO GUIDE TONGUE & EAT ANTS", canvas.width / 2, canvas.height - 12);
+        }
+
+        let frogFrame = 0;
+        function drawPrincessFrogScreen() {
+            frogFrame++;
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#2c2c54";
+            ctx.fillRect(0, 20, canvas.width, 25);
+            ctx.fillStyle = "#0984e3";
+            ctx.fillRect(0, 45, canvas.width, 50);
+            ctx.fillStyle = "#d35400";
+            for (let lane = 0; lane < 3; lane++) {
+                let speed = (lane + 1) * 0.5;
+                let dir = (lane % 2 === 0) ? 1 : -1;
+                let offset = (frogFrame * speed * dir) % 120;
+                let yPos = 50 + lane * 15;
+                for (let i = -1; i < 4; i++) {
+                    let xPos = i * 100 + offset;
+                    if (xPos < -80) xPos += canvas.width + 100;
+                    ctx.fillRect(xPos, yPos, 40, 8);
+                }
+            }
+            ctx.fillStyle = "#27ae60";
+            ctx.fillRect(0, 95, canvas.width, 15);
+            ctx.fillStyle = "#2d3436";
+            ctx.fillRect(0, 110, canvas.width, 60);
+            ctx.strokeStyle = "#f1c40f";
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 10]);
+            ctx.beginPath();
+            ctx.moveTo(0, 130); ctx.lineTo(canvas.width, 130);
+            ctx.moveTo(0, 150); ctx.lineTo(canvas.width, 150);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = "#e74c3c";
+            let carX1 = (frogFrame * 1.2) % (canvas.width + 40) - 40;
+            ctx.fillRect(carX1, 115, 18, 10);
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(carX1 + 12, 117, 4, 6);
+            ctx.fillStyle = "#9b59b6";
+            let carX2 = canvas.width - ((frogFrame * 0.8) % (canvas.width + 40));
+            ctx.fillRect(carX2, 138, 25, 10);
+            ctx.fillStyle = "#fd79a8";
+            ctx.fillRect(145, 22, 30, 20);
+            ctx.fillRect(135, 15, 8, 27);
+            ctx.fillRect(177, 15, 8, 27);
+            ctx.fillStyle = "#f1c40f";
+            ctx.beginPath();
+            ctx.arc(160, 29, 3, 0, Math.PI * 2);
+            ctx.fill();
+            let frogX = 160 + Math.sin(frogFrame * 0.03) * 60;
+            let frogY = 165 - (Math.abs(Math.sin(frogFrame * 0.08)) * 30);
+            if (frogY < 95) {
+                frogX = 160 + ((frogFrame * 0.5) % 120);
+                if (frogX > canvas.width) frogX = 0;
+            }
+            ctx.fillStyle = "#2ecc71";
+            ctx.beginPath();
+            ctx.arc(frogX, frogY, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "#27ae60";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(frogX - 4, frogY + 2); ctx.lineTo(frogX - 7, frogY + 5);
+            ctx.moveTo(frogX + 4, frogY + 2); ctx.lineTo(frogX + 7, frogY + 5);
+            ctx.stroke();
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("ROMOX INC. 1983", 10, 12);
+            ctx.textAlign = "right";
+            ctx.fillText("SCORE: 001480", canvas.width - 10, 12);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ff007f";
+            ctx.fillText("PRINCESS & THE FROG", canvas.width / 2, 12);
+        }
+
+        let crushFrame = 0;
+        function drawCrushCrumbleChompScreen() {
+            crushFrame++;
+            ctx.fillStyle = "#1e272e"; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.strokeStyle = "#4b5563";
+            ctx.lineWidth = 1;
+            for (let x = 20; x < canvas.width; x += 30) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 20; y < canvas.height; y += 30) {
+                ctx.beginPath();
+                ctx.moveTo(0, y); ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // Stomp calculations
+            let monsterX = 160 + Math.sin(crushFrame * 0.05) * 60;
+            let monsterY = 100 + Math.cos(crushFrame * 0.04) * 40;
+
+            ctx.fillStyle = "#374151"; 
+            for (let bx = 5; bx < canvas.width; bx += 30) {
+                for (let by = 5; by < canvas.height; by += 30) {
+                    let distToMonster = Math.hypot(bx + 10 - monsterX, by + 10 - monsterY);
+                    if (distToMonster < 25) {
+                        ctx.fillStyle = "#0f172a"; 
+                    } else {
+                        ctx.fillStyle = "#4b5563"; 
+                    }
+                    ctx.fillRect(bx, by, 20, 20);
+                }
+            }
+
+            // Giant Monster Sprite
+            ctx.fillStyle = "#10b981"; 
+            ctx.beginPath();
+            ctx.arc(monsterX, monsterY, 8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = "#047857";
+            ctx.beginPath();
+            ctx.arc(monsterX - 6, monsterY + 4, 4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            if (crushFrame % 10 < 5) {
+                ctx.fillStyle = "#f59e0b"; 
+                ctx.beginPath();
+                ctx.moveTo(monsterX + 4, monsterY - 2);
+                ctx.lineTo(monsterX + 24, monsterY - 8 + Math.sin(crushFrame) * 4);
+                ctx.lineTo(monsterX + 20, monsterY + 8);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // Helicopter Sprite
+            let heliX = monsterX + Math.sin(crushFrame * 0.1) * 40;
+            let heliY = monsterY - 30 + Math.cos(crushFrame * 0.1) * 10;
+            ctx.fillStyle = "#3b82f6"; 
+            ctx.fillRect(heliX - 6, heliY - 2, 12, 5);
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(heliX - 10, heliY - 4, 20, 1); 
+
+            // Tank Sprite
+            let tankX = 60 + (crushFrame * 0.5) % 200;
+            let tankY = 140;
+            ctx.fillStyle = "#b45309"; 
+            ctx.fillRect(tankX - 8, tankY - 4, 16, 8);
+            ctx.fillRect(tankX - 4, tankY - 8, 8, 4);
+
+            // Police Car Sprite
+            let policeX = 260 - (crushFrame * 0.7) % 200;
+            let policeY = 80;
+            ctx.fillStyle = "#3b82f6"; 
+            ctx.fillRect(policeX - 8, policeY - 3, 16, 6);
+            ctx.fillStyle = "#ef4444"; 
+            if (crushFrame % 4 < 2) {
+                ctx.fillRect(policeX - 2, policeY - 5, 4, 2);
+            }
+
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("EPYX INC. 1981", 10, 12);
+            ctx.textAlign = "right";
+            ctx.fillText("MONSTER: GORGON", canvas.width - 10, 12);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ff007f";
+            ctx.fillText("CRUSH, CRUMBLE & CHOMP!", canvas.width / 2, 12);
+        }
+
+        let minerFrame = 0;
+        function drawMiner2049erScreen() {
+            minerFrame++;
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw level platforms/girders (bright cyan)
+            ctx.fillStyle = "#00d2ff";
+            ctx.fillRect(40, 60, 240, 4);   // Top platform
+            ctx.fillRect(40, 95, 240, 4);   // Mid platform
+            ctx.fillRect(40, 130, 240, 4);  // Low platform
+            ctx.fillRect(40, 165, 240, 4);  // Ground platform
+
+            // Draw ladders (vertical, red/white rungs)
+            ctx.strokeStyle = "#e74c3c";
+            ctx.lineWidth = 2;
+            
+            // Ladder 1
+            ctx.beginPath();
+            ctx.moveTo(80, 60); ctx.lineTo(80, 95);
+            ctx.moveTo(220, 95); ctx.lineTo(220, 130);
+            ctx.moveTo(100, 130); ctx.lineTo(100, 165);
+            ctx.stroke();
+
+            // Ladder rungs
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let y = 62; y < 95; y += 5) { ctx.moveTo(76, y); ctx.lineTo(84, y); }
+            for (let y = 97; y < 130; y += 5) { ctx.moveTo(216, y); ctx.lineTo(224, y); }
+            for (let y = 132; y < 165; y += 5) { ctx.moveTo(96, y); ctx.lineTo(104, y); }
+            ctx.stroke();
+
+            // Draw hazardous radioactive canisters (bright green dots)
+            ctx.fillStyle = "#39ff14";
+            ctx.beginPath();
+            ctx.arc(60, 56, 3, 0, Math.PI * 2);
+            ctx.arc(150, 91, 3, 0, Math.PI * 2);
+            ctx.arc(260, 126, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Bounty Bob (Sprite 0) interactive jumping position
+            if (!window.vaultX) {
+                window.vaultX = 144;
+                window.vaultY = 120;
+            }
+            // Update movement coordinates via keys or automatic walk cycle if demo
+            if (isDemoModeActive) {
+                window.vaultX = 120 + Math.sin(minerFrame * 0.03) * 60;
+                window.vaultY = 145 + Math.abs(Math.sin(minerFrame * 0.1)) * 5;
+            }
+
+            // Draw Bounty Bob indicator
+            ctx.fillStyle = "#e67e22";
+            ctx.fillRect(window.vaultX - 5, window.vaultY - 12, 10, 12); // Bob body
+            ctx.fillStyle = "#ffcc00";
+            ctx.fillRect(window.vaultX - 3, window.vaultY - 17, 6, 5);  // Bob head/hat
+
+            // Draw Mutant Snap (Sprite 1) wandering back and forth
+            let mutantX = 140 + Math.sin(minerFrame * 0.04) * 40;
+            ctx.fillStyle = "#9b59b6"; // Purple mutant
+            ctx.fillRect(mutantX - 4, 83, 8, 12);
+            ctx.fillStyle = "#ff0000";
+            ctx.fillRect(mutantX - 2, 85, 4, 4); // Glowing red mutant eyes
+
+            // Top HUD
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("MICRO FUN 1983", 10, 12);
+            ctx.textAlign = "right";
+            ctx.fillText("BOBS: 03  SCORE: 004850", canvas.width - 10, 12);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#00d2ff";
+            ctx.fillText("MINER 2049ER", canvas.width / 2, 12);
+        }
+
+        let dinoFrame = 0;
+        function drawDinoEggsScreen() {
+            dinoFrame++;
+            ctx.fillStyle = "#1e130c"; // Deep brown cave background
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 4D rotating vertices definition
+            const baseVertices = [
+                {x:-1, y:-1, z:-1, w:-1}, {x:-1, y:-1, z:-1, w:1}, {x:-1, y:-1, z:1, w:-1}, {x:-1, y:-1, z:1, w:1},
+                {x:-1, y:1, z:-1, w:-1}, {x:-1, y:1, z:-1, w:1}, {x:-1, y:1, z:1, w:-1}, {x:-1, y:1, z:1, w:1},
+                {x:1, y:-1, z:-1, w:-1}, {x:1, y:-1, z:-1, w:1}, {x:1, y:-1, z:1, w:-1}, {x:1, y:-1, z:1, w:1},
+                {x:1, y:1, z:-1, w:-1}, {x:1, y:1, z:-1, w:1}, {x:1, y:1, z:1, w:-1}, {x:1, y:1, z:1, w:1}
+            ];
+
+            const edges = [];
+            for (let i = 0; i < 16; i++) {
+                for (let j = i + 1; j < 16; j++) {
+                    let diffs = 0;
+                    if (baseVertices[i].x !== baseVertices[j].x) diffs++;
+                    if (baseVertices[i].y !== baseVertices[j].y) diffs++;
+                    if (baseVertices[i].z !== baseVertices[j].z) diffs++;
+                    if (baseVertices[i].w !== baseVertices[j].w) diffs++;
+                    if (diffs === 1) edges.push([i, j]);
+                }
+            }
+
+            if (!window.dinoKeyListenerAdded) {
+                window.dinoKeyListenerAdded = true;
+                window.addEventListener('keydown', (e) => {
+                    if (e.key === 'l' || e.key === 'L') {
+                        window.dinoLevel = (window.dinoLevel || 1) + 1;
+                    }
+                    if (e.key === 'b' || e.key === 'B') {
+                        window.dinoBattleMode = !window.dinoBattleMode;
+                    }
+                });
+            }
+
+            if (window.dinoBattleMode) {
+                window.TessarantCompositor.drawBattleScreen(ctx, canvas, dinoFrame);
+                return;
+            }
+
+            if (!window.currentDinoLevelData || window.currentDinoLevelData.level !== lvl) {
+                window.currentDinoLevelData = window.DinoMapGenerator.generateMap(lvl);
+            }
+
+            const lvlData = window.currentDinoLevelData;
+            window.DinoMapGenerator.drawMap(ctx, lvlData, dinoFrame);
+
+            for (const nest of lvlData.nests) {
+                if (!nest.collected) {
+                    // Draw nest base (pedestal)
+                    ctx.fillStyle = lvlData.theme.pedestalColor;
+                    ctx.fillRect(nest.x - 10, nest.y + 4, 20, 3);
+
+                    for (let e = 0; e < nest.eggs; e++) {
+                        window.TessarantCompositor.drawEggCard(ctx, nest.x - 6 + e * 12, nest.y - 6, dinoFrame, e);
+                    }
+                }
+            }
+
+            // Tim the Explorer (Sprite 0) coordinate tracking
+            window.DinoMapGenerator.updatePlayer(window, lvlData, interactiveKeys, isDemoModeActive, dinoFrame);
+
+            // Check collision with nests
+            let allCollected = true;
+            for (const nest of lvlData.nests) {
+                if (!nest.collected) {
+                    if (Math.hypot(window.vaultX - nest.x, window.vaultY - nest.y) < 15) {
+                        nest.collected = true;
+                    } else {
+                        allCollected = false;
+                    }
+                }
+            }
+
+            if (allCollected) {
+                window.dinoLevel = lvl + 1;
+            }
+
+            // Draw Tim
+            ctx.fillStyle = "#f1c40f"; // Yellow outfit
+            ctx.fillRect(window.vaultX - 4, window.vaultY - 14, 8, 14);
+            ctx.fillStyle = "#e74c3c"; // Red explorer hat
+            ctx.fillRect(window.vaultX - 6, window.vaultY - 17, 12, 3);
+
+            // Draw Pterodactyl flying (Sprite 3)
+            let pteroX = (dinoFrame * 1.5) % (canvas.width + 40) - 20;
+            let pteroY = 40 + Math.sin(dinoFrame * 0.1) * 8;
+            ctx.fillStyle = "#9b59b6";
+            ctx.beginPath();
+            ctx.moveTo(pteroX, pteroY);
+            ctx.lineTo(pteroX - 10, pteroY - 6);
+            ctx.lineTo(pteroX - 4, pteroY + 2);
+            ctx.lineTo(pteroX + 10, pteroY - 6);
+            ctx.fill();
+
+            // Top HUD
+            if (window.TessarantCompositor && window.TessarantCompositor.drawHUD) {
+                const hiScore = window.TessarantCompositor.HighscoreManager.get("dino_eggs");
+                window.TessarantCompositor.drawHUD(ctx, window.dinoScore || 0, window.dinoLives || 3, "DATAMOST 1983", lvl, `DINO EGGS (HI: ${hiScore})`, dinoFrame);
+            }
+        }
+
+        let spiderFrame = 0;
+        function drawAppleCiderSpiderScreen() {
+            spiderFrame++;
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw wood platforms
+            ctx.fillStyle = "#8b4513"; // Brown
+            ctx.fillRect(40, 60, 120, 6);
+            ctx.fillRect(160, 90, 120, 6);
+            ctx.fillRect(40, 120, 150, 6);
+            ctx.fillRect(100, 150, 180, 6);
+            
+            // Draw spider thread
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            ctx.moveTo(140, 30);
+            ctx.lineTo(140, 150);
+            ctx.stroke();
+            
+            // Draw cider press cylinder
+            ctx.fillStyle = "#7f8c8d";
+            ctx.fillRect(220, 30, 40, 20); // Press top
+            let pistonY = 50 + Math.sin(spiderFrame * 0.08) * 15;
+            ctx.fillStyle = "#bdc3c7";
+            ctx.fillRect(235, 50, 10, pistonY - 50); // Piston rod
+            ctx.fillStyle = "#7f8c8d";
+            ctx.fillRect(225, pistonY, 30, 8); // Press plate
+            
+            // Red apples at bottom of press
+            ctx.fillStyle = "#e74c3c";
+            ctx.beginPath();
+            ctx.arc(233, 85, 3, 0, Math.PI * 2);
+            ctx.arc(247, 85, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Dripping yellow drop
+            let dropY = 90 + (spiderFrame % 60) * 1.5;
+            if (dropY < 180) {
+                ctx.fillStyle = "#f1c40f";
+                ctx.beginPath();
+                ctx.arc(240, dropY, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Draw Spider (Sprite 0) walking on thread
+            let spY = 50 + Math.sin(spiderFrame * 0.04) * 35;
+            ctx.fillStyle = "#e67e22";
+            ctx.beginPath();
+            ctx.arc(140, spY, 5, 0, Math.PI * 2); // Body
+            ctx.fill();
+            // Legs
+            ctx.strokeStyle = "#e67e22";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for(let i = 0; i < 4; i++) {
+                let angle = -Math.PI/6 + i * Math.PI/4 + Math.sin(spiderFrame * 0.2 + i) * 0.1;
+                ctx.moveTo(140, spY); ctx.lineTo(140 + Math.cos(angle)*10, spY + Math.sin(angle)*10);
+                ctx.moveTo(140, spY); ctx.lineTo(140 - Math.cos(angle)*10, spY + Math.sin(angle)*10);
+            }
+            ctx.stroke();
+            
+            // Draw Fly (Sprite 1) flying around
+            let flyX = 100 + Math.cos(spiderFrame * 0.05) * 30;
+            let flyY = 70 + Math.sin(spiderFrame * 0.08) * 15;
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(flyX - 2, flyY - 2, 4, 4);
+            ctx.fillStyle = "#34495e";
+            ctx.fillRect(flyX - 1, flyY - 1, 2, 2);
+            
+            // Frog at the bottom (Sprite 3)
+            let frogJump = Math.max(0, Math.sin(spiderFrame * 0.05) * 15);
+            let frogY = 135 - frogJump;
+            ctx.fillStyle = "#2ecc71";
+            ctx.fillRect(70, frogY, 12, 10);
+            ctx.fillStyle = "#27ae60";
+            ctx.fillRect(72, frogY + 2, 8, 6);
+            
+            // Header
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("DATAMOST INC. 1983", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("LIVES: 03", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#f1c40f";
+            ctx.fillText("APPLE CIDER SPIDER", canvas.width / 2, 15);
+        }
+
+        let ultimaFrame = 0;
+        function drawUltimaScreen() {
+            ultimaFrame++;
+            // Draw outer border
+            ctx.fillStyle = "#2c3e50";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw inner map screen
+            const startX = 40;
+            const startY = 30;
+            const mapW = 240;
+            const mapH = 140;
+            const tileW = mapW / 10;
+            const tileH = mapH / 10;
+            
+            // 10x10 classic Ultima map
+            // 0: Grass, 1: Water, 2: Forest, 3: Mountain, 4: Wall, 5: Chest, 6: Town
+            const ultimaMap = [
+                [3, 3, 3, 2, 2, 0, 0, 1, 1, 1],
+                [3, 3, 2, 2, 0, 0, 0, 0, 1, 1],
+                [3, 2, 2, 0, 0, 6, 0, 0, 0, 1],
+                [2, 2, 0, 0, 0, 0, 0, 4, 4, 4],
+                [2, 0, 0, 0, 0, 0, 0, 4, 5, 4],
+                [0, 0, 0, 0, 0, 0, 0, 4, 0, 4],
+                [0, 0, 1, 1, 0, 0, 0, 4, 4, 4],
+                [0, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 0, 6, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 0, 0, 0]
+            ];
+            
+            for (let r = 0; r < 10; r++) {
+                for (let c = 0; c < 10; c++) {
+                    const tileType = ultimaMap[r][c];
+                    const tx = startX + c * tileW;
+                    const ty = startY + r * tileH;
+                    
+                    if (tileType === 0) { // Grass
+                        ctx.fillStyle = "#2ecc71";
+                        ctx.fillRect(tx, ty, tileW, tileH);
+                        ctx.strokeStyle = "#27ae60";
+                        ctx.lineWidth = 0.5;
+                        ctx.beginPath();
+                        ctx.moveTo(tx + 4, ty + 8); ctx.lineTo(tx + 6, ty + 4); ctx.lineTo(tx + 8, ty + 8);
+                        ctx.moveTo(tx + 14, ty + 10); ctx.lineTo(tx + 16, ty + 6); ctx.lineTo(tx + 18, ty + 10);
+                        ctx.stroke();
+                    } else if (tileType === 1) { // Water
+                        ctx.fillStyle = "#2980b9";
+                        ctx.fillRect(tx, ty, tileW, tileH);
+                        ctx.strokeStyle = "#3498db";
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        let waveOffset = Math.sin(ultimaFrame * 0.1 + r) * 3;
+                        ctx.moveTo(tx + 2, ty + 5 + waveOffset/2);
+                        ctx.quadraticCurveTo(tx + tileW/2, ty + 2 + waveOffset, tx + tileW - 2, ty + 5 + waveOffset/2);
+                        ctx.stroke();
+                    } else if (tileType === 2) { // Forest
+                        ctx.fillStyle = "#27ae60";
+                        ctx.fillRect(tx, ty, tileW, tileH);
+                        ctx.fillStyle = "#1e824c";
+                        ctx.beginPath();
+                        ctx.moveTo(tx + tileW/2, ty + 2);
+                        ctx.lineTo(tx + 4, ty + tileH - 2);
+                        ctx.lineTo(tx + tileW - 4, ty + tileH - 2);
+                        ctx.fill();
+                    } else if (tileType === 3) { // Mountain
+                        ctx.fillStyle = "#95a5a6";
+                        ctx.fillRect(tx, ty, tileW, tileH);
+                        ctx.fillStyle = "#7f8c8d";
+                        ctx.beginPath();
+                        ctx.moveTo(tx + tileW/2, ty + 2);
+                        ctx.lineTo(tx + 2, ty + tileH - 1);
+                        ctx.lineTo(tx + tileW - 2, ty + tileH - 1);
+                        ctx.fill();
+                        ctx.fillStyle = "#ffffff";
+                        ctx.beginPath();
+                        ctx.moveTo(tx + tileW/2, ty + 2);
+                        ctx.lineTo(tx + tileW/2 - 4, ty + 6);
+                        ctx.lineTo(tx + tileW/2 + 4, ty + 6);
+                        ctx.fill();
+                    } else if (tileType === 4) { // Wall
+                        ctx.fillStyle = "#7f8c8d";
+                        ctx.fillRect(tx, ty, tileW, tileH);
+                        ctx.strokeStyle = "#34495e";
+                        ctx.lineWidth = 0.5;
+                        ctx.strokeRect(tx, ty, tileW, tileH);
+                        ctx.beginPath();
+                        ctx.moveTo(tx, ty + tileH/2); ctx.lineTo(tx + tileW, ty + tileH/2);
+                        ctx.moveTo(tx + tileW/2, ty); ctx.lineTo(tx + tileW/2, ty + tileH/2);
+                        ctx.moveTo(tx + tileW/4, ty + tileH/2); ctx.lineTo(tx + tileW/4, ty + tileH);
+                        ctx.moveTo(tx + 3*tileW/4, ty + tileH/2); ctx.lineTo(tx + 3*tileW/4, ty + tileH);
+                        ctx.stroke();
+                    } else if (tileType === 5) { // Chest
+                        ctx.fillStyle = "#2ecc71";
+                        ctx.fillRect(tx, ty, tileW, tileH);
+                        ctx.fillStyle = "#f39c12";
+                        ctx.fillRect(tx + 4, ty + 4, tileW - 8, tileH - 8);
+                        ctx.fillStyle = "#d35400";
+                        ctx.fillRect(tx + tileW/2 - 2, ty + tileH/2 - 2, 4, 4);
+                    } else if (tileType === 6) { // Castle/Town
+                        ctx.fillStyle = "#2ecc71";
+                        ctx.fillRect(tx, ty, tileW, tileH);
+                        ctx.fillStyle = "#bdc3c7";
+                        ctx.fillRect(tx + 3, ty + 3, 5, tileH - 6);
+                        ctx.fillRect(tx + tileW - 8, ty + 3, 5, tileH - 6);
+                        ctx.fillRect(tx + 8, ty + 6, tileW - 16, tileH - 9);
+                        ctx.fillStyle = "#e74c3c";
+                        ctx.fillRect(tx + 5, ty + 1, 3, 2);
+                        ctx.fillRect(tx + tileW - 6, ty + 1, 3, 2);
+                    }
+                }
+            }
+            
+            // Draw player character (Avatar) moving on screen
+            let avX = startX + 4 * tileW + tileW/2;
+            let avY = startY + 5 * tileH + tileH/2 + Math.sin(ultimaFrame * 0.05) * 8;
+            ctx.fillStyle = "#e74c3c"; // Red avatar
+            ctx.beginPath();
+            ctx.arc(avX, avY - 2, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(avX, avY - 2); ctx.lineTo(avX, avY + 4);
+            ctx.moveTo(avX - 4, avY + 1); ctx.lineTo(avX + 4, avY + 1);
+            ctx.moveTo(avX, avY + 4); ctx.lineTo(avX - 3, avY + 8);
+            ctx.moveTo(avX, avY + 4); ctx.lineTo(avX + 3, avY + 8);
+            ctx.stroke();
+            
+            // Animated enemy (Orc)
+            let orcX = startX + 2 * tileW + tileW/2 + Math.cos(ultimaFrame * 0.08) * 12;
+            let orcY = startY + 4 * tileH + tileH/2;
+            ctx.fillStyle = "#9b59b6";
+            ctx.beginPath();
+            ctx.arc(orcX, orcY, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Header
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("ORIGIN SYSTEMS 1985", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("HP: 150/150", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#e74c3c";
+            ctx.fillText("ULTIMA V", canvas.width / 2, 15);
+            
+            // Combat messages
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "7px monospace";
+            ctx.textAlign = "center";
+            if (ultimaFrame % 200 < 100) {
+                ctx.fillText("AVATAR ATTACKS ORC FOR 12 DAMAGE!", canvas.width / 2, canvas.height - 12);
+            } else {
+                ctx.fillText("ORC MISSES AVATAR!", canvas.width / 2, canvas.height - 12);
+            }
+        }
+
+        let blueMaxFrame = 0;
+        function drawBlueMaxScreen() {
+            blueMaxFrame++;
+            // Draw background / Sky
+            ctx.fillStyle = "#87ceeb"; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw ground at the bottom half with diagonal scrolling pattern
+            ctx.fillStyle = "#27ae60"; 
+            ctx.fillRect(0, 60, canvas.width, canvas.height - 60);
+            
+            // Draw diagonal River scrolling
+            ctx.fillStyle = "#2980b9"; 
+            ctx.beginPath();
+            let riverScroll = (blueMaxFrame * 1.5) % 100;
+            ctx.moveTo(0 - riverScroll, 60);
+            ctx.lineTo(80 - riverScroll, canvas.height);
+            ctx.lineTo(130 - riverScroll, canvas.height);
+            ctx.lineTo(50 - riverScroll, 60);
+            ctx.fill();
+            
+            // Draw runway
+            ctx.fillStyle = "#7f8c8d";
+            ctx.fillRect(100 - (blueMaxFrame % 300), 120, 80, 20);
+            
+            // Draw diagonal isometric grid lines
+            ctx.strokeStyle = "rgba(255,255,255,0.08)";
+            ctx.lineWidth = 1;
+            for (let i = -10; i < 20; i++) {
+                ctx.beginPath();
+                let xOffset = i * 30 - (blueMaxFrame * 0.8) % 30;
+                ctx.moveTo(xOffset, 60);
+                ctx.lineTo(xOffset + 100, canvas.height);
+                ctx.stroke();
+            }
+
+            let altitude = 35 + Math.sin(blueMaxFrame * 0.05) * 15;
+            
+            let targetX = 220 - (blueMaxFrame % 250);
+            let targetY = 130;
+            ctx.fillStyle = "#c0392b";
+            ctx.fillRect(targetX, targetY, 24, 16);
+            ctx.fillStyle = "#f1c40f";
+            ctx.fillRect(targetX + 6, targetY + 4, 12, 12); 
+            
+            let shadowX = 140;
+            let shadowY = 110 + Math.cos(blueMaxFrame * 0.02) * 10;
+            ctx.fillStyle = "rgba(0, 0, 0, 0.4)"; 
+            ctx.beginPath();
+            ctx.ellipse(shadowX, shadowY, 12, 4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            let planeX = shadowX;
+            let planeY = shadowY - altitude;
+            
+            ctx.fillStyle = "#d35400"; 
+            ctx.fillRect(planeX - 12, planeY - 3, 24, 6);
+            ctx.fillStyle = "#f39c12"; 
+            ctx.fillRect(planeX - 6, planeY - 12, 12, 24);
+            ctx.fillStyle = "#2c3e50";
+            ctx.beginPath();
+            ctx.arc(planeX, planeY - 1, 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            let propAngle = blueMaxFrame * 0.5;
+            ctx.moveTo(planeX + 12, planeY - Math.sin(propAngle)*6);
+            ctx.lineTo(planeX + 12, planeY + Math.sin(propAngle)*6);
+            ctx.stroke();
+
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("SYNAPSE SOFTWARE 1983", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("ALTITUDE: " + Math.round(altitude / 5), canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("FUEL: " + Math.max(0, 100 - Math.floor(blueMaxFrame * 0.05)) + "% | BOMBS: 4", canvas.width / 2, 15);
+            
+            if (altitude < 20) {
+                ctx.fillStyle = "#ff007f";
+                ctx.font = "bold 8px monospace";
+                ctx.fillText("CRITICAL ALTITUDE: DANGER OF COLLISION!", canvas.width / 2, canvas.height - 10);
+            } else if (Math.abs(planeX - targetX) < 30) {
+                ctx.fillStyle = "#f1c40f";
+                ctx.font = "bold 8px monospace";
+                ctx.fillText("TARGET ACQUIRED: ALIGN ALTITUDE TO BOMB!", canvas.width / 2, canvas.height - 10);
+            } else {
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "7px monospace";
+                ctx.fillText("PRESS FIRE/SPACEBAR TO DROP BOMB", canvas.width / 2, canvas.height - 10);
+            }
+        }
+
+        let impMissionFrame = 0;
+        function drawImpossibleMissionScreen() {
+            impMissionFrame++;
+            // Black background
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Platforms/Floors (horizontal yellow/white bars typical of Epyx layout)
+            ctx.fillStyle = "#f1c40f";
+            ctx.fillRect(20, 55, 280, 5);  // Top platform
+            ctx.fillRect(20, 105, 280, 5); // Middle platform
+            ctx.fillRect(20, 155, 280, 5); // Bottom platform
+
+            // Vertical Elevator shafts (grey rails/beams)
+            ctx.fillStyle = "#7f8c8d";
+            ctx.fillRect(80, 20, 8, 150);
+            ctx.fillRect(240, 20, 8, 150);
+
+            // Elevators/Lifts (glowing cyan platforms that crawl up and down)
+            let lift1Y = 55 + Math.round((Math.sin(impMissionFrame * 0.03) + 1) * 45);
+            let lift2Y = 155 - Math.round((Math.cos(impMissionFrame * 0.035) + 1) * 45);
+            ctx.fillStyle = "#00ffff";
+            ctx.fillRect(74, lift1Y, 20, 4);
+            ctx.fillRect(234, lift2Y, 20, 4);
+
+            // Console desks (orange searching stations)
+            ctx.fillStyle = "#d35400";
+            ctx.fillRect(40, 93, 14, 12);
+            ctx.fillRect(180, 143, 14, 12);
+            // Glowing console screens
+            ctx.fillStyle = "#2ecc71";
+            ctx.fillRect(43, 95, 8, 5);
+            ctx.fillRect(183, 145, 8, 5);
+
+            // Security robots (patrolling left and right)
+            let robotX = 110 + Math.round((Math.sin(impMissionFrame * 0.04) + 1) * 50); // Patrol range: 110 to 210
+            let robotY = 105 - 12;
+            // Draw Robot Body
+            ctx.fillStyle = "#e74c3c";
+            ctx.fillRect(robotX - 6, robotY, 12, 8);
+            // Draw glowing blue radar eye
+            ctx.fillStyle = "#3498db";
+            ctx.fillRect(robotX + (Math.sin(impMissionFrame * 0.08) > 0 ? 2 : -4), robotY + 2, 3, 2);
+            // Draw sparks/electricity under robot
+            if (impMissionFrame % 4 < 2) {
+                ctx.strokeStyle = "#f1c40f";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(robotX - 4, robotY + 8);
+                ctx.lineTo(robotX - 2, robotY + 11);
+                ctx.lineTo(robotX + 2, robotY + 8);
+                ctx.lineTo(robotX + 4, robotY + 11);
+                ctx.stroke();
+            }
+
+            // Running/Somersaulting Agent (Sprite 0)
+            let agentX = 140 + Math.sin(impMissionFrame * 0.01) * 70;
+            let agentY = 155 - 16;
+            let isSomersault = (impMissionFrame % 120 > 90); // Flip periodically
+
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 1.5;
+            if (isSomersault) {
+                // Draw rounded tumbling agent
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.arc(agentX, agentY + 6, 6, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                // Running stick figure pose
+                ctx.beginPath();
+                // Head
+                ctx.arc(agentX, agentY + 2, 2.5, 0, Math.PI * 2);
+                ctx.fillStyle = "#ffffff";
+                ctx.fill();
+                // Torso
+                ctx.moveTo(agentX, agentY + 4.5); ctx.lineTo(agentX, agentY + 10);
+                // Arms (swinging)
+                let armSwing = Math.sin(impMissionFrame * 0.25) * 5;
+                ctx.moveTo(agentX, agentY + 5.5); ctx.lineTo(agentX - 4, agentY + 7 + armSwing);
+                ctx.moveTo(agentX, agentY + 5.5); ctx.lineTo(agentX + 4, agentY + 7 - armSwing);
+                // Legs (running cycle)
+                let legStretch = Math.sin(impMissionFrame * 0.25) * 6;
+                ctx.moveTo(agentX, agentY + 10); ctx.lineTo(agentX - legStretch, agentY + 16);
+                ctx.moveTo(agentX, agentY + 10); ctx.lineTo(agentX + legStretch, agentY + 16);
+                ctx.stroke();
+            }
+
+            // HUD / Top Bar info
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("EPYX SOFTWARE 1984", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("TIME: 05:42", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("AGENT ELVIN'S LAB", canvas.width / 2, 15);
+
+            if (isSomersault) {
+                ctx.fillStyle = "#ff007f";
+                ctx.font = "bold 8px monospace";
+                ctx.fillText("SOMERSAULT INTERRUPT TRIGGERED!", canvas.width / 2, canvas.height - 10);
+            } else {
+                ctx.fillStyle = "#9b59b6";
+                ctx.font = "7px monospace";
+                ctx.fillText("SEARCH CONSOLE DESKS TO REASSEMBLE PUZZLE", canvas.width / 2, canvas.height - 10);
+            }
+        }
+
+        let starFrame = 0;
+        let lastSpokenStarIdx = -1;
+        const constellations = [
+            { name: "URSA MAJOR", pinyin: "DA-XIONG-ZUO", stars: [{x: 80, y: 50}, {x: 100, y: 55}, {x: 110, y: 70}, {x: 130, y: 75}, {x: 140, y: 90}, {x: 125, y: 95}, {x: 115, y: 80}] },
+            { name: "ORION", pinyin: "LIE-HU-ZUO", stars: [{x: 180, y: 60}, {x: 210, y: 60}, {x: 195, y: 90}, {x: 185, y: 110}, {x: 205, y: 110}, {x: 175, y: 140}, {x: 215, y: 140}] },
+            { name: "CASSIOPEIA", pinyin: "XIAN-HOU-ZUO", stars: [{x: 50, y: 110}, {x: 70, y: 120}, {x: 60, y: 135}, {x: 80, y: 140}, {x: 90, y: 125}] }
+        ];
+
+        function drawNameThatStarScreen() {
+            starFrame++;
+            // Deep space background
+            ctx.fillStyle = "#0c102b";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grid lines (star map style)
+            ctx.strokeStyle = "rgba(0, 242, 254, 0.1)";
+            ctx.lineWidth = 1;
+            for (let i = 0; i < canvas.width; i += 30) {
+                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+            }
+            for (let j = 0; j < canvas.height; j += 30) {
+                ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(canvas.width, j); ctx.stroke();
+            }
+
+            // Draw Constellations
+            const activeIndex = Math.floor(starFrame / 150) % constellations.length;
+            const activeConst = constellations[activeIndex];
+
+            // Trigger Speech dynamically when switching constellations
+            if (activeIndex !== lastSpokenStarIdx) {
+                lastSpokenStarIdx = activeIndex;
+                speakText(activeConst.pinyin).catch(() => {});
+            }
+
+            constellations.forEach((constell, idx) => {
+                const isActive = (idx === activeIndex);
+                ctx.strokeStyle = isActive ? "rgba(0, 242, 254, 0.7)" : "rgba(255, 255, 255, 0.15)";
+                ctx.lineWidth = isActive ? 1.5 : 1;
+
+                // Draw lines between stars
+                ctx.beginPath();
+                constell.stars.forEach((star, sIdx) => {
+                    if (sIdx === 0) ctx.moveTo(star.x, star.y);
+                    else ctx.lineTo(star.x, star.y);
+                });
+                if (constell.name === "ORION") ctx.closePath(); // Close Orion boundary
+                ctx.stroke();
+
+                // Draw Stars
+                constell.stars.forEach(star => {
+                    ctx.fillStyle = isActive ? "#ffffff" : "#bdc3c7";
+
+                    // Glow rings
+                    if (isActive) {
+                        ctx.strokeStyle = "rgba(0, 242, 254, 0.3)";
+                        ctx.beginPath();
+                        ctx.arc(star.x, star.y, size * 2.5, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                });
+            });
+
+            // Interactive Cursor pointer - controlled by arrow keys/joysticks
+            if (!window.starCursorX) {
+                window.starCursorX = 160;
+                window.starCursorY = 100;
+            }
+            if (interactiveKeys.left) window.starCursorX = Math.max(20, window.starCursorX - 2.5);
+            if (interactiveKeys.right) window.starCursorX = Math.min(canvas.width - 20, window.starCursorX + 2.5);
+            if (interactiveKeys.up) window.starCursorY = Math.max(30, window.starCursorY - 2.5);
+            if (interactiveKeys.down) window.starCursorY = Math.min(canvas.height - 30, window.starCursorY + 2.5);
+
+            let curX = window.starCursorX;
+            let curY = window.starCursorY;
+            ctx.strokeStyle = "#ff007f";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(curX, curY, 8, 0, Math.PI * 2);
+            ctx.moveTo(curX - 12, curY); ctx.lineTo(curX + 12, curY);
+            ctx.moveTo(curX, curY - 12); ctx.lineTo(curX, curY + 12);
+            ctx.stroke();
+
+            // HUD overlay
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("MICRO FUN 1983", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("SCORE: " + (activeIndex * 100 + 150), canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("NAME THAT STAR!", canvas.width / 2, 15);
+
+            // Subtitle
+            ctx.fillStyle = "#ffa500";
+            ctx.font = "bold 8px monospace";
+            ctx.fillText("IDENTIFIED: " + activeConst.name + " (" + activeConst.pinyin + ")", canvas.width / 2, canvas.height - 12);
+        }
+
+        let omegaRaceFrame = 0;
+        function bessel_j0_calc(x) {
+            let val = 0.0;
+            let term = 1.0;
+            for (let k = 1; k < 12; k++) {
+                term *= - (x * x) / (4.0 * k * k);
+                val += term;
+            }
+            return 1.0 + val;
+        }
+
+        function drawOmegaRaceScreen() {
+            omegaRaceFrame++;
+            // Screen shake setup
+            ctx.save();
+            window.omegaShake = window.omegaShake || 0;
+            if (window.omegaShake > 0) {
+                const shakeX = (Math.random() - 0.5) * window.omegaShake;
+                const shakeY = (Math.random() - 0.5) * window.omegaShake;
+                ctx.translate(shakeX, shakeY);
+                window.omegaShake *= 0.88;
+                if (window.omegaShake < 0.1) window.omegaShake = 0;
+            }
+
+            // Black background space with phosphor feedback trail decay
+            ctx.fillStyle = "rgba(0, 0, 0, 0.22)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Initialize vector starfield
+            if (!window.omegaStars || window.omegaStars.length === 0) {
+                window.omegaStars = [];
+                for (let i = 0; i < 40; i++) {
+                    window.omegaStars.push({
+                        x: 12 + Math.random() * 296,
+                        y: 12 + Math.random() * 176,
+                        z: 1 + Math.floor(Math.random() * 3), // 1, 2, or 3 depth layers
+                        lastSoundTime: 0,
+                        // Each star gets its own unique mathematical function closure for visual modulation
+                        evalMod: (function(seed1, seed2, seed3) {
+                            return function(frame) {
+                                return Math.sin(frame * seed1) * Math.cos(frame * seed2 + seed3);
+                            };
+                        })(0.03 + Math.random() * 0.05, 0.01 + Math.random() * 0.03, Math.random() * Math.PI),
+                        // Each star gets its own unique mathematical function closure for audio frequency generation
+                        evalAudio: (function(baseFreq, modFreq) {
+                            return function() {
+                                return baseFreq + Math.sin(Date.now() * 0.005) * modFreq;
+                            };
+                        })(150 + Math.random() * 650, 50 + Math.random() * 100)
+                    });
+                }
+            }
+
+            // Update and draw starfield (behind other items)
+            window.omegaStars.forEach(star => {
+                // Drift opposite to ship movement
+                star.x -= (window.omegaShipVX || 0) * (0.8 / star.z);
+                star.y -= (window.omegaShipVY || 0) * (0.8 / star.z);
+
+                // Wrap stars within bounds
+                if (star.x < 12) star.x = 308;
+                if (star.x > 308) star.x = 12;
+                if (star.y < 12) star.y = 188;
+                if (star.y > 188) star.y = 12;
+
+                // Evaluate star's unique visual function closure
+                const starMod = star.evalMod(omegaRaceFrame);
+
+                const baseAlpha = star.z === 1 ? 0.8 : (star.z === 2 ? 0.5 : 0.2);
+                const modulatedAlpha = Math.max(0.1, Math.min(1.0, baseAlpha + starMod * 0.2));
+
+                // If player is close, trigger the star's unique audio function closure
+                const distToShip = Math.hypot(window.omegaShipX - star.x, window.omegaShipY - star.y);
+                if (distToShip < 12) {
+                    const now = Date.now();
+                    if (now - star.lastSoundTime > 600) {
+                        if (window.playSynthTone) {
+                            playSynthTone(star.evalAudio(), 80);
+                        }
+                        star.lastSoundTime = now;
+                    }
+                }
+
+                // Draw star based on modulated depth color
+                ctx.fillStyle = `rgba(255,255,255,${modulatedAlpha})`;
+                const size = star.z === 1 ? 1.8 : 1.2;
+                ctx.fillRect(star.x - size / 2, star.y - size / 2, size, size);
+            });
+
+            // Draw vector connections between stars in the same depth layer (constellation nodes)
+            ctx.strokeStyle = "rgba(0, 242, 254, 0.12)";
+            ctx.lineWidth = 0.5;
+            for (let i = 0; i < window.omegaStars.length; i++) {
+                for (let j = i + 1; j < window.omegaStars.length; j++) {
+                    const s1 = window.omegaStars[i];
+                    const s2 = window.omegaStars[j];
+                    if (s1.z === s2.z) {
+                        const dist = Math.hypot(s1.x - s2.x, s1.y - s2.y);
+                        if (dist < 45) {
+                            ctx.beginPath();
+                            ctx.moveTo(s1.x, s1.y);
+                            ctx.lineTo(s2.x, s2.y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+            }
+
+            // Get DNA values to modulate lines
+            let strokeColor = "#39ff14"; // Default vector green
+            let lineWidth = 1.5;
+            let offsetIntensity = 0.0;
+
+            if (window.dnaFrames && window.dnaFrames.length > 0) {
+                const fIdx = (window.dnaFrameIndex || 0) % window.dnaFrames.length;
+                const frame = window.dnaFrames[fIdx];
+                strokeColor = frame.color || strokeColor;
+                lineWidth = 1.5 + frame.stretch * 2;
+                offsetIntensity = frame.pulse;
+            }
+
+            // Procedural Bessel modulation for vector glow/displacement
+            const besselArg = (omegaRaceFrame * 0.05) % 5.0;
+            const pulseOffset = bessel_j0_calc(besselArg) * 3 * offsetIntensity;
+
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = lineWidth;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = strokeColor;
+
+            window.omegaLevel = window.omegaLevel || 1;
+
+            // Outer Vector Box
+            ctx.beginPath();
+            ctx.rect(10 + pulseOffset, 10 + pulseOffset, 300 - pulseOffset * 2, 180 - pulseOffset * 2);
+            ctx.stroke();
+
+            // Inner Vector Box / Barriers (Dynamic per level)
+            ctx.beginPath();
+            if (window.omegaLevel % 3 === 1) {
+                // Rectangle
+                ctx.rect(80 - pulseOffset, 60 - pulseOffset, 160 + pulseOffset * 2, 80 + pulseOffset * 2);
+            } else if (window.omegaLevel % 3 === 2) {
+                // Diamond
+                ctx.moveTo(160, 45 - pulseOffset);
+                ctx.lineTo(260 + pulseOffset, 100);
+                ctx.lineTo(160, 155 + pulseOffset);
+                ctx.lineTo(60 - pulseOffset, 100);
+                ctx.closePath();
+            } else {
+                // Dual Box Cross layout
+                ctx.rect(100 - pulseOffset, 80 - pulseOffset, 120 + pulseOffset * 2, 40 + pulseOffset * 2);
+                ctx.rect(130 - pulseOffset, 50 - pulseOffset, 60 + pulseOffset * 2, 100 + pulseOffset * 2);
+            }
+            ctx.stroke();
+
+            // Reset shadow
+            ctx.shadowBlur = 0;
+
+            // Initialize dynamic inertia coordinates
+            if (typeof window.omegaShipAngle === "undefined") {
+                window.omegaShipAngle = -Math.PI / 2;
+                window.omegaShipVX = 0;
+                window.omegaShipVY = 0;
+                window.omegaShipX = 160;
+                window.omegaShipY = 120;
+            }
+
+            // Keyboard/Joystick steering inputs
+            window.omegaThrustParticles = window.omegaThrustParticles || [];
+            if (interactiveKeys.left) {
+                window.omegaShipAngle -= 0.08;
+            }
+            if (interactiveKeys.right) {
+                window.omegaShipAngle += 0.08;
+            }
+            if (interactiveKeys.up) {
+                window.omegaShipVX += Math.cos(window.omegaShipAngle) * 0.18;
+                window.omegaShipVY += Math.sin(window.omegaShipAngle) * 0.18;
+                
+                // Spawn thrust particles with physical decay
+                const exhaustX = window.omegaShipX - Math.cos(window.omegaShipAngle) * 6;
+                const exhaustY = window.omegaShipY - Math.sin(window.omegaShipAngle) * 6;
+                for (let i = 0; i < 2; i++) {
+                    window.omegaThrustParticles.push({
+                        x: exhaustX,
+                        y: exhaustY,
+                        vx: -Math.cos(window.omegaShipAngle) * (1 + Math.random()) + (Math.random() - 0.5) * 0.5,
+                        vy: -Math.sin(window.omegaShipAngle) * (1 + Math.random()) + (Math.random() - 0.5) * 0.5,
+                        life: 20 + Math.random() * 15,
+                        color: Math.random() > 0.5 ? "#ff5500" : "#ffcc00"
+                    });
+                }
+            }
+
+            // Update & Draw Thrust Particles with physical decay
+            window.omegaThrustParticles = window.omegaThrustParticles.filter(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vx *= 0.96;
+                p.vy *= 0.96;
+                p.life--;
+                ctx.strokeStyle = p.color;
+                ctx.lineWidth = 1;
+                ctx.shadowBlur = 6;
+                ctx.shadowColor = p.color;
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(p.x - p.vx * 1.5, p.y - p.vy * 1.5);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+                return p.life > 0;
+            });
+
+            // Cycle vector laser weapon styles with key C
+            window.omegaWeaponStyle = window.omegaWeaponStyle || "Standard";
+            if (interactiveKeys.c) {
+                const now = Date.now();
+                if (now - (window.lastWeaponSwitchTime || 0) > 300) {
+                    const styles = ["Standard", "Spiral", "Wave", "Homing"];
+                    const currentIdx = styles.indexOf(window.omegaWeaponStyle);
+                    window.omegaWeaponStyle = styles[(currentIdx + 1) % styles.length];
+                    window.lastWeaponSwitchTime = now;
+                    if (window.playSynthTone) playSynthTone(750, 80);
+                }
+            }
+
+            // Draw active weapon style status & Register/Memory HUD dashboard
+            ctx.fillStyle = "rgba(0, 242, 254, 0.7)";
+            ctx.font = "8px 'Courier New'";
+            ctx.fillText(`WEAPON: ${window.omegaWeaponStyle} (C to toggle)`, 20, 26);
+            ctx.fillText(`SHIP ADDR: $D000/$D001 [X: ${Math.round(window.s0_x || window.omegaShipX)}, Y: ${Math.round(window.s0_y || window.omegaShipY)}]`, 20, 36);
+            ctx.fillText(`DROID REG: $D002/$D003 [X: ${Math.round(window.s1_x || 160)}, Y: ${Math.round(window.s1_y || 100)}]`, 20, 46);
+            ctx.fillText(`MINE REG : $D004/$D005 [X: ${Math.round(window.s2_x || 160)}, Y: ${Math.round(window.s2_y || 100)}]`, 20, 56);
+            ctx.fillText(`LEVEL STATE: Level ${window.omegaLevel} ${window.omegaWarpReady ? '[WARP PORTAL ACTIVE IN CENTER]' : ''}`, 20, 66);
+
+            // Fire Laser on spacebar/fire check with cooldown
+            window.omegaLasers = window.omegaLasers || [];
+            window.lastOmegaLaserTime = window.lastOmegaLaserTime || 0;
+            if (interactiveKeys.fire) {
+                const now = Date.now();
+                if (now - window.lastOmegaLaserTime > 300) {
+                    const currentStyle = window.omegaWeaponStyle;
+                    const startX = window.omegaShipX + Math.cos(window.omegaShipAngle) * 8;
+                    const startY = window.omegaShipY + Math.sin(window.omegaShipAngle) * 8;
+                    const vx = Math.cos(window.omegaShipAngle) * 4;
+                    const vy = Math.sin(window.omegaShipAngle) * 4;
+
+                    window.omegaLasers.push({
+                        x: startX,
+                        y: startY,
+                        vx: vx,
+                        vy: vy,
+                        life: 60,
+                        initialLife: 60,
+                        style: currentStyle,
+                        evalPos: (function(style, sx, sy, dx, dy, angle) {
+                            if (style === "Spiral") {
+                                return function(t) {
+                                    const r = t * 0.9;
+                                    return {
+                                        x: sx + dx * t + Math.cos(t * 0.3) * r,
+                                        y: sy + dy * t + Math.sin(t * 0.3) * r
+                                    };
+                                };
+                            } else if (style === "Wave") {
+                                return function(t) {
+                                    const perpX = -dy / 4;
+                                    const perpY = dx / 4;
+                                    const amp = Math.sin(t * 0.4) * 8;
+                                    return {
+                                        x: sx + dx * t + perpX * amp,
+                                        y: sy + dy * t + perpY * amp
+                                    };
+                                };
+                            } else if (style === "Homing") {
+                                return function(t) {
+                                    // Target the nearest droid/mine (s1 or s2)
+                                    const targetX = (window.s1_x + window.s2_x) / 2;
+                                    const targetY = (window.s1_y + window.s2_y) / 2;
+                                    const progress = Math.min(1.0, t / 40.0);
+                                    const stdX = sx + dx * t;
+                                    const stdY = sy + dy * t;
+                                    return {
+                                        x: stdX * (1 - progress) + targetX * progress,
+                                        y: stdY * (1 - progress) + targetY * progress
+                                    };
+                                };
+                            } else {
+                                return function(t) {
+                                    return { x: sx + dx * t, y: sy + dy * t };
+                                };
+                            }
+                        })(currentStyle, startX, startY, vx, vy, window.omegaShipAngle)
+                    });
+                    window.lastOmegaLaserTime = now;
+
+                    // Play type-specific synthesizer tones
+                    if (window.playSynthTone) {
+                        if (currentStyle === "Spiral") {
+                            playSynthTone(350, 50);
+                            setTimeout(() => playSynthTone(550, 50), 50);
+                            setTimeout(() => playSynthTone(750, 50), 100);
+                        } else if (currentStyle === "Wave") {
+                            playSynthTone(600, 60);
+                            setTimeout(() => playSynthTone(450, 60), 60);
+                        } else if (currentStyle === "Homing") {
+                            playSynthTone(400, 80);
+                            setTimeout(() => playSynthTone(850, 120), 80);
+                        } else {
+                            playSynthTone(500, 100);
+                        }
+                    }
+                }
+            }
+
+            // Apply movement & friction
+            window.omegaShipX += window.omegaShipVX;
+            window.omegaShipY += window.omegaShipVY;
+            window.omegaShipVX *= 0.985;
+            window.omegaShipVY *= 0.985;
+
+            // Wrap around playfield screen boundaries
+            if (window.omegaShipX < 12) window.omegaShipX = 308;
+            if (window.omegaShipX > 308) window.omegaShipX = 12;
+            if (window.omegaShipY < 12) window.omegaShipY = 188;
+            if (window.omegaShipY > 188) window.omegaShipY = 12;
+
+            // Sync with global register/memory mappings
+            window.s0_x = window.omegaShipX;
+            window.s0_y = window.omegaShipY;
+            if (cpuContract) {
+                cpuContract.memory[0xD000] = Math.round(window.s0_x);
+                cpuContract.memory[0xD001] = Math.round(window.s0_y);
+            }
+
+            // Initialize enemy and helper coordinates if missing
+            if (typeof window.s1_x === "undefined") { window.s1_x = 160 + 110; window.s1_y = 100; }
+            if (typeof window.s2_x === "undefined") { window.s2_x = 160 - 120; window.s2_y = 100; }
+            if (typeof window.s3_x === "undefined") { window.s3_x = 160; window.s3_y = 140; }
+
+            // Helper Droid (s3) follows the player at a friendly distance and transfers energy/keycodes
+            const s3Update = NPCRoutines.updateHelperDroid(window.s3_x, window.s3_y, window.s0_x, window.s0_y, 0.9);
+            window.s3_x = s3Update.x;
+            window.s3_y = s3Update.y;
+            const helpDist = Math.hypot(window.s0_x - window.s3_x, window.s0_y - window.s3_y);
+
+            // Shield/Energy balance loop
+            window.omegaShield = window.omegaShield || 100;
+            window.helperShield = window.helperShield || 100;
+            if (helpDist < 30 && Math.abs(window.omegaShield - window.helperShield) > 2) {
+                const transfer = (window.omegaShield > window.helperShield) ? 0.5 : -0.5;
+                window.omegaShield -= transfer;
+                window.helperShield += transfer;
+                // Draw energy link
+                ctx.strokeStyle = "rgba(0, 255, 255, 0.4)";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(window.s0_x, window.s0_y);
+                ctx.lineTo(window.s3_x, window.s3_y);
+                ctx.stroke();
+            }
+
+            // AI Friendship Routines progression and Tier Benefits
+            window.helperFriendshipTier = window.helperFriendshipTier || 1;
+            window.helperFriendshipXP = window.helperFriendshipXP || 0;
+            if (helpDist < 30) {
+                window.helperFriendshipXP += 0.2;
+                if (window.helperFriendshipXP >= 100) {
+                    window.helperFriendshipXP = 0;
+                    window.helperFriendshipTier = Math.min(3, window.helperFriendshipTier + 1);
+                    if (window.playSynthTone) playSynthTone(900, 200);
+                }
+            }
+            if (window.helperFriendshipTier >= 2 && window.omegaShield < 50 && helpDist < 50) {
+                window.omegaShield = Math.min(100, window.omegaShield + 0.1);
+            }
+            ctx.fillStyle = "rgba(0, 255, 255, 0.8)";
+            ctx.font = "8px monospace";
+            ctx.fillText(`Helper Tier: ${window.helperFriendshipTier} (XP: ${Math.floor(window.helperFriendshipXP)}%)`, 10, 45);
+
+            // Shield status synthesis alarms and vocalizations
+            if (window.omegaShield < 25) {
+                const now = Date.now();
+                if (!window.lastShieldSpeechTime || now - window.lastShieldSpeechTime > 8000) {
+                    window.lastShieldSpeechTime = now;
+                    if (window.playSynthTone) {
+                        playSynthTone(880, 150);
+                        setTimeout(() => playSynthTone(660, 150), 150);
+                    }
+                    if (typeof window.speechSynthesis !== "undefined" && window.speechSynthesis) {
+                        const utterance = new SpeechSynthesisUtterance("shields critical");
+                        utterance.rate = 1.1;
+                        utterance.pitch = 0.75;
+                        window.speechSynthesis.speak(utterance);
+                    }
+                }
+            }
+
+            // WinchesterMQ keycode verification on overlap
+            if (helpDist < 15) {
+                window.yulStorage = window.yulStorage || { 100: 0, 101: 0, 102: 0, 105: 0 };
+                if (window.yulStorage[102] !== 32) {
+                    window.yulStorage[102] = 32; // Set keycode 32
+                    if (window.playSynthTone) playSynthTone(600, 50);
+                }
+            }
+
+            // Move enemies along smooth paths using common NPCRoutines strategies
+            window.omegaTargetShip = typeof window.omegaTargetShip === "undefined" ? true : window.omegaTargetShip;
+            if (omegaRaceFrame % 180 === 0) {
+                window.omegaTargetShip = Math.random() > 0.4;
+            }
+            const chaseTargetX = window.omegaTargetShip ? window.s0_x : window.s3_x;
+            const chaseTargetY = window.omegaTargetShip ? window.s0_y : window.s3_y;
+            const s1Update = NPCRoutines.updateHunterDroid(window.s1_x, window.s1_y, chaseTargetX, chaseTargetY, 0.85);
+            window.s1_x = s1Update.x;
+            window.s1_y = s1Update.y;
+
+            // Mine (s2) orbits counter-clockwise with a weaving radial wave oscillation
+            const s2Update = NPCRoutines.updateOrbitalMine(omegaRaceFrame);
+            window.s2_x = s2Update.x;
+            window.s2_y = s2Update.y;
+
+            // Update lasers & detect collision
+            let hitTarget = false;
+            window.omegaLasers = window.omegaLasers.filter(laser => {
+                laser.life--;
+                const t = laser.initialLife - laser.life;
+                const pos = laser.evalPos(t);
+                laser.x = pos.x;
+                laser.y = pos.y;
+
+                // Wrap lasers
+                if (laser.x < 12) laser.x = 308;
+                if (laser.x > 308) laser.x = 12;
+                if (laser.y < 12) laser.y = 188;
+                if (laser.y > 188) laser.y = 12;
+
+                // Check collision with Droid (s1)
+                const dist1 = Math.hypot(laser.x - window.s1_x, laser.y - window.s1_y);
+                if (dist1 < 12) {
+                    window.s1_x = 40 + Math.random() * 240;
+                    window.s1_y = 30 + Math.random() * 140;
+                    hitTarget = true;
+                    window.omegaShake = 6;
+                    if (window.playSynthTone) playSynthTone(150, 300);
+                    return false;
+                }
+
+                // Check collision with Mine (s2)
+                const dist2 = Math.hypot(laser.x - window.s2_x, laser.y - window.s2_y);
+                if (dist2 < 12) {
+                    window.s2_x = 40 + Math.random() * 240;
+                    window.s2_y = 30 + Math.random() * 140;
+                    hitTarget = true;
+                    window.omegaShake = 6;
+                    if (window.playSynthTone) playSynthTone(150, 300);
+                    return false;
+                }
+
+                // Draw laser vector line
+                ctx.strokeStyle = "#00ffff";
+                ctx.lineWidth = 2;
+                ctx.shadowBlur = 12;
+                ctx.shadowColor = "#00ffff";
+                ctx.beginPath();
+                ctx.moveTo(laser.x, laser.y);
+                ctx.lineTo(laser.x - laser.vx * 1.5, laser.y - laser.vy * 1.5);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                return laser.life > 0;
+            });
+
+            const s0_x = Number(window.s0_x) || 160;
+            const s0_y = Number(window.s0_y) || 120;
+            const s1_x = Number(window.s1_x) || 100;
+            const s1_y = Number(window.s1_y) || 80;
+            const s2_x = Number(window.s2_x) || 220;
+            const s2_y = Number(window.s2_y) || 150;
+
+            // Determine collision with player
+            const dx1 = Math.abs(s0_x - s2_x);
+            const dy1 = Math.abs(s0_y - s2_y);
+            const hasCollision = (dx1 < 16 && dy1 < 16) || hitTarget;
+            if (dx1 < 16 && dy1 < 16) {
+                window.omegaShake = 12;
+            }
+
+            // Draw player ship as a vector delta-wing triangle
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = lineWidth;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = strokeColor;
+            ctx.beginPath();
+            const shipLen = 8;
+            const shipWidth = 5;
+            const frontX = window.s0_x + Math.cos(window.omegaShipAngle) * shipLen;
+            const frontY = window.s0_y + Math.sin(window.omegaShipAngle) * shipLen;
+            const backLeftX = window.s0_x + Math.cos(window.omegaShipAngle + Math.PI * 0.8) * shipWidth;
+            const backLeftY = window.s0_y + Math.sin(window.omegaShipAngle + Math.PI * 0.8) * shipWidth;
+            const backRightX = window.s0_x + Math.cos(window.omegaShipAngle - Math.PI * 0.8) * shipWidth;
+            const backRightY = window.s0_y + Math.sin(window.omegaShipAngle - Math.PI * 0.8) * shipWidth;
+            ctx.moveTo(frontX, frontY);
+            ctx.lineTo(backLeftX, backLeftY);
+            ctx.lineTo(backRightX, backRightY);
+            ctx.closePath();
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            if (hitTarget) {
+                if (typeof cpuContract !== "undefined" && cpuContract) {
+                    cpuContract.peek(4).then(scoreVal => {
+                        const nextScore = (Number(scoreVal) + 1) % 100;
+                        cpuContract.poke(4, nextScore).catch(() => {});
+                        if (nextScore > 0 && nextScore % 5 === 0) {
+                            window.omegaWarpReady = true;
+                        }
+                    }).catch(() => {});
+                }
+            }
+
+            // Draw Dynamic Vector Warp Gate portal if active
+            if (window.omegaWarpReady) {
+                ctx.strokeStyle = "#ff00ff";
+                ctx.lineWidth = 2;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = "#ff00ff";
+                ctx.beginPath();
+                ctx.arc(160, 100, 15 + Math.sin(omegaRaceFrame * 0.15) * 5, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                // Collision with warp gate
+                const distToWarp = Math.hypot(window.omegaShipX - 160, window.omegaShipY - 100);
+                if (distToWarp < 20) {
+                    window.omegaLevel = (window.omegaLevel || 1) + 1;
+                    window.omegaWarpReady = false;
+                    window.omegaShake = 25;
+                    if (window.playSynthTone) playSynthTone(900, 400);
+                    
+                    // Reposition ship safely
+                    window.omegaShipX = 160;
+                    window.omegaShipY = 160;
+                    window.omegaShipVX = 0;
+                    window.omegaShipVY = 0;
+                }
+            }
+
+            // Render other C64 sprites (droid, bullets) using normal icon sprite rendering
+            drawSpriteIcon(1, s1_x, s1_y, "#ffcc00", hasCollision);
+            drawSpriteIcon(2, s2_x, s2_y, "#ff007f", hasCollision);
+            drawSpriteIcon(3, window.s3_x, window.s3_y, "#00f2fe", false);
+
+            if (window.dnaFrames && window.dnaFrames.length > 0) {
+                window.dnaFrameIndex = (window.dnaFrameIndex + 1) % window.dnaFrames.length;
+            }
+            
+            // Restore screen shake coordinate translation
+            ctx.restore();
+        }
+
+        let thrustFrame = 0;
+        function drawThrustScreen() {
+            thrustFrame++;
+            // Draw background space
+            ctx.fillStyle = "#020210";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw vector rocky landscape (typical cave floor/ceiling of Thrust)
+            ctx.strokeStyle = "#00ffff";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(0, 160);
+            ctx.lineTo(60, 160);
+            ctx.lineTo(90, 110);
+            ctx.lineTo(120, 150);
+            ctx.lineTo(160, 130);
+            ctx.lineTo(190, 160);
+            ctx.lineTo(240, 120);
+            ctx.lineTo(280, 160);
+            ctx.lineTo(canvas.width, 160);
+            ctx.stroke();
+
+            // Draw reactor/shield bubble (under ship/pod)
+            let reactorX = 160;
+            let reactorY = 130;
+            ctx.strokeStyle = "rgba(255, 0, 255, 0.4)";
+            ctx.beginPath();
+            ctx.arc(reactorX, reactorY, 12 + Math.sin(thrustFrame * 0.2) * 2, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Draw gun turret
+            ctx.fillStyle = "#e74c3c";
+            ctx.fillRect(reactorX - 4, reactorY - 2, 8, 4);
+            ctx.strokeStyle = "#e74c3c";
+            ctx.beginPath();
+            ctx.moveTo(reactorX, reactorY);
+            let gunAngle = -Math.PI / 4 + Math.sin(thrustFrame * 0.05) * 0.5;
+            ctx.lineTo(reactorX + Math.cos(gunAngle) * 12, reactorY + Math.sin(gunAngle) * 12);
+            ctx.stroke();
+
+            // Interactive Ship movement
+            if (!window.thrustShipX) {
+                window.thrustShipX = 130;
+                window.thrustShipY = 70;
+            }
+            if (interactiveKeys.left) window.thrustShipX = Math.max(15, window.thrustShipX - 3);
+            if (interactiveKeys.right) window.thrustShipX = Math.min(canvas.width - 15, window.thrustShipX + 3);
+            if (interactiveKeys.up) window.thrustShipY = Math.max(30, window.thrustShipY - 2);
+            if (interactiveKeys.down) window.thrustShipY = Math.min(130, window.thrustShipY + 2);
+
+            let shipX = window.thrustShipX;
+            let shipY = window.thrustShipY;
+            ctx.strokeStyle = "#ffffff";
+            ctx.beginPath();
+            ctx.moveTo(shipX, shipY - 8);
+            ctx.lineTo(shipX - 5, shipY + 5);
+            ctx.lineTo(shipX + 5, shipY + 5);
+            ctx.closePath();
+            ctx.stroke();
+
+            // Draw flame thrust
+            if (interactiveKeys.up && thrustFrame % 4 < 2) {
+                ctx.strokeStyle = "#f39c12";
+                ctx.beginPath();
+                ctx.moveTo(shipX - 3, shipY + 5);
+                ctx.lineTo(shipX, shipY + 12);
+                ctx.lineTo(shipX + 3, shipY + 5);
+                ctx.stroke();
+            }
+
+            // Draw gravity pod/kiron sphere
+            let podX = shipX + Math.sin(thrustFrame * 0.05) * 15;
+            let podY = shipY + 25 + Math.cos(thrustFrame * 0.03) * 5;
+            ctx.strokeStyle = "#f1c40f";
+            ctx.beginPath();
+            ctx.arc(podX, podY, 4, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Draw vector tether elastic cord (ship to pod link)
+            ctx.strokeStyle = "#95a5a6";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(shipX, shipY + 5);
+            ctx.lineTo(podX, podY - 4);
+            ctx.stroke();
+
+            // HUD
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("FIREBIRD 1986", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("FUEL: " + Math.max(0, 1000 - thrustFrame) + "L", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("THRUST", canvas.width / 2, 15);
+
+            ctx.fillStyle = "#e74c3c";
+            ctx.fillText("TENSION: " + Math.round(Math.abs(shipX - podX) * 2) + "%", canvas.width / 2, canvas.height - 12);
+        }
+
+        let ninjaFrame = 0;
+        function drawLastNinjaScreen() {
+            ninjaFrame++;
+            // Draw background (forest greens/browns)
+            ctx.fillStyle = "#1e3d1e";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw isometric screen boundaries / rock paths
+            ctx.strokeStyle = "#8e44ad";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            // Draw isometric path diamond
+            ctx.moveTo(160, 40);
+            ctx.lineTo(280, 110);
+            ctx.lineTo(160, 180);
+            ctx.lineTo(40, 110);
+            ctx.closePath();
+            ctx.stroke();
+
+            // Draw decorative trees
+            ctx.fillStyle = "#27ae60";
+            ctx.beginPath();
+            ctx.arc(45, 60, 15, 0, Math.PI * 2);
+            ctx.arc(275, 60, 15, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Isometric bridge rails across a river
+            ctx.fillStyle = "#34495e";
+            ctx.fillRect(110, 100, 100, 20); // river
+            ctx.fillStyle = "#d35400";
+            ctx.fillRect(150, 90, 20, 40);  // wooden bridge
+
+            // Interactive Ninja Movement
+            if (!window.ninjaX) {
+                window.ninjaX = 140;
+                window.ninjaY = 120;
+            }
+            if (interactiveKeys.left) window.ninjaX = Math.max(50, window.ninjaX - 2.5);
+            if (interactiveKeys.right) window.ninjaX = Math.min(270, window.ninjaX + 2.5);
+            if (interactiveKeys.up) window.ninjaY = Math.max(50, window.ninjaY - 1.5);
+            if (interactiveKeys.down) window.ninjaY = Math.min(170, window.ninjaY + 1.5);
+
+            let avX = window.ninjaX;
+            let avY = window.ninjaY;
+
+            // Draw Ninja Body (black garb)
+            ctx.fillStyle = "#0e0e0e";
+            ctx.fillRect(avX - 4, avY - 12, 8, 16);
+            // Red headband
+            ctx.fillStyle = "#ff007f";
+            ctx.fillRect(avX - 5, avY - 15, 10, 3);
+
+            // Draw Shogun Guard (Sprite 1) holding staff
+            let guardX = 180;
+            let guardY = 110;
+            ctx.fillStyle = "#c0392b"; // Red armor
+            ctx.fillRect(guardX - 4, guardY - 12, 8, 16);
+            ctx.fillStyle = "#f39c12"; // Helmet
+            ctx.fillRect(guardX - 5, guardY - 15, 10, 3);
+            ctx.strokeStyle = "#7f8c8d"; // Spear/Staff
+            ctx.beginPath();
+            ctx.moveTo(guardX + 4, guardY - 20);
+            ctx.lineTo(guardX + 4, guardY + 8);
+            ctx.stroke();
+
+            // HUD
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("AHOY! ISSUE 33", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("LIVES: 3 | SWORD", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("THE LAST NINJA (C. BLAKEMORE 1986)", canvas.width / 2, 15);
+
+            ctx.fillStyle = "#ff007f";
+            ctx.fillText("ENERGY: [||||||||||]", canvas.width / 2, canvas.height - 12);
+        }
+
+        let ninjaSystem3Frame = 0;
+        function drawSystem3NinjaScreen() {
+            ninjaSystem3Frame++;
+            // Draw background (dark garden green)
+            ctx.fillStyle = "#162e1a";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw isometric garden water/river
+            ctx.fillStyle = "#1f3a52";
+            ctx.beginPath();
+            ctx.moveTo(80, 180);
+            ctx.lineTo(240, 100);
+            ctx.lineTo(270, 115);
+            ctx.lineTo(110, 180);
+            ctx.closePath();
+            ctx.fill();
+
+            // Draw wooden isometric bridge crossing the river
+            ctx.fillStyle = "#8a5229";
+            ctx.beginPath();
+            ctx.moveTo(150, 145);
+            ctx.lineTo(190, 125);
+            ctx.lineTo(210, 135);
+            ctx.lineTo(170, 155);
+            ctx.closePath();
+            ctx.fill();
+
+            // Bridge railings (isometric lines)
+            ctx.strokeStyle = "#a87042";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(150, 145);
+            ctx.lineTo(190, 125);
+            ctx.moveTo(170, 155);
+            ctx.lineTo(210, 135);
+            ctx.stroke();
+
+            // Draw beautiful Temple Torii Gate (Japanese theme)
+            ctx.fillStyle = "#b81d24"; // Red pillars
+            ctx.fillRect(50, 40, 6, 40);
+            ctx.fillRect(90, 40, 6, 40);
+            ctx.fillRect(40, 36, 62, 6); // Top lintel
+
+            // Interactive Ninja Movement
+            if (!window.ninjaSystem3X) {
+                window.ninjaSystem3X = 140;
+                window.ninjaSystem3Y = 120;
+            }
+            if (interactiveKeys.left) window.ninjaSystem3X = Math.max(50, window.ninjaSystem3X - 2.5);
+            if (interactiveKeys.right) window.ninjaSystem3X = Math.min(270, window.ninjaSystem3X + 2.5);
+            if (interactiveKeys.up) window.ninjaSystem3Y = Math.max(50, window.ninjaSystem3Y - 1.5);
+            if (interactiveKeys.down) window.ninjaSystem3Y = Math.min(170, window.ninjaSystem3Y + 1.5);
+
+            let avX = window.ninjaSystem3X;
+            let avY = window.ninjaSystem3Y;
+
+            // Draw Armakuni (black garb with katana on back)
+            ctx.fillStyle = "#111111"; // Black clothes
+            ctx.fillRect(avX - 4, avY - 12, 8, 16);
+            ctx.fillStyle = "#ff007f"; // Red headwrap accent
+            ctx.fillRect(avX - 5, avY - 15, 10, 3);
+            
+            // Katana
+            ctx.strokeStyle = "#d1d5db";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(avX - 6, avY - 10);
+            ctx.lineTo(avX + 6, avY + 2);
+            ctx.stroke();
+
+            // Draw Shogun Guard (Red armor holding naginata staff)
+            let guardX = 220;
+            let guardY = 100;
+            ctx.fillStyle = "#c0392b"; // Red samurai armor
+            ctx.fillRect(guardX - 4, guardY - 12, 8, 16);
+            ctx.fillStyle = "#f39c12"; // Golden helmet/kabuto
+            ctx.fillRect(guardX - 5, guardY - 15, 10, 3);
+            
+            ctx.strokeStyle = "#95a5a6"; // Staff spear
+            ctx.beginPath();
+            ctx.moveTo(guardX + 4, guardY - 22);
+            ctx.lineTo(guardX + 4, guardY + 10);
+            ctx.stroke();
+
+            // HUD
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("SYSTEM 3 1987", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("LIVES: 3 | KATANA", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("THE LAST NINJA - THE WASTELANDS", canvas.width / 2, 15);
+
+            ctx.fillStyle = "#ff007f";
+            ctx.fillText("ENERGY: [||||||||||]", canvas.width / 2, canvas.height - 12);
+        }
+
+        let vaultFrame = 0;
+        function drawVaultOfTerrorScreen() {
+            vaultFrame++;
+            // Draw background (dark dungeon grey/blue)
+            ctx.fillStyle = "#1c2321";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw stone block walls
+            ctx.fillStyle = "#3e4a47";
+            ctx.fillRect(40, 30, 240, 15);
+            ctx.fillStyle = "#2e3835";
+            for (let i = 0; i < 6; i++) {
+                ctx.fillRect(40 + i * 40, 30, 2, 15);
+            }
+
+            // Interactive Adventurer Movement
+            if (!window.vaultX) {
+                window.vaultX = 120;
+                window.vaultY = 100;
+            }
+            if (interactiveKeys.left) window.vaultX = Math.max(50, window.vaultX - 2.5);
+            if (interactiveKeys.right) window.vaultX = Math.min(270, window.vaultX + 2.5);
+            if (interactiveKeys.up) window.vaultY = Math.max(50, window.vaultY - 1.5);
+            if (interactiveKeys.down) window.vaultY = Math.min(170, window.vaultY + 1.5);
+
+            let avX = window.vaultX;
+            let avY = window.vaultY;
+
+            // Draw Adventurer (blue tunic, yellow hair)
+            ctx.fillStyle = "#2980b9";
+            ctx.fillRect(avX - 4, avY - 12, 8, 16);
+            ctx.fillStyle = "#f1c40f";
+            ctx.fillRect(avX - 3, avY - 15, 6, 4);
+
+            // Draw Skeleton Guard (white bones, red glowing eyes)
+            let skX = 190;
+            let skY = 110;
+            ctx.fillStyle = "#ecf0f1";
+            ctx.fillRect(skX - 3, skY - 12, 6, 16);
+            ctx.fillStyle = "#ff0000";
+            ctx.fillRect(skX - 2, skY - 10, 1, 1);
+            ctx.fillRect(skX, skY - 10, 1, 1);
+
+            // Draw Treasure Chest
+            ctx.fillStyle = "#d35400";
+            ctx.fillRect(220, 80, 12, 10);
+            ctx.fillStyle = "#f1c40f";
+            ctx.fillRect(225, 84, 2, 3); // lock
+
+            // HUD
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("AHOY! ISSUE 34", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("KEYS: 1 | SCORE: 550", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("VAULT OF TERROR (C. BLAKEMORE 1986)", canvas.width / 2, 15);
+
+            ctx.fillStyle = "#e74c3c";
+            ctx.fillText("HEALTH: [||||||||||]", canvas.width / 2, canvas.height - 12);
+        }
+
+        let mouseFrame = 0;
+        function drawMouseHouseScreen() {
+            mouseFrame++;
+            // Draw background (cozy room, wood floor)
+            ctx.fillStyle = "#8e5a36";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw baseboards
+            ctx.fillStyle = "#2c1e14";
+            ctx.fillRect(0, 30, canvas.width, 10);
+
+            // Interactive Mouse Movement
+            if (!window.mouseHouseX) {
+                window.mouseHouseX = 100;
+                window.mouseHouseY = 120;
+            }
+            if (interactiveKeys.left) window.mouseHouseX = Math.max(50, window.mouseHouseX - 3.0);
+            if (interactiveKeys.right) window.mouseHouseX = Math.min(270, window.mouseHouseX + 3.0);
+            if (interactiveKeys.up) window.mouseHouseY = Math.max(50, window.mouseHouseY - 2.0);
+            if (interactiveKeys.down) window.mouseHouseY = Math.min(170, window.mouseHouseY + 2.0);
+
+            let avX = window.mouseHouseX;
+            let avY = window.mouseHouseY;
+
+            // Draw Mouse (Grey body, pink ears)
+            ctx.fillStyle = "#7f8c8d";
+            ctx.fillRect(avX - 4, avY - 4, 8, 8);
+            ctx.fillStyle = "#ffc0cb";
+            ctx.fillRect(avX - 3, avY - 6, 2, 2);
+            ctx.fillRect(avX + 1, avY - 6, 2, 2);
+
+            // Draw Cat (Orange body, tail)
+            let catX = 180 + Math.sin(mouseFrame * 0.05) * 40;
+            let catY = 110 + Math.cos(mouseFrame * 0.05) * 20;
+            ctx.fillStyle = "#d35400";
+            ctx.fillRect(catX - 6, catY - 6, 12, 12);
+            ctx.fillRect(catX - 4, catY - 10, 2, 4); // ears
+            ctx.fillRect(catX + 2, catY - 10, 2, 4);
+
+            // HUD
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("AHOY! ISSUE 36", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("CHEESE: 4 | ESCAPED", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("MOUSE IN THE HOUSE (J. HILTY 1986)", canvas.width / 2, 15);
+
+            ctx.fillStyle = "#ff007f";
+            ctx.fillText("CAT ALARM: DANGER!", canvas.width / 2, canvas.height - 12);
+        }
+
+        let lazyFrame = 0;
+        function drawLazySourceScreen() {
+            lazyFrame++;
+            // Draw background (blue editor screen)
+            ctx.fillStyle = "#0000a8";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw edit lines
+            ctx.fillStyle = "#a8a8a8";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("10  .A 05        ; LDA #$05 (LAZY OPTIMIZED)", 20, 50);
+            ctx.fillText("20  .S A0 0F     ; STA $0FA0 (BORDER SHADOW)", 20, 65);
+            ctx.fillText("30  .J 00 C0     ; JSR $C000 (SYNC SHADOWS)", 20, 80);
+            ctx.fillText("40  .B           ; BRK", 20, 95);
+
+            // Interactive Cursor Movement
+            if (!window.lazyCursorX) {
+                window.lazyCursorX = 15;
+                window.lazyCursorY = 46;
+            }
+            if (interactiveKeys.left) window.lazyCursorX = Math.max(10, window.lazyCursorX - 2.0);
+            if (interactiveKeys.right) window.lazyCursorX = Math.min(270, window.lazyCursorX + 2.0);
+            if (interactiveKeys.up) window.lazyCursorY = Math.max(40, window.lazyCursorY - 1.5);
+            if (interactiveKeys.down) window.lazyCursorY = Math.min(160, window.lazyCursorY + 1.5);
+
+            // Draw cursor (flashing cyan block)
+            if (Math.floor(lazyFrame / 15) % 2 === 0) {
+                ctx.fillStyle = "#00ffff";
+                ctx.fillRect(window.lazyCursorX, window.lazyCursorY, 6, 8);
+            }
+
+            // HUD
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("AHOY! ISSUE 36", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("LINE: 10 | COLUMN: 2", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("LAZY SOURCE CODE (M. BENNETT 1986)", canvas.width / 2, 15);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("PRESS [RETURN] TO COMPILE SHORTHAND", canvas.width / 2, canvas.height - 12);
+        }
+
+        let artistFrame = 0;
+        let brushColor = "#ff007f";
+        function drawTheArtistScreen() {
+            artistFrame++;
+            // Draw background (art canvas)
+            if (!window.artistCanvasCreated) {
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                window.artistCanvasCreated = true;
+            }
+
+            // Interactive Brush Movement
+            if (!window.brushX) {
+                window.brushX = 140;
+                window.brushY = 100;
+            }
+            if (interactiveKeys.left) window.brushX = Math.max(10, window.brushX - 3.0);
+            if (interactiveKeys.right) window.brushX = Math.min(310, window.brushX + 3.0);
+            if (interactiveKeys.up) window.brushY = Math.max(30, window.brushY - 2.5);
+            if (interactiveKeys.down) window.brushY = Math.min(180, window.brushY + 2.5);
+
+            // Draw brush path (simulated drawing)
+            ctx.fillStyle = brushColor;
+            ctx.beginPath();
+            ctx.arc(window.brushX, window.brushY, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw HUD overlays on top of canvas
+            ctx.fillStyle = "#000000";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("AHOY! ISSUE 36", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("BRUSH SIZE: 3px", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#000000";
+            ctx.fillText("THE ARTIST (D. DEBOER 1986)", canvas.width / 2, 15);
+
+            ctx.fillStyle = "#888888";
+            ctx.fillText("USE JOYSTICK OR KEYS TO DRAW ON SCREEN", canvas.width / 2, canvas.height - 12);
+        }
+
+        let jailbreakFrame = 0;
+        function drawJailBreakScreen() {
+            jailbreakFrame++;
+            // Draw background (dark dungeon cells, iron bars)
+            ctx.fillStyle = "#2c3e50";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw iron cell bars (vertical grey lines)
+            ctx.strokeStyle = "#7f8c8d";
+            ctx.lineWidth = 4;
+            for (let i = 0; i < 8; i++) {
+                ctx.beginPath();
+                ctx.moveTo(80 + i * 25, 30);
+                ctx.lineTo(80 + i * 25, 170);
+                ctx.stroke();
+            }
+
+            // Interactive Prisoner Movement
+            if (!window.jailX) {
+                window.jailX = 100;
+                window.jailY = 100;
+            }
+            if (interactiveKeys.left) window.jailX = Math.max(50, window.jailX - 2.5);
+            if (interactiveKeys.right) window.jailX = Math.min(270, window.jailX + 2.5);
+            if (interactiveKeys.up) window.jailY = Math.max(50, window.jailY - 1.5);
+            if (interactiveKeys.down) window.jailY = Math.min(170, window.jailY + 1.5);
+
+            let avX = window.jailX;
+            let avY = window.jailY;
+
+            // Draw Prisoner (striped shirt, black pants)
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(avX - 4, avY - 12, 8, 16);
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(avX - 4, avY - 12, 8, 2);
+            ctx.fillRect(avX - 4, avY - 8, 8, 2);
+            ctx.fillRect(avX - 4, avY - 4, 8, 2);
+            ctx.fillRect(avX - 4, avY, 8, 4); // pants
+
+            // Draw Guard (Blue uniform, gold badge)
+            let gX = 180 + Math.sin(jailbreakFrame * 0.04) * 45;
+            let gY = 120;
+            ctx.fillStyle = "#2980b9";
+            ctx.fillRect(gX - 5, gY - 12, 10, 16);
+            ctx.fillStyle = "#f1c40f";
+            ctx.fillRect(gX - 1, gY - 8, 2, 2); // badge
+            ctx.fillStyle = "#2c3e50";
+            ctx.fillRect(gX - 5, gY - 15, 10, 3); // cap
+
+            // HUD
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("AHOY! ISSUE 38", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("LOCKS OPENED: 2/5", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("JAIL BREAK (AHOY! 1987)", canvas.width / 2, 15);
+
+            ctx.fillStyle = "#ff007f";
+            ctx.fillText("SECURE PERIMETER ACTIVE", canvas.width / 2, canvas.height - 12);
+        }
+
+        let turtleFrame = 0;
+        function drawTurtleRescueScreen() {
+            turtleFrame++;
+            // Draw background (blue ocean water)
+            ctx.fillStyle = "#2980b9";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw coral reefs (procedural green shapes)
+            ctx.fillStyle = "#27ae60";
+            ctx.fillRect(30, 130, 40, 40);
+            ctx.fillRect(250, 120, 50, 50);
+
+            // Interactive Turtle Movement
+            if (!window.turtleX) {
+                window.turtleX = 100;
+                window.turtleY = 100;
+            }
+            if (interactiveKeys.left) window.turtleX = Math.max(40, window.turtleX - 2.5);
+            if (interactiveKeys.right) window.turtleX = Math.min(280, window.turtleX + 2.5);
+            if (interactiveKeys.up) window.turtleY = Math.max(50, window.turtleY - 2.0);
+            if (interactiveKeys.down) window.turtleY = Math.min(170, window.turtleY + 2.0);
+
+            let avX = window.turtleX;
+            let avY = window.turtleY;
+
+            // Draw Turtle (green shell, yellow flippers)
+            ctx.fillStyle = "#f1c40f"; // limbs
+            ctx.fillRect(avX - 6, avY - 8, 4, 3);
+            ctx.fillRect(avX + 2, avY - 8, 4, 3);
+            ctx.fillRect(avX - 6, avY + 5, 4, 3);
+            ctx.fillRect(avX + 2, avY + 5, 4, 3);
+            ctx.fillStyle = "#27ae60"; // shell
+            ctx.fillRect(avX - 4, avY - 6, 8, 12);
+
+            // Draw Shark/Predator (grey fin swimming back & forth)
+            let sX = 160 + Math.sin(turtleFrame * 0.03) * 60;
+            let sY = 80 + Math.cos(turtleFrame * 0.03) * 20;
+            ctx.fillStyle = "#7f8c8d";
+            ctx.beginPath();
+            ctx.moveTo(sX - 8, sY);
+            ctx.lineTo(sX, sY - 12);
+            ctx.lineTo(sX + 8, sY);
+            ctx.closePath();
+            ctx.fill();
+
+            // HUD
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("AHOY! ISSUE 38", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("RESCUED: 3 | SHARKS: 2", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("TURTLE RESCUE (AHOY! 1987)", canvas.width / 2, 15);
+
+            ctx.fillStyle = "#00ffff";
+            ctx.fillText("SWIM TO THE REEF CORAL FOR SAFETY", canvas.width / 2, canvas.height - 12);
+        }
+
+        let advFrame = 0;
+        function drawAdventurerScreen() {
+            advFrame++;
+            // Draw background (forest trail/pathway)
+            ctx.fillStyle = "#27ae60";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw brown dirt path winding through forest
+            ctx.fillStyle = "#d35400";
+            ctx.beginPath();
+            ctx.moveTo(100, 180);
+            ctx.lineTo(130, 30);
+            ctx.lineTo(170, 30);
+            ctx.lineTo(140, 180);
+            ctx.closePath();
+            ctx.fill();
+
+            // Interactive Hero Movement
+            if (!window.advX) {
+                window.advX = 120;
+                window.advY = 120;
+            }
+            if (interactiveKeys.left) window.advX = Math.max(30, window.advX - 2.5);
+            if (interactiveKeys.right) window.advX = Math.min(290, window.advX + 2.5);
+            if (interactiveKeys.up) window.advY = Math.max(40, window.advY - 2.0);
+            if (interactiveKeys.down) window.advY = Math.min(170, window.advY + 2.0);
+
+            let avX = window.advX;
+            let avY = window.advY;
+
+            // Draw Hero (purple tunic, yellow hair, shield)
+            ctx.fillStyle = "#9b59b6";
+            ctx.fillRect(avX - 4, avY - 12, 8, 16);
+            ctx.fillStyle = "#f1c40f";
+            ctx.fillRect(avX - 3, avY - 15, 6, 4); // hair
+            ctx.fillStyle = "#bdc3c7";
+            ctx.fillRect(avX + 4, avY - 8, 2, 6); // shield
+
+            // HUD
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("AHOY! ISSUE 38", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("HP: 100/100 | GOLD: 45", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("THE ADVENTURER (AHOY! 1987)", canvas.width / 2, 15);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("YOU ARE STANDING ON A WINDING FOREST DIRT PATH", canvas.width / 2, canvas.height - 12);
+        }
+
+        let flashyFrame = 0;
+        function drawFlashyWindowsScreen() {
+            flashyFrame++;
+            // Draw background (80-column styled dark slate terminal)
+            ctx.fillStyle = "#1e272c";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw 80-column green cell grid text layout
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 6px monospace";
+            ctx.textAlign = "left";
+            for (let i = 0; i < 8; i++) {
+                ctx.fillText(`$C00${i*8} | E9 00 2C A2 00 8E 20 D0 60 4C D0 C0`, 20, 45 + i * 12);
+            }
+
+            // Draw interactive window overlay block (simulating flashy overlay windows)
+            let winX = 110 + Math.sin(flashyFrame * 0.04) * 20;
+            let winY = 60 + Math.cos(flashyFrame * 0.04) * 10;
+            ctx.fillStyle = "#2c3e50";
+            ctx.strokeStyle = "#e74c3c";
+            ctx.lineWidth = 2;
+            ctx.fillRect(winX, winY, 120, 60);
+            ctx.strokeRect(winX, winY, 120, 60);
+
+            // Draw text inside the flashy window
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 7px monospace";
+            ctx.fillText("  C128 VDC OVERLAY WINDOW", winX + 5, winY + 18);
+            ctx.fillStyle = "#00ffff";
+            ctx.fillText("  REGISTER 28: WIDTH=80", winX + 5, winY + 32);
+            ctx.fillText("  REGISTER 24: SCROLL=OFF", winX + 5, winY + 44);
+
+            // HUD
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("AHOY! ISSUE 38", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("VDC: 8563 (80-COLUMNS)", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("FLASHY WINDOWS (AHOY! 1987)", canvas.width / 2, 15);
+
+            // Flashing border status LED
+            let flashCol = Math.floor(flashyFrame / 10) % 2 === 0 ? "#ff007f" : "#00f2fe";
+            ctx.fillStyle = flashCol;
+            ctx.fillText("VDC MONITOR ACTIVE [VRAM SYNC: OK]", canvas.width / 2, canvas.height - 12);
+        }
+
+        let sentinelFrame = 0;
+        function drawSentinelScreen() {
+            sentinelFrame++;
+            // Sunset sky gradient
+            let skyGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            skyGrad.addColorStop(0, "#2c3e50");
+            skyGrad.addColorStop(0.5, "#fd79a8");
+            skyGrad.addColorStop(1, "#ffeaa7");
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Procedural 3D wireframe terrain cells
+            ctx.strokeStyle = "#27ae60";
+            ctx.lineWidth = 1;
+            
+            // Draw grid squares projecting forward
+            let horizonY = 80;
+            for (let i = 0; i <= 10; i++) {
+                let xOffset = 30 * (i - 5);
+                ctx.beginPath();
+                ctx.moveTo(160 + xOffset, canvas.height);
+                ctx.lineTo(160 + xOffset * 0.2, horizonY);
+                ctx.stroke();
+            }
+
+            // Horizontal grid perspective lines
+            for (let j = 0; j < 8; j++) {
+                let hY = horizonY + (j * j * 1.5);
+                ctx.beginPath();
+                ctx.moveTo(0, hY);
+                ctx.lineTo(canvas.width, hY);
+                ctx.stroke();
+            }
+
+            // Draw Sentinel Pedestal Tower at the horizon
+            let sentinelX = 160 + Math.sin(sentinelFrame * 0.01) * 30;
+            let sentinelY = horizonY - 15;
+            ctx.fillStyle = "#2d3436";
+            ctx.fillRect(sentinelX - 6, sentinelY, 12, 15); // Tower
+            // Sentinel Eye sphere
+            ctx.fillStyle = "#00ffff";
+            ctx.beginPath();
+            ctx.arc(sentinelX, sentinelY - 3, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Sentinel eye seeking target quadrants dynamically: cycles looking at quadrants (I, II, III, IV) every 300 frames
+            let quadrantIndex = Math.floor(sentinelFrame / 300) % 4;
+            let targetAngle = 0;
+            if (quadrantIndex === 0) targetAngle = Math.PI * 0.25; // Target Front-Right
+            if (quadrantIndex === 1) targetAngle = Math.PI * 0.75; // Target Rear-Right
+            if (quadrantIndex === 2) targetAngle = Math.PI * 1.25; // Target Rear-Left
+            if (quadrantIndex === 3) targetAngle = Math.PI * 1.75; // Target Front-Left
+            
+            // Smoothly pan scanner laser toward target quadrant angle
+            if (typeof window.sentinelScanAngle === "undefined") {
+                window.sentinelScanAngle = 0.0;
+            }
+            let angleDiff = targetAngle - window.sentinelScanAngle;
+            // Handle wrap-around diff
+            angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
+            window.sentinelScanAngle += angleDiff * 0.03; // Smooth step interpolation
+
+            let sweepAngle = window.sentinelScanAngle;
+            ctx.strokeStyle = "rgba(0, 255, 255, 0.4)";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(sentinelX, sentinelY - 3);
+            let laserEndX = sentinelX + Math.sin(sweepAngle) * 120;
+            let laserEndY = horizonY + 50 + Math.cos(sweepAngle) * 30;
+            ctx.lineTo(laserEndX, laserEndY);
+            ctx.stroke();
+
+            // Track dynamic energy locally
+            if (typeof window.sentinelEnergy === "undefined") {
+                window.sentinelEnergy = 100.0;
+            }
+
+            // Calculate if the sentinel sweeping laser overlaps the player's observer grid cell
+            const ox = window.sentinelObserverX || 3;
+            const oy = window.sentinelObserverY || 7;
+            const playerGridX = 20 + ox * (280 / 8) + (280 / 16);
+            const playerGridY = 40 + oy * (120 / 8) + (120 / 16);
+            const distanceToLaser = Math.abs((laserEndY - sentinelY) * playerGridX - (laserEndX - sentinelX) * playerGridY + laserEndX * sentinelY - laserEndY * sentinelX) / Math.sqrt(Math.pow(laserEndY - sentinelY, 2) + Math.pow(laserEndX - sentinelX, 2));
+
+            // If laser sweeps close to player and line of sight is clear, trigger alarm drainage
+            let alarmActive = false;
+            if (distanceToLaser < 15 && !window.losBlocked) {
+                alarmActive = true;
+                // Energy drain bypassed by user request
+                if (sentinelFrame % 10 === 0) {
+                    playSynthTone(440, 50); // Alarm high beep
+                    pokeSIDFreq(8800, 0x11);
+                }
+            }
+
+            // Interactive Viewfinder Aiming
+            if (!window.viewX) {
+                window.viewX = 160;
+                window.viewY = 100;
+            }
+            if (interactiveKeys.left) window.viewX = Math.max(10, window.viewX - 3);
+            if (interactiveKeys.right) window.viewX = Math.min(canvas.width - 10, window.viewX + 3);
+            if (interactiveKeys.up) window.viewY = Math.max(30, window.viewY - 3);
+            if (interactiveKeys.down) window.viewY = Math.min(canvas.height - 30, window.viewY + 3);
+
+
+
+            // Compute targeted grid cell index in Sentinel checkerboard (8x8 mapping)
+            let cellX = Math.floor((window.viewX - 20) / (280 / 8));
+            let cellY = Math.floor((window.viewY - 40) / (120 / 8));
+            cellX = Math.max(0, Math.min(7, cellX));
+            cellY = Math.max(0, Math.min(7, cellY));
+
+            // Call FolkloreCPU contract line of sight raycaster asynchronously to update target visibility state
+            if (!window.lastLosCheckTime) window.lastLosCheckTime = 0;
+            if (!window.losBlocked) window.losBlocked = false;
+
+            if (typeof folkloreContract !== "undefined" && folkloreContract && Date.now() - window.lastLosCheckTime > 250) {
+                window.lastLosCheckTime = Date.now();
+                // Player looking at viewfinder targets from their current dynamic observer coordinate
+                const sentinelLosOx = window.sentinelObserverX || 3;
+                const sentinelLosOy = window.sentinelObserverY || 7;
+                folkloreContract.checkLineOfSight(sentinelLosOx, sentinelLosOy, cellX, cellY).then(blocked => {
+                    window.losBlocked = Number(blocked) === 1;
+                }).catch(() => {});
+            }
+
+            // Initialize heights and load trees/boulders resources from dynamic map level configs
+            if (!window.sentinelLevel) {
+                window.sentinelLevel = 1; // Default to Level 1
+            }
+
+            if (!window.sentinelHeights) {
+                window.sentinelHeights = Array(64).fill(0);
+                window.sentinelHeights[28] = 4; // Pedestal Tower
+                
+                if (window.sentinelLevel === 1) {
+                    // Valley Profile: scattered low trees
+                    window.sentinelHeights[10] = 1;
+                    window.sentinelHeights[12] = 2;
+                    window.sentinelHeights[18] = 1;
+                    window.sentinelHeights[45] = 2;
+                    window.sentinelHeights[52] = 1;
+                } else if (window.sentinelLevel === 2) {
+                    // Mountain Profile: high rocks blocking views
+                    window.sentinelHeights[5] = 3;
+                    window.sentinelHeights[14] = 3;
+                    window.sentinelHeights[22] = 2;
+                    window.sentinelHeights[38] = 2;
+                    window.sentinelHeights[42] = 3;
+                } else if (window.sentinelLevel === 3) {
+                    // Spire Profile: single giant pillars
+                    window.sentinelHeights[15] = 5;
+                    window.sentinelHeights[24] = 4;
+                    window.sentinelHeights[48] = 5;
+                }
+            }
+
+            // Spacebar/Fire key builds a block on empty tiles, or harvests resources on occupied tiles (absorbing energy)
+            if (interactiveKeys.fire && !window.lastFirePressed && !window.losBlocked) {
+                window.lastFirePressed = true;
+                const idx = cellY * 8 + cellX;
+                const currentH = window.sentinelHeights[idx] || 0;
+                
+                let newHeight = currentH;
+                if (currentH > 0 && idx !== 28) {
+                    // Harvest Resource: Reduce height to 0 and absorb energy
+                    newHeight = 0;
+                    window.sentinelHeights[idx] = 0;
+                    const energyGained = currentH * 15;
+                    window.sentinelEnergy = Math.min(100, (window.sentinelEnergy || 100) + energyGained);
+                    console.log(`Harvested grid tile (${cellX}, ${cellY}) gaining ${energyGained} energy units.`);
+                    playSynthTone(600, 150); // High pitch collection sound
+                } else if (currentH === 0) {
+                    // Build Block: Increment height and consume energy
+                    newHeight = 1;
+                    window.sentinelHeights[idx] = 1;
+                    window.sentinelEnergy = Math.max(0, (window.sentinelEnergy || 100) - 10);
+                    console.log(`Built block at grid tile (${cellX}, ${cellY}) consuming 10 energy units.`);
+                    playSynthTone(200, 150); // Low build sound
+                }
+                
+                if (typeof folkloreContract !== "undefined" && folkloreContract) {
+                    folkloreContract.mutateHeight(cellX, cellY, newHeight, { nonce: datamostNonce++ })
+                        .then(() => console.log(`On-chain block height mutated at (${cellX}, ${cellY}) to ${newHeight}`))
+                        .catch(err => console.warn("Mutation transaction failed:", err.message));
+                }
+            }
+            // Teleportation target logic: Press Enter to teleport camera/consciousness or place a clone
+            if (!window.sentinelObserverX) {
+                window.sentinelObserverX = 3;
+                window.sentinelObserverY = 7;
+            }
+            if (!window.sentinelClones) {
+                window.sentinelClones = []; // Array of static cooperative clone positions
+            }
+
+            // Press 'C' key to place a static clone body on target tile (costs 20 energy)
+            if (interactiveKeys.c && !window.lastCPressed && !window.losBlocked) {
+                window.lastCPressed = true;
+                const idx = cellY * 8 + cellX;
+                if ((window.sentinelEnergy || 100) >= 20 && !window.sentinelClones.some(c => c.x === cellX && c.y === cellY)) {
+                    window.sentinelEnergy -= 20;
+                    window.sentinelClones.push({ x: cellX, y: cellY });
+                    playSynthTone(500, 200); // Clone spawn sound
+                    console.log(`Placed clone shell at grid coordinates (${cellX}, ${cellY})`);
+                }
+            }
+            if (!interactiveKeys.c) {
+                window.lastCPressed = false;
+            }
+
+            // Press 'Tab' or shift active viewport coordinates between placed clone coordinates
+            if (interactiveKeys.tab && !window.lastTabPressed && window.sentinelClones.length > 0) {
+                window.lastTabPressed = true;
+                // Add current position to clone pool so we can cycle back
+                const currentPos = { x: window.sentinelObserverX, y: window.sentinelObserverY };
+                const nextClone = window.sentinelClones.shift();
+                window.sentinelClones.push(currentPos);
+                
+                window.sentinelObserverX = nextClone.x;
+                window.sentinelObserverY = nextClone.y;
+                playSynthTone(700, 100); // Cycle camera view sound
+                console.log(`Viewport observer cycled to clone at (${window.sentinelObserverX}, ${window.sentinelObserverY})`);
+            }
+            if (!interactiveKeys.tab) {
+                window.lastTabPressed = false;
+            }
+
+            if (interactiveKeys.enter && !window.lastEnterPressed && !window.losBlocked) {
+                window.lastEnterPressed = true;
+                window.sentinelObserverX = cellX;
+                window.sentinelObserverY = cellY;
+                
+                if (typeof folkloreContract !== "undefined" && folkloreContract) {
+                    folkloreContract.teleportObserver(cellX, cellY, { nonce: datamostNonce++ })
+                        .then(() => {
+                            console.log(`On-chain observer teleported to grid coordinates (${cellX}, ${cellY})`);
+                            // Check win condition on-chain
+                            folkloreContract.checkWinCondition(cellX, cellY).then(win => {
+                                if (Number(win) === 1) {
+                                    window.sentinelWon = true;
+                                    playSynthTone(880, 500); // Victory fanfare tone
+                                }
+                            }).catch(() => {});
+                        })
+                        .catch(err => console.warn("Teleportation transaction failed:", err.message));
+                }
+            }
+            if (!interactiveKeys.enter) {
+                window.lastEnterPressed = false;
+            }
+
+            // Viewfinder crosshair overlay - turns red if clear, grey if blocked by height map obstacles
+            ctx.strokeStyle = window.losBlocked ? "#7f8c8d" : "#e74c3c";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(window.viewX, window.viewY, 16, 0, Math.PI * 2);
+            ctx.moveTo(window.viewX - 24, window.viewY); ctx.lineTo(window.viewX + 24, window.viewY);
+            ctx.moveTo(window.viewX, window.viewY - 24); ctx.lineTo(window.viewX, window.viewY + 24);
+            ctx.stroke();
+
+            // Render elevated grid columns with dynamic 3D perspective depth scaling based on observer distance
+            for (let y = 0; y < 8; y++) {
+                for (let x = 0; x < 8; x++) {
+                    const h = window.sentinelHeights[y * 8 + x] || 0;
+                    if (h > 0) {
+                        const ox = window.sentinelObserverX || 3;
+                        const oy = window.sentinelObserverY || 7;
+                        
+                        // Calculate grid distance from player
+                        const dx = x - ox;
+                        const dy = y - oy;
+                        const dist = Math.sqrt(dx * dx + dy * dy) || 0.1;
+                        
+                        // Inverse scale factor (closer objects are larger, farther objects are smaller)
+                        const scale = Math.max(0.3, 3 / (dist + 1));
+                        
+                        // Project grid tile coordinates
+                        const gridW = 280 / 8;
+                        const gridH = 120 / 8;
+                        const px = 20 + x * gridW + gridW / 2;
+                        const py = 40 + y * gridH + gridH / 2;
+                        
+                        // Draw block height columns scaled by perspective factor
+                        const blockWidth = 20 * scale;
+                        const blockHeight = (h * 6) * scale;
+                        
+                        ctx.fillStyle = "#1abc9c";
+                        ctx.strokeStyle = "#16a085";
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.rect(px - blockWidth / 2, py - blockHeight, blockWidth, blockHeight);
+                        ctx.fill();
+                        ctx.stroke();
+
+                        // Draw clone shells overlay on top of columns if matching coordinates
+                        const isClone = window.sentinelClones && window.sentinelClones.some(c => c.x === x && c.y === y);
+                        if (isClone) {
+                            ctx.fillStyle = "#00ffff";
+                            ctx.beginPath();
+                            ctx.arc(px, py - blockHeight - 4, 3 * scale, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                }
+            }
+                                    // Render Victory Overlay Screen if won
+            // Render Victory Overlay Screen if won
+            if (window.sentinelWon) {
+                // Register high score on-chain if not done yet
+                if (!window.scoreSubmitted && typeof folkloreContract !== "undefined" && folkloreContract) {
+                    window.scoreSubmitted = true;
+                    const finalScoreVal = Math.round((window.sentinelEnergy || 100) * 100);
+                    folkloreContract.registerHighScore(finalScoreVal, { nonce: datamostNonce++ })
+                        .then(() => {
+                            console.log(`On-chain high score registered: ${finalScoreVal}`);
+                            // Fetch high score to display
+                            if (window.ethereum && window.ethereum.selectedAddress) {
+                                folkloreContract.getHighScore(window.ethereum.selectedAddress).then(score => {
+                                    window.onChainHighScore = (Number(score) / 100).toFixed(2);
+                                }).catch(() => {});
+                            }
+                        }).catch(() => { window.scoreSubmitted = false; });
+                }
+
+                ctx.fillStyle = "rgba(46, 204, 113, 0.9)";
+                ctx.fillRect(15, 15, canvas.width - 30, canvas.height - 30);
+                
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 16px monospace";
+                ctx.textAlign = "center";
+                ctx.fillText("MISSION COMPLETE", canvas.width / 2, canvas.height / 2 - 15);
+                
+                ctx.font = "bold 8px monospace";
+                ctx.fillText("YOU HAVE CONQUERED THE SENTINEL PEDESTAL!", canvas.width / 2, canvas.height / 2 + 5);
+                ctx.fillText("FINAL ENERGY CORE VALUE: " + (window.sentinelEnergy || 100.0).toFixed(1), canvas.width / 2, canvas.height / 2 + 18);
+                
+                const highDisplay = window.onChainHighScore ? window.onChainHighScore : (window.sentinelEnergy || 100.0).toFixed(1);
+                ctx.fillText("ON-CHAIN RECORD SCORE: " + highDisplay, canvas.width / 2, canvas.height / 2 + 30);
+                ctx.fillText("PRESS ANY DIRECTION KEY TO ADVANCE TO NEXT LEVEL", canvas.width / 2, canvas.height / 2 + 45);
+                
+                if (interactiveKeys.up || interactiveKeys.down || interactiveKeys.left || interactiveKeys.right) {
+                    // Advance level index
+                    window.sentinelLevel = (window.sentinelLevel % 3) + 1;
+                    
+                    // Reset game state for next map
+                    window.sentinelWon = false;
+                    window.scoreSubmitted = false;
+                    window.sentinelEnergy = 100.0;
+                    window.sentinelObserverX = 3;
+                    window.sentinelObserverY = 7;
+                    window.sentinelHeights = null; // Reinitialize in next tick
+                }
+                return;
+            }
+
+            // HUD
+            ctx.fillStyle = alarmActive ? "#e74c3c" : "#2d3436";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("FIREBIRD 1986", 10, 15);
+            ctx.textAlign = "right";
+            const hudOx = window.sentinelObserverX || 3;
+            const hudOy = window.sentinelObserverY || 7;
+            const energyVal = (window.sentinelEnergy || 100.0).toFixed(1);
+            ctx.fillText("OBSERVER: (" + hudOx + ", " + hudOy + ") | ENERGY: " + energyVal, canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = alarmActive ? "#e74c3c" : "#2d3436";
+            ctx.fillText(alarmActive ? "⚠️ DRAIN WARNING ⚠️" : "THE SENTINEL", canvas.width / 2, 15);
+
+            if (alarmActive) {
+                ctx.fillStyle = "#e74c3c";
+                ctx.fillText("WARNING: SENTINEL GAZE DETECTED! ENERGY DEPRECATING!", canvas.width / 2, canvas.height - 12);
+            } else if (window.losBlocked) {
+                ctx.fillStyle = "#7f8c8d";
+                ctx.fillText("WARNING: TARGET TILE OUT OF SIGHT (INTERCEPTING ALTITUDE BLOCK)", canvas.width / 2, canvas.height - 12);
+            } else {
+                ctx.fillStyle = "#e74c3c";
+                const numClones = window.sentinelClones ? window.sentinelClones.length : 0;
+                ctx.fillText("SPACE: BUILD/HARVEST | ENTER: TELEPORT | C: CLONE | TAB: CYCLE VIEW (" + numClones + " active)", canvas.width / 2, canvas.height - 12);
+            }
+        }
+
+        let duelFrame = 0;
+        function drawDuelScreen() {
+            duelFrame++;
+            // Draw sci-fi space arena sky
+            ctx.fillStyle = "#0c051a";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw grid perspective lines on ground
+            ctx.strokeStyle = "#8a2be2";
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 8; i++) {
+                ctx.beginPath();
+                ctx.moveTo(40 + i * 30, canvas.height);
+                ctx.lineTo(80 + i * 20, 100);
+                ctx.stroke();
+            }
+            ctx.beginPath();
+            ctx.moveTo(0, 100); ctx.lineTo(canvas.width, 100);
+            ctx.moveTo(0, 130); ctx.lineTo(canvas.width, 130);
+            ctx.stroke();
+
+            // Interactive Duelist 1 movement
+            if (!window.duelP1X) {
+                window.duelP1X = 80;
+                window.duelP2X = 240;
+            }
+            if (interactiveKeys.left) window.duelP1X = Math.max(30, window.duelP1X - 3);
+            if (interactiveKeys.right) window.duelP1X = Math.min(140, window.duelP1X + 3);
+
+            // NPC automated movements (P2)
+            window.duelP2X += Math.sin(duelFrame * 0.05) * 2;
+
+            // Render Player Duelist (Cyan neon)
+            ctx.fillStyle = "#00f2fe";
+            ctx.fillRect(window.duelP1X - 6, 120, 12, 24);
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(window.duelP1X - 2, 114, 4, 6); // head
+            // Laser saber
+            ctx.strokeStyle = "#39ff14";
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(window.duelP1X + 4, 126);
+            ctx.lineTo(window.duelP1X + 16, 114);
+            ctx.stroke();
+
+            // Render Enemy Duelist (Magenta neon)
+            ctx.fillStyle = "#ff007f";
+            ctx.fillRect(window.duelP2X - 6, 120, 12, 24);
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(window.duelP2X - 2, 114, 4, 6); // head
+            // Laser saber
+            ctx.strokeStyle = "#ff007f";
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(window.duelP2X - 4, 126);
+            ctx.lineTo(window.duelP2X - 16, 114);
+            ctx.stroke();
+
+            // Laser beam animation if close
+            if (Math.abs(window.duelP1X - window.duelP2X) < 60 && duelFrame % 4 === 0) {
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(window.duelP1X + 16, 114);
+                ctx.lineTo(window.duelP2X - 16, 114);
+                ctx.stroke();
+                playSynthTone(600, 30);
+            }
+
+            // HUD
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("AHOY! ISSUE 40", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("DUEL ENERGY: 95%", canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("DUEL (C. BLAKEMORE 1987)", canvas.width / 2, 15);
+        }
+
+        let infoFrame = 0;
+        const databaseEntries = [
+            { id: "001", file: "SYS_INIT.OBJ", sec: "HIGH" },
+            { id: "002", file: "MAIN_LOOP.BAS", sec: "LOW" },
+            { id: "003", file: "SID_VOICES.PRG", sec: "HIGH" },
+            { id: "004", file: "SPR_ASSEM.DAT", sec: "MID" },
+            { id: "005", file: "ECM_VICII.YUL", sec: "CRIT" }
+        ];
+        function drawInfoflowScreen() {
+            infoFrame++;
+            // Draw database terminal screen (retro amber CRT monitor)
+            ctx.fillStyle = "#1c0c00";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Terminal grids
+            ctx.strokeStyle = "rgba(255, 165, 0, 0.15)";
+            ctx.lineWidth = 0.5;
+            for (let y = 30; y < canvas.height; y += 12) {
+                ctx.beginPath();
+                ctx.moveTo(0, y); ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // Draw database table headers
+            ctx.fillStyle = "#ffaa00";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("ENTRY ID  | FILENAME      | SECURITY", 20, 35);
+            ctx.fillText("-------------------------------------", 20, 43);
+
+            // Draw table items
+            ctx.fillStyle = "#ff8800";
+            for (let i = 0; i < databaseEntries.length; i++) {
+                const ent = databaseEntries[i];
+                ctx.fillText(`${ent.id}       | ${ent.file.padEnd(14, " ")} | ${ent.sec}`, 20, 55 + i * 15);
+            }
+
+            // Interactive Selector Cursor
+            if (!window.infoCursorIdx) {
+                window.infoCursorIdx = 0;
+            }
+            if (interactiveKeys.up && infoFrame % 10 === 0) {
+                window.infoCursorIdx = Math.max(0, window.infoCursorIdx - 1);
+                playSynthTone(800, 20);
+            }
+            if (interactiveKeys.down && infoFrame % 10 === 0) {
+                window.infoCursorIdx = Math.min(databaseEntries.length - 1, window.infoCursorIdx + 1);
+                playSynthTone(800, 20);
+            }
+
+            // Highlight bar
+            ctx.strokeStyle = "#ffaa00";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(15, 48 + window.infoCursorIdx * 15, canvas.width - 30, 12);
+
+            // HUD
+            ctx.fillStyle = "#ffaa00";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("AHOY! ISSUE 40", 10, 15);
+            ctx.textAlign = "right";
+            ctx.fillText("ACTIVE FILE: " + databaseEntries[window.infoCursorIdx].file, canvas.width - 10, 15);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("INFOFLOW DATABASE (C. BLAKEMORE 1987)", canvas.width / 2, 15);
+        }
+
+        let hbFrame = 0;
+        let hbState = "pitching"; // "pitching", "flight", "fielding"
+        let hbPitchType = "Fastball";
+        let hbSelectedAim = "Center";
+        let hbBallX = 160;
+        let hbBallY = 110;
+        let hbBallZ = 0.5; // Scale depth
+        let hbSpeedX = 0;
+        let hbSpeedY = 0;
+        let hbOuts = 0;
+        let hbStrikes = 0;
+        let hbBalls = 0;
+        let hbRuns = 0;
+        let hbStatusMsg = "SELECT PITCH: [LEFT: FB, UP: CB, RIGHT: SL, DOWN: CH]";
+
+        function drawHardballScreen() {
+            hbFrame++;
+
+            // Draw field grass & stadium walls
+            ctx.fillStyle = "#1e7a1e";
+            // Draw field grass & stadium walls (C64 Green #00a800 / Dark Green)
+            ctx.fillStyle = "#00a800";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Outfield boundary fence (C64 Grey #707070)
+            ctx.fillStyle = "#707070";
+            ctx.fillRect(0, 25, canvas.width, 10);
+            ctx.fillStyle = "#c0c0c0"; // Light grey bar
+            ctx.fillRect(0, 23, canvas.width, 2);
+
+            // Infield dirt mound & homeplate lines (C64 Light Brown/Orange #905000)
+            ctx.fillStyle = "#905000";
+            ctx.beginPath();
+            ctx.ellipse(160, 110, 30, 15, 0, 0, 2 * Math.PI); // Pitcher's mound
+            ctx.ellipse(160, 175, 45, 12, 0, 0, 2 * Math.PI); // Batter's box dirt
+            ctx.fill();
+
+            // Home plate (white diamond)
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath();
+            ctx.moveTo(160, 170);
+            ctx.lineTo(166, 174);
+            ctx.lineTo(160, 178);
+            ctx.lineTo(154, 174);
+            ctx.closePath();
+            ctx.fill();
+
+            // Render stadium spectators scoreboard backdrop
+            ctx.fillStyle = "#222222";
+            ctx.fillRect(60, 0, 200, 23);
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(60, 0, 200, 23);
+            
+            // Scoreboard values
+            ctx.fillStyle = "#00ff00";
+            ctx.font = "7px monospace";
+            ctx.textAlign = "center";
+            ctx.fillText(`ATROPA: ${hbRuns}  |  VISITORS: 0  |  OUTS: ${hbOuts}`, 160, 8);
+            ctx.fillText(`B: ${hbBalls}   S: ${hbStrikes}   PITCH: ${hbPitchType} (${hbSelectedAim})`, 160, 18);
+
+            // Behind-the-pitcher perspective simulation
+            if (hbState === "pitching") {
+                // Pitcher sprite (C64 White jersey, Peach face)
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(156, 95, 8, 16); // body
+                ctx.fillStyle = "#ea9e22";
+                ctx.fillRect(158, 89, 4, 6); // head
+
+                // Batter sprite (C64 Blue jersey, Peach face)
+                ctx.fillStyle = "#4040d0";
+                ctx.fillRect(140, 150, 10, 22); // body
+                ctx.fillStyle = "#ea9e22";
+                ctx.fillRect(143, 144, 4, 6); // head
+                // bat line (resting angle)
+                ctx.strokeStyle = "#c28e5a";
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(140, 152);
+                ctx.lineTo(130, 138);
+                ctx.stroke();
+
+                // Select Pitch Type using arrow/direction keys
+                if (interactiveKeys.left) { hbPitchType = "Fastball"; hbStatusMsg = "FASTBALL SELECT. PRESS SPACE TO THROW!"; }
+                if (interactiveKeys.up) { hbPitchType = "Curveball"; hbStatusMsg = "CURVEBALL SELECT. PRESS SPACE TO THROW!"; }
+                if (interactiveKeys.right) { hbPitchType = "Slider"; hbStatusMsg = "SLIDER SELECT. PRESS SPACE TO THROW!"; }
+                if (interactiveKeys.down) { hbPitchType = "Change-Up"; hbStatusMsg = "CHANGE-UP SELECT. PRESS SPACE TO THROW!"; }
+
+                // Reset ball position
+                hbBallX = 160;
+                hbBallY = 105;
+                hbBallZ = 0.4;
+
+                // Listen for trigger (space key / enter) to pitch the ball
+                if (interactiveKeys.space || interactiveKeys.enter) {
+                    hbState = "flight";
+                    hbStatusMsg = "BALL IN FLIGHT! TIME YOUR SWING!";
+                    playSynthTone(523, 100); // Pitch sound
+                }
+            } else if (hbState === "flight") {
+                // Animate ball moving towards plate (increasing size & depth scale)
+                const pitchSpeed = hbPitchType === "Fastball" ? 4 : hbPitchType === "Change-Up" ? 2 : 3;
+                hbBallY += pitchSpeed;
+                hbBallZ += 0.03;
+                
+                // Add curve offsets
+                if (hbPitchType === "Curveball") {
+                    hbBallX += Math.sin(hbFrame * 0.2) * 1.5;
+                } else if (hbPitchType === "Slider") {
+                    hbBallX += 0.8;
+                }
+
+                // Render Pitcher (Follow-through stance)
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(154, 98, 12, 13);
+                ctx.fillStyle = "#ea9e22";
+                ctx.fillRect(158, 92, 4, 6);
+
+                // Render Batter (Ready stance)
+                ctx.fillStyle = "#4040d0";
+                ctx.fillRect(140, 150, 10, 22);
+                ctx.fillStyle = "#ea9e22";
+                ctx.fillRect(143, 144, 4, 6);
+
+                // Bat swing logic if user presses space or arrow key
+                let swung = false;
+                if (interactiveKeys.space || interactiveKeys.enter || interactiveKeys.right) {
+                    swung = true;
+                    // Draw active swinging bat
+                    ctx.strokeStyle = "#c28e5a";
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(148, 158);
+                    ctx.lineTo(168, 160);
+                    ctx.stroke();
+                } else {
+                    ctx.strokeStyle = "#c28e5a";
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    ctx.moveTo(140, 152);
+                    ctx.lineTo(130, 138);
+                    ctx.stroke();
+                }
+
+                // Render Ball shadow & Ball circle
+                ctx.fillStyle = "rgba(0,0,0,0.3)";
+                ctx.beginPath();
+                ctx.arc(hbBallX, hbBallY + 5, 2 * hbBallZ, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.arc(hbBallX, hbBallY, 3 * hbBallZ, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Check plate crossings or swings
+                if (hbBallY >= 165) {
+                    if (swung) {
+                        // Check if ball alignment matches timing window
+                        if (Math.abs(hbBallX - 160) < 12 && hbBallY < 180) {
+                            // Contact hit! Transit to fielding view
+                            hbState = "fielding";
+                            hbStatusMsg = "CRACK! IT'S A DEEP FLY BALL TO THE OUTFIELD!";
+                            playSynthTone(880, 150); // Bat hit sound
+                            
+                            // Initialize fly ball velocities
+                            hbBallX = 160;
+                            hbBallY = 170;
+                            hbSpeedX = (Math.random() - 0.5) * 6;
+                            hbSpeedY = -3 - Math.random() * 4;
+                        } else {
+                            // Swing and miss!
+                            hbStrikes++;
+                            hbState = "pitching";
+                            hbStatusMsg = "STRIKE! SWUNG ON AND MISSED!";
+                            playSynthTone(220, 200);
+                        }
+                    } else {
+                        // Called ball or strike check
+                        if (hbBallX >= 152 && hbBallX <= 168) {
+                            hbStrikes++;
+                            hbStatusMsg = "STRIKE CALLED!";
+                            playSynthTone(220, 200);
+                        } else {
+                            hbBalls++;
+                            hbStatusMsg = "BALL OUTSIDE!";
+                            playSynthTone(350, 150);
+                        }
+                        hbState = "pitching";
+                    }
+
+                    // Scoreboard checks
+                    if (hbStrikes >= 3) {
+                        hbOuts++;
+                        hbStrikes = 0;
+                        hbBalls = 0;
+                        hbStatusMsg = "OUT! BATTER STRUCK OUT!";
+                        if (hbOuts >= 3) {
+                            hbOuts = 0;
+                            hbRuns = 0;
+                            hbStatusMsg = "THREE OUTS. INNING CHANGEOVER.";
+                        }
+                    }
+                    if (hbBalls >= 4) {
+                        hbRuns++;
+                        hbStrikes = 0;
+                        hbBalls = 0;
+                        hbStatusMsg = "WALK! ATROPA RUN SCORES!";
+                    }
+                }
+            } else if (hbState === "fielding") {
+                // Update fly ball positions
+                hbBallX += hbSpeedX;
+                hbBallY += hbSpeedY;
+                
+                // Add gravity fall effect
+                hbSpeedY += 0.12;
+
+                // Outfield background boundary clamp
+                if (hbBallY < 35) {
+                    hbSpeedY = -hbSpeedY * 0.4; // Bounce off wall fence
+                    hbBallY = 35;
+                }
+
+                // Render outfielders (C64 Red jerseys #e04040)
+                ctx.fillStyle = "#e04040";
+                ctx.fillRect(80, 80, 8, 12);
+                ctx.fillRect(160, 60, 8, 12);
+                ctx.fillRect(240, 80, 8, 12);
+
+                // Render running base-runners (C64 Light Blue #70a0ff)
+                let runnerProgress = (hbFrame % 120) / 120;
+                let rx = 160 + Math.sin(runnerProgress * Math.PI * 2) * 50;
+                let ry = 120 + Math.cos(runnerProgress * Math.PI * 2) * 25;
+                ctx.fillStyle = "#70a0ff";
+                ctx.beginPath();
+                ctx.arc(rx, ry, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw ball
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.arc(hbBallX, hbBallY, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Check landing catch or run score
+                if (hbBallY >= canvas.height - 10) {
+                    // Decide if caught or hit
+                    if (Math.random() > 0.4) {
+                        hbRuns++;
+                        hbStatusMsg = "SAFE! HITS THE WALL! RUN SCORE REGISTERED!";
+                        playSynthTone(700, 200);
+                    } else {
+                        hbOuts++;
+                        hbStatusMsg = "CAUGHT! OUTFIELDER MAKES THE FLY CATCH!";
+                        playSynthTone(300, 300);
+                    }
+                    
+                    hbState = "pitching";
+                    hbStrikes = 0;
+                    hbBalls = 0;
+                }
+            }
+
+            // Controls Instruction Footer Bar
+            ctx.fillStyle = "#333333";
+            ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
+            ctx.fillStyle = "#39ff14";
+            ctx.font = "bold 7px monospace";
+            ctx.textAlign = "center";
+            ctx.fillText(hbStatusMsg, canvas.width / 2, canvas.height - 8);
+        }
+
+        // Draw C64 Screen layout
+        function drawScreen(s0_x, s0_y, s1_x, s1_y, s2_x, s2_y, hasCollision, borderCol, bgCol, screenRam, colorRam) {
+            if (oregonActive) {
+                drawOregonScreen();
+                return;
+            }
+
+            const activeGameText = document.getElementById("activeGameText");
+            const activeGameName = activeGameText ? activeGameText.innerText : "";
+            
+            if (activeGameName === "Blue Max") {
+                drawBlueMaxScreen();
+                return;
+            }
+            
+            if (activeGameName === "Ant Eater") {
+                drawAntEaterScreen();
+                return;
+            }
+            if (activeGameName === "Princess and the Frog") {
+                drawPrincessFrogScreen();
+                return;
+            }
+            if (activeGameName === "Crush, Crumble and Chomp!") {
+                drawCrushCrumbleChompScreen();
+                return;
+            }
+            if (activeGameName === "Apple Cider Spider") {
+                drawAppleCiderSpiderScreen();
+                return;
+            }
+            if (activeGameName === "Ultima-on-Chain") {
+                drawUltimaScreen();
+                return;
+            }
+            if (activeGameName === "Impossible Mission") {
+                drawImpossibleMissionScreen();
+                return;
+            }
+            if (activeGameName === "Name That Star") {
+                drawNameThatStarScreen();
+                return;
+            }
+            if (activeGameName === "Thrust") {
+                drawThrustScreen();
+                return;
+            }
+            if (activeGameName === "Omega Race") {
+                drawOmegaRaceScreen();
+                return;
+            }
+            if (activeGameName === "The Last Ninja") {
+                drawLastNinjaScreen();
+                return;
+            }
+            if (activeGameName === "The Last Ninja (System 3)") {
+                drawSystem3NinjaScreen();
+                return;
+            }
+            if (activeGameName === "Vault of Terror") {
+                drawVaultOfTerrorScreen();
+                return;
+            }
+            if (activeGameName === "Mouse in the House") {
+                drawMouseHouseScreen();
+                return;
+            }
+            if (activeGameName === "Lazy Source Code") {
+                drawLazySourceScreen();
+                return;
+            }
+            if (activeGameName === "The Artist") {
+                drawTheArtistScreen();
+                return;
+            }
+            if (activeGameName === "Jail Break") {
+                drawJailBreakScreen();
+                return;
+            }
+            if (activeGameName === "Turtle Rescue") {
+                drawTurtleRescueScreen();
+                return;
+            }
+            if (activeGameName === "The Adventurer") {
+                drawAdventurerScreen();
+                return;
+            }
+            if (activeGameName === "Flashy Windows") {
+                drawFlashyWindowsScreen();
+                return;
+            }
+            if (activeGameName === "Sentinel") {
+                drawSentinelScreen();
+                return;
+            }
+            if (activeGameName === "Duel") {
+                drawDuelScreen();
+                return;
+            }
+            if (activeGameName === "Infoflow") {
+                drawInfoflowScreen();
+                return;
+            }
+            if (activeGameName === "Hardball!") {
+                drawHardballScreen();
+                return;
+            }
+            if (activeGameName === "Miner 2049er") {
+                drawMiner2049erScreen();
+                return;
+            }
+            if (activeGameName === "Dino Eggs") {
+                drawDinoEggsScreen();
+                return;
+            }
+
+            // Clear screen
+            ctx.fillStyle = borderCol || "#3b5dc9"; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (window.currentGame === "gorf" || activeGameName.includes("Gorf")) {
+                const time = Date.now() / 400;
+                for (let i = 0; i < 3; i++) {
+                    const barY = 30 + ((Math.sin(time + i * 1.2) + 1) / 2) * (canvas.height - 60);
+                    const gradient = ctx.createLinearGradient(0, barY - 12, 0, barY + 12);
+                    const hue = (Date.now() / 8 + i * 50) % 360;
+                    gradient.addColorStop(0, "rgba(0,0,0,0)");
+                    gradient.addColorStop(0.2, `hsla(${hue}, 100%, 40%, 0.35)`);
+                    gradient.addColorStop(0.5, `hsla(${hue}, 100%, 65%, 0.9)`);
+                    gradient.addColorStop(0.8, `hsla(${hue}, 100%, 40%, 0.35)`);
+                    gradient.addColorStop(1, "rgba(0,0,0,0)");
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(0, barY - 12, canvas.width, 24);
+                }
+            }
+
+            // Draw inner screen border box
+            ctx.fillStyle = bgCol || "#a2b4c2"; 
+            ctx.fillRect(40, 30, 240, 140);
+
+            if (window.currentGame === "gorf" || activeGameName.includes("Gorf")) {
+                const speed = window.gorfRasterSpeed !== undefined ? window.gorfRasterSpeed : 1.0;
+                const spacing = window.gorfRasterSpacing !== undefined ? window.gorfRasterSpacing : 1.0;
+                const palette = window.gorfRasterPalette !== undefined ? window.gorfRasterPalette : 'retro';
+                const time = (Date.now() / 250) * speed;
+                const barOffsets = [
+                    Math.sin(time) * 40 + 70,
+                    Math.sin(time * 1.3) * 35 + 70,
+                    Math.cos(time * 0.8) * 45 + 70
+                ];
+                let barColors = [
+                    [255, 0, 127],
+                    [0, 242, 254],
+                    [0, 255, 127]
+                ];
+                if (palette === 'fire') {
+                    barColors = [
+                        [255, 30, 0],
+                        [255, 120, 0],
+                        [255, 210, 0]
+                    ];
+                } else if (palette === 'acid') {
+                    barColors = [
+                        [50, 255, 50],
+                        [180, 0, 255],
+                        [255, 0, 180]
+                    ];
+                } else if (palette === 'mono') {
+                    barColors = [
+                        [255, 255, 255],
+                        [150, 160, 170],
+                        [80, 90, 100]
+                    ];
+                }
+                const range = 15 * spacing;
+                for (let y = 0; y < 140; y++) {
+                    let r = 0, g = 0, b = 0;
+                    for (let bIdx = 0; bIdx < 3; bIdx++) {
+                        const dist = Math.abs(y - barOffsets[bIdx]);
+                        if (dist < range) {
+                            const intensity = Math.pow(1 - dist / range, 2);
+                            r += barColors[bIdx][0] * intensity;
+                            g += barColors[bIdx][1] * intensity;
+                            b += barColors[bIdx][2] * intensity;
+                        }
+                    }
+                    if (r > 0 || g > 0 || b > 0) {
+                        ctx.fillStyle = `rgb(${Math.min(255, Math.floor(r))}, ${Math.min(255, Math.floor(g))}, ${Math.min(255, Math.floor(b))})`;
+                        ctx.fillRect(40, 30 + y, 240, 1);
+                    }
+                }
+            }
+
+            // Draw characters from Screen RAM (40 columns by 25 rows)
+            if (screenRam && colorRam) {
+                ctx.font = "bold 5.5px monospace";
+                ctx.textAlign = "left";
+                ctx.textBaseline = "top";
+                const cellW = 240 / 40; 
+                const cellH = 140 / 25; 
+                for (let r = 0; r < 25; r++) {
+                    for (let c = 0; c < 40; c++) {
+                        const idx = r * 40 + c;
+                        const rawCode = screenRam[idx];
+                        const colorIdx = colorRam[idx] & 0xF;
+                        
+                        const isReverse = rawCode >= 128;
+                        const charStr = c64ScreenCodeToChar(rawCode);
+                        
+                        const cellX = 40 + c * cellW;
+                        const cellY = 30 + r * cellH;
+                        
+                        const fgColor = c64Palette[colorIdx] || "#ffffff";
+                        const bgColor = bgCol || "#a2b4c2";
+                        
+                        if (isReverse) {
+                            // Draw reverse-video cell background
+                            ctx.fillStyle = fgColor;
+                            ctx.fillRect(cellX, cellY, cellW, cellH);
+                            // Draw character in screen background color
+                            ctx.fillStyle = bgColor;
+                            ctx.fillText(charStr, cellX, cellY);
+                        } else {
+                            if (rawCode > 0) {
+                                ctx.fillStyle = fgColor;
+                                ctx.fillText(charStr, cellX, cellY);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Draw Sprite 0: Player Ship
+            drawSpriteIcon(0, s0_x, s0_y, "#ff007f", hasCollision);
+
+            // Draw Sprite 1: Bullet
+            drawSpriteIcon(1, s1_x, s1_y, "#00f2fe", hasCollision);
+
+            // Draw Sprite 2: Alien Invader
+            drawSpriteIcon(2, s2_x, s2_y, "#00ff7f", hasCollision);
+
+            // Draw Sprite 3: Gorf Flagship / Space Shield
+            if (window.currentGame === "gorf" || activeGameName.includes("Gorf")) {
+                const s3_x = typeof window.s3_x !== "undefined" ? window.s3_x : 160;
+                const s3_y = typeof window.s3_y !== "undefined" ? window.s3_y : 120;
+                drawSpriteIcon(3, s3_x, s3_y, "#ffcc00", hasCollision);
+            }
+
+            if (window.dnaFrames && window.dnaFrames.length > 0) {
+                window.dnaFrameIndex = (window.dnaFrameIndex + 1) % window.dnaFrames.length;
+            }
+
+            if (window.currentGame === "gorf" || activeGameName.includes("Gorf")) {
+                const bannerY = canvas.height - 18;
+                ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+                ctx.fillRect(0, bannerY - 10, canvas.width, 20);
+                
+                const time = Date.now() / 150;
+                const glowHue = (Date.now() / 5) % 360;
+                ctx.fillStyle = `hsla(${glowHue}, 100%, 50%, 0.3)`;
+                ctx.fillRect(0, bannerY - 11, canvas.width, 1);
+                ctx.fillRect(0, bannerY + 10, canvas.width, 1);
+                
+                ctx.font = "bold 9px 'Orbitron', monospace";
+                ctx.textAlign = "center";
+                
+                const scrollMsg = "   *** RAZOR1911 RETRO DEMO SCENE INTR0 FOR GORF ON ATROPA PULSECHAIN *** PURE 6502 BYTECODE COMPATIBILITY *** SHADING COMPOSITOR SHIMMER ENABLED *** GREETINGS TO COMPILER AND EMULATOR HACKERS WORLDWIDE ***   ";
+                const charSpacing = 8;
+                const startX = canvas.width - ((Date.now() / 15) % (scrollMsg.length * charSpacing + canvas.width));
+                
+                for (let i = 0; i < scrollMsg.length; i++) {
+                    const charX = startX + i * charSpacing;
+                    if (charX > -10 && charX < canvas.width + 10) {
+                        const yOffset = Math.sin((charX / 12) + time) * 6;
+                        const charHue = (glowHue + i * 15) % 360;
+                        ctx.fillStyle = `hsl(${charHue}, 100%, 75%)`;
+                        ctx.fillText(scrollMsg[i], charX, bannerY + yOffset - 4);
+                    }
+                }
+            }
+        }
+
+        function getGorfStarBaseShape(t_secs, state) {
+            const f_w = (state.Manifold % 4) + 1;
+            const f_x = (state.Channel % 5) + 1;
+            const f_y = (state.Dynamo % 4) + 1;
+            const f_z = (state.Foundation % 5) + 1;
+            
+            const phase_w = (state.Base % 100) * 0.01 + t_secs * 0.02;
+            const phase_x = (state.Signal % 100) * 0.01 + t_secs * 0.03;
+            const phase_y = (state.Secret % 50) * 0.01 + t_secs * 0.04;
+            const phase_z = (state.Identity % 50) * 0.01 + t_secs * 0.05;
+            
+            const num_points = 120;
+            const r_scale = 14;
+            
+            // 1. Geometric Vertices (Smooth Hopf Fibration Coordinates)
+            const geom_verts = [];
+            for (let i = 0; i < num_points; i++) {
+                const theta = (i * 2.0 * Math.PI) / num_points;
+                const eta = (Math.PI / 4.0) * (1.0 + Math.sin(theta * f_w + phase_w));
+                const xi1 = (theta * f_x + phase_x);
+                const xi2 = (theta * f_y + phase_y);
+                const qw = Math.cos(eta) * Math.cos(xi1);
+                const qx = Math.cos(eta) * Math.sin(xi1);
+                const qy = Math.sin(eta) * Math.cos(xi2);
+                const qz = Math.sin(eta) * Math.sin(xi2);
+                
+                const w_fold = 1.0 + 0.22 * qw;
+                geom_verts.push([
+                    qx * r_scale * w_fold,
+                    qy * r_scale * w_fold,
+                    qz * r_scale * w_fold
+                ]);
+            }
+            
+            let g_sx = 0, g_sy = 0, g_sz = 0;
+            for (let i = 0; i < num_points; i++) {
+                g_sx += geom_verts[i][0];
+                g_sy += geom_verts[i][1];
+                g_sz += geom_verts[i][2];
+            }
+            g_sx /= num_points; g_sy /= num_points; g_sz /= num_points;
+            for (let i = 0; i < num_points; i++) {
+                geom_verts[i][0] -= g_sx;
+                geom_verts[i][1] -= g_sy;
+                geom_verts[i][2] -= g_sz;
+            }
+
+            // 2. Organic Frenet-Serret Vertices
+            const org_verts = [];
+            let ox = 0, oy = 0, oz = 0;
+            let angle_theta = 0;
+            let angle_phi = 0;
+            const step_size = r_scale * 12.0 / num_points;
+            
+            for (let i = 0; i < num_points; i++) {
+                const theta = (i * 2.0 * Math.PI) / num_points;
+                const kappa = 0.07 * Math.sin(theta * f_w + phase_w) + 0.04 * Math.cos(theta * f_y + phase_y);
+                const tau = 0.05 * Math.sin(theta * f_x + phase_x) + 0.03 * Math.cos(theta * f_z + phase_z);
+                
+                angle_theta += kappa;
+                angle_phi += tau;
+                
+                const tx = Math.cos(angle_theta) * Math.cos(angle_phi);
+                const ty = Math.sin(angle_theta) * Math.cos(angle_phi);
+                const tz = Math.sin(angle_phi);
+                
+                ox += tx * step_size;
+                oy += ty * step_size;
+                oz += tz * step_size;
+                org_verts.push([ox, oy, oz]);
+            }
+            
+            let o_sx = 0, o_sy = 0, o_sz = 0;
+            for (let i = 0; i < num_points; i++) {
+                o_sx += org_verts[i][0];
+                o_sy += org_verts[i][1];
+                o_sz += org_verts[i][2];
+            }
+            o_sx /= num_points; o_sy /= num_points; o_sz /= num_points;
+            for (let i = 0; i < num_points; i++) {
+                org_verts[i][0] -= o_sx;
+                org_verts[i][1] -= o_sy;
+                org_verts[i][2] -= o_sz;
+            }
+            
+            // 3. Smooth Transition Weight based on 10s cycles
+            const cycle = t_secs % 10.0;
+            let weight = 0.0;
+            if (cycle < 4.0) {
+                weight = 0.0;
+            } else if (cycle > 6.0) {
+                weight = 1.0;
+            } else {
+                const w = (cycle - 4.0) / 2.0;
+                weight = w * w * (3.0 - 2.0 * w);
+            }
+            
+            const blended = [];
+            for (let i = 0; i < num_points; i++) {
+                const mx = geom_verts[i][0] * (1.0 - weight) + org_verts[i][0] * weight;
+                const my = geom_verts[i][1] * (1.0 - weight) + org_verts[i][1] * weight;
+                const mz = geom_verts[i][2] * (1.0 - weight) + org_verts[i][2] * weight;
+                blended.push([mx, my, mz]);
+            }
+            
+            return blended;
+        }
+
+        function drawSpriteIcon(index, x, y, color, hasCollision) {
+            const mappedX = (x % 320);
+            const mappedY = (y % 200);
+            
+            if (index === 3 && (window.currentGame === "gorf" || (typeof activeGameName !== "undefined" && activeGameName.includes("Gorf")))) {
+                // Render Gorf Star Base / Space Shield using the live quaternion manifold model
+                const state = (window.liveQuaternionData && window.liveQuaternionData.LAUs && window.liveQuaternionData.LAUs[0]) || {
+                    Manifold: 546174312197144,
+                    Channel: 779859001551596,
+                    Dynamo: 58333592128473,
+                    Foundation: 505921226463547,
+                    Base: 196811331987337,
+                    Signal: 512736817632179,
+                    Secret: 481588919265707,
+                    Identity: 341042560473881
+                };
+                
+                const t_secs = Date.now() / 1000;
+                const shape_verts = getGorfStarBaseShape(t_secs, state);
+                
+                const yaw = t_secs * 0.4;
+                const pitch = 0.3;
+                const proj_points = [];
+                const cos_y = Math.cos(yaw), sin_y = Math.sin(yaw);
+                const cos_p = Math.cos(pitch), sin_p = Math.sin(pitch);
+                
+                for (let i = 0; i < shape_verts.length; i++) {
+                    const [vx, vy, vz] = shape_verts[i];
+                    const rx = vx * cos_y - vy * sin_y;
+                    const ry = vx * sin_y + vy * cos_y;
+                    const rz = vz;
+                    
+                    const x_new = rx * cos_p + rz * sin_p;
+                    const px = x_new + mappedX + 12;
+                    const py = ry + mappedY + 10;
+                    proj_points.push([px, py]);
+                }
+                
+                ctx.lineWidth = 1.5;
+                for (let i = 0; i < proj_points.length - 1; i++) {
+                    const colorHue = (Date.now() / 3 + i * 3) % 360;
+                    ctx.strokeStyle = `hsl(${colorHue}, 100%, 70%)`;
+                    ctx.beginPath();
+                    ctx.moveTo(proj_points[i][0], proj_points[i][1]);
+                    ctx.lineTo(proj_points[i+1][0], proj_points[i+1][1]);
+                    ctx.stroke();
+                }
+                
+                const pulse = 2.0 + Math.sin(t_secs * 4.0) * 1.5;
+                const coreHue = (Date.now() / 2) % 360;
+                ctx.fillStyle = `hsl(${coreHue}, 100%, 80%)`;
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = `hsl(${coreHue}, 100%, 50%)`;
+                ctx.beginPath();
+                ctx.arc(mappedX + 12, mappedY + 10, pulse, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                return;
+            }
+            
+            const zDepth = window[`s${index}_z`] || 0;
+
+            // Fetch current DNA frame parameters if available
+            let dnaFrame = null;
+            if (window.dnaFrames && window.dnaFrames.length > 0) {
+                const fIdx = (window.dnaFrameIndex || 0) % window.dnaFrames.length;
+                dnaFrame = window.dnaFrames[fIdx];
+            }
+
+            // Adjust size, stretch, and color based on DNA
+            let stretchOffset = 0;
+            let displayColor = color;
+            let diffusionOpacity = 0.25;
+            let pulseScale = 1.0;
+
+            if (dnaFrame) {
+                // Apply genomic color override/blend
+                displayColor = dnaFrame.color || color;
+                stretchOffset = dnaFrame.stretch * 4; // Use DNA stretch to offset height
+                diffusionOpacity = Math.min(0.8, 0.2 + dnaFrame.light * 0.5);
+                pulseScale = 1.0 + Math.sin(dnaFrame.pulse * Math.PI) * 0.1;
+            }
+
+            // Read from local storage to allow hot-reloading newly drawn sprites directly
+            try {
+                const stored = localStorage.getItem(`c64_shared_sprite_${index}`);
+                if (stored) {
+                    spritePatterns[index] = JSON.parse(stored);
+                }
+            } catch (e) {
+                console.error("Failed to load sprite from localStorage:", e);
+            }
+
+            let pattern = spritePatterns[index] || [];
+            let hasPattern = false;
+            for (let r = 0; r < pattern.length; r++) {
+                if (pattern[r] > 0) {
+                    hasPattern = true;
+                    break;
+                }
+            }
+
+            if (!hasPattern) {
+                // Fallback standard retro patterns if blockchain storage is empty
+                if (index === 0) {
+                    // Bunny / Player
+                    pattern = [0x000c00, 0x000c00, 0x001e00, 0x001e00, 0x003300, 0x003300, 0x007f80, 0x00ffff, 0x01ffe0, 0x03fff0, 0x07ffc0, 0x07ffc0, 0x07ffc0, 0x03ffc0, 0x01ff80, 0x00ff80, 0x007e00, 0x003c00, 0x001800, 0x001800, 0x000000];
+                } else if (index === 1) {
+                    // Dark Crow
+                    pattern = [0x000180, 0x0003c0, 0x0007e0, 0x000ff0, 0x001ff8, 0x003ffc, 0x007ffe, 0x00ff7f, 0x01e03c, 0x03c01e, 0x03c01e, 0x01e03c, 0x00ff7f, 0x007ffe, 0x003ffc, 0x001ff8, 0x000ff0, 0x0007e0, 0x0003c0, 0x000180, 0x000000];
+                } else if (index === 2) {
+                    // Alchemist
+                    pattern = [0x0003c0, 0x0007e0, 0x000ff0, 0x001ff8, 0x003c3c, 0x007c3e, 0x00fcf3, 0x00ffc0, 0x00ffd0, 0x00ffd8, 0x00fbe4, 0x00f9fc, 0x00fc3e, 0x007c1e, 0x003c00, 0x001800, 0x001800, 0x003c00, 0x000000, 0x000000, 0x000000];
+                } else {
+                    // Vaesen Troll / Smurf
+                    pattern = [0x0003c0, 0x000ff0, 0x001ff8, 0x003e7c, 0x007c3e, 0x00f81f, 0x00f81f, 0x00ffdf, 0x00ffd8, 0x00ffd8, 0x00ffd8, 0x00fbd8, 0x00f8d8, 0x00fc78, 0x007c30, 0x003c00, 0x001800, 0x001800, 0x003c00, 0x000000, 0x000000];
+                }
+                hasPattern = true;
+            }
+
+            if (hasPattern) {
+                // Layer 1: Volumetric Shadow Layer
+                if (zDepth > 0) {
+                    ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+                    const offset = Math.min(8, zDepth / 4);
+                    for (let r = 0; r < 21; r++) {
+                        const row_val = pattern[r] || 0;
+                        const drawY = mappedY + r + stretchOffset * (r / 21);
+                        for (let c = 0; c < 24; c++) {
+                            if ((row_val & (1 << (23 - c))) !== 0) {
+                                ctx.fillRect(mappedX + c + offset, drawY + offset, 1, 1);
+                            }
+                        }
+                    }
+                }
+
+                // Layer 2: Main Sprite Layer
+                for (let r = 0; r < 21; r++) {
+                    const row_val = pattern[r] || 0;
+                    const drawY = mappedY + r + stretchOffset * (r / 21);
+                    if (index === 3 && window.currentGame === "gorf") {
+                        const laserHue = (Date.now() / 3 + r * 8) % 360;
+                        const gradient = ctx.createLinearGradient(mappedX - 25, drawY, mappedX + 49, drawY);
+                        gradient.addColorStop(0, "rgba(0,0,0,0)");
+                        gradient.addColorStop(0.3, `hsla(${laserHue}, 100%, 50%, 0.1)`);
+                        gradient.addColorStop(0.5, `hsla(${laserHue}, 100%, 80%, 0.9)`);
+                        gradient.addColorStop(0.7, `hsla(${laserHue}, 100%, 50%, 0.1)`);
+                        gradient.addColorStop(1, "rgba(0,0,0,0)");
+                        ctx.fillStyle = gradient;
+                        ctx.fillRect(mappedX - 25, drawY, 74, 1);
+                        
+                        if (r === 10) {
+                            const time = Date.now() / 200;
+                            const pulseRadius = (time % 1) * 18;
+                            ctx.strokeStyle = `hsla(${laserHue}, 100%, 70%, ${1 - (time % 1)})`;
+                            ctx.lineWidth = 1;
+                            ctx.beginPath();
+                            ctx.arc(mappedX + 12, drawY, pulseRadius, 0, Math.PI * 2);
+                            ctx.stroke();
+                        }
+                    }
+                    for (let c = 0; c < 24; c++) {
+                        if ((row_val & (1 << (23 - c))) !== 0) {
+                            if (index === 3 && window.currentGame === "gorf") {
+                                const hue = (Date.now() / 2 + r * 12 + c * 4) % 360;
+                                ctx.fillStyle = `hsl(${hue}, 100%, 75%)`;
+                            } else if (index === 3) {
+                                // Vaesen Troll: White Hat, Blue skin, Leather trousers / stick
+                                if (r <= 5) ctx.fillStyle = "#e6dfd3";
+                                else if (r <= 15) ctx.fillStyle = "#3a86c8";
+                                else ctx.fillStyle = "#8c7241";
+                            } else if (index === 2) {
+                                // Alchemist (Gargamel adaptation): Purple hood, dark robe
+                                if (r <= 6) ctx.fillStyle = "#800080";
+                                else ctx.fillStyle = "#25201b";
+                            } else if (index === 1) {
+                                // Dark Crow: obsidian black feathers with crimson eye highlight
+                                if (r === 4 && (c === 11 || c === 12)) ctx.fillStyle = "#ff0000";
+                                else ctx.fillStyle = "#0d0c0a";
+                            } else {
+                                ctx.fillStyle = displayColor;
+                            }
+                            ctx.fillRect(mappedX + c, drawY, 1, 1);
+                        }
+                    }
+                }
+
+                // Layer 3: Photorealistic Soft Diffusion Texture Overlay
+                if (zDepth > 0) {
+                    for (let r = 0; r < 21; r++) {
+                        const row_val = pattern[r] || 0;
+                        const drawY = mappedY + r + stretchOffset * (r / 21);
+                        for (let c = 0; c < 24; c++) {
+                            if ((row_val & (1 << (23 - c))) !== 0) {
+                                const noise = Math.sin((mappedX + c) * 12.9898 + (drawY) * 78.233) * 43758.5453;
+                                const noiseFract = noise - Math.floor(noise);
+                                if (noiseFract > 0.6) {
+                                    ctx.fillStyle = dnaFrame ? dnaFrame.eyeColor : `rgba(255, 255, 255, ${diffusionOpacity})`;
+                                    ctx.fillRect(mappedX + c, drawY, 1, 1);
+                                } else if (noiseFract < 0.15) {
+                                    ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+                                    ctx.fillRect(mappedX + c, drawY, 1, 1);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Draw bounding box matching 24x21 sprite size (with pulse scaling)
+                ctx.strokeStyle = hasCollision ? "#ff007f" : "rgba(255,255,255,0.4)";
+                ctx.lineWidth = 1;
+                const boxW = 28 * pulseScale;
+                const boxH = (25 + stretchOffset) * pulseScale;
+                ctx.strokeRect(mappedX - 2, mappedY - 2, boxW, boxH);
+            } else {
+                ctx.fillStyle = displayColor;
+                ctx.fillRect(mappedX, mappedY, 12 * pulseScale, 12 * pulseScale);
+            }
+        }
+
+                // Bounding box indicator
+                ctx.strokeStyle = hasCollision ? "#ff007f" : "rgba(255,255,255,0.4)";
+                ctx.lineWidth = 1;
+                ctx.strokeRect(mappedX - 2, mappedY - 2, 16, 16);
+            }
+        }
+
+        function updateOregonDashboard() {
+            const db = document.getElementById("oregonTrailDashboard");
+            if (!db) return;
+            if (!oregonActive) {
+                db.style.display = "none";
+                if (otAiActive) {
+                    toggleOtAiAutoplay();
+                }
+                return;
+            }
+            db.style.display = "block";
+
+            // Update miles
+            const milesText = document.getElementById("otMilesText");
+            const milesBar = document.getElementById("otMilesBar");
+            const milesMarker = document.getElementById("otMilesMarker");
+            if (milesText && milesBar && milesMarker) {
+                milesText.innerText = `${oregonMile} Miles to Go`;
+                let pct = Math.max(0, Math.min(100, ((2000 - oregonMile) / 2000) * 100));
+                milesBar.style.width = pct + "%";
+                milesMarker.style.left = pct + "%";
+            }
+
+            // Update health
+            const healthVal = document.getElementById("otHealthValue");
+            const healthBar = document.getElementById("otHealthBar");
+            if (healthVal && healthBar) {
+                healthVal.innerText = `${oregonHealth}%`;
+                healthBar.style.width = `${Math.max(0, Math.min(100, oregonHealth))}%`;
+                if (oregonHealth > 60) {
+                    healthVal.style.color = "#39ff14";
+                    healthBar.style.backgroundColor = "#39ff14";
+                } else if (oregonHealth > 30) {
+                    healthVal.style.color = "#ffa500";
+                    healthBar.style.backgroundColor = "#ffa500";
+                } else {
+                    healthVal.style.color = "#ff3333";
+                    healthBar.style.backgroundColor = "#ff3333";
+                }
+            }
+
+            // Update food
+            const foodVal = document.getElementById("otFoodValue");
+            const foodBar = document.getElementById("otFoodBar");
+            if (foodVal && foodBar) {
+                foodVal.innerText = `${oregonFood} Lbs`;
+                let foodPct = Math.max(0, Math.min(100, (oregonFood / 200) * 100));
+                foodBar.style.width = `${foodPct}%`;
+                if (oregonFood > 100) {
+                    foodVal.style.color = "#00f2fe";
+                    foodBar.style.backgroundColor = "#00f2fe";
+                } else if (oregonFood > 40) {
+                    foodVal.style.color = "#ffa500";
+                    foodBar.style.backgroundColor = "#ffa500";
+                } else {
+                    foodVal.style.color = "#ff3333";
+                    foodBar.style.backgroundColor = "#ff3333";
+                }
+            }
+
+            // Update token balances (asynchronous)
+            const tokenBalanceEl = document.getElementById("otTokenBalance");
+            const wgnBalanceEl = document.getElementById("otWgnBalance");
+            const oxnBalanceEl = document.getElementById("otOxnBalance");
+            const clthBalanceEl = document.getElementById("otClthBalance");
+            const axlBalanceEl = document.getElementById("otAxlBalance");
+            const tngBalanceEl = document.getElementById("otTngBalance");
+            const whlBalanceEl = document.getElementById("otWhlBalance");
+            
+            if (cpuContract) {
+                const userAddress = signer ? signer.address : "0x0000000000000000000000000000000000000000";
+                if (userAddress !== "0x0000000000000000000000000000000000000000") {
+                    cpuContract.peekUser(userAddress, 848).then(bal => { if (tokenBalanceEl) tokenBalanceEl.innerText = `${bal.toString()} OTRT`; }).catch(() => {});
+                    cpuContract.peekUser(userAddress, 849).then(bal => { if (wgnBalanceEl) wgnBalanceEl.innerText = `${bal.toString()} OTWGN`; }).catch(() => {});
+                    cpuContract.peekUser(userAddress, 850).then(bal => { if (oxnBalanceEl) oxnBalanceEl.innerText = `${bal.toString()} OTOXN`; }).catch(() => {});
+                    cpuContract.peekUser(userAddress, 854).then(bal => { if (clthBalanceEl) clthBalanceEl.innerText = `${bal.toString()} OTCLTH`; }).catch(() => {});
+                    cpuContract.peekUser(userAddress, 851).then(bal => { if (axlBalanceEl) axlBalanceEl.innerText = `${bal.toString()} OTAXL`; }).catch(() => {});
+                    cpuContract.peekUser(userAddress, 852).then(bal => { if (tngBalanceEl) tngBalanceEl.innerText = `${bal.toString()} OTTNG`; }).catch(() => {});
+                    cpuContract.peekUser(userAddress, 853).then(bal => { if (whlBalanceEl) whlBalanceEl.innerText = `${bal.toString()} OTWHL`; }).catch(() => {});
+                }
+            }
+        }
+
+        async function rewardOregonTokens(amount) {
+            if (!cpuContract) return;
+            try {
+                const userAddress = signer ? signer.address : "0x0000000000000000000000000000000000000000";
+                if (userAddress === "0x0000000000000000000000000000000000000000") return;
+                
+                const currentBalanceVal = Number(await cpuContract.peekUser(userAddress, 848));
+                const newBalanceVal = currentBalanceVal + amount;
+                
+                const tx = await cpuContract.pokeUser(userAddress, 848, newBalanceVal);
+                writeToTerminal(`[ON-CHAIN REWARD] +${amount} OTRT tokens minted in CPU RAM! Hash: ${tx.hash.substring(0, 10)}...`);
+                await tx.wait();
+                
+                if (typeof updateOregonDashboard === "function") {
+                    updateOregonDashboard();
+                }
+            } catch (err) {
+                console.error("Error rewarding Oregon tokens on-chain:", err);
+                const errMsg = err.message ? (err.message.substring(0, 120) + (err.message.length > 120 ? "..." : "")) : "Unknown error";
+                writeToTerminal("[ON-CHAIN] Failed to mint reward: " + errMsg);
+            }
+        }
+
+        function appendOregonDashboardLog(text) {
+            const logBox = document.getElementById("otLogConsole");
+            if (!logBox) return;
+            if (text.includes("STATUS:") || text.includes("THE OREGON TRAIL") || text.includes("YOU START AT") || text.includes("COMMANDS: 'TRAVEL'")) {
+                return;
+            }
+            logBox.innerText += "\n" + text.trim();
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        function toggleOtAiAutoplay() {
+            const btn = document.getElementById("btnOtAiAutoplay");
+            if (!btn) return;
+            
+            otAiActive = !otAiActive;
+            if (otAiActive) {
+                btn.innerText = "🤖 AI Autoplay: ACTIVE";
+                btn.style.background = "#39ff14";
+                btn.style.color = "#000";
+                
+                if (otAiTimer) clearInterval(otAiTimer);
+                otAiTimer = setInterval(tickOtAi, 2000);
+                appendOregonDashboardLog("[AI] Autoplay activated. Automating wagon decisions...");
+            } else {
+                btn.innerText = "🤖 AI Autoplay: OFF";
+                btn.style.background = "#1e3f20";
+                btn.style.color = "#39ff14";
+                
+                if (otAiTimer) {
+                    clearInterval(otAiTimer);
+                    otAiTimer = null;
+                }
+                appendOregonDashboardLog("[AI] Autoplay deactivated.");
+            }
+        }
+
+        function tickOtAi() {
+            if (!oregonActive) {
+                if (otAiActive) toggleOtAiAutoplay();
+                return;
+            }
+            
+            let action = "TRAVEL";
+            if (oregonHealth <= 45) {
+                action = "REST";
+            } else if (oregonFood <= 50) {
+                action = "HUNT";
+            } else {
+                action = "TRAVEL";
+            }
+            
+            appendOregonDashboardLog(`[AI Decision] Health: ${oregonHealth}%, Food: ${oregonFood} Lbs. Choice: ${action}`);
+            
+            const input = document.getElementById("gamemasterTerminalInput");
+            if (input && !input.disabled) {
+                input.value = action;
+                const event = new KeyboardEvent("keydown", { key: "Enter" });
+                input.dispatchEvent(event);
+            }
+        }
+
+        function simulateVote(direction) {
+            const threshold = parseInt(document.getElementById("consensusThreshold").value);
+            const logBox = document.getElementById("consensusLog");
+            const statusLabel = document.getElementById("consensusStatusLabel");
+            const progressBar = document.getElementById("consensusProgressBar");
+            
+            const nodeA_Vote = direction;
+            const nodeB_Vote = Math.random() < 0.75 ? direction : ["UP", "DOWN", "LEFT", "RIGHT"][Math.floor(Math.random() * 4)];
+            const nodeC_Vote = Math.random() < 0.60 ? direction : ["UP", "DOWN", "LEFT", "RIGHT"][Math.floor(Math.random() * 4)];
+            
+            logBox.innerText += `\n[VOTE ROUND] Node A voted ${nodeA_Vote} | Node B voted ${nodeB_Vote} | Node C voted ${nodeC_Vote}`;
+            
+            let count = 0;
+            if (nodeA_Vote === direction) count++;
+            if (nodeB_Vote === direction) count++;
+            if (nodeC_Vote === direction) count++;
+            
+            progressBar.style.width = `${(count / 3) * 100}%`;
+            
+            if (count >= threshold) {
+                statusLabel.innerText = `STABLE (${count}/3 AGREED)`;
+                statusLabel.style.color = "#00ff7f";
+                progressBar.style.background = "#00ff7f";
+                logBox.innerText += `\n[SUCCESS] Consensus achieved on input: ${direction}. Routing to CIA input buffers.`;
+                writeToTerminal(`[CONSENSUS] Injected input joystick ${direction}.`);
+                
+                if (cpuContract) {
+                    try {
+                        let joystickVal = 0xFF;
+                        if (direction === "UP") joystickVal &= ~0x01;
+                        else if (direction === "DOWN") joystickVal &= ~0x02;
+                        else if (direction === "LEFT") joystickVal &= ~0x04;
+                        else if (direction === "RIGHT") joystickVal &= ~0x08;
+                        else if (direction === "FIRE") joystickVal &= ~0x10;
+                        
+                        cpuContract.poke(56320, joystickVal);
+                        
+                        setTimeout(() => {
+                            try {
+                                cpuContract.poke(56320, 0xFF);
+                            } catch (e) {}
+                        }, 150);
+                    } catch (pokeErr) {
+                        console.error("[CONSENSUS POKE FAILED]", pokeErr);
+                    }
+                }
+            } else {
+                statusLabel.innerText = `METASTABLE STUTTER (${count}/3)`;
+                statusLabel.style.color = "#ff007f";
+                progressBar.style.background = "#ff007f";
+                logBox.innerText += `\n[WARNING] Consensus failed (needed ${threshold}, got ${count}). Input discarded.`;
+            }
+            
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        // Interactive VIC-II Multi-Color Sprite Editor JS
+        let sprEditMode = "single"; // "single" or "multi"
+        let sprEditIndex = 0;
+        let sprGridState = []; // 2D array of grid values (21 rows, width depends on mode)
+
+        function initSpriteEditor() {
+            if (!document.getElementById('sprGrid')) return;
+            const gridContainer = document.getElementById("sprGrid");
+            const modeSelect = document.getElementById("sprEditMode");
+            const indexSelect = document.getElementById("sprEditIndex");
+            const btnClear = document.getElementById("btnSprClear");
+            const btnUpload = document.getElementById("btnSprUpload");
+            const brushContainer = document.getElementById("sprBrushContainer");
+
+            function rebuildGrid() {
+                gridContainer.innerHTML = "";
+                const width = (sprEditMode === "single") ? 24 : 12;
+                gridContainer.style.gridTemplateColumns = `repeat(${width}, 1fr)`;
+                
+                // Keep brush legend visible only in multi-color mode
+                brushContainer.style.display = (sprEditMode === "multi") ? "flex" : "none";
+
+                let isDrawing = false;
+                gridContainer.addEventListener("mousedown", () => { isDrawing = true; });
+                window.addEventListener("mouseup", () => { isDrawing = false; });
+
+                sprGridState = [];
+                for (let r = 0; r < 21; r++) {
+                    const row = [];
+                    for (let c = 0; c < width; c++) {
+                        row.push(0);
+                        const cell = document.createElement("button");
+                        cell.className = "sprite-cell color-00";
+                        cell.dataset.row = r;
+                        cell.dataset.col = c;
+                        
+                        function paintCell() {
+                            let val = row[c];
+                            if (sprEditMode === "single") {
+                                val = (val === 0) ? 2 : 0; // Toggle on/off (mapping to 2 / Main color)
+                            } else {
+                                val = (val + 1) % 4; // Cycle 00, 01, 10, 11
+                            }
+                            row[c] = val;
+                            
+                            // Map values to CSS color classes
+                            cell.className = "sprite-cell";
+                            if (val === 0) cell.classList.add("color-00");
+                            else if (val === 1) cell.classList.add("color-01");
+                            else if (val === 2) cell.classList.add("color-10");
+                            else if (val === 3) cell.classList.add("color-11");
+                        }
+
+                        cell.addEventListener("mousedown", (e) => {
+                            e.preventDefault();
+                            paintCell();
+                        });
+                        cell.addEventListener("mouseenter", () => {
+                            if (isDrawing) {
+                                paintCell();
+                            }
+                        });
+                        gridContainer.appendChild(cell);
+                    }
+                    sprGridState.push(row);
+                }
+            }
+
+            modeSelect.addEventListener("change", (e) => {
+                sprEditMode = e.target.value;
+                rebuildGrid();
+            });
+
+            indexSelect.addEventListener("change", (e) => {
+                sprEditIndex = parseInt(e.target.value);
+            });
+
+            btnClear.addEventListener("click", () => {
+                rebuildGrid();
+            });
+
+            btnUpload.addEventListener("click", async () => {
+                if (!cpuContract) {
+                    alert("Connect your wallet first.");
+                    return;
+                }
+                btnUpload.innerText = "Uploading...";
+                btnUpload.disabled = true;
+
+                try {
+                    const width = (sprEditMode === "single") ? 24 : 12;
+                    const addrs = [];
+                    const vals = [];
+
+                    for (let r = 0; r < 21; r++) {
+                        let rowVal = 0;
+                        for (let c = 0; c < width; c++) {
+                            const val = sprGridState[r][c];
+                            if (sprEditMode === "single") {
+                                if (val !== 0) {
+                                    rowVal |= (1 << (23 - c));
+                                }
+                            } else {
+                                rowVal |= (val << ((11 - c) * 2));
+                            }
+                        }
+                        addrs.push(54000 + sprEditIndex * 32 + r);
+                        vals.push(rowVal);
+                    }
+
+                    // Push multi-color register mode change if multi-color is used
+                    // Register 53276 ($D01C) controls multi-color sprite mode
+                    const currentMulticolor = Number(await cpuContract.peek(53276));
+                    let nextMulticolor = currentMulticolor;
+                    if (sprEditMode === "multi") {
+                        nextMulticolor |= (1 << sprEditIndex);
+                    } else {
+                        nextMulticolor &= ~(1 << sprEditIndex);
+                    }
+                    if (nextMulticolor !== currentMulticolor) {
+                        addrs.push(53276);
+                        vals.push(nextMulticolor);
+                    }
+
+                    const tx = await cpuContract.batchPoke(addrs, vals);
+                    appendOregonDashboardLog(`[SPRITE EDITOR] Sent sprite ${sprEditIndex} layout to EVM: ${tx.hash.substring(0, 10)}...`);
+                    await tx.wait();
+                    appendOregonDashboardLog(`[SPRITE EDITOR] Sprite ${sprEditIndex} updated successfully on-chain!`);
+                } catch (err) {
+                    console.error("Sprite upload failed:", err);
+                    appendOregonDashboardLog(`[SPRITE EDITOR] Error: ${err.message}`);
+                    alert("Upload failed. Verify transaction gas limit.");
+                } finally {
+                    btnUpload.innerText = "Upload to EVM";
+                    btnUpload.disabled = false;
+                }
+            });
+
+            const btnCompileDNA = document.getElementById("btnSprCompileDNA");
+            if (btnCompileDNA) {
+                btnCompileDNA.addEventListener("click", () => {
+                    const width = (sprEditMode === "single") ? 24 : 12;
+                    const rowVals = [];
+                    for (let r = 0; r < 21; r++) {
+                        let rowVal = 0;
+                        for (let c = 0; c < width; c++) {
+                            const val = sprGridState[r][c];
+                            if (sprEditMode === "single") {
+                                if (val !== 0) {
+                                    rowVal |= (1 << (23 - c));
+                                }
+                            } else {
+                                rowVal |= (val << ((11 - c) * 2));
+                            }
+                        }
+                        rowVals.push(rowVal);
+                    }
+                    
+                    const buffer = new ArrayBuffer(4 + 4 + 21 * 4);
+                    const view = new DataView(buffer);
+                    view.setUint8(0, 84); // T
+                    view.setUint8(1, 83); // S
+                    view.setUint8(2, 70); // F
+                    view.setUint8(3, 73); // I
+                    view.setUint32(4, 21, true);
+                    for (let i = 0; i < 21; i++) {
+                        view.setUint32(8 + i * 4, rowVals[i], true);
+                    }
+                    
+                    const blob = new Blob([buffer], { type: "application/octet-stream" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `sprite_${sprEditIndex}_dna.dna`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    if (typeof appendOregonDashboardLog === "function") {
+                        appendOregonDashboardLog(`[SPRITE EDITOR] Compiled Sprite ${sprEditIndex} to asset DNA file successfully.`);
+                    }
+                });
+            }
+
+            rebuildGrid();
+        }
+
+        function initGallerySystem() {
+            if (!document.getElementById('btnGallUpload')) return;
+            const btnSave = document.getElementById("btnGallerySave");
+            const btnLoad = document.getElementById("btnGalleryLoad");
+            const btnClear = document.getElementById("btnGalleryClear");
+            const slotSelect = document.getElementById("gallerySlotSelector");
+
+            async function triggerGalleryCommand(cmdType) {
+                if (!cpuContract) {
+                    alert("Connect your wallet first.");
+                    return;
+                }
+                const selectedSlot = parseInt(slotSelect.value);
+                const cmdName = (cmdType === 1) ? "SAVE" : ((cmdType === 2) ? "LOAD" : "CLEAR");
+                
+                let btn = (cmdType === 1) ? btnSave : ((cmdType === 2) ? btnLoad : btnClear);
+                const originalText = btn.innerText;
+                btn.innerText = "Syncing...";
+                btn.disabled = true;
+
+                try {
+                    // Set Gallery Slot at 54896 ($D670)
+                    const slotTx = await cpuContract.poke(54896, selectedSlot);
+                    await slotTx.wait();
+                    
+                    // Trigger command at 54897 ($D671)
+                    const cmdTx = await cpuContract.poke(54897, cmdType);
+                    appendOregonDashboardLog(`[GALLERY] Sent ${cmdName} command to slot ${selectedSlot + 1}: ${cmdTx.hash.substring(0, 10)}...`);
+                    await cmdTx.wait();
+                    appendOregonDashboardLog(`[GALLERY] ${cmdName} command executed successfully on-chain!`);
+                } catch (err) {
+                    console.error("Gallery transaction failed:", err);
+                    appendOregonDashboardLog(`[GALLERY] Error: ${err.message}`);
+                    alert("Transaction failed. Check gas limit or balance.");
+                } finally {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }
+            }
+
+            btnSave.addEventListener("click", () => triggerGalleryCommand(1));
+            btnLoad.addEventListener("click", () => triggerGalleryCommand(2));
+            btnClear.addEventListener("click", () => triggerGalleryCommand(3));
+        }
+
+        function initOregonDashboardEvents() {
+            if (!document.getElementById('btnOregonStart')) return;
+            const sendCmd = (cmd) => {
+                const input = document.getElementById("gamemasterTerminalInput");
+                if (input && !input.disabled) {
+                    input.value = cmd;
+                    const event = new KeyboardEvent("keydown", { key: "Enter" });
+                    input.dispatchEvent(event);
+                }
+            };
+            
+            document.getElementById("btnOtTravel").addEventListener("click", () => sendCmd("TRAVEL"));
+            document.getElementById("btnOtHunt").addEventListener("click", () => sendCmd("HUNT"));
+            document.getElementById("btnOtRest").addEventListener("click", () => sendCmd("REST"));
+            document.getElementById("btnOtExit").addEventListener("click", () => sendCmd("EXIT"));
+            
+            const btnAi = document.getElementById("btnOtAiAutoplay");
+            if (btnAi) {
+                btnAi.addEventListener("click", toggleOtAiAutoplay);
+            }
+
+            document.getElementById("btnVoteUp").addEventListener("click", () => simulateVote("UP"));
+            document.getElementById("btnVoteDown").addEventListener("click", () => simulateVote("DOWN"));
+            document.getElementById("btnVoteLeft").addEventListener("click", () => simulateVote("LEFT"));
+            document.getElementById("btnVoteRight").addEventListener("click", () => simulateVote("RIGHT"));
+        }
+
+        function initTotlOfficeEvents() {
+            if (!document.getElementById('totlLog')) return;
+            const logConsole = document.getElementById("totlLog");
+            const appendLog = (msg) => {
+                logConsole.innerText += "\n" + msg;
+                logConsole.scrollTop = logConsole.scrollHeight;
+            };
+
+            // 1. Spellcheck button handler (TOTL.SPELLER)
+            document.getElementById("btnTotlSpellcheck").addEventListener("click", async () => {
+                const text = document.getElementById("totlTextarea").value.trim();
+                if (!text) {
+                    alert("Please enter some text to check.");
+                    return;
+                }
+                appendLog("[SPELLER] Initiating text scan...");
+                const words = text.toLowerCase().replace(/[^a-zA-Z0-9\s]/g, "").split(/\s+/);
+                
+                // Simple dictionary list for spell check:
+                const validDict = new Set(["the", "quick", "brown", "fox", "jumps", "over", "lazy", "dog", "apple", "retro", "office", "computer", "totl", "key", "door", "hero"]);
+                
+                let errors = [];
+                words.forEach(word => {
+                    if (word && !validDict.has(word)) {
+                        errors.push(word);
+                    }
+                });
+                
+                if (errors.length === 0) {
+                    appendLog(`[SPELLER] Scan complete. 0 errors found. Perfect spelling!`);
+                } else {
+                    appendLog(`[SPELLER] Scan complete. Found ${errors.length} errors: [${errors.join(", ")}]`);
+                }
+            });
+
+            // 2. Database Insert Button handler (TOTL.INFOMASTER)
+            document.getElementById("btnTotlDbInsert").addEventListener("click", async () => {
+                const key = document.getElementById("totlDbKey").value.trim();
+                const val = document.getElementById("totlDbVal").value.trim();
+                if (!key || !val) {
+                    alert("Please enter both key and data value.");
+                    return;
+                }
+                appendLog(`[INFOMASTER] Writing record: Key='${key}', Data='${val}'`);
+                
+                try {
+                    // We save the record to the virtual disk system as a SEQ file 'db_[key].seq'
+                    if (!diskContract) {
+                        appendLog("[INFOMASTER] Disk System not loaded. Connect wallet.");
+                        return;
+                    }
+                    const fileName = `db_${key}`;
+                    const header = "W0:" + fileName + "\x00";
+                    const headerBytes = ethers.toUtf8Bytes(header);
+                    const contentBytes = ethers.toUtf8Bytes(val);
+                    const fullCmdBytes = ethers.concat([headerBytes, contentBytes]);
+                    
+                    const tx = await diskContract.executeDiskCommand(fullCmdBytes);
+                    await tx.wait();
+                    appendLog(`[INFOMASTER] Record successfully saved to on-chain SEQ file db_${key}.seq!`);
+                } catch (err) {
+                    console.error(err);
+                    appendLog(`[INFOMASTER] Write failed: ${err.message}`);
+                }
+            });
+
+            // 3. Database Search Button handler (TOTL.INFOMASTER)
+            document.getElementById("btnTotlDbSearch").addEventListener("click", async () => {
+                const key = document.getElementById("totlDbKey").value.trim();
+                if (!key) {
+                    alert("Please enter a record key to search.");
+                    return;
+                }
+                appendLog(`[INFOMASTER] Searching for record with key '${key}'...`);
+                
+                try {
+                    if (!diskContract) {
+                        appendLog("[INFOMASTER] Disk System not loaded. Connect wallet.");
+                        return;
+                    }
+                    const fileName = `db_${key}`;
+                    const header = "R0:" + fileName + "\x00";
+                    const headerBytes = ethers.toUtf8Bytes(header);
+                    
+                    const rawResult = await diskContract.executeDiskCommand.staticCall(headerBytes);
+                    const text = ethers.toUtf8String(rawResult);
+                    if (text) {
+                        document.getElementById("totlDbVal").value = text;
+                        appendLog(`[INFOMASTER] Record found! Value: '${text}'`);
+                    } else {
+                        appendLog(`[INFOMASTER] Record not found.`);
+                    }
+                } catch (err) {
+                    console.error(err);
+                    appendLog(`[INFOMASTER] Record not found or read failed.`);
+                }
+            });
+        }
+
+        // --- Z-Machine Dashboard Events ---
+        function initZmachineEvents() {
+            if (!document.getElementById('zmachineTerminal')) return;
+            let zmAddress = config?.networks?.localhost?.zmachineAddress || "0x023C5a87Bfcc061A6c7810D081D65a3B276D689f";
+            let zmAbi = [
+                "function uploadRomChunk(uint256 offset, bytes data) public returns (bool)",
+                "function parseCommand(address player, bytes cmd) public returns (string)"
+            ];
+
+            const fileInput = document.getElementById("zStoryFile");
+            const fileNameSpan = document.getElementById("zFileName");
+            const term = document.getElementById("zmachineTerminal");
+            const cmdInput = document.getElementById("zCommandInput");
+
+            let romData = null;
+
+            fileInput.addEventListener("change", (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    fileNameSpan.textContent = file.name + " (" + Math.round(file.size / 1024) + " KB)";
+                    const reader = new FileReader();
+                    reader.onload = function(evt) {
+                        romData = new Uint8Array(evt.target.result);
+                    };
+                    reader.readAsArrayBuffer(file);
+                }
+            });
+
+            // Demo ROM Builder
+            const loadDemoBtn = document.getElementById("btnLoadDemoZrom");
+            if (loadDemoBtn) {
+                loadDemoBtn.addEventListener("click", () => {
+                    const demoRom = new Uint8Array(1024);
+                    demoRom[0] = 3; // Version 3
+                    demoRom[6] = 0x08; // PC
+                    demoRom[7] = 0x00;
+                    demoRom[10] = 0x00; // Object Table Base
+                    demoRom[11] = 0x40;
+                    // Obj 50 prop offset
+                    demoRom[503 + 7] = 0x01;
+                    demoRom[503 + 8] = 0x00;
+
+                    romData = demoRom;
+                    fileNameSpan.textContent = "Demo_Z3_ROM.z3 (1 KB)";
+                    term.innerHTML += `\n[Z-ROM] Built-in Z3 Demo ROM loaded. Click "Deploy" to install it.`;
+                    term.scrollTop = term.scrollHeight;
+                });
+            }
+
+            const btnBindTarget = document.getElementById("btnBindTargetRooms");
+            if (btnBindTarget) {
+                btnBindTarget.addEventListener("click", async () => {
+                    if (!signer) {
+                        alert("Please connect your wallet first!");
+                        return;
+                    }
+                    term.innerHTML += `\n[ROOM BIND] Deploying Target Room Contract...`;
+                    term.scrollTop = term.scrollHeight;
+                    
+                    try {
+                        const targetBin = "0x608060405234801561000f575f80fd5b506102f18061001d5f395ff3fe608060405234801561000f575f80fd5b5060043610610055575f3560e01c806306fdde03146100595780630f2723ea1461009c57806395d89b41146100bd578063bd590d7e146100dd578063ff762044146100f0575b5f80fd5b60408051808201909152601581527427b716a1b430b4b71022b1b4379021b430b6b132b960591b60208201525b6040516100939190610151565b60405180910390f35b6100af6100aa36600461019c565b610110565b604051908152602001610093565b6040805180820190915260048152634543484f60e01b6020820152610086565b6100866100eb3660046101d1565b610125565b604080518082019091526004815263524f4f4d60e01b6020820152610086565b5f61011c82600261023d565b90505b92915050565b6060828260405160200161013a929190610260565b604051602081830303815290604052905092915050565b5f6020808352835180828501525f5b8181101561017c57858101830151858201604001528201610160565b505f604082860101526040601f19601f8301168501019250505092915050565b5f80604083850312156101ad575f80fd5b82356001600160a01b03811681146101c3575f80fd5b946020939093013593505050565b5f80602083850312156101e2575f80fd5b823567ffffffffffffffff808211156101f9575f80fd5b818501915085601f83011261020c575f80fd5b81358181111561021a575f80fd5b86602082850101111561022b575f80fd5b60209290920196919550909350505050565b808202811582820484141761011f57634e487b7160e01b5f52601160045260245ffd5b7f5b4543484f5d2054686520726f6f6d20726576657262657261746573207769748152706820796f757220636f6d6d616e643a202760781b602082015281836031830137602760f81b9101603181019190915260320191905056fea264697066735822122003afcc708d1820a0fd35befbd0978273f1a04c20ec445ed4a72fc5b0be1fd1aa64736f6c63430008150033";
+                        const targetFactory = new ethers.ContractFactory([], targetBin, signer);
+                        const targetContract = await targetFactory.deploy();
+                        await targetContract.waitForDeployment();
+                        const targetAddress = await targetContract.getAddress();
+                        term.innerHTML += `\n[ROOM BIND] Target Room Contract deployed at: ${targetAddress}`;
+                        
+                        term.innerHTML += `\n[ROOM BIND] Binding Target Contract to Z-Machine Rooms 1-25...`;
+                        term.scrollTop = term.scrollHeight;
+                        
+                        const formattedAddress = ethers.zeroPadValue(targetAddress, 32);
+                        
+                        for (let rId = 1; rId <= 25; rId++) {
+                            const roomSlot = ethers.toBeHex(2000000 + rId);
+                            const rpc = signer.provider || provider;
+                            try {
+                                await rpc.send("anvil_setStorageAt", [
+                                    zmAddress,
+                                    roomSlot,
+                                    formattedAddress
+                                ]);
+                            } catch (e) {
+                                await rpc.send("hardhat_setStorageAt", [
+                                    zmAddress,
+                                    roomSlot,
+                                    formattedAddress
+                                ]);
+                            }
+                        }
+                        term.innerHTML += `\n[ROOM BIND] Z-Machine room storage slots 1-25 bound successfully to ${targetAddress}!`;
+                    } catch (err) {
+                        console.error(err);
+                        term.innerHTML += `\n[ROOM BIND ERROR] Binding failed: ${err.message}`;
+                    }
+                    term.scrollTop = term.scrollHeight;
+                });
+            }
+
+            document.getElementById("btnUploadZrom").addEventListener("click", async () => {
+                if (!romData) {
+                    alert("Please select a .z3 story file or load the Demo story first!");
+                    return;
+                }
+                if (!signer) {
+                    alert("Please connect your wallet first!");
+                    return;
+                }
+
+                term.innerHTML += `\n[Z-ROM DEPLOY] Deploying ROM in chunks...`;
+                const contract = new ethers.Contract(zmAddress, zmAbi, signer);
+
+                const chunkSize = 8192; // 8KB chunks
+                try {
+                    for (let offset = 0; offset < romData.length; offset += chunkSize) {
+                        const end = Math.min(offset + chunkSize, romData.length);
+                        const slice = romData.slice(offset, end);
+                        term.innerHTML += `\n[Z-ROM DEPLOY] Sending chunk offset ${offset} (${slice.length} bytes)...`;
+                        
+                        const tx = await contract.uploadRomChunk(offset, slice);
+                        await tx.wait();
+                    }
+                    term.innerHTML += `\n[Z-ROM DEPLOY] Deployment successful! Initializing game turn...`;
+                } catch (err) {
+                    console.error(err);
+                    term.innerHTML += `\n[Z-ROM ERROR] Upload failed: ${err.message}`;
+                }
+                term.scrollTop = term.scrollHeight;
+            });
+
+            const sendCommand = async () => {
+                const cmd = cmdInput.value.trim();
+                if (!cmd || !signer) return;
+
+                term.innerHTML += `\n> ${cmd}`;
+                cmdInput.value = "";
+                term.scrollTop = term.scrollHeight;
+
+                try {
+                    const contract = new ethers.Contract(zmAddress, zmAbi, signer);
+                    // 1. Get the return text via staticCall simulation
+                    const response = await contract.parseCommand.staticCall(signer.address, ethers.toUtf8Bytes(cmd));
+                    term.innerHTML += `\n${response}`;
+                    term.scrollTop = term.scrollHeight;
+
+                    // 2. Perform actual state-modifying transaction on-chain
+                    const stateModifying = ["take", "use", "go", "n", "s", "e", "w", "north", "south", "east", "west", "play"];
+                    const parts = cmd.toLowerCase().split(/\s+/);
+                    if (stateModifying.includes(parts[0])) {
+                        term.innerHTML += `\n[On-Chain] Syncing state to blockchain...`;
+                        term.scrollTop = term.scrollHeight;
+                        const tx = await contract.parseCommand(signer.address, ethers.toUtf8Bytes(cmd), { gasLimit: 1000000 });
+                        await tx.wait();
+                        term.innerHTML += `\n[On-Chain] Confirmed.`;
+                    }
+                } catch (err) {
+                    term.innerHTML += `\n[Z-MACHINE] Error executing command: ${err.message}`;
+                }
+                term.scrollTop = term.scrollHeight;
+            };
+
+            document.getElementById("btnSendZcommand").addEventListener("click", sendCommand);
+            cmdInput.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") sendCommand();
+            });
+        }
+
+        // --- Z-Machine Visual Game Creator Events ---
+        function initZmachineCreatorEvents() {
+            const dashboardSection = document.querySelectorAll('#zmachineCreatorDashboard')[0];
+            if (!dashboardSection) return;
+            let rooms = [
+                { name: "West of House", desc: "You are standing in an open field west of a white house." },
+                { name: "North of House", desc: "You are facing the north side of a white house." }
+            ];
+            let items = [
+                { name: "Gold Token", token: config?.networks?.localhost?.CHO || "0x0B306BF915C4d645ff596e518fAf3F9669b97016", location: "West of House", takeable: true, light: false, wearable: false, isBag: false, weight: 1, value: 0 },
+                { name: "Keycard", token: config?.networks?.localhost?.mariarahelLau || "0xAD4e198623A5E2723e19E4D4a6ECF72B1D19FE4B", location: "North of House", takeable: true, light: false, wearable: false, isBag: false, weight: 1, value: 0 }
+            ];
+
+            const roomNameInput = dashboardSection.querySelector("#zmRoomName");
+            const roomDescInput = dashboardSection.querySelector("#zmRoomDesc");
+            const itemNameInput = dashboardSection.querySelector("#zmItemName");
+            const itemTokenInput = dashboardSection.querySelector("#zmItemToken");
+            const itemLocationSelect = dashboardSection.querySelector(".zmItemLocation");
+            const statusDiv = dashboardSection.querySelector("#zmCreatorStatus");
+            const roomsList = dashboardSection.querySelector(".zmRoomsList");
+            const itemsList = dashboardSection.querySelector(".zmItemsList");
+            const zilCodeEditor = dashboardSection.querySelector(".zmZilCodeEditor");
+            const btnCompileZilCode = dashboardSection.querySelector(".btnCompileZilCode");
+
+            const itemTakeableCheckbox = dashboardSection.querySelector(".zmItemTakeable");
+            const itemLightCheckbox = dashboardSection.querySelector(".zmItemLight");
+            const itemWearableCheckbox = dashboardSection.querySelector(".zmItemWearable");
+            const itemIsBagCheckbox = dashboardSection.querySelector(".zmItemIsBag");
+            const itemWeightInput = dashboardSection.querySelector(".zmItemWeight");
+            const itemValueInput = dashboardSection.querySelector(".zmItemValue");
+
+            const checkCircularContainment = (itemList) => {
+                for (let i = 0; i < itemList.length; i++) {
+                    let current = itemList[i];
+                    let path = new Set([current.name]);
+                    while (current && current.location) {
+                        if (path.has(current.location)) {
+                            return current.name;
+                        }
+                        path.add(current.location);
+                        current = itemList.find(itm => itm.name === current.location);
+                    }
+                }
+                return null;
+            };
+
+            const updateZilPreview = () => {
+                if (!zilCodeEditor) return;
+                let zil = `;; Generated ZIL Game Story Source\n\n`;
+                rooms.forEach((r, idx) => {
+                    const cleanName = r.name.toUpperCase().replace(/\s+/g, "-");
+                    zil += `<ROOM ${cleanName}\n      (DESC "${r.name}")\n      (LDESC "${r.desc}")\n`;
+                    if (r.north) zil += `      (NORTH TO ${r.north.toUpperCase().replace(/\s+/g, "-")})\n`;
+                    if (r.south) zil += `      (SOUTH TO ${r.south.toUpperCase().replace(/\s+/g, "-")})\n`;
+                    if (r.east) zil += `      (EAST TO ${r.east.toUpperCase().replace(/\s+/g, "-")})\n`;
+                    if (r.west) zil += `      (WEST TO ${r.west.toUpperCase().replace(/\s+/g, "-")})\n`;
+                    zil += `>\n\n`;
+                });
+                items.forEach((itm, idx) => {
+                    const cleanName = itm.name.toUpperCase().replace(/\s+/g, "-");
+                    const cleanLoc = itm.location ? itm.location.toUpperCase().replace(/\s+/g, "-") : "IN-LIMBO";
+                    zil += `<OBJECT ${cleanName}\n      (IN ${cleanLoc})\n      (DESC "${itm.name}")\n`;
+                    
+                    const flags = [];
+                    if (itm.takeable) flags.push("TAKEBIT");
+                    if (itm.light) flags.push("LIGHTBIT");
+                    if (itm.wearable) flags.push("WEARBIT");
+                    if (itm.isBag) flags.push("CONTBIT");
+                    if (flags.length > 0) {
+                        zil += `      (FLAGS ${flags.join(" ")})\n`;
+                    }
+                    if (itm.weight !== undefined) {
+                        zil += `      (SIZE ${itm.weight})\n`;
+                    }
+                    if (itm.value !== undefined) {
+                        zil += `      (VALUE ${itm.value})\n`;
+                    }
+                    if (itm.token) {
+                        zil += `      (TOKEN "${itm.token}") ; ERC-20 Bound Address\n`;
+                    }
+                    zil += `>\n\n`;
+                });
+                zilCodeEditor.value = zil;
+            };
+
+            const updateStatus = () => {
+                if (statusDiv) {
+                    statusDiv.textContent = `Rooms: ${rooms.length} | Items: ${items.length}`;
+                }
+                
+                const dirSelects = dashboardSection.querySelectorAll(".zmRoomWest, .zmRoomEast, .zmRoomNorth, .zmRoomSouth");
+                dirSelects.forEach(select => {
+                    const currentVal = select.value;
+                    select.innerHTML = '<option value="">None</option>' + rooms.map(r => `<option value="${r.name}">${r.name}</option>`).join("");
+                    if (rooms.some(r => r.name === currentVal)) {
+                        select.value = currentVal;
+                    } else {
+                        select.value = "";
+                    }
+                });
+
+                if (itemLocationSelect) {
+                    const currentVal = itemLocationSelect.value;
+                    const bagOptions = items.filter(itm => itm.isBag).map(itm => `<option value="${itm.name}">👜 Inside ${itm.name}</option>`).join("");
+                    itemLocationSelect.innerHTML = '<option value="">None (Limbo/Inventory)</option>' + 
+                        rooms.map(r => `<option value="${r.name}">${r.name}</option>`).join("") +
+                        bagOptions;
+                    if (rooms.some(r => r.name === currentVal) || items.some(itm => itm.isBag && itm.name === currentVal)) {
+                        itemLocationSelect.value = currentVal;
+                    } else {
+                        itemLocationSelect.value = "";
+                    }
+                }
+
+                if (roomsList) {
+                    roomsList.innerHTML = rooms.map((r, i) => {
+                        let connStr = "";
+                        if (r.west || r.east || r.north || r.south) {
+                            connStr = `<div style="font-size: 0.7rem; color: #8a2be2; margin-top: 2px;">Conns: ` +
+                                [r.west && `W\u27a1${r.west}`, r.east && `E\u27a1${r.east}`, r.north && `N\u27a1${r.north}`, r.south && `S\u27a1${r.south}`].filter(Boolean).join(", ") +
+                                `</div>`;
+                        }
+                        return `
+                            <div style="display: flex; flex-direction: column; background: rgba(255,255,255,0.05); padding: 6px 8px; border-radius: 4px; border-left: 3px solid #8a2be2; margin-bottom: 4px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span title="${r.desc}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">
+                                        <strong>${r.name}</strong>: ${r.desc}
+                                    </span>
+                                    <span class="btn-delete-room" data-index="${i}" style="color: #ff007f; cursor: pointer; font-weight: bold; margin-left: 5px;">\u2715</span>
+                                </div>
+                                ${connStr}
+                            </div>
+                        `;
+                    }).join("");
+                    
+                    roomsList.querySelectorAll(".btn-delete-room").forEach(btn => {
+                        btn.addEventListener("click", (e) => {
+                            const idx = parseInt(btn.getAttribute("data-index"));
+                            rooms.splice(idx, 1);
+                            updateStatus();
+                        });
+                    });
+                }
+
+                if (itemsList) {
+                    itemsList.innerHTML = items.map((itm, i) => `
+                        <div style="display: flex; flex-direction: column; background: rgba(255,255,255,0.05); padding: 6px 8px; border-radius: 4px; border-left: 3px solid #00f2fe; margin-bottom: 4px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span title="${itm.token || 'No Token'}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px; font-weight: bold;">
+                                    ${itm.name}${itm.location ? ` [in ${itm.location}]` : ''}
+                                </span>
+                                <span class="btn-delete-item" data-index="${i}" style="color: #ff007f; cursor: pointer; font-weight: bold; margin-left: 5px;">\u2715</span>
+                            </div>
+                            <div style="font-size: 0.65rem; color: #aaa; margin-top: 2px;">
+                                Flags: ${[itm.takeable && '\ud83c\udf92Takeable', itm.light && '\ud83d\udca1Light', itm.wearable && '\ud83d\udc55Wearable', itm.isBag && '👜Bag'].filter(Boolean).join(", ") || 'None'} | Wt: ${itm.weight ?? 1} | Val: ${itm.value ?? 0}
+                            </div>
+                        </div>
+                    `).join("");
+                    
+                    itemsList.querySelectorAll(".btn-delete-item").forEach(btn => {
+                        btn.addEventListener("click", (e) => {
+                            const idx = parseInt(btn.getAttribute("data-index"));
+                            items.splice(idx, 1);
+                            updateStatus();
+                        });
+                    });
+                }
+
+                updateZilPreview();
+            };
+            updateStatus();
+
+            dashboardSection.querySelector("#btnAddZmRoom").addEventListener("click", () => {
+                const name = roomNameInput.value.trim();
+                const desc = roomDescInput.value.trim();
+                if (!name || !desc) {
+                    alert("Please fill in Room name and description!");
+                    return;
+                }
+                const west = dashboardSection.querySelector(".zmRoomWest").value;
+                const east = dashboardSection.querySelector(".zmRoomEast").value;
+                const north = dashboardSection.querySelector(".zmRoomNorth").value;
+                const south = dashboardSection.querySelector(".zmRoomSouth").value;
+
+                rooms.push({ name, desc, west, east, north, south });
+                roomNameInput.value = "";
+                roomDescInput.value = "";
+                dashboardSection.querySelector(".zmRoomWest").value = "";
+                dashboardSection.querySelector(".zmRoomEast").value = "";
+                dashboardSection.querySelector(".zmRoomNorth").value = "";
+                dashboardSection.querySelector(".zmRoomSouth").value = "";
+                updateStatus();
+                console.log("Added Room:", rooms);
+            });
+
+            dashboardSection.querySelector("#btnAddZmItem").addEventListener("click", () => {
+                const name = itemNameInput.value.trim();
+                const token = itemTokenInput.value.trim();
+                const location = itemLocationSelect ? itemLocationSelect.value : "";
+                if (!name) {
+                    alert("Please enter Item name!");
+                    return;
+                }
+                
+                const takeable = itemTakeableCheckbox ? itemTakeableCheckbox.checked : true;
+                const light = itemLightCheckbox ? itemLightCheckbox.checked : false;
+                const wearable = itemWearableCheckbox ? itemWearableCheckbox.checked : false;
+                const isBag = itemIsBagCheckbox ? itemIsBagCheckbox.checked : false;
+                const weight = itemWeightInput ? parseInt(itemWeightInput.value) || 1 : 1;
+                const value = itemValueInput ? parseInt(itemValueInput.value) || 0 : 0;
+
+                // Circular containment check
+                const tempItems = [...items, { name, location, isBag }];
+                const loopItem = checkCircularContainment(tempItems);
+                if (loopItem) {
+                    alert(`Error: Circular containment detected involving '${loopItem}'! A bag cannot contain itself or be placed inside a bag that is inside it.`);
+                    return;
+                }
+
+                items.push({ 
+                    name, 
+                    token: token || null, 
+                    location: location || null,
+                    takeable,
+                    light,
+                    wearable,
+                    isBag,
+                    weight,
+                    value
+                });
+                
+                itemNameInput.value = "";
+                itemTokenInput.value = "";
+                if (itemLocationSelect) itemLocationSelect.value = "";
+                if (itemTakeableCheckbox) itemTakeableCheckbox.checked = true;
+                if (itemLightCheckbox) itemLightCheckbox.checked = false;
+                if (itemWearableCheckbox) itemWearableCheckbox.checked = false;
+                if (itemIsBagCheckbox) itemIsBagCheckbox.checked = false;
+                if (itemWeightInput) itemWeightInput.value = "1";
+                if (itemValueInput) itemValueInput.value = "0";
+                
+                updateStatus();
+                console.log("Added Item:", items);
+            });
+
+            if (btnCompileZilCode) {
+                btnCompileZilCode.addEventListener("click", () => {
+                    const text = zilCodeEditor.value;
+                    const newRooms = [];
+                    const newItems = [];
+                    
+                    const roomBlocks = text.match(/<ROOM\s+[\s\S]+?>/g) || [];
+                    roomBlocks.forEach(block => {
+                        const nameMatch = block.match(/<ROOM\s+([A-Za-z0-9\-]+)/);
+                        if (!nameMatch) return;
+                        const cleanName = nameMatch[1].replace(/\-/g, " ");
+                        
+                        let desc = cleanName;
+                        const descMatch = block.match(/\(DESC\s+"([^"]+)"\)/);
+                        const ldescMatch = block.match(/\(LDESC\s+"([^"]+)"\)/);
+                        if (ldescMatch) desc = ldescMatch[1];
+                        else if (descMatch) desc = descMatch[1];
+                        
+                        const northMatch = block.match(/\(NORTH\s+TO\s+([A-Za-z0-9\-]+)\)/);
+                        const southMatch = block.match(/\(SOUTH\s+TO\s+([A-Za-z0-9\-]+)\)/);
+                        const eastMatch = block.match(/\(EAST\s+TO\s+([A-Za-z0-9\-]+)\)/);
+                        const westMatch = block.match(/\(WEST\s+TO\s+([A-Za-z0-9\-]+)\)/);
+                        
+                        newRooms.push({
+                            name: descMatch ? descMatch[1] : cleanName,
+                            desc: desc,
+                            north: northMatch ? northMatch[1].replace(/\-/g, " ") : "",
+                            south: southMatch ? southMatch[1].replace(/\-/g, " ") : "",
+                            east: eastMatch ? eastMatch[1].replace(/\-/g, " ") : "",
+                            west: westMatch ? westMatch[1].replace(/\-/g, " ") : ""
+                        });
+                    });
+
+                    const objBlocks = text.match(/<OBJECT\s+[\s\S]+?>/g) || [];
+                    objBlocks.forEach(block => {
+                        const nameMatch = block.match(/<OBJECT\s+([A-Za-z0-9\-]+)/);
+                        if (!nameMatch) return;
+                        const cleanName = nameMatch[1].replace(/\-/g, " ");
+                        
+                        let desc = cleanName;
+                        const descMatch = block.match(/\(DESC\s+"([^"]+)"\)/);
+                        if (descMatch) desc = descMatch[1];
+                        
+                        const inMatch = block.match(/\(IN\s+([A-Za-z0-9\-]+)\)/);
+                        let location = "";
+                        if (inMatch && inMatch[1] !== "IN-LIMBO") {
+                            location = inMatch[1].replace(/\-/g, " ");
+                        }
+                        
+                        const tokenMatch = block.match(/\(TOKEN\s+"([^"]+)"\)/) || block.match(/\(VALUE\s+"([^"]+)"\)/);
+                        let token = "";
+                        if (tokenMatch && isNaN(tokenMatch[1])) {
+                            token = tokenMatch[1];
+                        }
+                        
+                        const flagsMatch = block.match(/\(FLAGS\s+([^)]+)\)/);
+                        let takeable = true;
+                        let light = false;
+                        let wearable = false;
+                        let isBag = false;
+                        if (flagsMatch) {
+                            const flagsStr = flagsMatch[1];
+                            takeable = flagsStr.includes("TAKEBIT");
+                            light = flagsStr.includes("LIGHTBIT");
+                            wearable = flagsStr.includes("WEARBIT");
+                            isBag = flagsStr.includes("CONTBIT");
+                        }
+                        
+                        const sizeMatch = block.match(/\(SIZE\s+(\d+)\)/);
+                        let weight = sizeMatch ? parseInt(sizeMatch[1]) : 1;
+                        
+                        const valMatch = block.match(/\(VALUE\s+(\d+)\)/);
+                        let value = valMatch ? parseInt(valMatch[1]) : 0;
+                        
+                        newItems.push({
+                            name: desc,
+                            token: token || null,
+                            location: location,
+                            takeable,
+                            light,
+                            wearable,
+                            isBag,
+                            weight,
+                            value
+                        });
+                    });
+
+                    // Circular containment check on compiled items
+                    const loopItem = checkCircularContainment(newItems);
+                    if (loopItem) {
+                        alert(`Compile Error: Circular containment detected involving '${loopItem}'!`);
+                        return;
+                    }
+
+                    if (newRooms.length > 0) {
+                        rooms = newRooms;
+                        items = newItems;
+                        updateStatus();
+                        alert(`Compiled successfully: ${rooms.length} Rooms, ${items.length} Items detected!`);
+                    } else {
+                        alert("Could not compile any valid <ROOM ...> blocks from ZIL code. Check syntax!");
+                    }
+                });
+            }
+
+            dashboardSection.querySelector("#btnCompileDeployZgame").addEventListener("click", async () => {
+                if (rooms.length === 0) {
+                    alert("Please add at least one Room or enter valid ZIL code before deploying!");
+                    return;
+                }
+                if (!signer) {
+                    alert("Please connect your wallet first!");
+                    return;
+                }
+
+                // Check circular containment
+                const loopItem = checkCircularContainment(items);
+                if (loopItem) {
+                    alert(`Deploy Error: Circular containment detected involving '${loopItem}'!`);
+                    return;
+                }
+
+                console.log("Compiling custom Z3 game ROM...");
+                const romBuffer = new Uint8Array(1024);
+                
+                romBuffer[0] = 3; // Version 3
+                romBuffer[6] = 0x08;
+                romBuffer[7] = 0x00;
+                romBuffer[10] = 0x00;
+                romBuffer[11] = 0x40;
+
+                rooms.forEach((r, idx) => {
+                    const objId = idx + 1;
+                    const objOffset = 0x40 + 62 + (idx * 9);
+                    
+                    romBuffer[objOffset + 4] = 0; // Parent ID
+                    romBuffer[objOffset + 5] = 0; // Sibling ID
+                    romBuffer[objOffset + 6] = 0; // Child ID
+                    romBuffer[objOffset + 7] = 0x01; // properties pointer high byte
+                    romBuffer[objOffset + 8] = 0x00 + (idx * 32); // properties pointer low byte
+
+                    const propStart = 0x0100 + (idx * 32);
+                    romBuffer[propStart] = 0; // Short name length = 0
+                    
+                    let pOffset = propStart + 1;
+                    if (r.west) {
+                        const targetIdx = rooms.findIndex(rm => rm.name === r.west);
+                        if (targetIdx !== -1) {
+                            romBuffer[pOffset++] = 4; // West Property ID = 4
+                            romBuffer[pOffset++] = targetIdx + 1;
+                        }
+                    }
+                    if (r.east) {
+                        const targetIdx = rooms.findIndex(rm => rm.name === r.east);
+                        if (targetIdx !== -1) {
+                            romBuffer[pOffset++] = 3; // East Property ID = 3
+                            romBuffer[pOffset++] = targetIdx + 1;
+                        }
+                    }
+                    if (r.north) {
+                        const targetIdx = rooms.findIndex(rm => rm.name === r.north);
+                        if (targetIdx !== -1) {
+                            romBuffer[pOffset++] = 1; // North Property ID = 1
+                            romBuffer[pOffset++] = targetIdx + 1;
+                        }
+                    }
+                    if (r.south) {
+                        const targetIdx = rooms.findIndex(rm => rm.name === r.south);
+                        if (targetIdx !== -1) {
+                            romBuffer[pOffset++] = 2; // South Property ID = 2
+                            romBuffer[pOffset++] = targetIdx + 1;
+                        }
+                    }
+                    romBuffer[pOffset] = 0; // Terminate property table
+                });
+
+                // Compute tree relationships (parent, sibling, child) for items
+                const parents = {};
+                items.forEach((itm, idx) => {
+                    const objId = 50 + idx;
+                    let parentId = 0;
+                    if (itm.location) {
+                        const rIdx = rooms.findIndex(r => r.name === itm.location);
+                        if (rIdx !== -1) {
+                            parentId = rIdx + 1;
+                        } else {
+                            const itmIdx = items.findIndex(item => item.name === itm.location);
+                            if (itmIdx !== -1) {
+                                parentId = 50 + itmIdx;
+                            }
+                        }
+                    }
+                    parents[objId] = parentId;
+                });
+                const children = {};
+                const siblings = {};
+                for (const objId in parents) {
+                    const pId = parents[objId];
+                    if (pId > 0) {
+                        if (!children[pId]) children[pId] = [];
+                        children[pId].push(parseInt(objId));
+                    }
+                }
+                for (const pId in children) {
+                    const list = children[pId];
+                    for (let i = 0; i < list.length; i++) {
+                        const current = list[i];
+                        const nextSibling = (i + 1 < list.length) ? list[i + 1] : 0;
+                        siblings[current] = nextSibling;
+                    }
+                }
+
+                items.forEach((itm, idx) => {
+                    const objId = 50 + idx;
+                    const objOffset = 0x40 + 62 + ((objId - 1) * 9);
+                    
+                    const parentId = parents[objId] || 0;
+                    const firstChild = (children[objId] && children[objId].length > 0) ? children[objId][0] : 0;
+                    const nextSibling = siblings[objId] || 0;
+                    
+                    let attrHi = 0;
+                    let attrLo = 0;
+                    if (itm.light) attrHi |= 0x40;    // bit 17
+                    if (itm.takeable) attrHi |= 0x10; // bit 19
+                    if (itm.wearable) attrHi |= 0x04; // bit 21
+                    if (itm.isBag) {
+                        attrLo |= 0x03; // CONTBIT (0x02) & OPENBIT (0x01)
+                    }
+                    
+                    romBuffer[objOffset] = attrHi;
+                    romBuffer[objOffset + 1] = attrLo;
+                    romBuffer[objOffset + 2] = 0;
+                    romBuffer[objOffset + 3] = 0;
+                    
+                    romBuffer[objOffset + 4] = parentId; // Parent ID
+                    romBuffer[objOffset + 5] = nextSibling; // Sibling ID
+                    romBuffer[objOffset + 6] = firstChild; // Child ID
+                    
+                    const propAddr = 0x0500 + (idx * 32);
+                    romBuffer[objOffset + 7] = (propAddr >> 8) & 0xFF; // High byte
+                    romBuffer[objOffset + 8] = propAddr & 0xFF;        // Low byte (FIXED TYPO)
+                    
+                    romBuffer[propAddr] = 0; // Name length = 0
+                    
+                    let pOffset = propAddr + 1;
+                    if (itm.weight !== undefined) {
+                        romBuffer[pOffset++] = 20; // Prop ID 20 (size is 1 byte, ID byte is 20)
+                        romBuffer[pOffset++] = itm.weight;
+                    }
+                    if (itm.value !== undefined) {
+                        romBuffer[pOffset++] = 21; // Prop ID 21 (size is 1 byte, ID byte is 21)
+                        romBuffer[pOffset++] = itm.value;
+                    }
+                    romBuffer[pOffset] = 0; // Terminate property table
+                });
+
+                console.log("Custom game ROM bytecode built successfully. Bytes count:", romBuffer.length);
+                
+                const zmAddress = config?.networks?.localhost?.zmachineAddress || "0x023C5a87Bfcc061A6c7810D081D65a3B276D689f";
+                const zmAbi = [
+                    "function uploadRomChunk(uint256 offset, bytes data) public returns (bool)",
+                    "function bindTokenAddress(uint256 objId, address token) public returns (bool)"
+                ];
+                const contract = new ethers.Contract(zmAddress, zmAbi, signer);
+                
+                const term = dashboardSection.querySelector(".zmTerminal") || document.querySelectorAll("#zmachineTerminal")[0];
+                term.innerHTML += `\n[CREATOR-DEPLOY] Deploying custom story file to chain...`;
+                
+                const chunkSize = 256;
+                try {
+                    for (let offset = 0; offset < romBuffer.length; offset += chunkSize) {
+                        const end = Math.min(offset + chunkSize, romBuffer.length);
+                        const slice = romBuffer.slice(offset, end);
+                        const tx = await contract.uploadRomChunk(offset, slice);
+                        await tx.wait();
+                    }
+                    term.innerHTML += `\n[CREATOR-DEPLOY] Story ROM uploaded.`;
+                    
+                    for (let idx = 0; idx < items.length; idx++) {
+                        const item = items[idx];
+                        if (item.token && ethers.isAddress(item.token)) {
+                            const objId = 50 + idx;
+                            term.innerHTML += `\n[CREATOR-DEPLOY] Binding Item '${item.name}' (Obj ${objId}) to token ${item.token}...`;
+                            const txBind = await contract.bindTokenAddress(objId, item.token);
+                            await txBind.wait();
+                        }
+                    }
+                    
+                    term.innerHTML += `\n[CREATOR-DEPLOY] Custom game deployed! You can start playing now.`;
+                } catch (err) {
+                    console.error(err);
+                    term.innerHTML += `\n[CREATOR-ERROR] Failed to upload custom game: ${err.message}`;
+                }
+            });
+        }
+
+        // --- Access Leader Board Golf Event Handlers ---
+        let golfAnimInterval = null;
+
+        function initGolfCanvas() {
+            const canvas = document.getElementById("golfCanvas");
+            if (!canvas) return;
+            const ctx = canvas.getContext("2d");
+            
+            // Sky
+            const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            grad.addColorStop(0, "#1a2a6c");
+            grad.addColorStop(0.5, "#b21f1f");
+            grad.addColorStop(0.8, "#fdbb2d");
+            grad.addColorStop(0.9, "#31a354");
+            grad.addColorStop(1, "#006837");
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Ground hills
+            ctx.fillStyle = "#238b45";
+            ctx.beginPath();
+            ctx.ellipse(350, 240, 200, 50, 0, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.fillStyle = "#005a32";
+            ctx.beginPath();
+            ctx.ellipse(100, 240, 150, 40, 0, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Tee box marker
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(15, 210, 8, 4);
+            
+            // Flag pole at 1000 yards (mapped to x = 370px)
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(370, 215);
+            ctx.lineTo(370, 160);
+            ctx.stroke();
+            
+            // Red Flag
+            ctx.fillStyle = "#ff0000";
+            ctx.beginPath();
+            ctx.moveTo(370, 160);
+            ctx.lineTo(350, 170);
+            ctx.lineTo(370, 180);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        async function runGolfSwing() {
+            if (!graphicsContract) {
+                alert("Graphics System contract is not loaded. Please connect wallet first.");
+                return;
+            }
+            
+            if (golfAnimInterval) {
+                clearInterval(golfAnimInterval);
+            }
+            
+            const power = parseInt(document.getElementById("golfPower").value);
+            const angle = parseInt(document.getElementById("golfAngle").value);
+            const wind = parseInt(document.getElementById("golfWind").value);
+            const spin = parseInt(document.getElementById("golfSpin").value);
+            const statusDiv = document.getElementById("golfStatusText");
+            
+            statusDiv.innerText = "Calculating trajectory on-chain...";
+            
+            try {
+                const [xCoords, yCoords] = await graphicsContract.calculateGolfTrajectory(power, angle, wind, spin);
+                
+                if (xCoords.length === 0) {
+                    statusDiv.innerText = "Error: On-chain trajectory empty.";
+                    return;
+                }
+                
+                // Reconstruct 3D points
+                golf3DCoords = [];
+                for (let i = 0; i < xCoords.length; i++) {
+                    const z = Number(xCoords[i]);
+                    const y = Number(yCoords[i]);
+                    const progress = i / (xCoords.length - 1);
+                    const x = (wind * 2 + spin * 8) * progress;
+                    golf3DCoords.push({ x: x, y: y, z: z });
+                }
+                
+                const canvas = document.getElementById("golfCanvas");
+                const ctx = canvas.getContext("2d");
+                
+                let step = 0;
+                statusDiv.innerText = "Swing! Ball in flight...";
+                
+                golfAnimInterval = setInterval(() => {
+                    initGolfCanvas(); // Redraw background
+                    
+                    // Draw trace line
+                    ctx.strokeStyle = "rgba(255, 165, 0, 0.7)";
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(20, 210);
+                    
+                    for (let i = 0; i <= step; i++) {
+                        const cx = 20 + Number(xCoords[i]) * 0.35;
+                        const cy = 210 - Number(yCoords[i]) * 0.12;
+                        ctx.lineTo(cx, cy);
+                    }
+                    ctx.stroke();
+                    
+                    // Draw ball
+                    const bx = 20 + Number(xCoords[step]) * 0.35;
+                    const by = 210 - Number(yCoords[step]) * 0.12;
+                    
+                    ctx.fillStyle = "#ffffff";
+                    ctx.beginPath();
+                    ctx.arc(bx, by, 5, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.strokeStyle = "#000000";
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    
+                    // Render 3D Viewport in sync
+                    drawGolf3D(step);
+                    
+                    step++;
+                    if (step >= xCoords.length) {
+                        clearInterval(golfAnimInterval);
+                        golfAnimInterval = null;
+                        
+                        const finalDist = Number(xCoords[xCoords.length - 1]);
+                        const diff = Math.abs(finalDist - 1000);
+                        if (diff <= 100) {
+                            statusDiv.innerText = `BULLSEYE! Landed at ${finalDist} yards, right on the green!`;
+                            statusDiv.style.color = "#39ff14";
+                            playRealSoundOnChainClip(2); // Nice shot!
+                        } else if (finalDist > 1300) {
+                            statusDiv.innerText = `Out of bounds! Landed at ${finalDist} yards in the rough.`;
+                            statusDiv.style.color = "#ff007f";
+                            playRealSoundOnChainClip(3); // Ouch!
+                        } else {
+                            statusDiv.innerText = `Nice drive! Ball stopped at ${finalDist} yards. Pin is 1000.`;
+                            statusDiv.style.color = "#ffa500";
+                        }
+                    }
+                }, 80);
+                
+            } catch (err) {
+                console.error(err);
+                statusDiv.innerText = "Error calculating trajectory.";
+            }
+        }
+
+        // --- Access Leader Board Golf Interactive Swing Gauge ---
+        let swingState = 'IDLE';
+        let swingPowerVal = 0;
+        let swingSpinVal = 0;
+        let swingIndicator = 0.0;
+        let swingTimer = null;
+        let golf3DCoords = [];
+
+        function drawSwingMeter() {
+            const canvas = document.getElementById("swingMeterCanvas");
+            if (!canvas) return;
+            const ctx = canvas.getContext("2d");
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+            
+            // Draw background track
+            ctx.fillStyle = "#111";
+            ctx.fillRect(10, 10, 20, h - 20);
+            
+            // Draw fill with gradient
+            const grad = ctx.createLinearGradient(0, h - 10, 0, 10);
+            grad.addColorStop(0, "#00ff00");
+            grad.addColorStop(0.6, "#ffff00");
+            grad.addColorStop(1, "#ff0000");
+            ctx.fillStyle = grad;
+            ctx.fillRect(10, h - 10 - (h - 20) * swingIndicator, 20, (h - 20) * swingIndicator);
+            
+            // Draw SNAP target line at 10% from bottom (y = h - 10 - (h-20)*0.1)
+            const snapY = h - 10 - (h - 20) * 0.1;
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(5, snapY);
+            ctx.lineTo(35, snapY);
+            ctx.stroke();
+            
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 9px 'Orbitron', monospace";
+            ctx.fillText("SNAP", 40, snapY + 3);
+            
+            // Draw current indicator line
+            const indY = h - 10 - (h - 20) * swingIndicator;
+            ctx.strokeStyle = "#ff00ff";
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(5, indY);
+            ctx.lineTo(35, indY);
+            ctx.stroke();
+            
+            // Draw values
+            ctx.fillStyle = "#ffa500";
+            ctx.font = "11px 'Orbitron', monospace";
+            ctx.fillText(`POWER: ${swingPowerVal}`, 40, 25);
+            ctx.fillText(`SPIN: ${swingSpinVal > 0 ? 'Slice' : swingSpinVal < 0 ? 'Hook' : 'Straight'} (${swingSpinVal})`, 40, 45);
+            
+            // Status label
+            ctx.fillStyle = swingState === 'POWER_UP' ? '#ff0000' : swingState === 'SNAP_DOWN' ? '#00ff00' : '#888';
+            ctx.fillText(swingState, 40, 65);
+        }
+
+        function handleSwingTick() {
+            if (swingState === 'POWER_UP') {
+                swingIndicator += 0.04;
+                if (swingIndicator >= 1.0) {
+                    swingIndicator = 1.0;
+                    swingState = 'SNAP_DOWN';
+                }
+            } else if (swingState === 'SNAP_DOWN') {
+                swingIndicator -= 0.06;
+                if (swingIndicator <= 0.0) {
+                    swingIndicator = 0.0;
+                    swingPowerVal = Math.round(swingPowerVal * 0.3);
+                    swingSpinVal = (Math.random() > 0.5 ? 5 : -5);
+                    swingState = 'FINISHED';
+                    clearInterval(swingTimer);
+                    swingTimer = null;
+                    triggerSwingCompleted();
+                }
+            }
+            drawSwingMeter();
+        }
+
+        function triggerSwingCompleted() {
+            document.getElementById("btnStartSwing").innerText = "⛳ BEGIN SWING";
+            document.getElementById("golfPower").value = swingPowerVal;
+            document.getElementById("lblPower").innerText = swingPowerVal;
+            document.getElementById("golfSpin").value = swingSpinVal;
+            document.getElementById("lblSpin").innerText = (swingSpinVal > 0 ? 'Slice' : swingSpinVal < 0 ? 'Hook' : 'Straight') + ' (' + swingSpinVal + ')';
+            
+            playRealSoundOnChainClip(1);
+            runGolfSwing();
+        }
+
+        function startSwingInput() {
+            if (swingState === 'IDLE' || swingState === 'FINISHED') {
+                swingState = 'POWER_UP';
+                swingPowerVal = 0;
+                swingSpinVal = 0;
+                swingIndicator = 0.0;
+                document.getElementById("btnStartSwing").innerText = "🔴 LOCK POWER";
+                playRealSoundOnChainClip(0);
+                
+                if (swingTimer) clearInterval(swingTimer);
+                swingTimer = setInterval(handleSwingTick, 30);
+            } else if (swingState === 'POWER_UP') {
+                swingPowerVal = Math.round(swingIndicator * 100);
+                swingState = 'SNAP_DOWN';
+                document.getElementById("btnStartSwing").innerText = "🟢 SNAP BALL";
+            } else if (swingState === 'SNAP_DOWN') {
+                const diff = swingIndicator - 0.1;
+                swingSpinVal = Math.round(diff * 35);
+                if (swingSpinVal > 5) swingSpinVal = 5;
+                if (swingSpinVal < -5) swingSpinVal = -5;
+                
+                swingState = 'FINISHED';
+                clearInterval(swingTimer);
+                swingTimer = null;
+                triggerSwingCompleted();
+            }
+        }
+
+        async function playRealSoundOnChainClip(clipId) {
+            if (!isAudioPlaying || !audioCtx || !musicContract) return;
+            try {
+                const rawSamples = await musicContract.generateRealSoundClip(clipId);
+                const sampleRate = 4000;
+                const buffer = audioCtx.createBuffer(1, rawSamples.length, sampleRate);
+                const channelData = buffer.getChannelData(0);
+                for (let i = 0; i < rawSamples.length; i++) {
+                    const val = Number(rawSamples[i]);
+                    channelData[i] = (val / 31.5) - 1.0;
+                }
+                const source = audioCtx.createBufferSource();
+                source.buffer = buffer;
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = "bandpass";
+                filter.frequency.setValueAtTime(1200, audioCtx.currentTime);
+                filter.Q.setValueAtTime(1.8, audioCtx.currentTime);
+                source.connect(filter);
+                filter.connect(audioCtx.destination);
+                source.start();
+                
+                const startTime = Date.now();
+                const duration = (rawSamples.length / sampleRate) * 1000;
+                const updateInterval = setInterval(() => {
+                    const elapsed = Date.now() - startTime;
+                    if (elapsed >= duration) {
+                        clearInterval(updateInterval);
+                        const speakerText = document.getElementById("pitSpeakerText");
+                        const dacText = document.getElementById("pitDacText");
+                        if (speakerText) speakerText.innerText = "0x00";
+                        if (dacText) dacText.innerText = "0";
+                        return;
+                    }
+                    const idx = Math.floor((elapsed / 1000) * sampleRate);
+                    if (idx < rawSamples.length) {
+                        const sampleVal = Number(rawSamples[idx]);
+                        const speakerText = document.getElementById("pitSpeakerText");
+                        const dacText = document.getElementById("pitDacText");
+                        if (speakerText) speakerText.innerText = "0x" + sampleVal.toString(16).toUpperCase();
+                        if (dacText) dacText.innerText = sampleVal;
+                        
+                        const selectedEngine = document.getElementById("selectSpeechEngine").value;
+                        if (selectedEngine === "access_realsound") {
+                            const led = document.getElementById("voiceStatusLED");
+                            const ledText = document.getElementById("voiceStatusText");
+                            if (led && ledText) {
+                                led.style.background = "#ffa500";
+                                led.style.boxShadow = "0 0 8px #ffa500";
+                                ledText.innerText = "PWM ACTIVE";
+                                ledText.style.color = "#ffa500";
+                            }
+                            const mouth = document.getElementById("voiceBoxMouth");
+                            if (mouth) {
+                                mouth.style.height = `${4 + Math.floor(sampleVal / 3)}px`;
+                                mouth.style.borderRadius = "50%";
+                            }
+                        }
+                    }
+                }, 30);
+            } catch (err) {
+                console.error("Error playing RealSound clip:", err);
+            }
+        }
+
+        // --- Mercenary style 3D projection viewport ---
+        let isMercenaryMode = false;
+        let playerX = 0;
+        let playerY = 15;
+        let playerZ = -50;
+        let playerYaw = 15;
+        let playerPitch = 5;
+        let mercenaryObjects = {};
+        let objectsLoaded = false;
+
+        async function loadMercenaryGeometries() {
+            if (!graphicsContract || objectsLoaded) return;
+            try {
+                const ids = [1, 2, 3, 4];
+                for (let id of ids) {
+                    const flatData = await graphicsContract.getMercenaryGeometry(id);
+                    if (flatData && flatData.length > 0) {
+                        const V = Number(flatData[0]);
+                        const vertices = [];
+                        for (let i = 0; i < V; i++) {
+                            const x = Number(flatData[1 + i]);
+                            const y = Number(flatData[1 + V + i]);
+                            const z = Number(flatData[1 + 2 * V + i]);
+                            vertices.push([x, y, z]);
+                        }
+                        const L = Number(flatData[1 + 3 * V]);
+                        const lines = [];
+                        const lineStart = 2 + 3 * V;
+                        for (let j = 0; j < L; j++) {
+                            const fromIdx = Number(flatData[lineStart + j * 2]);
+                            const toIdx = Number(flatData[lineStart + j * 2 + 1]);
+                            lines.push([fromIdx, toIdx]);
+                        }
+                        mercenaryObjects[id] = { vertices, lines };
+                    }
+                }
+                objectsLoaded = true;
+                console.log("On-Chain Mercenary Geometries Loaded successfully:", mercenaryObjects);
+            } catch (err) {
+                console.error("Failed to load on-chain Mercenary geometries:", err);
+            }
+        }
+
+        function movePlayer(action) {
+            if (!isMercenaryMode) return;
+            const yawRad = (playerYaw * Math.PI) / 180;
+            const moveStep = 10;
+            const turnStep = 5;
+            
+            if (action === 'FORWARD') {
+                playerX += moveStep * Math.sin(yawRad);
+                playerZ += moveStep * Math.cos(yawRad);
+            }
+            if (action === 'BACKWARD') {
+                playerX -= moveStep * Math.sin(yawRad);
+                playerZ -= moveStep * Math.cos(yawRad);
+            }
+            if (action === 'LEFT') {
+                playerX -= moveStep * Math.cos(yawRad);
+                playerZ += moveStep * Math.sin(yawRad);
+            }
+            if (action === 'RIGHT') {
+                playerX += moveStep * Math.cos(yawRad);
+                playerZ -= moveStep * Math.sin(yawRad);
+            }
+            if (action === 'L_TURN') {
+                playerYaw = (playerYaw - turnStep + 360) % 360;
+                document.getElementById("camYaw").value = playerYaw - 180;
+            }
+            if (action === 'R_TURN') {
+                playerYaw = (playerYaw + turnStep) % 360;
+                document.getElementById("camYaw").value = playerYaw - 180;
+            }
+            if (action === 'UP') {
+                playerY += moveStep;
+            }
+            if (action === 'DOWN') {
+                playerY = Math.max(2, playerY - moveStep);
+            }
+            
+            playNavigationSound();
+            let currentTerritory = "NEUTRAL ZONE";
+            if (playerX < -150) currentTerritory = "PALYAR SECTOR";
+            else if (playerX > 150) currentTerritory = "MECHANOID SECTOR";
+            document.getElementById("mercenaryCoords").innerText = `POS: X=${Math.round(playerX)}, Y=${Math.round(playerY)}, Z=${Math.round(playerZ)} | ZONE: ${currentTerritory}`;
+            drawGolf3D();
+        }
+
+        function playNavigationSound() {
+            if (!isAudioPlaying || !audioCtx) return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = "sawtooth";
+            osc.frequency.setValueAtTime(45, now);
+            osc.frequency.exponentialRampToValueAtTime(15, now + 0.08);
+            
+            gain.gain.setValueAtTime(0.06, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 0.08);
+        }
+
+        function project3D(x, y, z, yawDeg, pitchDeg, w, h) {
+            let yaw, pitch, camX, camY, camZ;
+            
+            if (isMercenaryMode) {
+                yaw = (playerYaw * Math.PI) / 180;
+                pitch = (playerPitch * Math.PI) / 180;
+                camX = playerX;
+                camY = playerY;
+                camZ = playerZ;
+            } else {
+                yaw = (yawDeg * Math.PI) / 180;
+                pitch = (pitchDeg * Math.PI) / 180;
+                camX = 0;
+                camY = 60;
+                camZ = -200;
+            }
+            
+            let dx = x - camX;
+            let dy = y - camY;
+            let dz = z - camZ;
+            
+            let rx = dx * Math.cos(yaw) - dz * Math.sin(yaw);
+            let rz = dx * Math.sin(yaw) + dz * Math.cos(yaw);
+            
+            let ry = dy * Math.cos(pitch) - rz * Math.sin(pitch);
+            let depth = dy * Math.sin(pitch) + rz * Math.cos(pitch);
+            
+            if (depth <= 10) return null;
+            
+            const scale = 350;
+            const sx = w / 2 + (rx * scale) / depth;
+            const sy = h / 2 - (ry * scale) / depth;
+            
+            return { x: sx, y: sy };
+        }
+
+        function drawGolf3D(activeStep = -1) {
+            const canvas = document.getElementById("golf3DCanvas");
+            if (!canvas) return;
+            const ctx = canvas.getContext("2d");
+            const w = canvas.width;
+            const h = canvas.height;
+            
+            ctx.fillStyle = "#050508";
+            ctx.fillRect(0, 0, w, h);
+            
+            if (isMercenaryMode) {
+                // Color-coded boundary lines and sector grid coloring
+                // Boundaries are at X = -150 and X = 150
+                const getGridColor = (midX) => {
+                    if (midX < -150) return "rgba(57, 255, 20, 0.15)";   // Palyar Colony (neon green)
+                    if (midX > 150) return "rgba(0, 242, 254, 0.15)";    // Mechanoid Space (neon blue)
+                    return "rgba(255, 0, 127, 0.15)";                   // Neutral / Danger Zone (neon magenta)
+                };
+                
+                // Grid lines along Z (lines of constant X)
+                ctx.lineWidth = 1;
+                for (let x = -500; x <= 500; x += 100) {
+                    for (let z = -500; z < 1000; z += 100) {
+                        ctx.strokeStyle = getGridColor(x);
+                        ctx.beginPath();
+                        let p1 = project3D(x, 0, z, 0, 0, w, h);
+                        let p2 = project3D(x, 0, z + 100, 0, 0, w, h);
+                        if (p1 && p2) {
+                            ctx.moveTo(p1.x, p1.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+                
+                // Grid lines along X (lines of constant Z)
+                for (let z = -500; z <= 1000; z += 100) {
+                    for (let x = -500; x < 500; x += 100) {
+                        ctx.strokeStyle = getGridColor(x + 50);
+                        ctx.beginPath();
+                        let p1 = project3D(x, 0, z, 0, 0, w, h);
+                        let p2 = project3D(x + 100, 0, z, 0, 0, w, h);
+                        if (p1 && p2) {
+                            ctx.moveTo(p1.x, p1.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+                
+                // Draw thicker solid boundary fence lines at X = -150 and X = 150
+                // Boundary 1: X = -150 (Palyar Boundary)
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = "rgba(57, 255, 20, 0.8)"; // Neon green
+                ctx.beginPath();
+                let firstB1 = true;
+                for (let z = -500; z <= 1000; z += 50) {
+                    let p = project3D(-150, 0, z, 0, 0, w, h);
+                    if (p) {
+                        if (firstB1) { ctx.moveTo(p.x, p.y); firstB1 = false; }
+                        else { ctx.lineTo(p.x, p.y); }
+                    }
+                }
+                ctx.stroke();
+                
+                // Boundary 2: X = 150 (Mechanoid Boundary)
+                ctx.strokeStyle = "rgba(0, 242, 254, 0.8)"; // Neon blue
+                ctx.beginPath();
+                let firstB2 = true;
+                for (let z = -500; z <= 1000; z += 50) {
+                    let p = project3D(150, 0, z, 0, 0, w, h);
+                    if (p) {
+                        if (firstB2) { ctx.moveTo(p.x, p.y); firstB2 = false; }
+                        else { ctx.lineTo(p.x, p.y); }
+                    }
+                }
+                ctx.stroke();
+
+                // Add text labels in 3D space for the territories
+                let pPalyarLabel = project3D(-325, 0, 250, 0, 0, w, h);
+                if (pPalyarLabel) {
+                    ctx.fillStyle = "rgba(57, 255, 20, 0.7)";
+                    ctx.font = "bold 9px 'Orbitron', monospace";
+                    ctx.fillText("PALYAR SECTOR", pPalyarLabel.x - 40, pPalyarLabel.y);
+                }
+                let pMechLabel = project3D(325, 0, 250, 0, 0, w, h);
+                if (pMechLabel) {
+                    ctx.fillStyle = "rgba(0, 242, 254, 0.7)";
+                    ctx.font = "bold 9px 'Orbitron', monospace";
+                    ctx.fillText("MECHANOID SECTOR", pMechLabel.x - 45, pMechLabel.y);
+                }
+                let pDangerLabel = project3D(0, 0, 250, 0, 0, w, h);
+                if (pDangerLabel) {
+                    ctx.fillStyle = "rgba(255, 0, 127, 0.7)";
+                    ctx.font = "bold 9px 'Orbitron', monospace";
+                    ctx.fillText("NEUTRAL / DANGER ZONE", pDangerLabel.x - 55, pDangerLabel.y);
+                }
+                
+                const placements = [
+                    [1, 0, 0, 300, "Central Tower", "#ff00ff"],
+                    [2, -250, 0, 150, "Novagen Hangar", "#00ffff"],
+                    [3, 200, 0, 200, "Cruiser Spacecraft", "#39ff14"],
+                    [4, 150, 0, 400, "Defense Pylon", "#ffa500"]
+                ];
+                
+                for (let placement of placements) {
+                    const [id, wx, wy, wz, name, color] = placement;
+                    const model = mercenaryObjects[id];
+                    if (model) {
+                        ctx.strokeStyle = color;
+                        ctx.lineWidth = 2;
+                        
+                        const projected = [];
+                        for (let v of model.vertices) {
+                            let p = project3D(v[0] + wx, v[1] + wy, v[2] + wz, 0, 0, w, h);
+                            projected.push(p);
+                        }
+                        
+                        for (let line of model.lines) {
+                            const pFrom = projected[line[0]];
+                            const pTo = projected[line[1]];
+                            if (pFrom && pTo) {
+                                ctx.beginPath();
+                                ctx.moveTo(pFrom.x, pFrom.y);
+                                ctx.lineTo(pTo.x, pTo.y);
+                                ctx.stroke();
+                            }
+                        }
+                        
+                        let pLabel = project3D(wx, wy + 10, wz, 0, 0, w, h);
+                        if (pLabel) {
+                            ctx.fillStyle = color;
+                            ctx.font = "8px 'Orbitron', monospace";
+                            ctx.fillText(name, pLabel.x - 30, pLabel.y);
+                            ctx.fillStyle = "rgba(255,255,255,0.4)";
+                            ctx.fillText(`[X:${wx}, Z:${wz}]`, pLabel.x - 25, pLabel.y + 10);
+                        }
+                    }
+                }
+                
+                ctx.strokeStyle = "rgba(255, 0, 255, 0.4)";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(w/2 - 10, h/2); ctx.lineTo(w/2 + 10, h/2);
+                ctx.moveTo(w/2, h/2 - 10); ctx.lineTo(w/2, h/2 + 10);
+                ctx.stroke();
+                
+            } else {
+                const yaw = parseInt(document.getElementById("camYaw").value || 15);
+                const pitch = parseInt(document.getElementById("camPitch").value || 25);
+                
+                ctx.strokeStyle = "rgba(0, 255, 0, 0.25)";
+                ctx.lineWidth = 1;
+                const xLines = [-100, -50, 0, 50, 100];
+                for (let xl of xLines) {
+                    ctx.beginPath();
+                    let first = true;
+                    for (let z = 0; z <= 1200; z += 50) {
+                        let p = project3D(xl, 0, z, yaw, pitch, w, h);
+                        if (p) {
+                            if (first) { ctx.moveTo(p.x, p.y); first = false; }
+                            else { ctx.lineTo(p.x, p.y); }
+                        }
+                    }
+                    ctx.stroke();
+                }
+                
+                for (let z = 0; z <= 1200; z += 200) {
+                    ctx.beginPath();
+                    let first = true;
+                    for (let xl = -100; xl <= 100; xl += 10) {
+                        let p = project3D(xl, 0, z, yaw, pitch, w, h);
+                        if (p) {
+                            if (first) { ctx.moveTo(p.x, p.y); first = false; }
+                            else { ctx.lineTo(p.x, p.y); }
+                        }
+                    }
+                    ctx.stroke();
+                }
+                
+                ctx.strokeStyle = "#00ff7f";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                const greenRadius = 40;
+                const greenZ = 1000;
+                for (let a = 0; a <= 360; a += 45) {
+                    const rad = (a * Math.PI) / 180;
+                    const gx = greenRadius * Math.cos(rad);
+                    const gz = greenZ + greenRadius * Math.sin(rad);
+                    let p = project3D(gx, 0, gz, yaw, pitch, w, h);
+                    if (p) {
+                        if (a === 0) ctx.moveTo(p.x, p.y);
+                        else ctx.lineTo(p.x, p.y);
+                    }
+                }
+                ctx.closePath();
+                ctx.stroke();
+                
+                let pPoleBottom = project3D(0, 0, 1000, yaw, pitch, w, h);
+                let pPoleTop = project3D(0, 70, 1000, yaw, pitch, w, h);
+                if (pPoleBottom && pPoleTop) {
+                    ctx.strokeStyle = "#ffffff";
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(pPoleBottom.x, pPoleBottom.y);
+                    ctx.lineTo(pPoleTop.x, pPoleTop.y);
+                    ctx.stroke();
+                    
+                    let pFlagLeft = project3D(-15, 60, 1000, yaw, pitch, w, h);
+                    if (pFlagLeft) {
+                        ctx.fillStyle = "#ff007f";
+                        ctx.beginPath();
+                        ctx.moveTo(pPoleTop.x, pPoleTop.y);
+                        ctx.lineTo(pFlagLeft.x, pFlagLeft.y);
+                        ctx.lineTo(pPoleTop.x + (pPoleBottom.x - pPoleTop.x) * (20/70), pPoleTop.y + (pPoleBottom.y - pPoleTop.y) * (20/70));
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                }
+                
+                if (golf3DCoords.length > 0) {
+                    const limit = activeStep >= 0 ? Math.min(activeStep, golf3DCoords.length - 1) : golf3DCoords.length - 1;
+                    
+                    ctx.strokeStyle = "rgba(255, 0, 255, 0.8)";
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    let first = true;
+                    for (let i = 0; i <= limit; i++) {
+                        const pt = golf3DCoords[i];
+                        let p = project3D(pt.x, pt.y, pt.z, yaw, pitch, w, h);
+                        if (p) {
+                            if (first) { ctx.moveTo(p.x, p.y); first = false; }
+                            else { ctx.lineTo(p.x, p.y); }
+                        }
+                    }
+                    ctx.stroke();
+                    
+                    const currPt = golf3DCoords[limit];
+                    let pBall = project3D(currPt.x, currPt.y, currPt.z, yaw, pitch, w, h);
+                    let pGround = project3D(currPt.x, 0, currPt.z, yaw, pitch, w, h);
+                    
+                    if (pBall) {
+                        if (pGround) {
+                            ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+                            ctx.lineWidth = 1;
+                            ctx.setLineDash([3, 3]);
+                            ctx.beginPath();
+                            ctx.moveTo(pBall.x, pBall.y);
+                            ctx.lineTo(pGround.x, pGround.y);
+                            ctx.stroke();
+                            ctx.setLineDash([]);
+                        }
+                        
+                        ctx.fillStyle = "#ffffff";
+                        ctx.beginPath();
+                        ctx.arc(pBall.x, pBall.y, 4, 0, 2 * Math.PI);
+                        ctx.fill();
+                        ctx.strokeStyle = "#000000";
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        function initGolfEvents() {
+            if (!document.getElementById('btnGolfSwing')) return;
+            document.getElementById("btnGolfSwing").addEventListener("click", runGolfSwing);
+            const btnStart = document.getElementById("btnStartSwing");
+            if (btnStart) {
+                btnStart.addEventListener("click", startSwingInput);
+            }
+            
+            // Spacebar support for golf swing
+            window.addEventListener("keydown", (e) => {
+                if (e.code === "Space" && document.activeElement.tagName !== "INPUT") {
+                    const golfCard = document.getElementById("swingMeterCanvas");
+                    if (golfCard && golfCard.getBoundingClientRect().top < window.innerHeight && golfCard.getBoundingClientRect().bottom > 0) {
+                        e.preventDefault();
+                        startSwingInput();
+                    }
+                }
+            });
+
+            // Keyboard controls for 3D Mercenary Mode navigation
+            window.addEventListener("keydown", (e) => {
+                if (!isMercenaryMode) return;
+                if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA")) {
+                    return;
+                }
+                
+                let action = null;
+                const key = e.key.toLowerCase();
+                
+                if (key === "w" || e.key === "ArrowUp") action = "FORWARD";
+                else if (key === "s" || e.key === "ArrowDown") action = "BACKWARD";
+                else if (key === "a") action = "LEFT";
+                else if (key === "d") action = "RIGHT";
+                else if (key === "q" || e.key === "ArrowLeft") action = "L_TURN";
+                else if (key === "e" || e.key === "ArrowRight") action = "R_TURN";
+                else if (key === "r") action = "UP";
+                else if (key === "f") action = "DOWN";
+                
+                if (action) {
+                    e.preventDefault();
+                    movePlayer(action);
+                }
+            });
+
+            document.getElementById("btnToggleMercenaryMode").addEventListener("click", async () => {
+                isMercenaryMode = !isMercenaryMode;
+                const btn = document.getElementById("btnToggleMercenaryMode");
+                const coordsDiv = document.getElementById("mercenaryCoords");
+                const ctrlDiv = document.getElementById("mercenaryControls");
+                
+                if (isMercenaryMode) {
+                    btn.innerText = "⛳ BACK TO GOLF TRAJECTORY";
+                    btn.style.borderColor = "#ffa500";
+                    btn.style.color = "#ffa500";
+                    coordsDiv.style.display = "block";
+                    ctrlDiv.style.display = "grid";
+                    
+                    coordsDiv.innerText = "Loading 3D geometries from chain...";
+                    await loadMercenaryGeometries();
+                    let currentTerritory = "NEUTRAL ZONE";
+                    if (playerX < -150) currentTerritory = "PALYAR SECTOR";
+                    else if (playerX > 150) currentTerritory = "MECHANOID SECTOR";
+                    coordsDiv.innerText = `POS: X=${Math.round(playerX)}, Y=${Math.round(playerY)}, Z=${Math.round(playerZ)} | ZONE: ${currentTerritory}`;
+                    
+                    playRealSoundOnChainClip(4);
+                } else {
+                    btn.innerText = "🛸 EXPLORE TARG (3D Mercenary Mode)";
+                    btn.style.borderColor = "#ff00ff";
+                    btn.style.color = "#ff00ff";
+                    coordsDiv.style.display = "none";
+                    ctrlDiv.style.display = "none";
+                }
+                drawGolf3D();
+            });
+
+            window.addEventListener("keydown", (e) => {
+                if (!isMercenaryMode) return;
+                if (document.activeElement.tagName === "INPUT") return;
+                
+                const key = e.key.toLowerCase();
+                if (key === 'w') { e.preventDefault(); movePlayer('FORWARD'); }
+                if (key === 's') { e.preventDefault(); movePlayer('BACKWARD'); }
+                if (key === 'a') { e.preventDefault(); movePlayer('LEFT'); }
+                if (key === 'd') { e.preventDefault(); movePlayer('RIGHT'); }
+                if (key === 'q') { e.preventDefault(); movePlayer('L_TURN'); }
+                if (key === 'e') { e.preventDefault(); movePlayer('R_TURN'); }
+                if (key === 'r') { e.preventDefault(); movePlayer('UP'); }
+                if (key === 'f') { e.preventDefault(); movePlayer('DOWN'); }
+            });
+
+            drawSwingMeter();
+            drawGolf3D();
+            
+            if (typeof initAhoy19Events === "function") {
+                initAhoy19Events();
+            }
+        }
+
+        function initAhoy19Events() {
+            if (!document.getElementById('btnTabScript')) return;
+            const tabScript = document.getElementById("btnTabScript");
+            const tabAppend = document.getElementById("btnTabAppend");
+            const tabPixels = document.getElementById("btnTabPixels");
+            
+            const panelScript = document.getElementById("panelScript");
+            const panelAppend = document.getElementById("panelAppend");
+            const panelPixels = document.getElementById("panelPixels");
+            
+            function showPanel(panelShow, tabActive) {
+                [panelScript, panelAppend, panelPixels].forEach(p => p.style.display = "none");
+                [tabScript, tabAppend, tabPixels].forEach(t => t.classList.remove("active"));
+                panelShow.style.display = "block";
+                tabActive.classList.add("active");
+            }
+            
+            tabScript.addEventListener("click", () => showPanel(panelScript, tabScript));
+            tabAppend.addEventListener("click", () => showPanel(panelAppend, tabAppend));
+            tabPixels.addEventListener("click", () => {
+                showPanel(panelPixels, tabPixels);
+                initPixelsCanvas();
+            });
+            
+            document.getElementById("btnRunScriptAnalysis").addEventListener("click", () => {
+                const slant = document.getElementById("scriptSlant").value;
+                const size = document.getElementById("scriptSize").value;
+                const outDiv = document.getElementById("scriptResult");
+                outDiv.style.display = "block";
+                
+                let analysis = "=== HANDWRITING CHARACTER PROFILE ===\r\n";
+                analysis += `Slant slant: ${slant.toUpperCase()}\r\n`;
+                analysis += `Letter size: ${size.toUpperCase()}\r\n\r\n`;
+                analysis += "PSYCHOLOGICAL TRAITS:\r\n";
+                
+                if (slant === "forward") {
+                    analysis += "- Highly expressive emotional responses.\r\n- Enjoys social activities and values relationships.\r\n";
+                } else if (slant === "vertical") {
+                    analysis += "- Governed by logic and reason over emotion.\r\n- Independent thinker with high self-reliance.\r\n";
+                } else {
+                    analysis += "- Introspective, reserved, and private.\r\n- Thinks before reacting; values deep inner worlds.\r\n";
+                }
+                
+                if (size === "large") {
+                    analysis += "- Outgoing, seeks appreciation and recognition.\r\n- Energetic presence in social settings.\r\n";
+                } else if (size === "medium") {
+                    analysis += "- Well-balanced adaptability to different environments.\r\n- Focuses on practical day-to-day tasks.\r\n";
+                } else {
+                    analysis += "- Intense focus and concentration abilities.\r\n- Extremely detail-oriented and meticulous.\r\n";
+                }
+                
+                analysis += "\r\nREADY.";
+                outDiv.innerText = analysis;
+            });
+            
+            document.getElementById("btnRunAppend").addEventListener("click", () => {
+                const progA = document.getElementById("appendProgA").value;
+                const progB = document.getElementById("appendProgB").value;
+                const outDiv = document.getElementById("appendResult");
+                outDiv.style.display = "block";
+                
+                let combined = "=== AUTO-APPEND SYSTEM INITIALIZED ===\r\n";
+                combined += "Reading pointers: Start=$0801, End=$08A4\r\n";
+                combined += "Adjusting zero-page address links...\r\n";
+                combined += "Appended output:\r\n\r\n";
+                
+                const linesA = progA.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                const linesB = progB.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                
+                linesA.forEach(l => { combined += l + "\r\n"; });
+                linesB.forEach(l => { combined += l + "\r\n"; });
+                
+                combined += "\r\nNew end of BASIC pointer updated: $08EE\r\nREADY.";
+                outDiv.innerText = combined;
+            });
+            
+            const canvas = document.getElementById("pixelCanvas");
+            const ctx = canvas.getContext("2d");
+            
+            function initPixelsCanvas() {
+                ctx.fillStyle = "#000000";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.strokeStyle = "#39ff14";
+                ctx.lineWidth = 1;
+            }
+            
+            document.getElementById("btnDrawBasic").addEventListener("click", () => {
+                initPixelsCanvas();
+                const status = document.getElementById("pixelStatus");
+                status.innerText = "BASIC drawing active...";
+                
+                let start = performance.now();
+                let x = 0;
+                
+                function drawStep() {
+                    if (x < canvas.width) {
+                        ctx.beginPath();
+                        ctx.moveTo(x, 0);
+                        ctx.lineTo(canvas.width - x, canvas.height);
+                        ctx.stroke();
+                        x += 8;
+                        setTimeout(drawStep, 30);
+                    } else {
+                        let duration = Math.round(performance.now() - start + 750);
+                        status.innerText = `BASIC Draw completed in ${duration}ms! (Inefficient instruction loops)`;
+                    }
+                }
+                drawStep();
+            });
+            
+            document.getElementById("btnDrawAssembly").addEventListener("click", () => {
+                initPixelsCanvas();
+                const status = document.getElementById("pixelStatus");
+                status.innerText = "Assembly drawing active...";
+                
+                let start = performance.now();
+                for (let x = 0; x < canvas.width; x += 8) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(canvas.width - x, canvas.height);
+                    ctx.stroke();
+                }
+                let duration = Math.round(performance.now() - start + 8);
+                status.innerText = `Assembly Draw completed in ${duration}ms! (Ultra-fast direct screen write)`;
+            });
+        }
+
+        window.onload = init;
