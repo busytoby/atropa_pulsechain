@@ -287,5 +287,7 @@
 | 353 | IRS IMF Child Tax Credit (CTC) Phase-Out Start Threshold Matcher | PASS | Flags AGI boundaries where CTC begins phase-out limits | Volume 33 |
 | 354 | IRS IMF Net Capital Gains 0% Preferential Rate Bracket Matcher | PASS | Checks taxable income bounds for 0% long term capital gains rate | Volume 33 |
 | 355 | IRS CADE Filing Status Head of Household Dependent Matcher | PASS | Enforces dependency checks for Head of Household filing claims | Volume 33 |
+| 356 | IRS IMF Taxable Social Security Formula Checker | PASS | Audits high-taxability bands for Social Security benefits on MAGI | Volume 33 |
+| 357 | IRS IMF Tax-Exempt Interest Reporting Matcher | PASS | Matches tax-exempt interest amounts to Schedule K-1 shares | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 355 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 357 Scenarios validated successfully)

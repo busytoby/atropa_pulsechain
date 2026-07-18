@@ -844,6 +844,22 @@ int main(void) {
     assert(hoh_valid == 1);
     printf("  [PASS] IRS CADE HoH Dependent Validator verified.\n");
 
+    // 212. Verify IRS IMF Taxable Social Security Formula Checker
+    printf("[TEST] Validating IRS IMF Social Security High Taxability Checker...\n");
+    int subject_85 = -1;
+    int ss_85_res = tsfi_mf_imf_check_ss_high_taxability(40000.00, 10000.00, 1, &subject_85);
+    assert(ss_85_res == 0);
+    assert(subject_85 == 1);
+    printf("  [PASS] IRS IMF Social Security High Taxability Checker verified.\n");
+
+    // 213. Verify IRS IMF Tax-Exempt Interest Reporting Matcher
+    printf("[TEST] Validating IRS IMF Tax-Exempt Interest Matcher...\n");
+    int interest_match = -1;
+    int int_match_res = tsfi_mf_imf_match_tax_exempt_interest(1200.00, 1200.00, &interest_match);
+    assert(int_match_res == 0);
+    assert(interest_match == 1);
+    printf("  [PASS] IRS IMF Tax-Exempt Interest Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

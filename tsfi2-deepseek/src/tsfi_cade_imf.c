@@ -1201,4 +1201,18 @@ int tsfi_mf_cade_verify_hoh_dependent(int filing_status, int dependent_count, in
     return 0;
 }
 
+int tsfi_mf_imf_check_ss_high_taxability(double modified_agi, double ss_benefits, int filing_status, int *is_subject_to_85) {
+    if (!is_subject_to_85) return -1;
+    double threshold = (filing_status == 2) ? 44000.00 : 34000.00;
+    double val = modified_agi + (ss_benefits * 0.5);
+    *is_subject_to_85 = (val > threshold) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_imf_match_tax_exempt_interest(double reported_1040, double k1_share, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (reported_1040 == k1_share) ? 1 : 0;
+    return 0;
+}
+
 
