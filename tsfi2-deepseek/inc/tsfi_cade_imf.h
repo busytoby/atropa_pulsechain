@@ -139,5 +139,7 @@ int tsfi_mf_cade_verify_div_recipient_tin(const char *tin, int *is_valid);
 int tsfi_mf_cade_verify_distinct_ssns(const char *primary_ssn, const char *secondary_ssn, int filing_status, int *is_valid);
 int tsfi_mf_cade_verify_int_payer_tin(const char *tin, int *is_valid);
 int tsfi_mf_cade_verify_int_recipient_tin(const char *tin, int *is_valid);
+int tsfi_mf_imf_verify_reclassified_dividends(double interest_input, double dividend_input, double reclassified_amount, double *final_interest, double *final_dividend);
+int tsfi_mf_cade_verify_joint_secondary_signature(int filing_status, int secondary_signature_flag, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

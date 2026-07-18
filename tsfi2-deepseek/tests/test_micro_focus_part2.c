@@ -1103,6 +1103,23 @@ int main(void) {
     assert(int_rec_valid == 1);
     printf("  [PASS] IRS CADE INT Recipient TIN Validator verified.\n");
 
+    // 244. Verify IRS IMF Schedule B Dividend/Interest Reclassification Matcher
+    printf("[TEST] Validating IRS IMF Dividend/Interest Reclassification Matcher...\n");
+    double final_int = 0.0, final_div = 0.0;
+    int reclass_res = tsfi_mf_imf_verify_reclassified_dividends(1000.00, 500.00, 200.00, &final_int, &final_div);
+    assert(reclass_res == 0);
+    assert(final_int == 800.00);
+    assert(final_div == 700.00);
+    printf("  [PASS] IRS IMF Dividend/Interest Reclassification Matcher verified.\n");
+
+    // 245. Verify IRS CADE Form 1040 Joint Return Secondary Spouse Signature Validator
+    printf("[TEST] Validating IRS CADE Joint Secondary Signature Validator...\n");
+    int joint_sig_valid = -1;
+    int joint_sig_res = tsfi_mf_cade_verify_joint_secondary_signature(2, 1, &joint_sig_valid);
+    assert(joint_sig_res == 0);
+    assert(joint_sig_valid == 1);
+    printf("  [PASS] IRS CADE Joint Secondary Signature Validator verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

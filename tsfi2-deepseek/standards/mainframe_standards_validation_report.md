@@ -319,5 +319,7 @@
 | 385 | IRS CADE Form 1040 Primary and Secondary SSN Matcher | PASS | Verifies primary and secondary spouses do not list identical SSNs | Volume 33 |
 | 386 | IRS CADE Form 1099-INT Payer TIN Format Validator | PASS | Validates Employer Identification Number structure on Form 1099-INT | Volume 33 |
 | 387 | IRS CADE Form 1099-INT Recipient TIN Format Validator | PASS | Validates recipient Social Security/TIN structure on Form 1099-INT | Volume 33 |
+| 388 | IRS IMF Schedule B Dividend/Interest Reclassification Matcher | PASS | Adjusts and matches reclassified dividend totals on Schedule B | Volume 33 |
+| 389 | IRS CADE Form 1040 Joint Return Secondary Spouse Signature Validator | PASS | Audits presence of secondary spouse signature flag for joint status | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 387 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 389 Scenarios validated successfully)

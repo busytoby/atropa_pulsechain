@@ -1558,4 +1558,17 @@ int tsfi_mf_cade_verify_int_recipient_tin(const char *tin, int *is_valid) {
     return tsfi_mf_cade_verify_div_recipient_tin(tin, is_valid);
 }
 
+int tsfi_mf_imf_verify_reclassified_dividends(double interest_input, double dividend_input, double reclassified_amount, double *final_interest, double *final_dividend) {
+    if (!final_interest || !final_dividend) return -1;
+    *final_interest = interest_input - reclassified_amount;
+    *final_dividend = dividend_input + reclassified_amount;
+    return 0;
+}
+
+int tsfi_mf_cade_verify_joint_secondary_signature(int filing_status, int secondary_signature_flag, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (filing_status == 2) ? (secondary_signature_flag == 1) : 1;
+    return 0;
+}
+
 
