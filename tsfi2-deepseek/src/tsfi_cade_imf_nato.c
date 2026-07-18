@@ -913,6 +913,65 @@ int tsfi_mf_nato_generate_bind_confirm(int status, int max_saps, uint8_t *out_pk
     return 0;
 }
 
+int tsfi_mf_nato_phy_link_update(int event, int *current_state, int *is_valid) {
+    if (!current_state || !is_valid) return -1;
+    
+    *is_valid = 0;
+    if (event == 4) { // RESET
+        *current_state = 0;
+        *is_valid = 1;
+        return 0;
+    }
+    
+    switch (*current_state) {
+        case 0: // Disconnected
+            if (event == 0) { // CONNECT_REQ
+                *current_state = 1;
+                *is_valid = 1;
+            }
+            break;
+        case 1: // Connecting
+            if (event == 1) { // CONNECT_CONF
+                *current_state = 2;
+                *is_valid = 1;
+            }
+            break;
+        case 2: // Connected
+            if (event == 2) { // DISCONNECT_REQ
+                *current_state = 3;
+                *is_valid = 1;
+            }
+            break;
+        case 3: // Disconnecting
+            if (event == 3) { // DISCONNECT_CONF
+                *current_state = 0;
+                *is_valid = 1;
+            }
+            break;
+    }
+    
+    return 0;
+}
+
+int tsfi_mf_nato_verify_segment_bounds(int offset, int seg_size, int total_size, int is_last, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = 0;
+    if (offset < 0 || seg_size <= 0 || total_size <= 0) return 0;
+    if (offset + seg_size > total_size) return 0;
+    
+    if (is_last) {
+        if (offset + seg_size == total_size) {
+            *is_valid = 1;
+        }
+    } else {
+        if (offset + seg_size < total_size) {
+            *is_valid = 1;
+        }
+    }
+    return 0;
+}
+
+
 
 
 

@@ -270,7 +270,37 @@ int run_nato_stanag_tests_part5(void) {
     assert(bind_conf[0] == 0x81);
     assert(bind_conf[1] == 0);
     assert(bind_conf[2] == 16);
-    printf("  [PASS] Bind Confirmation verified.\n");
+    // Verify Physical Link State Machine
+    printf("[TEST] Validating NATO Physical Link State Machine...\n");
+    int state = 0; // Disconnected
+    int valid = -1;
+    int link_res = tsfi_mf_nato_phy_link_update(0, &state, &valid); // CONNECT_REQ
+    assert(link_res == 0);
+    assert(valid == 1);
+    assert(state == 1); // Connecting
+
+    tsfi_mf_nato_phy_link_update(2, &state, &valid); // DISCONNECT_REQ (invalid from Connecting)
+    assert(valid == 0);
+    assert(state == 1);
+
+    tsfi_mf_nato_phy_link_update(1, &state, &valid); // CONNECT_CONF
+    assert(valid == 1);
+    assert(state == 2); // Connected
+    printf("  [PASS] Physical Link State Machine verified.\n");
+
+    // Verify Segment Bounds Validation
+    printf("[TEST] Validating NATO Segment Bounds...\n");
+    int seg_valid = -1;
+    int bounds_res = tsfi_mf_nato_verify_segment_bounds(0, 100, 300, 0, &seg_valid); // Segment 0..100 of 300 (not last) -> valid
+    assert(bounds_res == 0);
+    assert(seg_valid == 1);
+
+    tsfi_mf_nato_verify_segment_bounds(200, 100, 300, 1, &seg_valid); // Segment 200..300 of 300 (last) -> valid
+    assert(seg_valid == 1);
+
+    tsfi_mf_nato_verify_segment_bounds(200, 100, 300, 0, &seg_valid); // Segment 200..300 of 300 (not last) -> invalid
+    assert(seg_valid == 0);
+    printf("  [PASS] Segment Bounds verified.\n");
 
     return 0;
 }

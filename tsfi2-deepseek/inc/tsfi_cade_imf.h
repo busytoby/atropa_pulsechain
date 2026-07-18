@@ -377,4 +377,7 @@ int tsfi_mf_nato_encode_eot(int reason, uint8_t *out_frame, size_t *out_size);
 int tsfi_mf_nato_decode_eot(const uint8_t *frame, size_t size, int *reason, int *is_valid);
 int tsfi_mf_nato_generate_bind_confirm(int status, int max_saps, uint8_t *out_pkt, size_t *out_size);
 
+int tsfi_mf_nato_phy_link_update(int event, int *current_state, int *is_valid);
+int tsfi_mf_nato_verify_segment_bounds(int offset, int seg_size, int total_size, int is_last, int *is_valid);
+
 #endif // TSFI_CADE_IMF_H
