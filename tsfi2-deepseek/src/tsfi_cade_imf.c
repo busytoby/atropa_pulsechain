@@ -1384,4 +1384,30 @@ int tsfi_mf_imf_verify_section1244_excess_redirection(double total_claimed_loss,
     return 0;
 }
 
+int tsfi_mf_cade_verify_seller_financed_ssn_format(const char *ssn, int *is_valid) {
+    if (!is_valid) return -1;
+    if (!ssn || strlen(ssn) != 9) {
+        *is_valid = 0;
+        return 0;
+    }
+    for (int i = 0; i < 9; i++) {
+        if (ssn[i] < '0' || ssn[i] > '9') {
+            *is_valid = 0;
+            return 0;
+        }
+    }
+    if (strcmp(ssn, "000000000") == 0 || strcmp(ssn, "999999999") == 0 || strcmp(ssn, "123456789") == 0) {
+        *is_valid = 0;
+        return 0;
+    }
+    *is_valid = 1;
+    return 0;
+}
+
+int tsfi_mf_imf_verify_section179_income_limit(double claimed_deduction, double net_business_income, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (claimed_deduction <= net_business_income && claimed_deduction >= 0.0) ? 1 : 0;
+    return 0;
+}
+
 

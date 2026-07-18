@@ -330,8 +330,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 373 | IRS CADE Schedule B Part II Foreign Dividend Source Matcher | PASS | Sums detailed foreign dividend sources to match Form 1040 | Volume 33 |
 | 374 | IRS CADE Schedule B Part III Foreign Trust Reporting Indicator Checker | PASS | Validates foreign trust obligations when foreign accounts exist | Volume 33 |
 | 375 | IRS IMF Section 1244 Small Business Stock Loss Excess Capital Loss Redirection Matcher | PASS | Confirms excess ordinary losses flow to Schedule D capital losses | Volume 33 |
+| 376 | IRS CADE Schedule B Part I Seller-Financed Interest Buyer SSN Formatting Matcher | PASS | Checks seller financed interest buyer SSN for dummy codes | Volume 33 |
+| 377 | IRS IMF Section 179 Property Eligible Expense Allocation Validator | PASS | Enforces business income caps on Section 179 asset deduction limits | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 375 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 377 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

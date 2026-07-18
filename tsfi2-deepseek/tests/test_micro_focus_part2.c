@@ -1007,6 +1007,22 @@ int main(void) {
     assert(redirection_valid == 1);
     printf("  [PASS] IRS IMF Section 1244 Redirection Matcher verified.\n");
 
+    // 232. Verify IRS CADE Schedule B Part I Seller-Financed Interest Buyer SSN Formatting Matcher
+    printf("[TEST] Validating IRS CADE Seller-Financed SSN Format Validator...\n");
+    int sfn_fmt_valid = -1;
+    int sfn_fmt_res = tsfi_mf_cade_verify_seller_financed_ssn_format("555123456", &sfn_fmt_valid);
+    assert(sfn_fmt_res == 0);
+    assert(sfn_fmt_valid == 1);
+    printf("  [PASS] IRS CADE Seller-Financed SSN Format Validator verified.\n");
+
+    // 233. Verify IRS IMF Section 179 Property Eligible Expense Allocation Validator
+    printf("[TEST] Validating IRS IMF Section 179 Income Limit Matcher...\n");
+    int income_limit_valid = -1;
+    int income_lim_res = tsfi_mf_imf_verify_section179_income_limit(5000.00, 10000.00, &income_limit_valid);
+    assert(income_lim_res == 0);
+    assert(income_limit_valid == 1);
+    printf("  [PASS] IRS IMF Section 179 Income Limit Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }
