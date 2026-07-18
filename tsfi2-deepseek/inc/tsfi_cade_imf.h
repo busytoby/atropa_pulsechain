@@ -204,5 +204,7 @@ int tsfi_mf_nato_verify_guard_time_flag(int flag, int *is_valid);
 int tsfi_mf_nato_verify_broadcast_expiry(int expiry_sec, int *is_valid);
 int tsfi_mf_nato_verify_busy_detection_timeout(int timeout_sec, int *is_valid);
 int tsfi_mf_nato_verify_channel_quality(int quality, int *is_valid);
+int tsfi_mf_nato_verify_backoff_jitter(int jitter_pct, int *is_valid);
+int tsfi_mf_nato_verify_guard_band(int spacing_ms, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

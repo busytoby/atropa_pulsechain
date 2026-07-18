@@ -407,8 +407,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 450 | NATO Link-Layer Broadcast Packet Expiry Checker | PASS | Audits packet lifetime timeout boundaries for broadcast frames | Volume 33 |
 | 451 | NATO Link-Layer Broadcast Channel Busy Detection Timeout Validator | PASS | Validates carrier-sense busy channel detection timeouts | Volume 33 |
 | 452 | NATO Link-Layer Multi-Scan Channel Quality Estimate Matcher | PASS | Audits quality metric percentage indicators for subnetwork link estimation | Volume 33 |
+| 453 | NATO Link-Layer Broadcast Collision Backoff Jitter Factor Matcher | PASS | Validates jitter factor percentages applied to collision retry backoff | Volume 33 |
+| 454 | NATO Link-Layer Broadcast Minimum Guard-Band Spacing Matcher | PASS | Audits minimum guard-band spacing intervals between broadcast blocks | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 452 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 454 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

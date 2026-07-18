@@ -481,5 +481,21 @@ int run_nato_stanag_tests(void) {
     assert(channel_quality_valid == 1);
     printf("  [PASS] NATO Channel Quality Estimate Matcher verified.\n");
 
+    // 309. Verify NATO Link-Layer Broadcast Collision Backoff Jitter Factor Matcher
+    printf("[TEST] Validating NATO Broadcast Backoff Jitter Factor Matcher...\n");
+    int backoff_jitter_valid = -1;
+    int backoff_jitter_res = tsfi_mf_nato_verify_backoff_jitter(25, &backoff_jitter_valid);
+    assert(backoff_jitter_res == 0);
+    assert(backoff_jitter_valid == 1);
+    printf("  [PASS] NATO Broadcast Backoff Jitter Factor Matcher verified.\n");
+
+    // 310. Verify NATO Link-Layer Broadcast Minimum Guard-Band Spacing Matcher
+    printf("[TEST] Validating NATO Broadcast Guard-Band Spacing Matcher...\n");
+    int guard_band_valid = -1;
+    int guard_band_res = tsfi_mf_nato_verify_guard_band(50, &guard_band_valid);
+    assert(guard_band_res == 0);
+    assert(guard_band_valid == 1);
+    printf("  [PASS] NATO Broadcast Guard-Band Spacing Matcher verified.\n");
+
     return 0;
 }
