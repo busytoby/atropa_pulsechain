@@ -1186,6 +1186,22 @@ int main(void) {
     assert(seg_size_valid == 1);
     printf("  [PASS] NATO STANAG 5066 HF MTU Segment Size Validator verified.\n");
 
+    // 254. Verify NATO STANAG 5066 Service Access Point (SAP) Number Matcher
+    printf("[TEST] Validating NATO STANAG 5066 SAP Matcher...\n");
+    int sap_valid = -1;
+    int sap_res = tsfi_mf_nato_verify_sap_number(12, &sap_valid);
+    assert(sap_res == 0);
+    assert(sap_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 SAP Matcher verified.\n");
+
+    // 255. Verify NATO STANAG 5066 ARQ Window Size Validator
+    printf("[TEST] Validating NATO STANAG 5066 ARQ Window Size Validator...\n");
+    int window_valid = -1;
+    int window_res = tsfi_mf_nato_verify_arq_window(64, &window_valid);
+    assert(window_res == 0);
+    assert(window_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 ARQ Window Size Validator verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

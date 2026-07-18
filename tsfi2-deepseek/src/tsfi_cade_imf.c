@@ -1651,4 +1651,16 @@ int tsfi_mf_nato_verify_segment_size(int segment_size, int *is_valid) {
     return 0;
 }
 
+int tsfi_mf_nato_verify_sap_number(int sap_number, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (sap_number >= 0 && sap_number <= 63) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_arq_window(int window_size, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (window_size >= 1 && window_size <= 128) ? 1 : 0;
+    return 0;
+}
+
 
