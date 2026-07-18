@@ -429,3 +429,15 @@ int tsfi_mf_nato_verify_rssi_drop(int drop_db, int *is_valid) {
     *is_valid = (drop_db >= 3 && drop_db <= 20) ? 1 : 0;
     return 0;
 }
+
+int tsfi_mf_nato_verify_backoff_cap(int cap, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (cap >= 4 && cap <= 10) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_rssi_hysteresis(int hysteresis_db, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (hysteresis_db >= 1 && hysteresis_db <= 10) ? 1 : 0;
+    return 0;
+}

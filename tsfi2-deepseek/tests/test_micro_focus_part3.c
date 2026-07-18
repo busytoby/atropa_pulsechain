@@ -513,5 +513,21 @@ int run_nato_stanag_tests(void) {
     assert(rssi_drop_valid == 1);
     printf("  [PASS] NATO Collision Clear RSSI Drop Threshold Matcher verified.\n");
 
+    // 313. Verify NATO Link-Layer Broadcast Collision Backoff Cap Validator
+    printf("[TEST] Validating NATO Broadcast Backoff Cap Validator...\n");
+    int backoff_cap_valid = -1;
+    int backoff_cap_res = tsfi_mf_nato_verify_backoff_cap(6, &backoff_cap_valid);
+    assert(backoff_cap_res == 0);
+    assert(backoff_cap_valid == 1);
+    printf("  [PASS] NATO Broadcast Backoff Cap Validator verified.\n");
+
+    // 314. Verify NATO Link-Layer Broadcast Channel Busy RSSI Hysteresis Matcher
+    printf("[TEST] Validating NATO Broadcast Busy RSSI Hysteresis Matcher...\n");
+    int rssi_hysteresis_valid = -1;
+    int rssi_hysteresis_res = tsfi_mf_nato_verify_rssi_hysteresis(3, &rssi_hysteresis_valid);
+    assert(rssi_hysteresis_res == 0);
+    assert(rssi_hysteresis_valid == 1);
+    printf("  [PASS] NATO Broadcast Busy RSSI Hysteresis Matcher verified.\n");
+
     return 0;
 }

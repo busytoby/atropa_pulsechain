@@ -388,5 +388,7 @@
 | 454 | NATO Link-Layer Broadcast Minimum Guard-Band Spacing Matcher | PASS | Audits minimum guard-band spacing intervals between broadcast blocks | Volume 33 |
 | 455 | NATO Link-Layer Broadcast Guard-Time Signal Ramp Validator | PASS | Validates transmitter signal ramp timing intervals for guard spacing | Volume 33 |
 | 456 | NATO Link-Layer Multi-Scan Collision Clear RSSI Drop Threshold Matcher | PASS | Audits RSSI drop thresholds required to detect collision clearance | Volume 33 |
+| 457 | NATO Link-Layer Broadcast Collision Backoff Cap Validator | PASS | Validates retry exponent capped limits on backoff range scaling | Volume 33 |
+| 458 | NATO Link-Layer Broadcast Channel Busy RSSI Hysteresis Matcher | PASS | Audits noise filtering hysteresis parameters for busy evaluations | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 456 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 458 Scenarios validated successfully)
