@@ -176,4 +176,6 @@ assets/*.jpai
 /scripts/tsfi2_demo_papers
 /assets/papers_demo.mp4
 
-
+# Ignore system and boot logs
+config-*-dysnomia
+boot-log-dysnomia
