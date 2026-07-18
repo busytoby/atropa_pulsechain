@@ -2181,8 +2181,8 @@ int main(void) {
     sim_sys.accounts[0].min_balance_fee_waive_threshold = 2000;
     sim_sys.accounts[0].card_expiry_epoch = 5;
     
-    tsfi_ramac_record ramac_disk[100];
-    memset(ramac_disk, 0, sizeof(ramac_disk));
+    tsfi_ramac_record *ramac_disk = (tsfi_ramac_record*)calloc(RAMAC_CYLINDERS * RAMAC_HEADS * RAMAC_SECTORS, sizeof(tsfi_ramac_record));
+    assert(ramac_disk != NULL);
     
     for (uint32_t epoch = 1; epoch <= 10; epoch++) {
         if (epoch <= 3) {
@@ -2232,6 +2232,7 @@ int main(void) {
         assert(slot1 >= 0);
         assert(slot2 >= 0);
     }
+    free(ramac_disk);
     printf("  [PASS] Hogan multi-epoch simulation and RAMAC disk layout mapping completed successfully.\n");
 
     // 59. Test Hogan ZMM VM State Machine Integration
@@ -2297,6 +2298,79 @@ int main(void) {
     remove("evm_storage.dat.bin");
     remove("tsfi2-deepseek/evm_storage.dat.bin");
     printf("  [PASS] Auncient ZMM VM Yul execution, dynamic contract query, and WinchesterMQ hardware handshakes verified.\n");
+
+    // 60. Test PEP ACH Direct Deposit, ILS Loans, DDO Sweeper, and HSM PIN verification
+    printf("[E2E] Testing Hogan PEP ACH, ILS Loans, DDO Sweeper, and HSM verification...\n");
+    hogan_umbrella_system test_sys;
+    tsfi_hogan_init(&test_sys);
+    
+    // Register test accounts
+    assert(tsfi_hogan_register_account(&test_sys, 7001, 1000) == 0);
+    assert(tsfi_hogan_register_account(&test_sys, 7002, 500) == 0);
+    assert(tsfi_hogan_register_account(&test_sys, 7003, 5000) == 0);
+    
+    // 1. ACH direct deposit registration
+    assert(tsfi_hogan_register_ach_direct_deposit(&test_sys, 7001, 987654, 300, 2) == 0);
+    
+    // 2. Setup Loan
+    assert(tsfi_hogan_setup_loan(&test_sys, 7002, 2000, 1000, 500, 5) == 0); // principal 2000, interest 10%, payment 500, 5 epochs
+    
+    // 3. Verify HSM PIN
+    assert(tsfi_hogan_verify_hsm_pin_block(&test_sys, 7001, 1234, 1234 ^ 0xABCDEF, 0xABCDEF) == 0);
+    assert(tsfi_hogan_verify_hsm_pin_block(&test_sys, 7001, 9999, 1234 ^ 0xABCDEF, 0xABCDEF) == -2);
+    
+    // Overnight reconciliation passes to advance epochs and trigger batch integration processors
+    // Epoch 1 -> 2
+    char lfs_temp[] = "test_temp_lfs.dat.bin";
+    remove(lfs_temp);
+    assert(tsfi_hogan_overnight_reconciliation_ex(&test_sys, lfs_temp, NULL) == 0);
+    
+    // Run reconciliation again to clear ACH at clearing_epoch 2
+    assert(tsfi_hogan_overnight_reconciliation_ex(&test_sys, lfs_temp, NULL) == 0);
+    
+    assert(test_sys.accounts[0].balance == 1300); // 7001
+    assert(test_sys.accounts[1].balance == 0);    // 7002
+    
+    // 4. Add Sweep Rule now that initial setup and deposit is completed
+    assert(tsfi_hogan_add_sweep_rule(&test_sys, 7003, 7001, 1200, 1500) == 0); // source 7003, target 7001, trigger 1200, target_bal 1500
+
+    // Let's transfer 200 out of 7001 to drop it below 1200
+    test_sys.accounts[0].balance = 1100;
+    
+    // Run overnight reconciliation epoch 3:
+    assert(tsfi_hogan_overnight_reconciliation_ex(&test_sys, lfs_temp, NULL) == 0);
+    assert(test_sys.accounts[0].balance == 1500);
+    assert(test_sys.accounts[2].balance == 4600);
+    
+    remove(lfs_temp);
+    printf("  [PASS] Hogan PEP ACH, ILS Loans, DDO Sweeps, and HSM PIN verification E2E verified.\n");
+
+    // 5. Test RAMAC cylinder seek emulator
+    tsfi_ramac_record *test_ramac = (tsfi_ramac_record*)calloc(RAMAC_CYLINDERS * RAMAC_HEADS * RAMAC_SECTORS, sizeof(tsfi_ramac_record));
+    assert(test_ramac != NULL);
+    double latency = tsfi_hogan_simulate_ramac_lfs_latency(&test_sys, test_ramac);
+    assert(latency > 0.0);
+    free(test_ramac);
+    printf("  [PASS] RAMAC Cylinder Seek/Latency Emulator verified.\n");
+
+    // 6. Test APPC/SNA LU6.2 Transaction Propagation
+    uint8_t appc_buf[512];
+    size_t appc_len = 0;
+    assert(tsfi_hogan_propagate_appc_transaction(&test_sys, 7001, 7002, 250, appc_buf, &appc_len) == 0);
+    assert(appc_len > sizeof(tsfi_sna_fmh));
+    printf("  [PASS] APPC/SNA LU6.2 Transaction Propagation verified.\n");
+
+    // 7. Test HSM PIN Translation & CVV Matrices
+    char cvv_out[4];
+    assert(tsfi_hogan_hsm_translate_pin_and_cvv(&test_sys, 7001, 45, "CVV_MASTER_KEY", cvv_out) == 0);
+    assert(strlen(cvv_out) == 3);
+    printf("  [PASS] HSM PIN Translation & CVV Matrices verified.\n");
+
+    // 8. Test Vulkan Batch Status Console
+    char batch_console[512];
+    assert(tsfi_hogan_render_vulkan_batch_status(&test_sys, batch_console, sizeof(batch_console)) == 0);
+    assert(strstr(batch_console, "HOGAN BATCH STATUS") != NULL);
+    printf("  [PASS] Vulkan Batch Status Console layout verified.\n");
 
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;

@@ -89,7 +89,42 @@ typedef struct {
     uint64_t fee_tier_amount;
     uint32_t transfer_fee_bps;
     uint64_t transfer_fee_flat;
+    uint64_t atm_daily_limit;
+    uint64_t atm_withdrawn_today;
+    uint16_t blocked_mccs[8];
+    uint8_t blocked_mcc_count;
+    uint64_t overdraft_grace_zone;
+    uint8_t currency_code;
+    uint32_t fx_spread_bps;
 } hogan_account;
+
+// Hogan PEP (Paperless Entry Processing) ACH Entry
+typedef struct {
+    uint32_t account_id;
+    uint32_t routing_number;
+    uint64_t amount;
+    uint32_t clearing_epoch;
+    uint8_t processed;
+} hogan_ach_entry;
+
+// Hogan ILS (Integrated Loan System) Loan Entry
+typedef struct {
+    uint32_t account_id;
+    uint64_t principal_remaining;
+    uint32_t interest_rate_bps;
+    uint64_t next_payment_amount;
+    uint32_t term_epochs_remaining;
+    uint8_t active;
+} hogan_loan;
+
+// Hogan DDO (Demand Deposit Accounting) Sweep Rule
+typedef struct {
+    uint32_t source_account_id;
+    uint32_t target_account_id;
+    uint64_t trigger_threshold;
+    uint64_t target_balance;
+    uint8_t active;
+} hogan_sweep_rule;
 
 #define HOGAN_MAX_BLOCKED_CARDS 32
 #define CARD_STATUS_ACTIVE      0
@@ -104,6 +139,12 @@ typedef struct {
     uint8_t acab_epoch_root[32];
     uint32_t blocked_cards[HOGAN_MAX_BLOCKED_CARDS];
     size_t blocked_card_count;
+    hogan_ach_entry ach_queue[32];
+    uint32_t ach_queue_count;
+    hogan_loan loans[16];
+    uint32_t loan_count;
+    hogan_sweep_rule sweep_rules[16];
+    uint32_t sweep_rule_count;
 } hogan_umbrella_system;
 
 // 1. Unified Umbrella Architecture
@@ -640,5 +681,74 @@ typedef struct {
 } hogan_transfer_fee_entry;
 
 int tsfi_hogan_update_transfer_fee(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t fee_bps, uint64_t fee_flat, uint32_t authority_id);
+
+// Card ATM Daily Cash Withdrawal Limit Manager
+typedef struct {
+    uint32_t account_id;
+    uint64_t previous_limit;
+    uint64_t new_limit;
+    uint32_t authority_id;
+} hogan_atm_limit_entry;
+
+int tsfi_hogan_update_atm_limit(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_limit, uint32_t authority_id);
+
+// Merchant Category Code (MCC) Block Manager
+typedef struct {
+    uint32_t account_id;
+    uint16_t mcc;
+    uint8_t is_blocked;
+    uint32_t authority_id;
+} hogan_mcc_block_entry;
+
+int tsfi_hogan_update_mcc_block(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint16_t mcc, uint8_t is_blocked, uint32_t authority_id);
+
+// Account Overdraft Protection Grace Zone (Shatter-Buffer)
+typedef struct {
+    uint32_t account_id;
+    uint64_t previous_grace;
+    uint64_t new_grace;
+    uint32_t authority_id;
+} hogan_overdraft_grace_entry;
+
+int tsfi_hogan_update_overdraft_grace_zone(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_grace, uint32_t authority_id);
+
+// Multi-Currency Account Ledger and Foreign Exchange (FX) Spread Manager
+typedef struct {
+    uint32_t account_id;
+    uint8_t previous_currency;
+    uint8_t new_currency;
+    uint32_t authority_id;
+} hogan_currency_entry;
+
+typedef struct {
+    uint32_t account_id;
+    uint32_t previous_spread;
+    uint32_t new_spread;
+    uint32_t authority_id;
+} hogan_fx_spread_entry;
+
+int tsfi_hogan_update_account_currency(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint8_t currency_code, uint32_t authority_id);
+int tsfi_hogan_update_fx_spread(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t spread_bps, uint32_t authority_id);
+
+int tsfi_hogan_register_ach_direct_deposit(hogan_umbrella_system *sys, uint32_t account_id, uint32_t routing_number, uint64_t amount, uint32_t clearing_epoch);
+int tsfi_hogan_setup_loan(hogan_umbrella_system *sys, uint32_t account_id, uint64_t principal, uint32_t interest_rate_bps, uint64_t next_payment, uint32_t term_epochs);
+int tsfi_hogan_add_sweep_rule(hogan_umbrella_system *sys, uint32_t source_id, uint32_t target_id, uint64_t trigger_threshold, uint64_t target_balance);
+int tsfi_hogan_verify_hsm_pin_block(hogan_umbrella_system *sys, uint32_t account_id, uint32_t entered_pin, uint32_t pin_block, uint32_t encrypted_key);
+void tsfi_hogan_process_integrations_overnight(hogan_umbrella_system *sys);
+
+// --- NEW HOGAN INTEGRATIONS ---
+#include "tsfi_ramac_layout.h"
+
+// 1. RAMAC Cylinder Seek/Latency Emulator
+double tsfi_hogan_simulate_ramac_lfs_latency(hogan_umbrella_system *sys, tsfi_ramac_record *disk);
+
+// 2. APPC/SNA LU6.2 Transaction Propagation
+int tsfi_hogan_propagate_appc_transaction(hogan_umbrella_system *sys, uint32_t sender_id, uint32_t recipient_id, uint64_t amount, uint8_t *appc_buf, size_t *buf_len_out);
+
+// 3. Full HSM PIN Translation & CVV Matrices
+int tsfi_hogan_hsm_translate_pin_and_cvv(hogan_umbrella_system *sys, uint32_t account_id, uint32_t pin_offset, const char *cvv_key, char *out_cvv);
+
+// 4. Vulkan Batch Status Console
+int tsfi_hogan_render_vulkan_batch_status(hogan_umbrella_system *sys, char *render_buffer, int max_len);
 
 #endif // TSFI_HOGAN_H
