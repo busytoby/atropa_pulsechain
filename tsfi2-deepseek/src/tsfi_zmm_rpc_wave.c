@@ -13,6 +13,7 @@
 #include "tsfi_io.h"
 #include "lau_memory.h"
 #include "tsfi_block_monitor.h"
+#include "tsfi_mainframe_computerworld.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -173,9 +174,17 @@ int tsfi_zmm_rpc_dispatch_wave(TsfiZmmVmState *state, int method_type, const cha
         snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"success\": true}, \"id\": %d}\n", id);
         return 1;
     }
+    static tsfi_cw_unt_cics_queue g_input_audit_queue = { "INQUE", 0, "TSQ", 0 };
+
     if (method_type == 30) { // input.mouse_move
         int x = extract_json_int(min_ptr, "\"x\"", 0);
         int y = extract_json_int(min_ptr, "\"y\"", 0);
+        
+        char audit_payload[64];
+        int dummy_processed;
+        snprintf(audit_payload, sizeof(audit_payload), "MM X=%d Y=%d", x, y);
+        tsfi_cw_unt_cics_inject_ballistic(audit_payload, (int)strlen(audit_payload), &g_input_audit_queue, &dummy_processed);
+
         if (!state->reu_ram) {
             state->reu_size = 0x10000;
             state->reu_ram = (uint8_t*)calloc(1, state->reu_size);
@@ -208,6 +217,12 @@ int tsfi_zmm_rpc_dispatch_wave(TsfiZmmVmState *state, int method_type, const cha
         int btn_state = extract_json_int(min_ptr, "\"state\"", 0);
         int x = extract_json_int(min_ptr, "\"x\"", -1);
         int y = extract_json_int(min_ptr, "\"y\"", -1);
+
+        char audit_payload[64];
+        int dummy_processed;
+        snprintf(audit_payload, sizeof(audit_payload), "MB BTN=%d ST=%d X=%d Y=%d", button, btn_state, x, y);
+        tsfi_cw_unt_cics_inject_ballistic(audit_payload, (int)strlen(audit_payload), &g_input_audit_queue, &dummy_processed);
+
         if (!state->reu_ram) {
             state->reu_size = 0x10000;
             state->reu_ram = (uint8_t*)calloc(1, state->reu_size);
@@ -242,6 +257,12 @@ int tsfi_zmm_rpc_dispatch_wave(TsfiZmmVmState *state, int method_type, const cha
     if (method_type == 32) { // input.keyboard
         int keycode = extract_json_int(min_ptr, "\"keycode\"", 0);
         int key_state = extract_json_int(min_ptr, "\"state\"", 0);
+
+        char audit_payload[64];
+        int dummy_processed;
+        snprintf(audit_payload, sizeof(audit_payload), "KB KC=%d ST=%d", keycode, key_state);
+        tsfi_cw_unt_cics_inject_ballistic(audit_payload, (int)strlen(audit_payload), &g_input_audit_queue, &dummy_processed);
+
         if (!state->reu_ram) {
             state->reu_size = 0x10000;
             state->reu_ram = (uint8_t*)calloc(1, state->reu_size);
@@ -265,6 +286,7 @@ int tsfi_zmm_rpc_dispatch_wave(TsfiZmmVmState *state, int method_type, const cha
         lau_yul_thunk_execute("WinchesterMQ", cd_post, 36, ret, &ret_len);
 
         snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Keyboard event OK\", \"id\": %d}\n", id);
+        return 1;
     }
     if (method_type == 50) { // tariffs_query
         int trunk_id = extract_json_int(min_ptr, "\"trunk_id\"", 800);
