@@ -751,4 +751,14 @@ int tsfi_hogan_hsm_translate_pin_and_cvv(hogan_umbrella_system *sys, uint32_t ac
 // 4. Vulkan Batch Status Console
 int tsfi_hogan_render_vulkan_batch_status(hogan_umbrella_system *sys, char *render_buffer, int max_len);
 
+// 5. Double-Entry General Ledger (GL) Reconciliation
+int tsfi_hogan_gl_reconciliation(hogan_umbrella_system *sys, const char *gl_report_filepath, int64_t *out_gl_variance);
+
+// 6. FDIC Insurance Warning System
+int tsfi_hogan_fdic_insurance_warnings(hogan_umbrella_system *sys, char *alert_buffer, int max_len);
+
+// 7. COBOL Copybook Serializer/Parser
+int tsfi_hogan_to_cobol_copybook(const hogan_account *account, uint8_t *copybook_buf, int max_len);
+int tsfi_hogan_from_cobol_copybook(hogan_account *account, const uint8_t *copybook_buf, int len);
+
 #endif // TSFI_HOGAN_H

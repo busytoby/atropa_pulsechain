@@ -38,10 +38,10 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_operator.o $(OBJ_DIR)/tsfi_yang.o $(OBJ_DIR)/tsfi_quan.o \
             $(OBJ_DIR)/tsfi_c_math.o $(OBJ_DIR)/firmware/LauWireFirmware_rtl.o \
             $(OBJ_DIR)/tsfi_vision_classify.o $(OBJ_DIR)/tsfi_cli.o $(OBJ_DIR)/tsfi_svdag.o \
-            $(OBJ_DIR)/tsfi_hogan_core.o $(OBJ_DIR)/tsfi_hogan_lfs.o $(OBJ_DIR)/tsfi_hogan_journal.o $(OBJ_DIR)/tsfi_hogan_compliance.o \
+            $(OBJ_DIR)/tsfi_hogan_core.o $(OBJ_DIR)/tsfi_hogan_lfs.o $(OBJ_DIR)/tsfi_hogan_journal.o $(OBJ_DIR)/tsfi_hogan_compliance.o $(OBJ_DIR)/tsfi_hogan_compliance_limits.o $(OBJ_DIR)/tsfi_hogan_integrations.o $(OBJ_DIR)/tsfi_mainframe_computerworld.o \
             $(OBJ_DIR)/lau_thunk.o $(OBJ_DIR)/lau_yul_thunk_common.o $(OBJ_DIR)/lau_yul_thunk_compiler.o $(OBJ_DIR)/lau_yul_thunk_interpreter.o $(OBJ_DIR)/lau_yul_thunk_memo.o $(OBJ_DIR)/lau_yul_thunk_nested.o $(OBJ_DIR)/tsfi_wiring.o $(OBJ_DIR)/tsfi_vulkan_cells.o \
             $(OBJ_DIR)/tsfi_merkle.o $(OBJ_DIR)/tsfi_steiner_evi.o $(OBJ_DIR)/tsfi_nebula.o $(OBJ_DIR)/tsfi_divider.o $(OBJ_DIR)/tsfi_serge_usg.o $(OBJ_DIR)/tsfi_dtl_core.o $(OBJ_DIR)/tsfi_delay_line.o $(OBJ_DIR)/tsfi_rtl_latch.o $(OBJ_DIR)/tsfi_shaft_encoder.o $(OBJ_DIR)/tsfi_core_plane.o $(OBJ_DIR)/tsfi_tunnel_latch.o $(OBJ_DIR)/tsfi_thin_film.o $(OBJ_DIR)/tsfi_integrated_circuit.o $(OBJ_DIR)/tsfi_core_rope.o $(OBJ_DIR)/tsfi_ttl_gate.o $(OBJ_DIR)/tsfi_parametron.o $(OBJ_DIR)/tsfi_slt.o $(OBJ_DIR)/tsfi_cla.o $(OBJ_DIR)/tsfi_plated_wire.o $(OBJ_DIR)/tsfi_mema.o $(OBJ_DIR)/tsfi_sar_adc.o $(OBJ_DIR)/tsfi_schmitt.o $(OBJ_DIR)/tsfi_diode_matrix.o $(OBJ_DIR)/tsfi_byte_issue21.o $(OBJ_DIR)/tsfi_byte_issue22.o $(OBJ_DIR)/tsfi_byte_issue23.o $(OBJ_DIR)/tsfi_byte_issue24.o $(OBJ_DIR)/tsfi_oregon_trail.o $(OBJ_DIR)/tsfi_elektuur_issue25.o $(OBJ_DIR)/tsfi_prophecy.o $(OBJ_DIR)/tsfi_valve.o \
-            $(OBJ_DIR)/tsfi_pool.o $(OBJ_DIR)/tsfi_time.o $(OBJ_DIR)/tsfi_staging.o \
+            $(OBJ_DIR)/tsfi_pool.o $(OBJ_DIR)/tsfi_time.o $(OBJ_DIR)/tsfi_staging.o $(OBJ_DIR)/tsfi_nsa_tempest.o \
             $(OBJ_DIR)/tsfi_design_pipeline.o \
             $(OBJ_DIR)/tsfi_temporal_warper.o \
             $(OBJ_DIR)/tsfi_safetensors_cache.o \
@@ -138,10 +138,12 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
              $(OBJ_DIR)/tsfi_s370_dat_extensions.o \
              $(OBJ_DIR)/tsfi_ray_tracer.o \
              $(OBJ_DIR)/tsfi_micro_focus.o \
-             $(OBJ_DIR)/tsfi_majormud.o \
-             $(OBJ_DIR)/tsfi_cade_imf.o \
-             $(OBJ_DIR)/tsfi_cade_imf_nato.o \
-             $(OBJ_DIR)/tsfi_eer_emergency.o
+              $(OBJ_DIR)/tsfi_majormud.o \
+              $(OBJ_DIR)/tsfi_cade_imf.o \
+              $(OBJ_DIR)/tsfi_cade_imf_nato.o \
+              $(OBJ_DIR)/tsfi_eer_emergency.o \
+              $(OBJ_DIR)/tsfi_nsa_tempest.o
+
 
 
 
@@ -155,7 +157,8 @@ VULKAN_PLUGIN_OBJS = $(OBJ_DIR)/vulkan_init.o $(OBJ_DIR)/vulkan_main.o $(OBJ_DIR
 
 .PHONY: all clean test
 
-all: tsfi2 bin/tsfi_mcp_server bin/tsfi_mcp_worker bin/tsfi_sd_worker bin/test_sd_thunk_execution bin/tsfi_dna_crossover tests/test_ahoy_issue1_resonance bin/test_wayland_terminal_shell bin/test_active_window_ocr bin/tsfi_font_editor bin/test_spider_registry_reap bin/test_spider_120f_reap tests/test_wayland_lunar_lander tests/test_wayland_space_war tests/test_wayland_gauntlet tests/test_wayland_yars_revenge tests/test_yars_revenge_features tests/test_zmm_cpu6502 tests/test_zmm_mystery_house tests/test_shadow_registers tests/test_epyx_opcodes tests/test_aub_complete tests/test_wayland_sprite_editor tests/test_lode_runner tests/test_karateka tests/test_choplifter tests/test_cannonball bin/tsfi_sprite_generator tests/test_compuserve tests/test_speech_c_controller bin/benchmark_neuro_backprop bin/benchmark_neuro_activation bin/test_wave512_asm bin/test_walsh bin/test_walsh_audio bin/test_steiner_evi bin/test_nebula bin/test_divider bin/test_serge_usg bin/test_dtl_core bin/test_delay_line bin/test_rtl_latch bin/test_shaft_encoder bin/test_core_plane bin/test_tunnel_latch bin/test_thin_film bin/test_integrated_circuit bin/test_core_rope bin/test_ttl_gate bin/test_parametron bin/slt bin/test_cla bin/test_plated_wire bin/test_mema bin/sar_adc bin/test_schmitt bin/test_diode_matrix bin/test_byte_issue21 bin/test_byte_issue22 bin/test_byte_issue23 bin/test_byte_issue24 bin/test_oregon_trail bin/test_elektuur_issue25 bin/test_prophecy_synthesis bin/test_yang_synthesis tests/test_rooted_browser_zmm tests/test_rooted_browser_wmq tests/test_rooted_browser_wmq_collision tests/test_base0_protocol tests/test_dilemma_synthesizer tests/test_bessel_zener_trapping bin/test_zmm_teddy_render bin/test_sort bin/test_graph_select tests/test_folklore_select tests/benchmark_neuro_folklore tests/test_qing_bst tests/test_qing_graph tests/test_qing_nesting tests/test_speech_trie tests/test_trie_routers tests/test_trie_to_bst tests/benchmark_neurology bin/test_formant_filter_c_rpc bin/test_ring_modulator_c_rpc bin/test_equa_amplifier_c_rpc bin/test_mostronome_c_rpc bin/test_gyrator_drum_c_rpc bin/test_germanium_stage_c_rpc bin/test_steam_whistle_c_rpc bin/test_rhythm_generator_c_rpc bin/test_compander_c_rpc bin/test_hysteresis_limiter_c_rpc bin/test_piezo_limiter_c_rpc bin/test_zener_dither_c_rpc bin/test_subharmonic_divider_c_rpc bin/test_wien_bridge_notch_c_rpc bin/test_bionika_reflex_c_rpc bin/tape_saturation bin/test_thermal_half_life_c_rpc bin/test_axonal_delay_c_rpc bin/test_vactrol_limiter_c_rpc bin/test_germanium_coax_string_c_rpc bin/test_zmm_disk_mount_c_rpc bin/test_ramac_layout bin/test_ramac_extended bin/test_ramac_extended_part2 bin/generate_mainframe_ramac_demo bin/test_mainframe_decnet bin/test_hogan_integration
+all: tsfi2 bin/tsfi_mcp_server bin/tsfi_mcp_worker bin/tsfi_sd_worker bin/test_sd_thunk_execution bin/tsfi_dna_crossover tests/test_ahoy_issue1_resonance bin/test_wayland_terminal_shell bin/test_active_window_ocr bin/tsfi_font_editor bin/test_spider_registry_reap bin/test_spider_120f_reap tests/test_wayland_lunar_lander tests/test_wayland_space_war tests/test_wayland_gauntlet tests/test_wayland_yars_revenge tests/test_yars_revenge_features tests/test_zmm_cpu6502 tests/test_zmm_mystery_house tests/test_shadow_registers tests/test_epyx_opcodes tests/test_aub_complete tests/test_wayland_sprite_editor tests/test_lode_runner tests/test_karateka tests/test_choplifter tests/test_cannonball bin/tsfi_sprite_generator tests/test_compuserve tests/test_speech_c_controller bin/benchmark_neuro_backprop bin/benchmark_neuro_activation bin/test_wave512_asm bin/test_walsh bin/test_walsh_audio bin/test_steiner_evi bin/test_nebula bin/test_divider bin/test_serge_usg bin/test_dtl_core bin/test_delay_line bin/test_rtl_latch bin/test_shaft_encoder bin/test_core_plane bin/test_tunnel_latch bin/test_thin_film bin/test_integrated_circuit bin/test_core_rope bin/test_ttl_gate bin/test_parametron bin/test_slt bin/test_cla bin/test_plated_wire bin/test_mema bin/sar_adc bin/test_schmitt bin/test_diode_matrix bin/test_byte_issue21 bin/test_byte_issue22 bin/test_byte_issue23 bin/test_byte_issue24 bin/test_oregon_trail bin/test_elektuur_issue25 bin/test_prophecy_synthesis bin/test_yang_synthesis tests/test_rooted_browser_zmm tests/test_rooted_browser_wmq tests/test_rooted_browser_wmq_collision tests/test_base0_protocol tests/test_dilemma_synthesizer tests/test_bessel_zener_trapping bin/test_zmm_teddy_render bin/test_sort bin/test_graph_select tests/test_folklore_select tests/benchmark_neuro_folklore tests/test_qing_bst tests/test_qing_graph tests/test_qing_nesting tests/test_speech_trie tests/test_trie_routers tests/test_trie_to_bst tests/benchmark_neurology bin/test_formant_filter_c_rpc bin/test_ring_modulator_c_rpc bin/test_equa_amplifier_c_rpc bin/test_mostronome_c_rpc bin/test_gyrator_drum_c_rpc bin/test_germanium_stage_c_rpc bin/test_steam_whistle_c_rpc bin/test_rhythm_generator_c_rpc bin/test_compander_c_rpc bin/test_hysteresis_limiter_c_rpc bin/test_piezo_limiter_c_rpc bin/test_zener_dither_c_rpc bin/test_subharmonic_divider_c_rpc bin/test_wien_bridge_notch_c_rpc bin/test_bionika_reflex_c_rpc bin/tape_saturation bin/test_thermal_half_life_c_rpc bin/test_axonal_delay_c_rpc bin/test_vactrol_limiter_c_rpc bin/test_germanium_coax_string_c_rpc bin/test_zmm_disk_mount_c_rpc bin/test_ramac_layout bin/test_ramac_extended bin/test_ramac_extended_part2 bin/generate_mainframe_ramac_demo bin/test_mainframe_decnet bin/test_hogan_integration tests/test_nsa_tempest tests/test_mainframe_computerworld
+
 
 
 
@@ -976,6 +979,12 @@ tests/test_coaxial_agent: tests/test_coaxial_agent.c $(CORE_OBJS) $(OBJ_DIR)/vul
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 tests/test_priority_queue: tests/test_priority_queue.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_nsa_tempest: tests/test_nsa_tempest.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_mainframe_computerworld: tests/test_mainframe_computerworld.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 tests/test_strategy_lang: tests/test_strategy_lang.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
