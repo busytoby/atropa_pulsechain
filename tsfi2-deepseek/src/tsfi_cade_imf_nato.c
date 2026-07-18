@@ -1753,6 +1753,45 @@ int tsfi_mf_norad_irs_relay_process_msg(TSFiNoradIrsRelay *relay, const char *ms
     return tsfi_mf_cics_format_irs_query(auth, 1, out_pdu, out_size);
 }
 
+int tsfi_mf_norad_irs_relay_test_loopback(TSFiNoradIrsRelay *relay, const char *test_msg, uint8_t *out_pdu, size_t *out_pdu_size, int *is_success) {
+    if (!relay || !test_msg || !out_pdu || !out_pdu_size || !is_success) return -1;
+    *is_success = 0;
+    
+    // 1. Process query message
+    int res = tsfi_mf_norad_irs_relay_process_msg(relay, test_msg, strlen(test_msg), out_pdu, out_pdu_size);
+    if (res != 0) return 0;
+    
+    // 2. Simulate IRS Reject Audit response (audit status 2)
+    uint8_t simulated_resp[] = {0xFE, 0x02, 0x00};
+    int audit_status = -1;
+    int resp_valid = 0;
+    res = tsfi_mf_cics_decode_irs_response(simulated_resp, sizeof(simulated_resp), &audit_status, &resp_valid);
+    if (res != 0 || !resp_valid) return 0;
+    
+    // 3. Link alert status to alarm registers
+    res = tsfi_mf_norad_link_irs_alarm(audit_status, &relay->defcon_level, &relay->status_word);
+    if (res != 0) return 0;
+    
+    // 4. Issue clearance certificate
+    uint8_t cl_pdu[8];
+    size_t cl_size = 0;
+    res = tsfi_mf_irs_format_clearance(relay->expected_clearance_token, cl_pdu, &cl_size);
+    if (res != 0) return 0;
+    
+    // 5. Validate clearance and unlock
+    int is_cleared = 0;
+    res = tsfi_mf_norad_validate_clearance(cl_pdu, cl_size, relay->expected_clearance_token, &is_cleared);
+    if (res != 0 || !is_cleared) return 0;
+    
+    // Reset DEFCON back to normal operations
+    relay->defcon_level = 5;
+    relay->status_word &= ~(1 << 10);
+    
+    *is_success = 1;
+    return 0;
+}
+
+
 
 
 

@@ -923,7 +923,15 @@ int run_nato_stanag_tests_part5(void) {
     assert(relay_res == 0);
     assert(relay_size == 6);
     assert(relay_pdu[0] == 0xFD); // Formatted IRS Query PDU
-    printf("  [PASS] TSFiNoradIrsRelay Orchestrator verified.\n");
+    // Verify TSFiNoradIrsRelay loopback
+    printf("[TEST] Validating TSFiNoradIrsRelay Loopback Verification...\n");
+    int loop_ok = -1;
+    int loop_res = tsfi_mf_norad_irs_relay_test_loopback(&relay, irs_msg, relay_pdu, &relay_size, &loop_ok);
+    assert(loop_res == 0);
+    assert(loop_ok == 1);
+    assert(relay.defcon_level == 5);
+    assert((relay.status_word & (1 << 10)) == 0);
+    printf("  [PASS] TSFiNoradIrsRelay Loopback Verification verified.\n");
 
     return 0;
 }

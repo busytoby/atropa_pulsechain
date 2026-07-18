@@ -458,5 +458,6 @@ typedef struct {
 
 int tsfi_mf_norad_irs_relay_init(TSFiNoradIrsRelay *relay, uint32_t clearance_token);
 int tsfi_mf_norad_irs_relay_process_msg(TSFiNoradIrsRelay *relay, const char *msg_buffer, size_t size, uint8_t *out_pdu, size_t *out_size);
+int tsfi_mf_norad_irs_relay_test_loopback(TSFiNoradIrsRelay *relay, const char *test_msg, uint8_t *out_pdu, size_t *out_pdu_size, int *is_success);
 
 #endif // TSFI_CADE_IMF_H
