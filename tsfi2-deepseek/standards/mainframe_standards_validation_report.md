@@ -267,5 +267,7 @@
 | 333 | IRS IMF Federal Qualified Dividend Tax Rate Matcher | PASS | Checks dividend tax rates conform to capital gains brackets | Volume 33 |
 | 334 | IRS IMF Schedule C Self-Employment Tax Threshold Matcher | PASS | Flags net self-employment profits above statutory limits | Volume 33 |
 | 335 | IRS IMF Federal Net Investment Income Tax (NIIT) Threshold Checker | PASS | Audits MAGI levels against investment tax liability thresholds | Volume 33 |
+| 336 | IRS IMF Schedule A Medical Expense Floor Matcher | PASS | Checks Schedule A medical deductions apply the 7.5% floor | Volume 33 |
+| 337 | IRS IMF Federal Qualified Business Income (QBI) Deduction Rate Matcher | PASS | Verifies QBI deduction calculation matches standard 20% limits | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 335 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 337 Scenarios validated successfully)

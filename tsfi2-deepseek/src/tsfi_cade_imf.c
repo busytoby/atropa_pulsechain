@@ -1063,4 +1063,25 @@ int tsfi_mf_imf_check_niit_threshold(double magi, int filing_status, int *niit_r
     return 0;
 }
 
+int tsfi_mf_imf_verify_medical_floor(double agi, double total_expenses, double claimed_deduction, int *is_valid) {
+    if (!is_valid) return -1;
+    double floor = agi * 0.075;
+    double allowed = total_expenses - floor;
+    if (allowed < 0.0) allowed = 0.0;
+    double diff = claimed_deduction - allowed;
+    if (diff < 0) diff = -diff;
+    *is_valid = (diff <= 1.00) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_imf_verify_qbi_deduction(double qbi, double taxable_income, double claimed_qbi_deduction, int *is_valid) {
+    if (!is_valid) return -1;
+    double limit = (taxable_income < qbi) ? taxable_income : qbi;
+    double expected = limit * 0.20;
+    double diff = claimed_qbi_deduction - expected;
+    if (diff < 0) diff = -diff;
+    *is_valid = (diff <= 1.00) ? 1 : 0;
+    return 0;
+}
+
 

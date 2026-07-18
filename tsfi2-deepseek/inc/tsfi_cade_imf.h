@@ -87,5 +87,7 @@ int tsfi_mf_imf_verify_social_security_tax_cap(double wages, double claimed_ss_w
 int tsfi_mf_imf_verify_qualified_dividend_rate(double taxable_income, double qualified_dividends, double dividend_tax, int *is_valid);
 int tsfi_mf_imf_check_se_tax_threshold(double net_profit, int *se_required);
 int tsfi_mf_imf_check_niit_threshold(double magi, int filing_status, int *niit_required);
+int tsfi_mf_imf_verify_medical_floor(double agi, double total_expenses, double claimed_deduction, int *is_valid);
+int tsfi_mf_imf_verify_qbi_deduction(double qbi, double taxable_income, double claimed_qbi_deduction, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

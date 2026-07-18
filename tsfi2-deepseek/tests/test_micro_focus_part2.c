@@ -684,6 +684,22 @@ int main(void) {
     assert(niit_required == 1);
     printf("  [PASS] IRS IMF NIIT Threshold Checker verified.\n");
 
+    // 192. Verify IRS IMF Schedule A Medical Expense Floor Matcher
+    printf("[TEST] Validating IRS IMF Medical Expense Floor Matcher...\n");
+    int medical_valid = -1;
+    int medical_res = tsfi_mf_imf_verify_medical_floor(100000.00, 10000.00, 2500.00, &medical_valid);
+    assert(medical_res == 0);
+    assert(medical_valid == 1);
+    printf("  [PASS] IRS IMF Medical Expense Floor Matcher verified.\n");
+
+    // 193. Verify IRS IMF Federal Qualified Business Income (QBI) Deduction Rate Matcher
+    printf("[TEST] Validating IRS IMF QBI Rate Matcher...\n");
+    int qbi_valid = -1;
+    int qbi_ded_res = tsfi_mf_imf_verify_qbi_deduction(50000.00, 100000.00, 10000.00, &qbi_valid);
+    assert(qbi_ded_res == 0);
+    assert(qbi_valid == 1);
+    printf("  [PASS] IRS IMF QBI Rate Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }
