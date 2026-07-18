@@ -200,5 +200,7 @@ int tsfi_mf_nato_verify_channel_free_threshold(int threshold_dbm, int *is_valid)
 int tsfi_mf_nato_verify_broadcast_repeats(int repeats, int *is_valid);
 int tsfi_mf_nato_verify_collision_clear_wait(int wait_ms, int *is_valid);
 int tsfi_mf_nato_verify_broadcast_guard_time(int guard_ms, int *is_valid);
+int tsfi_mf_nato_verify_guard_time_flag(int flag, int *is_valid);
+int tsfi_mf_nato_verify_broadcast_expiry(int expiry_sec, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

@@ -403,8 +403,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 446 | NATO Link-Layer Broadcast Minimum Repeat Count Validator | PASS | Audits packet transmission repeat multipliers for broadcast packets | Volume 33 |
 | 447 | NATO Link-Layer Broadcast Collision Clear Wait Time Validator | PASS | Validates carrier-sense wait durations following collision clearance | Volume 33 |
 | 448 | NATO Link-Layer Broadcast Guard-Time Interval Matcher | PASS | Audits safety guard-time spacing gaps inserted before transmission | Volume 33 |
+| 449 | NATO Link-Layer Broadcast Guard-Time Flag Matcher | PASS | Validates guard-time configuration option settings | Volume 33 |
+| 450 | NATO Link-Layer Broadcast Packet Expiry Checker | PASS | Audits packet lifetime timeout boundaries for broadcast frames | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 448 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 450 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

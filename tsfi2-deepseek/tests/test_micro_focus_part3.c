@@ -449,5 +449,21 @@ int run_nato_stanag_tests(void) {
     assert(guard_time_valid == 1);
     printf("  [PASS] NATO Broadcast Guard Time Matcher verified.\n");
 
+    // 305. Verify NATO Link-Layer Broadcast Guard-Time Flag Matcher
+    printf("[TEST] Validating NATO Broadcast Guard Time Flag Matcher...\n");
+    int guard_time_flag_valid = -1;
+    int guard_time_flag_res = tsfi_mf_nato_verify_guard_time_flag(1, &guard_time_flag_valid);
+    assert(guard_time_flag_res == 0);
+    assert(guard_time_flag_valid == 1);
+    printf("  [PASS] NATO Broadcast Guard Time Flag Matcher verified.\n");
+
+    // 306. Verify NATO Link-Layer Broadcast Packet Expiry Time checker
+    printf("[TEST] Validating NATO Broadcast Packet Expiry Checker...\n");
+    int broadcast_expiry_valid = -1;
+    int broadcast_expiry_res = tsfi_mf_nato_verify_broadcast_expiry(900, &broadcast_expiry_valid);
+    assert(broadcast_expiry_res == 0);
+    assert(broadcast_expiry_valid == 1);
+    printf("  [PASS] NATO Broadcast Packet Expiry Checker verified.\n");
+
     return 0;
 }
