@@ -113,6 +113,9 @@ int tsfi_hogan_lfs_save(const hogan_umbrella_system *sys, const char *filepath) 
             fwrite(&sys->accounts[i].max_interest_per_epoch, sizeof(uint64_t), 1, f);
             fwrite(&sys->accounts[i].acc_spend_limit_today, sizeof(uint64_t), 1, f);
             fwrite(&sys->accounts[i].acc_spent_today_transfers, sizeof(uint64_t), 1, f);
+            fwrite(&sys->accounts[i].card_pin, sizeof(uint32_t), 1, f);
+            fwrite(&sys->accounts[i].pin_fail_count, sizeof(uint32_t), 1, f);
+            fwrite(&sys->accounts[i].pin_fail_limit, sizeof(uint32_t), 1, f);
         }
     }
     
@@ -380,6 +383,24 @@ int tsfi_hogan_lfs_load(hogan_umbrella_system *sys, const char *filepath) {
             return -2;
         }
         sys->accounts[i].acc_spent_today_transfers = acc_sp_trans;
+        uint32_t c_pin = 0;
+        if (fread(&c_pin, sizeof(uint32_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
+        sys->accounts[i].card_pin = c_pin;
+        uint32_t p_fails = 0;
+        if (fread(&p_fails, sizeof(uint32_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
+        sys->accounts[i].pin_fail_count = p_fails;
+        uint32_t p_lim = 0;
+        if (fread(&p_lim, sizeof(uint32_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
+        sys->accounts[i].pin_fail_limit = p_lim;
         sys->accounts[i].active = 1;
     }
     
@@ -937,6 +958,9 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
             EVP_DigestUpdate(mdctx, &sys->accounts[i].max_interest_per_epoch, sizeof(uint64_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].acc_spend_limit_today, sizeof(uint64_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].acc_spent_today_transfers, sizeof(uint64_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].card_pin, sizeof(uint32_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].pin_fail_count, sizeof(uint32_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].pin_fail_limit, sizeof(uint32_t));
         }
     }
     EVP_DigestUpdate(mdctx, &sys->blocked_card_count, sizeof(size_t));
@@ -2097,6 +2121,141 @@ int tsfi_hogan_update_acc_spend_limit(hogan_umbrella_system *sys, const char *fi
     acc->acc_spend_limit_today = new_spend_limit;
     
     int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_acc_spend_limit_entry));
+    
+    sys->live_processing_enabled = original_live_state;
+    return write_res;
+}
+
+int tsfi_hogan_validate_card_pin(hogan_umbrella_system *sys, const char *filepath, uint32_t card_id, uint32_t account_id, uint32_t entered_pin) {
+    // Enforce Rule 13: file extension must end with .dat.bin
+    const char *ext = strrchr(filepath, '.');
+    if (!ext || strcmp(ext, ".bin") != 0) {
+        if (!ext || strcmp(ext - 4, ".dat.bin") != 0) {
+            return -3; // Invalid extension
+        }
+    }
+
+    // Disable live queue during validation
+    uint8_t original_live_state = sys->live_processing_enabled;
+    sys->live_processing_enabled = 0;
+
+    // Check if card is blocked
+    for (size_t idx = 0; idx < sys->blocked_card_count; idx++) {
+        if (sys->blocked_cards[idx] == card_id) {
+            sys->live_processing_enabled = original_live_state;
+            return -4; // Card is blocked
+        }
+    }
+
+    hogan_account *acc = NULL;
+    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
+        if (sys->accounts[i].active && sys->accounts[i].account_id == account_id) {
+            acc = &sys->accounts[i];
+            break;
+        }
+    }
+
+    if (!acc) {
+        sys->live_processing_enabled = original_live_state;
+        return -1; // Account missing
+    }
+
+    uint8_t correct = (acc->card_pin == entered_pin);
+    if (correct) {
+        acc->pin_fail_count = 0;
+    } else {
+        acc->pin_fail_count++;
+        if (acc->pin_fail_limit > 0 && acc->pin_fail_count >= acc->pin_fail_limit) {
+            // Auto lock the card!
+            uint8_t already_blocked = 0;
+            for (size_t idx = 0; idx < sys->blocked_card_count; idx++) {
+                if (sys->blocked_cards[idx] == card_id) {
+                    already_blocked = 1;
+                    break;
+                }
+            }
+            if (!already_blocked && sys->blocked_card_count < HOGAN_MAX_BLOCKED_CARDS) {
+                sys->blocked_cards[sys->blocked_card_count++] = card_id;
+                // Log to "hogan_pin_locks.dat.bin"
+                hogan_pin_fail_limit_entry lock_entry = { account_id, acc->pin_fail_limit, card_id, 0 };
+                tsfi_hogan_write_seq_record("hogan_pin_locks.dat.bin", (const uint8_t *)&lock_entry, sizeof(hogan_pin_fail_limit_entry));
+            }
+        }
+    }
+
+    // Log this attempt as card pin entry override record format (representing (previous_pin, new_pin, success) structure)
+    hogan_card_pin_entry attempt_entry = { account_id, acc->card_pin, entered_pin, correct ? 1u : 0u };
+    tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&attempt_entry, sizeof(hogan_card_pin_entry));
+
+    sys->live_processing_enabled = original_live_state;
+    return correct ? 0 : -2; // 0 on success, -2 on incorrect PIN
+}
+
+int tsfi_hogan_update_pin_fail_limit(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t new_pin_limit, uint32_t authority_id) {
+    // Enforce Rule 13: file extension must end with .dat.bin
+    const char *ext = strrchr(filepath, '.');
+    if (!ext || strcmp(ext, ".bin") != 0) {
+        if (!ext || strcmp(ext - 4, ".dat.bin") != 0) {
+            return -3; // Invalid extension
+        }
+    }
+
+    // Disable live queue during administrative action
+    uint8_t original_live_state = sys->live_processing_enabled;
+    sys->live_processing_enabled = 0;
+    
+    hogan_account *acc = NULL;
+    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
+        if (sys->accounts[i].active && sys->accounts[i].account_id == account_id) {
+            acc = &sys->accounts[i];
+            break;
+        }
+    }
+    
+    if (!acc) {
+        sys->live_processing_enabled = original_live_state;
+        return -1; // account not found
+    }
+    
+    hogan_pin_fail_limit_entry entry = { account_id, acc->pin_fail_limit, new_pin_limit, authority_id };
+    acc->pin_fail_limit = new_pin_limit;
+    
+    int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_pin_fail_limit_entry));
+    
+    sys->live_processing_enabled = original_live_state;
+    return write_res;
+}
+
+int tsfi_hogan_update_card_pin(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t new_pin, uint32_t authority_id) {
+    // Enforce Rule 13: file extension must end with .dat.bin
+    const char *ext = strrchr(filepath, '.');
+    if (!ext || strcmp(ext, ".bin") != 0) {
+        if (!ext || strcmp(ext - 4, ".dat.bin") != 0) {
+            return -3; // Invalid extension
+        }
+    }
+
+    // Disable live queue during administrative action
+    uint8_t original_live_state = sys->live_processing_enabled;
+    sys->live_processing_enabled = 0;
+    
+    hogan_account *acc = NULL;
+    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
+        if (sys->accounts[i].active && sys->accounts[i].account_id == account_id) {
+            acc = &sys->accounts[i];
+            break;
+        }
+    }
+    
+    if (!acc) {
+        sys->live_processing_enabled = original_live_state;
+        return -1; // account not found
+    }
+    
+    hogan_card_pin_entry entry = { account_id, acc->card_pin, new_pin, authority_id };
+    acc->card_pin = new_pin;
+    
+    int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_card_pin_entry));
     
     sys->live_processing_enabled = original_live_state;
     return write_res;

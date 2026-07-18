@@ -67,6 +67,9 @@ typedef struct {
     uint64_t max_interest_per_epoch;
     uint64_t acc_spend_limit_today;
     uint64_t acc_spent_today_transfers;
+    uint32_t card_pin;
+    uint32_t pin_fail_count;
+    uint32_t pin_fail_limit;
 } hogan_account;
 
 #define HOGAN_MAX_BLOCKED_CARDS 32
@@ -468,5 +471,26 @@ typedef struct {
 } hogan_acc_spend_limit_entry;
 
 int tsfi_hogan_update_acc_spend_limit(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_spend_limit, uint32_t authority_id);
+
+// Card PIN Attempt Limit Lockout Manager
+int tsfi_hogan_validate_card_pin(hogan_umbrella_system *sys, const char *filepath, uint32_t card_id, uint32_t account_id, uint32_t entered_pin);
+
+typedef struct {
+    uint32_t account_id;
+    uint32_t previous_pin_limit;
+    uint32_t new_pin_limit;
+    uint32_t authority_id;
+} hogan_pin_fail_limit_entry;
+
+int tsfi_hogan_update_pin_fail_limit(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t new_pin_limit, uint32_t authority_id);
+
+typedef struct {
+    uint32_t account_id;
+    uint32_t previous_pin;
+    uint32_t new_pin;
+    uint32_t authority_id;
+} hogan_card_pin_entry;
+
+int tsfi_hogan_update_card_pin(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t new_pin, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H

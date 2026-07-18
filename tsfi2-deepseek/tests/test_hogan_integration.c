@@ -1608,6 +1608,62 @@ int main(void) {
     remove(acc_spend_path); // clean up
     printf("  [PASS] Account cumulative transaction amount caps, volume validation, and override logs verified.\n");
 
+    // 45. Test Card PIN Attempt Limit Lockout Manager (PIN locks)
+    printf("[E2E] Testing Card PIN Attempt Limit Lockout Manager...\n");
+    const char *pin_path = "hogan_pin.dat.bin";
+    const char *pin_limit_path = "hogan_pin_limits.dat.bin";
+    remove(pin_path); // ensure clean start
+    remove(pin_limit_path); // ensure clean start
+    remove("hogan_pin_locks.dat.bin"); // ensure clean start
+    
+    hogan_umbrella_system pin_sys;
+    tsfi_hogan_init(&pin_sys);
+    assert(tsfi_hogan_register_account(&pin_sys, 1001, 10000) == 0); // Alice: 10000 balance
+    
+    // Set Alice's card PIN to 4321
+    assert(tsfi_hogan_update_card_pin(&pin_sys, pin_path, 1001, 4321, 999) == 0);
+    assert(tsfi_hogan_update_card_pin(&pin_sys, "hogan_pin.json", 1001, 4321, 999) == -3); // Rule 13 check
+    
+    // Set Alice's card PIN attempt limit to 2 attempts
+    assert(tsfi_hogan_update_pin_fail_limit(&pin_sys, pin_limit_path, 1001, 2, 999) == 0);
+    assert(tsfi_hogan_update_pin_fail_limit(&pin_sys, "hogan_pin_limits.json", 1001, 2, 999) == -3); // Rule 13 check
+    
+    // Verify incorrect PIN (entered 1111) returning -2
+    assert(tsfi_hogan_validate_card_pin(&pin_sys, "hogan_attempts.dat.bin", 5005, 1001, 1111) == -2);
+    
+    // Verify second incorrect PIN (entered 2222) returning -2, which triggers auto block
+    assert(tsfi_hogan_validate_card_pin(&pin_sys, "hogan_attempts.dat.bin", 5005, 1001, 2222) == -2);
+    
+    // Verify third PIN attempt is blocked with status block returning -4
+    assert(tsfi_hogan_validate_card_pin(&pin_sys, "hogan_attempts.dat.bin", 5005, 1001, 4321) == -4);
+    
+    // Read override log files and verify entries
+    uint8_t read_pinbuf[sizeof(hogan_card_pin_entry)];
+    size_t pin_size = 0;
+    assert(tsfi_hogan_read_seq_record(pin_path, 0, read_pinbuf, &pin_size) == 0);
+    assert(pin_size == sizeof(hogan_card_pin_entry));
+    const hogan_card_pin_entry *pinentry = (const hogan_card_pin_entry *)read_pinbuf;
+    assert(pinentry->account_id == 1001);
+    assert(pinentry->previous_pin == 0);
+    assert(pinentry->new_pin == 4321);
+    assert(pinentry->authority_id == 999);
+    
+    // Read auto lock sequential log entries
+    uint8_t read_plbuf[sizeof(hogan_pin_fail_limit_entry)];
+    size_t pl_size = 0;
+    assert(tsfi_hogan_read_seq_record("hogan_pin_locks.dat.bin", 0, read_plbuf, &pl_size) == 0);
+    assert(pl_size == sizeof(hogan_pin_fail_limit_entry));
+    const hogan_pin_fail_limit_entry *plentry = (const hogan_pin_fail_limit_entry *)read_plbuf;
+    assert(plentry->account_id == 1001);
+    assert(plentry->previous_pin_limit == 2); // pin_fail_limit
+    assert(plentry->new_pin_limit == 5005);   // card_id
+    
+    remove(pin_path); // clean up
+    remove(pin_limit_path); // clean up
+    remove("hogan_attempts.dat.bin"); // clean up
+    remove("hogan_pin_locks.dat.bin"); // clean up
+    printf("  [PASS] Card PIN validations, fail counts, auto-blocking lockouts, and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }
