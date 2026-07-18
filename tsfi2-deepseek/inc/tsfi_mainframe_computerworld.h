@@ -73,6 +73,7 @@ typedef struct {
     int sync_align;
     int sign_leading;
     int sign_separate;
+    char cond_value[32];
 } tsfi_cw_cobol_field;
 
 typedef struct {
@@ -115,6 +116,7 @@ typedef struct {
     uint32_t offset;
     uint32_t length;
     uint8_t active;
+    uint8_t lock_state;
 } tsfi_cw_vsam_entry;
 
 typedef struct {
@@ -359,6 +361,20 @@ int tsfi_cw_jcl_sysout_write(tsfi_cw_jcl_sysout *sysout, const char *text);
 
 // Y2K Date Duration calculator
 int tsfi_cw_y2k_date_diff(uint32_t yy1, uint32_t mm1, uint32_t dd1, uint32_t yy2, uint32_t mm2, uint32_t dd2, uint32_t pivot, int *days_out);
+
+// VSAM Record Level Sharing (RLS) locks
+int tsfi_cw_vsam_lock_record(tsfi_cw_vsam_ksds *ksds, const char *key);
+int tsfi_cw_vsam_unlock_record(tsfi_cw_vsam_ksds *ksds, const char *key);
+
+// EBCDIC CP850 translation map
+uint8_t tsfi_cw_ascii_to_ebcdic_cp850(uint8_t ascii_char);
+uint8_t tsfi_cw_ebcdic_to_ascii_cp850(uint8_t ebcdic_char);
+
+// JCL PROC step overrides
+int tsfi_cw_run_jcl_override(const char **cards, int card_count, const char *step_name, char *override_out, int max_len);
+
+// Y2K Day of Week calculator
+int tsfi_cw_y2k_day_of_week(uint32_t yy, uint32_t mm, uint32_t dd, uint32_t pivot, int *dow_out);
 
 // 4. Job Control Language (JCL) Execution Simulator
 int tsfi_cw_run_jcl(const char **cards, int card_count);

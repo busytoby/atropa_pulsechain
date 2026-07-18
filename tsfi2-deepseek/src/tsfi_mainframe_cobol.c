@@ -125,6 +125,38 @@ int tsfi_cw_parse_copybook_line(const char *copybook_line, tsfi_cw_copybook *cb)
     if (name_idx == 0) return -4;
     while (*p == ' ' || *p == '\t') p++;
 
+    if (level == 88) {
+        char cond_val[32] = "";
+        const char *val_ptr = strstr(p, "VALUE '");
+        if (val_ptr) {
+            val_ptr += 7;
+            int v_idx = 0;
+            while (*val_ptr && *val_ptr != '\'' && v_idx < 31) {
+                cond_val[v_idx++] = *val_ptr++;
+            }
+            cond_val[v_idx] = '\0';
+        } else {
+            val_ptr = strstr(p, "VALUE ");
+            if (val_ptr) {
+                val_ptr += 6;
+                int v_idx = 0;
+                while (*val_ptr && *val_ptr != ' ' && *val_ptr != '.' && v_idx < 31) {
+                    cond_val[v_idx++] = *val_ptr++;
+                }
+                cond_val[v_idx] = '\0';
+            }
+        }
+        tsfi_cw_cobol_field *f = &cb->fields[cb->field_count];
+        memset(f, 0, sizeof(tsfi_cw_cobol_field));
+        f->level = 88;
+        snprintf(f->name, sizeof(f->name), "%s", name);
+        f->type = COBOL_TYPE_ALPHA;
+        f->usage = COBOL_USAGE_DISPLAY;
+        strcpy(f->cond_value, cond_val);
+        cb->field_count++;
+        return 0;
+    }
+
     if (level == 66) {
         char ren_start[32] = "";
         char ren_end[32] = "";
@@ -409,49 +441,51 @@ int tsfi_cw_parse_copybook_line(const char *copybook_line, tsfi_cw_copybook *cb)
     return 0;
 }
 
-uint32_t tsfi_cw_ieee_to_ibm_float(float f) {
-    if (f == 0.0f) return 0;
-    
-    union {
-        float val_f;
-        uint32_t val_u;
-    } u;
-    u.val_f = f;
-    
-    uint32_t sign = u.val_u & 0x80000000;
-    int32_t ieee_exp = ((u.val_u >> 23) & 0xFF) - 127;
-    uint32_t ieee_mant = (u.val_u & 0x7FFFFF) | 0x800000;
-    
-    int32_t ibm_exp = (ieee_exp + 130) / 4;
-    int32_t shift = (ibm_exp * 4) - (ieee_exp + 130);
-    uint32_t ibm_mant = ieee_mant >> shift;
-    
-    ibm_exp += 64; // hex bias
-    if (ibm_exp > 127) ibm_exp = 127;
-    if (ibm_exp < 0) ibm_exp = 0;
-    
-    return sign | (ibm_exp << 24) | (ibm_mant & 0x00FFFFFF);
-}
-
-float tsfi_cw_ibm_to_ieee_float(uint32_t ibm_bits) {
-    if (ibm_bits == 0) return 0.0f;
-    
-    uint32_t sign = ibm_bits & 0x80000000;
-    int32_t ibm_exp = ((ibm_bits >> 24) & 0x7F) - 64;
-    uint32_t ibm_mant = ibm_bits & 0x00FFFFFF;
-    
-    int32_t ieee_exp = ibm_exp * 4 - 130 + 127;
-    while ((ibm_mant & 0x00800000) == 0 && ibm_mant > 0) {
-        ibm_mant <<= 1;
-        ieee_exp--;
+uint32_t tsfi_cw_ieee_to_ibm_float(float ieee_float) {
+    if (ieee_float == 0.0f) return 0;
+    uint32_t sign = 0;
+    if (ieee_float < 0.0f) {
+        sign = 1;
+        ieee_float = -ieee_float;
     }
     
-    union {
-        float val_f;
-        uint32_t val_u;
-    } u;
-    u.val_u = sign | (((ieee_exp + 127) & 0xFF) << 23) | (ibm_mant & 0x7FFFFF);
-    return u.val_f;
+    int exponent = 64;
+    double val = (double)ieee_float;
+    if (val >= 1.0) {
+        while (val >= 1.0 && exponent < 127) {
+            val /= 16.0;
+            exponent++;
+        }
+    } else {
+        while (val < 0.0625 && exponent > 0) {
+            val *= 16.0;
+            exponent--;
+        }
+    }
+    
+    uint32_t fraction = (uint32_t)(val * 16777216.0 + 0.5);
+    if (fraction >= 0x01000000) {
+        fraction >>= 4;
+        exponent++;
+    }
+    return (sign << 31) | ((uint32_t)exponent << 24) | (fraction & 0x00FFFFFF);
+}
+
+float tsfi_cw_ibm_to_ieee_float(uint32_t ibm_float) {
+    if (ibm_float == 0) return 0.0f;
+    uint32_t sign = (ibm_float >> 31) & 1;
+    int exponent = (int)((ibm_float >> 24) & 0x7F) - 64;
+    uint32_t fraction = ibm_float & 0x00FFFFFF;
+    
+    double val = (double)fraction / 16777216.0;
+    double scale = 1.0;
+    if (exponent > 0) {
+        for (int i = 0; i < exponent; i++) scale *= 16.0;
+    } else {
+        for (int i = 0; i < -exponent; i++) scale /= 16.0;
+    }
+    float result = (float)(val * scale);
+    return sign ? -result : result;
 }
 
 int tsfi_cw_pack_zoned_sign(const char *ascii_num, uint8_t *ebcdic_out, int max_len, int leading) {

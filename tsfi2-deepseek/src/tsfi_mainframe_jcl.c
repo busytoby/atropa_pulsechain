@@ -186,7 +186,8 @@ int tsfi_cw_run_jcl_set(const char **cards, int card_count, char *expanded_out, 
 }
 
 int tsfi_cw_run_jcl_proc_nested(const char **cards, int card_count, const char **proc_cards, int proc_card_count, int initial_rc, int depth) {
-    if (!cards || card_count <= 0 || depth > 5) return -1;
+    if (depth > 5) return -9;
+    if (!cards || card_count <= 0) return -1;
     int steps_run = 0;
     
     for (int i = 0; i < card_count; i++) {
@@ -197,6 +198,7 @@ int tsfi_cw_run_jcl_proc_nested(const char **cards, int card_count, const char *
             if (strstr(target, "PGM=") == NULL) {
                 // Call PROC
                 int proc_steps = tsfi_cw_run_jcl_proc_nested(proc_cards, proc_card_count, proc_cards, proc_card_count, initial_rc, depth + 1);
+                if (proc_steps == -9) return -9;
                 if (proc_steps > 0) steps_run += proc_steps;
             } else {
                 steps_run++;
@@ -286,33 +288,70 @@ int tsfi_cw_jcl_sysout_write(tsfi_cw_jcl_sysout *sysout, const char *text) {
     return 0;
 }
 
-int tsfi_cw_run_jcl_concat(const char **cards, int card_count, char *concat_out, int max_len) {
-    if (!cards || card_count <= 0 || !concat_out || max_len <= 0) return -1;
-    
+int tsfi_cw_run_jcl_concat(const char **cards, int card_count, char *concat_out, int max_out_len) {
+    if (!cards || card_count <= 0 || !concat_out || max_out_len <= 0) return -1;
     concat_out[0] = '\0';
-    int in_dd = 0;
+    
+    int in_concat = 0;
+    int bytes_written = 0;
     
     for (int i = 0; i < card_count; i++) {
         const char *card = cards[i];
-        if (strstr(card, "DD DSN=")) {
-            in_dd = 1;
-            const char *dsn = strstr(card, "DSN=");
-            strcat(concat_out, dsn + 4);
-            strcat(concat_out, ":");
-        } else if (in_dd && strncmp(card, "// ", 3) == 0 && strstr(card, "DD ") == NULL) {
-            // Concatenated DSN (starts with "// " and has no DD name)
-            const char *dsn = strstr(card, "DSN=");
-            if (dsn) {
-                strcat(concat_out, dsn + 4);
-                strcat(concat_out, ":");
+        if (in_concat) {
+            if (strncmp(card, "//", 2) == 0) {
+                const char *space = card + 2;
+                while (*space == ' ' || *space == '\t') space++;
+                if (strncmp(space, "DD ", 3) == 0 || (strncmp(card, "// ", 3) == 0 && strstr(card, "DD ") == NULL)) {
+                    const char *dsn = strstr(card, "DSN=");
+                    if (dsn) {
+                        dsn += 4;
+                        int d_len = 0;
+                        while (dsn[d_len] && dsn[d_len] != ',' && dsn[d_len] != ' ' && d_len < 31) {
+                            d_len++;
+                        }
+                        if (bytes_written + d_len + 2 < max_out_len) {
+                            if (bytes_written > 0) concat_out[bytes_written++] = ',';
+                            strncpy(concat_out + bytes_written, dsn, d_len);
+                            bytes_written += d_len;
+                            concat_out[bytes_written] = '\0';
+                        }
+                    }
+                } else {
+                    break;
+                }
             }
-        } else if (strncmp(card, "//", 2) == 0) {
-            in_dd = 0;
+        } else {
+            if (strstr(card, "DD DSN=")) {
+                in_concat = 1;
+                const char *dsn = strstr(card, "DSN=");
+                if (dsn) {
+                    dsn += 4;
+                    int d_len = 0;
+                    while (dsn[d_len] && dsn[d_len] != ',' && dsn[d_len] != ' ' && d_len < 31) {
+                        d_len++;
+                    }
+                    strncpy(concat_out, dsn, d_len);
+                    bytes_written += d_len;
+                    concat_out[bytes_written] = '\0';
+                }
+            }
         }
     }
-    int len = strlen(concat_out);
-    if (len > 0 && concat_out[len - 1] == ':') {
-        concat_out[len - 1] = '\0';
+    return bytes_written;
+}
+
+int tsfi_cw_run_jcl_override(const char **cards, int card_count, const char *step_name, char *override_out, int max_len) {
+    if (!cards || card_count <= 0 || !step_name || !override_out || max_len <= 0) return -1;
+    override_out[0] = '\0';
+    char search_pattern[64];
+    snprintf(search_pattern, sizeof(search_pattern), "//%s.", step_name);
+    for (int i = 0; i < card_count; i++) {
+        const char *card = cards[i];
+        if (strncmp(card, search_pattern, strlen(search_pattern)) == 0) {
+            strncpy(override_out, card, max_len - 1);
+            override_out[max_len - 1] = '\0';
+            return 0;
+        }
     }
-    return 0;
+    return -4;
 }

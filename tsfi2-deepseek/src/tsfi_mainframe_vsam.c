@@ -50,7 +50,7 @@ int tsfi_cw_vsam_write(tsfi_cw_vsam_ksds *ksds, const char *key, const uint8_t *
             break;
         }
     }
-
+    if (idx != -1 && ksds->index[idx].lock_state) return -7;
     if (idx == -1) {
         // Find correct insertion position to keep key sequence sorted (KSDS sequencing)
         int insert_pos = ksds->entry_count;
@@ -373,29 +373,31 @@ int tsfi_cw_vsam_esds_read(tsfi_cw_vsam_esds *esds, uint32_t rba, uint8_t *data_
 }
 
 int tsfi_cw_vsam_compress_key(const char *key, const char *prev_key, char *compressed_out, int max_len) {
-    if (!key || !compressed_out || max_len < 6) return -1;
-    int match = 0;
+    if (!key || !compressed_out || max_len <= 0) return -1;
+    compressed_out[0] = '\0';
+    
+    int shared_prefix = 0;
     if (prev_key) {
-        while (key[match] && prev_key[match] && key[match] == prev_key[match]) {
-            match++;
+        while (key[shared_prefix] && prev_key[shared_prefix] && key[shared_prefix] == prev_key[shared_prefix] && shared_prefix < 9) {
+            shared_prefix++;
         }
     }
-    int rem_len = strlen(key) - match;
-    snprintf(compressed_out, max_len, "%02u%02u%s", match, rem_len, key + match);
+    
+    snprintf(compressed_out, max_len, "%d%s", shared_prefix, key + shared_prefix);
     return 0;
 }
 
-int tsfi_cw_vsam_decompress_key(const char *compressed_in, const char *prev_key, char *decompressed_out, int max_len) {
-    if (!compressed_in || !decompressed_out || max_len <= 0) return -1;
-    unsigned int match = 0, rem_len = 0;
-    char suffix[64] = "";
-    if (sscanf(compressed_in, "%2u%2u%63s", &match, &rem_len, suffix) < 2) return -2;
+int tsfi_cw_vsam_decompress_key(const char *compressed, const char *prev_key, char *decompressed_out, int max_len) {
+    if (!compressed || !decompressed_out || max_len <= 0) return -1;
+    int shared_prefix = compressed[0] - '0';
+    if (shared_prefix < 0 || shared_prefix > 9) return -2;
     
     decompressed_out[0] = '\0';
-    if (match > 0 && prev_key) {
-        strncat(decompressed_out, prev_key, match);
+    if (shared_prefix > 0 && prev_key) {
+        strncpy(decompressed_out, prev_key, shared_prefix);
+        decompressed_out[shared_prefix] = '\0';
     }
-    strcat(decompressed_out, suffix);
+    strncat(decompressed_out, compressed + 1, max_len - strlen(decompressed_out) - 1);
     return 0;
 }
 
@@ -458,4 +460,27 @@ int tsfi_cw_vsam_path_read(tsfi_cw_vsam_ksds *ksds, tsfi_cw_vsam_aix *aix, const
     int found = tsfi_cw_vsam_aix_resolve(aix, alt_key, base_key);
     if (found != 0) return -4;
     return tsfi_cw_vsam_read(ksds, base_key, data_out, max_len, out_len);
+}
+
+int tsfi_cw_vsam_lock_record(tsfi_cw_vsam_ksds *ksds, const char *key) {
+    if (!ksds || !key) return -1;
+    for (int i = 0; i < ksds->entry_count; i++) {
+        if (ksds->index[i].active && strcmp(ksds->index[i].key, key) == 0) {
+            if (ksds->index[i].lock_state) return -2;
+            ksds->index[i].lock_state = 1;
+            return 0;
+        }
+    }
+    return -4;
+}
+
+int tsfi_cw_vsam_unlock_record(tsfi_cw_vsam_ksds *ksds, const char *key) {
+    if (!ksds || !key) return -1;
+    for (int i = 0; i < ksds->entry_count; i++) {
+        if (ksds->index[i].active && strcmp(ksds->index[i].key, key) == 0) {
+            ksds->index[i].lock_state = 0;
+            return 0;
+        }
+    }
+    return -4;
 }

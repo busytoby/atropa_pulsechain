@@ -249,3 +249,11 @@ int tsfi_cw_y2k_check_date_bounds(uint32_t yy, uint32_t mm, uint32_t dd, uint32_
     if (dd > (uint32_t)days_in_months[mm - 1]) return -2;
     return 0;
 }
+
+int tsfi_cw_y2k_day_of_week(uint32_t yy, uint32_t mm, uint32_t dd, uint32_t pivot, int *dow_out) {
+    if (!dow_out) return -1;
+    uint32_t year = tsfi_cw_y2k_resolve_year_ex(yy, pivot);
+    int days = tsfi_cw_days_from_epoch(year, mm, dd);
+    *dow_out = days % 7;
+    return 0;
+}

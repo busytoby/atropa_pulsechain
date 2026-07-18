@@ -193,3 +193,15 @@ uint8_t tsfi_cw_ebcdic_to_ascii_cp500(uint8_t ebcdic_char) {
     if (ebcdic_char == 0x5A) return ']';
     return tsfi_cw_ebcdic_to_ascii(ebcdic_char);
 }
+
+uint8_t tsfi_cw_ascii_to_ebcdic_cp850(uint8_t ascii_char) {
+    if (ascii_char == '{') return 0xC0;
+    if (ascii_char == '}') return 0xD0;
+    return tsfi_cw_ascii_to_ebcdic(ascii_char);
+}
+
+uint8_t tsfi_cw_ebcdic_to_ascii_cp850(uint8_t ebcdic_char) {
+    if (ebcdic_char == 0xC0) return '{';
+    if (ebcdic_char == 0xD0) return '}';
+    return tsfi_cw_ebcdic_to_ascii(ebcdic_char);
+}

@@ -676,6 +676,39 @@ static void test_new_mainframe_features(void) {
     int diff_days = 0;
     assert(tsfi_cw_y2k_date_diff(26, 7, 19, 26, 7, 21, 50, &diff_days) == 0);
     assert(diff_days == 2);
+
+    // VSAM Record Level Sharing (RLS) locks
+    assert(tsfi_cw_vsam_lock_record(&base_ksds, "BKEY1") == 0);
+    assert(tsfi_cw_vsam_write(&base_ksds, "BKEY1", base_d, 2) == -7);
+    assert(tsfi_cw_vsam_unlock_record(&base_ksds, "BKEY1") == 0);
+    assert(tsfi_cw_vsam_write(&base_ksds, "BKEY1", base_d, 2) == 0);
+
+    // COBOL Level 88 Condition Names
+    tsfi_cw_copybook cb_cond;
+    memset(&cb_cond, 0, sizeof(cb_cond));
+    rc = tsfi_cw_parse_copybook_line("88 VALID-STATE VALUE 'ACT'.", &cb_cond);
+    assert(rc == 0);
+    assert(cb_cond.field_count == 1);
+    assert(cb_cond.fields[0].level == 88);
+    assert(strcmp(cb_cond.fields[0].cond_value, "ACT") == 0);
+
+    // EBCDIC CP850 Translation
+    assert(tsfi_cw_ascii_to_ebcdic_cp850('{') == 0xC0);
+    assert(tsfi_cw_ebcdic_to_ascii_cp850(0xC0) == '{');
+
+    // JCL PROC step overrides
+    const char *jcl_override_deck[] = {
+        "//STEP1.SYSIN DD DSN=SYS1.LINKLIB",
+        "//STEP2 EXEC PGM=PROG"
+    };
+    char override_card[128];
+    assert(tsfi_cw_run_jcl_override(jcl_override_deck, 2, "STEP1", override_card, sizeof(override_card)) == 0);
+    assert(strstr(override_card, "DSN=SYS1.LINKLIB") != NULL);
+
+    // Y2K Day-of-Week Calculator
+    int dow = -1;
+    assert(tsfi_cw_y2k_day_of_week(26, 7, 19, 50, &dow) == 0);
+    assert(dow == 0);
 }
 
 int main(void) {
