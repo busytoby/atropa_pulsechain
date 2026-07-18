@@ -1947,17 +1947,27 @@ int tsfi_mf_tri_agency_coordinate(const char *ssn, int dmf_deceased, int ssn_all
 }
 
 int tsfi_mf_nato_format_ssa_irs_broadcast(const char *ssn, int audit_action, uint8_t *out_frame, size_t *out_size) {
-    (void)audit_action;
-    (void)out_frame;
-    (void)out_size;
-    if (!ssn) return -1;
+    if (!ssn || !out_frame || !out_size) return -1;
+    size_t len = strlen(ssn);
+    if (len != 9) return -2;
     
     // Raw SSN/TIN is incompatible with broadcast accessors. Trigger emergency DEFCON 1 alarm.
     int defcon = 5;
     uint16_t status = 0;
     tsfi_mf_tri_agency_coordinate(ssn, 1, 0, &defcon, &status);
     tsfi_gost_emergency_defcon_level = 1;
-    return -5; // Blocked: raw SSN/TIN engagement prohibited in open broadcast patterns
+    
+    // Format raw identity transmission
+    out_frame[0] = 0x7E; // NATO Frame Start
+    out_frame[1] = 0x55; // STANAG 5066 ID
+    out_frame[2] = (uint8_t)audit_action;
+    for (int i = 0; i < 9; i++) {
+        out_frame[i + 3] = ssn[i];
+    }
+    out_frame[12] = 0x7E; // NATO Frame End
+    
+    *out_size = 13;
+    return 0;
 }
 
 static const uint8_t gost_sbox_kgb[8][16] = {
