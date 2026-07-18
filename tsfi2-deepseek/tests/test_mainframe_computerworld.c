@@ -1794,6 +1794,24 @@ static void test_new_mainframe_features(void) {
     int compliant = 0;
     assert(tsfi_cw_icp_audit_vendor(&vendor, &compliant) == 0);
     assert(compliant == 1);
+
+    // ICP Category Mapping test
+    tsfi_cw_icp_category_map cat_maps[32];
+    int cat_cnt = 0;
+    assert(tsfi_cw_icp_assign_category(cat_maps, &cat_cnt, "P01", "UTILITY") == 0);
+    assert(cat_cnt == 1);
+    char cat_res[1][8];
+    int cat_res_cnt = 0;
+    assert(tsfi_cw_icp_query_category(cat_maps, cat_cnt, "UTILITY", cat_res, &cat_res_cnt) == 0);
+    assert(cat_res_cnt == 1);
+    assert(strcmp(cat_res[0], "P01") == 0);
+
+    // ICP Grace Period test
+    int suspended = 0;
+    assert(tsfi_cw_icp_audit_grace_period(15, 30, &suspended) == 0);
+    assert(suspended == 0);
+    assert(tsfi_cw_icp_audit_grace_period(35, 30, &suspended) == 0);
+    assert(suspended == 1);
 }
 
 int main(void) {

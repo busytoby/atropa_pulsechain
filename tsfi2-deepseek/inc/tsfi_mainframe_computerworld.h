@@ -873,5 +873,16 @@ typedef struct {
 int tsfi_cw_icp_register_release(tsfi_cw_icp_release_record *releases, int *release_count, const tsfi_cw_icp_release_record *new_release);
 int tsfi_cw_icp_audit_vendor(const tsfi_cw_icp_vendor_record *vendor, int *is_compliant_out);
 
+// ICP Product Category Mapping
+typedef struct {
+    char product_id[8];
+    char category_name[16];
+} tsfi_cw_icp_category_map;
+
+// ICP Category Grouping and Subscription Grace Functions
+int tsfi_cw_icp_assign_category(tsfi_cw_icp_category_map *maps, int *map_count, const char *prod_id, const char *category);
+int tsfi_cw_icp_query_category(const tsfi_cw_icp_category_map *maps, int map_count, const char *category, char ids_out[][8], int *ids_count_out);
+int tsfi_cw_icp_audit_grace_period(int days_late, int allowed_grace_days, int *suspended_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

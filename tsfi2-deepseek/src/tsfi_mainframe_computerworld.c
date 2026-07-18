@@ -1019,6 +1019,47 @@ int tsfi_cw_icp_audit_vendor(const tsfi_cw_icp_vendor_record *vendor, int *is_co
     return 0;
 }
 
+int tsfi_cw_icp_assign_category(tsfi_cw_icp_category_map *maps, int *map_count, const char *prod_id, const char *category) {
+    if (!maps || !map_count || !prod_id || !category) return -1;
+    
+    for (int i = 0; i < *map_count; i++) {
+        if (strcmp(maps[i].product_id, prod_id) == 0) {
+            strncpy(maps[i].category_name, category, sizeof(maps[i].category_name) - 1);
+            maps[i].category_name[sizeof(maps[i].category_name) - 1] = '\0';
+            return 0;
+        }
+    }
+    
+    if (*map_count >= 32) return -3;
+    strncpy(maps[*map_count].product_id, prod_id, sizeof(maps[*map_count].product_id) - 1);
+    maps[*map_count].product_id[sizeof(maps[*map_count].product_id) - 1] = '\0';
+    strncpy(maps[*map_count].category_name, category, sizeof(maps[*map_count].category_name) - 1);
+    maps[*map_count].category_name[sizeof(maps[*map_count].category_name) - 1] = '\0';
+    (*map_count)++;
+    return 0;
+}
+
+int tsfi_cw_icp_query_category(const tsfi_cw_icp_category_map *maps, int map_count, const char *category, char ids_out[][8], int *ids_count_out) {
+    if (!maps || map_count < 0 || !category || !ids_out || !ids_count_out) return -1;
+    
+    *ids_count_out = 0;
+    for (int i = 0; i < map_count; i++) {
+        if (strcmp(maps[i].category_name, category) == 0) {
+            strncpy(ids_out[*ids_count_out], maps[i].product_id, 7);
+            ids_out[*ids_count_out][7] = '\0';
+            (*ids_count_out)++;
+        }
+    }
+    return 0;
+}
+
+int tsfi_cw_icp_audit_grace_period(int days_late, int allowed_grace_days, int *suspended_out) {
+    if (!suspended_out) return -1;
+    *suspended_out = (days_late > allowed_grace_days) ? 1 : 0;
+    return 0;
+}
+
+
 
 
 
