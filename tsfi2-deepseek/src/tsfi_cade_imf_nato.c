@@ -753,3 +753,15 @@ int tsfi_mf_nato_verify_rssi_quiet_sample_threshold_limit_margin_range_val(int v
     *is_valid = (val_samples >= 1 && val_samples <= 10) ? 1 : 0;
     return 0;
 }
+
+int tsfi_mf_nato_verify_slot_boundary_source_offset_range_limit_val_margin_range(int range_ms, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (range_ms >= 0 && range_ms <= 80) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_rssi_quiet_sample_threshold_limit_margin_range_option_selector(int selector, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (selector >= 0 && selector <= 3) ? 1 : 0;
+    return 0;
+}
