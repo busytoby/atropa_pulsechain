@@ -50,12 +50,12 @@ int tsfi_mf_zmachine_majormud_command(const char *cmd, char *mud_state, char *re
     } else if (strncmp(cmd, "estate_tax ", 11) == 0) {
         int doc_code = atoi(cmd + 11);
         int result = 0;
-        tsfi_mf_imf_is_estate_form(doc_code, &result);
+        tsfi_mf_imf_verify_document_form(doc_code, 25, &result);
         snprintf(response_out, max_len, "Estate form check: %d", result);
     } else if (strncmp(cmd, "estate_status ", 14) == 0) {
         int status_code = atoi(cmd + 14);
         int result = 0;
-        tsfi_mf_cade_is_audit_or_pending(status_code, &result);
+        tsfi_mf_cade_check_status_mask(status_code, 10, &result);
         snprintf(response_out, max_len, "Estate audit check: %d", result);
     } else {
         snprintf(response_out, max_len, "Unknown MajorMUD command: %s", cmd);

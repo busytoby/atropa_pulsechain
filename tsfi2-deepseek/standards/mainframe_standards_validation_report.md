@@ -215,37 +215,7 @@
 | 281 | IRS CADE Taxpayer Under Audit Or Suspended Or Pending Checker | PASS | Asserves if account status matches under audit, suspended, or pending audit codes | Volume 33 |
 | 282 | IRS CADE Taxpayer Address Matching | PASS | Verifies structural equality for primary taxpayer street records | Volume 33 |
 | 283 | IRS IMF Cycle Week Calculator | PASS | Extracts weekly cycle intervals from cycle code timestamps | Volume 33 |
-| 284 | IRS IMF Form 1040A Verifier | PASS | Restricts individual filings to Form 1040A individual tax return ranges | Volume 33 |
-| 285 | IRS CADE Taxpayer Active Or Suspended Or Audit Or Pending Checker | PASS | Asserves if account status matches active, suspended, under audit, or pending audit codes | Volume 33 |
-| 286 | IRS IMF Form 1040EZ Verifier | PASS | Restricts individual filings to Form 1040EZ individual tax return ranges | Volume 33 |
-| 287 | IRS CADE Taxpayer Under Audit Or Suspended Or Pending Checker Ver2 | PASS | Asserves if account status matches under audit, suspended, or pending audit codes | Volume 33 |
-| 288 | IRS IMF Form 1040X Verifier | PASS | Restricts individual filings to Form 1040X amended tax return ranges | Volume 33 |
-| 289 | IRS CADE Taxpayer Active Or Under Audit Or Suspended Checker | PASS | Asserves if account status matches active, under audit, or suspended codes | Volume 33 |
-| 290 | IRS IMF Form 1040-SR Verifier | PASS | Restricts individual filings to Form 1040-SR senior tax return ranges | Volume 33 |
-| 291 | IRS CADE Taxpayer Under Audit Or Suspended Checker Ver3 | PASS | Asserves if account status matches under audit or suspended codes | Volume 33 |
-| 292 | IRS IMF Form 1040-NR Verifier | PASS | Restricts individual filings to Form 1040-NR non-resident tax return ranges | Volume 33 |
-| 293 | IRS CADE Taxpayer Active Or Under Audit Or Suspended Or Pending Checker Ver2 | PASS | Asserves if account status matches active, under audit, suspended, or pending audit codes | Volume 33 |
-| 294 | IRS IMF Form 1040-PR Verifier | PASS | Restricts individual filings to Form 1040-PR Puerto Rico return ranges | Volume 33 |
-| 295 | IRS CADE Taxpayer Active Or Under Audit Or Suspended Or Pending Checker Ver3 | PASS | Asserves if account status matches active, under audit, suspended, or pending audit codes | Volume 33 |
-| 296 | IRS IMF Form 1040-SS Verifier | PASS | Restricts individual filings to Form 1040-SS US Virgin Islands return ranges | Volume 33 |
-| 297 | IRS CADE Taxpayer Active Or Under Audit Or Suspended Or Pending Checker Ver4 | PASS | Asserves if account status matches active, under audit, suspended, or pending audit codes | Volume 33 |
-| 298 | IRS IMF Form 1040-C Verifier | PASS | Restricts individual filings to Form 1040-C alien return ranges | Volume 33 |
-| 299 | IRS CADE Taxpayer Active Or Under Audit Or Suspended Or Pending Checker Ver5 | PASS | Asserves if account status matches active, under audit, suspended, or pending audit codes | Volume 33 |
-| 300 | IRS IMF Form 1040-NR-EZ Verifier | PASS | Restricts individual filings to Form 1040-NR-EZ non-resident alien return ranges | Volume 33 |
-| 301 | IRS CADE Taxpayer Active Or Under Audit Or Suspended Or Pending Checker Ver6 | PASS | Asserves if account status matches active, under audit, suspended, or pending audit codes | Volume 33 |
-| 302 | IRS IMF Form 1040-PR-EZ Verifier | PASS | Restricts individual filings to Form 1040-PR-EZ Puerto Rico return ranges | Volume 33 |
-| 303 | IRS CADE Taxpayer Active Or Under Audit Or Suspended Or Pending Checker Ver7 | PASS | Asserves if account status matches active, under audit, suspended, or pending audit codes | Volume 33 |
-| 304 | IRS IMF Form 1040-SS-EZ Verifier | PASS | Restricts individual filings to Form 1040-SS-EZ US Virgin Islands return ranges | Volume 33 |
-| 305 | IRS CADE Taxpayer Active Or Under Audit Or Suspended Or Pending Checker Ver8 | PASS | Asserves if account status matches active, under audit, suspended, or pending audit codes | Volume 33 |
-| 306 | IRS IMF Form 1040-PR-SS Verifier | PASS | Restricts individual filings to Form 1040-PR-SS Puerto Rico / USVI return ranges | Volume 33 |
-| 307 | IRS CADE Taxpayer Active Or Under Audit Or Suspended Or Pending Checker Ver9 | PASS | Asserves if account status matches active, under audit, suspended, or pending audit codes | Volume 33 |
-| 308 | IRS IMF Form 1040-SS-SS Verifier | PASS | Restricts individual filings to Form 1040-SS-SS US territory return ranges | Volume 33 |
-| 309 | IRS CADE Taxpayer Active Or Under Audit Or Suspended Or Pending Checker Ver10 | PASS | Asserves if account status matches active, under audit, suspended, or pending audit codes | Volume 33 |
-| 310 | IRS IMF Form 1040-SS-SS Ver2 Verifier | PASS | Restricts individual filings to Form 1040-SS-SS territory return ranges | Volume 33 |
-| 311 | IRS CADE Taxpayer Active Or Under Audit Or Suspended Or Pending Checker Ver11 | PASS | Asserves if account status matches active, under audit, suspended, or pending audit codes | Volume 33 |
-| 312 | IRS IMF Form 1040-SS-SS Ver3 Verifier | PASS | Restricts individual filings to Form 1040-SS-SS territory return ranges | Volume 33 |
-| 313 | IRS CADE Taxpayer Active Or Under Audit Or Suspended Or Pending Checker Ver12 | PASS | Asserves if account status matches active, under audit, suspended, or pending audit codes | Volume 33 |
-| 314 | IRS IMF Form 1040-SS-SS Ver4 Verifier | PASS | Restricts individual filings to Form 1040-SS-SS territory return ranges | Volume 33 |
-| 315 | IRS CADE Taxpayer Active Or Under Audit Or Suspended Or Pending Checker Ver13 | PASS | Asserves if account status matches active, under audit, suspended, or pending audit codes | Volume 33 |
+| 284 | IRS IMF Generic Document Form Verifier | PASS | Unified document form type resolver | Volume 33 |
+| 285 | IRS CADE Generic Taxpayer Status Mask Checker | PASS | Unified account status mask validator | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 315 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 285 Scenarios validated successfully)
