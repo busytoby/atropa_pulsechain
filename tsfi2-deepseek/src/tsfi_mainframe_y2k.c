@@ -316,3 +316,10 @@ int tsfi_cw_y2k_validate_format(const char *date_str) {
     }
     return 0;
 }
+
+int tsfi_cw_y2k_validate_julian_day(uint32_t year, uint32_t day_of_year) {
+    int is_leap = tsfi_cw_y2k_is_leap_year(year);
+    uint32_t max_days = is_leap ? 366 : 365;
+    if (day_of_year < 1 || day_of_year > max_days) return -13;
+    return 0;
+}

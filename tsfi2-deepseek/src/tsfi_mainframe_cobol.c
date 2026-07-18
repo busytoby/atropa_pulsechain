@@ -699,3 +699,8 @@ int tsfi_cw_cobol_get_dynamic_record_length(tsfi_cw_copybook *cb, const char *de
     }
     return length;
 }
+
+int tsfi_cw_cobol_validate_occurs_range(int current_occurs, int max_occurs) {
+    if (current_occurs < 0 || current_occurs > max_occurs) return -12;
+    return 0;
+}

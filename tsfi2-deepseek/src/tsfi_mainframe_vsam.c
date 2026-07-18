@@ -41,6 +41,16 @@ int tsfi_cw_vsam_open(tsfi_cw_vsam_ksds *ksds, const char *filepath) {
 int tsfi_cw_vsam_write(tsfi_cw_vsam_ksds *ksds, const char *key, const uint8_t *data, int len) {
     if (!ksds || !key || !data || len <= 0) return -1;
     if (strlen(key) > 15) return -6;
+
+    if (ksds->entry_count >= 128) {
+        int write_idx = 0;
+        for (int i = 0; i < ksds->entry_count; i++) {
+            if (ksds->index[i].active) {
+                ksds->index[write_idx++] = ksds->index[i];
+            }
+        }
+        ksds->entry_count = write_idx;
+    }
     if (ksds->entry_count >= 128) return -2;
 
     int idx = -1;
@@ -52,6 +62,7 @@ int tsfi_cw_vsam_write(tsfi_cw_vsam_ksds *ksds, const char *key, const uint8_t *
     }
     if (idx != -1 && ksds->index[idx].lock_state) return -7;
     if (idx == -1) {
+
         // Find correct insertion position to keep key sequence sorted (KSDS sequencing)
         int insert_pos = ksds->entry_count;
         for (int i = 0; i < ksds->entry_count; i++) {

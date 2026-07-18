@@ -845,6 +845,34 @@ static void test_new_mainframe_features(void) {
     // Y2K format validator
     assert(tsfi_cw_y2k_validate_format("2026-07-18") == 0);
     assert(tsfi_cw_y2k_validate_format("2026/07/18") == -3);
+
+    // VSAM Index Split Recovery
+    tsfi_cw_vsam_ksds recovery_ksds;
+    memset(&recovery_ksds, 0, sizeof(recovery_ksds));
+    strcpy(recovery_ksds.filepath, "recovery_test.dat.bin");
+    for (int i = 0; i < 128; i++) {
+        recovery_ksds.index[i].active = 0;
+    }
+    recovery_ksds.entry_count = 128;
+    assert(tsfi_cw_vsam_write(&recovery_ksds, "REC1", base_d, 2) == 0);
+    assert(recovery_ksds.entry_count == 1);
+
+    // COBOL Occurs dynamic check
+    assert(tsfi_cw_cobol_validate_occurs_range(5, 10) == 0);
+    assert(tsfi_cw_cobol_validate_occurs_range(12, 10) == -12);
+
+    // EBCDIC CP284 Translation
+    assert(tsfi_cw_ascii_to_ebcdic_cp284(0xBF) == 0x51);
+    assert(tsfi_cw_ebcdic_to_ascii_cp284(0x51) == 0xBF);
+
+    // JCL parameter substitution
+    char subst_out[128];
+    assert(tsfi_cw_jcl_substitute_symbol("//SYSIN DD DSN=&MYDSN", "MYDSN", "TEST.DATA", subst_out, sizeof(subst_out)) == 0);
+    assert(strcmp(subst_out, "//SYSIN DD DSN=TEST.DATA") == 0);
+
+    // Y2K Julian validator
+    assert(tsfi_cw_y2k_validate_julian_day(2000, 366) == 0);
+    assert(tsfi_cw_y2k_validate_julian_day(2100, 366) == -13);
 }
 
 int main(void) {

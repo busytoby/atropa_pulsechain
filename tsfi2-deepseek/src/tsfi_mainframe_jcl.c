@@ -453,3 +453,23 @@ int tsfi_cw_jcl_parse_parm(const char *card, char *parm_out, int max_len) {
     }
     return -2;
 }
+
+int tsfi_cw_jcl_substitute_symbol(const char *card, const char *sym_name, const char *sym_val, char *resolved_out, int max_len) {
+    if (!card || !sym_name || !sym_val || !resolved_out || max_len <= 0) return -1;
+    char sym_placeholder[64];
+    snprintf(sym_placeholder, sizeof(sym_placeholder), "&%s", sym_name);
+    
+    const char *p = strstr(card, sym_placeholder);
+    if (p) {
+        int prefix_len = p - card;
+        if (prefix_len >= max_len) prefix_len = max_len - 1;
+        strncpy(resolved_out, card, prefix_len);
+        resolved_out[prefix_len] = '\0';
+        strncat(resolved_out, sym_val, max_len - strlen(resolved_out) - 1);
+        strncat(resolved_out, p + strlen(sym_placeholder), max_len - strlen(resolved_out) - 1);
+        return 0;
+    }
+    strncpy(resolved_out, card, max_len - 1);
+    resolved_out[max_len - 1] = '\0';
+    return -2;
+}
