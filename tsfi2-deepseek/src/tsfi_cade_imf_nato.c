@@ -783,6 +783,10 @@ int tsfi_mf_nato_verify_parameter(int param_type, int value, int *is_valid) {
             min_val = 0; max_val = 5; break;
         case TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION:
             min_val = 0; max_val = 2; break;
+        case TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT_VAL_MARGIN_RANGE_OPTION_SELECTOR_OPTION_MARGIN_RANGE_OPTION_SELECTOR_OPTION_MARGIN_LIMIT_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION_SELECTOR_MARGIN:
+            min_val = 0; max_val = 110; break;
+        case TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION_SELECTOR:
+            min_val = 0; max_val = 5; break;
         default:
             *is_valid = 0;
             return -2;
@@ -957,4 +961,12 @@ int tsfi_mf_nato_verify_slot_boundary_source_offset_range_limit_val_margin_range
 
 int tsfi_mf_nato_verify_rssi_quiet_sample_threshold_limit_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option(int option, int *is_valid) {
     return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION, option, is_valid);
+}
+
+int tsfi_mf_nato_verify_slot_boundary_source_offset_range_limit_val_margin_range_option_selector_option_margin_range_option_selector_option_margin_limit_range_option_selector_margin_range_option_selector_margin(int margin_ms, int *is_valid) {
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT_VAL_MARGIN_RANGE_OPTION_SELECTOR_OPTION_MARGIN_RANGE_OPTION_SELECTOR_OPTION_MARGIN_LIMIT_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION_SELECTOR_MARGIN, margin_ms, is_valid);
+}
+
+int tsfi_mf_nato_verify_rssi_quiet_sample_threshold_limit_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector(int selector, int *is_valid) {
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION_SELECTOR, selector, is_valid);
 }
