@@ -42,6 +42,7 @@ typedef struct {
     uint8_t fee_exempt;
     uint32_t custom_interest_rate_bps;
     uint8_t has_custom_rate;
+    uint64_t min_balance;
 } hogan_account;
 
 #define HOGAN_MAX_BLOCKED_CARDS 32
@@ -273,5 +274,15 @@ typedef struct {
 } hogan_int_override_entry;
 
 int tsfi_hogan_apply_interest_override(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t new_rate_bps, uint32_t authority_id);
+
+// Minimum Balance Compliance Manager (Threshold Enforcement)
+typedef struct {
+    uint32_t account_id;
+    uint64_t previous_min_balance;
+    uint64_t new_min_balance;
+    uint32_t authority_id;
+} hogan_min_balance_entry;
+
+int tsfi_hogan_update_min_balance(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_min_balance, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H

@@ -882,6 +882,49 @@ int main(void) {
     remove(overrides_path); // clean up
     printf("  [PASS] Custom interest rate overrides, custom rate postings, and override logs verified.\n");
 
+    // 28. Test Minimum Balance Compliance Manager (Threshold Enforcement)
+    printf("[E2E] Testing Minimum Balance Compliance Manager...\n");
+    const char *minb_path = "hogan_minb.dat.bin";
+    remove(minb_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system minb_sys;
+    tsfi_hogan_init(&minb_sys);
+    assert(tsfi_hogan_register_account(&minb_sys, 1001, 1000) == 0); // Alice: 1,000 units
+    assert(tsfi_hogan_register_account(&minb_sys, 2002, 1000) == 0); // Bob: 1,000 units
+    
+    // Set Alice's minimum balance threshold to 300 units
+    assert(tsfi_hogan_update_min_balance(&minb_sys, minb_path, 1001, 300, 888) == 0);
+    assert(tsfi_hogan_update_min_balance(&minb_sys, "hogan_minb.json", 1001, 300, 888) == -3); // Rule 13 check
+    
+    // Alice transfers 600 to Bob (succeeds, remaining balance 400 >= 300)
+    assert(tsfi_hogan_dispatch_tx(&minb_sys, 1001, 2002, 600, VM_EVM) == 0);
+    
+    // Alice transfers 200 to Bob (should fail because remaining balance would be 200 < 300)
+    assert(tsfi_hogan_dispatch_tx(&minb_sys, 1001, 2002, 200, VM_EVM) == 0);
+    
+    // Run reconciliation
+    assert(tsfi_hogan_overnight_reconciliation(&minb_sys, "hogan_lfs.dat.bin") == 0);
+    
+    // Verify balances (only 600 transfer processed, 200 transfer blocked)
+    assert(minb_sys.accounts[0].balance == 400);
+    assert(minb_sys.accounts[1].balance == 1600);
+    
+    // Read sequential log file and verify entries
+    uint8_t read_mbbuf[sizeof(hogan_min_balance_entry)];
+    size_t mb_size = 0;
+    assert(tsfi_hogan_read_seq_record(minb_path, 0, read_mbbuf, &mb_size) == 0);
+    assert(mb_size == sizeof(hogan_min_balance_entry));
+    
+    const hogan_min_balance_entry *mbentry = (const hogan_min_balance_entry *)read_mbbuf;
+    assert(mbentry->account_id == 1001);
+    assert(mbentry->previous_min_balance == 0);
+    assert(mbentry->new_min_balance == 300);
+    assert(mbentry->authority_id == 888);
+    
+    remove(minb_path); // clean up
+    printf("  [PASS] Minimum balance compliance, validations, and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }

@@ -88,6 +88,7 @@ int tsfi_hogan_lfs_save(const hogan_umbrella_system *sys, const char *filepath) 
             fwrite(&sys->accounts[i].fee_exempt, sizeof(uint8_t), 1, f);
             fwrite(&sys->accounts[i].custom_interest_rate_bps, sizeof(uint32_t), 1, f);
             fwrite(&sys->accounts[i].has_custom_rate, sizeof(uint8_t), 1, f);
+            fwrite(&sys->accounts[i].min_balance, sizeof(uint64_t), 1, f);
         }
     }
     
@@ -207,6 +208,12 @@ int tsfi_hogan_lfs_load(hogan_umbrella_system *sys, const char *filepath) {
         }
         sys->accounts[i].custom_interest_rate_bps = cust_rate;
         sys->accounts[i].has_custom_rate = has_cust;
+        uint64_t min_bal = 0;
+        if (fread(&min_bal, sizeof(uint64_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
+        sys->accounts[i].min_balance = min_bal;
         sys->accounts[i].active = 1;
     }
     
@@ -606,41 +613,46 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
                 tx->processed = 1; // transaction blocked by administrative hold
             } else if (sender->daily_transfer_limit > 0 && sender->daily_transferred + tx->amount > sender->daily_transfer_limit) {
                 tx->processed = 1; // blocked by daily transfer limit
-            } else if (sender->balance >= tx->amount) {
+            } else if (sender->balance >= tx->amount + sender->min_balance) {
                 sender->balance -= tx->amount;
                 recipient->balance += tx->amount;
                 sender->daily_transferred += tx->amount;
                 tx->processed = 1;
             } else if (sender->has_backup) {
                 // Determine overdraft backup account
-                uint64_t deficit = tx->amount - sender->balance;
-                hogan_account *backup = NULL;
-                for (int j = 0; j < HOGAN_MAX_ACCOUNTS; j++) {
-                    if (sys->accounts[j].active && sys->accounts[j].account_id == sender->backup_account_id) {
-                        backup = &sys->accounts[j];
-                        break;
+                uint64_t required = tx->amount + sender->min_balance;
+                if (required > sender->balance) {
+                    uint64_t deficit = required - sender->balance;
+                    hogan_account *backup = NULL;
+                    for (int j = 0; j < HOGAN_MAX_ACCOUNTS; j++) {
+                        if (sys->accounts[j].active && sys->accounts[j].account_id == sender->backup_account_id) {
+                            backup = &sys->accounts[j];
+                            break;
+                        }
                     }
-                }
-                
-                if (backup && backup->balance >= deficit) {
-                    backup->balance -= deficit;
-                    sender->balance += deficit;
                     
-                    sender->balance -= tx->amount;
-                    recipient->balance += tx->amount;
-                    sender->daily_transferred += tx->amount;
-                    tx->processed = 1;
-                    
-                    if (overdraft_filepath) {
-                        hogan_overdraft_entry o_entry = { sender->account_id, backup->account_id, deficit, 1 };
-                        tsfi_hogan_write_seq_record(overdraft_filepath, (const uint8_t *)&o_entry, sizeof(hogan_overdraft_entry));
+                    if (backup && backup->balance >= deficit) {
+                        backup->balance -= deficit;
+                        sender->balance += deficit;
+                        
+                        sender->balance -= tx->amount;
+                        recipient->balance += tx->amount;
+                        sender->daily_transferred += tx->amount;
+                        tx->processed = 1;
+                        
+                        if (overdraft_filepath) {
+                            hogan_overdraft_entry o_entry = { sender->account_id, backup->account_id, deficit, 1 };
+                            tsfi_hogan_write_seq_record(overdraft_filepath, (const uint8_t *)&o_entry, sizeof(hogan_overdraft_entry));
+                        }
+                    } else {
+                        tx->processed = 1;
+                        if (overdraft_filepath) {
+                            hogan_overdraft_entry o_entry = { sender->account_id, sender->backup_account_id, deficit, 0 };
+                            tsfi_hogan_write_seq_record(overdraft_filepath, (const uint8_t *)&o_entry, sizeof(hogan_overdraft_entry));
+                        }
                     }
                 } else {
-                    tx->processed = 1;
-                    if (overdraft_filepath) {
-                        hogan_overdraft_entry o_entry = { sender->account_id, sender->backup_account_id, deficit, 0 };
-                        tsfi_hogan_write_seq_record(overdraft_filepath, (const uint8_t *)&o_entry, sizeof(hogan_overdraft_entry));
-                    }
+                    tx->processed = 1; // Fails
                 }
             } else {
                 tx->processed = 1; // Fails, insufficient funds and no backup
@@ -684,6 +696,7 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
             EVP_DigestUpdate(mdctx, &sys->accounts[i].fee_exempt, sizeof(uint8_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].custom_interest_rate_bps, sizeof(uint32_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].has_custom_rate, sizeof(uint8_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].min_balance, sizeof(uint64_t));
         }
     }
     EVP_DigestUpdate(mdctx, &sys->blocked_card_count, sizeof(size_t));
@@ -1135,6 +1148,41 @@ int tsfi_hogan_apply_interest_override(hogan_umbrella_system *sys, const char *f
     acc->has_custom_rate = 1;
     
     int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_int_override_entry));
+    
+    sys->live_processing_enabled = original_live_state;
+    return write_res;
+}
+
+int tsfi_hogan_update_min_balance(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_min_balance, uint32_t authority_id) {
+    // Enforce Rule 13: file extension must end with .dat.bin
+    const char *ext = strrchr(filepath, '.');
+    if (!ext || strcmp(ext, ".bin") != 0) {
+        if (!ext || strcmp(ext - 4, ".dat.bin") != 0) {
+            return -3; // Invalid extension
+        }
+    }
+
+    // Disable live queue during administrative action
+    uint8_t original_live_state = sys->live_processing_enabled;
+    sys->live_processing_enabled = 0;
+    
+    hogan_account *acc = NULL;
+    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
+        if (sys->accounts[i].active && sys->accounts[i].account_id == account_id) {
+            acc = &sys->accounts[i];
+            break;
+        }
+    }
+    
+    if (!acc) {
+        sys->live_processing_enabled = original_live_state;
+        return -1; // account not found
+    }
+    
+    hogan_min_balance_entry entry = { account_id, acc->min_balance, new_min_balance, authority_id };
+    acc->min_balance = new_min_balance;
+    
+    int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_min_balance_entry));
     
     sys->live_processing_enabled = original_live_state;
     return write_res;
