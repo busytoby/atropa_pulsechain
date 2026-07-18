@@ -608,6 +608,39 @@ static void test_new_mainframe_features(void) {
     char greg_out_d[16];
     assert(tsfi_cw_julian_to_gregorian_y2k("26.200", 50, greg_out_d, sizeof(greg_out_d)) == 0);
     assert(strcmp(greg_out_d, "2026-07-19") == 0);
+
+    // COBOL SIGN Embedded Zone Nibbles
+    uint8_t zoned_out[16];
+    assert(tsfi_cw_pack_zoned_sign("-123", zoned_out, sizeof(zoned_out), 0) == 3);
+    char zoned_dec[16];
+    assert(tsfi_cw_unpack_zoned_sign(zoned_out, 3, zoned_dec, sizeof(zoned_dec), 0) == 0);
+    assert(strcmp(zoned_dec, "-123") == 0);
+
+    // VSAM RRDS Slot Occupancy
+    tsfi_cw_vsam_rrds rrds_occ;
+    tsfi_cw_vsam_rrds_init(&rrds_occ, "test_occ.dat.bin");
+    assert(tsfi_cw_vsam_rrds_is_occupied(&rrds_occ, 10) == 0);
+    uint8_t occ_data[4] = {0xAA};
+    assert(tsfi_cw_vsam_rrds_write(&rrds_occ, 10, occ_data, 1) == 0);
+    assert(tsfi_cw_vsam_rrds_is_occupied(&rrds_occ, 10) == 1);
+
+    // EBCDIC CP273 Translation
+    assert(tsfi_cw_ascii_to_ebcdic_cp273(0xA7) == 0x7C);
+    assert(tsfi_cw_ebcdic_to_ascii_cp273(0x7C) == 0xA7);
+
+    // JCL EXPORT Variable Cards
+    const char *jcl_exp_deck[] = {
+        "// EXPORT EXP1=MYVALUE",
+        "//STEP1 EXEC PGM=PROG"
+    };
+    char exp_n[32], exp_v[32];
+    assert(tsfi_cw_run_jcl_export(jcl_exp_deck, 2, exp_n, exp_v) == 0);
+    assert(strcmp(exp_n, "EXP1") == 0);
+    assert(strcmp(exp_v, "MYVALUE") == 0);
+
+    // Dynamic Gregorian Day-of-Month bounds
+    assert(tsfi_cw_y2k_check_date_bounds(24, 2, 29, 50) == 0);
+    assert(tsfi_cw_y2k_check_date_bounds(25, 2, 29, 50) == -2);
 }
 
 int main(void) {

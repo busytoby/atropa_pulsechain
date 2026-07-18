@@ -1339,6 +1339,7 @@ int tsfi_cw_vsam_rrds_write(tsfi_cw_vsam_rrds *rrds, uint32_t rrn, const uint8_t
     rrds->slots[rrn].rrn = rrn;
     rrds->slots[rrn].length = len;
     rrds->slots[rrn].active = 1;
+    rrds->occupancy_map |= (1ULL << rrn);
     if ((int)rrn > rrds->max_rrn) rrds->max_rrn = rrn;
     return 0;
 }
@@ -1836,6 +1837,106 @@ int tsfi_cw_julian_to_gregorian_y2k(const char *julian_in, uint32_t pivot, char 
     }
     
     snprintf(greg_out, max_len, "%04u-%02u-%02u", year, month, day);
+    return 0;
+}
+
+int tsfi_cw_pack_zoned_sign(const char *ascii_num, uint8_t *ebcdic_out, int max_len, int leading) {
+    if (!ascii_num || !ebcdic_out || max_len <= 0) return -1;
+    int len = strlen(ascii_num);
+    int is_neg = (ascii_num[0] == '-');
+    int start = (ascii_num[0] == '-' || ascii_num[0] == '+') ? 1 : 0;
+    int digits = len - start;
+    if (digits > max_len) return -2;
+
+    for (int i = 0; i < digits; i++) {
+        char digit = ascii_num[start + i];
+        ebcdic_out[i] = tsfi_cw_ascii_to_ebcdic(digit);
+    }
+    
+    int sign_idx = leading ? 0 : (digits - 1);
+    if (is_neg) {
+        ebcdic_out[sign_idx] = (ebcdic_out[sign_idx] & 0x0F) | 0xD0;
+    } else {
+        ebcdic_out[sign_idx] = (ebcdic_out[sign_idx] & 0x0F) | 0xC0;
+    }
+    return digits;
+}
+
+int tsfi_cw_unpack_zoned_sign(const uint8_t *ebcdic_in, int len, char *ascii_out, int max_len, int leading) {
+    if (!ebcdic_in || len <= 0 || !ascii_out || max_len <= len + 1) return -1;
+    int sign_idx = leading ? 0 : (len - 1);
+    uint8_t sign_nibble = ebcdic_in[sign_idx] & 0xF0;
+    int is_neg = (sign_nibble == 0xD0);
+    
+    int w_idx = 0;
+    if (is_neg) ascii_out[w_idx++] = '-';
+    
+    for (int i = 0; i < len; i++) {
+        uint8_t raw = ebcdic_in[i];
+        if (i == sign_idx) {
+            raw = (raw & 0x0F) | 0xF0;
+        }
+        ascii_out[w_idx++] = (char)tsfi_cw_ebcdic_to_ascii(raw);
+    }
+    ascii_out[w_idx] = '\0';
+    return 0;
+}
+
+int tsfi_cw_vsam_rrds_is_occupied(tsfi_cw_vsam_rrds *rrds, uint32_t rrn) {
+    if (!rrds || rrn >= 64) return 0;
+    return (rrds->occupancy_map & (1ULL << rrn)) ? 1 : 0;
+}
+
+uint8_t tsfi_cw_ascii_to_ebcdic_cp273(uint8_t ascii_char) {
+    if (ascii_char == 0xA7) return 0x7C;
+    if (ascii_char == 0xC4) return 0x4A;
+    return tsfi_cw_ascii_to_ebcdic(ascii_char);
+}
+
+uint8_t tsfi_cw_ebcdic_to_ascii_cp273(uint8_t ebcdic_char) {
+    if (ebcdic_char == 0x7C) return 0xA7;
+    if (ebcdic_char == 0x4A) return 0xC4;
+    return tsfi_cw_ebcdic_to_ascii(ebcdic_char);
+}
+
+int tsfi_cw_run_jcl_export(const char **cards, int card_count, char *exp_name, char *exp_val) {
+    if (!cards || card_count <= 0 || !exp_name || !exp_val) return -1;
+    exp_name[0] = '\0';
+    exp_val[0] = '\0';
+    
+    for (int i = 0; i < card_count; i++) {
+        const char *card = cards[i];
+        const char *exp = strstr(card, "EXPORT ");
+        if (exp) {
+            exp += 7;
+            while (*exp == ' ' || *exp == '\t') exp++;
+            int n_idx = 0;
+            while (*exp && *exp != '=' && *exp != ' ' && n_idx < 31) {
+                exp_name[n_idx++] = *exp++;
+            }
+            exp_name[n_idx] = '\0';
+            if (*exp == '=') exp++;
+            int v_idx = 0;
+            while (*exp && *exp != ' ' && *exp != '\n' && *exp != '\r' && v_idx < 31) {
+                exp_val[v_idx++] = *exp++;
+            }
+            exp_val[v_idx] = '\0';
+            return 0;
+        }
+    }
+    return -4;
+}
+
+int tsfi_cw_y2k_check_date_bounds(uint32_t yy, uint32_t mm, uint32_t dd, uint32_t pivot) {
+    if (mm < 1 || mm > 12 || dd < 1) return -1;
+    uint32_t year = tsfi_cw_y2k_resolve_year_ex(yy, pivot);
+    int is_leap = 0;
+    tsfi_cw_y2k_check_century_leap_2100(year, &is_leap);
+    
+    int days_in_months[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    if (is_leap) days_in_months[1] = 29;
+    
+    if (dd > (uint32_t)days_in_months[mm - 1]) return -2;
     return 0;
 }
 

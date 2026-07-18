@@ -234,11 +234,13 @@ typedef struct {
     tsfi_cw_vsam_rrds_entry slots[64];
     char filepath[256];
     int max_rrn;
+    uint64_t occupancy_map;
 } tsfi_cw_vsam_rrds;
 
 void tsfi_cw_vsam_rrds_init(tsfi_cw_vsam_rrds *rrds, const char *path);
 int tsfi_cw_vsam_rrds_write(tsfi_cw_vsam_rrds *rrds, uint32_t rrn, const uint8_t *data, int len);
 int tsfi_cw_vsam_rrds_read(tsfi_cw_vsam_rrds *rrds, uint32_t rrn, uint8_t *data_out, int max_len, int *out_len);
+int tsfi_cw_vsam_rrds_is_occupied(tsfi_cw_vsam_rrds *rrds, uint32_t rrn);
 
 // JCL Procedure Variable Substitutions
 int tsfi_cw_run_jcl_set(const char **cards, int card_count, char *jcl_out, int max_jcl_len);
@@ -322,6 +324,20 @@ int tsfi_cw_jcl_eval_cond(int step_rc, int cond_code, const char *operator);
 
 // Julian to Gregorian Y2K date converter
 int tsfi_cw_julian_to_gregorian_y2k(const char *julian_in, uint32_t pivot, char *greg_out, int max_len);
+
+// COBOL SIGN Embedded Zone Nibbles (Zoned Decimal Format)
+int tsfi_cw_pack_zoned_sign(const char *ascii_num, uint8_t *ebcdic_out, int max_len, int leading);
+int tsfi_cw_unpack_zoned_sign(const uint8_t *ebcdic_in, int len, char *ascii_out, int max_len, int leading);
+
+// EBCDIC CP273 (Germany) translation map
+uint8_t tsfi_cw_ascii_to_ebcdic_cp273(uint8_t ascii_char);
+uint8_t tsfi_cw_ebcdic_to_ascii_cp273(uint8_t ebcdic_char);
+
+// JCL EXPORT Variable Cards
+int tsfi_cw_run_jcl_export(const char **cards, int card_count, char *exp_name, char *exp_val);
+
+// Dynamic Gregorian Day-of-Month bounds
+int tsfi_cw_y2k_check_date_bounds(uint32_t yy, uint32_t mm, uint32_t dd, uint32_t pivot);
 
 // 4. Job Control Language (JCL) Execution Simulator
 int tsfi_cw_run_jcl(const char **cards, int card_count);
