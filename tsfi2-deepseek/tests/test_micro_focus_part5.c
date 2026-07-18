@@ -395,7 +395,29 @@ int run_nato_stanag_tests_part5(void) {
     int m_res = tsfi_mf_nato_merkle_combine(0x12345678, 0x9abcdef0, &parent);
     assert(m_res == 0);
     assert(parent != 0);
-    printf("  [PASS] Merkle Combine verified.\n");
+    // Verify DRS State Machine
+    printf("[TEST] Validating NATO DRS Adaptation...\n");
+    int rate = 0;
+    int rate_valid = -1;
+    int drs_res = tsfi_mf_nato_drs_update(-70, 20, &rate, &rate_valid); // SNR 20 -> 4800 bps
+    assert(drs_res == 0);
+    assert(rate_valid == 1);
+    assert(rate == 4800);
+
+    tsfi_mf_nato_drs_update(-130, 20, &rate, &rate_valid); // RSSI -130 (invalid) -> fails
+    assert(rate_valid == 0);
+    printf("  [PASS] DRS Adaptation verified.\n");
+
+    // Verify RX Reorder Buffer
+    printf("[TEST] Validating NATO RX Reorder Buffer...\n");
+    int reorder_valid = -1;
+    int reorder_res = tsfi_mf_nato_reorder_buffer_insert(5, 2, &reorder_valid); // Sequence 5 is within window [2, 9] -> valid
+    assert(reorder_res == 0);
+    assert(reorder_valid == 1);
+
+    tsfi_mf_nato_reorder_buffer_insert(20, 2, &reorder_valid); // Sequence 20 is outside window [2, 9] -> invalid
+    assert(reorder_valid == 0);
+    printf("  [PASS] RX Reorder Buffer verified.\n");
 
     return 0;
 }

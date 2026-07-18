@@ -1144,6 +1144,46 @@ int tsfi_mf_nato_merkle_combine(uint32_t left_hash, uint32_t right_hash, uint32_
     return 0;
 }
 
+int tsfi_mf_nato_drs_update(int rssi, int snr, int *current_rate, int *is_valid) {
+    if (!current_rate || !is_valid) return -1;
+    *is_valid = 0;
+    
+    if (rssi < -120 || rssi > 0 || snr < -10 || snr > 40) {
+        return 0;
+    }
+    
+    *is_valid = 1;
+    if (snr >= 25) {
+        *current_rate = 9600;
+    } else if (snr >= 15) {
+        *current_rate = 4800;
+    } else if (snr >= 8) {
+        *current_rate = 1200;
+    } else if (snr >= 3) {
+        *current_rate = 300;
+    } else {
+        *current_rate = 75;
+    }
+    return 0;
+}
+
+int tsfi_mf_nato_reorder_buffer_insert(int seq_num, int expected_seq, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = 0;
+    
+    if (seq_num < 0 || seq_num >= 128 || expected_seq < 0 || expected_seq >= 128) {
+        return 0;
+    }
+    
+    // Check if within expected reorder window of 8 frames (modulo 128)
+    int diff = (seq_num - expected_seq + 128) % 128;
+    if (diff < 8) {
+        *is_valid = 1;
+    }
+    return 0;
+}
+
+
 
 
 

@@ -388,4 +388,7 @@ int tsfi_mf_nato_hfrcp_evaluate_helmholtz(int op_type, float value, int *current
 int tsfi_mf_nato_afsk_verify(int tone_freq_hz, int baud_rate, int *is_valid);
 int tsfi_mf_nato_merkle_combine(uint32_t left_hash, uint32_t right_hash, uint32_t *parent_hash);
 
+int tsfi_mf_nato_drs_update(int rssi, int snr, int *current_rate, int *is_valid);
+int tsfi_mf_nato_reorder_buffer_insert(int seq_num, int expected_seq, int *is_valid);
+
 #endif // TSFI_CADE_IMF_H
