@@ -221,5 +221,7 @@
 | 287 | IRS CADE Taxpayer Under Audit Or Suspended Or Pending Checker Ver2 | PASS | Asserves if account status matches under audit, suspended, or pending audit codes | Volume 33 |
 | 288 | IRS IMF Form 1040X Verifier | PASS | Restricts individual filings to Form 1040X amended tax return ranges | Volume 33 |
 | 289 | IRS CADE Taxpayer Active Or Under Audit Or Suspended Checker | PASS | Asserves if account status matches active, under audit, or suspended codes | Volume 33 |
+| 290 | IRS IMF Form 1040-SR Verifier | PASS | Restricts individual filings to Form 1040-SR senior tax return ranges | Volume 33 |
+| 291 | IRS CADE Taxpayer Under Audit Or Suspended Checker Ver3 | PASS | Asserves if account status matches under audit or suspended codes | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 289 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 291 Scenarios validated successfully)
