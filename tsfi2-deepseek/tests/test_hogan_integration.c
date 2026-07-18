@@ -1198,6 +1198,42 @@ int main(void) {
     remove("hogan_tx.dat.bin"); // clean up
     printf("  [PASS] Card daily spend limit velocity caps, resets, and override logs verified.\n");
 
+    // 35. Test Merchant ID Block Manager (Merchant Restrictions)
+    printf("[E2E] Testing Merchant ID Block Manager...\n");
+    const char *merc_path = "hogan_merchant.dat.bin";
+    remove(merc_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system merc_sys;
+    tsfi_hogan_init(&merc_sys);
+    assert(tsfi_hogan_register_account(&merc_sys, 1001, 10000) == 0); // Alice: 10,000 units
+    
+    // Block merchant ID 9009 on Alice's account
+    assert(tsfi_hogan_update_merchant_block(&merc_sys, merc_path, 1001, 9009, 1, 999) == 0);
+    assert(tsfi_hogan_update_merchant_block(&merc_sys, "hogan_merchant.json", 1001, 9009, 1, 999) == -3); // Rule 13 check
+    
+    // Authorize card spending of 400 to merchant 8008 (succeeds)
+    assert(tsfi_hogan_authorize_card(&merc_sys, "hogan_tx.dat.bin", 5005, 1001, 8008, 400) == 0);
+    
+    // Authorize card spending of 200 to merchant 9009 (fails, blocked merchant returns -5)
+    assert(tsfi_hogan_authorize_card(&merc_sys, "hogan_tx.dat.bin", 5005, 1001, 9009, 200) == -5);
+    
+    // Read sequential log file and verify entries
+    uint8_t read_mblocks[sizeof(hogan_merchant_block_entry)];
+    size_t m_size = 0;
+    assert(tsfi_hogan_read_seq_record(merc_path, 0, read_mblocks, &m_size) == 0);
+    assert(m_size == sizeof(hogan_merchant_block_entry));
+    
+    const hogan_merchant_block_entry *mentry = (const hogan_merchant_block_entry *)read_mblocks;
+    assert(mentry->account_id == 1001);
+    assert(mentry->merchant_id == 9009);
+    assert(mentry->is_blocked == 1);
+    assert(mentry->authority_id == 999);
+    
+    remove(merc_path); // clean up
+    remove("hogan_tx.dat.bin"); // clean up
+    printf("  [PASS] Card merchant restrictions, validations, and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }

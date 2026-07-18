@@ -53,6 +53,8 @@ typedef struct {
     uint64_t overdraft_drawn;
     uint64_t card_spend_limit;
     uint64_t card_spent_today;
+    uint32_t blocked_merchants[8];
+    uint8_t blocked_merchant_count;
 } hogan_account;
 
 #define HOGAN_MAX_BLOCKED_CARDS 32
@@ -354,5 +356,15 @@ typedef struct {
 } hogan_card_spend_limit_entry;
 
 int tsfi_hogan_update_card_spend_limit(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_limit, uint32_t authority_id);
+
+// Merchant ID Block Manager (Merchant Restrictions)
+typedef struct {
+    uint32_t account_id;
+    uint32_t merchant_id;
+    uint8_t is_blocked;
+    uint32_t authority_id;
+} hogan_merchant_block_entry;
+
+int tsfi_hogan_update_merchant_block(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t merchant_id, uint8_t is_blocked, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H

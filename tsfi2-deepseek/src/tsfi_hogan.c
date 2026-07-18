@@ -99,6 +99,8 @@ int tsfi_hogan_lfs_save(const hogan_umbrella_system *sys, const char *filepath) 
             fwrite(&sys->accounts[i].overdraft_drawn, sizeof(uint64_t), 1, f);
             fwrite(&sys->accounts[i].card_spend_limit, sizeof(uint64_t), 1, f);
             fwrite(&sys->accounts[i].card_spent_today, sizeof(uint64_t), 1, f);
+            fwrite(sys->accounts[i].blocked_merchants, sizeof(uint32_t), 8, f);
+            fwrite(&sys->accounts[i].blocked_merchant_count, sizeof(uint8_t), 1, f);
         }
     }
     
@@ -284,6 +286,16 @@ int tsfi_hogan_lfs_load(hogan_umbrella_system *sys, const char *filepath) {
         }
         sys->accounts[i].card_spend_limit = card_lim;
         sys->accounts[i].card_spent_today = card_spent;
+        if (fread(sys->accounts[i].blocked_merchants, sizeof(uint32_t), 8, f) != 8) {
+            fclose(f);
+            return -2;
+        }
+        uint8_t blocked_count = 0;
+        if (fread(&blocked_count, sizeof(uint8_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
+        sys->accounts[i].blocked_merchant_count = blocked_count;
         sys->accounts[i].active = 1;
     }
     
@@ -804,6 +816,8 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
             EVP_DigestUpdate(mdctx, &sys->accounts[i].overdraft_drawn, sizeof(uint64_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].card_spend_limit, sizeof(uint64_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].card_spent_today, sizeof(uint64_t));
+            EVP_DigestUpdate(mdctx, sys->accounts[i].blocked_merchants, sizeof(uint32_t) * 8);
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].blocked_merchant_count, sizeof(uint8_t));
         }
     }
     EVP_DigestUpdate(mdctx, &sys->blocked_card_count, sizeof(size_t));
@@ -851,6 +865,15 @@ int tsfi_hogan_authorize_card(hogan_umbrella_system *sys, const char *filepath, 
         if (sys->accounts[i].active && sys->accounts[i].account_id == account_id) {
             acc = &sys->accounts[i];
             break;
+        }
+    }
+    
+    if (acc) {
+        for (uint8_t i = 0; i < acc->blocked_merchant_count; i++) {
+            if (acc->blocked_merchants[i] == merchant_id) {
+                sys->live_processing_enabled = original_live_state;
+                return -5; // Merchant is blocked
+            }
         }
     }
     
@@ -1503,6 +1526,68 @@ int tsfi_hogan_update_card_spend_limit(hogan_umbrella_system *sys, const char *f
     acc->card_spend_limit = new_limit;
     
     int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_card_spend_limit_entry));
+    
+    sys->live_processing_enabled = original_live_state;
+    return write_res;
+}
+
+int tsfi_hogan_update_merchant_block(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t merchant_id, uint8_t is_blocked, uint32_t authority_id) {
+    // Enforce Rule 13: file extension must end with .dat.bin
+    const char *ext = strrchr(filepath, '.');
+    if (!ext || strcmp(ext, ".bin") != 0) {
+        if (!ext || strcmp(ext - 4, ".dat.bin") != 0) {
+            return -3; // Invalid extension
+        }
+    }
+
+    // Disable live queue during administrative action
+    uint8_t original_live_state = sys->live_processing_enabled;
+    sys->live_processing_enabled = 0;
+    
+    hogan_account *acc = NULL;
+    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
+        if (sys->accounts[i].active && sys->accounts[i].account_id == account_id) {
+            acc = &sys->accounts[i];
+            break;
+        }
+    }
+    
+    if (!acc) {
+        sys->live_processing_enabled = original_live_state;
+        return -1; // account not found
+    }
+    
+    if (is_blocked) {
+        // Add to blocked merchants if not full and not already present
+        uint8_t exists = 0;
+        for (uint8_t i = 0; i < acc->blocked_merchant_count; i++) {
+            if (acc->blocked_merchants[i] == merchant_id) {
+                exists = 1;
+                break;
+            }
+        }
+        if (!exists && acc->blocked_merchant_count < 8) {
+            acc->blocked_merchants[acc->blocked_merchant_count++] = merchant_id;
+        }
+    } else {
+        // Remove from blocked merchants
+        int idx = -1;
+        for (uint8_t i = 0; i < acc->blocked_merchant_count; i++) {
+            if (acc->blocked_merchants[i] == merchant_id) {
+                idx = i;
+                break;
+            }
+        }
+        if (idx >= 0) {
+            for (uint8_t i = idx; i < acc->blocked_merchant_count - 1; i++) {
+                acc->blocked_merchants[i] = acc->blocked_merchants[i + 1];
+            }
+            acc->blocked_merchant_count--;
+        }
+    }
+    
+    hogan_merchant_block_entry entry = { account_id, merchant_id, is_blocked, authority_id };
+    int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_merchant_block_entry));
     
     sys->live_processing_enabled = original_live_state;
     return write_res;
