@@ -237,5 +237,7 @@
 | 303 | IRS CADE Taxpayer Active Or Under Audit Or Suspended Or Pending Checker Ver7 | PASS | Asserves if account status matches active, under audit, suspended, or pending audit codes | Volume 33 |
 | 304 | IRS IMF Form 1040-SS-EZ Verifier | PASS | Restricts individual filings to Form 1040-SS-EZ US Virgin Islands return ranges | Volume 33 |
 | 305 | IRS CADE Taxpayer Active Or Under Audit Or Suspended Or Pending Checker Ver8 | PASS | Asserves if account status matches active, under audit, suspended, or pending audit codes | Volume 33 |
+| 306 | IRS IMF Form 1040-PR-SS Verifier | PASS | Restricts individual filings to Form 1040-PR-SS Puerto Rico / USVI return ranges | Volume 33 |
+| 307 | IRS CADE Taxpayer Active Or Under Audit Or Suspended Or Pending Checker Ver9 | PASS | Asserves if account status matches active, under audit, suspended, or pending audit codes | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 305 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 307 Scenarios validated successfully)
