@@ -1279,5 +1279,21 @@ int run_nato_stanag_tests_part5(void) {
     assert(tsfi_norad_lockout_active == 0);
     printf("  [PASS] NORAD GOST Lockout and Reset verified.\n");
 
+    // Verify CICS task transaction monitor
+    printf("[TEST] Validating CICS Task Transaction Monitor...\n");
+    char abend[5] = {0};
+    uint8_t clean_data[] = "SafeTransactionNoSSN";
+    int cics_res = tsfi_mf_cics_check_task_security(0x1000, clean_data, sizeof(clean_data), abend);
+    assert(cics_res == 0);
+    assert(strcmp(abend, "    ") == 0);
+    
+    uint8_t dirty_data[] = "PayloadContainsSSN050051122WithinIt";
+    cics_res = tsfi_mf_cics_check_task_security(0x2000, dirty_data, sizeof(dirty_data), abend);
+    assert(cics_res == 1); // Intercepted
+    assert(strcmp(abend, "AGST") == 0); // Abend code set
+    assert(tsfi_gost_emergency_defcon_level == 0);
+    assert(tsfi_norad_lockout_active == 1);
+    printf("  [PASS] CICS Task Transaction Monitor verified.\n");
+
     return 0;
 }

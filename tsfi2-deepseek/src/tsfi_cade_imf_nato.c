@@ -2210,6 +2210,35 @@ int tsfi_mf_norad_reset_lockout(void) {
     return 0;
 }
 
+int tsfi_mf_cics_check_task_security(uint32_t transaction_id, const uint8_t *task_data, size_t data_size, char *abend_code_out) {
+    (void)transaction_id;
+    if (!task_data || !abend_code_out) return -1;
+    strcpy(abend_code_out, "    ");
+    
+    int has_identity = 0;
+    for (size_t i = 0; i + 9 <= data_size; i++) {
+        int digits = 0;
+        for (size_t j = 0; j < 9; j++) {
+            if (task_data[i + j] >= '0' && task_data[i + j] <= '9') {
+                digits++;
+            }
+        }
+        if (digits == 9) {
+            has_identity = 1;
+            break;
+        }
+    }
+    
+    if (has_identity) {
+        strcpy(abend_code_out, "AGST");
+        tsfi_gost_emergency_defcon_level = 0;
+        tsfi_norad_lockout_active = 1;
+        tsfi_gost_is_broadcast_channel = 0;
+        return 1;
+    }
+    return 0;
+}
+
 
 
 
