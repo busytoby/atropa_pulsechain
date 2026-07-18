@@ -1190,6 +1190,29 @@ int tsfi_cw_marist_optimize_vswitch(const tsfi_cw_marist_vswitch *vsw, int *need
     return 0;
 }
 
+int tsfi_cw_marist_audit_wlm(const tsfi_cw_marist_wlm_service *srv, int *needs_adjustment_out) {
+    if (!srv || !needs_adjustment_out) return -1;
+    
+    double velocity = 100.0 * srv->active_states_count / (srv->active_states_count + srv->delay_states_count + 1);
+    *needs_adjustment_out = (velocity < srv->goal_velocity) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_cw_marist_alloc_crypto(const tsfi_cw_marist_crypto_coproc *cfg, double guest_allocs_out[16]) {
+    if (!cfg || !guest_allocs_out) return -1;
+    if (cfg->guest_count < 0 || cfg->guest_count > 16) return -2;
+    
+    for (int i = 0; i < cfg->guest_count; i++) {
+        if (cfg->total_crypto_units > 0) {
+            guest_allocs_out[i] = (double)cfg->guest_shares[i] / (double)cfg->total_crypto_units;
+        } else {
+            guest_allocs_out[i] = 0.0;
+        }
+    }
+    return 0;
+}
+
+
 
 
 

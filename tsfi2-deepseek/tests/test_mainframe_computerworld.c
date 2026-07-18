@@ -1914,6 +1914,24 @@ static void test_new_mainframe_features(void) {
     tsfi_cw_marist_vswitch vsw_bad = { "VSW02", 3.2, 4, 1 };
     assert(tsfi_cw_marist_optimize_vswitch(&vsw_bad, &needs_failover) == 0);
     assert(needs_failover == 1);
+
+    // Marist WLM Service Class test
+    tsfi_cw_marist_wlm_service srv_ok = { "BAT", 50.0, 0.0, 60, 40 }; // 60/101 = 59.4% velocity >= 50
+    int needs_adj = 0;
+    assert(tsfi_cw_marist_audit_wlm(&srv_ok, &needs_adj) == 0);
+    assert(needs_adj == 0);
+
+    tsfi_cw_marist_wlm_service srv_bad = { "INT", 80.0, 0.0, 30, 70 }; // 30/101 = 29.7% velocity < 80 -> Adjustment needed!
+    assert(tsfi_cw_marist_audit_wlm(&srv_bad, &needs_adj) == 0);
+    assert(needs_adj == 1);
+
+    // Marist Cryptographic Coprocessor test
+    tsfi_cw_marist_crypto_coproc crypto_cfg = { 1, { 2, 3, 5 }, 3, 10 };
+    double crypto_allocs[16];
+    assert(tsfi_cw_marist_alloc_crypto(&crypto_cfg, crypto_allocs) == 0);
+    assert(fabs(crypto_allocs[0] - 0.20) < 0.01);
+    assert(fabs(crypto_allocs[1] - 0.30) < 0.01);
+    assert(fabs(crypto_allocs[2] - 0.50) < 0.01);
 }
 
 int main(void) {

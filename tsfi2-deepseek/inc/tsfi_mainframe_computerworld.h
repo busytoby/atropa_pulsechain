@@ -976,5 +976,25 @@ typedef struct {
 int tsfi_cw_marist_audit_rmf_cpu(const tsfi_cw_marist_rmf_cpu *cpus, int cpu_count, double *avg_busy_out, int *overloaded_out);
 int tsfi_cw_marist_optimize_vswitch(const tsfi_cw_marist_vswitch *vsw, int *needs_failover_out);
 
+// Marist z/OS WLM Service Class Telemetry
+typedef struct {
+    char class_name[8];
+    double goal_velocity;
+    double actual_velocity;
+    int active_states_count;
+    int delay_states_count;
+} tsfi_cw_marist_wlm_service;
+
+// Marist z/VM Cryptographic Coprocessor config
+typedef struct {
+    int coproc_id;
+    int guest_shares[16];
+    int guest_count;
+    int total_crypto_units;
+} tsfi_cw_marist_crypto_coproc;
+
+int tsfi_cw_marist_audit_wlm(const tsfi_cw_marist_wlm_service *srv, int *needs_adjustment_out);
+int tsfi_cw_marist_alloc_crypto(const tsfi_cw_marist_crypto_coproc *cfg, double guest_allocs_out[16]);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 
