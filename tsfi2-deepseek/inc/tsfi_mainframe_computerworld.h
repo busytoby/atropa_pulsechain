@@ -836,5 +836,9 @@ typedef struct {
 int tsfi_cw_icp_calculate_bundle_price(const tsfi_cw_icp_product *products, int count, double discount_rate, double *total_price_out);
 int tsfi_cw_icp_subscription_status(const tsfi_cw_icp_subscription *sub, double *total_paid_out, double *remaining_obligations_out);
 
+// ICP Vendor Analyzer and Transfer Tax Calculator
+int tsfi_cw_icp_analyze_vendor(const tsfi_cw_icp_product *catalog, int catalog_size, const char *vendor_name, double *total_revenue_out, int *award_count_out);
+int tsfi_cw_icp_calculate_transfer_tax(double license_amount, double tax_rate, double *tax_amount_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

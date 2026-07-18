@@ -1732,6 +1732,18 @@ static void test_new_mainframe_features(void) {
     assert(tsfi_cw_icp_subscription_status(&sub, &total_paid, &remaining_obligations) == 0);
     assert(total_paid == 6000.0);
     assert(remaining_obligations == 8400.0);
+
+    // ICP Vendor Analyzer test
+    double vend_rev = 0.0;
+    int vend_awards = 0;
+    assert(tsfi_cw_icp_analyze_vendor(bundle, 2, "Informatics", &vend_rev, &vend_awards) == 0);
+    assert(vend_rev == 750000.0);
+    assert(vend_awards == 0);
+
+    // ICP Transfer Tax Calculator test
+    double tax_amt = 0.0;
+    assert(tsfi_cw_icp_calculate_transfer_tax(1200000.0, 0.04, &tax_amt) == 0);
+    assert(tax_amt == 48000.0);
 }
 
 int main(void) {

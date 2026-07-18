@@ -905,6 +905,30 @@ int tsfi_cw_icp_subscription_status(const tsfi_cw_icp_subscription *sub, double 
     return 0;
 }
 
+int tsfi_cw_icp_analyze_vendor(const tsfi_cw_icp_product *catalog, int catalog_size, const char *vendor_name, double *total_revenue_out, int *award_count_out) {
+    if (!catalog || catalog_size < 0 || !vendor_name || !total_revenue_out || !award_count_out) return -1;
+    
+    *total_revenue_out = 0.0;
+    *award_count_out = 0;
+    for (int i = 0; i < catalog_size; i++) {
+        if (strcmp(catalog[i].vendor, vendor_name) == 0) {
+            double rev = catalog[i].unit_price * catalog[i].install_count;
+            *total_revenue_out += rev;
+            if (rev >= 1000000.0) {
+                (*award_count_out)++;
+            }
+        }
+    }
+    return 0;
+}
+
+int tsfi_cw_icp_calculate_transfer_tax(double license_amount, double tax_rate, double *tax_amount_out) {
+    if (license_amount < 0.0 || tax_rate < 0.0 || !tax_amount_out) return -1;
+    *tax_amount_out = license_amount * tax_rate;
+    return 0;
+}
+
+
 
 
 
