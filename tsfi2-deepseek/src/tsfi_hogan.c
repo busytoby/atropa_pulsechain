@@ -79,6 +79,7 @@ int tsfi_hogan_lfs_save(const hogan_umbrella_system *sys, const char *filepath) 
             fwrite(&sys->accounts[i].backup_account_id, sizeof(uint32_t), 1, f);
             fwrite(&sys->accounts[i].has_backup, sizeof(uint8_t), 1, f);
             fwrite(&sys->accounts[i].balance_held, sizeof(uint64_t), 1, f);
+            fwrite(&sys->accounts[i].status_code, sizeof(uint8_t), 1, f);
         }
     }
     
@@ -133,11 +134,17 @@ int tsfi_hogan_lfs_load(hogan_umbrella_system *sys, const char *filepath) {
             fclose(f);
             return -2;
         }
+        uint8_t st_code = 0;
+        if (fread(&st_code, sizeof(uint8_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
         sys->accounts[i].account_id = acc_id;
         sys->accounts[i].balance = bal;
         sys->accounts[i].backup_account_id = backup_id;
         sys->accounts[i].has_backup = has_bk;
         sys->accounts[i].balance_held = bal_held;
+        sys->accounts[i].status_code = st_code;
         sys->accounts[i].active = 1;
     }
     
@@ -512,7 +519,9 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
         }
         
         if (sender && recipient) {
-            if (sender->balance >= tx->amount) {
+            if (sender->status_code == STATUS_STOP_ALL || sender->status_code == STATUS_STOP_DEBIT || recipient->status_code == STATUS_STOP_ALL) {
+                tx->processed = 1; // transaction blocked by administrative hold
+            } else if (sender->balance >= tx->amount) {
                 sender->balance -= tx->amount;
                 recipient->balance += tx->amount;
                 tx->processed = 1;
@@ -571,6 +580,7 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
             EVP_DigestUpdate(mdctx, &sys->accounts[i].backup_account_id, sizeof(uint32_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].has_backup, sizeof(uint8_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].balance_held, sizeof(uint64_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].status_code, sizeof(uint8_t));
         }
     }
     EVP_DigestFinal_ex(mdctx, sys->acab_epoch_root, &hash_len);
@@ -622,4 +632,39 @@ int tsfi_hogan_authorize_card(hogan_umbrella_system *sys, const char *filepath, 
     
     if (write_res != 0) return write_res;
     return approved ? 0 : -1; // return 0 if approved, -1 if declined due to limit
+}
+
+int tsfi_hogan_apply_account_stop(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint8_t new_status, uint32_t authority_id) {
+    // Enforce Rule 13: file extension must end with .dat.bin
+    const char *ext = strrchr(filepath, '.');
+    if (!ext || strcmp(ext, ".bin") != 0) {
+        if (!ext || strcmp(ext - 4, ".dat.bin") != 0) {
+            return -3; // Invalid extension
+        }
+    }
+
+    // Disable live queue during administrative action
+    uint8_t original_live_state = sys->live_processing_enabled;
+    sys->live_processing_enabled = 0;
+    
+    hogan_account *acc = NULL;
+    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
+        if (sys->accounts[i].active && sys->accounts[i].account_id == account_id) {
+            acc = &sys->accounts[i];
+            break;
+        }
+    }
+    
+    if (!acc) {
+        sys->live_processing_enabled = original_live_state;
+        return -1; // account not found
+    }
+    
+    hogan_stop_entry entry = { account_id, acc->status_code, new_status, authority_id };
+    acc->status_code = new_status;
+    
+    int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_stop_entry));
+    
+    sys->live_processing_enabled = original_live_state;
+    return write_res;
 }

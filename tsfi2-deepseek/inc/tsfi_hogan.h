@@ -22,6 +22,10 @@ typedef struct {
     uint8_t processed;
 } hogan_transaction;
 
+#define STATUS_ACTIVE     0
+#define STATUS_STOP_ALL   1
+#define STATUS_STOP_DEBIT 2
+
 typedef struct {
     uint32_t account_id;
     uint64_t balance;
@@ -29,6 +33,7 @@ typedef struct {
     uint32_t backup_account_id;
     uint8_t has_backup;
     uint64_t balance_held;
+    uint8_t status_code;
 } hogan_account;
 
 typedef struct {
@@ -157,5 +162,15 @@ typedef struct {
 } hogan_card_entry;
 
 int tsfi_hogan_authorize_card(hogan_umbrella_system *sys, const char *filepath, uint32_t card_id, uint32_t account_id, uint32_t merchant_id, uint64_t amount);
+
+// Administrative Account Stop Manager (Status Overrides)
+typedef struct {
+    uint32_t account_id;
+    uint8_t previous_status;
+    uint8_t new_status;
+    uint32_t authority_id;
+} hogan_stop_entry;
+
+int tsfi_hogan_apply_account_stop(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint8_t new_status, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H

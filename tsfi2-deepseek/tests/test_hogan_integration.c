@@ -413,6 +413,64 @@ int main(void) {
     remove(card_path); // clean up
     printf("  [PASS] Card balance holds, limits, and authorization logging verified.\n");
 
+    // 18. Test Administrative Account Stop Manager (Status Overrides)
+    printf("[E2E] Testing Administrative Account Stop Manager...\n");
+    const char *stops_path = "hogan_stops.dat.bin";
+    remove(stops_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system stop_sys;
+    tsfi_hogan_init(&stop_sys);
+    assert(tsfi_hogan_register_account(&stop_sys, 1001, 5000) == 0); // Alice: 5,000 units
+    assert(tsfi_hogan_register_account(&stop_sys, 2002, 1000) == 0); // Bob: 1,000 units
+    
+    // Lock Alice's account with STATUS_STOP_DEBIT
+    assert(tsfi_hogan_apply_account_stop(&stop_sys, stops_path, 1001, STATUS_STOP_DEBIT, 777) == 0);
+    assert(tsfi_hogan_apply_account_stop(&stop_sys, "hogan_stops.json", 1001, STATUS_STOP_DEBIT, 777) == -3); // Rule 13 check
+    
+    // Alice attempts to transfer 1000 to Bob (should fail during reconciliation due to STOP_DEBIT status)
+    assert(tsfi_hogan_dispatch_tx(&stop_sys, 1001, 2002, 1000, VM_EVM) == 0);
+    
+    // Bob attempts to transfer 500 to Alice (should succeed since incoming works on STOP_DEBIT)
+    assert(tsfi_hogan_dispatch_tx(&stop_sys, 2002, 1001, 500, VM_EVM) == 0);
+    
+    // Run reconciliation
+    assert(tsfi_hogan_overnight_reconciliation(&stop_sys, "hogan_lfs.dat.bin") == 0);
+    
+    // Verify updated balances:
+    // Alice: 5000 (transfer of 1000 blocked) + 500 (incoming worked) = 5500
+    // Bob: 1000 - 500 = 500
+    assert(stop_sys.accounts[0].balance == 5500);
+    assert(stop_sys.accounts[1].balance == 500);
+    
+    // Now lock Alice's account with STATUS_STOP_ALL
+    assert(tsfi_hogan_apply_account_stop(&stop_sys, stops_path, 1001, STATUS_STOP_ALL, 777) == 0);
+    
+    // Bob attempts to transfer another 100 to Alice (should fail now since status is STOP_ALL)
+    assert(tsfi_hogan_dispatch_tx(&stop_sys, 2002, 1001, 100, VM_EVM) == 0);
+    
+    assert(tsfi_hogan_overnight_reconciliation(&stop_sys, "hogan_lfs.dat.bin") == 0);
+    
+    // Verify balance remains unchanged (incoming 100 blocked)
+    assert(stop_sys.accounts[0].balance == 5500);
+    assert(stop_sys.accounts[1].balance == 500);
+    
+    // Read sequential log file and verify entries
+    uint8_t read_sbuf[sizeof(hogan_stop_entry)];
+    size_t ssize = 0;
+    
+    // Check entry 0
+    assert(tsfi_hogan_read_seq_record(stops_path, 0, read_sbuf, &ssize) == 0);
+    assert(ssize == sizeof(hogan_stop_entry));
+    const hogan_stop_entry *sentry0 = (const hogan_stop_entry *)read_sbuf;
+    assert(sentry0->account_id == 1001);
+    assert(sentry0->previous_status == STATUS_ACTIVE);
+    assert(sentry0->new_status == STATUS_STOP_DEBIT);
+    assert(sentry0->authority_id == 777);
+    
+    remove(stops_path); // clean up
+    printf("  [PASS] Administrative status overrides, locks, and logging verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }
