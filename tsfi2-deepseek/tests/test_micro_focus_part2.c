@@ -272,6 +272,22 @@ int main(void) {
     assert(status_match == 1);
     printf("  [PASS] IRS CADE Generic Taxpayer Status Mask Checker verified.\n");
 
+    // 142. Verify IRS CADE Taxpayer SSN Partition Routing
+    printf("[TEST] Validating IRS CADE Taxpayer SSN Partition Routing...\n");
+    int partition = -1;
+    int route_res = tsfi_mf_cade_route_partition("999-12-3456", &partition);
+    assert(route_res == 0);
+    assert(partition == 5);
+    printf("  [PASS] IRS CADE Taxpayer SSN Partition Routing verified.\n");
+
+    // 143. Verify IRS IMF SSN Check Digit Validator
+    printf("[TEST] Validating IRS IMF SSN Check Digit Validator...\n");
+    int ssn_valid = -1;
+    int ssn_res = tsfi_mf_imf_verify_ssn_check_digit("000-00-0000", &ssn_valid);
+    assert(ssn_res == 0);
+    assert(ssn_valid == 1);
+    printf("  [PASS] IRS IMF SSN Check Digit Validator verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

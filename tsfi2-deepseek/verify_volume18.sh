@@ -240,8 +240,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 283 | IRS IMF Cycle Week Calculator | PASS | Extracts weekly cycle intervals from cycle code timestamps | Volume 33 |
 | 284 | IRS IMF Generic Document Form Verifier | PASS | Unified document form type resolver | Volume 33 |
 | 285 | IRS CADE Generic Taxpayer Status Mask Checker | PASS | Unified account status mask validator | Volume 33 |
+| 286 | IRS CADE Taxpayer SSN Partition Routing | PASS | Routes SSNs to partitions based on suffix digits | Volume 33 |
+| 287 | IRS IMF SSN Check Digit Validator | PASS | Computes and validates SSN check digit checksums | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 285 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 287 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

@@ -452,4 +452,28 @@ int tsfi_mf_imf_get_cycle_week(const char *cycle_code, int *week_out) {
     return 0;
 }
 
+int tsfi_mf_cade_route_partition(const char *ssn, int *partition_out) {
+    if (!ssn || !partition_out) return -1;
+    if (strlen(ssn) != 11) return -1;
+    if (ssn[3] != '-' || ssn[6] != '-') return -1;
+    char digit_str[3] = { ssn[9], ssn[10], '\0' };
+    int val = atoi(digit_str);
+    *partition_out = val / 10;
+    return 0;
+}
+
+int tsfi_mf_imf_verify_ssn_check_digit(const char *ssn, int *is_valid) {
+    if (!ssn || !is_valid) return -1;
+    if (strlen(ssn) != 11) return -1;
+    if (ssn[3] != '-' || ssn[6] != '-') return -1;
+    int sum = 0;
+    for (int i = 0; i < 11; i++) {
+        if (i != 3 && i != 6) {
+            sum = (sum * 10 + (ssn[i] - '0')) % 97;
+        }
+    }
+    *is_valid = (sum == 0) ? 1 : 0;
+    return 0;
+}
+
 

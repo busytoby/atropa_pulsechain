@@ -39,5 +39,7 @@ int tsfi_mf_imf_get_cycle_week(const char *cycle_code, int *week_out);
 
 int tsfi_mf_imf_verify_document_form(int doc_code, int target_code, int *result);
 int tsfi_mf_cade_check_status_mask(int status_code, unsigned int mask, int *is_valid);
+int tsfi_mf_cade_route_partition(const char *ssn, int *partition_out);
+int tsfi_mf_imf_verify_ssn_check_digit(const char *ssn, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H
