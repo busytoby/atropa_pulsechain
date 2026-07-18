@@ -1878,6 +1878,48 @@ int main(void) {
     remove(pclimit_path);
     printf("  [PASS] Card PIN change fail counts, lockouts, and override logs verified.\n");
 
+    // 51. Test Batch Fee Exemption Expiry Manager (Fee Exemption Expiry)
+    printf("[E2E] Testing Batch Fee Exemption Expiry Manager...\n");
+    const char *feexp_path = "hogan_feexp.dat.bin";
+    remove(feexp_path); // ensure clean start
+    
+    hogan_umbrella_system fe_sys;
+    tsfi_hogan_init(&fe_sys);
+    assert(tsfi_hogan_register_account(&fe_sys, 1001, 1000) == 0); // Alice: 1000 balance
+    fe_sys.accounts[0].fee_exempt = 1; // initially exempt
+    
+    // Set Alice's fee exemption expiry epoch to 2
+    assert(tsfi_hogan_update_fee_exempt_expiry(&fe_sys, feexp_path, 1001, 2, 999) == 0);
+    assert(tsfi_hogan_update_fee_exempt_expiry(&fe_sys, "hogan_feexp.json", 1001, 2, 999) == -3); // Rule 13 check
+    
+    // Epoch is 1 (system starts at 1, <= 2 expiry): Fee is skipped (Alice balance remains 1000)
+    assert(tsfi_hogan_apply_fees(&fe_sys, "hogan_fees.dat.bin", 50) == 0);
+    assert(fe_sys.accounts[0].balance == 1000);
+    remove("hogan_fees.dat.bin");
+    
+    // Advance epoch to 3 (> 2 expiry)
+    fe_sys.current_epoch = 3;
+    
+    // Apply batch maintenance fee of 50 units (exemption expires, fee is charged, balance becomes 950)
+    assert(tsfi_hogan_apply_fees(&fe_sys, "hogan_fees.dat.bin", 50) == 0);
+    assert(fe_sys.accounts[0].balance == 950);
+    assert(fe_sys.accounts[0].fee_exempt == 0); // verify flag is cleared
+    remove("hogan_fees.dat.bin");
+    
+    // Read override log files and verify entries
+    uint8_t read_feexbuf[sizeof(hogan_fee_exempt_expiry_entry)];
+    size_t feex_size = 0;
+    assert(tsfi_hogan_read_seq_record(feexp_path, 0, read_feexbuf, &feex_size) == 0);
+    assert(feex_size == sizeof(hogan_fee_exempt_expiry_entry));
+    const hogan_fee_exempt_expiry_entry *feentry = (const hogan_fee_exempt_expiry_entry *)read_feexbuf;
+    assert(feentry->account_id == 1001);
+    assert(feentry->previous_expiry == 0);
+    assert(feentry->new_expiry == 2);
+    assert(feentry->authority_id == 999);
+    
+    remove(feexp_path); // clean up
+    printf("  [PASS] Batch fee exemption expirations, validations, and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }

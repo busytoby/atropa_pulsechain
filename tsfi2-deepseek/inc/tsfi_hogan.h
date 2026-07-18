@@ -78,6 +78,7 @@ typedef struct {
     uint64_t min_balance_fee_waive_threshold;
     uint32_t pin_change_fail_count;
     uint32_t pin_change_fail_limit;
+    uint32_t fee_exempt_expiry_epoch;
 } hogan_account;
 
 #define HOGAN_MAX_BLOCKED_CARDS 32
@@ -559,5 +560,15 @@ typedef struct {
 
 int tsfi_hogan_change_card_pin(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t old_pin, uint32_t new_pin);
 int tsfi_hogan_set_pin_change_fail_limit(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t new_limit, uint32_t authority_id);
+
+// Batch Fee Exemption Expiry Manager
+typedef struct {
+    uint32_t account_id;
+    uint32_t previous_expiry;
+    uint32_t new_expiry;
+    uint32_t authority_id;
+} hogan_fee_exempt_expiry_entry;
+
+int tsfi_hogan_update_fee_exempt_expiry(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t expiry_epoch, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H
