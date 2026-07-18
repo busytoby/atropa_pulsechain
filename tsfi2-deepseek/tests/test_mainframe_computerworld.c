@@ -1982,6 +1982,22 @@ static void test_new_mainframe_features(void) {
     int total_bytes = 0;
     assert(tsfi_cw_niu_audit_copybook(fields, 2, &total_bytes) == 0);
     assert(total_bytes == 38);
+
+    // NIU JCL DD path test
+    int dd_valid = 0;
+    assert(tsfi_cw_niu_audit_jcl_dd("//INPUT DD DSN=SYS1.LINKLIB,DISP=SHR", &dd_valid) == 0);
+    assert(dd_valid == 1);
+    assert(tsfi_cw_niu_audit_jcl_dd("//INPUT DD DSN=123.BAD.NAME,DISP=SHR", &dd_valid) == 0);
+    assert(dd_valid == 0);
+
+    // NIU COBOL Working Storage test
+    tsfi_cw_niu_cobol_var vars[2] = {
+        { "WS-NAME", 1, 0, "SPACES" },
+        { "WS-COUNT", 0, 1, "" } // Uninitialized
+    };
+    int uninit_cnt = 0;
+    assert(tsfi_cw_niu_audit_working_storage(vars, 2, &uninit_cnt) == 0);
+    assert(uninit_cnt == 1);
 }
 
 int main(void) {

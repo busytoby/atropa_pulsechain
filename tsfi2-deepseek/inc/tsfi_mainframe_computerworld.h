@@ -1030,5 +1030,16 @@ typedef struct {
 int tsfi_cw_niu_expand_macro(const char *macro_def, const char *param, char *output_out, size_t max_len);
 int tsfi_cw_niu_audit_copybook(const tsfi_cw_niu_copybook_field *fields, int field_count, int *total_bytes_out);
 
+// NIU DeKalb COBOL Working Storage variable
+typedef struct {
+    char name[32];
+    int has_value_clause;
+    int is_numeric;
+    char initial_value_str[16];
+} tsfi_cw_niu_cobol_var;
+
+int tsfi_cw_niu_audit_jcl_dd(const char *dd_statement, int *is_valid_path_out);
+int tsfi_cw_niu_audit_working_storage(const tsfi_cw_niu_cobol_var *vars, int var_count, int *uninitialized_count_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

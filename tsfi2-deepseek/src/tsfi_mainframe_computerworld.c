@@ -1299,6 +1299,62 @@ int tsfi_cw_niu_audit_copybook(const tsfi_cw_niu_copybook_field *fields, int fie
     return 0;
 }
 
+int tsfi_cw_niu_audit_jcl_dd(const char *dd_statement, int *is_valid_path_out) {
+    if (!dd_statement || !is_valid_path_out) return -1;
+    
+    *is_valid_path_out = 0;
+    const char *dsn = strstr(dd_statement, "DSN=");
+    if (!dsn) dsn = strstr(dd_statement, "DSNAME=");
+    if (!dsn) return 0;
+    
+    // Skip key
+    if (strncmp(dsn, "DSN=", 4) == 0) dsn += 4;
+    else dsn += 7;
+    
+    // Validate characters: A-Z, 0-9, @, #, $, .
+    int seg_len = 0;
+    int has_seg = 0;
+    while (*dsn && *dsn != ',' && *dsn != ' ' && *dsn != '\n' && *dsn != '\r') {
+        char c = *dsn;
+        if (c == '.') {
+            if (seg_len == 0 || seg_len > 8) return 0;
+            seg_len = 0;
+        } else {
+            // First char of segment must be letter or @, #, $
+            if (seg_len == 0) {
+                if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '@' || c == '#' || c == '$')) {
+                    return 0;
+                }
+            } else {
+                if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '@' || c == '#' || c == '$')) {
+                    return 0;
+                }
+            }
+            seg_len++;
+            has_seg = 1;
+        }
+        dsn++;
+    }
+    
+    if (seg_len == 0 || seg_len > 8 || !has_seg) return 0;
+    
+    *is_valid_path_out = 1;
+    return 0;
+}
+
+int tsfi_cw_niu_audit_working_storage(const tsfi_cw_niu_cobol_var *vars, int var_count, int *uninitialized_count_out) {
+    if (!vars || var_count < 0 || !uninitialized_count_out) return -1;
+    
+    *uninitialized_count_out = 0;
+    for (int i = 0; i < var_count; i++) {
+        if (!vars[i].has_value_clause) {
+            (*uninitialized_count_out)++;
+        }
+    }
+    return 0;
+}
+
+
 
 
 
