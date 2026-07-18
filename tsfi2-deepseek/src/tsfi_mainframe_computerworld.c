@@ -425,6 +425,70 @@ int tsfi_cw_ar_process_ledger(const char **tx_cards, int card_count, const char 
     return 0;
 }
 
+int tsfi_cw_gl_compile_balance_sheet(const char **tx_cards, int card_count, tsfi_cw_gl_balance_sheet *sheet_out) {
+    if (!tx_cards || !sheet_out || card_count < 0) return -1;
+    
+    double debits_total = 0, credits_total = 0;
+    double assets = 0, liabilities = 0, equity = 0;
+    double revenue = 0, expense = 0;
+    
+    for (int i = 0; i < card_count; i++) {
+        const char *card = tx_cards[i];
+        if (strlen(card) < 15) continue;
+        
+        char type = card[5];
+        
+        char amt_str[7];
+        memcpy(amt_str, card + 7, 6);
+        amt_str[6] = '\0';
+        double amt = atof(amt_str);
+        
+        char dc = card[14];
+        
+        if (dc == 'D') {
+            debits_total += amt;
+            if (type == 'A') assets += amt;
+            else if (type == 'L') liabilities -= amt;
+            else if (type == 'E') equity -= amt;
+            else if (type == 'R') revenue -= amt;
+            else if (type == 'X') expense += amt;
+        } else if (dc == 'C') {
+            credits_total += amt;
+            if (type == 'A') assets -= amt;
+            else if (type == 'L') liabilities += amt;
+            else if (type == 'E') equity += amt;
+            else if (type == 'R') revenue += amt;
+            else if (type == 'X') expense -= amt;
+        }
+    }
+    
+    // Verify double-entry balance
+    if (fabs(debits_total - credits_total) > 1e-9) {
+        return -5; // Ledger out of balance error
+    }
+    
+    sheet_out->net_income = revenue - expense;
+    sheet_out->total_assets = assets;
+    sheet_out->total_liabilities = liabilities;
+    sheet_out->total_equity = equity + sheet_out->net_income;
+    
+    return 0;
+}
+
+int tsfi_cw_eoq_calculate(const tsfi_cw_eoq_problem *prob, double *eoq_out, double *total_cost_out) {
+    if (!prob || !eoq_out || !total_cost_out) return -1;
+    if (prob->annual_demand <= 0.0 || prob->order_cost <= 0.0 || prob->holding_cost <= 0.0) return -2;
+    
+    *eoq_out = sqrt((2.0 * prob->annual_demand * prob->order_cost) / prob->holding_cost);
+    
+    double order_tc = (prob->annual_demand / (*eoq_out)) * prob->order_cost;
+    double holding_tc = ((*eoq_out) / 2.0) * prob->holding_cost;
+    *total_cost_out = order_tc + holding_tc;
+    
+    return 0;
+}
+
+
 
 
 

@@ -665,5 +665,24 @@ typedef struct {
 
 int tsfi_cw_ar_process_ledger(const char **tx_cards, int card_count, const char *ref_date_yymmdd, tsfi_cw_ar_statement *statements_out, int *stmt_count_out);
 
+// Punched Card General Ledger compiler
+typedef struct {
+    double total_assets;
+    double total_liabilities;
+    double total_equity;
+    double net_income;
+} tsfi_cw_gl_balance_sheet;
+
+int tsfi_cw_gl_compile_balance_sheet(const char **tx_cards, int card_count, tsfi_cw_gl_balance_sheet *sheet_out);
+
+// Mainframe Economic Order Quantity (EOQ) calculator
+typedef struct {
+    double annual_demand;
+    double order_cost;
+    double holding_cost;
+} tsfi_cw_eoq_problem;
+
+int tsfi_cw_eoq_calculate(const tsfi_cw_eoq_problem *prob, double *eoq_out, double *total_cost_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

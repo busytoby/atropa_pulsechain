@@ -1521,6 +1521,30 @@ static void test_new_mainframe_features(void) {
     assert(ar_stmts[0].total_balance == 130.0);
     assert(ar_stmts[0].balance_90_days == 80.0);
     assert(ar_stmts[0].balance_current == 50.0);
+
+    // General Ledger Balance Sheet compiler test
+    // Cards: Account ID (cols 1-4), Type A/L/E/R/X (col 6), Amount (cols 8-13), D/C (col 15)
+    const char *gl_cards[] = {
+        "1000 A 010000 D", // Debit Cash $10,000 (Asset)
+        "2000 L 004000 C", // Credit Accounts Payable $4,000 (Liability)
+        "3000 E 005000 C", // Credit Common Stock $5,000 (Equity)
+        "4000 R 002000 C", // Credit Sales Revenue $2,000 (Revenue)
+        "5000 X 001000 D"  // Debit Rent Expense $1,000 (Expense)
+    };
+    tsfi_cw_gl_balance_sheet sheet;
+    assert(tsfi_cw_gl_compile_balance_sheet(gl_cards, 5, &sheet) == 0);
+    assert(sheet.total_assets == 10000.0);
+    assert(sheet.total_liabilities == 4000.0);
+    assert(sheet.net_income == 1000.0);
+    assert(sheet.total_equity == 6000.0);
+
+    // Mainframe EOQ Calculator test
+    tsfi_cw_eoq_problem eoq_prob = { 1000.0, 50.0, 4.0 }; // D=1000, S=50, H=4
+    double eoq = 0.0, total_cost = 0.0;
+    assert(tsfi_cw_eoq_calculate(&eoq_prob, &eoq, &total_cost) == 0);
+    // EOQ = sqrt((2 * 1000 * 50) / 4) = sqrt(25000) = 158.11
+    assert(fabs(eoq - 158.11) < 0.01);
+    assert(fabs(total_cost - 632.45) < 0.01);
 }
 
 int main(void) {
