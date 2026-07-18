@@ -941,6 +941,23 @@ int main(void) {
     assert(interest_sources_match == 1);
     printf("  [PASS] IRS CADE Schedule B Interest Matcher verified.\n");
 
+    // 224. Verify IRS CADE Schedule B Part II Dividend Source Matcher
+    printf("[TEST] Validating IRS CADE Schedule B Dividend Matcher...\n");
+    double dividend_sources[] = {1000.00, 1500.00, 500.00};
+    int dividend_sources_match = -1;
+    int dividend_match_res = tsfi_mf_cade_match_schedule_b_dividends(dividend_sources, 3, 3000.00, &dividend_sources_match);
+    assert(dividend_match_res == 0);
+    assert(dividend_sources_match == 1);
+    printf("  [PASS] IRS CADE Schedule B Dividend Matcher verified.\n");
+
+    // 225. Verify IRS IMF Qualifying Surviving Spouse Filing Year Matcher
+    printf("[TEST] Validating IRS IMF QSS Filing Year Matcher...\n");
+    int qss_year_valid = -1;
+    int qss_year_res = tsfi_mf_imf_verify_qss_filing_year(2021, 2023, &qss_year_valid);
+    assert(qss_year_res == 0);
+    assert(qss_year_valid == 1);
+    printf("  [PASS] IRS IMF QSS Filing Year Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

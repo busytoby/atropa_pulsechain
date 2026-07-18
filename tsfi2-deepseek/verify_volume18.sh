@@ -322,8 +322,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 365 | IRS CADE Schedule B Foreign Account Reporting Indicator Checker | PASS | Validates foreign disclosure requirements for interest/dividend filers | Volume 33 |
 | 366 | IRS IMF Section 179 Phase-Out Deduction Reducer | PASS | Computes and matches reduced deduction limits for high property cost | Volume 33 |
 | 367 | IRS CADE Schedule B Part I Interest Source Matcher | PASS | Sums detailed interest sources to verify cumulative reported total | Volume 33 |
+| 368 | IRS CADE Schedule B Part II Dividend Source Matcher | PASS | Sums detailed dividend sources to verify cumulative reported total | Volume 33 |
+| 369 | IRS IMF Qualifying Surviving Spouse Filing Year Matcher | PASS | Restricts widow filing status to two years post-spousal death | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 367 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 369 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"
