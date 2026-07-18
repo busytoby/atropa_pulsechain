@@ -1571,4 +1571,16 @@ int tsfi_mf_cade_verify_joint_secondary_signature(int filing_status, int seconda
     return 0;
 }
 
+int tsfi_mf_cade_verify_div_payer_address(const char *address, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (address && strlen(address) > 0) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_cade_verify_int_payer_address(const char *address, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (address && strlen(address) > 0) ? 1 : 0;
+    return 0;
+}
+
 

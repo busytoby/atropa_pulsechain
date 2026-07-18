@@ -1120,6 +1120,22 @@ int main(void) {
     assert(joint_sig_valid == 1);
     printf("  [PASS] IRS CADE Joint Secondary Signature Validator verified.\n");
 
+    // 246. Verify IRS CADE Form 1099-DIV Payer Address Matcher
+    printf("[TEST] Validating IRS CADE DIV Payer Address Matcher...\n");
+    int div_addr_valid = -1;
+    int div_addr_res = tsfi_mf_cade_verify_div_payer_address("456 Financial Way", &div_addr_valid);
+    assert(div_addr_res == 0);
+    assert(div_addr_valid == 1);
+    printf("  [PASS] IRS CADE DIV Payer Address Matcher verified.\n");
+
+    // 247. Verify IRS CADE Form 1099-INT Payer Address Matcher
+    printf("[TEST] Validating IRS CADE INT Payer Address Matcher...\n");
+    int int_addr_valid = -1;
+    int int_addr_res = tsfi_mf_cade_verify_int_payer_address("789 Banking Rd", &int_addr_valid);
+    assert(int_addr_res == 0);
+    assert(int_addr_valid == 1);
+    printf("  [PASS] IRS CADE INT Payer Address Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

@@ -321,5 +321,7 @@
 | 387 | IRS CADE Form 1099-INT Recipient TIN Format Validator | PASS | Validates recipient Social Security/TIN structure on Form 1099-INT | Volume 33 |
 | 388 | IRS IMF Schedule B Dividend/Interest Reclassification Matcher | PASS | Adjusts and matches reclassified dividend totals on Schedule B | Volume 33 |
 | 389 | IRS CADE Form 1040 Joint Return Secondary Spouse Signature Validator | PASS | Audits presence of secondary spouse signature flag for joint status | Volume 33 |
+| 390 | IRS CADE Form 1099-DIV Payer Address Matcher | PASS | Verifies non-empty street address string for dividend payers | Volume 33 |
+| 391 | IRS CADE Form 1099-INT Payer Address Matcher | PASS | Verifies non-empty street address string for interest payers | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 389 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 391 Scenarios validated successfully)
