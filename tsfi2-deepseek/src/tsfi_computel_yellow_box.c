@@ -69,27 +69,28 @@ int tsfi_mf_yellow_box_secure_telegram_route(const char *ssn, int dmf_deceased, 
     payload[14] = 0x00;
     payload[15] = 0x00;
     
-    // Encrypt in 2 blocks using 32-round GOST block cipher
+    // Encrypt metadata only using 32-round GOST block cipher (excluding raw identity from masking)
     uint32_t keys[8] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
+    uint8_t meta[8] = {0};
+    meta[0] = payload[10];
+    meta[1] = payload[11];
+    meta[2] = payload[12];
     
     int prev_bcast = tsfi_gost_is_broadcast_channel;
     tsfi_gost_is_broadcast_channel = 1;
-    for (int block = 0; block < 2; block++) {
-        int offset = block * 8;
-        uint32_t left = ((uint32_t)payload[offset] << 24) | ((uint32_t)payload[offset+1] << 16) | ((uint32_t)payload[offset+2] << 8) | payload[offset+3];
-        uint32_t right = ((uint32_t)payload[offset+4] << 24) | ((uint32_t)payload[offset+5] << 16) | ((uint32_t)payload[offset+6] << 8) | payload[offset+7];
-        
-        tsfi_mf_ussr_gost_encrypt_32(&left, &right, keys);
-        
-        payload[offset] = (left >> 24) & 0xFF;
-        payload[offset+1] = (left >> 16) & 0xFF;
-        payload[offset+2] = (left >> 8) & 0xFF;
-        payload[offset+3] = left & 0xFF;
-        payload[offset+4] = (right >> 24) & 0xFF;
-        payload[offset+5] = (right >> 16) & 0xFF;
-        payload[offset+6] = (right >> 8) & 0xFF;
-        payload[offset+7] = right & 0xFF;
-    }
+    
+    uint32_t left = ((uint32_t)meta[0] << 24) | ((uint32_t)meta[1] << 16) | ((uint32_t)meta[2] << 8) | meta[3];
+    uint32_t right = ((uint32_t)meta[4] << 24) | ((uint32_t)meta[5] << 16) | ((uint32_t)meta[6] << 8) | meta[7];
+    
+    tsfi_mf_ussr_gost_encrypt_32(&left, &right, keys);
+    
+    payload[10] = (left >> 24) & 0xFF;
+    payload[11] = (left >> 16) & 0xFF;
+    payload[12] = (left >> 8) & 0xFF;
+    payload[13] = left & 0xFF;
+    payload[14] = (right >> 24) & 0xFF;
+    payload[15] = (right >> 16) & 0xFF;
+    
     tsfi_gost_is_broadcast_channel = prev_bcast;
     
     // Encapsulate inside STANAG 5066 broadcast frame
