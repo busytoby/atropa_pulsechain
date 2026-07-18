@@ -1824,6 +1824,18 @@ static void test_new_mainframe_features(void) {
     assert(fabs(rebate - 25.0) < 0.1); // 500 * 0.05
     assert(tsfi_cw_icp_audit_support_sla(45, 60, 500.0, &rebate) == 0);
     assert(rebate == 0.0);
+
+    // ESJ Paging Telemetry test
+    tsfi_cw_esj_paging_metrics metric1 = { 10, 5, 45, 1000, 200 }; // Thrashing index: 15 / 801 = ~0.018. uic: 45. Nominal
+    double thrash = 0.0;
+    int alert = 0;
+    assert(tsfi_cw_esj_analyze_paging(&metric1, &thrash, &alert) == 0);
+    assert(fabs(thrash - 0.0187) < 0.001);
+    assert(alert == 0);
+
+    tsfi_cw_esj_paging_metrics metric2 = { 100, 200, 15, 1000, 200 }; // uic under 30. Alert!
+    assert(tsfi_cw_esj_analyze_paging(&metric2, &thrash, &alert) == 0);
+    assert(alert == 1);
 }
 
 int main(void) {

@@ -888,5 +888,16 @@ int tsfi_cw_icp_audit_grace_period(int days_late, int allowed_grace_days, int *s
 int tsfi_cw_icp_calculate_upgrade_price(double current_version_price, double new_version_price, double loyalty_discount_rate, double *upgrade_price_out);
 int tsfi_cw_icp_audit_support_sla(int response_time_mins, int target_sla_mins, double contract_monthly_fee, double *rebate_out);
 
+// ESJ Mainframe Paging & Memory Telemetry
+typedef struct {
+    int page_ins;
+    int page_outs;
+    int uic; // Unreferenced Interval Count (MVS page aging metric)
+    int total_frames;
+    int free_frames;
+} tsfi_cw_esj_paging_metrics;
+
+int tsfi_cw_esj_analyze_paging(const tsfi_cw_esj_paging_metrics *metrics, double *thrashing_index_out, int *alert_flag_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

@@ -1079,6 +1079,22 @@ int tsfi_cw_icp_audit_support_sla(int response_time_mins, int target_sla_mins, d
     return 0;
 }
 
+int tsfi_cw_esj_analyze_paging(const tsfi_cw_esj_paging_metrics *metrics, double *thrashing_index_out, int *alert_flag_out) {
+    if (!metrics || !thrashing_index_out || !alert_flag_out) return -1;
+    if (metrics->total_frames < 0 || metrics->free_frames < 0 || metrics->free_frames > metrics->total_frames) return -2;
+    
+    int active_frames = metrics->total_frames - metrics->free_frames;
+    *thrashing_index_out = (double)(metrics->page_ins + metrics->page_outs) / (double)(active_frames + 1);
+    
+    if (metrics->uic < 30 || *thrashing_index_out > 0.05) {
+        *alert_flag_out = 1;
+    } else {
+        *alert_flag_out = 0;
+    }
+    return 0;
+}
+
+
 
 
 
