@@ -1057,6 +1057,27 @@ static void test_new_mainframe_features(void) {
     // Y2K Date Span violation diagnostic stats reset
     tsfi_cw_y2k_reset_chronological_violations();
     assert(tsfi_cw_y2k_get_chronological_violations() == 0);
+
+    // VSAM index verification checks
+    assert(tsfi_cw_vsam_verify_index_checksums(&cached_ksds) == 0);
+    cached_ksds.index[0].checksum = 0xFFFFFFFF;
+    cached_ksds.index[0].active = 1;
+    assert(tsfi_cw_vsam_verify_index_checksums(&cached_ksds) == -25);
+
+    // COBOL padding limit checks
+    assert(tsfi_cw_cobol_validate_padding_limits(5, 10) == 0);
+    assert(tsfi_cw_cobol_validate_padding_limits(15, 10) == -30);
+
+    // EBCDIC overrides check
+    tsfi_cw_ebcdic_override_dbcs_markers(0x0E, 0x0F);
+
+    // JCL set recursion limit check
+    tsfi_cw_jcl_set_custom_proc_recursion_limit(10);
+
+    // Y2K query check
+    uint32_t v_count = 999;
+    assert(tsfi_cw_y2k_query_chronological_violations(&v_count) == 0);
+    assert(v_count == 0);
 }
 
 int main(void) {

@@ -780,3 +780,8 @@ int tsfi_cw_cobol_validate_padding_alignment(int field_offset, int alignment_mod
     if (field_offset % alignment_modulus != 0) return -34;
     return 0;
 }
+
+int tsfi_cw_cobol_validate_padding_limits(int pad_len, int max_allowed) {
+    if (pad_len < 0 || pad_len > max_allowed) return -30;
+    return 0;
+}

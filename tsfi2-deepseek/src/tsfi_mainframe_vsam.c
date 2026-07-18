@@ -624,3 +624,13 @@ int tsfi_cw_vsam_verify_checksum_cached(tsfi_cw_vsam_ksds *ksds, int mid, const 
     if (!ksds || mid < 0 || mid >= ksds->entry_count) return -1;
     return tsfi_cw_vsam_verify_record_checksum(data_out, read_len, ksds->index[mid].checksum);
 }
+
+int tsfi_cw_vsam_verify_index_checksums(tsfi_cw_vsam_ksds *ksds) {
+    if (!ksds) return -1;
+    for (int i = 0; i < ksds->entry_count; i++) {
+        if (ksds->index[i].active && ksds->index[i].checksum == 0xFFFFFFFF) {
+            return -25;
+        }
+    }
+    return 0;
+}

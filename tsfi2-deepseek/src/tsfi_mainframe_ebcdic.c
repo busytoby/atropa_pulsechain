@@ -594,3 +594,11 @@ uint8_t tsfi_cw_ebcdic_translate_control_escape_override(uint8_t ebcdic_char, ui
     return tsfi_cw_ebcdic_translate_control_escape(ebcdic_char);
 }
 
+static uint8_t global_ebcdic_so_marker = 0x0E;
+static uint8_t global_ebcdic_si_marker = 0x0F;
+
+void tsfi_cw_ebcdic_override_dbcs_markers(uint8_t new_so, uint8_t new_si) {
+    global_ebcdic_so_marker = new_so;
+    global_ebcdic_si_marker = new_si;
+}
+

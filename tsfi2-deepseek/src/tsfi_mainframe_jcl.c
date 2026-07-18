@@ -562,3 +562,9 @@ int tsfi_cw_jcl_validate_proc_recursion_depth(int depth, int max_depth) {
     if (depth > max_depth) return -36;
     return 0;
 }
+
+static int global_jcl_proc_recursion_limit = 5;
+
+void tsfi_cw_jcl_set_custom_proc_recursion_limit(int limit) {
+    global_jcl_proc_recursion_limit = limit;
+}

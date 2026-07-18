@@ -372,3 +372,9 @@ uint32_t tsfi_cw_y2k_get_chronological_violations(void) {
 void tsfi_cw_y2k_reset_chronological_violations(void) {
     global_y2k_chronological_violations = 0;
 }
+
+int tsfi_cw_y2k_query_chronological_violations(uint32_t *violations_out) {
+    if (!violations_out) return -1;
+    *violations_out = global_y2k_chronological_violations;
+    return 0;
+}
