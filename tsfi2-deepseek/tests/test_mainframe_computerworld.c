@@ -3,6 +3,7 @@
 #include <string.h>
 #include <assert.h>
 #include "tsfi_ramac_layout.h"
+#include "tsfi_wire_firmware.h"
 #include "tsfi_mainframe_computerworld.h"
 
 static void test_y2k_windowing(void) {
@@ -1387,15 +1388,41 @@ static void test_new_mainframe_features(void) {
     assert(tsfi_algol_operate_btc_rails_dat(&b5500_cpu, &test_dat, btc_stack, &btc_sp, btc_altstack, &btc_asp, "STORE_BTC_TO_DAT") == 0);
     assert(btc_sp == 0);
     assert(test_dat.key_start == 100);
+
+    // ALGOL execute BTC Rails Yul thunk test
+    // Instructions: PUSH 5, PUSH 10, ADD, HALT
+    uint8_t test_bytecode[] = { 0x01, 0x00, 0x00, 0x00, 0x05, 0x01, 0x00, 0x00, 0x00, 0x0A, 0x02, 0x06 };
+    uint32_t pc = 0, sp = 0, asp = 0, halted = 0;
+    assert(tsfi_algol_execute_btc_rails_yul(&test_dat, test_bytecode, sizeof(test_bytecode), 64, &pc, &sp, &asp, &halted) == 0);
+    assert(halted == 1);
+    assert(pc > 0);
 }
 
 int main(void) {
     printf("=== RUNNING COMPUTERWORLD MAINFRAME COMPLIANCE TESTS ===\n");
+    
+    // Initialize firmware and deploy btc_rails_vm so the execution thunks exist
+    tsfi_wire_firmware_init();
+    TsfiZmmVmState vm;
+    tsfi_zmm_vm_init(&vm);
+    const char *yul_path = "../solidity/bin/btc_rails_vm.yul";
+    FILE *f_yul = fopen(yul_path, "r");
+    if (f_yul) {
+        fclose(f_yul);
+    } else {
+        yul_path = "solidity/bin/btc_rails_vm.yul";
+    }
+    char init_cmd[256];
+    snprintf(init_cmd, sizeof(init_cmd), "YULINIT \"btc_rails_vm\", \"%s\", 1024", yul_path);
+    tsfi_zmm_vm_exec(&vm, init_cmd);
+
     test_y2k_windowing();
     test_ebcdic_translation();
     test_punch_card_parsing();
     test_cobol_comp3();
     test_new_mainframe_features();
+    
+    tsfi_zmm_vm_destroy(&vm);
     printf("=== ALL COMPUTERWORLD COMPLIANCE TESTS PASSED ===\n");
     return 0;
 }

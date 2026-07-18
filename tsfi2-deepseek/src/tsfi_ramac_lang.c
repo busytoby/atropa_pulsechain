@@ -225,3 +225,47 @@ int tsfi_algol_operate_btc_rails_dat(tsfi_b5500_processor *cpu, tsfi_algol_dynam
     return 0;
 }
 
+extern bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cd_size, uint8_t *retval, size_t *retval_len);
+
+int tsfi_algol_execute_btc_rails_yul(tsfi_algol_dynamic_array *dat_arr, const uint8_t *bytecode, int bytecode_len, int cycles, uint32_t *result_pc, uint32_t *result_sp, uint32_t *result_asp, uint32_t *result_halted) {
+    if (!dat_arr || !bytecode || bytecode_len <= 0 || !result_pc || !result_sp || !result_asp || !result_halted) return -1;
+    
+    uint8_t calldata[4096];
+    memset(calldata, 0, sizeof(calldata));
+    
+    calldata[0] = 0x22;
+    calldata[1] = 0x13;
+    calldata[2] = 0x76;
+    calldata[3] = 0x82;
+    
+    calldata[35] = 0x40;
+    
+    calldata[64] = (cycles >> 24) & 0xFF;
+    calldata[65] = (cycles >> 16) & 0xFF;
+    calldata[66] = (cycles >> 8) & 0xFF;
+    calldata[67] = cycles & 0xFF;
+    
+    calldata[96] = (bytecode_len >> 24) & 0xFF;
+    calldata[97] = (bytecode_len >> 16) & 0xFF;
+    calldata[98] = (bytecode_len >> 8) & 0xFF;
+    calldata[99] = bytecode_len & 0xFF;
+    
+    memcpy(calldata + 100, bytecode, bytecode_len);
+    
+    size_t cd_size = 100 + bytecode_len;
+    
+    uint8_t retval[128];
+    size_t retval_len = 128;
+    memset(retval, 0, sizeof(retval));
+    
+    bool success = lau_yul_thunk_execute("btc_rails_vm", calldata, cd_size, retval, &retval_len);
+    if (!success || retval_len < 128) return -2;
+    
+    *result_pc = (retval[28] << 24) | (retval[29] << 16) | (retval[30] << 8) | retval[31];
+    *result_sp = (retval[60] << 24) | (retval[61] << 16) | (retval[62] << 8) | retval[63];
+    *result_asp = (retval[92] << 24) | (retval[93] << 16) | (retval[94] << 8) | retval[95];
+    *result_halted = (retval[124] << 24) | (retval[125] << 16) | (retval[126] << 8) | retval[127];
+    
+    return 0;
+}
+
