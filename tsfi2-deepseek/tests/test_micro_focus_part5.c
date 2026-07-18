@@ -859,7 +859,22 @@ int run_nato_stanag_tests_part5(void) {
     assert(ebs_3270_size > 0);
     assert(ebs_3270_stream[0] == '\x11');
 
-    printf("  [PASS] Exhaustive Emergency Broadcast System (EBS) verified.\n");
+    // Verify NORAD Command Auth Hash
+    printf("[TEST] Validating NORAD Command Auth Hash...\n");
+    uint8_t c2_payload[] = {0x10, 0x20, 0x30, 0x40};
+    uint32_t c2_hash = 0;
+    int ebs_h_res = tsfi_mf_norad_auth_hash(c2_payload, sizeof(c2_payload), &c2_hash);
+    assert(ebs_h_res == 0);
+    assert(c2_hash != 0);
+    printf("  [PASS] NORAD Command Auth Hash verified.\n");
+
+    // Verify JANAP Message Validator
+    printf("[TEST] Validating JANAP Message Validator...\n");
+    int janap_valid_flag = -1;
+    int val_res = tsfi_mf_janap_validate_message(msg, strlen(msg), &janap_valid_flag);
+    assert(val_res == 0);
+    assert(janap_valid_flag == 1);
+    printf("  [PASS] JANAP Message Validator verified.\n");
 
     return 0;
 }

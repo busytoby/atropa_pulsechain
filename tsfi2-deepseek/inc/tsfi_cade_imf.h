@@ -439,4 +439,7 @@ int tsfi_mf_nato_relay_verify_sequence(int current_seq, int expected_seq, int *i
 int tsfi_mf_irs_merkle_combine(const uint8_t *left_hash, const uint8_t *right_hash, uint8_t *out_parent_hash);
 int tsfi_mf_cics_check_irs_timeout(uint32_t send_time_ms, uint32_t current_time_ms, uint32_t timeout_limit_ms, int *is_timeout);
 
+int tsfi_mf_norad_auth_hash(const uint8_t *payload, size_t size, uint32_t *out_hash);
+int tsfi_mf_janap_validate_message(const char *msg_buffer, size_t size, int *is_valid);
+
 #endif // TSFI_CADE_IMF_H

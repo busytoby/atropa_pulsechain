@@ -1632,6 +1632,40 @@ int tsfi_mf_cics_check_irs_timeout(uint32_t send_time_ms, uint32_t current_time_
     return 0;
 }
 
+int tsfi_mf_norad_auth_hash(const uint8_t *payload, size_t size, uint32_t *out_hash) {
+    if (!payload || !out_hash) return -1;
+    
+    uint32_t hash = 2166136261U;
+    for (size_t i = 0; i < size; i++) {
+        hash = (hash ^ payload[i]) * 16777619U;
+    }
+    *out_hash = hash;
+    return 0;
+}
+
+int tsfi_mf_janap_validate_message(const char *msg_buffer, size_t size, int *is_valid) {
+    if (!msg_buffer || !is_valid) return -1;
+    (void)size;
+    *is_valid = 0;
+    
+    // Find the end of the header line
+    const char *newline = strchr(msg_buffer, '\n');
+    if (!newline) return 0;
+    
+    // Validate header start "R "
+    if (newline - msg_buffer < 10) return 0;
+    if (msg_buffer[0] != 'R' || msg_buffer[1] != ' ') return 0;
+    
+    // Scan for EOM marker "NNNN"
+    const char *eom = strstr(msg_buffer, "NNNN");
+    if (!eom) return 0;
+    if (eom < newline) return 0;
+    
+    *is_valid = 1;
+    return 0;
+}
+
+
 
 
 
