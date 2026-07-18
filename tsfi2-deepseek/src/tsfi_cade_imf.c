@@ -542,4 +542,33 @@ int tsfi_mf_cade_classify_batch_error(int error_code, char *severity_out, int ma
     return 0;
 }
 
+int tsfi_mf_imf_verify_agi_calculation(double gross_income, double adjustments, double reported_agi, int *is_match) {
+    if (!is_match) return -1;
+    double expected_agi = gross_income - adjustments;
+    double diff = expected_agi - reported_agi;
+    if (diff < 0) diff = -diff;
+    *is_match = (diff < 1.00) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_imf_validate_deductions(int filing_status, double claimed_deductions, int use_itemized, int *is_valid) {
+    if (!is_valid) return -1;
+    if (use_itemized) {
+        *is_valid = 1;
+        return 0;
+    }
+    double standard_deduction = 12000.00;
+    if (filing_status == 2) {
+        standard_deduction = 24000.00;
+    }
+    *is_valid = (claimed_deductions == standard_deduction) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_cade_check_refund_hold(int identity_verified, int address_verified, int *has_hold) {
+    if (!has_hold) return -1;
+    *has_hold = (!identity_verified || !address_verified) ? 1 : 0;
+    return 0;
+}
+
 

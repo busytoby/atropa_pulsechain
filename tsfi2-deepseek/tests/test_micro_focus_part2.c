@@ -330,6 +330,30 @@ int main(void) {
     assert(strcmp(severity, "CRITICAL") == 0);
     printf("  [PASS] IRS CADE Daily Batch Error Accounting verified.\n");
 
+    // 149. Verify IRS IMF Adjusted Gross Income (AGI) Matcher
+    printf("[TEST] Validating IRS IMF AGI Matcher...\n");
+    int agi_match = -1;
+    int agi_res = tsfi_mf_imf_verify_agi_calculation(75000.00, 5000.00, 70000.00, &agi_match);
+    assert(agi_res == 0);
+    assert(agi_match == 1);
+    printf("  [PASS] IRS IMF AGI Matcher verified.\n");
+
+    // 150. Verify IRS IMF Standard vs Itemized Deduction Matcher
+    printf("[TEST] Validating IRS IMF Deduction Matcher...\n");
+    int ded_valid = -1;
+    int ded_res = tsfi_mf_imf_validate_deductions(1, 12000.00, 0, &ded_valid);
+    assert(ded_res == 0);
+    assert(ded_valid == 1);
+    printf("  [PASS] IRS IMF Deduction Matcher verified.\n");
+
+    // 151. Verify IRS CADE Refund Offset Delay Flag
+    printf("[TEST] Validating IRS CADE Refund Delay Checker...\n");
+    int has_hold = -1;
+    int hold_res = tsfi_mf_cade_check_refund_hold(1, 0, &has_hold);
+    assert(hold_res == 0);
+    assert(has_hold == 1);
+    printf("  [PASS] IRS CADE Refund Delay Checker verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

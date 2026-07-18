@@ -46,5 +46,8 @@ int tsfi_mf_imf_schedule_refund(const char *cycle_code, int transaction_code, ch
 int tsfi_mf_imf_apply_liability_offset(double refund_amt, double liability_amt, double *net_refund_out, double *remaining_liability_out);
 int tsfi_mf_imf_verify_filing_status(int filing_status, int doc_code, int *is_allowed);
 int tsfi_mf_cade_classify_batch_error(int error_code, char *severity_out, int max_len);
+int tsfi_mf_imf_verify_agi_calculation(double gross_income, double adjustments, double reported_agi, int *is_match);
+int tsfi_mf_imf_validate_deductions(int filing_status, double claimed_deductions, int use_itemized, int *is_valid);
+int tsfi_mf_cade_check_refund_hold(int identity_verified, int address_verified, int *has_hold);
 
 #endif // TSFI_CADE_IMF_H

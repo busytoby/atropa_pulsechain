@@ -224,5 +224,8 @@
 | 290 | IRS IMF Liability Offset Processor | PASS | Adjusts net refunds by deducting outstanding tax liabilities | Volume 33 |
 | 291 | IRS IMF Filing Status Restriction checks | PASS | Restricts certain forms and credits based on joint/separate returns | Volume 33 |
 | 292 | IRS CADE Daily Batch Error Accounting | PASS | Categorizes error severity thresholds for batch postings | Volume 33 |
+| 293 | IRS IMF Adjusted Gross Income (AGI) Matcher | PASS | Validates reported AGI matching expected gross minus adjustments | Volume 33 |
+| 294 | IRS IMF Standard vs Itemized Deduction Matcher | PASS | Confirms correct deductions applied depending on filing status | Volume 33 |
+| 295 | IRS CADE Refund Offset Delay Flag | PASS | Detects identity/address hold status preventing immediate refund posting | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 292 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 295 Scenarios validated successfully)
