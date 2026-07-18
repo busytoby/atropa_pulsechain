@@ -1744,6 +1744,16 @@ static void test_new_mainframe_features(void) {
     double tax_amt = 0.0;
     assert(tsfi_cw_icp_calculate_transfer_tax(1200000.0, 0.04, &tax_amt) == 0);
     assert(tax_amt == 48000.0);
+
+    // ICP Depreciation test
+    double dep_val = 0.0;
+    assert(tsfi_cw_icp_calculate_software_depreciation(10000.0, 1000.0, 5, 2, &dep_val) == 0);
+    assert(fabs(dep_val - 6400.0) < 0.1); // 10000 - (1800 * 2)
+
+    // ICP Renewal Penalty test
+    double penalty_val = 0.0;
+    assert(tsfi_cw_icp_calculate_renewal_penalty(1500.0, 10, 0.01, &penalty_val) == 0);
+    assert(fabs(penalty_val - 1650.0) < 0.1); // 1500 * 1.10
 }
 
 int main(void) {

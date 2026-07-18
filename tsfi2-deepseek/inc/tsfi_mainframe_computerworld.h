@@ -840,5 +840,9 @@ int tsfi_cw_icp_subscription_status(const tsfi_cw_icp_subscription *sub, double 
 int tsfi_cw_icp_analyze_vendor(const tsfi_cw_icp_product *catalog, int catalog_size, const char *vendor_name, double *total_revenue_out, int *award_count_out);
 int tsfi_cw_icp_calculate_transfer_tax(double license_amount, double tax_rate, double *tax_amount_out);
 
+// ICP Depreciation Estimator and Renewal Penalty Auditor
+int tsfi_cw_icp_calculate_software_depreciation(double cost, double salvage_value, int lifespan_years, int target_year, double *depreciated_value_out);
+int tsfi_cw_icp_calculate_renewal_penalty(double renewal_fee, int days_late, double penalty_rate_per_day, double *total_due_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

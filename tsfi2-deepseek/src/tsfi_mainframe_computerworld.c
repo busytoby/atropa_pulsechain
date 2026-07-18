@@ -928,6 +928,30 @@ int tsfi_cw_icp_calculate_transfer_tax(double license_amount, double tax_rate, d
     return 0;
 }
 
+int tsfi_cw_icp_calculate_software_depreciation(double cost, double salvage_value, int lifespan_years, int target_year, double *depreciated_value_out) {
+    if (cost < 0.0 || salvage_value < 0.0 || lifespan_years <= 0 || target_year < 0 || !depreciated_value_out) return -1;
+    
+    if (target_year >= lifespan_years) {
+        *depreciated_value_out = salvage_value;
+    } else {
+        double annual_dep = (cost - salvage_value) / lifespan_years;
+        *depreciated_value_out = cost - (annual_dep * target_year);
+    }
+    return 0;
+}
+
+int tsfi_cw_icp_calculate_renewal_penalty(double renewal_fee, int days_late, double penalty_rate_per_day, double *total_due_out) {
+    if (renewal_fee < 0.0 || penalty_rate_per_day < 0.0 || !total_due_out) return -1;
+    
+    if (days_late <= 0) {
+        *total_due_out = renewal_fee;
+    } else {
+        *total_due_out = renewal_fee * (1.0 + ((double)days_late * penalty_rate_per_day));
+    }
+    return 0;
+}
+
+
 
 
 
