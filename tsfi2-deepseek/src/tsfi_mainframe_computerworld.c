@@ -153,4 +153,119 @@ int tsfi_cw_ramac_process_transaction(tsfi_cw_ramac_stock *stock, const char *tx
     return 0;
 }
 
+int tsfi_cw_salary_process_cards(const char **card_lines, int card_count, tsfi_cw_survey_stats *stats_out) {
+    if (!card_lines || !stats_out || card_count < 0) return -1;
+    
+    double pg_sum = 0, op_sum = 0, sa_sum = 0;
+    int pg_cnt = 0, op_cnt = 0, sa_cnt = 0;
+    int f_cnt = 0, m_cnt = 0;
+    
+    for (int i = 0; i < card_count; i++) {
+        const char *line = card_lines[i];
+        if (strlen(line) < 23) continue;
+        
+        char role[3];
+        memcpy(role, line + 9, 2);
+        role[2] = '\0';
+        
+        char sal_str[7];
+        memcpy(sal_str, line + 15, 6);
+        sal_str[6] = '\0';
+        double sal = atof(sal_str);
+        
+        char gender = line[22];
+        
+        if (strcmp(role, "PG") == 0) {
+            pg_sum += sal;
+            pg_cnt++;
+        } else if (strcmp(role, "OP") == 0) {
+            op_sum += sal;
+            op_cnt++;
+        } else if (strcmp(role, "SA") == 0) {
+            sa_sum += sal;
+            sa_cnt++;
+        }
+        
+        if (gender == 'F') f_cnt++;
+        else if (gender == 'M') m_cnt++;
+    }
+    
+    stats_out->avg_programmer_salary = (pg_cnt > 0) ? (pg_sum / pg_cnt) : 0.0;
+    stats_out->avg_operator_salary = (op_cnt > 0) ? (op_sum / op_cnt) : 0.0;
+    stats_out->avg_analyst_salary = (sa_cnt > 0) ? (sa_sum / sa_cnt) : 0.0;
+    stats_out->female_count = f_cnt;
+    stats_out->male_count = m_cnt;
+    
+    return 0;
+}
+
+int tsfi_cw_simplex_optimize(const tsfi_cw_simplex_problem *prob, double *x1_opt, double *x2_opt, double *profit_opt) {
+    if (!prob || !x1_opt || !x2_opt || !profit_opt) return -1;
+    
+    double max_profit = -1.0;
+    double best_x1 = 0.0, best_x2 = 0.0;
+    
+    // Corner Points to evaluate:
+    double corners[6][2] = {
+        {0.0, 0.0},
+        {-1.0, -1.0},
+        {-1.0, -1.0},
+        {-1.0, -1.0},
+        {-1.0, -1.0},
+        {-1.0, -1.0}
+    };
+    
+    // Corner 1: (b1 / a11, 0)
+    if (prob->a11 > 0.0) {
+        corners[1][0] = prob->b1 / prob->a11;
+        corners[1][1] = 0.0;
+    }
+    // Corner 2: (0, b1 / a12)
+    if (prob->a12 > 0.0) {
+        corners[2][0] = 0.0;
+        corners[2][1] = prob->b1 / prob->a12;
+    }
+    // Corner 3: (b2 / a21, 0)
+    if (prob->a21 > 0.0) {
+        corners[3][0] = prob->b2 / prob->a21;
+        corners[3][1] = 0.0;
+    }
+    // Corner 4: (0, b2 / a22)
+    if (prob->a22 > 0.0) {
+        corners[4][0] = 0.0;
+        corners[4][1] = prob->b2 / prob->a22;
+    }
+    // Corner 5: Intersection of Constraint 1 and Constraint 2
+    double det = (prob->a11 * prob->a22) - (prob->a12 * prob->a21);
+    if (fabs(det) > 1e-9) {
+        corners[5][0] = ((prob->b1 * prob->a22) - (prob->a12 * prob->b2)) / det;
+        corners[5][1] = ((prob->a11 * prob->b2) - (prob->b1 * prob->a21)) / det;
+    }
+    
+    for (int i = 0; i < 6; i++) {
+        double x1 = corners[i][0];
+        double x2 = corners[i][1];
+        
+        if (x1 < 0.0 || x2 < 0.0) continue;
+        
+        // Check constraints (with a small margin for double precision issues)
+        if ((prob->a11 * x1 + prob->a12 * x2) > prob->b1 + 1e-9) continue;
+        if ((prob->a21 * x1 + prob->a22 * x2) > prob->b2 + 1e-9) continue;
+        
+        double profit = prob->c1 * x1 + prob->c2 * x2;
+        if (profit > max_profit) {
+            max_profit = profit;
+            best_x1 = x1;
+            best_x2 = x2;
+        }
+    }
+    
+    *x1_opt = best_x1;
+    *x2_opt = best_x2;
+    *profit_opt = max_profit;
+    
+    return 0;
+}
+
+
 

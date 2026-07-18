@@ -610,5 +610,32 @@ typedef struct {
 
 int tsfi_cw_ramac_process_transaction(tsfi_cw_ramac_stock *stock, const char *tx_card_line, int *reorder_triggered);
 
+// Corporate Salary Survey Analyzer structures and functions
+typedef struct {
+    char dept_id[8];
+    char role[4]; // "PG", "OP", "SA"
+    double salary;
+    char gender; // 'M', 'F'
+} tsfi_cw_salary_record;
+
+typedef struct {
+    double avg_programmer_salary;
+    double avg_operator_salary;
+    double avg_analyst_salary;
+    int female_count;
+    int male_count;
+} tsfi_cw_survey_stats;
+
+int tsfi_cw_salary_process_cards(const char **card_lines, int card_count, tsfi_cw_survey_stats *stats_out);
+
+// Simplex Production Optimizer structures and functions
+typedef struct {
+    double c1, c2;       // Profit coefficients
+    double a11, a12, b1; // Constraint 1: a11*x1 + a12*x2 <= b1
+    double a21, a22, b2; // Constraint 2: a21*x1 + a22*x2 <= b2
+} tsfi_cw_simplex_problem;
+
+int tsfi_cw_simplex_optimize(const tsfi_cw_simplex_problem *prob, double *x1_opt, double *x2_opt, double *profit_opt);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

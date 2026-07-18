@@ -1460,6 +1460,38 @@ static void test_new_mainframe_features(void) {
     assert(tsfi_cw_ramac_process_transaction(&stock, "PART99   S 00085", &reorder) == 0);
     assert(stock.quantity_on_hand == 15);
     assert(reorder == 1);
+
+    // Corporate Salary Survey Analyzer test
+    const char *survey_cards[] = {
+        "DEPT01   PG    012000 F",
+        "DEPT01   PG    014000 M",
+        "DEPT02   OP    008000 M",
+        "DEPT02   SA    018000 F"
+    };
+    tsfi_cw_survey_stats stats;
+    assert(tsfi_cw_salary_process_cards(survey_cards, 4, &stats) == 0);
+    assert(stats.avg_programmer_salary == 13000.0);
+    assert(stats.avg_operator_salary == 8000.0);
+    assert(stats.avg_analyst_salary == 18000.0);
+    assert(stats.female_count == 2);
+    assert(stats.male_count == 2);
+
+    // Simplex Production Optimizer test
+    // Maximize P = 40x1 + 30x2
+    // Subject to:
+    // 2x1 + 1x2 <= 20
+    // 1x1 + 2x2 <= 16
+    tsfi_cw_simplex_problem prob = {
+        40.0, 30.0, // c1, c2
+        2.0, 1.0, 20.0, // a11, a12, b1
+        1.0, 2.0, 16.0  // a21, a22, b2
+    };
+    double x1 = 0.0, x2 = 0.0, profit = 0.0;
+    assert(tsfi_cw_simplex_optimize(&prob, &x1, &x2, &profit) == 0);
+    // Optimal intersection is at x1=8, x2=4 -> Profit = 40*8 + 30*4 = 440
+    assert(fabs(x1 - 8.0) < 0.01);
+    assert(fabs(x2 - 4.0) < 0.01);
+    assert(fabs(profit - 440.0) < 0.01);
 }
 
 int main(void) {
