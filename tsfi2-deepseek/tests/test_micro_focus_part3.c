@@ -107,6 +107,10 @@ int run_nato_stanag_tests(void) {
     int tin_isol_res = tsfi_mf_cross_verify_tin_isolation("777665555", &tin_isolated);
     assert(tin_isol_res == 0);
     assert(tin_isolated == 1);
+    int broadcast_tin_isolated = -1;
+    int broadcast_tin_res = tsfi_mf_cross_verify_tin_isolation("67108863", &broadcast_tin_isolated);
+    assert(broadcast_tin_res == 0);
+    assert(broadcast_tin_isolated == 0);
     printf("  [PASS] NATO Short-TIN IRS Exclusivity Matcher verified.\n");
 
     // 263. Verify NATO STANAG 5066 SAP Prioritization Matcher
