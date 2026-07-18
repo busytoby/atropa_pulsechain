@@ -991,6 +991,22 @@ int main(void) {
     assert(foreign_div_match == 1);
     printf("  [PASS] IRS CADE Schedule B Foreign Dividend Matcher verified.\n");
 
+    // 230. Verify IRS CADE Schedule B Part III Foreign Trust Reporting Indicator Checker
+    printf("[TEST] Validating IRS CADE Schedule B Foreign Trust Indicator Checker...\n");
+    int trust_indicator_valid = -1;
+    int trust_ind_res = tsfi_mf_cade_verify_foreign_trust_indicator(1, 1, &trust_indicator_valid);
+    assert(trust_ind_res == 0);
+    assert(trust_indicator_valid == 1);
+    printf("  [PASS] IRS CADE Schedule B Foreign Trust Indicator Checker verified.\n");
+
+    // 231. Verify IRS IMF Section 1244 Small Business Stock Loss Excess Capital Loss Redirection Matcher
+    printf("[TEST] Validating IRS IMF Section 1244 Redirection Matcher...\n");
+    int redirection_valid = -1;
+    int redir_res = tsfi_mf_imf_verify_section1244_excess_redirection(120000.00, 2, 100000.00, 20000.00, &redirection_valid);
+    assert(redir_res == 0);
+    assert(redirection_valid == 1);
+    printf("  [PASS] IRS IMF Section 1244 Redirection Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

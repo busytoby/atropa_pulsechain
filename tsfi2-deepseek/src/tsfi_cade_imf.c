@@ -1363,4 +1363,25 @@ int tsfi_mf_cade_match_foreign_dividends(const double *sources, int source_count
     return 0;
 }
 
+int tsfi_mf_cade_verify_foreign_trust_indicator(int has_foreign_account, int has_foreign_trust_disclosure, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (has_foreign_account == 1) ? (has_foreign_trust_disclosure != 0) : 1;
+    return 0;
+}
+
+int tsfi_mf_imf_verify_section1244_excess_redirection(double total_claimed_loss, int filing_status, double reported_ordinary_loss, double reported_capital_loss, int *is_valid) {
+    if (!is_valid) return -1;
+    double cap = (filing_status == 2) ? 100000.00 : 50000.00;
+    double expected_ordinary_loss = (total_claimed_loss > cap) ? cap : total_claimed_loss;
+    double expected_capital_loss = (total_claimed_loss > cap) ? (total_claimed_loss - cap) : 0.0;
+    
+    double diff_ord = reported_ordinary_loss - expected_ordinary_loss;
+    if (diff_ord < 0) diff_ord = -diff_ord;
+    double diff_cap = reported_capital_loss - expected_capital_loss;
+    if (diff_cap < 0) diff_cap = -diff_cap;
+    
+    *is_valid = (diff_ord <= 1.00 && diff_cap <= 1.00) ? 1 : 0;
+    return 0;
+}
+
 

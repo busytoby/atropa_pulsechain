@@ -125,5 +125,7 @@ int tsfi_mf_imf_verify_section1244_loss(double claimed_loss, int filing_status, 
 int tsfi_mf_cade_verify_seller_financed_ssn(int is_seller_financed, const char *buyer_ssn, int *is_valid);
 int tsfi_mf_cade_verify_seller_financed_address(int is_seller_financed, const char *buyer_address, int *is_valid);
 int tsfi_mf_cade_match_foreign_dividends(const double *sources, int source_count, double total_foreign_dividends, int *is_valid);
+int tsfi_mf_cade_verify_foreign_trust_indicator(int has_foreign_account, int has_foreign_trust_disclosure, int *is_valid);
+int tsfi_mf_imf_verify_section1244_excess_redirection(double total_claimed_loss, int filing_status, double reported_ordinary_loss, double reported_capital_loss, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H
