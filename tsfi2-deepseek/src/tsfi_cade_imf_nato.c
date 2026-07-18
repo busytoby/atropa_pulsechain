@@ -597,3 +597,15 @@ int tsfi_mf_nato_verify_up_ramp_rate_factor(int factor, int *is_valid) {
     *is_valid = (factor >= 1 && factor <= 5) ? 1 : 0;
     return 0;
 }
+
+int tsfi_mf_nato_verify_down_ramp_rate_factor(int factor, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (factor >= 1 && factor <= 5) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_slot_method_option(int option, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (option >= 0 && option <= 3) ? 1 : 0;
+    return 0;
+}

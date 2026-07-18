@@ -416,5 +416,7 @@
 | 482 | NATO Link-Layer Broadcast Collision Backoff Slot Alignment Boundary Matcher | PASS | Audits slot alignment boundary configurations in milliseconds | Volume 33 |
 | 483 | NATO Link-Layer Broadcast Collision Backoff Slot Clock Source Selector | PASS | Validates backoff clock reference source selector configuration options | Volume 33 |
 | 484 | NATO Link-Layer Broadcast Channel Busy Hysteresis Up-Ramp Rate Factor Matcher | PASS | Audits up-ramp RSSI scaling multiplier configuration parameters | Volume 33 |
+| 485 | NATO Link-Layer Broadcast Channel Busy Hysteresis Down-Ramp Rate Factor Matcher | PASS | Validates down-ramp RSSI scaling multiplier configuration parameters | Volume 33 |
+| 486 | NATO Link-Layer Broadcast Collision Backoff Slot Alignment Method Option Checker | PASS | Audits slot alignment selection mode configuration parameter options | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 484 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 486 Scenarios validated successfully)
