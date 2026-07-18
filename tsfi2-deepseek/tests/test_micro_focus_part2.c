@@ -876,6 +876,22 @@ int main(void) {
     assert(mfj_sig_valid == 1);
     printf("  [PASS] IRS CADE MFJ Spousal Signature Matcher verified.\n");
 
+    // 216. Verify IRS IMF Net Capital Gains 20% Preferential Rate Bracket Matcher
+    printf("[TEST] Validating IRS IMF Capital Gains Twenty Rate Matcher...\n");
+    int qualifies_twenty = -1;
+    int cg_twenty_res = tsfi_mf_imf_verify_twenty_rate_capital_gains(600000.00, 1, &qualifies_twenty);
+    assert(cg_twenty_res == 0);
+    assert(qualifies_twenty == 1);
+    printf("  [PASS] IRS IMF Capital Gains Twenty Rate Matcher verified.\n");
+
+    // 217. Verify IRS CADE Qualifying Widow(er) Dependent Child Matcher
+    printf("[TEST] Validating IRS CADE QW Dependent Matcher...\n");
+    int qw_valid = -1;
+    int qw_res = tsfi_mf_cade_verify_qw_dependent(5, 1, &qw_valid);
+    assert(qw_res == 0);
+    assert(qw_valid == 1);
+    printf("  [PASS] IRS CADE QW Dependent Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

@@ -1229,4 +1229,17 @@ int tsfi_mf_cade_verify_mfj_signatures(int filing_status, int spouse_primary_sig
     return 0;
 }
 
+int tsfi_mf_imf_verify_twenty_rate_capital_gains(double taxable_income, int filing_status, int *qualifies_for_twenty_rate) {
+    if (!qualifies_for_twenty_rate) return -1;
+    double upper_bound = (filing_status == 2) ? 583750.00 : 518900.00;
+    *qualifies_for_twenty_rate = (taxable_income > upper_bound) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_cade_verify_qw_dependent(int filing_status, int dependent_count, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (filing_status == 5 && dependent_count < 1) ? 0 : 1;
+    return 0;
+}
+
 

@@ -314,8 +314,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 357 | IRS IMF Tax-Exempt Interest Reporting Matcher | PASS | Matches tax-exempt interest amounts to Schedule K-1 shares | Volume 33 |
 | 358 | IRS IMF Net Capital Gains 15% Preferential Rate Bracket Matcher | PASS | Checks taxable income bounds for 15% long term capital gains rate | Volume 33 |
 | 359 | IRS CADE Married Filing Jointly (MFJ) Spousal Signature Matcher | PASS | Verifies spousal signature fields on joint filing submissions | Volume 33 |
+| 360 | IRS IMF Net Capital Gains 20% Preferential Rate Bracket Matcher | PASS | Checks taxable income bounds for 20% long term capital gains rate | Volume 33 |
+| 361 | IRS CADE Qualifying Widow(er) Dependent Child Matcher | PASS | Enforces child dependent validation for qualifying widow status | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 359 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 361 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"
