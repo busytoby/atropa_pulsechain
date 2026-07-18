@@ -890,7 +890,26 @@ int run_nato_stanag_tests_part5(void) {
     int bo_res = tsfi_mf_irs_calculate_retry_backoff(3, 1000, &next_bo); // 1000 * 2^3 = 8000
     assert(bo_res == 0);
     assert(next_bo == 8000);
-    printf("  [PASS] IRS Retry Backoff verified.\n");
+    // Verify IRS Clearance Formatter
+    printf("[TEST] Validating IRS Clearance Formatter...\n");
+    uint8_t cl_pdu[8];
+    size_t cl_size = 0;
+    int cl_res = tsfi_mf_irs_format_clearance(0xDEADC0DE, cl_pdu, &cl_size);
+    assert(cl_res == 0);
+    assert(cl_size == 5);
+    assert(cl_pdu[0] == 0xFA);
+    printf("  [PASS] IRS Clearance Formatter verified.\n");
+
+    // Verify NORAD Clearance Validator
+    printf("[TEST] Validating NORAD Clearance Validator...\n");
+    int is_cl = -1;
+    int val_cl_res = tsfi_mf_norad_validate_clearance(cl_pdu, cl_size, 0xDEADC0DE, &is_cl);
+    assert(val_cl_res == 0);
+    assert(is_cl == 1);
+
+    tsfi_mf_norad_validate_clearance(cl_pdu, cl_size, 0x11223344, &is_cl);
+    assert(is_cl == 0);
+    printf("  [PASS] NORAD Clearance Validator verified.\n");
 
     return 0;
 }

@@ -1686,6 +1686,35 @@ int tsfi_mf_irs_calculate_retry_backoff(int retry_count, int base_backoff_ms, in
     return 0;
 }
 
+int tsfi_mf_irs_format_clearance(uint32_t auth_token, uint8_t *out_pdu, size_t *out_size) {
+    if (!out_pdu || !out_size) return -1;
+    out_pdu[0] = 0xFA; // IRS Clearance PDU marker
+    out_pdu[1] = (auth_token >> 24) & 0xFF;
+    out_pdu[2] = (auth_token >> 16) & 0xFF;
+    out_pdu[3] = (auth_token >> 8) & 0xFF;
+    out_pdu[4] = auth_token & 0xFF;
+    *out_size = 5;
+    return 0;
+}
+
+int tsfi_mf_norad_validate_clearance(const uint8_t *in_pdu, size_t pdu_size, uint32_t expected_token, int *is_cleared) {
+    if (!in_pdu || !is_cleared) return -1;
+    *is_cleared = 0;
+    
+    if (pdu_size < 5 || in_pdu[0] != 0xFA) return 0;
+    
+    uint32_t auth_token = ((uint32_t)in_pdu[1] << 24) | 
+                           ((uint32_t)in_pdu[2] << 16) | 
+                           ((uint32_t)in_pdu[3] << 8) | 
+                           in_pdu[4];
+    
+    if (auth_token == expected_token) {
+        *is_cleared = 1;
+    }
+    return 0;
+}
+
+
 
 
 

@@ -445,4 +445,7 @@ int tsfi_mf_janap_validate_message(const char *msg_buffer, size_t size, int *is_
 int tsfi_mf_norad_link_irs_alarm(int audit_status, int *defcon_level, uint16_t *status_word);
 int tsfi_mf_irs_calculate_retry_backoff(int retry_count, int base_backoff_ms, int *next_backoff_ms);
 
+int tsfi_mf_irs_format_clearance(uint32_t auth_token, uint8_t *out_pdu, size_t *out_size);
+int tsfi_mf_norad_validate_clearance(const uint8_t *in_pdu, size_t pdu_size, uint32_t expected_token, int *is_cleared);
+
 #endif // TSFI_CADE_IMF_H
