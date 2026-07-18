@@ -1024,4 +1024,30 @@ int tsfi_mf_imf_check_amt_threshold(double agi, int filing_status, int *requires
     return 0;
 }
 
+int tsfi_mf_imf_verify_social_security_tax_cap(double wages, double claimed_ss_withheld, int *is_valid) {
+    if (!is_valid) return -1;
+    double limit = 160200.00 * 0.062;
+    double expected = wages * 0.062;
+    if (expected > limit) expected = limit;
+    double diff = claimed_ss_withheld - expected;
+    if (diff < 0) diff = -diff;
+    *is_valid = (diff <= 1.00) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_imf_verify_qualified_dividend_rate(double taxable_income, double qualified_dividends, double dividend_tax, int *is_valid) {
+    if (!is_valid) return -1;
+    double rate = 0.15;
+    if (taxable_income <= 44625.00) {
+        rate = 0.0;
+    } else if (taxable_income > 492300.00) {
+        rate = 0.20;
+    }
+    double expected = qualified_dividends * rate;
+    double diff = dividend_tax - expected;
+    if (diff < 0) diff = -diff;
+    *is_valid = (diff <= 5.00) ? 1 : 0;
+    return 0;
+}
+
 

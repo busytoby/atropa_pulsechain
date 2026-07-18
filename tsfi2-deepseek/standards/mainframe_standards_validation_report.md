@@ -263,5 +263,7 @@
 | 329 | IRS IMF First-Time Filer Address Validation Check | PASS | Validates raw address text structure elements for first-time filers | Volume 33 |
 | 330 | IRS IMF Federal Tax Withholding Cap Validator | PASS | Asserts federal withholding claims do not exceed half of gross income | Volume 33 |
 | 331 | IRS IMF Alternative Minimum Tax (AMT) Simple Liability Checker | PASS | Validates AGI values against AMT exemption limit thresholds | Volume 33 |
+| 332 | IRS IMF Federal Social Security Tax Cap Matcher | PASS | Verifies social security tax withholding respects statutory limits | Volume 33 |
+| 333 | IRS IMF Federal Qualified Dividend Tax Rate Matcher | PASS | Checks dividend tax rates conform to capital gains brackets | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 331 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 333 Scenarios validated successfully)

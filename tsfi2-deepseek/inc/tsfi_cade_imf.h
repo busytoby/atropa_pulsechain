@@ -83,5 +83,7 @@ int tsfi_mf_cade_verify_filing_volume(const char *state_code, int current_count,
 int tsfi_mf_imf_verify_first_time_address(const char *address, int *is_valid);
 int tsfi_mf_imf_verify_federal_withholding_cap(double gross_income, double claimed_withholding, int *is_valid);
 int tsfi_mf_imf_check_amt_threshold(double agi, int filing_status, int *requires_amt);
+int tsfi_mf_imf_verify_social_security_tax_cap(double wages, double claimed_ss_withheld, int *is_valid);
+int tsfi_mf_imf_verify_qualified_dividend_rate(double taxable_income, double qualified_dividends, double dividend_tax, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

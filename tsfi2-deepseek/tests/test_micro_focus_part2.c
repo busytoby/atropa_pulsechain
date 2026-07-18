@@ -652,6 +652,22 @@ int main(void) {
     assert(requires_amt == 1);
     printf("  [PASS] IRS IMF AMT Threshold Checker verified.\n");
 
+    // 188. Verify IRS IMF Federal Social Security Tax Cap Matcher
+    printf("[TEST] Validating IRS IMF SS Tax Cap Matcher...\n");
+    int ss_cap_valid = -1;
+    int ss_cap_res = tsfi_mf_imf_verify_social_security_tax_cap(50000.00, 3100.00, &ss_cap_valid);
+    assert(ss_cap_res == 0);
+    assert(ss_cap_valid == 1);
+    printf("  [PASS] IRS IMF SS Tax Cap Matcher verified.\n");
+
+    // 189. Verify IRS IMF Federal Qualified Dividend Tax Rate Matcher
+    printf("[TEST] Validating IRS IMF Qualified Dividend Rate Matcher...\n");
+    int div_rate_valid = -1;
+    int div_rate_res = tsfi_mf_imf_verify_qualified_dividend_rate(100000.00, 1000.00, 150.00, &div_rate_valid);
+    assert(div_rate_res == 0);
+    assert(div_rate_valid == 1);
+    printf("  [PASS] IRS IMF Qualified Dividend Rate Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }
