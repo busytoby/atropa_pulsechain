@@ -567,6 +567,8 @@ uint8_t tsfi_cw_ebcdic_translate_control_escape(uint8_t ebcdic_char) {
     return 0;
 }
 
+static uint32_t global_ebcdic_parity_checks_count = 0;
+
 int tsfi_cw_ebcdic_check_dbcs_nesting(const uint8_t *ebcdic_str, int len) {
     if (!ebcdic_str || len <= 0) return -1;
     int state = 0;
@@ -579,6 +581,7 @@ int tsfi_cw_ebcdic_check_dbcs_nesting(const uint8_t *ebcdic_str, int len) {
         } else if (ebcdic_str[i] == 0x0F) {
             if (state == 0) return -28;
             state = 0;
+            global_ebcdic_parity_checks_count++;
             if (dbcs_bytes_count % 2 != 0) return -33; // DBCS parity violation!
         } else if (state == 1) {
             dbcs_bytes_count++;
@@ -600,5 +603,11 @@ static uint8_t global_ebcdic_si_marker = 0x0F;
 void tsfi_cw_ebcdic_override_dbcs_markers(uint8_t new_so, uint8_t new_si) {
     global_ebcdic_so_marker = new_so;
     global_ebcdic_si_marker = new_si;
+}
+
+int tsfi_cw_ebcdic_get_parity_checks_count(uint32_t *count_out) {
+    if (!count_out) return -1;
+    *count_out = global_ebcdic_parity_checks_count;
+    return 0;
 }
 

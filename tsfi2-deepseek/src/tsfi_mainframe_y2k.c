@@ -378,3 +378,10 @@ int tsfi_cw_y2k_query_chronological_violations(uint32_t *violations_out) {
     *violations_out = global_y2k_chronological_violations;
     return 0;
 }
+
+int tsfi_cw_y2k_query_and_reset_violations(uint32_t *violations_out) {
+    if (!violations_out) return -1;
+    *violations_out = global_y2k_chronological_violations;
+    global_y2k_chronological_violations = 0;
+    return 0;
+}

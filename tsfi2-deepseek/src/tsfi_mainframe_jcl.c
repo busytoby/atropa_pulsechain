@@ -568,3 +568,9 @@ static int global_jcl_proc_recursion_limit = 5;
 void tsfi_cw_jcl_set_custom_proc_recursion_limit(int limit) {
     global_jcl_proc_recursion_limit = limit;
 }
+
+int tsfi_cw_jcl_query_recursion_limit(int *limit_out) {
+    if (!limit_out) return -1;
+    *limit_out = global_jcl_proc_recursion_limit;
+    return 0;
+}

@@ -1078,6 +1078,24 @@ static void test_new_mainframe_features(void) {
     uint32_t v_count = 999;
     assert(tsfi_cw_y2k_query_chronological_violations(&v_count) == 0);
     assert(v_count == 0);
+
+    // COBOL padding alignment getter check
+    int padding_bytes = 0;
+    assert(tsfi_cw_cobol_get_alignment_padding(10, 4, &padding_bytes) == 0);
+    assert(padding_bytes == 2);
+
+    // EBCDIC parity checks stats
+    uint32_t parity_cnt = 0;
+    assert(tsfi_cw_ebcdic_get_parity_checks_count(&parity_cnt) == 0);
+
+    // JCL recursion limit query
+    int jcl_limit = 0;
+    assert(tsfi_cw_jcl_query_recursion_limit(&jcl_limit) == 0);
+    assert(jcl_limit == 10);
+
+    // Y2K query and reset check
+    assert(tsfi_cw_y2k_query_and_reset_violations(&v_count) == 0);
+    assert(v_count == 0);
 }
 
 int main(void) {

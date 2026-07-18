@@ -35,6 +35,18 @@ int tsfi_cw_vsam_open(tsfi_cw_vsam_ksds *ksds, const char *filepath) {
         return 0;
     }
     fclose(f);
+    
+    // Integrity audit
+    for (int i = 0; i < ksds->entry_count; i++) {
+        if (ksds->index[i].active && ksds->index[i].checksum != 0) {
+            uint8_t audit_buf[256];
+            int audit_len = 0;
+            int rc = tsfi_cw_vsam_read(ksds, ksds->index[i].key, audit_buf, sizeof(audit_buf), &audit_len);
+            if (rc != 0) {
+                return -25; // Integrity mismatch!
+            }
+        }
+    }
     return 0;
 }
 
