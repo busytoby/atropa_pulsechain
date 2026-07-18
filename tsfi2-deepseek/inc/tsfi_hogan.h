@@ -173,4 +173,14 @@ typedef struct {
 
 int tsfi_hogan_apply_account_stop(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint8_t new_status, uint32_t authority_id);
 
+// Card Hold Release Engine (Balance Hold Settlements)
+typedef struct {
+    uint32_t card_id;
+    uint32_t account_id;
+    uint64_t amount_released;
+    uint8_t success;
+} hogan_release_entry;
+
+int tsfi_hogan_release_hold(hogan_umbrella_system *sys, const char *filepath, uint32_t card_id, uint32_t account_id, uint64_t amount_released);
+
 #endif // TSFI_HOGAN_H

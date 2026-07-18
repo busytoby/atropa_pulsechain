@@ -668,3 +668,43 @@ int tsfi_hogan_apply_account_stop(hogan_umbrella_system *sys, const char *filepa
     sys->live_processing_enabled = original_live_state;
     return write_res;
 }
+
+int tsfi_hogan_release_hold(hogan_umbrella_system *sys, const char *filepath, uint32_t card_id, uint32_t account_id, uint64_t amount_released) {
+    // Enforce Rule 13: file extension must end with .dat.bin
+    const char *ext = strrchr(filepath, '.');
+    if (!ext || strcmp(ext, ".bin") != 0) {
+        if (!ext || strcmp(ext - 4, ".dat.bin") != 0) {
+            return -3; // Invalid extension
+        }
+    }
+
+    // Disable live queue during hold release
+    uint8_t original_live_state = sys->live_processing_enabled;
+    sys->live_processing_enabled = 0;
+    
+    hogan_account *acc = NULL;
+    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
+        if (sys->accounts[i].active && sys->accounts[i].account_id == account_id) {
+            acc = &sys->accounts[i];
+            break;
+        }
+    }
+    
+    uint8_t success = 0;
+    if (acc) {
+        if (acc->balance_held >= amount_released) {
+            acc->balance_held -= amount_released;
+        } else {
+            acc->balance_held = 0;
+        }
+        success = 1;
+    }
+    
+    hogan_release_entry entry = { card_id, account_id, amount_released, success };
+    int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_release_entry));
+    
+    sys->live_processing_enabled = original_live_state;
+    
+    if (write_res != 0) return write_res;
+    return success ? 0 : -1;
+}

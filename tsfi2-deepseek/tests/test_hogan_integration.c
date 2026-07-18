@@ -471,6 +471,47 @@ int main(void) {
     remove(stops_path); // clean up
     printf("  [PASS] Administrative status overrides, locks, and logging verified.\n");
 
+    // 19. Test Card Hold Release Engine (Balance Hold Settlements)
+    printf("[E2E] Testing Card Hold Release Engine...\n");
+    const char *release_path = "hogan_releases.dat.bin";
+    remove(release_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system release_sys;
+    tsfi_hogan_init(&release_sys);
+    assert(tsfi_hogan_register_account(&release_sys, 1001, 1000) == 0); // Alice: 1,000 units
+    
+    // Authorize card hold of 400 (held: 400)
+    assert(tsfi_hogan_authorize_card(&release_sys, "hogan_dummy_card.dat.bin", 9901, 1001, 888, 400) == 0);
+    remove("hogan_dummy_card.dat.bin"); // clean up
+    
+    // Release hold of 150 (held becomes 250)
+    assert(tsfi_hogan_release_hold(&release_sys, release_path, 9901, 1001, 150) == 0);
+    assert(tsfi_hogan_release_hold(&release_sys, "hogan_releases.json", 9901, 1001, 150) == -3); // Rule 13 check
+    
+    assert(release_sys.accounts[0].balance_held == 250);
+    
+    // Release hold of 300 (exceeds held, clamps to 0)
+    assert(tsfi_hogan_release_hold(&release_sys, release_path, 9901, 1001, 300) == 0);
+    
+    assert(release_sys.accounts[0].balance_held == 0);
+    
+    // Read sequential log file and verify entries
+    uint8_t read_rbuf[sizeof(hogan_release_entry)];
+    size_t rel_size = 0;
+    
+    // Check entry 0
+    assert(tsfi_hogan_read_seq_record(release_path, 0, read_rbuf, &rel_size) == 0);
+    assert(rel_size == sizeof(hogan_release_entry));
+    const hogan_release_entry *rentry0 = (const hogan_release_entry *)read_rbuf;
+    assert(rentry0->card_id == 9901);
+    assert(rentry0->account_id == 1001);
+    assert(rentry0->amount_released == 150);
+    assert(rentry0->success == 1);
+    
+    remove(release_path); // clean up
+    printf("  [PASS] Card balance hold settlements and release logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }
