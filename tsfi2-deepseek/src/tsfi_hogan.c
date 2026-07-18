@@ -116,6 +116,7 @@ int tsfi_hogan_lfs_save(const hogan_umbrella_system *sys, const char *filepath) 
             fwrite(&sys->accounts[i].card_pin, sizeof(uint32_t), 1, f);
             fwrite(&sys->accounts[i].pin_fail_count, sizeof(uint32_t), 1, f);
             fwrite(&sys->accounts[i].pin_fail_limit, sizeof(uint32_t), 1, f);
+            fwrite(&sys->accounts[i].max_fee_per_epoch, sizeof(uint64_t), 1, f);
         }
     }
     
@@ -401,6 +402,12 @@ int tsfi_hogan_lfs_load(hogan_umbrella_system *sys, const char *filepath) {
             return -2;
         }
         sys->accounts[i].pin_fail_limit = p_lim;
+        uint64_t max_f_cap = 0;
+        if (fread(&max_f_cap, sizeof(uint64_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
+        sys->accounts[i].max_fee_per_epoch = max_f_cap;
         sys->accounts[i].active = 1;
     }
     
@@ -735,7 +742,10 @@ int tsfi_hogan_apply_fees(hogan_umbrella_system *sys, const char *filepath, uint
             entry.original_balance = sys->accounts[i].balance;
             
             uint64_t actual_fee = flat_fee;
-            if (sys->accounts[i].balance < flat_fee) {
+            if (sys->accounts[i].max_fee_per_epoch > 0 && actual_fee > sys->accounts[i].max_fee_per_epoch) {
+                actual_fee = sys->accounts[i].max_fee_per_epoch;
+            }
+            if (sys->accounts[i].balance < actual_fee) {
                 actual_fee = sys->accounts[i].balance; // clamp to 0
             }
             
@@ -961,6 +971,7 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
             EVP_DigestUpdate(mdctx, &sys->accounts[i].card_pin, sizeof(uint32_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].pin_fail_count, sizeof(uint32_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].pin_fail_limit, sizeof(uint32_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].max_fee_per_epoch, sizeof(uint64_t));
         }
     }
     EVP_DigestUpdate(mdctx, &sys->blocked_card_count, sizeof(size_t));
@@ -2256,6 +2267,41 @@ int tsfi_hogan_update_card_pin(hogan_umbrella_system *sys, const char *filepath,
     acc->card_pin = new_pin;
     
     int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_card_pin_entry));
+    
+    sys->live_processing_enabled = original_live_state;
+    return write_res;
+}
+
+int tsfi_hogan_update_fee_cap(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_fee_cap, uint32_t authority_id) {
+    // Enforce Rule 13: file extension must end with .dat.bin
+    const char *ext = strrchr(filepath, '.');
+    if (!ext || strcmp(ext, ".bin") != 0) {
+        if (!ext || strcmp(ext - 4, ".dat.bin") != 0) {
+            return -3; // Invalid extension
+        }
+    }
+
+    // Disable live queue during administrative action
+    uint8_t original_live_state = sys->live_processing_enabled;
+    sys->live_processing_enabled = 0;
+    
+    hogan_account *acc = NULL;
+    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
+        if (sys->accounts[i].active && sys->accounts[i].account_id == account_id) {
+            acc = &sys->accounts[i];
+            break;
+        }
+    }
+    
+    if (!acc) {
+        sys->live_processing_enabled = original_live_state;
+        return -1; // account not found
+    }
+    
+    hogan_fee_cap_entry entry = { account_id, acc->max_fee_per_epoch, new_fee_cap, authority_id };
+    acc->max_fee_per_epoch = new_fee_cap;
+    
+    int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_fee_cap_entry));
     
     sys->live_processing_enabled = original_live_state;
     return write_res;

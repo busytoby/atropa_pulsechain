@@ -1664,6 +1664,38 @@ int main(void) {
     remove("hogan_pin_locks.dat.bin"); // clean up
     printf("  [PASS] Card PIN validations, fail counts, auto-blocking lockouts, and override logs verified.\n");
 
+    // 46. Test Account Daily Fee Cap Manager (Fee Caps)
+    printf("[E2E] Testing Account Daily Fee Cap Manager...\n");
+    const char *feecap_path = "hogan_feecap.dat.bin";
+    remove(feecap_path); // ensure clean start
+    
+    hogan_umbrella_system fcap_sys;
+    tsfi_hogan_init(&fcap_sys);
+    assert(tsfi_hogan_register_account(&fcap_sys, 1001, 1000) == 0); // Alice: 1000 balance
+    
+    // Set Alice's maintenance fee cap to 15 units
+    assert(tsfi_hogan_update_fee_cap(&fcap_sys, feecap_path, 1001, 15, 999) == 0);
+    assert(tsfi_hogan_update_fee_cap(&fcap_sys, "hogan_feecap.json", 1001, 15, 999) == -3); // Rule 13 check
+    
+    // Apply batch maintenance fee of 50 units (Alice's charge should be capped at 15)
+    assert(tsfi_hogan_apply_fees(&fcap_sys, "hogan_fees.dat.bin", 50) == 0);
+    assert(fcap_sys.accounts[0].balance == 985);
+    remove("hogan_fees.dat.bin");
+    
+    // Read override log files and verify entries
+    uint8_t read_fcbuf[sizeof(hogan_fee_cap_entry)];
+    size_t fc_size = 0;
+    assert(tsfi_hogan_read_seq_record(feecap_path, 0, read_fcbuf, &fc_size) == 0);
+    assert(fc_size == sizeof(hogan_fee_cap_entry));
+    const hogan_fee_cap_entry *fcentry = (const hogan_fee_cap_entry *)read_fcbuf;
+    assert(fcentry->account_id == 1001);
+    assert(fcentry->previous_fee_cap == 0);
+    assert(fcentry->new_fee_cap == 15);
+    assert(fcentry->authority_id == 999);
+    
+    remove(feecap_path); // clean up
+    printf("  [PASS] Maintenance fee caps, cap validations, and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }

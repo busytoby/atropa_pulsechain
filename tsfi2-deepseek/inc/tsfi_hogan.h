@@ -70,6 +70,7 @@ typedef struct {
     uint32_t card_pin;
     uint32_t pin_fail_count;
     uint32_t pin_fail_limit;
+    uint64_t max_fee_per_epoch;
 } hogan_account;
 
 #define HOGAN_MAX_BLOCKED_CARDS 32
@@ -492,5 +493,15 @@ typedef struct {
 } hogan_card_pin_entry;
 
 int tsfi_hogan_update_card_pin(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t new_pin, uint32_t authority_id);
+
+// Account Daily Fee Cap Manager
+typedef struct {
+    uint32_t account_id;
+    uint64_t previous_fee_cap;
+    uint64_t new_fee_cap;
+    uint32_t authority_id;
+} hogan_fee_cap_entry;
+
+int tsfi_hogan_update_fee_cap(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_fee_cap, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H
