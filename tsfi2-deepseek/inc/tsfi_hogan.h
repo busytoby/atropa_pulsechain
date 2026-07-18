@@ -74,6 +74,7 @@ typedef struct {
     uint32_t last_activity_epoch;
     uint32_t dormancy_threshold_epochs;
     uint8_t is_dormant;
+    uint64_t min_interest_posting_threshold;
 } hogan_account;
 
 #define HOGAN_MAX_BLOCKED_CARDS 32
@@ -517,5 +518,15 @@ typedef struct {
 
 int tsfi_hogan_reactivate_dormant_account(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t authority_id);
 int tsfi_hogan_set_dormancy_threshold(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t threshold_epochs, uint32_t authority_id);
+
+// Batch Interest Minimum Posting Threshold Manager
+typedef struct {
+    uint32_t account_id;
+    uint64_t previous_threshold;
+    uint64_t new_threshold;
+    uint32_t authority_id;
+} hogan_interest_threshold_entry;
+
+int tsfi_hogan_update_interest_threshold(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_threshold, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H

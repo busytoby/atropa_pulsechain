@@ -1753,6 +1753,45 @@ int main(void) {
     remove(dorm_path); // clean up
     printf("  [PASS] Account dormancy thresholds, gap validations, reactivations, and override logs verified.\n");
 
+    // 48. Test Batch Interest Minimum Posting Threshold Manager (Interest Threshold)
+    printf("[E2E] Testing Batch Interest Minimum Posting Threshold Manager...\n");
+    const char *inthreshold_path = "hogan_inthreshold.dat.bin";
+    remove(inthreshold_path); // ensure clean start
+    
+    hogan_umbrella_system th_sys;
+    tsfi_hogan_init(&th_sys);
+    assert(tsfi_hogan_register_account(&th_sys, 1001, 1000) == 0); // Alice: 1000 balance
+    
+    // Set Alice's minimum interest posting threshold to 5 units
+    assert(tsfi_hogan_update_interest_threshold(&th_sys, inthreshold_path, 1001, 5, 999) == 0);
+    assert(tsfi_hogan_update_interest_threshold(&th_sys, "hogan_inthreshold.json", 1001, 5, 999) == -3); // Rule 13 check
+    
+    // Apply batch interest posting at 30 bps (interest calculated = 1000 * 30 / 10000 = 3 units)
+    // 3 units < 5 threshold => Interest should be suppressed (Alice balance remains 1000)
+    assert(tsfi_hogan_apply_interest(&th_sys, "hogan_interests.dat.bin", 30) == 0);
+    assert(th_sys.accounts[0].balance == 1000);
+    remove("hogan_interests.dat.bin");
+    
+    // Apply batch interest posting at 60 bps (interest calculated = 1000 * 60 / 10000 = 6 units)
+    // 6 units >= 5 threshold => Interest should post (Alice balance becomes 1006)
+    assert(tsfi_hogan_apply_interest(&th_sys, "hogan_interests.dat.bin", 60) == 0);
+    assert(th_sys.accounts[0].balance == 1006);
+    remove("hogan_interests.dat.bin");
+    
+    // Read override log files and verify entries
+    uint8_t read_thbuf[sizeof(hogan_interest_threshold_entry)];
+    size_t th_size = 0;
+    assert(tsfi_hogan_read_seq_record(inthreshold_path, 0, read_thbuf, &th_size) == 0);
+    assert(th_size == sizeof(hogan_interest_threshold_entry));
+    const hogan_interest_threshold_entry *thentry = (const hogan_interest_threshold_entry *)read_thbuf;
+    assert(thentry->account_id == 1001);
+    assert(thentry->previous_threshold == 0);
+    assert(thentry->new_threshold == 5);
+    assert(thentry->authority_id == 999);
+    
+    remove(inthreshold_path); // clean up
+    printf("  [PASS] Batch interest posting thresholds, suppression, and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }
