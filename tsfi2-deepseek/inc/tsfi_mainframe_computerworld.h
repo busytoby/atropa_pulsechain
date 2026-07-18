@@ -118,6 +118,7 @@ typedef struct {
     uint32_t length;
     uint8_t active;
     uint8_t lock_state;
+    uint32_t lock_attempts;
 } tsfi_cw_vsam_entry;
 
 typedef struct {
@@ -390,6 +391,8 @@ int tsfi_cw_vsam_get_compression_ratio(tsfi_cw_vsam_ksds *ksds, float *ratio_out
 int tsfi_cw_vsam_get_key_compression_ratio(tsfi_cw_vsam_ksds *ksds, float *ratio_out);
 int tsfi_cw_vsam_get_cache_hits(tsfi_cw_vsam_ksds *ksds);
 
+int tsfi_cw_vsam_lock_record_ex(tsfi_cw_vsam_ksds *ksds, const char *key, uint32_t max_attempts);
+
 // EBCDIC DBCS validation
 int tsfi_cw_ebcdic_validate_dbcs_boundaries(const uint8_t *ebcdic_str, int len);
 
@@ -405,14 +408,20 @@ uint8_t tsfi_cw_ebcdic_to_ascii_cp273_ex(uint8_t ebcdic_char);
 uint8_t tsfi_cw_ascii_to_ebcdic_cp278(uint8_t ascii_char);
 uint8_t tsfi_cw_ebcdic_to_ascii_cp278(uint8_t ebcdic_char);
 
-// JCL GDG resolver and COND chain evaluation
+// EBCDIC CP280 translation
+uint8_t tsfi_cw_ascii_to_ebcdic_cp280(uint8_t ascii_char);
+uint8_t tsfi_cw_ebcdic_to_ascii_cp280(uint8_t ebcdic_char);
+
+// JCL GDG resolver, COND chain evaluation, and step parameter parser
 int tsfi_cw_jcl_resolve_gdg(const char *dsn_str, int current_gen, char *resolved_out, int max_len);
 int tsfi_cw_jcl_eval_cond_chain(int step_rc, int cond_code_1, const char *op_1, int cond_code_2, const char *op_2);
+int tsfi_cw_jcl_parse_parm(const char *card, char *parm_out, int max_len);
 
 // Y2K leap year checker and Month days resolver
 int tsfi_cw_y2k_is_leap_year(uint32_t year);
 int tsfi_cw_y2k_get_month_days(uint32_t year, uint32_t month, int *days_out);
 int tsfi_cw_gregorian_to_julian_y2k(const char *greg_in, uint32_t pivot, char *julian_out, int max_len);
+int tsfi_cw_y2k_validate_format(const char *date_str);
 
 typedef struct {
     uint32_t leap_checks_performed;

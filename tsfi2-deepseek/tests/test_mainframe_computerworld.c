@@ -823,6 +823,28 @@ static void test_new_mainframe_features(void) {
     tsfi_cw_y2k_diagnostics y2k_diag;
     tsfi_cw_y2k_get_diagnostics(&y2k_diag);
     assert(y2k_diag.leap_checks_performed > 0);
+
+    // VSAM Lock Record extended
+    assert(tsfi_cw_vsam_lock_record_ex(&split_ksds, "K1", 2) == 0);
+    assert(tsfi_cw_vsam_lock_record_ex(&split_ksds, "K1", 2) == -7);
+    assert(tsfi_cw_vsam_lock_record_ex(&split_ksds, "K1", 2) == -7);
+    assert(tsfi_cw_vsam_lock_record_ex(&split_ksds, "K1", 2) == -10);
+
+    // COBOL Alphanumeric justify right bounds
+    assert(tsfi_cw_parse_copybook_line("05 F1 PIC X(3) JUSTIFIED RIGHT VALUE 'ABCD'.", &cb_occ) == -11);
+
+    // EBCDIC CP280 Translation
+    assert(tsfi_cw_ascii_to_ebcdic_cp280(0xE9) == 0x51);
+    assert(tsfi_cw_ebcdic_to_ascii_cp280(0x51) == 0xE9);
+
+    // JCL EXEC step parameter
+    char parm_val[64];
+    assert(tsfi_cw_jcl_parse_parm("//STEP1 EXEC PGM=PROG,PARM='HELLO'", parm_val, sizeof(parm_val)) == 0);
+    assert(strcmp(parm_val, "HELLO") == 0);
+
+    // Y2K format validator
+    assert(tsfi_cw_y2k_validate_format("2026-07-18") == 0);
+    assert(tsfi_cw_y2k_validate_format("2026/07/18") == -3);
 }
 
 int main(void) {

@@ -304,3 +304,15 @@ void tsfi_cw_y2k_get_diagnostics(tsfi_cw_y2k_diagnostics *diag) {
         *diag = global_y2k_diag;
     }
 }
+
+int tsfi_cw_y2k_validate_format(const char *date_str) {
+    if (!date_str) return -1;
+    if (strlen(date_str) != 10) return -2;
+    if (date_str[4] != '-' || date_str[7] != '-') return -3;
+    for (int i = 0; i < 10; i++) {
+        if (i != 4 && i != 7) {
+            if (date_str[i] < '0' || date_str[i] > '9') return -4;
+        }
+    }
+    return 0;
+}

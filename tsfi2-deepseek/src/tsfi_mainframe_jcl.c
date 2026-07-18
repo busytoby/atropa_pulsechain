@@ -430,3 +430,26 @@ int tsfi_cw_run_jcl_sysin_ex(const char **cards, int card_count, char *sysin_out
     }
     return bytes_written;
 }
+
+int tsfi_cw_jcl_parse_parm(const char *card, char *parm_out, int max_len) {
+    if (!card || !parm_out || max_len <= 0) return -1;
+    parm_out[0] = '\0';
+    const char *p = strstr(card, "PARM=");
+    if (p) {
+        p += 5;
+        int idx = 0;
+        char quote = '\0';
+        if (*p == '\'' || *p == '"') {
+            quote = *p;
+            p++;
+        }
+        while (*p && idx < max_len - 1) {
+            if (quote && *p == quote) break;
+            if (!quote && (*p == ' ' || *p == ',' || *p == '\t' || *p == '\r' || *p == '\n')) break;
+            parm_out[idx++] = *p++;
+        }
+        parm_out[idx] = '\0';
+        return 0;
+    }
+    return -2;
+}

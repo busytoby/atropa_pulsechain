@@ -387,6 +387,9 @@ int tsfi_cw_parse_copybook_line(const char *copybook_line, tsfi_cw_copybook *cb)
     }
     f->length = base_length * occurs;
     f->decimal_places = decimal_places;
+    if (justified_right && strlen(value_clause) > (size_t)f->length) {
+        return -11;
+    }
     
     int final_offset = cb->record_length;
     if (strlen(redefines_target) > 0) {

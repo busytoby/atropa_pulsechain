@@ -541,3 +541,22 @@ int tsfi_cw_vsam_get_cache_hits(tsfi_cw_vsam_ksds *ksds) {
     if (!ksds) return -1;
     return ksds->cache_hits;
 }
+
+int tsfi_cw_vsam_lock_record_ex(tsfi_cw_vsam_ksds *ksds, const char *key, uint32_t max_attempts) {
+    if (!ksds || !key) return -1;
+    for (int i = 0; i < ksds->entry_count; i++) {
+        if (ksds->index[i].active && strcmp(ksds->index[i].key, key) == 0) {
+            if (ksds->index[i].lock_state) {
+                ksds->index[i].lock_attempts++;
+                if (ksds->index[i].lock_attempts > max_attempts) {
+                    return -10;
+                }
+                return -7;
+            }
+            ksds->index[i].lock_state = 1;
+            ksds->index[i].lock_attempts = 0;
+            return 0;
+        }
+    }
+    return -4;
+}
