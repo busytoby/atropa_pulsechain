@@ -1613,6 +1613,26 @@ int tsfi_mf_nato_relay_verify_sequence(int current_seq, int expected_seq, int *i
     return 0;
 }
 
+int tsfi_mf_irs_merkle_combine(const uint8_t *left_hash, const uint8_t *right_hash, uint8_t *out_parent_hash) {
+    if (!left_hash || !right_hash || !out_parent_hash) return -1;
+    uint32_t l, r, p = 0;
+    memcpy(&l, left_hash, 4);
+    memcpy(&r, right_hash, 4);
+    int res = tsfi_mf_nato_merkle_combine(l, r, &p);
+    memcpy(out_parent_hash, &p, 4);
+    return res;
+}
+
+int tsfi_mf_cics_check_irs_timeout(uint32_t send_time_ms, uint32_t current_time_ms, uint32_t timeout_limit_ms, int *is_timeout) {
+    if (!is_timeout) return -1;
+    *is_timeout = 0;
+    if (current_time_ms - send_time_ms > timeout_limit_ms) {
+        *is_timeout = 1;
+    }
+    return 0;
+}
+
+
 
 
 

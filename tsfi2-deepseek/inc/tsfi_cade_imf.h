@@ -436,4 +436,7 @@ int tsfi_mf_cics_format_irs_query(uint32_t tax_record_id, int routing_code, uint
 int tsfi_mf_cics_decode_irs_response(const uint8_t *in_pdu, size_t pdu_size, int *audit_status, int *is_valid);
 int tsfi_mf_nato_relay_verify_sequence(int current_seq, int expected_seq, int *is_in_sequence);
 
+int tsfi_mf_irs_merkle_combine(const uint8_t *left_hash, const uint8_t *right_hash, uint8_t *out_parent_hash);
+int tsfi_mf_cics_check_irs_timeout(uint32_t send_time_ms, uint32_t current_time_ms, uint32_t timeout_limit_ms, int *is_timeout);
+
 #endif // TSFI_CADE_IMF_H

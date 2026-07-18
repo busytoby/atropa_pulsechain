@@ -756,7 +756,25 @@ int run_nato_stanag_tests_part5(void) {
 
     tsfi_mf_nato_relay_verify_sequence(5, 6, &in_seq);
     assert(in_seq == 0);
-    printf("  [PASS] NATO Relay Sequencer verified.\n");
+    // Verify IRS Merkle Combiner
+    printf("[TEST] Validating IRS Merkle Combiner...\n");
+    uint8_t left_h[32] = {0x01};
+    uint8_t right_h[32] = {0x02};
+    uint8_t parent_h[32];
+    int irs_m_res = tsfi_mf_irs_merkle_combine(left_h, right_h, parent_h);
+    assert(irs_m_res == 0);
+    printf("  [PASS] IRS Merkle Combiner verified.\n");
+
+    // Verify CICS Timeout Monitor
+    printf("[TEST] Validating CICS Timeout Monitor...\n");
+    int is_to = -1;
+    int to_res = tsfi_mf_cics_check_irs_timeout(1000, 2500, 1000, &is_to); // 1500ms elapsed > 1000ms limit -> timeout
+    assert(to_res == 0);
+    assert(is_to == 1);
+
+    tsfi_mf_cics_check_irs_timeout(1000, 1500, 1000, &is_to); // 500ms elapsed <= 1000ms limit -> no timeout
+    assert(is_to == 0);
+    printf("  [PASS] CICS Timeout Monitor verified.\n");
 
     return 0;
 }
