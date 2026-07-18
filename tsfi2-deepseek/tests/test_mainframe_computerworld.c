@@ -911,6 +911,28 @@ static void test_new_mainframe_features(void) {
     int diff_span = 0;
     assert(tsfi_cw_y2k_date_diff(0, 1, 1, 99, 1, 1, 50, &diff_span) == 0);
     assert(tsfi_cw_y2k_date_diff(0, 1, 1, 201, 1, 1, 50, &diff_span) == -16);
+
+    // COBOL Picture Numeric bounds validator
+    assert(tsfi_cw_cobol_validate_picture_numeric_bounds("9(3)", 999) == 0);
+    assert(tsfi_cw_cobol_validate_picture_numeric_bounds("9(3)", 1000) == -17);
+
+    // EBCDIC CP939 Chinese Translation
+    uint8_t cp939_buf[64];
+    char utf8_cp939[64];
+    int cp939_len = tsfi_cw_utf8_to_ebcdic_cp939("中文~", cp939_buf, sizeof(cp939_buf));
+    assert(cp939_len == 9);
+    assert(cp939_buf[8] == 0xBA); // ~ in CP939
+    assert(tsfi_cw_ebcdic_to_utf8_cp939(cp939_buf, cp939_len, utf8_cp939, sizeof(utf8_cp939)) == 7);
+    assert(strcmp(utf8_cp939, "中文~") == 0);
+
+    // JCL EXEC parameter unbalanced quotes check
+    assert(tsfi_cw_jcl_check_parm_quotes("//STEP EXEC PARM='VAL'") == 0);
+    assert(tsfi_cw_jcl_check_parm_quotes("//STEP EXEC PARM='VAL") == -18);
+    char dummy_parm[32];
+    assert(tsfi_cw_jcl_parse_parm("//STEP EXEC PARM='VAL", dummy_parm, sizeof(dummy_parm)) == -18);
+
+    // Y2K leap adjustments count check
+    assert(tsfi_cw_y2k_count_leap_adjustments(2000, 2004) == 2);
 }
 
 int main(void) {

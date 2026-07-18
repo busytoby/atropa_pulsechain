@@ -92,6 +92,11 @@ int tsfi_cw_vsam_write(tsfi_cw_vsam_ksds *ksds, const char *key, const uint8_t *
             ksds->key_prefix_savings += savings;
         }
         tsfi_cw_vsam_compress_key(key, prev_key, comp_key, sizeof(comp_key));
+        char decomp_key[32];
+        tsfi_cw_vsam_decompress_key(comp_key, prev_key, decomp_key, sizeof(decomp_key));
+        if (strcmp(key, decomp_key) != 0) {
+            return -8;
+        }
         ksds->compressed_key_bytes += strlen(comp_key);
         strncpy(ksds->index[idx].key, key, sizeof(ksds->index[idx].key) - 1);
         ksds->index[idx].key[sizeof(ksds->index[idx].key) - 1] = '\0';

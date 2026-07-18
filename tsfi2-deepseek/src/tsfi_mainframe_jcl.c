@@ -431,8 +431,23 @@ int tsfi_cw_run_jcl_sysin_ex(const char **cards, int card_count, char *sysin_out
     return bytes_written;
 }
 
+int tsfi_cw_jcl_check_parm_quotes(const char *card) {
+    if (!card) return -1;
+    int single_quotes = 0;
+    int double_quotes = 0;
+    for (int i = 0; card[i]; i++) {
+        if (card[i] == '\'') single_quotes++;
+        if (card[i] == '"') double_quotes++;
+    }
+    if ((single_quotes % 2 != 0) || (double_quotes % 2 != 0)) {
+        return -18;
+    }
+    return 0;
+}
+
 int tsfi_cw_jcl_parse_parm(const char *card, char *parm_out, int max_len) {
     if (!card || !parm_out || max_len <= 0) return -1;
+    if (tsfi_cw_jcl_check_parm_quotes(card) != 0) return -18;
     parm_out[0] = '\0';
     const char *p = strstr(card, "PARM=");
     if (p) {

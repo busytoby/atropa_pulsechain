@@ -714,3 +714,30 @@ int tsfi_cw_cobol_validate_justified_right_dynamic(tsfi_cw_cobol_field *f, int d
     }
     return 0;
 }
+
+int tsfi_cw_cobol_validate_picture_numeric_bounds(const char *pic_str, double val) {
+    if (!pic_str) return -1;
+    int digits = 0;
+    const char *p = pic_str;
+    while (*p) {
+        if (*p == '9') {
+            digits++;
+        } else if (*p == '(') {
+            p++;
+            int count = atoi(p);
+            digits += count - 1;
+            while (*p && *p != ')') p++;
+        }
+        p++;
+    }
+    if (digits > 0) {
+        double max_val = 1.0;
+        for (int i = 0; i < digits; i++) max_val *= 10.0;
+        double limit = max_val - 0.0001;
+        double check_val = val < 0 ? -val : val;
+        if (check_val >= limit) {
+            return -17;
+        }
+    }
+    return 0;
+}

@@ -327,3 +327,15 @@ int tsfi_cw_y2k_validate_julian_day(uint32_t year, uint32_t day_of_year) {
     if (day_of_year < 1 || day_of_year > max_days) return -13;
     return 0;
 }
+
+int tsfi_cw_y2k_count_leap_adjustments(uint32_t year1, uint32_t year2) {
+    uint32_t start = year1 < year2 ? year1 : year2;
+    uint32_t end = year1 < year2 ? year2 : year1;
+    int leap_count = 0;
+    for (uint32_t y = start; y <= end; y++) {
+        if ((y % 4 == 0 && y % 100 != 0) || (y % 400 == 0)) {
+            leap_count++;
+        }
+    }
+    return leap_count;
+}
