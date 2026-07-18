@@ -1276,6 +1276,46 @@ int main(void) {
     remove("hogan_tx.dat.bin"); // clean up
     printf("  [PASS] Card daily transaction velocity caps, resets, and override logs verified.\n");
 
+    // 37. Test Card Expiry Compliance Manager (Expiration Validation)
+    printf("[E2E] Testing Card Expiry Compliance Manager...\n");
+    const char *expiry_path = "hogan_expiry.dat.bin";
+    remove(expiry_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system exp_sys;
+    tsfi_hogan_init(&exp_sys);
+    assert(tsfi_hogan_register_account(&exp_sys, 1001, 10000) == 0); // Alice: 10,000 units
+    
+    // Set Alice's card expiry to epoch 1
+    assert(tsfi_hogan_update_card_expiry(&exp_sys, expiry_path, 1001, 1, 999) == 0);
+    assert(tsfi_hogan_update_card_expiry(&exp_sys, "hogan_expiry.json", 1001, 1, 999) == -3); // Rule 13 check
+    
+    // First card authorization (succeeds because current_epoch is 1 <= expiry 1)
+    assert(tsfi_hogan_authorize_card(&exp_sys, "hogan_tx.dat.bin", 5005, 1001, 9009, 100) == 0);
+    
+    // Advance epoch to 2 by running overnight reconciliation
+    assert(tsfi_hogan_overnight_reconciliation(&exp_sys, "hogan_lfs.dat.bin") == 0);
+    assert(exp_sys.current_epoch == 2);
+    
+    // Second card authorization (should fail because current_epoch 2 > expiry 1; returns -7)
+    assert(tsfi_hogan_authorize_card(&exp_sys, "hogan_tx.dat.bin", 5005, 1001, 9009, 100) == -7);
+    
+    // Read sequential log file and verify entries
+    uint8_t read_expbuf[sizeof(hogan_card_expiry_entry)];
+    size_t exp_size = 0;
+    assert(tsfi_hogan_read_seq_record(expiry_path, 0, read_expbuf, &exp_size) == 0);
+    assert(exp_size == sizeof(hogan_card_expiry_entry));
+    
+    const hogan_card_expiry_entry *expentry = (const hogan_card_expiry_entry *)read_expbuf;
+    assert(expentry->account_id == 1001);
+    assert(expentry->previous_expiry_epoch == 0);
+    assert(expentry->new_expiry_epoch == 1);
+    assert(expentry->authority_id == 999);
+    
+    remove(expiry_path); // clean up
+    remove("hogan_tx.dat.bin"); // clean up
+    printf("  [PASS] Card expiry validations, epoch advances, and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }

@@ -57,6 +57,7 @@ typedef struct {
     uint8_t blocked_merchant_count;
     uint32_t card_tx_limit;
     uint32_t card_tx_count_today;
+    uint32_t card_expiry_epoch;
 } hogan_account;
 
 #define HOGAN_MAX_BLOCKED_CARDS 32
@@ -378,5 +379,15 @@ typedef struct {
 } hogan_card_tx_limit_entry;
 
 int tsfi_hogan_update_card_tx_limit(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t new_limit, uint32_t authority_id);
+
+// Card Expiry Compliance Manager (Expiration Validation)
+typedef struct {
+    uint32_t account_id;
+    uint32_t previous_expiry_epoch;
+    uint32_t new_expiry_epoch;
+    uint32_t authority_id;
+} hogan_card_expiry_entry;
+
+int tsfi_hogan_update_card_expiry(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t new_expiry_epoch, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H
