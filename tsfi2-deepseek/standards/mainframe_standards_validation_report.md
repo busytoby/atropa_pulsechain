@@ -386,5 +386,7 @@
 | 452 | NATO Link-Layer Multi-Scan Channel Quality Estimate Matcher | PASS | Audits quality metric percentage indicators for subnetwork link estimation | Volume 33 |
 | 453 | NATO Link-Layer Broadcast Collision Backoff Jitter Factor Matcher | PASS | Validates jitter factor percentages applied to collision retry backoff | Volume 33 |
 | 454 | NATO Link-Layer Broadcast Minimum Guard-Band Spacing Matcher | PASS | Audits minimum guard-band spacing intervals between broadcast blocks | Volume 33 |
+| 455 | NATO Link-Layer Broadcast Guard-Time Signal Ramp Validator | PASS | Validates transmitter signal ramp timing intervals for guard spacing | Volume 33 |
+| 456 | NATO Link-Layer Multi-Scan Collision Clear RSSI Drop Threshold Matcher | PASS | Audits RSSI drop thresholds required to detect collision clearance | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 454 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 456 Scenarios validated successfully)

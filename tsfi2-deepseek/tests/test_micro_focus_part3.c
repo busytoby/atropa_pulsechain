@@ -497,5 +497,21 @@ int run_nato_stanag_tests(void) {
     assert(guard_band_valid == 1);
     printf("  [PASS] NATO Broadcast Guard-Band Spacing Matcher verified.\n");
 
+    // 311. Verify NATO Link-Layer Broadcast Guard-Time Signal Ramp Validator
+    printf("[TEST] Validating NATO Broadcast Guard Time Signal Ramp Validator...\n");
+    int signal_ramp_valid = -1;
+    int signal_ramp_res = tsfi_mf_nato_verify_signal_ramp(10, &signal_ramp_valid);
+    assert(signal_ramp_res == 0);
+    assert(signal_ramp_valid == 1);
+    printf("  [PASS] NATO Broadcast Guard Time Signal Ramp Validator verified.\n");
+
+    // 312. Verify NATO Link-Layer Multi-Scan Collision Clear RSSI Drop Threshold Matcher
+    printf("[TEST] Validating NATO Collision Clear RSSI Drop Threshold Matcher...\n");
+    int rssi_drop_valid = -1;
+    int rssi_drop_res = tsfi_mf_nato_verify_rssi_drop(6, &rssi_drop_valid);
+    assert(rssi_drop_res == 0);
+    assert(rssi_drop_valid == 1);
+    printf("  [PASS] NATO Collision Clear RSSI Drop Threshold Matcher verified.\n");
+
     return 0;
 }

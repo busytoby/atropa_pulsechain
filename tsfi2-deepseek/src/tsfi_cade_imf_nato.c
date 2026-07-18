@@ -417,3 +417,15 @@ int tsfi_mf_nato_verify_guard_band(int spacing_ms, int *is_valid) {
     *is_valid = (spacing_ms >= 5 && spacing_ms <= 250) ? 1 : 0;
     return 0;
 }
+
+int tsfi_mf_nato_verify_signal_ramp(int ramp_ms, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (ramp_ms >= 1 && ramp_ms <= 50) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_rssi_drop(int drop_db, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (drop_db >= 3 && drop_db <= 20) ? 1 : 0;
+    return 0;
+}

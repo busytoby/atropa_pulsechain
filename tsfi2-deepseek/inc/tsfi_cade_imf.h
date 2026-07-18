@@ -206,5 +206,7 @@ int tsfi_mf_nato_verify_busy_detection_timeout(int timeout_sec, int *is_valid);
 int tsfi_mf_nato_verify_channel_quality(int quality, int *is_valid);
 int tsfi_mf_nato_verify_backoff_jitter(int jitter_pct, int *is_valid);
 int tsfi_mf_nato_verify_guard_band(int spacing_ms, int *is_valid);
+int tsfi_mf_nato_verify_signal_ramp(int ramp_ms, int *is_valid);
+int tsfi_mf_nato_verify_rssi_drop(int drop_db, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H
