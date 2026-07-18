@@ -354,6 +354,23 @@ int main(void) {
     assert(has_hold == 1);
     printf("  [PASS] IRS CADE Refund Delay Checker verified.\n");
 
+    // 152. Verify IRS IMF Required Signature presence verifier
+    printf("[TEST] Validating IRS IMF Signature Verifier...\n");
+    int sig_valid = -1;
+    int sig_res = tsfi_mf_imf_verify_signatures(2, 1, 0, &sig_valid);
+    assert(sig_res == 0);
+    assert(sig_valid == 0);
+    printf("  [PASS] IRS IMF Signature Verifier verified.\n");
+
+    // 153. Verify IRS IMF Dependents SSN Duplication Checker
+    printf("[TEST] Validating IRS IMF Dependent Duplicate Checker...\n");
+    int dep_dups = -1;
+    const char *deps[] = {"999-12-3456", "999-12-0000"};
+    int dep_res = tsfi_mf_imf_check_dependent_duplicates("999-12-3456", "999-12-7890", deps, 2, &dep_dups);
+    assert(dep_res == 0);
+    assert(dep_dups == 1);
+    printf("  [PASS] IRS IMF Dependent Duplicate Checker verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

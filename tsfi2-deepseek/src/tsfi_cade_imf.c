@@ -571,4 +571,37 @@ int tsfi_mf_cade_check_refund_hold(int identity_verified, int address_verified, 
     return 0;
 }
 
+int tsfi_mf_imf_verify_signatures(int filing_status, int has_taxpayer_sig, int has_spouse_sig, int *is_valid) {
+    if (!is_valid) return -1;
+    if (filing_status == 2) {
+        *is_valid = (has_taxpayer_sig && has_spouse_sig) ? 1 : 0;
+    } else {
+        *is_valid = (has_taxpayer_sig) ? 1 : 0;
+    }
+    return 0;
+}
+
+int tsfi_mf_imf_check_dependent_duplicates(const char *primary_ssn, const char *secondary_ssn, const char **dep_ssns, int dep_count, int *has_duplicates) {
+    if (!primary_ssn || !has_duplicates) return -1;
+    *has_duplicates = 0;
+    for (int i = 0; i < dep_count; i++) {
+        if (!dep_ssns[i]) continue;
+        if (strcmp(dep_ssns[i], primary_ssn) == 0) {
+            *has_duplicates = 1;
+            return 0;
+        }
+        if (secondary_ssn && strcmp(dep_ssns[i], secondary_ssn) == 0) {
+            *has_duplicates = 1;
+            return 0;
+        }
+        for (int j = i + 1; j < dep_count; j++) {
+            if (dep_ssns[j] && strcmp(dep_ssns[i], dep_ssns[j]) == 0) {
+                *has_duplicates = 1;
+                return 0;
+            }
+        }
+    }
+    return 0;
+}
+
 

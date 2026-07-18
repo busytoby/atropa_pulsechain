@@ -49,5 +49,7 @@ int tsfi_mf_cade_classify_batch_error(int error_code, char *severity_out, int ma
 int tsfi_mf_imf_verify_agi_calculation(double gross_income, double adjustments, double reported_agi, int *is_match);
 int tsfi_mf_imf_validate_deductions(int filing_status, double claimed_deductions, int use_itemized, int *is_valid);
 int tsfi_mf_cade_check_refund_hold(int identity_verified, int address_verified, int *has_hold);
+int tsfi_mf_imf_verify_signatures(int filing_status, int has_taxpayer_sig, int has_spouse_sig, int *is_valid);
+int tsfi_mf_imf_check_dependent_duplicates(const char *primary_ssn, const char *secondary_ssn, const char **dep_ssns, int dep_count, int *has_duplicates);
 
 #endif // TSFI_CADE_IMF_H

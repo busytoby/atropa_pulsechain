@@ -250,8 +250,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 293 | IRS IMF Adjusted Gross Income (AGI) Matcher | PASS | Validates reported AGI matching expected gross minus adjustments | Volume 33 |
 | 294 | IRS IMF Standard vs Itemized Deduction Matcher | PASS | Confirms correct deductions applied depending on filing status | Volume 33 |
 | 295 | IRS CADE Refund Offset Delay Flag | PASS | Detects identity/address hold status preventing immediate refund posting | Volume 33 |
+| 296 | IRS IMF Required Signature presence verifier | PASS | Confirms that taxpayer and spouse signatures match joint return filings | Volume 33 |
+| 297 | IRS IMF Dependents SSN Duplication Checker | PASS | Validates that dependents' SSNs do not duplicate primary/spouse records | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 295 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 297 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"
