@@ -1482,6 +1482,32 @@ int tsfi_cw_unt_audit_racf(const tsfi_cw_unt_racf_log *logs, int log_count, int 
     return 0;
 }
 
+int tsfi_cw_raf_allocate_vital(const tsfi_cw_raf_vital_request *req, int *approved_out, int *priority_score_out) {
+    if (!req || !approved_out || !priority_score_out) return -1;
+    
+    *approved_out = (req->stock_available >= req->qty_requested) ? 1 : 0;
+    *priority_score_out = 0;
+    if (strcmp(req->priority_level, "AOG") == 0) {
+        *priority_score_out = 100;
+    } else if (strcmp(req->priority_level, "ROUT") == 0) {
+        *priority_score_out = 10;
+    }
+    return 0;
+}
+
+int tsfi_cw_raf_audit_ridels(const tsfi_cw_raf_ridels_audit *items, int item_count, double *total_discrepancy_value_out) {
+    if (!items || item_count < 0 || !total_discrepancy_value_out) return -1;
+    
+    *total_discrepancy_value_out = 0.0;
+    for (int i = 0; i < item_count; i++) {
+        int diff = items[i].physical_count - items[i].system_count;
+        if (diff < 0) diff = -diff;
+        *total_discrepancy_value_out += diff * items[i].unit_cost;
+    }
+    return 0;
+}
+
+
 
 
 

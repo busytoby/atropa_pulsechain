@@ -1131,5 +1131,24 @@ typedef struct {
 int tsfi_cw_unt_optimize_vsam(const tsfi_cw_unt_vsam_ksds *ksds, int *recommendation_flags_out);
 int tsfi_cw_unt_audit_racf(const tsfi_cw_unt_racf_log *logs, int log_count, int *violations_out);
 
+// RAF VITAL request
+typedef struct {
+    char part_number[16];
+    char priority_level[8];
+    int stock_available;
+    int qty_requested;
+} tsfi_cw_raf_vital_request;
+
+// RAF RIDELS audit
+typedef struct {
+    char part_number[16];
+    int physical_count;
+    int system_count;
+    double unit_cost;
+} tsfi_cw_raf_ridels_audit;
+
+int tsfi_cw_raf_allocate_vital(const tsfi_cw_raf_vital_request *req, int *approved_out, int *priority_score_out);
+int tsfi_cw_raf_audit_ridels(const tsfi_cw_raf_ridels_audit *items, int item_count, double *total_discrepancy_value_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

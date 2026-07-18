@@ -2082,6 +2082,23 @@ static void test_new_mainframe_features(void) {
     int violations = 0;
     assert(tsfi_cw_unt_audit_racf(logs, 2, &violations) == 0);
     assert(violations == 1);
+
+    // RAF VITAL test
+    tsfi_cw_raf_vital_request req = { "ENG001", "AOG", 10, 2 };
+    int approved = 0;
+    int priority = 0;
+    assert(tsfi_cw_raf_allocate_vital(&req, &approved, &priority) == 0);
+    assert(approved == 1);
+    assert(priority == 100);
+
+    // RAF RIDELS test
+    tsfi_cw_raf_ridels_audit items[2] = {
+        { "SPARE01", 10, 12, 50.0 }, // diff 2 * 50 = 100.0
+        { "SPARE02", 5, 5, 200.0 }
+    };
+    double discrepancy = 0.0;
+    assert(tsfi_cw_raf_audit_ridels(items, 2, &discrepancy) == 0);
+    assert(fabs(discrepancy - 100.0) < 0.01);
 }
 
 int main(void) {
