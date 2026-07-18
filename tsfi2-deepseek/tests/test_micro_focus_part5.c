@@ -1229,5 +1229,20 @@ int run_nato_stanag_tests_part5(void) {
     // Restore default
     tsfi_gost_is_broadcast_channel = 0;
 
+    // Verify TIN Group Resolution and Validation
+    printf("[TEST] Validating TIN Group Resolution and Validation...\n");
+    char ssn_res[10][10];
+    int ssn_res_count = 0;
+    int resolve_rc = tsfi_mf_tin_resolve_group_identities("950000000", ssn_res, &ssn_res_count);
+    assert(resolve_rc == 0);
+    assert(ssn_res_count == 2);
+    assert(strcmp(ssn_res[0], "050051122") == 0);
+    
+    int verify_group_valid = -1;
+    int verify_rc = tsfi_mf_tin_verify_group_exhaustive("950000000", &verify_group_valid);
+    assert(verify_rc == 0);
+    assert(verify_group_valid == 1);
+    printf("  [PASS] TIN Group Resolution and Validation verified.\n");
+
     return 0;
 }

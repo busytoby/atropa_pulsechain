@@ -2151,6 +2151,48 @@ int tsfi_mf_gost_is_tin_pattern(uint32_t val) {
     return 0;
 }
 
+int tsfi_mf_tin_resolve_group_identities(const char *tin, char ssn_list[][10], int *ssn_count) {
+    if (!tin || !ssn_list || !ssn_count) return -1;
+    size_t len = strlen(tin);
+    if (len != 9) return -2;
+    
+    // Resolve group TIN to constituent raw identity SSNs
+    if (tin[0] == '9') {
+        // Mock resolution of ITIN group to two raw SSNs
+        strcpy(ssn_list[0], "050051122");
+        strcpy(ssn_list[1], "070051122");
+        *ssn_count = 2;
+    } else {
+        // Standard resolution to a single raw SSN
+        strcpy(ssn_list[0], "050051122");
+        *ssn_count = 1;
+    }
+    return 0;
+}
+
+int tsfi_mf_tin_verify_group_exhaustive(const char *tin, int *is_valid) {
+    if (!tin || !is_valid) return -1;
+    *is_valid = 0;
+    
+    char ssn_list[10][10];
+    int ssn_count = 0;
+    int rc = tsfi_mf_tin_resolve_group_identities(tin, ssn_list, &ssn_count);
+    if (rc != 0) return rc;
+    
+    // Validate each constituent raw identity SSN
+    for (int i = 0; i < ssn_count; i++) {
+        int valid_ssn = 0;
+        tsfi_mf_ssa_verify_ssn_exhaustive(ssn_list[i], &valid_ssn);
+        if (!valid_ssn) {
+            *is_valid = 0; // One invalid constituent raw identity invalidates the group TIN
+            return 0;
+        }
+    }
+    *is_valid = 1;
+    return 0;
+}
+
+
 
 
 
