@@ -1396,6 +1396,24 @@ static void test_new_mainframe_features(void) {
     assert(tsfi_algol_execute_btc_rails_yul(&test_dat, test_bytecode, sizeof(test_bytecode), 64, &pc, &sp, &asp, &halted) == 0);
     assert(halted == 1);
     assert(pc > 0);
+
+    // PRT 2-3 Tree database & MSCW control language test
+    tsfi_prt_database prt_db;
+    assert(tsfi_algol_mscw_exec(&prt_db, "MSCW_INIT") == 0);
+    assert(tsfi_algol_mscw_exec(&prt_db, "MSCW_INSERT 42 999") == 0);
+    assert(tsfi_algol_mscw_exec(&prt_db, "MSCW_INSERT 20 555") == 0);
+    assert(tsfi_algol_mscw_exec(&prt_db, "MSCW_INSERT 50 777") == 0);
+    assert(tsfi_algol_mscw_exec(&prt_db, "MSCW_FIND 42") == 999);
+    assert(tsfi_algol_mscw_exec(&prt_db, "MSCW_FIND 20") == 555);
+    assert(tsfi_algol_mscw_exec(&prt_db, "MSCW_FIND 50") == 777);
+
+    // Save and load .dat.bin test
+    const char *db_path = "prt_test_db.dat.bin";
+    assert(tsfi_algol_prt_save_dat(&prt_db, db_path) == 0);
+    tsfi_prt_database loaded_db;
+    assert(tsfi_algol_prt_load_dat(&loaded_db, db_path) == 0);
+    assert(tsfi_algol_mscw_exec(&loaded_db, "MSCW_FIND 42") == 999);
+    remove(db_path);
 }
 
 int main(void) {

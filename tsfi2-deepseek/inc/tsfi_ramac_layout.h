@@ -923,6 +923,26 @@ typedef struct {
 
 void tsfi_algol_matrix_multiply(const tsfi_algol_matrix *a, const tsfi_algol_matrix *b, tsfi_algol_matrix *result);
 
+// Burroughs PRT 2-3 Tree Node Structure
+typedef struct {
+    int key;
+    int val;
+    int left_child;
+    int middle_child;
+    int right_child;
+    int is_three_node;
+} tsfi_prt_node;
+
+typedef struct {
+    tsfi_prt_node nodes[64];
+    int node_count;
+    int root_idx;
+} tsfi_prt_database;
+
+int tsfi_algol_mscw_exec(tsfi_prt_database *db, const char *control_cmd);
+int tsfi_algol_prt_save_dat(const tsfi_prt_database *db, const char *filepath);
+int tsfi_algol_prt_load_dat(tsfi_prt_database *db, const char *filepath);
+
 // COBOL COMPUTE Expression Solver
 int tsfi_cobol_compute_eval(const char *expression, const int reg_values[8]);
 

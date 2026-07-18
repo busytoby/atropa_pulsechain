@@ -269,3 +269,105 @@ int tsfi_algol_execute_btc_rails_yul(tsfi_algol_dynamic_array *dat_arr, const ui
     return 0;
 }
 
+int tsfi_algol_prt_save_dat(const tsfi_prt_database *db, const char *filepath) {
+    if (!db || !filepath) return -1;
+    int len = strlen(filepath);
+    if (len < 8 || strcmp(filepath + len - 8, ".dat.bin") != 0) return -2;
+    FILE *f = fopen(filepath, "wb");
+    if (!f) return -3;
+    size_t written = fwrite(db, sizeof(tsfi_prt_database), 1, f);
+    fclose(f);
+    return (written == 1) ? 0 : -4;
+}
+
+int tsfi_algol_prt_load_dat(tsfi_prt_database *db, const char *filepath) {
+    if (!db || !filepath) return -1;
+    int len = strlen(filepath);
+    if (len < 8 || strcmp(filepath + len - 8, ".dat.bin") != 0) return -2;
+    FILE *f = fopen(filepath, "rb");
+    if (!f) return -3;
+    size_t read_bytes = fread(db, sizeof(tsfi_prt_database), 1, f);
+    fclose(f);
+    return (read_bytes == 1) ? 0 : -4;
+}
+
+static int prt_insert_node(tsfi_prt_database *db, int current_idx, int key, int val) {
+    if (db->node_count >= 64) return -1;
+    if (current_idx == -1) {
+        int new_idx = db->node_count++;
+        db->nodes[new_idx].key = key;
+        db->nodes[new_idx].val = val;
+        db->nodes[new_idx].left_child = -1;
+        db->nodes[new_idx].middle_child = -1;
+        db->nodes[new_idx].right_child = -1;
+        db->nodes[new_idx].is_three_node = 0;
+        db->root_idx = new_idx;
+        return new_idx;
+    }
+    tsfi_prt_node *curr = &db->nodes[current_idx];
+    if (key < curr->key) {
+        if (curr->left_child == -1) {
+            int new_idx = db->node_count++;
+            db->nodes[new_idx].key = key;
+            db->nodes[new_idx].val = val;
+            db->nodes[new_idx].left_child = -1;
+            db->nodes[new_idx].middle_child = -1;
+            db->nodes[new_idx].right_child = -1;
+            db->nodes[new_idx].is_three_node = 0;
+            curr->left_child = new_idx;
+            return new_idx;
+        } else {
+            return prt_insert_node(db, curr->left_child, key, val);
+        }
+    } else {
+        if (curr->right_child == -1) {
+            int new_idx = db->node_count++;
+            db->nodes[new_idx].key = key;
+            db->nodes[new_idx].val = val;
+            db->nodes[new_idx].left_child = -1;
+            db->nodes[new_idx].middle_child = -1;
+            db->nodes[new_idx].right_child = -1;
+            db->nodes[new_idx].is_three_node = 0;
+            curr->right_child = new_idx;
+            return new_idx;
+        } else {
+            return prt_insert_node(db, curr->right_child, key, val);
+        }
+    }
+}
+
+static int prt_find_node(const tsfi_prt_database *db, int current_idx, int key, int *val_out) {
+    if (current_idx == -1) return -1;
+    const tsfi_prt_node *curr = &db->nodes[current_idx];
+    if (curr->key == key) {
+        *val_out = curr->val;
+        return 0;
+    }
+    if (key < curr->key) {
+        return prt_find_node(db, curr->left_child, key, val_out);
+    } else {
+        return prt_find_node(db, curr->right_child, key, val_out);
+    }
+}
+
+int tsfi_algol_mscw_exec(tsfi_prt_database *db, const char *control_cmd) {
+    if (!db || !control_cmd) return -1;
+    if (strncmp(control_cmd, "MSCW_INIT", 9) == 0) {
+        memset(db, 0, sizeof(tsfi_prt_database));
+        db->root_idx = -1;
+        db->node_count = 0;
+        return 0;
+    } else if (strncmp(control_cmd, "MSCW_INSERT", 11) == 0) {
+        int key = 0, val = 0;
+        if (sscanf(control_cmd + 11, "%d %d", &key, &val) != 2) return -2;
+        int res = prt_insert_node(db, db->root_idx, key, val);
+        return (res >= 0) ? 0 : -3;
+    } else if (strncmp(control_cmd, "MSCW_FIND", 9) == 0) {
+        int key = 0, val_out = 0;
+        if (sscanf(control_cmd + 9, "%d", &key) != 1) return -2;
+        int res = prt_find_node(db, db->root_idx, key, &val_out);
+        return (res == 0) ? val_out : -4;
+    }
+    return -5;
+}
+
