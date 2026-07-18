@@ -81,5 +81,7 @@ int tsfi_mf_cade_verify_witness_indicator(int doc_code, int has_witness_sig, int
 int tsfi_mf_imf_verify_actc_limit(int child_count, double claimed_actc, int *is_valid);
 int tsfi_mf_cade_verify_filing_volume(const char *state_code, int current_count, int max_limit, int *is_allowed);
 int tsfi_mf_imf_verify_first_time_address(const char *address, int *is_valid);
+int tsfi_mf_imf_verify_federal_withholding_cap(double gross_income, double claimed_withholding, int *is_valid);
+int tsfi_mf_imf_check_amt_threshold(double agi, int filing_status, int *requires_amt);
 
 #endif // TSFI_CADE_IMF_H

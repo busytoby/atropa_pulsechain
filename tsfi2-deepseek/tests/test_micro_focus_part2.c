@@ -636,6 +636,22 @@ int main(void) {
     assert(addr_valid == 1);
     printf("  [PASS] IRS IMF First-Time Filer Address Checker verified.\n");
 
+    // 186. Verify IRS IMF Federal Tax Withholding Cap Validator
+    printf("[TEST] Validating IRS IMF Federal Withholding Cap Validator...\n");
+    int fed_valid = -1;
+    int fed_res = tsfi_mf_imf_verify_federal_withholding_cap(100000.00, 25000.00, &fed_valid);
+    assert(fed_res == 0);
+    assert(fed_valid == 1);
+    printf("  [PASS] IRS IMF Federal Withholding Cap Validator verified.\n");
+
+    // 187. Verify IRS IMF Alternative Minimum Tax (AMT) Simple Liability Checker
+    printf("[TEST] Validating IRS IMF AMT Threshold Checker...\n");
+    int requires_amt = -1;
+    int amt_res = tsfi_mf_imf_check_amt_threshold(95000.00, 1, &requires_amt);
+    assert(amt_res == 0);
+    assert(requires_amt == 1);
+    printf("  [PASS] IRS IMF AMT Threshold Checker verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

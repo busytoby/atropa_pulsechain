@@ -1011,4 +1011,17 @@ int tsfi_mf_imf_verify_first_time_address(const char *address, int *is_valid) {
     return 0;
 }
 
+int tsfi_mf_imf_verify_federal_withholding_cap(double gross_income, double claimed_withholding, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (claimed_withholding >= 0.0 && claimed_withholding <= gross_income && claimed_withholding <= gross_income * 0.50) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_imf_check_amt_threshold(double agi, int filing_status, int *requires_amt) {
+    if (!requires_amt) return -1;
+    double threshold = (filing_status == 2) ? 133300.00 : 85700.00;
+    *requires_amt = (agi > threshold) ? 1 : 0;
+    return 0;
+}
+
 
