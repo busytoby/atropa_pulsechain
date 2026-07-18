@@ -2189,6 +2189,16 @@ static void test_new_mainframe_features(void) {
     tsfi_cw_chase_micr_check check_bad = { "021000022", "123456789", "1001", 1500.50 }; // invalid routing check digit
     assert(tsfi_cw_chase_audit_micr(&check_bad, &check_valid) == 0);
     assert(check_valid == 0);
+
+    // Chase Manhattan ATM test
+    tsfi_cw_chase_atm_transaction atm_tx_ok = { "4111222233334444", "1234", "WITHDRAWAL", 200.0, 1000.0 };
+    int atm_valid = 0;
+    assert(tsfi_cw_chase_audit_atm(&atm_tx_ok, &atm_valid) == 0);
+    assert(atm_valid == 1);
+
+    tsfi_cw_chase_atm_transaction atm_tx_bad = { "4111222233334444", "123", "WITHDRAWAL", 200.0, 1000.0 }; // pin too short
+    assert(tsfi_cw_chase_audit_atm(&atm_tx_bad, &atm_valid) == 0);
+    assert(atm_valid == 0);
 }
 
 int main(void) {

@@ -245,7 +245,7 @@
             padding: 1rem;
             font-family: 'JetBrains Mono', monospace;
             font-size: 0.8rem;
-            height: 250px;
+            height: 200px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
@@ -289,7 +289,7 @@
         /* Interactive Telemetry Pad styles */
         .capture-pad {
             width: 100%;
-            height: 180px;
+            height: 150px;
             border: 2px dashed rgba(0, 242, 254, 0.3);
             border-radius: 12px;
             display: flex;
@@ -316,11 +316,11 @@
 
         .telemetry-canvas {
             width: 100%;
-            height: 200px;
+            height: 180px;
             background: rgba(6, 7, 10, 0.9);
             border-radius: 12px;
             border: 1px solid var(--border-glow);
-            margin-top: 1rem;
+            margin-top: 0.5rem;
         }
     </style>
 </head>
@@ -445,6 +445,52 @@
         </div>
 
         <div class="section-column">
+            <!-- Chase Manhattan ATM Card -->
+            <div class="card">
+                <div class="card-title">
+                    <span>Chase Manhattan ATM</span>
+                    <span class="card-accent-tag">cics.audit_atm_transaction</span>
+                </div>
+                <div style="background: #06070a; border: 1px solid var(--border-glow); border-radius: 8px; padding: 1rem; font-family:'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--accent-green); text-align: center; margin-bottom: 1rem; text-shadow: 0 0 5px rgba(56, 239, 125, 0.5);" id="atmScreen">
+                    INSERT CARD OR ENTER PIN
+                </div>
+                <div class="grid-inputs">
+                    <div class="input-group">
+                        <label for="atmCardNumber">Card Number</label>
+                        <input type="text" id="atmCardNumber" value="4111222233334444">
+                    </div>
+                    <div class="input-group">
+                        <label for="atmPin">Enter PIN</label>
+                        <input type="password" id="atmPin" value="" readonly style="text-align: center; font-size: 1.1rem; letter-spacing: 5px;">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin: 0.5rem auto 1rem auto; max-width: 200px;">
+                    <button class="btn" style="padding: 0.4rem; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border-glow);" onclick="pressAtmKey('1')">1</button>
+                    <button class="btn" style="padding: 0.4rem; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border-glow);" onclick="pressAtmKey('2')">2</button>
+                    <button class="btn" style="padding: 0.4rem; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border-glow);" onclick="pressAtmKey('3')">3</button>
+                    <button class="btn" style="padding: 0.4rem; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border-glow);" onclick="pressAtmKey('4')">4</button>
+                    <button class="btn" style="padding: 0.4rem; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border-glow);" onclick="pressAtmKey('5')">5</button>
+                    <button class="btn" style="padding: 0.4rem; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border-glow);" onclick="pressAtmKey('6')">6</button>
+                    <button class="btn" style="padding: 0.4rem; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border-glow);" onclick="pressAtmKey('7')">7</button>
+                    <button class="btn" style="padding: 0.4rem; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border-glow);" onclick="pressAtmKey('8')">8</button>
+                    <button class="btn" style="padding: 0.4rem; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border-glow);" onclick="pressAtmKey('9')">9</button>
+                    <button class="btn" style="padding: 0.4rem; background: rgba(255,65,108,0.2); color: var(--accent-red); border: 1px solid rgba(255,65,108,0.4);" onclick="clearAtmPin()">CLR</button>
+                    <button class="btn" style="padding: 0.4rem; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border-glow);" onclick="pressAtmKey('0')">0</button>
+                    <button class="btn" style="padding: 0.4rem; background: rgba(56,239,125,0.2); color: var(--accent-green); border: 1px solid rgba(56,239,125,0.4);" onclick="submitAtmPin()">ENT</button>
+                </div>
+                <div class="grid-inputs">
+                    <div class="input-group">
+                        <label for="atmAmount">Withdrawal ($)</label>
+                        <input type="number" id="atmAmount" value="200" step="20">
+                    </div>
+                    <div class="input-group">
+                        <label for="atmBalance">Balance ($)</label>
+                        <input type="number" id="atmBalance" value="1000">
+                    </div>
+                </div>
+                <button class="btn" onclick="auditAtmTransaction()">Verify ATM Cash Out</button>
+            </div>
+
             <!-- Event Capture Pad -->
             <div class="card">
                 <div class="card-title">
@@ -699,6 +745,59 @@
                     }
                 }
             } catch (e) {}
+        }
+
+        // ATM Logic
+        const atmPinInput = document.getElementById("atmPin");
+        const atmScreen = document.getElementById("atmScreen");
+
+        function pressAtmKey(num) {
+            if (atmPinInput.value.length < 4) {
+                atmPinInput.value += num;
+                atmScreen.textContent = "PIN: " + "*".repeat(atmPinInput.value.length);
+            }
+        }
+
+        function clearAtmPin() {
+            atmPinInput.value = "";
+            atmScreen.textContent = "ENTER PIN";
+        }
+
+        function submitAtmPin() {
+            if (atmPinInput.value.length === 4) {
+                atmScreen.textContent = "PIN ACCEPTED. CHOOSE WITHDRAWAL";
+            } else {
+                atmScreen.textContent = "INVALID PIN LENGTH";
+            }
+        }
+
+        async function auditAtmTransaction() {
+            try {
+                atmScreen.textContent = "PROCESSING...";
+                const res = await sendRpc("cics.audit_atm_transaction", {
+                    card_number: document.getElementById("atmCardNumber").value,
+                    pin: atmPinInput.value,
+                    transaction_type: "WITHDRAWAL",
+                    amount_dollars: document.getElementById("atmAmount").value,
+                    account_balance_dollars: document.getElementById("atmBalance").value
+                });
+
+                if (res && res.result) {
+                    if (res.result.is_valid) {
+                        atmScreen.textContent = "DISPENSING CASH - SUCCESS";
+                        atmScreen.style.color = "var(--accent-green)";
+                    } else {
+                        atmScreen.textContent = "DECLINED - CICS RULE VIOLATION";
+                        atmScreen.style.color = "var(--accent-red)";
+                    }
+                    setTimeout(() => {
+                        atmScreen.style.color = "var(--accent-green)";
+                    }, 4000);
+                }
+            } catch (e) {
+                atmScreen.textContent = "COMMUNICATION FAILURE";
+                atmScreen.style.color = "var(--accent-red)";
+            }
         }
 
         // Interactive Capture Pad Logic

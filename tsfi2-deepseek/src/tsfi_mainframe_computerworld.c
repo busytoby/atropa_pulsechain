@@ -1623,6 +1623,22 @@ int tsfi_cw_chase_audit_micr(const tsfi_cw_chase_micr_check *check, int *is_vali
     return 0;
 }
 
+int tsfi_cw_chase_audit_atm(const tsfi_cw_chase_atm_transaction *tx, int *is_valid_out) {
+    if (!tx || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    if (strlen(tx->pin) != 4) return 0;
+    for (int i = 0; i < 4; i++) {
+        if (tx->pin[i] < '0' || tx->pin[i] > '9') return 0;
+    }
+    if (strlen(tx->card_number) < 12) return 0;
+    if (tx->amount_dollars < 0.0 || tx->amount_dollars > tx->account_balance_dollars) return 0;
+    
+    *is_valid_out = 1;
+    return 0;
+}
+
+
 
 
 

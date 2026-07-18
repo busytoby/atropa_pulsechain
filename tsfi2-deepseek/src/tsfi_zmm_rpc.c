@@ -1058,6 +1058,41 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
         snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"is_valid\": %d}, \"id\": %d}\n", is_valid, id);
         return 1;
     }
+    if (method_type == 75) {
+        char card_number[32] = {0};
+        char pin[16] = {0};
+        char transaction_type[32] = {0};
+        char amount_str[32] = {0};
+        char balance_str[32] = {0};
+        extract_json_string(min_ptr, "\"card_number\"", card_number, sizeof(card_number));
+        extract_json_string(min_ptr, "\"pin\"", pin, sizeof(pin));
+        extract_json_string(min_ptr, "\"transaction_type\"", transaction_type, sizeof(transaction_type));
+        extract_json_string(min_ptr, "\"amount_dollars\"", amount_str, sizeof(amount_str));
+        extract_json_string(min_ptr, "\"account_balance_dollars\"", balance_str, sizeof(balance_str));
+        double amount_dollars = atof(amount_str);
+        double account_balance_dollars = atof(balance_str);
+        
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wstringop-truncation"
+        tsfi_cw_chase_atm_transaction tx;
+        strncpy(tx.card_number, card_number, sizeof(tx.card_number) - 1);
+        tx.card_number[sizeof(tx.card_number) - 1] = 0;
+        strncpy(tx.pin, pin, sizeof(tx.pin) - 1);
+        tx.pin[sizeof(tx.pin) - 1] = 0;
+        strncpy(tx.transaction_type, transaction_type, sizeof(tx.transaction_type) - 1);
+        tx.transaction_type[sizeof(tx.transaction_type) - 1] = 0;
+        #pragma GCC diagnostic pop
+        
+        tx.amount_dollars = amount_dollars;
+        tx.account_balance_dollars = account_balance_dollars;
+        
+        int is_valid = 0;
+        extern int tsfi_cw_chase_audit_atm(const tsfi_cw_chase_atm_transaction *tx, int *is_valid_out);
+        tsfi_cw_chase_audit_atm(&tx, &is_valid);
+        
+        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"is_valid\": %d}, \"id\": %d}\n", is_valid, id);
+        return 1;
+    }
     snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"Method not found\", \"id\": %d}\n", id);
     return 1;
 }

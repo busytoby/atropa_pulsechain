@@ -1220,5 +1220,16 @@ typedef struct {
 
 int tsfi_cw_chase_audit_micr(const tsfi_cw_chase_micr_check *check, int *is_valid_out);
 
+// Chase Manhattan ATM Transaction Info
+typedef struct {
+    char card_number[24];
+    char pin[8];
+    char transaction_type[16];
+    double amount_dollars;
+    double account_balance_dollars;
+} tsfi_cw_chase_atm_transaction;
+
+int tsfi_cw_chase_audit_atm(const tsfi_cw_chase_atm_transaction *tx, int *is_valid_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 
