@@ -1781,6 +1781,19 @@ static void test_new_mainframe_features(void) {
     double payback_yrs = 0.0;
     assert(tsfi_cw_icp_calculate_payback(25000.0, 10000.0, &payback_yrs) == 0);
     assert(fabs(payback_yrs - 2.5) < 0.1);
+
+    // ICP Software Release version control test
+    tsfi_cw_icp_release_record releases[32];
+    int release_cnt = 0;
+    tsfi_cw_icp_release_record new_rel = { "P01", "v1.2", 1970, 8, 12 };
+    assert(tsfi_cw_icp_register_release(releases, &release_cnt, &new_rel) == 0);
+    assert(release_cnt == 1);
+
+    // ICP Vendor Compliance Auditor test
+    tsfi_cw_icp_vendor_record vendor = { "ADR", "US", 1, 0 };
+    int compliant = 0;
+    assert(tsfi_cw_icp_audit_vendor(&vendor, &compliant) == 0);
+    assert(compliant == 1);
 }
 
 int main(void) {

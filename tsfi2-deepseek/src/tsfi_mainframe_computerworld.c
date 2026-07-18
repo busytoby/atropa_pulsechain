@@ -989,6 +989,37 @@ int tsfi_cw_icp_calculate_payback(double purchase_cost, double annual_savings, d
     return 0;
 }
 
+int tsfi_cw_icp_register_release(tsfi_cw_icp_release_record *releases, int *release_count, const tsfi_cw_icp_release_record *new_release) {
+    if (!releases || !release_count || !new_release) return -1;
+    
+    // Check if exists
+    for (int i = 0; i < *release_count; i++) {
+        if (strcmp(releases[i].product_id, new_release->product_id) == 0 &&
+            strcmp(releases[i].version_string, new_release->version_string) == 0) {
+            releases[i] = *new_release;
+            return 0;
+        }
+    }
+    
+    // Append new
+    if (*release_count >= 32) return -3;
+    releases[*release_count] = *new_release;
+    (*release_count)++;
+    return 0;
+}
+
+int tsfi_cw_icp_audit_vendor(const tsfi_cw_icp_vendor_record *vendor, int *is_compliant_out) {
+    if (!vendor || !is_compliant_out) return -1;
+    
+    if (vendor->is_active && (strcmp(vendor->country_code, "US") == 0 || strcmp(vendor->country_code, "UK") == 0)) {
+        *is_compliant_out = 1;
+    } else {
+        *is_compliant_out = 0;
+    }
+    return 0;
+}
+
+
 
 
 

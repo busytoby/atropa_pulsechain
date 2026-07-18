@@ -852,5 +852,26 @@ int tsfi_cw_icp_consolidate_royalties(const tsfi_cw_icp_product *catalog, int ca
 int tsfi_cw_icp_check_expiration(int current_year, int current_month, int current_day, int exp_year, int exp_month, int exp_day, int *expired_out, int *days_remaining_out);
 int tsfi_cw_icp_calculate_payback(double purchase_cost, double annual_savings, double *payback_years_out);
 
+// ICP Release Record
+typedef struct {
+    char product_id[8];
+    char version_string[16];
+    int release_year;
+    int release_month;
+    int release_day;
+} tsfi_cw_icp_release_record;
+
+// ICP Vendor Record
+typedef struct {
+    char vendor_name[32];
+    char country_code[4];
+    int is_active;
+    int is_compliant;
+} tsfi_cw_icp_vendor_record;
+
+// ICP Release and Vendor Compliance Functions
+int tsfi_cw_icp_register_release(tsfi_cw_icp_release_record *releases, int *release_count, const tsfi_cw_icp_release_record *new_release);
+int tsfi_cw_icp_audit_vendor(const tsfi_cw_icp_vendor_record *vendor, int *is_compliant_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 
