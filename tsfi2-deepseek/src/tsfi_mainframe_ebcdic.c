@@ -570,13 +570,18 @@ uint8_t tsfi_cw_ebcdic_translate_control_escape(uint8_t ebcdic_char) {
 int tsfi_cw_ebcdic_check_dbcs_nesting(const uint8_t *ebcdic_str, int len) {
     if (!ebcdic_str || len <= 0) return -1;
     int state = 0;
+    int dbcs_bytes_count = 0;
     for (int i = 0; i < len; i++) {
         if (ebcdic_str[i] == 0x0E) {
             if (state == 1) return -27;
             state = 1;
+            dbcs_bytes_count = 0;
         } else if (ebcdic_str[i] == 0x0F) {
             if (state == 0) return -28;
             state = 0;
+            if (dbcs_bytes_count % 2 != 0) return -33; // DBCS parity violation!
+        } else if (state == 1) {
+            dbcs_bytes_count++;
         }
     }
     return 0;

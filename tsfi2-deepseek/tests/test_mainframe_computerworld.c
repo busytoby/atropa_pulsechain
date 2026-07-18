@@ -1024,6 +1024,16 @@ static void test_new_mainframe_features(void) {
     // Y2K chronological dates validation
     assert(tsfi_cw_y2k_validate_chronological_order(0, 1, 1, 10, 1, 1, 50) == 0);
     assert(tsfi_cw_y2k_validate_chronological_order(10, 1, 1, 0, 1, 1, 50) == -32);
+    assert(tsfi_cw_y2k_get_chronological_violations() > 0);
+
+    // COBOL padding map config check
+    char mapped_pad = '\0';
+    assert(tsfi_cw_cobol_map_custom_padding_byte('\0', &mapped_pad) == 0);
+    assert(mapped_pad == ' ');
+
+    // EBCDIC DBCS parity error check
+    uint8_t nested_dbcs_odd[5] = {0x0E, 0x5D, 0x0F}; // 1 DBCS byte (odd length)
+    assert(tsfi_cw_ebcdic_check_dbcs_nesting(nested_dbcs_odd, 3) == -33);
 }
 
 int main(void) {

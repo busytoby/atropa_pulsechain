@@ -179,6 +179,9 @@ int tsfi_cw_vsam_read(tsfi_cw_vsam_ksds *ksds, const char *key, uint8_t *data_ou
                     return -3;
                 }
                 fclose(f);
+                if (ksds->index[mid].checksum != 0 && tsfi_cw_vsam_verify_record_checksum(data_out, read_len, ksds->index[mid].checksum) != 0) {
+                    return -25;
+                }
                 *out_len = read_len;
                 return 0;
             }

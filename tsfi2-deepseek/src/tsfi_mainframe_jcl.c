@@ -530,13 +530,23 @@ int tsfi_cw_jcl_substitute_symbols_multi(const char *card, const char **sym_name
     strncpy(temp, card, sizeof(temp) - 1);
     temp[sizeof(temp) - 1] = '\0';
     
-    for (int i = 0; i < sym_count; i++) {
-        char next_resolved[256];
-        int rc = tsfi_cw_jcl_substitute_symbol(temp, sym_names[i], sym_vals[i], next_resolved, sizeof(next_resolved));
-        if (rc == 0) {
-            strncpy(temp, next_resolved, sizeof(temp) - 1);
-            temp[sizeof(temp) - 1] = '\0';
+    int replaced = 1;
+    int depth = 0;
+    while (replaced) {
+        replaced = 0;
+        if (tsfi_cw_jcl_validate_substitution_depth(depth, 5) != 0) {
+            return -31;
         }
+        for (int i = 0; i < sym_count; i++) {
+            char next_resolved[256];
+            int rc = tsfi_cw_jcl_substitute_symbol(temp, sym_names[i], sym_vals[i], next_resolved, sizeof(next_resolved));
+            if (rc == 0) {
+                strncpy(temp, next_resolved, sizeof(temp) - 1);
+                temp[sizeof(temp) - 1] = '\0';
+                replaced = 1;
+            }
+        }
+        if (replaced) depth++;
     }
     strncpy(resolved_out, temp, max_len - 1);
     resolved_out[max_len - 1] = '\0';

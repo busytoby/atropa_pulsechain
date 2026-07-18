@@ -351,11 +351,20 @@ int tsfi_cw_y2k_validate_pivot_range(uint32_t pivot) {
     return 0;
 }
 
+static uint32_t global_y2k_chronological_violations = 0;
+
 int tsfi_cw_y2k_validate_chronological_order(uint32_t yy1, uint32_t mm1, uint32_t dd1, uint32_t yy2, uint32_t mm2, uint32_t dd2, uint32_t pivot) {
     uint32_t year1 = tsfi_cw_y2k_resolve_year_ex(yy1, pivot);
     uint32_t year2 = tsfi_cw_y2k_resolve_year_ex(yy2, pivot);
     int d1 = tsfi_cw_days_from_epoch(year1, mm1, dd1);
     int d2 = tsfi_cw_days_from_epoch(year2, mm2, dd2);
-    if (d1 > d2) return -32;
+    if (d1 > d2) {
+        global_y2k_chronological_violations++;
+        return -32;
+    }
     return 0;
+}
+
+uint32_t tsfi_cw_y2k_get_chronological_violations(void) {
+    return global_y2k_chronological_violations;
 }

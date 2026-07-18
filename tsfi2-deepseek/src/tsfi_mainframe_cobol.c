@@ -764,3 +764,13 @@ int tsfi_cw_cobol_validate_custom_padding_ex(char pad_char, int pad_len, int max
     if (pad_len < 0 || pad_len > max_len) return -30;
     return 0;
 }
+
+int tsfi_cw_cobol_map_custom_padding_byte(char input_char, char *mapped_out) {
+    if (!mapped_out) return -1;
+    if (input_char == '\0' || input_char == '\n') {
+        *mapped_out = ' ';
+        return 0;
+    }
+    *mapped_out = input_char;
+    return 0;
+}
