@@ -584,6 +584,7 @@ int tsfi_cw_ebcdic_check_dbcs_nesting(const uint8_t *ebcdic_str, int len) {
             dbcs_bytes_count++;
         }
     }
+    if (state == 1) return -35;
     return 0;
 }
 

@@ -619,3 +619,8 @@ int tsfi_cw_vsam_verify_record_checksum(const uint8_t *data, int len, uint32_t e
     if (actual != expected_checksum) return -25;
     return 0;
 }
+
+int tsfi_cw_vsam_verify_checksum_cached(tsfi_cw_vsam_ksds *ksds, int mid, const uint8_t *data_out, int read_len) {
+    if (!ksds || mid < 0 || mid >= ksds->entry_count) return -1;
+    return tsfi_cw_vsam_verify_record_checksum(data_out, read_len, ksds->index[mid].checksum);
+}

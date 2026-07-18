@@ -193,7 +193,7 @@ int tsfi_cw_run_jcl_set(const char **cards, int card_count, char *expanded_out, 
 }
 
 int tsfi_cw_run_jcl_proc_nested(const char **cards, int card_count, const char **proc_cards, int proc_card_count, int initial_rc, int depth) {
-    if (depth > 5) return -9;
+    if (tsfi_cw_jcl_validate_proc_recursion_depth(depth, 5) != 0) return -9;
     if (!cards || card_count <= 0) return -1;
     int steps_run = 0;
     
@@ -555,5 +555,10 @@ int tsfi_cw_jcl_substitute_symbols_multi(const char *card, const char **sym_name
 
 int tsfi_cw_jcl_validate_substitution_depth(int current_depth, int max_depth) {
     if (current_depth > max_depth) return -31;
+    return 0;
+}
+
+int tsfi_cw_jcl_validate_proc_recursion_depth(int depth, int max_depth) {
+    if (depth > max_depth) return -36;
     return 0;
 }

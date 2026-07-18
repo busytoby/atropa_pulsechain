@@ -1034,6 +1034,29 @@ static void test_new_mainframe_features(void) {
     // EBCDIC DBCS parity error check
     uint8_t nested_dbcs_odd[5] = {0x0E, 0x5D, 0x0F}; // 1 DBCS byte (odd length)
     assert(tsfi_cw_ebcdic_check_dbcs_nesting(nested_dbcs_odd, 3) == -33);
+
+    // EBCDIC DBCS unbalanced shift-out check
+    uint8_t nested_dbcs_unbalanced[4] = {0x0E, 0x5D, 0x5D}; // Missing Shift-In
+    assert(tsfi_cw_ebcdic_check_dbcs_nesting(nested_dbcs_unbalanced, 3) == -35);
+
+    // VSAM verify checksum cached
+    tsfi_cw_vsam_ksds cached_ksds;
+    cached_ksds.entry_count = 1;
+    cached_ksds.index[0].checksum = 12345;
+    uint8_t cached_dummy[4] = {0,0,0,0};
+    assert(tsfi_cw_vsam_verify_checksum_cached(&cached_ksds, 0, cached_dummy, 4) == -25);
+
+    // COBOL padding alignment
+    assert(tsfi_cw_cobol_validate_padding_alignment(8, 4) == 0);
+    assert(tsfi_cw_cobol_validate_padding_alignment(9, 4) == -34);
+
+    // JCL step execution PROC depth recursion checker
+    assert(tsfi_cw_jcl_validate_proc_recursion_depth(3, 5) == 0);
+    assert(tsfi_cw_jcl_validate_proc_recursion_depth(6, 5) == -36);
+
+    // Y2K Date Span violation diagnostic stats reset
+    tsfi_cw_y2k_reset_chronological_violations();
+    assert(tsfi_cw_y2k_get_chronological_violations() == 0);
 }
 
 int main(void) {

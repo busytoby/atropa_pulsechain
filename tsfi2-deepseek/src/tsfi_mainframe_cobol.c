@@ -774,3 +774,9 @@ int tsfi_cw_cobol_map_custom_padding_byte(char input_char, char *mapped_out) {
     *mapped_out = input_char;
     return 0;
 }
+
+int tsfi_cw_cobol_validate_padding_alignment(int field_offset, int alignment_modulus) {
+    if (alignment_modulus <= 0) return -1;
+    if (field_offset % alignment_modulus != 0) return -34;
+    return 0;
+}

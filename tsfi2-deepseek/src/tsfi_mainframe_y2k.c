@@ -368,3 +368,7 @@ int tsfi_cw_y2k_validate_chronological_order(uint32_t yy1, uint32_t mm1, uint32_
 uint32_t tsfi_cw_y2k_get_chronological_violations(void) {
     return global_y2k_chronological_violations;
 }
+
+void tsfi_cw_y2k_reset_chronological_violations(void) {
+    global_y2k_chronological_violations = 0;
+}
