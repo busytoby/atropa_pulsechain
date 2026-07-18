@@ -61,6 +61,9 @@ typedef struct {
     uint32_t grace_period_epochs;
     uint64_t min_card_auth_amount;
     uint64_t max_card_auth_amount;
+    uint32_t card_fail_count_today;
+    uint32_t card_fail_limit;
+    uint64_t overdraft_fee_amount;
 } hogan_account;
 
 #define HOGAN_MAX_BLOCKED_CARDS 32
@@ -422,5 +425,25 @@ typedef struct {
 } hogan_max_card_auth_entry;
 
 int tsfi_hogan_update_max_card_auth(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_max_amount, uint32_t authority_id);
+
+// Card Daily Failures Lock Manager
+typedef struct {
+    uint32_t account_id;
+    uint32_t previous_fail_limit;
+    uint32_t new_fail_limit;
+    uint32_t authority_id;
+} hogan_card_fail_limit_entry;
+
+int tsfi_hogan_update_card_fail_limit(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t new_fail_limit, uint32_t authority_id);
+
+// Account Overdraft Fee Accumulator Manager
+typedef struct {
+    uint32_t account_id;
+    uint64_t previous_fee_amount;
+    uint64_t new_fee_amount;
+    uint32_t authority_id;
+} hogan_overdraft_fee_entry;
+
+int tsfi_hogan_update_overdraft_fee(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_fee_amount, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H

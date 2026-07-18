@@ -107,6 +107,9 @@ int tsfi_hogan_lfs_save(const hogan_umbrella_system *sys, const char *filepath) 
             fwrite(&sys->accounts[i].grace_period_epochs, sizeof(uint32_t), 1, f);
             fwrite(&sys->accounts[i].min_card_auth_amount, sizeof(uint64_t), 1, f);
             fwrite(&sys->accounts[i].max_card_auth_amount, sizeof(uint64_t), 1, f);
+            fwrite(&sys->accounts[i].card_fail_count_today, sizeof(uint32_t), 1, f);
+            fwrite(&sys->accounts[i].card_fail_limit, sizeof(uint32_t), 1, f);
+            fwrite(&sys->accounts[i].overdraft_fee_amount, sizeof(uint64_t), 1, f);
         }
     }
     
@@ -338,6 +341,24 @@ int tsfi_hogan_lfs_load(hogan_umbrella_system *sys, const char *filepath) {
             return -2;
         }
         sys->accounts[i].max_card_auth_amount = max_auth_amt;
+        uint32_t c_fail_cnt = 0;
+        if (fread(&c_fail_cnt, sizeof(uint32_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
+        sys->accounts[i].card_fail_count_today = c_fail_cnt;
+        uint32_t c_fail_lim = 0;
+        if (fread(&c_fail_lim, sizeof(uint32_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
+        sys->accounts[i].card_fail_limit = c_fail_lim;
+        uint64_t od_fee = 0;
+        if (fread(&od_fee, sizeof(uint64_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
+        sys->accounts[i].overdraft_fee_amount = od_fee;
         sys->accounts[i].active = 1;
     }
     
@@ -796,6 +817,17 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
                             hogan_overdraft_entry o_entry = { sender->account_id, backup->account_id, deficit, 1 };
                             tsfi_hogan_write_seq_record(overdraft_filepath, (const uint8_t *)&o_entry, sizeof(hogan_overdraft_entry));
                         }
+                        
+                        // Charge overdraft fee if configured
+                        if (sender->overdraft_fee_amount > 0) {
+                            if (sender->balance >= sender->overdraft_fee_amount) {
+                                sender->balance -= sender->overdraft_fee_amount;
+                            } else {
+                                uint64_t remaining_fee = sender->overdraft_fee_amount - sender->balance;
+                                sender->balance = 0;
+                                sender->overdraft_drawn += remaining_fee;
+                            }
+                        }
                     } else {
                         tx->processed = 1;
                         if (overdraft_filepath) {
@@ -825,6 +857,7 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
             sys->accounts[j].daily_deposited = 0;
             sys->accounts[j].card_spent_today = 0;
             sys->accounts[j].card_tx_count_today = 0;
+            sys->accounts[j].card_fail_count_today = 0;
         }
     }
     
@@ -869,6 +902,9 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
             EVP_DigestUpdate(mdctx, &sys->accounts[i].grace_period_epochs, sizeof(uint32_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].min_card_auth_amount, sizeof(uint64_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].max_card_auth_amount, sizeof(uint64_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].card_fail_count_today, sizeof(uint32_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].card_fail_limit, sizeof(uint32_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].overdraft_fee_amount, sizeof(uint64_t));
         }
     }
     EVP_DigestUpdate(mdctx, &sys->blocked_card_count, sizeof(size_t));
@@ -944,17 +980,75 @@ int tsfi_hogan_authorize_card(hogan_umbrella_system *sys, const char *filepath, 
         }
     }
     
-    uint8_t approved = 0;
-    if (acc && (acc->balance >= acc->balance_held + amount)) {
-        if (acc->daily_limit == 0 || (acc->daily_spent + amount <= acc->daily_limit)) {
-            if (acc->card_spend_limit == 0 || (acc->card_spent_today + amount <= acc->card_spend_limit)) {
-                acc->balance_held += amount;
-                acc->daily_spent += amount;
-                acc->card_spent_today += amount;
-                acc->card_tx_count_today++;
-                approved = 1;
+    int decline_reason = 0;
+    if (acc) {
+        for (uint8_t i = 0; i < acc->blocked_merchant_count; i++) {
+            if (acc->blocked_merchants[i] == merchant_id) {
+                decline_reason = -5; // Merchant is blocked
+                break;
             }
         }
+        if (decline_reason == 0 && acc->card_tx_limit > 0 && acc->card_tx_count_today >= acc->card_tx_limit) {
+            decline_reason = -6; // Card transaction limit hit
+        }
+        if (decline_reason == 0 && acc->card_expiry_epoch > 0 && sys->current_epoch > acc->card_expiry_epoch) {
+            decline_reason = -7; // Card has expired
+        }
+        if (decline_reason == 0 && acc->min_card_auth_amount > 0 && amount < acc->min_card_auth_amount) {
+            decline_reason = -8; // Amount below minimum card authorization threshold
+        }
+        if (decline_reason == 0 && acc->max_card_auth_amount > 0 && amount > acc->max_card_auth_amount) {
+            decline_reason = -9; // Amount exceeds maximum card authorization threshold
+        }
+    } else {
+        decline_reason = -1; // Account missing
+    }
+    
+    uint8_t approved = 0;
+    if (decline_reason == 0) {
+        if (acc->balance >= acc->balance_held + amount) {
+            if (acc->daily_limit == 0 || (acc->daily_spent + amount <= acc->daily_limit)) {
+                if (acc->card_spend_limit == 0 || (acc->card_spent_today + amount <= acc->card_spend_limit)) {
+                    acc->balance_held += amount;
+                    acc->daily_spent += amount;
+                    acc->card_spent_today += amount;
+                    acc->card_tx_count_today++;
+                    approved = 1;
+                } else {
+                    decline_reason = -1; // card spend limit hit
+                }
+            } else {
+                decline_reason = -1; // daily spend limit hit
+            }
+        } else {
+            decline_reason = -1; // insufficient balance
+        }
+    }
+    
+    if (!approved && acc) {
+        acc->card_fail_count_today++;
+        if (acc->card_fail_limit > 0 && acc->card_fail_count_today >= acc->card_fail_limit) {
+            // Auto block card!
+            uint8_t already_blocked = 0;
+            for (size_t idx = 0; idx < sys->blocked_card_count; idx++) {
+                if (sys->blocked_cards[idx] == card_id) {
+                    already_blocked = 1;
+                    break;
+                }
+            }
+            if (!already_blocked && sys->blocked_card_count < HOGAN_MAX_BLOCKED_CARDS) {
+                sys->blocked_cards[sys->blocked_card_count++] = card_id;
+                // Log the auto-lock to the sequential file "hogan_fail_locks.dat.bin"
+                hogan_card_fail_limit_entry lock_entry = { account_id, acc->card_fail_limit, card_id, 0 }; // 0 for system autolock authority
+                tsfi_hogan_write_seq_record("hogan_fail_locks.dat.bin", (const uint8_t *)&lock_entry, sizeof(hogan_card_fail_limit_entry));
+            }
+        }
+    }
+    
+    if (decline_reason == 0 && approved) {
+        decline_reason = 0;
+    } else if (decline_reason == 0) {
+        decline_reason = -1;
     }
     
     hogan_card_entry entry = { card_id, account_id, merchant_id, amount, approved };
@@ -963,7 +1057,7 @@ int tsfi_hogan_authorize_card(hogan_umbrella_system *sys, const char *filepath, 
     sys->live_processing_enabled = original_live_state;
     
     if (write_res != 0) return write_res;
-    return approved ? 0 : -1; // return 0 if approved, -1 if declined due to limit
+    return decline_reason;
 }
 
 int tsfi_hogan_apply_account_stop(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint8_t new_status, uint32_t authority_id) {
@@ -1831,6 +1925,76 @@ int tsfi_hogan_update_max_card_auth(hogan_umbrella_system *sys, const char *file
     acc->max_card_auth_amount = new_max_amount;
     
     int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_max_card_auth_entry));
+    
+    sys->live_processing_enabled = original_live_state;
+    return write_res;
+}
+
+int tsfi_hogan_update_card_fail_limit(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t new_fail_limit, uint32_t authority_id) {
+    // Enforce Rule 13: file extension must end with .dat.bin
+    const char *ext = strrchr(filepath, '.');
+    if (!ext || strcmp(ext, ".bin") != 0) {
+        if (!ext || strcmp(ext - 4, ".dat.bin") != 0) {
+            return -3; // Invalid extension
+        }
+    }
+
+    // Disable live queue during administrative action
+    uint8_t original_live_state = sys->live_processing_enabled;
+    sys->live_processing_enabled = 0;
+    
+    hogan_account *acc = NULL;
+    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
+        if (sys->accounts[i].active && sys->accounts[i].account_id == account_id) {
+            acc = &sys->accounts[i];
+            break;
+        }
+    }
+    
+    if (!acc) {
+        sys->live_processing_enabled = original_live_state;
+        return -1; // account not found
+    }
+    
+    hogan_card_fail_limit_entry entry = { account_id, acc->card_fail_limit, new_fail_limit, authority_id };
+    acc->card_fail_limit = new_fail_limit;
+    
+    int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_card_fail_limit_entry));
+    
+    sys->live_processing_enabled = original_live_state;
+    return write_res;
+}
+
+int tsfi_hogan_update_overdraft_fee(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_fee_amount, uint32_t authority_id) {
+    // Enforce Rule 13: file extension must end with .dat.bin
+    const char *ext = strrchr(filepath, '.');
+    if (!ext || strcmp(ext, ".bin") != 0) {
+        if (!ext || strcmp(ext - 4, ".dat.bin") != 0) {
+            return -3; // Invalid extension
+        }
+    }
+
+    // Disable live queue during administrative action
+    uint8_t original_live_state = sys->live_processing_enabled;
+    sys->live_processing_enabled = 0;
+    
+    hogan_account *acc = NULL;
+    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
+        if (sys->accounts[i].active && sys->accounts[i].account_id == account_id) {
+            acc = &sys->accounts[i];
+            break;
+        }
+    }
+    
+    if (!acc) {
+        sys->live_processing_enabled = original_live_state;
+        return -1; // account not found
+    }
+    
+    hogan_overdraft_fee_entry entry = { account_id, acc->overdraft_fee_amount, new_fee_amount, authority_id };
+    acc->overdraft_fee_amount = new_fee_amount;
+    
+    int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_overdraft_fee_entry));
     
     sys->live_processing_enabled = original_live_state;
     return write_res;

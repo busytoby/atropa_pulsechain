@@ -1436,6 +1436,103 @@ int main(void) {
     remove("hogan_tx.dat.bin"); // clean up
     printf("  [PASS] Card maximum authorization thresholds, amount checks, and override logs verified.\n");
 
+    // 41. Test Card Daily Failures Lock Manager (Daily Failure Lock)
+    printf("[E2E] Testing Card Daily Failures Lock Manager...\n");
+    const char *faillock_path = "hogan_faillock.dat.bin";
+    remove(faillock_path); // ensure clean start
+    remove("hogan_fail_locks.dat.bin"); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system fail_sys;
+    tsfi_hogan_init(&fail_sys);
+    assert(tsfi_hogan_register_account(&fail_sys, 1001, 10000) == 0); // Alice: 10,000 units
+    
+    // Set Alice's card failure limit to 2 failures
+    assert(tsfi_hogan_update_card_fail_limit(&fail_sys, faillock_path, 1001, 2, 777) == 0);
+    assert(tsfi_hogan_update_card_fail_limit(&fail_sys, "hogan_faillock.json", 1001, 2, 777) == -3); // Rule 13 check
+    
+    // Trigger first authorization failure (insufficient funds, request 20000)
+    assert(tsfi_hogan_authorize_card(&fail_sys, "hogan_tx.dat.bin", 5005, 1001, 9009, 20000) == -1);
+    
+    // Trigger second authorization failure (insufficient funds, request 30000)
+    // This second failure should trigger an automatic block (returns -1 on auth, card becomes blocked)
+    assert(tsfi_hogan_authorize_card(&fail_sys, "hogan_tx.dat.bin", 5005, 1001, 9009, 30000) == -1);
+    
+    // Third authorization attempt should be blocked by status lock (returns -4)
+    assert(tsfi_hogan_authorize_card(&fail_sys, "hogan_tx.dat.bin", 5005, 1001, 9009, 100) == -4);
+    
+    // Read failure lock entry and verify override log
+    uint8_t read_flbuf[sizeof(hogan_card_fail_limit_entry)];
+    size_t fl_size = 0;
+    assert(tsfi_hogan_read_seq_record(faillock_path, 0, read_flbuf, &fl_size) == 0);
+    assert(fl_size == sizeof(hogan_card_fail_limit_entry));
+    const hogan_card_fail_limit_entry *flentry = (const hogan_card_fail_limit_entry *)read_flbuf;
+    assert(flentry->account_id == 1001);
+    assert(flentry->previous_fail_limit == 0);
+    assert(flentry->new_fail_limit == 2);
+    assert(flentry->authority_id == 777);
+    
+    // Read auto lock sequential log entries
+    uint8_t read_albuf[sizeof(hogan_card_fail_limit_entry)];
+    size_t al_size = 0;
+    assert(tsfi_hogan_read_seq_record("hogan_fail_locks.dat.bin", 0, read_albuf, &al_size) == 0);
+    assert(al_size == sizeof(hogan_card_fail_limit_entry));
+    const hogan_card_fail_limit_entry *alentry = (const hogan_card_fail_limit_entry *)read_albuf;
+    assert(alentry->account_id == 1001);
+    assert(alentry->new_fail_limit == 5005); // card_id is stored in new_fail_limit field for system auto lock representation
+    assert(alentry->authority_id == 0);
+    
+    remove(faillock_path); // clean up
+    remove("hogan_fail_locks.dat.bin"); // clean up
+    remove("hogan_tx.dat.bin"); // clean up
+    printf("  [PASS] Card failure count limits, auto-blocking, and lock logs verified.\n");
+
+    // 42. Test Account Overdraft Fee Accumulator Manager (Overdraft Fee Booking)
+    printf("[E2E] Testing Account Overdraft Fee Accumulator Manager...\n");
+    const char *odfee_path = "hogan_odfee.dat.bin";
+    remove(odfee_path); // ensure clean start
+    
+    hogan_umbrella_system odfee_sys;
+    tsfi_hogan_init(&odfee_sys);
+    assert(tsfi_hogan_register_account(&odfee_sys, 1001, 1000) == 0); // Alice: 1000 balance
+    assert(tsfi_hogan_register_account(&odfee_sys, 2002, 500) == 0);  // Bob: 500 balance
+    assert(tsfi_hogan_register_account(&odfee_sys, 3003, 10000) == 0); // Backup: 10,000 balance
+    
+    // Set Alice's backup to account 3003
+    odfee_sys.accounts[0].backup_account_id = 3003;
+    odfee_sys.accounts[0].has_backup = 1;
+    
+    // Set Alice's overdraft fee amount to 15 units
+    assert(tsfi_hogan_update_overdraft_fee(&odfee_sys, odfee_path, 1001, 15, 888) == 0);
+    assert(tsfi_hogan_update_overdraft_fee(&odfee_sys, "hogan_odfee.json", 1001, 15, 888) == -3); // Rule 13 check
+    
+    // Dispatch overnight transfer transaction for 1200 units (requires 200 overdraft deficit)
+    assert(tsfi_hogan_dispatch_tx(&odfee_sys, 1001, 2002, 1200, VM_EVM) == 0);
+    
+    // Run overnight reconciliation
+    assert(tsfi_hogan_overnight_reconciliation(&odfee_sys, "hogan_lfs.dat.bin") == 0);
+    
+    // Verify backup balance (10,000 - 200 = 9800)
+    assert(odfee_sys.accounts[2].balance == 9800);
+    // Verify Alice's balance (1000 + 200 - 1200 = 0. Then minus 15 fee = 0, with 15 fee added to overdraft_drawn)
+    assert(odfee_sys.accounts[0].balance == 0);
+    assert(odfee_sys.accounts[0].overdraft_drawn == 215); // 200 deficit + 15 fee
+    
+    // Read sequential log file and verify entries
+    uint8_t read_ofbuf[sizeof(hogan_overdraft_fee_entry)];
+    size_t of_size = 0;
+    assert(tsfi_hogan_read_seq_record(odfee_path, 0, read_ofbuf, &of_size) == 0);
+    assert(of_size == sizeof(hogan_overdraft_fee_entry));
+    
+    const hogan_overdraft_fee_entry *ofentry = (const hogan_overdraft_fee_entry *)read_ofbuf;
+    assert(ofentry->account_id == 1001);
+    assert(ofentry->previous_fee_amount == 0);
+    assert(ofentry->new_fee_amount == 15);
+    assert(ofentry->authority_id == 888);
+    
+    remove(odfee_path); // clean up
+    printf("  [PASS] Overdraft transaction fees, deductions, and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }
