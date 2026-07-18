@@ -1142,6 +1142,32 @@ int tsfi_cw_marist_audit_isolation(const tsfi_cw_marist_guest_profile *profile, 
     return 0;
 }
 
+int tsfi_cw_marist_audit_sysplex(const tsfi_cw_marist_sysplex_cf *cf, int *alert_out) {
+    if (!cf || !alert_out) return -1;
+    
+    if (cf->failed_requests > 10 || cf->avg_response_time_us > 500 || cf->buffer_util_percent > 90.0) {
+        *alert_out = 1;
+    } else {
+        *alert_out = 0;
+    }
+    return 0;
+}
+
+int tsfi_cw_marist_calc_cpu_shares(const tsfi_cw_marist_zvm_scheduler *sched, double share_allocs_out[16]) {
+    if (!sched || !share_allocs_out) return -1;
+    if (sched->vm_count < 0 || sched->vm_count > 16) return -2;
+    
+    for (int i = 0; i < sched->vm_count; i++) {
+        if (sched->total_shares > 0) {
+            share_allocs_out[i] = (double)sched->shares[i] / (double)sched->total_shares;
+        } else {
+            share_allocs_out[i] = 0.0;
+        }
+    }
+    return 0;
+}
+
+
 
 
 

@@ -939,5 +939,23 @@ typedef struct {
 int tsfi_cw_marist_audit_tenant(const tsfi_cw_marist_tenant *tenant, int *is_nominal_out);
 int tsfi_cw_marist_audit_isolation(const tsfi_cw_marist_guest_profile *profile, int *is_secure_out);
 
+// Marist z/OS Parallel Sysplex Coupling Facility Telemetry
+typedef struct {
+    int total_requests;
+    int failed_requests;
+    int avg_response_time_us;
+    double buffer_util_percent;
+} tsfi_cw_marist_sysplex_cf;
+
+// Marist z/VM CPU Share Scheduler
+typedef struct {
+    int vm_count;
+    int shares[16];
+    int total_shares;
+} tsfi_cw_marist_zvm_scheduler;
+
+int tsfi_cw_marist_audit_sysplex(const tsfi_cw_marist_sysplex_cf *cf, int *alert_out);
+int tsfi_cw_marist_calc_cpu_shares(const tsfi_cw_marist_zvm_scheduler *sched, double share_allocs_out[16]);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

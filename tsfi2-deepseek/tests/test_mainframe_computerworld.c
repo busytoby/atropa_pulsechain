@@ -1875,6 +1875,24 @@ static void test_new_mainframe_features(void) {
     tsfi_cw_marist_guest_profile profile_insecure = { "GUEST02", 'G', 1, 1 }; // Class G, has spool read -> INSECURE!
     assert(tsfi_cw_marist_audit_isolation(&profile_insecure, &secure) == 0);
     assert(secure == 0);
+
+    // Marist Sysplex Coupling Facility test
+    tsfi_cw_marist_sysplex_cf cf_ok = { 1000, 2, 80, 45.0 };
+    int sysplex_alert = 0;
+    assert(tsfi_cw_marist_audit_sysplex(&cf_ok, &sysplex_alert) == 0);
+    assert(sysplex_alert == 0);
+
+    tsfi_cw_marist_sysplex_cf cf_err = { 1000, 15, 80, 45.0 }; // failed requests > 10
+    assert(tsfi_cw_marist_audit_sysplex(&cf_err, &sysplex_alert) == 0);
+    assert(sysplex_alert == 1);
+
+    // Marist z/VM Scheduler test
+    tsfi_cw_marist_zvm_scheduler sched = { 3, { 100, 200, 200 }, 500 };
+    double allocs[16];
+    assert(tsfi_cw_marist_calc_cpu_shares(&sched, allocs) == 0);
+    assert(fabs(allocs[0] - 0.20) < 0.01);
+    assert(fabs(allocs[1] - 0.40) < 0.01);
+    assert(fabs(allocs[2] - 0.40) < 0.01);
 }
 
 int main(void) {
