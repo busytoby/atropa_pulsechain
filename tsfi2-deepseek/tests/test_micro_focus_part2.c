@@ -1322,6 +1322,22 @@ int main(void) {
     assert(burst_valid == 1);
     printf("  [PASS] NATO STANAG 5066 Burst Limit Validator verified.\n");
 
+    // 271. Verify NATO STANAG 5066 Interface Data Flow Direction Matcher
+    printf("[TEST] Validating NATO STANAG 5066 Flow Direction Matcher...\n");
+    int flow_valid = -1;
+    int flow_res = tsfi_mf_nato_verify_flow_direction(1, &flow_valid);
+    assert(flow_res == 0);
+    assert(flow_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Flow Direction Matcher verified.\n");
+
+    // 272. Verify NATO STANAG 5066 Link-Layer Multi-Scan Selector
+    printf("[TEST] Validating NATO STANAG 5066 Multi-Scan Selector...\n");
+    int scan_valid = -1;
+    int scan_res = tsfi_mf_nato_verify_multiscan_mode(1, &scan_valid);
+    assert(scan_res == 0);
+    assert(scan_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Multi-Scan Selector verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

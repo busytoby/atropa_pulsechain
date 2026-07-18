@@ -1769,4 +1769,16 @@ int tsfi_mf_nato_verify_burst_limit(int segment_count, int *is_valid) {
     return 0;
 }
 
+int tsfi_mf_nato_verify_flow_direction(int direction, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (direction == 0 || direction == 1) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_multiscan_mode(int mode, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (mode == 0 || mode == 1) ? 1 : 0;
+    return 0;
+}
+
 

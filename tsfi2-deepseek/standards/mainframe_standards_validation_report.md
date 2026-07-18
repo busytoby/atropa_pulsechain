@@ -346,5 +346,7 @@
 | 412 | NATO STANAG 5066 Frame Check Sequence (FCS) Type Checker | PASS | Verifies that FCS checksum selector flags match standard values | Volume 33 |
 | 413 | NATO STANAG 5066 Client Handshake Confirmation Matcher | PASS | Validates connection status confirmation flag on client handshake | Volume 33 |
 | 414 | NATO STANAG 5066 Burst Packet Segment Count Validator | PASS | Verifies link-layer transmission queue bursts stay within limits | Volume 33 |
+| 415 | NATO STANAG 5066 Interface Data Flow Direction Matcher | PASS | Audits interface routing flow direction flags conform to standards | Volume 33 |
+| 416 | NATO STANAG 5066 Link-Layer Multi-Scan Selector | PASS | Validates multi-scan mode parameter flags match standard options | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 414 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 416 Scenarios validated successfully)
