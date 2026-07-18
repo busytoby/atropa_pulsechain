@@ -450,6 +450,42 @@ void draw_ui_elements(VulkanSystem *s) {
     // Draw connection line
     draw_rounded_rect(s->paint_buffer, 668, 140, 4, 20, 0, node_color);
 
+    // Draw Vulkan VSAM 2-3 Index Tree Visualizer
+    draw_rounded_rect(s->paint_buffer, 600, 205, 180, 100, 4, 0xFF050515);
+    draw_rounded_rect(s->paint_buffer, 605, 210, 170, 90, 2, 0xFF7D38EF); // Purple-ish
+    draw_debug_text(s->paint_buffer, 610, 215, "UNT VSAM KSDS TREE", 0xFF7D38EF, true);
+    // Draw tree root node
+    draw_rounded_rect(s->paint_buffer, 675, 230, 30, 15, 2, 0xFFFFFFFF);
+    draw_debug_text(s->paint_buffer, 680, 233, "R1", 0xFFFFFFFF, true);
+    // Draw tree child nodes
+    draw_rounded_rect(s->paint_buffer, 620, 260, 30, 15, 2, 0xFF00FF00);
+    draw_debug_text(s->paint_buffer, 625, 263, "C1", 0xFF00FF00, true);
+    draw_rounded_rect(s->paint_buffer, 660, 260, 30, 15, 2, 0xFF00FF00);
+    draw_debug_text(s->paint_buffer, 665, 263, "C2", 0xFF00FF00, true);
+    draw_rounded_rect(s->paint_buffer, 700, 260, 30, 15, 2, 0xFF00FF00);
+    draw_debug_text(s->paint_buffer, 705, 263, "C3", 0xFF00FF00, true);
+    // Draw connection lines
+    draw_rounded_rect(s->paint_buffer, 650, 248, 20, 2, 0, 0xFFFFFFFF);
+    draw_rounded_rect(s->paint_buffer, 685, 248, 2, 10, 0, 0xFFFFFFFF);
+    draw_rounded_rect(s->paint_buffer, 690, 248, 20, 2, 0, 0xFFFFFFFF);
+
+    // Draw Vulkan Marist Parallel Sysplex Monitor
+    draw_rounded_rect(s->paint_buffer, 600, 315, 180, 100, 4, 0xFF050515);
+    draw_rounded_rect(s->paint_buffer, 605, 320, 170, 90, 2, 0xFF38EF7D); // Greenish neon
+    draw_debug_text(s->paint_buffer, 610, 325, "MARIST SYSPLEX MAP", 0xFF38EF7D, true);
+    // Draw sysplex guest nodes
+    draw_rounded_rect(s->paint_buffer, 620, 345, 40, 20, 2, 0xFFFFFFFF);
+    draw_debug_text(s->paint_buffer, 625, 348, "SYS1", 0xFFFFFFFF, true);
+    draw_rounded_rect(s->paint_buffer, 720, 345, 40, 20, 2, 0xFFFFFFFF);
+    draw_debug_text(s->paint_buffer, 725, 348, "SYS2", 0xFFFFFFFF, true);
+    draw_rounded_rect(s->paint_buffer, 670, 375, 40, 20, 2, 0xFF00FFFF);
+    draw_debug_text(s->paint_buffer, 675, 378, "CF1", 0xFF00FFFF, true);
+    // Draw communication link lines
+    draw_rounded_rect(s->paint_buffer, 660, 355, 10, 2, 0, 0xFFFFFFFF);
+    draw_rounded_rect(s->paint_buffer, 710, 355, 10, 2, 0, 0xFFFFFFFF);
+    draw_rounded_rect(s->paint_buffer, 650, 365, 2, 10, 0, 0xFFFFFFFF);
+    draw_rounded_rect(s->paint_buffer, 730, 365, 2, 10, 0, 0xFFFFFFFF);
+
     // Draw live Vulkan knowledge graph of LP connections
     extern void draw_vulkan_knowledge_graph(VulkanSystem *s);
     draw_vulkan_knowledge_graph(s);
