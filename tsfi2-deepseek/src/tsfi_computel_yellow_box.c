@@ -91,3 +91,33 @@ int tsfi_mf_yellow_box_secure_telegram_route(const char *ssn, int dmf_deceased, 
     return 0;
 }
 
+int tsfi_mf_yellow_box_scramble_keypad(uint8_t raw_keycode, uint8_t *scrambled_keycode) {
+    if (!scrambled_keycode) return -1;
+    uint32_t left = raw_keycode;
+    uint32_t right = 0x55;
+    tsfi_mf_ussr_gost_scramble(&left, &right, 0x1234);
+    *scrambled_keycode = (uint8_t)(left & 0xFF);
+    return 0;
+}
+
+int tsfi_mf_gost_encrypt_cfb(const uint8_t *iv, const uint8_t *in, size_t size, const uint32_t *keys_8words, uint8_t *out) {
+    if (!iv || !in || !out || !keys_8words) return -1;
+    
+    uint32_t left = ((uint32_t)iv[0] << 24) | ((uint32_t)iv[1] << 16) | ((uint32_t)iv[2] << 8) | iv[3];
+    uint32_t right = ((uint32_t)iv[4] << 24) | ((uint32_t)iv[5] << 16) | ((uint32_t)iv[6] << 8) | iv[7];
+    
+    for (size_t i = 0; i < size; i++) {
+        uint32_t temp_l = left;
+        uint32_t temp_r = right;
+        tsfi_mf_ussr_gost_encrypt_32(&temp_l, &temp_r, keys_8words);
+        
+        uint8_t key_byte = (temp_l >> 24) & 0xFF;
+        out[i] = in[i] ^ key_byte;
+        
+        left = (left << 8) | (right >> 24);
+        right = (right << 8) | out[i];
+    }
+    return 0;
+}
+
+

@@ -41,6 +41,25 @@ int main(void) {
     assert(telegram[18] == 0x7E);
     printf("[TEST] Yellow Box Secure Telegram successfully routed and framed (19 bytes).\n");
 
+    // Test Keypad Scrambler
+    printf("[TEST] Validating Keypad Scrambler...\n");
+    uint8_t scrambled_code = 0;
+    rc = tsfi_mf_yellow_box_scramble_keypad(0x41, &scrambled_code);
+    assert(rc == 0);
+    assert(scrambled_code != 0x41);
+    printf("[TEST] Keypad code successfully scrambled.\n");
+
+    // Test GOST CFB stream encryption
+    printf("[TEST] Validating GOST CFB encryption...\n");
+    uint8_t iv[8] = {1, 2, 3, 4, 5, 6, 7, 8};
+    uint8_t stream_in[] = "ContinuousTelemetryStream";
+    uint8_t stream_out[32] = {0};
+    uint32_t cfb_keys[8] = {9, 10, 11, 12, 13, 14, 15, 16};
+    rc = tsfi_mf_gost_encrypt_cfb(iv, stream_in, sizeof(stream_in), cfb_keys, stream_out);
+    assert(rc == 0);
+    assert(stream_out[0] != stream_in[0]);
+    printf("[TEST] GOST CFB stream encryption completed successfully.\n");
+
     printf("[SUCCESS] All Yellow Box S-Box scrambler integration tests passed.\n");
     return 0;
 }

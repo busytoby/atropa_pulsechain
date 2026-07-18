@@ -16,4 +16,7 @@ int yellow_box_scramble_signal(const uint8_t *in, size_t size, uint8_t *out);
 
 int tsfi_mf_yellow_box_secure_telegram_route(const char *ssn, int dmf_deceased, int ssn_allocated, int defcon_level, uint8_t *out_telegram, size_t *out_size);
 
+int tsfi_mf_yellow_box_scramble_keypad(uint8_t raw_keycode, uint8_t *scrambled_keycode);
+int tsfi_mf_gost_encrypt_cfb(const uint8_t *iv, const uint8_t *in, size_t size, const uint32_t *keys_8words, uint8_t *out);
+
 #endif // TSFI_COMPUTEL_YELLOW_BOX_H
