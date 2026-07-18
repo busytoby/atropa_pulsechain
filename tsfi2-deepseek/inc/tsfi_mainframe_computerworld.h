@@ -708,5 +708,44 @@ typedef struct {
 
 int tsfi_cw_depreciation_calculate(const tsfi_cw_depreciation_asset *asset, char method, int target_year, double *expense_out, double *book_value_out);
 
+// Simplex Transportation Optimizer (2x2)
+typedef struct {
+    double supply[2];
+    double demand[2];
+    double cost[2][2];
+} tsfi_cw_transportation_problem;
+
+int tsfi_cw_transport_optimize(const tsfi_cw_transportation_problem *prob, double shipment[2][2], double *total_cost_out);
+
+// Three-Way PO Matcher
+typedef struct {
+    char po_id[8];
+    char part_id[8];
+    int quantity;
+    double unit_price;
+} tsfi_cw_po_record;
+
+typedef struct {
+    char po_id[8];
+    char part_id[8];
+    int quantity_received;
+} tsfi_cw_receiving_record;
+
+typedef struct {
+    char po_id[8];
+    char part_id[8];
+    int quantity_invoiced;
+    double invoice_amount;
+} tsfi_cw_invoice_record;
+
+typedef struct {
+    int matches;
+    int qty_mismatch;  // flag 1 if received != invoiced or PO quantity
+    int price_mismatch; // flag 1 if invoice amount != invoiced_qty * PO unit price
+    int status_approved; // flag 1 if matched and correct, else 0
+} tsfi_cw_match_result;
+
+int tsfi_cw_three_way_match(const tsfi_cw_po_record *po, const tsfi_cw_receiving_record *rr, const tsfi_cw_invoice_record *invoice, tsfi_cw_match_result *result_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

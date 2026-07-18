@@ -1569,6 +1569,37 @@ static void test_new_mainframe_features(void) {
     assert(tsfi_cw_depreciation_calculate(&asset, 'D', 2, &dep_exp, &book_val) == 0);
     assert(fabs(dep_exp - 2400.0) < 0.01);
     assert(fabs(book_val - 3600.0) < 0.01);
+
+    // Simplex Transportation Optimizer test
+    tsfi_cw_transportation_problem trans_prob = {
+        { 50.0, 50.0 }, // Supply
+        { 40.0, 60.0 }, // Demand
+        {
+            { 2.0, 5.0 }, // Cost from S1 to D1, D2
+            { 3.0, 4.0 }  // Cost from S2 to D1, D2
+        }
+    };
+    double shipment[2][2];
+    double trans_cost = 0.0;
+    assert(tsfi_cw_transport_optimize(&trans_prob, shipment, &trans_cost) == 0);
+    // S1 to D1: 40, S1 to D2: 10, S2 to D1: 0, S2 to D2: 50
+    // Total Cost = 40*2 + 10*5 + 0*3 + 50*4 = 80 + 50 + 200 = 330
+    assert(shipment[0][0] == 40.0);
+    assert(shipment[0][1] == 10.0);
+    assert(shipment[1][0] == 0.0);
+    assert(shipment[1][1] == 50.0);
+    assert(trans_cost == 330.0);
+
+    // Three-Way PO Matcher test
+    tsfi_cw_po_record po_rec = { "PO100", "PART9", 100, 1.50 };
+    tsfi_cw_receiving_record rr_rec = { "PO100", "PART9", 100 };
+    tsfi_cw_invoice_record inv_rec = { "PO100", "PART9", 100, 150.0 };
+    tsfi_cw_match_result match_res;
+    assert(tsfi_cw_three_way_match(&po_rec, &rr_rec, &inv_rec, &match_res) == 0);
+    assert(match_res.matches == 1);
+    assert(match_res.qty_mismatch == 0);
+    assert(match_res.price_mismatch == 0);
+    assert(match_res.status_approved == 1);
 }
 
 int main(void) {

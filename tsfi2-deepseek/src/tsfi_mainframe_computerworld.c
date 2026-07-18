@@ -602,6 +602,76 @@ int tsfi_cw_depreciation_calculate(const tsfi_cw_depreciation_asset *asset, char
     return 0;
 }
 
+int tsfi_cw_transport_optimize(const tsfi_cw_transportation_problem *prob, double shipment[2][2], double *total_cost_out) {
+    if (!prob || !shipment || !total_cost_out) return -1;
+    
+    // Check feasibility: total supply must equal total demand for this simplified solver
+    double total_supply = prob->supply[0] + prob->supply[1];
+    double total_demand = prob->demand[0] + prob->demand[1];
+    if (fabs(total_supply - total_demand) > 1e-9) return -2;
+    
+    double s1 = prob->supply[0];
+    double s2 = prob->supply[1];
+    double d1 = prob->demand[0];
+    
+    // Bounds on x11: max(0, d1 - s2) <= x11 <= min(d1, s1)
+    double x11_min = (0.0 > (d1 - s2)) ? 0.0 : (d1 - s2);
+    double x11_max = (d1 < s1) ? d1 : s1;
+    
+    if (x11_min > x11_max) return -3; // Infeasible bounds
+    
+    // Coefficients of x11 in cost function: C11 - C12 - C21 + C22
+    double coeff = prob->cost[0][0] - prob->cost[0][1] - prob->cost[1][0] + prob->cost[1][1];
+    
+    double best_x11 = (coeff < 0.0) ? x11_max : x11_min;
+    
+    shipment[0][0] = best_x11;
+    shipment[0][1] = s1 - best_x11;
+    shipment[1][0] = d1 - best_x11;
+    shipment[1][1] = s2 - (d1 - best_x11);
+    
+    *total_cost_out = 0.0;
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 2; j++) {
+            *total_cost_out += shipment[i][j] * prob->cost[i][j];
+        }
+    }
+    
+    return 0;
+}
+
+int tsfi_cw_three_way_match(const tsfi_cw_po_record *po, const tsfi_cw_receiving_record *rr, const tsfi_cw_invoice_record *invoice, tsfi_cw_match_result *result_out) {
+    if (!po || !rr || !invoice || !result_out) return -1;
+    
+    result_out->matches = 0;
+    result_out->qty_mismatch = 0;
+    result_out->price_mismatch = 0;
+    result_out->status_approved = 0;
+    
+    if (strcmp(po->po_id, rr->po_id) == 0 && strcmp(po->po_id, invoice->po_id) == 0 &&
+        strcmp(po->part_id, rr->part_id) == 0 && strcmp(po->part_id, invoice->part_id) == 0) {
+        result_out->matches = 1;
+    } else {
+        return 0; // Not matched
+    }
+    
+    if (rr->quantity_received != po->quantity || invoice->quantity_invoiced != po->quantity) {
+        result_out->qty_mismatch = 1;
+    }
+    
+    double expected_amt = invoice->quantity_invoiced * po->unit_price;
+    if (fabs(invoice->invoice_amount - expected_amt) > 1e-2) {
+        result_out->price_mismatch = 1;
+    }
+    
+    if (result_out->qty_mismatch == 0 && result_out->price_mismatch == 0) {
+        result_out->status_approved = 1;
+    }
+    
+    return 0;
+}
+
+
 
 
 
