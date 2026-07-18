@@ -1812,6 +1812,18 @@ static void test_new_mainframe_features(void) {
     assert(suspended == 0);
     assert(tsfi_cw_icp_audit_grace_period(35, 30, &suspended) == 0);
     assert(suspended == 1);
+
+    // ICP Upgrade Pricing test
+    double up_price = 0.0;
+    assert(tsfi_cw_icp_calculate_upgrade_price(8000.0, 10000.0, 0.20, &up_price) == 0);
+    assert(fabs(up_price - 1600.0) < 0.1); // (10000 - 8000) * 0.80
+
+    // ICP SLA Auditor test
+    double rebate = 0.0;
+    assert(tsfi_cw_icp_audit_support_sla(120, 60, 500.0, &rebate) == 0);
+    assert(fabs(rebate - 25.0) < 0.1); // 500 * 0.05
+    assert(tsfi_cw_icp_audit_support_sla(45, 60, 500.0, &rebate) == 0);
+    assert(rebate == 0.0);
 }
 
 int main(void) {

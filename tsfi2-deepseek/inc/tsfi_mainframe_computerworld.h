@@ -884,5 +884,9 @@ int tsfi_cw_icp_assign_category(tsfi_cw_icp_category_map *maps, int *map_count, 
 int tsfi_cw_icp_query_category(const tsfi_cw_icp_category_map *maps, int map_count, const char *category, char ids_out[][8], int *ids_count_out);
 int tsfi_cw_icp_audit_grace_period(int days_late, int allowed_grace_days, int *suspended_out);
 
+// ICP Upgrade Pricing and Support SLA Functions
+int tsfi_cw_icp_calculate_upgrade_price(double current_version_price, double new_version_price, double loyalty_discount_rate, double *upgrade_price_out);
+int tsfi_cw_icp_audit_support_sla(int response_time_mins, int target_sla_mins, double contract_monthly_fee, double *rebate_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

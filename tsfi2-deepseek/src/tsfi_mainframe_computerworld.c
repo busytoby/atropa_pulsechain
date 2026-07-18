@@ -1059,6 +1059,27 @@ int tsfi_cw_icp_audit_grace_period(int days_late, int allowed_grace_days, int *s
     return 0;
 }
 
+int tsfi_cw_icp_calculate_upgrade_price(double current_version_price, double new_version_price, double loyalty_discount_rate, double *upgrade_price_out) {
+    if (current_version_price < 0.0 || new_version_price < 0.0 || loyalty_discount_rate < 0.0 || loyalty_discount_rate > 1.0 || !upgrade_price_out) return -1;
+    
+    double diff = new_version_price - current_version_price;
+    if (diff < 0.0) diff = 0.0;
+    *upgrade_price_out = diff * (1.0 - loyalty_discount_rate);
+    return 0;
+}
+
+int tsfi_cw_icp_audit_support_sla(int response_time_mins, int target_sla_mins, double contract_monthly_fee, double *rebate_out) {
+    if (response_time_mins < 0 || target_sla_mins <= 0 || contract_monthly_fee < 0.0 || !rebate_out) return -1;
+    
+    if (response_time_mins > target_sla_mins) {
+        *rebate_out = contract_monthly_fee * 0.05;
+    } else {
+        *rebate_out = 0.0;
+    }
+    return 0;
+}
+
+
 
 
 
