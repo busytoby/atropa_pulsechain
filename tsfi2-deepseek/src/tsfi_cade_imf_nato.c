@@ -477,3 +477,15 @@ int tsfi_mf_nato_verify_status_interval(int interval_sec, int *is_valid) {
     *is_valid = (interval_sec >= 1 && interval_sec <= 60) ? 1 : 0;
     return 0;
 }
+
+int tsfi_mf_nato_verify_up_ramp_rate(int rate_db, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (rate_db >= 1 && rate_db <= 20) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_down_ramp_rate(int rate_db, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (rate_db >= 1 && rate_db <= 15) ? 1 : 0;
+    return 0;
+}

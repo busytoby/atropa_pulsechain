@@ -577,5 +577,21 @@ int run_nato_stanag_tests(void) {
     assert(status_interval_valid == 1);
     printf("  [PASS] NATO Broadcast Status Interval Checker verified.\n");
 
+    // 321. Verify NATO Link-Layer Broadcast Channel Busy Hysteresis Up-Ramp Rate Matcher
+    printf("[TEST] Validating NATO Broadcast Busy Up-Ramp Rate Matcher...\n");
+    int up_ramp_valid = -1;
+    int up_ramp_res = tsfi_mf_nato_verify_up_ramp_rate(10, &up_ramp_valid);
+    assert(up_ramp_res == 0);
+    assert(up_ramp_valid == 1);
+    printf("  [PASS] NATO Broadcast Busy Up-Ramp Rate Matcher verified.\n");
+
+    // 322. Verify NATO Link-Layer Multi-Scan Collision Clear Signal Drop Down-Ramp Rate Matcher
+    printf("[TEST] Validating NATO Collision Clear Down-Ramp Rate Matcher...\n");
+    int down_ramp_valid = -1;
+    int down_ramp_res = tsfi_mf_nato_verify_down_ramp_rate(8, &down_ramp_valid);
+    assert(down_ramp_res == 0);
+    assert(down_ramp_valid == 1);
+    printf("  [PASS] NATO Collision Clear Down-Ramp Rate Matcher verified.\n");
+
     return 0;
 }

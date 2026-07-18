@@ -396,5 +396,7 @@
 | 462 | NATO Link-Layer Multi-Scan Collision Clear Signal Drop Sample Matcher | PASS | Audits required consecutive clear samples to confirm collision clearance | Volume 33 |
 | 463 | NATO Link-Layer Broadcast Collision Retry Backoff LFSR Size Matcher | PASS | Validates LFSR shift register bit capacities for random retry spacing | Volume 33 |
 | 464 | NATO Link-Layer Broadcast Channel Status Report Interval Checker | PASS | Audits telemetry periodic interval timings for status report transmission | Volume 33 |
+| 465 | NATO Link-Layer Broadcast Channel Busy Hysteresis Up-Ramp Rate Matcher | PASS | Validates busy evaluations up-ramp RSSI rates for signal onset checks | Volume 33 |
+| 466 | NATO Link-Layer Multi-Scan Collision Clear Signal Drop Down-Ramp Rate Matcher | PASS | Audits down-ramp signal decay rates for clear channel determinations | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 464 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 466 Scenarios validated successfully)
