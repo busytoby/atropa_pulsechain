@@ -685,3 +685,66 @@ int tsfi_cw_jcl_query_and_reset_substitution_stats_ex2(uint32_t *substitutions_o
     global_jcl_substitutions_performed = 0;
     return 0;
 }
+
+int tsfi_cw_jcl_simulate_s360_job(const char *jcl_script, char *log_out, int max_log_len, int *job_status_out) {
+    if (!jcl_script || !log_out || max_log_len <= 0 || !job_status_out) return -1;
+    *job_status_out = 0;
+    log_out[0] = '\0';
+    
+    int written = snprintf(log_out, max_log_len, "OS/360 Job Simulator Init\n");
+    if (written >= max_log_len) return 0;
+    
+    const char *line = jcl_script;
+    int has_job_card = 0;
+    int exec_steps = 0;
+    int dd_cards = 0;
+    
+    while (*line) {
+        const char *next_line = strchr(line, '\n');
+        int line_len = next_line ? (next_line - line) : (int)strlen(line);
+        
+        if (line_len > 0) {
+            if (line_len >= 2 && line[0] == '/' && line[1] == '/') {
+                char buf[256];
+                int copy_len = line_len < 255 ? line_len : 255;
+                strncpy(buf, line, copy_len);
+                buf[copy_len] = '\0';
+                
+                if (strstr(buf, " JOB ")) {
+                    has_job_card = 1;
+                    int cur_len = (int)strlen(log_out);
+                    snprintf(log_out + cur_len, max_log_len - cur_len, "Parsed JOB card: %s\n", buf);
+                } else if (strstr(buf, " EXEC ")) {
+                    exec_steps++;
+                    int cur_len = (int)strlen(log_out);
+                    snprintf(log_out + cur_len, max_log_len - cur_len, "Parsed EXEC step %d: %s\n", exec_steps, buf);
+                } else if (strstr(buf, " DD ")) {
+                    dd_cards++;
+                    int valid_dd = 0;
+                    if (strstr(buf, "DSN=") || strstr(buf, "DSNAME=") || strstr(buf, "*") || strstr(buf, "SYSOUT=")) {
+                        valid_dd = 1;
+                    }
+                    int cur_len = (int)strlen(log_out);
+                    snprintf(log_out + cur_len, max_log_len - cur_len, "Parsed DD card %d (valid=%d): %s\n", dd_cards, valid_dd, buf);
+                    if (!valid_dd) {
+                        *job_status_out = -2;
+                    }
+                }
+            }
+        }
+        
+        if (!next_line) break;
+        line = next_line + 1;
+    }
+    
+    if (!has_job_card) {
+        *job_status_out = -1;
+        int cur_len = (int)strlen(log_out);
+        snprintf(log_out + cur_len, max_log_len - cur_len, "Error: Missing JOB card\n");
+    } else {
+        int cur_len = (int)strlen(log_out);
+        snprintf(log_out + cur_len, max_log_len - cur_len, "Job completed. Steps: %d, DDs: %d, Status: %d\n", exec_steps, dd_cards, *job_status_out);
+    }
+    
+    return 0;
+}

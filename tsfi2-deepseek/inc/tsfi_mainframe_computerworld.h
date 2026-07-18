@@ -499,6 +499,7 @@ int tsfi_cw_cobol_verify_field_alignment_ex3(int offset, int size, int alignment
 int tsfi_cw_cobol_verify_field_alignment_ex4(int offset, int size, int alignment, int max_size, char pad_char, int margin, int fallback_pad);
 int tsfi_cw_cobol_verify_field_alignment_ex5(int offset, int size, int alignment, int max_size, char pad_char, int margin, int fallback_pad, int offset_limit);
 int tsfi_cw_cobol_verify_field_alignment_ex6(int offset, int size, int alignment, int max_size, char pad_char, int margin, int fallback_pad, int offset_limit, int *failure_offset_out);
+int tsfi_cw_cobol_validate_dod1967_compliance(const char *source_code, int *violation_count_out);
 
 typedef struct {
     uint32_t total_parity_checks;
@@ -541,6 +542,7 @@ int tsfi_cw_jcl_get_substitution_stats(uint32_t *substitutions_out);
 int tsfi_cw_jcl_query_and_reset_substitution_stats(uint32_t *substitutions_out);
 int tsfi_cw_jcl_query_and_reset_substitution_stats_ex(uint32_t *substitutions_out, int *limit_out);
 int tsfi_cw_jcl_query_and_reset_substitution_stats_ex2(uint32_t *substitutions_out, int *limit_out, int *boundary_out);
+int tsfi_cw_jcl_simulate_s360_job(const char *jcl_script, char *log_out, int max_log_len, int *job_status_out);
 
 // Y2K dates chronological order check, reset tool, query interface, query-and-reset tool, violations query formatter, query format-reset tool, violations list printer, print-reset list tool, list printer ex, print-reset list ex, violations format-reset ex settings, print-reset list ex 2, chronological violations list ex 2 format, chronological violations list ex 2 format-reset, and chronological violations list ex 3 format-reset tool
 int tsfi_cw_y2k_validate_chronological_order(uint32_t yy1, uint32_t mm1, uint32_t dd1, uint32_t yy2, uint32_t mm2, uint32_t dd2, uint32_t pivot);

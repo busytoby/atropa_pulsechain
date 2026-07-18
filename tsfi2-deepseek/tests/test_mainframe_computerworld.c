@@ -1339,6 +1339,24 @@ static void test_new_mainframe_features(void) {
     uint32_t Y2k_viols = 0;
     assert(tsfi_cw_y2k_format_and_reset_violations_ex3(y2k_format_buf, sizeof(y2k_format_buf), 50, "[LOG]", &viol_len, &Y2k_viols) == 0);
     assert(viol_len > 0);
+
+    // DoD 1967 COBOL Compliance Validation Suite test
+    int dod_viols = 0;
+    const char *compliant_src = "IDENTIFICATION DIVISION.\nENVIRONMENT DIVISION.\nDATA DIVISION.\nPROCEDURE DIVISION.\n";
+    assert(tsfi_cw_cobol_validate_dod1967_compliance(compliant_src, &dod_viols) == 0);
+    assert(dod_viols == 0);
+
+    const char *non_compliant_src = "IDENTIFICATION DIVISION.\nDATA DIVISION.\n88 CONDITION-VAL PIC X.\n";
+    assert(tsfi_cw_cobol_validate_dod1967_compliance(non_compliant_src, &dod_viols) == 0);
+    assert(dod_viols > 0); // Missing divisions + Level 88 violation
+
+    // OS/360 JCL Job Simulator test
+    const char *test_jcl = "//MYJOB JOB 'ACCOUNTING'\n//STEP1 EXEC PGM=IEFBR14\n//DD1 DD DSN=SYS1.LINKLIB,DISP=SHR\n";
+    char jcl_log[512];
+    int job_status = 0;
+    assert(tsfi_cw_jcl_simulate_s360_job(test_jcl, jcl_log, sizeof(jcl_log), &job_status) == 0);
+    assert(job_status == 0);
+    assert(strstr(jcl_log, "Job completed") != NULL);
 }
 
 int main(void) {

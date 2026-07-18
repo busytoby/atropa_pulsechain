@@ -892,3 +892,24 @@ int tsfi_cw_cobol_verify_field_alignment_ex6(int offset, int size, int alignment
     }
     return 0;
 }
+
+int tsfi_cw_cobol_validate_dod1967_compliance(const char *source_code, int *violation_count_out) {
+    if (!source_code || !violation_count_out) return -1;
+    int viols = 0;
+    
+    if (!strstr(source_code, "IDENTIFICATION DIVISION")) viols++;
+    if (!strstr(source_code, "ENVIRONMENT DIVISION")) viols++;
+    if (!strstr(source_code, "DATA DIVISION")) viols++;
+    if (!strstr(source_code, "PROCEDURE DIVISION")) viols++;
+    
+    const char *p = source_code;
+    while ((p = strstr(p, "88 ")) != NULL) {
+        if (p == source_code || *(p - 1) == ' ' || *(p - 1) == '\n' || *(p - 1) == '\t' || *(p - 1) == '\r') {
+            viols++;
+        }
+        p += 3;
+    }
+    
+    *violation_count_out = viols;
+    return 0;
+}
