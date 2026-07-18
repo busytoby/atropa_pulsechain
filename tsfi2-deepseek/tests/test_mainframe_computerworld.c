@@ -1998,6 +1998,19 @@ static void test_new_mainframe_features(void) {
     int uninit_cnt = 0;
     assert(tsfi_cw_niu_audit_working_storage(vars, 2, &uninit_cnt) == 0);
     assert(uninit_cnt == 1);
+
+    // ISU LEAP defense test
+    tsfi_cw_isu_leap_app app = { "LEAP01", 100.0, 50, 4 }; // Base: 100*0.05 + 50*0.1 = 10; NATO rating 4 -> factor (5-4)*15 = 15. Total base risk = 25.
+    double crit_risk = 0.0;
+    assert(tsfi_cw_isu_leap_defense_audit(&app, 3, &crit_risk) == 0); // DEFCON 3 -> mult 1.5 -> 25 * 1.5 = 37.5
+    assert(fabs(crit_risk - 37.5) < 0.1);
+
+    // ISU ULID-SSA test
+    int ssa_match = 0;
+    assert(tsfi_cw_isu_ulid_ssa_match("gdecke4", "1234", &ssa_match) == 0); // Last char '4' matches '4'
+    assert(ssa_match == 1);
+    assert(tsfi_cw_isu_ulid_ssa_match("gdecke4", "1235", &ssa_match) == 0);
+    assert(ssa_match == 0);
 }
 
 int main(void) {

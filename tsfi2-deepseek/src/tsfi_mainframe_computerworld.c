@@ -1354,6 +1354,41 @@ int tsfi_cw_niu_audit_working_storage(const tsfi_cw_niu_cobol_var *vars, int var
     return 0;
 }
 
+int tsfi_cw_isu_leap_defense_audit(const tsfi_cw_isu_leap_app *app, int defcon_level, double *criticality_risk_out) {
+    if (!app || !criticality_risk_out) return -1;
+    
+    double base = (app->database_size_gb * 0.05) + (app->transaction_rate_per_sec * 0.1);
+    double nato_factor = (5.0 - app->nato_irs_compliance_rating) * 15.0;
+    double mult = 1.0;
+    
+    switch (defcon_level) {
+        case 1: mult = 3.0; break;
+        case 2: mult = 2.0; break;
+        case 3: mult = 1.5; break;
+        case 4: mult = 1.2; break;
+        case 5: default: mult = 1.0; break;
+    }
+    
+    *criticality_risk_out = (base + nato_factor) * mult;
+    return 0;
+}
+
+int tsfi_cw_isu_ulid_ssa_match(const char *ulid, const char *ssn_last4, int *is_match_out) {
+    if (!ulid || !ssn_last4 || !is_match_out) return -1;
+    if (strlen(ssn_last4) != 4) return -2;
+    
+    // Simplistic simulated check: last char of ULID matches last char of SSN last 4
+    size_t ulid_len = strlen(ulid);
+    if (ulid_len == 0) {
+        *is_match_out = 0;
+        return 0;
+    }
+    
+    *is_match_out = (ulid[ulid_len - 1] == ssn_last4[3]) ? 1 : 0;
+    return 0;
+}
+
+
 
 
 

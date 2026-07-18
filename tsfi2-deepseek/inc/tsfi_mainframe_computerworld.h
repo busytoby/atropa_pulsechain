@@ -1041,5 +1041,16 @@ typedef struct {
 int tsfi_cw_niu_audit_jcl_dd(const char *dd_statement, int *is_valid_path_out);
 int tsfi_cw_niu_audit_working_storage(const tsfi_cw_niu_cobol_var *vars, int var_count, int *uninitialized_count_out);
 
+// ISU Normal LEAP defense application
+typedef struct {
+    char app_id[16];
+    double database_size_gb;
+    int transaction_rate_per_sec;
+    int nato_irs_compliance_rating; // 0..5
+} tsfi_cw_isu_leap_app;
+
+int tsfi_cw_isu_leap_defense_audit(const tsfi_cw_isu_leap_app *app, int defcon_level, double *criticality_risk_out);
+int tsfi_cw_isu_ulid_ssa_match(const char *ulid, const char *ssn_last4, int *is_match_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 
