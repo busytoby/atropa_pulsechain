@@ -769,5 +769,21 @@ int run_nato_stanag_tests(void) {
     assert(up_ramp_limit_valid == 1);
     printf("  [PASS] NATO Broadcast Busy Up-Ramp Rate Limit Matcher verified.\n");
 
+    // 345. Verify NATO Link-Layer Broadcast Channel Busy Hysteresis Down-Ramp Rate Limit Matcher
+    printf("[TEST] Validating NATO Broadcast Busy Down-Ramp Rate Limit Matcher...\n");
+    int down_ramp_limit_valid = -1;
+    int down_ramp_limit_res = tsfi_mf_nato_verify_down_ramp_rate_limit(10, &down_ramp_limit_valid);
+    assert(down_ramp_limit_res == 0);
+    assert(down_ramp_limit_valid == 1);
+    printf("  [PASS] NATO Broadcast Busy Down-Ramp Rate Limit Matcher verified.\n");
+
+    // 346. Verify NATO Link-Layer Broadcast Collision Backoff Slot Alignment Offset Boundary Matcher
+    printf("[TEST] Validating NATO Broadcast Backoff Slot Offset Boundary Matcher...\n");
+    int slot_offset_boundary_valid = -1;
+    int slot_offset_boundary_res = tsfi_mf_nato_verify_slot_offset_boundary(4, &slot_offset_boundary_valid);
+    assert(slot_offset_boundary_res == 0);
+    assert(slot_offset_boundary_valid == 1);
+    printf("  [PASS] NATO Broadcast Backoff Slot Offset Boundary Matcher verified.\n");
+
     return 0;
 }

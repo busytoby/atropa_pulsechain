@@ -621,3 +621,15 @@ int tsfi_mf_nato_verify_up_ramp_rate_limit(int limit_db, int *is_valid) {
     *is_valid = (limit_db >= 5 && limit_db <= 25) ? 1 : 0;
     return 0;
 }
+
+int tsfi_mf_nato_verify_down_ramp_rate_limit(int limit_db, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (limit_db >= 3 && limit_db <= 20) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_slot_offset_boundary(int boundary_ms, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (boundary_ms >= 1 && boundary_ms <= 8) ? 1 : 0;
+    return 0;
+}
