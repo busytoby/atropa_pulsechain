@@ -1119,6 +1119,32 @@ int tsfi_mf_nato_hfrcp_evaluate_helmholtz(int op_type, float value, int *current
     return 0;
 }
 
+int tsfi_mf_nato_afsk_verify(int tone_freq_hz, int baud_rate, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = 0;
+    
+    // Check standard STANAG 5066 AFSK tone limits
+    if (tone_freq_hz != 875 && tone_freq_hz != 2025 && tone_freq_hz != 1800) {
+        return 0;
+    }
+    
+    // Check standard baud rates
+    if (baud_rate != 75 && baud_rate != 150 && baud_rate != 300 &&
+        baud_rate != 600 && baud_rate != 1200 && baud_rate != 2400) {
+        return 0;
+    }
+    
+    *is_valid = 1;
+    return 0;
+}
+
+int tsfi_mf_nato_merkle_combine(uint32_t left_hash, uint32_t right_hash, uint32_t *parent_hash) {
+    if (!parent_hash) return -1;
+    *parent_hash = (left_hash * 33) ^ right_hash ^ 0x55555555;
+    return 0;
+}
+
+
 
 
 

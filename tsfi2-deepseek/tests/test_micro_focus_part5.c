@@ -378,7 +378,24 @@ int run_nato_stanag_tests_part5(void) {
     tsfi_mf_nato_hfrcp_evaluate_helmholtz(2, 0.0f, &hf_epoch, &hf_ev_valid);
     assert(hf_ev_valid == 1);
     assert(hf_epoch == 2);
-    printf("  [PASS] Helmholtz HFRCP verified.\n");
+    // Verify AFSK Modem
+    printf("[TEST] Validating NATO AFSK Modem...\n");
+    int afsk_valid = -1;
+    int afsk_res = tsfi_mf_nato_afsk_verify(875, 300, &afsk_valid); // Standard mark tone at 300 baud -> valid
+    assert(afsk_res == 0);
+    assert(afsk_valid == 1);
+
+    tsfi_mf_nato_afsk_verify(1000, 300, &afsk_valid); // Invalid tone -> invalid
+    assert(afsk_valid == 0);
+    printf("  [PASS] AFSK Modem verified.\n");
+
+    // Verify Merkle Combine
+    printf("[TEST] Validating NATO Merkle Combine...\n");
+    uint32_t parent = 0;
+    int m_res = tsfi_mf_nato_merkle_combine(0x12345678, 0x9abcdef0, &parent);
+    assert(m_res == 0);
+    assert(parent != 0);
+    printf("  [PASS] Merkle Combine verified.\n");
 
     return 0;
 }

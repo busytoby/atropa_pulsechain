@@ -385,4 +385,7 @@ int tsfi_mf_nato_hfrcp_update(int action, int frequency_khz, int *current_state,
 int tsfi_mf_nato_verify_throttle_limit(int queue_size, int threshold, int *is_throttled, int *is_valid);
 int tsfi_mf_nato_hfrcp_evaluate_helmholtz(int op_type, float value, int *current_epoch, int *is_valid);
 
+int tsfi_mf_nato_afsk_verify(int tone_freq_hz, int baud_rate, int *is_valid);
+int tsfi_mf_nato_merkle_combine(uint32_t left_hash, uint32_t right_hash, uint32_t *parent_hash);
+
 #endif // TSFI_CADE_IMF_H
