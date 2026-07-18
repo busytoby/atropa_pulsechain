@@ -1206,6 +1206,31 @@ static void test_new_mainframe_features(void) {
     // Y2K violations print ex
     assert(tsfi_cw_y2k_print_diagnostic_violations_list_ex(y2k_format_buf, sizeof(y2k_format_buf), 50) == 0);
     assert(strcmp(y2k_format_buf, "[Y2K Pivot 50] Chronological Violations: 0") == 0);
+
+    // VSAM checksum audit query ex
+    char path_buf[128];
+    tsfi_cw_vsam_ksds dummy_ksds;
+    strcpy(dummy_ksds.filepath, "dummy.dat.bin");
+    assert(tsfi_cw_vsam_get_checksum_audit_stats_ex(&dummy_ksds, path_buf, sizeof(path_buf), &aud_p, &aud_m) == 0);
+    assert(strcmp(path_buf, "dummy.dat.bin") == 0);
+
+    // COBOL verify field alignment ex
+    assert(tsfi_cw_cobol_verify_field_alignment_ex(8, 4, 4, 16) == 0);
+    assert(tsfi_cw_cobol_verify_field_alignment_ex(8, 4, 4, 10) == -30);
+
+    // EBCDIC query and reset parity metrics ex
+    assert(tsfi_cw_ebcdic_query_and_reset_parity_metrics_ex(&ebcdic_met) == 0);
+    assert(ebcdic_met.total_parity_checks == 0);
+
+    // JCL get substitution depth limit boundary
+    int sub_lim = 0, sub_bound = 0;
+    assert(tsfi_cw_jcl_get_substitution_depth_limit_boundary(&sub_lim, &sub_bound) == 0);
+    assert(sub_lim == 10);
+    assert(sub_bound == 20);
+
+    // Y2K print and reset list ex check
+    assert(tsfi_cw_y2k_print_and_reset_violations_list_ex(y2k_format_buf, sizeof(y2k_format_buf), 50) == 0);
+    assert(strcmp(y2k_format_buf, "[Y2K Pivot 50] Chronological Violations: 0") == 0);
 }
 
 int main(void) {

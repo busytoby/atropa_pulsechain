@@ -830,3 +830,10 @@ int tsfi_cw_cobol_reset_padding_alignment(tsfi_cw_cobol_padding_config *cfg) {
     cfg->max_size = 0;
     return 0;
 }
+
+int tsfi_cw_cobol_verify_field_alignment_ex(int offset, int size, int alignment, int max_size) {
+    if (alignment <= 0 || max_size <= 0) return -1;
+    if (offset + size > max_size) return -30;
+    if ((offset + size) % alignment != 0) return -34;
+    return 0;
+}

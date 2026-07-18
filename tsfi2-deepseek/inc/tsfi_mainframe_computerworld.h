@@ -468,6 +468,7 @@ void tsfi_cw_vsam_reset_checksum_audit_stats(void);
 int tsfi_cw_vsam_format_checksum_stats(char *buf_out, int max_len);
 int tsfi_cw_vsam_format_and_reset_checksum_stats(char *buf_out, int max_len);
 int tsfi_cw_vsam_query_and_reset_checksum_audit_stats(uint32_t *audits_out, uint32_t *mismatches_out);
+int tsfi_cw_vsam_get_checksum_audit_stats_ex(const tsfi_cw_vsam_ksds *ksds, char *filepath_out, int max_len, uint32_t *audits_out, uint32_t *mismatches_out);
 
 typedef struct {
     char pad_char;
@@ -475,7 +476,7 @@ typedef struct {
     int max_size;
 } tsfi_cw_cobol_padding_config;
 
-// COBOL custom padding validator, alignment checker, padding limits validator, alignment padding mapper, field alignment verifier, alignment limits validator, config tool, config query, and reset tool
+// COBOL custom padding validator, alignment checker, padding limits validator, alignment padding mapper, field alignment verifier, alignment limits validator, config tool, config query, reset tool, and alignment ex checker
 int tsfi_cw_cobol_validate_custom_padding(char pad_char);
 int tsfi_cw_cobol_validate_custom_padding_ex(char pad_char, int pad_len, int max_len);
 int tsfi_cw_cobol_map_custom_padding_byte(char input_char, char *mapped_out);
@@ -487,6 +488,7 @@ int tsfi_cw_cobol_validate_padding_limits_ex(int pad_len, int max_allowed, int a
 int tsfi_cw_cobol_configure_padding_alignment(tsfi_cw_cobol_padding_config *cfg, char pad_char, int alignment, int max_size);
 int tsfi_cw_cobol_query_padding_alignment(const tsfi_cw_cobol_padding_config *cfg, char *pad_char_out, int *alignment_out, int *max_size_out);
 int tsfi_cw_cobol_reset_padding_alignment(tsfi_cw_cobol_padding_config *cfg);
+int tsfi_cw_cobol_verify_field_alignment_ex(int offset, int size, int alignment, int max_size);
 
 typedef struct {
     uint32_t total_parity_checks;
@@ -494,7 +496,7 @@ typedef struct {
     uint8_t current_si;
 } tsfi_cw_ebcdic_parity_metrics;
 
-// EBCDIC nesting validator, escape override, custom markers override, parity checks counter query, parity checks reset tool, query-and-reset tool, diagnostics formatter, diagnostics format-reset tool, and metrics ex query
+// EBCDIC nesting validator, escape override, custom markers override, parity checks counter query, parity checks reset tool, query-and-reset tool, diagnostics formatter, diagnostics format-reset tool, metrics ex query, and query-reset ex helper
 int tsfi_cw_ebcdic_check_dbcs_nesting(const uint8_t *ebcdic_str, int len);
 uint8_t tsfi_cw_ebcdic_translate_control_escape_override(uint8_t ebcdic_char, uint8_t custom_lf, uint8_t custom_cr);
 void tsfi_cw_ebcdic_override_dbcs_markers(uint8_t new_so, uint8_t new_si);
@@ -504,8 +506,9 @@ int tsfi_cw_ebcdic_query_and_reset_parity_checks(uint32_t *count_out);
 int tsfi_cw_ebcdic_format_parity_diagnostics(char *buf_out, int max_len);
 int tsfi_cw_ebcdic_format_and_reset_parity_diagnostics(char *buf_out, int max_len);
 int tsfi_cw_ebcdic_get_parity_metrics_ex(tsfi_cw_ebcdic_parity_metrics *metrics_out);
+int tsfi_cw_ebcdic_query_and_reset_parity_metrics_ex(tsfi_cw_ebcdic_parity_metrics *metrics_out);
 
-// JCL circular dependency checker, recursion depth validator, PROC recursion depth checker, recursion limit setter, limit query, substitution with custom depth limit, substitution limit configuration setter/getter, limit reset tool, limit query-reset tool, and limit boundary setter
+// JCL circular dependency checker, recursion depth validator, PROC recursion depth checker, recursion limit setter, limit query, substitution with custom depth limit, substitution limit configuration setter/getter, limit reset tool, limit query-reset tool, limit boundary setter, and limit boundary query tool
 int tsfi_cw_jcl_detect_circular_symbols(const char **sym_names, const char **sym_vals, int sym_count);
 int tsfi_cw_jcl_validate_substitution_depth(int current_depth, int max_depth);
 int tsfi_cw_jcl_validate_proc_recursion_depth(int depth, int max_depth);
@@ -517,8 +520,9 @@ int tsfi_cw_jcl_get_substitution_depth_limit(int *limit_out);
 void tsfi_cw_jcl_reset_substitution_depth_limit(void);
 int tsfi_cw_jcl_query_and_reset_substitution_limit(int *limit_out);
 int tsfi_cw_jcl_set_substitution_depth_limit_boundary(int limit, int max_allowed_boundary);
+int tsfi_cw_jcl_get_substitution_depth_limit_boundary(int *limit_out, int *boundary_out);
 
-// Y2K dates chronological order check, reset tool, query interface, query-and-reset tool, violations query formatter, query format-reset tool, violations list printer, print-reset list tool, and list printer ex with custom pivot
+// Y2K dates chronological order check, reset tool, query interface, query-and-reset tool, violations query formatter, query format-reset tool, violations list printer, print-reset list tool, list printer ex, and print-reset list ex tool
 int tsfi_cw_y2k_validate_chronological_order(uint32_t yy1, uint32_t mm1, uint32_t dd1, uint32_t yy2, uint32_t mm2, uint32_t dd2, uint32_t pivot);
 uint32_t tsfi_cw_y2k_get_chronological_violations(void);
 void tsfi_cw_y2k_reset_chronological_violations(void);
@@ -529,6 +533,7 @@ int tsfi_cw_y2k_format_and_reset_violations(char *buf_out, int max_len);
 int tsfi_cw_y2k_print_diagnostic_violations_list(char *buf_out, int max_len);
 int tsfi_cw_y2k_print_and_reset_violations_list(char *buf_out, int max_len);
 int tsfi_cw_y2k_print_diagnostic_violations_list_ex(char *buf_out, int max_len, uint32_t pivot);
+int tsfi_cw_y2k_print_and_reset_violations_list_ex(char *buf_out, int max_len, uint32_t pivot);
 
 typedef struct {
     uint32_t leap_checks_performed;

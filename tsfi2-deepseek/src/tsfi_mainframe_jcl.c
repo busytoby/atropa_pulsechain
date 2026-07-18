@@ -628,8 +628,18 @@ int tsfi_cw_jcl_query_and_reset_substitution_limit(int *limit_out) {
     return 0;
 }
 
+static int global_jcl_substitution_depth_boundary = 20;
+
 int tsfi_cw_jcl_set_substitution_depth_limit_boundary(int limit, int max_allowed_boundary) {
     if (limit <= 0 || limit > max_allowed_boundary) return -1;
     global_jcl_substitution_depth_limit = limit;
+    global_jcl_substitution_depth_boundary = max_allowed_boundary;
+    return 0;
+}
+
+int tsfi_cw_jcl_get_substitution_depth_limit_boundary(int *limit_out, int *boundary_out) {
+    if (!limit_out || !boundary_out) return -1;
+    *limit_out = global_jcl_substitution_depth_limit;
+    *boundary_out = global_jcl_substitution_depth_boundary;
     return 0;
 }
