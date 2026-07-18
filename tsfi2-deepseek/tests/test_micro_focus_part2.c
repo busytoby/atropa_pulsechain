@@ -1202,6 +1202,22 @@ int main(void) {
     assert(window_valid == 1);
     printf("  [PASS] NATO STANAG 5066 ARQ Window Size Validator verified.\n");
 
+    // 256. Verify NATO STANAG 5066 Priority Level Checker
+    printf("[TEST] Validating NATO STANAG 5066 Priority Level Checker...\n");
+    int priority_valid = -1;
+    int priority_res = tsfi_mf_nato_verify_priority_level(8, &priority_valid);
+    assert(priority_res == 0);
+    assert(priority_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Priority Level Checker verified.\n");
+
+    // 257. Verify NATO STANAG 5066 Sync Sequence Type Matcher
+    printf("[TEST] Validating NATO STANAG 5066 Sync Sequence Matcher...\n");
+    int sync_seq_valid = -1;
+    int sync_seq_res = tsfi_mf_nato_match_sync_sequence(0x90EB, &sync_seq_valid);
+    assert(sync_seq_res == 0);
+    assert(sync_seq_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Sync Sequence Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

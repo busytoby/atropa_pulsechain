@@ -1663,4 +1663,16 @@ int tsfi_mf_nato_verify_arq_window(int window_size, int *is_valid) {
     return 0;
 }
 
+int tsfi_mf_nato_verify_priority_level(int priority, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (priority >= 0 && priority <= 15) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_match_sync_sequence(int sync_seq, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (sync_seq == 0x90EB || sync_seq == 0xEB90) ? 1 : 0;
+    return 0;
+}
+
 

@@ -354,8 +354,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 397 | NATO STANAG 5066 HF MTU Segment Size Validator | PASS | Verifies segment size does not exceed HF MTU limits | Volume 33 |
 | 398 | NATO STANAG 5066 Service Access Point (SAP) Number Matcher | PASS | Audits whether client SAP conforms to valid ranges (0-63) | Volume 33 |
 | 399 | NATO STANAG 5066 ARQ Window Size Validator | PASS | Verifies ARQ sliding window size falls within standard limits | Volume 33 |
+| 400 | NATO STANAG 5066 Priority Level Checker | PASS | Audits whether priority field in the subnetwork header is bounded (0-15) | Volume 33 |
+| 401 | NATO STANAG 5066 Sync Sequence Type Matcher | PASS | Validates sync sequences against standard and maintenance patterns | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 399 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 401 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"
