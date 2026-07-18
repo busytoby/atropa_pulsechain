@@ -268,8 +268,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 311 | IRS IMF EITC Qualifying Child Matcher | PASS | Validates relationship structure and residency limits for EITC | Volume 33 |
 | 312 | IRS IMF Homebuyer Recapture Validator | PASS | Computes mandatory 15-year recapture payments for legacy 2008 credits | Volume 33 |
 | 313 | IRS CADE Prior Refund Offset Query | PASS | Retrieves outstanding offset amounts from legacy cyclic databases | Volume 33 |
+| 314 | IRS CADE Taxpayer IP PIN Length Matcher | PASS | Validates security 6-digit identity protection PIN structures | Volume 33 |
+| 315 | IRS IMF Standard Mileage Rate Business Expense Matcher | PASS | Audits mileage deduction calculations against annual standard rates | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 313 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 315 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

@@ -845,4 +845,29 @@ int tsfi_mf_cade_query_prior_refund_offset(const char *ssn, const char *offset_r
     return 0;
 }
 
+int tsfi_mf_cade_verify_ip_pin(const char *ip_pin, int *is_valid) {
+    if (!is_valid) return -1;
+    if (!ip_pin || strlen(ip_pin) != 6) {
+        *is_valid = 0;
+        return 0;
+    }
+    for (int i = 0; i < 6; i++) {
+        if (ip_pin[i] < '0' || ip_pin[i] > '9') {
+            *is_valid = 0;
+            return 0;
+        }
+    }
+    *is_valid = 1;
+    return 0;
+}
+
+int tsfi_mf_imf_verify_mileage_deduction(double miles, double claimed_deduction, double rate_per_mile, int *is_valid) {
+    if (!is_valid) return -1;
+    double calculated = miles * rate_per_mile;
+    double diff = claimed_deduction - calculated;
+    if (diff < 0) diff = -diff;
+    *is_valid = (diff <= 1.00) ? 1 : 0;
+    return 0;
+}
+
 

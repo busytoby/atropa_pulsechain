@@ -65,5 +65,7 @@ int tsfi_mf_cade_verify_zip_state(const char *zip, const char *state_code, int *
 int tsfi_mf_imf_verify_eitc_qualifying_child(const char *relationship, int residency_days, int *is_eligible);
 int tsfi_mf_imf_verify_homebuyer_recapture(int acquisition_year, double credit_received, double *recapture_amount);
 int tsfi_mf_cade_query_prior_refund_offset(const char *ssn, const char *offset_registry, double *offset_amount);
+int tsfi_mf_cade_verify_ip_pin(const char *ip_pin, int *is_valid);
+int tsfi_mf_imf_verify_mileage_deduction(double miles, double claimed_deduction, double rate_per_mile, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

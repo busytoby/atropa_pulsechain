@@ -508,6 +508,22 @@ int main(void) {
     assert(offset == 250.00);
     printf("  [PASS] IRS CADE Prior Refund Offset Query verified.\n");
 
+    // 170. Verify IRS CADE Taxpayer IP PIN Length Matcher
+    printf("[TEST] Validating IRS CADE IP PIN Length Matcher...\n");
+    int pin_valid = -1;
+    int pin_res = tsfi_mf_cade_verify_ip_pin("123456", &pin_valid);
+    assert(pin_res == 0);
+    assert(pin_valid == 1);
+    printf("  [PASS] IRS CADE IP PIN Length Matcher verified.\n");
+
+    // 171. Verify IRS IMF Standard Mileage Rate Business Expense Matcher
+    printf("[TEST] Validating IRS IMF Mileage Deduction Matcher...\n");
+    int mileage_valid = -1;
+    int mileage_res = tsfi_mf_imf_verify_mileage_deduction(100.0, 67.00, 0.67, &mileage_valid);
+    assert(mileage_res == 0);
+    assert(mileage_valid == 1);
+    printf("  [PASS] IRS IMF Mileage Deduction Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }
