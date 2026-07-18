@@ -652,3 +652,9 @@ int tsfi_cw_ebcdic_query_and_reset_parity_metrics_ex(tsfi_cw_ebcdic_parity_metri
     return 0;
 }
 
+int tsfi_cw_ebcdic_format_and_reset_parity_metrics_ex(const tsfi_cw_ebcdic_parity_metrics *metrics, char *buf_out, int max_len) {
+    if (!metrics || !buf_out || max_len <= 0) return -1;
+    snprintf(buf_out, max_len, "Total Parity Checks: %u, SO: 0x%02X, SI: 0x%02X", metrics->total_parity_checks, metrics->current_so, metrics->current_si);
+    return 0;
+}
+

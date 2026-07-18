@@ -697,3 +697,11 @@ int tsfi_cw_vsam_get_checksum_audit_stats_ex(const tsfi_cw_vsam_ksds *ksds, char
     *mismatches_out = global_vsam_checksum_mismatches;
     return 0;
 }
+
+int tsfi_cw_vsam_format_and_reset_checksum_stats_ex(const tsfi_cw_vsam_ksds *ksds, char *buf_out, int max_len) {
+    if (!ksds || !buf_out || max_len <= 0) return -1;
+    snprintf(buf_out, max_len, "File: %s, Audits: %u, Mismatches: %u", ksds->filepath, global_vsam_checksum_audits_performed, global_vsam_checksum_mismatches);
+    global_vsam_checksum_audits_performed = 0;
+    global_vsam_checksum_mismatches = 0;
+    return 0;
+}

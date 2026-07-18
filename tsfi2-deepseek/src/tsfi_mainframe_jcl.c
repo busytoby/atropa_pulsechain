@@ -643,3 +643,11 @@ int tsfi_cw_jcl_get_substitution_depth_limit_boundary(int *limit_out, int *bound
     *boundary_out = global_jcl_substitution_depth_boundary;
     return 0;
 }
+
+int tsfi_cw_jcl_get_substitution_depth_limit_boundary_ex(int *limit_out, int *boundary_out, int *fallback_out) {
+    if (!limit_out || !boundary_out || !fallback_out) return -1;
+    *limit_out = global_jcl_substitution_depth_limit;
+    *boundary_out = global_jcl_substitution_depth_boundary;
+    *fallback_out = 5;
+    return 0;
+}

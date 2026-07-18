@@ -424,3 +424,10 @@ int tsfi_cw_y2k_print_and_reset_violations_list_ex(char *buf_out, int max_len, u
     global_y2k_chronological_violations = 0;
     return 0;
 }
+
+int tsfi_cw_y2k_format_and_reset_violations_ex(char *buf_out, int max_len, uint32_t pivot) {
+    if (!buf_out || max_len <= 0) return -1;
+    snprintf(buf_out, max_len, "[Y2K Pivot %u] Chronological violations: %u", pivot, global_y2k_chronological_violations);
+    global_y2k_chronological_violations = 0;
+    return 0;
+}
