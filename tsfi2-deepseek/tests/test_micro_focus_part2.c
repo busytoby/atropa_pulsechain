@@ -1152,6 +1152,24 @@ int main(void) {
     assert(int_rec_name_valid == 1);
     printf("  [PASS] IRS CADE INT Recipient Name Matcher verified.\n");
 
+    // 250. Verify NATO STANAG 5066 Header Validator
+    printf("[TEST] Validating NATO STANAG 5066 Header Validator...\n");
+    const unsigned char s5066_hdr[] = {0x90, 0xEB, 0x05, 0x00, 0x10};
+    int s5066_valid = -1;
+    int s5066_res = tsfi_mf_nato_verify_stanag5066_header(s5066_hdr, sizeof(s5066_hdr), &s5066_valid);
+    assert(s5066_res == 0);
+    assert(s5066_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Header Validator verified.\n");
+
+    // 251. Verify NATO STANAG 5066 Kermit Payload Validator
+    printf("[TEST] Validating NATO STANAG 5066 Kermit Payload Validator...\n");
+    const unsigned char kermit_pkt[] = {0x01, 35, 35, 35, 74};
+    int kermit_valid = -1;
+    int kermit_res = tsfi_mf_nato_verify_kermit_payload(kermit_pkt, sizeof(kermit_pkt), &kermit_valid);
+    assert(kermit_res == 0);
+    assert(kermit_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Kermit Payload Validator verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

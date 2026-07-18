@@ -1595,4 +1595,48 @@ int tsfi_mf_cade_verify_int_recipient_name(const char *name, int *is_valid) {
     return 0;
 }
 
+int tsfi_mf_nato_verify_stanag5066_header(const unsigned char *header, int header_len, int *is_valid) {
+    if (!is_valid) return -1;
+    if (!header || header_len < 5) {
+        *is_valid = 0;
+        return 0;
+    }
+    if (header[0] != 0x90 || header[1] != 0xEB) {
+        *is_valid = 0;
+        return 0;
+    }
+    if (header[2] > 15) {
+        *is_valid = 0;
+        return 0;
+    }
+    int payload_len = (header[3] << 8) | header[4];
+    *is_valid = (payload_len >= 0) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_kermit_payload(const unsigned char *payload, int payload_len, int *is_valid) {
+    if (!is_valid) return -1;
+    if (!payload || payload_len < 4) {
+        *is_valid = 0;
+        return 0;
+    }
+    if (payload[0] != 0x01) {
+        *is_valid = 0;
+        return 0;
+    }
+    int len_val = payload[1] - 32;
+    if (len_val < 0 || len_val > 94) {
+        *is_valid = 0;
+        return 0;
+    }
+    int sum = 0;
+    for (int i = 1; i < payload_len - 1; i++) {
+        sum += payload[i];
+    }
+    int calculated_bcc = ((sum + ((sum & 0xC0) >> 6)) & 0x3F);
+    int expected_bcc = payload[payload_len - 1] - 32;
+    *is_valid = (calculated_bcc == expected_bcc) ? 1 : 0;
+    return 0;
+}
+
 

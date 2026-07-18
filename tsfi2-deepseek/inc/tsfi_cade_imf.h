@@ -145,5 +145,7 @@ int tsfi_mf_cade_verify_div_payer_address(const char *address, int *is_valid);
 int tsfi_mf_cade_verify_int_payer_address(const char *address, int *is_valid);
 int tsfi_mf_cade_verify_div_recipient_name(const char *name, int *is_valid);
 int tsfi_mf_cade_verify_int_recipient_name(const char *name, int *is_valid);
+int tsfi_mf_nato_verify_stanag5066_header(const unsigned char *header, int header_len, int *is_valid);
+int tsfi_mf_nato_verify_kermit_payload(const unsigned char *payload, int payload_len, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

@@ -348,8 +348,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 391 | IRS CADE Form 1099-INT Payer Address Matcher | PASS | Verifies non-empty street address string for interest payers | Volume 33 |
 | 392 | IRS CADE Form 1099-DIV Recipient Name Matcher | PASS | Verifies non-empty recipient name string for dividend payers | Volume 33 |
 | 393 | IRS CADE Form 1099-INT Recipient Name Matcher | PASS | Verifies non-empty recipient name string for interest payers | Volume 33 |
+| 394 | NATO STANAG 5066 Header Validator | PASS | Validates sync structure and type fields on STANAG 5066 frames | Volume 33 |
+| 395 | NATO STANAG 5066 Kermit Payload Validator | PASS | Validates Kermit checksums encapsulated in STANAG 5066 envelopes | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 393 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 395 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"
