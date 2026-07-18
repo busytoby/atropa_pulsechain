@@ -1498,4 +1498,56 @@ int tsfi_mf_imf_match_k1_interest(double reported_1040_interest, double k1_share
     return 0;
 }
 
+int tsfi_mf_cade_verify_div_recipient_tin(const char *tin, int *is_valid) {
+    if (!is_valid) return -1;
+    if (!tin) {
+        *is_valid = 0;
+        return 0;
+    }
+    int len = strlen(tin);
+    if (len == 9) {
+        for (int i = 0; i < 9; i++) {
+            if (tin[i] < '0' || tin[i] > '9') {
+                *is_valid = 0;
+                return 0;
+            }
+        }
+        if (strcmp(tin, "000000000") == 0 || strcmp(tin, "999999999") == 0 || strcmp(tin, "123456789") == 0) {
+            *is_valid = 0;
+            return 0;
+        }
+    } else if (len == 11) {
+        if (tin[3] != '-' || tin[6] != '-') {
+            *is_valid = 0;
+            return 0;
+        }
+        for (int i = 0; i < 11; i++) {
+            if (i == 3 || i == 6) continue;
+            if (tin[i] < '0' || tin[i] > '9') {
+                *is_valid = 0;
+                return 0;
+            }
+        }
+        if (strcmp(tin, "000-00-0000") == 0 || strcmp(tin, "999-99-9999") == 0 || strcmp(tin, "123-45-6789") == 0) {
+            *is_valid = 0;
+            return 0;
+        }
+    } else {
+        *is_valid = 0;
+        return 0;
+    }
+    *is_valid = 1;
+    return 0;
+}
+
+int tsfi_mf_cade_verify_distinct_ssns(const char *primary_ssn, const char *secondary_ssn, int filing_status, int *is_valid) {
+    if (!is_valid) return -1;
+    if (filing_status == 2) {
+        *is_valid = (primary_ssn && secondary_ssn && strcmp(primary_ssn, secondary_ssn) != 0) ? 1 : 0;
+    } else {
+        *is_valid = 1;
+    }
+    return 0;
+}
+
 

@@ -1071,6 +1071,22 @@ int main(void) {
     assert(k1_int_match == 1);
     printf("  [PASS] IRS IMF K-1 Interest Share Matcher verified.\n");
 
+    // 240. Verify IRS CADE Form 1099-DIV Recipient TIN Format Validator
+    printf("[TEST] Validating IRS CADE DIV Recipient TIN Validator...\n");
+    int rec_tin_valid = -1;
+    int rec_tin_res = tsfi_mf_cade_verify_div_recipient_tin("555-12-3456", &rec_tin_valid);
+    assert(rec_tin_res == 0);
+    assert(rec_tin_valid == 1);
+    printf("  [PASS] IRS CADE DIV Recipient TIN Validator verified.\n");
+
+    // 241. Verify IRS CADE Form 1040 Primary and Secondary SSN Matcher
+    printf("[TEST] Validating IRS CADE Distinct SSNs Matcher...\n");
+    int distinct_ssns_valid = -1;
+    int distinct_res = tsfi_mf_cade_verify_distinct_ssns("111223333", "444556666", 2, &distinct_ssns_valid);
+    assert(distinct_res == 0);
+    assert(distinct_ssns_valid == 1);
+    printf("  [PASS] IRS CADE Distinct SSNs Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }
