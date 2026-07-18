@@ -671,6 +671,89 @@ int tsfi_cw_three_way_match(const tsfi_cw_po_record *po, const tsfi_cw_receiving
     return 0;
 }
 
+int tsfi_cw_resource_level(tsfi_cw_leveling_task *tasks, int task_count, int project_horizon, int *peak_resource_out) {
+    if (!tasks || task_count <= 0 || project_horizon <= 0 || !peak_resource_out) return -1;
+    
+    // Set default starts to early starts
+    for (int i = 0; i < task_count; i++) {
+        tasks[i].scheduled_start = tasks[i].early_start;
+    }
+    
+    int *best_starts = (int *)malloc(task_count * sizeof(int));
+    for (int i = 0; i < task_count; i++) {
+        best_starts[i] = tasks[i].early_start;
+    }
+    
+    int min_peak = 999999;
+    int *daily = (int *)calloc(project_horizon + 1, sizeof(int));
+    
+    // Evaluate early start peak first
+    for (int d = 0; d < project_horizon; d++) daily[d] = 0;
+    for (int i = 0; i < task_count; i++) {
+        int start = tasks[i].early_start;
+        for (int d = start; d < start + tasks[i].duration && d < project_horizon; d++) {
+            daily[d] += tasks[i].resource_rate;
+        }
+    }
+    int current_peak = 0;
+    for (int d = 0; d < project_horizon; d++) {
+        if (daily[d] > current_peak) current_peak = daily[d];
+    }
+    min_peak = current_peak;
+    
+    // A simple search: for each task with slack, try shifting it
+    for (int i = 0; i < task_count; i++) {
+        if (tasks[i].late_start > tasks[i].early_start) {
+            for (int shift = tasks[i].early_start; shift <= tasks[i].late_start; shift++) {
+                // Clear daily profile
+                for (int d = 0; d < project_horizon; d++) daily[d] = 0;
+                
+                // Add all other tasks at their current best schedule
+                for (int j = 0; j < task_count; j++) {
+                    int start = (j == i) ? shift : best_starts[j];
+                    for (int d = start; d < start + tasks[j].duration && d < project_horizon; d++) {
+                        daily[d] += tasks[j].resource_rate;
+                    }
+                }
+                
+                int peak = 0;
+                for (int d = 0; d < project_horizon; d++) {
+                    if (daily[d] > peak) peak = daily[d];
+                }
+                
+                if (peak < min_peak) {
+                    min_peak = peak;
+                    best_starts[i] = shift;
+                }
+            }
+        }
+    }
+    
+    for (int i = 0; i < task_count; i++) {
+        tasks[i].scheduled_start = best_starts[i];
+    }
+    
+    *peak_resource_out = min_peak;
+    
+    free(best_starts);
+    free(daily);
+    return 0;
+}
+
+int tsfi_cw_rop_calculate(const tsfi_cw_rop_problem *prob, double *safety_stock_out, double *reorder_point_out) {
+    if (!prob || !safety_stock_out || !reorder_point_out) return -1;
+    if (prob->avg_daily_demand < 0.0 || prob->avg_lead_time_days < 0.0) return -2;
+    
+    double term1 = prob->avg_lead_time_days * pow(prob->demand_std_dev, 2.0);
+    double term2 = pow(prob->avg_daily_demand, 2.0) * pow(prob->lead_time_std_dev, 2.0);
+    
+    *safety_stock_out = prob->service_factor_z * sqrt(term1 + term2);
+    *reorder_point_out = (prob->avg_daily_demand * prob->avg_lead_time_days) + (*safety_stock_out);
+    
+    return 0;
+}
+
+
 
 
 

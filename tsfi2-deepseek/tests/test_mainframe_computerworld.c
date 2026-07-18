@@ -1600,6 +1600,38 @@ static void test_new_mainframe_features(void) {
     assert(match_res.qty_mismatch == 0);
     assert(match_res.price_mismatch == 0);
     assert(match_res.status_approved == 1);
+
+    // Resource Leveling test
+    // Task 1: dur=3, ES=0, LS=0, rate=5
+    // Task 2: dur=2, ES=0, LS=3, rate=3
+    // Project horizon = 5 days.
+    // If Task 2 starts at ES=0, peak on days 0-1 is 8.
+    // If Task 2 starts at LS=3, peak is max(5, 3) = 5.
+    tsfi_cw_leveling_task lev_tasks[2] = {
+        { 1, 3, 0, 0, 5, 0 },
+        { 2, 2, 0, 3, 3, 0 }
+    };
+    int peak_res = 0;
+    assert(tsfi_cw_resource_level(lev_tasks, 2, 5, &peak_res) == 0);
+    assert(peak_res == 5);
+    assert(lev_tasks[1].scheduled_start == 3);
+
+    // Safety Stock & ROP test
+    tsfi_cw_rop_problem rop_prob = {
+        1.65, // Z
+        100.0, // D
+        10.0,  // std_D
+        10.0,  // LT
+        2.0    // std_LT
+    };
+    double safety_stock = 0.0, rop = 0.0;
+    assert(tsfi_cw_rop_calculate(&rop_prob, &safety_stock, &rop) == 0);
+    // term1 = 10 * 100 = 1000
+    // term2 = 10000 * 4 = 40000
+    // safety_stock = 1.65 * sqrt(41000) = 1.65 * 202.484 = 334.1
+    // ROP = 1000 + 334.1 = 1334.1
+    assert(fabs(safety_stock - 334.1) < 0.1);
+    assert(fabs(rop - 1334.1) < 0.1);
 }
 
 int main(void) {

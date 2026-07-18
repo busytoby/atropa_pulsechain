@@ -747,5 +747,28 @@ typedef struct {
 
 int tsfi_cw_three_way_match(const tsfi_cw_po_record *po, const tsfi_cw_receiving_record *rr, const tsfi_cw_invoice_record *invoice, tsfi_cw_match_result *result_out);
 
+// PERT/CPM Resource Leveling
+typedef struct {
+    int task_id;
+    int duration;
+    int early_start;
+    int late_start;
+    int resource_rate; // Resources used per day
+    int scheduled_start; // Output: optimized start day
+} tsfi_cw_leveling_task;
+
+int tsfi_cw_resource_level(tsfi_cw_leveling_task *tasks, int task_count, int project_horizon, int *peak_resource_out);
+
+// Safety Stock & Reorder Point (ROP) Calculator
+typedef struct {
+    double service_factor_z;      // e.g. 1.65
+    double avg_daily_demand;      // D
+    double demand_std_dev;         // sigma_D
+    double avg_lead_time_days;    // LT
+    double lead_time_std_dev;      // sigma_LT
+} tsfi_cw_rop_problem;
+
+int tsfi_cw_rop_calculate(const tsfi_cw_rop_problem *prob, double *safety_stock_out, double *reorder_point_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 
