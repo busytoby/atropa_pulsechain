@@ -1889,4 +1889,16 @@ int tsfi_mf_nato_verify_adaptation_mode(int mode, int *is_valid) {
     return 0;
 }
 
+int tsfi_mf_nato_verify_subnetwork_profile(int profile, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (profile >= 0 && profile <= 2) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_retry_delay(int delay_ms, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (delay_ms >= 10 && delay_ms <= 600) ? 1 : 0;
+    return 0;
+}
+
 

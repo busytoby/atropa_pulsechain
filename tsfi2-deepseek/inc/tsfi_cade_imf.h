@@ -186,5 +186,7 @@ int tsfi_mf_nato_verify_idle_timeout(int timeout, int *is_valid);
 int tsfi_mf_nato_verify_delay_interval(int interval, int *is_valid);
 int tsfi_mf_nato_verify_low_water_mode(int mode, int *is_valid);
 int tsfi_mf_nato_verify_adaptation_mode(int mode, int *is_valid);
+int tsfi_mf_nato_verify_subnetwork_profile(int profile, int *is_valid);
+int tsfi_mf_nato_verify_retry_delay(int delay_ms, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

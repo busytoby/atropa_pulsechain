@@ -366,5 +366,7 @@
 | 432 | NATO STANAG 5066 Transmit Delay Interval Validator | PASS | Audits delay spacing intervals inserted between transmit bursts | Volume 33 |
 | 433 | NATO STANAG 5066 Flow Control Buffer Low-Water Mark Mode Selector | PASS | Validates low-water flow control restore mode settings | Volume 33 |
 | 434 | NATO STANAG 5066 Dynamic Segment Lifetime Adaptation Selector | PASS | Audits lifetime adaptive scaling configurations | Volume 33 |
+| 435 | NATO Link-Layer Subnetwork Profile Identifier Validator | PASS | Validates link-layer profile configuration settings | Volume 33 |
+| 436 | NATO Link-Layer Multi-Scan Retry Delay Matcher | PASS | Audits backoff retry intervals following scan collisions | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 434 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 436 Scenarios validated successfully)

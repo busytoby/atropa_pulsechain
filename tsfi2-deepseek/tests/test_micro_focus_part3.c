@@ -333,5 +333,21 @@ int run_nato_stanag_tests(void) {
     assert(adapt_mode_valid == 1);
     printf("  [PASS] NATO STANAG 5066 Lifetime Adaptation Selector verified.\n");
 
+    // 291. Verify NATO Link-Layer Subnetwork Profile Identifier Validator
+    printf("[TEST] Validating NATO Subnetwork Profile Identifier Validator...\n");
+    int profile_valid = -1;
+    int profile_res = tsfi_mf_nato_verify_subnetwork_profile(1, &profile_valid);
+    assert(profile_res == 0);
+    assert(profile_valid == 1);
+    printf("  [PASS] NATO Subnetwork Profile Identifier Validator verified.\n");
+
+    // 292. Verify NATO Link-Layer Multi-Scan Retry Delay Matcher
+    printf("[TEST] Validating NATO Multi-Scan Retry Delay Matcher...\n");
+    int retry_delay_valid = -1;
+    int retry_delay_res = tsfi_mf_nato_verify_retry_delay(200, &retry_delay_valid);
+    assert(retry_delay_res == 0);
+    assert(retry_delay_valid == 1);
+    printf("  [PASS] NATO Multi-Scan Retry Delay Matcher verified.\n");
+
     return 0;
 }
