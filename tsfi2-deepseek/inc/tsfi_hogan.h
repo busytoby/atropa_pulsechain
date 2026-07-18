@@ -76,6 +76,8 @@ typedef struct {
     uint8_t is_dormant;
     uint64_t min_interest_posting_threshold;
     uint64_t min_balance_fee_waive_threshold;
+    uint32_t pin_change_fail_count;
+    uint32_t pin_change_fail_limit;
 } hogan_account;
 
 #define HOGAN_MAX_BLOCKED_CARDS 32
@@ -539,5 +541,23 @@ typedef struct {
 } hogan_fee_waive_threshold_entry;
 
 int tsfi_hogan_update_fee_waive_threshold(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_threshold, uint32_t authority_id);
+
+// Card PIN Change Failure Count Manager
+typedef struct {
+    uint32_t account_id;
+    uint32_t old_pin_entered;
+    uint32_t new_pin_proposed;
+    uint8_t success;
+} hogan_pin_change_entry;
+
+typedef struct {
+    uint32_t account_id;
+    uint32_t previous_limit;
+    uint32_t new_limit;
+    uint32_t authority_id;
+} hogan_pin_change_limit_entry;
+
+int tsfi_hogan_change_card_pin(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t old_pin, uint32_t new_pin);
+int tsfi_hogan_set_pin_change_fail_limit(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t new_limit, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H

@@ -1833,6 +1833,51 @@ int main(void) {
     remove(fwpath); // clean up
     printf("  [PASS] Batch fee minimum balance waiving, validations, and override logs verified.\n");
 
+    // 50. Test Card PIN Change Failure Count Manager (PIN Change Lockout)
+    printf("[E2E] Testing Card PIN Change Failure Count Manager...\n");
+    const char *pclock_path = "hogan_pclock.dat.bin";
+    const char *pclimit_path = "hogan_pclimit.dat.bin";
+    remove(pclock_path); // ensure clean start
+    remove(pclimit_path);
+    
+    hogan_umbrella_system pc_sys;
+    tsfi_hogan_init(&pc_sys);
+    assert(tsfi_hogan_register_account(&pc_sys, 1001, 1000) == 0);
+    pc_sys.accounts[0].card_pin = 1234;
+    
+    // Set Alice's PIN change fail limit to 2 attempts
+    assert(tsfi_hogan_set_pin_change_fail_limit(&pc_sys, pclimit_path, 1001, 2, 999) == 0);
+    assert(tsfi_hogan_set_pin_change_fail_limit(&pc_sys, "hogan_pclimit.json", 1001, 2, 999) == -3); // Rule 13 check
+    
+    // Attempt 1: Failed PIN change (wrong old PIN 1111)
+    assert(tsfi_hogan_change_card_pin(&pc_sys, pclock_path, 1001, 1111, 4321) == -2);
+    assert(pc_sys.accounts[0].card_pin == 1234);
+    assert(pc_sys.accounts[0].pin_change_fail_count == 1);
+    
+    // Attempt 2: Failed PIN change (wrong old PIN 2222, reaches limit of 2)
+    assert(tsfi_hogan_change_card_pin(&pc_sys, pclock_path, 1001, 2222, 4321) == -2);
+    assert(pc_sys.accounts[0].card_pin == 1234);
+    assert(pc_sys.accounts[0].pin_change_fail_count == 2);
+    
+    // Attempt 3: Blocked PIN change due to lockout (-4)
+    assert(tsfi_hogan_change_card_pin(&pc_sys, pclock_path, 1001, 1234, 4321) == -4);
+    assert(pc_sys.accounts[0].card_pin == 1234);
+    
+    // Verify override log files
+    uint8_t read_pclbuf[sizeof(hogan_pin_change_limit_entry)];
+    size_t pcl_size = 0;
+    assert(tsfi_hogan_read_seq_record(pclimit_path, 0, read_pclbuf, &pcl_size) == 0);
+    assert(pcl_size == sizeof(hogan_pin_change_limit_entry));
+    const hogan_pin_change_limit_entry *pcentry = (const hogan_pin_change_limit_entry *)read_pclbuf;
+    assert(pcentry->account_id == 1001);
+    assert(pcentry->previous_limit == 0);
+    assert(pcentry->new_limit == 2);
+    assert(pcentry->authority_id == 999);
+    
+    remove(pclock_path); // clean up
+    remove(pclimit_path);
+    printf("  [PASS] Card PIN change fail counts, lockouts, and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }
