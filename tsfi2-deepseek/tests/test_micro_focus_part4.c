@@ -51,5 +51,13 @@ int run_nato_stanag_tests_part4(void) {
     assert(rssi_quiet_sample_threshold_limit_margin_range_option_selector_margin_range_option_selector_margin_range_option_valid == 1);
     printf("  [PASS] NATO Broadcast Busy RSSI Quiet Sample Threshold Limit Margin Range Option Selector Margin Range Option Selector Margin Range Option Matcher verified.\n");
 
+    // 383. Verify NATO Parameter Dispatcher Verification
+    printf("[TEST] Validating Centralized NATO Parameter Dispatcher...\n");
+    int dispatch_valid = -1;
+    int dispatch_res = tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT, 20, &dispatch_valid);
+    assert(dispatch_res == 0);
+    assert(dispatch_valid == 1);
+    printf("  [PASS] Centralized NATO Parameter Dispatcher verified.\n");
+
     return 0;
 }

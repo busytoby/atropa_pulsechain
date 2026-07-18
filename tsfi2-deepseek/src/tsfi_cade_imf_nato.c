@@ -694,158 +694,171 @@ int tsfi_mf_nato_verify_rssi_quiet_sample_threshold(int samples, int *is_valid) 
     return 0;
 }
 
-int tsfi_mf_nato_verify_slot_boundary_source_offset_range_limit(int limit_ms, int *is_valid) {
+int tsfi_mf_nato_verify_parameter(int param_type, int value, int *is_valid) {
     if (!is_valid) return -1;
-    *is_valid = (limit_ms >= 0 && limit_ms <= 30) ? 1 : 0;
+    int min_val = 0;
+    int max_val = 0;
+    switch (param_type) {
+        case TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT:
+            min_val = 0; max_val = 30; break;
+        case TSFI_NATO_PARAM_RSSI_QUIET_LIMIT:
+            min_val = 2; max_val = 12; break;
+        case TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT_BOUNDARY:
+            min_val = 0; max_val = 40; break;
+        case TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN:
+            min_val = 1; max_val = 6; break;
+        case TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT_VAL:
+            min_val = 0; max_val = 50; break;
+        case TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN_RANGE:
+            min_val = 1; max_val = 8; break;
+        case TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT_VAL_BOUNDARY:
+            min_val = 0; max_val = 60; break;
+        case TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN_RANGE_OPTION:
+            min_val = 0; max_val = 4; break;
+        case TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT_VAL_MARGIN:
+            min_val = 0; max_val = 70; break;
+        case TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN_RANGE_VAL:
+            min_val = 1; max_val = 10; break;
+        case TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT_VAL_MARGIN_RANGE:
+            min_val = 0; max_val = 80; break;
+        case TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN_RANGE_OPTION_SELECTOR:
+            min_val = 0; max_val = 3; break;
+        case TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT_VAL_MARGIN_RANGE_OPTION_SELECTOR_OPTION:
+            min_val = 0; max_val = 2; break;
+        case TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN_RANGE_OPTION_SELECTOR_MARGIN:
+            min_val = 1; max_val = 5; break;
+        case TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT_VAL_MARGIN_RANGE_OPTION_SELECTOR_OPTION_MARGIN:
+            min_val = 0; max_val = 90; break;
+        case TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE:
+            min_val = 1; max_val = 7; break;
+        case TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT_VAL_MARGIN_RANGE_OPTION_SELECTOR_OPTION_MARGIN_RANGE:
+            min_val = 0; max_val = 100; break;
+        case TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION:
+            min_val = 0; max_val = 2; break;
+        case TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT_VAL_MARGIN_RANGE_OPTION_SELECTOR_OPTION_MARGIN_RANGE_OPTION:
+            min_val = 0; max_val = 3; break;
+        case TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION_SELECTOR:
+            min_val = 0; max_val = 4; break;
+        case TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT_VAL_MARGIN_RANGE_OPTION_SELECTOR_OPTION_MARGIN_RANGE_OPTION_SELECTOR:
+            min_val = 0; max_val = 5; break;
+        case TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION_SELECTOR_MARGIN:
+            min_val = 1; max_val = 9; break;
+        case TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT_VAL_MARGIN_RANGE_OPTION_SELECTOR_OPTION_MARGIN_RANGE_OPTION_SELECTOR_OPTION:
+            min_val = 0; max_val = 3; break;
+        case TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE:
+            min_val = 1; max_val = 10; break;
+        case TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT_VAL_MARGIN_RANGE_OPTION_SELECTOR_OPTION_MARGIN_RANGE_OPTION_SELECTOR_OPTION_MARGIN:
+            min_val = 0; max_val = 110; break;
+        case TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION:
+            min_val = 0; max_val = 2; break;
+        default:
+            *is_valid = 0;
+            return -2;
+    }
+    *is_valid = (value >= min_val && value <= max_val) ? 1 : 0;
     return 0;
+}
+
+int tsfi_mf_nato_verify_slot_boundary_source_offset_range_limit(int limit_ms, int *is_valid) {
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT, limit_ms, is_valid);
 }
 
 int tsfi_mf_nato_verify_rssi_quiet_sample_threshold_limit(int limit_samples, int *is_valid) {
-    if (!is_valid) return -1;
-    *is_valid = (limit_samples >= 2 && limit_samples <= 12) ? 1 : 0;
-    return 0;
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_RSSI_QUIET_LIMIT, limit_samples, is_valid);
 }
 
 int tsfi_mf_nato_verify_slot_boundary_source_offset_range_limit_boundary(int boundary_ms, int *is_valid) {
-    if (!is_valid) return -1;
-    *is_valid = (boundary_ms >= 0 && boundary_ms <= 40) ? 1 : 0;
-    return 0;
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT_BOUNDARY, boundary_ms, is_valid);
 }
 
 int tsfi_mf_nato_verify_rssi_quiet_sample_threshold_limit_margin(int margin_samples, int *is_valid) {
-    if (!is_valid) return -1;
-    *is_valid = (margin_samples >= 1 && margin_samples <= 6) ? 1 : 0;
-    return 0;
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN, margin_samples, is_valid);
 }
 
 int tsfi_mf_nato_verify_slot_boundary_source_offset_range_limit_val(int val_ms, int *is_valid) {
-    if (!is_valid) return -1;
-    *is_valid = (val_ms >= 0 && val_ms <= 50) ? 1 : 0;
-    return 0;
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT_VAL, val_ms, is_valid);
 }
 
 int tsfi_mf_nato_verify_rssi_quiet_sample_threshold_limit_margin_range(int range_samples, int *is_valid) {
-    if (!is_valid) return -1;
-    *is_valid = (range_samples >= 1 && range_samples <= 8) ? 1 : 0;
-    return 0;
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN_RANGE, range_samples, is_valid);
 }
 
 int tsfi_mf_nato_verify_slot_boundary_source_offset_range_limit_val_boundary(int boundary_ms, int *is_valid) {
-    if (!is_valid) return -1;
-    *is_valid = (boundary_ms >= 0 && boundary_ms <= 60) ? 1 : 0;
-    return 0;
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT_VAL_BOUNDARY, boundary_ms, is_valid);
 }
 
 int tsfi_mf_nato_verify_rssi_quiet_sample_threshold_limit_margin_range_option(int option, int *is_valid) {
-    if (!is_valid) return -1;
-    *is_valid = (option >= 0 && option <= 4) ? 1 : 0;
-    return 0;
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN_RANGE_OPTION, option, is_valid);
 }
 
 int tsfi_mf_nato_verify_slot_boundary_source_offset_range_limit_val_margin(int margin_ms, int *is_valid) {
-    if (!is_valid) return -1;
-    *is_valid = (margin_ms >= 0 && margin_ms <= 70) ? 1 : 0;
-    return 0;
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT_VAL_MARGIN, margin_ms, is_valid);
 }
 
 int tsfi_mf_nato_verify_rssi_quiet_sample_threshold_limit_margin_range_val(int val_samples, int *is_valid) {
-    if (!is_valid) return -1;
-    *is_valid = (val_samples >= 1 && val_samples <= 10) ? 1 : 0;
-    return 0;
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN_RANGE_VAL, val_samples, is_valid);
 }
 
 int tsfi_mf_nato_verify_slot_boundary_source_offset_range_limit_val_margin_range(int range_ms, int *is_valid) {
-    if (!is_valid) return -1;
-    *is_valid = (range_ms >= 0 && range_ms <= 80) ? 1 : 0;
-    return 0;
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT_VAL_MARGIN_RANGE, range_ms, is_valid);
 }
 
 int tsfi_mf_nato_verify_rssi_quiet_sample_threshold_limit_margin_range_option_selector(int selector, int *is_valid) {
-    if (!is_valid) return -1;
-    *is_valid = (selector >= 0 && selector <= 3) ? 1 : 0;
-    return 0;
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN_RANGE_OPTION_SELECTOR, selector, is_valid);
 }
 
 int tsfi_mf_nato_verify_slot_boundary_source_offset_range_limit_val_margin_range_option_selector_option(int option, int *is_valid) {
-    if (!is_valid) return -1;
-    *is_valid = (option >= 0 && option <= 2) ? 1 : 0;
-    return 0;
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT_VAL_MARGIN_RANGE_OPTION_SELECTOR_OPTION, option, is_valid);
 }
 
 int tsfi_mf_nato_verify_rssi_quiet_sample_threshold_limit_margin_range_option_selector_margin(int margin_samples, int *is_valid) {
-    if (!is_valid) return -1;
-    *is_valid = (margin_samples >= 1 && margin_samples <= 5) ? 1 : 0;
-    return 0;
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN_RANGE_OPTION_SELECTOR_MARGIN, margin_samples, is_valid);
 }
 
 int tsfi_mf_nato_verify_slot_boundary_source_offset_range_limit_val_margin_range_option_selector_option_margin(int margin_ms, int *is_valid) {
-    if (!is_valid) return -1;
-    *is_valid = (margin_ms >= 0 && margin_ms <= 90) ? 1 : 0;
-    return 0;
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT_VAL_MARGIN_RANGE_OPTION_SELECTOR_OPTION_MARGIN, margin_ms, is_valid);
 }
 
 int tsfi_mf_nato_verify_rssi_quiet_sample_threshold_limit_margin_range_option_selector_margin_range(int range_samples, int *is_valid) {
-    if (!is_valid) return -1;
-    *is_valid = (range_samples >= 1 && range_samples <= 7) ? 1 : 0;
-    return 0;
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE, range_samples, is_valid);
 }
 
 int tsfi_mf_nato_verify_slot_boundary_source_offset_range_limit_val_margin_range_option_selector_option_margin_range(int range_ms, int *is_valid) {
-    if (!is_valid) return -1;
-    *is_valid = (range_ms >= 0 && range_ms <= 100) ? 1 : 0;
-    return 0;
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT_VAL_MARGIN_RANGE_OPTION_SELECTOR_OPTION_MARGIN_RANGE, range_ms, is_valid);
 }
 
 int tsfi_mf_nato_verify_rssi_quiet_sample_threshold_limit_margin_range_option_selector_margin_range_option(int option, int *is_valid) {
-    if (!is_valid) return -1;
-    *is_valid = (option >= 0 && option <= 2) ? 1 : 0;
-    return 0;
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION, option, is_valid);
 }
 
 int tsfi_mf_nato_verify_slot_boundary_source_offset_range_limit_val_margin_range_option_selector_option_margin_range_option(int option, int *is_valid) {
-    if (!is_valid) return -1;
-    *is_valid = (option >= 0 && option <= 3) ? 1 : 0;
-    return 0;
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT_VAL_MARGIN_RANGE_OPTION_SELECTOR_OPTION_MARGIN_RANGE_OPTION, option, is_valid);
 }
 
 int tsfi_mf_nato_verify_rssi_quiet_sample_threshold_limit_margin_range_option_selector_margin_range_option_selector(int selector, int *is_valid) {
-    if (!is_valid) return -1;
-    *is_valid = (selector >= 0 && selector <= 4) ? 1 : 0;
-    return 0;
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION_SELECTOR, selector, is_valid);
 }
 
 int tsfi_mf_nato_verify_slot_boundary_source_offset_range_limit_val_margin_range_option_selector_option_margin_range_option_selector(int selector, int *is_valid) {
-    if (!is_valid) return -1;
-    *is_valid = (selector >= 0 && selector <= 5) ? 1 : 0;
-    return 0;
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT_VAL_MARGIN_RANGE_OPTION_SELECTOR_OPTION_MARGIN_RANGE_OPTION_SELECTOR, selector, is_valid);
 }
 
 int tsfi_mf_nato_verify_rssi_quiet_sample_threshold_limit_margin_range_option_selector_margin_range_option_selector_margin(int margin_samples, int *is_valid) {
-    if (!is_valid) return -1;
-    *is_valid = (margin_samples >= 1 && margin_samples <= 9) ? 1 : 0;
-    return 0;
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION_SELECTOR_MARGIN, margin_samples, is_valid);
 }
 
 int tsfi_mf_nato_verify_slot_boundary_source_offset_range_limit_val_margin_range_option_selector_option_margin_range_option_selector_option(int option, int *is_valid) {
-    if (!is_valid) return -1;
-    *is_valid = (option >= 0 && option <= 3) ? 1 : 0;
-    return 0;
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT_VAL_MARGIN_RANGE_OPTION_SELECTOR_OPTION_MARGIN_RANGE_OPTION_SELECTOR_OPTION, option, is_valid);
 }
 
 int tsfi_mf_nato_verify_rssi_quiet_sample_threshold_limit_margin_range_option_selector_margin_range_option_selector_margin_range(int range_samples, int *is_valid) {
-    if (!is_valid) return -1;
-    *is_valid = (range_samples >= 1 && range_samples <= 10) ? 1 : 0;
-    return 0;
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE, range_samples, is_valid);
 }
 
 int tsfi_mf_nato_verify_slot_boundary_source_offset_range_limit_val_margin_range_option_selector_option_margin_range_option_selector_option_margin(int margin_ms, int *is_valid) {
-    if (!is_valid) return -1;
-    *is_valid = (margin_ms >= 0 && margin_ms <= 110) ? 1 : 0;
-    return 0;
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_SLOT_OFFSET_LIMIT_VAL_MARGIN_RANGE_OPTION_SELECTOR_OPTION_MARGIN_RANGE_OPTION_SELECTOR_OPTION_MARGIN, margin_ms, is_valid);
 }
 
 int tsfi_mf_nato_verify_rssi_quiet_sample_threshold_limit_margin_range_option_selector_margin_range_option_selector_margin_range_option(int option, int *is_valid) {
-    if (!is_valid) return -1;
-    *is_valid = (option >= 0 && option <= 2) ? 1 : 0;
-    return 0;
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_RSSI_QUIET_LIMIT_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION_SELECTOR_MARGIN_RANGE_OPTION, option, is_valid);
 }
