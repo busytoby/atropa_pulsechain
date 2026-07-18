@@ -1242,4 +1242,20 @@ int tsfi_mf_cade_verify_qw_dependent(int filing_status, int dependent_count, int
     return 0;
 }
 
+int tsfi_mf_imf_verify_section179_limit(double claimed_deduction, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (claimed_deduction <= 1220000.00 && claimed_deduction >= 0.0) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_cade_verify_mfs_spouse_name(int filing_status, const char *spouse_first_name, const char *spouse_last_name, int *is_valid) {
+    if (!is_valid) return -1;
+    if (filing_status == 3) {
+        *is_valid = (spouse_first_name && strlen(spouse_first_name) > 0 && spouse_last_name && strlen(spouse_last_name) > 0) ? 1 : 0;
+    } else {
+        *is_valid = 1;
+    }
+    return 0;
+}
+
 

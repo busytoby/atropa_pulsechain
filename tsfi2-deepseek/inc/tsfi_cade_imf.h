@@ -113,5 +113,7 @@ int tsfi_mf_imf_verify_fifteen_rate_capital_gains(double taxable_income, int fil
 int tsfi_mf_cade_verify_mfj_signatures(int filing_status, int spouse_primary_sig, int spouse_secondary_sig, int *is_valid);
 int tsfi_mf_imf_verify_twenty_rate_capital_gains(double taxable_income, int filing_status, int *qualifies_for_twenty_rate);
 int tsfi_mf_cade_verify_qw_dependent(int filing_status, int dependent_count, int *is_valid);
+int tsfi_mf_imf_verify_section179_limit(double claimed_deduction, int *is_valid);
+int tsfi_mf_cade_verify_mfs_spouse_name(int filing_status, const char *spouse_first_name, const char *spouse_last_name, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

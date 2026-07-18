@@ -892,6 +892,22 @@ int main(void) {
     assert(qw_valid == 1);
     printf("  [PASS] IRS CADE QW Dependent Matcher verified.\n");
 
+    // 218. Verify IRS IMF Section 179 Property Expense Limit Checker
+    printf("[TEST] Validating IRS IMF Section 179 Limit Matcher...\n");
+    int s179_valid = -1;
+    int s179_res = tsfi_mf_imf_verify_section179_limit(500000.00, &s179_valid);
+    assert(s179_res == 0);
+    assert(s179_valid == 1);
+    printf("  [PASS] IRS IMF Section 179 Limit Matcher verified.\n");
+
+    // 219. Verify IRS CADE Married Filing Separately (MFS) Spousal Name Validator
+    printf("[TEST] Validating IRS CADE MFS Spousal Name Validator...\n");
+    int mfs_name_valid = -1;
+    int mfs_name_res = tsfi_mf_cade_verify_mfs_spouse_name(3, "Jane", "Doe", &mfs_name_valid);
+    assert(mfs_name_res == 0);
+    assert(mfs_name_valid == 1);
+    printf("  [PASS] IRS CADE MFS Spousal Name Validator verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

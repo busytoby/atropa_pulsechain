@@ -293,5 +293,7 @@
 | 359 | IRS CADE Married Filing Jointly (MFJ) Spousal Signature Matcher | PASS | Verifies spousal signature fields on joint filing submissions | Volume 33 |
 | 360 | IRS IMF Net Capital Gains 20% Preferential Rate Bracket Matcher | PASS | Checks taxable income bounds for 20% long term capital gains rate | Volume 33 |
 | 361 | IRS CADE Qualifying Widow(er) Dependent Child Matcher | PASS | Enforces child dependent validation for qualifying widow status | Volume 33 |
+| 362 | IRS IMF Section 179 Property Expense Limit Checker | PASS | Validates claimed Section 179 expenses do not exceed caps | Volume 33 |
+| 363 | IRS CADE Married Filing Separately (MFS) Spousal Name Validator | PASS | Enforces spousal name input requirement for MFS status | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 361 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 363 Scenarios validated successfully)
