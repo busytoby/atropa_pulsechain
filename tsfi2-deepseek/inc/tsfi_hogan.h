@@ -49,4 +49,33 @@ int tsfi_hogan_lfs_load(hogan_umbrella_system *sys, const char *filepath);
 // 3. Overnight Batch Reconciliation (Epoch Sync)
 int tsfi_hogan_overnight_reconciliation(hogan_umbrella_system *sys, const char *lfs_filepath);
 
+// Sequential Block-Record Queue (BLACK Box)
+#define HOGAN_MAX_FIELDS 16
+
+typedef enum {
+    FIELD_TYPE_UINT32,
+    FIELD_TYPE_UINT64,
+    FIELD_TYPE_STRING
+} hogan_field_type;
+
+typedef struct {
+    char name[16];
+    uint32_t offset;
+    hogan_field_type type;
+} hogan_field_def;
+
+typedef struct {
+    hogan_field_def fields[HOGAN_MAX_FIELDS];
+    size_t field_count;
+} hogan_record_dict;
+
+int tsfi_hogan_write_seq_record(const char *filepath, const uint8_t *payload, size_t size);
+int tsfi_hogan_read_seq_record(const char *filepath, size_t index, uint8_t *payload_out, size_t *size_out);
+
+// Runtime Record Dictionary Resolver (RED Box)
+void tsfi_hogan_init_dict(hogan_record_dict *dict);
+int tsfi_hogan_add_field(hogan_record_dict *dict, const char *name, uint32_t offset, hogan_field_type type);
+int tsfi_hogan_resolve_uint32(const hogan_record_dict *dict, const uint8_t *payload, const char *field_name, uint32_t *val_out);
+int tsfi_hogan_resolve_uint64(const hogan_record_dict *dict, const uint8_t *payload, const char *field_name, uint64_t *val_out);
+
 #endif // TSFI_HOGAN_H

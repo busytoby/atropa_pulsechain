@@ -81,6 +81,63 @@ int main(void) {
     assert(tsfi_hogan_lfs_save(&sys, "hogan_lfs.json") == -3);
     printf("  [PASS] Invalid file extension properly rejected by LFS interface.\n");
 
+    // 8. Test Sequential Block-Record Queue (BLACK Box)
+    printf("[E2E] Testing Sequential Block-Record Queue...\n");
+    const char *seq_filepath = "hogan_seq.dat.bin";
+    remove(seq_filepath); // ensure clean start
+    
+    uint8_t payload1[12] = {0};
+    uint32_t acc_id1 = 5005;
+    uint64_t bal1 = 99999;
+    memcpy(payload1, &acc_id1, sizeof(uint32_t));
+    memcpy(payload1 + 4, &bal1, sizeof(uint64_t));
+    
+    assert(tsfi_hogan_write_seq_record(seq_filepath, payload1, 12) == 0);
+    assert(tsfi_hogan_write_seq_record("hogan_seq.json", payload1, 12) == -3); // Rule 13 check
+    
+    uint8_t payload2[12] = {0};
+    uint32_t acc_id2 = 6006;
+    uint64_t bal2 = 88888;
+    memcpy(payload2, &acc_id2, sizeof(uint32_t));
+    memcpy(payload2 + 4, &bal2, sizeof(uint64_t));
+    
+    assert(tsfi_hogan_write_seq_record(seq_filepath, payload2, 12) == 0);
+    printf("  [PASS] Sequential records written successfully.\n");
+    
+    // 9. Test Runtime Record Dictionary Resolver (RED Box)
+    printf("[E2E] Testing Runtime Record Dictionary Resolver...\n");
+    hogan_record_dict dict;
+    tsfi_hogan_init_dict(&dict);
+    assert(tsfi_hogan_add_field(&dict, "acc_id", 0, FIELD_TYPE_UINT32) == 0);
+    assert(tsfi_hogan_add_field(&dict, "balance", 4, FIELD_TYPE_UINT64) == 0);
+    
+    uint8_t read_payload[12] = {0};
+    size_t read_size = 0;
+    
+    // Read and resolve record at index 0 (acc_id1, bal1)
+    assert(tsfi_hogan_read_seq_record(seq_filepath, 0, read_payload, &read_size) == 0);
+    assert(read_size == 12);
+    
+    uint32_t resolved_acc_id = 0;
+    uint64_t resolved_bal = 0;
+    assert(tsfi_hogan_resolve_uint32(&dict, read_payload, "acc_id", &resolved_acc_id) == 0);
+    assert(tsfi_hogan_resolve_uint64(&dict, read_payload, "balance", &resolved_bal) == 0);
+    assert(resolved_acc_id == 5005);
+    assert(resolved_bal == 99999);
+    
+    // Read and resolve record at index 1 (acc_id2, bal2)
+    assert(tsfi_hogan_read_seq_record(seq_filepath, 1, read_payload, &read_size) == 0);
+    assert(read_size == 12);
+    
+    assert(tsfi_hogan_resolve_uint32(&dict, read_payload, "acc_id", &resolved_acc_id) == 0);
+    assert(tsfi_hogan_resolve_uint64(&dict, read_payload, "balance", &resolved_bal) == 0);
+    assert(resolved_acc_id == 6006);
+    assert(resolved_bal == 88888);
+    
+    printf("  [PASS] Dict resolver extracted values: acc_id=%u, balance=%lu\n", resolved_acc_id, resolved_bal);
+    
+    remove(seq_filepath); // clean up
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }
