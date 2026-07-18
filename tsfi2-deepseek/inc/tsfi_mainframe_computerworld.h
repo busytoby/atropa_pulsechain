@@ -472,6 +472,7 @@ int tsfi_cw_vsam_get_checksum_audit_stats_ex(const tsfi_cw_vsam_ksds *ksds, char
 int tsfi_cw_vsam_format_and_reset_checksum_stats_ex(const tsfi_cw_vsam_ksds *ksds, char *buf_out, int max_len);
 int tsfi_cw_vsam_format_checksum_status_ex(const tsfi_cw_vsam_ksds *ksds, char *buf_out, int max_len, const char *status_msg);
 int tsfi_cw_vsam_format_and_reset_checksum_status_ex(const tsfi_cw_vsam_ksds *ksds, char *buf_out, int max_len, const char *status_msg);
+int tsfi_cw_vsam_format_and_reset_checksum_status_ex2(const tsfi_cw_vsam_ksds *ksds, char *buf_out, int max_len, const char *status_msg, int *rc_out);
 
 typedef struct {
     char pad_char;
@@ -479,7 +480,7 @@ typedef struct {
     int max_size;
 } tsfi_cw_cobol_padding_config;
 
-// COBOL custom padding validator, alignment checker, padding limits validator, alignment padding mapper, field alignment verifier, alignment limits validator, config tool, config query, reset tool, alignment ex checker, boundary alignment checker, alignment ex 3 boundary check, and alignment ex 4 fallback boundary checker
+// COBOL custom padding validator, alignment checker, padding limits validator, alignment padding mapper, field alignment verifier, alignment limits validator, config tool, config query, reset tool, alignment ex checker, boundary alignment checker, alignment ex 3 boundary check, alignment ex 4 fallback boundary checker, and alignment ex 5 margin offset check
 int tsfi_cw_cobol_validate_custom_padding(char pad_char);
 int tsfi_cw_cobol_validate_custom_padding_ex(char pad_char, int pad_len, int max_len);
 int tsfi_cw_cobol_map_custom_padding_byte(char input_char, char *mapped_out);
@@ -495,6 +496,7 @@ int tsfi_cw_cobol_verify_field_alignment_ex(int offset, int size, int alignment,
 int tsfi_cw_cobol_verify_field_alignment_ex2(int offset, int size, int alignment, int max_size, char pad_char);
 int tsfi_cw_cobol_verify_field_alignment_ex3(int offset, int size, int alignment, int max_size, char pad_char, int margin);
 int tsfi_cw_cobol_verify_field_alignment_ex4(int offset, int size, int alignment, int max_size, char pad_char, int margin, int fallback_pad);
+int tsfi_cw_cobol_verify_field_alignment_ex5(int offset, int size, int alignment, int max_size, char pad_char, int margin, int fallback_pad, int offset_limit);
 
 typedef struct {
     uint32_t total_parity_checks;
@@ -502,7 +504,7 @@ typedef struct {
     uint8_t current_si;
 } tsfi_cw_ebcdic_parity_metrics;
 
-// EBCDIC nesting validator, escape override, custom markers override, parity checks counter query, parity checks reset tool, query-and-reset tool, diagnostics formatter, diagnostics format-reset tool, metrics ex query, query-reset ex helper, metrics ex formatter, metrics ex 2 formatter format-reset, and metrics ex 3 formatter format-reset ex
+// EBCDIC nesting validator, escape override, custom markers override, parity checks counter query, parity checks reset tool, query-and-reset tool, diagnostics formatter, diagnostics format-reset tool, metrics ex query, query-reset ex helper, metrics ex formatter, metrics ex 2 formatter format-reset, metrics ex 3 formatter format-reset ex, and metrics ex 4 formatter format-reset ex 2
 int tsfi_cw_ebcdic_check_dbcs_nesting(const uint8_t *ebcdic_str, int len);
 uint8_t tsfi_cw_ebcdic_translate_control_escape_override(uint8_t ebcdic_char, uint8_t custom_lf, uint8_t custom_cr);
 void tsfi_cw_ebcdic_override_dbcs_markers(uint8_t new_so, uint8_t new_si);
@@ -516,8 +518,9 @@ int tsfi_cw_ebcdic_query_and_reset_parity_metrics_ex(tsfi_cw_ebcdic_parity_metri
 int tsfi_cw_ebcdic_format_and_reset_parity_metrics_ex(const tsfi_cw_ebcdic_parity_metrics *metrics, char *buf_out, int max_len);
 int tsfi_cw_ebcdic_format_and_reset_parity_metrics_ex2(tsfi_cw_ebcdic_parity_metrics *metrics, char *buf_out, int max_len);
 int tsfi_cw_ebcdic_format_and_reset_parity_metrics_ex3(tsfi_cw_ebcdic_parity_metrics *metrics, char *buf_out, int max_len, const char *prefix);
+int tsfi_cw_ebcdic_format_and_reset_parity_metrics_ex4(tsfi_cw_ebcdic_parity_metrics *metrics, char *buf_out, int max_len, const char *prefix, int *len_out);
 
-// JCL circular dependency checker, recursion depth validator, PROC recursion depth checker, recursion limit setter, limit query, substitution with custom depth limit, substitution limit configuration setter/getter, limit reset tool, limit query-reset tool, limit boundary setter, limit boundary query, limits fallback configuration query, symbol substitution stats query, and symbol substitution stats query-reset tool
+// JCL circular dependency checker, recursion depth validator, PROC recursion depth checker, recursion limit setter, limit query, substitution with custom depth limit, substitution limit configuration setter/getter, limit reset tool, limit query-reset tool, limit boundary setter, limit boundary query, limits fallback configuration query, symbol substitution stats query, symbol substitution stats query-reset, and symbol substitution stats query-reset ex tool
 int tsfi_cw_jcl_detect_circular_symbols(const char **sym_names, const char **sym_vals, int sym_count);
 int tsfi_cw_jcl_validate_substitution_depth(int current_depth, int max_depth);
 int tsfi_cw_jcl_validate_proc_recursion_depth(int depth, int max_depth);
@@ -533,8 +536,9 @@ int tsfi_cw_jcl_get_substitution_depth_limit_boundary(int *limit_out, int *bound
 int tsfi_cw_jcl_get_substitution_depth_limit_boundary_ex(int *limit_out, int *boundary_out, int *fallback_out);
 int tsfi_cw_jcl_get_substitution_stats(uint32_t *substitutions_out);
 int tsfi_cw_jcl_query_and_reset_substitution_stats(uint32_t *substitutions_out);
+int tsfi_cw_jcl_query_and_reset_substitution_stats_ex(uint32_t *substitutions_out, int *limit_out);
 
-// Y2K dates chronological order check, reset tool, query interface, query-and-reset tool, violations query formatter, query format-reset tool, violations list printer, print-reset list tool, list printer ex, print-reset list ex, violations format-reset ex settings, print-reset list ex 2, and chronological violations list ex 2 format tool
+// Y2K dates chronological order check, reset tool, query interface, query-and-reset tool, violations query formatter, query format-reset tool, violations list printer, print-reset list tool, list printer ex, print-reset list ex, violations format-reset ex settings, print-reset list ex 2, chronological violations list ex 2 format, and chronological violations list ex 2 format-reset tool
 int tsfi_cw_y2k_validate_chronological_order(uint32_t yy1, uint32_t mm1, uint32_t dd1, uint32_t yy2, uint32_t mm2, uint32_t dd2, uint32_t pivot);
 uint32_t tsfi_cw_y2k_get_chronological_violations(void);
 void tsfi_cw_y2k_reset_chronological_violations(void);
@@ -549,6 +553,7 @@ int tsfi_cw_y2k_print_and_reset_violations_list_ex(char *buf_out, int max_len, u
 int tsfi_cw_y2k_format_and_reset_violations_ex(char *buf_out, int max_len, uint32_t pivot);
 int tsfi_cw_y2k_print_and_reset_violations_list_ex2(char *buf_out, int max_len, uint32_t pivot, const char *prefix);
 int tsfi_cw_y2k_format_diagnostic_violations_list_ex2(char *buf_out, int max_len, uint32_t pivot, const char *prefix, int *len_out);
+int tsfi_cw_y2k_format_and_reset_violations_ex2(char *buf_out, int max_len, uint32_t pivot, const char *prefix, int *len_out);
 
 typedef struct {
     uint32_t leap_checks_performed;

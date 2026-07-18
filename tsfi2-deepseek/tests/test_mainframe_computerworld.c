@@ -1293,6 +1293,28 @@ static void test_new_mainframe_features(void) {
     int viol_len = 0;
     assert(tsfi_cw_y2k_format_diagnostic_violations_list_ex2(y2k_format_buf, sizeof(y2k_format_buf), 50, "[LOG]", &viol_len) == 0);
     assert(viol_len > 0);
+
+    // VSAM checksum status formatting ex2 reset
+    int vsam_rc = 0;
+    assert(tsfi_cw_vsam_format_and_reset_checksum_status_ex2(&dummy_ksds, vsam_fmt, sizeof(vsam_fmt), "OK", &vsam_rc) == 0);
+    assert(vsam_rc > 0);
+
+    // COBOL field alignment ex5
+    assert(tsfi_cw_cobol_verify_field_alignment_ex5(8, 4, 4, 16, ' ', 2, 0, 10) == 0);
+    assert(tsfi_cw_cobol_verify_field_alignment_ex5(12, 4, 4, 16, ' ', 2, 0, 10) == -28);
+
+    // EBCDIC metrics ex4 format reset
+    assert(tsfi_cw_ebcdic_format_and_reset_parity_metrics_ex4(&ebcdic_met, ebcdic_fmt, sizeof(ebcdic_fmt), "PRE:", &viol_len) == 0);
+    assert(viol_len > 0);
+
+    // JCL substitution stats query reset ex
+    assert(tsfi_cw_jcl_query_and_reset_substitution_stats_ex(&jcl_subs, &sub_lim) == 0);
+    assert(jcl_subs == 0);
+    assert(sub_lim == 10);
+
+    // Y2K list format-reset ex2 length
+    assert(tsfi_cw_y2k_format_and_reset_violations_ex2(y2k_format_buf, sizeof(y2k_format_buf), 50, "[LOG]", &viol_len) == 0);
+    assert(viol_len > 0);
 }
 
 int main(void) {
