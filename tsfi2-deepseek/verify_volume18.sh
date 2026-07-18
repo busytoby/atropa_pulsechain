@@ -481,8 +481,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 524 | NATO Link-Layer Broadcast Channel Busy Hysteresis RSSI Quiet Sample Threshold Limit Margin Range Option Selector Margin Range Option Selector Margin Range Matcher | PASS | Audits RSSI quiet sample count limit margin range option selector margin range option selector margin ranges | Volume 33 |
 | 525 | NATO Link-Layer Broadcast Collision Backoff Slot Alignment Boundary Source Offset Range Limit Value Margin Range Option Selector Option Margin Range Option Selector Option Margin Matcher | PASS | Validates slot boundary source alignment offset range limits value margin range option selector option margin range option selector option margins | Volume 33 |
 | 526 | NATO Link-Layer Broadcast Channel Busy Hysteresis RSSI Quiet Sample Threshold Limit Margin Range Option Selector Margin Range Option Selector Margin Range Option Matcher | PASS | Audits RSSI quiet sample count limit margin range option selector margin range option selector margin range options | Volume 33 |
+| 527 | NATO Link-Layer Broadcast Collision Backoff Slot Alignment Boundary Source Offset Range Limit Value Margin Range Option Selector Option Margin Range Option Selector Option Margin Limit Matcher | PASS | Validates slot boundary source alignment offset range limits value margin range option selector option margin range option selector option margin limits | Volume 33 |
+| 528 | NATO Link-Layer Broadcast Channel Busy Hysteresis RSSI Quiet Sample Threshold Limit Margin Range Option Selector Margin Range Option Selector Margin Range Option Selector Matcher | PASS | Audits RSSI quiet sample count limit margin range option selector margin range option selector margin range option selectors | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 526 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 528 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"
