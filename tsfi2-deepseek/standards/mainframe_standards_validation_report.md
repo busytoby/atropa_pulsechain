@@ -354,5 +354,7 @@
 | 420 | NATO STANAG 5066 Delivery Confirmation Mode Selector | PASS | Validates client-to-client ack/node-to-node ack configuration options | Volume 33 |
 | 421 | NATO STANAG 5066 Interface Backpressure Timeout Validator | PASS | Validates client interface backpressure flow control timeouts | Volume 33 |
 | 422 | NATO STANAG 5066 Link-Layer Max Frame Size Checker | PASS | Audits that physical radio frame sizes do not exceed maximum MTU boundaries | Volume 33 |
+| 423 | NATO STANAG 5066 Client Transmit Buffer Size Matcher | PASS | Validates that client transmit buffer capacities match standard limits | Volume 33 |
+| 424 | NATO STANAG 5066 Max Segment Lifetime Checker | PASS | Audits that packet transmission lifetimes stay within standard bounds | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 422 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 424 Scenarios validated successfully)

@@ -1817,4 +1817,16 @@ int tsfi_mf_nato_verify_max_frame_size(int frame_size, int *is_valid) {
     return 0;
 }
 
+int tsfi_mf_nato_verify_buffer_size(int size, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (size >= 1024 && size <= 262144) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_segment_lifetime(int lifetime, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (lifetime >= 1 && lifetime <= 3600) ? 1 : 0;
+    return 0;
+}
+
 
