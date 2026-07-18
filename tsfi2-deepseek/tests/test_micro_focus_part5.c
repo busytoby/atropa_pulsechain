@@ -965,7 +965,42 @@ int run_nato_stanag_tests_part5(void) {
     eer_res = tsfi_eer_get_active_alerts(&eer_db, 201, &active_alerts);
     assert(eer_res == 0);
     assert(active_alerts == 1);
-    printf("  [PASS] EER Emergency Database verified.\n");
+    // Verify EER DEFCON Broadcast Integration Trigger
+    printf("[TEST] Validating EER DEFCON Broadcast Integration Trigger...\n");
+    uint8_t bc_buf[8];
+    size_t bc_sz = 0;
+    // Generate DEFCON 2 broadcast
+    int eer_bc_res = tsfi_mf_cics_generate_naap_broadcast(2, 0x1122, bc_buf, &bc_sz);
+    assert(eer_bc_res == 0);
+    assert(bc_sz == 4);
+    assert(bc_buf[0] == 0xBC);
+    
+    // Ingest the broadcast packet into EER Database
+    int extracted_defcon = bc_buf[1];
+    uint32_t incident_id = 999;
+    eer_res = tsfi_eer_insert_incident(&eer_db, incident_id, extracted_defcon, 1700000000, 1);
+    assert(eer_res == 0);
+    
+    // Assert the record was saved with DEFCON 2
+    assert(eer_db.incidents[eer_db.incident_count - 1].defcon_level == 2);
+    
+    // Link to Broadcasting Unit
+    if (eer_db.unit_count < 16) {
+        TSFiEerBroadcastingUnit *unit = &eer_db.units[eer_db.unit_count++];
+        unit->unit_id = 301;
+        unit->target_area = 55;
+        unit->power_level = 100;
+    }
+    
+    // Map relation
+    if (eer_db.transmits_count < 32) {
+        TSFiEerTransmitsAlert *trans = &eer_db.transmits[eer_db.transmits_count++];
+        trans->unit_id = 301;
+        trans->incident_id = incident_id;
+    }
+    
+    assert(eer_db.transmits[eer_db.transmits_count - 1].incident_id == incident_id);
+    printf("  [PASS] EER DEFCON Broadcast Integration Trigger verified.\n");
 
     return 0;
 }
