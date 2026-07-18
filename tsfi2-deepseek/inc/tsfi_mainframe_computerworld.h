@@ -408,10 +408,6 @@ uint8_t tsfi_cw_ebcdic_to_ascii_cp273_ex(uint8_t ebcdic_char);
 uint8_t tsfi_cw_ascii_to_ebcdic_cp278(uint8_t ascii_char);
 uint8_t tsfi_cw_ebcdic_to_ascii_cp278(uint8_t ebcdic_char);
 
-// EBCDIC CP280 translation
-uint8_t tsfi_cw_ascii_to_ebcdic_cp280(uint8_t ascii_char);
-uint8_t tsfi_cw_ebcdic_to_ascii_cp280(uint8_t ebcdic_char);
-
 // JCL GDG resolver, COND chain evaluation, step parameter parser, and symbol substitution
 int tsfi_cw_jcl_resolve_gdg(const char *dsn_str, int current_gen, char *resolved_out, int max_len);
 int tsfi_cw_jcl_eval_cond_chain(int step_rc, int cond_code_1, const char *op_1, int cond_code_2, const char *op_2);
@@ -420,14 +416,6 @@ int tsfi_cw_jcl_substitute_symbol(const char *card, const char *sym_name, const 
 
 // COBOL occurs validator
 int tsfi_cw_cobol_validate_occurs_range(int current_occurs, int max_occurs);
-
-// EBCDIC CP284 translation
-uint8_t tsfi_cw_ascii_to_ebcdic_cp284(uint8_t ascii_char);
-uint8_t tsfi_cw_ebcdic_to_ascii_cp284(uint8_t ebcdic_char);
-
-// EBCDIC CP280 translation
-uint8_t tsfi_cw_ascii_to_ebcdic_cp280(uint8_t ascii_char);
-uint8_t tsfi_cw_ebcdic_to_ascii_cp280(uint8_t ebcdic_char);
 
 // Y2K leap year checker, Month days resolver, and Julian day validator
 int tsfi_cw_y2k_is_leap_year(uint32_t year);

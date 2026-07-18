@@ -246,30 +246,3 @@ uint8_t tsfi_cw_ebcdic_to_ascii_cp278(uint8_t ebcdic_char) {
     return tsfi_cw_ebcdic_to_ascii(ebcdic_char);
 }
 
-uint8_t tsfi_cw_ascii_to_ebcdic_cp280(uint8_t ascii_char) {
-    if (ascii_char == 0xE9) return 0x51;
-    if (ascii_char == 0xF9) return 0x54;
-    if (ascii_char == 0xE0) return 0x7C;
-    return tsfi_cw_ascii_to_ebcdic(ascii_char);
-}
-
-uint8_t tsfi_cw_ebcdic_to_ascii_cp280(uint8_t ebcdic_char) {
-    if (ebcdic_char == 0x51) return 0xE9;
-    if (ebcdic_char == 0x54) return 0xF9;
-    if (ebcdic_char == 0x7C) return 0xE0;
-    return tsfi_cw_ebcdic_to_ascii(ebcdic_char);
-}
-
-uint8_t tsfi_cw_ascii_to_ebcdic_cp284(uint8_t ascii_char) {
-    if (ascii_char == 0xBF) return 0x51;
-    if (ascii_char == 0xD1) return 0x7C;
-    if (ascii_char == 0xAA) return 0x54;
-    return tsfi_cw_ascii_to_ebcdic(ascii_char);
-}
-
-uint8_t tsfi_cw_ebcdic_to_ascii_cp284(uint8_t ebcdic_char) {
-    if (ebcdic_char == 0x51) return 0xBF;
-    if (ebcdic_char == 0x7C) return 0xD1;
-    if (ebcdic_char == 0x54) return 0xAA;
-    return tsfi_cw_ebcdic_to_ascii(ebcdic_char);
-}

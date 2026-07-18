@@ -833,10 +833,6 @@ static void test_new_mainframe_features(void) {
     // COBOL Alphanumeric justify right bounds
     assert(tsfi_cw_parse_copybook_line("05 F1 PIC X(3) JUSTIFIED RIGHT VALUE 'ABCD'.", &cb_occ) == -11);
 
-    // EBCDIC CP280 Translation
-    assert(tsfi_cw_ascii_to_ebcdic_cp280(0xE9) == 0x51);
-    assert(tsfi_cw_ebcdic_to_ascii_cp280(0x51) == 0xE9);
-
     // JCL EXEC step parameter
     char parm_val[64];
     assert(tsfi_cw_jcl_parse_parm("//STEP1 EXEC PGM=PROG,PARM='HELLO'", parm_val, sizeof(parm_val)) == 0);
@@ -860,10 +856,6 @@ static void test_new_mainframe_features(void) {
     // COBOL Occurs dynamic check
     assert(tsfi_cw_cobol_validate_occurs_range(5, 10) == 0);
     assert(tsfi_cw_cobol_validate_occurs_range(12, 10) == -12);
-
-    // EBCDIC CP284 Translation
-    assert(tsfi_cw_ascii_to_ebcdic_cp284(0xBF) == 0x51);
-    assert(tsfi_cw_ebcdic_to_ascii_cp284(0x51) == 0xBF);
 
     // JCL parameter substitution
     char subst_out[128];
