@@ -356,5 +356,7 @@
 | 422 | NATO STANAG 5066 Link-Layer Max Frame Size Checker | PASS | Audits that physical radio frame sizes do not exceed maximum MTU boundaries | Volume 33 |
 | 423 | NATO STANAG 5066 Client Transmit Buffer Size Matcher | PASS | Validates that client transmit buffer capacities match standard limits | Volume 33 |
 | 424 | NATO STANAG 5066 Max Segment Lifetime Checker | PASS | Audits that packet transmission lifetimes stay within standard bounds | Volume 33 |
+| 425 | NATO STANAG 5066 Connection Rejection Reason Matcher | PASS | Validates subnetwork interface connection handshake rejection reason codes | Volume 33 |
+| 426 | NATO STANAG 5066 Link-Layer Packet Delay Selector | PASS | Audits that packet transmission delay parameters stay within standard limits | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 424 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 426 Scenarios validated successfully)

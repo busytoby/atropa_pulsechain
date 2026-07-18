@@ -253,5 +253,21 @@ int run_nato_stanag_tests(void) {
     assert(lifetime_valid == 1);
     printf("  [PASS] NATO STANAG 5066 Max Segment Lifetime Checker verified.\n");
 
+    // 281. Verify NATO STANAG 5066 Connection Rejection Reason Matcher
+    printf("[TEST] Validating NATO STANAG 5066 Connection Rejection Reason Matcher...\n");
+    int reason_valid = -1;
+    int reason_res = tsfi_mf_nato_verify_rejection_reason(3, &reason_valid);
+    assert(reason_res == 0);
+    assert(reason_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Connection Rejection Reason Matcher verified.\n");
+
+    // 282. Verify NATO STANAG 5066 Link-Layer Packet Delay Selector
+    printf("[TEST] Validating NATO STANAG 5066 Packet Delay Selector...\n");
+    int delay_valid = -1;
+    int delay_res = tsfi_mf_nato_verify_packet_delay(60, &delay_valid);
+    assert(delay_res == 0);
+    assert(delay_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Packet Delay Selector verified.\n");
+
     return 0;
 }

@@ -1829,4 +1829,16 @@ int tsfi_mf_nato_verify_segment_lifetime(int lifetime, int *is_valid) {
     return 0;
 }
 
+int tsfi_mf_nato_verify_rejection_reason(int reason, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (reason >= 0 && reason <= 15) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_packet_delay(int delay, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (delay >= 0 && delay <= 120) ? 1 : 0;
+    return 0;
+}
+
 
