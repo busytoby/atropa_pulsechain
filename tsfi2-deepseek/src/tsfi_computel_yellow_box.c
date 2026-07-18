@@ -43,3 +43,51 @@ int yellow_box_scramble_signal(const uint8_t *in, size_t size, uint8_t *out) {
     
     return 0;
 }
+
+int tsfi_mf_yellow_box_secure_telegram_route(const char *ssn, int dmf_deceased, int ssn_allocated, int defcon_level, uint8_t *out_telegram, size_t *out_size) {
+    if (!ssn || !out_telegram || !out_size) return -1;
+    if (strlen(ssn) != 9) return -2;
+    
+    // 16 bytes raw payload
+    uint8_t payload[16];
+    payload[0] = 0xAA; // Yellow Box Header
+    for (int i = 0; i < 9; i++) {
+        payload[i + 1] = ssn[i];
+    }
+    payload[10] = (uint8_t)dmf_deceased;
+    payload[11] = (uint8_t)ssn_allocated;
+    payload[12] = (uint8_t)defcon_level;
+    payload[13] = 0x00;
+    payload[14] = 0x00;
+    payload[15] = 0x00;
+    
+    // Encrypt in 2 blocks using 32-round GOST block cipher
+    uint32_t keys[8] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
+    
+    for (int block = 0; block < 2; block++) {
+        int offset = block * 8;
+        uint32_t left = ((uint32_t)payload[offset] << 24) | ((uint32_t)payload[offset+1] << 16) | ((uint32_t)payload[offset+2] << 8) | payload[offset+3];
+        uint32_t right = ((uint32_t)payload[offset+4] << 24) | ((uint32_t)payload[offset+5] << 16) | ((uint32_t)payload[offset+6] << 8) | payload[offset+7];
+        
+        tsfi_mf_ussr_gost_encrypt_32(&left, &right, keys);
+        
+        payload[offset] = (left >> 24) & 0xFF;
+        payload[offset+1] = (left >> 16) & 0xFF;
+        payload[offset+2] = (left >> 8) & 0xFF;
+        payload[offset+3] = left & 0xFF;
+        payload[offset+4] = (right >> 24) & 0xFF;
+        payload[offset+5] = (right >> 16) & 0xFF;
+        payload[offset+6] = (right >> 8) & 0xFF;
+        payload[offset+7] = right & 0xFF;
+    }
+    
+    // Encapsulate inside STANAG 5066 broadcast frame
+    out_telegram[0] = 0x7E; // Start
+    out_telegram[1] = 0x55; // Protocol ID
+    memcpy(&out_telegram[2], payload, 16);
+    out_telegram[18] = 0x7E; // End
+    
+    *out_size = 19;
+    return 0;
+}
+

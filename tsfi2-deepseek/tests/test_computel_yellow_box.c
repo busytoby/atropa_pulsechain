@@ -29,6 +29,18 @@ int main(void) {
     assert(rc == 0);
     printf("[TEST] Descrambling pass executed.\n");
 
+    // Test Secure Telegram Routing (integrating Yellow Box, S-Box, IRS, NATO, NORAD, and SSA status)
+    printf("[TEST] Validating Yellow Box Secure Telegram Routing...\n");
+    uint8_t telegram[32] = {0};
+    size_t tel_size = 0;
+    rc = tsfi_mf_yellow_box_secure_telegram_route("050051122", 1, 0, 1, telegram, &tel_size);
+    assert(rc == 0);
+    assert(tel_size == 19);
+    assert(telegram[0] == 0x7E); // STANAG 5066 framing check
+    assert(telegram[1] == 0x55);
+    assert(telegram[18] == 0x7E);
+    printf("[TEST] Yellow Box Secure Telegram successfully routed and framed (19 bytes).\n");
+
     printf("[SUCCESS] All Yellow Box S-Box scrambler integration tests passed.\n");
     return 0;
 }
