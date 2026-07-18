@@ -178,7 +178,34 @@ int run_nato_stanag_tests_part5(void) {
     }
     assert(frame[8] == ((verify_crc >> 8) & 0xFF));
     assert(frame[9] == (verify_crc & 0xFF));
-    printf("  [PASS] D_PDU Encoder and Checksum verified.\n");
+    // Verify Selective Repeat ARQ State Machine
+    printf("[TEST] Validating NATO Selective Repeat ARQ...\n");
+    int next_exp = 5;
+    int arq_valid = -1;
+    // Receive expected in-order frame (5) -> valid, increments next_expected
+    int arq_res = tsfi_mf_nato_arq_update(0, 5, 8, &next_exp, &arq_valid);
+    assert(arq_res == 0);
+    assert(arq_valid == 1);
+    assert(next_exp == 6);
+    // Receive out-of-order frame (8) within window [6, 13] -> valid, does not increment next_expected
+    tsfi_mf_nato_arq_update(0, 8, 8, &next_exp, &arq_valid);
+    assert(arq_valid == 1);
+    assert(next_exp == 6);
+    // Receive frame (20) outside window -> invalid
+    tsfi_mf_nato_arq_update(0, 20, 8, &next_exp, &arq_valid);
+    assert(arq_valid == 0);
+    printf("  [PASS] Selective Repeat ARQ verified.\n");
+
+    // Verify U_PDU Header Encoder
+    printf("[TEST] Validating NATO U_PDU Header Encoder...\n");
+    uint8_t hdr_buf[8];
+    size_t hdr_size = 0;
+    int hdr_res = tsfi_mf_nato_encode_u_pdu_header(3, 4, 7, 1, hdr_buf, &hdr_size);
+    assert(hdr_res == 0);
+    assert(hdr_size == 2);
+    assert(hdr_buf[0] == 0x34); // (3 << 4) | 4
+    assert(hdr_buf[1] == 0x87); // 7 | 0x80
+    printf("  [PASS] U_PDU Header Encoder verified.\n");
 
     return 0;
 }

@@ -366,4 +366,7 @@ int tsfi_mf_nato_verify_fec_block_size(int size_bytes, int *is_valid);
 int tsfi_mf_nato_parse_sis_primitive(const uint8_t *data, size_t size, int *prim_type, int *is_valid);
 int tsfi_mf_nato_encode_d_pdu(int type, const uint8_t *payload, size_t pay_size, uint8_t *out_frame, size_t *out_size);
 
+int tsfi_mf_nato_arq_update(int event, int seq_num, int window_size, int *next_expected, int *is_valid);
+int tsfi_mf_nato_encode_u_pdu_header(int dest_sap, int src_sap, int priority, int is_segment, uint8_t *out_hdr, size_t *out_size);
+
 #endif // TSFI_CADE_IMF_H

@@ -790,4 +790,48 @@ int tsfi_mf_nato_encode_d_pdu(int type, const uint8_t *payload, size_t pay_size,
     return 0;
 }
 
+int tsfi_mf_nato_arq_update(int event, int seq_num, int window_size, int *next_expected, int *is_valid) {
+    if (!next_expected || !is_valid) return -1;
+    if (seq_num < 0 || seq_num >= 128 || window_size < 1 || window_size > 64) {
+        *is_valid = 0;
+        return 0;
+    }
+    
+    int limit = (*next_expected + window_size) % 128;
+    int in_window = 0;
+    if (*next_expected + window_size <= 128) {
+        if (seq_num >= *next_expected && seq_num < *next_expected + window_size) {
+            in_window = 1;
+        }
+    } else {
+        if (seq_num >= *next_expected || seq_num < limit) {
+            in_window = 1;
+        }
+    }
+    
+    if (in_window) {
+        *is_valid = 1;
+        if (event == 0 && seq_num == *next_expected) {
+            *next_expected = (*next_expected + 1) % 128;
+        }
+    } else {
+        *is_valid = 0;
+    }
+    
+    return 0;
+}
+
+int tsfi_mf_nato_encode_u_pdu_header(int dest_sap, int src_sap, int priority, int is_segment, uint8_t *out_hdr, size_t *out_size) {
+    if (!out_hdr || !out_size) return -1;
+    if (dest_sap < 0 || dest_sap > 15 || src_sap < 0 || src_sap > 15 || priority < 0 || priority > 15) {
+        return -2;
+    }
+    
+    out_hdr[0] = ((dest_sap & 0x0F) << 4) | (src_sap & 0x0F);
+    out_hdr[1] = (priority & 0x0F) | (is_segment ? 0x80 : 0x00);
+    *out_size = 2;
+    return 0;
+}
+
+
 
