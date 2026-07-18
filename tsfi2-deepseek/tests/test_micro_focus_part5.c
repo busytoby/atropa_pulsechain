@@ -1295,5 +1295,22 @@ int run_nato_stanag_tests_part5(void) {
     assert(tsfi_norad_lockout_active == 1);
     printf("  [PASS] CICS Task Transaction Monitor verified.\n");
 
+    // Verify CICS 3270 Terminal Stream Guard
+    printf("[TEST] Validating CICS 3270 Terminal Stream Guard...\n");
+    char abend3270[5] = {0};
+    uint8_t clean_screen[] = "3270TerminalMapWithSafeLabelsNoData";
+    int term_res = tsfi_mf_cics_check_3270_buffer(clean_screen, sizeof(clean_screen), abend3270);
+    assert(term_res == 0);
+    assert(strcmp(abend3270, "    ") == 0);
+    
+    uint8_t dirty_screen[] = "SSN: 050051122 displaying on terminal screen";
+    tsfi_mf_norad_reset_lockout();
+    term_res = tsfi_mf_cics_check_3270_buffer(dirty_screen, sizeof(dirty_screen), abend3270);
+    assert(term_res == 1); // Intercepted
+    assert(strcmp(abend3270, "A327") == 0);
+    assert(tsfi_gost_emergency_defcon_level == 0);
+    assert(tsfi_norad_lockout_active == 1);
+    printf("  [PASS] CICS 3270 Terminal Stream Guard verified.\n");
+
     return 0;
 }

@@ -2239,6 +2239,34 @@ int tsfi_mf_cics_check_task_security(uint32_t transaction_id, const uint8_t *tas
     return 0;
 }
 
+int tsfi_mf_cics_check_3270_buffer(const uint8_t *screen_buffer, size_t buffer_size, char *abend_code_out) {
+    if (!screen_buffer || !abend_code_out) return -1;
+    strcpy(abend_code_out, "    ");
+    
+    int has_identity = 0;
+    for (size_t i = 0; i + 9 <= buffer_size; i++) {
+        int digits = 0;
+        for (size_t j = 0; j < 9; j++) {
+            if (screen_buffer[i + j] >= '0' && screen_buffer[i + j] <= '9') {
+                digits++;
+            }
+        }
+        if (digits == 9) {
+            has_identity = 1;
+            break;
+        }
+    }
+    
+    if (has_identity) {
+        strcpy(abend_code_out, "A327");
+        tsfi_gost_emergency_defcon_level = 0;
+        tsfi_norad_lockout_active = 1;
+        tsfi_gost_is_broadcast_channel = 0;
+        return 1;
+    }
+    return 0;
+}
+
 
 
 
