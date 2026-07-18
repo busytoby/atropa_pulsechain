@@ -309,5 +309,7 @@
 | 375 | IRS IMF Section 1244 Small Business Stock Loss Excess Capital Loss Redirection Matcher | PASS | Confirms excess ordinary losses flow to Schedule D capital losses | Volume 33 |
 | 376 | IRS CADE Schedule B Part I Seller-Financed Interest Buyer SSN Formatting Matcher | PASS | Checks seller financed interest buyer SSN for dummy codes | Volume 33 |
 | 377 | IRS IMF Section 179 Property Eligible Expense Allocation Validator | PASS | Enforces business income caps on Section 179 asset deduction limits | Volume 33 |
+| 378 | IRS CADE Schedule B Part III Foreign Account Country Code Matcher | PASS | Checks foreign account locations list valid 2-letter ISO country codes | Volume 33 |
+| 379 | IRS IMF Schedule K-1 Distributive Dividend Share Matcher | PASS | Matches 1040 ordinary dividend lines against distributive Schedule K-1 shares | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 377 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 379 Scenarios validated successfully)

@@ -1410,4 +1410,28 @@ int tsfi_mf_imf_verify_section179_income_limit(double claimed_deduction, double 
     return 0;
 }
 
+int tsfi_mf_cade_verify_foreign_country_code(int has_foreign_account, const char *country_code, int *is_valid) {
+    if (!is_valid) return -1;
+    if (!has_foreign_account) {
+        *is_valid = 1;
+        return 0;
+    }
+    if (!country_code || strlen(country_code) != 2) {
+        *is_valid = 0;
+        return 0;
+    }
+    if (country_code[0] < 'A' || country_code[0] > 'Z' || country_code[1] < 'A' || country_code[1] > 'Z') {
+        *is_valid = 0;
+        return 0;
+    }
+    *is_valid = 1;
+    return 0;
+}
+
+int tsfi_mf_imf_match_k1_dividends(double reported_1040_dividends, double k1_share_dividends, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (reported_1040_dividends == k1_share_dividends) ? 1 : 0;
+    return 0;
+}
+
 

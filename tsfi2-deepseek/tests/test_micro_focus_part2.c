@@ -1023,6 +1023,22 @@ int main(void) {
     assert(income_limit_valid == 1);
     printf("  [PASS] IRS IMF Section 179 Income Limit Matcher verified.\n");
 
+    // 234. Verify IRS CADE Schedule B Part III Foreign Account Country Code Matcher
+    printf("[TEST] Validating IRS CADE Foreign Country Code Matcher...\n");
+    int cc_valid = -1;
+    int cc_res = tsfi_mf_cade_verify_foreign_country_code(1, "UK", &cc_valid);
+    assert(cc_res == 0);
+    assert(cc_valid == 1);
+    printf("  [PASS] IRS CADE Foreign Country Code Matcher verified.\n");
+
+    // 235. Verify IRS IMF Schedule K-1 Distributive Dividend Share Matcher
+    printf("[TEST] Validating IRS IMF K-1 Dividend Share Matcher...\n");
+    int k1_div_match = -1;
+    int k1_div_res = tsfi_mf_imf_match_k1_dividends(1500.00, 1500.00, &k1_div_match);
+    assert(k1_div_res == 0);
+    assert(k1_div_match == 1);
+    printf("  [PASS] IRS IMF K-1 Dividend Share Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

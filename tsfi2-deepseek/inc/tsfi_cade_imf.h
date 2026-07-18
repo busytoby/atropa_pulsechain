@@ -129,5 +129,7 @@ int tsfi_mf_cade_verify_foreign_trust_indicator(int has_foreign_account, int has
 int tsfi_mf_imf_verify_section1244_excess_redirection(double total_claimed_loss, int filing_status, double reported_ordinary_loss, double reported_capital_loss, int *is_valid);
 int tsfi_mf_cade_verify_seller_financed_ssn_format(const char *ssn, int *is_valid);
 int tsfi_mf_imf_verify_section179_income_limit(double claimed_deduction, double net_business_income, int *is_valid);
+int tsfi_mf_cade_verify_foreign_country_code(int has_foreign_account, const char *country_code, int *is_valid);
+int tsfi_mf_imf_match_k1_dividends(double reported_1040_dividends, double k1_share_dividends, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H
