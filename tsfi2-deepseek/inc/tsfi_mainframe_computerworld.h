@@ -119,6 +119,7 @@ typedef struct {
     uint8_t active;
     uint8_t lock_state;
     uint32_t lock_attempts;
+    uint32_t checksum;
 } tsfi_cw_vsam_entry;
 
 typedef struct {
@@ -463,12 +464,18 @@ int tsfi_cw_vsam_verify_record_checksum(const uint8_t *data, int len, uint32_t e
 
 // COBOL custom padding validator
 int tsfi_cw_cobol_validate_custom_padding(char pad_char);
+int tsfi_cw_cobol_validate_custom_padding_ex(char pad_char, int pad_len, int max_len);
 
-// EBCDIC nesting validator
+// EBCDIC nesting validator and escape override
 int tsfi_cw_ebcdic_check_dbcs_nesting(const uint8_t *ebcdic_str, int len);
+uint8_t tsfi_cw_ebcdic_translate_control_escape_override(uint8_t ebcdic_char, uint8_t custom_lf, uint8_t custom_cr);
 
-// JCL circular dependency checker
+// JCL circular dependency checker and recursion depth validator
 int tsfi_cw_jcl_detect_circular_symbols(const char **sym_names, const char **sym_vals, int sym_count);
+int tsfi_cw_jcl_validate_substitution_depth(int current_depth, int max_depth);
+
+// Y2K dates chronological order check
+int tsfi_cw_y2k_validate_chronological_order(uint32_t yy1, uint32_t mm1, uint32_t dd1, uint32_t yy2, uint32_t mm2, uint32_t dd2, uint32_t pivot);
 
 typedef struct {
     uint32_t leap_checks_performed;

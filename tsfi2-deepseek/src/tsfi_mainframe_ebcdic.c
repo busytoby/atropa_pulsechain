@@ -582,3 +582,9 @@ int tsfi_cw_ebcdic_check_dbcs_nesting(const uint8_t *ebcdic_str, int len) {
     return 0;
 }
 
+uint8_t tsfi_cw_ebcdic_translate_control_escape_override(uint8_t ebcdic_char, uint8_t custom_lf, uint8_t custom_cr) {
+    if (ebcdic_char == custom_lf) return '\n';
+    if (ebcdic_char == custom_cr) return '\r';
+    return tsfi_cw_ebcdic_translate_control_escape(ebcdic_char);
+}
+

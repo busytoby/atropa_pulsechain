@@ -542,3 +542,8 @@ int tsfi_cw_jcl_substitute_symbols_multi(const char *card, const char **sym_name
     resolved_out[max_len - 1] = '\0';
     return 0;
 }
+
+int tsfi_cw_jcl_validate_substitution_depth(int current_depth, int max_depth) {
+    if (current_depth > max_depth) return -31;
+    return 0;
+}

@@ -1009,6 +1009,21 @@ static void test_new_mainframe_features(void) {
     tsfi_cw_y2k_date_diff(0, 1, 1, 10, 1, 1, 50, &d_dummy);
     tsfi_cw_y2k_get_diagnostics(&diag);
     assert(diag.span_leap_adjustments_tracked > 0);
+
+    // COBOL custom padding ex bounds check
+    assert(tsfi_cw_cobol_validate_custom_padding_ex('_', 5, 10) == 0);
+    assert(tsfi_cw_cobol_validate_custom_padding_ex('_', 15, 10) == -30);
+
+    // EBCDIC escape overrides
+    assert(tsfi_cw_ebcdic_translate_control_escape_override(0x1F, 0x1F, 0x0D) == '\n');
+
+    // JCL symbol recursion depth validator
+    assert(tsfi_cw_jcl_validate_substitution_depth(3, 5) == 0);
+    assert(tsfi_cw_jcl_validate_substitution_depth(6, 5) == -31);
+
+    // Y2K chronological dates validation
+    assert(tsfi_cw_y2k_validate_chronological_order(0, 1, 1, 10, 1, 1, 50) == 0);
+    assert(tsfi_cw_y2k_validate_chronological_order(10, 1, 1, 0, 1, 1, 50) == -32);
 }
 
 int main(void) {

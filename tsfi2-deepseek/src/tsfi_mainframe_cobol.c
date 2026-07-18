@@ -758,3 +758,9 @@ int tsfi_cw_cobol_validate_custom_padding(char pad_char) {
     }
     return 0;
 }
+
+int tsfi_cw_cobol_validate_custom_padding_ex(char pad_char, int pad_len, int max_len) {
+    if (pad_char == '\0' || pad_char == '\n' || pad_char == '\r') return -26;
+    if (pad_len < 0 || pad_len > max_len) return -30;
+    return 0;
+}
