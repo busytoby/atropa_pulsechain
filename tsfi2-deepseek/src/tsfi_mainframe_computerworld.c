@@ -1212,6 +1212,27 @@ int tsfi_cw_marist_alloc_crypto(const tsfi_cw_marist_crypto_coproc *cfg, double 
     return 0;
 }
 
+int tsfi_cw_marist_audit_minidisk_cache(const tsfi_cw_marist_minidisk_cache *cache, double *hit_ratio_out, int *needs_resize_out) {
+    if (!cache || !hit_ratio_out || !needs_resize_out) return -1;
+    
+    *hit_ratio_out = (cache->read_requests > 0) ? (double)cache->read_hits / (double)cache->read_requests : 0.0;
+    *needs_resize_out = (*hit_ratio_out < 0.60 && cache->read_requests > 100) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_cw_marist_audit_isglock(const tsfi_cw_marist_isglock *lock, int *alert_out) {
+    if (!lock || !alert_out) return -1;
+    
+    double contention_ratio = (lock->lock_requests > 0) ? (double)lock->contended_requests / lock->lock_requests : 0.0;
+    if (lock->timeouts > 0 || lock->avg_grant_delay_ms > 50 || contention_ratio > 0.15) {
+        *alert_out = 1;
+    } else {
+        *alert_out = 0;
+    }
+    return 0;
+}
+
+
 
 
 

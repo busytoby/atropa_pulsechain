@@ -996,5 +996,24 @@ typedef struct {
 int tsfi_cw_marist_audit_wlm(const tsfi_cw_marist_wlm_service *srv, int *needs_adjustment_out);
 int tsfi_cw_marist_alloc_crypto(const tsfi_cw_marist_crypto_coproc *cfg, double guest_allocs_out[16]);
 
+// Marist z/VM Minidisk Cache Telemetry
+typedef struct {
+    int read_requests;
+    int read_hits;
+    int write_requests;
+    int cache_size_kb;
+} tsfi_cw_marist_minidisk_cache;
+
+// Marist z/OS ISGLOCK Clustered Lock Telemetry
+typedef struct {
+    int lock_requests;
+    int contended_requests;
+    int timeouts;
+    int avg_grant_delay_ms;
+} tsfi_cw_marist_isglock;
+
+int tsfi_cw_marist_audit_minidisk_cache(const tsfi_cw_marist_minidisk_cache *cache, double *hit_ratio_out, int *needs_resize_out);
+int tsfi_cw_marist_audit_isglock(const tsfi_cw_marist_isglock *lock, int *alert_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

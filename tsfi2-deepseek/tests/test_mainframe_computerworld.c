@@ -1932,6 +1932,24 @@ static void test_new_mainframe_features(void) {
     assert(fabs(crypto_allocs[0] - 0.20) < 0.01);
     assert(fabs(crypto_allocs[1] - 0.30) < 0.01);
     assert(fabs(crypto_allocs[2] - 0.50) < 0.01);
+
+    // Marist Minidisk Cache test
+    tsfi_cw_marist_minidisk_cache cache = { 200, 90, 50, 4096 }; // 90/200 = 45% hit ratio (< 60%) -> Resize needed!
+    double hit_ratio = 0.0;
+    int needs_resize = 0;
+    assert(tsfi_cw_marist_audit_minidisk_cache(&cache, &hit_ratio, &needs_resize) == 0);
+    assert(fabs(hit_ratio - 0.45) < 0.01);
+    assert(needs_resize == 1);
+
+    // Marist ISGLOCK test
+    tsfi_cw_marist_isglock lock_ok = { 100, 5, 0, 10 };
+    int lock_alert = 0;
+    assert(tsfi_cw_marist_audit_isglock(&lock_ok, &lock_alert) == 0);
+    assert(lock_alert == 0);
+
+    tsfi_cw_marist_isglock lock_bad = { 100, 25, 0, 10 }; // 25% contention (> 15%)
+    assert(tsfi_cw_marist_audit_isglock(&lock_bad, &lock_alert) == 0);
+    assert(lock_alert == 1);
 }
 
 int main(void) {
