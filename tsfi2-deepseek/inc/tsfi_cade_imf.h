@@ -497,4 +497,14 @@ extern int tsfi_gost_is_broadcast_channel;
 
 int tsfi_mf_gost_is_tin_pattern(uint32_t val);
 
+int tsfi_mf_tin_resolve_group_identities(const char *tin, char ssn_list[][10], int *ssn_count);
+int tsfi_mf_tin_verify_group_exhaustive(const char *tin, int *is_valid);
+
+extern int tsfi_norad_lockout_active;
+int tsfi_mf_norad_reset_lockout(void);
+
+int tsfi_mf_cics_check_task_security(uint32_t transaction_id, const uint8_t *task_data, size_t data_size, char *abend_code_out);
+int tsfi_mf_cics_check_3270_buffer(const uint8_t *screen_buffer, size_t buffer_size, char *abend_code_out);
+int tsfi_mf_es_evm_spool_guard(const char *jcl_content, int *is_valid);
+
 #endif // TSFI_CADE_IMF_H

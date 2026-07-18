@@ -1322,18 +1322,21 @@ int run_nato_stanag_tests_part5(void) {
     assert(spool_res == 0);
     assert(jcl_valid == 1);
     
-    const char *dirty_jcl = 
-        "//ESEVJOB JOB (ES),'GOST RUN',CLASS=A\n"
-        "//SYSIN DD *\n"
-        "050051122\n"
-        "/*\n";
+    // Load and validate gost_intrusion.strategy
+    FILE *f = fopen("../solidity/dysnomia/domain/strategies/gost_intrusion.strategy", "r");
+    assert(f != NULL);
+    char buf[2048];
+    size_t bytes = fread(buf, 1, sizeof(buf) - 1, f);
+    buf[bytes] = '\0';
+    fclose(f);
+    
     tsfi_mf_norad_reset_lockout();
-    spool_res = tsfi_mf_es_evm_spool_guard(dirty_jcl, &jcl_valid);
+    spool_res = tsfi_mf_es_evm_spool_guard(buf, &jcl_valid);
     assert(spool_res == 1); // Intercepted
     assert(jcl_valid == 0); // Invalidated
     assert(tsfi_gost_emergency_defcon_level == 0);
     assert(tsfi_norad_lockout_active == 1);
-    printf("  [PASS] ES EVM JES Spool JCL Guard verified.\n");
+    printf("  [PASS] ES EVM JES Spool JCL Guard verified via .strategy file.\n");
 
     return 0;
 }
