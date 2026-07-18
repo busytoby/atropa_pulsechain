@@ -1169,5 +1169,24 @@ typedef struct {
 int tsfi_cw_unt_audit_pds(const tsfi_cw_unt_pds_status *pds, int *needs_compress_out);
 int tsfi_cw_unt_profile_cics(const tsfi_cw_unt_cics_tran *trans, int tran_count, double *avg_response_time_out, int *slow_count_out);
 
+// CICS Terminal Session Info
+typedef struct {
+    char user_id[8];
+    char terminal_id[8];
+    int is_active;
+    int latency_ms;
+} tsfi_cw_unt_cics_session;
+
+// CICS Storage Queue Info
+typedef struct {
+    char queue_name[8];
+    int item_count;
+    char queue_type[8]; // TSQ or TDQ
+    int total_bytes;
+} tsfi_cw_unt_cics_queue;
+
+int tsfi_cw_unt_cics_audit_session(const tsfi_cw_unt_cics_session *session, int *needs_reset_out);
+int tsfi_cw_unt_cics_audit_queue(const tsfi_cw_unt_cics_queue *queue, int *alert_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

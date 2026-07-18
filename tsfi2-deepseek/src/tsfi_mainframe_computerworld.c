@@ -1529,6 +1529,21 @@ int tsfi_cw_unt_profile_cics(const tsfi_cw_unt_cics_tran *trans, int tran_count,
     return 0;
 }
 
+int tsfi_cw_unt_cics_audit_session(const tsfi_cw_unt_cics_session *session, int *needs_reset_out) {
+    if (!session || !needs_reset_out) return -1;
+    
+    *needs_reset_out = (session->is_active && session->latency_ms > 2000) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_cw_unt_cics_audit_queue(const tsfi_cw_unt_cics_queue *queue, int *alert_out) {
+    if (!queue || !alert_out) return -1;
+    
+    *alert_out = (queue->total_bytes > 50000000 || queue->item_count > 10000) ? 1 : 0;
+    return 0;
+}
+
+
 
 
 

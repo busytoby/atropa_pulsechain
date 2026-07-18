@@ -2120,6 +2120,25 @@ static void test_new_mainframe_features(void) {
     assert(tsfi_cw_unt_profile_cics(trans, 2, &avg_resp, &slow_cnt) == 0);
     assert(fabs(avg_resp - 1000.0) < 0.1);
     assert(slow_cnt == 1);
+
+    // UNT CICS session and queue tests
+    tsfi_cw_unt_cics_session session_ok = { "USER1", "T001", 1, 150 };
+    int needs_reset = 0;
+    assert(tsfi_cw_unt_cics_audit_session(&session_ok, &needs_reset) == 0);
+    assert(needs_reset == 0);
+
+    tsfi_cw_unt_cics_session session_bad = { "USER2", "T002", 1, 3000 };
+    assert(tsfi_cw_unt_cics_audit_session(&session_bad, &needs_reset) == 0);
+    assert(needs_reset == 1);
+
+    tsfi_cw_unt_cics_queue queue_ok = { "TSQ01", 100, "TSQ", 1000000 };
+    int cics_alert = 0;
+    assert(tsfi_cw_unt_cics_audit_queue(&queue_ok, &cics_alert) == 0);
+    assert(cics_alert == 0);
+
+    tsfi_cw_unt_cics_queue queue_bad = { "TSQ02", 15000, "TSQ", 1000000 };
+    assert(tsfi_cw_unt_cics_audit_queue(&queue_bad, &cics_alert) == 0);
+    assert(cics_alert == 1);
 }
 
 int main(void) {

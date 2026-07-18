@@ -13,6 +13,7 @@
 #include "tsfi_io.h"
 #include "lau_memory.h"
 #include "tsfi_block_monitor.h"
+#include "tsfi_mainframe_computerworld.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -912,6 +913,58 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
             lau_free(file_data);
             return 1;
         }
+    }
+    if (method_type == 70) {
+        char user_id[32] = {0};
+        char terminal_id[32] = {0};
+        extract_json_string(min_ptr, "\"user_id\"", user_id, sizeof(user_id));
+        extract_json_string(min_ptr, "\"terminal_id\"", terminal_id, sizeof(terminal_id));
+        int is_active = extract_json_int(min_ptr, "\"is_active\"", 0);
+        int latency_ms = extract_json_int(min_ptr, "\"latency_ms\"", 0);
+        
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wstringop-truncation"
+        tsfi_cw_unt_cics_session session;
+        strncpy(session.user_id, user_id, sizeof(session.user_id) - 1);
+        session.user_id[sizeof(session.user_id) - 1] = 0;
+        strncpy(session.terminal_id, terminal_id, sizeof(session.terminal_id) - 1);
+        session.terminal_id[sizeof(session.terminal_id) - 1] = 0;
+        #pragma GCC diagnostic pop
+        
+        session.is_active = is_active;
+        session.latency_ms = latency_ms;
+        
+        int needs_reset = 0;
+        extern int tsfi_cw_unt_cics_audit_session(const tsfi_cw_unt_cics_session *session, int *needs_reset_out);
+        tsfi_cw_unt_cics_audit_session(&session, &needs_reset);
+        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"needs_reset\": %d}, \"id\": %d}\n", needs_reset, id);
+        return 1;
+    }
+    if (method_type == 71) {
+        char queue_name[32] = {0};
+        char queue_type[32] = {0};
+        extract_json_string(min_ptr, "\"queue_name\"", queue_name, sizeof(queue_name));
+        extract_json_string(min_ptr, "\"queue_type\"", queue_type, sizeof(queue_type));
+        int item_count = extract_json_int(min_ptr, "\"item_count\"", 0);
+        int total_bytes = extract_json_int(min_ptr, "\"total_bytes\"", 0);
+        
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wstringop-truncation"
+        tsfi_cw_unt_cics_queue queue;
+        strncpy(queue.queue_name, queue_name, sizeof(queue.queue_name) - 1);
+        queue.queue_name[sizeof(queue.queue_name) - 1] = 0;
+        strncpy(queue.queue_type, queue_type, sizeof(queue.queue_type) - 1);
+        queue.queue_type[sizeof(queue.queue_type) - 1] = 0;
+        #pragma GCC diagnostic pop
+        
+        queue.item_count = item_count;
+        queue.total_bytes = total_bytes;
+        
+        int alert = 0;
+        extern int tsfi_cw_unt_cics_audit_queue(const tsfi_cw_unt_cics_queue *queue, int *alert_out);
+        tsfi_cw_unt_cics_audit_queue(&queue, &alert);
+        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"alert\": %d}, \"id\": %d}\n", alert, id);
+        return 1;
     }
     snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"Method not found\", \"id\": %d}\n", id);
     return 1;
