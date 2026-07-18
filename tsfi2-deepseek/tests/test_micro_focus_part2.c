@@ -732,6 +732,22 @@ int main(void) {
     assert(ftc_valid == 1);
     printf("  [PASS] IRS IMF Foreign Tax Credit Limit Matcher verified.\n");
 
+    // 198. Verify IRS IMF Standard Mileage Rate Medical Travel Matcher
+    printf("[TEST] Validating IRS IMF Medical Mileage Matcher...\n");
+    int medical_mileage_valid = -1;
+    int med_mil_res = tsfi_mf_imf_verify_medical_mileage(100.0, 21.00, 0.21, &medical_mileage_valid);
+    assert(med_mil_res == 0);
+    assert(medical_mileage_valid == 1);
+    printf("  [PASS] IRS IMF Medical Mileage Matcher verified.\n");
+
+    // 199. Verify IRS IMF Federal Earned Income Bracket Matcher
+    printf("[TEST] Validating IRS IMF EITC Income Limit Matcher...\n");
+    int eitc_limit_eligible = -1;
+    int eitc_limit_res = tsfi_mf_imf_verify_eitc_income_limit(35000.00, 3, 2, &eitc_limit_eligible);
+    assert(eitc_limit_res == 0);
+    assert(eitc_limit_eligible == 1);
+    printf("  [PASS] IRS IMF EITC Income Limit Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

@@ -1111,4 +1111,21 @@ int tsfi_mf_imf_verify_foreign_tax_credit(double foreign_taxes_paid, double tota
     return 0;
 }
 
+int tsfi_mf_imf_verify_medical_mileage(double miles, double claimed_deduction, double rate_per_mile, int *is_valid) {
+    if (!is_valid) return -1;
+    double expected = miles * rate_per_mile;
+    double diff = claimed_deduction - expected;
+    if (diff < 0) diff = -diff;
+    *is_valid = (diff <= 1.00) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_imf_verify_eitc_income_limit(double earned_income, int child_count, int filing_status, int *is_eligible) {
+    if (!is_eligible) return -1;
+    (void)child_count;
+    double limit = (filing_status == 2) ? 63398.00 : 56838.00;
+    *is_eligible = (earned_income <= limit && earned_income >= 0.0) ? 1 : 0;
+    return 0;
+}
+
 

@@ -93,5 +93,7 @@ int tsfi_mf_imf_select_deduction(double standard_ded, double itemized_ded, doubl
 int tsfi_mf_imf_verify_charity_cap(double agi, double claimed_charity, int *is_valid);
 int tsfi_mf_imf_verify_ptc_eligibility(double agi, double fpl_limit, int *is_eligible);
 int tsfi_mf_imf_verify_foreign_tax_credit(double foreign_taxes_paid, double total_tax_liability, double claimed_credit, int *is_valid);
+int tsfi_mf_imf_verify_medical_mileage(double miles, double claimed_deduction, double rate_per_mile, int *is_valid);
+int tsfi_mf_imf_verify_eitc_income_limit(double earned_income, int child_count, int filing_status, int *is_eligible);
 
 #endif // TSFI_CADE_IMF_H
