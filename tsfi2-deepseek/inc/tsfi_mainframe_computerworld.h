@@ -823,5 +823,18 @@ int tsfi_cw_icp_migration_audit(const tsfi_cw_icp_product *old_prod, const tsfi_
 int tsfi_cw_icp_audit_license_compliance(int purchased, int active, int *warning_out);
 int tsfi_cw_icp_track_quota(double target, double actual, double *bonus_payout_out);
 
+// ICP Subscription Structure
+typedef struct {
+    char sub_id[8];
+    char product_id[8];
+    double monthly_rate;
+    int billing_cycles_total;
+    int cycles_paid;
+} tsfi_cw_icp_subscription;
+
+// ICP Bundle Pricer and Subscription Calculator
+int tsfi_cw_icp_calculate_bundle_price(const tsfi_cw_icp_product *products, int count, double discount_rate, double *total_price_out);
+int tsfi_cw_icp_subscription_status(const tsfi_cw_icp_subscription *sub, double *total_paid_out, double *remaining_obligations_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

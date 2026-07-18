@@ -883,6 +883,29 @@ int tsfi_cw_icp_track_quota(double target, double actual, double *bonus_payout_o
     return 0;
 }
 
+int tsfi_cw_icp_calculate_bundle_price(const tsfi_cw_icp_product *products, int count, double discount_rate, double *total_price_out) {
+    if (!products || count <= 0 || !total_price_out || discount_rate < 0.0 || discount_rate > 1.0) return -1;
+    
+    double sum = 0.0;
+    for (int i = 0; i < count; i++) {
+        sum += products[i].unit_price;
+    }
+    *total_price_out = sum * (1.0 - discount_rate);
+    return 0;
+}
+
+int tsfi_cw_icp_subscription_status(const tsfi_cw_icp_subscription *sub, double *total_paid_out, double *remaining_obligations_out) {
+    if (!sub || !total_paid_out || !remaining_obligations_out) return -1;
+    
+    *total_paid_out = sub->monthly_rate * sub->cycles_paid;
+    
+    int rem = sub->billing_cycles_total - sub->cycles_paid;
+    if (rem < 0) rem = 0;
+    *remaining_obligations_out = sub->monthly_rate * rem;
+    return 0;
+}
+
+
 
 
 

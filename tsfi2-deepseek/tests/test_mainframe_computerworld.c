@@ -1716,6 +1716,22 @@ static void test_new_mainframe_features(void) {
     assert(bonus == 220.0); // 11000 * 0.02
     assert(tsfi_cw_icp_track_quota(10000.0, 12500.0, &bonus) == 0);
     assert(bonus == 625.0); // 12500 * 0.05
+
+    // ICP Bundle Pricer test
+    tsfi_cw_icp_product bundle[2] = {
+        { "P01", "MARK IV", "Informatics", "IBM 360", 15000.0, 50 },
+        { "P02", "AUTOFLOW", "ADR", "IBM 360", 8000.0, 150 }
+    };
+    double total_bundle_price = 0.0;
+    assert(tsfi_cw_icp_calculate_bundle_price(bundle, 2, 0.15, &total_bundle_price) == 0);
+    assert(total_bundle_price == 19550.0); // 23000 * 0.85
+
+    // ICP Subscription Calculator test
+    tsfi_cw_icp_subscription sub = { "SUB01", "P01", 1200.0, 12, 5 };
+    double total_paid = 0.0, remaining_obligations = 0.0;
+    assert(tsfi_cw_icp_subscription_status(&sub, &total_paid, &remaining_obligations) == 0);
+    assert(total_paid == 6000.0);
+    assert(remaining_obligations == 8400.0);
 }
 
 int main(void) {
