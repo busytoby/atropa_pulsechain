@@ -51,8 +51,8 @@ int tsfi_mf_yellow_box_secure_telegram_route(const char *ssn, int dmf_deceased, 
     if (!ssn || !out_telegram || !out_size) return -1;
     if (strlen(ssn) != 9) return -2;
     
-    // Trigger emergency DEFCON 1 alarm: broadcast accessor engaging IRS/SSA raw identity
-    tsfi_gost_emergency_defcon_level = 1;
+    // Trigger emergency DEFCON 0 alarm: broadcast accessor engaging IRS/SSA raw identity
+    tsfi_gost_emergency_defcon_level = 0;
     
     // 16 bytes raw payload
     uint8_t payload[16];

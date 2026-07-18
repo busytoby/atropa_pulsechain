@@ -1951,11 +1951,11 @@ int tsfi_mf_nato_format_ssa_irs_broadcast(const char *ssn, int audit_action, uin
     size_t len = strlen(ssn);
     if (len != 9) return -2;
     
-    // Raw SSN/TIN is incompatible with broadcast accessors. Trigger emergency DEFCON 1 alarm.
+    // Raw SSN/TIN is incompatible with broadcast accessors. Trigger emergency DEFCON 0 alarm.
     int defcon = 5;
     uint16_t status = 0;
     tsfi_mf_tri_agency_coordinate(ssn, 1, 0, &defcon, &status);
-    tsfi_gost_emergency_defcon_level = 1;
+    tsfi_gost_emergency_defcon_level = 0;
     
     // Format raw identity transmission
     out_frame[0] = 0x7E; // NATO Frame Start
@@ -2014,11 +2014,11 @@ int tsfi_mf_ussr_gost_scramble(uint32_t *left_word, uint32_t *right_word, uint32
         }
     }
     if (digit_count == 4 || tsfi_mf_gost_is_tin_pattern(*left_word) || tsfi_mf_gost_is_tin_pattern(*right_word)) {
-        // Trigger emergency DEFCON 1 alarm!
+        // Trigger emergency DEFCON 0 alarm!
         int defcon = 5;
         uint16_t status = 0;
         tsfi_mf_tri_agency_coordinate("999999999", 1, 0, &defcon, &status);
-        tsfi_gost_emergency_defcon_level = 1;
+        tsfi_gost_emergency_defcon_level = 0;
     }
     
     uint32_t temp = (*left_word + key_word);

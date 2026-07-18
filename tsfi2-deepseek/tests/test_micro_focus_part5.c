@@ -1121,8 +1121,8 @@ int run_nato_stanag_tests_part5(void) {
     assert(nato_frame[1] == 0x55);
     assert(nato_frame[2] == 2);
     assert(nato_frame[12] == 0x7E);
-    assert(tsfi_gost_emergency_defcon_level == 1); // Alarm triggered by broadcast accessor
-    printf("  [PASS] SSA-IRS-NATO STANAG Broadcast permitted raw identity and triggered DEFCON 1 successfully.\n");
+    assert(tsfi_gost_emergency_defcon_level == 0); // Alarm triggered by broadcast accessor
+    printf("  [PASS] SSA-IRS-NATO STANAG Broadcast permitted raw identity and triggered DEFCON 0 successfully.\n");
     // Verify Soviet GOST Scrambler
     printf("[TEST] Validating Soviet GOST Scrambler...\n");
     tsfi_gost_is_broadcast_channel = 1;
@@ -1212,7 +1212,7 @@ int run_nato_stanag_tests_part5(void) {
     uint32_t bad_left = 0x31323334; // "1234" (ASCII digits)
     uint32_t bad_right = 0;
     tsfi_mf_ussr_gost_scramble(&bad_left, &bad_right, 0);
-    assert(tsfi_gost_emergency_defcon_level == 1);
+    assert(tsfi_gost_emergency_defcon_level == 0);
     printf("  [PASS] GOST Emergency DEFCON override verified.\n");
 
     // Verify TIN pattern alarm
@@ -1223,7 +1223,7 @@ int run_nato_stanag_tests_part5(void) {
     uint32_t normal_val = 0;
     int block_res = tsfi_mf_ussr_gost_scramble(&itin_val, &normal_val, 0);
     assert(block_res == 0); // Permitted
-    assert(tsfi_gost_emergency_defcon_level == 1); // Alarm triggered
+    assert(tsfi_gost_emergency_defcon_level == 0); // Alarm triggered
     printf("  [PASS] TIN range alarm inside GOST verified.\n");
     
     // Restore default
