@@ -848,5 +848,9 @@ int tsfi_cw_icp_calculate_renewal_penalty(double renewal_fee, int days_late, dou
 int tsfi_cw_icp_audit_transfer(tsfi_cw_icp_product *prod, const char *new_vendor, double transfer_fee_rate, double *transfer_fee_out);
 int tsfi_cw_icp_consolidate_royalties(const tsfi_cw_icp_product *catalog, int catalog_size, const char *vendor, double royalty_rate, double *consolidated_payment_out);
 
+// ICP Expiration Monitor and Software Payback Calculator
+int tsfi_cw_icp_check_expiration(int current_year, int current_month, int current_day, int exp_year, int exp_month, int exp_day, int *expired_out, int *days_remaining_out);
+int tsfi_cw_icp_calculate_payback(double purchase_cost, double annual_savings, double *payback_years_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

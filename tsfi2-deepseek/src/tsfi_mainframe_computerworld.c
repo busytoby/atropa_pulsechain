@@ -972,6 +972,24 @@ int tsfi_cw_icp_consolidate_royalties(const tsfi_cw_icp_product *catalog, int ca
     return 0;
 }
 
+int tsfi_cw_icp_check_expiration(int current_year, int current_month, int current_day, int exp_year, int exp_month, int exp_day, int *expired_out, int *days_remaining_out) {
+    if (!expired_out || !days_remaining_out) return -1;
+    
+    long long days_cur = (long long)current_year * 365 + (long long)current_month * 30 + current_day;
+    long long days_exp = (long long)exp_year * 365 + (long long)exp_month * 30 + exp_day;
+    
+    *days_remaining_out = (int)(days_exp - days_cur);
+    *expired_out = (*days_remaining_out < 0) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_cw_icp_calculate_payback(double purchase_cost, double annual_savings, double *payback_years_out) {
+    if (purchase_cost < 0.0 || annual_savings <= 0.0 || !payback_years_out) return -1;
+    *payback_years_out = purchase_cost / annual_savings;
+    return 0;
+}
+
+
 
 
 

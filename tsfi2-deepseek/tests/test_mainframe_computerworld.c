@@ -1770,6 +1770,17 @@ static void test_new_mainframe_features(void) {
     double consolidated_payment = 0.0;
     assert(tsfi_cw_icp_consolidate_royalties(catalog_list, 2, "Informatics", 0.10, &consolidated_payment) == 0);
     assert(fabs(consolidated_payment - 75000.0) < 0.1); // 15000 * 50 * 0.10
+
+    // ICP Expiration Monitor test
+    int expired = 0, days_rem = 0;
+    assert(tsfi_cw_icp_check_expiration(1972, 10, 15, 1973, 5, 1, &expired, &days_rem) == 0);
+    assert(expired == 0);
+    assert(days_rem == 201); // (1973-1972)*365 + (5-10)*30 + (1-15) = 365 - 150 - 14 = 201
+
+    // ICP Payback Period test
+    double payback_yrs = 0.0;
+    assert(tsfi_cw_icp_calculate_payback(25000.0, 10000.0, &payback_yrs) == 0);
+    assert(fabs(payback_yrs - 2.5) < 0.1);
 }
 
 int main(void) {
