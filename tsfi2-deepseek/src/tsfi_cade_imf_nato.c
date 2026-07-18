@@ -501,3 +501,15 @@ int tsfi_mf_nato_verify_busy_decay_rate(int rate_db, int *is_valid) {
     *is_valid = (rate_db >= 1 && rate_db <= 10) ? 1 : 0;
     return 0;
 }
+
+int tsfi_mf_nato_verify_backoff_scale(int scale_ms, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (scale_ms >= 1 && scale_ms <= 500) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_busy_hysteresis_threshold(int threshold_dbm, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (threshold_dbm >= -90 && threshold_dbm <= -50) ? 1 : 0;
+    return 0;
+}

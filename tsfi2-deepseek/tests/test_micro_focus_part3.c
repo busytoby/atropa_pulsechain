@@ -609,5 +609,21 @@ int run_nato_stanag_tests(void) {
     assert(busy_decay_valid == 1);
     printf("  [PASS] NATO Broadcast Busy Decay Rate Matcher verified.\n");
 
+    // 325. Verify NATO Link-Layer Broadcast Collision Backoff Scale Factor Validator
+    printf("[TEST] Validating NATO Broadcast Backoff Scale Factor Validator...\n");
+    int backoff_scale_valid = -1;
+    int backoff_scale_res = tsfi_mf_nato_verify_backoff_scale(100, &backoff_scale_valid);
+    assert(backoff_scale_res == 0);
+    assert(backoff_scale_valid == 1);
+    printf("  [PASS] NATO Broadcast Backoff Scale Factor Validator verified.\n");
+
+    // 326. Verify NATO Link-Layer Broadcast Channel Busy Hysteresis Signal Threshold Matcher
+    printf("[TEST] Validating NATO Broadcast Busy RSSI Hysteresis Trigger Matcher...\n");
+    int busy_hysteresis_threshold_valid = -1;
+    int busy_hysteresis_threshold_res = tsfi_mf_nato_verify_busy_hysteresis_threshold(-75, &busy_hysteresis_threshold_valid);
+    assert(busy_hysteresis_threshold_res == 0);
+    assert(busy_hysteresis_threshold_valid == 1);
+    printf("  [PASS] NATO Broadcast Busy RSSI Hysteresis Trigger Matcher verified.\n");
+
     return 0;
 }

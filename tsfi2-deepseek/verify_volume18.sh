@@ -423,8 +423,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 466 | NATO Link-Layer Multi-Scan Collision Clear Signal Drop Down-Ramp Rate Matcher | PASS | Audits down-ramp signal decay rates for clear channel determinations | Volume 33 |
 | 467 | NATO Link-Layer Broadcast Collision Backoff Exponential Base Matcher | PASS | Validates backoff random window exponent calculations base multipliers | Volume 33 |
 | 468 | NATO Link-Layer Broadcast Channel Busy Hysteresis Decay Rate Matcher | PASS | Audits RSSI decay rate filter coefficients for busy channel transitions | Volume 33 |
+| 469 | NATO Link-Layer Broadcast Collision Backoff Scale Factor Validator | PASS | Validates retry slot time scaling multiplier configurations | Volume 33 |
+| 470 | NATO Link-Layer Broadcast Channel Busy Hysteresis Signal Threshold Matcher | PASS | Audits absolute RSSI trigger levels to flag channel activity | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 468 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 470 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"
