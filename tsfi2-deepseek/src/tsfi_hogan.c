@@ -422,3 +422,41 @@ int tsfi_hogan_print_statement(const char *filepath, uint32_t account_id, size_t
     *entries_count_out = matches;
     return 0;
 }
+
+int tsfi_hogan_apply_interest(hogan_umbrella_system *sys, const char *filepath, uint32_t rate_bps) {
+    // Enforce Rule 13: file extension must end with .dat.bin
+    const char *ext = strrchr(filepath, '.');
+    if (!ext || strcmp(ext, ".bin") != 0) {
+        if (!ext || strcmp(ext - 4, ".dat.bin") != 0) {
+            return -3; // Invalid extension
+        }
+    }
+
+    // Disable live queue during batch interest posting
+    uint8_t original_live_state = sys->live_processing_enabled;
+    sys->live_processing_enabled = 0;
+    
+    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
+        if (sys->accounts[i].active) {
+            hogan_interest_entry entry;
+            entry.account_id = sys->accounts[i].account_id;
+            entry.original_balance = sys->accounts[i].balance;
+            
+            // Calculate interest: balance * rate_bps / 10000
+            uint64_t interest = (sys->accounts[i].balance * rate_bps) / 10000;
+            sys->accounts[i].balance += interest;
+            
+            entry.interest_added = interest;
+            entry.new_balance = sys->accounts[i].balance;
+            
+            int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_interest_entry));
+            if (write_res != 0) {
+                sys->live_processing_enabled = original_live_state;
+                return write_res;
+            }
+        }
+    }
+    
+    sys->live_processing_enabled = original_live_state;
+    return 0;
+}

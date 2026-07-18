@@ -113,4 +113,14 @@ typedef struct {
 int tsfi_hogan_write_ledger_entry(const char *filepath, uint32_t account_id, uint64_t amount, uint8_t is_credit, const char *description);
 int tsfi_hogan_print_statement(const char *filepath, uint32_t account_id, size_t *entries_count_out);
 
+// Batch Interest Posting Engine (Ledger Calculation Updates)
+typedef struct {
+    uint32_t account_id;
+    uint64_t original_balance;
+    uint64_t interest_added;
+    uint64_t new_balance;
+} hogan_interest_entry;
+
+int tsfi_hogan_apply_interest(hogan_umbrella_system *sys, const char *filepath, uint32_t rate_bps);
+
 #endif // TSFI_HOGAN_H

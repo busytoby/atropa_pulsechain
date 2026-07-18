@@ -235,6 +235,50 @@ int main(void) {
     remove(ledger_path); // clean up
     printf("  [PASS] Account Ledger Statements correctly written, filtered, and generated.\n");
 
+    // 14. Test Batch Interest Posting Engine (Ledger Calculation Updates)
+    printf("[E2E] Testing Batch Interest Posting Engine...\n");
+    const char *interest_path = "hogan_interest.dat.bin";
+    remove(interest_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system interest_sys;
+    tsfi_hogan_init(&interest_sys);
+    assert(tsfi_hogan_register_account(&interest_sys, 1001, 10000) == 0); // 10,000 units
+    assert(tsfi_hogan_register_account(&interest_sys, 2002, 5000) == 0);  // 5,000 units
+    
+    // Apply 500 basis points interest (5%)
+    assert(tsfi_hogan_apply_interest(&interest_sys, interest_path, 500) == 0);
+    assert(tsfi_hogan_apply_interest(&interest_sys, "hogan_interest.json", 500) == -3); // Rule 13 check
+    
+    // Verify updated balances
+    assert(interest_sys.accounts[0].balance == 10500); // 10000 + 500
+    assert(interest_sys.accounts[1].balance == 5250);  // 5000 + 250
+    
+    // Read sequential log file and verify entries
+    uint8_t read_buf[sizeof(hogan_interest_entry)];
+    size_t rsize = 0;
+    
+    // Check entry 0
+    assert(tsfi_hogan_read_seq_record(interest_path, 0, read_buf, &rsize) == 0);
+    assert(rsize == sizeof(hogan_interest_entry));
+    const hogan_interest_entry *entry0 = (const hogan_interest_entry *)read_buf;
+    assert(entry0->account_id == 1001);
+    assert(entry0->original_balance == 10000);
+    assert(entry0->interest_added == 500);
+    assert(entry0->new_balance == 10500);
+    
+    // Check entry 1
+    assert(tsfi_hogan_read_seq_record(interest_path, 1, read_buf, &rsize) == 0);
+    assert(rsize == sizeof(hogan_interest_entry));
+    const hogan_interest_entry *entry1 = (const hogan_interest_entry *)read_buf;
+    assert(entry1->account_id == 2002);
+    assert(entry1->original_balance == 5000);
+    assert(entry1->interest_added == 250);
+    assert(entry1->new_balance == 5250);
+    
+    remove(interest_path); // clean up
+    printf("  [PASS] Batch interest rates calculated, applied, and logged successfully.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }
