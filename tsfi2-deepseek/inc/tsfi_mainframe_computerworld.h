@@ -919,5 +919,25 @@ typedef struct {
 int tsfi_cw_marist_optimize_migration(const tsfi_cw_marist_zvm_migration *config, double *est_time_out, int *can_migrate_out);
 int tsfi_cw_marist_audit_sdn(const tsfi_cw_marist_sdn_rule *rules, int rule_count, const char *src_ip, const char *dest_ip, int *action_out);
 
+// Marist LinuxONE Academic Tenant
+typedef struct {
+    char tenant_id[16];
+    double allocated_cores;
+    double used_cores;
+    double allocated_mem_gb;
+    double used_mem_gb;
+} tsfi_cw_marist_tenant;
+
+// Marist z/VM Guest Profile
+typedef struct {
+    char guest_id[16];
+    char privilege_class; // 'A'..'Z'
+    int allow_inter_vm_comm;
+    int has_read_any_spool;
+} tsfi_cw_marist_guest_profile;
+
+int tsfi_cw_marist_audit_tenant(const tsfi_cw_marist_tenant *tenant, int *is_nominal_out);
+int tsfi_cw_marist_audit_isolation(const tsfi_cw_marist_guest_profile *profile, int *is_secure_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

@@ -1855,6 +1855,26 @@ static void test_new_mainframe_features(void) {
     assert(action == 1); // FORWARD
     assert(tsfi_cw_marist_audit_sdn(rules, 2, "10.0.0.5", "10.0.0.6", &action) == 0);
     assert(action == 2); // Default DROP
+
+    // Marist LinuxONE Tenant Audit test
+    tsfi_cw_marist_tenant tenant = { "TENANT01", 8.0, 4.0, 32.0, 16.0 };
+    int nominal = 0;
+    assert(tsfi_cw_marist_audit_tenant(&tenant, &nominal) == 0);
+    assert(nominal == 1);
+
+    tsfi_cw_marist_tenant tenant_over = { "TENANT02", 8.0, 10.0, 32.0, 16.0 };
+    assert(tsfi_cw_marist_audit_tenant(&tenant_over, &nominal) == 0);
+    assert(nominal == 0);
+
+    // Marist z/VM Guest Isolation test
+    tsfi_cw_marist_guest_profile profile_secure = { "GUEST01", 'G', 1, 0 }; // Class G, has inter-vm, no spool read
+    int secure = 0;
+    assert(tsfi_cw_marist_audit_isolation(&profile_secure, &secure) == 0);
+    assert(secure == 1);
+
+    tsfi_cw_marist_guest_profile profile_insecure = { "GUEST02", 'G', 1, 1 }; // Class G, has spool read -> INSECURE!
+    assert(tsfi_cw_marist_audit_isolation(&profile_insecure, &secure) == 0);
+    assert(secure == 0);
 }
 
 int main(void) {

@@ -1124,6 +1124,25 @@ int tsfi_cw_marist_audit_sdn(const tsfi_cw_marist_sdn_rule *rules, int rule_coun
     return 0;
 }
 
+int tsfi_cw_marist_audit_tenant(const tsfi_cw_marist_tenant *tenant, int *is_nominal_out) {
+    if (!tenant || !is_nominal_out) return -1;
+    
+    if (tenant->used_cores <= tenant->allocated_cores && tenant->used_mem_gb <= tenant->allocated_mem_gb) {
+        *is_nominal_out = 1;
+    } else {
+        *is_nominal_out = 0;
+    }
+    return 0;
+}
+
+int tsfi_cw_marist_audit_isolation(const tsfi_cw_marist_guest_profile *profile, int *is_secure_out) {
+    if (!profile || !is_secure_out) return -1;
+    
+    *is_secure_out = (profile->has_read_any_spool == 0 && (profile->privilege_class == 'G' || profile->allow_inter_vm_comm == 0)) ? 1 : 0;
+    return 0;
+}
+
+
 
 
 
