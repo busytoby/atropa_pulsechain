@@ -55,5 +55,7 @@ int tsfi_mf_imf_verify_filing_deadline(int julian_date_filed, int has_approved_e
 int tsfi_mf_cade_route_refund_disbursement(const char *routing_number, const char *account_number, int *method_out);
 int tsfi_mf_imf_verify_refund_threshold(double refund_amount, double limit, int *requires_review);
 int tsfi_mf_cade_verify_prior_year_agi(double input_agi, double actual_prior_agi, int *is_match);
+int tsfi_mf_imf_classify_agi_bracket(double agi, int *bracket_out);
+int tsfi_mf_cade_verify_designee_record(int has_designee, const char *designee_pin, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

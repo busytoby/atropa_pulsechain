@@ -403,6 +403,22 @@ int main(void) {
     assert(prior_match == 1);
     printf("  [PASS] IRS CADE Prior Year AGI Matcher verified.\n");
 
+    // 158. Verify IRS IMF AGI Bracket Classifier
+    printf("[TEST] Validating IRS IMF AGI Bracket Classifier...\n");
+    int bracket = -1;
+    int bracket_res = tsfi_mf_imf_classify_agi_bracket(75000.00, &bracket);
+    assert(bracket_res == 0);
+    assert(bracket == 2);
+    printf("  [PASS] IRS IMF AGI Bracket Classifier verified.\n");
+
+    // 159. Verify IRS CADE Third-Party Designee Presence Check
+    printf("[TEST] Validating IRS CADE Designee PIN Verifier...\n");
+    int designee_valid = -1;
+    int designee_res = tsfi_mf_cade_verify_designee_record(1, "12345", &designee_valid);
+    assert(designee_res == 0);
+    assert(designee_valid == 1);
+    printf("  [PASS] IRS CADE Designee PIN Verifier verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

@@ -645,4 +645,38 @@ int tsfi_mf_cade_verify_prior_year_agi(double input_agi, double actual_prior_agi
     return 0;
 }
 
+int tsfi_mf_imf_classify_agi_bracket(double agi, int *bracket_out) {
+    if (!bracket_out) return -1;
+    if (agi < 30000.00) {
+        *bracket_out = 1;
+    } else if (agi < 100000.00) {
+        *bracket_out = 2;
+    } else if (agi < 500000.00) {
+        *bracket_out = 3;
+    } else {
+        *bracket_out = 4;
+    }
+    return 0;
+}
+
+int tsfi_mf_cade_verify_designee_record(int has_designee, const char *designee_pin, int *is_valid) {
+    if (!is_valid) return -1;
+    if (!has_designee) {
+        *is_valid = 1;
+        return 0;
+    }
+    if (!designee_pin || strlen(designee_pin) != 5) {
+        *is_valid = 0;
+        return 0;
+    }
+    for (int i = 0; i < 5; i++) {
+        if (designee_pin[i] < '0' || designee_pin[i] > '9') {
+            *is_valid = 0;
+            return 0;
+        }
+    }
+    *is_valid = 1;
+    return 0;
+}
+
 
