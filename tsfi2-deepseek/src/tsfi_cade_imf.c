@@ -695,4 +695,36 @@ int tsfi_mf_imf_check_first_time_filer(const char *ssn, const char *registry_poo
     return 0;
 }
 
+int tsfi_mf_cade_verify_phone_area_code(const char *phone, const char *state_code, int *is_match) {
+    if (!phone || !state_code || !is_match) return -1;
+    *is_match = 0;
+    char area[4] = {0};
+    int count = 0;
+    for (int i = 0; phone[i] != '\0' && count < 3; i++) {
+        if (phone[i] >= '0' && phone[i] <= '9') {
+            area[count++] = phone[i];
+        }
+    }
+    if (count < 3) return 0;
+    if (strcmp(state_code, "CA") == 0) {
+        if (strcmp(area, "213") == 0 || strcmp(area, "310") == 0 || strcmp(area, "415") == 0 || strcmp(area, "650") == 0) {
+            *is_match = 1;
+        }
+    } else if (strcmp(state_code, "NY") == 0) {
+        if (strcmp(area, "212") == 0 || strcmp(area, "718") == 0 || strcmp(area, "917") == 0) {
+            *is_match = 1;
+        }
+    } else {
+        *is_match = 1;
+    }
+    return 0;
+}
+
+int tsfi_mf_imf_verify_dependent_age(int birth_year, int tax_year, int *is_eligible) {
+    if (!is_eligible) return -1;
+    int age = tax_year - birth_year;
+    *is_eligible = (age >= 0 && age <= 16) ? 1 : 0;
+    return 0;
+}
+
 

@@ -260,8 +260,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 303 | IRS CADE Third-Party Designee Presence Check | PASS | Validates authorization PIN inputs when preparer flag is checked | Volume 33 |
 | 304 | IRS CADE Filing Method Indicator Validator | PASS | Validates transmission format codes matching accepted input pathways | Volume 33 |
 | 305 | IRS IMF First-Time Filer Flag Selector | PASS | Detects new SSN entries to trigger initial identity check parameters | Volume 33 |
+| 306 | IRS CADE Taxpayer Phone Number Area Code Matcher | PASS | Flags phone number area code anomalies matching billing states | Volume 33 |
+| 307 | IRS IMF Dependents Age Eligibility Check | PASS | Verifies claimed dependents do not exceed age thresholds for credit | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 305 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 307 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

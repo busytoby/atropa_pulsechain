@@ -435,6 +435,22 @@ int main(void) {
     assert(first_time == 1);
     printf("  [PASS] IRS IMF First-Time Filer Checker verified.\n");
 
+    // 162. Verify IRS CADE Taxpayer Phone Number Area Code Matcher
+    printf("[TEST] Validating IRS CADE Phone Area Code Matcher...\n");
+    int phone_match = -1;
+    int phone_res = tsfi_mf_cade_verify_phone_area_code("213-555-0199", "CA", &phone_match);
+    assert(phone_res == 0);
+    assert(phone_match == 1);
+    printf("  [PASS] IRS CADE Phone Area Code Matcher verified.\n");
+
+    // 163. Verify IRS IMF Dependents Age Eligibility Check
+    printf("[TEST] Validating IRS IMF Dependent Age Checker...\n");
+    int age_eligible = -1;
+    int age_res = tsfi_mf_imf_verify_dependent_age(2015, 2026, &age_eligible);
+    assert(age_res == 0);
+    assert(age_eligible == 1);
+    printf("  [PASS] IRS IMF Dependent Age Checker verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }
