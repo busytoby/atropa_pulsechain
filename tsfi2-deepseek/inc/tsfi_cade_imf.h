@@ -117,5 +117,7 @@ int tsfi_mf_imf_verify_section179_limit(double claimed_deduction, int *is_valid)
 int tsfi_mf_cade_verify_mfs_spouse_name(int filing_status, const char *spouse_first_name, const char *spouse_last_name, int *is_valid);
 int tsfi_mf_imf_check_section179_phaseout(double total_property_cost, int *is_above_threshold);
 int tsfi_mf_cade_check_foreign_account_indicator(double total_interest_dividends, int foreign_disclosure_flag, int *is_valid);
+int tsfi_mf_imf_calculate_section179_reduced_limit(double total_property_cost, double *reduced_limit);
+int tsfi_mf_cade_match_schedule_b_interest(const double *sources, int source_count, double total_1040_interest, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

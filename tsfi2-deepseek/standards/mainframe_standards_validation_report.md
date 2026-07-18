@@ -297,5 +297,7 @@
 | 363 | IRS CADE Married Filing Separately (MFS) Spousal Name Validator | PASS | Enforces spousal name input requirement for MFS status | Volume 33 |
 | 364 | IRS IMF Section 179 Threshold Phase-Out Matcher | PASS | Checks placed-in-service asset costs against Section 179 floors | Volume 33 |
 | 365 | IRS CADE Schedule B Foreign Account Reporting Indicator Checker | PASS | Validates foreign disclosure requirements for interest/dividend filers | Volume 33 |
+| 366 | IRS IMF Section 179 Phase-Out Deduction Reducer | PASS | Computes and matches reduced deduction limits for high property cost | Volume 33 |
+| 367 | IRS CADE Schedule B Part I Interest Source Matcher | PASS | Sums detailed interest sources to verify cumulative reported total | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 365 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 367 Scenarios validated successfully)

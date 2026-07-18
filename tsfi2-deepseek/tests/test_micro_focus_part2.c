@@ -924,6 +924,23 @@ int main(void) {
     assert(foreign_indicator_valid == 1);
     printf("  [PASS] IRS CADE Schedule B Foreign Account Indicator Checker verified.\n");
 
+    // 222. Verify IRS IMF Section 179 Phase-Out Deduction Reducer
+    printf("[TEST] Validating IRS IMF Section 179 Reduced Limit Calculator...\n");
+    double reduced_limit = -1.0;
+    int limit_calc_res = tsfi_mf_imf_calculate_section179_reduced_limit(3150000.00, &reduced_limit);
+    assert(limit_calc_res == 0);
+    assert(reduced_limit == 1120000.00);
+    printf("  [PASS] IRS IMF Section 179 Reduced Limit Calculator verified.\n");
+
+    // 223. Verify IRS CADE Schedule B Part I Interest Source Matcher
+    printf("[TEST] Validating IRS CADE Schedule B Interest Matcher...\n");
+    double interest_sources[] = {500.00, 300.50, 200.00};
+    int interest_sources_match = -1;
+    int interest_match_res = tsfi_mf_cade_match_schedule_b_interest(interest_sources, 3, 1000.50, &interest_sources_match);
+    assert(interest_match_res == 0);
+    assert(interest_sources_match == 1);
+    printf("  [PASS] IRS CADE Schedule B Interest Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

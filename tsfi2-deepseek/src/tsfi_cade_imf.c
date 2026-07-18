@@ -1270,4 +1270,30 @@ int tsfi_mf_cade_check_foreign_account_indicator(double total_interest_dividends
     return 0;
 }
 
+int tsfi_mf_imf_calculate_section179_reduced_limit(double total_property_cost, double *reduced_limit) {
+    if (!reduced_limit) return -1;
+    if (total_property_cost <= 3050000.00) {
+        *reduced_limit = 1220000.00;
+    } else if (total_property_cost >= 4270000.00) {
+        *reduced_limit = 0.0;
+    } else {
+        *reduced_limit = 1220000.00 - (total_property_cost - 3050000.00);
+    }
+    return 0;
+}
+
+int tsfi_mf_cade_match_schedule_b_interest(const double *sources, int source_count, double total_1040_interest, int *is_valid) {
+    if (!is_valid) return -1;
+    double sum = 0.0;
+    if (sources && source_count > 0) {
+        for (int i = 0; i < source_count; i++) {
+            sum += sources[i];
+        }
+    }
+    double diff = sum - total_1040_interest;
+    if (diff < 0) diff = -diff;
+    *is_valid = (diff <= 1.00) ? 1 : 0;
+    return 0;
+}
+
 
