@@ -1338,6 +1338,24 @@ int tsfi_mf_nato_generate_flow_control(int flow_action, int sap_id, uint8_t *out
     return 0;
 }
 
+int tsfi_mf_nato_generate_flow_alert(int alert_reason, uint8_t *out_pkt, size_t *out_size) {
+    if (!out_pkt || !out_size) return -1;
+    out_pkt[0] = 0x89;
+    out_pkt[1] = alert_reason & 0xFF;
+    *out_size = 2;
+    return 0;
+}
+
+int tsfi_mf_nato_encode_d_pdu_type8(int dest_sap, int src_sap, int is_ack, uint8_t *out_frame, size_t *out_size) {
+    if (!out_frame || !out_size) return -1;
+    out_frame[0] = 0x08; // D_PDU Type 8
+    out_frame[1] = ((dest_sap & 0x0F) << 4) | (src_sap & 0x0F);
+    out_frame[2] = is_ack ? 1 : 0;
+    *out_size = 3;
+    return 0;
+}
+
+
 
 
 

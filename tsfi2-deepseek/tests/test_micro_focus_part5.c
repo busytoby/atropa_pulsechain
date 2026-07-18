@@ -558,7 +558,28 @@ int run_nato_stanag_tests_part5(void) {
     assert(flow_size == 2);
     assert(flow_pkt[0] == 0x8D);
     assert(flow_pkt[1] == 0x13); // (1 << 4) | 3 = 0x13
-    printf("  [PASS] Flow Control Primitive verified.\n");
+    // Verify Flow Alert
+    printf("[TEST] Validating NATO Flow Alert Primitive...\n");
+    uint8_t alert_pkt[8];
+    size_t alert_size = 0;
+    int alert_res = tsfi_mf_nato_generate_flow_alert(1, alert_pkt, &alert_size);
+    assert(alert_res == 0);
+    assert(alert_size == 2);
+    assert(alert_pkt[0] == 0x89);
+    assert(alert_pkt[1] == 1);
+    printf("  [PASS] Flow Alert Primitive verified.\n");
+
+    // Verify D_PDU Type 8
+    printf("[TEST] Validating NATO D_PDU Type 8 Encoder...\n");
+    uint8_t dpdu8[8];
+    size_t dpdu8_size = 0;
+    int dpdu8_res = tsfi_mf_nato_encode_d_pdu_type8(2, 4, 1, dpdu8, &dpdu8_size); // Destination 2, Source 4, ACK Reset = 1
+    assert(dpdu8_res == 0);
+    assert(dpdu8_size == 3);
+    assert(dpdu8[0] == 0x08);
+    assert(dpdu8[1] == 0x24); // (2 << 4) | 4 = 0x24
+    assert(dpdu8[2] == 1);
+    printf("  [PASS] D_PDU Type 8 verified.\n");
 
     return 0;
 }
