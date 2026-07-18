@@ -1218,6 +1218,22 @@ int main(void) {
     assert(sync_seq_valid == 1);
     printf("  [PASS] NATO STANAG 5066 Sync Sequence Matcher verified.\n");
 
+    // 258. Verify NATO STANAG 5066 Client Protocol Data Unit (C_PDU) Length Checker
+    printf("[TEST] Validating NATO STANAG 5066 C_PDU Length Checker...\n");
+    int cpdu_len_valid = -1;
+    int cpdu_len_res = tsfi_mf_nato_verify_cpdu_length(2048, &cpdu_len_valid);
+    assert(cpdu_len_res == 0);
+    assert(cpdu_len_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 C_PDU Length Checker verified.\n");
+
+    // 259. Verify NATO STANAG 5066 Transmission Mode Selector
+    printf("[TEST] Validating NATO STANAG 5066 Tx Mode Validator...\n");
+    int tx_mode_valid = -1;
+    int tx_mode_res = tsfi_mf_nato_verify_tx_mode(1, &tx_mode_valid);
+    assert(tx_mode_res == 0);
+    assert(tx_mode_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Tx Mode Validator verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }

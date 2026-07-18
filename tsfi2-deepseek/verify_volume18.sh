@@ -356,8 +356,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 399 | NATO STANAG 5066 ARQ Window Size Validator | PASS | Verifies ARQ sliding window size falls within standard limits | Volume 33 |
 | 400 | NATO STANAG 5066 Priority Level Checker | PASS | Audits whether priority field in the subnetwork header is bounded (0-15) | Volume 33 |
 | 401 | NATO STANAG 5066 Sync Sequence Type Matcher | PASS | Validates sync sequences against standard and maintenance patterns | Volume 33 |
+| 402 | NATO STANAG 5066 Client Protocol Data Unit (C_PDU) Length Checker | PASS | Validates C_PDU total length values stay within memory limits | Volume 33 |
+| 403 | NATO STANAG 5066 Transmission Mode Selector | PASS | Audits transmission mode flags match standard ARQ/Non-ARQ/Broadcast values | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 401 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 403 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

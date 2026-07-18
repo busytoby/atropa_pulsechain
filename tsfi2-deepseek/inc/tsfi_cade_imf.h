@@ -153,5 +153,7 @@ int tsfi_mf_nato_verify_sap_number(int sap_number, int *is_valid);
 int tsfi_mf_nato_verify_arq_window(int window_size, int *is_valid);
 int tsfi_mf_nato_verify_priority_level(int priority, int *is_valid);
 int tsfi_mf_nato_match_sync_sequence(int sync_seq, int *is_valid);
+int tsfi_mf_nato_verify_cpdu_length(int length, int *is_valid);
+int tsfi_mf_nato_verify_tx_mode(int mode, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H
