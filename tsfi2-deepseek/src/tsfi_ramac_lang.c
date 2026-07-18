@@ -152,3 +152,51 @@ int tsfi_algol_maze_solve(const int maze[16], int curr, int end, int visited[16]
     return 0;
 }
 
+int tsfi_algol_execute_b5500(tsfi_b5500_processor *cpu, const char **opcodes, int opcode_count) {
+    if (!cpu || !opcodes) return -1;
+    for (int i = 0; i < opcode_count; i++) {
+        const char *op = opcodes[i];
+        if (strncmp(op, "PUSH ", 5) == 0) {
+            if (cpu->sp >= 32) return -2;
+            cpu->operand_stack[cpu->sp++] = atof(op + 5);
+        } else if (strcmp(op, "ADD") == 0) {
+            if (cpu->sp < 2) return -3;
+            double val2 = cpu->operand_stack[--cpu->sp];
+            double val1 = cpu->operand_stack[--cpu->sp];
+            cpu->operand_stack[cpu->sp++] = val1 + val2;
+        } else if (strcmp(op, "SUB") == 0) {
+            if (cpu->sp < 2) return -3;
+            double val2 = cpu->operand_stack[--cpu->sp];
+            double val1 = cpu->operand_stack[--cpu->sp];
+            cpu->operand_stack[cpu->sp++] = val1 - val2;
+        } else if (strcmp(op, "MUL") == 0) {
+            if (cpu->sp < 2) return -3;
+            double val2 = cpu->operand_stack[--cpu->sp];
+            double val1 = cpu->operand_stack[--cpu->sp];
+            cpu->operand_stack[cpu->sp++] = val1 * val2;
+        } else if (strcmp(op, "DIV") == 0) {
+            if (cpu->sp < 2) return -3;
+            double val2 = cpu->operand_stack[--cpu->sp];
+            double val1 = cpu->operand_stack[--cpu->sp];
+            if (val2 == 0.0) return -4;
+            cpu->operand_stack[cpu->sp++] = val1 / val2;
+        } else if (strcmp(op, "POP") == 0) {
+            if (cpu->sp < 1) return -3;
+            cpu->sp--;
+        } else if (strcmp(op, "DUP") == 0) {
+            if (cpu->sp < 1) return -3;
+            if (cpu->sp >= 32) return -2;
+            cpu->operand_stack[cpu->sp] = cpu->operand_stack[cpu->sp - 1];
+            cpu->sp++;
+        } else if (strcmp(op, "SWAP") == 0) {
+            if (cpu->sp < 2) return -3;
+            double temp = cpu->operand_stack[cpu->sp - 1];
+            cpu->operand_stack[cpu->sp - 1] = cpu->operand_stack[cpu->sp - 2];
+            cpu->operand_stack[cpu->sp - 2] = temp;
+        } else {
+            return -5;
+        }
+    }
+    return 0;
+}
+

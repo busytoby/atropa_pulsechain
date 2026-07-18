@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include "tsfi_ramac_layout.h"
 #include "tsfi_mainframe_computerworld.h"
 
 static void test_y2k_windowing(void) {
@@ -1357,6 +1358,20 @@ static void test_new_mainframe_features(void) {
     assert(tsfi_cw_jcl_simulate_s360_job(test_jcl, jcl_log, sizeof(jcl_log), &job_status) == 0);
     assert(job_status == 0);
     assert(strstr(jcl_log, "Job completed") != NULL);
+
+    // Burroughs B5500 ALGOL Stack Simulator test
+    tsfi_b5500_processor b5500_cpu;
+    memset(&b5500_cpu, 0, sizeof(b5500_cpu));
+    const char *b5500_ops[] = {
+        "PUSH 10.5",
+        "PUSH 4.5",
+        "ADD",
+        "PUSH 2.0",
+        "MUL"
+    };
+    assert(tsfi_algol_execute_b5500(&b5500_cpu, b5500_ops, 5) == 0);
+    assert(b5500_cpu.sp == 1);
+    assert(b5500_cpu.operand_stack[0] == 30.0);
 }
 
 int main(void) {

@@ -904,6 +904,14 @@ void tsfi_algol_scope_init(tsfi_algol_scope_frame *frame, int parent);
 void tsfi_algol_stack_push(tsfi_algol_call_stack *stack, int pc);
 int tsfi_algol_stack_pop(tsfi_algol_call_stack *stack);
 
+typedef struct {
+    double operand_stack[32];
+    int sp;
+    int program_counter;
+} tsfi_b5500_processor;
+
+int tsfi_algol_execute_b5500(tsfi_b5500_processor *cpu, const char **opcodes, int opcode_count);
+
 // ALGOL Dynamic Matrix Extensions
 typedef struct {
     int rows;
