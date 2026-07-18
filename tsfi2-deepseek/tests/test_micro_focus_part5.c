@@ -535,7 +535,30 @@ int run_nato_stanag_tests_part5(void) {
     tsfi_mf_nato_arq_detect_duplicate(11, rec_mask, 10, &is_dup, &dup_valid); // seq 11 == expected 10 + 1 -> bit 1 checked -> not duplicate
     assert(dup_valid == 1);
     assert(is_dup == 0);
-    printf("  [PASS] ARQ Duplicate Detector verified.\n");
+    // Verify D_PDU Type 2
+    printf("[TEST] Validating NATO D_PDU Type 2 Encoder...\n");
+    uint8_t pdu_payload2[] = {0x11, 0x22};
+    uint8_t dpdu2[16];
+    size_t dpdu2_size = 0;
+    int dpdu2_res = tsfi_mf_nato_encode_d_pdu_type2(2, 5, 42, pdu_payload2, sizeof(pdu_payload2), dpdu2, &dpdu2_size);
+    assert(dpdu2_res == 0);
+    assert(dpdu2_size == 5);
+    assert(dpdu2[0] == 0x02);
+    assert(dpdu2[1] == 0x25); // (2 << 4) | 5 = 0x25
+    assert(dpdu2[2] == 42);   // Tx Seq
+    assert(dpdu2[3] == 0x11);
+    printf("  [PASS] D_PDU Type 2 verified.\n");
+
+    // Verify Flow Control (Resume/Pause)
+    printf("[TEST] Validating NATO Flow Control Primitive...\n");
+    uint8_t flow_pkt[8];
+    size_t flow_size = 0;
+    int flow_res = tsfi_mf_nato_generate_flow_control(1, 3, flow_pkt, &flow_size); // Resume, SAP 3
+    assert(flow_res == 0);
+    assert(flow_size == 2);
+    assert(flow_pkt[0] == 0x8D);
+    assert(flow_pkt[1] == 0x13); // (1 << 4) | 3 = 0x13
+    printf("  [PASS] Flow Control Primitive verified.\n");
 
     return 0;
 }

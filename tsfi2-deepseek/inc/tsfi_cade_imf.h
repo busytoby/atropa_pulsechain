@@ -406,4 +406,7 @@ int tsfi_mf_nato_generate_hard_reset(int reset_code, uint8_t *out_pkt, size_t *o
 int tsfi_mf_nato_generate_flow_clear(int sap_id, uint8_t *out_pkt, size_t *out_size);
 int tsfi_mf_nato_arq_detect_duplicate(int seq_num, const uint8_t *received_mask, int expected_seq, int *is_duplicate, int *is_valid);
 
+int tsfi_mf_nato_encode_d_pdu_type2(int dest_sap, int src_sap, int tx_seq, const uint8_t *payload, size_t pay_size, uint8_t *out_frame, size_t *out_size);
+int tsfi_mf_nato_generate_flow_control(int flow_action, int sap_id, uint8_t *out_pkt, size_t *out_size);
+
 #endif // TSFI_CADE_IMF_H

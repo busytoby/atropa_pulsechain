@@ -1316,6 +1316,29 @@ int tsfi_mf_nato_arq_detect_duplicate(int seq_num, const uint8_t *received_mask,
     return 0;
 }
 
+int tsfi_mf_nato_encode_d_pdu_type2(int dest_sap, int src_sap, int tx_seq, const uint8_t *payload, size_t pay_size, uint8_t *out_frame, size_t *out_size) {
+    if (!out_frame || !out_size) return -1;
+    if (pay_size > 0 && !payload) return -2;
+    
+    out_frame[0] = 0x02; // D_PDU Type 2
+    out_frame[1] = ((dest_sap & 0x0F) << 4) | (src_sap & 0x0F);
+    out_frame[2] = tx_seq & 0xFF;
+    if (pay_size > 0) {
+        memcpy(out_frame + 3, payload, pay_size);
+    }
+    *out_size = 3 + pay_size;
+    return 0;
+}
+
+int tsfi_mf_nato_generate_flow_control(int flow_action, int sap_id, uint8_t *out_pkt, size_t *out_size) {
+    if (!out_pkt || !out_size) return -1;
+    out_pkt[0] = 0x8D;
+    out_pkt[1] = ((flow_action & 0x0F) << 4) | (sap_id & 0x0F);
+    *out_size = 2;
+    return 0;
+}
+
+
 
 
 
