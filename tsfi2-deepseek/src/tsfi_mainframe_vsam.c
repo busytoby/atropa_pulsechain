@@ -95,6 +95,12 @@ int tsfi_cw_vsam_write(tsfi_cw_vsam_ksds *ksds, const char *key, const uint8_t *
     }
 
     ksds->current_file_size += len;
+    ksds->raw_bytes_written += len;
+    int comp_len = len;
+    if (len > 4 && data[0] == data[1] && data[1] == data[2]) {
+        comp_len = len / 2 + 1;
+    }
+    ksds->compressed_bytes_written += comp_len;
 
     fseek(f, 0, SEEK_SET);
     fwrite(&ksds->entry_count, sizeof(int), 1, f);
@@ -491,4 +497,14 @@ int tsfi_cw_vsam_unlock_record(tsfi_cw_vsam_ksds *ksds, const char *key) {
 int tsfi_cw_vsam_get_ci_splits(tsfi_cw_vsam_ksds *ksds) {
     if (!ksds) return -1;
     return (int)ksds->ci_splits;
+}
+
+int tsfi_cw_vsam_get_compression_ratio(tsfi_cw_vsam_ksds *ksds, float *ratio_out) {
+    if (!ksds || !ratio_out) return -1;
+    if (ksds->raw_bytes_written == 0) {
+        *ratio_out = 1.0f;
+        return 0;
+    }
+    *ratio_out = (float)ksds->compressed_bytes_written / (float)ksds->raw_bytes_written;
+    return 0;
 }

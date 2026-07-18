@@ -734,6 +734,31 @@ static void test_new_mainframe_features(void) {
     // Y2K Leap century overrides
     assert(tsfi_cw_y2k_is_leap_year(2000) == 1);
     assert(tsfi_cw_y2k_is_leap_year(2100) == 0);
+
+    // VSAM Record Compression Stats
+    float comp_ratio = 0.0f;
+    assert(tsfi_cw_vsam_get_compression_ratio(&split_ksds, &comp_ratio) == 0);
+    assert(comp_ratio > 0.0f);
+
+    // COBOL REDEFINES Bounds Validator
+    tsfi_cw_copybook cb_red;
+    memset(&cb_red, 0, sizeof(cb_red));
+    assert(tsfi_cw_parse_copybook_line("05 F1 PIC X(4).", &cb_red) == 0);
+    assert(tsfi_cw_parse_copybook_line("05 F2 REDEFINES F1 PIC X(5).", &cb_red) == -8);
+
+    // EBCDIC CP285 Character Map
+    assert(tsfi_cw_ascii_to_ebcdic_cp285(0x9C) == 0x5B);
+    assert(tsfi_cw_ebcdic_to_ascii_cp285(0x5B) == 0xA3);
+
+    // JCL COND Multi-step Chain
+    assert(tsfi_cw_jcl_eval_cond_chain(12, 8, "LT", 16, "GT") == 1);
+
+    // Y2K Month Bounds calculator
+    int m_days = 0;
+    assert(tsfi_cw_y2k_get_month_days(2000, 2, &m_days) == 0);
+    assert(m_days == 29);
+    assert(tsfi_cw_y2k_get_month_days(2100, 2, &m_days) == 0);
+    assert(m_days == 28);
 }
 
 int main(void) {

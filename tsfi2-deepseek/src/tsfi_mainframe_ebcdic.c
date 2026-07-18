@@ -129,13 +129,13 @@ void tsfi_cw_set_custom_translation_tables(const uint8_t *ascii_to_ebcdic, const
 }
 
 uint8_t tsfi_cw_ascii_to_ebcdic_cp285(uint8_t ascii_char) {
-    if (ascii_char == 0xA3) return 0x5B; // Pound sterling sign
+    if (ascii_char == 0xA3 || ascii_char == 0x9C) return 0x5B; // Pound sterling sign
     if (ascii_char == 0x24) return 0x7B; // Dollar sign
     return tsfi_cw_ascii_to_ebcdic(ascii_char);
 }
 
 uint8_t tsfi_cw_ebcdic_to_ascii_cp285(uint8_t ebcdic_char) {
-    if (ebcdic_char == 0x5B) return 0xA3;
+    if (ebcdic_char == 0x5B) return 0xA3; // Pound sterling sign (ASCII 0xA3)
     if (ebcdic_char == 0x7B) return 0x24;
     return tsfi_cw_ebcdic_to_ascii(ebcdic_char);
 }

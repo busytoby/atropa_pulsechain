@@ -390,12 +390,18 @@ int tsfi_cw_parse_copybook_line(const char *copybook_line, tsfi_cw_copybook *cb)
     
     int final_offset = cb->record_length;
     if (strlen(redefines_target) > 0) {
+        int found_target = 0;
         for (int i = 0; i < cb->field_count; i++) {
             if (strcmp(cb->fields[i].name, redefines_target) == 0) {
+                found_target = 1;
+                if (f->length > cb->fields[i].length) {
+                    return -8;
+                }
                 final_offset = cb->fields[i].offset;
                 break;
             }
         }
+        if (!found_target) return -9;
     }
     if (sync_align > 0 && final_offset % sync_align != 0) {
         final_offset += (sync_align - (final_offset % sync_align));

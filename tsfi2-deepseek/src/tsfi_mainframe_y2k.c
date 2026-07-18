@@ -264,3 +264,12 @@ int tsfi_cw_y2k_is_leap_year(uint32_t year) {
     }
     return 0;
 }
+
+int tsfi_cw_y2k_get_month_days(uint32_t year, uint32_t month, int *days_out) {
+    if (month < 1 || month > 12 || !days_out) return -1;
+    int days_in_months[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    int is_leap = tsfi_cw_y2k_is_leap_year(year);
+    if (is_leap) days_in_months[1] = 29;
+    *days_out = days_in_months[month - 1];
+    return 0;
+}

@@ -374,3 +374,9 @@ int tsfi_cw_jcl_resolve_gdg(const char *dsn_str, int current_gen, char *resolved
     resolved_out[max_len - 1] = '\0';
     return 0;
 }
+
+int tsfi_cw_jcl_eval_cond_chain(int step_rc, int cond_code_1, const char *op_1, int cond_code_2, const char *op_2) {
+    int res1 = tsfi_cw_jcl_eval_cond(step_rc, cond_code_1, op_1);
+    int res2 = tsfi_cw_jcl_eval_cond(step_rc, cond_code_2, op_2);
+    return res1 && res2;
+}
