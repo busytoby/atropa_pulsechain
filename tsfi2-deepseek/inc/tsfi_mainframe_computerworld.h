@@ -30,6 +30,10 @@ int tsfi_cw_ebcdic_to_ascii_buf(const uint8_t *ebcdic_in, char *ascii_out, int l
 int tsfi_cw_pack_comp3(const char *ascii_num, uint8_t *comp3_out, int max_out_len, int *out_len);
 int tsfi_cw_unpack_comp3(const uint8_t *comp3_in, int comp3_len, char *ascii_out, int max_ascii_len);
 
+// Zoned decimal sign encoding
+int tsfi_cw_pack_zoned(const char *ascii_num, uint8_t *zoned_out, int max_out_len, int *out_len);
+int tsfi_cw_unpack_zoned(const uint8_t *zoned_in, int zoned_len, char *ascii_out, int max_ascii_len);
+
 // 1. IBM Hexadecimal Floating-Point (HFP) Conversions
 float tsfi_cw_ibm_to_ieee_float(uint32_t ibm_float);
 uint32_t tsfi_cw_ieee_to_ibm_float(float ieee_float);
@@ -42,16 +46,25 @@ typedef enum {
     COBOL_TYPE_COMP5
 } tsfi_cw_cobol_type;
 
+typedef enum {
+    COBOL_USAGE_DISPLAY,
+    COBOL_USAGE_COMP,
+    COBOL_USAGE_COMP3,
+    COBOL_USAGE_COMP5
+} tsfi_cw_cobol_usage;
+
 typedef struct {
     int level;
     char name[32];
     tsfi_cw_cobol_type type;
+    tsfi_cw_cobol_usage usage;
     int length;
     int decimal_places;
     int offset;
     char value[32];
     char redefines[32];
     int occurs;
+    char depending_on[32];
 } tsfi_cw_cobol_field;
 
 typedef struct {
@@ -131,6 +144,15 @@ void tsfi_cw_vsam_aix_init(tsfi_cw_vsam_aix *aix);
 int tsfi_cw_vsam_aix_add(tsfi_cw_vsam_aix *aix, const char *alt_key, const char *primary_key);
 int tsfi_cw_vsam_aix_resolve(tsfi_cw_vsam_aix *aix, const char *alt_key, char *primary_key_out);
 
+// VSAM Control Area (CA) Split Emulator
+typedef struct {
+    tsfi_cw_vsam_ci_set cis_sets[4];
+    int ca_count;
+} tsfi_cw_vsam_ca_set;
+
+void tsfi_cw_vsam_ca_init(tsfi_cw_vsam_ca_set *set);
+int tsfi_cw_vsam_ca_insert(tsfi_cw_vsam_ca_set *set, uint32_t ca_idx, const char *key);
+
 // JCL Dataset Dispositions
 typedef struct {
     char dsn[64];
@@ -141,10 +163,37 @@ typedef struct {
 
 int tsfi_cw_jcl_parse_disp(const char *disp_str, tsfi_cw_jcl_disp *disp_out);
 
+// Multi-century Y2K helper
+uint32_t tsfi_cw_y2k_resolve_year_multi(uint32_t two_digit_year, uint32_t century_prefix);
+
+// VSAM Key-Range Partitioning (KRDS) Emulator
+typedef struct {
+    char range_start[16];
+    char range_end[16];
+    char filepath[256];
+} tsfi_cw_vsam_krds_partition;
+
+typedef struct {
+    tsfi_cw_vsam_krds_partition partitions[4];
+    int partition_count;
+} tsfi_cw_vsam_krds;
+
+void tsfi_cw_vsam_krds_init(tsfi_cw_vsam_krds *krds);
+int tsfi_cw_vsam_krds_add_partition(tsfi_cw_vsam_krds *krds, const char *start, const char *end, const char *path);
+const char *tsfi_cw_vsam_krds_resolve(tsfi_cw_vsam_krds *krds, const char *key);
+
+// Fixed-Block (FB 80) record blocking
+int tsfi_cw_block_fb80(const char *unix_stream, uint8_t *block_out, int max_block_size, int *records_blocked);
+
+// Leap Second adjustments
+int tsfi_cw_y2k_adjust_leap_seconds(uint32_t year, int *seconds_offset);
+
 // 4. Job Control Language (JCL) Execution Simulator
 int tsfi_cw_run_jcl(const char **cards, int card_count);
 int tsfi_cw_run_jcl_ex(const char **cards, int card_count, int initial_rc);
 int tsfi_cw_run_jcl_sysin(const char **cards, int card_count, char *sysin_out, int max_sysin_len);
+int tsfi_cw_run_jcl_proc(const char **cards, int card_count, const char **proc_cards, int proc_card_count, int initial_rc);
+int tsfi_cw_run_jcl_restart(const char **cards, int card_count, const char *restart_step);
 
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

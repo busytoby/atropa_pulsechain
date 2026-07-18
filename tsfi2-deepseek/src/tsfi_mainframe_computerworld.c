@@ -421,13 +421,41 @@ int tsfi_cw_parse_copybook_line(const char *copybook_line, tsfi_cw_copybook *cb)
         }
     }
 
+    tsfi_cw_cobol_usage usage = COBOL_USAGE_DISPLAY;
+    if (strstr(copybook_line, "USAGE IS COMP-3") || strstr(copybook_line, "USAGE COMP-3")) {
+        usage = COBOL_USAGE_COMP3;
+        type = COBOL_TYPE_COMP3;
+    } else if (strstr(copybook_line, "USAGE IS COMP-5") || strstr(copybook_line, "USAGE COMP-5")) {
+        usage = COBOL_USAGE_COMP5;
+        type = COBOL_TYPE_COMP5;
+    } else if (strstr(copybook_line, "USAGE IS COMP") || strstr(copybook_line, "USAGE COMP")) {
+        usage = COBOL_USAGE_COMP;
+        type = COBOL_TYPE_COMP5;
+    } else if (strstr(copybook_line, "USAGE IS DISPLAY") || strstr(copybook_line, "USAGE DISPLAY")) {
+        usage = COBOL_USAGE_DISPLAY;
+    }
+
+    char depending_on[32] = "";
+    const char *dep_ptr = strstr(copybook_line, "DEPENDING ON");
+    if (dep_ptr) {
+        dep_ptr += 12;
+        while (*dep_ptr == ' ' || *dep_ptr == '\t') dep_ptr++;
+        int d_idx = 0;
+        while (*dep_ptr && *dep_ptr != ' ' && *dep_ptr != '\t' && *dep_ptr != '.' && d_idx < 31) {
+            depending_on[d_idx++] = *dep_ptr++;
+        }
+        depending_on[d_idx] = '\0';
+    }
+
     tsfi_cw_cobol_field *f = &cb->fields[cb->field_count];
     f->level = level;
     snprintf(f->name, sizeof(f->name), "%s", name);
     f->type = type;
+    f->usage = usage;
     snprintf(f->value, sizeof(f->value), "%s", value_clause);
     snprintf(f->redefines, sizeof(f->redefines), "%s", redefines_target);
     f->occurs = occurs;
+    snprintf(f->depending_on, sizeof(f->depending_on), "%s", depending_on);
     
     int byte_len = length + decimal_places;
     int base_length = 0;
@@ -923,5 +951,221 @@ int tsfi_cw_jcl_parse_disp(const char *disp_str, tsfi_cw_jcl_disp *disp_out) {
         }
     }
     return 0;
+}
+
+int tsfi_cw_pack_zoned(const char *ascii_num, uint8_t *zoned_out, int max_out_len, int *out_len) {
+    if (!ascii_num || !zoned_out || !out_len) return -1;
+    int len = strlen(ascii_num);
+    if (len == 0) return -2;
+
+    int is_negative = 0;
+    int start_idx = 0;
+    if (ascii_num[0] == '-') {
+        is_negative = 1;
+        start_idx = 1;
+    } else if (ascii_num[0] == '+') {
+        start_idx = 1;
+    }
+
+    int digits_len = len - start_idx;
+    if (digits_len > max_out_len) return -3;
+    *out_len = digits_len;
+
+    for (int i = 0; i < digits_len; i++) {
+        char c = ascii_num[start_idx + i];
+        if (c < '0' || c > '9') return -4;
+        zoned_out[i] = 0xF0 | (c - '0');
+    }
+
+    if (digits_len > 0) {
+        uint8_t last_digit = zoned_out[digits_len - 1] & 0x0F;
+        if (is_negative) {
+            zoned_out[digits_len - 1] = 0xD0 | last_digit;
+        } else {
+            zoned_out[digits_len - 1] = 0xC0 | last_digit;
+        }
+    }
+    return 0;
+}
+
+int tsfi_cw_unpack_zoned(const uint8_t *zoned_in, int zoned_len, char *ascii_out, int max_ascii_len) {
+    if (!zoned_in || !ascii_out || zoned_len <= 0) return -1;
+    if (zoned_len + 2 > max_ascii_len) return -2;
+
+    int write_idx = 0;
+    uint8_t last_byte = zoned_in[zoned_len - 1];
+    uint8_t sign_zone = last_byte & 0xF0;
+    
+    if (sign_zone == 0xD0) {
+        ascii_out[write_idx++] = '-';
+    }
+
+    for (int i = 0; i < zoned_len - 1; i++) {
+        ascii_out[write_idx++] = '0' + (zoned_in[i] & 0x0F);
+    }
+    ascii_out[write_idx++] = '0' + (last_byte & 0x0F);
+    ascii_out[write_idx] = '\0';
+    return 0;
+}
+
+void tsfi_cw_vsam_ca_init(tsfi_cw_vsam_ca_set *set) {
+    if (!set) return;
+    memset(set, 0, sizeof(tsfi_cw_vsam_ca_set));
+    set->ca_count = 1;
+    tsfi_cw_vsam_ci_init(&set->cis_sets[0]);
+}
+
+int tsfi_cw_vsam_ca_insert(tsfi_cw_vsam_ca_set *set, uint32_t ca_idx, const char *key) {
+    if (!set || ca_idx >= (uint32_t)set->ca_count) return -1;
+    tsfi_cw_vsam_ci_set *ci_s = &set->cis_sets[ca_idx];
+    
+    int last_ci = ci_s->ci_count - 1;
+    int rc = tsfi_cw_vsam_ci_insert(ci_s, last_ci, key);
+    if (rc >= 0) return rc;
+    
+    if (set->ca_count >= 4) return -2;
+    
+    uint32_t new_ca_idx = set->ca_count++;
+    tsfi_cw_vsam_ci_set *new_ci_s = &set->cis_sets[new_ca_idx];
+    tsfi_cw_vsam_ci_init(new_ci_s);
+    
+    for (int i = 4; i < 8; i++) {
+        new_ci_s->cis[i - 4] = ci_s->cis[i];
+        memset(&ci_s->cis[i], 0, sizeof(tsfi_cw_vsam_ci));
+    }
+    ci_s->ci_count = 4;
+    new_ci_s->ci_count = 4;
+    
+    return tsfi_cw_vsam_ci_insert(new_ci_s, 0, key) >= 0 ? 2 : -3;
+}
+
+uint32_t tsfi_cw_y2k_resolve_year_multi(uint32_t two_digit_year, uint32_t century_prefix) {
+    return (century_prefix * 100) + two_digit_year;
+}
+
+int tsfi_cw_run_jcl_proc(const char **cards, int card_count, const char **proc_cards, int proc_card_count, int initial_rc) {
+    if (!cards || card_count <= 0) return -1;
+    
+    int steps_run = 0;
+    int current_rc = initial_rc;
+    
+    for (int i = 0; i < card_count; i++) {
+        const char *card = cards[i];
+        if (strncmp(card, "//", 2) == 0) {
+            const char *exec = strstr(card, "EXEC ");
+            if (exec) {
+                exec += 5;
+                if (strncmp(exec, "PGM=", 4) == 0) {
+                    steps_run++;
+                } else {
+                    int proc_steps = tsfi_cw_run_jcl_ex(proc_cards, proc_card_count, current_rc);
+                    if (proc_steps > 0) {
+                        steps_run += proc_steps;
+                    }
+                }
+            }
+        }
+    }
+    return steps_run;
+}
+
+void tsfi_cw_vsam_krds_init(tsfi_cw_vsam_krds *krds) {
+    if (krds) memset(krds, 0, sizeof(tsfi_cw_vsam_krds));
+}
+
+int tsfi_cw_vsam_krds_add_partition(tsfi_cw_vsam_krds *krds, const char *start, const char *end, const char *path) {
+    if (!krds || !start || !end || !path) return -1;
+    if (krds->partition_count >= 4) return -2;
+    int idx = krds->partition_count++;
+    strcpy(krds->partitions[idx].range_start, start);
+    strcpy(krds->partitions[idx].range_end, end);
+    strcpy(krds->partitions[idx].filepath, path);
+    return 0;
+}
+
+const char *tsfi_cw_vsam_krds_resolve(tsfi_cw_vsam_krds *krds, const char *key) {
+    if (!krds || !key) return NULL;
+    for (int i = 0; i < krds->partition_count; i++) {
+        if (strcmp(key, krds->partitions[i].range_start) >= 0 && strcmp(key, krds->partitions[i].range_end) <= 0) {
+            return krds->partitions[i].filepath;
+        }
+    }
+    return NULL;
+}
+
+int tsfi_cw_block_fb80(const char *unix_stream, uint8_t *block_out, int max_block_size, int *records_blocked) {
+    if (!unix_stream || !block_out || !records_blocked) return -1;
+    *records_blocked = 0;
+    
+    int block_offset = 0;
+    const char *p = unix_stream;
+    
+    while (*p && (block_offset + 80 <= max_block_size)) {
+        int line_len = 0;
+        const char *line_end = p;
+        while (*line_end && *line_end != '\n' && *line_end != '\r') {
+            line_len++;
+            line_end++;
+        }
+        
+        int copy_len = (line_len > 80) ? 80 : line_len;
+        memcpy(block_out + block_offset, p, copy_len);
+        for (int i = copy_len; i < 80; i++) {
+            block_out[block_offset + i] = 0x40; // Pad EBCDIC space
+        }
+        block_offset += 80;
+        (*records_blocked)++;
+        
+        p = line_end;
+        if (*p == '\r') p++;
+        if (*p == '\n') p++;
+    }
+    return block_offset;
+}
+
+int tsfi_cw_y2k_adjust_leap_seconds(uint32_t year, int *seconds_offset) {
+    if (!seconds_offset) return -1;
+    
+    int offset = 0;
+    if (year >= 1972) offset += 10;
+    if (year >= 1980) offset += 9;
+    if (year >= 1990) offset += 8;
+    if (year >= 2000) offset += 5;
+    if (year >= 2015) offset += 5;
+    
+    *seconds_offset = offset;
+    return 0;
+}
+
+int tsfi_cw_run_jcl_restart(const char **cards, int card_count, const char *restart_step) {
+    if (!cards || card_count <= 0) return -1;
+    
+    int steps_run = 0;
+    int skip_active = 1;
+    
+    for (int i = 0; i < card_count; i++) {
+        const char *card = cards[i];
+        if (strncmp(card, "//", 2) == 0) {
+            const char *exec = strstr(card, "EXEC ");
+            if (exec) {
+                char step_name[32] = "";
+                const char *s_start = card + 2;
+                int s_idx = 0;
+                while (*s_start && *s_start != ' ' && *s_start != '\t' && s_idx < 31) {
+                    step_name[s_idx++] = *s_start++;
+                }
+                step_name[s_idx] = '\0';
+                
+                if (restart_step && strcmp(step_name, restart_step) == 0) {
+                    skip_active = 0;
+                }
+                
+                if (!skip_active) {
+                    steps_run++;
+                }
+            }
+        }
+    }
+    return steps_run;
 }
 

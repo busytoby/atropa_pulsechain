@@ -311,6 +311,87 @@ static void test_new_mainframe_features(void) {
     assert(strcmp(jcl_disp.status, "NEW") == 0);
     assert(strcmp(jcl_disp.normal, "CATLG") == 0);
     assert(strcmp(jcl_disp.abnormal, "DELETE") == 0);
+
+    // Zoned decimal sign encoding
+    uint8_t zoned_pad[10];
+    int zoned_len_out = 0;
+    assert(tsfi_cw_pack_zoned("-12345", zoned_pad, 10, &zoned_len_out) == 0);
+    assert(zoned_len_out == 5);
+    assert(zoned_pad[4] == 0xD5); // '5' is 5, negative zone is D
+    char ascii_zoned[16];
+    assert(tsfi_cw_unpack_zoned(zoned_pad, 5, ascii_zoned, sizeof(ascii_zoned)) == 0);
+    assert(strcmp(ascii_zoned, "-12345") == 0);
+
+    // COBOL USAGE parsing
+    rc = tsfi_cw_parse_copybook_line("05 STR-VAR PIC X(10) USAGE IS DISPLAY.", &cb);
+    assert(rc == 0);
+    assert(cb.fields[6].usage == COBOL_USAGE_DISPLAY);
+    rc = tsfi_cw_parse_copybook_line("05 COMP-VAR PIC 9(4) USAGE COMP.", &cb);
+    assert(rc == 0);
+    assert(cb.fields[7].usage == COBOL_USAGE_COMP);
+
+    // JCL PROC execution
+    const char *jcl_proc_deck[] = {
+        "//TESTJOB JOB (ACCT)",
+        "//MYSTEP EXEC MYPROC"
+    };
+    const char *proc_deck[] = {
+        "//STEP1 EXEC PGM=RECON",
+        "//STEP2 EXEC PGM=COMP3"
+    };
+    int proc_steps_run = tsfi_cw_run_jcl_proc(jcl_proc_deck, 2, proc_deck, 2, 0);
+    assert(proc_steps_run == 2);
+
+    // VSAM CA Split validation
+    tsfi_cw_vsam_ca_set ca_set;
+    tsfi_cw_vsam_ca_init(&ca_set);
+    assert(tsfi_cw_vsam_ca_insert(&ca_set, 0, "KEY1") == 0);
+    assert(tsfi_cw_vsam_ca_insert(&ca_set, 0, "KEY2") == 0);
+    assert(tsfi_cw_vsam_ca_insert(&ca_set, 0, "KEY3") == 0);
+    assert(tsfi_cw_vsam_ca_insert(&ca_set, 0, "KEY4") == 0);
+    assert(tsfi_cw_vsam_ca_insert(&ca_set, 0, "KEY5") == 1); // CI split occurs inside CA 0
+    assert(ca_set.ca_count == 1);
+    assert(ca_set.cis_sets[0].ci_count == 2);
+
+    // Multi-Century Y2K resolution
+    assert(tsfi_cw_y2k_resolve_year_multi(26, 18) == 1826);
+    assert(tsfi_cw_y2k_resolve_year_multi(84, 19) == 1984);
+
+    // COBOL OCCURS DEPENDING ON parsing
+    rc = tsfi_cw_parse_copybook_line("05 ITEM-ARRAY PIC X(5) OCCURS 5 DEPENDING ON ITEM-COUNT.", &cb);
+    assert(rc == 0);
+    assert(cb.field_count == 9);
+    assert(strcmp(cb.fields[8].depending_on, "ITEM-COUNT") == 0);
+
+    // JCL Step Checkpoint Restarts
+    const char *jcl_restart_deck[] = {
+        "//STEP1 EXEC PGM=RECON",
+        "//STEP2 EXEC PGM=COMP3",
+        "//STEP3 EXEC PGM=HOGAN"
+    };
+    int restart_steps = tsfi_cw_run_jcl_restart(jcl_restart_deck, 3, "STEP2");
+    assert(restart_steps == 2);
+
+    // VSAM Key-Range Partitioning (KRDS)
+    tsfi_cw_vsam_krds krds;
+    tsfi_cw_vsam_krds_init(&krds);
+    assert(tsfi_cw_vsam_krds_add_partition(&krds, "A", "M", "part1.dat.bin") == 0);
+    assert(tsfi_cw_vsam_krds_add_partition(&krds, "N", "Z", "part2.dat.bin") == 0);
+    assert(strcmp(tsfi_cw_vsam_krds_resolve(&krds, "G"), "part1.dat.bin") == 0);
+    assert(strcmp(tsfi_cw_vsam_krds_resolve(&krds, "R"), "part2.dat.bin") == 0);
+
+    // FB 80 Record Blocking
+    uint8_t fb80_block[200];
+    int recs_blocked = 0;
+    int bytes_blocked = tsfi_cw_block_fb80("LINE1\nLINE2\n", fb80_block, sizeof(fb80_block), &recs_blocked);
+    assert(bytes_blocked == 160);
+    assert(recs_blocked == 2);
+    assert(fb80_block[5] == 0x40);
+
+    // Leap Second Correction Logs
+    int leap_sec_offset = 0;
+    assert(tsfi_cw_y2k_adjust_leap_seconds(1985, &leap_sec_offset) == 0);
+    assert(leap_sec_offset == 19);
 }
 
 int main(void) {
