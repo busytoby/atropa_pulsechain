@@ -325,7 +325,40 @@ int run_nato_stanag_tests_part5(void) {
     tsfi_mf_nato_phy_link_evaluate_helmholtz(2, 0.0f, &epoch, &ev_valid);
     assert(ev_valid == 1);
     assert(epoch == 3);
-    printf("  [PASS] Helmholtz Physical Link verified.\n");
+    // Verify HFRCP State Machine
+    printf("[TEST] Validating NATO HFRCP State Machine...\n");
+    int hf_state = 0; // Idle
+    int hf_valid = -1;
+    // Tune frequency in valid band -> Tuning
+    int hf_res = tsfi_mf_nato_hfrcp_update(0, 14250, &hf_state, &hf_valid); // 14.25 MHz (20m Amateur)
+    assert(hf_res == 0);
+    assert(hf_valid == 1);
+    assert(hf_state == 1);
+
+    // Tune frequency in invalid band -> fails
+    tsfi_mf_nato_hfrcp_update(0, 500, &hf_state, &hf_valid); // 500 kHz (out of bounds)
+    assert(hf_valid == 0);
+    assert(hf_state == 1);
+
+    // Complete tuning -> Listening
+    tsfi_mf_nato_hfrcp_update(1, 0, &hf_state, &hf_valid);
+    assert(hf_valid == 1);
+    assert(hf_state == 3);
+    printf("  [PASS] HFRCP State Machine verified.\n");
+
+    // Verify Flow Throttling Tracker
+    printf("[TEST] Validating NATO Flow Throttling...\n");
+    int is_thr = -1;
+    int thr_val = -1;
+    int thr_res = tsfi_mf_nato_verify_throttle_limit(50, 40, &is_thr, &thr_val); // queue size 50 >= threshold 40 -> throttled
+    assert(thr_res == 0);
+    assert(thr_val == 1);
+    assert(is_thr == 1);
+
+    tsfi_mf_nato_verify_throttle_limit(30, 40, &is_thr, &thr_val); // queue size 30 < threshold 40 -> not throttled
+    assert(thr_val == 1);
+    assert(is_thr == 0);
+    printf("  [PASS] Flow Throttling verified.\n");
 
     return 0;
 }

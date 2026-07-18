@@ -381,4 +381,7 @@ int tsfi_mf_nato_phy_link_update(int event, int *current_state, int *is_valid);
 int tsfi_mf_nato_verify_segment_bounds(int offset, int seg_size, int total_size, int is_last, int *is_valid);
 int tsfi_mf_nato_phy_link_evaluate_helmholtz(int op_type, float value, int *current_epoch, int *is_valid);
 
+int tsfi_mf_nato_hfrcp_update(int action, int frequency_khz, int *current_state, int *is_valid);
+int tsfi_mf_nato_verify_throttle_limit(int queue_size, int threshold, int *is_throttled, int *is_valid);
+
 #endif // TSFI_CADE_IMF_H

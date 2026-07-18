@@ -1021,6 +1021,56 @@ int tsfi_mf_nato_phy_link_evaluate_helmholtz(int op_type, float value, int *curr
     return 0;
 }
 
+int tsfi_mf_nato_hfrcp_update(int action, int frequency_khz, int *current_state, int *is_valid) {
+    if (!current_state || !is_valid) return -1;
+    *is_valid = 0;
+    
+    switch (action) {
+        case 0: // TUNE_FREQ
+            if ((*current_state == 0 || *current_state == 3) && frequency_khz >= 2000 && frequency_khz <= 30000) {
+                *current_state = 1; // Tuning
+                *is_valid = 1;
+            }
+            break;
+        case 1: // TUNE_COMPLETE
+            if (*current_state == 1) {
+                *current_state = 3; // Listening
+                *is_valid = 1;
+            }
+            break;
+        case 2: // START_TX
+            if (*current_state == 3) {
+                *current_state = 2; // Transmitting
+                *is_valid = 1;
+            }
+            break;
+        case 3: // STOP_TX
+            if (*current_state == 2) {
+                *current_state = 3; // Listening
+                *is_valid = 1;
+            }
+            break;
+        case 4: // GO_IDLE
+            if (*current_state == 3) {
+                *current_state = 0; // Idle
+                *is_valid = 1;
+            }
+            break;
+    }
+    return 0;
+}
+
+int tsfi_mf_nato_verify_throttle_limit(int queue_size, int threshold, int *is_throttled, int *is_valid) {
+    if (!is_throttled || !is_valid) return -1;
+    *is_valid = 0;
+    if (queue_size < 0 || threshold <= 0) return 0;
+    
+    *is_valid = 1;
+    *is_throttled = (queue_size >= threshold) ? 1 : 0;
+    return 0;
+}
+
+
 
 
 
