@@ -2031,6 +2031,26 @@ static void test_new_mainframe_features(void) {
     tsfi_cw_isu_state_farm_sla sla_strict = { "SFJOB02", 90, 100, 1 }; // strict: limit reduced to 80 -> elapsed (90) > limit (80)
     assert(tsfi_cw_isu_audit_sf_sla(&sla_strict, &sf_compliant) == 0);
     assert(sf_compliant == 0);
+
+    // ISU Course Enrollment test
+    tsfi_cw_isu_course_enrollment enroll_ok = { "IT262", 25, 30, 5, 5 };
+    int can_register = 0;
+    assert(tsfi_cw_isu_audit_enrollment(&enroll_ok, &can_register) == 0);
+    assert(can_register == 1);
+
+    tsfi_cw_isu_course_enrollment enroll_full = { "IT262", 30, 30, 5, 5 };
+    assert(tsfi_cw_isu_audit_enrollment(&enroll_full, &can_register) == 0);
+    assert(can_register == 0);
+
+    // ISU Gateway status test
+    tsfi_cw_isu_gateway_status gw_ok = { "10.0.0.1", 1000, 5, 45 };
+    int gw_alert = 0;
+    assert(tsfi_cw_isu_audit_gateway(&gw_ok, &gw_alert) == 0);
+    assert(gw_alert == 0);
+
+    tsfi_cw_isu_gateway_status gw_bad = { "10.0.0.1", 1000, 80, 45 }; // 8% drop rate (> 5%)
+    assert(tsfi_cw_isu_audit_gateway(&gw_bad, &gw_alert) == 0);
+    assert(gw_alert == 1);
 }
 
 int main(void) {

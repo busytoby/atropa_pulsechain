@@ -1421,6 +1421,22 @@ int tsfi_cw_isu_audit_sf_sla(const tsfi_cw_isu_state_farm_sla *sla, int *is_comp
     return 0;
 }
 
+int tsfi_cw_isu_audit_enrollment(const tsfi_cw_isu_course_enrollment *enroll, int *can_register_out) {
+    if (!enroll || !can_register_out) return -1;
+    
+    *can_register_out = (enroll->current_enrolled < enroll->max_capacity && enroll->prereqs_met_count == enroll->total_applicants) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_cw_isu_audit_gateway(const tsfi_cw_isu_gateway_status *gw, int *alert_out) {
+    if (!gw || !alert_out) return -1;
+    
+    double drop_rate = (gw->packets_sent > 0) ? (double)gw->packets_dropped / (double)gw->packets_sent : 0.0;
+    *alert_out = (drop_rate > 0.05 || gw->rtt_ms > 250) ? 1 : 0;
+    return 0;
+}
+
+
 
 
 

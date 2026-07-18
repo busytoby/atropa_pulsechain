@@ -1071,5 +1071,25 @@ typedef struct {
 int tsfi_cw_isu_audit_email(const tsfi_cw_isu_email_log *log, int *is_valid_out);
 int tsfi_cw_isu_audit_sf_sla(const tsfi_cw_isu_state_farm_sla *sla, int *is_compliant_out);
 
+// ISU Normal Course Enrollment
+typedef struct {
+    char course_id[8];
+    int current_enrolled;
+    int max_capacity;
+    int prereqs_met_count;
+    int total_applicants;
+} tsfi_cw_isu_course_enrollment;
+
+// ISU Normal Gateway Status
+typedef struct {
+    char gateway_ip[16];
+    int packets_sent;
+    int packets_dropped;
+    int rtt_ms;
+} tsfi_cw_isu_gateway_status;
+
+int tsfi_cw_isu_audit_enrollment(const tsfi_cw_isu_course_enrollment *enroll, int *can_register_out);
+int tsfi_cw_isu_audit_gateway(const tsfi_cw_isu_gateway_status *gw, int *alert_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 
