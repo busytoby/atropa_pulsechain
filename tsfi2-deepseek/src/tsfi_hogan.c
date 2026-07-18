@@ -385,3 +385,40 @@ int tsfi_hogan_lookup_account_offset(const char *filepath, uint32_t account_id, 
     
     return -1; // Not found
 }
+
+int tsfi_hogan_write_ledger_entry(const char *filepath, uint32_t account_id, uint64_t amount, uint8_t is_credit, const char *description) {
+    hogan_ledger_entry entry;
+    entry.account_id = account_id;
+    entry.amount = amount;
+    entry.is_credit = is_credit;
+    strncpy(entry.description, description, sizeof(entry.description) - 1);
+    entry.description[sizeof(entry.description) - 1] = '\0';
+    
+    return tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_ledger_entry));
+}
+
+int tsfi_hogan_print_statement(const char *filepath, uint32_t account_id, size_t *entries_count_out) {
+    uint8_t buf[sizeof(hogan_ledger_entry)];
+    size_t size = 0;
+    size_t index = 0;
+    size_t matches = 0;
+    
+    printf("--- ACCOUNT LEDGER STATEMENT REPORT FOR ACC: %04u ---\n", account_id);
+    while (tsfi_hogan_read_seq_record(filepath, index, buf, &size) == 0) {
+        if (size != sizeof(hogan_ledger_entry)) {
+            return -2; // Corrupt record size
+        }
+        
+        const hogan_ledger_entry *entry = (const hogan_ledger_entry *)buf;
+        if (entry->account_id == account_id) {
+            printf("  [Tx %03lu] Type: %-6s | Amount: %-6lu | Desc: %s\n",
+                   matches + 1, entry->is_credit ? "CREDIT" : "DEBIT",
+                   entry->amount, entry->description);
+            matches++;
+        }
+        index++;
+    }
+    
+    *entries_count_out = matches;
+    return 0;
+}

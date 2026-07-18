@@ -212,6 +212,29 @@ int main(void) {
     remove(index_path); // clean up
     printf("  [PASS] Master Account Index lookups and pointer resolutions verified.\n");
 
+    // 13. Test Account Ledger Statement Generator (Statement Reporting)
+    printf("[E2E] Testing Account Ledger Statement Generator...\n");
+    const char *ledger_path = "hogan_ledger.dat.bin";
+    remove(ledger_path); // ensure clean start
+    
+    assert(tsfi_hogan_write_ledger_entry(ledger_path, 1001, 3000, 0, "EVM TRANSFER") == 0);
+    assert(tsfi_hogan_write_ledger_entry(ledger_path, 1001, 500, 1, "RAMAC DEPOSIT") == 0);
+    assert(tsfi_hogan_write_ledger_entry(ledger_path, 2002, 3000, 1, "EVM TRANSFER") == 0);
+    assert(tsfi_hogan_write_ledger_entry("hogan_ledger.json", 1001, 3000, 0, "EVM TRANSFER") == -3); // Rule 13 check
+    
+    size_t stmt_count = 0;
+    assert(tsfi_hogan_print_statement(ledger_path, 1001, &stmt_count) == 0);
+    assert(stmt_count == 2);
+    
+    assert(tsfi_hogan_print_statement(ledger_path, 2002, &stmt_count) == 0);
+    assert(stmt_count == 1);
+    
+    assert(tsfi_hogan_print_statement(ledger_path, 9999, &stmt_count) == 0);
+    assert(stmt_count == 0);
+    
+    remove(ledger_path); // clean up
+    printf("  [PASS] Account Ledger Statements correctly written, filtered, and generated.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }

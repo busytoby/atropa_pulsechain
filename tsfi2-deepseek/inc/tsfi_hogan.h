@@ -102,4 +102,15 @@ typedef struct {
 int tsfi_hogan_write_account_index(const char *filepath, uint32_t account_id, uint32_t sector_offset);
 int tsfi_hogan_lookup_account_offset(const char *filepath, uint32_t account_id, uint32_t *sector_offset_out);
 
+// Account Ledger Statement Generator (Statement Reporting)
+typedef struct {
+    uint32_t account_id;
+    uint64_t amount;
+    uint8_t is_credit;
+    char description[24];
+} hogan_ledger_entry;
+
+int tsfi_hogan_write_ledger_entry(const char *filepath, uint32_t account_id, uint64_t amount, uint8_t is_credit, const char *description);
+int tsfi_hogan_print_statement(const char *filepath, uint32_t account_id, size_t *entries_count_out);
+
 #endif // TSFI_HOGAN_H
