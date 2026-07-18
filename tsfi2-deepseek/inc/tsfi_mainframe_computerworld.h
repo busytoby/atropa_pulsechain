@@ -1049,8 +1049,9 @@ typedef struct {
     int nato_irs_compliance_rating; // 0..5
 } tsfi_cw_isu_leap_app;
 
-int tsfi_cw_isu_leap_defense_audit(const tsfi_cw_isu_leap_app *app, int defcon_level, double *criticality_risk_out);
-int tsfi_cw_isu_ulid_ssa_match(const char *ulid, const char *ssn_last4, int *is_match_out);
+int tsfi_cw_isu_leap_defense_audit(const tsfi_cw_isu_leap_app *app, int defcon_level, const char *transaction_id, const char *user_security_key, double *criticality_risk_out);
+int tsfi_cw_isu_ulid_ssa_match(const char *ulid, const char *ssn_last4, const char *transaction_id, const char *user_security_key, int *is_match_out);
+int tsfi_cw_rmu_audit_cics_security(const char *transaction_id, const char *user_security_key, int *is_authorized_out);
 
 // ISU Normal legacy email log
 typedef struct {

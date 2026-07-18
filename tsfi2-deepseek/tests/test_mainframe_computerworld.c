@@ -2002,15 +2002,21 @@ static void test_new_mainframe_features(void) {
     // ISU LEAP defense test
     tsfi_cw_isu_leap_app app = { "LEAP01", 100.0, 50, 4 }; // Base: 100*0.05 + 50*0.1 = 10; NATO rating 4 -> factor (5-4)*15 = 15. Total base risk = 25.
     double crit_risk = 0.0;
-    assert(tsfi_cw_isu_leap_defense_audit(&app, 3, &crit_risk) == 0); // DEFCON 3 -> mult 1.5 -> 25 * 1.5 = 37.5
+    // Authorized call
+    assert(tsfi_cw_isu_leap_defense_audit(&app, 3, "TX01", "ADMIN", &crit_risk) == 0); // DEFCON 3 -> mult 1.5 -> 25 * 1.5 = 37.5
     assert(fabs(crit_risk - 37.5) < 0.1);
+    // Unauthorized call (adds 500 penalty)
+    assert(tsfi_cw_isu_leap_defense_audit(&app, 3, "TX01", "GUEST", &crit_risk) == 0);
+    assert(fabs(crit_risk - 537.5) < 0.1);
 
     // ISU ULID-SSA test
     int ssa_match = 0;
-    assert(tsfi_cw_isu_ulid_ssa_match("gdecke4", "1234", &ssa_match) == 0); // Last char '4' matches '4'
+    assert(tsfi_cw_isu_ulid_ssa_match("gdecke4", "1234", "TX02", "ADMIN", &ssa_match) == 0); // Last char '4' matches '4'
     assert(ssa_match == 1);
-    assert(tsfi_cw_isu_ulid_ssa_match("gdecke4", "1235", &ssa_match) == 0);
+    assert(tsfi_cw_isu_ulid_ssa_match("gdecke4", "1235", "TX02", "ADMIN", &ssa_match) == 0);
     assert(ssa_match == 0);
+    // Unauthorized call returns security error code -3
+    assert(tsfi_cw_isu_ulid_ssa_match("gdecke4", "1234", "TX02", "GUEST", &ssa_match) == -3);
 
     // ISU legacy email test
     tsfi_cw_isu_email_log mail = { "jqsmith", "test@ilstu.edu", 1000, 1 };

@@ -1354,8 +1354,18 @@ int tsfi_cw_niu_audit_working_storage(const tsfi_cw_niu_cobol_var *vars, int var
     return 0;
 }
 
-int tsfi_cw_isu_leap_defense_audit(const tsfi_cw_isu_leap_app *app, int defcon_level, double *criticality_risk_out) {
+int tsfi_cw_rmu_audit_cics_security(const char *transaction_id, const char *user_security_key, int *is_authorized_out) {
+    if (!transaction_id || !user_security_key || !is_authorized_out) return -1;
+    
+    *is_authorized_out = (strncmp(user_security_key, "SEC_", 4) == 0 || strcmp(user_security_key, "ADMIN") == 0) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_cw_isu_leap_defense_audit(const tsfi_cw_isu_leap_app *app, int defcon_level, const char *transaction_id, const char *user_security_key, double *criticality_risk_out) {
     if (!app || !criticality_risk_out) return -1;
+    
+    int auth = 0;
+    tsfi_cw_rmu_audit_cics_security(transaction_id, user_security_key, &auth);
     
     double base = (app->database_size_gb * 0.05) + (app->transaction_rate_per_sec * 0.1);
     double nato_factor = (5.0 - app->nato_irs_compliance_rating) * 15.0;
@@ -1370,14 +1380,23 @@ int tsfi_cw_isu_leap_defense_audit(const tsfi_cw_isu_leap_app *app, int defcon_l
     }
     
     *criticality_risk_out = (base + nato_factor) * mult;
+    if (!auth) {
+        *criticality_risk_out += 500.0; // massive penalty for unauthorized transaction
+    }
     return 0;
 }
 
-int tsfi_cw_isu_ulid_ssa_match(const char *ulid, const char *ssn_last4, int *is_match_out) {
+int tsfi_cw_isu_ulid_ssa_match(const char *ulid, const char *ssn_last4, const char *transaction_id, const char *user_security_key, int *is_match_out) {
     if (!ulid || !ssn_last4 || !is_match_out) return -1;
     if (strlen(ssn_last4) != 4) return -2;
     
-    // Simplistic simulated check: last char of ULID matches last char of SSN last 4
+    int auth = 0;
+    tsfi_cw_rmu_audit_cics_security(transaction_id, user_security_key, &auth);
+    if (!auth) {
+        *is_match_out = 0;
+        return -3; // security block
+    }
+    
     size_t ulid_len = strlen(ulid);
     if (ulid_len == 0) {
         *is_match_out = 0;
