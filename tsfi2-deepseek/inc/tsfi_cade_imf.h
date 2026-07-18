@@ -470,4 +470,6 @@ int tsfi_mf_ssa_verify_checksum(const char *ssn, int *is_valid);
 int tsfi_mf_ssa_verify_high_group(int area, int group, int *is_allocated);
 int tsfi_mf_ssa_format_benefit_auth(uint32_t recipient_id, double amount, uint8_t *out_pdu, size_t *out_size);
 
+int tsfi_mf_ssa_verify_ssn_exhaustive(const char *ssn, int *is_valid);
+
 #endif // TSFI_CADE_IMF_H

@@ -1879,6 +1879,38 @@ int tsfi_mf_ssa_format_benefit_auth(uint32_t recipient_id, double amount, uint8_
     return 0;
 }
 
+int tsfi_mf_ssa_verify_ssn_exhaustive(const char *ssn, int *is_valid) {
+    if (!ssn || !is_valid) return -1;
+    *is_valid = 0;
+    
+    size_t len = strlen(ssn);
+    if (len != 9) return 0;
+    
+    // Parse areas
+    int area = 0;
+    int group = 0;
+    int serial = 0;
+    if (sscanf(ssn, "%3d%2d%4d", &area, &group, &serial) != 3) return 0;
+    
+    // 1. Area code constraints (cannot be 000, 666, or >= 900)
+    if (area == 0 || area == 666 || area >= 900) return 0;
+    
+    // 2. Group number constraints (cannot be 00)
+    if (group == 0) return 0;
+    
+    // 3. Group must be within active high group limit
+    int allocated = 0;
+    tsfi_mf_ssa_verify_high_group(area, group, &allocated);
+    if (!allocated) return 0;
+    
+    // 4. Serial number constraints (cannot be 0000)
+    if (serial == 0) return 0;
+    
+    *is_valid = 1;
+    return 0;
+}
+
+
 
 
 

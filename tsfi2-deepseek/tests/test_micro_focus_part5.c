@@ -1055,7 +1055,32 @@ int run_nato_stanag_tests_part5(void) {
     assert(ssa_res == 0);
     assert(ben_size == 9);
     assert(ben_pdu[0] == 0xF9);
-    printf("  [PASS] SSA Benefit Auth Formatting verified.\n");
+    // Verify SSA Exhaustive SSN Validator
+    printf("[TEST] Validating SSA Exhaustive SSN Validator...\n");
+    int ssn_ok = -1;
+    
+    // Valid case: Area 050, Group 05 (<= 10), Serial 1122
+    ssa_res = tsfi_mf_ssa_verify_ssn_exhaustive("050051122", &ssn_ok);
+    assert(ssa_res == 0);
+    assert(ssn_ok == 1);
+    
+    // Invalid case: Area 666
+    tsfi_mf_ssa_verify_ssn_exhaustive("666051122", &ssn_ok);
+    assert(ssn_ok == 0);
+    
+    // Invalid case: Group 00
+    tsfi_mf_ssa_verify_ssn_exhaustive("050001122", &ssn_ok);
+    assert(ssn_ok == 0);
+    
+    // Invalid case: Group exceeds High-Group (Group 15 > 10 for Area 050)
+    tsfi_mf_ssa_verify_ssn_exhaustive("050151122", &ssn_ok);
+    assert(ssn_ok == 0);
+    
+    // Invalid case: Serial 0000
+    tsfi_mf_ssa_verify_ssn_exhaustive("050050000", &ssn_ok);
+    assert(ssn_ok == 0);
+    
+    printf("  [PASS] SSA Exhaustive SSN Validator verified.\n");
 
     return 0;
 }
