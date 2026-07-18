@@ -97,6 +97,8 @@ int tsfi_hogan_lfs_save(const hogan_umbrella_system *sys, const char *filepath) 
             fwrite(&sys->accounts[i].daily_deposited, sizeof(uint64_t), 1, f);
             fwrite(&sys->accounts[i].overdraft_limit, sizeof(uint64_t), 1, f);
             fwrite(&sys->accounts[i].overdraft_drawn, sizeof(uint64_t), 1, f);
+            fwrite(&sys->accounts[i].card_spend_limit, sizeof(uint64_t), 1, f);
+            fwrite(&sys->accounts[i].card_spent_today, sizeof(uint64_t), 1, f);
         }
     }
     
@@ -270,6 +272,18 @@ int tsfi_hogan_lfs_load(hogan_umbrella_system *sys, const char *filepath) {
         }
         sys->accounts[i].overdraft_limit = ov_lim;
         sys->accounts[i].overdraft_drawn = ov_drawn;
+        uint64_t card_lim = 0;
+        if (fread(&card_lim, sizeof(uint64_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
+        uint64_t card_spent = 0;
+        if (fread(&card_spent, sizeof(uint64_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
+        sys->accounts[i].card_spend_limit = card_lim;
+        sys->accounts[i].card_spent_today = card_spent;
         sys->accounts[i].active = 1;
     }
     
@@ -752,6 +766,7 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
             sys->accounts[j].daily_transferred = 0;
             sys->accounts[j].daily_tx_count = 0;
             sys->accounts[j].daily_deposited = 0;
+            sys->accounts[j].card_spent_today = 0;
         }
     }
     
@@ -787,6 +802,8 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
             EVP_DigestUpdate(mdctx, &sys->accounts[i].daily_deposited, sizeof(uint64_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].overdraft_limit, sizeof(uint64_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].overdraft_drawn, sizeof(uint64_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].card_spend_limit, sizeof(uint64_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].card_spent_today, sizeof(uint64_t));
         }
     }
     EVP_DigestUpdate(mdctx, &sys->blocked_card_count, sizeof(size_t));
@@ -840,9 +857,12 @@ int tsfi_hogan_authorize_card(hogan_umbrella_system *sys, const char *filepath, 
     uint8_t approved = 0;
     if (acc && (acc->balance >= acc->balance_held + amount)) {
         if (acc->daily_limit == 0 || (acc->daily_spent + amount <= acc->daily_limit)) {
-            acc->balance_held += amount;
-            acc->daily_spent += amount;
-            approved = 1;
+            if (acc->card_spend_limit == 0 || (acc->card_spent_today + amount <= acc->card_spend_limit)) {
+                acc->balance_held += amount;
+                acc->daily_spent += amount;
+                acc->card_spent_today += amount;
+                approved = 1;
+            }
         }
     }
     
@@ -1448,6 +1468,41 @@ int tsfi_hogan_update_overdraft_limit(hogan_umbrella_system *sys, const char *fi
     acc->overdraft_limit = new_limit;
     
     int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_overdraft_limit_entry));
+    
+    sys->live_processing_enabled = original_live_state;
+    return write_res;
+}
+
+int tsfi_hogan_update_card_spend_limit(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_limit, uint32_t authority_id) {
+    // Enforce Rule 13: file extension must end with .dat.bin
+    const char *ext = strrchr(filepath, '.');
+    if (!ext || strcmp(ext, ".bin") != 0) {
+        if (!ext || strcmp(ext - 4, ".dat.bin") != 0) {
+            return -3; // Invalid extension
+        }
+    }
+
+    // Disable live queue during administrative action
+    uint8_t original_live_state = sys->live_processing_enabled;
+    sys->live_processing_enabled = 0;
+    
+    hogan_account *acc = NULL;
+    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
+        if (sys->accounts[i].active && sys->accounts[i].account_id == account_id) {
+            acc = &sys->accounts[i];
+            break;
+        }
+    }
+    
+    if (!acc) {
+        sys->live_processing_enabled = original_live_state;
+        return -1; // account not found
+    }
+    
+    hogan_card_spend_limit_entry entry = { account_id, acc->card_spend_limit, new_limit, authority_id };
+    acc->card_spend_limit = new_limit;
+    
+    int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_card_spend_limit_entry));
     
     sys->live_processing_enabled = original_live_state;
     return write_res;

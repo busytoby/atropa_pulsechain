@@ -1156,6 +1156,48 @@ int main(void) {
     remove(ovlimit_path); // clean up
     printf("  [PASS] Overdraft credit line capping, validations, and override logs verified.\n");
 
+    // 34. Test Card Daily Spend Manager (Spend Velocity Capping)
+    printf("[E2E] Testing Card Daily Spend Manager...\n");
+    const char *cardsp_path = "hogan_cardsp.dat.bin";
+    remove(cardsp_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system cardsp_sys;
+    tsfi_hogan_init(&cardsp_sys);
+    assert(tsfi_hogan_register_account(&cardsp_sys, 1001, 10000) == 0); // Alice: 10,000 units
+    
+    // Set Alice's daily card spend limit to 500 units
+    assert(tsfi_hogan_update_card_spend_limit(&cardsp_sys, cardsp_path, 1001, 500, 888) == 0);
+    assert(tsfi_hogan_update_card_spend_limit(&cardsp_sys, "hogan_cardsp.json", 1001, 500, 888) == -3); // Rule 13 check
+    
+    // Authorize card spending of 400 (succeeds, Alice card_spent_today becomes 400)
+    assert(tsfi_hogan_authorize_card(&cardsp_sys, "hogan_tx.dat.bin", 5005, 1001, 9009, 400) == 0);
+    
+    // Authorize card spending of 200 (should fail because Alice daily card spent would be 600 > 500)
+    assert(tsfi_hogan_authorize_card(&cardsp_sys, "hogan_tx.dat.bin", 5005, 1001, 9009, 200) == -1);
+    
+    // Run reconciliation
+    assert(tsfi_hogan_overnight_reconciliation(&cardsp_sys, "hogan_lfs.dat.bin") == 0);
+    
+    // Verify daily card spent resets overnight
+    assert(cardsp_sys.accounts[0].card_spent_today == 0);
+    
+    // Read sequential log file and verify entries
+    uint8_t read_cspbuf[sizeof(hogan_card_spend_limit_entry)];
+    size_t csp_size = 0;
+    assert(tsfi_hogan_read_seq_record(cardsp_path, 0, read_cspbuf, &csp_size) == 0);
+    assert(csp_size == sizeof(hogan_card_spend_limit_entry));
+    
+    const hogan_card_spend_limit_entry *cspentry = (const hogan_card_spend_limit_entry *)read_cspbuf;
+    assert(cspentry->account_id == 1001);
+    assert(cspentry->previous_spend_limit == 0);
+    assert(cspentry->new_spend_limit == 500);
+    assert(cspentry->authority_id == 888);
+    
+    remove(cardsp_path); // clean up
+    remove("hogan_tx.dat.bin"); // clean up
+    printf("  [PASS] Card daily spend limit velocity caps, resets, and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }
