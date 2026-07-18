@@ -30,6 +30,7 @@ int main(void) {
 
     // 2. Verify mapping frequency 880Hz -> keycode 30 (Key 'A')
     perf_engine->synth->wheels[0].frequency = 880.0f;
+    bridge->registers.keycode_reg = 0;
     res = tsfi_winchester_bridge_handshake(bridge);
     printf("  [SCSI Handshake] Status: %d, Keycode Register: %d (Expected 30)\n", res, bridge->registers.keycode_reg);
     fflush(stdout);
