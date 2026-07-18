@@ -2067,6 +2067,21 @@ static void test_new_mainframe_features(void) {
     tsfi_cw_unt_crypto_pipeline pipe_bad = { 102, "DES", 0, 1 }; // DES encryption
     assert(tsfi_cw_unt_audit_pipeline(&pipe_bad, &pipe_compliant) == 0);
     assert(pipe_compliant == 0);
+
+    // UNT VSAM optimization test
+    tsfi_cw_unt_vsam_ksds unt_ksds = { "CUSTOMER.KSDS", 60, 2, 64 }; // CI splits > 50 -> 0x01; buffer < 128 -> 0x02. Total: 0x03
+    int unt_flags = 0;
+    assert(tsfi_cw_unt_optimize_vsam(&unt_ksds, &unt_flags) == 0);
+    assert(unt_flags == 0x03);
+
+    // UNT RACF test
+    tsfi_cw_unt_racf_log logs[2] = {
+        { "ADMIN01", "PAYROLL.FILE", "READ", 1 },
+        { "GUEST01", "PAYROLL.FILE", "READ", 0 } // Unauthorized
+    };
+    int violations = 0;
+    assert(tsfi_cw_unt_audit_racf(logs, 2, &violations) == 0);
+    assert(violations == 1);
 }
 
 int main(void) {

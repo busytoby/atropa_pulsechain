@@ -1112,5 +1112,24 @@ typedef struct {
 int tsfi_cw_unt_score_contestant(const tsfi_cw_unt_mtm_contestant *student, int *score_out);
 int tsfi_cw_unt_audit_pipeline(const tsfi_cw_unt_crypto_pipeline *pipe, int *is_compliant_out);
 
+// UNT Denton VSAM KSDS
+typedef struct {
+    char dataset_name[32];
+    int control_interval_splits;
+    int control_area_splits;
+    int buffer_space_allocated_kb;
+} tsfi_cw_unt_vsam_ksds;
+
+// UNT Denton RACF log
+typedef struct {
+    char user_id[8];
+    char resource_name[32];
+    char access_level_requested[8];
+    int is_authorized;
+} tsfi_cw_unt_racf_log;
+
+int tsfi_cw_unt_optimize_vsam(const tsfi_cw_unt_vsam_ksds *ksds, int *recommendation_flags_out);
+int tsfi_cw_unt_audit_racf(const tsfi_cw_unt_racf_log *logs, int log_count, int *violations_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

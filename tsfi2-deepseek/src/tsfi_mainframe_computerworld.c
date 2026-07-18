@@ -1457,6 +1457,32 @@ int tsfi_cw_unt_audit_pipeline(const tsfi_cw_unt_crypto_pipeline *pipe, int *is_
     return 0;
 }
 
+int tsfi_cw_unt_optimize_vsam(const tsfi_cw_unt_vsam_ksds *ksds, int *recommendation_flags_out) {
+    if (!ksds || !recommendation_flags_out) return -1;
+    
+    *recommendation_flags_out = 0;
+    if (ksds->control_interval_splits > 50) {
+        *recommendation_flags_out |= 0x01;
+    }
+    if (ksds->buffer_space_allocated_kb < 128) {
+        *recommendation_flags_out |= 0x02;
+    }
+    return 0;
+}
+
+int tsfi_cw_unt_audit_racf(const tsfi_cw_unt_racf_log *logs, int log_count, int *violations_out) {
+    if (!logs || log_count < 0 || !violations_out) return -1;
+    
+    *violations_out = 0;
+    for (int i = 0; i < log_count; i++) {
+        if (!logs[i].is_authorized) {
+            (*violations_out)++;
+        }
+    }
+    return 0;
+}
+
+
 
 
 
