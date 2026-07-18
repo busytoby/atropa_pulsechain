@@ -101,5 +101,7 @@ int tsfi_mf_imf_verify_eitc_investment_income(double interest_income, double div
 int tsfi_mf_imf_verify_simple_ira_contribution(double elective_contribution, int *is_valid);
 int tsfi_mf_imf_check_actc_income_floor(double earned_income, int *is_above_floor);
 int tsfi_mf_imf_verify_simple_ira_match(double employee_comp, double claimed_match, int *is_valid);
+int tsfi_mf_imf_verify_adoption_credit(double claimed_credit, int *is_valid);
+int tsfi_mf_imf_verify_educator_expense(double claimed_deduction, int is_spouse_educator, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

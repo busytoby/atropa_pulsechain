@@ -304,8 +304,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 347 | IRS IMF SIMPLE IRA Elective Contribution Limit Matcher | PASS | Enforces standard contribution limit ceilings ($16,000) for SIMPLE | Volume 33 |
 | 348 | IRS IMF Additional Child Tax Credit (ACTC) Income Threshold Checker | PASS | Checks earned income floor bounds calculating refundable ACTC | Volume 33 |
 | 349 | IRS IMF SIMPLE IRA Employer Match Matcher | PASS | Verifies employer matching contributions up to employee caps | Volume 33 |
+| 350 | IRS IMF Adoption Tax Credit Limit Matcher | PASS | Verifies claimed adoption credit does not exceed statutory caps | Volume 33 |
+| 351 | IRS IMF Educator Expense Deduction Cap Checker | PASS | Audits teacher classroom expense deductions against limits | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 349 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 351 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

@@ -1162,4 +1162,17 @@ int tsfi_mf_imf_verify_simple_ira_match(double employee_comp, double claimed_mat
     return 0;
 }
 
+int tsfi_mf_imf_verify_adoption_credit(double claimed_credit, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (claimed_credit <= 16810.00 && claimed_credit >= 0.0) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_imf_verify_educator_expense(double claimed_deduction, int is_spouse_educator, int *is_valid) {
+    if (!is_valid) return -1;
+    double cap = is_spouse_educator ? 600.00 : 300.00;
+    *is_valid = (claimed_deduction <= cap && claimed_deduction >= 0.0) ? 1 : 0;
+    return 0;
+}
+
 

@@ -796,6 +796,22 @@ int main(void) {
     assert(ira_match_valid == 1);
     printf("  [PASS] IRS IMF SIMPLE IRA Match Matcher verified.\n");
 
+    // 206. Verify IRS IMF Adoption Tax Credit Limit Matcher
+    printf("[TEST] Validating IRS IMF Adoption Credit Limit Matcher...\n");
+    int adopt_valid = -1;
+    int adopt_res = tsfi_mf_imf_verify_adoption_credit(10000.00, &adopt_valid);
+    assert(adopt_res == 0);
+    assert(adopt_valid == 1);
+    printf("  [PASS] IRS IMF Adoption Credit Limit Matcher verified.\n");
+
+    // 207. Verify IRS IMF Educator Expense Deduction Cap Checker
+    printf("[TEST] Validating IRS IMF Educator Expense Cap Checker...\n");
+    int educator_valid = -1;
+    int educator_res = tsfi_mf_imf_verify_educator_expense(250.00, 0, &educator_valid);
+    assert(educator_res == 0);
+    assert(educator_valid == 1);
+    printf("  [PASS] IRS IMF Educator Expense Cap Checker verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }
