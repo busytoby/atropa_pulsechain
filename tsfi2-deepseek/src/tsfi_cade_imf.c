@@ -1865,4 +1865,16 @@ int tsfi_mf_nato_verify_multiscan_frame_count(int count, int *is_valid) {
     return 0;
 }
 
+int tsfi_mf_nato_verify_idle_timeout(int timeout, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (timeout >= 5 && timeout <= 600) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_delay_interval(int interval, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (interval >= 1 && interval <= 10) ? 1 : 0;
+    return 0;
+}
+
 

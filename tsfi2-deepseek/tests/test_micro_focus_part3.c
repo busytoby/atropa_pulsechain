@@ -301,5 +301,21 @@ int run_nato_stanag_tests(void) {
     assert(multiscan_count_valid == 1);
     printf("  [PASS] NATO STANAG 5066 Multi-Scan Frame Count Validator verified.\n");
 
+    // 287. Verify NATO STANAG 5066 Client Idle Timeout Matcher
+    printf("[TEST] Validating NATO STANAG 5066 Client Idle Timeout Matcher...\n");
+    int idle_timeout_valid = -1;
+    int idle_timeout_res = tsfi_mf_nato_verify_idle_timeout(300, &idle_timeout_valid);
+    assert(idle_timeout_res == 0);
+    assert(idle_timeout_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Client Idle Timeout Matcher verified.\n");
+
+    // 288. Verify NATO STANAG 5066 Transmit Delay Interval Validator
+    printf("[TEST] Validating NATO STANAG 5066 Transmit Delay Interval Validator...\n");
+    int delay_interval_valid = -1;
+    int delay_interval_res = tsfi_mf_nato_verify_delay_interval(5, &delay_interval_valid);
+    assert(delay_interval_res == 0);
+    assert(delay_interval_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Transmit Delay Interval Validator verified.\n");
+
     return 0;
 }

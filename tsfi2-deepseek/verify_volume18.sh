@@ -385,8 +385,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 428 | NATO STANAG 5066 Max Segment Retransmission Timeout Validator | PASS | Audits segment retransmission time limit boundaries | Volume 33 |
 | 429 | NATO STANAG 5066 Flow Control Buffer Low-Water Mark Matcher | PASS | Validates flow control buffer resume percentage thresholds | Volume 33 |
 | 430 | NATO STANAG 5066 Multi-Scan Frame Count Validator | PASS | Audits maximum frame count settings per multi-scan transmission | Volume 33 |
+| 431 | NATO STANAG 5066 Client Idle Timeout Matcher | PASS | Validates client subnetwork interface socket idle timeout limits | Volume 33 |
+| 432 | NATO STANAG 5066 Transmit Delay Interval Validator | PASS | Audits delay spacing intervals inserted between transmit bursts | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 430 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 432 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"
