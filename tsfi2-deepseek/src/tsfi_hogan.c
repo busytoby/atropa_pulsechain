@@ -76,6 +76,8 @@ int tsfi_hogan_lfs_save(const hogan_umbrella_system *sys, const char *filepath) 
         if (sys->accounts[i].active) {
             fwrite(&sys->accounts[i].account_id, sizeof(uint32_t), 1, f);
             fwrite(&sys->accounts[i].balance, sizeof(uint64_t), 1, f);
+            fwrite(&sys->accounts[i].backup_account_id, sizeof(uint32_t), 1, f);
+            fwrite(&sys->accounts[i].has_backup, sizeof(uint8_t), 1, f);
         }
     }
     
@@ -107,6 +109,8 @@ int tsfi_hogan_lfs_load(hogan_umbrella_system *sys, const char *filepath) {
     for (uint32_t i = 0; i < active_accounts; i++) {
         uint32_t acc_id;
         uint64_t bal;
+        uint32_t backup_id;
+        uint8_t has_bk;
         if (fread(&acc_id, sizeof(uint32_t), 1, f) != 1) {
             fclose(f);
             return -2;
@@ -115,8 +119,18 @@ int tsfi_hogan_lfs_load(hogan_umbrella_system *sys, const char *filepath) {
             fclose(f);
             return -2;
         }
+        if (fread(&backup_id, sizeof(uint32_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
+        if (fread(&has_bk, sizeof(uint8_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
         sys->accounts[i].account_id = acc_id;
         sys->accounts[i].balance = bal;
+        sys->accounts[i].backup_account_id = backup_id;
+        sys->accounts[i].has_backup = has_bk;
         sys->accounts[i].active = 1;
     }
     
@@ -125,62 +139,7 @@ int tsfi_hogan_lfs_load(hogan_umbrella_system *sys, const char *filepath) {
 }
 
 int tsfi_hogan_overnight_reconciliation(hogan_umbrella_system *sys, const char *lfs_filepath) {
-    // 1. Pause live transaction dispatching
-    sys->live_processing_enabled = 0;
-    
-    // 2. Process all pending transactions in log
-    for (size_t i = 0; i < sys->tx_count; i++) {
-        hogan_transaction *tx = &sys->tx_log[i];
-        if (tx->processed) continue;
-        
-        hogan_account *sender = NULL;
-        hogan_account *recipient = NULL;
-        for (int j = 0; j < HOGAN_MAX_ACCOUNTS; j++) {
-            if (sys->accounts[j].active) {
-                if (sys->accounts[j].account_id == tx->sender_id) sender = &sys->accounts[j];
-                if (sys->accounts[j].account_id == tx->recipient_id) recipient = &sys->accounts[j];
-            }
-        }
-        
-        if (sender && recipient && sender->balance >= tx->amount) {
-            sender->balance -= tx->amount;
-            recipient->balance += tx->amount;
-            tx->processed = 1;
-        } else {
-            // Insufficient balance or missing account, mark as processed/failed
-            tx->processed = 1;
-        }
-    }
-    
-    // Clear transaction log for next day
-    sys->tx_count = 0;
-    
-    // 3. Compute new acab_epoch_root using OpenSSL EVP hash
-    unsigned int hash_len = 32;
-    EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
-    EVP_DigestInit_ex(mdctx, EVP_sha256(), NULL);
-    
-    // Hash current accounts and epoch metadata
-    EVP_DigestUpdate(mdctx, &sys->current_epoch, sizeof(uint32_t));
-    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
-        if (sys->accounts[i].active) {
-            EVP_DigestUpdate(mdctx, &sys->accounts[i].account_id, sizeof(uint32_t));
-            EVP_DigestUpdate(mdctx, &sys->accounts[i].balance, sizeof(uint64_t));
-        }
-    }
-    EVP_DigestFinal_ex(mdctx, sys->acab_epoch_root, &hash_len);
-    EVP_MD_CTX_free(mdctx);
-    
-    // Increment epoch
-    sys->current_epoch++;
-    
-    // 4. Save state to Logical File System
-    int save_res = tsfi_hogan_lfs_save(sys, lfs_filepath);
-    
-    // 5. Resume live transaction dispatching
-    sys->live_processing_enabled = 1;
-    
-    return save_res;
+    return tsfi_hogan_overnight_reconciliation_ex(sys, lfs_filepath, NULL);
 }
 
 int tsfi_hogan_write_seq_record(const char *filepath, const uint8_t *payload, size_t size) {
@@ -500,4 +459,123 @@ int tsfi_hogan_apply_fees(hogan_umbrella_system *sys, const char *filepath, uint
     
     sys->live_processing_enabled = original_live_state;
     return 0;
+}
+
+int tsfi_hogan_link_backup(hogan_umbrella_system *sys, uint32_t primary_id, uint32_t backup_id) {
+    hogan_account *primary = NULL;
+    hogan_account *backup = NULL;
+    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
+        if (sys->accounts[i].active) {
+            if (sys->accounts[i].account_id == primary_id) primary = &sys->accounts[i];
+            if (sys->accounts[i].account_id == backup_id) backup = &sys->accounts[i];
+        }
+    }
+    if (!primary || !backup) return -1; // primary or backup not found
+    
+    primary->backup_account_id = backup_id;
+    primary->has_backup = 1;
+    return 0;
+}
+
+int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const char *lfs_filepath, const char *overdraft_filepath) {
+    if (overdraft_filepath) {
+        const char *ext = strrchr(overdraft_filepath, '.');
+        if (!ext || strcmp(ext, ".bin") != 0) {
+            if (!ext || strcmp(ext - 4, ".dat.bin") != 0) {
+                return -3; // Invalid extension
+            }
+        }
+    }
+
+    // Disable live transaction queue
+    sys->live_processing_enabled = 0;
+    
+    // Process all pending transactions in log
+    for (size_t i = 0; i < sys->tx_count; i++) {
+        hogan_transaction *tx = &sys->tx_log[i];
+        if (tx->processed) continue;
+        
+        hogan_account *sender = NULL;
+        hogan_account *recipient = NULL;
+        for (int j = 0; j < HOGAN_MAX_ACCOUNTS; j++) {
+            if (sys->accounts[j].active) {
+                if (sys->accounts[j].account_id == tx->sender_id) sender = &sys->accounts[j];
+                if (sys->accounts[j].account_id == tx->recipient_id) recipient = &sys->accounts[j];
+            }
+        }
+        
+        if (sender && recipient) {
+            if (sender->balance >= tx->amount) {
+                sender->balance -= tx->amount;
+                recipient->balance += tx->amount;
+                tx->processed = 1;
+            } else if (sender->has_backup) {
+                // Determine overdraft backup account
+                uint64_t deficit = tx->amount - sender->balance;
+                hogan_account *backup = NULL;
+                for (int j = 0; j < HOGAN_MAX_ACCOUNTS; j++) {
+                    if (sys->accounts[j].active && sys->accounts[j].account_id == sender->backup_account_id) {
+                        backup = &sys->accounts[j];
+                        break;
+                    }
+                }
+                
+                if (backup && backup->balance >= deficit) {
+                    backup->balance -= deficit;
+                    sender->balance += deficit;
+                    
+                    sender->balance -= tx->amount;
+                    recipient->balance += tx->amount;
+                    tx->processed = 1;
+                    
+                    if (overdraft_filepath) {
+                        hogan_overdraft_entry o_entry = { sender->account_id, backup->account_id, deficit, 1 };
+                        tsfi_hogan_write_seq_record(overdraft_filepath, (const uint8_t *)&o_entry, sizeof(hogan_overdraft_entry));
+                    }
+                } else {
+                    tx->processed = 1;
+                    if (overdraft_filepath) {
+                        hogan_overdraft_entry o_entry = { sender->account_id, sender->backup_account_id, deficit, 0 };
+                        tsfi_hogan_write_seq_record(overdraft_filepath, (const uint8_t *)&o_entry, sizeof(hogan_overdraft_entry));
+                    }
+                }
+            } else {
+                tx->processed = 1; // Fails, insufficient funds and no backup
+            }
+        } else {
+            tx->processed = 1; // Fails, sender or receiver missing
+        }
+    }
+    
+    // Clear transaction log for next day
+    sys->tx_count = 0;
+    
+    // Compute new acab_epoch_root using OpenSSL EVP hash
+    unsigned int hash_len = 32;
+    EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+    EVP_DigestInit_ex(mdctx, EVP_sha256(), NULL);
+    
+    // Hash current accounts and epoch metadata
+    EVP_DigestUpdate(mdctx, &sys->current_epoch, sizeof(uint32_t));
+    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
+        if (sys->accounts[i].active) {
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].account_id, sizeof(uint32_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].balance, sizeof(uint64_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].backup_account_id, sizeof(uint32_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].has_backup, sizeof(uint8_t));
+        }
+    }
+    EVP_DigestFinal_ex(mdctx, sys->acab_epoch_root, &hash_len);
+    EVP_MD_CTX_free(mdctx);
+    
+    // Increment epoch
+    sys->current_epoch++;
+    
+    // Save state to Logical File System
+    int save_res = tsfi_hogan_lfs_save(sys, lfs_filepath);
+    
+    // Resume live transaction dispatching
+    sys->live_processing_enabled = 1;
+    
+    return save_res;
 }

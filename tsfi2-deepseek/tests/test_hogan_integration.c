@@ -323,6 +323,48 @@ int main(void) {
     remove(fees_path); // clean up
     printf("  [PASS] Batch maintenance fees calculated, applied, and logged successfully.\n");
 
+    // 16. Test Overdraft Protection Engine (Backup Balance Linkage)
+    printf("[E2E] Testing Overdraft Protection Engine...\n");
+    const char *overdraft_path = "hogan_overdraft.dat.bin";
+    remove(overdraft_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system overdraft_sys;
+    tsfi_hogan_init(&overdraft_sys);
+    assert(tsfi_hogan_register_account(&overdraft_sys, 1001, 1000) == 0); // Alice: 1,000 units
+    assert(tsfi_hogan_register_account(&overdraft_sys, 2002, 5000) == 0); // Bob: 5,000 units
+    assert(tsfi_hogan_register_account(&overdraft_sys, 3003, 0) == 0);    // Charlie: 0 units
+    
+    // Link Bob (2002) as Alice's (1001) backup
+    assert(tsfi_hogan_link_backup(&overdraft_sys, 1001, 2002) == 0);
+    
+    // Alice transfers 3000 to Charlie (requires 2000 from Bob)
+    assert(tsfi_hogan_dispatch_tx(&overdraft_sys, 1001, 3003, 3000, VM_EVM) == 0);
+    
+    // Run reconciliation with overdraft file output
+    assert(tsfi_hogan_overnight_reconciliation_ex(&overdraft_sys, "hogan_lfs.dat.bin", overdraft_path) == 0);
+    assert(tsfi_hogan_overnight_reconciliation_ex(&overdraft_sys, "hogan_lfs.dat.bin", "hogan_overdraft.json") == -3); // Rule 13 check
+    
+    // Verify updated balances
+    assert(overdraft_sys.accounts[0].balance == 0);    // Alice: 1000 + 2000 - 3000 = 0
+    assert(overdraft_sys.accounts[1].balance == 3000); // Bob: 5000 - 2000 = 3000
+    assert(overdraft_sys.accounts[2].balance == 3000); // Charlie: 0 + 3000 = 3000
+    
+    // Read sequential log file and verify entries
+    uint8_t read_obuf[sizeof(hogan_overdraft_entry)];
+    size_t osize = 0;
+    assert(tsfi_hogan_read_seq_record(overdraft_path, 0, read_obuf, &osize) == 0);
+    assert(osize == sizeof(hogan_overdraft_entry));
+    
+    const hogan_overdraft_entry *oentry = (const hogan_overdraft_entry *)read_obuf;
+    assert(oentry->primary_account_id == 1001);
+    assert(oentry->backup_account_id == 2002);
+    assert(oentry->amount_transferred == 2000);
+    assert(oentry->success == 1);
+    
+    remove(overdraft_path); // clean up
+    printf("  [PASS] Overdraft linkage, automatic balance transfer, and logging verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }

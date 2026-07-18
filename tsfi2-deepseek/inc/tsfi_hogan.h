@@ -26,6 +26,8 @@ typedef struct {
     uint32_t account_id;
     uint64_t balance;
     uint8_t active;
+    uint32_t backup_account_id;
+    uint8_t has_backup;
 } hogan_account;
 
 typedef struct {
@@ -132,5 +134,16 @@ typedef struct {
 } hogan_fee_entry;
 
 int tsfi_hogan_apply_fees(hogan_umbrella_system *sys, const char *filepath, uint64_t flat_fee);
+
+// Overdraft Protection Engine (Backup Balance Linkage)
+typedef struct {
+    uint32_t primary_account_id;
+    uint32_t backup_account_id;
+    uint64_t amount_transferred;
+    uint8_t success;
+} hogan_overdraft_entry;
+
+int tsfi_hogan_link_backup(hogan_umbrella_system *sys, uint32_t primary_id, uint32_t backup_id);
+int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const char *lfs_filepath, const char *overdraft_filepath);
 
 #endif // TSFI_HOGAN_H
