@@ -94,6 +94,7 @@ unresolved_swaps.json
 assets/**/*.png
 assets/*.png
 assets/*.img
+assets/**/*.json
 found_addresses.txt
 
 # Root tests binaries
