@@ -931,7 +931,15 @@ int run_nato_stanag_tests_part5(void) {
     assert(loop_ok == 1);
     assert(relay.defcon_level == 5);
     assert((relay.status_word & (1 << 10)) == 0);
-    printf("  [PASS] TSFiNoradIrsRelay Loopback Verification verified.\n");
+    // Verify Unified Dispatch
+    printf("[TEST] Validating Micro Focus Unified Dispatch...\n");
+    uint8_t disp_pdu[8];
+    size_t disp_size = 0;
+    int disp_res = tsfi_mf_unified_dispatch("IRS", "CLEARANCE", (const uint8_t *)"\xDE\xAD\xC0\xDE", 4, disp_pdu, &disp_size);
+    assert(disp_res == 0);
+    assert(disp_size == 5);
+    assert(disp_pdu[0] == 0xFA);
+    printf("  [PASS] Micro Focus Unified Dispatch verified.\n");
 
     return 0;
 }

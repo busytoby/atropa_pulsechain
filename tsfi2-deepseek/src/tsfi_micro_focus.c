@@ -1894,3 +1894,34 @@ int tsfi_mf_cics_inquire_tranclass_percent(const char *class_name, int acttasks_
     *percent_out = ((float)acttasks_registry / (float)maxtasks_registry) * 100.0f;
     return 0;
 }
+
+int tsfi_mf_unified_dispatch(const char *subsystem, const char *action, const uint8_t *payload, size_t size, uint8_t *out_pdu, size_t *out_size) {
+    if (!subsystem || !action) return -1;
+    
+    if (strcmp(subsystem, "NORAD") == 0) {
+        if (strcmp(action, "AUTH") == 0) {
+            uint32_t hash = 0;
+            int res = tsfi_mf_norad_auth_hash(payload, size, &hash);
+            if (res == 0 && out_pdu && out_size) {
+                memcpy(out_pdu, &hash, 4);
+                *out_size = 4;
+            }
+            return res;
+        }
+    } else if (strcmp(subsystem, "IRS") == 0) {
+        if (strcmp(action, "CLEARANCE") == 0) {
+            uint32_t token = 0;
+            if (size >= 4 && payload) {
+                memcpy(&token, payload, 4);
+            }
+            return tsfi_mf_irs_format_clearance(token, out_pdu, out_size);
+        }
+    } else if (strcmp(subsystem, "CICS") == 0) {
+        if (strcmp(action, "BROADCAST") == 0) {
+            int level = (size >= 1 && payload) ? payload[0] : 5;
+            return tsfi_mf_cics_generate_naap_broadcast(level, 0x1122, out_pdu, out_size);
+        }
+    }
+    return -2;
+}
+

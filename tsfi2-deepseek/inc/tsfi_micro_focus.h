@@ -142,4 +142,6 @@ int tsfi_mf_vulkan_appc_layout(uint32_t transaction_id, uint32_t state_flags, ch
 int tsfi_mf_pmg_handle_collision(uint8_t player_id, uint8_t playfield_id, uint8_t *storage_pool, uint32_t *allocated_offset);
 int tsfi_mf_cics_freemain(uint32_t offset, uint32_t length, uint8_t *storage_pool);
 
+int tsfi_mf_unified_dispatch(const char *subsystem, const char *action, const uint8_t *payload, size_t size, uint8_t *out_pdu, size_t *out_size);
+
 #endif // TSFI_MICRO_FOCUS_H
