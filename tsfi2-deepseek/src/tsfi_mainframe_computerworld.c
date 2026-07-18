@@ -1232,6 +1232,35 @@ int tsfi_cw_marist_audit_isglock(const tsfi_cw_marist_isglock *lock, int *alert_
     return 0;
 }
 
+int tsfi_cw_niu_hlasm_exec(uint32_t regs[16], const char *op, int r1, int r2, int32_t immediate, int *overflow_out) {
+    if (!regs || !op || !overflow_out) return -1;
+    if (r1 < 0 || r1 >= 16 || r2 < 0 || r2 >= 16) return -2;
+    
+    *overflow_out = 0;
+    if (strcmp(op, "AR") == 0) {
+        uint64_t res = (uint64_t)regs[r1] + regs[r2];
+        regs[r1] = (uint32_t)res;
+        *overflow_out = (res > 0xFFFFFFFFULL) ? 1 : 0;
+    } else if (strcmp(op, "SR") == 0) {
+        regs[r1] = regs[r1] - regs[r2];
+    } else if (strcmp(op, "L") == 0) {
+        regs[r1] = (uint32_t)immediate;
+    } else if (strcmp(op, "ST") == 0) {
+        // Simulated store
+    } else {
+        return -3; // Unknown opcode
+    }
+    return 0;
+}
+
+int tsfi_cw_niu_validate_jcl(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = (strncmp(jcl_line, "//", 2) == 0 && (strstr(jcl_line, " JOB ") != NULL || strstr(jcl_line, " EXEC ") != NULL || strstr(jcl_line, " DD ") != NULL)) ? 1 : 0;
+    return 0;
+}
+
+
 
 
 

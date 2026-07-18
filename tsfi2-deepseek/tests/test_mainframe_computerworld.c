@@ -1950,6 +1950,24 @@ static void test_new_mainframe_features(void) {
     tsfi_cw_marist_isglock lock_bad = { 100, 25, 0, 10 }; // 25% contention (> 15%)
     assert(tsfi_cw_marist_audit_isglock(&lock_bad, &lock_alert) == 0);
     assert(lock_alert == 1);
+
+    // NIU HLASM test
+    uint32_t regs[16] = {0};
+    int overflow = 0;
+    assert(tsfi_cw_niu_hlasm_exec(regs, "L", 3, 0, 500, &overflow) == 0);
+    assert(regs[3] == 500);
+    assert(tsfi_cw_niu_hlasm_exec(regs, "L", 4, 0, 200, &overflow) == 0);
+    assert(regs[4] == 200);
+    assert(tsfi_cw_niu_hlasm_exec(regs, "AR", 3, 4, 0, &overflow) == 0);
+    assert(regs[3] == 700);
+    assert(overflow == 0);
+
+    // NIU JCL test
+    int jcl_ok = 0;
+    assert(tsfi_cw_niu_validate_jcl("//MYJOB JOB (1234),CLASS=A", &jcl_ok) == 0);
+    assert(jcl_ok == 1);
+    assert(tsfi_cw_niu_validate_jcl("INVALID JCL", &jcl_ok) == 0);
+    assert(jcl_ok == 0);
 }
 
 int main(void) {

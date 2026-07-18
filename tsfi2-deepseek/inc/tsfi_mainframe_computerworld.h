@@ -1015,5 +1015,9 @@ typedef struct {
 int tsfi_cw_marist_audit_minidisk_cache(const tsfi_cw_marist_minidisk_cache *cache, double *hit_ratio_out, int *needs_resize_out);
 int tsfi_cw_marist_audit_isglock(const tsfi_cw_marist_isglock *lock, int *alert_out);
 
+// NIU DeKalb HLASM & JCL functions
+int tsfi_cw_niu_hlasm_exec(uint32_t regs[16], const char *op, int r1, int r2, int32_t immediate, int *overflow_out);
+int tsfi_cw_niu_validate_jcl(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 
