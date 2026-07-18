@@ -1000,7 +1000,42 @@ int run_nato_stanag_tests_part5(void) {
     }
     
     assert(eer_db.transmits[eer_db.transmits_count - 1].incident_id == incident_id);
-    printf("  [PASS] EER DEFCON Broadcast Integration Trigger verified.\n");
+    // Verify SSA DMF Formatting & Decoding
+    printf("[TEST] Validating SSA DMF Query/Response...\n");
+    uint8_t dmf_pdu[16];
+    size_t dmf_size = 0;
+    int ssa_res = tsfi_mf_ssa_format_dmf_query("123456789", dmf_pdu, &dmf_size);
+    assert(ssa_res == 0);
+    assert(dmf_size == 10);
+    assert(dmf_pdu[0] == 0xFB);
+    assert(memcmp(&dmf_pdu[1], "123456789", 9) == 0);
+
+    uint8_t dmf_resp_pdu[] = {0xFC, 1}; // Deceased indicator
+    int deceased = -1;
+    ssa_res = tsfi_mf_ssa_decode_dmf_response(dmf_resp_pdu, sizeof(dmf_resp_pdu), &deceased);
+    assert(ssa_res == 0);
+    assert(deceased == 1);
+    printf("  [PASS] SSA DMF Query/Response verified.\n");
+
+    // Verify SSA SSN Site Resolution
+    printf("[TEST] Validating SSA SSN Site Resolution...\n");
+    char site[32];
+    ssa_res = tsfi_mf_ssa_resolve_issuance_site("002445566", site, sizeof(site));
+    assert(ssa_res == 0);
+    assert(strcmp(site, "New Hampshire") == 0);
+    printf("  [PASS] SSA SSN Site Resolution verified.\n");
+
+    // Verify SSA Checksum
+    printf("[TEST] Validating SSA Checksum...\n");
+    int ssa_valid = -1;
+    // 1+2+3+4+5+6+7+8+9 = 45 -> 45 % 10 = 5 (invalid)
+    tsfi_mf_ssa_verify_checksum("123456789", &ssa_valid);
+    assert(ssa_valid == 0);
+
+    // 1+2+3+4+5+6+7+8+4 = 40 -> 40 % 10 = 0 (valid)
+    tsfi_mf_ssa_verify_checksum("123456784", &ssa_valid);
+    assert(ssa_valid == 1);
+    printf("  [PASS] SSA Checksum verified.\n");
 
     return 0;
 }

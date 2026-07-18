@@ -462,4 +462,9 @@ int tsfi_mf_norad_irs_relay_init(TSFiNoradIrsRelay *relay, uint32_t clearance_to
 int tsfi_mf_norad_irs_relay_process_msg(TSFiNoradIrsRelay *relay, const char *msg_buffer, size_t size, uint8_t *out_pdu, size_t *out_size);
 int tsfi_mf_norad_irs_relay_test_loopback(TSFiNoradIrsRelay *relay, const char *test_msg, uint8_t *out_pdu, size_t *out_pdu_size, int *is_success);
 
+int tsfi_mf_ssa_format_dmf_query(const char *ssn, uint8_t *out_pdu, size_t *out_size);
+int tsfi_mf_ssa_decode_dmf_response(const uint8_t *in_pdu, size_t pdu_size, int *is_deceased);
+int tsfi_mf_ssa_resolve_issuance_site(const char *ssn, char *site_name_out, int max_len);
+int tsfi_mf_ssa_verify_checksum(const char *ssn, int *is_valid);
+
 #endif // TSFI_CADE_IMF_H

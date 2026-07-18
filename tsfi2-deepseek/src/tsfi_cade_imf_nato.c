@@ -1791,6 +1791,70 @@ int tsfi_mf_norad_irs_relay_test_loopback(TSFiNoradIrsRelay *relay, const char *
     return 0;
 }
 
+int tsfi_mf_ssa_format_dmf_query(const char *ssn, uint8_t *out_pdu, size_t *out_size) {
+    if (!ssn || !out_pdu || !out_size) return -1;
+    size_t len = strlen(ssn);
+    if (len != 9) return -2;
+    
+    out_pdu[0] = 0xFB; // SSA DMF Query Code
+    for (int i = 0; i < 9; i++) {
+        if (ssn[i] < '0' || ssn[i] > '9') return -3;
+        out_pdu[i + 1] = ssn[i];
+    }
+    *out_size = 10;
+    return 0;
+}
+
+int tsfi_mf_ssa_decode_dmf_response(const uint8_t *in_pdu, size_t pdu_size, int *is_deceased) {
+    if (!in_pdu || !is_deceased) return -1;
+    if (pdu_size < 2 || in_pdu[0] != 0xFC) return -2;
+    
+    *is_deceased = (in_pdu[1] == 1) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_ssa_resolve_issuance_site(const char *ssn, char *site_name_out, int max_len) {
+    if (!ssn || !site_name_out || max_len < 16) return -1;
+    
+    // Parse first 3 digits
+    int area = 0;
+    if (sscanf(ssn, "%3d", &area) != 1) return -2;
+    
+    if (area >= 1 && area <= 3) {
+        strncpy(site_name_out, "New Hampshire", max_len - 1);
+    } else if (area >= 4 && area <= 7) {
+        strncpy(site_name_out, "Maine", max_len - 1);
+    } else if (area >= 8 && area <= 9) {
+        strncpy(site_name_out, "Vermont", max_len - 1);
+    } else {
+        strncpy(site_name_out, "Default Site", max_len - 1);
+    }
+    site_name_out[max_len - 1] = '\0';
+    return 0;
+}
+
+int tsfi_mf_ssa_verify_checksum(const char *ssn, int *is_valid) {
+    if (!ssn || !is_valid) return -1;
+    size_t len = strlen(ssn);
+    if (len != 9) {
+        *is_valid = 0;
+        return 0;
+    }
+    
+    // Simple checksum: sum of all digits modulo 10 must equal 0
+    int sum = 0;
+    for (int i = 0; i < 9; i++) {
+        if (ssn[i] < '0' || ssn[i] > '9') {
+            *is_valid = 0;
+            return 0;
+        }
+        sum += (ssn[i] - '0');
+    }
+    *is_valid = ((sum % 10) == 0) ? 1 : 0;
+    return 0;
+}
+
+
 
 
 
