@@ -419,6 +419,31 @@ int run_nato_stanag_tests_part5(void) {
     assert(reorder_valid == 0);
     printf("  [PASS] RX Reorder Buffer verified.\n");
 
+    // Verify HMTP Envelope
+    printf("[TEST] Validating NATO HMTP Envelope...\n");
+    uint8_t mail_pkt[128];
+    size_t mail_size = 0;
+    int mail_res = tsfi_mf_nato_hmtp_encode_envelope("alice@node.org", "bob@node.org", mail_pkt, &mail_size);
+    assert(mail_res == 0);
+    assert(mail_size == 1 + 14 + 1 + 12 + 1); // "M" + sender + "," + recipient + ";"
+    assert(mail_pkt[0] == 0x4D);
+    assert(mail_pkt[mail_size - 1] == ';');
+    printf("  [PASS] HMTP Envelope verified.\n");
+
+    // Verify CSM Evaluator
+    printf("[TEST] Validating NATO Channel State Monitor...\n");
+    int csm_flags = -1;
+    int csm_valid = -1;
+    int csm_res = tsfi_mf_nato_csm_evaluate(-110, 300, &csm_flags, &csm_valid); // Noise -110 (< -100), carrier lock 300 (> 200) -> quiet & lock
+    assert(csm_res == 0);
+    assert(csm_valid == 1);
+    assert(csm_flags == 0x03);
+
+    tsfi_mf_nato_csm_evaluate(-80, 100, &csm_flags, &csm_valid); // Noise -80, lock 100 -> flags should be 0
+    assert(csm_valid == 1);
+    assert(csm_flags == 0x00);
+    printf("  [PASS] Channel State Monitor verified.\n");
+
     return 0;
 }
 

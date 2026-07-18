@@ -391,4 +391,7 @@ int tsfi_mf_nato_merkle_combine(uint32_t left_hash, uint32_t right_hash, uint32_
 int tsfi_mf_nato_drs_update(int rssi, int snr, int *current_rate, int *is_valid);
 int tsfi_mf_nato_reorder_buffer_insert(int seq_num, int expected_seq, int *is_valid);
 
+int tsfi_mf_nato_hmtp_encode_envelope(const char *sender, const char *recipient, uint8_t *out_pkt, size_t *out_size);
+int tsfi_mf_nato_csm_evaluate(int noise_floor_dbm, int carrier_lock_ms, int *status_flags, int *is_valid);
+
 #endif // TSFI_CADE_IMF_H

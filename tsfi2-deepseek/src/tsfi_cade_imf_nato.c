@@ -1183,6 +1183,42 @@ int tsfi_mf_nato_reorder_buffer_insert(int seq_num, int expected_seq, int *is_va
     return 0;
 }
 
+int tsfi_mf_nato_hmtp_encode_envelope(const char *sender, const char *recipient, uint8_t *out_pkt, size_t *out_size) {
+    if (!sender || !recipient || !out_pkt || !out_size) return -1;
+    
+    size_t s_len = strlen(sender);
+    size_t r_len = strlen(recipient);
+    
+    out_pkt[0] = 0x4D; // "M" prefix for Mail
+    memcpy(out_pkt + 1, sender, s_len);
+    out_pkt[1 + s_len] = ',';
+    memcpy(out_pkt + 1 + s_len + 1, recipient, r_len);
+    out_pkt[1 + s_len + 1 + r_len] = ';';
+    
+    *out_size = 1 + s_len + 1 + r_len + 1;
+    return 0;
+}
+
+int tsfi_mf_nato_csm_evaluate(int noise_floor_dbm, int carrier_lock_ms, int *status_flags, int *is_valid) {
+    if (!status_flags || !is_valid) return -1;
+    *is_valid = 0;
+    
+    if (noise_floor_dbm < -150 || noise_floor_dbm > -50 || carrier_lock_ms < 0) {
+        return 0;
+    }
+    
+    *is_valid = 1;
+    *status_flags = 0;
+    if (noise_floor_dbm < -100) {
+        *status_flags |= 0x01; // CHANNEL_QUIET
+    }
+    if (carrier_lock_ms > 200) {
+        *status_flags |= 0x02; // CARRIER_LOCK
+    }
+    return 0;
+}
+
+
 
 
 
