@@ -805,3 +805,12 @@ int tsfi_cw_cobol_validate_padding_limits_ex(int pad_len, int max_allowed, int a
     if (pad_len % alignment != 0) return -34;
     return 0;
 }
+
+int tsfi_cw_cobol_configure_padding_alignment(tsfi_cw_cobol_padding_config *cfg, char pad_char, int alignment, int max_size) {
+    if (!cfg) return -1;
+    if (alignment <= 0 || max_size <= 0) return -2;
+    cfg->pad_char = pad_char;
+    cfg->alignment = alignment;
+    cfg->max_size = max_size;
+    return 0;
+}

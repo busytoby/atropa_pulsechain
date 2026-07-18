@@ -622,3 +622,9 @@ int tsfi_cw_ebcdic_query_and_reset_parity_checks(uint32_t *count_out) {
     return 0;
 }
 
+int tsfi_cw_ebcdic_format_parity_diagnostics(char *buf_out, int max_len) {
+    if (!buf_out || max_len <= 0) return -1;
+    snprintf(buf_out, max_len, "Parity checks: %u, SO: 0x%02X, SI: 0x%02X", global_ebcdic_parity_checks_count, global_ebcdic_so_marker, global_ebcdic_si_marker);
+    return 0;
+}
+
