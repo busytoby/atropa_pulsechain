@@ -411,6 +411,30 @@ void draw_ui_elements(VulkanSystem *s) {
         }
     }
     
+    // Draw Chase Manhattan Check Scanner visualizer overlay in Vulkan
+    draw_rounded_rect(s->paint_buffer, 600, 10, 180, 80, 4, 0xFF050515);
+    draw_rounded_rect(s->paint_buffer, 605, 15, 170, 70, 2, 0xFF00FF00);
+    draw_debug_text(s->paint_buffer, 610, 20, "CHASE MICR SCANNER", 0xFF00FF00, true);
+    draw_debug_text(s->paint_buffer, 610, 35, "RT: 021000021", 0xFFFFFFFF, true);
+    draw_debug_text(s->paint_buffer, 610, 50, "AC: 123456789", 0xFFFFFFFF, true);
+    draw_debug_text(s->paint_buffer, 610, 65, "SCAN STATUS: OK", 0xFF00FF00, true);
+
+    // Draw RMU IMS DB Structural Navigator Map in Vulkan
+    draw_rounded_rect(s->paint_buffer, 600, 95, 180, 100, 4, 0xFF050515);
+    draw_rounded_rect(s->paint_buffer, 605, 100, 170, 90, 2, 0xFF00FFFF);
+    draw_debug_text(s->paint_buffer, 610, 105, "RMU IMS STRUCT MAP", 0xFF00FFFF, true);
+    
+    // Draw ROOTSEG node
+    draw_rounded_rect(s->paint_buffer, 640, 120, 60, 20, 2, 0xFF00FF00);
+    draw_debug_text(s->paint_buffer, 645, 123, "ROOTSEG", 0xFF00FF00, true);
+
+    // Draw CHILDSEG node
+    draw_rounded_rect(s->paint_buffer, 640, 160, 60, 20, 2, 0xFF00FF00);
+    draw_debug_text(s->paint_buffer, 645, 163, "CHILDSEG", 0xFF00FF00, true);
+
+    // Draw connection line
+    draw_rounded_rect(s->paint_buffer, 668, 140, 4, 20, 0, 0xFF00FF00);
+
     // Draw live Vulkan knowledge graph of LP connections
     extern void draw_vulkan_knowledge_graph(VulkanSystem *s);
     draw_vulkan_knowledge_graph(s);
