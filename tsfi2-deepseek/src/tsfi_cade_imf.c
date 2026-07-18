@@ -1805,4 +1805,16 @@ int tsfi_mf_nato_verify_delivery_confirmation(int mode, int *is_valid) {
     return 0;
 }
 
+int tsfi_mf_nato_verify_backpressure_timeout(int timeout, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (timeout >= 1 && timeout <= 300) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_max_frame_size(int frame_size, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (frame_size >= 1 && frame_size <= 4096) ? 1 : 0;
+    return 0;
+}
+
 

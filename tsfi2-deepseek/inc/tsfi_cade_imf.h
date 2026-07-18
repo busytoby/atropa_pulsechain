@@ -172,5 +172,7 @@ int tsfi_mf_nato_verify_data_type(int type, int *is_valid);
 int tsfi_mf_nato_verify_compression_mode(int mode, int *is_valid);
 int tsfi_mf_nato_verify_flow_control(int state, int *is_valid);
 int tsfi_mf_nato_verify_delivery_confirmation(int mode, int *is_valid);
+int tsfi_mf_nato_verify_backpressure_timeout(int timeout, int *is_valid);
+int tsfi_mf_nato_verify_max_frame_size(int frame_size, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

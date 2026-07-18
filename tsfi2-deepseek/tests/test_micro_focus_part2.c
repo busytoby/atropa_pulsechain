@@ -1370,6 +1370,22 @@ int main(void) {
     assert(deliv_confirm_valid == 1);
     printf("  [PASS] NATO STANAG 5066 Delivery Confirmation Matcher verified.\n");
 
+    // 277. Verify NATO STANAG 5066 Interface Backpressure Timeout Validator
+    printf("[TEST] Validating NATO STANAG 5066 Backpressure Timeout Validator...\n");
+    int backpressure_valid = -1;
+    int backpressure_res = tsfi_mf_nato_verify_backpressure_timeout(60, &backpressure_valid);
+    assert(backpressure_res == 0);
+    assert(backpressure_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Backpressure Timeout Validator verified.\n");
+
+    // 278. Verify NATO STANAG 5066 Link-Layer Max Frame Size Checker
+    printf("[TEST] Validating NATO STANAG 5066 Max Frame Size Checker...\n");
+    int max_frame_valid = -1;
+    int max_frame_res = tsfi_mf_nato_verify_max_frame_size(1024, &max_frame_valid);
+    assert(max_frame_res == 0);
+    assert(max_frame_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Max Frame Size Checker verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }
