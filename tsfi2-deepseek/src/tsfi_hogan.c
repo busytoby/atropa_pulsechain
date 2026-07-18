@@ -134,6 +134,8 @@ int tsfi_hogan_lfs_save(const hogan_umbrella_system *sys, const char *filepath) 
             fwrite(&sys->accounts[i].dormancy_fee_surcharge, sizeof(uint64_t), 1, f);
             fwrite(&sys->accounts[i].interest_tier_threshold, sizeof(uint64_t), 1, f);
             fwrite(&sys->accounts[i].interest_tier_rate_bps, sizeof(uint32_t), 1, f);
+            fwrite(&sys->accounts[i].fee_tier_threshold, sizeof(uint64_t), 1, f);
+            fwrite(&sys->accounts[i].fee_tier_amount, sizeof(uint64_t), 1, f);
         }
     }
     
@@ -509,6 +511,18 @@ int tsfi_hogan_lfs_load(hogan_umbrella_system *sys, const char *filepath) {
             return -2;
         }
         sys->accounts[i].interest_tier_rate_bps = tier_r;
+        uint64_t f_tier_th = 0;
+        if (fread(&f_tier_th, sizeof(uint64_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
+        sys->accounts[i].fee_tier_threshold = f_tier_th;
+        uint64_t f_tier_amt = 0;
+        if (fread(&f_tier_amt, sizeof(uint64_t), 1, f) != 1) {
+            fclose(f);
+            return -2;
+        }
+        sys->accounts[i].fee_tier_amount = f_tier_amt;
         sys->accounts[i].active = 1;
     }
     
@@ -858,6 +872,10 @@ int tsfi_hogan_apply_fees(hogan_umbrella_system *sys, const char *filepath, uint
             entry.original_balance = sys->accounts[i].balance;
             
             uint64_t actual_fee = flat_fee;
+            if (sys->accounts[i].fee_tier_threshold > 0 &&
+                sys->accounts[i].balance < sys->accounts[i].fee_tier_threshold) {
+                actual_fee = sys->accounts[i].fee_tier_amount;
+            }
             if (sys->accounts[i].is_dormant) {
                 actual_fee += sys->accounts[i].dormancy_fee_surcharge;
             }
@@ -1124,6 +1142,8 @@ int tsfi_hogan_overnight_reconciliation_ex(hogan_umbrella_system *sys, const cha
             EVP_DigestUpdate(mdctx, &sys->accounts[i].dormancy_fee_surcharge, sizeof(uint64_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].interest_tier_threshold, sizeof(uint64_t));
             EVP_DigestUpdate(mdctx, &sys->accounts[i].interest_tier_rate_bps, sizeof(uint32_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].fee_tier_threshold, sizeof(uint64_t));
+            EVP_DigestUpdate(mdctx, &sys->accounts[i].fee_tier_amount, sizeof(uint64_t));
         }
     }
     EVP_DigestUpdate(mdctx, &sys->blocked_card_count, sizeof(size_t));
@@ -2889,6 +2909,42 @@ int tsfi_hogan_update_interest_tier(hogan_umbrella_system *sys, const char *file
     acc->interest_tier_rate_bps = rate_bps;
     
     int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_interest_tier_entry));
+    
+    sys->live_processing_enabled = original_live_state;
+    return write_res;
+}
+
+int tsfi_hogan_update_fee_tier(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t threshold, uint64_t fee_amount, uint32_t authority_id) {
+    // Enforce Rule 13: file extension must end with .dat.bin
+    const char *ext = strrchr(filepath, '.');
+    if (!ext || strcmp(ext, ".bin") != 0) {
+        if (!ext || strcmp(ext - 4, ".dat.bin") != 0) {
+            return -3; // Invalid extension
+        }
+    }
+
+    // Disable live queue during administrative action
+    uint8_t original_live_state = sys->live_processing_enabled;
+    sys->live_processing_enabled = 0;
+    
+    hogan_account *acc = NULL;
+    for (int i = 0; i < HOGAN_MAX_ACCOUNTS; i++) {
+        if (sys->accounts[i].active && sys->accounts[i].account_id == account_id) {
+            acc = &sys->accounts[i];
+            break;
+        }
+    }
+    
+    if (!acc) {
+        sys->live_processing_enabled = original_live_state;
+        return -1; // account not found
+    }
+    
+    hogan_fee_tier_entry entry = { account_id, threshold, fee_amount, authority_id };
+    acc->fee_tier_threshold = threshold;
+    acc->fee_tier_amount = fee_amount;
+    
+    int write_res = tsfi_hogan_write_seq_record(filepath, (const uint8_t *)&entry, sizeof(hogan_fee_tier_entry));
     
     sys->live_processing_enabled = original_live_state;
     return write_res;

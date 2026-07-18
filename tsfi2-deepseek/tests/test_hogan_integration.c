@@ -2094,6 +2094,40 @@ int main(void) {
     remove(it_path); // clean up
     printf("  [PASS] Batch interest rate tiering calculations and override logs verified.\n");
 
+    // 56. Test Batch Fee Tier Manager (Fee Tiering)
+    printf("[E2E] Testing Batch Fee Tier Manager...\n");
+    const char *ft_path = "hogan_fee_tiers.dat.bin";
+    remove(ft_path); // ensure clean start
+    
+    hogan_umbrella_system ft_sys;
+    tsfi_hogan_init(&ft_sys);
+    assert(tsfi_hogan_register_account(&ft_sys, 1001, 1000) == 0); // Alice: 1000 balance
+    
+    // Set Alice's tier: if balance < 2000, fee is 45 instead of flat fee (e.g. 10)
+    assert(tsfi_hogan_update_fee_tier(&ft_sys, ft_path, 1001, 2000, 45, 999) == 0);
+    assert(tsfi_hogan_update_fee_tier(&ft_sys, "hogan_ft.json", 1001, 2000, 45, 999) == -3); // Rule 13 check
+    
+    // Apply batch fees: flat fee of 10. Alice's balance (1000) is below the threshold (2000), so she is charged 45.
+    remove(fee_log_path);
+    assert(tsfi_hogan_apply_fees(&ft_sys, fee_log_path, 10) == 0);
+    remove(fee_log_path);
+    
+    assert(ft_sys.accounts[0].balance == 955); // 1000 - 45 = 955
+    
+    // Read override log files and verify entries
+    uint8_t read_ftbuf[sizeof(hogan_fee_tier_entry)];
+    size_t ft_size = 0;
+    assert(tsfi_hogan_read_seq_record(ft_path, 0, read_ftbuf, &ft_size) == 0);
+    assert(ft_size == sizeof(hogan_fee_tier_entry));
+    const hogan_fee_tier_entry *ft_entry = (const hogan_fee_tier_entry *)read_ftbuf;
+    assert(ft_entry->account_id == 1001);
+    assert(ft_entry->threshold == 2000);
+    assert(ft_entry->fee_amount == 45);
+    assert(ft_entry->authority_id == 999);
+    
+    remove(ft_path); // clean up
+    printf("  [PASS] Batch fee tiering calculations and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }
