@@ -250,5 +250,7 @@ int tsfi_mf_nato_verify_slot_boundary_source_offset(int offset_ms, int *is_valid
 int tsfi_mf_nato_verify_up_ramp_duration_threshold(int duration_ms, int *is_valid);
 int tsfi_mf_nato_verify_down_ramp_duration_threshold(int duration_ms, int *is_valid);
 int tsfi_mf_nato_verify_slot_boundary_source_offset_limit(int limit_ms, int *is_valid);
+int tsfi_mf_nato_verify_slot_boundary_source_offset_range(int range_ms, int *is_valid);
+int tsfi_mf_nato_verify_rssi_quiet_sample_threshold(int samples, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H
