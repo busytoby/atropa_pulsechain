@@ -428,6 +428,46 @@ static void test_new_mainframe_features(void) {
     assert(tsfi_cw_y2k_is_century_leap(2000) == 1);
     assert(tsfi_cw_y2k_is_century_leap(1900) == 0);
     assert(tsfi_cw_y2k_is_century_leap(2024) == 1);
+
+    // VSAM Entry-Sequenced Data Sets (ESDS)
+    tsfi_cw_vsam_esds esds;
+    tsfi_cw_vsam_esds_init(&esds, "test_esds.dat.bin");
+    uint32_t rba1 = 0, rba2 = 0;
+    uint8_t esds_d1[4] = {0xAA, 0xBB};
+    uint8_t esds_d2[6] = {0xCC, 0xDD, 0xEE};
+    assert(tsfi_cw_vsam_esds_write(&esds, esds_d1, 2, &rba1) == 0);
+    assert(tsfi_cw_vsam_esds_write(&esds, esds_d2, 3, &rba2) == 0);
+    assert(rba1 == 0);
+    assert(rba2 == 2);
+    uint8_t esds_out[10];
+    int esds_out_len = 0;
+    assert(tsfi_cw_vsam_esds_read(&esds, 2, esds_out, sizeof(esds_out), &esds_out_len) == 0);
+    assert(esds_out_len == 3);
+
+    // COBOL INDEXED BY Clause
+    rc = tsfi_cw_parse_copybook_line("05 TABLE-A PIC X(1) OCCURS 5 INDEXED BY TABLE-IDX.", &cb);
+    assert(rc == 0);
+    assert(cb.field_count == 11);
+    assert(strcmp(cb.fields[10].indexed_by, "TABLE-IDX") == 0);
+
+    // Dynamic EBCDIC Translation Maps
+    uint8_t custom_a2e[256];
+    uint8_t custom_e2a[256];
+    memset(custom_a2e, 0x40, 256);
+    memset(custom_e2a, 0x20, 256);
+    custom_a2e['A'] = 0xC1;
+    custom_e2a[0xC1] = 'A';
+    tsfi_cw_set_custom_translation_tables(custom_a2e, custom_e2a);
+    assert(tsfi_cw_ascii_to_ebcdic('A') == 0xC1);
+    assert(tsfi_cw_ebcdic_to_ascii(0xC1) == 'A');
+    tsfi_cw_set_custom_translation_tables(NULL, NULL);
+
+    // Multi-format Gregorian parsing
+    uint32_t myy = 0, mmm = 0, mdd = 0;
+    assert(tsfi_cw_parse_multi_format_date("071826", "MMDDYY", &myy, &mmm, &mdd) == 0);
+    assert(myy == 26);
+    assert(mmm == 7);
+    assert(mdd == 18);
 }
 
 int main(void) {

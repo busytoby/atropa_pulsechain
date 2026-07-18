@@ -65,6 +65,7 @@ typedef struct {
     char redefines[32];
     int occurs;
     char depending_on[32];
+    char indexed_by[32];
 } tsfi_cw_cobol_field;
 
 typedef struct {
@@ -172,6 +173,28 @@ int tsfi_cw_jcl_parse_disp(const char *disp_str, tsfi_cw_jcl_disp *disp_out);
 
 // Multi-century Y2K helper
 uint32_t tsfi_cw_y2k_resolve_year_multi(uint32_t two_digit_year, uint32_t century_prefix);
+int tsfi_cw_parse_multi_format_date(const char *date_str, const char *format, uint32_t *yy, uint32_t *mm, uint32_t *dd);
+
+// Dynamic EBCDIC tables
+void tsfi_cw_set_custom_translation_tables(const uint8_t *ascii_to_ebcdic, const uint8_t *ebcdic_to_ascii);
+
+// VSAM Entry-Sequenced Data Sets (ESDS) Emulator
+typedef struct {
+    uint32_t rba;
+    uint32_t length;
+    uint8_t active;
+} tsfi_cw_vsam_esds_entry;
+
+typedef struct {
+    tsfi_cw_vsam_esds_entry entries[64];
+    char filepath[256];
+    uint32_t current_rba;
+    int entry_count;
+} tsfi_cw_vsam_esds;
+
+void tsfi_cw_vsam_esds_init(tsfi_cw_vsam_esds *esds, const char *path);
+int tsfi_cw_vsam_esds_write(tsfi_cw_vsam_esds *esds, const uint8_t *data, int len, uint32_t *rba_out);
+int tsfi_cw_vsam_esds_read(tsfi_cw_vsam_esds *esds, uint32_t rba, uint8_t *data_out, int max_len, int *out_len);
 
 // VSAM Key-Range Partitioning (KRDS) Emulator
 typedef struct {

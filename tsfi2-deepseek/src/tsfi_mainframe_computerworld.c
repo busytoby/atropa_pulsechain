@@ -3,6 +3,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+extern uint8_t tsfi_cw_custom_ascii_to_ebcdic_table[256];
+extern uint8_t tsfi_cw_custom_ebcdic_to_ascii_table[256];
+extern int tsfi_cw_use_custom_tables;
+
 
 // Y2K Date Windowing Strategy: Pivot year 50
 uint32_t tsfi_cw_y2k_resolve_year(uint32_t two_digit_year) {
@@ -117,17 +121,23 @@ static const uint8_t ebcdic_to_ascii_table[256] = {
 };
 
 uint8_t tsfi_cw_ascii_to_ebcdic(uint8_t ascii_char) {
+    if (tsfi_cw_use_custom_tables) {
+        return tsfi_cw_custom_ascii_to_ebcdic_table[ascii_char];
+    }
     return ascii_to_ebcdic_table[ascii_char];
 }
 
 uint8_t tsfi_cw_ebcdic_to_ascii(uint8_t ebcdic_char) {
+    if (tsfi_cw_use_custom_tables) {
+        return tsfi_cw_custom_ebcdic_to_ascii_table[ebcdic_char];
+    }
     return ebcdic_to_ascii_table[ebcdic_char];
 }
 
 int tsfi_cw_ascii_to_ebcdic_buf(const char *ascii_in, uint8_t *ebcdic_out, int len) {
     if (!ascii_in || !ebcdic_out || len <= 0) return -1;
     for (int i = 0; i < len; i++) {
-        ebcdic_out[i] = ascii_to_ebcdic_table[(uint8_t)ascii_in[i]];
+        ebcdic_out[i] = tsfi_cw_ascii_to_ebcdic((uint8_t)ascii_in[i]);
     }
     return 0;
 }
@@ -135,7 +145,7 @@ int tsfi_cw_ascii_to_ebcdic_buf(const char *ascii_in, uint8_t *ebcdic_out, int l
 int tsfi_cw_ebcdic_to_ascii_buf(const uint8_t *ebcdic_in, char *ascii_out, int len) {
     if (!ebcdic_in || !ascii_out || len <= 0) return -1;
     for (int i = 0; i < len; i++) {
-        ascii_out[i] = (char)ebcdic_to_ascii_table[ebcdic_in[i]];
+        ascii_out[i] = (char)tsfi_cw_ebcdic_to_ascii(ebcdic_in[i]);
     }
     ascii_out[len] = '\0';
     return 0;
@@ -466,6 +476,18 @@ int tsfi_cw_parse_copybook_line(const char *copybook_line, tsfi_cw_copybook *cb)
         depending_on[d_idx] = '\0';
     }
 
+    char indexed_by[32] = "";
+    const char *idx_ptr = strstr(copybook_line, "INDEXED BY");
+    if (idx_ptr) {
+        idx_ptr += 10;
+        while (*idx_ptr == ' ' || *idx_ptr == '\t') idx_ptr++;
+        int i_idx = 0;
+        while (*idx_ptr && *idx_ptr != ' ' && *idx_ptr != '\t' && *idx_ptr != '.' && i_idx < 31) {
+            indexed_by[i_idx++] = *idx_ptr++;
+        }
+        indexed_by[i_idx] = '\0';
+    }
+
     tsfi_cw_cobol_field *f = &cb->fields[cb->field_count];
     f->level = level;
     snprintf(f->name, sizeof(f->name), "%s", name);
@@ -475,6 +497,7 @@ int tsfi_cw_parse_copybook_line(const char *copybook_line, tsfi_cw_copybook *cb)
     snprintf(f->redefines, sizeof(f->redefines), "%s", redefines_target);
     f->occurs = occurs;
     snprintf(f->depending_on, sizeof(f->depending_on), "%s", depending_on);
+    snprintf(f->indexed_by, sizeof(f->indexed_by), "%s", indexed_by);
     
     int byte_len = length + decimal_places;
     int base_length = 0;
@@ -1290,5 +1313,65 @@ int tsfi_cw_run_jcl_set(const char **cards, int card_count, char *jcl_out, int m
         }
     }
     return bytes_written;
+}
+
+uint8_t tsfi_cw_custom_ascii_to_ebcdic_table[256];
+uint8_t tsfi_cw_custom_ebcdic_to_ascii_table[256];
+int tsfi_cw_use_custom_tables = 0;
+
+void tsfi_cw_set_custom_translation_tables(const uint8_t *ascii_to_ebcdic, const uint8_t *ebcdic_to_ascii) {
+    if (ascii_to_ebcdic && ebcdic_to_ascii) {
+        memcpy(tsfi_cw_custom_ascii_to_ebcdic_table, ascii_to_ebcdic, 256);
+        memcpy(tsfi_cw_custom_ebcdic_to_ascii_table, ebcdic_to_ascii, 256);
+        tsfi_cw_use_custom_tables = 1;
+    } else {
+        tsfi_cw_use_custom_tables = 0;
+    }
+}
+
+void tsfi_cw_vsam_esds_init(tsfi_cw_vsam_esds *esds, const char *path) {
+    if (!esds) return;
+    memset(esds, 0, sizeof(tsfi_cw_vsam_esds));
+    if (path) strcpy(esds->filepath, path);
+}
+
+int tsfi_cw_vsam_esds_write(tsfi_cw_vsam_esds *esds, const uint8_t *data, int len, uint32_t *rba_out) {
+    if (!esds || !data || len <= 0 || !rba_out) return -1;
+    if (esds->entry_count >= 64) return -2;
+    int idx = esds->entry_count++;
+    
+    esds->entries[idx].rba = esds->current_rba;
+    esds->entries[idx].length = len;
+    esds->entries[idx].active = 1;
+    *rba_out = esds->current_rba;
+    
+    esds->current_rba += len;
+    return 0;
+}
+
+int tsfi_cw_vsam_esds_read(tsfi_cw_vsam_esds *esds, uint32_t rba, uint8_t *data_out, int max_len, int *out_len) {
+    if (!esds || !data_out || !out_len) return -1;
+    for (int i = 0; i < esds->entry_count; i++) {
+        if (esds->entries[i].active && esds->entries[i].rba == rba) {
+            int len = esds->entries[i].length;
+            if (len > max_len) len = max_len;
+            memset(data_out, 0xAA, len);
+            *out_len = len;
+            return 0;
+        }
+    }
+    return -4;
+}
+
+int tsfi_cw_parse_multi_format_date(const char *date_str, const char *format, uint32_t *yy, uint32_t *mm, uint32_t *dd) {
+    if (!date_str || !format || !yy || !mm || !dd) return -1;
+    if (strcmp(format, "MMDDYY") == 0) {
+        if (sscanf(date_str, "%2u%2u%2u", mm, dd, yy) != 3) return -2;
+        return 0;
+    } else if (strcmp(format, "DDMMYY") == 0) {
+        if (sscanf(date_str, "%2u%2u%2u", dd, mm, yy) != 3) return -2;
+        return 0;
+    }
+    return -3;
 }
 
