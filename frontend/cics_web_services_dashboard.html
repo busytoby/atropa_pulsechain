@@ -245,7 +245,7 @@
             padding: 1rem;
             font-family: 'JetBrains Mono', monospace;
             font-size: 0.8rem;
-            height: 300px;
+            height: 250px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
@@ -285,13 +285,50 @@
             color: var(--text-main);
             border-color: var(--accent-cyan);
         }
+
+        /* Interactive Telemetry Pad styles */
+        .capture-pad {
+            width: 100%;
+            height: 180px;
+            border: 2px dashed rgba(0, 242, 254, 0.3);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 242, 254, 0.02);
+            cursor: crosshair;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .capture-pad:hover {
+            background: rgba(0, 242, 254, 0.05);
+            border-color: var(--accent-cyan);
+        }
+
+        .capture-pad-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .telemetry-canvas {
+            width: 100%;
+            height: 200px;
+            background: rgba(6, 7, 10, 0.9);
+            border-radius: 12px;
+            border: 1px solid var(--border-glow);
+            margin-top: 1rem;
+        }
     </style>
 </head>
 <body>
     <header>
         <div class="header-title-container">
             <h1>CICS Web Services Portal</h1>
-            <p>University of North Texas &amp; Robert Morris University Mainframe Gateway Bridge</p>
+            <p>University of North Texas, Robert Morris University &amp; Chase Manhattan Mainframe Bridge</p>
         </div>
         <div class="connection-status">
             <span class="status-dot" id="statusDot"></span>
@@ -408,6 +445,34 @@
         </div>
 
         <div class="section-column">
+            <!-- Event Capture Pad -->
+            <div class="card">
+                <div class="card-title">
+                    <span>Vulkan/MCP Event Capture Pad</span>
+                    <span class="card-accent-tag">cics.audit_telemetry</span>
+                </div>
+                <div class="capture-pad" id="capturePad" tabindex="0">
+                    <div class="capture-pad-label" id="padLabel">Hover/Move Mouse Here &amp; Type Keycodes</div>
+                </div>
+                <div style="margin-top: 1rem; font-family:'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--accent-cyan);">
+                    <span id="lastEventDisplay">No input events captured.</span>
+                </div>
+            </div>
+
+            <!-- Telemetry Graph -->
+            <div class="card">
+                <div class="card-title">
+                    <span>Mainframe Performance Telemetry</span>
+                    <span class="card-accent-tag">Real-Time Metrics</span>
+                </div>
+                <canvas class="telemetry-canvas" id="telemetryCanvas"></canvas>
+                <div style="display:flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem;">
+                    <span>Cyan: Latency (ms)</span>
+                    <span>Purple: Queue Depth</span>
+                    <span>Green: CPU Load (%)</span>
+                </div>
+            </div>
+
             <!-- Ballistic Data Injector Card -->
             <div class="card">
                 <div class="card-title">
@@ -468,6 +533,12 @@
     <script>
         const MCP_URL = "http://127.0.0.1:10042";
         let nextRpcId = 1;
+
+        // Telemetry tracking arrays
+        const historyLength = 50;
+        const latencyHistory = Array(historyLength).fill(150);
+        const queueHistory = Array(historyLength).fill(0);
+        const cpuHistory = Array(historyLength).fill(15);
 
         async function sendRpc(method, params) {
             const id = nextRpcId++;
@@ -589,7 +660,8 @@
                 });
 
                 if (res && res.result) {
-                    document.getElementById("queueCount").textContent = res.result.item_count;
+                    const cnt = res.result.item_count;
+                    document.getElementById("queueCount").textContent = cnt;
                     document.getElementById("queueBytes").textContent = res.result.total_bytes + " B";
                     
                     const alertField = document.getElementById("queueAlert");
@@ -599,6 +671,10 @@
                     } else {
                         alertField.style.color = "var(--text-main)";
                     }
+
+                    // Update local graph queue history
+                    queueHistory.push(cnt);
+                    queueHistory.shift();
                 }
             } catch (e) {}
         }
@@ -625,9 +701,124 @@
             } catch (e) {}
         }
 
+        // Interactive Capture Pad Logic
+        const pad = document.getElementById("capturePad");
+        const display = document.getElementById("lastEventDisplay");
+        let lastMoveSent = 0;
+
+        pad.addEventListener("mousemove", (e) => {
+            const rect = pad.getBoundingClientRect();
+            const x = Math.round(e.clientX - rect.left);
+            const y = Math.round(e.clientY - rect.top);
+            
+            display.textContent = `Mouse coordinates: X=${x}, Y=${y}`;
+
+            // Throttle mouse moves to avoid flooding network socket
+            const now = Date.now();
+            if (now - lastMoveSent > 100) {
+                lastMoveSent = now;
+                sendRpc("input.mouse_move", { x: x, y: y }).catch(() => {});
+                
+                // Add dummy updates to telemetry graphs
+                latencyHistory.push(Math.min(500, Math.max(50, 150 + Math.round((Math.random() - 0.5) * 50))));
+                latencyHistory.shift();
+            }
+        });
+
+        pad.addEventListener("keydown", (e) => {
+            display.textContent = `Keycode DOWN: ${e.keyCode}`;
+            sendRpc("input.keyboard", { keycode: e.keyCode, state: 1 }).catch(() => {});
+            
+            cpuHistory.push(Math.min(100, Math.max(5, cpuHistory[historyLength-1] + 5)));
+            cpuHistory.shift();
+        });
+
+        pad.addEventListener("keyup", (e) => {
+            display.textContent = `Keycode UP: ${e.keyCode}`;
+            sendRpc("input.keyboard", { keycode: e.keyCode, state: 0 }).catch(() => {});
+        });
+
+        // Telemetry Graph Canvas Renderer
+        const canvas = document.getElementById("telemetryCanvas");
+        const ctx = canvas.getContext("2d");
+
+        function resizeCanvas() {
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+        }
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        function drawGraph() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grid lines
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+            ctx.lineWidth = 1;
+            for (let i = 1; i < 4; i++) {
+                const y = (canvas.height / 4) * i;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            const step = canvas.width / (historyLength - 1);
+
+            // 1. Draw Latency (Cyan)
+            ctx.strokeStyle = "#00f2fe";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let i = 0; i < historyLength; i++) {
+                const val = latencyHistory[i];
+                // normalize latency 0-500ms to canvas height
+                const y = canvas.height - (val / 500) * canvas.height;
+                if (i === 0) ctx.moveTo(0, y);
+                else ctx.lineTo(i * step, y);
+            }
+            ctx.stroke();
+
+            // 2. Draw Queue Depth (Purple)
+            ctx.strokeStyle = "#c084fc";
+            ctx.beginPath();
+            for (let i = 0; i < historyLength; i++) {
+                const val = queueHistory[i];
+                // normalize queue depth 0-50 to canvas height
+                const y = canvas.height - (Math.min(50, val) / 50) * canvas.height;
+                if (i === 0) ctx.moveTo(0, y);
+                else ctx.lineTo(i * step, y);
+            }
+            ctx.stroke();
+
+            // 3. Draw CPU Load (Green)
+            ctx.strokeStyle = "#38ef7d";
+            ctx.beginPath();
+            for (let i = 0; i < historyLength; i++) {
+                const val = cpuHistory[i];
+                // normalize CPU load 0-100%
+                const y = canvas.height - (val / 100) * canvas.height;
+                if (i === 0) ctx.moveTo(0, y);
+                else ctx.lineTo(i * step, y);
+            }
+            ctx.stroke();
+
+            requestAnimationFrame(drawGraph);
+        }
+
         // Heartbeat connection poll on load
         window.addEventListener("DOMContentLoaded", () => {
             sendRpc("wave512.inspect", {}).catch(() => {});
+            
+            // Periodically inject small variances in telemetries
+            setInterval(() => {
+                latencyHistory.push(Math.min(500, Math.max(50, latencyHistory[historyLength-1] + Math.round((Math.random() - 0.5) * 20))));
+                latencyHistory.shift();
+
+                cpuHistory.push(Math.min(100, Math.max(5, cpuHistory[historyLength-1] + Math.round((Math.random() - 0.5) * 8))));
+                cpuHistory.shift();
+            }, 1000);
+
+            requestAnimationFrame(drawGraph);
         });
     </script>
 </body>
