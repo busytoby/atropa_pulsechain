@@ -55,6 +55,8 @@ typedef struct {
     uint64_t card_spent_today;
     uint32_t blocked_merchants[8];
     uint8_t blocked_merchant_count;
+    uint32_t card_tx_limit;
+    uint32_t card_tx_count_today;
 } hogan_account;
 
 #define HOGAN_MAX_BLOCKED_CARDS 32
@@ -366,5 +368,15 @@ typedef struct {
 } hogan_merchant_block_entry;
 
 int tsfi_hogan_update_merchant_block(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t merchant_id, uint8_t is_blocked, uint32_t authority_id);
+
+// Card Transaction Velocity Manager (Authorization Capping)
+typedef struct {
+    uint32_t account_id;
+    uint32_t previous_tx_limit;
+    uint32_t new_tx_limit;
+    uint32_t authority_id;
+} hogan_card_tx_limit_entry;
+
+int tsfi_hogan_update_card_tx_limit(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t new_limit, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H

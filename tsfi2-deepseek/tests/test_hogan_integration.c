@@ -1234,6 +1234,48 @@ int main(void) {
     remove("hogan_tx.dat.bin"); // clean up
     printf("  [PASS] Card merchant restrictions, validations, and override logs verified.\n");
 
+    // 36. Test Card Transaction Velocity Manager (Authorization Capping)
+    printf("[E2E] Testing Card Transaction Velocity Manager...\n");
+    const char *cardvel_path = "hogan_cardvel.dat.bin";
+    remove(cardvel_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system cardvel_sys;
+    tsfi_hogan_init(&cardvel_sys);
+    assert(tsfi_hogan_register_account(&cardvel_sys, 1001, 10000) == 0); // Alice: 10,000 units
+    
+    // Set Alice's daily card transaction count limit to 1 transaction
+    assert(tsfi_hogan_update_card_tx_limit(&cardvel_sys, cardvel_path, 1001, 1, 777) == 0);
+    assert(tsfi_hogan_update_card_tx_limit(&cardvel_sys, "hogan_cardvel.json", 1001, 1, 777) == -3); // Rule 13 check
+    
+    // First card authorization (succeeds)
+    assert(tsfi_hogan_authorize_card(&cardvel_sys, "hogan_tx.dat.bin", 5005, 1001, 9009, 100) == 0);
+    
+    // Second card authorization (should fail because Alice card tx count would be 2 > 1 limit; returns -6)
+    assert(tsfi_hogan_authorize_card(&cardvel_sys, "hogan_tx.dat.bin", 5005, 1001, 9009, 100) == -6);
+    
+    // Run reconciliation
+    assert(tsfi_hogan_overnight_reconciliation(&cardvel_sys, "hogan_lfs.dat.bin") == 0);
+    
+    // Verify daily card tx count resets overnight
+    assert(cardvel_sys.accounts[0].card_tx_count_today == 0);
+    
+    // Read sequential log file and verify entries
+    uint8_t read_cvlbuf[sizeof(hogan_card_tx_limit_entry)];
+    size_t cvl_size = 0;
+    assert(tsfi_hogan_read_seq_record(cardvel_path, 0, read_cvlbuf, &cvl_size) == 0);
+    assert(cvl_size == sizeof(hogan_card_tx_limit_entry));
+    
+    const hogan_card_tx_limit_entry *cvlentry = (const hogan_card_tx_limit_entry *)read_cvlbuf;
+    assert(cvlentry->account_id == 1001);
+    assert(cvlentry->previous_tx_limit == 0);
+    assert(cvlentry->new_tx_limit == 1);
+    assert(cvlentry->authority_id == 777);
+    
+    remove(cardvel_path); // clean up
+    remove("hogan_tx.dat.bin"); // clean up
+    printf("  [PASS] Card daily transaction velocity caps, resets, and override logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }
