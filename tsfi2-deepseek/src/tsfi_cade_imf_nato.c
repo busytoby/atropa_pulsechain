@@ -715,3 +715,79 @@ int tsfi_mf_nato_verify_##fn_sfx(int value, int *is_valid) { \
 }
 NATO_PARAMETER_TABLE
 #undef X
+
+int tsfi_mf_nato_verify_sis_flow_control(int state, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (state >= 0 && state <= 3) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_sis_sap_allocation(int sap_id, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (sap_id >= 0 && sap_id <= 15) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_fec_code_rate(int rate_pct, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (rate_pct == 50 || rate_pct == 75 || rate_pct == 87) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_fec_block_size(int size_bytes, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (size_bytes == 128 || size_bytes == 256 || size_bytes == 512 || size_bytes == 1024) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_parse_sis_primitive(const uint8_t *data, size_t size, int *prim_type, int *is_valid) {
+    if (!data || !prim_type || !is_valid || size == 0) return -1;
+    
+    *prim_type = data[0];
+    *is_valid = 0;
+    
+    if (data[0] == 0x01) { // C_Bind
+        if (size >= 4) *is_valid = 1;
+    } else if (data[0] == 0x02) { // C_Unbind
+        if (size >= 2) *is_valid = 1;
+    } else if (data[0] == 0x03) { // U_Data
+        if (size >= 6) *is_valid = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_mf_nato_encode_d_pdu(int type, const uint8_t *payload, size_t pay_size, uint8_t *out_frame, size_t *out_size) {
+    if (!payload || !out_frame || !out_size) return -1;
+    
+    out_frame[0] = type & 0x0F;
+    out_frame[1] = (pay_size >> 8) & 0xFF;
+    out_frame[2] = pay_size & 0xFF;
+    
+    for (size_t i = 0; i < pay_size; i++) {
+        out_frame[3 + i] = payload[i];
+    }
+    
+    size_t header_and_pay_len = 3 + pay_size;
+    
+    // CRC-16 CCITT-FALSE
+    uint16_t crc = 0xFFFF;
+    for (size_t i = 0; i < header_and_pay_len; i++) {
+        crc ^= (uint16_t)out_frame[i] << 8;
+        for (int j = 0; j < 8; j++) {
+            if (crc & 0x8000) {
+                crc = (crc << 1) ^ 0x1021;
+            } else {
+                crc <<= 1;
+            }
+        }
+    }
+    
+    out_frame[header_and_pay_len] = (crc >> 8) & 0xFF;
+    out_frame[header_and_pay_len + 1] = crc & 0xFF;
+    
+    *out_size = header_and_pay_len + 2;
+    return 0;
+}
+
+

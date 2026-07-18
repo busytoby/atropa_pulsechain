@@ -97,7 +97,89 @@ int run_nato_stanag_tests_part5(void) {
     int rssi_quiet_sample_threshold_limit_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_res = tsfi_mf_nato_verify_rssi_quiet_sample_threshold_limit_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector(4, &rssi_quiet_sample_threshold_limit_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_valid);
     assert(rssi_quiet_sample_threshold_limit_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_res == 0);
     assert(rssi_quiet_sample_threshold_limit_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_margin_range_option_selector_valid == 1);
-    printf("  [PASS] NATO Broadcast Busy RSSI Quiet Sample Threshold Limit Margin Range Option Selector Margin Range Option Selector Margin Range Option Selector Margin Range Option Selector Margin Range Option Selector Margin Range Option Selector Margin Range Option Selector Margin Range Option Selector Matcher verified.\n");
+    // Verify SIS Flow Control state verifier
+    printf("[TEST] Validating NATO SIS Flow Control...\n");
+    int sis_fc_valid = -1;
+    int sis_fc_res = tsfi_mf_nato_verify_sis_flow_control(2, &sis_fc_valid); // Blocked is valid
+    assert(sis_fc_res == 0);
+    assert(sis_fc_valid == 1);
+    tsfi_mf_nato_verify_sis_flow_control(5, &sis_fc_valid); // 5 is invalid
+    assert(sis_fc_valid == 0);
+    printf("  [PASS] SIS Flow Control verified.\n");
+
+    // Verify SIS SAP Allocation verifier
+    printf("[TEST] Validating NATO SIS SAP Allocation...\n");
+    int sis_sap_valid = -1;
+    int sis_sap_res = tsfi_mf_nato_verify_sis_sap_allocation(8, &sis_sap_valid); // SAP 8 is valid
+    assert(sis_sap_res == 0);
+    assert(sis_sap_valid == 1);
+    tsfi_mf_nato_verify_sis_sap_allocation(20, &sis_sap_valid); // SAP 20 is invalid
+    assert(sis_sap_valid == 0);
+    printf("  [PASS] SIS SAP Allocation verified.\n");
+
+    // Verify FEC Code Rate verifier
+    printf("[TEST] Validating NATO FEC Code Rate...\n");
+    int fec_rate_valid = -1;
+    int fec_rate_res = tsfi_mf_nato_verify_fec_code_rate(75, &fec_rate_valid); // 3/4 rate is valid
+    assert(fec_rate_res == 0);
+    assert(fec_rate_valid == 1);
+    tsfi_mf_nato_verify_fec_code_rate(60, &fec_rate_valid); // 60% rate is invalid
+    assert(fec_rate_valid == 0);
+    printf("  [PASS] FEC Code Rate verified.\n");
+
+    // Verify FEC Block Size verifier
+    printf("[TEST] Validating NATO FEC Block Size...\n");
+    int fec_size_valid = -1;
+    int fec_size_res = tsfi_mf_nato_verify_fec_block_size(512, &fec_size_valid); // 512 bytes is valid
+    assert(fec_size_res == 0);
+    assert(fec_size_valid == 1);
+    tsfi_mf_nato_verify_fec_block_size(300, &fec_size_valid); // 300 bytes is invalid
+    assert(fec_size_valid == 0);
+    // Verify SIS Primitive Parser
+    printf("[TEST] Validating NATO SIS Primitive Parser...\n");
+    uint8_t bind_data[] = {0x01, 0x00, 0x01, 0x02};
+    int parsed_type = -1;
+    int parsed_valid = -1;
+    int parse_res = tsfi_mf_nato_parse_sis_primitive(bind_data, sizeof(bind_data), &parsed_type, &parsed_valid);
+    assert(parse_res == 0);
+    assert(parsed_type == 0x01);
+    assert(parsed_valid == 1);
+
+    uint8_t short_unbind[] = {0x02};
+    parse_res = tsfi_mf_nato_parse_sis_primitive(short_unbind, sizeof(short_unbind), &parsed_type, &parsed_valid);
+    assert(parse_res == 0);
+    assert(parsed_type == 0x02);
+    assert(parsed_valid == 0); // Need 2 bytes
+    printf("  [PASS] SIS Primitive Parser verified.\n");
+
+    // Verify D_PDU Encoder & Checksum
+    printf("[TEST] Validating NATO D_PDU Encoder...\n");
+    uint8_t payload[] = {'H', 'e', 'l', 'l', 'o'};
+    uint8_t frame[64];
+    size_t frame_size = 0;
+    int encode_res = tsfi_mf_nato_encode_d_pdu(0x00, payload, sizeof(payload), frame, &frame_size);
+    assert(encode_res == 0);
+    assert(frame_size == 10); // 3 (header) + 5 (payload) + 2 (CRC)
+    assert(frame[0] == 0x00);
+    assert(frame[1] == 0x00);
+    assert(frame[2] == 0x05);
+    // Verify CRC CCITT-FALSE for encoded frame:
+    // Header + payload is frame[0] to frame[7]
+    uint16_t verify_crc = 0xFFFF;
+    for (size_t i = 0; i < 8; i++) {
+        verify_crc ^= (uint16_t)frame[i] << 8;
+        for (int j = 0; j < 8; j++) {
+            if (verify_crc & 0x8000) {
+                verify_crc = (verify_crc << 1) ^ 0x1021;
+            } else {
+                verify_crc <<= 1;
+            }
+        }
+    }
+    assert(frame[8] == ((verify_crc >> 8) & 0xFF));
+    assert(frame[9] == (verify_crc & 0xFF));
+    printf("  [PASS] D_PDU Encoder and Checksum verified.\n");
 
     return 0;
 }
+
