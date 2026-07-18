@@ -365,5 +365,21 @@ int run_nato_stanag_tests(void) {
     assert(backoff_multiplier_valid == 1);
     printf("  [PASS] NATO Multi-Scan Collision Backoff Multiplier Validator verified.\n");
 
+    // 295. Verify NATO Link-Layer Broadcast Multi-Cast Address Validator
+    printf("[TEST] Validating NATO Broadcast Address Validator...\n");
+    int broadcast_address_valid = -1;
+    int broadcast_address_res = tsfi_mf_nato_verify_broadcast_address(0x3FFFFFF, &broadcast_address_valid);
+    assert(broadcast_address_res == 0);
+    assert(broadcast_address_valid == 1);
+    printf("  [PASS] NATO Broadcast Address Validator verified.\n");
+
+    // 296. Verify NATO Link-Layer Broadcast Window Constraint Matcher
+    printf("[TEST] Validating NATO Broadcast Window Constraint Matcher...\n");
+    int broadcast_window_valid = -1;
+    int broadcast_window_res = tsfi_mf_nato_verify_broadcast_window(0, 0, &broadcast_window_valid);
+    assert(broadcast_window_res == 0);
+    assert(broadcast_window_valid == 1);
+    printf("  [PASS] NATO Broadcast Window Constraint Matcher verified.\n");
+
     return 0;
 }

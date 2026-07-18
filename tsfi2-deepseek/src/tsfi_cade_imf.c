@@ -1913,4 +1913,16 @@ int tsfi_mf_nato_verify_backoff_multiplier(int multiplier, int *is_valid) {
     return 0;
 }
 
+int tsfi_mf_nato_verify_broadcast_address(int address, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (address == 0x3FFFFFF) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_broadcast_window(int mode, int window_size, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = ((mode == 0 && window_size == 0) || (mode != 0)) ? 1 : 0;
+    return 0;
+}
+
 

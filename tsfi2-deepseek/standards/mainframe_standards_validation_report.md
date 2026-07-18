@@ -370,5 +370,7 @@
 | 436 | NATO Link-Layer Multi-Scan Retry Delay Matcher | PASS | Audits backoff retry intervals following scan collisions | Volume 33 |
 | 437 | NATO Link-Layer Subnetwork Profile Override Flag Matcher | PASS | Validates profile override configuration settings | Volume 33 |
 | 438 | NATO Link-Layer Multi-Scan Collision Backoff Multiplier Validator | PASS | Audits retry backoff collision exponent multiplier limits | Volume 33 |
+| 439 | NATO Link-Layer Broadcast Multi-Cast Address Validator | PASS | Validates broadcast target address structure | Volume 33 |
+| 440 | NATO Link-Layer Broadcast Window Constraint Matcher | PASS | Audits sliding window size boundaries for non-ARQ broadcast mode | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 438 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 440 Scenarios validated successfully)
