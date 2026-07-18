@@ -177,5 +177,5 @@ assets/*.jpai
 /assets/papers_demo.mp4
 
 # Ignore system and boot logs
-config-*-dysnomia
+config-*-dysnomia*
 boot-log-dysnomia
