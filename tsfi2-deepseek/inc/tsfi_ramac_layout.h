@@ -1198,6 +1198,10 @@ int tsfi_bgp_proxy_route(const imp_header *hdr, const char *bgp_payload, char *r
 int tsfi_imp_monitor_link_quality(uint8_t neighbor_imp_id, int response_time_ms, int *link_quality_metric_out);
 int tsfi_imp_update_routing_table(int current_table[4], const int neighbor_table[4], int link_delay);
 
+// Honeywell MOS Memory Parity Controller
+int tsfi_hw_generate_parity(uint64_t data, uint8_t *parity_out);
+int tsfi_hw_check_parity(uint64_t data, uint8_t parity, int *error_detected_out);
+
 // 1969 Multics Segment Access Control
 #define MULTICS_R 1
 #define MULTICS_W 2

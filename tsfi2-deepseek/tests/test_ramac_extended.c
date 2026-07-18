@@ -1244,6 +1244,23 @@ int main(void) {
     assert(cur_table[3] == 35); // 30 + 5 < 100
     printf("  [PASS] ARPANET Honeywell link quality monitor and delay table routing verified.\n");
 
+    // Honeywell MOS Memory Parity Controller verification
+    printf("[Test] Verifying Honeywell MOS Memory Parity Controller...\n");
+    uint8_t par = 0;
+    assert(tsfi_hw_generate_parity(0x3, &par) == 0); // Binary 11 (even number of bits) -> Parity should be 1 to make it odd
+    assert(par == 1);
+    
+    assert(tsfi_hw_generate_parity(0x7, &par) == 0); // Binary 111 (odd number of bits) -> Parity should be 0 to keep it odd
+    assert(par == 0);
+    
+    int err = 0;
+    assert(tsfi_hw_check_parity(0x3, 1, &err) == 0);
+    assert(err == 0); // No error
+    
+    assert(tsfi_hw_check_parity(0x3, 0, &err) == 0);
+    assert(err == 1); // Error detected (parity bit mismatch)
+    printf("  [PASS] Honeywell MOS Memory Parity generation and error checking verified.\n");
+
     printf("[PASS] All extended RAMAC simulation invariants verified successfully!\n");
     printf("=============================================================\n");
     return 0;

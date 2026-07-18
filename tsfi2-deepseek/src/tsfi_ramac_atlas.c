@@ -762,4 +762,27 @@ int tsfi_imp_update_routing_table(int current_table[4], const int neighbor_table
     return 0;
 }
 
+int tsfi_hw_generate_parity(uint64_t data, uint8_t *parity_out) {
+    if (!parity_out) return -1;
+    
+    uint64_t val = data & 0xFFFFFFFFFULL;
+    int cnt = 0;
+    while (val) {
+        cnt += (val & 1);
+        val >>= 1;
+    }
+    *parity_out = (cnt % 2 == 0) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_hw_check_parity(uint64_t data, uint8_t parity, int *error_detected_out) {
+    if (!error_detected_out) return -1;
+    
+    uint8_t exp = 0;
+    tsfi_hw_generate_parity(data, &exp);
+    *error_detected_out = (exp != parity) ? 1 : 0;
+    return 0;
+}
+
+
 
