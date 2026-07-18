@@ -63,5 +63,7 @@ int tsfi_mf_cade_verify_phone_area_code(const char *phone, const char *state_cod
 int tsfi_mf_imf_verify_dependent_age(int birth_year, int tax_year, int *is_eligible);
 int tsfi_mf_cade_verify_zip_state(const char *zip, const char *state_code, int *is_match);
 int tsfi_mf_imf_verify_eitc_qualifying_child(const char *relationship, int residency_days, int *is_eligible);
+int tsfi_mf_imf_verify_homebuyer_recapture(int acquisition_year, double credit_received, double *recapture_amount);
+int tsfi_mf_cade_query_prior_refund_offset(const char *ssn, const char *offset_registry, double *offset_amount);
 
 #endif // TSFI_CADE_IMF_H

@@ -821,4 +821,28 @@ int tsfi_mf_imf_verify_eitc_qualifying_child(const char *relationship, int resid
     return 0;
 }
 
+int tsfi_mf_imf_verify_homebuyer_recapture(int acquisition_year, double credit_received, double *recapture_amount) {
+    if (!recapture_amount) return -1;
+    *recapture_amount = 0.0;
+    if (acquisition_year == 2008) {
+        *recapture_amount = credit_received / 15.0;
+    }
+    return 0;
+}
+
+int tsfi_mf_cade_query_prior_refund_offset(const char *ssn, const char *offset_registry, double *offset_amount) {
+    if (!ssn || !offset_amount) return -1;
+    *offset_amount = 0.0;
+    if (!offset_registry) return 0;
+    const char *p = strstr(offset_registry, ssn);
+    if (p) {
+        p = strchr(p, '=');
+        if (p) {
+            p++;
+            *offset_amount = atof(p);
+        }
+    }
+    return 0;
+}
+
 

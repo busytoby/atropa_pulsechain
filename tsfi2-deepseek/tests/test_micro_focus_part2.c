@@ -492,6 +492,22 @@ int main(void) {
     assert(eitc_eligible == 1);
     printf("  [PASS] IRS IMF EITC Child Matcher verified.\n");
 
+    // 168. Verify IRS IMF Homebuyer Recapture Validator
+    printf("[TEST] Validating IRS IMF Homebuyer Recapture Validator...\n");
+    double recap = -1.0;
+    int recap_res = tsfi_mf_imf_verify_homebuyer_recapture(2008, 7500.00, &recap);
+    assert(recap_res == 0);
+    assert(recap == 500.00);
+    printf("  [PASS] IRS IMF Homebuyer Recapture Validator verified.\n");
+
+    // 169. Verify IRS CADE Prior Refund Offset Query
+    printf("[TEST] Validating IRS CADE Prior Refund Offset Query...\n");
+    double offset = -1.0;
+    int offset_chk_res = tsfi_mf_cade_query_prior_refund_offset("999-12-3456", "SSN:999-12-3456=250.00 | SSN:999-12-7890=0.00", &offset);
+    assert(offset_chk_res == 0);
+    assert(offset == 250.00);
+    printf("  [PASS] IRS CADE Prior Refund Offset Query verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }
