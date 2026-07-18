@@ -1070,6 +1070,56 @@ int tsfi_mf_nato_verify_throttle_limit(int queue_size, int threshold, int *is_th
     return 0;
 }
 
+int tsfi_mf_nato_hfrcp_evaluate_helmholtz(int op_type, float value, int *current_epoch, int *is_valid) {
+    (void)value;
+    if (!current_epoch || !is_valid) return -1;
+    *is_valid = 0;
+    
+    switch (op_type) {
+        case 1: // HILBERT_ENCODE (prepares carrier freq config)
+            if (*current_epoch == 0) { // EPOCH_INIT -> EPOCH_AVAIL
+                *current_epoch = 1;
+                *is_valid = 1;
+            }
+            break;
+        case 2: // BANACH_NORM (tunes antenna impedance match)
+            if (*current_epoch == 1) { // EPOCH_AVAIL -> EPOCH_FORM
+                *current_epoch = 2;
+                *is_valid = 1;
+            } else if (*current_epoch == 2) { // EPOCH_FORM -> EPOCH_POLARIZE
+                *current_epoch = 3;
+                *is_valid = 1;
+            }
+            break;
+        case 3: // DIFFUSION (spreads frequency lock loops)
+            if (*current_epoch == 3) { // EPOCH_POLARIZE -> EPOCH_CONJUGATE
+                *current_epoch = 4;
+                *is_valid = 1;
+            } else if (*current_epoch == 4) { // EPOCH_CONJUGATE -> EPOCH_CONIFY
+                *current_epoch = 5;
+                *is_valid = 1;
+            } else if (*current_epoch == 5) { // EPOCH_CONIFY -> EPOCH_SATURATE
+                *current_epoch = 6;
+                *is_valid = 1;
+            }
+            break;
+        case 4: // RESONANCE (keys power amp lock)
+            if (*current_epoch == 6) { // EPOCH_SATURATE -> EPOCH_IONIZE
+                *current_epoch = 7;
+                *is_valid = 1;
+            } else if (*current_epoch == 7) { // EPOCH_IONIZE -> EPOCH_MAGNETIZE
+                *current_epoch = 8;
+                *is_valid = 1;
+            } else if (*current_epoch == 8) { // EPOCH_MAGNETIZE -> EPOCH_DONE
+                *current_epoch = 9;
+                *is_valid = 1;
+            }
+            break;
+    }
+    return 0;
+}
+
+
 
 
 

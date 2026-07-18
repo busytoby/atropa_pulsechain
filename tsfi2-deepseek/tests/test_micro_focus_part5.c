@@ -358,7 +358,27 @@ int run_nato_stanag_tests_part5(void) {
     tsfi_mf_nato_verify_throttle_limit(30, 40, &is_thr, &thr_val); // queue size 30 < threshold 40 -> not throttled
     assert(thr_val == 1);
     assert(is_thr == 0);
-    printf("  [PASS] Flow Throttling verified.\n");
+    // Verify Helmholtz HFRCP
+    printf("[TEST] Validating NATO Helmholtz HFRCP...\n");
+    int hf_epoch = 0; // EPOCH_INIT
+    int hf_ev_valid = -1;
+    
+    // Apply HILBERT_ENCODE -> EPOCH_AVAIL
+    int hf_h_res = tsfi_mf_nato_hfrcp_evaluate_helmholtz(1, 0.0f, &hf_epoch, &hf_ev_valid);
+    assert(hf_h_res == 0);
+    assert(hf_ev_valid == 1);
+    assert(hf_epoch == 1);
+    
+    // Apply RESONANCE (invalid from EPOCH_AVAIL)
+    tsfi_mf_nato_hfrcp_evaluate_helmholtz(4, 0.0f, &hf_epoch, &hf_ev_valid);
+    assert(hf_ev_valid == 0);
+    assert(hf_epoch == 1);
+    
+    // Apply BANACH_NORM -> EPOCH_FORM
+    tsfi_mf_nato_hfrcp_evaluate_helmholtz(2, 0.0f, &hf_epoch, &hf_ev_valid);
+    assert(hf_ev_valid == 1);
+    assert(hf_epoch == 2);
+    printf("  [PASS] Helmholtz HFRCP verified.\n");
 
     return 0;
 }
