@@ -669,3 +669,15 @@ int tsfi_mf_nato_verify_up_ramp_duration_threshold(int duration_ms, int *is_vali
     *is_valid = (duration_ms >= 2 && duration_ms <= 15) ? 1 : 0;
     return 0;
 }
+
+int tsfi_mf_nato_verify_down_ramp_duration_threshold(int duration_ms, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (duration_ms >= 2 && duration_ms <= 20) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_slot_boundary_source_offset_limit(int limit_ms, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (limit_ms >= 1 && limit_ms <= 15) ? 1 : 0;
+    return 0;
+}

@@ -248,5 +248,7 @@ int tsfi_mf_nato_verify_down_ramp_rate_factor_offset(int offset_db, int *is_vali
 int tsfi_mf_nato_verify_slot_boundary_selector(int selector, int *is_valid);
 int tsfi_mf_nato_verify_slot_boundary_source_offset(int offset_ms, int *is_valid);
 int tsfi_mf_nato_verify_up_ramp_duration_threshold(int duration_ms, int *is_valid);
+int tsfi_mf_nato_verify_down_ramp_duration_threshold(int duration_ms, int *is_valid);
+int tsfi_mf_nato_verify_slot_boundary_source_offset_limit(int limit_ms, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

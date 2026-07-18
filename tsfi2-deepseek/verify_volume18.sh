@@ -451,8 +451,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 494 | NATO Link-Layer Broadcast Collision Backoff Slot Alignment Boundary Selector Matcher | PASS | Audits slot boundary alignment source configuration parameters | Volume 33 |
 | 495 | NATO Link-Layer Broadcast Collision Backoff Slot Alignment Boundary Source Offset Matcher | PASS | Validates backoff slot boundary clock reference alignment offsets | Volume 33 |
 | 496 | NATO Link-Layer Broadcast Channel Busy Hysteresis Up-Ramp Duration Threshold Matcher | PASS | Audits RSSI busy up-ramp sustained threshold duration configurations | Volume 33 |
+| 497 | NATO Link-Layer Broadcast Channel Busy Hysteresis Down-Ramp Duration Threshold Matcher | PASS | Validates RSSI busy down-ramp sustained threshold duration parameters | Volume 33 |
+| 498 | NATO Link-Layer Broadcast Collision Backoff Slot Alignment Boundary Source Offset Limit Matcher | PASS | Audits slot boundary clock reference alignment offset limits | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 496 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 498 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"
