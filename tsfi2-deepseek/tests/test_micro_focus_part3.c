@@ -657,5 +657,21 @@ int run_nato_stanag_tests(void) {
     assert(down_ramp_duration_valid == 1);
     printf("  [PASS] NATO Broadcast Busy Down-Ramp Duration Matcher verified.\n");
 
+    // 331. Verify NATO Link-Layer Broadcast Collision Backoff Slot Duration Matcher
+    printf("[TEST] Validating NATO Broadcast Backoff Slot Duration Matcher...\n");
+    int slot_duration_valid = -1;
+    int slot_duration_res = tsfi_mf_nato_verify_slot_duration(20, &slot_duration_valid);
+    assert(slot_duration_res == 0);
+    assert(slot_duration_valid == 1);
+    printf("  [PASS] NATO Broadcast Backoff Slot Duration Matcher verified.\n");
+
+    // 332. Verify NATO Link-Layer Broadcast Channel Busy Hysteresis Up-Ramp Sample Count Checker
+    printf("[TEST] Validating NATO Broadcast Busy Up-Ramp Sample Count Checker...\n");
+    int up_ramp_samples_valid = -1;
+    int up_ramp_samples_res = tsfi_mf_nato_verify_up_ramp_samples(3, &up_ramp_samples_valid);
+    assert(up_ramp_samples_res == 0);
+    assert(up_ramp_samples_valid == 1);
+    printf("  [PASS] NATO Broadcast Busy Up-Ramp Sample Count Checker verified.\n");
+
     return 0;
 }

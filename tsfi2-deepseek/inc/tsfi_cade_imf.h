@@ -226,5 +226,7 @@ int tsfi_mf_nato_verify_jitter_dist(int dist, int *is_valid);
 int tsfi_mf_nato_verify_up_ramp_duration(int duration_ms, int *is_valid);
 int tsfi_mf_nato_verify_slot_map(int map, int *is_valid);
 int tsfi_mf_nato_verify_down_ramp_duration(int duration_ms, int *is_valid);
+int tsfi_mf_nato_verify_slot_duration(int duration_ms, int *is_valid);
+int tsfi_mf_nato_verify_up_ramp_samples(int samples, int *is_valid);
 
 #endif // TSFI_CADE_IMF_H

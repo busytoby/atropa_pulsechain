@@ -537,3 +537,15 @@ int tsfi_mf_nato_verify_down_ramp_duration(int duration_ms, int *is_valid) {
     *is_valid = (duration_ms >= 1 && duration_ms <= 15) ? 1 : 0;
     return 0;
 }
+
+int tsfi_mf_nato_verify_slot_duration(int duration_ms, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (duration_ms >= 5 && duration_ms <= 50) ? 1 : 0;
+    return 0;
+}
+
+int tsfi_mf_nato_verify_up_ramp_samples(int samples, int *is_valid) {
+    if (!is_valid) return -1;
+    *is_valid = (samples >= 2 && samples <= 6) ? 1 : 0;
+    return 0;
+}
