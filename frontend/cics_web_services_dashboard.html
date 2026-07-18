@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CICS Web Services Monitor & Ballistic Queue Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #0a0b10;
+            --bg-card: rgba(18, 20, 30, 0.7);
+            --border-glow: rgba(0, 242, 254, 0.15);
+            --accent-cyan: #00f2fe;
+            --accent-purple: #4facfe;
+            --accent-green: #38ef7d;
+            --accent-red: #ff416c;
+            --text-main: #f1f2f6;
+            --text-muted: #a4b0be;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(79, 172, 254, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(0, 242, 254, 0.08) 0%, transparent 40%);
+        }
+
+        header {
+            padding: 2rem;
+            border-bottom: 1px solid var(--border-glow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-title-container h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 1px;
+        }
+
+        .header-title-container p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 0.2rem;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.85rem;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            border: 1px solid var(--border-glow);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--accent-red);
+            box-shadow: 0 0 8px var(--accent-red);
+            transition: all 0.3s ease;
+        }
+
+        .status-dot.connected {
+            background-color: var(--accent-green);
+            box-shadow: 0 0 10px var(--accent-green);
+        }
+
+        main {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .section-column {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border-glow);
+            padding: 1.8rem;
+            backdrop-filter: blur(16px);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 242, 254, 0.05);
+            border-color: rgba(0, 242, 254, 0.3);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--accent-cyan), var(--accent-purple));
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-accent-tag {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            background: rgba(0, 242, 254, 0.1);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(0, 242, 254, 0.2);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .grid-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .input-group label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-group input, .input-group select {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-glow);
+            border-radius: 8px;
+            padding: 0.7rem 1rem;
+            color: var(--text-main);
+            font-family: inherit;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        button.btn {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+            color: #0d0e15;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            padding: 0.8rem 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+        }
+
+        button.btn:hover {
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+            transform: scale(1.02);
+        }
+
+        .metric-badge {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .metric-val {
+            font-size: 1.5rem;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .terminal-log-card {
+            background: #06070a;
+            border: 1px solid var(--border-glow);
+            border-radius: 12px;
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            height: 300px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .log-entry {
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .log-tx { color: var(--accent-cyan); }
+        .log-rx { color: var(--accent-purple); }
+        .log-error { color: var(--accent-red); }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+        }
+
+        .clear-logs-btn {
+            background: transparent;
+            border: 1px solid var(--border-glow);
+            color: var(--text-muted);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .clear-logs-btn:hover {
+            color: var(--text-main);
+            border-color: var(--accent-cyan);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-title-container">
+            <h1>CICS Web Services Portal</h1>
+            <p>University of North Texas &amp; Robert Morris University Mainframe Gateway Bridge</p>
+        </div>
+        <div class="connection-status">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="statusText">Disconnected</span>
+        </div>
+    </header>
+
+    <main>
+        <div class="section-column">
+            <!-- Terminal Session Auditor Card -->
+            <div class="card">
+                <div class="card-title">
+                    <span>3270 Terminal Session Auditor</span>
+                    <span class="card-accent-tag">cics.audit_terminal_session</span>
+                </div>
+                <div class="grid-inputs">
+                    <div class="input-group">
+                        <label for="userId">User ID</label>
+                        <input type="text" id="userId" value="UNTUSER">
+                    </div>
+                    <div class="input-group">
+                        <label for="terminalId">Terminal ID</label>
+                        <input type="text" id="terminalId" value="T800">
+                    </div>
+                    <div class="input-group">
+                        <label for="sessionActive">Session State</label>
+                        <select id="sessionActive">
+                            <option value="1">Active</option>
+                            <option value="0">Inactive</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="latencyMs">Latency (ms)</label>
+                        <input type="number" id="latencyMs" value="150">
+                    </div>
+                </div>
+                <button class="btn" onclick="auditTerminalSession()">Audit Session State</button>
+                <div style="margin-top: 1.2rem; display: grid; grid-template-columns: 1fr; gap: 1rem;">
+                    <div class="metric-badge" style="border-color: rgba(255, 65, 108, 0.2);">
+                        <span class="metric-val" id="sessionNeedsReset" style="color: var(--accent-red);">NO</span>
+                        <span class="metric-label">Force Session Reset Flag</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Web Gateway Services Auditor Card -->
+            <div class="card">
+                <div class="card-title">
+                    <span>CICS SOAP/JSON Web Gateway Auditor</span>
+                    <span class="card-accent-tag">cics.audit_web_gateway</span>
+                </div>
+                <div class="grid-inputs">
+                    <div class="input-group">
+                        <label for="httpMethod">HTTP Method</label>
+                        <input type="text" id="httpMethod" value="POST">
+                    </div>
+                    <div class="input-group">
+                        <label for="contentType">Header Content-Type</label>
+                        <input type="text" id="contentType" value="application/json">
+                    </div>
+                    <div class="input-group">
+                        <label for="payloadBytes">Payload Size (Bytes)</label>
+                        <input type="number" id="payloadBytes" value="4096">
+                    </div>
+                    <div class="input-group">
+                        <label for="webAuthorized">Access Key Auth</label>
+                        <select id="webAuthorized">
+                            <option value="1">Authorized</option>
+                            <option value="0">Unauthorized</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn" onclick="auditWebGateway()">Audit Web Gateway Request</button>
+                <div style="margin-top: 1.2rem; display: grid; grid-template-columns: 1fr; gap: 1rem;">
+                    <div class="metric-badge" style="border-color: rgba(56, 239, 125, 0.2);">
+                        <span class="metric-val" id="gatewayCompliance" style="color: var(--accent-green);">UNKNOWN</span>
+                        <span class="metric-label">Gateway Compliance Status</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-column">
+            <!-- Ballistic Data Injector Card -->
+            <div class="card">
+                <div class="card-title">
+                    <span>Ballistic Queue Injector</span>
+                    <span class="card-accent-tag">cics.inject_ballistic_data</span>
+                </div>
+                <div class="input-group" style="margin-bottom: 1rem;">
+                    <label for="queueName">Target Storage Queue</label>
+                    <input type="text" id="queueName" value="UNTQ01">
+                </div>
+                <div class="input-group" style="margin-bottom: 1rem;">
+                    <label for="queueType">Queue Type</label>
+                    <select id="queueType">
+                        <option value="TSQ">TSQ (Temporary Storage)</option>
+                        <option value="TDQ">TDQ (Transient Data)</option>
+                    </select>
+                </div>
+                <div class="input-group" style="margin-bottom: 1.2rem;">
+                    <label for="ballisticPayload">Packet Payload (Ballistic)</label>
+                    <input type="text" id="ballisticPayload" value="SYS_HEARTBEAT_ACK">
+                </div>
+                <button class="btn" onclick="injectBallisticData()">Inject Ballistic Event</button>
+
+                <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+                    <div class="metric-badge">
+                        <span class="metric-val" id="queueCount">0</span>
+                        <span class="metric-label">Queue Item Count</span>
+                    </div>
+                    <div class="metric-badge">
+                        <span class="metric-val" id="queueBytes">0 B</span>
+                        <span class="metric-label">Queue Byte Weight</span>
+                    </div>
+                    <div class="metric-badge" id="queueAlertBadge">
+                        <span class="metric-val" id="queueAlert">NO</span>
+                        <span class="metric-label">Queue Overload Alert</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Console Logging Terminal -->
+    <div style="padding: 0 2rem 2rem 2rem; max-width: 1400px; width: 100%; margin: 0 auto;">
+        <div class="card" style="padding: 1.2rem;">
+            <div class="console-header">
+                <span style="font-weight: 600; font-size: 0.9rem; color: var(--accent-cyan); display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="display:inline-block; width:6px; height:6px; background:var(--accent-cyan); border-radius:50%;"></span>
+                    Google Flow Bridge / MCP JSON-RPC Console Logs
+                </span>
+                <button class="clear-logs-btn" onclick="clearLogs()">Clear Console</button>
+            </div>
+            <div class="terminal-log-card" id="terminalLogs">
+                <div class="log-entry"><span class="log-rx">Initialized CICS Web Services Portal. Connecting to MCP bridge...</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const MCP_URL = "http://127.0.0.1:10042";
+        let nextRpcId = 1;
+
+        async function sendRpc(method, params) {
+            const id = nextRpcId++;
+            const payload = {
+                jsonrpc: "2.0",
+                method: method,
+                params: params,
+                id: id
+            };
+
+            logConsole(`--> OUTGOING [id:${id}]: ${method}(${JSON.stringify(params)})`, 'tx');
+
+            try {
+                const response = await fetch(MCP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP network error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                logConsole(`<-- INCOMING [id:${id}]: ${JSON.stringify(data.result || data.error)}`, 'rx');
+                updateStatus(true);
+                return data;
+            } catch (err) {
+                logConsole(`[ERROR] Connection failed: ${err.message}`, 'error');
+                updateStatus(false);
+                throw err;
+            }
+        }
+
+        function logConsole(message, type) {
+            const container = document.getElementById("terminalLogs");
+            const entry = document.createElement("div");
+            entry.className = "log-entry";
+            
+            const span = document.createElement("span");
+            if (type === 'tx') span.className = 'log-tx';
+            else if (type === 'rx') span.className = 'log-rx';
+            else if (type === 'error') span.className = 'log-error';
+            
+            span.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            entry.appendChild(span);
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById("terminalLogs").innerHTML = '';
+        }
+
+        function updateStatus(isConnected) {
+            const dot = document.getElementById("statusDot");
+            const txt = document.getElementById("statusText");
+            if (isConnected) {
+                dot.className = "status-dot connected";
+                txt.textContent = "Connected to MCP";
+            } else {
+                dot.className = "status-dot";
+                txt.textContent = "Disconnected";
+            }
+        }
+
+        async function auditTerminalSession() {
+            try {
+                const res = await sendRpc("cics.audit_terminal_session", {
+                    user_id: document.getElementById("userId").value,
+                    terminal_id: document.getElementById("terminalId").value,
+                    is_active: parseInt(document.getElementById("sessionActive").value, 10),
+                    latency_ms: parseInt(document.getElementById("latencyMs").value, 10)
+                });
+
+                if (res && res.result) {
+                    const needsReset = res.result.needs_reset ? "YES" : "NO";
+                    const field = document.getElementById("sessionNeedsReset");
+                    field.textContent = needsReset;
+                    if (res.result.needs_reset) {
+                        field.style.color = "var(--accent-red)";
+                    } else {
+                        field.style.color = "var(--text-main)";
+                    }
+                }
+            } catch (e) {}
+        }
+
+        async function auditWebGateway() {
+            try {
+                const res = await sendRpc("cics.audit_web_gateway", {
+                    http_method: document.getElementById("httpMethod").value,
+                    header_content_type: document.getElementById("contentType").value,
+                    payload_bytes: parseInt(document.getElementById("payloadBytes").value, 10),
+                    is_authorized: parseInt(document.getElementById("webAuthorized").value, 10)
+                });
+
+                if (res && res.result) {
+                    const isCompliant = res.result.is_compliant ? "COMPLIANT" : "NON-COMPLIANT";
+                    const field = document.getElementById("gatewayCompliance");
+                    field.textContent = isCompliant;
+                    if (res.result.is_compliant) {
+                        field.style.color = "var(--accent-green)";
+                    } else {
+                        field.style.color = "var(--accent-red)";
+                    }
+                }
+            } catch (e) {}
+        }
+
+        async function injectBallisticData() {
+            try {
+                const res = await sendRpc("cics.inject_ballistic_data", {
+                    queue_name: document.getElementById("queueName").value,
+                    queue_type: document.getElementById("queueType").value,
+                    data: document.getElementById("ballisticPayload").value,
+                    item_count: parseInt(document.getElementById("queueCount").textContent, 10),
+                    total_bytes: parseInt(document.getElementById("queueBytes").textContent, 10)
+                });
+
+                if (res && res.result) {
+                    document.getElementById("queueCount").textContent = res.result.item_count;
+                    document.getElementById("queueBytes").textContent = res.result.total_bytes + " B";
+                    
+                    const alertField = document.getElementById("queueAlert");
+                    alertField.textContent = res.result.alert ? "CRITICAL" : "NO";
+                    if (res.result.alert) {
+                        alertField.style.color = "var(--accent-red)";
+                    } else {
+                        alertField.style.color = "var(--text-main)";
+                    }
+                }
+            } catch (e) {}
+        }
+
+        // Heartbeat connection poll on load
+        window.addEventListener("DOMContentLoaded", () => {
+            sendRpc("wave512.inspect", {}).catch(() => {});
+        });
+    </script>
+</body>
+</html>
