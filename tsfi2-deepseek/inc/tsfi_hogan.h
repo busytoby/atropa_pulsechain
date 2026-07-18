@@ -43,6 +43,8 @@ typedef struct {
     uint32_t custom_interest_rate_bps;
     uint8_t has_custom_rate;
     uint64_t min_balance;
+    uint32_t daily_tx_limit;
+    uint32_t daily_tx_count;
 } hogan_account;
 
 #define HOGAN_MAX_BLOCKED_CARDS 32
@@ -284,5 +286,15 @@ typedef struct {
 } hogan_min_balance_entry;
 
 int tsfi_hogan_update_min_balance(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint64_t new_min_balance, uint32_t authority_id);
+
+// Daily Transaction Count Manager (Velocity Capping)
+typedef struct {
+    uint32_t account_id;
+    uint32_t previous_tx_limit;
+    uint32_t new_tx_limit;
+    uint32_t authority_id;
+} hogan_tx_count_entry;
+
+int tsfi_hogan_update_tx_count_limit(hogan_umbrella_system *sys, const char *filepath, uint32_t account_id, uint32_t new_limit, uint32_t authority_id);
 
 #endif // TSFI_HOGAN_H

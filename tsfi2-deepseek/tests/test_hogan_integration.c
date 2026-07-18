@@ -925,6 +925,52 @@ int main(void) {
     remove(minb_path); // clean up
     printf("  [PASS] Minimum balance compliance, validations, and override logs verified.\n");
 
+    // 29. Test Daily Transaction Count Manager (Velocity Capping)
+    printf("[E2E] Testing Daily Transaction Count Manager...\n");
+    const char *txcounts_path = "hogan_txcounts.dat.bin";
+    remove(txcounts_path); // ensure clean start
+    
+    // Set up system state
+    hogan_umbrella_system velocity_sys;
+    tsfi_hogan_init(&velocity_sys);
+    assert(tsfi_hogan_register_account(&velocity_sys, 1001, 10000) == 0); // Alice: 10,000 units
+    assert(tsfi_hogan_register_account(&velocity_sys, 2002, 1000) == 0);  // Bob: 1,000 units
+    
+    // Set Alice's daily tx limit to 1
+    assert(tsfi_hogan_update_tx_count_limit(&velocity_sys, txcounts_path, 1001, 1, 999) == 0);
+    assert(tsfi_hogan_update_tx_count_limit(&velocity_sys, "hogan_txcounts.json", 1001, 1, 999) == -3); // Rule 13 check
+    
+    // Alice transfers 500 to Bob (succeeds, daily_tx_count becomes 1)
+    assert(tsfi_hogan_dispatch_tx(&velocity_sys, 1001, 2002, 500, VM_EVM) == 0);
+    
+    // Alice transfers 500 to Bob again (declined, exceeds 1 daily tx limit)
+    assert(tsfi_hogan_dispatch_tx(&velocity_sys, 1001, 2002, 500, VM_EVM) == 0);
+    
+    // Run reconciliation
+    assert(tsfi_hogan_overnight_reconciliation(&velocity_sys, "hogan_lfs.dat.bin") == 0);
+    
+    // Verify balances (only 500 transfer processed, second one blocked)
+    assert(velocity_sys.accounts[0].balance == 9500);
+    assert(velocity_sys.accounts[1].balance == 1500);
+    
+    // Verify daily tx count resets overnight
+    assert(velocity_sys.accounts[0].daily_tx_count == 0);
+    
+    // Read sequential log file and verify entries
+    uint8_t read_vbuf[sizeof(hogan_tx_count_entry)];
+    size_t v_size = 0;
+    assert(tsfi_hogan_read_seq_record(txcounts_path, 0, read_vbuf, &v_size) == 0);
+    assert(v_size == sizeof(hogan_tx_count_entry));
+    
+    const hogan_tx_count_entry *ventry = (const hogan_tx_count_entry *)read_vbuf;
+    assert(ventry->account_id == 1001);
+    assert(ventry->previous_tx_limit == 0);
+    assert(ventry->new_tx_limit == 1);
+    assert(ventry->authority_id == 999);
+    
+    remove(txcounts_path); // clean up
+    printf("  [PASS] Daily transaction count velocity caps, overnight resets, and logs verified.\n");
+
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
 }
