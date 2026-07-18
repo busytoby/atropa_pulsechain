@@ -373,8 +373,10 @@ cat << 'EOF' > standards/mainframe_standards_validation_report.md
 | 416 | NATO STANAG 5066 Link-Layer Multi-Scan Selector | PASS | Validates multi-scan mode parameter flags match standard options | Volume 33 |
 | 417 | NATO STANAG 5066 Interface Data Type Selector | PASS | Validates client subnetwork interface payload type categories | Volume 33 |
 | 418 | NATO STANAG 5066 Link-Layer Compression Mode Validator | PASS | Audits packet compression algorithm selector options | Volume 33 |
+| 419 | NATO STANAG 5066 Interface Flow Control State Matcher | PASS | Audits client subnetwork interface flow control status flags | Volume 33 |
+| 420 | NATO STANAG 5066 Delivery Confirmation Mode Selector | PASS | Validates client-to-client ack/node-to-node ack configuration options | Volume 33 |
 
-**System Invariant Validation Verdict:** SUCCESS (All 418 Scenarios validated successfully)
+**System Invariant Validation Verdict:** SUCCESS (All 420 Scenarios validated successfully)
 EOF
 
 echo "Verification report generated successfully under standards/mainframe_standards_validation_report.md"

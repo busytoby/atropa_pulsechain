@@ -1354,6 +1354,22 @@ int main(void) {
     assert(compression_valid == 1);
     printf("  [PASS] NATO STANAG 5066 Compression Mode Validator verified.\n");
 
+    // 275. Verify NATO STANAG 5066 Interface Flow Control State Matcher
+    printf("[TEST] Validating NATO STANAG 5066 Flow Control State Matcher...\n");
+    int flow_ctrl_valid = -1;
+    int flow_ctrl_res = tsfi_mf_nato_verify_flow_control(1, &flow_ctrl_valid);
+    assert(flow_ctrl_res == 0);
+    assert(flow_ctrl_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Flow Control State Matcher verified.\n");
+
+    // 276. Verify NATO STANAG 5066 Delivery Confirmation Mode Selector
+    printf("[TEST] Validating NATO STANAG 5066 Delivery Confirmation Matcher...\n");
+    int deliv_confirm_valid = -1;
+    int deliv_confirm_res = tsfi_mf_nato_verify_delivery_confirmation(1, &deliv_confirm_valid);
+    assert(deliv_confirm_res == 0);
+    assert(deliv_confirm_valid == 1);
+    printf("  [PASS] NATO STANAG 5066 Delivery Confirmation Matcher verified.\n");
+
     printf("[SUCCESS] Micro Focus COBOL standard compatibility checks part 2 completed successfully!\n");
     return 0;
 }
