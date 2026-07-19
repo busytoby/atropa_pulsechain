@@ -342,6 +342,14 @@ int main(void) {
     int style_res = tsfi_zorse_audit_icon_style("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "moondream", style_buf, sizeof(style_buf));
     assert(style_res == 0 || style_res == -2 || style_res == -1);
 
+    // Test Case 66: COBOL INITIALIZE Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_initialize("INITIALIZE MY-RECORD.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 67: JCL DSNTYPE Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_dsntype("//DD1 DD DSN=A.B.C,DSNTYPE=LIBRARY\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
