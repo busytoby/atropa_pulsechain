@@ -177,4 +177,10 @@ int tsfi_zorse_validate_cobol_goto(const char *cobol_src, int *is_valid_out);
 // Zorse JCL SMS Storage Class Parameter Auditor
 int tsfi_zorse_validate_jcl_sms(const char *jcl_line, int *is_valid_out);
 
+// Zorse COBOL STRING Statement Delimiter Auditor
+int tsfi_zorse_validate_cobol_string(const char *cobol_src, int *is_valid_out);
+
+// Zorse JCL RECORG Parameter Auditor
+int tsfi_zorse_validate_jcl_recorg(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

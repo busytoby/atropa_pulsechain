@@ -1077,3 +1077,33 @@ int tsfi_zorse_validate_jcl_sms(const char *jcl_line, int *is_valid_out) {
     
     return 0;
 }
+
+int tsfi_zorse_validate_cobol_string(const char *cobol_src, int *is_valid_out) {
+    if (!cobol_src || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(cobol_src, "STRING ") && strstr(cobol_src, "DELIMITED BY")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_jcl_recorg(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    const char *p = strstr(jcl_line, "RECORG=");
+    if (!p) return 0;
+    
+    p += 7; // Skip "RECORG="
+    
+    if (strncmp(p, "KS", 2) == 0 || strncmp(p, "ES", 2) == 0 ||
+        strncmp(p, "RR", 2) == 0 || strncmp(p, "LS", 2) == 0) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
