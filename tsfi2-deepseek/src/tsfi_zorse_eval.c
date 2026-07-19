@@ -295,3 +295,45 @@ int tsfi_zorse_validate_jcl_cond(const char *cond_parameter, int *is_valid_out) 
     
     return 0;
 }
+
+int tsfi_zorse_autocorrect_source(const char *failed_source, const char *lang, const char *model_name, char *corrected_source_out, size_t max_len) {
+    if (!failed_source || !lang || !model_name || !corrected_source_out || max_len == 0) return -1;
+    
+    corrected_source_out[0] = '\0';
+    
+    // Construct prompt
+    size_t f_len = strlen(failed_source);
+    size_t l_len = strlen(lang);
+    char *prompt = (char *)malloc(f_len + l_len + 128);
+    if (!prompt) return -1;
+    
+    snprintf(prompt, f_len + l_len + 128, 
+             "The following %s code has a syntax error. Please output only the corrected code block: %s", 
+             lang, failed_source);
+    
+    int ret = tsfi_zorse_query_llm(prompt, model_name, corrected_source_out, max_len);
+    free(prompt);
+    
+    return ret;
+}
+
+int tsfi_zorse_resolve_dependencies(const char *cobol_src, const char *jcl_src, const char *model_name, char *mapping_out, size_t max_len) {
+    if (!cobol_src || !jcl_src || !model_name || !mapping_out || max_len == 0) return -1;
+    
+    mapping_out[0] = '\0';
+    
+    // Construct prompt
+    size_t c_len = strlen(cobol_src);
+    size_t j_len = strlen(jcl_src);
+    char *prompt = (char *)malloc(c_len + j_len + 256);
+    if (!prompt) return -1;
+    
+    snprintf(prompt, c_len + j_len + 256, 
+             "Given this COBOL code: %s and this JCL code: %s, map SELECT ASSIGN variables to JCL DD names. Format: VAR->DD.", 
+             cobol_src, jcl_src);
+    
+    int ret = tsfi_zorse_query_llm(prompt, model_name, mapping_out, max_len);
+    free(prompt);
+    
+    return ret;
+}

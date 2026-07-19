@@ -36,4 +36,10 @@ int tsfi_zorse_validate_cobol_occurs(const char *occurs_clause, int *is_valid_ou
 // Zorse JCL COND Parameter Validator
 int tsfi_zorse_validate_jcl_cond(const char *cond_parameter, int *is_valid_out);
 
+// Zorse Self-Correcting Syntax Pipeline
+int tsfi_zorse_autocorrect_source(const char *failed_source, const char *lang, const char *model_name, char *corrected_source_out, size_t max_len);
+
+// Zorse LLM COBOL-to-JCL Dependency Resolver
+int tsfi_zorse_resolve_dependencies(const char *cobol_src, const char *jcl_src, const char *model_name, char *mapping_out, size_t max_len);
+
 #endif // TSFI_ZORSE_EVAL_H

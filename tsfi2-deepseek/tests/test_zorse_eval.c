@@ -121,6 +121,16 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_cond(invalid_cond, &is_valid) == 0);
     assert(is_valid == 0);
 
+    // Test Case 23: LLM Autocorrect Pipeline validation
+    char corrected_buf[256];
+    int autocor_res = tsfi_zorse_autocorrect_source("10 DISPLAY", "COBOL", "moondream", corrected_buf, sizeof(corrected_buf));
+    assert(autocor_res == 0 || autocor_res == -2);
+
+    // Test Case 24: LLM Dependency Resolver validation
+    char dep_buf[256];
+    int dep_res = tsfi_zorse_resolve_dependencies("SELECT F1 ASSIGN TO UT-S-FILE1.", "//FILE1 DD DSN=A.B.C", "moondream", dep_buf, sizeof(dep_buf));
+    assert(dep_res == 0 || dep_res == -2);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
