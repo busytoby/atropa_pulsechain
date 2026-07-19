@@ -1128,6 +1128,14 @@ int main(void) {
     assert(tsfi_zorse_validate_cobol_final_spacing_status("01 SUMMARY-LINE FINAL LIMIT 85 OVERRIDE CHECKS LIST STATUS.", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 241: z/VSE POWER Spool Print Class Override Status Validator validation
+    assert(tsfi_zorse_validate_vse_power_class_status_override("* $$ LST CLASS=(A,STATUS,OVERRIDE),DISP=H\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 242: COBOL Report Writer Control Heading Spacing Limit Auditor validation
+    assert(tsfi_zorse_validate_cobol_ch_spacing_limit("01 CH-LINE CONTROL HEADING LIMIT 50.", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
