@@ -730,6 +730,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_filedata("//DD25 DD PATH='/tmp/data.txt',FILEDATA=TEXT\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 154: COBOL ENTRY USING Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_entry_using("ENTRY 'SUBPROG' USING PARM-1 PARM-2.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 155: JCL DD PROTECT Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_protect("//DD26 DD DSN=SECRET.DATA,PROTECT=YES\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

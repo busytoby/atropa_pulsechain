@@ -432,4 +432,10 @@ int tsfi_zorse_validate_cobol_init_filler(const char *cobol_src, int *is_valid_o
 // Zorse JCL DD FILEDATA Parameter Auditor
 int tsfi_zorse_validate_jcl_filedata(const char *jcl_line, int *is_valid_out);
 
+// Zorse COBOL ENTRY USING Statement Auditor
+int tsfi_zorse_validate_cobol_entry_using(const char *cobol_src, int *is_valid_out);
+
+// Zorse JCL DD PROTECT Parameter Auditor
+int tsfi_zorse_validate_jcl_protect(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H
