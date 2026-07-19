@@ -896,6 +896,14 @@ int main(void) {
     assert(tsfi_zorse_validate_cobol_sort_key("SORT WORK-FILE ON ASCENDING KEY WORK-KEY.", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 183: z/VSE POWER Spool Print Class Validator validation
+    assert(tsfi_zorse_validate_vse_power_prtclass("* $$ LST PRTCLASS=A,DISP=H\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 184: COBOL File Merge Auditor validation
+    assert(tsfi_zorse_validate_cobol_merge_key("MERGE OUT-FILE ON ASCENDING KEY OUT-KEY.", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
