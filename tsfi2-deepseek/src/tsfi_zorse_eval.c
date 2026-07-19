@@ -2706,3 +2706,27 @@ int tsfi_zorse_validate_cobol_heading_group(const char *cobol_src, int *is_valid
     
     return 0;
 }
+
+int tsfi_zorse_validate_vse_power_pages_override(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(jcl_line, "* $$") && strstr(jcl_line, "PAGES=") && strstr(jcl_line, "(")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_cobol_detail_group(const char *cobol_src, int *is_valid_out) {
+    if (!cobol_src || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(cobol_src, "TYPE IS") && strstr(cobol_src, "DETAIL")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}

@@ -952,6 +952,14 @@ int main(void) {
     assert(tsfi_zorse_validate_cobol_heading_group("01 TYPE IS PAGE HEADING.", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 197: z/VSE POWER Spool Page Override Validator validation
+    assert(tsfi_zorse_validate_vse_power_pages_override("* $$ LST PAGES=(1,5,10),DISP=H\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 198: COBOL Report Writer Detail Group Auditor validation
+    assert(tsfi_zorse_validate_cobol_detail_group("01 TYPE IS DETAIL.", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

@@ -549,4 +549,10 @@ int tsfi_zorse_validate_vse_power_pages(const char *jcl_line, int *is_valid_out)
 // COBOL Report Writer Heading Group Auditor
 int tsfi_zorse_validate_cobol_heading_group(const char *cobol_src, int *is_valid_out);
 
+// z/VSE POWER Spool Page Override Validator
+int tsfi_zorse_validate_vse_power_pages_override(const char *jcl_line, int *is_valid_out);
+
+// COBOL Report Writer Detail Group Auditor
+int tsfi_zorse_validate_cobol_detail_group(const char *cobol_src, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H
