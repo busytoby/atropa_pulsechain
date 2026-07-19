@@ -462,4 +462,7 @@ int tsfi_zorse_validate_cobol_xml_gen(const char *cobol_src, int *is_valid_out);
 // Zorse JCL DD DSNTYPE=LARGE Parameter Auditor
 int tsfi_zorse_validate_jcl_dsntype_large(const char *jcl_line, int *is_valid_out);
 
+// Zorse Stable Diffusion batch pipeline compliance auditor
+int tsfi_zorse_validate_stable_diffusion(const char *jcl_line, const char *cobol_src, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

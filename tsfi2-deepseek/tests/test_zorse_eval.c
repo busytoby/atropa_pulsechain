@@ -799,6 +799,10 @@ int main(void) {
     assert(taste_tree->intensity_stream[0] > 0.89f && taste_tree->intensity_stream[0] < 0.91f);
     tsfi_svdag_destroy(taste_tree);
 
+    // Test Case 166: Zorse Stable Diffusion batch pipeline compliance auditor validation
+    assert(tsfi_zorse_validate_stable_diffusion("//STEP EXEC PGM=SD_DIFFUSE\n", "LINKAGE SECTION. CALL USING PARM-1.", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
