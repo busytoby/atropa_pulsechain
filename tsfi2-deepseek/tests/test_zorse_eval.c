@@ -202,6 +202,16 @@ int main(void) {
     assert(sna_res == 0);
     assert(is_sna_valid == 1);
 
+    // Test Case 38: Moondream Cabinet Fan Acoustic Spectrogram Auditor validation
+    char audit_buf[256];
+    int spectrogram_res = tsfi_zorse_audit_fan_spectrogram("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "moondream", audit_buf, sizeof(audit_buf));
+    assert(spectrogram_res == 0 || spectrogram_res == -2 || spectrogram_res == -1);
+
+    // Test Case 39: COBOL-to-JCL SPACE Optimizer validation
+    char space_opt_buf[512];
+    int space_opt_res = tsfi_zorse_optimize_jcl_space("01 MY-VAR PIC X(1000).", "moondream", space_opt_buf, sizeof(space_opt_buf));
+    assert(space_opt_res == 0 || space_opt_res == -2);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

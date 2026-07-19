@@ -545,3 +545,32 @@ int tsfi_zorse_audit_sna_session(const char *sna_bind_hex, int *is_valid_out) {
     
     return 0;
 }
+
+int tsfi_zorse_audit_fan_spectrogram(const char *b64_spectrogram_img, const char *model_name, char *audit_result_out, size_t max_len) {
+    if (!b64_spectrogram_img || !model_name || !audit_result_out || max_len == 0) return -1;
+    
+    audit_result_out[0] = '\0';
+    
+    const char *prompt = "Analyze this fan acoustic spectrogram image to identify bearing failures or operational speed anomalies.";
+    
+    return tsfi_ai_evaluate_vlm(b64_spectrogram_img, prompt, audit_result_out, max_len);
+}
+
+int tsfi_zorse_optimize_jcl_space(const char *cobol_src, const char *model_name, char *space_opt_out, size_t max_len) {
+    if (!cobol_src || !model_name || !space_opt_out || max_len == 0) return -1;
+    
+    space_opt_out[0] = '\0';
+    
+    size_t c_len = strlen(cobol_src);
+    char *prompt = (char *)malloc(c_len + 128);
+    if (!prompt) return -1;
+    
+    snprintf(prompt, c_len + 128, 
+             "Based on the variable sizes in this COBOL code, calculate and optimize the JCL SPACE allocation parameter: %s", 
+             cobol_src);
+             
+    int ret = tsfi_zorse_query_llm(prompt, model_name, space_opt_out, max_len);
+    free(prompt);
+    
+    return ret;
+}

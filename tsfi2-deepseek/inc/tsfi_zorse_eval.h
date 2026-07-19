@@ -81,4 +81,10 @@ int tsfi_zorse_transpile_cobol_to_c(const char *cobol_data_div, const char *mode
 // Zorse SNA Session Protocol Auditor
 int tsfi_zorse_audit_sna_session(const char *sna_bind_hex, int *is_valid_out);
 
+// Zorse Moondream Cabinet Fan Acoustic Spectrogram Auditor
+int tsfi_zorse_audit_fan_spectrogram(const char *b64_spectrogram_img, const char *model_name, char *audit_result_out, size_t max_len);
+
+// Zorse COBOL-to-JCL SPACE Allocation Optimizer
+int tsfi_zorse_optimize_jcl_space(const char *cobol_src, const char *model_name, char *space_opt_out, size_t max_len);
+
 #endif // TSFI_ZORSE_EVAL_H
