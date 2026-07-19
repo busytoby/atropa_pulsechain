@@ -1793,3 +1793,27 @@ int tsfi_zorse_validate_vse_fba_vdisk(const char *jcl_line, int *is_valid_out) {
     
     return 0;
 }
+
+int tsfi_zorse_validate_cobol_evaluate_also(const char *cobol_src, int *is_valid_out) {
+    if (!cobol_src || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(cobol_src, "EVALUATE ") && strstr(cobol_src, "ALSO")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_jcl_vtam_port(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(jcl_line, "PORTNAME=")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}

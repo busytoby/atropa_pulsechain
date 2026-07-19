@@ -583,6 +583,14 @@ int main(void) {
     assert(tsfi_zorse_validate_vse_fba_vdisk("// VDISK UNIT=FBA,SIZE=20480\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 125: COBOL EVALUATE ALSO Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_evaluate_also("EVALUATE TRUE ALSO VAL-1", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 126: JCL VTAM PORT Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_vtam_port("PORT01   PORT  PORTNAME=GPPORT\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

@@ -342,4 +342,10 @@ int tsfi_zorse_validate_vse_vtam_mpc(const char *jcl_line, int *is_valid_out);
 // z/VSE Virtual Disk (FBA) Parameter Auditor
 int tsfi_zorse_validate_vse_fba_vdisk(const char *jcl_line, int *is_valid_out);
 
+// Zorse COBOL EVALUATE ALSO Statement Auditor
+int tsfi_zorse_validate_cobol_evaluate_also(const char *cobol_src, int *is_valid_out);
+
+// Zorse JCL VTAM PORT Parameter Auditor
+int tsfi_zorse_validate_jcl_vtam_port(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H
