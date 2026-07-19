@@ -51,4 +51,10 @@ int tsfi_phoneme_apply_whisper(float base_freq, float base_amp, int is_voiceless
 // Nasality Resonance Simulator
 int tsfi_phoneme_apply_nasality(float base_freq, int is_nasal, float *nasal_freq_out);
 
+// Sun Emotional Prosody Scaler
+int tsfi_phoneme_apply_emotion(float base_freq, float base_amp, const char *emotion, float *emo_freq_out, float *emo_amp_out);
+
+// Sun Style Phase Aligner
+int tsfi_phoneme_apply_style_phase(float base_phase, float style_shift, float *aligned_phase_out);
+
 #endif // TSFI_PHONEME_SYNTH_H

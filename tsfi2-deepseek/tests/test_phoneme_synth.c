@@ -104,6 +104,17 @@ int main(void) {
     assert(tsfi_phoneme_apply_nasality(100.0f, 1, &n_freq) == 0);
     assert(n_freq == 85.0f);
 
+    // 14. Test Sun Emotional Prosody Scaler
+    float emo_freq, emo_amp;
+    assert(tsfi_phoneme_apply_emotion(100.0f, 0.5f, "angry", &emo_freq, &emo_amp) == 0);
+    assert(emo_freq == 135.0f);
+    assert(emo_amp == 0.7f);
+
+    // 15. Test Sun Style Phase Aligner
+    float aligned_phase = 0.0f;
+    assert(tsfi_phoneme_apply_style_phase(1.5f, 0.5f, &aligned_phase) == 0);
+    assert(aligned_phase == 2.0f);
+
     // Cleanup
     tsfi_synth_perf_destroy(perf_engine);
     tsfi_trie_destroy(trie_root);

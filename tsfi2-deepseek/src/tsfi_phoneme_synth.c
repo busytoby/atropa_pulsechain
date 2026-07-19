@@ -281,3 +281,37 @@ int tsfi_phoneme_apply_nasality(float base_freq, int is_nasal, float *nasal_freq
     }
     return 0;
 }
+
+int tsfi_phoneme_apply_emotion(float base_freq, float base_amp, const char *emotion, float *emo_freq_out, float *emo_amp_out) {
+    if (!emotion || !emo_freq_out || !emo_amp_out) return -1;
+    
+    *emo_freq_out = base_freq;
+    *emo_amp_out = base_amp;
+    
+    if (strcmp(emotion, "angry") == 0) {
+        // High frequency (high pitch) and high amplitude (loud/intense)
+        *emo_freq_out = base_freq * 1.35f;
+        *emo_amp_out = base_amp * 1.4f;
+    } else if (strcmp(emotion, "sad") == 0) {
+        // Low frequency (low pitch) and dampened amplitude (soft/subdued)
+        *emo_freq_out = base_freq * 0.82f;
+        *emo_amp_out = base_amp * 0.6f;
+    } else if (strcmp(emotion, "happy") == 0) {
+        // Higher frequency and slightly boosted amplitude
+        *emo_freq_out = base_freq * 1.15f;
+        *emo_amp_out = base_amp * 1.2f;
+    }
+    
+    if (*emo_amp_out > 1.0f) *emo_amp_out = 1.0f;
+    if (*emo_amp_out < 0.0f) *emo_amp_out = 0.0f;
+    
+    return 0;
+}
+
+int tsfi_phoneme_apply_style_phase(float base_phase, float style_shift, float *aligned_phase_out) {
+    if (!aligned_phase_out) return -1;
+    
+    // Style transfer shifts phase bounds to simulate speaker accent adjustments
+    *aligned_phase_out = base_phase + style_shift;
+    return 0;
+}
