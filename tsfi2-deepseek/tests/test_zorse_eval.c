@@ -506,6 +506,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_outlim("//DD13 DD SYSOUT=A,OUTLIM=5000\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 106: COBOL ENTRY Point Auditor validation
+    assert(tsfi_zorse_validate_cobol_entry("ENTRY 'SUBENTRY' USING PARM-1.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 107: JCL JOBLIB / STEPLIB Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_steplib("//STEPLIB DD DSN=MY.LOADLIB,DISP=SHR\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
