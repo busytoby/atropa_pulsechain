@@ -1685,3 +1685,27 @@ int tsfi_zorse_validate_jcl_jcllib(const char *jcl_line, int *is_valid_out) {
     
     return 0;
 }
+
+int tsfi_zorse_validate_vse_cics_dfhresp(const char *cobol_src, int *is_valid_out) {
+    if (!cobol_src || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(cobol_src, "DFHRESP") && strstr(cobol_src, "NORMAL")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_vse_dli_call(const char *cobol_src, int *is_valid_out) {
+    if (!cobol_src || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(cobol_src, "CBLTDLI") && (strstr(cobol_src, "GU") || strstr(cobol_src, "GN") || strstr(cobol_src, "REPL") || strstr(cobol_src, "DLET"))) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}

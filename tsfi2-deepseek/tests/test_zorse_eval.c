@@ -554,6 +554,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_jcllib("//MYLIB JCLLIB ORDER=SYS1.PROCLIB\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 118: z/VSE CICS DFHRESP Response Auditor validation
+    assert(tsfi_zorse_validate_vse_cics_dfhresp("IF EIBAID = DFHRESP(NORMAL) PERFORM GO-ON.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 119: z/VSE DL/I CBLTDLI Call Auditor validation
+    assert(tsfi_zorse_validate_vse_dli_call("CALL 'CBLTDLI' USING GU-FUNC PCB-NAME.", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
