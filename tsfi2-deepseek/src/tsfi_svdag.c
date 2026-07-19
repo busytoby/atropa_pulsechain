@@ -1,4 +1,5 @@
 #include "tsfi_svdag.h"
+#include "tsfi_zorse_eval.h"
 #include "lau_memory.h"
 #include <string.h>
 #include <stdio.h>
@@ -367,5 +368,27 @@ void tsfi_svdag_cleanup_lut(void) {
         g_basis_lut = NULL;
         atomic_store(&g_lut_init_state, 0);
     }
+}
+
+int tsfi_svdag_apply_vaesen_parameters(const char *vaesen_name, const char *region_name, float *melanin, float *roughness, float *iridescence) {
+    if (!vaesen_name || !region_name || !melanin || !roughness || !iridescence) return -1;
+
+    char type_out[128] = {0};
+    char status_out[128] = {0};
+    int risk_level = 0;
+
+    int rc1 = tsfi_vsen_vaesen_lookup(vaesen_name, type_out, &risk_level, status_out, sizeof(type_out));
+    if (rc1 == 0) {
+        *melanin += 0.1f * (float)risk_level;
+        *roughness += 0.05f * (float)risk_level;
+    }
+
+    int fear_level = 0;
+    int rc2 = tsfi_vsen_vaesen_get_aggregate_fear(region_name, &fear_level);
+    if (rc2 == 0) {
+        *iridescence += 0.08f * (float)fear_level;
+    }
+
+    return 0;
 }
 

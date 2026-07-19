@@ -127,4 +127,7 @@ size_t tsfi_proteo_screen_candidates_avx512(const TSFiHelmholtzSVDAG *dag, int c
 // Traces a point in the voxel BASE (linear 128x128x128 mapping assumption)
 float tsfi_svdag_trace_point(const TSFiHelmholtzSVDAG *dag, int x, int y, int z);
 
+// VSEn SVDAG Parameters Resolver
+int tsfi_svdag_apply_vaesen_parameters(const char *vaesen_name, const char *region_name, float *melanin, float *roughness, float *iridescence);
+
 #endif // TSFI_SVDAG_H

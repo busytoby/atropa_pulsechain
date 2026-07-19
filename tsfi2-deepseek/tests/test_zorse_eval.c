@@ -762,6 +762,26 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_accode("//DD29 DD DSN=TAPE.DATA,ACCODE=SECURE1\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 162: SVDAG Vaesen parameters resolver validation
+    float melanin = 0.1f;
+    float roughness = 0.2f;
+    float iridescence = 0.3f;
+    extern int tsfi_vsen_vaesen_register(const char *name, const char *type, int risk_level, const char *status);
+    extern int tsfi_vsen_vaesen_record_sight(const char *name, const char *location, int fear_level);
+    assert(tsfi_vsen_vaesen_register("Mara", "Nightmare", 2, "Active") == 0);
+    assert(tsfi_vsen_vaesen_record_sight("Mara", "Uppsala", 5) == 0);
+
+    extern int tsfi_svdag_apply_vaesen_parameters(const char *vaesen_name, const char *region_name, float *melanin, float *roughness, float *iridescence);
+    assert(tsfi_svdag_apply_vaesen_parameters("Mara", "Uppsala", &melanin, &roughness, &iridescence) == 0);
+    // Mara (risk_level=2) -> melanin=0.1+0.2=0.3, roughness=0.2+0.1=0.3
+    // Uppsala (fear_level=5) -> iridescence=0.3+0.4=0.7
+    assert(melanin > 0.29f && melanin < 0.31f);
+    assert(roughness > 0.29f && roughness < 0.31f);
+    assert(iridescence > 0.69f && iridescence < 0.71f);
+
+    remove("vaesen_registry.dat.bin");
+    remove("vaesen_sights.dat.bin");
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
