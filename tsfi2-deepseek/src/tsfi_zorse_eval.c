@@ -2778,3 +2778,27 @@ int tsfi_zorse_validate_cobol_control_footing(const char *cobol_src, int *is_val
     
     return 0;
 }
+
+int tsfi_zorse_validate_vse_power_pages_list(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(jcl_line, "* $$") && strstr(jcl_line, "PAGES=") && strstr(jcl_line, "(") && strstr(jcl_line, ",")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_cobol_page_footing(const char *cobol_src, int *is_valid_out) {
+    if (!cobol_src || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(cobol_src, "PAGE FOOTING") || (strstr(cobol_src, "TYPE IS") && strstr(cobol_src, "PF"))) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}

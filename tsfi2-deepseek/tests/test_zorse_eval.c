@@ -976,6 +976,14 @@ int main(void) {
     assert(tsfi_zorse_validate_cobol_control_footing("01 TYPE IS CONTROL FOOTING.", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 203: z/VSE POWER Spool Page Range List Validator validation
+    assert(tsfi_zorse_validate_vse_power_pages_list("* $$ LST PAGES=(1,2,5),DISP=H\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 204: COBOL Report Writer Page Footing Auditor validation
+    assert(tsfi_zorse_validate_cobol_page_footing("01 TYPE IS PAGE FOOTING.", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
