@@ -546,6 +546,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_import("//IMPORT IMPORT SYMLIST=*\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 116: COBOL INITIALIZE REPLACING Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_init_repl("INITIALIZE MY-RECORD REPLACING ALPHANUMERIC DATA BY SPACES.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 117: JCL JCLLIB Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_jcllib("//MYLIB JCLLIB ORDER=SYS1.PROCLIB\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
