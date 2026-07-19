@@ -80,6 +80,19 @@ int main(void) {
     assert(g == 0);
     assert(b == 0);
 
+    // Verify Subsurface Scattering (SSS) wrap rendering
+    printf("[TEST] Validating Subsurface Scattering (SSS) shader integration...\n");
+    scene.primitives[0].param_vec = (tsfi_rt_vec3){0.5f, 1.0f, 0.5f}; // Enable SSS
+    int render_res_sss = tsfi_ray_tracer_render(&scene, img_buf, width, height);
+    assert(render_res_sss == 0);
+    uint32_t sss_pixel = img_buf[(height / 2) * width + (width / 2)];
+    uint8_t sss_r = (sss_pixel >> 16) & 0xFF;
+    uint8_t sss_g = (sss_pixel >> 8) & 0xFF;
+    uint8_t sss_b = sss_pixel & 0xFF;
+    printf("DEBUG: sss_pixel=0x%08X (R=%d, G=%d, B=%d)\n", sss_pixel, sss_r, sss_g, sss_b);
+    assert(sss_r > 0);
+    assert(sss_g > 0); // Warm SSS scatter color mixed in green component
+
     // 3. Verify Punched Card CAD System Parsing
     printf("[TEST] Validating CAD Punched Card parsing...\n");
     tsfi_cgm_scene cad_scene;

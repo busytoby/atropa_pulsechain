@@ -173,13 +173,33 @@ int tsfi_ray_tracer_render(const tsfi_cgm_scene *scene, uint32_t *image_out, int
                     }
                 }
 
-                // Diffuse lighting
+                // Diffuse lighting with Subsurface Scattering (SSS / Triple S) wrap-around approximation
                 float diffuse = vec3_dot(normal, scene->light_dir);
+                float wrap = 0.0f;
+                if (prim->param_vec.x > 0.001f) {
+                    wrap = prim->param_vec.x;
+                }
+                
+                float scatter_diffuse = diffuse;
+                if (wrap > 0.0f) {
+                    scatter_diffuse = (diffuse + wrap) / (1.0f + wrap);
+                }
                 if (diffuse < 0.0f) diffuse = 0.0f;
+                if (scatter_diffuse < 0.0f) scatter_diffuse = 0.0f;
 
                 float r = color.x * (scene->ambient_color.x + diffuse);
                 float g = color.y * (scene->ambient_color.y + diffuse);
                 float b = color.z * (scene->ambient_color.z + diffuse);
+
+                if (wrap > 0.0f) {
+                    float sss_r = prim->param_vec.y > 0.001f ? prim->param_vec.y : 1.0f;
+                    float sss_g = prim->param_vec.z > 0.001f ? prim->param_vec.z : 0.2f;
+                    float sss_b = 0.05f;
+                    
+                    r += sss_r * scatter_diffuse * wrap * 0.4f;
+                    g += sss_g * scatter_diffuse * wrap * 0.4f;
+                    b += sss_b * scatter_diffuse * wrap * 0.4f;
+                }
 
                 if (r > 1.0f) r = 1.0f;
                 if (g > 1.0f) g = 1.0f;
