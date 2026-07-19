@@ -348,4 +348,9 @@ int tsfi_zorse_validate_cobol_evaluate_also(const char *cobol_src, int *is_valid
 // Zorse JCL VTAM PORT Parameter Auditor
 int tsfi_zorse_validate_jcl_vtam_port(const char *jcl_line, int *is_valid_out);
 
+// VSEn Vaesen System Registry APIs (Auncient Vaesen Tracking)
+int tsfi_vsen_vaesen_register(const char *name, const char *type, int risk_level, const char *status);
+int tsfi_vsen_vaesen_lookup(const char *name, char *type_out, int *risk_level_out, char *status_out, size_t max_len);
+int tsfi_vsen_vaesen_audit_transaction(const char *cics_trans_id, const char *entity_name, int *is_allowed_out);
+
 #endif // TSFI_ZORSE_EVAL_H

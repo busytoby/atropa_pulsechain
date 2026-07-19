@@ -1817,3 +1817,76 @@ int tsfi_zorse_validate_jcl_vtam_port(const char *jcl_line, int *is_valid_out) {
     
     return 0;
 }
+
+typedef struct {
+    char name[64];
+    char type[64];
+    int risk_level;
+    char status[32];
+} vsen_vaesen_record;
+
+int tsfi_vsen_vaesen_register(const char *name, const char *type, int risk_level, const char *status) {
+    if (!name || !type || !status) return -1;
+    
+    vsen_vaesen_record record;
+    memset(&record, 0, sizeof(record));
+    strncpy(record.name, name, sizeof(record.name) - 1);
+    strncpy(record.type, type, sizeof(record.type) - 1);
+    record.risk_level = risk_level;
+    strncpy(record.status, status, sizeof(record.status) - 1);
+    
+    // Rule 13: Must only support .dat.bin extension for quadtree, index, database slices
+    FILE *fp = fopen("vaesen_registry.dat.bin", "ab");
+    if (!fp) {
+        fp = fopen("vaesen_registry.dat.bin", "wb");
+    }
+    if (!fp) return -2;
+    
+    size_t written = fwrite(&record, sizeof(record), 1, fp);
+    fclose(fp);
+    
+    return (written == 1) ? 0 : -3;
+}
+
+int tsfi_vsen_vaesen_lookup(const char *name, char *type_out, int *risk_level_out, char *status_out, size_t max_len) {
+    if (!name || !type_out || !risk_level_out || !status_out || max_len == 0) return -1;
+    
+    FILE *fp = fopen("vaesen_registry.dat.bin", "rb");
+    if (!fp) return -2;
+    
+    vsen_vaesen_record record;
+    int found = 0;
+    while (fread(&record, sizeof(record), 1, fp) == 1) {
+        if (strcmp(record.name, name) == 0) {
+            strncpy(type_out, record.type, max_len - 1);
+            type_out[max_len - 1] = '\0';
+            *risk_level_out = record.risk_level;
+            strncpy(status_out, record.status, sizeof(record.status) - 1);
+            status_out[sizeof(record.status) - 1] = '\0';
+            found = 1;
+            break;
+        }
+    }
+    fclose(fp);
+    
+    return found ? 0 : -3;
+}
+
+int tsfi_vsen_vaesen_audit_transaction(const char *cics_trans_id, const char *entity_name, int *is_allowed_out) {
+    if (!cics_trans_id || !entity_name || !is_allowed_out) return -1;
+    
+    *is_allowed_out = 1;
+    char type_buf[64];
+    char status_buf[32];
+    int risk_level = 0;
+    
+    int lookup_rc = tsfi_vsen_vaesen_lookup(entity_name, type_buf, &risk_level, status_buf, sizeof(type_buf));
+    if (lookup_rc == 0) {
+        // Critical Auncient Vaesen with high risk levels require explicit administrative override
+        if (risk_level > 8) {
+            *is_allowed_out = 0; // Block or raise transaction warning
+        }
+    }
+    
+    return 0;
+}

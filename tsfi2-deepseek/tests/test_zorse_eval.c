@@ -591,6 +591,28 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_vtam_port("PORT01   PORT  PORTNAME=GPPORT\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 127: VSEn Vaesen System Registry (Auncient Vaesen) validation
+    remove("vaesen_registry.dat.bin");
+    assert(tsfi_vsen_vaesen_register("Nacken", "Neck", 9, "Active") == 0);
+    assert(tsfi_vsen_vaesen_register("Tomte", "Nisse", 3, "Friendly") == 0);
+    
+    char type_buf[64];
+    char status_buf[32];
+    int risk = 0;
+    assert(tsfi_vsen_vaesen_lookup("Nacken", type_buf, &risk, status_buf, sizeof(type_buf)) == 0);
+    assert(strcmp(type_buf, "Neck") == 0);
+    assert(risk == 9);
+    assert(strcmp(status_buf, "Active") == 0);
+    
+    int allowed = 0;
+    assert(tsfi_vsen_vaesen_audit_transaction("TRX1", "Nacken", &allowed) == 0);
+    assert(allowed == 0); // Risk level 9 > 8 should be flagged/disallowed
+    
+    assert(tsfi_vsen_vaesen_audit_transaction("TRX1", "Tomte", &allowed) == 0);
+    assert(allowed == 1); // Risk level 3 <= 8 should be allowed
+    
+    remove("vaesen_registry.dat.bin");
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
