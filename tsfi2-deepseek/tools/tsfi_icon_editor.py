@@ -78,22 +78,45 @@ class IconEditorHandler(BaseHTTPRequestHandler):
                     #interactionCanvas { z-index: 3; cursor: grab; }
                     .result-box { width: 512px; height: 512px; border: 2px solid #444; background: #222; display: flex; align-items: center; justify-content: center; }
                     .result-box img { max-width: 100%; max-height: 100%; }
-                    button, input { background: #333; color: #fff; border: 1px solid #555; padding: 10px; font-family: monospace; margin-top: 10px; }
+                    button, input, select { background: #333; color: #fff; border: 1px solid #555; padding: 10px; font-family: monospace; margin: 5px; }
                     button { cursor: pointer; }
                     button:hover { background: #555; }
-                    .controls { margin-top: 20px; }
-                    input[type="text"] { width: 400px; }
+                    .controls { margin-top: 20px; padding: 15px; background: #222; border-radius: 8px; display: inline-block; }
+                    input[type="text"] { width: 350px; }
+                    .slider-container { display: flex; justify-content: space-around; gap: 10px; margin-top: 10px; font-size: 12px; }
                 </style>
             </head>
             <body>
                 <h2>TSFi Stylized Line Art Editor (Dream Spider Edition)</h2>
                 
                 <div class="controls">
-                    <input type="text" id="promptInput" placeholder="Describe the icon (e.g., 'a cute stuffed animal crow')" value="a stuffed animal crow">
-                    <button onclick="generateIcon()">Generate Icon</button>
-                    <button onclick="clearCanvas()">Clear Scribble</button>
-                    <button onclick="togglePoseMode()" id="modeBtn">Mode: Scribble</button>
-                    <button style="background: #a00; color: white;" onclick="terminateTest()">FAIL</button>
+                    <div>
+                        <input type="text" id="promptInput" placeholder="Describe the icon (e.g., 'a cute stuffed animal crow')" value="a stuffed animal crow">
+                        <select id="styleSelect">
+                            <option value="minimalist">Minimalist Line Art</option>
+                            <option value="auncient">Auncient Retro Cybernetic</option>
+                            <option value="sigil">Hypotrochoid Vector Sigil</option>
+                            <option value="steampunk">Steampunk Mechanical</option>
+                        </select>
+                        <button onclick="generateIcon()">Generate Icon</button>
+                        <button onclick="clearCanvas()">Clear Scribble</button>
+                        <button onclick="togglePoseMode()" id="modeBtn">Mode: Scribble</button>
+                        <button style="background: #a00; color: white;" onclick="terminateTest()">FAIL</button>
+                    </div>
+                    <div class="slider-container">
+                        <div>
+                            <label>Steps: <span id="stepsVal">20</span></label><br>
+                            <input type="range" id="stepsSlider" min="5" max="40" value="20" oninput="document.getElementById('stepsVal').innerText=this.value">
+                        </div>
+                        <div>
+                            <label>CFG Scale: <span id="cfgVal">7.5</span></label><br>
+                            <input type="range" id="cfgSlider" min="1.0" max="15.0" step="0.5" value="7.5" oninput="document.getElementById('cfgVal').innerText=this.value">
+                        </div>
+                        <div>
+                            <label>Depth Weight: <span id="depthVal">0.85</span></label><br>
+                            <input type="range" id="depthSlider" min="0.0" max="1.0" step="0.05" value="0.85" oninput="document.getElementById('depthVal').innerText=this.value">
+                        </div>
+                    </div>
                 </div>
 
                 <div class="container">
@@ -193,10 +216,6 @@ class IconEditorHandler(BaseHTTPRequestHandler):
                     }
 
                     // --- Dream Spider Pose Logic ---
-                    // OpenPose colors (R, G, B)
-                    // Nose(0), Neck(1), MidHip(8)
-                    // L-Legs: 85,255,0 | 0,255,0 | 0,0,255 | 85,0,255
-                    // R-Legs: 255,170,0 | 255,255,0 | 255,0,0 | 255,85,0
                     const joints = [
                         {x: 256, y: 150}, // 0: Nose
                         {x: 256, y: 200}, // 1: Neck
@@ -214,9 +233,6 @@ class IconEditorHandler(BaseHTTPRequestHandler):
 
                     function renderPose() {
                         poseCtx.clearRect(0, 0, 512, 512);
-                        
-                        // We must draw a black background for the raw export, but keep it transparent for UI.
-                        // We'll generate a separate buffer for the POST request.
                         
                         function dl(ctx, j1, j2, r, g, b) {
                             ctx.beginPath();
@@ -240,7 +256,6 @@ class IconEditorHandler(BaseHTTPRequestHandler):
                         dl(poseCtx, 2, 9, 255, 0, 0);
                         dl(poseCtx, 2, 10, 255, 85, 0);
 
-                        // Draw Joint Nodes
                         for (let i = 0; i < joints.length; i++) {
                             poseCtx.beginPath();
                             poseCtx.arc(joints[i].x, joints[i].y, 6, 0, 2 * Math.PI);
@@ -252,26 +267,19 @@ class IconEditorHandler(BaseHTTPRequestHandler):
                     
                     // --- Orchestration ---
                     async function generateIcon() {
-                        // Flatten background + scribble + pose into a SINGLE depth map
-                        // This prevents the GGML Out-Of-Memory crash by eliminating the 
-                        // need for a second heavy ControlNet.
                         const tempCanvas = document.createElement('canvas');
                         tempCanvas.width = 512; tempCanvas.height = 512;
                         const tCtx = tempCanvas.getContext('2d');
                         
-                        // 1. Draw black background
                         tCtx.fillStyle = 'black';
                         tCtx.fillRect(0, 0, 512, 512);
-                        
-                        // 2. Draw user scribble
                         tCtx.drawImage(drawCanvas, 0, 0);
                         
-                        // 3. Draw Spider Pose as bold white lines (acting as solid depth structures)
                         function dlT(j1, j2) {
                             tCtx.beginPath();
                             tCtx.moveTo(joints[j1].x, joints[j1].y);
                             tCtx.lineTo(joints[j2].x, joints[j2].y);
-                            tCtx.strokeStyle = 'white'; // White = closest in depth map
+                            tCtx.strokeStyle = 'white';
                             tCtx.lineWidth = 14;
                             tCtx.stroke();
                         }
@@ -290,16 +298,26 @@ class IconEditorHandler(BaseHTTPRequestHandler):
                         }
                         
                         const depthDataURL = tempCanvas.toDataURL('image/png');
-
                         const userPrompt = document.getElementById('promptInput').value;
+                        const selectedStyle = document.getElementById('styleSelect').value;
+                        const steps = document.getElementById('stepsSlider').value;
+                        const cfg = document.getElementById('cfgSlider').value;
+                        const depthWeight = document.getElementById('depthSlider').value;
+                        
                         const resultBox = document.getElementById('resultBox');
                         resultBox.innerHTML = '<span>Synthesizing neural geometry...</span>';
                         
-                        // Send only the composited depth map
                         const response = await fetch('/generate', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ depth: depthDataURL, prompt: userPrompt })
+                            body: JSON.stringify({ 
+                                depth: depthDataURL, 
+                                prompt: userPrompt,
+                                style: selectedStyle,
+                                steps: steps,
+                                cfg: cfg,
+                                depth_weight: depthWeight
+                            })
                         });
                         
                         const result = await response.json();
@@ -330,7 +348,6 @@ class IconEditorHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({'errors': IconEditorHandler.last_error}).encode('utf-8'))
             print("[SYSTEM] FAIL triggered. Terminating test...")
-            # Schedule an exit so the response can be sent first
             def kill_server():
                 time.sleep(1)
                 os._exit(1)
@@ -346,6 +363,10 @@ class IconEditorHandler(BaseHTTPRequestHandler):
             # --- Depth Scribble Setup ---
             data_url = req['depth']
             user_prompt = req.get('prompt', 'a stuffed animal crow')
+            style = req.get('style', 'minimalist')
+            steps = int(req.get('steps', 20))
+            cfg = float(req.get('cfg', 7.5))
+            depth_weight = float(req.get('depth_weight', 0.85))
             
             header, encoded = data_url.split(",", 1)
             img_data = base64.b64decode(encoded)
@@ -363,18 +384,21 @@ class IconEditorHandler(BaseHTTPRequestHandler):
             
             # --- DGUI Setup ---
             dgui = get_dgui_shm()
-            steps = 20
-            cfg = 7.5
-            # Depth strength guides the composited scribble + spider pose
-            update_guidance(dgui, depth=0.85, pose=0.0, cfg=cfg, steps=steps)
+            update_guidance(dgui, depth=depth_weight, pose=0.0, cfg=cfg, steps=steps)
             
-            base_prompt = "clean minimalist line art icon, elegant ink drawing, bold black outlines on pure white background, vector graphics style, sharp edges, no shading, high contrast, perfect logo design"
+            # Select style positive prompt
+            if style == 'minimalist':
+                base_prompt = "clean minimalist line art icon, elegant ink drawing, bold black outlines on pure white background, vector graphics style, sharp edges, no shading, high contrast, perfect logo design"
+            elif style == 'auncient':
+                base_prompt = "Auncient retro cybernetic hardware style, glowing neon wireframe envelope, Lissajous vector projections, computer terminal glow, dark background, premium HSL tailored palette, highly detailed"
+            elif style == 'sigil':
+                base_prompt = "glowing cyber-fantasy magical sigil, sacred geometry, complex hypotrochoid curves, glowing vector orbits on pure dark background, high contrast, radiant vector lines"
+            else: # steampunk
+                base_prompt = "steampunk machinery icon, complex brass gears, mechanical clockwork loops, polished copper pipes, high details, dark slate background"
+                
             prompt = f"{user_prompt}, {base_prompt}"
             out_raw = "tmp/icon_out.raw"
             
-            # Isolate the environment from other programs (like the ballet trainer)
-            # by unlinking unused controlnet maps, preventing the C++ worker from
-            # accidentally loading multiple multi-GB controlnets into VRAM.
             try: os.unlink("/dev/shm/tsfi_cn_pose")
             except: pass
             try: os.unlink("/dev/shm/tsfi_cn_init")
@@ -385,14 +409,14 @@ class IconEditorHandler(BaseHTTPRequestHandler):
                 prompt,
                 out_raw,
                 "1", # use_shm
-                "sd15", # Switch back to SD1.5 because Turbo is incompatible with ControlNet
+                "sd15",
                 str(steps),
                 "euler_a",
                 str(cfg)
             ]
             
             env = os.environ.copy()
-            env["GGML_VK_FORCE_MAX_BUFFER_SIZE"] = "1073741824" # Cap single buffers to 1GB to prevent 4.5GB contiguous failures
+            env["GGML_VK_FORCE_MAX_BUFFER_SIZE"] = "1073741824"
             
             print("[EDITOR] Synthesizing stylized icon...")
             res = subprocess.run(cmd, capture_output=True, env=env)
@@ -405,7 +429,6 @@ class IconEditorHandler(BaseHTTPRequestHandler):
                 if len(out_data) >= expected_sz:
                     res_img = Image.frombytes("RGB", (W, H), out_data[:expected_sz])
                     
-                    # Convert to JPEG base64
                     buf = io.BytesIO()
                     res_img.save(buf, format='JPEG', quality=90)
                     b64_res = base64.b64encode(buf.getvalue()).decode('utf-8')

@@ -11,6 +11,8 @@ import glob
 PORT = int(os.environ.get("PORT", 8080))
 http.server.BaseHTTPRequestHandler.max_line_size = 1048576
 PRICE_CACHE_FILE = "assets/price_cache.json"
+if not os.path.exists(PRICE_CACHE_FILE) and os.path.exists("price_cache.json"):
+    PRICE_CACHE_FILE = "price_cache.json"
 UNRESOLVED_FILE = "unresolved_swaps.json"
 RESOLVED_FILE = "resolved_swaps.json"
 

@@ -349,6 +349,19 @@ int tsfi_zorse_validate_cobol_evaluate_also(const char *cobol_src, int *is_valid
 int tsfi_zorse_validate_jcl_vtam_port(const char *jcl_line, int *is_valid_out);
 
 // VSEn Vaesen System Registry APIs (Auncient Vaesen Tracking)
+typedef struct {
+    char name[64];
+    char type[64];
+    int risk_level;
+    char status[32];
+} vsen_vaesen_record;
+
+typedef struct {
+    char entity_name[64];
+    char location[64];
+    int fear_factor;
+} vsen_vaesen_sight_record;
+
 int tsfi_vsen_vaesen_register(const char *name, const char *type, int risk_level, const char *status);
 int tsfi_vsen_vaesen_lookup(const char *name, char *type_out, int *risk_level_out, char *status_out, size_t max_len);
 int tsfi_vsen_vaesen_audit_transaction(const char *cics_trans_id, const char *entity_name, int *is_allowed_out);

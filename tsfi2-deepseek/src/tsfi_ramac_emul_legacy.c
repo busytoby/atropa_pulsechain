@@ -938,3 +938,515 @@ int tsfi_rca501_check_channel(const tsfi_rca501_controller *ctrl, int channel) {
     return (ctrl->channels_busy & (1 << channel)) ? 1 : 0;
 }
 
+
+int tsfi_s370_uncol_to_lgp30(const tsfi_uncol_instruction *program, int program_size, int *lgp_memory_out, int max_words) {
+    if (!program || program_size <= 0 || !lgp_memory_out || max_words <= 0) {
+        return -1;
+    }
+
+    int compiled_words = 0;
+
+    for (int i = 0; i < program_size; i++) {
+        if (compiled_words >= max_words) {
+            return -2;
+        }
+
+        tsfi_uncol_instruction inst = program[i];
+        int opcode = -1;
+        int addr = inst.address & 0x0FFF;
+
+        if (strcmp(inst.op, "LOAD") == 0) {
+            opcode = 0;
+        } else if (strcmp(inst.op, "STORE") == 0) {
+            opcode = 9;
+        } else if (strcmp(inst.op, "ADD") == 0) {
+            opcode = 2;
+        } else if (strcmp(inst.op, "SUB") == 0) {
+            opcode = 3;
+        } else if (strcmp(inst.op, "JMP") == 0) {
+            opcode = 7;
+        } else if (strcmp(inst.op, "JZ") == 0) {
+            opcode = 8;
+        }
+
+        if (opcode != -1) {
+            lgp_memory_out[compiled_words++] = (opcode << 20) | addr;
+        }
+    }
+
+    return compiled_words;
+}
+
+int tsfi_s370_ibm7090_tix(uint16_t *index_reg, uint16_t decrement, uint16_t target_address, uint16_t *pc) {
+    if (!index_reg || !pc) return -1;
+
+    if (*index_reg > decrement) {
+        *index_reg -= decrement;
+        *pc = target_address;
+        return 1;
+    }
+    return 0;
+}
+
+int tsfi_s370_ibm7090_txi(uint16_t *index_reg, uint16_t decrement, uint16_t target_address, uint16_t *pc) {
+    if (!index_reg || !pc) return -1;
+
+    *index_reg += decrement;
+    *pc = target_address;
+    return 1;
+}
+
+void tsfi_s370_cdc6600_init(tsfi_cdc6600_scoreboard *sb) {
+    if (!sb) return;
+    memset(sb->units, 0, sizeof(sb->units));
+    memset(sb->registers, 0, sizeof(sb->registers));
+}
+
+int tsfi_s370_cdc6600_issue(tsfi_cdc6600_scoreboard *sb, tsfi_cdc6600_unit_type unit, int dest_reg, int src_val_a, int src_val_b, int op) {
+    if (!sb || unit < 0 || unit >= CDC_UNIT_COUNT) return -1;
+    if (dest_reg < 0 || dest_reg >= 8) return -2;
+
+    tsfi_cdc6600_functional_unit *fu = &sb->units[unit];
+    if (fu->is_busy) {
+        return -3; // Functional unit is busy
+    }
+
+    fu->is_busy = 1;
+    fu->dest_reg = dest_reg;
+
+    switch (unit) {
+        case CDC_UNIT_ADD:
+            fu->result_value = (op == 0) ? (src_val_a + src_val_b) : (src_val_a - src_val_b);
+            fu->remaining_cycles = 2;
+            break;
+        case CDC_UNIT_MULTIPLY:
+            fu->result_value = src_val_a * src_val_b;
+            fu->remaining_cycles = 4;
+            break;
+        case CDC_UNIT_SHIFT:
+            fu->result_value = src_val_a << src_val_b;
+            fu->remaining_cycles = 1;
+            break;
+        case CDC_UNIT_BRANCH:
+            fu->result_value = src_val_a; // pass-through target
+            fu->remaining_cycles = 1;
+            break;
+        default:
+            break;
+    }
+
+    return 0;
+}
+
+void tsfi_s370_cdc6600_tick(tsfi_cdc6600_scoreboard *sb) {
+    if (!sb) return;
+
+    for (int i = 0; i < CDC_UNIT_COUNT; i++) {
+        tsfi_cdc6600_functional_unit *fu = &sb->units[i];
+        if (fu->is_busy) {
+            fu->remaining_cycles--;
+            if (fu->remaining_cycles == 0) {
+                sb->registers[fu->dest_reg] = fu->result_value;
+                fu->is_busy = 0;
+            }
+        }
+    }
+}
+
+int tsfi_s370_ramac_controller_exec(tsfi_ibm7030_lau_queue *queue, uint64_t *ramac_platter, int platter_size, 
+                                    uint32_t sector_addr, int is_write, uint64_t *data_word) {
+    if (!queue || !ramac_platter || !data_word || (int)sector_addr >= platter_size) return -1;
+
+    if (is_write) {
+        uint64_t ecc_encoded_word = tsfi_s370_ibm7030_ecc_encode(*data_word);
+        int push_status = tsfi_s370_ibm7030_lau_push_store(queue, sector_addr, ecc_encoded_word);
+        if (push_status != 0) return -2;
+
+        int commits = tsfi_s370_ibm7030_lau_commit(queue, ramac_platter, platter_size);
+        if (commits < 0) return -3;
+    } else {
+        int push_status = tsfi_s370_ibm7030_lau_push_load(queue, sector_addr);
+        if (push_status != 0) return -2;
+
+        int commits = tsfi_s370_ibm7030_lau_commit(queue, ramac_platter, platter_size);
+        if (commits < 0) return -3;
+
+        int last_head = (queue->head - 1 + 8) % 8;
+        uint64_t ecc_read_word = queue->entries[last_head].value;
+
+        uint64_t corrected_val = 0;
+        int err_type = tsfi_s370_ibm7030_ecc_decode(ecc_read_word, &corrected_val);
+        if (err_type == 2) {
+            return -4;
+        }
+        *data_word = corrected_val;
+    }
+
+    return 0;
+}
+
+int tsfi_s370_univac2_to_rca501(const char *univac_data, char *rca_data_out) {
+    if (!univac_data || !rca_data_out) return -1;
+
+    // Find the last non-space character in the 12-byte word
+    int len = 12;
+    while (len > 0 && (univac_data[len - 1] == ' ' || univac_data[len - 1] == '\0')) {
+        len--;
+    }
+
+    int i;
+    for (i = 0; i < len; i++) {
+        rca_data_out[i] = univac_data[i];
+    }
+
+    // Append the RCA 501 variable-length item delimiter '$'
+    rca_data_out[i++] = '$';
+    rca_data_out[i] = '\0';
+    return 0;
+}
+
+int tsfi_s370_normalize_signed_field(const char *input_field, int is_univac, int64_t *out_val) {
+    if (!input_field || !out_val) return -1;
+
+    int64_t val = 0;
+    int sign = 1;
+
+    if (is_univac) {
+        if (input_field[0] == '-') {
+            sign = -1;
+        }
+
+        int i = 1;
+        while (i < 12 && input_field[i] != '\0' && input_field[i] != ' ') {
+            if (input_field[i] >= '0' && input_field[i] <= '9') {
+                val = val * 10 + (input_field[i] - '0');
+            }
+            i++;
+        }
+    } else {
+        int len = 0;
+        while (input_field[len] != '\0' && input_field[len] != '$') {
+            len++;
+        }
+
+        if (len == 0) return -2;
+
+        char last_char = input_field[len - 1];
+        if (last_char == '-') {
+            sign = -1;
+            len--;
+        } else if (last_char == '+') {
+            sign = 1;
+            len--;
+        }
+
+        for (int i = 0; i < len; i++) {
+            if (input_field[i] >= '0' && input_field[i] <= '9') {
+                val = val * 10 + (input_field[i] - '0');
+            }
+        }
+    }
+
+    *out_val = val * sign;
+    return 0;
+}
+
+static int get_char_weight(char c, int is_univac) {
+    if (c == ' ' || c == '\0' || c == '$') return 0;
+    if (is_univac) {
+        if (c >= '0' && c <= '9') return (c - '0') + 1;
+        if (c >= 'A' && c <= 'Z') return (c - 'A') + 11;
+        if (c >= 'a' && c <= 'z') return (c - 'a') + 11;
+    } else {
+        if (c >= 'A' && c <= 'Z') return (c - 'A') + 1;
+        if (c >= 'a' && c <= 'z') return (c - 'a') + 1;
+        if (c >= '0' && c <= '9') return (c - '0') + 27;
+    }
+    return (int)c + 100;
+}
+
+int tsfi_s370_cobol_compare_collating(const char *str_a, const char *str_b, int is_univac) {
+    if (!str_a || !str_b) return 0;
+
+    int i = 0;
+    while (1) {
+        char ca = str_a[i];
+        char cb = str_b[i];
+
+        int wa = get_char_weight(ca, is_univac);
+        int wb = get_char_weight(cb, is_univac);
+
+        if (wa < wb) return -1;
+        if (wa > wb) return 1;
+
+        if (ca == '\0' || ca == '$' || cb == '\0' || cb == '$') {
+            break;
+        }
+        i++;
+    }
+    return 0;
+}
+
+int tsfi_s370_cross_compiler_parity_loop(const char *cobol_strategy_script, int val_r0, int val_r1, int *out_result) {
+    if (!cobol_strategy_script || !out_result) return -1;
+
+    uint8_t bytecode[256];
+    int len = 0;
+    int res = tsfi_strategy_compile_script(cobol_strategy_script, bytecode, 256, &len);
+    if (res != 0) return -2;
+
+    char rca_input_0[32];
+    char rca_input_1[32];
+    snprintf(rca_input_0, sizeof(rca_input_0), "%s%d$", (val_r0 >= 0 ? "+" : ""), val_r0);
+    snprintf(rca_input_1, sizeof(rca_input_1), "%s%d$", (val_r1 >= 0 ? "+" : ""), val_r1);
+
+    int64_t rca_reg0_val = 0;
+    int64_t rca_reg1_val = 0;
+    tsfi_s370_normalize_signed_field(rca_input_0, 0, &rca_reg0_val);
+    tsfi_s370_normalize_signed_field(rca_input_1, 0, &rca_reg1_val);
+
+    TSFiStrategyVM rca_vm;
+    tsfi_strategy_vm_init(&rca_vm);
+    rca_vm.registers[0] = (int)rca_reg0_val;
+    rca_vm.registers[1] = (int)rca_reg1_val;
+
+    res = tsfi_strategy_vm_execute_bytecode(&rca_vm, NULL, bytecode, len, NULL);
+    if (res != 0) return -3;
+    int rca_out_val = rca_vm.registers[0];
+
+    char rca_output[32];
+    snprintf(rca_output, sizeof(rca_output), "%s%d$", (rca_out_val >= 0 ? "+" : ""), rca_out_val);
+
+    char univac_input_0[16];
+    char univac_input_1[16];
+    tsfi_s370_rca501_to_univac2(rca_input_0, univac_input_0);
+    tsfi_s370_rca501_to_univac2(rca_input_1, univac_input_1);
+
+    int64_t univac_reg0_val = 0;
+    int64_t univac_reg1_val = 0;
+    tsfi_s370_normalize_signed_field(univac_input_0, 1, &univac_reg0_val);
+    tsfi_s370_normalize_signed_field(univac_input_1, 1, &univac_reg1_val);
+
+    TSFiStrategyVM univac_vm;
+    tsfi_strategy_vm_init(&univac_vm);
+    univac_vm.registers[0] = (int)univac_reg0_val;
+    univac_vm.registers[1] = (int)univac_reg1_val;
+
+    res = tsfi_strategy_vm_execute_bytecode(&univac_vm, NULL, bytecode, len, NULL);
+    if (res != 0) return -4;
+    int univac_out_val = univac_vm.registers[0];
+
+    char univac_output[16];
+    snprintf(univac_output, sizeof(univac_output), "%s%d", (univac_out_val >= 0 ? "+" : ""), univac_out_val);
+    char univac_output_padded[16];
+    tsfi_s370_rca501_to_univac2(univac_output, univac_output_padded);
+
+    char rca_translated_output[32];
+    tsfi_s370_univac2_to_rca501(univac_output_padded, rca_translated_output);
+
+    if (strcmp(rca_output, rca_translated_output) != 0) {
+        return -5;
+    }
+
+    *out_result = rca_out_val;
+    return 0;
+}
+
+int tsfi_s370_cobol_tombstone_report(char *report_out, int max_len) {
+    if (!report_out || max_len < 256) return -1;
+
+    const char *tombstone_art = 
+        "     .------.\n"
+        "    /  R.I.P. \\\n"
+        "   |    COBOL   |\n"
+        "   |            |\n"
+        "   |  1959-1960 |\n"
+        "   |   CODASYL  |\n"
+        "   |            |\n"
+        "  *|____________|*\n";
+
+    strncpy(report_out, tombstone_art, max_len - 1);
+    report_out[max_len - 1] = '\0';
+    return 0;
+}
+
+static int gps_solve_recursive(tsfi_gps_state *gps, int goal_feature, int *applied_ops, int *ops_count, int max_ops, int depth) {
+    if (depth > 10) return -1; // Prevent infinite loops
+    
+    // If we already have the feature, we are done
+    if (gps->current_features & (1 << goal_feature)) {
+        return 0;
+    }
+    
+    // Find an operator that sets this feature
+    for (int i = 0; i < gps->operator_count; i++) {
+        tsfi_gps_operator op = gps->operators[i];
+        if (op.add_feature == goal_feature) {
+            // Check condition
+            if (op.condition_diff != -1) {
+                // Try to satisfy condition recursively
+                if (gps_solve_recursive(gps, op.condition_diff, applied_ops, ops_count, max_ops, depth + 1) != 0) {
+                    continue; // try another operator if this path fails
+                }
+            }
+            // Apply operator
+            if (*ops_count >= max_ops) return -1;
+            applied_ops[(*ops_count)++] = i;
+            gps->current_features |= (1 << goal_feature);
+            return 0;
+        }
+    }
+    return -1; // No operator can set this feature
+}
+
+int tsfi_s370_gps_solve(tsfi_gps_state *gps, int *applied_ops_out, int max_ops) {
+    if (!gps || !applied_ops_out || max_ops <= 0) return -1;
+    
+    int ops_count = 0;
+    // For each feature in goal_features, if it's missing in current_features, reduce difference
+    for (int f = 0; f < 32; f++) {
+        if (gps->goal_features & (1 << f)) {
+            if (!(gps->current_features & (1 << f))) {
+                if (gps_solve_recursive(gps, f, applied_ops_out, &ops_count, max_ops, 0) != 0) {
+                    return -1; // Failed to solve a goal feature
+                }
+            }
+        }
+    }
+    return ops_count;
+}
+
+static void *tsfi_zmm_ctss_worker(void *arg) {
+    tsfi_zmm_voice_thread *voice = (tsfi_zmm_voice_thread *)arg;
+    
+    // Calculate the base pointer of the scheduler structure
+    tsfi_zmm_ctss_scheduler *sched = (tsfi_zmm_ctss_scheduler *)((char *)voice - voice->voice_id * sizeof(tsfi_zmm_voice_thread));
+    
+    for (int i = 0; i < 256; i++) {
+        voice->buffer[i] = (uint8_t)(128 + 30 * sin((double)i * (voice->voice_id + 1) * 0.1));
+    }
+    
+    pthread_mutex_lock(&sched->mix_mutex);
+    for (int i = 0; i < 256; i++) {
+        sched->mix_buffer[i] += (int)voice->buffer[i] - 128;
+    }
+    pthread_mutex_unlock(&sched->mix_mutex);
+    
+    return NULL;
+}
+
+void tsfi_zmm_ctss_init(tsfi_zmm_ctss_scheduler *sched, TsfiZmmVmState *zmm) {
+    if (!sched) return;
+    pthread_mutex_init(&sched->mix_mutex, NULL);
+    memset(sched->mix_buffer, 0, sizeof(sched->mix_buffer));
+    for (int i = 0; i < 4; i++) {
+        sched->voices[i].zmm = zmm;
+        sched->voices[i].voice_id = i;
+        sched->voices[i].active = 0;
+        memset(sched->voices[i].buffer, 0, sizeof(sched->voices[i].buffer));
+    }
+}
+
+void tsfi_zmm_ctss_start(tsfi_zmm_ctss_scheduler *sched) {
+    if (!sched) return;
+    for (int i = 0; i < 4; i++) {
+        sched->voices[i].active = 1;
+        pthread_create(&sched->voices[i].thread_id, NULL, tsfi_zmm_ctss_worker, &sched->voices[i]);
+    }
+}
+
+void tsfi_zmm_ctss_stop(tsfi_zmm_ctss_scheduler *sched) {
+    if (!sched) return;
+    for (int i = 0; i < 4; i++) {
+        if (sched->voices[i].active) {
+            pthread_join(sched->voices[i].thread_id, NULL);
+            sched->voices[i].active = 0;
+        }
+    }
+}
+
+void tsfi_zmm_ctss_mix(tsfi_zmm_ctss_scheduler *sched, int *output_mix, int max_len) {
+    if (!sched || !output_mix || max_len <= 0) return;
+    pthread_mutex_lock(&sched->mix_mutex);
+    int len = max_len > 256 ? 256 : max_len;
+    for (int i = 0; i < len; i++) {
+        output_mix[i] = sched->mix_buffer[i];
+    }
+    pthread_mutex_unlock(&sched->mix_mutex);
+}
+
+int tsfi_dbl_convert(const uint8_t *raw_sector_data, size_t sector_size, char *db_relation_output, size_t max_len) {
+    if (!raw_sector_data || sector_size == 0 || !db_relation_output || max_len == 0) return -1;
+    if (sector_size < 4) return -2;
+    uint32_t owner_key = ((uint32_t)raw_sector_data[0] << 24) |
+                         ((uint32_t)raw_sector_data[1] << 16) |
+                         ((uint32_t)raw_sector_data[2] << 8)  |
+                         (uint32_t)raw_sector_data[3];
+    int bytes = snprintf(db_relation_output, max_len, "OWNER_KEY=0x%08X; MEMBERS=%zu_BYTES", owner_key, sector_size - 4);
+    return (bytes > 0 && (size_t)bytes < max_len) ? 0 : -3;
+}
+
+void tsfi_s370_vs_dat_init(tsfi_s370_vs_dat *dat) {
+    if (!dat) return;
+    memset(dat, 0, sizeof(tsfi_s370_vs_dat));
+}
+
+int tsfi_s370_vs_dat_translate(const tsfi_s370_vs_dat *dat, uint32_t virtual_address, uint32_t *physical_address_out) {
+    if (!dat || !physical_address_out) return -1;
+    uint32_t seg_idx = (virtual_address >> 12) & 0x0F;
+    uint32_t page_idx = (virtual_address >> 8) & 0x0F;
+    uint32_t offset = virtual_address & 0xFF;
+    if (dat->segment_table[seg_idx] == 0) {
+        return -2;
+    }
+    uint32_t page_frame = dat->page_tables[seg_idx][page_idx];
+    if (page_frame == 0) {
+        return -3;
+    }
+    *physical_address_out = page_frame + offset;
+    return 0;
+}
+
+void tsfi_structured_analyze_script(const char *script, tsfi_structured_analysis_report *report) {
+    if (!script || !report) return;
+    memset(report, 0, sizeof(tsfi_structured_analysis_report));
+    char script_copy[2048];
+    strncpy(script_copy, script, 2047);
+    script_copy[2047] = '\0';
+    const char *delims = " ;(),{}\"\n\r\t.";
+    char labels[32][32];
+    int label_count = 0;
+    char *tokens[256];
+    int token_count = 0;
+    char *tok = strtok(script_copy, delims);
+    while (tok && token_count < 256) {
+        tokens[token_count++] = tok;
+        tok = strtok(NULL, delims);
+    }
+    for (int i = 0; i < token_count; i++) {
+        size_t len = strlen(tokens[i]);
+        if (len > 1 && tokens[i][len - 1] == ':') {
+            char lbl[32];
+            size_t copy_len = (len - 1 < 31) ? len - 1 : 31;
+            memcpy(lbl, tokens[i], copy_len);
+            lbl[copy_len] = '\0';
+            if (label_count < 32) {
+                memcpy(labels[label_count], lbl, copy_len + 1);
+                label_count++;
+            }
+        }
+        if (i + 1 < token_count &&
+            ((strcasecmp(tokens[i], "GO") == 0 && strcasecmp(tokens[i + 1], "TO") == 0) ||
+             (strcasecmp(tokens[i], "GOTO") == 0))) {
+            report->goto_count++;
+            char *target = (strcasecmp(tokens[i], "GOTO") == 0) ? tokens[i + 1] : tokens[i + 2];
+            for (int k = 0; k < label_count; k++) {
+                if (strcmp(labels[k], target) == 0) {
+                    report->backward_jmp_detected = 1;
+                    break;
+                }
+            }
+        }
+    }
+}
+

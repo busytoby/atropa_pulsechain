@@ -5,6 +5,7 @@
 #include <time.h>
 #include <chrono>
 #include <vector>
+#include <string>
 #include "stable-diffusion.h"
 
 extern "C" {
@@ -113,7 +114,26 @@ int main(int argc, char** argv) {
     memset(&gen_params, 0, sizeof(sd_img_gen_params_t));
     sd_img_gen_params_init(&gen_params);
     
-    gen_params.prompt = prompt;
+    std::string expanded_prompt = prompt;
+    if (expanded_prompt.find("[minimalist]") != std::string::npos) {
+        size_t pos = expanded_prompt.find("[minimalist]");
+        expanded_prompt.replace(pos, 13, "");
+        expanded_prompt += ", clean minimalist line art icon, elegant ink drawing, bold black outlines on pure white background, vector graphics style, sharp edges, no shading, high contrast, perfect logo design";
+    } else if (expanded_prompt.find("[auncient]") != std::string::npos) {
+        size_t pos = expanded_prompt.find("[auncient]");
+        expanded_prompt.replace(pos, 10, "");
+        expanded_prompt += ", Auncient retro cybernetic hardware style, glowing neon wireframe envelope, Lissajous vector projections, computer terminal glow, dark background, premium HSL tailored palette, highly detailed";
+    } else if (expanded_prompt.find("[sigil]") != std::string::npos) {
+        size_t pos = expanded_prompt.find("[sigil]");
+        expanded_prompt.replace(pos, 7, "");
+        expanded_prompt += ", glowing cyber-fantasy magical sigil, sacred geometry, complex hypotrochoid curves, glowing vector orbits on pure dark background, high contrast, radiant vector lines";
+    } else if (expanded_prompt.find("[steampunk]") != std::string::npos) {
+        size_t pos = expanded_prompt.find("[steampunk]");
+        expanded_prompt.replace(pos, 11, "");
+        expanded_prompt += ", steampunk machinery icon, complex brass gears, mechanical clockwork loops, polished copper pipes, high details, dark slate background";
+    }
+
+    gen_params.prompt = expanded_prompt.c_str();
     gen_params.negative_prompt = "";
     gen_params.clip_skip = -1;
     gen_params.width = shm_depth ? shm_depth->width : 512;
@@ -218,7 +238,27 @@ int main(int argc, char** argv) {
                 }
             }
             
-            gen_params.prompt = prompt_ptr;
+            std::string prompt_str(prompt_ptr);
+            if (prompt_str.find("[minimalist]") != std::string::npos) {
+                size_t pos = prompt_str.find("[minimalist]");
+                prompt_str.replace(pos, 13, "");
+                prompt_str += ", clean minimalist line art icon, elegant ink drawing, bold black outlines on pure white background, vector graphics style, sharp edges, no shading, high contrast, perfect logo design";
+            } else if (prompt_str.find("[auncient]") != std::string::npos) {
+                size_t pos = prompt_str.find("[auncient]");
+                prompt_str.replace(pos, 10, "");
+                prompt_str += ", Auncient retro cybernetic hardware style, glowing neon wireframe envelope, Lissajous vector projections, computer terminal glow, dark background, premium HSL tailored palette, highly detailed";
+            } else if (prompt_str.find("[sigil]") != std::string::npos) {
+                size_t pos = prompt_str.find("[sigil]");
+                prompt_str.replace(pos, 7, "");
+                prompt_str += ", glowing cyber-fantasy magical sigil, sacred geometry, complex hypotrochoid curves, glowing vector orbits on pure dark background, high contrast, radiant vector lines";
+            } else if (prompt_str.find("[steampunk]") != std::string::npos) {
+                size_t pos = prompt_str.find("[steampunk]");
+                prompt_str.replace(pos, 11, "");
+                prompt_str += ", steampunk machinery icon, complex brass gears, mechanical clockwork loops, polished copper pipes, high details, dark slate background";
+            }
+            static std::string static_prompt_hold;
+            static_prompt_hold = prompt_str;
+            gen_params.prompt = static_prompt_hold.c_str();
             gen_params.sample_params.sample_steps = steps_val;
             gen_params.sample_params.guidance.txt_cfg = cfg_val;
             
