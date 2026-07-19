@@ -2576,6 +2576,21 @@ static void test_new_mainframe_features(void) {
     assert(tsfi_cw_hainaut_collapse_subtype(&super_tbl, &sub_tbl, &clps_tbl) == 0);
     assert(strcmp(clps_tbl.table_name, "EMPLOYEE_CLPS") == 0);
     assert(strcmp(clps_tbl.primary_key, "EMP_ID") == 0);
+
+    // Roland Attribute Merger test
+    char mrg_attr[32];
+    assert(tsfi_cw_roland_merge_attributes(&super_tbl, "FIRST", "LAST", mrg_attr, 32) == 0);
+    assert(strcmp(mrg_attr, "FIRST_LAST") == 0);
+
+    // Roland Join Path Solver test
+    tsfi_cw_hainaut_table path_tables[3] = {
+        { "A", "A_ID", "B_ID", "B" },
+        { "B", "B_ID", "C_ID", "C" },
+        { "C", "C_ID", "", "" }
+    };
+    char roland_path_buf[128];
+    assert(tsfi_cw_roland_solve_join_path(path_tables, 3, "A", "C", roland_path_buf, 128) == 0);
+    assert(strcmp(roland_path_buf, "A -> B -> C") == 0);
 }
 
 int main(void) {

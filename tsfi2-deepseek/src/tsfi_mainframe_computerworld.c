@@ -2728,6 +2728,51 @@ int tsfi_cw_hainaut_collapse_subtype(const tsfi_cw_hainaut_table *super_table, c
     return 0;
 }
 
+int tsfi_cw_roland_merge_attributes(const tsfi_cw_hainaut_table *table, const char *attr_a, const char *attr_b, char *merged_attr_out, int max_len) {
+    if (!table || !attr_a || !attr_b || !merged_attr_out || max_len <= 0) return -1;
+    
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wformat-truncation"
+    snprintf(merged_attr_out, max_len, "%s_%s", attr_a, attr_b);
+    #pragma GCC diagnostic pop
+    
+    return 0;
+}
+
+int tsfi_cw_roland_solve_join_path(const tsfi_cw_hainaut_table *tables, int count, const char *start_table, const char *end_table, char *path_out, int max_len) {
+    if (!tables || count <= 0 || !start_table || !end_table || !path_out || max_len <= 0) return -1;
+    
+    // Simple path routing: check direct reference or through a single middle table
+    for (int i = 0; i < count; i++) {
+        if (strcmp(tables[i].table_name, start_table) == 0 &&
+            strcmp(tables[i].references_table, end_table) == 0) {
+            #pragma GCC diagnostic push
+            #pragma GCC diagnostic ignored "-Wformat-truncation"
+            snprintf(path_out, max_len, "%s -> %s", start_table, end_table);
+            #pragma GCC diagnostic pop
+            return 0;
+        }
+    }
+    
+    for (int i = 0; i < count; i++) {
+        if (strcmp(tables[i].table_name, start_table) == 0 && strlen(tables[i].references_table) > 0) {
+            const char *mid = tables[i].references_table;
+            for (int j = 0; j < count; j++) {
+                if (strcmp(tables[j].table_name, mid) == 0 && strcmp(tables[j].references_table, end_table) == 0) {
+                    #pragma GCC diagnostic push
+                    #pragma GCC diagnostic ignored "-Wformat-truncation"
+                    snprintf(path_out, max_len, "%s -> %s -> %s", start_table, mid, end_table);
+                    #pragma GCC diagnostic pop
+                    return 0;
+                }
+            }
+        }
+    }
+    
+    path_out[0] = 0;
+    return 1; // path not resolved
+}
+
 
 
 

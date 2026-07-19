@@ -1464,5 +1464,11 @@ int tsfi_cw_hainaut_verify_equivalence(const tsfi_cw_hainaut_table *schema_a, in
 // Hainaut Subtype Collapser
 int tsfi_cw_hainaut_collapse_subtype(const tsfi_cw_hainaut_table *super_table, const tsfi_cw_hainaut_table *sub_table, tsfi_cw_hainaut_table *collapsed_table_out);
 
+// Roland Attribute Merger
+int tsfi_cw_roland_merge_attributes(const tsfi_cw_hainaut_table *table, const char *attr_a, const char *attr_b, char *merged_attr_out, int max_len);
+
+// Roland Join Path Solver
+int tsfi_cw_roland_solve_join_path(const tsfi_cw_hainaut_table *tables, int count, const char *start_table, const char *end_table, char *path_out, int max_len);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 
