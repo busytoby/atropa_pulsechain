@@ -501,4 +501,10 @@ int tsfi_zorse_validate_jcl_parm_override(const char *jcl_line, int *is_valid_ou
 // JCL SYSOUT Routing Auditor
 int tsfi_zorse_validate_jcl_sysout_route(const char *jcl_line, int *is_valid_out);
 
+// z/VSE POWER Spool Queue Class Validator
+int tsfi_zorse_validate_vse_power_class(const char *jcl_line, int *is_valid_out);
+
+// COBOL Internal Sorting Auditor
+int tsfi_zorse_validate_cobol_sort_key(const char *cobol_src, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

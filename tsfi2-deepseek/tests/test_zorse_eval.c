@@ -888,6 +888,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_sysout_route("//OUT1 DD SYSOUT=(A,INTRDR)\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 181: z/VSE POWER Spool Queue Class Validator validation
+    assert(tsfi_zorse_validate_vse_power_class("* $$ LST CLASS=A,DISP=D\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 182: COBOL Internal Sorting Auditor validation
+    assert(tsfi_zorse_validate_cobol_sort_key("SORT WORK-FILE ON ASCENDING KEY WORK-KEY.", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
