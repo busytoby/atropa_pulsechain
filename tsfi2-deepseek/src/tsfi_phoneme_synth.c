@@ -10,6 +10,10 @@ int tsfi_phoneme_map_word(TSFiSynthPerfEngine *engine, const char *word, int whe
     float base_freq = engine->synth->wheels[wheel_idx].frequency;
     float accumulated_freq_offset = 0.0f;
     float total_amplitude = 0.0f;
+    float formant_f1 = 0.0f;
+    float formant_f2 = 0.0f;
+    int vowel_count = 0;
+    int consonant_count = 0;
 
     // 1. Fully resolve every character of the word to synthesizer parameters
     for (size_t i = 0; i < len; i++) {
@@ -17,6 +21,32 @@ int tsfi_phoneme_map_word(TSFiSynthPerfEngine *engine, const char *word, int whe
         
         // CLP constraint: enforce valid ASCII character bounds
         if (c < 32 || c > 126) return -2; // Backtrack on control characters
+
+        // Detect vowels for Formant Resonance Mapping
+        if (c == 'a' || c == 'A') {
+            formant_f1 += 730.0f;
+            formant_f2 += 1090.0f;
+            vowel_count++;
+        } else if (c == 'e' || c == 'E') {
+            formant_f1 += 530.0f;
+            formant_f2 += 1840.0f;
+            vowel_count++;
+        } else if (c == 'i' || c == 'I') {
+            formant_f1 += 270.0f;
+            formant_f2 += 2290.0f;
+            vowel_count++;
+        } else if (c == 'o' || c == 'O') {
+            formant_f1 += 570.0f;
+            formant_f2 += 840.0f;
+            vowel_count++;
+        } else if (c == 'u' || c == 'U') {
+            formant_f1 += 300.0f;
+            formant_f2 += 870.0f;
+            vowel_count++;
+        } else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+            // Consonants for noise injection simulation
+            consonant_count++;
+        }
 
         // Character value modulates frequency offset (2.0Hz per ASCII step)
         accumulated_freq_offset += (float)c * 2.0f;
@@ -29,8 +59,26 @@ int tsfi_phoneme_map_word(TSFiSynthPerfEngine *engine, const char *word, int whe
     total_amplitude = total_amplitude / (float)len;
     if (total_amplitude > 1.0f) total_amplitude = 1.0f;
 
-    // 2. Apply directly to tone-wheel parameters with LGP-30 twin-triode warmth saturation
+    // Resolve frequencies: blend with formant frequencies if vowels exist
     float final_freq = base_freq + (accumulated_freq_offset / (float)len);
+    if (vowel_count > 0) {
+        float avg_f1 = formant_f1 / (float)vowel_count;
+        float avg_f2 = formant_f2 / (float)vowel_count;
+        // Blend F1/F2 formant center frequencies into the tone wheel frequency
+        final_freq = (final_freq + avg_f1 + avg_f2) * 0.5f;
+    }
+
+    // Consonantal noise injection simulation: add pseudo-random amplitude fluctuation
+    if (consonant_count > 0) {
+        float noise_jitter = (float)(consonant_count % 7) * 0.05f;
+        total_amplitude += noise_jitter;
+        if (total_amplitude > 1.0f) total_amplitude = 1.0f;
+        
+        // Add a high-frequency jitter component to frequency to simulate noise
+        final_freq += (float)(consonant_count % 5) * 15.0f;
+    }
+
+    // 2. Apply directly to tone-wheel parameters with LGP-30 twin-triode warmth saturation
     // Apply asymmetric quadratic soft-clipping for pleasant second-harmonic tube warmth
     float warmed_amp = total_amplitude + 0.15f * total_amplitude * total_amplitude;
     if (warmed_amp > 1.0f) warmed_amp = 1.0f;
