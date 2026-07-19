@@ -420,4 +420,10 @@ int tsfi_zorse_audit_subsurface_translucency(const char *image_b64, const char *
 // z/VSE Subsystem Support Services (Triple S Class) Auditor
 int tsfi_zorse_validate_vse_triple_s(const char *jcl_line, int *is_valid_out);
 
+// Zorse COBOL STRING WITH POINTER Statement Auditor
+int tsfi_zorse_validate_cobol_string_pointer(const char *cobol_src, int *is_valid_out);
+
+// Zorse JCL DD PATHDISP Parameter Auditor
+int tsfi_zorse_validate_jcl_pathdisp(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

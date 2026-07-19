@@ -714,6 +714,14 @@ int main(void) {
     assert(tsfi_zorse_validate_vse_triple_s("// ASSIGN SYS005,READER,SSS=YES\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 150: COBOL STRING WITH POINTER Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_string_pointer("STRING STR-A STR-B DELIMITED BY SIZE INTO STR-OUT WITH POINTER PTR-VAR.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 151: JCL DD PATHDISP Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_pathdisp("//DD24 DD PATH='/tmp/out',PATHDISP=(KEEP,DELETE)\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
