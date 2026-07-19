@@ -1470,5 +1470,11 @@ int tsfi_cw_roland_merge_attributes(const tsfi_cw_hainaut_table *table, const ch
 // Roland Join Path Solver
 int tsfi_cw_roland_solve_join_path(const tsfi_cw_hainaut_table *tables, int count, const char *start_table, const char *end_table, char *path_out, int max_len);
 
+// Roland Domain Integrity Checker
+int tsfi_cw_roland_check_domain(const char *merged_attr, int min_val, int max_val, int *is_valid_out);
+
+// Roland BCNF Optimizer
+int tsfi_cw_roland_optimize_bcnf(const tsfi_cw_hainaut_table *table, const tsfi_cw_hainaut_fd *fds, int fd_count, tsfi_cw_hainaut_table *optimized_tables_out, int *optimized_count_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

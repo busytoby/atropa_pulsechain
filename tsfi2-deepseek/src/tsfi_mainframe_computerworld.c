@@ -2773,6 +2773,68 @@ int tsfi_cw_roland_solve_join_path(const tsfi_cw_hainaut_table *tables, int coun
     return 1; // path not resolved
 }
 
+int tsfi_cw_roland_check_domain(const char *merged_attr, int min_val, int max_val, int *is_valid_out) {
+    if (!merged_attr || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    // Find numeric suffix or value inside the attribute string
+    const char *p = merged_attr;
+    while (*p && (*p < '0' || *p > '9')) p++;
+    
+    if (*p) {
+        int val = atoi(p);
+        if (val >= min_val && val <= max_val) {
+            *is_valid_out = 1;
+        }
+    }
+    return 0;
+}
+
+int tsfi_cw_roland_optimize_bcnf(const tsfi_cw_hainaut_table *table, const tsfi_cw_hainaut_fd *fds, int fd_count, tsfi_cw_hainaut_table *optimized_tables_out, int *optimized_count_out) {
+    if (!table || !fds || fd_count <= 0 || !optimized_tables_out || !optimized_count_out) return -1;
+    
+    *optimized_count_out = 0;
+    int bcnf_violation = 0;
+    int violating_fd_idx = -1;
+    
+    for (int i = 0; i < fd_count; i++) {
+        // If determinant is not primary key, BCNF is violated
+        if (strcmp(fds[i].determinant, table->primary_key) != 0) {
+            bcnf_violation = 1;
+            violating_fd_idx = i;
+            break;
+        }
+    }
+    
+    if (bcnf_violation && violating_fd_idx != -1) {
+        // Decompose into two tables: 
+        // Table A: determinant + dependent (e.g. holds the functional dependency)
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wformat-truncation"
+        snprintf(optimized_tables_out[0].table_name, sizeof(optimized_tables_out[0].table_name), "%s_R1", table->table_name);
+        #pragma GCC diagnostic pop
+        strcpy(optimized_tables_out[0].primary_key, fds[violating_fd_idx].determinant);
+        optimized_tables_out[0].foreign_key[0] = 0;
+        optimized_tables_out[0].references_table[0] = 0;
+        
+        // Table B: table original primary key + determinant (as foreign key)
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wformat-truncation"
+        snprintf(optimized_tables_out[1].table_name, sizeof(optimized_tables_out[1].table_name), "%s_R2", table->table_name);
+        #pragma GCC diagnostic pop
+        strcpy(optimized_tables_out[1].primary_key, table->primary_key);
+        strcpy(optimized_tables_out[1].foreign_key, fds[violating_fd_idx].determinant);
+        strcpy(optimized_tables_out[1].references_table, optimized_tables_out[0].table_name);
+        
+        *optimized_count_out = 2;
+    } else {
+        // Already in BCNF, return original table
+        optimized_tables_out[0] = *table;
+        *optimized_count_out = 1;
+    }
+    return 0;
+}
+
 
 
 

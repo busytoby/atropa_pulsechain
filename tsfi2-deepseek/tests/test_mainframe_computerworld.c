@@ -2591,6 +2591,25 @@ static void test_new_mainframe_features(void) {
     char roland_path_buf[128];
     assert(tsfi_cw_roland_solve_join_path(path_tables, 3, "A", "C", roland_path_buf, 128) == 0);
     assert(strcmp(roland_path_buf, "A -> B -> C") == 0);
+
+    // Roland Domain Integrity Checker test
+    int dom_valid = 0;
+    assert(tsfi_cw_roland_check_domain("PHONE_105", 100, 200, &dom_valid) == 0);
+    assert(dom_valid == 1);
+    assert(tsfi_cw_roland_check_domain("PHONE_50", 100, 200, &dom_valid) == 0);
+    assert(dom_valid == 0);
+
+    // Roland BCNF Optimizer test
+    tsfi_cw_hainaut_table bcnf_tbls[2];
+    int opt_count = 0;
+    tsfi_cw_hainaut_fd violate_fd[1] = { { "DEPT_ID", "DEPT_NAME" } };
+    assert(tsfi_cw_roland_optimize_bcnf(&super_tbl, violate_fd, 1, bcnf_tbls, &opt_count) == 0);
+    assert(opt_count == 2);
+    assert(strcmp(bcnf_tbls[0].table_name, "EMPLOYEE_R1") == 0);
+    assert(strcmp(bcnf_tbls[0].primary_key, "DEPT_ID") == 0);
+    assert(strcmp(bcnf_tbls[1].table_name, "EMPLOYEE_R2") == 0);
+    assert(strcmp(bcnf_tbls[1].primary_key, "EMP_ID") == 0);
+    assert(strcmp(bcnf_tbls[1].foreign_key, "DEPT_ID") == 0);
 }
 
 int main(void) {
