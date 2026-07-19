@@ -782,6 +782,14 @@ int main(void) {
     remove("vaesen_registry.dat.bin");
     remove("vaesen_sights.dat.bin");
 
+    // Test Case 163: COBOL XML GENERATE Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_xml_gen("XML GENERATE XML-DOC FROM GRP-REC.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 164: JCL DD DSNTYPE=LARGE Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_dsntype_large("//DD30 DD DSN=LARGE.DATA,DSNTYPE=LARGE\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

@@ -456,4 +456,10 @@ int tsfi_zorse_validate_cobol_copy_of(const char *cobol_src, int *is_valid_out);
 // Zorse JCL DD ACCODE Parameter Auditor
 int tsfi_zorse_validate_jcl_accode(const char *jcl_line, int *is_valid_out);
 
+// Zorse COBOL XML GENERATE Statement Auditor
+int tsfi_zorse_validate_cobol_xml_gen(const char *cobol_src, int *is_valid_out);
+
+// Zorse JCL DD DSNTYPE=LARGE Parameter Auditor
+int tsfi_zorse_validate_jcl_dsntype_large(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H
