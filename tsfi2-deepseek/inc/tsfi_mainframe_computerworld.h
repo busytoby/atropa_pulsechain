@@ -1486,5 +1486,8 @@ typedef struct {
 int tsfi_cw_validate_23_node_domain(const tsfi_cw_23_node *node, int *is_valid_out);
 int tsfi_cw_split_23_node_bcnf(tsfi_cw_23_node *parent, tsfi_cw_23_node *child_a_out, tsfi_cw_23_node *child_b_out);
 
+int tsfi_cw_merge_23_nodes(const tsfi_cw_23_node *child_a, const tsfi_cw_23_node *child_b, int parent_divider, tsfi_cw_23_node *merged_node_out);
+int tsfi_cw_audit_23_dependencies(const tsfi_cw_23_node *node, const tsfi_cw_hainaut_fd *fds, int fd_count, int *violation_detected_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

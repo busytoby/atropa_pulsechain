@@ -2888,6 +2888,51 @@ int tsfi_cw_split_23_node_bcnf(tsfi_cw_23_node *parent, tsfi_cw_23_node *child_a
     return 0;
 }
 
+int tsfi_cw_merge_23_nodes(const tsfi_cw_23_node *child_a, const tsfi_cw_23_node *child_b, int parent_divider, tsfi_cw_23_node *merged_node_out) {
+    if (!child_a || !child_b || !merged_node_out) return -1;
+    
+    // Check if combined key counts can fit into a single 3-node (max 2 keys)
+    if (child_a->key_count + child_b->key_count + 1 > 2) {
+        return 1; // cannot merge directly without splitting or parent borrow
+    }
+    
+    merged_node_out->key_count = 2;
+    merged_node_out->keys[0] = child_a->keys[0];
+    merged_node_out->keys[1] = parent_divider;
+    
+    merged_node_out->child_bounds[0][0] = child_a->child_bounds[0][0];
+    merged_node_out->child_bounds[0][1] = child_a->child_bounds[0][1];
+    merged_node_out->child_bounds[1][0] = child_a->child_bounds[1][0];
+    merged_node_out->child_bounds[1][1] = child_a->child_bounds[1][1];
+    merged_node_out->child_bounds[2][0] = child_b->child_bounds[0][0];
+    merged_node_out->child_bounds[2][1] = child_b->child_bounds[0][1];
+    
+    return 0;
+}
+
+int tsfi_cw_audit_23_dependencies(const tsfi_cw_23_node *node, const tsfi_cw_hainaut_fd *fds, int fd_count, int *violation_detected_out) {
+    if (!node || !fds || fd_count <= 0 || !violation_detected_out) return -1;
+    
+    *violation_detected_out = 0;
+    
+    // Audit if any determinant represents key mapping matching the node keys
+    for (int i = 0; i < fd_count; i++) {
+        int key_found = 0;
+        int det_val = atoi(fds[i].determinant);
+        for (int k = 0; k < node->key_count; k++) {
+            if (node->keys[k] == det_val) {
+                key_found = 1;
+                break;
+            }
+        }
+        if (!key_found && det_val > 0) {
+            *violation_detected_out = 1;
+            return 0;
+        }
+    }
+    return 0;
+}
+
 
 
 

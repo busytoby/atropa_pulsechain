@@ -2624,6 +2624,19 @@ static void test_new_mainframe_features(void) {
     assert(child_a.keys[0] == 100);
     assert(child_b.key_count == 1);
     assert(child_b.keys[0] == 200);
+
+    // 2-3 Tree Node Domain Merger test
+    tsfi_cw_23_node merged_node;
+    child_a.key_count = 0; // Simulate deletion underflow in child_a
+    assert(tsfi_cw_merge_23_nodes(&child_a, &child_b, 150, &merged_node) == 0);
+    assert(merged_node.key_count == 2);
+    assert(merged_node.keys[1] == 150);
+
+    // 2-3 Tree Node Dependency Auditor test
+    tsfi_cw_hainaut_fd audit_fds[1] = { { "200", "300" } };
+    int audit_violation = 0;
+    assert(tsfi_cw_audit_23_dependencies(&child_b, audit_fds, 1, &audit_violation) == 0);
+    assert(audit_violation == 0);
 }
 
 int main(void) {
