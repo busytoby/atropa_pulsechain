@@ -2521,6 +2521,54 @@ int tsfi_cw_hainaut_check_redundancy(const tsfi_cw_hainaut_table *tables, int co
     return 0;
 }
 
+int tsfi_cw_hainaut_split_attribute(const tsfi_cw_hainaut_table *source_table, const char *complex_attr, char *part_a_out, char *part_b_out, int max_len) {
+    if (!source_table || !complex_attr || !part_a_out || !part_b_out || max_len <= 0) return -1;
+    
+    // Find delimiter underscore or space to split the attribute
+    const char *delim = strchr(complex_attr, '_');
+    if (!delim) delim = strchr(complex_attr, ' ');
+    
+    if (delim) {
+        int len_a = delim - complex_attr;
+        if (len_a >= max_len) len_a = max_len - 1;
+        strncpy(part_a_out, complex_attr, len_a);
+        part_a_out[len_a] = 0;
+        
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wstringop-truncation"
+        strncpy(part_b_out, delim + 1, max_len - 1);
+        part_b_out[max_len - 1] = 0;
+        #pragma GCC diagnostic pop
+    } else {
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wstringop-truncation"
+        strncpy(part_a_out, complex_attr, max_len - 1);
+        part_a_out[max_len - 1] = 0;
+        #pragma GCC diagnostic pop
+        part_b_out[0] = 0;
+    }
+    return 0;
+}
+
+int tsfi_cw_hainaut_generate_view(const tsfi_cw_hainaut_table *table, const char *attributes, tsfi_cw_hainaut_view *view_out) {
+    if (!table || !attributes || !view_out) return -1;
+    
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wformat-truncation"
+    snprintf(view_out->view_name, sizeof(view_out->view_name), "V_%s", table->table_name);
+    #pragma GCC diagnostic pop
+    
+    strcpy(view_out->source_table, table->table_name);
+    
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wstringop-truncation"
+    strncpy(view_out->projected_attributes, attributes, sizeof(view_out->projected_attributes) - 1);
+    view_out->projected_attributes[sizeof(view_out->projected_attributes) - 1] = 0;
+    #pragma GCC diagnostic pop
+    
+    return 0;
+}
+
 
 
 

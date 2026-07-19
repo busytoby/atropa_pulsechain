@@ -1417,5 +1417,17 @@ int tsfi_cw_hainaut_promote_attribute(const tsfi_cw_hainaut_table *source_table,
 // Hainaut Schema Redundancy Checker
 int tsfi_cw_hainaut_check_redundancy(const tsfi_cw_hainaut_table *tables, int count, int *redundancy_detected_out);
 
+// Hainaut Attribute Splitter
+int tsfi_cw_hainaut_split_attribute(const tsfi_cw_hainaut_table *source_table, const char *complex_attr, char *part_a_out, char *part_b_out, int max_len);
+
+// Hainaut Schema View Generator
+typedef struct {
+    char view_name[32];
+    char source_table[32];
+    char projected_attributes[64];
+} tsfi_cw_hainaut_view;
+
+int tsfi_cw_hainaut_generate_view(const tsfi_cw_hainaut_table *table, const char *attributes, tsfi_cw_hainaut_view *view_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

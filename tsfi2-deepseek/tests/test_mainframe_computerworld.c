@@ -2499,6 +2499,19 @@ static void test_new_mainframe_features(void) {
     int redundancy = 0;
     assert(tsfi_cw_hainaut_check_redundancy(redundant_list, 3, &redundancy) == 0);
     assert(redundancy == 1); // Table3 -> Table2 -> Table1 detected
+
+    // Hainaut Attribute Splitter test
+    char part_a[32], part_b[32];
+    assert(tsfi_cw_hainaut_split_attribute(&trsf_tbl, "FIRST_LAST", part_a, part_b, 32) == 0);
+    assert(strcmp(part_a, "FIRST") == 0);
+    assert(strcmp(part_b, "LAST") == 0);
+
+    // Hainaut Schema View Generator test
+    tsfi_cw_hainaut_view view;
+    assert(tsfi_cw_hainaut_generate_view(&trsf_tbl, "PK_ID,FIRST_NAME", &view) == 0);
+    assert(strcmp(view.view_name, "V_T_User") == 0);
+    assert(strcmp(view.source_table, "T_User") == 0);
+    assert(strcmp(view.projected_attributes, "PK_ID,FIRST_NAME") == 0);
 }
 
 int main(void) {
