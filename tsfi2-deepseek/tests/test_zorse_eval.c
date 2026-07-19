@@ -1072,6 +1072,14 @@ int main(void) {
     assert(tsfi_zorse_validate_cobol_final_spacing("01 SUMMARY-LINE FINAL LINE PLUS 2.", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 227: z/VSE POWER Spool Print Class Override Validator validation
+    assert(tsfi_zorse_validate_vse_power_class_override("* $$ LST CLASS=(A,B),DISP=H\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 228: COBOL Report Writer Page Heading Spacing Limit Auditor validation
+    assert(tsfi_zorse_validate_cobol_ph_spacing_limit("01 PH-LINE PAGE HEADING LIMIT 60.", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
