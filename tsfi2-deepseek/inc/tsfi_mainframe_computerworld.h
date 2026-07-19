@@ -1255,6 +1255,7 @@ typedef struct {
 
 int tsfi_cw_omp_galasa_init_run(const char *suite_name, tsfi_cw_omp_galasa_run *run_out);
 int tsfi_cw_omp_galasa_assert(tsfi_cw_omp_galasa_run *run, int condition);
+int tsfi_cw_omp_galasa_assert_with_retry(tsfi_cw_omp_galasa_run *run, int (*eval_fn)(void *ctx), void *ctx, int max_retries);
 int tsfi_cw_omp_galasa_run_diagnostics(const tsfi_cw_omp_galasa_run *run, char *report_out, size_t report_max);
 
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H

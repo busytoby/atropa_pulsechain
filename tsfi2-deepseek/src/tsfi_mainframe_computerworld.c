@@ -1887,6 +1887,24 @@ int tsfi_cw_omp_feilong_dispatch(const char *cmd_line, tsfi_cw_omp_feilong_guest
             return 1;
         }
         return tsfi_cw_omp_feilong_set_state(guest_io_out, state);
+    } else if (strncmp(cmd_line, "SCALE ", 6) == 0) {
+        char name[32] = {0};
+        int cpus = 0;
+        int mem = 0;
+        if (sscanf(cmd_line + 6, "%31s %d %d", name, &cpus, &mem) != 3) {
+            snprintf(err_msg_out, err_max, "PARSE_ERROR: Invalid scale arguments");
+            return 1;
+        }
+        if (strcmp(guest_io_out->guest_name, name) != 0) {
+            snprintf(err_msg_out, err_max, "TARGET_MISMATCH: Guest name does not match memory instance");
+            return 1;
+        }
+        guest_io_out->cpu_count = cpus;
+        guest_io_out->memory_mb = mem;
+        if (mem > 16384) {
+            snprintf(err_msg_out, err_max, "WARNING: Memory allocation exceeds 16GB ceiling threshold");
+        }
+        return 0;
     }
     
     snprintf(err_msg_out, err_max, "UNKNOWN_COMMAND: %s", cmd_line);
@@ -1911,6 +1929,21 @@ int tsfi_cw_omp_galasa_run_diagnostics(const tsfi_cw_omp_galasa_run *run, char *
              (run->assertions_failed > 0) ? "RED_ALERT" : "STABLE_GREEN");
     return 0;
 }
+
+int tsfi_cw_omp_galasa_assert_with_retry(tsfi_cw_omp_galasa_run *run, int (*eval_fn)(void *ctx), void *ctx, int max_retries) {
+    if (!run || !eval_fn) return -1;
+    
+    int passes = 0;
+    for (int r = 0; r < max_retries; r++) {
+        if (eval_fn(ctx)) {
+            passes = 1;
+            break;
+        }
+    }
+    
+    return tsfi_cw_omp_galasa_assert(run, passes);
+}
+
 
 
 

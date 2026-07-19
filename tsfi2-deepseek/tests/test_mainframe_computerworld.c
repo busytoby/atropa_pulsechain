@@ -114,6 +114,12 @@ static void test_cobol_comp3(void) {
     assert(strcmp(ascii, "0") == 0);
 }
 
+static int omp_galasa_mock_eval(void *ctx) {
+    int *attempts = (int *)ctx;
+    (*attempts)++;
+    return (*attempts >= 2);
+}
+
 static void test_new_mainframe_features(void) {
     printf("[Computerworld Test] Verifying IBM HFP Conversions...\n");
     float f1 = 1.0f;
@@ -2228,10 +2234,22 @@ static void test_new_mainframe_features(void) {
     assert(tsfi_cw_omp_feilong_dispatch("INVALID_CMD", &guest, err_buf, sizeof(err_buf)) == 1);
     assert(strlen(err_buf) > 0);
 
+    // Feilong SCALE command & ceiling memory warning threshold check
+    err_buf[0] = 0;
+    assert(tsfi_cw_omp_feilong_dispatch("SCALE GUEST01 8 32768", &guest, err_buf, sizeof(err_buf)) == 0);
+    assert(guest.cpu_count == 8);
+    assert(guest.memory_mb == 32768);
+    assert(strstr(err_buf, "exceeds 16GB") != NULL);
+
     // OMP Galasa Diagnostics test
     char report_buf[256] = {0};
     assert(tsfi_cw_omp_galasa_run_diagnostics(&run, report_buf, sizeof(report_buf)) == 0);
     assert(strstr(report_buf, "RED_ALERT") != NULL);
+
+    // OMP Galasa Assert with Retry test
+    int attempts = 0;
+    assert(tsfi_cw_omp_galasa_assert_with_retry(&run, omp_galasa_mock_eval, &attempts, 3) == 0);
+    assert(attempts == 2);
 }
 
 int main(void) {
