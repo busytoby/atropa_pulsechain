@@ -585,4 +585,10 @@ int tsfi_zorse_validate_vse_power_node(const char *jcl_line, int *is_valid_out);
 // COBOL Report Writer Report Footing Auditor
 int tsfi_zorse_validate_cobol_report_footing(const char *cobol_src, int *is_valid_out);
 
+// z/VSE POWER Spool Print Forms Overlay Validator
+int tsfi_zorse_validate_vse_power_flash(const char *jcl_line, int *is_valid_out);
+
+// COBOL Report Writer Control Footing Group Auditor
+int tsfi_zorse_validate_cobol_cf_group(const char *cobol_src, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H
