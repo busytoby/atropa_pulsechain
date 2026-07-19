@@ -150,6 +150,28 @@ int main(void) {
     assert(com_scene.primitives[6].position.y == 0.0f);
     printf("  [PASS] FIPS 54 COM layout grid coordinate mapping verified.\n");
 
+    // 7. Verify Vaesen Silhouette and Supernatural Aura integrations
+    printf("[TEST] Validating Vaesen integrations...\n");
+    // Register and record sight telemetry for Uppsala region
+    extern int tsfi_vsen_vaesen_register(const char *name, const char *type, int risk_level, const char *status);
+    extern int tsfi_vsen_vaesen_record_sight(const char *name, const char *location, int fear_level);
+    
+    assert(tsfi_vsen_vaesen_register("Mara", "Nightmare", 2, "Active") == 0);
+    assert(tsfi_vsen_vaesen_record_sight("Mara", "Uppsala", 5) == 0);
+
+    tsfi_cgm_scene vaesen_scene;
+    tsfi_cgm_scene_init(&vaesen_scene);
+    tsfi_cgm_scene_add_primitive(&vaesen_scene, CGM_PRIM_SPHERE, (tsfi_rt_vec3){0, 0, 5}, (tsfi_rt_vec3){1.0f, 0.0f, 0.0f}, 1.5f, (tsfi_rt_vec3){0,0,0});
+
+    // Test Silhouette
+    assert(tsfi_ray_tracer_apply_vaesen_silhouette(&vaesen_scene, "Mara") == 0);
+    // Radius should be scaled: 1.5f * (1.0f + 0.2f * 2) = 1.5 * 1.4 = 2.1f
+    assert(vaesen_scene.primitives[0].param1 > 2.09f && vaesen_scene.primitives[0].param1 < 2.11f);
+
+    // Test Aura
+    assert(tsfi_ray_tracer_apply_vaesen_aura(&vaesen_scene, "Uppsala") == 0);
+    assert(vaesen_scene.ambient_color.x > 0.3f); // Base 0.1f + 0.05f * 5 = 0.35f
+
     free(img_buf);
     printf("[SUCCESS] CGI/CGM Ray Tracer validation completed successfully!\n");
     return 0;

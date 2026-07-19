@@ -1,4 +1,5 @@
 #include "tsfi_ray_tracer.h"
+#include "tsfi_zorse_eval.h"
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
@@ -307,6 +308,43 @@ int tsfi_fips54_com_to_ray_tracer(int rows, int cols, float spacing, tsfi_cgm_sc
             tsfi_cgm_scene_add_primitive(scene, CGM_PRIM_SPHERE, pos, color, 0.15f, (tsfi_rt_vec3){0,0,0});
         }
     }
+
+    return 0;
+}
+
+int tsfi_ray_tracer_apply_vaesen_silhouette(tsfi_cgm_scene *scene, const char *vaesen_name) {
+    if (!scene || !vaesen_name) return -1;
+
+    char type_out[128] = {0};
+    char status_out[128] = {0};
+    int risk_level = 0;
+
+    int rc = tsfi_vsen_vaesen_lookup(vaesen_name, type_out, &risk_level, status_out, sizeof(type_out));
+    if (rc != 0) return rc;
+
+    // Apply silhouette modification to all active primitives in the scene
+    for (int i = 0; i < scene->primitive_count; i++) {
+        if (scene->primitives[i].type == CGM_PRIM_SPHERE) {
+            scene->primitives[i].param1 *= (1.0f + 0.2f * (float)risk_level);
+        }
+    }
+
+    return 0;
+}
+
+int tsfi_ray_tracer_apply_vaesen_aura(tsfi_cgm_scene *scene, const char *region_name) {
+    if (!scene || !region_name) return -1;
+
+    int fear_level = 0;
+    int rc = tsfi_vsen_vaesen_get_aggregate_fear(region_name, &fear_level);
+    if (rc != 0) return rc;
+
+    // Shift ambient color dynamically based on fear levels (blending a spectral crimson aura)
+    scene->ambient_color.x += 0.05f * (float)fear_level;
+    scene->ambient_color.y += 0.01f * (float)fear_level;
+    
+    if (scene->ambient_color.x > 1.0f) scene->ambient_color.x = 1.0f;
+    if (scene->ambient_color.y > 1.0f) scene->ambient_color.y = 1.0f;
 
     return 0;
 }

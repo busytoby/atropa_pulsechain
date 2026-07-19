@@ -38,4 +38,10 @@ int tsfi_gks_to_ray_tracer(const uint8_t *gks_stream, int len, tsfi_cgm_scene *s
 int tsfi_oscar_trace_to_ray_tracer(const float *coefficients, int order, float x_start, float x_end, int steps, tsfi_cgm_scene *scene);
 int tsfi_fips54_com_to_ray_tracer(int rows, int cols, float spacing, tsfi_cgm_scene *scene);
 
+// Vaesen Silhouette Footprint Mapping
+int tsfi_ray_tracer_apply_vaesen_silhouette(tsfi_cgm_scene *scene, const char *vaesen_name);
+
+// Vaesen Supernatural Aura Shading
+int tsfi_ray_tracer_apply_vaesen_aura(tsfi_cgm_scene *scene, const char *region_name);
+
 #endif // TSFI_RAY_TRACER_H
