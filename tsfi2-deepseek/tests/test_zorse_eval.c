@@ -530,6 +530,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_export("//EXPORT EXPORT SYMLIST=(VAR1,VAR2)\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 112: COBOL EXIT Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_exit("EXIT PROGRAM.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 113: JCL SET Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_set("// SET VAR1=VALUE1\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
