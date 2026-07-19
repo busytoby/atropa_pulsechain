@@ -212,6 +212,17 @@ int main(void) {
     int space_opt_res = tsfi_zorse_optimize_jcl_space("01 MY-VAR PIC X(1000).", "moondream", space_opt_buf, sizeof(space_opt_buf));
     assert(space_opt_res == 0 || space_opt_res == -2);
 
+    // Test Case 40: COBOL Copybook Resolver validation
+    char copybook_buf[256];
+    int copy_res = tsfi_zorse_resolve_copybooks("01 MY-VAR. COPY MYCOPY.", copybook_buf, sizeof(copybook_buf));
+    assert(copy_res == 0);
+    assert(strcmp(copybook_buf, "MYCOPY") == 0);
+
+    // Test Case 41: JCL DD DISP Parameter Validator validation
+    const char *disp_inp = "//DD1 DD DSN=A.B.C,DISP=(NEW,CATLG,DELETE)\n";
+    assert(tsfi_zorse_validate_jcl_disp(disp_inp, &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

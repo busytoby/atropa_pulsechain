@@ -87,4 +87,10 @@ int tsfi_zorse_audit_fan_spectrogram(const char *b64_spectrogram_img, const char
 // Zorse COBOL-to-JCL SPACE Allocation Optimizer
 int tsfi_zorse_optimize_jcl_space(const char *cobol_src, const char *model_name, char *space_opt_out, size_t max_len);
 
+// Zorse COBOL Copybook Dependency Resolver
+int tsfi_zorse_resolve_copybooks(const char *cobol_src, char *dependencies_out, size_t max_len);
+
+// Zorse JCL DD DISP Parameter Auditor
+int tsfi_zorse_validate_jcl_disp(const char *dd_statement, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

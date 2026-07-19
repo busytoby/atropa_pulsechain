@@ -574,3 +574,50 @@ int tsfi_zorse_optimize_jcl_space(const char *cobol_src, const char *model_name,
     
     return ret;
 }
+
+int tsfi_zorse_resolve_copybooks(const char *cobol_src, char *dependencies_out, size_t max_len) {
+    if (!cobol_src || !dependencies_out || max_len == 0) return -1;
+    
+    dependencies_out[0] = '\0';
+    
+    const char *p = strstr(cobol_src, "COPY ");
+    if (!p) return 0;
+    
+    p += 5; // Skip "COPY "
+    
+    // Extract copybook name (alphanumeric, -, or _)
+    size_t len = 0;
+    while (*p != '\0' && *p != ' ' && *p != '.' && *p != '\n') {
+        if (len < max_len - 1) {
+            dependencies_out[len] = *p;
+            len++;
+        }
+        p++;
+    }
+    dependencies_out[len] = '\0';
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_jcl_disp(const char *dd_statement, int *is_valid_out) {
+    if (!dd_statement || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    // Check if statement contains DISP=
+    const char *p = strstr(dd_statement, "DISP=");
+    if (!p) return 0;
+    
+    p += 5; // Skip "DISP="
+    
+    // Match disposition status operators
+    if (strncmp(p, "NEW", 3) == 0 || strncmp(p, "OLD", 3) == 0 ||
+        strncmp(p, "SHR", 3) == 0 || strncmp(p, "MOD", 3) == 0 ||
+        strncmp(p, "CATLG", 5) == 0 || strncmp(p, "KEEP", 4) == 0 ||
+        strncmp(p, "DELETE", 6) == 0 || strncmp(p, "PASS", 4) == 0 ||
+        *p == '(') {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
