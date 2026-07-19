@@ -1411,5 +1411,11 @@ int tsfi_cw_hainaut_transform_er_to_relational(const tsfi_cw_hainaut_entity *ent
 // Hainaut Schema Merger
 int tsfi_cw_hainaut_merge_schemas(const tsfi_cw_hainaut_table *table_a, const tsfi_cw_hainaut_table *table_b, tsfi_cw_hainaut_table *merged_table_out);
 
+// Hainaut Attribute Promoter
+int tsfi_cw_hainaut_promote_attribute(const tsfi_cw_hainaut_table *source_table, const char *attribute_name, tsfi_cw_hainaut_table *new_table_out);
+
+// Hainaut Schema Redundancy Checker
+int tsfi_cw_hainaut_check_redundancy(const tsfi_cw_hainaut_table *tables, int count, int *redundancy_detected_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

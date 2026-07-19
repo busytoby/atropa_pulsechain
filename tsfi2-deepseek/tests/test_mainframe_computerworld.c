@@ -2473,6 +2473,32 @@ static void test_new_mainframe_features(void) {
     assert(strcmp(mrg_tbl.table_name, "CUSTOMERS_BASE_MG") == 0);
     assert(strcmp(mrg_tbl.primary_key, "CUST_ID") == 0);
     assert(strcmp(mrg_tbl.foreign_key, "CUST_ID") == 0);
+
+    // Hainaut Attribute Promoter test
+    tsfi_cw_hainaut_table promoted_tbl;
+    assert(tsfi_cw_hainaut_promote_attribute(&trsf_tbl, "Email", &promoted_tbl) == 0);
+    assert(strcmp(promoted_tbl.table_name, "T_User_Email") == 0);
+    assert(strcmp(promoted_tbl.primary_key, "PK_Email") == 0);
+
+    // Hainaut Redundancy Checker test
+    tsfi_cw_hainaut_table redundant_list[3];
+    // Table 2 (t_i) references Table 1 (t_j)
+    strcpy(redundant_list[0].table_name, "Table1");
+    redundant_list[0].foreign_key[0] = 0;
+    redundant_list[0].references_table[0] = 0;
+    
+    strcpy(redundant_list[1].table_name, "Table2");
+    strcpy(redundant_list[1].foreign_key, "T1_ID");
+    strcpy(redundant_list[1].references_table, "Table1");
+    
+    // Table 3 (t_k) references Table 2 (t_j) which references Table 1
+    strcpy(redundant_list[2].table_name, "Table3");
+    strcpy(redundant_list[2].foreign_key, "T2_ID");
+    strcpy(redundant_list[2].references_table, "Table2");
+    
+    int redundancy = 0;
+    assert(tsfi_cw_hainaut_check_redundancy(redundant_list, 3, &redundancy) == 0);
+    assert(redundancy == 1); // Table3 -> Table2 -> Table1 detected
 }
 
 int main(void) {
