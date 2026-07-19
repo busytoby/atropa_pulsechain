@@ -276,6 +276,15 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_region("//STEP1 EXEC PGM=IEFBR14,REGION=4M\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 52: COBOL OCCURS DEPENDING ON Clause Auditor validation
+    const char *occurs_dep_inp = "05 MY-ARRAY PIC X OCCURS 1 TO 100 TIMES DEPENDING ON MY-COUNTER.";
+    assert(tsfi_zorse_validate_cobol_occurs_depending(occurs_dep_inp, &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 53: JCL TIME Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_time("//STEP1 EXEC PGM=IEFBR14,TIME=1440\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

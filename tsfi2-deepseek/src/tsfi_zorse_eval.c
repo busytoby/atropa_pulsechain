@@ -841,3 +841,34 @@ int tsfi_zorse_validate_jcl_region(const char *jcl_line, int *is_valid_out) {
     
     return 0;
 }
+
+int tsfi_zorse_validate_cobol_occurs_depending(const char *occurs_clause, int *is_valid_out) {
+    if (!occurs_clause || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    // Match "OCCURS" and "DEPENDING ON" anywhere inside the clause statement bounds
+    if (strstr(occurs_clause, "OCCURS ") && strstr(occurs_clause, "DEPENDING ON")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_jcl_time(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    const char *p = strstr(jcl_line, "TIME=");
+    if (!p) return 0;
+    
+    p += 5; // Skip "TIME="
+    
+    // Check for standard formats like TIME=1440, TIME=N, or TIME=(mins,secs)
+    if (*p == '(' || (*p >= '0' && *p <= '9')) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}

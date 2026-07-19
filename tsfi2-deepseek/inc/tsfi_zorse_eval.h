@@ -123,4 +123,10 @@ const char* tsfi_zorse_explain_file_status(int status_code);
 // Zorse JCL REGION Sizing Validator
 int tsfi_zorse_validate_jcl_region(const char *jcl_line, int *is_valid_out);
 
+// Zorse COBOL OCCURS DEPENDING ON Clause Auditor
+int tsfi_zorse_validate_cobol_occurs_depending(const char *occurs_clause, int *is_valid_out);
+
+// Zorse JCL TIME Parameter Auditor
+int tsfi_zorse_validate_jcl_time(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H
