@@ -352,3 +352,24 @@ int tsfi_phoneme_xiang_detect_liaison(const char *curr_syllable, const char *nex
     
     return 0;
 }
+
+int tsfi_phoneme_xiang_smooth_liaison(float freq_a, float freq_b, float ratio, float *smoothed_freq_out) {
+    if (ratio < 0.0f || ratio > 1.0f || !smoothed_freq_out) return -1;
+    
+    // Linearly interpolate between tone pitch frequencies to smooth syllable transition
+    *smoothed_freq_out = (freq_a * (1.0f - ratio)) + (freq_b * ratio);
+    return 0;
+}
+
+int tsfi_phoneme_xiang_cantonese_sandhi(const int *tones, int count, int target_idx, float base_freq, float *adjusted_freq_out) {
+    if (!tones || count <= 0 || target_idx < 0 || target_idx >= count || !adjusted_freq_out) return -1;
+    
+    *adjusted_freq_out = base_freq;
+    
+    // Cantonese tone sandhi: consecutive low falling tones (tone 4)
+    // If current is tone 4, and next is tone 4, current is shifted to tone 2 (high rising multiplier 1.25)
+    if (tones[target_idx] == 4 && target_idx + 1 < count && tones[target_idx + 1] == 4) {
+        *adjusted_freq_out = base_freq * 1.5625f; // shifts up (1.25 / 0.8)
+    }
+    return 0;
+}

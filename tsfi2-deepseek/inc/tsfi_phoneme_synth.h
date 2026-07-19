@@ -63,4 +63,10 @@ int tsfi_phoneme_xiang_map_cantonese_tone(int tone_number, float base_freq, floa
 // Xiang Syllable Liaison Detector
 int tsfi_phoneme_xiang_detect_liaison(const char *curr_syllable, const char *next_syllable, int *liaison_needed_out);
 
+// Xiang Liaison Transition Smoother
+int tsfi_phoneme_xiang_smooth_liaison(float freq_a, float freq_b, float ratio, float *smoothed_freq_out);
+
+// Xiang Cantonese Tone Sandhi Controller
+int tsfi_phoneme_xiang_cantonese_sandhi(const int *tones, int count, int target_idx, float base_freq, float *adjusted_freq_out);
+
 #endif // TSFI_PHONEME_SYNTH_H

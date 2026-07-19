@@ -125,6 +125,17 @@ int main(void) {
     assert(tsfi_phoneme_xiang_detect_liaison("ni", "ao", &liaison_required) == 0);
     assert(liaison_required == 1);
 
+    // 18. Test Xiang Liaison Transition Smoother
+    float smoothed_freq = 0.0f;
+    assert(tsfi_phoneme_xiang_smooth_liaison(100.0f, 200.0f, 0.5f, &smoothed_freq) == 0);
+    assert(smoothed_freq == 150.0f);
+
+    // 19. Test Xiang Cantonese Tone Sandhi Controller
+    int cant_tones[3] = { 4, 4, 1 };
+    float c_sandhi_freq = 0.0f;
+    assert(tsfi_phoneme_xiang_cantonese_sandhi(cant_tones, 3, 0, 100.0f, &c_sandhi_freq) == 0);
+    assert(c_sandhi_freq == 156.25f);
+
     // Cleanup
     tsfi_synth_perf_destroy(perf_engine);
     tsfi_trie_destroy(trie_root);
