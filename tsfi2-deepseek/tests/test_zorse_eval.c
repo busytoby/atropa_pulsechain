@@ -482,6 +482,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_flash("//PRT4 DD SYSOUT=A,FLASH=STD1\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 100: COBOL CALL ON EXCEPTION Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_call_exception("CALL 'MYPROG' ON EXCEPTION DISPLAY 'ERR'.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 101: JCL HOLD Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_hold("//DD11 DD DSN=A.B.C,HOLD=YES\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

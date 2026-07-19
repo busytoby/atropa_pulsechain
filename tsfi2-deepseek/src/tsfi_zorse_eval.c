@@ -1469,3 +1469,27 @@ int tsfi_zorse_validate_jcl_flash(const char *jcl_line, int *is_valid_out) {
     
     return 0;
 }
+
+int tsfi_zorse_validate_cobol_call_exception(const char *cobol_src, int *is_valid_out) {
+    if (!cobol_src || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(cobol_src, "CALL ") && (strstr(cobol_src, "EXCEPTION") || strstr(cobol_src, "OVERFLOW"))) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_jcl_hold(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(jcl_line, "HOLD=")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
