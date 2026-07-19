@@ -803,6 +803,12 @@ int main(void) {
     assert(tsfi_zorse_validate_stable_diffusion("//STEP EXEC PGM=SD_DIFFUSE\n", "LINKAGE SECTION. CALL USING PARM-1.", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 167: Zorse Stable Diffusion Algol phase variance simulation validation
+    double noise_out = 0.0;
+    assert(tsfi_zorse_execute_stable_diffusion_algol(2.0, 10.0, 1000.0, &noise_out) == 0);
+    // 2^10 = 1024. 1024 mod 1000 = 24.
+    assert(noise_out > 23.9f && noise_out < 24.1f);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

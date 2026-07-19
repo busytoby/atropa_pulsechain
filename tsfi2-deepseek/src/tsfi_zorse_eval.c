@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 int tsfi_zorse_validate_jcl(const char *jcl_string, int *is_valid_out, char *error_msg_out, int max_err_len) {
     if (!jcl_string || !is_valid_out || !error_msg_out || max_err_len <= 0) return -1;
@@ -2364,6 +2365,17 @@ int tsfi_zorse_validate_stable_diffusion(const char *jcl_line, const char *cobol
         (strstr(cobol_src, "LINKAGE SECTION") || strstr(cobol_src, "CALL USING"))) {
         *is_valid_out = 1;
     }
+
+    return 0;
+}
+
+int tsfi_zorse_execute_stable_diffusion_algol(double base, double secret, double prime, double *noise_out) {
+    if (!noise_out) return -1;
+    if (prime <= 0.0) return -2;
+
+    double val = pow(base, secret);
+    double quotient = floor(val / prime);
+    *noise_out = val - prime * quotient;
 
     return 0;
 }

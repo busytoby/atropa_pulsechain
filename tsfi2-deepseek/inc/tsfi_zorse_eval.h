@@ -465,4 +465,7 @@ int tsfi_zorse_validate_jcl_dsntype_large(const char *jcl_line, int *is_valid_ou
 // Zorse Stable Diffusion batch pipeline compliance auditor
 int tsfi_zorse_validate_stable_diffusion(const char *jcl_line, const char *cobol_src, int *is_valid_out);
 
+// Zorse Stable Diffusion Algol phase variance simulation
+int tsfi_zorse_execute_stable_diffusion_algol(double base, double secret, double prime, double *noise_out);
+
 #endif // TSFI_ZORSE_EVAL_H
