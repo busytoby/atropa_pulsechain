@@ -189,4 +189,10 @@ int tsfi_zorse_validate_cobol_inspect(const char *cobol_src, int *is_valid_out);
 // Zorse JCL AVGREC Parameter Auditor
 int tsfi_zorse_validate_jcl_avgrec(const char *jcl_line, int *is_valid_out);
 
+// Zorse COBOL UNSTRING Statement Pointer Auditor
+int tsfi_zorse_validate_cobol_unstring(const char *cobol_src, int *is_valid_out);
+
+// Zorse JCL SECMODEL Parameter Auditor
+int tsfi_zorse_validate_jcl_secmodel(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

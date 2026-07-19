@@ -374,6 +374,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_avgrec("//DD4 DD DSN=A.B.C,AVGREC=U\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 74: COBOL UNSTRING Statement Pointer Auditor validation
+    assert(tsfi_zorse_validate_cobol_unstring("UNSTRING MY-STR INTO DEST-STR1 DEST-STR2.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 75: JCL SECMODEL Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_secmodel("//DD5 DD DSN=A.B.C,SECMODEL=GDG\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
