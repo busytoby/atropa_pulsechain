@@ -2386,6 +2386,18 @@ static void test_new_mainframe_features(void) {
     assert(passes_audit == 1); // 5/1000 = 0.005 <= 0.01
     assert(tsfi_cw_nbs_verify_margin(1000, 15, 0.01, &passes_audit) == 0);
     assert(passes_audit == 0); // 15/1000 = 0.015 > 0.01
+
+    // Sammet Language Taxonomy test
+    tsfi_cw_sammet_lang lang;
+    assert(tsfi_cw_sammet_classify_lang("COBOL", &lang) == 0);
+    assert(strcmp(lang.category, "Business Oriented") == 0);
+    assert(lang.year == 1959);
+
+    // CODASYL Committee Design Register test
+    tsfi_cw_sammet_codasyl_vote vote;
+    assert(tsfi_cw_sammet_register_codasyl_vote("ADD DEFINE CLAUSE", 12, 4, &vote) == 0);
+    assert(vote.approved == 1);
+    assert(strcmp(vote.proposal, "ADD DEFINE CLAUSE") == 0);
 }
 
 int main(void) {

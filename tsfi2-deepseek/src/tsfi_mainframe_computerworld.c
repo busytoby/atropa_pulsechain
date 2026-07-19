@@ -2245,6 +2245,49 @@ int tsfi_cw_nbs_verify_margin(int sample_total, int discrepancies, double max_ma
     return 0;
 }
 
+int tsfi_cw_sammet_classify_lang(const char *lang_name, tsfi_cw_sammet_lang *lang_out) {
+    if (!lang_name || !lang_out) return -1;
+    
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wstringop-truncation"
+    strncpy(lang_out->name, lang_name, sizeof(lang_out->name) - 1);
+    lang_out->name[sizeof(lang_out->name) - 1] = 0;
+    
+    if (strcmp(lang_name, "FORTRAN") == 0) {
+        strcpy(lang_out->category, "Numerical Scientific");
+        lang_out->year = 1957;
+    } else if (strcmp(lang_name, "COBOL") == 0) {
+        strcpy(lang_out->category, "Business Oriented");
+        lang_out->year = 1959;
+    } else if (strcmp(lang_name, "LISP") == 0) {
+        strcpy(lang_out->category, "List Processing");
+        lang_out->year = 1958;
+    } else if (strcmp(lang_name, "FORMAC") == 0) {
+        strcpy(lang_out->category, "Formula Manipulation");
+        lang_out->year = 1962;
+    } else {
+        strcpy(lang_out->category, "Unknown Paradigm");
+        lang_out->year = 0;
+    }
+    #pragma GCC diagnostic pop
+    return 0;
+}
+
+int tsfi_cw_sammet_register_codasyl_vote(const char *proposal, int yeas, int nays, tsfi_cw_sammet_codasyl_vote *vote_out) {
+    if (!proposal || !vote_out) return -1;
+    
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wstringop-truncation"
+    strncpy(vote_out->proposal, proposal, sizeof(vote_out->proposal) - 1);
+    vote_out->proposal[sizeof(vote_out->proposal) - 1] = 0;
+    #pragma GCC diagnostic pop
+    
+    vote_out->yeas = yeas;
+    vote_out->nays = nays;
+    vote_out->approved = (yeas > nays);
+    return 0;
+}
+
 
 
 

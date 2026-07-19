@@ -1330,5 +1330,24 @@ int tsfi_cw_nbs_optimize_booths(int voter_count, int target_wait_mins, int *boot
 int tsfi_cw_nbs_calc_regional_turnout(const tsfi_cw_nbs_voter *voters, int voter_count, const char *target_region, double *turnout_rate_out);
 int tsfi_cw_nbs_verify_margin(int sample_total, int discrepancies, double max_margin, int *passes_audit_out);
 
+// Sammet Language Taxonomy
+typedef struct {
+    char name[32];
+    char category[32];
+    int year;
+} tsfi_cw_sammet_lang;
+
+int tsfi_cw_sammet_classify_lang(const char *lang_name, tsfi_cw_sammet_lang *lang_out);
+
+// CODASYL Committee Design Register
+typedef struct {
+    char proposal[64];
+    int yeas;
+    int nays;
+    int approved;
+} tsfi_cw_sammet_codasyl_vote;
+
+int tsfi_cw_sammet_register_codasyl_vote(const char *proposal, int yeas, int nays, tsfi_cw_sammet_codasyl_vote *vote_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 
