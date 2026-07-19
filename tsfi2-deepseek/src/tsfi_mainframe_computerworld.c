@@ -1972,6 +1972,7 @@ int tsfi_cw_omp_feilong_get_summary(const tsfi_cw_omp_feilong_guest *guests, int
     summary_out->active_guests = 0;
     summary_out->total_cpus = 0;
     summary_out->total_mem_mb = 0;
+    summary_out->oversubscribed_alert = 0;
     
     for (int i = 0; i < guest_count; i++) {
         if (strcmp(guests[i].lifecycle_state, "ACTIVE") == 0) {
@@ -1979,6 +1980,10 @@ int tsfi_cw_omp_feilong_get_summary(const tsfi_cw_omp_feilong_guest *guests, int
         }
         summary_out->total_cpus += guests[i].cpu_count;
         summary_out->total_mem_mb += guests[i].memory_mb;
+    }
+    
+    if (summary_out->total_mem_mb > 65536) {
+        summary_out->oversubscribed_alert = 1;
     }
     return 0;
 }
@@ -1989,6 +1994,36 @@ int tsfi_cw_omp_galasa_assert_timed(tsfi_cw_omp_galasa_run *run, int condition, 
     run->total_latency_ns += latency_ns;
     return tsfi_cw_omp_galasa_assert(run, condition);
 }
+
+int tsfi_cw_omp_galasa_write_html_report(const tsfi_cw_omp_galasa_run *run, const char *filepath) {
+    if (!run || !filepath) return -1;
+    
+    FILE *fp = fopen(filepath, "w");
+    if (!fp) return 1;
+    
+    fprintf(fp, "<!DOCTYPE html>\n<html>\n<head>\n<title>OMP Galasa Test Run Report</title>\n");
+    fprintf(fp, "<style>\nbody { font-family: sans-serif; background: #0c0f12; color: #f0f3f6; padding: 2rem; }\n");
+    fprintf(fp, ".badge { display: inline-block; padding: 0.5rem 1rem; border-radius: 4px; font-weight: bold; }\n");
+    fprintf(fp, ".green { background: #38ef7d; color: #000; }\n");
+    fprintf(fp, ".red { background: #ff4d4d; color: #fff; }\n");
+    fprintf(fp, "</style>\n</head>\n<body>\n");
+    fprintf(fp, "<h1>Galasa Test Suite: %s</h1>\n", run->test_suite_name);
+    fprintf(fp, "<p>Assertions Run: <strong>%d</strong></p>\n", run->assertions_run);
+    fprintf(fp, "<p>Passes: <strong>%d</strong></p>\n", run->passes);
+    fprintf(fp, "<p>Failures: <strong>%d</strong></p>\n", run->assertions_failed);
+    fprintf(fp, "<p>Cumulative Latency: <strong>%lu ns</strong></p>\n", (unsigned long)run->total_latency_ns);
+    
+    if (run->assertions_failed > 0) {
+        fprintf(fp, "<div class=\"badge red\">STATUS: FAIL (RED_ALERT)</div>\n");
+    } else {
+        fprintf(fp, "<div class=\"badge green\">STATUS: PASS (STABLE_GREEN)</div>\n");
+    }
+    
+    fprintf(fp, "</body>\n</html>\n");
+    fclose(fp);
+    return 0;
+}
+
 
 
 

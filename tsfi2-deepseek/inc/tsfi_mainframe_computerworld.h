@@ -1245,6 +1245,7 @@ typedef struct {
     int active_guests;
     int total_cpus;
     int total_mem_mb;
+    int oversubscribed_alert;
 } tsfi_cw_omp_feilong_summary;
 
 int tsfi_cw_omp_feilong_provision(const char *guest_name, int cpus, int memory_mb, tsfi_cw_omp_feilong_guest *guest_out);
@@ -1268,6 +1269,7 @@ int tsfi_cw_omp_galasa_assert(tsfi_cw_omp_galasa_run *run, int condition);
 int tsfi_cw_omp_galasa_assert_with_retry(tsfi_cw_omp_galasa_run *run, int (*eval_fn)(void *ctx), void *ctx, int max_retries);
 int tsfi_cw_omp_galasa_assert_timed(tsfi_cw_omp_galasa_run *run, int condition, uint64_t latency_ns);
 int tsfi_cw_omp_galasa_run_diagnostics(const tsfi_cw_omp_galasa_run *run, char *report_out, size_t report_max);
+int tsfi_cw_omp_galasa_write_html_report(const tsfi_cw_omp_galasa_run *run, const char *filepath);
 
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

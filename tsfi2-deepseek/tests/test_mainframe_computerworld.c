@@ -2285,6 +2285,20 @@ static void test_new_mainframe_features(void) {
     assert(ff_run.aborted == 1);
     assert(tsfi_cw_omp_galasa_assert(&ff_run, 1) == 0); // Aborted, should bypass
     assert(ff_run.assertions_run == 2); // Assertion run count remains 2
+
+    // Feilong oversubscription test
+    tsfi_cw_omp_feilong_guest over_guests[1];
+    assert(tsfi_cw_omp_feilong_provision("BIG_GUEST", 16, 70000, &over_guests[0]) == 0);
+    assert(tsfi_cw_omp_feilong_get_summary(over_guests, 1, &summary) == 0);
+    assert(summary.oversubscribed_alert == 1);
+
+    // Galasa HTML report writer test
+    const char *report_file = "galasa_test_report.html";
+    assert(tsfi_cw_omp_galasa_write_html_report(&run, report_file) == 0);
+    FILE *rep = fopen(report_file, "r");
+    assert(rep != NULL);
+    fclose(rep);
+    remove(report_file);
 }
 
 int main(void) {
