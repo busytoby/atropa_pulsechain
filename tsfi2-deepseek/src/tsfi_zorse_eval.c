@@ -1290,3 +1290,27 @@ int tsfi_zorse_validate_jcl_keylen(const char *jcl_line, int *is_valid_out) {
     
     return 0;
 }
+
+int tsfi_zorse_validate_cobol_subtract_error(const char *cobol_src, int *is_valid_out) {
+    if (!cobol_src || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(cobol_src, "SUBTRACT ") && strstr(cobol_src, "SIZE ERROR")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_jcl_expdt(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(jcl_line, "EXPDT=")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}

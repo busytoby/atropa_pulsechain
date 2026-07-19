@@ -426,6 +426,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_keylen("//DD8 DD DSN=A.B.C,KEYLEN=8\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 86: COBOL SUBTRACT SIZE ERROR Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_subtract_error("SUBTRACT A FROM B ON SIZE ERROR DISPLAY 'ERROR'.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 87: JCL EXPDT Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_expdt("//DD9 DD DSN=A.B.C,EXPDT=99365\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
