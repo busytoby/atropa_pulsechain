@@ -189,6 +189,18 @@ int main(void) {
     assert(tsfi_phoneme_feng_compress_pitch(120.0f, 100.0f, 0.5f, &compressed_f) == 0);
     assert(fabs(compressed_f - 110.0f) < 0.0001f);
 
+    // 30. Test Lin Stress Modulator
+    float stressed_f = 0.0f;
+    int stressed_dur = 0;
+    assert(tsfi_phoneme_lin_modulate_stress(1, 100.0f, 100, &stressed_f, &stressed_dur) == 0);
+    assert(fabs(stressed_f - 115.0f) < 0.0001f);
+    assert(stressed_dur == 120);
+
+    // 31. Test Lin Declination Slope Adapter
+    float adapted_slope = 0.0f;
+    assert(tsfi_phoneme_lin_adapt_slope(10, 1.0f, &adapted_slope) == 0);
+    assert(fabs(adapted_slope - 1.0f) < 0.0001f); // 1.0 * (1.5 / 1.5)
+
     // Cleanup
     tsfi_synth_perf_destroy(perf_engine);
     tsfi_trie_destroy(trie_root);

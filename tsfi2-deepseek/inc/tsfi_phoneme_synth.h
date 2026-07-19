@@ -99,4 +99,10 @@ int tsfi_phoneme_feng_adapt_speaker(const float *speaker_embed, int embed_dim, f
 // Feng Pitch Range Compressor
 int tsfi_phoneme_feng_compress_pitch(float current_freq, float median_freq, float compression_factor, float *compressed_freq_out);
 
+// Lin Stress Modulator
+int tsfi_phoneme_lin_modulate_stress(int is_stressed, float base_freq, int base_duration_ms, float *stressed_freq_out, int *stressed_duration_out);
+
+// Lin Declination Slope Adapter
+int tsfi_phoneme_lin_adapt_slope(int phrase_syllable_count, float base_slope, float *adapted_slope_out);
+
 #endif // TSFI_PHONEME_SYNTH_H

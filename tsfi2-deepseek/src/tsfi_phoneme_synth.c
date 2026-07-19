@@ -500,3 +500,25 @@ int tsfi_phoneme_feng_compress_pitch(float current_freq, float median_freq, floa
     *compressed_freq_out = median_freq + ((current_freq - median_freq) * compression_factor);
     return 0;
 }
+
+int tsfi_phoneme_lin_modulate_stress(int is_stressed, float base_freq, int base_duration_ms, float *stressed_freq_out, int *stressed_duration_out) {
+    if (base_freq <= 0.0f || base_duration_ms <= 0 || !stressed_freq_out || !stressed_duration_out) return -1;
+    
+    if (is_stressed) {
+        // Boost pitch frequency and stretch syllable duration
+        *stressed_freq_out = base_freq * 1.15f;
+        *stressed_duration_out = (int)((float)base_duration_ms * 1.20f);
+    } else {
+        *stressed_freq_out = base_freq;
+        *stressed_duration_out = base_duration_ms;
+    }
+    return 0;
+}
+
+int tsfi_phoneme_lin_adapt_slope(int phrase_syllable_count, float base_slope, float *adapted_slope_out) {
+    if (phrase_syllable_count <= 0 || base_slope < 0.0f || !adapted_slope_out) return -1;
+    
+    // Scale slope scale: longer phrase = flatter slope, shorter phrase = steeper slope
+    *adapted_slope_out = base_slope * (1.5f / (1.0f + ((float)phrase_syllable_count * 0.05f)));
+    return 0;
+}
