@@ -178,6 +178,17 @@ int main(void) {
     assert(tsfi_phoneme_smooth_formant(100.0f, 1000.0f, 0.5f, &smooth_f) == 0);
     assert(fabs(smooth_f - 316.2277f) < 0.1f); // sqrt(100*1000)
 
+    // 28. Test Feng Speaker Embedding Adapter
+    float embed[3] = { 0.5f, 1.0f, 1.5f };
+    float adapted_f = 0.0f;
+    assert(tsfi_phoneme_feng_adapt_speaker(embed, 3, 100.0f, &adapted_f) == 0);
+    assert(fabs(adapted_f - 120.0f) < 0.0001f);
+
+    // 29. Test Feng Pitch Range Compressor
+    float compressed_f = 0.0f;
+    assert(tsfi_phoneme_feng_compress_pitch(120.0f, 100.0f, 0.5f, &compressed_f) == 0);
+    assert(fabs(compressed_f - 110.0f) < 0.0001f);
+
     // Cleanup
     tsfi_synth_perf_destroy(perf_engine);
     tsfi_trie_destroy(trie_root);

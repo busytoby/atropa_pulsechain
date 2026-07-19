@@ -93,4 +93,10 @@ int tsfi_phoneme_xiang_shift_aspect(const char *aspect, float verb_freq, float *
 // Formant Transition Smoother (Log-Linear)
 int tsfi_phoneme_smooth_formant(float f_start, float f_end, float ratio, float *smoothed_f_out);
 
+// Feng Speaker Embedding Adapter
+int tsfi_phoneme_feng_adapt_speaker(const float *speaker_embed, int embed_dim, float base_freq, float *adapted_freq_out);
+
+// Feng Pitch Range Compressor
+int tsfi_phoneme_feng_compress_pitch(float current_freq, float median_freq, float compression_factor, float *compressed_freq_out);
+
 #endif // TSFI_PHONEME_SYNTH_H

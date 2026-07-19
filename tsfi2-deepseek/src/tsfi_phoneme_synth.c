@@ -478,3 +478,25 @@ int tsfi_phoneme_smooth_formant(float f_start, float f_end, float ratio, float *
     *smoothed_f_out = expf(logf(f_start) * (1.0f - ratio) + logf(f_end) * ratio);
     return 0;
 }
+
+int tsfi_phoneme_feng_adapt_speaker(const float *speaker_embed, int embed_dim, float base_freq, float *adapted_freq_out) {
+    if (!speaker_embed || embed_dim <= 0 || base_freq <= 0.0f || !adapted_freq_out) return -1;
+    
+    float sum = 0.0f;
+    for (int i = 0; i < embed_dim; i++) {
+        sum += speaker_embed[i];
+    }
+    float avg = sum / (float)embed_dim;
+    
+    // Scale baseline pitch relative to average embedding weight bias
+    *adapted_freq_out = base_freq * (1.0f + (avg * 0.20f));
+    return 0;
+}
+
+int tsfi_phoneme_feng_compress_pitch(float current_freq, float median_freq, float compression_factor, float *compressed_freq_out) {
+    if (current_freq <= 0.0f || median_freq <= 0.0f || compression_factor < 0.0f || !compressed_freq_out) return -1;
+    
+    // Compress dynamic range variations around target median pitch
+    *compressed_freq_out = median_freq + ((current_freq - median_freq) * compression_factor);
+    return 0;
+}
