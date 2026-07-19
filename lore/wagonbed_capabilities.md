@@ -65,3 +65,15 @@ Instead of cellular networks, out-of-band transmission uses NATO STANAG 5066 HF 
 *   **Encapsulation:** Relational tables and ACAB activity records are divided into segments and packed into STANAG 5066 Client Protocol Data Units (C_PDUs).
 *   **Frame Verification:** The mainframe verifies frame consistency using [tsfi_mf_nato_verify_stanag5066_header](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/inc/tsfi_cade_imf.h#L150).
 *   **Transmission:** Data is output via the audio channel as AFSK modulated signals, completely decoupled from standard IP-based networking.
+
+---
+
+## 5. Unified Coaxial Audio Metaphor
+
+From the **Auncient** coaxial perspective, every activity, event, and state transition in the system modulates onto a unified bus as frequency-encoded signals, rendering all system operations structurally compatible with the speech synthesizer:
+
+*   **Unified Bus Modulation (ACAB & ALSA Pipe):** Memory transactions, database records, and event sequences are represented as multi-channel coordinate events mapped onto the **Auncient** Coaxial Activity Bus (ACAB). Instead of raw data structures, every transaction (such as a database edit, key classification, or contract transition) registers as a specific frequency value (e.g., `440.0Hz` representing a `COAXIAL_MODULATION` event).
+*   **Formant and Tone-Wheel Synthesis Compatibility:** Because all events resolve to frequency and amplitude coordinate offsets on the coaxial pipe, they feed directly into our speech synthesizer's active tone-wheels. For example, database key upgrades modulate base frequencies via $F_1/F_2$ formant transitions.
+*   **Vulkan UI Events as Modulators:** Vulkan mouse movements, keyboard presses, and rendering frames are piped directly onto the coaxial bus as real-time audio parameters. These modulate the synthesizer's active pitch envelopes, jitter/shimmer coefficients, or vocal fry transitions.
+*   **STANAG Framing:** The resulting acoustic signals are packetized into STANAG 5066 frames, letting the system serialize and transmit any computing task over audio-frequency AFSK/radio carrier channels.
+
