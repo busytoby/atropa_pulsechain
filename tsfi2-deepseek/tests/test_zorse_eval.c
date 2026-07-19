@@ -1,5 +1,6 @@
 #include "tsfi_zorse_eval.h"
 #include "tsfi_svdag.h"
+#include "tsfi_zmm_vm.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -842,6 +843,26 @@ int main(void) {
     char resolved_gdg[128];
     assert(tsfi_zorse_resolve_gdg_relative_to_absolute("ZORSE.GDG", 1, 4, resolved_gdg, sizeof(resolved_gdg)) == 0);
     assert(strcmp(resolved_gdg, "ZORSE.GDG.G0005V00") == 0);
+
+    // Test Case 174: ZMM VM GDG Operating Context commit and rollback validation
+    TsfiZmmVmState vm_state;
+    tsfi_zmm_vm_init(&vm_state);
+    vm_state.program_counter = 42;
+    vm_state.llm_tx_counter = 1001;
+    assert(tsfi_zmm_vm_commit_gdg_generation(&vm_state, "ZMM.STATE", 5) == 0);
+
+    // Modify state
+    vm_state.program_counter = 99;
+    vm_state.llm_tx_counter = 8888;
+
+    // Rollback
+    assert(tsfi_zmm_vm_rollback_gdg_generation(&vm_state, "ZMM.STATE", 5) == 0);
+    assert(vm_state.program_counter == 42);
+    assert(vm_state.llm_tx_counter == 1001);
+    tsfi_zmm_vm_destroy(&vm_state);
+
+    // Cleanup the generated catalog file
+    remove("ZMM.STATE.G0005V00.dat.bin");
 
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;

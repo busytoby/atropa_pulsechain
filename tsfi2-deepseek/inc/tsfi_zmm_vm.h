@@ -71,4 +71,8 @@ size_t tsfi_zmm_vm_splice_block(const void *blockA, const void *blockB, void *ch
 // Attach to telemetry if available
 void tsfi_zmm_vm_attach_telemetry(TsfiZmmVmState *state, const char *id);
 
+// ZMM VM GDG Operating Context commit and rollback
+int tsfi_zmm_vm_commit_gdg_generation(TsfiZmmVmState *state, const char *gdg_base, int generation);
+int tsfi_zmm_vm_rollback_gdg_generation(TsfiZmmVmState *state, const char *gdg_base, int generation);
+
 #endif // TSFI_ZMM_VM_H

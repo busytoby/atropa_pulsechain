@@ -1556,3 +1556,38 @@ int tsfi_zmm_vm_step_block(TsfiZmmVmState *state, void *block) {
     state->program_counter = (int)(next_op - base);
     return state->program_counter;
 }
+
+int tsfi_zmm_vm_commit_gdg_generation(TsfiZmmVmState *state, const char *gdg_base, int generation) {
+    if (!state || !gdg_base) return -1;
+
+    char filename[256];
+    snprintf(filename, sizeof(filename), "%s.G%04dV00.dat.bin", gdg_base, generation);
+
+    FILE *f = fopen(filename, "wb");
+    if (!f) return -2;
+
+    fwrite(state->registers, sizeof(wave512), TSFI_ZMM_REG_COUNT, f);
+    fwrite(&state->program_counter, sizeof(int), 1, f);
+    fwrite(&state->llm_tx_counter, sizeof(uint64_t), 1, f);
+
+    fclose(f);
+    return 0;
+}
+
+int tsfi_zmm_vm_rollback_gdg_generation(TsfiZmmVmState *state, const char *gdg_base, int generation) {
+    if (!state || !gdg_base) return -1;
+
+    char filename[256];
+    snprintf(filename, sizeof(filename), "%s.G%04dV00.dat.bin", gdg_base, generation);
+
+    FILE *f = fopen(filename, "rb");
+    if (!f) return -2;
+
+    size_t r1 = fread(state->registers, sizeof(wave512), TSFI_ZMM_REG_COUNT, f);
+    size_t r2 = fread(&state->program_counter, sizeof(int), 1, f);
+    size_t r3 = fread(&state->llm_tx_counter, sizeof(uint64_t), 1, f);
+    (void)r1; (void)r2; (void)r3;
+
+    fclose(f);
+    return 0;
+}
