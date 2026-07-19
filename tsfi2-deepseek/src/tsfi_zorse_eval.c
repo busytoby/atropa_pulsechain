@@ -2802,3 +2802,27 @@ int tsfi_zorse_validate_cobol_page_footing(const char *cobol_src, int *is_valid_
     
     return 0;
 }
+
+int tsfi_zorse_validate_vse_power_pages_limit(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(jcl_line, "* $$") && strstr(jcl_line, "PAGES=") && !strstr(jcl_line, "(")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_cobol_report_heading(const char *cobol_src, int *is_valid_out) {
+    if (!cobol_src || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(cobol_src, "REPORT HEADING") || (strstr(cobol_src, "TYPE IS") && strstr(cobol_src, "RH"))) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
