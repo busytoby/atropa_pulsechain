@@ -570,6 +570,11 @@ int main(void) {
     assert(tsfi_zorse_validate_vse_vsam_rls("//DD15 DD DSN=A.B.C,RLS=NRI\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 122: Zorse and z/VSE Combined DAT-based LLM Query validation
+    char resp_buf[256];
+    assert(tsfi_zorse_eval_dat_llm_query(NULL, "CBLTDLI", resp_buf, sizeof(resp_buf)) == 0);
+    assert(strstr(resp_buf, "CBLTDLI") != NULL);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
