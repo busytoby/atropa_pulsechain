@@ -51,6 +51,19 @@ int main(void) {
     assert(tsfi_phoneme_liu_adjust_pitch(dep_heads, 3, 1, 100.0f, &adjusted_pitch) == 0);
     assert(adjusted_pitch == 125.0f); // 100 + (2 * 12.5)
 
+    // 4. Test Xu Tone Sandhi Adjuster
+    int tones[3] = { 3, 3, 1 }; // consecutive 3rd tones
+    float adj_freq = 0.0f;
+    assert(tsfi_phoneme_xu_adjust_sandhi(tones, 3, 0, 200.0f, &adj_freq) == 0);
+    assert(adj_freq == 250.0f); // 200.0 * 1.25
+
+    // 5. Test Xu Prosodic Boundary Predictor
+    int boundary_pause = 0;
+    assert(tsfi_phoneme_xu_predict_boundary("Hello, world.", 5, &boundary_pause) == 0);
+    assert(boundary_pause == 250); // comma pause
+    assert(tsfi_phoneme_xu_predict_boundary("Hello, world.", 12, &boundary_pause) == 0);
+    assert(boundary_pause == 600); // period pause
+
     // Cleanup
     tsfi_synth_perf_destroy(perf_engine);
     tsfi_trie_destroy(trie_root);

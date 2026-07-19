@@ -133,3 +133,34 @@ int tsfi_phoneme_liu_adjust_pitch(const int *dependency_heads, int count, int ta
     *adjusted_pitch_out = base_pitch + ((float)degree * 12.5f);
     return 0;
 }
+
+int tsfi_phoneme_xu_adjust_sandhi(const int *tones, int count, int target_idx, float base_freq, float *adjusted_freq_out) {
+    if (!tones || count <= 0 || target_idx < 0 || target_idx >= count || !adjusted_freq_out) return -1;
+    
+    *adjusted_freq_out = base_freq;
+    
+    // Mandarin 3rd-tone sandhi: if current tone is 3, and NEXT tone is also 3, current tone changes to 2nd tone
+    if (tones[target_idx] == 3 && target_idx + 1 < count && tones[target_idx + 1] == 3) {
+        // Shift frequency higher to represent 2nd tone (rising pitch contour)
+        *adjusted_freq_out = base_freq * 1.25f;
+    }
+    return 0;
+}
+
+int tsfi_phoneme_xu_predict_boundary(const char *sentence, int target_char_idx, int *pause_ms_out) {
+    if (!sentence || target_char_idx < 0 || target_char_idx >= (int)strlen(sentence) || !pause_ms_out) return -1;
+    
+    *pause_ms_out = 0;
+    char current_char = sentence[target_char_idx];
+    
+    // Detect phrasing boundary signals from punctuation (e.g. comma, period, or space)
+    if (current_char == ',') {
+        *pause_ms_out = 250; // short pause for prosodic word/phrase break
+    } else if (current_char == '.' || current_char == '?' || current_char == '!') {
+        *pause_ms_out = 600; // longer breath pause for sentence boundary
+    } else if (current_char == ' ') {
+        *pause_ms_out = 80;  // word spacer pause
+    }
+    
+    return 0;
+}
