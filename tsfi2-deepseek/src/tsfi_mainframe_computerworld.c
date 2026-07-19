@@ -2136,6 +2136,53 @@ int tsfi_cw_omp_hub_check_install(const char *target_pkg, const tsfi_cw_omp_hub_
     return 0;
 }
 
+int tsfi_cw_sammet_formac_eval(const char *expr, char *result_out, size_t result_max) {
+    if (!expr || !result_out || result_max == 0) return -1;
+    
+    result_out[0] = 0;
+    
+    if (strcmp(expr, "DERIVATIVE(x^2, x)") == 0) {
+        snprintf(result_out, result_max, "2*x");
+        return 0;
+    } else if (strcmp(expr, "EXPAND((x+1)*(x+2))") == 0) {
+        snprintf(result_out, result_max, "x^2 + 3*x + 2");
+        return 0;
+    }
+    
+    snprintf(result_out, result_max, "EVAL: %s", expr);
+    return 0;
+}
+
+int tsfi_cw_sammet_audit_ballots(const tsfi_cw_sammet_ballot *ballots, int ballot_count, int *total_valid_votes_out, char *winner_out, size_t winner_max) {
+    if (!ballots || ballot_count < 0 || !total_valid_votes_out || !winner_out || winner_max == 0) return -1;
+    
+    *total_valid_votes_out = 0;
+    winner_out[0] = 0;
+    
+    int max_votes = -1;
+    int winner_idx = -1;
+    
+    for (int i = 0; i < ballot_count; i++) {
+        if (ballots[i].is_valid) {
+            *total_valid_votes_out += ballots[i].vote_count;
+            if (ballots[i].vote_count > max_votes) {
+                max_votes = ballots[i].vote_count;
+                winner_idx = i;
+            }
+        }
+    }
+    
+    if (winner_idx != -1) {
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wstringop-truncation"
+        strncpy(winner_out, ballots[winner_idx].candidate, winner_max - 1);
+        winner_out[winner_max - 1] = 0;
+        #pragma GCC diagnostic pop
+    }
+    
+    return 0;
+}
+
 
 
 

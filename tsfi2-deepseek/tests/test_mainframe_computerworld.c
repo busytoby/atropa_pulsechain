@@ -2337,6 +2337,24 @@ static void test_new_mainframe_features(void) {
     repo[1].is_installed = 0; // uninstall nodejs
     assert(tsfi_cw_omp_hub_check_install("zowe-cli", repo, 2, &can_install) == 0);
     assert(can_install == 0);
+
+    // Sammet FORMAC test
+    char algebra_res[64];
+    assert(tsfi_cw_sammet_formac_eval("DERIVATIVE(x^2, x)", algebra_res, sizeof(algebra_res)) == 0);
+    assert(strcmp(algebra_res, "2*x") == 0);
+    assert(tsfi_cw_sammet_formac_eval("EXPAND((x+1)*(x+2))", algebra_res, sizeof(algebra_res)) == 0);
+    assert(strcmp(algebra_res, "x^2 + 3*x + 2") == 0);
+
+    // Sammet ACM Election Ballot test
+    tsfi_cw_sammet_ballot ballots[2] = {
+        { "Jean Sammet", 1000, 1 },
+        { "Candidate B", 500, 1 }
+    };
+    int total_votes = 0;
+    char winner[32] = {0};
+    assert(tsfi_cw_sammet_audit_ballots(ballots, 2, &total_votes, winner, sizeof(winner)) == 0);
+    assert(total_votes == 1500);
+    assert(strcmp(winner, "Jean Sammet") == 0);
 }
 
 int main(void) {

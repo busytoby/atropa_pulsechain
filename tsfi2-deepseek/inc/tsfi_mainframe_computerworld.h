@@ -1295,5 +1295,17 @@ typedef struct {
 
 int tsfi_cw_omp_hub_check_install(const char *target_pkg, const tsfi_cw_omp_hub_pkg *repo, int repo_count, int *can_install_out);
 
+// Jean E. Sammet FORMAC Algebraic Evaluator
+int tsfi_cw_sammet_formac_eval(const char *expr, char *result_out, size_t result_max);
+
+// Jean E. Sammet ACM Election Ballot Auditor
+typedef struct {
+    char candidate[32];
+    int vote_count;
+    int is_valid;
+} tsfi_cw_sammet_ballot;
+
+int tsfi_cw_sammet_audit_ballots(const tsfi_cw_sammet_ballot *ballots, int ballot_count, int *total_valid_votes_out, char *winner_out, size_t winner_max);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 
