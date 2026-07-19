@@ -912,6 +912,14 @@ int main(void) {
     assert(tsfi_zorse_validate_cobol_generate("GENERATE SALES-REPORT.", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 187: z/VSE POWER Spool Queue Hold Validator validation
+    assert(tsfi_zorse_validate_vse_power_hold("* $$ LST HOLD=YES,DISP=D\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 188: COBOL Report Writer Initiation Auditor validation
+    assert(tsfi_zorse_validate_cobol_initiate("INITIATE SALES-REPORT.", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
