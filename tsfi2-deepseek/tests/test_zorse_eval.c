@@ -538,6 +538,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_set("// SET VAR1=VALUE1\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 114: COBOL CONTINUE Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_continue("CONTINUE.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 115: JCL IMPORT Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_import("//IMPORT IMPORT SYMLIST=*\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

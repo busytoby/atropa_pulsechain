@@ -309,4 +309,10 @@ int tsfi_zorse_validate_cobol_exit(const char *cobol_src, int *is_valid_out);
 // Zorse JCL SET Parameter Auditor
 int tsfi_zorse_validate_jcl_set(const char *jcl_line, int *is_valid_out);
 
+// Zorse COBOL CONTINUE Statement Auditor
+int tsfi_zorse_validate_cobol_continue(const char *cobol_src, int *is_valid_out);
+
+// Zorse JCL IMPORT SYMLIST Parameter Auditor
+int tsfi_zorse_validate_jcl_import(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H
