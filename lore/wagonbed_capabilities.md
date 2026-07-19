@@ -79,3 +79,18 @@ From the **Auncient** coaxial perspective, every activity, event, and state tran
 *   **Vulkan UI Events as Modulators:** Vulkan mouse movements, keyboard presses, and rendering frames are piped directly onto the coaxial bus as real-time audio parameters. These modulate the synthesizer's active pitch envelopes, jitter/shimmer coefficients, or vocal fry transitions.
 *   **STANAG Framing:** The resulting acoustic signals are packetized into STANAG 5066 frames, letting the system serialize and transmit any computing task over audio-frequency AFSK/radio carrier channels.
 
+---
+
+## 6. Relationship to Burroughs VM and DEFCON States
+
+The operating capabilities of the WAGONBED emulation interact directly with the platform's core security systems and threat mitigation pathways:
+
+*   **Burroughs Memory Protections:**
+    Because WAGONBED performs low-level sniffing and injection, its activities bypass standard OS layers. To intercept this, the system uses Burroughs B5000-style virtual machine descriptors and segment-limit memory protections. This hardware-level containment detects illegal stack allocations and out-of-bounds pointer changes, blocking unauthorized register injections from rewriting key parameters.
+*   **DEFCON Escalation Triggering:**
+    When the CICS controller logs a critical security violation (via a failed security audit or invalid bus write), it interfaces directly with the mainframe's national alert systems:
+    *   **NORAD Alert Encoding:** The system calls [tsfi_mf_norad_encode_defcon](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/src/tsfi_cade_imf_nato.c#L1395) to adjust the active threat levels dynamically based on detected anomalies.
+    *   **NAAP Broadcasts:** The CICS daemon broadcasts emergency alerts using [tsfi_mf_cics_generate_naap_broadcast](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/src/tsfi_cade_imf_nato.c#L1476), notifying linked stations of an ongoing system intrusion.
+    *   **IBM 3270 Alert Formatting:** The terminal updates dynamically using [tsfi_mf_cics_format_3270_map](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/src/tsfi_cade_imf_nato.c#L1534), printing warning banner overlays across active user console screens.
+
+
