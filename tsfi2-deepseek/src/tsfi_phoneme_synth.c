@@ -254,3 +254,30 @@ int tsfi_phoneme_apply_vocal_fry(float current_freq, float current_amp, float de
     
     return 0;
 }
+
+int tsfi_phoneme_apply_whisper(float base_freq, float base_amp, int is_voiceless, float *whisper_freq_out, float *whisper_amp_out) {
+    if (!whisper_freq_out || !whisper_amp_out) return -1;
+    
+    if (is_voiceless) {
+        // Replace base frequency with a high-pitched chaotic frequency to represent whisper noise
+        *whisper_freq_out = base_freq * 3.5f;
+        // Dampen amplitude to make whisper soft
+        *whisper_amp_out = base_amp * 0.35f;
+    } else {
+        *whisper_freq_out = base_freq;
+        *whisper_amp_out = base_amp;
+    }
+    return 0;
+}
+
+int tsfi_phoneme_apply_nasality(float base_freq, int is_nasal, float *nasal_freq_out) {
+    if (!nasal_freq_out) return -1;
+    
+    if (is_nasal) {
+        // Attenuate target frequency bounds by applying a notch offset (shifts F0 away from nasal zeros)
+        *nasal_freq_out = base_freq * 0.85f;
+    } else {
+        *nasal_freq_out = base_freq;
+    }
+    return 0;
+}

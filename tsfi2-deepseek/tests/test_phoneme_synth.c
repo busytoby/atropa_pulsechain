@@ -94,6 +94,16 @@ int main(void) {
     assert(tsfi_phoneme_apply_vocal_fry(440.0f, 0.8f, 0.9f, &fry_freq, &fry_amp) == 0);
     assert(fry_freq == 65.0f); // vocal fry triggered at the end (>0.85)
 
+    // 12. Test Whispery Voice Simulator
+    float w_freq, w_amp;
+    assert(tsfi_phoneme_apply_whisper(100.0f, 1.0f, 1, &w_freq, &w_amp) == 0);
+    assert(w_freq == 350.0f);
+
+    // 13. Test Nasality Resonance Simulator
+    float n_freq;
+    assert(tsfi_phoneme_apply_nasality(100.0f, 1, &n_freq) == 0);
+    assert(n_freq == 85.0f);
+
     // Cleanup
     tsfi_synth_perf_destroy(perf_engine);
     tsfi_trie_destroy(trie_root);

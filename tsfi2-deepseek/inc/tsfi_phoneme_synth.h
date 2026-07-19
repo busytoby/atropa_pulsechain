@@ -45,4 +45,10 @@ int tsfi_phoneme_apply_jitter_shimmer(float base_freq, float base_amp, int cycle
 // Vocal Fry Region Simulator
 int tsfi_phoneme_apply_vocal_fry(float current_freq, float current_amp, float declination_ratio, float *fry_freq_out, float *fry_amp_out);
 
+// Whispery Voice Simulator
+int tsfi_phoneme_apply_whisper(float base_freq, float base_amp, int is_voiceless, float *whisper_freq_out, float *whisper_amp_out);
+
+// Nasality Resonance Simulator
+int tsfi_phoneme_apply_nasality(float base_freq, int is_nasal, float *nasal_freq_out);
+
 #endif // TSFI_PHONEME_SYNTH_H
