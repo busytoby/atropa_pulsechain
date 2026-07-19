@@ -434,6 +434,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_expdt("//DD9 DD DSN=A.B.C,EXPDT=99365\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 88: COBOL COMPUTE SIZE ERROR Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_compute_error("COMPUTE A = B / C ON SIZE ERROR DISPLAY 'ERROR'.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 89: JCL RETPD Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_retpd("//DD10 DD DSN=A.B.C,RETPD=30\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
