@@ -722,6 +722,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_pathdisp("//DD24 DD PATH='/tmp/out',PATHDISP=(KEEP,DELETE)\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 152: COBOL INITIALIZE WITH FILLER Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_init_filler("INITIALIZE GRP-REC WITH FILLER.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 153: JCL DD FILEDATA Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_filedata("//DD25 DD PATH='/tmp/data.txt',FILEDATA=TEXT\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

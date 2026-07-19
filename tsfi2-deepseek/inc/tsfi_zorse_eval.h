@@ -426,4 +426,10 @@ int tsfi_zorse_validate_cobol_string_pointer(const char *cobol_src, int *is_vali
 // Zorse JCL DD PATHDISP Parameter Auditor
 int tsfi_zorse_validate_jcl_pathdisp(const char *jcl_line, int *is_valid_out);
 
+// Zorse COBOL INITIALIZE WITH FILLER Statement Auditor
+int tsfi_zorse_validate_cobol_init_filler(const char *cobol_src, int *is_valid_out);
+
+// Zorse JCL DD FILEDATA Parameter Auditor
+int tsfi_zorse_validate_jcl_filedata(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H
