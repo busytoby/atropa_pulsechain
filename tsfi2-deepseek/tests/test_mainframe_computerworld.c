@@ -121,6 +121,7 @@ static int omp_galasa_mock_eval(void *ctx) {
 }
 
 static void test_new_mainframe_features(void) {
+    remove("evm_storage.dat.bin");
     printf("[Computerworld Test] Verifying IBM HFP Conversions...\n");
     float f1 = 1.0f;
     uint32_t ibm1 = tsfi_cw_ieee_to_ibm_float(f1);
@@ -2512,6 +2513,22 @@ static void test_new_mainframe_features(void) {
     assert(strcmp(view.view_name, "V_T_User") == 0);
     assert(strcmp(view.source_table, "T_User") == 0);
     assert(strcmp(view.projected_attributes, "PK_ID,FIRST_NAME") == 0);
+
+    // Hainaut generalization hierarchy transformation test
+    tsfi_cw_hainaut_table super_tbl = { "EMPLOYEE", "EMP_ID", "", "" };
+    tsfi_cw_hainaut_table sub_tbl = { "HOURLY_EMP", "EMP_ID", "DEPT_ID", "DEPARTMENTS" };
+    tsfi_cw_hainaut_table flat_tbl;
+    assert(tsfi_cw_hainaut_transform_generalization(&super_tbl, &sub_tbl, &flat_tbl) == 0);
+    assert(strcmp(flat_tbl.table_name, "EMPLOYEE_FLAT") == 0);
+    assert(strcmp(flat_tbl.primary_key, "EMP_ID") == 0);
+    assert(strcmp(flat_tbl.foreign_key, "DEPT_ID") == 0);
+    assert(strcmp(flat_tbl.references_table, "DEPARTMENTS") == 0); // inherits references
+
+    // Hainaut Key Degrader test
+    tsfi_cw_hainaut_table degraded_tbl;
+    assert(tsfi_cw_hainaut_degrade_key(&sub_tbl, &degraded_tbl) == 0);
+    assert(strcmp(degraded_tbl.table_name, "HOURLY_EMP_DEG") == 0);
+    assert(degraded_tbl.foreign_key[0] == 0);
 }
 
 int main(void) {

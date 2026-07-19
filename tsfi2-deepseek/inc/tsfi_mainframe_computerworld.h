@@ -1429,5 +1429,11 @@ typedef struct {
 
 int tsfi_cw_hainaut_generate_view(const tsfi_cw_hainaut_table *table, const char *attributes, tsfi_cw_hainaut_view *view_out);
 
+// Hainaut Generalization Hierarchy Transformer
+int tsfi_cw_hainaut_transform_generalization(const tsfi_cw_hainaut_table *super_table, const tsfi_cw_hainaut_table *sub_table, tsfi_cw_hainaut_table *flat_table_out);
+
+// Hainaut Key-to-Attribute Degrader
+int tsfi_cw_hainaut_degrade_key(const tsfi_cw_hainaut_table *source_table, tsfi_cw_hainaut_table *degraded_table_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

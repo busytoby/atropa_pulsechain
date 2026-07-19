@@ -2569,6 +2569,38 @@ int tsfi_cw_hainaut_generate_view(const tsfi_cw_hainaut_table *table, const char
     return 0;
 }
 
+int tsfi_cw_hainaut_transform_generalization(const tsfi_cw_hainaut_table *super_table, const tsfi_cw_hainaut_table *sub_table, tsfi_cw_hainaut_table *flat_table_out) {
+    if (!super_table || !sub_table || !flat_table_out) return -1;
+    
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wformat-truncation"
+    snprintf(flat_table_out->table_name, sizeof(flat_table_out->table_name), "%s_FLAT", super_table->table_name);
+    #pragma GCC diagnostic pop
+    
+    strcpy(flat_table_out->primary_key, super_table->primary_key);
+    
+    // Check if sub_table has attributes to map or keep
+    strcpy(flat_table_out->foreign_key, sub_table->foreign_key);
+    strcpy(flat_table_out->references_table, sub_table->references_table);
+    return 0;
+}
+
+int tsfi_cw_hainaut_degrade_key(const tsfi_cw_hainaut_table *source_table, tsfi_cw_hainaut_table *degraded_table_out) {
+    if (!source_table || !degraded_table_out) return -1;
+    
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wformat-truncation"
+    snprintf(degraded_table_out->table_name, sizeof(degraded_table_out->table_name), "%s_DEG", source_table->table_name);
+    #pragma GCC diagnostic pop
+    
+    strcpy(degraded_table_out->primary_key, source_table->primary_key);
+    
+    // Clear foreign key and references (they are now degraded to normal attributes)
+    degraded_table_out->foreign_key[0] = 0;
+    degraded_table_out->references_table[0] = 0;
+    return 0;
+}
+
 
 
 
