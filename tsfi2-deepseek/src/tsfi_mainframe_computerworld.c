@@ -2377,6 +2377,74 @@ int tsfi_cw_keating_bandpass_filter(float input_freq, float center_freq, float b
     return 0;
 }
 
+int tsfi_cw_hainaut_reverse_engineer(const char *metadata_ddl, tsfi_cw_hainaut_table *tables_out, int max_tables, int *table_count_out) {
+    if (!metadata_ddl || !tables_out || max_tables <= 0 || !table_count_out) return -1;
+    
+    *table_count_out = 0;
+    const char *line = metadata_ddl;
+    
+    while (line && *line != 0 && *table_count_out < max_tables) {
+        if (strncmp(line, "CREATE TABLE ", 13) == 0) {
+            char name[32] = {0};
+            char pk[32] = {0};
+            char fk[32] = {0};
+            char ref[32] = {0};
+            
+            // Format: CREATE TABLE <name> DDL ( <pk> PK, <fk> FK REFERENCES <ref> )
+            int parsed = sscanf(line + 13, "%31s ( %31s PK , %31s FK REFERENCES %31s )", name, pk, fk, ref);
+            if (parsed >= 2) {
+                #pragma GCC diagnostic push
+                #pragma GCC diagnostic ignored "-Wstringop-truncation"
+                strncpy(tables_out[*table_count_out].table_name, name, sizeof(tables_out[*table_count_out].table_name) - 1);
+                tables_out[*table_count_out].table_name[sizeof(tables_out[*table_count_out].table_name) - 1] = 0;
+                
+                strncpy(tables_out[*table_count_out].primary_key, pk, sizeof(tables_out[*table_count_out].primary_key) - 1);
+                tables_out[*table_count_out].primary_key[sizeof(tables_out[*table_count_out].primary_key) - 1] = 0;
+                #pragma GCC diagnostic pop
+                
+                if (parsed == 4) {
+                    #pragma GCC diagnostic push
+                    #pragma GCC diagnostic ignored "-Wstringop-truncation"
+                    strncpy(tables_out[*table_count_out].foreign_key, fk, sizeof(tables_out[*table_count_out].foreign_key) - 1);
+                    tables_out[*table_count_out].foreign_key[sizeof(tables_out[*table_count_out].foreign_key) - 1] = 0;
+                    
+                    strncpy(tables_out[*table_count_out].references_table, ref, sizeof(tables_out[*table_count_out].references_table) - 1);
+                    tables_out[*table_count_out].references_table[sizeof(tables_out[*table_count_out].references_table) - 1] = 0;
+                    #pragma GCC diagnostic pop
+                } else {
+                    tables_out[*table_count_out].foreign_key[0] = 0;
+                    tables_out[*table_count_out].references_table[0] = 0;
+                }
+                (*table_count_out)++;
+            }
+        }
+        line = strchr(line, '\n');
+        if (line) line++;
+    }
+    return 0;
+}
+
+int tsfi_cw_hainaut_migrate_table_split(const tsfi_cw_hainaut_table *source_table, tsfi_cw_hainaut_table *target_table_a, tsfi_cw_hainaut_table *target_table_b) {
+    if (!source_table || !target_table_a || !target_table_b) return -1;
+    
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wformat-truncation"
+    // Split target_table_a: keeps primary key and becomes original
+    snprintf(target_table_a->table_name, sizeof(target_table_a->table_name), "%s_BASE", source_table->table_name);
+    strcpy(target_table_a->primary_key, source_table->primary_key);
+    target_table_a->foreign_key[0] = 0;
+    target_table_a->references_table[0] = 0;
+    
+    // Split target_table_b: holds a foreign key reference pointing to base table A
+    snprintf(target_table_b->table_name, sizeof(target_table_b->table_name), "%s_EXT", source_table->table_name);
+    snprintf(target_table_b->primary_key, sizeof(target_table_b->primary_key), "EXT_%s", source_table->primary_key);
+    strcpy(target_table_b->foreign_key, source_table->primary_key);
+    strcpy(target_table_b->references_table, target_table_a->table_name);
+    #pragma GCC diagnostic pop
+    
+    return 0;
+}
+
 
 
 

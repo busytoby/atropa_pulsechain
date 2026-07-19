@@ -2441,6 +2441,24 @@ static void test_new_mainframe_features(void) {
     assert(out_sig > 1900.0f); // 1000 * 10^(6/20) ~ 1995
     assert(tsfi_cw_keating_bandpass_filter(500.0f, 1000.0f, 100.0f, 6.0f, &out_sig) == 0);
     assert(out_sig < 10.0f); // attenuated
+
+    // Hainaut DDL reverse engineering test
+    const char *ddl = "CREATE TABLE CUSTOMERS ( CUST_ID PK , ORDER_ID FK REFERENCES ORDERS )\n";
+    tsfi_cw_hainaut_table parsed_tbls[1];
+    int tbl_count = 0;
+    assert(tsfi_cw_hainaut_reverse_engineer(ddl, parsed_tbls, 1, &tbl_count) == 0);
+    assert(tbl_count == 1);
+    assert(strcmp(parsed_tbls[0].table_name, "CUSTOMERS") == 0);
+    assert(strcmp(parsed_tbls[0].primary_key, "CUST_ID") == 0);
+    assert(strcmp(parsed_tbls[0].foreign_key, "ORDER_ID") == 0);
+    assert(strcmp(parsed_tbls[0].references_table, "ORDERS") == 0);
+
+    // Hainaut schema table split test
+    tsfi_cw_hainaut_table tgt_a, tgt_b;
+    assert(tsfi_cw_hainaut_migrate_table_split(&parsed_tbls[0], &tgt_a, &tgt_b) == 0);
+    assert(strcmp(tgt_a.table_name, "CUSTOMERS_BASE") == 0);
+    assert(strcmp(tgt_b.table_name, "CUSTOMERS_EXT") == 0);
+    assert(strcmp(tgt_b.references_table, "CUSTOMERS_BASE") == 0);
 }
 
 int main(void) {
