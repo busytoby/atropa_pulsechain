@@ -1476,5 +1476,15 @@ int tsfi_cw_roland_check_domain(const char *merged_attr, int min_val, int max_va
 // Roland BCNF Optimizer
 int tsfi_cw_roland_optimize_bcnf(const tsfi_cw_hainaut_table *table, const tsfi_cw_hainaut_fd *fds, int fd_count, tsfi_cw_hainaut_table *optimized_tables_out, int *optimized_count_out);
 
+// 2-3 Tree Node Domain structures
+typedef struct {
+    int key_count;
+    int keys[2];
+    int child_bounds[3][2];
+} tsfi_cw_23_node;
+
+int tsfi_cw_validate_23_node_domain(const tsfi_cw_23_node *node, int *is_valid_out);
+int tsfi_cw_split_23_node_bcnf(tsfi_cw_23_node *parent, tsfi_cw_23_node *child_a_out, tsfi_cw_23_node *child_b_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

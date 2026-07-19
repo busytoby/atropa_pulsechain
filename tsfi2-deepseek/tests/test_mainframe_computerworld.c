@@ -2610,6 +2610,20 @@ static void test_new_mainframe_features(void) {
     assert(strcmp(bcnf_tbls[1].table_name, "EMPLOYEE_R2") == 0);
     assert(strcmp(bcnf_tbls[1].primary_key, "EMP_ID") == 0);
     assert(strcmp(bcnf_tbls[1].foreign_key, "DEPT_ID") == 0);
+
+    // 2-3 Tree Node Domain Validator test
+    tsfi_cw_23_node node_23 = { 2, { 100, 200 }, { { 0, 99 }, { 101, 199 }, { 201, 300 } } };
+    int node_valid = 0;
+    assert(tsfi_cw_validate_23_node_domain(&node_23, &node_valid) == 0);
+    assert(node_valid == 1);
+
+    // 2-3 Tree Node BCNF Splitter test
+    tsfi_cw_23_node child_a, child_b;
+    assert(tsfi_cw_split_23_node_bcnf(&node_23, &child_a, &child_b) == 0);
+    assert(child_a.key_count == 1);
+    assert(child_a.keys[0] == 100);
+    assert(child_b.key_count == 1);
+    assert(child_b.keys[0] == 200);
 }
 
 int main(void) {

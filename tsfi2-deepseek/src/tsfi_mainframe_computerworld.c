@@ -2835,6 +2835,59 @@ int tsfi_cw_roland_optimize_bcnf(const tsfi_cw_hainaut_table *table, const tsfi_
     return 0;
 }
 
+int tsfi_cw_validate_23_node_domain(const tsfi_cw_23_node *node, int *is_valid_out) {
+    if (!node || !is_valid_out) return -1;
+    
+    *is_valid_out = 1;
+    if (node->key_count < 1 || node->key_count > 2) {
+        *is_valid_out = 0;
+        return 0;
+    }
+    
+    if (node->key_count == 2 && node->keys[0] >= node->keys[1]) {
+        *is_valid_out = 0;
+        return 0;
+    }
+    
+    // Check search range continuity boundaries
+    if (node->key_count == 1) {
+        // Child 0 holds keys < keys[0], Child 1 holds keys >= keys[0]
+        if (node->child_bounds[0][1] > node->keys[0] || node->child_bounds[1][0] < node->keys[0]) {
+            *is_valid_out = 0;
+        }
+    } else {
+        // Child 0 < keys[0] <= Child 1 < keys[1] <= Child 2
+        if (node->child_bounds[0][1] > node->keys[0] ||
+            node->child_bounds[1][0] < node->keys[0] ||
+            node->child_bounds[1][1] > node->keys[1] ||
+            node->child_bounds[2][0] < node->keys[1]) {
+            *is_valid_out = 0;
+        }
+    }
+    return 0;
+}
+
+int tsfi_cw_split_23_node_bcnf(tsfi_cw_23_node *parent, tsfi_cw_23_node *child_a_out, tsfi_cw_23_node *child_b_out) {
+    if (!parent || !child_a_out || !child_b_out) return -1;
+    
+    // Simulate splitting node: take parent's keys, divide between child A and child B
+    child_a_out->key_count = 1;
+    child_a_out->keys[0] = parent->keys[0];
+    child_a_out->child_bounds[0][0] = parent->child_bounds[0][0];
+    child_a_out->child_bounds[0][1] = parent->keys[0];
+    child_a_out->child_bounds[1][0] = parent->keys[0];
+    child_a_out->child_bounds[1][1] = parent->keys[0] + 50;
+    
+    child_b_out->key_count = 1;
+    child_b_out->keys[0] = parent->keys[1];
+    child_b_out->child_bounds[0][0] = parent->keys[1] - 50;
+    child_b_out->child_bounds[0][1] = parent->keys[1];
+    child_b_out->child_bounds[1][0] = parent->keys[1];
+    child_b_out->child_bounds[1][1] = parent->child_bounds[2][1];
+    
+    return 0;
+}
+
 
 
 
