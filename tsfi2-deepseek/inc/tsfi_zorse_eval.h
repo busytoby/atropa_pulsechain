@@ -468,4 +468,10 @@ int tsfi_zorse_validate_stable_diffusion(const char *jcl_line, const char *cobol
 // Zorse Stable Diffusion Algol phase variance simulation
 int tsfi_zorse_execute_stable_diffusion_algol(double base, double secret, double prime, double *noise_out);
 
+// Zorse COBOL XML PARSE Statement Auditor
+int tsfi_zorse_validate_cobol_xml_parse(const char *cobol_src, int *is_valid_out);
+
+// Zorse JCL DD EROPT Parameter Auditor
+int tsfi_zorse_validate_jcl_eropt(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

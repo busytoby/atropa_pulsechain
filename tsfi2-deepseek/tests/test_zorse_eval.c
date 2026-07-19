@@ -809,6 +809,14 @@ int main(void) {
     // 2^10 = 1024. 1024 mod 1000 = 24.
     assert(noise_out > 23.9f && noise_out < 24.1f);
 
+    // Test Case 168: COBOL XML PARSE Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_xml_parse("XML PARSE XML-TEXT PROCESSING PROCEDURE PARSE-HANDLER.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 169: JCL DD EROPT Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_eropt("//DD31 DD DSN=SYS.DATA,EROPT=ACC\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
