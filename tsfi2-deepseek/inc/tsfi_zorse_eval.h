@@ -393,4 +393,10 @@ int tsfi_zorse_validate_cobol_sort(const char *cobol_src, int *is_valid_out);
 // Zorse JCL DD PATH Parameter Auditor
 int tsfi_zorse_validate_jcl_path(const char *jcl_line, int *is_valid_out);
 
+// Zorse COBOL SEARCH ALL Statement Auditor
+int tsfi_zorse_validate_cobol_search_all(const char *cobol_src, int *is_valid_out);
+
+// Zorse JCL DD GDG Generation Auditor
+int tsfi_zorse_validate_jcl_gdg(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

@@ -676,6 +676,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_path("//DD20 DD PATH='/u/usr/data'\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 141: COBOL SEARCH ALL Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_search_all("SEARCH ALL TBL-ITEM WHEN ITEM-KEY(IDX) = VAL-IN", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 142: JCL DD GDG Generation Auditor validation
+    assert(tsfi_zorse_validate_jcl_gdg("//DD21 DD DSN=APP.GDG.DATASET(+1),DISP=(NEW,CATLG)\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
