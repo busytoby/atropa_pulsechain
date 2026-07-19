@@ -77,6 +77,24 @@
       <div class="card-title">LP Connections</div>
       <div id="det-pools"></div>
     </div>
+    <!-- Swap Card -->
+    <div class="card" id="swap-card" style="display:none;">
+      <div class="card-title">DEX Swap Simulator</div>
+      <div style="margin-bottom:10px;">
+        <label style="font-size:11px; color:#94a3b8; display:block; margin-bottom:4px;">Sell Amount</label>
+        <input type="number" id="swap-amount" value="100" style="width:100%; padding:8px; background:rgba(255,255,255,0.03); border:1px solid rgba(0,242,254,0.15); border-radius:6px; color:#fff; font-size:13px; outline:none;" oninput="updateSwapSimulation()">
+      </div>
+      <div style="margin-bottom:10px;">
+        <label style="font-size:11px; color:#94a3b8; display:block; margin-bottom:4px;">Target Liquidity Pool</label>
+        <select id="swap-target-pool" style="width:100%; padding:8px; background:#0f121d; border:1px solid rgba(0,242,254,0.15); border-radius:6px; color:#fff; font-size:13px; outline:none;" onchange="updateSwapSimulation()"></select>
+      </div>
+      <div class="pool-row" style="border-top: 1px solid rgba(255,255,255,0.05); margin-top:12px; padding-top:8px;">
+        <span>Est. Output</span>
+        <strong id="swap-output-val" style="color:#4ade80;">0.00</strong>
+      </div>
+      <button class="view-btn" style="background:linear-gradient(135deg, #00f2fe 0%, #d946ef 100%); color:#fff; font-weight:600; text-align:center; border:none; margin-top:10px;" onclick="executeSwapSim()">Execute CICS Auditable Swap</button>
+      <div id="swap-log" style="font-size:10px; font-family:monospace; color:#38bdf8; margin-top:8px; display:none; max-height:100px; overflow-y:auto; background:rgba(0,0,0,0.2); padding:6px; border-radius:4px; border:1px solid rgba(0,242,254,0.1);"></div>
+    </div>
   </div>
 </div>
 <div id="network-container">
@@ -1381,15 +1399,66 @@
     document.getElementById('det-addr').innerText = node.id;
 
     let poolsHtml = '';
-    links.forEach(l => {
+    let selectHtml = '';
+    let hasPools = false;
+    links.forEach((l, index) => {
       if (l.source.id.toLowerCase() === node.id.toLowerCase()) {
         poolsHtml += '<div class="pool-row"><span>' + l.target.symbol + '</span><strong>' + l.price.toFixed(6) + '</strong></div>';
+        selectHtml += '<option value="' + index + '" data-type="direct">' + l.target.symbol + '</option>';
+        hasPools = true;
       } else if (l.target.id.toLowerCase() === node.id.toLowerCase()) {
         poolsHtml += '<div class="pool-row"><span>' + l.source.symbol + '</span><strong>' + (1/l.price).toFixed(6) + '</strong></div>';
+        selectHtml += '<option value="' + index + '" data-type="reverse">' + l.source.symbol + '</option>';
+        hasPools = true;
       }
     });
     document.getElementById('det-pools').innerHTML = poolsHtml || '<div style="color:#64748b;font-size:13px;">No direct active LPs found</div>';
+    
+    const swapSel = document.getElementById('swap-target-pool');
+    swapSel.innerHTML = selectHtml;
+    document.getElementById('swap-card').style.display = hasPools ? 'block' : 'none';
+    document.getElementById('swap-log').style.display = 'none';
+    updateSwapSimulation();
   }
+
+  window.updateSwapSimulation = function() {
+    const amt = parseFloat(document.getElementById('swap-amount').value) || 0;
+    const sel = document.getElementById('swap-target-pool');
+    if (!sel || sel.options.length === 0) {
+      document.getElementById('swap-output-val').innerText = '0.00';
+      return;
+    }
+    const opt = sel.options[sel.selectedIndex];
+    const linkIdx = parseInt(opt.value);
+    const linkType = opt.getAttribute('data-type');
+    const link = links[linkIdx];
+    let outputVal = 0;
+    if (linkType === 'direct') {
+      outputVal = amt * link.price;
+    } else {
+      outputVal = amt * (1 / link.price);
+    }
+    document.getElementById('swap-output-val').innerText = outputVal.toFixed(6) + ' ' + opt.text;
+  };
+
+  window.executeSwapSim = function() {
+    const amt = parseFloat(document.getElementById('swap-amount').value) || 0;
+    const sel = document.getElementById('swap-target-pool');
+    if (!sel || sel.options.length === 0) return;
+    const opt = sel.options[sel.selectedIndex];
+    const outStr = document.getElementById('swap-output-val').innerText;
+    const logBox = document.getElementById('swap-log');
+    logBox.style.display = 'block';
+    
+    const timestamp = new Date().toISOString();
+    logBox.innerHTML = `[${timestamp}] EXEC CICS SWAP INIT<br>` +
+                       `[${timestamp}] FROM: ${selectedNode.symbol} (${amt})<br>` +
+                       `[${timestamp}] TO: ${opt.text}<br>` +
+                       `[${timestamp}] OUT: ${outStr}<br>` +
+                       `[${timestamp}] DFHRESP: NORMAL<br>` +
+                       `[${timestamp}] TRANSACTION AUDITED SUCCESS`;
+    logBox.scrollTop = logBox.scrollHeight;
+  };
 
   function searchNode() {
     const val = document.getElementById('search-box').value.toLowerCase().trim();
