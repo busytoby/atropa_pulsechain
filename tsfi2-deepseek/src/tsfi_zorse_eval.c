@@ -1235,3 +1235,23 @@ int tsfi_zorse_validate_jcl_label(const char *jcl_line, int *is_valid_out) {
     
     return 0;
 }
+
+int tsfi_zorse_audit_light_bloom(const char *b64_render_img, const char *model_name, char *analysis_out, size_t max_len) {
+    if (!b64_render_img || !model_name || !analysis_out || max_len == 0) return -1;
+    
+    analysis_out[0] = '\0';
+    
+    const char *prompt = "Analyze this rendering to evaluate visual light bloom, glare intensity levels, and lens flare artifacts.";
+    
+    return tsfi_ai_evaluate_vlm(b64_render_img, prompt, analysis_out, max_len);
+}
+
+int tsfi_zorse_audit_denoising_clarity(const char *b64_render_img, const char *model_name, char *analysis_out, size_t max_len) {
+    if (!b64_render_img || !model_name || !analysis_out || max_len == 0) return -1;
+    
+    analysis_out[0] = '\0';
+    
+    const char *prompt = "Verify this ray-traced rendering to identify visual detail loss, blur, or smudging artifacts caused by denoising filters.";
+    
+    return tsfi_ai_evaluate_vlm(b64_render_img, prompt, analysis_out, max_len);
+}

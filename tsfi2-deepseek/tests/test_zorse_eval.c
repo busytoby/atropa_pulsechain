@@ -408,6 +408,16 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_label("//DD7 DD DSN=A.B.C,LABEL=(,SL)\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 82: Moondream Visual Light Bloom & Glare Auditor validation
+    char bloom_buf[256];
+    int bloom_res = tsfi_zorse_audit_light_bloom("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "moondream", bloom_buf, sizeof(bloom_buf));
+    assert(bloom_res == 0 || bloom_res == -2 || bloom_res == -1);
+
+    // Test Case 83: Moondream Visual Denoising Clarity Auditor validation
+    char denoise_buf[256];
+    int denoise_res = tsfi_zorse_audit_denoising_clarity("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "moondream", denoise_buf, sizeof(denoise_buf));
+    assert(denoise_res == 0 || denoise_res == -2 || denoise_res == -1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

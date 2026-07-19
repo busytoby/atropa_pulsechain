@@ -213,4 +213,10 @@ int tsfi_zorse_validate_cobol_multiply_error(const char *cobol_src, int *is_vali
 // Zorse JCL LABEL Parameter Auditor
 int tsfi_zorse_validate_jcl_label(const char *jcl_line, int *is_valid_out);
 
+// Zorse Moondream Visual Light Bloom & Glare Auditor
+int tsfi_zorse_audit_light_bloom(const char *b64_render_img, const char *model_name, char *analysis_out, size_t max_len);
+
+// Zorse Moondream Visual Denoising Clarity Auditor
+int tsfi_zorse_audit_denoising_clarity(const char *b64_render_img, const char *model_name, char *analysis_out, size_t max_len);
+
 #endif // TSFI_ZORSE_EVAL_H
