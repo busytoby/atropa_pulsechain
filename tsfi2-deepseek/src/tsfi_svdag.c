@@ -418,3 +418,28 @@ int tsfi_svdag_compile_zorse(TSFiHelmholtzSVDAG *dag, const char *zorse_source) 
     return 0;
 }
 
+int tsfi_svdag_voxelize_image(TSFiHelmholtzSVDAG *dag, const uint32_t *pixels, int w, int h, float threshold) {
+    if (!dag || !pixels || w <= 0 || h <= 0) return -1;
+
+    size_t count = 0;
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            uint32_t color = pixels[y * w + x];
+            float r = (float)((color >> 16) & 0xFF) / 255.0f;
+            float g = (float)((color >> 8) & 0xFF) / 255.0f;
+            float b = (float)(color & 0xFF) / 255.0f;
+            float luminance = 0.2126f * r + 0.7152f * g + 0.0722f * b;
+
+            if (luminance >= threshold && count < dag->stream_capacity) {
+                dag->intensity_stream[count] = luminance;
+                dag->phase_stream[count] = r;
+                dag->index_stream[count] = (uint32_t)(y * w + x);
+                count++;
+            }
+        }
+    }
+    dag->stream_size = count;
+
+    return 0;
+}
+

@@ -817,6 +817,19 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_eropt("//DD31 DD DSN=SYS.DATA,EROPT=ACC\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 170: SVDAG image voxelizer validation
+    uint32_t mock_pixels[4] = {
+        0xFFFFFFFF, 0x00000000,
+        0x00000000, 0xFFFFFFFF
+    };
+    TSFiTasteTree *vox_tree = tsfi_svdag_create(10);
+    assert(vox_tree != NULL);
+    assert(tsfi_svdag_voxelize_image(vox_tree, mock_pixels, 2, 2, 0.5f) == 0);
+    // Two bright pixels should pass the 0.5 threshold
+    assert(vox_tree->stream_size == 2);
+    assert(vox_tree->intensity_stream[0] > 0.99f);
+    tsfi_svdag_destroy(vox_tree);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

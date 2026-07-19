@@ -133,4 +133,7 @@ int tsfi_svdag_apply_vaesen_parameters(const char *vaesen_name, const char *regi
 // Zorse SVDAG Compiler
 int tsfi_svdag_compile_zorse(TSFiHelmholtzSVDAG *dag, const char *zorse_source);
 
+// Image to SVDAG Voxelizer
+int tsfi_svdag_voxelize_image(TSFiHelmholtzSVDAG *dag, const uint32_t *pixels, int w, int h, float threshold);
+
 #endif // TSFI_SVDAG_H
