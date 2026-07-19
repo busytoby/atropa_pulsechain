@@ -644,6 +644,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_dlurvtam("//DLUR01 DD DSN=SYS1.VTAMLST,DLURVTAM=YES\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 133: COBOL EXIT PROGRAM Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_exit_program("EXIT PROGRAM.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 134: JCL SYSOUT DEST Spool Router Auditor validation
+    assert(tsfi_zorse_validate_jcl_dest_router("//DD17 DD SYSOUT=A,DEST=RMT12\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
