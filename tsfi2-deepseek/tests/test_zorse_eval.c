@@ -350,6 +350,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_dsntype("//DD1 DD DSN=A.B.C,DSNTYPE=LIBRARY\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 68: COBOL GOTO Statement Path Auditor validation
+    assert(tsfi_zorse_validate_cobol_goto("GO TO MY-PARA.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 69: JCL SMS Storage Class Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_sms("//DD2 DD DSN=A.B.C,DATACLAS=EXTENDED\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
