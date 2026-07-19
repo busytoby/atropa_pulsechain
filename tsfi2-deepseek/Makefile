@@ -956,6 +956,9 @@ tests/test_nlp: tests/test_nlp.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 tests/test_phoneme_synth: tests/test_phoneme_synth.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+tests/test_zorse_eval: tests/test_zorse_eval.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 tests/test_markov_lm: tests/test_markov_lm.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 

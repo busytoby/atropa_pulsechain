@@ -129,3 +129,50 @@ int tsfi_zorse_query_llm(const char *prompt, const char *model_name, char *respo
     free(resp);
     return ret;
 }
+
+int tsfi_zorse_validate_cobol_pic(const char *pic_clause, int *is_valid_out) {
+    if (!pic_clause || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    // PICTURE clause must contain "PIC " or "PICTURE "
+    const char *p = strstr(pic_clause, "PIC ");
+    if (!p) p = strstr(pic_clause, "PICTURE ");
+    if (!p) return 0;
+    
+    // Skip to the pattern definition
+    if (strstr(p, " X") || strstr(p, " 9") || strstr(p, " S9") || strstr(p, " A")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_jcl_pgm(const char *exec_statement, int *is_valid_out) {
+    if (!exec_statement || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    // Statement must contain "EXEC PGM="
+    const char *p = strstr(exec_statement, "EXEC PGM=");
+    if (!p) return 0;
+    
+    p += 9; // Skip "EXEC PGM="
+    
+    // Parse the program name length and verify it is alphanumeric
+    int pgm_len = 0;
+    while (*p != '\0' && *p != ' ' && *p != ',' && *p != '\n') {
+        char c = *p;
+        if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9'))) {
+            return 0; // Non-alphanumeric character found
+        }
+        pgm_len++;
+        p++;
+    }
+    
+    if (pgm_len >= 1 && pgm_len <= 8) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}

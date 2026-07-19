@@ -61,6 +61,26 @@ int main(void) {
     // If the Ollama server is offline, it should gracefully return -2 (connect failure) or -1 (bad args)
     assert(q_res == 0 || q_res == -2);
 
+    // Test Case 11: Valid COBOL PICTURE Clause
+    const char *valid_pic = "01  MY-VAR  PIC X(10).\n";
+    assert(tsfi_zorse_validate_cobol_pic(valid_pic, &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 12: Invalid COBOL PICTURE Clause (missing format)
+    const char *invalid_pic = "01  MY-VAR  PIC.\n";
+    assert(tsfi_zorse_validate_cobol_pic(invalid_pic, &is_valid) == 0);
+    assert(is_valid == 0);
+
+    // Test Case 13: Valid JCL EXEC Program
+    const char *valid_pgm = "//STEP1 EXEC PGM=IEFBR14,PARM='TEST'\n";
+    assert(tsfi_zorse_validate_jcl_pgm(valid_pgm, &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 14: Invalid JCL EXEC Program (too long)
+    const char *invalid_pgm = "//STEP1 EXEC PGM=IEFBR14LONG\n";
+    assert(tsfi_zorse_validate_jcl_pgm(invalid_pgm, &is_valid) == 0);
+    assert(is_valid == 0);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
