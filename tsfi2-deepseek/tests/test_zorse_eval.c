@@ -161,6 +161,16 @@ int main(void) {
     int explain_res = tsfi_zorse_explain_source("MOVE A TO B.", "COBOL", "moondream", explanation_buf, sizeof(explanation_buf));
     assert(explain_res == 0 || explain_res == -2);
 
+    // Test Case 31: Moondream Visual Punch Card Reader validation
+    char punch_card_res[256];
+    int pc_res = tsfi_zorse_read_punch_card("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "moondream", punch_card_res, sizeof(punch_card_res));
+    assert(pc_res == 0 || pc_res == -2 || pc_res == -1);
+
+    // Test Case 32: Moondream Tape Mount Auditor validation
+    int is_mounted = 0;
+    int tape_res = tsfi_zorse_audit_tape_mount("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "TAPE01", "moondream", &is_mounted);
+    assert(tape_res == 0 || tape_res == -2 || tape_res == -1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

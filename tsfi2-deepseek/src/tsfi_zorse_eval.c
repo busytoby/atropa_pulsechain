@@ -427,3 +427,39 @@ int tsfi_zorse_explain_source(const char *source, const char *lang, const char *
     
     return ret;
 }
+
+int tsfi_zorse_read_punch_card(const char *b64_card_img, const char *model_name, char *text_out, size_t max_len) {
+    if (!b64_card_img || !model_name || !text_out || max_len == 0) return -1;
+    
+    text_out[0] = '\0';
+    
+    const char *prompt = "Read the punched hole patterns in this 80-column IBM punch card image and output the decoded alphanumeric text line.";
+    
+    return tsfi_ai_evaluate_vlm(b64_card_img, prompt, text_out, max_len);
+}
+
+int tsfi_zorse_audit_tape_mount(const char *b64_tape_img, const char *expected_tape_id, const char *model_name, int *is_mounted_out) {
+    if (!b64_tape_img || !expected_tape_id || !model_name || !is_mounted_out) return -1;
+    
+    *is_mounted_out = 0;
+    
+    char ans[64];
+    size_t e_len = strlen(expected_tape_id);
+    char *prompt = (char *)malloc(e_len + 128);
+    if (!prompt) return -1;
+    
+    snprintf(prompt, e_len + 128, 
+             "Is the tape reel labeled with the ID %s correctly mounted on the tape drive unit in this image? Answer only Yes or No.", 
+             expected_tape_id);
+             
+    int ret = tsfi_ai_evaluate_vlm(b64_tape_img, prompt, ans, sizeof(ans));
+    free(prompt);
+    
+    if (ret == 0) {
+        if (strstr(ans, "Yes") || strstr(ans, "yes") || strstr(ans, "YES")) {
+            *is_mounted_out = 1;
+        }
+    }
+    
+    return ret;
+}

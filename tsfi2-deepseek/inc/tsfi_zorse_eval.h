@@ -60,4 +60,10 @@ int tsfi_zorse_map_dasd_space(const char *b64_layout_img, const char *model_name
 // Zorse LLM JCL/COBOL Code Explain-Pipeline
 int tsfi_zorse_explain_source(const char *source, const char *lang, const char *model_name, char *explanation_out, size_t max_len);
 
+// Zorse Moondream Visual Punch Card Reader
+int tsfi_zorse_read_punch_card(const char *b64_card_img, const char *model_name, char *text_out, size_t max_len);
+
+// Zorse Moondream Tape Drive Mount Auditor
+int tsfi_zorse_audit_tape_mount(const char *b64_tape_img, const char *expected_tape_id, const char *model_name, int *is_mounted_out);
+
 #endif // TSFI_ZORSE_EVAL_H
