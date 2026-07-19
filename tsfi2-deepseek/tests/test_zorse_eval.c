@@ -1040,6 +1040,14 @@ int main(void) {
     assert(tsfi_zorse_validate_cobol_cf_spacing("01 CF-LINE CONTROL FOOTING LINE PLUS 2.", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 219: z/VSE POWER Spool Print Priority Validator validation
+    assert(tsfi_zorse_validate_vse_power_pri("* $$ LST PRI=3,DISP=H\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 220: COBOL Report Writer Page Footing Spacing Auditor validation
+    assert(tsfi_zorse_validate_cobol_pf_spacing("01 PF-LINE PAGE FOOTING LINE PLUS 1.", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
