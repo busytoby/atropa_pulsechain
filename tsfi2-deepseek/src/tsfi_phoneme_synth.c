@@ -404,3 +404,27 @@ int tsfi_phoneme_generate_glottal_pulse(float time_sample, float pitch_period, f
     }
     return 0;
 }
+
+int tsfi_phoneme_xiang_neutralize_sandhi(float speed_ratio, int original_tone, int *neutralized_tone_out) {
+    if (!neutralized_tone_out) return -1;
+    
+    // In rapid speech (>1.4x), Cantonese sandhi neutralizes back to original tone target
+    if (speed_ratio > 1.4f) {
+        *neutralized_tone_out = original_tone;
+    } else {
+        *neutralized_tone_out = -1; // keep sandhi active
+    }
+    return 0;
+}
+
+int tsfi_phoneme_xiang_scale_emphasis(const char *particle, int base_duration_ms, int *scaled_duration_out) {
+    if (!particle || base_duration_ms <= 0 || !scaled_duration_out) return -1;
+    
+    *scaled_duration_out = base_duration_ms;
+    
+    // final particles extension
+    if (strcmp(particle, "laa") == 0 || strcmp(particle, "me") == 0 || strcmp(particle, "aa") == 0) {
+        *scaled_duration_out = (int)((float)base_duration_ms * 1.5f);
+    }
+    return 0;
+}

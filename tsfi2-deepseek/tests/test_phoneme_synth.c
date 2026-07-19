@@ -146,6 +146,16 @@ int main(void) {
     assert(tsfi_phoneme_generate_glottal_pulse(0.10f, 1.0f, &glottal_val) == 0);
     assert(glottal_val > 0.0f);
 
+    // 22. Test Xiang Cantonese Sandhi Neutralizer
+    int neutralized_tone = 0;
+    assert(tsfi_phoneme_xiang_neutralize_sandhi(1.5f, 4, &neutralized_tone) == 0);
+    assert(neutralized_tone == 4);
+
+    // 23. Test Xiang Syllable Emphasis Scaler
+    int emp_dur = 0;
+    assert(tsfi_phoneme_xiang_scale_emphasis("laa", 100, &emp_dur) == 0);
+    assert(emp_dur == 150);
+
     // Cleanup
     tsfi_synth_perf_destroy(perf_engine);
     tsfi_trie_destroy(trie_root);

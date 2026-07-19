@@ -75,4 +75,10 @@ int tsfi_phoneme_apply_coarticulation(float prev_freq, float curr_freq, float ne
 // Glottal Flow Excitation Generator
 int tsfi_phoneme_generate_glottal_pulse(float time_sample, float pitch_period, float *pulse_out);
 
+// Xiang Cantonese Sandhi Neutralizer
+int tsfi_phoneme_xiang_neutralize_sandhi(float speed_ratio, int original_tone, int *neutralized_tone_out);
+
+// Xiang Syllable Emphasis Scaler
+int tsfi_phoneme_xiang_scale_emphasis(const char *particle, int base_duration_ms, int *scaled_duration_out);
+
 #endif // TSFI_PHONEME_SYNTH_H
