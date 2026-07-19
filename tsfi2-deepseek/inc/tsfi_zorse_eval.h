@@ -30,4 +30,10 @@ int tsfi_zorse_validate_cobol_redefines(const char *redefines_clause, int *is_va
 // Zorse JCL Symbolic Parameter Validator
 int tsfi_zorse_validate_jcl_symbolic(const char *jcl_line, int *is_valid_out);
 
+// Zorse COBOL OCCURS Clause Auditor
+int tsfi_zorse_validate_cobol_occurs(const char *occurs_clause, int *is_valid_out);
+
+// Zorse JCL COND Parameter Validator
+int tsfi_zorse_validate_jcl_cond(const char *cond_parameter, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

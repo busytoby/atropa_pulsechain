@@ -240,3 +240,58 @@ int tsfi_zorse_validate_jcl_symbolic(const char *jcl_line, int *is_valid_out) {
     
     return 0;
 }
+
+int tsfi_zorse_validate_cobol_occurs(const char *occurs_clause, int *is_valid_out) {
+    if (!occurs_clause || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    // Must contain " OCCURS "
+    const char *p = strstr(occurs_clause, " OCCURS ");
+    if (!p) return 0;
+    
+    p += 8; // Skip " OCCURS "
+    
+    // Verify it is followed by a number and optionally "TIMES" ending with period
+    int occurs_limit = atoi(p);
+    if (occurs_limit <= 0 || occurs_limit > 32767) {
+        return 0; // Exceeds standard mainframe limit sizing bounds
+    }
+    
+    *is_valid_out = 1;
+    return 0;
+}
+
+int tsfi_zorse_validate_jcl_cond(const char *cond_parameter, int *is_valid_out) {
+    if (!cond_parameter || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    // Find "COND="
+    const char *p = strstr(cond_parameter, "COND=");
+    if (!p) return 0;
+    
+    p += 5; // Skip "COND="
+    
+    // Check if it starts with parenthesized comparison block, e.g. COND=(4,LT)
+    if (*p == '(') {
+        p++;
+        // Find digit return code
+        int code = atoi(p);
+        if (code < 0 || code > 4095) return 0;
+        
+        // Find comma
+        p = strchr(p, ',');
+        if (!p) return 0;
+        p++; // Skip ','
+        
+        // Match operators: EQ, NE, GT, LT, GE, LE
+        if (strncmp(p, "EQ", 2) == 0 || strncmp(p, "NE", 2) == 0 ||
+            strncmp(p, "GT", 2) == 0 || strncmp(p, "LT", 2) == 0 ||
+            strncmp(p, "GE", 2) == 0 || strncmp(p, "LE", 2) == 0) {
+            *is_valid_out = 1;
+        }
+    }
+    
+    return 0;
+}

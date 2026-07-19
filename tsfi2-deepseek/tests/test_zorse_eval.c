@@ -101,6 +101,26 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_symbolic(invalid_sym, &is_valid) == 0);
     assert(is_valid == 0);
 
+    // Test Case 19: Valid COBOL OCCURS Clause
+    const char *valid_occurs = "05  MY-ARRAY  PIC X OCCURS 10 TIMES.\n";
+    assert(tsfi_zorse_validate_cobol_occurs(valid_occurs, &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 20: Invalid COBOL OCCURS Clause (exceeds bounds limit)
+    const char *invalid_occurs = "05  MY-ARRAY  PIC X OCCURS 99999 TIMES.\n";
+    assert(tsfi_zorse_validate_cobol_occurs(invalid_occurs, &is_valid) == 0);
+    assert(is_valid == 0);
+
+    // Test Case 21: Valid JCL COND Parameter
+    const char *valid_cond = "//STEP1 EXEC PGM=MYPROG,COND=(4,LT)\n";
+    assert(tsfi_zorse_validate_jcl_cond(valid_cond, &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 22: Invalid JCL COND Parameter (invalid operator)
+    const char *invalid_cond = "//STEP1 EXEC PGM=MYPROG,COND=(4,XX)\n";
+    assert(tsfi_zorse_validate_jcl_cond(invalid_cond, &is_valid) == 0);
+    assert(is_valid == 0);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
