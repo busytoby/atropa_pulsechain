@@ -944,6 +944,14 @@ int main(void) {
     assert(tsfi_zorse_validate_cobol_page_limit("PAGE LIMIT 66 LINES.", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 195: z/VSE POWER Spool Page Range Limit Validator validation
+    assert(tsfi_zorse_validate_vse_power_pages("* $$ LST PAGES=(1,10),DISP=H\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 196: COBOL Report Writer Heading Group Auditor validation
+    assert(tsfi_zorse_validate_cobol_heading_group("01 TYPE IS PAGE HEADING.", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
