@@ -438,4 +438,10 @@ int tsfi_zorse_validate_cobol_entry_using(const char *cobol_src, int *is_valid_o
 // Zorse JCL DD PROTECT Parameter Auditor
 int tsfi_zorse_validate_jcl_protect(const char *jcl_line, int *is_valid_out);
 
+// Zorse COBOL INSPECT TALLYING Statement Auditor
+int tsfi_zorse_validate_cobol_inspect_tallying(const char *cobol_src, int *is_valid_out);
+
+// Zorse JCL DD SUBSYS Parameter Auditor
+int tsfi_zorse_validate_jcl_subsys(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

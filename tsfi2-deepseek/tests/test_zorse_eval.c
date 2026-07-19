@@ -738,6 +738,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_protect("//DD26 DD DSN=SECRET.DATA,PROTECT=YES\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 156: COBOL INSPECT TALLYING Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_inspect_tallying("INSPECT STR-A TALLYING CHAR-CNT FOR ALL CHARACTERS.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 157: JCL DD SUBSYS Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_subsys("//DD27 DD SUBSYS=(LAM,PARM1)\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
