@@ -405,4 +405,10 @@ int tsfi_zorse_validate_cobol_read_next(const char *cobol_src, int *is_valid_out
 // Zorse JCL DD PATHMODE Parameter Auditor
 int tsfi_zorse_validate_jcl_pathmode(const char *jcl_line, int *is_valid_out);
 
+// Zorse COBOL WRITE FROM Statement Auditor
+int tsfi_zorse_validate_cobol_write_from(const char *cobol_src, int *is_valid_out);
+
+// Zorse JCL DD GDG Version Auditor
+int tsfi_zorse_validate_jcl_gdg_version(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

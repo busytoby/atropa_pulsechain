@@ -692,6 +692,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_pathmode("//DD22 DD PATH='/u/usr/data',PATHMODE=SIRWXU\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 145: COBOL WRITE FROM Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_write_from("WRITE REC-OUT FROM WORK-REC.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 146: JCL DD GDG Version Auditor validation
+    assert(tsfi_zorse_validate_jcl_gdg_version("//DD23 DD DSN=APP.GDG.DATASET.G0001V00,DISP=SHR\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
