@@ -382,6 +382,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_secmodel("//DD5 DD DSN=A.B.C,SECMODEL=GDG\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 76: COBOL ADD SIZE ERROR Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_size_error("ADD A TO B ON SIZE ERROR DISPLAY 'ERROR'.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 77: JCL DSORG Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_dsorg("//DD6 DD DSN=A.B.C,DSORG=PS\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

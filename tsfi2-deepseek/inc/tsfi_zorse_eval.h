@@ -195,4 +195,10 @@ int tsfi_zorse_validate_cobol_unstring(const char *cobol_src, int *is_valid_out)
 // Zorse JCL SECMODEL Parameter Auditor
 int tsfi_zorse_validate_jcl_secmodel(const char *jcl_line, int *is_valid_out);
 
+// Zorse COBOL ADD SIZE ERROR Statement Auditor
+int tsfi_zorse_validate_cobol_size_error(const char *cobol_src, int *is_valid_out);
+
+// Zorse JCL DSORG Parameter Auditor
+int tsfi_zorse_validate_jcl_dsorg(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

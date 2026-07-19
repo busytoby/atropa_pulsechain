@@ -1160,3 +1160,34 @@ int tsfi_zorse_validate_jcl_secmodel(const char *jcl_line, int *is_valid_out) {
     
     return 0;
 }
+
+int tsfi_zorse_validate_cobol_size_error(const char *cobol_src, int *is_valid_out) {
+    if (!cobol_src || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(cobol_src, "ADD ") && strstr(cobol_src, "SIZE ERROR")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_jcl_dsorg(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    const char *p = strstr(jcl_line, "DSORG=");
+    if (!p) return 0;
+    
+    p += 6; // Skip "DSORG="
+    
+    if (strncmp(p, "PS", 2) == 0 || strncmp(p, "PO", 2) == 0 ||
+        strncmp(p, "DA", 2) == 0 || strncmp(p, "IS", 2) == 0 ||
+        strncmp(p, "CX", 2) == 0) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
