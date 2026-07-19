@@ -147,3 +147,7 @@ int tsfi_ai_evaluate_vlm(const char *b64_img, const char *prompt, char *output, 
     free(resp);
     return 0;
 }
+
+char* tsfi_ai_exec_post(const char *host, const char *port, const char *path, const char *payload) {
+    return exec_raw_http_post(host, port, path, payload);
+}

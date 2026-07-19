@@ -55,6 +55,12 @@ int main(void) {
     assert(tsfi_zorse_validate_hlasm(invalid_hlasm, &is_valid) == 0);
     assert(is_valid == 0);
 
+    // Test Case 10: LLM query interface validation
+    char llm_res[256];
+    int q_res = tsfi_zorse_query_llm("Ping", "moondream", llm_res, sizeof(llm_res));
+    // If the Ollama server is offline, it should gracefully return -2 (connect failure) or -1 (bad args)
+    assert(q_res == 0 || q_res == -2);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

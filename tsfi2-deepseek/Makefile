@@ -13,6 +13,7 @@ SRC_DIR  = src
 
 # --- Core Simulation Objects ---
 CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/tsfi_hotloader.o \
+            $(OBJ_DIR)/tsfi_ai_core.o \
             $(OBJ_DIR)/tsfi_fourier.o $(OBJ_DIR)/tsfi_genetic.o $(OBJ_DIR)/tsfi_hilbert_avx512.o \
             $(OBJ_DIR)/tsfi_vision.o $(OBJ_DIR)/lau_audit.o $(OBJ_DIR)/tsfi_crash_handler.o \
             $(OBJ_DIR)/tsfi_spirv_kernels.o $(OBJ_DIR)/tsfi_fused_operator.o $(OBJ_DIR)/tsfi_vision_metrics.o \
@@ -109,6 +110,7 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_doxastic_pipeline.o \
             $(OBJ_DIR)/tsfi_nlp.o \
             $(OBJ_DIR)/tsfi_phoneme_synth.o \
+            $(OBJ_DIR)/tsfi_zorse_eval.o \
             $(OBJ_DIR)/tsfi_markov_lm.o \
             $(OBJ_DIR)/tsfi_shm_prune.o \
             $(OBJ_DIR)/tsfi_lexical_trie.o \

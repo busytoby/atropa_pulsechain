@@ -1,6 +1,8 @@
 #include "tsfi_zorse_eval.h"
+#include "tsfi_ai_core.h"
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 int tsfi_zorse_validate_jcl(const char *jcl_string, int *is_valid_out, char *error_msg_out, int max_err_len) {
     if (!jcl_string || !is_valid_out || !error_msg_out || max_err_len <= 0) return -1;
@@ -80,4 +82,50 @@ int tsfi_zorse_validate_hlasm(const char *hlasm_instruction, int *is_valid_out) 
     
     *is_valid_out = 1;
     return 0;
+}
+
+int tsfi_zorse_query_llm(const char *prompt, const char *model_name, char *response_out, size_t max_resp_len) {
+    if (!prompt || !model_name || !response_out || max_resp_len == 0) return -1;
+    
+    response_out[0] = '\0';
+    
+    size_t m_len = strlen(model_name);
+    size_t p_len = strlen(prompt);
+    char *json_payload = (char *)malloc(m_len + p_len + 256);
+    if (!json_payload) return -1;
+    
+    snprintf(json_payload, m_len + p_len + 256, 
+             "{\"model\": \"%s\", \"prompt\": \"%s\", \"stream\": false}", 
+             model_name, prompt);
+    
+    // Query local Ollama service port (11434)
+    char *resp = tsfi_ai_exec_post("127.0.0.1", "11434", "/api/generate", json_payload);
+    free(json_payload);
+    
+    if (!resp) return -2;
+    
+    char *body = strstr(resp, "\r\n\r\n");
+    int ret = -3;
+    if (body) {
+        char *resp_start = strstr(body, "\"response\":\"");
+        if (resp_start) {
+            resp_start += 12;
+            char *resp_end = resp_start;
+            while (*resp_end != '\0') {
+                if (*resp_end == '"' && *(resp_end - 1) != '\\') break;
+                resp_end++;
+            }
+            
+            if (*resp_end == '"') {
+                size_t len = resp_end - resp_start;
+                if (len >= max_resp_len) len = max_resp_len - 1;
+                strncpy(response_out, resp_start, len);
+                response_out[len] = '\0';
+                ret = 0;
+            }
+        }
+    }
+    
+    free(resp);
+    return ret;
 }

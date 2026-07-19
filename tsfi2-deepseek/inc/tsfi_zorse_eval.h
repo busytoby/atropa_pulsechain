@@ -1,6 +1,8 @@
 #ifndef TSFI_ZORSE_EVAL_H
 #define TSFI_ZORSE_EVAL_H
 
+#include <stddef.h>
+
 // Zorse JCL Syntax Compliance Validator
 int tsfi_zorse_validate_jcl(const char *jcl_string, int *is_valid_out, char *error_msg_out, int max_err_len);
 
@@ -12,5 +14,8 @@ int tsfi_zorse_validate_jcl_dd(const char *dd_statement, int *is_valid_out);
 
 // Zorse HLASM Instruction Compliance Auditor
 int tsfi_zorse_validate_hlasm(const char *hlasm_instruction, int *is_valid_out);
+
+// Zorse LLM Integration Query Interface
+int tsfi_zorse_query_llm(const char *prompt, const char *model_name, char *response_out, size_t max_resp_len);
 
 #endif // TSFI_ZORSE_EVAL_H

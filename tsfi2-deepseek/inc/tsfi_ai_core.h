@@ -2,6 +2,7 @@
 #define TSFI_AI_CORE_H
 
 #include <stddef.h>
+#include <stdint.h>
 
 /**
  * Fetch a 256x256 photorealistic image from local Stable Diffusion (127.0.0.1:8080)
@@ -29,5 +30,8 @@ void tsfi_sd_free(void* ctx_ptr);
 
 // Direct TAESD Latent Decoding (Stall-Free)
 int tsfi_taesd_decode(void* sd_ctx_ptr, float* latents, uint8_t* out_pixels);
+
+// Public HTTP helper for Ollama/SD calls
+char* tsfi_ai_exec_post(const char *host, const char *port, const char *path, const char *payload);
 
 #endif // TSFI_AI_CORE_H
