@@ -24,4 +24,10 @@ int tsfi_zorse_validate_cobol_pic(const char *pic_clause, int *is_valid_out);
 // Zorse JCL EXEC Program Validator
 int tsfi_zorse_validate_jcl_pgm(const char *exec_statement, int *is_valid_out);
 
+// Zorse COBOL REDEFINES Clause Auditor
+int tsfi_zorse_validate_cobol_redefines(const char *redefines_clause, int *is_valid_out);
+
+// Zorse JCL Symbolic Parameter Validator
+int tsfi_zorse_validate_jcl_symbolic(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

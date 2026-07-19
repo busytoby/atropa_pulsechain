@@ -176,3 +176,67 @@ int tsfi_zorse_validate_jcl_pgm(const char *exec_statement, int *is_valid_out) {
     
     return 0;
 }
+
+int tsfi_zorse_validate_cobol_redefines(const char *redefines_clause, int *is_valid_out) {
+    if (!redefines_clause || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    // Must contain " REDEFINES "
+    const char *p = strstr(redefines_clause, " REDEFINES ");
+    if (!p) return 0;
+    
+    p += 11; // Skip " REDEFINES "
+    
+    // Check that it's followed by a valid identifier (alphanumeric, -, or _) and ends with a period
+    int id_len = 0;
+    while (*p != '\0' && *p != ' ' && *p != '\n' && *p != '.') {
+        char c = *p;
+        if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-' || c == '_')) {
+            return 0;
+        }
+        id_len++;
+        p++;
+    }
+    
+    if (id_len >= 1 && *p == '.') {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_jcl_symbolic(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    // Locate variable declaration or reference starter symbol '&'
+    const char *p = strchr(jcl_line, '&');
+    if (!p) return 0;
+    
+    p++; // Skip '&'
+    
+    // Variable name must start with alphabetical character
+    char first = *p;
+    if (!((first >= 'A' && first <= 'Z') || (first >= 'a' && first <= 'z'))) {
+        return 0;
+    }
+    
+    int var_len = 1;
+    p++;
+    while (*p != '\0' && *p != ' ' && *p != ',' && *p != '=' && *p != '.' && *p != '\'' && *p != '\n') {
+        char c = *p;
+        if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9'))) {
+            return 0;
+        }
+        var_len++;
+        p++;
+    }
+    
+    if (var_len <= 8) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}

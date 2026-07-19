@@ -81,6 +81,26 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_pgm(invalid_pgm, &is_valid) == 0);
     assert(is_valid == 0);
 
+    // Test Case 15: Valid COBOL REDEFINES Clause
+    const char *valid_redef = "05  VAR2  REDEFINES VAR1.\n";
+    assert(tsfi_zorse_validate_cobol_redefines(valid_redef, &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 16: Invalid COBOL REDEFINES Clause (missing period)
+    const char *invalid_redef = "05  VAR2  REDEFINES VAR1\n";
+    assert(tsfi_zorse_validate_cobol_redefines(invalid_redef, &is_valid) == 0);
+    assert(is_valid == 0);
+
+    // Test Case 17: Valid JCL Symbolic Parameter
+    const char *valid_sym = "//STEP1 EXEC PGM=MYPROG,PARM='&MYVAR'\n";
+    assert(tsfi_zorse_validate_jcl_symbolic(valid_sym, &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 18: Invalid JCL Symbolic Parameter (numeric start)
+    const char *invalid_sym = "//STEP1 EXEC PGM=MYPROG,PARM='&1MYVAR'\n";
+    assert(tsfi_zorse_validate_jcl_symbolic(invalid_sym, &is_valid) == 0);
+    assert(is_valid == 0);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
