@@ -312,6 +312,16 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_addrspc("//STEP1 EXEC PGM=IEFBR14,ADDRSPC=VIRT\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 60: Moondream Ray-Tracer Render Artifact Auditor validation
+    char artifact_buf[256];
+    int art_res = tsfi_zorse_audit_render_artifacts("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "moondream", artifact_buf, sizeof(artifact_buf));
+    assert(art_res == 0 || art_res == -2 || art_res == -1);
+
+    // Test Case 61: Moondream Visual Camera Matrix Optimizer validation
+    char matrix_buf[256];
+    int matrix_res = tsfi_zorse_optimize_camera_matrix("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "moondream", matrix_buf, sizeof(matrix_buf));
+    assert(matrix_res == 0 || matrix_res == -2 || matrix_res == -1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

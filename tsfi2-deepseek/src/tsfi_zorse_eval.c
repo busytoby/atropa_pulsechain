@@ -963,3 +963,23 @@ int tsfi_zorse_validate_jcl_addrspc(const char *jcl_line, int *is_valid_out) {
     
     return 0;
 }
+
+int tsfi_zorse_audit_render_artifacts(const char *b64_render_img, const char *model_name, char *analysis_out, size_t max_len) {
+    if (!b64_render_img || !model_name || !analysis_out || max_len == 0) return -1;
+    
+    analysis_out[0] = '\0';
+    
+    const char *prompt = "Analyze this ray-traced render output to check for reflection noise, shadow artifacts, or surface clipping.";
+    
+    return tsfi_ai_evaluate_vlm(b64_render_img, prompt, analysis_out, max_len);
+}
+
+int tsfi_zorse_optimize_camera_matrix(const char *b64_render_img, const char *model_name, char *matrix_out, size_t max_len) {
+    if (!b64_render_img || !model_name || !matrix_out || max_len == 0) return -1;
+    
+    matrix_out[0] = '\0';
+    
+    const char *prompt = "Evaluate the perspective projection in this rendering. Recommend corrections for translation offsets and field of view camera parameters.";
+    
+    return tsfi_ai_evaluate_vlm(b64_render_img, prompt, matrix_out, max_len);
+}

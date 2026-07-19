@@ -147,4 +147,10 @@ int tsfi_zorse_validate_cobol_search(const char *cobol_src, int *is_valid_out);
 // Zorse JCL ADDRSPC Storage Mode Auditor
 int tsfi_zorse_validate_jcl_addrspc(const char *jcl_line, int *is_valid_out);
 
+// Zorse Moondream Ray-Tracer Render Artifact Auditor
+int tsfi_zorse_audit_render_artifacts(const char *b64_render_img, const char *model_name, char *analysis_out, size_t max_len);
+
+// Zorse Moondream Visual Camera Matrix Optimizer
+int tsfi_zorse_optimize_camera_matrix(const char *b64_render_img, const char *model_name, char *matrix_out, size_t max_len);
+
 #endif // TSFI_ZORSE_EVAL_H
