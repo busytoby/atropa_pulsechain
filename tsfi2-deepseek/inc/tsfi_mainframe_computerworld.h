@@ -1400,5 +1400,16 @@ int tsfi_cw_hainaut_reverse_engineer(const char *metadata_ddl, tsfi_cw_hainaut_t
 // Hainaut Database Schema Evolution Migrator
 int tsfi_cw_hainaut_migrate_table_split(const tsfi_cw_hainaut_table *source_table, tsfi_cw_hainaut_table *target_table_a, tsfi_cw_hainaut_table *target_table_b);
 
+// Hainaut ER Entity
+typedef struct {
+    char name[32];
+    char attr[32];
+} tsfi_cw_hainaut_entity;
+
+int tsfi_cw_hainaut_transform_er_to_relational(const tsfi_cw_hainaut_entity *entity, tsfi_cw_hainaut_table *table_out);
+
+// Hainaut Schema Merger
+int tsfi_cw_hainaut_merge_schemas(const tsfi_cw_hainaut_table *table_a, const tsfi_cw_hainaut_table *table_b, tsfi_cw_hainaut_table *merged_table_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

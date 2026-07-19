@@ -2459,6 +2459,20 @@ static void test_new_mainframe_features(void) {
     assert(strcmp(tgt_a.table_name, "CUSTOMERS_BASE") == 0);
     assert(strcmp(tgt_b.table_name, "CUSTOMERS_EXT") == 0);
     assert(strcmp(tgt_b.references_table, "CUSTOMERS_BASE") == 0);
+
+    // Hainaut ER translation test
+    tsfi_cw_hainaut_entity ent = { "User", "ID" };
+    tsfi_cw_hainaut_table trsf_tbl;
+    assert(tsfi_cw_hainaut_transform_er_to_relational(&ent, &trsf_tbl) == 0);
+    assert(strcmp(trsf_tbl.table_name, "T_User") == 0);
+    assert(strcmp(trsf_tbl.primary_key, "PK_ID") == 0);
+
+    // Hainaut Schema Merger test
+    tsfi_cw_hainaut_table mrg_tbl;
+    assert(tsfi_cw_hainaut_merge_schemas(&tgt_a, &tgt_b, &mrg_tbl) == 0);
+    assert(strcmp(mrg_tbl.table_name, "CUSTOMERS_BASE_MG") == 0);
+    assert(strcmp(mrg_tbl.primary_key, "CUST_ID") == 0);
+    assert(strcmp(mrg_tbl.foreign_key, "CUST_ID") == 0);
 }
 
 int main(void) {

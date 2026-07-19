@@ -2445,6 +2445,35 @@ int tsfi_cw_hainaut_migrate_table_split(const tsfi_cw_hainaut_table *source_tabl
     return 0;
 }
 
+int tsfi_cw_hainaut_transform_er_to_relational(const tsfi_cw_hainaut_entity *entity, tsfi_cw_hainaut_table *table_out) {
+    if (!entity || !table_out) return -1;
+    
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wformat-truncation"
+    snprintf(table_out->table_name, sizeof(table_out->table_name), "T_%s", entity->name);
+    snprintf(table_out->primary_key, sizeof(table_out->primary_key), "PK_%s", entity->attr);
+    #pragma GCC diagnostic pop
+    
+    table_out->foreign_key[0] = 0;
+    table_out->references_table[0] = 0;
+    return 0;
+}
+
+int tsfi_cw_hainaut_merge_schemas(const tsfi_cw_hainaut_table *table_a, const tsfi_cw_hainaut_table *table_b, tsfi_cw_hainaut_table *merged_table_out) {
+    if (!table_a || !table_b || !merged_table_out) return -1;
+    
+    // Merge structure: Name from Table A, primary key from Table A, foreign key from Table B
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wformat-truncation"
+    snprintf(merged_table_out->table_name, sizeof(merged_table_out->table_name), "%s_MG", table_a->table_name);
+    #pragma GCC diagnostic pop
+    
+    strcpy(merged_table_out->primary_key, table_a->primary_key);
+    strcpy(merged_table_out->foreign_key, table_b->foreign_key);
+    strcpy(merged_table_out->references_table, table_b->references_table);
+    return 0;
+}
+
 
 
 
