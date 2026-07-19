@@ -710,6 +710,10 @@ int main(void) {
     int sub_rc = tsfi_zorse_audit_subsurface_translucency("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "moondream", sub_buf, sizeof(sub_buf));
     assert(sub_rc == 0 || sub_rc == -1 || sub_rc == -2);
 
+    // Test Case 149: z/VSE Subsystem Support Services (Triple S Class) Auditor validation
+    assert(tsfi_zorse_validate_vse_triple_s("// ASSIGN SYS005,READER,SSS=YES\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

@@ -2174,3 +2174,15 @@ int tsfi_zorse_audit_subsurface_translucency(const char *image_b64, const char *
     
     return tsfi_ai_evaluate_vlm(image_b64, prompt, report_out, max_report_len);
 }
+
+int tsfi_zorse_validate_vse_triple_s(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(jcl_line, "SSS=") || strstr(jcl_line, "SSSPGM=")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}

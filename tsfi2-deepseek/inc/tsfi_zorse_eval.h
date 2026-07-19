@@ -417,4 +417,7 @@ int tsfi_zorse_audit_volumetric_scatter(const char *image_b64, const char *model
 // Zorse Ray-Tracer Subsurface Translucency Auditor
 int tsfi_zorse_audit_subsurface_translucency(const char *image_b64, const char *model_name, char *report_out, size_t max_report_len);
 
+// z/VSE Subsystem Support Services (Triple S Class) Auditor
+int tsfi_zorse_validate_vse_triple_s(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H
