@@ -411,4 +411,10 @@ int tsfi_zorse_validate_cobol_write_from(const char *cobol_src, int *is_valid_ou
 // Zorse JCL DD GDG Version Auditor
 int tsfi_zorse_validate_jcl_gdg_version(const char *jcl_line, int *is_valid_out);
 
+// Zorse Ray-Tracer Volumetric Scatter Auditor
+int tsfi_zorse_audit_volumetric_scatter(const char *image_b64, const char *model_name, char *report_out, size_t max_report_len);
+
+// Zorse Ray-Tracer Subsurface Translucency Auditor
+int tsfi_zorse_audit_subsurface_translucency(const char *image_b64, const char *model_name, char *report_out, size_t max_report_len);
+
 #endif // TSFI_ZORSE_EVAL_H

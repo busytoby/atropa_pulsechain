@@ -2156,3 +2156,21 @@ int tsfi_zorse_validate_jcl_gdg_version(const char *jcl_line, int *is_valid_out)
     
     return 0;
 }
+
+int tsfi_zorse_audit_volumetric_scatter(const char *image_b64, const char *model_name, char *report_out, size_t max_report_len) {
+    if (!image_b64 || !model_name || !report_out || max_report_len == 0) return -1;
+    
+    report_out[0] = '\0';
+    const char *prompt = "Analyze this rendering to evaluate visual light scattering, volumetric fog, and light-beam bloom intensity.";
+    
+    return tsfi_ai_evaluate_vlm(image_b64, prompt, report_out, max_report_len);
+}
+
+int tsfi_zorse_audit_subsurface_translucency(const char *image_b64, const char *model_name, char *report_out, size_t max_report_len) {
+    if (!image_b64 || !model_name || !report_out || max_report_len == 0) return -1;
+    
+    report_out[0] = '\0';
+    const char *prompt = "Verify this ray-traced rendering to analyze subsurface scattering (SSS) parameters and skin/wax material translucency details.";
+    
+    return tsfi_ai_evaluate_vlm(image_b64, prompt, report_out, max_report_len);
+}

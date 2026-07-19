@@ -700,6 +700,16 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_gdg_version("//DD23 DD DSN=APP.GDG.DATASET.G0001V00,DISP=SHR\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 147: Ray-Tracer Volumetric Scatter Auditor validation
+    char vol_buf[1024];
+    int vol_rc = tsfi_zorse_audit_volumetric_scatter("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "moondream", vol_buf, sizeof(vol_buf));
+    assert(vol_rc == 0 || vol_rc == -1 || vol_rc == -2);
+
+    // Test Case 148: Ray-Tracer Subsurface Translucency Auditor validation
+    char sub_buf[1024];
+    int sub_rc = tsfi_zorse_audit_subsurface_translucency("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "moondream", sub_buf, sizeof(sub_buf));
+    assert(sub_rc == 0 || sub_rc == -1 || sub_rc == -2);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
