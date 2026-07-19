@@ -531,4 +531,10 @@ int tsfi_zorse_validate_vse_power_disp(const char *jcl_line, int *is_valid_out);
 // COBOL Report Writer Termination Auditor
 int tsfi_zorse_validate_cobol_terminate(const char *cobol_src, int *is_valid_out);
 
+// z/VSE POWER Spool Print Class Override Validator
+int tsfi_zorse_validate_vse_power_prtclass_override(const char *jcl_line, int *is_valid_out);
+
+// COBOL Report Writer Page Heading Auditor
+int tsfi_zorse_validate_cobol_page_heading(const char *cobol_src, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

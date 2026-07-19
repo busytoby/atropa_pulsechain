@@ -928,6 +928,14 @@ int main(void) {
     assert(tsfi_zorse_validate_cobol_terminate("TERMINATE SALES-REPORT.", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 191: z/VSE POWER Spool Print Class Override Validator validation
+    assert(tsfi_zorse_validate_vse_power_prtclass_override("* $$ LST PRTCLASS=(A,B),DISP=H\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 192: COBOL Report Writer Page Heading Auditor validation
+    assert(tsfi_zorse_validate_cobol_page_heading("PAGE HEADING. 01 TITLE-LINE.", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
