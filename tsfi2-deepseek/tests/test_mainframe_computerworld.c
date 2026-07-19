@@ -2410,6 +2410,20 @@ static void test_new_mainframe_features(void) {
     double integral = 0.0;
     assert(tsfi_cw_kendrick_integrate(0.1, 1.0, 10, &integral) == 0);
     assert(integral > 2.0); // 1.1^10 ~ 2.59
+
+    // Kendrick Multiplexer test
+    int inputs[3] = { 10, 20, 30 };
+    int out_combined = 0;
+    assert(tsfi_cw_kendrick_multiplex(3, inputs, &out_combined) == 0);
+    assert(out_combined == 60);
+
+    // Kendrick Diagnostic Log test
+    tsfi_cw_kendrick_log_entry k_logs[2];
+    int count = 0;
+    assert(tsfi_cw_kendrick_log_event(5, "BUSY", k_logs, 2, &count) == 0);
+    assert(count == 1);
+    assert(k_logs[0].line_id == 5);
+    assert(strcmp(k_logs[0].status, "BUSY") == 0);
 }
 
 int main(void) {

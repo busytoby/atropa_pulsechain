@@ -2314,6 +2314,34 @@ int tsfi_cw_kendrick_integrate(double step_size, double initial_val, int iterati
     return 0;
 }
 
+int tsfi_cw_kendrick_multiplex(int channel_count, const int *input_signals, int *output_combined_out) {
+    if (channel_count <= 0 || !input_signals || !output_combined_out) return -1;
+    
+    int combined = 0;
+    for (int i = 0; i < channel_count; i++) {
+        combined += input_signals[i];
+    }
+    *output_combined_out = combined;
+    return 0;
+}
+
+int tsfi_cw_kendrick_log_event(int line_id, const char *status, tsfi_cw_kendrick_log_entry *log_out, int max_entries, int *current_count_io) {
+    if (!status || !log_out || max_entries <= 0 || !current_count_io || *current_count_io < 0) return -1;
+    
+    if (*current_count_io < max_entries) {
+        log_out[*current_count_io].line_id = line_id;
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wstringop-truncation"
+        strncpy(log_out[*current_count_io].status, status, sizeof(log_out[*current_count_io].status) - 1);
+        log_out[*current_count_io].status[sizeof(log_out[*current_count_io].status) - 1] = 0;
+        #pragma GCC diagnostic pop
+        (*current_count_io)++;
+        return 0;
+    }
+    
+    return 1; // Log capacity reached
+}
+
 
 
 

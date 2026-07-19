@@ -1361,5 +1361,16 @@ int tsfi_cw_kendrick_route_call(int dial_digit, tsfi_cw_kendrick_switch *sw_io_o
 // Kendrick Numerical Integrator
 int tsfi_cw_kendrick_integrate(double step_size, double initial_val, int iterations, double *result_out);
 
+// Kendrick Multiplexer
+int tsfi_cw_kendrick_multiplex(int channel_count, const int *input_signals, int *output_combined_out);
+
+// Kendrick Diagnostic Log
+typedef struct {
+    int line_id;
+    char status[16];
+} tsfi_cw_kendrick_log_entry;
+
+int tsfi_cw_kendrick_log_event(int line_id, const char *status, tsfi_cw_kendrick_log_entry *log_out, int max_entries, int *current_count_io);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 
