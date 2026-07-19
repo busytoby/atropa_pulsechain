@@ -93,4 +93,31 @@ The operating capabilities of the WAGONBED emulation interact directly with the 
     *   **NAAP Broadcasts:** The CICS daemon broadcasts emergency alerts using [tsfi_mf_cics_generate_naap_broadcast](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/src/tsfi_cade_imf_nato.c#L1476), notifying linked stations of an ongoing system intrusion.
     *   **IBM 3270 Alert Formatting:** The terminal updates dynamically using [tsfi_mf_cics_format_3270_map](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/src/tsfi_cade_imf_nato.c#L1534), printing warning banner overlays across active user console screens.
 
+---
+
+## 7. Playing Oregon Trail over WAGONBED
+
+The platform supports playing the simulated **Oregon Trail** application over WAGONBED's bus-writing pathways:
+
+```
+  [ User Keystroke ] 
+          │
+          ▼
+  [ CICS Input Receiver ] ──► (Ballistic Event Queue)
+          │
+          ▼ (WAGONBED Intercept)
+  [ ACAB Bus Address 0x0200 ] ◄── (mstore poke operation)
+          │
+          ▼ (cpu6502 Poll)
+  [ MOS 6502 core (folklore.yul) ]
+          │
+          ▼
+  [ Oregon Trail Token / HUD Update ]
+```
+
+*   **Keystroke Redirection:** Keystone inputs are captured by CICS as ballistic queue data. 
+*   **WAGONBED Memory Injection:** The WAGONBED controller intercepts the keystroke codes and executes a `poke` (`mstore`) directly to RAM address `0x0200` on the **Auncient** Coaxial Activity Bus (ACAB).
+*   **c6502 Game Engine Loop:** The simulated `c6502` virtual machine (running `folklore.yul` assembly) fetches inputs by executing a `peek` (`mload`) on register `0x0200`. The 6502 execution thread processes the command (updating game state criteria like distance traveled, food consumption, or hunting results) and writes the updated telemetry data to the on-chain `oregonTrailToken` structure to synchronize HUD metrics.
+
+
 
