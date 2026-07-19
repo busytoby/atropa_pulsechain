@@ -463,3 +463,23 @@ int tsfi_zorse_audit_tape_mount(const char *b64_tape_img, const char *expected_t
     
     return ret;
 }
+
+int tsfi_zorse_parse_cabling_topology(const char *b64_topology_img, const char *model_name, char *sna_config_out, size_t max_len) {
+    if (!b64_topology_img || !model_name || !sna_config_out || max_len == 0) return -1;
+    
+    sna_config_out[0] = '\0';
+    
+    const char *prompt = "Extract the node clustering layout and controller paths from this cabling topology diagram and generate corresponding SNA network definition statements.";
+    
+    return tsfi_ai_evaluate_vlm(b64_topology_img, prompt, sna_config_out, max_len);
+}
+
+int tsfi_zorse_audit_thermal_graph(const char *b64_thermal_img, const char *model_name, char *hotspot_info_out, size_t max_len) {
+    if (!b64_thermal_img || !model_name || !hotspot_info_out || max_len == 0) return -1;
+    
+    hotspot_info_out[0] = '\0';
+    
+    const char *prompt = "Audit this cabinet thermal thermogram image to find overheating hot spot components. Output the coordinates or component labels.";
+    
+    return tsfi_ai_evaluate_vlm(b64_thermal_img, prompt, hotspot_info_out, max_len);
+}

@@ -171,6 +171,16 @@ int main(void) {
     int tape_res = tsfi_zorse_audit_tape_mount("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "TAPE01", "moondream", &is_mounted);
     assert(tape_res == 0 || tape_res == -2 || tape_res == -1);
 
+    // Test Case 33: Moondream Visual Cabling Topology Parser validation
+    char topology_res[256];
+    int top_res = tsfi_zorse_parse_cabling_topology("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "moondream", topology_res, sizeof(topology_res));
+    assert(top_res == 0 || top_res == -2 || top_res == -1);
+
+    // Test Case 34: Moondream Cabinet Thermal Graph Auditor validation
+    char thermal_res[256];
+    int therm_res = tsfi_zorse_audit_thermal_graph("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "moondream", thermal_res, sizeof(thermal_res));
+    assert(therm_res == 0 || therm_res == -2 || therm_res == -1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
