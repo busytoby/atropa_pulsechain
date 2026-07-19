@@ -2183,6 +2183,37 @@ int tsfi_cw_sammet_audit_ballots(const tsfi_cw_sammet_ballot *ballots, int ballo
     return 0;
 }
 
+int tsfi_cw_nbs_audit_demographics(const tsfi_cw_nbs_voter *voters, int voter_count, tsfi_cw_nbs_demographics *results_out) {
+    if (!voters || voter_count < 0 || !results_out) return -1;
+    
+    results_out->age_18_to_35 = 0;
+    results_out->age_36_to_60 = 0;
+    results_out->age_over_60 = 0;
+    
+    for (int i = 0; i < voter_count; i++) {
+        if (voters[i].is_registered) {
+            if (voters[i].age >= 18 && voters[i].age <= 35) {
+                results_out->age_18_to_35++;
+            } else if (voters[i].age >= 36 && voters[i].age <= 60) {
+                results_out->age_36_to_60++;
+            } else if (voters[i].age > 60) {
+                results_out->age_over_60++;
+            }
+        }
+    }
+    return 0;
+}
+
+int tsfi_cw_nbs_optimize_booths(int voter_count, int target_wait_mins, int *booths_needed_out) {
+    if (voter_count < 0 || target_wait_mins <= 0 || !booths_needed_out) return -1;
+    
+    // Simplistic queue math: booths = (voter_count * 12) / (target_wait_mins * 60) + 1
+    int booths = (voter_count * 12) / (target_wait_mins * 60);
+    if (booths < 1) booths = 1;
+    *booths_needed_out = booths;
+    return 0;
+}
+
 
 
 

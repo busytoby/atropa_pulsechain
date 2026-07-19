@@ -1307,5 +1307,23 @@ typedef struct {
 
 int tsfi_cw_sammet_audit_ballots(const tsfi_cw_sammet_ballot *ballots, int ballot_count, int *total_valid_votes_out, char *winner_out, size_t winner_max);
 
+// NBS Demographic Stratification
+typedef struct {
+    char region[16];
+    int age;
+    int is_registered;
+} tsfi_cw_nbs_voter;
+
+typedef struct {
+    int age_18_to_35;
+    int age_36_to_60;
+    int age_over_60;
+} tsfi_cw_nbs_demographics;
+
+int tsfi_cw_nbs_audit_demographics(const tsfi_cw_nbs_voter *voters, int voter_count, tsfi_cw_nbs_demographics *results_out);
+
+// NBS Queue Optimizer
+int tsfi_cw_nbs_optimize_booths(int voter_count, int target_wait_mins, int *booths_needed_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

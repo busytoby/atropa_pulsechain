@@ -2355,6 +2355,23 @@ static void test_new_mainframe_features(void) {
     assert(tsfi_cw_sammet_audit_ballots(ballots, 2, &total_votes, winner, sizeof(winner)) == 0);
     assert(total_votes == 1500);
     assert(strcmp(winner, "Jean Sammet") == 0);
+
+    // NBS Demographic Stratification test
+    tsfi_cw_nbs_voter voters[3] = {
+        { "NY", 25, 1 },
+        { "CA", 45, 1 },
+        { "TX", 70, 0 } // not registered
+    };
+    tsfi_cw_nbs_demographics dem;
+    assert(tsfi_cw_nbs_audit_demographics(voters, 3, &dem) == 0);
+    assert(dem.age_18_to_35 == 1);
+    assert(dem.age_36_to_60 == 1);
+    assert(dem.age_over_60 == 0);
+
+    // NBS Polling wait-time optimizer test
+    int booths = 0;
+    assert(tsfi_cw_nbs_optimize_booths(1000, 10, &booths) == 0);
+    assert(booths >= 1);
 }
 
 int main(void) {
