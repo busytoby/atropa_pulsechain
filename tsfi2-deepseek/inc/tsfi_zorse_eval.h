@@ -651,4 +651,10 @@ int tsfi_zorse_validate_vse_power_class_status(const char *jcl_line, int *is_val
 // COBOL Report Writer Page Footing Spacing Limit Auditor
 int tsfi_zorse_validate_cobol_pf_spacing_limit(const char *cobol_src, int *is_valid_out);
 
+// z/VSE POWER Spool Print Retention Override Validator
+int tsfi_zorse_validate_vse_power_keep_override(const char *jcl_line, int *is_valid_out);
+
+// COBOL Report Writer Final Summary Spacing Limit Auditor
+int tsfi_zorse_validate_cobol_final_spacing_limit(const char *cobol_src, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H
