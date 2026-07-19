@@ -2434,6 +2434,13 @@ static void test_new_mainframe_features(void) {
     double freq = 0.0;
     assert(tsfi_cw_keating_synthesize_freq(100.0, 5, &freq) == 0);
     assert(freq == 500.0);
+
+    // Keating Bandpass Filter test
+    float out_sig = 0.0f;
+    assert(tsfi_cw_keating_bandpass_filter(1000.0f, 1000.0f, 100.0f, 6.0f, &out_sig) == 0);
+    assert(out_sig > 1900.0f); // 1000 * 10^(6/20) ~ 1995
+    assert(tsfi_cw_keating_bandpass_filter(500.0f, 1000.0f, 100.0f, 6.0f, &out_sig) == 0);
+    assert(out_sig < 10.0f); // attenuated
 }
 
 int main(void) {

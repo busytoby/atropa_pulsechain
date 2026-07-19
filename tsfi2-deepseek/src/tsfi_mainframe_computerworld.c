@@ -2361,6 +2361,22 @@ int tsfi_cw_keating_synthesize_freq(double base_freq, int scale_factor, double *
     return 0;
 }
 
+#include <math.h>
+int tsfi_cw_keating_bandpass_filter(float input_freq, float center_freq, float bandwidth_hz, float db_gain, float *output_signal_out) {
+    if (center_freq <= 0.0f || bandwidth_hz <= 0.0f || !output_signal_out) return -1;
+    
+    float half_bw = bandwidth_hz * 0.5f;
+    if (input_freq >= (center_freq - half_bw) && input_freq <= (center_freq + half_bw)) {
+        // Apply amplification based on decibel gain: gain_linear = 10^(db/20)
+        float linear_gain = powf(10.0f, db_gain / 20.0f);
+        *output_signal_out = input_freq * linear_gain;
+    } else {
+        // Attenuate standard signal falling outside bandpass limits
+        *output_signal_out = input_freq * 0.01f;
+    }
+    return 0;
+}
+
 
 
 

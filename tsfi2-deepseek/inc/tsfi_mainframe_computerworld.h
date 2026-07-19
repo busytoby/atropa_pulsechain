@@ -1384,5 +1384,8 @@ int tsfi_cw_keating_write_core(int x, int y, int state, tsfi_cw_keating_core *co
 // Keating Frequency Synthesizer
 int tsfi_cw_keating_synthesize_freq(double base_freq, int scale_factor, double *freq_out);
 
+// Keating Decibel Bandpass Filter
+int tsfi_cw_keating_bandpass_filter(float input_freq, float center_freq, float bandwidth_hz, float db_gain, float *output_signal_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 
