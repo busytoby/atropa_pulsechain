@@ -1211,3 +1211,27 @@ int tsfi_zorse_audit_icon_palette(const char *b64_render_img, const char *model_
     
     return tsfi_ai_evaluate_vlm(b64_render_img, prompt, analysis_out, max_len);
 }
+
+int tsfi_zorse_validate_cobol_multiply_error(const char *cobol_src, int *is_valid_out) {
+    if (!cobol_src || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(cobol_src, "MULTIPLY ") && strstr(cobol_src, "SIZE ERROR")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_jcl_label(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(jcl_line, "LABEL=")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}

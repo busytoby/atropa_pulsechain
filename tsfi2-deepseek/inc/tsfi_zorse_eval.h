@@ -207,4 +207,10 @@ int tsfi_zorse_audit_icon_balance(const char *b64_render_img, const char *model_
 // Zorse Moondream Visual Icon Brand Palette Compliance Auditor
 int tsfi_zorse_audit_icon_palette(const char *b64_render_img, const char *model_name, char *analysis_out, size_t max_len);
 
+// Zorse COBOL MULTIPLY SIZE ERROR Statement Auditor
+int tsfi_zorse_validate_cobol_multiply_error(const char *cobol_src, int *is_valid_out);
+
+// Zorse JCL LABEL Parameter Auditor
+int tsfi_zorse_validate_jcl_label(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

@@ -400,6 +400,14 @@ int main(void) {
     int pal_res = tsfi_zorse_audit_icon_palette("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "moondream", pal_buf, sizeof(pal_buf));
     assert(pal_res == 0 || pal_res == -2 || pal_res == -1);
 
+    // Test Case 80: COBOL MULTIPLY SIZE ERROR Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_multiply_error("MULTIPLY A BY B ON SIZE ERROR DISPLAY 'ERROR'.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 81: JCL LABEL Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_label("//DD7 DD DSN=A.B.C,LABEL=(,SL)\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
