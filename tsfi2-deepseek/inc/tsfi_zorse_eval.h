@@ -117,4 +117,10 @@ int tsfi_zorse_estimate_vsam_size(const char *cobol_pic_clause, int *record_len_
 // Zorse JCL COND Logic Evaluator
 int tsfi_zorse_evaluate_step_cond(int step_rc, const char *cond_expr, int *should_run_out);
 
+// Zorse COBOL FILE STATUS Error Code Explainer
+const char* tsfi_zorse_explain_file_status(int status_code);
+
+// Zorse JCL REGION Sizing Validator
+int tsfi_zorse_validate_jcl_region(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

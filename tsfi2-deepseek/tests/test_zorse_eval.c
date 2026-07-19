@@ -268,6 +268,14 @@ int main(void) {
     // 2 < 4 is true -> should bypass -> should_run = 0
     assert(should_run == 0);
 
+    // Test Case 50: COBOL FILE STATUS Error Code Explainer validation
+    assert(strcmp(tsfi_zorse_explain_file_status(35), "File not found") == 0);
+    assert(strcmp(tsfi_zorse_explain_file_status(39), "Attribute conflict mismatch") == 0);
+
+    // Test Case 51: JCL REGION Sizing Validator validation
+    assert(tsfi_zorse_validate_jcl_region("//STEP1 EXEC PGM=IEFBR14,REGION=4M\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

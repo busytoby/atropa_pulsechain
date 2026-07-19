@@ -806,3 +806,38 @@ int tsfi_zorse_evaluate_step_cond(int step_rc, const char *cond_expr, int *shoul
     
     return 0;
 }
+
+const char* tsfi_zorse_explain_file_status(int status_code) {
+    switch (status_code) {
+        case 0:  return "Success";
+        case 10: return "End of file";
+        case 23: return "Key not found";
+        case 30: return "Permanent I/O error";
+        case 35: return "File not found";
+        case 39: return "Attribute conflict mismatch";
+        case 46: return "Read failed: file not opened";
+        default: return "Unknown status code";
+    }
+}
+
+int tsfi_zorse_validate_jcl_region(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    const char *p = strstr(jcl_line, "REGION=");
+    if (!p) return 0;
+    
+    p += 7; // Skip "REGION="
+    
+    // Verify it is followed by a number and optionally a unit (K or M)
+    int val = atoi(p);
+    if (val > 0) {
+        while (*p >= '0' && *p <= '9') p++;
+        if (*p == 'K' || *p == 'M' || *p == 'k' || *p == 'm' || *p == ' ' || *p == '\0' || *p == '\n' || *p == ',') {
+            *is_valid_out = 1;
+        }
+    }
+    
+    return 0;
+}
