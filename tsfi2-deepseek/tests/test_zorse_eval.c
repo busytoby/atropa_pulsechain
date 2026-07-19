@@ -1,4 +1,5 @@
 #include "tsfi_zorse_eval.h"
+#include "tsfi_svdag.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -789,6 +790,14 @@ int main(void) {
     // Test Case 164: JCL DD DSNTYPE=LARGE Parameter Auditor validation
     assert(tsfi_zorse_validate_jcl_dsntype_large("//DD30 DD DSN=LARGE.DATA,DSNTYPE=LARGE\n", &is_valid) == 0);
     assert(is_valid == 1);
+
+    // Test Case 165: Zorse SVDAG compiler validation
+    TSFiTasteTree *taste_tree = tsfi_svdag_create(10);
+    assert(taste_tree != NULL);
+    assert(tsfi_svdag_compile_zorse(taste_tree, "XML GENERATE DOC FROM REC.\nINSPECT STR.\n") == 0);
+    assert(taste_tree->stream_size == 2);
+    assert(taste_tree->intensity_stream[0] > 0.89f && taste_tree->intensity_stream[0] < 0.91f);
+    tsfi_svdag_destroy(taste_tree);
 
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;

@@ -130,4 +130,7 @@ float tsfi_svdag_trace_point(const TSFiHelmholtzSVDAG *dag, int x, int y, int z)
 // VSEn SVDAG Parameters Resolver
 int tsfi_svdag_apply_vaesen_parameters(const char *vaesen_name, const char *region_name, float *melanin, float *roughness, float *iridescence);
 
+// Zorse SVDAG Compiler
+int tsfi_svdag_compile_zorse(TSFiHelmholtzSVDAG *dag, const char *zorse_source);
+
 #endif // TSFI_SVDAG_H

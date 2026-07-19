@@ -392,3 +392,29 @@ int tsfi_svdag_apply_vaesen_parameters(const char *vaesen_name, const char *regi
     return 0;
 }
 
+int tsfi_svdag_compile_zorse(TSFiHelmholtzSVDAG *dag, const char *zorse_source) {
+    if (!dag || !zorse_source) return -1;
+
+    size_t line_cnt = 0;
+    const char *curr = zorse_source;
+    while (*curr) {
+        if (*curr == '\n') line_cnt++;
+        curr++;
+    }
+    if (line_cnt == 0) line_cnt = 1;
+
+    float compliance_density = 0.1f;
+    if (strstr(zorse_source, "INSPECT") || strstr(zorse_source, "XML GENERATE") || strstr(zorse_source, "DSNTYPE=")) {
+        compliance_density = 0.9f;
+    }
+
+    for (size_t i = 0; i < line_cnt && i < dag->stream_capacity; i++) {
+        dag->intensity_stream[i] = compliance_density;
+        dag->phase_stream[i] = 0.5f;
+        dag->index_stream[i] = (uint32_t)i;
+    }
+    dag->stream_size = line_cnt < dag->stream_capacity ? line_cnt : dag->stream_capacity;
+
+    return 0;
+}
+
