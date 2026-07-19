@@ -474,4 +474,10 @@ int tsfi_zorse_validate_cobol_xml_parse(const char *cobol_src, int *is_valid_out
 // Zorse JCL DD EROPT Parameter Auditor
 int tsfi_zorse_validate_jcl_eropt(const char *jcl_line, int *is_valid_out);
 
+// z/VSE POWER Queue Entry Submit Auditor
+int tsfi_zorse_validate_vse_power_submit(const char *jcl_line, int *is_valid_out);
+
+// JCL DD DSNAME Versioning Generation Auditor
+int tsfi_zorse_validate_jcl_dsname_ver(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

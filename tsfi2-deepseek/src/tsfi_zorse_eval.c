@@ -2403,3 +2403,27 @@ int tsfi_zorse_validate_jcl_eropt(const char *jcl_line, int *is_valid_out) {
     
     return 0;
 }
+
+int tsfi_zorse_validate_vse_power_submit(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(jcl_line, "POWER ") && strstr(jcl_line, "SUBMIT")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_jcl_dsname_ver(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(jcl_line, "DSNAME=") && strstr(jcl_line, ".G") && strstr(jcl_line, "V")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}

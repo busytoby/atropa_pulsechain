@@ -830,6 +830,14 @@ int main(void) {
     assert(vox_tree->intensity_stream[0] > 0.99f);
     tsfi_svdag_destroy(vox_tree);
 
+    // Test Case 171: z/VSE POWER submit compliance auditor validation
+    assert(tsfi_zorse_validate_vse_power_submit("* $$ POWER SUBMIT\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 172: JCL DD DSNAME versioning compliance auditor validation
+    assert(tsfi_zorse_validate_jcl_dsname_ver("//DD32 DD DSNAME=GDG.NAME.G0001V00,DISP=SHR\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
