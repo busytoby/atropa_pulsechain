@@ -561,4 +561,10 @@ int tsfi_zorse_validate_vse_power_form(const char *jcl_line, int *is_valid_out);
 // COBOL Report Writer Control Heading Auditor
 int tsfi_zorse_validate_cobol_control_heading(const char *cobol_src, int *is_valid_out);
 
+// z/VSE POWER Spool Print Line Limit Validator
+int tsfi_zorse_validate_vse_power_lines(const char *jcl_line, int *is_valid_out);
+
+// COBOL Report Writer Control Footing Auditor
+int tsfi_zorse_validate_cobol_control_footing(const char *cobol_src, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

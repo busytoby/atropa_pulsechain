@@ -968,6 +968,14 @@ int main(void) {
     assert(tsfi_zorse_validate_cobol_control_heading("01 TYPE IS CONTROL HEADING.", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 201: z/VSE POWER Spool Print Line Limit Validator validation
+    assert(tsfi_zorse_validate_vse_power_lines("* $$ LST LINES=1000,DISP=H\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 202: COBOL Report Writer Control Footing Auditor validation
+    assert(tsfi_zorse_validate_cobol_control_footing("01 TYPE IS CONTROL FOOTING.", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
