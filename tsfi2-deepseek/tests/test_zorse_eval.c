@@ -668,6 +668,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_dsname("//DD19 DD DSNAME=MY.DATASET.VAL\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 139: COBOL SORT Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_sort("SORT WORK-FILE ON ASCENDING KEY WORK-KEY.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 140: JCL DD PATH Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_path("//DD20 DD PATH='/u/usr/data'\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
