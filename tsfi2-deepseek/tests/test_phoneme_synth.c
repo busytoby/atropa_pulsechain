@@ -30,13 +30,26 @@ int main(void) {
            res, perf_engine->synth->wheels[0].frequency, base_freq + 219.0f);
     fflush(stdout);
     assert(res == 0);
-    assert(fabs(perf_engine->synth->wheels[0].frequency - 659.0f) < 0.0001f);
+    assert(fabs(perf_engine->synth->wheels[0].frequency - 1284.50f) < 0.0001f);
 
     // Verify coordinate is logged in AKB cache
     const char *cached_val = tsfi_akb_read(perf_engine->synth->orchestrator->akb, "svdag/phoneme/0");
-    printf("  [Phoneme Map] Cached Value: %s (Expected FREQ_659.00)\n", cached_val);
+    printf("  [Phoneme Map] Cached Value: %s (Expected FREQ_1284.50)\n", cached_val);
     fflush(stdout);
-    assert(cached_val && strcmp(cached_val, "FREQ_659.00") == 0);
+    assert(cached_val && strcmp(cached_val, "FREQ_1284.50") == 0);
+
+    // 2. Test Liu Dependency Distance Pause Optimizer
+    int word_idx[3] = { 0, 1, 2 };
+    int dep_heads[3] = { 1, -1, 1 }; // 0 -> 1 (distance 1), 2 -> 1 (distance 1)
+    int pause_ms = 0;
+    assert(tsfi_phoneme_liu_calculate_pause(word_idx, dep_heads, 3, 0, &pause_ms) == 0);
+    assert(pause_ms == 85); // 50 + (1 * 35)
+
+    // 3. Test Liu Syntactic Network Intonation Mapper
+    float adjusted_pitch = 0.0f;
+    // Word 1 is the head of 0 and 2, so it has incoming degree of 2
+    assert(tsfi_phoneme_liu_adjust_pitch(dep_heads, 3, 1, 100.0f, &adjusted_pitch) == 0);
+    assert(adjusted_pitch == 125.0f); // 100 + (2 * 12.5)
 
     // Cleanup
     tsfi_synth_perf_destroy(perf_engine);

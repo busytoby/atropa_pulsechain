@@ -97,3 +97,39 @@ int tsfi_phoneme_map_word(TSFiSynthPerfEngine *engine, const char *word, int whe
 
     return 0; // Resolved successfully
 }
+
+int tsfi_phoneme_liu_calculate_pause(const int *word_indices, const int *dependency_heads, int count, int target_word_idx, int *pause_ms_out) {
+    if (!word_indices || !dependency_heads || count <= 0 || target_word_idx < 0 || target_word_idx >= count || !pause_ms_out) return -1;
+    
+    // Dependency distance: absolute difference between word index and its head index
+    int head_idx = dependency_heads[target_word_idx];
+    int distance = 0;
+    if (head_idx >= 0 && head_idx < count) {
+        distance = abs(target_word_idx - head_idx);
+    }
+    
+    // Pause duration is proportional to dependency distance (e.g. 50ms per unit of distance)
+    *pause_ms_out = 50 + (distance * 35);
+    return 0;
+}
+
+int tsfi_phoneme_liu_adjust_pitch(const int *dependency_heads, int count, int target_word_idx, float base_pitch, float *adjusted_pitch_out) {
+    if (!dependency_heads || count <= 0 || target_word_idx < 0 || target_word_idx >= count || !adjusted_pitch_out) return -1;
+    
+    // Syntactic network node degree centrality: count incoming dependencies + outgoing dependency
+    int degree = 0;
+    // Outgoing dependency:
+    if (dependency_heads[target_word_idx] >= 0 && dependency_heads[target_word_idx] < count) {
+        degree++;
+    }
+    // Incoming dependencies:
+    for (int i = 0; i < count; i++) {
+        if (dependency_heads[i] == target_word_idx) {
+            degree++;
+        }
+    }
+    
+    // Adjust pitch higher for keywords with high network degree (central words carry intonation emphasis)
+    *adjusted_pitch_out = base_pitch + ((float)degree * 12.5f);
+    return 0;
+}
