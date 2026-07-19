@@ -201,6 +201,17 @@ int main(void) {
     assert(tsfi_phoneme_lin_adapt_slope(10, 1.0f, &adapted_slope) == 0);
     assert(fabs(adapted_slope - 1.0f) < 0.0001f); // 1.0 * (1.5 / 1.5)
 
+    // 32. Test Lin Stress Spillover Modulator
+    float spill_f, spill_a;
+    assert(tsfi_phoneme_lin_stress_spillover(1, 100.0f, 0.5f, &spill_f, &spill_a) == 0);
+    assert(fabs(spill_f - 105.0f) < 0.0001f);
+    assert(fabs(spill_a - 0.54f) < 0.0001f);
+
+    // 33. Test Lin Formant Undershoot Compensator
+    float comp_f = 0.0f;
+    assert(tsfi_phoneme_lin_compensate_undershoot(1.4f, 1000.0f, 800.0f, &comp_f) == 0);
+    assert(fabs(comp_f - 840.0f) < 0.0001f); // 800 + 200 * 0.4 * 0.5 = 840
+
     // Cleanup
     tsfi_synth_perf_destroy(perf_engine);
     tsfi_trie_destroy(trie_root);

@@ -522,3 +522,31 @@ int tsfi_phoneme_lin_adapt_slope(int phrase_syllable_count, float base_slope, fl
     *adapted_slope_out = base_slope * (1.5f / (1.0f + ((float)phrase_syllable_count * 0.05f)));
     return 0;
 }
+
+int tsfi_phoneme_lin_stress_spillover(int adjacent_stressed, float base_freq, float base_amp, float *spill_freq_out, float *spill_amp_out) {
+    if (base_freq <= 0.0f || base_amp < 0.0f || !spill_freq_out || !spill_amp_out) return -1;
+    
+    if (adjacent_stressed) {
+        // Stressed spillover boosts neighbor frequency by 5% and amplitude by 8%
+        *spill_freq_out = base_freq * 1.05f;
+        *spill_amp_out = base_amp * 1.08f;
+    } else {
+        *spill_freq_out = base_freq;
+        *spill_amp_out = base_amp;
+    }
+    
+    if (*spill_amp_out > 1.0f) *spill_amp_out = 1.0f;
+    return 0;
+}
+
+int tsfi_phoneme_lin_compensate_undershoot(float speed_ratio, float target_f, float current_f, float *compensated_f_out) {
+    if (target_f <= 0.0f || current_f <= 0.0f || speed_ratio < 0.0f || !compensated_f_out) return -1;
+    
+    *compensated_f_out = current_f;
+    if (speed_ratio > 1.2f) {
+        // Compensate for articulatory undershoot by driving closer to target formant
+        float diff = target_f - current_f;
+        *compensated_f_out = current_f + (diff * (speed_ratio - 1.0f) * 0.5f);
+    }
+    return 0;
+}

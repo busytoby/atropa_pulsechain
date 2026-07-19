@@ -105,4 +105,10 @@ int tsfi_phoneme_lin_modulate_stress(int is_stressed, float base_freq, int base_
 // Lin Declination Slope Adapter
 int tsfi_phoneme_lin_adapt_slope(int phrase_syllable_count, float base_slope, float *adapted_slope_out);
 
+// Lin Stress Spillover Modulator
+int tsfi_phoneme_lin_stress_spillover(int adjacent_stressed, float base_freq, float base_amp, float *spill_freq_out, float *spill_amp_out);
+
+// Lin Formant Undershoot Compensator
+int tsfi_phoneme_lin_compensate_undershoot(float speed_ratio, float target_f, float current_f, float *compensated_f_out);
+
 #endif // TSFI_PHONEME_SYNTH_H
