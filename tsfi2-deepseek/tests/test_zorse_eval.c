@@ -223,6 +223,16 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_disp(disp_inp, &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 42: HLASM Macro Definition Parser validation
+    const char *macro_inp = "         MACRO\nMYMAC    DS    0H\n         MEND\n";
+    assert(tsfi_zorse_validate_hlasm_macro(macro_inp, &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 43: JCL Step Flow Visualizer Prompt Generator validation
+    char flow_prompt_buf[512];
+    int flow_prompt_res = tsfi_zorse_generate_flow_prompt("//STEP1 EXEC PGM=IEFBR14", "moondream", flow_prompt_buf, sizeof(flow_prompt_buf));
+    assert(flow_prompt_res == 0 || flow_prompt_res == -2);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

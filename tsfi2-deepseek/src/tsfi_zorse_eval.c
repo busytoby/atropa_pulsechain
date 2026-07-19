@@ -621,3 +621,38 @@ int tsfi_zorse_validate_jcl_disp(const char *dd_statement, int *is_valid_out) {
     
     return 0;
 }
+
+int tsfi_zorse_validate_hlasm_macro(const char *macro_src, int *is_valid_out) {
+    if (!macro_src || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    // Check if macro_src contains "         MACRO" and "         MEND"
+    const char *mac = strstr(macro_src, "         MACRO");
+    const char *mend = strstr(macro_src, "         MEND");
+    
+    if (mac && mend && mac < mend) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_generate_flow_prompt(const char *jcl_src, const char *model_name, char *prompt_out, size_t max_len) {
+    if (!jcl_src || !model_name || !prompt_out || max_len == 0) return -1;
+    
+    prompt_out[0] = '\0';
+    
+    size_t j_len = strlen(jcl_src);
+    char *prompt = (char *)malloc(j_len + 128);
+    if (!prompt) return -1;
+    
+    snprintf(prompt, j_len + 128, 
+             "Generate a flowchart diagram prompt describing the step execution sequence for this JCL: %s", 
+             jcl_src);
+             
+    int ret = tsfi_zorse_query_llm(prompt, model_name, prompt_out, max_len);
+    free(prompt);
+    
+    return ret;
+}

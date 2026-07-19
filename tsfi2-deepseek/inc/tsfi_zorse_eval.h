@@ -93,4 +93,10 @@ int tsfi_zorse_resolve_copybooks(const char *cobol_src, char *dependencies_out, 
 // Zorse JCL DD DISP Parameter Auditor
 int tsfi_zorse_validate_jcl_disp(const char *dd_statement, int *is_valid_out);
 
+// Zorse HLASM Macro Definition Parser
+int tsfi_zorse_validate_hlasm_macro(const char *macro_src, int *is_valid_out);
+
+// Zorse JCL Step Flow Visualizer Prompt Generator
+int tsfi_zorse_generate_flow_prompt(const char *jcl_src, const char *model_name, char *prompt_out, size_t max_len);
+
 #endif // TSFI_ZORSE_EVAL_H
