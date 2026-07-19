@@ -42,4 +42,10 @@ int tsfi_zorse_autocorrect_source(const char *failed_source, const char *lang, c
 // Zorse LLM COBOL-to-JCL Dependency Resolver
 int tsfi_zorse_resolve_dependencies(const char *cobol_src, const char *jcl_src, const char *model_name, char *mapping_out, size_t max_len);
 
+// Zorse Moondream Visual Console Auditor
+int tsfi_zorse_audit_screen_visual(const char *b64_screen_img, const char *model_name, char *alert_level_out, size_t max_len);
+
+// Zorse LLM COBOL-to-HLASM Transpiler
+int tsfi_zorse_transpile_cobol_to_hlasm(const char *cobol_src, const char *model_name, char *hlasm_out, size_t max_len);
+
 #endif // TSFI_ZORSE_EVAL_H

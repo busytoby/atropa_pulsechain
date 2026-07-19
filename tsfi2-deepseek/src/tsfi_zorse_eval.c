@@ -337,3 +337,34 @@ int tsfi_zorse_resolve_dependencies(const char *cobol_src, const char *jcl_src, 
     
     return ret;
 }
+
+int tsfi_zorse_audit_screen_visual(const char *b64_screen_img, const char *model_name, char *alert_level_out, size_t max_len) {
+    if (!b64_screen_img || !model_name || !alert_level_out || max_len == 0) return -1;
+    
+    alert_level_out[0] = '\0';
+    
+    const char *prompt = "Is there an active SYSTEM DEFCON ALERT or security error visible in this terminal screen capture? If yes, output the DEFCON level number.";
+    
+    // We reuse tsfi_ai_evaluate_vlm which is specifically tailored for Ollama/SD VLM calls.
+    // However, if the target VLM is Ollama's moondream, we call the public function:
+    return tsfi_ai_evaluate_vlm(b64_screen_img, prompt, alert_level_out, max_len);
+}
+
+int tsfi_zorse_transpile_cobol_to_hlasm(const char *cobol_src, const char *model_name, char *hlasm_out, size_t max_len) {
+    if (!cobol_src || !model_name || !hlasm_out || max_len == 0) return -1;
+    
+    hlasm_out[0] = '\0';
+    
+    size_t c_len = strlen(cobol_src);
+    char *prompt = (char *)malloc(c_len + 128);
+    if (!prompt) return -1;
+    
+    snprintf(prompt, c_len + 128, 
+             "Translate this COBOL block into equivalent IBM HLASM instructions. Output only the HLASM instructions: %s", 
+             cobol_src);
+    
+    int ret = tsfi_zorse_query_llm(prompt, model_name, hlasm_out, max_len);
+    free(prompt);
+    
+    return ret;
+}

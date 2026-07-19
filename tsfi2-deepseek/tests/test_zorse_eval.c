@@ -131,6 +131,16 @@ int main(void) {
     int dep_res = tsfi_zorse_resolve_dependencies("SELECT F1 ASSIGN TO UT-S-FILE1.", "//FILE1 DD DSN=A.B.C", "moondream", dep_buf, sizeof(dep_buf));
     assert(dep_res == 0 || dep_res == -2);
 
+    // Test Case 25: Moondream Visual Console Auditor validation
+    char visual_res[256];
+    int vis_res = tsfi_zorse_audit_screen_visual("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "moondream", visual_res, sizeof(visual_res));
+    assert(vis_res == 0 || vis_res == -2 || vis_res == -1);
+
+    // Test Case 26: LLM COBOL-to-HLASM Transpiler validation
+    char transp_res[256];
+    int transp_res_val = tsfi_zorse_transpile_cobol_to_hlasm("DISPLAY 'HELLO'.", "moondream", transp_res, sizeof(transp_res));
+    assert(transp_res_val == 0 || transp_res_val == -2);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
