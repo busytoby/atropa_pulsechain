@@ -983,3 +983,23 @@ int tsfi_zorse_optimize_camera_matrix(const char *b64_render_img, const char *mo
     
     return tsfi_ai_evaluate_vlm(b64_render_img, prompt, matrix_out, max_len);
 }
+
+int tsfi_zorse_audit_material_properties(const char *b64_render_img, const char *model_name, char *analysis_out, size_t max_len) {
+    if (!b64_render_img || !model_name || !analysis_out || max_len == 0) return -1;
+    
+    analysis_out[0] = '\0';
+    
+    const char *prompt = "Analyze this rendering to audit material textures, specularity, and roughness realism.";
+    
+    return tsfi_ai_evaluate_vlm(b64_render_img, prompt, analysis_out, max_len);
+}
+
+int tsfi_zorse_optimize_bounding_collision(const char *b64_render_img, const char *model_name, char *analysis_out, size_t max_len) {
+    if (!b64_render_img || !model_name || !analysis_out || max_len == 0) return -1;
+    
+    analysis_out[0] = '\0';
+    
+    const char *prompt = "Inspect the rendered scene geometry in this frame to identify and optimize bounding box overlaps or visual collision anomalies.";
+    
+    return tsfi_ai_evaluate_vlm(b64_render_img, prompt, analysis_out, max_len);
+}

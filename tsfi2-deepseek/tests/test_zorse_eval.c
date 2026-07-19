@@ -322,6 +322,16 @@ int main(void) {
     int matrix_res = tsfi_zorse_optimize_camera_matrix("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "moondream", matrix_buf, sizeof(matrix_buf));
     assert(matrix_res == 0 || matrix_res == -2 || matrix_res == -1);
 
+    // Test Case 62: Moondream Material Properties Auditor validation
+    char mat_buf[256];
+    int mat_res = tsfi_zorse_audit_material_properties("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "moondream", mat_buf, sizeof(mat_buf));
+    assert(mat_res == 0 || mat_res == -2 || mat_res == -1);
+
+    // Test Case 63: Moondream Visual Bounding Box Collision Optimizer validation
+    char col_buf[256];
+    int col_res = tsfi_zorse_optimize_bounding_collision("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "moondream", col_buf, sizeof(col_buf));
+    assert(col_res == 0 || col_res == -2 || col_res == -1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

@@ -153,4 +153,10 @@ int tsfi_zorse_audit_render_artifacts(const char *b64_render_img, const char *mo
 // Zorse Moondream Visual Camera Matrix Optimizer
 int tsfi_zorse_optimize_camera_matrix(const char *b64_render_img, const char *model_name, char *matrix_out, size_t max_len);
 
+// Zorse Moondream Ray-Tracer Material Properties Auditor
+int tsfi_zorse_audit_material_properties(const char *b64_render_img, const char *model_name, char *analysis_out, size_t max_len);
+
+// Zorse Moondream Visual Bounding Box Collision Optimizer
+int tsfi_zorse_optimize_bounding_collision(const char *b64_render_img, const char *model_name, char *analysis_out, size_t max_len);
+
 #endif // TSFI_ZORSE_EVAL_H
