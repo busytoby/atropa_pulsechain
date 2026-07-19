@@ -261,4 +261,10 @@ int tsfi_zorse_validate_cobol_delete_key(const char *cobol_src, int *is_valid_ou
 // Zorse JCL BURST Parameter Auditor
 int tsfi_zorse_validate_jcl_burst(const char *jcl_line, int *is_valid_out);
 
+// Zorse COBOL REWRITE INVALID KEY Statement Auditor
+int tsfi_zorse_validate_cobol_rewrite_key(const char *cobol_src, int *is_valid_out);
+
+// Zorse JCL FLASH Parameter Auditor
+int tsfi_zorse_validate_jcl_flash(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

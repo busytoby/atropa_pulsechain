@@ -474,6 +474,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_burst("//PRT3 DD SYSOUT=A,BURST=Y\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 98: COBOL REWRITE INVALID KEY Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_rewrite_key("REWRITE REC-IN INVALID KEY DISPLAY 'ERR'.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 99: JCL FLASH Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_flash("//PRT4 DD SYSOUT=A,FLASH=STD1\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
