@@ -2687,6 +2687,47 @@ int tsfi_cw_hainaut_promote_to_key(const char *attribute_name, tsfi_cw_hainaut_t
     return 0;
 }
 
+int tsfi_cw_hainaut_verify_equivalence(const tsfi_cw_hainaut_table *schema_a, int count_a, const tsfi_cw_hainaut_table *schema_b, int count_b, int *is_equivalent_out) {
+    if (!schema_a || count_a <= 0 || !schema_b || count_b <= 0 || !is_equivalent_out) return -1;
+    
+    *is_equivalent_out = 0;
+    
+    // Check if primary key sets match across schemas
+    int matched_keys = 0;
+    for (int i = 0; i < count_a; i++) {
+        for (int j = 0; j < count_b; j++) {
+            if (strcmp(schema_a[i].primary_key, schema_b[j].primary_key) == 0 &&
+                strlen(schema_a[i].primary_key) > 0) {
+                matched_keys++;
+                break;
+            }
+        }
+    }
+    
+    // If we matched all primary keys, they are equivalent under key constraint projection
+    if (matched_keys >= count_a && count_a == count_b) {
+        *is_equivalent_out = 1;
+    }
+    return 0;
+}
+
+int tsfi_cw_hainaut_collapse_subtype(const tsfi_cw_hainaut_table *super_table, const tsfi_cw_hainaut_table *sub_table, tsfi_cw_hainaut_table *collapsed_table_out) {
+    if (!super_table || !sub_table || !collapsed_table_out) return -1;
+    
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wformat-truncation"
+    snprintf(collapsed_table_out->table_name, sizeof(collapsed_table_out->table_name), "%s_CLPS", super_table->table_name);
+    #pragma GCC diagnostic pop
+    
+    strcpy(collapsed_table_out->primary_key, super_table->primary_key);
+    
+    // subtype fields become nullable/optional on parent supertype
+    strcpy(collapsed_table_out->foreign_key, sub_table->foreign_key);
+    strcpy(collapsed_table_out->references_table, sub_table->references_table);
+    
+    return 0;
+}
+
 
 
 

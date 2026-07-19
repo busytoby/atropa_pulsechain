@@ -2565,6 +2565,17 @@ static void test_new_mainframe_features(void) {
     // Hainaut Attribute-to-Key Promoter test
     assert(tsfi_cw_hainaut_promote_to_key("NEW_KEY", &q_tables[1]) == 0);
     assert(strcmp(q_tables[1].primary_key, "NEW_KEY") == 0);
+
+    // Hainaut Schema Equivalence Validator test
+    int eq_valid = 0;
+    assert(tsfi_cw_hainaut_verify_equivalence(q_tables, 2, q_tables, 2, &eq_valid) == 0);
+    assert(eq_valid == 1);
+
+    // Hainaut Subtype Collapser test
+    tsfi_cw_hainaut_table clps_tbl;
+    assert(tsfi_cw_hainaut_collapse_subtype(&super_tbl, &sub_tbl, &clps_tbl) == 0);
+    assert(strcmp(clps_tbl.table_name, "EMPLOYEE_CLPS") == 0);
+    assert(strcmp(clps_tbl.primary_key, "EMP_ID") == 0);
 }
 
 int main(void) {

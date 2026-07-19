@@ -1458,5 +1458,11 @@ int tsfi_cw_hainaut_analyze_quality(const tsfi_cw_hainaut_table *tables, int cou
 // Hainaut Attribute-to-Key Promoter
 int tsfi_cw_hainaut_promote_to_key(const char *attribute_name, tsfi_cw_hainaut_table *table_io);
 
+// Hainaut Schema Equivalence Validator
+int tsfi_cw_hainaut_verify_equivalence(const tsfi_cw_hainaut_table *schema_a, int count_a, const tsfi_cw_hainaut_table *schema_b, int count_b, int *is_equivalent_out);
+
+// Hainaut Subtype Collapser
+int tsfi_cw_hainaut_collapse_subtype(const tsfi_cw_hainaut_table *super_table, const tsfi_cw_hainaut_table *sub_table, tsfi_cw_hainaut_table *collapsed_table_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 
