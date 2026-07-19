@@ -480,4 +480,7 @@ int tsfi_zorse_validate_vse_power_submit(const char *jcl_line, int *is_valid_out
 // JCL DD DSNAME Versioning Generation Auditor
 int tsfi_zorse_validate_jcl_dsname_ver(const char *jcl_line, int *is_valid_out);
 
+// Zorse relative to absolute GDG name resolver
+int tsfi_zorse_resolve_gdg_relative_to_absolute(const char *gdg_base, int relative_gen, int current_gen, char *absolute_out, size_t max_len);
+
 #endif // TSFI_ZORSE_EVAL_H

@@ -838,6 +838,11 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_dsname_ver("//DD32 DD DSNAME=GDG.NAME.G0001V00,DISP=SHR\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 173: GDG name resolver validation
+    char resolved_gdg[128];
+    assert(tsfi_zorse_resolve_gdg_relative_to_absolute("ZORSE.GDG", 1, 4, resolved_gdg, sizeof(resolved_gdg)) == 0);
+    assert(strcmp(resolved_gdg, "ZORSE.GDG.G0005V00") == 0);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

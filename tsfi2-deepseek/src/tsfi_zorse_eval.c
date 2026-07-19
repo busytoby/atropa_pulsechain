@@ -2427,3 +2427,13 @@ int tsfi_zorse_validate_jcl_dsname_ver(const char *jcl_line, int *is_valid_out) 
     
     return 0;
 }
+
+int tsfi_zorse_resolve_gdg_relative_to_absolute(const char *gdg_base, int relative_gen, int current_gen, char *absolute_out, size_t max_len) {
+    if (!gdg_base || !absolute_out || max_len == 0) return -1;
+
+    int target_gen = current_gen + relative_gen;
+    if (target_gen < 0) target_gen = 0;
+
+    snprintf(absolute_out, max_len, "%s.G%04dV00", gdg_base, target_gen);
+    return 0;
+}
