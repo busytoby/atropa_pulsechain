@@ -375,4 +375,10 @@ int tsfi_zorse_validate_cobol_exit_program(const char *cobol_src, int *is_valid_
 // Zorse JCL SYSOUT DEST Spool Router Auditor
 int tsfi_zorse_validate_jcl_dest_router(const char *jcl_line, int *is_valid_out);
 
+// Zorse COBOL STOP RUN Statement Auditor
+int tsfi_zorse_validate_cobol_stop_run(const char *cobol_src, int *is_valid_out);
+
+// Zorse JCL DD DSID Parameter Auditor
+int tsfi_zorse_validate_jcl_dsid(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H
