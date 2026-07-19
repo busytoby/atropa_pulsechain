@@ -297,4 +297,10 @@ int tsfi_zorse_validate_cobol_goback(const char *cobol_src, int *is_valid_out);
 // Zorse JCL DEST Parameter Auditor
 int tsfi_zorse_validate_jcl_dest(const char *jcl_line, int *is_valid_out);
 
+// Zorse COBOL CANCEL Program Auditor
+int tsfi_zorse_validate_cobol_cancel(const char *cobol_src, int *is_valid_out);
+
+// Zorse JCL EXPORT SYMLIST Parameter Auditor
+int tsfi_zorse_validate_jcl_export(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H
