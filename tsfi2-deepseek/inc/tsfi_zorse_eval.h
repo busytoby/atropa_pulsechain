@@ -159,4 +159,10 @@ int tsfi_zorse_audit_material_properties(const char *b64_render_img, const char 
 // Zorse Moondream Visual Bounding Box Collision Optimizer
 int tsfi_zorse_optimize_bounding_collision(const char *b64_render_img, const char *model_name, char *analysis_out, size_t max_len);
 
+// Zorse Moondream Visual Icon Transparency & Contrast Auditor
+int tsfi_zorse_audit_icon_transparency(const char *b64_render_img, const char *model_name, char *analysis_out, size_t max_len);
+
+// Zorse Moondream Visual Icon Style Consistency Auditor
+int tsfi_zorse_audit_icon_style(const char *b64_render_img, const char *model_name, char *analysis_out, size_t max_len);
+
 #endif // TSFI_ZORSE_EVAL_H

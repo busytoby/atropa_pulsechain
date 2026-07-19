@@ -1003,3 +1003,23 @@ int tsfi_zorse_optimize_bounding_collision(const char *b64_render_img, const cha
     
     return tsfi_ai_evaluate_vlm(b64_render_img, prompt, analysis_out, max_len);
 }
+
+int tsfi_zorse_audit_icon_transparency(const char *b64_render_img, const char *model_name, char *analysis_out, size_t max_len) {
+    if (!b64_render_img || !model_name || !analysis_out || max_len == 0) return -1;
+    
+    analysis_out[0] = '\0';
+    
+    const char *prompt = "Verify icon transparency boundaries, anti-aliasing quality, and color contrast limits across interface background themes.";
+    
+    return tsfi_ai_evaluate_vlm(b64_render_img, prompt, analysis_out, max_len);
+}
+
+int tsfi_zorse_audit_icon_style(const char *b64_render_img, const char *model_name, char *analysis_out, size_t max_len) {
+    if (!b64_render_img || !model_name || !analysis_out || max_len == 0) return -1;
+    
+    analysis_out[0] = '\0';
+    
+    const char *prompt = "Check this rendered icon to ensure visual design consistency (including lighting perspective, stroke width, and scale) matches style guides.";
+    
+    return tsfi_ai_evaluate_vlm(b64_render_img, prompt, analysis_out, max_len);
+}

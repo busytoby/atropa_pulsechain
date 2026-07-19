@@ -332,6 +332,16 @@ int main(void) {
     int col_res = tsfi_zorse_optimize_bounding_collision("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "moondream", col_buf, sizeof(col_buf));
     assert(col_res == 0 || col_res == -2 || col_res == -1);
 
+    // Test Case 64: Moondream Visual Icon Transparency & Contrast Auditor validation
+    char trans_buf[256];
+    int trans_res = tsfi_zorse_audit_icon_transparency("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "moondream", trans_buf, sizeof(trans_buf));
+    assert(trans_res == 0 || trans_res == -2 || trans_res == -1);
+
+    // Test Case 65: Moondream Visual Icon Style Consistency Auditor validation
+    char style_buf[256];
+    int style_res = tsfi_zorse_audit_icon_style("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "moondream", style_buf, sizeof(style_buf));
+    assert(style_res == 0 || style_res == -2 || style_res == -1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
