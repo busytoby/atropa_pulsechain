@@ -72,4 +72,7 @@ int tsfi_zorse_parse_cabling_topology(const char *b64_topology_img, const char *
 // Zorse Moondream Cabinet Thermal Graph Auditor
 int tsfi_zorse_audit_thermal_graph(const char *b64_thermal_img, const char *model_name, char *hotspot_info_out, size_t max_len);
 
+// Zorse Mainframe Job Stream Orchestrator
+int tsfi_zorse_audit_job_stream(const char *jcl_source, const char *cobol_source, const char *model_name, int *is_valid_out, char *report_out, size_t max_report_len);
+
 #endif // TSFI_ZORSE_EVAL_H

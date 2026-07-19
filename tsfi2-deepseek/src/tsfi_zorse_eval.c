@@ -483,3 +483,33 @@ int tsfi_zorse_audit_thermal_graph(const char *b64_thermal_img, const char *mode
     
     return tsfi_ai_evaluate_vlm(b64_thermal_img, prompt, hotspot_info_out, max_len);
 }
+
+int tsfi_zorse_audit_job_stream(const char *jcl_source, const char *cobol_source, const char *model_name, int *is_valid_out, char *report_out, size_t max_report_len) {
+    if (!jcl_source || !cobol_source || !model_name || !is_valid_out || !report_out || max_report_len == 0) return -1;
+    
+    *is_valid_out = 0;
+    report_out[0] = '\0';
+    
+    int jcl_ok = 0;
+    char jcl_err[128] = {0};
+    int r = tsfi_zorse_validate_jcl(jcl_source, &jcl_ok, jcl_err, sizeof(jcl_err));
+    if (r < 0) return -2;
+    
+    int cobol_ok = 0;
+    r = tsfi_zorse_validate_cobol(cobol_source, &cobol_ok);
+    if (r < 0) return -3;
+    
+    if (jcl_ok && cobol_ok) {
+        *is_valid_out = 1;
+    }
+    
+    snprintf(report_out, max_report_len, 
+             "Zorse Audit Report:\n- JCL Validation: %s%s%s\n- COBOL Validation: %s\n- Overall Job Stream Status: %s\n",
+             jcl_ok ? "PASS" : "FAIL",
+             jcl_ok ? "" : " (",
+             jcl_ok ? "" : jcl_err,
+             cobol_ok ? "PASS" : "FAIL",
+             (*is_valid_out) ? "APPROVED" : "REJECTED");
+             
+    return 0;
+}

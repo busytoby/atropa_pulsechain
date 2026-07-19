@@ -181,6 +181,16 @@ int main(void) {
     int therm_res = tsfi_zorse_audit_thermal_graph("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "moondream", thermal_res, sizeof(thermal_res));
     assert(therm_res == 0 || therm_res == -2 || therm_res == -1);
 
+    // Test Case 35: Job Stream Orchestrator validation
+    const char *jcl_inp = "//MYJOB JOB (123),CLASS=A\n";
+    const char *cobol_inp = "IDENTIFICATION DIVISION.\nPROGRAM-ID. HELLO.\nPROCEDURE DIVISION.\n";
+    char report_buf[1024];
+    int is_stream_valid = 0;
+    int stream_res = tsfi_zorse_audit_job_stream(jcl_inp, cobol_inp, "moondream", &is_stream_valid, report_buf, sizeof(report_buf));
+    assert(stream_res == 0);
+    assert(is_stream_valid == 1);
+    assert(strstr(report_buf, "APPROVED") != NULL);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
