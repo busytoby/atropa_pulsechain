@@ -50,11 +50,13 @@ The hardware tap is emulated through direct memory-mapped access to the **Auncie
 
 ## 3. CICS Transaction Controller
 
-The telemetry daemon runs as a CICS transaction managing queues and task verification:
+The telemetry daemon runs as a CICS transaction managing queues, state overrides, and task security:
 
 *   **Transient Data Queues (TDQ):** Telemetry payload segments are stored in CICS transient storage queues (`tsfi_cw_unt_cics_queue`).
 *   **Ballistic Inputs:** Incoming commands from the out-of-band channel bypass normal guest TCP/IP stacks and are injected directly into the mainframe as ballistic inputs.
-*   **Security Auditing:** CICS transactions (e.g. `tsfi_cw_rmu_audit_cics_security`) monitor the activity bus, preventing unauthorized memory modifications while logging standard audits.
+*   **Security Auditing (`tsfi_cw_rmu_audit_cics_security`):**
+    To prevent arbitrary state overrides (such as spoofed `Fuse` operations seeking to compromise Yul register alignments), the system invokes [tsfi_cw_rmu_audit_cics_security](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/src/tsfi_mainframe_computerworld.c#L1357). 
+    This security gateway verifies that incoming administrative payloads carry a validated credentials token (starting with `"SEC_"` or matching `"ADMIN"`). Transactions failing this security audit are either discarded or assigned a critical penalty penalty score in security evaluation wrappers, ensuring that hostile bus command injections are locked out at the CICS gateway boundary.
 
 ---
 
