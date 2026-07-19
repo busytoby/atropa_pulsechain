@@ -164,3 +164,35 @@ int tsfi_phoneme_xu_predict_boundary(const char *sentence, int target_char_idx, 
     
     return 0;
 }
+
+int tsfi_phoneme_yu_calculate_declination(int word_progress_idx, int total_words, float base_f0, float *declined_f0_out) {
+    if (total_words <= 0 || word_progress_idx < 0 || word_progress_idx >= total_words || !declined_f0_out) return -1;
+    
+    // Decline slope: drop pitch linearly towards end of sentence (max 15% drop)
+    float progress_ratio = (float)word_progress_idx / (float)total_words;
+    *declined_f0_out = base_f0 * (1.0f - (progress_ratio * 0.15f));
+    return 0;
+}
+
+int tsfi_phoneme_yu_estimate_duration(const char *syllable, int *duration_ms_out) {
+    if (!syllable || strlen(syllable) == 0 || !duration_ms_out) return -1;
+    
+    // Base duration for syllable is 150ms
+    int duration = 150;
+    int len = (int)strlen(syllable);
+    
+    for (int i = 0; i < len; i++) {
+        char c = syllable[i];
+        // Vowels extend duration (long open vowels)
+        if (c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u' ||
+            c == 'A' || c == 'E' || c == 'I' || c == 'O' || c == 'U') {
+            duration += 45;
+        } else {
+            // Consonants add smaller duration
+            duration += 15;
+        }
+    }
+    
+    *duration_ms_out = duration;
+    return 0;
+}

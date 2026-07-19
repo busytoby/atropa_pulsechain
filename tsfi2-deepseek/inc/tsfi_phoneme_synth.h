@@ -23,4 +23,12 @@ int tsfi_phoneme_xu_adjust_sandhi(const int *tones, int count, int target_idx, f
 // Predicts phrasing break pause in milliseconds based on character sequence and punctuation signals
 int tsfi_phoneme_xu_predict_boundary(const char *sentence, int target_char_idx, int *pause_ms_out);
 
+// Yu F0 Declination Generator
+// Models pitch decay decline slope based on sentence word progress index
+int tsfi_phoneme_yu_calculate_declination(int word_progress_idx, int total_words, float base_f0, float *declined_f0_out);
+
+// Yu Syllable Duration Estimator
+// Approximates syllable length in milliseconds using phonological vowel/consonant properties
+int tsfi_phoneme_yu_estimate_duration(const char *syllable, int *duration_ms_out);
+
 #endif // TSFI_PHONEME_SYNTH_H

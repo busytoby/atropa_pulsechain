@@ -63,6 +63,15 @@ int main(void) {
     assert(boundary_pause == 250); // comma pause
     assert(tsfi_phoneme_xu_predict_boundary("Hello, world.", 12, &boundary_pause) == 0);
     assert(boundary_pause == 600); // period pause
+    // 6. Test Yu F0 Declination Generator
+    float declined_f0 = 0.0f;
+    assert(tsfi_phoneme_yu_calculate_declination(5, 10, 200.0f, &declined_f0) == 0);
+    assert(fabs(declined_f0 - 185.0f) < 0.0001f); // 200 * (1 - 0.075)
+
+    // 7. Test Yu Syllable Duration Estimator
+    int syllable_dur = 0;
+    assert(tsfi_phoneme_yu_estimate_duration("ma", &syllable_dur) == 0);
+    assert(syllable_dur == 210); // 150 + 15('m') + 45('a')
 
     // Cleanup
     tsfi_synth_perf_destroy(perf_engine);
