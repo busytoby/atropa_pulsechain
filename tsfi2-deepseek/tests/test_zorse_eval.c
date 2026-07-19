@@ -514,6 +514,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_steplib("//STEPLIB DD DSN=MY.LOADLIB,DISP=SHR\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 108: COBOL GOBACK Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_goback("GOBACK.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 109: JCL DEST Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_dest("//DD14 DD SYSOUT=A,DEST=RMT1\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
