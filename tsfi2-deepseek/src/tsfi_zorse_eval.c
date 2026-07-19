@@ -1255,3 +1255,38 @@ int tsfi_zorse_audit_denoising_clarity(const char *b64_render_img, const char *m
     
     return tsfi_ai_evaluate_vlm(b64_render_img, prompt, analysis_out, max_len);
 }
+
+int tsfi_zorse_validate_cobol_divide_error(const char *cobol_src, int *is_valid_out) {
+    if (!cobol_src || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(cobol_src, "DIVIDE ") && strstr(cobol_src, "SIZE ERROR")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_jcl_keylen(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    const char *p = strstr(jcl_line, "KEYLEN=");
+    if (!p) return 0;
+    
+    p += 7; // Skip "KEYLEN="
+    
+    int val = 0;
+    while (*p >= '0' && *p <= '9') {
+        val = val * 10 + (*p - '0');
+        p++;
+    }
+    
+    if (val >= 0 && val <= 255) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}

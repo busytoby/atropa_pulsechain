@@ -418,6 +418,14 @@ int main(void) {
     int denoise_res = tsfi_zorse_audit_denoising_clarity("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "moondream", denoise_buf, sizeof(denoise_buf));
     assert(denoise_res == 0 || denoise_res == -2 || denoise_res == -1);
 
+    // Test Case 84: COBOL DIVIDE SIZE ERROR Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_divide_error("DIVIDE A INTO B ON SIZE ERROR DISPLAY 'ERROR'.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 85: JCL KEYLEN Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_keylen("//DD8 DD DSN=A.B.C,KEYLEN=8\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
