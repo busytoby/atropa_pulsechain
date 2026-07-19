@@ -39,4 +39,10 @@ int tsfi_phoneme_reset_sandhi_at_boundary(int pause_duration_ms, int original_to
 // Resets word progress index to zero if a sentence/prosodic break is detected
 int tsfi_phoneme_reset_declination_at_boundary(const char *sentence, int char_idx, int current_progress, int *new_progress_out);
 
+// Jitter and Shimmer Modulator
+int tsfi_phoneme_apply_jitter_shimmer(float base_freq, float base_amp, int cycle_seed, float *freq_out, float *amp_out);
+
+// Vocal Fry Region Simulator
+int tsfi_phoneme_apply_vocal_fry(float current_freq, float current_amp, float declination_ratio, float *fry_freq_out, float *fry_amp_out);
+
 #endif // TSFI_PHONEME_SYNTH_H

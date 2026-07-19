@@ -84,6 +84,16 @@ int main(void) {
     assert(tsfi_phoneme_reset_declination_at_boundary("Hello, world.", 12, 5, &new_prog) == 0);
     assert(new_prog == 0); // reset declination progress to 0 at period
 
+    // 10. Test Jitter and Shimmer Modulator
+    float j_freq, s_amp;
+    assert(tsfi_phoneme_apply_jitter_shimmer(440.0f, 0.8f, 1, &j_freq, &s_amp) == 0);
+    assert(fabs(j_freq - 440.0f) < 5.0f);
+
+    // 11. Test Vocal Fry Region Simulator
+    float fry_freq, fry_amp;
+    assert(tsfi_phoneme_apply_vocal_fry(440.0f, 0.8f, 0.9f, &fry_freq, &fry_amp) == 0);
+    assert(fry_freq == 65.0f); // vocal fry triggered at the end (>0.85)
+
     // Cleanup
     tsfi_synth_perf_destroy(perf_engine);
     tsfi_trie_destroy(trie_root);

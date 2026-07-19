@@ -222,3 +222,35 @@ int tsfi_phoneme_reset_declination_at_boundary(const char *sentence, int char_id
     }
     return 0;
 }
+
+int tsfi_phoneme_apply_jitter_shimmer(float base_freq, float base_amp, int cycle_seed, float *freq_out, float *amp_out) {
+    if (!freq_out || !amp_out) return -1;
+    
+    // Inject micro-jitter: frequency varies by +/- 0.3%
+    float jitter_factor = 1.0f + (((float)(cycle_seed % 3) - 1.0f) * 0.003f);
+    *freq_out = base_freq * jitter_factor;
+    
+    // Inject micro-shimmer: amplitude varies by +/- 0.5%
+    float shimmer_factor = 1.0f + (((float)(cycle_seed % 5) - 2.0f) * 0.005f);
+    *amp_out = base_amp * shimmer_factor;
+    
+    if (*amp_out > 1.0f) *amp_out = 1.0f;
+    if (*amp_out < 0.0f) *amp_out = 0.0f;
+    
+    return 0;
+}
+
+int tsfi_phoneme_apply_vocal_fry(float current_freq, float current_amp, float declination_ratio, float *fry_freq_out, float *fry_amp_out) {
+    if (!fry_freq_out || !fry_amp_out) return -1;
+    
+    *fry_freq_out = current_freq;
+    *fry_amp_out = current_amp;
+    
+    // At the end of utterance (declination_ratio > 0.85), simulate vocal fry drop-off
+    if (declination_ratio > 0.85f) {
+        *fry_freq_out = 65.0f; // low pitch boundary
+        *fry_amp_out = current_amp * 0.4f; // lower volume creakiness
+    }
+    
+    return 0;
+}
