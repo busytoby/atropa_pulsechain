@@ -489,4 +489,10 @@ int tsfi_zorse_validate_vse_cics_rdo(const char *rdo_script, int *is_valid_out);
 // COBOL Dynamic Call Auditor
 int tsfi_zorse_validate_cobol_dyn_call(const char *cobol_src, int *is_valid_out);
 
+// Zorse Red DDL Strategy Language Auditor
+int tsfi_zorse_validate_red_ddl(const char *ddl_src, int *is_valid_out);
+
+// Zorse Black DML Data Model Auditor
+int tsfi_zorse_validate_black_dml(const char *dml_src, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

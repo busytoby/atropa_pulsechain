@@ -872,6 +872,14 @@ int main(void) {
     assert(tsfi_zorse_validate_cobol_dyn_call("CALL PROGRAM-ID-VAR USING PARM-1.", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 177: Red DDL Strategy Language Auditor validation
+    assert(tsfi_zorse_validate_red_ddl("RED DDL: DEFINE STRATEGY FOR VAESEN", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 178: Black DML Data Model Auditor validation
+    assert(tsfi_zorse_validate_black_dml("BLACK DML: STREAM IMAGE TO VRAM", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

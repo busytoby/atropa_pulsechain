@@ -2466,3 +2466,27 @@ int tsfi_zorse_validate_cobol_dyn_call(const char *cobol_src, int *is_valid_out)
     
     return 0;
 }
+
+int tsfi_zorse_validate_red_ddl(const char *ddl_src, int *is_valid_out) {
+    if (!ddl_src || !is_valid_out) return -1;
+
+    *is_valid_out = 0;
+
+    if (strstr(ddl_src, "RED DDL") || strstr(ddl_src, "DEFINE STRATEGY")) {
+        *is_valid_out = 1;
+    }
+
+    return 0;
+}
+
+int tsfi_zorse_validate_black_dml(const char *dml_src, int *is_valid_out) {
+    if (!dml_src || !is_valid_out) return -1;
+
+    *is_valid_out = 0;
+
+    if (strstr(dml_src, "BLACK DML") || strstr(dml_src, "STREAM IMAGE")) {
+        *is_valid_out = 1;
+    }
+
+    return 0;
+}
