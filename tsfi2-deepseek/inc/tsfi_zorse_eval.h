@@ -495,4 +495,10 @@ int tsfi_zorse_validate_red_ddl(const char *ddl_src, int *is_valid_out);
 // Zorse Black DML Data Model Auditor
 int tsfi_zorse_validate_black_dml(const char *dml_src, int *is_valid_out);
 
+// JCL EXEC PGM Parameter Override Auditor
+int tsfi_zorse_validate_jcl_parm_override(const char *jcl_line, int *is_valid_out);
+
+// JCL SYSOUT Routing Auditor
+int tsfi_zorse_validate_jcl_sysout_route(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

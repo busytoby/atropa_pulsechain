@@ -2490,3 +2490,27 @@ int tsfi_zorse_validate_black_dml(const char *dml_src, int *is_valid_out) {
 
     return 0;
 }
+
+int tsfi_zorse_validate_jcl_parm_override(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(jcl_line, "PARM=")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_jcl_sysout_route(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(jcl_line, "SYSOUT=")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}

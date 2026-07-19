@@ -880,6 +880,14 @@ int main(void) {
     assert(tsfi_zorse_validate_black_dml("BLACK DML: STREAM IMAGE TO VRAM", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 179: JCL EXEC PGM Parameter Override Auditor validation
+    assert(tsfi_zorse_validate_jcl_parm_override("//STEP1 EXEC PGM=IEFBR14,PARM='DEBUG=YES'\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 180: JCL SYSOUT Routing Auditor validation
+    assert(tsfi_zorse_validate_jcl_sysout_route("//OUT1 DD SYSOUT=(A,INTRDR)\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
