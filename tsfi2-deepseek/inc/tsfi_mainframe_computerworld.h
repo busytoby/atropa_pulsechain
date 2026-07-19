@@ -1495,5 +1495,11 @@ int tsfi_cw_roland_prune_transitive(const tsfi_cw_hainaut_table *table, const ts
 // Roland Update Anomaly Auditor
 int tsfi_cw_roland_audit_anomalies(const tsfi_cw_hainaut_table *table, const tsfi_cw_hainaut_fd *fds, int fd_count, int *anomaly_detected_out);
 
+// Henrard Legacy DML Code Analyzer
+int tsfi_cw_henrard_analyze_dml(const char *source_code, char *accessed_table_out, int max_len);
+
+// Henrard Constraint Inference Engine
+int tsfi_cw_henrard_infer_constraints(const char *query_join, char *inferred_fk_out, char *inferred_ref_table_out, int max_len);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

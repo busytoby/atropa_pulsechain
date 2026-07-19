@@ -2652,6 +2652,17 @@ static void test_new_mainframe_features(void) {
     int anomaly_found = 0;
     assert(tsfi_cw_roland_audit_anomalies(&redundant_tbl, trans_fds, 2, &anomaly_found) == 0);
     assert(anomaly_found == 1); // DEPT_ID -> DIV_ID is a non-prime transitive dependency
+
+    // Henrard Legacy DML Code Analyzer test
+    char accessed_tbl[32];
+    assert(tsfi_cw_henrard_analyze_dml("SELECT * FROM CUSTOMERS WHERE ID = 1;", accessed_tbl, 32) == 0);
+    assert(strcmp(accessed_tbl, "CUSTOMERS") == 0);
+
+    // Henrard Constraint Inference Engine test
+    char inf_fk[32], inf_ref[32];
+    assert(tsfi_cw_henrard_infer_constraints("JOIN ORDERS ON CUSTOMERS.CUST_ID = ORDERS.CUST_ID", inf_fk, inf_ref, 32) == 0);
+    assert(strcmp(inf_ref, "ORDERS") == 0);
+    assert(strcmp(inf_fk, "CUST_ID") == 0);
 }
 
 int main(void) {

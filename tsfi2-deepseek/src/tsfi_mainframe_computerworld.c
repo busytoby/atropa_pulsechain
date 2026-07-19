@@ -2971,6 +2971,70 @@ int tsfi_cw_roland_audit_anomalies(const tsfi_cw_hainaut_table *table, const tsf
     return 0;
 }
 
+int tsfi_cw_henrard_analyze_dml(const char *source_code, char *accessed_table_out, int max_len) {
+    if (!source_code || !accessed_table_out || max_len <= 0) return -1;
+    
+    accessed_table_out[0] = 0;
+    
+    // Find keywords "FROM " or "READ " or "UPDATE "
+    const char *kw_from = strstr(source_code, "FROM ");
+    const char *kw_read = strstr(source_code, "READ ");
+    const char *kw_update = strstr(source_code, "UPDATE ");
+    
+    const char *match = NULL;
+    if (kw_from) match = kw_from + 5;
+    else if (kw_read) match = kw_read + 5;
+    else if (kw_update) match = kw_update + 7;
+    
+    if (match) {
+        int idx = 0;
+        while (match[idx] && match[idx] != ' ' && match[idx] != ';' && match[idx] != '\r' && match[idx] != '\n' && idx < max_len - 1) {
+            accessed_table_out[idx] = match[idx];
+            idx++;
+        }
+        accessed_table_out[idx] = 0;
+        return 0;
+    }
+    return 1; // no match found
+}
+
+int tsfi_cw_henrard_infer_constraints(const char *query_join, char *inferred_fk_out, char *inferred_ref_table_out, int max_len) {
+    if (!query_join || !inferred_fk_out || !inferred_ref_table_out || max_len <= 0) return -1;
+    
+    inferred_fk_out[0] = 0;
+    inferred_ref_table_out[0] = 0;
+    
+    // Parse "JOIN <REF_TABLE> ON <FK_COL> = ..."
+    const char *kw_join = strstr(query_join, "JOIN ");
+    const char *kw_on = strstr(query_join, " ON ");
+    
+    if (kw_join && kw_on && kw_on > kw_join) {
+        // Extract ref table
+        const char *ref_p = kw_join + 5;
+        int idx = 0;
+        while (ref_p[idx] && ref_p[idx] != ' ' && idx < max_len - 1) {
+            inferred_ref_table_out[idx] = ref_p[idx];
+            idx++;
+        }
+        inferred_ref_table_out[idx] = 0;
+        
+        // Extract foreign key from "ON <TABLE>.<FK_COL> = ..."
+        const char *on_p = kw_on + 4;
+        while (*on_p && *on_p != '.' && *on_p != '=') on_p++;
+        if (*on_p == '.') {
+            on_p++;
+            idx = 0;
+            while (on_p[idx] && on_p[idx] != ' ' && on_p[idx] != '=' && idx < max_len - 1) {
+                inferred_fk_out[idx] = on_p[idx];
+                idx++;
+            }
+            inferred_fk_out[idx] = 0;
+            return 0;
+        }
+    }
+    return 1; // parse failed
+}
+
 
 
 
