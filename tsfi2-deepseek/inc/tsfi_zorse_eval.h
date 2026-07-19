@@ -54,4 +54,10 @@ int tsfi_zorse_generate_jcl_from_flowchart(const char *b64_flowchart_img, const 
 // Zorse LLM HLASM-to-COBOL Reverse Transpiler
 int tsfi_zorse_transpile_hlasm_to_cobol(const char *hlasm_src, const char *model_name, char *cobol_out, size_t max_len);
 
+// Zorse Moondream DASD Layout-to-JCL Space Mapper
+int tsfi_zorse_map_dasd_space(const char *b64_layout_img, const char *model_name, char *space_out, size_t max_len);
+
+// Zorse LLM JCL/COBOL Code Explain-Pipeline
+int tsfi_zorse_explain_source(const char *source, const char *lang, const char *model_name, char *explanation_out, size_t max_len);
+
 #endif // TSFI_ZORSE_EVAL_H

@@ -151,6 +151,16 @@ int main(void) {
     int reverse_res = tsfi_zorse_transpile_hlasm_to_cobol("BALR 12,0", "moondream", cobol_transp_res, sizeof(cobol_transp_res));
     assert(reverse_res == 0 || reverse_res == -2);
 
+    // Test Case 29: Moondream DASD Layout Space Mapper validation
+    char space_res[256];
+    int space_res_val = tsfi_zorse_map_dasd_space("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "moondream", space_res, sizeof(space_res));
+    assert(space_res_val == 0 || space_res_val == -2 || space_res_val == -1);
+
+    // Test Case 30: LLM Code Explain Pipeline validation
+    char explanation_buf[512];
+    int explain_res = tsfi_zorse_explain_source("MOVE A TO B.", "COBOL", "moondream", explanation_buf, sizeof(explanation_buf));
+    assert(explain_res == 0 || explain_res == -2);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

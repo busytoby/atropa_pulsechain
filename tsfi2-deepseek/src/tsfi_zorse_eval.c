@@ -397,3 +397,33 @@ int tsfi_zorse_transpile_hlasm_to_cobol(const char *hlasm_src, const char *model
     
     return ret;
 }
+
+int tsfi_zorse_map_dasd_space(const char *b64_layout_img, const char *model_name, char *space_out, size_t max_len) {
+    if (!b64_layout_img || !model_name || !space_out || max_len == 0) return -1;
+    
+    space_out[0] = '\0';
+    
+    const char *prompt = "Analyze this DASD cylinder volume layout diagram and output the corresponding JCL SPACE allocation parameter, e.g. SPACE=(CYL,(10,5)).";
+    
+    return tsfi_ai_evaluate_vlm(b64_layout_img, prompt, space_out, max_len);
+}
+
+int tsfi_zorse_explain_source(const char *source, const char *lang, const char *model_name, char *explanation_out, size_t max_len) {
+    if (!source || !lang || !model_name || !explanation_out || max_len == 0) return -1;
+    
+    explanation_out[0] = '\0';
+    
+    size_t s_len = strlen(source);
+    size_t l_len = strlen(lang);
+    char *prompt = (char *)malloc(s_len + l_len + 128);
+    if (!prompt) return -1;
+    
+    snprintf(prompt, s_len + l_len + 128, 
+             "Explain the logic, variables, and execution steps of the following %s source block in detail: %s", 
+             lang, source);
+    
+    int ret = tsfi_zorse_query_llm(prompt, model_name, explanation_out, max_len);
+    free(prompt);
+    
+    return ret;
+}
