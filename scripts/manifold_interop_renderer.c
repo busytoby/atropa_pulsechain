@@ -17,11 +17,12 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    int style = 0; // 0 = photorealistic, 1 = stylized, 2 = lineart, 3 = retro
+    int style = 0; // 0 = photorealistic, 1 = stylized, 2 = lineart, 3 = retro, 4 = dragons_lair
     if (argc > 9) {
         if (strcmp(argv[9], "stylized") == 0) style = 1;
         else if (strcmp(argv[9], "lineart") == 0) style = 2;
         else if (strcmp(argv[9], "retro") == 0) style = 3;
+        else if (strcmp(argv[9], "dragons_lair") == 0) style = 4;
     }
 
     FILE *f_eris = fopen(argv[1], "rb");
@@ -113,15 +114,28 @@ int main(int argc, char *argv[]) {
         float spec_power = 8.0f + ((reg.frame_modulation_factor + (float)mq_boost) * 16.0f); // Modulated specularity
         float edge_blend = 0.5f + ((reg.frame_modulation_factor + (float)mq_boost) * 0.5f);  // LineArt visibility mapping
 
+        // Calculate film projector jitter for Dragon's Lair style
+        int jitter_x = 0, jitter_y = 0;
+        if (style == 4) {
+            jitter_x = (frame % 3 == 0) ? 1 : ((frame % 3 == 1) ? -1 : 0);
+            jitter_y = (frame % 2 == 0) ? 1 : -1;
+        }
+
         #pragma omp parallel for schedule(static)
         for (int i = 0; i < FRAME_SIZE; i += 3) {
-            int px = (i / 3) % WIDTH;
-            int py = (i / 3) / WIDTH;
+            int px = ((i / 3) % WIDTH) + jitter_x;
+            int py = ((i / 3) / WIDTH) + jitter_y;
+            
+            // Clamp coordinates to frame boundary
+            if (px < 0) px = 0; if (px >= WIDTH) px = WIDTH - 1;
+            if (py < 0) py = 0; if (py >= HEIGHT) py = HEIGHT - 1;
+            
+            int offset = (py * WIDTH + px) * 3;
 
-            uint8_t lr = buf_line[i], lg = buf_line[i+1], lb = buf_line[i+2];
-            uint8_t dr = buf_depth[i];
-            uint8_t nr = buf_norm[i], ng = buf_norm[i+1], nb = buf_norm[i+2];
-            uint8_t sr = buf_seg[i], sg = buf_seg[i+1], sb = buf_seg[i+2];
+            uint8_t lr = buf_line[offset], lg = buf_line[offset+1], lb = buf_line[offset+2];
+            uint8_t dr = buf_depth[offset];
+            uint8_t nr = buf_norm[offset], ng = buf_norm[offset+1], nb = buf_norm[offset+2];
+            uint8_t sr = buf_seg[offset], sg = buf_seg[offset+1], sb = buf_seg[offset+2];
 
             // Sample raw color based on 3D UV mapping encoded in segmentation map
             uint8_t br = 0, bg = 0, bb = 0;
@@ -132,7 +146,7 @@ int main(int argc, char *argv[]) {
 
             if (is_fomal) {
                 // Sky background stays mapped in screen-space coordinates
-                br = buf_fomal[i]; bg = buf_fomal[i+1]; bb = buf_fomal[i+2];
+                br = buf_fomal[offset]; bg = buf_fomal[offset+1]; bb = buf_fomal[offset+2];
             } else {
                 // Ground (Eris) and Wheel (Fornax) utilize true UV mapped lookups
                 int tx = (sr * 1279) / 255;
@@ -144,7 +158,7 @@ int main(int argc, char *argv[]) {
                 } else if (is_fornax) {
                     br = buf_fornax[tex_idx]; bg = buf_fornax[tex_idx+1]; bb = buf_fornax[tex_idx+2];
                 } else {
-                    br = buf_fomal[i]; bg = buf_fomal[i+1]; bb = buf_fomal[i+2];
+                    br = buf_fomal[offset]; bg = buf_fomal[offset+1]; bb = buf_fomal[offset+2];
                 }
             }
 
@@ -193,6 +207,19 @@ int main(int argc, char *argv[]) {
                     g_out = 40.0f * fornax_glow;
                     b_out = 40.0f * fornax_glow;
                 }
+            } else if (style == 4) { // Don Bluth Dragon's Lair Cel Animation Style
+                // Rich, saturated warm gouache colors
+                if (is_fomal) { // Background: Classic mysterious deep blue-purple
+                    r_out = 45.0f; g_out = 30.0f; b_out = 90.0f;
+                } else if (is_eris) { // Dirk the Daring skin/clothes base
+                    r_out = 245.0f; g_out = 220.0f; b_out = 170.0f;
+                } else if (is_fornax) { // Singe the Red Dragon scales
+                    r_out = 220.0f + spec * 35.0f;
+                    g_out = 40.0f;
+                    b_out = 30.0f;
+                } else {
+                    r_out = 180.0f; g_out = 120.0f; b_out = 60.0f;
+                }
             } else { // Vaesen Nordic Gothic Photorealistic Style
                 // Base colors: Muted, earthy tones matching Scandinavian folklore
                 if (is_fomal) { // Background Sky: Misty dark forest green / gray-blue
@@ -222,14 +249,16 @@ int main(int argc, char *argv[]) {
                 b_out += lantern * 0.48f;
             }
 
-            // Apply soft hand-inked watercolor outlines from LineArt map
-            r_out = r_out * (1.0f - l_val * 0.38f);
-            g_out = g_out * (1.0f - l_val * 0.38f);
-            b_out = b_out * (1.0f - l_val * 0.38f);
+            // Apply soft hand-inked watercolor outlines from LineArt map (bold outlines for cel-art)
+            float outline_intensity = (style == 4) ? 0.85f : 0.38f;
+            r_out = r_out * (1.0f - l_val * outline_intensity);
+            g_out = g_out * (1.0f - l_val * outline_intensity);
+            b_out = b_out * (1.0f - l_val * outline_intensity);
 
-            // Apply cold, misty Nordic forest fog based on depth map
+            // Apply cold, misty Nordic forest fog based on depth map (less fog for crisp cel animation)
+            float fog_blend_factor = (style == 4) ? 0.90f : 0.50f;
             float fog_r = 25.0f, fog_g = 32.0f, fog_b = 38.0f; // Misty gray-blue
-            float depth_blend = 0.50f + (d_val * 0.50f);
+            float depth_blend = fog_blend_factor + (d_val * (1.0f - fog_blend_factor));
             r_out = r_out * depth_blend + fog_r * (1.0f - depth_blend);
             g_out = g_out * depth_blend + fog_g * (1.0f - depth_blend);
             b_out = b_out * depth_blend + fog_b * (1.0f - depth_blend);
