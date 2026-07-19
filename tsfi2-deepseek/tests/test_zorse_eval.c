@@ -450,6 +450,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_ucs("//PRT DD SYSOUT=A,UCS=AN\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 92: COBOL START INVALID KEY Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_start_key("START MY-FILE KEY IS EQUAL TO MY-KEY INVALID KEY DISPLAY 'ERR'.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 93: JCL FCB Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_fcb("//PRT2 DD SYSOUT=A,FCB=STD1\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
