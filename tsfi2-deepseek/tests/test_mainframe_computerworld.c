@@ -2541,6 +2541,17 @@ static void test_new_mainframe_features(void) {
     int fd_violation = 0;
     assert(tsfi_cw_hainaut_map_dependencies(&super_tbl, fd_list, 1, &fd_violation) == 0);
     assert(fd_violation == 1); // DEPT_ID is not EMP_ID (primary key of super_tbl)
+
+    // Hainaut Entity-to-Relationship Demoter test
+    tsfi_cw_hainaut_table tgt_io = { "TGT", "TGT_ID", "", "" };
+    assert(tsfi_cw_hainaut_demote_entity(&super_tbl, &tgt_io) == 0);
+    assert(strcmp(tgt_io.foreign_key, "EMP_ID") == 0);
+    assert(strcmp(tgt_io.references_table, "EMPLOYEE") == 0);
+
+    // Hainaut DDL Schema Exporter test
+    char ddl_buf[256];
+    assert(tsfi_cw_hainaut_export_ddl(&tgt_io, ddl_buf, 256) == 0);
+    assert(strcmp(ddl_buf, "CREATE TABLE TGT ( TGT_ID PK , EMP_ID FK REFERENCES EMPLOYEE )") == 0);
 }
 
 int main(void) {

@@ -1446,5 +1446,11 @@ typedef struct {
 
 int tsfi_cw_hainaut_map_dependencies(const tsfi_cw_hainaut_table *table, const tsfi_cw_hainaut_fd *fds, int fd_count, int *violation_detected_out);
 
+// Hainaut Entity-to-Relationship Demoter
+int tsfi_cw_hainaut_demote_entity(const tsfi_cw_hainaut_table *entity_table, tsfi_cw_hainaut_table *target_table_io);
+
+// Hainaut DDL Schema Exporter
+int tsfi_cw_hainaut_export_ddl(const tsfi_cw_hainaut_table *table, char *buffer_out, int max_len);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

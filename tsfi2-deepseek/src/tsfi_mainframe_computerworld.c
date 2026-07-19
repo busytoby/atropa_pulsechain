@@ -2629,6 +2629,32 @@ int tsfi_cw_hainaut_map_dependencies(const tsfi_cw_hainaut_table *table, const t
     return 0;
 }
 
+int tsfi_cw_hainaut_demote_entity(const tsfi_cw_hainaut_table *entity_table, tsfi_cw_hainaut_table *target_table_io) {
+    if (!entity_table || !target_table_io) return -1;
+    
+    // Demote table entity to a foreign key link on target table
+    strcpy(target_table_io->foreign_key, entity_table->primary_key);
+    strcpy(target_table_io->references_table, entity_table->table_name);
+    return 0;
+}
+
+int tsfi_cw_hainaut_export_ddl(const tsfi_cw_hainaut_table *table, char *buffer_out, int max_len) {
+    if (!table || !buffer_out || max_len <= 0) return -1;
+    
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wformat-truncation"
+    if (strlen(table->foreign_key) > 0 && strlen(table->references_table) > 0) {
+        snprintf(buffer_out, max_len, "CREATE TABLE %s ( %s PK , %s FK REFERENCES %s )",
+                 table->table_name, table->primary_key, table->foreign_key, table->references_table);
+    } else {
+        snprintf(buffer_out, max_len, "CREATE TABLE %s ( %s PK )",
+                 table->table_name, table->primary_key);
+    }
+    #pragma GCC diagnostic pop
+    
+    return 0;
+}
+
 
 
 
