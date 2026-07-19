@@ -81,4 +81,10 @@ int tsfi_phoneme_xiang_neutralize_sandhi(float speed_ratio, int original_tone, i
 // Xiang Syllable Emphasis Scaler
 int tsfi_phoneme_xiang_scale_emphasis(const char *particle, int base_duration_ms, int *scaled_duration_out);
 
+// Xiang Cantonese Vowel Length Compensator
+int tsfi_phoneme_xiang_compensate_vowel(const char *coda, int base_duration_ms, int *compensated_duration_out);
+
+// Xiang Quadratic Pitch Contour Interpolator
+int tsfi_phoneme_xiang_interpolate_pitch_quadratic(float freq_start, float freq_mid, float freq_end, float ratio, float *interpolated_freq_out);
+
 #endif // TSFI_PHONEME_SYNTH_H

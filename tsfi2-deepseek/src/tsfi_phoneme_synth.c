@@ -428,3 +428,28 @@ int tsfi_phoneme_xiang_scale_emphasis(const char *particle, int base_duration_ms
     }
     return 0;
 }
+
+int tsfi_phoneme_xiang_compensate_vowel(const char *coda, int base_duration_ms, int *compensated_duration_out) {
+    if (!coda || base_duration_ms <= 0 || !compensated_duration_out) return -1;
+    
+    *compensated_duration_out = base_duration_ms;
+    
+    // Stop codas shorten vowel duration
+    if (strcmp(coda, "p") == 0 || strcmp(coda, "t") == 0 || strcmp(coda, "k") == 0) {
+        *compensated_duration_out = (int)((float)base_duration_ms * 0.75f);
+    }
+    // Nasal codas lengthen vowel duration
+    else if (strcmp(coda, "m") == 0 || strcmp(coda, "n") == 0 || strcmp(coda, "ng") == 0) {
+        *compensated_duration_out = (int)((float)base_duration_ms * 1.15f);
+    }
+    return 0;
+}
+
+int tsfi_phoneme_xiang_interpolate_pitch_quadratic(float freq_start, float freq_mid, float freq_end, float ratio, float *interpolated_freq_out) {
+    if (ratio < 0.0f || ratio > 1.0f || !interpolated_freq_out) return -1;
+    
+    float inv_r = 1.0f - ratio;
+    // P(t) = (1-t)^2 * P0 + 2*(1-t)*t * P1 + t^2 * P2
+    *interpolated_freq_out = (inv_r * inv_r * freq_start) + (2.0f * inv_r * ratio * freq_mid) + (ratio * ratio * freq_end);
+    return 0;
+}

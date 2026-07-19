@@ -156,6 +156,18 @@ int main(void) {
     assert(tsfi_phoneme_xiang_scale_emphasis("laa", 100, &emp_dur) == 0);
     assert(emp_dur == 150);
 
+    // 24. Test Xiang Cantonese Vowel Length Compensator
+    int comp_dur = 0;
+    assert(tsfi_phoneme_xiang_compensate_vowel("t", 100, &comp_dur) == 0);
+    assert(comp_dur == 75); // stop coda shortens
+    assert(tsfi_phoneme_xiang_compensate_vowel("ng", 100, &comp_dur) == 0);
+    assert(comp_dur == 115); // nasal coda lengthens
+
+    // 25. Test Xiang Quadratic Pitch Contour Interpolator
+    float quad_freq = 0.0f;
+    assert(tsfi_phoneme_xiang_interpolate_pitch_quadratic(100.0f, 150.0f, 200.0f, 0.5f, &quad_freq) == 0);
+    assert(quad_freq == 150.0f); // 0.25*100 + 0.5*150 + 0.25*200
+
     // Cleanup
     tsfi_synth_perf_destroy(perf_engine);
     tsfi_trie_destroy(trie_root);
