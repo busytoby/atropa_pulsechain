@@ -1847,17 +1847,23 @@ int tsfi_cw_omp_galasa_init_run(const char *suite_name, tsfi_cw_omp_galasa_run *
     run_out->assertions_failed = 0;
     run_out->passes = 0;
     run_out->total_latency_ns = 0;
+    run_out->fail_fast = 0;
+    run_out->aborted = 0;
     return 0;
 }
 
 int tsfi_cw_omp_galasa_assert(tsfi_cw_omp_galasa_run *run, int condition) {
     if (!run) return -1;
+    if (run->aborted) return 0;
     
     run->assertions_run++;
     if (condition) {
         run->passes++;
     } else {
         run->assertions_failed++;
+        if (run->fail_fast) {
+            run->aborted = 1;
+        }
     }
     return 0;
 }
@@ -1905,6 +1911,21 @@ int tsfi_cw_omp_feilong_dispatch(const char *cmd_line, tsfi_cw_omp_feilong_guest
         if (mem > 16384) {
             snprintf(err_msg_out, err_max, "WARNING: Memory allocation exceeds 16GB ceiling threshold");
         }
+        return 0;
+    } else if (strncmp(cmd_line, "DEPROVISION ", 12) == 0) {
+        char name[32] = {0};
+        if (sscanf(cmd_line + 12, "%31s", name) != 1) {
+            snprintf(err_msg_out, err_max, "PARSE_ERROR: Invalid deprovision arguments");
+            return 1;
+        }
+        if (strcmp(guest_io_out->guest_name, name) != 0) {
+            snprintf(err_msg_out, err_max, "TARGET_MISMATCH: Guest name does not match memory instance");
+            return 1;
+        }
+        guest_io_out->guest_name[0] = 0;
+        guest_io_out->cpu_count = 0;
+        guest_io_out->memory_mb = 0;
+        strcpy(guest_io_out->lifecycle_state, "DEPROVISIONED");
         return 0;
     }
     

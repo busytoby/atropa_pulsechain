@@ -1259,6 +1259,8 @@ typedef struct {
     int assertions_failed;
     int passes;
     uint64_t total_latency_ns;
+    int fail_fast;
+    int aborted;
 } tsfi_cw_omp_galasa_run;
 
 int tsfi_cw_omp_galasa_init_run(const char *suite_name, tsfi_cw_omp_galasa_run *run_out);

@@ -2267,6 +2267,24 @@ static void test_new_mainframe_features(void) {
     assert(run.total_latency_ns == 0);
     assert(tsfi_cw_omp_galasa_assert_timed(&run, 1, 500) == 0);
     assert(run.total_latency_ns == 500);
+
+    // Feilong de-provisioning command test
+    assert(tsfi_cw_omp_feilong_dispatch("DEPROVISION GUEST01", &guests[0], err_buf, sizeof(err_buf)) == 0);
+    assert(guests[0].guest_name[0] == 0);
+    assert(guests[0].cpu_count == 0);
+    assert(guests[0].memory_mb == 0);
+    assert(strcmp(guests[0].lifecycle_state, "DEPROVISIONED") == 0);
+
+    // Galasa fail-fast test
+    tsfi_cw_omp_galasa_run ff_run;
+    assert(tsfi_cw_omp_galasa_init_run("FailFastSuite", &ff_run) == 0);
+    ff_run.fail_fast = 1;
+    assert(tsfi_cw_omp_galasa_assert(&ff_run, 1) == 0); // Pass
+    assert(ff_run.aborted == 0);
+    assert(tsfi_cw_omp_galasa_assert(&ff_run, 0) == 0); // Fail
+    assert(ff_run.aborted == 1);
+    assert(tsfi_cw_omp_galasa_assert(&ff_run, 1) == 0); // Aborted, should bypass
+    assert(ff_run.assertions_run == 2); // Assertion run count remains 2
 }
 
 int main(void) {
