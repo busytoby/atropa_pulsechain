@@ -54,4 +54,7 @@ int tsfi_vsen_ray_tracer_draw_element(tsfi_cgm_scene *scene, const char *element
 struct TSFiHelmholtzSVDAG;
 int tsfi_vsen_ray_tracer_render_zorse_svdag(struct TSFiHelmholtzSVDAG *dag, const char *element_name, const char *b64_guidance_img, uint32_t *image_out, int width, int height);
 
+// VSEn Voxel-Texture Color Applier
+int tsfi_ray_tracer_apply_voxel_texture(tsfi_cgm_scene *scene, const struct TSFiHelmholtzSVDAG *vox_tree, const uint32_t *pixels, int w, int h);
+
 #endif // TSFI_RAY_TRACER_H

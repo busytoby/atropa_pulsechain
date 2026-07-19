@@ -197,6 +197,24 @@ int main(void) {
     free(zorse_svdag_img);
     tsfi_svdag_destroy(taste_tree);
 
+    // Test Voxel-Texture Color Applier
+    printf("[TEST] Validating Voxel-Texture Color Applier...\n");
+    tsfi_cgm_scene tex_scene;
+    tsfi_cgm_scene_init(&tex_scene);
+    tsfi_rt_vec3 pos = {0, 0, 5};
+    tsfi_rt_vec3 color = {0, 0, 0};
+    tsfi_cgm_scene_add_primitive(&tex_scene, CGM_PRIM_SPHERE, pos, color, 1.0f, (tsfi_rt_vec3){0,0,0});
+    
+    TSFiTasteTree *vox_tree = tsfi_svdag_create(10);
+    assert(vox_tree != NULL);
+    vox_tree->stream_size = 1;
+    vox_tree->index_stream[0] = 0;
+    
+    uint32_t mock_pixels[1] = { 0xFFFF0000 }; // Red pixel
+    assert(tsfi_ray_tracer_apply_voxel_texture(&tex_scene, vox_tree, mock_pixels, 1, 1) == 0);
+    assert(tex_scene.primitives[0].color.x > 0.99f); // Should be red
+    tsfi_svdag_destroy(vox_tree);
+
     free(img_buf);
     printf("[SUCCESS] CGI/CGM Ray Tracer validation completed successfully!\n");
     return 0;

@@ -413,3 +413,22 @@ int tsfi_vsen_ray_tracer_render_zorse_svdag(TSFiHelmholtzSVDAG *dag, const char 
 
     return tsfi_ray_tracer_render(&scene, image_out, width, height);
 }
+
+int tsfi_ray_tracer_apply_voxel_texture(tsfi_cgm_scene *scene, const TSFiHelmholtzSVDAG *vox_tree, const uint32_t *pixels, int w, int h) {
+    if (!scene || !vox_tree || !pixels || w <= 0 || h <= 0) return -1;
+
+    for (size_t i = 0; i < vox_tree->stream_size && i < (size_t)scene->primitive_count; i++) {
+        uint32_t pixel_idx = vox_tree->index_stream[i];
+        if (pixel_idx < (uint32_t)(w * h)) {
+            uint32_t color = pixels[pixel_idx];
+            float r = (float)((color >> 16) & 0xFF) / 255.0f;
+            float g = (float)((color >> 8) & 0xFF) / 255.0f;
+            float b = (float)(color & 0xFF) / 255.0f;
+            
+            scene->primitives[i].color.x = r;
+            scene->primitives[i].color.y = g;
+            scene->primitives[i].color.z = b;
+        }
+    }
+    return 0;
+}
