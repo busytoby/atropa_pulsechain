@@ -294,6 +294,15 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_msgclass("//MYJOB JOB MSGCLASS=A\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 56: COBOL PERFORM Statement Branch Auditor validation
+    const char *perform_inp = "PERFORM VARYING I FROM 1 BY 1 UNTIL I > 10 DISPLAY I END-PERFORM.";
+    assert(tsfi_zorse_validate_cobol_perform(perform_inp, &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 57: JCL TYPRUN Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_typrun("//MYJOB JOB TYPRUN=SCAN\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

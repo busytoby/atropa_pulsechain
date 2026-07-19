@@ -903,3 +903,33 @@ int tsfi_zorse_validate_jcl_msgclass(const char *jcl_line, int *is_valid_out) {
     
     return 0;
 }
+
+int tsfi_zorse_validate_cobol_perform(const char *cobol_src, int *is_valid_out) {
+    if (!cobol_src || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    // Check if statement contains PERFORM
+    if (strstr(cobol_src, "PERFORM")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_jcl_typrun(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    const char *p = strstr(jcl_line, "TYPRUN=");
+    if (!p) return 0;
+    
+    p += 7; // Skip "TYPRUN="
+    
+    if (strncmp(p, "HOLD", 4) == 0 || strncmp(p, "SCAN", 4) == 0 || strncmp(p, "COPY", 4) == 0) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
