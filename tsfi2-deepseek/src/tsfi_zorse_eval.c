@@ -2306,3 +2306,27 @@ int tsfi_zorse_validate_jcl_free_close(const char *jcl_line, int *is_valid_out) 
     
     return 0;
 }
+
+int tsfi_zorse_validate_cobol_copy_of(const char *cobol_src, int *is_valid_out) {
+    if (!cobol_src || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(cobol_src, "COPY ") && strstr(cobol_src, " OF ")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_jcl_accode(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(jcl_line, "ACCODE=")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}

@@ -754,6 +754,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_free_close("//DD28 DD SYSOUT=A,FREE=CLOSE\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 160: COBOL COPY OF Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_copy_of("COPY MEMBER-A OF COPY-LIB.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 161: JCL DD ACCODE Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_accode("//DD29 DD DSN=TAPE.DATA,ACCODE=SECURE1\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
