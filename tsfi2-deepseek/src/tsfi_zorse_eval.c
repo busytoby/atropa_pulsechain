@@ -1890,3 +1890,53 @@ int tsfi_vsen_vaesen_audit_transaction(const char *cics_trans_id, const char *en
     
     return 0;
 }
+
+typedef struct {
+    char entity_name[64];
+    char location[64];
+    int fear_factor;
+} vsen_vaesen_sight_record;
+
+int tsfi_vsen_vaesen_record_sight(const char *entity_name, const char *location, int fear_factor) {
+    if (!entity_name || !location) return -1;
+    
+    vsen_vaesen_sight_record record;
+    memset(&record, 0, sizeof(record));
+    strncpy(record.entity_name, entity_name, sizeof(record.entity_name) - 1);
+    strncpy(record.location, location, sizeof(record.location) - 1);
+    record.fear_factor = fear_factor;
+    
+    // Rule 13: Must only support .dat.bin extension for quadtree, index, database slices
+    FILE *fp = fopen("vaesen_sights.dat.bin", "ab");
+    if (!fp) {
+        fp = fopen("vaesen_sights.dat.bin", "wb");
+    }
+    if (!fp) return -2;
+    
+    size_t written = fwrite(&record, sizeof(record), 1, fp);
+    fclose(fp);
+    
+    return (written == 1) ? 0 : -3;
+}
+
+int tsfi_vsen_vaesen_get_aggregate_fear(const char *location, int *agg_fear_out) {
+    if (!location || !agg_fear_out) return -1;
+    
+    FILE *fp = fopen("vaesen_sights.dat.bin", "rb");
+    if (!fp) {
+        *agg_fear_out = 0;
+        return 0; // Return empty/0 aggregate fear if database doesn't exist yet
+    }
+    
+    vsen_vaesen_sight_record record;
+    int total_fear = 0;
+    while (fread(&record, sizeof(record), 1, fp) == 1) {
+        if (strcmp(record.location, location) == 0) {
+            total_fear += record.fear_factor;
+        }
+    }
+    fclose(fp);
+    
+    *agg_fear_out = total_fear;
+    return 0;
+}

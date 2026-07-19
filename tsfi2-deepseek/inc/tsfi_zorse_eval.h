@@ -353,4 +353,8 @@ int tsfi_vsen_vaesen_register(const char *name, const char *type, int risk_level
 int tsfi_vsen_vaesen_lookup(const char *name, char *type_out, int *risk_level_out, char *status_out, size_t max_len);
 int tsfi_vsen_vaesen_audit_transaction(const char *cics_trans_id, const char *entity_name, int *is_allowed_out);
 
+// VSEn Vaesen Sight Telemetry Tracker
+int tsfi_vsen_vaesen_record_sight(const char *entity_name, const char *location, int fear_factor);
+int tsfi_vsen_vaesen_get_aggregate_fear(const char *location, int *agg_fear_out);
+
 #endif // TSFI_ZORSE_EVAL_H

@@ -613,6 +613,21 @@ int main(void) {
     
     remove("vaesen_registry.dat.bin");
 
+    // Test Case 128: VSEn Vaesen Sight Telemetry Tracker validation
+    remove("vaesen_sights.dat.bin");
+    assert(tsfi_vsen_vaesen_record_sight("Nacken", "Upsala", 8) == 0);
+    assert(tsfi_vsen_vaesen_record_sight("Tomte", "Upsala", 2) == 0);
+    assert(tsfi_vsen_vaesen_record_sight("Vaettar", "Gothia", 4) == 0);
+    
+    int agg_fear = 0;
+    assert(tsfi_vsen_vaesen_get_aggregate_fear("Upsala", &agg_fear) == 0);
+    assert(agg_fear == 10); // 8 + 2
+    
+    assert(tsfi_vsen_vaesen_get_aggregate_fear("Gothia", &agg_fear) == 0);
+    assert(agg_fear == 4);
+    
+    remove("vaesen_sights.dat.bin");
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
