@@ -381,4 +381,10 @@ int tsfi_zorse_validate_cobol_stop_run(const char *cobol_src, int *is_valid_out)
 // Zorse JCL DD DSID Parameter Auditor
 int tsfi_zorse_validate_jcl_dsid(const char *jcl_line, int *is_valid_out);
 
+// Zorse COBOL GOTO DEPENDING ON Statement Auditor
+int tsfi_zorse_validate_cobol_goto_depending(const char *cobol_src, int *is_valid_out);
+
+// Zorse JCL DD DSNAME Parameter Auditor
+int tsfi_zorse_validate_jcl_dsname(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

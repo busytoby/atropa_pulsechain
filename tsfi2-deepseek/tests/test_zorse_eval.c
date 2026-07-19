@@ -660,6 +660,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_dsid("//DD18 DD DSID=SYSIN\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 137: COBOL GOTO DEPENDING ON Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_goto_depending("GO TO PROC-A PROC-B DEPENDING ON FLD-IDX.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 138: JCL DD DSNAME Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_dsname("//DD19 DD DSNAME=MY.DATASET.VAL\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
