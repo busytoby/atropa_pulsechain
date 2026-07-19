@@ -115,6 +115,16 @@ int main(void) {
     assert(tsfi_phoneme_apply_style_phase(1.5f, 0.5f, &aligned_phase) == 0);
     assert(aligned_phase == 2.0f);
 
+    // 16. Test Xiang Cantonese 6-Tone Mapper
+    float cantonese_freq = 0.0f;
+    assert(tsfi_phoneme_xiang_map_cantonese_tone(2, 100.0f, &cantonese_freq) == 0);
+    assert(cantonese_freq == 125.0f); // 100.0 * 1.25 (high rising)
+
+    // 17. Test Xiang Syllable Liaison Detector
+    int liaison_required = 0;
+    assert(tsfi_phoneme_xiang_detect_liaison("ni", "ao", &liaison_required) == 0);
+    assert(liaison_required == 1);
+
     // Cleanup
     tsfi_synth_perf_destroy(perf_engine);
     tsfi_trie_destroy(trie_root);

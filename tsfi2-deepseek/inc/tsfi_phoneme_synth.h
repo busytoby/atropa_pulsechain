@@ -57,4 +57,10 @@ int tsfi_phoneme_apply_emotion(float base_freq, float base_amp, const char *emot
 // Sun Style Phase Aligner
 int tsfi_phoneme_apply_style_phase(float base_phase, float style_shift, float *aligned_phase_out);
 
+// Xiang Cantonese 6-Tone Mapper
+int tsfi_phoneme_xiang_map_cantonese_tone(int tone_number, float base_freq, float *tone_freq_out);
+
+// Xiang Syllable Liaison Detector
+int tsfi_phoneme_xiang_detect_liaison(const char *curr_syllable, const char *next_syllable, int *liaison_needed_out);
+
 #endif // TSFI_PHONEME_SYNTH_H

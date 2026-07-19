@@ -315,3 +315,40 @@ int tsfi_phoneme_apply_style_phase(float base_phase, float style_shift, float *a
     *aligned_phase_out = base_phase + style_shift;
     return 0;
 }
+
+int tsfi_phoneme_xiang_map_cantonese_tone(int tone_number, float base_freq, float *tone_freq_out) {
+    if (tone_number < 1 || tone_number > 6 || !tone_freq_out) return -1;
+    
+    switch (tone_number) {
+        case 1: *tone_freq_out = base_freq * 1.40f; break; // high flat
+        case 2: *tone_freq_out = base_freq * 1.25f; break; // high rising
+        case 3: *tone_freq_out = base_freq * 1.10f; break; // mid flat
+        case 4: *tone_freq_out = base_freq * 0.80f; break; // low falling
+        case 5: *tone_freq_out = base_freq * 0.90f; break; // low rising
+        case 6: *tone_freq_out = base_freq * 0.95f; break; // low flat
+        default: *tone_freq_out = base_freq; break;
+    }
+    return 0;
+}
+
+int tsfi_phoneme_xiang_detect_liaison(const char *curr_syllable, const char *next_syllable, int *liaison_needed_out) {
+    if (!curr_syllable || !next_syllable || !liaison_needed_out) return -1;
+    
+    *liaison_needed_out = 0;
+    
+    int curr_len = (int)strlen(curr_syllable);
+    if (curr_len > 0) {
+        char last_char = curr_syllable[curr_len - 1];
+        char first_char = next_syllable[0];
+        
+        // Vowel to vowel boundary crossing implies liaison transition is active
+        int last_vowel = (last_char == 'a' || last_char == 'e' || last_char == 'i' || last_char == 'o' || last_char == 'u');
+        int first_vowel = (first_char == 'a' || first_char == 'e' || first_char == 'i' || first_char == 'o' || first_char == 'u');
+        
+        if (last_vowel && first_vowel) {
+            *liaison_needed_out = 1;
+        }
+    }
+    
+    return 0;
+}
