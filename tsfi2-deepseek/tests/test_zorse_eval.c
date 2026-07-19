@@ -904,6 +904,14 @@ int main(void) {
     assert(tsfi_zorse_validate_cobol_merge_key("MERGE OUT-FILE ON ASCENDING KEY OUT-KEY.", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 185: z/VSE POWER Spool Punch Class Validator validation
+    assert(tsfi_zorse_validate_vse_power_punclass("* $$ PUN PUNCLASS=B,DISP=K\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 186: COBOL Report Writer Auditor validation
+    assert(tsfi_zorse_validate_cobol_generate("GENERATE SALES-REPORT.", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

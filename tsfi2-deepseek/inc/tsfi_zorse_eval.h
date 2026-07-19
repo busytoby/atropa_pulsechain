@@ -513,4 +513,10 @@ int tsfi_zorse_validate_vse_power_prtclass(const char *jcl_line, int *is_valid_o
 // COBOL File Merge Auditor
 int tsfi_zorse_validate_cobol_merge_key(const char *cobol_src, int *is_valid_out);
 
+// z/VSE POWER Spool Punch Class Validator
+int tsfi_zorse_validate_vse_power_punclass(const char *jcl_line, int *is_valid_out);
+
+// COBOL Report Writer Auditor
+int tsfi_zorse_validate_cobol_generate(const char *cobol_src, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H
