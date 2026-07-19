@@ -525,4 +525,10 @@ int tsfi_zorse_validate_vse_power_hold(const char *jcl_line, int *is_valid_out);
 // COBOL Report Writer Initiation Auditor
 int tsfi_zorse_validate_cobol_initiate(const char *cobol_src, int *is_valid_out);
 
+// z/VSE POWER Spool Queue Disposition Validator
+int tsfi_zorse_validate_vse_power_disp(const char *jcl_line, int *is_valid_out);
+
+// COBOL Report Writer Termination Auditor
+int tsfi_zorse_validate_cobol_terminate(const char *cobol_src, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

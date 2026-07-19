@@ -920,6 +920,14 @@ int main(void) {
     assert(tsfi_zorse_validate_cobol_initiate("INITIATE SALES-REPORT.", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 189: z/VSE POWER Spool Queue Disposition Validator validation
+    assert(tsfi_zorse_validate_vse_power_disp("* $$ LST DISP=D,CLASS=A\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 190: COBOL Report Writer Termination Auditor validation
+    assert(tsfi_zorse_validate_cobol_terminate("TERMINATE SALES-REPORT.", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
