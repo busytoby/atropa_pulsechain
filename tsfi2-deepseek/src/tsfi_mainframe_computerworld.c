@@ -2342,6 +2342,25 @@ int tsfi_cw_kendrick_log_event(int line_id, const char *status, tsfi_cw_kendrick
     return 1; // Log capacity reached
 }
 
+int tsfi_cw_keating_write_core(int x, int y, int state, tsfi_cw_keating_core *cores, int core_count) {
+    if (!cores || core_count < 0) return -1;
+    
+    for (int i = 0; i < core_count; i++) {
+        if (cores[i].x_coord == x && cores[i].y_coord == y) {
+            cores[i].state = state;
+            return 0; // successfully updated core state
+        }
+    }
+    return 1; // core coordinate not mapped
+}
+
+int tsfi_cw_keating_synthesize_freq(double base_freq, int scale_factor, double *freq_out) {
+    if (base_freq <= 0.0 || scale_factor <= 0 || !freq_out) return -1;
+    
+    *freq_out = base_freq * scale_factor;
+    return 0;
+}
+
 
 
 

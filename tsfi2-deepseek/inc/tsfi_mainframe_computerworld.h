@@ -1372,5 +1372,17 @@ typedef struct {
 
 int tsfi_cw_kendrick_log_event(int line_id, const char *status, tsfi_cw_kendrick_log_entry *log_out, int max_entries, int *current_count_io);
 
+// Keating Magnetic Core Memory
+typedef struct {
+    int x_coord;
+    int y_coord;
+    int state;
+} tsfi_cw_keating_core;
+
+int tsfi_cw_keating_write_core(int x, int y, int state, tsfi_cw_keating_core *cores, int core_count);
+
+// Keating Frequency Synthesizer
+int tsfi_cw_keating_synthesize_freq(double base_freq, int scale_factor, double *freq_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

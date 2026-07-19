@@ -2424,6 +2424,16 @@ static void test_new_mainframe_features(void) {
     assert(count == 1);
     assert(k_logs[0].line_id == 5);
     assert(strcmp(k_logs[0].status, "BUSY") == 0);
+
+    // Keating Core selector test
+    tsfi_cw_keating_core cores[1] = { { 4, 8, 0 } };
+    assert(tsfi_cw_keating_write_core(4, 8, 1, cores, 1) == 0);
+    assert(cores[0].state == 1);
+
+    // Keating Frequency Synthesizer test
+    double freq = 0.0;
+    assert(tsfi_cw_keating_synthesize_freq(100.0, 5, &freq) == 0);
+    assert(freq == 500.0);
 }
 
 int main(void) {
