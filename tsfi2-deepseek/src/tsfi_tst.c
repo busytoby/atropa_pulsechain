@@ -118,6 +118,8 @@ tsfi_tst_node* tsfi_tst_init_rpc_router(void) {
     root = tsfi_tst_insert(root, "cics.audit_micr", "74");
     root = tsfi_tst_insert(root, "cics.audit_atm_transaction", "75");
     root = tsfi_tst_insert(root, "cics.issue_atm_card", "76");
+    root = tsfi_tst_insert(root, "cics.omp_feilong_command", "77");
+    root = tsfi_tst_insert(root, "cics.omp_galasa_run_suite", "78");
 
     return root;
 }

@@ -1109,6 +1109,51 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
         snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"success\": %d}, \"id\": %d}\n", success, id);
         return 1;
     }
+    if (method_type == 77) {
+        char cmd_line[128] = {0};
+        extract_json_string(min_ptr, "\"cmd_line\"", cmd_line, sizeof(cmd_line));
+        
+        static tsfi_cw_omp_feilong_guest mcp_feilong_guest;
+        char err_msg[128] = {0};
+        extern int tsfi_cw_omp_feilong_dispatch(const char *cmd_line, tsfi_cw_omp_feilong_guest *guest_io_out, char *err_msg_out, size_t err_max);
+        int rc = tsfi_cw_omp_feilong_dispatch(cmd_line, &mcp_feilong_guest, err_msg, sizeof(err_msg));
+        
+        snprintf(output_buf, out_max,
+                 "{\"jsonrpc\": \"2.0\", \"result\": {"
+                 "\"rc\": %d, \"guest_name\": \"%s\", \"cpu_count\": %d, \"memory_mb\": %d, \"lifecycle_state\": \"%s\", \"error\": \"%s\""
+                 "}, \"id\": %d}\n",
+                 rc, mcp_feilong_guest.guest_name, mcp_feilong_guest.cpu_count, mcp_feilong_guest.memory_mb, mcp_feilong_guest.lifecycle_state, err_msg, id);
+        return 1;
+    }
+    if (method_type == 78) {
+        char suite_name[64] = {0};
+        extract_json_string(min_ptr, "\"suite_name\"", suite_name, sizeof(suite_name));
+        
+        tsfi_cw_omp_galasa_run run;
+        extern int tsfi_cw_omp_galasa_init_run(const char *suite_name, tsfi_cw_omp_galasa_run *run_out);
+        extern int tsfi_cw_omp_galasa_assert(tsfi_cw_omp_galasa_run *run, int condition);
+        extern int tsfi_cw_omp_galasa_assert_timed(tsfi_cw_omp_galasa_run *run, int condition, uint64_t latency_ns);
+        extern int tsfi_cw_omp_galasa_run_diagnostics(const tsfi_cw_omp_galasa_run *run, char *report_out, size_t report_max);
+        
+        tsfi_cw_omp_galasa_init_run(suite_name, &run);
+        tsfi_cw_omp_galasa_assert_timed(&run, 1, 120); // 1st passes
+        tsfi_cw_omp_galasa_assert_timed(&run, 0, 150); // 2nd fails
+        
+        char report[256] = {0};
+        tsfi_cw_omp_galasa_run_diagnostics(&run, report, sizeof(report));
+        
+        // Escape newlines for valid JSON
+        for (int i = 0; report[i] != 0; i++) {
+            if (report[i] == '\n') report[i] = ' ';
+        }
+        
+        snprintf(output_buf, out_max,
+                 "{\"jsonrpc\": \"2.0\", \"result\": {"
+                 "\"suite_name\": \"%s\", \"assertions_run\": %d, \"passes\": %d, \"failures\": %d, \"total_latency_ns\": %lu, \"diagnostics\": \"%s\""
+                 "}, \"id\": %d}\n",
+                 run.test_suite_name, run.assertions_run, run.passes, run.assertions_failed, (unsigned long)run.total_latency_ns, report, id);
+        return 1;
+    }
     snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"Method not found\", \"id\": %d}\n", id);
     return 1;
 }

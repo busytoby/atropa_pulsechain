@@ -548,6 +548,42 @@
                 </div>
             </div>
 
+            <!-- OMP Feilong z/VM Guest CLI -->
+            <div class="card">
+                <div class="card-title">
+                    <span>OMP Feilong VM Controller</span>
+                    <span class="card-accent-tag">cics.omp_feilong_command</span>
+                </div>
+                <div class="input-group" style="margin-bottom: 1rem;">
+                    <label for="feilongCmd">z/VM Provision/Scale/Deprovision Command</label>
+                    <input type="text" id="feilongCmd" value="PROVISION GUEST01 4 8192">
+                </div>
+                <button class="btn" onclick="executeFeilongCommand()">Execute z/VM Command</button>
+                <div style="margin-top: 1.2rem; display: grid; grid-template-columns: 1fr; gap: 1rem;">
+                    <div class="metric-badge" style="border-color: rgba(0, 242, 254, 0.2); font-family:'JetBrains Mono', monospace; font-size:0.8rem; text-align:left; white-space:pre-wrap;" id="feilongOutput">
+                        No command executed.
+                    </div>
+                </div>
+            </div>
+
+            <!-- OMP Galasa Test Runner -->
+            <div class="card">
+                <div class="card-title">
+                    <span>OMP Galasa Test Suite Runner</span>
+                    <span class="card-accent-tag">cics.omp_galasa_run_suite</span>
+                </div>
+                <div class="input-group" style="margin-bottom: 1rem;">
+                    <label for="galasaSuiteName">Galasa Test Suite Name</label>
+                    <input type="text" id="galasaSuiteName" value="MainframeIntegrationSuite">
+                </div>
+                <button class="btn" onclick="runGalasaSuite()">Run Automated Test Suite</button>
+                <div style="margin-top: 1.2rem; display: grid; grid-template-columns: 1fr; gap: 1rem;">
+                    <div class="metric-badge" style="border-color: rgba(56, 239, 125, 0.2); font-family:'JetBrains Mono', monospace; font-size:0.8rem; text-align:left; white-space:pre-wrap;" id="galasaOutput">
+                        Waiting for run...
+                    </div>
+                </div>
+            </div>
+
             <!-- Ballistic Data Injector Card -->
             <div class="card">
                 <div class="card-title">
@@ -857,6 +893,47 @@
                     }
                 }
             } catch (e) {}
+        }
+
+        async function executeFeilongCommand() {
+            try {
+                const res = await sendRpc("cics.omp_feilong_command", {
+                    cmd_line: document.getElementById("feilongCmd").value
+                });
+
+                if (res && res.result) {
+                    const r = res.result;
+                    const warnText = r.error ? `\nWarning/Error: ${r.error}` : "";
+                    document.getElementById("feilongOutput").textContent = 
+                        `Guest Name : ${r.guest_name}\n` +
+                        `vCPUs      : ${r.cpu_count}\n` +
+                        `Memory MB  : ${r.memory_mb}\n` +
+                        `State      : ${r.lifecycle_state}${warnText}`;
+                }
+            } catch (e) {
+                document.getElementById("feilongOutput").textContent = "COMMUNICATION FAILURE";
+            }
+        }
+
+        async function runGalasaSuite() {
+            try {
+                const res = await sendRpc("cics.omp_galasa_run_suite", {
+                    suite_name: document.getElementById("galasaSuiteName").value
+                });
+
+                if (res && res.result) {
+                    const r = res.result;
+                    document.getElementById("galasaOutput").textContent = 
+                        `Suite Name : ${r.suite_name}\n` +
+                        `Asserts Run: ${r.assertions_run}\n` +
+                        `Passes      : ${r.passes}\n` +
+                        `Failures    : ${r.failures}\n` +
+                        `Latency     : ${r.total_latency_ns} ns\n` +
+                        `Diagnostics : ${r.diagnostics}`;
+                }
+            } catch (e) {
+                document.getElementById("galasaOutput").textContent = "COMMUNICATION FAILURE";
+            }
         }
 
         // Interactive Capture Pad Logic
