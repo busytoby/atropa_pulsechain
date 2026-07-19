@@ -627,4 +627,10 @@ int tsfi_zorse_validate_vse_power_pri_override(const char *jcl_line, int *is_val
 // COBOL Report Writer Report Heading Spacing Auditor
 int tsfi_zorse_validate_cobol_rh_spacing(const char *cobol_src, int *is_valid_out);
 
+// z/VSE POWER Spool Print Retention Validator
+int tsfi_zorse_validate_vse_power_keep(const char *jcl_line, int *is_valid_out);
+
+// COBOL Report Writer Final Summary Group Auditor
+int tsfi_zorse_validate_cobol_final_summary(const char *cobol_src, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

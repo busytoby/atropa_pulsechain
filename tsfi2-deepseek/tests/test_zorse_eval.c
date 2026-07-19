@@ -1056,6 +1056,14 @@ int main(void) {
     assert(tsfi_zorse_validate_cobol_rh_spacing("01 RH-LINE REPORT HEADING LINE PLUS 3.", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 223: z/VSE POWER Spool Print Retention Validator validation
+    assert(tsfi_zorse_validate_vse_power_keep("* $$ LST KEEP=YES,DISP=H\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 224: COBOL Report Writer Final Summary Group Auditor validation
+    assert(tsfi_zorse_validate_cobol_final_summary("01 SUMMARY-LINE CONTROL FOOTING FINAL.", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

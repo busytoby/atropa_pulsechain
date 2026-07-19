@@ -3018,3 +3018,27 @@ int tsfi_zorse_validate_cobol_rh_spacing(const char *cobol_src, int *is_valid_ou
     
     return 0;
 }
+
+int tsfi_zorse_validate_vse_power_keep(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(jcl_line, "* $$") && strstr(jcl_line, "KEEP=")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_cobol_final_summary(const char *cobol_src, int *is_valid_out) {
+    if (!cobol_src || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(cobol_src, "CONTROL FOOTING") && strstr(cobol_src, "FINAL")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
