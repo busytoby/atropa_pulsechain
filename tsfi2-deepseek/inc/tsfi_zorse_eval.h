@@ -444,4 +444,10 @@ int tsfi_zorse_validate_cobol_inspect_tallying(const char *cobol_src, int *is_va
 // Zorse JCL DD SUBSYS Parameter Auditor
 int tsfi_zorse_validate_jcl_subsys(const char *jcl_line, int *is_valid_out);
 
+// Zorse COBOL INSPECT TALLYING REPLACING Statement Auditor
+int tsfi_zorse_validate_cobol_inspect_tally_repl(const char *cobol_src, int *is_valid_out);
+
+// Zorse JCL DD FREE=CLOSE Parameter Auditor
+int tsfi_zorse_validate_jcl_free_close(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

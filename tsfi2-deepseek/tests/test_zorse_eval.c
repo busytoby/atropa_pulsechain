@@ -746,6 +746,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_subsys("//DD27 DD SUBSYS=(LAM,PARM1)\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 158: COBOL INSPECT TALLYING REPLACING Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_inspect_tally_repl("INSPECT STR-A TALLYING CHAR-CNT REPLACING ALL 'A' BY 'B'.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 159: JCL DD FREE=CLOSE Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_free_close("//DD28 DD SYSOUT=A,FREE=CLOSE\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
