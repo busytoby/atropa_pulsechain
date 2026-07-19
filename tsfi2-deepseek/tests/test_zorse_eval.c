@@ -864,6 +864,14 @@ int main(void) {
     // Cleanup the generated catalog file
     remove("ZMM.STATE.G0005V00.dat.bin");
 
+    // Test Case 175: z/VSE CICS RDO Compliance Auditor validation
+    assert(tsfi_zorse_validate_vse_cics_rdo("DEFINE CONNECTION(C01) NETNAME(N01) ACCESSMETHOD(VTAM)", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 176: COBOL Dynamic Call Auditor validation
+    assert(tsfi_zorse_validate_cobol_dyn_call("CALL PROGRAM-ID-VAR USING PARM-1.", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

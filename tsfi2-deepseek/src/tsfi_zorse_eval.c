@@ -2437,3 +2437,32 @@ int tsfi_zorse_resolve_gdg_relative_to_absolute(const char *gdg_base, int relati
     snprintf(absolute_out, max_len, "%s.G%04dV00", gdg_base, target_gen);
     return 0;
 }
+
+int tsfi_zorse_validate_vse_cics_rdo(const char *rdo_script, int *is_valid_out) {
+    if (!rdo_script || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(rdo_script, "DEFINE CONNECTION") || strstr(rdo_script, "DEFINE SESSIONS")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_cobol_dyn_call(const char *cobol_src, int *is_valid_out) {
+    if (!cobol_src || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    const char *call_ptr = strstr(cobol_src, "CALL ");
+    if (call_ptr) {
+        call_ptr += 5;
+        while (*call_ptr == ' ' || *call_ptr == '\t') call_ptr++;
+        if (*call_ptr != '"' && *call_ptr != '\'') {
+            *is_valid_out = 1;
+        }
+    }
+    
+    return 0;
+}
