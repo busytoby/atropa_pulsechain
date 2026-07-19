@@ -992,6 +992,14 @@ int main(void) {
     assert(tsfi_zorse_validate_cobol_report_heading("01 TYPE IS REPORT HEADING.", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 207: z/VSE POWER Spool Print Node Destination Validator validation
+    assert(tsfi_zorse_validate_vse_power_node("* $$ LST NODE=NODE1,DISP=H\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 208: COBOL Report Writer Report Footing Auditor validation
+    assert(tsfi_zorse_validate_cobol_report_footing("01 TYPE IS REPORT FOOTING.", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
