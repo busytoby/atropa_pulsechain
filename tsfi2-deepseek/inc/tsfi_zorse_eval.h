@@ -105,4 +105,10 @@ int tsfi_zorse_validate_cobol_file_status(const char *cobol_src, int *is_valid_o
 // Zorse JCL SYSOUT Class Auditor
 int tsfi_zorse_validate_jcl_sysout(const char *jcl_line, int *is_valid_out);
 
+// Zorse HLASM Register Usage Tracker
+int tsfi_zorse_validate_hlasm_register(const char *hlasm_line, int *is_valid_out);
+
+// Zorse JCL STEP Name Validator
+int tsfi_zorse_validate_jcl_stepname(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

@@ -243,6 +243,16 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_sysout(sysout_line, &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 46: HLASM Register Usage Tracker validation
+    const char *register_line = "         USING MYBASE,R12\n";
+    assert(tsfi_zorse_validate_hlasm_register(register_line, &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 47: JCL STEP Name Validator validation
+    const char *step_line = "//MYSTEP1 EXEC PGM=IEFBR14\n";
+    assert(tsfi_zorse_validate_jcl_stepname(step_line, &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

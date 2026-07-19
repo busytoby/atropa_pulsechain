@@ -688,3 +688,56 @@ int tsfi_zorse_validate_jcl_sysout(const char *jcl_line, int *is_valid_out) {
     
     return 0;
 }
+
+int tsfi_zorse_validate_hlasm_register(const char *hlasm_line, int *is_valid_out) {
+    if (!hlasm_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    // Check for USING or DROP statements
+    const char *p = strstr(hlasm_line, " USING ");
+    if (!p) p = strstr(hlasm_line, " DROP ");
+    if (!p) return 0;
+    
+    // Find the register (skip space and directive)
+    p = strchr(p + 1, ' ');
+    if (!p) return 0;
+    while (*p == ' ' || *p == '\t') p++;
+    
+    // Accept standard register formats like R0..R15 or numeric 0..15
+    if (*p == 'R' || *p == 'r') p++;
+    int reg = atoi(p);
+    if (reg >= 0 && reg <= 15) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_jcl_stepname(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    // Check if statement contains JCL step name indicator (e.g. starts with //)
+    if (strncmp(jcl_line, "//", 2) != 0) return 0;
+    
+    const char *p = jcl_line + 2;
+    
+    // Verify name length is between 1 and 8 characters and entirely alphanumeric
+    int name_len = 0;
+    while (*p != '\0' && *p != ' ' && *p != '\n' && *p != '\t') {
+        char c = *p;
+        if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9'))) {
+            return 0;
+        }
+        name_len++;
+        p++;
+    }
+    
+    if (name_len >= 1 && name_len <= 8) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
