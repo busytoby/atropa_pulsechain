@@ -636,6 +636,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_symlist("//DD16 DD SYSOUT=*,SYMLIST=(VAR1)\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 131: COBOL INSPECT REPLACING Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_inspect_repl("INSPECT STR-IN REPLACING ALL 'A' BY 'B'.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 132: JCL DLURVTAM Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_dlurvtam("//DLUR01 DD DSN=SYS1.VTAMLST,DLURVTAM=YES\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

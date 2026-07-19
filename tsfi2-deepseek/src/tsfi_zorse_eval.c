@@ -1964,3 +1964,27 @@ int tsfi_zorse_validate_jcl_symlist(const char *jcl_line, int *is_valid_out) {
     
     return 0;
 }
+
+int tsfi_zorse_validate_cobol_inspect_repl(const char *cobol_src, int *is_valid_out) {
+    if (!cobol_src || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(cobol_src, "INSPECT ") && strstr(cobol_src, "REPLACING")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_jcl_dlurvtam(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(jcl_line, "DLURVTAM") || strstr(jcl_line, "DLUR")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
