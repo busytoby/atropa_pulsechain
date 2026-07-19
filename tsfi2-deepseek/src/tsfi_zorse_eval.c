@@ -1709,3 +1709,27 @@ int tsfi_zorse_validate_vse_dli_call(const char *cobol_src, int *is_valid_out) {
     
     return 0;
 }
+
+int tsfi_zorse_validate_vse_power_spool(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(jcl_line, "* $$ ") && (strstr(jcl_line, "LST") || strstr(jcl_line, "PUN") || strstr(jcl_line, "JOB"))) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_vse_vsam_rls(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(jcl_line, "RLS=") || strstr(jcl_line, "RLS(DB)")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}

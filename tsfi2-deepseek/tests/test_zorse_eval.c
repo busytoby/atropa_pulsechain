@@ -562,6 +562,14 @@ int main(void) {
     assert(tsfi_zorse_validate_vse_dli_call("CALL 'CBLTDLI' USING GU-FUNC PCB-NAME.", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 120: z/VSE POWER Spooling Parameter Auditor validation
+    assert(tsfi_zorse_validate_vse_power_spool("* $$ LST CLASS=A,DISP=D\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 121: z/VSE VSAM Record-Level Sharing (RLS) Lock Auditor validation
+    assert(tsfi_zorse_validate_vse_vsam_rls("//DD15 DD DSN=A.B.C,RLS=NRI\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

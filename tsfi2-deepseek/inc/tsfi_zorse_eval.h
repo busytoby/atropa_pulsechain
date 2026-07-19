@@ -327,4 +327,10 @@ int tsfi_zorse_validate_vse_cics_dfhresp(const char *cobol_src, int *is_valid_ou
 // z/VSE DL/I CBLTDLI Call Auditor
 int tsfi_zorse_validate_vse_dli_call(const char *cobol_src, int *is_valid_out);
 
+// z/VSE POWER Spooling Parameter Auditor
+int tsfi_zorse_validate_vse_power_spool(const char *jcl_line, int *is_valid_out);
+
+// z/VSE VSAM Record-Level Sharing (RLS) Lock Auditor
+int tsfi_zorse_validate_vse_vsam_rls(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H
