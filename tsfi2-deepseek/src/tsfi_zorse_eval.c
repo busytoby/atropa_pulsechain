@@ -1191,3 +1191,23 @@ int tsfi_zorse_validate_jcl_dsorg(const char *jcl_line, int *is_valid_out) {
     
     return 0;
 }
+
+int tsfi_zorse_audit_icon_balance(const char *b64_render_img, const char *model_name, char *analysis_out, size_t max_len) {
+    if (!b64_render_img || !model_name || !analysis_out || max_len == 0) return -1;
+    
+    analysis_out[0] = '\0';
+    
+    const char *prompt = "Verify the optical center of gravity, visual balance, and padding margins of this rendered icon.";
+    
+    return tsfi_ai_evaluate_vlm(b64_render_img, prompt, analysis_out, max_len);
+}
+
+int tsfi_zorse_audit_icon_palette(const char *b64_render_img, const char *model_name, char *analysis_out, size_t max_len) {
+    if (!b64_render_img || !model_name || !analysis_out || max_len == 0) return -1;
+    
+    analysis_out[0] = '\0';
+    
+    const char *prompt = "Inspect the color values and lighting shadows in this icon render to confirm compliance with brand palette specifications.";
+    
+    return tsfi_ai_evaluate_vlm(b64_render_img, prompt, analysis_out, max_len);
+}

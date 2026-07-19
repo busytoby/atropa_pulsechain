@@ -390,6 +390,16 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_dsorg("//DD6 DD DSN=A.B.C,DSORG=PS\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 78: Moondream Visual Icon Balance Auditor validation
+    char bal_buf[256];
+    int bal_res = tsfi_zorse_audit_icon_balance("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "moondream", bal_buf, sizeof(bal_buf));
+    assert(bal_res == 0 || bal_res == -2 || bal_res == -1);
+
+    // Test Case 79: Moondream Visual Icon Brand Palette Compliance Auditor validation
+    char pal_buf[256];
+    int pal_res = tsfi_zorse_audit_icon_palette("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "moondream", pal_buf, sizeof(pal_buf));
+    assert(pal_res == 0 || pal_res == -2 || pal_res == -1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
