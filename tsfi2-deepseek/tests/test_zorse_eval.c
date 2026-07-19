@@ -191,6 +191,17 @@ int main(void) {
     assert(is_stream_valid == 1);
     assert(strstr(report_buf, "APPROVED") != NULL);
 
+    // Test Case 36: COBOL-to-C Struct Transpiler validation
+    char c_struct_buf[512];
+    int c_trans_res = tsfi_zorse_transpile_cobol_to_c("01 MY-VAR PIC X(10).", "moondream", c_struct_buf, sizeof(c_struct_buf));
+    assert(c_trans_res == 0 || c_trans_res == -2);
+
+    // Test Case 37: SNA Session Protocol Auditor validation
+    int is_sna_valid = 0;
+    int sna_res = tsfi_zorse_audit_sna_session("31010303", &is_sna_valid);
+    assert(sna_res == 0);
+    assert(is_sna_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

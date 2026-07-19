@@ -75,4 +75,10 @@ int tsfi_zorse_audit_thermal_graph(const char *b64_thermal_img, const char *mode
 // Zorse Mainframe Job Stream Orchestrator
 int tsfi_zorse_audit_job_stream(const char *jcl_source, const char *cobol_source, const char *model_name, int *is_valid_out, char *report_out, size_t max_report_len);
 
+// Zorse LLM COBOL-to-C Struct Transpiler
+int tsfi_zorse_transpile_cobol_to_c(const char *cobol_data_div, const char *model_name, char *c_struct_out, size_t max_len);
+
+// Zorse SNA Session Protocol Auditor
+int tsfi_zorse_audit_sna_session(const char *sna_bind_hex, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

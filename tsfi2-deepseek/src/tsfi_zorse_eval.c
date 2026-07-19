@@ -513,3 +513,35 @@ int tsfi_zorse_audit_job_stream(const char *jcl_source, const char *cobol_source
              
     return 0;
 }
+
+int tsfi_zorse_transpile_cobol_to_c(const char *cobol_data_div, const char *model_name, char *c_struct_out, size_t max_len) {
+    if (!cobol_data_div || !model_name || !c_struct_out || max_len == 0) return -1;
+    
+    c_struct_out[0] = '\0';
+    
+    size_t c_len = strlen(cobol_data_div);
+    char *prompt = (char *)malloc(c_len + 128);
+    if (!prompt) return -1;
+    
+    snprintf(prompt, c_len + 128, 
+             "Translate this COBOL DATA DIVISION variable layout into a binary-equivalent C struct. Preserve exact byte offsets: %s", 
+             cobol_data_div);
+             
+    int ret = tsfi_zorse_query_llm(prompt, model_name, c_struct_out, max_len);
+    free(prompt);
+    
+    return ret;
+}
+
+int tsfi_zorse_audit_sna_session(const char *sna_bind_hex, int *is_valid_out) {
+    if (!sna_bind_hex || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    // Check for standard SNA session request unit prefixes like "31" or "01" (bind sequence hex boundaries)
+    if (strncmp(sna_bind_hex, "31", 2) == 0 || strncmp(sna_bind_hex, "01", 2) == 0) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
