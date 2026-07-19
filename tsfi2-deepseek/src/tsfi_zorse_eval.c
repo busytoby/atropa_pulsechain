@@ -933,3 +933,33 @@ int tsfi_zorse_validate_jcl_typrun(const char *jcl_line, int *is_valid_out) {
     
     return 0;
 }
+
+int tsfi_zorse_validate_cobol_search(const char *cobol_src, int *is_valid_out) {
+    if (!cobol_src || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    // Check for matching SEARCH and END-SEARCH blocks
+    if (strstr(cobol_src, "SEARCH ") && strstr(cobol_src, "END-SEARCH")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_jcl_addrspc(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    const char *p = strstr(jcl_line, "ADDRSPC=");
+    if (!p) return 0;
+    
+    p += 8; // Skip "ADDRSPC="
+    
+    if (strncmp(p, "VIRT", 4) == 0 || strncmp(p, "REAL", 4) == 0) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}

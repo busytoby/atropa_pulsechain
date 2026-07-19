@@ -303,6 +303,15 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_typrun("//MYJOB JOB TYPRUN=SCAN\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 58: COBOL SEARCH Table Branch Auditor validation
+    const char *search_inp = "SEARCH MY-TABLE AT END DISPLAY 'NOT FOUND' WHEN MY-KEY = 10 DISPLAY 'FOUND' END-SEARCH.";
+    assert(tsfi_zorse_validate_cobol_search(search_inp, &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 59: JCL ADDRSPC Storage Mode Auditor validation
+    assert(tsfi_zorse_validate_jcl_addrspc("//STEP1 EXEC PGM=IEFBR14,ADDRSPC=VIRT\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

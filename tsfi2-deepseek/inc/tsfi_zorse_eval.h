@@ -141,4 +141,10 @@ int tsfi_zorse_validate_cobol_perform(const char *cobol_src, int *is_valid_out);
 // Zorse JCL TYPRUN Parameter Auditor
 int tsfi_zorse_validate_jcl_typrun(const char *jcl_line, int *is_valid_out);
 
+// Zorse COBOL SEARCH Statement Branch Auditor
+int tsfi_zorse_validate_cobol_search(const char *cobol_src, int *is_valid_out);
+
+// Zorse JCL ADDRSPC Storage Mode Auditor
+int tsfi_zorse_validate_jcl_addrspc(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H
