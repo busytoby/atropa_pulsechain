@@ -2601,6 +2601,34 @@ int tsfi_cw_hainaut_degrade_key(const tsfi_cw_hainaut_table *source_table, tsfi_
     return 0;
 }
 
+int tsfi_cw_hainaut_promote_multivalued(const tsfi_cw_hainaut_table *source_table, const char *multivalued_attr, tsfi_cw_hainaut_table *new_table_out) {
+    if (!source_table || !multivalued_attr || !new_table_out) return -1;
+    
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wformat-truncation"
+    snprintf(new_table_out->table_name, sizeof(new_table_out->table_name), "%s_%s_1NF", source_table->table_name, multivalued_attr);
+    snprintf(new_table_out->primary_key, sizeof(new_table_out->primary_key), "PK_%s", multivalued_attr);
+    #pragma GCC diagnostic pop
+    
+    strcpy(new_table_out->foreign_key, source_table->primary_key);
+    strcpy(new_table_out->references_table, source_table->table_name);
+    return 0;
+}
+
+int tsfi_cw_hainaut_map_dependencies(const tsfi_cw_hainaut_table *table, const tsfi_cw_hainaut_fd *fds, int fd_count, int *violation_detected_out) {
+    if (!table || !fds || fd_count <= 0 || !violation_detected_out) return -1;
+    
+    *violation_detected_out = 0;
+    for (int i = 0; i < fd_count; i++) {
+        // If determinant is not primary key, it violates BCNF/3NF
+        if (strcmp(fds[i].determinant, table->primary_key) != 0) {
+            *violation_detected_out = 1;
+            return 0;
+        }
+    }
+    return 0;
+}
+
 
 
 

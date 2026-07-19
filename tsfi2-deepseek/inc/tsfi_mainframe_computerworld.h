@@ -1435,5 +1435,16 @@ int tsfi_cw_hainaut_transform_generalization(const tsfi_cw_hainaut_table *super_
 // Hainaut Key-to-Attribute Degrader
 int tsfi_cw_hainaut_degrade_key(const tsfi_cw_hainaut_table *source_table, tsfi_cw_hainaut_table *degraded_table_out);
 
+// Hainaut Multivalued Attribute Promoter
+int tsfi_cw_hainaut_promote_multivalued(const tsfi_cw_hainaut_table *source_table, const char *multivalued_attr, tsfi_cw_hainaut_table *new_table_out);
+
+// Hainaut Functional Dependency Mapper
+typedef struct {
+    char determinant[32];
+    char dependent[32];
+} tsfi_cw_hainaut_fd;
+
+int tsfi_cw_hainaut_map_dependencies(const tsfi_cw_hainaut_table *table, const tsfi_cw_hainaut_fd *fds, int fd_count, int *violation_detected_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 

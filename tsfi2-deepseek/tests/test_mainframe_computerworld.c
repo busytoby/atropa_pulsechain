@@ -2529,6 +2529,18 @@ static void test_new_mainframe_features(void) {
     assert(tsfi_cw_hainaut_degrade_key(&sub_tbl, &degraded_tbl) == 0);
     assert(strcmp(degraded_tbl.table_name, "HOURLY_EMP_DEG") == 0);
     assert(degraded_tbl.foreign_key[0] == 0);
+
+    // Hainaut Multivalued Promoter test
+    tsfi_cw_hainaut_table mult_tbl;
+    assert(tsfi_cw_hainaut_promote_multivalued(&super_tbl, "PHONES", &mult_tbl) == 0);
+    assert(strcmp(mult_tbl.table_name, "EMPLOYEE_PHONES_1NF") == 0);
+    assert(strcmp(mult_tbl.primary_key, "PK_PHONES") == 0);
+
+    // Hainaut Functional Dependency Mapper test
+    tsfi_cw_hainaut_fd fd_list[1] = { { "DEPT_ID", "DEPT_NAME" } };
+    int fd_violation = 0;
+    assert(tsfi_cw_hainaut_map_dependencies(&super_tbl, fd_list, 1, &fd_violation) == 0);
+    assert(fd_violation == 1); // DEPT_ID is not EMP_ID (primary key of super_tbl)
 }
 
 int main(void) {
