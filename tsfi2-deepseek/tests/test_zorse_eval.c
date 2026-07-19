@@ -1024,6 +1024,14 @@ int main(void) {
     assert(tsfi_zorse_validate_cobol_next_page("01 DETAIL-LINE LINE NEXT PAGE.", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 215: z/VSE POWER Spool Destination Node Status Validator validation
+    assert(tsfi_zorse_validate_vse_power_node_status("* $$ LST NODE=(NODE1,STATUS),DISP=H\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 216: COBOL Report Writer Next Page Limit Auditor validation
+    assert(tsfi_zorse_validate_cobol_next_page_limit("01 DETAIL-LINE LINE NEXT PAGE LIMIT 50.", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

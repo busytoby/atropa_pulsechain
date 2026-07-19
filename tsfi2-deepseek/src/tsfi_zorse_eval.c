@@ -2922,3 +2922,27 @@ int tsfi_zorse_validate_cobol_next_page(const char *cobol_src, int *is_valid_out
     
     return 0;
 }
+
+int tsfi_zorse_validate_vse_power_node_status(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(jcl_line, "* $$") && strstr(jcl_line, "NODE=") && strstr(jcl_line, "STATUS")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_cobol_next_page_limit(const char *cobol_src, int *is_valid_out) {
+    if (!cobol_src || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(cobol_src, "NEXT PAGE LIMIT")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}

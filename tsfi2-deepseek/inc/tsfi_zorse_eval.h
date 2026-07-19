@@ -603,4 +603,10 @@ int tsfi_zorse_validate_vse_power_flash_status(const char *jcl_line, int *is_val
 // COBOL Report Writer Next Page Spacing Auditor
 int tsfi_zorse_validate_cobol_next_page(const char *cobol_src, int *is_valid_out);
 
+// z/VSE POWER Spool Destination Node Status Validator
+int tsfi_zorse_validate_vse_power_node_status(const char *jcl_line, int *is_valid_out);
+
+// COBOL Report Writer Next Page Limit Auditor
+int tsfi_zorse_validate_cobol_next_page_limit(const char *cobol_src, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H
