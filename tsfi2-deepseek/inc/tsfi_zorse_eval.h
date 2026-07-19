@@ -111,4 +111,10 @@ int tsfi_zorse_validate_hlasm_register(const char *hlasm_line, int *is_valid_out
 // Zorse JCL STEP Name Validator
 int tsfi_zorse_validate_jcl_stepname(const char *jcl_line, int *is_valid_out);
 
+// Zorse COBOL PICTURE to VSAM Sizing Estimator
+int tsfi_zorse_estimate_vsam_size(const char *cobol_pic_clause, int *record_len_out);
+
+// Zorse JCL COND Logic Evaluator
+int tsfi_zorse_evaluate_step_cond(int step_rc, const char *cond_expr, int *should_run_out);
+
 #endif // TSFI_ZORSE_EVAL_H

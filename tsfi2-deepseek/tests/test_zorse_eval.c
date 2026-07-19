@@ -253,6 +253,21 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_stepname(step_line, &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 48: COBOL PICTURE to VSAM Sizing Estimator validation
+    int rec_len = 0;
+    assert(tsfi_zorse_estimate_vsam_size("01 MY-REC PIC X(150).", &rec_len) == 0);
+    assert(rec_len == 150);
+
+    // Test Case 49: JCL COND Logic Evaluator validation
+    int should_run = 0;
+    assert(tsfi_zorse_evaluate_step_cond(8, "COND=(4,LT)", &should_run) == 0);
+    // 8 < 4 is false -> should not bypass -> should_run = 1
+    assert(should_run == 1);
+    
+    assert(tsfi_zorse_evaluate_step_cond(2, "COND=(4,LT)", &should_run) == 0);
+    // 2 < 4 is true -> should bypass -> should_run = 0
+    assert(should_run == 0);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

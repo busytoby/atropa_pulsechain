@@ -741,3 +741,68 @@ int tsfi_zorse_validate_jcl_stepname(const char *jcl_line, int *is_valid_out) {
     
     return 0;
 }
+
+int tsfi_zorse_estimate_vsam_size(const char *cobol_pic_clause, int *record_len_out) {
+    if (!cobol_pic_clause || !record_len_out) return -1;
+    
+    *record_len_out = 0;
+    
+    // Find PIC or PICTURE
+    const char *p = strstr(cobol_pic_clause, "PIC ");
+    if (!p) p = strstr(cobol_pic_clause, "PICTURE ");
+    if (!p) return 0;
+    
+    // Find opening parenthesis
+    p = strchr(p, '(');
+    if (p) {
+        p++;
+        *record_len_out = atoi(p);
+    } else {
+        // Look for literal pattern length like "X" or "999"
+        p = strchr(cobol_pic_clause, ' ');
+        while (*p == ' ') p++;
+        p = strchr(p, ' ');
+        while (*p == ' ') p++;
+        int len = 0;
+        while (*p != '\0' && *p != '.' && *p != ' ' && *p != '\n') {
+            if (*p == 'X' || *p == '9' || *p == 'A') {
+                len++;
+            }
+            p++;
+        }
+        *record_len_out = len;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_evaluate_step_cond(int step_rc, const char *cond_expr, int *should_run_out) {
+    if (!cond_expr || !should_run_out) return -1;
+    
+    *should_run_out = 1; // Default to run step
+    
+    // Parse target COND comparison block, e.g. COND=(4,LT)
+    const char *p = strstr(cond_expr, "COND=");
+    if (!p) return 0;
+    
+    p += 5; // Skip "COND="
+    
+    if (*p == '(') {
+        p++;
+        int val = atoi(p);
+        p = strchr(p, ',');
+        if (p) {
+            p++;
+            // Check condition comparison modes:
+            // If the condition is true, the step is bypassed (should_run_out = 0)
+            if (strncmp(p, "EQ", 2) == 0 && step_rc == val) *should_run_out = 0;
+            if (strncmp(p, "NE", 2) == 0 && step_rc != val) *should_run_out = 0;
+            if (strncmp(p, "GT", 2) == 0 && step_rc > val) *should_run_out = 0;
+            if (strncmp(p, "LT", 2) == 0 && step_rc < val) *should_run_out = 0;
+            if (strncmp(p, "GE", 2) == 0 && step_rc >= val) *should_run_out = 0;
+            if (strncmp(p, "LE", 2) == 0 && step_rc <= val) *should_run_out = 0;
+        }
+    }
+    
+    return 0;
+}
