@@ -3186,3 +3186,27 @@ int tsfi_zorse_validate_cobol_final_spacing_checks(const char *cobol_src, int *i
     
     return 0;
 }
+
+int tsfi_zorse_validate_vse_power_pri_override_list(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(jcl_line, "* $$") && strstr(jcl_line, "PRI=") && strstr(jcl_line, "(") && strstr(jcl_line, ",")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_cobol_final_spacing_list_checks(const char *cobol_src, int *is_valid_out) {
+    if (!cobol_src || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(cobol_src, "FINAL") && strstr(cobol_src, "LIMIT") && strstr(cobol_src, "OVERRIDE") && strstr(cobol_src, "CHECKS") && strstr(cobol_src, "LIST")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}

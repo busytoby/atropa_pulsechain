@@ -669,4 +669,10 @@ int tsfi_zorse_validate_vse_power_pri_status_override(const char *jcl_line, int 
 // COBOL Report Writer Final Summary Spacing Limit Override Checks Auditor
 int tsfi_zorse_validate_cobol_final_spacing_checks(const char *cobol_src, int *is_valid_out);
 
+// z/VSE POWER Spool Print Priority Override List Validator
+int tsfi_zorse_validate_vse_power_pri_override_list(const char *jcl_line, int *is_valid_out);
+
+// COBOL Report Writer Final Summary Spacing Limit Override Checks List Auditor
+int tsfi_zorse_validate_cobol_final_spacing_list_checks(const char *cobol_src, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H
