@@ -2874,3 +2874,27 @@ int tsfi_zorse_validate_cobol_cf_group(const char *cobol_src, int *is_valid_out)
     
     return 0;
 }
+
+int tsfi_zorse_validate_vse_power_flash_override(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(jcl_line, "* $$") && strstr(jcl_line, "FLASH=") && strstr(jcl_line, "(")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_cobol_line_spacing(const char *cobol_src, int *is_valid_out) {
+    if (!cobol_src || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(cobol_src, "LINE PLUS") || strstr(cobol_src, "LINE NEXT")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}

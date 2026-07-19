@@ -591,4 +591,10 @@ int tsfi_zorse_validate_vse_power_flash(const char *jcl_line, int *is_valid_out)
 // COBOL Report Writer Control Footing Group Auditor
 int tsfi_zorse_validate_cobol_cf_group(const char *cobol_src, int *is_valid_out);
 
+// z/VSE POWER Spool Forms Flash Override Validator
+int tsfi_zorse_validate_vse_power_flash_override(const char *jcl_line, int *is_valid_out);
+
+// COBOL Report Writer Detail Group Line Spacing Auditor
+int tsfi_zorse_validate_cobol_line_spacing(const char *cobol_src, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

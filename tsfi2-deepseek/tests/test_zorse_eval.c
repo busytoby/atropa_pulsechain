@@ -1008,6 +1008,14 @@ int main(void) {
     assert(tsfi_zorse_validate_cobol_cf_group("01 TYPE IS CONTROL FOOTING.", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 211: z/VSE POWER Spool Forms Flash Override Validator validation
+    assert(tsfi_zorse_validate_vse_power_flash_override("* $$ LST FLASH=(OVL1,OVL2),DISP=H\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 212: COBOL Report Writer Detail Group Line Spacing Auditor validation
+    assert(tsfi_zorse_validate_cobol_line_spacing("01 DETAIL-LINE LINE PLUS 1.", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
