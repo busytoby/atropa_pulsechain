@@ -2933,6 +2933,44 @@ int tsfi_cw_audit_23_dependencies(const tsfi_cw_23_node *node, const tsfi_cw_hai
     return 0;
 }
 
+int tsfi_cw_roland_prune_transitive(const tsfi_cw_hainaut_table *table, const tsfi_cw_hainaut_fd *fds, int fd_count, tsfi_cw_hainaut_table *pruned_table_out) {
+    if (!table || !fds || fd_count <= 0 || !pruned_table_out) return -1;
+    
+    *pruned_table_out = *table;
+    
+    // Search for a transitive path: A -> B and B -> C, then prune direct A -> C if it references it
+    for (int i = 0; i < fd_count; i++) {
+        for (int j = 0; j < fd_count; j++) {
+            if (strcmp(fds[i].dependent, fds[j].determinant) == 0) {
+                // Found path: fds[i].determinant -> fds[i].dependent -> fds[j].dependent
+                // If table has foreign key matching fds[i].determinant referencing fds[j].dependent, prune it
+                if (strcmp(table->foreign_key, fds[j].dependent) == 0) {
+                    pruned_table_out->foreign_key[0] = 0;
+                    pruned_table_out->references_table[0] = 0;
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+int tsfi_cw_roland_audit_anomalies(const tsfi_cw_hainaut_table *table, const tsfi_cw_hainaut_fd *fds, int fd_count, int *anomaly_detected_out) {
+    if (!table || !fds || fd_count <= 0 || !anomaly_detected_out) return -1;
+    
+    *anomaly_detected_out = 0;
+    
+    // Check if a non-prime attribute (non-primary key determinant) determines another attribute (transitive anomaly)
+    for (int i = 0; i < fd_count; i++) {
+        if (strcmp(fds[i].determinant, table->primary_key) != 0 &&
+            strlen(fds[i].determinant) > 0 &&
+            strlen(fds[i].dependent) > 0) {
+            *anomaly_detected_out = 1;
+            return 0;
+        }
+    }
+    return 0;
+}
+
 
 
 

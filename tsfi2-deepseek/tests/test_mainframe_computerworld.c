@@ -2637,6 +2637,21 @@ static void test_new_mainframe_features(void) {
     int audit_violation = 0;
     assert(tsfi_cw_audit_23_dependencies(&child_b, audit_fds, 1, &audit_violation) == 0);
     assert(audit_violation == 0);
+
+    // Roland Transitive Redundancy Pruner test
+    tsfi_cw_hainaut_fd trans_fds[2] = {
+        { "EMP_ID", "DEPT_ID" },
+        { "DEPT_ID", "DIV_ID" }
+    };
+    tsfi_cw_hainaut_table redundant_tbl = { "EMP", "EMP_ID", "DIV_ID", "DIV" };
+    tsfi_cw_hainaut_table pruned_tbl;
+    assert(tsfi_cw_roland_prune_transitive(&redundant_tbl, trans_fds, 2, &pruned_tbl) == 0);
+    assert(pruned_tbl.foreign_key[0] == 0); // direct reference to DIV_ID pruned
+
+    // Roland Update Anomaly Auditor test
+    int anomaly_found = 0;
+    assert(tsfi_cw_roland_audit_anomalies(&redundant_tbl, trans_fds, 2, &anomaly_found) == 0);
+    assert(anomaly_found == 1); // DEPT_ID -> DIV_ID is a non-prime transitive dependency
 }
 
 int main(void) {
