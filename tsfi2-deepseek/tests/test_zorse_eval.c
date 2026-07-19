@@ -442,6 +442,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_retpd("//DD10 DD DSN=A.B.C,RETPD=30\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 90: COBOL WRITE INVALID KEY Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_invalid_key("WRITE REC-OUT INVALID KEY DISPLAY 'ERROR'.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 91: JCL UCS Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_ucs("//PRT DD SYSOUT=A,UCS=AN\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

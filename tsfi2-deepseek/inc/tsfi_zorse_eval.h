@@ -237,4 +237,10 @@ int tsfi_zorse_validate_cobol_compute_error(const char *cobol_src, int *is_valid
 // Zorse JCL RETPD Parameter Auditor
 int tsfi_zorse_validate_jcl_retpd(const char *jcl_line, int *is_valid_out);
 
+// Zorse COBOL WRITE INVALID KEY Statement Auditor
+int tsfi_zorse_validate_cobol_invalid_key(const char *cobol_src, int *is_valid_out);
+
+// Zorse JCL UCS Parameter Auditor
+int tsfi_zorse_validate_jcl_ucs(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H
