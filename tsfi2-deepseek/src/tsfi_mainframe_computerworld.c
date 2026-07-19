@@ -2214,6 +2214,37 @@ int tsfi_cw_nbs_optimize_booths(int voter_count, int target_wait_mins, int *boot
     return 0;
 }
 
+int tsfi_cw_nbs_calc_regional_turnout(const tsfi_cw_nbs_voter *voters, int voter_count, const char *target_region, double *turnout_rate_out) {
+    if (!voters || voter_count < 0 || !target_region || !turnout_rate_out) return -1;
+    
+    int total_registered = 0;
+    int total_voted = 0;
+    
+    for (int i = 0; i < voter_count; i++) {
+        if (strcmp(voters[i].region, target_region) == 0 && voters[i].is_registered) {
+            total_registered++;
+            if (voters[i].has_voted) {
+                total_voted++;
+            }
+        }
+    }
+    
+    if (total_registered == 0) {
+        *turnout_rate_out = 0.0;
+    } else {
+        *turnout_rate_out = (double)total_voted / total_registered;
+    }
+    return 0;
+}
+
+int tsfi_cw_nbs_verify_margin(int sample_total, int discrepancies, double max_margin, int *passes_audit_out) {
+    if (sample_total <= 0 || discrepancies < 0 || !passes_audit_out) return -1;
+    
+    double margin = (double)discrepancies / sample_total;
+    *passes_audit_out = (margin <= max_margin);
+    return 0;
+}
+
 
 
 

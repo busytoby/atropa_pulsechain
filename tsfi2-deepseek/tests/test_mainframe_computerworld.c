@@ -2358,9 +2358,9 @@ static void test_new_mainframe_features(void) {
 
     // NBS Demographic Stratification test
     tsfi_cw_nbs_voter voters[3] = {
-        { "NY", 25, 1 },
-        { "CA", 45, 1 },
-        { "TX", 70, 0 } // not registered
+        { "NY", 25, 1, 0 },
+        { "CA", 45, 1, 0 },
+        { "TX", 70, 0, 0 } // not registered
     };
     tsfi_cw_nbs_demographics dem;
     assert(tsfi_cw_nbs_audit_demographics(voters, 3, &dem) == 0);
@@ -2372,6 +2372,20 @@ static void test_new_mainframe_features(void) {
     int booths = 0;
     assert(tsfi_cw_nbs_optimize_booths(1000, 10, &booths) == 0);
     assert(booths >= 1);
+
+    // NBS Regional Turnout test
+    voters[0].has_voted = 1; // CA has voted
+    voters[1].has_voted = 0; // NY hasn't voted
+    double turnout = 0.0;
+    assert(tsfi_cw_nbs_calc_regional_turnout(voters, 3, "NY", &turnout) == 0);
+    assert(turnout == 1.0); // 1 registered voter, 1 voted
+    
+    // NBS Margin Verification test
+    int passes_audit = 0;
+    assert(tsfi_cw_nbs_verify_margin(1000, 5, 0.01, &passes_audit) == 0);
+    assert(passes_audit == 1); // 5/1000 = 0.005 <= 0.01
+    assert(tsfi_cw_nbs_verify_margin(1000, 15, 0.01, &passes_audit) == 0);
+    assert(passes_audit == 0); // 15/1000 = 0.015 > 0.01
 }
 
 int main(void) {

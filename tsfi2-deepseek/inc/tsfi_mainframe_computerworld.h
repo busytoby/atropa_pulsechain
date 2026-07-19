@@ -1312,6 +1312,7 @@ typedef struct {
     char region[16];
     int age;
     int is_registered;
+    int has_voted;
 } tsfi_cw_nbs_voter;
 
 typedef struct {
@@ -1324,6 +1325,10 @@ int tsfi_cw_nbs_audit_demographics(const tsfi_cw_nbs_voter *voters, int voter_co
 
 // NBS Queue Optimizer
 int tsfi_cw_nbs_optimize_booths(int voter_count, int target_wait_mins, int *booths_needed_out);
+
+// NBS Regional Turnout & Margin Analyzer
+int tsfi_cw_nbs_calc_regional_turnout(const tsfi_cw_nbs_voter *voters, int voter_count, const char *target_region, double *turnout_rate_out);
+int tsfi_cw_nbs_verify_margin(int sample_total, int discrepancies, double max_margin, int *passes_audit_out);
 
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 
