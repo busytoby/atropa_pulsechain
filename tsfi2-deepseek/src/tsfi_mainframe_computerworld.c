@@ -2288,6 +2288,32 @@ int tsfi_cw_sammet_register_codasyl_vote(const char *proposal, int yeas, int nay
     return 0;
 }
 
+int tsfi_cw_kendrick_route_call(int dial_digit, tsfi_cw_kendrick_switch *sw_io_out, int *line_connected_out) {
+    if (!sw_io_out || !line_connected_out) return -1;
+    
+    *line_connected_out = 0;
+    
+    // Check digital dial validation
+    if (dial_digit < 0 || dial_digit > 9) return 1;
+    
+    if (sw_io_out->active_lines < sw_io_out->capacity) {
+        sw_io_out->active_lines++;
+        *line_connected_out = 1;
+    }
+    return 0;
+}
+
+int tsfi_cw_kendrick_integrate(double step_size, double initial_val, int iterations, double *result_out) {
+    if (step_size <= 0.0 || iterations < 0 || !result_out) return -1;
+    
+    double val = initial_val;
+    for (int i = 0; i < iterations; i++) {
+        val += step_size * val; // simple dy/dx = y step
+    }
+    *result_out = val;
+    return 0;
+}
+
 
 
 

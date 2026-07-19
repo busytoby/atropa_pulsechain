@@ -2398,6 +2398,18 @@ static void test_new_mainframe_features(void) {
     assert(tsfi_cw_sammet_register_codasyl_vote("ADD DEFINE CLAUSE", 12, 4, &vote) == 0);
     assert(vote.approved == 1);
     assert(strcmp(vote.proposal, "ADD DEFINE CLAUSE") == 0);
+
+    // Kendrick Switch test
+    tsfi_cw_kendrick_switch sw = { 0, 5, 101 };
+    int connected = 0;
+    assert(tsfi_cw_kendrick_route_call(4, &sw, &connected) == 0);
+    assert(connected == 1);
+    assert(sw.active_lines == 1);
+
+    // Kendrick Integrator test
+    double integral = 0.0;
+    assert(tsfi_cw_kendrick_integrate(0.1, 1.0, 10, &integral) == 0);
+    assert(integral > 2.0); // 1.1^10 ~ 2.59
 }
 
 int main(void) {

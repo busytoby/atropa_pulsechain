@@ -1349,5 +1349,17 @@ typedef struct {
 
 int tsfi_cw_sammet_register_codasyl_vote(const char *proposal, int yeas, int nays, tsfi_cw_sammet_codasyl_vote *vote_out);
 
+// Kendrick Telephony Switch
+typedef struct {
+    int active_lines;
+    int capacity;
+    int trunk_id;
+} tsfi_cw_kendrick_switch;
+
+int tsfi_cw_kendrick_route_call(int dial_digit, tsfi_cw_kendrick_switch *sw_io_out, int *line_connected_out);
+
+// Kendrick Numerical Integrator
+int tsfi_cw_kendrick_integrate(double step_size, double initial_val, int iterations, double *result_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 
