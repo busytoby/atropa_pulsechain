@@ -136,6 +136,16 @@ int main(void) {
     assert(tsfi_phoneme_xiang_cantonese_sandhi(cant_tones, 3, 0, 100.0f, &c_sandhi_freq) == 0);
     assert(c_sandhi_freq == 156.25f);
 
+    // 20. Test Tone Co-articulation Modulator
+    float coart_freq = 0.0f;
+    assert(tsfi_phoneme_apply_coarticulation(100.0f, 200.0f, 300.0f, &coart_freq) == 0);
+    assert(coart_freq == 200.0f); // (15 + 140 + 45)
+
+    // 21. Test Glottal Flow Excitation Generator
+    float glottal_val = 0.0f;
+    assert(tsfi_phoneme_generate_glottal_pulse(0.10f, 1.0f, &glottal_val) == 0);
+    assert(glottal_val > 0.0f);
+
     // Cleanup
     tsfi_synth_perf_destroy(perf_engine);
     tsfi_trie_destroy(trie_root);

@@ -69,4 +69,10 @@ int tsfi_phoneme_xiang_smooth_liaison(float freq_a, float freq_b, float ratio, f
 // Xiang Cantonese Tone Sandhi Controller
 int tsfi_phoneme_xiang_cantonese_sandhi(const int *tones, int count, int target_idx, float base_freq, float *adjusted_freq_out);
 
+// Tone Co-articulation Modulator
+int tsfi_phoneme_apply_coarticulation(float prev_freq, float curr_freq, float next_freq, float *coart_freq_out);
+
+// Glottal Flow Excitation Generator
+int tsfi_phoneme_generate_glottal_pulse(float time_sample, float pitch_period, float *pulse_out);
+
 #endif // TSFI_PHONEME_SYNTH_H

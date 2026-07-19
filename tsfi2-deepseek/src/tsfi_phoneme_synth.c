@@ -373,3 +373,34 @@ int tsfi_phoneme_xiang_cantonese_sandhi(const int *tones, int count, int target_
     }
     return 0;
 }
+
+int tsfi_phoneme_apply_coarticulation(float prev_freq, float curr_freq, float next_freq, float *coart_freq_out) {
+    if (!coart_freq_out) return -1;
+    
+    // Smooth transition by assimilation: blend 70% current, 15% previous, 15% next frequency targets
+    *coart_freq_out = (prev_freq * 0.15f) + (curr_freq * 0.70f) + (next_freq * 0.15f);
+    return 0;
+}
+
+int tsfi_phoneme_generate_glottal_pulse(float time_sample, float pitch_period, float *pulse_out) {
+    if (pitch_period <= 0.0f || !pulse_out) return -1;
+    
+    // Wrap time_sample modulo pitch_period
+    float t = time_sample - (pitch_period * (float)((int)(time_sample / pitch_period)));
+    if (t < 0.0f) t += pitch_period;
+    
+    // Rosenberg glottal wave pulse open/close parameters
+    float tp = pitch_period * 0.40f; // open time
+    float tn = pitch_period * 0.16f; // closing time
+    
+    if (t < tp) {
+        float r = t / tp;
+        *pulse_out = 3.0f * r * r - 2.0f * r * r * r;
+    } else if (t < tp + tn) {
+        float r = (t - tp) / tn;
+        *pulse_out = 1.0f - r * r;
+    } else {
+        *pulse_out = 0.0f;
+    }
+    return 0;
+}
