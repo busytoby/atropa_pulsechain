@@ -87,4 +87,10 @@ int tsfi_phoneme_xiang_compensate_vowel(const char *coda, int base_duration_ms, 
 // Xiang Quadratic Pitch Contour Interpolator
 int tsfi_phoneme_xiang_interpolate_pitch_quadratic(float freq_start, float freq_mid, float freq_end, float ratio, float *interpolated_freq_out);
 
+// Xiang Cantonese Aspect Marker Pitch Shifter
+int tsfi_phoneme_xiang_shift_aspect(const char *aspect, float verb_freq, float *aspect_freq_out);
+
+// Formant Transition Smoother (Log-Linear)
+int tsfi_phoneme_smooth_formant(float f_start, float f_end, float ratio, float *smoothed_f_out);
+
 #endif // TSFI_PHONEME_SYNTH_H

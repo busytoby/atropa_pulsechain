@@ -168,6 +168,16 @@ int main(void) {
     assert(tsfi_phoneme_xiang_interpolate_pitch_quadratic(100.0f, 150.0f, 200.0f, 0.5f, &quad_freq) == 0);
     assert(quad_freq == 150.0f); // 0.25*100 + 0.5*150 + 0.25*200
 
+    // 26. Test Xiang Cantonese Aspect Marker Pitch Shifter
+    float aspect_freq = 0.0f;
+    assert(tsfi_phoneme_xiang_shift_aspect("zo2", 100.0f, &aspect_freq) == 0);
+    assert(aspect_freq == 125.0f);
+
+    // 27. Test Formant Transition Smoother
+    float smooth_f = 0.0f;
+    assert(tsfi_phoneme_smooth_formant(100.0f, 1000.0f, 0.5f, &smooth_f) == 0);
+    assert(fabs(smooth_f - 316.2277f) < 0.1f); // sqrt(100*1000)
+
     // Cleanup
     tsfi_synth_perf_destroy(perf_engine);
     tsfi_trie_destroy(trie_root);

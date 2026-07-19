@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "tsfi_phoneme_synth.h"
 
 int tsfi_phoneme_map_word(TSFiSynthPerfEngine *engine, const char *word, int wheel_idx) {
@@ -451,5 +452,29 @@ int tsfi_phoneme_xiang_interpolate_pitch_quadratic(float freq_start, float freq_
     float inv_r = 1.0f - ratio;
     // P(t) = (1-t)^2 * P0 + 2*(1-t)*t * P1 + t^2 * P2
     *interpolated_freq_out = (inv_r * inv_r * freq_start) + (2.0f * inv_r * ratio * freq_mid) + (ratio * ratio * freq_end);
+    return 0;
+}
+
+int tsfi_phoneme_xiang_shift_aspect(const char *aspect, float verb_freq, float *aspect_freq_out) {
+    if (!aspect || verb_freq <= 0.0f || !aspect_freq_out) return -1;
+    
+    *aspect_freq_out = verb_freq;
+    
+    // Zo2 (perfective aspect, high rising) shifts verb frequency up by 25%
+    if (strcmp(aspect, "zo2") == 0) {
+        *aspect_freq_out = verb_freq * 1.25f;
+    }
+    // Gan1 (continuous aspect, high flat) shifts verb frequency up by 40%
+    else if (strcmp(aspect, "gan1") == 0) {
+        *aspect_freq_out = verb_freq * 1.40f;
+    }
+    return 0;
+}
+
+int tsfi_phoneme_smooth_formant(float f_start, float f_end, float ratio, float *smoothed_f_out) {
+    if (f_start <= 0.0f || f_end <= 0.0f || ratio < 0.0f || ratio > 1.0f || !smoothed_f_out) return -1;
+    
+    // Log-linear interpolation
+    *smoothed_f_out = expf(logf(f_start) * (1.0f - ratio) + logf(f_end) * ratio);
     return 0;
 }
