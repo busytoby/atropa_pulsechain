@@ -172,6 +172,13 @@ int main(void) {
     assert(tsfi_ray_tracer_apply_vaesen_aura(&vaesen_scene, "Uppsala") == 0);
     assert(vaesen_scene.ambient_color.x > 0.3f); // Base 0.1f + 0.05f * 5 = 0.35f
 
+    // Test Unified VSEn Ray Tracer Renderer
+    printf("[TEST] Validating Unified VSEn Ray Tracer Renderer...\n");
+    uint32_t *vsen_img = malloc(width * height * sizeof(uint32_t));
+    assert(vsen_img != NULL);
+    assert(tsfi_vsen_ray_tracer_render("Mara", "Uppsala", vsen_img, width, height) == 0);
+    free(vsen_img);
+
     free(img_buf);
     printf("[SUCCESS] CGI/CGM Ray Tracer validation completed successfully!\n");
     return 0;

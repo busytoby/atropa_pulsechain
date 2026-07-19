@@ -44,4 +44,7 @@ int tsfi_ray_tracer_apply_vaesen_silhouette(tsfi_cgm_scene *scene, const char *v
 // Vaesen Supernatural Aura Shading
 int tsfi_ray_tracer_apply_vaesen_aura(tsfi_cgm_scene *scene, const char *region_name);
 
+// VSEn Ray Tracer Unified Renderer
+int tsfi_vsen_ray_tracer_render(const char *vaesen_name, const char *region_name, uint32_t *image_out, int width, int height);
+
 #endif // TSFI_RAY_TRACER_H

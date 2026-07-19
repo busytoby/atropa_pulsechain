@@ -348,3 +348,23 @@ int tsfi_ray_tracer_apply_vaesen_aura(tsfi_cgm_scene *scene, const char *region_
 
     return 0;
 }
+
+int tsfi_vsen_ray_tracer_render(const char *vaesen_name, const char *region_name, uint32_t *image_out, int width, int height) {
+    if (!vaesen_name || !region_name || !image_out || width <= 0 || height <= 0) return -1;
+
+    tsfi_cgm_scene scene;
+    tsfi_cgm_scene_init(&scene);
+
+    tsfi_rt_vec3 pos = {0.0f, 0.0f, 5.0f};
+    tsfi_rt_vec3 color = {0.1f, 0.6f, 0.8f};
+    int add_rc = tsfi_cgm_scene_add_primitive(&scene, CGM_PRIM_SPHERE, pos, color, 1.0f, (tsfi_rt_vec3){0, 0, 0});
+    if (add_rc != 0) return add_rc;
+
+    int sil_rc = tsfi_ray_tracer_apply_vaesen_silhouette(&scene, vaesen_name);
+    if (sil_rc != 0) return sil_rc;
+
+    int aura_rc = tsfi_ray_tracer_apply_vaesen_aura(&scene, region_name);
+    if (aura_rc != 0) return aura_rc;
+
+    return tsfi_ray_tracer_render(&scene, image_out, width, height);
+}
