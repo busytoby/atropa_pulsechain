@@ -129,4 +129,10 @@ int tsfi_zorse_validate_cobol_occurs_depending(const char *occurs_clause, int *i
 // Zorse JCL TIME Parameter Auditor
 int tsfi_zorse_validate_jcl_time(const char *jcl_line, int *is_valid_out);
 
+// Zorse COBOL EVALUATE Statement Branch Auditor
+int tsfi_zorse_validate_cobol_evaluate(const char *cobol_src, int *is_valid_out);
+
+// Zorse JCL MSGCLASS Parameter Auditor
+int tsfi_zorse_validate_jcl_msgclass(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

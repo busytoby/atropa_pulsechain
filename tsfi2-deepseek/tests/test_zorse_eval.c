@@ -285,6 +285,15 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_time("//STEP1 EXEC PGM=IEFBR14,TIME=1440\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 54: COBOL EVALUATE Statement Branch Auditor validation
+    const char *eval_inp = "EVALUATE MY-VAL WHEN 1 PERFORM PROC-1 WHEN OTHER PERFORM PROC-OTHER END-EVALUATE.";
+    assert(tsfi_zorse_validate_cobol_evaluate(eval_inp, &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 55: JCL MSGCLASS Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_msgclass("//MYJOB JOB MSGCLASS=A\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

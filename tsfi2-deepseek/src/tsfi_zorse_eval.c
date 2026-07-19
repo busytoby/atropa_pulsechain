@@ -872,3 +872,34 @@ int tsfi_zorse_validate_jcl_time(const char *jcl_line, int *is_valid_out) {
     
     return 0;
 }
+
+int tsfi_zorse_validate_cobol_evaluate(const char *cobol_src, int *is_valid_out) {
+    if (!cobol_src || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    // Check for matching EVALUATE and END-EVALUATE blocks
+    if (strstr(cobol_src, "EVALUATE ") && strstr(cobol_src, "END-EVALUATE")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_jcl_msgclass(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    const char *p = strstr(jcl_line, "MSGCLASS=");
+    if (!p) return 0;
+    
+    p += 9; // Skip "MSGCLASS="
+    
+    char c = *p;
+    if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '*') {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
