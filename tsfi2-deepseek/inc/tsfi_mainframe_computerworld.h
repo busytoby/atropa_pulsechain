@@ -1241,9 +1241,16 @@ typedef struct {
     char lifecycle_state[16];
 } tsfi_cw_omp_feilong_guest;
 
+typedef struct {
+    int active_guests;
+    int total_cpus;
+    int total_mem_mb;
+} tsfi_cw_omp_feilong_summary;
+
 int tsfi_cw_omp_feilong_provision(const char *guest_name, int cpus, int memory_mb, tsfi_cw_omp_feilong_guest *guest_out);
 int tsfi_cw_omp_feilong_set_state(tsfi_cw_omp_feilong_guest *guest, const char *state);
 int tsfi_cw_omp_feilong_dispatch(const char *cmd_line, tsfi_cw_omp_feilong_guest *guest_io_out, char *err_msg_out, size_t err_max);
+int tsfi_cw_omp_feilong_get_summary(const tsfi_cw_omp_feilong_guest *guests, int guest_count, tsfi_cw_omp_feilong_summary *summary_out);
 
 // OMP Galasa Test Run Info
 typedef struct {
@@ -1251,11 +1258,13 @@ typedef struct {
     int assertions_run;
     int assertions_failed;
     int passes;
+    uint64_t total_latency_ns;
 } tsfi_cw_omp_galasa_run;
 
 int tsfi_cw_omp_galasa_init_run(const char *suite_name, tsfi_cw_omp_galasa_run *run_out);
 int tsfi_cw_omp_galasa_assert(tsfi_cw_omp_galasa_run *run, int condition);
 int tsfi_cw_omp_galasa_assert_with_retry(tsfi_cw_omp_galasa_run *run, int (*eval_fn)(void *ctx), void *ctx, int max_retries);
+int tsfi_cw_omp_galasa_assert_timed(tsfi_cw_omp_galasa_run *run, int condition, uint64_t latency_ns);
 int tsfi_cw_omp_galasa_run_diagnostics(const tsfi_cw_omp_galasa_run *run, char *report_out, size_t report_max);
 
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H

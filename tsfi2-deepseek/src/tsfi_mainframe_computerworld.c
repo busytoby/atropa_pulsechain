@@ -1846,6 +1846,7 @@ int tsfi_cw_omp_galasa_init_run(const char *suite_name, tsfi_cw_omp_galasa_run *
     run_out->assertions_run = 0;
     run_out->assertions_failed = 0;
     run_out->passes = 0;
+    run_out->total_latency_ns = 0;
     return 0;
 }
 
@@ -1943,6 +1944,31 @@ int tsfi_cw_omp_galasa_assert_with_retry(tsfi_cw_omp_galasa_run *run, int (*eval
     
     return tsfi_cw_omp_galasa_assert(run, passes);
 }
+
+int tsfi_cw_omp_feilong_get_summary(const tsfi_cw_omp_feilong_guest *guests, int guest_count, tsfi_cw_omp_feilong_summary *summary_out) {
+    if (!guests || guest_count < 0 || !summary_out) return -1;
+    
+    summary_out->active_guests = 0;
+    summary_out->total_cpus = 0;
+    summary_out->total_mem_mb = 0;
+    
+    for (int i = 0; i < guest_count; i++) {
+        if (strcmp(guests[i].lifecycle_state, "ACTIVE") == 0) {
+            summary_out->active_guests++;
+        }
+        summary_out->total_cpus += guests[i].cpu_count;
+        summary_out->total_mem_mb += guests[i].memory_mb;
+    }
+    return 0;
+}
+
+int tsfi_cw_omp_galasa_assert_timed(tsfi_cw_omp_galasa_run *run, int condition, uint64_t latency_ns) {
+    if (!run) return -1;
+    
+    run->total_latency_ns += latency_ns;
+    return tsfi_cw_omp_galasa_assert(run, condition);
+}
+
 
 
 

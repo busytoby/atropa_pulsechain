@@ -2250,6 +2250,23 @@ static void test_new_mainframe_features(void) {
     int attempts = 0;
     assert(tsfi_cw_omp_galasa_assert_with_retry(&run, omp_galasa_mock_eval, &attempts, 3) == 0);
     assert(attempts == 2);
+
+    // OMP Feilong host summary test
+    tsfi_cw_omp_feilong_guest guests[2];
+    assert(tsfi_cw_omp_feilong_provision("GUEST01", 2, 4096, &guests[0]) == 0);
+    assert(tsfi_cw_omp_feilong_set_state(&guests[0], "ACTIVE") == 0);
+    assert(tsfi_cw_omp_feilong_provision("GUEST02", 4, 8192, &guests[1]) == 0);
+    
+    tsfi_cw_omp_feilong_summary summary;
+    assert(tsfi_cw_omp_feilong_get_summary(guests, 2, &summary) == 0);
+    assert(summary.active_guests == 1);
+    assert(summary.total_cpus == 6);
+    assert(summary.total_mem_mb == 12288);
+
+    // OMP Galasa assert timed test
+    assert(run.total_latency_ns == 0);
+    assert(tsfi_cw_omp_galasa_assert_timed(&run, 1, 500) == 0);
+    assert(run.total_latency_ns == 500);
 }
 
 int main(void) {
