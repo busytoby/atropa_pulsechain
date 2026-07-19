@@ -2074,6 +2074,69 @@ int tsfi_cw_omp_ambitus_translate(const char *unix_cmd, char *mvs_cmd_out, size_
     return 1;
 }
 
+int tsfi_cw_omp_cobol_verify_syntax(const char *cobol_line, char *err_out, size_t err_max) {
+    if (!cobol_line || !err_out || err_max == 0) return -1;
+    
+    err_out[0] = 0;
+    
+    const char *pic_ptr = strstr(cobol_line, "PIC ");
+    if (pic_ptr) {
+        const char *pic_val = pic_ptr + 4;
+        // Search if there is a dot at the end
+        const char *dot_ptr = strchr(pic_val, '.');
+        if (!dot_ptr) {
+            snprintf(err_out, err_max, "SYNTAX_ERROR: Missing ending period on PICTURE definition");
+            return 1;
+        }
+        
+        // Ensure it contains standard format indicators: X or 9
+        if (strchr(pic_val, 'X') == NULL && strchr(pic_val, '9') == NULL) {
+            snprintf(err_out, err_max, "SYNTAX_ERROR: Invalid PICTURE clause type indicator");
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int tsfi_cw_omp_hub_check_install(const char *target_pkg, const tsfi_cw_omp_hub_pkg *repo, int repo_count, int *can_install_out) {
+    if (!target_pkg || !repo || repo_count < 0 || !can_install_out) return -1;
+    
+    *can_install_out = 0;
+    int found_index = -1;
+    for (int i = 0; i < repo_count; i++) {
+        if (strcmp(repo[i].name, target_pkg) == 0) {
+            found_index = i;
+            break;
+        }
+    }
+    
+    if (found_index == -1) {
+        return 1; // Package not found in repository catalog
+    }
+    
+    // Check dependencies
+    if (repo[found_index].depends_on[0] != 0) {
+        int dep_found = 0;
+        for (int j = 0; j < repo_count; j++) {
+            if (strcmp(repo[j].name, repo[found_index].depends_on) == 0) {
+                dep_found = 1;
+                if (repo[j].is_installed) {
+                    *can_install_out = 1;
+                }
+                break;
+            }
+        }
+        if (!dep_found) {
+            return 1; // Unresolvable dependency definition
+        }
+    } else {
+        *can_install_out = 1; // No dependency constraints
+    }
+    
+    return 0;
+}
+
+
 
 
 

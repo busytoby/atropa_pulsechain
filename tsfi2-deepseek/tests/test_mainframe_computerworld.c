@@ -2317,6 +2317,26 @@ static void test_new_mainframe_features(void) {
     assert(strcmp(mvs_cmd, "D A,L") == 0);
     assert(tsfi_cw_omp_ambitus_translate("grep", mvs_cmd, sizeof(mvs_cmd)) == 0);
     assert(strcmp(mvs_cmd, "D TS") == 0);
+
+    // OMP COBOL syntax verify test
+    char cob_err[128] = {0};
+    assert(tsfi_cw_omp_cobol_verify_syntax("01 WS-VAR PIC X(10)", cob_err, sizeof(cob_err)) == 1);
+    assert(strstr(cob_err, "Missing ending period") != NULL);
+    assert(tsfi_cw_omp_cobol_verify_syntax("01 WS-VAR PIC X(10).", cob_err, sizeof(cob_err)) == 0);
+    assert(strlen(cob_err) == 0);
+
+    // OMP Software Hub test
+    tsfi_cw_omp_hub_pkg repo[2] = {
+        { "zowe-cli", "nodejs", 0 },
+        { "nodejs", "", 1 } // installed
+    };
+    int can_install = 0;
+    assert(tsfi_cw_omp_hub_check_install("zowe-cli", repo, 2, &can_install) == 0);
+    assert(can_install == 1);
+    
+    repo[1].is_installed = 0; // uninstall nodejs
+    assert(tsfi_cw_omp_hub_check_install("zowe-cli", repo, 2, &can_install) == 0);
+    assert(can_install == 0);
 }
 
 int main(void) {

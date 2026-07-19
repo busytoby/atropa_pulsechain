@@ -1283,5 +1283,17 @@ int tsfi_cw_omp_sdt_parse_catalog(const char *raw_data, tsfi_cw_omp_sdt_package 
 // OMP Ambitus Command Translator
 int tsfi_cw_omp_ambitus_translate(const char *unix_cmd, char *mvs_cmd_out, size_t mvs_max);
 
+// OMP COBOL Compiler syntax verifier
+int tsfi_cw_omp_cobol_verify_syntax(const char *cobol_line, char *err_out, size_t err_max);
+
+// OMP Mainframe Software Hub Package Info
+typedef struct {
+    char name[32];
+    char depends_on[32];
+    int is_installed;
+} tsfi_cw_omp_hub_pkg;
+
+int tsfi_cw_omp_hub_check_install(const char *target_pkg, const tsfi_cw_omp_hub_pkg *repo, int repo_count, int *can_install_out);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 
