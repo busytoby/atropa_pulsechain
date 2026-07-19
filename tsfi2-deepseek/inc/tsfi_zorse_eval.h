@@ -597,4 +597,10 @@ int tsfi_zorse_validate_vse_power_flash_override(const char *jcl_line, int *is_v
 // COBOL Report Writer Detail Group Line Spacing Auditor
 int tsfi_zorse_validate_cobol_line_spacing(const char *cobol_src, int *is_valid_out);
 
+// z/VSE POWER Spool forms flash overlay Status Validator
+int tsfi_zorse_validate_vse_power_flash_status(const char *jcl_line, int *is_valid_out);
+
+// COBOL Report Writer Next Page Spacing Auditor
+int tsfi_zorse_validate_cobol_next_page(const char *cobol_src, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

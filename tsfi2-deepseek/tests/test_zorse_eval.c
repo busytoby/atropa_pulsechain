@@ -1016,6 +1016,14 @@ int main(void) {
     assert(tsfi_zorse_validate_cobol_line_spacing("01 DETAIL-LINE LINE PLUS 1.", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 213: z/VSE POWER Spool forms flash overlay Status Validator validation
+    assert(tsfi_zorse_validate_vse_power_flash_status("* $$ LST FLASH=(OVL1,STATUS),DISP=H\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 214: COBOL Report Writer Next Page Spacing Auditor validation
+    assert(tsfi_zorse_validate_cobol_next_page("01 DETAIL-LINE LINE NEXT PAGE.", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
