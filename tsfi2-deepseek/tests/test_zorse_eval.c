@@ -960,6 +960,14 @@ int main(void) {
     assert(tsfi_zorse_validate_cobol_detail_group("01 TYPE IS DETAIL.", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 199: z/VSE POWER Spool Printer Forms Validator validation
+    assert(tsfi_zorse_validate_vse_power_form("* $$ LST FORM=STD,DISP=H\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 200: COBOL Report Writer Control Heading Auditor validation
+    assert(tsfi_zorse_validate_cobol_control_heading("01 TYPE IS CONTROL HEADING.", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
