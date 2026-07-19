@@ -47,4 +47,7 @@ int tsfi_ray_tracer_apply_vaesen_aura(tsfi_cgm_scene *scene, const char *region_
 // VSEn Ray Tracer Unified Renderer
 int tsfi_vsen_ray_tracer_render(const char *vaesen_name, const char *region_name, uint32_t *image_out, int width, int height);
 
+// VSEn Moondream2 LLM-guided Element Drawing
+int tsfi_vsen_ray_tracer_draw_element(tsfi_cgm_scene *scene, const char *element_name, const char *b64_guidance_img);
+
 #endif // TSFI_RAY_TRACER_H

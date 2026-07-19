@@ -179,6 +179,13 @@ int main(void) {
     assert(tsfi_vsen_ray_tracer_render("Mara", "Uppsala", vsen_img, width, height) == 0);
     free(vsen_img);
 
+    // Test Moondream2 Guided Drawing
+    printf("[TEST] Validating VSEn Moondream2 Guided Drawing...\n");
+    tsfi_cgm_scene draw_scene;
+    tsfi_cgm_scene_init(&draw_scene);
+    assert(tsfi_vsen_ray_tracer_draw_element(&draw_scene, "Shield", "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==") == 0);
+    assert(draw_scene.primitive_count == 1);
+
     free(img_buf);
     printf("[SUCCESS] CGI/CGM Ray Tracer validation completed successfully!\n");
     return 0;

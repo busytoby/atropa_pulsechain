@@ -368,3 +368,26 @@ int tsfi_vsen_ray_tracer_render(const char *vaesen_name, const char *region_name
 
     return tsfi_ray_tracer_render(&scene, image_out, width, height);
 }
+
+int tsfi_vsen_ray_tracer_draw_element(tsfi_cgm_scene *scene, const char *element_name, const char *b64_guidance_img) {
+    if (!scene || !element_name || !b64_guidance_img) return -1;
+
+    extern int tsfi_ai_evaluate_vlm(const char *b64_img, const char *prompt, char *output, size_t out_max);
+
+    char vlm_res[512] = {0};
+    char prompt[256];
+    snprintf(prompt, sizeof(prompt), "Analyze the guidance coordinates for drawing the %s icon.", element_name);
+
+    int rc = tsfi_ai_evaluate_vlm(b64_guidance_img, prompt, vlm_res, sizeof(vlm_res));
+    
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 6.0f;
+    if (rc == 0) {
+        sscanf(vlm_res, "%f %f %f", &x, &y, &z);
+    }
+
+    tsfi_rt_vec3 pos = { x, y, z };
+    tsfi_rt_vec3 color = { 0.9f, 0.9f, 0.9f };
+    return tsfi_cgm_scene_add_primitive(scene, CGM_PRIM_SPHERE, pos, color, 0.5f, (tsfi_rt_vec3){0, 0, 0});
+}
