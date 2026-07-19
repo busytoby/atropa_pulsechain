@@ -684,6 +684,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_gdg("//DD21 DD DSN=APP.GDG.DATASET(+1),DISP=(NEW,CATLG)\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 143: COBOL READ NEXT Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_read_next("READ FILE-A NEXT RECORD INTO REC-BUF.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 144: JCL DD PATHMODE Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_pathmode("//DD22 DD PATH='/u/usr/data',PATHMODE=SIRWXU\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
