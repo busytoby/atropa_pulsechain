@@ -1,5 +1,6 @@
 #include "tsfi_ray_tracer.h"
 #include "tsfi_zorse_eval.h"
+#include "tsfi_svdag.h"
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
@@ -390,4 +391,25 @@ int tsfi_vsen_ray_tracer_draw_element(tsfi_cgm_scene *scene, const char *element
     tsfi_rt_vec3 pos = { x, y, z };
     tsfi_rt_vec3 color = { 0.9f, 0.9f, 0.9f };
     return tsfi_cgm_scene_add_primitive(scene, CGM_PRIM_SPHERE, pos, color, 0.5f, (tsfi_rt_vec3){0, 0, 0});
+}
+
+int tsfi_vsen_ray_tracer_render_zorse_svdag(TSFiHelmholtzSVDAG *dag, const char *element_name, const char *b64_guidance_img, uint32_t *image_out, int width, int height) {
+    if (!dag || !element_name || !b64_guidance_img || !image_out || width <= 0 || height <= 0) return -1;
+
+    tsfi_cgm_scene scene;
+    tsfi_cgm_scene_init(&scene);
+
+    char zorse_src[128];
+    snprintf(zorse_src, sizeof(zorse_src), "XML GENERATE %s.\n", element_name);
+    int comp_rc = tsfi_svdag_compile_zorse(dag, zorse_src);
+    if (comp_rc != 0) return comp_rc;
+
+    int draw_rc = tsfi_vsen_ray_tracer_draw_element(&scene, element_name, b64_guidance_img);
+    if (draw_rc != 0) return draw_rc;
+
+    if (scene.primitive_count > 0 && dag->stream_size > 0) {
+        scene.primitives[0].param1 *= (1.0f + dag->intensity_stream[0]);
+    }
+
+    return tsfi_ray_tracer_render(&scene, image_out, width, height);
 }

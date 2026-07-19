@@ -1,4 +1,5 @@
 #include "tsfi_ray_tracer.h"
+#include "tsfi_svdag.h"
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -185,6 +186,16 @@ int main(void) {
     tsfi_cgm_scene_init(&draw_scene);
     assert(tsfi_vsen_ray_tracer_draw_element(&draw_scene, "Shield", "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==") == 0);
     assert(draw_scene.primitive_count == 1);
+
+    // Test Combined VSEn Zorse SVDAG Renderer
+    printf("[TEST] Validating VSEn Zorse SVDAG Renderer...\n");
+    TSFiTasteTree *taste_tree = tsfi_svdag_create(10);
+    assert(taste_tree != NULL);
+    uint32_t *zorse_svdag_img = malloc(width * height * sizeof(uint32_t));
+    assert(zorse_svdag_img != NULL);
+    assert(tsfi_vsen_ray_tracer_render_zorse_svdag(taste_tree, "Shield", "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", zorse_svdag_img, width, height) == 0);
+    free(zorse_svdag_img);
+    tsfi_svdag_destroy(taste_tree);
 
     free(img_buf);
     printf("[SUCCESS] CGI/CGM Ray Tracer validation completed successfully!\n");

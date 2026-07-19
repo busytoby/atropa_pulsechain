@@ -50,4 +50,8 @@ int tsfi_vsen_ray_tracer_render(const char *vaesen_name, const char *region_name
 // VSEn Moondream2 LLM-guided Element Drawing
 int tsfi_vsen_ray_tracer_draw_element(tsfi_cgm_scene *scene, const char *element_name, const char *b64_guidance_img);
 
+// VSEn Zorse SVDAG Unified Renderer
+struct TSFiHelmholtzSVDAG;
+int tsfi_vsen_ray_tracer_render_zorse_svdag(struct TSFiHelmholtzSVDAG *dag, const char *element_name, const char *b64_guidance_img, uint32_t *image_out, int width, int height);
+
 #endif // TSFI_RAY_TRACER_H
