@@ -68,14 +68,15 @@ int tsfi_phoneme_map_word(TSFiSynthPerfEngine *engine, const char *word, int whe
         final_freq = (final_freq + avg_f1 + avg_f2) * 0.5f;
     }
 
-    // Consonantal noise injection simulation: add pseudo-random amplitude fluctuation
+    // Consonantal noise injection simulation: add extremely soft pseudo-random amplitude fluctuation
     if (consonant_count > 0) {
-        float noise_jitter = (float)(consonant_count % 7) * 0.05f;
+        float noise_jitter = (float)(consonant_count % 7) * 0.005f; // reduced by 10x
         total_amplitude += noise_jitter;
+        total_amplitude *= 0.12f; // attenuate overall volume of consonants to keep them soft
         if (total_amplitude > 1.0f) total_amplitude = 1.0f;
         
         // Add a high-frequency jitter component to frequency to simulate noise
-        final_freq += (float)(consonant_count % 5) * 15.0f;
+        final_freq += (float)(consonant_count % 5) * 5.0f; // reduced jitter range
     }
 
     // 2. Apply directly to tone-wheel parameters with LGP-30 twin-triode warmth saturation
