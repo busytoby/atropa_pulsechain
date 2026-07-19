@@ -1769,3 +1769,27 @@ int tsfi_zorse_eval_dat_llm_query(const char *dat_bin_path, const char *prompt, 
     
     return 0;
 }
+
+int tsfi_zorse_validate_vse_vtam_mpc(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(jcl_line, "MPCGRP") || strstr(jcl_line, "MPC")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_vse_fba_vdisk(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(jcl_line, "VDISK") && strstr(jcl_line, "UNIT=")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}

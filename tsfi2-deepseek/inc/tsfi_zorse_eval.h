@@ -336,4 +336,10 @@ int tsfi_zorse_validate_vse_vsam_rls(const char *jcl_line, int *is_valid_out);
 // Zorse and z/VSE Combined DAT-based LLM Query Interface
 int tsfi_zorse_eval_dat_llm_query(const char *dat_bin_path, const char *prompt, char *response_out, size_t max_len);
 
+// z/VSE VTAM Multi-Path Channel (MPC) Auditor
+int tsfi_zorse_validate_vse_vtam_mpc(const char *jcl_line, int *is_valid_out);
+
+// z/VSE Virtual Disk (FBA) Parameter Auditor
+int tsfi_zorse_validate_vse_fba_vdisk(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

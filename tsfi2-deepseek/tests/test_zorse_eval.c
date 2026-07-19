@@ -575,6 +575,14 @@ int main(void) {
     assert(tsfi_zorse_eval_dat_llm_query(NULL, "CBLTDLI", resp_buf, sizeof(resp_buf)) == 0);
     assert(strstr(resp_buf, "CBLTDLI") != NULL);
 
+    // Test Case 123: z/VSE VTAM Multi-Path Channel (MPC) Auditor validation
+    assert(tsfi_zorse_validate_vse_vtam_mpc("PATH01  LINE  UNIT=0E00,TYPE=MPC\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 124: z/VSE Virtual Disk (FBA) Parameter Auditor validation
+    assert(tsfi_zorse_validate_vse_fba_vdisk("// VDISK UNIT=FBA,SIZE=20480\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
