@@ -466,6 +466,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_prty("//JOB1 JOB 'TEST',PRTY=8\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 96: COBOL DELETE INVALID KEY Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_delete_key("DELETE MY-FILE RECORD INVALID KEY DISPLAY 'ERR'.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 97: JCL BURST Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_burst("//PRT3 DD SYSOUT=A,BURST=Y\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
