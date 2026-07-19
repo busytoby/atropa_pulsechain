@@ -2024,6 +2024,56 @@ int tsfi_cw_omp_galasa_write_html_report(const tsfi_cw_omp_galasa_run *run, cons
     return 0;
 }
 
+int tsfi_cw_omp_sdt_parse_catalog(const char *raw_data, tsfi_cw_omp_sdt_package *pkgs_out, int max_pkgs, int *count_out) {
+    if (!raw_data || !pkgs_out || max_pkgs <= 0 || !count_out) return -1;
+    
+    *count_out = 0;
+    const char *line = raw_data;
+    while (line && *line != 0 && *count_out < max_pkgs) {
+        if (strncmp(line, "PKG ", 4) == 0) {
+            char name[32] = {0};
+            char ver[16] = {0};
+            char status[16] = {0};
+            if (sscanf(line + 4, "%31s %15s %15s", name, ver, status) >= 2) {
+                #pragma GCC diagnostic push
+                #pragma GCC diagnostic ignored "-Wstringop-truncation"
+                strncpy(pkgs_out[*count_out].package_name, name, sizeof(pkgs_out[*count_out].package_name) - 1);
+                pkgs_out[*count_out].package_name[sizeof(pkgs_out[*count_out].package_name) - 1] = 0;
+                strncpy(pkgs_out[*count_out].version, ver, sizeof(pkgs_out[*count_out].version) - 1);
+                pkgs_out[*count_out].version[sizeof(pkgs_out[*count_out].version) - 1] = 0;
+                #pragma GCC diagnostic pop
+                
+                pkgs_out[*count_out].is_obsolete = (strcmp(status, "OBSOLETE") == 0);
+                (*count_out)++;
+            }
+        }
+        
+        line = strchr(line, '\n');
+        if (line) line++;
+    }
+    return 0;
+}
+
+int tsfi_cw_omp_ambitus_translate(const char *unix_cmd, char *mvs_cmd_out, size_t mvs_max) {
+    if (!unix_cmd || !mvs_cmd_out || mvs_max == 0) return -1;
+    
+    mvs_cmd_out[0] = 0;
+    
+    if (strcmp(unix_cmd, "ls") == 0) {
+        snprintf(mvs_cmd_out, mvs_max, "D A,L");
+        return 0;
+    } else if (strcmp(unix_cmd, "cat") == 0) {
+        snprintf(mvs_cmd_out, mvs_max, "D U");
+        return 0;
+    } else if (strcmp(unix_cmd, "grep") == 0) {
+        snprintf(mvs_cmd_out, mvs_max, "D TS");
+        return 0;
+    }
+    
+    snprintf(mvs_cmd_out, mvs_max, "UNKNOWN: %s", unix_cmd);
+    return 1;
+}
+
 
 
 

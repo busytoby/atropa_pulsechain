@@ -2299,6 +2299,24 @@ static void test_new_mainframe_features(void) {
     assert(rep != NULL);
     fclose(rep);
     remove(report_file);
+
+    // OMP Software Discovery Tool Catalog test
+    const char *raw_catalog = "PKG COBOL 15.2 ACTIVE\nPKG ASSEMBLY 2.1 OBSOLETE\n";
+    tsfi_cw_omp_sdt_package pkgs[2];
+    int pkg_count = 0;
+    assert(tsfi_cw_omp_sdt_parse_catalog(raw_catalog, pkgs, 2, &pkg_count) == 0);
+    assert(pkg_count == 2);
+    assert(strcmp(pkgs[0].package_name, "COBOL") == 0);
+    assert(pkgs[0].is_obsolete == 0);
+    assert(strcmp(pkgs[1].package_name, "ASSEMBLY") == 0);
+    assert(pkgs[1].is_obsolete == 1);
+
+    // OMP Ambitus Command Translator test
+    char mvs_cmd[64];
+    assert(tsfi_cw_omp_ambitus_translate("ls", mvs_cmd, sizeof(mvs_cmd)) == 0);
+    assert(strcmp(mvs_cmd, "D A,L") == 0);
+    assert(tsfi_cw_omp_ambitus_translate("grep", mvs_cmd, sizeof(mvs_cmd)) == 0);
+    assert(strcmp(mvs_cmd, "D TS") == 0);
 }
 
 int main(void) {

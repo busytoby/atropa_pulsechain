@@ -1271,5 +1271,17 @@ int tsfi_cw_omp_galasa_assert_timed(tsfi_cw_omp_galasa_run *run, int condition, 
 int tsfi_cw_omp_galasa_run_diagnostics(const tsfi_cw_omp_galasa_run *run, char *report_out, size_t report_max);
 int tsfi_cw_omp_galasa_write_html_report(const tsfi_cw_omp_galasa_run *run, const char *filepath);
 
+// OMP Software Discovery Tool Package
+typedef struct {
+    char package_name[32];
+    char version[16];
+    int is_obsolete;
+} tsfi_cw_omp_sdt_package;
+
+int tsfi_cw_omp_sdt_parse_catalog(const char *raw_data, tsfi_cw_omp_sdt_package *pkgs_out, int max_pkgs, int *count_out);
+
+// OMP Ambitus Command Translator
+int tsfi_cw_omp_ambitus_translate(const char *unix_cmd, char *mvs_cmd_out, size_t mvs_max);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 
