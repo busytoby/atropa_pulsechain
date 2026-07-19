@@ -458,6 +458,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_fcb("//PRT2 DD SYSOUT=A,FCB=STD1\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 94: COBOL READ INVALID KEY Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_read_key("READ MY-FILE RECORD INTO MY-REC INVALID KEY DISPLAY 'ERR'.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 95: JCL PRTY Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_prty("//JOB1 JOB 'TEST',PRTY=8\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

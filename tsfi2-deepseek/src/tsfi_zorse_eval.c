@@ -1386,3 +1386,38 @@ int tsfi_zorse_validate_jcl_fcb(const char *jcl_line, int *is_valid_out) {
     
     return 0;
 }
+
+int tsfi_zorse_validate_cobol_read_key(const char *cobol_src, int *is_valid_out) {
+    if (!cobol_src || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    if (strstr(cobol_src, "READ ") && strstr(cobol_src, "INVALID KEY")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_jcl_prty(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    const char *p = strstr(jcl_line, "PRTY=");
+    if (!p) return 0;
+    
+    p += 5; // Skip "PRTY="
+    
+    int val = 0;
+    while (*p >= '0' && *p <= '9') {
+        val = val * 10 + (*p - '0');
+        p++;
+    }
+    
+    if (val >= 0 && val <= 15) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}

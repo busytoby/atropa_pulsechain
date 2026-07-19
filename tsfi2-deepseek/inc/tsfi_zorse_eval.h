@@ -249,4 +249,10 @@ int tsfi_zorse_validate_cobol_start_key(const char *cobol_src, int *is_valid_out
 // Zorse JCL FCB Parameter Auditor
 int tsfi_zorse_validate_jcl_fcb(const char *jcl_line, int *is_valid_out);
 
+// Zorse COBOL READ INVALID KEY Statement Auditor
+int tsfi_zorse_validate_cobol_read_key(const char *cobol_src, int *is_valid_out);
+
+// Zorse JCL PRTY Parameter Auditor
+int tsfi_zorse_validate_jcl_prty(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H
