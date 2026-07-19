@@ -656,3 +656,35 @@ int tsfi_zorse_generate_flow_prompt(const char *jcl_src, const char *model_name,
     
     return ret;
 }
+
+int tsfi_zorse_validate_cobol_file_status(const char *cobol_src, int *is_valid_out) {
+    if (!cobol_src || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    // Check if COBOL source specifies FILE STATUS clause
+    if (strstr(cobol_src, "FILE STATUS IS ") || strstr(cobol_src, "FILE STATUS ")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_jcl_sysout(const char *jcl_line, int *is_valid_out) {
+    if (!jcl_line || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    const char *p = strstr(jcl_line, "SYSOUT=");
+    if (!p) return 0;
+    
+    p += 7; // Skip "SYSOUT="
+    
+    // Verify it is followed by a valid single alphanumeric character or '*'
+    char c = *p;
+    if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '*') {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}

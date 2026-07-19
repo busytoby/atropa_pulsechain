@@ -233,6 +233,16 @@ int main(void) {
     int flow_prompt_res = tsfi_zorse_generate_flow_prompt("//STEP1 EXEC PGM=IEFBR14", "moondream", flow_prompt_buf, sizeof(flow_prompt_buf));
     assert(flow_prompt_res == 0 || flow_prompt_res == -2);
 
+    // Test Case 44: COBOL FILE STATUS Logic Auditor validation
+    const char *cobol_status_inp = "SELECT MYFILE ASSIGN TO UT-S-FILE1 FILE STATUS IS MY-STATUS.";
+    assert(tsfi_zorse_validate_cobol_file_status(cobol_status_inp, &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 45: JCL SYSOUT Class Auditor validation
+    const char *sysout_line = "//SYSOUT DD SYSOUT=*\n";
+    assert(tsfi_zorse_validate_jcl_sysout(sysout_line, &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
