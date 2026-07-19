@@ -35,6 +35,26 @@ int main(void) {
     assert(tsfi_zorse_validate_cobol(invalid_cobol, &is_valid) == 0);
     assert(is_valid == 0);
 
+    // Test Case 6: Valid JCL DD Statement
+    const char *valid_dd = "//SYSUT1   DD DSN=MY.DATA.SET,DISP=SHR\n";
+    assert(tsfi_zorse_validate_jcl_dd(valid_dd, &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 7: Invalid JCL DD Statement (missing DISP)
+    const char *invalid_dd = "//SYSUT1   DD DSN=MY.DATA.SET\n";
+    assert(tsfi_zorse_validate_jcl_dd(invalid_dd, &is_valid) == 0);
+    assert(is_valid == 0);
+
+    // Test Case 8: Valid HLASM Instruction
+    const char *valid_hlasm = "         LA    R1,MYADDR";
+    assert(tsfi_zorse_validate_hlasm(valid_hlasm, &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 9: Invalid HLASM Instruction (spaces in operands)
+    const char *invalid_hlasm = "         LA    R1, MYADDR";
+    assert(tsfi_zorse_validate_hlasm(invalid_hlasm, &is_valid) == 0);
+    assert(is_valid == 0);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }

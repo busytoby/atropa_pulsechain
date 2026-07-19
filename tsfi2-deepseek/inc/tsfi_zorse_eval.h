@@ -7,4 +7,10 @@ int tsfi_zorse_validate_jcl(const char *jcl_string, int *is_valid_out, char *err
 // Zorse COBOL Division Structure Compliance Validator
 int tsfi_zorse_validate_cobol(const char *cobol_string, int *is_valid_out);
 
+// Zorse JCL DD Parameter Auditor
+int tsfi_zorse_validate_jcl_dd(const char *dd_statement, int *is_valid_out);
+
+// Zorse HLASM Instruction Compliance Auditor
+int tsfi_zorse_validate_hlasm(const char *hlasm_instruction, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

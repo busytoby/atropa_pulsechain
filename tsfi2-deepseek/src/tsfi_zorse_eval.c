@@ -40,3 +40,44 @@ int tsfi_zorse_validate_cobol(const char *cobol_string, int *is_valid_out) {
     
     return 0;
 }
+
+int tsfi_zorse_validate_jcl_dd(const char *dd_statement, int *is_valid_out) {
+    if (!dd_statement || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    // DD statement must contain " DD " parameter
+    if (!strstr(dd_statement, " DD ")) return 0;
+    
+    // Check for standard properties: DSN/DSNAME and DISP
+    if ((strstr(dd_statement, "DSN=") || strstr(dd_statement, "DSNAME=")) && strstr(dd_statement, "DISP=")) {
+        *is_valid_out = 1;
+    }
+    
+    return 0;
+}
+
+int tsfi_zorse_validate_hlasm(const char *hlasm_instruction, int *is_valid_out) {
+    if (!hlasm_instruction || !is_valid_out) return -1;
+    
+    *is_valid_out = 0;
+    
+    size_t len = strlen(hlasm_instruction);
+    if (len == 0 || hlasm_instruction[0] == '*') {
+        // Comment lines are valid HLASM lines
+        *is_valid_out = 1;
+        return 0;
+    }
+    
+    // Check if any comma is followed by a space (invalid operands spacing)
+    const char *p = hlasm_instruction;
+    while ((p = strchr(p, ',')) != NULL) {
+        if (p[1] == ' ' || p[1] == '\t') {
+            return 0;
+        }
+        p++;
+    }
+    
+    *is_valid_out = 1;
+    return 0;
+}
