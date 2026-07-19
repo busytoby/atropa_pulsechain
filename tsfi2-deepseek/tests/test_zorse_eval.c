@@ -490,6 +490,14 @@ int main(void) {
     assert(tsfi_zorse_validate_jcl_hold("//DD11 DD DSN=A.B.C,HOLD=YES\n", &is_valid) == 0);
     assert(is_valid == 1);
 
+    // Test Case 102: COBOL ACCEPT Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_accept("ACCEPT CURRENT-DATE FROM DATE.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 103: JCL FREE Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_free("//DD12 DD DSN=A.B.C,FREE=CLOSE\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
