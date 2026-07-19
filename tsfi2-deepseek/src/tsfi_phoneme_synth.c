@@ -196,3 +196,29 @@ int tsfi_phoneme_yu_estimate_duration(const char *syllable, int *duration_ms_out
     *duration_ms_out = duration;
     return 0;
 }
+
+int tsfi_phoneme_reset_sandhi_at_boundary(int pause_duration_ms, int original_tone, int *effective_tone_out) {
+    if (!effective_tone_out) return -1;
+    
+    // If phrasing break is a major breath break (>200ms), reset sandhi modifications (effective tone remains original tone)
+    if (pause_duration_ms > 200) {
+        *effective_tone_out = original_tone;
+    } else {
+        // Otherwise, allow tone modifications to propagate (effective tone could be adjusted)
+        *effective_tone_out = -1; // flags sandhi propagation is active
+    }
+    return 0;
+}
+
+int tsfi_phoneme_reset_declination_at_boundary(const char *sentence, int char_idx, int current_progress, int *new_progress_out) {
+    if (!sentence || char_idx < 0 || char_idx >= (int)strlen(sentence) || !new_progress_out) return -1;
+    
+    *new_progress_out = current_progress;
+    char current_char = sentence[char_idx];
+    
+    // Reset declination progress to zero when crossing a sentence-level punctuation boundary
+    if (current_char == '.' || current_char == '?' || current_char == '!') {
+        *new_progress_out = 0;
+    }
+    return 0;
+}

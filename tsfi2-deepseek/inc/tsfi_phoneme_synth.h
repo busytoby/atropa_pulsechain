@@ -31,4 +31,12 @@ int tsfi_phoneme_yu_calculate_declination(int word_progress_idx, int total_words
 // Approximates syllable length in milliseconds using phonological vowel/consonant properties
 int tsfi_phoneme_yu_estimate_duration(const char *syllable, int *duration_ms_out);
 
+// Sandhi Boundary Resetter
+// Resets tone sandhi adjustments if a major phrasing break pause exceeds 200ms
+int tsfi_phoneme_reset_sandhi_at_boundary(int pause_duration_ms, int original_tone, int *effective_tone_out);
+
+// Declination Reset Controller
+// Resets word progress index to zero if a sentence/prosodic break is detected
+int tsfi_phoneme_reset_declination_at_boundary(const char *sentence, int char_idx, int current_progress, int *new_progress_out);
+
 #endif // TSFI_PHONEME_SYNTH_H

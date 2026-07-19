@@ -72,6 +72,17 @@ int main(void) {
     int syllable_dur = 0;
     assert(tsfi_phoneme_yu_estimate_duration("ma", &syllable_dur) == 0);
     assert(syllable_dur == 210); // 150 + 15('m') + 45('a')
+    // 8. Test Sandhi Boundary Resetter
+    int eff_tone = 0;
+    assert(tsfi_phoneme_reset_sandhi_at_boundary(250, 3, &eff_tone) == 0);
+    assert(eff_tone == 3); // reset triggered (effective tone is original)
+    assert(tsfi_phoneme_reset_sandhi_at_boundary(80, 3, &eff_tone) == 0);
+    assert(eff_tone == -1); // sandhi propagation active
+
+    // 9. Test Declination Reset Controller
+    int new_prog = 0;
+    assert(tsfi_phoneme_reset_declination_at_boundary("Hello, world.", 12, 5, &new_prog) == 0);
+    assert(new_prog == 0); // reset declination progress to 0 at period
 
     // Cleanup
     tsfi_synth_perf_destroy(perf_engine);
