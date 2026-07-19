@@ -2655,6 +2655,38 @@ int tsfi_cw_hainaut_export_ddl(const tsfi_cw_hainaut_table *table, char *buffer_
     return 0;
 }
 
+int tsfi_cw_hainaut_analyze_quality(const tsfi_cw_hainaut_table *tables, int count, double *quality_score_out) {
+    if (!tables || count <= 0 || !quality_score_out) return -1;
+    
+    double score = 100.0;
+    for (int i = 0; i < count; i++) {
+        // Table lacks a primary key: deduct 15 points
+        if (strlen(tables[i].primary_key) == 0) {
+            score -= 15.0;
+        }
+        // Self-referencing tables: deduct 10 points
+        if (strcmp(tables[i].table_name, tables[i].references_table) == 0 && strlen(tables[i].references_table) > 0) {
+            score -= 10.0;
+        }
+    }
+    
+    if (score < 0.0) score = 0.0;
+    *quality_score_out = score;
+    return 0;
+}
+
+int tsfi_cw_hainaut_promote_to_key(const char *attribute_name, tsfi_cw_hainaut_table *table_io) {
+    if (!attribute_name || !table_io) return -1;
+    
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wstringop-truncation"
+    strncpy(table_io->primary_key, attribute_name, sizeof(table_io->primary_key) - 1);
+    table_io->primary_key[sizeof(table_io->primary_key) - 1] = 0;
+    #pragma GCC diagnostic pop
+    
+    return 0;
+}
+
 
 
 

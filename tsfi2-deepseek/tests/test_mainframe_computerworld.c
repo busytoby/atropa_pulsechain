@@ -2552,6 +2552,19 @@ static void test_new_mainframe_features(void) {
     char ddl_buf[256];
     assert(tsfi_cw_hainaut_export_ddl(&tgt_io, ddl_buf, 256) == 0);
     assert(strcmp(ddl_buf, "CREATE TABLE TGT ( TGT_ID PK , EMP_ID FK REFERENCES EMPLOYEE )") == 0);
+
+    // Hainaut Schema Quality Analyzer test
+    double q_score = 0.0;
+    tsfi_cw_hainaut_table q_tables[2] = {
+        { "T1", "ID", "", "" },
+        { "T2", "", "", "" } // lacks primary key -> deducts 15 points
+    };
+    assert(tsfi_cw_hainaut_analyze_quality(q_tables, 2, &q_score) == 0);
+    assert(q_score == 85.0);
+
+    // Hainaut Attribute-to-Key Promoter test
+    assert(tsfi_cw_hainaut_promote_to_key("NEW_KEY", &q_tables[1]) == 0);
+    assert(strcmp(q_tables[1].primary_key, "NEW_KEY") == 0);
 }
 
 int main(void) {

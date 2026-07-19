@@ -1452,5 +1452,11 @@ int tsfi_cw_hainaut_demote_entity(const tsfi_cw_hainaut_table *entity_table, tsf
 // Hainaut DDL Schema Exporter
 int tsfi_cw_hainaut_export_ddl(const tsfi_cw_hainaut_table *table, char *buffer_out, int max_len);
 
+// Hainaut Schema Quality Analyzer
+int tsfi_cw_hainaut_analyze_quality(const tsfi_cw_hainaut_table *tables, int count, double *quality_score_out);
+
+// Hainaut Attribute-to-Key Promoter
+int tsfi_cw_hainaut_promote_to_key(const char *attribute_name, tsfi_cw_hainaut_table *table_io);
+
 #endif // TSFI_MAINFRAME_COMPUTERWORLD_H
 
