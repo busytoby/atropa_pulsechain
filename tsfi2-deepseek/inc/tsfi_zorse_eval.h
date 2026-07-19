@@ -357,4 +357,10 @@ int tsfi_vsen_vaesen_audit_transaction(const char *cics_trans_id, const char *en
 int tsfi_vsen_vaesen_record_sight(const char *entity_name, const char *location, int fear_factor);
 int tsfi_vsen_vaesen_get_aggregate_fear(const char *location, int *agg_fear_out);
 
+// Zorse COBOL CALL USING Statement Auditor
+int tsfi_zorse_validate_cobol_call_using(const char *cobol_src, int *is_valid_out);
+
+// Zorse JCL SYMLIST Parameter Auditor
+int tsfi_zorse_validate_jcl_symlist(const char *jcl_line, int *is_valid_out);
+
 #endif // TSFI_ZORSE_EVAL_H

@@ -628,6 +628,14 @@ int main(void) {
     
     remove("vaesen_sights.dat.bin");
 
+    // Test Case 129: COBOL CALL USING Statement Auditor validation
+    assert(tsfi_zorse_validate_cobol_call_using("CALL 'SUBPROG' USING BY REFERENCE PARM-1.", &is_valid) == 0);
+    assert(is_valid == 1);
+
+    // Test Case 130: JCL SYMLIST Parameter Auditor validation
+    assert(tsfi_zorse_validate_jcl_symlist("//DD16 DD SYSOUT=*,SYMLIST=(VAR1)\n", &is_valid) == 0);
+    assert(is_valid == 1);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
