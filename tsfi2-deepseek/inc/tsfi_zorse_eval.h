@@ -48,4 +48,10 @@ int tsfi_zorse_audit_screen_visual(const char *b64_screen_img, const char *model
 // Zorse LLM COBOL-to-HLASM Transpiler
 int tsfi_zorse_transpile_cobol_to_hlasm(const char *cobol_src, const char *model_name, char *hlasm_out, size_t max_len);
 
+// Zorse Moondream Flowchart-to-JCL Generator
+int tsfi_zorse_generate_jcl_from_flowchart(const char *b64_flowchart_img, const char *model_name, char *jcl_out, size_t max_len);
+
+// Zorse LLM HLASM-to-COBOL Reverse Transpiler
+int tsfi_zorse_transpile_hlasm_to_cobol(const char *hlasm_src, const char *model_name, char *cobol_out, size_t max_len);
+
 #endif // TSFI_ZORSE_EVAL_H

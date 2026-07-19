@@ -368,3 +368,32 @@ int tsfi_zorse_transpile_cobol_to_hlasm(const char *cobol_src, const char *model
     
     return ret;
 }
+
+int tsfi_zorse_generate_jcl_from_flowchart(const char *b64_flowchart_img, const char *model_name, char *jcl_out, size_t max_len) {
+    if (!b64_flowchart_img || !model_name || !jcl_out || max_len == 0) return -1;
+    
+    jcl_out[0] = '\0';
+    
+    const char *prompt = "Extract the program execution sequence from this flowchart image and write a compliant JCL job stream with EXEC cards.";
+    
+    return tsfi_ai_evaluate_vlm(b64_flowchart_img, prompt, jcl_out, max_len);
+}
+
+int tsfi_zorse_transpile_hlasm_to_cobol(const char *hlasm_src, const char *model_name, char *cobol_out, size_t max_len) {
+    if (!hlasm_src || !model_name || !cobol_out || max_len == 0) return -1;
+    
+    cobol_out[0] = '\0';
+    
+    size_t h_len = strlen(hlasm_src);
+    char *prompt = (char *)malloc(h_len + 128);
+    if (!prompt) return -1;
+    
+    snprintf(prompt, h_len + 128, 
+             "Translate this HLASM assembly block into equivalent COBOL divisions and statements. Output only COBOL code: %s", 
+             hlasm_src);
+    
+    int ret = tsfi_zorse_query_llm(prompt, model_name, cobol_out, max_len);
+    free(prompt);
+    
+    return ret;
+}

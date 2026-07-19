@@ -141,6 +141,16 @@ int main(void) {
     int transp_res_val = tsfi_zorse_transpile_cobol_to_hlasm("DISPLAY 'HELLO'.", "moondream", transp_res, sizeof(transp_res));
     assert(transp_res_val == 0 || transp_res_val == -2);
 
+    // Test Case 27: Moondream Flowchart-to-JCL Generator validation
+    char flowchart_res[256];
+    int flow_res = tsfi_zorse_generate_jcl_from_flowchart("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "moondream", flowchart_res, sizeof(flowchart_res));
+    assert(flow_res == 0 || flow_res == -2 || flow_res == -1);
+
+    // Test Case 28: LLM HLASM-to-COBOL Reverse Transpiler validation
+    char cobol_transp_res[256];
+    int reverse_res = tsfi_zorse_transpile_hlasm_to_cobol("BALR 12,0", "moondream", cobol_transp_res, sizeof(cobol_transp_res));
+    assert(reverse_res == 0 || reverse_res == -2);
+
     printf("[PASS] Zorse compliance evaluation tests verified successfully!\n");
     return 0;
 }
