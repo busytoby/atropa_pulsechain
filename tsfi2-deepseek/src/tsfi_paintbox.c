@@ -1020,3 +1020,25 @@ int tsfi_quantel_paintbox_warm_cool_filter(uint32_t *pixels, int w, int h, float
     }
     return 0;
 }
+
+int tsfi_quantel_paintbox_saturation_sweep(uint32_t *pixels, int w, int h, float saturation_adjust) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = pixels[i];
+        float r = ((pix >> 16) & 0xFF) / 255.0f;
+        float g = ((pix >> 8) & 0xFF) / 255.0f;
+        float b = (pix & 0xFF) / 255.0f;
+
+        float luma = 0.299f * r + 0.587f * g + 0.114f * b;
+        float nr = luma + (r - luma) * saturation_adjust;
+        float ng = luma + (g - luma) * saturation_adjust;
+        float nb = luma + (b - luma) * saturation_adjust;
+
+        if (nr < 0.0f) { nr = 0.0f; } if (nr > 1.0f) { nr = 1.0f; }
+        if (ng < 0.0f) { ng = 0.0f; } if (ng > 1.0f) { ng = 1.0f; }
+        if (nb < 0.0f) { nb = 0.0f; } if (nb > 1.0f) { nb = 1.0f; }
+
+        pixels[i] = (0xFF000000) | ((int)(nr * 255.0f) << 16) | ((int)(ng * 255.0f) << 8) | (int)(nb * 255.0f);
+    }
+    return 0;
+}

@@ -375,6 +375,18 @@ int tsfi_quantel_harry_clock_wipe(const uint32_t *src_a, const uint32_t *src_b, 
 /* Storyboard Frame Thumbnail Grid Crosshairs Overlay */
 int tsfi_quantel_storyboard_crosshairs(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t color);
 
+/* Quantel Paintbox Palette Saturation Sweep */
+int tsfi_quantel_paintbox_saturation_sweep(uint32_t *pixels, int w, int h, float saturation_adjust);
+
+/* Mirage 3D Double Twirl Symmetry Warp */
+int tsfi_quantel_mirage_double_twirl(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float angle, float radius);
+
+/* Harry Chronological Frame Interlaced Field Splitter */
+int tsfi_quantel_harry_split_fields(const uint32_t *src, uint32_t *field_even, uint32_t *field_odd, int w, int h);
+
+/* Storyboard Frame Thumbnail Grid Outer Borders */
+int tsfi_quantel_storyboard_outer_borders(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t border_color);
+
 #endif // TSFI_PAINT_H
 
 

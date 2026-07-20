@@ -1382,3 +1382,29 @@ int tsfi_quantel_storyboard_crosshairs(uint32_t *pixels, int w, int h, int cell_
     }
     return 0;
 }
+
+int tsfi_quantel_harry_split_fields(const uint32_t *src, uint32_t *field_even, uint32_t *field_odd, int w, int h) {
+    if (!src || !field_even || !field_odd || w <= 0 || h <= 0) return -1;
+    for (int y = 0; y < h; y++) {
+        uint32_t *dst_row = (y % 2 == 0) ? field_even : field_odd;
+        memcpy(dst_row + y * w, src + y * w, w * sizeof(uint32_t));
+        
+        uint32_t *unused_row = (y % 2 == 0) ? field_odd : field_even;
+        memset(unused_row + y * w, 0, w * sizeof(uint32_t));
+    }
+    return 0;
+}
+
+int tsfi_quantel_storyboard_outer_borders(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t border_color) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    for (int y = cell_y; y < cell_y + cell_h; y++) {
+        if (y < 0 || y >= h) continue;
+        for (int x = cell_x; x < cell_x + cell_w; x++) {
+            if (x < 0 || x >= w) continue;
+            if (y == cell_y || y == cell_y + cell_h - 1 || x == cell_x || x == cell_x + cell_w - 1) {
+                pixels[y * w + x] = border_color;
+            }
+        }
+    }
+    return 0;
+}
