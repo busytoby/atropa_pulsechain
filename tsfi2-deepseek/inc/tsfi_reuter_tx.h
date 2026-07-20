@@ -145,6 +145,19 @@ int tsfi_reuter_2pc_add_participant(tsfi_reuter_2pc_coordinator *coord, uint32_t
 int tsfi_reuter_2pc_vote(tsfi_reuter_2pc_coordinator *coord, uint32_t node_id, bool vote_commit);
 int tsfi_reuter_2pc_finalize(tsfi_reuter_2pc_coordinator *coord, bool *is_committed);
 
+// MVCC Version Chain Node
+typedef struct tsfi_reuter_version {
+    uint64_t lsn;
+    uint8_t data[REUTER_MAX_DATA_SIZE];
+    struct tsfi_reuter_version *next;
+} tsfi_reuter_version;
+
+// WFG (Wait-For Graph) Edge
+typedef struct {
+    uint32_t waiting_tx_id;
+    uint32_t holding_tx_id;
+} tsfi_reuter_wfg_edge;
+
 // Savepoint & Nested Transaction APIs
 int tsfi_reuter_savepoint_create(tsfi_reuter_tx_context *ctx, const char *name, uint64_t current_lsn);
 uint64_t tsfi_reuter_savepoint_rollback(tsfi_reuter_tx_context *ctx, const char *name);
@@ -160,5 +173,16 @@ int tsfi_reuter_group_commit_queue(tsfi_reuter_group_commit *gc, uint32_t tx_id,
                                     uint32_t len, const uint8_t *before, const uint8_t *after, 
                                     uint64_t *assigned_lsn);
 int tsfi_reuter_group_commit_flush(tsfi_reuter_group_commit *gc);
+
+// Lock Escalation API
+int tsfi_reuter_lock_escalate(tsfi_reuter_lock_head *lock_heads, int lock_head_count, uint32_t tx_id);
+
+// Deadlock Detection API
+int tsfi_reuter_wfg_detect_deadlock(const tsfi_reuter_wfg_edge *edges, int edge_count, uint32_t *victim_tx_id_out);
+
+// MVCC APIs
+int tsfi_reuter_mvcc_write(tsfi_reuter_version **head, uint64_t commit_lsn, const uint8_t *data, int len);
+int tsfi_reuter_mvcc_read(const tsfi_reuter_version *head, uint64_t start_lsn, uint8_t *data_out, int len);
+int tsfi_reuter_mvcc_sweep(tsfi_reuter_version **head, uint64_t min_active_lsn);
 
 #endif // TSFI_REUTER_TX_H

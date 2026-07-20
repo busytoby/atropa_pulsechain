@@ -1,6 +1,7 @@
 #include "tsfi_reuter_tx.h"
 #include <string.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 static uint64_t global_lsn = 0;
 
@@ -437,5 +438,154 @@ int tsfi_reuter_group_commit_flush(tsfi_reuter_group_commit *gc) {
     fsync(gc->log_fd);
     
     gc->queued_count = 0; // Reset queue
+    return 0;
+}
+
+// 10. Lock Escalation
+int tsfi_reuter_lock_escalate(tsfi_reuter_lock_head *lock_heads, int lock_head_count, uint32_t tx_id) {
+    if (!lock_heads || lock_head_count <= 0) return -1;
+    
+    int tx_lock_count = 0;
+    // Count lock heads where this transaction has granted locks
+    for (int i = 0; i < lock_head_count; i++) {
+        for (int j = 0; j < lock_heads[i].request_count; j++) {
+            if (lock_heads[i].requests[j].transaction_id == tx_id && lock_heads[i].requests[j].granted) {
+                tx_lock_count++;
+            }
+        }
+    }
+    
+    // Escalate if transaction holds more than 3 locks (simulating low memory ceiling)
+    if (tx_lock_count > 3) {
+        // Upgrade the first lock head to Exclusive (X) and release the rest
+        bool upgraded = false;
+        for (int i = 0; i < lock_head_count; i++) {
+            bool has_lock = false;
+            int req_idx = -1;
+            for (int j = 0; j < lock_heads[i].request_count; j++) {
+                if (lock_heads[i].requests[j].transaction_id == tx_id) {
+                    has_lock = true;
+                    req_idx = j;
+                    break;
+                }
+            }
+            
+            if (has_lock) {
+                if (!upgraded) {
+                    lock_heads[i].requests[req_idx].mode = LOCK_MODE_X;
+                    lock_heads[i].requests[req_idx].granted = true; // Force upgrade
+                    upgraded = true;
+                } else {
+                    // Release subsequent locks held by this transaction
+                    tsfi_reuter_lock_release(&lock_heads[i], tx_id);
+                }
+            }
+        }
+        return 0; // Escalated successfully
+    }
+    
+    return 1; // Escalation not needed
+}
+
+// 11. Deadlock Detection via Wait-For Graphs (WFG)
+int tsfi_reuter_wfg_detect_deadlock(const tsfi_reuter_wfg_edge *edges, int edge_count, uint32_t *victim_tx_id_out) {
+    if (!edges || edge_count <= 0 || !victim_tx_id_out) return -1;
+    
+    // Cycle detection using adjacency traversal (WFG path search)
+    for (int i = 0; i < edge_count; i++) {
+        uint32_t start_tx = edges[i].waiting_tx_id;
+        uint32_t current_tx = edges[i].holding_tx_id;
+        
+        // Follow wait chains (max depth 8 to prevent infinite loops)
+        for (int depth = 0; depth < 8; depth++) {
+            if (current_tx == start_tx) {
+                // Cycle detected! Select lowest transaction ID as the victim
+                uint32_t victim = edges[i].waiting_tx_id;
+                for (int k = 0; k < edge_count; k++) {
+                    if (edges[k].waiting_tx_id < victim) {
+                        victim = edges[k].waiting_tx_id;
+                    }
+                }
+                *victim_tx_id_out = victim;
+                return 0; // Deadlock detected & victim selected
+            }
+            
+            // Move to next edge in wait chain
+            bool chain_moved = false;
+            for (int j = 0; j < edge_count; j++) {
+                if (edges[j].waiting_tx_id == current_tx) {
+                    current_tx = edges[j].holding_tx_id;
+                    chain_moved = true;
+                    break;
+                }
+            }
+            if (!chain_moved) break;
+        }
+    }
+    
+    return 1; // No deadlock detected
+}
+
+// 12. MVCC Read, Write, and Sweep
+int tsfi_reuter_mvcc_write(tsfi_reuter_version **head, uint64_t commit_lsn, const uint8_t *data, int len) {
+    if (!head || !data || len > REUTER_MAX_DATA_SIZE) return -1;
+    
+    // Create new version node
+    tsfi_reuter_version *new_ver = (tsfi_reuter_version *)malloc(sizeof(tsfi_reuter_version));
+    if (!new_ver) return -2;
+    
+    new_ver->lsn = commit_lsn;
+    memcpy(new_ver->data, data, len);
+    
+    // Insert at head (newest version first)
+    new_ver->next = *head;
+    *head = new_ver;
+    
+    return 0;
+}
+
+int tsfi_reuter_mvcc_read(const tsfi_reuter_version *head, uint64_t start_lsn, uint8_t *data_out, int len) {
+    if (!data_out) return -1;
+    
+    const tsfi_reuter_version *curr = head;
+    while (curr) {
+        // Read version that was committed at or before start_lsn
+        if (curr->lsn <= start_lsn) {
+            memcpy(data_out, curr->data, len);
+            return 0; // Version found
+        }
+        curr = curr->next;
+    }
+    return -2; // No visible version found
+}
+
+int tsfi_reuter_mvcc_sweep(tsfi_reuter_version **head, uint64_t min_active_lsn) {
+    if (!head || !*head) return -1;
+    
+    tsfi_reuter_version *curr = *head;
+    tsfi_reuter_version *prev = NULL;
+    
+    // Traverse version chain. Keep the first version committed <= min_active_lsn.
+    // All subsequent versions are older and no longer active, so they can be swept!
+    bool found_last_active = false;
+    while (curr) {
+        if (curr->lsn <= min_active_lsn) {
+            if (found_last_active) {
+                // Sweep/Free this old version
+                tsfi_reuter_version *to_free = curr;
+                if (prev) {
+                    prev->next = curr->next;
+                } else {
+                    *head = curr->next;
+                }
+                curr = curr->next;
+                free(to_free);
+                continue;
+            }
+            found_last_active = true; // Keep this one as fallback, free remaining
+        }
+        prev = curr;
+        curr = curr->next;
+    }
     return 0;
 }
