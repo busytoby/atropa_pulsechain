@@ -1,0 +1,42 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. ALTO-VIDEO-FRAGMENT-STRATEGY.
+       
+       ENVIRONMENT DIVISION.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  WS-PIXEL-COORD-X      COMP-2 VALUE 0.0.
+       01  WS-PIXEL-COORD-Y      COMP-2 VALUE 0.0.
+       01  WS-CURSOR-REG-X       COMP-2 VALUE 120.0.
+       01  WS-CURSOR-REG-Y       COMP-2 VALUE 450.0.
+       01  WS-SCAN-LINE          COMP-2 VALUE 0.0.
+       01  WS-OUT-COLOR-R        COMP-2 VALUE 0.0.
+       01  WS-OUT-COLOR-G        COMP-2 VALUE 0.0.
+       01  WS-OUT-COLOR-B        COMP-2 VALUE 0.0.
+       01  WS-OUT-COLOR-A        COMP-2 VALUE 1.0.
+       
+       PROCEDURE DIVISION.
+       MAIN-LOGIC SECTION.
+           comment Emulate the Fragment Shader color raster calculation
+           IF WS-PIXEL-COORD-X >= WS-CURSOR-REG-X AND 
+              WS-PIXEL-COORD-X < WS-CURSOR-REG-X + 16.0 AND
+              WS-PIXEL-COORD-Y >= WS-CURSOR-REG-Y AND
+              WS-PIXEL-COORD-Y < WS-CURSOR-REG-Y + 16.0
+               comment Render cursor overlay pixel in classic gold
+               MOVE 0.77 TO WS-OUT-COLOR-R
+               MOVE 0.63 TO WS-OUT-COLOR-G
+               MOVE 0.35 TO WS-OUT-COLOR-B
+           ELSE
+               comment Standard monochrome green phosphor decay background
+               MOVE 0.11 TO WS-OUT-COLOR-R
+               MOVE 0.09 TO WS-OUT-COLOR-G
+               MOVE 0.08 TO WS-OUT-COLOR-B
+           END-IF.
+           
+           comment Apply vertical CRT scanline modulation
+           IF FUNCTION MOD(WS-PIXEL-COORD-Y, 2) = 0
+               COMPUTE WS-OUT-COLOR-R = WS-OUT-COLOR-R * 0.75
+               COMPUTE WS-OUT-COLOR-G = WS-OUT-COLOR-G * 0.75
+               COMPUTE WS-OUT-COLOR-B = WS-OUT-COLOR-B * 0.75
+           END-IF.
+           
+           STOP RUN.

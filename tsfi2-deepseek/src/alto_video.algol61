@@ -1,0 +1,29 @@
+begin
+  comment Standard Algol60/61 Vertex Shader Domain;
+  comment Defines screen boundaries, scaling factors, and viewport projections;
+
+  real procedure project_vertex(coord, scale, offset);
+  value coord, scale, offset;
+  real coord, scale, offset;
+  begin
+    project_vertex := (coord * scale) + offset
+  end;
+
+  real viewport_width, viewport_height;
+  real scale_x, scale_y;
+  real center_x, center_y;
+
+  viewport_width  := 512.0;
+  viewport_height := 512.0;
+
+  comment Map standard Alto portrait mode 606x808 within viewport;
+  scale_x  := 606.0 / viewport_width;
+  scale_y  := 808.0 / viewport_height;
+  center_x := viewport_width / 2.0;
+  center_y := viewport_height / 2.0;
+
+  comment Resolve normalized coordinates;
+  real ndc_x, ndc_y;
+  ndc_x := project_vertex(1.0, scale_x, -center_x);
+  ndc_y := project_vertex(1.0, scale_y, -center_y)
+end
