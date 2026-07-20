@@ -453,40 +453,43 @@ int main() {
             }
         }
 
-        // Draw dynamic tiger stripes sweeping across the screen using Paintbox pressure dynamics
+        // Draw dynamic tiger stripes sweeping across the screen using Paintbox pressure dynamics and path velocity shifts
         float stripe_x = center_x + 140.0f * cosf(t * 2.0f);
         float stripe_y = center_y + 80.0f * sinf(t * 3.5f);
-        tsfi_quantel_paintbox_pressure_jitter_opacity_saturation_value_width_angle_shape_texture(canvas, WIDTH, HEIGHT, (int)stripe_x, (int)stripe_y, 16, 0.9f, 0.3f, 0xFFFF4500, t * 1.5f, 1.4f, 1.8f);
+        tsfi_quantel_paintbox_pressure_jitter_opacity_saturation_value_width_angle_shape_texture_path(canvas, WIDTH, HEIGHT, (int)stripe_x, (int)stripe_y, 16, 0.9f, 0.3f, 0xFFFF4500, t * 1.5f, 1.4f, 1.8f, 5.0f * cosf(t), 5.0f * sinf(t));
 
         memcpy(canvas_b, canvas, WIDTH * HEIGHT * sizeof(uint32_t));
 
-        // Mirage 3D warps to simulate screen roll / optical distortions
+        // Mirage 3D warps to simulate screen roll / optical distortions with depth offsets
         int phase_cycle = ((int)t) % 4;
         if (phase_cycle == 0) {
             float curl_pulse = 1.0f - fmodf(t, 1.0f);
             tsfi_quantel_mirage_sphere_warp(canvas_b, WIDTH, HEIGHT, dst_buffer, WIDTH, HEIGHT, 0.4f * curl_pulse, 120.0f * (1.0f + curl_pulse));
             memcpy(canvas_b, dst_buffer, WIDTH * HEIGHT * sizeof(uint32_t));
         } else if (phase_cycle == 3) {
-            // Apply 3D page curl warp
-            tsfi_quantel_mirage_page_curl_perspective_rotation_shear_center_light_warp(canvas, WIDTH, HEIGHT, canvas_b, WIDTH, HEIGHT, 45.0f, 0.4f * sinf(t), 1.0f + 0.05f * sinf(t), 0.04f, t * 0.08f, 0.04f * sinf(t), 0.0f, center_x, center_y, 1.0f, 1.0f);
+            // Apply 3D page curl perspective rotation shear center light depth warp
+            tsfi_quantel_mirage_page_curl_perspective_rotation_shear_center_light_depth_warp(canvas, WIDTH, HEIGHT, canvas_b, WIDTH, HEIGHT, 45.0f, 0.4f * sinf(t), 1.0f + 0.05f * sinf(t), 0.04f, t * 0.08f, 0.04f * sinf(t), 0.0f, center_x, center_y, 1.0f, 1.0f, 0.05f * cosf(t));
         }
 
-        // Harry Wipe Transitions
+        // Harry Wipe Transitions with Matte mask
         int transition_stage = ((int)t) % 12;
         if (transition_stage == 0) {
             float wipe_p = fmodf(t, 1.0f);
             uint32_t *mat = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
+            uint8_t *matte_mask = malloc(WIDTH * HEIGHT);
             for (int y = 0; y < HEIGHT; y++) {
                 for (int x = 0; x < WIDTH; x++) {
                     mat[y * WIDTH + x] = ((x / 32 + y / 32) % 2 == 0) ? 0xFF3E2723 : 0xFF4E342E;
+                    matte_mask[y * WIDTH + x] = (x > WIDTH / 2) ? 255 : 128;
                 }
             }
-            tsfi_quantel_harry_blend_fields_color_offset_vertical_scale_aspect_rotation_center_mirror(canvas_b, mat, dst_buffer, WIDTH, HEIGHT, wipe_p, 4, 0xFFFF8C00, 2.0f * sinf(t), 1.0f + 0.03f * cosf(t), 1.0f + 0.01f * sinf(t), t * 0.03f, center_x, center_y, 0, 0);
+            tsfi_quantel_harry_blend_fields_color_offset_vertical_scale_aspect_rotation_center_mirror_matte(canvas_b, mat, dst_buffer, WIDTH, HEIGHT, wipe_p, 4, 0xFFFF8C00, 2.0f * sinf(t), 1.0f + 0.03f * cosf(t), 1.0f + 0.01f * sinf(t), t * 0.03f, center_x, center_y, 0, 0, matte_mask);
             memcpy(canvas_b, dst_buffer, WIDTH * HEIGHT * sizeof(uint32_t));
             free(mat);
+            free(matte_mask);
 
-            // Double outline highlights
-            tsfi_quantel_storyboard_border_highlights_concentric_double_outer_width_offset_color_texture(canvas_b, WIDTH, HEIGHT, 32, 120, WIDTH - 64, HEIGHT - 240, 4, 2, 3, 0xFFFF8C00, 0xFFFF4500, 10, 2, (int)(2.0f * sinf(t)), (int)(2.0f * cosf(t)), 0xFF000000, 0.2f);
+            // Double outline highlights with inner bevel overlay
+            tsfi_quantel_storyboard_border_highlights_concentric_double_outer_width_offset_color_texture_bevel(canvas_b, WIDTH, HEIGHT, 32, 120, WIDTH - 64, HEIGHT - 240, 4, 2, 3, 0xFFFF8C00, 0xFFFF4500, 10, 2, (int)(2.0f * sinf(t)), (int)(2.0f * cosf(t)), 0xFF000000, 0.2f, 1);
         }
 
         // Dispatch CICS inputs to HOGAN

@@ -4,6 +4,7 @@
 
 #include "tsfi_paint_core.c"
 #include "tsfi_paintbox.c"
+#include "tsfi_paintbox_part2.c"
 #include "tsfi_mirage.c"
 #include "tsfi_mirage_part2.c"
 #include "tsfi_harry.c"

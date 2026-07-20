@@ -842,3 +842,26 @@ int tsfi_quantel_storyboard_border_highlights_concentric_double_outer_width_offs
     }
     return 0;
 }
+
+int tsfi_quantel_storyboard_border_highlights_concentric_double_outer_width_offset_color_texture_bevel(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int offset_w, int border_w, int count, uint32_t color1, uint32_t color2, int outer_margin, int highlight_thickness, int highlight_offset_x, int highlight_offset_y, uint32_t shadow_color, float texture_intensity, int bevel_thickness) {
+    if (!pixels || w <= 0 || h <= 0 || offset_w < 0 || border_w <= 0 || count <= 0 || highlight_thickness <= 0) return -1;
+    tsfi_quantel_storyboard_border_highlights_concentric_double_outer_width_offset_color_texture(pixels, w, h, cell_x, cell_y, cell_w, cell_h, offset_w, border_w, count, color1, color2, outer_margin, highlight_thickness, highlight_offset_x, highlight_offset_y, shadow_color, texture_intensity);
+
+    for (int t = 0; t < bevel_thickness; t++) {
+        int bx = cell_x + t + 1;
+        int by = cell_y + t + 1;
+        int bw = cell_w - 2 * (t + 1);
+        int bh = cell_h - 2 * (t + 1);
+        if (bx >= 0 && by >= 0 && bx + bw <= w && by + bh <= h) {
+            for (int x = bx; x < bx + bw; x++) {
+                pixels[by * w + x] = color1;
+                pixels[(by + bh - 1) * w + x] = color2;
+            }
+            for (int y = by; y < by + bh; y++) {
+                pixels[y * w + bx] = color1;
+                pixels[y * w + (bx + bw - 1)] = color2;
+            }
+        }
+    }
+    return 0;
+}
