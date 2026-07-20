@@ -822,6 +822,88 @@ int tsfi_quantel_harry_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32
     return 0;
 }
 
+int tsfi_quantel_harry_spill_suppress(uint32_t *pixels, int w, int h, const char *suppress_type, float amount) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = pixels[i];
+        uint8_t r = (pix >> 16) & 0xFF;
+        uint8_t g = (pix >> 8) & 0xFF;
+        uint8_t b = pix & 0xFF;
+
+        if (strcmp(suppress_type, "green") == 0) {
+            uint8_t max_rb = r > b ? r : b;
+            if (g > max_rb) {
+                g = (uint8_t)(g - amount * (g - max_rb));
+            }
+        } else if (strcmp(suppress_type, "blue") == 0) {
+            uint8_t max_rg = r > g ? r : g;
+            if (b > max_rg) {
+                b = (uint8_t)(b - amount * (b - max_rg));
+            }
+        }
+
+        pixels[i] = (0xFF000000) | (r << 16) | (g << 8) | b;
+    }
+    return 0;
+}
+
+int tsfi_quantel_mirage_torus_wrap(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float inner_r, float outer_r) {
+    if (!src || !dst || src_w <= 0 || src_h <= 0 || dst_w <= 0 || dst_h <= 0 || inner_r <= 0.0f || outer_r <= inner_r) return -1;
+
+    memset(dst, 0, dst_w * dst_h * sizeof(uint32_t));
+    float cx = dst_w / 2.0f;
+    float cy = dst_h / 2.0f;
+    float R = (outer_r + inner_r) / 2.0f;
+    float r_minor = (outer_r - inner_r) / 2.0f;
+
+    for (int y = 0; y < dst_h; y++) {
+        float dy = y - cy;
+        for (int x = 0; x < dst_w; x++) {
+            float dx = x - cx;
+            float r_proj = sqrtf(dx * dx + dy * dy);
+
+            if (r_proj >= inner_r && r_proj <= outer_r) {
+                // Toroidal coordinate projection
+                float theta = atan2f(dy, dx);
+                if (theta < 0) theta += 2.0f * M_PI;
+
+                float dist_major = r_proj - R;
+                float phi = acosf(dist_major / r_minor);
+
+                float u = theta / (2.0f * M_PI);
+                float v = phi / M_PI;
+
+                int sx = (int)(u * src_w);
+                int sy = (int)(v * src_h);
+
+                if (sx >= 0 && sx < src_w && sy >= 0 && sy < src_h) {
+                    dst[y * dst_w + x] = src[sy * src_w + sx];
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_paintbox_calligraphy_shape(uint32_t *pixels, int w, int h, int start_x, int start_y, int end_x, int end_y, int max_radius, float pressure, float aspect_ratio, float angle, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+
+    float dx = end_x - start_x;
+    float dy = end_y - start_y;
+    float dist = sqrtf(dx * dx + dy * dy);
+
+    int steps = (int)(dist + 1.0f);
+    for (int i = 0; i <= steps; i++) {
+        float t = (float)i / steps;
+        int cx = (int)(start_x + dx * t);
+        int cy = (int)(start_y + dy * t);
+        tsfi_quantel_paintbox_tablet_brush(pixels, w, h, cx, cy, max_radius, pressure, aspect_ratio, angle, color);
+    }
+    return 0;
+}
+
+
 int tsfi_quantel_paintbox_clone(uint32_t *pixels, int w, int h, int cx, int cy, int src_dx, int src_dy, int radius, float opacity) {
     if (!pixels || w <= 0 || h <= 0 || radius <= 0) return -1;
 

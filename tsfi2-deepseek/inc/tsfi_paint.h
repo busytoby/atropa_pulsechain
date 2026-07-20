@@ -111,7 +111,17 @@ int tsfi_quantel_mirage_mesh_warp(const uint32_t *src, int src_w, int src_h, uin
 /* Quantel Harry: Temporal slow-motion frame blending compositor */
 int tsfi_quantel_harry_temporal_blend(const uint32_t *frame_a, const uint32_t *frame_b, uint32_t *dst, int w, int h, float blend_factor);
 
+/* Quantel Harry: Chroma key green/blue spill suppression */
+int tsfi_quantel_harry_spill_suppress(uint32_t *pixels, int w, int h, const char *suppress_type, float amount);
+
+/* Quantel Mirage: 3D Torus warp coordinate projection mapping */
+int tsfi_quantel_mirage_torus_wrap(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float inner_r, float outer_r);
+
+/* Quantel Paintbox: Draw calligraphic vector shapes (lines, ellipses) using flat chisel stamps */
+int tsfi_quantel_paintbox_calligraphy_shape(uint32_t *pixels, int w, int h, int start_x, int start_y, int end_x, int end_y, int max_radius, float pressure, float aspect_ratio, float angle, uint32_t color);
+
 #endif // TSFI_PAINT_H
+
 
 
 
