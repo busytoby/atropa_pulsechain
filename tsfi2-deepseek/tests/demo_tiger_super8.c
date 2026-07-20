@@ -29,6 +29,7 @@
 #include "tsfi_parc_video.h"
 #include "tsfi_parc_shaders.h"
 #include "tsfi_parc_videodeck.h"
+#include "tsfi_parc_clipboard.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -785,6 +786,12 @@ int main() {
     remove("alto_dummy.dat.bin");
 
     char typed_document[64] = "CICS CADE ";
+
+    // Xerox Gypsy Modeless Clipboard verify check
+    tsfi_parc_clipboard_t clip;
+    tsfi_parc_clip_init(&clip);
+    tsfi_parc_clip_copy(&clip, "GYPSY OK ", 9);
+    tsfi_parc_clip_paste(&clip, typed_document, sizeof(typed_document));
 
     uint32_t *canvas = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
     uint32_t *canvas_b = calloc(WIDTH * HEIGHT, sizeof(uint32_t));

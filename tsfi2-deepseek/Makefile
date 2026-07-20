@@ -166,9 +166,10 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                  $(OBJ_DIR)/tsfi_parc_gc.o \
                  $(OBJ_DIR)/tsfi_parc_bfs.o \
                  $(OBJ_DIR)/tsfi_parc_stcomp.o \
-                 $(OBJ_DIR)/tsfi_parc_video.o \
-                 $(OBJ_DIR)/tsfi_parc_shaders.o \
-                 $(OBJ_DIR)/tsfi_parc_videodeck.o
+                  $(OBJ_DIR)/tsfi_parc_video.o \
+                  $(OBJ_DIR)/tsfi_parc_shaders.o \
+                  $(OBJ_DIR)/tsfi_parc_videodeck.o \
+                  $(OBJ_DIR)/tsfi_parc_clipboard.o
 
 
 
