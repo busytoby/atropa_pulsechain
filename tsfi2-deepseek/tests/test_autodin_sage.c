@@ -220,6 +220,45 @@ int main(void) {
     assert(vec.end_y == 200);
     assert(vec.intensity_reg == 255);
     
+    // Test 15: SAGE-Reuter Duplex Transaction Table Synchronization
+    tsfi_sage_duplex bridge_duplex;
+    bridge_duplex.active_cpu_id = 1;
+    bridge_duplex.standby_cpu_id = 2;
+    bridge_duplex.last_sync_time = 0;
+    
+    tsfi_reuter_tx_entry active_table[2] = {
+        {101, 5, true},
+        {102, 8, true}
+    };
+    tsfi_reuter_tx_entry standby_table[16];
+    memset(standby_table, 0, sizeof(standby_table));
+    int standby_count = 0;
+    
+    rc = tsfi_sage_duplex_reuter_sync(&bridge_duplex, active_table, 2, standby_table, &standby_count);
+    assert(rc == 0);
+    assert(standby_count == 2);
+    assert(standby_table[1].transaction_id == 102);
+    assert(bridge_duplex.last_sync_time == 1);
+    
+    // Test 16: AUTODIN-Gray Preemption Lock Releases
+    tsfi_autodin_preempt_channel preempt_chan;
+    preempt_chan.channel_busy = true;
+    preempt_chan.current_precedence = AUTODIN_PRECEDENCE_ROUTINE;
+    preempt_chan.suspended_tx_id = 5001;
+    
+    tsfi_reuter_lock_head preempt_locks[1];
+    memset(preempt_locks, 0, sizeof(preempt_locks));
+    preempt_locks[0].resource_id = 999;
+    
+    // Acquire lock for transaction 5001 (suspended tx)
+    rc = tsfi_reuter_lock_acquire(&preempt_locks[0], 5001, LOCK_MODE_S);
+    assert(rc == 0);
+    assert(preempt_locks[0].request_count == 1);
+    
+    rc = tsfi_autodin_preempt_gray_locks(&preempt_chan, preempt_locks, 1, CONSISTENCY_DEGREE_1);
+    assert(rc == 0);
+    assert(preempt_locks[0].request_count == 0); // Lock successfully preempted and released!
+    
     printf("[SUCCESS] AUTODIN SAGE Transaction Compliance Test Passed!\n");
     return 0;
 }

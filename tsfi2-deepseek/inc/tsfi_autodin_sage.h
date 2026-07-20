@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "tsfi_gray_tx.h"
 
 // 1. AUTODIN Store-and-Forward Latching Relay Structures
 typedef struct {
@@ -131,5 +132,9 @@ typedef struct {
 } tsfi_sage_vector;
 
 int tsfi_sage_generate_vector(tsfi_sage_vector *vec, int32_t sx, int32_t sy, int32_t ex, int32_t ey, uint32_t intensity);
+
+// SAGE & AUTODIN Bridges to Gray & Reuter Transactions
+int tsfi_sage_duplex_reuter_sync(tsfi_sage_duplex *duplex, const tsfi_reuter_tx_entry *active_table, int active_count, tsfi_reuter_tx_entry *standby_table, int *standby_count);
+int tsfi_autodin_preempt_gray_locks(tsfi_autodin_preempt_channel *chan, tsfi_reuter_lock_head *locks, int lock_count, tsfi_gray_consistency_degree degree);
 
 #endif // TSFI_AUTODIN_SAGE_H

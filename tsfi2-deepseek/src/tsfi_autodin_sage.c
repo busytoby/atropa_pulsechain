@@ -319,3 +319,40 @@ int tsfi_sage_generate_vector(tsfi_sage_vector *vec, int32_t sx, int32_t sy, int
     
     return 0;
 }
+
+// 14. SAGE Duplex Reuter Transaction Synchronization
+int tsfi_sage_duplex_reuter_sync(tsfi_sage_duplex *duplex, const tsfi_reuter_tx_entry *active_table, int active_count, tsfi_reuter_tx_entry *standby_table, int *standby_count) {
+    if (!duplex || !active_table || !standby_table || !standby_count) return -1;
+    
+    // Copy Reuter transaction state table entries from Active processor to Standby processor
+    int copy_count = active_count > 16 ? 16 : active_count;
+    for (int i = 0; i < copy_count; i++) {
+        standby_table[i] = active_table[i];
+    }
+    
+    *standby_count = copy_count;
+    duplex->last_sync_time++; // Advance SAGE duplex clock tick
+    
+    return 0;
+}
+
+// 15. AUTODIN Preemption locking scheduler bridge (enforcing Jim Gray consistency degrees)
+int tsfi_autodin_preempt_gray_locks(tsfi_autodin_preempt_channel *chan, tsfi_reuter_lock_head *locks, int lock_count, tsfi_gray_consistency_degree degree) {
+    if (!chan || !locks || lock_count < 0) return -1;
+    
+    // If preemption triggers and consistency is Degree 1 (Read Committed),
+    // we can release all S locks immediately to resolve conflicts for incoming Flash messages
+    if (degree == CONSISTENCY_DEGREE_1 || degree == CONSISTENCY_DEGREE_0) {
+        for (int i = 0; i < lock_count; i++) {
+            // Find S locks held by suspended transaction and release them immediately (short lock logic)
+            for (int r = 0; r < locks[i].request_count; r++) {
+                if (locks[i].requests[r].transaction_id == chan->suspended_tx_id && 
+                    locks[i].requests[r].mode == LOCK_MODE_S) {
+                    tsfi_reuter_lock_release(&locks[i], chan->suspended_tx_id);
+                }
+            }
+        }
+    }
+    
+    return 0;
+}
