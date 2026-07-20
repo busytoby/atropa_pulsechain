@@ -36,6 +36,19 @@ int tsfi_quantel_harry_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32
 /* Quantel Harry: Luma key extraction based on luminance thresholds */
 int tsfi_quantel_harry_luma_key(const uint32_t *src_pixels, int w, int h, uint8_t *out_mask, uint8_t low_threshold, uint8_t high_threshold);
 
+/* Quantel Harry: 3x3 Convolution filtering (blur, sharpen) */
+int tsfi_quantel_harry_filter(const uint32_t *src, uint32_t *dst, int w, int h, const float kernel[9]);
+
+/* Quantel Harry: HSL color correction (hue, sat, tint) */
+int tsfi_quantel_harry_color_adjust(const uint32_t *src, uint32_t *dst, int w, int h, float hue_shift, float sat_scale, uint32_t tint_color, float tint_amount);
+
+/* Quantel Mirage: 3D Page Peel transition from frame A to B */
+int tsfi_quantel_mirage_page_peel_transition(const uint32_t *src_a, const uint32_t *src_b, uint32_t *dst, int w, int h, float progress, float peel_radius);
+
+/* Quantel Paintbox: Dynamic velocity-based brush stroke drawing */
+int tsfi_quantel_paintbox_velocity_brush(uint32_t *pixels, int w, int h, int prev_x, int prev_y, int curr_x, int curr_y, float max_radius, float pressure, uint32_t color);
+
 #endif // TSFI_PAINT_H
+
 
 

@@ -831,9 +831,6 @@ int tsfi_quantel_harry_luma_key(const uint32_t *src_pixels, int w, int h, uint8_
         uint8_t g = (pix >> 8) & 0xFF;
         uint8_t b = pix & 0xFF;
 
-        // Rec. 601 luma formula
-        uint8_t luma = (uint8_t)(0.299f * r + 0.587f * g + 0.114f * b);
-
         if (luma >= low_threshold && luma <= high_threshold) {
             out_mask[i] = 255; // Keep foreground details
         } else {
@@ -842,5 +839,184 @@ int tsfi_quantel_harry_luma_key(const uint32_t *src_pixels, int w, int h, uint8_
     }
     return 0;
 }
+
+int tsfi_quantel_harry_filter(const uint32_t *src, uint32_t *dst, int w, int h, const float kernel[9]) {
+    if (!src || !dst || w <= 0 || h <= 0) return -1;
+
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            float sum_r = 0.0f, sum_g = 0.0f, sum_b = 0.0f;
+            for (int ky = -1; ky <= 1; ky++) {
+                int py = y + ky;
+                if (py < 0) py = 0;
+                if (py >= h) py = h - 1;
+                const uint32_t *row = src + py * w;
+
+                for (int kx = -1; kx <= 1; kx++) {
+                    int px = x + kx;
+                    if (px < 0) px = 0;
+                    if (px >= w) px = w - 1;
+
+                    uint32_t pix = row[px];
+                    float k_val = kernel[(ky + 1) * 3 + (kx + 1)];
+                    sum_r += ((pix >> 16) & 0xFF) * k_val;
+                    sum_g += ((pix >> 8) & 0xFF) * k_val;
+                    sum_b += (pix & 0xFF) * k_val;
+                }
+            }
+
+            int r = (int)sum_r;
+            int g = (int)sum_g;
+            int b = (int)sum_b;
+            if (r < 0) r = 0; if (r > 255) r = 255;
+            if (g < 0) g = 0; if (g > 255) g = 255;
+            if (b < 0) b = 0; if (b > 255) b = 255;
+
+            dst[y * w + x] = (0xFF000000) | (r << 16) | (g << 8) | b;
+        }
+    }
+    return 0;
+}
+
+static void tsfi_rgb_to_hsl(uint8_t r, uint8_t g, uint8_t b, float *h, float *s, float *l) {
+    float fr = r / 255.0f;
+    float fg = g / 255.0f;
+    float fb = b / 255.0f;
+    float max_c = fr > fg ? (fr > fb ? fr : fb) : (fg > fb ? fg : fb);
+    float min_c = fr < fg ? (fr < fb ? fr : fb) : (fg < fb ? fg : fb);
+    *l = (max_c + min_c) / 2.0f;
+    if (max_c == min_c) {
+        *h = 0.0f;
+        *s = 0.0f;
+    } else {
+        float d = max_c - min_c;
+        *s = (*l > 0.5f) ? d / (2.0f - max_c - min_c) : d / (max_c + min_c);
+        if (max_c == fr) {
+            *h = (fg - fb) / d + (fg < fb ? 6.0f : 0.0f);
+        } else if (max_c == fg) {
+            *h = (fb - fr) / d + 2.0f;
+        } else {
+            *h = (fr - fg) / d + 4.0f;
+        }
+        *h /= 6.0f;
+    }
+}
+
+static float tsfi_hue_to_rgb(float p, float q, float t) {
+    if (t < 0.0f) t += 1.0f;
+    if (t > 1.0f) t -= 1.0f;
+    if (t < 1.0f/6.0f) return p + (q - p) * 6.0f * t;
+    if (t < 1.0f/2.0f) return q;
+    if (t < 2.0f/3.0f) return p + (q - p) * (2.0f/3.0f - t) * 6.0f;
+    return p;
+}
+
+static void tsfi_hsl_to_rgb(float h, float s, float l, uint8_t *r, uint8_t *g, uint8_t *b) {
+    if (s == 0.0f) {
+        *r = *g = *b = (uint8_t)(l * 255.0f);
+    } else {
+        float q = l < 0.5f ? l * (1.0f + s) : l + s - l * s;
+        float p = 2.0f * l - q;
+        *r = (uint8_t)(tsfi_hue_to_rgb(p, q, h + 1.0f/3.0f) * 255.0f);
+        *g = (uint8_t)(tsfi_hue_to_rgb(p, q, h) * 255.0f);
+        *b = (uint8_t)(tsfi_hue_to_rgb(p, q, h - 1.0f/3.0f) * 255.0f);
+    }
+}
+
+int tsfi_quantel_harry_color_adjust(const uint32_t *src, uint32_t *dst, int w, int h, float hue_shift, float sat_scale, uint32_t tint_color, float tint_amount) {
+    if (!src || !dst || w <= 0 || h <= 0) return -1;
+
+    uint8_t tr = (tint_color >> 16) & 0xFF;
+    uint8_t tg = (tint_color >> 8) & 0xFF;
+    uint8_t tb = tint_color & 0xFF;
+
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = src[i];
+        uint8_t r = (pix >> 16) & 0xFF;
+        uint8_t g = (pix >> 8) & 0xFF;
+        uint8_t b = pix & 0xFF;
+
+        float hue, sat, luma;
+        tsfi_rgb_to_hsl(r, g, b, &hue, &sat, &luma);
+
+        // Adjust parameters
+        hue += hue_shift;
+        if (hue > 1.0f) hue -= 1.0f;
+        if (hue < 0.0f) hue += 1.0f;
+        sat *= sat_scale;
+        if (sat > 1.0f) sat = 1.0f;
+        if (sat < 0.0f) sat = 0.0f;
+
+        uint8_t r_adj, g_adj, b_adj;
+        tsfi_hsl_to_rgb(hue, sat, luma, &r_adj, &g_adj, &b_adj);
+
+        // Apply tint
+        uint8_t r_res = (uint8_t)(r_adj * (1.0f - tint_amount) + tr * tint_amount);
+        uint8_t g_res = (uint8_t)(g_adj * (1.0f - tint_amount) + tg * tint_amount);
+        uint8_t b_res = (uint8_t)(b_adj * (1.0f - tint_amount) + tb * tint_amount);
+
+        dst[i] = (0xFF000000) | (r_res << 16) | (g_res << 8) | b_res;
+    }
+    return 0;
+}
+
+int tsfi_quantel_mirage_page_peel_transition(const uint32_t *src_a, const uint32_t *src_b, uint32_t *dst, int w, int h, float progress, float peel_radius) {
+    if (!src_a || !src_b || !dst || w <= 0 || h <= 0) return -1;
+
+    float roll_line = progress * w;
+
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            int idx = y * w + x;
+            float px = (float)x;
+
+            if (px < roll_line) {
+                // Curved/peeling page showing source A
+                float dist_to_roll = roll_line - px;
+                float theta = dist_to_roll / peel_radius;
+                if (theta <= M_PI) {
+                    float warp_x = roll_line - peel_radius * sinf(theta);
+                    int sx = (int)warp_x;
+                    if (sx >= 0 && sx < w) {
+                        dst[idx] = src_a[y * w + sx];
+                    } else {
+                        dst[idx] = src_b[idx];
+                    }
+                } else {
+                    // Underneath revealed layer B
+                    dst[idx] = src_b[idx];
+                }
+            } else {
+                // Unpeeled flat layer A
+                dst[idx] = src_a[idx];
+            }
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_paintbox_velocity_brush(uint32_t *pixels, int w, int h, int prev_x, int prev_y, int curr_x, int curr_y, float max_radius, float pressure, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+
+    float dx = curr_x - prev_x;
+    float dy = curr_y - prev_y;
+    float dist = sqrtf(dx * dx + dy * dy);
+
+    // Brush radius decreases with stroke speed (velocity dynamics)
+    float speed_factor = dist > 1.0f ? (1.0f / (1.0f + 0.05f * dist)) : 1.0f;
+    float active_radius = max_radius * speed_factor;
+    if (active_radius < 1.0f) active_radius = 1.0f;
+
+    // Interpolate stamps along the line segment
+    int steps = (int)(dist + 1.0f);
+    for (int i = 0; i <= steps; i++) {
+        float t = (float)i / steps;
+        int cx = (int)(prev_x + dx * t);
+        int cy = (int)(prev_y + dy * t);
+        tsfi_quantel_paintbox_airbrush(pixels, w, h, cx, cy, (int)active_radius, pressure, color);
+    }
+    return 0;
+}
+
 
 
