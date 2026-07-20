@@ -6,7 +6,7 @@
 #include <string.h>
 
 int main(void) {
-    printf("[INFO] Starting Andreas Reuter Transaction Compliance Test (Extended)...\n");
+    printf("[INFO] Starting Andreas Reuter Transaction Compliance Test (Complete)...\n");
     
     tsfi_reuter_init();
     assert(tsfi_reuter_get_global_lsn() == 0);
@@ -49,46 +49,38 @@ int main(void) {
     int tx_count = 0;
     int dirty_count = 0;
     
-    // Simulate crash rollback of active transactions
     tsfi_reuter_page dirty_page;
     memset(&dirty_page, 0, sizeof(tsfi_reuter_page));
     dirty_page.page_id = 0;
-    dirty_page.page_lsn = 0; // Simulate old dirty page on disk
+    dirty_page.page_lsn = 0; 
     
     rc = tsfi_reuter_aries_recover(fd, &dirty_page, 1, tx_table, &tx_count, dirty_table, &dirty_count);
     assert(rc == 0);
     assert(tx_count == 1);
     assert(dirty_count == 1);
-    assert(dirty_page.page_lsn == 3); // Redo applied the write LSN 3
+    assert(dirty_page.page_lsn == 3); 
     assert(memcmp(dirty_page.data, new_data, 4) == 0);
-    
-    close(fd);
-    unlink(temp_log);
     
     // Test 5: Hierarchical Intent Locking Compatibility
     tsfi_reuter_lock_head db_lock;
     memset(&db_lock, 0, sizeof(tsfi_reuter_lock_head));
     db_lock.resource_id = 99;
     
-    // Acquire Intent Shared (IS) for TX1
     rc = tsfi_reuter_lock_acquire(&db_lock, 101, LOCK_MODE_IS);
     assert(rc == 0);
     assert(db_lock.requests[0].granted == true);
     
-    // Acquire Intent Exclusive (IX) for TX2 (compatible with IS)
     rc = tsfi_reuter_lock_acquire(&db_lock, 102, LOCK_MODE_IX);
     assert(rc == 0);
     assert(db_lock.requests[1].granted == true);
     
-    // Acquire Shared (S) for TX3 (compatible with IS, incompatible with IX)
     rc = tsfi_reuter_lock_acquire(&db_lock, 103, LOCK_MODE_S);
-    assert(rc == 1); // Queued (not granted)
+    assert(rc == 1); // Queued
     assert(db_lock.requests[2].granted == false);
     
-    // Release TX2 (IX) - should automatically grant TX3 (S)
     rc = tsfi_reuter_lock_release(&db_lock, 102);
     assert(rc == 0);
-    assert(db_lock.requests[1].granted == true); // Request 1 (was TX3) is now granted!
+    assert(db_lock.requests[1].granted == true); // upgraded
     
     // Test 6: LU6.2 Two-Phase Commit (2PC)
     tsfi_reuter_2pc_coordinator coord;
@@ -104,6 +96,49 @@ int main(void) {
     assert(rc == 0);
     assert(is_committed == true);
     
-    printf("[SUCCESS] Andreas Reuter Transaction Compliance Test (Extended) Passed!\n");
+    // Test 7: Savepoints and Nested Rollback
+    tsfi_reuter_tx_context tx_ctx;
+    memset(&tx_ctx, 0, sizeof(tsfi_reuter_tx_context));
+    tx_ctx.transaction_id = 1005;
+    
+    rc = tsfi_reuter_savepoint_create(&tx_ctx, "SP_ALPHA", 55);
+    assert(rc == 0);
+    assert(tx_ctx.savepoint_count == 1);
+    
+    rc = tsfi_reuter_savepoint_create(&tx_ctx, "SP_BETA", 77);
+    assert(rc == 0);
+    assert(tx_ctx.savepoint_count == 2);
+    
+    uint64_t rolled_lsn = tsfi_reuter_savepoint_rollback(&tx_ctx, "SP_ALPHA");
+    assert(rolled_lsn == 55);
+    assert(tx_ctx.savepoint_count == 0); // Discarded both ALPHA and BETA
+    
+    // Test 8: Fuzzy Checkpoint
+    uint64_t chk_lsn = 0;
+    rc = tsfi_reuter_write_checkpoint(fd, tx_table, tx_count, dirty_table, dirty_count, &chk_lsn);
+    assert(rc == 0);
+    assert(chk_lsn > 0);
+    
+    // Test 9: Group Commit
+    tsfi_reuter_group_commit gc;
+    tsfi_reuter_group_commit_init(&gc, fd);
+    
+    uint64_t g_lsn1 = 0, g_lsn2 = 0;
+    rc = tsfi_reuter_group_commit_queue(&gc, 1006, 0, 3, before, after, &g_lsn1);
+    assert(rc == 0);
+    rc = tsfi_reuter_group_commit_queue(&gc, 1007, 4, 3, before, after, &g_lsn2);
+    assert(rc == 0);
+    
+    assert(g_lsn1 == 0 && g_lsn2 == 0); // Still buffered, not committed
+    
+    rc = tsfi_reuter_group_commit_flush(&gc);
+    assert(rc == 0);
+    assert(g_lsn1 > 0 && g_lsn2 > 0); // Flushed and assigned LSNs
+    assert(g_lsn2 == g_lsn1 + 1);
+    
+    close(fd);
+    unlink(temp_log);
+    
+    printf("[SUCCESS] Andreas Reuter Transaction Compliance Test (Complete) Passed!\n");
     return 0;
 }

@@ -84,6 +84,38 @@ typedef struct {
     uint64_t rec_lsn;
 } tsfi_reuter_dirty_page;
 
+// Savepoints and Nested Transactions structures
+typedef struct {
+    char name[32];
+    uint64_t savepoint_lsn;
+} tsfi_reuter_savepoint;
+
+typedef struct {
+    uint32_t transaction_id;
+    uint32_t parent_id;
+    int savepoint_count;
+    tsfi_reuter_savepoint savepoints[8];
+} tsfi_reuter_tx_context;
+
+// Fuzzy Checkpoint Metadata
+typedef struct {
+    uint64_t checkpoint_lsn;
+    int active_tx_count;
+    uint32_t active_tx_ids[16];
+    uint64_t active_tx_last_lsns[16];
+    int dirty_page_count;
+    uint32_t dirty_page_ids[16];
+    uint64_t dirty_page_rec_lsns[16];
+} tsfi_reuter_checkpoint;
+
+// Group Commit Coordinator
+typedef struct {
+    int log_fd;
+    int queued_count;
+    tsfi_reuter_log_record queued_records[16];
+    uint64_t *assigned_lsns[16];
+} tsfi_reuter_group_commit;
+
 // WAL and Recovery Manager APIs
 void tsfi_reuter_init(void);
 uint64_t tsfi_reuter_get_global_lsn(void);
@@ -112,5 +144,21 @@ void tsfi_reuter_2pc_init(tsfi_reuter_2pc_coordinator *coord, uint32_t tx_id);
 int tsfi_reuter_2pc_add_participant(tsfi_reuter_2pc_coordinator *coord, uint32_t node_id);
 int tsfi_reuter_2pc_vote(tsfi_reuter_2pc_coordinator *coord, uint32_t node_id, bool vote_commit);
 int tsfi_reuter_2pc_finalize(tsfi_reuter_2pc_coordinator *coord, bool *is_committed);
+
+// Savepoint & Nested Transaction APIs
+int tsfi_reuter_savepoint_create(tsfi_reuter_tx_context *ctx, const char *name, uint64_t current_lsn);
+uint64_t tsfi_reuter_savepoint_rollback(tsfi_reuter_tx_context *ctx, const char *name);
+
+// Fuzzy Checkpoint API
+int tsfi_reuter_write_checkpoint(int log_fd, const tsfi_reuter_tx_entry *tx_table, int tx_count, 
+                                 const tsfi_reuter_dirty_page *dirty_table, int dirty_count, 
+                                 uint64_t *chk_lsn);
+
+// Group Commit APIs
+void tsfi_reuter_group_commit_init(tsfi_reuter_group_commit *gc, int log_fd);
+int tsfi_reuter_group_commit_queue(tsfi_reuter_group_commit *gc, uint32_t tx_id, uint32_t offset, 
+                                    uint32_t len, const uint8_t *before, const uint8_t *after, 
+                                    uint64_t *assigned_lsn);
+int tsfi_reuter_group_commit_flush(tsfi_reuter_group_commit *gc);
 
 #endif // TSFI_REUTER_TX_H

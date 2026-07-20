@@ -315,3 +315,127 @@ int tsfi_reuter_aries_recover(int log_fd, tsfi_reuter_page *pages, int page_coun
     
     return 0; // Recovery completed successfully
 }
+
+// 7. Savepoints and Nested Transactions
+int tsfi_reuter_savepoint_create(tsfi_reuter_tx_context *ctx, const char *name, uint64_t current_lsn) {
+    if (!ctx || !name || ctx->savepoint_count >= 8) return -1;
+    
+    tsfi_reuter_savepoint *sp = &ctx->savepoints[ctx->savepoint_count];
+    strncpy(sp->name, name, 31);
+    sp->name[31] = '\0';
+    sp->savepoint_lsn = current_lsn;
+    ctx->savepoint_count++;
+    
+    return 0;
+}
+
+uint64_t tsfi_reuter_savepoint_rollback(tsfi_reuter_tx_context *ctx, const char *name) {
+    if (!ctx || !name) return 0;
+    
+    for (int i = ctx->savepoint_count - 1; i >= 0; i--) {
+        if (strcmp(ctx->savepoints[i].name, name) == 0) {
+            uint64_t target_lsn = ctx->savepoints[i].savepoint_lsn;
+            ctx->savepoint_count = i; // Discard all savepoints created after this one
+            return target_lsn;
+        }
+    }
+    return 0; // Savepoint not found
+}
+
+// 8. Fuzzy Checkpointing
+int tsfi_reuter_write_checkpoint(int log_fd, const tsfi_reuter_tx_entry *tx_table, int tx_count, 
+                                 const tsfi_reuter_dirty_page *dirty_table, int dirty_count, 
+                                 uint64_t *chk_lsn) {
+    if (log_fd < 0 || !tx_table || !dirty_table) return -1;
+    
+    tsfi_reuter_checkpoint chk;
+    memset(&chk, 0, sizeof(tsfi_reuter_checkpoint));
+    
+    chk.checkpoint_lsn = ++global_lsn;
+    chk.active_tx_count = tx_count < 16 ? tx_count : 16;
+    for (int i = 0; i < chk.active_tx_count; i++) {
+        chk.active_tx_ids[i] = tx_table[i].transaction_id;
+        chk.active_tx_last_lsns[i] = tx_table[i].last_lsn;
+    }
+    
+    chk.dirty_page_count = dirty_count < 16 ? dirty_count : 16;
+    for (int i = 0; i < chk.dirty_page_count; i++) {
+        chk.dirty_page_ids[i] = dirty_table[i].page_id;
+        chk.dirty_page_rec_lsns[i] = dirty_table[i].rec_lsn;
+    }
+    
+    // Write checkpoint record to stable storage
+    ssize_t bytes_written = write(log_fd, &chk, sizeof(tsfi_reuter_checkpoint));
+    if (bytes_written < (ssize_t)sizeof(tsfi_reuter_checkpoint)) {
+        return -2;
+    }
+    
+    // Fuzzy checkpoint does NOT block other writers, just flushes metadata
+    fsync(log_fd);
+    
+    if (chk_lsn) {
+        *chk_lsn = chk.checkpoint_lsn;
+    }
+    return 0;
+}
+
+// 9. Group Commit
+void tsfi_reuter_group_commit_init(tsfi_reuter_group_commit *gc, int log_fd) {
+    if (!gc) return;
+    memset(gc, 0, sizeof(tsfi_reuter_group_commit));
+    gc->log_fd = log_fd;
+}
+
+int tsfi_reuter_group_commit_queue(tsfi_reuter_group_commit *gc, uint32_t tx_id, uint32_t offset, 
+                                    uint32_t len, const uint8_t *before, const uint8_t *after, 
+                                    uint64_t *assigned_lsn) {
+    if (!gc || len > REUTER_MAX_DATA_SIZE) return -1;
+    
+    // Flush if buffer is full
+    if (gc->queued_count >= 16) {
+        int rc = tsfi_reuter_group_commit_flush(gc);
+        if (rc != 0) return rc;
+    }
+    
+    int index = gc->queued_count;
+    tsfi_reuter_log_record *record = &gc->queued_records[index];
+    memset(record, 0, sizeof(tsfi_reuter_log_record));
+    
+    record->lsn = 0; // Will be assigned during flush
+    record->transaction_id = tx_id;
+    record->type = LOG_TYPE_WAL;
+    record->data_offset = offset;
+    record->data_len = len;
+    
+    if (before) memcpy(record->before_image, before, len);
+    if (after) memcpy(record->after_image, after, len);
+    
+    gc->assigned_lsns[index] = assigned_lsn;
+    gc->queued_count++;
+    
+    return 0;
+}
+
+int tsfi_reuter_group_commit_flush(tsfi_reuter_group_commit *gc) {
+    if (!gc || gc->queued_count == 0) return 0;
+    if (gc->log_fd < 0) return -1;
+    
+    // Assign LSNs and write all queued records in a SINGLE sequential block
+    for (int i = 0; i < gc->queued_count; i++) {
+        gc->queued_records[i].lsn = ++global_lsn;
+        if (gc->assigned_lsns[i]) {
+            *(gc->assigned_lsns[i]) = gc->queued_records[i].lsn;
+        }
+        
+        ssize_t bytes_written = write(gc->log_fd, &gc->queued_records[i], sizeof(tsfi_reuter_log_record));
+        if (bytes_written < (ssize_t)sizeof(tsfi_reuter_log_record)) {
+            return -2;
+        }
+    }
+    
+    // Single consolidated fsync call for the entire group
+    fsync(gc->log_fd);
+    
+    gc->queued_count = 0; // Reset queue
+    return 0;
+}
