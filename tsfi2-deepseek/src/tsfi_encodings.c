@@ -1,6 +1,7 @@
 #include "tsfi_encodings.h"
 #include <string.h>
 #include <ctype.h>
+#include <stdio.h>
 
 // 1. ASCII
 int tsfi_encode_ascii(const char *in, uint8_t *out, int max_len) {
@@ -366,4 +367,42 @@ int tsfi_decode_radix50(const uint16_t *in, int len, char *out, int max_len) {
     }
     out[out_idx] = '\0';
     return out_idx;
+}
+
+// 10. Oregon Trail (OT) Baudot (Baud) LLM-Tokenized .dat.bin (DAT) exporter
+int tsfi_ot_baud_llm_dat(const char *dat_bin_path) {
+    if (!dat_bin_path) return -1;
+    
+    // Step 1: Run Oregon Trail game simulation step
+    TsfiOregonTrail game;
+    tsfi_oregon_trail_init(&game);
+    tsfi_oregon_trail_buy_supplies(&game, 4, 300, 200);
+    tsfi_oregon_trail_step(&game, 0, 0);
+    
+    // Step 2: Format status report
+    char status[128];
+    snprintf(status, sizeof(status), "MILES %d FOOD %d OXEN %d", 
+             game.miles_traveled, game.food_lbs, game.oxen);
+             
+    // Step 3: Encode status using Baudot Code (ITA2)
+    uint8_t baud_buf[128];
+    int baud_len = tsfi_encode_baudot(status, baud_buf, 128);
+    if (baud_len <= 0) return -2;
+    
+    // Step 4: Tokenize Baudot stream (simulated LLM tokenization)
+    uint32_t tokens[128];
+    for (int i = 0; i < baud_len; i++) {
+        tokens[i] = (uint32_t)baud_buf[i];
+    }
+    
+    // Step 5: Save to binary block-ledger asset (.dat.bin)
+    FILE *f = fopen(dat_bin_path, "wb");
+    if (!f) return -3;
+    
+    uint32_t count = (uint32_t)baud_len;
+    fwrite(&count, sizeof(uint32_t), 1, f);
+    fwrite(tokens, sizeof(uint32_t), count, f);
+    fclose(f);
+    
+    return 0;
 }

@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "tsfi_oregon_trail.h"
+
 // Encodings API
 int tsfi_encode_ascii(const char *in, uint8_t *out, int max_len);
 int tsfi_decode_ascii(const uint8_t *in, int len, char *out, int max_len);
@@ -31,5 +33,7 @@ int tsfi_decode_murray(const uint8_t *in, int len, char *out, int max_len);
 
 int tsfi_encode_radix50(const char *in, uint16_t *out, int max_len);
 int tsfi_decode_radix50(const uint16_t *in, int len, char *out, int max_len);
+
+int tsfi_ot_baud_llm_dat(const char *dat_bin_path);
 
 #endif // TSFI_ENCODINGS_H

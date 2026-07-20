@@ -124,6 +124,39 @@ int main(void) {
         assert(strncmp(orig, dec, strlen(orig)) == 0);
         printf("[PASS] Radix-50 encode/decode\n");
     }
+    // Test 10: Oregon Trail (OT) Baudot (Baud) LLM-Tokenized .dat.bin (DAT)
+    {
+        const char *bin_path = "tmp/ot_baud_test.dat.bin";
+        int rc = tsfi_ot_baud_llm_dat(bin_path);
+        assert(rc == 0);
+        
+        // Open and verify content
+        FILE *f = fopen(bin_path, "rb");
+        assert(f != NULL);
+        uint32_t count = 0;
+        assert(fread(&count, sizeof(uint32_t), 1, f) == 1);
+        assert(count > 0);
+        
+        uint32_t tokens[128];
+        assert(fread(tokens, sizeof(uint32_t), count, f) == count);
+        fclose(f);
+        
+        // Convert tokens back to Baudot and decode
+        uint8_t baud_buf[128];
+        for (uint32_t i = 0; i < count; i++) {
+            baud_buf[i] = (uint8_t)tokens[i];
+        }
+        
+        char status_dec[128];
+        rc = tsfi_decode_baudot(baud_buf, count, status_dec, 128);
+        assert(rc > 0);
+        assert(strstr(status_dec, "MILES") != NULL);
+        assert(strstr(status_dec, "FOOD") != NULL);
+        assert(strstr(status_dec, "OXEN") != NULL);
+        
+        remove(bin_path);
+        printf("[PASS] Oregon Trail Baudot LLM DAT integration\n");
+    }
     
     printf("[SUCCESS] All Encodings Compliance Tests Passed!\n");
     return 0;
