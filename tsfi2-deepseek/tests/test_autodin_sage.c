@@ -484,6 +484,16 @@ int main(void) {
     rc = tsfi_sage_cics_event_parity_verify(&parity_evt, 1);
     assert(rc == -2); // Parity error mismatch
     
+    // Test 27: Winchester MQ SCSI payload register parity checker
+    tsfi_winchester_scsi scsi_parity;
+    scsi_parity.keycode_reg = 30; // 30 is binary 011110 -> 4 set bits, parity is 0 (even)
+    rc = tsfi_winchester_scsi_parity_verify(&scsi_parity, 0);
+    assert(rc == 0);
+    
+    scsi_parity.keycode_reg = 32; // 32 is binary 100000 -> 1 set bit, parity is 1 (odd)
+    rc = tsfi_winchester_scsi_parity_verify(&scsi_parity, 1);
+    assert(rc == 0);
+    
     printf("[SUCCESS] AUTODIN SAGE Transaction Compliance Test Passed!\n");
     return 0;
 }

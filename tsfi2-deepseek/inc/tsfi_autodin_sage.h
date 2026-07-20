@@ -159,5 +159,6 @@ typedef struct {
 int tsfi_sage_cics_audit_event(tsfi_reuter_group_commit *gc, uint32_t tx_id, const tsfi_sage_cics_event *event);
 int tsfi_sage_light_gun_audit(tsfi_reuter_group_commit *gc, uint32_t tx_id, const tsfi_sage_light_gun *gun, const int32_t *track_x, const int32_t *track_y, int track_count, int *selected_track_idx);
 int tsfi_sage_cics_event_parity_verify(const tsfi_sage_cics_event *event, uint8_t parity_bit);
+int tsfi_winchester_scsi_parity_verify(const tsfi_winchester_scsi *scsi, uint8_t parity_bit);
 
 #endif // TSFI_AUTODIN_SAGE_H

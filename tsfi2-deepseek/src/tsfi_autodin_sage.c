@@ -512,3 +512,17 @@ int tsfi_sage_cics_event_parity_verify(const tsfi_sage_cics_event *event, uint8_
     
     return (calc_parity == parity_bit) ? 0 : -2; // 0 = valid parity, -2 = parity error
 }
+
+// 26. Winchester MQ SCSI payload register parity checker
+int tsfi_winchester_scsi_parity_verify(const tsfi_winchester_scsi *scsi, uint8_t parity_bit) {
+    if (!scsi) return -1;
+    
+    uint8_t temp = scsi->keycode_reg;
+    uint8_t calc_parity = 0;
+    while (temp) {
+        calc_parity ^= (temp & 1);
+        temp >>= 1;
+    }
+    
+    return (calc_parity == parity_bit) ? 0 : -2; // 0 = valid parity, -2 = parity error
+}
