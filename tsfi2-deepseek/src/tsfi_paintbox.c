@@ -701,3 +701,24 @@ int tsfi_quantel_paintbox_pressure_jitter(uint32_t *pixels, int w, int h, int cx
 
     return tsfi_quantel_paintbox_airbrush(pixels, w, h, cx + (int)noise_x, cy + (int)noise_y, active_radius, pressure, color);
 }
+
+int tsfi_quantel_paintbox_palette_mixer(uint32_t *mixer_pixels, int w, int h, int x, int y, uint32_t brush_color, float mix_rate) {
+    if (!mixer_pixels || w <= 0 || h <= 0 || x < 0 || x >= w || y < 0 || y >= h) return -1;
+    int idx = y * w + x;
+    uint32_t existing = mixer_pixels[idx];
+
+    uint8_t er = (existing >> 16) & 0xFF;
+    uint8_t eg = (existing >> 8) & 0xFF;
+    uint8_t eb = existing & 0xFF;
+
+    uint8_t br = (brush_color >> 16) & 0xFF;
+    uint8_t bg = (brush_color >> 8) & 0xFF;
+    uint8_t bb = brush_color & 0xFF;
+
+    uint8_t res_r = (uint8_t)(br * mix_rate + er * (1.0f - mix_rate));
+    uint8_t res_g = (uint8_t)(bg * mix_rate + eg * (1.0f - mix_rate));
+    uint8_t res_b = (uint8_t)(bb * mix_rate + eb * (1.0f - mix_rate));
+
+    mixer_pixels[idx] = (0xFF000000) | (res_r << 16) | (res_g << 8) | res_b;
+    return 0;
+}

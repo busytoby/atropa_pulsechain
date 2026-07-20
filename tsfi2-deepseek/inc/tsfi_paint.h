@@ -186,6 +186,18 @@ int tsfi_quantel_harry_multitrack_dissolve(const uint32_t *src_a, const uint32_t
 /* Storyboard Captions Overlay */
 int tsfi_quantel_storyboard_burn_captions(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, const char *scene, const char *take, const char *desc, uint32_t text_color);
 
+/* Quantel Palette Mixer Pad */
+int tsfi_quantel_paintbox_palette_mixer(uint32_t *mixer_pixels, int w, int h, int x, int y, uint32_t brush_color, float mix_rate);
+
+/* Mirage 3D Concentric Ripple Warp */
+int tsfi_quantel_mirage_concentric_ripple(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float amplitude, float wavelength, float speed, float t, float cx, float cy);
+
+/* Harry Advanced Color Difference Keyer */
+int tsfi_quantel_harry_advanced_difference_key(const uint32_t *src, int w, int h, uint8_t *out_mask, uint32_t target_color, float range_min, float range_max);
+
+/* Storyboard Delta Frame Overlay */
+int tsfi_quantel_storyboard_delta_overlay(const uint32_t *prev_frame, const uint32_t *next_frame, uint32_t *dst, int w, int h);
+
 #endif // TSFI_PAINT_H
 
 

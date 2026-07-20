@@ -773,3 +773,41 @@ int tsfi_quantel_storyboard_burn_captions(uint32_t *pixels, int w, int h, int ce
     draw_text(pixels, w, h, cell_x + 10, cell_y + cell_h - 18, desc, text_color, 1);
     return 0;
 }
+
+int tsfi_quantel_harry_advanced_difference_key(const uint32_t *src, int w, int h, uint8_t *out_mask, uint32_t target_color, float range_min, float range_max) {
+    if (!src || !out_mask || w <= 0 || h <= 0) return -1;
+
+    uint8_t tr = (target_color >> 16) & 0xFF;
+    uint8_t tg = (target_color >> 8) & 0xFF;
+    uint8_t tb = target_color & 0xFF;
+
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = src[i];
+        uint8_t r = (pix >> 16) & 0xFF;
+        uint8_t g = (pix >> 8) & 0xFF;
+        uint8_t b = pix & 0xFF;
+
+        float dist = sqrtf((r - tr) * (r - tr) + (g - tg) * (g - tg) + (b - tb) * (b - tb));
+        if (dist >= range_min && dist <= range_max) {
+            out_mask[i] = 0;
+        } else {
+            out_mask[i] = 255;
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_storyboard_delta_overlay(const uint32_t *prev_frame, const uint32_t *next_frame, uint32_t *dst, int w, int h) {
+    if (!prev_frame || !next_frame || !dst || w <= 0 || h <= 0) return -1;
+    for (int i = 0; i < w * h; i++) {
+        uint32_t p = prev_frame[i];
+        uint32_t n = next_frame[i];
+
+        int dr = abs((int)((p >> 16) & 0xFF) - (int)((n >> 16) & 0xFF));
+        int dg = abs((int)((p >> 8) & 0xFF) - (int)((n >> 8) & 0xFF));
+        int db = abs((int)(p & 0xFF) - (int)(n & 0xFF));
+
+        dst[i] = (0xFF000000) | (dr << 16) | (dg << 8) | db;
+    }
+    return 0;
+}
