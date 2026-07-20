@@ -926,3 +926,107 @@ int tsfi_eer_delete_incident(TSFiEerDatabase *db, uint32_t incident_id) {
     }
     return 0;
 }
+
+// 26. Cryptographic Oblivious Transfer (OT) basic model
+int tsfi_ot_crypto_baud_llm_dat(const char *dat_bin_path, int choice_b, const char *msg0, const char *msg1) {
+    if (!dat_bin_path || !msg0 || !msg1) return -1;
+    if (choice_b < 0 || choice_b > 1) choice_b = 0;
+    
+    // Simulate 1-out-of-2 Oblivious Transfer key derivation
+    uint64_t C = 953467954114363ULL; // Motzkin Prime constant
+    if (g_gguf_acab_found) {
+        C ^= (uint64_t)g_gguf_acab_root[0] << 32;
+    }
+    
+    uint64_t pk = (choice_b == 0) ? 0x12345ULL : (C - 0x12345ULL);
+    
+    // Simulate encryption keys
+    uint64_t k0 = pk ^ 0xFEEDFACEULL;
+    uint64_t k1 = (C - pk) ^ 0xFEEDFACEULL;
+    
+    // Receiver decrypts only the chosen message
+    char decrypted[128];
+    if (choice_b == 0) {
+        snprintf(decrypted, sizeof(decrypted), "OT %d KEY %llx MSG %s", choice_b, (unsigned long long)k0, msg0);
+    } else {
+        snprintf(decrypted, sizeof(decrypted), "OT %d KEY %llx MSG %s", choice_b, (unsigned long long)k1, msg1);
+    }
+    
+    uint8_t baud_buf[256];
+    int baud_len = tsfi_encode_baudot(decrypted, baud_buf, 256);
+    if (baud_len <= 0) return -2;
+    
+    uint32_t tokens[256];
+    for (int i = 0; i < baud_len; i++) {
+        tokens[i] = (uint32_t)baud_buf[i];
+    }
+    
+    FILE *f = fopen(dat_bin_path, "wb");
+    if (!f) return -3;
+    
+    uint32_t count = (uint32_t)baud_len;
+    fwrite(&count, sizeof(uint32_t), 1, f);
+    fwrite(tokens, sizeof(uint32_t), count, f);
+    fclose(f);
+    
+    return 0;
+}
+
+// 27. Cryptographic Oblivious Transfer (OT) EER bridge
+int tsfi_eer_bridge_ot_crypto_acab(TSFiEerDatabase *db, const char *dat_bin_path) {
+    if (!db || !dat_bin_path) return -1;
+    
+    FILE *f = fopen(dat_bin_path, "rb");
+    if (!f) return -2;
+    
+    uint32_t count = 0;
+    if (fread(&count, sizeof(uint32_t), 1, f) != 1 || count == 0 || count > 256) {
+        fclose(f);
+        return -3;
+    }
+    
+    uint32_t tokens[256];
+    if (fread(tokens, sizeof(uint32_t), count, f) != count) {
+        fclose(f);
+        return -4;
+    }
+    fclose(f);
+    
+    uint8_t baud_buf[256];
+    for (uint32_t i = 0; i < count; i++) {
+        baud_buf[i] = (uint8_t)tokens[i];
+    }
+    char decrypted[256];
+    int dec_len = tsfi_decode_baudot(baud_buf, count, decrypted, 256);
+    if (dec_len <= 0) return -5;
+    
+    int choice = 0;
+    char msg[128] = {0};
+    sscanf(decrypted, "OT %d KEY %*x MSG %127s", &choice, msg);
+    
+    uint32_t incident_id = 4000 + choice;
+    // Map choice 0 to minor audit (type 2), choice 1 to nuclear security audit (type 1)
+    int type = (choice == 0) ? 2 : 1;
+    int defcon = (choice == 0) ? 5 : 1;
+    
+    tsfi_eer_db_init(db);
+    tsfi_eer_insert_incident(db, incident_id, defcon, 1782000000U, type);
+    
+    tsfi_eer_insert_agency(db, 101, "NORAD_SECURE", 1, 1);
+    tsfi_eer_insert_agency(db, 102, "IRS_AUDIT", 2, 2);
+    
+    if (type == 1) {
+        tsfi_eer_link_response(db, 101, incident_id);
+    } else {
+        tsfi_eer_link_response(db, 102, incident_id);
+    }
+    
+    if (db->channel_count < 16) {
+        TSFiEerChannel *chan = &db->channels[db->channel_count++];
+        chan->channel_id = 0x0200; // Tapped ACAB channel
+        chan->encryption_type = 3;
+        chan->frequency_band = 144000;
+    }
+    
+    return 0;
+}
