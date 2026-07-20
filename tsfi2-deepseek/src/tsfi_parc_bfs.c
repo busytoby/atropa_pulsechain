@@ -18,6 +18,7 @@ uint16_t tsfi_parc_bfs_checksum(const uint8_t *buffer, int len) {
 
 int tsfi_parc_bfs_init_sector(tsfi_parc_bfs_sector_t *sec, uint16_t cyl, uint8_t hd, uint8_t sc) {
     if (!sec) return -1;
+    if (cyl >= 203 || hd >= 2 || sc >= 12) return -2;
     sec->chs.cylinder = cyl;
     sec->chs.head = hd;
     sec->chs.sector = sc;
