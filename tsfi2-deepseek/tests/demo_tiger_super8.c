@@ -42,6 +42,7 @@
 #include "tsfi_parc_rle.h"
 #include "tsfi_parc_figma.h"
 #include "tsfi_parc_figma_advanced.h"
+#include "tsfi_parc_figma_super.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -882,6 +883,13 @@ int main() {
     tsfi_parc_figma_variant_resolve("type=button,state=hover", &var_w, &var_h, &var_col);
     tsfi_parc_layout_item_t union_result;
     tsfi_parc_figma_vector_boolean_union(&layout_items[0], &layout_items[1], &union_result);
+
+    // Super Figma constraints, corner smooth, and tidy grid check
+    int cx = 10, cy = 10, cw = 100, ch = 100;
+    tsfi_parc_figma_apply_constraints(500, 500, 600, 600, CONSTRAINT_SCALE, CONSTRAINT_SCALE, &cx, &cy, &cw, &ch);
+    float ctrl_x, ctrl_y;
+    tsfi_parc_figma_corner_smooth(0, 0, 10, 10, 20, 0, 5.0f, &ctrl_x, &ctrl_y);
+    tsfi_parc_figma_tidy_grid(layout_items, 3, 2, 8, 8);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
