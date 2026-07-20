@@ -369,6 +369,9 @@ int tsfi_decode_radix50(const uint16_t *in, int len, char *out, int max_len) {
     return out_idx;
 }
 
+extern bool g_gguf_acab_found;
+extern uint8_t g_gguf_acab_root[32];
+
 // 10. Oregon Trail (OT) Baudot (Baud) LLM-Tokenized .dat.bin (DAT) exporter
 int tsfi_ot_baud_llm_dat(const char *dat_bin_path) {
     if (!dat_bin_path) return -1;
@@ -376,7 +379,17 @@ int tsfi_ot_baud_llm_dat(const char *dat_bin_path) {
     // Step 1: Run Oregon Trail game simulation step
     TsfiOregonTrail game;
     tsfi_oregon_trail_init(&game);
-    tsfi_oregon_trail_buy_supplies(&game, 4, 300, 200);
+    
+    // Seed initial supply parameters from ACAB memory root if present
+    if (g_gguf_acab_found) {
+        int extra_oxen = g_gguf_acab_root[0] % 4;
+        int extra_food = (g_gguf_acab_root[1] % 5) * 100;
+        int extra_bullets = (g_gguf_acab_root[2] % 5) * 50;
+        tsfi_oregon_trail_buy_supplies(&game, 4 + extra_oxen, 300 + extra_food, 200 + extra_bullets);
+    } else {
+        tsfi_oregon_trail_buy_supplies(&game, 4, 300, 200);
+    }
+    
     tsfi_oregon_trail_step(&game, 0, 0);
     
     // Step 2: Format status report

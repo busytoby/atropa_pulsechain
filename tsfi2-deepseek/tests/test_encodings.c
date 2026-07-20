@@ -126,22 +126,38 @@ int main(void) {
     }
     // Test 10: Oregon Trail (OT) Baudot (Baud) LLM-Tokenized .dat.bin (DAT)
     {
+        extern bool g_gguf_acab_found;
+        extern uint8_t g_gguf_acab_root[32];
+        
+        // Test Path A: Without ACAB Root
+        g_gguf_acab_found = false;
         const char *bin_path = "tmp/ot_baud_test.dat.bin";
         int rc = tsfi_ot_baud_llm_dat(bin_path);
         assert(rc == 0);
         
-        // Open and verify content
         FILE *f = fopen(bin_path, "rb");
         assert(f != NULL);
         uint32_t count = 0;
         assert(fread(&count, sizeof(uint32_t), 1, f) == 1);
         assert(count > 0);
-        
         uint32_t tokens[128];
         assert(fread(tokens, sizeof(uint32_t), count, f) == count);
         fclose(f);
+        remove(bin_path);
         
-        // Convert tokens back to Baudot and decode
+        // Test Path B: With ACAB Root active
+        g_gguf_acab_found = true;
+        memset(g_gguf_acab_root, 0xAB, 32);
+        rc = tsfi_ot_baud_llm_dat(bin_path);
+        assert(rc == 0);
+        
+        f = fopen(bin_path, "rb");
+        assert(f != NULL);
+        assert(fread(&count, sizeof(uint32_t), 1, f) == 1);
+        assert(count > 0);
+        assert(fread(tokens, sizeof(uint32_t), count, f) == count);
+        fclose(f);
+        
         uint8_t baud_buf[128];
         for (uint32_t i = 0; i < count; i++) {
             baud_buf[i] = (uint8_t)tokens[i];
@@ -155,7 +171,8 @@ int main(void) {
         assert(strstr(status_dec, "OXEN") != NULL);
         
         remove(bin_path);
-        printf("[PASS] Oregon Trail Baudot LLM DAT integration\n");
+        g_gguf_acab_found = false; // reset
+        printf("[PASS] Oregon Trail Baudot LLM DAT on the ACAB integration\n");
     }
     
     printf("[SUCCESS] All Encodings Compliance Tests Passed!\n");
