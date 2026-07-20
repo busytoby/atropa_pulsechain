@@ -240,7 +240,10 @@ void generate_tiger_soundtrack(const char *filepath) {
 
                 double bass_out = 0.0;
                 if (bass_freq > 0.0) {
-                    bass_out = sin(bass_phase + 0.6 * X * Y) * 0.35;
+                    double main_bass = sin(bass_phase + 0.6 * X * Y);
+                    double sub_bass = sin(bass_phase * 0.5 + 0.3 * X);
+                    double combined_bass = main_bass * 0.5 + sub_bass * 0.8;
+                    bass_out = tanh(combined_bass * 2.2) * 0.5f;
                     bass_phase += (2.0 * M_PI * bass_freq) / SAMPLE_RATE;
                     if (bass_phase >= 2.0 * M_PI) bass_phase -= 2.0 * M_PI;
                 }
@@ -517,6 +520,28 @@ int main() {
         }
         if (f % 150 == 0) {
             tsfi_hogan_overnight_reconciliation(&hogan_sys, "demo_tiger_lfs.dat.bin");
+        }
+
+        // Beat-synced camera shake/rumble pass
+        float shake_amp = 0.0f;
+        int frame_in_beat = f % 15;
+        if (frame_in_beat < 6) {
+            shake_amp = (6 - frame_in_beat) * 1.5f;
+        }
+        if (shake_amp > 0.1f) {
+            int dx_shake = (rand() % 2 == 0 ? 1 : -1) * (int)(shake_amp * ((float)rand() / RAND_MAX));
+            int dy_shake = (rand() % 2 == 0 ? 1 : -1) * (int)(shake_amp * ((float)rand() / RAND_MAX));
+            memcpy(dst_buffer, canvas_b, WIDTH * HEIGHT * sizeof(uint32_t));
+            memset(canvas_b, 0, WIDTH * HEIGHT * sizeof(uint32_t));
+            for (int y = 0; y < HEIGHT; y++) {
+                int sy = y + dy_shake;
+                if (sy < 0 || sy >= HEIGHT) continue;
+                for (int x = 0; x < WIDTH; x++) {
+                    int sx = x + dx_shake;
+                    if (sx < 0 || sx >= WIDTH) continue;
+                    canvas_b[y * WIDTH + x] = dst_buffer[sy * WIDTH + sx];
+                }
+            }
         }
 
         // Enforce Super8 crop gate & sprocket holes
