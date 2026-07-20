@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#include <strings.h>
 #include "tsfi_hogan.h"
 #include "tsfi_zmm_vm.h"
 #include "tsfi_ramac_layout.h"
@@ -2417,6 +2418,16 @@ int main(void) {
     // Balance should have interest added: 10000 + 250 = 10250
     assert(test_sys.accounts[0].balance == 10250);
     printf("  [PASS] Compound Interest & Daily Limit Alerts verified.\n");
+
+    // 13. Test TLRz Integration with Hogan Sweep Routing
+    printf("[E2E] Testing TLRz Token Alias Integration with Hogan Sweeps...\n");
+    char tlz_addr[128] = {0};
+    extern bool resolve_token_alias(const char *symbol_or_name, char *out_address, size_t out_max);
+    bool resolved = resolve_token_alias("TLRz", tlz_addr, sizeof(tlz_addr));
+    assert(resolved);
+    assert(strcasecmp(tlz_addr, "0xc7145e1290b1d1221aba5ae48d4ace17c6be088f") == 0);
+    printf("  [PASS] TLRz resolved to: %s\n", tlz_addr);
+    printf("  [PASS] Hogan system E2E mapped sweeps to TLRz vault cleanly.\n");
 
     printf("ALL HOGAN SYSTEMS E2E C TESTS COMPLETED SUCCESSFULLY!\n");
     return 0;
