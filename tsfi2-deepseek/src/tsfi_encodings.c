@@ -1783,13 +1783,17 @@ int tsfi_ot_llm_bandwidth_comm_init(TSFiOtLlmBandwidthComm *comm, int sap, int p
 int tsfi_ot_llm_bandwidth_comm_send(TSFiOtLlmBandwidthComm *comm, const uint32_t *tokens, int count, uint8_t *out_frame, int *out_len) {
     if (!comm || !tokens || !out_frame || !out_len || count <= 0) return -1;
     
-    // We group tokens into 11-byte chunks.
-    int chunks = (count + 10) / 11;
+    // We group tokens (4 bytes each) into 11-byte chunks.
+    int total_bytes = count * 4;
+    int chunks = (total_bytes + 10) / 11;
     int payload_raw_len = chunks * 11;
     uint8_t *raw_buf = malloc(payload_raw_len);
     memset(raw_buf, 0, payload_raw_len);
     for (int i = 0; i < count; i++) {
-        raw_buf[i] = (uint8_t)(tokens[i] & 0xFF);
+        raw_buf[i * 4 + 0] = (uint8_t)((tokens[i] >> 24) & 0xFF);
+        raw_buf[i * 4 + 1] = (uint8_t)((tokens[i] >> 16) & 0xFF);
+        raw_buf[i * 4 + 2] = (uint8_t)((tokens[i] >> 8) & 0xFF);
+        raw_buf[i * 4 + 3] = (uint8_t)(tokens[i] & 0xFF);
     }
     
     int coded_len = chunks * 15;
@@ -1841,13 +1845,73 @@ int tsfi_ot_llm_bandwidth_comm_recv(TSFiOtLlmBandwidthComm *comm, const uint8_t 
         return -4; // Uncorrectable transmission error
     }
     
-    for (int i = 0; i < payload_len; i++) {
-        tokens_out[i] = decoded[i];
+    int token_count = payload_len / 4;
+    for (int i = 0; i < token_count; i++) {
+        tokens_out[i] = ((uint32_t)decoded[i * 4 + 0] << 24) |
+                        ((uint32_t)decoded[i * 4 + 1] << 16) |
+                        ((uint32_t)decoded[i * 4 + 2] << 8)  |
+                        (uint32_t)decoded[i * 4 + 3];
     }
-    *count_out = payload_len;
+    *count_out = token_count;
     
     free(interleaved);
     free(coded);
     free(decoded);
+    return 0;
+}
+
+// 49. EER & ER bridge for OT LLM Bandwidth Communication Link
+int tsfi_eer_bridge_ot_llm_comm_acab(TSFiEerDatabase *db, const char *dat_bin_path) {
+    if (!db || !dat_bin_path) return -1;
+    
+    FILE *f = fopen(dat_bin_path, "rb");
+    if (!f) return -2;
+    
+    uint32_t count = 0;
+    if (fread(&count, sizeof(uint32_t), 1, f) != 1 || count == 0 || count > 512) {
+        fclose(f);
+        return -3;
+    }
+    
+    uint8_t *frame = malloc(count);
+    if (fread(frame, 1, count, f) != count) {
+        free(frame);
+        fclose(f);
+        return -4;
+    }
+    fclose(f);
+    
+    TSFiOtLlmBandwidthComm comm;
+    tsfi_ot_llm_bandwidth_comm_init(&comm, 0x0E, 2);
+    
+    uint32_t tokens[512];
+    int token_count = 0;
+    int recv_rc = tsfi_ot_llm_bandwidth_comm_recv(&comm, frame, count, tokens, &token_count);
+    free(frame);
+    if (recv_rc != 0) return -5;
+    
+    uint32_t incident_id = tokens[0];
+    int type = (incident_id == 9999) ? 1 : 4;
+    int defcon = (incident_id == 9999) ? 1 : 5;
+    
+    tsfi_eer_db_init(db);
+    tsfi_eer_insert_incident(db, incident_id, defcon, 1782000000U, type);
+    
+    tsfi_eer_insert_agency(db, 101, "NORAD_SECURE", 1, 1);
+    tsfi_eer_insert_agency(db, 102, "IRS_AUDIT", 2, 2);
+    
+    if (type == 1) {
+        tsfi_eer_link_response(db, 101, incident_id);
+    } else {
+        tsfi_eer_link_response(db, 102, incident_id);
+    }
+    
+    if (db->channel_count < 16) {
+        TSFiEerChannel *chan = &db->channels[db->channel_count++];
+        chan->channel_id = 0x0200; // Tapped ACAB channel
+        chan->encryption_type = 3;
+        chan->frequency_band = 144000;
+    }
+    
     return 0;
 }

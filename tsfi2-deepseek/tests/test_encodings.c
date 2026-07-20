@@ -638,6 +638,38 @@ int main(void) {
         printf("[PASS] OT LLM Bandwidth Communication Link transmission and correction\n");
     }
     
+    // Test 25: OT LLM Bandwidth Communication ER & EER bridge test
+    {
+        const char *bin_path = "tmp/ot_llm_comm_basic.dat.bin";
+        TSFiOtLlmBandwidthComm comm;
+        tsfi_ot_llm_bandwidth_comm_init(&comm, 0x0E, 2);
+        
+        uint32_t send_tokens[11] = {
+            9999, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110
+        };
+        uint8_t frame_buf[128];
+        int frame_len = 0;
+        int send_rc = tsfi_ot_llm_bandwidth_comm_send(&comm, send_tokens, 11, frame_buf, &frame_len);
+        assert(send_rc == 0);
+        
+        FILE *f = fopen(bin_path, "wb");
+        assert(f != NULL);
+        uint32_t count = (uint32_t)frame_len;
+        fwrite(&count, sizeof(uint32_t), 1, f);
+        fwrite(frame_buf, 1, frame_len, f);
+        fclose(f);
+        
+        TSFiEerDatabase db;
+        int bridge_rc = tsfi_eer_bridge_ot_llm_comm_acab(&db, bin_path);
+        assert(bridge_rc == 0);
+        assert(db.incident_count == 1);
+        assert(db.incidents[0].incident_id == 9999);
+        assert(db.incidents[0].defcon_level == 1); // NuclearAlert specialization
+        
+        remove(bin_path);
+        printf("[PASS] OT LLM Bandwidth Communication ER & EER bridge\n");
+    }
+    
     printf("[SUCCESS] All Encodings Compliance Tests Passed!\n");
     return 0;
 }
