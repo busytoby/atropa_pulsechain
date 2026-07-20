@@ -57,13 +57,18 @@ void generate_synth_soundtrack(const char *filename) {
 
     fwrite(&hdr, 1, sizeof(hdr), f);
 
-    // Simple FM/additive synthesizer melody generator
+    // Simple FM/additive synthesizer melody generator with Lissajous-driven drums
     float phase_bass = 0.0f;
     float phase_lead = 0.0f;
     float phase_pad = 0.0f;
+    float phase_drum_kick = 0.0f;
 
     for (int s = 0; s < total_samples; s++) {
         float t = (float)s / SAMPLE_RATE;
+
+        // Lissajous modulation signals
+        float X = sinf(t * 2.0f * (float)M_PI * 1.5f);
+        float Y = cosf(t * 2.0f * (float)M_PI * 2.5f);
 
         // Dynamic chord/melody changes
         int chord_idx = ((int)t / 4) % 4;
@@ -77,12 +82,12 @@ void generate_synth_soundtrack(const char *filename) {
 
         // Synthesize waves
         phase_bass += (2.0f * (float)M_PI * base_f) / SAMPLE_RATE;
-        phase_pad += (2.0f * (float)M_PI * base_f * 1.5f) / SAMPLE_RATE; // Perfect fifth pad
+        phase_pad += (2.0f * (float)M_PI * base_f * 1.5f) / SAMPLE_RATE;
         phase_lead += (2.0f * (float)M_PI * lead_freq) / SAMPLE_RATE;
 
-        if (phase_bass > 2.0f * (float)M_PI) phase_bass -= 2.0f * (float)M_PI;
-        if (phase_pad > 2.0f * (float)M_PI) phase_pad -= 2.0f * (float)M_PI;
-        if (phase_lead > 2.0f * (float)M_PI) phase_lead -= 2.0f * (float)M_PI;
+        if (phase_bass > 2.0f * (float)M_PI) { phase_bass -= 2.0f * (float)M_PI; }
+        if (phase_pad > 2.0f * (float)M_PI) { phase_pad -= 2.0f * (float)M_PI; }
+        if (phase_lead > 2.0f * (float)M_PI) { phase_lead -= 2.0f * (float)M_PI; }
 
         float bass_sample = sinf(phase_bass) + 0.2f * sinf(phase_bass * 2.0f);
         float pad_sample = sinf(phase_pad) * 0.4f;
@@ -92,9 +97,34 @@ void generate_synth_soundtrack(const char *filename) {
         float lead_env = 1.0f - fmodf(t * 4.0f, 1.0f);
         lead_sample *= lead_env;
 
-        float combined = (bass_sample + pad_sample + lead_sample) * 0.4f;
-        if (combined > 1.0f) combined = 1.0f;
-        if (combined < -1.0f) combined = -1.0f;
+        // --- Lissajous Drums synthesis ---
+        float drum_sample = 0.0f;
+
+        // Kick Drum (120 BPM, every 0.5 seconds)
+        float t_kick = fmodf(t, 0.5f);
+        float kick_env = expf(-t_kick * 30.0f);
+        float kick_freq = 150.0f * kick_env * (1.0f + 0.1f * X * Y);
+        phase_drum_kick += (2.0f * (float)M_PI * kick_freq) / SAMPLE_RATE;
+        if (phase_drum_kick > 2.0f * (float)M_PI) { phase_drum_kick -= 2.0f * (float)M_PI; }
+        float kick_sample = sinf(phase_drum_kick) * kick_env * 1.0f;
+
+        // Snare Drum (triggered on off beats: offset by 0.25 seconds)
+        float t_snare = fmodf(t + 0.25f, 0.5f);
+        float snare_env = expf(-t_snare * 15.0f);
+        float noise = ((float)rand() / RAND_MAX - 0.5f) * 2.0f;
+        // Resonant modulation using Lissajous phase
+        float snare_sample = noise * snare_env * (0.6f + 0.2f * sinf(X * Y * (float)M_PI)) * 0.5f;
+
+        // Hi-Hats (every 0.125 seconds)
+        float t_hat = fmodf(t, 0.125f);
+        float hat_env = expf(-t_hat * 80.0f);
+        float hat_sample = noise * hat_env * 0.15f;
+
+        drum_sample = kick_sample + snare_sample + hat_sample;
+
+        float combined = (bass_sample + pad_sample + lead_sample + drum_sample) * 0.4f;
+        if (combined > 1.0f) { combined = 1.0f; }
+        if (combined < -1.0f) { combined = -1.0f; }
 
         int16_t sample_16 = (int16_t)(combined * 32767.0f);
         fwrite(&sample_16, 1, sizeof(int16_t), f);
