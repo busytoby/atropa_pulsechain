@@ -444,6 +444,18 @@ int tsfi_quantel_harry_field_shift(uint32_t *pixels, int w, int h, int shift_eve
 /* Storyboard Frame Thumbnail Grid Dotted Borders */
 int tsfi_quantel_storyboard_dotted_borders(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int dot_spacing, uint32_t border_color);
 
+/* Quantel Paintbox Brush Pressure Flow Dynamics */
+int tsfi_quantel_paintbox_pressure_flow(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float pressure, uint32_t color);
+
+/* Mirage 3D Dynamic Twirl/Swirl Inverse Warp */
+int tsfi_quantel_mirage_twirl_inverse_warp(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float angle, float radius);
+
+/* Harry Chronological Frame Interlaced Field Blend */
+int tsfi_quantel_harry_blend_fields(const uint32_t *field_even, const uint32_t *field_odd, uint32_t *dst, int w, int h, float blend_factor);
+
+/* Storyboard Frame Thumbnail Grid Corner Spacers */
+int tsfi_quantel_storyboard_corner_spacers(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int spacer_w, uint32_t color);
+
 #endif // TSFI_PAINT_H
 
 

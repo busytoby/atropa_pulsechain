@@ -1569,3 +1569,55 @@ int tsfi_quantel_storyboard_dotted_borders(uint32_t *pixels, int w, int h, int c
     }
     return 0;
 }
+
+int tsfi_quantel_harry_blend_fields(const uint32_t *field_even, const uint32_t *field_odd, uint32_t *dst, int w, int h, float blend_factor) {
+    if (!field_even || !field_odd || !dst || w <= 0 || h <= 0) return -1;
+    if (blend_factor < 0.0f) { blend_factor = 0.0f; }
+    if (blend_factor > 1.0f) { blend_factor = 1.0f; }
+
+    for (int y = 0; y < h; y++) {
+        const uint32_t *row_a = field_even + y * w;
+        const uint32_t *row_b = field_odd + y * w;
+        uint32_t *dst_row = dst + y * w;
+
+        for (int x = 0; x < w; x++) {
+            uint32_t ca = row_a[x];
+            uint32_t cb = row_b[x];
+
+            uint8_t ra = (ca >> 16) & 0xFF;
+            uint8_t ga = (ca >> 8) & 0xFF;
+            uint8_t ba = ca & 0xFF;
+
+            uint8_t rb = (cb >> 16) & 0xFF;
+            uint8_t gb = (cb >> 8) & 0xFF;
+            uint8_t bb = cb & 0xFF;
+
+            uint8_t r = (uint8_t)(ra * (1.0f - blend_factor) + rb * blend_factor);
+            uint8_t g = (uint8_t)(ga * (1.0f - blend_factor) + gb * blend_factor);
+            uint8_t b = (uint8_t)(ba * (1.0f - blend_factor) + bb * blend_factor);
+
+            dst_row[x] = (0xFF000000) | (r << 16) | (g << 8) | b;
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_storyboard_corner_spacers(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int spacer_w, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0 || spacer_w <= 0) return -1;
+
+    for (int y = cell_y; y < cell_y + cell_h; y++) {
+        if (y < 0 || y >= h) continue;
+        for (int x = cell_x; x < cell_x + cell_w; x++) {
+            if (x < 0 || x >= w) continue;
+            int in_left = (x >= cell_x && x < cell_x + spacer_w);
+            int in_right = (x >= cell_x + cell_w - spacer_w && x < cell_x + cell_w);
+            int in_top = (y >= cell_y && y < cell_y + spacer_w);
+            int in_bottom = (y >= cell_y + cell_h - spacer_w && y < cell_y + cell_h);
+
+            if ((in_left && in_top) || (in_right && in_top) || (in_left && in_bottom) || (in_right && in_bottom)) {
+                pixels[y * w + x] = color;
+            }
+        }
+    }
+    return 0;
+}

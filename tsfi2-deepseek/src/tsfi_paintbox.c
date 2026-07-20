@@ -1086,3 +1086,10 @@ int tsfi_quantel_paintbox_velocity_flow(uint32_t *pixels, int w, int h, int cx, 
     return tsfi_quantel_paintbox_airbrush(pixels, w, h, cx, cy, radius, flow, color);
 }
 
+int tsfi_quantel_paintbox_pressure_flow(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float pressure, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0 || radius <= 0) return -1;
+    float flow = pressure;
+    if (flow < 0.01f) { flow = 0.01f; }
+    return tsfi_quantel_paintbox_airbrush(pixels, w, h, cx, cy, radius, flow, color);
+}
+
