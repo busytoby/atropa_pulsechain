@@ -414,3 +414,35 @@ int tsfi_autodin_preempt_evict_cache(tsfi_autodin_preempt_channel *chan, tsfi_gr
     // Sweep the cache to evict cold pages to make room for preemptive Flash transactions
     return tsfi_gray_cache_evict_sweep(cm, current_time, evicted_page_id);
 }
+
+// 20. SAGE Duplex Group Commit Bridging
+int tsfi_sage_duplex_group_commit(tsfi_sage_duplex *duplex, tsfi_reuter_group_commit *gc, uint32_t active_tx_id, uint32_t standby_tx_id) {
+    if (!duplex || !gc) return -1;
+    
+    uint64_t lsn_active = 0;
+    uint64_t lsn_standby = 0;
+    uint8_t payload[8] = "DUP_TX";
+    
+    // Queue Active CPU transaction WAL record
+    int rc = tsfi_reuter_group_commit_queue(gc, active_tx_id, 0, 8, payload, payload, &lsn_active);
+    if (rc != 0) return -2;
+    
+    // Queue Standby CPU transaction WAL record
+    rc = tsfi_reuter_group_commit_queue(gc, standby_tx_id, 8, 8, payload, payload, &lsn_standby);
+    if (rc != 0) return -3;
+    
+    // Flush both concurrently in a single file system write block
+    rc = tsfi_reuter_group_commit_flush(gc);
+    if (rc != 0) return -4;
+    
+    duplex->last_sync_time++; // Advance SAGE duplex clock
+    return 0;
+}
+
+// 21. AUTODIN Preemption MVCC Sweep version cleaner
+int tsfi_autodin_preempt_mvcc_sweep(tsfi_autodin_preempt_channel *chan, tsfi_reuter_version **version_head, uint64_t min_active_lsn) {
+    if (!chan || !version_head) return -1;
+    
+    // Clear old coordinate versions to release heap/memory for Flash routing piece
+    return tsfi_reuter_mvcc_sweep(version_head, min_active_lsn);
+}

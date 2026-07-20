@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <stdlib.h>
 
 int main(void) {
     printf("[INFO] Starting AUTODIN SAGE Transaction Compliance Test...\n");
@@ -345,10 +346,54 @@ int main(void) {
     assert(rc == 1 && entry != NULL);
     
     uint32_t evicted_page = 0;
-    // Sweep cache 400 seconds later (1000 + 400 = 1400, exceeds 300 seconds / 5-minute rule threshold)
     rc = tsfi_autodin_preempt_evict_cache(&cascade_chan, &cm, 1400, &evicted_page);
     assert(rc == 0);
     assert(evicted_page == 101); // Cold page successfully evicted
+    
+    // Test 21: SAGE Duplex Group Commit Bridging
+    tsfi_sage_duplex grp_duplex;
+    grp_duplex.active_cpu_id = 1;
+    grp_duplex.standby_cpu_id = 2;
+    grp_duplex.last_sync_time = 0;
+    
+    const char *grp_log_path = "tmp/reuter_group.log";
+    int g_fd = open(grp_log_path, O_RDWR | O_CREAT | O_TRUNC, 0644);
+    assert(g_fd >= 0);
+    
+    tsfi_reuter_group_commit gc;
+    tsfi_reuter_group_commit_init(&gc, g_fd);
+    
+    rc = tsfi_sage_duplex_group_commit(&grp_duplex, &gc, 8001, 8002);
+    assert(rc == 0);
+    assert(grp_duplex.last_sync_time == 1);
+    
+    close(g_fd);
+    unlink(grp_log_path);
+    
+    // Test 22: AUTODIN Preemption MVCC Sweep version cleaner
+    tsfi_reuter_version *head = NULL;
+    uint8_t ver_data[8] = "V_OLD";
+    rc = tsfi_reuter_mvcc_write(&head, 20, ver_data, 8); // committed at LSN 20
+    assert(rc == 0);
+    rc = tsfi_reuter_mvcc_write(&head, 50, ver_data, 8); // committed at LSN 50
+    assert(rc == 0);
+    rc = tsfi_reuter_mvcc_write(&head, 150, ver_data, 8); // committed at LSN 150
+    assert(rc == 0);
+    
+    // Sweep old versions committed <= 100 (keeping the first one <= 100, which is LSN 50, sweeping older ones like LSN 20)
+    rc = tsfi_autodin_preempt_mvcc_sweep(&cascade_chan, &head, 100);
+    assert(rc == 0);
+    
+    assert(head != NULL);
+    assert(head->lsn == 150);
+    assert(head->next != NULL);
+    assert(head->next->lsn == 50);
+    assert(head->next->next == NULL); // Version 20 successfully swept!
+    
+    // Clean up allocated memory
+    tsfi_reuter_version *tmp = head->next;
+    free(head);
+    free(tmp);
     
     printf("[SUCCESS] AUTODIN SAGE Transaction Compliance Test Passed!\n");
     return 0;

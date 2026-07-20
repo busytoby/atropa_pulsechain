@@ -143,4 +143,7 @@ int tsfi_autodin_preempt_cascade_abort(tsfi_autodin_preempt_channel *chan, tsfi_
 int tsfi_sage_duplex_lu62_commit(tsfi_sage_duplex *duplex, tsfi_reuter_2pc_coordinator *coord, uint32_t standby_node_id);
 int tsfi_autodin_preempt_evict_cache(tsfi_autodin_preempt_channel *chan, tsfi_gray_cache_manager *cm, uint64_t current_time, uint32_t *evicted_page_id);
 
+int tsfi_sage_duplex_group_commit(tsfi_sage_duplex *duplex, tsfi_reuter_group_commit *gc, uint32_t active_tx_id, uint32_t standby_tx_id);
+int tsfi_autodin_preempt_mvcc_sweep(tsfi_autodin_preempt_channel *chan, tsfi_reuter_version **version_head, uint64_t min_active_lsn);
+
 #endif // TSFI_AUTODIN_SAGE_H
