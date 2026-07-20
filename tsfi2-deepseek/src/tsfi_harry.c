@@ -895,20 +895,30 @@ int tsfi_quantel_harry_hsl_despill(uint32_t *pixels, int w, int h, float thresho
 }
 
 int tsfi_quantel_storyboard_aspect_guides(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, const char *ratio_str, uint32_t color) {
+    (void)ratio_str;
     if (!pixels || w <= 0 || h <= 0) return -1;
-    float aspect = 1.777f;
-    if (strcmp(ratio_str, "4:3") == 0) aspect = 1.333f;
-    else if (strcmp(ratio_str, "1.85:1") == 0) aspect = 1.85f;
+    float aspect = 1.85f;
 
-    int crop_w = cell_w;
-    int crop_h = (int)(cell_w / aspect);
+    int crop_w = cell_w - 30;
+    int crop_h = (int)(crop_w / aspect);
     if (crop_h > cell_h) {
         crop_h = cell_h;
         crop_w = (int)(cell_h * aspect);
     }
 
-    int ox = cell_x + (cell_w - crop_w) / 2;
+    int ox = cell_x + 30 + (cell_w - 30 - crop_w) / 2;
     int oy = cell_y + (cell_h - crop_h) / 2;
+
+    for (int y = oy; y < oy + crop_h; y++) {
+        for (int x = cell_x; x < ox; x++) {
+            int y_mod = y % 20;
+            if (y_mod >= 6 && y_mod <= 14 && x >= cell_x + 8 && x <= cell_x + 18) {
+                pixels[y * w + x] = 0xFF2A2820;
+            } else {
+                pixels[y * w + x] = 0xFF0D0D0D;
+            }
+        }
+    }
 
     for (int x = ox; x < ox + crop_w; x++) {
         if (x >= 0 && x < w) {
