@@ -142,7 +142,7 @@ int tsfi_reuter_page_write(tsfi_reuter_page *page, int log_fd, uint32_t tx_id, u
     
     // Write changes first to log (WAL protocol)
     uint64_t assigned_lsn = 0;
-    int rc = tsfi_reuter_write_wal(log_fd, tx_id, offset, len, before, new_data, &assigned_lsn);
+    int rc = tsfi_reuter_write_wal(log_fd, tx_id, page->page_id * 512 + offset, len, before, new_data, &assigned_lsn);
     if (rc != 0) return rc;
     
     // Update physiological page state
@@ -670,6 +670,150 @@ int tsfi_reuter_log_truncate(int log_fd, uint64_t min_recovery_lsn, const char *
     if (rename(temp_filepath, log_filepath) != 0) {
         unlink(temp_filepath);
         return -4;
+    }
+    
+    return 0;
+}
+
+// 16. Checkpoint-Driven Boot Recovery optimization
+int tsfi_reuter_aries_recover_from_checkpoint(int log_fd, tsfi_reuter_page *pages, int page_count, 
+                                               tsfi_reuter_tx_entry *tx_table, int *tx_count, 
+                                               tsfi_reuter_dirty_page *dirty_table, int *dirty_count) {
+    if (log_fd < 0 || !pages || !tx_table || !dirty_table) return -1;
+    
+    *tx_count = 0;
+    *dirty_count = 0;
+    
+    // Scan backwards from end of log file to locate the latest checkpoint record
+    off_t file_len = lseek(log_fd, 0, SEEK_END);
+    if (file_len < (off_t)sizeof(tsfi_reuter_log_record)) return -2; // Log too small
+    
+    off_t offset = file_len - sizeof(tsfi_reuter_log_record);
+    tsfi_reuter_log_record record;
+    bool checkpoint_found = false;
+    
+    while (offset >= 0) {
+        lseek(log_fd, offset, SEEK_SET);
+        if (read(log_fd, &record, sizeof(tsfi_reuter_log_record)) == sizeof(tsfi_reuter_log_record)) {
+            if (record.type == LOG_TYPE_CHECKPOINT) {
+                checkpoint_found = true;
+                break;
+            }
+        }
+        offset -= sizeof(tsfi_reuter_log_record);
+    }
+    
+    uint64_t start_redo_lsn = 0;
+    if (checkpoint_found) {
+        // Recover Transaction Table and Dirty Page Table from checkpoint record
+        for (int i = 0; i < 8; i++) {
+            uint32_t tx_id = 0;
+            memcpy(&tx_id, record.before_image + (i * 4), 4);
+            if (tx_id != 0) {
+                tx_table[*tx_count].transaction_id = tx_id;
+                tx_table[*tx_count].last_lsn = record.lsn;
+                tx_table[*tx_count].active = true;
+                (*tx_count)++;
+            }
+            
+            uint32_t page_id = 0;
+            memcpy(&page_id, record.after_image + (i * 4), 4);
+            if (page_id != 0 || i == 0) { // Keep dummy page mapping
+                dirty_table[*dirty_count].page_id = page_id;
+                dirty_table[*dirty_count].rec_lsn = record.lsn;
+                (*dirty_count)++;
+            }
+        }
+        start_redo_lsn = record.lsn;
+    }
+    
+    // Redo Phase starting from checkpoint LSN
+    lseek(log_fd, 0, SEEK_SET);
+    while (read(log_fd, &record, sizeof(tsfi_reuter_log_record)) == sizeof(tsfi_reuter_log_record)) {
+        if (record.lsn >= start_redo_lsn && record.type == LOG_TYPE_WAL) {
+            uint32_t page_id = record.data_offset / 512;
+            for (int i = 0; i < page_count; i++) {
+                if (pages[i].page_id == page_id && pages[i].page_lsn < record.lsn) {
+                    uint32_t local_offset = record.data_offset % 512;
+                    memcpy(pages[i].data + local_offset, record.after_image, record.data_len);
+                    pages[i].page_lsn = record.lsn;
+                }
+            }
+        }
+    }
+    
+    // Undo Phase rolling back active transactions
+    for (int i = *tx_count - 1; i >= 0; i--) {
+        if (tx_table[i].active) {
+            uint64_t clr_lsn = 0;
+            tsfi_reuter_write_clr(log_fd, tx_table[i].transaction_id, tx_table[i].last_lsn, 0, 0, NULL, &clr_lsn);
+            tx_table[i].active = false;
+        }
+    }
+    
+    return checkpoint_found ? 0 : 1; // 0 = recovered from checkpoint, 1 = fallback redo
+}
+
+// 17. LU6.2 Multi-Node Syncpoint Handshake Exchange
+int tsfi_reuter_lu62_syncpoint_handshake(tsfi_reuter_2pc_coordinator *coord, uint32_t node_id, 
+                                         const char *in_buffer, char *out_buffer) {
+    if (!coord || !in_buffer || !out_buffer) return -1;
+    
+    if (strcmp(in_buffer, "REQ_COMMIT") == 0) {
+        // Coordinator sends PREPARE signal to participants
+        strcpy(out_buffer, "PREPARE");
+        return LU62_STATE_SYNC_PENDING;
+    } else if (strcmp(in_buffer, "AGREE") == 0) {
+        // Participant votes to commit
+        tsfi_reuter_2pc_vote(coord, node_id, true);
+        strcpy(out_buffer, "DECISION_COMMIT");
+        return LU62_STATE_DECIDED;
+    } else if (strcmp(in_buffer, "VETO") == 0) {
+        // Participant votes to abort
+        tsfi_reuter_2pc_vote(coord, node_id, false);
+        strcpy(out_buffer, "DECISION_ABORT");
+        return LU62_STATE_DECIDED;
+    }
+    
+    return -2; // Unknown handshake sequence
+}
+
+// 18. Selective undo (subtransaction rollback) using undo_next_lsn
+int tsfi_reuter_selective_undo(int log_fd, tsfi_reuter_page *pages, int page_count, 
+                               uint32_t tx_id, uint64_t target_lsn) {
+    if (log_fd < 0 || !pages) return -1;
+    
+    // Read log records in reverse LSN order to selectively roll back this transaction
+    off_t file_len = lseek(log_fd, 0, SEEK_END);
+    off_t offset = file_len - sizeof(tsfi_reuter_log_record);
+    tsfi_reuter_log_record record;
+    
+    uint64_t next_undo_lsn = 0;
+    
+    while (offset >= 0) {
+        lseek(log_fd, offset, SEEK_SET);
+        if (read(log_fd, &record, sizeof(tsfi_reuter_log_record)) == sizeof(tsfi_reuter_log_record)) {
+            if (record.transaction_id == tx_id && record.lsn > target_lsn) {
+                if (record.type == LOG_TYPE_WAL) {
+                    // Undo this specific change
+                    uint32_t page_id = record.data_offset / 512;
+                    for (int i = 0; i < page_count; i++) {
+                        if (pages[i].page_id == page_id) {
+                            uint32_t local_offset = record.data_offset % 512;
+                            memcpy(pages[i].data + local_offset, record.before_image, record.data_len);
+                            
+                            // Log Compensation Log Record (CLR) pointing to the previous LSN to undo
+                            uint64_t clr_lsn = 0;
+                            tsfi_reuter_write_clr(log_fd, tx_id, next_undo_lsn, record.data_offset, record.data_len, record.before_image, &clr_lsn);
+                            pages[i].page_lsn = clr_lsn;
+                            next_undo_lsn = record.lsn;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        offset -= sizeof(tsfi_reuter_log_record);
     }
     
     return 0;

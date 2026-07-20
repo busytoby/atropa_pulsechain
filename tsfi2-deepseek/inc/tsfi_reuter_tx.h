@@ -195,4 +195,25 @@ int tsfi_reuter_ss2pl_release_all(tsfi_reuter_lock_head *lock_heads, int lock_he
 // Log Truncation Sweeper API
 int tsfi_reuter_log_truncate(int log_fd, uint64_t min_recovery_lsn, const char *log_filepath);
 
+// LU6.2 Conversational Syncpoint States
+typedef enum {
+    LU62_STATE_SEND,
+    LU62_STATE_RECEIVE,
+    LU62_STATE_SYNC_PENDING,
+    LU62_STATE_DECIDED
+} tsfi_reuter_lu62_state;
+
+// Checkpoint-Driven Boot Recovery API
+int tsfi_reuter_aries_recover_from_checkpoint(int log_fd, tsfi_reuter_page *pages, int page_count, 
+                                               tsfi_reuter_tx_entry *tx_table, int *tx_count, 
+                                               tsfi_reuter_dirty_page *dirty_table, int *dirty_count);
+
+// LU6.2 Multi-Node Syncpoint Handshake Exchange API
+int tsfi_reuter_lu62_syncpoint_handshake(tsfi_reuter_2pc_coordinator *coord, uint32_t node_id, 
+                                         const char *in_buffer, char *out_buffer);
+
+// Selective subtransaction undo via undo_next_lsn
+int tsfi_reuter_selective_undo(int log_fd, tsfi_reuter_page *pages, int page_count, 
+                               uint32_t tx_id, uint64_t target_lsn);
+
 #endif // TSFI_REUTER_TX_H
