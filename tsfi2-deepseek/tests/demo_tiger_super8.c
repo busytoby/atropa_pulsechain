@@ -38,6 +38,7 @@
 #include "tsfi_parc_routing.h"
 #include "tsfi_parc_keyboard.h"
 #include "tsfi_parc_knoll.h"
+#include "tsfi_parc_tknoll.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -846,6 +847,12 @@ int main() {
     tsfi_parc_knoll_lens_flare(canvas, WIDTH, HEIGHT, 256, 256, 1.0f);
     tsfi_parc_knoll_gaussian_blur(canvas, canvas_b, WIDTH, HEIGHT, 1.0f);
     tsfi_parc_knoll_gray_lut(canvas, canvas_b, WIDTH, HEIGHT);
+
+    // Thomas Knoll (Photoshop/Display pre-history) filters verify check
+    tsfi_parc_tknoll_levels_adjustment(canvas_b, WIDTH, HEIGHT, 10, 240, 1.0f);
+    uint32_t hist[256];
+    tsfi_parc_tknoll_histogram(canvas_b, WIDTH, HEIGHT, hist);
+    tsfi_parc_tknoll_dither_floyd_steinberg(canvas_b, alto_display_mem, WIDTH, HEIGHT);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
