@@ -608,6 +608,36 @@ int main(void) {
         printf("[PASS] Lock-free EER transaction journaling\n");
     }
     
+    // Test 24: OT LLM Bandwidth Communication Link test
+    {
+        TSFiOtLlmBandwidthComm comm;
+        int init_rc = tsfi_ot_llm_bandwidth_comm_init(&comm, 0x0E, 2);
+        assert(init_rc == 0);
+        assert(comm.active_sap == 0x0E);
+        assert(comm.priority == 2);
+        
+        uint32_t send_tokens[22] = {
+            10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110,
+            120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220
+        };
+        uint8_t frame_buf[128];
+        int frame_len = 0;
+        int send_rc = tsfi_ot_llm_bandwidth_comm_send(&comm, send_tokens, 22, frame_buf, &frame_len);
+        assert(send_rc == 0);
+        assert(frame_len > 4);
+        
+        // Corrupt 1 byte in payload (after header)
+        frame_buf[6] ^= 0xFF;
+        
+        uint32_t recv_tokens[128];
+        int recv_count = 0;
+        int recv_rc = tsfi_ot_llm_bandwidth_comm_recv(&comm, frame_buf, frame_len, recv_tokens, &recv_count);
+        assert(recv_rc == 0);
+        assert(recv_count >= 22);
+        assert(memcmp(send_tokens, recv_tokens, 22 * sizeof(uint32_t)) == 0);
+        printf("[PASS] OT LLM Bandwidth Communication Link transmission and correction\n");
+    }
+    
     printf("[SUCCESS] All Encodings Compliance Tests Passed!\n");
     return 0;
 }

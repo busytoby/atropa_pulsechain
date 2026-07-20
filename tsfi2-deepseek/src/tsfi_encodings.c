@@ -1,5 +1,6 @@
 #include "tsfi_encodings.h"
 #include <string.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <stdio.h>
 #include "tsfi_trie.h"
@@ -1766,5 +1767,87 @@ int tsfi_eer_journal_pop(TSFiEerJournalEntry *entry) {
     if (!entry || g_eer_journal.tail == g_eer_journal.head) return -1; // Empty
     *entry = g_eer_journal.buffer[g_eer_journal.tail];
     g_eer_journal.tail = (g_eer_journal.tail + 1) % EER_JOURNAL_SIZE;
+    return 0;
+}
+
+// 48. OT LLM Bandwidth Communication Link
+int tsfi_ot_llm_bandwidth_comm_init(TSFiOtLlmBandwidthComm *comm, int sap, int priority) {
+    if (!comm) return -1;
+    comm->noise_level = 0.1f;
+    comm->current_window_size = 16;
+    comm->active_sap = sap;
+    comm->priority = priority;
+    return 0;
+}
+
+int tsfi_ot_llm_bandwidth_comm_send(TSFiOtLlmBandwidthComm *comm, const uint32_t *tokens, int count, uint8_t *out_frame, int *out_len) {
+    if (!comm || !tokens || !out_frame || !out_len || count <= 0) return -1;
+    
+    // We group tokens into 11-byte chunks.
+    int chunks = (count + 10) / 11;
+    int payload_raw_len = chunks * 11;
+    uint8_t *raw_buf = malloc(payload_raw_len);
+    memset(raw_buf, 0, payload_raw_len);
+    for (int i = 0; i < count; i++) {
+        raw_buf[i] = (uint8_t)(tokens[i] & 0xFF);
+    }
+    
+    int coded_len = chunks * 15;
+    uint8_t *coded_buf = malloc(coded_len);
+    tsfi_encode_lrc15_11(raw_buf, payload_raw_len, coded_buf);
+    
+    uint8_t *interleaved_buf = malloc(coded_len);
+    tsfi_interleave_lrc(coded_buf, coded_len, interleaved_buf);
+    
+    // Dynamic Window scaling based on noise
+    comm->current_window_size = tsfi_stanag_scale_window(comm->noise_level);
+    
+    // Frame header: Sync (2 bytes: 0xE1, 0x4A), SAP (1 byte), Priority (1 byte)
+    out_frame[0] = 0xE1;
+    out_frame[1] = 0x4A;
+    out_frame[2] = (uint8_t)comm->active_sap;
+    out_frame[3] = (uint8_t)comm->priority;
+    
+    memcpy(out_frame + 4, interleaved_buf, coded_len);
+    *out_len = 4 + coded_len;
+    
+    free(raw_buf);
+    free(coded_buf);
+    free(interleaved_buf);
+    return 0;
+}
+
+int tsfi_ot_llm_bandwidth_comm_recv(TSFiOtLlmBandwidthComm *comm, const uint8_t *frame, int len, uint32_t *tokens_out, int *count_out) {
+    if (!comm || !frame || !tokens_out || !count_out || len <= 4) return -1;
+    
+    if (frame[0] != 0xE1 || frame[1] != 0x4A) return -2; // Bad Sync
+    int sap = frame[2];
+    if (sap != comm->active_sap) return -3; // Bad Route
+    
+    int coded_len = len - 4;
+    uint8_t *interleaved = malloc(coded_len);
+    memcpy(interleaved, frame + 4, coded_len);
+    
+    uint8_t *coded = malloc(coded_len);
+    tsfi_deinterleave_lrc(interleaved, coded_len, coded);
+    
+    int payload_len = (coded_len / 15) * 11;
+    uint8_t *decoded = malloc(payload_len);
+    int decode_rc = tsfi_decode_lrc15_11(coded, coded_len, decoded);
+    if (decode_rc < 0) {
+        free(interleaved);
+        free(coded);
+        free(decoded);
+        return -4; // Uncorrectable transmission error
+    }
+    
+    for (int i = 0; i < payload_len; i++) {
+        tokens_out[i] = decoded[i];
+    }
+    *count_out = payload_len;
+    
+    free(interleaved);
+    free(coded);
+    free(decoded);
     return 0;
 }

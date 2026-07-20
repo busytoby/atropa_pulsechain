@@ -148,4 +148,16 @@ typedef struct {
 int tsfi_eer_journal_push(uint32_t incident_id, int event_type, uint32_t timestamp);
 int tsfi_eer_journal_pop(TSFiEerJournalEntry *entry);
 
+// --- OT LLM Bandwidth Communication Link APIs ---
+typedef struct {
+    float noise_level;
+    int current_window_size;
+    int active_sap;
+    int priority;
+} TSFiOtLlmBandwidthComm;
+
+int tsfi_ot_llm_bandwidth_comm_init(TSFiOtLlmBandwidthComm *comm, int sap, int priority);
+int tsfi_ot_llm_bandwidth_comm_send(TSFiOtLlmBandwidthComm *comm, const uint32_t *tokens, int count, uint8_t *out_frame, int *out_len);
+int tsfi_ot_llm_bandwidth_comm_recv(TSFiOtLlmBandwidthComm *comm, const uint8_t *frame, int len, uint32_t *tokens_out, int *count_out);
+
 #endif // TSFI_ENCODINGS_H
