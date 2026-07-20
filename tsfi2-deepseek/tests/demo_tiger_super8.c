@@ -36,6 +36,7 @@
 #include "tsfi_parc_notetaker.h"
 #include "tsfi_parc_alfont.h"
 #include "tsfi_parc_routing.h"
+#include "tsfi_parc_keyboard.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -832,6 +833,9 @@ int main() {
     tsfi_parc_routing_add(&routing_table, 3, 22, 1);
     uint8_t next_hop = 0;
     tsfi_parc_routing_lookup(&routing_table, 3, &next_hop);
+
+    // Xerox Alto Keyboard Scan Matrix translation check
+    tsfi_parc_kb_translate(1, 1, 0); // 'q'
 
     uint32_t *canvas = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
     uint32_t *canvas_b = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
