@@ -148,4 +148,14 @@ int tsfi_autodin_preempt_mvcc_sweep(tsfi_autodin_preempt_channel *chan, tsfi_reu
 
 int tsfi_sage_vulkan_project(int32_t track_x, int32_t track_y, float *ndc_x, float *ndc_y);
 
+// SAGE Keyboard / Mouse Event Audited under CICS
+typedef struct {
+    uint32_t event_type; // 1 = Keyboard, 2 = Mouse
+    uint32_t key_code;
+    int32_t mouse_x;
+    int32_t mouse_y;
+} tsfi_sage_cics_event;
+
+int tsfi_sage_cics_audit_event(tsfi_reuter_group_commit *gc, uint32_t tx_id, const tsfi_sage_cics_event *event);
+
 #endif // TSFI_AUTODIN_SAGE_H

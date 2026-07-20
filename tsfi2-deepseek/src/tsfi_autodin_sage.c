@@ -461,3 +461,20 @@ int tsfi_sage_vulkan_project(int32_t track_x, int32_t track_y, float *ndc_x, flo
     
     return 0;
 }
+
+// 23. CICS keyboard and mouse event auditing under Vulkan pipeline
+int tsfi_sage_cics_audit_event(tsfi_reuter_group_commit *gc, uint32_t tx_id, const tsfi_sage_cics_event *event) {
+    if (!gc || !event) return -1;
+    
+    // Serialise keyboard/mouse event data struct
+    uint8_t buffer[16];
+    memset(buffer, 0, 16);
+    memcpy(buffer, &event->event_type, 4);
+    memcpy(buffer + 4, &event->key_code, 4);
+    memcpy(buffer + 8, &event->mouse_x, 4);
+    memcpy(buffer + 12, &event->mouse_y, 4);
+    
+    uint64_t assigned_lsn = 0;
+    // Log as WAL record to sequential transaction stream
+    return tsfi_reuter_group_commit_queue(gc, tx_id, 0xFF00, 16, buffer, buffer, &assigned_lsn);
+}

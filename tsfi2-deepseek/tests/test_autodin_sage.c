@@ -426,6 +426,26 @@ int main(void) {
     assert(ndc_x == 0.5f);
     assert(ndc_y == -0.5f);
     
+    // Test 24: CICS Keyboard/Mouse Event Auditing in Vulkan Simulation
+    const char *audit_log_path = "tmp/reuter_audit.log";
+    int a_fd = open(audit_log_path, O_RDWR | O_CREAT | O_TRUNC, 0644);
+    assert(a_fd >= 0);
+    
+    tsfi_reuter_group_commit audit_gc;
+    tsfi_reuter_group_commit_init(&audit_gc, a_fd);
+    
+    tsfi_sage_cics_event event;
+    event.event_type = 2; // Mouse event
+    event.key_code = 0;
+    event.mouse_x = 350;
+    event.mouse_y = 700;
+    
+    rc = tsfi_sage_cics_audit_event(&audit_gc, 9001, &event);
+    assert(rc == 0);
+    
+    close(a_fd);
+    unlink(audit_log_path);
+    
     printf("[SUCCESS] AUTODIN SAGE Transaction Compliance Test Passed!\n");
     return 0;
 }
