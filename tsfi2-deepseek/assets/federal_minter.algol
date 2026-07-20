@@ -1,0 +1,42 @@
+begin
+  comment solidity-like contract features implemented in ALGOL 60 DDM;
+
+  comment State variable mappings (represented as indexed arrays);
+  integer array TreasuryTokensOwner[0:2048];
+  integer array Hu[0:2048];
+  integer array Ho[0:2048, 0:2048];
+
+  comment Solidity require(...) modifier emulation;
+  procedure Require(Condition, ErrorCode);
+    value Condition, ErrorCode;
+    boolean Condition;
+    integer ErrorCode;
+  begin
+    if not Condition then
+      begin
+        comment Revert execution and trigger error;
+        ErrorTrap(ErrorCode);
+      end
+  end;
+
+  comment Solidity event Published(address) emulation;
+  procedure EmitPublished(TokenAddr);
+    value TokenAddr;
+    string TokenAddr;
+  begin
+    comment Write event entry to block-ledger .dat.bin stream;
+    WriteLedgerEvent(TokenAddr, "Published");
+  end;
+
+  comment Solidity public view FDIC getter;
+  string procedure GetFDICAddress(FDICRegister);
+    value FDICRegister;
+    string FDICRegister;
+  begin
+    GetFDICAddress := FDICRegister;
+  end;
+
+  comment Error handler label;
+  Revert:
+    comment Reset state variables;
+end
