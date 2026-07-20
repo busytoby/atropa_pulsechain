@@ -1602,3 +1602,31 @@ int tsfi_quantel_harry_blend_fields_directional_jitter_offset(const uint32_t *fi
     }
     return 0;
 }
+
+int tsfi_quantel_harry_scanline_offset_jitter_width_directional(uint32_t *pixels, int w, int h, int offset, int line_width, float jitter_amp, float angle) {
+    if (!pixels || w <= 0 || h <= 0 || line_width <= 0) return -1;
+    uint32_t *temp = (uint32_t *)malloc(w * h * sizeof(uint32_t));
+    if (!temp) { return -1; }
+    memcpy(temp, pixels, w * h * sizeof(uint32_t));
+
+    float cos_a = cosf(angle);
+    float sin_a = sinf(angle);
+
+    for (int y = 0; y < h; y++) {
+        int line_group = y / line_width;
+        float jitter_val = ((float)rand() / RAND_MAX - 0.5f) * jitter_amp;
+        float base_shift = ((line_group % 2 == 0) ? offset : -offset) + jitter_val;
+
+        int shift_x = (int)(base_shift * cos_a);
+        int shift_y = (int)(base_shift * sin_a);
+
+        uint32_t *dst_row = pixels + y * w;
+        for (int x = 0; x < w; x++) {
+            int sx = (x - shift_x + w) % w;
+            int sy = (y - shift_y + h) % h;
+            dst_row[x] = temp[sy * w + sx];
+        }
+    }
+    free(temp);
+    return 0;
+}
