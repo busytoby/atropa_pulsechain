@@ -612,6 +612,9 @@ int tsfi_quantel_harry_scanline_offset_jitter_width_directional(uint32_t *pixels
 /* Storyboard Frame Thumbnail Grid Border Highlights Offset Width Color Outer Double */
 int tsfi_quantel_storyboard_border_highlights_offset_width_color_outer_double(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int offset_w, int border_w, uint32_t color1, uint32_t color2);
 
+/* Orchestrator & Paintbox Synthesizer + Red/Blue Box Integration */
+int tsfi_quantel_orchestrator_paintbox_synth_link(uint32_t *pixels, int w, int h, int cx, int cy, float pressure, float speed, float *audio_buf, int audio_count);
+
 #endif // TSFI_PAINT_H
 
 

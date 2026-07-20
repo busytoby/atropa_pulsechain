@@ -1302,3 +1302,26 @@ int tsfi_quantel_paintbox_pressure_jitter_opacity_value(uint32_t *pixels, int w,
     return tsfi_quantel_paintbox_airbrush(pixels, w, h, cx, cy, radius, opacity, final_color);
 }
 
+extern bool blue_box_generate_tone(uint32_t freq1, uint32_t freq2, float *samples_out, size_t count);
+extern void blue_box_accumulate_state(uint64_t input_signal);
+
+int tsfi_quantel_orchestrator_paintbox_synth_link(uint32_t *pixels, int w, int h, int cx, int cy, float pressure, float speed, float *audio_buf, int audio_count) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+
+    uint32_t freq1 = 200 + (uint32_t)(cx * 800.0f / w);
+    uint32_t freq2 = 300 + (uint32_t)(cy * 1200.0f / h);
+
+    if (audio_buf && audio_count > 0) {
+        blue_box_generate_tone(freq1, freq2, audio_buf, (size_t)audio_count);
+    }
+
+    uint64_t accumulated_signal = (uint64_t)(pressure * 1000.0f) + (uint64_t)(speed * 500.0f);
+    blue_box_accumulate_state(accumulated_signal);
+
+    uint32_t color = (0xFF000000) | ((freq1 & 0xFF) << 16) | ((freq2 & 0xFF) << 8) | ((int)(pressure * 255.0f) & 0xFF);
+    int brush_radius = 5 + (int)(speed * 4.0f);
+    tsfi_quantel_paintbox_airbrush(pixels, w, h, cx, cy, brush_radius, pressure, color);
+
+    return 0;
+}
+
