@@ -138,6 +138,46 @@ int main(void) {
     assert(cascaded_aborts[0] == 1002);
     assert(cascaded_aborts[1] == 1003);
     
+    // Test 7: OLAP "Data Cube" aggregates
+    tsfi_gray_cube_entry raw_data[2] = {
+        {1, 10, 500},
+        {1, 11, 300}
+    };
+    tsfi_gray_cube_entry cube_res[16];
+    memset(cube_res, 0, sizeof(cube_res));
+    int cube_count = 0;
+    
+    rc = tsfi_gray_cube_aggregate(raw_data, 2, cube_res, &cube_count);
+    assert(rc == 0);
+    // There should be:
+    // 2 leaf combinations (1, 10) & (1, 11)
+    // 2 branch combinations (1, ALL) & (1, ALL) -> collapsed to one (1, ALL)
+    // 2 teller combinations (ALL, 10) & (ALL, 11)
+    // 1 grand total (ALL, ALL)
+    // Total count: 6
+    assert(cube_count == 6);
+    assert(cube_res[5].branch_id == 0xFFFFFFFF && cube_res[5].teller_id == 0xFFFFFFFF);
+    assert(cube_res[5].total_amount == 800); // Grand total
+    
+    // Test 8: DAG Hierarchical Lock Conversion Validator
+    rc = tsfi_gray_dag_lock_verify(LOCK_MODE_IS, LOCK_MODE_S);
+    assert(rc == 0); // OK to lock S under IS parent
+    
+    rc = tsfi_gray_dag_lock_verify(LOCK_MODE_IS, LOCK_MODE_X);
+    assert(rc == -1); // Blocked! Cannot lock X under IS parent!
+    
+    // Test 9: Heartbeat backup monitor
+    tsfi_gray_heartbeat_monitor mon;
+    mon.last_heartbeat_time = 1000;
+    mon.heartbeat_timeout = 50;
+    
+    bool trigger = false;
+    rc = tsfi_gray_pp_heartbeat_check(&mon, 1030, &trigger);
+    assert(rc == 0 && trigger == false); // Within bounds (idle 30 < 50)
+    
+    rc = tsfi_gray_pp_heartbeat_check(&mon, 1060, &trigger);
+    assert(rc == 0 && trigger == true); // Timeout breached! (idle 60 >= 50)
+    
     printf("[SUCCESS] Jim Gray Transaction Compliance Test (Extended) Passed!\n");
     return 0;
 }

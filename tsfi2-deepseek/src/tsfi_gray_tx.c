@@ -282,3 +282,117 @@ int tsfi_gray_abort_cascade(tsfi_gray_abort_tracker *at, uint32_t aborted_tx_id,
     }
     return 0;
 }
+
+// 7. OLAP "Data Cube" Aggregation Operator
+int tsfi_gray_cube_aggregate(const tsfi_gray_cube_entry *raw_data, int data_count, 
+                             tsfi_gray_cube_entry *cube_out, int *cube_count_out) {
+    if (!raw_data || data_count <= 0 || !cube_out || !cube_count_out) return -1;
+    
+    int count = 0;
+    
+    // 1. Calculate leaf-level combinations (Branch + Teller)
+    for (int i = 0; i < data_count; i++) {
+        bool found = false;
+        for (int j = 0; j < count; j++) {
+            if (cube_out[j].branch_id == raw_data[i].branch_id && 
+                cube_out[j].teller_id == raw_data[i].teller_id) {
+                cube_out[j].total_amount += raw_data[i].total_amount;
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            cube_out[count].branch_id = raw_data[i].branch_id;
+            cube_out[count].teller_id = raw_data[i].teller_id;
+            cube_out[count].total_amount = raw_data[i].total_amount;
+            count++;
+        }
+    }
+    
+    // 2. Calculate sub-totals for each Branch (Branch, ALL tellers: teller_id = 0xFFFFFFFF)
+    for (int i = 0; i < data_count; i++) {
+        bool found = false;
+        for (int j = 0; j < count; j++) {
+            if (cube_out[j].branch_id == raw_data[i].branch_id && 
+                cube_out[j].teller_id == 0xFFFFFFFF) {
+                cube_out[j].total_amount += raw_data[i].total_amount;
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            cube_out[count].branch_id = raw_data[i].branch_id;
+            cube_out[count].teller_id = 0xFFFFFFFF;
+            cube_out[count].total_amount = raw_data[i].total_amount;
+            count++;
+        }
+    }
+    
+    // 3. Calculate sub-totals for each Teller (ALL branches, Teller: branch_id = 0xFFFFFFFF)
+    for (int i = 0; i < data_count; i++) {
+        bool found = false;
+        for (int j = 0; j < count; j++) {
+            if (cube_out[j].branch_id == 0xFFFFFFFF && 
+                cube_out[j].teller_id == raw_data[i].teller_id) {
+                cube_out[j].total_amount += raw_data[i].total_amount;
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            cube_out[count].branch_id = 0xFFFFFFFF;
+            cube_out[count].teller_id = raw_data[i].teller_id;
+            cube_out[count].total_amount = raw_data[i].total_amount;
+            count++;
+        }
+    }
+    
+    // 4. Calculate grand total (ALL branches, ALL tellers: branch_id = teller_id = 0xFFFFFFFF)
+    int32_t grand_total = 0;
+    for (int i = 0; i < data_count; i++) {
+        grand_total += raw_data[i].total_amount;
+    }
+    cube_out[count].branch_id = 0xFFFFFFFF;
+    cube_out[count].teller_id = 0xFFFFFFFF;
+    cube_out[count].total_amount = grand_total;
+    count++;
+    
+    *cube_count_out = count;
+    return 0;
+}
+
+// 8. DAG Hierarchical Lock Conversion Validator
+int tsfi_gray_dag_lock_verify(tsfi_reuter_lock_mode parent_mode, tsfi_reuter_lock_mode child_mode) {
+    // Jim Gray's DAG Rule:
+    // To lock a child in S or IS mode, the parent must be locked in IS or IX.
+    // To lock a child in X, IX, or SIX mode, the parent must be locked in IX or SIX.
+    if (child_mode == LOCK_MODE_S || child_mode == LOCK_MODE_IS) {
+        if (parent_mode == LOCK_MODE_IS || parent_mode == LOCK_MODE_IX) {
+            return 0; // Authorized!
+        }
+    }
+    
+    if (child_mode == LOCK_MODE_X || child_mode == LOCK_MODE_IX || child_mode == LOCK_MODE_SIX) {
+        if (parent_mode == LOCK_MODE_IX || parent_mode == LOCK_MODE_SIX || parent_mode == LOCK_MODE_X) {
+            return 0; // Authorized!
+        }
+    }
+    
+    return -1; // Unauthorized lock conversion / hierarchy violation
+}
+
+// 9. Heartbeat-Based Backup Monitor (Process Pair Active Liveness)
+int tsfi_gray_pp_heartbeat_check(tsfi_gray_heartbeat_monitor *mon, uint64_t current_time, bool *trigger_failover) {
+    if (!mon || !trigger_failover) return -1;
+    
+    uint64_t idle = current_time > mon->last_heartbeat_time ? 
+                    current_time - mon->last_heartbeat_time : 0;
+    
+    if (idle >= mon->heartbeat_timeout) {
+        *trigger_failover = true;
+    } else {
+        *trigger_failover = false;
+    }
+    
+    return 0;
+}

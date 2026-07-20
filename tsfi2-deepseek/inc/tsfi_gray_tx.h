@@ -91,4 +91,25 @@ void tsfi_gray_abort_tracker_init(tsfi_gray_abort_tracker *at);
 int tsfi_gray_abort_add_dep(tsfi_gray_abort_tracker *at, uint32_t writer_id, uint32_t reader_id);
 int tsfi_gray_abort_cascade(tsfi_gray_abort_tracker *at, uint32_t aborted_tx_id, uint32_t *cascaded_aborts_out, int *cascade_count);
 
+// 7. OLAP "Data Cube" Aggregation Operator
+typedef struct {
+    uint32_t branch_id;
+    uint32_t teller_id;
+    int32_t total_amount;
+} tsfi_gray_cube_entry;
+
+int tsfi_gray_cube_aggregate(const tsfi_gray_cube_entry *raw_data, int data_count, 
+                             tsfi_gray_cube_entry *cube_out, int *cube_count_out);
+
+// 8. DAG Hierarchical Lock Conversion Validator
+int tsfi_gray_dag_lock_verify(tsfi_reuter_lock_mode parent_mode, tsfi_reuter_lock_mode child_mode);
+
+// 9. Heartbeat-Based Backup Monitor (Process Pair Active Liveness)
+typedef struct {
+    uint64_t last_heartbeat_time;
+    uint64_t heartbeat_timeout;
+} tsfi_gray_heartbeat_monitor;
+
+int tsfi_gray_pp_heartbeat_check(tsfi_gray_heartbeat_monitor *mon, uint64_t current_time, bool *trigger_failover);
+
 #endif // TSFI_GRAY_TX_H
