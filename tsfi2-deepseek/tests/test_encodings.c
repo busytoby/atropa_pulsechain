@@ -502,6 +502,51 @@ int main(void) {
         printf("[PASS] Generic OT Baud LLM DAT on ACAB bridge tests\n");
     }
     
+    // Test 21: Fifth-Generation Systems Improvements
+    {
+        // 21.1 Convolutional Interleaving test
+        const uint8_t raw[15] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14};
+        uint8_t int_buf[15];
+        uint8_t deint_buf[15];
+        tsfi_interleave_lrc(raw, 15, int_buf);
+        tsfi_deinterleave_lrc(int_buf, 15, deint_buf);
+        assert(memcmp(raw, deint_buf, 15) == 0);
+        printf("[PASS] Convolutional block interleaving\n");
+        
+        // 21.2 Double Exponential Smoothing (Holt-Linear) test
+        float level = 10.0f;
+        float trend = 0.5f;
+        tsfi_pll_holt_estimate(12.0f, &level, &trend, 0.2f, 0.1f);
+        assert(level > 10.0f);
+        assert(trend > 0.0f);
+        printf("[PASS] Holt-Linear double exponential smoothing\n");
+        
+        // 21.3 STANAG Priority Routing (QoS) test
+        int reg_rc = tsfi_stanag_register_priority_route(0x4F, mock_sap_handler, 1);
+        assert(reg_rc == 0);
+        TSFiEerDatabase db;
+        tsfi_eer_db_init(&db);
+        int route_rc = tsfi_stanag_route_priority_frame(&db, 0x4F, (const uint8_t *)"critical", 8);
+        assert(route_rc == 0);
+        assert(db.incident_count == 1);
+        printf("[PASS] Priority STANAG SAP routing\n");
+        
+        // 21.4 EER relational path dependency audits test
+        tsfi_eer_db_init(&db);
+        tsfi_eer_insert_incident(&db, 1111, 5, 1782000000U, 2);
+        tsfi_eer_insert_agency(&db, 102, "IRS", 2, 2);
+        tsfi_eer_link_response(&db, 102, 1111);
+        
+        // Audit fails because there is no channel defined in database yet
+        int audit_fail = tsfi_eer_audit_paths(&db);
+        assert(audit_fail == -2);
+        
+        db.channels[db.channel_count++].channel_id = 0x0200; // Define channel
+        int audit_pass = tsfi_eer_audit_paths(&db);
+        assert(audit_pass == 0);
+        printf("[PASS] EER relational path dependency audits\n");
+    }
+    
     printf("[SUCCESS] All Encodings Compliance Tests Passed!\n");
     return 0;
 }

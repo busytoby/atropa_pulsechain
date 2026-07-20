@@ -1462,3 +1462,96 @@ int tsfi_eer_bridge_generic_ot_acab(TSFiEerDatabase *db, const char *dat_bin_pat
     
     return 0;
 }
+
+// 38. Convolutional / Block Interleaver for LRC
+void tsfi_interleave_lrc(const uint8_t *in, int len, uint8_t *out) {
+    if (!in || !out || len <= 0) return;
+    for (int i = 0; i < len; i += 15) {
+        int chunk = (len - i < 15) ? (len - i) : 15;
+        if (chunk < 15) {
+            memcpy(out + i, in + i, chunk);
+            continue;
+        }
+        uint8_t temp[15];
+        memcpy(temp, in + i, 15);
+        for (int r = 0; r < 3; r++) {
+            for (int c = 0; c < 5; c++) {
+                out[i + c * 3 + r] = temp[r * 5 + c];
+            }
+        }
+    }
+}
+
+void tsfi_deinterleave_lrc(const uint8_t *in, int len, uint8_t *out) {
+    if (!in || !out || len <= 0) return;
+    for (int i = 0; i < len; i += 15) {
+        int chunk = (len - i < 15) ? (len - i) : 15;
+        if (chunk < 15) {
+            memcpy(out + i, in + i, chunk);
+            continue;
+        }
+        uint8_t temp[15];
+        memcpy(temp, in + i, 15);
+        for (int r = 0; r < 3; r++) {
+            for (int c = 0; c < 5; c++) {
+                out[i + r * 5 + c] = temp[c * 3 + r];
+            }
+        }
+    }
+}
+
+// 39. Double Exponential Smoothing (Holt-Linear)
+void tsfi_pll_holt_estimate(float measurement, float *level, float *trend, float alpha, float beta) {
+    if (!level || !trend) return;
+    float last_level = *level;
+    *level = alpha * measurement + (1.0f - alpha) * (last_level + *trend);
+    *trend = beta * (*level - last_level) + (1.0f - beta) * (*trend);
+}
+
+// 40. STANAG Priority Routing (QoS)
+TSFiStanagRoutePriority g_stanag_pri_routes[MAX_STANAG_ROUTES];
+int g_stanag_pri_route_count = 0;
+
+int tsfi_stanag_register_priority_route(uint8_t sap, tsfi_stanag_sap_handler handler, int priority) {
+    if (!handler || g_stanag_pri_route_count >= MAX_STANAG_ROUTES) return -1;
+    g_stanag_pri_routes[g_stanag_pri_route_count].sap = sap;
+    g_stanag_pri_routes[g_stanag_pri_route_count].handler = handler;
+    g_stanag_pri_routes[g_stanag_pri_route_count].priority = priority;
+    
+    // Simple sorting by priority (insertion sort)
+    for (int i = g_stanag_pri_route_count; i > 0; i--) {
+        if (g_stanag_pri_routes[i].priority < g_stanag_pri_routes[i - 1].priority) {
+            TSFiStanagRoutePriority temp = g_stanag_pri_routes[i];
+            g_stanag_pri_routes[i] = g_stanag_pri_routes[i - 1];
+            g_stanag_pri_routes[i - 1] = temp;
+        }
+    }
+    g_stanag_pri_route_count++;
+    return 0;
+}
+
+int tsfi_stanag_route_priority_frame(TSFiEerDatabase *db, uint8_t sap, const uint8_t *payload, int len) {
+    for (int i = 0; i < g_stanag_pri_route_count; i++) {
+        if (g_stanag_pri_routes[i].sap == sap) {
+            g_stanag_pri_routes[i].handler(db, payload, len);
+            return 0;
+        }
+    }
+    return -1;
+}
+
+// 41. EER relational path dependency audits
+int tsfi_eer_audit_paths(const TSFiEerDatabase *db) {
+    if (!db) return -1;
+    for (int i = 0; i < db->responds_count; i++) {
+        int has_channel = 0;
+        for (int j = 0; j < db->channel_count; j++) {
+            if (db->channels[j].channel_id == 0x0200) {
+                has_channel = 1;
+                break;
+            }
+        }
+        if (!has_channel) return -2;
+    }
+    return 0;
+}

@@ -104,4 +104,21 @@ void tsfi_pll_ema_estimate(float measurement, float *state, float alpha);
 
 int tsfi_eer_audit_invariants(const TSFiEerDatabase *db);
 
+// --- Fifth-Generation Improvements APIs ---
+void tsfi_interleave_lrc(const uint8_t *in, int len, uint8_t *out);
+void tsfi_deinterleave_lrc(const uint8_t *in, int len, uint8_t *out);
+
+void tsfi_pll_holt_estimate(float measurement, float *level, float *trend, float alpha, float beta);
+
+typedef struct {
+    uint8_t sap;
+    tsfi_stanag_sap_handler handler;
+    int priority;
+} TSFiStanagRoutePriority;
+
+int tsfi_stanag_register_priority_route(uint8_t sap, tsfi_stanag_sap_handler handler, int priority);
+int tsfi_stanag_route_priority_frame(TSFiEerDatabase *db, uint8_t sap, const uint8_t *payload, int len);
+
+int tsfi_eer_audit_paths(const TSFiEerDatabase *db);
+
 #endif // TSFI_ENCODINGS_H
