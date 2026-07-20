@@ -1018,5 +1018,145 @@ int tsfi_quantel_paintbox_velocity_brush(uint32_t *pixels, int w, int h, int pre
     return 0;
 }
 
+int tsfi_quantel_paintbox_wet_paint(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float smudge_rate, uint32_t *brush_color_in_out) {
+    if (!pixels || !brush_color_in_out || w <= 0 || h <= 0 || radius <= 0) return -1;
+
+    double sum_r = 0, sum_g = 0, sum_b = 0;
+    int count = 0;
+
+    for (int y = cy - radius; y <= cy + radius; y++) {
+        if (y < 0 || y >= h) continue;
+        uint32_t *row = pixels + y * w;
+        int dy = y - cy;
+        for (int x = cx - radius; x <= cx + radius; x++) {
+            if (x < 0 || x >= w) continue;
+            int dx = x - cx;
+            if (dx * dx + dy * dy <= radius * radius) {
+                uint32_t pix = row[x];
+                sum_r += (pix >> 16) & 0xFF;
+                sum_g += (pix >> 8) & 0xFF;
+                sum_b += pix & 0xFF;
+                count++;
+            }
+        }
+    }
+
+    if (count > 0) {
+        uint8_t avg_r = (uint8_t)(sum_r / count);
+        uint8_t avg_g = (uint8_t)(sum_g / count);
+        uint8_t avg_b = (uint8_t)(sum_b / count);
+
+        uint32_t br_col = *brush_color_in_out;
+        uint8_t br_r = (br_col >> 16) & 0xFF;
+        uint8_t br_g = (br_col >> 8) & 0xFF;
+        uint8_t br_b = br_col & 0xFF;
+
+        uint8_t res_r = (uint8_t)(br_r * (1.0f - smudge_rate) + avg_r * smudge_rate);
+        uint8_t res_g = (uint8_t)(br_g * (1.0f - smudge_rate) + avg_g * smudge_rate);
+        uint8_t res_b = (uint8_t)(br_b * (1.0f - smudge_rate) + avg_b * smudge_rate);
+
+        *brush_color_in_out = (0xFF000000) | (res_r << 16) | (res_g << 8) | res_b;
+    }
+
+    // Paint with smudge blended color
+    return tsfi_quantel_paintbox_airbrush(pixels, w, h, cx, cy, radius, 1.0f, *brush_color_in_out);
+}
+
+int tsfi_quantel_mirage_perspective_rotate(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float rot_x, float rot_y, float rot_z, float fov) {
+    if (!src || !dst || src_w <= 0 || src_h <= 0 || dst_w <= 0 || dst_h <= 0) return -1;
+
+    memset(dst, 0, dst_w * dst_h * sizeof(uint32_t));
+
+    float cos_x = cosf(rot_x); float sin_x = sinf(rot_x);
+    float cos_y = cosf(rot_y); float sin_y = sinf(rot_y);
+    float cos_z = cosf(rot_z); float sin_z = sinf(rot_z);
+
+    float cx_s = src_w / 2.0f;
+    float cy_s = src_h / 2.0f;
+    float cx_d = dst_w / 2.0f;
+    float cy_d = dst_h / 2.0f;
+
+    for (int y = 0; y < src_h; y++) {
+        float sy = y - cy_s;
+        for (int x = 0; x < src_w; x++) {
+            float sx = x - cx_s;
+
+            // 1. Z-axis rotation
+            float x1 = sx * cos_z - sy * sin_z;
+            float y1 = sx * sin_z + sy * cos_z;
+            float z1 = 0;
+
+            // 2. Y-axis rotation
+            float x2 = x1 * cos_y + z1 * sin_y;
+            float y2 = y1;
+            float z2 = -x1 * sin_y + z1 * cos_y;
+
+            // 3. X-axis rotation
+            float x3 = x2;
+            float y3 = y2 * cos_x - z2 * sin_x;
+            float z3 = y2 * sin_x + z2 * cos_x;
+
+            // Perspective scale
+            float z_offset = z3 + fov;
+            if (z_offset > 1.0f) {
+                float scale = fov / z_offset;
+                int dx = (int)(x3 * scale + cx_d);
+                int dy = (int)(y3 * scale + cy_d);
+
+                if (dx >= 0 && dx < dst_w && dy >= 0 && dy < dst_h) {
+                    dst[dy * dst_w + dx] = src[y * src_w + x];
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_harry_bezier_animate(const uint32_t *fg, int fg_w, int fg_h, uint32_t *bg, int w, int h, float t, float p0_x, float p0_y, float p1_x, float p1_y, float p2_x, float p2_y) {
+    if (!fg || !bg || w <= 0 || h <= 0 || fg_w <= 0 || fg_h <= 0) return -1;
+
+    // Evaluate quadratic bezier position
+    float omt = 1.0f - t;
+    float bx = omt * omt * p0_x + 2.0f * omt * t * p1_x + t * t * p2_x;
+    float by = omt * omt * p0_y + 2.0f * omt * t * p1_y + t * t * p2_y;
+
+    int ox = (int)(bx - fg_w / 2.0f);
+    int oy = (int)(by - fg_h / 2.0f);
+
+    for (int y = 0; y < fg_h; y++) {
+        int cy = oy + y;
+        if (cy < 0 || cy >= h) continue;
+        uint32_t *bg_row = bg + cy * w;
+        const uint32_t *fg_row = fg + y * fg_w;
+
+        for (int x = 0; x < fg_w; x++) {
+            int cx = ox + x;
+            if (cx < 0 || cx >= w) continue;
+
+            uint32_t fg_pixel = fg_row[x];
+            uint8_t alpha = (fg_pixel >> 24) & 0xFF;
+            if (alpha > 0) {
+                float a = alpha / 255.0f;
+                uint8_t rf = (fg_pixel >> 16) & 0xFF;
+                uint8_t gf = (fg_pixel >> 8) & 0xFF;
+                uint8_t bf = fg_pixel & 0xFF;
+
+                uint32_t bg_pixel = bg_row[cx];
+                uint8_t rb = (bg_pixel >> 16) & 0xFF;
+                uint8_t gb = (bg_pixel >> 8) & 0xFF;
+                uint8_t bb = bg_pixel & 0xFF;
+
+                uint8_t r_res = (uint8_t)(rf * a + rb * (1.0f - a));
+                uint8_t g_res = (uint8_t)(gf * a + gb * (1.0f - a));
+                uint8_t b_res = (uint8_t)(bf * a + bb * (1.0f - a));
+
+                bg_row[cx] = (0xFF000000) | (r_res << 16) | (g_res << 8) | b_res;
+            }
+        }
+    }
+    return 0;
+}
+
+
 
 

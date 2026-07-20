@@ -48,7 +48,17 @@ int tsfi_quantel_mirage_page_peel_transition(const uint32_t *src_a, const uint32
 /* Quantel Paintbox: Dynamic velocity-based brush stroke drawing */
 int tsfi_quantel_paintbox_velocity_brush(uint32_t *pixels, int w, int h, int prev_x, int prev_y, int curr_x, int curr_y, float max_radius, float pressure, uint32_t color);
 
+/* Quantel Paintbox: Wet paint canvas smudge color mixing */
+int tsfi_quantel_paintbox_wet_paint(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float smudge_rate, uint32_t *brush_color_in_out);
+
+/* Quantel Mirage: 3D DVE perspective projection rotation */
+int tsfi_quantel_mirage_perspective_rotate(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float rot_x, float rot_y, float rot_z, float fov);
+
+/* Quantel Harry: Keyframe animation translation along Quadratic Bezier motion paths */
+int tsfi_quantel_harry_bezier_animate(const uint32_t *fg, int fg_w, int fg_h, uint32_t *bg, int w, int h, float t, float p0_x, float p0_y, float p1_x, float p1_y, float p2_x, float p2_y);
+
 #endif // TSFI_PAINT_H
+
 
 
 
