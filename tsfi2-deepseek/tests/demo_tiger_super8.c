@@ -784,6 +784,8 @@ int main() {
     tsfi_parc_deck_load_track(&deck, "alto_dummy.dat.bin");
     remove("alto_dummy.dat.bin");
 
+    char typed_document[64] = "CICS CADE ";
+
     uint32_t *canvas = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
     uint32_t *canvas_b = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
     uint32_t *dst_buffer = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
@@ -1243,9 +1245,16 @@ int main() {
         tsfi_parc_gc_release_ref(&st_gc, &st_vm, obj_inst);
 
         // 2. Xerox Alto Keysets Chord keyboard emulation
-        uint8_t chord = (uint8_t)(f % 32);
-        char entry_char = tsfi_parc_decode_keyset(chord);
-        (void)entry_char; // Register keyset state simulation
+        // Type a character from keyset mapping into our running Bravo document every 60 frames (2 seconds)
+        if (f > 0 && f % 60 == 0) {
+            uint8_t kb_chord = (uint8_t)((f / 60) % 16); // characters A-P
+            char next_char = tsfi_parc_decode_keyset(kb_chord);
+            int len = strlen(typed_document);
+            if (len < 63) {
+                typed_document[len] = next_char;
+                typed_document[len + 1] = '\0';
+            }
+        }
 
         // 3. Xerox PUP packet serialization & CSMA/CD Ethernet Collision Engine
         tsfi_parc_pup_packet_t pup_pkt;
@@ -1273,6 +1282,14 @@ int main() {
         bravo_style.is_shadow = 1;
         bravo_style.color = 0xFFe6dfd3;
         tsfi_parc_render_styled_text(canvas_b, WIDTH, HEIGHT, bravo_layout.margin_left, bravo_layout.margin_top - 12, "XEROX ALTO / STAR CADE MONITOR", &bravo_style, 8.0f);
+
+        // Render keyboard keyset typed document in real-time
+        tsfi_parc_style_run_t doc_style;
+        doc_style.is_bold = 0;
+        doc_style.is_underline = 1;
+        doc_style.is_shadow = 0;
+        doc_style.color = 0xFFc5a059;
+        tsfi_parc_render_styled_text(canvas_b, WIDTH, HEIGHT, bravo_layout.margin_left, bravo_layout.margin_top + 16, typed_document, &doc_style, 7.0f);
 
         // 5. Xerox Interpress PDL Scalable vector diagram: Rotating target box in CADE panel center
         tsfi_parc_interpress_init(&ip_ctx);

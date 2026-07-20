@@ -35,6 +35,7 @@ int tsfi_parc_wm_open_window(tsfi_parc_window_manager_t *wm, const char *title, 
 
 int tsfi_parc_wm_render(tsfi_parc_window_manager_t *wm, uint32_t *pixels, int width, int height, float t, uint32_t st_result, int pup_len, uint16_t pup_checksum, int tx_count) {
     if (!wm || !pixels || width <= 0 || height <= 0) return -1;
+    (void)tx_count;
 
     // 1. Alto Halftone Desktop Grid Background removed to prevent obscuring the Menorah trunk
 
@@ -141,23 +142,27 @@ int tsfi_parc_wm_render(tsfi_parc_window_manager_t *wm, uint32_t *pixels, int wi
 
         // Draw custom body text based on Window ID
         char text_buf[128];
-        if (win->id == 0) { // CADE IMF Register
-            tsfi_quantel_paintbox_typographer(pixels, width, height, win->x + 12, win->y + 18, "SSN: 999-12-3456", 0xFFc5a059, 5.5f);
-            char status_n[32];
-            tsfi_mf_cade_get_status_name(1, status_n, sizeof(status_n));
-            snprintf(text_buf, sizeof(text_buf), "STATUS: %s", status_n);
+        if (win->id == 0) { // CADE IMF Register & BFS Directory
+            tsfi_quantel_paintbox_typographer(pixels, width, height, win->x + 12, win->y + 18, "BFS DB: VOL_01", 0xFFc5a059, 5.5f);
+            snprintf(text_buf, sizeof(text_buf), "CYL 100 HD 1 SEC %d", (int)(t * 2) % 12);
             tsfi_quantel_paintbox_typographer(pixels, width, height, win->x + 12, win->y + 28, text_buf, 0xFFc5a059, 5.5f);
-            snprintf(text_buf, sizeof(text_buf), "TX COUNT: %d", tx_count);
+            snprintf(text_buf, sizeof(text_buf), "DATA CHK: 0x%04X", (uint16_t)(0xFD4A + (int)t));
             tsfi_quantel_paintbox_typographer(pixels, width, height, win->x + 12, win->y + 38, text_buf, 0xFFc5a059, 5.5f);
         } else if (win->id == 1) { // Smalltalk VM
             tsfi_quantel_paintbox_typographer(pixels, width, height, win->x + 12, win->y + 18, "CLASS: TigerSensor", 0xFFc5a059, 5.5f);
             tsfi_quantel_paintbox_typographer(pixels, width, height, win->x + 12, win->y + 28, "MSG: #processData", 0xFFc5a059, 5.5f);
             snprintf(text_buf, sizeof(text_buf), "EVAL: %u (STACK OK)", st_result);
             tsfi_quantel_paintbox_typographer(pixels, width, height, win->x + 12, win->y + 38, text_buf, 0xFFc5a059, 5.5f);
-        } else if (win->id == 2) { // PUP Netlog
-            tsfi_quantel_paintbox_typographer(pixels, width, height, win->x + 12, win->y + 18, "ETHERNET: 3Mb/s PUP", 0xFFc5a059, 5.5f);
-            snprintf(text_buf, sizeof(text_buf), "PACKET LEN: %d B", pup_len);
-            tsfi_quantel_paintbox_typographer(pixels, width, height, win->x + 12, win->y + 28, text_buf, 0xFFc5a059, 5.5f);
+        } else if (win->id == 2) { // PUP Netlog & Metcalfe CSMA/CD Simulation
+            if ((int)(t * 2) % 4 == 0) {
+                tsfi_quantel_paintbox_typographer(pixels, width, height, win->x + 12, win->y + 18, "NET: COLLISION ACTIVE", 0xFFc5a059, 5.5f);
+                snprintf(text_buf, sizeof(text_buf), "BACKOFF: %d SLOTS", 1 << ((int)(t * 2.5f) % 6));
+                tsfi_quantel_paintbox_typographer(pixels, width, height, win->x + 12, win->y + 28, text_buf, 0xFFc5a059, 5.5f);
+            } else {
+                tsfi_quantel_paintbox_typographer(pixels, width, height, win->x + 12, win->y + 18, "NET: PUP TRANSMIT", 0xFFc5a059, 5.5f);
+                snprintf(text_buf, sizeof(text_buf), "PACKET LEN: %d B", pup_len);
+                tsfi_quantel_paintbox_typographer(pixels, width, height, win->x + 12, win->y + 28, text_buf, 0xFFc5a059, 5.5f);
+            }
             snprintf(text_buf, sizeof(text_buf), "CHECKSUM: 0x%04X", pup_checksum);
             tsfi_quantel_paintbox_typographer(pixels, width, height, win->x + 12, win->y + 38, text_buf, 0xFFc5a059, 5.5f);
         }
