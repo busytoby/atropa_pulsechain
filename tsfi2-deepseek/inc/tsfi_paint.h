@@ -222,6 +222,18 @@ int tsfi_quantel_harry_hsl_despill(uint32_t *pixels, int w, int h, float thresho
 /* Storyboard Aspect Ratio Guides */
 int tsfi_quantel_storyboard_aspect_guides(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, const char *ratio_str, uint32_t color);
 
+/* Quantel Brush Saturation Buildup */
+int tsfi_quantel_paintbox_saturation_buildup(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float pressure, float dwell_time, uint32_t color);
+
+/* Mirage 3D Sphere Map Warp */
+int tsfi_quantel_mirage_sphere_map(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float rot_x, float rot_y, float radius);
+
+/* Harry Chronological Time-Slice Wipe */
+int tsfi_quantel_harry_time_slice_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32_t *dst, int w, int h, float progress);
+
+/* Storyboard Burn-In Frame Indexer */
+int tsfi_quantel_storyboard_burn_index(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int frame_idx, float fps, uint32_t text_color);
+
 #endif // TSFI_PAINT_H
 
 

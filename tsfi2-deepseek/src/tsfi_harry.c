@@ -934,3 +934,30 @@ int tsfi_quantel_storyboard_aspect_guides(uint32_t *pixels, int w, int h, int ce
     }
     return 0;
 }
+
+int tsfi_quantel_harry_time_slice_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32_t *dst, int w, int h, float progress) {
+    if (!src_a || !src_b || !dst || w <= 0 || h <= 0) return -1;
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            float slice_thresh = (float)x / w;
+            int idx = y * w + x;
+            if (slice_thresh < progress) {
+                dst[idx] = src_b[idx];
+            } else {
+                dst[idx] = src_a[idx];
+            }
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_storyboard_burn_index(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int frame_idx, float fps, uint32_t text_color) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    char timecode[64];
+    tsfi_quantel_storyboard_drop_frame_timecode(frame_idx, fps, timecode, sizeof(timecode));
+
+    char index_str[128];
+    snprintf(index_str, sizeof(index_str), "F: %05d  TC: %s", frame_idx, timecode);
+    draw_text(pixels, w, h, cell_x + cell_w - 180, cell_y + cell_h - 18, index_str, text_color, 1);
+    return 0;
+}

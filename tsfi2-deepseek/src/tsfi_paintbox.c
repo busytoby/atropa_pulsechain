@@ -776,3 +776,10 @@ int tsfi_quantel_paintbox_shear_jitter(uint32_t *pixels, int w, int h, int cx, i
 
     return tsfi_quantel_paintbox_stylus_shear(pixels, w, h, cx, cy, radius, tilt_x, tilt_y, jitter_rot, color);
 }
+
+int tsfi_quantel_paintbox_saturation_buildup(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float pressure, float dwell_time, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0 || radius <= 0) return -1;
+    float accum_pressure = pressure * (1.0f + 0.1f * dwell_time);
+    if (accum_pressure > 1.0f) accum_pressure = 1.0f;
+    return tsfi_quantel_paintbox_airbrush(pixels, w, h, cx, cy, radius, accum_pressure, color);
+}
