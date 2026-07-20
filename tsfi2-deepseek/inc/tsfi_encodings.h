@@ -161,4 +161,28 @@ int tsfi_ot_llm_bandwidth_comm_send(TSFiOtLlmBandwidthComm *comm, const uint32_t
 int tsfi_ot_llm_bandwidth_comm_recv(TSFiOtLlmBandwidthComm *comm, const uint8_t *frame, int len, uint32_t *tokens_out, int *count_out);
 int tsfi_eer_bridge_ot_llm_comm_acab(TSFiEerDatabase *db, const char *dat_bin_path);
 
+// --- Seventh-Generation Improvements APIs ---
+void tsfi_stanag_age_routes(int elapsed_cycles);
+
+void tsfi_pll_holt_adaptive_estimate(float measurement, float *level, float *trend, float *alpha, float *beta, float variance);
+
+int tsfi_baudot_compress(const uint8_t *in, int len, uint8_t *out, int max_out);
+int tsfi_baudot_decompress(const uint8_t *in, int len, uint8_t *out, int max_out);
+
+typedef struct {
+    uint32_t incident_id;
+    int original_defcon;
+    int original_type;
+    int active;
+} TSFiEerUndoLogEntry;
+
+#define MAX_UNDO_LOGS 16
+typedef struct {
+    TSFiEerUndoLogEntry entries[MAX_UNDO_LOGS];
+    int top;
+} TSFiEerUndoLogStack;
+
+void tsfi_eer_undo_push(uint32_t incident_id, int original_defcon, int original_type);
+int tsfi_eer_undo_rollback(TSFiEerDatabase *db);
+
 #endif // TSFI_ENCODINGS_H

@@ -1915,3 +1915,97 @@ int tsfi_eer_bridge_ot_llm_comm_acab(TSFiEerDatabase *db, const char *dat_bin_pa
     
     return 0;
 }
+
+// 50. Dynamic Priority Escalation (Aging) in STANAG QoS
+void tsfi_stanag_age_routes(int elapsed_cycles) {
+    for (int i = 0; i < g_stanag_pri_route_count; i++) {
+        if (g_stanag_pri_routes[i].priority > 1 && elapsed_cycles > 10) {
+            g_stanag_pri_routes[i].priority--;
+        }
+    }
+}
+
+// 51. Adaptive Holt Parameter Tuning via Sliding Variance
+void tsfi_pll_holt_adaptive_estimate(float measurement, float *level, float *trend, float *alpha, float *beta, float variance) {
+    if (!level || !trend || !alpha || !beta) return;
+    *alpha = 0.1f + (variance * 0.5f);
+    if (*alpha > 0.9f) *alpha = 0.9f;
+    *beta = 0.05f + (variance * 0.2f);
+    if (*beta > 0.5f) *beta = 0.5f;
+    
+    tsfi_pll_holt_estimate(measurement, level, trend, *alpha, *beta);
+}
+
+// 52. Baudot Run-Length Compression (RLC)
+int tsfi_baudot_compress(const uint8_t *in, int len, uint8_t *out, int max_out) {
+    if (!in || !out || len <= 0) return -1;
+    int out_idx = 0;
+    int i = 0;
+    while (i < len && out_idx < max_out - 2) {
+        uint8_t current = in[i];
+        int run = 1;
+        while (i + run < len && in[i + run] == current && run < 255) {
+            run++;
+        }
+        if (run >= 4) {
+            out[out_idx++] = 0x00;
+            out[out_idx++] = (uint8_t)run;
+            out[out_idx++] = current;
+            i += run;
+        } else {
+            out[out_idx++] = current;
+            i++;
+        }
+    }
+    return out_idx;
+}
+
+int tsfi_baudot_decompress(const uint8_t *in, int len, uint8_t *out, int max_out) {
+    if (!in || !out || len <= 0) return -1;
+    int out_idx = 0;
+    int i = 0;
+    while (i < len && out_idx < max_out) {
+        if (in[i] == 0x00 && i + 2 < len) {
+            int run = in[i + 1];
+            uint8_t val = in[i + 2];
+            for (int r = 0; r < run && out_idx < max_out; r++) {
+                out[out_idx++] = val;
+            }
+            i += 3;
+        } else {
+            out[out_idx++] = in[i];
+            i++;
+        }
+    }
+    return out_idx;
+}
+
+// 53. EER Database Transaction Rollback Logs
+TSFiEerUndoLogStack g_eer_undo_stack = { .top = 0 };
+
+void tsfi_eer_undo_push(uint32_t incident_id, int original_defcon, int original_type) {
+    if (g_eer_undo_stack.top >= MAX_UNDO_LOGS) return;
+    g_eer_undo_stack.entries[g_eer_undo_stack.top].incident_id = incident_id;
+    g_eer_undo_stack.entries[g_eer_undo_stack.top].original_defcon = original_defcon;
+    g_eer_undo_stack.entries[g_eer_undo_stack.top].original_type = original_type;
+    g_eer_undo_stack.entries[g_eer_undo_stack.top].active = 1;
+    g_eer_undo_stack.top++;
+}
+
+int tsfi_eer_undo_rollback(TSFiEerDatabase *db) {
+    if (!db || g_eer_undo_stack.top == 0) return -1;
+    while (g_eer_undo_stack.top > 0) {
+        g_eer_undo_stack.top--;
+        TSFiEerUndoLogEntry entry = g_eer_undo_stack.entries[g_eer_undo_stack.top];
+        if (entry.active) {
+            for (int i = 0; i < db->incident_count; i++) {
+                if (db->incidents[i].incident_id == entry.incident_id) {
+                    db->incidents[i].defcon_level = entry.original_defcon;
+                    db->incidents[i].type = entry.original_type;
+                    break;
+                }
+            }
+        }
+    }
+    return 0;
+}

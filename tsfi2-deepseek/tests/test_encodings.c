@@ -670,6 +670,49 @@ int main(void) {
         printf("[PASS] OT LLM Bandwidth Communication ER & EER bridge\n");
     }
     
+    // Test 26: Seventh-Generation Systems Improvements
+    {
+        // 26.1 Dynamic Priority Escalation (Aging) test
+        tsfi_stanag_age_routes(12);
+        
+        // 26.2 Adaptive Holt Parameter Tuning test
+        float level = 10.0f;
+        float trend = 0.5f;
+        float alpha = 0.1f;
+        float beta = 0.05f;
+        tsfi_pll_holt_adaptive_estimate(12.0f, &level, &trend, &alpha, &beta, 1.5f);
+        assert(alpha > 0.1f);
+        assert(beta > 0.05f);
+        printf("[PASS] Adaptive Holt parameter tuning\n");
+        
+        // 26.3 Baudot Run-Length Compression (RLC) test
+        const uint8_t raw[10] = {0x04, 0x04, 0x04, 0x04, 0x04, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A};
+        uint8_t comp[32];
+        uint8_t decomp[32];
+        int comp_len = tsfi_baudot_compress(raw, 10, comp, 32);
+        assert(comp_len > 0);
+        assert(comp_len < 10); // Compressed should be smaller
+        int decomp_len = tsfi_baudot_decompress(comp, comp_len, decomp, 32);
+        assert(decomp_len == 10);
+        assert(memcmp(raw, decomp, 10) == 0);
+        printf("[PASS] Baudot run-length compression and decompression\n");
+        
+        // 26.4 EER Database Transaction Rollback Logs test
+        TSFiEerDatabase db;
+        tsfi_eer_db_init(&db);
+        tsfi_eer_insert_incident(&db, 5555, 5, 1782000000U, 2);
+        
+        tsfi_eer_undo_push(5555, 5, 2);
+        db.incidents[0].defcon_level = 1; // Mutate Defcon to 1
+        db.incidents[0].type = 1;
+        
+        int roll_rc = tsfi_eer_undo_rollback(&db);
+        assert(roll_rc == 0);
+        assert(db.incidents[0].defcon_level == 5); // Successfully rolled back to 5!
+        assert(db.incidents[0].type == 2);
+        printf("[PASS] EER database transaction rollback logs\n");
+    }
+    
     printf("[SUCCESS] All Encodings Compliance Tests Passed!\n");
     return 0;
 }
