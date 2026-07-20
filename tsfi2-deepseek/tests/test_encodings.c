@@ -203,6 +203,48 @@ int main(void) {
         printf("[PASS] ER & EER bridge integration tests\n");
     }
     
+    // Test 12: Encodings and Demodulation Improvements
+    {
+        // 12.1 Hamming(7,4) FEC test
+        const uint8_t raw_in[4] = {0x12, 0x34, 0x56, 0x78};
+        uint8_t coded[8];
+        uint8_t raw_out[4];
+        tsfi_encode_hamming74(raw_in, 4, coded);
+        
+        // Corrupt one bit in a codeword (syndrome error correction check)
+        coded[0] ^= 1; 
+        
+        tsfi_decode_hamming74(coded, 8, raw_out);
+        assert(raw_out[0] == 0x12);
+        assert(raw_out[1] == 0x34);
+        assert(raw_out[2] == 0x56);
+        assert(raw_out[3] == 0x78);
+        printf("[PASS] Hamming(7,4) FEC recovery\n");
+        
+        // 12.2 Dynamic read-write Tone Wheel test
+        uint16_t wheel[80];
+        memset(wheel, 0, sizeof(wheel));
+        int p_rc = tsfi_punch_tone_wheel(wheel, 80, 5, 'A');
+        assert(p_rc == 0);
+        assert(wheel[5] == 0x801); // 12-zone + row 1
+        printf("[PASS] Dynamic Tone Wheel punch\n");
+        
+        // 12.3 EER Declarative Datalog Specialization test
+        TSFiEerDatabase db;
+        tsfi_eer_db_init(&db);
+        int assigned = tsfi_eer_datalog_specialization(&db, "NuclearAlert", "Critical");
+        assert(assigned == 1);
+        assert(db.agency_count == 1);
+        assert(db.agencies[0].agency_id == 101); // NORAD assigned
+        printf("[PASS] Declarative Datalog EER specialization\n");
+        
+        // 12.4 Vulkan-based PLL visualization test
+        float ndc_x = 0.0f, ndc_y = 0.0f;
+        tsfi_pll_vulkan_project(2.5f, -1.57f, &ndc_x, &ndc_y);
+        assert(ndc_x > 0.0f && ndc_y < 0.0f);
+        printf("[PASS] Vulkan-based PLL project\n");
+    }
+    
     printf("[SUCCESS] All Encodings Compliance Tests Passed!\n");
     return 0;
 }

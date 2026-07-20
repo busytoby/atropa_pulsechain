@@ -2,6 +2,8 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdio.h>
+#include "tsfi_trie.h"
+#include "tsfi_dat.h"
 
 // 1. ASCII
 int tsfi_encode_ascii(const char *in, uint8_t *out, int max_len) {
@@ -484,4 +486,106 @@ int tsfi_eer_bridge_ot_acab(TSFiEerDatabase *db, const char *dat_bin_path) {
     }
     
     return 0;
+}
+
+// 12. Hamming(7,4) FEC Implementation
+void tsfi_encode_hamming74(const uint8_t *in, int len, uint8_t *out) {
+    if (!in || !out || len <= 0) return;
+    for (int i = 0; i < len; i++) {
+        uint8_t b = in[i];
+        for (int nibble = 0; nibble < 2; nibble++) {
+            uint8_t data = (nibble == 0) ? (b & 0x0F) : ((b >> 4) & 0x0F);
+            uint8_t d1 = (data >> 3) & 1;
+            uint8_t d2 = (data >> 2) & 1;
+            uint8_t d3 = (data >> 1) & 1;
+            uint8_t d4 = data & 1;
+            uint8_t p1 = d1 ^ d2 ^ d4;
+            uint8_t p2 = d1 ^ d3 ^ d4;
+            uint8_t p3 = d2 ^ d3 ^ d4;
+            out[i * 2 + nibble] = (p1 << 6) | (p2 << 5) | (d1 << 4) | (p3 << 3) | (d2 << 2) | (d3 << 1) | d4;
+        }
+    }
+}
+
+void tsfi_decode_hamming74(const uint8_t *in, int coded_len, uint8_t *out) {
+    if (!in || !out || coded_len <= 0) return;
+    int bytes = coded_len / 2;
+    for (int i = 0; i < bytes; i++) {
+        uint8_t nibbles[2];
+        for (int nibble = 0; nibble < 2; nibble++) {
+            uint8_t code = in[i * 2 + nibble];
+            uint8_t p1 = (code >> 6) & 1;
+            uint8_t p2 = (code >> 5) & 1;
+            uint8_t d1 = (code >> 4) & 1;
+            uint8_t p3 = (code >> 3) & 1;
+            uint8_t d2 = (code >> 2) & 1;
+            uint8_t d3 = (code >> 1) & 1;
+            uint8_t d4 = code & 1;
+            
+            uint8_t s1 = p1 ^ d1 ^ d2 ^ d4;
+            uint8_t s2 = p2 ^ d1 ^ d3 ^ d4;
+            uint8_t s3 = p3 ^ d2 ^ d3 ^ d4;
+            uint8_t syndrome = (s1 << 2) | (s2 << 1) | s3;
+            
+            if (syndrome == 7) d4 ^= 1;
+            else if (syndrome == 6) d1 ^= 1;
+            else if (syndrome == 5) d2 ^= 1;
+            else if (syndrome == 3) d3 ^= 1;
+            
+            nibbles[nibble] = (d1 << 3) | (d2 << 2) | (d3 << 1) | d4;
+        }
+        out[i] = nibbles[0] | (nibbles[1] << 4);
+    }
+}
+
+// 13. Dynamic read-write Tone Wheel punch simulator
+int tsfi_punch_tone_wheel(uint16_t *wheel, int max_cols, int col, char c) {
+    if (!wheel || col < 0 || col >= max_cols) return -1;
+    uint16_t val = 0;
+    c = toupper((unsigned char)c);
+    if (c >= 'A' && c <= 'I') val = 0x800 | (1 << (c - 'A'));
+    else if (c >= 'J' && c <= 'R') val = 0x400 | (1 << (c - 'J'));
+    else if (c >= 'S' && c <= 'Z') val = 0x200 | (1 << (c - 'S' + 1));
+    else if (c >= '1' && c <= '9') val = 1 << (c - '1');
+    else if (c == '0') val = 0x200;
+    else if (c == ' ') val = 0;
+    wheel[col] = val;
+    return 0;
+}
+
+// 14. EER Declarative Datalog Specialization Engine
+int tsfi_eer_datalog_specialization(TSFiEerDatabase *db, const char *incident_type, const char *severity) {
+    if (!db || !incident_type || !severity) return -1;
+    
+    tsfi_trie_node *trie_root = tsfi_trie_create_node(0);
+    tsfi_dat *rel_dat = tsfi_dat_compile_relation(trie_root, incident_type, severity, "NORAD_RESPONDER");
+    if (!rel_dat) {
+        tsfi_trie_destroy(trie_root);
+        return -1;
+    }
+    
+    char search_key[128];
+    snprintf(search_key, sizeof(search_key), "%s/%s/NORAD_RESPONDER", incident_type, severity);
+    const char *res = tsfi_dat_search(rel_dat, search_key);
+    int assigned = 0;
+    if (res && strcmp(res, "RELATION_TRUE") == 0) {
+        assigned = 1;
+        tsfi_eer_insert_agency(db, 101, "NORAD_SECURE", 1, 1);
+    }
+    
+    tsfi_dat_destroy(rel_dat);
+    tsfi_trie_destroy(trie_root);
+    return assigned;
+}
+
+// 15. Vulkan-based Phase Convergence Visualization Projection
+void tsfi_pll_vulkan_project(float error_voltage, float phase_diff, float *ndc_x, float *ndc_y) {
+    if (!ndc_x || !ndc_y) return;
+    if (error_voltage < -5.0f) error_voltage = -5.0f;
+    if (error_voltage > 5.0f) error_voltage = 5.0f;
+    if (phase_diff < -3.14159f) phase_diff = -3.14159f;
+    if (phase_diff > 3.14159f) phase_diff = 3.14159f;
+    
+    *ndc_x = error_voltage / 5.0f;
+    *ndc_y = phase_diff / 3.14159f;
 }

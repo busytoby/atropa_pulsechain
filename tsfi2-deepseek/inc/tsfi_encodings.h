@@ -38,4 +38,14 @@ int tsfi_decode_radix50(const uint16_t *in, int len, char *out, int max_len);
 int tsfi_ot_baud_llm_dat(const char *dat_bin_path);
 int tsfi_eer_bridge_ot_acab(TSFiEerDatabase *db, const char *dat_bin_path);
 
+// --- Improvements APIs ---
+void tsfi_encode_hamming74(const uint8_t *in, int len, uint8_t *out);
+void tsfi_decode_hamming74(const uint8_t *in, int coded_len, uint8_t *out);
+
+int tsfi_punch_tone_wheel(uint16_t *wheel, int max_cols, int col, char c);
+
+int tsfi_eer_datalog_specialization(TSFiEerDatabase *db, const char *incident_type, const char *severity);
+
+void tsfi_pll_vulkan_project(float error_voltage, float phase_diff, float *ndc_x, float *ndc_y);
+
 #endif // TSFI_ENCODINGS_H
