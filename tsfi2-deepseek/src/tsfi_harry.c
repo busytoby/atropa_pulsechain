@@ -666,3 +666,80 @@ int tsfi_quantel_harry_bezier_animate(const uint32_t *fg, int fg_w, int fg_h, ui
     }
     return 0;
 }
+
+int tsfi_quantel_harry_lift_gamma_gain(uint32_t *pixels, int w, int h, float lift[3], float gamma[3], float gain[3]) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = pixels[i];
+        float r = ((pix >> 16) & 0xFF) / 255.0f;
+        float g = ((pix >> 8) & 0xFF) / 255.0f;
+        float b = (pix & 0xFF) / 255.0f;
+
+        r = r * gain[0] + lift[0];
+        g = g * gain[1] + lift[1];
+        b = b * gain[2] + lift[2];
+
+        if (r < 0.0f) { r = 0.0f; }
+        if (r > 1.0f) { r = 1.0f; }
+        if (g < 0.0f) { g = 0.0f; }
+        if (g > 1.0f) { g = 1.0f; }
+        if (b < 0.0f) { b = 0.0f; }
+        if (b > 1.0f) { b = 1.0f; }
+
+        if (gamma[0] > 0.001f) r = powf(r, 1.0f / gamma[0]);
+        if (gamma[1] > 0.001f) g = powf(g, 1.0f / gamma[1]);
+        if (gamma[2] > 0.001f) b = powf(b, 1.0f / gamma[2]);
+
+        if (r < 0.0f) { r = 0.0f; }
+        if (r > 1.0f) { r = 1.0f; }
+        if (g < 0.0f) { g = 0.0f; }
+        if (g > 1.0f) { g = 1.0f; }
+        if (b < 0.0f) { b = 0.0f; }
+        if (b > 1.0f) { b = 1.0f; }
+
+        pixels[i] = (0xFF000000) | ((int)(r * 255.0f) << 16) | ((int)(g * 255.0f) << 8) | (int)(b * 255.0f);
+    }
+    return 0;
+}
+
+int tsfi_quantel_harry_rotoscope_blend(const uint32_t *canvas, const uint32_t *reference_frame, uint32_t *dst, int w, int h, float reference_opacity) {
+    if (!canvas || !reference_frame || !dst || w <= 0 || h <= 0) return -1;
+    for (int i = 0; i < w * h; i++) {
+        uint32_t c_pix = canvas[i];
+        uint32_t r_pix = reference_frame[i];
+
+        uint8_t cr = (c_pix >> 16) & 0xFF;
+        uint8_t cg = (c_pix >> 8) & 0xFF;
+        uint8_t cb = c_pix & 0xFF;
+
+        uint8_t rr = (r_pix >> 16) & 0xFF;
+        uint8_t rg = (r_pix >> 8) & 0xFF;
+        uint8_t rb = r_pix & 0xFF;
+
+        uint8_t out_r = (uint8_t)(cr * (1.0f - reference_opacity) + rr * reference_opacity);
+        uint8_t out_g = (uint8_t)(cg * (1.0f - reference_opacity) + rg * reference_opacity);
+        uint8_t out_b = (uint8_t)(cb * (1.0f - reference_opacity) + rb * reference_opacity);
+
+        dst[i] = (0xFF000000) | (out_r << 16) | (out_g << 8) | out_b;
+    }
+    return 0;
+}
+
+int tsfi_quantel_storyboard_export_sheet(const uint32_t *sheet_pixels, int w, int h, const char *output_path) {
+    if (!sheet_pixels || !output_path || w <= 0 || h <= 0) return -1;
+    FILE *f = fopen(output_path, "wb");
+    if (!f) return -2;
+
+    fprintf(f, "P6\n%d %d\n255\n", w, h);
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = sheet_pixels[i];
+        uint8_t rgb[3];
+        rgb[0] = (pix >> 16) & 0xFF;
+        rgb[1] = (pix >> 8) & 0xFF;
+        rgb[2] = pix & 0xFF;
+        size_t written = fwrite(rgb, 1, 3, f);
+        (void)written;
+    }
+    fclose(f);
+    return 0;
+}

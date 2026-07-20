@@ -418,3 +418,22 @@ int tsfi_quantel_mirage_height_map_extrude(const uint32_t *src, int w, int h, ui
     }
     return 0;
 }
+
+int tsfi_quantel_mirage_ribbon_warp(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float amplitude, float frequency, float speed, float t) {
+    if (!src || !dst || src_w <= 0 || src_h <= 0 || dst_w <= 0 || dst_h <= 0) return -1;
+    memset(dst, 0, dst_w * dst_h * sizeof(uint32_t));
+    for (int y = 0; y < dst_h; y++) {
+        float norm_y = (float)y / dst_h;
+        float wave = amplitude * sinf(2.0f * M_PI * frequency * norm_y + speed * t);
+        for (int x = 0; x < dst_w; x++) {
+            int sx = x - (int)wave;
+            if (sx >= 0 && sx < src_w) {
+                int sy = (int)(norm_y * src_h);
+                if (sy >= 0 && sy < src_h) {
+                    dst[y * dst_w + x] = src[sy * src_w + sx];
+                }
+            }
+        }
+    }
+    return 0;
+}

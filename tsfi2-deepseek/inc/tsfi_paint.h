@@ -162,6 +162,18 @@ int tsfi_quantel_paintbox_flow_brush(uint32_t *pixels, int w, int h, int prev_x,
 /* Mirage 3D Height-Map Extrusion */
 int tsfi_quantel_mirage_height_map_extrude(const uint32_t *src, int w, int h, uint32_t *dst, float max_height, float scale);
 
+/* Quantel Harry Lift, Gamma, Gain Color Grading */
+int tsfi_quantel_harry_lift_gamma_gain(uint32_t *pixels, int w, int h, float lift[3], float gamma[3], float gain[3]);
+
+/* Mirage 3D Flowing Ribbon Warp */
+int tsfi_quantel_mirage_ribbon_warp(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float amplitude, float frequency, float speed, float t);
+
+/* Harry Rotoscope Layer Blend */
+int tsfi_quantel_harry_rotoscope_blend(const uint32_t *canvas, const uint32_t *reference_frame, uint32_t *dst, int w, int h, float reference_opacity);
+
+/* Storyboard Sheet Exporter */
+int tsfi_quantel_storyboard_export_sheet(const uint32_t *sheet_pixels, int w, int h, const char *output_path);
+
 #endif // TSFI_PAINT_H
 
 
