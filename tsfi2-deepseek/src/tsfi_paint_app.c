@@ -555,37 +555,73 @@ int main(int argc, char **argv) {
             }
             tsfi_svdag_path_trace(g_3d_viewport, g_3d_depth, g_dag_flower, g_dag_bear, 400, 400, g_rotation_t, 0.5f, 0.5f, 0.5f);
 
-            // Render 2D canvas and copy SVDAG 3D viewport side-by-side
+            // Render 2D canvas and 3D viewport inside 1.85:1 Super8 film frame layouts
+            int canvas_w = canvas_right_limit - 250;
+            int crop_h = (int)(canvas_w / 1.85f);
+            int start_y = (H - crop_h) / 2;
+            int end_y = start_y + crop_h;
+
             for (int y = 0; y < H; y++) {
-                int canvas_y = y * 768 / H;
-                if (canvas_y >= 768) canvas_y = 767;
+                // 1. Draw Left Side: Super8 1.85:1 Frame Border / Canvas
+                if (y < start_y || y >= end_y) {
+                    for (int x = 200; x < canvas_right_limit; x++) {
+                        px[y * W + x] = 0xFF0D0D0D;
+                    }
+                } else {
+                    for (int x = 200; x < 250; x++) {
+                        int y_mod = y % 80;
+                        if (y_mod >= 30 && y_mod <= 50 && x >= 215 && x <= 235) {
+                            px[y * W + x] = 0xFF2A2820;
+                        } else {
+                            px[y * W + x] = 0xFF0D0D0D;
+                        }
+                    }
 
-                int canvas_w = canvas_right_limit - 200;
+                    if (y >= start_y && y < end_y) {
+                        px[y * W + 250] = 0xFF1F1F1F;
+                    }
 
-                // 1. Draw Left Side: 2D Canvas
-                for (int x = 200; x < canvas_right_limit; x++) {
-                    int canvas_x = (x - 200) * 1024 / canvas_w;
-                    if (canvas_x >= 1024) canvas_x = 1023;
+                    int active_w = canvas_right_limit - 251;
+                    for (int x = 251; x < canvas_right_limit; x++) {
+                        int canvas_x = (x - 251) * 1024 / active_w;
+                        int canvas_y = (y - start_y) * 768 / crop_h;
+                        if (canvas_x >= 1024) canvas_x = 1023;
+                        if (canvas_y >= 768) canvas_y = 767;
 
-                    uint32_t c_pixel = g_canvas[canvas_y * 1024 + canvas_x];
-                    if ((c_pixel & 0xFFFFFF) == 0) {
-                        uint8_t tex = g_paper_texture[canvas_y * 1024 + canvas_x];
-                        px[y * W + x] = 0xFF000000 | (tex << 16) | (tex << 8) | tex;
-                    } else {
-                        px[y * W + x] = c_pixel;
+                        uint32_t c_pixel = g_canvas[canvas_y * 1024 + canvas_x];
+                        if ((c_pixel & 0xFFFFFF) == 0) {
+                            uint8_t tex = g_paper_texture[canvas_y * 1024 + canvas_x];
+                            uint8_t r_tex = (uint8_t)(tex * 0.95f);
+                            uint8_t g_tex = (uint8_t)(tex * 0.88f);
+                            uint8_t b_tex = (uint8_t)(tex * 0.80f);
+                            px[y * W + x] = 0xFF000000 | (r_tex << 16) | (g_tex << 8) | b_tex;
+                        } else {
+                            px[y * W + x] = c_pixel;
+                        }
                     }
                 }
 
-                // 2. Draw Right Side: 3D Viewport
+                // 2. Draw Right Side: 3D Viewport in 1.85:1 crop
                 int viewport_start_x = canvas_right_limit;
-                int viewport_y = y * 400 / H;
-                if (viewport_y >= 400) viewport_y = 399;
+                int vp_w = W - viewport_start_x;
+                int vp_crop_h = (int)(vp_w / 1.85f);
+                int vp_start_y = (H - vp_crop_h) / 2;
+                int vp_end_y = vp_start_y + vp_crop_h;
 
-                for (int x = viewport_start_x; x < W; x++) {
-                    int viewport_x = (x - viewport_start_x) * 400 / (W - viewport_start_x);
-                    if (viewport_x >= 400) viewport_x = 399;
+                if (y < vp_start_y || y >= vp_end_y) {
+                    for (int x = viewport_start_x; x < W; x++) {
+                        px[y * W + x] = 0xFF0D0D0D;
+                    }
+                } else {
+                    int viewport_y = (y - vp_start_y) * 400 / vp_crop_h;
+                    if (viewport_y >= 400) viewport_y = 399;
 
-                    px[y * W + x] = g_3d_viewport[viewport_y * 400 + viewport_x];
+                    for (int x = viewport_start_x; x < W; x++) {
+                        int viewport_x = (x - viewport_start_x) * 400 / vp_w;
+                        if (viewport_x >= 400) viewport_x = 399;
+
+                        px[y * W + x] = g_3d_viewport[viewport_y * 400 + viewport_x];
+                    }
                 }
             }
 
