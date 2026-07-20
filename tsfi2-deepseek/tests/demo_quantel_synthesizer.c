@@ -250,13 +250,22 @@ void draw_hogan_telemetry(uint32_t *pixels, int w, int h, const hogan_umbrella_s
         }
     }
 
-    int epoch_y = start_y + 75;
-    int epoch_x = start_x + 160;
-    int max_epoch_dots = (int)sys->current_epoch % 10 + 1;
-    for (int i = 0; i < max_epoch_dots; i++) {
-        for (int dx = 0; dx < 6; dx++) {
-            for (int dy = 0; dy < 10; dy++) {
-                pixels[(epoch_y + dy) * w + (epoch_x + i * 10 + dx)] = 0xFFFF5500;
+    int dot_y = start_y + 75;
+    int dot_x = start_x + 160;
+    int tx_limit = (sys->tx_count < 20) ? (int)sys->tx_count : 20;
+    for (int i = 0; i < tx_limit; i++) {
+        const hogan_transaction *tx = &sys->tx_log[sys->tx_count - tx_limit + i];
+        uint32_t dot_color = tx->processed ? 0xFF00FF00 : 0xFFFF5500;
+        int dot_width = (tx->amount > 150) ? 8 : 5;
+        int dot_height = (tx->amount > 150) ? 12 : 8;
+
+        for (int dx = 0; dx < dot_width; dx++) {
+            for (int dy = 0; dy < dot_height; dy++) {
+                int px_x = dot_x + i * 12 + dx;
+                int px_y = dot_y + dy;
+                if (px_x < end_x - 5) {
+                    pixels[px_y * w + px_x] = dot_color;
+                }
             }
         }
     }
@@ -360,7 +369,8 @@ int main() {
         if (f % 30 == 0) {
             uint32_t sender = (f % 90 == 0) ? 1001 : ((f % 90 == 30) ? 2002 : 3003);
             uint32_t recipient = (f % 90 == 0) ? 2002 : ((f % 90 == 30) ? 3003 : 1001);
-            tsfi_hogan_dispatch_tx(&hogan_sys, sender, recipient, 100, (f % 60 == 0) ? VM_EVM : VM_ZMM);
+            uint64_t amount = 50 * (f % 6 + 1); // 50, 100, 150, 200, 250, 300
+            tsfi_hogan_dispatch_tx(&hogan_sys, sender, recipient, amount, (f % 60 == 0) ? VM_EVM : VM_ZMM);
         }
         if (f % 150 == 0) {
             tsfi_hogan_overnight_reconciliation(&hogan_sys, "demo_hogan_lfs.dat.bin");
