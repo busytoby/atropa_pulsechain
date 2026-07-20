@@ -31,6 +31,7 @@
 #include "tsfi_parc_videodeck.h"
 #include "tsfi_parc_clipboard.h"
 #include "tsfi_parc_mvc.h"
+#include "tsfi_parc_laurel.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -799,6 +800,12 @@ int main() {
     tsfi_parc_mvc_init(&mvc_disp, &wm, &st_vm);
     tsfi_parc_mvc_event_t mvc_ev = { MVC_EVENT_CLICK, 100, 100, 'Z' };
     tsfi_parc_mvc_dispatch(&mvc_disp, &mvc_ev);
+
+    // Xerox Laurel Email Client verify check
+    tsfi_parc_email_t email;
+    tsfi_parc_laurel_compose(&email, "Larry", "Tim", "Gypsy Release", "Clipboard cuts are modeless now.");
+    uint8_t email_pup_payload[256];
+    tsfi_parc_laurel_serialize_pup(&email, email_pup_payload, sizeof(email_pup_payload));
 
     uint32_t *canvas = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
     uint32_t *canvas_b = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
