@@ -105,4 +105,20 @@ typedef struct {
 int tsfi_sage_marginal_check(tsfi_sage_marginal_unit *unit, int32_t voltage_offset_mv);
 int tsfi_autodin_preempt_check(tsfi_autodin_preempt_channel *chan, uint32_t new_tx_id, tsfi_autodin_precedence new_prec, bool *action_preempt, bool *action_reject);
 
+// SAGE Light Gun operator input mapping
+typedef struct {
+    int32_t target_x;
+    int32_t target_y;
+    bool trigger_pulled;
+} tsfi_sage_light_gun;
+
+// AUTODIN Store-and-Forward Tape Journal
+typedef struct {
+    int journal_fd;
+    uint64_t last_journal_lsn;
+} tsfi_autodin_journal;
+
+int tsfi_sage_light_gun_select(const tsfi_sage_light_gun *gun, const int32_t *track_x, const int32_t *track_y, int track_count, int *selected_track_idx);
+int tsfi_autodin_journal_write(tsfi_autodin_journal *j, uint64_t lsn, const char *msg);
+
 #endif // TSFI_AUTODIN_SAGE_H

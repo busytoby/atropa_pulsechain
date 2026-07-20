@@ -264,3 +264,45 @@ int tsfi_autodin_preempt_check(tsfi_autodin_preempt_channel *chan, uint32_t new_
     
     return 0;
 }
+
+// 11. SAGE Light Gun operator input coordinate resolution
+int tsfi_sage_light_gun_select(const tsfi_sage_light_gun *gun, const int32_t *track_x, const int32_t *track_y, int track_count, int *selected_track_idx) {
+    if (!gun || !track_x || !track_y || track_count <= 0 || !selected_track_idx) return -1;
+    if (!gun->trigger_pulled) return -2; // Trigger not pulled, selection idle
+    
+    int best_idx = -1;
+    int64_t min_distance_sq = 1000000; // Limit selection radius tolerance
+    
+    for (int i = 0; i < track_count; i++) {
+        int64_t dx = gun->target_x - track_x[i];
+        int64_t dy = gun->target_y - track_y[i];
+        int64_t dist_sq = dx*dx + dy*dy;
+        
+        if (dist_sq < min_distance_sq) {
+            min_distance_sq = dist_sq;
+            best_idx = i;
+        }
+    }
+    
+    if (best_idx == -1) {
+        return -3; // No track matches selection radius
+    }
+    
+    *selected_track_idx = best_idx;
+    return 0;
+}
+
+// 12. AUTODIN Tape Journaling writes
+int tsfi_autodin_journal_write(tsfi_autodin_journal *j, uint64_t lsn, const char *msg) {
+    if (!j || j->journal_fd < 0 || !msg) return -1;
+    
+    // Write LSN and message length-prefixed to sequential tape journal
+    uint32_t len = (uint32_t)strlen(msg);
+    if (write(j->journal_fd, &lsn, sizeof(uint64_t)) < (ssize_t)sizeof(uint64_t)) return -2;
+    if (write(j->journal_fd, &len, sizeof(uint32_t)) < (ssize_t)sizeof(uint32_t)) return -3;
+    if (write(j->journal_fd, msg, len) < (ssize_t)len) return -4;
+    
+    fsync(j->journal_fd);
+    j->last_journal_lsn = lsn;
+    return 0;
+}

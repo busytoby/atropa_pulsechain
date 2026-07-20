@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 int main(void) {
     printf("[INFO] Starting AUTODIN SAGE Transaction Compliance Test...\n");
@@ -178,6 +179,36 @@ int main(void) {
     rc = tsfi_autodin_preempt_check(&p_chan, 8002, AUTODIN_PRECEDENCE_ROUTINE, &preempt, &reject);
     assert(rc == 0);
     assert(preempt == false && reject == true); // Routine rejected under current active Flash
+    
+    // Test 12: SAGE Light Gun operator input coordinate resolution
+    tsfi_sage_light_gun gun;
+    gun.target_x = 105;
+    gun.target_y = 205;
+    gun.trigger_pulled = true;
+    
+    int32_t track_x[3] = {10, 107, 300};
+    int32_t track_y[3] = {20, 204, 400};
+    int selected_idx = -1;
+    
+    rc = tsfi_sage_light_gun_select(&gun, track_x, track_y, 3, &selected_idx);
+    assert(rc == 0);
+    assert(selected_idx == 1); // Selected closest target track
+    
+    // Test 13: AUTODIN Tape Journaling writes
+    const char *journal_path = "tmp/autodin_tape.log";
+    int j_fd = open(journal_path, O_RDWR | O_CREAT | O_TRUNC, 0644);
+    assert(j_fd >= 0);
+    
+    tsfi_autodin_journal journal;
+    journal.journal_fd = j_fd;
+    journal.last_journal_lsn = 0;
+    
+    rc = tsfi_autodin_journal_write(&journal, 1205, "TAPE_JOURNAL_BLOCK");
+    assert(rc == 0);
+    assert(journal.last_journal_lsn == 1205);
+    
+    close(j_fd);
+    unlink(journal_path);
     
     printf("[SUCCESS] AUTODIN SAGE Transaction Compliance Test Passed!\n");
     return 0;
