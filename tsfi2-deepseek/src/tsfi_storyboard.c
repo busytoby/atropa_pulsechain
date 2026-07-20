@@ -801,3 +801,44 @@ int tsfi_quantel_storyboard_border_highlights_concentric_double_outer_width_offs
     }
     return 0;
 }
+
+int tsfi_quantel_storyboard_border_highlights_concentric_double_outer_width_offset_color_texture(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int offset_w, int border_w, int count, uint32_t color1, uint32_t color2, int outer_margin, int highlight_thickness, int highlight_offset_x, int highlight_offset_y, uint32_t shadow_color, float texture_intensity) {
+    if (!pixels || w <= 0 || h <= 0 || offset_w < 0 || border_w <= 0 || count <= 0 || highlight_thickness <= 0) return -1;
+    for (int c = 0; c < count; c++) {
+        int current_offset = offset_w + c * border_w * 2;
+        for (int offset = 0; offset < border_w; offset++) {
+            int tx = cell_x - current_offset - offset + highlight_offset_x + 3;
+            int ty = cell_y - current_offset - offset + highlight_offset_y + 3;
+            int tw = cell_w + 2 * (current_offset + offset);
+            int th = cell_h + 2 * (current_offset + offset);
+            if (tx < outer_margin || ty < outer_margin || tx + tw > w - outer_margin || ty + th > h - outer_margin) { continue; }
+            for (int t = 0; t < highlight_thickness; t++) {
+                tsfi_quantel_storyboard_border_highlights(pixels, w, h, tx - t, ty - t, tw + 2 * t, th + 2 * t, shadow_color);
+            }
+        }
+    }
+    for (int c = 0; c < count; c++) {
+        int current_offset = offset_w + c * border_w * 2;
+        uint32_t active_color = (c % 2 == 0) ? color1 : color2;
+        for (int offset = 0; offset < border_w; offset++) {
+            int tx = cell_x - current_offset - offset + highlight_offset_x;
+            int ty = cell_y - current_offset - offset + highlight_offset_y;
+            int tw = cell_w + 2 * (current_offset + offset);
+            int th = cell_h + 2 * (current_offset + offset);
+            if (tx < outer_margin || ty < outer_margin || tx + tw > w - outer_margin || ty + th > h - outer_margin) { continue; }
+            for (int t = 0; t < highlight_thickness; t++) {
+                float noise = (float)rand() / RAND_MAX * texture_intensity;
+                uint8_t tr = (active_color >> 16) & 0xFF;
+                uint8_t tg = (active_color >> 8) & 0xFF;
+                uint8_t tb = active_color & 0xFF;
+                tr = (uint8_t)(tr * (1.0f - noise));
+                tg = (uint8_t)(tg * (1.0f - noise));
+                tb = (uint8_t)(tb * (1.0f - noise));
+                uint32_t textured_color = (0xFF000000) | (tr << 16) | (tg << 8) | tb;
+
+                tsfi_quantel_storyboard_border_highlights(pixels, w, h, tx - t, ty - t, tw + 2 * t, th + 2 * t, textured_color);
+            }
+        }
+    }
+    return 0;
+}

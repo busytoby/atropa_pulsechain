@@ -687,6 +687,18 @@ int tsfi_quantel_harry_blend_fields_color_offset_vertical_scale_aspect_rotation_
 /* Storyboard Frame Thumbnail Grid Border Highlights Concentric Double Outer Width Offset Color */
 int tsfi_quantel_storyboard_border_highlights_concentric_double_outer_width_offset_color(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int offset_w, int border_w, int count, uint32_t color1, uint32_t color2, int outer_margin, int highlight_thickness, int highlight_offset_x, int highlight_offset_y, uint32_t shadow_color);
 
+/* Quantel Paintbox Brush Pressure Jitter Opacity Saturation Value Width Angle Shape Texture Dynamics */
+int tsfi_quantel_paintbox_pressure_jitter_opacity_saturation_value_width_angle_shape_texture(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float pressure, float jitter_amp, uint32_t color, float angle, float shape_aspect, float texture_scale);
+
+/* Mirage 3D Spherical Page Curl Perspective Rotation Shear Center Light Warp */
+int tsfi_quantel_mirage_page_curl_perspective_rotation_shear_center_light_warp(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float curl_radius, float angle, float zoom, float perspective, float rotation_angle, float shear_x, float shear_y, float center_x, float center_y, float light_x, float light_y);
+
+/* Harry Chronological Frame Interlaced Field Split Jitter Blend Offset Color Vertical Scale Aspect Rotation Center Mirror */
+int tsfi_quantel_harry_blend_fields_color_offset_vertical_scale_aspect_rotation_center_mirror(const uint32_t *field_even, const uint32_t *field_odd, uint32_t *dst, int w, int h, float blend_factor, int offset, uint32_t tint_color, float vert_displace, float scale, float aspect, float rotation_angle, float center_x, float center_y, int mirror_h, int mirror_v);
+
+/* Storyboard Frame Thumbnail Grid Border Highlights Concentric Double Outer Width Offset Color Texture */
+int tsfi_quantel_storyboard_border_highlights_concentric_double_outer_width_offset_color_texture(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int offset_w, int border_w, int count, uint32_t color1, uint32_t color2, int outer_margin, int highlight_thickness, int highlight_offset_x, int highlight_offset_y, uint32_t shadow_color, float texture_intensity);
+
 #endif // TSFI_PAINT_H
 
 

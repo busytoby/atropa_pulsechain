@@ -1,0 +1,59 @@
+// Mirage 3D Spherical Page Curl helper functions part 2
+#define _GNU_SOURCE
+#include "tsfi_paint.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+
+int tsfi_quantel_mirage_page_curl_perspective_rotation_shear_center_light_warp(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float curl_radius, float angle, float zoom, float perspective, float rotation_angle, float shear_x, float shear_y, float center_x, float center_y, float light_x, float light_y) {
+    if (!src || !dst || src_w <= 0 || src_h <= 0 || dst_w <= 0 || dst_h <= 0 || curl_radius <= 0.0f) return -1;
+    memset(dst, 0, dst_w * dst_h * sizeof(uint32_t));
+
+    float cos_a = cosf(angle);
+    float sin_a = sinf(angle);
+    float cos_r = cosf(rotation_angle);
+    float sin_r = sinf(rotation_angle);
+
+    for (int y = 0; y < dst_h; y++) {
+        for (int x = 0; x < dst_w; x++) {
+            float dy = y - center_y;
+            float p_scale = 1.0f + dy * perspective / dst_h;
+            float px = center_x + (x - center_x) / (p_scale * zoom);
+            float py = center_y + (y - center_y) / (p_scale * zoom);
+
+            float rx_rot = (px - center_x) * cos_r - (py - center_y) * sin_r + center_x;
+            float ry_rot = (px - center_x) * sin_r + (py - center_y) * cos_r + center_y;
+
+            float rx = rx_rot + shear_x * (ry_rot - center_y);
+            float ry = ry_rot + shear_y * (rx_rot - center_x);
+
+            float d = rx * cos_a + ry * sin_a;
+            if (d > 0.0f) {
+                float theta = d / curl_radius;
+                float nx = rx - curl_radius * sinf(theta) * cos_a;
+                float ny = ry - curl_radius * sinf(theta) * sin_a;
+
+                int sx = (int)(nx * src_w / dst_w);
+                int sy = (int)(ny * src_h / dst_h);
+
+                if (sx >= 0 && sx < src_w && sy >= 0 && sy < src_h) {
+                    uint32_t pix = src[sy * src_w + sx];
+                    float dot_light = cos_a * light_x + sin_a * light_y;
+                    float shadow = 0.7f + 0.3f * fmaxf(0.0f, dot_light * sinf(theta));
+                    uint8_t r = (uint8_t)(((pix >> 16) & 0xFF) * shadow);
+                    uint8_t g = (uint8_t)(((pix >> 8) & 0xFF) * shadow);
+                    uint8_t b = (uint8_t)((pix & 0xFF) * shadow);
+                    dst[y * dst_w + x] = (0xFF000000) | (r << 16) | (g << 8) | b;
+                }
+            } else {
+                int sx = (int)(rx * src_w / dst_w);
+                int sy = (int)(ry * src_h / dst_h);
+                if (sx >= 0 && sx < src_w && sy >= 0 && sy < src_h) {
+                    dst[y * dst_w + x] = src[sy * src_w + sx];
+                }
+            }
+        }
+    }
+    return 0;
+}
