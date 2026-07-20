@@ -317,6 +317,39 @@ int main(void) {
     assert(aborted_txs[0] == 6001);
     assert(aborted_txs[1] == 6002);
     
+    // Test 19: SAGE Duplex LU6.2 Syncpoint Commitment
+    tsfi_sage_duplex lu_duplex;
+    lu_duplex.active_cpu_id = 1;
+    lu_duplex.standby_cpu_id = 2;
+    lu_duplex.last_sync_time = 0;
+    
+    tsfi_reuter_2pc_coordinator coord;
+    memset(&coord, 0, sizeof(coord));
+    coord.transaction_id = 7001;
+    coord.participant_count = 1;
+    coord.participant_ids[0] = 2; // Standby node ID
+    coord.participant_states[0] = NODE_STATE_INIT;
+    
+    rc = tsfi_sage_duplex_lu62_commit(&lu_duplex, &coord, 2);
+    assert(rc == 0);
+    assert(coord.global_decision_commit == true);
+    assert(coord.participant_states[0] == NODE_STATE_COMMITTED);
+    assert(lu_duplex.last_sync_time == 1);
+    
+    // Test 20: AUTODIN Preemption Buffer Eviction (Five-Minute Rule)
+    tsfi_gray_cache_manager cm;
+    tsfi_gray_cache_init(&cm);
+    
+    tsfi_gray_cache_entry *entry = NULL;
+    rc = tsfi_gray_cache_access(&cm, 101, 1000, &entry); // page 101 accessed at tick 1000
+    assert(rc == 1 && entry != NULL);
+    
+    uint32_t evicted_page = 0;
+    // Sweep cache 400 seconds later (1000 + 400 = 1400, exceeds 300 seconds / 5-minute rule threshold)
+    rc = tsfi_autodin_preempt_evict_cache(&cascade_chan, &cm, 1400, &evicted_page);
+    assert(rc == 0);
+    assert(evicted_page == 101); // Cold page successfully evicted
+    
     printf("[SUCCESS] AUTODIN SAGE Transaction Compliance Test Passed!\n");
     return 0;
 }

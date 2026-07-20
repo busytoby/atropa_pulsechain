@@ -140,4 +140,7 @@ int tsfi_autodin_preempt_gray_locks(tsfi_autodin_preempt_channel *chan, tsfi_reu
 int tsfi_sage_duplex_checkpoint_recover(tsfi_sage_duplex *duplex, int log_fd, tsfi_reuter_page *pages, int page_count, tsfi_reuter_tx_entry *tx_table, int *tx_count, tsfi_reuter_dirty_page *dirty_table, int *dirty_count);
 int tsfi_autodin_preempt_cascade_abort(tsfi_autodin_preempt_channel *chan, tsfi_gray_abort_tracker *tracker, uint32_t *cascaded_aborts_out, int *cascade_count);
 
+int tsfi_sage_duplex_lu62_commit(tsfi_sage_duplex *duplex, tsfi_reuter_2pc_coordinator *coord, uint32_t standby_node_id);
+int tsfi_autodin_preempt_evict_cache(tsfi_autodin_preempt_channel *chan, tsfi_gray_cache_manager *cm, uint64_t current_time, uint32_t *evicted_page_id);
+
 #endif // TSFI_AUTODIN_SAGE_H

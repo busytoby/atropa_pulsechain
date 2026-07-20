@@ -383,3 +383,34 @@ int tsfi_autodin_preempt_cascade_abort(tsfi_autodin_preempt_channel *chan, tsfi_
     // Cascade aborts to all dependent transactions that read uncommitted data
     return tsfi_gray_abort_cascade(tracker, target_abort_tx, cascaded_aborts_out, cascade_count);
 }
+
+// 18. SAGE Duplex LU6.2 Syncpoint Commitment
+int tsfi_sage_duplex_lu62_commit(tsfi_sage_duplex *duplex, tsfi_reuter_2pc_coordinator *coord, uint32_t standby_node_id) {
+    if (!duplex || !coord) return -1;
+    
+    char out_buf[32];
+    
+    // Step 1: Coordinator (Active CPU) sends REQ_COMMIT
+    int rc = tsfi_reuter_lu62_syncpoint_handshake(coord, standby_node_id, "REQ_COMMIT", out_buf);
+    if (rc != LU62_STATE_SYNC_PENDING) return -2;
+    
+    // Step 2: Standby node votes AGREE
+    rc = tsfi_reuter_lu62_syncpoint_handshake(coord, standby_node_id, "AGREE", out_buf);
+    if (rc != LU62_STATE_DECIDED) return -3;
+    
+    // Step 3: Finalize decision
+    bool committed = false;
+    rc = tsfi_reuter_2pc_finalize_presumed(coord, false, &committed);
+    if (rc != 0 || !committed) return -4;
+    
+    duplex->last_sync_time++; // Advance SAGE duplex clock
+    return 0; // Success, coordinated commit finalized across both duplex nodes
+}
+
+// 19. AUTODIN Preemption buffer pool cache eviction (Five-Minute Rule)
+int tsfi_autodin_preempt_evict_cache(tsfi_autodin_preempt_channel *chan, tsfi_gray_cache_manager *cm, uint64_t current_time, uint32_t *evicted_page_id) {
+    if (!chan || !cm || !evicted_page_id) return -1;
+    
+    // Sweep the cache to evict cold pages to make room for preemptive Flash transactions
+    return tsfi_gray_cache_evict_sweep(cm, current_time, evicted_page_id);
+}
