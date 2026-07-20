@@ -93,7 +93,17 @@ int tsfi_quantel_storyboard_timecode_burn(uint32_t *pixels, int w, int h, int fr
 /* Quantel Storyboard: Onion skinning compositor (blends prev/next frames) */
 int tsfi_quantel_storyboard_onion_skin(const uint32_t *prev_frame, const uint32_t *next_frame, uint32_t *active_canvas, int w, int h, float opacity_prev, float opacity_next);
 
+/* Quantel Mirage: Dual-sided page curl with distinct backside texture */
+int tsfi_quantel_mirage_dual_sided_page_curl(const uint32_t *front_pixels, const uint32_t *back_pixels, int src_w, int src_h, uint32_t *dst_pixels, int dst_w, int dst_h, float curl_radius, float roll_percent);
+
+/* Quantel Paintbox: Speed-sensitive custom brush spacing dynamics along stylus path */
+int tsfi_quantel_paintbox_spacing_brush(uint32_t *pixels, int w, int h, int prev_x, int prev_y, int curr_x, int curr_y, const uint8_t *brush_tex, int brush_w, int brush_h, float base_spacing, float opacity, uint32_t color);
+
+/* Quantel Harry: Ripple wave displacement wipe transition between two frames */
+int tsfi_quantel_harry_displacement_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32_t *dst, int w, int h, float progress, float wave_amplitude, float wave_frequency);
+
 #endif // TSFI_PAINT_H
+
 
 
 

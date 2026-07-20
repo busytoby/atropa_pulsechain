@@ -822,6 +822,89 @@ int tsfi_quantel_harry_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32
     return 0;
 }
 
+int tsfi_quantel_mirage_dual_sided_page_curl(const uint32_t *front_pixels, const uint32_t *back_pixels, int src_w, int src_h, uint32_t *dst_pixels, int dst_w, int dst_h, float curl_radius, float roll_percent) {
+    if (!front_pixels || !back_pixels || !dst_pixels || src_w <= 0 || src_h <= 0 || dst_w <= 0 || dst_h <= 0) return -1;
+
+    memset(dst_pixels, 0, dst_w * dst_h * sizeof(uint32_t));
+    float roll_line = roll_percent * src_w;
+
+    for (int y = 0; y < src_h; y++) {
+        float v = (float)y / src_h;
+        int dy = (int)(v * dst_h);
+        if (dy < 0 || dy >= dst_h) continue;
+
+        for (int x = 0; x < src_w; x++) {
+            float u = (float)x / src_w;
+            float px = (float)x;
+
+            if (px < roll_line) {
+                float dist_to_roll = roll_line - px;
+                float theta = dist_to_roll / curl_radius;
+                if (theta <= M_PI) {
+                    float warp_x = roll_line - curl_radius * sinf(theta);
+                    int dx = (int)(warp_x * dst_w / src_w);
+                    if (dx >= 0 && dx < dst_w) {
+                        // If theta > PI/2, we are looking at the backside of the curling page
+                        if (theta > M_PI_2) {
+                            dst_pixels[dy * dst_w + dx] = back_pixels[y * src_w + (src_w - 1 - x)];
+                        } else {
+                            dst_pixels[dy * dst_w + dx] = front_pixels[y * src_w + x];
+                        }
+                    }
+                }
+            } else {
+                int dx = (int)(u * dst_w);
+                if (dx >= 0 && dx < dst_w) {
+                    dst_pixels[dy * dst_w + dx] = front_pixels[y * src_w + x];
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_paintbox_spacing_brush(uint32_t *pixels, int w, int h, int prev_x, int prev_y, int curr_x, int curr_y, const uint8_t *brush_tex, int brush_w, int brush_h, float base_spacing, float opacity, uint32_t color) {
+    if (!pixels || !brush_tex || w <= 0 || h <= 0 || brush_w <= 0 || brush_h <= 0) return -1;
+
+    float dx = curr_x - prev_x;
+    float dy = curr_y - prev_y;
+    float dist = sqrtf(dx * dx + dy * dy);
+
+    // Speed modulation: spacing increases with stylus speed
+    float speed_factor = dist > 1.0f ? (1.0f + 0.1f * dist) : 1.0f;
+    float step = base_spacing * speed_factor;
+    if (step < 1.0f) step = 1.0f;
+
+    int stamps = (int)(dist / step) + 1;
+    for (int i = 0; i < stamps; i++) {
+        float t = stamps > 1 ? ((float)i / (stamps - 1)) : 0.0f;
+        int cx = (int)(prev_x + dx * t);
+        int cy = (int)(prev_y + dy * t);
+        tsfi_quantel_paintbox_custom_brush(pixels, w, h, cx, cy, brush_tex, brush_w, brush_h, opacity, color);
+    }
+    return 0;
+}
+
+int tsfi_quantel_harry_displacement_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32_t *dst, int w, int h, float progress, float wave_amplitude, float wave_frequency) {
+    if (!src_a || !src_b || !dst || w <= 0 || h <= 0) return -1;
+
+    for (int y = 0; y < h; y++) {
+        float displacement = wave_amplitude * sinf(2.0f * M_PI * wave_frequency * ((float)y / h));
+        float limit_x = progress * w + displacement;
+
+        for (int x = 0; x < w; x++) {
+            int idx = y * w + x;
+            if ((float)x < limit_x) {
+                dst[idx] = src_b[idx];
+            } else {
+                dst[idx] = src_a[idx];
+            }
+        }
+    }
+    return 0;
+}
+
+
 int tsfi_quantel_storyboard_grid(const uint32_t **frames, int frame_count, int frame_w, int frame_h, uint32_t *dst_sheet, int sheet_w, int sheet_h, int rows, int cols) {
     if (!frames || !dst_sheet || frame_w <= 0 || frame_h <= 0 || sheet_w <= 0 || sheet_h <= 0 || rows <= 0 || cols <= 0) return -1;
 
