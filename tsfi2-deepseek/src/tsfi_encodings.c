@@ -1380,3 +1380,85 @@ int tsfi_eer_bridge_ot_optical_acab(TSFiEerDatabase *db, const char *dat_bin_pat
     
     return 0;
 }
+
+// 36. Generic OT (OT can be anything) Baudot LLM DAT exporter
+int tsfi_generic_ot_baud_llm_dat(const char *dat_bin_path, const char *payload_text) {
+    if (!dat_bin_path || !payload_text) return -1;
+    
+    uint8_t baud_buf[256];
+    int baud_len = tsfi_encode_baudot(payload_text, baud_buf, 256);
+    if (baud_len <= 0) return -2;
+    
+    uint32_t tokens[256];
+    for (int i = 0; i < baud_len; i++) {
+        tokens[i] = (uint32_t)baud_buf[i];
+    }
+    
+    FILE *f = fopen(dat_bin_path, "wb");
+    if (!f) return -3;
+    
+    uint32_t count = (uint32_t)baud_len;
+    fwrite(&count, sizeof(uint32_t), 1, f);
+    fwrite(tokens, sizeof(uint32_t), count, f);
+    fclose(f);
+    
+    return 0;
+}
+
+// 37. Generic OT ER & EER bridge
+int tsfi_eer_bridge_generic_ot_acab(TSFiEerDatabase *db, const char *dat_bin_path, int (*parse_callback)(const char *decrypted, uint32_t *incident_id, int *type, int *defcon)) {
+    if (!db || !dat_bin_path || !parse_callback) return -1;
+    
+    FILE *f = fopen(dat_bin_path, "rb");
+    if (!f) return -2;
+    
+    uint32_t count = 0;
+    if (fread(&count, sizeof(uint32_t), 1, f) != 1 || count == 0 || count > 256) {
+        fclose(f);
+        return -3;
+    }
+    
+    uint32_t tokens[256];
+    if (fread(tokens, sizeof(uint32_t), count, f) != count) {
+        fclose(f);
+        return -4;
+    }
+    fclose(f);
+    
+    uint8_t baud_buf[256];
+    for (uint32_t i = 0; i < count; i++) {
+        baud_buf[i] = (uint8_t)tokens[i];
+    }
+    char decrypted[256];
+    int dec_len = tsfi_decode_baudot(baud_buf, count, decrypted, 256);
+    if (dec_len <= 0) return -5;
+    
+    uint32_t incident_id = 0;
+    int type = 0;
+    int defcon = 0;
+    
+    if (parse_callback(decrypted, &incident_id, &type, &defcon) != 0) {
+        return -6;
+    }
+    
+    tsfi_eer_db_init(db);
+    tsfi_eer_insert_incident(db, incident_id, defcon, 1782000000U, type);
+    
+    tsfi_eer_insert_agency(db, 101, "NORAD_SECURE", 1, 1);
+    tsfi_eer_insert_agency(db, 102, "IRS_AUDIT", 2, 2);
+    
+    if (type == 1) {
+        tsfi_eer_link_response(db, 101, incident_id);
+    } else {
+        tsfi_eer_link_response(db, 102, incident_id);
+    }
+    
+    if (db->channel_count < 16) {
+        TSFiEerChannel *chan = &db->channels[db->channel_count++];
+        chan->channel_id = 0x0200; // Tapped ACAB channel
+        chan->encryption_type = 3;
+        chan->frequency_band = 144000;
+    }
+    
+    return 0;
+}

@@ -8,6 +8,19 @@ static void mock_sap_handler(TSFiEerDatabase *db, const uint8_t *payload, int le
     tsfi_eer_insert_incident(db, 8888, 1, 1782000000U, 1);
 }
 
+static int mock_generic_ot_parser(const char *decrypted, uint32_t *incident_id, int *type, int *defcon) {
+    if (strstr(decrypted, "CRITICAL") != NULL) {
+        *incident_id = 9999;
+        *type = 1;
+        *defcon = 1;
+    } else {
+        *incident_id = 1111;
+        *type = 2;
+        *defcon = 5;
+    }
+    return 0;
+}
+
 int main(void) {
     printf("[INFO] Starting Comprehensive Character Encodings Compliance Tests...\n");
     
@@ -468,6 +481,25 @@ int main(void) {
         
         remove(bin_path);
         printf("[PASS] Optical Telemetry Baud LLM DAT on ACAB bridge tests\n");
+    }
+    
+    // Test 20: Generic OT (OT can be anything) Baudot LLM DAT on ACAB
+    {
+        const char *bin_path = "tmp/ot_generic_basic.dat.bin";
+        int rc = tsfi_generic_ot_baud_llm_dat(bin_path, "STATUS CRITICAL LEVEL FIVE");
+        assert(rc == 0);
+        
+        TSFiEerDatabase db;
+        rc = tsfi_eer_bridge_generic_ot_acab(&db, bin_path, mock_generic_ot_parser);
+        assert(rc == 0);
+        
+        assert(db.incident_count == 1);
+        assert(db.incidents[0].incident_id == 9999);
+        assert(db.agency_count == 2);
+        assert(db.channel_count == 1);
+        
+        remove(bin_path);
+        printf("[PASS] Generic OT Baud LLM DAT on ACAB bridge tests\n");
     }
     
     printf("[SUCCESS] All Encodings Compliance Tests Passed!\n");
