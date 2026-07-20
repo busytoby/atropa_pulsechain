@@ -216,4 +216,20 @@ int tsfi_reuter_lu62_syncpoint_handshake(tsfi_reuter_2pc_coordinator *coord, uin
 int tsfi_reuter_selective_undo(int log_fd, tsfi_reuter_page *pages, int page_count, 
                                uint32_t tx_id, uint64_t target_lsn);
 
+// Presumed Commit vs. Presumed Abort 2PC API
+int tsfi_reuter_2pc_finalize_presumed(tsfi_reuter_2pc_coordinator *coord, bool presumed_abort, bool *is_committed);
+
+// Doublewrite Buffer Structure and APIs
+typedef struct {
+    tsfi_reuter_page pages[4];
+    int count;
+} tsfi_reuter_doublewrite_buffer;
+
+int tsfi_reuter_doublewrite_init(tsfi_reuter_doublewrite_buffer *dwb);
+int tsfi_reuter_doublewrite_flush(tsfi_reuter_doublewrite_buffer *dwb, int dw_fd, tsfi_reuter_page *page);
+int tsfi_reuter_doublewrite_recover_page(int dw_fd, tsfi_reuter_page *corrupted_page);
+
+// Background Page Cleaner Scheduler API
+int tsfi_reuter_page_cleaner_flush_page(tsfi_reuter_page *page, int db_fd, uint64_t flushed_lsn);
+
 #endif // TSFI_REUTER_TX_H

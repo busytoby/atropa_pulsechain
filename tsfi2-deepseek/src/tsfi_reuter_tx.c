@@ -818,3 +818,97 @@ int tsfi_reuter_selective_undo(int log_fd, tsfi_reuter_page *pages, int page_cou
     
     return 0;
 }
+
+// 19. Presumed Commit vs. Presumed Abort LU6.2 optimizations
+int tsfi_reuter_2pc_finalize_presumed(tsfi_reuter_2pc_coordinator *coord, bool presumed_abort, bool *is_committed) {
+    if (!coord || !is_committed) return -1;
+    (void)presumed_abort;
+    
+    // Check states of participants
+    bool all_prepared = true;
+    for (int i = 0; i < coord->participant_count; i++) {
+        if (coord->participant_states[i] != NODE_STATE_PREPARED) {
+            all_prepared = false;
+            break;
+        }
+    }
+    
+    if (all_prepared) {
+        coord->global_decision_commit = true;
+        for (int i = 0; i < coord->participant_count; i++) {
+            coord->participant_states[i] = NODE_STATE_COMMITTED;
+        }
+        *is_committed = true;
+        // Under Presumed Abort, commit must be written to log. Under Presumed Commit, commit is default (saves log write)
+        return 0;
+    } else {
+        coord->global_decision_commit = false;
+        for (int i = 0; i < coord->participant_count; i++) {
+            coord->participant_states[i] = NODE_STATE_ABORTED;
+        }
+        *is_committed = false;
+        // Under Presumed Commit, abort must be written to log. Under Presumed Abort, abort is default (saves log write)
+        return 0;
+    }
+}
+
+// 20. Doublewrite Buffer Manager
+int tsfi_reuter_doublewrite_init(tsfi_reuter_doublewrite_buffer *dwb) {
+    if (!dwb) return -1;
+    memset(dwb, 0, sizeof(tsfi_reuter_doublewrite_buffer));
+    return 0;
+}
+
+int tsfi_reuter_doublewrite_flush(tsfi_reuter_doublewrite_buffer *dwb, int dw_fd, tsfi_reuter_page *page) {
+    if (!dwb || dw_fd < 0 || !page) return -1;
+    
+    // Queue page in doublewrite buffer memory
+    int index = dwb->count % 4;
+    dwb->pages[index] = *page;
+    dwb->count++;
+    
+    // Write sequentially to the doublewrite file (simulated disk block)
+    lseek(dw_fd, index * sizeof(tsfi_reuter_page), SEEK_SET);
+    if (write(dw_fd, page, sizeof(tsfi_reuter_page)) < (ssize_t)sizeof(tsfi_reuter_page)) {
+        return -2;
+    }
+    
+    // Ensure data is synced to doublewrite space before random writes to actual DB files are allowed!
+    fsync(dw_fd);
+    return 0;
+}
+
+int tsfi_reuter_doublewrite_recover_page(int dw_fd, tsfi_reuter_page *corrupted_page) {
+    if (dw_fd < 0 || !corrupted_page) return -1;
+    
+    // Scan doublewrite buffer file to find matching page ID to restore from
+    lseek(dw_fd, 0, SEEK_SET);
+    tsfi_reuter_page buffer_page;
+    while (read(dw_fd, &buffer_page, sizeof(tsfi_reuter_page)) == sizeof(tsfi_reuter_page)) {
+        if (buffer_page.page_id == corrupted_page->page_id) {
+            *corrupted_page = buffer_page; // Restore full page content
+            return 0; // Page successfully restored from doublewrite copy!
+        }
+    }
+    
+    return -2; // Page copy not found in doublewrite buffer
+}
+
+// 21. Background Page Cleaner Scheduler (WAL Constraint verification)
+int tsfi_reuter_page_cleaner_flush_page(tsfi_reuter_page *page, int db_fd, uint64_t flushed_lsn) {
+    if (!page || db_fd < 0) return -1;
+    
+    // WAL Protocol Rule: A dirty page cannot be written to database disk files
+    // until the log records up to the page's LSN have been written and flushed to disk.
+    if (page->page_lsn > flushed_lsn) {
+        return -2; // WAL violation! Log has not been flushed yet!
+    }
+    
+    // Write page to simulated DB file
+    lseek(db_fd, page->page_id * sizeof(tsfi_reuter_page), SEEK_SET);
+    if (write(db_fd, page, sizeof(tsfi_reuter_page)) < (ssize_t)sizeof(tsfi_reuter_page)) {
+        return -3;
+    }
+    
+    return 0;
+}
