@@ -7,13 +7,13 @@
 #include <stdlib.h>
 
 int main(void) {
-    printf("[INFO] Starting Andreas Reuter Transaction Compliance Test (Ultra-Comprehensive)...\n");
+    printf("[INFO] Starting Andreas Reuter Transaction Compliance Test (Hyper-Extended)...\n");
     
     tsfi_reuter_init();
     assert(tsfi_reuter_get_global_lsn() == 0);
     
     // Test 1: Write-Ahead Logging (WAL)
-    const char *temp_log = "tmp/reuter_tx_ultra.log";
+    const char *temp_log = "tmp/reuter_tx_hyper_ext.log";
     int fd = open(temp_log, O_RDWR | O_CREAT | O_TRUNC, 0644);
     assert(fd >= 0);
     
@@ -87,7 +87,7 @@ int main(void) {
     
     // Test 7: Savepoints and Nested Rollback
     tsfi_reuter_tx_context tx_ctx;
-    memset(&tx_ctx, 0, sizeof(tsfi_reuter_tx_context));
+    memset(&tx_ctx, 0, sizeof(tx_ctx));
     tx_ctx.transaction_id = 1005;
     
     rc = tsfi_reuter_savepoint_create(&tx_ctx, "SP_ALPHA", 55);
@@ -202,14 +202,14 @@ int main(void) {
     tsfi_reuter_2pc_coordinator presumed_coord;
     tsfi_reuter_2pc_init(&presumed_coord, 3005);
     tsfi_reuter_2pc_add_participant(&presumed_coord, 101);
-    tsfi_reuter_2pc_vote(&presumed_coord, 101, true); // Prepare Node
+    tsfi_reuter_2pc_vote(&presumed_coord, 101, true);
     
     bool p_commit = false;
-    rc = tsfi_reuter_2pc_finalize_presumed(&presumed_coord, true, &p_commit); // Presumed Abort finalization
+    rc = tsfi_reuter_2pc_finalize_presumed(&presumed_coord, true, &p_commit);
     assert(rc == 0 && p_commit == true);
     
     // Test 18: Doublewrite Buffer Torn Page Recovery
-    const char *dw_log = "tmp/reuter_dw.log";
+    const char *dw_log = "tmp/reuter_dw_ext.log";
     int dw_fd = open(dw_log, O_RDWR | O_CREAT | O_TRUNC, 0644);
     assert(dw_fd >= 0);
     
@@ -224,13 +224,11 @@ int main(void) {
     rc = tsfi_reuter_doublewrite_flush(&dwb, dw_fd, &write_page);
     assert(rc == 0);
     
-    // Corrupt page locally (torn page simulation)
     tsfi_reuter_page torn_page;
     memset(&torn_page, 0, sizeof(tsfi_reuter_page));
     torn_page.page_id = 45;
     strcpy((char *)torn_page.data, "Corrupted/Torn Block data...");
     
-    // Restore page from Doublewrite buffer file copy
     rc = tsfi_reuter_doublewrite_recover_page(dw_fd, &torn_page);
     assert(rc == 0);
     assert(strcmp((char *)torn_page.data, "Doublewrite Intact Block Data") == 0);
@@ -239,19 +237,56 @@ int main(void) {
     tsfi_reuter_page dirty_clean_page;
     memset(&dirty_clean_page, 0, sizeof(tsfi_reuter_page));
     dirty_clean_page.page_id = 2;
-    dirty_clean_page.page_lsn = 85; // Page modified at LSN 85
+    dirty_clean_page.page_lsn = 85;
     
-    const char *db_file = "tmp/reuter_db.dat";
+    const char *db_file = "tmp/reuter_db_ext.dat";
     int db_fd = open(db_file, O_RDWR | O_CREAT | O_TRUNC, 0644);
     assert(db_fd >= 0);
     
-    // Flush page using page cleaner while global flushed LSN is only 80 (WAL violation!)
     rc = tsfi_reuter_page_cleaner_flush_page(&dirty_clean_page, db_fd, 80);
-    assert(rc == -2); // Blocked!
+    assert(rc == -2); // WAL violation
     
-    // Flush page using page cleaner while global flushed LSN is 90 (WAL satisfied!)
     rc = tsfi_reuter_page_cleaner_flush_page(&dirty_clean_page, db_fd, 90);
-    assert(rc == 0); // Succeeded!
+    assert(rc == 0);
+    
+    // Test 20: Nested Top Actions (NTA split tracking)
+    uint64_t nta_lsn = 0;
+    rc = tsfi_reuter_write_nta(fd, 3001, 24, 4, before, data_step2, &nta_lsn);
+    assert(rc == 0);
+    assert(nta_lsn > 0);
+    
+    // Verify selective undo skips NTA record types completely
+    tsfi_reuter_page nta_page;
+    memset(&nta_page, 0, sizeof(tsfi_reuter_page));
+    nta_page.page_id = 1;
+    strcpy((char *)nta_page.data, "NTA Split Unmodified Page State");
+    
+    rc = tsfi_reuter_selective_undo(fd, &nta_page, 1, 3001, nta_lsn - 1);
+    assert(rc == 0);
+    // Content remains split and unmodified because NTA is skipped during undo
+    assert(strcmp((char *)nta_page.data, "NTA Split Unmodified Page State") == 0);
+    
+    // Test 21: Transaction Chopping Safe Check
+    uint32_t conflicts[4] = {
+        0, 1,
+        1, 0
+    };
+    int chopped_siblings[2] = {1, 2}; // Pieces belong to different chopped transactions
+    rc = tsfi_reuter_chop_verify(conflicts, 2, chopped_siblings, 0, 1);
+    assert(rc == 0); // No sibling-conflict cycle
+    
+    // Test 22: Key-Range gap locking
+    tsfi_reuter_range_lock r_locks[16];
+    memset(r_locks, 0, sizeof(r_locks));
+    int range_lock_count = 0;
+    
+    rc = tsfi_reuter_lock_acquire_range(r_locks, &range_lock_count, 105, 10, 20, true);
+    assert(rc == 0);
+    assert(range_lock_count == 1);
+    
+    // Check overlap conflict with gap lock from another transaction
+    rc = tsfi_reuter_lock_acquire_range(r_locks, &range_lock_count, 106, 15, 25, true);
+    assert(rc == 1); // Conflicted overlap gap lock
     
     close(db_fd);
     unlink(db_file);
@@ -261,6 +296,6 @@ int main(void) {
     close(fd);
     unlink(temp_log);
     
-    printf("[SUCCESS] Andreas Reuter Transaction Compliance Test (Ultra-Comprehensive) Passed!\n");
+    printf("[SUCCESS] Andreas Reuter Transaction Compliance Test (Hyper-Extended) Passed!\n");
     return 0;
 }

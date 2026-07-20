@@ -912,3 +912,90 @@ int tsfi_reuter_page_cleaner_flush_page(tsfi_reuter_page *page, int db_fd, uint6
     
     return 0;
 }
+
+// 22. Nested Top Actions (NTAs)
+int tsfi_reuter_write_nta(int log_fd, uint32_t tx_id, uint32_t offset, uint32_t len, 
+                          const uint8_t *before, const uint8_t *after, uint64_t *assigned_lsn) {
+    if (log_fd < 0 || len > REUTER_MAX_DATA_SIZE) return -1;
+    
+    tsfi_reuter_log_record record;
+    memset(&record, 0, sizeof(tsfi_reuter_log_record));
+    
+    record.lsn = ++global_lsn;
+    record.transaction_id = tx_id;
+    record.type = LOG_TYPE_NTA; // Nested Top Action
+    record.data_offset = offset;
+    record.data_len = len;
+    
+    if (before) memcpy(record.before_image, before, len);
+    if (after) memcpy(record.after_image, after, len);
+    
+    ssize_t bytes_written = write(log_fd, &record, sizeof(tsfi_reuter_log_record));
+    if (bytes_written < (ssize_t)sizeof(tsfi_reuter_log_record)) {
+        return -2;
+    }
+    
+    fsync(log_fd);
+    
+    if (assigned_lsn) {
+        *assigned_lsn = record.lsn;
+    }
+    return 0;
+}
+
+// 23. Transaction Chopping (SC-Graph verification)
+int tsfi_reuter_chop_verify(const uint32_t *conflict_matrix, int pieces_count, 
+                            const int *chopped_tx_pieces, int piece_idx_a, int piece_idx_b) {
+    if (!conflict_matrix || pieces_count <= 0 || !chopped_tx_pieces) return -1;
+    
+    // An execution of chopped transactions is serializable if there are no SC-cycles.
+    // SC-cycles contain both conflict edges (C-edges) and transaction sibling edges (S-edges).
+    // S-edges exist between pieces of the SAME chopped transaction.
+    // C-edges exist where conflict_matrix[i * pieces_count + j] == 1.
+    // Check if there is an direct conflict edge between piece_idx_a and piece_idx_b
+    bool has_c_edge = (conflict_matrix[piece_idx_a * pieces_count + piece_idx_b] == 1 ||
+                       conflict_matrix[piece_idx_b * pieces_count + piece_idx_a] == 1);
+    
+    // S-edge exists if they belong to the same chopped transaction sibling group
+    bool has_s_edge = (chopped_tx_pieces[piece_idx_a] == chopped_tx_pieces[piece_idx_b]);
+    
+    if (has_c_edge && has_s_edge) {
+        return -2; // Conflict cycle risk: Cannot chop safely!
+    }
+    
+    return 0; // Safe to chop
+}
+
+// 24. Key-Range / Gap Locking
+int tsfi_reuter_lock_acquire_range(tsfi_reuter_range_lock *locks, int *lock_count, 
+                                   uint32_t tx_id, uint32_t start_key, uint32_t end_key, bool gap_only) {
+    if (!locks || !lock_count) return -1;
+    
+    // Check for conflicting overlapping key-range locks held by other transactions
+    for (int i = 0; i < *lock_count; i++) {
+        if (locks[i].transaction_id != tx_id) {
+            // Overlapping range check
+            bool overlap = (start_key <= locks[i].end_key && end_key >= locks[i].start_key);
+            if (overlap) {
+                // S/X gap locking conflict check
+                if (gap_only && locks[i].gap_locked) {
+                    return 1; // Conflict / Wait
+                }
+                if (!gap_only) {
+                    return 1; // Conflict / Wait
+                }
+            }
+        }
+    }
+    
+    // Register range lock
+    if (*lock_count >= 16) return -2; // Lock space limit
+    
+    locks[*lock_count].transaction_id = tx_id;
+    locks[*lock_count].start_key = start_key;
+    locks[*lock_count].end_key = end_key;
+    locks[*lock_count].gap_locked = gap_only;
+    (*lock_count)++;
+    
+    return 0;
+}

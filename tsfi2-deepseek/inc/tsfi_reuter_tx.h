@@ -11,7 +11,8 @@
 typedef enum {
     LOG_TYPE_WAL,
     LOG_TYPE_CLR,
-    LOG_TYPE_CHECKPOINT
+    LOG_TYPE_CHECKPOINT,
+    LOG_TYPE_NTA
 } tsfi_reuter_log_type;
 
 // Andreas Reuter Log Record (Unified WAL / CLR format)
@@ -231,5 +232,25 @@ int tsfi_reuter_doublewrite_recover_page(int dw_fd, tsfi_reuter_page *corrupted_
 
 // Background Page Cleaner Scheduler API
 int tsfi_reuter_page_cleaner_flush_page(tsfi_reuter_page *page, int db_fd, uint64_t flushed_lsn);
+
+// Key-Range Lock descriptor for phantom prevention
+typedef struct {
+    uint32_t transaction_id;
+    uint32_t start_key;
+    uint32_t end_key;
+    bool gap_locked;
+} tsfi_reuter_range_lock;
+
+// Nested Top Action (NTA) API
+int tsfi_reuter_write_nta(int log_fd, uint32_t tx_id, uint32_t offset, uint32_t len, 
+                          const uint8_t *before, const uint8_t *after, uint64_t *assigned_lsn);
+
+// Transaction Chopping SC-graph verification API
+int tsfi_reuter_chop_verify(const uint32_t *conflict_matrix, int pieces_count, 
+                            const int *chopped_tx_pieces, int piece_idx_a, int piece_idx_b);
+
+// Key-Range / Gap locking API
+int tsfi_reuter_lock_acquire_range(tsfi_reuter_range_lock *locks, int *lock_count, 
+                                   uint32_t tx_id, uint32_t start_key, uint32_t end_key, bool gap_only);
 
 #endif // TSFI_REUTER_TX_H
