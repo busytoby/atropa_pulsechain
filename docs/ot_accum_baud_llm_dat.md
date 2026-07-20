@@ -57,3 +57,10 @@ All configurations serialize output status text through Baudot encoders, tokeniz
 3. **Exponential Moving Average (EMA):** Smoothes PLL tracking using low-pass EMA filters, completely replacing Kalman estimation.
 4. **Declarative Relational Invariant Audits:** Automatically verifies global relational assertions across EER tables to prevent incorrect or non-compliant states.
 
+### Generation 5
+1. **LRC Block Interleaving:** Reorders encoded bytes using a 3x5 matrix permutation to disperse burst errors, maximizing the correction limits of LRC(15,11).
+2. **Holt-Linear Trend Estimation:** Employs double exponential smoothing to track both the tracking signal level and its trajectory drift over time.
+3. **STANAG Priority Routing (QoS):** Integrates priority queues inside the SAP router to prioritize critical security traffic.
+4. **EER Relational Path Dependency Audits:** Validates linked multi-hop path dependencies, ensuring responders are connected to active frequency channels.
+
+
