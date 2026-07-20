@@ -79,4 +79,24 @@ void tsfi_pll_pid_agc_tune(float error_voltage, float last_integral, float last_
 
 int tsfi_eer_delete_incident(TSFiEerDatabase *db, uint32_t incident_id);
 
+// --- Fourth-Generation Improvements APIs ---
+#define MAX_STANAG_ROUTES 8
+typedef void (*tsfi_stanag_sap_handler)(TSFiEerDatabase *db, const uint8_t *payload, int len);
+
+typedef struct {
+    uint8_t sap;
+    tsfi_stanag_sap_handler handler;
+} TSFiStanagRoute;
+
+int tsfi_stanag_register_route(uint8_t sap, tsfi_stanag_sap_handler handler);
+int tsfi_stanag_route_frame(TSFiEerDatabase *db, uint8_t sap, const uint8_t *payload, int len);
+
+uint8_t tsfi_gf28_mul(uint8_t a, uint8_t b);
+void tsfi_encode_rs15_11(const uint8_t *in, int len, uint8_t *out);
+int tsfi_decode_rs15_11(const uint8_t *in, int len, uint8_t *out);
+
+void tsfi_pll_kalman_estimate(float measurement, float *state, float *covariance, float process_noise, float measurement_noise);
+
+int tsfi_eer_audit_invariants(const TSFiEerDatabase *db);
+
 #endif // TSFI_ENCODINGS_H

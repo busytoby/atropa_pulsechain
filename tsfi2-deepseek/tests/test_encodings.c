@@ -3,6 +3,11 @@
 #include <assert.h>
 #include <string.h>
 
+static void mock_sap_handler(TSFiEerDatabase *db, const uint8_t *payload, int len) {
+    (void)payload; (void)len;
+    tsfi_eer_insert_incident(db, 8888, 1, 1782000000U, 1);
+}
+
 int main(void) {
     printf("[INFO] Starting Comprehensive Character Encodings Compliance Tests...\n");
     
@@ -400,6 +405,52 @@ int main(void) {
         
         remove(bin_path);
         printf("[PASS] STANAG 5066 Framed Oblivious Transfer Baud LLM DAT on ACAB bridge tests\n");
+    }
+    
+    // Test 18: Fourth-Generation Systems Improvements
+    {
+        int reg_rc = tsfi_stanag_register_route(0x7A, mock_sap_handler);
+        assert(reg_rc == 0);
+        
+        TSFiEerDatabase db;
+        tsfi_eer_db_init(&db);
+        int route_rc = tsfi_stanag_route_frame(&db, 0x7A, (const uint8_t *)"hello", 5);
+        assert(route_rc == 0);
+        assert(db.incident_count == 1);
+        assert(db.incidents[0].incident_id == 8888);
+        printf("[PASS] Dynamic STANAG SAP routing\n");
+        
+        // 18.2 Galois Field GF(2^8) Reed-Solomon(15,11) test
+        const uint8_t rs_in[11] = {'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'};
+        uint8_t rs_coded[15];
+        uint8_t rs_out[11];
+        tsfi_encode_rs15_11(rs_in, 11, rs_coded);
+        
+        // Corrupt 1 byte: Reed-Solomon must correct it
+        rs_coded[3] ^= 0xFF;
+        int rs_dec_rc = tsfi_decode_rs15_11(rs_coded, 15, rs_out);
+        assert(rs_dec_rc == 0);
+        assert(memcmp(rs_in, rs_out, 11) == 0);
+        printf("[PASS] Reed-Solomon(15,11) single-byte error correction\n");
+        
+        // 18.3 Kalman Filter Noise Estimation test
+        float state = 0.0f;
+        float cov = 1.0f;
+        tsfi_pll_kalman_estimate(1.5f, &state, &cov, 0.1f, 0.5f);
+        assert(state > 0.0f);
+        printf("[PASS] Kalman filter noise estimation\n");
+        
+        // 18.4 EER Declarative Relational Invariant Audits test
+        tsfi_eer_db_init(&db);
+        tsfi_eer_insert_incident(&db, 9999, 1, 1782000000U, 1); // DEFCON 1
+        int audit_fail = tsfi_eer_audit_invariants(&db);
+        assert(audit_fail == -2); // Failed because NORAD is not responding
+        
+        tsfi_eer_insert_agency(&db, 101, "NORAD", 1, 1);
+        tsfi_eer_link_response(&db, 101, 9999);
+        int audit_pass = tsfi_eer_audit_invariants(&db);
+        assert(audit_pass == 0); // Invariants validated successfully!
+        printf("[PASS] EER database relational invariant audits\n");
     }
     
     printf("[SUCCESS] All Encodings Compliance Tests Passed!\n");

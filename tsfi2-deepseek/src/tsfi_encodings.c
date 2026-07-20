@@ -1159,3 +1159,140 @@ int tsfi_eer_bridge_ot_crypto_stanag_acab(TSFiEerDatabase *db, const char *dat_b
     
     return 0;
 }
+
+// 30. Dynamic STANAG 5066 SAP Routing
+TSFiStanagRoute g_stanag_routes[MAX_STANAG_ROUTES];
+int g_stanag_route_count = 0;
+
+int tsfi_stanag_register_route(uint8_t sap, tsfi_stanag_sap_handler handler) {
+    if (!handler || g_stanag_route_count >= MAX_STANAG_ROUTES) return -1;
+    g_stanag_routes[g_stanag_route_count].sap = sap;
+    g_stanag_routes[g_stanag_route_count].handler = handler;
+    g_stanag_route_count++;
+    return 0;
+}
+
+int tsfi_stanag_route_frame(TSFiEerDatabase *db, uint8_t sap, const uint8_t *payload, int len) {
+    for (int i = 0; i < g_stanag_route_count; i++) {
+        if (g_stanag_routes[i].sap == sap) {
+            g_stanag_routes[i].handler(db, payload, len);
+            return 0;
+        }
+    }
+    return -1; // SAP route not found
+}
+
+// 31. Galois Field GF(2^8) math & Reed-Solomon(15,11) encoder/decoder
+uint8_t tsfi_gf28_mul(uint8_t a, uint8_t b) {
+    uint8_t p = 0;
+    for (int i = 0; i < 8; i++) {
+        if (b & 1) p ^= a;
+        uint8_t hi_bit = a & 0x80;
+        a <<= 1;
+        if (hi_bit) a ^= 0x1D;
+        b >>= 1;
+    }
+    return p;
+}
+
+uint8_t tsfi_gf28_exp(uint8_t base, int power) {
+    uint8_t res = 1;
+    for (int i = 0; i < power; i++) {
+        res = tsfi_gf28_mul(res, base);
+    }
+    return res;
+}
+
+void tsfi_encode_rs15_11(const uint8_t *in, int len, uint8_t *out) {
+    if (!in || !out || len <= 0) return;
+    for (int i = 0; i < len; i += 11) {
+        int chunk = (len - i < 11) ? (len - i) : 11;
+        uint8_t msg[11] = {0};
+        memcpy(msg, in + i, chunk);
+        
+        uint8_t parity[4] = {0};
+        for (int k = 0; k < 4; k++) {
+            uint8_t val = 0;
+            for (int j = 0; j < 11; j++) {
+                val ^= tsfi_gf28_mul(msg[j], tsfi_gf28_exp(2, (k + 1) * j));
+            }
+            parity[k] = val;
+        }
+        memcpy(out + (i / 11) * 15, msg, 11);
+        memcpy(out + (i / 11) * 15 + 11, parity, 4);
+    }
+}
+
+int tsfi_decode_rs15_11(const uint8_t *in, int len, uint8_t *out) {
+    if (!in || !out || len <= 0) return -1;
+    int uncorrectable = 0;
+    for (int i = 0; i < len; i += 15) {
+        uint8_t block[15];
+        memcpy(block, in + i, 15);
+        
+        uint8_t s[4] = {0};
+        for (int k = 0; k < 4; k++) {
+            uint8_t val = 0;
+            for (int j = 0; j < 11; j++) {
+                val ^= tsfi_gf28_mul(block[j], tsfi_gf28_exp(2, (k + 1) * j));
+            }
+            s[k] = val ^ block[11 + k];
+        }
+        
+        if (s[0] || s[1] || s[2] || s[3]) {
+            int corrected = 0;
+            for (int pos = 0; pos < 15 && !corrected; pos++) {
+                for (int val = 1; val < 256; val++) {
+                    block[pos] ^= val;
+                    // Recalculate syndromes
+                    uint8_t s_new[4] = {0};
+                    for (int k = 0; k < 4; k++) {
+                        uint8_t v = 0;
+                        for (int j = 0; j < 11; j++) {
+                            v ^= tsfi_gf28_mul(block[j], tsfi_gf28_exp(2, (k + 1) * j));
+                        }
+                        s_new[k] = v ^ block[11 + k];
+                    }
+                    if (s_new[0] == 0 && s_new[1] == 0 && s_new[2] == 0 && s_new[3] == 0) {
+                        corrected = 1;
+                        break;
+                    }
+                    block[pos] ^= val;
+                }
+            }
+            if (!corrected) {
+                uncorrectable++;
+            }
+        }
+        memcpy(out + (i / 15) * 11, block, 11);
+    }
+    return uncorrectable;
+}
+
+// 32. Kalman Filter noise estimator
+void tsfi_pll_kalman_estimate(float measurement, float *state, float *covariance, float process_noise, float measurement_noise) {
+    if (!state || !covariance) return;
+    float pred_state = *state;
+    float pred_cov = *covariance + process_noise;
+    float kalman_gain = pred_cov / (pred_cov + measurement_noise);
+    *state = pred_state + kalman_gain * (measurement - pred_state);
+    *covariance = (1.0f - kalman_gain) * pred_cov;
+}
+
+// 33. EER database global invariants audit
+int tsfi_eer_audit_invariants(const TSFiEerDatabase *db) {
+    if (!db) return -1;
+    for (int i = 0; i < db->incident_count; i++) {
+        if (db->incidents[i].defcon_level == 1) {
+            int has_norad = 0;
+            for (int j = 0; j < db->responds_count; j++) {
+                if (db->responds[j].incident_id == db->incidents[i].incident_id && db->responds[j].agency_id == 101) {
+                    has_norad = 1;
+                    break;
+                }
+            }
+            if (!has_norad) return -2;
+        }
+    }
+    return 0;
+}
