@@ -28,6 +28,7 @@
 #include "tsfi_parc_stcomp.h"
 #include "tsfi_parc_video.h"
 #include "tsfi_parc_shaders.h"
+#include "tsfi_parc_videodeck.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -765,6 +766,11 @@ int main() {
     // Xerox PARC: Load and parse Algol61 and COBOL strategy shaders at runtime
     tsfi_parc_shader_params_t shader_params;
     tsfi_parc_load_shaders("src/alto_video.algol61", "src/alto_video.strategy", &shader_params);
+    // Xerox PARC: Initialize video playback deck
+    tsfi_parc_video_deck_t deck;
+    tsfi_parc_deck_init(&deck, FRAMES, 3);
+    tsfi_parc_deck_control(&deck, DECK_CMD_PLAY, 0);
+
     uint16_t *alto_display_mem = calloc(38 * 808, sizeof(uint16_t));
     uint32_t *canvas = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
     uint32_t *canvas_b = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
@@ -1302,6 +1308,9 @@ int main() {
             0xFFC0, 0xFE00, 0xEF00, 0xC780, 0x0780, 0x03C0, 0x03C0, 0x0000
         };
         tsfi_parc_video_render_frame(&vc, alto_display_mem, canvas_b, WIDTH, HEIGHT, 147, 438, 0xFF39FF14, 0xFFc5a059, arrow_cursor_bits);
+        // Step video deck playback state and flip page buffers dynamically
+        tsfi_parc_deck_step(&deck, 1.0f / 30.0f, t);
+        tsfi_parc_deck_flip(&deck);
 
         // 7. Cycle the SuperPaint LUT dynamically
         tsfi_parc_superpaint_cycle_lut(&sp_lut, f % 256);
@@ -1325,6 +1334,7 @@ int main() {
     free(canvas);
     free(canvas_b);
     free(alto_display_mem);
+    tsfi_parc_deck_free(&deck);
     free(dst_buffer);
     free(rgb_out);
     remove(audio_file);
