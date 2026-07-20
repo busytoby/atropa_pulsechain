@@ -73,6 +73,14 @@ int tsfi_quantel_harry_blend(const uint32_t *fg_pixels, const uint32_t *bg_pixel
 
 int tsfi_quantel_harry_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32_t *dst, int w, int h, float progress, const char *wipe_type) {
     if (!src_a || !src_b || !dst || w <= 0 || h <= 0) return -1;
+    if (progress <= 0.0f) {
+        memcpy(dst, src_a, w * h * sizeof(uint32_t));
+        return 0;
+    }
+    if (progress >= 1.0f) {
+        memcpy(dst, src_b, w * h * sizeof(uint32_t));
+        return 0;
+    }
 
     for (int y = 0; y < h; y++) {
         for (int x = 0; x < w; x++) {
@@ -230,6 +238,14 @@ int tsfi_quantel_harry_temporal_blend(const uint32_t *frame_a, const uint32_t *f
 
 int tsfi_quantel_harry_displacement_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32_t *dst, int w, int h, float progress, float wave_amplitude, float wave_frequency) {
     if (!src_a || !src_b || !dst || w <= 0 || h <= 0) return -1;
+    if (progress <= 0.0f) {
+        memcpy(dst, src_a, w * h * sizeof(uint32_t));
+        return 0;
+    }
+    if (progress >= 1.0f) {
+        memcpy(dst, src_b, w * h * sizeof(uint32_t));
+        return 0;
+    }
 
     for (int y = 0; y < h; y++) {
         float displacement = wave_amplitude * sinf(2.0f * M_PI * wave_frequency * ((float)y / h));
@@ -486,6 +502,14 @@ int tsfi_quantel_harry_keyframe_transform(const uint32_t *src, int src_w, int sr
 
 int tsfi_quantel_harry_matrix_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32_t *dst, int w, int h, float progress, int grid_m, int grid_n) {
     if (!src_a || !src_b || !dst || w <= 0 || h <= 0 || grid_m <= 0 || grid_n <= 0) return -1;
+    if (progress <= 0.0f) {
+        memcpy(dst, src_a, w * h * sizeof(uint32_t));
+        return 0;
+    }
+    if (progress >= 1.0f) {
+        memcpy(dst, src_b, w * h * sizeof(uint32_t));
+        return 0;
+    }
 
     int cell_w = w / grid_m;
     int cell_h = h / grid_n;
@@ -720,6 +744,15 @@ int tsfi_quantel_harry_hsl_despill(uint32_t *pixels, int w, int h, float thresho
 
 int tsfi_quantel_harry_time_slice_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32_t *dst, int w, int h, float progress) {
     if (!src_a || !src_b || !dst || w <= 0 || h <= 0) return -1;
+    if (progress <= 0.0f) {
+        memcpy(dst, src_a, w * h * sizeof(uint32_t));
+        return 0;
+    }
+    if (progress >= 1.0f) {
+        memcpy(dst, src_b, w * h * sizeof(uint32_t));
+        return 0;
+    }
+
     for (int y = 0; y < h; y++) {
         for (int x = 0; x < w; x++) {
             float slice_thresh = (float)x / w;
@@ -966,6 +999,15 @@ int tsfi_quantel_harry_matte_choke(const uint8_t *src_mask, uint8_t *dst_mask, i
 
 int tsfi_quantel_harry_clock_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32_t *dst, int w, int h, float progress) {
     if (!src_a || !src_b || !dst || w <= 0 || h <= 0) return -1;
+    if (progress <= 0.0f) {
+        memcpy(dst, src_a, w * h * sizeof(uint32_t));
+        return 0;
+    }
+    if (progress >= 1.0f) {
+        memcpy(dst, src_b, w * h * sizeof(uint32_t));
+        return 0;
+    }
+
     float cx = w / 2.0f;
     float cy = h / 2.0f;
     float target_angle = progress * 2.0f * (float)M_PI - (float)M_PI / 2.0f;
