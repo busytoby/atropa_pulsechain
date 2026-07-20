@@ -618,3 +618,32 @@ int tsfi_quantel_mirage_peel_shadow(uint32_t *pixels, int w, int h, float progre
     }
     return 0;
 }
+
+int tsfi_quantel_mirage_cylindrical_wrap(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float rot_y, float radius) {
+    if (!src || !dst || src_w <= 0 || src_h <= 0 || dst_w <= 0 || dst_h <= 0) return -1;
+    memset(dst, 0, dst_w * dst_h * sizeof(uint32_t));
+
+    float cx_d = dst_w / 2.0f;
+    (void)rot_y;
+
+    for (int y = 0; y < dst_h; y++) {
+        for (int x = 0; x < dst_w; x++) {
+            float dx = x - cx_d;
+            if (fabsf(dx) < radius) {
+                float z = sqrtf(radius * radius - dx * dx);
+                float theta = atan2f(dx, z);
+
+                float u = (theta + (float)M_PI / 2.0f) / (float)M_PI;
+                float v = (float)y / dst_h;
+
+                int sx = (int)(u * src_w);
+                int sy = (int)(v * src_h);
+
+                if (sx >= 0 && sx < src_w && sy >= 0 && sy < src_h) {
+                    dst[y * dst_w + x] = src[sy * src_w + sx];
+                }
+            }
+        }
+    }
+    return 0;
+}

@@ -246,6 +246,18 @@ int tsfi_quantel_harry_split_matte_preview(const uint32_t *composite, const uint
 /* Storyboard Production Slate Block */
 int tsfi_quantel_storyboard_production_slate(uint32_t *pixels, int w, int h, const char *director, const char *project, const char *date);
 
+/* Quantel Paintbox Bristle Brush Simulation */
+int tsfi_quantel_paintbox_bristle_brush(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float pressure, int bristle_count, uint32_t color);
+
+/* Mirage 3D Cylindrical Wrap */
+int tsfi_quantel_mirage_cylindrical_wrap(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float rot_y, float radius);
+
+/* Harry Keyframe In-Between Interpolator */
+int tsfi_quantel_harry_interpolate_keyframe(float t, float start_val, float end_val, float *out_val);
+
+/* Storyboard Film Frame Borders */
+int tsfi_quantel_storyboard_film_borders(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t border_color);
+
 #endif // TSFI_PAINT_H
 
 

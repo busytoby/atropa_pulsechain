@@ -994,3 +994,23 @@ int tsfi_quantel_storyboard_production_slate(uint32_t *pixels, int w, int h, con
     draw_text(pixels, w, h, 20, 16, slate_info, 0xFFFFD700, 1);
     return 0;
 }
+
+int tsfi_quantel_harry_interpolate_keyframe(float t, float start_val, float end_val, float *out_val) {
+    if (!out_val) return -1;
+    *out_val = start_val * (1.0f - t) + end_val * t;
+    return 0;
+}
+
+int tsfi_quantel_storyboard_film_borders(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t border_color) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    for (int y = cell_y; y < cell_y + cell_h; y++) {
+        if (y < 0 || y >= h) continue;
+        for (int x = cell_x; x < cell_x + cell_w; x++) {
+            if (x < 0 || x >= w) continue;
+            if (y < cell_y + 4 || y >= cell_y + cell_h - 4 || x < cell_x + 4 || x >= cell_x + cell_w - 4) {
+                pixels[y * w + x] = border_color;
+            }
+        }
+    }
+    return 0;
+}

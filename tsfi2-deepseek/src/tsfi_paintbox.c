@@ -832,3 +832,18 @@ int tsfi_quantel_paintbox_multistop_gradient(uint32_t *pixels, int w, int h, int
     }
     return 0;
 }
+
+int tsfi_quantel_paintbox_bristle_brush(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float pressure, int bristle_count, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0 || radius <= 0 || bristle_count <= 0) return -1;
+    for (int i = 0; i < bristle_count; i++) {
+        float angle = ((float)i / bristle_count) * 2.0f * (float)M_PI;
+        float r_offset = ((float)rand() / RAND_MAX) * radius * 0.7f;
+        int bx = cx + (int)(r_offset * cosf(angle));
+        int by = cy + (int)(r_offset * sinf(angle));
+        int bristle_r = radius / 5;
+        if (bristle_r < 1) bristle_r = 1;
+
+        tsfi_quantel_paintbox_airbrush(pixels, w, h, bx, by, bristle_r, pressure * 0.4f, color);
+    }
+    return 0;
+}
