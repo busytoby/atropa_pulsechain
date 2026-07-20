@@ -1264,3 +1264,39 @@ int tsfi_quantel_storyboard_cell_overlay(uint32_t *pixels, int w, int h, int cel
     }
     return 0;
 }
+
+int tsfi_quantel_harry_film_grain(uint32_t *pixels, int w, int h, float intensity) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = pixels[i];
+        float noise = ((float)rand() / RAND_MAX - 0.5f) * intensity * 255.0f;
+
+        int r = (int)(((pix >> 16) & 0xFF) + noise);
+        int g = (int)(((pix >> 8) & 0xFF) + noise);
+        int b = (int)((pix & 0xFF) + noise);
+
+        if (r < 0) { r = 0; }
+        if (r > 255) { r = 255; }
+        if (g < 0) { g = 0; }
+        if (g > 255) { g = 255; }
+        if (b < 0) { b = 0; }
+        if (b > 255) { b = 255; }
+
+        pixels[i] = (0xFF000000) | (r << 16) | (g << 8) | b;
+    }
+    return 0;
+}
+
+int tsfi_quantel_storyboard_border_margins(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int margin_w, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0 || margin_w <= 0) return -1;
+    for (int y = cell_y; y < cell_y + cell_h; y++) {
+        if (y < 0 || y >= h) continue;
+        for (int x = cell_x; x < cell_x + cell_w; x++) {
+            if (x < 0 || x >= w) continue;
+            if (y < cell_y + margin_w || y >= cell_y + cell_h - margin_w || x < cell_x + margin_w || x >= cell_x + cell_w - margin_w) {
+                pixels[y * w + x] = color;
+            }
+        }
+    }
+    return 0;
+}

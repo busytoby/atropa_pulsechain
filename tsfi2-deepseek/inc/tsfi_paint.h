@@ -339,6 +339,18 @@ int tsfi_quantel_harry_dissolve(const uint32_t *src_a, const uint32_t *src_b, ui
 /* Storyboard Frame Thumbnail Grid Border Overlay */
 int tsfi_quantel_storyboard_cell_overlay(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t border_color, float alpha);
 
+/* Quantel Paintbox Brush Angle Lock Dynamics */
+int tsfi_quantel_paintbox_angle_lock(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float angle_lock, uint32_t color);
+
+/* Mirage 3D Dynamic Ripple Deformer */
+int tsfi_quantel_mirage_ripple_deform(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float amplitude, float frequency, float phase);
+
+/* Harry Chronological Film Grain Overlay */
+int tsfi_quantel_harry_film_grain(uint32_t *pixels, int w, int h, float intensity);
+
+/* Storyboard Frame Thumbnail Grid Border Margins */
+int tsfi_quantel_storyboard_border_margins(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int margin_w, uint32_t color);
+
 #endif // TSFI_PAINT_H
 
 

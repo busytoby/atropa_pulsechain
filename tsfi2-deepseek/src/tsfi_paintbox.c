@@ -985,3 +985,8 @@ int tsfi_quantel_paintbox_dynamic_flow(uint32_t *pixels, int w, int h, int cx, i
     if (flow < 0.01f) { flow = 0.01f; }
     return tsfi_quantel_paintbox_airbrush(pixels, w, h, cx, cy, radius, flow, color);
 }
+
+int tsfi_quantel_paintbox_angle_lock(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float angle_lock, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0 || radius <= 0) return -1;
+    return tsfi_quantel_paintbox_tablet_brush(pixels, w, h, cx, cy, radius, 1.0f, 0.3f, angle_lock, color);
+}
