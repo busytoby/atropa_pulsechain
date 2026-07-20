@@ -822,6 +822,126 @@ int tsfi_quantel_harry_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32
     return 0;
 }
 
+int tsfi_quantel_paintbox_clone(uint32_t *pixels, int w, int h, int cx, int cy, int src_dx, int src_dy, int radius, float opacity) {
+    if (!pixels || w <= 0 || h <= 0 || radius <= 0) return -1;
+
+    // Pre-copy image buffer to read source pixels from unchanged state
+    uint32_t *temp = malloc(w * h * sizeof(uint32_t));
+    if (!temp) return -2;
+    memcpy(temp, pixels, w * h * sizeof(uint32_t));
+
+    for (int y = cy - radius; y <= cy + radius; y++) {
+        if (y < 0 || y >= h) continue;
+        uint32_t *row = pixels + y * w;
+        int dy = y - cy;
+
+        for (int x = cx - radius; x <= cx + radius; x++) {
+            if (x < 0 || x >= w) continue;
+            int dx = x - cx;
+
+            if (dx * dx + dy * dy <= radius * radius) {
+                // Source offset lookup
+                int sy = y + src_dy;
+                int sx = x + src_dx;
+
+                if (sx >= 0 && sx < w && sy >= 0 && sy < h) {
+                    uint32_t src_color = temp[sy * w + sx];
+                    uint8_t r_src = (src_color >> 16) & 0xFF;
+                    uint8_t g_src = (src_color >> 8) & 0xFF;
+                    uint8_t b_src = src_color & 0xFF;
+
+                    uint32_t dest = row[x];
+                    uint8_t r_dst = (dest >> 16) & 0xFF;
+                    uint8_t g_dst = (dest >> 8) & 0xFF;
+                    uint8_t b_dst = dest & 0xFF;
+
+                    float intensity = (1.0f - (float)(dx * dx + dy * dy) / (radius * radius)) * opacity;
+                    if (intensity > 1.0f) intensity = 1.0f;
+                    if (intensity < 0.0f) intensity = 0.0f;
+
+                    uint8_t r_res = (uint8_t)(r_src * intensity + r_dst * (1.0f - intensity));
+                    uint8_t g_res = (uint8_t)(g_src * intensity + g_dst * (1.0f - intensity));
+                    uint8_t b_res = (uint8_t)(b_src * intensity + b_dst * (1.0f - intensity));
+
+                    row[x] = (0xFF000000) | (r_res << 16) | (g_res << 8) | b_res;
+                }
+            }
+        }
+    }
+    free(temp);
+    return 0;
+}
+
+int tsfi_quantel_mirage_mesh_warp(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, const float *grid_points_x, const float *grid_points_y, int grid_cols, int grid_rows) {
+    if (!src || !dst || src_w <= 0 || src_h <= 0 || dst_w <= 0 || dst_h <= 0 || !grid_points_x || !grid_points_y || grid_cols <= 1 || grid_rows <= 1) return -1;
+
+    memset(dst, 0, dst_w * dst_h * sizeof(uint32_t));
+
+    // Bilinear warp grids mapping output x,y to grid quads
+    for (int y = 0; y < dst_h; y++) {
+        float norm_y = (float)y / (dst_h - 1) * (grid_rows - 1);
+        int r_idx = (int)norm_y;
+        if (r_idx >= grid_rows - 1) r_idx = grid_rows - 2;
+        float v = norm_y - r_idx;
+
+        for (int x = 0; x < dst_w; x++) {
+            float norm_x = (float)x / (dst_w - 1) * (grid_cols - 1);
+            int c_idx = (int)norm_x;
+            if (c_idx >= grid_cols - 1) c_idx = grid_cols - 2;
+            float u = norm_x - c_idx;
+
+            // Interpolate target control points
+            int idx00 = r_idx * grid_cols + c_idx;
+            int idx10 = idx00 + 1;
+            int idx01 = (r_idx + 1) * grid_cols + c_idx;
+            int idx11 = idx01 + 1;
+
+            float x_int = (1.0f - u) * (1.0f - v) * grid_points_x[idx00] +
+                          u * (1.0f - v) * grid_points_x[idx10] +
+                          (1.0f - u) * v * grid_points_x[idx01] +
+                          u * v * grid_points_x[idx11];
+
+            float y_int = (1.0f - u) * (1.0f - v) * grid_points_y[idx00] +
+                          u * (1.0f - v) * grid_points_y[idx10] +
+                          (1.0f - u) * v * grid_points_y[idx01] +
+                          u * v * grid_points_y[idx11];
+
+            int sx = (int)(x_int * src_w / dst_w);
+            int sy = (int)(y_int * src_h / dst_h);
+
+            if (sx >= 0 && sx < src_w && sy >= 0 && sy < src_h) {
+                dst[y * dst_w + x] = src[sy * src_w + sx];
+            }
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_harry_temporal_blend(const uint32_t *frame_a, const uint32_t *frame_b, uint32_t *dst, int w, int h, float blend_factor) {
+    if (!frame_a || !frame_b || !dst || w <= 0 || h <= 0) return -1;
+
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix_a = frame_a[i];
+        uint32_t pix_b = frame_b[i];
+
+        uint8_t ra = (pix_a >> 16) & 0xFF;
+        uint8_t ga = (pix_a >> 8) & 0xFF;
+        uint8_t ba = pix_a & 0xFF;
+
+        uint8_t rb = (pix_b >> 16) & 0xFF;
+        uint8_t gb = (pix_b >> 8) & 0xFF;
+        uint8_t bb = pix_b & 0xFF;
+
+        uint8_t r = (uint8_t)(ra * (1.0f - blend_factor) + rb * blend_factor);
+        uint8_t g = (uint8_t)(ga * (1.0f - blend_factor) + gb * blend_factor);
+        uint8_t b = (uint8_t)(ba * (1.0f - blend_factor) + bb * blend_factor);
+
+        dst[i] = (0xFF000000) | (r << 16) | (g << 8) | b;
+    }
+    return 0;
+}
+
+
 int tsfi_quantel_mirage_dual_sided_page_curl(const uint32_t *front_pixels, const uint32_t *back_pixels, int src_w, int src_h, uint32_t *dst_pixels, int dst_w, int dst_h, float curl_radius, float roll_percent) {
     if (!front_pixels || !back_pixels || !dst_pixels || src_w <= 0 || src_h <= 0 || dst_w <= 0 || dst_h <= 0) return -1;
 

@@ -102,7 +102,17 @@ int tsfi_quantel_paintbox_spacing_brush(uint32_t *pixels, int w, int h, int prev
 /* Quantel Harry: Ripple wave displacement wipe transition between two frames */
 int tsfi_quantel_harry_displacement_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32_t *dst, int w, int h, float progress, float wave_amplitude, float wave_frequency);
 
+/* Quantel Paintbox: Rubber stamp cloning tool painting pixels from a source offset */
+int tsfi_quantel_paintbox_clone(uint32_t *pixels, int w, int h, int cx, int cy, int src_dx, int src_dy, int radius, float opacity);
+
+/* Quantel Mirage: 3D Freeform grid mesh warp transformation using bilinear grid mapping */
+int tsfi_quantel_mirage_mesh_warp(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, const float *grid_points_x, const float *grid_points_y, int grid_cols, int grid_rows);
+
+/* Quantel Harry: Temporal slow-motion frame blending compositor */
+int tsfi_quantel_harry_temporal_blend(const uint32_t *frame_a, const uint32_t *frame_b, uint32_t *dst, int w, int h, float blend_factor);
+
 #endif // TSFI_PAINT_H
+
 
 
 
