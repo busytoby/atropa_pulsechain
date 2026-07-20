@@ -1651,3 +1651,120 @@ int tsfi_eer_bridge_ot_terminal_acab(TSFiEerDatabase *db, const char *dat_bin_pa
     
     return 0;
 }
+
+// 44. Dynamic STANAG Transmit Window Scaling
+int tsfi_stanag_scale_window(float noise_level) {
+    if (noise_level > 2.0f) return 1;
+    if (noise_level > 1.0f) return 4;
+    if (noise_level > 0.5f) return 8;
+    return 16;
+}
+
+// 45. Cascading LRC Checksum Layers
+void tsfi_encode_cascading_lrc(const uint8_t *in, int len, uint8_t *out) {
+    if (!in || !out || len <= 0) return;
+    uint8_t global_lrc = 0;
+    uint8_t sub1_lrc = 0;
+    uint8_t sub2_lrc = 0;
+    for (int i = 0; i < len; i++) {
+        global_lrc += in[i];
+        if (i < len / 2) {
+            sub1_lrc += in[i] * (uint8_t)(i + 1);
+        } else {
+            sub2_lrc += in[i] * (uint8_t)(i + 1);
+        }
+    }
+    memcpy(out, in, len);
+    out[len] = global_lrc;
+    out[len + 1] = sub1_lrc;
+    out[len + 2] = sub2_lrc;
+}
+
+int tsfi_decode_cascading_lrc(const uint8_t *in, int len, uint8_t *out) {
+    if (!in || !out || len < 3) return -1;
+    int payload_len = len - 3;
+    uint8_t global_lrc = 0;
+    uint8_t sub1_lrc = 0;
+    uint8_t sub2_lrc = 0;
+    for (int i = 0; i < payload_len; i++) {
+        global_lrc += in[i];
+        if (i < payload_len / 2) {
+            sub1_lrc += in[i] * (uint8_t)(i + 1);
+        } else {
+            sub2_lrc += in[i] * (uint8_t)(i + 1);
+        }
+    }
+    memcpy(out, in, payload_len);
+    if (global_lrc != in[payload_len] || sub1_lrc != in[payload_len + 1] || sub2_lrc != in[payload_len + 2]) {
+        for (int i = 0; i < payload_len; i++) {
+            for (int val = 1; val < 256; val++) {
+                out[i] += (uint8_t)val;
+                uint8_t g = 0, s1 = 0, s2 = 0;
+                for (int j = 0; j < payload_len; j++) {
+                    g += out[j];
+                    if (j < payload_len / 2) s1 += out[j] * (uint8_t)(j + 1);
+                    else s2 += out[j] * (uint8_t)(j + 1);
+                }
+                if (g == in[payload_len] && s1 == in[payload_len + 1] && s2 == in[payload_len + 2]) {
+                    return 0; // Corrected!
+                }
+                out[i] -= (uint8_t)val;
+            }
+        }
+        return -1;
+    }
+    return 0;
+}
+
+// 46. Adaptive Baudot Shift Timeout
+int tsfi_baudot_decode_with_timeout(const uint8_t *in, int len, char *out, int max_out, int timeout_cycles) {
+    if (!in || !out || len <= 0) return -1;
+    int current_shift = 0;
+    int silent_cycles = 0;
+    int out_idx = 0;
+    for (int i = 0; i < len; i++) {
+        uint8_t code = in[i];
+        if (code == 0) {
+            silent_cycles++;
+            if (silent_cycles >= timeout_cycles && current_shift != 0) {
+                current_shift = 0;
+            }
+            continue;
+        }
+        silent_cycles = 0;
+        if (code == 0x1F) {
+            current_shift = 0;
+            continue;
+        }
+        if (code == 0x1B) {
+            current_shift = 1;
+            continue;
+        }
+        char c = (current_shift == 0) ? (char)g_ltrs_map[code] : (char)g_figs_map[code];
+        if (out_idx < max_out - 1) {
+            out[out_idx++] = c;
+        }
+    }
+    out[out_idx] = '\0';
+    return out_idx;
+}
+
+// 47. Lock-Free EER Transaction Journaling
+TSFiEerJournal g_eer_journal = { .head = 0, .tail = 0 };
+
+int tsfi_eer_journal_push(uint32_t incident_id, int event_type, uint32_t timestamp) {
+    int next = (g_eer_journal.head + 1) % EER_JOURNAL_SIZE;
+    if (next == g_eer_journal.tail) return -1; // Full
+    g_eer_journal.buffer[g_eer_journal.head].incident_id = incident_id;
+    g_eer_journal.buffer[g_eer_journal.head].event_type = event_type;
+    g_eer_journal.buffer[g_eer_journal.head].timestamp = timestamp;
+    g_eer_journal.head = next;
+    return 0;
+}
+
+int tsfi_eer_journal_pop(TSFiEerJournalEntry *entry) {
+    if (!entry || g_eer_journal.tail == g_eer_journal.head) return -1; // Empty
+    *entry = g_eer_journal.buffer[g_eer_journal.tail];
+    g_eer_journal.tail = (g_eer_journal.tail + 1) % EER_JOURNAL_SIZE;
+    return 0;
+}

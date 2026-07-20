@@ -124,4 +124,28 @@ int tsfi_stanag_route_priority_frame(TSFiEerDatabase *db, uint8_t sap, const uin
 
 int tsfi_eer_audit_paths(const TSFiEerDatabase *db);
 
+// --- Sixth-Generation Improvements APIs ---
+int tsfi_stanag_scale_window(float noise_level);
+
+void tsfi_encode_cascading_lrc(const uint8_t *in, int len, uint8_t *out);
+int tsfi_decode_cascading_lrc(const uint8_t *in, int len, uint8_t *out);
+
+int tsfi_baudot_decode_with_timeout(const uint8_t *in, int len, char *out, int max_out, int timeout_cycles);
+
+typedef struct {
+    uint32_t incident_id;
+    int event_type;
+    uint32_t timestamp;
+} TSFiEerJournalEntry;
+
+#define EER_JOURNAL_SIZE 64
+typedef struct {
+    TSFiEerJournalEntry buffer[EER_JOURNAL_SIZE];
+    volatile int head;
+    volatile int tail;
+} TSFiEerJournal;
+
+int tsfi_eer_journal_push(uint32_t incident_id, int event_type, uint32_t timestamp);
+int tsfi_eer_journal_pop(TSFiEerJournalEntry *entry);
+
 #endif // TSFI_ENCODINGS_H

@@ -565,6 +565,49 @@ int main(void) {
         printf("[PASS] Operator Terminal Baud LLM DAT on ACAB bridge tests\n");
     }
     
+    // Test 23: Sixth-Generation Systems Improvements
+    {
+        // 23.1 Dynamic STANAG Transmit Window Scaling test
+        int win = tsfi_stanag_scale_window(1.5f);
+        assert(win == 4);
+        win = tsfi_stanag_scale_window(0.2f);
+        assert(win == 16);
+        printf("[PASS] Dynamic STANAG transmit window scaling\n");
+        
+        // 23.2 Cascading LRC Checksum test
+        const uint8_t raw[8] = {'A','B','C','D','E','F','G','H'};
+        uint8_t enc[11];
+        uint8_t dec[8];
+        tsfi_encode_cascading_lrc(raw, 8, enc);
+        
+        // Corrupt 1 byte
+        enc[2] ^= 0x5A;
+        int lrc_rc = tsfi_decode_cascading_lrc(enc, 11, dec);
+        assert(lrc_rc == 0);
+        assert(memcmp(raw, dec, 8) == 0);
+        printf("[PASS] Cascading LRC checksum recovery\n");
+        
+        // 23.3 Adaptive Baudot Shift Timeout test
+        // 0x1B = FIGS, 0x01 = T/5, 0x00 = NULL (silent), 0x00 = NULL, 0x15 = Y/6
+        const uint8_t stream[5] = {0x1B, 0x10, 0x00, 0x00, 0x15};
+        char decoded[10];
+        // With timeout = 2 cycles: the second silent cycle resets shift back to LTRS, so 0x15 decodes to 'Y' instead of '6'
+        int dec_len = tsfi_baudot_decode_with_timeout(stream, 5, decoded, 10, 2);
+        assert(dec_len > 0);
+        assert(decoded[0] == '5');
+        assert(decoded[1] == 'Y');
+        printf("[PASS] Adaptive Baudot shift-state timeout\n");
+        
+        // 23.4 Lock-Free EER Transaction Journaling test
+        int push_rc = tsfi_eer_journal_push(8888, 1, 1782000000U);
+        assert(push_rc == 0);
+        TSFiEerJournalEntry entry;
+        int pop_rc = tsfi_eer_journal_pop(&entry);
+        assert(pop_rc == 0);
+        assert(entry.incident_id == 8888);
+        printf("[PASS] Lock-free EER transaction journaling\n");
+    }
+    
     printf("[SUCCESS] All Encodings Compliance Tests Passed!\n");
     return 0;
 }
