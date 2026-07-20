@@ -1550,3 +1550,43 @@ int tsfi_quantel_mirage_page_curl_warp(const uint32_t *src, int src_w, int src_h
     }
     return 0;
 }
+
+int tsfi_quantel_mirage_page_curl_perspective_warp(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float curl_radius, float angle, float zoom, float perspective) {
+    if (!src || !dst || src_w <= 0 || src_h <= 0 || dst_w <= 0 || dst_h <= 0 || curl_radius <= 0.0f) return -1;
+    memset(dst, 0, dst_w * dst_h * sizeof(uint32_t));
+
+    float cos_a = cosf(angle);
+    float sin_a = sinf(angle);
+    float cx = dst_w / 2.0f;
+    float cy = dst_h / 2.0f;
+
+    for (int y = 0; y < dst_h; y++) {
+        for (int x = 0; x < dst_w; x++) {
+            float dy = y - cy;
+            float p_scale = 1.0f + dy * perspective / dst_h;
+            float px = cx + (x - cx) / (p_scale * zoom);
+            float py = cy + (y - cy) / (p_scale * zoom);
+
+            float d = px * cos_a + py * sin_a;
+            if (d > 0.0f) {
+                float theta = d / curl_radius;
+                float nx = px - curl_radius * sinf(theta) * cos_a;
+                float ny = py - curl_radius * sinf(theta) * sin_a;
+
+                int sx = (int)(nx * src_w / dst_w);
+                int sy = (int)(ny * src_h / dst_h);
+
+                if (sx >= 0 && sx < src_w && sy >= 0 && sy < src_h) {
+                    dst[y * dst_w + x] = src[sy * src_w + sx];
+                }
+            } else {
+                int sx = (int)(px * src_w / dst_w);
+                int sy = (int)(py * src_h / dst_h);
+                if (sx >= 0 && sx < src_w && sy >= 0 && sy < src_h) {
+                    dst[y * dst_w + x] = src[sy * src_w + sx];
+                }
+            }
+        }
+    }
+    return 0;
+}

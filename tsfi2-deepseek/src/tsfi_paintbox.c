@@ -1389,3 +1389,34 @@ int tsfi_quantel_paintbox_pressure_jitter_opacity_saturation(uint32_t *pixels, i
     return tsfi_quantel_paintbox_airbrush(pixels, w, h, cx, cy, radius, opacity, final_color);
 }
 
+int tsfi_quantel_paintbox_pressure_jitter_opacity_saturation_value(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float pressure, float jitter_amp, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0 || radius <= 0) return -1;
+    uint8_t r = (color >> 16) & 0xFF;
+    uint8_t g = (color >> 8) & 0xFF;
+    uint8_t b = color & 0xFF;
+
+    float h_val, s_val, l_val;
+    tsfi_rgb_to_hsl(r, g, b, &h_val, &s_val, &l_val);
+
+    float jitter_s = ((float)rand() / RAND_MAX - 0.5f) * jitter_amp * pressure;
+    s_val += jitter_s;
+    if (s_val < 0.0f) { s_val = 0.0f; }
+    if (s_val > 1.0f) { s_val = 1.0f; }
+
+    float jitter_v = ((float)rand() / RAND_MAX - 0.5f) * jitter_amp * pressure;
+    l_val += jitter_v;
+    if (l_val < 0.0f) { l_val = 0.0f; }
+    if (l_val > 1.0f) { l_val = 1.0f; }
+
+    float jitter_a = ((float)rand() / RAND_MAX - 0.5f) * jitter_amp;
+    float opacity = pressure + jitter_a;
+    if (opacity < 0.01f) { opacity = 0.01f; }
+    if (opacity > 1.0f) { opacity = 1.0f; }
+
+    uint8_t out_r, out_g, out_b;
+    tsfi_hsl_to_rgb(h_val, s_val, l_val, &out_r, &out_g, &out_b);
+    uint32_t final_color = (0xFF000000) | (out_r << 16) | (out_g << 8) | out_b;
+
+    return tsfi_quantel_paintbox_airbrush(pixels, w, h, cx, cy, radius, opacity, final_color);
+}
+

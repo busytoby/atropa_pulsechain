@@ -639,6 +639,18 @@ int tsfi_quantel_harry_blend_fields_color_offset_vertical(const uint32_t *field_
 /* Storyboard Frame Thumbnail Grid Border Highlights Concentric Double */
 int tsfi_quantel_storyboard_border_highlights_concentric_double(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int offset_w, int border_w, int count, uint32_t color1, uint32_t color2);
 
+/* Quantel Paintbox Brush Pressure Jitter Opacity Saturation Value Dynamics */
+int tsfi_quantel_paintbox_pressure_jitter_opacity_saturation_value(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float pressure, float jitter_amp, uint32_t color);
+
+/* Mirage 3D Spherical Page Curl Perspective Warp */
+int tsfi_quantel_mirage_page_curl_perspective_warp(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float curl_radius, float angle, float zoom, float perspective);
+
+/* Harry Chronological Frame Interlaced Field Split Jitter Blend Offset Color Vertical Scale */
+int tsfi_quantel_harry_blend_fields_color_offset_vertical_scale(const uint32_t *field_even, const uint32_t *field_odd, uint32_t *dst, int w, int h, float blend_factor, int offset, uint32_t tint_color, float vert_displace, float scale);
+
+/* Storyboard Frame Thumbnail Grid Border Highlights Concentric Double Outer */
+int tsfi_quantel_storyboard_border_highlights_concentric_double_outer(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int offset_w, int border_w, int count, uint32_t color1, uint32_t color2, int outer_margin);
+
 #endif // TSFI_PAINT_H
 
 

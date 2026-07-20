@@ -714,3 +714,20 @@ int tsfi_quantel_storyboard_border_highlights_concentric_double(uint32_t *pixels
     }
     return 0;
 }
+
+int tsfi_quantel_storyboard_border_highlights_concentric_double_outer(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int offset_w, int border_w, int count, uint32_t color1, uint32_t color2, int outer_margin) {
+    if (!pixels || w <= 0 || h <= 0 || offset_w < 0 || border_w <= 0 || count <= 0) return -1;
+    for (int c = 0; c < count; c++) {
+        int current_offset = offset_w + c * border_w * 2;
+        uint32_t active_color = (c % 2 == 0) ? color1 : color2;
+        for (int offset = 0; offset < border_w; offset++) {
+            int tx = cell_x - current_offset - offset;
+            int ty = cell_y - current_offset - offset;
+            int tw = cell_w + 2 * (current_offset + offset);
+            int th = cell_h + 2 * (current_offset + offset);
+            if (tx < outer_margin || ty < outer_margin || tx + tw > w - outer_margin || ty + th > h - outer_margin) { continue; }
+            tsfi_quantel_storyboard_border_highlights(pixels, w, h, tx, ty, tw, th, active_color);
+        }
+    }
+    return 0;
+}
