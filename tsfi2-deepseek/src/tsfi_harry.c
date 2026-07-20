@@ -1014,3 +1014,11 @@ int tsfi_quantel_storyboard_film_borders(uint32_t *pixels, int w, int h, int cel
     }
     return 0;
 }
+
+int tsfi_quantel_storyboard_page_divider(uint32_t *pixels, int w, int h, int y_coord, uint32_t line_color) {
+    if (!pixels || w <= 0 || h <= 0 || y_coord < 0 || y_coord >= h) return -1;
+    for (int x = 0; x < w; x++) {
+        pixels[y_coord * w + x] = line_color;
+    }
+    return 0;
+}

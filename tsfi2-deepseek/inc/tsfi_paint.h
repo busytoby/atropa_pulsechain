@@ -258,6 +258,15 @@ int tsfi_quantel_harry_interpolate_keyframe(float t, float start_val, float end_
 /* Storyboard Film Frame Borders */
 int tsfi_quantel_storyboard_film_borders(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t border_color);
 
+/* Quantel Paintbox Chalk/Dry Brush Simulation */
+int tsfi_quantel_paintbox_chalk_brush(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float pressure, uint32_t color);
+
+/* Mirage 3D Perspective Plane Tilt Warp */
+int tsfi_quantel_mirage_plane_tilt(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float pitch, float yaw);
+
+/* Storyboard Page Divider Layout */
+int tsfi_quantel_storyboard_page_divider(uint32_t *pixels, int w, int h, int y_coord, uint32_t line_color);
+
 #endif // TSFI_PAINT_H
 
 
