@@ -178,7 +178,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_parc_routing.o \
                   $(OBJ_DIR)/tsfi_parc_keyboard.o \
                   $(OBJ_DIR)/tsfi_parc_knoll.o \
-                  $(OBJ_DIR)/tsfi_parc_tknoll.o
+                  $(OBJ_DIR)/tsfi_parc_tknoll.o \
+                  $(OBJ_DIR)/tsfi_parc_rle.o
 
 
 

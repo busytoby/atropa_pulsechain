@@ -39,6 +39,7 @@
 #include "tsfi_parc_keyboard.h"
 #include "tsfi_parc_knoll.h"
 #include "tsfi_parc_tknoll.h"
+#include "tsfi_parc_rle.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -853,6 +854,13 @@ int main() {
     uint32_t hist[256];
     tsfi_parc_tknoll_histogram(canvas_b, WIDTH, HEIGHT, hist);
     tsfi_parc_tknoll_dither_floyd_steinberg(canvas_b, alto_display_mem, WIDTH, HEIGHT);
+
+    // Thomas Knoll-style RLE Compression verify check
+    uint8_t raw_data[16] = { 1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 4 };
+    uint8_t comp_buf[32];
+    uint8_t decomp_buf[16];
+    int comp_sz = tsfi_parc_rle_compress(raw_data, 16, comp_buf, sizeof(comp_buf));
+    tsfi_parc_rle_decompress(comp_buf, comp_sz, decomp_buf, 16);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
