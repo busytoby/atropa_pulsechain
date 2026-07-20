@@ -1554,21 +1554,6 @@ int tsfi_quantel_harry_field_shift(uint32_t *pixels, int w, int h, int shift_eve
     return 0;
 }
 
-int tsfi_quantel_storyboard_dotted_borders(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int dot_spacing, uint32_t border_color) {
-    if (!pixels || w <= 0 || h <= 0 || dot_spacing <= 0) return -1;
-    for (int y = cell_y; y < cell_y + cell_h; y++) {
-        if (y < 0 || y >= h) continue;
-        for (int x = cell_x; x < cell_x + cell_w; x++) {
-            if (x < 0 || x >= w) continue;
-            if (y == cell_y || y == cell_y + cell_h - 1 || x == cell_x || x == cell_x + cell_w - 1) {
-                if (((x - cell_x) + (y - cell_y)) % dot_spacing == 0) {
-                    pixels[y * w + x] = border_color;
-                }
-            }
-        }
-    }
-    return 0;
-}
 
 int tsfi_quantel_harry_blend_fields(const uint32_t *field_even, const uint32_t *field_odd, uint32_t *dst, int w, int h, float blend_factor) {
     if (!field_even || !field_odd || !dst || w <= 0 || h <= 0) return -1;
@@ -1602,25 +1587,6 @@ int tsfi_quantel_harry_blend_fields(const uint32_t *field_even, const uint32_t *
     return 0;
 }
 
-int tsfi_quantel_storyboard_corner_spacers(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int spacer_w, uint32_t color) {
-    if (!pixels || w <= 0 || h <= 0 || spacer_w <= 0) return -1;
-
-    for (int y = cell_y; y < cell_y + cell_h; y++) {
-        if (y < 0 || y >= h) continue;
-        for (int x = cell_x; x < cell_x + cell_w; x++) {
-            if (x < 0 || x >= w) continue;
-            int in_left = (x >= cell_x && x < cell_x + spacer_w);
-            int in_right = (x >= cell_x + cell_w - spacer_w && x < cell_x + cell_w);
-            int in_top = (y >= cell_y && y < cell_y + spacer_w);
-            int in_bottom = (y >= cell_y + cell_h - spacer_w && y < cell_y + cell_h);
-
-            if ((in_left && in_top) || (in_right && in_top) || (in_left && in_bottom) || (in_right && in_bottom)) {
-                pixels[y * w + x] = color;
-            }
-        }
-    }
-    return 0;
-}
 
 int tsfi_quantel_harry_scanline_blend(uint32_t *pixels, int w, int h, float blend_factor) {
     if (!pixels || w <= 0 || h <= 0) return -1;
@@ -1663,17 +1629,6 @@ int tsfi_quantel_harry_scanline_blend(uint32_t *pixels, int w, int h, float blen
     return 0;
 }
 
-int tsfi_quantel_storyboard_outer_borders_corners(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t border_color, uint32_t corner_color) {
-    if (!pixels || w <= 0 || h <= 0) return -1;
-    tsfi_quantel_storyboard_outer_borders(pixels, w, h, cell_x, cell_y, cell_w, cell_h, border_color);
-
-    if (cell_y >= 0 && cell_y < h && cell_x >= 0 && cell_x < w) { pixels[cell_y * w + cell_x] = corner_color; }
-    if (cell_y >= 0 && cell_y < h && cell_x + cell_w - 1 >= 0 && cell_x + cell_w - 1 < w) { pixels[cell_y * w + cell_x + cell_w - 1] = corner_color; }
-    if (cell_y + cell_h - 1 >= 0 && cell_y + cell_h - 1 < h && cell_x >= 0 && cell_x < w) { pixels[(cell_y + cell_h - 1) * w + cell_x] = corner_color; }
-    if (cell_y + cell_h - 1 >= 0 && cell_y + cell_h - 1 < h && cell_x + cell_w - 1 >= 0 && cell_x + cell_w - 1 < w) { pixels[(cell_y + cell_h - 1) * w + cell_x + cell_w - 1] = corner_color; }
-
-    return 0;
-}
 
 int tsfi_quantel_harry_blend_fields_offset(const uint32_t *field_even, const uint32_t *field_odd, uint32_t *dst, int w, int h, float blend_factor, int offset) {
     if (!field_even || !field_odd || !dst || w <= 0 || h <= 0) return -1;
@@ -1707,20 +1662,6 @@ int tsfi_quantel_harry_blend_fields_offset(const uint32_t *field_even, const uin
             uint8_t b = (uint8_t)(ba * (1.0f - blend_factor) + bb * blend_factor);
 
             dst_row[x] = (0xFF000000) | (r << 16) | (g << 8) | b;
-        }
-    }
-    return 0;
-}
-
-int tsfi_quantel_storyboard_inner_borders_offset(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int offset_w, uint32_t border_color) {
-    if (!pixels || w <= 0 || h <= 0 || offset_w <= 0) return -1;
-    for (int y = cell_y + offset_w; y < cell_y + cell_h - offset_w; y++) {
-        if (y < 0 || y >= h) continue;
-        for (int x = cell_x + offset_w; x < cell_x + cell_w - offset_w; x++) {
-            if (x < 0 || x >= w) continue;
-            if (y == cell_y + offset_w || y == cell_y + cell_h - 1 - offset_w || x == cell_x + offset_w || x == cell_x + cell_w - 1 - offset_w) {
-                pixels[y * w + x] = border_color;
-            }
         }
     }
     return 0;
@@ -1763,9 +1704,34 @@ int tsfi_quantel_harry_blend_fields_shift(const uint32_t *field_even, const uint
     return 0;
 }
 
-int tsfi_quantel_storyboard_double_borders_offset(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int offset_w, uint32_t border_color) {
-    if (!pixels || w <= 0 || h <= 0 || offset_w <= 0) return -1;
-    tsfi_quantel_storyboard_outer_borders(pixels, w, h, cell_x, cell_y, cell_w, cell_h, border_color);
-    tsfi_quantel_storyboard_inner_borders_offset(pixels, w, h, cell_x, cell_y, cell_w, cell_h, offset_w, border_color);
+int tsfi_quantel_harry_split_interpolate(const uint32_t *src, uint32_t *dst_even, uint32_t *dst_odd, int w, int h) {
+    if (!src || !dst_even || !dst_odd || w <= 0 || h <= 0) return -1;
+    for (int y = 0; y < h; y++) {
+        if (y % 2 == 0) {
+            memcpy(dst_even + y * w, src + y * w, w * sizeof(uint32_t));
+            if (y > 0) {
+                for (int x = 0; x < w; x++) {
+                    uint32_t c1 = src[(y - 2) * w + x];
+                    uint32_t c2 = src[y * w + x];
+                    uint8_t r = (((c1 >> 16) & 0xFF) + ((c2 >> 16) & 0xFF)) / 2;
+                    uint8_t g = (((c1 >> 8) & 0xFF) + ((c2 >> 8) & 0xFF)) / 2;
+                    uint8_t b = ((c1 & 0xFF) + (c2 & 0xFF)) / 2;
+                    dst_even[(y - 1) * w + x] = (0xFF000000) | (r << 16) | (g << 8) | b;
+                }
+            }
+        } else {
+            memcpy(dst_odd + y * w, src + y * w, w * sizeof(uint32_t));
+            if (y > 1) {
+                for (int x = 0; x < w; x++) {
+                    uint32_t c1 = src[(y - 2) * w + x];
+                    uint32_t c2 = src[y * w + x];
+                    uint8_t r = (((c1 >> 16) & 0xFF) + ((c2 >> 16) & 0xFF)) / 2;
+                    uint8_t g = (((c1 >> 8) & 0xFF) + ((c2 >> 8) & 0xFF)) / 2;
+                    uint8_t b = ((c1 & 0xFF) + (c2 & 0xFF)) / 2;
+                    dst_odd[(y - 1) * w + x] = (0xFF000000) | (r << 16) | (g << 8) | b;
+                }
+            }
+        }
+    }
     return 0;
 }

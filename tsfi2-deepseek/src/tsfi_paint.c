@@ -6,3 +6,4 @@
 #include "tsfi_paintbox.c"
 #include "tsfi_mirage.c"
 #include "tsfi_harry.c"
+#include "tsfi_storyboard.c"

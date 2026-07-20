@@ -1247,3 +1247,8 @@ int tsfi_quantel_mirage_twirl_double_symmetry(const uint32_t *src, int src_w, in
     }
     return 0;
 }
+
+int tsfi_quantel_mirage_plane_pitch(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float pitch) {
+    if (!src || !dst || src_w <= 0 || src_h <= 0 || dst_w <= 0 || dst_h <= 0) return -1;
+    return tsfi_quantel_mirage_plane_rotation(src, src_w, src_h, dst, dst_w, dst_h, pitch, 0.0f, 0.0f);
+}
