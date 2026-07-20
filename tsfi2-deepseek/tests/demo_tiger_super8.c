@@ -240,10 +240,10 @@ void generate_tiger_soundtrack(const char *filepath) {
 
                 double bass_out = 0.0;
                 if (bass_freq > 0.0) {
-                    double main_bass = sin(bass_phase + 0.6 * X * Y);
-                    double sub_bass = sin(bass_phase * 0.5 + 0.3 * X);
-                    double combined_bass = main_bass * 0.5 + sub_bass * 0.8;
-                    bass_out = tanh(combined_bass * 2.2) * 0.5f;
+                    double main_bass = sin(bass_phase + 0.8 * X * Y);
+                    double sub_bass = sin(bass_phase * 0.5 + 0.4 * X) + sin(bass_phase * 0.25 + 0.2 * Y);
+                    double combined_bass = main_bass * 0.4 + sub_bass * 1.2;
+                    bass_out = tanh(combined_bass * 3.0) * 0.8f;
                     bass_phase += (2.0 * M_PI * bass_freq) / SAMPLE_RATE;
                     if (bass_phase >= 2.0 * M_PI) bass_phase -= 2.0 * M_PI;
                 }
@@ -452,6 +452,16 @@ int main() {
             float ex = center_x + 90.0f * cosf(rad) * pulse;
             float ey = center_y + 50.0f * sinf(rad) * pulse;
             tsfi_quantel_paintbox_pressure_jitter_hue(canvas, WIDTH, HEIGHT, (int)ex, (int)ey, 14, 0.8f, 0.1f, 0xFFFF8C00); // Dark Orange
+        }
+
+        // Draw 3D Hot Lissajous Tube Orbitals wrapping around the eye frame
+        for (int i = 0; i < 200; i++) {
+            float theta_l = (float)i * 2.0f * (float)M_PI / 200.0f;
+            float lx = center_x + 160.0f * sinf(theta_l * 3.0f + t * 4.0f);
+            float ly = center_y + 90.0f * cosf(theta_l * 5.0f + t * 3.0f);
+            uint32_t glow_color = 0xFFFF3300;
+            if (i % 2 == 0) glow_color = 0xFFFFD700;
+            tsfi_quantel_paintbox_pressure_jitter_hue(canvas, WIDTH, HEIGHT, (int)lx, (int)ly, 6, 0.9f, 0.2f, glow_color);
         }
 
         // Draw tiger pupil slit
