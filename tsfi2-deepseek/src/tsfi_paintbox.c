@@ -926,3 +926,29 @@ int tsfi_quantel_paintbox_sort_palette(uint32_t *palette, int count, int sort_by
     }
     return 0;
 }
+
+int tsfi_quantel_paintbox_blend_mixer(uint32_t *pixels, int w, int h, const uint32_t *src_a, const uint32_t *src_b, float mix_factor) {
+    if (!pixels || !src_a || !src_b || w <= 0 || h <= 0) return -1;
+    if (mix_factor < 0.0f) { mix_factor = 0.0f; }
+    if (mix_factor > 1.0f) { mix_factor = 1.0f; }
+
+    for (int i = 0; i < w * h; i++) {
+        uint32_t ca = src_a[i];
+        uint32_t cb = src_b[i];
+
+        uint8_t ra = (ca >> 16) & 0xFF;
+        uint8_t ga = (ca >> 8) & 0xFF;
+        uint8_t ba = ca & 0xFF;
+
+        uint8_t rb = (cb >> 16) & 0xFF;
+        uint8_t gb = (cb >> 8) & 0xFF;
+        uint8_t bb = cb & 0xFF;
+
+        uint8_t r = (uint8_t)(ra * (1.0f - mix_factor) + rb * mix_factor);
+        uint8_t g = (uint8_t)(ga * (1.0f - mix_factor) + gb * mix_factor);
+        uint8_t b = (uint8_t)(ba * (1.0f - mix_factor) + bb * mix_factor);
+
+        pixels[i] = (0xFF000000) | (r << 16) | (g << 8) | b;
+    }
+    return 0;
+}

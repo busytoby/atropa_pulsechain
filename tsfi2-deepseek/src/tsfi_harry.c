@@ -1154,3 +1154,35 @@ int tsfi_quantel_storyboard_outline_cell(uint32_t *pixels, int w, int h, int cel
     }
     return 0;
 }
+
+int tsfi_quantel_harry_chroma_gain(uint32_t *pixels, int w, int h, float gain) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = pixels[i];
+        float r = ((pix >> 16) & 0xFF) / 255.0f;
+        float g = ((pix >> 8) & 0xFF) / 255.0f;
+        float b = (pix & 0xFF) / 255.0f;
+
+        float y_val = 0.299f * r + 0.587f * g + 0.114f * b;
+        float i_val = (0.596f * r - 0.274f * g - 0.322f * b) * gain;
+        float q_val = (0.211f * r - 0.523f * g + 0.312f * b) * gain;
+
+        float nr = y_val + 0.956f * i_val + 0.621f * q_val;
+        float ng = y_val - 0.272f * i_val - 0.647f * q_val;
+        float nb = y_val - 1.106f * i_val + 1.703f * q_val;
+
+        if (nr < 0.0f) { nr = 0.0f; } if (nr > 1.0f) { nr = 1.0f; }
+        if (ng < 0.0f) { ng = 0.0f; } if (ng > 1.0f) { ng = 1.0f; }
+        if (nb < 0.0f) { nb = 0.0f; } if (nb > 1.0f) { nb = 1.0f; }
+
+        pixels[i] = (0xFF000000) | ((int)(nr * 255.0f) << 16) | ((int)(ng * 255.0f) << 8) | (int)(nb * 255.0f);
+    }
+    return 0;
+}
+
+int tsfi_quantel_storyboard_burn_label(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, const char *label, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0 || !label) return -1;
+    (void)cell_w;
+    draw_text(pixels, w, h, cell_x + 10, cell_y + cell_h - 38, label, color, 1);
+    return 0;
+}
