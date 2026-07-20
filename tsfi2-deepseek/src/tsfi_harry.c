@@ -1300,3 +1300,41 @@ int tsfi_quantel_storyboard_border_margins(uint32_t *pixels, int w, int h, int c
     }
     return 0;
 }
+
+int tsfi_quantel_harry_matte_choke(const uint8_t *src_mask, uint8_t *dst_mask, int w, int h, int choke_radius) {
+    if (!src_mask || !dst_mask || w <= 0 || h <= 0) return -1;
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            uint8_t min_val = 255;
+            for (int cy = y - choke_radius; cy <= y + choke_radius; cy++) {
+                if (cy < 0 || cy >= h) continue;
+                for (int cx = x - choke_radius; cx <= x + choke_radius; cx++) {
+                    if (cx < 0 || cx >= w) continue;
+                    uint8_t val = src_mask[cy * w + cx];
+                    if (val < min_val) { min_val = val; }
+                }
+            }
+            dst_mask[y * w + x] = min_val;
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_storyboard_corner_marks(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int mark_len, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0 || mark_len <= 0) return -1;
+
+    for (int i = 0; i < mark_len; i++) {
+        if (cell_y >= 0 && cell_y < h && cell_x + i >= 0 && cell_x + i < w) { pixels[cell_y * w + cell_x + i] = color; }
+        if (cell_y + i >= 0 && cell_y + i < h && cell_x >= 0 && cell_x < w) { pixels[(cell_y + i) * w + cell_x] = color; }
+
+        if (cell_y >= 0 && cell_y < h && cell_x + cell_w - 1 - i >= 0 && cell_x + cell_w - 1 - i < w) { pixels[cell_y * w + (cell_x + cell_w - 1 - i)] = color; }
+        if (cell_y + i >= 0 && cell_y + i < h && cell_x + cell_w - 1 >= 0 && cell_x + cell_w - 1 < w) { pixels[(cell_y + i) * w + (cell_x + cell_w - 1)] = color; }
+
+        if (cell_y + cell_h - 1 >= 0 && cell_y + cell_h - 1 < h && cell_x + i >= 0 && cell_x + i < w) { pixels[(cell_y + cell_h - 1) * w + cell_x + i] = color; }
+        if (cell_y + cell_h - 1 - i >= 0 && cell_y + cell_h - 1 - i < h && cell_x >= 0 && cell_x < w) { pixels[(cell_y + cell_h - 1 - i) * w + cell_x] = color; }
+
+        if (cell_y + cell_h - 1 >= 0 && cell_y + cell_h - 1 < h && cell_x + cell_w - 1 - i >= 0 && cell_x + cell_w - 1 - i < w) { pixels[(cell_y + cell_h - 1) * w + (cell_x + cell_w - 1 - i)] = color; }
+        if (cell_y + cell_h - 1 - i >= 0 && cell_y + cell_h - 1 - i < h && cell_x + cell_w - 1 >= 0 && cell_x + cell_w - 1 < w) { pixels[(cell_y + cell_h - 1 - i) * w + (cell_x + cell_w - 1)] = color; }
+    }
+    return 0;
+}

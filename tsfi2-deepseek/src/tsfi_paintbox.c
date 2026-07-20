@@ -990,3 +990,12 @@ int tsfi_quantel_paintbox_angle_lock(uint32_t *pixels, int w, int h, int cx, int
     if (!pixels || w <= 0 || h <= 0 || radius <= 0) return -1;
     return tsfi_quantel_paintbox_tablet_brush(pixels, w, h, cx, cy, radius, 1.0f, 0.3f, angle_lock, color);
 }
+
+int tsfi_quantel_paintbox_complementary_color(uint32_t color, uint32_t *out_color) {
+    if (!out_color) return -1;
+    uint8_t r = 255 - ((color >> 16) & 0xFF);
+    uint8_t g = 255 - ((color >> 8) & 0xFF);
+    uint8_t b = 255 - (color & 0xFF);
+    *out_color = (0xFF000000) | (r << 16) | (g << 8) | b;
+    return 0;
+}

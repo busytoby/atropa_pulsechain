@@ -351,6 +351,18 @@ int tsfi_quantel_harry_film_grain(uint32_t *pixels, int w, int h, float intensit
 /* Storyboard Frame Thumbnail Grid Border Margins */
 int tsfi_quantel_storyboard_border_margins(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int margin_w, uint32_t color);
 
+/* Quantel Paintbox Palette Complementary Matcher */
+int tsfi_quantel_paintbox_complementary_color(uint32_t color, uint32_t *out_color);
+
+/* Mirage 3D Orthographic Pinch/Squeeze Warp */
+int tsfi_quantel_mirage_pinch_warp(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float factor);
+
+/* Harry Chroma-Key Edge Matte Choker */
+int tsfi_quantel_harry_matte_choke(const uint8_t *src_mask, uint8_t *dst_mask, int w, int h, int choke_radius);
+
+/* Storyboard Frame Thumbnail Grid Corner Markers */
+int tsfi_quantel_storyboard_corner_marks(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int mark_len, uint32_t color);
+
 #endif // TSFI_PAINT_H
 
 
