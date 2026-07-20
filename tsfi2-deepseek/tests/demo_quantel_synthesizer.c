@@ -287,6 +287,7 @@ int main() {
 
     hogan_umbrella_system hogan_sys;
     tsfi_hogan_init(&hogan_sys);
+    tsfi_hogan_register_account(&hogan_sys, 999, 1000000); // Synthesizer Feeder CICS account
     tsfi_hogan_register_account(&hogan_sys, 1001, 10000);
     tsfi_hogan_register_account(&hogan_sys, 2002, 5000);
     tsfi_hogan_register_account(&hogan_sys, 3003, 2000);
@@ -367,10 +368,13 @@ int main() {
         }
 
         if (f % 30 == 0) {
-            uint32_t sender = (f % 90 == 0) ? 1001 : ((f % 90 == 30) ? 2002 : 3003);
-            uint32_t recipient = (f % 90 == 0) ? 2002 : ((f % 90 == 30) ? 3003 : 1001);
-            uint64_t amount = 50 * (f % 6 + 1); // 50, 100, 150, 200, 250, 300
-            tsfi_hogan_dispatch_tx(&hogan_sys, sender, recipient, amount, (f % 60 == 0) ? VM_EVM : VM_ZMM);
+            float paint_val = sqrtf(px * px + py * py) * 0.5f;
+            float mirage_val = 40.0f * (1.0f + 0.1f * sinf(t));
+            float harry_val = (1.0f + 0.02f * sinf(t)) * 100.0f;
+
+            tsfi_hogan_dispatch_tx(&hogan_sys, 999, 1001, (uint64_t)paint_val, VM_RAMAC);
+            tsfi_hogan_dispatch_tx(&hogan_sys, 999, 2002, (uint64_t)mirage_val, VM_EVM);
+            tsfi_hogan_dispatch_tx(&hogan_sys, 999, 3003, (uint64_t)harry_val, VM_ZMM);
         }
         if (f % 150 == 0) {
             tsfi_hogan_overnight_reconciliation(&hogan_sys, "demo_hogan_lfs.dat.bin");
