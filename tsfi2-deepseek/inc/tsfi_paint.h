@@ -132,7 +132,17 @@ int tsfi_quantel_harry_posterize(uint32_t *pixels, int w, int h, int levels);
 /* Quantel Harry: Solarize color filter to invert highlights/midtones */
 int tsfi_quantel_harry_solarize(uint32_t *pixels, int w, int h, float threshold);
 
+/* Quantel Paintbox: Pressure-sensitive noise spray can */
+int tsfi_quantel_paintbox_spray_can(uint32_t *pixels, int w, int h, int cx, int cy, int max_radius, float pressure, uint32_t color);
+
+/* Quantel Mirage: 3D Cylinder warp coordinate projection mapping */
+int tsfi_quantel_mirage_cylinder_wrap(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float cylinder_radius);
+
+/* Quantel Harry: Brightness, contrast, and threshold adjustment filter */
+int tsfi_quantel_harry_contrast_adjust(uint32_t *pixels, int w, int h, float brightness, float contrast);
+
 #endif // TSFI_PAINT_H
+
 
 
 

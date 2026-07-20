@@ -822,6 +822,101 @@ int tsfi_quantel_harry_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32
     return 0;
 }
 
+int tsfi_quantel_paintbox_spray_can(uint32_t *pixels, int w, int h, int cx, int cy, int max_radius, float pressure, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0 || max_radius <= 0) return -1;
+
+    uint8_t r_src = (color >> 16) & 0xFF;
+    uint8_t g_src = (color >> 8) & 0xFF;
+    uint8_t b_src = color & 0xFF;
+
+    // Number of random noise dots increases with pressure
+    int dot_count = (int)(pressure * 100.0f);
+    if (dot_count < 5) dot_count = 5;
+
+    for (int i = 0; i < dot_count; i++) {
+        // Uniform circular distribution
+        float r_val = ((float)rand() / RAND_MAX) * max_radius;
+        float theta = ((float)rand() / RAND_MAX) * 2.0f * M_PI;
+
+        int dx = (int)(r_val * cosf(theta));
+        int dy = (int)(r_val * sinf(theta));
+
+        int px = cx + dx;
+        int py = cy + dy;
+
+        if (px >= 0 && px < w && py >= 0 && py < h) {
+            int idx = py * w + px;
+            uint32_t dest = pixels[idx];
+
+            uint8_t r_dst = (dest >> 16) & 0xFF;
+            uint8_t g_dst = (dest >> 8) & 0xFF;
+            uint8_t b_dst = dest & 0xFF;
+
+            float intensity = 0.5f * pressure; // Semi-transparent drops
+            uint8_t r_res = (uint8_t)(r_src * intensity + r_dst * (1.0f - intensity));
+            uint8_t g_res = (uint8_t)(g_src * intensity + g_dst * (1.0f - intensity));
+            uint8_t b_res = (uint8_t)(b_src * intensity + b_dst * (1.0f - intensity));
+
+            pixels[idx] = (0xFF000000) | (r_res << 16) | (g_res << 8) | b_res;
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_mirage_cylinder_wrap(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float cylinder_radius) {
+    if (!src || !dst || src_w <= 0 || src_h <= 0 || dst_w <= 0 || dst_h <= 0 || cylinder_radius <= 0.0f) return -1;
+
+    memset(dst, 0, dst_w * dst_h * sizeof(uint32_t));
+    float cx = dst_w / 2.0f;
+
+    for (int y = 0; y < dst_h; y++) {
+        float v = (float)y / dst_h;
+        int sy = (int)(v * src_h);
+        if (sy < 0 || sy >= src_h) continue;
+
+        for (int x = 0; x < dst_w; x++) {
+            float dx = x - cx;
+            // Map flat projection plane to cylindrical curve
+            if (fabsf(dx) <= cylinder_radius) {
+                float theta = asinf(dx / cylinder_radius);
+                // Map theta [-PI/2, PI/2] to [0.25, 0.75] texture space range
+                float u = 0.5f + theta / M_PI;
+
+                int sx = (int)(u * src_w);
+                if (sx >= 0 && sx < src_w) {
+                    dst[y * dst_w + x] = src[sy * src_w + sx];
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_harry_contrast_adjust(uint32_t *pixels, int w, int h, float brightness, float contrast) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = pixels[i];
+        float r = (pix >> 16) & 0xFF;
+        float g = (pix >> 8) & 0xFF;
+        float b = pix & 0xFF;
+
+        // Apply contrast scale around 128 midtone
+        r = (r - 128.0f) * contrast + 128.0f + brightness;
+        g = (g - 128.0f) * contrast + 128.0f + brightness;
+        b = (b - 128.0f) * contrast + 128.0f + brightness;
+
+        int ir = (int)r; int ig = (int)g; int ib = (int)b;
+        if (ir < 0) ir = 0; if (ir > 255) ir = 255;
+        if (ig < 0) ig = 0; if (ig > 255) ig = 255;
+        if (ib < 0) ib = 0; if (ib > 255) ib = 255;
+
+        pixels[i] = (0xFF000000) | (ir << 16) | (ig << 8) | ib;
+    }
+    return 0;
+}
+
+
 int tsfi_quantel_paintbox_flood_fill(uint32_t *pixels, int w, int h, int start_x, int start_y, uint32_t fill_color, float tolerance) {
     if (!pixels || w <= 0 || h <= 0 || start_x < 0 || start_x >= w || start_y < 0 || start_y >= h) return -1;
 
