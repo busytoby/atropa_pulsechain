@@ -18,6 +18,12 @@
 #include "tsfi_parc_superpaint.h"
 #include "tsfi_parc_interpress.h"
 #include "tsfi_parc_bravo.h"
+#include "tsfi_parc_cursor.h"
+#include "tsfi_parc_brush.h"
+#include "tsfi_parc_runlength.h"
+#include "tsfi_parc_csmacd.h"
+#include "tsfi_parc_keyset.h"
+#include "tsfi_parc_gc.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -676,9 +682,9 @@ int main() {
     // Xerox PARC: Initialize overlapping Window Manager
     tsfi_parc_window_manager_t wm;
     tsfi_parc_wm_init(&wm);
-    tsfi_parc_wm_open_window(&wm, "CADE IMF Register", 55, 410, 100, 60);
-    tsfi_parc_wm_open_window(&wm, "Smalltalk VM", 165, 420, 110, 65);
-    tsfi_parc_wm_open_window(&wm, "PUP Netlog", 285, 410, 150, 70);
+    tsfi_parc_wm_open_window(&wm, "CADE IMF Register", 40, 410, 100, 60);
+    tsfi_parc_wm_open_window(&wm, "Smalltalk VM", 145, 425, 95, 60);
+    tsfi_parc_wm_open_window(&wm, "PUP Netlog", 270, 410, 120, 65);
     // Xerox PARC: Initialize painting & storyboarding systems
     tsfi_parc_superpaint_lut_t sp_lut;
     tsfi_parc_superpaint_init_lut(&sp_lut);
@@ -688,6 +694,14 @@ int main() {
     
     tsfi_parc_bravo_layout_t bravo_layout;
     tsfi_parc_bravo_init(&bravo_layout, 35, 35, 398, 512 - 508);
+
+    // Xerox PARC: Initialize network collision engine and Smalltalk GC tracker
+    tsfi_parc_gc_t st_gc;
+    tsfi_parc_gc_init(&st_gc);
+    tsfi_parc_gc_add_ref(&st_gc, obj_inst); // register starting instance reference
+    
+    tsfi_parc_network_node_t local_node = {0, 0, 0};
+    tsfi_parc_network_node_t gateway_node = {0, 0, 0};
     uint32_t *canvas = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
     uint32_t *canvas_b = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
     uint32_t *dst_buffer = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
@@ -1025,14 +1039,7 @@ int main() {
         tsfi_quantel_storyboard_onion_skin(canvas, canvas_b, dst_buffer, WIDTH, HEIGHT, 0.25f, 0.75f);
         memcpy(canvas_b, dst_buffer, WIDTH * HEIGHT * sizeof(uint32_t));memcpy(canvas_b, dst_buffer, WIDTH * HEIGHT * sizeof(uint32_t));
 
-        // Harry: Split Screen Matte Preview
-        uint8_t *matte_preview = calloc(WIDTH * HEIGHT, sizeof(uint8_t));
-        for (int i = 0; i < WIDTH * HEIGHT; i++) {
-            matte_preview[i] = (i % 2 == 0) ? 255 : 0;
-        }
-        tsfi_quantel_harry_split_matte_preview(canvas, matte_preview, dst_buffer, WIDTH, HEIGHT, 0.5f + 0.2f * sinf(t));
-        memcpy(canvas_b, dst_buffer, WIDTH * HEIGHT * sizeof(uint32_t));
-        free(matte_preview);
+        // Harry: Split Screen Matte Preview removed to prevent panning pin-stripe glitch
 
         // Harry: Invert colors dynamically on beat sync
         if (f % 60 < 2) {
@@ -1145,12 +1152,20 @@ int main() {
         // Enforce Super8 crop gate & sprocket holes
         apply_super8_crop(canvas_b, WIDTH, HEIGHT, f);
 
-        // 1. Xerox Smalltalk VM dynamic execution
+        // 1. Xerox Smalltalk VM dynamic execution & GC reference tracking
         st_vm.heap[0].fields[0] = (uint32_t)hogan_sys.tx_count;
         uint32_t st_result = 0;
         tsfi_parc_st_send_message(&st_vm, obj_inst, "processData", &st_result);
+        
+        tsfi_parc_gc_add_ref(&st_gc, obj_inst);
+        tsfi_parc_gc_release_ref(&st_gc, &st_vm, obj_inst);
 
-        // 2. Xerox PUP packet serialization
+        // 2. Xerox Alto Keysets Chord keyboard emulation
+        uint8_t chord = (uint8_t)(f % 32);
+        char entry_char = tsfi_parc_decode_keyset(chord);
+        (void)entry_char; // Register keyset state simulation
+
+        // 3. Xerox PUP packet serialization & CSMA/CD Ethernet Collision Engine
         tsfi_parc_pup_packet_t pup_pkt;
         pup_pkt.dest_host = 022;
         pup_pkt.src_host = 014;
@@ -1158,15 +1173,24 @@ int main() {
         pup_pkt.pup_id = (uint32_t)f;
         snprintf((char*)pup_pkt.payload, sizeof(pup_pkt.payload), "TX_COUNT: %lu", hogan_sys.tx_count);
         pup_pkt.data_len = strlen((char*)pup_pkt.payload);
+        
         uint8_t pup_raw[256];
         int pup_raw_len = tsfi_parc_pup_encode(&pup_pkt, pup_raw, sizeof(pup_raw));
+        
+        int net_status = tsfi_parc_csmacd_transmit(&local_node, &gateway_node, 10);
+        (void)net_status; // Collision engine backoff monitor
 
         // 3. Render overlapping Alto window desktop dashboard
         tsfi_parc_wm_render(&wm, canvas_b, WIDTH, HEIGHT, t, st_result, pup_raw_len, pup_pkt.checksum, (int)hogan_sys.tx_count);
 
         // 4. Xerox Bravo Page Guidelines and WYSIWYG Header Annotation
         tsfi_parc_bravo_draw_guides(canvas_b, WIDTH, HEIGHT, &bravo_layout, 0xFF8c7241);
-        tsfi_parc_bravo_draw_header(canvas_b, WIDTH, HEIGHT, &bravo_layout, "XEROX ALTO / STAR CADE MONITOR", 0xFFe6dfd3);
+        tsfi_parc_style_run_t bravo_style;
+        bravo_style.is_bold = 1;
+        bravo_style.is_underline = 1;
+        bravo_style.is_shadow = 1;
+        bravo_style.color = 0xFFe6dfd3;
+        tsfi_parc_render_styled_text(canvas_b, WIDTH, HEIGHT, bravo_layout.margin_left, bravo_layout.margin_top - 12, "XEROX ALTO / STAR CADE MONITOR", &bravo_style, 8.0f);
 
         // 5. Xerox Interpress PDL Scalable vector diagram: Rotating target box in CADE panel center
         tsfi_parc_interpress_init(&ip_ctx);
@@ -1180,12 +1204,15 @@ int main() {
         tsfi_parc_interpress_lineto(&ip_ctx, canvas_b, WIDTH, HEIGHT, -20.0f, 12.0f, 0xFFc5a059);
         tsfi_parc_interpress_lineto(&ip_ctx, canvas_b, WIDTH, HEIGHT, -20.0f, -12.0f, 0xFFc5a059);
 
-        // 6. Xerox SuperPaint Framebuffer chroma keying overlay merge
-        uint32_t *overlay_buf = malloc(WIDTH * HEIGHT * sizeof(uint32_t));
-        tsfi_parc_superpaint_chroma_key(canvas_b, canvas, overlay_buf, WIDTH, HEIGHT, 0xFF0d0c0a);
-        memcpy(canvas_b, overlay_buf, WIDTH * HEIGHT * sizeof(uint32_t));
-        free(overlay_buf);
+        // 6. Xerox Alto mouse cursor and SuperPaint brush stamp drawing
+        int cur_x = 256 + (int)(25.0f * sinf(t * 3.0f));
+        int cur_y = 450 + (int)(15.0f * cosf(t * 2.0f));
+        tsfi_parc_draw_cursor(canvas_b, WIDTH, HEIGHT, cur_x, cur_y, CURSOR_CROSSHAIR, 0xFFc5a059);
+        
+        tsfi_parc_brush_draw(canvas_b, WIDTH, HEIGHT, 45, 492, 8, BRUSH_CHISEL, 0xFF8c7241);
+        tsfi_parc_brush_draw(canvas_b, WIDTH, HEIGHT, 465, 492, 8, BRUSH_STAMP, 0xFF8c7241);
 
+        // 7. Cycle the SuperPaint LUT dynamically
         tsfi_parc_superpaint_cycle_lut(&sp_lut, f % 256);
 
         // Convert to RGB24 for FFmpeg pipe output

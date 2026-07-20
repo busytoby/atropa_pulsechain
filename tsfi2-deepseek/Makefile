@@ -155,9 +155,15 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
               $(OBJ_DIR)/tsfi_parc_smalltalk.o \
               $(OBJ_DIR)/tsfi_parc_window.o \
               $(OBJ_DIR)/tsfi_parc_ethernet.o \
-              $(OBJ_DIR)/tsfi_parc_superpaint.o \
-              $(OBJ_DIR)/tsfi_parc_interpress.o \
-              $(OBJ_DIR)/tsfi_parc_bravo.o
+               $(OBJ_DIR)/tsfi_parc_superpaint.o \
+               $(OBJ_DIR)/tsfi_parc_interpress.o \
+               $(OBJ_DIR)/tsfi_parc_bravo.o \
+                $(OBJ_DIR)/tsfi_parc_cursor.o \
+                $(OBJ_DIR)/tsfi_parc_brush.o \
+                $(OBJ_DIR)/tsfi_parc_runlength.o \
+                $(OBJ_DIR)/tsfi_parc_csmacd.o \
+                $(OBJ_DIR)/tsfi_parc_keyset.o \
+                $(OBJ_DIR)/tsfi_parc_gc.o
 
 
 

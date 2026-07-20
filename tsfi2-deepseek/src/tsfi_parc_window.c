@@ -36,25 +36,7 @@ int tsfi_parc_wm_open_window(tsfi_parc_window_manager_t *wm, const char *title, 
 int tsfi_parc_wm_render(tsfi_parc_window_manager_t *wm, uint32_t *pixels, int width, int height, float t, uint32_t st_result, int pup_len, uint16_t pup_checksum, int tx_count) {
     if (!wm || !pixels || width <= 0 || height <= 0) return -1;
 
-    // 1. Draw Alto Halftone Desktop Grid Background (16x16 halftone tiling)
-    tsfi_parc_bitblt_t bb;
-    bb.dest_bits = pixels;
-    bb.dest_width = width;
-    bb.dest_height = height;
-    bb.src_bits = NULL;
-    bb.src_width = 0;
-    bb.src_height = 0;
-    bb.has_halftone = 1;
-    
-    // Classic diagonal pixel halftone pattern
-    uint16_t stipple[16] = {
-        0x8080, 0x0000, 0x0808, 0x0000, 0x8080, 0x0000, 0x0808, 0x0000,
-        0x8080, 0x0000, 0x0808, 0x0000, 0x8080, 0x0000, 0x0808, 0x0000
-    };
-    memcpy(bb.halftone_pattern, stipple, sizeof(stipple));
-    
-    // Draw stippled background over the center dashboard viewport canvas area
-    tsfi_parc_bitblt_transfer(&bb, 35, 398, 0, 0, width - 70, 110, BITBLT_COPY);
+    // 1. Alto Halftone Desktop Grid Background removed to prevent obscuring the Menorah trunk
 
     // 2. Draw Retro Desktop Icons: Filing Cabinet & Floppy Disk
     // Draw filing cabinet icon at left
@@ -95,17 +77,19 @@ int tsfi_parc_wm_render(tsfi_parc_window_manager_t *wm, uint32_t *pixels, int wi
             }
         }
 
-        // Draw Window Border outline
-        for (int x = win->x; x < win->x + win->w; x++) {
-            if (x >= 35 && x < width - 35) {
-                if (win->y >= 398 && win->y < 508) pixels[win->y * width + x] = 0xFF8c7241;
-                if (win->y + win->h - 1 >= 398 && win->y + win->h - 1 < 508) pixels[(win->y + win->h - 1) * width + x] = 0xFF8c7241;
+        // Draw Double Window Border outline for high fidelity
+        for (int offset = 0; offset < 2; offset++) {
+            for (int x = win->x + offset; x < win->x + win->w - offset; x++) {
+                if (x >= 35 && x < width - 35) {
+                    if (win->y + offset >= 398 && win->y + offset < 508) pixels[(win->y + offset) * width + x] = 0xFF8c7241;
+                    if (win->y + win->h - 1 - offset >= 398 && win->y + win->h - 1 - offset < 508) pixels[(win->y + win->h - 1 - offset) * width + x] = 0xFF8c7241;
+                }
             }
-        }
-        for (int y = win->y; y < win->y + win->h; y++) {
-            if (y >= 398 && y < 508) {
-                if (win->x >= 35 && win->x < width - 35) pixels[y * width + win->x] = 0xFF8c7241;
-                if (win->x + win->w - 1 >= 35 && win->x + win->w - 1 < width - 35) pixels[y * width + (win->x + win->w - 1)] = 0xFF8c7241;
+            for (int y = win->y + offset; y < win->y + win->h - offset; y++) {
+                if (y >= 398 && y < 508) {
+                    if (win->x + offset >= 35 && win->x + offset < width - 35) pixels[y * width + (win->x + offset)] = 0xFF8c7241;
+                    if (win->x + win->w - 1 - offset >= 35 && win->x + win->w - 1 - offset < width - 35) pixels[y * width + (win->x + win->w - 1 - offset)] = 0xFF8c7241;
+                }
             }
         }
 
@@ -120,6 +104,21 @@ int tsfi_parc_wm_render(tsfi_parc_window_manager_t *wm, uint32_t *pixels, int wi
             }
         }
         tsfi_quantel_paintbox_typographer(pixels, width, height, win->x + 5, win->y + 8, win->title, 0xFFe6dfd3, 6.5f);
+
+        // Window Control Handle box on top right
+        int cb_x = win->x + win->w - 11;
+        int cb_y = win->y + 2;
+        for (int dy = 0; dy < 8; dy++) {
+            for (int dx = 0; dx < 8; dx++) {
+                int px = cb_x + dx;
+                int py = cb_y + dy;
+                if (px >= 35 && px < width - 35 && py >= 398 && py < 508) {
+                    if (dy == 0 || dy == 7 || dx == 0 || dx == 7 || dy == dx || dy == 7 - dx) {
+                        pixels[py * width + px] = 0xFFe6dfd3;
+                    }
+                }
+            }
+        }
 
         // Draw Xerox classic left scrollbar strip
         int sb_w = 8;
