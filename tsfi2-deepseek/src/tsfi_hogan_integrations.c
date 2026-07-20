@@ -2,6 +2,9 @@
 #include "tsfi_mainframe_decnet.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <strings.h>
+#include "lau_memory.h"
+#include "tsfi_block_monitor.h"
 #include <string.h>
 
 int tsfi_hogan_register_ach_direct_deposit(hogan_umbrella_system *sys, uint32_t account_id, uint32_t routing_number, uint64_t amount, uint32_t clearing_epoch) {
@@ -395,4 +398,82 @@ int tsfi_hogan_from_cobol_copybook(hogan_account *account, const uint8_t *copybo
     account->card_expiry_epoch = __builtin_bswap32(exp_be);
     
     return 0;
+}
+
+extern bool resolve_token_alias(const char *symbol_or_name, char *out_address, size_t out_max);
+extern bool tsfi_pulse_rpc_call(const char *address, const char *data, char *result, size_t result_max);
+
+int tsfi_hogan_query_token_facts(const char *token_alias, char *out_total_supply, size_t ts_max, char *out_balance_of, size_t bal_max, const char *account_addr) {
+    char token_addr[128];
+    if (!resolve_token_alias(token_alias, token_addr, sizeof(token_addr))) {
+        return -1;
+    }
+
+    if (!tsfi_pulse_rpc_call(token_addr, "0x18160ddd", out_total_supply, ts_max)) {
+        return -2;
+    }
+
+    char data_payload[128];
+    const char *clean_addr = account_addr;
+    if (strncmp(clean_addr, "0x", 2) == 0 || strncmp(clean_addr, "0X", 2) == 0) {
+        clean_addr += 2;
+    }
+    snprintf(data_payload, sizeof(data_payload), "0x70a08231000000000000000000000000%s", clean_addr);
+
+    if (!tsfi_pulse_rpc_call(token_addr, data_payload, out_balance_of, bal_max)) {
+        return -3;
+    }
+
+    return 0;
+}
+
+int tsfi_mf_cics_exec_link_call(const char *address, const char *data, char *result, size_t result_max) {
+    // CICS ABI bridge to EVM RPC calls
+    if (tsfi_pulse_rpc_call(address, data, result, result_max)) {
+        return 0; // DFHRESP(NORMAL)
+    }
+    return -1; // DFHRESP(ERROR)
+}
+
+int tsfi_mf_cics_exec_link_kb(const char *param, char *result_out, size_t result_max) {
+    // CICS ABI bridge to dynamic KB .dat.bin reads
+    FILE *f = fopen("assets/contract_metadata.dat.bin", "rb");
+    if (!f) {
+        f = fopen("../assets/contract_metadata.dat.bin", "rb");
+    }
+    if (!f) {
+        f = fopen("tsfi2-deepseek/assets/contract_metadata.dat.bin", "rb");
+    }
+    if (!f) {
+        return -1; // DFHRESP(SYSIDERR)
+    }
+    
+    LauRdbmsTable *table = lau_malloc(sizeof(LauRdbmsTable));
+    if (!table) {
+        fclose(f);
+        return -2; // DFHRESP(STORAGE)
+    }
+    
+    size_t r = fread(table, sizeof(LauRdbmsTable), 1, f);
+    fclose(f);
+    
+    if (r != 1) {
+        lau_free(table);
+        return -3; // DFHRESP(IOERR)
+    }
+    
+    bool found = false;
+    for (uint32_t i = 0; i < table->count; i++) {
+        if (strcasecmp(table->rows[i].address, param) == 0 ||
+            strncasecmp(table->rows[i].symbol, param, strlen(param)) == 0) {
+            snprintf(result_out, result_max, "ADDR:%s SYM:%s DEC:%lu PRICE:%.8f",
+                     table->rows[i].address, table->rows[i].symbol,
+                     (unsigned long)table->rows[i].decimals, table->rows[i].price_pls);
+            found = true;
+            break;
+        }
+    }
+    
+    lau_free(table);
+    return found ? 0 : -4; // DFHRESP(NORMAL) or DFHRESP(NOTFND)
 }

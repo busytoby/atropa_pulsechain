@@ -102,7 +102,7 @@ static int handle_provenance_command(WaveSystem *ws) {
     return 0;
 }
 
-static bool resolve_token_alias(const char *symbol_or_name, char *out_address, size_t out_max) {
+bool resolve_token_alias(const char *symbol_or_name, char *out_address, size_t out_max) {
     if (strcasecmp(symbol_or_name, "FederalMinter") == 0) {
         snprintf(out_address, out_max, "0xc15c5F699Daf5e1135732139f05D2c05b3EF4354");
         return true;

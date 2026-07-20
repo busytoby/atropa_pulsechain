@@ -761,4 +761,8 @@ int tsfi_hogan_fdic_insurance_warnings(hogan_umbrella_system *sys, char *alert_b
 int tsfi_hogan_to_cobol_copybook(const hogan_account *account, uint8_t *copybook_buf, int max_len);
 int tsfi_hogan_from_cobol_copybook(hogan_account *account, const uint8_t *copybook_buf, int len);
 
+int tsfi_hogan_query_token_facts(const char *token_alias, char *out_total_supply, size_t ts_max, char *out_balance_of, size_t bal_max, const char *account_addr);
+int tsfi_mf_cics_exec_link_call(const char *address, const char *data, char *result, size_t result_max);
+int tsfi_mf_cics_exec_link_kb(const char *param, char *result_out, size_t result_max);
+
 #endif // TSFI_HOGAN_H
