@@ -3,6 +3,7 @@
 
 // Classical internet-style 16-bit packet checksum calculations
 static uint16_t compute_pup_checksum(const uint8_t *stream, int len) {
+    if (!stream || len <= 0) return 0;
     uint32_t sum = 0;
     for (int i = 0; i < len - 1; i += 2) {
         sum += (stream[i] << 8) | stream[i + 1];
@@ -17,7 +18,7 @@ static uint16_t compute_pup_checksum(const uint8_t *stream, int len) {
 }
 
 int tsfi_parc_pup_encode(const tsfi_parc_pup_packet_t *pkt, uint8_t *stream_out, int max_len) {
-    if (!pkt || !stream_out || max_len < 10 + pkt->data_len) return -1;
+    if (!pkt || !stream_out || pkt->data_len > 128 || max_len < 10 + pkt->data_len) return -1;
 
     stream_out[0] = pkt->dest_host;
     stream_out[1] = pkt->src_host;
@@ -47,6 +48,7 @@ int tsfi_parc_pup_decode(const uint8_t *stream_in, int stream_len, tsfi_parc_pup
     pkt_out->pup_type = (stream_in[2] << 8) | stream_in[3];
     pkt_out->pup_id = (stream_in[4] << 24) | (stream_in[5] << 16) | (stream_in[6] << 8) | stream_in[7];
     pkt_out->data_len = (stream_in[8] << 8) | stream_in[9];
+    if (pkt_out->data_len > 128) return -4; // payload bounds overflow protection
 
     if (stream_len < 12 + pkt_out->data_len) return -2; // stream too short for payload size
 

@@ -13,6 +13,7 @@ int tsfi_parc_st_compile(const char *source, uint8_t *bytecodes_out, int max_len
 
     int code_idx = 0;
     char *token = strtok(src_copy, " \t\n\r;");
+    if (!token) return -4;
     while (token) {
         if (strcmp(token, "load") == 0) {
             char *arg_str = strtok(NULL, " \t\n\r;");
