@@ -30,6 +30,7 @@
 #include "tsfi_parc_shaders.h"
 #include "tsfi_parc_videodeck.h"
 #include "tsfi_parc_clipboard.h"
+#include "tsfi_parc_mvc.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -792,6 +793,12 @@ int main() {
     tsfi_parc_clip_init(&clip);
     tsfi_parc_clip_copy(&clip, "GYPSY OK ", 9);
     tsfi_parc_clip_paste(&clip, typed_document, sizeof(typed_document));
+
+    // Xerox Smalltalk MVC Event Loop Dispatcher verify check
+    tsfi_parc_mvc_dispatcher_t mvc_disp;
+    tsfi_parc_mvc_init(&mvc_disp, &wm, &st_vm);
+    tsfi_parc_mvc_event_t mvc_ev = { MVC_EVENT_CLICK, 100, 100, 'Z' };
+    tsfi_parc_mvc_dispatch(&mvc_disp, &mvc_ev);
 
     uint32_t *canvas = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
     uint32_t *canvas_b = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
