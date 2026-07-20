@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include "tsfi_parc_videodeck.h"
 
 #define ALTO_FRAME_WORDS (38 * 808)
@@ -105,5 +106,51 @@ int tsfi_parc_deck_control(tsfi_parc_video_deck_t *deck, int command, int arg) {
         default:
             return -2; // unknown command
     }
+    return 0;
+}
+
+int tsfi_parc_deck_load_track(tsfi_parc_video_deck_t *deck, const char *filepath) {
+    if (!deck || !filepath) return -1;
+
+    // Enforce only .dat.bin extension check to satisfy database format rules
+    if (!strstr(filepath, ".dat.bin")) return -6;
+
+    FILE *f = fopen(filepath, "rb");
+    if (!f) return -2;
+
+    // Read header (32 bytes)
+    uint8_t header[32];
+    if (fread(header, 1, 32, f) != 32) {
+        fclose(f);
+        return -3;
+    }
+
+    // Verify magic bytes
+    if (header[0] != 'A' || header[1] != 'L' || header[2] != 'T' || header[3] != 'O') {
+        fclose(f);
+        return -4;
+    }
+
+    // Read data for active track buffer
+    size_t read_bytes = fread(deck->back_buffer, 1, ALTO_FRAME_WORDS * sizeof(uint16_t), f);
+    fclose(f);
+
+    if (read_bytes < ALTO_FRAME_WORDS * sizeof(uint16_t)) {
+        return -5; // incomplete frame read
+    }
+
+    return 0;
+}
+
+int tsfi_parc_deck_record_frame(const uint16_t *display_mem, void *file_handle) {
+    if (!display_mem || !file_handle) return -1;
+
+    FILE *f = (FILE *)file_handle;
+    // Write single frame of raw 1-bit display words
+    size_t written = fwrite(display_mem, sizeof(uint16_t), ALTO_FRAME_WORDS, f);
+    if (written < ALTO_FRAME_WORDS) {
+        return -2;
+    }
+
     return 0;
 }

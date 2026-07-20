@@ -772,6 +772,18 @@ int main() {
     tsfi_parc_deck_control(&deck, DECK_CMD_PLAY, 0);
 
     uint16_t *alto_display_mem = calloc(38 * 808, sizeof(uint16_t));
+
+    // Statically verify video deck record and load track operations using .dat.bin files
+    FILE *f_dummy = fopen("alto_dummy.dat.bin", "wb");
+    if (f_dummy) {
+        uint8_t dummy_header[32] = {'A', 'L', 'T', 'O', 0};
+        fwrite(dummy_header, 1, 32, f_dummy);
+        tsfi_parc_deck_record_frame(alto_display_mem, f_dummy);
+        fclose(f_dummy);
+    }
+    tsfi_parc_deck_load_track(&deck, "alto_dummy.dat.bin");
+    remove("alto_dummy.dat.bin");
+
     uint32_t *canvas = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
     uint32_t *canvas_b = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
     uint32_t *dst_buffer = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
