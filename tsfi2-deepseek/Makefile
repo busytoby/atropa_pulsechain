@@ -1079,6 +1079,9 @@ benchmarks/profiler_suite/bench_strategy_vm: benchmarks/profiler_suite/bench_str
 bin/test_ray_tracer: tests/test_ray_tracer.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/demo_quantel_synthesizer: tests/demo_quantel_synthesizer.c $(CORE_OBJS) $(OBJ_DIR)/tsfi_paint.o $(OBJ_DIR)/tsfi_dom.o $(VULKAN_PLUGIN_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 bin/test_micro_focus: tests/test_micro_focus.c tests/test_micro_focus_part2.c tests/test_micro_focus_part3.c tests/test_micro_focus_part4.c tests/test_micro_focus_part5.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
