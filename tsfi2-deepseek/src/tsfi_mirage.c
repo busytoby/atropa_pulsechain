@@ -1331,3 +1331,41 @@ int tsfi_quantel_mirage_twirl_zoom_phase_symmetry(const uint32_t *src, int src_w
     }
     return 0;
 }
+
+int tsfi_quantel_mirage_sphere_warp(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float bulge_factor, float radius) {
+    if (!src || !dst || src_w <= 0 || src_h <= 0 || dst_w <= 0 || dst_h <= 0 || radius <= 0.0f) return -1;
+    memset(dst, 0, dst_w * dst_h * sizeof(uint32_t));
+
+    float cx_d = dst_w / 2.0f;
+    float cy_d = dst_h / 2.0f;
+
+    for (int y = 0; y < dst_h; y++) {
+        float dy = y - cy_d;
+        for (int x = 0; x < dst_w; x++) {
+            float dx = x - cx_d;
+            float r = sqrtf(dx * dx + dy * dy);
+            
+            if (r < radius) {
+                float z = sqrtf(radius * radius - r * r);
+                float scale = 1.0f - bulge_factor * (z / radius);
+                
+                float nx = cx_d + dx * scale;
+                float ny = cy_d + dy * scale;
+
+                int sx = (int)(nx * src_w / dst_w);
+                int sy = (int)(ny * src_h / dst_h);
+
+                if (sx >= 0 && sx < src_w && sy >= 0 && sy < src_h) {
+                    dst[y * dst_w + x] = src[sy * src_w + sx];
+                }
+            } else {
+                int sx = (int)(x * src_w / dst_w);
+                int sy = (int)(y * src_h / dst_h);
+                if (sx >= 0 && sx < src_w && sy >= 0 && sy < src_h) {
+                    dst[y * dst_w + x] = src[sy * src_w + sx];
+                }
+            }
+        }
+    }
+    return 0;
+}

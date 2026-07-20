@@ -1203,3 +1203,13 @@ int tsfi_quantel_paintbox_velocity_jitter_opacity(uint32_t *pixels, int w, int h
     return tsfi_quantel_paintbox_airbrush(pixels, w, h, cx, cy, radius, opacity, color);
 }
 
+int tsfi_quantel_paintbox_pressure_jitter_size(uint32_t *pixels, int w, int h, int cx, int cy, int base_radius, float pressure, float jitter_amp, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0 || base_radius <= 0) return -1;
+    float pressure_factor = pressure;
+    float jitter = ((float)rand() / RAND_MAX - 0.5f) * jitter_amp;
+    float final_radius_f = base_radius * (pressure_factor + jitter);
+    int final_radius = (int)final_radius_f;
+    if (final_radius < 1) final_radius = 1;
+    return tsfi_quantel_paintbox_airbrush(pixels, w, h, cx, cy, final_radius, 1.0f, color);
+}
+
