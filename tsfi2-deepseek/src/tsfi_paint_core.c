@@ -1,0 +1,513 @@
+#define _GNU_SOURCE
+#include "tsfi_paint.h"
+#include "stb_truetype.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <math.h>
+
+// Minimal 8x8 monochrome bitmap font definition (covering standard ASCII 32 - 126)
+static const uint8_t font_8x8[96][8] = {
+    {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, // space
+    {0x18, 0x3c, 0x3c, 0x18, 0x18, 0x00, 0x18, 0x00}, // !
+    {0x6c, 0x6c, 0x6c, 0x00, 0x00, 0x00, 0x00, 0x00}, // "
+    {0x36, 0x36, 0x7f, 0x36, 0x7f, 0x36, 0x36, 0x00}, // #
+    {0x18, 0x3e, 0x60, 0x3c, 0x06, 0x7c, 0x18, 0x00}, // $
+    {0x00, 0x66, 0x6c, 0x18, 0x30, 0x66, 0x46, 0x00}, // %
+    {0x3c, 0x66, 0x3c, 0x38, 0x67, 0x66, 0x3f, 0x00}, // &
+    {0x06, 0x0c, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00}, // '
+    {0x0c, 0x18, 0x30, 0x30, 0x30, 0x18, 0x0c, 0x00}, // (
+    {0x30, 0x18, 0x0c, 0x0c, 0x0c, 0x18, 0x30, 0x00}, // )
+    {0x00, 0x66, 0x3c, 0xff, 0x3c, 0x66, 0x00, 0x00}, // *
+    {0x00, 0x18, 0x18, 0x7e, 0x18, 0x18, 0x00, 0x00}, // +
+    {0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x18, 0x30}, // ,
+    {0x00, 0x00, 0x00, 0x7e, 0x00, 0x00, 0x00, 0x00}, // -
+    {0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x18, 0x00}, // .
+    {0x03, 0x06, 0x0c, 0x18, 0x30, 0x60, 0xc0, 0x00}, // /
+    {0x3e, 0x63, 0x67, 0x6f, 0x7b, 0x63, 0x3e, 0x00}, // 0
+    {0x0c, 0x1e, 0x0c, 0x0c, 0x0c, 0x0c, 0x3f, 0x00}, // 1
+    {0x3e, 0x63, 0x06, 0x1c, 0x30, 0x63, 0x7f, 0x00}, // 2
+    {0x7f, 0x06, 0x0c, 0x1e, 0x03, 0x63, 0x3e, 0x00}, // 3
+    {0x06, 0x0e, 0x1e, 0x36, 0x7f, 0x06, 0x06, 0x00}, // 4
+    {0x7f, 0x60, 0x7e, 0x03, 0x03, 0x63, 0x3e, 0x00}, // 5
+    {0x1c, 0x30, 0x60, 0x7c, 0x63, 0x63, 0x3e, 0x00}, // 6
+    {0x7f, 0x03, 0x06, 0x0c, 0x18, 0x18, 0x18, 0x00}, // 7
+    {0x3e, 0x63, 0x63, 0x3e, 0x63, 0x63, 0x3e, 0x00}, // 8
+    {0x3e, 0x63, 0x63, 0x3e, 0x03, 0x06, 0x3c, 0x00}, // 9
+    {0x00, 0x18, 0x18, 0x00, 0x00, 0x18, 0x18, 0x00}, // :
+    {0x00, 0x18, 0x18, 0x00, 0x00, 0x18, 0x18, 0x30}, // ;
+    {0x0c, 0x18, 0x30, 0x60, 0x30, 0x18, 0x0c, 0x00}, // <
+    {0x00, 0x00, 0x7e, 0x00, 0x7e, 0x00, 0x00, 0x00}, // =
+    {0x30, 0x18, 0x0c, 0x06, 0x0c, 0x18, 0x30, 0x00}, // >
+    {0x3e, 0x63, 0x03, 0x06, 0x0c, 0x00, 0x0c, 0x00}, // ?
+    {0x3e, 0x63, 0x6f, 0x6b, 0x6f, 0x60, 0x3e, 0x00}, // @
+    {0x18, 0x3c, 0x66, 0x66, 0x7e, 0x66, 0x66, 0x00}, // A
+    {0x7e, 0x33, 0x33, 0x3e, 0x33, 0x33, 0x7e, 0x00}, // B
+    {0x1e, 0x33, 0x60, 0x60, 0x60, 0x33, 0x1e, 0x00}, // C
+    {0x7c, 0x22, 0x22, 0x22, 0x22, 0x22, 0x7c, 0x00}, // D
+    {0x7f, 0x60, 0x60, 0x7c, 0x60, 0x60, 0x7f, 0x00}, // E
+    {0x7f, 0x60, 0x60, 0x7c, 0x60, 0x60, 0x60, 0x00}, // F
+    {0x3e, 0x63, 0x60, 0x6f, 0x63, 0x63, 0x3e, 0x00}, // G
+    {0x66, 0x66, 0x66, 0x7e, 0x66, 0x66, 0x66, 0x00}, // H
+    {0x3c, 0x18, 0x18, 0x18, 0x18, 0x18, 0x3c, 0x00}, // I
+    {0x0f, 0x03, 0x03, 0x03, 0x03, 0x63, 0x3e, 0x00}, // J
+    {0x66, 0x6c, 0x78, 0x70, 0x78, 0x6c, 0x66, 0x00}, // K
+    {0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x7f, 0x00}, // L
+    {0x63, 0x77, 0x7f, 0x6b, 0x63, 0x63, 0x63, 0x00}, // M
+    {0x66, 0x76, 0x7e, 0x7e, 0x6e, 0x66, 0x66, 0x00}, // N
+    {0x3e, 0x63, 0x63, 0x63, 0x63, 0x63, 0x3e, 0x00}, // O
+    {0x7e, 0x63, 0x63, 0x7e, 0x60, 0x60, 0x60, 0x00}, // P
+    {0x3e, 0x63, 0x63, 0x63, 0x6b, 0x67, 0x3e, 0x03}, // Q
+    {0x7e, 0x63, 0x63, 0x7e, 0x78, 0x6c, 0x66, 0x00}, // R
+    {0x3e, 0x63, 0x38, 0x0e, 0x07, 0x63, 0x3e, 0x00}, // S
+    {0x7f, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x00}, // T
+    {0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x3e, 0x00}, // U
+    {0x66, 0x66, 0x66, 0x66, 0x66, 0x3c, 0x18, 0x00}, // V
+    {0x63, 0x63, 0x63, 0x6b, 0x7f, 0x77, 0x63, 0x00}, // W
+    {0x66, 0x66, 0x3c, 0x18, 0x3c, 0x66, 0x66, 0x00}, // X
+    {0x66, 0x66, 0x66, 0x3c, 0x18, 0x18, 0x18, 0x00}, // Y
+    {0x7f, 0x03, 0x06, 0x0c, 0x18, 0x30, 0x7f, 0x00}, // Z
+    {0x3c, 0x30, 0x30, 0x30, 0x30, 0x30, 0x3c, 0x00}, // [
+    {0x00, 0x10, 0x08, 0x04, 0x02, 0x01, 0x00}, // backslash
+    {0x3c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x3c, 0x00}, // ]
+    {0x18, 0x3c, 0x66, 0x00, 0x00, 0x00, 0x00, 0x00}, // ^
+    {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff}, // _
+    {0x18, 0x0c, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00}, // `
+    {0x00, 0x00, 0x3c, 0x03, 0x3f, 0x63, 0x3f, 0x00}, // a
+    {0x60, 0x60, 0x7c, 0x66, 0x66, 0x66, 0x7c, 0x00}, // b
+    {0x00, 0x00, 0x3e, 0x60, 0x60, 0x63, 0x3e, 0x00}, // c
+    {0x03, 0x03, 0x3f, 0x63, 0x63, 0x63, 0x3f, 0x00}, // d
+    {0x00, 0x00, 0x3e, 0x63, 0x7f, 0x60, 0x3e, 0x00}, // e
+    {0x1c, 0x36, 0x30, 0x78, 0x30, 0x30, 0x30, 0x00}, // f
+    {0x00, 0x00, 0x3f, 0x63, 0x63, 0x3f, 0x03, 0x3e}, // g
+    {0x60, 0x60, 0x7c, 0x66, 0x66, 0x66, 0x66, 0x00}, // h
+    {0x18, 0x00, 0x38, 0x18, 0x18, 0x18, 0x3c, 0x00}, // i
+    {0x06, 0x00, 0x0e, 0x06, 0x06, 0x66, 0x3c, 0x00}, // j
+    {0x60, 0x60, 0x66, 0x6c, 0x78, 0x6c, 0x66, 0x00}, // k
+    {0x38, 0x18, 0x18, 0x18, 0x18, 0x18, 0x3c, 0x00}, // l
+    {0x00, 0x00, 0x76, 0x7f, 0x6b, 0x63, 0x63, 0x00}, // m
+    {0x00, 0x00, 0x7c, 0x66, 0x66, 0x66, 0x66, 0x00}, // n
+    {0x00, 0x00, 0x3e, 0x63, 0x63, 0x63, 0x3e, 0x00}, // o
+    {0x00, 0x00, 0x7c, 0x66, 0x66, 0x7c, 0x60, 0x60}, // p
+    {0x00, 0x00, 0x3f, 0x63, 0x63, 0x3f, 0x03, 0x03}, // q
+    {0x00, 0x00, 0x5e, 0x30, 0x30, 0x30, 0x30, 0x00}, // r
+    {0x00, 0x00, 0x3e, 0x60, 0x3e, 0x03, 0x3e, 0x00}, // s
+    {0x30, 0x30, 0x7c, 0x30, 0x30, 0x30, 0x1e, 0x00}, // t
+    {0x00, 0x00, 0x66, 0x66, 0x66, 0x66, 0x3f, 0x00}, // u
+    {0x00, 0x00, 0x66, 0x66, 0x66, 0x3c, 0x18, 0x00}, // v
+    {0x00, 0x00, 0x63, 0x63, 0x6b, 0x7f, 0x36, 0x00}, // w
+    {0x00, 0x00, 0x66, 0x3c, 0x18, 0x3c, 0x66, 0x00}, // x
+    {0x00, 0x00, 0x66, 0x66, 0x66, 0x3f, 0x03, 0x3e}, // y
+    {0x00, 0x00, 0x7f, 0x06, 0x0c, 0x18, 0x7f, 0x00}, // z
+    {0x0c, 0x18, 0x18, 0x30, 0x18, 0x18, 0x0c, 0x00}, // {
+    {0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x00}, // |
+    {0x30, 0x18, 0x18, 0x0c, 0x18, 0x18, 0x30, 0x00}, // }
+    {0x76, 0xdc, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}  // ~
+};
+
+static const char* get_style_val_paint(const char *style, const char *prop_name, char *buf, size_t buf_sz) {
+    if (!style) return NULL;
+    const char *p = style;
+    size_t prop_len = strlen(prop_name);
+    while (*p) {
+        p = strstr(p, prop_name);
+        if (!p) break;
+        if (p == style || *(p - 1) == ';' || isspace((unsigned char)*(p - 1))) {
+            const char *colon = strchr(p, ':');
+            if (colon) {
+                const char *val_start = colon + 1;
+                while (*val_start && isspace((unsigned char)*val_start)) val_start++;
+                const char *semi = strchr(val_start, ';');
+                size_t val_len = semi ? (size_t)(semi - val_start) : strlen(val_start);
+                while (val_len > 0 && isspace((unsigned char)val_start[val_len - 1])) val_len--;
+                if (val_len < buf_sz) {
+                    memcpy(buf, val_start, val_len);
+                    buf[val_len] = '\0';
+                    return buf;
+                }
+            }
+        }
+        p += prop_len;
+    }
+    return NULL;
+}
+
+static uint32_t blend_pixels(uint32_t src, uint32_t dst, float intensity) {
+    if (intensity <= 0.001f) return dst;
+    if (intensity >= 0.999f) return src;
+    
+    uint8_t sa = (src >> 24) & 0xFF;
+    uint8_t sr = (src >> 16) & 0xFF;
+    uint8_t sg = (src >> 8) & 0xFF;
+    uint8_t sb = src & 0xFF;
+    
+    uint8_t da = (dst >> 24) & 0xFF;
+    uint8_t dr = (dst >> 16) & 0xFF;
+    uint8_t dg = (dst >> 8) & 0xFF;
+    uint8_t db = dst & 0xFF;
+    
+    float factor = intensity * (sa / 255.0f);
+    uint8_t r = (uint8_t)(sr * factor + dr * (1.0f - factor));
+    uint8_t g = (uint8_t)(sg * factor + dg * (1.0f - factor));
+    uint8_t b = (uint8_t)(sb * factor + db * (1.0f - factor));
+    uint8_t a = (uint8_t)(sa * intensity + da * (1.0f - intensity));
+    
+    return ((uint32_t)a << 24) | ((uint32_t)r << 16) | ((uint32_t)g << 8) | b;
+}
+
+static uint32_t parse_color(const char *color_str, uint32_t fallback) {
+    if (!color_str) return fallback;
+    while (*color_str && isspace((unsigned char)*color_str)) color_str++;
+
+    if (color_str[0] == '#') {
+        color_str++;
+        unsigned int val = 0;
+        if (strlen(color_str) == 6) {
+            sscanf(color_str, "%x", &val);
+            return 0xFF000000 | val;
+        } else if (strlen(color_str) == 3) {
+            unsigned int r, g, b;
+            sscanf(color_str, "%1x%1x%1x", &r, &g, &b);
+            r = (r << 4) | r;
+            g = (g << 4) | g;
+            b = (b << 4) | b;
+            return 0xFF000000 | (r << 16) | (g << 8) | b;
+        }
+    }
+
+    if (strncasecmp(color_str, "rgb", 3) == 0) {
+        const char *p = strchr(color_str, '(');
+        if (p) {
+            p++;
+            int r = 0, g = 0, b = 0;
+            float a = 1.0f;
+            if (sscanf(p, "%d , %d , %d , %f", &r, &g, &b, &a) == 4) {
+                uint32_t alpha = (uint32_t)(a * 255.0f) & 0xFF;
+                return (alpha << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF);
+            } else if (sscanf(p, "%d , %d , %d", &r, &g, &b) == 3) {
+                return 0xFF000000 | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF);
+            }
+        }
+    }
+
+    if (strcasecmp(color_str, "red") == 0) return 0xFFFF0000;
+    if (strcasecmp(color_str, "blue") == 0) return 0xFF0000FF;
+    if (strcasecmp(color_str, "green") == 0) return 0xFF00FF00;
+    if (strcasecmp(color_str, "purple") == 0) return 0xFF800080;
+    if (strcasecmp(color_str, "white") == 0) return 0xFFFFFFFF;
+    if (strcasecmp(color_str, "black") == 0) return 0xFF000000;
+    if (strcasecmp(color_str, "gray") == 0 || strcasecmp(color_str, "grey") == 0) return 0xFF808080;
+    if (strcasecmp(color_str, "darkgrey") == 0 || strcasecmp(color_str, "darkgray") == 0) return 0xFF5A5A5A;
+    if (strcasecmp(color_str, "lightgrey") == 0 || strcasecmp(color_str, "lightgray") == 0) return 0xFFD3D3D3;
+    if (strcasecmp(color_str, "silver") == 0) return 0xFFC0C0C0;
+    if (strcasecmp(color_str, "navy") == 0) return 0xFF000080;
+    if (strcasecmp(color_str, "teal") == 0) return 0xFF008080;
+    if (strcasecmp(color_str, "olive") == 0) return 0xFF808000;
+    if (strcasecmp(color_str, "maroon") == 0) return 0xFF800000;
+    if (strcasecmp(color_str, "orange") == 0) return 0xFFFFA500;
+    if (strcasecmp(color_str, "yellow") == 0) return 0xFFFFD700;
+    if (strcasecmp(color_str, "transparent") == 0) return 0x00000000;
+
+    return fallback;
+}
+
+static void draw_rect(uint32_t *pixels, int w, int h, int rx, int ry, int rw, int rh, uint32_t color) {
+    for (int y = ry; y < ry + rh; y++) {
+        if (y < 0 || y >= h) continue;
+        uint32_t *row = pixels + y * w;
+        for (int x = rx; x < rx + rw; x++) {
+            if (x < 0 || x >= w) continue;
+            row[x] = color;
+        }
+    }
+}
+
+static void draw_border(uint32_t *pixels, int w, int h, int rx, int ry, int rw, int rh, int border_w, uint32_t color) {
+    if (border_w <= 0) return;
+    draw_rect(pixels, w, h, rx, ry, rw, border_w, color);
+    draw_rect(pixels, w, h, rx, ry + rh - border_w, rw, border_w, color);
+    draw_rect(pixels, w, h, rx, ry, border_w, rh, color);
+    draw_rect(pixels, w, h, rx + rw - border_w, ry, border_w, rh, color);
+}
+
+static stbtt_fontinfo g_font_info;
+static unsigned char *g_font_buffer = NULL;
+static bool g_font_initialized = false;
+
+static void init_vector_font() {
+    if (g_font_initialized) return;
+    const char *font_paths[] = {
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/truetype/freefont/FreeSans.ttf"
+    };
+    for (int i = 0; i < 3; i++) {
+        FILE *f = fopen(font_paths[i], "rb");
+        if (f) {
+            fseek(f, 0, SEEK_END);
+            long sz = ftell(f);
+            fseek(f, 0, SEEK_SET);
+            g_font_buffer = (unsigned char *)malloc(sz);
+            size_t read_bytes = fread(g_font_buffer, 1, sz, f);
+            (void)read_bytes;
+            fclose(f);
+            if (stbtt_InitFont(&g_font_info, g_font_buffer, 0)) {
+                g_font_initialized = true;
+                printf("[Auncient Font] Loaded vector font: %s\n", font_paths[i]);
+                return;
+            }
+            free(g_font_buffer);
+            g_font_buffer = NULL;
+        }
+    }
+    printf("[Auncient Font] Warning: No vector font loaded, falling back to 8x8 bitmap font.\n");
+}
+
+static void draw_char(uint32_t *pixels, int w, int h, int rx, int ry, unsigned char c, uint32_t color, int scale) {
+    init_vector_font();
+    if (!g_font_initialized) {
+        if (c < 32 || c > 127) return;
+        int idx = c - 32;
+        int char_w = 8 * scale;
+        int char_h = 8 * scale;
+        for (int dy = 0; dy < char_h; dy++) {
+            int y = ry + dy;
+            if (y < 0 || y >= h) continue;
+            uint32_t *row_pixels = pixels + y * w;
+            float v = ((float)dy + 0.5f) / (float)scale - 0.5f;
+            int v0 = (int)floorf(v);
+            int v1 = v0 + 1;
+            float wv = v - (float)v0;
+            if (v0 < 0) { v0 = 0; v1 = 0; wv = 0.0f; }
+            if (v1 > 7) { v1 = 7; v0 = 7; wv = 0.0f; }
+            uint8_t row0_bits = font_8x8[idx][v0];
+            uint8_t row1_bits = font_8x8[idx][v1];
+            for (int dx = 0; dx < char_w; dx++) {
+                int x = rx + dx;
+                if (x < 0 || x >= w) continue;
+                float u = ((float)dx + 0.5f) / (float)scale - 0.5f;
+                int u0 = (int)floorf(u);
+                int u1 = u0 + 1;
+                float wu = u - (float)u0;
+                if (u0 < 0) { u0 = 0; u1 = 0; wu = 0.0f; }
+                if (u1 > 7) { u1 = 7; u0 = 7; wu = 0.0f; }
+                float val00 = (float)((row0_bits >> (7 - u0)) & 1);
+                float val10 = (float)((row0_bits >> (7 - u1)) & 1);
+                float val01 = (float)((row1_bits >> (7 - u0)) & 1);
+                float val11 = (float)((row1_bits >> (7 - u1)) & 1);
+                float intensity = val00 * (1.0f - wu) * (1.0f - wv) +
+                                  val10 * wu * (1.0f - wv) +
+                                  val01 * (1.0f - wu) * wv +
+                                  val11 * wu * wv;
+                if (intensity > 0.001f) {
+                    row_pixels[x] = blend_pixels(color, row_pixels[x], intensity);
+                }
+            }
+        }
+        return;
+    }
+
+    float font_size = 12.0f * scale;
+    float scale_factor = stbtt_ScaleForPixelHeight(&g_font_info, font_size);
+    int char_w, char_h, xoff, yoff;
+    unsigned char *bitmap = stbtt_GetCodepointBitmap(&g_font_info, scale_factor, scale_factor, c, &char_w, &char_h, &xoff, &yoff);
+    if (!bitmap) return;
+
+    int start_y = ry + yoff + (int)(font_size * 0.8f);
+
+    for (int dy = 0; dy < char_h; dy++) {
+        int y = start_y + dy;
+        if (y < 0 || y >= h) continue;
+        uint32_t *row_pixels = pixels + y * w;
+        for (int dx = 0; dx < char_w; dx++) {
+            int x = rx + xoff + dx;
+            if (x < 0 || x >= w) continue;
+            float intensity = (float)bitmap[dy * char_w + dx] / 255.0f;
+            if (intensity > 0.001f) {
+                row_pixels[x] = blend_pixels(color, row_pixels[x], intensity);
+            }
+        }
+    }
+    stbtt_FreeBitmap(bitmap, NULL);
+}
+
+static void draw_text(uint32_t *pixels, int w, int h, int rx, int ry, const char *text, uint32_t color, int scale) {
+    int cur_x = rx;
+    while (*text) {
+        draw_char(pixels, w, h, cur_x, ry, *text, color, scale);
+        init_vector_font();
+        if (g_font_initialized) {
+            float font_size = 12.0f * scale;
+            float scale_factor = stbtt_ScaleForPixelHeight(&g_font_info, font_size);
+            int advance, lsb;
+            stbtt_GetCodepointHMetrics(&g_font_info, *text, &advance, &lsb);
+            cur_x += (int)(advance * scale_factor);
+        } else {
+            cur_x += 8 * scale;
+        }
+        text++;
+    }
+}
+
+const uint8_t *g_active_video_frame = NULL;
+int g_active_video_w = 0;
+int g_active_video_h = 0;
+
+static void draw_rect_rounded(uint32_t *pixels, int w, int h, int rx, int ry, int rw, int rh, int radius, uint32_t color) {
+    if (radius <= 0) {
+        draw_rect(pixels, w, h, rx, ry, rw, rh, color);
+        return;
+    }
+    for (int y = ry; y < ry + rh; y++) {
+        if (y < 0 || y >= h) continue;
+        uint32_t *row = pixels + y * w;
+        int dy = 0;
+        if (y < ry + radius) dy = (ry + radius) - y;
+        else if (y >= ry + rh - radius) dy = y - (ry + rh - radius - 1);
+
+        for (int x = rx; x < rx + rw; x++) {
+            if (x < 0 || x >= w) continue;
+            int dx = 0;
+            if (x < rx + radius) dx = (rx + radius) - x;
+            else if (x >= rx + rw - radius) dx = x - (rx + rw - radius - 1);
+
+            if (dx > 0 && dy > 0) {
+                if (dx * dx + dy * dy <= radius * radius) {
+                    row[x] = color;
+                }
+            } else {
+                row[x] = color;
+            }
+        }
+    }
+}
+
+static void draw_video_frame(uint32_t *pixels, int w, int h, int rx, int ry, int rw, int rh, const uint8_t *video_rgba, int video_w, int video_h) {
+    for (int y = 0; y < rh; y++) {
+        int dy = ry + y;
+        if (dy < 0 || dy >= h) continue;
+        uint32_t *row = pixels + dy * w;
+        float sy = (float)y * (float)video_h / (float)rh;
+        int vy = (int)sy;
+        if (vy >= video_h) vy = video_h - 1;
+        const uint8_t *src_row = video_rgba + vy * video_w * 4;
+
+        for (int x = 0; x < rw; x++) {
+            int dx = rx + x;
+            if (dx < 0 || dx >= w) continue;
+            float sx = (float)x * (float)video_w / (float)rw;
+            int vx_idx = (int)sx;
+            if (vx_idx >= video_w) vx_idx = video_w - 1;
+            const uint8_t *pixel = src_row + vx_idx * 4;
+            row[dx] = (0xFF000000) | (pixel[0] << 16) | (pixel[1] << 8) | pixel[2];
+        }
+    }
+}
+
+void tsfi_paint_tree(const TsfiLayoutBox *box, uint32_t *pixels, int width, int height) {
+    if (!box) return;
+
+    const char *style = box->node ? tsfi_node_get_attribute(box->node, "style") : NULL;
+    char buf[128];
+
+    if (box->type == TSFI_BOX_BLOCK || box->type == TSFI_BOX_FLEX || box->type == TSFI_BOX_INLINE) {
+        uint32_t bg_color = 0;
+        bool has_bg = false;
+        if (get_style_val_paint(style, "background-color", buf, sizeof(buf))) {
+            bg_color = parse_color(buf, 0);
+            has_bg = true;
+        } else if (get_style_val_paint(style, "background", buf, sizeof(buf))) {
+            bg_color = parse_color(buf, 0);
+            has_bg = true;
+        }
+
+        int radius = 0;
+        if (get_style_val_paint(style, "border-radius", buf, sizeof(buf))) {
+            radius = atoi(buf);
+        }
+
+        if (has_bg) {
+            draw_rect_rounded(pixels, width, height, (int)box->x, (int)box->y, (int)box->w, (int)box->h, radius, bg_color);
+        }
+
+        float max_border = box->border_left;
+        if (box->border_right > max_border) max_border = box->border_right;
+        if (box->border_top > max_border) max_border = box->border_top;
+        if (box->border_bottom > max_border) max_border = box->border_bottom;
+
+        if (max_border > 0.0f) {
+            uint32_t border_color = 0xFFFFFFFF;
+            if (get_style_val_paint(style, "border-color", buf, sizeof(buf))) {
+                border_color = parse_color(buf, border_color);
+            }
+            draw_border(pixels, width, height, (int)box->x, (int)box->y, (int)box->w, (int)box->h, (int)max_border, border_color);
+        }
+    }
+
+    if (box->type == TSFI_BOX_VIDEO) {
+        if (g_active_video_frame) {
+            draw_video_frame(pixels, width, height, (int)box->x, (int)box->y, (int)box->w, (int)box->h, g_active_video_frame, g_active_video_w, g_active_video_h);
+        } else {
+            draw_rect(pixels, width, height, (int)box->x, (int)box->y, (int)box->w, (int)box->h, 0xFF1A1A1A);
+            draw_border(pixels, width, height, (int)box->x, (int)box->y, (int)box->w, (int)box->h, 2, 0xFF00FF00);
+            
+            const char *src = box->node ? tsfi_node_get_attribute(box->node, "src") : "NULL";
+            char video_overlay[256];
+            snprintf(video_overlay, sizeof(video_overlay), "[VIDEO: %s]", src);
+            draw_text(pixels, width, height, (int)box->x + 10, (int)box->y + 10, video_overlay, 0xFF00FF00, 1);
+        }
+    }
+
+    if (box->node && box->node->type == TSFI_NODE_TEXT) {
+        uint32_t text_color = 0xFFFFFFFF;
+        if (get_style_val_paint(style, "color", buf, sizeof(buf))) {
+            text_color = parse_color(buf, text_color);
+        } else {
+            const TsfiLayoutBox *p = box->parent;
+            while (p) {
+                const char *p_style = p->node ? tsfi_node_get_attribute(p->node, "style") : NULL;
+                if (p_style && get_style_val_paint(p_style, "color", buf, sizeof(buf))) {
+                    text_color = parse_color(buf, text_color);
+                    break;
+                }
+                p = p->parent;
+            }
+        }
+        int text_scale = 2;
+        if (get_style_val_paint(style, "font-size", buf, sizeof(buf))) {
+            int fs = atoi(buf);
+            if (fs >= 24) text_scale = 3;
+            else if (fs >= 16) text_scale = 2;
+            else text_scale = 1;
+        }
+
+        int text_x = (int)box->x;
+        const TsfiLayoutBox *p = box->parent;
+        bool align_center = false;
+        while (p) {
+            const char *p_style = p->node ? tsfi_node_get_attribute(p->node, "style") : NULL;
+            if (p_style && get_style_val_paint(p_style, "text-align", buf, sizeof(buf))) {
+                if (strcmp(buf, "center") == 0) {
+                    align_center = true;
+                }
+                break;
+            }
+            p = p->parent;
+        }
+        if (align_center) {
+            int text_w = strlen(box->node->text_content) * 8 * text_scale;
+            if (box->parent && box->parent->w > text_w) {
+                text_x = (int)box->parent->x + ((int)box->parent->w - text_w) / 2;
+            }
+        }
+
+        draw_text(pixels, width, height, text_x, (int)box->y, box->node->text_content, text_color, text_scale);
+    }
+
+    TsfiLayoutBox *child = box->first_child;
+    while (child) {
+        tsfi_paint_tree(child, pixels, width, height);
+        child = child->next_sibling;
+    }
+}

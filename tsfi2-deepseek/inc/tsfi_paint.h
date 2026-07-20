@@ -150,6 +150,18 @@ int tsfi_quantel_mirage_pyramid_wrap(const uint32_t *src, int src_w, int src_h, 
 /* Quantel Harry: Color negative inverter filter */
 int tsfi_quantel_harry_invert(uint32_t *pixels, int w, int h);
 
+/* Quantel Palette Color Cycling */
+int tsfi_quantel_paintbox_palette_cycle(uint32_t *pixels, int w, int h, int shift_amount);
+
+/* Quantel Typographer overlay */
+int tsfi_quantel_paintbox_typographer(uint32_t *pixels, int w, int h, int x, int y, const char *text, uint32_t color, float size);
+
+/* Paintbox Brush Flow Dynamics (speed-sensitive flow-rate modulation) */
+int tsfi_quantel_paintbox_flow_brush(uint32_t *pixels, int w, int h, int prev_x, int prev_y, int curr_x, int curr_y, int radius, float pressure, uint32_t color);
+
+/* Mirage 3D Height-Map Extrusion */
+int tsfi_quantel_mirage_height_map_extrude(const uint32_t *src, int w, int h, uint32_t *dst, float max_height, float scale);
+
 #endif // TSFI_PAINT_H
 
 

@@ -1,0 +1,668 @@
+#define _GNU_SOURCE
+#include "tsfi_paint.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+
+int tsfi_quantel_harry_chroma_key(const uint32_t *src_pixels, int w, int h, uint8_t *out_mask, uint32_t key_color, float tolerance) {
+    if (!src_pixels || !out_mask || w <= 0 || h <= 0) return -1;
+
+    uint8_t kr = (key_color >> 16) & 0xFF;
+    uint8_t kg = (key_color >> 8) & 0xFF;
+    uint8_t kb = key_color & 0xFF;
+
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = src_pixels[i];
+        uint8_t r = (pix >> 16) & 0xFF;
+        uint8_t g = (pix >> 8) & 0xFF;
+        uint8_t b = pix & 0xFF;
+
+        float dr = r - kr;
+        float dg = g - kg;
+        float db = b - kb;
+        float dist = sqrtf(dr * dr + dg * dg + db * db);
+
+        if (dist < tolerance) {
+            out_mask[i] = 0;
+        } else {
+            out_mask[i] = 255;
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_harry_blend(const uint32_t *fg_pixels, const uint32_t *bg_pixels, uint32_t *dst_pixels, int w, int h, const uint8_t *mask, const char *blend_mode) {
+    if (!fg_pixels || !bg_pixels || !dst_pixels || w <= 0 || h <= 0) return -1;
+
+    for (int i = 0; i < w * h; i++) {
+        float alpha = mask ? (mask[i] / 255.0f) : 1.0f;
+        uint32_t fg = fg_pixels[i];
+        uint32_t bg = bg_pixels[i];
+
+        uint8_t r_f = (fg >> 16) & 0xFF;
+        uint8_t g_f = (fg >> 8) & 0xFF;
+        uint8_t b_f = fg & 0xFF;
+
+        uint8_t r_b = (bg >> 16) & 0xFF;
+        uint8_t g_b = (bg >> 8) & 0xFF;
+        uint8_t b_b = bg & 0xFF;
+
+        uint8_t r_blended = r_f;
+        uint8_t g_blended = g_f;
+        uint8_t b_blended = b_f;
+
+        if (strcmp(blend_mode, "multiply") == 0) {
+            r_blended = (uint8_t)((r_f * r_b) / 255);
+            g_blended = (uint8_t)((g_f * g_b) / 255);
+            b_blended = (uint8_t)((b_f * b_b) / 255);
+        } else if (strcmp(blend_mode, "screen") == 0) {
+            r_blended = (uint8_t)(255 - ((255 - r_f) * (255 - r_b)) / 255);
+            g_blended = (uint8_t)(255 - ((255 - g_f) * (255 - g_b)) / 255);
+            b_blended = (uint8_t)(255 - ((255 - b_f) * (255 - b_b)) / 255);
+        }
+
+        uint8_t r_res = (uint8_t)(r_blended * alpha + r_b * (1.0f - alpha));
+        uint8_t g_res = (uint8_t)(g_blended * alpha + g_b * (1.0f - alpha));
+        uint8_t b_res = (uint8_t)(b_blended * alpha + b_b * (1.0f - alpha));
+
+        dst_pixels[i] = (0xFF000000) | (r_res << 16) | (g_res << 8) | b_res;
+    }
+    return 0;
+}
+
+int tsfi_quantel_harry_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32_t *dst, int w, int h, float progress, const char *wipe_type) {
+    if (!src_a || !src_b || !dst || w <= 0 || h <= 0) return -1;
+
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            int idx = y * w + x;
+            bool show_b = false;
+
+            if (strcmp(wipe_type, "radial") == 0) {
+                float dx = x - (w / 2.0f);
+                float dy = y - (h / 2.0f);
+                float angle = atan2f(dy, dx) + M_PI;
+                float normalized_angle = angle / (2.0f * M_PI);
+                show_b = (normalized_angle < progress);
+            } else {
+                float px = (float)x / w;
+                show_b = (px < progress);
+            }
+
+            dst[idx] = show_b ? src_b[idx] : src_a[idx];
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_harry_invert(uint32_t *pixels, int w, int h) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = pixels[i];
+        uint8_t r = 255 - ((pix >> 16) & 0xFF);
+        uint8_t g = 255 - ((pix >> 8) & 0xFF);
+        uint8_t b = 255 - (pix & 0xFF);
+        pixels[i] = (0xFF000000) | (r << 16) | (g << 8) | b;
+    }
+    return 0;
+}
+
+int tsfi_quantel_harry_contrast_adjust(uint32_t *pixels, int w, int h, float brightness, float contrast) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = pixels[i];
+        float r = (pix >> 16) & 0xFF;
+        float g = (pix >> 8) & 0xFF;
+        float b = pix & 0xFF;
+
+        r = (r - 128.0f) * contrast + 128.0f + brightness;
+        g = (g - 128.0f) * contrast + 128.0f + brightness;
+        b = (b - 128.0f) * contrast + 128.0f + brightness;
+
+        int ir = (int)r;
+        int ig = (int)g;
+        int ib = (int)b;
+        if (ir < 0) { ir = 0; }
+        if (ir > 255) { ir = 255; }
+        if (ig < 0) { ig = 0; }
+        if (ig > 255) { ig = 255; }
+        if (ib < 0) { ib = 0; }
+        if (ib > 255) { ib = 255; }
+
+        pixels[i] = (0xFF000000) | (ir << 16) | (ig << 8) | ib;
+    }
+    return 0;
+}
+
+int tsfi_quantel_harry_posterize(uint32_t *pixels, int w, int h, int levels) {
+    if (!pixels || w <= 0 || h <= 0 || levels < 2) return -1;
+
+    float scale = 255.0f / (levels - 1);
+
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = pixels[i];
+        uint8_t r = (pix >> 16) & 0xFF;
+        uint8_t g = (pix >> 8) & 0xFF;
+        uint8_t b = pix & 0xFF;
+
+        r = (uint8_t)(roundf(r / scale) * scale);
+        g = (uint8_t)(roundf(g / scale) * scale);
+        b = (uint8_t)(roundf(b / scale) * scale);
+
+        pixels[i] = (0xFF000000) | (r << 16) | (g << 8) | b;
+    }
+    return 0;
+}
+
+int tsfi_quantel_harry_solarize(uint32_t *pixels, int w, int h, float threshold) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = pixels[i];
+        uint8_t r = (pix >> 16) & 0xFF;
+        uint8_t g = (pix >> 8) & 0xFF;
+        uint8_t b = pix & 0xFF;
+
+        float luma = 0.299f * r + 0.587f * g + 0.114f * b;
+        if (luma > threshold) {
+            r = 255 - r;
+            g = 255 - g;
+            b = 255 - b;
+        }
+
+        pixels[i] = (0xFF000000) | (r << 16) | (g << 8) | b;
+    }
+    return 0;
+}
+
+int tsfi_quantel_harry_spill_suppress(uint32_t *pixels, int w, int h, const char *suppress_type, float amount) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = pixels[i];
+        uint8_t r = (pix >> 16) & 0xFF;
+        uint8_t g = (pix >> 8) & 0xFF;
+        uint8_t b = pix & 0xFF;
+
+        if (strcmp(suppress_type, "green") == 0) {
+            uint8_t max_rb = r > b ? r : b;
+            if (g > max_rb) {
+                g = (uint8_t)(g - amount * (g - max_rb));
+            }
+        } else if (strcmp(suppress_type, "blue") == 0) {
+            uint8_t max_rg = r > g ? r : g;
+            if (b > max_rg) {
+                b = (uint8_t)(b - amount * (b - max_rg));
+            }
+        }
+
+        pixels[i] = (0xFF000000) | (r << 16) | (g << 8) | b;
+    }
+    return 0;
+}
+
+int tsfi_quantel_harry_temporal_blend(const uint32_t *frame_a, const uint32_t *frame_b, uint32_t *dst, int w, int h, float blend_factor) {
+    if (!frame_a || !frame_b || !dst || w <= 0 || h <= 0) return -1;
+
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix_a = frame_a[i];
+        uint32_t pix_b = frame_b[i];
+
+        uint8_t ra = (pix_a >> 16) & 0xFF;
+        uint8_t ga = (pix_a >> 8) & 0xFF;
+        uint8_t ba = pix_a & 0xFF;
+
+        uint8_t rb = (pix_b >> 16) & 0xFF;
+        uint8_t gb = (pix_b >> 8) & 0xFF;
+        uint8_t bb = pix_b & 0xFF;
+
+        uint8_t r = (uint8_t)(ra * (1.0f - blend_factor) + rb * blend_factor);
+        uint8_t g = (uint8_t)(ga * (1.0f - blend_factor) + gb * blend_factor);
+        uint8_t b = (uint8_t)(ba * (1.0f - blend_factor) + bb * blend_factor);
+
+        dst[i] = (0xFF000000) | (r << 16) | (g << 8) | b;
+    }
+    return 0;
+}
+
+int tsfi_quantel_harry_displacement_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32_t *dst, int w, int h, float progress, float wave_amplitude, float wave_frequency) {
+    if (!src_a || !src_b || !dst || w <= 0 || h <= 0) return -1;
+
+    for (int y = 0; y < h; y++) {
+        float displacement = wave_amplitude * sinf(2.0f * M_PI * wave_frequency * ((float)y / h));
+        float limit_x = progress * w + displacement;
+
+        for (int x = 0; x < w; x++) {
+            int idx = y * w + x;
+            if ((float)x < limit_x) {
+                dst[idx] = src_b[idx];
+            } else {
+                dst[idx] = src_a[idx];
+            }
+        }
+    }
+    return 0;
+}
+
+extern void draw_text(uint32_t *pixels, int w, int h, int rx, int ry, const char *text, uint32_t color, int scale);
+
+int tsfi_quantel_storyboard_grid(const uint32_t **frames, int frame_count, int frame_w, int frame_h, uint32_t *dst_sheet, int sheet_w, int sheet_h, int rows, int cols) {
+    if (!frames || !dst_sheet || frame_w <= 0 || frame_h <= 0 || sheet_w <= 0 || sheet_h <= 0 || rows <= 0 || cols <= 0) return -1;
+
+    memset(dst_sheet, 0x1F, sheet_w * sheet_h * sizeof(uint32_t));
+
+    int cell_w = sheet_w / cols;
+    int cell_h = sheet_h / rows;
+
+    for (int i = 0; i < frame_count && i < (rows * cols); i++) {
+        const uint32_t *src_frame = frames[i];
+        if (!src_frame) continue;
+
+        int grid_y = i / cols;
+        int grid_x = i % cols;
+
+        int start_x = grid_x * cell_w + (cell_w - frame_w) / 2;
+        int start_y = grid_y * cell_h + (cell_h - frame_h) / 2;
+
+        for (int y = 0; y < frame_h; y++) {
+            int cy = start_y + y;
+            if (cy < 0 || cy >= sheet_h) continue;
+            uint32_t *dst_row = dst_sheet + cy * sheet_w;
+            const uint32_t *src_row = src_frame + y * frame_w;
+
+            for (int x = 0; x < frame_w; x++) {
+                int cx = start_x + x;
+                if (cx >= 0 && cx < sheet_w) {
+                    dst_row[cx] = src_row[x];
+                }
+            }
+        }
+
+        char label[64];
+        snprintf(label, sizeof(label), "PANEL %02d", i + 1);
+        draw_text(dst_sheet, sheet_w, sheet_h, grid_x * cell_w + 10, (grid_y + 1) * cell_h - 20, label, 0xFF00FF00, 1);
+    }
+    return 0;
+}
+
+int tsfi_quantel_storyboard_timecode_burn(uint32_t *pixels, int w, int h, int frame_number, float fps, uint32_t text_color) {
+    if (!pixels || w <= 0 || h <= 0 || fps <= 0.0f) return -1;
+
+    int total_secs = (int)(frame_number / fps);
+    int frames = frame_number % (int)fps;
+    int hours = total_secs / 3600;
+    int mins = (total_secs % 3600) / 60;
+    int secs = total_secs % 60;
+
+    char tc_str[64];
+    snprintf(tc_str, sizeof(tc_str), "TCR %02d:%02d:%02d:%02d", hours, mins, secs, frames);
+
+    int rx = w - (int)(strlen(tc_str) * 8 * 2) - 20;
+    int ry = h - 30;
+
+    for (int y = ry - 4; y < ry + 20; y++) {
+        if (y >= 0 && y < h) {
+            uint32_t *row = pixels + y * w;
+            for (int x = rx - 4; x < w - 10; x++) {
+                if (x >= 0 && x < w) {
+                    row[x] = 0xFF000000;
+                }
+            }
+        }
+    }
+
+    draw_text(pixels, w, h, rx, ry, tc_str, text_color, 2);
+    return 0;
+}
+
+int tsfi_quantel_storyboard_onion_skin(const uint32_t *prev_frame, const uint32_t *next_frame, uint32_t *active_canvas, int w, int h, float opacity_prev, float opacity_next) {
+    if (!active_canvas || w <= 0 || h <= 0) return -1;
+
+    for (int i = 0; i < w * h; i++) {
+        uint32_t curr_pixel = active_canvas[i];
+        uint8_t r_c = (curr_pixel >> 16) & 0xFF;
+        uint8_t g_c = (curr_pixel >> 8) & 0xFF;
+        uint8_t b_c = curr_pixel & 0xFF;
+
+        float r_accum = r_c * (1.0f - opacity_prev - opacity_next);
+        float g_accum = g_c * (1.0f - opacity_prev - opacity_next);
+        float b_accum = b_c * (1.0f - opacity_prev - opacity_next);
+
+        if (prev_frame) {
+            uint32_t p_pixel = prev_frame[i];
+            r_accum += ((p_pixel >> 16) & 0xFF) * opacity_prev;
+            g_accum += ((p_pixel >> 8) & 0xFF) * opacity_prev;
+            b_accum += (p_pixel & 0xFF) * opacity_prev;
+        }
+
+        if (next_frame) {
+            uint32_t n_pixel = next_frame[i];
+            r_accum += ((n_pixel >> 16) & 0xFF) * opacity_next;
+            g_accum += ((n_pixel >> 8) & 0xFF) * opacity_next;
+            b_accum += (n_pixel & 0xFF) * opacity_next;
+        }
+
+        int r = (int)r_accum;
+        int g = (int)g_accum;
+        int b = (int)b_accum;
+        if (r < 0) { r = 0; }
+        if (r > 255) { r = 255; }
+        if (g < 0) { g = 0; }
+        if (g > 255) { g = 255; }
+        if (b < 0) { b = 0; }
+        if (b > 255) { b = 255; }
+
+        active_canvas[i] = (0xFF000000) | (r << 16) | (g << 8) | b;
+    }
+    return 0;
+}
+
+int tsfi_quantel_harry_luma_key(const uint32_t *src_pixels, int w, int h, uint8_t *out_mask, uint8_t low_threshold, uint8_t high_threshold) {
+    if (!src_pixels || !out_mask || w <= 0 || h <= 0) return -1;
+
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = src_pixels[i];
+        uint8_t r = (pix >> 16) & 0xFF;
+        uint8_t g = (pix >> 8) & 0xFF;
+        uint8_t b = pix & 0xFF;
+        uint8_t luma = (uint8_t)(0.299f * r + 0.587f * g + 0.114f * b);
+
+        if (luma >= low_threshold && luma <= high_threshold) {
+            out_mask[i] = 255;
+        } else {
+            out_mask[i] = 0;
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_harry_filter(const uint32_t *src, uint32_t *dst, int w, int h, const float kernel[9]) {
+    if (!src || !dst || w <= 0 || h <= 0) return -1;
+
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            float sum_r = 0.0f, sum_g = 0.0f, sum_b = 0.0f;
+            for (int ky = -1; ky <= 1; ky++) {
+                int py = y + ky;
+                if (py < 0) py = 0;
+                if (py >= h) py = h - 1;
+                const uint32_t *row = src + py * w;
+
+                for (int kx = -1; kx <= 1; kx++) {
+                    int px = x + kx;
+                    if (px < 0) px = 0;
+                    if (px >= w) px = w - 1;
+
+                    uint32_t pix = row[px];
+                    float k_val = kernel[(ky + 1) * 3 + (kx + 1)];
+                    sum_r += ((pix >> 16) & 0xFF) * k_val;
+                    sum_g += ((pix >> 8) & 0xFF) * k_val;
+                    sum_b += (pix & 0xFF) * k_val;
+                }
+            }
+
+            int r = (int)sum_r;
+            int g = (int)sum_g;
+            int b = (int)sum_b;
+            if (r < 0) { r = 0; }
+            if (r > 255) { r = 255; }
+            if (g < 0) { g = 0; }
+            if (g > 255) { g = 255; }
+            if (b < 0) { b = 0; }
+            if (b > 255) { b = 255; }
+
+            dst[y * w + x] = (0xFF000000) | (r << 16) | (g << 8) | b;
+        }
+    }
+    return 0;
+}
+
+void tsfi_rgb_to_hsl(uint8_t r, uint8_t g, uint8_t b, float *h, float *s, float *l) {
+    float fr = r / 255.0f;
+    float fg = g / 255.0f;
+    float fb = b / 255.0f;
+    float max_c = fr > fg ? (fr > fb ? fr : fb) : (fg > fb ? fg : fb);
+    float min_c = fr < fg ? (fr < fb ? fr : fb) : (fg < fb ? fg : fb);
+    *l = (max_c + min_c) / 2.0f;
+    if (max_c == min_c) {
+        *h = 0.0f;
+        *s = 0.0f;
+    } else {
+        float d = max_c - min_c;
+        *s = (*l > 0.5f) ? d / (2.0f - max_c - min_c) : d / (max_c + min_c);
+        if (max_c == fr) {
+            *h = (fg - fb) / d + (fg < fb ? 6.0f : 0.0f);
+        } else if (max_c == fg) {
+            *h = (fb - fr) / d + 2.0f;
+        } else {
+            *h = (fr - fg) / d + 4.0f;
+        }
+        *h /= 6.0f;
+    }
+}
+
+float tsfi_hue_to_rgb(float p, float q, float t) {
+    if (t < 0.0f) t += 1.0f;
+    if (t > 1.0f) t -= 1.0f;
+    if (t < 1.0f/6.0f) return p + (q - p) * 6.0f * t;
+    if (t < 1.0f/2.0f) return q;
+    if (t < 2.0f/3.0f) return p + (q - p) * (2.0f/3.0f - t) * 6.0f;
+    return p;
+}
+
+void tsfi_hsl_to_rgb(float h, float s, float l, uint8_t *r, uint8_t *g, uint8_t *b) {
+    if (s == 0.0f) {
+        *r = *g = *b = (uint8_t)(l * 255.0f);
+    } else {
+        float q = l < 0.5f ? l * (1.0f + s) : l + s - l * s;
+        float p = 2.0f * l - q;
+        *r = (uint8_t)(tsfi_hue_to_rgb(p, q, h + 1.0f/3.0f) * 255.0f);
+        *g = (uint8_t)(tsfi_hue_to_rgb(p, q, h) * 255.0f);
+        *b = (uint8_t)(tsfi_hue_to_rgb(p, q, h - 1.0f/3.0f) * 255.0f);
+    }
+}
+
+int tsfi_quantel_harry_color_adjust(const uint32_t *src, uint32_t *dst, int w, int h, float hue_shift, float sat_scale, uint32_t tint_color, float tint_amount) {
+    if (!src || !dst || w <= 0 || h <= 0) return -1;
+
+    uint8_t tr = (tint_color >> 16) & 0xFF;
+    uint8_t tg = (tint_color >> 8) & 0xFF;
+    uint8_t tb = tint_color & 0xFF;
+
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = src[i];
+        uint8_t r = (pix >> 16) & 0xFF;
+        uint8_t g = (pix >> 8) & 0xFF;
+        uint8_t b = pix & 0xFF;
+
+        float hue, sat, luma;
+        tsfi_rgb_to_hsl(r, g, b, &hue, &sat, &luma);
+
+        hue += hue_shift;
+        if (hue > 1.0f) hue -= 1.0f;
+        if (hue < 0.0f) hue += 1.0f;
+        sat *= sat_scale;
+        if (sat > 1.0f) sat = 1.0f;
+        if (sat < 0.0f) sat = 0.0f;
+
+        uint8_t r_adj, g_adj, b_adj;
+        tsfi_hsl_to_rgb(hue, sat, luma, &r_adj, &g_adj, &b_adj);
+
+        uint8_t r_res = (uint8_t)(r_adj * (1.0f - tint_amount) + tr * tint_amount);
+        uint8_t g_res = (uint8_t)(g_adj * (1.0f - tint_amount) + tg * tint_amount);
+        uint8_t b_res = (uint8_t)(b_adj * (1.0f - tint_amount) + tb * tint_amount);
+
+        dst[i] = (0xFF000000) | (r_res << 16) | (g_res << 8) | b_res;
+    }
+    return 0;
+}
+
+int tsfi_quantel_harry_color_difference_key(const uint32_t *src, int w, int h, uint8_t *out_mask, float k_factor, float b_factor, float feather_radius) {
+    if (!src || !out_mask || w <= 0 || h <= 0) return -1;
+
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = src[i];
+        float r = (pix >> 16) & 0xFF;
+        float g = (pix >> 8) & 0xFF;
+        float b = pix & 0xFF;
+
+        float max_rb = r > b ? r : b;
+        float val = g - b_factor * max_rb;
+        float alpha = 1.0f - k_factor * val;
+
+        if (alpha < 0.0f) alpha = 0.0f;
+        if (alpha > 1.0f) alpha = 1.0f;
+
+        out_mask[i] = (uint8_t)(alpha * 255.0f);
+    }
+
+    if (feather_radius > 0.5f) {
+        uint8_t *temp = malloc(w * h);
+        if (temp) {
+            memcpy(temp, out_mask, w * h);
+            int rad = (int)feather_radius;
+            for (int y = 0; y < h; y++) {
+                for (int x = 0; x < w; x++) {
+                    int sum = 0, count = 0;
+                    for (int ky = -rad; ky <= rad; ky++) {
+                        int py = y + ky;
+                        if (py >= 0 && py < h) {
+                            for (int kx = -rad; kx <= rad; kx++) {
+                                int px = x + kx;
+                                if (px >= 0 && px < w) {
+                                    sum += temp[py * w + px];
+                                    count++;
+                                }
+                            }
+                        }
+                    }
+                    out_mask[y * w + x] = sum / count;
+                }
+            }
+            free(temp);
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_harry_keyframe_transform(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float progress, float start_scale, float end_scale, float start_rot, float end_rot, float start_alpha, float end_alpha) {
+    if (!src || !dst || src_w <= 0 || src_h <= 0 || dst_w <= 0 || dst_h <= 0) return -1;
+
+    memset(dst, 0, dst_w * dst_h * sizeof(uint32_t));
+
+    float scale = start_scale * (1.0f - progress) + end_scale * progress;
+    float rot = start_rot * (1.0f - progress) + end_rot * progress;
+    float alpha = start_alpha * (1.0f - progress) + end_alpha * progress;
+
+    if (scale <= 0.001f) return 0;
+
+    float cos_r = cosf(rot);
+    float sin_r = sinf(rot);
+
+    float cx_s = src_w / 2.0f;
+    float cy_s = src_h / 2.0f;
+    float cx_d = dst_w / 2.0f;
+    float cy_d = dst_h / 2.0f;
+
+    for (int y = 0; y < dst_h; y++) {
+        float dy = y - cy_d;
+        for (int x = 0; x < dst_w; x++) {
+            float dx = x - cx_d;
+
+            float rx = (dx * cos_r + dy * sin_r) / scale;
+            float ry = (-dx * sin_r + dy * cos_r) / scale;
+
+            int sx = (int)(rx + cx_s);
+            int sy = (int)(ry + cy_s);
+
+            if (sx >= 0 && sx < src_w && sy >= 0 && sy < src_h) {
+                uint32_t pixel = src[sy * src_w + sx];
+                uint8_t r = (pixel >> 16) & 0xFF;
+                uint8_t g = (pixel >> 8) & 0xFF;
+                uint8_t b = pixel & 0xFF;
+
+                uint8_t r_res = (uint8_t)(r * alpha);
+                uint8_t g_res = (uint8_t)(g * alpha);
+                uint8_t b_res = (uint8_t)(b * alpha);
+
+                dst[y * dst_w + x] = (0xFF000000) | (r_res << 16) | (g_res << 8) | b_res;
+            }
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_harry_matrix_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32_t *dst, int w, int h, float progress, int grid_m, int grid_n) {
+    if (!src_a || !src_b || !dst || w <= 0 || h <= 0 || grid_m <= 0 || grid_n <= 0) return -1;
+
+    int cell_w = w / grid_m;
+    int cell_h = h / grid_n;
+
+    for (int y = 0; y < h; y++) {
+        int cell_y = y / cell_h;
+        if (cell_y >= grid_n) cell_y = grid_n - 1;
+
+        for (int x = 0; x < w; x++) {
+            int cell_x = x / cell_w;
+            if (cell_x >= grid_m) cell_x = grid_m - 1;
+
+            float threshold = (float)(cell_x + cell_y * grid_m) / (grid_m * grid_n);
+            int idx = y * w + x;
+            if (threshold < progress) {
+                dst[idx] = src_b[idx];
+            } else {
+                dst[idx] = src_a[idx];
+            }
+        }
+    }
+    return 0;
+}
+
+extern int tsfi_quantel_paintbox_airbrush(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float pressure, uint32_t color);
+
+int tsfi_quantel_harry_bezier_animate(const uint32_t *fg, int fg_w, int fg_h, uint32_t *bg, int w, int h, float t, float p0_x, float p0_y, float p1_x, float p1_y, float p2_x, float p2_y) {
+    if (!fg || !bg || w <= 0 || h <= 0 || fg_w <= 0 || fg_h <= 0) return -1;
+
+    float omt = 1.0f - t;
+    float bx = omt * omt * p0_x + 2.0f * omt * t * p1_x + t * t * p2_x;
+    float by = omt * omt * p0_y + 2.0f * omt * t * p1_y + t * t * p2_y;
+
+    int ox = (int)(bx - fg_w / 2.0f);
+    int oy = (int)(by - fg_h / 2.0f);
+
+    for (int y = 0; y < fg_h; y++) {
+        int cy = oy + y;
+        if (cy < 0 || cy >= h) continue;
+        uint32_t *bg_row = bg + cy * w;
+        const uint32_t *fg_row = fg + y * fg_w;
+
+        for (int x = 0; x < fg_w; x++) {
+            int cx = ox + x;
+            if (cx < 0 || cx >= w) continue;
+
+            uint32_t fg_pixel = fg_row[x];
+            uint8_t alpha = (fg_pixel >> 24) & 0xFF;
+            if (alpha > 0) {
+                float a = alpha / 255.0f;
+                uint8_t rf = (fg_pixel >> 16) & 0xFF;
+                uint8_t gf = (fg_pixel >> 8) & 0xFF;
+                uint8_t bf = fg_pixel & 0xFF;
+
+                uint32_t bg_pixel = bg_row[cx];
+                uint8_t rb = (bg_pixel >> 16) & 0xFF;
+                uint8_t gb = (bg_pixel >> 8) & 0xFF;
+                uint8_t bb = bg_pixel & 0xFF;
+
+                uint8_t r_res = (uint8_t)(rf * a + rb * (1.0f - a));
+                uint8_t g_res = (uint8_t)(gf * a + gb * (1.0f - a));
+                uint8_t b_res = (uint8_t)(bf * a + bb * (1.0f - a));
+
+                bg_row[cx] = (0xFF000000) | (r_res << 16) | (g_res << 8) | b_res;
+            }
+        }
+    }
+    return 0;
+}
