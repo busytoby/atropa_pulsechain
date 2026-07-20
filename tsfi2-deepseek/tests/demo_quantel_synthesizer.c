@@ -7,6 +7,7 @@
 #include <time.h>
 #include "tsfi_paint.h"
 #include "tsfi_computel_blue_box.h"
+#include "tsfi_hogan.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -198,6 +199,69 @@ void apply_super8_crop(uint32_t *pixels, int w, int h, int f_idx) {
     }
 }
 
+void draw_hogan_telemetry(uint32_t *pixels, int w, int h, const hogan_umbrella_system *sys, float t) {
+    (void)h;
+    int start_y = 398;
+    int end_y = 508;
+    int start_x = 35;
+    int end_x = w - 35;
+
+    for (int x = start_x; x <= end_x; x++) {
+        pixels[start_y * w + x] = 0xFF00FF00;
+        pixels[end_y * w + x] = 0xFF00FF00;
+    }
+    for (int y = start_y; y <= end_y; y++) {
+        pixels[y * w + start_x] = 0xFF00FF00;
+        pixels[y * w + end_x] = 0xFF00FF00;
+    }
+
+    for (int acc = 0; acc < 3; acc++) {
+        if (!sys->accounts[acc].active) continue;
+        uint64_t bal = sys->accounts[acc].balance;
+        int bar_length = (int)(bal * 100 / 15000);
+        if (bar_length > 120) bar_length = 120;
+        if (bar_length < 0) bar_length = 0;
+        int y_pos = start_y + 15 + acc * 18;
+
+        uint32_t acc_color = (acc == 0) ? 0xFF00FFFF : ((acc == 1) ? 0xFF0080FF : 0xFFFFFF00);
+        for (int dx = 0; dx < 8; dx++) {
+            for (int dy = 0; dy < 8; dy++) {
+                pixels[(y_pos + dy) * w + (start_x + 10 + dx)] = acc_color;
+            }
+        }
+
+        for (int x = 0; x < bar_length; x++) {
+            for (int dy = 0; dy < 6; dy++) {
+                pixels[(y_pos + dy + 1) * w + (start_x + 25 + x)] = 0xFF00FF00;
+            }
+        }
+    }
+
+    int active_vm = ((int)(t * 2.0f)) % 3;
+    int vm_x = start_x + 160;
+    int vm_y = start_y + 20;
+
+    for (int vm = 0; vm < 3; vm++) {
+        uint32_t color = (vm == active_vm) ? 0xFF00FF00 : 0xFF003300;
+        for (int dx = 0; dx < 25; dx++) {
+            for (int dy = 0; dy < 12; dy++) {
+                pixels[(vm_y + dy) * w + (vm_x + vm * 30 + dx)] = color;
+            }
+        }
+    }
+
+    int epoch_y = start_y + 75;
+    int epoch_x = start_x + 160;
+    int max_epoch_dots = (int)sys->current_epoch % 10 + 1;
+    for (int i = 0; i < max_epoch_dots; i++) {
+        for (int dx = 0; dx < 6; dx++) {
+            for (int dy = 0; dy < 10; dy++) {
+                pixels[(epoch_y + dy) * w + (epoch_x + i * 10 + dx)] = 0xFFFF5500;
+            }
+        }
+    }
+}
+
 int main() {
     srand((unsigned int)time(NULL));
     const char *audio_file = "/tmp/tsfi_synth_demo.wav";
@@ -211,6 +275,12 @@ int main() {
         printf("[ERROR] Failed to open FFmpeg pipe.\n");
         return 1;
     }
+
+    hogan_umbrella_system hogan_sys;
+    tsfi_hogan_init(&hogan_sys);
+    tsfi_hogan_register_account(&hogan_sys, 1001, 10000);
+    tsfi_hogan_register_account(&hogan_sys, 2002, 5000);
+    tsfi_hogan_register_account(&hogan_sys, 3003, 2000);
 
     uint32_t *canvas = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
     uint32_t *canvas_b = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
@@ -287,8 +357,20 @@ int main() {
             tsfi_quantel_storyboard_border_highlights_concentric_double_outer_width_offset_color_texture(canvas_b, WIDTH, HEIGHT, 32, 120, WIDTH - 64, HEIGHT - 240, 4, 2, 3, 0xFFFFD700, 0xFFFF00FF, 10, 2, (int)(3.0f * sinf(t)), (int)(3.0f * cosf(t)), 0xFF000000, 0.25f);
         }
 
+        if (f % 30 == 0) {
+            uint32_t sender = (f % 90 == 0) ? 1001 : ((f % 90 == 30) ? 2002 : 3003);
+            uint32_t recipient = (f % 90 == 0) ? 2002 : ((f % 90 == 30) ? 3003 : 1001);
+            tsfi_hogan_dispatch_tx(&hogan_sys, sender, recipient, 100, (f % 60 == 0) ? VM_EVM : VM_ZMM);
+        }
+        if (f % 150 == 0) {
+            tsfi_hogan_overnight_reconciliation(&hogan_sys, "demo_hogan_lfs.dat.bin");
+        }
+
         // Enforce Super8 crop aspect ratio and sprocket holes
         apply_super8_crop(canvas_b, WIDTH, HEIGHT, f);
+
+        // Draw dynamic HOGAN telemetry overlay inside the bottom CRT console screen border
+        draw_hogan_telemetry(canvas_b, WIDTH, HEIGHT, &hogan_sys, t);
 
         // Convert to RGB24 and write to FFmpeg
         for (int i = 0; i < WIDTH * HEIGHT; i++) {
