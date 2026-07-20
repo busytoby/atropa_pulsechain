@@ -1433,3 +1433,34 @@ int tsfi_quantel_mirage_spherical_coordinate_warp(const uint32_t *src, int src_w
     }
     return 0;
 }
+
+int tsfi_quantel_mirage_spherical_coordinate_zoom_warp(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float scale_r, float scale_theta, float zoom) {
+    if (!src || !dst || src_w <= 0 || src_h <= 0 || dst_w <= 0 || dst_h <= 0 || zoom <= 0.0f) return -1;
+    memset(dst, 0, dst_w * dst_h * sizeof(uint32_t));
+
+    float cx_d = dst_w / 2.0f;
+    float cy_d = dst_h / 2.0f;
+
+    for (int y = 0; y < dst_h; y++) {
+        float dy = y - cy_d;
+        for (int x = 0; x < dst_w; x++) {
+            float dx = x - cx_d;
+            float r = sqrtf(dx * dx + dy * dy);
+            float theta = atan2f(dy, dx);
+
+            float nr_r = r * scale_r * zoom;
+            float nr_theta = theta * scale_theta;
+
+            float nx = cx_d + nr_r * cosf(nr_theta);
+            float ny = cy_d + nr_r * sinf(nr_theta);
+
+            int sx = (int)(nx * src_w / dst_w);
+            int sy = (int)(ny * src_h / dst_h);
+
+            if (sx >= 0 && sx < src_w && sy >= 0 && sy < src_h) {
+                dst[y * dst_w + x] = src[sy * src_w + sx];
+            }
+        }
+    }
+    return 0;
+}
