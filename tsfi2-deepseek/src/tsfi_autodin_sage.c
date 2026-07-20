@@ -526,3 +526,15 @@ int tsfi_winchester_scsi_parity_verify(const tsfi_winchester_scsi *scsi, uint8_t
     
     return (calc_parity == parity_bit) ? 0 : -2; // 0 = valid parity, -2 = parity error
 }
+
+// 27. AUTODIN Preemption-driven selective rollback to LU6.2 savepoints
+int tsfi_autodin_preempt_lu62_rollback(tsfi_autodin_preempt_channel *chan, tsfi_reuter_tx_context *ctx, int log_fd, tsfi_reuter_page *pages, int page_count, const char *savepoint_name) {
+    if (!chan || !ctx || log_fd < 0 || !pages || !savepoint_name) return -1;
+    
+    // Find LSN for the target savepoint name
+    uint64_t target_lsn = tsfi_reuter_savepoint_rollback(ctx, savepoint_name);
+    if (target_lsn == 0) return -2; // Savepoint not found
+    
+    // Selectively undo coordinates database changes back to the savepoint LSN
+    return tsfi_reuter_selective_undo(log_fd, pages, page_count, chan->suspended_tx_id, target_lsn);
+}

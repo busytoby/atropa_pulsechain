@@ -160,5 +160,6 @@ int tsfi_sage_cics_audit_event(tsfi_reuter_group_commit *gc, uint32_t tx_id, con
 int tsfi_sage_light_gun_audit(tsfi_reuter_group_commit *gc, uint32_t tx_id, const tsfi_sage_light_gun *gun, const int32_t *track_x, const int32_t *track_y, int track_count, int *selected_track_idx);
 int tsfi_sage_cics_event_parity_verify(const tsfi_sage_cics_event *event, uint8_t parity_bit);
 int tsfi_winchester_scsi_parity_verify(const tsfi_winchester_scsi *scsi, uint8_t parity_bit);
+int tsfi_autodin_preempt_lu62_rollback(tsfi_autodin_preempt_channel *chan, tsfi_reuter_tx_context *ctx, int log_fd, tsfi_reuter_page *pages, int page_count, const char *savepoint_name);
 
 #endif // TSFI_AUTODIN_SAGE_H

@@ -494,6 +494,49 @@ int main(void) {
     rc = tsfi_winchester_scsi_parity_verify(&scsi_parity, 1);
     assert(rc == 0);
     
+    // Test 28: AUTODIN Preemption LU6.2 Rollback
+    tsfi_reuter_tx_context tx_ctx;
+    memset(&tx_ctx, 0, sizeof(tx_ctx));
+    tx_ctx.savepoint_count = 0;
+    
+    rc = tsfi_reuter_savepoint_create(&tx_ctx, "SP1", 100);
+    assert(rc == 0);
+    
+    tsfi_autodin_preempt_channel r_chan;
+    r_chan.suspended_tx_id = 9999;
+    
+    tsfi_reuter_page rollback_pages[1];
+    memset(rollback_pages, 0, sizeof(rollback_pages));
+    rollback_pages[0].page_id = 0;
+    
+    const char *roll_log_path = "tmp/reuter_roll.log";
+    int roll_fd = open(roll_log_path, O_RDWR | O_CREAT | O_TRUNC, 0644);
+    assert(roll_fd >= 0);
+    
+    // Write WAL log entry with LSN 150 (after savepoint) modifying data offset 0
+    tsfi_reuter_log_record r_rec;
+    memset(&r_rec, 0, sizeof(r_rec));
+    r_rec.lsn = 150;
+    r_rec.transaction_id = 9999;
+    r_rec.type = LOG_TYPE_WAL;
+    r_rec.data_offset = 0;
+    r_rec.data_len = 4;
+    memcpy(r_rec.before_image, "BEFORE", 4);
+    memcpy(r_rec.after_image, "AFTER", 4);
+    assert(write(roll_fd, &r_rec, sizeof(r_rec)) == sizeof(r_rec));
+    
+    // Set page state to AFTER values
+    memcpy(rollback_pages[0].data, "AFTER", 4);
+    
+    rc = tsfi_autodin_preempt_lu62_rollback(&r_chan, &tx_ctx, roll_fd, rollback_pages, 1, "SP1");
+    assert(rc == 0);
+    
+    // Page data must be restored to BEFORE value
+    assert(memcmp(rollback_pages[0].data, "BEFORE", 4) == 0);
+    
+    close(roll_fd);
+    unlink(roll_log_path);
+    
     printf("[SUCCESS] AUTODIN SAGE Transaction Compliance Test Passed!\n");
     return 0;
 }
