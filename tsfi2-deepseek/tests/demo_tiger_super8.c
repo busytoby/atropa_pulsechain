@@ -43,6 +43,7 @@
 #include "tsfi_parc_figma.h"
 #include "tsfi_parc_figma_advanced.h"
 #include "tsfi_parc_figma_super.h"
+#include "tsfi_parc_figma_proto.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -890,6 +891,13 @@ int main() {
     float ctrl_x, ctrl_y;
     tsfi_parc_figma_corner_smooth(0, 0, 10, 10, 20, 0, 5.0f, &ctrl_x, &ctrl_y);
     tsfi_parc_figma_tidy_grid(layout_items, 3, 2, 8, 8);
+
+    // Figma proto Smart Animate, CSS exporter, and drop shadow check
+    tsfi_parc_layout_item_t interpolated;
+    tsfi_parc_figma_smart_animate(&layout_items[0], &layout_items[1], 0.5f, &interpolated);
+    char css_out[128];
+    tsfi_parc_figma_to_css(&layout_items[0], 4.0f, 0xFF4A90E2, css_out, sizeof(css_out));
+    tsfi_parc_figma_drop_shadow(canvas, WIDTH, HEIGHT, &layout_items[0], 4, 4, 2, 0xFF000000);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
