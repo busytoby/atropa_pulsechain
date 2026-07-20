@@ -446,3 +446,18 @@ int tsfi_autodin_preempt_mvcc_sweep(tsfi_autodin_preempt_channel *chan, tsfi_reu
     // Clear old coordinate versions to release heap/memory for Flash routing piece
     return tsfi_reuter_mvcc_sweep(version_head, min_active_lsn);
 }
+
+// 22. SAGE Coordinate translation to Vulkan Normalized Device Coordinates (NDCs)
+int tsfi_sage_vulkan_project(int32_t track_x, int32_t track_y, float *ndc_x, float *ndc_y) {
+    if (!ndc_x || !ndc_y) return -1;
+    
+    // Clamp coordinate bounds [0, 10000]
+    int32_t cx = track_x < 0 ? 0 : (track_x > 10000 ? 10000 : track_x);
+    int32_t cy = track_y < 0 ? 0 : (track_y > 10000 ? 10000 : track_y);
+    
+    // Map to [-1.0f, 1.0f]
+    *ndc_x = (cx / 5000.0f) - 1.0f;
+    *ndc_y = (cy / 5000.0f) - 1.0f;
+    
+    return 0;
+}

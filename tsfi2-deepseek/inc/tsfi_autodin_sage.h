@@ -146,4 +146,6 @@ int tsfi_autodin_preempt_evict_cache(tsfi_autodin_preempt_channel *chan, tsfi_gr
 int tsfi_sage_duplex_group_commit(tsfi_sage_duplex *duplex, tsfi_reuter_group_commit *gc, uint32_t active_tx_id, uint32_t standby_tx_id);
 int tsfi_autodin_preempt_mvcc_sweep(tsfi_autodin_preempt_channel *chan, tsfi_reuter_version **version_head, uint64_t min_active_lsn);
 
+int tsfi_sage_vulkan_project(int32_t track_x, int32_t track_y, float *ndc_x, float *ndc_y);
+
 #endif // TSFI_AUTODIN_SAGE_H

@@ -86,6 +86,29 @@ int main(void) {
     close(sv[0]);
     close(sv[1]);
     
+    // Attempt keycode 30 (A/a)
+    rc = socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
+    assert(rc == 0);
+    
+    memset(&scsi, 0, sizeof(tsfi_winchester_scsi));
+    rc = tsfi_winchester_scsi_handshake(&scsi, sv[0], 30);
+    assert(rc == 1);
+    assert(scsi.req_line == true);
+    
+    read_payload = 0;
+    rc = recv(sv[1], &read_payload, 1, 0);
+    assert(rc == 1 && read_payload == 30);
+    
+    rc = send(sv[1], &read_payload, 1, 0);
+    assert(rc == 1);
+    
+    rc = tsfi_winchester_scsi_handshake(&scsi, sv[0], 30);
+    assert(rc == 0);
+    assert(scsi.ack_line == true);
+    
+    close(sv[0]);
+    close(sv[1]);
+    
     // Test 5: SAGE Radar Coordinate Filtering
     int32_t station_x[3] = {1000, 1010, 990};
     int32_t station_y[3] = {5000, 5020, 4980};
@@ -394,6 +417,14 @@ int main(void) {
     tsfi_reuter_version *tmp = head->next;
     free(head);
     free(tmp);
+    
+    // Test 23: SAGE Vulkan Projection coordinates
+    float ndc_x = 0.0f;
+    float ndc_y = 0.0f;
+    rc = tsfi_sage_vulkan_project(7500, 2500, &ndc_x, &ndc_y);
+    assert(rc == 0);
+    assert(ndc_x == 0.5f);
+    assert(ndc_y == -0.5f);
     
     printf("[SUCCESS] AUTODIN SAGE Transaction Compliance Test Passed!\n");
     return 0;
