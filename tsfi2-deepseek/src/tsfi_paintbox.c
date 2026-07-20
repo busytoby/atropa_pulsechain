@@ -783,3 +783,52 @@ int tsfi_quantel_paintbox_saturation_buildup(uint32_t *pixels, int w, int h, int
     if (accum_pressure > 1.0f) accum_pressure = 1.0f;
     return tsfi_quantel_paintbox_airbrush(pixels, w, h, cx, cy, radius, accum_pressure, color);
 }
+
+int tsfi_quantel_paintbox_multistop_gradient(uint32_t *pixels, int w, int h, int x0, int y0, int x1, int y1, const uint32_t *colors, const float *stops, int stop_count) {
+    if (!pixels || w <= 0 || h <= 0 || stop_count < 2 || !colors || !stops) return -1;
+    float dx = (float)(x1 - x0);
+    float dy = (float)(y1 - y0);
+    float len_sq = dx*dx + dy*dy;
+    if (len_sq < 0.001f) len_sq = 0.001f;
+
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            float px_x = (float)(x - x0);
+            float px_y = (float)(y - y0);
+            float t = (px_x * dx + px_y * dy) / len_sq;
+            if (t < 0.0f) t = 0.0f;
+            if (t > 1.0f) t = 1.0f;
+
+            int lower_idx = 0;
+            int upper_idx = 1;
+            for (int i = 0; i < stop_count - 1; i++) {
+                if (t >= stops[i] && t <= stops[i+1]) {
+                    lower_idx = i;
+                    upper_idx = i + 1;
+                    break;
+                }
+            }
+
+            float range = stops[upper_idx] - stops[lower_idx];
+            float factor = range > 0.0001f ? (t - stops[lower_idx]) / range : 0.0f;
+
+            uint32_t c0 = colors[lower_idx];
+            uint32_t c1 = colors[upper_idx];
+
+            uint8_t r0 = (c0 >> 16) & 0xFF;
+            uint8_t g0 = (c0 >> 8) & 0xFF;
+            uint8_t b0 = c0 & 0xFF;
+
+            uint8_t r1 = (c1 >> 16) & 0xFF;
+            uint8_t g1 = (c1 >> 8) & 0xFF;
+            uint8_t b1 = c1 & 0xFF;
+
+            uint8_t r = (uint8_t)(r0 * (1.0f - factor) + r1 * factor);
+            uint8_t g = (uint8_t)(g0 * (1.0f - factor) + g1 * factor);
+            uint8_t b = (uint8_t)(b0 * (1.0f - factor) + b1 * factor);
+
+            pixels[y * w + x] = (0xFF000000) | (r << 16) | (g << 8) | b;
+        }
+    }
+    return 0;
+}

@@ -234,6 +234,18 @@ int tsfi_quantel_harry_time_slice_wipe(const uint32_t *src_a, const uint32_t *sr
 /* Storyboard Burn-In Frame Indexer */
 int tsfi_quantel_storyboard_burn_index(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int frame_idx, float fps, uint32_t text_color);
 
+/* Quantel Multi-Stop Gradient Builder */
+int tsfi_quantel_paintbox_multistop_gradient(uint32_t *pixels, int w, int h, int x0, int y0, int x1, int y1, const uint32_t *colors, const float *stops, int stop_count);
+
+/* Mirage 3D Page Peel Shadow Matte */
+int tsfi_quantel_mirage_peel_shadow(uint32_t *pixels, int w, int h, float progress, float shadow_intensity);
+
+/* Harry Split Screen Matte Preview */
+int tsfi_quantel_harry_split_matte_preview(const uint32_t *composite, const uint8_t *matte, uint32_t *dst, int w, int h, float split_x);
+
+/* Storyboard Production Slate Block */
+int tsfi_quantel_storyboard_production_slate(uint32_t *pixels, int w, int h, const char *director, const char *project, const char *date);
+
 #endif // TSFI_PAINT_H
 
 

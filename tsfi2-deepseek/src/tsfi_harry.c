@@ -962,3 +962,35 @@ int tsfi_quantel_storyboard_burn_index(uint32_t *pixels, int w, int h, int cell_
     draw_text(pixels, w, h, cell_x + cell_w - 180, cell_y + cell_h - 18, index_str, text_color, 1);
     return 0;
 }
+
+int tsfi_quantel_harry_split_matte_preview(const uint32_t *composite, const uint8_t *matte, uint32_t *dst, int w, int h, float split_x) {
+    if (!composite || !matte || !dst || w <= 0 || h <= 0) return -1;
+    int border_x = (int)(split_x * w);
+
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            int idx = y * w + x;
+            if (x < border_x) {
+                dst[idx] = composite[idx];
+            } else {
+                uint8_t m = matte[idx];
+                dst[idx] = (0xFF000000) | (m << 16) | (m << 8) | m;
+            }
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_storyboard_production_slate(uint32_t *pixels, int w, int h, const char *director, const char *project, const char *date) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    for (int y = 0; y < 45; y++) {
+        for (int x = 0; x < w; x++) {
+            pixels[y * w + x] = 0xFF1C1A17;
+        }
+    }
+
+    char slate_info[256];
+    snprintf(slate_info, sizeof(slate_info), "PROJECT: %s | DIR: %s | DATE: %s", project, director, date);
+    draw_text(pixels, w, h, 20, 16, slate_info, 0xFFFFD700, 1);
+    return 0;
+}

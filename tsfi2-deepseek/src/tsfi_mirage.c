@@ -591,3 +591,30 @@ int tsfi_quantel_mirage_sphere_map(const uint32_t *src, int src_w, int src_h, ui
     }
     return 0;
 }
+
+int tsfi_quantel_mirage_peel_shadow(uint32_t *pixels, int w, int h, float progress, float shadow_intensity) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    int shadow_boundary = (int)(progress * w);
+
+    for (int y = 0; y < h; y++) {
+        uint32_t *row = pixels + y * w;
+        for (int x = 0; x < w; x++) {
+            if (x >= shadow_boundary - 40 && x < shadow_boundary) {
+                float dist = (float)(shadow_boundary - x) / 40.0f;
+                float shadow_factor = 1.0f - (1.0f - dist) * shadow_intensity;
+
+                uint32_t pix = row[x];
+                uint8_t r = (pix >> 16) & 0xFF;
+                uint8_t g = (pix >> 8) & 0xFF;
+                uint8_t b = pix & 0xFF;
+
+                r = (uint8_t)(r * shadow_factor);
+                g = (uint8_t)(g * shadow_factor);
+                b = (uint8_t)(b * shadow_factor);
+
+                row[x] = (0xFF000000) | (r << 16) | (g << 8) | b;
+            }
+        }
+    }
+    return 0;
+}
