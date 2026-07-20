@@ -478,3 +478,22 @@ int tsfi_sage_cics_audit_event(tsfi_reuter_group_commit *gc, uint32_t tx_id, con
     // Log as WAL record to sequential transaction stream
     return tsfi_reuter_group_commit_queue(gc, tx_id, 0xFF00, 16, buffer, buffer, &assigned_lsn);
 }
+
+// 24. SAGE Light Gun selects coordinates and triggers CICS audit logging
+int tsfi_sage_light_gun_audit(tsfi_reuter_group_commit *gc, uint32_t tx_id, const tsfi_sage_light_gun *gun, const int32_t *track_x, const int32_t *track_y, int track_count, int *selected_track_idx) {
+    if (!gc || !gun || !track_x || !track_y || track_count <= 0 || !selected_track_idx) return -1;
+    
+    // Step 1: Perform selection matching
+    int rc = tsfi_sage_light_gun_select(gun, track_x, track_y, track_count, selected_track_idx);
+    if (rc != 0) return rc;
+    
+    // Step 2: Build auditable click event at the coordinates of selected target track
+    tsfi_sage_cics_event event;
+    event.event_type = 2; // Mouse/Click event
+    event.key_code = 0;
+    event.mouse_x = track_x[*selected_track_idx];
+    event.mouse_y = track_y[*selected_track_idx];
+    
+    // Step 3: Write audit entry
+    return tsfi_sage_cics_audit_event(gc, tx_id, &event);
+}

@@ -446,6 +446,30 @@ int main(void) {
     close(a_fd);
     unlink(audit_log_path);
     
+    // Test 25: SAGE Light Gun select and CICS Audit logging
+    const char *gun_audit_log_path = "tmp/reuter_gun_audit.log";
+    int ga_fd = open(gun_audit_log_path, O_RDWR | O_CREAT | O_TRUNC, 0644);
+    assert(ga_fd >= 0);
+    
+    tsfi_reuter_group_commit gun_gc;
+    tsfi_reuter_group_commit_init(&gun_gc, ga_fd);
+    
+    tsfi_sage_light_gun gun_device;
+    gun_device.target_x = 502;
+    gun_device.target_y = 1004;
+    gun_device.trigger_pulled = true;
+    
+    int32_t track_xs[2] = {10, 500};
+    int32_t track_ys[2] = {20, 1000};
+    int selected_track = -1;
+    
+    rc = tsfi_sage_light_gun_audit(&gun_gc, 9002, &gun_device, track_xs, track_ys, 2, &selected_track);
+    assert(rc == 0);
+    assert(selected_track == 1);
+    
+    close(ga_fd);
+    unlink(gun_audit_log_path);
+    
     printf("[SUCCESS] AUTODIN SAGE Transaction Compliance Test Passed!\n");
     return 0;
 }
