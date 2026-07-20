@@ -865,3 +865,11 @@ int tsfi_quantel_storyboard_border_highlights_concentric_double_outer_width_offs
     }
     return 0;
 }
+
+int tsfi_quantel_storyboard_border_highlights_concentric_double_outer_width_offset_color_texture_bevel_shadow(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int offset_w, int border_w, int count, uint32_t color1, uint32_t color2, int outer_margin, int highlight_thickness, int highlight_offset_x, int highlight_offset_y, uint32_t shadow_color, float texture_intensity, int bevel_thickness, int shadow_blur_radius) {
+    if (!pixels || w <= 0 || h <= 0 || offset_w < 0 || border_w <= 0 || count <= 0 || highlight_thickness <= 0) return -1;
+    for (int r = 1; r <= shadow_blur_radius; r++) {
+        tsfi_quantel_storyboard_border_highlights_concentric_double_outer_width_offset_color_texture_bevel(pixels, w, h, cell_x, cell_y, cell_w, cell_h, offset_w, border_w, count, shadow_color, shadow_color, outer_margin, highlight_thickness, highlight_offset_x + r, highlight_offset_y + r, shadow_color, 0.0f, bevel_thickness);
+    }
+    return tsfi_quantel_storyboard_border_highlights_concentric_double_outer_width_offset_color_texture_bevel(pixels, w, h, cell_x, cell_y, cell_w, cell_h, offset_w, border_w, count, color1, color2, outer_margin, highlight_thickness, highlight_offset_x, highlight_offset_y, shadow_color, texture_intensity, bevel_thickness);
+}

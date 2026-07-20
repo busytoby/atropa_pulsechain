@@ -711,6 +711,18 @@ int tsfi_quantel_harry_blend_fields_color_offset_vertical_scale_aspect_rotation_
 /* Storyboard Frame Thumbnail Grid Border Highlights Concentric Double Outer Width Offset Color Texture Bevel */
 int tsfi_quantel_storyboard_border_highlights_concentric_double_outer_width_offset_color_texture_bevel(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int offset_w, int border_w, int count, uint32_t color1, uint32_t color2, int outer_margin, int highlight_thickness, int highlight_offset_x, int highlight_offset_y, uint32_t shadow_color, float texture_intensity, int bevel_thickness);
 
+/* Quantel Paintbox Brush Pressure Jitter Opacity Saturation Value Width Angle Shape Texture Path Spline Dynamics */
+int tsfi_quantel_paintbox_pressure_jitter_opacity_saturation_value_width_angle_shape_texture_path_spline(uint32_t *pixels, int w, int h, float p0_x, float p0_y, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, int radius, float pressure, float jitter_amp, uint32_t color, float angle, float shape_aspect, float texture_scale);
+
+/* Mirage 3D Spherical Page Curl Perspective Rotation Shear Center Light Depth Displacement Warp */
+int tsfi_quantel_mirage_page_curl_perspective_rotation_shear_center_light_depth_displacement_warp(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float curl_radius, float angle, float zoom, float perspective, float rotation_angle, float shear_x, float shear_y, float center_x, float center_y, float light_x, float light_y, float depth_offset, float disp_amplitude, float disp_frequency);
+
+/* Harry Chronological Frame Interlaced Field Split Jitter Blend Offset Color Vertical Scale Aspect Rotation Center Mirror Matte Chroma Keyer */
+int tsfi_quantel_harry_blend_fields_color_offset_vertical_scale_aspect_rotation_center_mirror_matte_chroma(const uint32_t *field_even, const uint32_t *field_odd, uint32_t *dst, int w, int h, float blend_factor, int offset, uint32_t tint_color, float vert_displace, float scale, float aspect, float rotation_angle, float center_x, float center_y, int mirror_h, int mirror_v, const uint8_t *matte_mask, uint32_t chroma_key_color, float chroma_tolerance);
+
+/* Storyboard Frame Thumbnail Grid Border Highlights Concentric Double Outer Width Offset Color Texture Bevel DropShadow */
+int tsfi_quantel_storyboard_border_highlights_concentric_double_outer_width_offset_color_texture_bevel_shadow(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int offset_w, int border_w, int count, uint32_t color1, uint32_t color2, int outer_margin, int highlight_thickness, int highlight_offset_x, int highlight_offset_y, uint32_t shadow_color, float texture_intensity, int bevel_thickness, int shadow_blur_radius);
+
 #endif // TSFI_PAINT_H
 
 

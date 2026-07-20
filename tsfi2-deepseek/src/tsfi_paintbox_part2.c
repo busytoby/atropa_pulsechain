@@ -81,3 +81,35 @@ int tsfi_quantel_paintbox_pressure_jitter_opacity_saturation_value_width_angle_s
 
     return 0;
 }
+
+int tsfi_quantel_paintbox_pressure_jitter_opacity_saturation_value_width_angle_shape_texture_path_spline(uint32_t *pixels, int w, int h, float p0_x, float p0_y, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, int radius, float pressure, float jitter_amp, uint32_t color, float angle, float shape_aspect, float texture_scale) {
+    if (!pixels || w <= 0 || h <= 0 || radius <= 0) return -1;
+
+    int steps = 16;
+    for (int i = 0; i <= steps; i++) {
+        float t = (float)i / steps;
+        float omt = 1.0f - t;
+
+        float cx = omt * omt * omt * p0_x +
+                   3.0f * omt * omt * t * p1_x +
+                   3.0f * omt * t * t * p2_x +
+                   t * t * t * p3_x;
+
+        float cy = omt * omt * omt * p0_y +
+                   3.0f * omt * omt * t * p1_y +
+                   3.0f * omt * t * t * p2_y +
+                   t * t * t * p3_y;
+
+        float tangent_x = 3.0f * omt * omt * (p1_x - p0_x) +
+                          6.0f * omt * t * (p2_x - p1_x) +
+                          3.0f * t * t * (p3_x - p2_x);
+        float tangent_y = 3.0f * omt * omt * (p1_y - p0_y) +
+                          6.0f * omt * t * (p2_y - p1_y) +
+                          3.0f * t * t * (p3_y - p2_y);
+
+        tsfi_quantel_paintbox_pressure_jitter_opacity_saturation_value_width_angle_shape_texture_path(
+            pixels, w, h, (int)cx, (int)cy, radius, pressure, jitter_amp, color, angle, shape_aspect, texture_scale,
+            tangent_x * 0.1f, tangent_y * 0.1f);
+    }
+    return 0;
+}

@@ -477,3 +477,80 @@ int tsfi_quantel_harry_blend_fields_color_offset_vertical_scale_aspect_rotation_
     }
     return 0;
 }
+
+int tsfi_quantel_harry_blend_fields_color_offset_vertical_scale_aspect_rotation_center_mirror_matte_chroma(const uint32_t *field_even, const uint32_t *field_odd, uint32_t *dst, int w, int h, float blend_factor, int offset, uint32_t tint_color, float vert_displace, float scale, float aspect, float rotation_angle, float center_x, float center_y, int mirror_h, int mirror_v, const uint8_t *matte_mask, uint32_t chroma_key_color, float chroma_tolerance) {
+    if (!field_even || !field_odd || !dst || w <= 0 || h <= 0) return -1;
+    if (blend_factor < 0.0f) { blend_factor = 0.0f; }
+    if (blend_factor > 1.0f) { blend_factor = 1.0f; }
+    if (scale <= 0.0f) { scale = 1.0f; }
+    if (aspect <= 0.0f) { aspect = 1.0f; }
+
+    uint8_t tr = (tint_color >> 16) & 0xFF;
+    uint8_t tg = (tint_color >> 8) & 0xFF;
+    uint8_t tb = tint_color & 0xFF;
+
+    uint8_t key_r = (chroma_key_color >> 16) & 0xFF;
+    uint8_t key_g = (chroma_key_color >> 8) & 0xFF;
+    uint8_t key_b = chroma_key_color & 0xFF;
+
+    float cos_r = cosf(rotation_angle);
+    float sin_r = sinf(rotation_angle);
+
+    for (int y = 0; y < h; y++) {
+        int active_y = mirror_v ? (h - 1 - y) : y;
+        float dy = (active_y - center_y) / scale;
+        float displace_y = (y % 2 == 0) ? vert_displace : -vert_displace;
+        int sy = (int)(center_y + dy + displace_y);
+        if (sy < 0) { sy = 0; }
+        if (sy >= h) { sy = h - 1; }
+
+        const uint32_t *row_a = field_even + sy * w;
+        const uint32_t *row_b = field_odd + sy * w;
+        uint32_t *dst_row = dst + y * w;
+
+        int shift_x = (y % 2 == 0) ? offset : -offset;
+
+        for (int x = 0; x < w; x++) {
+            int active_x = mirror_h ? (w - 1 - x) : x;
+            float dx = (active_x - center_x) / (scale * aspect);
+            
+            float rx_rot = dx * cos_r - dy * sin_r;
+            int sx = (int)(center_x + rx_rot);
+            int sx_a = (sx - shift_x + w) % w;
+            int sx_b = (sx + shift_x + w) % w;
+
+            uint32_t ca = row_a[sx_a];
+            uint32_t cb = row_b[sx_b];
+
+            uint8_t ra = (ca >> 16) & 0xFF;
+            uint8_t ga = (ca >> 8) & 0xFF;
+            uint8_t ba = ca & 0xFF;
+
+            uint8_t rb = (cb >> 16) & 0xFF;
+            uint8_t gb = (cb >> 8) & 0xFF;
+            uint8_t bb = cb & 0xFF;
+
+            float diff = sqrtf((ra - key_r)*(ra - key_r) + (ga - key_g)*(ga - key_g) + (ba - key_b)*(ba - key_b)) / 441.67f;
+            float key_blend = (diff < chroma_tolerance) ? 0.0f : 1.0f;
+
+            float mask_val = 1.0f;
+            if (matte_mask) {
+                mask_val = matte_mask[y * w + x] / 255.0f;
+            }
+            float final_blend = blend_factor * mask_val * key_blend;
+
+            uint8_t r = (uint8_t)(ra * (1.0f - final_blend) + rb * final_blend);
+            uint8_t g = (uint8_t)(ga * (1.0f - final_blend) + gb * final_blend);
+            uint8_t b = (uint8_t)(ba * (1.0f - final_blend) + bb * final_blend);
+
+            if (y % 2 == 0) {
+                r = (uint8_t)(r * 0.9f + tr * 0.1f);
+                g = (uint8_t)(g * 0.9f + tg * 0.1f);
+                b = (uint8_t)(b * 0.9f + tb * 0.1f);
+            }
+
+            dst_row[x] = (0xFF000000) | (r << 16) | (g << 8) | b;
+        }
+    }
+    return 0;
+}
