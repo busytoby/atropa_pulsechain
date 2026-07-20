@@ -1368,6 +1368,133 @@ int tsfi_quantel_paintbox_texture_reveal(uint32_t *pixels, int w, int h, int cx,
     return 0;
 }
 
+int tsfi_quantel_harry_color_difference_key(const uint32_t *src, int w, int h, uint8_t *out_mask, float k_factor, float b_factor, float feather_radius) {
+    if (!src || !out_mask || w <= 0 || h <= 0) return -1;
+
+    // Phase 1: Compute Ultimatte G-B color difference alpha map
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = src[i];
+        float r = (pix >> 16) & 0xFF;
+        float g = (pix >> 8) & 0xFF;
+        float b = pix & 0xFF;
+
+        float max_rb = r > b ? r : b;
+        float val = g - b_factor * max_rb;
+        float alpha = 1.0f - k_factor * val;
+
+        if (alpha < 0.0f) alpha = 0.0f;
+        if (alpha > 1.0f) alpha = 1.0f;
+
+        out_mask[i] = (uint8_t)(alpha * 255.0f);
+    }
+
+    // Phase 2: Edge feathering (basic box blur pass on out_mask)
+    if (feather_radius > 0.5f) {
+        uint8_t *temp = malloc(w * h);
+        if (temp) {
+            memcpy(temp, out_mask, w * h);
+            int rad = (int)feather_radius;
+            for (int y = 0; y < h; y++) {
+                for (int x = 0; x < w; x++) {
+                    int sum = 0, count = 0;
+                    for (int ky = -rad; ky <= rad; ky++) {
+                        int py = y + ky;
+                        if (py >= 0 && py < h) {
+                            for (int kx = -rad; kx <= rad; kx++) {
+                                int px = x + kx;
+                                if (px >= 0 && px < w) {
+                                    sum += temp[py * w + px];
+                                    count++;
+                                }
+                            }
+                        }
+                    }
+                    out_mask[y * w + x] = sum / count;
+                }
+            }
+            free(temp);
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_harry_keyframe_transform(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float progress, float start_scale, float end_scale, float start_rot, float end_rot, float start_alpha, float end_alpha) {
+    if (!src || !dst || src_w <= 0 || src_h <= 0 || dst_w <= 0 || dst_h <= 0) return -1;
+
+    memset(dst, 0, dst_w * dst_h * sizeof(uint32_t));
+
+    // Linear interpolator
+    float scale = start_scale * (1.0f - progress) + end_scale * progress;
+    float rot = start_rot * (1.0f - progress) + end_rot * progress;
+    float alpha = start_alpha * (1.0f - progress) + end_alpha * progress;
+
+    if (scale <= 0.001f) return 0; // scaled out
+
+    float cos_r = cosf(rot);
+    float sin_r = sinf(rot);
+
+    float cx_s = src_w / 2.0f;
+    float cy_s = src_h / 2.0f;
+    float cx_d = dst_w / 2.0f;
+    float cy_d = dst_h / 2.0f;
+
+    for (int y = 0; y < dst_h; y++) {
+        float dy = y - cy_d;
+        for (int x = 0; x < dst_w; x++) {
+            float dx = x - cx_d;
+
+            // Backward mapping for rotation and scale
+            float rx = (dx * cos_r + dy * sin_r) / scale;
+            float ry = (-dx * sin_r + dy * cos_r) / scale;
+
+            int sx = (int)(rx + cx_s);
+            int sy = (int)(ry + cy_s);
+
+            if (sx >= 0 && sx < src_w && sy >= 0 && sy < src_h) {
+                uint32_t pixel = src[sy * src_w + sx];
+                uint8_t r = (pixel >> 16) & 0xFF;
+                uint8_t g = (pixel >> 8) & 0xFF;
+                uint8_t b = pixel & 0xFF;
+
+                uint8_t r_res = (uint8_t)(r * alpha);
+                uint8_t g_res = (uint8_t)(g * alpha);
+                uint8_t b_res = (uint8_t)(b * alpha);
+
+                dst[y * dst_w + x] = (0xFF000000) | (r_res << 16) | (g_res << 8) | b_res;
+            }
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_harry_matrix_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32_t *dst, int w, int h, float progress, int grid_m, int grid_n) {
+    if (!src_a || !src_b || !dst || w <= 0 || h <= 0 || grid_m <= 0 || grid_n <= 0) return -1;
+
+    int cell_w = w / grid_m;
+    int cell_h = h / grid_n;
+
+    for (int y = 0; y < h; y++) {
+        int cell_y = y / cell_h;
+        if (cell_y >= grid_n) cell_y = grid_n - 1;
+
+        for (int x = 0; x < w; x++) {
+            int cell_x = x / cell_w;
+            if (cell_x >= grid_m) cell_x = grid_m - 1;
+
+            // Sequential order cell threshold
+            float threshold = (float)(cell_x + cell_y * grid_m) / (grid_m * grid_n);
+            int idx = y * w + x;
+            if (threshold < progress) {
+                dst[idx] = src_b[idx];
+            } else {
+                dst[idx] = src_a[idx];
+            }
+        }
+    }
+    return 0;
+}
+
+
 
 
 

@@ -75,7 +75,17 @@ int tsfi_quantel_paintbox_bezier_stroke(uint32_t *pixels, int w, int h, float p0
 /* Quantel Paintbox: Pressure-gated background canvas paper texture reveal */
 int tsfi_quantel_paintbox_texture_reveal(uint32_t *pixels, int w, int h, int cx, int cy, int radius, const uint8_t *paper_tex, int tex_w, int tex_h, float pressure, uint32_t color);
 
+/* Quantel Harry: Color difference keyer (G-B Ultimatte-style) and edge feathering */
+int tsfi_quantel_harry_color_difference_key(const uint32_t *src, int w, int h, uint8_t *out_mask, float k_factor, float b_factor, float feather_radius);
+
+/* Quantel Harry: 2D Keyframe dynamic scaling, rotation, and opacity transition */
+int tsfi_quantel_harry_keyframe_transform(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float progress, float start_scale, float end_scale, float start_rot, float end_rot, float start_alpha, float end_alpha);
+
+/* Quantel Harry: Matrix grid tile wipe transition (M x N block sweeps) */
+int tsfi_quantel_harry_matrix_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32_t *dst, int w, int h, float progress, int grid_m, int grid_n);
+
 #endif // TSFI_PAINT_H
+
 
 
 
