@@ -463,7 +463,7 @@ int main() {
             }
         }
 
-        // Draw dynamic tiger stripes sweeping across the screen using Paintbox pressure dynamics and path Bezier spline dynamics
+        // Draw dynamic tiger stripes sweeping across the screen using Paintbox pressure dynamics and path Bezier spline flow dynamics
         float p0_x = center_x - 140.0f;
         float p0_y = center_y - 80.0f;
         float p1_x = center_x + 100.0f * cosf(t * 1.5f);
@@ -472,22 +472,22 @@ int main() {
         float p2_y = center_y - 80.0f * cosf(t * 2.2f);
         float p3_x = center_x + 140.0f;
         float p3_y = center_y + 80.0f;
-        tsfi_quantel_paintbox_pressure_jitter_opacity_saturation_value_width_angle_shape_texture_path_spline(canvas, WIDTH, HEIGHT, p0_x, p0_y, p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, 16, 0.9f, 0.3f, 0xFFFF4500, t * 1.5f, 1.4f, 1.8f);
+        tsfi_quantel_paintbox_pressure_jitter_opacity_saturation_value_width_angle_shape_texture_path_spline_flow(canvas, WIDTH, HEIGHT, p0_x, p0_y, p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, 16, 0.9f, 0.3f, 0xFFFF4500, t * 1.5f, 1.4f, 1.8f, 0.5f);
 
         memcpy(canvas_b, canvas, WIDTH * HEIGHT * sizeof(uint32_t));
 
-        // Mirage 3D warps to simulate screen roll / optical distortions with depth and wave displacement
+        // Mirage 3D warps to simulate screen roll / optical distortions with depth, wave displacement and Phong specular reflections
         int phase_cycle = ((int)t) % 4;
         if (phase_cycle == 0) {
             float curl_pulse = 1.0f - fmodf(t, 1.0f);
             tsfi_quantel_mirage_sphere_warp(canvas_b, WIDTH, HEIGHT, dst_buffer, WIDTH, HEIGHT, 0.4f * curl_pulse, 120.0f * (1.0f + curl_pulse));
             memcpy(canvas_b, dst_buffer, WIDTH * HEIGHT * sizeof(uint32_t));
         } else if (phase_cycle == 3) {
-            // Apply 3D page curl perspective rotation shear center light depth wave displacement warp
-            tsfi_quantel_mirage_page_curl_perspective_rotation_shear_center_light_depth_displacement_warp(canvas, WIDTH, HEIGHT, canvas_b, WIDTH, HEIGHT, 45.0f, 0.4f * sinf(t), 1.0f + 0.05f * sinf(t), 0.04f, t * 0.08f, 0.04f * sinf(t), 0.0f, center_x, center_y, 1.0f, 1.0f, 0.05f * cosf(t), 5.0f * sinf(t * 2.0f), 0.1f);
+            // Apply 3D page curl perspective rotation shear center light depth wave displacement Phong warp
+            tsfi_quantel_mirage_page_curl_perspective_rotation_shear_center_light_depth_displacement_phong_warp(canvas, WIDTH, HEIGHT, canvas_b, WIDTH, HEIGHT, 45.0f, 0.4f * sinf(t), 1.0f + 0.05f * sinf(t), 0.04f, t * 0.08f, 0.04f * sinf(t), 0.0f, center_x, center_y, 1.0f, 1.0f, 0.05f * cosf(t), 5.0f * sinf(t * 2.0f), 0.1f, 0.8f);
         }
 
-        // Harry Wipe Transitions with Matte mask and chroma key filter
+        // Harry Wipe Transitions with Matte mask and chroma / luma key filters
         int transition_stage = ((int)t) % 12;
         if (transition_stage == 0) {
             float wipe_p = fmodf(t, 1.0f);
@@ -499,13 +499,13 @@ int main() {
                     matte_mask[y * WIDTH + x] = (x > WIDTH / 2) ? 255 : 128;
                 }
             }
-            tsfi_quantel_harry_blend_fields_color_offset_vertical_scale_aspect_rotation_center_mirror_matte_chroma(canvas_b, mat, dst_buffer, WIDTH, HEIGHT, wipe_p, 4, 0xFFFF8C00, 2.0f * sinf(t), 1.0f + 0.03f * cosf(t), 1.0f + 0.01f * sinf(t), t * 0.03f, center_x, center_y, 0, 0, matte_mask, 0xFF4E342E, 0.15f);
+            tsfi_quantel_harry_blend_fields_color_offset_vertical_scale_aspect_rotation_center_mirror_matte_chroma_luma(canvas_b, mat, dst_buffer, WIDTH, HEIGHT, wipe_p, 4, 0xFFFF8C00, 2.0f * sinf(t), 1.0f + 0.03f * cosf(t), 1.0f + 0.01f * sinf(t), t * 0.03f, center_x, center_y, 0, 0, matte_mask, 0xFF4E342E, 0.15f, 10, 240);
             memcpy(canvas_b, dst_buffer, WIDTH * HEIGHT * sizeof(uint32_t));
             free(mat);
             free(matte_mask);
 
-            // Double outline highlights with inner bevel overlay and directional soft drop shadow
-            tsfi_quantel_storyboard_border_highlights_concentric_double_outer_width_offset_color_texture_bevel_shadow(canvas_b, WIDTH, HEIGHT, 32, 120, WIDTH - 64, HEIGHT - 240, 4, 2, 3, 0xFFFF8C00, 0xFFFF4500, 10, 2, (int)(2.0f * sinf(t)), (int)(2.0f * cosf(t)), 0xFF000000, 0.2f, 1, 2);
+            // Double outline highlights with inner bevel overlay, directional soft drop shadow, and rounded corner bounding clip
+            tsfi_quantel_storyboard_border_highlights_concentric_double_outer_width_offset_color_texture_bevel_shadow_corner(canvas_b, WIDTH, HEIGHT, 32, 120, WIDTH - 64, HEIGHT - 240, 4, 2, 3, 0xFFFF8C00, 0xFFFF4500, 10, 2, (int)(2.0f * sinf(t)), (int)(2.0f * cosf(t)), 0xFF000000, 0.2f, 1, 2, 12);
         }
 
         // Dispatch CICS inputs to HOGAN

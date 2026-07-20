@@ -873,3 +873,40 @@ int tsfi_quantel_storyboard_border_highlights_concentric_double_outer_width_offs
     }
     return tsfi_quantel_storyboard_border_highlights_concentric_double_outer_width_offset_color_texture_bevel(pixels, w, h, cell_x, cell_y, cell_w, cell_h, offset_w, border_w, count, color1, color2, outer_margin, highlight_thickness, highlight_offset_x, highlight_offset_y, shadow_color, texture_intensity, bevel_thickness);
 }
+
+int tsfi_quantel_storyboard_border_highlights_concentric_double_outer_width_offset_color_texture_bevel_shadow_corner(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int offset_w, int border_w, int count, uint32_t color1, uint32_t color2, int outer_margin, int highlight_thickness, int highlight_offset_x, int highlight_offset_y, uint32_t shadow_color, float texture_intensity, int bevel_thickness, int shadow_blur_radius, int corner_radius) {
+    if (!pixels || w <= 0 || h <= 0 || offset_w < 0 || border_w <= 0 || count <= 0 || highlight_thickness <= 0) return -1;
+    tsfi_quantel_storyboard_border_highlights_concentric_double_outer_width_offset_color_texture_bevel_shadow(pixels, w, h, cell_x, cell_y, cell_w, cell_h, offset_w, border_w, count, color1, color2, outer_margin, highlight_thickness, highlight_offset_x, highlight_offset_y, shadow_color, texture_intensity, bevel_thickness, shadow_blur_radius);
+
+    if (corner_radius > 0) {
+        int cx1 = cell_x + corner_radius;
+        int cy1 = cell_y + corner_radius;
+        int cx2 = cell_x + cell_w - corner_radius;
+        int cy2 = cell_y + cell_h - corner_radius;
+
+        for (int y = cell_y; y < cell_y + cell_h; y++) {
+            for (int x = cell_x; x < cell_x + cell_w; x++) {
+                if (x >= 0 && x < w && y >= 0 && y < h) {
+                    int clip = 0;
+                    if (x < cx1 && y < cy1) {
+                        float dist = sqrtf((x - cx1)*(x - cx1) + (y - cy1)*(y - cy1));
+                        if (dist > corner_radius) clip = 1;
+                    } else if (x > cx2 && y < cy1) {
+                        float dist = sqrtf((x - cx2)*(x - cx2) + (y - cy1)*(y - cy1));
+                        if (dist > corner_radius) clip = 1;
+                    } else if (x < cx1 && y > cy2) {
+                        float dist = sqrtf((x - cx1)*(x - cx1) + (y - cy2)*(y - cy2));
+                        if (dist > corner_radius) clip = 1;
+                    } else if (x > cx2 && y > cy2) {
+                        float dist = sqrtf((x - cx2)*(x - cx2) + (y - cy2)*(y - cy2));
+                        if (dist > corner_radius) clip = 1;
+                    }
+                    if (clip) {
+                        pixels[y * w + x] = 0;
+                    }
+                }
+            }
+        }
+    }
+    return 0;
+}
