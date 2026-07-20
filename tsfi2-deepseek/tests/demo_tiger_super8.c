@@ -192,9 +192,16 @@ void generate_tiger_soundtrack(const char *filepath) {
             double arp_freq = parse_note(arp_seq[step]);
 
             for (int s = 0; s < samples_per_step; s++) {
+                int global_idx = (l * 32 + step) * samples_per_step + s;
+                double t_s = (double)global_idx / SAMPLE_RATE;
+
+                double X = sin(t_s * 2.0 * M_PI * 1.5);
+                double Y = cos(t_s * 2.0 * M_PI * 2.5);
+
                 double kick_out = 0.0;
                 if (kick_env > 0.0) {
-                    kick_out = sin(2.0 * M_PI * kick_pitch * s / SAMPLE_RATE) * kick_env;
+                    double active_kick_pitch = kick_pitch * (1.0 + 0.15 * X * Y);
+                    kick_out = sin(2.0 * M_PI * active_kick_pitch * s / SAMPLE_RATE) * kick_env;
                     kick_pitch *= 0.995;
                     kick_env *= 0.992;
                 }
@@ -233,7 +240,7 @@ void generate_tiger_soundtrack(const char *filepath) {
 
                 double bass_out = 0.0;
                 if (bass_freq > 0.0) {
-                    bass_out = (sin(bass_phase) >= 0.0) ? 0.25 : -0.25;
+                    bass_out = sin(bass_phase + 0.6 * X * Y) * 0.35;
                     bass_phase += (2.0 * M_PI * bass_freq) / SAMPLE_RATE;
                     if (bass_phase >= 2.0 * M_PI) bass_phase -= 2.0 * M_PI;
                 }
