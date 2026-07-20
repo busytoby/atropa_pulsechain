@@ -41,6 +41,7 @@
 #include "tsfi_parc_tknoll.h"
 #include "tsfi_parc_rle.h"
 #include "tsfi_parc_figma.h"
+#include "tsfi_parc_figma_advanced.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -873,6 +874,14 @@ int main() {
 
     tsfi_parc_figma_cursor_t cursors[2] = { {120, 120, "User A", 0xFFFF0000}, {180, 150, "User B", 0xFF00FF00} };
     tsfi_parc_figma_draw_cursors(canvas, WIDTH, HEIGHT, cursors, 2);
+
+    // Advanced Figma layer blending, variant property mapping, and Boolean union check
+    tsfi_parc_figma_blend_layer(canvas, canvas_b, WIDTH, HEIGHT, BLEND_MULTIPLY);
+    int var_w, var_h;
+    uint32_t var_col;
+    tsfi_parc_figma_variant_resolve("type=button,state=hover", &var_w, &var_h, &var_col);
+    tsfi_parc_layout_item_t union_result;
+    tsfi_parc_figma_vector_boolean_union(&layout_items[0], &layout_items[1], &union_result);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
