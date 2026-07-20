@@ -8,6 +8,7 @@
 #include "tsfi_genetic.h"
 #include "tsfi_io.h"
 #include "tsfi_pulsechain_rpc.h"
+#include "tsfi_block_monitor.h"
 #include <stdio.h>
 #include <string.h>
 #include <strings.h>
@@ -119,6 +120,9 @@ static bool resolve_token_alias(const char *symbol_or_name, char *out_address, s
     if (!f) {
         f = fopen("../assets/treasury_tokens_federalminter.json", "r");
     }
+    if (!f) {
+        f = fopen("tsfi2-deepseek/assets/treasury_tokens_federalminter.json", "r");
+    }
     if (f) {
         char line[1024];
         char current_addr[128] = {0};
@@ -169,6 +173,57 @@ static bool resolve_token_alias(const char *symbol_or_name, char *out_address, s
     return false;
 }
 
+static void handle_kb_query(const char *param) {
+    FILE *f = fopen("assets/contract_metadata.dat.bin", "rb");
+    if (!f) {
+        f = fopen("../assets/contract_metadata.dat.bin", "rb");
+    }
+    if (!f) {
+        f = fopen("tsfi2-deepseek/assets/contract_metadata.dat.bin", "rb");
+    }
+    if (!f) {
+        tsfi_io_printf(stdout, "[KB] Error: contract_metadata.dat.bin not found.\n");
+        return;
+    }
+    
+    LauRdbmsTable *table = lau_malloc(sizeof(LauRdbmsTable));
+    if (!table) {
+        fclose(f);
+        tsfi_io_printf(stdout, "[KB] Error: memory allocation failed.\n");
+        return;
+    }
+    
+    size_t r = fread(table, sizeof(LauRdbmsTable), 1, f);
+    fclose(f);
+    
+    if (r != 1) {
+        tsfi_io_printf(stdout, "[KB] Error: failed to read table from disk.\n");
+        lau_free(table);
+        return;
+    }
+    
+    tsfi_io_printf(stdout, "[KB] Searching for '%s'...\n", param);
+    bool found = false;
+    for (uint32_t i = 0; i < table->count; i++) {
+        if (strcasecmp(table->rows[i].address, param) == 0 ||
+            strncasecmp(table->rows[i].symbol, param, strlen(param)) == 0) {
+            tsfi_io_printf(stdout, "----------------------------------------\n");
+            tsfi_io_printf(stdout, "Address   : %s\n", table->rows[i].address);
+            tsfi_io_printf(stdout, "Symbol    : %s\n", table->rows[i].symbol);
+            tsfi_io_printf(stdout, "Name      : %s\n", table->rows[i].name);
+            tsfi_io_printf(stdout, "Decimals  : %lu\n", (unsigned long)table->rows[i].decimals);
+            tsfi_io_printf(stdout, "Price PLS : %.8f\n", table->rows[i].price_pls);
+            found = true;
+        }
+    }
+    if (!found) {
+        tsfi_io_printf(stdout, "[KB] No matching token records found.\n");
+    } else {
+        tsfi_io_printf(stdout, "----------------------------------------\n");
+    }
+    lau_free(table);
+}
+
 static int handle_query_command(WaveSystem *ws, const char *new_d) {
     (void)ws;
     char action[32];
@@ -178,7 +233,13 @@ static int handle_query_command(WaveSystem *ws, const char *new_d) {
     char formatted_data[1030];
     char result[8192];
 
-    if (sscanf(new_d, "%s %127s %1023s", action, raw_address, raw_data) == 3) {
+    int parsed = sscanf(new_d, "%s %127s %1023s", action, raw_address, raw_data);
+    if (parsed == 2 && strcmp(action, "KB") == 0) {
+        handle_kb_query(raw_address);
+        return 0;
+    }
+
+    if (parsed == 3) {
         // 1. Resolve Address Aliases (hardcoded + registry)
         if (!resolve_token_alias(raw_address, resolved_address, sizeof(resolved_address))) {
             strncpy(resolved_address, raw_address, sizeof(resolved_address) - 1);
@@ -214,7 +275,7 @@ static int handle_query_command(WaveSystem *ws, const char *new_d) {
             tsfi_io_printf(stdout, "[RPC] Error: Unknown query action '%s'.\n", action);
         }
     } else {
-        tsfi_io_printf(stdout, "[RPC] Usage: 0.0 <CALL|STORAGE> <address|alias> <hex_data|alias>\n");
+        tsfi_io_printf(stdout, "[RPC] Usage: 0.0 <CALL|STORAGE> <address|alias> <hex_data|alias> OR 0.0 KB <alias|address>\n");
     }
     return 0;
 }
@@ -424,7 +485,7 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
         if (strcmp(new_d, "TELEMETRY") == 0) {
             return handle_telemetry_command(ws);
         }
-        if (strncmp(new_d, "CALL", 4) == 0 || strncmp(new_d, "STORAGE", 7) == 0) {
+        if (strncmp(new_d, "CALL", 4) == 0 || strncmp(new_d, "STORAGE", 7) == 0 || strncmp(new_d, "KB", 2) == 0) {
             return handle_query_command(ws, new_d);
         }
         if (strncmp(new_d, "MATH", 4) == 0) {
