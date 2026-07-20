@@ -382,6 +382,26 @@ int main(void) {
         printf("[PASS] Cryptographic Oblivious Transfer Baud LLM DAT on ACAB bridge tests\n");
     }
     
+    // Test 17: STANAG 5066 Framed Cryptographic Oblivious Transfer (OT)
+    {
+        const char *bin_path = "tmp/ot_crypto_stanag.dat.bin";
+        int rc = tsfi_ot_crypto_stanag_baud_llm_dat(bin_path, 0, "SECRET_A", "SECRET_B");
+        assert(rc == 0);
+        
+        TSFiEerDatabase db;
+        rc = tsfi_eer_bridge_ot_crypto_stanag_acab(&db, bin_path);
+        assert(rc == 0);
+        
+        assert(db.incident_count == 1);
+        assert(db.incidents[0].incident_id == 5000); // Choice 0 mapped to 5000
+        assert(db.agency_count == 2);
+        assert(db.channel_count == 1);
+        assert(db.channels[0].encryption_type == 3); // STANAG 5066
+        
+        remove(bin_path);
+        printf("[PASS] STANAG 5066 Framed Oblivious Transfer Baud LLM DAT on ACAB bridge tests\n");
+    }
+    
     printf("[SUCCESS] All Encodings Compliance Tests Passed!\n");
     return 0;
 }
