@@ -822,6 +822,149 @@ int tsfi_quantel_harry_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32
     return 0;
 }
 
+int tsfi_quantel_paintbox_flood_fill(uint32_t *pixels, int w, int h, int start_x, int start_y, uint32_t fill_color, float tolerance) {
+    if (!pixels || w <= 0 || h <= 0 || start_x < 0 || start_x >= w || start_y < 0 || start_y >= h) return -1;
+
+    uint32_t start_color = pixels[start_y * w + start_x];
+    if (start_color == fill_color) return 0;
+
+    uint8_t target_r = (start_color >> 16) & 0xFF;
+    uint8_t target_g = (start_color >> 8) & 0xFF;
+    uint8_t target_b = start_color & 0xFF;
+
+    // Simple Queue/Stack for flood fill traversal
+    int max_nodes = w * h;
+    int *queue_x = malloc(max_nodes * sizeof(int));
+    int *queue_y = malloc(max_nodes * sizeof(int));
+    uint8_t *visited = calloc(max_nodes, 1);
+
+    if (!queue_x || !queue_y || !visited) {
+        free(queue_x); free(queue_y); free(visited);
+        return -2;
+    }
+
+    int q_start = 0, q_end = 0;
+    queue_x[q_end] = start_x;
+    queue_y[q_end] = start_y;
+    visited[start_y * w + start_x] = 1;
+    q_end++;
+
+    int dx[] = { 1, -1, 0, 0 };
+    int dy[] = { 0, 0, 1, -1 };
+
+    while (q_start < q_end) {
+        int cx = queue_x[q_start];
+        int cy = queue_y[q_start];
+        q_start++;
+
+        int idx = cy * w + cx;
+        uint32_t color = pixels[idx];
+
+        uint8_t r = (color >> 16) & 0xFF;
+        uint8_t g = (color >> 8) & 0xFF;
+        uint8_t b = color & 0xFF;
+
+        float diff = sqrtf((r - target_r) * (r - target_r) +
+                           (g - target_g) * (g - target_g) +
+                           (b - target_b) * (b - target_b));
+
+        if (diff <= tolerance) {
+            pixels[idx] = fill_color;
+
+            for (int i = 0; i < 4; i++) {
+                int nx = cx + dx[i];
+                int ny = cy + dy[i];
+                if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+                    int nidx = ny * w + nx;
+                    if (!visited[nidx]) {
+                        queue_x[q_end] = nx;
+                        queue_y[q_end] = ny;
+                        visited[nidx] = 1;
+                        q_end++;
+                    }
+                }
+            }
+        }
+    }
+
+    free(queue_x); free(queue_y); free(visited);
+    return 0;
+}
+
+int tsfi_quantel_mirage_cone_wrap(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float cone_height, float cone_radius) {
+    if (!src || !dst || src_w <= 0 || src_h <= 0 || dst_w <= 0 || dst_h <= 0 || cone_radius <= 0.0f) return -1;
+
+    memset(dst, 0, dst_w * dst_h * sizeof(uint32_t));
+    float cx = dst_w / 2.0f;
+    float cy = dst_h / 2.0f;
+
+    for (int y = 0; y < dst_h; y++) {
+        float dy = y - cy;
+        for (int x = 0; x < dst_w; x++) {
+            float dx = x - cx;
+            float r_proj = sqrtf(dx * dx + dy * dy);
+
+            if (r_proj <= cone_radius) {
+                float theta = atan2f(dy, dx);
+                if (theta < 0) theta += 2.0f * M_PI;
+
+                float u = theta / (2.0f * M_PI);
+                float v = r_proj / cone_radius; // Height mapping along radius
+
+                int sx = (int)(u * src_w);
+                int sy = (int)(v * src_h);
+
+                if (sx >= 0 && sx < src_w && sy >= 0 && sy < src_h) {
+                    dst[y * dst_w + x] = src[sy * src_w + sx];
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_harry_posterize(uint32_t *pixels, int w, int h, int levels) {
+    if (!pixels || w <= 0 || h <= 0 || levels < 2) return -1;
+
+    float scale = 255.0f / (levels - 1);
+
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = pixels[i];
+        uint8_t r = (pix >> 16) & 0xFF;
+        uint8_t g = (pix >> 8) & 0xFF;
+        uint8_t b = pix & 0xFF;
+
+        r = (uint8_t)(roundf(r / scale) * scale);
+        g = (uint8_t)(roundf(g / scale) * scale);
+        b = (uint8_t)(roundf(b / scale) * scale);
+
+        pixels[i] = (0xFF000000) | (r << 16) | (g << 8) | b;
+    }
+    return 0;
+}
+
+int tsfi_quantel_harry_solarize(uint32_t *pixels, int w, int h, float threshold) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = pixels[i];
+        uint8_t r = (pix >> 16) & 0xFF;
+        uint8_t g = (pix >> 8) & 0xFF;
+        uint8_t b = pix & 0xFF;
+
+        float luma = 0.299f * r + 0.587f * g + 0.114f * b;
+        if (luma > threshold) {
+            r = 255 - r;
+            g = 255 - g;
+            b = 255 - b;
+        }
+
+        pixels[i] = (0xFF000000) | (r << 16) | (g << 8) | b;
+    }
+    return 0;
+}
+
+
 int tsfi_quantel_harry_spill_suppress(uint32_t *pixels, int w, int h, const char *suppress_type, float amount) {
     if (!pixels || w <= 0 || h <= 0) return -1;
 

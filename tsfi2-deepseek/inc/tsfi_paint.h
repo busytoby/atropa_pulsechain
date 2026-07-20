@@ -120,7 +120,20 @@ int tsfi_quantel_mirage_torus_wrap(const uint32_t *src, int src_w, int src_h, ui
 /* Quantel Paintbox: Draw calligraphic vector shapes (lines, ellipses) using flat chisel stamps */
 int tsfi_quantel_paintbox_calligraphy_shape(uint32_t *pixels, int w, int h, int start_x, int start_y, int end_x, int end_y, int max_radius, float pressure, float aspect_ratio, float angle, uint32_t color);
 
+/* Quantel Paintbox: Paint bucket flood fill tool with color similarity tolerance */
+int tsfi_quantel_paintbox_flood_fill(uint32_t *pixels, int w, int h, int start_x, int start_y, uint32_t fill_color, float tolerance);
+
+/* Quantel Mirage: 3D Cone warp coordinate projection mapping */
+int tsfi_quantel_mirage_cone_wrap(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float cone_height, float cone_radius);
+
+/* Quantel Harry: Posterize color filter to reduce channel bits */
+int tsfi_quantel_harry_posterize(uint32_t *pixels, int w, int h, int levels);
+
+/* Quantel Harry: Solarize color filter to invert highlights/midtones */
+int tsfi_quantel_harry_solarize(uint32_t *pixels, int w, int h, float threshold);
+
 #endif // TSFI_PAINT_H
+
 
 
 
