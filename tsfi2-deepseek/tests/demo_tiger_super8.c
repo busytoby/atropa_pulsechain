@@ -647,6 +647,49 @@ void draw_hogan_telemetry(uint32_t *pixels, int w, int h, const hogan_umbrella_s
     snprintf(buf, sizeof(buf), "BCDIC T-CODE: %02X %02X %02X %02X", bcd_buf[0], bcd_buf[1], bcd_buf[2], bcd_buf[3]);
     tsfi_quantel_paintbox_typographer(pixels, w, 512, start_x + 280, start_y + 56, buf, 0xFFc5a059, 8.0f);
 }
+static void draw_char_1bit(uint16_t *buf, int cx, int cy, char c) {
+    static const uint8_t font8x8[16][8] = {
+        {0x3C, 0x66, 0x6E, 0x7E, 0x76, 0x66, 0x66, 0x00}, // A
+        {0x7C, 0x66, 0x66, 0x7C, 0x66, 0x66, 0x7C, 0x00}, // B
+        {0x3C, 0x66, 0x60, 0x60, 0x60, 0x66, 0x3C, 0x00}, // C
+        {0x78, 0x6C, 0x66, 0x66, 0x66, 0x6C, 0x78, 0x00}, // D
+        {0x7E, 0x60, 0x60, 0x7C, 0x60, 0x60, 0x7E, 0x00}, // E
+        {0x7E, 0x60, 0x60, 0x7C, 0x60, 0x60, 0x60, 0x00}, // F
+        {0x3C, 0x66, 0x60, 0x6E, 0x66, 0x66, 0x3C, 0x00}, // G
+        {0x66, 0x66, 0x66, 0x7E, 0x66, 0x66, 0x66, 0x00}, // H
+        {0x3C, 0x18, 0x18, 0x18, 0x18, 0x18, 0x3C, 0x00}, // I
+        {0x1E, 0x0C, 0x0C, 0x0C, 0x0C, 0xCC, 0x78, 0x00}, // J
+        {0x66, 0x6C, 0x78, 0x70, 0x78, 0x6C, 0x66, 0x00}, // K
+        {0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x7E, 0x00}, // L
+        {0x63, 0x77, 0x7F, 0x6B, 0x63, 0x63, 0x63, 0x00}, // M
+        {0x66, 0x76, 0x7E, 0x7E, 0x76, 0x66, 0x66, 0x00}, // N
+        {0x3C, 0x66, 0x66, 0x66, 0x66, 0x66, 0x3C, 0x00}, // O
+        {0x7C, 0x66, 0x66, 0x7C, 0x60, 0x60, 0x60, 0x00}  // P
+    };
+    int idx = c - 'A';
+    if (idx < 0 || idx >= 16) idx = 2; // fallback to 'C'
+    for (int y = 0; y < 8; y++) {
+        uint8_t row = font8x8[idx][y];
+        for (int x = 0; x < 8; x++) {
+            if ((row >> (7 - x)) & 1) {
+                int px = cx + x;
+                int py = cy + y;
+                if (px >= 0 && px < 606 && py >= 0 && py < 808) {
+                    buf[py * 38 + (px / 16)] |= (uint16_t)(1 << (15 - (px % 16)));
+                }
+            }
+        }
+    }
+}
+
+static void draw_string_1bit(uint16_t *buf, int cx, int cy, const char *str) {
+    int x_offset = 0;
+    while (*str) {
+        draw_char_1bit(buf, cx + x_offset, cy, *str);
+        x_offset += 8;
+        str++;
+    }
+}
 
 int main() {
     srand((unsigned int)time(NULL));
@@ -1230,7 +1273,14 @@ int main() {
 
         // Xerox Alto Video Scanline & CRT frame rendering inside Smalltalk VM window
         memset(alto_display_mem, 0, 38 * 808 * sizeof(uint16_t));
-        for (int y = 0; y < 808; y++) {
+        
+        // Draw mainframe status indicators inside the 1-bit display buffer using our A-P font
+        draw_string_1bit(alto_display_mem, 10, 20, "CICS OK");
+        draw_string_1bit(alto_display_mem, 10, 35, "CADE IMF");
+        draw_string_1bit(alto_display_mem, 10, 50, "EBCDIC");
+        draw_string_1bit(alto_display_mem, 10, 65, "HOGAN");
+
+        for (int y = 80; y < 808; y++) {
             alto_display_mem[y * 38 + (y % 38)] = (uint16_t)(0xF0F0 ^ (y * 7));
             if (y % 40 < 10) {
                 for (int w = 0; w < 10; w++) {
