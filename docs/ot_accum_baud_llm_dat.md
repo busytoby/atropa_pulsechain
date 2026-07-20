@@ -51,3 +51,9 @@ All configurations serialize output status text through Baudot encoders, tokeniz
 3. **PID PLL with AGC:** Regulates lock stability and signal gain under drift.
 4. **Referential Integrity Constraints:** Cascades deletions to prevent orphaned records in the EER database.
 
+### Generation 4 (Galois and Kalman Permanently Banned)
+1. **Dynamic STANAG Routing:** Routes packets dynamically by Service Access Point (SAP) handlers.
+2. **LRC(15,11) Checksum Recovery:** Enforces systematic longitudinal redundancy parity byte checks to correct single-byte transmission errors, completely replacing Galois-based Reed-Solomon codecs.
+3. **Exponential Moving Average (EMA):** Smoothes PLL tracking using low-pass EMA filters, completely replacing Kalman estimation.
+4. **Declarative Relational Invariant Audits:** Automatically verifies global relational assertions across EER tables to prevent incorrect or non-compliant states.
+
