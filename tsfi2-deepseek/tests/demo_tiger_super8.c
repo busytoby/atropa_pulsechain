@@ -44,6 +44,7 @@
 #include "tsfi_parc_figma_advanced.h"
 #include "tsfi_parc_figma_super.h"
 #include "tsfi_parc_figma_proto.h"
+#include "tsfi_parc_figma_vector.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -898,6 +899,15 @@ int main() {
     char css_out[128];
     tsfi_parc_figma_to_css(&layout_items[0], 4.0f, 0xFF4A90E2, css_out, sizeof(css_out));
     tsfi_parc_figma_drop_shadow(canvas, WIDTH, HEIGHT, &layout_items[0], 4, 4, 2, 0xFF000000);
+
+    // Figma vector Bezier curves, stencil masking, and overrides check
+    tsfi_parc_figma_draw_bezier(canvas, WIDTH, HEIGHT, 10, 10, 50, 100, 100, 0, 150, 150, 0xFFFFFFFF);
+    uint8_t stencil[16] = { 255, 255, 255, 255, 0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0 };
+    tsfi_parc_figma_apply_mask(canvas, WIDTH, HEIGHT, stencil, 4, 4, 10, 10);
+    tsfi_parc_figma_override_t ovr = { 0xFFFF0000, "Override Text", 1, 1 };
+    uint32_t base_c = 0xFFFFFFFF;
+    char base_t[32] = "Original Text";
+    tsfi_parc_figma_apply_overrides(&base_c, base_t, &ovr);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
