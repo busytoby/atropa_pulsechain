@@ -532,3 +532,27 @@ int tsfi_quantel_mirage_twirl(const uint32_t *src, int src_w, int src_h, uint32_
     }
     return 0;
 }
+
+int tsfi_quantel_mirage_accordion_fold(const uint32_t *src_a, const uint32_t *src_b, uint32_t *dst, int w, int h, float progress, int folds) {
+    if (!src_a || !src_b || !dst || w <= 0 || h <= 0 || folds <= 0) return -1;
+    memset(dst, 0, w * h * sizeof(uint32_t));
+
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            float norm_x = (float)x / w;
+            float cycle = sinf(norm_x * folds * M_PI);
+            float fold_offset = cycle * progress * 0.1f * w;
+
+            int sx = x - (int)fold_offset;
+            if (sx >= 0 && sx < w) {
+                int idx = y * w + sx;
+                if (norm_x < progress) {
+                    dst[y * w + x] = src_b[idx];
+                } else {
+                    dst[y * w + x] = src_a[idx];
+                }
+            }
+        }
+    }
+    return 0;
+}

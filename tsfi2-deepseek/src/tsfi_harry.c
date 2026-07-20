@@ -868,3 +868,59 @@ int tsfi_quantel_storyboard_drop_frame_timecode(int frame_number, float fps, cha
              hours, mins, secs, is_drop_frame ? ';' : ':', frames);
     return 0;
 }
+
+int tsfi_quantel_harry_hsl_despill(uint32_t *pixels, int w, int h, float threshold_hue, float suppression_amount) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = pixels[i];
+        uint8_t r = (pix >> 16) & 0xFF;
+        uint8_t g = (pix >> 8) & 0xFF;
+        uint8_t b = pix & 0xFF;
+
+        float h_val, s_val, l_val;
+        tsfi_rgb_to_hsl(r, g, b, &h_val, &s_val, &l_val);
+
+        float delta_h = fabsf(h_val - threshold_hue);
+        if (delta_h > 0.5f) delta_h = 1.0f - delta_h;
+
+        if (delta_h < 0.1f) {
+            float damp = (0.1f - delta_h) / 0.1f * suppression_amount;
+            s_val *= (1.0f - damp);
+            uint8_t nr, ng, nb;
+            tsfi_hsl_to_rgb(h_val, s_val, l_val, &nr, &ng, &nb);
+            pixels[i] = (0xFF000000) | (nr << 16) | (ng << 8) | nb;
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_storyboard_aspect_guides(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, const char *ratio_str, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    float aspect = 1.777f;
+    if (strcmp(ratio_str, "4:3") == 0) aspect = 1.333f;
+    else if (strcmp(ratio_str, "1.85:1") == 0) aspect = 1.85f;
+
+    int crop_w = cell_w;
+    int crop_h = (int)(cell_w / aspect);
+    if (crop_h > cell_h) {
+        crop_h = cell_h;
+        crop_w = (int)(cell_h * aspect);
+    }
+
+    int ox = cell_x + (cell_w - crop_w) / 2;
+    int oy = cell_y + (cell_h - crop_h) / 2;
+
+    for (int x = ox; x < ox + crop_w; x++) {
+        if (x >= 0 && x < w) {
+            if (oy >= 0 && oy < h) pixels[oy * w + x] = color;
+            if (oy + crop_h - 1 >= 0 && oy + crop_h - 1 < h) pixels[(oy + crop_h - 1) * w + x] = color;
+        }
+    }
+    for (int y = oy; y < oy + crop_h; y++) {
+        if (y >= 0 && y < h) {
+            if (ox >= 0 && ox < w) pixels[y * w + ox] = color;
+            if (ox + crop_w - 1 >= 0 && ox + crop_w - 1 < w) pixels[y * w + (ox + crop_w - 1)] = color;
+        }
+    }
+    return 0;
+}

@@ -210,6 +210,18 @@ int tsfi_quantel_harry_erode_dilate(const uint8_t *src_mask, uint8_t *dst_mask, 
 /* Storyboard SMPTE Drop-Frame Configurator */
 int tsfi_quantel_storyboard_drop_frame_timecode(int frame_number, float fps, char *timecode_out, int max_len);
 
+/* Quantel Brush Shear Jitter */
+int tsfi_quantel_paintbox_shear_jitter(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float pressure, float jitter_amount, float base_rotation, uint32_t color);
+
+/* Mirage 3D Accordion Sheet Fold Transition */
+int tsfi_quantel_mirage_accordion_fold(const uint32_t *src_a, const uint32_t *src_b, uint32_t *dst, int w, int h, float progress, int folds);
+
+/* Harry Matte HSL Despill */
+int tsfi_quantel_harry_hsl_despill(uint32_t *pixels, int w, int h, float threshold_hue, float suppression_amount);
+
+/* Storyboard Aspect Ratio Guides */
+int tsfi_quantel_storyboard_aspect_guides(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, const char *ratio_str, uint32_t color);
+
 #endif // TSFI_PAINT_H
 
 
