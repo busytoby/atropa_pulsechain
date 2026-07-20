@@ -284,6 +284,7 @@ int tsfi_quantel_storyboard_grid(const uint32_t **frames, int frame_count, int f
         char label[64];
         snprintf(label, sizeof(label), "PANEL %02d", i + 1);
         draw_text(dst_sheet, sheet_w, sheet_h, grid_x * cell_w + 10, (grid_y + 1) * cell_h - 20, label, 0xFF00FF00, 1);
+        tsfi_quantel_storyboard_aspect_guides(dst_sheet, sheet_w, sheet_h, grid_x * cell_w, grid_y * cell_h, cell_w, cell_h, "1.85:1", 0xFFFFD700);
     }
     return 0;
 }
