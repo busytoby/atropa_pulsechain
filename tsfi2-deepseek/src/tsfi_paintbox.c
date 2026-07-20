@@ -1064,3 +1064,10 @@ int tsfi_quantel_paintbox_contrast_adjust(uint32_t *pixels, int w, int h, float 
     return 0;
 }
 
+int tsfi_quantel_paintbox_pressure_radius(uint32_t *pixels, int w, int h, int cx, int cy, int max_radius, float pressure, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0 || max_radius <= 0) return -1;
+    int r = (int)(max_radius * pressure);
+    if (r < 1) { r = 1; }
+    return tsfi_quantel_paintbox_airbrush(pixels, w, h, cx, cy, r, 1.0f, color);
+}
+
