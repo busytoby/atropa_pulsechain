@@ -681,3 +681,19 @@ int tsfi_quantel_storyboard_border_highlights_offset_width_color_outer_double(ui
     }
     return 0;
 }
+
+int tsfi_quantel_storyboard_border_highlights_concentric(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int offset_w, int border_w, int count, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0 || offset_w < 0 || border_w <= 0 || count <= 0) return -1;
+    for (int c = 0; c < count; c++) {
+        int current_offset = offset_w + c * border_w * 2;
+        for (int offset = 0; offset < border_w; offset++) {
+            int tx = cell_x - current_offset - offset;
+            int ty = cell_y - current_offset - offset;
+            int tw = cell_w + 2 * (current_offset + offset);
+            int th = cell_h + 2 * (current_offset + offset);
+            if (tx < 0 || ty < 0 || tx + tw > w || ty + th > h) { continue; }
+            tsfi_quantel_storyboard_border_highlights(pixels, w, h, tx, ty, tw, th, color);
+        }
+    }
+    return 0;
+}

@@ -615,6 +615,18 @@ int tsfi_quantel_storyboard_border_highlights_offset_width_color_outer_double(ui
 /* Orchestrator & Paintbox Synthesizer + Red/Blue Box Integration */
 int tsfi_quantel_orchestrator_paintbox_synth_link(uint32_t *pixels, int w, int h, int cx, int cy, float pressure, float speed, float *audio_buf, int audio_count);
 
+/* Quantel Paintbox Chalk Pressure Texture Modulation */
+int tsfi_quantel_paintbox_chalk_pressure_texture(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float pressure, float texture_scale, uint32_t color);
+
+/* Mirage 3D Ribbon / Page Wave Warp */
+int tsfi_quantel_mirage_ribbon_wave_warp(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float frequency, float amplitude);
+
+/* Harry Chronological Frame Interlaced Field Split Jitter Blend Offset Color */
+int tsfi_quantel_harry_blend_fields_color_offset(const uint32_t *field_even, const uint32_t *field_odd, uint32_t *dst, int w, int h, float blend_factor, int offset, uint32_t tint_color);
+
+/* Storyboard Frame Thumbnail Grid Border Highlights Concentric */
+int tsfi_quantel_storyboard_border_highlights_concentric(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int offset_w, int border_w, int count, uint32_t color);
+
 #endif // TSFI_PAINT_H
 
 

@@ -1325,3 +1325,41 @@ int tsfi_quantel_orchestrator_paintbox_synth_link(uint32_t *pixels, int w, int h
     return 0;
 }
 
+int tsfi_quantel_paintbox_chalk_pressure_texture(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float pressure, float texture_scale, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0 || radius <= 0) return -1;
+    uint8_t r_src = (color >> 16) & 0xFF;
+    uint8_t g_src = (color >> 8) & 0xFF;
+    uint8_t b_src = color & 0xFF;
+
+    for (int y = cy - radius; y <= cy + radius; y++) {
+        if (y < 0 || y >= h) continue;
+        uint32_t *row = pixels + y * w;
+        int dy = y - cy;
+        for (int x = cx - radius; x <= cx + radius; x++) {
+            if (x < 0 || x >= w) continue;
+            int dx = x - cx;
+            float dist = sqrtf((float)(dx * dx + dy * dy));
+            if (dist <= radius) {
+                float noise = (float)rand() / RAND_MAX;
+                float pattern = sinf(x * texture_scale) * cosf(y * texture_scale);
+                float density = (1.0f - (dist / radius)) * pressure * pattern;
+                
+                if (noise < density) {
+                    uint32_t pix = row[x];
+                    uint8_t r_dst = (pix >> 16) & 0xFF;
+                    uint8_t g_dst = (pix >> 8) & 0xFF;
+                    uint8_t b_dst = pix & 0xFF;
+
+                    float alpha = density * 0.8f;
+                    uint8_t r = (uint8_t)(r_src * alpha + r_dst * (1.0f - alpha));
+                    uint8_t g = (uint8_t)(g_src * alpha + g_dst * (1.0f - alpha));
+                    uint8_t b = (uint8_t)(b_src * alpha + b_dst * (1.0f - alpha));
+
+                    row[x] = (0xFF000000) | (r << 16) | (g << 8) | b;
+                }
+            }
+        }
+    }
+    return 0;
+}
+
