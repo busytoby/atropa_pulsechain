@@ -137,4 +137,7 @@ int tsfi_sage_generate_vector(tsfi_sage_vector *vec, int32_t sx, int32_t sy, int
 int tsfi_sage_duplex_reuter_sync(tsfi_sage_duplex *duplex, const tsfi_reuter_tx_entry *active_table, int active_count, tsfi_reuter_tx_entry *standby_table, int *standby_count);
 int tsfi_autodin_preempt_gray_locks(tsfi_autodin_preempt_channel *chan, tsfi_reuter_lock_head *locks, int lock_count, tsfi_gray_consistency_degree degree);
 
+int tsfi_sage_duplex_checkpoint_recover(tsfi_sage_duplex *duplex, int log_fd, tsfi_reuter_page *pages, int page_count, tsfi_reuter_tx_entry *tx_table, int *tx_count, tsfi_reuter_dirty_page *dirty_table, int *dirty_count);
+int tsfi_autodin_preempt_cascade_abort(tsfi_autodin_preempt_channel *chan, tsfi_gray_abort_tracker *tracker, uint32_t *cascaded_aborts_out, int *cascade_count);
+
 #endif // TSFI_AUTODIN_SAGE_H

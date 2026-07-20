@@ -356,3 +356,30 @@ int tsfi_autodin_preempt_gray_locks(tsfi_autodin_preempt_channel *chan, tsfi_reu
     
     return 0;
 }
+
+// 16. SAGE Duplex recovery from Checkpoints on Standby promote failovers
+int tsfi_sage_duplex_checkpoint_recover(tsfi_sage_duplex *duplex, int log_fd, tsfi_reuter_page *pages, int page_count, tsfi_reuter_tx_entry *tx_table, int *tx_count, tsfi_reuter_dirty_page *dirty_table, int *dirty_count) {
+    if (!duplex) return -1;
+    
+    // Simulate failover first
+    int promoted = tsfi_sage_duplex_sync(duplex, false); // Active crashed, Standby promoted
+    if (promoted != 1) return -2;
+    
+    // Standby CPU triggers ARIES recovery from checkpoint data
+    return tsfi_reuter_aries_recover_from_checkpoint(log_fd, pages, page_count, tx_table, tx_count, dirty_table, dirty_count);
+}
+
+// 17. AUTODIN Preemption cascading dependency abort
+int tsfi_autodin_preempt_cascade_abort(tsfi_autodin_preempt_channel *chan, tsfi_gray_abort_tracker *tracker, uint32_t *cascaded_aborts_out, int *cascade_count) {
+    if (!chan || !tracker || !cascaded_aborts_out || !cascade_count) return -1;
+    
+    // If channel is preempted, the suspended transaction is aborted to release write locks
+    uint32_t target_abort_tx = chan->suspended_tx_id;
+    
+    // Record suspended transaction as aborted
+    cascaded_aborts_out[*cascade_count] = target_abort_tx;
+    (*cascade_count)++;
+    
+    // Cascade aborts to all dependent transactions that read uncommitted data
+    return tsfi_gray_abort_cascade(tracker, target_abort_tx, cascaded_aborts_out, cascade_count);
+}

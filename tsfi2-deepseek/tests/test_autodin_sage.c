@@ -259,6 +259,64 @@ int main(void) {
     assert(rc == 0);
     assert(preempt_locks[0].request_count == 0); // Lock successfully preempted and released!
     
+    // Test 17: SAGE-Reuter Duplex Checkpoint Recovery Promoted Failovers
+    tsfi_sage_duplex recover_duplex;
+    recover_duplex.active_cpu_id = 1;
+    recover_duplex.standby_cpu_id = 2;
+    recover_duplex.last_sync_time = 0;
+    recover_duplex.standby_active = false;
+    
+    const char *recover_log_path = "tmp/reuter_recover.log";
+    int rec_fd = open(recover_log_path, O_RDWR | O_CREAT | O_TRUNC, 0644);
+    assert(rec_fd >= 0);
+    
+    tsfi_reuter_tx_entry dummy_tx[1] = {{5001, 10, true}};
+    tsfi_reuter_dirty_page dummy_dirty[1] = {{12, 10}};
+    uint64_t chk_lsn = 0;
+    rc = tsfi_reuter_write_checkpoint(rec_fd, dummy_tx, 1, dummy_dirty, 1, &chk_lsn);
+    assert(rc == 0);
+    lseek(rec_fd, 0, SEEK_SET);
+    
+    tsfi_reuter_page pages[4];
+    memset(pages, 0, sizeof(pages));
+    tsfi_reuter_tx_entry tx_table[4];
+    memset(tx_table, 0, sizeof(tx_table));
+    int tx_count = 0;
+    tsfi_reuter_dirty_page dirty_table[4];
+    memset(dirty_table, 0, sizeof(dirty_table));
+    int dirty_count = 0;
+    
+    rc = tsfi_sage_duplex_checkpoint_recover(&recover_duplex, rec_fd, pages, 4, tx_table, &tx_count, dirty_table, &dirty_count);
+    assert(rc == 0); // Standby promoted & recovered transactions from log checkpoint!
+    assert(recover_duplex.standby_active == true);
+    assert(recover_duplex.active_cpu_id == 2);
+    
+    close(rec_fd);
+    unlink(recover_log_path);
+    
+    // Test 18: AUTODIN Preemption Cascading Aborts (Jim Gray bridge)
+    tsfi_gray_abort_tracker tracker;
+    memset(&tracker, 0, sizeof(tracker));
+    
+    // Register dependency: TX 6002 read dirty data from TX 6001 (suspended_tx_id)
+    rc = tsfi_gray_abort_add_dep(&tracker, 6001, 6002);
+    assert(rc == 0);
+    
+    tsfi_autodin_preempt_channel cascade_chan;
+    cascade_chan.channel_busy = true;
+    cascade_chan.current_precedence = AUTODIN_PRECEDENCE_ROUTINE;
+    cascade_chan.suspended_tx_id = 6001;
+    
+    uint32_t aborted_txs[16];
+    memset(aborted_txs, 0, sizeof(aborted_txs));
+    int aborted_count = 0;
+    
+    rc = tsfi_autodin_preempt_cascade_abort(&cascade_chan, &tracker, aborted_txs, &aborted_count);
+    assert(rc == 0);
+    assert(aborted_count == 2); // Suspend 6001 and cascaded to 6002
+    assert(aborted_txs[0] == 6001);
+    assert(aborted_txs[1] == 6002);
+    
     printf("[SUCCESS] AUTODIN SAGE Transaction Compliance Test Passed!\n");
     return 0;
 }
