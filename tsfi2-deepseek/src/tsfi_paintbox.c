@@ -882,3 +882,9 @@ int tsfi_quantel_paintbox_chalk_brush(uint32_t *pixels, int w, int h, int cx, in
     }
     return 0;
 }
+
+int tsfi_quantel_paintbox_dynamic_smudge(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float pressure, float smudge_dryness, uint32_t *brush_color) {
+    if (!pixels || w <= 0 || h <= 0 || radius <= 0 || !brush_color) return -1;
+    float effective_smudge = pressure * (1.0f - smudge_dryness);
+    return tsfi_quantel_paintbox_wet_paint(pixels, w, h, cx, cy, radius, effective_smudge, brush_color);
+}

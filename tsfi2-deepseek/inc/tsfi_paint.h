@@ -267,6 +267,18 @@ int tsfi_quantel_mirage_plane_tilt(const uint32_t *src, int src_w, int src_h, ui
 /* Storyboard Page Divider Layout */
 int tsfi_quantel_storyboard_page_divider(uint32_t *pixels, int w, int h, int y_coord, uint32_t line_color);
 
+/* Quantel Paintbox Dynamic Smudge Brush */
+int tsfi_quantel_paintbox_dynamic_smudge(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float pressure, float smudge_dryness, uint32_t *brush_color);
+
+/* Mirage 3D Dynamic Flag Wave Warp */
+int tsfi_quantel_mirage_flag_wave(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float amplitude, float frequency, float speed, float t);
+
+/* Harry SMPTE-C to Rec709 Color Space Converter */
+int tsfi_quantel_harry_smptec_to_rec709(uint32_t *pixels, int w, int h);
+
+/* Storyboard Frame Thumbnail Shadow Borders */
+int tsfi_quantel_storyboard_thumbnail_shadows(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h);
+
 #endif // TSFI_PAINT_H
 
 

@@ -1022,3 +1022,46 @@ int tsfi_quantel_storyboard_page_divider(uint32_t *pixels, int w, int h, int y_c
     }
     return 0;
 }
+
+int tsfi_quantel_harry_smptec_to_rec709(uint32_t *pixels, int w, int h) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = pixels[i];
+        float r = ((pix >> 16) & 0xFF) / 255.0f;
+        float g = ((pix >> 8) & 0xFF) / 255.0f;
+        float b = (pix & 0xFF) / 255.0f;
+
+        float nr = 1.112f * r - 0.100f * g - 0.012f * b;
+        float ng = -0.021f * r + 1.037f * g - 0.016f * b;
+        float nb = -0.041f * r - 0.063f * g + 1.104f * b;
+
+        if (nr < 0.0f) { nr = 0.0f; }
+        if (nr > 1.0f) { nr = 1.0f; }
+        if (ng < 0.0f) { ng = 0.0f; }
+        if (ng > 1.0f) { ng = 1.0f; }
+        if (nb < 0.0f) { nb = 0.0f; }
+        if (nb > 1.0f) { nb = 1.0f; }
+
+        pixels[i] = (0xFF000000) | ((int)(nr * 255.0f) << 16) | ((int)(ng * 255.0f) << 8) | (int)(nb * 255.0f);
+    }
+    return 0;
+}
+
+int tsfi_quantel_storyboard_thumbnail_shadows(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    for (int y = cell_y + 4; y < cell_y + cell_h + 4; y++) {
+        if (y < 0 || y >= h) continue;
+        uint32_t *row = pixels + y * w;
+        for (int x = cell_x + 4; x < cell_x + cell_w + 4; x++) {
+            if (x < 0 || x >= w) continue;
+            if (y >= cell_y + cell_h || x >= cell_x + cell_w) {
+                uint32_t pix = row[x];
+                uint8_t r = (uint8_t)(((pix >> 16) & 0xFF) * 0.3f);
+                uint8_t g = (uint8_t)(((pix >> 8) & 0xFF) * 0.3f);
+                uint8_t b = (uint8_t)((pix & 0xFF) * 0.3f);
+                row[x] = (0xFF000000) | (r << 16) | (g << 8) | b;
+            }
+        }
+    }
+    return 0;
+}
