@@ -1263,6 +1263,112 @@ int tsfi_quantel_paintbox_filter_jitter(int raw_x, int raw_y, int prev_x, int pr
     return 0;
 }
 
+int tsfi_quantel_paintbox_pressure_color_mod(uint32_t base_color, float pressure, float hue_drift, float sat_drift, uint32_t *out_color) {
+    if (!out_color) return -1;
+
+    uint8_t r = (base_color >> 16) & 0xFF;
+    uint8_t g = (base_color >> 8) & 0xFF;
+    uint8_t b = base_color & 0xFF;
+
+    float h, s, l;
+    tsfi_rgb_to_hsl(r, g, b, &h, &s, &l);
+
+    // Apply pressure-induced drift
+    h += hue_drift * pressure;
+    if (h > 1.0f) h -= 1.0f;
+    if (h < 0.0f) h += 1.0f;
+
+    s += sat_drift * pressure;
+    if (s > 1.0f) s = 1.0f;
+    if (s < 0.0f) s = 0.0f;
+
+    uint8_t out_r, out_g, out_b;
+    tsfi_hsl_to_rgb(h, s, l, &out_r, &out_g, &out_b);
+
+    *out_color = (0xFF000000) | (out_r << 16) | (out_g << 8) | out_b;
+    return 0;
+}
+
+int tsfi_quantel_paintbox_bezier_stroke(uint32_t *pixels, int w, int h, float p0_x, float p0_y, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, int radius, float pressure, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0 || radius <= 0) return -1;
+
+    // Estimate step count based on control point distance
+    float d1_x = p1_x - p0_x; float d1_y = p1_y - p0_y;
+    float d2_x = p2_x - p1_x; float d2_y = p2_y - p1_y;
+    float d3_x = p3_x - p2_x; float d3_y = p3_y - p2_y;
+    float total_dist = sqrtf(d1_x * d1_x + d1_y * d1_y) + sqrtf(d2_x * d2_x + d2_y * d2_y) + sqrtf(d3_x * d3_x + d3_y * d3_y);
+
+    int steps = (int)(total_dist / 2.0f);
+    if (steps < 4) steps = 4;
+
+    for (int i = 0; i <= steps; i++) {
+        float t = (float)i / steps;
+        float omt = 1.0f - t;
+
+        // Cubic Bezier evaluation
+        float cx = omt * omt * omt * p0_x +
+                   3.0f * omt * omt * t * p1_x +
+                   3.0f * omt * t * t * p2_x +
+                   t * t * t * p3_x;
+
+        float cy = omt * omt * omt * p0_y +
+                   3.0f * omt * omt * t * p1_y +
+                   3.0f * omt * t * t * p2_y +
+                   t * t * t * p3_y;
+
+        tsfi_quantel_paintbox_airbrush(pixels, w, h, (int)cx, (int)cy, radius, pressure, color);
+    }
+    return 0;
+}
+
+int tsfi_quantel_paintbox_texture_reveal(uint32_t *pixels, int w, int h, int cx, int cy, int radius, const uint8_t *paper_tex, int tex_w, int tex_h, float pressure, uint32_t color) {
+    if (!pixels || !paper_tex || w <= 0 || h <= 0 || tex_w <= 0 || tex_h <= 0 || radius <= 0) return -1;
+
+    uint8_t r_src = (color >> 16) & 0xFF;
+    uint8_t g_src = (color >> 8) & 0xFF;
+    uint8_t b_src = color & 0xFF;
+
+    for (int y = cy - radius; y <= cy + radius; y++) {
+        if (y < 0 || y >= h) continue;
+        uint32_t *row = pixels + y * w;
+        int dy = y - cy;
+
+        // Texture tiling mapping
+        int tex_y = y % tex_h;
+        if (tex_y < 0) tex_y += tex_h;
+        const uint8_t *tex_row = paper_tex + tex_y * tex_w;
+
+        for (int x = cx - radius; x <= cx + radius; x++) {
+            if (x < 0 || x >= w) continue;
+            int dx = x - cx;
+
+            if (dx * dx + dy * dy <= radius * radius) {
+                int tex_x = x % tex_w;
+                if (tex_x < 0) tex_x += tex_w;
+
+                // Modulate opacity: light pressure reveals texture grain, high pressure fills solid
+                float texture_grain = tex_row[tex_x] / 255.0f;
+                float intensity = (1.0f - pressure) * texture_grain + pressure;
+                if (intensity > 1.0f) intensity = 1.0f;
+                if (intensity < 0.0f) intensity = 0.0f;
+
+                uint32_t dest = row[x];
+                uint8_t r_dst = (dest >> 16) & 0xFF;
+                uint8_t g_dst = (dest >> 8) & 0xFF;
+                uint8_t b_dst = dest & 0xFF;
+
+                uint8_t r_res = (uint8_t)(r_src * intensity + r_dst * (1.0f - intensity));
+                uint8_t g_res = (uint8_t)(g_src * intensity + g_dst * (1.0f - intensity));
+                uint8_t b_res = (uint8_t)(b_src * intensity + b_dst * (1.0f - intensity));
+
+                row[x] = (0xFF000000) | (r_res << 16) | (g_res << 8) | b_res;
+            }
+        }
+    }
+    return 0;
+}
+
+
 
 
 

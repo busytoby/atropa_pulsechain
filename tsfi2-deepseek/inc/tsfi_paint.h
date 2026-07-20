@@ -66,7 +66,17 @@ int tsfi_quantel_paintbox_stylus_shear(uint32_t *pixels, int w, int h, int cx, i
 /* Quantel Paintbox: Exponential smoothing filter for tablet coordinate jitter removal */
 int tsfi_quantel_paintbox_filter_jitter(int raw_x, int raw_y, int prev_x, int prev_y, float alpha, int *smooth_x, int *smooth_y);
 
+/* Quantel Paintbox: Tablet color modulation with pressure-to-hue drift */
+int tsfi_quantel_paintbox_pressure_color_mod(uint32_t base_color, float pressure, float hue_drift, float sat_drift, uint32_t *out_color);
+
+/* Quantel Paintbox: Dynamic cubic Bezier curve interpolation along tablet points */
+int tsfi_quantel_paintbox_bezier_stroke(uint32_t *pixels, int w, int h, float p0_x, float p0_y, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, int radius, float pressure, uint32_t color);
+
+/* Quantel Paintbox: Pressure-gated background canvas paper texture reveal */
+int tsfi_quantel_paintbox_texture_reveal(uint32_t *pixels, int w, int h, int cx, int cy, int radius, const uint8_t *paper_tex, int tex_w, int tex_h, float pressure, uint32_t color);
+
 #endif // TSFI_PAINT_H
+
 
 
 
