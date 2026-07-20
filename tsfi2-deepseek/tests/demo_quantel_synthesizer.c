@@ -153,6 +153,19 @@ void apply_super8_crop(uint32_t *pixels, int w, int h, int f_idx) {
             pixels[y * w + x] = (pix & 0xFF000000) | (r << 16) | (g << 8) | b;
         }
     }
+
+    if (f_idx % 25 == 0) {
+        int sx = rand() % (w - 60) + 30;
+        int sy = rand() % (h - 2 * border_y) + border_y;
+        int len = rand() % 20 + 10;
+        for (int i = 0; i < len; i++) {
+            int px = sx + i;
+            int py = sy + (int)(sinf(i * 0.2f) * 3.0f);
+            if (px >= 0 && px < w && py >= border_y && py < h - border_y) {
+                pixels[py * w + px] = 0xFF101010;
+            }
+        }
+    }
 }
 
 int main() {
@@ -197,6 +210,11 @@ int main() {
         tsfi_quantel_paintbox_pressure_jitter_hue(canvas, WIDTH, HEIGHT, (int)px, (int)py, 20, 0.8f, 0.2f, paint_color);
         tsfi_quantel_paintbox_pressure_jitter_size(canvas, WIDTH, HEIGHT, (int)(WIDTH - px), (int)(HEIGHT - py), 25, 0.7f, 0.3f, 0xFF00FFFF);
 
+        // Draw a dry chalk textured path
+        float chalk_x = WIDTH / 2.0f + 140.0f * cosf(t * 1.5f);
+        float chalk_y = HEIGHT / 2.0f + 100.0f * sinf(t * 1.5f);
+        tsfi_quantel_paintbox_chalk_pressure_texture(canvas, WIDTH, HEIGHT, (int)chalk_x, (int)chalk_y, 18, 0.9f, 2.0f, 0xFFFFA500);
+
         // Periodically trigger a Mirage 3D Warp on chord hits (every 4 seconds)
         memcpy(canvas_b, canvas, WIDTH * HEIGHT * sizeof(uint32_t));
         int phase_cycle = ((int)t) % 4;
@@ -204,6 +222,9 @@ int main() {
             float pulse = 1.0f - fmodf(t, 1.0f);
             tsfi_quantel_mirage_sphere_warp(canvas_b, WIDTH, HEIGHT, dst_buffer, WIDTH, HEIGHT, 0.5f * pulse, 150.0f * (1.0f + pulse));
             memcpy(canvas_b, dst_buffer, WIDTH * HEIGHT * sizeof(uint32_t));
+        } else if (phase_cycle == 1) {
+            // Apply ribbon wave trapeze warp
+            tsfi_quantel_mirage_ribbon_wave_warp(canvas, WIDTH, HEIGHT, canvas_b, WIDTH, HEIGHT, 0.05f, 20.0f * sinf(t));
         } else if (phase_cycle == 2) {
             // Spherical perspective twist
             tsfi_quantel_mirage_spherical_coordinate_zoom_twist_warp(canvas, WIDTH, HEIGHT, canvas_b, WIDTH, HEIGHT, 1.0f, 1.0f, 1.1f, 0.2f * sinf(t));
@@ -212,18 +233,20 @@ int main() {
         // Periodically trigger a Harry Wipe Transition (every 15 seconds)
         int transition_stage = ((int)t) % 15;
         if (transition_stage == 0) {
-            // Apply Clock Wipe transition from canvas_b to a secondary matrix canvas
             float wipe_p = fmodf(t, 1.0f);
             uint32_t *matrix_canvas = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
-            // Secondary grid texture
             for (int y = 0; y < HEIGHT; y++) {
                 for (int x = 0; x < WIDTH; x++) {
                     matrix_canvas[y * WIDTH + x] = ((x / 16 + y / 16) % 2 == 0) ? 0xFF002244 : 0xFF004488;
                 }
             }
-            tsfi_quantel_harry_clock_wipe(canvas_b, matrix_canvas, dst_buffer, WIDTH, HEIGHT, wipe_p);
+            // Use field split color offset for transition
+            tsfi_quantel_harry_blend_fields_color_offset(canvas_b, matrix_canvas, dst_buffer, WIDTH, HEIGHT, wipe_p, 4, 0xFF00FF00);
             memcpy(canvas_b, dst_buffer, WIDTH * HEIGHT * sizeof(uint32_t));
             free(matrix_canvas);
+
+            // Draw Concentric storyboard highlights around central frame
+            tsfi_quantel_storyboard_border_highlights_concentric(canvas_b, WIDTH, HEIGHT, 32, 120, WIDTH - 64, HEIGHT - 240, 4, 2, 3, 0xFFFFD700);
         }
 
         // Enforce Super8 crop aspect ratio and sprocket holes
