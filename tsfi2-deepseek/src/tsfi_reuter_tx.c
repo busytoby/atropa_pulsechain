@@ -999,3 +999,72 @@ int tsfi_reuter_lock_acquire_range(tsfi_reuter_range_lock *locks, int *lock_coun
     
     return 0;
 }
+
+// 25. Escrow Transactions (Hot-spot Concurrency)
+int tsfi_reuter_escrow_reserve(tsfi_reuter_escrow_resource *res, int32_t delta) {
+    if (!res) return -1;
+    
+    // Evaluate aggregate bounds dynamically
+    if (delta < 0) {
+        // Decrement: check if value plus current active decrements satisfies lower limit
+        if (res->val + res->active_decrements + delta < res->lower_limit) {
+            return -2; // Boundary breach: Reserve failed!
+        }
+        res->active_decrements += delta;
+    } else {
+        // Increment: check if value plus current active increments satisfies upper limit
+        if (res->val + res->active_increments + delta > res->upper_limit) {
+            return -3; // Boundary breach: Reserve failed!
+        }
+        res->active_increments += delta;
+    }
+    
+    return 0; // Successfully reserved!
+}
+
+int tsfi_reuter_escrow_commit(tsfi_reuter_escrow_resource *res, int32_t delta) {
+    if (!res) return -1;
+    
+    // Apply changes permanently to the actual value
+    res->val += delta;
+    if (delta < 0) {
+        res->active_decrements -= delta;
+    } else {
+        res->active_increments -= delta;
+    }
+    return 0;
+}
+
+int tsfi_reuter_escrow_rollback(tsfi_reuter_escrow_resource *res, int32_t delta) {
+    if (!res) return -1;
+    
+    // Discard reservations
+    if (delta < 0) {
+        res->active_decrements -= delta;
+    } else {
+        res->active_increments -= delta;
+    }
+    return 0;
+}
+
+// 26. Multi-Level Transactions (Logical Rollback)
+int tsfi_reuter_logical_rollback(uint32_t tx_id, int (*inverse_op)(uint32_t, void *), void *op_context) {
+    if (!inverse_op) return -1;
+    
+    // Execute the logical inverse compensating operation (logical undo)
+    return inverse_op(tx_id, op_context);
+}
+
+// 27. Log-Based Transaction Shipping/Replication
+int tsfi_reuter_ship_log_record(int target_fd, const tsfi_reuter_log_record *record) {
+    if (target_fd < 0 || !record) return -1;
+    
+    // Ship log record block sequentially to target node/file descriptor
+    ssize_t bytes_written = write(target_fd, record, sizeof(tsfi_reuter_log_record));
+    if (bytes_written < (ssize_t)sizeof(tsfi_reuter_log_record)) {
+        return -2;
+    }
+    
+    fsync(target_fd);
+    return 0;
+}

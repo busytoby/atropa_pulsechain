@@ -253,4 +253,24 @@ int tsfi_reuter_chop_verify(const uint32_t *conflict_matrix, int pieces_count,
 int tsfi_reuter_lock_acquire_range(tsfi_reuter_range_lock *locks, int *lock_count, 
                                    uint32_t tx_id, uint32_t start_key, uint32_t end_key, bool gap_only);
 
+// Escrow transaction resource descriptor
+typedef struct {
+    int32_t val;
+    int32_t lower_limit;
+    int32_t upper_limit;
+    int32_t active_decrements;
+    int32_t active_increments;
+} tsfi_reuter_escrow_resource;
+
+// Escrow Transaction APIs
+int tsfi_reuter_escrow_reserve(tsfi_reuter_escrow_resource *res, int32_t delta);
+int tsfi_reuter_escrow_commit(tsfi_reuter_escrow_resource *res, int32_t delta);
+int tsfi_reuter_escrow_rollback(tsfi_reuter_escrow_resource *res, int32_t delta);
+
+// Multi-Level Transaction Logical Rollback API
+int tsfi_reuter_logical_rollback(uint32_t tx_id, int (*inverse_op)(uint32_t, void *), void *op_context);
+
+// Log-Based Transaction Shipping/Replication API
+int tsfi_reuter_ship_log_record(int target_fd, const tsfi_reuter_log_record *record);
+
 #endif // TSFI_REUTER_TX_H
