@@ -40,6 +40,7 @@
 #include "tsfi_parc_knoll.h"
 #include "tsfi_parc_tknoll.h"
 #include "tsfi_parc_rle.h"
+#include "tsfi_parc_figma.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -861,6 +862,17 @@ int main() {
     uint8_t decomp_buf[16];
     int comp_sz = tsfi_parc_rle_compress(raw_data, 16, comp_buf, sizeof(comp_buf));
     tsfi_parc_rle_decompress(comp_buf, comp_sz, decomp_buf, 16);
+
+    // Figma Vector Network, Auto Layout, and Multi-Cursor verify check
+    tsfi_parc_vector_node_t nodes[3] = { {100, 100}, {200, 100}, {150, 200} };
+    tsfi_parc_vector_edge_t edges[3] = { {0, 1}, {1, 2}, {2, 0} };
+    tsfi_parc_figma_draw_vector_network(canvas, WIDTH, HEIGHT, nodes, 3, edges, 3, 0xFFFFFFFF);
+
+    tsfi_parc_layout_item_t layout_items[3] = { {0, 0, 50, 50}, {0, 0, 50, 50}, {0, 0, 50, 50} };
+    tsfi_parc_figma_auto_layout(layout_items, 3, 0, 10, 10, 5, WIDTH, HEIGHT);
+
+    tsfi_parc_figma_cursor_t cursors[2] = { {120, 120, "User A", 0xFFFF0000}, {180, 150, "User B", 0xFF00FF00} };
+    tsfi_parc_figma_draw_cursors(canvas, WIDTH, HEIGHT, cursors, 2);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
