@@ -538,3 +538,28 @@ int tsfi_autodin_preempt_lu62_rollback(tsfi_autodin_preempt_channel *chan, tsfi_
     // Selectively undo coordinates database changes back to the savepoint LSN
     return tsfi_reuter_selective_undo(log_fd, pages, page_count, chan->suspended_tx_id, target_lsn);
 }
+
+// 28. SAGE duplex failover audit logger under CICS
+int tsfi_sage_duplex_failover_audit(tsfi_reuter_group_commit *gc, tsfi_sage_duplex *duplex, bool active_alive) {
+    if (!gc || !duplex) return -1;
+    
+    uint32_t old_active = duplex->active_cpu_id;
+    
+    // Perform the state transition
+    int rc = tsfi_sage_duplex_sync(duplex, active_alive);
+    if (rc < 0) return rc;
+    
+    // If a failover occurs, write an audit event WAL record
+    if (!active_alive && duplex->standby_active) {
+        uint8_t payload[16];
+        memset(payload, 0, 16);
+        memcpy(payload, &old_active, 4);
+        memcpy(payload + 4, &duplex->active_cpu_id, 4);
+        memcpy(payload + 8, &duplex->last_sync_time, 8);
+        
+        uint64_t assigned_lsn = 0;
+        return tsfi_reuter_group_commit_queue(gc, 9999, 0xFFE0, 16, payload, payload, &assigned_lsn);
+    }
+    
+    return 0;
+}

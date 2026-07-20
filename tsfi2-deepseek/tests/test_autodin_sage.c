@@ -537,6 +537,29 @@ int main(void) {
     close(roll_fd);
     unlink(roll_log_path);
     
+    // Test 29: SAGE Duplex Failover Auditing
+    tsfi_sage_duplex fail_duplex;
+    fail_duplex.active_cpu_id = 101;
+    fail_duplex.standby_cpu_id = 102;
+    fail_duplex.last_sync_time = 50;
+    fail_duplex.standby_active = false;
+    
+    const char *fail_log_path = "tmp/reuter_fail.log";
+    int f_fd = open(fail_log_path, O_RDWR | O_CREAT | O_TRUNC, 0644);
+    assert(f_fd >= 0);
+    
+    tsfi_reuter_group_commit fail_gc;
+    tsfi_reuter_group_commit_init(&fail_gc, f_fd);
+    
+    // Active CPU dead, trigger failover
+    rc = tsfi_sage_duplex_failover_audit(&fail_gc, &fail_duplex, false);
+    assert(rc == 0);
+    assert(fail_duplex.active_cpu_id == 102);
+    assert(fail_duplex.standby_active == true);
+    
+    close(f_fd);
+    unlink(fail_log_path);
+    
     printf("[SUCCESS] AUTODIN SAGE Transaction Compliance Test Passed!\n");
     return 0;
 }

@@ -161,5 +161,6 @@ int tsfi_sage_light_gun_audit(tsfi_reuter_group_commit *gc, uint32_t tx_id, cons
 int tsfi_sage_cics_event_parity_verify(const tsfi_sage_cics_event *event, uint8_t parity_bit);
 int tsfi_winchester_scsi_parity_verify(const tsfi_winchester_scsi *scsi, uint8_t parity_bit);
 int tsfi_autodin_preempt_lu62_rollback(tsfi_autodin_preempt_channel *chan, tsfi_reuter_tx_context *ctx, int log_fd, tsfi_reuter_page *pages, int page_count, const char *savepoint_name);
+int tsfi_sage_duplex_failover_audit(tsfi_reuter_group_commit *gc, tsfi_sage_duplex *duplex, bool active_alive);
 
 #endif // TSFI_AUTODIN_SAGE_H
