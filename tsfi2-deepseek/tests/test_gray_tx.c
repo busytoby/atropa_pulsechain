@@ -4,7 +4,7 @@
 #include <string.h>
 
 int main(void) {
-    printf("[INFO] Starting Jim Gray Transaction Compliance Test...\n");
+    printf("[INFO] Starting Jim Gray Transaction Compliance Test (Extended)...\n");
     
     // Test 1: Degrees of Consistency locking
     tsfi_reuter_lock_head lock_head;
@@ -80,6 +80,64 @@ int main(void) {
     
     tsfi_gray_lh_destroy(&lh);
     
-    printf("[SUCCESS] Jim Gray Transaction Compliance Test Passed!\n");
+    // Test 4: Fault-Tolerant Process Pairs Failover
+    tsfi_gray_process_pair pair;
+    memset(&pair, 0, sizeof(tsfi_gray_process_pair));
+    
+    tsfi_reuter_page pri_page;
+    memset(&pri_page, 0, sizeof(tsfi_reuter_page));
+    pri_page.page_id = 8;
+    strcpy((char *)pri_page.data, "Tandem Primary Memory Content");
+    
+    // Sync Primary state to Backup
+    rc = tsfi_gray_pp_checkpoint_sync(&pair, 101, 45, &pri_page);
+    assert(rc == 0);
+    assert(pair.active_tx_id == 101);
+    
+    // Trigger primary node crash and failover takeover
+    tsfi_reuter_page backup_active_page;
+    rc = tsfi_gray_pp_failover(&pair, &backup_active_page);
+    assert(rc == 0);
+    assert(pair.primary_failed == true);
+    assert(strcmp((char *)backup_active_page.data, "Tandem Primary Memory Content") == 0);
+    
+    // Test 5: Debit-Credit (TPC-A workload simulation)
+    tsfi_gray_tpca_state bank_state;
+    bank_state.branch_balance = 5000;
+    bank_state.teller_balance = 500;
+    bank_state.account_balance = 10000;
+    
+    int history_record = 0;
+    rc = tsfi_gray_tpca_exec(&bank_state, -100, &history_record);
+    assert(rc == 0);
+    assert(bank_state.account_balance == 9900);
+    assert(bank_state.teller_balance == 400);
+    assert(bank_state.branch_balance == 4900);
+    assert(history_record == 15200); // 9900 + 400 + 4900
+    
+    // Test 6: Cascading Abort Chain Tracker
+    tsfi_gray_abort_tracker tracker;
+    tsfi_gray_abort_tracker_init(&tracker);
+    
+    // tx 1001 writes data, tx 1002 reads it (dirty dependency)
+    rc = tsfi_gray_abort_add_dep(&tracker, 1001, 1002);
+    assert(rc == 0);
+    
+    // tx 1002 writes data, tx 1003 reads it (dirty dependency)
+    rc = tsfi_gray_abort_add_dep(&tracker, 1002, 1003);
+    assert(rc == 0);
+    
+    // tx 1001 aborts -> check if 1002 and 1003 cascade abort
+    uint32_t cascaded_aborts[16];
+    memset(cascaded_aborts, 0, sizeof(cascaded_aborts));
+    int cascade_count = 0;
+    
+    rc = tsfi_gray_abort_cascade(&tracker, 1001, cascaded_aborts, &cascade_count);
+    assert(rc == 0);
+    assert(cascade_count == 2);
+    assert(cascaded_aborts[0] == 1002);
+    assert(cascaded_aborts[1] == 1003);
+    
+    printf("[SUCCESS] Jim Gray Transaction Compliance Test (Extended) Passed!\n");
     return 0;
 }

@@ -200,3 +200,85 @@ void tsfi_gray_lh_destroy(tsfi_gray_linear_hash *lh) {
     free(lh->buckets);
     lh->buckets = NULL;
 }
+
+// 4. Fault-Tolerant Process Pairs
+int tsfi_gray_pp_checkpoint_sync(tsfi_gray_process_pair *pair, uint32_t tx_id, uint64_t lsn, const tsfi_reuter_page *page) {
+    if (!pair) return -1;
+    
+    pair->active_tx_id = tx_id;
+    pair->last_sync_lsn = lsn;
+    if (page) {
+        pair->replicated_page = *page;
+    }
+    return 0;
+}
+
+int tsfi_gray_pp_failover(tsfi_gray_process_pair *pair, tsfi_reuter_page *active_page) {
+    if (!pair || !active_page) return -1;
+    
+    pair->primary_failed = true;
+    *active_page = pair->replicated_page; // Restore page state on failover
+    return 0;
+}
+
+// 5. Debit-Credit Workload (TPC-A Simulator)
+int tsfi_gray_tpca_exec(tsfi_gray_tpca_state *state, int32_t delta, int *out_history_val) {
+    if (!state || !out_history_val) return -1;
+    
+    // Standard Debit-Credit logic:
+    // Update Branch, Teller, and Account balances
+    state->branch_balance += delta;
+    state->teller_balance += delta;
+    state->account_balance += delta;
+    
+    // Generate history record value
+    *out_history_val = state->account_balance + state->teller_balance + state->branch_balance;
+    return 0;
+}
+
+// 6. Cascading Abort Chain Tracker
+void tsfi_gray_abort_tracker_init(tsfi_gray_abort_tracker *at) {
+    if (!at) return;
+    memset(at, 0, sizeof(tsfi_gray_abort_tracker));
+}
+
+int tsfi_gray_abort_add_dep(tsfi_gray_abort_tracker *at, uint32_t writer_id, uint32_t reader_id) {
+    if (!at) return -1;
+    if (at->count >= 16) return -2; // Limit exceeded
+    
+    at->dependencies[at->count].writer_tx_id = writer_id;
+    at->dependencies[at->count].reader_tx_id = reader_id;
+    at->dependencies[at->count].active = true;
+    at->count++;
+    return 0;
+}
+
+int tsfi_gray_abort_cascade(tsfi_gray_abort_tracker *at, uint32_t aborted_tx_id, uint32_t *cascaded_aborts_out, int *cascade_count) {
+    if (!at || !cascaded_aborts_out || !cascade_count) return -1;
+    
+    // Find all active readers that read from this aborted writer transaction
+    for (int i = 0; i < at->count; i++) {
+        if (at->dependencies[i].active && at->dependencies[i].writer_tx_id == aborted_tx_id) {
+            uint32_t dependent_tx = at->dependencies[i].reader_tx_id;
+            
+            // Check if already recorded
+            bool already_recorded = false;
+            for (int j = 0; j < *cascade_count; j++) {
+                if (cascaded_aborts_out[j] == dependent_tx) {
+                    already_recorded = true;
+                    break;
+                }
+            }
+            
+            if (!already_recorded) {
+                cascaded_aborts_out[*cascade_count] = dependent_tx;
+                (*cascade_count)++;
+                at->dependencies[i].active = false;
+                
+                // Recursively cascade aborts downstream
+                tsfi_gray_abort_cascade(at, dependent_tx, cascaded_aborts_out, cascade_count);
+            }
+        }
+    }
+    return 0;
+}
