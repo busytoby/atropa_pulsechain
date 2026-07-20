@@ -1065,3 +1065,29 @@ int tsfi_quantel_storyboard_thumbnail_shadows(uint32_t *pixels, int w, int h, in
     }
     return 0;
 }
+
+int tsfi_quantel_harry_color_balance_sweep(uint32_t *pixels, int w, int h, float red_bal, float green_bal, float blue_bal) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = pixels[i];
+        int r = (int)(((pix >> 16) & 0xFF) * red_bal);
+        int g = (int)(((pix >> 8) & 0xFF) * green_bal);
+        int b = (int)((pix & 0xFF) * blue_bal);
+
+        if (r < 0) { r = 0; }
+        if (r > 255) { r = 255; }
+        if (g < 0) { g = 0; }
+        if (g > 255) { g = 255; }
+        if (b < 0) { b = 0; }
+        if (b > 255) { b = 255; }
+
+        pixels[i] = (0xFF000000) | (r << 16) | (g << 8) | b;
+    }
+    return 0;
+}
+
+int tsfi_quantel_storyboard_annotate_title(uint32_t *pixels, int w, int h, int x, int y, const char *title, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0 || !title) return -1;
+    draw_text(pixels, w, h, x, y, title, color, 1);
+    return 0;
+}

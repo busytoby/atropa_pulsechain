@@ -279,6 +279,18 @@ int tsfi_quantel_harry_smptec_to_rec709(uint32_t *pixels, int w, int h);
 /* Storyboard Frame Thumbnail Shadow Borders */
 int tsfi_quantel_storyboard_thumbnail_shadows(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h);
 
+/* Quantel Paintbox Spray Can Velocity Scatter */
+int tsfi_quantel_paintbox_velocity_spray(uint32_t *pixels, int w, int h, int prev_x, int prev_y, int curr_x, int curr_y, int radius, float pressure, uint32_t color);
+
+/* Mirage 3D Coordinate Shear Warp */
+int tsfi_quantel_mirage_coordinate_shear(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float shear_x, float shear_y);
+
+/* Harry Chronological Color Balance Sweep */
+int tsfi_quantel_harry_color_balance_sweep(uint32_t *pixels, int w, int h, float red_bal, float green_bal, float blue_bal);
+
+/* Storyboard PDF Custom Title Annotation */
+int tsfi_quantel_storyboard_annotate_title(uint32_t *pixels, int w, int h, int x, int y, const char *title, uint32_t color);
+
 #endif // TSFI_PAINT_H
 
 

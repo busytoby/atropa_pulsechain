@@ -888,3 +888,16 @@ int tsfi_quantel_paintbox_dynamic_smudge(uint32_t *pixels, int w, int h, int cx,
     float effective_smudge = pressure * (1.0f - smudge_dryness);
     return tsfi_quantel_paintbox_wet_paint(pixels, w, h, cx, cy, radius, effective_smudge, brush_color);
 }
+
+int tsfi_quantel_paintbox_velocity_spray(uint32_t *pixels, int w, int h, int prev_x, int prev_y, int curr_x, int curr_y, int radius, float pressure, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0 || radius <= 0) return -1;
+    float dx = (float)(curr_x - prev_x);
+    float dy = (float)(curr_y - prev_y);
+    float speed = sqrtf(dx*dx + dy*dy);
+    
+    float scatter_radius = radius * (1.0f + 0.1f * speed);
+    float density = pressure / (1.0f + 0.2f * speed);
+    if (density < 0.05f) density = 0.05f;
+
+    return tsfi_quantel_paintbox_spray_can(pixels, w, h, curr_x, curr_y, (int)scatter_radius, density, color);
+}

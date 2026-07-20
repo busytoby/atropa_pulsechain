@@ -703,3 +703,29 @@ int tsfi_quantel_mirage_flag_wave(const uint32_t *src, int src_w, int src_h, uin
     }
     return 0;
 }
+
+int tsfi_quantel_mirage_coordinate_shear(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float shear_x, float shear_y) {
+    if (!src || !dst || src_w <= 0 || src_h <= 0 || dst_w <= 0 || dst_h <= 0) return -1;
+    memset(dst, 0, dst_w * dst_h * sizeof(uint32_t));
+
+    float cx_d = dst_w / 2.0f;
+    float cy_d = dst_h / 2.0f;
+
+    for (int y = 0; y < dst_h; y++) {
+        float dy = y - cy_d;
+        for (int x = 0; x < dst_w; x++) {
+            float dx = x - cx_d;
+
+            float sx_coord = dx + shear_x * dy + cx_d;
+            float sy_coord = dy + shear_y * dx + cy_d;
+
+            int sx = (int)(sx_coord * src_w / dst_w);
+            int sy = (int)(sy_coord * src_h / dst_h);
+
+            if (sx >= 0 && sx < src_w && sy >= 0 && sy < src_h) {
+                dst[y * dst_w + x] = src[sy * src_w + sx];
+            }
+        }
+    }
+    return 0;
+}
