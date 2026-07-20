@@ -37,6 +37,7 @@
 #include "tsfi_parc_alfont.h"
 #include "tsfi_parc_routing.h"
 #include "tsfi_parc_keyboard.h"
+#include "tsfi_parc_knoll.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -840,6 +841,12 @@ int main() {
     uint32_t *canvas = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
     uint32_t *canvas_b = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
     uint32_t *dst_buffer = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
+
+    // John Knoll (Photoshop/Display pre-history) filters verify check
+    tsfi_parc_knoll_lens_flare(canvas, WIDTH, HEIGHT, 256, 256, 1.0f);
+    tsfi_parc_knoll_gaussian_blur(canvas, canvas_b, WIDTH, HEIGHT, 1.0f);
+    tsfi_parc_knoll_gray_lut(canvas, canvas_b, WIDTH, HEIGHT);
+
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
     printf("[INFO] Rendering 90-second Eye of the Tiger Super8 / Quantel demoscene showcase...\n");
