@@ -699,3 +699,148 @@ int tsfi_quantel_harry_blend(const uint32_t *fg_pixels, const uint32_t *bg_pixel
     return 0;
 }
 
+int tsfi_quantel_paintbox_custom_brush(uint32_t *pixels, int w, int h, int cx, int cy, const uint8_t *brush_tex, int brush_w, int brush_h, float opacity, uint32_t color) {
+    if (!pixels || !brush_tex || w <= 0 || h <= 0 || brush_w <= 0 || brush_h <= 0) return -1;
+
+    uint8_t r_src = (color >> 16) & 0xFF;
+    uint8_t g_src = (color >> 8) & 0xFF;
+    uint8_t b_src = color & 0xFF;
+
+    int half_bw = brush_w / 2;
+    int half_bh = brush_h / 2;
+
+    for (int by = 0; by < brush_h; by++) {
+        int canvas_y = cy - half_bh + by;
+        if (canvas_y < 0 || canvas_y >= h) continue;
+        uint32_t *canvas_row = pixels + canvas_y * w;
+        const uint8_t *brush_row = brush_tex + by * brush_w;
+
+        for (int bx = 0; bx < brush_w; bx++) {
+            int canvas_x = cx - half_bw + bx;
+            if (canvas_x < 0 || canvas_x >= w) continue;
+
+            float intensity = (brush_row[bx] / 255.0f) * opacity;
+            if (intensity > 0.0f) {
+                if (intensity > 1.0f) intensity = 1.0f;
+                uint32_t dest = canvas_row[canvas_x];
+                uint8_t r_dst = (dest >> 16) & 0xFF;
+                uint8_t g_dst = (dest >> 8) & 0xFF;
+                uint8_t b_dst = dest & 0xFF;
+
+                uint8_t r_res = (uint8_t)(r_src * intensity + r_dst * (1.0f - intensity));
+                uint8_t g_res = (uint8_t)(g_src * intensity + g_dst * (1.0f - intensity));
+                uint8_t b_res = (uint8_t)(b_src * intensity + b_dst * (1.0f - intensity));
+
+                canvas_row[canvas_x] = (0xFF000000) | (r_res << 16) | (g_res << 8) | b_res;
+            }
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_mirage_sphere_wrap(const uint32_t *src_pixels, int src_w, int src_h, uint32_t *dst_pixels, int dst_w, int dst_h, float sphere_radius) {
+    if (!src_pixels || !dst_pixels || src_w <= 0 || src_h <= 0 || dst_w <= 0 || dst_h <= 0 || sphere_radius <= 0.0f) return -1;
+
+    memset(dst_pixels, 0, dst_w * dst_h * sizeof(uint32_t));
+    float cx = dst_w / 2.0f;
+    float cy = dst_h / 2.0f;
+
+    for (int y = 0; y < dst_h; y++) {
+        float dy = y - cy;
+        for (int x = 0; x < dst_w; x++) {
+            float dx = x - cx;
+            float r = sqrtf(dx * dx + dy * dy);
+            if (r < sphere_radius) {
+                // Orthographic sphere mapping projection
+                float z = sqrtf(sphere_radius * sphere_radius - r * r);
+                float lon = atan2f(dx, z);
+                float lat = asinf(dy / sphere_radius);
+
+                float u = (lon + M_PI) / (2.0f * M_PI);
+                float v = (lat + M_PI_2) / M_PI;
+
+                int sx = (int)(u * src_w);
+                int sy = (int)(v * src_h);
+
+                if (sx >= 0 && sx < src_w && sy >= 0 && sy < src_h) {
+                    dst_pixels[y * dst_w + x] = src_pixels[sy * src_w + sx];
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_mirage_flag_ripple(const uint32_t *src_pixels, int src_w, int src_h, uint32_t *dst_pixels, int dst_w, int dst_h, float amplitude, float frequency, float phase) {
+    if (!src_pixels || !dst_pixels || src_w <= 0 || src_h <= 0 || dst_w <= 0 || dst_h <= 0) return -1;
+
+    memset(dst_pixels, 0, dst_w * dst_h * sizeof(uint32_t));
+
+    for (int y = 0; y < dst_h; y++) {
+        float v = (float)y / dst_h;
+        int sy = (int)(v * src_h);
+        if (sy < 0 || sy >= src_h) continue;
+
+        for (int x = 0; x < dst_w; x++) {
+            float u = (float)x / dst_w;
+            
+            // Apply ripple displacement to src_x sampling index
+            float ripple = amplitude * sinf(2.0f * M_PI * frequency * v + phase);
+            int sx = (int)((u * src_w) + ripple);
+
+            if (sx >= 0 && sx < src_w) {
+                dst_pixels[y * dst_w + x] = src_pixels[sy * src_w + sx];
+            }
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_harry_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32_t *dst, int w, int h, float progress, const char *wipe_type) {
+    if (!src_a || !src_b || !dst || w <= 0 || h <= 0) return -1;
+
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            int idx = y * w + x;
+            bool show_b = false;
+
+            if (strcmp(wipe_type, "radial") == 0) {
+                float dx = x - (w / 2.0f);
+                float dy = y - (h / 2.0f);
+                float angle = atan2f(dy, dx) + M_PI; // [0, 2*PI]
+                float normalized_angle = angle / (2.0f * M_PI);
+                show_b = (normalized_angle < progress);
+            } else {
+                // Default: horizontal linear wipe
+                float px = (float)x / w;
+                show_b = (px < progress);
+            }
+
+            dst[idx] = show_b ? src_b[idx] : src_a[idx];
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_harry_luma_key(const uint32_t *src_pixels, int w, int h, uint8_t *out_mask, uint8_t low_threshold, uint8_t high_threshold) {
+    if (!src_pixels || !out_mask || w <= 0 || h <= 0) return -1;
+
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = src_pixels[i];
+        uint8_t r = (pix >> 16) & 0xFF;
+        uint8_t g = (pix >> 8) & 0xFF;
+        uint8_t b = pix & 0xFF;
+
+        // Rec. 601 luma formula
+        uint8_t luma = (uint8_t)(0.299f * r + 0.587f * g + 0.114f * b);
+
+        if (luma >= low_threshold && luma <= high_threshold) {
+            out_mask[i] = 255; // Keep foreground details
+        } else {
+            out_mask[i] = 0; // Keyed out
+        }
+    }
+    return 0;
+}
+
+

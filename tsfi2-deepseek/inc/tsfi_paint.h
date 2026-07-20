@@ -21,5 +21,21 @@ int tsfi_quantel_harry_chroma_key(const uint32_t *src_pixels, int w, int h, uint
 /* Quantel Harry: Dynamic timeline compositing blend modes */
 int tsfi_quantel_harry_blend(const uint32_t *fg_pixels, const uint32_t *bg_pixels, uint32_t *dst_pixels, int w, int h, const uint8_t *mask, const char *blend_mode);
 
+/* Quantel Paintbox: Textured brush stencils drawing custom patterns */
+int tsfi_quantel_paintbox_custom_brush(uint32_t *pixels, int w, int h, int cx, int cy, const uint8_t *brush_tex, int brush_w, int brush_h, float opacity, uint32_t color);
+
+/* Quantel Mirage: Sphere warp coordinate mapping */
+int tsfi_quantel_mirage_sphere_wrap(const uint32_t *src_pixels, int src_w, int src_h, uint32_t *dst_pixels, int dst_w, int dst_h, float sphere_radius);
+
+/* Quantel Mirage: Flag ripple animation warp */
+int tsfi_quantel_mirage_flag_ripple(const uint32_t *src_pixels, int src_w, int src_h, uint32_t *dst_pixels, int dst_w, int dst_h, float amplitude, float frequency, float phase);
+
+/* Quantel Harry: Wipe transitions between two frames */
+int tsfi_quantel_harry_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32_t *dst, int w, int h, float progress, const char *wipe_type);
+
+/* Quantel Harry: Luma key extraction based on luminance thresholds */
+int tsfi_quantel_harry_luma_key(const uint32_t *src_pixels, int w, int h, uint8_t *out_mask, uint8_t low_threshold, uint8_t high_threshold);
+
 #endif // TSFI_PAINT_H
+
 
