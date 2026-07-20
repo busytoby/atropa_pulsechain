@@ -141,15 +141,23 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
              $(OBJ_DIR)/tsfi_ray_tracer.o \
              $(OBJ_DIR)/tsfi_micro_focus.o \
               $(OBJ_DIR)/tsfi_majormud.o \
-              $(OBJ_DIR)/tsfi_cade_imf.o \
-              $(OBJ_DIR)/tsfi_cade_imf_nato.o \
-              $(OBJ_DIR)/tsfi_eer_emergency.o \
+               $(OBJ_DIR)/tsfi_cade_imf.o \
+               $(OBJ_DIR)/tsfi_cade_imf_nato.o \
+               $(OBJ_DIR)/tsfi_cade_vulkan.o \
+               $(OBJ_DIR)/tsfi_eer_emergency.o \
               $(OBJ_DIR)/tsfi_nsa_tempest.o \
               $(OBJ_DIR)/tsfi_reuter_tx.o \
               $(OBJ_DIR)/tsfi_gray_tx.o \
               $(OBJ_DIR)/tsfi_autodin_sage.o \
               $(OBJ_DIR)/tsfi_encodings.o \
-              $(OBJ_DIR)/tsfi_encodings_opt.o
+              $(OBJ_DIR)/tsfi_encodings_opt.o \
+              $(OBJ_DIR)/tsfi_parc_bitblt.o \
+              $(OBJ_DIR)/tsfi_parc_smalltalk.o \
+              $(OBJ_DIR)/tsfi_parc_window.o \
+              $(OBJ_DIR)/tsfi_parc_ethernet.o \
+              $(OBJ_DIR)/tsfi_parc_superpaint.o \
+              $(OBJ_DIR)/tsfi_parc_interpress.o \
+              $(OBJ_DIR)/tsfi_parc_bravo.o
 
 
 

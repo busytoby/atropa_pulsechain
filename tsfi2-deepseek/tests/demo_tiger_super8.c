@@ -8,11 +8,159 @@
 #include "tsfi_paint.h"
 #include "tsfi_computel_blue_box.h"
 #include "tsfi_hogan.h"
+#include "tsfi_encodings.h"
+#include "tsfi_cade_imf.h"
+#include "tsfi_cade_vulkan.h"
+#include "tsfi_parc_bitblt.h"
+#include "tsfi_parc_smalltalk.h"
+#include "tsfi_parc_window.h"
+#include "tsfi_parc_ethernet.h"
+#include "tsfi_parc_superpaint.h"
+#include "tsfi_parc_interpress.h"
+#include "tsfi_parc_bravo.h"
 
 #define WIDTH 512
 #define HEIGHT 512
 #define FRAMES 2700 // 90 seconds @ 30 FPS
 #define SAMPLE_RATE 8000
+
+typedef struct {
+    uint64_t base;
+    uint64_t signal;
+    uint64_t channel;
+    uint64_t secret;
+    uint64_t pole;
+    uint64_t identity;
+    uint64_t foundation;
+    uint64_t element;
+    uint64_t chin;
+    uint64_t dynamo;
+    uint64_t manifold;
+    uint64_t monopole;
+    uint64_t ring;
+    uint64_t contour;
+    uint64_t coordinate;
+    uint64_t charge;
+    uint64_t xi;
+    uint64_t omicron;
+    uint64_t omega;
+} Lau19DValues;
+
+static int load_lau_19d_values(Lau19DValues *val) {
+    val->base = 196811331987337ULL;
+    val->signal = 512736817632179ULL;
+    val->channel = 779859001551596ULL;
+    val->secret = 481588919265707ULL;
+    val->pole = 0ULL;
+    val->identity = 341042560473881ULL;
+    val->foundation = 505921226463547ULL;
+    val->element = 931869611669725ULL;
+    val->chin = 415958429943167ULL;
+    val->dynamo = 58333592128473ULL;
+    val->manifold = 546174312197144ULL;
+    val->monopole = 802597347437964ULL;
+    val->ring = 363710239596665ULL;
+    val->contour = 825385904428888ULL;
+    val->coordinate = 643408250229640ULL;
+    val->charge = 553126253850364ULL;
+    val->xi = 261640507549433ULL;
+    val->omicron = 70972746134015ULL;
+    val->omega = 152946039182293ULL;
+
+    FILE *f = fopen("config/live_quaternion_data.json", "r");
+    if (!f) {
+        f = fopen("../config/live_quaternion_data.json", "r");
+    }
+    if (!f) return -1;
+
+    char buf[1024];
+    int in_laus = 0;
+    while (fgets(buf, sizeof(buf), f)) {
+        if (strstr(buf, "\"LAUs\"")) {
+            in_laus = 1;
+        }
+        if (!in_laus) continue;
+        
+        if (strstr(buf, "\"Base\":")) {
+            char *ptr = strchr(buf, ':');
+            if (ptr) val->base = strtoull(ptr + 1, NULL, 10);
+        }
+        if (strstr(buf, "\"Signal\":")) {
+            char *ptr = strchr(buf, ':');
+            if (ptr) val->signal = strtoull(ptr + 1, NULL, 10);
+        }
+        if (strstr(buf, "\"Channel\":")) {
+            char *ptr = strchr(buf, ':');
+            if (ptr) val->channel = strtoull(ptr + 1, NULL, 10);
+        }
+        if (strstr(buf, "\"Secret\":")) {
+            char *ptr = strchr(buf, ':');
+            if (ptr) val->secret = strtoull(ptr + 1, NULL, 10);
+        }
+        if (strstr(buf, "\"Pole\":")) {
+            char *ptr = strchr(buf, ':');
+            if (ptr) val->pole = strtoull(ptr + 1, NULL, 10);
+        }
+        if (strstr(buf, "\"Identity\":")) {
+            char *ptr = strchr(buf, ':');
+            if (ptr) val->identity = strtoull(ptr + 1, NULL, 10);
+        }
+        if (strstr(buf, "\"Foundation\":")) {
+            char *ptr = strchr(buf, ':');
+            if (ptr) val->foundation = strtoull(ptr + 1, NULL, 10);
+        }
+        if (strstr(buf, "\"Element\":")) {
+            char *ptr = strchr(buf, ':');
+            if (ptr) val->element = strtoull(ptr + 1, NULL, 10);
+        }
+        if (strstr(buf, "\"Chin\":")) {
+            char *ptr = strchr(buf, ':');
+            if (ptr) val->chin = strtoull(ptr + 1, NULL, 10);
+        }
+        if (strstr(buf, "\"Dynamo\":")) {
+            char *ptr = strchr(buf, ':');
+            if (ptr) val->dynamo = strtoull(ptr + 1, NULL, 10);
+        }
+        if (strstr(buf, "\"Manifold\":")) {
+            char *ptr = strchr(buf, ':');
+            if (ptr) val->manifold = strtoull(ptr + 1, NULL, 10);
+        }
+        if (strstr(buf, "\"Monopole\":")) {
+            char *ptr = strchr(buf, ':');
+            if (ptr) val->monopole = strtoull(ptr + 1, NULL, 10);
+        }
+        if (strstr(buf, "\"Ring\":")) {
+            char *ptr = strchr(buf, ':');
+            if (ptr) val->ring = strtoull(ptr + 1, NULL, 10);
+        }
+        if (strstr(buf, "\"Contour\":")) {
+            char *ptr = strchr(buf, ':');
+            if (ptr) val->contour = strtoull(ptr + 1, NULL, 10);
+        }
+        if (strstr(buf, "\"Coordinate\":")) {
+            char *ptr = strchr(buf, ':');
+            if (ptr) val->coordinate = strtoull(ptr + 1, NULL, 10);
+        }
+        if (strstr(buf, "\"Charge\":")) {
+            char *ptr = strchr(buf, ':');
+            if (ptr) val->charge = strtoull(ptr + 1, NULL, 10);
+        }
+        if (strstr(buf, "\"Xi\":")) {
+            char *ptr = strchr(buf, ':');
+            if (ptr) val->xi = strtoull(ptr + 1, NULL, 10);
+        }
+        if (strstr(buf, "\"Omicron\":")) {
+            char *ptr = strchr(buf, ':');
+            if (ptr) val->omicron = strtoull(ptr + 1, NULL, 10);
+        }
+        if (strstr(buf, "\"Omega\":")) {
+            char *ptr = strchr(buf, ':');
+            if (ptr) val->omega = strtoull(ptr + 1, NULL, 10);
+        }
+    }
+    fclose(f);
+    return 0;
+}
 
 // WAV Header struct
 #pragma pack(push, 1)
@@ -160,6 +308,14 @@ void generate_tiger_soundtrack(const char *filepath) {
     int loops = (SAMPLE_RATE * 90) / loop_samples + 1;
     int total_samples = loop_samples * loops;
 
+    Lau19DValues lau_vals;
+    load_lau_19d_values(&lau_vals);
+
+    // Compute modular frequency scales from actual LAU contract registers
+    double freq_x = 3.0 + (double)(lau_vals.channel % 1000) / 500.0;
+    double freq_y = 5.0 + (double)(lau_vals.dynamo % 1000) / 500.0;
+    double freq_z = 1.0 + (double)(lau_vals.foundation % 1000) / 1000.0;
+
     FILE *f = fopen(filepath, "wb");
     if (!f) return;
     write_wav_header(f, total_samples * 2);
@@ -195,8 +351,10 @@ void generate_tiger_soundtrack(const char *filepath) {
                 int global_idx = (l * 32 + step) * samples_per_step + s;
                 double t_s = (double)global_idx / SAMPLE_RATE;
 
-                double X = sin(t_s * 2.0 * M_PI * 1.5);
-                double Y = cos(t_s * 2.0 * M_PI * 2.5);
+                // Drive oscillators along the 3D Hot Lissajous Tube coordinate paths
+                double theta_l = t_s * 2.0 * M_PI;
+                double X = sin(theta_l * freq_x);
+                double Y = cos(theta_l * freq_y) * sin(theta_l * freq_z);
 
                 double kick_out = 0.0;
                 if (kick_env > 0.0) {
@@ -240,10 +398,11 @@ void generate_tiger_soundtrack(const char *filepath) {
 
                 double bass_out = 0.0;
                 if (bass_freq > 0.0) {
-                    double main_bass = sin(bass_phase + 0.8 * X * Y);
-                    double sub_bass = sin(bass_phase * 0.5 + 0.4 * X) + sin(bass_phase * 0.25 + 0.2 * Y);
-                    double combined_bass = main_bass * 0.4 + sub_bass * 1.2;
-                    bass_out = tanh(combined_bass * 3.0) * 0.8f;
+                    // Drive sub-bass FM growl using secret and signal registers
+                    double main_bass = sin(bass_phase + 0.9 * X * Y * ((double)(lau_vals.secret % 1000) / 1000.0));
+                    double sub_bass = sin(bass_phase * 0.5 + 0.5 * X) + sin(bass_phase * 0.25 + 0.3 * Y);
+                    double combined_bass = main_bass * 0.4 + sub_bass * 1.5;
+                    bass_out = tanh(combined_bass * 3.5) * 0.9f;
                     bass_phase += (2.0 * M_PI * bass_freq) / SAMPLE_RATE;
                     if (bass_phase >= 2.0 * M_PI) bass_phase -= 2.0 * M_PI;
                 }
@@ -327,6 +486,61 @@ void apply_super8_crop(uint32_t *pixels, int w, int h, int f_idx) {
     }
 }
 
+void draw_line_thick(uint32_t *pixels, int w, int h, int x0, int y0, int x1, int y1, int thickness, uint32_t color) {
+    int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+    int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+    int err = dx + dy, e2;
+    while (1) {
+        for (int i = -thickness / 2; i <= thickness / 2; i++) {
+            for (int j = -thickness / 2; j <= thickness / 2; j++) {
+                int px = x0 + i, py = y0 + j;
+                if (px >= 0 && px < w && py >= 0 && py < h) pixels[py * w + px] = color;
+            }
+        }
+        if (x0 == x1 && y0 == y1) break;
+        e2 = 2 * err;
+        if (e2 >= dy) { err += dy; x0 += sx; }
+        if (e2 <= dx) { err += dx; y0 += sy; }
+    }
+}
+
+void draw_baudot_punched_tape(uint32_t *pixels, int w, int h, const char *text, int f_idx) {
+    uint8_t baud_buf[128];
+    int len = tsfi_encode_baudot(text, baud_buf, sizeof(baud_buf));
+    int start_x = 35 + (f_idx % 16);
+    int tape_y = 48;
+    int border_y = 32;
+
+    // Draw white paper tape background strip matching Super8 style
+    for (int x = 35; x < w - 35; x++) {
+        for (int y = tape_y - 8; y < tape_y + 8; y++) {
+            if (x >= 0 && x < w && y >= border_y && y < h - border_y) {
+                pixels[y * w + x] = 0xFFe6dfd3; // Cream background
+            }
+        }
+    }
+    // Draw holes for each character
+    for (int i = 0; i < len; i++) {
+        int char_x = start_x + i * 14;
+        if (char_x < 35 || char_x > w - 35) continue;
+        uint8_t code = baud_buf[i];
+        // Draw 5 code holes + 1 feed sprocket hole
+        for (int bit = 0; bit < 5; bit++) {
+            int hole_y = tape_y - 6 + bit * 3;
+            if (bit >= 3) hole_y += 2; // skip sprocket space
+            // If bit is set, draw a dark punch mark
+            uint32_t hole_color = (code & (1 << bit)) ? 0xFF12100e : 0xFFe6dfd3;
+            if (hole_color == 0xFF12100e) {
+                pixels[hole_y * w + char_x] = hole_color;
+                pixels[hole_y * w + (char_x - 1)] = hole_color;
+                pixels[hole_y * w + (char_x + 1)] = hole_color;
+            }
+        }
+        // Sprocket hole (smaller)
+        pixels[tape_y * w + char_x] = 0xFF12100e;
+    }
+}
+
 void draw_hogan_telemetry(uint32_t *pixels, int w, int h, const hogan_umbrella_system *sys, float t) {
     (void)h;
     int start_y = 398;
@@ -334,62 +548,64 @@ void draw_hogan_telemetry(uint32_t *pixels, int w, int h, const hogan_umbrella_s
     int start_x = 35;
     int end_x = w - 35;
 
+    // Golden Vaesen borders
     for (int x = start_x; x <= end_x; x++) {
-        pixels[start_y * w + x] = 0xFF00FF00;
-        pixels[end_y * w + x] = 0xFF00FF00;
+        pixels[start_y * w + x] = 0xFF8c7241;
+        pixels[end_y * w + x] = 0xFF8c7241;
     }
     for (int y = start_y; y <= end_y; y++) {
-        pixels[y * w + start_x] = 0xFF00FF00;
-        pixels[y * w + end_x] = 0xFF00FF00;
+        pixels[y * w + start_x] = 0xFF8c7241;
+        pixels[y * w + end_x] = 0xFF8c7241;
     }
 
-    for (int acc = 0; acc < 3; acc++) {
-        if (!sys->accounts[acc].active) continue;
-        uint64_t bal = sys->accounts[acc].balance;
-        int bar_length = (int)(bal * 100 / 25000);
-        if (bar_length > 120) bar_length = 120;
-        if (bar_length < 0) bar_length = 0;
-        int y_pos = start_y + 15 + acc * 18;
+    // Load dynamic LAU values to display on the panel
+    Lau19DValues lau_vals;
+    load_lau_19d_values(&lau_vals);
 
-        uint32_t acc_color = (acc == 0) ? 0xFF00FFFF : ((acc == 1) ? 0xFF0080FF : 0xFFFFFF00);
-        for (int dx = 0; dx < 8; dx++) {
-            for (int dy = 0; dy < 8; dy++) {
-                pixels[(y_pos + dy) * w + (start_x + 10 + dx)] = acc_color;
-            }
-        }
+    // Render title
+    tsfi_quantel_paintbox_typographer(pixels, w, 512, start_x + 10, start_y + 16, "LAU STATE MONITOR", 0xFFe6dfd3, 10.0f);
 
-        for (int x = 0; x < bar_length; x++) {
-            for (int dy = 0; dy < 6; dy++) {
-                pixels[(y_pos + dy + 1) * w + (start_x + 25 + x)] = 0xFF00FF00;
-            }
-        }
-    }
+    // Render registers
+    char buf[128];
+    snprintf(buf, sizeof(buf), "BASE: %lu", lau_vals.base % 1000000);
+    tsfi_quantel_paintbox_typographer(pixels, w, 512, start_x + 10, start_y + 32, buf, 0xFFc5a059, 8.0f);
 
+    snprintf(buf, sizeof(buf), "CHIN: %lu", lau_vals.chin % 1000000);
+    tsfi_quantel_paintbox_typographer(pixels, w, 512, start_x + 10, start_y + 44, buf, 0xFFc5a059, 8.0f);
+
+    snprintf(buf, sizeof(buf), "DYNAMO: %lu", lau_vals.dynamo % 1000000);
+    tsfi_quantel_paintbox_typographer(pixels, w, 512, start_x + 10, start_y + 56, buf, 0xFFc5a059, 8.0f);
+
+    // Active VMs
+    tsfi_quantel_paintbox_typographer(pixels, w, 512, start_x + 150, start_y + 16, "ACTIVE VM UNITS", 0xFFe6dfd3, 10.0f);
     int active_vm = ((int)(t * 2.0f)) % 3;
-    int vm_x = start_x + 160;
-    int vm_y = start_y + 20;
-
+    int vm_x = start_x + 150;
+    int vm_y = start_y + 24;
     for (int vm = 0; vm < 3; vm++) {
-        uint32_t color = (vm == active_vm) ? 0xFF00FF00 : 0xFF003300;
-        for (int dx = 0; dx < 25; dx++) {
-            for (int dy = 0; dy < 12; dy++) {
-                pixels[(vm_y + dy) * w + (vm_x + vm * 30 + dx)] = color;
+        uint32_t color = (vm == active_vm) ? 0xFFc5a059 : 0xFF1c1815;
+        for (int dx = 0; dx < 22; dx++) {
+            for (int dy = 0; dy < 10; dy++) {
+                pixels[(vm_y + dy) * w + (vm_x + vm * 28 + dx)] = color;
             }
         }
+        char vm_label[8];
+        snprintf(vm_label, sizeof(vm_label), "VM%d", vm);
+        tsfi_quantel_paintbox_typographer(pixels, w, 512, vm_x + vm * 28 + 2, vm_y + 8, vm_label, 0xFFe6dfd3, 7.0f);
     }
 
-    int dot_y = start_y + 75;
-    int dot_x = start_x + 160;
+    // Transaction pipeline
+    tsfi_quantel_paintbox_typographer(pixels, w, 512, start_x + 150, start_y + 48, "ZMM TX HANDSHAKE LOOPS", 0xFFe6dfd3, 9.0f);
+    int dot_y = start_y + 60;
+    int dot_x = start_x + 150;
     int tx_limit = (sys->tx_count < 20) ? (int)sys->tx_count : 20;
     for (int i = 0; i < tx_limit; i++) {
         const hogan_transaction *tx = &sys->tx_log[sys->tx_count - tx_limit + i];
-        uint32_t dot_color = tx->processed ? 0xFF00FF00 : 0xFFFF5500;
+        uint32_t dot_color = tx->processed ? 0xFFc5a059 : 0xFFe6dfd3;
         int dot_width = (tx->amount > 150) ? 8 : 5;
-        int dot_height = (tx->amount > 150) ? 12 : 8;
-
+        int dot_height = (tx->amount > 150) ? 10 : 7;
         for (int dx = 0; dx < dot_width; dx++) {
             for (int dy = 0; dy < dot_height; dy++) {
-                int px_x = dot_x + i * 12 + dx;
+                int px_x = dot_x + i * 11 + dx;
                 int px_y = dot_y + dy;
                 if (px_x < end_x - 5) {
                     pixels[px_y * w + px_x] = dot_color;
@@ -397,6 +613,30 @@ void draw_hogan_telemetry(uint32_t *pixels, int w, int h, const hogan_umbrella_s
             }
         }
     }
+
+    // Right Side: CADE IMF Control Panel & Daily Batch summary
+    tsfi_quantel_paintbox_typographer(pixels, w, 512, start_x + 280, start_y + 16, "CADE IMF BATCH REGISTER", 0xFFe6dfd3, 10.0f);
+
+    // Call actual CADE daily batch summary formatter
+    char cade_buf[128];
+    tsfi_mf_cade_format_batch_summary((int)sys->tx_count, 0, (double)sys->tx_count * 105.5, 0.0, cade_buf, sizeof(cade_buf));
+    tsfi_quantel_paintbox_typographer(pixels, w, 512, start_x + 280, start_y + 32, cade_buf, 0xFFc5a059, 7.5f);
+
+    // Dynamic taxpayer registration lookup using actual CADE logic
+    char registry_out[256];
+    tsfi_mf_cade_register_taxpayer("999-12-3456", 100000.0, 1, registry_out, sizeof(registry_out));
+    
+    // Extract state status name using CADE lookup
+    char status_name[32];
+    tsfi_mf_cade_get_status_name(1, status_name, sizeof(status_name));
+    snprintf(buf, sizeof(buf), "SSN: 999-12-3456 | STATUS: %s", status_name);
+    tsfi_quantel_paintbox_typographer(pixels, w, 512, start_x + 280, start_y + 44, buf, 0xFFc5a059, 8.0f);
+
+    // Display the BCDIC representation of the transaction code
+    uint8_t bcd_buf[16];
+    tsfi_encode_bcdic("CADE_OK", bcd_buf, sizeof(bcd_buf));
+    snprintf(buf, sizeof(buf), "BCDIC T-CODE: %02X %02X %02X %02X", bcd_buf[0], bcd_buf[1], bcd_buf[2], bcd_buf[3]);
+    tsfi_quantel_paintbox_typographer(pixels, w, 512, start_x + 280, start_y + 56, buf, 0xFFc5a059, 8.0f);
 }
 
 int main() {
@@ -420,6 +660,34 @@ int main() {
     tsfi_hogan_register_account(&hogan_sys, 2002, 5000);
     tsfi_hogan_register_account(&hogan_sys, 3003, 2000);
 
+    // Xerox PARC: Initialize Smalltalk Sandbox VM
+    tsfi_parc_smalltalk_vm_t st_vm;
+    tsfi_parc_st_init_vm(&st_vm);
+    oop_t cls_sensor = tsfi_parc_st_define_class(&st_vm, "TigerSensor", 0);
+    uint8_t m_code[4] = { 0x00, 0x25, 0x30, 0x50 };
+    tsfi_parc_st_bind_method(&st_vm, cls_sensor, "processData", m_code, 4);
+    
+    oop_t obj_inst = 0xAA01;
+    st_vm.heap[0].oop = obj_inst;
+    st_vm.heap[0].class_oop = cls_sensor;
+    st_vm.heap[0].fields[0] = 42;
+    st_vm.heap_count = 1;
+
+    // Xerox PARC: Initialize overlapping Window Manager
+    tsfi_parc_window_manager_t wm;
+    tsfi_parc_wm_init(&wm);
+    tsfi_parc_wm_open_window(&wm, "CADE IMF Register", 55, 410, 100, 60);
+    tsfi_parc_wm_open_window(&wm, "Smalltalk VM", 165, 420, 110, 65);
+    tsfi_parc_wm_open_window(&wm, "PUP Netlog", 285, 410, 150, 70);
+    // Xerox PARC: Initialize painting & storyboarding systems
+    tsfi_parc_superpaint_lut_t sp_lut;
+    tsfi_parc_superpaint_init_lut(&sp_lut);
+    
+    tsfi_parc_interpress_ctx_t ip_ctx;
+    tsfi_parc_interpress_init(&ip_ctx);
+    
+    tsfi_parc_bravo_layout_t bravo_layout;
+    tsfi_parc_bravo_init(&bravo_layout, 35, 35, 398, 512 - 508);
     uint32_t *canvas = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
     uint32_t *canvas_b = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
     uint32_t *dst_buffer = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
@@ -430,46 +698,192 @@ int main() {
     for (int f = 0; f < FRAMES; f++) {
         float t = (float)f / 30.0f;
 
-        // Orange/Gold-tinted gradient background representing the Tiger glowing eye backdrop
-        for (int y = 0; y < HEIGHT; y++) {
-            uint32_t color = (0xFF000000) | 
-                             ((int)(40.0f * (1.0f + sinf(t + y * 0.015f))) << 16) |
-                             ((int)(20.0f * (1.0f + cosf(t * 0.4f))) << 8) |
-                             ((int)(10.0f * (1.0f + sinf(t * 0.2f))));
-            for (int x = 0; x < WIDTH; x++) {
-                canvas[y * WIDTH + x] = color;
+        // Paintbox: Multi-Stop Gradient background fill
+        uint32_t stops_colors[3] = { 0xFF12100e, 0xFF1c1815, 0xFF0d0c0a };
+        float stops_positions[3] = { 0.0f, 0.5f, 1.0f };
+        tsfi_quantel_paintbox_multistop_gradient(canvas, WIDTH, HEIGHT, 0, 0, WIDTH, HEIGHT, stops_colors, stops_positions, 3);
+
+        // Paintbox: Dynamic Stencil mask application
+        uint8_t *stencil_mask = calloc(WIDTH * HEIGHT, sizeof(uint8_t));
+        for (int i = 0; i < WIDTH * HEIGHT; i++) {
+            stencil_mask[i] = ((i % WIDTH) > 40 && (i % WIDTH) < 80) ? 255 : 0;
+        }
+        tsfi_quantel_paintbox_apply_stencil(canvas, WIDTH, HEIGHT, stencil_mask, 0xFF1c1815);
+        free(stencil_mask);
+
+        float center_x = WIDTH / 2.0f;
+        float center_y = HEIGHT / 2.0f;
+
+        // Draw animated Menorah structure branches
+        // Base trunk
+        for (int y = 260; y <= 380; y++) {
+            for (int dx = -4; dx <= 4; dx++) {
+                int px = 256 + dx;
+                if (px >= 0 && px < WIDTH && y >= 0 && y < HEIGHT) {
+                    canvas[y * WIDTH + px] = 0xFF8c7241; // Vaesen Bronze/Gold
+                }
+            }
+        }
+        // Left side arc
+        for (int x = 70; x < 256; x++) {
+            float norm = (x - 256.0f) / 186.0f;
+            int y = 360 - (int)(200.0f * (1.0f - norm * norm));
+            if (y >= 0 && y < HEIGHT) {
+                for (int dy = -3; dy <= 3; dy++) {
+                    canvas[(y + dy) * WIDTH + x] = 0xFF8c7241;
+                }
+            }
+        }
+        // Right side arc
+        for (int x = 256; x <= 442; x++) {
+            float norm = (x - 256.0f) / 186.0f;
+            int y = 360 - (int)(200.0f * (1.0f - norm * norm));
+            if (y >= 0 && y < HEIGHT) {
+                for (int dy = -3; dy <= 3; dy++) {
+                    canvas[(y + dy) * WIDTH + x] = 0xFF8c7241;
+                }
             }
         }
 
-        // Draw animated Tiger eye glowing wireframe
-        float center_x = WIDTH / 2.0f;
-        float center_y = HEIGHT / 2.0f;
-        float pulse = 1.0f + 0.15f * sinf(t * 8.0f); // Pulsing on simulated beat
+        // Screens coordinate mapping scaled for 512x512
+        int scr_x[7] = { 256, 70, 130, 190, 322, 382, 442 };
+        int scr_y[7] = { 260, 160, 180, 200, 200, 180, 160 };
+        int scr_r[7] = { 65,  22,  22,  22,  22,  22,  22  };
 
-        // Draw circular eye boundaries using Paintbox pressure tools
+        // Draw screen circular frames & inner dark tube background
+        for (int s = 0; s < 7; s++) {
+            int cx = scr_x[s];
+            int cy = scr_y[s];
+            int r = scr_r[s];
+            for (int y = cy - r - 2; y <= cy + r + 2; y++) {
+                for (int x = cx - r - 2; x <= cx + r + 2; x++) {
+                    if (x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT) {
+                        float dist = sqrtf((x - cx) * (x - cx) + (y - cy) * (y - cy));
+                        if (dist <= r) {
+                            canvas[y * WIDTH + x] = 0xFF0d0c0a; // CRT Phosphor dark tube background
+                        } else if (dist <= r + 2) {
+                            canvas[y * WIDTH + x] = 0xFF8c7241; // Screen bezel
+                        }
+                    }
+                }
+            }
+        }
+
+        // Draw animated Tiger eye glowing wireframe inside Center CRT (Master Attractor B1)
+        float pulse = 1.0f + 0.15f * sinf(t * 8.0f); // Pulsing on simulated beat
+        int b1_cx = scr_x[0];
+        int b1_cy = scr_y[0];
+        int b1_r = scr_r[0];
         for (int theta = 0; theta < 360; theta += 15) {
             float rad = (theta * (float)M_PI) / 180.0f;
-            float ex = center_x + 90.0f * cosf(rad) * pulse;
-            float ey = center_y + 50.0f * sinf(rad) * pulse;
-            tsfi_quantel_paintbox_pressure_jitter_hue(canvas, WIDTH, HEIGHT, (int)ex, (int)ey, 14, 0.8f, 0.1f, 0xFFFF8C00); // Dark Orange
+            float ex = b1_cx + (b1_r - 20) * cosf(rad) * pulse;
+            float ey = b1_cy + (b1_r - 35) * sinf(rad) * pulse;
+            tsfi_quantel_paintbox_pressure_jitter_hue(canvas, WIDTH, HEIGHT, (int)ex, (int)ey, 6, 0.8f, 0.1f, 0xFFc5a059);
         }
 
-        // Draw 3D Hot Lissajous Tube Orbitals wrapping around the eye frame
-        for (int i = 0; i < 200; i++) {
-            float theta_l = (float)i * 2.0f * (float)M_PI / 200.0f;
-            float lx = center_x + 160.0f * sinf(theta_l * 3.0f + t * 4.0f);
-            float ly = center_y + 90.0f * cosf(theta_l * 5.0f + t * 3.0f);
-            uint32_t glow_color = 0xFFFF3300;
-            if (i % 2 == 0) glow_color = 0xFFFFD700;
-            tsfi_quantel_paintbox_pressure_jitter_hue(canvas, WIDTH, HEIGHT, (int)lx, (int)ly, 6, 0.9f, 0.2f, glow_color);
+        // Draw 3D Hot Lissajous Tube Orbitals wrapping inside screens driven by LAU 19D values
+        static Lau19DValues lau_vals;
+        static bool lau_loaded = false;
+        if (!lau_loaded) {
+            load_lau_19d_values(&lau_vals);
+            lau_loaded = true;
         }
 
-        // Draw tiger pupil slit
+        // Determine active step and decay envelopes for each instrument track
+        int current_step = (int)(t * 1000.0f / 136.0f) % 32;
+        float step_ms = fmodf(t * 1000.0f, 136.0f);
+        
+        // Sequences matching generate_tiger_soundtrack
+        int kick_trig = (current_step % 4 == 0) ? 1 : 0;
+        int snare_trig = (current_step % 8 == 4) ? 1 : 0;
+        int hh_trig = (current_step % 2 == 0) ? 1 : 0;
+
+        float kick_env = kick_trig ? expf(-step_ms / 40.0f) : 0.0f;
+        float snare_env = snare_trig ? expf(-step_ms / 60.0f) : 0.0f;
+        float hh_env = hh_trig ? expf(-step_ms / 20.0f) : 0.0f;
+        float bass_env = 0.6f + 0.4f * sinf(t * 4.0f); // continuous bass line
+        float lead_env = 0.5f + 0.5f * cosf(t * 2.0f); // continuous lead line
+
+        // Modulate frequency indices using actual LAU channel, dynamo, and foundation ratios
+        float freq_x = 3.0f + (float)(lau_vals.channel % 1000) / 500.0f;
+        float freq_y = 5.0f + (float)(lau_vals.dynamo % 1000) / 500.0f;
+        float freq_z = 1.0f + (float)(lau_vals.foundation % 1000) / 1000.0f;
+
+        // 1. Kick Tube (Screen 4, scaled by kick beat rumble)
+        float kick_scale = 10.0f + kick_env * 8.0f;
+        int k_cx = scr_x[4];
+        int k_cy = scr_y[4];
+        for (int i = 0; i < 60; i++) {
+            float theta_l = (float)i * 2.0f * (float)M_PI / 60.0f;
+            float lx = k_cx + kick_scale * sinf(theta_l * freq_x + t * 5.0f);
+            float ly = k_cy + kick_scale * cosf(theta_l * freq_y + t * 4.0f);
+            tsfi_quantel_paintbox_pressure_jitter_hue(canvas, WIDTH, HEIGHT, (int)lx, (int)ly, 3, 0.9f, 0.1f, 0xFFc5a059); // Gold
+        }
+
+        // 2. Snare Tube (Screen 5, scaled by snare snap)
+        float snare_scale = 8.0f + snare_env * 8.0f;
+        int s_cx = scr_x[5];
+        int s_cy = scr_y[5];
+        for (int i = 0; i < 50; i++) {
+            float theta_l = (float)i * 2.0f * (float)M_PI / 50.0f;
+            float lx = s_cx + snare_scale * sinf(theta_l * (freq_x + 1.0f) + t * 6.0f);
+            float ly = s_cy + snare_scale * cosf(theta_l * freq_y + t * 5.0f);
+            tsfi_quantel_paintbox_pressure_jitter_hue(canvas, WIDTH, HEIGHT, (int)lx, (int)ly, 3, 0.8f, 0.1f, 0xFFe6dfd3); // Cream
+        }
+
+        // 3. Hihat Tube (Screen 6, rapid jittery waves)
+        float hh_scale = 6.0f + hh_env * 6.0f;
+        int h_cx = scr_x[6];
+        int h_cy = scr_y[6];
+        for (int i = 0; i < 40; i++) {
+            float theta_l = (float)i * 2.0f * (float)M_PI / 40.0f;
+            float lx = h_cx + hh_scale * sinf(theta_l * (freq_x * 2.0f) + t * 12.0f);
+            float ly = h_cy + hh_scale * cosf(theta_l * (freq_y * 1.5f) + t * 10.0f);
+            tsfi_quantel_paintbox_pressure_jitter_hue(canvas, WIDTH, HEIGHT, (int)lx, (int)ly, 2, 0.7f, 0.1f, 0xFF8c7241); // Dim Gold
+        }
+
+        // 4. Bass Tube (Screen 2, deep waves)
+        float bass_scale = 12.0f * bass_env;
+        int b_cx = scr_x[2];
+        int b_cy = scr_y[2];
+        for (int i = 0; i < 60; i++) {
+            float theta_l = (float)i * 2.0f * (float)M_PI / 60.0f;
+            float lx = b_cx + bass_scale * sinf(theta_l * (freq_x * 0.5f) + t * 3.0f);
+            float ly = b_cy + bass_scale * cosf(theta_l * (freq_y * 0.5f) + t * 2.0f);
+            tsfi_quantel_paintbox_pressure_jitter_hue(canvas, WIDTH, HEIGHT, (int)lx, (int)ly, 3, 0.9f, 0.1f, 0xFFc5a059); // Gold
+        }
+
+        // 5. Lead Tube (Screen 3, high sweep)
+        float lead_scale = 10.0f * lead_env;
+        int l_cx = scr_x[3];
+        int l_cy = scr_y[3];
+        for (int i = 0; i < 60; i++) {
+            float theta_l = (float)i * 2.0f * (float)M_PI / 60.0f;
+            float lx = l_cx + lead_scale * sinf(theta_l * (freq_x + 2.0f) + t * 8.0f);
+            float ly = l_cy + lead_scale * cosf(theta_l * (freq_y + 1.0f) + t * 7.0f);
+            tsfi_quantel_paintbox_pressure_jitter_hue(canvas, WIDTH, HEIGHT, (int)lx, (int)ly, 2, 0.8f, 0.2f, 0xFFFF4500); // Red-Orange
+        }
+
+        // 6. Sub Growl Tube (Screen 1, negative-resistance wobble)
+        float growl_scale = 8.0f + 6.0f * sinf(t * 5.8f);
+        int g_cx = scr_x[1];
+        int g_cy = scr_y[1];
+        for (int i = 0; i < 50; i++) {
+            float theta_l = (float)i * 2.0f * (float)M_PI / 50.0f;
+            float lx = g_cx + growl_scale * sinf(theta_l * 2.0f + t * 2.0f);
+            float ly = g_cy + growl_scale * cosf(theta_l * 3.0f + t * 1.5f);
+            tsfi_quantel_paintbox_pressure_jitter_hue(canvas, WIDTH, HEIGHT, (int)lx, (int)ly, 3, 0.8f, 0.1f, 0xFF8c7241); // Dim Gold
+        }
+
+        // Suppress unused warning
+        (void)freq_z;
+
+        // Draw tiger pupil slit using Vaesen Ink (0x0d0c0a) inside B1 (256, 260)
         for (int dy = -40; dy <= 40; dy++) {
-            int px = (int)center_x + (int)(sinf(t * 3.0f) * 2.0f);
-            int py = (int)center_y + dy;
+            int px = b1_cx + (int)(sinf(t * 3.0f) * 2.0f);
+            int py = b1_cy + dy;
             if (px >= 0 && px < WIDTH && py >= 0 && py < HEIGHT) {
-                tsfi_quantel_paintbox_chalk_pressure_texture(canvas, WIDTH, HEIGHT, px, py, 10, 0.9f, 1.5f, 0xFF080808);
+                tsfi_quantel_paintbox_chalk_pressure_texture(canvas, WIDTH, HEIGHT, px, py, 10, 0.9f, 1.5f, 0xFF0d0c0a);
             }
         }
 
@@ -484,17 +898,191 @@ int main() {
         float p3_y = center_y + 80.0f;
         tsfi_quantel_paintbox_pressure_jitter_opacity_saturation_value_width_angle_shape_texture_path_spline_flow(canvas, WIDTH, HEIGHT, p0_x, p0_y, p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, 16, 0.9f, 0.3f, 0xFFFF4500, t * 1.5f, 1.4f, 1.8f, 0.5f);
 
+        // Paintbox: Calligraphy brush strokes around border
+        tsfi_quantel_paintbox_calligraphy_shape(canvas, WIDTH, HEIGHT, 10, 10, WIDTH-10, 10, 8, 0.7f, 0.4f, 45.0f, 0xFFc5a059);
+        tsfi_quantel_paintbox_calligraphy_shape(canvas, WIDTH, HEIGHT, WIDTH-10, 10, WIDTH-10, HEIGHT-10, 8, 0.7f, 0.4f, 45.0f, 0xFFc5a059);
+
+        // Paintbox: Orchestrator Synthesizer Link waveforms drawing
+        float local_audio[32];
+        for (int i = 0; i < 32; i++) {
+            local_audio[i] = sinf(t * 8.0f + i * 0.5f) * 0.8f;
+        }
+        tsfi_quantel_orchestrator_paintbox_synth_link(canvas, WIDTH, HEIGHT, (int)center_x, (int)center_y, 0.8f, 1.2f, local_audio, 32);
+
+        // Paintbox: Bristle brush simulation paint marks
+        tsfi_quantel_paintbox_bristle_brush(canvas, WIDTH, HEIGHT, (int)center_x - 100, (int)center_y - 80, 15, 0.6f, 8, 0xFF8c7241);
+
+        // Paintbox: Brush Spacing Dynamics along stylus path
+        uint8_t spacing_tex[16] = { 0xFF, 0x00, 0xFF, 0x00, 0x00, 0xFF, 0x00, 0xFF, 0xFF, 0x00, 0xFF, 0x00, 0x00, 0xFF, 0x00, 0xFF };
+        tsfi_quantel_paintbox_spacing_brush(canvas, WIDTH, HEIGHT, 20, HEIGHT - 30, WIDTH - 20, HEIGHT - 30, spacing_tex, 4, 4, 12.0f, 0.7f, 0xFF8c7241);
+
+        // Paintbox: Chalk / dry brush strokes with pressure texture modulation
+        tsfi_quantel_paintbox_chalk_pressure_texture(canvas, WIDTH, HEIGHT, (int)center_x - 120, (int)center_y + 120, 16, 0.7f, 1.5f, 0xFF8c7241);
+        tsfi_quantel_paintbox_chalk_brush(canvas, WIDTH, HEIGHT, (int)center_x + 60, (int)center_y + 80, 12, 0.5f, 0xFFc5a059);
+
+        // Paintbox: Brush pressure jitter hue dynamics stroke
+        tsfi_quantel_paintbox_pressure_jitter_hue(canvas, WIDTH, HEIGHT, (int)center_x + 120, (int)center_y - 120, 14, 0.6f, 0.2f, 0xFFc5a059);
+
+        // Paintbox: Dynamic Airbrush Flow spray marks
+        tsfi_quantel_paintbox_dynamic_flow(canvas, WIDTH, HEIGHT, (int)center_x, (int)center_y - 80, 20, 0.5f, 1.5f, 0xFF8c7241);
+
+        // Paintbox: Brush Angle Lock relative to stylus velocity
+        tsfi_quantel_paintbox_angle_lock(canvas, WIDTH, HEIGHT, (int)center_x, (int)center_y + 80, 15, t, 0xFFc5a059);
+
+        // Paintbox: Spray can noise particles around border
+        tsfi_quantel_paintbox_spray_can(canvas, WIDTH, HEIGHT, (int)center_x, (int)center_y - 120, 30, 0.4f, 0xFFc5a059);
+
+        // Paintbox: Rubber stamp cloning
+        tsfi_quantel_paintbox_clone(canvas, WIDTH, HEIGHT, 50, 50, (int)(center_x - 50), (int)(center_y - 50), 20, 0.5f);
+
+        // Paintbox: Flood fill top corner segment initially
+        if (f < 90) {
+            tsfi_quantel_paintbox_flood_fill(canvas, WIDTH, HEIGHT, 2, 2, 0xFF12100e, 0.05f);
+        }
+
+        // Paintbox: Wet paint canvas smudge mixing at center
+        uint32_t smudge_color = 0xFFc5a059;
+        tsfi_quantel_paintbox_wet_paint(canvas, WIDTH, HEIGHT, (int)center_x, (int)center_y, 40, 0.05f, & smudge_color);
+
+        // Mirage: 3D Perspective Plane Tilt Warp
+        tsfi_quantel_mirage_plane_tilt(canvas, WIDTH, HEIGHT, dst_buffer, WIDTH, HEIGHT, 0.05f * sinf(t), 0.05f * cosf(t));
+        memcpy(canvas, dst_buffer, WIDTH * HEIGHT * sizeof(uint32_t));
+
+        // Mirage: 3D Perspective Projection Rotation
+        tsfi_quantel_mirage_perspective_rotate(canvas, WIDTH, HEIGHT, dst_buffer, WIDTH, HEIGHT, 0.1f * sinf(t), 0.1f * cosf(t), 0.0f, 60.0f);
+        memcpy(canvas, dst_buffer, WIDTH * HEIGHT * sizeof(uint32_t));
+
+        // Mirage: 3D Barrel Distorted Fish-Eye Warp
+        tsfi_quantel_mirage_fisheye_warp(canvas, WIDTH, HEIGHT, dst_buffer, WIDTH, HEIGHT, 0.04f * sinf(t * 1.5f));
+        memcpy(canvas, dst_buffer, WIDTH * HEIGHT * sizeof(uint32_t));
+
         memcpy(canvas_b, canvas, WIDTH * HEIGHT * sizeof(uint32_t));
 
-        // Mirage 3D warps to simulate screen roll / optical distortions with depth, wave displacement and Phong specular reflections
+        // Mirage: Sphere wrap, cylinder wrap, flag ripple, twirl, pyramid, and ripple distortions
         int phase_cycle = ((int)t) % 4;
         if (phase_cycle == 0) {
-            float curl_pulse = 1.0f - fmodf(t, 1.0f);
-            tsfi_quantel_mirage_sphere_warp(canvas_b, WIDTH, HEIGHT, dst_buffer, WIDTH, HEIGHT, 0.4f * curl_pulse, 120.0f * (1.0f + curl_pulse));
+            // Mirage: 3D Dual-Sided Page Curl exposing a solid reverse color texture
+            uint32_t *back_tex = malloc(WIDTH * HEIGHT * sizeof(uint32_t));
+            for (int i = 0; i < WIDTH * HEIGHT; i++) {
+                back_tex[i] = 0xFFc5a059;
+            }
+            tsfi_quantel_mirage_dual_sided_page_curl(canvas, back_tex, WIDTH, HEIGHT, dst_buffer, WIDTH, HEIGHT, 80.0f, 0.4f * sinf(t));
+            memcpy(canvas_b, dst_buffer, WIDTH * HEIGHT * sizeof(uint32_t));
+            free(back_tex);
+        } else if (phase_cycle == 1) {
+            tsfi_quantel_mirage_flag_ripple(canvas, WIDTH, HEIGHT, dst_buffer, WIDTH, HEIGHT, 6.0f, 0.05f, t * 2.0f);
+            memcpy(canvas_b, dst_buffer, WIDTH * HEIGHT * sizeof(uint32_t));
+        } else if (phase_cycle == 2) {
+            // Mirage: Cylinder warp mapping
+            tsfi_quantel_mirage_cylinder_wrap(canvas, WIDTH, HEIGHT, dst_buffer, WIDTH, HEIGHT, 180.0f);
             memcpy(canvas_b, dst_buffer, WIDTH * HEIGHT * sizeof(uint32_t));
         } else if (phase_cycle == 3) {
-            // Apply 3D page curl perspective rotation shear center light depth wave displacement Phong warp
-            tsfi_quantel_mirage_page_curl_perspective_rotation_shear_center_light_depth_displacement_phong_warp(canvas, WIDTH, HEIGHT, canvas_b, WIDTH, HEIGHT, 45.0f, 0.4f * sinf(t), 1.0f + 0.05f * sinf(t), 0.04f, t * 0.08f, 0.04f * sinf(t), 0.0f, center_x, center_y, 1.0f, 1.0f, 0.05f * cosf(t), 5.0f * sinf(t * 2.0f), 0.1f, 0.8f);
+            // Mirage: Ribbon Wave warp & pyramid projections
+            tsfi_quantel_mirage_ribbon_wave_warp(canvas, WIDTH, HEIGHT, dst_buffer, WIDTH, HEIGHT, 10.0f, 8.0f);
+            tsfi_quantel_mirage_pyramid_wrap(dst_buffer, WIDTH, HEIGHT, canvas, WIDTH, HEIGHT, 100.0f, 200.0f);
+            tsfi_quantel_mirage_twirl(canvas, WIDTH, HEIGHT, canvas_b, WIDTH, HEIGHT, 0.15f * sinf(t), 120.0f, center_x, center_y);
+        }
+
+        // Harry: Solarize and Posterize filter effects
+        if (phase_cycle == 1) {
+            tsfi_quantel_harry_solarize(canvas_b, WIDTH, HEIGHT, 0.65f);
+        } else if (phase_cycle == 2) {
+            tsfi_quantel_harry_posterize(canvas_b, WIDTH, HEIGHT, 8);
+        }
+
+        // Harry: 3x3 Convolution filtering (Sharpening the output frame)
+        float sharpen_kernel[9] = {
+             0.0f, -1.0f,  0.0f,
+            -1.0f,  5.0f, -1.0f,
+             0.0f, -1.0f,  0.0f
+        };
+        tsfi_quantel_harry_filter(canvas_b, dst_buffer, WIDTH, HEIGHT, sharpen_kernel);
+        memcpy(canvas_b, dst_buffer, WIDTH * HEIGHT * sizeof(uint32_t));
+
+        // Harry: Color Grading (Lift, Gamma, Gain)
+        float lift[3] = {0.04f, 0.0f, -0.04f};
+        float gamma[3] = {1.1f, 1.0f, 0.9f};
+        float gain[3] = {1.0f, 0.95f, 0.9f};
+        tsfi_quantel_harry_lift_gamma_gain(canvas_b, WIDTH, HEIGHT, lift, gamma, gain);
+
+        // Harry: Color Balance Sweep over time
+        tsfi_quantel_harry_color_balance_sweep(canvas_b, WIDTH, HEIGHT, 1.0f + 0.05f * sinf(t), 1.0f, 1.0f + 0.05f * cosf(t));
+
+        // Harry: SMPTE-C to Rec709 Color Space Conversion
+        tsfi_quantel_harry_smptec_to_rec709(canvas_b, WIDTH, HEIGHT);
+
+        // Harry: Film Grain vintage noise overlay
+        tsfi_quantel_harry_film_grain(canvas_b, WIDTH, HEIGHT, 0.07f);
+
+        // Harry: Chroma Key Spill Suppression along green boundaries
+        tsfi_quantel_harry_spill_suppress(canvas_b, WIDTH, HEIGHT, "green", 0.85f);
+
+        // Harry: Frame Dissolve dynamic cross-fade transitions
+        tsfi_quantel_harry_dissolve(canvas, canvas_b, dst_buffer, WIDTH, HEIGHT, 0.92f);
+        memcpy(canvas_b, dst_buffer, WIDTH * HEIGHT * sizeof(uint32_t));
+
+        // Storyboard: Onion Skinning compositor (blending canvas offsets)
+        tsfi_quantel_storyboard_onion_skin(canvas, canvas_b, dst_buffer, WIDTH, HEIGHT, 0.25f, 0.75f);
+        memcpy(canvas_b, dst_buffer, WIDTH * HEIGHT * sizeof(uint32_t));memcpy(canvas_b, dst_buffer, WIDTH * HEIGHT * sizeof(uint32_t));
+
+        // Harry: Split Screen Matte Preview
+        uint8_t *matte_preview = calloc(WIDTH * HEIGHT, sizeof(uint8_t));
+        for (int i = 0; i < WIDTH * HEIGHT; i++) {
+            matte_preview[i] = (i % 2 == 0) ? 255 : 0;
+        }
+        tsfi_quantel_harry_split_matte_preview(canvas, matte_preview, dst_buffer, WIDTH, HEIGHT, 0.5f + 0.2f * sinf(t));
+        memcpy(canvas_b, dst_buffer, WIDTH * HEIGHT * sizeof(uint32_t));
+        free(matte_preview);
+
+        // Harry: Invert colors dynamically on beat sync
+        if (f % 60 < 2) {
+            tsfi_quantel_harry_invert(canvas_b, WIDTH, HEIGHT);
+        }
+
+        // Paintbox: Palette color cycling
+        tsfi_quantel_paintbox_palette_cycle(canvas_b, WIDTH, HEIGHT, (int)(t * 12.0f));
+
+        // Mirage: 3D Page Peel Shadow intensity simulation
+        tsfi_quantel_mirage_peel_shadow(canvas_b, WIDTH, HEIGHT, 0.5f + 0.2f * sinf(t), 0.75f);
+
+        // Storyboard: Burn-in real-time SMPTE timecode (HH:MM:SS:FF)
+        tsfi_quantel_storyboard_timecode_burn(canvas_b, WIDTH, HEIGHT, f, 30.0f, 0xFFe6dfd3);
+
+        // Paintbox: Typographer text overlay
+        tsfi_quantel_paintbox_typographer(canvas_b, WIDTH, HEIGHT, 110, 48, "AUNCIENT VAESEN TIGER", 0xFFe6dfd3, 16.0f);
+
+        // Harry: Keyframe In-Between Interpolator for frame parameters
+        float interp_val = 0.0f;
+        tsfi_quantel_harry_interpolate_keyframe(fmodf(t, 2.0f) / 2.0f, 0.0f, 1.0f, &interp_val);
+
+        // Storyboard: Film Frame Borders & Outline Cell overlays
+        tsfi_quantel_storyboard_film_borders(canvas_b, WIDTH, HEIGHT, 32, 120, WIDTH - 64, HEIGHT - 240, 0xFF8c7241);
+        tsfi_quantel_storyboard_outline_cell(canvas_b, WIDTH, HEIGHT, 32, 120, WIDTH - 64, HEIGHT - 240, 0xFFc5a059);
+
+        // Storyboard: Concentric double borders overlay
+        tsfi_quantel_storyboard_border_highlights_concentric_double(canvas_b, WIDTH, HEIGHT, 32, 120, WIDTH - 64, HEIGHT - 240, 2, 4, 2, 0xFFc5a059, 0xFF8c7241);
+
+        // Storyboard: Double borders offset with color
+        tsfi_quantel_storyboard_double_borders_offset_color(canvas_b, WIDTH, HEIGHT, 32, 120, WIDTH - 64, HEIGHT - 240, 6, 0xFFc5a059, 0xFF8c7241);
+
+        // Harry: Interlaced field split chromatic offset blend
+        uint32_t *field_even_b = malloc(WIDTH * HEIGHT * sizeof(uint32_t));
+        memcpy(field_even_b, canvas_b, WIDTH * HEIGHT * sizeof(uint32_t));
+        tsfi_quantel_harry_blend_fields_color_offset(field_even_b, canvas_b, dst_buffer, WIDTH, HEIGHT, 0.5f * interp_val, 4, 0xFFc5a059);
+        memcpy(canvas_b, dst_buffer, WIDTH * HEIGHT * sizeof(uint32_t));
+        free(field_even_b);
+
+        // Storyboard: Aspect Ratio Guides, Centering Crosshairs & Corner crop marks
+        tsfi_quantel_storyboard_aspect_guides(canvas_b, WIDTH, HEIGHT, 32, 120, WIDTH - 64, HEIGHT - 240, "1.85:1", 0xFF8c7241);
+        tsfi_quantel_storyboard_crosshairs(canvas_b, WIDTH, HEIGHT, 32, 120, WIDTH - 64, HEIGHT - 240, 0xFF8c7241);
+        tsfi_quantel_storyboard_corner_marks(canvas_b, WIDTH, HEIGHT, 32, 120, WIDTH - 64, HEIGHT - 240, 8, 0xFFc5a059);
+
+        // Baudot 5-Bit Punched Tape visual overlay ticker
+        draw_baudot_punched_tape(canvas_b, WIDTH, HEIGHT, "AUNCIENT TIGER", f);
+
+        // Storyboard: Production Slate burned at start (first 25 frames)
+        if (f < 25) {
+            tsfi_quantel_storyboard_production_slate(canvas_b, WIDTH, HEIGHT, "MARIARAHEL", "AUNCIENT TIGER", "2026-07-20");
         }
 
         // Harry Wipe Transitions with Matte mask and chroma / luma key filters
@@ -515,7 +1103,7 @@ int main() {
             free(matte_mask);
 
             // Double outline highlights with inner bevel overlay, directional soft drop shadow, and rounded corner bounding clip
-            tsfi_quantel_storyboard_border_highlights_concentric_double_outer_width_offset_color_texture_bevel_shadow_corner(canvas_b, WIDTH, HEIGHT, 32, 120, WIDTH - 64, HEIGHT - 240, 4, 2, 3, 0xFFFF8C00, 0xFFFF4500, 10, 2, (int)(2.0f * sinf(t)), (int)(2.0f * cosf(t)), 0xFF000000, 0.2f, 1, 2, 12);
+            tsfi_quantel_storyboard_border_highlights_concentric_double_outer_width_offset_color_texture_bevel_shadow_corner(canvas_b, WIDTH, HEIGHT, 32, 120, WIDTH - 64, HEIGHT - 240, 4, 2, 3, 0xFFc5a059, 0xFF8c7241, 10, 2, (int)(2.0f * sinf(t)), (int)(2.0f * cosf(t)), 0xFF12100e, 0.2f, 1, 2, 12);
         }
 
         // Dispatch CICS inputs to HOGAN
@@ -557,8 +1145,48 @@ int main() {
         // Enforce Super8 crop gate & sprocket holes
         apply_super8_crop(canvas_b, WIDTH, HEIGHT, f);
 
-        // HOGAN telemetry layout overlay
-        draw_hogan_telemetry(canvas_b, WIDTH, HEIGHT, &hogan_sys, t);
+        // 1. Xerox Smalltalk VM dynamic execution
+        st_vm.heap[0].fields[0] = (uint32_t)hogan_sys.tx_count;
+        uint32_t st_result = 0;
+        tsfi_parc_st_send_message(&st_vm, obj_inst, "processData", &st_result);
+
+        // 2. Xerox PUP packet serialization
+        tsfi_parc_pup_packet_t pup_pkt;
+        pup_pkt.dest_host = 022;
+        pup_pkt.src_host = 014;
+        pup_pkt.pup_type = PUP_TYPE_DATA;
+        pup_pkt.pup_id = (uint32_t)f;
+        snprintf((char*)pup_pkt.payload, sizeof(pup_pkt.payload), "TX_COUNT: %lu", hogan_sys.tx_count);
+        pup_pkt.data_len = strlen((char*)pup_pkt.payload);
+        uint8_t pup_raw[256];
+        int pup_raw_len = tsfi_parc_pup_encode(&pup_pkt, pup_raw, sizeof(pup_raw));
+
+        // 3. Render overlapping Alto window desktop dashboard
+        tsfi_parc_wm_render(&wm, canvas_b, WIDTH, HEIGHT, t, st_result, pup_raw_len, pup_pkt.checksum, (int)hogan_sys.tx_count);
+
+        // 4. Xerox Bravo Page Guidelines and WYSIWYG Header Annotation
+        tsfi_parc_bravo_draw_guides(canvas_b, WIDTH, HEIGHT, &bravo_layout, 0xFF8c7241);
+        tsfi_parc_bravo_draw_header(canvas_b, WIDTH, HEIGHT, &bravo_layout, "XEROX ALTO / STAR CADE MONITOR", 0xFFe6dfd3);
+
+        // 5. Xerox Interpress PDL Scalable vector diagram: Rotating target box in CADE panel center
+        tsfi_parc_interpress_init(&ip_ctx);
+        tsfi_parc_interpress_scale(&ip_ctx, 1.0f, 1.0f);
+        tsfi_parc_interpress_rotate(&ip_ctx, t * 0.4f);
+        ip_ctx.matrix[4] = 256.0f;
+        ip_ctx.matrix[5] = 450.0f;
+        tsfi_parc_interpress_moveto(&ip_ctx, -20.0f, -12.0f);
+        tsfi_parc_interpress_lineto(&ip_ctx, canvas_b, WIDTH, HEIGHT, 20.0f, -12.0f, 0xFFc5a059);
+        tsfi_parc_interpress_lineto(&ip_ctx, canvas_b, WIDTH, HEIGHT, 20.0f, 12.0f, 0xFFc5a059);
+        tsfi_parc_interpress_lineto(&ip_ctx, canvas_b, WIDTH, HEIGHT, -20.0f, 12.0f, 0xFFc5a059);
+        tsfi_parc_interpress_lineto(&ip_ctx, canvas_b, WIDTH, HEIGHT, -20.0f, -12.0f, 0xFFc5a059);
+
+        // 6. Xerox SuperPaint Framebuffer chroma keying overlay merge
+        uint32_t *overlay_buf = malloc(WIDTH * HEIGHT * sizeof(uint32_t));
+        tsfi_parc_superpaint_chroma_key(canvas_b, canvas, overlay_buf, WIDTH, HEIGHT, 0xFF0d0c0a);
+        memcpy(canvas_b, overlay_buf, WIDTH * HEIGHT * sizeof(uint32_t));
+        free(overlay_buf);
+
+        tsfi_parc_superpaint_cycle_lut(&sp_lut, f % 256);
 
         // Convert to RGB24 for FFmpeg pipe output
         for (int i = 0; i < WIDTH * HEIGHT; i++) {
