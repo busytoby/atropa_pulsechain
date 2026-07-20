@@ -165,3 +165,62 @@ int tsfi_quantel_storyboard_corner_spacers_offset(uint32_t *pixels, int w, int h
     if (tw <= 0 || th <= 0) return -1;
     return tsfi_quantel_storyboard_corner_spacers(pixels, w, h, tx, ty, tw, th, spacer_w, color);
 }
+
+int tsfi_quantel_storyboard_border_highlights_offset_width(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int offset_w, int border_w, uint32_t highlight_color) {
+    if (!pixels || w <= 0 || h <= 0 || offset_w < 0 || border_w <= 0) return -1;
+    for (int offset = 0; offset < border_w; offset++) {
+        int tx = cell_x + offset_w + offset;
+        int ty = cell_y + offset_w + offset;
+        int tw = cell_w - 2 * (offset_w + offset);
+        int th = cell_h - 2 * (offset_w + offset);
+        if (tw <= 0 || th <= 0) { continue; }
+        tsfi_quantel_storyboard_border_highlights(pixels, w, h, tx, ty, tw, th, highlight_color);
+    }
+    return 0;
+}
+
+int tsfi_quantel_storyboard_crosshairs(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    int mid_x = cell_x + cell_w / 2;
+    int mid_y = cell_y + cell_h / 2;
+
+    for (int x = cell_x; x < cell_x + cell_w; x++) {
+        if (x >= 0 && x < w && mid_y >= 0 && mid_y < h) {
+            pixels[mid_y * w + x] = color;
+        }
+    }
+    for (int y = cell_y; y < cell_y + cell_h; y++) {
+        if (y >= 0 && y < h && mid_x >= 0 && mid_x < w) {
+            pixels[y * w + mid_x] = color;
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_storyboard_outer_borders(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t border_color) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    for (int y = cell_y; y < cell_y + cell_h; y++) {
+        if (y < 0 || y >= h) continue;
+        for (int x = cell_x; x < cell_x + cell_w; x++) {
+            if (x < 0 || x >= w) continue;
+            if (y == cell_y || y == cell_y + cell_h - 1 || x == cell_x || x == cell_x + cell_w - 1) {
+                pixels[y * w + x] = border_color;
+            }
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_storyboard_inner_borders(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t border_color) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    for (int y = cell_y + 1; y < cell_y + cell_h - 1; y++) {
+        if (y < 0 || y >= h) continue;
+        for (int x = cell_x + 1; x < cell_x + cell_w - 1; x++) {
+            if (x < 0 || x >= w) continue;
+            if (y == cell_y + 1 || y == cell_y + cell_h - 2 || x == cell_x + 1 || x == cell_x + cell_w - 2) {
+                pixels[y * w + x] = border_color;
+            }
+        }
+    }
+    return 0;
+}

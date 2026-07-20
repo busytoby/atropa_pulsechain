@@ -1365,23 +1365,6 @@ int tsfi_quantel_harry_clock_wipe(const uint32_t *src_a, const uint32_t *src_b, 
     return 0;
 }
 
-int tsfi_quantel_storyboard_crosshairs(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t color) {
-    if (!pixels || w <= 0 || h <= 0) return -1;
-    int mid_x = cell_x + cell_w / 2;
-    int mid_y = cell_y + cell_h / 2;
-
-    for (int x = cell_x; x < cell_x + cell_w; x++) {
-        if (x >= 0 && x < w && mid_y >= 0 && mid_y < h) {
-            pixels[mid_y * w + x] = color;
-        }
-    }
-    for (int y = cell_y; y < cell_y + cell_h; y++) {
-        if (y >= 0 && y < h && mid_x >= 0 && mid_x < w) {
-            pixels[y * w + mid_x] = color;
-        }
-    }
-    return 0;
-}
 
 int tsfi_quantel_harry_split_fields(const uint32_t *src, uint32_t *field_even, uint32_t *field_odd, int w, int h) {
     if (!src || !field_even || !field_odd || w <= 0 || h <= 0) return -1;
@@ -1395,19 +1378,6 @@ int tsfi_quantel_harry_split_fields(const uint32_t *src, uint32_t *field_even, u
     return 0;
 }
 
-int tsfi_quantel_storyboard_outer_borders(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t border_color) {
-    if (!pixels || w <= 0 || h <= 0) return -1;
-    for (int y = cell_y; y < cell_y + cell_h; y++) {
-        if (y < 0 || y >= h) continue;
-        for (int x = cell_x; x < cell_x + cell_w; x++) {
-            if (x < 0 || x >= w) continue;
-            if (y == cell_y || y == cell_y + cell_h - 1 || x == cell_x || x == cell_x + cell_w - 1) {
-                pixels[y * w + x] = border_color;
-            }
-        }
-    }
-    return 0;
-}
 
 int tsfi_quantel_harry_scanline_offset(uint32_t *pixels, int w, int h, int offset) {
     if (!pixels || w <= 0 || h <= 0) return -1;
@@ -1428,19 +1398,6 @@ int tsfi_quantel_harry_scanline_offset(uint32_t *pixels, int w, int h, int offse
     return 0;
 }
 
-int tsfi_quantel_storyboard_inner_borders(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t border_color) {
-    if (!pixels || w <= 0 || h <= 0) return -1;
-    for (int y = cell_y + 1; y < cell_y + cell_h - 1; y++) {
-        if (y < 0 || y >= h) continue;
-        for (int x = cell_x + 1; x < cell_x + cell_w - 1; x++) {
-            if (x < 0 || x >= w) continue;
-            if (y == cell_y + 1 || y == cell_y + cell_h - 2 || x == cell_x + 1 || x == cell_x + cell_w - 2) {
-                pixels[y * w + x] = border_color;
-            }
-        }
-    }
-    return 0;
-}
 
 int tsfi_quantel_harry_color_film_grain(uint32_t *pixels, int w, int h, float intensity) {
     if (!pixels || w <= 0 || h <= 0) return -1;
@@ -1791,5 +1748,43 @@ int tsfi_quantel_harry_scanline_offset_jitter(uint32_t *pixels, int w, int h, in
         }
     }
     free(temp);
+    return 0;
+}
+
+int tsfi_quantel_harry_blend_fields_offset_jitter(const uint32_t *field_even, const uint32_t *field_odd, uint32_t *dst, int w, int h, float blend_factor, int offset, float jitter_amp) {
+    if (!field_even || !field_odd || !dst || w <= 0 || h <= 0) return -1;
+    if (blend_factor < 0.0f) { blend_factor = 0.0f; }
+    if (blend_factor > 1.0f) { blend_factor = 1.0f; }
+
+    for (int y = 0; y < h; y++) {
+        const uint32_t *row_a = field_even + y * w;
+        const uint32_t *row_b = field_odd + y * w;
+        uint32_t *dst_row = dst + y * w;
+
+        float jitter_val = ((float)rand() / RAND_MAX - 0.5f) * jitter_amp;
+        int shift = ((y % 2 == 0) ? offset : -offset) + (int)jitter_val;
+
+        for (int x = 0; x < w; x++) {
+            int sx_a = (x - shift + w) % w;
+            int sx_b = (x + shift + w) % w;
+
+            uint32_t ca = row_a[sx_a];
+            uint32_t cb = row_b[sx_b];
+
+            uint8_t ra = (ca >> 16) & 0xFF;
+            uint8_t ga = (ca >> 8) & 0xFF;
+            uint8_t ba = ca & 0xFF;
+
+            uint8_t rb = (cb >> 16) & 0xFF;
+            uint8_t gb = (cb >> 8) & 0xFF;
+            uint8_t bb = cb & 0xFF;
+
+            uint8_t r = (uint8_t)(ra * (1.0f - blend_factor) + rb * blend_factor);
+            uint8_t g = (uint8_t)(ga * (1.0f - blend_factor) + gb * blend_factor);
+            uint8_t b = (uint8_t)(ba * (1.0f - blend_factor) + bb * blend_factor);
+
+            dst_row[x] = (0xFF000000) | (r << 16) | (g << 8) | b;
+        }
+    }
     return 0;
 }
