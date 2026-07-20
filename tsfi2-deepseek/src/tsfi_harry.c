@@ -811,3 +811,60 @@ int tsfi_quantel_storyboard_delta_overlay(const uint32_t *prev_frame, const uint
     }
     return 0;
 }
+
+int tsfi_quantel_harry_erode_dilate(const uint8_t *src_mask, uint8_t *dst_mask, int w, int h, int radius, int erode) {
+    if (!src_mask || !dst_mask || w <= 0 || h <= 0 || radius <= 0) return -1;
+    memcpy(dst_mask, src_mask, w * h);
+
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            uint8_t target = erode ? 255 : 0;
+            bool trigger = false;
+            for (int ky = -radius; ky <= radius; ky++) {
+                int py = y + ky;
+                if (py >= 0 && py < h) {
+                    for (int kx = -radius; kx <= radius; kx++) {
+                        int px = x + kx;
+                        if (px >= 0 && px < w) {
+                            if (src_mask[py * w + px] == target) {
+                                trigger = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (trigger) break;
+            }
+            if (trigger) {
+                dst_mask[y * w + x] = erode ? 0 : 255;
+            }
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_storyboard_drop_frame_timecode(int frame_number, float fps, char *timecode_out, int max_len) {
+    if (!timecode_out || max_len <= 0) return -1;
+    double fps_d = (double)fps;
+    bool is_drop_frame = (fabs(fps_d - 29.97) < 0.01) || (fabs(fps_d - 59.94) < 0.01);
+    
+    int drop_frames = 2;
+    if (fabs(fps_d - 59.94) < 0.01) drop_frames = 4;
+
+    int total_minutes = frame_number / (int)(fps_d * 60.0);
+    if (is_drop_frame) {
+        int drop_count = total_minutes - total_minutes / 10;
+        frame_number += drop_frames * drop_count;
+    }
+
+    int frames_per_sec = (int)round(fps_d);
+    int total_secs = frame_number / frames_per_sec;
+    int frames = frame_number % frames_per_sec;
+    int hours = total_secs / 3600;
+    int mins = (total_secs % 3600) / 60;
+    int secs = total_secs % 60;
+
+    snprintf(timecode_out, max_len, "%02d:%02d:%02d%c%02d", 
+             hours, mins, secs, is_drop_frame ? ';' : ':', frames);
+    return 0;
+}

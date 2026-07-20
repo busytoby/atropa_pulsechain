@@ -198,6 +198,18 @@ int tsfi_quantel_harry_advanced_difference_key(const uint32_t *src, int w, int h
 /* Storyboard Delta Frame Overlay */
 int tsfi_quantel_storyboard_delta_overlay(const uint32_t *prev_frame, const uint32_t *next_frame, uint32_t *dst, int w, int h);
 
+/* Quantel Brush Edge Softness Profile */
+int tsfi_quantel_paintbox_profile_brush(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float pressure, float softness, uint32_t color);
+
+/* Mirage 3D Twirl Vortex Warp */
+int tsfi_quantel_mirage_twirl(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float angle, float radius, float cx, float cy);
+
+/* Harry Matte Edge Erosion / Dilation */
+int tsfi_quantel_harry_erode_dilate(const uint8_t *src_mask, uint8_t *dst_mask, int w, int h, int radius, int erode);
+
+/* Storyboard SMPTE Drop-Frame Configurator */
+int tsfi_quantel_storyboard_drop_frame_timecode(int frame_number, float fps, char *timecode_out, int max_len);
+
 #endif // TSFI_PAINT_H
 
 

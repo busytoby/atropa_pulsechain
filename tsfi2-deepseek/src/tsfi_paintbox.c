@@ -722,3 +722,47 @@ int tsfi_quantel_paintbox_palette_mixer(uint32_t *mixer_pixels, int w, int h, in
     mixer_pixels[idx] = (0xFF000000) | (res_r << 16) | (res_g << 8) | res_b;
     return 0;
 }
+
+int tsfi_quantel_paintbox_profile_brush(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float pressure, float softness, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0 || radius <= 0) return -1;
+    
+    uint8_t r_src = (color >> 16) & 0xFF;
+    uint8_t g_src = (color >> 8) & 0xFF;
+    uint8_t b_src = color & 0xFF;
+
+    for (int y = cy - radius; y <= cy + radius; y++) {
+        if (y < 0 || y >= h) continue;
+        uint32_t *row = pixels + y * w;
+        int dy = y - cy;
+        for (int x = cx - radius; x <= cx + radius; x++) {
+            if (x < 0 || x >= w) continue;
+            int dx = x - cx;
+            float dist = sqrtf((float)(dx * dx + dy * dy));
+            if (dist <= radius) {
+                float norm_dist = dist / radius;
+                float intensity = 0.0f;
+                if (norm_dist > (1.0f - softness)) {
+                    float factor = (norm_dist - (1.0f - softness)) / softness;
+                    intensity = (1.0f - factor) * pressure;
+                } else {
+                    intensity = pressure;
+                }
+                
+                if (intensity > 1.0f) intensity = 1.0f;
+                if (intensity < 0.0f) intensity = 0.0f;
+
+                uint32_t dest = row[x];
+                uint8_t r_dst = (dest >> 16) & 0xFF;
+                uint8_t g_dst = (dest >> 8) & 0xFF;
+                uint8_t b_dst = dest & 0xFF;
+
+                uint8_t r_res = (uint8_t)(r_src * intensity + r_dst * (1.0f - intensity));
+                uint8_t g_res = (uint8_t)(g_src * intensity + g_dst * (1.0f - intensity));
+                uint8_t b_res = (uint8_t)(b_src * intensity + b_dst * (1.0f - intensity));
+
+                row[x] = (0xFF000000) | (r_res << 16) | (g_res << 8) | b_res;
+            }
+        }
+    }
+    return 0;
+}
