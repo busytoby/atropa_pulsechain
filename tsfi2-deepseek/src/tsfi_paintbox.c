@@ -1118,3 +1118,26 @@ int tsfi_quantel_paintbox_pressure_jitter_amp(uint32_t *pixels, int w, int h, in
     return tsfi_quantel_paintbox_airbrush(pixels, w, h, cx, cy, radius, flow, color);
 }
 
+int tsfi_quantel_paintbox_pressure_saturation(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float pressure, float saturation, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0 || radius <= 0) return -1;
+    float sat_mod = saturation * pressure;
+    uint32_t mod_color = color;
+    
+    float r = ((color >> 16) & 0xFF) / 255.0f;
+    float g = ((color >> 8) & 0xFF) / 255.0f;
+    float b = (color & 0xFF) / 255.0f;
+
+    float luma = 0.299f * r + 0.587f * g + 0.114f * b;
+    float nr = luma + (r - luma) * sat_mod;
+    float ng = luma + (g - luma) * sat_mod;
+    float nb = luma + (b - luma) * sat_mod;
+
+    if (nr < 0.0f) { nr = 0.0f; } if (nr > 1.0f) { nr = 1.0f; }
+    if (ng < 0.0f) { ng = 0.0f; } if (ng > 1.0f) { ng = 1.0f; }
+    if (nb < 0.0f) { nb = 0.0f; } if (nb > 1.0f) { nb = 1.0f; }
+
+    mod_color = (0xFF000000) | ((int)(nr * 255.0f) << 16) | ((int)(ng * 255.0f) << 8) | (int)(nb * 255.0f);
+
+    return tsfi_quantel_paintbox_airbrush(pixels, w, h, cx, cy, radius, 1.0f, mod_color);
+}
+
