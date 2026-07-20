@@ -1209,3 +1209,58 @@ int tsfi_quantel_storyboard_grid_spacers(uint32_t *pixels, int w, int h, int cel
     }
     return 0;
 }
+
+int tsfi_quantel_harry_dissolve(const uint32_t *src_a, const uint32_t *src_b, uint32_t *dst, int w, int h, float progress) {
+    if (!src_a || !src_b || !dst || w <= 0 || h <= 0) return -1;
+    if (progress < 0.0f) { progress = 0.0f; }
+    if (progress > 1.0f) { progress = 1.0f; }
+
+    for (int i = 0; i < w * h; i++) {
+        uint32_t ca = src_a[i];
+        uint32_t cb = src_b[i];
+
+        uint8_t ra = (ca >> 16) & 0xFF;
+        uint8_t ga = (ca >> 8) & 0xFF;
+        uint8_t ba = ca & 0xFF;
+
+        uint8_t rb = (cb >> 16) & 0xFF;
+        uint8_t gb = (cb >> 8) & 0xFF;
+        uint8_t bb = cb & 0xFF;
+
+        uint8_t r = (uint8_t)(ra * (1.0f - progress) + rb * progress);
+        uint8_t g = (uint8_t)(ga * (1.0f - progress) + gb * progress);
+        uint8_t b = (uint8_t)(ba * (1.0f - progress) + bb * progress);
+
+        dst[i] = (0xFF000000) | (r << 16) | (g << 8) | b;
+    }
+    return 0;
+}
+
+int tsfi_quantel_storyboard_cell_overlay(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t border_color, float alpha) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    if (alpha < 0.0f) { alpha = 0.0f; }
+    if (alpha > 1.0f) { alpha = 1.0f; }
+
+    uint8_t r_src = (border_color >> 16) & 0xFF;
+    uint8_t g_src = (border_color >> 8) & 0xFF;
+    uint8_t b_src = border_color & 0xFF;
+
+    for (int y = cell_y; y < cell_y + cell_h; y++) {
+        if (y < 0 || y >= h) continue;
+        uint32_t *row = pixels + y * w;
+        for (int x = cell_x; x < cell_x + cell_w; x++) {
+            if (x < 0 || x >= w) continue;
+            uint32_t dest = row[x];
+            uint8_t r_dst = (dest >> 16) & 0xFF;
+            uint8_t g_dst = (dest >> 8) & 0xFF;
+            uint8_t b_dst = dest & 0xFF;
+
+            uint8_t r_res = (uint8_t)(r_src * alpha + r_dst * (1.0f - alpha));
+            uint8_t g_res = (uint8_t)(g_src * alpha + g_dst * (1.0f - alpha));
+            uint8_t b_res = (uint8_t)(b_src * alpha + b_dst * (1.0f - alpha));
+
+            row[x] = (0xFF000000) | (r_res << 16) | (g_res << 8) | b_res;
+        }
+    }
+    return 0;
+}

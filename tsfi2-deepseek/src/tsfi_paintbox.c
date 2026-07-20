@@ -978,3 +978,10 @@ int tsfi_quantel_paintbox_interpolate_palette(const uint32_t *palette_a, const u
     }
     return 0;
 }
+
+int tsfi_quantel_paintbox_dynamic_flow(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float pressure, float speed, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0 || radius <= 0) return -1;
+    float flow = pressure / (1.0f + 0.1f * speed);
+    if (flow < 0.01f) { flow = 0.01f; }
+    return tsfi_quantel_paintbox_airbrush(pixels, w, h, cx, cy, radius, flow, color);
+}
