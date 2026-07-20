@@ -2,6 +2,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <fcntl.h>
 
 static uint64_t global_lsn = 0;
 
@@ -349,25 +351,27 @@ int tsfi_reuter_write_checkpoint(int log_fd, const tsfi_reuter_tx_entry *tx_tabl
                                  uint64_t *chk_lsn) {
     if (log_fd < 0 || !tx_table || !dirty_table) return -1;
     
-    tsfi_reuter_checkpoint chk;
-    memset(&chk, 0, sizeof(tsfi_reuter_checkpoint));
+    tsfi_reuter_log_record record;
+    memset(&record, 0, sizeof(tsfi_reuter_log_record));
     
-    chk.checkpoint_lsn = ++global_lsn;
-    chk.active_tx_count = tx_count < 16 ? tx_count : 16;
-    for (int i = 0; i < chk.active_tx_count; i++) {
-        chk.active_tx_ids[i] = tx_table[i].transaction_id;
-        chk.active_tx_last_lsns[i] = tx_table[i].last_lsn;
+    record.lsn = ++global_lsn;
+    record.type = LOG_TYPE_CHECKPOINT;
+    
+    // Copy active transactions to before_image (up to 8 transactions, 4 bytes each)
+    int tx_to_copy = tx_count < 8 ? tx_count : 8;
+    for (int i = 0; i < tx_to_copy; i++) {
+        memcpy(record.before_image + (i * 4), &tx_table[i].transaction_id, 4);
     }
     
-    chk.dirty_page_count = dirty_count < 16 ? dirty_count : 16;
-    for (int i = 0; i < chk.dirty_page_count; i++) {
-        chk.dirty_page_ids[i] = dirty_table[i].page_id;
-        chk.dirty_page_rec_lsns[i] = dirty_table[i].rec_lsn;
+    // Copy dirty pages to after_image (up to 8 pages, 4 bytes each)
+    int pages_to_copy = dirty_count < 8 ? dirty_count : 8;
+    for (int i = 0; i < pages_to_copy; i++) {
+        memcpy(record.after_image + (i * 4), &dirty_table[i].page_id, 4);
     }
     
     // Write checkpoint record to stable storage
-    ssize_t bytes_written = write(log_fd, &chk, sizeof(tsfi_reuter_checkpoint));
-    if (bytes_written < (ssize_t)sizeof(tsfi_reuter_checkpoint)) {
+    ssize_t bytes_written = write(log_fd, &record, sizeof(tsfi_reuter_log_record));
+    if (bytes_written < (ssize_t)sizeof(tsfi_reuter_log_record)) {
         return -2;
     }
     
@@ -375,7 +379,7 @@ int tsfi_reuter_write_checkpoint(int log_fd, const tsfi_reuter_tx_entry *tx_tabl
     fsync(log_fd);
     
     if (chk_lsn) {
-        *chk_lsn = chk.checkpoint_lsn;
+        *chk_lsn = record.lsn;
     }
     return 0;
 }
@@ -587,5 +591,86 @@ int tsfi_reuter_mvcc_sweep(tsfi_reuter_version **head, uint64_t min_active_lsn) 
         prev = curr;
         curr = curr->next;
     }
+    return 0;
+}
+
+// 13. Lock Upgrade Conversion
+int tsfi_reuter_lock_upgrade(tsfi_reuter_lock_head *lock_head, uint32_t tx_id, tsfi_reuter_lock_mode target_mode) {
+    if (!lock_head) return -1;
+    
+    int index = -1;
+    for (int i = 0; i < lock_head->request_count; i++) {
+        if (lock_head->requests[i].transaction_id == tx_id) {
+            index = i;
+            break;
+        }
+    }
+    
+    if (index == -1) return -2; // Lock not held
+    
+    tsfi_reuter_lock_mode original_mode = lock_head->requests[index].mode;
+    if (original_mode >= target_mode) return 0; // Already holds sufficient mode
+    
+    // Check compatibility with other granted locks held by other transactions
+    bool compatible = true;
+    for (int i = 0; i < lock_head->request_count; i++) {
+        if (i != index && lock_head->requests[i].granted) {
+            if (!is_lock_compatible(target_mode, lock_head->requests[i].mode)) {
+                compatible = false;
+                break;
+            }
+        }
+    }
+    
+    lock_head->requests[index].mode = target_mode;
+    lock_head->requests[index].granted = compatible;
+    
+    return compatible ? 0 : 1; // 0 = upgraded immediately, 1 = conversion conflict (waiting)
+}
+
+// 14. Rigorous Two-Phase Locking (SS2PL)
+int tsfi_reuter_ss2pl_release_all(tsfi_reuter_lock_head *lock_heads, int lock_head_count, uint32_t tx_id) {
+    if (!lock_heads || lock_head_count <= 0) return -1;
+    
+    // Releases both Shared and Exclusive locks at transaction commit/abort
+    for (int i = 0; i < lock_head_count; i++) {
+        tsfi_reuter_lock_release(&lock_heads[i], tx_id);
+    }
+    return 0;
+}
+
+// 15. Log Reclamation & Truncation (Checkpoint Sweeper)
+int tsfi_reuter_log_truncate(int log_fd, uint64_t min_recovery_lsn, const char *log_filepath) {
+    if (log_fd < 0 || !log_filepath) return -1;
+    
+    // Create new temporary log file to store active segments
+    char temp_filepath[256];
+    snprintf(temp_filepath, sizeof(temp_filepath), "%s.tmp", log_filepath);
+    
+    int new_fd = open(temp_filepath, O_RDWR | O_CREAT | O_TRUNC, 0644);
+    if (new_fd < 0) return -2;
+    
+    // Scan log from start and copy records >= min_recovery_lsn
+    lseek(log_fd, 0, SEEK_SET);
+    tsfi_reuter_log_record record;
+    while (read(log_fd, &record, sizeof(tsfi_reuter_log_record)) == sizeof(tsfi_reuter_log_record)) {
+        if (record.lsn >= min_recovery_lsn) {
+            if (write(new_fd, &record, sizeof(tsfi_reuter_log_record)) < (ssize_t)sizeof(tsfi_reuter_log_record)) {
+                close(new_fd);
+                unlink(temp_filepath);
+                return -3;
+            }
+        }
+    }
+    
+    fsync(new_fd);
+    close(new_fd);
+    
+    // Atomically replace old log with truncated log
+    if (rename(temp_filepath, log_filepath) != 0) {
+        unlink(temp_filepath);
+        return -4;
+    }
+    
     return 0;
 }

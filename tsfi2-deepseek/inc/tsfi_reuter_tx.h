@@ -10,7 +10,8 @@
 
 typedef enum {
     LOG_TYPE_WAL,
-    LOG_TYPE_CLR
+    LOG_TYPE_CLR,
+    LOG_TYPE_CHECKPOINT
 } tsfi_reuter_log_type;
 
 // Andreas Reuter Log Record (Unified WAL / CLR format)
@@ -184,5 +185,14 @@ int tsfi_reuter_wfg_detect_deadlock(const tsfi_reuter_wfg_edge *edges, int edge_
 int tsfi_reuter_mvcc_write(tsfi_reuter_version **head, uint64_t commit_lsn, const uint8_t *data, int len);
 int tsfi_reuter_mvcc_read(const tsfi_reuter_version *head, uint64_t start_lsn, uint8_t *data_out, int len);
 int tsfi_reuter_mvcc_sweep(tsfi_reuter_version **head, uint64_t min_active_lsn);
+
+// Lock Upgrade Conversion API
+int tsfi_reuter_lock_upgrade(tsfi_reuter_lock_head *lock_head, uint32_t tx_id, tsfi_reuter_lock_mode target_mode);
+
+// Rigorous 2PL (SS2PL) API
+int tsfi_reuter_ss2pl_release_all(tsfi_reuter_lock_head *lock_heads, int lock_head_count, uint32_t tx_id);
+
+// Log Truncation Sweeper API
+int tsfi_reuter_log_truncate(int log_fd, uint64_t min_recovery_lsn, const char *log_filepath);
 
 #endif // TSFI_REUTER_TX_H
