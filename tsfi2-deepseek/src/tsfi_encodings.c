@@ -419,3 +419,69 @@ int tsfi_ot_baud_llm_dat(const char *dat_bin_path) {
     
     return 0;
 }
+
+// 11. EER (Enhanced Entity-Relationship) Bridge for Oregon Trail (OT) over ACAB
+int tsfi_eer_bridge_ot_acab(TSFiEerDatabase *db, const char *dat_bin_path) {
+    if (!db || !dat_bin_path) return -1;
+    
+    // Read the binary block-ledger asset (.dat.bin)
+    FILE *f = fopen(dat_bin_path, "rb");
+    if (!f) return -2;
+    
+    uint32_t count = 0;
+    if (fread(&count, sizeof(uint32_t), 1, f) != 1 || count == 0 || count > 128) {
+        fclose(f);
+        return -3;
+    }
+    
+    uint32_t tokens[128];
+    if (fread(tokens, sizeof(uint32_t), count, f) != count) {
+        fclose(f);
+        return -4;
+    }
+    fclose(f);
+    
+    // Decode Baudot tokens back to string
+    uint8_t baud_buf[128];
+    for (uint32_t i = 0; i < count; i++) {
+        baud_buf[i] = (uint8_t)tokens[i];
+    }
+    char status_dec[128];
+    int dec_len = tsfi_decode_baudot(baud_buf, count, status_dec, 128);
+    if (dec_len <= 0) return -5;
+    
+    // Parse values (Miles) from game status
+    int miles = 0;
+    sscanf(status_dec, "MILES %d", &miles);
+    
+    // ER modeling: Create a basic incident entity
+    uint32_t incident_id = 2000 + (uint32_t)miles;
+    int defcon = (miles < 100) ? 5 : 2;
+    int type = (miles < 100) ? 2 : 1; // 2 = TaxAuditConflict (basic), 1 = NuclearAlert (enhanced subclass)
+    
+    tsfi_eer_db_init(db);
+    
+    // Insert incident (ER entity definition)
+    tsfi_eer_insert_incident(db, incident_id, defcon, 1782000000U, type);
+    
+    // Insert agencies (EER specializations)
+    tsfi_eer_insert_agency(db, 101, "NORAD_SECURE", 1, 1); // NORAD
+    tsfi_eer_insert_agency(db, 102, "IRS_AUDIT", 2, 2);   // IRS
+    
+    // Establish relationship mapping (ER relationship definition)
+    if (type == 1) {
+        tsfi_eer_link_response(db, 101, incident_id); // NORAD responds to NuclearAlert
+    } else {
+        tsfi_eer_link_response(db, 102, incident_id); // IRS responds to TaxAuditConflict
+    }
+    
+    // Insert tapped ACAB channel relation
+    if (db->channel_count < 16) {
+        TSFiEerChannel *chan = &db->channels[db->channel_count++];
+        chan->channel_id = 0x0200; // Tapped ACAB memory address
+        chan->encryption_type = 3;  // STANAG 5066
+        chan->frequency_band = 144000;
+    }
+    
+    return 0;
+}

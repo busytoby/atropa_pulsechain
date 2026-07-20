@@ -175,6 +175,34 @@ int main(void) {
         printf("[PASS] Oregon Trail Baudot LLM DAT on the ACAB integration\n");
     }
     
+    // Test 11: ER and EER database bridging from basic model
+    {
+        const char *bin_path = "tmp/ot_basic_model.dat.bin";
+        int rc = tsfi_ot_baud_llm_dat(bin_path);
+        assert(rc == 0);
+        
+        TSFiEerDatabase eer_db;
+        rc = tsfi_eer_bridge_ot_acab(&eer_db, bin_path);
+        assert(rc == 0);
+        
+        // Assertions verifying ER entities and relations
+        assert(eer_db.incident_count == 1);
+        assert(eer_db.agency_count == 2);
+        assert(eer_db.channel_count == 1);
+        assert(eer_db.channels[0].channel_id == 0x0200); // Tapped ACAB channel
+        
+        // Assertions verifying EER specializations
+        assert(eer_db.responds_count == 1);
+        if (eer_db.incidents[0].type == 1) {
+            assert(eer_db.responds[0].agency_id == 101); // NORAD responds to NuclearAlert
+        } else {
+            assert(eer_db.responds[0].agency_id == 102); // IRS responds to TaxAuditConflict
+        }
+        
+        remove(bin_path);
+        printf("[PASS] ER & EER bridge integration tests\n");
+    }
+    
     printf("[SUCCESS] All Encodings Compliance Tests Passed!\n");
     return 0;
 }
