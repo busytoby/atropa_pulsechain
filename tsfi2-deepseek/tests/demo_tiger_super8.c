@@ -33,6 +33,7 @@
 #include "tsfi_parc_mvc.h"
 #include "tsfi_parc_laurel.h"
 #include "tsfi_parc_disktool.h"
+#include "tsfi_parc_notetaker.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -812,6 +813,11 @@ int main() {
     tsfi_parc_disktool_t disk_tool;
     tsfi_parc_disktool_init(&disk_tool);
     tsfi_parc_disktool_format(&disk_tool, "VOL_01");
+
+    // Xerox NoteTaker power FET discharge simulation verify check
+    tsfi_parc_notetaker_fet_t fet;
+    tsfi_parc_notetaker_init(&fet);
+    tsfi_parc_notetaker_step_discharge(&fet, 0.1f);
 
     uint32_t *canvas = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
     uint32_t *canvas_b = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
