@@ -27,6 +27,7 @@
 #include "tsfi_parc_bfs.h"
 #include "tsfi_parc_stcomp.h"
 #include "tsfi_parc_video.h"
+#include "tsfi_parc_shaders.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -760,6 +761,10 @@ int main() {
     tsfi_parc_video_controller_t vc;
     tsfi_parc_video_init(&vc);
     tsfi_parc_video_step(&vc, 100, 100);
+
+    // Xerox PARC: Load and parse Algol61 and COBOL strategy shaders at runtime
+    tsfi_parc_shader_params_t shader_params;
+    tsfi_parc_load_shaders("src/alto_video.algol61", "src/alto_video.strategy", &shader_params);
     uint16_t *alto_display_mem = calloc(38 * 808, sizeof(uint16_t));
     uint32_t *canvas = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
     uint32_t *canvas_b = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
