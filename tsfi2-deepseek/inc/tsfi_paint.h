@@ -387,6 +387,15 @@ int tsfi_quantel_harry_split_fields(const uint32_t *src, uint32_t *field_even, u
 /* Storyboard Frame Thumbnail Grid Outer Borders */
 int tsfi_quantel_storyboard_outer_borders(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t border_color);
 
+/* Mirage 3D Perspective Wave Grid Shift */
+int tsfi_quantel_mirage_wave_grid_shift(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float phase, float shift_amount);
+
+/* Harry Chronological Frame Interlaced Scan Line Offset */
+int tsfi_quantel_harry_scanline_offset(uint32_t *pixels, int w, int h, int offset);
+
+/* Storyboard Frame Thumbnail Grid Inner Borders */
+int tsfi_quantel_storyboard_inner_borders(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t border_color);
+
 #endif // TSFI_PAINT_H
 
 
