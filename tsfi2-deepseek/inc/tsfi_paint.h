@@ -456,6 +456,18 @@ int tsfi_quantel_harry_blend_fields(const uint32_t *field_even, const uint32_t *
 /* Storyboard Frame Thumbnail Grid Corner Spacers */
 int tsfi_quantel_storyboard_corner_spacers(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int spacer_w, uint32_t color);
 
+/* Quantel Paintbox Palette Auto-Sort By Green */
+int tsfi_quantel_paintbox_sort_palette_green(uint32_t *palette, int size);
+
+/* Mirage 3D Dynamic Flag Wave Shift Warp */
+int tsfi_quantel_mirage_flag_wave_shift(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float phase, float amplitude);
+
+/* Harry Chronological Frame Interlaced Scan Line Blend */
+int tsfi_quantel_harry_scanline_blend(uint32_t *pixels, int w, int h, float blend_factor);
+
+/* Storyboard Frame Thumbnail Grid Outer Borders With Corners */
+int tsfi_quantel_storyboard_outer_borders_corners(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t border_color, uint32_t corner_color);
+
 #endif // TSFI_PAINT_H
 
 

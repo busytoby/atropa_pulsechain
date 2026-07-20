@@ -1093,3 +1093,19 @@ int tsfi_quantel_paintbox_pressure_flow(uint32_t *pixels, int w, int h, int cx, 
     return tsfi_quantel_paintbox_airbrush(pixels, w, h, cx, cy, radius, flow, color);
 }
 
+int tsfi_quantel_paintbox_sort_palette_green(uint32_t *palette, int size) {
+    if (!palette || size <= 0) return -1;
+    for (int i = 0; i < size - 1; i++) {
+        for (int j = 0; j < size - i - 1; j++) {
+            uint8_t g1 = (palette[j] >> 8) & 0xFF;
+            uint8_t g2 = (palette[j+1] >> 8) & 0xFF;
+            if (g1 > g2) {
+                uint32_t temp = palette[j];
+                palette[j] = palette[j+1];
+                palette[j+1] = temp;
+            }
+        }
+    }
+    return 0;
+}
+

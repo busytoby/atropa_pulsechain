@@ -1621,3 +1621,56 @@ int tsfi_quantel_storyboard_corner_spacers(uint32_t *pixels, int w, int h, int c
     }
     return 0;
 }
+
+int tsfi_quantel_harry_scanline_blend(uint32_t *pixels, int w, int h, float blend_factor) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    if (blend_factor < 0.0f) { blend_factor = 0.0f; }
+    if (blend_factor > 1.0f) { blend_factor = 1.0f; }
+
+    for (int y = 1; y < h - 1; y += 2) {
+        uint32_t *prev = pixels + (y - 1) * w;
+        uint32_t *curr = pixels + y * w;
+        uint32_t *next = pixels + (y + 1) * w;
+
+        for (int x = 0; x < w; x++) {
+            uint32_t c_prev = prev[x];
+            uint32_t c_next = next[x];
+
+            uint8_t r_prev = (c_prev >> 16) & 0xFF;
+            uint8_t g_prev = (c_prev >> 8) & 0xFF;
+            uint8_t b_prev = c_prev & 0xFF;
+
+            uint8_t r_next = (c_next >> 16) & 0xFF;
+            uint8_t g_next = (c_next >> 8) & 0xFF;
+            uint8_t b_next = c_next & 0xFF;
+
+            uint8_t r_avg = (uint8_t)((r_prev + r_next) / 2);
+            uint8_t g_avg = (uint8_t)((g_prev + g_next) / 2);
+            uint8_t b_avg = (uint8_t)((b_prev + b_next) / 2);
+
+            uint32_t c_curr = curr[x];
+            uint8_t r_curr = (c_curr >> 16) & 0xFF;
+            uint8_t g_curr = (c_curr >> 8) & 0xFF;
+            uint8_t b_curr = c_curr & 0xFF;
+
+            uint8_t r = (uint8_t)(r_curr * (1.0f - blend_factor) + r_avg * blend_factor);
+            uint8_t g = (uint8_t)(g_curr * (1.0f - blend_factor) + g_avg * blend_factor);
+            uint8_t b = (uint8_t)(b_curr * (1.0f - blend_factor) + b_avg * blend_factor);
+
+            curr[x] = (0xFF000000) | (r << 16) | (g << 8) | b;
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_storyboard_outer_borders_corners(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t border_color, uint32_t corner_color) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    tsfi_quantel_storyboard_outer_borders(pixels, w, h, cell_x, cell_y, cell_w, cell_h, border_color);
+
+    if (cell_y >= 0 && cell_y < h && cell_x >= 0 && cell_x < w) { pixels[cell_y * w + cell_x] = corner_color; }
+    if (cell_y >= 0 && cell_y < h && cell_x + cell_w - 1 >= 0 && cell_x + cell_w - 1 < w) { pixels[cell_y * w + cell_x + cell_w - 1] = corner_color; }
+    if (cell_y + cell_h - 1 >= 0 && cell_y + cell_h - 1 < h && cell_x >= 0 && cell_x < w) { pixels[(cell_y + cell_h - 1) * w + cell_x] = corner_color; }
+    if (cell_y + cell_h - 1 >= 0 && cell_y + cell_h - 1 < h && cell_x + cell_w - 1 >= 0 && cell_x + cell_w - 1 < w) { pixels[(cell_y + cell_h - 1) * w + cell_x + cell_w - 1] = corner_color; }
+
+    return 0;
+}
