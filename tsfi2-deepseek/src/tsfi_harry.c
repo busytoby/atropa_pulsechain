@@ -247,119 +247,7 @@ int tsfi_quantel_harry_displacement_wipe(const uint32_t *src_a, const uint32_t *
     return 0;
 }
 
-extern void draw_text(uint32_t *pixels, int w, int h, int rx, int ry, const char *text, uint32_t color, int scale);
 
-int tsfi_quantel_storyboard_grid(const uint32_t **frames, int frame_count, int frame_w, int frame_h, uint32_t *dst_sheet, int sheet_w, int sheet_h, int rows, int cols) {
-    if (!frames || !dst_sheet || frame_w <= 0 || frame_h <= 0 || sheet_w <= 0 || sheet_h <= 0 || rows <= 0 || cols <= 0) return -1;
-
-    memset(dst_sheet, 0x1F, sheet_w * sheet_h * sizeof(uint32_t));
-
-    int cell_w = sheet_w / cols;
-    int cell_h = sheet_h / rows;
-
-    for (int i = 0; i < frame_count && i < (rows * cols); i++) {
-        const uint32_t *src_frame = frames[i];
-        if (!src_frame) continue;
-
-        int grid_y = i / cols;
-        int grid_x = i % cols;
-
-        int start_x = grid_x * cell_w + (cell_w - frame_w) / 2;
-        int start_y = grid_y * cell_h + (cell_h - frame_h) / 2;
-
-        for (int y = 0; y < frame_h; y++) {
-            int cy = start_y + y;
-            if (cy < 0 || cy >= sheet_h) continue;
-            uint32_t *dst_row = dst_sheet + cy * sheet_w;
-            const uint32_t *src_row = src_frame + y * frame_w;
-
-            for (int x = 0; x < frame_w; x++) {
-                int cx = start_x + x;
-                if (cx >= 0 && cx < sheet_w) {
-                    dst_row[cx] = src_row[x];
-                }
-            }
-        }
-
-        char label[64];
-        snprintf(label, sizeof(label), "PANEL %02d", i + 1);
-        draw_text(dst_sheet, sheet_w, sheet_h, grid_x * cell_w + 10, (grid_y + 1) * cell_h - 20, label, 0xFF00FF00, 1);
-        tsfi_quantel_storyboard_aspect_guides(dst_sheet, sheet_w, sheet_h, grid_x * cell_w, grid_y * cell_h, cell_w, cell_h, "1.85:1", 0xFFFFD700);
-    }
-    return 0;
-}
-
-int tsfi_quantel_storyboard_timecode_burn(uint32_t *pixels, int w, int h, int frame_number, float fps, uint32_t text_color) {
-    if (!pixels || w <= 0 || h <= 0 || fps <= 0.0f) return -1;
-
-    int total_secs = (int)(frame_number / fps);
-    int frames = frame_number % (int)fps;
-    int hours = total_secs / 3600;
-    int mins = (total_secs % 3600) / 60;
-    int secs = total_secs % 60;
-
-    char tc_str[64];
-    snprintf(tc_str, sizeof(tc_str), "TCR %02d:%02d:%02d:%02d", hours, mins, secs, frames);
-
-    int rx = w - (int)(strlen(tc_str) * 8 * 2) - 20;
-    int ry = h - 30;
-
-    for (int y = ry - 4; y < ry + 20; y++) {
-        if (y >= 0 && y < h) {
-            uint32_t *row = pixels + y * w;
-            for (int x = rx - 4; x < w - 10; x++) {
-                if (x >= 0 && x < w) {
-                    row[x] = 0xFF000000;
-                }
-            }
-        }
-    }
-
-    draw_text(pixels, w, h, rx, ry, tc_str, text_color, 2);
-    return 0;
-}
-
-int tsfi_quantel_storyboard_onion_skin(const uint32_t *prev_frame, const uint32_t *next_frame, uint32_t *active_canvas, int w, int h, float opacity_prev, float opacity_next) {
-    if (!active_canvas || w <= 0 || h <= 0) return -1;
-
-    for (int i = 0; i < w * h; i++) {
-        uint32_t curr_pixel = active_canvas[i];
-        uint8_t r_c = (curr_pixel >> 16) & 0xFF;
-        uint8_t g_c = (curr_pixel >> 8) & 0xFF;
-        uint8_t b_c = curr_pixel & 0xFF;
-
-        float r_accum = r_c * (1.0f - opacity_prev - opacity_next);
-        float g_accum = g_c * (1.0f - opacity_prev - opacity_next);
-        float b_accum = b_c * (1.0f - opacity_prev - opacity_next);
-
-        if (prev_frame) {
-            uint32_t p_pixel = prev_frame[i];
-            r_accum += ((p_pixel >> 16) & 0xFF) * opacity_prev;
-            g_accum += ((p_pixel >> 8) & 0xFF) * opacity_prev;
-            b_accum += (p_pixel & 0xFF) * opacity_prev;
-        }
-
-        if (next_frame) {
-            uint32_t n_pixel = next_frame[i];
-            r_accum += ((n_pixel >> 16) & 0xFF) * opacity_next;
-            g_accum += ((n_pixel >> 8) & 0xFF) * opacity_next;
-            b_accum += (n_pixel & 0xFF) * opacity_next;
-        }
-
-        int r = (int)r_accum;
-        int g = (int)g_accum;
-        int b = (int)b_accum;
-        if (r < 0) { r = 0; }
-        if (r > 255) { r = 255; }
-        if (g < 0) { g = 0; }
-        if (g > 255) { g = 255; }
-        if (b < 0) { b = 0; }
-        if (b > 255) { b = 255; }
-
-        active_canvas[i] = (0xFF000000) | (r << 16) | (g << 8) | b;
-    }
-    return 0;
-}
 
 int tsfi_quantel_harry_luma_key(const uint32_t *src_pixels, int w, int h, uint8_t *out_mask, uint8_t low_threshold, uint8_t high_threshold) {
     if (!src_pixels || !out_mask || w <= 0 || h <= 0) return -1;
@@ -726,24 +614,6 @@ int tsfi_quantel_harry_rotoscope_blend(const uint32_t *canvas, const uint32_t *r
     return 0;
 }
 
-int tsfi_quantel_storyboard_export_sheet(const uint32_t *sheet_pixels, int w, int h, const char *output_path) {
-    if (!sheet_pixels || !output_path || w <= 0 || h <= 0) return -1;
-    FILE *f = fopen(output_path, "wb");
-    if (!f) return -2;
-
-    fprintf(f, "P6\n%d %d\n255\n", w, h);
-    for (int i = 0; i < w * h; i++) {
-        uint32_t pix = sheet_pixels[i];
-        uint8_t rgb[3];
-        rgb[0] = (pix >> 16) & 0xFF;
-        rgb[1] = (pix >> 8) & 0xFF;
-        rgb[2] = pix & 0xFF;
-        size_t written = fwrite(rgb, 1, 3, f);
-        (void)written;
-    }
-    fclose(f);
-    return 0;
-}
 
 int tsfi_quantel_harry_multitrack_dissolve(const uint32_t *src_a, const uint32_t *src_b, const uint32_t *src_c, uint32_t *dst, int w, int h, const float weights[3]) {
     if (!src_a || !src_b || !src_c || !dst || w <= 0 || h <= 0) return -1;
@@ -765,15 +635,6 @@ int tsfi_quantel_harry_multitrack_dissolve(const uint32_t *src_a, const uint32_t
     return 0;
 }
 
-int tsfi_quantel_storyboard_burn_captions(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, const char *scene, const char *take, const char *desc, uint32_t text_color) {
-    (void)cell_w;
-    if (!pixels || w <= 0 || h <= 0) return -1;
-    char meta[128];
-    snprintf(meta, sizeof(meta), "SCENE: %s  TAKE: %s", scene, take);
-    draw_text(pixels, w, h, cell_x + 10, cell_y + cell_h - 32, meta, text_color, 1);
-    draw_text(pixels, w, h, cell_x + 10, cell_y + cell_h - 18, desc, text_color, 1);
-    return 0;
-}
 
 int tsfi_quantel_harry_advanced_difference_key(const uint32_t *src, int w, int h, uint8_t *out_mask, uint32_t target_color, float range_min, float range_max) {
     if (!src || !out_mask || w <= 0 || h <= 0) return -1;
@@ -798,20 +659,6 @@ int tsfi_quantel_harry_advanced_difference_key(const uint32_t *src, int w, int h
     return 0;
 }
 
-int tsfi_quantel_storyboard_delta_overlay(const uint32_t *prev_frame, const uint32_t *next_frame, uint32_t *dst, int w, int h) {
-    if (!prev_frame || !next_frame || !dst || w <= 0 || h <= 0) return -1;
-    for (int i = 0; i < w * h; i++) {
-        uint32_t p = prev_frame[i];
-        uint32_t n = next_frame[i];
-
-        int dr = abs((int)((p >> 16) & 0xFF) - (int)((n >> 16) & 0xFF));
-        int dg = abs((int)((p >> 8) & 0xFF) - (int)((n >> 8) & 0xFF));
-        int db = abs((int)(p & 0xFF) - (int)(n & 0xFF));
-
-        dst[i] = (0xFF000000) | (dr << 16) | (dg << 8) | db;
-    }
-    return 0;
-}
 
 int tsfi_quantel_harry_erode_dilate(const uint8_t *src_mask, uint8_t *dst_mask, int w, int h, int radius, int erode) {
     if (!src_mask || !dst_mask || w <= 0 || h <= 0 || radius <= 0) return -1;
@@ -844,31 +691,6 @@ int tsfi_quantel_harry_erode_dilate(const uint8_t *src_mask, uint8_t *dst_mask, 
     return 0;
 }
 
-int tsfi_quantel_storyboard_drop_frame_timecode(int frame_number, float fps, char *timecode_out, int max_len) {
-    if (!timecode_out || max_len <= 0) return -1;
-    double fps_d = (double)fps;
-    bool is_drop_frame = (fabs(fps_d - 29.97) < 0.01) || (fabs(fps_d - 59.94) < 0.01);
-    
-    int drop_frames = 2;
-    if (fabs(fps_d - 59.94) < 0.01) drop_frames = 4;
-
-    int total_minutes = frame_number / (int)(fps_d * 60.0);
-    if (is_drop_frame) {
-        int drop_count = total_minutes - total_minutes / 10;
-        frame_number += drop_frames * drop_count;
-    }
-
-    int frames_per_sec = (int)round(fps_d);
-    int total_secs = frame_number / frames_per_sec;
-    int frames = frame_number % frames_per_sec;
-    int hours = total_secs / 3600;
-    int mins = (total_secs % 3600) / 60;
-    int secs = total_secs % 60;
-
-    snprintf(timecode_out, max_len, "%02d:%02d:%02d%c%02d", 
-             hours, mins, secs, is_drop_frame ? ';' : ':', frames);
-    return 0;
-}
 
 int tsfi_quantel_harry_hsl_despill(uint32_t *pixels, int w, int h, float threshold_hue, float suppression_amount) {
     if (!pixels || w <= 0 || h <= 0) return -1;
@@ -895,46 +717,6 @@ int tsfi_quantel_harry_hsl_despill(uint32_t *pixels, int w, int h, float thresho
     return 0;
 }
 
-int tsfi_quantel_storyboard_aspect_guides(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, const char *ratio_str, uint32_t color) {
-    (void)ratio_str;
-    if (!pixels || w <= 0 || h <= 0) return -1;
-    float aspect = 1.85f;
-
-    int crop_w = cell_w - 30;
-    int crop_h = (int)(crop_w / aspect);
-    if (crop_h > cell_h) {
-        crop_h = cell_h;
-        crop_w = (int)(cell_h * aspect);
-    }
-
-    int ox = cell_x + 30 + (cell_w - 30 - crop_w) / 2;
-    int oy = cell_y + (cell_h - crop_h) / 2;
-
-    for (int y = oy; y < oy + crop_h; y++) {
-        for (int x = cell_x; x < ox; x++) {
-            int y_mod = y % 20;
-            if (y_mod >= 6 && y_mod <= 14 && x >= cell_x + 8 && x <= cell_x + 18) {
-                pixels[y * w + x] = 0xFF2A2820;
-            } else {
-                pixels[y * w + x] = 0xFF0D0D0D;
-            }
-        }
-    }
-
-    for (int x = ox; x < ox + crop_w; x++) {
-        if (x >= 0 && x < w) {
-            if (oy >= 0 && oy < h) pixels[oy * w + x] = color;
-            if (oy + crop_h - 1 >= 0 && oy + crop_h - 1 < h) pixels[(oy + crop_h - 1) * w + x] = color;
-        }
-    }
-    for (int y = oy; y < oy + crop_h; y++) {
-        if (y >= 0 && y < h) {
-            if (ox >= 0 && ox < w) pixels[y * w + ox] = color;
-            if (ox + crop_w - 1 >= 0 && ox + crop_w - 1 < w) pixels[y * w + (ox + crop_w - 1)] = color;
-        }
-    }
-    return 0;
-}
 
 int tsfi_quantel_harry_time_slice_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32_t *dst, int w, int h, float progress) {
     if (!src_a || !src_b || !dst || w <= 0 || h <= 0) return -1;
@@ -952,16 +734,6 @@ int tsfi_quantel_harry_time_slice_wipe(const uint32_t *src_a, const uint32_t *sr
     return 0;
 }
 
-int tsfi_quantel_storyboard_burn_index(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int frame_idx, float fps, uint32_t text_color) {
-    if (!pixels || w <= 0 || h <= 0) return -1;
-    char timecode[64];
-    tsfi_quantel_storyboard_drop_frame_timecode(frame_idx, fps, timecode, sizeof(timecode));
-
-    char index_str[128];
-    snprintf(index_str, sizeof(index_str), "F: %05d  TC: %s", frame_idx, timecode);
-    draw_text(pixels, w, h, cell_x + cell_w - 180, cell_y + cell_h - 18, index_str, text_color, 1);
-    return 0;
-}
 
 int tsfi_quantel_harry_split_matte_preview(const uint32_t *composite, const uint8_t *matte, uint32_t *dst, int w, int h, float split_x) {
     if (!composite || !matte || !dst || w <= 0 || h <= 0) return -1;
@@ -981,19 +753,6 @@ int tsfi_quantel_harry_split_matte_preview(const uint32_t *composite, const uint
     return 0;
 }
 
-int tsfi_quantel_storyboard_production_slate(uint32_t *pixels, int w, int h, const char *director, const char *project, const char *date) {
-    if (!pixels || w <= 0 || h <= 0) return -1;
-    for (int y = 0; y < 45; y++) {
-        for (int x = 0; x < w; x++) {
-            pixels[y * w + x] = 0xFF1C1A17;
-        }
-    }
-
-    char slate_info[256];
-    snprintf(slate_info, sizeof(slate_info), "PROJECT: %s | DIR: %s | DATE: %s", project, director, date);
-    draw_text(pixels, w, h, 20, 16, slate_info, 0xFFFFD700, 1);
-    return 0;
-}
 
 int tsfi_quantel_harry_interpolate_keyframe(float t, float start_val, float end_val, float *out_val) {
     if (!out_val) return -1;
@@ -1001,27 +760,7 @@ int tsfi_quantel_harry_interpolate_keyframe(float t, float start_val, float end_
     return 0;
 }
 
-int tsfi_quantel_storyboard_film_borders(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t border_color) {
-    if (!pixels || w <= 0 || h <= 0) return -1;
-    for (int y = cell_y; y < cell_y + cell_h; y++) {
-        if (y < 0 || y >= h) continue;
-        for (int x = cell_x; x < cell_x + cell_w; x++) {
-            if (x < 0 || x >= w) continue;
-            if (y < cell_y + 4 || y >= cell_y + cell_h - 4 || x < cell_x + 4 || x >= cell_x + cell_w - 4) {
-                pixels[y * w + x] = border_color;
-            }
-        }
-    }
-    return 0;
-}
 
-int tsfi_quantel_storyboard_page_divider(uint32_t *pixels, int w, int h, int y_coord, uint32_t line_color) {
-    if (!pixels || w <= 0 || h <= 0 || y_coord < 0 || y_coord >= h) return -1;
-    for (int x = 0; x < w; x++) {
-        pixels[y_coord * w + x] = line_color;
-    }
-    return 0;
-}
 
 int tsfi_quantel_harry_smptec_to_rec709(uint32_t *pixels, int w, int h) {
     if (!pixels || w <= 0 || h <= 0) return -1;
@@ -1047,24 +786,6 @@ int tsfi_quantel_harry_smptec_to_rec709(uint32_t *pixels, int w, int h) {
     return 0;
 }
 
-int tsfi_quantel_storyboard_thumbnail_shadows(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h) {
-    if (!pixels || w <= 0 || h <= 0) return -1;
-    for (int y = cell_y + 4; y < cell_y + cell_h + 4; y++) {
-        if (y < 0 || y >= h) continue;
-        uint32_t *row = pixels + y * w;
-        for (int x = cell_x + 4; x < cell_x + cell_w + 4; x++) {
-            if (x < 0 || x >= w) continue;
-            if (y >= cell_y + cell_h || x >= cell_x + cell_w) {
-                uint32_t pix = row[x];
-                uint8_t r = (uint8_t)(((pix >> 16) & 0xFF) * 0.3f);
-                uint8_t g = (uint8_t)(((pix >> 8) & 0xFF) * 0.3f);
-                uint8_t b = (uint8_t)((pix & 0xFF) * 0.3f);
-                row[x] = (0xFF000000) | (r << 16) | (g << 8) | b;
-            }
-        }
-    }
-    return 0;
-}
 
 int tsfi_quantel_harry_color_balance_sweep(uint32_t *pixels, int w, int h, float red_bal, float green_bal, float blue_bal) {
     if (!pixels || w <= 0 || h <= 0) return -1;
@@ -1086,11 +807,6 @@ int tsfi_quantel_harry_color_balance_sweep(uint32_t *pixels, int w, int h, float
     return 0;
 }
 
-int tsfi_quantel_storyboard_annotate_title(uint32_t *pixels, int w, int h, int x, int y, const char *title, uint32_t color) {
-    if (!pixels || w <= 0 || h <= 0 || !title) return -1;
-    draw_text(pixels, w, h, x, y, title, color, 1);
-    return 0;
-}
 
 int tsfi_quantel_harry_subpixel_shift(const uint32_t *src, uint32_t *dst, int w, int h, float dx, float dy) {
     if (!src || !dst || w <= 0 || h <= 0) return -1;
@@ -1141,19 +857,6 @@ int tsfi_quantel_harry_subpixel_shift(const uint32_t *src, uint32_t *dst, int w,
     return 0;
 }
 
-int tsfi_quantel_storyboard_outline_cell(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t outline_color) {
-    if (!pixels || w <= 0 || h <= 0) return -1;
-    for (int y = cell_y; y < cell_y + cell_h; y++) {
-        if (y < 0 || y >= h) continue;
-        for (int x = cell_x; x < cell_x + cell_w; x++) {
-            if (x < 0 || x >= w) continue;
-            if (y < cell_y + 2 || y >= cell_y + cell_h - 2 || x < cell_x + 2 || x >= cell_x + cell_w - 2) {
-                pixels[y * w + x] = outline_color;
-            }
-        }
-    }
-    return 0;
-}
 
 int tsfi_quantel_harry_chroma_gain(uint32_t *pixels, int w, int h, float gain) {
     if (!pixels || w <= 0 || h <= 0) return -1;
@@ -1180,12 +883,6 @@ int tsfi_quantel_harry_chroma_gain(uint32_t *pixels, int w, int h, float gain) {
     return 0;
 }
 
-int tsfi_quantel_storyboard_burn_label(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, const char *label, uint32_t color) {
-    if (!pixels || w <= 0 || h <= 0 || !label) return -1;
-    (void)cell_w;
-    draw_text(pixels, w, h, cell_x + 10, cell_y + cell_h - 38, label, color, 1);
-    return 0;
-}
 
 int tsfi_quantel_harry_interlace_fields(const uint32_t *field_even, const uint32_t *field_odd, uint32_t *dst, int w, int h) {
     if (!field_even || !field_odd || !dst || w <= 0 || h <= 0) return -1;
@@ -1196,19 +893,6 @@ int tsfi_quantel_harry_interlace_fields(const uint32_t *field_even, const uint32
     return 0;
 }
 
-int tsfi_quantel_storyboard_grid_spacers(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t bg_color) {
-    if (!pixels || w <= 0 || h <= 0) return -1;
-    for (int y = cell_y; y < cell_y + cell_h; y++) {
-        if (y < 0 || y >= h) continue;
-        for (int x = cell_x; x < cell_x + cell_w; x++) {
-            if (x < 0 || x >= w) continue;
-            if (y < cell_y + 10 || y >= cell_y + cell_h - 10 || x < cell_x + 10 || x >= cell_x + cell_w - 10) {
-                pixels[y * w + x] = bg_color;
-            }
-        }
-    }
-    return 0;
-}
 
 int tsfi_quantel_harry_dissolve(const uint32_t *src_a, const uint32_t *src_b, uint32_t *dst, int w, int h, float progress) {
     if (!src_a || !src_b || !dst || w <= 0 || h <= 0) return -1;
@@ -1236,34 +920,6 @@ int tsfi_quantel_harry_dissolve(const uint32_t *src_a, const uint32_t *src_b, ui
     return 0;
 }
 
-int tsfi_quantel_storyboard_cell_overlay(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t border_color, float alpha) {
-    if (!pixels || w <= 0 || h <= 0) return -1;
-    if (alpha < 0.0f) { alpha = 0.0f; }
-    if (alpha > 1.0f) { alpha = 1.0f; }
-
-    uint8_t r_src = (border_color >> 16) & 0xFF;
-    uint8_t g_src = (border_color >> 8) & 0xFF;
-    uint8_t b_src = border_color & 0xFF;
-
-    for (int y = cell_y; y < cell_y + cell_h; y++) {
-        if (y < 0 || y >= h) continue;
-        uint32_t *row = pixels + y * w;
-        for (int x = cell_x; x < cell_x + cell_w; x++) {
-            if (x < 0 || x >= w) continue;
-            uint32_t dest = row[x];
-            uint8_t r_dst = (dest >> 16) & 0xFF;
-            uint8_t g_dst = (dest >> 8) & 0xFF;
-            uint8_t b_dst = dest & 0xFF;
-
-            uint8_t r_res = (uint8_t)(r_src * alpha + r_dst * (1.0f - alpha));
-            uint8_t g_res = (uint8_t)(g_src * alpha + g_dst * (1.0f - alpha));
-            uint8_t b_res = (uint8_t)(b_src * alpha + b_dst * (1.0f - alpha));
-
-            row[x] = (0xFF000000) | (r_res << 16) | (g_res << 8) | b_res;
-        }
-    }
-    return 0;
-}
 
 int tsfi_quantel_harry_film_grain(uint32_t *pixels, int w, int h, float intensity) {
     if (!pixels || w <= 0 || h <= 0) return -1;
@@ -1287,19 +943,6 @@ int tsfi_quantel_harry_film_grain(uint32_t *pixels, int w, int h, float intensit
     return 0;
 }
 
-int tsfi_quantel_storyboard_border_margins(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int margin_w, uint32_t color) {
-    if (!pixels || w <= 0 || h <= 0 || margin_w <= 0) return -1;
-    for (int y = cell_y; y < cell_y + cell_h; y++) {
-        if (y < 0 || y >= h) continue;
-        for (int x = cell_x; x < cell_x + cell_w; x++) {
-            if (x < 0 || x >= w) continue;
-            if (y < cell_y + margin_w || y >= cell_y + cell_h - margin_w || x < cell_x + margin_w || x >= cell_x + cell_w - margin_w) {
-                pixels[y * w + x] = color;
-            }
-        }
-    }
-    return 0;
-}
 
 int tsfi_quantel_harry_matte_choke(const uint8_t *src_mask, uint8_t *dst_mask, int w, int h, int choke_radius) {
     if (!src_mask || !dst_mask || w <= 0 || h <= 0) return -1;
@@ -1320,24 +963,6 @@ int tsfi_quantel_harry_matte_choke(const uint8_t *src_mask, uint8_t *dst_mask, i
     return 0;
 }
 
-int tsfi_quantel_storyboard_corner_marks(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int mark_len, uint32_t color) {
-    if (!pixels || w <= 0 || h <= 0 || mark_len <= 0) return -1;
-
-    for (int i = 0; i < mark_len; i++) {
-        if (cell_y >= 0 && cell_y < h && cell_x + i >= 0 && cell_x + i < w) { pixels[cell_y * w + cell_x + i] = color; }
-        if (cell_y + i >= 0 && cell_y + i < h && cell_x >= 0 && cell_x < w) { pixels[(cell_y + i) * w + cell_x] = color; }
-
-        if (cell_y >= 0 && cell_y < h && cell_x + cell_w - 1 - i >= 0 && cell_x + cell_w - 1 - i < w) { pixels[cell_y * w + (cell_x + cell_w - 1 - i)] = color; }
-        if (cell_y + i >= 0 && cell_y + i < h && cell_x + cell_w - 1 >= 0 && cell_x + cell_w - 1 < w) { pixels[(cell_y + i) * w + (cell_x + cell_w - 1)] = color; }
-
-        if (cell_y + cell_h - 1 >= 0 && cell_y + cell_h - 1 < h && cell_x + i >= 0 && cell_x + i < w) { pixels[(cell_y + cell_h - 1) * w + cell_x + i] = color; }
-        if (cell_y + cell_h - 1 - i >= 0 && cell_y + cell_h - 1 - i < h && cell_x >= 0 && cell_x < w) { pixels[(cell_y + cell_h - 1 - i) * w + cell_x] = color; }
-
-        if (cell_y + cell_h - 1 >= 0 && cell_y + cell_h - 1 < h && cell_x + cell_w - 1 - i >= 0 && cell_x + cell_w - 1 - i < w) { pixels[(cell_y + cell_h - 1) * w + (cell_x + cell_w - 1 - i)] = color; }
-        if (cell_y + cell_h - 1 - i >= 0 && cell_y + cell_h - 1 - i < h && cell_x + cell_w - 1 >= 0 && cell_x + cell_w - 1 < w) { pixels[(cell_y + cell_h - 1 - i) * w + (cell_x + cell_w - 1)] = color; }
-    }
-    return 0;
-}
 
 int tsfi_quantel_harry_clock_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32_t *dst, int w, int h, float progress) {
     if (!src_a || !src_b || !dst || w <= 0 || h <= 0) return -1;
