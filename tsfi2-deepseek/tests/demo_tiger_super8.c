@@ -34,6 +34,7 @@
 #include "tsfi_parc_laurel.h"
 #include "tsfi_parc_disktool.h"
 #include "tsfi_parc_notetaker.h"
+#include "tsfi_parc_alfont.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -818,6 +819,11 @@ int main() {
     tsfi_parc_notetaker_fet_t fet;
     tsfi_parc_notetaker_init(&fet);
     tsfi_parc_notetaker_step_discharge(&fet, 0.1f);
+
+    // Xerox Alto .AL font shaping parser verify check
+    tsfi_parc_alfont_t al_font;
+    tsfi_parc_alfont_init(&al_font);
+    tsfi_parc_alfont_load(&al_font, "alto_font.dat.bin");
 
     uint32_t *canvas = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
     uint32_t *canvas_b = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
