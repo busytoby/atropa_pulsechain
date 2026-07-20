@@ -172,3 +172,46 @@ int tsfi_autodin_schedule_message(tsfi_autodin_precedence precedence, const char
     strcat(out_queue_buf, msg);
     return 0;
 }
+
+// 7. SAGE Magnetic Drum Memory buffer reads/writes
+int tsfi_sage_drum_write(tsfi_sage_drum *drum, int track_idx, int sector_idx, const uint8_t *data, int len) {
+    if (!drum || track_idx < 0 || track_idx >= 8 || sector_idx < 0 || sector_idx >= 64 || !data || len <= 0) {
+        return -1;
+    }
+    
+    // Simulate rotational sync latency (update head position)
+    drum->head_position = sector_idx;
+    
+    // Perform write with length clamping
+    int write_len = len > 64 ? 64 : len;
+    memcpy(&drum->tracks[track_idx][sector_idx], data, write_len);
+    return 0;
+}
+
+int tsfi_sage_drum_read(tsfi_sage_drum *drum, int track_idx, int sector_idx, uint8_t *data_out, int len) {
+    if (!drum || track_idx < 0 || track_idx >= 8 || sector_idx < 0 || sector_idx >= 64 || !data_out || len <= 0) {
+        return -1;
+    }
+    
+    // Rotate head position
+    drum->head_position = sector_idx;
+    
+    int read_len = len > 64 ? 64 : len;
+    memcpy(data_out, &drum->tracks[track_idx][sector_idx], read_len);
+    return 0;
+}
+
+// 8. AUTODIN Routing Indicator lookup search
+int tsfi_autodin_find_route(const tsfi_autodin_route *table, int table_size, const char *ri, uint32_t *channel_out) {
+    if (!table || table_size <= 0 || !ri || !channel_out) return -1;
+    
+    // Linear scan of Routing Indicators (RIs)
+    for (int i = 0; i < table_size; i++) {
+        if (strcmp(table[i].routing_indicator, ri) == 0) {
+            *channel_out = table[i].output_channel;
+            return 0; // Route located successfully!
+        }
+    }
+    
+    return -2; // Unknown Destination routing indicator
+}

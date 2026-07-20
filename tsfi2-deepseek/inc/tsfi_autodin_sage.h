@@ -72,4 +72,20 @@ int tsfi_sage_filter_tracks(int32_t *x_out, int32_t *y_out, const int32_t *stati
 int tsfi_sage_duplex_sync(tsfi_sage_duplex *duplex, bool active_alive);
 int tsfi_autodin_schedule_message(tsfi_autodin_precedence precedence, const char *msg, char *out_queue_buf);
 
+// SAGE Magnetic Drum Memory buffer
+typedef struct {
+    uint8_t tracks[8][64];
+    uint32_t head_position;
+} tsfi_sage_drum;
+
+// AUTODIN routing indicator mapping
+typedef struct {
+    char routing_indicator[8];
+    uint32_t output_channel;
+} tsfi_autodin_route;
+
+int tsfi_sage_drum_write(tsfi_sage_drum *drum, int track_idx, int sector_idx, const uint8_t *data, int len);
+int tsfi_sage_drum_read(tsfi_sage_drum *drum, int track_idx, int sector_idx, uint8_t *data_out, int len);
+int tsfi_autodin_find_route(const tsfi_autodin_route *table, int table_size, const char *ri, uint32_t *channel_out);
+
 #endif // TSFI_AUTODIN_SAGE_H

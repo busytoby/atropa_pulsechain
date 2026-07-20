@@ -117,6 +117,33 @@ int main(void) {
     assert(rc == 0);
     assert(strcmp(switch_buf, "[FLASH] IMPENDING FLIGHT DETECTED") == 0);
     
+    // Test 8: SAGE Magnetic Drum Memory Writes and Reads
+    tsfi_sage_drum drum;
+    memset(&drum, 0, sizeof(tsfi_sage_drum));
+    
+    uint8_t write_data[32] = "DRUM_SECTOR_DATA";
+    rc = tsfi_sage_drum_write(&drum, 3, 12, write_data, 16);
+    assert(rc == 0);
+    assert(drum.head_position == 12);
+    
+    uint8_t read_data[32] = "";
+    rc = tsfi_sage_drum_read(&drum, 3, 12, read_data, 16);
+    assert(rc == 0);
+    assert(memcmp(read_data, "DRUM_SECTOR_DATA", 16) == 0);
+    
+    // Test 9: AUTODIN Routing Indicator Lookup Search
+    tsfi_autodin_route route_table[2] = {
+        {"RUA1", 101},
+        {"RUA2", 102}
+    };
+    uint32_t chan = 0;
+    rc = tsfi_autodin_find_route(route_table, 2, "RUA2", &chan);
+    assert(rc == 0);
+    assert(chan == 102);
+    
+    rc = tsfi_autodin_find_route(route_table, 2, "UNKNOWN", &chan);
+    assert(rc == -2);
+    
     printf("[SUCCESS] AUTODIN SAGE Transaction Compliance Test Passed!\n");
     return 0;
 }
