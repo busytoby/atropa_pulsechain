@@ -291,6 +291,18 @@ int tsfi_quantel_harry_color_balance_sweep(uint32_t *pixels, int w, int h, float
 /* Storyboard PDF Custom Title Annotation */
 int tsfi_quantel_storyboard_annotate_title(uint32_t *pixels, int w, int h, int x, int y, const char *title, uint32_t color);
 
+/* Quantel Paintbox Palette Auto-Sort & Selection */
+int tsfi_quantel_paintbox_sort_palette(uint32_t *palette, int count, int sort_by_luma);
+
+/* Mirage 3D Perspective Wave Grid Deformer */
+int tsfi_quantel_mirage_wave_grid(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float phase);
+
+/* Harry Sub-Pixel Frame Translation Shift */
+int tsfi_quantel_harry_subpixel_shift(const uint32_t *src, uint32_t *dst, int w, int h, float dx, float dy);
+
+/* Storyboard Frame Outline Border */
+int tsfi_quantel_storyboard_outline_cell(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t outline_color);
+
 #endif // TSFI_PAINT_H
 
 

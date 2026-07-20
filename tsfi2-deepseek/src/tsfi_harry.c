@@ -1091,3 +1091,66 @@ int tsfi_quantel_storyboard_annotate_title(uint32_t *pixels, int w, int h, int x
     draw_text(pixels, w, h, x, y, title, color, 1);
     return 0;
 }
+
+int tsfi_quantel_harry_subpixel_shift(const uint32_t *src, uint32_t *dst, int w, int h, float dx, float dy) {
+    if (!src || !dst || w <= 0 || h <= 0) return -1;
+    memset(dst, 0, w * h * sizeof(uint32_t));
+
+    int shift_x = (int)floorf(dx);
+    int shift_y = (int)floorf(dy);
+    float fx = dx - shift_x;
+    float fy = dy - shift_y;
+
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            int x0 = x - shift_x;
+            int y0 = y - shift_y;
+            int x1 = x0 - 1;
+            int y1 = y0 - 1;
+
+            if (x0 >= 0 && x0 < w && y0 >= 0 && y0 < h &&
+                x1 >= 0 && x1 < w && y1 >= 0 && y1 < h) {
+                uint32_t c00 = src[y0 * w + x0];
+                uint32_t c10 = src[y0 * w + x1];
+                uint32_t c01 = src[y1 * w + x0];
+                uint32_t c11 = src[y1 * w + x1];
+
+                uint8_t r = (uint8_t)(
+                    ((c00 >> 16) & 0xFF) * (1.0f - fx) * (1.0f - fy) +
+                    ((c10 >> 16) & 0xFF) * fx * (1.0f - fy) +
+                    ((c01 >> 16) & 0xFF) * (1.0f - fx) * fy +
+                    ((c11 >> 16) & 0xFF) * fx * fy
+                );
+                uint8_t g = (uint8_t)(
+                    ((c00 >> 8) & 0xFF) * (1.0f - fx) * (1.0f - fy) +
+                    ((c10 >> 8) & 0xFF) * fx * (1.0f - fy) +
+                    ((c01 >> 8) & 0xFF) * (1.0f - fx) * fy +
+                    ((c11 >> 8) & 0xFF) * fx * fy
+                );
+                uint8_t b = (uint8_t)(
+                    (c00 & 0xFF) * (1.0f - fx) * (1.0f - fy) +
+                    (c10 & 0xFF) * fx * (1.0f - fy) +
+                    (c01 & 0xFF) * (1.0f - fx) * fy +
+                    (c11 & 0xFF) * fx * fy
+                );
+
+                dst[y * w + x] = (0xFF000000) | (r << 16) | (g << 8) | b;
+            }
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_storyboard_outline_cell(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t outline_color) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    for (int y = cell_y; y < cell_y + cell_h; y++) {
+        if (y < 0 || y >= h) continue;
+        for (int x = cell_x; x < cell_x + cell_w; x++) {
+            if (x < 0 || x >= w) continue;
+            if (y < cell_y + 2 || y >= cell_y + cell_h - 2 || x < cell_x + 2 || x >= cell_x + cell_w - 2) {
+                pixels[y * w + x] = outline_color;
+            }
+        }
+    }
+    return 0;
+}

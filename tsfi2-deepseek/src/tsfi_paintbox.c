@@ -901,3 +901,28 @@ int tsfi_quantel_paintbox_velocity_spray(uint32_t *pixels, int w, int h, int pre
 
     return tsfi_quantel_paintbox_spray_can(pixels, w, h, curr_x, curr_y, (int)scatter_radius, density, color);
 }
+
+int tsfi_quantel_paintbox_sort_palette(uint32_t *palette, int count, int sort_by_luma) {
+    if (!palette || count <= 1) return -1;
+    for (int i = 0; i < count - 1; i++) {
+        for (int j = i + 1; j < count; j++) {
+            uint32_t c0 = palette[i];
+            uint32_t c1 = palette[j];
+
+            float v0, v1;
+            if (sort_by_luma) {
+                v0 = 0.299f * ((c0 >> 16) & 0xFF) + 0.587f * ((c0 >> 8) & 0xFF) + 0.114f * (c0 & 0xFF);
+                v1 = 0.299f * ((c1 >> 16) & 0xFF) + 0.587f * ((c1 >> 8) & 0xFF) + 0.114f * (c1 & 0xFF);
+            } else {
+                v0 = (float)((c0 >> 16) & 0xFF);
+                v1 = (float)((c1 >> 16) & 0xFF);
+            }
+
+            if (v0 > v1) {
+                palette[i] = c1;
+                palette[j] = c0;
+            }
+        }
+    }
+    return 0;
+}
