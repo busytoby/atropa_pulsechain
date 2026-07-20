@@ -265,6 +265,52 @@ int main(void) {
         printf("[PASS] OT Accumulator Baud LLM DAT on ACAB bridge tests\n");
     }
     
+    // Test 14: Extended System Improvements (SECDED, SPSC, Datalog Cascade, PI PLL)
+    {
+        // 14.1 SECDED Hamming(8,4) test
+        const uint8_t raw_in[4] = {0xA5, 0x5A, 0x12, 0x34};
+        uint8_t coded[8];
+        uint8_t raw_out[4];
+        tsfi_encode_hamming84(raw_in, 4, coded);
+        
+        // Corrupt 1 bit: SECDED must correct it
+        coded[0] ^= 2; 
+        int err = tsfi_decode_hamming84(coded, 8, raw_out);
+        assert(err == 0);
+        assert(raw_out[0] == 0xA5);
+        
+        // Corrupt 2 bits: SECDED must detect double error
+        coded[0] ^= 4; 
+        err = tsfi_decode_hamming84(coded, 8, raw_out);
+        assert(err == 1); // Double error detected
+        printf("[PASS] SECDED Hamming(8,4) double-error detection\n");
+        
+        // 14.2 Lock-free SPSC Accumulator queue test
+        TSFiOTAccumulator acc;
+        tsfi_ot_accumulator_init(&acc);
+        int push_rc = tsfi_ot_accumulator_spsc_push(&acc, "coord_lock_free", 88.5f);
+        assert(push_rc == 0);
+        assert(acc.count == 1);
+        assert(acc.cumulative_potential == 88.5f);
+        printf("[PASS] Lock-free SPSC Accumulator queue push\n");
+        
+        // 14.3 Cascading Datalog rules EER resolver test
+        TSFiEerDatabase db;
+        tsfi_eer_db_init(&db);
+        int cascade_rc = tsfi_eer_datalog_cascade(&db, "CriticalOutage", "PowerOut", "BatteryLow");
+        assert(cascade_rc == 1);
+        assert(db.agency_count == 1);
+        assert(db.agencies[0].agency_id == 101); // NORAD assigned
+        printf("[PASS] Cascading Datalog EER specialization\n");
+        
+        // 14.4 PI PLL Loop Tuning test
+        float out_v = 0.0f, next_int = 0.0f;
+        tsfi_pll_pi_tune(1.2f, 0.5f, 2.0f, 0.5f, 0.1f, &out_v, &next_int);
+        assert(out_v > 0.0f);
+        assert(next_int > 0.61f && next_int < 0.63f);
+        printf("[PASS] PI PLL Loop Tuning\n");
+    }
+    
     printf("[SUCCESS] All Encodings Compliance Tests Passed!\n");
     return 0;
 }

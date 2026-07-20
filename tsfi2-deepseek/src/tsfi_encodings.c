@@ -688,3 +688,124 @@ int tsfi_eer_bridge_ot_accum_acab(TSFiEerDatabase *db, const char *dat_bin_path)
     
     return 0;
 }
+
+// 18. Extended Hamming(8,4) SECDED Implementation
+void tsfi_encode_hamming84(const uint8_t *in, int len, uint8_t *out) {
+    if (!in || !out || len <= 0) return;
+    for (int i = 0; i < len; i++) {
+        uint8_t b = in[i];
+        for (int nibble = 0; nibble < 2; nibble++) {
+            uint8_t data = (nibble == 0) ? (b & 0x0F) : ((b >> 4) & 0x0F);
+            uint8_t d1 = (data >> 3) & 1;
+            uint8_t d2 = (data >> 2) & 1;
+            uint8_t d3 = (data >> 1) & 1;
+            uint8_t d4 = data & 1;
+            uint8_t p1 = d1 ^ d2 ^ d4;
+            uint8_t p2 = d1 ^ d3 ^ d4;
+            uint8_t p3 = d2 ^ d3 ^ d4;
+            uint8_t c = (p1 << 6) | (p2 << 5) | (d1 << 4) | (p3 << 3) | (d2 << 2) | (d3 << 1) | d4;
+            uint8_t parity = 0;
+            for (int bit = 0; bit < 7; bit++) {
+                parity ^= (c >> bit) & 1;
+            }
+            out[i * 2 + nibble] = (parity << 7) | c;
+        }
+    }
+}
+
+int tsfi_decode_hamming84(const uint8_t *in, int coded_len, uint8_t *out) {
+    if (!in || !out || coded_len <= 0) return -1;
+    int bytes = coded_len / 2;
+    int double_errors = 0;
+    for (int i = 0; i < bytes; i++) {
+        uint8_t nibbles[2];
+        for (int nibble = 0; nibble < 2; nibble++) {
+            uint8_t code = in[i * 2 + nibble];
+            uint8_t received_parity = (code >> 7) & 1;
+            uint8_t c = code & 0x7F;
+            uint8_t p1 = (c >> 6) & 1;
+            uint8_t p2 = (c >> 5) & 1;
+            uint8_t d1 = (c >> 4) & 1;
+            uint8_t p3 = (c >> 3) & 1;
+            uint8_t d2 = (c >> 2) & 1;
+            uint8_t d3 = (c >> 1) & 1;
+            uint8_t d4 = c & 1;
+            
+            uint8_t s1 = p1 ^ d1 ^ d2 ^ d4;
+            uint8_t s2 = p2 ^ d1 ^ d3 ^ d4;
+            uint8_t s3 = p3 ^ d2 ^ d3 ^ d4;
+            uint8_t syndrome = (s1 << 2) | (s2 << 1) | s3;
+            
+            uint8_t actual_parity = 0;
+            for (int bit = 0; bit < 7; bit++) {
+                actual_parity ^= (c >> bit) & 1;
+            }
+            
+            bool parity_error = (received_parity != actual_parity);
+            
+            if (syndrome != 0) {
+                if (parity_error) {
+                    if (syndrome == 7) d4 ^= 1;
+                    else if (syndrome == 6) d1 ^= 1;
+                    else if (syndrome == 5) d2 ^= 1;
+                    else if (syndrome == 3) d3 ^= 1;
+                } else {
+                    double_errors++;
+                }
+            }
+            nibbles[nibble] = (d1 << 3) | (d2 << 2) | (d3 << 1) | d4;
+        }
+        out[i] = nibbles[0] | (nibbles[1] << 4);
+    }
+    return double_errors > 0 ? 1 : 0;
+}
+
+// 19. Lock-free SPSC Accumulator queue simulation
+int tsfi_ot_accumulator_spsc_push(TSFiOTAccumulator *acc, const char *coord, float weight) {
+    if (!acc || !coord) return -1;
+    int current = acc->count;
+    if (current >= MAX_ACCUMULATED_PATHS) return -2;
+    
+    strncpy(acc->entries[current].coordinate, coord, 127);
+    acc->entries[current].coordinate[127] = '\0';
+    acc->entries[current].path_weight = weight;
+    
+    acc->count = current + 1;
+    acc->cumulative_potential += weight;
+    return 0;
+}
+
+// 20. Cascading Datalog rules EER resolver
+int tsfi_eer_datalog_cascade(TSFiEerDatabase *db, const char *entity, const char *rule1, const char *rule2) {
+    if (!db || !entity || !rule1 || !rule2) return -1;
+    tsfi_trie_node *trie_root = tsfi_trie_create_node(0);
+    tsfi_dat *dat1 = tsfi_dat_compile_relation(trie_root, entity, rule1, "TRUE");
+    tsfi_dat *dat2 = tsfi_dat_compile_relation(trie_root, entity, rule2, "TRUE");
+    
+    int resolved = 0;
+    if (dat1 && dat2) {
+        char key1[128], key2[128];
+        snprintf(key1, sizeof(key1), "%s/%s/TRUE", entity, rule1);
+        snprintf(key2, sizeof(key2), "%s/%s/TRUE", entity, rule2);
+        
+        const char *res1 = tsfi_dat_search(dat1, key1);
+        const char *res2 = tsfi_dat_search(dat2, key2);
+        
+        if (res1 && strcmp(res1, "RELATION_TRUE") == 0 && res2 && strcmp(res2, "RELATION_TRUE") == 0) {
+            resolved = 1;
+            tsfi_eer_insert_agency(db, 101, "NORAD_SECURE", 1, 1);
+        }
+    }
+    if (dat1) tsfi_dat_destroy(dat1);
+    if (dat2) tsfi_dat_destroy(dat2);
+    tsfi_trie_destroy(trie_root);
+    return resolved;
+}
+
+// 21. Proportional-Integral (PI) PLL Loop Tuning
+void tsfi_pll_pi_tune(float error_voltage, float last_integral, float kp, float ki, float dt, float *output_voltage, float *next_integral) {
+    if (!output_voltage || !next_integral) return;
+    float integral = last_integral + error_voltage * dt;
+    *output_voltage = kp * error_voltage + ki * integral;
+    *next_integral = integral;
+}

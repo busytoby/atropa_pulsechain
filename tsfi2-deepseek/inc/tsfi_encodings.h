@@ -53,4 +53,14 @@ int tsfi_eer_datalog_specialization(TSFiEerDatabase *db, const char *incident_ty
 
 void tsfi_pll_vulkan_project(float error_voltage, float phase_diff, float *ndc_x, float *ndc_y);
 
+// --- Extended Improvements APIs ---
+void tsfi_encode_hamming84(const uint8_t *in, int len, uint8_t *out);
+int tsfi_decode_hamming84(const uint8_t *in, int coded_len, uint8_t *out);
+
+int tsfi_ot_accumulator_spsc_push(TSFiOTAccumulator *acc, const char *coord, float weight);
+
+int tsfi_eer_datalog_cascade(TSFiEerDatabase *db, const char *entity, const char *rule1, const char *rule2);
+
+void tsfi_pll_pi_tune(float error_voltage, float last_integral, float kp, float ki, float dt, float *output_voltage, float *next_integral);
+
 #endif // TSFI_ENCODINGS_H
