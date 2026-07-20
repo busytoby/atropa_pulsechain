@@ -51,4 +51,25 @@ int tsfi_sage_cics_io_route(tsfi_sage_cics_io *io, tsfi_autodin_manager *mgr);
 
 int tsfi_winchester_scsi_handshake(tsfi_winchester_scsi *scsi, int loopback_socket_fd, uint8_t input_keycode);
 
+// AUTODIN Precedence Levels
+typedef enum {
+    AUTODIN_PRECEDENCE_ROUTINE,
+    AUTODIN_PRECEDENCE_PRIORITY,
+    AUTODIN_PRECEDENCE_IMMEDIATE,
+    AUTODIN_PRECEDENCE_FLASH
+} tsfi_autodin_precedence;
+
+// SAGE Duplex Processor State
+typedef struct {
+    uint32_t active_cpu_id;
+    uint32_t standby_cpu_id;
+    uint64_t last_sync_time;
+    bool standby_active;
+} tsfi_sage_duplex;
+
+// Expanded SAGE / AUTODIN APIs
+int tsfi_sage_filter_tracks(int32_t *x_out, int32_t *y_out, const int32_t *stations_x, const int32_t *stations_y, int count);
+int tsfi_sage_duplex_sync(tsfi_sage_duplex *duplex, bool active_alive);
+int tsfi_autodin_schedule_message(tsfi_autodin_precedence precedence, const char *msg, char *out_queue_buf);
+
 #endif // TSFI_AUTODIN_SAGE_H

@@ -111,3 +111,64 @@ int tsfi_winchester_scsi_handshake(tsfi_winchester_scsi *scsi, int loopback_sock
     
     return 1; // Handshake in progress
 }
+
+// 4. Expanded SAGE Radar Coordinate Filtering
+int tsfi_sage_filter_tracks(int32_t *x_out, int32_t *y_out, const int32_t *stations_x, const int32_t *stations_y, int count) {
+    if (!x_out || !y_out || !stations_x || !stations_y || count <= 0) return -1;
+    
+    // Compute consensus coordinate by calculating averages to eliminate local radar drift
+    int64_t sum_x = 0;
+    int64_t sum_y = 0;
+    for (int i = 0; i < count; i++) {
+        sum_x += stations_x[i];
+        sum_y += stations_y[i];
+    }
+    
+    *x_out = (int32_t)(sum_x / count);
+    *y_out = (int32_t)(sum_y / count);
+    return 0;
+}
+
+// 5. SAGE Duplex Computer Sync (Hot Standby Active/Standby)
+int tsfi_sage_duplex_sync(tsfi_sage_duplex *duplex, bool active_alive) {
+    if (!duplex) return -1;
+    
+    if (active_alive) {
+        duplex->last_sync_time++; // Mark active sync check tick
+        duplex->standby_active = false;
+        return 0; // Sync successful, active is primary
+    } else {
+        // Active crashed, trigger hot failover to standby CPU
+        duplex->standby_active = true;
+        uint32_t temp = duplex->active_cpu_id;
+        duplex->active_cpu_id = duplex->standby_cpu_id;
+        duplex->standby_cpu_id = temp;
+        return 1; // Standby promoted to Active role
+    }
+}
+
+// 6. AUTODIN Message Switching Scheduler
+int tsfi_autodin_schedule_message(tsfi_autodin_precedence precedence, const char *msg, char *out_queue_buf) {
+    if (!msg || !out_queue_buf) return -1;
+    
+    // Inject precedence prefix headers to implement routing interrupts
+    const char *header = "";
+    switch (precedence) {
+        case AUTODIN_PRECEDENCE_ROUTINE:
+            header = "[ROUTINE] ";
+            break;
+        case AUTODIN_PRECEDENCE_PRIORITY:
+            header = "[PRIORITY] ";
+            break;
+        case AUTODIN_PRECEDENCE_IMMEDIATE:
+            header = "[IMMEDIATE] ";
+            break;
+        case AUTODIN_PRECEDENCE_FLASH:
+            header = "[FLASH] ";
+            break;
+    }
+    
+    strcpy(out_queue_buf, header);
+    strcat(out_queue_buf, msg);
+    return 0;
+}

@@ -84,6 +84,39 @@ int main(void) {
     close(sv[0]);
     close(sv[1]);
     
+    // Test 5: SAGE Radar Coordinate Filtering
+    int32_t station_x[3] = {1000, 1010, 990};
+    int32_t station_y[3] = {5000, 5020, 4980};
+    int32_t filt_x = 0;
+    int32_t filt_y = 0;
+    
+    rc = tsfi_sage_filter_tracks(&filt_x, &filt_y, station_x, station_y, 3);
+    assert(rc == 0);
+    assert(filt_x == 1000);
+    assert(filt_y == 5000);
+    
+    // Test 6: SAGE Duplex Processor Sync and Failover
+    tsfi_sage_duplex duplex;
+    duplex.active_cpu_id = 1;
+    duplex.standby_cpu_id = 2;
+    duplex.last_sync_time = 0;
+    duplex.standby_active = false;
+    
+    rc = tsfi_sage_duplex_sync(&duplex, true);
+    assert(rc == 0);
+    assert(duplex.last_sync_time == 1);
+    
+    rc = tsfi_sage_duplex_sync(&duplex, false); // Failover!
+    assert(rc == 1);
+    assert(duplex.standby_active == true);
+    assert(duplex.active_cpu_id == 2);
+    
+    // Test 7: AUTODIN Precedence Message Switch Scheduling
+    char switch_buf[128];
+    rc = tsfi_autodin_schedule_message(AUTODIN_PRECEDENCE_FLASH, "IMPENDING FLIGHT DETECTED", switch_buf);
+    assert(rc == 0);
+    assert(strcmp(switch_buf, "[FLASH] IMPENDING FLIGHT DETECTED") == 0);
+    
     printf("[SUCCESS] AUTODIN SAGE Transaction Compliance Test Passed!\n");
     return 0;
 }
