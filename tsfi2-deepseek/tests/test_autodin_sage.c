@@ -144,6 +144,41 @@ int main(void) {
     rc = tsfi_autodin_find_route(route_table, 2, "UNKNOWN", &chan);
     assert(rc == -2);
     
+    // Test 10: SAGE Marginal Checking (Vacuum Tube diagnostics)
+    tsfi_sage_marginal_unit tube_unit;
+    tube_unit.baseline_voltage_mv = 6000;
+    tube_unit.applied_voltage_mv = 6000;
+    tube_unit.tube_emission_percent = 80;
+    
+    rc = tsfi_sage_marginal_check(&tube_unit, 0); // Normal range
+    assert(rc == 0);
+    assert(tube_unit.tube_emission_percent == 80);
+    
+    rc = tsfi_sage_marginal_check(&tube_unit, 1500); // 7500 mv (Over-voltage excursion)
+    assert(rc == 0);
+    assert(tube_unit.tube_emission_percent == 65);
+    
+    rc = tsfi_sage_marginal_check(&tube_unit, 1500); // 7500 mv again (exceeds tolerance, wear snap)
+    assert(rc == 1); // Triggers warning (emission 50 < 60)
+    assert(tube_unit.tube_emission_percent == 50);
+    
+    // Test 11: AUTODIN Preemption Queue Controls
+    tsfi_autodin_preempt_channel p_chan;
+    p_chan.channel_busy = true;
+    p_chan.current_precedence = AUTODIN_PRECEDENCE_ROUTINE;
+    p_chan.suspended_tx_id = 0;
+    
+    bool preempt = false;
+    bool reject = false;
+    rc = tsfi_autodin_preempt_check(&p_chan, 8001, AUTODIN_PRECEDENCE_FLASH, &preempt, &reject);
+    assert(rc == 0);
+    assert(preempt == true && reject == false); // Flash preempts routine
+    assert(p_chan.suspended_tx_id == 8001);
+    
+    rc = tsfi_autodin_preempt_check(&p_chan, 8002, AUTODIN_PRECEDENCE_ROUTINE, &preempt, &reject);
+    assert(rc == 0);
+    assert(preempt == false && reject == true); // Routine rejected under current active Flash
+    
     printf("[SUCCESS] AUTODIN SAGE Transaction Compliance Test Passed!\n");
     return 0;
 }

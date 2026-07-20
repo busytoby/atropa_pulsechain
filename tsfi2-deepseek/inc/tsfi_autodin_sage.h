@@ -88,4 +88,21 @@ int tsfi_sage_drum_write(tsfi_sage_drum *drum, int track_idx, int sector_idx, co
 int tsfi_sage_drum_read(tsfi_sage_drum *drum, int track_idx, int sector_idx, uint8_t *data_out, int len);
 int tsfi_autodin_find_route(const tsfi_autodin_route *table, int table_size, const char *ri, uint32_t *channel_out);
 
+// SAGE Marginal checking unit (Vacuum tubes voltage variations)
+typedef struct {
+    int32_t baseline_voltage_mv;
+    int32_t applied_voltage_mv;
+    int32_t tube_emission_percent;
+} tsfi_sage_marginal_unit;
+
+// AUTODIN Preemption control channel
+typedef struct {
+    bool channel_busy;
+    tsfi_autodin_precedence current_precedence;
+    uint32_t suspended_tx_id;
+} tsfi_autodin_preempt_channel;
+
+int tsfi_sage_marginal_check(tsfi_sage_marginal_unit *unit, int32_t voltage_offset_mv);
+int tsfi_autodin_preempt_check(tsfi_autodin_preempt_channel *chan, uint32_t new_tx_id, tsfi_autodin_precedence new_prec, bool *action_preempt, bool *action_reject);
+
 #endif // TSFI_AUTODIN_SAGE_H

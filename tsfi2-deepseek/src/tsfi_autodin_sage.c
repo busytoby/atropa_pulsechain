@@ -215,3 +215,52 @@ int tsfi_autodin_find_route(const tsfi_autodin_route *table, int table_size, con
     
     return -2; // Unknown Destination routing indicator
 }
+
+// 9. SAGE Marginal Checking (Vacuum Tube Voltage Variations)
+int tsfi_sage_marginal_check(tsfi_sage_marginal_unit *unit, int32_t voltage_offset_mv) {
+    if (!unit) return -1;
+    
+    // Vary voltages to test hardware tolerances
+    unit->applied_voltage_mv = unit->baseline_voltage_mv + voltage_offset_mv;
+    
+    // Vacuum tube wear profile based on voltage excursions
+    if (unit->applied_voltage_mv < 5000 || unit->applied_voltage_mv > 7000) {
+        // High wear or low emission simulation
+        unit->tube_emission_percent -= 15;
+    }
+    
+    // Emission below 60% indicates a predictive vacuum tube hardware failure
+    if (unit->tube_emission_percent < 60) {
+        return 1; // Diagnostic warning: preventative maintenance required!
+    }
+    
+    return 0; // Marginal check pass
+}
+
+// 10. AUTODIN Preemption Queue Controller
+int tsfi_autodin_preempt_check(tsfi_autodin_preempt_channel *chan, uint32_t new_tx_id, tsfi_autodin_precedence new_prec, bool *action_preempt, bool *action_reject) {
+    if (!chan || !action_preempt || !action_reject) return -1;
+    
+    *action_preempt = false;
+    *action_reject = false;
+    
+    if (!chan->channel_busy) {
+        // Channel idle: accept new transaction immediately
+        chan->channel_busy = true;
+        chan->current_precedence = new_prec;
+        return 0;
+    }
+    
+    // Channel busy: compare message precedence levels
+    if (new_prec > chan->current_precedence) {
+        // Interrupt/Preempt current lower-priority message
+        *action_preempt = true;
+        chan->suspended_tx_id = new_tx_id; // Suspend current session
+        chan->current_precedence = new_prec; // Upgrade to higher priority
+    } else {
+        // Precedence is equal or lower: queue/reject transmission request
+        *action_reject = true;
+    }
+    
+    return 0;
+}
