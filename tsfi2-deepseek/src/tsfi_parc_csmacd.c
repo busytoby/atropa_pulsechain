@@ -4,6 +4,9 @@
 int tsfi_parc_csmacd_backoff(tsfi_parc_network_node_t *node, int max_backoff_slots) {
     if (!node) return -1;
 
+    if (node->attempts > 16) {
+        node->attempts = 16;
+    }
     node->attempts++;
     // Binary exponential backoff limit
     int limit = 1 << (node->attempts > 10 ? 10 : node->attempts);

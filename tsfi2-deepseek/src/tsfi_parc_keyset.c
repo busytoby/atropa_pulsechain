@@ -11,5 +11,10 @@ static const char chord_map[32] = {
 char tsfi_parc_decode_keyset(uint8_t chord_state) {
     // Only map the lower 5 bits of the chord state
     uint8_t index = chord_state & 0x1F;
-    return chord_map[index];
+    char c = chord_map[index];
+    // If bit 5 (0x20) is active, convert alphabetical characters to uppercase
+    if ((chord_state & 0x20) && c >= 'a' && c <= 'z') {
+        c = c - 'a' + 'A';
+    }
+    return c;
 }
