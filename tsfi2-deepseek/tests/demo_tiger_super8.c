@@ -32,6 +32,7 @@
 #include "tsfi_parc_clipboard.h"
 #include "tsfi_parc_mvc.h"
 #include "tsfi_parc_laurel.h"
+#include "tsfi_parc_disktool.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -806,6 +807,11 @@ int main() {
     tsfi_parc_laurel_compose(&email, "Larry", "Tim", "Gypsy Release", "Clipboard cuts are modeless now.");
     uint8_t email_pup_payload[256];
     tsfi_parc_laurel_serialize_pup(&email, email_pup_payload, sizeof(email_pup_payload));
+
+    // Xerox Alto Diablo Disk Formatter tool check
+    tsfi_parc_disktool_t disk_tool;
+    tsfi_parc_disktool_init(&disk_tool);
+    tsfi_parc_disktool_format(&disk_tool, "VOL_01");
 
     uint32_t *canvas = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
     uint32_t *canvas_b = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
