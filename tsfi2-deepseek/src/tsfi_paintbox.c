@@ -1496,3 +1496,60 @@ int tsfi_quantel_paintbox_pressure_jitter_opacity_saturation_value_width_angle(u
     return tsfi_quantel_paintbox_airbrush(pixels, w, h, target_cx, target_cy, target_radius, opacity, final_color);
 }
 
+int tsfi_quantel_paintbox_pressure_jitter_opacity_saturation_value_width_angle_shape(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float pressure, float jitter_amp, uint32_t color, float angle, float shape_aspect) {
+    if (!pixels || w <= 0 || h <= 0 || radius <= 0) return -1;
+    uint8_t r = (color >> 16) & 0xFF;
+    uint8_t g = (color >> 8) & 0xFF;
+    uint8_t b = color & 0xFF;
+
+    float h_val, s_val, l_val;
+    tsfi_rgb_to_hsl(r, g, b, &h_val, &s_val, &l_val);
+
+    float jitter_s = ((float)rand() / RAND_MAX - 0.5f) * jitter_amp * pressure;
+    s_val += jitter_s;
+    if (s_val < 0.0f) { s_val = 0.0f; }
+    if (s_val > 1.0f) { s_val = 1.0f; }
+
+    float jitter_v = ((float)rand() / RAND_MAX - 0.5f) * jitter_amp * pressure;
+    l_val += jitter_v;
+    if (l_val < 0.0f) { l_val = 0.0f; }
+    if (l_val > 1.0f) { l_val = 1.0f; }
+
+    float jitter_a = ((float)rand() / RAND_MAX - 0.5f) * jitter_amp;
+    float opacity = pressure + jitter_a;
+    if (opacity < 0.01f) { opacity = 0.01f; }
+    if (opacity > 1.0f) { opacity = 1.0f; }
+
+    float jitter_w = ((float)rand() / RAND_MAX - 0.5f) * jitter_amp * radius;
+    int target_radius = radius + (int)jitter_w;
+    if (target_radius < 1) { target_radius = 1; }
+
+    float jitter_ang = ((float)rand() / RAND_MAX - 0.5f) * jitter_amp * (float)M_PI;
+    float target_angle = angle + jitter_ang;
+
+    float jitter_aspect = ((float)rand() / RAND_MAX - 0.5f) * jitter_amp * shape_aspect;
+    float active_aspect = shape_aspect + jitter_aspect;
+    if (active_aspect < 0.1f) { active_aspect = 0.1f; }
+
+    int target_cx = cx + (int)(cosf(target_angle) * pressure * 10.0f);
+    int target_cy = cy + (int)(sinf(target_angle) * pressure * 10.0f);
+
+    uint8_t out_r, out_g, out_b;
+    tsfi_hsl_to_rgb(h_val, s_val, l_val, &out_r, &out_g, &out_b);
+    uint32_t final_color = (0xFF000000) | (out_r << 16) | (out_g << 8) | out_b;
+
+    for (int y = target_cy - target_radius; y <= target_cy + target_radius; y++) {
+        if (y < 0 || y >= h) continue;
+        int dy = y - target_cy;
+        for (int x = target_cx - target_radius; x <= target_cx + target_radius; x++) {
+            if (x < 0 || x >= w) continue;
+            int dx = x - target_cx;
+            float dist = sqrtf((float)(dx * dx) + (float)(dy * dy) / (active_aspect * active_aspect));
+            if (dist <= target_radius) {
+                pixels[y * w + x] = final_color;
+            }
+        }
+    }
+    return 0;
+}
+
