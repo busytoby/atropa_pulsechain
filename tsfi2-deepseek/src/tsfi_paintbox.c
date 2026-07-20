@@ -1213,3 +1213,24 @@ int tsfi_quantel_paintbox_pressure_jitter_size(uint32_t *pixels, int w, int h, i
     return tsfi_quantel_paintbox_airbrush(pixels, w, h, cx, cy, final_radius, 1.0f, color);
 }
 
+int tsfi_quantel_paintbox_pressure_jitter_hue(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float pressure, float jitter_amp, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0 || radius <= 0) return -1;
+    uint8_t r = (color >> 16) & 0xFF;
+    uint8_t g = (color >> 8) & 0xFF;
+    uint8_t b = color & 0xFF;
+
+    float h_val, s_val, l_val;
+    tsfi_rgb_to_hsl(r, g, b, &h_val, &s_val, &l_val);
+
+    float jitter = ((float)rand() / RAND_MAX - 0.5f) * jitter_amp * pressure;
+    h_val += jitter;
+    if (h_val < 0.0f) { h_val += 1.0f; }
+    if (h_val > 1.0f) { h_val -= 1.0f; }
+
+    uint8_t out_r, out_g, out_b;
+    tsfi_hsl_to_rgb(h_val, s_val, l_val, &out_r, &out_g, &out_b);
+    uint32_t final_color = (0xFF000000) | (out_r << 16) | (out_g << 8) | out_b;
+
+    return tsfi_quantel_paintbox_airbrush(pixels, w, h, cx, cy, radius, 1.0f, final_color);
+}
+

@@ -564,6 +564,18 @@ int tsfi_quantel_harry_blend_fields_jitter_shift(const uint32_t *field_even, con
 /* Storyboard Frame Thumbnail Grid Outer Highlights Offset */
 int tsfi_quantel_storyboard_outer_highlights_offset(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int offset_w, uint32_t color);
 
+/* Quantel Paintbox Brush Pressure Jitter Hue Dynamics */
+int tsfi_quantel_paintbox_pressure_jitter_hue(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float pressure, float jitter_amp, uint32_t color);
+
+/* Mirage 3D Cylinder Mapping Warp */
+int tsfi_quantel_mirage_cylinder_warp(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float curvature, float radius);
+
+/* Harry Chronological Frame Interlaced Field Blend Directional Jitter */
+int tsfi_quantel_harry_blend_fields_directional_jitter(const uint32_t *field_even, const uint32_t *field_odd, uint32_t *dst, int w, int h, float blend_factor, float jitter_x, float jitter_y);
+
+/* Storyboard Frame Thumbnail Grid Double Borders Offset With Color */
+int tsfi_quantel_storyboard_double_borders_offset_color(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int offset_w, uint32_t color1, uint32_t color2);
+
 #endif // TSFI_PAINT_H
 
 

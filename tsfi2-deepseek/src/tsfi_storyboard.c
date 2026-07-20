@@ -628,3 +628,16 @@ int tsfi_quantel_storyboard_outer_highlights_offset(uint32_t *pixels, int w, int
     if (tx < 0 || ty < 0 || tx + tw > w || ty + th > h) return -1;
     return tsfi_quantel_storyboard_border_highlights(pixels, w, h, tx, ty, tw, th, color);
 }
+
+int tsfi_quantel_storyboard_double_borders_offset_color(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int offset_w, uint32_t color1, uint32_t color2) {
+    if (!pixels || w <= 0 || h <= 0 || offset_w < 0) return -1;
+    int tx1 = cell_x + offset_w;
+    int ty1 = cell_y + offset_w;
+    int tw1 = cell_w - 2 * offset_w;
+    int th1 = cell_h - 2 * offset_w;
+    if (tw1 > 0 && th1 > 0) {
+        tsfi_quantel_storyboard_outer_borders(pixels, w, h, tx1, ty1, tw1, th1, color1);
+        tsfi_quantel_storyboard_inner_borders(pixels, w, h, tx1, ty1, tw1, th1, color2);
+    }
+    return 0;
+}
