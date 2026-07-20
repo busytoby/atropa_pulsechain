@@ -245,10 +245,10 @@ int main() {
         float chalk_y = HEIGHT / 2.0f + 100.0f * sinf(t * 1.5f);
         tsfi_quantel_paintbox_chalk_pressure_texture(canvas, WIDTH, HEIGHT, (int)chalk_x, (int)chalk_y, 18, 0.9f, 2.0f, 0xFFFFA500);
 
-        // Draw path with shifting opacity and saturation
+        // Draw path with shifting opacity, saturation and brightness value
         float op_sat_x = WIDTH / 2.0f + 100.0f * cosf(t * 3.1f);
         float op_sat_y = HEIGHT / 2.0f + 80.0f * sinf(t * 3.1f);
-        tsfi_quantel_paintbox_pressure_jitter_opacity_saturation(canvas, WIDTH, HEIGHT, (int)op_sat_x, (int)op_sat_y, 22, 0.85f, 0.25f, 0xFFADFF2F);
+        tsfi_quantel_paintbox_pressure_jitter_opacity_saturation_value(canvas, WIDTH, HEIGHT, (int)op_sat_x, (int)op_sat_y, 22, 0.85f, 0.25f, 0xFFADFF2F);
 
         // Periodically trigger a Mirage 3D Warp on chord hits (every 4 seconds)
         memcpy(canvas_b, canvas, WIDTH * HEIGHT * sizeof(uint32_t));
@@ -264,8 +264,8 @@ int main() {
             // Spherical perspective twist
             tsfi_quantel_mirage_spherical_coordinate_zoom_twist_warp(canvas, WIDTH, HEIGHT, canvas_b, WIDTH, HEIGHT, 1.0f, 1.0f, 1.1f, 0.2f * sinf(t));
         } else if (phase_cycle == 3) {
-            // Spherical page curl curl
-            tsfi_quantel_mirage_page_curl_warp(canvas, WIDTH, HEIGHT, canvas_b, WIDTH, HEIGHT, 40.0f, 0.5f * sinf(t));
+            // 3D perspective page curl warp
+            tsfi_quantel_mirage_page_curl_perspective_warp(canvas, WIDTH, HEIGHT, canvas_b, WIDTH, HEIGHT, 40.0f, 0.5f * sinf(t), 1.0f + 0.1f * sinf(t), 0.05f);
         }
 
         // Periodically trigger a Harry Wipe Transition (every 15 seconds)
@@ -278,13 +278,13 @@ int main() {
                     matrix_canvas[y * WIDTH + x] = ((x / 16 + y / 16) % 2 == 0) ? 0xFF002244 : 0xFF004488;
                 }
             }
-            // Use vertical field split color offset for transition
-            tsfi_quantel_harry_blend_fields_color_offset_vertical(canvas_b, matrix_canvas, dst_buffer, WIDTH, HEIGHT, wipe_p, 4, 0xFF00FF00, 3.0f * sinf(t));
+            // Use vertical-scale field split color offset for transition
+            tsfi_quantel_harry_blend_fields_color_offset_vertical_scale(canvas_b, matrix_canvas, dst_buffer, WIDTH, HEIGHT, wipe_p, 4, 0xFF00FF00, 3.0f * sinf(t), 1.0f + 0.05f * cosf(t));
             memcpy(canvas_b, dst_buffer, WIDTH * HEIGHT * sizeof(uint32_t));
             free(matrix_canvas);
 
-            // Draw Concentric double storyboard highlights around central frame
-            tsfi_quantel_storyboard_border_highlights_concentric_double(canvas_b, WIDTH, HEIGHT, 32, 120, WIDTH - 64, HEIGHT - 240, 4, 2, 3, 0xFFFFD700, 0xFFFF00FF);
+            // Draw Concentric double outer storyboard highlights around central frame
+            tsfi_quantel_storyboard_border_highlights_concentric_double_outer(canvas_b, WIDTH, HEIGHT, 32, 120, WIDTH - 64, HEIGHT - 240, 4, 2, 3, 0xFFFFD700, 0xFFFF00FF, 10);
         }
 
         // Enforce Super8 crop aspect ratio and sprocket holes
