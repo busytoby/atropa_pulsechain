@@ -188,11 +188,11 @@ int tsfi_decode_hollerith(const uint16_t *in, int len, char *out, int max_len) {
 }
 
 // 5. Baudot Code (ITA2)
-static const uint8_t ltrs_map[32] = {
+uint8_t g_ltrs_map[32] = {
     0, 'E', '\n', 'A', ' ', 'S', 'I', 'U', '\r', 'D', 'R', 'J', 'N', 'F', 'C', 'K',
     'T', 'Z', 'L', 'W', 'H', 'Y', 'P', 'Q', 'O', 'B', 'G', 0, 'M', 'X', 'V', 'Z'
 };
-static const uint8_t figs_map[32] = {
+uint8_t g_figs_map[32] = {
     0, '3', '\n', '-', ' ', '\'', '8', '7', '\r', '$', '4', '\'', ',', '!', ':', '(',
     '5', '+', ')', '2', '#', '6', '0', '1', '9', '?', '&', 0, '.', '/', '=', 0
 };
@@ -207,11 +207,11 @@ int tsfi_encode_baudot(const char *in, uint8_t *out, int max_len) {
         bool target_figs = false;
         
         for (int j = 0; j < 32; j++) {
-            if (ltrs_map[j] == c) { code = j; target_figs = false; break; }
+            if (g_ltrs_map[j] == c) { code = j; target_figs = false; break; }
         }
         if (code == -1) {
             for (int j = 0; j < 32; j++) {
-                if (figs_map[j] == c) { code = j; target_figs = true; break; }
+                if (g_figs_map[j] == c) { code = j; target_figs = true; break; }
             }
         }
         if (code != -1) {
@@ -236,7 +236,7 @@ int tsfi_decode_baudot(const uint8_t *in, int len, char *out, int max_len) {
         uint8_t code = in[i] & 0x1F;
         if (code == 0x1B) { is_figs = true; continue; }
         if (code == 0x1F) { is_figs = false; continue; }
-        char c = is_figs ? figs_map[code] : ltrs_map[code];
+        char c = is_figs ? g_figs_map[code] : g_ltrs_map[code];
         if (c != '\0') out[out_idx++] = c;
     }
     out[out_idx] = '\0';
@@ -808,4 +808,121 @@ void tsfi_pll_pi_tune(float error_voltage, float last_integral, float kp, float 
     float integral = last_integral + error_voltage * dt;
     *output_voltage = kp * error_voltage + ki * integral;
     *next_integral = integral;
+}
+
+// 22. Dynamic Baudot Map update API
+extern uint8_t g_ltrs_map[32];
+extern uint8_t g_figs_map[32];
+
+int tsfi_baudot_update_maps(const uint8_t *new_ltrs, const uint8_t *new_figs) {
+    if (!new_ltrs || !new_figs) return -1;
+    memcpy(g_ltrs_map, new_ltrs, 32);
+    memcpy(g_figs_map, new_figs, 32);
+    return 0;
+}
+
+// 23. BCH(15,7) Encoder and Decoder
+void tsfi_encode_bch15_7(const uint8_t *in, int len, uint16_t *out) {
+    if (!in || !out || len <= 0) return;
+    for (int i = 0; i < len; i++) {
+        uint16_t msg = in[i] & 0x7F;
+        uint32_t codeword = msg << 8;
+        for (int bit = 14; bit >= 8; bit--) {
+            if (codeword & (1 << bit)) {
+                codeword ^= (0x1D5 << (bit - 8));
+            }
+        }
+        out[i] = (msg << 8) | (codeword & 0xFF);
+    }
+}
+
+int tsfi_decode_bch15_7(const uint16_t *in, int len, uint8_t *out) {
+    if (!in || !out || len <= 0) return -1;
+    int uncorrectable = 0;
+    for (int i = 0; i < len; i++) {
+        uint16_t cw = in[i] & 0x7FFF;
+        uint32_t rem = cw;
+        for (int bit = 14; bit >= 8; bit--) {
+            if (rem & (1 << bit)) {
+                rem ^= (0x1D5 << (bit - 8));
+            }
+        }
+        if (rem != 0) {
+            int corrected = 0;
+            for (int b1 = 0; b1 < 15 && !corrected; b1++) {
+                uint16_t temp1 = cw ^ (1 << b1);
+                uint32_t rem1 = temp1;
+                for (int bit = 14; bit >= 8; bit--) {
+                    if (rem1 & (1 << bit)) rem1 ^= (0x1D5 << (bit - 8));
+                }
+                if (rem1 == 0) {
+                    cw = temp1;
+                    corrected = 1;
+                }
+            }
+            for (int b1 = 0; b1 < 15 && !corrected; b1++) {
+                for (int b2 = b1 + 1; b2 < 15 && !corrected; b2++) {
+                    uint16_t temp2 = cw ^ (1 << b1) ^ (1 << b2);
+                    uint32_t rem2 = temp2;
+                    for (int bit = 14; bit >= 8; bit--) {
+                        if (rem2 & (1 << bit)) rem2 ^= (0x1D5 << (bit - 8));
+                    }
+                    if (rem2 == 0) {
+                        cw = temp2;
+                        corrected = 1;
+                    }
+                }
+            }
+            if (!corrected) {
+                uncorrectable++;
+            }
+        }
+        out[i] = (uint8_t)(cw >> 8);
+    }
+    return uncorrectable;
+}
+
+// 24. PID PLL with AGC Tuning
+void tsfi_pll_pid_agc_tune(float error_voltage, float last_integral, float last_error, float kp, float ki, float kd, float dt, float input_signal_amp, float *output_voltage, float *next_integral, float *next_error, float *agc_gain) {
+    if (!output_voltage || !next_integral || !next_error || !agc_gain) return;
+    float integral = last_integral + error_voltage * dt;
+    float derivative = (error_voltage - last_error) / dt;
+    float target_amp = 1.0f;
+    float gain = 1.0f;
+    if (input_signal_amp > 0.01f) {
+        gain = target_amp / input_signal_amp;
+    }
+    *output_voltage = (kp * error_voltage + ki * integral + kd * derivative) * gain;
+    *next_integral = integral;
+    *next_error = error_voltage;
+    *agc_gain = gain;
+}
+
+// 25. EER Referential Integrity Cascade Delete
+int tsfi_eer_delete_incident(TSFiEerDatabase *db, uint32_t incident_id) {
+    if (!db) return -1;
+    int found_idx = -1;
+    for (int i = 0; i < db->incident_count; i++) {
+        if (db->incidents[i].incident_id == incident_id) {
+            found_idx = i;
+            break;
+        }
+    }
+    if (found_idx == -1) return -2;
+    for (int i = found_idx; i < db->incident_count - 1; i++) {
+        db->incidents[i] = db->incidents[i + 1];
+    }
+    db->incident_count--;
+    int r = 0;
+    while (r < db->responds_count) {
+        if (db->responds[r].incident_id == incident_id) {
+            for (int j = r; j < db->responds_count - 1; j++) {
+                db->responds[j] = db->responds[j + 1];
+            }
+            db->responds_count--;
+        } else {
+            r++;
+        }
+    }
+    return 0;
 }

@@ -63,4 +63,14 @@ int tsfi_eer_datalog_cascade(TSFiEerDatabase *db, const char *entity, const char
 
 void tsfi_pll_pi_tune(float error_voltage, float last_integral, float kp, float ki, float dt, float *output_voltage, float *next_integral);
 
+// --- Third-Generation Improvements APIs ---
+int tsfi_baudot_update_maps(const uint8_t *new_ltrs, const uint8_t *new_figs);
+
+void tsfi_encode_bch15_7(const uint8_t *in, int len, uint16_t *out);
+int tsfi_decode_bch15_7(const uint16_t *in, int len, uint8_t *out);
+
+void tsfi_pll_pid_agc_tune(float error_voltage, float last_integral, float last_error, float kp, float ki, float kd, float dt, float input_signal_amp, float *output_voltage, float *next_integral, float *next_error, float *agc_gain);
+
+int tsfi_eer_delete_incident(TSFiEerDatabase *db, uint32_t incident_id);
+
 #endif // TSFI_ENCODINGS_H

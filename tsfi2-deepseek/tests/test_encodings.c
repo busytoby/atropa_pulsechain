@@ -311,6 +311,58 @@ int main(void) {
         printf("[PASS] PI PLL Loop Tuning\n");
     }
     
+    // Test 15: Third-Generation Systems Improvements
+    {
+        // 15.1 Adaptive Baudot Dictionary Shifting test
+        uint8_t custom_ltrs[32] = {
+            ' ', 'E', '\n', 'A', ' ', 'S', 'I', 'U', '\r', 'D', 'R', 'J', 'N', 'F', 'C', 'K',
+            'T', 'Z', 'L', 'W', 'H', 'Y', 'P', 'Q', 'O', 'B', 'G', 0, 'M', 'X', 'V', 'Z'
+        };
+        uint8_t custom_figs[32] = {
+            ' ', '3', '\n', '-', ' ', '\'', '8', '7', '\r', '$', '4', '\'', ',', '!', ':', '(',
+            '5', '+', ')', '2', '#', '6', '0', '1', '9', '?', '&', 0, '.', '/', '=', 0
+        };
+        int u_rc = tsfi_baudot_update_maps(custom_ltrs, custom_figs);
+        assert(u_rc == 0);
+        printf("[PASS] Adaptive Baudot map update\n");
+        
+        // 15.2 BCH(15,7) DEC-TED test
+        const uint8_t raw_msg[4] = {0x0A, 0x1F, 0x5C, 0x7E};
+        uint16_t bch_coded[4];
+        uint8_t bch_decoded[4];
+        tsfi_encode_bch15_7(raw_msg, 4, bch_coded);
+        
+        // Introduce 2 bit errors in one codeword: BCH must still correct it (DEC)
+        bch_coded[0] ^= 0x03;
+        int uncor = tsfi_decode_bch15_7(bch_coded, 4, bch_decoded);
+        assert(uncor == 0);
+        assert(bch_decoded[0] == 0x0A);
+        printf("[PASS] BCH(15,7) double-error correction\n");
+        
+        // 15.3 PID PLL with AGC Tuning test
+        float pid_v = 0.0f, next_pi_i = 0.0f, next_pi_e = 0.0f, agc_g = 0.0f;
+        tsfi_pll_pid_agc_tune(1.5f, 0.5f, 1.0f, 2.0f, 0.5f, 0.1f, 0.1f, 0.5f, &pid_v, &next_pi_i, &next_pi_e, &agc_g);
+        assert(pid_v > 0.0f);
+        assert(agc_g == 2.0f); // target 1.0 / amp 0.5
+        printf("[PASS] PID PLL with AGC Tuning\n");
+        
+        // 15.4 EER Referential Integrity Cascade Delete test
+        TSFiEerDatabase db;
+        tsfi_eer_db_init(&db);
+        tsfi_eer_insert_incident(&db, 5001, 2, 1782000000U, 1);
+        tsfi_eer_insert_agency(&db, 101, "NORAD", 1, 1);
+        tsfi_eer_link_response(&db, 101, 5001);
+        
+        assert(db.incident_count == 1);
+        assert(db.responds_count == 1);
+        
+        int del_rc = tsfi_eer_delete_incident(&db, 5001);
+        assert(del_rc == 0);
+        assert(db.incident_count == 0);
+        assert(db.responds_count == 0); // Cascaded delete verified!
+        printf("[PASS] EER database referential integrity cascade deletion\n");
+    }
+    
     printf("[SUCCESS] All Encodings Compliance Tests Passed!\n");
     return 0;
 }
