@@ -146,7 +146,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
               $(OBJ_DIR)/tsfi_eer_emergency.o \
               $(OBJ_DIR)/tsfi_nsa_tempest.o \
               $(OBJ_DIR)/tsfi_reuter_tx.o \
-              $(OBJ_DIR)/tsfi_gray_tx.o
+              $(OBJ_DIR)/tsfi_gray_tx.o \
+              $(OBJ_DIR)/tsfi_autodin_sage.o
 
 
 
@@ -854,6 +855,9 @@ tests/test_reuter_tx: tests/test_reuter_tx.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 tests/test_gray_tx: tests/test_gray_tx.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tests/test_autodin_sage: tests/test_autodin_sage.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 tests/test_doxastic_thermodynamics: tests/test_doxastic_thermodynamics.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o

@@ -1,0 +1,54 @@
+#ifndef TSFI_AUTODIN_SAGE_H
+#define TSFI_AUTODIN_SAGE_H
+
+#include <stdint.h>
+#include <stdbool.h>
+
+// 1. AUTODIN Store-and-Forward Latching Relay Structures
+typedef struct {
+    int32_t set_flux;      // Magnetic flux on SET coil
+    int32_t reset_flux;    // Magnetic flux on RESET coil
+    bool contacts_closed;   // Physical connection status
+} tsfi_autodin_relay;
+
+// 2. SAGE PLL (Phase-Locked Loop) Fabric and CICS I/O System
+typedef struct {
+    int32_t reference_phase;
+    int32_t feedback_phase;
+    int32_t error_voltage;
+    int32_t frequency_offset;
+} tsfi_sage_pll_fabric;
+
+typedef struct {
+    uint32_t tx_id;
+    uint32_t queue_id;
+    uint8_t buffer[256];
+    int len;
+} tsfi_sage_cics_io;
+
+// 3. AUTODIN Transaction and Heartbeat Manager
+typedef struct {
+    uint32_t active_tx_id;
+    uint64_t last_heartbeat;
+    bool system_unstable;
+    tsfi_sage_pll_fabric pll;
+} tsfi_autodin_manager;
+
+// 4. WinchesterMQ SCSI Loopback Handshake (Auncient Hardware Routing)
+typedef struct {
+    uint8_t keycode_reg;   // SCSI keycode register (32 for D/d, 30 for A/a)
+    bool req_line;         // SCSI REQ line state
+    bool ack_line;         // SCSI ACK line state
+    int handshake_step;    // State machine step
+} tsfi_winchester_scsi;
+
+// APIs
+void tsfi_autodin_relay_init(tsfi_autodin_relay *relay);
+int tsfi_autodin_relay_latch(tsfi_autodin_relay *relay, int32_t set_current, int32_t reset_current);
+
+int tsfi_sage_pll_sync(tsfi_sage_pll_fabric *pll, int32_t external_phase);
+int tsfi_sage_cics_io_route(tsfi_sage_cics_io *io, tsfi_autodin_manager *mgr);
+
+int tsfi_winchester_scsi_handshake(tsfi_winchester_scsi *scsi, int loopback_socket_fd, uint8_t input_keycode);
+
+#endif // TSFI_AUTODIN_SAGE_H
