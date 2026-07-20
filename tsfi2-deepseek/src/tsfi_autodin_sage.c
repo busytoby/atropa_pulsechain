@@ -306,3 +306,16 @@ int tsfi_autodin_journal_write(tsfi_autodin_journal *j, uint64_t lsn, const char
     j->last_journal_lsn = lsn;
     return 0;
 }
+
+// 13. SAGE CRT vector projection generator
+int tsfi_sage_generate_vector(tsfi_sage_vector *vec, int32_t sx, int32_t sy, int32_t ex, int32_t ey, uint32_t intensity) {
+    if (!vec) return -1;
+    
+    vec->start_x = sx;
+    vec->start_y = sy;
+    vec->end_x = ex;
+    vec->end_y = ey;
+    vec->intensity_reg = intensity;
+    
+    return 0;
+}

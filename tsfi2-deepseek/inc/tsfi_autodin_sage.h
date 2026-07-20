@@ -121,4 +121,15 @@ typedef struct {
 int tsfi_sage_light_gun_select(const tsfi_sage_light_gun *gun, const int32_t *track_x, const int32_t *track_y, int track_count, int *selected_track_idx);
 int tsfi_autodin_journal_write(tsfi_autodin_journal *j, uint64_t lsn, const char *msg);
 
+// SAGE Console Vector Drawing Definition
+typedef struct {
+    int32_t start_x;
+    int32_t start_y;
+    int32_t end_x;
+    int32_t end_y;
+    uint32_t intensity_reg;
+} tsfi_sage_vector;
+
+int tsfi_sage_generate_vector(tsfi_sage_vector *vec, int32_t sx, int32_t sy, int32_t ex, int32_t ey, uint32_t intensity);
+
 #endif // TSFI_AUTODIN_SAGE_H

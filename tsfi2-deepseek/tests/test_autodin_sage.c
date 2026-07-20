@@ -210,6 +210,16 @@ int main(void) {
     close(j_fd);
     unlink(journal_path);
     
+    // Test 14: SAGE Console Vector Drawing
+    tsfi_sage_vector vec;
+    rc = tsfi_sage_generate_vector(&vec, 10, 20, 100, 200, 255);
+    assert(rc == 0);
+    assert(vec.start_x == 10);
+    assert(vec.start_y == 20);
+    assert(vec.end_x == 100);
+    assert(vec.end_y == 200);
+    assert(vec.intensity_reg == 255);
+    
     printf("[SUCCESS] AUTODIN SAGE Transaction Compliance Test Passed!\n");
     return 0;
 }
