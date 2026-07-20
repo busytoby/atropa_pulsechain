@@ -717,6 +717,7 @@ int main() {
     tsfi_parc_video_controller_t vc;
     tsfi_parc_video_init(&vc);
     tsfi_parc_video_step(&vc, 100, 100);
+    uint16_t *alto_display_mem = calloc(38 * 808, sizeof(uint16_t));
     uint32_t *canvas = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
     uint32_t *canvas_b = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
     uint32_t *dst_buffer = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
@@ -1227,6 +1228,26 @@ int main() {
         tsfi_parc_brush_draw(canvas_b, WIDTH, HEIGHT, 45, 492, 8, BRUSH_CHISEL, 0xFF8c7241);
         tsfi_parc_brush_draw(canvas_b, WIDTH, HEIGHT, 465, 492, 8, BRUSH_STAMP, 0xFF8c7241);
 
+        // Xerox Alto Video Scanline & CRT frame rendering inside Smalltalk VM window
+        memset(alto_display_mem, 0, 38 * 808 * sizeof(uint16_t));
+        for (int y = 0; y < 808; y++) {
+            alto_display_mem[y * 38 + (y % 38)] = (uint16_t)(0xF0F0 ^ (y * 7));
+            if (y % 40 < 10) {
+                for (int w = 0; w < 10; w++) {
+                    alto_display_mem[y * 38 + w] = 0xAAAA;
+                }
+            }
+        }
+        int alto_mx = 40 + (int)(30.0f * sinf(t * 2.0f));
+        int alto_my = 30 + (int)(20.0f * cosf(t * 2.5f));
+        tsfi_parc_video_step(&vc, alto_mx, alto_my);
+        
+        static const uint16_t arrow_cursor_bits[16] = {
+            0xC000, 0xE000, 0xF000, 0xF800, 0xFC00, 0xFE00, 0xFF00, 0xFF80,
+            0xFFC0, 0xFE00, 0xEF00, 0xC780, 0x0780, 0x03C0, 0x03C0, 0x0000
+        };
+        tsfi_parc_video_render_frame(&vc, alto_display_mem, canvas_b, WIDTH, HEIGHT, 147, 438, 0xFF39FF14, 0xFFc5a059, arrow_cursor_bits);
+
         // 7. Cycle the SuperPaint LUT dynamically
         tsfi_parc_superpaint_cycle_lut(&sp_lut, f % 256);
 
@@ -1248,6 +1269,7 @@ int main() {
     pclose(ffmpeg_pipe);
     free(canvas);
     free(canvas_b);
+    free(alto_display_mem);
     free(dst_buffer);
     free(rgb_out);
     remove(audio_file);
