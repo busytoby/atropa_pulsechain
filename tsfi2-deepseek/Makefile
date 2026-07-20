@@ -161,9 +161,12 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                 $(OBJ_DIR)/tsfi_parc_cursor.o \
                 $(OBJ_DIR)/tsfi_parc_brush.o \
                 $(OBJ_DIR)/tsfi_parc_runlength.o \
-                $(OBJ_DIR)/tsfi_parc_csmacd.o \
-                $(OBJ_DIR)/tsfi_parc_keyset.o \
-                $(OBJ_DIR)/tsfi_parc_gc.o
+                 $(OBJ_DIR)/tsfi_parc_csmacd.o \
+                 $(OBJ_DIR)/tsfi_parc_keyset.o \
+                 $(OBJ_DIR)/tsfi_parc_gc.o \
+                 $(OBJ_DIR)/tsfi_parc_bfs.o \
+                 $(OBJ_DIR)/tsfi_parc_stcomp.o \
+                 $(OBJ_DIR)/tsfi_parc_video.o
 
 
 

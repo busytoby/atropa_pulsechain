@@ -24,6 +24,9 @@
 #include "tsfi_parc_csmacd.h"
 #include "tsfi_parc_keyset.h"
 #include "tsfi_parc_gc.h"
+#include "tsfi_parc_bfs.h"
+#include "tsfi_parc_stcomp.h"
+#include "tsfi_parc_video.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -702,6 +705,18 @@ int main() {
     
     tsfi_parc_network_node_t local_node = {0, 0, 0};
     tsfi_parc_network_node_t gateway_node = {0, 0, 0};
+
+    // Xerox PARC: Statically verify BFS Diablo drive, Smalltalk compiler, and video scan
+    tsfi_parc_bfs_sector_t bfs_sec;
+    tsfi_parc_bfs_init_sector(&bfs_sec, 0, 0, 0);
+
+    uint8_t compiler_out[16];
+    int compiled_len = tsfi_parc_st_compile("load 0; const 5; add; return", compiler_out, 16);
+    (void)compiled_len;
+
+    tsfi_parc_video_controller_t vc;
+    tsfi_parc_video_init(&vc);
+    tsfi_parc_video_step(&vc, 100, 100);
     uint32_t *canvas = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
     uint32_t *canvas_b = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
     uint32_t *dst_buffer = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
