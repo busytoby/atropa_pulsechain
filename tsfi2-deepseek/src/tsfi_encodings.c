@@ -589,3 +589,102 @@ void tsfi_pll_vulkan_project(float error_voltage, float phase_diff, float *ndc_x
     *ndc_x = error_voltage / 5.0f;
     *ndc_y = phase_diff / 3.14159f;
 }
+
+// 16. OT Accumulator (OT) Baudot (Baud) LLM-Tokenized .dat.bin (DAT) exporter on the ACAB
+int tsfi_ot_accum_baud_llm_dat(const char *dat_bin_path) {
+    if (!dat_bin_path) return -1;
+    
+    TSFiOTAccumulator acc;
+    tsfi_ot_accumulator_init(&acc);
+    
+    // Seed initial potential or coordinate weights from ACAB memory root if present
+    float weight1 = 12.5f;
+    float weight2 = 35.2f;
+    if (g_gguf_acab_found) {
+        weight1 += (float)g_gguf_acab_root[0] / 10.0f;
+        weight2 += (float)g_gguf_acab_root[1] / 10.0f;
+    }
+    
+    tsfi_ot_accumulator_add(&acc, "coord_001", weight1);
+    tsfi_ot_accumulator_add(&acc, "coord_002", weight2);
+    
+    char status[128];
+    snprintf(status, sizeof(status), "COUNT %d POTENTIAL %.2f", 
+             acc.count, tsfi_ot_accumulator_get_potential(&acc));
+             
+    uint8_t baud_buf[128];
+    int baud_len = tsfi_encode_baudot(status, baud_buf, 128);
+    if (baud_len <= 0) return -2;
+    
+    uint32_t tokens[128];
+    for (int i = 0; i < baud_len; i++) {
+        tokens[i] = (uint32_t)baud_buf[i];
+    }
+    
+    FILE *f = fopen(dat_bin_path, "wb");
+    if (!f) return -3;
+    
+    uint32_t count = (uint32_t)baud_len;
+    fwrite(&count, sizeof(uint32_t), 1, f);
+    fwrite(tokens, sizeof(uint32_t), count, f);
+    fclose(f);
+    
+    return 0;
+}
+
+// 17. EER Bridge for OT Accumulator (OT) over ACAB
+int tsfi_eer_bridge_ot_accum_acab(TSFiEerDatabase *db, const char *dat_bin_path) {
+    if (!db || !dat_bin_path) return -1;
+    
+    FILE *f = fopen(dat_bin_path, "rb");
+    if (!f) return -2;
+    
+    uint32_t count = 0;
+    if (fread(&count, sizeof(uint32_t), 1, f) != 1 || count == 0 || count > 128) {
+        fclose(f);
+        return -3;
+    }
+    
+    uint32_t tokens[128];
+    if (fread(tokens, sizeof(uint32_t), count, f) != count) {
+        fclose(f);
+        return -4;
+    }
+    fclose(f);
+    
+    uint8_t baud_buf[128];
+    for (uint32_t i = 0; i < count; i++) {
+        baud_buf[i] = (uint8_t)tokens[i];
+    }
+    char status_dec[128];
+    int dec_len = tsfi_decode_baudot(baud_buf, count, status_dec, 128);
+    if (dec_len <= 0) return -5;
+    
+    float potential = 0.0f;
+    sscanf(status_dec, "COUNT %*d POTENTIAL %f", &potential);
+    
+    uint32_t incident_id = 3000 + (uint32_t)potential;
+    int defcon = (potential < 50.0f) ? 5 : 1;
+    int type = (potential < 50.0f) ? 2 : 1; // 2 = TaxAuditConflict (basic), 1 = NuclearAlert (enhanced subclass)
+    
+    tsfi_eer_db_init(db);
+    tsfi_eer_insert_incident(db, incident_id, defcon, 1782000000U, type);
+    
+    tsfi_eer_insert_agency(db, 101, "NORAD_SECURE", 1, 1);
+    tsfi_eer_insert_agency(db, 102, "IRS_AUDIT", 2, 2);
+    
+    if (type == 1) {
+        tsfi_eer_link_response(db, 101, incident_id);
+    } else {
+        tsfi_eer_link_response(db, 102, incident_id);
+    }
+    
+    if (db->channel_count < 16) {
+        TSFiEerChannel *chan = &db->channels[db->channel_count++];
+        chan->channel_id = 0x0200; // Tapped ACAB memory address
+        chan->encryption_type = 3;
+        chan->frequency_band = 144000;
+    }
+    
+    return 0;
+}

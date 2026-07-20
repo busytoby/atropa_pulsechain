@@ -35,8 +35,13 @@ int tsfi_decode_murray(const uint8_t *in, int len, char *out, int max_len);
 int tsfi_encode_radix50(const char *in, uint16_t *out, int max_len);
 int tsfi_decode_radix50(const uint16_t *in, int len, char *out, int max_len);
 
+#include "tsfi_ot_accumulator.h"
+
 int tsfi_ot_baud_llm_dat(const char *dat_bin_path);
 int tsfi_eer_bridge_ot_acab(TSFiEerDatabase *db, const char *dat_bin_path);
+
+int tsfi_ot_accum_baud_llm_dat(const char *dat_bin_path);
+int tsfi_eer_bridge_ot_accum_acab(TSFiEerDatabase *db, const char *dat_bin_path);
 
 // --- Improvements APIs ---
 void tsfi_encode_hamming74(const uint8_t *in, int len, uint8_t *out);

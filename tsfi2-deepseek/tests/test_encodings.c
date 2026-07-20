@@ -245,6 +245,26 @@ int main(void) {
         printf("[PASS] Vulkan-based PLL project\n");
     }
     
+    // Test 13: OT Accumulator (OT) Baudot (Baud) LLM-Tokenized DAT on ACAB
+    {
+        const char *bin_path = "tmp/ot_accum_basic.dat.bin";
+        int rc = tsfi_ot_accum_baud_llm_dat(bin_path);
+        assert(rc == 0);
+        
+        TSFiEerDatabase db;
+        rc = tsfi_eer_bridge_ot_accum_acab(&db, bin_path);
+        assert(rc == 0);
+        
+        // Assertions verifying ER/EER details
+        assert(db.incident_count == 1);
+        assert(db.agency_count == 2);
+        assert(db.channel_count == 1);
+        assert(db.channels[0].channel_id == 0x0200); // Tapped ACAB channel
+        
+        remove(bin_path);
+        printf("[PASS] OT Accumulator Baud LLM DAT on ACAB bridge tests\n");
+    }
+    
     printf("[SUCCESS] All Encodings Compliance Tests Passed!\n");
     return 0;
 }
