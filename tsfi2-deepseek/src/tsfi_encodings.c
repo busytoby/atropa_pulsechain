@@ -1777,60 +1777,98 @@ int tsfi_ot_llm_bandwidth_comm_init(TSFiOtLlmBandwidthComm *comm, int sap, int p
     comm->current_window_size = 16;
     comm->active_sap = sap;
     comm->priority = priority;
+    
+    // Reset global Baudot maps to standard layout to avoid side-effects from other tests
+    uint8_t default_ltrs[32] = {
+        0, 'E', '\n', 'A', ' ', 'S', 'I', 'U', '\r', 'D', 'R', 'J', 'N', 'F', 'C', 'K',
+        'T', 'Z', 'L', 'W', 'H', 'Y', 'P', 'Q', 'O', 'B', 'G', 0, 'M', 'X', 'V', 'Z'
+    };
+    uint8_t default_figs[32] = {
+        0, '3', '\n', '-', ' ', '\'', '8', '7', '\r', '$', '4', '\'', ',', '!', ':', '(',
+        '5', '+', ')', '2', '#', '6', '0', '1', '9', '?', '&', 0, '.', '/', '=', 0
+    };
+    tsfi_baudot_update_maps(default_ltrs, default_figs);
     return 0;
 }
 
 int tsfi_ot_llm_bandwidth_comm_send(TSFiOtLlmBandwidthComm *comm, const uint32_t *tokens, int count, uint8_t *out_frame, int *out_len) {
     if (!comm || !tokens || !out_frame || !out_len || count <= 0) return -1;
     
-    // We group tokens (4 bytes each) into 11-byte chunks.
-    int total_bytes = count * 4;
-    int chunks = (total_bytes + 10) / 11;
-    int payload_raw_len = chunks * 11;
-    uint8_t *raw_buf = malloc(payload_raw_len);
-    memset(raw_buf, 0, payload_raw_len);
+    // Convert uint32_t tokens to space-separated ASCII string
+    char *ascii = malloc(count * 16 + 16);
+    ascii[0] = '\0';
     for (int i = 0; i < count; i++) {
-        raw_buf[i * 4 + 0] = (uint8_t)((tokens[i] >> 24) & 0xFF);
-        raw_buf[i * 4 + 1] = (uint8_t)((tokens[i] >> 16) & 0xFF);
-        raw_buf[i * 4 + 2] = (uint8_t)((tokens[i] >> 8) & 0xFF);
-        raw_buf[i * 4 + 3] = (uint8_t)(tokens[i] & 0xFF);
+        char temp[32];
+        sprintf(temp, "%u ", tokens[i]);
+        strcat(ascii, temp);
     }
+    int ascii_len = (int)strlen(ascii);
+    
+    // Encode to Baudot
+    uint8_t *baud_buf = malloc(ascii_len * 2 + 64);
+    int baud_len = tsfi_encode_baudot(ascii, baud_buf, ascii_len * 2 + 64);
+    free(ascii);
+    if (baud_len < 0) {
+        free(baud_buf);
+        return -2;
+    }
+    
+    // Run-Length Compression (RLC)
+    uint8_t *comp_buf = malloc(baud_len + 16);
+    int comp_len = tsfi_baudot_compress(baud_buf, baud_len, comp_buf, baud_len + 16);
+    free(baud_buf);
+    if (comp_len < 0) {
+        free(comp_buf);
+        return -3;
+    }
+    
+    int chunks = (comp_len + 10) / 11;
+    int payload_raw_len = chunks * 11;
+    uint8_t *padded_buf = malloc(payload_raw_len);
+    memset(padded_buf, 0, payload_raw_len);
+    memcpy(padded_buf, comp_buf, comp_len);
     
     int coded_len = chunks * 15;
     uint8_t *coded_buf = malloc(coded_len);
-    tsfi_encode_lrc15_11(raw_buf, payload_raw_len, coded_buf);
+    tsfi_encode_lrc15_11(padded_buf, payload_raw_len, coded_buf);
     
     uint8_t *interleaved_buf = malloc(coded_len);
     tsfi_interleave_lrc(coded_buf, coded_len, interleaved_buf);
     
-    // Dynamic Window scaling based on noise
     comm->current_window_size = tsfi_stanag_scale_window(comm->noise_level);
     
-    // Frame header: Sync (2 bytes: 0xE1, 0x4A), SAP (1 byte), Priority (1 byte)
     out_frame[0] = 0xE1;
     out_frame[1] = 0x4A;
     out_frame[2] = (uint8_t)comm->active_sap;
     out_frame[3] = (uint8_t)comm->priority;
+    out_frame[4] = (uint8_t)((comp_len >> 8) & 0xFF);
+    out_frame[5] = (uint8_t)(comp_len & 0xFF);
+    out_frame[6] = (uint8_t)((baud_len >> 8) & 0xFF);
+    out_frame[7] = (uint8_t)(baud_len & 0xFF);
     
-    memcpy(out_frame + 4, interleaved_buf, coded_len);
-    *out_len = 4 + coded_len;
+    memcpy(out_frame + 8, interleaved_buf, coded_len);
+    *out_len = 8 + coded_len;
     
-    free(raw_buf);
+    free(comp_buf);
+    free(padded_buf);
     free(coded_buf);
     free(interleaved_buf);
     return 0;
 }
 
 int tsfi_ot_llm_bandwidth_comm_recv(TSFiOtLlmBandwidthComm *comm, const uint8_t *frame, int len, uint32_t *tokens_out, int *count_out) {
-    if (!comm || !frame || !tokens_out || !count_out || len <= 4) return -1;
+    if (!comm || !frame || !tokens_out || !count_out || len <= 8) return -1;
     
-    if (frame[0] != 0xE1 || frame[1] != 0x4A) return -2; // Bad Sync
+    if (frame[0] != 0xE1 || frame[1] != 0x4A) return -2;
     int sap = frame[2];
-    if (sap != comm->active_sap) return -3; // Bad Route
+    if (sap != comm->active_sap) return -3;
     
-    int coded_len = len - 4;
+    int comp_len = ((int)frame[4] << 8) | frame[5];
+    int baud_len = ((int)frame[6] << 8) | frame[7];
+    
+    int coded_len = len - 8;
     uint8_t *interleaved = malloc(coded_len);
-    memcpy(interleaved, frame + 4, coded_len);
+    memcpy(interleaved, frame + 8, coded_len);
     
     uint8_t *coded = malloc(coded_len);
     tsfi_deinterleave_lrc(interleaved, coded_len, coded);
@@ -1842,21 +1880,53 @@ int tsfi_ot_llm_bandwidth_comm_recv(TSFiOtLlmBandwidthComm *comm, const uint8_t 
         free(interleaved);
         free(coded);
         free(decoded);
-        return -4; // Uncorrectable transmission error
+        return -4;
     }
     
-    int token_count = payload_len / 4;
-    for (int i = 0; i < token_count; i++) {
-        tokens_out[i] = ((uint32_t)decoded[i * 4 + 0] << 24) |
-                        ((uint32_t)decoded[i * 4 + 1] << 16) |
-                        ((uint32_t)decoded[i * 4 + 2] << 8)  |
-                        (uint32_t)decoded[i * 4 + 3];
+    uint8_t *decomp_buf = malloc(baud_len + 16);
+    int decomp_len = tsfi_baudot_decompress(decoded, comp_len, decomp_buf, baud_len + 16);
+    if (decomp_len < baud_len) {
+        free(interleaved);
+        free(coded);
+        free(decoded);
+        free(decomp_buf);
+        return -5;
     }
-    *count_out = token_count;
+    
+    char *ascii = malloc(baud_len * 4 + 32);
+    int dec_len = tsfi_decode_baudot(decomp_buf, baud_len, ascii, baud_len * 4 + 32);
+    if (dec_len < 0) {
+        free(interleaved);
+        free(coded);
+        free(decoded);
+        free(decomp_buf);
+        free(ascii);
+        return -6;
+    }
+    // Parse space-separated values back to tokens
+    int token_idx = 0;
+    char *ptr = ascii;
+    while (*ptr) {
+        while (*ptr && isspace((unsigned char)*ptr)) ptr++;
+        if (!*ptr) break;
+        char *next_ptr = NULL;
+        uint32_t val = (uint32_t)strtoul(ptr, &next_ptr, 10);
+        if (next_ptr == ptr) {
+            ptr++;
+        } else {
+            if (token_idx < 128) {
+                tokens_out[token_idx++] = val;
+            }
+            ptr = next_ptr;
+        }
+    }
+    *count_out = token_idx;
     
     free(interleaved);
     free(coded);
     free(decoded);
+    free(decomp_buf);
+    free(ascii);
     return 0;
 }
 
@@ -1896,6 +1966,7 @@ int tsfi_eer_bridge_ot_llm_comm_acab(TSFiEerDatabase *db, const char *dat_bin_pa
     
     tsfi_eer_db_init(db);
     tsfi_eer_insert_incident(db, incident_id, defcon, 1782000000U, type);
+    tsfi_eer_undo_push(incident_id, 0, 0); // Log new insertion for rollback
     
     tsfi_eer_insert_agency(db, 101, "NORAD_SECURE", 1, 1);
     tsfi_eer_insert_agency(db, 102, "IRS_AUDIT", 2, 2);
@@ -1911,6 +1982,12 @@ int tsfi_eer_bridge_ot_llm_comm_acab(TSFiEerDatabase *db, const char *dat_bin_pa
         chan->channel_id = 0x0200; // Tapped ACAB channel
         chan->encryption_type = 3;
         chan->frequency_band = 144000;
+    }
+    
+    // Invariants Audit Check
+    if (tsfi_eer_audit_invariants(db) != 0) {
+        tsfi_eer_undo_rollback(db);
+        return -6; // Invariant check failed, transaction rolled back
     }
     
     return 0;
@@ -2000,8 +2077,15 @@ int tsfi_eer_undo_rollback(TSFiEerDatabase *db) {
         if (entry.active) {
             for (int i = 0; i < db->incident_count; i++) {
                 if (db->incidents[i].incident_id == entry.incident_id) {
-                    db->incidents[i].defcon_level = entry.original_defcon;
-                    db->incidents[i].type = entry.original_type;
+                    if (entry.original_defcon == 0) {
+                        for (int j = i; j < db->incident_count - 1; j++) {
+                            db->incidents[j] = db->incidents[j + 1];
+                        }
+                        db->incident_count--;
+                    } else {
+                        db->incidents[i].defcon_level = entry.original_defcon;
+                        db->incidents[i].type = entry.original_type;
+                    }
                     break;
                 }
             }

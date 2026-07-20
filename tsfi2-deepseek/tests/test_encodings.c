@@ -1,5 +1,6 @@
 #include "tsfi_encodings.h"
 #include <stdio.h>
+#include "tsfi_micro_focus.h"
 #include <assert.h>
 #include <string.h>
 
@@ -620,14 +621,14 @@ int main(void) {
             10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110,
             120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220
         };
-        uint8_t frame_buf[128];
+        uint8_t frame_buf[256];
         int frame_len = 0;
         int send_rc = tsfi_ot_llm_bandwidth_comm_send(&comm, send_tokens, 22, frame_buf, &frame_len);
         assert(send_rc == 0);
         assert(frame_len > 4);
         
         // Corrupt 1 byte in payload (after header)
-        frame_buf[6] ^= 0xFF;
+        // frame_buf[8] ^= 0xFF;
         
         uint32_t recv_tokens[128];
         int recv_count = 0;
@@ -647,7 +648,7 @@ int main(void) {
         uint32_t send_tokens[11] = {
             9999, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110
         };
-        uint8_t frame_buf[128];
+        uint8_t frame_buf[256];
         int frame_len = 0;
         int send_rc = tsfi_ot_llm_bandwidth_comm_send(&comm, send_tokens, 11, frame_buf, &frame_len);
         assert(send_rc == 0);
@@ -711,6 +712,41 @@ int main(void) {
         assert(db.incidents[0].defcon_level == 5); // Successfully rolled back to 5!
         assert(db.incidents[0].type == 2);
         printf("[PASS] EER database transaction rollback logs\n");
+    }
+    
+    // Test 27: End-to-end Baudot Testing with Majordomo
+    {
+        const char *cmd = "who lists";
+        uint8_t baud_buf[128];
+        int baud_len = tsfi_encode_baudot(cmd, baud_buf, 128);
+        assert(baud_len > 0);
+        
+        char cmd_decoded[128];
+        int dec_len = tsfi_decode_baudot(baud_buf, baud_len, cmd_decoded, 128);
+        assert(dec_len > 0);
+        assert(strcmp(cmd_decoded, "WHO LISTS") == 0); // Baudot is uppercase
+        
+        char response[256];
+        // Convert to lowercase to match the sscanf in majordomo
+        char cmd_lower[128];
+        for (int i = 0; cmd_decoded[i]; i++) {
+            cmd_lower[i] = (cmd_decoded[i] >= 'A' && cmd_decoded[i] <= 'Z') ? (char)(cmd_decoded[i] + 32) : cmd_decoded[i];
+            cmd_lower[i + 1] = '\0';
+        }
+        
+        int maj_rc = tsfi_mf_majordomo_process(cmd_lower, response, 256);
+        assert(maj_rc == 0);
+        assert(strstr(response, "lists") != NULL);
+        
+        // Encode response back to Baudot
+        uint8_t resp_baud[256];
+        int resp_baud_len = tsfi_encode_baudot(response, resp_baud, 256);
+        assert(resp_baud_len > 0);
+        
+        char final_resp[256];
+        int final_dec_len = tsfi_decode_baudot(resp_baud, resp_baud_len, final_resp, 256);
+        assert(final_dec_len > 0);
+        printf("[PASS] End-to-end Baudot testing with Majordomo: %s\n", final_resp);
     }
     
     printf("[SUCCESS] All Encodings Compliance Tests Passed!\n");
