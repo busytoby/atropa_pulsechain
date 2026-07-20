@@ -1182,28 +1182,8 @@ int tsfi_stanag_route_frame(TSFiEerDatabase *db, uint8_t sap, const uint8_t *pay
     return -1; // SAP route not found
 }
 
-// 31. Galois Field GF(2^8) math & Reed-Solomon(15,11) encoder/decoder
-uint8_t tsfi_gf28_mul(uint8_t a, uint8_t b) {
-    uint8_t p = 0;
-    for (int i = 0; i < 8; i++) {
-        if (b & 1) p ^= a;
-        uint8_t hi_bit = a & 0x80;
-        a <<= 1;
-        if (hi_bit) a ^= 0x1D;
-        b >>= 1;
-    }
-    return p;
-}
-
-uint8_t tsfi_gf28_exp(uint8_t base, int power) {
-    uint8_t res = 1;
-    for (int i = 0; i < power; i++) {
-        res = tsfi_gf28_mul(res, base);
-    }
-    return res;
-}
-
-void tsfi_encode_rs15_11(const uint8_t *in, int len, uint8_t *out) {
+// 31. Byte-wise Longitudinal Redundancy Check (LRC) encoder/decoder (replacing Reed-Solomon)
+void tsfi_encode_lrc15_11(const uint8_t *in, int len, uint8_t *out) {
     if (!in || !out || len <= 0) return;
     for (int i = 0; i < len; i += 11) {
         int chunk = (len - i < 11) ? (len - i) : 11;
@@ -1211,19 +1191,20 @@ void tsfi_encode_rs15_11(const uint8_t *in, int len, uint8_t *out) {
         memcpy(msg, in + i, chunk);
         
         uint8_t parity[4] = {0};
-        for (int k = 0; k < 4; k++) {
-            uint8_t val = 0;
-            for (int j = 0; j < 11; j++) {
-                val ^= tsfi_gf28_mul(msg[j], tsfi_gf28_exp(2, (k + 1) * j));
-            }
-            parity[k] = val;
+        for (int j = 0; j < 11; j++) {
+            uint8_t w = msg[j];
+            uint8_t idx = (uint8_t)(j + 1);
+            parity[0] += w;
+            parity[1] += w * idx;
+            parity[2] += w * idx * idx;
+            parity[3] += w * idx * idx * idx;
         }
         memcpy(out + (i / 11) * 15, msg, 11);
         memcpy(out + (i / 11) * 15 + 11, parity, 4);
     }
 }
 
-int tsfi_decode_rs15_11(const uint8_t *in, int len, uint8_t *out) {
+int tsfi_decode_lrc15_11(const uint8_t *in, int len, uint8_t *out) {
     if (!in || !out || len <= 0) return -1;
     int uncorrectable = 0;
     for (int i = 0; i < len; i += 15) {
@@ -1231,33 +1212,44 @@ int tsfi_decode_rs15_11(const uint8_t *in, int len, uint8_t *out) {
         memcpy(block, in + i, 15);
         
         uint8_t s[4] = {0};
-        for (int k = 0; k < 4; k++) {
-            uint8_t val = 0;
-            for (int j = 0; j < 11; j++) {
-                val ^= tsfi_gf28_mul(block[j], tsfi_gf28_exp(2, (k + 1) * j));
-            }
-            s[k] = val ^ block[11 + k];
+        for (int j = 0; j < 11; j++) {
+            uint8_t w = block[j];
+            uint8_t idx = (uint8_t)(j + 1);
+            s[0] += w;
+            s[1] += w * idx;
+            s[2] += w * idx * idx;
+            s[3] += w * idx * idx * idx;
         }
+        s[0] -= block[11];
+        s[1] -= block[12];
+        s[2] -= block[13];
+        s[3] -= block[14];
         
         if (s[0] || s[1] || s[2] || s[3]) {
             int corrected = 0;
             for (int pos = 0; pos < 15 && !corrected; pos++) {
                 for (int val = 1; val < 256; val++) {
-                    block[pos] ^= val;
-                    // Recalculate syndromes
+                    block[pos] ^= (uint8_t)val;
+                    
                     uint8_t s_new[4] = {0};
-                    for (int k = 0; k < 4; k++) {
-                        uint8_t v = 0;
-                        for (int j = 0; j < 11; j++) {
-                            v ^= tsfi_gf28_mul(block[j], tsfi_gf28_exp(2, (k + 1) * j));
-                        }
-                        s_new[k] = v ^ block[11 + k];
+                    for (int j = 0; j < 11; j++) {
+                        uint8_t w = block[j];
+                        uint8_t idx = (uint8_t)(j + 1);
+                        s_new[0] += w;
+                        s_new[1] += w * idx;
+                        s_new[2] += w * idx * idx;
+                        s_new[3] += w * idx * idx * idx;
                     }
+                    s_new[0] -= block[11];
+                    s_new[1] -= block[12];
+                    s_new[2] -= block[13];
+                    s_new[3] -= block[14];
+                    
                     if (s_new[0] == 0 && s_new[1] == 0 && s_new[2] == 0 && s_new[3] == 0) {
                         corrected = 1;
                         break;
                     }
-                    block[pos] ^= val;
+                    block[pos] ^= (uint8_t)val;
                 }
             }
             if (!corrected) {
@@ -1269,14 +1261,10 @@ int tsfi_decode_rs15_11(const uint8_t *in, int len, uint8_t *out) {
     return uncorrectable;
 }
 
-// 32. Kalman Filter noise estimator
-void tsfi_pll_kalman_estimate(float measurement, float *state, float *covariance, float process_noise, float measurement_noise) {
-    if (!state || !covariance) return;
-    float pred_state = *state;
-    float pred_cov = *covariance + process_noise;
-    float kalman_gain = pred_cov / (pred_cov + measurement_noise);
-    *state = pred_state + kalman_gain * (measurement - pred_state);
-    *covariance = (1.0f - kalman_gain) * pred_cov;
+// 32. Exponential Moving Average (EMA) noise estimator (replacing Kalman)
+void tsfi_pll_ema_estimate(float measurement, float *state, float alpha) {
+    if (!state) return;
+    *state = alpha * measurement + (1.0f - alpha) * (*state);
 }
 
 // 33. EER database global invariants audit

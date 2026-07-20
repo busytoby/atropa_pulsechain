@@ -420,25 +420,24 @@ int main(void) {
         assert(db.incidents[0].incident_id == 8888);
         printf("[PASS] Dynamic STANAG SAP routing\n");
         
-        // 18.2 Galois Field GF(2^8) Reed-Solomon(15,11) test
-        const uint8_t rs_in[11] = {'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'};
-        uint8_t rs_coded[15];
-        uint8_t rs_out[11];
-        tsfi_encode_rs15_11(rs_in, 11, rs_coded);
+        // 18.2 LRC(15,11) test (replacing Galois Reed-Solomon)
+        const uint8_t lrc_in[11] = {'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'};
+        uint8_t lrc_coded[15];
+        uint8_t lrc_out[11];
+        tsfi_encode_lrc15_11(lrc_in, 11, lrc_coded);
         
-        // Corrupt 1 byte: Reed-Solomon must correct it
-        rs_coded[3] ^= 0xFF;
-        int rs_dec_rc = tsfi_decode_rs15_11(rs_coded, 15, rs_out);
-        assert(rs_dec_rc == 0);
-        assert(memcmp(rs_in, rs_out, 11) == 0);
-        printf("[PASS] Reed-Solomon(15,11) single-byte error correction\n");
+        // Corrupt 1 byte: LRC must correct it
+        lrc_coded[3] ^= 0xFF;
+        int lrc_dec_rc = tsfi_decode_lrc15_11(lrc_coded, 15, lrc_out);
+        assert(lrc_dec_rc == 0);
+        assert(memcmp(lrc_in, lrc_out, 11) == 0);
+        printf("[PASS] LRC(15,11) single-byte error correction\n");
         
-        // 18.3 Kalman Filter Noise Estimation test
-        float state = 0.0f;
-        float cov = 1.0f;
-        tsfi_pll_kalman_estimate(1.5f, &state, &cov, 0.1f, 0.5f);
-        assert(state > 0.0f);
-        printf("[PASS] Kalman filter noise estimation\n");
+        // 18.3 EMA Noise Estimation test (replacing Kalman)
+        float ema_state = 0.0f;
+        tsfi_pll_ema_estimate(1.5f, &ema_state, 0.2f);
+        assert(ema_state > 0.0f);
+        printf("[PASS] EMA filter noise estimation\n");
         
         // 18.4 EER Declarative Relational Invariant Audits test
         tsfi_eer_db_init(&db);

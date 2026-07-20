@@ -91,11 +91,10 @@ typedef struct {
 int tsfi_stanag_register_route(uint8_t sap, tsfi_stanag_sap_handler handler);
 int tsfi_stanag_route_frame(TSFiEerDatabase *db, uint8_t sap, const uint8_t *payload, int len);
 
-uint8_t tsfi_gf28_mul(uint8_t a, uint8_t b);
-void tsfi_encode_rs15_11(const uint8_t *in, int len, uint8_t *out);
-int tsfi_decode_rs15_11(const uint8_t *in, int len, uint8_t *out);
+void tsfi_encode_lrc15_11(const uint8_t *in, int len, uint8_t *out);
+int tsfi_decode_lrc15_11(const uint8_t *in, int len, uint8_t *out);
 
-void tsfi_pll_kalman_estimate(float measurement, float *state, float *covariance, float process_noise, float measurement_noise);
+void tsfi_pll_ema_estimate(float measurement, float *state, float alpha);
 
 int tsfi_eer_audit_invariants(const TSFiEerDatabase *db);
 
