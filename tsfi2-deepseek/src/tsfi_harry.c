@@ -1441,3 +1441,43 @@ int tsfi_quantel_storyboard_inner_borders(uint32_t *pixels, int w, int h, int ce
     }
     return 0;
 }
+
+int tsfi_quantel_harry_color_film_grain(uint32_t *pixels, int w, int h, float intensity) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = pixels[i];
+        float noise_r = ((float)rand() / RAND_MAX - 0.5f) * intensity * 255.0f;
+        float noise_g = ((float)rand() / RAND_MAX - 0.5f) * intensity * 255.0f;
+        float noise_b = ((float)rand() / RAND_MAX - 0.5f) * intensity * 255.0f;
+
+        int r = (int)(((pix >> 16) & 0xFF) + noise_r);
+        int g = (int)(((pix >> 8) & 0xFF) + noise_g);
+        int b = (int)((pix & 0xFF) + noise_b);
+
+        if (r < 0) { r = 0; } if (r > 255) { r = 255; }
+        if (g < 0) { g = 0; } if (g > 255) { g = 255; }
+        if (b < 0) { b = 0; } if (b > 255) { b = 255; }
+
+        pixels[i] = (0xFF000000) | (r << 16) | (g << 8) | b;
+    }
+    return 0;
+}
+
+int tsfi_quantel_storyboard_corner_outlines(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int outline_len, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0 || outline_len <= 0) return -1;
+
+    for (int i = 0; i < outline_len; i++) {
+        if (cell_y + 2 >= 0 && cell_y + 2 < h && cell_x + 2 + i >= 0 && cell_x + 2 + i < w) { pixels[(cell_y + 2) * w + cell_x + 2 + i] = color; }
+        if (cell_y + 2 + i >= 0 && cell_y + 2 + i < h && cell_x + 2 >= 0 && cell_x + 2 < w) { pixels[(cell_y + 2 + i) * w + cell_x + 2] = color; }
+
+        if (cell_y + 2 >= 0 && cell_y + 2 < h && cell_x + cell_w - 3 - i >= 0 && cell_x + cell_w - 3 - i < w) { pixels[(cell_y + 2) * w + (cell_x + cell_w - 3 - i)] = color; }
+        if (cell_y + 2 + i >= 0 && cell_y + 2 + i < h && cell_x + cell_w - 3 >= 0 && cell_x + cell_w - 3 < w) { pixels[(cell_y + 2 + i) * w + (cell_x + cell_w - 3)] = color; }
+
+        if (cell_y + cell_h - 3 >= 0 && cell_y + cell_h - 3 < h && cell_x + 2 + i >= 0 && cell_x + 2 + i < w) { pixels[(cell_y + cell_h - 3) * w + cell_x + 2 + i] = color; }
+        if (cell_y + cell_h - 3 - i >= 0 && cell_y + cell_h - 3 - i < h && cell_x + 2 >= 0 && cell_x + 2 < w) { pixels[(cell_y + cell_h - 3 - i) * w + cell_x + 2] = color; }
+
+        if (cell_y + cell_h - 3 >= 0 && cell_y + cell_h - 3 < h && cell_x + cell_w - 3 - i >= 0 && cell_x + cell_w - 3 - i < w) { pixels[(cell_y + cell_h - 3) * w + (cell_x + cell_w - 3 - i)] = color; }
+        if (cell_y + cell_h - 3 - i >= 0 && cell_y + cell_h - 3 - i < h && cell_x + cell_w - 3 >= 0 && cell_x + cell_w - 3 < w) { pixels[(cell_y + cell_h - 3 - i) * w + (cell_x + cell_w - 3)] = color; }
+    }
+    return 0;
+}

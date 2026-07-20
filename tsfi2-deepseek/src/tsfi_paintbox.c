@@ -1043,3 +1043,24 @@ int tsfi_quantel_paintbox_saturation_sweep(uint32_t *pixels, int w, int h, float
     return 0;
 }
 
+int tsfi_quantel_paintbox_contrast_adjust(uint32_t *pixels, int w, int h, float contrast) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = pixels[i];
+        float r = ((pix >> 16) & 0xFF) / 255.0f;
+        float g = ((pix >> 8) & 0xFF) / 255.0f;
+        float b = (pix & 0xFF) / 255.0f;
+
+        float nr = 0.5f + (r - 0.5f) * contrast;
+        float ng = 0.5f + (g - 0.5f) * contrast;
+        float nb = 0.5f + (b - 0.5f) * contrast;
+
+        if (nr < 0.0f) { nr = 0.0f; } if (nr > 1.0f) { nr = 1.0f; }
+        if (ng < 0.0f) { ng = 0.0f; } if (ng > 1.0f) { ng = 1.0f; }
+        if (nb < 0.0f) { nb = 0.0f; } if (nb > 1.0f) { nb = 1.0f; }
+
+        pixels[i] = (0xFF000000) | ((int)(nr * 255.0f) << 16) | ((int)(ng * 255.0f) << 8) | (int)(nb * 255.0f);
+    }
+    return 0;
+}
+
