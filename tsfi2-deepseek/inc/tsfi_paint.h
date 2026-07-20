@@ -84,7 +84,17 @@ int tsfi_quantel_harry_keyframe_transform(const uint32_t *src, int src_w, int sr
 /* Quantel Harry: Matrix grid tile wipe transition (M x N block sweeps) */
 int tsfi_quantel_harry_matrix_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32_t *dst, int w, int h, float progress, int grid_m, int grid_n);
 
+/* Quantel Storyboard: Composite multiple frames into a grid layout sheet */
+int tsfi_quantel_storyboard_grid(const uint32_t **frames, int frame_count, int frame_w, int frame_h, uint32_t *dst_sheet, int sheet_w, int sheet_h, int rows, int cols);
+
+/* Quantel Storyboard: Overlay SMPTE timecode burn-in (HH:MM:SS:FF) */
+int tsfi_quantel_storyboard_timecode_burn(uint32_t *pixels, int w, int h, int frame_number, float fps, uint32_t text_color);
+
+/* Quantel Storyboard: Onion skinning compositor (blends prev/next frames) */
+int tsfi_quantel_storyboard_onion_skin(const uint32_t *prev_frame, const uint32_t *next_frame, uint32_t *active_canvas, int w, int h, float opacity_prev, float opacity_next);
+
 #endif // TSFI_PAINT_H
+
 
 
 

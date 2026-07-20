@@ -822,6 +822,118 @@ int tsfi_quantel_harry_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32
     return 0;
 }
 
+int tsfi_quantel_storyboard_grid(const uint32_t **frames, int frame_count, int frame_w, int frame_h, uint32_t *dst_sheet, int sheet_w, int sheet_h, int rows, int cols) {
+    if (!frames || !dst_sheet || frame_w <= 0 || frame_h <= 0 || sheet_w <= 0 || sheet_h <= 0 || rows <= 0 || cols <= 0) return -1;
+
+    memset(dst_sheet, 0x1F, sheet_w * sheet_h * sizeof(uint32_t)); // Dark slate background
+
+    int cell_w = sheet_w / cols;
+    int cell_h = sheet_h / rows;
+
+    for (int i = 0; i < frame_count && i < (rows * cols); i++) {
+        const uint32_t *src_frame = frames[i];
+        if (!src_frame) continue;
+
+        int grid_y = i / cols;
+        int grid_x = i % cols;
+
+        int start_x = grid_x * cell_w + (cell_w - frame_w) / 2;
+        int start_y = grid_y * cell_h + (cell_h - frame_h) / 2;
+
+        for (int y = 0; y < frame_h; y++) {
+            int cy = start_y + y;
+            if (cy < 0 || cy >= sheet_h) continue;
+            uint32_t *dst_row = dst_sheet + cy * sheet_w;
+            const uint32_t *src_row = src_frame + y * frame_w;
+
+            for (int x = 0; x < frame_w; x++) {
+                int cx = start_x + x;
+                if (cx >= 0 && cx < sheet_w) {
+                    dst_row[cx] = src_row[x];
+                }
+            }
+        }
+
+        // Draw dynamic frame labels
+        char label[64];
+        snprintf(label, sizeof(label), "PANEL %02d", i + 1);
+        draw_text(dst_sheet, sheet_w, sheet_h, grid_x * cell_w + 10, (grid_y + 1) * cell_h - 20, label, 0xFF00FF00, 1);
+    }
+    return 0;
+}
+
+int tsfi_quantel_storyboard_timecode_burn(uint32_t *pixels, int w, int h, int frame_number, float fps, uint32_t text_color) {
+    if (!pixels || w <= 0 || h <= 0 || fps <= 0.0f) return -1;
+
+    int total_secs = (int)(frame_number / fps);
+    int frames = frame_number % (int)fps;
+    int hours = total_secs / 3600;
+    int mins = (total_secs % 3600) / 60;
+    int secs = total_secs % 60;
+
+    char tc_str[64];
+    snprintf(tc_str, sizeof(tc_str), "TCR %02d:%02d:%02d:%02d", hours, mins, secs, frames);
+
+    // Burn timecode on bottom right
+    int rx = w - (int)(strlen(tc_str) * 8 * 2) - 20;
+    int ry = h - 30;
+
+    // Draw backdrop black bar for readability
+    for (int y = ry - 4; y < ry + 20; y++) {
+        if (y >= 0 && y < h) {
+            uint32_t *row = pixels + y * w;
+            for (int x = rx - 4; x < w - 10; x++) {
+                if (x >= 0 && x < w) {
+                    row[x] = 0xFF000000;
+                }
+            }
+        }
+    }
+
+    draw_text(pixels, w, h, rx, ry, tc_str, text_color, 2);
+    return 0;
+}
+
+int tsfi_quantel_storyboard_onion_skin(const uint32_t *prev_frame, const uint32_t *next_frame, uint32_t *active_canvas, int w, int h, float opacity_prev, float opacity_next) {
+    if (!active_canvas || w <= 0 || h <= 0) return -1;
+
+    for (int i = 0; i < w * h; i++) {
+        uint32_t curr_pixel = active_canvas[i];
+        uint8_t r_c = (curr_pixel >> 16) & 0xFF;
+        uint8_t g_c = (curr_pixel >> 8) & 0xFF;
+        uint8_t b_c = curr_pixel & 0xFF;
+
+        float r_accum = r_c * (1.0f - opacity_prev - opacity_next);
+        float g_accum = g_c * (1.0f - opacity_prev - opacity_next);
+        float b_accum = b_c * (1.0f - opacity_prev - opacity_next);
+
+        if (prev_frame) {
+            uint32_t p_pixel = prev_frame[i];
+            r_accum += ((p_pixel >> 16) & 0xFF) * opacity_prev;
+            g_accum += ((p_pixel >> 8) & 0xFF) * opacity_prev;
+            b_accum += (p_pixel & 0xFF) * opacity_prev;
+        }
+
+        if (next_frame) {
+            uint32_t n_pixel = next_frame[i];
+            r_accum += ((n_pixel >> 16) & 0xFF) * opacity_next;
+            g_accum += ((n_pixel >> 8) & 0xFF) * opacity_next;
+            b_accum += (n_pixel & 0xFF) * opacity_next;
+        }
+
+        int r = (int)r_accum;
+        int g = (int)g_accum;
+        int b = (int)b_accum;
+        if (r < 0) r = 0; if (r > 255) r = 255;
+        if (g < 0) g = 0; if (g > 255) g = 255;
+        if (b < 0) b = 0; if (b > 255) b = 255;
+
+        active_canvas[i] = (0xFF000000) | (r << 16) | (g << 8) | b;
+    }
+    return 0;
+}
+
+
 int tsfi_quantel_harry_luma_key(const uint32_t *src_pixels, int w, int h, uint8_t *out_mask, uint8_t low_threshold, uint8_t high_threshold) {
     if (!src_pixels || !out_mask || w <= 0 || h <= 0) return -1;
 
