@@ -10,6 +10,7 @@
 #include "tsfi_pulsechain_rpc.h"
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 #include <unistd.h>
 #include <time.h>
 
@@ -103,19 +104,46 @@ static int handle_provenance_command(WaveSystem *ws) {
 static int handle_query_command(WaveSystem *ws, const char *new_d) {
     (void)ws;
     char action[32];
-    char address[64];
-    char data[512];
+    char raw_address[128];
+    char raw_data[1024];
+    char resolved_address[128];
+    char formatted_data[1030];
     char result[8192];
 
-    if (sscanf(new_d, "%s %s %s", action, address, data) == 3) {
+    if (sscanf(new_d, "%s %127s %1023s", action, raw_address, raw_data) == 3) {
+        // 1. Resolve Address Aliases
+        if (strcasecmp(raw_address, "FederalMinter") == 0) {
+            strcpy(resolved_address, "0xc15c5F699Daf5e1135732139f05D2c05b3EF4354");
+        } else if (strcasecmp(raw_address, "atropa") == 0) {
+            strcpy(resolved_address, "0x7a20189B297343CF26d8548764b04891f37F3414");
+        } else if (strcasecmp(raw_address, "FDIC") == 0) {
+            strcpy(resolved_address, "0x812571a12330a74e2a3c1ff8953f6f3aac7a83e9");
+        } else {
+            strncpy(resolved_address, raw_address, sizeof(resolved_address) - 1);
+            resolved_address[sizeof(resolved_address) - 1] = '\0';
+        }
+
+        // 2. Resolve Function Selector Aliases / Format hex data
+        char *data_ptr = raw_data;
+        if (strcasecmp(raw_data, "FDIC()") == 0) {
+            data_ptr = "0x539303e8";
+        }
+        
+        if (strncmp(data_ptr, "0x", 2) != 0 && strncmp(data_ptr, "0X", 2) != 0) {
+            snprintf(formatted_data, sizeof(formatted_data), "0x%s", data_ptr);
+        } else {
+            strncpy(formatted_data, data_ptr, sizeof(formatted_data) - 1);
+            formatted_data[sizeof(formatted_data) - 1] = '\0';
+        }
+
         if (strcmp(action, "CALL") == 0) {
-            if (tsfi_pulse_rpc_call(address, data, result, sizeof(result))) {
+            if (tsfi_pulse_rpc_call(resolved_address, formatted_data, result, sizeof(result))) {
                 tsfi_io_printf(stdout, "[RPC] Call Result: %s\n", result);
             } else {
                 tsfi_io_printf(stdout, "[RPC] Error: Call failed.\n");
             }
         } else if (strcmp(action, "STORAGE") == 0) {
-            if (tsfi_pulse_rpc_get_storage_at(address, data, result, sizeof(result))) {
+            if (tsfi_pulse_rpc_get_storage_at(resolved_address, formatted_data, result, sizeof(result))) {
                 tsfi_io_printf(stdout, "[RPC] Storage Result: %s\n", result);
             } else {
                 tsfi_io_printf(stdout, "[RPC] Error: Storage read failed.\n");
@@ -124,7 +152,7 @@ static int handle_query_command(WaveSystem *ws, const char *new_d) {
             tsfi_io_printf(stdout, "[RPC] Error: Unknown query action '%s'.\n", action);
         }
     } else {
-        tsfi_io_printf(stdout, "[RPC] Usage: 0.0 <CALL|STORAGE> <address> <hex_data_or_slot>\n");
+        tsfi_io_printf(stdout, "[RPC] Usage: 0.0 <CALL|STORAGE> <address|alias> <hex_data|alias>\n");
     }
     return 0;
 }
