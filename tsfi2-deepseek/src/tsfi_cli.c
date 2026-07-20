@@ -101,6 +101,74 @@ static int handle_provenance_command(WaveSystem *ws) {
     return 0;
 }
 
+static bool resolve_token_alias(const char *symbol_or_name, char *out_address, size_t out_max) {
+    if (strcasecmp(symbol_or_name, "FederalMinter") == 0) {
+        snprintf(out_address, out_max, "0xc15c5F699Daf5e1135732139f05D2c05b3EF4354");
+        return true;
+    }
+    if (strcasecmp(symbol_or_name, "atropa") == 0) {
+        snprintf(out_address, out_max, "0x7a20189B297343CF26d8548764b04891f37F3414");
+        return true;
+    }
+    if (strcasecmp(symbol_or_name, "FDIC") == 0) {
+        snprintf(out_address, out_max, "0x812571a12330a74e2a3c1ff8953f6f3aac7a83e9");
+        return true;
+    }
+
+    FILE *f = fopen("assets/treasury_tokens_federalminter.json", "r");
+    if (!f) {
+        f = fopen("../assets/treasury_tokens_federalminter.json", "r");
+    }
+    if (f) {
+        char line[1024];
+        char current_addr[128] = {0};
+        char current_sym[128] = {0};
+        while (fgets(line, sizeof(line), f)) {
+            char *addr_ptr = strstr(line, "\"address\":");
+            if (addr_ptr) {
+                char *start = strchr(addr_ptr + 10, '"');
+                if (start) {
+                    char *end = strchr(start + 1, '"');
+                    if (end) {
+                        size_t len = end - (start + 1);
+                        if (len < sizeof(current_addr)) {
+                            memcpy(current_addr, start + 1, len);
+                            current_addr[len] = '\0';
+                        }
+                    }
+                }
+            }
+            char *sym_ptr = strstr(line, "\"symbol\":");
+            if (sym_ptr) {
+                char *start = strchr(sym_ptr + 9, '"');
+                if (start) {
+                    char *end = strchr(start + 1, '"');
+                    if (end) {
+                        size_t len = end - (start + 1);
+                        if (len < sizeof(current_sym)) {
+                            memcpy(current_sym, start + 1, len);
+                            current_sym[len] = '\0';
+                        }
+                    }
+                }
+                if (current_sym[0] != '\0' && strncasecmp(current_sym, symbol_or_name, strlen(symbol_or_name)) == 0) {
+                    if (current_addr[0] != '\0') {
+                        snprintf(out_address, out_max, "%s", current_addr);
+                        fclose(f);
+                        return true;
+                    }
+                }
+            }
+            if (strstr(line, "}")) {
+                current_addr[0] = '\0';
+                current_sym[0] = '\0';
+            }
+        }
+        fclose(f);
+    }
+    return false;
+}
+
 static int handle_query_command(WaveSystem *ws, const char *new_d) {
     (void)ws;
     char action[32];
@@ -111,14 +179,8 @@ static int handle_query_command(WaveSystem *ws, const char *new_d) {
     char result[8192];
 
     if (sscanf(new_d, "%s %127s %1023s", action, raw_address, raw_data) == 3) {
-        // 1. Resolve Address Aliases
-        if (strcasecmp(raw_address, "FederalMinter") == 0) {
-            strcpy(resolved_address, "0xc15c5F699Daf5e1135732139f05D2c05b3EF4354");
-        } else if (strcasecmp(raw_address, "atropa") == 0) {
-            strcpy(resolved_address, "0x7a20189B297343CF26d8548764b04891f37F3414");
-        } else if (strcasecmp(raw_address, "FDIC") == 0) {
-            strcpy(resolved_address, "0x812571a12330a74e2a3c1ff8953f6f3aac7a83e9");
-        } else {
+        // 1. Resolve Address Aliases (hardcoded + registry)
+        if (!resolve_token_alias(raw_address, resolved_address, sizeof(resolved_address))) {
             strncpy(resolved_address, raw_address, sizeof(resolved_address) - 1);
             resolved_address[sizeof(resolved_address) - 1] = '\0';
         }
