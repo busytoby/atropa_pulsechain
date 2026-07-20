@@ -1157,6 +1157,113 @@ int tsfi_quantel_harry_bezier_animate(const uint32_t *fg, int fg_w, int fg_h, ui
     return 0;
 }
 
+int tsfi_quantel_paintbox_tablet_brush(uint32_t *pixels, int w, int h, int cx, int cy, int max_radius, float pressure, float aspect_ratio, float angle, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0 || max_radius <= 0) return -1;
+
+    uint8_t r_src = (color >> 16) & 0xFF;
+    uint8_t g_src = (color >> 8) & 0xFF;
+    uint8_t b_src = color & 0xFF;
+
+    float active_r = max_radius * pressure;
+    if (active_r < 1.0f) active_r = 1.0f;
+    float cos_a = cosf(angle);
+    float sin_a = sinf(angle);
+
+    int bounds = (int)(active_r + 1.0f);
+    for (int y = cy - bounds; y <= cy + bounds; y++) {
+        if (y < 0 || y >= h) continue;
+        uint32_t *row = pixels + y * w;
+        int dy = y - cy;
+
+        for (int x = cx - bounds; x <= cx + bounds; x++) {
+            if (x < 0 || x >= w) continue;
+            int dx = x - cx;
+
+            // Calligraphy rotational projection
+            float rx = dx * cos_a + dy * sin_a;
+            float ry = -dx * sin_a + dy * cos_a;
+
+            float term_x = rx / active_r;
+            float term_y = ry / (active_r * aspect_ratio);
+
+            float ellipse = term_x * term_x + term_y * term_y;
+            if (ellipse <= 1.0f) {
+                // Modulate intensity based on pressure flow rate
+                float intensity = (1.0f - ellipse) * pressure;
+                if (intensity > 1.0f) intensity = 1.0f;
+                if (intensity < 0.0f) intensity = 0.0f;
+
+                uint32_t dest = row[x];
+                uint8_t r_dst = (dest >> 16) & 0xFF;
+                uint8_t g_dst = (dest >> 8) & 0xFF;
+                uint8_t b_dst = dest & 0xFF;
+
+                uint8_t r_res = (uint8_t)(r_src * intensity + r_dst * (1.0f - intensity));
+                uint8_t g_res = (uint8_t)(g_src * intensity + g_dst * (1.0f - intensity));
+                uint8_t b_res = (uint8_t)(b_src * intensity + b_dst * (1.0f - intensity));
+
+                row[x] = (0xFF000000) | (r_res << 16) | (g_res << 8) | b_res;
+            }
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_paintbox_stylus_shear(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float tilt_x, float tilt_y, float rotation, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0 || radius <= 0) return -1;
+
+    uint8_t r_src = (color >> 16) & 0xFF;
+    uint8_t g_src = (color >> 8) & 0xFF;
+    uint8_t b_src = color & 0xFF;
+
+    float cos_r = cosf(rotation);
+    float sin_r = sinf(rotation);
+
+    int bounds = radius * 2;
+    for (int y = cy - bounds; y <= cy + bounds; y++) {
+        if (y < 0 || y >= h) continue;
+        uint32_t *row = pixels + y * w;
+        int dy = y - cy;
+
+        for (int x = cx - bounds; x <= cx + bounds; x++) {
+            if (x < 0 || x >= w) continue;
+            int dx = x - cx;
+
+            // Apply tilt shearing
+            float sx = dx + tilt_x * dy;
+            float sy = dy + tilt_y * dx;
+
+            // Apply stylus barrel rotation
+            float rx = sx * cos_r + sy * sin_r;
+            float ry = -sx * sin_r + sy * cos_r;
+
+            float dist_sq = rx * rx + ry * ry;
+            if (dist_sq <= radius * radius) {
+                float intensity = 1.0f - sqrtf(dist_sq) / radius;
+                uint32_t dest = row[x];
+                uint8_t r_dst = (dest >> 16) & 0xFF;
+                uint8_t g_dst = (dest >> 8) & 0xFF;
+                uint8_t b_dst = dest & 0xFF;
+
+                uint8_t r_res = (uint8_t)(r_src * intensity + r_dst * (1.0f - intensity));
+                uint8_t g_res = (uint8_t)(g_src * intensity + g_dst * (1.0f - intensity));
+                uint8_t b_res = (uint8_t)(b_src * intensity + b_dst * (1.0f - intensity));
+
+                row[x] = (0xFF000000) | (r_res << 16) | (g_res << 8) | b_res;
+            }
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_paintbox_filter_jitter(int raw_x, int raw_y, int prev_x, int prev_y, float alpha, int *smooth_x, int *smooth_y) {
+    if (!smooth_x || !smooth_y) return -1;
+    *smooth_x = (int)(alpha * raw_x + (1.0f - alpha) * prev_x);
+    *smooth_y = (int)(alpha * raw_y + (1.0f - alpha) * prev_y);
+    return 0;
+}
+
+
 
 
 

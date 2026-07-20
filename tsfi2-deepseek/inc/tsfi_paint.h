@@ -57,7 +57,17 @@ int tsfi_quantel_mirage_perspective_rotate(const uint32_t *src, int src_w, int s
 /* Quantel Harry: Keyframe animation translation along Quadratic Bezier motion paths */
 int tsfi_quantel_harry_bezier_animate(const uint32_t *fg, int fg_w, int fg_h, uint32_t *bg, int w, int h, float t, float p0_x, float p0_y, float p1_x, float p1_y, float p2_x, float p2_y);
 
+/* Quantel Paintbox: Calligraphy brush with tablet pressure and flow-rate scale mapping */
+int tsfi_quantel_paintbox_tablet_brush(uint32_t *pixels, int w, int h, int cx, int cy, int max_radius, float pressure, float aspect_ratio, float angle, uint32_t color);
+
+/* Quantel Paintbox: Stylus tilt & barrel rotation brush shearing */
+int tsfi_quantel_paintbox_stylus_shear(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float tilt_x, float tilt_y, float rotation, uint32_t color);
+
+/* Quantel Paintbox: Exponential smoothing filter for tablet coordinate jitter removal */
+int tsfi_quantel_paintbox_filter_jitter(int raw_x, int raw_y, int prev_x, int prev_y, float alpha, int *smooth_x, int *smooth_y);
+
 #endif // TSFI_PAINT_H
+
 
 
 
