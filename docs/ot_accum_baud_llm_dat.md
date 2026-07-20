@@ -63,4 +63,17 @@ All configurations serialize output status text through Baudot encoders, tokeniz
 3. **STANAG Priority Routing (QoS):** Integrates priority queues inside the SAP router to prioritize critical security traffic.
 4. **EER Relational Path Dependency Audits:** Validates linked multi-hop path dependencies, ensuring responders are connected to active frequency channels.
 
+### Generation 6
+1. **Dynamic STANAG Transmit Window Scaling:** Dynamically resizes the transmit frame window based on real-time noise parameters.
+2. **Cascading Checksum Parity Layers:** Implements systematic position-weighted cascading checksum loops over integer addition (modulo 256) to resolve multiple errors.
+3. **Adaptive Baudot Shift Timeout:** Automatically reverts decoder shift registers to LTRS if silent transmission periods exceed dynamic timeout counts.
+4. **Lock-Free EER Transaction Journaling:** Integrates a ring-buffered log tracking relational database mutations.
+
+### Generation 7
+1. **Dynamic Priority Escalation (Aging):** Increments priority levels of pending STANAG frames over time to avoid starvation of low-priority telemetry.
+2. **Adaptive Holt Tuning via Sliding Variance:** Automatically adjusts the $\alpha$ and $\beta$ variables of the Holt-Linear estimator based on PLL error variance.
+3. **Baudot Run-Length Compression (RLC):** Compresses repeating character runs in Baudot data streams.
+4. **EER Database Transaction Rollback Logs:** Integrates an undo-log rollback stack to restore defcon levels and incident states if EER invariant checks fail.
+
+
 
