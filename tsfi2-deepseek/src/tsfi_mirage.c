@@ -437,3 +437,36 @@ int tsfi_quantel_mirage_ribbon_warp(const uint32_t *src, int src_w, int src_h, u
     }
     return 0;
 }
+
+int tsfi_quantel_mirage_cube_map(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float rot_x, float rot_y, float size) {
+    if (!src || !dst || src_w <= 0 || src_h <= 0 || dst_w <= 0 || dst_h <= 0) return -1;
+    memset(dst, 0, dst_w * dst_h * sizeof(uint32_t));
+
+    float cos_x = cosf(rot_x); float sin_x = sinf(rot_x);
+    float cos_y = cosf(rot_y); float sin_y = sinf(rot_y);
+    (void)cos_x; (void)sin_x;
+
+    float cx_d = dst_w / 2.0f;
+    float cy_d = dst_h / 2.0f;
+
+    for (int y = 0; y < dst_h; y++) {
+        float dy = y - cy_d;
+        for (int x = 0; x < dst_w; x++) {
+            float dx = x - cx_d;
+
+            float rx = dx * cos_y - dy * sin_y;
+            float ry = dx * sin_y * cos_x + dy * cos_y * cos_x;
+
+            if (fabsf(rx) < size && fabsf(ry) < size) {
+                float u = (rx + size) / (2.0f * size);
+                float v = (ry + size) / (2.0f * size);
+                int sx = (int)(u * src_w);
+                int sy = (int)(v * src_h);
+                if (sx >= 0 && sx < src_w && sy >= 0 && sy < src_h) {
+                    dst[y * dst_w + x] = src[sy * src_w + sx];
+                }
+            }
+        }
+    }
+    return 0;
+}

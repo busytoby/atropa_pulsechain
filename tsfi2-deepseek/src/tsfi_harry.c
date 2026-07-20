@@ -743,3 +743,33 @@ int tsfi_quantel_storyboard_export_sheet(const uint32_t *sheet_pixels, int w, in
     fclose(f);
     return 0;
 }
+
+int tsfi_quantel_harry_multitrack_dissolve(const uint32_t *src_a, const uint32_t *src_b, const uint32_t *src_c, uint32_t *dst, int w, int h, const float weights[3]) {
+    if (!src_a || !src_b || !src_c || !dst || w <= 0 || h <= 0) return -1;
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pa = src_a[i];
+        uint32_t pb = src_b[i];
+        uint32_t pc = src_c[i];
+
+        float r = ((pa >> 16) & 0xFF) * weights[0] + ((pb >> 16) & 0xFF) * weights[1] + ((pc >> 16) & 0xFF) * weights[2];
+        float g = ((pa >> 8) & 0xFF) * weights[0] + ((pb >> 8) & 0xFF) * weights[1] + ((pc >> 8) & 0xFF) * weights[2];
+        float b = (pa & 0xFF) * weights[0] + (pb & 0xFF) * weights[1] + (pc & 0xFF) * weights[2];
+
+        int ir = (int)r; if (ir < 0) ir = 0; if (ir > 255) ir = 255;
+        int ig = (int)g; if (ig < 0) ig = 0; if (ig > 255) ig = 255;
+        int ib = (int)b; if (ib < 0) ib = 0; if (ib > 255) ib = 255;
+
+        dst[i] = (0xFF000000) | (ir << 16) | (ig << 8) | ib;
+    }
+    return 0;
+}
+
+int tsfi_quantel_storyboard_burn_captions(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, const char *scene, const char *take, const char *desc, uint32_t text_color) {
+    (void)cell_w;
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    char meta[128];
+    snprintf(meta, sizeof(meta), "SCENE: %s  TAKE: %s", scene, take);
+    draw_text(pixels, w, h, cell_x + 10, cell_y + cell_h - 32, meta, text_color, 1);
+    draw_text(pixels, w, h, cell_x + 10, cell_y + cell_h - 18, desc, text_color, 1);
+    return 0;
+}

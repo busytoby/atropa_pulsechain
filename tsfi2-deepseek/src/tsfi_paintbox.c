@@ -689,3 +689,15 @@ int tsfi_quantel_paintbox_flow_brush(uint32_t *pixels, int w, int h, int prev_x,
     }
     return 0;
 }
+
+int tsfi_quantel_paintbox_pressure_jitter(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float pressure, float jitter_amount, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0 || radius <= 0) return -1;
+    float noise_r = ((float)rand() / RAND_MAX - 0.5f) * jitter_amount * radius * (1.0f - pressure);
+    float noise_x = ((float)rand() / RAND_MAX - 0.5f) * jitter_amount * radius;
+    float noise_y = ((float)rand() / RAND_MAX - 0.5f) * jitter_amount * radius;
+
+    int active_radius = radius + (int)noise_r;
+    if (active_radius < 1) active_radius = 1;
+
+    return tsfi_quantel_paintbox_airbrush(pixels, w, h, cx + (int)noise_x, cy + (int)noise_y, active_radius, pressure, color);
+}

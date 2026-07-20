@@ -174,6 +174,18 @@ int tsfi_quantel_harry_rotoscope_blend(const uint32_t *canvas, const uint32_t *r
 /* Storyboard Sheet Exporter */
 int tsfi_quantel_storyboard_export_sheet(const uint32_t *sheet_pixels, int w, int h, const char *output_path);
 
+/* Quantel Brush Pressure Jitter */
+int tsfi_quantel_paintbox_pressure_jitter(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float pressure, float jitter_amount, uint32_t color);
+
+/* Mirage 3D Cube Mapping */
+int tsfi_quantel_mirage_cube_map(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float rot_x, float rot_y, float size);
+
+/* Harry Multi-Track Masked Dissolve */
+int tsfi_quantel_harry_multitrack_dissolve(const uint32_t *src_a, const uint32_t *src_b, const uint32_t *src_c, uint32_t *dst, int w, int h, const float weights[3]);
+
+/* Storyboard Captions Overlay */
+int tsfi_quantel_storyboard_burn_captions(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, const char *scene, const char *take, const char *desc, uint32_t text_color);
+
 #endif // TSFI_PAINT_H
 
 
