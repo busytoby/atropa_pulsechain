@@ -1515,3 +1515,22 @@ int tsfi_quantel_storyboard_border_highlights(uint32_t *pixels, int w, int h, in
     }
     return 0;
 }
+
+int tsfi_quantel_harry_interpolate_fields(const uint32_t *field_even, const uint32_t *field_odd, uint32_t *dst, int w, int h) {
+    if (!field_even || !field_odd || !dst || w <= 0 || h <= 0) return -1;
+    for (int y = 0; y < h; y++) {
+        if (y % 2 == 0) {
+            memcpy(dst + y * w, field_even + y * w, w * sizeof(uint32_t));
+        } else {
+            memcpy(dst + y * w, field_odd + y * w, w * sizeof(uint32_t));
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_storyboard_double_borders(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t border_color) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    tsfi_quantel_storyboard_outer_borders(pixels, w, h, cell_x, cell_y, cell_w, cell_h, border_color);
+    tsfi_quantel_storyboard_inner_borders(pixels, w, h, cell_x, cell_y, cell_w, cell_h, border_color);
+    return 0;
+}

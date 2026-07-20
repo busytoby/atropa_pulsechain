@@ -1064,3 +1064,36 @@ int tsfi_quantel_mirage_polar_inverse_warp(const uint32_t *src, int src_w, int s
     }
     return 0;
 }
+
+int tsfi_quantel_mirage_polar_swirl(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float radius, float swirl_angle) {
+    if (!src || !dst || src_w <= 0 || src_h <= 0 || dst_w <= 0 || dst_h <= 0) return -1;
+    memset(dst, 0, dst_w * dst_h * sizeof(uint32_t));
+
+    float cx_d = dst_w / 2.0f;
+    float cy_d = dst_h / 2.0f;
+
+    for (int y = 0; y < dst_h; y++) {
+        float dy = y - cy_d;
+        for (int x = 0; x < dst_w; x++) {
+            float dx = x - cx_d;
+            float r = sqrtf(dx * dx + dy * dy);
+            float theta = atan2f(dy, dx);
+            if (theta < 0.0f) { theta += 2.0f * (float)M_PI; }
+
+            float factor = (radius - r) / radius;
+            if (factor < 0.0f) { factor = 0.0f; }
+            float swirl = theta + factor * factor * swirl_angle;
+
+            float u = swirl / (2.0f * (float)M_PI);
+            float v = r / radius;
+
+            int sx = (int)(u * src_w);
+            int sy = (int)(v * src_h);
+
+            if (sx >= 0 && sx < src_w && sy >= 0 && sy < src_h) {
+                dst[y * dst_w + x] = src[sy * src_w + sx];
+            }
+        }
+    }
+    return 0;
+}

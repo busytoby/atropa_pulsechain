@@ -1071,3 +1071,11 @@ int tsfi_quantel_paintbox_pressure_radius(uint32_t *pixels, int w, int h, int cx
     return tsfi_quantel_paintbox_airbrush(pixels, w, h, cx, cy, r, 1.0f, color);
 }
 
+int tsfi_quantel_paintbox_velocity_radius(uint32_t *pixels, int w, int h, int cx, int cy, int max_radius, float speed, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0 || max_radius <= 0) return -1;
+    float speed_factor = 1.0f / (1.0f + 0.05f * speed);
+    int r = (int)(max_radius * speed_factor);
+    if (r < 1) { r = 1; }
+    return tsfi_quantel_paintbox_airbrush(pixels, w, h, cx, cy, r, 1.0f, color);
+}
+
