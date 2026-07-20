@@ -35,6 +35,7 @@
 #include "tsfi_parc_disktool.h"
 #include "tsfi_parc_notetaker.h"
 #include "tsfi_parc_alfont.h"
+#include "tsfi_parc_routing.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -824,6 +825,13 @@ int main() {
     tsfi_parc_alfont_t al_font;
     tsfi_parc_alfont_init(&al_font);
     tsfi_parc_alfont_load(&al_font, "alto_font.dat.bin");
+
+    // Xerox PUP Gateway Routing Table verify check
+    tsfi_parc_routing_table_t routing_table;
+    tsfi_parc_routing_init(&routing_table);
+    tsfi_parc_routing_add(&routing_table, 3, 22, 1);
+    uint8_t next_hop = 0;
+    tsfi_parc_routing_lookup(&routing_table, 3, &next_hop);
 
     uint32_t *canvas = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
     uint32_t *canvas_b = calloc(WIDTH * HEIGHT, sizeof(uint32_t));

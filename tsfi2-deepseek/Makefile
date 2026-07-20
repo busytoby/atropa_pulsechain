@@ -174,7 +174,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_parc_laurel.o \
                   $(OBJ_DIR)/tsfi_parc_disktool.o \
                   $(OBJ_DIR)/tsfi_parc_notetaker.o \
-                  $(OBJ_DIR)/tsfi_parc_alfont.o
+                  $(OBJ_DIR)/tsfi_parc_alfont.o \
+                  $(OBJ_DIR)/tsfi_parc_routing.o
 
 
 
