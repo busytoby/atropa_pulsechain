@@ -148,7 +148,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
               $(OBJ_DIR)/tsfi_reuter_tx.o \
               $(OBJ_DIR)/tsfi_gray_tx.o \
               $(OBJ_DIR)/tsfi_autodin_sage.o \
-              $(OBJ_DIR)/tsfi_encodings.o
+              $(OBJ_DIR)/tsfi_encodings.o \
+              $(OBJ_DIR)/tsfi_encodings_opt.o
 
 
 

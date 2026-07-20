@@ -1,4 +1,5 @@
 #include "tsfi_encodings.h"
+#include "tsfi_encodings_opt.h"
 #include <stdio.h>
 #include "tsfi_micro_focus.h"
 #include <assert.h>
@@ -747,6 +748,50 @@ int main(void) {
         int final_dec_len = tsfi_decode_baudot(resp_baud, resp_baud_len, final_resp, 256);
         assert(final_dec_len > 0);
         printf("[PASS] End-to-end Baudot testing with Majordomo: %s\n", final_resp);
+    }
+    
+    // Test 28: Optimized Capabilities and Custom Codecs
+    {
+        // 28.1 SIMD-Accelerated LRC Test
+        const uint8_t raw_data[11] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+        uint8_t standard_lrc[15];
+        uint8_t simd_lrc[15];
+        tsfi_encode_lrc15_11(raw_data, 11, standard_lrc);
+        tsfi_encode_lrc_simd(raw_data, 11, simd_lrc);
+        assert(memcmp(standard_lrc, simd_lrc, 15) == 0);
+        printf("[PASS] SIMD-Accelerated LRC check-block equivalence\n");
+        
+        // 28.2 LogOS Probability-Weighted Choice Point Pruning Test
+        uint32_t choice_pts[5] = {101, 102, 103, 104, 105};
+        float weights[5] = {0.85f, 0.40f, 0.95f, 0.12f, 0.70f};
+        int remaining = tsfi_logos_prune_choice_points(choice_pts, weights, 5, 0.50f);
+        assert(remaining == 3);
+        assert(choice_pts[0] == 101);
+        assert(choice_pts[1] == 103);
+        assert(choice_pts[2] == 105);
+        printf("[PASS] LogOS choice-point pruning logic\n");
+        
+        // 28.3 Coaxial Leakage Telemetry Loop Test
+        float level = 100.0f;
+        float trend = 2.0f;
+        float alpha = 0.0f;
+        float beta = 0.0f;
+        tsfi_coax_telemetry_loop(76.2f, &alpha, &beta, &level, &trend, 0.05f);
+        assert(alpha > 0.0f);
+        assert(beta > 0.0f);
+        printf("[PASS] Coaxial telemetry adaptive tracking loop\n");
+        
+        // 28.4 Bi-Directional Shift-Free EDO-22 Codec Test
+        const char *plain = "LLM LINE 4";
+        uint8_t encoded[64];
+        int enc_len = tsfi_encode_edo22_shiftfree(plain, encoded, 64);
+        assert(enc_len == 10);
+        
+        char decoded[64];
+        int dec_len = tsfi_decode_edo22_shiftfree(encoded, enc_len, decoded, 64);
+        assert(dec_len == 10);
+        assert(strcmp(plain, decoded) == 0);
+        printf("[PASS] Bi-directional shift-free EDO-22 codec\n");
     }
     
     printf("[SUCCESS] All Encodings Compliance Tests Passed!\n");
