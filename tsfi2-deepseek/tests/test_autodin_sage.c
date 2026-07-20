@@ -470,6 +470,20 @@ int main(void) {
     close(ga_fd);
     unlink(gun_audit_log_path);
     
+    // Test 26: CICS Event Parity Checking
+    tsfi_sage_cics_event parity_evt;
+    parity_evt.event_type = 1;
+    parity_evt.key_code = 32;
+    parity_evt.mouse_x = 0;
+    parity_evt.mouse_y = 0;
+    
+    // 1 ^ 32 = 33 (binary 100001 -> has 2 set bits, parity is even, i.e., 0)
+    rc = tsfi_sage_cics_event_parity_verify(&parity_evt, 0);
+    assert(rc == 0);
+    
+    rc = tsfi_sage_cics_event_parity_verify(&parity_evt, 1);
+    assert(rc == -2); // Parity error mismatch
+    
     printf("[SUCCESS] AUTODIN SAGE Transaction Compliance Test Passed!\n");
     return 0;
 }

@@ -497,3 +497,18 @@ int tsfi_sage_light_gun_audit(tsfi_reuter_group_commit *gc, uint32_t tx_id, cons
     // Step 3: Write audit entry
     return tsfi_sage_cics_audit_event(gc, tx_id, &event);
 }
+
+// 25. Parity bit verification for audited events
+int tsfi_sage_cics_event_parity_verify(const tsfi_sage_cics_event *event, uint8_t parity_bit) {
+    if (!event) return -1;
+    
+    // Compute parity bit by XORing all bytes
+    uint32_t sum = event->event_type ^ event->key_code ^ (uint32_t)event->mouse_x ^ (uint32_t)event->mouse_y;
+    uint8_t calc_parity = 0;
+    while (sum) {
+        calc_parity ^= (sum & 1);
+        sum >>= 1;
+    }
+    
+    return (calc_parity == parity_bit) ? 0 : -2; // 0 = valid parity, -2 = parity error
+}
