@@ -125,6 +125,11 @@ int main(int argc, char **argv) {
             poll_status = fw->cell_hardware_poll(16, input, sizeof(input));
         }
 
+        if (poll_status == -2) {
+            fprintf(stderr, "[MAIN] STDIN EOF/POLLHUP detected. Exiting cleanly.\n");
+            break;
+        }
+
         if (poll_status < 0) {
             // Sleep 30ms to prevent CPU saturation when stdin/VTY is disconnected
             struct timespec req = {0, 30000000}; // 30ms

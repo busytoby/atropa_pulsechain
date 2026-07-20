@@ -127,15 +127,21 @@ static int cell_hardware_poll_impl(int timeout_ms, char *buf, size_t max) {
             fprintf(stderr, "[POLL_DEBUG] poll error: %d (errno=%d: %s)\n", ret, errno, strerror(errno));
         }
     } else if (ret > 0) {
-        if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL)) {
-            fprintf(stderr, "[POLL_DEBUG] poll socket state: revents=0x%x\n", pfd.revents);
-        }
         if (pfd.revents & POLLIN) {
             if (fgets(buf, (int)max, stdin)) {
                 fprintf(stderr, "[POLL_DEBUG] Read stdin: \"%s\"\n", buf);
                 return 0;
             } else {
                 fprintf(stderr, "[POLL_DEBUG] fgets returned NULL. feof=%d ferror=%d\n", feof(stdin), ferror(stdin));
+                if (feof(stdin)) {
+                    return -2;
+                }
+            }
+        }
+        if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL)) {
+            fprintf(stderr, "[POLL_DEBUG] poll socket state: revents=0x%x\n", pfd.revents);
+            if (pfd.revents & POLLHUP) {
+                return -2;
             }
         }
     }

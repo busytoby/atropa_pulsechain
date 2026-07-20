@@ -175,6 +175,7 @@ void lau_update_logic(WaveSystem *ws, const TSFiLogicTable *new_logic) {
 
 void lau_final_cleanup(WaveSystem *ws, int sfd) {
     if (ws) {
+        lau_unseal_object(ws);
         LauSystemHeader *h = (LauSystemHeader *)((char *)ws - offsetof(LauSystemHeader, payload));
         if (h->resonance_as_status) { lau_free(h->resonance_as_status); h->resonance_as_status = NULL; }
         if (ws->current_directive) { lau_free(ws->current_directive); ws->current_directive = NULL; }

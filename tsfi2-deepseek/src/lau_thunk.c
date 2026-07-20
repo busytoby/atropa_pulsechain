@@ -106,6 +106,7 @@ void* ThunkProxy_emit_baked_no_ret(ThunkProxy *p, void *fn, int argc, ...) {
 }
 
 void* ThunkProxy_emit_mixed(ThunkProxy *p, void *fn, void *baked_ptr) {
+    thunk_make_writeable(p);
     thunk_check_bounds(p, 64 + 2); 
     uint8_t *meta = p->thunk_cursor; p->thunk_cursor += 2;
     uint8_t *c = p->thunk_cursor; void *start = (void*)c;
@@ -116,10 +117,12 @@ void* ThunkProxy_emit_mixed(ThunkProxy *p, void *fn, void *baked_ptr) {
     *(u64_u*)c = (uintptr_t)fn; c += 8;
     *c++ = 0xff; *c++ = 0xe0;
     p->thunk_cursor = c; __builtin___clear_cache((char*)start, (char*)c);
+    thunk_make_executable(p);
     return start;
 }
 
 void* ThunkProxy_emit_forwarding(ThunkProxy *p, void *fn, void *baked_ptr) {
+    thunk_make_writeable(p);
     thunk_check_bounds(p, 128 + 2); 
     uint8_t *meta = p->thunk_cursor; p->thunk_cursor += 2;
     uint8_t *c = p->thunk_cursor; void *start = (void*)c;
@@ -132,10 +135,12 @@ void* ThunkProxy_emit_forwarding(ThunkProxy *p, void *fn, void *baked_ptr) {
     *(u64_u*)c = (uintptr_t)fn; c += 8;
     *c++ = 0xff; *c++ = 0xe0;
     p->thunk_cursor = c; __builtin___clear_cache((char*)start, (char*)c);
+    thunk_make_executable(p);
     return start;
 }
 
 void* ThunkProxy_emit_avx_setup(ThunkProxy *p, void *kernel_fn, void *sgpr_bank) {
+    thunk_make_writeable(p);
     thunk_check_bounds(p, 128 + 2); 
     uint8_t *meta = p->thunk_cursor; p->thunk_cursor += 2;
     uint8_t *c = p->thunk_cursor; void *start = (void*)c;
@@ -146,11 +151,12 @@ void* ThunkProxy_emit_avx_setup(ThunkProxy *p, void *kernel_fn, void *sgpr_bank)
     *(u16_u*)meta = (uint16_t)(ptr_slot - (uint8_t*)start);
     *c++ = 0xff; *c++ = 0xe0;
     p->thunk_cursor = c; __builtin___clear_cache((char*)start, (char*)c);
+    thunk_make_executable(p);
     return start;
 }
 
 void* ThunkProxy_emit_vgpr_load(ThunkProxy *p, void *fn, void *ptr_to_ptr, int zmm_idx) {
-    (void)fn; thunk_check_bounds(p, 32 + 2);
+    (void)fn; thunk_make_writeable(p); thunk_check_bounds(p, 32 + 2);
     p->thunk_cursor += 2; 
     uint8_t *c = p->thunk_cursor; void *start = (void*)c;
     *c++ = 0x48; *c++ = 0xb8; *(u64_u*)c = (uintptr_t)ptr_to_ptr; c += 8;
@@ -158,11 +164,12 @@ void* ThunkProxy_emit_vgpr_load(ThunkProxy *p, void *fn, void *ptr_to_ptr, int z
     *c++ = 0x62; *c++ = 0xf1; *c++ = 0x7c; *c++ = 0x48; *c++ = 0x10; *c++ = (uint8_t)(0x00 | (zmm_idx << 3)); 
     *c++ = 0xc3; 
     p->thunk_cursor = c; __builtin___clear_cache((char*)start, (char*)c);
+    thunk_make_executable(p);
     return start;
 }
 
 void* ThunkProxy_emit_vgpr_store(ThunkProxy *p, void *fn, void *ptr_to_ptr, int zmm_idx) {
-    (void)fn; thunk_check_bounds(p, 32 + 2);
+    (void)fn; thunk_make_writeable(p); thunk_check_bounds(p, 32 + 2);
     p->thunk_cursor += 2; 
     uint8_t *c = p->thunk_cursor; void *start = (void*)c;
     *c++ = 0x48; *c++ = 0xb8; *(u64_u*)c = (uintptr_t)ptr_to_ptr; c += 8;
@@ -170,11 +177,12 @@ void* ThunkProxy_emit_vgpr_store(ThunkProxy *p, void *fn, void *ptr_to_ptr, int 
     *c++ = 0x62; *c++ = 0xf1; *c++ = 0x7c; *c++ = 0x48; *c++ = 0x11; *c++ = (uint8_t)(0x00 | (zmm_idx << 3)); 
     *c++ = 0xc3; 
     p->thunk_cursor = c; __builtin___clear_cache((char*)start, (char*)c);
+    thunk_make_executable(p);
     return start;
 }
 
 void* ThunkProxy_emit_vgpr_kernel_call(ThunkProxy *p, void *avx_kernel_fn, void *scalar_context_ptr) {
-    thunk_check_bounds(p, 32 + 2);
+    thunk_make_writeable(p); thunk_check_bounds(p, 32 + 2);
     uint8_t *meta = p->thunk_cursor; p->thunk_cursor += 2;
     uint8_t *c = p->thunk_cursor; void *start = (void*)c;
     *c++ = 0x48; *c++ = 0xbf; *(u64_u*)c = (uintptr_t)scalar_context_ptr; c += 8;
@@ -183,33 +191,36 @@ void* ThunkProxy_emit_vgpr_kernel_call(ThunkProxy *p, void *avx_kernel_fn, void 
     *c++ = 0xff; *c++ = 0xd0; *c++ = 0xc3; 
     *(u16_u*)meta = (uint16_t)(ptr_slot - (uint8_t*)start);
     p->thunk_cursor = c; __builtin___clear_cache((char*)start, (char*)c);
+    thunk_make_executable(p);
     return start;
 }
 
 void* ThunkProxy_emit_vgpr_load_relative(ThunkProxy *p, int secret_bytes, int zmm_idx) {
-    thunk_check_bounds(p, 32 + 2); p->thunk_cursor += 2;
+    thunk_make_writeable(p); thunk_check_bounds(p, 32 + 2); p->thunk_cursor += 2;
     uint8_t *c = p->thunk_cursor; void *start = (void*)c;
     *c++ = 0x62; uint8_t p1 = 0xf1; if (zmm_idx >= 8) p1 &= ~0x80; p1 &= ~0x20; 
     *c++ = p1; *c++ = 0x7c; *c++ = 0x48; *c++ = 0x10; 
     *c++ = (uint8_t)(0x87 | ((zmm_idx & 7) << 3)); 
     *(u32_u*)c = (uint32_t)secret_bytes; c += 4; *c++ = 0xc3; 
     p->thunk_cursor = c; __builtin___clear_cache((char*)start, (char*)c);
+    thunk_make_executable(p);
     return start;
 }
 
 void* ThunkProxy_emit_vgpr_store_relative(ThunkProxy *p, int secret_bytes, int zmm_idx) {
-    thunk_check_bounds(p, 32 + 2); p->thunk_cursor += 2;
+    thunk_make_writeable(p); thunk_check_bounds(p, 32 + 2); p->thunk_cursor += 2;
     uint8_t *c = p->thunk_cursor; void *start = (void*)c;
     *c++ = 0x62; uint8_t p1 = 0xf1; if (zmm_idx >= 8) p1 &= ~0x80; p1 &= ~0x20; 
     *c++ = p1; *c++ = 0x7c; *c++ = 0x48; *c++ = 0x11; 
     *c++ = (uint8_t)(0x87 | ((zmm_idx & 7) << 3)); 
     *(u32_u*)c = (uint32_t)secret_bytes; c += 4; *c++ = 0xc3; 
     p->thunk_cursor = c; __builtin___clear_cache((char*)start, (char*)c);
+    thunk_make_executable(p);
     return start;
 }
 
 void* ThunkProxy_emit_set_r15_and_call(ThunkProxy *p, void *target_fn, void *r15_val) {
-    thunk_check_bounds(p, 32 + 2);
+    thunk_make_writeable(p); thunk_check_bounds(p, 32 + 2);
     uint8_t *meta = p->thunk_cursor; p->thunk_cursor += 2;
     uint8_t *c = p->thunk_cursor; void *start = (void*)c;
     *c++ = 0x49; *c++ = 0xbf; *(u64_u*)c = (uintptr_t)r15_val; c += 8;
@@ -217,6 +228,7 @@ void* ThunkProxy_emit_set_r15_and_call(ThunkProxy *p, void *target_fn, void *r15
     *(u64_u*)c = (uintptr_t)target_fn; c += 8; *c++ = 0xff; *c++ = 0xe0;
     *(u16_u*)meta = (uint16_t)(ptr_slot - (uint8_t*)start);
     p->thunk_cursor = c; __builtin___clear_cache((char*)start, (char*)c);
+    thunk_make_executable(p);
     return start;
 }
 

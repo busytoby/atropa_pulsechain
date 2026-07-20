@@ -22,8 +22,8 @@ bool tsfi_tls_handshake(TsfiTlsContext *ctx, const char *hostname) {
         return false;
     }
 
-    // Force TLS 1.3
-    SSL_CTX_set_min_proto_version(ssl_ctx, TLS1_3_VERSION);
+    // Allow TLS 1.2 fallback and TLS 1.3
+    SSL_CTX_set_min_proto_version(ssl_ctx, TLS1_2_VERSION);
     SSL_CTX_set_max_proto_version(ssl_ctx, TLS1_3_VERSION);
 
     SSL *ssl = SSL_new(ssl_ctx);
