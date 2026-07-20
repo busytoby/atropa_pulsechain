@@ -163,7 +163,7 @@ int main() {
     generate_synth_soundtrack(audio_file);
 
     printf("[INFO] Launching FFmpeg encoder...\n");
-    FILE *ffmpeg_pipe = popen("ffmpeg -y -f rawvideo -vcodec rawvideo -s 512x512 -pix_fmt rgb24 -r 30 -i - -i /tmp/tsfi_synth_demo.wav -c:v libx264 -preset ultrafast -c:a aac -b:a 192k -pix_fmt yuv420p quantel_synthesis_demo.mp4 2>/dev/null", "w");
+    FILE *ffmpeg_pipe = popen("ffmpeg -y -f rawvideo -vcodec rawvideo -s 512x512 -pix_fmt rgb24 -r 30 -i - -i /tmp/tsfi_synth_demo.wav -c:v libx264 -preset ultrafast -c:a aac -b:a 192k -pix_fmt yuv420p bin/quantel_synthesis_demo.mp4 2>/dev/null", "w");
     if (!ffmpeg_pipe) {
         printf("[ERROR] Failed to open FFmpeg pipe.\n");
         return 1;
