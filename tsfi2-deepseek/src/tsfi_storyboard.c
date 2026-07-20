@@ -94,3 +94,13 @@ int tsfi_quantel_storyboard_dotted_borders(uint32_t *pixels, int w, int h, int c
     }
     return 0;
 }
+
+int tsfi_quantel_storyboard_dotted_borders_offset(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int offset_w, int dot_spacing, uint32_t border_color) {
+    if (!pixels || w <= 0 || h <= 0 || offset_w < 0 || dot_spacing <= 0) return -1;
+    int tx = cell_x + offset_w;
+    int ty = cell_y + offset_w;
+    int tw = cell_w - 2 * offset_w;
+    int th = cell_h - 2 * offset_w;
+    if (tw <= 0 || th <= 0) return -1;
+    return tsfi_quantel_storyboard_dotted_borders(pixels, w, h, tx, ty, tw, th, dot_spacing, border_color);
+}

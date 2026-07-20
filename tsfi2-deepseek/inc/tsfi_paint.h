@@ -504,6 +504,18 @@ int tsfi_quantel_harry_split_interpolate(const uint32_t *src, uint32_t *dst_even
 /* Storyboard Frame Thumbnail Grid Border Highlights Offset */
 int tsfi_quantel_storyboard_border_highlights_offset(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int offset_w, uint32_t highlight_color);
 
+/* Quantel Paintbox Brush Pressure Jitter Flow Dynamics */
+int tsfi_quantel_paintbox_pressure_jitter_flow(uint32_t *pixels, int w, int h, int cx, int cy, int radius, float pressure, float jitter_amp, uint32_t color);
+
+/* Mirage 3D Perspective Plane Yaw Warp */
+int tsfi_quantel_mirage_plane_yaw(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float yaw);
+
+/* Harry Chronological Frame Interlaced Field Blend Jitter */
+int tsfi_quantel_harry_blend_fields_jitter(const uint32_t *field_even, const uint32_t *field_odd, uint32_t *dst, int w, int h, float blend_factor, float jitter_amp);
+
+/* Storyboard Frame Thumbnail Grid Dotted Borders Offset */
+int tsfi_quantel_storyboard_dotted_borders_offset(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, int offset_w, int dot_spacing, uint32_t border_color);
+
 #endif // TSFI_PAINT_H
 
 
