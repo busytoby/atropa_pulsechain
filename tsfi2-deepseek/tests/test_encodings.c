@@ -547,6 +547,24 @@ int main(void) {
         printf("[PASS] EER relational path dependency audits\n");
     }
     
+    // Test 22: Operator Terminal (OT) Baudot LLM DAT on ACAB
+    {
+        const char *bin_path = "tmp/ot_terminal_basic.dat.bin";
+        int rc = tsfi_ot_terminal_baud_llm_dat(bin_path);
+        assert(rc == 0);
+        
+        TSFiEerDatabase db;
+        rc = tsfi_eer_bridge_ot_terminal_acab(&db, bin_path);
+        assert(rc == 0);
+        
+        assert(db.incident_count == 1);
+        assert(db.agency_count == 2);
+        assert(db.channel_count == 1);
+        
+        remove(bin_path);
+        printf("[PASS] Operator Terminal Baud LLM DAT on ACAB bridge tests\n");
+    }
+    
     printf("[SUCCESS] All Encodings Compliance Tests Passed!\n");
     return 0;
 }

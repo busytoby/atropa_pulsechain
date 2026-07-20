@@ -1555,3 +1555,99 @@ int tsfi_eer_audit_paths(const TSFiEerDatabase *db) {
     }
     return 0;
 }
+
+// 42. Operator Terminal (OT) basic model
+int tsfi_ot_terminal_baud_llm_dat(const char *dat_bin_path) {
+    if (!dat_bin_path) return -1;
+    
+    int online = 1;
+    int cols = 80;
+    int baud = 110;
+    
+    if (g_gguf_acab_found) {
+        online = (int)g_gguf_acab_root[0] % 2;
+        cols = 40 + ((int)g_gguf_acab_root[1] % 41);
+        baud = 50 + ((int)g_gguf_acab_root[2] % 100);
+    }
+    
+    char status[128];
+    snprintf(status, sizeof(status), "TTY ON %d COLS %d BAUD %d", online, cols, baud);
+    
+    uint8_t baud_buf[128];
+    int baud_len = tsfi_encode_baudot(status, baud_buf, 128);
+    if (baud_len <= 0) return -2;
+    
+    uint32_t tokens[128];
+    for (int i = 0; i < baud_len; i++) {
+        tokens[i] = (uint32_t)baud_buf[i];
+    }
+    
+    FILE *f = fopen(dat_bin_path, "wb");
+    if (!f) return -3;
+    
+    uint32_t count = (uint32_t)baud_len;
+    fwrite(&count, sizeof(uint32_t), 1, f);
+    fwrite(tokens, sizeof(uint32_t), count, f);
+    fclose(f);
+    
+    return 0;
+}
+
+// 43. Operator Terminal (OT) EER bridge
+int tsfi_eer_bridge_ot_terminal_acab(TSFiEerDatabase *db, const char *dat_bin_path) {
+    if (!db || !dat_bin_path) return -1;
+    
+    FILE *f = fopen(dat_bin_path, "rb");
+    if (!f) return -2;
+    
+    uint32_t count = 0;
+    if (fread(&count, sizeof(uint32_t), 1, f) != 1 || count == 0 || count > 128) {
+        fclose(f);
+        return -3;
+    }
+    
+    uint32_t tokens[128];
+    if (fread(tokens, sizeof(uint32_t), count, f) != count) {
+        fclose(f);
+        return -4;
+    }
+    fclose(f);
+    
+    uint8_t baud_buf[128];
+    for (uint32_t i = 0; i < count; i++) {
+        baud_buf[i] = (uint8_t)tokens[i];
+    }
+    char status_dec[128];
+    int dec_len = tsfi_decode_baudot(baud_buf, count, status_dec, 128);
+    if (dec_len <= 0) return -5;
+    
+    int online = 0;
+    int cols = 0;
+    int baud = 0;
+    sscanf(status_dec, "TTY ON %d COLS %d BAUD %d", &online, &cols, &baud);
+    
+    uint32_t incident_id = 7000 + (uint32_t)baud;
+    int type = (baud < 110) ? 3 : 4;
+    int defcon = (baud < 110) ? 4 : 5;
+    
+    tsfi_eer_db_init(db);
+    tsfi_eer_insert_incident(db, incident_id, defcon, 1782000000U, type);
+    
+    tsfi_eer_insert_agency(db, 101, "NORAD_SECURE", 1, 1);
+    tsfi_eer_insert_agency(db, 103, "TELEX_MAINT", 3, 3);
+    
+    if (type == 3) {
+        tsfi_eer_link_response(db, 103, incident_id);
+    } else {
+        tsfi_eer_link_response(db, 101, incident_id);
+    }
+    
+    if (db->channel_count < 16) {
+        TSFiEerChannel *chan = &db->channels[db->channel_count++];
+        chan->channel_id = 0x0200; // Tapped TTY channel
+        chan->encryption_type = 1;
+        chan->frequency_band = 75; // Baudot speed band
+    }
+    
+    return 0;
+}
