@@ -49,6 +49,9 @@ int tsfi_eer_bridge_ot_crypto_acab(TSFiEerDatabase *db, const char *dat_bin_path
 int tsfi_ot_crypto_stanag_baud_llm_dat(const char *dat_bin_path, int choice_b, const char *msg0, const char *msg1);
 int tsfi_eer_bridge_ot_crypto_stanag_acab(TSFiEerDatabase *db, const char *dat_bin_path);
 
+int tsfi_ot_optical_baud_llm_dat(const char *dat_bin_path);
+int tsfi_eer_bridge_ot_optical_acab(TSFiEerDatabase *db, const char *dat_bin_path);
+
 // --- Improvements APIs ---
 void tsfi_encode_hamming74(const uint8_t *in, int len, uint8_t *out);
 void tsfi_decode_hamming74(const uint8_t *in, int coded_len, uint8_t *out);

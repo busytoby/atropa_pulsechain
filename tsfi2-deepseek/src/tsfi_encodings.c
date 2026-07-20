@@ -1284,3 +1284,99 @@ int tsfi_eer_audit_invariants(const TSFiEerDatabase *db) {
     }
     return 0;
 }
+
+// 34. Optical Telemetry (OT) basic model
+int tsfi_ot_optical_baud_llm_dat(const char *dat_bin_path) {
+    if (!dat_bin_path) return -1;
+    
+    int temp = 25;
+    int intensity = 80;
+    int drift = 0;
+    
+    if (g_gguf_acab_found) {
+        temp += (int)g_gguf_acab_root[0] % 10;
+        intensity += (int)g_gguf_acab_root[1] % 20;
+        drift += (int)g_gguf_acab_root[2] % 10;
+    }
+    
+    char status[128];
+    snprintf(status, sizeof(status), "OPTO TEMP %d INTENSITY %d DRIFT %d", temp, intensity, drift);
+    
+    uint8_t baud_buf[128];
+    int baud_len = tsfi_encode_baudot(status, baud_buf, 128);
+    if (baud_len <= 0) return -2;
+    
+    uint32_t tokens[128];
+    for (int i = 0; i < baud_len; i++) {
+        tokens[i] = (uint32_t)baud_buf[i];
+    }
+    
+    FILE *f = fopen(dat_bin_path, "wb");
+    if (!f) return -3;
+    
+    uint32_t count = (uint32_t)baud_len;
+    fwrite(&count, sizeof(uint32_t), 1, f);
+    fwrite(tokens, sizeof(uint32_t), count, f);
+    fclose(f);
+    
+    return 0;
+}
+
+// 35. Optical Telemetry (OT) EER bridge
+int tsfi_eer_bridge_ot_optical_acab(TSFiEerDatabase *db, const char *dat_bin_path) {
+    if (!db || !dat_bin_path) return -1;
+    
+    FILE *f = fopen(dat_bin_path, "rb");
+    if (!f) return -2;
+    
+    uint32_t count = 0;
+    if (fread(&count, sizeof(uint32_t), 1, f) != 1 || count == 0 || count > 128) {
+        fclose(f);
+        return -3;
+    }
+    
+    uint32_t tokens[128];
+    if (fread(tokens, sizeof(uint32_t), count, f) != count) {
+        fclose(f);
+        return -4;
+    }
+    fclose(f);
+    
+    uint8_t baud_buf[128];
+    for (uint32_t i = 0; i < count; i++) {
+        baud_buf[i] = (uint8_t)tokens[i];
+    }
+    char status_dec[128];
+    int dec_len = tsfi_decode_baudot(baud_buf, count, status_dec, 128);
+    if (dec_len <= 0) return -5;
+    
+    int temp = 0;
+    int intensity = 0;
+    int drift = 0;
+    sscanf(status_dec, "OPTO TEMP %d INTENSITY %d DRIFT %d", &temp, &intensity, &drift);
+    
+    uint32_t incident_id = 6000 + (uint32_t)drift;
+    int type = (drift >= 5) ? 1 : 2;
+    int defcon = (drift >= 5) ? 1 : 5;
+    
+    tsfi_eer_db_init(db);
+    tsfi_eer_insert_incident(db, incident_id, defcon, 1782000000U, type);
+    
+    tsfi_eer_insert_agency(db, 101, "NORAD_SECURE", 1, 1);
+    tsfi_eer_insert_agency(db, 102, "IRS_AUDIT", 2, 2);
+    
+    if (type == 1) {
+        tsfi_eer_link_response(db, 101, incident_id);
+    } else {
+        tsfi_eer_link_response(db, 102, incident_id);
+    }
+    
+    if (db->channel_count < 16) {
+        TSFiEerChannel *chan = &db->channels[db->channel_count++];
+        chan->channel_id = 0x0200; // Tapped ACAB channel
+        chan->encryption_type = 3;
+        chan->frequency_band = 144000;
+    }
+    
+    return 0;
+}

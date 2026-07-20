@@ -452,6 +452,24 @@ int main(void) {
         printf("[PASS] EER database relational invariant audits\n");
     }
     
+    // Test 19: Optical Telemetry (OT) Baudot LLM DAT on ACAB
+    {
+        const char *bin_path = "tmp/ot_optical_basic.dat.bin";
+        int rc = tsfi_ot_optical_baud_llm_dat(bin_path);
+        assert(rc == 0);
+        
+        TSFiEerDatabase db;
+        rc = tsfi_eer_bridge_ot_optical_acab(&db, bin_path);
+        assert(rc == 0);
+        
+        assert(db.incident_count == 1);
+        assert(db.agency_count == 2);
+        assert(db.channel_count == 1);
+        
+        remove(bin_path);
+        printf("[PASS] Optical Telemetry Baud LLM DAT on ACAB bridge tests\n");
+    }
+    
     printf("[SUCCESS] All Encodings Compliance Tests Passed!\n");
     return 0;
 }
