@@ -1186,3 +1186,26 @@ int tsfi_quantel_storyboard_burn_label(uint32_t *pixels, int w, int h, int cell_
     draw_text(pixels, w, h, cell_x + 10, cell_y + cell_h - 38, label, color, 1);
     return 0;
 }
+
+int tsfi_quantel_harry_interlace_fields(const uint32_t *field_even, const uint32_t *field_odd, uint32_t *dst, int w, int h) {
+    if (!field_even || !field_odd || !dst || w <= 0 || h <= 0) return -1;
+    for (int y = 0; y < h; y++) {
+        const uint32_t *src_row = (y % 2 == 0) ? field_even : field_odd;
+        memcpy(dst + y * w, src_row + y * w, w * sizeof(uint32_t));
+    }
+    return 0;
+}
+
+int tsfi_quantel_storyboard_grid_spacers(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t bg_color) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    for (int y = cell_y; y < cell_y + cell_h; y++) {
+        if (y < 0 || y >= h) continue;
+        for (int x = cell_x; x < cell_x + cell_w; x++) {
+            if (x < 0 || x >= w) continue;
+            if (y < cell_y + 10 || y >= cell_y + cell_h - 10 || x < cell_x + 10 || x >= cell_x + cell_w - 10) {
+                pixels[y * w + x] = bg_color;
+            }
+        }
+    }
+    return 0;
+}

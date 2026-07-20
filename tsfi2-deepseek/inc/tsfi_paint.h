@@ -315,6 +315,18 @@ int tsfi_quantel_harry_chroma_gain(uint32_t *pixels, int w, int h, float gain);
 /* Storyboard Frame Thumbnail Burn-In Label Annotation */
 int tsfi_quantel_storyboard_burn_label(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, const char *label, uint32_t color);
 
+/* Quantel Paintbox Palette Interpolator Mixer */
+int tsfi_quantel_paintbox_interpolate_palette(const uint32_t *palette_a, const uint32_t *palette_b, uint32_t *dst_palette, int count, float t);
+
+/* Mirage 3D Dynamic Twirl/Swirl Warp */
+int tsfi_quantel_mirage_twirl_warp(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float angle, float radius);
+
+/* Harry Chronological Frame Interlacing */
+int tsfi_quantel_harry_interlace_fields(const uint32_t *field_even, const uint32_t *field_odd, uint32_t *dst, int w, int h);
+
+/* Storyboard Frame Thumbnail Grid Margin Spacer */
+int tsfi_quantel_storyboard_grid_spacers(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t bg_color);
+
 #endif // TSFI_PAINT_H
 
 

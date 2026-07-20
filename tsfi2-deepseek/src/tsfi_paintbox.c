@@ -952,3 +952,29 @@ int tsfi_quantel_paintbox_blend_mixer(uint32_t *pixels, int w, int h, const uint
     }
     return 0;
 }
+
+int tsfi_quantel_paintbox_interpolate_palette(const uint32_t *palette_a, const uint32_t *palette_b, uint32_t *dst_palette, int count, float t) {
+    if (!palette_a || !palette_b || !dst_palette || count <= 0) return -1;
+    if (t < 0.0f) { t = 0.0f; }
+    if (t > 1.0f) { t = 1.0f; }
+
+    for (int i = 0; i < count; i++) {
+        uint32_t ca = palette_a[i];
+        uint32_t cb = palette_b[i];
+
+        uint8_t ra = (ca >> 16) & 0xFF;
+        uint8_t ga = (ca >> 8) & 0xFF;
+        uint8_t ba = ca & 0xFF;
+
+        uint8_t rb = (cb >> 16) & 0xFF;
+        uint8_t gb = (cb >> 8) & 0xFF;
+        uint8_t bb = cb & 0xFF;
+
+        uint8_t r = (uint8_t)(ra * (1.0f - t) + rb * t);
+        uint8_t g = (uint8_t)(ga * (1.0f - t) + gb * t);
+        uint8_t b = (uint8_t)(ba * (1.0f - t) + bb * t);
+
+        dst_palette[i] = (0xFF000000) | (r << 16) | (g << 8) | b;
+    }
+    return 0;
+}
