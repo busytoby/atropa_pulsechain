@@ -999,3 +999,24 @@ int tsfi_quantel_paintbox_complementary_color(uint32_t color, uint32_t *out_colo
     *out_color = (0xFF000000) | (r << 16) | (g << 8) | b;
     return 0;
 }
+
+int tsfi_quantel_paintbox_warm_cool_filter(uint32_t *pixels, int w, int h, float temp_adjust) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = pixels[i];
+        int r = (pix >> 16) & 0xFF;
+        int g = (pix >> 8) & 0xFF;
+        int b = pix & 0xFF;
+
+        r = (int)(r + temp_adjust * 20.0f);
+        b = (int)(b - temp_adjust * 20.0f);
+
+        if (r < 0) { r = 0; }
+        if (r > 255) { r = 255; }
+        if (b < 0) { b = 0; }
+        if (b > 255) { b = 255; }
+
+        pixels[i] = (0xFF000000) | (r << 16) | (g << 8) | b;
+    }
+    return 0;
+}

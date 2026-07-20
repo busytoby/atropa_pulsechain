@@ -1338,3 +1338,47 @@ int tsfi_quantel_storyboard_corner_marks(uint32_t *pixels, int w, int h, int cel
     }
     return 0;
 }
+
+int tsfi_quantel_harry_clock_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32_t *dst, int w, int h, float progress) {
+    if (!src_a || !src_b || !dst || w <= 0 || h <= 0) return -1;
+    float cx = w / 2.0f;
+    float cy = h / 2.0f;
+    float target_angle = progress * 2.0f * (float)M_PI - (float)M_PI / 2.0f;
+
+    for (int y = 0; y < h; y++) {
+        float dy = y - cy;
+        for (int x = 0; x < w; x++) {
+            float dx = x - cx;
+            float angle = atan2f(dy, dx);
+            if (angle < -(float)M_PI / 2.0f) {
+                angle += 2.0f * (float)M_PI;
+            }
+
+            int idx = y * w + x;
+            if (angle <= target_angle + 0.001f) {
+                dst[idx] = src_b[idx];
+            } else {
+                dst[idx] = src_a[idx];
+            }
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_storyboard_crosshairs(uint32_t *pixels, int w, int h, int cell_x, int cell_y, int cell_w, int cell_h, uint32_t color) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+    int mid_x = cell_x + cell_w / 2;
+    int mid_y = cell_y + cell_h / 2;
+
+    for (int x = cell_x; x < cell_x + cell_w; x++) {
+        if (x >= 0 && x < w && mid_y >= 0 && mid_y < h) {
+            pixels[mid_y * w + x] = color;
+        }
+    }
+    for (int y = cell_y; y < cell_y + cell_h; y++) {
+        if (y >= 0 && y < h && mid_x >= 0 && mid_x < w) {
+            pixels[y * w + mid_x] = color;
+        }
+    }
+    return 0;
+}
