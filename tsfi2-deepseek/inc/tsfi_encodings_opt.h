@@ -30,4 +30,11 @@ void tsfi_coax_telemetry_loop(float coax_z_measured, float *alpha, float *beta, 
 int tsfi_encode_edo22_shiftfree(const char *in, uint8_t *out, int max_len);
 int tsfi_decode_edo22_shiftfree(const uint8_t *in, int len, char *out, int max_len);
 
+// --- Generation 8 Enhancements ---
+void tsfi_encode_edo22_simd(const char *in, int len, uint8_t *out);
+int tsfi_logos_compress_choice_point(const uint32_t *parent_stack, const uint32_t *child_stack, int size, int16_t *delta_out);
+int tsfi_logos_decompress_choice_point(const uint32_t *parent_stack, const int16_t *delta_in, int size, uint32_t *child_out);
+float tsfi_logos_adaptive_threshold(float noise_level);
+void tsfi_coax_telemetry_pll_smooth(float coax_z_measured, float *filtered_z, float *phase_error, float *loop_integrator, float kp, float ki);
+
 #endif // TSFI_ENCODINGS_OPT_H

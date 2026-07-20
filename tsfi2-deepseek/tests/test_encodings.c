@@ -794,6 +794,50 @@ int main(void) {
         printf("[PASS] Bi-directional shift-free EDO-22 codec\n");
     }
     
+    // Test 29: Generation 8 Enhancements
+    {
+        // 29.1 SIMD Byte-Shuffling for EDO-22 Test
+        const char *src = "LLM MODEM";
+        uint8_t standard[10];
+        uint8_t simd[10];
+        tsfi_encode_edo22_shiftfree(src, standard, 9);
+        tsfi_encode_edo22_simd(src, 9, simd);
+        assert(memcmp(standard, simd, 9) == 0);
+        printf("[PASS] SIMD byte-shuffling for EDO-22 mapping\n");
+        
+        // 29.2 LogOS Choice-Point Stack Delta-Compression Test
+        uint32_t parent[3] = {1000, 2000, 3000};
+        uint32_t child[3] = {1002, 1999, 3005};
+        int16_t delta[3];
+        uint32_t decompressed[3];
+        int cmp_rc = tsfi_logos_compress_choice_point(parent, child, 3, delta);
+        assert(cmp_rc == 3);
+        assert(delta[0] == 2);
+        assert(delta[1] == -1);
+        assert(delta[2] == 5);
+        
+        int dec_rc = tsfi_logos_decompress_choice_point(parent, delta, 3, decompressed);
+        assert(dec_rc == 3);
+        assert(memcmp(child, decompressed, 3 * sizeof(uint32_t)) == 0);
+        printf("[PASS] LogOS choice-point delta-compression\n");
+        
+        // 29.3 LogOS Noise-Adaptive Pruning Thresholds Test
+        float low_noise_thresh = tsfi_logos_adaptive_threshold(0.1f);
+        float high_noise_thresh = tsfi_logos_adaptive_threshold(0.9f);
+        assert(high_noise_thresh > low_noise_thresh);
+        printf("[PASS] LogOS noise-adaptive pruning thresholds\n");
+        
+        // 29.4 Coaxial Telemetry PLL Loop Filter Test
+        float filtered_z = 75.0f;
+        float phase_error = 0.0f;
+        float loop_integrator = 0.0f;
+        tsfi_coax_telemetry_pll_smooth(78.5f, &filtered_z, &phase_error, &loop_integrator, 0.2f, 0.05f);
+        assert(filtered_z > 75.0f);
+        assert(phase_error == 3.5f);
+        assert(loop_integrator > 0.0f);
+        printf("[PASS] Coaxial telemetry PLL loop filter tracking\n");
+    }
+    
     printf("[SUCCESS] All Encodings Compliance Tests Passed!\n");
     return 0;
 }

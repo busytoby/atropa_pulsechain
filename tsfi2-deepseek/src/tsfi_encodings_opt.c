@@ -419,3 +419,54 @@ int tsfi_decode_edo22_shiftfree(const uint8_t *in, int len, char *out, int max_l
     out[out_idx] = '\0';
     return out_idx;
 }
+
+// --- Generation 8 Enhancements ---
+
+void tsfi_encode_edo22_simd(const char *in, int len, uint8_t *out) {
+    if (!in || !out || len <= 0) return;
+    // Auto-vectorizable character conversion loop
+    for (int i = 0; i < len; i++) {
+        char c = in[i];
+        uint8_t val = 0;
+        if (c == ' ') {
+            val = 0;
+        } else if (c >= '0' && c <= '9') {
+            val = (uint8_t)(c - '0' + 1);
+        } else {
+            char up = (c >= 'a' && c <= 'z') ? (char)(c - 32) : c;
+            val = (up >= 'A' && up <= 'Z') ? (uint8_t)(up - 'A' + 11) : 0;
+        }
+        out[i] = val;
+    }
+}
+
+int tsfi_logos_compress_choice_point(const uint32_t *parent_stack, const uint32_t *child_stack, int size, int16_t *delta_out) {
+    if (!parent_stack || !child_stack || size <= 0 || !delta_out) return -1;
+    for (int i = 0; i < size; i++) {
+        delta_out[i] = (int16_t)((int32_t)child_stack[i] - (int32_t)parent_stack[i]);
+    }
+    return size;
+}
+
+int tsfi_logos_decompress_choice_point(const uint32_t *parent_stack, const int16_t *delta_in, int size, uint32_t *child_out) {
+    if (!parent_stack || !delta_in || size <= 0 || !child_out) return -1;
+    for (int i = 0; i < size; i++) {
+        child_out[i] = (uint32_t)((int32_t)parent_stack[i] + delta_in[i]);
+    }
+    return size;
+}
+
+float tsfi_logos_adaptive_threshold(float noise_level) {
+    float thresh = 0.3f + (noise_level * 0.4f);
+    if (thresh > 0.95f) thresh = 0.95f;
+    if (thresh < 0.20f) thresh = 0.20f;
+    return thresh;
+}
+
+void tsfi_coax_telemetry_pll_smooth(float coax_z_measured, float *filtered_z, float *phase_error, float *loop_integrator, float kp, float ki) {
+    if (!filtered_z || !phase_error || !loop_integrator) return;
+    float error = coax_z_measured - (*filtered_z);
+    *phase_error = error;
+    *loop_integrator += error * ki;
+    *filtered_z += error * kp + (*loop_integrator);
+}
