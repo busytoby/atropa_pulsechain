@@ -822,6 +822,109 @@ int tsfi_quantel_harry_wipe(const uint32_t *src_a, const uint32_t *src_b, uint32
     return 0;
 }
 
+int tsfi_quantel_paintbox_gradient(uint32_t *pixels, int w, int h, int x0, int y0, int x1, int y1, uint32_t color_start, uint32_t color_end, const char *gradient_type) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+
+    uint8_t r_s = (color_start >> 16) & 0xFF;
+    uint8_t g_s = (color_start >> 8) & 0xFF;
+    uint8_t b_s = color_start & 0xFF;
+
+    uint8_t r_e = (color_end >> 16) & 0xFF;
+    uint8_t g_e = (color_end >> 8) & 0xFF;
+    uint8_t b_e = color_end & 0xFF;
+
+    float dx = x1 - x0;
+    float dy = y1 - y0;
+    float len_sq = dx * dx + dy * dy;
+    if (len_sq < 1.0f) len_sq = 1.0f;
+
+    for (int y = 0; y < h; y++) {
+        uint32_t *row = pixels + y * w;
+        for (int x = 0; x < w; x++) {
+            float t = 0.0f;
+            if (strcmp(gradient_type, "linear") == 0) {
+                t = ((x - x0) * dx + (y - y0) * dy) / len_sq;
+            } else if (strcmp(gradient_type, "radial") == 0) {
+                float rx = x - x0;
+                float ry = y - y0;
+                t = sqrtf(rx * rx + ry * ry) / sqrtf(len_sq);
+            }
+
+            if (t < 0.0f) t = 0.0f;
+            if (t > 1.0f) t = 1.0f;
+
+            uint8_t r = (uint8_t)(r_s * (1.0f - t) + r_e * t);
+            uint8_t g = (uint8_t)(g_s * (1.0f - t) + g_e * t);
+            uint8_t b = (uint8_t)(b_s * (1.0f - t) + b_e * t);
+
+            row[x] = (0xFF000000) | (r << 16) | (g << 8) | b;
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_mirage_pyramid_wrap(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float height, float base_size) {
+    if (!src || !dst || src_w <= 0 || src_h <= 0 || dst_w <= 0 || dst_h <= 0 || base_size <= 0.0f) return -1;
+
+    memset(dst, 0, dst_w * dst_h * sizeof(uint32_t));
+    float cx = dst_w / 2.0f;
+    float cy = dst_h / 2.0f;
+    float half_base = base_size / 2.0f;
+
+    for (int y = 0; y < dst_h; y++) {
+        float dy = y - cy;
+        for (int x = 0; x < dst_w; x++) {
+            float dx = x - cx;
+
+            // Check if within bounds of pyramid base projection
+            if (fabsf(dx) <= half_base && fabsf(dy) <= half_base) {
+                // Map the 4 triangular faces of the pyramid to source quarters
+                float u = 0.0f, v = 0.0f;
+                if (fabsf(dx) > fabsf(dy)) {
+                    // Left/Right triangles
+                    if (dx > 0) {
+                        u = (half_base - dx) / half_base;
+                        v = (dy + half_base) / base_size;
+                    } else {
+                        u = (dx + half_base) / half_base;
+                        v = (dy + half_base) / base_size;
+                    }
+                } else {
+                    // Top/Bottom triangles
+                    if (dy > 0) {
+                        u = (dx + half_base) / base_size;
+                        v = (half_base - dy) / half_base;
+                    } else {
+                        u = (dx + half_base) / base_size;
+                        v = (dy + half_base) / half_base;
+                    }
+                }
+
+                int sx = (int)(u * src_w);
+                int sy = (int)(v * src_h);
+                if (sx >= 0 && sx < src_w && sy >= 0 && sy < src_h) {
+                    dst[y * dst_w + x] = src[sy * src_w + sx];
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+int tsfi_quantel_harry_invert(uint32_t *pixels, int w, int h) {
+    if (!pixels || w <= 0 || h <= 0) return -1;
+
+    for (int i = 0; i < w * h; i++) {
+        uint32_t pix = pixels[i];
+        uint8_t r = 255 - ((pix >> 16) & 0xFF);
+        uint8_t g = 255 - ((pix >> 8) & 0xFF);
+        uint8_t b = 255 - (pix & 0xFF);
+        pixels[i] = (0xFF000000) | (r << 16) | (g << 8) | b;
+    }
+    return 0;
+}
+
+
 int tsfi_quantel_paintbox_spray_can(uint32_t *pixels, int w, int h, int cx, int cy, int max_radius, float pressure, uint32_t color) {
     if (!pixels || w <= 0 || h <= 0 || max_radius <= 0) return -1;
 

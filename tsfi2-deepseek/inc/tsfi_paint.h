@@ -141,7 +141,17 @@ int tsfi_quantel_mirage_cylinder_wrap(const uint32_t *src, int src_w, int src_h,
 /* Quantel Harry: Brightness, contrast, and threshold adjustment filter */
 int tsfi_quantel_harry_contrast_adjust(uint32_t *pixels, int w, int h, float brightness, float contrast);
 
+/* Quantel Paintbox: Linear and radial gradient fills */
+int tsfi_quantel_paintbox_gradient(uint32_t *pixels, int w, int h, int x0, int y0, int x1, int y1, uint32_t color_start, uint32_t color_end, const char *gradient_type);
+
+/* Quantel Mirage: 3D Pyramid warp coordinate projection mapping */
+int tsfi_quantel_mirage_pyramid_wrap(const uint32_t *src, int src_w, int src_h, uint32_t *dst, int dst_w, int dst_h, float height, float base_size);
+
+/* Quantel Harry: Color negative inverter filter */
+int tsfi_quantel_harry_invert(uint32_t *pixels, int w, int h);
+
 #endif // TSFI_PAINT_H
+
 
 
 
