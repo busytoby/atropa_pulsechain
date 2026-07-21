@@ -59,6 +59,16 @@ int tsfi_tape_catalog_process_all(const char *dir_path, tsfi_tape_catalog_entry_
             generate_meaningful_file_id(entry->d_name, entries_out[count].file_id);
             entries_out[count].security_level = TAPE_SECURITY_UNCLASSIFIED;
             entries_out[count].is_valid = 1;
+
+            // Inscribe 240-byte VOL1+HDR1+HDR2 header onto disk file if needed
+            FILE *f = fopen(entries_out[count].file_path, "r+b");
+            if (f) {
+                uint8_t header_buf[240];
+                tsfi_tape_label_yul_format_header(header_buf, entries_out[count].volume_id, entries_out[count].file_id, TAPE_SECURITY_UNCLASSIFIED);
+                fwrite(header_buf, 1, 240, f);
+                fclose(f);
+            }
+
             count++;
         }
     }
