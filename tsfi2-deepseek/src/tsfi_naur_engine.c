@@ -28,6 +28,34 @@ int tsfi_naur_engine_init(
     tsfi_naur_add_bnf_rule(engine, "<term>", "<primary>|<term>*<primary>");
     tsfi_naur_add_bnf_rule(engine, "<primary>", "identifier|number");
 
+    // Populate Peter Naur ALGOL Bulletin No. 14 Questionnaire (1962)
+    const char *topics[NUM_NAUR_QUESTIONS] = {
+        "Side Effects", "Subscript Evaluation Order", "For Loop Modification",
+        "Dynamic Array Declarations", "Own Variables Scope", "Call By Name vs Value",
+        "Standard I/O Procedures", "Non-Local Goto Labels", "Type Coercion Rules",
+        "Hardware Representation"
+    };
+
+    const char *questions[NUM_NAUR_QUESTIONS] = {
+        "Allow function designators to alter global evaluation state?",
+        "Strict left-to-right evaluation order of array subscript expressions?",
+        "Define variable mutation behavior inside ALGOL 60 for-loop bodies?",
+        "Permit dynamic expression bounds in block entry array declarations?",
+        "Preserve own variable states across recursive procedure invocations?",
+        "Enforce call-by-name Jensen's Device evaluation semantics?",
+        "Standardize primitive input/output procedure specifications in BNF?",
+        "Permit non-local goto jumps across active block scope boundaries?",
+        "Strict conversion rules between integer and real arithmetic modes?",
+        "Map publication language symbols to 7-bit ASCII and tape media?"
+    };
+
+    for (int i = 0; i < NUM_NAUR_QUESTIONS; i++) {
+        engine->questionnaire[i].question_id = (uint32_t)(i + 1);
+        snprintf(engine->questionnaire[i].topic, sizeof(engine->questionnaire[i].topic), "%s", topics[i]);
+        snprintf(engine->questionnaire[i].question_text, sizeof(engine->questionnaire[i].question_text), "%s", questions[i]);
+        engine->questionnaire[i].status_affirmed = 1;
+    }
+
     return 0;
 }
 
@@ -78,6 +106,26 @@ int tsfi_naur_validate_syntax(
     printf("[PETER NAUR BNF VALIDATOR] Start: %s | Stream: \"%s\" | Validated: %s | Gas: %u\n",
            start_symbol, token_stream, *out_valid ? "YES" : "NO", engine->evm_gas_units);
 
+    return 0;
+}
+
+int tsfi_naur_eval_questionnaire(
+    tsfi_naur_engine_t *engine,
+    uint32_t *out_affirmed_count
+) {
+    if (!engine || !out_affirmed_count) return -1;
+
+    uint32_t count = 0;
+    for (int i = 0; i < NUM_NAUR_QUESTIONS; i++) {
+        if (engine->questionnaire[i].status_affirmed) {
+            count++;
+        }
+        printf("[PETER NAUR QUESTIONNAIRE Q%d] %s: %s -> [AFFIRMED]\n",
+               engine->questionnaire[i].question_id,
+               engine->questionnaire[i].topic,
+               engine->questionnaire[i].question_text);
+    }
+    *out_affirmed_count = count;
     return 0;
 }
 

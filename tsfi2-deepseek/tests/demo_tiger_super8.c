@@ -1602,6 +1602,8 @@ int main() {
     tsfi_naur_validate_syntax(&naur_eng, "<expression>", "term+term", &bnf_valid);
     uint32_t gier_frame_addr = 0;
     tsfi_naur_gier_alloc_frame(&naur_eng, 4, &gier_frame_addr);
+    uint32_t quest_affirmed = 0;
+    tsfi_naur_eval_questionnaire(&naur_eng, &quest_affirmed);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
