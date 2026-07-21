@@ -261,7 +261,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_speroni_param_list.o \
                   $(OBJ_DIR)/tsfi_speroni_define_format.o \
                   $(OBJ_DIR)/tsfi_speroni_sort_merge.o \
-                  $(OBJ_DIR)/tsfi_dempster_scattering.o
+                  $(OBJ_DIR)/tsfi_dempster_scattering.o \
+                  $(OBJ_DIR)/tsfi_bachelor_parse_dict.o
 
 
 

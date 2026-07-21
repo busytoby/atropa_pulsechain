@@ -121,6 +121,7 @@
 #include "tsfi_speroni_define_format.h"
 #include "tsfi_speroni_sort_merge.h"
 #include "tsfi_dempster_scattering.h"
+#include "tsfi_bachelor_parse_dict.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1438,6 +1439,15 @@ int main() {
     tsfi_dempster_scattering_solver_t dempster_solver;
     tsfi_dempster_scattering_init(17001, &dempster_solver);
     tsfi_dempster_scattering_compute(&dempster_solver, 13.6, 5.0);
+
+    // Bachelor SMALGOL-61 Syntax Parse Table & Symbol Dictionary Check (240 Gas Slot / 78.2% Cut)
+    tsfi_bachelor_parse_dict_t bachelor_parser;
+    tsfi_bachelor_parse_dict_init(18001, &bachelor_parser);
+    tsfi_bachelor_insert_symbol(&bachelor_parser, "Fa", 101, 0x00000004);
+    tsfi_bachelor_insert_symbol(&bachelor_parser, "Channel", 102, 0x00000008);
+    tsfi_bachelor_insert_symbol(&bachelor_parser, "Signal", 103, 0x0000000C);
+    uint32_t bach_addr;
+    tsfi_bachelor_parse_reduction(&bachelor_parser, "Channel", &bach_addr);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
