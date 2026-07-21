@@ -255,7 +255,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_speroni_params.o \
                   $(OBJ_DIR)/tsfi_speroni_ir_engine.o \
                   $(OBJ_DIR)/tsfi_speroni_conway_cobol.o \
-                  $(OBJ_DIR)/tsfi_speroni_lynch_stream.o
+                  $(OBJ_DIR)/tsfi_speroni_lynch_stream.o \
+                  $(OBJ_DIR)/tsfi_decnet_exec_stack.o
 
 
 

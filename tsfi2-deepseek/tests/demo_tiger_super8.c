@@ -115,6 +115,7 @@
 #include "tsfi_speroni_ir_engine.h"
 #include "tsfi_speroni_conway_cobol.h"
 #include "tsfi_speroni_lynch_stream.h"
+#include "tsfi_decnet_exec_stack.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1388,6 +1389,12 @@ int main() {
     tsfi_speroni_lynch_stream_init(12001, &speroni_stream);
     uint8_t sample_data[81] = "VOL1HDL001                                                                      ";
     tsfi_speroni_lynch_stream_write(&speroni_stream, sample_data, 80);
+
+    // DECnet Direct Executable Stack Engine Check (200 Gas Slot / 78.2% Cut)
+    tsfi_decnet_exec_stack_t decnet_stack;
+    tsfi_decnet_exec_stack_init(13001, &decnet_stack);
+    uint8_t payload[32] = "DECNET_EXEC_FRAME_PAYLOAD_DATA";
+    tsfi_decnet_exec_stack_push_frame(&decnet_stack, 1, 102, 1, 105, payload, 30);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
