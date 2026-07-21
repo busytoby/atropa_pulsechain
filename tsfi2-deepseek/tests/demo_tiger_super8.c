@@ -47,6 +47,7 @@
 #include "tsfi_parc_figma_vector.h"
 #include "tsfi_parc_runcible_lang.h"
 #include "tsfi_parc_tape_label_yul.h"
+#include "tsfi_parc_tape_catalog.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -939,6 +940,12 @@ int main() {
     tsfi_tape_label_yul_format_trailer(tape_trl, TAPE_LABEL_EOF1, 1024);
     printf("[INFO] Yul DDL Tape Sequence (VOL1+HDR1+HDR2) Result: %d (Governance: %d, EOF1 Magic: %.4s)\n",
            tape_valid, gov_res, (char *)tape_trl);
+
+    // Tape Catalog unique Volume ID and meaningful File ID generation check
+    tsfi_tape_catalog_entry_t cat_entries[8];
+    int cat_count = tsfi_tape_catalog_process_all(".", cat_entries, 8);
+    printf("[INFO] Processed %d Tape Catalog entries (Sample Vol: %s -> FileID: %s)\n",
+           cat_count, cat_entries[0].volume_id, cat_entries[0].file_id);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 

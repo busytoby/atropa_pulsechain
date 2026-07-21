@@ -186,7 +186,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_parc_figma_proto.o \
                   $(OBJ_DIR)/tsfi_parc_figma_vector.o \
                   $(OBJ_DIR)/tsfi_parc_runcible_lang.o \
-                  $(OBJ_DIR)/tsfi_parc_tape_label_yul.o
+                  $(OBJ_DIR)/tsfi_parc_tape_label_yul.o \
+                  $(OBJ_DIR)/tsfi_parc_tape_catalog.o
 
 
 
