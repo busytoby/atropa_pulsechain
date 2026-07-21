@@ -56,6 +56,7 @@
 #include "tsfi_autodin_anvil_oracle.h"
 #include "tsfi_parc_trunk_queue.h"
 #include "tsfi_iso_security_engine.h"
+#include "tsfi_helmholtz_dispatcher.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1013,6 +1014,10 @@ int main() {
     // Real-Time Isomorphic Security Verification & Anomaly Interception Audit Check
     tsfi_iso_sec_audit_result_t sec_audit;
     tsfi_iso_sec_audit_state(0, tape_hdr, 0x20, TAPE_SECURITY_TOPSECRET, &sec_audit);
+
+    // Helmholtz Operator Unified System Wave Cycle Dispatch Check
+    tsfi_helmholtz_dispatch_result_t hres;
+    tsfi_helmholtz_dispatch_wave_cycle(0x1a2b3c4d, dep_res1.contract_address, 32, "./tmp/test_guarded.dat.bin", TAPE_SECURITY_TOPSECRET, &hres);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
