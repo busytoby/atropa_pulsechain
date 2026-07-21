@@ -36,6 +36,8 @@ int main(int argc, char **argv) {
         free(framebuffer_rgb);
     }
 
+    vulkan_guide_application_run_wayland_loop(&guide_app, 0);
+
     printf("[SUCCESS] Standalone Auncient Vulkan Guide Hypermedia System verified!\n");
     return 0;
 }

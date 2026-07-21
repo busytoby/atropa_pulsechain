@@ -57,4 +57,10 @@ int vulkan_guide_application_render_frame(
     uint32_t stride_bytes
 );
 
+/* Run standalone Wayland Vulkan window presentation and input loop */
+int vulkan_guide_application_run_wayland_loop(
+    vulkan_guide_application_t *application,
+    int max_frames_to_run
+);
+
 #endif // TSFI_VULKAN_GUIDE_APP_H

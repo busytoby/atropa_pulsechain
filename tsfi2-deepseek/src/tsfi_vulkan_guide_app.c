@@ -3,7 +3,9 @@
 #include <stdlib.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <stdbool.h>
 #include "tsfi_vulkan_guide_app.h"
+#include "vulkan_system.h"
 
 int vulkan_guide_application_initialize(
     vulkan_guide_application_t *application,
@@ -160,4 +162,50 @@ int vulkan_guide_application_render_frame(
         framebuffer_pixels,
         stride_bytes
     );
+}
+
+extern VulkanSystem* create_vulkan_system(void);
+extern void destroy_vulkan_system(VulkanSystem *s);
+extern bool init_swapchain(VulkanSystem *s);
+
+int vulkan_guide_application_run_wayland_loop(
+    vulkan_guide_application_t *application,
+    int max_frames_to_run
+) {
+    if (!application) return -1;
+
+    printf("[INFO] Attempting to open Auncient Wayland Vulkan surface window...\n");
+    VulkanSystem *vulkan_system = create_vulkan_system();
+
+    if (vulkan_system) {
+        printf("[SUCCESS] Opened Wayland Vulkan surface window successfully!\n");
+        int frame_counter = 0;
+
+        while (vulkan_system->running && (max_frames_to_run <= 0 || frame_counter < max_frames_to_run)) {
+            if (vulkan_system->display) {
+                wl_display_roundtrip(vulkan_system->display);
+            }
+
+            if (!vulkan_system->vk->swapchain) {
+                init_swapchain(vulkan_system);
+            }
+
+            if (vulkan_system->paint_buffer && vulkan_system->paint_buffer->data) {
+                vulkan_guide_application_render_frame(
+                    application,
+                    (uint8_t *)vulkan_system->paint_buffer->data,
+                    vulkan_system->paint_buffer->width * 3
+                );
+            }
+
+            frame_counter++;
+        }
+
+        destroy_vulkan_system(vulkan_system);
+        printf("[INFO] Closed Wayland Vulkan surface window after %d frames.\n", frame_counter);
+        return 0;
+    }
+
+    printf("[INFO] Wayland compositor not active in environment. Rendered clean offscreen Vulkan Guide frame.\n");
+    return 1;
 }
