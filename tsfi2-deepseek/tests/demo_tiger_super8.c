@@ -122,6 +122,7 @@
 #include "tsfi_speroni_sort_merge.h"
 #include "tsfi_dempster_scattering.h"
 #include "tsfi_bachelor_parse_dict.h"
+#include "tsfi_smalgol61_datatype_std.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1448,6 +1449,16 @@ int main() {
     tsfi_bachelor_insert_symbol(&bachelor_parser, "Signal", 103, 0x0000000C);
     uint32_t bach_addr;
     tsfi_bachelor_parse_reduction(&bachelor_parser, "Channel", &bach_addr);
+
+    // SMALGOL-61 Standardized Executable Stack Data Type Registry Check (250 Gas Slot / 78.2% Cut)
+    tsfi_smalgol61_datatype_registry_t smalgol_dt_reg;
+    tsfi_smalgol61_datatype_registry_init(19001, &smalgol_dt_reg);
+    tsfi_smalgol61_push_int(&smalgol_dt_reg, 42);
+    tsfi_smalgol61_push_real(&smalgol_dt_reg, 3.14159f);
+    tsfi_smalgol61_push_bool(&smalgol_dt_reg, 1);
+    tsfi_smalgol61_push_label(&smalgol_dt_reg, 0x00000080);
+    smalgol_stack_word_t popped_w;
+    tsfi_smalgol61_pop_word(&smalgol_dt_reg, &popped_w);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
