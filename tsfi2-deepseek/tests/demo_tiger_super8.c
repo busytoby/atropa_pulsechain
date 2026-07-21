@@ -87,6 +87,7 @@
 #include "tsfi_nadler_hull_automaton.h"
 #include "tsfi_nadler_agentic_automaton.h"
 #include "tsfi_nadler_skeletonizer.h"
+#include "tsfi_nadler_syntactic_parser.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1210,6 +1211,11 @@ int main() {
     memset(sample_bmp, 255, sizeof(sample_bmp));
     tsfi_nadler_skeleton_summary_t skel_summary;
     tsfi_nadler_skeletonize_bitmap(sample_bmp, 16, 16, &skel_summary);
+
+    // Morton Nadler Contextual Grammar Syntactic Parser Check (1,000 Gas Slot / 650 ns Latency)
+    tsfi_nadler_stroke_type_t sample_strokes[3] = {NADLER_STROKE_STEM, NADLER_STROKE_STEM, NADLER_STROKE_BAR};
+    tsfi_nadler_syntax_summary_t syn_summary;
+    tsfi_nadler_parse_syntactic_strokes(sample_strokes, 3, &syn_summary);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
