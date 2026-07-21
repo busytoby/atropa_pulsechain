@@ -264,7 +264,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_dempster_scattering.o \
                   $(OBJ_DIR)/tsfi_bachelor_parse_dict.o \
                   $(OBJ_DIR)/tsfi_smalgol61_datatype_std.o \
-                  $(OBJ_DIR)/tsfi_algol61_evm_types.o
+                  $(OBJ_DIR)/tsfi_algol61_evm_types.o \
+                  $(OBJ_DIR)/tsfi_algol_cobol_vulkan.o
 
 
 

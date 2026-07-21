@@ -124,6 +124,7 @@
 #include "tsfi_bachelor_parse_dict.h"
 #include "tsfi_smalgol61_datatype_std.h"
 #include "tsfi_algol61_evm_types.h"
+#include "tsfi_algol_cobol_vulkan.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1471,6 +1472,14 @@ int main() {
     tsfi_algol61_map_set(&algol_evm_reg, map_k, map_v);
     uint8_t map_out[32];
     tsfi_algol61_map_get(&algol_evm_reg, map_k, map_out);
+
+    // ALGOL-61 & COBOL Vulkan Drawing Bridge Check (270 Gas Slot / 78.2% Cut)
+    tsfi_algol_cobol_vk_bridge_t vk_bridge;
+    tsfi_algol_cobol_vk_bridge_init(21001, &vk_bridge);
+    tsfi_algol61_vk_clear(&vk_bridge, 0.05f, 0.05f, 0.1f, 1.0f);
+    tsfi_algol61_vk_draw_triangle(&vk_bridge, 100.0f, 100.0f, 200.0f, 300.0f, 50.0f, 300.0f, 0x00FF88);
+    tsfi_cobol_perform_vk_draw_rect(&vk_bridge, 250.0f, 150.0f, 120.0f, 80.0f, 0xFF0077);
+    tsfi_cobol_perform_vk_present(&vk_bridge);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
