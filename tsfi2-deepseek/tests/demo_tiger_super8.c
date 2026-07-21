@@ -133,6 +133,7 @@
 #include "tsfi_stearman_engine.h"
 #include "tsfi_lgp30_algol_engine.h"
 #include "tsfi_sherman_engine.h"
+#include "tsfi_scott_engine.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1554,6 +1555,15 @@ int main() {
     double v_vec[2] = {0.1, 0.4};
     double inv_updated[4];
     tsfi_sherman_morrison_update(&sherman_eng, inv_A, u_vec, v_vec, 2, inv_updated);
+
+    // D. W. Scott Nonparametric Density Estimation & ASH Bandwidth Solver Check (280 Gas Slot / 78.2% Cut)
+    tsfi_scott_engine_t scott_eng;
+    tsfi_scott_engine_init(30001, &scott_eng);
+    double scott_bandwidth = 0.0;
+    tsfi_scott_compute_bandwidth(&scott_eng, 1.25, 100, &scott_bandwidth);
+    double scott_samples[5] = {0.1, 0.4, 0.45, 0.8, 1.2};
+    double scott_density_bins[4];
+    tsfi_scott_ash_density_estimate(&scott_eng, scott_samples, 5, 4, scott_density_bins);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 

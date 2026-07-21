@@ -273,7 +273,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_thacher_solver.o \
                   $(OBJ_DIR)/tsfi_stearman_engine.o \
                   $(OBJ_DIR)/tsfi_lgp30_algol_engine.o \
-                  $(OBJ_DIR)/tsfi_sherman_engine.o
+                  $(OBJ_DIR)/tsfi_sherman_engine.o \
+                  $(OBJ_DIR)/tsfi_scott_engine.o
 
 
 
