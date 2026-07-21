@@ -198,7 +198,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_parc_trunk_queue.o \
                   $(OBJ_DIR)/tsfi_iso_security_engine.o \
                   $(OBJ_DIR)/tsfi_helmholtz_dispatcher.o \
-                  $(OBJ_DIR)/tsfi_logan_synth.o
+                  $(OBJ_DIR)/tsfi_logan_synth.o \
+                  $(OBJ_DIR)/tsfi_lynch_exec.o
 
 
 

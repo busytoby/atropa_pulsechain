@@ -58,6 +58,7 @@
 #include "tsfi_iso_security_engine.h"
 #include "tsfi_helmholtz_dispatcher.h"
 #include "tsfi_logan_synth.h"
+#include "tsfi_lynch_exec.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1025,6 +1026,13 @@ int main() {
     tsfi_logan_synth_init(&logan_s, 440.0f, 44100.0f);
     float sample_v = tsfi_logan_synth_step(&logan_s);
     (void)sample_v;
+
+    // William C. Lynch Executive Kernel & Concurrent Process Scheduler Check
+    tsfi_lynch_exec_t lynch_exec;
+    tsfi_lynch_exec_init(&lynch_exec);
+    uint32_t spawned_pid, active_pid;
+    tsfi_lynch_exec_spawn(&lynch_exec, 1, 20, &spawned_pid);
+    tsfi_lynch_exec_schedule_next(&lynch_exec, &active_pid);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
