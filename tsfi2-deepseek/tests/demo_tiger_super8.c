@@ -106,6 +106,7 @@
 #include "tsfi_autodin_tx_pipe.h"
 #include "tsfi_conway_ledger_process.h"
 #include "tsfi_conway_interledger_signal.h"
+#include "tsfi_conway_dynamic_stack.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1323,6 +1324,14 @@ int main() {
     // Inter-Ledger Process Signal Dispatch Check (280 Gas Slot / 78.2% Cut)
     tsfi_conway_interledger_signal_t inter_signal;
     tsfi_conway_dispatch_interledger_signal(7001, "HDL001.DAT.BIN", 7002, "RDB001.DAT.BIN", 0x80000001, 0x1122334455667788, &inter_signal);
+
+    // Dynamic Build-As-You-Go Stack Check (220 Gas Slot / 78.2% Cut)
+    tsfi_conway_dynamic_stack_t dynamic_stack;
+    tsfi_conway_dynamic_stack_init(7001, &dynamic_stack);
+    tsfi_conway_dynamic_stack_push(&dynamic_stack, 0x0040, 0x1234567890ABCDEF);
+    uint32_t ret_pc = 0;
+    uint64_t ret_word = 0;
+    tsfi_conway_dynamic_stack_pop(&dynamic_stack, &ret_pc, &ret_word);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
