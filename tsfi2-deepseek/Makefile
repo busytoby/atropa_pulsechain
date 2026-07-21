@@ -187,7 +187,7 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_parc_figma_vector.o \
                   $(OBJ_DIR)/tsfi_parc_runcible_lang.o \
                   $(OBJ_DIR)/tsfi_parc_tape_label_yul.o $(OBJ_DIR)/tsfi_parc_tape_catalog.o \
-            $(OBJ_DIR)/tsfi_parc_schrack.o \
+            $(OBJ_DIR)/tsfi_parc_schrack.o $(OBJ_DIR)/tsfi_parc_naur_ab14.o \
                   $(OBJ_DIR)/tsfi_autodin_tape_proof.o \
                   $(OBJ_DIR)/tsfi_isomorphism_engine.o \
                   $(OBJ_DIR)/tsfi_iso_transpiler.o \
@@ -1269,6 +1269,10 @@ test: bin/test_vulkan_teddy tests/test_rooted_browser_wmq_collision tests/test_a
 	./tests/test_level_up_scheduler
 
 bin/test_schrack_suite: tests/test_schrack_suite.c $(OBJ_DIR)/tsfi_parc_schrack.o
+	@mkdir -p bin
+	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LDFLAGS)
+
+bin/test_naur_ab14_suite: tests/test_naur_ab14_suite.c $(OBJ_DIR)/tsfi_parc_naur_ab14.o
 	@mkdir -p bin
 	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LDFLAGS)
 
