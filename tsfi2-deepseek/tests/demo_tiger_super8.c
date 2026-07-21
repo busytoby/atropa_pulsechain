@@ -91,6 +91,7 @@
 #include "tsfi_nadler_contour_code.h"
 #include "tsfi_transcendental_cf.h"
 #include "tsfi_nather_photometry.h"
+#include "tsfi_algol60_block_scope.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1233,6 +1234,10 @@ int main() {
     uint64_t photon_ts[4] = {1000000000ULL, 1000000500ULL, 1000001000ULL, 1000002000ULL};
     tsfi_nather_photometry_summary_t nather_summary;
     tsfi_nather_process_photometry(photon_ts, 4, &nather_summary);
+
+    // ALGOL 60 Confidential Lexical Block & Call-by-Name Thunk Check (450 Gas Slot)
+    tsfi_algol60_block_summary_t algol_summary;
+    tsfi_algol60_execute_block_frame(3, 4, &algol_summary);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 

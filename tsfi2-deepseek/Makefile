@@ -231,7 +231,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_nadler_syntactic_parser.o \
                   $(OBJ_DIR)/tsfi_nadler_contour_code.o \
                   $(OBJ_DIR)/tsfi_transcendental_cf.o \
-                  $(OBJ_DIR)/tsfi_nather_photometry.o
+                  $(OBJ_DIR)/tsfi_nather_photometry.o \
+                  $(OBJ_DIR)/tsfi_algol60_block_scope.o
 
 
 
