@@ -90,6 +90,7 @@
 #include "tsfi_nadler_syntactic_parser.h"
 #include "tsfi_nadler_contour_code.h"
 #include "tsfi_transcendental_cf.h"
+#include "tsfi_nather_photometry.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1227,6 +1228,11 @@ int main() {
     tsfi_cf_convergent_t e_conv, pi_conv;
     tsfi_cf_compute_e_convergent(5, &e_conv);
     tsfi_cf_compute_pi_convergent(4, &pi_conv);
+
+    // R. E. Nather Synchronous High-Speed Photometric Data Ingestion Check (1,200 Gas / 520 ns)
+    uint64_t photon_ts[4] = {1000000000ULL, 1000000500ULL, 1000001000ULL, 1000002000ULL};
+    tsfi_nather_photometry_summary_t nather_summary;
+    tsfi_nather_process_photometry(photon_ts, 4, &nather_summary);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
