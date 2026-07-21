@@ -189,7 +189,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_parc_tape_label_yul.o \
                   $(OBJ_DIR)/tsfi_parc_tape_catalog.o \
                   $(OBJ_DIR)/tsfi_autodin_tape_proof.o \
-                  $(OBJ_DIR)/tsfi_isomorphism_engine.o
+                  $(OBJ_DIR)/tsfi_isomorphism_engine.o \
+                  $(OBJ_DIR)/tsfi_iso_transpiler.o
 
 
 

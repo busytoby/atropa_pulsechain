@@ -49,6 +49,7 @@
 #include "tsfi_parc_tape_label_yul.h"
 #include "tsfi_parc_tape_catalog.h"
 #include "tsfi_autodin_tape_proof.h"
+#include "tsfi_iso_transpiler.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -963,6 +964,10 @@ int main() {
     FILE *guard_f = tsfi_tape_open_guarded("./tmp/test_guarded.dat.bin", "w+b", TAPE_SECURITY_UNCLASSIFIED);
     if (guard_f) { fclose(guard_f); }
     printf("[INFO] Guarded Tape Creator Check -> Assigned Serial: %s\n", next_vol);
+
+    // AI System Isomorphism Transpiler Equivalence Check
+    int iso_equiv = tsfi_iso_validate_equivalence("SCSI WRITE 0x20 32");
+    printf("[INFO] Yul Isomorphism Transpiler Equivalence Check Result: %d\n", iso_equiv);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
