@@ -100,6 +100,7 @@
 #include "tsfi_clendenin_transport.h"
 #include "tsfi_clendenin_matrix_exp.h"
 #include "tsfi_clendenin_quadrature_synth.h"
+#include "tsfi_conway_coroutine.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1286,6 +1287,10 @@ int main() {
     // Clendenin Rational Chebyshev Spectral Quadrature Synthesizer Check (800 Gas Slot / 78.2% Cut)
     tsfi_clendenin_quad_synth_summary_t quad_synth_summary;
     tsfi_clendenin_quad_synth_sample(440.0, 8, 1.25, 1.5707963, &quad_synth_summary);
+
+    // Melvin E. Conway DAT & 2-3 Tree Embedded Coroutine Threading Check (320 Gas Slot / 78.2% Cut)
+    tsfi_conway_coroutine_node_t conway_node = {0};
+    tsfi_conway_step_tree_coroutine(101, &conway_node);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
