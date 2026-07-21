@@ -1,12 +1,14 @@
 object "TapeLabelDDL" {
     code {
-        // Constructor: Initialize Tape Label Magic Selectors
+        // Constructor: Initialize Extended Tape Label Magic Selectors
         sstore(0x00, 0x564F4C31) // "VOL1"
         sstore(0x01, 0x48445231) // "HDR1"
         sstore(0x02, 0x48445232) // "HDR2"
-        sstore(0x03, 0x454F4631) // "EOF1"
-        sstore(0x04, 0x454F4632) // "EOF2"
-        sstore(0x05, 0x454F5631) // "EOV1"
+        sstore(0x03, 0x48445233) // "HDR3" (Crypto Sig)
+        sstore(0x04, 0x48445234) // "HDR4" (Spatial Bounds)
+        sstore(0x05, 0x48445235) // "HDR5" (Volume Spanning Pointers)
+        sstore(0x06, 0x454F4631) // "EOF1"
+        sstore(0x07, 0x454F5632) // "EOV2"
     }
     object "TapeLabelDDL_deployed" {
         code {
@@ -34,10 +36,30 @@ object "TapeLabelDDL" {
                     switch field_id
                     case 0 { mstore(0, 160) } // label_id
                     case 1 { mstore(0, 164) } // record_format ("F")
+                    case 2 { mstore(0, 165) } // block_size ("00512")
                     default { mstore(0, 160) }
                 }
-                case 4 { // EOF1 (Trailer Offset)
-                    mstore(0, 0xFFFFFFFF) // Dynamically calculated at end of file
+                case 4 { // HDR3 (Offset 240) - Cryptographic Signature
+                    switch field_id
+                    case 0 { mstore(0, 240) } // label_id ("HDR3")
+                    case 1 { mstore(0, 244) } // sig_key ("SIG_2026_USLM_AFFIRMED")
+                    default { mstore(0, 240) }
+                }
+                case 5 { // HDR4 (Offset 320) - Quadtree Spatial Bounds
+                    switch field_id
+                    case 0 { mstore(0, 320) } // label_id ("HDR4")
+                    case 1 { mstore(0, 324) } // spatial_xmin
+                    case 2 { mstore(0, 332) } // spatial_ymin
+                    case 3 { mstore(0, 340) } // spatial_xmax
+                    case 4 { mstore(0, 348) } // spatial_ymax
+                    default { mstore(0, 320) }
+                }
+                case 6 { // HDR5 (Offset 400) - Spanning Pointers
+                    switch field_id
+                    case 0 { mstore(0, 400) } // label_id ("HDR5")
+                    case 1 { mstore(0, 404) } // prev_vol_id
+                    case 2 { mstore(0, 410) } // next_vol_id
+                    default { mstore(0, 400) }
                 }
                 default {
                     revert(0, 0)

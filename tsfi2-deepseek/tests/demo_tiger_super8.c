@@ -931,15 +931,17 @@ int main() {
     tsfi_runcible_main_step("VOID");
     tsfi_runcible_main_step("STATUS");
 
-    // Tape Label Yul DDL verification check for complete .dat.bin sequence (VOL1 + HDR1 + HDR2 + EOF1)
-    uint8_t tape_hdr[240];
-    tsfi_tape_label_yul_format_header(tape_hdr, "DAT001", "QUAD_TREE.DAT.BIN", TAPE_SECURITY_SECRET);
+    // Tape Label Yul DDL verification check for 480-byte extended sequence (VOL1..HDR5 + EOF1)
+    uint8_t tape_hdr[480];
+    tsfi_tape_label_yul_format_extended_header(tape_hdr, "DAT001", "QUAD_TREE.DAT.BIN", TAPE_SECURITY_SECRET, 0.0f, 0.0f, 512.0f, 512.0f, "HDL000", "HDL002");
     int tape_valid = tsfi_tape_label_yul_validate_sequence(tape_hdr);
     int gov_res = tsfi_tape_label_yul_check_governance(tape_hdr, TAPE_SECURITY_TOPSECRET);
+    float xmin, ymin, xmax, ymax;
+    tsfi_tape_label_yul_get_spatial_bounds(tape_hdr, &xmin, &ymin, &xmax, &ymax);
     uint8_t tape_trl[80];
     tsfi_tape_label_yul_format_trailer(tape_trl, TAPE_LABEL_EOF1, 1024);
-    printf("[INFO] Yul DDL Tape Sequence (VOL1+HDR1+HDR2) Result: %d (Governance: %d, EOF1 Magic: %.4s)\n",
-           tape_valid, gov_res, (char *)tape_trl);
+    printf("[INFO] Yul DDL Tape Extended Sequence (VOL1..HDR5) Result: %d (Governance: %d, Bounds: %.0f,%.0f-%.0f,%.0f)\n",
+           tape_valid, gov_res, xmin, ymin, xmax, ymax);
 
     // Tape Catalog unique Volume ID and meaningful File ID generation check
     tsfi_tape_catalog_entry_t cat_entries[8];
