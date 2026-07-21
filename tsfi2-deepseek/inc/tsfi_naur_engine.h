@@ -7,6 +7,7 @@
 #define MAX_BNF_RULES 32
 #define MAX_SYMBOL_LEN 64
 #define NUM_NAUR_QUESTIONS 10
+#define NUM_SYNAPSE_NODES 16
 
 typedef struct {
     uint32_t question_id;
@@ -22,10 +23,17 @@ typedef struct {
 } tsfi_naur_bnf_rule_t;
 
 typedef struct {
+    double excitation_weights[NUM_SYNAPSE_NODES]; // Synapse-State Theory excitation vector
+    double mental_life_coherence;                  // Integrated excitation energy [0.0..1.0]
+} tsfi_naur_sst_model_t;
+
+typedef struct {
     uint32_t naur_id;
     tsfi_naur_bnf_rule_t bnf_rules[MAX_BNF_RULES];
     size_t rule_count;
     tsfi_naur_question_item_t questionnaire[NUM_NAUR_QUESTIONS];
+    tsfi_naur_sst_model_t sst_model;    // Peter Naur Synapse-State Theory Neuro-Model
+    double theory_building_score;       // Programming-as-Theory-Building (PTB) Score
     uint32_t gier_stack_pointer;
     uint32_t evm_gas_units;             // 280 Gas / Auncient Ether Units
     double fet_power_watts;             // 0.0109 W under 78.2% Power Cut
@@ -57,6 +65,22 @@ int tsfi_naur_validate_syntax(
 int tsfi_naur_eval_questionnaire(
     tsfi_naur_engine_t *engine,
     uint32_t *out_affirmed_count
+);
+
+/* Evaluate Peter Naur's "Programming as Theory Building" (PTB) mental model score */
+int tsfi_naur_eval_theory_building(
+    tsfi_naur_engine_t *engine,
+    double code_complexity,
+    double team_comprehension,
+    double *out_theory_score
+);
+
+/* Compute Peter Naur Synapse-State Theory (SST) excitation vector */
+int tsfi_naur_eval_synapse_state(
+    tsfi_naur_engine_t *engine,
+    const double *stimulus_inputs,
+    size_t input_count,
+    double *out_coherence
 );
 
 /* Simulate GIER ALGOL multi-pass compiler stack frame allocation */

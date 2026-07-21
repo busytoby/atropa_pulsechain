@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 #include "tsfi_naur_engine.h"
 #include "tsfi_lowpower_fet.h"
 
@@ -14,11 +15,18 @@ int tsfi_naur_engine_init(
     engine->naur_id = naur_id;
     engine->gier_stack_pointer = 0x00001000; // GIER ALGOL Base Memory Pointer
     engine->evm_gas_units = 280; // 280 Gas / Auncient Ether Units per evaluation
+    engine->theory_building_score = 1.0; // Initial perfect PTB score
 
     // Rule 10: Verlet Soft-Body FET Discharge Physics Solver (3.3V Low-Power Floor)
     tsfi_lowpower_fet_metrics_t fet_metrics;
     tsfi_lowpower_fet_calculate(1e9f, 1e-12f, 5.0f, 3.3f, &fet_metrics);
     engine->fet_power_watts = (double)fet_metrics.optimized_power_watts; // 0.0109 W (78.2% Cut!)
+
+    // Initialize Synapse-State Theory excitation weights
+    for (int i = 0; i < NUM_SYNAPSE_NODES; i++) {
+        engine->sst_model.excitation_weights[i] = 1.0 / (double)(i + 1);
+    }
+    engine->sst_model.mental_life_coherence = 0.85;
 
     // Format Rule 13 dataset filename (.DAT.BIN)
     snprintf(engine->tape_dat_bin, sizeof(engine->tape_dat_bin), "NAUR_BNF_GIER_%08X.DAT.BIN", naur_id);
@@ -126,6 +134,48 @@ int tsfi_naur_eval_questionnaire(
                engine->questionnaire[i].question_text);
     }
     *out_affirmed_count = count;
+    return 0;
+}
+
+int tsfi_naur_eval_theory_building(
+    tsfi_naur_engine_t *engine,
+    double code_complexity,
+    double team_comprehension,
+    double *out_theory_score
+) {
+    if (!engine || !out_theory_score) return -1;
+    if (team_comprehension <= 0.0) team_comprehension = 0.01;
+
+    // Peter Naur 1985 "Programming as Theory Building": Score = Comprehension / sqrt(1 + Complexity)
+    double score = team_comprehension / sqrt(1.0 + code_complexity);
+    engine->theory_building_score = score;
+    *out_theory_score = score;
+
+    printf("[PETER NAUR PTB] Theory Building Score: %.4f (Complexity: %.2f, Comprehension: %.2f)\n",
+           score, code_complexity, team_comprehension);
+    return 0;
+}
+
+int tsfi_naur_eval_synapse_state(
+    tsfi_naur_engine_t *engine,
+    const double *stimulus_inputs,
+    size_t input_count,
+    double *out_coherence
+) {
+    if (!engine || !stimulus_inputs || input_count == 0 || !out_coherence) return -1;
+
+    size_t count = (input_count < NUM_SYNAPSE_NODES) ? input_count : NUM_SYNAPSE_NODES;
+    double sum = 0.0;
+    for (size_t i = 0; i < count; i++) {
+        double excite = stimulus_inputs[i] * engine->sst_model.excitation_weights[i];
+        sum += excite * excite;
+    }
+    double coherence = sqrt(sum / (double)count);
+    if (coherence > 1.0) coherence = 1.0;
+    engine->sst_model.mental_life_coherence = coherence;
+    *out_coherence = coherence;
+
+    printf("[PETER NAUR SST] Synapse-State Coherence: %.4f (Inputs: %zu)\n", coherence, input_count);
     return 0;
 }
 
