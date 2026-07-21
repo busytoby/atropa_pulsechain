@@ -254,7 +254,7 @@ all: tsfi2 bin/tsfi_paint_app bin/tsfi_mcp_server bin/tsfi_mcp_worker bin/tsfi_s
 
 
 # --- Primary Targets ---
-tsfi2: $(OBJ_DIR)/main.o $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
+tsfi2: $(OBJ_DIR)/main.o $(CORE_OBJS) $(OBJ_DIR)/tsfi_paint.o $(OBJ_DIR)/tsfi_dom.o $(VULKAN_PLUGIN_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 libtsfi2.so: $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)

@@ -5,6 +5,7 @@
 #include "tsfi_cli.h"
 #include "tsfi_io.h"
 #include "tsfi_wire_firmware.h"
+#include "tsfi_parc_runcible_lang.h"
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -139,7 +140,7 @@ int main(int argc, char **argv) {
 
         if (input[0] != '\0') {
             if (tsfi_cli_process_line(ws, input) != 0) {
-                break;
+                tsfi_runcible_main_step(input);
             }
             if (fw && fw->cell_printf) fw->cell_printf(0, "\nLAU Command (Intensity Directive) > ");
         }
