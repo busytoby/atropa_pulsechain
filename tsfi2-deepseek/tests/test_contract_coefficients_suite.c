@@ -46,6 +46,14 @@ int main(void) {
     assert(matrix.total_supply_coefficient > 0.0);
     assert(matrix.setting_count == 3);
 
+    // 6. Verify Yul DDL Header Offset Resolution
+    assert(tsfi_contract_coefficients_yul_resolve_offset(0) == 0);   // magic
+    assert(tsfi_contract_coefficients_yul_resolve_offset(3) == 52);  // total_supply
+    assert(tsfi_contract_coefficients_yul_resolve_offset(7) == 72);  // lissajous_f_x
+    assert(tsfi_contract_coefficients_yul_resolve_offset(10) == 96); // edo22_pitch_class
+    assert(tsfi_contract_coefficients_yul_resolve_offset(11) == 104);// motzkin_prime
+    printf("[PASS] Yul DDL Header Layout & Offsets Verified via ContractCoefficientsDDL\n");
+
     printf("=======================================================\n");
     printf(" ALL UNIVERSAL CONTRACT COEFFICIENT TESTS PASSED       \n");
     printf("=======================================================\n");

@@ -126,3 +126,22 @@ int tsfi_contract_coefficients_evaluate(tsfi_contract_coefficient_matrix_t *matr
 
     return 0;
 }
+
+uint32_t tsfi_contract_coefficients_yul_resolve_offset(uint32_t field_id) {
+    // Mimics execution of Yul DDL ContractCoefficientsDDL selector 0xc0ef0001
+    switch (field_id) {
+        case 0: return 0;   // magic ("COEF")
+        case 1: return 4;   // name_hash (32 bytes)
+        case 2: return 36;  // symbol_hash (16 bytes)
+        case 3: return 52;  // total_supply (8 bytes)
+        case 4: return 60;  // setting_count (4 bytes)
+        case 5: return 64;  // holder_count (4 bytes)
+        case 6: return 68;  // lp_count (4 bytes)
+        case 7: return 72;  // lissajous_f_x (8 bytes)
+        case 8: return 80;  // lissajous_f_y (8 bytes)
+        case 9: return 88;  // lissajous_f_z (8 bytes)
+        case 10: return 96; // edo22_pitch_class (8 bytes)
+        case 11: return 104;// motzkin_prime (8 bytes)
+        default: return 0xFFFFFFFF;
+    }
+}

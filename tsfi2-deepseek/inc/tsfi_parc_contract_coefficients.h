@@ -76,4 +76,7 @@ int tsfi_contract_coefficients_register_lp(tsfi_contract_coefficient_matrix_t *m
 /* Evaluate Universal Contract Polynomial Spectrum */
 int tsfi_contract_coefficients_evaluate(tsfi_contract_coefficient_matrix_t *matrix);
 
+/* Resolve Formal Yul DDL Header Offset for Contract Coefficient Field */
+uint32_t tsfi_contract_coefficients_yul_resolve_offset(uint32_t field_id);
+
 #endif // TSFI_PARC_CONTRACT_COEFFICIENTS_H
