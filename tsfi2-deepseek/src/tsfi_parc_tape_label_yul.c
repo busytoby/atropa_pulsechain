@@ -19,11 +19,12 @@ static int yul_get_hdr1_offset(int field_id) {
         case 0: return 80;  // label_id ("HDR1")
         case 1: return 84;  // file_id (must end in .dat.bin)
         case 2: return 101; // set_id
+        case 3: return 127; // security_code (offset 80 + 47 = 127)
         default: return 80;
     }
 }
 
-int tsfi_tape_label_yul_format(uint8_t *header_buf, const char *volume_id, const char *file_id) {
+int tsfi_tape_label_yul_format(uint8_t *header_buf, const char *volume_id, const char *file_id, uint8_t security_level) {
     if (!header_buf || !volume_id || !file_id) return -1;
 
     // Fill 160-byte header buffer with space padding
@@ -37,6 +38,9 @@ int tsfi_tape_label_yul_format(uint8_t *header_buf, const char *volume_id, const
     // Format HDR1 header using Yul offsets
     memcpy(header_buf + yul_get_hdr1_offset(0), "HDR1", 4);
     memcpy(header_buf + yul_get_hdr1_offset(1), file_id, strlen(file_id) > 17 ? 17 : strlen(file_id));
+    
+    // Format security level code ('0' = Unclassified, '1' = Confidential, '2' = Secret, '3' = Top Secret)
+    header_buf[yul_get_hdr1_offset(3)] = '0' + (security_level > 3 ? 3 : security_level);
 
     return 0;
 }
@@ -63,4 +67,25 @@ int tsfi_tape_label_yul_validate(const uint8_t *header_buf) {
     }
 
     return 0; // Validated successfully
+}
+
+int tsfi_tape_label_yul_check_governance(const uint8_t *header_buf, uint8_t required_clearance) {
+    int val_res = tsfi_tape_label_yul_validate(header_buf);
+    if (val_res != 0) return val_res;
+
+    // Read security classification level code from HDR1
+    uint8_t sec_code = header_buf[yul_get_hdr1_offset(3)] - '0';
+    if (sec_code > 3) sec_code = 0;
+
+    // Reject access if required clearance is lower than asset classification tag
+    if (required_clearance < sec_code) {
+        return -5; // Access Denied: Clearance Insufficient
+    }
+
+    // Check owner ID provenance
+    if (memcmp(header_buf + yul_get_vol1_offset(3), "AUNCIENT_ZMM01", 14) != 0) {
+        return -6; // Access Denied: Provenance Hash Mismatch
+    }
+
+    return 0; // Governance Gatekeeper Approved
 }

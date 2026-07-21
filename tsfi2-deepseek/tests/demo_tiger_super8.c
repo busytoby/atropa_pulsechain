@@ -930,11 +930,12 @@ int main() {
     tsfi_runcible_main_step("VOID");
     tsfi_runcible_main_step("STATUS");
 
-    // Tape Label Yul DDL verification check for .dat.bin extension alignment
+    // Tape Label Yul DDL verification check for .dat.bin extension alignment and security governance
     uint8_t tape_hdr[160];
-    tsfi_tape_label_yul_format(tape_hdr, "DAT001", "QUAD_TREE.DAT.BIN");
+    tsfi_tape_label_yul_format(tape_hdr, "DAT001", "QUAD_TREE.DAT.BIN", TAPE_SECURITY_SECRET);
     int tape_valid = tsfi_tape_label_yul_validate(tape_hdr);
-    printf("[INFO] Yul DDL Tape Label .dat.bin Header Validation Result: %d\n", tape_valid);
+    int gov_res = tsfi_tape_label_yul_check_governance(tape_hdr, TAPE_SECURITY_TOPSECRET);
+    printf("[INFO] Yul DDL Tape Label .dat.bin Header Validation Result: %d (Governance Gate: %d)\n", tape_valid, gov_res);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
