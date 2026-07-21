@@ -90,7 +90,25 @@ int vulkan_guide_application_execute_search(
 
     for (uint32_t index = 0; index < application->total_indexed_documents; index++) {
         vulkan_guide_indexed_document_t *doc = &application->indexed_documents[index];
+        int matched = 0;
+
         if (strstr(doc->document_file_name, search_query_string) != NULL) {
+            matched = 1;
+        } else {
+            FILE *file = fopen(doc->document_file_path, "r");
+            if (file) {
+                char line_buffer[1024];
+                while (fgets(line_buffer, sizeof(line_buffer), file)) {
+                    if (strstr(line_buffer, search_query_string) != NULL) {
+                        matched = 1;
+                        break;
+                    }
+                }
+                fclose(file);
+            }
+        }
+
+        if (matched) {
             application->matched_search_count++;
         }
     }
