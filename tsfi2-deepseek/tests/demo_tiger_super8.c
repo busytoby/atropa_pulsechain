@@ -134,6 +134,7 @@
 #include "tsfi_lgp30_algol_engine.h"
 #include "tsfi_sherman_engine.h"
 #include "tsfi_scott_engine.h"
+#include "tsfi_schmidt_engine.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1564,6 +1565,15 @@ int main() {
     double scott_samples[5] = {0.1, 0.4, 0.45, 0.8, 1.2};
     double scott_density_bins[4];
     tsfi_scott_ash_density_estimate(&scott_eng, scott_samples, 5, 4, scott_density_bins);
+
+    // Lee Schmidt CACM Syntax Metacompiler & ALGOL LU Matrix Factorization Check (280 Gas Slot / 78.2% Cut)
+    tsfi_schmidt_engine_t schmidt_eng;
+    tsfi_schmidt_engine_init(31001, &schmidt_eng);
+    int syntax_ok = 0;
+    tsfi_schmidt_syntax_check(&schmidt_eng, "BEGIN A := B[i]; END", &syntax_ok);
+    double matrix_A[4] = {4.0, 3.0, 6.0, 3.0}; // 2x2 matrix
+    double matrix_L[4], matrix_U[4];
+    tsfi_schmidt_lu_factorize(&schmidt_eng, matrix_A, 2, matrix_L, matrix_U);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
