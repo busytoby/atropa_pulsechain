@@ -114,6 +114,7 @@
 #include "tsfi_speroni_params.h"
 #include "tsfi_speroni_ir_engine.h"
 #include "tsfi_speroni_conway_cobol.h"
+#include "tsfi_speroni_lynch_stream.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1381,6 +1382,12 @@ int main() {
     tsfi_speroni_conway_cobol_init(11001, &speroni_cobol_rec);
     tsfi_speroni_conway_cobol_add_field(&speroni_cobol_rec, 1, "VOL-HEADER", 80);
     tsfi_speroni_conway_cobol_add_field(&speroni_cobol_rec, 5, "FILE-BODY", 640);
+
+    // Speroni-Lynch Case ALGOL Stream I/O Channel Check (230 Gas Slot / 78.2% Cut)
+    tsfi_speroni_lynch_stream_t speroni_stream;
+    tsfi_speroni_lynch_stream_init(12001, &speroni_stream);
+    uint8_t sample_data[81] = "VOL1HDL001                                                                      ";
+    tsfi_speroni_lynch_stream_write(&speroni_stream, sample_data, 80);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
