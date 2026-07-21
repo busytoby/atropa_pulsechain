@@ -61,6 +61,7 @@
 #include "tsfi_lynch_exec.h"
 #include "tsfi_helmholtz_lynch_bridge.h"
 #include "tsfi_zevm_vm_selector.h"
+#include "tsfi_lynch_channel.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1045,6 +1046,17 @@ int main() {
     tsfi_zevm_select_vm_kernel(ZEVM_VM_MODE_LYNCH, &vm_cfg_lynch);
     tsfi_zevm_select_vm_kernel(ZEVM_VM_MODE_LOGAN, &vm_cfg_logan);
     tsfi_zevm_select_vm_kernel(ZEVM_VM_MODE_HELMHOLTZ, &vm_cfg_helm);
+
+    // William C. Lynch Double-Buffering Channel & Checkpoint Rollback Check
+    tsfi_lynch_channel_t lynch_chan;
+    tsfi_lynch_channel_init(&lynch_chan);
+    tsfi_lynch_channel_swap_buffers(&lynch_chan);
+
+    uint32_t dummy_slots[32] = {0};
+    uint8_t scsi_reg_out = 0;
+    tsfi_lynch_checkpoint_t lynch_ckpt;
+    tsfi_lynch_checkpoint_capture(&lynch_ckpt, dummy_slots, 32);
+    tsfi_lynch_checkpoint_rollback(&lynch_ckpt, dummy_slots, &scsi_reg_out);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
