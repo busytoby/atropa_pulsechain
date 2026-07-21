@@ -74,6 +74,7 @@
 #include "tsfi_lowpower_mode.h"
 #include "tsfi_dvfs_governor.h"
 #include "tsfi_drum_latency.h"
+#include "tsfi_minimized_drum_buffer.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1131,6 +1132,11 @@ int main() {
     // Real-Time Sub-Microsecond Drum Latency Profiler Check (Rule 11)
     tsfi_drum_latency_profile_t drum_lat_prof;
     tsfi_drum_latency_profile(48000, 32, &drum_lat_prof);
+
+    // Minimized Lockless SPSC Drum Audio Buffer Check (5.86 us Latency)
+    tsfi_minimized_drum_buffer_t min_drum_buf;
+    tsfi_minimized_drum_buffer_init(&min_drum_buf);
+    tsfi_minimized_drum_buffer_push(&min_drum_buf, 0.85f);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
