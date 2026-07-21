@@ -16,6 +16,7 @@
 #include "tsfi_autodin_cumulative_winchester.h"
 #include "tsfi_autodin_cumulative_contract_resolver.h"
 #include "tsfi_autodin_cumulative_contract_comprehensive.h"
+#include "tsfi_vulkan_guide_engine.h"
 #include "tsfi_encodings.h"
 #include "tsfi_cade_imf.h"
 #include "tsfi_cade_vulkan.h"
@@ -1693,7 +1694,13 @@ int main() {
     autodin_cumulative_contract_comprehensive_bond(&autodin_comp_resolver, "dynamic_0xfeedfacecafe");
     autodin_cumulative_contract_comprehensive_delegate(&autodin_comp_resolver, "dynamic_0xfeedfacecafe", 0x777777ULL);
 
+    // P. J. Brown Guide Hypertext Engine on Vulkan (Replacing Lore Workshop)
+    vulkan_guide_engine_t vulkan_guide;
+    vulkan_guide_engine_initialize(&vulkan_guide, WIDTH, HEIGHT);
+    vulkan_guide_engine_process_click(&vulkan_guide, 45.0f, 85.0f); // Toggle "Auncient WinchesterMQ" button in-place expansion
+
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
+    vulkan_guide_engine_render_framebuffer(&vulkan_guide, rgb_out, WIDTH * 3);
 
     printf("[INFO] Rendering 90-second Eye of the Tiger Super8 / Quantel demoscene showcase...\n");
 
