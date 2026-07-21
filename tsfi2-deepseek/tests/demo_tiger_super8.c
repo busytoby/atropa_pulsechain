@@ -126,6 +126,7 @@
 #include "tsfi_algol61_evm_types.h"
 #include "tsfi_algol_cobol_vulkan.h"
 #include "tsfi_universal_abi_firstclass.h"
+#include "tsfi_manderfield_engine.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1492,6 +1493,12 @@ int main() {
     uint64_t dummy_args[2] = {10, 20};
     tsfi_firstclass_abi_invoke(&abi_gw, &st_handle, 0x01, dummy_args, 2, &abi_res);
     tsfi_firstclass_abi_invoke(&abi_gw, &algol_handle, 0x02, dummy_args, 2, &abi_res);
+
+    // E. L. Manderfield SMALGOL-62 Syntax & Fluidized Physics Engine Check (280 Gas Slot / 78.2% Cut)
+    tsfi_manderfield_engine_t mand_engine;
+    tsfi_manderfield_engine_init(23001, &mand_engine);
+    tsfi_manderfield_smalgol62_exec(&mand_engine, "BEGIN INTEGER I; I := 42; END");
+    tsfi_manderfield_fluidized_calculate(&mand_engine, 1.5f, 0.002f);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 

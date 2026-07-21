@@ -266,7 +266,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_smalgol61_datatype_std.o \
                   $(OBJ_DIR)/tsfi_algol61_evm_types.o \
                   $(OBJ_DIR)/tsfi_algol_cobol_vulkan.o \
-                  $(OBJ_DIR)/tsfi_universal_abi_firstclass.o
+                  $(OBJ_DIR)/tsfi_universal_abi_firstclass.o \
+                  $(OBJ_DIR)/tsfi_manderfield_engine.o
 
 
 
