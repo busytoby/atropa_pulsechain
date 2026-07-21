@@ -12,6 +12,7 @@
 #include "tsfi_autodin_cumulative_permutation.h"
 #include "tsfi_autodin_cumulative_telemetry.h"
 #include "tsfi_autodin_cumulative_gateway.h"
+#include "tsfi_autodin_cumulative_quadtree.h"
 #include "tsfi_encodings.h"
 #include "tsfi_cade_imf.h"
 #include "tsfi_cade_vulkan.h"
@@ -1656,6 +1657,11 @@ int main() {
     autodin_cumulative_gateway_t autodin_gateway;
     autodin_cumulative_gateway_initialize(9001, &autodin_gateway);
     autodin_cumulative_gateway_process_batch(&autodin_gateway, &autodin_cumulative_engine);
+
+    // Automated Digital Network Cumulative Quadtree Storage System (.DAT.BIN - Rule 13)
+    autodin_cumulative_quadtree_storage_t autodin_quadtree;
+    autodin_cumulative_quadtree_initialize("AUTODIN_SPATIAL_INDEX.DAT.BIN", &autodin_quadtree);
+    autodin_cumulative_quadtree_insert_transaction(&autodin_quadtree, 12.5, -45.2, autodin_root_cumulative_hash);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
