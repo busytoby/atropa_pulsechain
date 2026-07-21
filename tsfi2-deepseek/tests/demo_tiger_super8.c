@@ -84,6 +84,7 @@
 #include "tsfi_fortran_dml_power.h"
 #include "tsfi_continuous_zero_power.h"
 #include "tsfi_defcon_power_alarm.h"
+#include "tsfi_nadler_hull_automaton.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1191,6 +1192,11 @@ int main() {
     // DEFCON Power Spike Alarm Evaluation Check (Trigger DEFCON 3 at 0.022 W Spike)
     tsfi_defcon_alarm_status_t defcon_status;
     tsfi_defcon_power_alarm_eval(0.022, &defcon_status);
+
+    // Morton Nadler Convex Hull & Sequential-Scan Automaton Check (2,500 Gas / 98.4% Cut)
+    uint8_t sample_raster[64] = {200, 50, 180, 10, 255};
+    tsfi_nadler_hull_summary_t hull_summary;
+    tsfi_nadler_run_sequential_automaton(sample_raster, 64, &hull_summary);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
