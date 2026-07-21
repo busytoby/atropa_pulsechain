@@ -111,6 +111,7 @@
 #include "tsfi_hershkowitz_consensus.h"
 #include "tsfi_smalgol61_engine.h"
 #include "tsfi_ezvm_smalgol61_stack.h"
+#include "tsfi_speroni_params.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1359,6 +1360,14 @@ int main() {
     tsfi_ezvm_smalgol61_stack_init(9001, &ezvm_stack);
     tsfi_ezvm_smalgol61_stack_step(&ezvm_stack, "CALL R0 := SCSI(32)", 0x0080, 0xABCDEF1234567890);
     tsfi_ezvm_smalgol61_stack_step(&ezvm_stack, "RETURN", 0, 0);
+
+    // Joseph Speroni Parameter List & Declaration Arithmetization Check (270 Gas Slot / 78.2% Cut)
+    tsfi_speroni_param_list_t speroni_list;
+    tsfi_speroni_param_list_init(&speroni_list);
+    uint64_t params[3] = {32, 30, 0x12345678};
+    tsfi_speroni_param_list_bind(&speroni_list, params, 3);
+    uint32_t arith_off = tsfi_speroni_arithmetize_header_offset(1, 2);
+    (void)arith_off;
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
