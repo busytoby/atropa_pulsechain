@@ -118,6 +118,7 @@
 #include "tsfi_decnet_exec_stack.h"
 #include "tsfi_tree_net_vm.h"
 #include "tsfi_speroni_param_list.h"
+#include "tsfi_speroni_define_format.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1414,6 +1415,14 @@ int main() {
     tsfi_speroni_param_list_add_param(&speroni_params_proc, "y_thunk", SPERONI_PARAM_MODE_NAME, 0x10002000);
     tsfi_speroni_param_list_add_param(&speroni_params_proc, "z_ref", SPERONI_PARAM_MODE_REF, 0x00001001);
     tsfi_speroni_param_list_eval(&speroni_params_proc);
+
+    // Speroni Case ALGOL DEFINE Macro & FORMAT Table Engine Check (210 Gas Slot / 78.2% Cut)
+    tsfi_speroni_define_format_proc_t speroni_df_proc;
+    tsfi_speroni_define_format_proc_init(15001, &speroni_df_proc);
+    tsfi_speroni_add_define_macro(&speroni_df_proc, "SCSI_FETCH", "POKE(32, KEY); PEEK(30)");
+    tsfi_speroni_add_format_spec(&speroni_df_proc, "VOL1_FMT", "\"VOL1\", 80A, DAT_BIN");
+    char df_out[256];
+    tsfi_speroni_expand_define_format(&speroni_df_proc, "SCSI_FETCH", "VOL1_FMT", df_out, sizeof(df_out));
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
