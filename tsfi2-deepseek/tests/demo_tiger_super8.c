@@ -120,6 +120,7 @@
 #include "tsfi_speroni_param_list.h"
 #include "tsfi_speroni_define_format.h"
 #include "tsfi_speroni_sort_merge.h"
+#include "tsfi_dempster_scattering.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1432,6 +1433,11 @@ int main() {
     tsfi_speroni_sort_merge_insert(&speroni_sm_spooler, 0x1001, 0xBB);
     tsfi_speroni_sort_merge_insert(&speroni_sm_spooler, 0x1002, 0xCC);
     tsfi_speroni_sort_merge_execute(&speroni_sm_spooler);
+
+    // Dempster Feynman-Born Scattering Matrix & SMALGOL Math Check (230 Gas Slot / 78.2% Cut)
+    tsfi_dempster_scattering_solver_t dempster_solver;
+    tsfi_dempster_scattering_init(17001, &dempster_solver);
+    tsfi_dempster_scattering_compute(&dempster_solver, 13.6, 5.0);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
