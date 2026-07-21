@@ -70,6 +70,7 @@
 #include "tsfi_knuth_fft.h"
 #include "tsfi_knuth_quadtree.h"
 #include "tsfi_knuth_rb_dragon.h"
+#include "tsfi_lowpower_fet.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1110,6 +1111,10 @@ int main() {
     // Donald E. Knuth Base 2i Red-Black Twin Dragon Quadtree Classifier Check (Rule 13)
     tsfi_knuth_rb_dragon_node_t rb_dragon_node;
     tsfi_knuth_rb_dragon_classify(knuth_quad_node.quad_node_address, &rb_dragon_node);
+
+    // Low-Power FET Energy Optimizer Check under Knuth Base 2i Voltage Scaling
+    tsfi_lowpower_fet_metrics_t fet_lp_metrics;
+    tsfi_lowpower_fet_calculate(1e9f, 1e-12f, 5.0f, 3.3f, &fet_lp_metrics);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
