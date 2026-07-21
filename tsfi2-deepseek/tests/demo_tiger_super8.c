@@ -46,6 +46,7 @@
 #include "tsfi_parc_figma_proto.h"
 #include "tsfi_parc_figma_vector.h"
 #include "tsfi_parc_runcible_lang.h"
+#include "tsfi_parc_tape_label_yul.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -928,6 +929,12 @@ int main() {
     tsfi_runcible_main_step("ST EVAL 3 + 4");
     tsfi_runcible_main_step("VOID");
     tsfi_runcible_main_step("STATUS");
+
+    // Tape Label Yul DDL verification check for .dat.bin extension alignment
+    uint8_t tape_hdr[160];
+    tsfi_tape_label_yul_format(tape_hdr, "DAT001", "QUAD_TREE.DAT.BIN");
+    int tape_valid = tsfi_tape_label_yul_validate(tape_hdr);
+    printf("[INFO] Yul DDL Tape Label .dat.bin Header Validation Result: %d\n", tape_valid);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
