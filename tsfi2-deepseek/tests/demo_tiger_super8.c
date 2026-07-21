@@ -95,6 +95,7 @@
 #include "tsfi_algol61_logic_power.h"
 #include "tsfi_auncient_ether.h"
 #include "tsfi_rb_llm_neurology.h"
+#include "tsfi_algol68_mode_transpiler.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1260,6 +1261,10 @@ int main() {
     uint8_t sample_logic_matrix[16] = {1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1};
     tsfi_rb_neurology_summary_t rb_summary;
     tsfi_rb_neurology_compile_table(0x1001, sample_logic_matrix, 16, &rb_summary);
+
+    // ALGOL 68 Polymorphic Mode & Subroutine Transpiler Check (550 Gas Slot / 78.2% Cut)
+    tsfi_algol68_mode_summary_t a68_summary;
+    tsfi_algol68_transpile_mode(ALGOL68_MODE_STRUCT, 4, 0x01, &a68_summary);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
