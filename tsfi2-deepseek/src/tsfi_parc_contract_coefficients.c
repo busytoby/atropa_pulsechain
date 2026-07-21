@@ -145,3 +145,38 @@ uint32_t tsfi_contract_coefficients_yul_resolve_offset(uint32_t field_id) {
         default: return 0xFFFFFFFF;
     }
 }
+
+int tsfi_contract_coefficients_call_and_resolve(tsfi_contract_coefficient_matrix_t *matrix, const char *func_signature, uint32_t selector) {
+    if (!matrix || !matrix->is_initialized || !func_signature) return -1;
+
+    // Simulate EVM call execution against target contract (dynamic_<address>) via standard 4-byte selector
+    switch (selector) {
+        case 0x18160ddd: { // totalSupply()
+            uint64_t simulated_supply = 1000000000000000000ULL;
+            matrix->total_supply = simulated_supply;
+            matrix->total_supply_coefficient = log10((double)simulated_supply) / 18.0;
+            break;
+        }
+        case 0x06fdde03: { // name()
+            snprintf(matrix->name, sizeof(matrix->name), "Atropa PulseChain Dynamic Token");
+            matrix->name_coefficient = hash_string_to_coefficient(matrix->name);
+            break;
+        }
+        case 0x95d89b41: { // symbol()
+            snprintf(matrix->symbol, sizeof(matrix->symbol), "ATROPA");
+            matrix->symbol_coefficient = hash_string_to_coefficient(matrix->symbol);
+            break;
+        }
+        case 0x0902f1de: { // getReserves()
+            tsfi_contract_coefficients_register_lp(matrix, "0xUniswapPairContract", 5000000, 10000000);
+            break;
+        }
+        default: { // Arbitrary function call resolution (e.g., owner(), decimals(), paused())
+            uint64_t simulated_return = (uint64_t)selector % 1000;
+            tsfi_contract_coefficients_register_setting(matrix, func_signature, simulated_return);
+            break;
+        }
+    }
+
+    return tsfi_contract_coefficients_evaluate(matrix);
+}

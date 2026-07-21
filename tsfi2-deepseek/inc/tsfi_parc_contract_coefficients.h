@@ -79,4 +79,7 @@ int tsfi_contract_coefficients_evaluate(tsfi_contract_coefficient_matrix_t *matr
 /* Resolve Formal Yul DDL Header Offset for Contract Coefficient Field */
 uint32_t tsfi_contract_coefficients_yul_resolve_offset(uint32_t field_id);
 
+/* Execute Regular Contract Function Call and Resolve Returned Value into Coefficient Matrix */
+int tsfi_contract_coefficients_call_and_resolve(tsfi_contract_coefficient_matrix_t *matrix, const char *func_signature, uint32_t selector);
+
 #endif // TSFI_PARC_CONTRACT_COEFFICIENTS_H

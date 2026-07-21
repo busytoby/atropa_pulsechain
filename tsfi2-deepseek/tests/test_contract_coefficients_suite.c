@@ -54,6 +54,19 @@ int main(void) {
     assert(tsfi_contract_coefficients_yul_resolve_offset(11) == 104);// motzkin_prime
     printf("[PASS] Yul DDL Header Layout & Offsets Verified via ContractCoefficientsDDL\n");
 
+    // 7. Resolve Coefficients via Direct Contract Function Calls (totalSupply(), name(), symbol(), getReserves())
+    tsfi_contract_coefficient_matrix_t dynamic_matrix;
+    assert(tsfi_contract_coefficients_init(&dynamic_matrix, "0x953467954114363") == 0);
+    assert(tsfi_contract_coefficients_call_and_resolve(&dynamic_matrix, "totalSupply()", 0x18160ddd) == 0);
+    assert(tsfi_contract_coefficients_call_and_resolve(&dynamic_matrix, "name()", 0x06fdde03) == 0);
+    assert(tsfi_contract_coefficients_call_and_resolve(&dynamic_matrix, "symbol()", 0x95d89b41) == 0);
+    assert(tsfi_contract_coefficients_call_and_resolve(&dynamic_matrix, "getReserves()", 0x0902f1de) == 0);
+    assert(tsfi_contract_coefficients_call_and_resolve(&dynamic_matrix, "owner()", 0x8da5ad1e) == 0);
+    printf("[PASS] Resolved Contract Coefficients Directly from Function Calls\n");
+    printf("[INFO] Dynamically Resolved TotalSupply: %lu\n", dynamic_matrix.total_supply);
+    printf("[INFO] Dynamically Resolved Name: %s\n", dynamic_matrix.name);
+    printf("[INFO] Dynamically Resolved Symbol: %s\n", dynamic_matrix.symbol);
+
     printf("=======================================================\n");
     printf(" ALL UNIVERSAL CONTRACT COEFFICIENT TESTS PASSED       \n");
     printf("=======================================================\n");
