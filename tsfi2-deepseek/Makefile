@@ -190,6 +190,7 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_parc_schrack.o $(OBJ_DIR)/tsfi_parc_naur_ab14.o \
             $(OBJ_DIR)/tsfi_parc_runcible_cics.o $(OBJ_DIR)/tsfi_parc_ingerman_translator.o \
             $(OBJ_DIR)/tsfi_parc_ingerman_alg141.o \
+            $(OBJ_DIR)/tsfi_parc_pulsechain_lp_matrix.o \
                   $(OBJ_DIR)/tsfi_autodin_tape_proof.o \
                   $(OBJ_DIR)/tsfi_isomorphism_engine.o \
                   $(OBJ_DIR)/tsfi_iso_transpiler.o \
@@ -1287,6 +1288,10 @@ bin/test_ingerman_translator_suite: tests/test_ingerman_translator_suite.c $(OBJ
 	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LDFLAGS)
 
 bin/test_ingerman_alg141_suite: tests/test_ingerman_alg141_suite.c $(OBJ_DIR)/tsfi_parc_ingerman_alg141.o
+	@mkdir -p bin
+	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LDFLAGS)
+
+bin/test_pulsechain_lp_matrix_suite: tests/test_pulsechain_lp_matrix_suite.c $(OBJ_DIR)/tsfi_parc_pulsechain_lp_matrix.o $(OBJ_DIR)/tsfi_parc_ingerman_alg141.o
 	@mkdir -p bin
 	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LDFLAGS)
 
