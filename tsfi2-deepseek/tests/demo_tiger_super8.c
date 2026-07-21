@@ -110,6 +110,7 @@
 #include "tsfi_hershkowitz_fit.h"
 #include "tsfi_hershkowitz_consensus.h"
 #include "tsfi_smalgol61_engine.h"
+#include "tsfi_ezvm_smalgol61_stack.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1352,6 +1353,12 @@ int main() {
     tsfi_smalgol61_proc_t smalgol_proc;
     tsfi_smalgol61_proc_init(8001, &smalgol_proc);
     tsfi_smalgol61_proc_step(&smalgol_proc, "R0 := SCSI(32)");
+
+    // e/ZVM Dynamic Stack SMALGOL-61 Executable System Check (330 Gas Slot / 78.2% Cut)
+    tsfi_ezvm_smalgol61_stack_t ezvm_stack;
+    tsfi_ezvm_smalgol61_stack_init(9001, &ezvm_stack);
+    tsfi_ezvm_smalgol61_stack_step(&ezvm_stack, "CALL R0 := SCSI(32)", 0x0080, 0xABCDEF1234567890);
+    tsfi_ezvm_smalgol61_stack_step(&ezvm_stack, "RETURN", 0, 0);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
