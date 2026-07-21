@@ -102,6 +102,7 @@
 #include "tsfi_clendenin_quadrature_synth.h"
 #include "tsfi_conway_coroutine.h"
 #include "tsfi_autodin_conway_tx.h"
+#include "tsfi_conway_pipe.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1296,6 +1297,13 @@ int main() {
     // Bounded AUTODIN Submitter Gas Escrow Coroutine Execution Check (450 Gas Slot / 78.2% Cut)
     tsfi_autodin_conway_tx_summary_t autodin_conway_summary;
     tsfi_autodin_step_conway_tx_submitter(0x10002000, "0x1234567890ABCDEF1234567890ABCDEF12345678", 10000, 32, &autodin_conway_summary);
+
+    // Melvin E. Conway Coroutine Stream Pipe Multiplexer Check (280 Gas Slot / 78.2% Cut)
+    tsfi_conway_pipe_t conway_pipe;
+    tsfi_conway_pipe_init(&conway_pipe);
+    tsfi_conway_pipe_push(&conway_pipe, 0xCAFEBABEDEADBEEF);
+    uint64_t pulled_word = 0;
+    tsfi_conway_pipe_pull(&conway_pipe, &pulled_word);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
