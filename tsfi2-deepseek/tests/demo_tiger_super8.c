@@ -77,6 +77,7 @@
 #include "tsfi_minimized_drum_buffer.h"
 #include "tsfi_card_spooler.h"
 #include "tsfi_nanosecond_drum.h"
+#include "tsfi_nadler_optimizer.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1152,6 +1153,10 @@ int main() {
     tsfi_nanosecond_drum_t nano_drum;
     tsfi_nanosecond_drum_init(&nano_drum);
     tsfi_nanosecond_drum_trigger_stroke(&nano_drum, 32);
+
+    // Morton Nadler Positional Bit Interleaving Check (5,000 Gas Tier / Rule 13)
+    tsfi_nadler_optimizer_t nadler_opt;
+    tsfi_nadler_interleave_2d(25, 42, &nadler_opt);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
