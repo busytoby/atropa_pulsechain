@@ -192,6 +192,7 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_parc_ingerman_alg141.o \
             $(OBJ_DIR)/tsfi_parc_ingerman_thunk.o \
             $(OBJ_DIR)/tsfi_parc_ingerman_display.o \
+            $(OBJ_DIR)/tsfi_parc_ingerman_syntax.o \
             $(OBJ_DIR)/tsfi_parc_pulsechain_lp_matrix.o \
                   $(OBJ_DIR)/tsfi_autodin_tape_proof.o \
                   $(OBJ_DIR)/tsfi_isomorphism_engine.o \
@@ -1298,6 +1299,10 @@ bin/test_ingerman_thunk_suite: tests/test_ingerman_thunk_suite.c $(OBJ_DIR)/tsfi
 	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LDFLAGS)
 
 bin/test_ingerman_display_suite: tests/test_ingerman_display_suite.c $(OBJ_DIR)/tsfi_parc_ingerman_display.o
+	@mkdir -p bin
+	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LDFLAGS)
+
+bin/test_ingerman_syntax_suite: tests/test_ingerman_syntax_suite.c $(OBJ_DIR)/tsfi_parc_ingerman_syntax.o
 	@mkdir -p bin
 	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LDFLAGS)
 
