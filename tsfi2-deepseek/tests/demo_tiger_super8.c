@@ -83,6 +83,7 @@
 #include "tsfi_cobol_algol_power.h"
 #include "tsfi_fortran_dml_power.h"
 #include "tsfi_continuous_zero_power.h"
+#include "tsfi_defcon_power_alarm.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1186,6 +1187,10 @@ int main() {
     // Continuous Zero-Leakage Lowest Power Sentinel Initialization
     tsfi_continuous_power_status_t p_status;
     tsfi_continuous_power_init(&p_status);
+
+    // DEFCON Power Spike Alarm Evaluation Check (Trigger DEFCON 3 at 0.022 W Spike)
+    tsfi_defcon_alarm_status_t defcon_status;
+    tsfi_defcon_power_alarm_eval(0.022, &defcon_status);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
