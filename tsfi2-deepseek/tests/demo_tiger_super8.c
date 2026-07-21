@@ -113,6 +113,7 @@
 #include "tsfi_ezvm_smalgol61_stack.h"
 #include "tsfi_speroni_params.h"
 #include "tsfi_speroni_ir_engine.h"
+#include "tsfi_speroni_conway_cobol.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1374,6 +1375,12 @@ int main() {
     tsfi_speroni_ir_proc_t speroni_ir;
     tsfi_speroni_ir_proc_init(10001, &speroni_ir);
     tsfi_speroni_ir_emit(&speroni_ir, SPERONI_IR_OP_SCSI_READ, 0, 1, 32);
+
+    // Speroni-Conway COBOL Record Layout Arithmetizer Check (210 Gas Slot / 78.2% Cut)
+    tsfi_speroni_conway_cobol_t speroni_cobol_rec;
+    tsfi_speroni_conway_cobol_init(11001, &speroni_cobol_rec);
+    tsfi_speroni_conway_cobol_add_field(&speroni_cobol_rec, 1, "VOL-HEADER", 80);
+    tsfi_speroni_conway_cobol_add_field(&speroni_cobol_rec, 5, "FILE-BODY", 640);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
