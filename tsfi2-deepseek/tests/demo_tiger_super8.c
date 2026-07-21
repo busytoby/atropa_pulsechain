@@ -108,6 +108,7 @@
 #include "tsfi_conway_interledger_signal.h"
 #include "tsfi_conway_dynamic_stack.h"
 #include "tsfi_hershkowitz_fit.h"
+#include "tsfi_hershkowitz_consensus.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1340,6 +1341,11 @@ int main() {
     uint32_t obs[10] = {10, 12, 9, 11, 10, 8, 10, 11, 9, 10};
     double exp_val[10] = {10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0};
     tsfi_hershkowitz_fit_evaluate(&hershk_fit, obs, exp_val, 10);
+
+    // Martin Hershkowitz Statistical & Matrix Transactional Consensus Check (410 Gas Slot / 78.2% Cut)
+    tsfi_hershkowitz_consensus_t hershk_cons;
+    tsfi_hershkowitz_consensus_init(1000001, &hershk_cons);
+    tsfi_hershkowitz_consensus_validate(&hershk_cons, obs, 10, 0x07);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
