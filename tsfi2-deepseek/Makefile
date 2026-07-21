@@ -252,7 +252,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_hershkowitz_consensus.o \
                   $(OBJ_DIR)/tsfi_smalgol61_engine.o \
                   $(OBJ_DIR)/tsfi_ezvm_smalgol61_stack.o \
-                  $(OBJ_DIR)/tsfi_speroni_params.o
+                  $(OBJ_DIR)/tsfi_speroni_params.o \
+                  $(OBJ_DIR)/tsfi_speroni_ir_engine.o
 
 
 

@@ -112,6 +112,7 @@
 #include "tsfi_smalgol61_engine.h"
 #include "tsfi_ezvm_smalgol61_stack.h"
 #include "tsfi_speroni_params.h"
+#include "tsfi_speroni_ir_engine.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1368,6 +1369,11 @@ int main() {
     tsfi_speroni_param_list_bind(&speroni_list, params, 3);
     uint32_t arith_off = tsfi_speroni_arithmetize_header_offset(1, 2);
     (void)arith_off;
+
+    // Joseph Speroni Arithmetized IR Optimization Check (240 Gas Slot / 78.2% Cut)
+    tsfi_speroni_ir_proc_t speroni_ir;
+    tsfi_speroni_ir_proc_init(10001, &speroni_ir);
+    tsfi_speroni_ir_emit(&speroni_ir, SPERONI_IR_OP_SCSI_READ, 0, 1, 32);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
