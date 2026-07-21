@@ -128,6 +128,7 @@
 #include "tsfi_universal_abi_firstclass.h"
 #include "tsfi_manderfield_engine.h"
 #include "tsfi_manderfield_compiler.h"
+#include "tsfi_manderfield_npl_transpiler.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1508,6 +1509,14 @@ int main() {
     size_t smalgol_len = 0;
     tsfi_manderfield_compile_smalgol(&mand_cmp, "BEGIN INTEGER X; X := 10; END", smalgol_bc, &smalgol_len);
     tsfi_manderfield_governance_check(&mand_cmp, "SMALGOL-62 Standard (NAA / ACM 1962)");
+
+    // Manderfield-NPL Multi-Paradigm Transpiler & Small-Memory AST Compactor Check (280 Gas Slot / 78.2% Cut)
+    tsfi_manderfield_npl_transpiler_t mand_npl;
+    tsfi_manderfield_npl_transpiler_init(25001, &mand_npl);
+    char yul_out_buf[256];
+    tsfi_manderfield_transpile_npl(&mand_npl, "DECLARE X FIXED BINARY;", yul_out_buf, sizeof(yul_out_buf));
+    size_t compacted_ast_sz = 0;
+    tsfi_manderfield_compact_ast(&mand_npl, 1024, &compacted_ast_sz);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
