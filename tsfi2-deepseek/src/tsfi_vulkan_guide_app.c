@@ -456,6 +456,7 @@ int vulkan_guide_application_run_wayland_loop(
     if (vulkan_system) {
         lau_unseal_object(vulkan_system);
         vulkan_system->disable_ui_overlay = true;
+        vulkan_system->external_render_enabled = true;
         g_guide_vulkan_system_instance = vulkan_system;
 
         tsfi_input_set_key_hook((void *)vulkan_guide_key_hook);
@@ -473,10 +474,13 @@ int vulkan_guide_application_run_wayland_loop(
             }
 
             if (vulkan_system->paint_buffer && vulkan_system->paint_buffer->data) {
+                application->core_guide_engine.vulkan_framebuffer_width = (uint32_t)vulkan_system->paint_buffer->width;
+                application->core_guide_engine.vulkan_framebuffer_height = (uint32_t)vulkan_system->paint_buffer->height;
+
                 vulkan_guide_application_render_frame(
                     application,
                     (uint8_t *)vulkan_system->paint_buffer->data,
-                    vulkan_system->paint_buffer->width * 3
+                    vulkan_system->paint_buffer->width * 4
                 );
             }
 
