@@ -243,7 +243,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_clendenin_quadrature_synth.o \
                   $(OBJ_DIR)/tsfi_conway_coroutine.o \
                   $(OBJ_DIR)/tsfi_autodin_conway_tx.o \
-                  $(OBJ_DIR)/tsfi_conway_pipe.o
+                  $(OBJ_DIR)/tsfi_conway_pipe.o \
+                  $(OBJ_DIR)/tsfi_autodin_tx_pipe.o
 
 
 

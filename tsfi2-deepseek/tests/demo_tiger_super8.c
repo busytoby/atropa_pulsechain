@@ -103,6 +103,7 @@
 #include "tsfi_conway_coroutine.h"
 #include "tsfi_autodin_conway_tx.h"
 #include "tsfi_conway_pipe.h"
+#include "tsfi_autodin_tx_pipe.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1304,6 +1305,13 @@ int main() {
     tsfi_conway_pipe_push(&conway_pipe, 0xCAFEBABEDEADBEEF);
     uint64_t pulled_word = 0;
     tsfi_conway_pipe_pull(&conway_pipe, &pulled_word);
+
+    // AUTODIN Per-Transaction Coroutine Stream Pipe Fabric Check (280 Gas Slot / 78.2% Cut)
+    tsfi_autodin_tx_pipe_t autodin_tx_pipe;
+    tsfi_autodin_tx_pipe_init(&autodin_tx_pipe);
+    tsfi_autodin_tx_pipe_push(&autodin_tx_pipe, 0x90001000, "0x1234567890ABCDEF1234567890ABCDEF12345678", 0xDEADBEEF12345678);
+    tsfi_autodin_tx_entry_t pulled_tx_entry;
+    tsfi_autodin_tx_pipe_pull(&autodin_tx_pipe, &pulled_tx_entry);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
