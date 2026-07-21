@@ -127,6 +127,7 @@
 #include "tsfi_algol_cobol_vulkan.h"
 #include "tsfi_universal_abi_firstclass.h"
 #include "tsfi_manderfield_engine.h"
+#include "tsfi_manderfield_compiler.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1499,6 +1500,14 @@ int main() {
     tsfi_manderfield_engine_init(23001, &mand_engine);
     tsfi_manderfield_smalgol62_exec(&mand_engine, "BEGIN INTEGER I; I := 42; END");
     tsfi_manderfield_fluidized_calculate(&mand_engine, 1.5f, 0.002f);
+
+    // Manderfield Small-Computer Compiler & ALGOL Bulletin Governance Check (280 Gas Slot / 78.2% Cut)
+    tsfi_manderfield_compiler_t mand_cmp;
+    tsfi_manderfield_compiler_init(24001, &mand_cmp);
+    uint8_t smalgol_bc[16];
+    size_t smalgol_len = 0;
+    tsfi_manderfield_compile_smalgol(&mand_cmp, "BEGIN INTEGER X; X := 10; END", smalgol_bc, &smalgol_len);
+    tsfi_manderfield_governance_check(&mand_cmp, "SMALGOL-62 Standard (NAA / ACM 1962)");
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
