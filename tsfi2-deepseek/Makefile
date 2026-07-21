@@ -209,7 +209,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_electricity_meter.o \
                   $(OBJ_DIR)/tsfi_knuth_yul_transpiler.o \
                   $(OBJ_DIR)/tsfi_knuth_fft.o \
-                  $(OBJ_DIR)/tsfi_knuth_quadtree.o
+                  $(OBJ_DIR)/tsfi_knuth_quadtree.o \
+                  $(OBJ_DIR)/tsfi_knuth_rb_dragon.o
 
 
 

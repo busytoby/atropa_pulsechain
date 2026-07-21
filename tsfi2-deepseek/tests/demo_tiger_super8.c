@@ -69,6 +69,7 @@
 #include "tsfi_knuth_yul_transpiler.h"
 #include "tsfi_knuth_fft.h"
 #include "tsfi_knuth_quadtree.h"
+#include "tsfi_knuth_rb_dragon.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1105,6 +1106,10 @@ int main() {
     // Donald E. Knuth Base 2i Twin Dragon Quadtree Indexer Check (Rule 13)
     tsfi_knuth_quadtree_node_t knuth_quad_node;
     tsfi_knuth_quadtree_resolve_node(25, -12, 8, &knuth_quad_node);
+
+    // Donald E. Knuth Base 2i Red-Black Twin Dragon Quadtree Classifier Check (Rule 13)
+    tsfi_knuth_rb_dragon_node_t rb_dragon_node;
+    tsfi_knuth_rb_dragon_classify(knuth_quad_node.quad_node_address, &rb_dragon_node);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
