@@ -104,6 +104,7 @@
 #include "tsfi_autodin_conway_tx.h"
 #include "tsfi_conway_pipe.h"
 #include "tsfi_autodin_tx_pipe.h"
+#include "tsfi_conway_ledger_process.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1312,6 +1313,11 @@ int main() {
     tsfi_autodin_tx_pipe_push(&autodin_tx_pipe, 0x90001000, "0x1234567890ABCDEF1234567890ABCDEF12345678", 0xDEADBEEF12345678);
     tsfi_autodin_tx_entry_t pulled_tx_entry;
     tsfi_autodin_tx_pipe_pull(&autodin_tx_pipe, &pulled_tx_entry);
+
+    // Transaction-Ordered Multi-Tx Binary Ledger Process Check (350 Gas Slot / 78.2% Cut)
+    tsfi_conway_ledger_process_t conway_proc;
+    tsfi_conway_ledger_process_init(7001, "0x1234567890ABCDEF1234567890ABCDEF12345678", &conway_proc);
+    tsfi_conway_ledger_process_step(&conway_proc, 0x90001001, 0x60016002);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
