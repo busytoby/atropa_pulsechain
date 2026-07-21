@@ -55,6 +55,7 @@
 #include "tsfi_autodin_zmm_tx.h"
 #include "tsfi_autodin_anvil_oracle.h"
 #include "tsfi_parc_trunk_queue.h"
+#include "tsfi_iso_security_engine.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1008,6 +1009,10 @@ int main() {
     // AUTODIN Priority Trunk Queue Check
     tsfi_trunk_queue_item_t qitem;
     tsfi_trunk_queue_enqueue(0, "SYS001", 512, &qitem);
+
+    // Real-Time Isomorphic Security Verification & Anomaly Interception Audit Check
+    tsfi_iso_sec_audit_result_t sec_audit;
+    tsfi_iso_sec_audit_state(0, tape_hdr, 0x20, TAPE_SECURITY_TOPSECRET, &sec_audit);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 

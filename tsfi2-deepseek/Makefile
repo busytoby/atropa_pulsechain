@@ -195,7 +195,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_yul_deployer.o \
                   $(OBJ_DIR)/tsfi_autodin_zmm_tx.o \
                   $(OBJ_DIR)/tsfi_autodin_anvil_oracle.o \
-                  $(OBJ_DIR)/tsfi_parc_trunk_queue.o
+                  $(OBJ_DIR)/tsfi_parc_trunk_queue.o \
+                  $(OBJ_DIR)/tsfi_iso_security_engine.o
 
 
 
