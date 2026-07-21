@@ -86,6 +86,7 @@
 #include "tsfi_defcon_power_alarm.h"
 #include "tsfi_nadler_hull_automaton.h"
 #include "tsfi_nadler_agentic_automaton.h"
+#include "tsfi_nadler_skeletonizer.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1203,6 +1204,12 @@ int main() {
     tsfi_nadler_agent_summary_t agent_summary;
     memset(&agent_summary, 0, sizeof(agent_summary));
     tsfi_nadler_agentic_step(220, &agent_summary);
+
+    // Morton Nadler Topological Character Skeletonizer Check (1,500 Gas Slot / 850 ns Latency)
+    uint8_t sample_bmp[16 * 16];
+    memset(sample_bmp, 255, sizeof(sample_bmp));
+    tsfi_nadler_skeleton_summary_t skel_summary;
+    tsfi_nadler_skeletonize_bitmap(sample_bmp, 16, 16, &skel_summary);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
