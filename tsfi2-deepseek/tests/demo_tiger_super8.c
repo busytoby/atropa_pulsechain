@@ -107,6 +107,7 @@
 #include "tsfi_conway_ledger_process.h"
 #include "tsfi_conway_interledger_signal.h"
 #include "tsfi_conway_dynamic_stack.h"
+#include "tsfi_hershkowitz_fit.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1332,6 +1333,13 @@ int main() {
     uint32_t ret_pc = 0;
     uint64_t ret_word = 0;
     tsfi_conway_dynamic_stack_pop(&dynamic_stack, &ret_pc, &ret_word);
+
+    // Martin Hershkowitz Chi-Square Goodness-of-Fit Evaluation Check (320 Gas Slot / 78.2% Cut)
+    tsfi_hershkowitz_fit_t hershk_fit;
+    tsfi_hershkowitz_fit_init(&hershk_fit);
+    uint32_t obs[10] = {10, 12, 9, 11, 10, 8, 10, 11, 9, 10};
+    double exp_val[10] = {10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0};
+    tsfi_hershkowitz_fit_evaluate(&hershk_fit, obs, exp_val, 10);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
