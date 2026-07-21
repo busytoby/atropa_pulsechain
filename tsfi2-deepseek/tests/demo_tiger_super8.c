@@ -52,6 +52,7 @@
 #include "tsfi_iso_transpiler.h"
 #include "tsfi_parc_tape_trunk.h"
 #include "tsfi_yul_deployer.h"
+#include "tsfi_autodin_zmm_tx.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -981,6 +982,11 @@ int main() {
     tsfi_yul_deploy_contract("assets/isomorphism_engine.yul", YUL_DEPLOY_TARGET_23_TREE_NODE, &dep_res1);
     tsfi_yul_deploy_contract("assets/isomorphism_engine.yul", YUL_DEPLOY_TARGET_ANVIL_EVM, &dep_res2);
     tsfi_yul_deploy_contract("assets/isomorphism_engine.yul", YUL_DEPLOY_TARGET_IN_MEM_THUNK, &dep_res3);
+
+    // AUTODIN ZMM VM Transaction Dispatcher & Nonce Tracking Check
+    tsfi_autodin_zmm_tx_receipt_t zmm_tx_rec;
+    uint8_t tx_data[4] = {0x01, 0x02, 0x03, 0x04};
+    autodin_send_zmm_tx(dep_res1.contract_address, 0x1a2b3c4d, tx_data, 4, TAPE_SECURITY_TOPSECRET, &zmm_tx_rec);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
