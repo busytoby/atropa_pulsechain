@@ -45,6 +45,7 @@
 #include "tsfi_parc_figma_super.h"
 #include "tsfi_parc_figma_proto.h"
 #include "tsfi_parc_figma_vector.h"
+#include "tsfi_parc_runcible_lang.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -908,6 +909,12 @@ int main() {
     uint32_t base_c = 0xFFFFFFFF;
     char base_t[32] = "Original Text";
     tsfi_parc_figma_apply_overrides(&base_c, base_t, &ovr);
+
+    // Runcible interactive TTY language CLI check (CALL & KB support)
+    tsfi_runcible_main_step("CALL 0x00401000 main");
+    tsfi_runcible_main_step("KB 1 1 0");
+    tsfi_runcible_main_step("SLIDE");
+    tsfi_runcible_main_step("STATUS");
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
