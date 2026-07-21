@@ -66,6 +66,7 @@
 #include "tsfi_knuth_storage.h"
 #include "tsfi_knuth_fet_gas.h"
 #include "tsfi_electricity_meter.h"
+#include "tsfi_knuth_yul_transpiler.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1089,6 +1090,10 @@ int main() {
     tsfi_electricity_meter_t elec_meter;
     tsfi_electricity_meter_init(&elec_meter);
     tsfi_electricity_meter_calculate(3.3f, 1e-9f, 0.05f, 5.0f, 0.001f, &elec_meter);
+
+    // Donald E. Knuth Base 2i Automatic Yul SSTORE Transpiler Check
+    tsfi_knuth_yul_transpile_result_t yul_tr_res;
+    tsfi_knuth_transpile_yul_sstore("0x01", "balance", "0x02", "debt", &yul_tr_res);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
