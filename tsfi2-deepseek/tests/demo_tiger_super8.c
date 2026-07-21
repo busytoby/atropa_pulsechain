@@ -67,6 +67,7 @@
 #include "tsfi_knuth_fet_gas.h"
 #include "tsfi_electricity_meter.h"
 #include "tsfi_knuth_yul_transpiler.h"
+#include "tsfi_knuth_fft.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1094,6 +1095,11 @@ int main() {
     // Donald E. Knuth Base 2i Automatic Yul SSTORE Transpiler Check
     tsfi_knuth_yul_transpile_result_t yul_tr_res;
     tsfi_knuth_transpile_yul_sstore("0x01", "balance", "0x02", "debt", &yul_tr_res);
+
+    // Donald E. Knuth Base 2i Complex Fast Fourier Transform Check
+    tsfi_knuth_fft_plan_t knuth_fft_plan;
+    tsfi_knuth_fft_init(&knuth_fft_plan, 16);
+    tsfi_knuth_fft_execute(&knuth_fft_plan);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
