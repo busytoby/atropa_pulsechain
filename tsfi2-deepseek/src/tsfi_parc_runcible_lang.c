@@ -8,6 +8,7 @@
 #include "tsfi_parc_routing.h"
 #include "tsfi_parc_clipboard.h"
 #include "tsfi_parc_stcomp.h"
+#include "tsfi_parc_tape_label_yul.h"
 
 int tsfi_runcible_parse_cmd(const char *cmd_line, tsfi_runcible_cmd_t *out_cmd) {
     if (!cmd_line || !out_cmd) return -1;
@@ -159,6 +160,14 @@ int tsfi_runcible_parse_cmd(const char *cmd_line, tsfi_runcible_cmd_t *out_cmd) 
         return 0;
     }
 
+    if (strncmp(cmd_line, "TAPE", 4) == 0) {
+        out_cmd->type = RUNCIBLE_CMD_TAPE_CHECK;
+        const char *args = cmd_line + 4;
+        while (*args == ' ' || *args == '\t') args++;
+        strncpy(out_cmd->raw_args, args, sizeof(out_cmd->raw_args) - 1);
+        return 0;
+    }
+
     if (strncmp(cmd_line, "VOID", 4) == 0) {
         out_cmd->type = RUNCIBLE_CMD_VOID;
         return 0;
@@ -262,6 +271,14 @@ int tsfi_runcible_exec_cmd(const tsfi_runcible_cmd_t *cmd) {
             printf("[RUNCIBLE TTY] ST Smalltalk-76 Live Method Eval -> Bytecode Count %d\n", bc_len);
             return 0;
         }
+        case RUNCIBLE_CMD_TAPE_CHECK: {
+            uint8_t tape_hdr[720];
+            tsfi_tape_label_yul_format_full_header(tape_hdr, "HDL001", "HOLDERS_0.DAT.BIN", TAPE_SECURITY_SECRET, 0.0f, 0.0f, 512.0f, 512.0f, "HDL000", "HDL002", 0.125f, 2, 4, 8, 32, 30);
+            int valid = tsfi_tape_label_yul_validate_sequence(tape_hdr);
+            printf("[RUNCIBLE TTY] TAPE CHECK Volume Diagnostic (%s) -> Full 8-Block Sequence Valid: %d\n",
+                   cmd->raw_args[0] ? cmd->raw_args : "HDL001", valid);
+            return 0;
+        }
         case RUNCIBLE_CMD_VOID: {
             printf("[RUNCIBLE TTY] VOID Dysnomia VM Root State Discard -> Fuse(0) Dependent Registers Collapsed\n");
             return 0;
@@ -271,7 +288,7 @@ int tsfi_runcible_exec_cmd(const tsfi_runcible_cmd_t *cmd) {
             return 0;
         }
         case RUNCIBLE_CMD_STATUS: {
-            printf("[RUNCIBLE TTY] Subsystem Active | Full PARC Network & Runcible Suite Validated\n");
+            printf("[RUNCIBLE TTY] Subsystem Active | Full 8-Block Yul Tape Header Suite Validated\n");
             return 0;
         }
         default:

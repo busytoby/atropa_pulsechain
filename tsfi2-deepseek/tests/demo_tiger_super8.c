@@ -929,19 +929,22 @@ int main() {
     tsfi_runcible_main_step("CLIP COPY Hello");
     tsfi_runcible_main_step("ST EVAL 3 + 4");
     tsfi_runcible_main_step("VOID");
+    tsfi_runcible_main_step("TAPE CHECK HDL001");
     tsfi_runcible_main_step("STATUS");
 
-    // Tape Label Yul DDL verification check for 480-byte extended sequence (VOL1..HDR5 + EOF1)
-    uint8_t tape_hdr[480];
-    tsfi_tape_label_yul_format_extended_header(tape_hdr, "DAT001", "QUAD_TREE.DAT.BIN", TAPE_SECURITY_SECRET, 0.0f, 0.0f, 512.0f, 512.0f, "HDL000", "HDL002");
+    // Tape Label Yul DDL verification check for 720-byte 8-block full sequence (VOL1..HDR8 + EOF1)
+    uint8_t tape_hdr[720];
+    tsfi_tape_label_yul_format_full_header(tape_hdr, "DAT001", "QUAD_TREE.DAT.BIN", TAPE_SECURITY_SECRET, 0.0f, 0.0f, 512.0f, 512.0f, "HDL000", "HDL002", 0.125f, 2, 4, 8, 32, 30);
     int tape_valid = tsfi_tape_label_yul_validate_sequence(tape_hdr);
     int gov_res = tsfi_tape_label_yul_check_governance(tape_hdr, TAPE_SECURITY_TOPSECRET);
-    float xmin, ymin, xmax, ymax;
+    float xmin, ymin, xmax, ymax, phi;
+    int fx, fy, fz;
+    uint8_t kc32, kc30;
     tsfi_tape_label_yul_get_spatial_bounds(tape_hdr, &xmin, &ymin, &xmax, &ymax);
-    uint8_t tape_trl[80];
-    tsfi_tape_label_yul_format_trailer(tape_trl, TAPE_LABEL_EOF1, 1024);
-    printf("[INFO] Yul DDL Tape Extended Sequence (VOL1..HDR5) Result: %d (Governance: %d, Bounds: %.0f,%.0f-%.0f,%.0f)\n",
-           tape_valid, gov_res, xmin, ymin, xmax, ymax);
+    tsfi_tape_label_yul_get_phase_invariants(tape_hdr, &phi, &fx, &fy, &fz);
+    tsfi_tape_label_yul_get_scsi_map(tape_hdr, &kc32, &kc30);
+    printf("[INFO] Yul DDL Full 8-Block Sequence (VOL1..HDR8) Result: %d (Gov: %d, Phase: %.3f, SCSI: %d/%d)\n",
+           tape_valid, gov_res, phi, kc32, kc30);
 
     // Tape Catalog unique Volume ID and meaningful File ID generation check
     tsfi_tape_catalog_entry_t cat_entries[8];

@@ -49,22 +49,47 @@ static int yul_get_label_offset(int label_type, int field_id) {
                 case 2: return 410; // next_vol_id
                 default: return 400;
             }
+        case TAPE_LABEL_HDR6:
+            switch (field_id) {
+                case 0: return 480; // label_id ("HDR6")
+                case 1: return 484; // compression_type ("RLE")
+                case 2: return 492; // vulkan_accel ("VK_ENABLE")
+                default: return 480;
+            }
+        case TAPE_LABEL_HDR7:
+            switch (field_id) {
+                case 0: return 560; // label_id ("HDR7")
+                case 1: return 564; // phase_phi
+                case 2: return 572; // freq_fx
+                case 3: return 580; // freq_fy
+                case 4: return 588; // freq_fz
+                default: return 560;
+            }
+        case TAPE_LABEL_HDR8:
+            switch (field_id) {
+                case 0: return 640; // label_id ("HDR8")
+                case 1: return 644; // scsi_reg_20 (keycode 32)
+                case 2: return 652; // scsi_reg_1E (keycode 30)
+                default: return 640;
+            }
         default: return 0;
     }
 }
 
-int tsfi_tape_label_yul_format_extended_header(
+int tsfi_tape_label_yul_format_full_header(
     uint8_t *header_buf,
     const char *volume_id,
     const char *file_id,
     uint8_t security_level,
     float xmin, float ymin, float xmax, float ymax,
-    const char *prev_vol, const char *next_vol
+    const char *prev_vol, const char *next_vol,
+    float phase_phi, int fx, int fy, int fz,
+    uint8_t keycode_32, uint8_t keycode_30
 ) {
     if (!header_buf || !volume_id || !file_id) return -1;
 
-    // Fill 480-byte header sequence buffer with space padding
-    memset(header_buf, ' ', 480);
+    // Fill 720-byte header sequence buffer with space padding
+    memset(header_buf, ' ', 720);
 
     // 1. VOL1 Label (Offset 0..79)
     memcpy(header_buf + yul_get_label_offset(TAPE_LABEL_VOL1, 0), "VOL1", 4);
@@ -97,6 +122,23 @@ int tsfi_tape_label_yul_format_extended_header(
     if (prev_vol) memcpy(header_buf + yul_get_label_offset(TAPE_LABEL_HDR5, 1), prev_vol, strlen(prev_vol) > 6 ? 6 : strlen(prev_vol));
     if (next_vol) memcpy(header_buf + yul_get_label_offset(TAPE_LABEL_HDR5, 2), next_vol, strlen(next_vol) > 6 ? 6 : strlen(next_vol));
 
+    // 7. HDR6 Label (Offset 480..559) - Hardware Density & Vulkan Acceleration Tags
+    memcpy(header_buf + yul_get_label_offset(TAPE_LABEL_HDR6, 0), "HDR6", 4);
+    memcpy(header_buf + yul_get_label_offset(TAPE_LABEL_HDR6, 1), "RLE", 3);
+    memcpy(header_buf + yul_get_label_offset(TAPE_LABEL_HDR6, 2), "VK_ENABLE", 9);
+
+    // 8. HDR7 Label (Offset 560..639) - Lissajous Phase Space Invariants
+    memcpy(header_buf + yul_get_label_offset(TAPE_LABEL_HDR7, 0), "HDR7", 4);
+    snprintf((char *)(header_buf + yul_get_label_offset(TAPE_LABEL_HDR7, 1)), 8, "%07.3f", phase_phi);
+    snprintf((char *)(header_buf + yul_get_label_offset(TAPE_LABEL_HDR7, 2)), 8, "%07d", fx);
+    snprintf((char *)(header_buf + yul_get_label_offset(TAPE_LABEL_HDR7, 3)), 8, "%07d", fy);
+    snprintf((char *)(header_buf + yul_get_label_offset(TAPE_LABEL_HDR7, 4)), 8, "%07d", fz);
+
+    // 9. HDR8 Label (Offset 640..719) - WinchesterMQ SCSI Register State Map
+    memcpy(header_buf + yul_get_label_offset(TAPE_LABEL_HDR8, 0), "HDR8", 4);
+    snprintf((char *)(header_buf + yul_get_label_offset(TAPE_LABEL_HDR8, 1)), 8, "%07d", keycode_32);
+    snprintf((char *)(header_buf + yul_get_label_offset(TAPE_LABEL_HDR8, 2)), 8, "%07d", keycode_30);
+
     return 0;
 }
 
@@ -126,11 +168,14 @@ int tsfi_tape_label_yul_validate_sequence(const uint8_t *header_buf) {
     if (memcmp(header_buf + yul_get_label_offset(TAPE_LABEL_HDR3, 0), "HDR3", 4) != 0) return -5;
     if (memcmp(header_buf + yul_get_label_offset(TAPE_LABEL_HDR4, 0), "HDR4", 4) != 0) return -6;
     if (memcmp(header_buf + yul_get_label_offset(TAPE_LABEL_HDR5, 0), "HDR5", 4) != 0) return -7;
+    if (memcmp(header_buf + yul_get_label_offset(TAPE_LABEL_HDR6, 0), "HDR6", 4) != 0) return -8;
+    if (memcmp(header_buf + yul_get_label_offset(TAPE_LABEL_HDR7, 0), "HDR7", 4) != 0) return -9;
+    if (memcmp(header_buf + yul_get_label_offset(TAPE_LABEL_HDR8, 0), "HDR8", 4) != 0) return -10;
 
     char file_id_str[18] = {0};
     memcpy(file_id_str, header_buf + yul_get_label_offset(TAPE_LABEL_HDR1, 1), 17);
     if (!strstr(file_id_str, ".dat.bin") && !strstr(file_id_str, ".DAT.BIN")) {
-        return -8; // Must end in .dat.bin extension (Rule 13)
+        return -11; // Must end in .dat.bin extension (Rule 13)
     }
 
     return 0;
@@ -140,7 +185,7 @@ int tsfi_tape_label_yul_verify_signature(const uint8_t *header_buf) {
     if (!header_buf) return -1;
 
     if (memcmp(header_buf + yul_get_label_offset(TAPE_LABEL_HDR3, 1), "SIG_2026_USLM_AFFIRMED", 22) != 0) {
-        return -10; // Signature verification failed
+        return -12; // Signature verification failed
     }
     return 0; // Verified
 }
@@ -156,23 +201,43 @@ int tsfi_tape_label_yul_get_spatial_bounds(const uint8_t *header_buf, float *xmi
     return 0;
 }
 
+int tsfi_tape_label_yul_get_phase_invariants(const uint8_t *header_buf, float *phase_phi, int *fx, int *fy, int *fz) {
+    if (!header_buf || !phase_phi || !fx || !fy || !fz) return -1;
+
+    *phase_phi = (float)atof((const char *)(header_buf + yul_get_label_offset(TAPE_LABEL_HDR7, 1)));
+    *fx = atoi((const char *)(header_buf + yul_get_label_offset(TAPE_LABEL_HDR7, 2)));
+    *fy = atoi((const char *)(header_buf + yul_get_label_offset(TAPE_LABEL_HDR7, 3)));
+    *fz = atoi((const char *)(header_buf + yul_get_label_offset(TAPE_LABEL_HDR7, 4)));
+
+    return 0;
+}
+
+int tsfi_tape_label_yul_get_scsi_map(const uint8_t *header_buf, uint8_t *kc_32, uint8_t *kc_30) {
+    if (!header_buf || !kc_32 || !kc_30) return -1;
+
+    *kc_32 = (uint8_t)atoi((const char *)(header_buf + yul_get_label_offset(TAPE_LABEL_HDR8, 1)));
+    *kc_30 = (uint8_t)atoi((const char *)(header_buf + yul_get_label_offset(TAPE_LABEL_HDR8, 2)));
+
+    return 0;
+}
+
 int tsfi_tape_label_yul_check_governance(const uint8_t *header_buf, uint8_t required_clearance) {
     int val_res = tsfi_tape_label_yul_validate_sequence(header_buf);
     if (val_res != 0) return val_res;
 
     if (tsfi_tape_label_yul_verify_signature(header_buf) != 0) {
-        return -11; // Cryptographic Signature Invalid
+        return -13; // Cryptographic Signature Invalid
     }
 
     uint8_t sec_code = header_buf[yul_get_label_offset(TAPE_LABEL_HDR1, 2)] - '0';
     if (sec_code > 3) sec_code = 0;
 
     if (required_clearance < sec_code) {
-        return -12; // Access Denied: Clearance Insufficient
+        return -14; // Access Denied: Clearance Insufficient
     }
 
     if (memcmp(header_buf + yul_get_label_offset(TAPE_LABEL_VOL1, 2), "AUNCIENT_ZMM01", 14) != 0) {
-        return -13; // Access Denied: Provenance Hash Mismatch
+        return -15; // Access Denied: Provenance Hash Mismatch
     }
 
     return 0;

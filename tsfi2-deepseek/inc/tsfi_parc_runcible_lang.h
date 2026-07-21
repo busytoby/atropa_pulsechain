@@ -21,7 +21,8 @@ typedef enum {
     RUNCIBLE_CMD_PUP,
     RUNCIBLE_CMD_CLIP,
     RUNCIBLE_CMD_ST,
-    RUNCIBLE_CMD_VOID
+    RUNCIBLE_CMD_VOID,
+    RUNCIBLE_CMD_TAPE_CHECK
 } tsfi_runcible_cmd_type_t;
 
 typedef struct {
