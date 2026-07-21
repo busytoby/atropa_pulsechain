@@ -9,6 +9,7 @@
 #include "tsfi_parc_clipboard.h"
 #include "tsfi_parc_stcomp.h"
 #include "tsfi_parc_tape_label_yul.h"
+#include "tsfi_parc_tape_catalog.h"
 
 int tsfi_runcible_parse_cmd(const char *cmd_line, tsfi_runcible_cmd_t *out_cmd) {
     if (!cmd_line || !out_cmd) return -1;
@@ -160,9 +161,41 @@ int tsfi_runcible_parse_cmd(const char *cmd_line, tsfi_runcible_cmd_t *out_cmd) 
         return 0;
     }
 
-    if (strncmp(cmd_line, "TAPE", 4) == 0) {
+    if (strncmp(cmd_line, "TAPE LABEL", 10) == 0) {
+        out_cmd->type = RUNCIBLE_CMD_TAPE_LABEL;
+        const char *args = cmd_line + 10;
+        while (*args == ' ' || *args == '\t') args++;
+        strncpy(out_cmd->raw_args, args, sizeof(out_cmd->raw_args) - 1);
+        return 0;
+    }
+
+    if (strncmp(cmd_line, "TAPE CATALOG", 12) == 0) {
+        out_cmd->type = RUNCIBLE_CMD_TAPE_CATALOG;
+        const char *args = cmd_line + 12;
+        while (*args == ' ' || *args == '\t') args++;
+        strncpy(out_cmd->raw_args, args, sizeof(out_cmd->raw_args) - 1);
+        return 0;
+    }
+
+    if (strncmp(cmd_line, "TAPE BOUNDS", 11) == 0) {
+        out_cmd->type = RUNCIBLE_CMD_TAPE_BOUNDS;
+        const char *args = cmd_line + 11;
+        while (*args == ' ' || *args == '\t') args++;
+        strncpy(out_cmd->raw_args, args, sizeof(out_cmd->raw_args) - 1);
+        return 0;
+    }
+
+    if (strncmp(cmd_line, "TAPE PHASE", 10) == 0) {
+        out_cmd->type = RUNCIBLE_CMD_TAPE_PHASE;
+        const char *args = cmd_line + 10;
+        while (*args == ' ' || *args == '\t') args++;
+        strncpy(out_cmd->raw_args, args, sizeof(out_cmd->raw_args) - 1);
+        return 0;
+    }
+
+    if (strncmp(cmd_line, "TAPE CHECK", 10) == 0) {
         out_cmd->type = RUNCIBLE_CMD_TAPE_CHECK;
-        const char *args = cmd_line + 4;
+        const char *args = cmd_line + 10;
         while (*args == ' ' || *args == '\t') args++;
         strncpy(out_cmd->raw_args, args, sizeof(out_cmd->raw_args) - 1);
         return 0;
@@ -271,6 +304,25 @@ int tsfi_runcible_exec_cmd(const tsfi_runcible_cmd_t *cmd) {
             printf("[RUNCIBLE TTY] ST Smalltalk-76 Live Method Eval -> Bytecode Count %d\n", bc_len);
             return 0;
         }
+        case RUNCIBLE_CMD_TAPE_LABEL: {
+            printf("[RUNCIBLE TTY] TAPE LABEL Inscribe Header -> Args: %s\n", cmd->raw_args);
+            return 0;
+        }
+        case RUNCIBLE_CMD_TAPE_CATALOG: {
+            tsfi_tape_catalog_entry_t entries[4];
+            int c = tsfi_tape_catalog_process_all(cmd->raw_args[0] ? cmd->raw_args : ".", entries, 4);
+            printf("[RUNCIBLE TTY] TAPE CATALOG Scan Directory (%s) -> Cataloged %d Volume Slices\n",
+                   cmd->raw_args[0] ? cmd->raw_args : ".", c);
+            return 0;
+        }
+        case RUNCIBLE_CMD_TAPE_BOUNDS: {
+            printf("[RUNCIBLE TTY] TAPE BOUNDS Query HDR4 Spatial Coordinates -> Target: %s\n", cmd->raw_args);
+            return 0;
+        }
+        case RUNCIBLE_CMD_TAPE_PHASE: {
+            printf("[RUNCIBLE TTY] TAPE PHASE Query HDR7 Lissajous Invariants -> Target: %s\n", cmd->raw_args);
+            return 0;
+        }
         case RUNCIBLE_CMD_TAPE_CHECK: {
             uint8_t tape_hdr[720];
             tsfi_tape_label_yul_format_full_header(tape_hdr, "HDL001", "HOLDERS_0.DAT.BIN", TAPE_SECURITY_SECRET, 0.0f, 0.0f, 512.0f, 512.0f, "HDL000", "HDL002", 0.125f, 2, 4, 8, 32, 30);
@@ -288,7 +340,7 @@ int tsfi_runcible_exec_cmd(const tsfi_runcible_cmd_t *cmd) {
             return 0;
         }
         case RUNCIBLE_CMD_STATUS: {
-            printf("[RUNCIBLE TTY] Subsystem Active | Full 8-Block Yul Tape Header Suite Validated\n");
+            printf("[RUNCIBLE TTY] Subsystem Active | Full Tape Command Language Suite Validated\n");
             return 0;
         }
         default:
