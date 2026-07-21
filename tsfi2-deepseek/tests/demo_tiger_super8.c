@@ -137,6 +137,7 @@
 #include "tsfi_schmidt_engine.h"
 #include "tsfi_parc_ui_def.h"
 #include "tsfi_chapple_engine.h"
+#include "tsfi_naur_engine.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1593,6 +1594,14 @@ int main() {
     tsfi_chapple_moog_vcf_init(&chapple_eng, 1200.0, 2.5, 1.2);
     double moog_audio_out = tsfi_chapple_moog_vcf_process_sample(&chapple_eng, 0.75, 44100.0);
     (void)moog_audio_out;
+
+    // Peter Naur BNF Grammar & GIER ALGOL Compiler Check (280 Gas Slot / 78.2% Cut)
+    tsfi_naur_engine_t naur_eng;
+    tsfi_naur_engine_init(34001, &naur_eng);
+    int bnf_valid = 0;
+    tsfi_naur_validate_syntax(&naur_eng, "<expression>", "term+term", &bnf_valid);
+    uint32_t gier_frame_addr = 0;
+    tsfi_naur_gier_alloc_frame(&naur_eng, 4, &gier_frame_addr);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
