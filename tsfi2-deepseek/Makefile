@@ -219,7 +219,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_card_spooler.o \
                   $(OBJ_DIR)/tsfi_nanosecond_drum.o \
                   $(OBJ_DIR)/tsfi_nadler_optimizer.o \
-                  $(OBJ_DIR)/tsfi_nadler_advanced.o
+                  $(OBJ_DIR)/tsfi_nadler_advanced.o \
+                  $(OBJ_DIR)/tsfi_transcendental_math.o
 
 
 

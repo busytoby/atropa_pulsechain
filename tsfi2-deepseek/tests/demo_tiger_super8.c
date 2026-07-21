@@ -79,6 +79,7 @@
 #include "tsfi_nanosecond_drum.h"
 #include "tsfi_nadler_optimizer.h"
 #include "tsfi_nadler_advanced.h"
+#include "tsfi_transcendental_math.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1162,6 +1163,10 @@ int main() {
     // Advanced 3D Morton Nadler Bit Interleaving Check (3,000 Gas Tier / 60% Power Cut)
     tsfi_nadler_advanced_t nadler_adv;
     tsfi_nadler_interleave_3d(15, 30, 45, &nadler_adv);
+
+    // Transcendental Number Solver Evaluation Check (Euler e & Pi Harmonic Phase)
+    tsfi_transcendental_eval_t trans_eval;
+    tsfi_transcendental_profile(5.0, 440.0, 0.001, &trans_eval);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
