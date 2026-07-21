@@ -116,6 +116,7 @@
 #include "tsfi_speroni_conway_cobol.h"
 #include "tsfi_speroni_lynch_stream.h"
 #include "tsfi_decnet_exec_stack.h"
+#include "tsfi_tree_net_vm.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1395,6 +1396,15 @@ int main() {
     tsfi_decnet_exec_stack_init(13001, &decnet_stack);
     uint8_t payload[32] = "DECNET_EXEC_FRAME_PAYLOAD_DATA";
     tsfi_decnet_exec_stack_push_frame(&decnet_stack, 1, 102, 1, 105, payload, 30);
+
+    // 2-3 Tree Multi-Protocol Network VM Engine Check (180 Gas Slot / 78.2% Cut)
+    tsfi_tree_net_vm_node_t src_net_node, dst_net_node;
+    uint8_t mac1[6] = {0x08, 0x00, 0x2B, 0x11, 0x22, 0x33};
+    uint8_t mac2[6] = {0x08, 0x00, 0x2B, 0x44, 0x55, 0x66};
+    tsfi_tree_net_vm_init_node(0x1001, 12, 3, mac1, 1, 102, 0x5066, &src_net_node);
+    tsfi_tree_net_vm_init_node(0x1002, 12, 5, mac2, 1, 105, 0x4538, &dst_net_node);
+    uint8_t net_payload[16] = "NET_VM_PAYLOAD";
+    tsfi_tree_net_vm_route_packet(&src_net_node, &dst_net_node, "HYBRID_STANAG_DECNET", net_payload, 14);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
