@@ -62,6 +62,7 @@
 #include "tsfi_helmholtz_lynch_bridge.h"
 #include "tsfi_zevm_vm_selector.h"
 #include "tsfi_lynch_channel.h"
+#include "tsfi_lynch_sync.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1057,6 +1058,17 @@ int main() {
     tsfi_lynch_checkpoint_t lynch_ckpt;
     tsfi_lynch_checkpoint_capture(&lynch_ckpt, dummy_slots, 32);
     tsfi_lynch_checkpoint_rollback(&lynch_ckpt, dummy_slots, &scsi_reg_out);
+
+    // William C. Lynch Multiprocessor Counting Semaphore & Index Node Latching Check
+    tsfi_lynch_sem_t lynch_sem;
+    tsfi_lynch_sem_init(&lynch_sem, 1);
+    tsfi_lynch_sem_wait(&lynch_sem, 1);
+    tsfi_lynch_sem_signal(&lynch_sem);
+
+    tsfi_lynch_index_latch_t lynch_latch;
+    memset(&lynch_latch, 0, sizeof(lynch_latch));
+    tsfi_lynch_latch_acquire(&lynch_latch, 101, LYNCH_LATCH_SHARED);
+    tsfi_lynch_latch_release(&lynch_latch);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
