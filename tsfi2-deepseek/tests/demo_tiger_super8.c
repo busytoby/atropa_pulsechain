@@ -98,6 +98,7 @@
 #include "tsfi_algol68_mode_transpiler.h"
 #include "tsfi_clendenin_synth.h"
 #include "tsfi_clendenin_transport.h"
+#include "tsfi_clendenin_matrix_exp.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1275,6 +1276,11 @@ int main() {
     // Clendenin Boundary Layer Transport & Thermal Diffusion Check (700 Gas Slot / 78.2% Cut)
     tsfi_clendenin_transport_summary_t transport_summary;
     tsfi_clendenin_solve_transport(25.0, 1e-5, &transport_summary);
+
+    // Clendenin Rational Matrix Exponentiation Engine Check (750 Gas Slot / 78.2% Cut)
+    double sample_matrix[16] = {0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0};
+    tsfi_clendenin_matrix_summary_t matrix_exp_summary;
+    tsfi_clendenin_matrix_exp(sample_matrix, 0.1, &matrix_exp_summary);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
