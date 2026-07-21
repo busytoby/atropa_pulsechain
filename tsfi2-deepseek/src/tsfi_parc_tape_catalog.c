@@ -1,19 +1,22 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <dirent.h>
+#include <sys/stat.h>
 #include "tsfi_parc_tape_catalog.h"
 #include "tsfi_parc_tape_label_yul.h"
 
 // Generate a domain-prefixed unique 6-character Volume ID
 static void generate_unique_vol_id(const char *filename, int index, char *vol_id_out) {
+    unsigned int idx = (unsigned int)(index > 999 ? 999 : index);
     if (strstr(filename, "holders_")) {
-        snprintf(vol_id_out, 7, "HDL%03d", index);
+        snprintf(vol_id_out, 7, "HDL%03u", idx);
     } else if (strstr(filename, "rdbms_") || strstr(filename, "ledger")) {
-        snprintf(vol_id_out, 7, "RDB%03d", index);
+        snprintf(vol_id_out, 7, "RDB%03u", idx);
     } else if (strstr(filename, "uniservo") || strstr(filename, "mmap")) {
-        snprintf(vol_id_out, 7, "UNI%03d", index);
+        snprintf(vol_id_out, 7, "UNI%03u", idx);
     } else {
-        snprintf(vol_id_out, 7, "VOL%03d", index);
+        snprintf(vol_id_out, 7, "VOL%03u", idx);
     }
 }
 
@@ -39,27 +42,27 @@ static void generate_meaningful_file_id(const char *filename, char *file_id_out)
 
 int tsfi_tape_catalog_process_all(const char *dir_path, tsfi_tape_catalog_entry_t *entries_out, int max_entries) {
     if (!dir_path || !entries_out || max_entries <= 0) return -1;
-    (void)dir_path;
 
-    // Simulated cataloging run generating unique labels for tapes
-    const char *sample_tapes[] = {
-        "holders_0xc7bd.dat.bin",
-        "rdbms_ledger.dat.bin",
-        "uniservo_bench.dat.bin",
-        "codebase_graph.dat.bin",
-        "demo_tiger_lfs.dat.bin"
-    };
+    DIR *dir = opendir(dir_path);
+    if (!dir) return -2;
 
-    int count = sizeof(sample_tapes) / sizeof(sample_tapes[0]);
-    if (count > max_entries) count = max_entries;
+    struct dirent *entry;
+    int count = 0;
 
-    for (int i = 0; i < count; i++) {
-        strncpy(entries_out[i].file_path, sample_tapes[i], sizeof(entries_out[i].file_path) - 1);
-        generate_unique_vol_id(sample_tapes[i], i + 1, entries_out[i].volume_id);
-        generate_meaningful_file_id(sample_tapes[i], entries_out[i].file_id);
-        entries_out[i].security_level = TAPE_SECURITY_UNCLASSIFIED;
-        entries_out[i].is_valid = 1;
+    while ((entry = readdir(dir)) != NULL && count < max_entries) {
+        if (strstr(entry->d_name, ".dat.bin") != NULL) {
+            int written = snprintf(entries_out[count].file_path, sizeof(entries_out[count].file_path), "%s/%s", dir_path, entry->d_name);
+            if (written < 0 || written >= (int)sizeof(entries_out[count].file_path)) {
+                entries_out[count].file_path[sizeof(entries_out[count].file_path) - 1] = '\0';
+            }
+            generate_unique_vol_id(entry->d_name, count + 1, entries_out[count].volume_id);
+            generate_meaningful_file_id(entry->d_name, entries_out[count].file_id);
+            entries_out[count].security_level = TAPE_SECURITY_UNCLASSIFIED;
+            entries_out[count].is_valid = 1;
+            count++;
+        }
     }
 
+    closedir(dir);
     return count;
 }
