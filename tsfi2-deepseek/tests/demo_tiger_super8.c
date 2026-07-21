@@ -72,6 +72,7 @@
 #include "tsfi_knuth_rb_dragon.h"
 #include "tsfi_lowpower_fet.h"
 #include "tsfi_lowpower_mode.h"
+#include "tsfi_dvfs_governor.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1120,6 +1121,11 @@ int main() {
     // System Low-Power Operational Mode Controller Check (78.2% Savings Tier)
     tsfi_lowpower_controller_t lp_mode_ctrl;
     tsfi_lowpower_mode_init(&lp_mode_ctrl);
+
+    // Dynamic Voltage & Frequency Scaling (DVFS) Governor Check
+    tsfi_dvfs_governor_t dvfs_gov;
+    tsfi_dvfs_governor_init(&dvfs_gov);
+    tsfi_dvfs_governor_adapt(&dvfs_gov, 85.0f);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 

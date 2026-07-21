@@ -212,7 +212,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_knuth_quadtree.o \
                   $(OBJ_DIR)/tsfi_knuth_rb_dragon.o \
                   $(OBJ_DIR)/tsfi_lowpower_fet.o \
-                  $(OBJ_DIR)/tsfi_lowpower_mode.o
+                  $(OBJ_DIR)/tsfi_lowpower_mode.o \
+                  $(OBJ_DIR)/tsfi_dvfs_governor.o
 
 
 
