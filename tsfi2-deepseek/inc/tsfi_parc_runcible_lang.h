@@ -17,7 +17,11 @@ typedef enum {
     RUNCIBLE_CMD_POKE,
     RUNCIBLE_CMD_YUL,
     RUNCIBLE_CMD_MACRO,
-    RUNCIBLE_CMD_DISCHARGE
+    RUNCIBLE_CMD_DISCHARGE,
+    RUNCIBLE_CMD_PUP,
+    RUNCIBLE_CMD_CLIP,
+    RUNCIBLE_CMD_ST,
+    RUNCIBLE_CMD_VOID
 } tsfi_runcible_cmd_type_t;
 
 typedef struct {
@@ -31,6 +35,9 @@ typedef struct {
     uint8_t scsi_reg;
     uint32_t scsi_val;
     uint8_t keyset_chord;
+    uint8_t dest_net;
+    uint8_t dest_host;
+    uint8_t pup_type;
     float dt;
     int fet_id;
     char sub_op[16];

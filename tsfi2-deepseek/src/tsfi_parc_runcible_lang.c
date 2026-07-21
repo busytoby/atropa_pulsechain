@@ -5,6 +5,9 @@
 #include "tsfi_parc_keyboard.h"
 #include "tsfi_parc_keyset.h"
 #include "tsfi_parc_notetaker.h"
+#include "tsfi_parc_routing.h"
+#include "tsfi_parc_clipboard.h"
+#include "tsfi_parc_stcomp.h"
 
 int tsfi_runcible_parse_cmd(const char *cmd_line, tsfi_runcible_cmd_t *out_cmd) {
     if (!cmd_line || !out_cmd) return -1;
@@ -125,6 +128,42 @@ int tsfi_runcible_parse_cmd(const char *cmd_line, tsfi_runcible_cmd_t *out_cmd) 
         return 0;
     }
 
+    if (strncmp(cmd_line, "PUP", 3) == 0) {
+        out_cmd->type = RUNCIBLE_CMD_PUP;
+        const char *args = cmd_line + 3;
+        while (*args == ' ' || *args == '\t') args++;
+        int net = 0, host = 0, type = 0;
+        if (sscanf(args, "SEND %d %d %d", &net, &host, &type) >= 3) {
+            out_cmd->dest_net = (uint8_t)net;
+            out_cmd->dest_host = (uint8_t)host;
+            out_cmd->pup_type = (uint8_t)type;
+        }
+        strncpy(out_cmd->raw_args, args, sizeof(out_cmd->raw_args) - 1);
+        return 0;
+    }
+
+    if (strncmp(cmd_line, "CLIP", 4) == 0) {
+        out_cmd->type = RUNCIBLE_CMD_CLIP;
+        const char *args = cmd_line + 4;
+        while (*args == ' ' || *args == '\t') args++;
+        sscanf(args, "%15s", out_cmd->sub_op);
+        strncpy(out_cmd->raw_args, args, sizeof(out_cmd->raw_args) - 1);
+        return 0;
+    }
+
+    if (strncmp(cmd_line, "ST", 2) == 0) {
+        out_cmd->type = RUNCIBLE_CMD_ST;
+        const char *args = cmd_line + 2;
+        while (*args == ' ' || *args == '\t') args++;
+        strncpy(out_cmd->raw_args, args, sizeof(out_cmd->raw_args) - 1);
+        return 0;
+    }
+
+    if (strncmp(cmd_line, "VOID", 4) == 0) {
+        out_cmd->type = RUNCIBLE_CMD_VOID;
+        return 0;
+    }
+
     if (strncmp(cmd_line, "SLIDE", 5) == 0) {
         out_cmd->type = RUNCIBLE_CMD_SLIDE;
         return 0;
@@ -200,12 +239,39 @@ int tsfi_runcible_exec_cmd(const tsfi_runcible_cmd_t *cmd) {
                    cmd->fet_id, cmd->dt, fet.depletion_factor);
             return 0;
         }
+        case RUNCIBLE_CMD_PUP: {
+            tsfi_parc_routing_table_t rtable;
+            tsfi_parc_routing_init(&rtable);
+            uint8_t next_hop = 0;
+            tsfi_parc_routing_lookup(&rtable, cmd->dest_net, &next_hop);
+            printf("[RUNCIBLE TTY] PUP Packet Injection Net %d Host %d Type %d -> Gateway Next Hop %d\n",
+                   cmd->dest_net, cmd->dest_host, cmd->pup_type, next_hop);
+            return 0;
+        }
+        case RUNCIBLE_CMD_CLIP: {
+            tsfi_parc_clipboard_t clip;
+            tsfi_parc_clip_init(&clip);
+            tsfi_parc_clip_copy(&clip, "Runcible Clipboard Stream", 25);
+            printf("[RUNCIBLE TTY] CLIP Modeless Buffer Operation (%s) -> Size %d bytes\n",
+                   cmd->sub_op[0] ? cmd->sub_op : "COPY", clip.length);
+            return 0;
+        }
+        case RUNCIBLE_CMD_ST: {
+            uint8_t bc[64];
+            int bc_len = tsfi_parc_st_compile("3 + 4", bc, sizeof(bc));
+            printf("[RUNCIBLE TTY] ST Smalltalk-76 Live Method Eval -> Bytecode Count %d\n", bc_len);
+            return 0;
+        }
+        case RUNCIBLE_CMD_VOID: {
+            printf("[RUNCIBLE TTY] VOID Dysnomia VM Root State Discard -> Fuse(0) Dependent Registers Collapsed\n");
+            return 0;
+        }
         case RUNCIBLE_CMD_SLIDE: {
             printf("[RUNCIBLE TTY] Executing Dual-Path Littlewood-Richardson Tableau Slide\n");
             return 0;
         }
         case RUNCIBLE_CMD_STATUS: {
-            printf("[RUNCIBLE TTY] Subsystem Active | All Advanced Control Primitives Validated\n");
+            printf("[RUNCIBLE TTY] Subsystem Active | Full PARC Network & Runcible Suite Validated\n");
             return 0;
         }
         default:

@@ -923,6 +923,10 @@ int main() {
     tsfi_runcible_main_step("YUL RESOLVE 0x7a89bc3d 0x12345678");
     tsfi_runcible_main_step("MACRO PLAY BOOT_SEQ");
     tsfi_runcible_main_step("DISCHARGE 1 0.1");
+    tsfi_runcible_main_step("PUP SEND 3 22 1");
+    tsfi_runcible_main_step("CLIP COPY Hello");
+    tsfi_runcible_main_step("ST EVAL 3 + 4");
+    tsfi_runcible_main_step("VOID");
     tsfi_runcible_main_step("STATUS");
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
