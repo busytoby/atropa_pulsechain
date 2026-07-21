@@ -15,6 +15,7 @@
 #include "tsfi_autodin_cumulative_quadtree.h"
 #include "tsfi_autodin_cumulative_winchester.h"
 #include "tsfi_autodin_cumulative_contract_resolver.h"
+#include "tsfi_autodin_cumulative_contract_comprehensive.h"
 #include "tsfi_encodings.h"
 #include "tsfi_cade_imf.h"
 #include "tsfi_cade_vulkan.h"
@@ -1679,6 +1680,18 @@ int main() {
     autodin_cumulative_contract_resolver_register_contract(&autodin_contract_resolver, "0x1234567890abcdef", 987654321ULL, 123456789ULL);
     autodin_cumulative_contract_state_t *resolved_contract = NULL;
     autodin_cumulative_contract_resolver_resolve_by_address(&autodin_contract_resolver, "dynamic_0x1234567890abcdef", &resolved_contract);
+
+    // Comprehensive ZMM VM State Transition Pipeline (Seed, Form, Fuse, Tune, Polarize, Conify, Saturate, Bond, Delegate)
+    autodin_cumulative_contract_comprehensive_resolver_t autodin_comp_resolver;
+    autodin_cumulative_contract_comprehensive_initialize(&autodin_comp_resolver);
+    autodin_cumulative_contract_comprehensive_seed(&autodin_comp_resolver, "0xfeedfacecafe", 12345ULL, 67890ULL, 13579ULL);
+    autodin_cumulative_contract_comprehensive_form(&autodin_comp_resolver, "dynamic_0xfeedfacecafe", 24680ULL);
+    autodin_cumulative_contract_comprehensive_tune(&autodin_comp_resolver, "dynamic_0xfeedfacecafe");
+    autodin_cumulative_contract_comprehensive_polarize(&autodin_comp_resolver, "dynamic_0xfeedfacecafe");
+    autodin_cumulative_contract_comprehensive_conify(&autodin_comp_resolver, "dynamic_0xfeedfacecafe", 99999ULL);
+    autodin_cumulative_contract_comprehensive_saturate(&autodin_comp_resolver, "dynamic_0xfeedfacecafe", 100ULL, 200ULL, 300ULL);
+    autodin_cumulative_contract_comprehensive_bond(&autodin_comp_resolver, "dynamic_0xfeedfacecafe");
+    autodin_cumulative_contract_comprehensive_delegate(&autodin_comp_resolver, "dynamic_0xfeedfacecafe", 0x777777ULL);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 

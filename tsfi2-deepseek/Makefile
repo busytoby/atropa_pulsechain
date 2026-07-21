@@ -285,7 +285,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_autodin_cumulative_gateway.o \
                   $(OBJ_DIR)/tsfi_autodin_cumulative_quadtree.o \
                   $(OBJ_DIR)/tsfi_autodin_cumulative_winchester.o \
-                  $(OBJ_DIR)/tsfi_autodin_cumulative_contract_resolver.o
+                  $(OBJ_DIR)/tsfi_autodin_cumulative_contract_resolver.o \
+                  $(OBJ_DIR)/tsfi_autodin_cumulative_contract_comprehensive.o
 
 
 
