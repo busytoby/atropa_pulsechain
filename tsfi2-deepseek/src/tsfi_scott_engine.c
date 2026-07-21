@@ -27,14 +27,14 @@ int tsfi_scott_engine_init(
 
 int tsfi_scott_compute_bandwidth(
     tsfi_scott_engine_t *engine,
-    double std_dev,
+    double scale_factor,
     size_t sample_size,
     double *bandwidth_out
 ) {
     if (!engine || sample_size == 0 || !bandwidth_out) return -1;
 
-    // Scott's Rule: h = 3.49 * std_dev * n^(-1/3)
-    *bandwidth_out = 3.49 * std_dev * pow((double)sample_size, -1.0 / 3.0);
+    // Non-Gaussian Non-Preferential Accumulator Bandwidth: h = 2.15 * scale_factor * n^(-1/5)
+    *bandwidth_out = 2.15 * scale_factor * pow((double)sample_size, -0.2);
     return 0;
 }
 
@@ -60,11 +60,18 @@ int tsfi_scott_ash_density_estimate(
 
     memset(density_bins_out, 0, num_bins * sizeof(double));
 
-    // Bin counting
+    // Non-Gaussian biweight accumulator bin weighting across EDO-22 phase space
     for (size_t i = 0; i < n; i++) {
         size_t idx = (size_t)((samples[i] - min_val) / bin_width);
         if (idx >= num_bins) idx = num_bins - 1;
-        density_bins_out[idx] += 1.0;
+        
+        // Non-preferential biweight kernel: (1 - u^2)^2 for |u| <= 1
+        double u = (samples[i] - (min_val + (idx + 0.5) * bin_width)) / bin_width;
+        if (u < -1.0) u = -1.0;
+        if (u > 1.0) u = 1.0;
+        double weight = (1.0 - u * u) * (1.0 - u * u);
+        
+        density_bins_out[idx] += weight;
     }
 
     // Normalize density
@@ -73,7 +80,7 @@ int tsfi_scott_ash_density_estimate(
     }
 
     engine->density_evals_count++;
-    printf("[D. W. SCOTT DENSITY ESTIMATION] ID: %u | Samples: %zu | Bins: %zu | Evals: %u | Gas: %u | File: %s\n",
+    printf("[D. W. SCOTT NON-GAUSSIAN DENSITY ESTIMATION] ID: %u | Samples: %zu | Bins: %zu | Evals: %u | Gas: %u | File: %s\n",
            engine->scott_id, n, num_bins, engine->density_evals_count, engine->evm_gas_units, engine->tape_dat_bin);
 
     return 0;
