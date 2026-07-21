@@ -68,6 +68,7 @@
 #include "tsfi_electricity_meter.h"
 #include "tsfi_knuth_yul_transpiler.h"
 #include "tsfi_knuth_fft.h"
+#include "tsfi_knuth_quadtree.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1100,6 +1101,10 @@ int main() {
     tsfi_knuth_fft_plan_t knuth_fft_plan;
     tsfi_knuth_fft_init(&knuth_fft_plan, 16);
     tsfi_knuth_fft_execute(&knuth_fft_plan);
+
+    // Donald E. Knuth Base 2i Twin Dragon Quadtree Indexer Check (Rule 13)
+    tsfi_knuth_quadtree_node_t knuth_quad_node;
+    tsfi_knuth_quadtree_resolve_node(25, -12, 8, &knuth_quad_node);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
