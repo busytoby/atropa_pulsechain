@@ -136,6 +136,7 @@
 #include "tsfi_scott_engine.h"
 #include "tsfi_schmidt_engine.h"
 #include "tsfi_parc_ui_def.h"
+#include "tsfi_chapple_engine.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1582,6 +1583,13 @@ int main() {
     tsfi_ui_element_t ui_elem;
     tsfi_xaml_parse_markup(&ui_def_eng, "<Button Width=\"120\" Height=\"40\" CornerRadius=\"8\" Content=\"OK\"/>", &ui_elem);
     tsfi_st_bind_ui_morph(&ui_def_eng, &ui_elem, "ButtonMorph");
+
+    // M. A. Chapple Power Series Inversion & Lagrange Reversion Check (280 Gas Slot / 78.2% Cut)
+    tsfi_chapple_engine_t chapple_eng;
+    tsfi_chapple_engine_init(33001, &chapple_eng);
+    double a_coeffs[4] = {2.0, 1.0, 0.5, 0.25}; // y = 2x + x^2 + 0.5x^3 + 0.25x^4
+    double b_coeffs[4];
+    tsfi_chapple_revert_power_series(&chapple_eng, a_coeffs, 4, b_coeffs);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
