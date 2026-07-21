@@ -14,6 +14,7 @@
 #include "tsfi_autodin_cumulative_gateway.h"
 #include "tsfi_autodin_cumulative_quadtree.h"
 #include "tsfi_autodin_cumulative_winchester.h"
+#include "tsfi_autodin_cumulative_contract_resolver.h"
 #include "tsfi_encodings.h"
 #include "tsfi_cade_imf.h"
 #include "tsfi_cade_vulkan.h"
@@ -1671,6 +1672,13 @@ int main() {
     autodin_cumulative_winchester_process_scsi_handshake(&autodin_winchester, 30); // Keycode 30 (a/A)
     double fet_discharge_potential = 5.0;
     autodin_cumulative_winchester_evaluate_fet_discharge(&autodin_winchester, &fet_discharge_potential);
+
+    // Automated Digital Network Dynamic Contract Resolution Manager (Rule 9)
+    autodin_cumulative_contract_resolver_t autodin_contract_resolver;
+    autodin_cumulative_contract_resolver_initialize(&autodin_contract_resolver);
+    autodin_cumulative_contract_resolver_register_contract(&autodin_contract_resolver, "0x1234567890abcdef", 987654321ULL, 123456789ULL);
+    autodin_cumulative_contract_state_t *resolved_contract = NULL;
+    autodin_cumulative_contract_resolver_resolve_by_address(&autodin_contract_resolver, "dynamic_0x1234567890abcdef", &resolved_contract);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
