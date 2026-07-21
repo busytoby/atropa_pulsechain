@@ -89,6 +89,7 @@
 #include "tsfi_nadler_skeletonizer.h"
 #include "tsfi_nadler_syntactic_parser.h"
 #include "tsfi_nadler_contour_code.h"
+#include "tsfi_transcendental_cf.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1221,6 +1222,11 @@ int main() {
     // Morton Nadler Directional Contour Code Chain-Code Encoder Check (800 Gas Slot / 450 ns Latency)
     tsfi_nadler_contour_summary_t contour_summary;
     tsfi_nadler_encode_contour(sample_bmp, 16, 16, &contour_summary);
+
+    // Transcendental Continued Fraction Approximation Check (e and pi Convergents)
+    tsfi_cf_convergent_t e_conv, pi_conv;
+    tsfi_cf_compute_e_convergent(5, &e_conv);
+    tsfi_cf_compute_pi_convergent(4, &pi_conv);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
