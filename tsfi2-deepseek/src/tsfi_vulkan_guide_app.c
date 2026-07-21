@@ -147,6 +147,7 @@ int vulkan_guide_application_select_document(
         fclose(file);
     }
 
+    application->document_scroll_y_offset = 0;
     return 0;
 }
 
@@ -298,38 +299,125 @@ int vulkan_guide_application_render_frame(
         pixels[(view_y + 32) * width + x] = 0xFFc5a059;
     }
 
-    // Document Body Text Reader Viewport
-    const char *body_ptr = application->core_guide_engine.active_document_body_text;
-    uint32_t text_render_y = view_y + 50;
-    char line_buffer[256];
-    size_t line_len = 0;
+    // Enhanced Markdown Rendering Engine with Word-Wrapping and Hierarchy
+    const char *text_cursor = application->core_guide_engine.active_document_body_text;
+    uint32_t render_y = view_y + 45;
+    uint32_t max_render_y = view_y + view_h - 170;
+    int in_code_block = 0;
+    uint32_t line_counter = 0;
 
-    while (*body_ptr && text_render_y < (view_y + view_h - 180)) {
-        if (*body_ptr == '\n' || line_len >= 80) {
-            line_buffer[line_len] = '\0';
+    while (*text_cursor && render_y < max_render_y) {
+        // Read raw line up to newline
+        char raw_line[512];
+        size_t raw_len = 0;
+        while (*text_cursor && *text_cursor != '\n' && raw_len < sizeof(raw_line) - 1) {
+            raw_line[raw_len++] = *text_cursor++;
+        }
+        if (*text_cursor == '\n') text_cursor++;
+        raw_line[raw_len] = '\0';
 
-            uint32_t line_color = 0xFFd4ceb8; // Default parchment
-            float font_scale = 5.5f;
+        // Check line scroll offset
+        if (line_counter < application->document_scroll_y_offset) {
+            line_counter++;
+            continue;
+        }
+        line_counter++;
 
-            if (line_buffer[0] == '#') {
-                line_color = 0xFFe6dfd3; // Header Gold/Cream
-                font_scale = 6.5f;
-            } else if (strncmp(line_buffer, "```", 3) == 0 || line_buffer[0] == '`') {
-                line_color = 0xFF00E5FF; // Code Cyan
+        // Code block toggle
+        if (strncmp(raw_line, "```", 3) == 0) {
+            in_code_block = !in_code_block;
+            continue;
+        }
+
+        uint32_t line_color = 0xFFD4CEB8; // Standard Parchment
+        float font_scale = 5.5f;
+        int render_x_offset = (int)view_x + 20;
+        const char *display_text = raw_line;
+
+        if (in_code_block) {
+            // Monospace Code Block formatting inside charcoal container
+            line_color = 0xFF00E5FF;
+            font_scale = 5.0f;
+            render_x_offset += 10;
+            // Draw background card for code block
+            for (uint32_t cy = render_y - 2; cy < render_y + 14 && cy < height; cy++) {
+                for (uint32_t cx = view_x + 20; cx < view_x + view_w - 20 && cx < width; cx++) {
+                    pixels[cy * width + cx] = 0xFF1A2233;
+                }
             }
+        } else if (raw_line[0] == '#') {
+            // Markdown Headings
+            if (strncmp(raw_line, "### ", 4) == 0) {
+                line_color = 0xFFC5A059; // H3 Bronze
+                font_scale = 6.5f;
+                display_text = raw_line + 4;
+            } else if (strncmp(raw_line, "## ", 3) == 0) {
+                line_color = 0xFFE6DFD3; // H2 Warm Cream
+                font_scale = 7.5f;
+                display_text = raw_line + 3;
+            } else if (strncmp(raw_line, "# ", 2) == 0) {
+                line_color = 0xFFF5D061; // H1 Bright Gold
+                font_scale = 8.5f;
+                display_text = raw_line + 2;
+            }
+        } else if (strncmp(raw_line, "* ", 2) == 0 || strncmp(raw_line, "- ", 2) == 0 || strncmp(raw_line, "+ ", 2) == 0) {
+            // Bullet Lists
+            line_color = 0xFFEFE6D5;
+            font_scale = 5.5f;
+            render_x_offset += 15;
+            display_text = raw_line + 2;
+            // Render Bullet Dot
+            tsfi_quantel_paintbox_typographer(pixels, (int)width, (int)height, render_x_offset - 10, (int)render_y, "*", 0xFFC5A059, 5.5f);
+        } else if (raw_line[0] == '>' && raw_line[1] == ' ') {
+            // Blockquotes
+            line_color = 0xFFD4B982;
+            font_scale = 5.5f;
+            render_x_offset += 15;
+            display_text = raw_line + 2;
+            // Draw Gold Margin Accent Bar
+            for (uint32_t qy = render_y - 2; qy < render_y + 14 && qy < height; qy++) {
+                for (uint32_t qx = view_x + 22; qx < view_x + 25 && qx < width; qx++) {
+                    pixels[qy * width + qx] = 0xFFC5A059;
+                }
+            }
+        }
 
-            tsfi_quantel_paintbox_typographer(
-                pixels, (int)width, (int)height,
-                (int)view_x + 20, (int)text_render_y,
-                line_buffer,
-                line_color, font_scale
-            );
+        // Clean Word-Wrapping Algorithm (Wraps cleanly at spaces)
+        const char *word_ptr = display_text;
+        char formatted_word_buf[128];
+        size_t word_buf_len = 0;
+        const size_t max_chars_per_line = 72;
 
-            text_render_y += (uint32_t)(font_scale * 2.2f) + 4;
-            line_len = 0;
-            if (*body_ptr == '\n') body_ptr++;
-        } else {
-            line_buffer[line_len++] = *body_ptr++;
+        while (*word_ptr) {
+            if (*word_ptr == ' ' || *(word_ptr + 1) == '\0') {
+                if (*(word_ptr + 1) == '\0' && *word_ptr != ' ') {
+                    formatted_word_buf[word_buf_len++] = *word_ptr;
+                }
+                formatted_word_buf[word_buf_len] = '\0';
+
+                if (word_buf_len > 0) {
+                    tsfi_quantel_paintbox_typographer(
+                        pixels, (int)width, (int)height,
+                        render_x_offset, (int)render_y,
+                        formatted_word_buf,
+                        line_color, font_scale
+                    );
+
+                    render_y += (uint32_t)(font_scale * 2.2f) + 4;
+                    if (render_y >= max_render_y) break;
+                    word_buf_len = 0;
+                }
+                word_ptr++;
+            } else {
+                if (word_buf_len < max_chars_per_line) {
+                    formatted_word_buf[word_buf_len++] = *word_ptr;
+                }
+                word_ptr++;
+            }
+        }
+
+        if (display_text[0] == '\0') {
+            render_y += 10; // Extra paragraph spacing
         }
     }
 
@@ -420,6 +508,18 @@ static void vulkan_guide_key_hook(void *data, uint32_t serial, uint32_t time, ui
     } else if (key == 103 || key == 17) { // UP Arrow or 'w'/'k'
         if (g_guide_app_instance && g_guide_app_instance->active_selected_document_index > 0) {
             vulkan_guide_application_select_document(g_guide_app_instance, g_guide_app_instance->active_selected_document_index - 1);
+        }
+    } else if (key == 109 || key == 32) { // Page Down (109) or 'd'
+        if (g_guide_app_instance) {
+            g_guide_app_instance->document_scroll_y_offset += 4;
+        }
+    } else if (key == 104 || key == 18) { // Page Up (104) or 'e'
+        if (g_guide_app_instance) {
+            if (g_guide_app_instance->document_scroll_y_offset >= 4) {
+                g_guide_app_instance->document_scroll_y_offset -= 4;
+            } else {
+                g_guide_app_instance->document_scroll_y_offset = 0;
+            }
         }
     }
 }

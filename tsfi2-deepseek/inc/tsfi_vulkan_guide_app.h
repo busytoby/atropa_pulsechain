@@ -22,6 +22,7 @@ typedef struct {
     char active_search_query[VULKAN_GUIDE_SEARCH_QUERY_MAX_BYTES];
     uint32_t active_selected_document_index;
     uint32_t matched_search_count;
+    uint32_t document_scroll_y_offset;
 } vulkan_guide_application_t;
 
 /* Initialize Standalone Vulkan P. J. Brown Guide Lore & Documentation Application */
