@@ -952,6 +952,12 @@ int main() {
     printf("[INFO] Processed %d Tape Catalog entries (Sample Vol: %s -> FileID: %s)\n",
            cat_count, cat_entries[0].volume_id, cat_entries[0].file_id);
 
+    char next_vol[7];
+    tsfi_tape_catalog_next_id("HDL", next_vol);
+    FILE *guard_f = tsfi_tape_open_guarded("./tmp/test_guarded.dat.bin", "w+b", TAPE_SECURITY_UNCLASSIFIED);
+    if (guard_f) { fclose(guard_f); }
+    printf("[INFO] Guarded Tape Creator Check -> Assigned Serial: %s\n", next_vol);
+
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
     printf("[INFO] Rendering 90-second Eye of the Tiger Super8 / Quantel demoscene showcase...\n");

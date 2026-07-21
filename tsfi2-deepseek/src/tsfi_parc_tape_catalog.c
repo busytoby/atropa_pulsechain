@@ -6,6 +6,14 @@
 #include "tsfi_parc_tape_catalog.h"
 #include "tsfi_parc_tape_label_yul.h"
 
+static int g_hdl_counter = 37;
+static int g_rdb_counter = 12;
+static int g_uni_counter = 14;
+static int g_ast_counter = 8;
+static int g_sys_counter = 12;
+static int g_vmx_counter = 10;
+static int g_vol_counter = 30;
+
 // Generate a domain-prefixed unique 6-character Volume ID
 static void generate_unique_vol_id(const char *filename, int index, char *vol_id_out) {
     unsigned int idx = (unsigned int)(index > 999 ? 999 : index);
@@ -15,6 +23,12 @@ static void generate_unique_vol_id(const char *filename, int index, char *vol_id
         snprintf(vol_id_out, 7, "RDB%03u", idx);
     } else if (strstr(filename, "uniservo") || strstr(filename, "mmap")) {
         snprintf(vol_id_out, 7, "UNI%03u", idx);
+    } else if (strstr(filename, "graph")) {
+        snprintf(vol_id_out, 7, "AST%03u", idx);
+    } else if (strstr(filename, "hogan") || strstr(filename, "lfs")) {
+        snprintf(vol_id_out, 7, "SYS%03u", idx);
+    } else if (strstr(filename, "evm") || strstr(filename, "vm")) {
+        snprintf(vol_id_out, 7, "VMX%03u", idx);
     } else {
         snprintf(vol_id_out, 7, "VOL%03u", idx);
     }
@@ -38,6 +52,68 @@ static void generate_meaningful_file_id(const char *filename, char *file_id_out)
     }
 
     snprintf(file_id_out, 18, "%s.DAT.BIN", clean_name);
+}
+
+int tsfi_tape_catalog_next_id(const char *domain_prefix, char *out_vol_id) {
+    if (!domain_prefix || !out_vol_id) return -1;
+
+    int next_val = 1;
+    if (strcmp(domain_prefix, "HDL") == 0) next_val = ++g_hdl_counter;
+    else if (strcmp(domain_prefix, "RDB") == 0) next_val = ++g_rdb_counter;
+    else if (strcmp(domain_prefix, "UNI") == 0) next_val = ++g_uni_counter;
+    else if (strcmp(domain_prefix, "AST") == 0) next_val = ++g_ast_counter;
+    else if (strcmp(domain_prefix, "SYS") == 0) next_val = ++g_sys_counter;
+    else if (strcmp(domain_prefix, "VMX") == 0) next_val = ++g_vmx_counter;
+    else next_val = ++g_vol_counter;
+
+    snprintf(out_vol_id, 7, "%.3s%03u", domain_prefix, (unsigned int)(next_val > 999 ? 999 : next_val));
+    return 0;
+}
+
+FILE *tsfi_tape_open_guarded(const char *file_path, const char *mode, uint8_t process_clearance) {
+    if (!file_path || !mode) return NULL;
+
+    // Rule 13: Must end strictly with .dat.bin
+    if (!strstr(file_path, ".dat.bin") && !strstr(file_path, ".DAT.BIN")) {
+        printf("[SECURITY] Access Denied: File %s does not satisfy .dat.bin Rule 13\n", file_path);
+        return NULL;
+    }
+
+    FILE *f = fopen(file_path, mode);
+    if (!f) return NULL;
+
+    // If writing a new file, inscribe 720-byte Yul DDL header block
+    if (strchr(mode, 'w') || strchr(mode, 'a')) {
+        uint8_t header_buf[720];
+        char vol_id[7];
+        char file_id[18];
+        tsfi_tape_catalog_next_id("VOL", vol_id);
+        generate_meaningful_file_id(file_path, file_id);
+
+        tsfi_tape_label_yul_format_full_header(
+            header_buf, vol_id, file_id, TAPE_SECURITY_UNCLASSIFIED,
+            0.0f, 0.0f, 1024.0f, 1024.0f, NULL, NULL,
+            0.0f, 1, 1, 1, 32, 30
+        );
+        fwrite(header_buf, 1, 720, f);
+        fflush(f);
+    } else {
+        // If reading existing file, validate 720-byte sequence & governance clearance
+        uint8_t header_buf[720];
+        size_t nread = fread(header_buf, 1, 720, f);
+        fseek(f, 0, SEEK_SET);
+
+        if (nread == 720) {
+            int gov_res = tsfi_tape_label_yul_check_governance(header_buf, process_clearance);
+            if (gov_res != 0) {
+                printf("[SECURITY] Access Denied: Governance check failed for %s (Code %d)\n", file_path, gov_res);
+                fclose(f);
+                return NULL;
+            }
+        }
+    }
+
+    return f;
 }
 
 int tsfi_tape_catalog_process_all(const char *dir_path, tsfi_tape_catalog_entry_t *entries_out, int max_entries) {
