@@ -1239,6 +1239,12 @@ int main() {
     tsfi_algol60_block_summary_t algol_summary;
     tsfi_algol60_execute_block_frame(3, 4, &algol_summary);
 
+    // Runcible TTY Control Engine ALGOL 60 Block & Thunk Commands Check
+    tsfi_runcible_main_step("BEGIN");
+    tsfi_runcible_main_step("THUNK scsi_eval YUL dynamic_0x80");
+    tsfi_runcible_main_step("EVAL scsi_eval");
+    tsfi_runcible_main_step("END");
+
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
     printf("[INFO] Rendering 90-second Eye of the Tiger Super8 / Quantel demoscene showcase...\n");

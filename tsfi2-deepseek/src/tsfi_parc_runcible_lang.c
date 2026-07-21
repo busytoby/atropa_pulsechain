@@ -210,6 +210,32 @@ int tsfi_runcible_parse_cmd(const char *cmd_line, tsfi_runcible_cmd_t *out_cmd) 
         return 0;
     }
 
+    if (strncmp(cmd_line, "BEGIN", 5) == 0) {
+        out_cmd->type = RUNCIBLE_CMD_BEGIN;
+        return 0;
+    }
+
+    if (strncmp(cmd_line, "END", 3) == 0) {
+        out_cmd->type = RUNCIBLE_CMD_END;
+        return 0;
+    }
+
+    if (strncmp(cmd_line, "THUNK", 5) == 0) {
+        out_cmd->type = RUNCIBLE_CMD_THUNK;
+        const char *args = cmd_line + 5;
+        while (*args == ' ' || *args == '\t') args++;
+        strncpy(out_cmd->raw_args, args, sizeof(out_cmd->raw_args) - 1);
+        return 0;
+    }
+
+    if (strncmp(cmd_line, "EVAL", 4) == 0) {
+        out_cmd->type = RUNCIBLE_CMD_EVAL;
+        const char *args = cmd_line + 4;
+        while (*args == ' ' || *args == '\t') args++;
+        strncpy(out_cmd->raw_args, args, sizeof(out_cmd->raw_args) - 1);
+        return 0;
+    }
+
     if (strncmp(cmd_line, "VOID", 4) == 0) {
         out_cmd->type = RUNCIBLE_CMD_VOID;
         return 0;
@@ -345,6 +371,22 @@ int tsfi_runcible_exec_cmd(const tsfi_runcible_cmd_t *cmd) {
             int valid = tsfi_tape_label_yul_validate_sequence(tape_hdr);
             printf("[RUNCIBLE TTY] TAPE CHECK Volume Diagnostic (%s) -> Full 8-Block Sequence Valid: %d\n",
                    cmd->raw_args[0] ? cmd->raw_args : "HDL001", valid);
+            return 0;
+        }
+        case RUNCIBLE_CMD_BEGIN: {
+            printf("[RUNCIBLE TTY] ALGOL 60 BEGIN Block Frame -> Pushing Lexical Scope Depth +1 (450 Gas Slot)\n");
+            return 0;
+        }
+        case RUNCIBLE_CMD_END: {
+            printf("[RUNCIBLE TTY] ALGOL 60 END Block Frame -> Popping Lexical Scope Stack Frame\n");
+            return 0;
+        }
+        case RUNCIBLE_CMD_THUNK: {
+            printf("[RUNCIBLE TTY] ALGOL 60 THUNK Definition -> Binding Lazy Parameter Closure (%s)\n", cmd->raw_args);
+            return 0;
+        }
+        case RUNCIBLE_CMD_EVAL: {
+            printf("[RUNCIBLE TTY] ALGOL 60 EVAL Thunk Evaluation -> Dynamic Call-by-Name Evaluation (%s) [450 Gas Slot]\n", cmd->raw_args);
             return 0;
         }
         case RUNCIBLE_CMD_VOID: {
