@@ -88,6 +88,7 @@
 #include "tsfi_nadler_agentic_automaton.h"
 #include "tsfi_nadler_skeletonizer.h"
 #include "tsfi_nadler_syntactic_parser.h"
+#include "tsfi_nadler_contour_code.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1216,6 +1217,10 @@ int main() {
     tsfi_nadler_stroke_type_t sample_strokes[3] = {NADLER_STROKE_STEM, NADLER_STROKE_STEM, NADLER_STROKE_BAR};
     tsfi_nadler_syntax_summary_t syn_summary;
     tsfi_nadler_parse_syntactic_strokes(sample_strokes, 3, &syn_summary);
+
+    // Morton Nadler Directional Contour Code Chain-Code Encoder Check (800 Gas Slot / 450 ns Latency)
+    tsfi_nadler_contour_summary_t contour_summary;
+    tsfi_nadler_encode_contour(sample_bmp, 16, 16, &contour_summary);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
