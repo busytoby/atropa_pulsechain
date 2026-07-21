@@ -13,11 +13,11 @@
 
 #define DEMO_WIDTH 512
 #define DEMO_HEIGHT 512
-#define TOTAL_FRAMES 120
+#define TOTAL_FRAMES 240
 
 int main(void) {
     printf("====================================================================\n");
-    printf("   MORTON NADLER MULTI-CHARACTER SUPER8 DEMO MP4 GENERATOR           \n");
+    printf("   MORTON NADLER AUNCIENT CHARACTER SUPER8 DEMO MP4 GENERATOR        \n");
     printf("====================================================================\n");
 
     // 1. Initialize Power Sentinel
@@ -35,14 +35,16 @@ int main(void) {
         return 1;
     }
 
-    printf("[INFO] Rendering %d Super8 multi-character demoscene frames...\n", TOTAL_FRAMES);
+    const char *auncient_str = "AUNCIENT";
+    size_t str_len = strlen(auncient_str);
+
+    printf("[INFO] Rendering %d Super8 AUNCIENT character demoscene frames...\n", TOTAL_FRAMES);
 
     for (int frame = 0; frame < TOTAL_FRAMES; frame++) {
         memset(bitmap, 0, DEMO_WIDTH * DEMO_HEIGHT);
-        int char_phase = (frame / 30) % 4; // Cycle through 'A', 'B', 'R', '8'
+        char cur_char = auncient_str[(frame / 30) % str_len];
 
-        if (char_phase == 0) {
-            // Draw 'A'
+        if (cur_char == 'A') {
             for (int y = 100; y < 400; y++) {
                 for (int w = -10; w <= 10; w++) {
                     int x1 = 256 - (y - 100) / 2 + w;
@@ -56,54 +58,71 @@ int main(void) {
                     bitmap[(250 + dy) * DEMO_WIDTH + x] = 255;
                 }
             }
-        } else if (char_phase == 1) {
-            // Draw 'B'
+        } else if (cur_char == 'U') {
+            for (int y = 100; y < 320; y++) {
+                for (int w = 0; w <= 20; w++) {
+                    bitmap[y * DEMO_WIDTH + (150 + w)] = 255;
+                    bitmap[y * DEMO_WIDTH + (342 + w)] = 255;
+                }
+            }
+            for (int theta = 0; theta <= 180; theta++) {
+                float rad = (float)theta * 3.14159f / 180.0f;
+                int x = 256 - (int)(100.0f * cosf(rad));
+                int y = 320 + (int)(75.0f * sinf(rad));
+                if (x >= 0 && x < DEMO_WIDTH && y >= 0 && y < DEMO_HEIGHT) bitmap[y * DEMO_WIDTH + x] = 255;
+            }
+        } else if (cur_char == 'N') {
             for (int y = 100; y < 400; y++) {
                 for (int w = 0; w <= 20; w++) {
                     bitmap[y * DEMO_WIDTH + (150 + w)] = 255;
+                    bitmap[y * DEMO_WIDTH + (342 + w)] = 255;
                 }
             }
-            // Upper and lower loops
-            for (int theta = 0; theta < 180; theta++) {
-                float rad = (float)theta * 3.14159f / 180.0f;
-                int x1 = 160 + (int)(100.0f * sinf(rad));
-                int y1 = 175 - (int)(75.0f * cosf(rad));
-                int y2 = 325 - (int)(75.0f * cosf(rad));
-                if (x1 >= 0 && x1 < DEMO_WIDTH && y1 >= 0 && y1 < DEMO_HEIGHT) bitmap[y1 * DEMO_WIDTH + x1] = 255;
-                if (x1 >= 0 && x1 < DEMO_WIDTH && y2 >= 0 && y2 < DEMO_HEIGHT) bitmap[y2 * DEMO_WIDTH + x1] = 255;
-            }
-        } else if (char_phase == 2) {
-            // Draw 'R'
-            for (int y = 100; y < 400; y++) {
-                for (int w = 0; w <= 20; w++) {
-                    bitmap[y * DEMO_WIDTH + (150 + w)] = 255;
-                }
-            }
-            for (int theta = 0; theta < 180; theta++) {
-                float rad = (float)theta * 3.14159f / 180.0f;
-                int x1 = 160 + (int)(100.0f * sinf(rad));
-                int y1 = 175 - (int)(75.0f * cosf(rad));
-                if (x1 >= 0 && x1 < DEMO_WIDTH && y1 >= 0 && y1 < DEMO_HEIGHT) bitmap[y1 * DEMO_WIDTH + x1] = 255;
-            }
-            // Right leg diagonal
-            for (int i = 0; i < 150; i++) {
-                int x = 170 + i;
-                int y = 250 + i;
+            for (int i = 0; i < 200; i++) {
+                int x = 160 + i;
+                int y = 100 + (i * 300) / 200;
                 if (x < DEMO_WIDTH && y < DEMO_HEIGHT) bitmap[y * DEMO_WIDTH + x] = 255;
             }
-        } else {
-            // Draw '8'
-            for (int theta = 0; theta < 360; theta++) {
+        } else if (cur_char == 'C') {
+            for (int theta = 45; theta <= 315; theta++) {
                 float rad = (float)theta * 3.14159f / 180.0f;
-                int x1 = 256 + (int)(80.0f * sinf(rad));
-                int y1 = 180 - (int)(70.0f * cosf(rad));
-                int y2 = 330 - (int)(70.0f * cosf(rad));
-                if (x1 >= 0 && x1 < DEMO_WIDTH && y1 >= 0 && y1 < DEMO_HEIGHT) bitmap[y1 * DEMO_WIDTH + x1] = 255;
-                if (x1 >= 0 && x1 < DEMO_WIDTH && y2 >= 0 && y2 < DEMO_HEIGHT) bitmap[y2 * DEMO_WIDTH + x1] = 255;
+                int x = 270 - (int)(110.0f * cosf(rad));
+                int y = 250 - (int)(120.0f * sinf(rad));
+                if (x >= 0 && x < DEMO_WIDTH && y >= 0 && y < DEMO_HEIGHT) bitmap[y * DEMO_WIDTH + x] = 255;
+            }
+        } else if (cur_char == 'I') {
+            for (int y = 100; y < 400; y++) {
+                for (int w = -10; w <= 10; w++) {
+                    bitmap[y * DEMO_WIDTH + (256 + w)] = 255;
+                }
+            }
+        } else if (cur_char == 'E') {
+            for (int y = 100; y < 400; y++) {
+                for (int w = 0; w <= 20; w++) {
+                    bitmap[y * DEMO_WIDTH + (150 + w)] = 255;
+                }
+            }
+            for (int x = 150; x <= 330; x++) {
+                for (int dy = -8; dy <= 8; dy++) {
+                    bitmap[(100 + dy) * DEMO_WIDTH + x] = 255;
+                    bitmap[(250 + dy) * DEMO_WIDTH + x] = 255;
+                    bitmap[(400 + dy) * DEMO_WIDTH + x] = 255;
+                }
+            }
+        } else if (cur_char == 'T') {
+            for (int y = 100; y < 400; y++) {
+                for (int w = -10; w <= 10; w++) {
+                    bitmap[y * DEMO_WIDTH + (256 + w)] = 255;
+                }
+            }
+            for (int x = 150; x <= 362; x++) {
+                for (int dy = -8; dy <= 8; dy++) {
+                    bitmap[(100 + dy) * DEMO_WIDTH + x] = 255;
+                }
             }
         }
 
-        // Run Morton Nadler Skeletonizer Thinning
+        // Run Morton Nadler Topological Character Skeletonizer
         tsfi_nadler_skeleton_summary_t skel_summary;
         tsfi_nadler_skeletonize_bitmap(bitmap, DEMO_WIDTH, DEMO_HEIGHT, &skel_summary);
 
@@ -134,6 +153,6 @@ int main(void) {
     free(bitmap);
     free(rgb_frame);
 
-    printf("[INFO] Multi-character Super8 PPM frames rendered successfully.\n");
+    printf("[INFO] AUNCIENT Super8 PPM frames rendered successfully.\n");
     return 0;
 }
