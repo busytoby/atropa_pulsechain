@@ -259,7 +259,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_decnet_exec_stack.o \
                   $(OBJ_DIR)/tsfi_tree_net_vm.o \
                   $(OBJ_DIR)/tsfi_speroni_param_list.o \
-                  $(OBJ_DIR)/tsfi_speroni_define_format.o
+                  $(OBJ_DIR)/tsfi_speroni_define_format.o \
+                  $(OBJ_DIR)/tsfi_speroni_sort_merge.o
 
 
 

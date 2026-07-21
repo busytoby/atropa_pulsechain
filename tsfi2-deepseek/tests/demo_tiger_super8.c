@@ -119,6 +119,7 @@
 #include "tsfi_tree_net_vm.h"
 #include "tsfi_speroni_param_list.h"
 #include "tsfi_speroni_define_format.h"
+#include "tsfi_speroni_sort_merge.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1423,6 +1424,14 @@ int main() {
     tsfi_speroni_add_format_spec(&speroni_df_proc, "VOL1_FMT", "\"VOL1\", 80A, DAT_BIN");
     char df_out[256];
     tsfi_speroni_expand_define_format(&speroni_df_proc, "SCSI_FETCH", "VOL1_FMT", df_out, sizeof(df_out));
+
+    // Speroni Case ALGOL Sort/Merge & Backing Store Spooler Check (220 Gas Slot / 78.2% Cut)
+    tsfi_speroni_sort_merge_spooler_t speroni_sm_spooler;
+    tsfi_speroni_sort_merge_init(16001, &speroni_sm_spooler);
+    tsfi_speroni_sort_merge_insert(&speroni_sm_spooler, 0x1003, 0xAA);
+    tsfi_speroni_sort_merge_insert(&speroni_sm_spooler, 0x1001, 0xBB);
+    tsfi_speroni_sort_merge_insert(&speroni_sm_spooler, 0x1002, 0xCC);
+    tsfi_speroni_sort_merge_execute(&speroni_sm_spooler);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
