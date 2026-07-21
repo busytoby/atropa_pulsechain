@@ -9,6 +9,7 @@
 #include "tsfi_computel_blue_box.h"
 #include "tsfi_hogan.h"
 #include "tsfi_hogan_tax_permutation.h"
+#include "tsfi_autodin_cumulative_permutation.h"
 #include "tsfi_encodings.h"
 #include "tsfi_cade_imf.h"
 #include "tsfi_cade_vulkan.h"
@@ -1627,6 +1628,22 @@ int main() {
     char swap_hops[8][48];
     size_t hop_count = 0;
     tsfi_hogan_tax_permute_swap_route(&hogan_tax_eng, "0x1111222233334444555566667777888899990000", "0x9999888877776666555544443333222211110000", 100000, swap_hops, &hop_count);
+
+    // Automated Digital Network Cumulative Transaction State Permutation Verification
+    autodin_cumulative_permutation_engine_t autodin_cumulative_engine;
+    autodin_cumulative_permutation_initialize(7001, &autodin_cumulative_engine);
+    tsfi_autodin_zmm_tx_req_t autodin_transaction_request;
+    memset(&autodin_transaction_request, 0, sizeof(tsfi_autodin_zmm_tx_req_t));
+    snprintf(autodin_transaction_request.from_addr, 43, "0x1111222233334444555566667777888899990000");
+    snprintf(autodin_transaction_request.to_addr, 43, "dynamic_0x9999888877776666555544443333222211110000");
+    autodin_transaction_request.nonce = 1;
+    autodin_transaction_request.selector = 0xA9059CBB;
+    autodin_transaction_request.calldata_len = 64;
+    autodin_cumulative_permutation_push_transaction(&autodin_cumulative_engine, &autodin_transaction_request);
+    uint64_t autodin_root_cumulative_hash = 0;
+    autodin_cumulative_permutation_evaluate(&autodin_cumulative_engine, &autodin_root_cumulative_hash);
+    uint8_t autodin_cumulative_tape_buffer_720bytes[720];
+    autodin_cumulative_permutation_inscribe_tape_label(&autodin_cumulative_engine, autodin_cumulative_tape_buffer_720bytes);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
