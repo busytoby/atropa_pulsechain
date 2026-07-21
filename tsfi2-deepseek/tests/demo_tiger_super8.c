@@ -129,6 +129,7 @@
 #include "tsfi_manderfield_engine.h"
 #include "tsfi_manderfield_compiler.h"
 #include "tsfi_manderfield_npl_transpiler.h"
+#include "tsfi_thacher_solver.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1517,6 +1518,13 @@ int main() {
     tsfi_manderfield_transpile_npl(&mand_npl, "DECLARE X FIXED BINARY;", yul_out_buf, sizeof(yul_out_buf));
     size_t compacted_ast_sz = 0;
     tsfi_manderfield_compact_ast(&mand_npl, 1024, &compacted_ast_sz);
+
+    // H. C. Thacher Rational Chebyshev Approximation & CACM ALGOL Quadrature Check (280 Gas Slot / 78.2% Cut)
+    tsfi_thacher_solver_t thacher_solver;
+    tsfi_thacher_solver_init(26001, &thacher_solver);
+    double rational_res = 0.0, quad_res = 0.0;
+    tsfi_thacher_rational_eval(&thacher_solver, 2.5, &rational_res);
+    tsfi_thacher_cacm_algol_quadrature(&thacher_solver, 0.0, 1.0, &quad_res);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 

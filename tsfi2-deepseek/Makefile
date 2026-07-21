@@ -269,7 +269,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_universal_abi_firstclass.o \
                   $(OBJ_DIR)/tsfi_manderfield_engine.o \
                   $(OBJ_DIR)/tsfi_manderfield_compiler.o \
-                  $(OBJ_DIR)/tsfi_manderfield_npl_transpiler.o
+                  $(OBJ_DIR)/tsfi_manderfield_npl_transpiler.o \
+                  $(OBJ_DIR)/tsfi_thacher_solver.o
 
 
 
