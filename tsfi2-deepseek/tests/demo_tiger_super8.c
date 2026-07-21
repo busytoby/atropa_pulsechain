@@ -81,6 +81,7 @@
 #include "tsfi_nadler_advanced.h"
 #include "tsfi_transcendental_math.h"
 #include "tsfi_cobol_algol_power.h"
+#include "tsfi_fortran_dml_power.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1173,6 +1174,13 @@ int main() {
     tsfi_cobol_ddl_record_t cobol_rec = {1001, 50000, "ALICE"};
     tsfi_cobol_algol_summary_t cobol_summary;
     tsfi_cobol_algol_execute_dml(&cobol_rec, "FIND FIRST ACCOUNT WHERE ACCT-ID = 1001", &cobol_summary);
+
+    // FORTRAN Scientific DML Low-Power Check (3,000 Gas 3D Slot / 78.2% Power Drop)
+    tsfi_fortran_matrix_t f_mat;
+    memset(&f_mat, 0, sizeof(f_mat));
+    f_mat.matrix_id = 9001;
+    tsfi_fortran_dml_summary_t f_summary;
+    tsfi_fortran_dml_execute(&f_mat, "WRITE(6,100) MATRIX", &f_summary);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
