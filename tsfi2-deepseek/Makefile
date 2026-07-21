@@ -200,7 +200,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_helmholtz_dispatcher.o \
                   $(OBJ_DIR)/tsfi_logan_synth.o \
                   $(OBJ_DIR)/tsfi_lynch_exec.o \
-                  $(OBJ_DIR)/tsfi_helmholtz_lynch_bridge.o
+                  $(OBJ_DIR)/tsfi_helmholtz_lynch_bridge.o \
+                  $(OBJ_DIR)/tsfi_zevm_vm_selector.o
 
 
 

@@ -60,6 +60,7 @@
 #include "tsfi_logan_synth.h"
 #include "tsfi_lynch_exec.h"
 #include "tsfi_helmholtz_lynch_bridge.h"
+#include "tsfi_zevm_vm_selector.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1038,6 +1039,12 @@ int main() {
     // Helmholtz-Lynch First-Class Bridge Wave Sync Check
     tsfi_hl_bridge_sync_t hl_sync;
     tsfi_hl_bridge_sync_wave(&lynch_exec, 0.785f, 1.1f, 0, &hl_sync);
+
+    // z/EVMn & Mainframe VM Kernel Choice Selector Check (Lynch, Logan, Helmholtz VM Modes)
+    tsfi_zevm_vm_config_t vm_cfg_lynch, vm_cfg_logan, vm_cfg_helm;
+    tsfi_zevm_select_vm_kernel(ZEVM_VM_MODE_LYNCH, &vm_cfg_lynch);
+    tsfi_zevm_select_vm_kernel(ZEVM_VM_MODE_LOGAN, &vm_cfg_logan);
+    tsfi_zevm_select_vm_kernel(ZEVM_VM_MODE_HELMHOLTZ, &vm_cfg_helm);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
