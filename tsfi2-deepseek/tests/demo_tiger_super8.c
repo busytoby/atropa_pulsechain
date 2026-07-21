@@ -101,6 +101,7 @@
 #include "tsfi_clendenin_matrix_exp.h"
 #include "tsfi_clendenin_quadrature_synth.h"
 #include "tsfi_conway_coroutine.h"
+#include "tsfi_autodin_conway_tx.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1291,6 +1292,10 @@ int main() {
     // Melvin E. Conway DAT & 2-3 Tree Embedded Coroutine Threading Check (320 Gas Slot / 78.2% Cut)
     tsfi_conway_coroutine_node_t conway_node = {0};
     tsfi_conway_step_tree_coroutine(101, &conway_node);
+
+    // Bounded AUTODIN Transaction Coroutine Execution Check (450 Gas Slot / 78.2% Cut)
+    tsfi_autodin_conway_tx_summary_t autodin_conway_summary;
+    tsfi_autodin_step_conway_tx(0x10002000, 32, &autodin_conway_summary);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
