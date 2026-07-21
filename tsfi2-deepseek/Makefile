@@ -233,7 +233,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_transcendental_cf.o \
                   $(OBJ_DIR)/tsfi_nather_photometry.o \
                   $(OBJ_DIR)/tsfi_algol60_block_scope.o \
-                  $(OBJ_DIR)/tsfi_algol61_logic_power.o
+                  $(OBJ_DIR)/tsfi_algol61_logic_power.o \
+                  $(OBJ_DIR)/tsfi_auncient_ether.o
 
 
 

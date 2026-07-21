@@ -93,6 +93,7 @@
 #include "tsfi_nather_photometry.h"
 #include "tsfi_algol60_block_scope.h"
 #include "tsfi_algol61_logic_power.h"
+#include "tsfi_auncient_ether.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1249,6 +1250,10 @@ int main() {
     // ALGOL 61 Basic Logic Table & Low-Power FET Discharge Physics Check (78.2% Savings Tier)
     tsfi_algol61_logic_summary_t logic_summary;
     tsfi_algol61_eval_logic_gate(ALGOL61_GATE_XOR, 1, 0, &logic_summary);
+
+    // Auncient Ether Profiling & FET Discharge Conversion Check (78.2% Low-Power Floor)
+    tsfi_auncient_ether_summary_t ether_summary;
+    tsfi_auncient_ether_meter_discharge(1000, &ether_summary);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
