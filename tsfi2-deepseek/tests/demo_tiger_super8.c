@@ -82,6 +82,7 @@
 #include "tsfi_transcendental_math.h"
 #include "tsfi_cobol_algol_power.h"
 #include "tsfi_fortran_dml_power.h"
+#include "tsfi_continuous_zero_power.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1181,6 +1182,10 @@ int main() {
     f_mat.matrix_id = 9001;
     tsfi_fortran_dml_summary_t f_summary;
     tsfi_fortran_dml_execute(&f_mat, "WRITE(6,100) MATRIX", &f_summary);
+
+    // Continuous Zero-Leakage Lowest Power Sentinel Initialization
+    tsfi_continuous_power_status_t p_status;
+    tsfi_continuous_power_init(&p_status);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
