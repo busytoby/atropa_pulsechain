@@ -188,6 +188,7 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_parc_runcible_lang.o \
                   $(OBJ_DIR)/tsfi_parc_tape_label_yul.o $(OBJ_DIR)/tsfi_parc_tape_catalog.o \
             $(OBJ_DIR)/tsfi_parc_schrack.o $(OBJ_DIR)/tsfi_parc_naur_ab14.o \
+            $(OBJ_DIR)/tsfi_parc_runcible_cics.o \
                   $(OBJ_DIR)/tsfi_autodin_tape_proof.o \
                   $(OBJ_DIR)/tsfi_isomorphism_engine.o \
                   $(OBJ_DIR)/tsfi_iso_transpiler.o \
@@ -1273,6 +1274,10 @@ bin/test_schrack_suite: tests/test_schrack_suite.c $(OBJ_DIR)/tsfi_parc_schrack.
 	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LDFLAGS)
 
 bin/test_naur_ab14_suite: tests/test_naur_ab14_suite.c $(OBJ_DIR)/tsfi_parc_naur_ab14.o
+	@mkdir -p bin
+	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LDFLAGS)
+
+bin/test_runcible_cics_suite: tests/test_runcible_cics_suite.c $(OBJ_DIR)/tsfi_parc_runcible_cics.o
 	@mkdir -p bin
 	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LDFLAGS)
 
