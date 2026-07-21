@@ -167,6 +167,8 @@ int vulkan_guide_application_render_frame(
 extern VulkanSystem* create_vulkan_system(void);
 extern void destroy_vulkan_system(VulkanSystem *s);
 extern bool init_swapchain(VulkanSystem *s);
+extern void draw_frame(VulkanSystem *s);
+extern void lau_unseal_object(void *obj);
 
 int vulkan_guide_application_run_wayland_loop(
     vulkan_guide_application_t *application,
@@ -178,6 +180,9 @@ int vulkan_guide_application_run_wayland_loop(
     VulkanSystem *vulkan_system = create_vulkan_system();
 
     if (vulkan_system) {
+        lau_unseal_object(vulkan_system);
+        vulkan_system->disable_ui_overlay = true;
+
         printf("[SUCCESS] Opened Wayland Vulkan surface window successfully!\n");
         int frame_counter = 0;
 
@@ -198,6 +203,7 @@ int vulkan_guide_application_run_wayland_loop(
                 );
             }
 
+            draw_frame(vulkan_system);
             frame_counter++;
         }
 
