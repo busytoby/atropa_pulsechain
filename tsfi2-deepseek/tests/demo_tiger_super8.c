@@ -1293,9 +1293,9 @@ int main() {
     tsfi_conway_coroutine_node_t conway_node = {0};
     tsfi_conway_step_tree_coroutine(101, &conway_node);
 
-    // Bounded AUTODIN Transaction Coroutine Execution Check (450 Gas Slot / 78.2% Cut)
+    // Bounded AUTODIN Submitter Gas Escrow Coroutine Execution Check (450 Gas Slot / 78.2% Cut)
     tsfi_autodin_conway_tx_summary_t autodin_conway_summary;
-    tsfi_autodin_step_conway_tx(0x10002000, 32, &autodin_conway_summary);
+    tsfi_autodin_step_conway_tx_submitter(0x10002000, "0x1234567890ABCDEF1234567890ABCDEF12345678", 10000, 32, &autodin_conway_summary);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
