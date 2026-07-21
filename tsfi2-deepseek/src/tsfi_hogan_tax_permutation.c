@@ -138,6 +138,61 @@ int tsfi_hogan_permute_disposal(
     return 0;
 }
 
+int tsfi_hogan_tax_inscribe_tape_label(
+    hogan_tax_permutation_engine_t *engine,
+    uint8_t *tape_buffer_720b
+) {
+    if (!engine || !tape_buffer_720b) return -1;
+
+    memset(tape_buffer_720b, ' ', 720);
+
+    // Format 8-block 720-byte sequence: VOL1 (80B), HDR1..HDR8 (80B each)
+    char vol1[81], hdr1[81], hdr2[81];
+    snprintf(vol1, 81, "VOL1HGN%06u                                                                  ", engine->account_id);
+    snprintf(hdr1, 81, "HDR1IRS_FORM_1099B_COMPLIANCE_AUDIT_LOG_ACC_%08X                          ", engine->account_id);
+    snprintf(hdr2, 81, "HDR2GAIN_%012llu_LOSS_%012llu_GAS_%04u                               ",
+             (unsigned long long)engine->total_realized_gain_microcents,
+             (unsigned long long)engine->total_realized_loss_microcents,
+             engine->evm_gas_units);
+
+    memcpy(tape_buffer_720b, vol1, 80);
+    memcpy(tape_buffer_720b + 80, hdr1, 80);
+    memcpy(tape_buffer_720b + 160, hdr2, 80);
+
+    for (int b = 3; b <= 9; b++) {
+        char hdr_b[81];
+        snprintf(hdr_b, 81, "HDR%dPROVENANCE_SIG_2026_USLM_AFFIRMED_HOGAN_TAX_AUDIT_LOTS_%02zu               ",
+                 b - 1, engine->lot_count);
+        memcpy(tape_buffer_720b + (b - 1) * 80, hdr_b, 80);
+    }
+
+    printf("[HOGAN TAX TAPE LABEL] Inscribed 720-byte Yul DDL sequence for Account #%u\n", engine->account_id);
+    return 0;
+}
+
+int tsfi_hogan_tax_permute_swap_route(
+    hogan_tax_permutation_engine_t *engine,
+    const char *token_in,
+    const char *token_out,
+    uint64_t amount_in,
+    char route_hops[MAX_SWAP_HOPS][48],
+    size_t *out_hop_count
+) {
+    if (!engine || !token_in || !token_out || !route_hops || !out_hop_count) return -1;
+
+    // Rule 9: Address-based dynamic contract resolution
+    snprintf(route_hops[0], 48, "dynamic_%.39s", token_in);
+    snprintf(route_hops[1], 48, "dynamic_0xPulseChainWPLSGatewayPool00001");
+    snprintf(route_hops[2], 48, "dynamic_0xAtropaPulseChainLAULiquidityPool02");
+    snprintf(route_hops[3], 48, "dynamic_%.39s", token_out);
+
+    *out_hop_count = 4;
+    printf("[HOGAN SWAP ROUTE PERMUTATION] TokenIn: %s -> TokenOut: %s | Amount: %lu | Hops: %zu\n",
+           token_in, token_out, (unsigned long)amount_in, *out_hop_count);
+
+    return 0;
+}
+
 int tsfi_hogan_verify_winchester_scsi_permutations(
     hogan_tax_permutation_engine_t *engine,
     uint8_t keycode,

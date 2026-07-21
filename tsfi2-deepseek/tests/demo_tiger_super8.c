@@ -1622,6 +1622,11 @@ int main() {
     tsfi_hogan_permute_disposal(&hogan_tax_eng, 150000, 120000, HOGAN_TAX_LOT_HIFO, &realized_gain_loss);
     int winchester_scsi_valid = 0;
     tsfi_hogan_verify_winchester_scsi_permutations(&hogan_tax_eng, 32, &winchester_scsi_valid);
+    uint8_t tax_tape_720b[720];
+    tsfi_hogan_tax_inscribe_tape_label(&hogan_tax_eng, tax_tape_720b);
+    char swap_hops[8][48];
+    size_t hop_count = 0;
+    tsfi_hogan_tax_permute_swap_route(&hogan_tax_eng, "0x1111222233334444555566667777888899990000", "0x9999888877776666555544443333222211110000", 100000, swap_hops, &hop_count);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 

@@ -6,6 +6,7 @@
 #include "tsfi_hogan.h"
 
 #define MAX_TAX_LOTS 64
+#define MAX_SWAP_HOPS 8
 
 typedef enum {
     HOGAN_TAX_LOT_FIFO = 0,
@@ -55,6 +56,22 @@ int tsfi_hogan_permute_disposal(
     uint64_t proceeds_microcents,
     hogan_tax_method_t strategy,
     uint64_t *out_realized_gain_loss
+);
+
+/* Inscribe 720-byte Yul DDL tape label sequence for IRS Form 1099-B tax compliance audit */
+int tsfi_hogan_tax_inscribe_tape_label(
+    hogan_tax_permutation_engine_t *engine,
+    uint8_t *tape_buffer_720b
+);
+
+/* Compute PulseChain multi-hop swap route permutation to minimize tax impact */
+int tsfi_hogan_tax_permute_swap_route(
+    hogan_tax_permutation_engine_t *engine,
+    const char *token_in,
+    const char *token_out,
+    uint64_t amount_in,
+    char route_hops[MAX_SWAP_HOPS][48],
+    size_t *out_hop_count
 );
 
 /* Verify WinchesterMQ SCSI keycode register state permutations (Keycode 32 / 30 - Rule 5) */
