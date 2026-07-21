@@ -1609,6 +1609,8 @@ int main() {
     double sst_inputs[4] = {0.8, 0.6, 0.9, 0.4};
     double sst_coherence = 0.0;
     tsfi_naur_eval_synapse_state(&naur_eng, sst_inputs, 4, &sst_coherence);
+    uint32_t perm_arr[4] = {1, 2, 3, 4};
+    tsfi_naur_permute_next(&naur_eng, perm_arr, 4);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 

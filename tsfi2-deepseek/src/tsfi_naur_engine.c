@@ -16,6 +16,7 @@ int tsfi_naur_engine_init(
     engine->gier_stack_pointer = 0x00001000; // GIER ALGOL Base Memory Pointer
     engine->evm_gas_units = 280; // 280 Gas / Auncient Ether Units per evaluation
     engine->theory_building_score = 1.0; // Initial perfect PTB score
+    engine->permutation_counter = 0;
 
     // Rule 10: Verlet Soft-Body FET Discharge Physics Solver (3.3V Low-Power Floor)
     tsfi_lowpower_fet_metrics_t fet_metrics;
@@ -176,6 +177,62 @@ int tsfi_naur_eval_synapse_state(
     *out_coherence = coherence;
 
     printf("[PETER NAUR SST] Synapse-State Coherence: %.4f (Inputs: %zu)\n", coherence, input_count);
+    return 0;
+}
+
+int tsfi_naur_permute_next(
+    tsfi_naur_engine_t *engine,
+    uint32_t *array,
+    size_t n
+) {
+    if (!engine || !array || n < 2) return -1;
+
+    // Lexicographical Permutation Algorithm (Naur CACM ALGOL 60 Formulation)
+    int k = -1;
+    for (int i = (int)n - 2; i >= 0; i--) {
+        if (array[i] < array[i + 1]) {
+            k = i;
+            break;
+        }
+    }
+
+    if (k < 0) {
+        // Reverse array back to initial sorted state
+        for (size_t i = 0; i < n / 2; i++) {
+            uint32_t tmp = array[i];
+            array[i] = array[n - 1 - i];
+            array[n - 1 - i] = tmp;
+        }
+        engine->permutation_counter++;
+        return 0;
+    }
+
+    int l = -1;
+    for (int i = (int)n - 1; i > k; i--) {
+        if (array[i] > array[k]) {
+            l = i;
+            break;
+        }
+    }
+
+    // Swap array[k] and array[l]
+    uint32_t tmp = array[k];
+    array[k] = array[l];
+    array[l] = tmp;
+
+    // Reverse suffix array[k+1 .. n-1]
+    int left = k + 1;
+    int right = (int)n - 1;
+    while (left < right) {
+        tmp = array[left];
+        array[left] = array[right];
+        array[right] = tmp;
+        left++;
+        right--;
+    }
+
+    engine->permutation_counter++;
+    printf("[PETER NAUR PERMUTATION] Step #%lu | Next Sequence Generated\n", (unsigned long)engine->permutation_counter);
     return 0;
 }
 

@@ -34,6 +34,7 @@ typedef struct {
     tsfi_naur_question_item_t questionnaire[NUM_NAUR_QUESTIONS];
     tsfi_naur_sst_model_t sst_model;    // Peter Naur Synapse-State Theory Neuro-Model
     double theory_building_score;       // Programming-as-Theory-Building (PTB) Score
+    uint64_t permutation_counter;       // Naur CACM Permutation State Tracker
     uint32_t gier_stack_pointer;
     uint32_t evm_gas_units;             // 280 Gas / Auncient Ether Units
     double fet_power_watts;             // 0.0109 W under 78.2% Power Cut
@@ -81,6 +82,13 @@ int tsfi_naur_eval_synapse_state(
     const double *stimulus_inputs,
     size_t input_count,
     double *out_coherence
+);
+
+/* Generate next lexicographical Permutation sequence (Naur CACM ALGOL Algorithm) */
+int tsfi_naur_permute_next(
+    tsfi_naur_engine_t *engine,
+    uint32_t *array,
+    size_t n
 );
 
 /* Simulate GIER ALGOL multi-pass compiler stack frame allocation */
