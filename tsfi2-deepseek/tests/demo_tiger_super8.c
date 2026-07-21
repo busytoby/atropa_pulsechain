@@ -75,6 +75,7 @@
 #include "tsfi_dvfs_governor.h"
 #include "tsfi_drum_latency.h"
 #include "tsfi_minimized_drum_buffer.h"
+#include "tsfi_card_spooler.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1137,6 +1138,14 @@ int main() {
     tsfi_minimized_drum_buffer_t min_drum_buf;
     tsfi_minimized_drum_buffer_init(&min_drum_buf);
     tsfi_minimized_drum_buffer_push(&min_drum_buf, 0.85f);
+
+    // Punch Card-to-Drum & Tape Spooler Interface Check (Rule 13)
+    tsfi_punch_card_t sample_cards[2] = {
+        {"JOB 001 SSTORE BALANCE 0x01", 1},
+        {"JOB 002 SSTORE DEBT 0x02", 2}
+    };
+    tsfi_card_spooler_summary_t card_summary;
+    tsfi_card_spooler_process_deck(sample_cards, 2, &card_summary);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
