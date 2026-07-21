@@ -130,6 +130,7 @@
 #include "tsfi_manderfield_compiler.h"
 #include "tsfi_manderfield_npl_transpiler.h"
 #include "tsfi_thacher_solver.h"
+#include "tsfi_stearman_engine.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1525,6 +1526,14 @@ int main() {
     double rational_res = 0.0, quad_res = 0.0;
     tsfi_thacher_rational_eval(&thacher_solver, 2.5, &rational_res);
     tsfi_thacher_cacm_algol_quadrature(&thacher_solver, 0.0, 1.0, &quad_res);
+
+    // R. L. Stearman Statistical Subroutine & Resistance Solver Check (280 Gas Slot / 78.2% Cut)
+    tsfi_stearman_engine_t stearman_eng;
+    tsfi_stearman_engine_init(27001, &stearman_eng);
+    double st_data[4] = {12.0, 14.5, 11.2, 13.8};
+    double mean_v = 0.0, var_v = 0.0, res_v = 0.0;
+    tsfi_stearman_compute_stats(&stearman_eng, st_data, 4, &mean_v, &var_v);
+    tsfi_stearman_resistance_solve(&stearman_eng, 0.5, 5.0, &res_v);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
