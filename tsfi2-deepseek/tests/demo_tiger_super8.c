@@ -71,6 +71,7 @@
 #include "tsfi_knuth_quadtree.h"
 #include "tsfi_knuth_rb_dragon.h"
 #include "tsfi_lowpower_fet.h"
+#include "tsfi_lowpower_mode.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1115,6 +1116,10 @@ int main() {
     // Low-Power FET Energy Optimizer Check under Knuth Base 2i Voltage Scaling
     tsfi_lowpower_fet_metrics_t fet_lp_metrics;
     tsfi_lowpower_fet_calculate(1e9f, 1e-12f, 5.0f, 3.3f, &fet_lp_metrics);
+
+    // System Low-Power Operational Mode Controller Check (78.2% Savings Tier)
+    tsfi_lowpower_controller_t lp_mode_ctrl;
+    tsfi_lowpower_mode_init(&lp_mode_ctrl);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
