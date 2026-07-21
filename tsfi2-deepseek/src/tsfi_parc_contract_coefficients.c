@@ -3,6 +3,19 @@
 #include <string.h>
 #include <math.h>
 
+#define MOTZKIN_PRIME_FIELD 953467954114363ULL
+
+static double hash_string_to_coefficient(const char *str) {
+    if (!str) return 0.0;
+    uint64_t hash = 5381;
+    int c;
+    while ((c = *str++)) {
+        hash = ((hash << 5) + hash) + c;
+    }
+    uint64_t mod_val = hash % MOTZKIN_PRIME_FIELD;
+    return (double)mod_val / (double)MOTZKIN_PRIME_FIELD;
+}
+
 int tsfi_contract_coefficients_init(tsfi_contract_coefficient_matrix_t *matrix, const char *dynamic_contract_addr) {
     if (!matrix || !dynamic_contract_addr) return -1;
     memset(matrix, 0, sizeof(tsfi_contract_coefficient_matrix_t));
@@ -13,6 +26,33 @@ int tsfi_contract_coefficients_init(tsfi_contract_coefficient_matrix_t *matrix, 
     } else {
         snprintf(matrix->target_contract_address, sizeof(matrix->target_contract_address), "dynamic_%s", dynamic_contract_addr);
     }
+    return 0;
+}
+
+int tsfi_contract_coefficients_set_metadata(tsfi_contract_coefficient_matrix_t *matrix, const char *name, const char *symbol, uint64_t total_supply) {
+    if (!matrix || !name || !symbol) return -1;
+    snprintf(matrix->name, sizeof(matrix->name), "%s", name);
+    snprintf(matrix->symbol, sizeof(matrix->symbol), "%s", symbol);
+    matrix->total_supply = total_supply;
+
+    matrix->name_coefficient = hash_string_to_coefficient(name);
+    matrix->symbol_coefficient = hash_string_to_coefficient(symbol);
+    matrix->total_supply_coefficient = (total_supply > 0) ? (log10((double)total_supply) / 18.0) : 0.0;
+    return 0;
+}
+
+int tsfi_contract_coefficients_register_setting(tsfi_contract_coefficient_matrix_t *matrix, const char *setting_key, uint64_t raw_val) {
+    if (!matrix || !setting_key) return -1;
+    if (matrix->setting_count >= TSFI_MAX_SETTING_COEFFICIENTS) return -2;
+
+    tsfi_setting_coefficient_t *s = &matrix->settings[matrix->setting_count];
+    snprintf(s->key, sizeof(s->key), "%s", setting_key);
+    s->raw_value = raw_val;
+
+    double key_hash = hash_string_to_coefficient(setting_key);
+    s->scalar_coefficient = key_hash * ((double)(raw_val % 1000) / 1000.0 + 0.1);
+
+    matrix->setting_count++;
     return 0;
 }
 
@@ -46,32 +86,43 @@ int tsfi_contract_coefficients_register_lp(tsfi_contract_coefficient_matrix_t *m
 int tsfi_contract_coefficients_evaluate(tsfi_contract_coefficient_matrix_t *matrix) {
     if (!matrix || !matrix->is_initialized) return -1;
 
-    uint64_t total_supply = 0;
+    /* 1. Evaluate Holder Coefficients */
+    uint64_t total_holder_bal = 0;
     for (uint32_t i = 0; i < matrix->holder_count; i++) {
-        total_supply += matrix->holders[i].balance;
+        total_holder_bal += matrix->holders[i].balance;
+    }
+    double holder_sum = 0.0;
+    for (uint32_t i = 0; i < matrix->holder_count; i++) {
+        matrix->holders[i].normalized_coefficient = (total_holder_bal > 0) ? ((double)matrix->holders[i].balance / (double)total_holder_bal) : 0.0;
+        holder_sum += matrix->holders[i].normalized_coefficient;
     }
 
-    double coeff_sum = 0.0;
-    for (uint32_t i = 0; i < matrix->holder_count; i++) {
-        if (total_supply > 0) {
-            matrix->holders[i].normalized_coefficient = (double)matrix->holders[i].balance / (double)total_supply;
-        } else {
-            matrix->holders[i].normalized_coefficient = 0.0;
-        }
-        coeff_sum += matrix->holders[i].normalized_coefficient;
-    }
-
+    /* 2. Evaluate LP Coefficients */
     double lp_sum = 0.0;
     for (uint32_t j = 0; j < matrix->lp_count; j++) {
         lp_sum += matrix->lps[j].ratio_coefficient;
     }
 
-    matrix->total_coefficient_sum = coeff_sum + lp_sum;
+    /* 3. Evaluate Function/Setting Coefficients */
+    double setting_sum = 0.0;
+    for (uint32_t k = 0; k < matrix->setting_count; k++) {
+        setting_sum += matrix->settings[k].scalar_coefficient;
+    }
 
-    // Modulate Lissajous projection frequencies using polynomial contract coefficients
-    matrix->dynamic_lissajous_f_x = 1.0 + (coeff_sum * 5.0);
-    matrix->dynamic_lissajous_f_y = 1.0 + (lp_sum * 3.0);
-    matrix->dynamic_lissajous_f_z = fmod(matrix->total_coefficient_sum * 22.0, 22.0) + 1.0; // EDO-22 pitch mapping
+    /* 4. Sum Universal Contract Coefficients */
+    matrix->universal_coefficient_sum = matrix->name_coefficient + 
+                                        matrix->symbol_coefficient + 
+                                        matrix->total_supply_coefficient + 
+                                        setting_sum + 
+                                        holder_sum + 
+                                        lp_sum;
+
+    /* 5. Map into Vulkan Lissajous Frequencies & EDO-22 Octave */
+    matrix->dynamic_lissajous_f_x = 1.0 + (matrix->name_coefficient + matrix->symbol_coefficient + holder_sum) * 4.0;
+    matrix->dynamic_lissajous_f_y = 1.0 + (matrix->total_supply_coefficient + lp_sum) * 3.0;
+    matrix->dynamic_lissajous_f_z = 1.0 + setting_sum * 2.0;
+
+    matrix->EDO22_pitch_class = fmod(matrix->universal_coefficient_sum * 22.0, 22.0);
 
     return 0;
 }
