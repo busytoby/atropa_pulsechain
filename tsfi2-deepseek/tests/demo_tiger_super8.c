@@ -73,6 +73,7 @@
 #include "tsfi_lowpower_fet.h"
 #include "tsfi_lowpower_mode.h"
 #include "tsfi_dvfs_governor.h"
+#include "tsfi_drum_latency.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1126,6 +1127,10 @@ int main() {
     tsfi_dvfs_governor_t dvfs_gov;
     tsfi_dvfs_governor_init(&dvfs_gov);
     tsfi_dvfs_governor_adapt(&dvfs_gov, 85.0f);
+
+    // Real-Time Sub-Microsecond Drum Latency Profiler Check (Rule 11)
+    tsfi_drum_latency_profile_t drum_lat_prof;
+    tsfi_drum_latency_profile(48000, 32, &drum_lat_prof);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
