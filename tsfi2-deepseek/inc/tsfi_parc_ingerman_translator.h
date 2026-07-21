@@ -8,6 +8,15 @@
 #define INGERMAN_MAX_PRODUCTION_RULES 32
 #define INGERMAN_MAX_SYMBOL_LENGTH    32
 #define INGERMAN_MAX_THUNKS           16
+#define INGERMAN_MAX_USER_ALIASES     32
+
+/* Ingerman User-Defined Call-By-Name Alias Mapping */
+typedef struct {
+    char alias_name[INGERMAN_MAX_SYMBOL_LENGTH];
+    char target_expression[64];
+    uint32_t usage_count;
+    bool is_active;
+} tsfi_ingerman_alias_t;
 
 /* Ingerman Call-By-Name Thunk Metadata */
 typedef struct {
@@ -34,16 +43,24 @@ typedef struct {
     tsfi_ingerman_rule_t rules[INGERMAN_MAX_PRODUCTION_RULES];
     uint32_t thunk_count;
     tsfi_ingerman_thunk_t thunks[INGERMAN_MAX_THUNKS];
+    uint32_t alias_count;
+    tsfi_ingerman_alias_t aliases[INGERMAN_MAX_USER_ALIASES];
     char dynamic_contract_address[64];
 } tsfi_ingerman_translator_t;
 
 /* Initialize Ingerman Syntax-Oriented Translator */
 int tsfi_ingerman_translator_initialize(tsfi_ingerman_translator_t *translator);
 
+/* Register User-Defined Call-By-Name Alias */
+int tsfi_ingerman_register_alias(tsfi_ingerman_translator_t *translator, const char *alias_name, const char *target_expression);
+
+/* Resolve User-Defined Call-By-Name Alias */
+const char* tsfi_ingerman_resolve_alias(const tsfi_ingerman_translator_t *translator, const char *alias_name);
+
 /* Add Syntax-Directed Production Rule (Ingerman 1966) */
 int tsfi_ingerman_add_production_rule(tsfi_ingerman_translator_t *translator, const char *non_terminal, const char *pattern, const char *yul_template);
 
-/* Compile Syntax Input to Target Yul Code & Dynamic Contract ZMM State */
+/* Compile Syntax Input with User Alias Expansion to Target Yul Code */
 int tsfi_ingerman_translate_syntax(tsfi_ingerman_translator_t *translator, const char *input_source, char *output_yul_code, size_t max_out_len);
 
 /* Register Ingerman Call-By-Name Thunk (Ingerman 1961) */
