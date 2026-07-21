@@ -92,6 +92,7 @@
 #include "tsfi_transcendental_cf.h"
 #include "tsfi_nather_photometry.h"
 #include "tsfi_algol60_block_scope.h"
+#include "tsfi_algol61_logic_power.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1244,6 +1245,10 @@ int main() {
     tsfi_runcible_main_step("THUNK scsi_eval YUL dynamic_0x80");
     tsfi_runcible_main_step("EVAL scsi_eval");
     tsfi_runcible_main_step("END");
+
+    // ALGOL 61 Basic Logic Table & Low-Power FET Discharge Physics Check (78.2% Savings Tier)
+    tsfi_algol61_logic_summary_t logic_summary;
+    tsfi_algol61_eval_logic_gate(ALGOL61_GATE_XOR, 1, 0, &logic_summary);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
