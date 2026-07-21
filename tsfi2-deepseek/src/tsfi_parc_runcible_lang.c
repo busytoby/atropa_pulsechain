@@ -10,6 +10,7 @@
 #include "tsfi_parc_stcomp.h"
 #include "tsfi_parc_tape_label_yul.h"
 #include "tsfi_parc_tape_catalog.h"
+#include "tsfi_autodin_tape_proof.h"
 
 int tsfi_runcible_parse_cmd(const char *cmd_line, tsfi_runcible_cmd_t *out_cmd) {
     if (!cmd_line || !out_cmd) return -1;
@@ -161,6 +162,14 @@ int tsfi_runcible_parse_cmd(const char *cmd_line, tsfi_runcible_cmd_t *out_cmd) 
         return 0;
     }
 
+    if (strncmp(cmd_line, "TAPE PROOF", 10) == 0) {
+        out_cmd->type = RUNCIBLE_CMD_TAPE_PROOF;
+        const char *args = cmd_line + 10;
+        while (*args == ' ' || *args == '\t') args++;
+        strncpy(out_cmd->raw_args, args, sizeof(out_cmd->raw_args) - 1);
+        return 0;
+    }
+
     if (strncmp(cmd_line, "TAPE LABEL", 10) == 0) {
         out_cmd->type = RUNCIBLE_CMD_TAPE_LABEL;
         const char *args = cmd_line + 10;
@@ -304,6 +313,13 @@ int tsfi_runcible_exec_cmd(const tsfi_runcible_cmd_t *cmd) {
             printf("[RUNCIBLE TTY] ST Smalltalk-76 Live Method Eval -> Bytecode Count %d\n", bc_len);
             return 0;
         }
+        case RUNCIBLE_CMD_TAPE_PROOF: {
+            tsfi_autodin_tape_proof_result_t res;
+            int r = tsfi_autodin_verify_tape_file(cmd->raw_args[0] ? cmd->raw_args : "./tmp/test_guarded.dat.bin", TAPE_SECURITY_TOPSECRET, &res);
+            printf("[RUNCIBLE TTY] TAPE PROOF AUTODIN Diagnostic (%s) -> Verified: %d (SigValid: %d)\n",
+                   cmd->raw_args[0] ? cmd->raw_args : "./tmp/test_guarded.dat.bin", r == 0 ? 1 : 0, res.sig_valid);
+            return 0;
+        }
         case RUNCIBLE_CMD_TAPE_LABEL: {
             printf("[RUNCIBLE TTY] TAPE LABEL Inscribe Header -> Args: %s\n", cmd->raw_args);
             return 0;
@@ -340,7 +356,7 @@ int tsfi_runcible_exec_cmd(const tsfi_runcible_cmd_t *cmd) {
             return 0;
         }
         case RUNCIBLE_CMD_STATUS: {
-            printf("[RUNCIBLE TTY] Subsystem Active | Full Tape Command Language Suite Validated\n");
+            printf("[RUNCIBLE TTY] Subsystem Active | AUTODIN Cryptographic Proof Engine Validated\n");
             return 0;
         }
         default:

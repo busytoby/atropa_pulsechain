@@ -48,6 +48,7 @@
 #include "tsfi_parc_runcible_lang.h"
 #include "tsfi_parc_tape_label_yul.h"
 #include "tsfi_parc_tape_catalog.h"
+#include "tsfi_autodin_tape_proof.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -934,6 +935,7 @@ int main() {
     tsfi_runcible_main_step("TAPE CATALOG .");
     tsfi_runcible_main_step("TAPE BOUNDS ./tmp/test_guarded.dat.bin");
     tsfi_runcible_main_step("TAPE PHASE ./tmp/test_guarded.dat.bin");
+    tsfi_runcible_main_step("TAPE PROOF ./tmp/test_guarded.dat.bin");
     tsfi_runcible_main_step("STATUS");
 
     // Tape Label Yul DDL verification check for 720-byte 8-block full sequence (VOL1..HDR8 + EOF1)

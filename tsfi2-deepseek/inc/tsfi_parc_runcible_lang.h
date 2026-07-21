@@ -26,7 +26,8 @@ typedef enum {
     RUNCIBLE_CMD_TAPE_LABEL,
     RUNCIBLE_CMD_TAPE_CATALOG,
     RUNCIBLE_CMD_TAPE_BOUNDS,
-    RUNCIBLE_CMD_TAPE_PHASE
+    RUNCIBLE_CMD_TAPE_PHASE,
+    RUNCIBLE_CMD_TAPE_PROOF
 } tsfi_runcible_cmd_type_t;
 
 typedef struct {
