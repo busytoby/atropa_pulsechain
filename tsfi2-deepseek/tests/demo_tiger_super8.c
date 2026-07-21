@@ -65,6 +65,7 @@
 #include "tsfi_lynch_sync.h"
 #include "tsfi_knuth_storage.h"
 #include "tsfi_knuth_fet_gas.h"
+#include "tsfi_electricity_meter.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1083,6 +1084,11 @@ int main() {
     // Donald E. Knuth Base 2i FET Discharge Physics & Net Gas Engine Check
     tsfi_knuth_fet_gas_state_t fet_gas_st;
     tsfi_knuth_fet_gas_step(3.3f, 0.01f, &fet_gas_st);
+
+    // Physical Electricity Metering System Check (Joules / Micro-Joules)
+    tsfi_electricity_meter_t elec_meter;
+    tsfi_electricity_meter_init(&elec_meter);
+    tsfi_electricity_meter_calculate(3.3f, 1e-9f, 0.05f, 5.0f, 0.001f, &elec_meter);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 

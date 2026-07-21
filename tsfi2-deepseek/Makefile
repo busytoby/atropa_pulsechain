@@ -205,7 +205,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_lynch_channel.o \
                   $(OBJ_DIR)/tsfi_lynch_sync.o \
                   $(OBJ_DIR)/tsfi_knuth_storage.o \
-                  $(OBJ_DIR)/tsfi_knuth_fet_gas.o
+                  $(OBJ_DIR)/tsfi_knuth_fet_gas.o \
+                  $(OBJ_DIR)/tsfi_electricity_meter.o
 
 
 
