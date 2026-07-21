@@ -8,6 +8,7 @@
 #include "tsfi_paint.h"
 #include "tsfi_computel_blue_box.h"
 #include "tsfi_hogan.h"
+#include "tsfi_hogan_tax_permutation.h"
 #include "tsfi_encodings.h"
 #include "tsfi_cade_imf.h"
 #include "tsfi_cade_vulkan.h"
@@ -1611,6 +1612,16 @@ int main() {
     tsfi_naur_eval_synapse_state(&naur_eng, sst_inputs, 4, &sst_coherence);
     uint32_t perm_arr[4] = {1, 2, 3, 4};
     tsfi_naur_permute_next(&naur_eng, perm_arr, 4);
+
+    // Hogan IRS Tax Lot Permutation Engine Verification
+    hogan_tax_permutation_engine_t hogan_tax_eng;
+    tsfi_hogan_tax_engine_init(9001, &hogan_tax_eng);
+    tsfi_hogan_add_tax_lot(&hogan_tax_eng, 100000, 50000, "0x1111222233334444555566667777888899990000");
+    tsfi_hogan_add_tax_lot(&hogan_tax_eng, 200000, 180000, "0x1111222233334444555566667777888899990000");
+    uint64_t realized_gain_loss = 0;
+    tsfi_hogan_permute_disposal(&hogan_tax_eng, 150000, 120000, HOGAN_TAX_LOT_HIFO, &realized_gain_loss);
+    int winchester_scsi_valid = 0;
+    tsfi_hogan_verify_winchester_scsi_permutations(&hogan_tax_eng, 32, &winchester_scsi_valid);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
