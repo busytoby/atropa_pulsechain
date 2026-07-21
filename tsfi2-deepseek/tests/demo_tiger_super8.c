@@ -983,10 +983,21 @@ int main() {
     tsfi_yul_deploy_contract("assets/isomorphism_engine.yul", YUL_DEPLOY_TARGET_ANVIL_EVM, &dep_res2);
     tsfi_yul_deploy_contract("assets/isomorphism_engine.yul", YUL_DEPLOY_TARGET_IN_MEM_THUNK, &dep_res3);
 
-    // AUTODIN ZMM VM Transaction Dispatcher & Nonce Tracking Check
+    // AUTODIN ZMM VM Block-Secure Transaction Dispatcher & Nonce Tracking Check
+    tsfi_autodin_zmm_tx_req_t tx_req;
+    memset(&tx_req, 0, sizeof(tx_req));
+    snprintf(tx_req.from_addr, sizeof(tx_req.from_addr), "0x1111111111111111111111111111111111111111");
+    snprintf(tx_req.to_addr, sizeof(tx_req.to_addr), "%s", dep_res1.contract_address);
+    tx_req.chain_id = 369; // PulseChain / ZMM Mainnet
+    tx_req.selector = 0x1a2b3c4d;
+    tx_req.calldata[0] = 0x01;
+    tx_req.calldata_len = 1;
+    tx_req.max_fee_per_fet = 100;
+    tx_req.process_clearance = TAPE_SECURITY_TOPSECRET;
+    snprintf(tx_req.sig_key, sizeof(tx_req.sig_key), "SIG_2026_USLM_AFFIRMED");
+
     tsfi_autodin_zmm_tx_receipt_t zmm_tx_rec;
-    uint8_t tx_data[4] = {0x01, 0x02, 0x03, 0x04};
-    autodin_send_zmm_tx(dep_res1.contract_address, 0x1a2b3c4d, tx_data, 4, TAPE_SECURITY_TOPSECRET, &zmm_tx_rec);
+    autodin_send_zmm_tx(&tx_req, &zmm_tx_rec);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
