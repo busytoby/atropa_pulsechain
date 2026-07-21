@@ -85,6 +85,7 @@
 #include "tsfi_continuous_zero_power.h"
 #include "tsfi_defcon_power_alarm.h"
 #include "tsfi_nadler_hull_automaton.h"
+#include "tsfi_nadler_agentic_automaton.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1197,6 +1198,11 @@ int main() {
     uint8_t sample_raster[64] = {200, 50, 180, 10, 255};
     tsfi_nadler_hull_summary_t hull_summary;
     tsfi_nadler_run_sequential_automaton(sample_raster, 64, &hull_summary);
+
+    // Morton Nadler Agentic Automaton Perception Loop Check
+    tsfi_nadler_agent_summary_t agent_summary;
+    memset(&agent_summary, 0, sizeof(agent_summary));
+    tsfi_nadler_agentic_step(220, &agent_summary);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 

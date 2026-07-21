@@ -225,7 +225,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_fortran_dml_power.o \
                   $(OBJ_DIR)/tsfi_continuous_zero_power.o \
                   $(OBJ_DIR)/tsfi_defcon_power_alarm.o \
-                  $(OBJ_DIR)/tsfi_nadler_hull_automaton.o
+                  $(OBJ_DIR)/tsfi_nadler_hull_automaton.o \
+                  $(OBJ_DIR)/tsfi_nadler_agentic_automaton.o
 
 
 
