@@ -51,6 +51,7 @@
 #include "tsfi_autodin_tape_proof.h"
 #include "tsfi_iso_transpiler.h"
 #include "tsfi_parc_tape_trunk.h"
+#include "tsfi_yul_deployer.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -974,6 +975,12 @@ int main() {
     char trunk_vol[7];
     tsfi_tape_trunk_get_vol_id(0, trunk_vol);
     printf("[INFO] Yul-Compiled Tape Trunk Engine Head Volume ID: %s\n", trunk_vol);
+
+    // Multi-Target AUTODIN Yul Contract Deployer Verification (2-3 Tree Node, Anvil EVM, In-Memory Thunk)
+    tsfi_yul_deploy_result_t dep_res1, dep_res2, dep_res3;
+    tsfi_yul_deploy_contract("assets/isomorphism_engine.yul", YUL_DEPLOY_TARGET_23_TREE_NODE, &dep_res1);
+    tsfi_yul_deploy_contract("assets/isomorphism_engine.yul", YUL_DEPLOY_TARGET_ANVIL_EVM, &dep_res2);
+    tsfi_yul_deploy_contract("assets/isomorphism_engine.yul", YUL_DEPLOY_TARGET_IN_MEM_THUNK, &dep_res3);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
