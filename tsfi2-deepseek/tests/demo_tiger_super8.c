@@ -131,6 +131,7 @@
 #include "tsfi_manderfield_npl_transpiler.h"
 #include "tsfi_thacher_solver.h"
 #include "tsfi_stearman_engine.h"
+#include "tsfi_lgp30_algol_engine.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1534,6 +1535,15 @@ int main() {
     double mean_v = 0.0, var_v = 0.0, res_v = 0.0;
     tsfi_stearman_compute_stats(&stearman_eng, st_data, 4, &mean_v, &var_v);
     tsfi_stearman_resistance_solve(&stearman_eng, 0.5, 5.0, &res_v);
+
+    // LGP-30 Embedded ALGOL SCALP Compiler & Drum Memory Latency Optimizer Check (280 Gas Slot / 78.2% Cut)
+    tsfi_lgp30_algol_engine_t lgp30_eng;
+    tsfi_lgp30_algol_engine_init(28001, &lgp30_eng);
+    uint32_t drum_words[16];
+    size_t words_len = 0;
+    tsfi_lgp30_scalp_compile(&lgp30_eng, "BEGIN A := B + C; END", drum_words, &words_len);
+    uint32_t cycles_saved = 0;
+    tsfi_lgp30_drum_optimize_latency(&lgp30_eng, 0x01F3, &cycles_saved);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
