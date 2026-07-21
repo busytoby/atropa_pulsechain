@@ -1,0 +1,21 @@
+<Grid Width="1280" Height="720" Background="#121620">
+    <!-- Top Navigation Header Bar -->
+    <TextBlock Name="GuideHeader" X="20" Y="22" Width="1240" Height="30" Content="AUNCIENT DYSNOMIA VULKAN P. J. BROWN GUIDE &amp; DOCUMENTATION SYSTEM" Foreground="#e6dfd3" FontSize="7.5"/>
+    
+    <!-- Left Sidebar: Document Index & Search Panel -->
+    <Grid Name="DocumentIndexSidebar" X="10" Y="45" Width="350" Height="665" Background="#181d2a" BorderColor="#c5a059">
+        <TextBlock Name="IndexPanelTitle" X="25" Y="65" Width="320" Height="20" Content="DOCUMENT INDEX (642 .md Files)" Foreground="#c5a059" FontSize="7.0"/>
+        <TextBlock Name="SearchQueryBox" X="25" Y="81" Width="320" Height="20" Content="[ Search: 'DYSNOMIA' ] (15 Matches)" Foreground="#00E5FF" FontSize="6.0"/>
+        <!-- Document List Items Container -->
+        <Grid Name="DocumentListViewport" X="20" Y="100" Width="330" Height="600" Background="#181d2a"/>
+    </Grid>
+
+    <!-- Right Viewport: Document Reader & Expansion Viewer Panel -->
+    <Grid Name="DocumentReaderViewport" X="370" Y="45" Width="895" Height="665" Background="#151924" BorderColor="#c5a059">
+        <TextBlock Name="DocumentTitleBar" X="390" Y="65" Width="855" Height="25" Content="P. J. Brown Guide: motzkin_prime_synthesis_sequencing.md" Foreground="#e6dfd3" FontSize="7.5"/>
+        <TextBlock Name="DocumentBodyReader" X="390" Y="95" Width="855" Height="450" Content="Motzkin Prime Synthesis &amp; WinchesterMQ SCSI Handshake" Foreground="#d4ceb8" FontSize="5.5"/>
+        <!-- P. J. Brown In-Place Hypermedia Expansion Buttons Section -->
+        <Button Name="ExpansionButtonWinchester" X="390" Y="565" Width="260" Height="24" Content="[+] Auncient WinchesterMQ" CornerRadius="4.0" Background="#2a354d"/>
+        <Button Name="ExpansionButtonMotzkin" X="390" Y="630" Width="260" Height="24" Content="[+] MotzkinPrime Field" CornerRadius="4.0" Background="#2a354d"/>
+    </Grid>
+</Grid>

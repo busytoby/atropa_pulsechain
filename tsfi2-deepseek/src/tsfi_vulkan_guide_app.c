@@ -389,11 +389,40 @@ int vulkan_guide_application_render_frame(
     return 0;
 }
 
+#include "tsfi_parc_ui_def.h"
+
 extern VulkanSystem* create_vulkan_system(void);
 extern void destroy_vulkan_system(VulkanSystem *s);
 extern bool init_swapchain(VulkanSystem *s);
 extern void draw_frame(VulkanSystem *s);
 extern void lau_unseal_object(void *obj);
+extern void tsfi_input_set_key_hook(void *hook_func);
+
+static vulkan_guide_application_t *g_guide_app_instance = NULL;
+static VulkanSystem *g_guide_vulkan_system_instance = NULL;
+
+static void vulkan_guide_key_hook(void *data, uint32_t serial, uint32_t time, uint32_t key, uint32_t state) {
+    (void)data;
+    (void)serial;
+    (void)time;
+
+    if (state != 1) return; // Only process key press down
+
+    if (key == 1) { // ESC Key (KEY_ESC)
+        printf("[INFO] ESC key pressed in Vulkan Guide window. Closing window...\n");
+        if (g_guide_vulkan_system_instance) {
+            g_guide_vulkan_system_instance->running = false;
+        }
+    } else if (key == 108 || key == 31) { // DOWN Arrow or 's'/'j'
+        if (g_guide_app_instance && g_guide_app_instance->active_selected_document_index + 1 < g_guide_app_instance->total_indexed_documents) {
+            vulkan_guide_application_select_document(g_guide_app_instance, g_guide_app_instance->active_selected_document_index + 1);
+        }
+    } else if (key == 103 || key == 17) { // UP Arrow or 'w'/'k'
+        if (g_guide_app_instance && g_guide_app_instance->active_selected_document_index > 0) {
+            vulkan_guide_application_select_document(g_guide_app_instance, g_guide_app_instance->active_selected_document_index - 1);
+        }
+    }
+}
 
 int vulkan_guide_application_run_wayland_loop(
     vulkan_guide_application_t *application,
@@ -401,14 +430,37 @@ int vulkan_guide_application_run_wayland_loop(
 ) {
     if (!application) return -1;
 
+    g_guide_app_instance = application;
+
+    // 1. Load Declarative XAML Layout & Smalltalk Morph Class Assets
+    tsfi_ui_def_engine_t ui_def_engine;
+    tsfi_ui_def_engine_init(101, &ui_def_engine);
+
+    FILE *xaml_file = fopen("../assets/vulkan_guide_layout.xaml", "r");
+    if (!xaml_file) xaml_file = fopen("assets/vulkan_guide_layout.xaml", "r");
+    if (xaml_file) {
+        char xaml_buffer[2048];
+        size_t bytes_read = fread(xaml_buffer, 1, sizeof(xaml_buffer) - 1, xaml_file);
+        xaml_buffer[bytes_read] = '\0';
+        fclose(xaml_file);
+
+        tsfi_ui_element_t ui_element;
+        tsfi_xaml_parse_markup(&ui_def_engine, xaml_buffer, &ui_element);
+        tsfi_st_bind_ui_morph(&ui_def_engine, &ui_element, "GuideViewportMorph");
+        printf("[SUCCESS] Loaded XAML markup assets & bound Smalltalk GuideViewportMorph!\n");
+    }
+
     printf("[INFO] Attempting to open Auncient Wayland Vulkan surface window...\n");
     VulkanSystem *vulkan_system = create_vulkan_system();
 
     if (vulkan_system) {
         lau_unseal_object(vulkan_system);
         vulkan_system->disable_ui_overlay = true;
+        g_guide_vulkan_system_instance = vulkan_system;
 
-        printf("[SUCCESS] Opened Wayland Vulkan surface window successfully!\n");
+        tsfi_input_set_key_hook((void *)vulkan_guide_key_hook);
+
+        printf("[SUCCESS] Opened Wayland Vulkan surface window successfully! (Press ESC to close)\n");
         int frame_counter = 0;
 
         while (vulkan_system->running && (max_frames_to_run <= 0 || frame_counter < max_frames_to_run)) {
@@ -433,6 +485,7 @@ int vulkan_guide_application_run_wayland_loop(
         }
 
         destroy_vulkan_system(vulkan_system);
+        g_guide_vulkan_system_instance = NULL;
         printf("[INFO] Closed Wayland Vulkan surface window after %d frames.\n", frame_counter);
         return 0;
     }
