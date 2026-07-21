@@ -914,6 +914,15 @@ int main() {
     tsfi_runcible_main_step("CALL 0x00401000 main");
     tsfi_runcible_main_step("KB 1 1 0");
     tsfi_runcible_main_step("SLIDE");
+    tsfi_runcible_main_step("SCSI WRITE 0x20 32");
+    tsfi_runcible_main_step("KEYSET 0x01");
+    tsfi_runcible_main_step("KEYSET 0x21");
+    tsfi_runcible_main_step("SCHUR (2,1) (1) (1)");
+    tsfi_runcible_main_step("PEEK 0x00401000");
+    tsfi_runcible_main_step("POKE 0x00401000 0xFF357ABD");
+    tsfi_runcible_main_step("YUL RESOLVE 0x7a89bc3d 0x12345678");
+    tsfi_runcible_main_step("MACRO PLAY BOOT_SEQ");
+    tsfi_runcible_main_step("DISCHARGE 1 0.1");
     tsfi_runcible_main_step("STATUS");
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
