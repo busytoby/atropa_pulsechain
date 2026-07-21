@@ -64,6 +64,7 @@
 #include "tsfi_lynch_channel.h"
 #include "tsfi_lynch_sync.h"
 #include "tsfi_knuth_storage.h"
+#include "tsfi_knuth_fet_gas.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1078,6 +1079,10 @@ int main() {
     uint32_t saved_gas = tsfi_knuth_calculate_gas_savings(100);
     printf("[KNUTH GAS OPTIMIZATION] Saved %u Gas on 100 SSTORE Operations (Packed Val: 0x%016lX)\n",
            saved_gas, (unsigned long)packed_val);
+
+    // Donald E. Knuth Base 2i FET Discharge Physics & Net Gas Engine Check
+    tsfi_knuth_fet_gas_state_t fet_gas_st;
+    tsfi_knuth_fet_gas_step(3.3f, 0.01f, &fet_gas_st);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
