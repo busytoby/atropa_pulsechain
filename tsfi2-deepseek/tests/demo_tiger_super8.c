@@ -53,6 +53,7 @@
 #include "tsfi_parc_tape_trunk.h"
 #include "tsfi_yul_deployer.h"
 #include "tsfi_autodin_zmm_tx.h"
+#include "tsfi_autodin_anvil_oracle.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -998,6 +999,10 @@ int main() {
 
     tsfi_autodin_zmm_tx_receipt_t zmm_tx_rec;
     autodin_send_zmm_tx(&tx_req, &zmm_tx_rec);
+
+    // Dual-Path AUTODIN Anvil Isomorphism Verification Oracle Check
+    tsfi_autodin_anvil_isom_proof_t isom_proof;
+    tsfi_autodin_verify_anvil_isom(&tx_req, &isom_proof);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
