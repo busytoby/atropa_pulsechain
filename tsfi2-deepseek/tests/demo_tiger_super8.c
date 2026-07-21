@@ -135,6 +135,7 @@
 #include "tsfi_sherman_engine.h"
 #include "tsfi_scott_engine.h"
 #include "tsfi_schmidt_engine.h"
+#include "tsfi_parc_ui_def.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1574,6 +1575,13 @@ int main() {
     double matrix_A[4] = {4.0, 3.0, 6.0, 3.0}; // 2x2 matrix
     double matrix_L[4], matrix_U[4];
     tsfi_schmidt_lu_factorize(&schmidt_eng, matrix_A, 2, matrix_L, matrix_U);
+
+    // XAML & Smalltalk Dynamic UI Definition Parser Engine Check (280 Gas Slot / 78.2% Cut)
+    tsfi_ui_def_engine_t ui_def_eng;
+    tsfi_ui_def_engine_init(32001, &ui_def_eng);
+    tsfi_ui_element_t ui_elem;
+    tsfi_xaml_parse_markup(&ui_def_eng, "<Button Width=\"120\" Height=\"40\" CornerRadius=\"8\" Content=\"OK\"/>", &ui_elem);
+    tsfi_st_bind_ui_morph(&ui_def_eng, &ui_elem, "ButtonMorph");
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
