@@ -1590,6 +1590,9 @@ int main() {
     double a_coeffs[4] = {2.0, 1.0, 0.5, 0.25}; // y = 2x + x^2 + 0.5x^3 + 0.25x^4
     double b_coeffs[4];
     tsfi_chapple_revert_power_series(&chapple_eng, a_coeffs, 4, b_coeffs);
+    tsfi_chapple_moog_vcf_init(&chapple_eng, 1200.0, 2.5, 1.2);
+    double moog_audio_out = tsfi_chapple_moog_vcf_process_sample(&chapple_eng, 0.75, 44100.0);
+    (void)moog_audio_out;
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
