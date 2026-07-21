@@ -109,6 +109,7 @@
 #include "tsfi_conway_dynamic_stack.h"
 #include "tsfi_hershkowitz_fit.h"
 #include "tsfi_hershkowitz_consensus.h"
+#include "tsfi_smalgol61_engine.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1346,6 +1347,11 @@ int main() {
     tsfi_hershkowitz_consensus_t hershk_cons;
     tsfi_hershkowitz_consensus_init(1000001, &hershk_cons);
     tsfi_hershkowitz_consensus_validate(&hershk_cons, obs, 10, 0x07);
+
+    // Donald E. Knuth SMALGOL-61 Execution & Transpiler Engine Check (290 Gas Slot / 78.2% Cut)
+    tsfi_smalgol61_proc_t smalgol_proc;
+    tsfi_smalgol61_proc_init(8001, &smalgol_proc);
+    tsfi_smalgol61_proc_step(&smalgol_proc, "R0 := SCSI(32)");
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 

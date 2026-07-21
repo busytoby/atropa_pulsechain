@@ -249,7 +249,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_conway_interledger_signal.o \
                   $(OBJ_DIR)/tsfi_conway_dynamic_stack.o \
                   $(OBJ_DIR)/tsfi_hershkowitz_fit.o \
-                  $(OBJ_DIR)/tsfi_hershkowitz_consensus.o
+                  $(OBJ_DIR)/tsfi_hershkowitz_consensus.o \
+                  $(OBJ_DIR)/tsfi_smalgol61_engine.o
 
 
 
