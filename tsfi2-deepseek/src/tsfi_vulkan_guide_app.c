@@ -147,7 +147,111 @@ int vulkan_guide_application_select_document(
         fclose(file);
     }
 
+    // Reset Document Scroll Offset
     application->document_scroll_y_offset = 0;
+
+    // Dynamically Register P. J. Brown Expansion Buttons for Terms Actually Present in Selected Document
+    application->core_guide_engine.total_guide_buttons = 0;
+    const char *body = application->core_guide_engine.active_document_body_text;
+
+    if (strstr(body, "WinchesterMQ") || strstr(body, "Winchester") || strstr(body, "SCSI")) {
+        float btn_y = 550.0f + application->core_guide_engine.total_guide_buttons * 38.0f;
+        vulkan_guide_engine_register_button(
+            &application->core_guide_engine,
+            "Auncient WinchesterMQ",
+            "Tripartite Register Context: WinchesterMQ SCSI handshake loops (keycode 32 for d/D, keycode 30 for a/A).\n"
+            "Mathematical Function: Channel = Base^Signal mod MotzkinPrime (953467954114363).\n"
+            "Visual Manifestation: Modulates initial phase angle offset phi_w and orbital camera projection vector.",
+            "3 + 4",
+            "dynamic_0x1234567890abcdef",
+            390.0f, btn_y, 260.0f, 28.0f
+        );
+    }
+
+    if (strstr(body, "MotzkinPrime") || strstr(body, "Motzkin") || strstr(body, "Prime")) {
+        float btn_y = 550.0f + application->core_guide_engine.total_guide_buttons * 38.0f;
+        vulkan_guide_engine_register_button(
+            &application->core_guide_engine,
+            "MotzkinPrime Field",
+            "Tripartite Register Context: System field divisor constant 953467954114363.\n"
+            "Mathematical Function: Denominator P for modular exponentiations (Base^Exponent mod P).\n"
+            "Visual Manifestation: Sets mathematical scale limit for internal lookup tables and EDO-22 octave mapping.",
+            "5 * 5",
+            "dynamic_0x953467954114363",
+            390.0f, btn_y, 260.0f, 28.0f
+        );
+    }
+
+    if (strstr(body, "LAU") || strstr(body, "Delegate") || strstr(body, "Soul")) {
+        float btn_y = 550.0f + application->core_guide_engine.total_guide_buttons * 38.0f;
+        vulkan_guide_engine_register_button(
+            &application->core_guide_engine,
+            "LAU Identity Delegate",
+            "Tripartite Register Context: Wallet address to verified LAU token contract mapping.\n"
+            "Mathematical Function: Resolves user identifier Soul = LAU(UserToken).Saat(1).\n"
+            "Visual Manifestation: Governs hypotrochoid geometric signature coordinates.",
+            "100 + 200",
+            "dynamic_0x7000000000000001",
+            390.0f, btn_y, 260.0f, 28.0f
+        );
+    }
+
+    if (strstr(body, "Chin") || strstr(body, "Hemisphere")) {
+        float btn_y = 550.0f + application->core_guide_engine.total_guide_buttons * 38.0f;
+        vulkan_guide_engine_register_button(
+            &application->core_guide_engine,
+            "Chin Floor Clamp",
+            "Tripartite Register Context: Lower clamp of WinchesterMQ field layout.\n"
+            "Mathematical Function: Chin = Beta + Eta mod MotzkinPrime; Monopole = Chin^Identity mod MotzkinPrime.\n"
+            "Visual Manifestation: Governs visual hemisphere asymmetry along negative Y-axis floor.",
+            "7 * 6",
+            "dynamic_0x000000000000000c",
+            390.0f, btn_y, 260.0f, 28.0f
+        );
+    }
+
+    if (strstr(body, "Dynamo") || strstr(body, "Bond")) {
+        float btn_y = 550.0f + application->core_guide_engine.total_guide_buttons * 38.0f;
+        vulkan_guide_engine_register_button(
+            &application->core_guide_engine,
+            "Dynamo Velocity Tracker",
+            "Tripartite Register Context: Dynamic velocity tracking word of SHA contract.\n"
+            "Mathematical Function: Dynamo = Base^Signal mod Element during Bond.\n"
+            "Visual Manifestation: Governs frequency multiplier f_y of Y-axis coordinate.",
+            "88 / 2",
+            "dynamic_0x000000000000000b",
+            390.0f, btn_y, 260.0f, 28.0f
+        );
+    }
+
+    if (strstr(body, "FET") || strstr(body, "Verlet") || strstr(body, "Discharge")) {
+        float btn_y = 550.0f + application->core_guide_engine.total_guide_buttons * 38.0f;
+        vulkan_guide_engine_register_button(
+            &application->core_guide_engine,
+            "FET Verlet Discharge Physics",
+            "Tripartite Register Context: Low-level hardware Field-Effect Transistor structure.\n"
+            "Mathematical Function: Soft-body Verlet solver and mass-spring depletion dynamics.\n"
+            "Visual Manifestation: Governs discharge cycle physics under 78.2% power cut.",
+            "12 * 12",
+            "dynamic_0x000000000000000f",
+            390.0f, btn_y, 260.0f, 28.0f
+        );
+    }
+
+    if (strstr(body, "Quadtree") || strstr(body, "dat.bin")) {
+        float btn_y = 550.0f + application->core_guide_engine.total_guide_buttons * 38.0f;
+        vulkan_guide_engine_register_button(
+            &application->core_guide_engine,
+            "Quadtree .dat.bin Layout",
+            "Tripartite Register Context: Quadtree spatial block-ledger database layout (Rule 13).\n"
+            "Mathematical Function: 2D spatial bounding box slice partition.\n"
+            "Visual Manifestation: Governs spatial indexing boundary maps.",
+            "64 * 64",
+            "dynamic_0x0000000000000013",
+            390.0f, btn_y, 260.0f, 28.0f
+        );
+    }
+
     return 0;
 }
 
@@ -299,7 +403,7 @@ int vulkan_guide_application_render_frame(
         pixels[(view_y + 32) * width + x] = 0xFFc5a059;
     }
 
-    // Enhanced Markdown Rendering Engine with Word-Wrapping and Hierarchy
+    // Enhanced Markdown Rendering Engine with Clean Horizontal Word-Wrapping
     const char *text_cursor = application->core_guide_engine.active_document_body_text;
     uint32_t render_y = view_y + 45;
     uint32_t max_render_y = view_y + view_h - 170;
@@ -382,95 +486,106 @@ int vulkan_guide_application_render_frame(
             }
         }
 
-        // Clean Word-Wrapping Algorithm (Wraps cleanly at spaces)
+        // Clean Horizontal Paragraph Line Accumulator (never breaks line mid-word)
+        char line_acc[512] = "";
         const char *word_ptr = display_text;
-        char formatted_word_buf[128];
-        size_t word_buf_len = 0;
-        const size_t max_chars_per_line = 72;
 
         while (*word_ptr) {
-            if (*word_ptr == ' ' || *(word_ptr + 1) == '\0') {
-                if (*(word_ptr + 1) == '\0' && *word_ptr != ' ') {
-                    formatted_word_buf[word_buf_len++] = *word_ptr;
-                }
-                formatted_word_buf[word_buf_len] = '\0';
-
-                if (word_buf_len > 0) {
-                    tsfi_quantel_paintbox_typographer(
-                        pixels, (int)width, (int)height,
-                        render_x_offset, (int)render_y,
-                        formatted_word_buf,
-                        line_color, font_scale
-                    );
-
-                    render_y += (uint32_t)(font_scale * 2.2f) + 4;
-                    if (render_y >= max_render_y) break;
-                    word_buf_len = 0;
-                }
-                word_ptr++;
-            } else {
-                if (word_buf_len < max_chars_per_line) {
-                    formatted_word_buf[word_buf_len++] = *word_ptr;
-                }
-                word_ptr++;
+            char single_word[128];
+            size_t w_len = 0;
+            while (*word_ptr && *word_ptr != ' ' && w_len < sizeof(single_word) - 1) {
+                single_word[w_len++] = *word_ptr++;
             }
+            single_word[w_len] = '\0';
+            if (*word_ptr == ' ') word_ptr++;
+
+            size_t current_len = strlen(line_acc);
+            if (current_len + w_len + 1 > 68) {
+                tsfi_quantel_paintbox_typographer(
+                    pixels, (int)width, (int)height,
+                    render_x_offset, (int)render_y,
+                    line_acc,
+                    line_color, font_scale
+                );
+                render_y += (uint32_t)(font_scale * 2.2f) + 4;
+                if (render_y >= max_render_y) break;
+
+                snprintf(line_acc, sizeof(line_acc), "%s", single_word);
+            } else {
+                if (current_len > 0) {
+                    strcat(line_acc, " ");
+                }
+                strcat(line_acc, single_word);
+            }
+        }
+
+        if (line_acc[0] != '\0' && render_y < max_render_y) {
+            tsfi_quantel_paintbox_typographer(
+                pixels, (int)width, (int)height,
+                render_x_offset, (int)render_y,
+                line_acc,
+                line_color, font_scale
+            );
+            render_y += (uint32_t)(font_scale * 2.2f) + 4;
         }
 
         if (display_text[0] == '\0') {
-            render_y += 10; // Extra paragraph spacing
+            render_y += 6; // Extra paragraph spacing
         }
     }
 
-    // 5. P. J. Brown In-Place Hypermedia Expansion Buttons Section
-    uint32_t btn_y = view_y + view_h - 165;
-    tsfi_quantel_paintbox_typographer(
-        pixels, (int)width, (int)height,
-        (int)view_x + 20, (int)btn_y - 12,
-        "P. J. BROWN IN-PLACE HYPERTEXT EXPANSIONS & GLOSSARY SIEVES:",
-        0xFFc5a059, 6.0f
-    );
-
-    for (uint32_t b_idx = 0; b_idx < application->core_guide_engine.total_guide_buttons; b_idx++) {
-        vulkan_guide_button_t *button = &application->core_guide_engine.guide_buttons[b_idx];
-
-        uint32_t cur_btn_y = btn_y + b_idx * 65;
-        if (cur_btn_y + 50 > (view_y + view_h)) break;
-
-        int is_exp = (button->button_state == VULKAN_GUIDE_BUTTON_EXPANDED);
-
-        // Draw Button Box
-        for (uint32_t ry = cur_btn_y; ry < cur_btn_y + 24; ry++) {
-            for (uint32_t rx = view_x + 20; rx < view_x + 280; rx++) {
-                pixels[ry * width + rx] = is_exp ? 0xFF008080 : 0xFF2a354d;
-            }
-        }
-
-        char btn_label_buf[128];
-        snprintf(btn_label_buf, sizeof(btn_label_buf), "[%s] %s", is_exp ? "-" : "+", button->button_label_text);
+    // 5. P. J. Brown In-Place Hypermedia Expansion Buttons Section (Contextual to Selected Document)
+    if (application->core_guide_engine.total_guide_buttons > 0) {
+        uint32_t btn_y = view_y + view_h - 165;
         tsfi_quantel_paintbox_typographer(
             pixels, (int)width, (int)height,
-            (int)view_x + 25, (int)cur_btn_y + 14,
-            btn_label_buf,
-            0xFFFFFFFF, 6.0f
+            (int)view_x + 20, (int)btn_y - 12,
+            "P. J. BROWN IN-PLACE HYPERTEXT EXPANSIONS & GLOSSARY SIEVES:",
+            0xFFc5a059, 6.0f
         );
 
-        if (is_exp) {
-            // Render In-Place Expanded Glossary Context & Smalltalk/ZMM Dynamic Address
+        for (uint32_t b_idx = 0; b_idx < application->core_guide_engine.total_guide_buttons; b_idx++) {
+            vulkan_guide_button_t *button = &application->core_guide_engine.guide_buttons[b_idx];
+
+            uint32_t cur_btn_y = btn_y + b_idx * 40;
+            if (cur_btn_y + 35 > (view_y + view_h)) break;
+
+            int is_exp = (button->button_state == VULKAN_GUIDE_BUTTON_EXPANDED);
+
+            // Draw Button Box
+            for (uint32_t ry = cur_btn_y; ry < cur_btn_y + 26; ry++) {
+                for (uint32_t rx = view_x + 20; rx < view_x + 260; rx++) {
+                    pixels[ry * width + rx] = is_exp ? 0xFF008080 : 0xFF2a354d;
+                }
+            }
+
+            char btn_label_buf[128];
+            snprintf(btn_label_buf, sizeof(btn_label_buf), "[%s] %s", is_exp ? "-" : "+", button->button_label_text);
             tsfi_quantel_paintbox_typographer(
                 pixels, (int)width, (int)height,
-                (int)view_x + 290, (int)cur_btn_y + 10,
-                button->expansion_text_content,
-                0xFF00E5FF, 5.0f
+                (int)view_x + 25, (int)cur_btn_y + 14,
+                btn_label_buf,
+                0xFFFFFFFF, 5.5f
             );
 
-            char zmm_buf[128];
-            snprintf(zmm_buf, sizeof(zmm_buf), "ZMM Contract: %s | %s", button->dynamic_contract_address, button->smalltalk_bytecode_evaluator);
-            tsfi_quantel_paintbox_typographer(
-                pixels, (int)width, (int)height,
-                (int)view_x + 290, (int)cur_btn_y + 22,
-                zmm_buf,
-                0xFFc5a059, 5.0f
-            );
+            if (is_exp) {
+                // Render In-Place Expanded Glossary Context & Smalltalk/ZMM Dynamic Address
+                tsfi_quantel_paintbox_typographer(
+                    pixels, (int)width, (int)height,
+                    (int)view_x + 270, (int)cur_btn_y + 8,
+                    button->expansion_text_content,
+                    0xFF00E5FF, 4.5f
+                );
+
+                char zmm_buf[128];
+                snprintf(zmm_buf, sizeof(zmm_buf), "ZMM Contract: %s | %s", button->dynamic_contract_address, button->smalltalk_bytecode_evaluator);
+                tsfi_quantel_paintbox_typographer(
+                    pixels, (int)width, (int)height,
+                    (int)view_x + 270, (int)cur_btn_y + 20,
+                    zmm_buf,
+                    0xFFc5a059, 4.5f
+                );
+            }
         }
     }
 
@@ -563,11 +678,40 @@ int vulkan_guide_application_run_wayland_loop(
 
         printf("[SUCCESS] Opened Wayland Vulkan surface window successfully! (Press ESC to close)\n");
         int frame_counter = 0;
+        bool prev_mouse_down = false;
 
         while (vulkan_system->running && (max_frames_to_run <= 0 || frame_counter < max_frames_to_run)) {
             if (vulkan_system->display) {
                 wl_display_roundtrip(vulkan_system->display);
             }
+
+            // Dispatch Pointer / Mouse Click Events
+            if (vulkan_system->mouse_down && !prev_mouse_down) {
+                int mx = vulkan_system->mouse_x;
+                int my = vulkan_system->mouse_y;
+
+                // Sidebar Document List Selection Click (x: 10..360, y: 100..650)
+                if (mx >= 10 && mx <= 360 && my >= 100 && my <= 650) {
+                    uint32_t start_doc_idx = 0;
+                    if (application->active_selected_document_index > 12) {
+                        start_doc_idx = application->active_selected_document_index - 12;
+                    }
+                    uint32_t clicked_item = start_doc_idx + (uint32_t)((my - 100) / 22);
+                    if (clicked_item < application->total_indexed_documents) {
+                        vulkan_guide_application_select_document(application, clicked_item);
+                        printf("[INFO] Selected Document #%u: %s\n", clicked_item, application->indexed_documents[clicked_item].document_file_name);
+                    }
+                }
+
+                // P. J. Brown Expansion Button Click (x: 370..1260, y: 500..710)
+                if (mx >= 370 && mx <= 1260 && my >= 500 && my <= 710) {
+                    int clicked_btn = vulkan_guide_engine_process_click(&application->core_guide_engine, (float)mx, (float)my);
+                    if (clicked_btn >= 0) {
+                        printf("[INFO] Toggled P. J. Brown expansion button #%d!\n", clicked_btn);
+                    }
+                }
+            }
+            prev_mouse_down = vulkan_system->mouse_down;
 
             if (!vulkan_system->vk->swapchain) {
                 init_swapchain(vulkan_system);
