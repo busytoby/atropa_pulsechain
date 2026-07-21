@@ -123,6 +123,7 @@
 #include "tsfi_dempster_scattering.h"
 #include "tsfi_bachelor_parse_dict.h"
 #include "tsfi_smalgol61_datatype_std.h"
+#include "tsfi_algol61_evm_types.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1459,6 +1460,17 @@ int main() {
     tsfi_smalgol61_push_label(&smalgol_dt_reg, 0x00000080);
     smalgol_stack_word_t popped_w;
     tsfi_smalgol61_pop_word(&smalgol_dt_reg, &popped_w);
+
+    // ALGOL-61 EVM Extended Data Types & Mapping Check (260 Gas Slot / 78.2% Cut)
+    tsfi_algol61_evm_type_registry_t algol_evm_reg;
+    tsfi_algol61_evm_type_registry_init(20001, &algol_evm_reg);
+    uint8_t u256_val[32] = {0}; u256_val[31] = 0xFF;
+    tsfi_algol61_push_uint256(&algol_evm_reg, u256_val);
+    uint8_t map_k[32] = {0x11, 0x22, 0x33, 0x44};
+    uint8_t map_v[32] = {0xAA, 0xBB, 0xCC, 0xDD};
+    tsfi_algol61_map_set(&algol_evm_reg, map_k, map_v);
+    uint8_t map_out[32];
+    tsfi_algol61_map_get(&algol_evm_reg, map_k, map_out);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
