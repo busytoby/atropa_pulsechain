@@ -117,6 +117,7 @@
 #include "tsfi_speroni_lynch_stream.h"
 #include "tsfi_decnet_exec_stack.h"
 #include "tsfi_tree_net_vm.h"
+#include "tsfi_speroni_param_list.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1405,6 +1406,14 @@ int main() {
     tsfi_tree_net_vm_init_node(0x1002, 12, 5, mac2, 1, 105, 0x4538, &dst_net_node);
     uint8_t net_payload[16] = "NET_VM_PAYLOAD";
     tsfi_tree_net_vm_route_packet(&src_net_node, &dst_net_node, "HYBRID_STANAG_DECNET", net_payload, 14);
+
+    // Speroni-Knuth Generalized Parameter List Engine Check (190 Gas Slot / 78.2% Cut)
+    tsfi_speroni_param_list_proc_t speroni_params_proc;
+    tsfi_speroni_param_list_proc_init(14001, &speroni_params_proc);
+    tsfi_speroni_param_list_add_param(&speroni_params_proc, "x_val", SPERONI_PARAM_MODE_VALUE, 42);
+    tsfi_speroni_param_list_add_param(&speroni_params_proc, "y_thunk", SPERONI_PARAM_MODE_NAME, 0x10002000);
+    tsfi_speroni_param_list_add_param(&speroni_params_proc, "z_ref", SPERONI_PARAM_MODE_REF, 0x00001001);
+    tsfi_speroni_param_list_eval(&speroni_params_proc);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
