@@ -12,17 +12,26 @@ object "TapeTrunkEngine" {
             switch selector
             case 0x8a7b6c5d { // get_trunk_volume(vol_index)
                 let idx := calldataload(4)
-                // Return Yul memory slot for volume index in trunk sequence
                 mstore(0, add(0x48444C3030310000, idx))
                 return(0, 32)
             }
             case 0x4e3d2c1b { // get_trunk_channel_type(channel_id)
                 let channel_id := calldataload(4)
                 switch channel_id
-                case 1 { mstore(0, 1) } // Channel 1: Token Holders (HDL)
-                case 2 { mstore(0, 2) } // Channel 2: RDBMS Ledgers (RDB)
-                case 3 { mstore(0, 3) } // Channel 3: UNISERVO Reels (UNI)
+                case 0 { mstore(0, 0) } // SYS Channel (Hogan LFS)
+                case 1 { mstore(0, 1) } // HDL Channel (Token Holders)
+                case 2 { mstore(0, 2) } // RDB Channel (Ledgers)
+                case 3 { mstore(0, 3) } // UNI Channel (UNISERVO Reels)
                 default { mstore(0, 0) }
+                return(0, 32)
+            }
+            case 0x2b3c4d5e { // get_channel_priority(channel_id)
+                let channel_id := calldataload(4)
+                switch channel_id
+                case 0 { mstore(0, 0) } // Priority 0: FLASH (SYS)
+                case 2 { mstore(0, 1) } // Priority 1: IMMEDIATE (RDB)
+                case 1 { mstore(0, 2) } // Priority 2: PRIORITY (HDL)
+                default { mstore(0, 3) } // Priority 3: ROUTINE (UNI/AST)
                 return(0, 32)
             }
             default {

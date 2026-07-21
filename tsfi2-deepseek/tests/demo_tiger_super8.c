@@ -54,6 +54,7 @@
 #include "tsfi_yul_deployer.h"
 #include "tsfi_autodin_zmm_tx.h"
 #include "tsfi_autodin_anvil_oracle.h"
+#include "tsfi_parc_trunk_queue.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1003,6 +1004,10 @@ int main() {
     // Dual-Path AUTODIN Anvil Isomorphism Verification Oracle Check
     tsfi_autodin_anvil_isom_proof_t isom_proof;
     tsfi_autodin_verify_anvil_isom(&tx_req, &isom_proof);
+
+    // AUTODIN Priority Trunk Queue Check
+    tsfi_trunk_queue_item_t qitem;
+    tsfi_trunk_queue_enqueue(0, "SYS001", 512, &qitem);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
