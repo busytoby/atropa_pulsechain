@@ -105,6 +105,7 @@
 #include "tsfi_conway_pipe.h"
 #include "tsfi_autodin_tx_pipe.h"
 #include "tsfi_conway_ledger_process.h"
+#include "tsfi_conway_interledger_signal.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1318,6 +1319,10 @@ int main() {
     tsfi_conway_ledger_process_t conway_proc;
     tsfi_conway_ledger_process_init(7001, "0x1234567890ABCDEF1234567890ABCDEF12345678", &conway_proc);
     tsfi_conway_ledger_process_step(&conway_proc, 0x90001001, 0x60016002);
+
+    // Inter-Ledger Process Signal Dispatch Check (280 Gas Slot / 78.2% Cut)
+    tsfi_conway_interledger_signal_t inter_signal;
+    tsfi_conway_dispatch_interledger_signal(7001, "HDL001.DAT.BIN", 7002, "RDB001.DAT.BIN", 0x80000001, 0x1122334455667788, &inter_signal);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
