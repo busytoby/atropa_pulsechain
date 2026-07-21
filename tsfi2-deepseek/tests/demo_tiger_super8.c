@@ -76,6 +76,7 @@
 #include "tsfi_drum_latency.h"
 #include "tsfi_minimized_drum_buffer.h"
 #include "tsfi_card_spooler.h"
+#include "tsfi_nanosecond_drum.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1146,6 +1147,11 @@ int main() {
     };
     tsfi_card_spooler_summary_t card_summary;
     tsfi_card_spooler_process_deck(sample_cards, 2, &card_summary);
+
+    // Nanosecond AVX-512 L1 Register Drum Check (< 50 ns Latency / Keycode 32)
+    tsfi_nanosecond_drum_t nano_drum;
+    tsfi_nanosecond_drum_init(&nano_drum);
+    tsfi_nanosecond_drum_trigger_stroke(&nano_drum, 32);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
