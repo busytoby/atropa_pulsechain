@@ -63,6 +63,7 @@
 #include "tsfi_zevm_vm_selector.h"
 #include "tsfi_lynch_channel.h"
 #include "tsfi_lynch_sync.h"
+#include "tsfi_knuth_storage.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1069,6 +1070,14 @@ int main() {
     memset(&lynch_latch, 0, sizeof(lynch_latch));
     tsfi_lynch_latch_acquire(&lynch_latch, 101, LYNCH_LATCH_SHARED);
     tsfi_lynch_latch_release(&lynch_latch);
+
+    // Donald E. Knuth Quater-Imaginary Base 2i Dual-Axis Gas Storage Check
+    uint64_t packed_val = tsfi_knuth_pack_base2i(15, -7);
+    tsfi_knuth_complex_pair_t unpacked_pair;
+    tsfi_knuth_unpack_base2i(packed_val, &unpacked_pair);
+    uint32_t saved_gas = tsfi_knuth_calculate_gas_savings(100);
+    printf("[KNUTH GAS OPTIMIZATION] Saved %u Gas on 100 SSTORE Operations (Packed Val: 0x%016lX)\n",
+           saved_gas, (unsigned long)packed_val);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
