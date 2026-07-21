@@ -751,6 +751,9 @@ bin/tsfi_sprite_generator: tools/tsfi_sprite_generator.c | $(BIN_DIR)
 bin/tsfi_ipomoea_video_gen: tools/tsfi_ipomoea_video_gen.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/demo_nadler_super8_lowpower: tests/demo_nadler_super8_lowpower.c $(CORE_OBJS) $(OBJ_DIR)/tsfi_paint.o $(OBJ_DIR)/tsfi_dom.o $(VULKAN_PLUGIN_OBJS) | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 # --- Firmware Realization ---
 src/firmware/Genesis_rtl.c src/firmware/Genesis_rtl.h: src/firmware/Genesis.v bin/tsfi_v2c
 	./bin/tsfi_v2c $<
