@@ -94,6 +94,7 @@
 #include "tsfi_algol60_block_scope.h"
 #include "tsfi_algol61_logic_power.h"
 #include "tsfi_auncient_ether.h"
+#include "tsfi_rb_llm_neurology.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1254,6 +1255,11 @@ int main() {
     // Auncient Ether Profiling & FET Discharge Conversion Check (78.2% Low-Power Floor)
     tsfi_auncient_ether_summary_t ether_summary;
     tsfi_auncient_ether_meter_discharge(1000, &ether_summary);
+
+    // Red-Black Twin Dragon LLM Neurology & Logic Structure Compiler Check (600 Gas / 78.2% Cut)
+    uint8_t sample_logic_matrix[16] = {1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1};
+    tsfi_rb_neurology_summary_t rb_summary;
+    tsfi_rb_neurology_compile_table(0x1001, sample_logic_matrix, 16, &rb_summary);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
