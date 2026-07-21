@@ -78,6 +78,7 @@
 #include "tsfi_card_spooler.h"
 #include "tsfi_nanosecond_drum.h"
 #include "tsfi_nadler_optimizer.h"
+#include "tsfi_nadler_advanced.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1157,6 +1158,10 @@ int main() {
     // Morton Nadler Positional Bit Interleaving Check (5,000 Gas Tier / Rule 13)
     tsfi_nadler_optimizer_t nadler_opt;
     tsfi_nadler_interleave_2d(25, 42, &nadler_opt);
+
+    // Advanced 3D Morton Nadler Bit Interleaving Check (3,000 Gas Tier / 60% Power Cut)
+    tsfi_nadler_advanced_t nadler_adv;
+    tsfi_nadler_interleave_3d(15, 30, 45, &nadler_adv);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
