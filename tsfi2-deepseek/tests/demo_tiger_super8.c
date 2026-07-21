@@ -132,6 +132,7 @@
 #include "tsfi_thacher_solver.h"
 #include "tsfi_stearman_engine.h"
 #include "tsfi_lgp30_algol_engine.h"
+#include "tsfi_sherman_engine.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1544,6 +1545,15 @@ int main() {
     tsfi_lgp30_scalp_compile(&lgp30_eng, "BEGIN A := B + C; END", drum_words, &words_len);
     uint32_t cycles_saved = 0;
     tsfi_lgp30_drum_optimize_latency(&lgp30_eng, 0x01F3, &cycles_saved);
+
+    // Jack Sherman Sherman-Morrison Rank-1 Inverse Matrix Update Solver Check (280 Gas Slot / 78.2% Cut)
+    tsfi_sherman_engine_t sherman_eng;
+    tsfi_sherman_engine_init(29001, &sherman_eng);
+    double inv_A[4] = {1.0, 0.0, 0.0, 1.0}; // 2x2 Identity Matrix
+    double u_vec[2] = {0.5, 0.2};
+    double v_vec[2] = {0.1, 0.4};
+    double inv_updated[4];
+    tsfi_sherman_morrison_update(&sherman_eng, inv_A, u_vec, v_vec, 2, inv_updated);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
