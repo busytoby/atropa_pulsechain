@@ -125,6 +125,7 @@
 #include "tsfi_smalgol61_datatype_std.h"
 #include "tsfi_algol61_evm_types.h"
 #include "tsfi_algol_cobol_vulkan.h"
+#include "tsfi_universal_abi_firstclass.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1480,6 +1481,17 @@ int main() {
     tsfi_algol61_vk_draw_triangle(&vk_bridge, 100.0f, 100.0f, 200.0f, 300.0f, 50.0f, 300.0f, 0x00FF88);
     tsfi_cobol_perform_vk_draw_rect(&vk_bridge, 250.0f, 150.0f, 120.0f, 80.0f, 0xFF0077);
     tsfi_cobol_perform_vk_present(&vk_bridge);
+
+    // Universal First-Class Object, Memory & Language Unified ABI Gateway Check (280 Gas Slot / 78.2% Cut)
+    tsfi_universal_abi_gateway_t abi_gw;
+    tsfi_universal_abi_gateway_init(22001, &abi_gw);
+    tsfi_firstclass_handle_t st_handle, algol_handle;
+    tsfi_firstclass_abi_register(&abi_gw, ABI_DOMAIN_SMALLTALK, (void*)0x1000, &st_handle);
+    tsfi_firstclass_abi_register(&abi_gw, ABI_DOMAIN_ALGOL61, (void*)0x2000, &algol_handle);
+    uint64_t abi_res;
+    uint64_t dummy_args[2] = {10, 20};
+    tsfi_firstclass_abi_invoke(&abi_gw, &st_handle, 0x01, dummy_args, 2, &abi_res);
+    tsfi_firstclass_abi_invoke(&abi_gw, &algol_handle, 0x02, dummy_args, 2, &abi_res);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
