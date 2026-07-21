@@ -59,6 +59,7 @@
 #include "tsfi_helmholtz_dispatcher.h"
 #include "tsfi_logan_synth.h"
 #include "tsfi_lynch_exec.h"
+#include "tsfi_helmholtz_lynch_bridge.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1033,6 +1034,10 @@ int main() {
     uint32_t spawned_pid, active_pid;
     tsfi_lynch_exec_spawn(&lynch_exec, 1, 20, &spawned_pid);
     tsfi_lynch_exec_schedule_next(&lynch_exec, &active_pid);
+
+    // Helmholtz-Lynch First-Class Bridge Wave Sync Check
+    tsfi_hl_bridge_sync_t hl_sync;
+    tsfi_hl_bridge_sync_wave(&lynch_exec, 0.785f, 1.1f, 0, &hl_sync);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
