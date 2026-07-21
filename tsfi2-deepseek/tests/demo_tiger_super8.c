@@ -96,6 +96,7 @@
 #include "tsfi_auncient_ether.h"
 #include "tsfi_rb_llm_neurology.h"
 #include "tsfi_algol68_mode_transpiler.h"
+#include "tsfi_clendenin_synth.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -1265,6 +1266,10 @@ int main() {
     // ALGOL 68 Polymorphic Mode & Subroutine Transpiler Check (550 Gas Slot / 78.2% Cut)
     tsfi_algol68_mode_summary_t a68_summary;
     tsfi_algol68_transpile_mode(ALGOL68_MODE_STRUCT, 4, 0x01, &a68_summary);
+
+    // Clendenin Rational Incomplete Elliptic Synthesizer Instrument Check (650 Gas Slot / 78.2% Cut)
+    tsfi_clendenin_synth_summary_t clendenin_summary;
+    tsfi_clendenin_synth_sample(440.0, 0.75, 1.5707963, &clendenin_summary);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 

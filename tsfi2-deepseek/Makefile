@@ -236,7 +236,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_algol61_logic_power.o \
                   $(OBJ_DIR)/tsfi_auncient_ether.o \
                   $(OBJ_DIR)/tsfi_rb_llm_neurology.o \
-                  $(OBJ_DIR)/tsfi_algol68_mode_transpiler.o
+                  $(OBJ_DIR)/tsfi_algol68_mode_transpiler.o \
+                  $(OBJ_DIR)/tsfi_clendenin_synth.o
 
 
 
