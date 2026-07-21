@@ -239,7 +239,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_algol68_mode_transpiler.o \
                   $(OBJ_DIR)/tsfi_clendenin_synth.o \
                   $(OBJ_DIR)/tsfi_clendenin_transport.o \
-                  $(OBJ_DIR)/tsfi_clendenin_matrix_exp.o
+                  $(OBJ_DIR)/tsfi_clendenin_matrix_exp.o \
+                  $(OBJ_DIR)/tsfi_clendenin_quadrature_synth.o
 
 
 
