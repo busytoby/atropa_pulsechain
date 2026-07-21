@@ -29,13 +29,6 @@ int main(int argc, char **argv) {
         printf("[INFO] Active document title: %s\n", guide_app.core_guide_engine.active_document_title);
     }
 
-    uint8_t *framebuffer_rgb = (uint8_t *)malloc(1280 * 720 * 3);
-    if (framebuffer_rgb) {
-        vulkan_guide_application_render_frame(&guide_app, framebuffer_rgb, 1280 * 3);
-        printf("[SUCCESS] Rendered Vulkan P. J. Brown Guide framebuffer (%dx%d pixels clean).\n", 1280, 720);
-        free(framebuffer_rgb);
-    }
-
     vulkan_guide_application_run_wayland_loop(&guide_app, 0);
 
     printf("[SUCCESS] Standalone Auncient Vulkan Guide Hypermedia System verified!\n");
