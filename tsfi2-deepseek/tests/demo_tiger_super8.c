@@ -10,6 +10,7 @@
 #include "tsfi_hogan.h"
 #include "tsfi_hogan_tax_permutation.h"
 #include "tsfi_autodin_cumulative_permutation.h"
+#include "tsfi_autodin_cumulative_telemetry.h"
 #include "tsfi_encodings.h"
 #include "tsfi_cade_imf.h"
 #include "tsfi_cade_vulkan.h"
@@ -1644,6 +1645,11 @@ int main() {
     autodin_cumulative_permutation_evaluate(&autodin_cumulative_engine, &autodin_root_cumulative_hash);
     uint8_t autodin_cumulative_tape_buffer_720bytes[720];
     autodin_cumulative_permutation_inscribe_tape_label(&autodin_cumulative_engine, autodin_cumulative_tape_buffer_720bytes);
+
+    autodin_cumulative_telemetry_snapshot_t autodin_telemetry_snapshot;
+    autodin_cumulative_telemetry_capture(&autodin_cumulative_engine, &autodin_telemetry_snapshot);
+    char autodin_telemetry_display_buffer[1024];
+    autodin_cumulative_telemetry_format_display(&autodin_telemetry_snapshot, autodin_telemetry_display_buffer, sizeof(autodin_telemetry_display_buffer));
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
