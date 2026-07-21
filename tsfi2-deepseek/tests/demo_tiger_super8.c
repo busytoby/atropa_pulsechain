@@ -50,6 +50,7 @@
 #include "tsfi_parc_tape_catalog.h"
 #include "tsfi_autodin_tape_proof.h"
 #include "tsfi_iso_transpiler.h"
+#include "tsfi_parc_tape_trunk.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -968,6 +969,11 @@ int main() {
     // AI System Isomorphism Transpiler Equivalence Check
     int iso_equiv = tsfi_iso_validate_equivalence("SCSI WRITE 0x20 32");
     printf("[INFO] Yul Isomorphism Transpiler Equivalence Check Result: %d\n", iso_equiv);
+
+    // Yul-Compiled Tape Trunk Engine Sequence Check
+    char trunk_vol[7];
+    tsfi_tape_trunk_get_vol_id(0, trunk_vol);
+    printf("[INFO] Yul-Compiled Tape Trunk Engine Head Volume ID: %s\n", trunk_vol);
 
     uint8_t *rgb_out = malloc(WIDTH * HEIGHT * 3);
 
