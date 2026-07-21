@@ -287,7 +287,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_autodin_cumulative_winchester.o \
                   $(OBJ_DIR)/tsfi_autodin_cumulative_contract_resolver.o \
                   $(OBJ_DIR)/tsfi_autodin_cumulative_contract_comprehensive.o \
-                  $(OBJ_DIR)/tsfi_vulkan_guide_engine.o
+                  $(OBJ_DIR)/tsfi_vulkan_guide_engine.o \
+                  $(OBJ_DIR)/tsfi_vulkan_guide_app.o
 
 
 
@@ -1224,6 +1225,9 @@ bin/demo_quantel_synthesizer: tests/demo_quantel_synthesizer.c $(CORE_OBJS) $(OB
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 bin/demo_tiger_super8: tests/demo_tiger_super8.c $(CORE_OBJS) $(OBJ_DIR)/tsfi_paint.o $(OBJ_DIR)/tsfi_dom.o $(VULKAN_PLUGIN_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+bin/tsfi_vulkan_guide: tests/tsfi_vulkan_guide_main.c $(CORE_OBJS) $(OBJ_DIR)/tsfi_paint.o $(OBJ_DIR)/tsfi_dom.o $(VULKAN_PLUGIN_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 bin/test_micro_focus: tests/test_micro_focus.c tests/test_micro_focus_part2.c tests/test_micro_focus_part3.c tests/test_micro_focus_part4.c tests/test_micro_focus_part5.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
