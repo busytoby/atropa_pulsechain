@@ -426,6 +426,9 @@ bin/test_xpl_mariner_hardened: tests/test_xpl_mariner_hardened.c $(CORE_OBJS) $(
 bin/test_xpl_network_stack: tests/test_xpl_network_stack.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_xpl_network_lib: tests/test_xpl_network_lib.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 mariner-audit:
 	bash /home/mariarahel/src/tsfi2/scripts/mariner_audit.sh
 
