@@ -70,6 +70,7 @@ static int yul_get_label_offset(int label_type, int field_id) {
                 case 0: return 640; // label_id ("HDR8")
                 case 1: return 644; // scsi_reg_20 (keycode 32)
                 case 2: return 652; // scsi_reg_1E (keycode 30)
+                case 3: return 670; // crypto_seal (64-bit FNV-1a Hex Seal)
                 default: return 640;
             }
         default: return 0;
@@ -134,10 +135,13 @@ int tsfi_tape_label_yul_format_full_header(
     snprintf((char *)(header_buf + yul_get_label_offset(TAPE_LABEL_HDR7, 3)), 8, "%07d", fy);
     snprintf((char *)(header_buf + yul_get_label_offset(TAPE_LABEL_HDR7, 4)), 8, "%07d", fz);
 
-    // 9. HDR8 Label (Offset 640..719) - WinchesterMQ SCSI Register State Map
+    // 9. HDR8 Label (Offset 640..719) - WinchesterMQ SCSI Register State Map & Seal Slot
     memcpy(header_buf + yul_get_label_offset(TAPE_LABEL_HDR8, 0), "HDR8", 4);
     snprintf((char *)(header_buf + yul_get_label_offset(TAPE_LABEL_HDR8, 1)), 8, "%07d", keycode_32);
     snprintf((char *)(header_buf + yul_get_label_offset(TAPE_LABEL_HDR8, 2)), 8, "%07d", keycode_30);
+
+    // Apply Cryptographic FNV-1a Integrity Seal across entire header block sequence
+    tsfi_tape_label_apply_seal(header_buf);
 
     return 0;
 }
@@ -221,6 +225,36 @@ int tsfi_tape_label_yul_get_scsi_map(const uint8_t *header_buf, uint8_t *kc_32, 
     return 0;
 }
 
+uint64_t tsfi_tape_label_compute_fnv1a(const uint8_t *data, size_t len) {
+    if (!data) return 0;
+    uint64_t hash = 0xCBF29CE484222325ULL;
+    for (size_t i = 0; i < len; i++) {
+        hash ^= data[i];
+        hash *= 0x100000001B3ULL;
+    }
+    return hash;
+}
+
+int tsfi_tape_label_apply_seal(uint8_t *header_buf) {
+    if (!header_buf) return -1;
+    // Compute checksum over the first 640 bytes (VOL1 + HDR1..HDR7)
+    uint64_t hash = tsfi_tape_label_compute_fnv1a(header_buf, 640);
+    // Inscribe hex string seal in HDR8 reserved seal field via Yul offset resolver
+    snprintf((char *)(header_buf + yul_get_label_offset(TAPE_LABEL_HDR8, 3)), 17, "%016llX", (unsigned long long)hash);
+    return 0;
+}
+
+int tsfi_tape_label_verify_seal(const uint8_t *header_buf) {
+    if (!header_buf) return -1;
+    uint64_t computed_hash = tsfi_tape_label_compute_fnv1a(header_buf, 640);
+    char seal_str[17] = {0};
+    memcpy(seal_str, header_buf + yul_get_label_offset(TAPE_LABEL_HDR8, 3), 16);
+    unsigned long long stored_hash = 0;
+    if (sscanf(seal_str, "%llX", &stored_hash) != 1) return -2;
+    if ((uint64_t)stored_hash != computed_hash) return -3; // Integrity Seal Broken
+    return 0; // Seal Intact
+}
+
 int tsfi_tape_label_yul_check_governance(const uint8_t *header_buf, uint8_t required_clearance) {
     int val_res = tsfi_tape_label_yul_validate_sequence(header_buf);
     if (val_res != 0) return val_res;
@@ -238,6 +272,10 @@ int tsfi_tape_label_yul_check_governance(const uint8_t *header_buf, uint8_t requ
 
     if (memcmp(header_buf + yul_get_label_offset(TAPE_LABEL_VOL1, 2), "AUNCIENT_ZMM01", 14) != 0) {
         return -15; // Access Denied: Provenance Hash Mismatch
+    }
+
+    if (tsfi_tape_label_verify_seal(header_buf) != 0) {
+        return -16; // Access Denied: Tape Integrity Seal Broken
     }
 
     return 0;
