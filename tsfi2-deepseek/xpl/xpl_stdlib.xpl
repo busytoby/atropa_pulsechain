@@ -1,6 +1,6 @@
 /* Auncient XPL Standard Library and System Interface (xpl_stdlib.xpl) */
 
-/* 1. Standard Virtual Register Constants */
+/* 1. Standard Register Constants */
 DECLARE PSG_BASE        LITERALLY '61696'; /* 0xF100 */
 DECLARE VCE_BASE        LITERALLY '62208'; /* 0xF300 */
 DECLARE VRAM_BASE       LITERALLY '62464'; /* 0xF400 */

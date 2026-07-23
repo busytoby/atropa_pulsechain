@@ -35,12 +35,12 @@ int main() {
     assert(result == 30);
     printf("[XPL] FP_MUL: Resolved fixed-point product: %d\n", result);
 
-    // 4. Test GET_SPRITE_VRAM_OFFSET
-    printf("\n--- Test Case 3: Sprite VRAM Offsets ---\n");
+    // 4. Test GET_SPRITE_VRAM_ADDR
+    printf("\n--- Test Case 3: Sprite VRAM Addresses ---\n");
     int sprite_idx = 2;
-    int expected_offset = REG_VRAM_SPRITES + (sprite_idx * 256);
-    assert(expected_offset == 62976); // 0xF600
-    printf("[XPL] GET_SPRITE_VRAM_OFFSET: Resolved sprite 2 index to %d (0xF600).\n", expected_offset);
+    int expected_addr = REG_VRAM_SPRITES + (sprite_idx * 256);
+    assert(expected_addr == 62976); // 0xF600
+    printf("[XPL] GET_SPRITE_VRAM_ADDR: Resolved sprite 2 index to %d (0xF600).\n", expected_addr);
 
     // 5. Test GET_INTERRUPT_HANDLER: Read Vector 1 (VBlank) handler
     printf("\n--- Test Case 4: Interrupt Vector Handler Getters ---\n");

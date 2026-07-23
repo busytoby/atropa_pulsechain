@@ -6,7 +6,7 @@ WILF_CHROMATIC_BOUND: PROCEDURE(MATRIX_ADDR, NODES) FIXED;
     DECLARE (MATRIX_ADDR, NODES, I, J, ITER) FIXED;
     DECLARE (EIGEN_VAL, SUM) FIXED;
     
-    /* Vectors stored in scratch memory offsets starting at 0xF900 */
+    /* Vectors stored in scratch memory base starting at 0xF900 */
     DECLARE V_BASE LITERALLY '63744'; /* 0xF900 */
     
     /* Initialize test vector with 1s */

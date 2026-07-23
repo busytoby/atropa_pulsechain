@@ -19,12 +19,12 @@ FP_MUL: PROCEDURE(X, Y, SCALE) FIXED;
     RETURN (X * Y) / SCALE;
 END FP_MUL;
 
-/* 3. Sprite VRAM Offset Calculator */
-GET_SPRITE_VRAM_OFFSET: PROCEDURE(SPRITE_IDX) FIXED;
+/* 3. Sprite VRAM Address Calculator */
+GET_SPRITE_VRAM_ADDR: PROCEDURE(SPRITE_IDX) FIXED;
     DECLARE SPRITE_IDX FIXED;
-    /* Calculates memory address offset for standard sprite */
+    /* Calculates memory address base for standard sprite */
     RETURN VRAM_SPRITES + (SPRITE_IDX * SPRITE_SIZE);
-END GET_SPRITE_VRAM_OFFSET;
+END GET_SPRITE_VRAM_ADDR;
 
 /* 4. Reserved Interrupt Vector Mapper */
 /* Vector 0: Boot, Vector 1: VBlank, Vector 2: HBlank, Vector 3: SCSI */

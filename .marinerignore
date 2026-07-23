@@ -1,0 +1,16 @@
+# Project Mariner: Phase 1 Ignore List for atropa_pulsechain
+# Exclude legacy codebase components and Solidity source contracts from strict compliance scans
+
+solidity
+tsfi2-deepseek/src
+tsfi2-deepseek/inc
+tsfi2-deepseek/tests
+tsfi2-deepseek/tools
+tsfi2-deepseek/firmware
+tsfi2-deepseek/assets
+tsfi2-deepseek/bin
+tsfi2-deepseek/obj
+tsfi2-deepseek/.yul_cache
+node_modules
+tmp
+.git

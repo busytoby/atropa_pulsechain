@@ -1,6 +1,6 @@
 /* Runge-Kutta 4th Order and Coupled Transistor Solvers in XPL */
 
-DECLARE VRAM_BASE LITERALLY '62464'; /* 0xF400 - Vulkan Uniform Buffer offset */
+DECLARE VRAM_BASE LITERALLY '62464'; /* 0xF400 - Vulkan Uniform Buffer base */
 
 /* 1. Runge-Kutta 4th Order (RK4) Step Solver */
 /* Solves dy/dt = -3 * y (transistor decay) */

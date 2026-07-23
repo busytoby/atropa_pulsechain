@@ -23,13 +23,13 @@ SOUTHWORTH_ODE: PROCEDURE(Y_START, DT, STEPS) FIXED;
 END SOUTHWORTH_ODE;
 
 /* 2. Southworth Autocorrelation Frequency Estimator */
-/* Computes autocorrelation offset sum to evaluate signal frequency */
-SOUTHWORTH_CORR: PROCEDURE(BUF_ADDR, LENGTH, OFFSET) FIXED;
-    DECLARE (BUF_ADDR, LENGTH, OFFSET, I, SUM) FIXED;
+/* Computes autocorrelation gap sum to evaluate signal frequency */
+SOUTHWORTH_CORR: PROCEDURE(BUF_ADDR, LENGTH, GAP) FIXED;
+    DECLARE (BUF_ADDR, LENGTH, GAP, I, SUM) FIXED;
     SUM = 0;
     I = 0;
-    DO WHILE I < (LENGTH - OFFSET);
-        SUM = SUM + (BYTE(BUF_ADDR + I) * BYTE(BUF_ADDR + I + OFFSET));
+    DO WHILE I < (LENGTH - GAP);
+        SUM = SUM + (BYTE(BUF_ADDR + I) * BYTE(BUF_ADDR + I + GAP));
         I = I + 1;
     END;
     RETURN SUM;
