@@ -36,6 +36,19 @@ layout(std430, binding = 3) writeonly buffer OutputBuffer {
     Vertex vertices[];
 };
 
+// Auncient HuC Register Mapping
+layout(std430, binding = 4) readonly buffer HuCRegisters {
+    uint hucRegs[]; // 65536 bytes packed into 16384 uints
+};
+
+// Helper function to peek virtual HuC registers in the shader
+uint peekHuC(uint addr) {
+    uint wordIdx = addr / 4;
+    uint byteIdx = addr % 4;
+    uint word = hucRegs[wordIdx];
+    return (word >> (byteIdx * 8)) & 0xFF;
+}
+
 // 19D Lissajous LUT Mapping Function
 uint getLissajousLUTIndex(uint gID, float phaseOffset, uint manifoldSize) {
     float fx = regs.channelFreq * 0.001;
@@ -142,12 +155,17 @@ void main() {
         pos.xyz += normal * furFluffiness;
     }
 
-    // 7. Synthesis of composite texture color using SD weights
+    // 7. Synthesis of composite texture color using VCE registers
+    uint vce_r = peekHuC(0xF300);
+    uint vce_g = peekHuC(0xF301);
+    uint vce_b = peekHuC(0xF302);
+    
+    vec4 hucColor = vec4(float(vce_r) / 255.0, float(vce_g) / 255.0, float(vce_b) / 255.0, 1.0);
     vec4 color;
     if (gID % 2 == 0) {
-        color = vec4(0.06, 0.72 * (1.0 - furFluffiness * 0.3), 0.50, 0.8);
+        color = vec4(hucColor.r * 0.8, hucColor.g * (1.0 - furFluffiness * 0.3), hucColor.b * 0.9, 0.8);
     } else {
-        color = vec4(0.93, 0.26 * (1.0 - furFluffiness * 0.3), 0.26 * (1.0 - furFluffiness * 0.3), 0.8);
+        color = vec4(hucColor.r, hucColor.g * (1.0 - furFluffiness * 0.3), hucColor.b * (1.0 - furFluffiness * 0.3), 0.8);
     }
 
     vertices[gID].position = pos;

@@ -96,6 +96,11 @@ DEFINE_MAPPED_STRUCT(VulkanSystem,
     VkDeviceMemory        compute_target_memory;
     VkImageView           compute_target_view;
 
+    // --- Auncient HuC Architecture ---
+    uint8_t               huc_registers[0x10000];
+    VkBuffer              huc_registers_buffer;
+    VkDeviceMemory        huc_registers_memory;
+
     struct wl_data_device_manager *data_device_manager;
     struct wl_data_device *data_device;
     char *clipboard_buffer;

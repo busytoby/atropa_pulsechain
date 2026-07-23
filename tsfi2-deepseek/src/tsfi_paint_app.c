@@ -65,6 +65,9 @@ static float g_intent_w_gemini = 0.2f;
 static int g_prev_mouse_x = -1;
 static int g_prev_mouse_y = -1;
 
+static bool g_huc_demo_active = false;
+static uint32_t g_huc_demo_frame = 0;
+
 static void handle_sigint(int sig) {
     (void)sig;
     g_force_quit = true;
@@ -265,6 +268,31 @@ static void load_mainframe_dag_template(void) {
     }
 }
 
+static uint8_t g_huc_virtual_registers[0x10000] = {0};
+
+static uint8_t huc_peek(uint16_t addr) {
+    return g_huc_virtual_registers[addr];
+}
+
+static void huc_poke(uint16_t addr, uint8_t value) {
+    g_huc_virtual_registers[addr] = value;
+    
+    // Side effect: VCE color registers (0xF300 - 0xF302) modulate brush color
+    if (addr >= 0xF300 && addr <= 0xF302) {
+        uint8_t r = g_huc_virtual_registers[0xF300];
+        uint8_t g = g_huc_virtual_registers[0xF301];
+        uint8_t b = g_huc_virtual_registers[0xF302];
+        g_brush_color = 0xFF000000 | (r << 16) | (g << 8) | b;
+    }
+    
+    // Side effect: PSG Global Volume modulates brush radius
+    if (addr == 0xF101) {
+        g_brush_radius = value;
+        if (g_brush_radius < 1) g_brush_radius = 1;
+        if (g_brush_radius > 100) g_brush_radius = 100;
+    }
+}
+
 static void draw_toolbox(uint32_t *px, int w, int h) {
     // Draw sidebar panel background
     for (int y = 0; y < h; y++) {
@@ -299,21 +327,22 @@ static void draw_toolbox(uint32_t *px, int w, int h) {
     draw_text_overlay(px, w, h, 15, 260, "[V] Voxelize Canvas", 0xFFFFD700);
     draw_text_overlay(px, w, h, 15, 275, "[M] Load Mainframe DAG", 0xFFFFD700);
     draw_text_overlay(px, w, h, 15, 290, "[R] Toggle Auto-Rotate", g_auto_rotate ? 0xFF00FF00 : 0xFFCCCCCC);
+    draw_text_overlay(px, w, h, 15, 305, "[H] Star Soldier Demo", g_huc_demo_active ? 0xFF00FF00 : 0xFFFFD700);
     
     char val_buf[64];
     snprintf(val_buf, sizeof(val_buf), "[E/D] Energy Pour: %.1f", g_water_tank_energy);
-    draw_text_overlay(px, w, h, 15, 310, val_buf, 0xFFCCCCCC);
+    draw_text_overlay(px, w, h, 15, 325, val_buf, 0xFFCCCCCC);
 
     snprintf(val_buf, sizeof(val_buf), "[T/G] Target Depth: %d", g_water_tank_depth);
-    draw_text_overlay(px, w, h, 15, 330, val_buf, 0xFFCCCCCC);
+    draw_text_overlay(px, w, h, 15, 345, val_buf, 0xFFCCCCCC);
 
-    draw_text_overlay(px, w, h, 10, 360, "Intent Norm Weights", 0xFFFFFFFF);
+    draw_text_overlay(px, w, h, 10, 370, "Intent Norm Weights", 0xFFFFFFFF);
     snprintf(val_buf, sizeof(val_buf), "User (U/I): %.2f", g_intent_w_user);
-    draw_text_overlay(px, w, h, 15, 380, val_buf, 0xFFCCCCCC);
+    draw_text_overlay(px, w, h, 15, 390, val_buf, 0xFFCCCCCC);
     snprintf(val_buf, sizeof(val_buf), "DeepSeek (J/K): %.2f", g_intent_w_deepseek);
-    draw_text_overlay(px, w, h, 15, 400, val_buf, 0xFFCCCCCC);
+    draw_text_overlay(px, w, h, 15, 410, val_buf, 0xFFCCCCCC);
     snprintf(val_buf, sizeof(val_buf), "Gemini (O/P): %.2f", g_intent_w_gemini);
-    draw_text_overlay(px, w, h, 15, 420, val_buf, 0xFFCCCCCC);
+    draw_text_overlay(px, w, h, 15, 430, val_buf, 0xFFCCCCCC);
 
     // Display brush size and pressure status
     snprintf(val_buf, sizeof(val_buf), "Brush Radius: %d (UP/DN)", g_brush_radius);
@@ -328,6 +357,23 @@ static void draw_toolbox(uint32_t *px, int w, int h) {
             px[(515 + r) * w + c] = g_brush_color;
         }
     }
+
+    // Auncient HuC registers HUD overlay
+    draw_text_overlay(px, w, h, 10, 545, "Auncient HuC Status:", 0xFFFFD700);
+    snprintf(val_buf, sizeof(val_buf), "PSG Vol (F101): %d", huc_peek(0xF101));
+    draw_text_overlay(px, w, h, 15, 565, val_buf, 0xFFCCCCCC);
+    snprintf(val_buf, sizeof(val_buf), "VCE R (F300): %d", huc_peek(0xF300));
+    draw_text_overlay(px, w, h, 15, 580, val_buf, 0xFFCCCCCC);
+    snprintf(val_buf, sizeof(val_buf), "VCE G (F301): %d", huc_peek(0xF301));
+    draw_text_overlay(px, w, h, 15, 595, val_buf, 0xFFCCCCCC);
+    snprintf(val_buf, sizeof(val_buf), "VCE B (F302): %d", huc_peek(0xF302));
+    draw_text_overlay(px, w, h, 15, 610, val_buf, 0xFFCCCCCC);
+    snprintf(val_buf, sizeof(val_buf), "RTC Hour (F500): %d", huc_peek(0xF500));
+    draw_text_overlay(px, w, h, 15, 625, val_buf, 0xFFCCCCCC);
+    snprintf(val_buf, sizeof(val_buf), "ADPCM Aud (FA00): %d", huc_peek(0xFA00));
+    draw_text_overlay(px, w, h, 15, 640, val_buf, 0xFFCCCCCC);
+    snprintf(val_buf, sizeof(val_buf), "SRAM Score (F600): %d", huc_peek(0xF600));
+    draw_text_overlay(px, w, h, 15, 655, val_buf, 0xFFCCCCCC);
 }
 
 static void application_resize_hook(void *data, int32_t width, int32_t height) {
@@ -356,6 +402,11 @@ static void application_key_hook(void *data, uint32_t serial, uint32_t time, uin
     // Toggle Auto-Rotate
     if (key == KEY_R) {
         g_auto_rotate = !g_auto_rotate;
+    }
+
+    // Toggle Hudson Demo
+    if (key == KEY_H) {
+        g_huc_demo_active = !g_huc_demo_active;
     }
 
     // Load Mainframe JCL Job-Dataset dependency DAG
@@ -405,14 +456,16 @@ static void application_key_hook(void *data, uint32_t serial, uint32_t time, uin
     if (key == KEY_O) g_intent_w_gemini += 0.05f;
     if (key == KEY_P) { g_intent_w_gemini -= 0.05f; if (g_intent_w_gemini < 0.0f) g_intent_w_gemini = 0.0f; }
 
-    // Brush radius control
+    // Brush radius control via HuC PSG Volume register
     if (key == KEY_UP) {
-        g_brush_radius += 2;
-        if (g_brush_radius > 100) g_brush_radius = 100;
+        int next_vol = huc_peek(0xF101) + 2;
+        if (next_vol > 100) next_vol = 100;
+        huc_poke(0xF101, next_vol);
     }
     if (key == KEY_DOWN) {
-        g_brush_radius -= 2;
-        if (g_brush_radius < 1) g_brush_radius = 1;
+        int next_vol = huc_peek(0xF101) - 2;
+        if (next_vol < 1) next_vol = 1;
+        huc_poke(0xF101, next_vol);
     }
 
     // Clear Canvas
@@ -420,13 +473,17 @@ static void application_key_hook(void *data, uint32_t serial, uint32_t time, uin
         memset(g_canvas, 0, 1024 * 768 * sizeof(uint32_t));
     }
 
-    // Cycle brush color
+    // Cycle brush color via HuC VCE registers
     if (key == KEY_C) {
-        if (g_brush_color == 0xFF00FF00) g_brush_color = 0xFFFF0000; // Red
-        else if (g_brush_color == 0xFFFF0000) g_brush_color = 0xFF0000FF; // Blue
-        else if (g_brush_color == 0xFF0000FF) g_brush_color = 0xFFFFFF00; // Yellow
-        else if (g_brush_color == 0xFFFFFF00) g_brush_color = 0xFFFFFFFF; // White
-        else g_brush_color = 0xFF00FF00;
+        uint32_t next_c = 0xFF00FF00;
+        if (g_brush_color == 0xFF00FF00) next_c = 0xFFFF0000; // Red
+        else if (g_brush_color == 0xFFFF0000) next_c = 0xFF0000FF; // Blue
+        else if (g_brush_color == 0xFF0000FF) next_c = 0xFFFFFF00; // Yellow
+        else if (g_brush_color == 0xFFFFFF00) next_c = 0xFFFFFFFF; // White
+        
+        huc_poke(0xF300, (next_c >> 16) & 0xFF);
+        huc_poke(0xF301, (next_c >> 8) & 0xFF);
+        huc_poke(0xF302, next_c & 0xFF);
     }
 
     g_dirty = true;
@@ -441,6 +498,12 @@ int main(int argc, char **argv) {
     void *g_registry = lau_memalign_wired(512, 1024);
     tsfi_font_registry_init(g_registry);
     tsfi_input_init();
+
+    // Initialize default Auncient HuC register values
+    huc_poke(0xF101, g_brush_radius);
+    huc_poke(0xF300, (g_brush_color >> 16) & 0xFF);
+    huc_poke(0xF301, (g_brush_color >> 8) & 0xFF);
+    huc_poke(0xF302, g_brush_color & 0xFF);
 
     // Create wayland/vulkan system
     VulkanSystem *s = create_vulkan_system();
@@ -543,14 +606,93 @@ int main(int argc, char **argv) {
             g_dirty = true;
         }
 
+        if (g_huc_demo_active) {
+            g_huc_demo_frame++;
+            
+            // 1. HuC3 RTC Simulation: Increment hours every 60 frames (1 minute simulated)
+            uint8_t current_hours = huc_peek(0xF500);
+            if (g_huc_demo_frame % 60 == 0) {
+                current_hours = (current_hours + 1) % 24;
+                huc_poke(0xF500, current_hours);
+            }
+            // Day/Night brightness multiplier derived from hours (noon = 1.0, midnight = 0.2)
+            float day_coef = 1.0f - (float)abs(12 - (int)current_hours) / 15.0f;
+            if (day_coef < 0.2f) day_coef = 0.2f;
+            
+            // 2. HuC6260 VCE: Cycle color registries scaled by Day/Night RTC coefficient
+            uint8_t r = (uint8_t)((128 + sinf(g_huc_demo_frame * 0.05f) * 127) * day_coef);
+            uint8_t g = (uint8_t)((128 + cosf(g_huc_demo_frame * 0.03f) * 127) * day_coef);
+            uint8_t b = (uint8_t)((128 + sinf(g_huc_demo_frame * 0.02f) * 127) * day_coef);
+            huc_poke(0xF300, r);
+            huc_poke(0xF301, g);
+            huc_poke(0xF302, b);
+            
+            // 3. HuC6230 ADPCM SoundBox: Trigger audio channel sound index when ship changes direction
+            float ship_angle_vel = cosf(g_huc_demo_frame * 0.04f);
+            if (fabs(ship_angle_vel) < 0.05f) {
+                huc_poke(0xFA00, 1); // Poke voice stream index 1 (thruster burst alert)
+            } else {
+                huc_poke(0xFA00, 0); // Clear audio interrupt
+            }
+            
+            // 4. HuC6201 Backup SRAM: Save high-score updates to persistent slots
+            if (g_huc_demo_frame % 120 == 0) {
+                uint8_t current_score = huc_peek(0xF600);
+                huc_poke(0xF600, current_score + 10);
+            }
+            
+            // 5. HuC6273 PC-FX: Transform 3D viewport rotation using emulated hardware parameters
+            huc_poke(0xF208, (uint8_t)(g_huc_demo_frame % 256));
+            g_rotation_t = (float)huc_peek(0xF208) / 256.0f;
+
+            // 6. HuC6271 PC-FX: Poke mock MJPEG compressed Gel data blocks
+            huc_poke(0xF700, (uint8_t)(g_huc_demo_frame % 256));
+            huc_poke(0xF701, (uint8_t)((g_huc_demo_frame / 2) % 256));
+            
+            // Draw scrolling stars
+            memset(g_canvas, 0, 1024 * 768 * sizeof(uint32_t));
+            for (int s_idx = 0; s_idx < 100; s_idx++) {
+                int star_x = (s_idx * 17) % 1024;
+                int star_y = (s_idx * 23 + g_huc_demo_frame * (1 + (s_idx % 3))) % 768;
+                g_canvas[star_y * 1024 + star_x] = 0xFFFFFFFF;
+            }
+            
+            // Draw player spaceship (animated left-right)
+            int ship_x = 512 + (int)(sinf(g_huc_demo_frame * 0.04f) * 200);
+            int ship_y = 600;
+            for (int sy_off = -10; sy_off <= 10; sy_off++) {
+                for (int sx_off = -10; sx_off <= 10; sx_off++) {
+                    if (abs(sx_off) + abs(sy_off) < 12) {
+                        g_canvas[(ship_y + sy_off) * 1024 + (ship_x + sx_off)] = g_brush_color;
+                    }
+                }
+            }
+            
+            g_dirty = true;
+        }
+
         if (g_dirty || true) {
+            // Sync virtual registers to Vulkan buffer
+            if (s->huc_registers_buffer && s->huc_registers_memory) {
+                void *data = NULL;
+                s->vk->vkMapMemory(s->vk->device, s->huc_registers_memory, 0, sizeof(g_huc_virtual_registers), 0, &data);
+                memcpy(data, g_huc_virtual_registers, sizeof(g_huc_virtual_registers));
+                s->vk->vkUnmapMemory(s->vk->device, s->huc_registers_memory);
+            }
+
             // Apply trilateral intent modifications to the SVDAG
             tsfi_svdag_calculate_intent(g_dag_flower, g_intent_w_user, g_intent_w_deepseek, g_intent_w_gemini);
             tsfi_svdag_calculate_intent(g_dag_bear, g_intent_w_user, g_intent_w_deepseek, g_intent_w_gemini);
 
             // Render the path-traced SVDAG viewport
+            uint8_t gel_val1 = huc_peek(0xF700);
+            uint8_t gel_val2 = huc_peek(0xF701);
             for (int i = 0; i < 400 * 400; i++) {
-                g_3d_viewport[i] = 0xFF14020B; // Deep dark purple background for ray tracer
+                int vx = i % 400;
+                int vy = i / 400;
+                // Decompressed block pixel pattern (8x8 cells simulation)
+                uint8_t block_pixel = (uint8_t)(((vx / 8) * gel_val1 + (vy / 8) * gel_val2) % 256);
+                g_3d_viewport[i] = 0xFF000000 | (block_pixel << 16) | ((block_pixel / 2) << 8) | 0x30;
                 g_3d_depth[i] = 10.0f; // Reset depth
             }
             tsfi_svdag_path_trace(g_3d_viewport, g_3d_depth, g_dag_flower, g_dag_bear, 400, 400, g_rotation_t, 0.5f, 0.5f, 0.5f);

@@ -295,7 +295,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_autodin_cumulative_contract_resolver.o \
                   $(OBJ_DIR)/tsfi_autodin_cumulative_contract_comprehensive.o \
                   $(OBJ_DIR)/tsfi_vulkan_guide_engine.o \
-                  $(OBJ_DIR)/tsfi_vulkan_guide_app.o
+                  $(OBJ_DIR)/tsfi_vulkan_guide_app.o \
+                  $(OBJ_DIR)/tsfi_parc_dahm_lock.o
 
 
 
@@ -327,6 +328,12 @@ bin/test_genesis_standalone: tests/test_genesis_standard_cell.c $(CORE_OBJS) $(O
 	$(CC) $(CFLAGS) -Isrc/firmware -o $@ $^ $(LDFLAGS)
 
 bin/test_zmm_dysnomia: tests/test_zmm_dysnomia.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+bin/test_zmm_huc: tests/test_zmm_huc.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+bin/test_zmm_huc_audio: tests/test_zmm_huc_audio.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 bin/benchmark_neuro_backprop: tests/benchmark_neuro_backprop.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)

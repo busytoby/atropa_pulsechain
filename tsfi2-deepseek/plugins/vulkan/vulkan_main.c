@@ -175,6 +175,53 @@ VulkanSystem* create_vulkan_system() {
         printf("[TSFI_VULKAN] init_swapchain status: %s, swapchain ptr: %p\n", swap_ok ? "SUCCESS" : "FAILED", (void*)s->vk->swapchain);
     }
 
+    static bool init_huc_vulkan_support(VulkanSystem *s) {
+        if (!s || !s->vk || !s->vk->device) return false;
+        
+        VkBufferCreateInfo bufferInfo = {
+            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+            .pNext = NULL,
+            .size = sizeof(s->huc_registers),
+            .usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            .sharingMode = VK_SHARING_MODE_EXCLUSIVE
+        };
+        
+        if (s->vk->vkCreateBuffer(s->vk->device, &bufferInfo, NULL, &s->huc_registers_buffer) != VK_SUCCESS) {
+            return false;
+        }
+        
+        VkMemoryRequirements memReqs;
+        s->vk->vkGetBufferMemoryRequirements(s->vk->device, s->huc_registers_buffer, &memReqs);
+        
+        VkMemoryAllocateInfo allocInfo = {
+            .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+            .pNext = NULL,
+            .allocationSize = memReqs.size
+        };
+        
+        bool found = false;
+        for (uint32_t i = 0; i < s->vk->memory_properties.memoryTypeCount; i++) {
+            if ((memReqs.memoryTypeBits & (1 << i)) && 
+                (s->vk->memory_properties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) &&
+                (s->vk->memory_properties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
+                allocInfo.memoryTypeIndex = i;
+                found = true;
+                break;
+            }
+        }
+        
+        if (!found) return false;
+        
+        if (s->vk->vkAllocateMemory(s->vk->device, &allocInfo, NULL, &s->huc_registers_memory) != VK_SUCCESS) {
+            return false;
+        }
+        
+        s->vk->vkBindBufferMemory(s->vk->device, s->huc_registers_buffer, s->huc_registers_memory, 0);
+        return true;
+    }
+
+    init_huc_vulkan_support(s);
+
     s->running = true;
     set_vulkan_system(s);
 
@@ -187,6 +234,14 @@ VulkanSystem* create_vulkan_system() {
 void destroy_vulkan_system(VulkanSystem *s) {
     if (!s) return;
     if (get_vulkan_system() == s) set_vulkan_system(NULL);
+    
+    if (s->huc_registers_buffer) {
+        s->vk->vkDestroyBuffer(s->vk->device, s->huc_registers_buffer, NULL);
+    }
+    if (s->huc_registers_memory) {
+        s->vk->vkFreeMemory(s->vk->device, s->huc_registers_memory, NULL);
+    }
+
     if (s->vk) cleanup_vulkan(s->vk);
     if (s->paint_buffer) destroy_staging_buffer(s->paint_buffer);
     

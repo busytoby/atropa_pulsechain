@@ -387,7 +387,8 @@ const DysnomiaContract g_dysnomia_system[] = {
     { "cheon",        "../solidity/dysnomia/domain/tang/02_cheon.sol",    "0xcF54035Be7F6eC2664FEeaAcfbA4470BbB23E0A0" },
     { "cabsMarketMachine", "../solidity/dysnomia/domain/sky/CABSMarketMachine.sol", "0x74ef2B06A1D2035C33244A4a263FF00B84504865" },
     { "zmachine",       "../solidity/bin/zmachine.yul",             "5" },
-    { "zmachineParser", "../solidity/bin/zmachineParser.yul",       "6" }
+    { "zmachineParser", "../solidity/bin/zmachineParser.yul",       "6" },
+    { "hucSystem",      "../solidity/bin/hucSystem.yul",            "7" }
 };
 
 const size_t g_dysnomia_system_count = sizeof(g_dysnomia_system) / sizeof(g_dysnomia_system[0]);
