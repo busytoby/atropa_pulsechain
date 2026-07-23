@@ -408,6 +408,9 @@ bin/test_xpl_benchmarks: tests/test_xpl_benchmarks.c $(CORE_OBJS) $(OBJ_DIR)/vul
 bin/test_xpl_coaxial_rk4: tests/test_xpl_coaxial_rk4.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_zmm_huc_hybrid_demo: tests/test_zmm_huc_hybrid_demo.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 bin/benchmark_neuro_backprop: tests/benchmark_neuro_backprop.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
