@@ -369,6 +369,9 @@ bin/test_xpl_accumulator: tests/test_xpl_accumulator.c $(CORE_OBJS) $(OBJ_DIR)/v
 bin/test_xpl_optimizations_exhaustive: tests/test_xpl_optimizations_exhaustive.c | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_xpl_tws_final: tests/test_xpl_tws_final.c | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 bin/benchmark_neuro_backprop: tests/benchmark_neuro_backprop.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
