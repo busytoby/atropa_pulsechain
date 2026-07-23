@@ -393,6 +393,9 @@ bin/test_xpl_bemer: tests/test_xpl_bemer.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 bin/test_xpl_southworth: tests/test_xpl_southworth.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_xpl_runge_kutta: tests/test_xpl_runge_kutta.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 bin/benchmark_neuro_backprop: tests/benchmark_neuro_backprop.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
