@@ -336,6 +336,9 @@ bin/test_zmm_huc: tests/test_zmm_huc.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $
 bin/test_zmm_huc_audio: tests/test_zmm_huc_audio.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_xpl_vce: tests/test_xpl_vce.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 bin/benchmark_neuro_backprop: tests/benchmark_neuro_backprop.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
