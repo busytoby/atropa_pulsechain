@@ -649,7 +649,7 @@ bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, 
                 uint8_t *initcode = NULL;
                 size_t initcode_len = length.d[0];
                 if (initcode_len > 0) {
-                    initcode = malloc(initcode_len);
+                    initcode = lau_malloc(initcode_len);
                     if (initcode) {
                         for (size_t i = 0; i < initcode_len; i++) {
                             uint64_t src = offset.d[0] + i;
@@ -662,7 +662,7 @@ bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, 
 
                 u256_t ret_addr = {{0}};
                 if (initcode && initcode_len > 0) {
-                    YulEvmContext *nested_ctx = calloc(1, sizeof(YulEvmContext));
+                    YulEvmContext *nested_ctx = lau_calloc(1, sizeof(YulEvmContext));
                     if (nested_ctx) {
                         nested_ctx->self_address = new_address;
                         nested_ctx->caller_address.d[0] = ctx->self_address;
@@ -677,7 +677,7 @@ bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, 
                             if (g_cached_contracts_count < MAX_CACHED_CONTRACTS) {
                                 CachedContract *c = &g_cached_contracts[g_cached_contracts_count++];
                                 snprintf(c->name, sizeof(c->name), "dynamic_%lx", new_address);
-                                c->bytecode = malloc(nested_ctx->return_size);
+                                c->bytecode = lau_malloc(nested_ctx->return_size);
                                 memcpy(c->bytecode, nested_ctx->return_data, nested_ctx->return_size);
                                 c->size = nested_ctx->return_size;
                                 c->virtual_address = new_address;
@@ -705,9 +705,9 @@ bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, 
                                 }
                             }
                         }
-                        free(nested_ctx);
+                        lau_free(nested_ctx);
                     }
-                    free(initcode);
+                    lau_free(initcode);
                 }
 
                 ctx->stack[ctx->stack_ptr++] = ret_addr;
@@ -724,7 +724,7 @@ bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, 
                 uint8_t *initcode = NULL;
                 size_t initcode_len = length.d[0];
                 if (initcode_len > 0) {
-                    initcode = malloc(initcode_len);
+                    initcode = lau_malloc(initcode_len);
                     if (initcode) {
                         for (size_t i = 0; i < initcode_len; i++) {
                             uint64_t src = offset.d[0] + i;
@@ -737,7 +737,7 @@ bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, 
 
                 u256_t ret_addr = {{0}};
                 if (initcode && initcode_len > 0) {
-                    YulEvmContext *nested_ctx = calloc(1, sizeof(YulEvmContext));
+                    YulEvmContext *nested_ctx = lau_calloc(1, sizeof(YulEvmContext));
                     if (nested_ctx) {
                         nested_ctx->self_address = new_address;
                         nested_ctx->caller_address.d[0] = ctx->self_address;
@@ -752,7 +752,7 @@ bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, 
                             if (g_cached_contracts_count < MAX_CACHED_CONTRACTS) {
                                 CachedContract *c = &g_cached_contracts[g_cached_contracts_count++];
                                 snprintf(c->name, sizeof(c->name), "dynamic_%lx", new_address);
-                                c->bytecode = malloc(nested_ctx->return_size);
+                                c->bytecode = lau_malloc(nested_ctx->return_size);
                                 memcpy(c->bytecode, nested_ctx->return_data, nested_ctx->return_size);
                                 c->size = nested_ctx->return_size;
                                 c->virtual_address = new_address;
@@ -780,9 +780,9 @@ bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, 
                                 }
                             }
                         }
-                        free(nested_ctx);
+                        lau_free(nested_ctx);
                     }
-                    free(initcode);
+                    lau_free(initcode);
                 }
 
                 ctx->stack[ctx->stack_ptr++] = ret_addr;
