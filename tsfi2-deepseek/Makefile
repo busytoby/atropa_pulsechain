@@ -378,6 +378,9 @@ bin/test_xpl_erc20: tests/test_xpl_erc20.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 bin/test_xpl_machine_utils: tests/test_xpl_machine_utils.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_xpl_advanced_utils: tests/test_xpl_advanced_utils.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 bin/benchmark_neuro_backprop: tests/benchmark_neuro_backprop.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
