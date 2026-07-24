@@ -50,6 +50,12 @@ typedef struct {
     char dynamic_members[MAX_MEMBERS][64];
     int64_t dynamic_values[MAX_MEMBERS];
     int member_count;
+
+    // SVDAG State Vector registers (State parameters)
+    int64_t svdag_base;
+    int64_t svdag_signal;
+    int64_t checkpoint_svdag_base;
+    int64_t checkpoint_svdag_signal;
 } vppd_context_t;
 
 // Stack helpers
@@ -66,18 +72,33 @@ static int64_t pop_stack(vppd_stack_t *s) {
     return 0;
 }
 
-static void save_checkpoint(vppd_stack_t *s) {
-    s->checkpoint_top = s->top;
-    memcpy(s->checkpoint_data, s->data, sizeof(int64_t) * s->top);
+// Saves current stack state and SVDAG registers to the checkpoint
+static void save_checkpoint_integrated(vppd_context_t *ctx) {
+    // 1. Stack checkpoint
+    ctx->stack.checkpoint_top = ctx->stack.top;
+    memcpy(ctx->stack.checkpoint_data, ctx->stack.data, sizeof(int64_t) * ctx->stack.top);
+
+    // 2. SVDAG checkpoint
+    ctx->checkpoint_svdag_base = ctx->svdag_base;
+    ctx->checkpoint_svdag_signal = ctx->svdag_signal;
 }
 
-static void rollback_checkpoint(vppd_stack_t *s) {
-    s->top = s->checkpoint_top;
-    memcpy(s->data, s->checkpoint_data, sizeof(int64_t) * s->checkpoint_top);
+// Restores stack state and SVDAG registers to the saved checkpoint
+static void rollback_checkpoint_integrated(vppd_context_t *ctx) {
+    // 1. Stack rollback
+    ctx->stack.top = ctx->stack.checkpoint_top;
+    memcpy(ctx->stack.data, ctx->stack.checkpoint_data, sizeof(int64_t) * ctx->stack.checkpoint_top);
+
+    // 2. SVDAG rollback
+    ctx->svdag_base = ctx->checkpoint_svdag_base;
+    ctx->svdag_signal = ctx->checkpoint_svdag_signal;
 }
 
-static void commit_checkpoint(vppd_stack_t *s) {
-    s->checkpoint_top = s->top;
+// Commits the active stack and SVDAG transitions
+static void commit_checkpoint_integrated(vppd_context_t *ctx) {
+    ctx->stack.checkpoint_top = ctx->stack.top;
+    ctx->checkpoint_svdag_base = ctx->svdag_base;
+    ctx->checkpoint_svdag_signal = ctx->svdag_signal;
 }
 
 // CICS ASCII Terminal interface rendering
@@ -89,6 +110,7 @@ static void render_cics_terminal(const vppd_context_t *ctx) {
     printf("  PLL PHASE ERROR: %.4f\n", ctx->pll_phase_error);
     printf("  SYSTEM CYCLES  : %lu\n", ctx->tsc_cycles);
     printf("  STACK DEPTH    : %d\n", ctx->stack.top);
+    printf("  SVDAG REGISTERS: Base=%ld, Signal=%ld\n", ctx->svdag_base, ctx->svdag_signal);
     
     // Display active spawned tasks
     printf("  SPAWNED TASKS  : %d\n", ctx->task_count);
@@ -148,6 +170,45 @@ bool vppd_abi_entry(vppd_context_t *ctx, vppd_abi_cmd_t cmd, const vppd_packet_t
     return true;
 }
 
+// Interactive CICS Command to load and parse a .pli source task file
+static void cics_load_pli_file(vppd_context_t *ctx, const char *filename) {
+    FILE *f = fopen(filename, "r");
+    if (!f) {
+        printf("Result: Error. Cannot open file %s\n", filename);
+        return;
+    }
+
+    char line[256];
+    int parsed_procedures = 0;
+    printf("Result: Loading and parsing PL/I source file...\n");
+
+    while (fgets(line, sizeof(line), f)) {
+        // Look for PROCEDURE declaration tokens in PL/I
+        if (strstr(line, "PROCEDURE") != NULL) {
+            // Find procedure name
+            char proc_name[64];
+            memset(proc_name, 0, sizeof(proc_name));
+            char *colon = strchr(line, ':');
+            if (colon) {
+                size_t name_len = colon - line;
+                if (name_len > 63) name_len = 63;
+                strncpy(proc_name, line, name_len);
+                // Strip whitespace
+                proc_name[name_len] = '\0';
+                
+                // Add to active task list
+                if (ctx->task_count < MAX_TASKS) {
+                    snprintf(ctx->active_tasks[ctx->task_count++], 160, "PLI_PROC_%s", proc_name);
+                    parsed_procedures++;
+                }
+            }
+        }
+    }
+    fclose(f);
+    ctx->tsc_cycles += (parsed_procedures * 200);
+    printf("Result: Parsed and registered %d PL/I procedures.\n", parsed_procedures);
+}
+
 // Interactive CICS Terminal console loop
 static void run_interactive_mode(vppd_context_t *ctx) {
     char input_line[128];
@@ -179,9 +240,11 @@ static void run_interactive_mode(vppd_context_t *ctx) {
             printf("  route <N>                  - Route a simulated transaction packet with sequence N\n");
             printf("  spawn <name> <clearance>   - Spawn a dynamic contract process task\n");
             printf("  add-member <name> <v> <m>  - Add a dynamic data member with val <v> and signature mask <m>\n");
-            printf("  checkpoint                 - Save stack state checkpoint\n");
-            printf("  rollback                   - Rollback stack to saved checkpoint\n");
-            printf("  commit                     - Commit active stack changes\n");
+            printf("  load-pli <filename>        - Load and parse a PL/I source task file\n");
+            printf("  set-svdag <base> <signal>  - Set SVDAG state vector registers\n");
+            printf("  checkpoint                 - Save stack and SVDAG checkpoints\n");
+            printf("  rollback                   - Rollback stack and SVDAG to saved checkpoint\n");
+            printf("  commit                     - Commit active changes\n");
             printf("  exit                       - Terminate the session\n");
             fflush(stdout);
         } else if (strcmp(input_line, "ping") == 0) {
@@ -193,16 +256,29 @@ static void run_interactive_mode(vppd_context_t *ctx) {
             printf("Result: %s\n", abi_buffer);
             fflush(stdout);
         } else if (strcmp(input_line, "checkpoint") == 0) {
-            save_checkpoint(&(ctx->stack));
+            save_checkpoint_integrated(ctx);
             printf("Result: Checkpoint saved successfully.\n");
             fflush(stdout);
         } else if (strcmp(input_line, "rollback") == 0) {
-            rollback_checkpoint(&(ctx->stack));
+            rollback_checkpoint_integrated(ctx);
             printf("Result: Rollback completed successfully.\n");
             fflush(stdout);
         } else if (strcmp(input_line, "commit") == 0) {
-            commit_checkpoint(&(ctx->stack));
+            commit_checkpoint_integrated(ctx);
             printf("Result: Commit completed successfully.\n");
+            fflush(stdout);
+        } else if (strncmp(input_line, "load-pli ", 9) == 0) {
+            cics_load_pli_file(ctx, input_line + 9);
+            fflush(stdout);
+        } else if (strncmp(input_line, "set-svdag ", 10) == 0) {
+            int64_t b = 0, s = 0;
+            if (sscanf(input_line + 10, "%ld %ld", &b, &s) == 2) {
+                ctx->svdag_base = b;
+                ctx->svdag_signal = s;
+                printf("Result: SVDAG registers updated.\n");
+            } else {
+                printf("Usage: set-svdag <base> <signal>\n");
+            }
             fflush(stdout);
         } else if (strncmp(input_line, "route ", 6) == 0) {
             uint64_t seq = strtoull(input_line + 6, NULL, 10);
@@ -271,6 +347,8 @@ int main(int argc, char **argv) {
     memset(&vppd, 0, sizeof(vppd_context_t));
     vppd.pll_phase_error = 0.002;
     vppd.tsc_cycles = 10000;
+    vppd.svdag_base = 500;
+    vppd.svdag_signal = 1200;
 
     // Check if interactive flag is provided
     if (argc > 1 && (strcmp(argv[1], "--interactive") == 0 || strcmp(argv[1], "-i") == 0)) {
@@ -319,6 +397,22 @@ int main(int argc, char **argv) {
     assert(ok == true);
     assert(strstr(abi_buffer, "packets=1") != NULL);
     printf("   ✓ ABI Response: %s\n", abi_buffer);
+    fflush(stdout);
+
+    // 5. Test Integrated SVDAG Rollback
+    printf("[TEST] Verifying integrated SVDAG rollback...\n");
+    fflush(stdout);
+    save_checkpoint_integrated(&vppd);
+    
+    // Mutate state registers
+    vppd.svdag_base = 9999;
+    vppd.svdag_signal = 8888;
+    
+    // Perform rollback
+    rollback_checkpoint_integrated(&vppd);
+    assert(vppd.svdag_base == 500);
+    assert(vppd.svdag_signal == 1200);
+    printf("   ✓ SVDAG state vector successfully restored to pre-checkpoint parameters.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
