@@ -323,6 +323,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_stack_search.c -o tes
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_similarity_search.c -o tests/test_auncient_similarity_search -lm -lrt
 ./tests/test_auncient_similarity_search
 
+# Compile and run Voodoo SLI Routing
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_voodoo_sli.c -o tests/test_auncient_voodoo_sli -lm -lrt
+./tests/test_auncient_voodoo_sli
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
