@@ -348,6 +348,8 @@ frontend/compiled_yul.json
 /tests/test_auncient_dataplane_pll_integration
 /tests/test_auncient_dataplane_jitter_buffer
 /tests/test_auncient_dataplane_backpressure
+/tests/test_auncient_vpp_dataplane
+
 
 
 
