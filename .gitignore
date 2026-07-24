@@ -175,6 +175,7 @@ libtsfi2.so
 /tests/test_auncient_pli_based_dat
 /tests/test_auncient_pli_controlled
 /tests/test_auncient_pli_translate
+/tests/test_auncient_pli_vfio_driver
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
