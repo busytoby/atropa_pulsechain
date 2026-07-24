@@ -88,6 +88,12 @@ bool auncient_sdk_check_clearance(const sdk_cics_context_t *ctx, uint32_t value)
 bool auncient_sdk_autodin_spin_lock(sdk_cics_context_t *ctx, uint32_t lock_token, char precedence);
 void auncient_sdk_autodin_spin_unlock(sdk_cics_context_t *ctx, uint32_t lock_token);
 
+// .xpl Compiler to .dat.bin stream interface
+bool auncient_sdk_compile_xpl_to_dat_bin(const char *xpl_source_path, const char *dat_bin_dest_path);
+
+// .dat.bin Binary Stream Executor
+bool auncient_sdk_execute_dat_bin(sdk_cics_context_t *ctx, const char *dat_bin_path, uint32_t *results, int max_results);
+
 bool auncient_sdk_alu_execute(sdk_cics_context_t *ctx, uint8_t alu_opcode, uint32_t target_val, const bool *approvals, uint32_t *result_val);
 
 bool auncient_sdk_cics_exec(sdk_cics_context_t *ctx, uint32_t value, const bool *approvals);

@@ -5,11 +5,11 @@
 #include <assert.h>
 
 // -------------------------------------------------------------
-// .xpl to .dat.bin Compiler Tests
+// .xpl to .dat.bin Compiler & Execution Tests
 // -------------------------------------------------------------
 int main(void) {
     printf("=============================================================\n");
-    printf("AUNCIENT .XPL SOURCE COMPILER SUITE\n");
+    printf("AUNCIENT .XPL SOURCE COMPILER & EXECUTION SUITE\n");
     printf("=============================================================\n");
     fflush(stdout);
 
@@ -31,52 +31,45 @@ int main(void) {
     printf("   ✓ Compiler executed successfully.\n");
     fflush(stdout);
 
-    // 2. Read and verify output binary structure
-    FILE *bin = fopen(bin_path, "rb");
-    assert(bin != NULL);
+    // 2. Setup Coaxial CICS execution environment
+    sdk_coaxial_env_t env;
+    ok = auncient_sdk_init_coaxial(&env);
+    assert(ok == true);
 
-    uint32_t signature = 0;
-    size_t read_bytes = fread(&signature, sizeof(uint32_t), 1, bin);
-    assert(read_bytes == 1);
-    assert(signature == 0x58504C00); // "XPL\0"
-    printf("   ✓ Verified compiled binary signature (0x58504C00).\n");
+    sdk_kermit_cache_t cache = { .cached_value = 0, .cached_ts = { 0, 0 }, .is_warm = false };
+    sdk_cics_context_t ctx = {
+        .env = &env,
+        .cache = &cache,
+        .quorum_type = SDK_QUORUM_MAJORITY,
+        .writer_id = 77,
+        .security_clearance = 3
+    };
+
+    printf("[TEST] Executing compiled .dat.bin binary stream via SDK...\n");
     fflush(stdout);
 
-    uint32_t count = 0;
-    read_bytes = fread(&count, sizeof(uint32_t), 1, bin);
-    assert(read_bytes == 1);
-    assert(count == 2);
-    printf("   ✓ Verified instruction count (2).\n");
+    uint32_t results[2] = { 0 };
+    ok = auncient_sdk_execute_dat_bin(&ctx, bin_path, results, 2);
+    assert(ok == true);
+    assert(results[0] == 999);
+    assert(results[1] == 999);
+    printf("   ✓ Executed compiled .dat.bin binary stream. Result 0: %u, Result 1: %u.\n", results[0], results[1]);
     fflush(stdout);
 
-    // Verify first instruction: WRITE_ABD
-    uint8_t op = 0;
-    uint32_t val = 0;
-    uint32_t mask = 0;
-    
-    read_bytes = fread(&op, sizeof(uint8_t), 1, bin);
-    assert(read_bytes == 1);
-    assert(op == ALU_OP_WRITE_ABD);
-
-    read_bytes = fread(&val, sizeof(uint32_t), 1, bin);
-    assert(read_bytes == 1);
-    assert(val == 999);
-
-    read_bytes = fread(&mask, sizeof(uint32_t), 1, bin);
-    assert(read_bytes == 1);
-    assert(mask == 0x7); // 1 + 2 + 4 = 7
-
-    printf("   ✓ Verified instruction 0: Opcode WRITE_ABD, Value 999, Approvals mask 0x7.\n");
+    // Verify registers updated in coaxial environment
+    assert(env.registers[0].value == 999);
+    assert(cache.cached_value == 999);
+    printf("   ✓ Verified register values and cache in CICS context are correct.\n");
     fflush(stdout);
 
-    fclose(bin);
+    auncient_sdk_close_coaxial(&env);
 
     // Clean up temporary files
     remove(src_path);
     remove(bin_path);
 
     printf("=============================================================\n");
-    printf("XPL COMPILER TESTS PASSED\n");
+    printf("XPL COMPILER & EXECUTION TESTS PASSED\n");
     printf("=============================================================\n");
     fflush(stdout);
     return 0;

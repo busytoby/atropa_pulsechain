@@ -117,6 +117,132 @@ void auncient_sdk_autodin_spin_unlock(sdk_cics_context_t *ctx, uint32_t lock_tok
     (void)lock_token;
 }
 
+bool auncient_sdk_compile_xpl_to_dat_bin(const char *xpl_source_path, const char *dat_bin_dest_path) {
+    FILE *in = fopen(xpl_source_path, "r");
+    if (!in) {
+        return false;
+    }
+
+    FILE *out = fopen(dat_bin_dest_path, "wb");
+    if (!out) {
+        fclose(in);
+        return false;
+    }
+
+    // Write header: "XPL\0"
+    uint32_t signature = 0x58504C00;
+    fwrite(&signature, sizeof(uint32_t), 1, out);
+
+    // Placeholder for count of instructions (will patch later)
+    uint32_t instruction_count = 0;
+    fwrite(&instruction_count, sizeof(uint32_t), 1, out);
+
+    char op_str[64];
+    uint32_t val;
+    int a0, a1, a2, a3;
+
+    while (fscanf(in, "%63s", op_str) == 1) {
+        uint8_t opcode = 0;
+        uint32_t payload_val = 0;
+        uint32_t approvals_mask = 0;
+
+        if (strcmp(op_str, "WRITE_ABD") == 0) {
+            opcode = ALU_OP_WRITE_ABD;
+            if (fscanf(in, "%u %d %d %d %d", &val, &a0, &a1, &a2, &a3) == 5) {
+                payload_val = val;
+                approvals_mask = (a0 ? 1 : 0) | (a1 ? 2 : 0) | (a2 ? 4 : 0) | (a3 ? 8 : 0);
+            }
+        } else if (strcmp(op_str, "READ_KERMIT") == 0) {
+            opcode = ALU_OP_READ_KERMIT;
+        } else if (strcmp(op_str, "EVAL_ACKERMAN") == 0) {
+            opcode = ALU_OP_EVAL_ACKERMAN;
+            if (fscanf(in, "%d %d %d %d", &a0, &a1, &a2, &a3) == 4) {
+                approvals_mask = (a0 ? 1 : 0) | (a1 ? 2 : 0) | (a2 ? 4 : 0) | (a3 ? 8 : 0);
+            }
+        } else {
+            // Unknown opcode, skip line
+            continue;
+        }
+
+        // Write instruction record
+        fwrite(&opcode, sizeof(uint8_t), 1, out);
+        fwrite(&payload_val, sizeof(uint32_t), 1, out);
+        fwrite(&approvals_mask, sizeof(uint32_t), 1, out);
+
+        instruction_count++;
+    }
+
+    // Patch instruction count at position 4
+    fseek(out, sizeof(uint32_t), SEEK_SET);
+    fwrite(&instruction_count, sizeof(uint32_t), 1, out);
+
+    fclose(in);
+    fclose(out);
+    return true;
+}
+
+bool auncient_sdk_execute_dat_bin(sdk_cics_context_t *ctx, const char *dat_bin_path, uint32_t *results, int max_results) {
+    FILE *bin = fopen(dat_bin_path, "rb");
+    if (!bin) {
+        return false;
+    }
+
+    uint32_t signature = 0;
+    if (fread(&signature, sizeof(uint32_t), 1, bin) != 1 || signature != 0x58504C00) {
+        fclose(bin);
+        return false;
+    }
+
+    uint32_t count = 0;
+    if (fread(&count, sizeof(uint32_t), 1, bin) != 1) {
+        fclose(bin);
+        return false;
+    }
+
+    // Acquire AUTODIN spin-lock for serialized execution
+    if (!auncient_sdk_autodin_spin_lock(ctx, 0x111, 'F')) {
+        fclose(bin);
+        return false;
+    }
+
+    bool overall_ok = true;
+
+    for (uint32_t i = 0; i < count; i++) {
+        uint8_t opcode = 0;
+        uint32_t val = 0;
+        uint32_t mask = 0;
+
+        if (fread(&opcode, sizeof(uint8_t), 1, bin) != 1 ||
+            fread(&val, sizeof(uint32_t), 1, bin) != 1 ||
+            fread(&mask, sizeof(uint32_t), 1, bin) != 1) {
+            overall_ok = false;
+            break;
+        }
+
+        bool approvals[SDK_NUM_NODES] = {
+            (mask & 1) ? true : false,
+            (mask & 2) ? true : false,
+            (mask & 4) ? true : false,
+            (mask & 8) ? true : false
+        };
+
+        uint32_t res = 0;
+        bool ok = auncient_sdk_alu_execute(ctx, opcode, val, approvals, &res);
+        if (!ok) {
+            overall_ok = false;
+            break;
+        }
+
+        if (results && (int)i < max_results) {
+            results[i] = res;
+        }
+    }
+
+    auncient_sdk_autodin_spin_unlock(ctx, 0x111);
+    fclose(bin);
+    return overall_ok;
+}
+
 static bool check_ackerman_quorum(sdk_quorum_type_t type, const bool *approvals, const uint32_t *weights) {
     if (type == SDK_QUORUM_MAJORITY) {
         int count = 0;
