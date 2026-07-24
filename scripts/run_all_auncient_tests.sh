@@ -347,6 +347,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_aunci
 gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_xpl_loader.c -o tests/test_auncient_xpl_loader -lm -lrt
 ./tests/test_auncient_xpl_loader
 
+# Compile and run XPL Compiler Simulator
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_xpl_compiler.c -o tests/test_auncient_xpl_compiler -lm -lrt
+./tests/test_auncient_xpl_compiler
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
