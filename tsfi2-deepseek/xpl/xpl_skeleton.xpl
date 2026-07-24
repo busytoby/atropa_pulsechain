@@ -17,7 +17,12 @@ DECLARE XCOM_REQ          LITERALLY '64256'; /* SCSI REQ signal */
 DECLARE XCOM_ACK          LITERALLY '64257'; /* SCSI ACK signal */
 DECLARE XCOM_DATA         LITERALLY '64258'; /* SCSI Data register */
 
-/* 4. Device Initialization Wrapper (I/PL & XCOM Gated) */
+/* 4. APDL Concurrent Mutex Register and Segments */
+DECLARE MUTEX_REG         LITERALLY '64400'; /* Hardware locking register */
+DECLARE SEGMENT_A_BASE    LITERALLY '64410'; /* Segment A data storage */
+DECLARE SEGMENT_B_BASE    LITERALLY '64420'; /* Segment B data storage */
+
+/* 5. Device Initialization Wrapper (I/PL & XCOM Gated) */
 SETUP_SYSTEM_DEVICE: PROCEDURE(PORT_ID) FIXED;
     DECLARE PORT_ID FIXED;
     
@@ -45,7 +50,7 @@ SETUP_SYSTEM_DEVICE: PROCEDURE(PORT_ID) FIXED;
     RETURN 1;
 END SETUP_SYSTEM_DEVICE;
 
-/* 5. Unified Packet Demux and Dispatch Loop (Fourier Implication Gated) */
+/* 6. Unified Packet Demux and Dispatch Loop (Fourier Implication Gated) */
 DISPATCH_INCOMING_PACKET: PROCEDURE(PACKET_ADDR) FIXED;
     DECLARE PACKET_ADDR FIXED;
     DECLARE (ETHER_TYPE, PORT, PAYLOAD_OFFSET) FIXED;
@@ -64,7 +69,7 @@ DISPATCH_INCOMING_PACKET: PROCEDURE(PACKET_ADDR) FIXED;
         BYTE(XPLSM_INTERRUPT) = 10;
         RETURN 0; /* Precondition failed: de-tuned signal */
     END;
-    if Q_FACTOR < 50 THEN
+    IF Q_FACTOR < 50 THEN
         /* Trigger XPLSM trap interrupt (Code 11: Low Q-factor) */
         BYTE(XPLSM_INTERRUPT) = 11;
         RETURN 0; /* Precondition failed: Q-factor resonance too low */
@@ -95,3 +100,30 @@ DISPATCH_INCOMING_PACKET: PROCEDURE(PACKET_ADDR) FIXED;
     BYTE(DEVICE_STATUS) = BACKUP_STATUS;
     RETURN 0;
 END DISPATCH_INCOMING_PACKET;
+
+/* 7. Parallel Task Dispatcher (APDL Gated) */
+EXECUTE_CONCURRENT_TASKS: PROCEDURE(ADDR_A, ADDR_B, VAL_A, VAL_B) FIXED;
+    DECLARE (ADDR_A, ADDR_B, VAL_A, VAL_B) FIXED;
+    
+    /* Horning Overlap Audit: Refuse execution if target segments overlap */
+    IF ADDR_A == ADDR_B THEN
+        BYTE(XPLSM_INTERRUPT) = 14; /* Conflict Trap */
+        RETURN 0;
+    END;
+
+    /* Task A (alpha) Execution */
+    IF BYTE(MUTEX_REG) == 0 THEN
+        BYTE(MUTEX_REG) = 1; /* Lock acquired by Task A */
+        BYTE(SEGMENT_A_BASE) = VAL_A;
+        BYTE(MUTEX_REG) = 0; /* Lock released */
+    END;
+
+    /* Task B (beta) Execution */
+    IF BYTE(MUTEX_REG) == 0 THEN
+        BYTE(MUTEX_REG) = 2; /* Lock acquired by Task B */
+        BYTE(SEGMENT_B_BASE) = VAL_B;
+        BYTE(MUTEX_REG) = 0; /* Lock released */
+    END;
+
+    RETURN 1;
+END EXECUTE_CONCURRENT_TASKS;
