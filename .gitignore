@@ -229,6 +229,7 @@ libtsfi2.so
 /tests/test_auncient_chin_monopole
 /tests/test_auncient_interactive_db
 /tests/test_auncient_ipl_vol1
+/tests/test_auncient_sigplan_loop_bound
 /tests/output.xpl
 /scripts/compile_apdl
 /scripts/alsa_player
