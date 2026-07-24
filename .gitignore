@@ -224,6 +224,7 @@ libtsfi2.so
 /tests/test_auncient_unified_alu_coax
 /tests/test_auncient_transistor_alu
 /tests/test_auncient_apdl_compiler
+/tests/test_auncient_apdl_xpl_integration
 /tests/output.xpl
 /scripts/compile_apdl
 /scripts/alsa_player
