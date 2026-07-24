@@ -523,4 +523,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_reconciliation.
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_huc_ocean_v3.c -o tests/test_auncient_hogan_huc_ocean_v3 -lm -lrt
 ./tests/test_auncient_hogan_huc_ocean_v3
 
+# Compile and run Auncient Hogan-Hudson Ocean Protocol Integration Level 4
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_huc_ocean_v4.c -o tests/test_auncient_hogan_huc_ocean_v4 -lm -lrt
+./tests/test_auncient_hogan_huc_ocean_v4
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
