@@ -402,7 +402,9 @@ frontend/compiled_yul.json
 /tests/test_auncient_bgp_peering
 /tests/test_auncient_sdk_bgp_demo
 /tests/test_auncient_bgp_reflector
+/tests/test_auncient_bgp_precedence
 /tests/autodin_events.dat.bin
+
 
 
 

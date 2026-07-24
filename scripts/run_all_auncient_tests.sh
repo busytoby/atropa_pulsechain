@@ -615,4 +615,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_aunci
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_bgp_reflector.c -o tests/test_auncient_bgp_reflector -lm -lrt
 ./tests/test_auncient_bgp_reflector
 
+# Compile and run Auncient BGP Routing Path Precedence
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_bgp_precedence.c -o tests/test_auncient_bgp_precedence -lm -lrt
+./tests/test_auncient_bgp_precedence
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
