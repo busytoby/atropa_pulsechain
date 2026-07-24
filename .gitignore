@@ -373,7 +373,9 @@ frontend/compiled_yul.json
 /tests/test_auncient_consensus_optimizer
 /tests/test_auncient_consensus_optimizer_v2
 /tests/test_auncient_ocean_loader
+/tests/test_auncient_huc_vgpr
 /tests/autodin_events.dat.bin
+
 
 
 

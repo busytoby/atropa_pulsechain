@@ -499,4 +499,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_consensus_optimizer_v
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_ocean_loader.c -o tests/test_auncient_ocean_loader -lm -lrt
 ./tests/test_auncient_ocean_loader
 
+# Compile and run Auncient Hudson Soft to VGPR Register Mirroring
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_huc_vgpr.c -o tests/test_auncient_huc_vgpr -lm -lrt
+./tests/test_auncient_huc_vgpr
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
