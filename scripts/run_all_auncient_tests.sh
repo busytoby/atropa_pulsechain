@@ -415,4 +415,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpp_tws_batch.c -o te
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpp_simd.c -o tests/test_auncient_vpp_simd -lm -lrt
 ./tests/test_auncient_vpp_simd
 
+# Compile and run VPP Verification Cache Shortcut
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpp_cache.c -o tests/test_auncient_vpp_cache -lssl -lcrypto -lm -lrt
+./tests/test_auncient_vpp_cache
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="

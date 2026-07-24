@@ -352,6 +352,8 @@ frontend/compiled_yul.json
 /tests/test_auncient_vpp_forwarding
 /tests/test_auncient_vpp_tws_batch
 /tests/test_auncient_vpp_simd
+/tests/test_auncient_vpp_cache
+
 
 
 
