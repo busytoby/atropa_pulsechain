@@ -194,6 +194,7 @@ libtsfi2.so
 /tests/test_auncient_cics_pll
 /tests/test_auncient_tty_device
 /tests/test_auncient_vdm_isolation
+/tests/test_auncient_ipl_hypervisor
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
