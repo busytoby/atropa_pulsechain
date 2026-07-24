@@ -4,6 +4,10 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 typedef enum {
     CUTOFF_STATE,
     CONDUC_STATE
@@ -39,6 +43,42 @@ bool write_register_with_contract(contract_vdm_t *vdm, uint32_t reg_idx, uint32_
 }
 
 // -------------------------------------------------------------
+// Socket-based state verification
+// -------------------------------------------------------------
+bool verify_contract_over_socket(const contract_vdm_t *vdm) {
+    int sv[2];
+    if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0) {
+        return false;
+    }
+
+    // Send state maps over endpoint 0
+    if (write(sv[0], vdm->regs, sizeof(vdm->regs)) != sizeof(vdm->regs)) {
+        close(sv[0]);
+        close(sv[1]);
+        return false;
+    }
+
+    // Receive state maps over endpoint 1
+    uint32_t buf[8] = { 0 };
+    if (read(sv[1], buf, sizeof(buf)) != sizeof(buf)) {
+        close(sv[0]);
+        close(sv[1]);
+        return false;
+    }
+
+    close(sv[0]);
+    close(sv[1]);
+
+    // Validate that contract invariants hold over socket transmission
+    for (int i = 0; i < 8; i++) {
+        if (buf[i] != vdm->regs[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// -------------------------------------------------------------
 // Unit Tests
 // -------------------------------------------------------------
 int main(void) {
@@ -69,6 +109,14 @@ int main(void) {
     assert(ok == false);
     assert(vdm.pipeline_gate == CUTOFF_STATE);
     printf("   ✓ Precondition violation trapped successfully.\n");
+    fflush(stdout);
+
+    // 3. Socket-based Contract Case: Verify transmission invariants -> Should pass
+    printf("[TEST] Verifying contract invariant mapping over unix socket pair...\n");
+    fflush(stdout);
+    ok = verify_contract_over_socket(&vdm);
+    assert(ok == true);
+    printf("   ✓ Socket-based contract verification passed.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
