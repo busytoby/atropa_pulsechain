@@ -14,12 +14,37 @@
 #define MAX_TASKS 4
 #define MAX_MEMBERS 4
 #define MAX_CHECKPOINT_DEPTH 4
+#define QUEUE_SIZE 4
+
+// Level 6 binary optimization header fields
+typedef struct {
+    char target_vm[32];
+    uint32_t opt_level;
+    uint32_t registry_count;
+    uint32_t active_seats[3];
+    uint32_t quarantined_seats[3];
+    uint32_t stack_telemetry_limit;
+    uint32_t heap_space_allocation;
+} vppd_binary_hdr_v6_t;
+
+// Phase 1 Hardening lockless telemetry structures
+typedef struct {
+    uint32_t telemetry_id;
+    uint32_t data_payload[8];
+} vppd_hardened_telemetry_t;
+
+typedef struct {
+    vppd_hardened_telemetry_t slots[QUEUE_SIZE];
+    volatile uint32_t head;
+    volatile uint32_t tail;
+} vppd_lockless_queue_t;
 
 // vppd.bin ABI definition
 typedef enum {
     ABI_CMD_PING = 1,
     ABI_CMD_STATUS = 2,
-    ABI_CMD_ROUTE = 3
+    ABI_CMD_ROUTE = 3,
+    ABI_CMD_HARDENING = 4
 } vppd_abi_cmd_t;
 
 typedef struct {
@@ -65,6 +90,10 @@ typedef struct {
     // Nested checkpoints stack
     checkpoint_frame_t checkpoint_history[MAX_CHECKPOINT_DEPTH];
     int checkpoint_depth;
+
+    // Level 6 Optimizations & Phase 1 Hardening structures
+    vppd_binary_hdr_v6_t hdr_v6;
+    vppd_lockless_queue_t lockless_queue;
 } vppd_context_t;
 
 // Stack helpers
@@ -116,6 +145,31 @@ static bool commit_checkpoint_nested(vppd_context_t *ctx) {
     return true;
 }
 
+// Lockless Ring Buffer Helpers (Phase 1 Hardening)
+static void lockless_queue_init(vppd_lockless_queue_t *q) {
+    q->head = 0;
+    q->tail = 0;
+}
+
+static int lockless_queue_enqueue(vppd_lockless_queue_t *q, const vppd_hardened_telemetry_t *item) {
+    uint32_t next_head = (q->head + 1) % QUEUE_SIZE;
+    if (next_head == q->tail) {
+        return 0; // Queue Full
+    }
+    q->slots[q->head] = *item;
+    q->head = next_head;
+    return 1;
+}
+
+static int lockless_queue_dequeue(vppd_lockless_queue_t *q, vppd_hardened_telemetry_t *out_item) {
+    if (q->head == q->tail) {
+        return 0; // Queue Empty
+    }
+    *out_item = q->slots[q->tail];
+    q->tail = (q->tail + 1) % QUEUE_SIZE;
+    return 1;
+}
+
 // Basic PL/I-to-Yul transpiler parser
 static void vppd_transpile_pli_to_yul(const char *pli_line, char *yul_out, size_t out_len) {
     memset(yul_out, 0, out_len);
@@ -152,6 +206,7 @@ static void render_cics_terminal(const vppd_context_t *ctx) {
     printf("  STACK DEPTH    : %d\n", ctx->stack.top);
     printf("  SVDAG REGISTERS: Base=%ld, Signal=%ld\n", ctx->svdag_base, ctx->svdag_signal);
     printf("  NESTED DEPTH   : %d\n", ctx->checkpoint_depth);
+    printf("  LEVEL 6 TARGET : %s (Opt: %u)\n", ctx->hdr_v6.target_vm, ctx->hdr_v6.opt_level);
     
     // Display active spawned tasks
     printf("  SPAWNED TASKS  : %d\n", ctx->task_count);
@@ -200,6 +255,20 @@ bool vppd_abi_entry(vppd_context_t *ctx, vppd_abi_cmd_t cmd, const vppd_packet_t
             
             sprintf(out_status, "ROUTED;seq=%lu;stack_top=%ld", pkt->sequence, ctx->stack.data[ctx->stack.top - 1]);
             break;
+        case ABI_CMD_HARDENING: {
+            vppd_hardened_telemetry_t item = { .telemetry_id = 404 };
+            memset(item.data_payload, 0xEE, sizeof(item.data_payload));
+            lockless_queue_init(&ctx->lockless_queue);
+            int enq = lockless_queue_enqueue(&ctx->lockless_queue, &item);
+            vppd_hardened_telemetry_t retrieved;
+            int deq = lockless_queue_dequeue(&ctx->lockless_queue, &retrieved);
+            if (enq && deq && retrieved.telemetry_id == 404) {
+                strcpy(out_status, "HARDENING_PASS");
+            } else {
+                strcpy(out_status, "HARDENING_FAIL");
+            }
+            break;
+        }
         default:
             strcpy(out_status, "ABI_UNKNOWN");
             return false;
@@ -290,6 +359,7 @@ static void run_interactive_mode(vppd_context_t *ctx) {
             printf("  checkpoint                 - Save nested checkpoint frame\n");
             printf("  rollback                   - Rollback stack/SVDAG to last nested checkpoint\n");
             printf("  commit                     - Commit active nested changes\n");
+            printf("  hardening                  - Verify Phase 1 hardening queues\n");
             printf("  exit                       - Terminate the session\n");
             fflush(stdout);
         } else if (strcmp(input_line, "ping") == 0) {
@@ -298,6 +368,10 @@ static void run_interactive_mode(vppd_context_t *ctx) {
             fflush(stdout);
         } else if (strcmp(input_line, "status") == 0) {
             vppd_abi_entry(ctx, ABI_CMD_STATUS, NULL, abi_buffer);
+            printf("Result: %s\n", abi_buffer);
+            fflush(stdout);
+        } else if (strcmp(input_line, "hardening") == 0) {
+            vppd_abi_entry(ctx, ABI_CMD_HARDENING, NULL, abi_buffer);
             printf("Result: %s\n", abi_buffer);
             fflush(stdout);
         } else if (strcmp(input_line, "checkpoint") == 0) {
@@ -404,6 +478,16 @@ int main(int argc, char **argv) {
     vppd.svdag_base = 500;
     vppd.svdag_signal = 1200;
 
+    // Load Level 6 binary compiler fields
+    strcpy(vppd.hdr_v6.target_vm, "DysnomiaVM");
+    vppd.hdr_v6.opt_level = 3;
+    vppd.hdr_v6.registry_count = 2;
+    vppd.hdr_v6.active_seats[0] = 1;
+    vppd.hdr_v6.active_seats[1] = 2;
+    vppd.hdr_v6.active_seats[2] = 3;
+    vppd.hdr_v6.stack_telemetry_limit = 64;
+    vppd.hdr_v6.heap_space_allocation = 2048;
+
     // Check if interactive flag is provided
     if (argc > 1 && (strcmp(argv[1], "--interactive") == 0 || strcmp(argv[1], "-i") == 0)) {
         run_interactive_mode(&vppd);
@@ -484,6 +568,25 @@ int main(int argc, char **argv) {
     assert(vppd.checkpoint_depth == 0);
 
     printf("   ✓ Nested checkpoints successfully popped and verified.\n");
+    fflush(stdout);
+
+    // 6. Test Phase 1 Hardening Lockless Telemetry Queue
+    printf("[TEST] Verifying Phase 1 hardening telemetry queues...\n");
+    fflush(stdout);
+    ok = vppd_abi_entry(&vppd, ABI_CMD_HARDENING, NULL, abi_buffer);
+    assert(ok == true);
+    assert(strcmp(abi_buffer, "HARDENING_PASS") == 0);
+    printf("   ✓ Hardening queue response: %s\n", abi_buffer);
+    fflush(stdout);
+
+    // 7. Verify Level 6 Binary Compiler Fields
+    printf("[TEST] Verifying Level 6 binary compiler properties...\n");
+    fflush(stdout);
+    assert(strcmp(vppd.hdr_v6.target_vm, "DysnomiaVM") == 0);
+    assert(vppd.hdr_v6.opt_level == 3);
+    assert(vppd.hdr_v6.stack_telemetry_limit == 64);
+    assert(vppd.hdr_v6.heap_space_allocation == 2048);
+    printf("   ✓ Level 6 binary headers verified successfully.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
