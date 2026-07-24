@@ -331,6 +331,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_voodoo_sli.c -o tests
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_contract_invariant.c -o tests/test_auncient_contract_invariant -lm -lrt
 ./tests/test_auncient_contract_invariant
 
+# Compile and run Behavioral Subtyping Verification
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_behavioral_subtyping.c -o tests/test_auncient_behavioral_subtyping -lm -lrt
+./tests/test_auncient_behavioral_subtyping
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
