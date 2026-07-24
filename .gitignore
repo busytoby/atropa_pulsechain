@@ -199,6 +199,7 @@ libtsfi2.so
 /tests/test_auncient_pli_attributes
 /tests/test_auncient_pl_cang
 /tests/test_auncient_pl_cang_cad
+/tests/test_auncient_pdl_gating
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
