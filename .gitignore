@@ -218,6 +218,7 @@ libtsfi2.so
 /tests/test_auncient_apdl_convergence
 /tests/test_auncient_vca_fet
 /tests/test_auncient_mkk_fet
+/tests/test_auncient_apdl_token
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
