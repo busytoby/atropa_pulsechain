@@ -197,6 +197,7 @@ libtsfi2.so
 /tests/test_auncient_ipl_hypervisor
 /tests/test_auncient_ipl_preproc
 /tests/test_auncient_pli_attributes
+/tests/test_auncient_pl_cang
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
