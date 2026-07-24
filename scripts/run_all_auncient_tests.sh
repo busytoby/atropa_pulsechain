@@ -603,4 +603,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_unified_dns.c -o test
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_bgp_dns_mounts.c -o tests/test_auncient_bgp_dns_mounts -lm -lrt
 ./tests/test_auncient_bgp_dns_mounts
 
+# Compile and run Auncient BGP Peering & Auto-Discovery
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_bgp_peering.c -o tests/test_auncient_bgp_peering -lm -lrt
+./tests/test_auncient_bgp_peering
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="

@@ -399,7 +399,9 @@ frontend/compiled_yul.json
 /tests/test_auncient_coaxial_dns
 /tests/test_auncient_unified_dns
 /tests/test_auncient_bgp_dns_mounts
+/tests/test_auncient_bgp_peering
 /tests/autodin_events.dat.bin
+
 
 
 
