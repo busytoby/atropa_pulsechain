@@ -511,4 +511,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_sgpr_vgpr.c -o 
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_huc_ocean.c -o tests/test_auncient_hogan_huc_ocean -lm -lrt
 ./tests/test_auncient_hogan_huc_ocean
 
+# Compile and run Auncient Hogan-Hudson Ocean Protocol Integration Level 2
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_huc_ocean_v2.c -o tests/test_auncient_hogan_huc_ocean_v2 -lm -lrt
+./tests/test_auncient_hogan_huc_ocean_v2
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
