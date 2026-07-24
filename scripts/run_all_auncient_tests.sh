@@ -595,4 +595,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_address_resolution.c 
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_coaxial_dns.c -o tests/test_auncient_coaxial_dns -lm -lrt
 ./tests/test_auncient_coaxial_dns
 
+# Compile and run Auncient Unified DNS Registry Simulation
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_unified_dns.c -o tests/test_auncient_unified_dns -lm -lrt
+./tests/test_auncient_unified_dns
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="

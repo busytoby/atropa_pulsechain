@@ -397,7 +397,9 @@ frontend/compiled_yul.json
 /tests/test_auncient_lau_svdag
 /tests/test_auncient_address_resolution
 /tests/test_auncient_coaxial_dns
+/tests/test_auncient_unified_dns
 /tests/autodin_events.dat.bin
+
 
 
 
