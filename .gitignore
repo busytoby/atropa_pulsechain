@@ -404,7 +404,9 @@ frontend/compiled_yul.json
 /tests/test_auncient_bgp_reflector
 /tests/test_auncient_bgp_precedence
 /tests/test_auncient_bgp_security
+/tests/test_auncient_bgp_fault_tolerance
 /tests/autodin_events.dat.bin
+
 
 
 
