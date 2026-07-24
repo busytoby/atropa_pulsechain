@@ -187,6 +187,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_sigplan_ifc.c -o test
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_autodin_ifc.c -o tests/test_auncient_autodin_ifc -lm -lrt
 ./tests/test_auncient_autodin_ifc
 
+# Compile and run SIGPLAN VDM Contracts
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_sigplan_contracts.c -o tests/test_auncient_sigplan_contracts -lm -lrt
+./tests/test_auncient_sigplan_contracts
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
