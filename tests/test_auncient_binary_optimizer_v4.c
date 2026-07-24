@@ -7,8 +7,15 @@
 
 #define ALIGNMENT_PADDING 32
 #define MAX_DISPATCH_ENTRIES 2
-#define MAX_DEBUG_ENTRIES 3
+#define MAX_DEBUG_ENTRIES 4
 #define MAX_IMPORT_ENTRIES 2
+
+typedef enum {
+    LANG_PLI = 1,
+    LANG_XPL = 2,
+    LANG_COBOL = 3,
+    LANG_ALGOL = 4
+} language_type_t;
 
 typedef struct {
     uint32_t selector;
@@ -18,6 +25,7 @@ typedef struct {
 typedef struct {
     uint32_t instruction_index;
     uint32_t source_line;
+    uint32_t language; // Maps to language_type_t
 } debug_line_t;
 
 typedef struct {
@@ -55,11 +63,12 @@ int main(void) {
     };
     header.dispatch_count = MAX_DISPATCH_ENTRIES;
 
-    // 2. Setup Compressed Debug Line mappings (DEBUG)
+    // 2. Setup Multi-Language Debug Line mappings (DEBUG)
     debug_line_t mock_debug[MAX_DEBUG_ENTRIES] = {
-        { .instruction_index = 0, .source_line = 10 },
-        { .instruction_index = 4, .source_line = 15 },
-        { .instruction_index = 8, .source_line = 22 }
+        { .instruction_index = 0, .source_line = 10, .language = LANG_PLI },
+        { .instruction_index = 4, .source_line = 15, .language = LANG_XPL },
+        { .instruction_index = 8, .source_line = 100, .language = LANG_COBOL },
+        { .instruction_index = 12, .source_line = 45, .language = LANG_ALGOL }
     };
     header.debug_count = MAX_DEBUG_ENTRIES;
 
@@ -115,14 +124,17 @@ int main(void) {
     printf("   ✓ Selectors mapped successfully to internal code displacements.\n");
     fflush(stdout);
 
-    // Verify debug line reconstruction
-    printf("[TEST] Verifying debug line mappings...\n");
+    // Verify multi-language debug line reconstruction
+    printf("[TEST] Verifying multi-language debug line mappings (PL/I, XPL, COBOL, ALGOL)...\n");
     fflush(stdout);
     debug_line_t *loaded_debug = (debug_line_t *)(binary_buffer + parsed->debug_displacement);
-    assert(loaded_debug[0].instruction_index == 0 && loaded_debug[0].source_line == 10);
-    assert(loaded_debug[1].instruction_index == 4 && loaded_debug[1].source_line == 15);
-    assert(loaded_debug[2].instruction_index == 8 && loaded_debug[2].source_line == 22);
-    printf("   ✓ Instruction indices mapped successfully to PL/I source lines.\n");
+    
+    assert(loaded_debug[0].instruction_index == 0 && loaded_debug[0].source_line == 10 && loaded_debug[0].language == LANG_PLI);
+    assert(loaded_debug[1].instruction_index == 4 && loaded_debug[1].source_line == 15 && loaded_debug[1].language == LANG_XPL);
+    assert(loaded_debug[2].instruction_index == 8 && loaded_debug[2].source_line == 100 && loaded_debug[2].language == LANG_COBOL);
+    assert(loaded_debug[3].instruction_index == 12 && loaded_debug[3].source_line == 45 && loaded_debug[3].language == LANG_ALGOL);
+    
+    printf("   ✓ Multi-language instruction indices mapped successfully to respective source lines.\n");
     fflush(stdout);
 
     // Verify dependency loads
