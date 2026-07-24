@@ -213,6 +213,7 @@ libtsfi2.so
 /tests/test_auncient_decnet_routing
 /tests/test_auncient_pdl_hoare
 /tests/test_auncient_safety_learning
+/tests/test_auncient_black_red_pdl
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
