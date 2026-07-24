@@ -144,6 +144,7 @@ libtsfi2.so
 /tests/test_auncient_aho_corasick_net
 /tests/test_auncient_kendrick_network
 /tests/test_auncient_qft_sitton
+/tests/test_auncient_npn_pnp_bjt
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
