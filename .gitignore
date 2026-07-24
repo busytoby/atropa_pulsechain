@@ -139,6 +139,7 @@ libtsfi2.so
 /tests/test_auncient_decnet_nic
 /tests/test_auncient_coaxial_mcp_net
 /tests/test_auncient_xpl_net_stack
+/tests/test_auncient_autodin_recovery
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
