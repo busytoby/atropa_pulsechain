@@ -419,4 +419,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpp_simd.c -o tests/t
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpp_cache.c -o tests/test_auncient_vpp_cache -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_vpp_cache
 
+# Compile and run VPP Pipelined Compiler Stage
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpp_pipeline.c -o tests/test_auncient_vpp_pipeline -lm -lrt
+./tests/test_auncient_vpp_pipeline
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
