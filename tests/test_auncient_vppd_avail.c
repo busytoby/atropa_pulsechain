@@ -9,7 +9,6 @@
 #define MOTZKIN_PRIME 953467954114363ULL
 #define REQUIRED_QUORUM_MASK 0x07
 #define COLOR_BLACK 0x000000
-
 #define COLOR_RED   0x0000FF
 #define COLOR_CYAN  0xFFFF
 
@@ -23,7 +22,7 @@ typedef enum {
 typedef struct {
     uint32_t source_device_address;
     uint32_t destination_device_address;
-    uint32_t operation_opcode; // 0xAVA11 for AVAIL signal
+    uint32_t operation_opcode; // 0xAEA11 for AVAIL signal
     uint64_t payload_value;
     uint32_t signature_mask;
 } stanag_packet_t;
@@ -34,6 +33,7 @@ typedef struct {
     uint32_t device_address;
     uint64_t registers[4]; // 0: Base, 1: Chin, 2: Channel, 3: Monopole
     bool is_avail;
+    char source_file[128];
 } vppd_device_t;
 
 // Global VPPD Broadcast bus simulation
@@ -68,6 +68,25 @@ static uint64_t field_pow(uint64_t base, uint64_t exp, uint64_t modulus) {
         base = field_mul(base, base, modulus);
     }
     return result;
+}
+
+// Simulates parsing source files
+static bool load_device_source(vppd_device_t *dev) {
+    printf("[VPPD] Loading source file %s for device 0x%X...\n", dev->source_file, dev->device_address);
+    FILE *f = fopen(dev->source_file, "r");
+    if (!f) {
+        printf("   [ERROR] Failed to load source file %s\n", dev->source_file);
+        return false;
+    }
+    char line[128];
+    while (fgets(line, sizeof(line), f)) {
+        // Mock parsing lines to verify structure syntax
+        if (strstr(line, "Chin") || strstr(line, "CHANNEL")) {
+            printf("   [PARSER] Found structured key boundary in source: %s", line);
+        }
+    }
+    fclose(f);
+    return true;
 }
 
 static void process_stanag_broadcast(vppd_broadcast_bus_t *bus, const stanag_packet_t *pkt) {
@@ -134,17 +153,25 @@ int main(void) {
             .dev_type = DEVICE_DDL_ROD_ALGOL,
             .device_address = 0x51E9A4B, // DDL STANAG Address
             .registers = {0},
-            .is_avail = false
+            .is_avail = false,
+            .source_file = "std/ddl_rod.algol61"
         },
         .dml_cone = {
             .dev_type = DEVICE_DML_CONE_COBOL,
             .device_address = 0x9999AAAA, // DML STANAG Address
             .registers = {0},
-            .is_avail = false
+            .is_avail = false,
+            .source_file = "strategies/dml_cone.cobol"
         },
         .bus_status_color = COLOR_BLACK,
         .switch_residency_red = false
     };
+
+    // Load and parse device sources first
+    bool load_ok = load_device_source(&bus.ddl_rod);
+    assert(load_ok == true);
+    load_ok = load_device_source(&bus.dml_cone);
+    assert(load_ok == true);
 
     // 2. Execute AVAIL Handshake from DDL Rod -> DML Cone
     stanag_packet_t pkt1 = {

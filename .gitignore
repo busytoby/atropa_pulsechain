@@ -406,7 +406,12 @@ frontend/compiled_yul.json
 /tests/test_auncient_bgp_security
 /tests/test_auncient_bgp_fault_tolerance
 /tests/test_auncient_vppd_avail
+/tools/auncient_gcc_vppd
+/tools/auncient_gcc_vppd.c
+/std/ddl_rod.algol61
+/strategies/dml_cone.cobol
 /tests/autodin_events.dat.bin
+
 
 
 
