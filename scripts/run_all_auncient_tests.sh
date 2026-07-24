@@ -119,6 +119,10 @@ gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -O3 tests/test_aunc
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -O3 tests/test_auncient_transistor_alu.c -o tests/test_auncient_transistor_alu -lm -lrt
 ./tests/test_auncient_transistor_alu
 
+# Compile and run APDL Compiler
+gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -O3 tests/test_auncient_apdl_compiler.c -o tests/test_auncient_apdl_compiler -lm -lrt
+./tests/test_auncient_apdl_compiler
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
