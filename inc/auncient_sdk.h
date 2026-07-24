@@ -25,15 +25,6 @@ typedef enum {
     SDK_BLAME_SUBLIBRARY = 3
 } sdk_blame_t;
 
-// Layout for immutable blame records preserved to disk (.dat.bin files)
-typedef struct {
-    uint32_t writer_id;
-    uint8_t blame_target; // Maps to sdk_blame_t
-    uint8_t reserved1;
-    uint16_t reserved2;
-    uint64_t timestamp_counter;
-} sdk_blame_record_t;
-
 // Rich status and diagnostic codes for ABI packets
 typedef enum {
     SDK_STATUS_OK = 0,
@@ -52,8 +43,24 @@ typedef enum {
     SDK_STATUS_ERR_DEPENDENT_TYPE = 13,
     SDK_STATUS_ERR_PURITY = 14,
     SDK_STATUS_ERR_REFINEMENT = 15,
-    SDK_STATUS_ERR_TRANSITION = 16
+    SDK_STATUS_ERR_TRANSITION = 16,
+    SDK_STATUS_ERR_INVARIANT_STRENGTHENING = 17
 } sdk_status_code_t;
+
+// Forward declaration of context structure
+struct sdk_cics_context;
+
+// Resilient contract recovery handler callback function type
+typedef void (*sdk_contract_recovery_handler_t)(struct sdk_cics_context *ctx, sdk_status_code_t error_code);
+
+// Layout for immutable blame records preserved to disk (.dat.bin files)
+typedef struct {
+    uint32_t writer_id;
+    uint8_t blame_target; // Maps to sdk_blame_t
+    uint8_t reserved1;
+    uint16_t reserved2;
+    uint64_t timestamp_counter;
+} sdk_blame_record_t;
 
 // Auncient ABI Packet Layout for Coaxial Socket Transmission
 typedef struct {
@@ -93,7 +100,7 @@ typedef struct {
     bool is_warm;
 } sdk_kermit_cache_t;
 
-typedef struct {
+typedef struct sdk_cics_context {
     sdk_coaxial_env_t *env;
     sdk_kermit_cache_t *cache;
     sdk_quorum_type_t quorum_type;
@@ -103,6 +110,7 @@ typedef struct {
     sdk_typestate_t state;     // Typestate identifier
     bool is_contract_checking; // Purity check flag
     sdk_blame_t last_blame;    // Blame identifier
+    sdk_contract_recovery_handler_t recovery_handler; // Resilient recovery handler hook
 } sdk_cics_context_t;
 
 // Batched operation structure
@@ -155,6 +163,9 @@ void auncient_sdk_assign_blame(sdk_cics_context_t *ctx, sdk_blame_t blame_target
 
 // Transition Invariants (Pre/Post Relation Constraints)
 bool auncient_sdk_validate_transition_invariant(const sdk_coaxial_env_t *env, int node_idx, uint32_t new_val);
+
+// Invariant Strengthening Verification
+bool auncient_sdk_validate_invariant_strengthening(const sdk_cics_context_t *parent_ctx, const sdk_cics_context_t *child_ctx);
 
 // Physical Layer Driver (PLD) Blame Verification Diagnostic
 bool auncient_pld_verify_blame(const sdk_cics_context_t *ctx, sdk_blame_t expected_blame);

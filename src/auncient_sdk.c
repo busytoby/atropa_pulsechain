@@ -178,6 +178,22 @@ bool auncient_sdk_validate_transition_invariant(const sdk_coaxial_env_t *env, in
     return (new_val >= env->registers[node_idx].value);
 }
 
+bool auncient_sdk_validate_invariant_strengthening(const sdk_cics_context_t *parent_ctx, const sdk_cics_context_t *child_ctx) {
+    if (!parent_ctx || !child_ctx) {
+        return false;
+    }
+    // Sub-binary must preserve or strengthen invariants: if parent requires Grid/Weighted quorums, child cannot fallback to Majority
+    if ((parent_ctx->quorum_type == SDK_QUORUM_GRID || parent_ctx->quorum_type == SDK_QUORUM_WEIGHTED) &&
+        child_ctx->quorum_type == SDK_QUORUM_MAJORITY) {
+        return false;
+    }
+    // Child cannot bypass temporal locks check if parent enforces it
+    if (parent_ctx->has_lock && !child_ctx->has_lock) {
+        return false;
+    }
+    return true;
+}
+
 bool auncient_pld_verify_blame(const sdk_cics_context_t *ctx, sdk_blame_t expected_blame) {
     if (!ctx) {
         return false;
@@ -429,7 +445,8 @@ bool auncient_sdk_execute_primary_bin(const char *bin_path, uint32_t *results, i
         .has_lock = false,
         .state = SDK_STATE_UNLOCKED,
         .is_contract_checking = false,
-        .last_blame = SDK_BLAME_NONE
+        .last_blame = SDK_BLAME_NONE,
+        .recovery_handler = NULL
     };
 
     // 3. Execute
@@ -513,6 +530,13 @@ static bool verify_subtyping(const sdk_cics_context_t *ctx, const char *path) {
             fclose(bin);
             return false;
         }
+
+        // Invariant Strengthening Verification
+        if (!auncient_sdk_validate_invariant_strengthening(ctx, &child_ctx)) {
+            auncient_sdk_assign_blame((sdk_cics_context_t *)ctx, SDK_BLAME_SUBLIBRARY);
+            fclose(bin);
+            return false;
+        }
     }
 
     fclose(bin);
@@ -582,10 +606,17 @@ static bool auncient_sdk_execute_dat_bin_internal(sdk_cics_context_t *ctx, const
         ctx->is_contract_checking = true;
         if (!auncient_sdk_validate_temporal_invariants(ctx, opcode, val)) {
             ctx->is_contract_checking = false;
+            if (ctx->recovery_handler) {
+                ctx->recovery_handler(ctx, SDK_STATUS_ERR_TEMPORAL);
+                if (auncient_sdk_validate_temporal_invariants(ctx, opcode, val)) {
+                    goto proceed_temporal;
+                }
+            }
             auncient_sdk_assign_blame(ctx, SDK_BLAME_CALLER);
             overall_ok = false;
             break;
         }
+        proceed_temporal:
         ctx->is_contract_checking = false;
 
         bool approvals[SDK_NUM_NODES] = {
@@ -637,21 +668,42 @@ bool auncient_sdk_alu_execute(sdk_cics_context_t *ctx, uint8_t alu_opcode, uint3
 
     // Enforce active Purity rules
     if (!auncient_sdk_validate_purity(ctx, alu_opcode)) {
+        if (ctx->recovery_handler) {
+            ctx->recovery_handler(ctx, SDK_STATUS_ERR_PURITY);
+            if (auncient_sdk_validate_purity(ctx, alu_opcode)) {
+                goto proceed_purity;
+            }
+        }
         auncient_sdk_assign_blame(ctx, SDK_BLAME_CALLER);
         return false;
     }
+    proceed_purity:
 
     // Enforce Active Security Clearance check
     if (!auncient_sdk_check_clearance(ctx, target_val)) {
+        if (ctx->recovery_handler) {
+            ctx->recovery_handler(ctx, SDK_STATUS_ERR_SECURITY);
+            if (auncient_sdk_check_clearance(ctx, target_val)) {
+                goto proceed_clearance;
+            }
+        }
         auncient_sdk_assign_blame(ctx, SDK_BLAME_CALLER);
         return false; // Trapped security violation
     }
+    proceed_clearance:
 
     // Enforce Dependent Types PARITY checks
     if (!auncient_sdk_validate_dependent_types(ctx, alu_opcode, target_val)) {
+        if (ctx->recovery_handler) {
+            ctx->recovery_handler(ctx, SDK_STATUS_ERR_DEPENDENT_TYPE);
+            if (auncient_sdk_validate_dependent_types(ctx, alu_opcode, target_val)) {
+                goto proceed_dependent;
+            }
+        }
         auncient_sdk_assign_blame(ctx, SDK_BLAME_CALLER);
         return false;
     }
+    proceed_dependent:
 
     if (alu_opcode == ALU_OP_READ_KERMIT) {
         // Read fast-path from warm cache
@@ -688,9 +740,16 @@ bool auncient_sdk_alu_execute(sdk_cics_context_t *ctx, uint8_t alu_opcode, uint3
         ctx->is_contract_checking = true;
         if (!auncient_sdk_verify_postcondition_oracle(ctx, alu_opcode, approvals, res)) {
             ctx->is_contract_checking = false;
+            if (ctx->recovery_handler) {
+                ctx->recovery_handler(ctx, SDK_STATUS_ERR_ORACLE);
+                if (auncient_sdk_verify_postcondition_oracle(ctx, alu_opcode, approvals, res)) {
+                    goto proceed_oracle;
+                }
+            }
             auncient_sdk_assign_blame(ctx, SDK_BLAME_CALLEE);
             return false; // Oracle mismatch detected
         }
+        proceed_oracle:
         ctx->is_contract_checking = false;
 
         *result_val = res;
@@ -700,9 +759,16 @@ bool auncient_sdk_alu_execute(sdk_cics_context_t *ctx, uint8_t alu_opcode, uint3
     if (alu_opcode == ALU_OP_WRITE_ABD) {
         // Typestate check: writing registers is strictly forbidden unless context is in EXECUTING/COMMITTED typestate
         if (ctx->state != SDK_STATE_EXECUTING && ctx->state != SDK_STATE_COMMITTED) {
+            if (ctx->recovery_handler) {
+                ctx->recovery_handler(ctx, SDK_STATUS_ERR_TYPESTATE);
+                if (ctx->state == SDK_STATE_EXECUTING || ctx->state == SDK_STATE_COMMITTED) {
+                    goto proceed_typestate;
+                }
+            }
             auncient_sdk_assign_blame(ctx, SDK_BLAME_CALLER);
             return false; // Typestate violation
         }
+        proceed_typestate:
 
         // Find max counter
         uint64_t max_counter = 0;
@@ -733,6 +799,12 @@ bool auncient_sdk_alu_execute(sdk_cics_context_t *ctx, uint8_t alu_opcode, uint3
         for (int i = 0; i < SDK_NUM_NODES; i++) {
             if (approvals[i]) {
                 if (!auncient_sdk_validate_transition_invariant(env, i, target_val)) {
+                    if (ctx->recovery_handler) {
+                        ctx->recovery_handler(ctx, SDK_STATUS_ERR_TRANSITION);
+                        if (auncient_sdk_validate_transition_invariant(env, i, target_val)) {
+                            continue; // Recovered
+                        }
+                    }
                     auncient_sdk_assign_blame(ctx, SDK_BLAME_CALLER);
                     return false; // Transition invariant failure (value regression)
                 }

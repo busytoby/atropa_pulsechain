@@ -4,6 +4,14 @@
 #include <stdlib.h>
 #include <assert.h>
 
+// Resilient recovery callback for testing
+static void test_recovery_callback(sdk_cics_context_t *ctx, sdk_status_code_t error_code) {
+    if (error_code == SDK_STATUS_ERR_SECURITY) {
+        // Recover by elevating security clearance level to satisfy pre-conditions
+        ctx->security_clearance = 3;
+    }
+}
+
 // -------------------------------------------------------------
 // .xpl to .dat.bin Compiler & Execution Tests
 // -------------------------------------------------------------
@@ -86,7 +94,8 @@ int main(void) {
         .has_lock = false,
         .state = SDK_STATE_UNLOCKED,
         .is_contract_checking = false,
-        .last_blame = SDK_BLAME_NONE
+        .last_blame = SDK_BLAME_NONE,
+        .recovery_handler = NULL
     };
 
     // Attempting load should fail behavioral subtyping verification
@@ -203,29 +212,40 @@ int main(void) {
     assert(ok == false); // Write should trigger purity violation
     ok = auncient_sdk_validate_purity(&low_clearance_ctx, ALU_OP_READ_KERMIT);
     assert(ok == true);  // Read is pure/allowed
+    low_clearance_ctx.is_contract_checking = false;
     printf("   ✓ Purity validations confirmed: writes blocked during contracts.\n");
     fflush(stdout);
 
-    // 14. Test Contract Refinement checking (Behavioral subtyping refinement)
-    printf("[TEST] Testing contract refinement validations...\n");
+    // 14. Test Contract Refinement checking & Invariant Strengthening (Behavioral subtyping refinement)
+    printf("[TEST] Testing contract refinement & invariant strengthening...\n");
     fflush(stdout);
     sdk_cics_context_t parent_ctx = low_clearance_ctx;
     parent_ctx.security_clearance = 3;
     parent_ctx.quorum_type = SDK_QUORUM_WEIGHTED;
+    parent_ctx.has_lock = true;
 
     sdk_cics_context_t child_ctx = low_clearance_ctx;
     child_ctx.security_clearance = 2; // Weakened pre-condition (requires LESS clearance)
     child_ctx.quorum_type = SDK_QUORUM_WEIGHTED;
+    child_ctx.has_lock = true;
 
-    // Conforming refinement
+    // Conforming refinement & invariant strengthening
     ok = auncient_sdk_validate_contract_refinement(&parent_ctx, &child_ctx);
+    assert(ok == true);
+    ok = auncient_sdk_validate_invariant_strengthening(&parent_ctx, &child_ctx);
     assert(ok == true);
 
     // Non-conforming refinement (child requires MORE clearance, strengthening pre-condition)
     child_ctx.security_clearance = 4;
     ok = auncient_sdk_validate_contract_refinement(&parent_ctx, &child_ctx);
     assert(ok == false);
-    printf("   ✓ Contract refinement pre/post rules verified successfully.\n");
+
+    // Non-conforming invariant strengthening (child degrades quorum to Majority, violating invariant rules)
+    child_ctx.security_clearance = 2;
+    child_ctx.quorum_type = SDK_QUORUM_MAJORITY;
+    ok = auncient_sdk_validate_invariant_strengthening(&parent_ctx, &child_ctx);
+    assert(ok == false);
+    printf("   ✓ Contract refinement and invariant strengthening verified successfully.\n");
     fflush(stdout);
 
     // 15. Test Blame Assignment semantics & PLD logging
@@ -233,6 +253,10 @@ int main(void) {
     fflush(stdout);
     low_clearance_ctx.last_blame = SDK_BLAME_NONE;
     low_clearance_ctx.security_clearance = 1; // Low clearance
+    low_clearance_ctx.recovery_handler = NULL;
+    low_clearance_ctx.quorum_type = SDK_QUORUM_MAJORITY;
+    low_clearance_ctx.has_lock = true;
+    
     // High-clearance value write (950000) fails pre-condition: blames the Caller
     ok = auncient_sdk_alu_execute(&low_clearance_ctx, ALU_OP_WRITE_ABD, 950000, approvals, &results[0]);
     assert(ok == false);
@@ -262,7 +286,21 @@ int main(void) {
     printf("   ✓ Blame correctly verified, logged to disk, and cleared via PLD driver functions.\n");
     fflush(stdout);
 
-    // 16. Test Transition Invariants (Pre/Post Relation Constraints)
+    // 16. Test Resilient Contract Recovery Handlers
+    printf("[TEST] Testing resilient contract recovery handlers...\n");
+    fflush(stdout);
+    low_clearance_ctx.security_clearance = 1; // Reset to low clearance
+    low_clearance_ctx.recovery_handler = test_recovery_callback; // Set recovery hook
+    
+    // High-clearance value write should succeed because the recovery handler catches the clearance failure
+    // and promotes clearance level to 3
+    ok = auncient_sdk_alu_execute(&low_clearance_ctx, ALU_OP_WRITE_ABD, 950000, approvals, &results[0]);
+    assert(ok == true);
+    assert(low_clearance_ctx.security_clearance == 3);
+    printf("   ✓ Resilient recovery handler executed and recovered state successfully.\n");
+    fflush(stdout);
+
+    // 17. Test Transition Invariants (Pre/Post Relation Constraints)
     printf("[TEST] Testing pre/post relation transition invariants...\n");
     fflush(stdout);
     env.registers[0].value = 500; // Baseline state
