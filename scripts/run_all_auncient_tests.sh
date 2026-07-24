@@ -215,6 +215,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_voodoo_best_practices
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_ackerman_consensus.c -o tests/test_auncient_ackerman_consensus -lm -lrt
 ./tests/test_auncient_ackerman_consensus
 
+# Compile and run Kermit Policy Aho-Corasick Cache
+gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_kermit_cache.c -o tests/test_auncient_kermit_cache -lm -lrt
+./tests/test_auncient_kermit_cache
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
