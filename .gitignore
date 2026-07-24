@@ -167,6 +167,7 @@ libtsfi2.so
 /tests/test_auncient_xplos_debugger_extended
 /tests/test_auncient_plexus_multiplexer
 /tests/test_auncient_coaxial_cad
+/tests/test_auncient_power_amplifier
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
