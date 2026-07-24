@@ -142,6 +142,7 @@ libtsfi2.so
 /tests/test_auncient_autodin_recovery
 /tests/test_auncient_network_skeleton
 /tests/test_auncient_aho_corasick_net
+/tests/test_auncient_kendrick_network
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
