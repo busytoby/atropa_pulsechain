@@ -607,4 +607,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_bgp_dns_mounts.c -o t
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_bgp_peering.c -o tests/test_auncient_bgp_peering -lm -lrt
 ./tests/test_auncient_bgp_peering
 
+# Compile and run Auncient SDK BGP Demo
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_sdk_bgp_demo.c -o tests/test_auncient_sdk_bgp_demo -lm -lrt
+./tests/test_auncient_sdk_bgp_demo
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
