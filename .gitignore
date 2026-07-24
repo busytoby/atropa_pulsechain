@@ -257,6 +257,7 @@ libtsfi2.so
 /tests/test_auncient_wunsche_entropy
 /tests/test_auncient_coupled_byzantine_entropy
 /tests/test_auncient_structured_bench
+/tests/test_auncient_fault_tolerant_clock
 /tests/output.xpl
 /scripts/compile_apdl
 /scripts/alsa_player
