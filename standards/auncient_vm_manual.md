@@ -55,6 +55,13 @@ Logical invariant contracts are compiled directly to branchless hardware write g
 * **Postcondition $\psi$ (PNP Red)**: Mapped to active-low PNP gate conduction (value `0` represents truth).
 * **Conduction Path**: Path is open only when NPN Black is high and PNP Red is low. All other combinations force immediate `TRANSISTOR_CUTOFF`.
 
+### H. APDL Compiler Specifications (TWS)
+* **Concurrent Grammar**: Recognizes parallel composition operations (`||` or `CONCURRENT`).
+* **Horning Disjointness Check**: Verifies that parallel tasks write to disjoint memory space targets:
+  $$\text{Targets}(\alpha) \cap \text{Targets}(\beta) = \emptyset$$
+  Overlapping write space targets fail compilation to prevent race conditions.
+* **Codegen Wrapper**: Emits Converse Vector Table (CVT) and Mutex code segments to wrap the parallel tasks.
+
 ---
 
 ## 3. System Register Maps
