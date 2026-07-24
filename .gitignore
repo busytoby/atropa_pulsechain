@@ -162,6 +162,7 @@ libtsfi2.so
 /tests/test_tws_improved
 /tests/test_auncient_unified_pll_vfio
 /tests/test_auncient_autodin_pll
+/tests/test_auncient_wortman_auditor
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
