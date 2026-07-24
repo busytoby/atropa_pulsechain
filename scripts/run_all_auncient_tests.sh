@@ -463,4 +463,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vppd_consensus.c -o t
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vppd_rollback.c -o tests/test_auncient_vppd_rollback -lm -lrt
 ./tests/test_auncient_vppd_rollback
 
+# Compile and run Auncient Binary Layout Optimizer
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_binary_optimizer.c -o tests/test_auncient_binary_optimizer -lssl -lcrypto -lm -lrt
+./tests/test_auncient_binary_optimizer
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
