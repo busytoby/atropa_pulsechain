@@ -72,6 +72,24 @@ int main(void) {
     printf("   ✓ Batched operations committed and verified successfully.\n");
     fflush(stdout);
 
+    // 5. Test dynamic quorum policy switcher
+    printf("[TEST] Changing active quorum policy dynamically...\n");
+    fflush(stdout);
+    ok = auncient_sdk_set_quorum_policy(&ctx, SDK_QUORUM_GRID);
+    assert(ok == true);
+    assert(ctx.quorum_type == SDK_QUORUM_GRID);
+    printf("   ✓ Quorum policy changed dynamically to SDK_QUORUM_GRID.\n");
+    fflush(stdout);
+
+    // 6. Test contextual register reset (Void)
+    printf("[TEST] Resetting registers via Void context command...\n");
+    fflush(stdout);
+    auncient_sdk_void_registers(&env);
+    assert(env.registers[0].value == 0);
+    assert(env.registers[0].ts.counter == 0);
+    printf("   ✓ Contextual register reset verified.\n");
+    fflush(stdout);
+
     auncient_sdk_close_coaxial(&env);
     printf("=============================================================\n");
     printf("SDK INTEGRATION TESTS PASSED\n");

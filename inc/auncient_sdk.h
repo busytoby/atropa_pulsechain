@@ -16,7 +16,8 @@ typedef enum {
     SDK_STATUS_ERR_QUORUM = 1,
     SDK_STATUS_ERR_STALE = 2,
     SDK_STATUS_ERR_SECURITY = 3,
-    SDK_STATUS_ERR_GENERIC = 4
+    SDK_STATUS_ERR_GENERIC = 4,
+    SDK_STATUS_COPROCESSOR_ROUTE = 5
 } sdk_status_code_t;
 
 // Auncient ABI Packet Layout for Coaxial Socket Transmission
@@ -77,6 +78,8 @@ bool auncient_sdk_init_coaxial(sdk_coaxial_env_t *env);
 void auncient_sdk_close_coaxial(sdk_coaxial_env_t *env);
 
 bool auncient_sdk_configure_weights(sdk_coaxial_env_t *env, const uint32_t *weights);
+bool auncient_sdk_set_quorum_policy(sdk_cics_context_t *ctx, sdk_quorum_type_t policy);
+void auncient_sdk_void_registers(sdk_coaxial_env_t *env);
 
 bool auncient_sdk_alu_execute(sdk_cics_context_t *ctx, uint8_t alu_opcode, uint32_t target_val, const bool *approvals, uint32_t *result_val);
 

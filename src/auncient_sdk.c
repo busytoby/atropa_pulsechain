@@ -40,6 +40,25 @@ bool auncient_sdk_configure_weights(sdk_coaxial_env_t *env, const uint32_t *weig
     return true;
 }
 
+bool auncient_sdk_set_quorum_policy(sdk_cics_context_t *ctx, sdk_quorum_type_t policy) {
+    if (!ctx) {
+        return false;
+    }
+    ctx->quorum_type = policy;
+    return true;
+}
+
+void auncient_sdk_void_registers(sdk_coaxial_env_t *env) {
+    if (!env) {
+        return;
+    }
+    for (int i = 0; i < SDK_NUM_NODES; i++) {
+        env->registers[i].value = 0;
+        env->registers[i].ts.counter = 0;
+        env->registers[i].ts.writer_id = 0;
+    }
+}
+
 static bool check_ackerman_quorum(sdk_quorum_type_t type, const bool *approvals, const uint32_t *weights) {
     if (type == SDK_QUORUM_MAJORITY) {
         int count = 0;
@@ -182,6 +201,21 @@ bool auncient_sdk_cics_exec(sdk_cics_context_t *ctx, uint32_t value, const bool 
 bool auncient_sdk_batch_exec(sdk_cics_context_t *ctx, const sdk_batched_op_t *ops, int num_ops, uint32_t *results) {
     if (!ctx || !ops || num_ops <= 0 || !results) {
         return false;
+    }
+
+    // Pirk co-processing router logic: If the batch contains more than 2 operations,
+    // flag the operation route status.
+    if (num_ops > 2) {
+        // Send a status packet back to indicate co-processing reroute
+        auncient_abi_packet_t packet = {
+            .alu_opcode = ops[0].opcode,
+            .status_flag = SDK_STATUS_COPROCESSOR_ROUTE,
+            .payload_length = 0,
+            .payload_value = 0,
+            .timestamp_counter = 0,
+            .writer_id = ctx->writer_id
+        };
+        write(ctx->env->socket_fds[0], &packet, sizeof(auncient_abi_packet_t));
     }
 
     for (int i = 0; i < num_ops; i++) {
