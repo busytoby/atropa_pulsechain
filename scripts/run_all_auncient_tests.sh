@@ -179,6 +179,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_jin_li_rate.c -o test
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_jin_li_quant.c -o tests/test_auncient_jin_li_quant -lm -lrt
 ./tests/test_auncient_jin_li_quant
 
+# Compile and run SIGPLAN Information Flow Control
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_sigplan_ifc.c -o tests/test_auncient_sigplan_ifc -lm -lrt
+./tests/test_auncient_sigplan_ifc
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
