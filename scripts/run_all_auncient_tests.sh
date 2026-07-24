@@ -599,4 +599,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_coaxial_dns.c -o test
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_unified_dns.c -o tests/test_auncient_unified_dns -lm -lrt
 ./tests/test_auncient_unified_dns
 
+# Compile and run Auncient BGP Server Dynamic Mount Discovery
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_bgp_dns_mounts.c -o tests/test_auncient_bgp_dns_mounts -lm -lrt
+./tests/test_auncient_bgp_dns_mounts
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
