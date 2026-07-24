@@ -152,6 +152,7 @@ libtsfi2.so
 /tests/test_auncient_plexus_gated_device
 /tests/test_auncient_23tree_net_device
 /tests/test_auncient_shared_memory_auditor
+/tests/test_auncient_xplos_kernel
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
