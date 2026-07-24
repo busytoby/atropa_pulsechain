@@ -185,6 +185,7 @@ libtsfi2.so
 /tests/test_auncient_fourier_registry
 /tests/test_auncient_fourier_registry_improved
 /tests/test_auncient_benchmarks
+/tests/test_auncient_fourier_qfactor
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
