@@ -399,4 +399,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_dataplane_backpressur
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpp_dataplane.c -o tests/test_auncient_vpp_dataplane -lm -lrt
 ./tests/test_auncient_vpp_dataplane
 
+# Compile and run Dataplane Telemetry Blame Logger
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_dataplane_telemetry.c -o tests/test_auncient_dataplane_telemetry -lm -lrt
+./tests/test_auncient_dataplane_telemetry
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
