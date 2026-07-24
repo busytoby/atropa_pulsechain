@@ -42,7 +42,7 @@ static void ac_insert(const char *pattern, uint32_t pattern_idx) {
     g_trie[current_state].match_mask |= (1 << pattern_idx);
 }
 
-// Build Failure links for Aho-Corasick
+// Build Failure links and transform to a Deterministic Finite Automaton (DFA)
 static void ac_build_failure_links(void) {
     int queue[MAX_STATES];
     int q_head = 0, q_tail = 0;
@@ -63,33 +63,29 @@ static void ac_build_failure_links(void) {
             int next = g_trie[current].next_states[c];
             if (next != 0) {
                 int fail = g_trie[current].failure_link;
-                while (fail > 0 && g_trie[fail].next_states[c] == 0) {
-                    fail = g_trie[fail].failure_link;
-                }
                 int resolved_fail = g_trie[fail].next_states[c];
                 g_trie[next].failure_link = resolved_fail;
                 g_trie[next].match_mask |= g_trie[resolved_fail].match_mask;
                 queue[q_tail++] = next;
+            } else {
+                int fail = g_trie[current].failure_link;
+                g_trie[current].next_states[c] = g_trie[fail].next_states[c];
             }
         }
     }
 }
 
-// Sub-microsecond Aho-Corasick packet auditor lookup loop
+// Sub-microsecond O(1) single-step Aho-Corasick DFA lookup loop
 // Banned prints in hot path to comply with Rule 11
 static inline bool ac_audit_payload(const uint8_t *payload, uint16_t len) {
     uint32_t current_state = 0;
     
     for (uint16_t i = 0; i < len; i++) {
         uint8_t c = payload[i];
-        while (current_state > 0 && g_trie[current_state].next_states[c] == 0) {
-            current_state = g_trie[current_state].failure_link;
-        }
         current_state = g_trie[current_state].next_states[c];
         
         if (g_trie[current_state].match_mask != 0) {
             // Match found, copy to quarantine and return audit fail
-            // No printf inside hot path lookup to prevent locking
             g_quarantine.has_quarantined_data = true;
             return false;
         }
