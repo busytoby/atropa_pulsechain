@@ -236,7 +236,15 @@ int main(void) {
     ok = auncient_sdk_alu_execute(&low_clearance_ctx, ALU_OP_WRITE_ABD, 950000, approvals, &results[0]);
     assert(ok == false);
     assert(auncient_pld_verify_blame(&low_clearance_ctx, SDK_BLAME_CALLER) == true);
-    printf("   ✓ Blame correctly assigned to Caller context via PLD diagnostic.\n");
+    
+    // Broadcast blame over physical driver socket
+    ok = auncient_pld_broadcast_blame(&low_clearance_ctx);
+    assert(ok == true);
+    
+    // Clear blame via driver query
+    auncient_pld_clear_blame(&low_clearance_ctx);
+    assert(auncient_pld_verify_blame(&low_clearance_ctx, SDK_BLAME_NONE) == true);
+    printf("   ✓ Blame correctly verified, broadcasted, and cleared via PLD driver functions.\n");
     fflush(stdout);
 
     // 16. Test Transition Invariants (Pre/Post Relation Constraints)

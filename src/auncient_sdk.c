@@ -185,6 +185,39 @@ bool auncient_pld_verify_blame(const sdk_cics_context_t *ctx, sdk_blame_t expect
     return (ctx->last_blame == expected_blame);
 }
 
+void auncient_pld_clear_blame(sdk_cics_context_t *ctx) {
+    if (ctx) {
+        ctx->last_blame = SDK_BLAME_NONE;
+    }
+}
+
+bool auncient_pld_broadcast_blame(const sdk_cics_context_t *ctx) {
+    if (!ctx) {
+        return false;
+    }
+
+    // Packet carries blame information across coaxial line
+    auncient_abi_packet_t packet = {
+        .alu_opcode = 0xFF, // Custom diagnostic op
+        .status_flag = ctx->last_blame,
+        .payload_length = 0,
+        .payload_value = 0,
+        .timestamp_counter = 0,
+        .writer_id = ctx->writer_id
+    };
+
+    if (write(ctx->env->socket_fds[0], &packet, sizeof(auncient_abi_packet_t)) < 0) {
+        return false;
+    }
+
+    auncient_abi_packet_t rx_packet;
+    if (read(ctx->env->socket_fds[1], &rx_packet, sizeof(auncient_abi_packet_t)) < 0) {
+        return false;
+    }
+
+    return (rx_packet.status_flag == ctx->last_blame);
+}
+
 static bool check_ackerman_quorum(sdk_quorum_type_t type, const bool *approvals, const uint32_t *weights) {
     if (type == SDK_QUORUM_MAJORITY) {
         int count = 0;
