@@ -343,6 +343,8 @@ frontend/compiled_yul.json
 /tests/siggraph_physics.dat.bin
 /tests/test_auncient_siggraph_presenter
 /tests/test_auncient_tws_improved
+/tests/tws_audit.dat.bin
+
 
 
 

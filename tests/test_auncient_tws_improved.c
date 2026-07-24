@@ -131,6 +131,32 @@ bool tws_compile_gated(tws_compiler_t *compiler, const char *source, uint8_t cle
     return false;
 }
 
+// Writes compiled transition logs to .dat.bin cold storage ledger (Rule 13 compliance)
+bool tws_log_audits_to_disk(const tws_compiler_t *compiler, const char *log_dat_bin_path) {
+    if (!compiler || !log_dat_bin_path) {
+        return false;
+    }
+
+    FILE *f = fopen(log_dat_bin_path, "wb");
+    if (!f) {
+        return false;
+    }
+
+    // Write header: "TWSA"
+    uint32_t signature = 0x54575341;
+    fwrite(&signature, sizeof(uint32_t), 1, f);
+    
+    // Write count of records
+    uint32_t count = (uint32_t)compiler->audit_log_count;
+    fwrite(&count, sizeof(uint32_t), 1, f);
+
+    // Write array entries
+    size_t written = fwrite(compiler->audit_log, sizeof(tws_gate_audit_entry_t), count, f);
+    fclose(f);
+
+    return (written == count);
+}
+
 // -------------------------------------------------------------
 // Unit Tests
 // -------------------------------------------------------------
@@ -139,6 +165,8 @@ int main(void) {
     printf("AUNCIENT TWS GATED COMPILER VERIFICATION SUITE\n");
     printf("=============================================================\n");
     fflush(stdout);
+
+    const char *log_path = "tests/tws_audit.dat.bin";
 
     TwoThreeNode *ast = create_leaf(100, "AST_INIT_STATE");
     tws_compiler_t compiler = {
@@ -196,7 +224,33 @@ int main(void) {
     printf("   ✓ Second transition (cutoff enforcement) successfully logged.\n");
     fflush(stdout);
 
+    // 3. Serialize Audits directly to .dat.bin ledger on disk
+    printf("[TEST] Logging TWS compiler audits to cold storage ledger...\n");
+    fflush(stdout);
+    ok = tws_log_audits_to_disk(&compiler, log_path);
+    assert(ok == true);
+    printf("   ✓ Cold storage serialization completed.\n");
+    fflush(stdout);
+
+    // Verify log file structure
+    FILE *log_f = fopen(log_path, "rb");
+    assert(log_f != NULL);
+    uint32_t read_sig = 0, read_count = 0;
+    assert(fread(&read_sig, sizeof(uint32_t), 1, log_f) == 1 && read_sig == 0x54575341);
+    assert(fread(&read_count, sizeof(uint32_t), 1, log_f) == 1 && read_count == 2);
+    
+    tws_gate_audit_entry_t read_entries[2];
+    assert(fread(read_entries, sizeof(tws_gate_audit_entry_t), 2, log_f) == 2);
+    fclose(log_f);
+
+    assert(read_entries[0].previous_state == CUTOFF_STATE && read_entries[0].next_state == CONDUC_STATE);
+    assert(read_entries[1].previous_state == CONDUC_STATE && read_entries[1].next_state == CUTOFF_STATE);
+    printf("   ✓ Log data verified successfully from disk.\n");
+    fflush(stdout);
+
     free(ast);
+    remove(log_path);
+
     printf("=============================================================\n");
     printf("TWS GATED COMPILER VERIFICATION COMPLETE\n");
     printf("=============================================================\n");
