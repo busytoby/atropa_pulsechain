@@ -327,6 +327,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_similarity_search.c -
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_voodoo_sli.c -o tests/test_auncient_voodoo_sli -lm -lrt
 ./tests/test_auncient_voodoo_sli
 
+# Compile and run Contract Invariant Monitors
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_contract_invariant.c -o tests/test_auncient_contract_invariant -lm -lrt
+./tests/test_auncient_contract_invariant
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
