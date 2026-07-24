@@ -208,6 +208,7 @@ libtsfi2.so
 /tests/test_auncient_fourier_implication
 /tests/test_auncient_coaxial_only
 /tests/test_auncient_integration_bench
+/tests/test_auncient_pdl_oversight
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
