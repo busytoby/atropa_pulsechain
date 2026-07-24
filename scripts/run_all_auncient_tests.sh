@@ -459,4 +459,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vppd_ackerman.c -o te
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vppd_consensus.c -o tests/test_auncient_vppd_consensus -lm -lrt
 ./tests/test_auncient_vppd_consensus
 
+# Compile and run VPPD Stack Transactional Rollback
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vppd_rollback.c -o tests/test_auncient_vppd_rollback -lm -lrt
+./tests/test_auncient_vppd_rollback
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
