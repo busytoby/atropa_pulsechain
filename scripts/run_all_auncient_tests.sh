@@ -219,6 +219,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_ackerman_consensus.c 
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_kermit_cache.c -o tests/test_auncient_kermit_cache -lm -lrt
 ./tests/test_auncient_kermit_cache
 
+# Compile and run AUTODIN Ackerman Declassification Gating
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_autodin_ackerman.c -o tests/test_auncient_autodin_ackerman -lm -lrt
+./tests/test_auncient_autodin_ackerman
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
