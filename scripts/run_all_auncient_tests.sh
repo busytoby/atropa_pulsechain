@@ -515,4 +515,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_huc_ocean.c -o 
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_huc_ocean_v2.c -o tests/test_auncient_hogan_huc_ocean_v2 -lm -lrt
 ./tests/test_auncient_hogan_huc_ocean_v2
 
+# Compile and run Auncient Hogan Overnight Reconciliation
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_reconciliation.c -o tests/test_auncient_hogan_reconciliation -lm -lrt
+./tests/test_auncient_hogan_reconciliation
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="

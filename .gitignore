@@ -377,7 +377,9 @@ frontend/compiled_yul.json
 /tests/test_auncient_hogan_sgpr_vgpr
 /tests/test_auncient_hogan_huc_ocean
 /tests/test_auncient_hogan_huc_ocean_v2
+/tests/test_auncient_hogan_reconciliation
 /tests/autodin_events.dat.bin
+
 
 
 
