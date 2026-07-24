@@ -387,7 +387,9 @@ frontend/compiled_yul.json
 /tests/test_auncient_accumulator_quorum
 /tests/test_auncient_hogan_reconciliation_quorum
 /tests/test_auncient_hogan_reconciliation_quorum_v2
+/tests/test_auncient_hogan_huc_ocean_v5
 /tests/autodin_events.dat.bin
+
 
 
 
