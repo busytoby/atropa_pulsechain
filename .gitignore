@@ -362,7 +362,9 @@ frontend/compiled_yul.json
 /tests/test_auncient_vpdl
 /tests/test_auncient_vpdl_blame
 /tests/test_auncient_vppd_ackerman
+/tests/test_auncient_vppd_consensus
 /tests/autodin_events.dat.bin
+
 
 
 

@@ -455,4 +455,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpdl_blame.c -o tests
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vppd_ackerman.c -o tests/test_auncient_vppd_ackerman -lm -lrt
 ./tests/test_auncient_vppd_ackerman
 
+# Compile and run Ackerman Communal Consensus Simulation
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vppd_consensus.c -o tests/test_auncient_vppd_consensus -lm -lrt
+./tests/test_auncient_vppd_consensus
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
