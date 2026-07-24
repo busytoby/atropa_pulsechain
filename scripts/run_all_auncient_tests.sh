@@ -619,4 +619,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_bgp_reflector.c -o te
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_bgp_precedence.c -o tests/test_auncient_bgp_precedence -lm -lrt
 ./tests/test_auncient_bgp_precedence
 
+# Compile and run Auncient BGP Routing Security & Hijack Detection
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_bgp_security.c -o tests/test_auncient_bgp_security -lm -lrt
+./tests/test_auncient_bgp_security
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
