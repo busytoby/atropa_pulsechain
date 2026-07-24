@@ -243,6 +243,7 @@ libtsfi2.so
 /tests/test_auncient_sigplan_contracts
 /tests/test_auncient_cscw_crdt
 /tests/test_auncient_cscw_black_crdt_red
+/tests/test_auncient_cscw_pn_counter
 /tests/output.xpl
 /scripts/compile_apdl
 /scripts/alsa_player
