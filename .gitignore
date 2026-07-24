@@ -158,6 +158,7 @@ libtsfi2.so
 /tests/test_auncient_vfio_xplsm
 /tests/test_auncient_interlocked_tamper
 /tests/test_auncient_lindsey_fox
+/tests/test_acom_improved
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
