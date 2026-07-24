@@ -155,6 +155,7 @@ libtsfi2.so
 /tests/test_auncient_xplos_kernel
 /tests/test_auncient_plexus_polymorphic_alu
 /tests/test_auncient_unified_alu
+/tests/test_auncient_vfio_xplsm
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
