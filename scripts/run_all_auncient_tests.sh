@@ -251,6 +251,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_wunsche_entropy.c -o 
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_coupled_byzantine_entropy.c -o tests/test_auncient_coupled_byzantine_entropy -lm -lrt
 ./tests/test_auncient_coupled_byzantine_entropy
 
+# Compile and run Structured Transaction Benchmarks
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_structured_bench.c -o tests/test_auncient_structured_bench -lm -lrt
+./tests/test_auncient_structured_bench
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
