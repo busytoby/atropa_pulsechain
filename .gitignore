@@ -180,6 +180,7 @@ libtsfi2.so
 /tests/test_auncient_pli_vfio_controlled
 /tests/test_auncient_pli_refer
 /tests/test_auncient_pli_precision
+/tests/test_auncient_cad_automatic_discharge
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
