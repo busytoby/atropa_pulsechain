@@ -241,6 +241,7 @@ libtsfi2.so
 /tests/test_auncient_sigplan_ifc
 /tests/test_auncient_autodin_ifc
 /tests/test_auncient_sigplan_contracts
+/tests/test_auncient_cscw_crdt
 /tests/output.xpl
 /scripts/compile_apdl
 /scripts/alsa_player
