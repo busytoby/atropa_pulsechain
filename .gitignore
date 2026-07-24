@@ -260,6 +260,7 @@ libtsfi2.so
 /tests/test_auncient_fault_tolerant_clock
 /tests/test_auncient_bakery_lock
 /tests/test_auncient_welch_link_state
+/tests/test_auncient_socket_link_state
 /tests/output.xpl
 /scripts/compile_apdl
 /scripts/alsa_player
