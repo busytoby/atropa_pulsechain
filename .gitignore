@@ -389,7 +389,11 @@ frontend/compiled_yul.json
 /tests/test_auncient_hogan_reconciliation_quorum_v2
 /tests/test_auncient_hogan_huc_ocean_v5
 /tests/test_auncient_fourier_switch
+/tests/test_auncient_cassel_smps
+/tests/test_auncient_winchester_majordomo
 /tests/autodin_events.dat.bin
+
+
 
 
 

@@ -563,4 +563,12 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_huc_ocean_v5.c 
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_fourier_switch.c -o tests/test_auncient_fourier_switch -lm -lrt
 ./tests/test_auncient_fourier_switch
 
+# Compile and run Auncient Arno Cassel SMPS Toolbox Simulation
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_cassel_smps.c -o tests/test_auncient_cassel_smps -lm -lrt
+./tests/test_auncient_cassel_smps
+
+# Compile and run Auncient WinchesterMQ & Majordomo Integration
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_winchester_majordomo.c -o tests/test_auncient_winchester_majordomo -lm -lrt
+./tests/test_auncient_winchester_majordomo
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
