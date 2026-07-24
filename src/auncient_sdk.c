@@ -67,11 +67,17 @@ bool auncient_sdk_check_clearance(const sdk_cics_context_t *ctx, uint32_t value)
     return true;
 }
 
-bool auncient_sdk_autodin_spin_lock(sdk_cics_context_t *ctx, uint32_t lock_token) {
-    // Write a lock request envelope into the AUTODIN spin-lock loop
+bool auncient_sdk_autodin_spin_lock(sdk_cics_context_t *ctx, uint32_t lock_token, char precedence) {
+    // Map precedence character to priority level ('F'=4, 'I'=3, 'P'=2, 'R'=1)
+    uint8_t priority = 1;
+    if (precedence == 'F') priority = 4;
+    else if (precedence == 'I') priority = 3;
+    else if (precedence == 'P') priority = 2;
+
+    // Write a lock request envelope into the AUTODIN spin-lock loop containing priority metadata
     auncient_abi_packet_t packet = {
         .alu_opcode = ALU_OP_EVAL_ACKERMAN,
-        .status_flag = SDK_STATUS_OK,
+        .status_flag = priority, // Use status_flag to carry priority metadata
         .payload_length = sizeof(uint32_t),
         .payload_value = lock_token,
         .timestamp_counter = 1,
@@ -96,7 +102,7 @@ void auncient_sdk_autodin_spin_unlock(sdk_cics_context_t *ctx, uint32_t lock_tok
     // Write an unlock/release envelope into the AUTODIN spin-lock loop
     auncient_abi_packet_t packet = {
         .alu_opcode = ALU_OP_EVAL_ACKERMAN,
-        .status_flag = SDK_STATUS_OK,
+        .status_flag = 0,
         .payload_length = sizeof(uint32_t),
         .payload_value = 0, // 0 indicates lock release
         .timestamp_counter = 2,

@@ -84,8 +84,8 @@ void auncient_sdk_void_registers(sdk_coaxial_env_t *env);
 // Active Security Clearance check
 bool auncient_sdk_check_clearance(const sdk_cics_context_t *ctx, uint32_t value);
 
-// AUTODIN Spin-Lock Interface
-bool auncient_sdk_autodin_spin_lock(sdk_cics_context_t *ctx, uint32_t lock_token);
+// Precedence-Aware AUTODIN Spin-Lock Interface
+bool auncient_sdk_autodin_spin_lock(sdk_cics_context_t *ctx, uint32_t lock_token, char precedence);
 void auncient_sdk_autodin_spin_unlock(sdk_cics_context_t *ctx, uint32_t lock_token);
 
 bool auncient_sdk_alu_execute(sdk_cics_context_t *ctx, uint8_t alu_opcode, uint32_t target_val, const bool *approvals, uint32_t *result_val);

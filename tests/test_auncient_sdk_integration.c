@@ -102,7 +102,7 @@ int main(void) {
     // 8. Test AUTODIN spin-lock acquisition and release
     printf("[TEST] Acquiring lock via AUTODIN loopback spin-lock...\n");
     fflush(stdout);
-    ok = auncient_sdk_autodin_spin_lock(&ctx, 0xABC);
+    ok = auncient_sdk_autodin_spin_lock(&ctx, 0xABC, 'F');
     assert(ok == true);
     printf("   ✓ AUTODIN spin-lock acquired successfully.\n");
     fflush(stdout);
