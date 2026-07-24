@@ -215,6 +215,7 @@ libtsfi2.so
 /tests/test_auncient_safety_learning
 /tests/test_auncient_black_red_pdl
 /tests/test_auncient_apdl_xplos
+/tests/test_auncient_apdl_convergence
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
