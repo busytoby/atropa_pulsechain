@@ -571,4 +571,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_cassel_smps.c -o test
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_winchester_majordomo.c -o tests/test_auncient_winchester_majordomo -lm -lrt
 ./tests/test_auncient_winchester_majordomo
 
+# Compile and run Auncient mdev Coaxial Carrier Simulation
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_mdev_coaxial.c -o tests/test_auncient_mdev_coaxial -lm -lrt
+./tests/test_auncient_mdev_coaxial
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
