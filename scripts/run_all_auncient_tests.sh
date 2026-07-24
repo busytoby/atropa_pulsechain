@@ -375,4 +375,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_siggraph_discharge.c 
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_siggraph_presenter.c -o tests/test_auncient_siggraph_presenter -lm -lrt
 ./tests/test_auncient_siggraph_presenter
 
+# Compile and run TWS Gated Compiler
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_tws_improved.c -o tests/test_auncient_tws_improved -lssl -lcrypto -lm -lrt
+./tests/test_auncient_tws_improved
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
