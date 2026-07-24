@@ -16,6 +16,11 @@ sdk-benchmark:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_sdk_benchmarks.c -o tests/test_auncient_sdk_benchmarks -lm -lrt
 	./tests/test_auncient_sdk_benchmarks
 
+siggraph-projector:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_siggraph_projector.c -o tests/test_auncient_siggraph_projector -lm -lrt
+	./tests/test_auncient_siggraph_projector
+
+
 
 test-dashboard:
 	python3 -m unittest tests/e2e/test_nonukes_dashboard.py

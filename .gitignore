@@ -334,3 +334,7 @@ boot-log-dysnomia
 
 # Ignore generated yul compiler output
 frontend/compiled_yul.json
+
+# SIGGRAPH projector binary
+/tests/test_auncient_siggraph_projector
+
