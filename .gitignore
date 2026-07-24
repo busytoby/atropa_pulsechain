@@ -254,6 +254,7 @@ libtsfi2.so
 /tests/test_auncient_sigact_byzantine
 /tests/test_auncient_edtc_self_test
 /tests/test_auncient_coupled_simulator
+/tests/test_auncient_wunsche_entropy
 /tests/output.xpl
 /scripts/compile_apdl
 /scripts/alsa_player
