@@ -55,13 +55,14 @@ static int64_t pop_stack(vppd_stack_t *s) {
 
 // CICS ASCII Terminal interface rendering
 static void render_cics_terminal(const vppd_context_t *ctx) {
-    printf("\n--- CICS TERMINAL DIAGNOSTIC SCREEN ---\n");
+    printf("\n========================================\n");
+    printf("--- CICS TERMINAL DIAGNOSTIC SCREEN ---\n");
     printf("  VPPD STATUS    : ACTIVE (Self-Contained)\n");
     printf("  PACKETS SWITCHED: %lu\n", ctx->total_packets);
     printf("  PLL PHASE ERROR: %.4f\n", ctx->pll_phase_error);
     printf("  SYSTEM CYCLES  : %lu\n", ctx->tsc_cycles);
     printf("  STACK DEPTH    : %d\n", ctx->stack.top);
-    printf("----------------------------------------\n");
+    printf("========================================\n");
     fflush(stdout);
 }
 
@@ -108,17 +109,79 @@ bool vppd_abi_entry(vppd_context_t *ctx, vppd_abi_cmd_t cmd, const vppd_packet_t
     return true;
 }
 
-int main(void) {
-    printf("=============================================================\n");
-    printf("AUNCIENT VPPD.BIN SELF-CONTAINED EXECUTION & PROFILING SUITE\n");
-    printf("=============================================================\n");
+// Interactive CICS Terminal console loop
+static void run_interactive_mode(vppd_context_t *ctx) {
+    char input_line[128];
+    char abi_buffer[256];
+
+    printf("Entering VPPD Interactive Mode. Type 'help' for commands.\n");
     fflush(stdout);
 
+    while (1) {
+        render_cics_terminal(ctx);
+        printf("vppd> ");
+        fflush(stdout);
+
+        if (!fgets(input_line, sizeof(input_line), stdin)) {
+            break; // EOF
+        }
+
+        // Clean newline
+        input_line[strcspn(input_line, "\r\n")] = 0;
+
+        if (strcmp(input_line, "exit") == 0 || strcmp(input_line, "quit") == 0) {
+            printf("Exiting Interactive Mode.\n");
+            fflush(stdout);
+            break;
+        } else if (strcmp(input_line, "help") == 0) {
+            printf("Commands:\n");
+            printf("  ping       - Query daemon responsiveness\n");
+            printf("  status     - Query current telemetry statistics\n");
+            printf("  route <N>  - Route a simulated transaction packet with sequence N\n");
+            printf("  exit       - Terminate the session\n");
+            fflush(stdout);
+        } else if (strcmp(input_line, "ping") == 0) {
+            vppd_abi_entry(ctx, ABI_CMD_PING, NULL, abi_buffer);
+            printf("Result: %s\n", abi_buffer);
+            fflush(stdout);
+        } else if (strcmp(input_line, "status") == 0) {
+            vppd_abi_entry(ctx, ABI_CMD_STATUS, NULL, abi_buffer);
+            printf("Result: %s\n", abi_buffer);
+            fflush(stdout);
+        } else if (strncmp(input_line, "route ", 6) == 0) {
+            uint64_t seq = strtoull(input_line + 6, NULL, 10);
+            vppd_packet_t pkt;
+            pkt.sequence = seq;
+            pkt.precedence = 3; // FLASH
+            strcpy(pkt.operation_cmd, "EXEC");
+            
+            vppd_abi_entry(ctx, ABI_CMD_ROUTE, &pkt, abi_buffer);
+            printf("Result: %s\n", abi_buffer);
+            fflush(stdout);
+        } else if (strlen(input_line) > 0) {
+            printf("Unknown command: %s\n", input_line);
+            fflush(stdout);
+        }
+    }
+}
+
+int main(int argc, char **argv) {
     // Instantiate self-contained vppd context
     vppd_context_t vppd;
     memset(&vppd, 0, sizeof(vppd_context_t));
     vppd.pll_phase_error = 0.002;
     vppd.tsc_cycles = 10000;
+
+    // Check if interactive flag is provided
+    if (argc > 1 && (strcmp(argv[1], "--interactive") == 0 || strcmp(argv[1], "-i") == 0)) {
+        run_interactive_mode(&vppd);
+        return 0;
+    }
+
+    printf("=============================================================\n");
+    printf("AUNCIENT VPPD.BIN SELF-CONTAINED EXECUTION & PROFILING SUITE\n");
+    printf("=============================================================\n");
+    fflush(stdout);
 
     char abi_buffer[256];
 
