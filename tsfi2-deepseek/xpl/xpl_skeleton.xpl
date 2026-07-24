@@ -4,12 +4,19 @@
 DECLARE TX_BUFFER_BASE     LITERALLY '63000'; /* 0xF600 - Transmit SRAM */
 DECLARE RX_BUFFER_BASE     LITERALLY '63100'; /* 0xF664 - Receive SRAM */
 DECLARE DEVICE_STATUS      LITERALLY '64000'; /* 0xFA00 - Device State Control */
-DECLARE SCSI_HANDSHAKE     LITERALLY '64256'; /* 0xFB00 - SCSI Bus Status */
+DECLARE COAX_FREQ_REG      LITERALLY '64100'; /* Coaxial Frequency register */
+DECLARE COAX_Q_REG         LITERALLY '64110'; /* Coaxial Q-Factor register */
+DECLARE IPL_STATUS_REG     LITERALLY '64200'; /* I/PL boot status */
 
-/* 2. Device Initialization Wrapper */
+/* 2. Device Initialization Wrapper (I/PL Gated) */
 SETUP_SYSTEM_DEVICE: PROCEDURE(PORT_ID) FIXED;
     DECLARE PORT_ID FIXED;
     
+    /* Precondition check: Verify I/PL boot status is active (tag check) */
+    IF BYTE(IPL_STATUS_REG) == 0 THEN
+        RETURN 0; /* Halted: Boot not verified */
+    END;
+
     /* Transition state to CONFIGURING */
     BYTE(DEVICE_STATUS) = 1;
     
@@ -22,10 +29,26 @@ SETUP_SYSTEM_DEVICE: PROCEDURE(PORT_ID) FIXED;
     RETURN 1;
 END SETUP_SYSTEM_DEVICE;
 
-/* 3. Unified Packet Demux and Dispatch Loop */
+/* 3. Unified Packet Demux and Dispatch Loop (Fourier Implication Gated) */
 DISPATCH_INCOMING_PACKET: PROCEDURE(PACKET_ADDR) FIXED;
     DECLARE PACKET_ADDR FIXED;
     DECLARE (ETHER_TYPE, PORT, PAYLOAD_OFFSET) FIXED;
+    DECLARE (FREQ, Q_FACTOR) FIXED;
+    DECLARE BACKUP_STATUS FIXED;
+    
+    /* 1. Precondition check ?phi_fourier (Frequency resonance validation) */
+    FREQ = BYTE(COAX_FREQ_REG);
+    Q_FACTOR = BYTE(COAX_Q_REG);
+    
+    IF FREQ != 44 THEN
+        RETURN 0; /* Precondition failed: de-tuned signal */
+    END;
+    IF Q_FACTOR < 50 THEN
+        RETURN 0; /* Precondition failed: Q-factor resonance too low */
+    END;
+
+    /* Backup device status for converse rollback in case of routing failure */
+    BACKUP_STATUS = BYTE(DEVICE_STATUS);
     
     /* Extract EtherType from packet header */
     ETHER_TYPE = BYTE(PACKET_ADDR + 12);
@@ -34,7 +57,7 @@ DISPATCH_INCOMING_PACKET: PROCEDURE(PACKET_ADDR) FIXED;
         PORT = BYTE(PACKET_ADDR + 14);
         PAYLOAD_OFFSET = PACKET_ADDR + 16;
         
-        /* Dispatch payload to target registered procedure based on Port */
+        /* Dispatch payload to target registered register based on Port */
         BYTE(TX_BUFFER_BASE + 10) = BYTE(PAYLOAD_OFFSET);
         RETURN 1;
     END;
@@ -45,6 +68,7 @@ DISPATCH_INCOMING_PACKET: PROCEDURE(PACKET_ADDR) FIXED;
         RETURN 2;
     END;
     
-    /* Discard unknown frames */
+    /* Postcondition failed: Route mismatch. Execute converse rollback */
+    BYTE(DEVICE_STATUS) = BACKUP_STATUS;
     RETURN 0;
 END DISPATCH_INCOMING_PACKET;
