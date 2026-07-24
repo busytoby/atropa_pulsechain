@@ -190,6 +190,7 @@ libtsfi2.so
 /tests/test_auncient_fourier_protocols
 /tests/test_auncient_fourier_mcp
 /tests/test_auncient_xcom_winchester
+/tests/test_auncient_alu_wmq_integration
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
