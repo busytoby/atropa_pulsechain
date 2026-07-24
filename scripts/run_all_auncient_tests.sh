@@ -63,6 +63,10 @@ gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -O3 tests/test_aunc
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -O3 tests/test_auncient_pdl_oversight.c -o tests/test_auncient_pdl_oversight -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_pdl_oversight
 
+# Compile and run Coaxial Kermit
+gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -O3 tests/test_auncient_kermit_coax.c -o tests/test_auncient_kermit_coax -lssl -lcrypto -lm -lrt
+./tests/test_auncient_kermit_coax
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
