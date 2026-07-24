@@ -27,10 +27,12 @@ typedef struct {
     char operation_cmd[64];
 } vppd_packet_t;
 
-// Self-contained execution stack
+// Self-contained execution stack with checkpoint/rollback capability
 typedef struct {
     int64_t data[STACK_CAPACITY];
     int top;
+    int64_t checkpoint_data[STACK_CAPACITY];
+    int checkpoint_top;
 } vppd_stack_t;
 
 // vppd.bin main executable context
@@ -62,6 +64,20 @@ static int64_t pop_stack(vppd_stack_t *s) {
         return s->data[--s->top];
     }
     return 0;
+}
+
+static void save_checkpoint(vppd_stack_t *s) {
+    s->checkpoint_top = s->top;
+    memcpy(s->checkpoint_data, s->data, sizeof(int64_t) * s->top);
+}
+
+static void rollback_checkpoint(vppd_stack_t *s) {
+    s->top = s->checkpoint_top;
+    memcpy(s->data, s->checkpoint_data, sizeof(int64_t) * s->checkpoint_top);
+}
+
+static void commit_checkpoint(vppd_stack_t *s) {
+    s->checkpoint_top = s->top;
 }
 
 // CICS ASCII Terminal interface rendering
@@ -163,6 +179,9 @@ static void run_interactive_mode(vppd_context_t *ctx) {
             printf("  route <N>                  - Route a simulated transaction packet with sequence N\n");
             printf("  spawn <name> <clearance>   - Spawn a dynamic contract process task\n");
             printf("  add-member <name> <v> <m>  - Add a dynamic data member with val <v> and signature mask <m>\n");
+            printf("  checkpoint                 - Save stack state checkpoint\n");
+            printf("  rollback                   - Rollback stack to saved checkpoint\n");
+            printf("  commit                     - Commit active stack changes\n");
             printf("  exit                       - Terminate the session\n");
             fflush(stdout);
         } else if (strcmp(input_line, "ping") == 0) {
@@ -172,6 +191,18 @@ static void run_interactive_mode(vppd_context_t *ctx) {
         } else if (strcmp(input_line, "status") == 0) {
             vppd_abi_entry(ctx, ABI_CMD_STATUS, NULL, abi_buffer);
             printf("Result: %s\n", abi_buffer);
+            fflush(stdout);
+        } else if (strcmp(input_line, "checkpoint") == 0) {
+            save_checkpoint(&(ctx->stack));
+            printf("Result: Checkpoint saved successfully.\n");
+            fflush(stdout);
+        } else if (strcmp(input_line, "rollback") == 0) {
+            rollback_checkpoint(&(ctx->stack));
+            printf("Result: Rollback completed successfully.\n");
+            fflush(stdout);
+        } else if (strcmp(input_line, "commit") == 0) {
+            commit_checkpoint(&(ctx->stack));
+            printf("Result: Commit completed successfully.\n");
             fflush(stdout);
         } else if (strncmp(input_line, "route ", 6) == 0) {
             uint64_t seq = strtoull(input_line + 6, NULL, 10);
