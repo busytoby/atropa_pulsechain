@@ -359,9 +359,14 @@ bool auncient_sdk_autodin_spin_lock(sdk_cics_context_t *ctx, uint32_t lock_token
         else if (ctx->current_lock_precedence == 'P') cur_priority = 2;
 
         if (priority >= cur_priority) {
-            auncient_sdk_assign_blame(ctx, SDK_BLAME_CALLER);
-            return false; // Trapped lock precedence violation
+            // Priority Inheritance: dynamically elevate active lock priority level to block priority
+            ctx->current_lock_precedence = precedence;
         }
+    }
+
+    if (ctx->lock_stack_depth >= SDK_LOCK_STACK_LIMIT) {
+        auncient_sdk_assign_blame(ctx, SDK_BLAME_CALLER);
+        return false;
     }
 
     // Write a lock request envelope into the AUTODIN spin-lock loop containing priority metadata
@@ -388,13 +393,31 @@ bool auncient_sdk_autodin_spin_lock(sdk_cics_context_t *ctx, uint32_t lock_token
     if (rx_packet.payload_value == lock_token) {
         ctx->has_lock = true;
         ctx->current_lock_precedence = precedence;
+        ctx->lock_stack[ctx->lock_stack_depth] = lock_token;
+        ctx->lock_precedence_stack[ctx->lock_stack_depth] = precedence;
+        ctx->lock_stack_depth++;
         auncient_sdk_transition_typestate(ctx, SDK_STATE_LOCKED);
         return true;
     }
     return false;
 }
 
-void auncient_sdk_autodin_spin_unlock(sdk_cics_context_t *ctx, uint32_t lock_token) {
+bool auncient_sdk_autodin_spin_unlock(sdk_cics_context_t *ctx, uint32_t lock_token) {
+    if (!ctx || ctx->lock_stack_depth == 0) {
+        auncient_sdk_assign_blame(ctx, SDK_BLAME_CALLER);
+        return false;
+    }
+
+    // LIFO release order audit
+    uint32_t expected_token = ctx->lock_stack[ctx->lock_stack_depth - 1];
+    if (lock_token != expected_token) {
+        auncient_sdk_assign_blame(ctx, SDK_BLAME_CALLER);
+        return false; // Lock released out-of-order
+    }
+
+    // Pop lock from stack
+    ctx->lock_stack_depth--;
+
     // Write an unlock/release envelope into the AUTODIN spin-lock loop
     auncient_abi_packet_t packet = {
         .alu_opcode = ALU_OP_EVAL_ACKERMAN,
@@ -410,10 +433,17 @@ void auncient_sdk_autodin_spin_unlock(sdk_cics_context_t *ctx, uint32_t lock_tok
     auncient_abi_packet_t rx_packet;
     read(ctx->env->socket_fds[1], &rx_packet, sizeof(auncient_abi_packet_t));
     assert(rx_packet.payload_value == 0);
-    ctx->has_lock = false;
-    ctx->current_lock_precedence = '\0';
-    auncient_sdk_transition_typestate(ctx, SDK_STATE_UNLOCKED);
-    (void)lock_token;
+
+    // Restore previous lock precedence level if locks are still held
+    if (ctx->lock_stack_depth > 0) {
+        ctx->current_lock_precedence = ctx->lock_precedence_stack[ctx->lock_stack_depth - 1];
+    } else {
+        ctx->has_lock = false;
+        ctx->current_lock_precedence = '\0';
+        auncient_sdk_transition_typestate(ctx, SDK_STATE_UNLOCKED);
+    }
+
+    return true;
 }
 
 bool auncient_sdk_compile_xpl_to_dat_bin(const char *xpl_source_path, const char *dat_bin_dest_path) {
@@ -505,6 +535,7 @@ bool auncient_sdk_execute_primary_bin(const char *bin_path, uint32_t *results, i
         .security_clearance = 3,
         .has_lock = false,
         .current_lock_precedence = '\0',
+        .lock_stack_depth = 0,
         .state = SDK_STATE_UNLOCKED,
         .is_contract_checking = false,
         .last_blame = SDK_BLAME_NONE,

@@ -93,6 +93,7 @@ int main(void) {
         .security_clearance = 2, // Insufficient for TopSecret write
         .has_lock = false,
         .current_lock_precedence = '\0',
+        .lock_stack_depth = 0,
         .state = SDK_STATE_UNLOCKED,
         .is_contract_checking = false,
         .last_blame = SDK_BLAME_NONE,
@@ -331,6 +332,7 @@ int main(void) {
     low_clearance_ctx.state = SDK_STATE_UNLOCKED;
     low_clearance_ctx.has_lock = false;
     low_clearance_ctx.current_lock_precedence = '\0';
+    low_clearance_ctx.lock_stack_depth = 0;
     low_clearance_ctx.recovery_handler = test_recovery_callback; // Handler will elevate clearance on retry
 
     // Execute dat.bin containing TopSecret write instructions.
@@ -400,28 +402,39 @@ int main(void) {
     printf("   ✓ Historical trace checks trapped trajectory regressions correctly.\n");
     fflush(stdout);
 
-    // 20. Test Lock Precedence Ordering Enforcement
-    printf("[TEST] Testing lock precedence ordering hierarchy audits...\n");
+    // 20. Test Lock Precedence & LIFO Stack Auditing
+    printf("[TEST] Testing lock precedence hierarchy audits & LIFO stack validation...\n");
     fflush(stdout);
     low_clearance_ctx.has_lock = false;
     low_clearance_ctx.current_lock_precedence = '\0';
+    low_clearance_ctx.lock_stack_depth = 0;
 
     // Acquire lock priority 'I' (Immediate, value 3)
     ok = auncient_sdk_autodin_spin_lock(&low_clearance_ctx, 0x123, 'I');
     assert(ok == true);
     assert(low_clearance_ctx.current_lock_precedence == 'I');
 
-    // Attempting to acquire lock priority 'F' (Flash, value 4) should fail (not strictly lower)
+    // Attempting to acquire lock priority 'F' (Flash, value 4) should succeed via Priority Inheritance
     ok = auncient_sdk_autodin_spin_lock(&low_clearance_ctx, 0x124, 'F');
+    assert(ok == true);
+    assert(low_clearance_ctx.current_lock_precedence == 'F'); // Promoted
+    assert(low_clearance_ctx.lock_stack_depth == 2);
+
+    // LIFO Release Order: unlocking 0x123 (out-of-order) must fail
+    ok = auncient_sdk_autodin_spin_unlock(&low_clearance_ctx, 0x123);
     assert(ok == false);
 
-    // Attempting to acquire lock priority 'P' (Priority, value 2) should succeed (strictly lower)
-    ok = auncient_sdk_autodin_spin_lock(&low_clearance_ctx, 0x125, 'P');
+    // Unlocking 0x124 (top of stack) must succeed
+    ok = auncient_sdk_autodin_spin_unlock(&low_clearance_ctx, 0x124);
     assert(ok == true);
-    assert(low_clearance_ctx.current_lock_precedence == 'P');
+    assert(low_clearance_ctx.current_lock_precedence == 'I'); // Restored to previous in stack
 
-    auncient_sdk_autodin_spin_unlock(&low_clearance_ctx, 0x125);
-    printf("   ✓ Lock hierarchy checking correctly prevented priority inversion deadlocks.\n");
+    // Unlocking 0x123 (now top of stack) must succeed
+    ok = auncient_sdk_autodin_spin_unlock(&low_clearance_ctx, 0x123);
+    assert(ok == true);
+    assert(low_clearance_ctx.has_lock == false);
+    assert(low_clearance_ctx.lock_stack_depth == 0);
+    printf("   ✓ Priority inheritance and LIFO lock stack release audits verified successfully.\n");
     fflush(stdout);
 
     // 21. Test Transition Invariants (Pre/Post Relation Constraints)

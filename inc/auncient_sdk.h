@@ -12,6 +12,7 @@
 #define SDK_NUM_NODES 4
 #define SDK_TRANSACTION_RETRY_LIMIT 3
 #define SDK_TRACE_LIMIT 8
+#define SDK_LOCK_STACK_LIMIT 4
 
 typedef enum {
     SDK_STATE_UNLOCKED = 0,
@@ -120,6 +121,9 @@ typedef struct sdk_cics_context {
     uint8_t security_clearance; // Embedded security clearance level
     bool has_lock;             // Tracks whether the active context holds the AUTODIN lock
     char current_lock_precedence; // Priority precedence of currently held lock ('F', 'I', 'P', 'R')
+    uint32_t lock_stack[SDK_LOCK_STACK_LIMIT]; // LIFO lock ownership tracking
+    char lock_precedence_stack[SDK_LOCK_STACK_LIMIT];
+    uint8_t lock_stack_depth;
     sdk_typestate_t state;     // Typestate identifier
     bool is_contract_checking; // Purity check flag
     sdk_blame_t last_blame;    // Blame identifier
@@ -197,7 +201,7 @@ bool auncient_pld_log_blame_to_disk(const sdk_cics_context_t *ctx, const char *l
 
 // Precedence-Aware AUTODIN Spin-Lock Interface
 bool auncient_sdk_autodin_spin_lock(sdk_cics_context_t *ctx, uint32_t lock_token, char precedence);
-void auncient_sdk_autodin_spin_unlock(sdk_cics_context_t *ctx, uint32_t lock_token);
+bool auncient_sdk_autodin_spin_unlock(sdk_cics_context_t *ctx, uint32_t lock_token);
 
 // .xpl Compiler to .dat.bin stream interface
 bool auncient_sdk_compile_xpl_to_dat_bin(const char *xpl_source_path, const char *dat_bin_dest_path);
