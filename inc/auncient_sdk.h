@@ -10,6 +10,25 @@
 
 #define SDK_NUM_NODES 4
 
+// Rich status and diagnostic codes for ABI packets
+typedef enum {
+    SDK_STATUS_OK = 0,
+    SDK_STATUS_ERR_QUORUM = 1,
+    SDK_STATUS_ERR_STALE = 2,
+    SDK_STATUS_ERR_SECURITY = 3,
+    SDK_STATUS_ERR_GENERIC = 4
+} sdk_status_code_t;
+
+// Auncient ABI Packet Layout for Coaxial Socket Transmission
+typedef struct {
+    uint8_t alu_opcode;
+    uint8_t status_flag; // Maps to sdk_status_code_t
+    uint16_t payload_length;
+    uint32_t payload_value;
+    uint64_t timestamp_counter;
+    uint32_t writer_id;
+} auncient_abi_packet_t;
+
 typedef enum {
     SDK_QUORUM_MAJORITY,
     SDK_QUORUM_GRID,
@@ -43,14 +62,26 @@ typedef struct {
     sdk_kermit_cache_t *cache;
     sdk_quorum_type_t quorum_type;
     uint32_t writer_id;
+    uint8_t security_clearance; // Embedded security clearance level
 } sdk_cics_context_t;
+
+// Batched operation structure
+typedef struct {
+    uint8_t opcode;
+    uint32_t value;
+    bool approvals[SDK_NUM_NODES];
+} sdk_batched_op_t;
 
 // SDK Interface Functions
 bool auncient_sdk_init_coaxial(sdk_coaxial_env_t *env);
 void auncient_sdk_close_coaxial(sdk_coaxial_env_t *env);
 
+bool auncient_sdk_configure_weights(sdk_coaxial_env_t *env, const uint32_t *weights);
+
 bool auncient_sdk_alu_execute(sdk_cics_context_t *ctx, uint8_t alu_opcode, uint32_t target_val, const bool *approvals, uint32_t *result_val);
 
 bool auncient_sdk_cics_exec(sdk_cics_context_t *ctx, uint32_t value, const bool *approvals);
+
+bool auncient_sdk_batch_exec(sdk_cics_context_t *ctx, const sdk_batched_op_t *ops, int num_ops, uint32_t *results);
 
 #endif // AUNCIENT_SDK_H

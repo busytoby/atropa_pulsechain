@@ -30,6 +30,16 @@ void auncient_sdk_close_coaxial(sdk_coaxial_env_t *env) {
     close(env->socket_fds[1]);
 }
 
+bool auncient_sdk_configure_weights(sdk_coaxial_env_t *env, const uint32_t *weights) {
+    if (!env || !weights) {
+        return false;
+    }
+    for (int i = 0; i < SDK_NUM_NODES; i++) {
+        env->weights[i] = weights[i];
+    }
+    return true;
+}
+
 static bool check_ackerman_quorum(sdk_quorum_type_t type, const bool *approvals, const uint32_t *weights) {
     if (type == SDK_QUORUM_MAJORITY) {
         int count = 0;
@@ -145,12 +155,43 @@ bool auncient_sdk_cics_exec(sdk_cics_context_t *ctx, uint32_t value, const bool 
     uint32_t dummy;
     auncient_sdk_alu_execute(ctx, ALU_OP_WRITE_ABD, value, approvals, &dummy);
 
-    // Step 3: Write packet signature to Coaxial sockets to simulate line transmission
-    write(ctx->env->socket_fds[0], &value, sizeof(uint32_t));
+    // Step 3: Populate formal ABI packet with rich status code
+    auncient_abi_packet_t packet = {
+        .alu_opcode = ALU_OP_WRITE_ABD,
+        .status_flag = SDK_STATUS_OK,
+        .payload_length = sizeof(uint32_t),
+        .payload_value = value,
+        .timestamp_counter = ctx->cache->cached_ts.counter,
+        .writer_id = ctx->writer_id
+    };
+
+    // Write packet to Coaxial socket
+    write(ctx->env->socket_fds[0], &packet, sizeof(auncient_abi_packet_t));
     
-    uint32_t check_val = 0;
-    read(ctx->env->socket_fds[1], &check_val, sizeof(uint32_t));
-    assert(check_val == value);
+    // Read and verify packet content on receiving side
+    auncient_abi_packet_t rx_packet;
+    read(ctx->env->socket_fds[1], &rx_packet, sizeof(auncient_abi_packet_t));
+    assert(rx_packet.alu_opcode == ALU_OP_WRITE_ABD);
+    assert(rx_packet.status_flag == SDK_STATUS_OK);
+    assert(rx_packet.payload_value == value);
+    assert(rx_packet.writer_id == ctx->writer_id);
+
+    return true;
+}
+
+bool auncient_sdk_batch_exec(sdk_cics_context_t *ctx, const sdk_batched_op_t *ops, int num_ops, uint32_t *results) {
+    if (!ctx || !ops || num_ops <= 0 || !results) {
+        return false;
+    }
+
+    for (int i = 0; i < num_ops; i++) {
+        uint32_t res = 0;
+        bool ok = auncient_sdk_alu_execute(ctx, ops[i].opcode, ops[i].value, ops[i].approvals, &res);
+        if (!ok) {
+            return false; // Abort whole batch on ALU failure
+        }
+        results[i] = res;
+    }
 
     return true;
 }

@@ -21,7 +21,8 @@ int main(void) {
         .env = &env,
         .cache = &cache,
         .quorum_type = SDK_QUORUM_MAJORITY,
-        .writer_id = 99
+        .writer_id = 99,
+        .security_clearance = 2
     };
 
     // 1. Transaction execution with valid majority approvals (Nodes 0, 1, 2 approve)
@@ -44,6 +45,31 @@ int main(void) {
     ok = auncient_sdk_cics_exec(&ctx, 67890, approvals_fail);
     assert(ok == false); // Should fail quorum validation
     printf("   ✓ Invalid transaction successfully aborted and rolled back.\n");
+    fflush(stdout);
+
+    // 3. Test dynamic weights configuration
+    uint32_t new_weights[SDK_NUM_NODES] = { 2, 2, 0, 0 };
+    printf("[TEST] Configuring new dynamic node weights...\n");
+    fflush(stdout);
+    ok = auncient_sdk_configure_weights(&env, new_weights);
+    assert(ok == true);
+    assert(env.weights[0] == 2);
+    printf("   ✓ Dynamic node weights updated successfully.\n");
+    fflush(stdout);
+
+    // 4. Test batched operations execution
+    printf("[TEST] Running batched ALU operations execution...\n");
+    fflush(stdout);
+    sdk_batched_op_t batch_ops[2] = {
+        { .opcode = ALU_OP_WRITE_ABD, .value = 54321, .approvals = { true, true, false, false } },
+        { .opcode = ALU_OP_READ_KERMIT, .value = 0, .approvals = { 0 } }
+    };
+    uint32_t batch_results[2] = { 0 };
+    ok = auncient_sdk_batch_exec(&ctx, batch_ops, 2, batch_results);
+    assert(ok == true);
+    assert(batch_results[0] == 54321);
+    assert(batch_results[1] == 54321); // Read should match what was just written
+    printf("   ✓ Batched operations committed and verified successfully.\n");
     fflush(stdout);
 
     auncient_sdk_close_coaxial(&env);
