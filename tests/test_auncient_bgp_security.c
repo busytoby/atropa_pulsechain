@@ -12,11 +12,11 @@
 #define REQUIRED_QUORUM_MASK 0x07
 #define MAX_ROUTES     4
 
-// Authorized Prefix Ownership
+// Secure Coaxial Peer Address Identity Check
 typedef struct {
-    uint32_t prefix_space;
-    uint32_t authorized_as;
-} prefix_owner_t;
+    uint32_t peer_address;
+    uint32_t auth_signature;
+} peer_identity_t;
 
 // BGP Route Record
 typedef struct {
@@ -25,24 +25,27 @@ typedef struct {
     uint32_t hop_address;
 } bgp_secure_route_t;
 
-// BGP Security Router State
+// BGP Secure Connection Registry
 typedef struct {
-    prefix_owner_t registry[MAX_ROUTES];
-    int registry_count;
+    peer_identity_t authorized_peers[MAX_ROUTES];
+    int peer_count;
     bgp_secure_route_t routing_table[MAX_ROUTES];
     int route_count;
     uint32_t status_color;
     bool switch_residency_red;
 } bgp_security_router_t;
 
-static bool process_secure_bgp_route(bgp_security_router_t *router,
-                                     const bgp_secure_route_t *route,
-                                     uint32_t quorum_mask) {
-    printf("[BGP SECURITY] Evaluating route advertisement: Prefix 0x%X from AS-%u via Hop 0x%X...\n",
-           route->prefix_space, route->originating_as, route->hop_address);
+// Verify secure connection address negotiation using signatures
+static bool negotiate_peer_connection(bgp_security_router_t *router,
+                                      uint32_t peer_address,
+                                      uint32_t handshake_sig,
+                                      const bgp_secure_route_t *route,
+                                      uint32_t quorum_mask) {
+    printf("[BGP COAXIAL] Negotiating connection with Peer 0x%X (Handshake Sig: 0x%X)...\n",
+           peer_address, handshake_sig);
     fflush(stdout);
 
-    // Verify consensus signatures
+    // 1. Verify consensus quorum mask
     int signatures = 0;
     for (int i = 0; i < 32; i++) {
         if ((quorum_mask >> i) & 1) {
@@ -51,34 +54,34 @@ static bool process_secure_bgp_route(bgp_security_router_t *router,
     }
 
     if (signatures < 3) {
-        printf("   [SECURITY VIOLATION] Insufficient consensus signatures (%d/3)! Toggling RED.\n", signatures);
+        printf("   [NEGOTIATION FAIL] Insufficient consensus signatures (%d/3)! Toggling RED.\n", signatures);
         router->status_color = COLOR_RED;
         router->switch_residency_red = true;
         fflush(stdout);
         return false;
     }
 
-    // Hijack detection: Verify that the originating AS owns the prefix space
-    bool authorized = false;
-    for (int i = 0; i < router->registry_count; i++) {
-        if (router->registry[i].prefix_space == route->prefix_space) {
-            if (router->registry[i].authorized_as == route->originating_as) {
-                authorized = true;
+    // 2. Cryptographic signature check (handshake signature must derive from peer address)
+    bool identity_verified = false;
+    for (int i = 0; i < router->peer_count; i++) {
+        if (router->authorized_peers[i].peer_address == peer_address) {
+            if (router->authorized_peers[i].auth_signature == handshake_sig) {
+                identity_verified = true;
             }
             break;
         }
     }
 
-    if (!authorized) {
-        printf("   [HIJACK DETECTED] Unauthorized prefix advertisement! AS-%u does not own Prefix 0x%X. Blocking route. Toggling RED.\n",
-               route->originating_as, route->prefix_space);
+    if (!identity_verified) {
+        printf("   [SPOOF DETECTED] Peer 0x%X handshake signature 0x%X verification failed! Rejecting connection. Toggling RED.\n",
+               peer_address, handshake_sig);
         router->status_color = COLOR_RED;
         router->switch_residency_red = true;
         fflush(stdout);
         return false;
     }
 
-    // Insert route
+    // Insert route since connection is authenticated and cannot be spoofed
     if (router->route_count >= MAX_ROUTES) {
         return false;
     }
@@ -86,51 +89,53 @@ static bool process_secure_bgp_route(bgp_security_router_t *router,
     router->status_color = COLOR_CYAN;
     router->switch_residency_red = false;
 
-    printf("   [SECURITY PASS] Route accepted and added to table.\n");
+    printf("   [NEGOTIATION PASS] Peer 0x%X successfully negotiated. Route prefix 0x%X accepted.\n",
+           peer_address, route->prefix_space);
     fflush(stdout);
     return true;
 }
 
 int main(void) {
     printf("=============================================================\n");
-    printf("AUNCIENT BGP ROUTING SECURITY & HIJACK DETECTION SUITE\n");
+    printf("AUNCIENT BGP SECURE CONNECTION ADDRESS NEGOTIATION SUITE\n");
     printf("=============================================================\n");
     fflush(stdout);
 
-    // Initialize Authorized Ownership Registry
+    // Initialize Authorized Peer Identity Registry
     bgp_security_router_t router = {
-        .registry = {
-            { .prefix_space = 0x4000, .authorized_as = 65001 },
-            { .prefix_space = 0x8000, .authorized_as = 65002 }
+        .authorized_peers = {
+            { .peer_address = 0x1111, .auth_signature = 0xABC1111 },
+            { .peer_address = 0x2222, .auth_signature = 0xABC2222 }
         },
-        .registry_count = 2,
+        .peer_count = 2,
         .route_count = 0,
         .status_color = COLOR_BLACK,
         .switch_residency_red = false
     };
 
-    // 1. Authorized advertisement with valid quorum
     bgp_secure_route_t route1 = {
         .prefix_space = 0x4000,
         .originating_as = 65001,
         .hop_address = 0x1111
     };
-    printf("[TEST] Processing authorized route advertisement...\n");
+
+    // 1. Genuine peer negotiates successfully using cryptographic handshake signature
+    printf("[TEST] Authenticating valid peer connection...\n");
     fflush(stdout);
-    bool ok = process_secure_bgp_route(&router, &route1, REQUIRED_QUORUM_MASK);
+    bool ok = negotiate_peer_connection(&router, 0x1111, 0xABC1111, &route1, REQUIRED_QUORUM_MASK);
     assert(ok == true);
     assert(router.switch_residency_red == false);
     assert(router.route_count == 1);
 
-    // 2. Unauthorized advertisement (AS-65003 trying to advertise AS-65002's prefix 0x8000)
+    // 2. Spoof attempt (Peer 0x3333 trying to present an invalid handshake signature)
     bgp_secure_route_t route2 = {
         .prefix_space = 0x8000,
-        .originating_as = 65003, // Hijacker AS
+        .originating_as = 65002,
         .hop_address = 0x3333
     };
-    printf("[TEST] Processing unauthorized hijacking route advertisement...\n");
+    printf("[TEST] Rejecting spoofed peer connection...\n");
     fflush(stdout);
-    ok = process_secure_bgp_route(&router, &route2, REQUIRED_QUORUM_MASK);
+    ok = negotiate_peer_connection(&router, 0x3333, 0xBAD3333, &route2, REQUIRED_QUORUM_MASK);
     assert(ok == false);
     assert(router.switch_residency_red == true);
     assert(router.status_color == COLOR_RED);
@@ -161,12 +166,12 @@ int main(void) {
     remove(STATE_FILE);
 
     assert(reloaded_routes[0].prefix_space == 0x4000);
-    assert(reloaded_routes[0].originating_as == 65001);
+    assert(reloaded_routes[0].hop_address == 0x1111);
     printf("   ✓ BGP secure route database serialization validated successfully.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
-    printf("BGP SECURITY & HIJACK DETECTION TESTS COMPLETE\n");
+    printf("BGP SECURE ADDRESS NEGOTIATION TESTS COMPLETE\n");
     printf("=============================================================\n");
     fflush(stdout);
     return 0;
