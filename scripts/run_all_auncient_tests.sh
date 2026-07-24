@@ -303,6 +303,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_aunci
 gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_sdk_usage.c -o tests/test_auncient_sdk_usage -lm -lrt
 ./tests/test_auncient_sdk_usage
 
+# Compile and run Self-Stabilizing BFS Spanning Tree
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_self_stabilizing_tree.c -o tests/test_auncient_self_stabilizing_tree -lm -lrt
+./tests/test_auncient_self_stabilizing_tree
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
