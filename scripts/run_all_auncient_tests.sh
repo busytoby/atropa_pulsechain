@@ -495,4 +495,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_consensus_optimizer.c
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_consensus_optimizer_v2.c -o tests/test_auncient_consensus_optimizer_v2 -lm -lrt
 ./tests/test_auncient_consensus_optimizer_v2
 
+# Compile and run Auncient HuCOcean Loader Simulation
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_ocean_loader.c -o tests/test_auncient_ocean_loader -lm -lrt
+./tests/test_auncient_ocean_loader
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
