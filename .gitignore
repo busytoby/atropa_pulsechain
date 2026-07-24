@@ -169,6 +169,7 @@ libtsfi2.so
 /tests/test_auncient_coaxial_cad
 /tests/test_auncient_power_amplifier
 /tests/test_auncient_horning_auditor
+/tests/test_auncient_pli_exception
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
