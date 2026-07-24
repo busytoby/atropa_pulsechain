@@ -227,6 +227,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_autodin_ackerman.c -o
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_kermit_state_consensus.c -o tests/test_auncient_kermit_state_consensus -lm -lrt
 ./tests/test_auncient_kermit_state_consensus
 
+# Compile and run Lutters Boundary Object
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_lutters_boundary.c -o tests/test_auncient_lutters_boundary -lm -lrt
+./tests/test_auncient_lutters_boundary
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
