@@ -295,6 +295,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_mwmw_abd.c -o tests/t
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_kermit_abd_ackerman.c -o tests/test_auncient_kermit_abd_ackerman -lm -lrt
 ./tests/test_auncient_kermit_abd_ackerman
 
+# Compile and run SDK CICS-ALU Coaxial Integration
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_sdk_integration.c -o tests/test_auncient_sdk_integration -lm -lrt
+./tests/test_auncient_sdk_integration
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
