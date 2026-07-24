@@ -343,6 +343,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_autodin_contract.c -o
 gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_sdk_precedence_locks.c -o tests/test_auncient_sdk_precedence_locks -lm -lrt
 ./tests/test_auncient_sdk_precedence_locks
 
+# Compile and run XPL Loader Simulator
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_xpl_loader.c -o tests/test_auncient_xpl_loader -lm -lrt
+./tests/test_auncient_xpl_loader
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
