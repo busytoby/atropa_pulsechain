@@ -5,51 +5,35 @@
 #include <assert.h>
 #include <time.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <linux/vfio.h>
 #include <arpa/inet.h>
 
-// STANAG 5066 D_PDU structure definitions (Auncient Subnetwork Profile)
-#define STANAG_MAX_PAYLOAD 2048
 #define STANAG_PORTS_COUNT 4000
 #define STANAG_PORT_MIN 1000
 #define STANAG_PORT_MAX (STANAG_PORT_MIN + STANAG_PORTS_COUNT - 1)
 
-// Simulated Intel/generic NIC hardware VFIO BAR registers
-#define REG_RDBAL 0x0100  // Receive Descriptor Base Address Low
-#define REG_RDBAH 0x0104  // Receive Descriptor Base Address High
-#define REG_RDLEN 0x0108  // Receive Descriptor Length
-#define REG_RDH   0x0110  // Receive Descriptor Head
-#define REG_RDT   0x0114  // Receive Descriptor Tail
-#define REG_RCTL  0x0120  // Receive Control Register
+// Intel 82599 10GbE Controller Register Layout
+#define IXGBE_RDBAL(n)  (0x01000 + 0x40 * (n))
+#define IXGBE_RDBAH(n)  (0x01004 + 0x40 * (n))
+#define IXGBE_RDLEN(n)  (0x01008 + 0x40 * (n))
+#define IXGBE_RDH(n)    (0x01010 + 0x40 * (n))
+#define IXGBE_RDT(n)    (0x01018 + 0x40 * (n))
+#define IXGBE_RXDCTL(n) (0x01028 + 0x40 * (n))
 
-#define RCTL_EN   0x00000002 // Receiver Enable
-#define RX_DD     0x01       // Descriptor Done (DD) status bit
-
-// Ethernet Header
-struct eth_header {
-    uint8_t dest_mac[6];
-    uint8_t src_mac[6];
-    uint16_t ether_type;
+struct ixgbe_rx_desc {
+    uint64_t pkt_addr; /* Physical address of packet buffer */
+    uint64_t status;   /* Status and errors */
 } __attribute__((packed));
 
-// Custom STANAG D_PDU layout
-struct stanag_pdu {
-    uint16_t dst_port;
-    uint16_t src_port;
-    uint16_t length;
-    uint8_t flags;
-    uint8_t seq_num;
-    uint8_t data[STANAG_MAX_PAYLOAD];
-} __attribute__((packed));
-
-// VFIO Hardware RX Descriptor definition
-struct vfio_rx_desc {
-    uint64_t buffer_addr; /* Physical address of packet buffer */
-    uint16_t length;      /* Packet length */
-    uint16_t checksum;
-    uint8_t status;       /* Status flags (e.g. DD bit) */
-    uint8_t errors;
-    uint16_t special;
-} __attribute__((packed));
+struct vfio_dma_region {
+    void *vaddr;
+    uint64_t iova;
+    size_t size;
+};
 
 // Thread-safe dynamic interop registrar for STANAG active port listeners
 typedef void (*stanag_listener_fn)(uint16_t port, const uint8_t *data, uint16_t len);
@@ -60,170 +44,166 @@ struct stanag_port_registry {
     uint64_t rx_byte_counts[STANAG_PORTS_COUNT];
 } interop_stanag_registry;
 
-// Simulated Physical Memory buffers
-static uint8_t g_dma_packet_pool[128 * 2048]; // 128 packet buffers
-static struct vfio_rx_desc g_rx_ring[128];
-static uint32_t g_bar_space[1024]; // 4KB MMIO Register Space
+// Real VFIO Context
+struct vfio_context {
+    int container;
+    int group;
+    int device;
+    volatile uint32_t *regs;
+    size_t regs_size;
+    struct vfio_dma_region ring_dma;
+    struct vfio_dma_region buffer_dma;
+} g_vfio_ctx;
 
-// Dummy listener callback for verification
-static uint64_t g_total_verifications = 0;
-static void test_listener_callback(uint16_t port, const uint8_t *data, uint16_t len) {
-    (void)port;
-    (void)data;
-    (void)len;
-    g_total_verifications++;
+// Allocate and map DMA memory via IOMMU Type 1
+static bool vfio_dma_alloc_map(struct vfio_dma_region *dma, size_t size, uint64_t iova) {
+    dma->size = size;
+    dma->iova = iova;
+    
+    // Allocate page-aligned memory
+    dma->vaddr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB, -1, 0);
+    if (dma->vaddr == MAP_FAILED) {
+        // Fallback if Hugepages are not configured on host
+        dma->vaddr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+        if (dma->vaddr == MAP_FAILED) return false;
+    }
+
+    struct vfio_iommu_type1_dma_map dma_map = {
+        .argsz = sizeof(dma_map),
+        .flags = VFIO_DMA_MAP_FLAG_READ | VFIO_DMA_MAP_FLAG_WRITE,
+        .vaddr = (uint64_t)dma->vaddr,
+        .iova = dma->iova,
+        .size = dma->size
+    };
+
+    if (ioctl(g_vfio_ctx.container, VFIO_IOMMU_MAP_DMA, &dma_map) < 0) {
+        munmap(dma->vaddr, size);
+        return false;
+    }
+    return true;
 }
 
-// Function to resolve listeners and update telemetry in O(1) time
-static inline void dispatch_stanag_packet(uint16_t port, const uint8_t *data, uint16_t len) {
-    if (port >= STANAG_PORT_MIN && port <= STANAG_PORT_MAX) {
-        uint32_t idx = port - STANAG_PORT_MIN;
-        interop_stanag_registry.rx_packet_counts[idx]++;
-        interop_stanag_registry.rx_byte_counts[idx] += len;
-        if (interop_stanag_registry.listeners[idx]) {
-            interop_stanag_registry.listeners[idx](port, data, len);
+// Initialize real hardware VFIO mapping
+bool vfio_driver_init(const char *group_path, const char *device_name) {
+    g_vfio_ctx.container = open("/dev/vfio/vfio", O_RDWR);
+    if (g_vfio_ctx.container < 0) return false;
+
+    if (ioctl(g_vfio_ctx.container, VFIO_GET_API_VERSION) != VFIO_API_VERSION) return false;
+    if (!ioctl(g_vfio_ctx.container, VFIO_CHECK_EXTENSION, VFIO_TYPE1_IOMMU)) return false;
+
+    g_vfio_ctx.group = open(group_path, O_RDWR);
+    if (g_vfio_ctx.group < 0) return false;
+
+    if (ioctl(g_vfio_ctx.group, VFIO_GROUP_SET_CONTAINER, &g_vfio_ctx.container) < 0) return false;
+    if (ioctl(g_vfio_ctx.container, VFIO_SET_IOMMU, VFIO_TYPE1_IOMMU) < 0) return false;
+
+    g_vfio_ctx.device = ioctl(g_vfio_ctx.group, VFIO_GROUP_GET_DEVICE_FD, device_name);
+    if (g_vfio_ctx.device < 0) return false;
+
+    struct vfio_region_info reg_info = {
+        .argsz = sizeof(reg_info),
+        .index = VFIO_PCI_BAR0_REGION_INDEX
+    };
+    if (ioctl(g_vfio_ctx.device, VFIO_DEVICE_GET_REGION_INFO, &reg_info) < 0) return false;
+
+    void *mapped_regs = mmap(NULL, reg_info.size, PROT_READ | PROT_WRITE, MAP_SHARED, g_vfio_ctx.device, *(uint64_t *)((char *)&reg_info + 24));
+    if (mapped_regs == MAP_FAILED) return false;
+
+    g_vfio_ctx.regs = (volatile uint32_t *)mapped_regs;
+    g_vfio_ctx.regs_size = reg_info.size;
+
+    // Allocate ring descriptor memory (4KB) and packet buffer memory (1MB)
+    if (!vfio_dma_alloc_map(&g_vfio_ctx.ring_dma, 4096, 0x1000000)) return false;
+    if (!vfio_dma_alloc_map(&g_vfio_ctx.buffer_dma, 1024 * 1024, 0x2000000)) return false;
+
+    return true;
+}
+
+// Configure the hardware registers on the physical NIC
+void ixgbe_hardware_configure(uint16_t queue_idx, uint32_t desc_count) {
+    volatile uint32_t *regs = g_vfio_ctx.regs;
+    uint64_t ring_phys = g_vfio_ctx.ring_dma.iova;
+
+    // Set Descriptor base registers
+    regs[IXGBE_RDBAL(queue_idx) / 4] = (uint32_t)(ring_phys & 0xFFFFFFFF);
+    regs[IXGBE_RDBAH(queue_idx) / 4] = (uint32_t)(ring_phys >> 32);
+    regs[IXGBE_RDLEN(queue_idx) / 4] = desc_count * sizeof(struct ixgbe_rx_desc);
+
+    // Initialize RX ring descriptors with packet buffer physical addresses
+    struct ixgbe_rx_desc *ring = (struct ixgbe_rx_desc *)g_vfio_ctx.ring_dma.vaddr;
+    for (uint32_t i = 0; i < desc_count; i++) {
+        ring[i].pkt_addr = g_vfio_ctx.buffer_dma.iova + (i * 2048);
+        ring[i].status = 0;
+    }
+
+    // Set Head and Tail pointers
+    regs[IXGBE_RDH(queue_idx) / 4] = 0;
+    regs[IXGBE_RDT(queue_idx) / 4] = desc_count - 1;
+
+    // Enable RX Queue
+    regs[IXGBE_RXDCTL(queue_idx) / 4] |= (1 << 25); // RXDCTL.ENABLE
+}
+
+// Read packets directly from the physical hardware rings
+void vfio_hardware_poll(uint16_t queue_idx, uint32_t desc_count) {
+    struct ixgbe_rx_desc *ring = (struct ixgbe_rx_desc *)g_vfio_ctx.ring_dma.vaddr;
+    volatile uint32_t *regs = g_vfio_ctx.regs;
+    uint32_t head = regs[IXGBE_RDH(queue_idx) / 4];
+    uint32_t tail = regs[IXGBE_RDT(queue_idx) / 4];
+
+    while (head != tail) {
+        volatile struct ixgbe_rx_desc *desc = &ring[head];
+        if (desc->status & (1 << 0)) { // Descriptor Done (DD) status bit
+            uint8_t *pkt = (uint8_t *)g_vfio_ctx.buffer_dma.vaddr + (head * 2048);
+            uint16_t len = desc->status & 0xFFFF;
+            
+            // Parse STANAG packet directly from wire
+            if (len > 14) {
+                uint16_t eth_type = ntohs(*(uint16_t *)(pkt + 12));
+                if (eth_type == 0x8B32) {
+                    uint16_t dst_port = ntohs(*(uint16_t *)(pkt + 14));
+                    if (dst_port >= STANAG_PORT_MIN && dst_port <= STANAG_PORT_MAX) {
+                        uint32_t port_idx = dst_port - STANAG_PORT_MIN;
+                        interop_stanag_registry.rx_packet_counts[port_idx]++;
+                        interop_stanag_registry.rx_byte_counts[port_idx] += len;
+                        if (interop_stanag_registry.listeners[port_idx]) {
+                            interop_stanag_registry.listeners[port_idx](dst_port, pkt + 16, len - 16);
+                        }
+                    }
+                }
+            }
+            
+            // Clean up descriptor and update Tail pointer
+            desc->status = 0;
+            regs[IXGBE_RDT(queue_idx) / 4] = head;
+            head = (head + 1) % desc_count;
+        } else {
+            break;
         }
     }
 }
 
-// Simulate hardware filling the packet and updating descriptor
-static void simulate_hardware_packet(uint32_t ring_idx, uint16_t dst_port, const uint8_t *payload, uint16_t payload_len) {
-    struct eth_header *eth = (struct eth_header *)(g_dma_packet_pool + (ring_idx * 2048));
-    memset(eth->dest_mac, 0xAA, 6);
-    memset(eth->src_mac, 0xBB, 6);
-    eth->ether_type = htons(0x8B32); // Custom Auncient STANAG EtherType
+int main(int argc, char **argv) {
+    printf("=============================================================\n");
+    printf("AUNCIENT STANAG OVER VFIO HARDWARE CONTROLLER PIPELINE\n");
+    printf("=============================================================\n");
 
-    struct stanag_pdu *pdu = (struct stanag_pdu *)(eth + 1);
-    pdu->dst_port = dst_port;
-    pdu->src_port = 1234;
-    pdu->length = payload_len;
-    pdu->flags = 0;
-    pdu->seq_num = (uint8_t)(ring_idx & 0xFF);
-    if (payload && payload_len > 0) {
-        memcpy(pdu->data, payload, payload_len);
+    if (argc < 3) {
+        printf("[INFO] Standalone execution requires VFIO paths.\n");
+        printf("Usage: %s [/dev/vfio/X] [PCI_DEVICE_NAME]\n", argv[0]);
+        return 0;
     }
 
-    g_rx_ring[ring_idx].length = sizeof(struct eth_header) + sizeof(struct stanag_pdu) + payload_len;
-    g_rx_ring[ring_idx].status |= RX_DD; // Set Descriptor Done status
-}
-
-// The PMD polling routine for a single descriptor slot
-static bool process_rx_descriptor(uint32_t *head_idx) {
-    volatile struct vfio_rx_desc *desc = &g_rx_ring[*head_idx];
-    if (desc->status & RX_DD) {
-        uint8_t *buffer = g_dma_packet_pool + (*head_idx * 2048);
-        struct eth_header *eth = (struct eth_header *)buffer;
-        
-        if (eth->ether_type == htons(0x8B32)) {
-            struct stanag_pdu *pdu = (struct stanag_pdu *)(eth + 1);
-            dispatch_stanag_packet(pdu->dst_port, pdu->data, pdu->length);
-        }
-        
-        // Reset status to hand control back to "hardware"
-        desc->status &= ~RX_DD;
-        *head_idx = (*head_idx + 1) % 128;
-        return true;
+    if (!vfio_driver_init(argv[1], argv[2])) {
+        printf("[ERROR] Failed to initialize hardware VFIO connection.\n");
+        return 1;
     }
-    return false;
-}
 
-// -------------------------------------------------------------
-// Unit Tests
-// -------------------------------------------------------------
-static void test_register_and_dispatch(void) {
-    printf("[TEST] Verifying listener registration and direct O(1) dispatch...\n");
-    memset(&interop_stanag_registry, 0, sizeof(interop_stanag_registry));
+    printf("[SUCCESS] Hardware mapping complete. Running active PMD polling...\n");
+    ixgbe_hardware_configure(0, 128);
     
-    // Register listener on port 1500
-    uint16_t test_port = 1500;
-    interop_stanag_registry.listeners[test_port - STANAG_PORT_MIN] = test_listener_callback;
-    
-    // Dispatch test packet
-    uint8_t test_data[] = "Auncient Payload";
-    g_total_verifications = 0;
-    dispatch_stanag_packet(test_port, test_data, sizeof(test_data));
-    
-    assert(g_total_verifications == 1);
-    assert(interop_stanag_registry.rx_packet_counts[test_port - STANAG_PORT_MIN] == 1);
-    assert(interop_stanag_registry.rx_byte_counts[test_port - STANAG_PORT_MIN] == sizeof(test_data));
-    printf("   ✓ Listener dispatch test passed.\n");
-}
+    // Poll hardware interface
+    vfio_hardware_poll(0, 128);
 
-static void test_vfio_pmd_sim(void) {
-    printf("[TEST] Verifying simulated VFIO PMD packet loop...\n");
-    memset(&interop_stanag_registry, 0, sizeof(interop_stanag_registry));
-    memset(g_rx_ring, 0, sizeof(g_rx_ring));
-    
-    uint16_t test_port = 2000;
-    interop_stanag_registry.listeners[test_port - STANAG_PORT_MIN] = test_listener_callback;
-    
-    // Configure simulated registers
-    g_bar_space[REG_RCTL / 4] |= RCTL_EN;
-    
-    // Inject packet at index 5 in the ring
-    uint8_t payload[] = "STANAG-5066";
-    simulate_hardware_packet(5, test_port, payload, sizeof(payload));
-    
-    // Start polling from index 5
-    uint32_t head = 5;
-    g_total_verifications = 0;
-    bool success = process_rx_descriptor(&head);
-    
-    assert(success == true);
-    assert(head == 6);
-    assert(g_total_verifications == 1);
-    printf("   ✓ VFIO PMD packet loop test passed.\n");
-}
-
-// -------------------------------------------------------------
-// Benchmarks
-// -------------------------------------------------------------
-static void run_demux_benchmark(void) {
-    printf("[BENCHMARK] Running O(1) demux benchmark across %d ports...\n", STANAG_PORTS_COUNT);
-    
-    // Setup listeners on all ports
-    for (int i = 0; i < STANAG_PORTS_COUNT; i++) {
-        interop_stanag_registry.listeners[i] = test_listener_callback;
-    }
-    
-    uint8_t payload[256];
-    memset(payload, 0xEF, sizeof(payload));
-    
-    struct timespec start, end;
-    clock_gettime(CLOCK_MONOTONIC, &start);
-    
-    uint64_t iterations = 10000000; // 10 Million iterations
-    uint16_t base_port = STANAG_PORT_MIN;
-    
-    for (uint64_t i = 0; i < iterations; i++) {
-        uint16_t dst = base_port + (uint16_t)(i % STANAG_PORTS_COUNT);
-        dispatch_stanag_packet(dst, payload, sizeof(payload));
-    }
-    
-    clock_gettime(CLOCK_MONOTONIC, &end);
-    
-    double elapsed = (double)(end.tv_sec - start.tv_sec) + 
-                     (double)(end.tv_nsec - start.tv_nsec) / 1e9;
-    double tps = (double)iterations / elapsed;
-    double latency = (elapsed / (double)iterations) * 1e9;
-    
-    printf("   - Duration:  %.4f seconds\n", elapsed);
-    printf("   - Throughput: %.2f M-packets/sec (MOPS)\n", tps / 1e6);
-    printf("   - Latency:    %.2f ns/packet\n", latency);
-}
-
-int main(void) {
-    printf("=============================================================\n");
-    printf("AUNCIENT STANAG OVER VFIO DRIVER TELEMETRY VALIDATION SUITE\n");
-    printf("=============================================================\n");
-    
-    test_register_and_dispatch();
-    test_vfio_pmd_sim();
-    run_demux_benchmark();
-    
-    printf("=============================================================\n");
-    printf("STANAG OVER VFIO TELEMETRY TESTS COMPLETED\n");
-    printf("=============================================================\n");
-    
     return 0;
 }

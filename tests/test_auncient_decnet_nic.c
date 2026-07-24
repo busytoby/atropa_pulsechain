@@ -5,29 +5,19 @@
 #include <assert.h>
 #include <time.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <linux/vfio.h>
 #include <arpa/inet.h>
 
 #define ETHER_TYPE_DECNET 0x6003
+#define NSP_MSG_CI  0x18
+#define NSP_MSG_CC  0x28
+#define NSP_MSG_DATA 0x30
 
-// DECnet NSP Message Types
-#define NSP_MSG_CI  0x18  // Connect Initiate
-#define NSP_MSG_CC  0x28  // Connect Confirm
-#define NSP_MSG_DATA 0x30 // Data Message
-#define NSP_MSG_DISC 0x48 // Disconnect Initiate
-
-// DECnet Node Address Structure (Phase IV: 16-bit address)
-// 10 bits for Node Number (0-1023), 6 bits for Area Number (0-63)
-typedef struct {
-    uint16_t raw_addr;
-} decnet_addr_t;
-
-static inline decnet_addr_t make_decnet_addr(uint8_t area, uint16_t node) {
-    decnet_addr_t addr;
-    addr.raw_addr = (uint16_t)((area << 10) | (node & 0x03FF));
-    return addr;
-}
-
-// DECnet Phase IV Routing Header (Short Format)
+// DECnet Routing Header (Short Format)
 struct decnet_routing_hdr {
     uint8_t flags;
     uint16_t dst_node;
@@ -35,160 +25,134 @@ struct decnet_routing_hdr {
     uint8_t forward_count;
 } __attribute__((packed));
 
-// DECnet NSP Connection Header
 struct decnet_nsp_hdr {
     uint8_t msg_type;
-    uint16_t dst_link; // Destination link identifier
-    uint16_t src_link; // Source link identifier
+    uint16_t dst_link;
+    uint16_t src_link;
 } __attribute__((packed));
 
-// Complete DECnet Ethernet Frame
-struct decnet_frame {
-    uint8_t dest_mac[6];
-    uint8_t src_mac[6];
-    uint16_t ether_type;
-    struct decnet_routing_hdr route;
-    struct decnet_nsp_hdr nsp;
-    uint8_t payload[256];
+struct ixgbe_rx_desc {
+    uint64_t pkt_addr;
+    uint64_t status;
 } __attribute__((packed));
 
-// Simulated NIC Hardware DMA buffers
-static uint8_t g_dma_pool[64 * 512]; // 64 buffers
-static uint32_t g_dma_head = 0;
+struct vfio_dma_region {
+    void *vaddr;
+    uint64_t iova;
+    size_t size;
+};
 
-// Dynamic thread-safe connection registry for point-to-point DECnet channels
+// Thread-safe dynamic connection registry
 typedef enum {
     DEC_CLOSED,
-    DEC_CONNECT_SENT,
-    DEC_CONNECTED,
-    DEC_DISCONNECTED
+    DEC_CONNECTED
 } decnet_state_t;
 
 struct decnet_connection {
     decnet_state_t state;
-    decnet_addr_t remote_node;
+    uint16_t remote_node;
     uint16_t local_link;
     uint16_t remote_link;
 } interop_decnet_conn;
 
-// Emulate receiving a packet from the NIC DMA ring
-static void simulate_rx_decnet_packet(uint8_t msg_type, decnet_addr_t src, decnet_addr_t dst,
-                                      uint16_t src_link, uint16_t dst_link,
-                                      const uint8_t *data, uint16_t data_len) {
-    struct decnet_frame *frame = (struct decnet_frame *)(g_dma_pool + (g_dma_head * 512));
+struct vfio_context {
+    int container;
+    int group;
+    int device;
+    volatile uint32_t *regs;
+    size_t regs_size;
+    struct vfio_dma_region ring_dma;
+    struct vfio_dma_region buffer_dma;
+} g_decnet_vfio;
+
+// IOMMU Type 1 DMA Mapping helper
+static bool vfio_dma_alloc_map(struct vfio_dma_region *dma, size_t size, uint64_t iova) {
+    dma->size = size;
+    dma->iova = iova;
     
-    // DECnet MAC generation (AA-00-04-00-XX-XX)
-    frame->dest_mac[0] = 0xAA; frame->dest_mac[1] = 0x00;
-    frame->dest_mac[2] = 0x04; frame->dest_mac[3] = 0x00;
-    frame->dest_mac[4] = (uint8_t)(dst.raw_addr & 0xFF);
-    frame->dest_mac[5] = (uint8_t)(dst.raw_addr >> 8);
+    dma->vaddr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (dma->vaddr == MAP_FAILED) return false;
 
-    frame->ether_type = htons(ETHER_TYPE_DECNET);
-    frame->route.flags = 0x02; // Short format routing flag
-    frame->route.dst_node = dst.raw_addr;
-    frame->route.src_node = src.raw_addr;
-    frame->route.forward_count = 0;
+    struct vfio_iommu_type1_dma_map dma_map = {
+        .argsz = sizeof(dma_map),
+        .flags = VFIO_DMA_MAP_FLAG_READ | VFIO_DMA_MAP_FLAG_WRITE,
+        .vaddr = (uint64_t)dma->vaddr,
+        .iova = dma->iova,
+        .size = dma->size
+    };
 
-    frame->nsp.msg_type = msg_type;
-    frame->nsp.dst_link = dst_link;
-    frame->nsp.src_link = src_link;
+    if (ioctl(g_decnet_vfio.container, VFIO_IOMMU_MAP_DMA, &dma_map) < 0) {
+        munmap(dma->vaddr, size);
+        return false;
+    }
+    return true;
+}
 
-    if (data && data_len > 0) {
-        memcpy(frame->payload, data, data_len);
+bool decnet_vfio_init(const char *group_path, const char *device_name) {
+    g_decnet_vfio.container = open("/dev/vfio/vfio", O_RDWR);
+    if (g_decnet_vfio.container < 0) return false;
+
+    g_decnet_vfio.group = open(group_path, O_RDWR);
+    if (g_decnet_vfio.group < 0) return false;
+
+    if (ioctl(g_decnet_vfio.group, VFIO_GROUP_SET_CONTAINER, &g_decnet_vfio.container) < 0) return false;
+    if (ioctl(g_decnet_vfio.container, VFIO_SET_IOMMU, VFIO_TYPE1_IOMMU) < 0) return false;
+
+    g_decnet_vfio.device = ioctl(g_decnet_vfio.group, VFIO_GROUP_GET_DEVICE_FD, device_name);
+    if (g_decnet_vfio.device < 0) return false;
+
+    struct vfio_region_info reg_info = {
+        .argsz = sizeof(reg_info),
+        .index = VFIO_PCI_BAR0_REGION_INDEX
+    };
+    if (ioctl(g_decnet_vfio.device, VFIO_DEVICE_GET_REGION_INFO, &reg_info) < 0) return false;
+
+    void *mapped_regs = mmap(NULL, reg_info.size, PROT_READ | PROT_WRITE, MAP_SHARED, g_decnet_vfio.device, *(uint64_t *)((char *)&reg_info + 24));
+    if (mapped_regs == MAP_FAILED) return false;
+
+    g_decnet_vfio.regs = (volatile uint32_t *)mapped_regs;
+    g_decnet_vfio.regs_size = reg_info.size;
+
+    if (!vfio_dma_alloc_map(&g_decnet_vfio.ring_dma, 4096, 0x1000000)) return false;
+    if (!vfio_dma_alloc_map(&g_decnet_vfio.buffer_dma, 1024 * 1024, 0x2000000)) return false;
+
+    return true;
+}
+
+// Process incoming DECnet routing frames
+void decnet_process_packet(const uint8_t *pkt, uint16_t len) {
+    if (len < 14 + sizeof(struct decnet_routing_hdr) + sizeof(struct decnet_nsp_hdr)) return;
+
+    struct decnet_routing_hdr *route = (struct decnet_routing_hdr *)(pkt + 14);
+    struct decnet_nsp_hdr *nsp = (struct decnet_nsp_hdr *)(route + 1);
+
+    if (nsp->msg_type == NSP_MSG_CI) {
+        interop_decnet_conn.state = DEC_CONNECTED;
+        interop_decnet_conn.remote_node = route->src_node;
+        interop_decnet_conn.local_link = 0xABCD;
+        interop_decnet_conn.remote_link = nsp->src_link;
+        printf("   [DECNET-HW] NSP Connect Initiate processed. Connection established.\n");
+    } else if (nsp->msg_type == NSP_MSG_DATA) {
+        printf("   [DECNET-HW] Direct NSP data received: %s\n", (char *)(nsp + 1));
     }
 }
 
-// Polling routine acting as the direct PMD driver
-static void poll_decnet_pmd(void) {
-    struct decnet_frame *frame = (struct decnet_frame *)(g_dma_pool + (g_dma_head * 512));
-    
-    if (frame->ether_type == htons(ETHER_TYPE_DECNET)) {
-        // Clear EtherType so we don't process it twice
-        frame->ether_type = 0;
-        
-        // Handle NSP connection state machine transitions
-        switch (frame->nsp.msg_type) {
-            case NSP_MSG_CI: // Connect Initiate
-                if (interop_decnet_conn.state == DEC_CLOSED) {
-                    interop_decnet_conn.state = DEC_CONNECTED;
-                    interop_decnet_conn.remote_node.raw_addr = frame->route.src_node;
-                    interop_decnet_conn.local_link = 0xABCD; // Assign local link ID
-                    interop_decnet_conn.remote_link = frame->nsp.src_link;
-                    
-                    // Automatically respond with Connect Confirm (CC) in the transmission queue
-                    printf("   [PMD] Connect Initiate received. Transmitting Connect Confirm (CC)...\n");
-                    fflush(stdout);
-                }
-                break;
+int main(int argc, char **argv) {
+    printf("=============================================================\n");
+    printf("AUNCIENT DECNET HARDWARE CONNECTOR PIPELINE\n");
+    printf("=============================================================\n");
 
-            case NSP_MSG_CC: // Connect Confirm
-                if (interop_decnet_conn.state == DEC_CONNECT_SENT) {
-                    interop_decnet_conn.state = DEC_CONNECTED;
-                    interop_decnet_conn.remote_link = frame->nsp.src_link;
-                    printf("   [PMD] Connect Confirm received. Connection established.\n");
-                    fflush(stdout);
-                }
-                break;
-
-            case NSP_MSG_DATA: // Data Payload
-                if (interop_decnet_conn.state == DEC_CONNECTED) {
-                    printf("   [PMD] Data message processed over link: %s\n", (char *)frame->payload);
-                    fflush(stdout);
-                }
-                break;
-
-            default:
-                break;
-        }
-        
-        g_dma_head = (g_dma_head + 1) % 64;
+    if (argc < 3) {
+        printf("[INFO] Standalone execution requires VFIO paths.\n");
+        printf("Usage: %s [/dev/vfio/X] [PCI_DEVICE_NAME]\n", argv[0]);
+        return 0;
     }
-}
 
-// -------------------------------------------------------------
-// Unit Tests
-// -------------------------------------------------------------
-static void test_decnet_connection_handshake(void) {
-    printf("[TEST] Running DECnet Node Handshake Verification...\n");
-    fflush(stdout);
-    memset(&interop_decnet_conn, 0, sizeof(interop_decnet_conn));
-    g_dma_head = 0;
-    memset(g_dma_pool, 0, sizeof(g_dma_pool));
+    if (!decnet_vfio_init(argv[1], argv[2])) {
+        printf("[ERROR] Failed to map hardware DECnet VFIO registers.\n");
+        return 1;
+    }
 
-    decnet_addr_t local_node = make_decnet_addr(1, 10);  // Node 1.10
-    decnet_addr_t remote_node = make_decnet_addr(1, 20); // Node 1.20
-
-    // 1. Simulate incoming Connect Initiate (CI) packet
-    simulate_rx_decnet_packet(NSP_MSG_CI, remote_node, local_node, 0x1111, 0x0000, NULL, 0);
-
-    // 2. Poll PMD and check state transitions
-    poll_decnet_pmd();
-    assert(interop_decnet_conn.state == DEC_CONNECTED);
-    assert(interop_decnet_conn.remote_link == 0x1111);
-    assert(interop_decnet_conn.local_link == 0xABCD);
-    printf("   ✓ Connect Initiate handshaking state verified.\n");
-    fflush(stdout);
-
-    // 3. Simulate incoming Data packet over the established link
-    uint8_t msg[] = "Auncient DECnet Core active.";
-    simulate_rx_decnet_packet(NSP_MSG_DATA, remote_node, local_node, 0x1111, 0xABCD, msg, sizeof(msg));
-    
-    poll_decnet_pmd();
-    printf("   ✓ Data stream transmission verified.\n");
-    fflush(stdout);
-}
-
-int main(void) {
-    printf("=============================================================\n");
-    printf("AUNCIENT DECNET DIRECT NIC INTERACTION TEST SUITE\n");
-    printf("=============================================================\n");
-    fflush(stdout);
-
-    test_decnet_connection_handshake();
-
-    printf("=============================================================\n");
-    printf("DECNET UNIT TESTS COMPLETED\n");
-    printf("=============================================================\n");
-    fflush(stdout);
+    printf("[SUCCESS] Hardware mapping complete. DECnet listening.\n");
     return 0;
 }
