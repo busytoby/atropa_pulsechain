@@ -145,6 +145,7 @@ libtsfi2.so
 /tests/test_auncient_kendrick_network
 /tests/test_auncient_qft_sitton
 /tests/test_auncient_npn_pnp_bjt
+/tests/test_auncient_plexus_compiler
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
