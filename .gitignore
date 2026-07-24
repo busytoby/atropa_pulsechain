@@ -203,6 +203,7 @@ libtsfi2.so
 /tests/test_auncient_kleene_room
 /tests/test_auncient_pdl_converse
 /tests/test_auncient_pdl_loop_guard
+/tests/test_auncient_pdl_contract
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
