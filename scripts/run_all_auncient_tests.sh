@@ -383,4 +383,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_tws_improved.c -o tes
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_dataplane_multiplexer.c -o tests/test_auncient_dataplane_multiplexer -lm -lrt
 ./tests/test_auncient_dataplane_multiplexer
 
+# Compile and run Dataplane PLL Integration
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_dataplane_pll_integration.c -o tests/test_auncient_dataplane_pll_integration -lm -lrt
+./tests/test_auncient_dataplane_pll_integration
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
