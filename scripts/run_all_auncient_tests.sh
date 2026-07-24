@@ -627,4 +627,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_bgp_security.c -o tes
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_bgp_fault_tolerance.c -o tests/test_auncient_bgp_fault_tolerance -lm -lrt
 ./tests/test_auncient_bgp_fault_tolerance
 
+# Compile and run Auncient VPPD STANAG AVAIL Handshake
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vppd_avail.c -o tests/test_auncient_vppd_avail -lm -lrt
+./tests/test_auncient_vppd_avail
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
