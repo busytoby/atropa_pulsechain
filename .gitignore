@@ -410,9 +410,11 @@ frontend/compiled_yul.json
 /tools/auncient_gcc_vppd.c
 /tools/tsfi_gcc_plugin
 /tools/tsfi_gcc_plugin.c
+/tools/gcc/
 /std/ddl_rod.algol61
 /strategies/dml_cone.cobol
 /tests/autodin_events.dat.bin
+
 
 
 
