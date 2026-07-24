@@ -439,4 +439,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpp_autodin_input.c -
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpp_example.c -o tests/test_auncient_vpp_example -lm -lrt
 ./tests/test_auncient_vpp_example
 
+# Compile and run VPPD Self-Contained Daemon Execution
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vppd.c -o tests/test_auncient_vppd -lm -lrt
+./tests/test_auncient_vppd
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="

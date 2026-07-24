@@ -358,7 +358,9 @@ frontend/compiled_yul.json
 /tests/test_auncient_vpp_profiler
 /tests/test_auncient_vpp_autodin_input
 /tests/test_auncient_vpp_example
+/tests/test_auncient_vppd
 /tests/autodin_events.dat.bin
+
 
 
 
