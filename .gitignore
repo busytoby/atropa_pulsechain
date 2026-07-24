@@ -235,6 +235,7 @@ libtsfi2.so
 /tests/test_auncient_voodoo_tmu
 /tests/test_auncient_sigplan_tmu
 /tests/test_auncient_sigplan_voodoo
+/tests/test_auncient_jin_li_cache
 /tests/output.xpl
 /scripts/compile_apdl
 /scripts/alsa_player
