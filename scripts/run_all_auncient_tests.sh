@@ -587,4 +587,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_alu_penetration.c -o 
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_lau_svdag.c -o tests/test_auncient_lau_svdag -lm -lrt
 ./tests/test_auncient_lau_svdag
 
+# Compile and run Auncient ZMM VM Address-Based Resolution
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_address_resolution.c -o tests/test_auncient_address_resolution -lm -lrt
+./tests/test_auncient_address_resolution
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="

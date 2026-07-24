@@ -395,7 +395,9 @@ frontend/compiled_yul.json
 /tests/test_auncient_mdev_audio
 /tests/test_auncient_alu_penetration
 /tests/test_auncient_lau_svdag
+/tests/test_auncient_address_resolution
 /tests/autodin_events.dat.bin
+
 
 
 
