@@ -391,4 +391,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_dataplane_pll_integra
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_dataplane_jitter_buffer.c -o tests/test_auncient_dataplane_jitter_buffer -lm -lrt
 ./tests/test_auncient_dataplane_jitter_buffer
 
+# Compile and run Dataplane Backpressure
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_dataplane_backpressure.c -o tests/test_auncient_dataplane_backpressure -lm -lrt
+./tests/test_auncient_dataplane_backpressure
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
