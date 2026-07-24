@@ -149,6 +149,7 @@ libtsfi2.so
 /tests/test_auncient_logic_gates
 /tests/test_auncient_plexus_tag_checker
 /tests/test_auncient_timing_audit
+/tests/test_auncient_plexus_gated_device
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
