@@ -235,8 +235,8 @@ int main(void) {
     // High-clearance value write (950000) fails pre-condition: blames the Caller
     ok = auncient_sdk_alu_execute(&low_clearance_ctx, ALU_OP_WRITE_ABD, 950000, approvals, &results[0]);
     assert(ok == false);
-    assert(low_clearance_ctx.last_blame == SDK_BLAME_CALLER);
-    printf("   ✓ Blame correctly assigned to Caller context.\n");
+    assert(auncient_pld_verify_blame(&low_clearance_ctx, SDK_BLAME_CALLER) == true);
+    printf("   ✓ Blame correctly assigned to Caller context via PLD diagnostic.\n");
     fflush(stdout);
 
     // 16. Test Transition Invariants (Pre/Post Relation Constraints)

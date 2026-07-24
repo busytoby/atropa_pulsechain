@@ -147,6 +147,9 @@ void auncient_sdk_assign_blame(sdk_cics_context_t *ctx, sdk_blame_t blame_target
 // Transition Invariants (Pre/Post Relation Constraints)
 bool auncient_sdk_validate_transition_invariant(const sdk_coaxial_env_t *env, int node_idx, uint32_t new_val);
 
+// Physical Layer Driver (PLD) Blame Verification Diagnostic
+bool auncient_pld_verify_blame(const sdk_cics_context_t *ctx, sdk_blame_t expected_blame);
+
 // Precedence-Aware AUTODIN Spin-Lock Interface
 bool auncient_sdk_autodin_spin_lock(sdk_cics_context_t *ctx, uint32_t lock_token, char precedence);
 void auncient_sdk_autodin_spin_unlock(sdk_cics_context_t *ctx, uint32_t lock_token);

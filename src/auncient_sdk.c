@@ -178,6 +178,13 @@ bool auncient_sdk_validate_transition_invariant(const sdk_coaxial_env_t *env, in
     return (new_val >= env->registers[node_idx].value);
 }
 
+bool auncient_pld_verify_blame(const sdk_cics_context_t *ctx, sdk_blame_t expected_blame) {
+    if (!ctx) {
+        return false;
+    }
+    return (ctx->last_blame == expected_blame);
+}
+
 static bool check_ackerman_quorum(sdk_quorum_type_t type, const bool *approvals, const uint32_t *weights) {
     if (type == SDK_QUORUM_MAJORITY) {
         int count = 0;
