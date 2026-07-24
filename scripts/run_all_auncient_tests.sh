@@ -487,4 +487,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_binary_optimizer_v5.c
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_binary_optimizer_v6.c -o tests/test_auncient_binary_optimizer_v6 -lm -lrt
 ./tests/test_auncient_binary_optimizer_v6
 
+# Compile and run Auncient Consensus & Quorum Optimizer
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_consensus_optimizer.c -o tests/test_auncient_consensus_optimizer -lm -lrt
+./tests/test_auncient_consensus_optimizer
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
