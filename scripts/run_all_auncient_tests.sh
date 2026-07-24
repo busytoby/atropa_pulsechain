@@ -255,6 +255,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_coupled_byzantine_ent
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_structured_bench.c -o tests/test_auncient_structured_bench -lm -lrt
 ./tests/test_auncient_structured_bench
 
+# Compile and run Fault-Tolerant Clock Synchronization
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_fault_tolerant_clock.c -o tests/test_auncient_fault_tolerant_clock -lm -lrt
+./tests/test_auncient_fault_tolerant_clock
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
