@@ -280,6 +280,7 @@ libtsfi2.so
 /tests/test_auncient_autodin_contract
 /tests/test_auncient_sdk_precedence_locks
 /tests/test_auncient_xpl_loader
+/tests/test_auncient_xpl_compiler
 /libauncient_sdk.a
 /src/auncient_sdk.o
 /dist/
