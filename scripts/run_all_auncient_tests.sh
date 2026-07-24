@@ -403,4 +403,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpp_dataplane.c -o te
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_dataplane_telemetry.c -o tests/test_auncient_dataplane_telemetry -lm -lrt
 ./tests/test_auncient_dataplane_telemetry
 
+# Compile and run VPP Forwarding
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpp_forwarding.c -o tests/test_auncient_vpp_forwarding -lm -lrt
+./tests/test_auncient_vpp_forwarding
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
