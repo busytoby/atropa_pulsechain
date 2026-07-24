@@ -163,6 +163,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_voodoo_tmu.c -o tests
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_sigplan_tmu.c -o tests/test_auncient_sigplan_tmu -lm -lrt
 ./tests/test_auncient_sigplan_tmu
 
+# Compile and run SIGPLAN Voodoo TMU Pipeline
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_sigplan_voodoo.c -o tests/test_auncient_sigplan_voodoo -lm -lrt
+./tests/test_auncient_sigplan_voodoo
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
