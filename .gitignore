@@ -165,6 +165,7 @@ libtsfi2.so
 /tests/test_auncient_wortman_auditor
 /tests/test_auncient_xplos_debugger
 /tests/test_auncient_xplos_debugger_extended
+/tests/test_auncient_plexus_multiplexer
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
