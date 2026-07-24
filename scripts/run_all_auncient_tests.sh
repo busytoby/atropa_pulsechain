@@ -75,6 +75,10 @@ gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -O3 tests/test_aunc
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -O3 tests/test_auncient_pdl_hoare.c -o tests/test_auncient_pdl_hoare -lm -lrt
 ./tests/test_auncient_pdl_hoare
 
+# Compile and run Safety Learning
+gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -O3 tests/test_auncient_safety_learning.c -o tests/test_auncient_safety_learning -lssl -lcrypto -lm -lrt
+./tests/test_auncient_safety_learning
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
