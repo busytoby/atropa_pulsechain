@@ -392,7 +392,9 @@ frontend/compiled_yul.json
 /tests/test_auncient_cassel_smps
 /tests/test_auncient_winchester_majordomo
 /tests/test_auncient_mdev_coaxial
+/tests/test_auncient_mdev_audio
 /tests/autodin_events.dat.bin
+
 
 
 

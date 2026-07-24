@@ -575,4 +575,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_winchester_majordomo.
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_mdev_coaxial.c -o tests/test_auncient_mdev_coaxial -lm -lrt
 ./tests/test_auncient_mdev_coaxial
 
+# Compile and run Auncient mdev Coaxial PSG Audio Simulation
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_mdev_audio.c -o tests/test_auncient_mdev_audio -lm -lrt
+./tests/test_auncient_mdev_audio
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
