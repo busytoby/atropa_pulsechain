@@ -346,6 +346,8 @@ frontend/compiled_yul.json
 /tests/tws_audit.dat.bin
 /tests/test_auncient_dataplane_multiplexer
 /tests/test_auncient_dataplane_pll_integration
+/tests/test_auncient_dataplane_jitter_buffer
+
 
 
 
