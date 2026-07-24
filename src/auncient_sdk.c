@@ -120,6 +120,14 @@ bool auncient_sdk_transition_typestate(sdk_cics_context_t *ctx, sdk_typestate_t 
         return true;
     }
     if (next_state == SDK_STATE_COMMITTED && cur == SDK_STATE_EXECUTING) {
+        // Dependent Typestate Check: Grid Quorum requires all nodes to be even for a commit transition
+        if (ctx->quorum_type == SDK_QUORUM_GRID) {
+            for (int i = 0; i < SDK_NUM_NODES; i++) {
+                if (ctx->env->registers[i].value % 2 != 0) {
+                    return false; // Trapped dependent typestate constraint failure
+                }
+            }
+        }
         ctx->state = next_state;
         return true;
     }
@@ -463,13 +471,38 @@ bool auncient_sdk_execute_dat_bin(sdk_cics_context_t *ctx, const char *dat_bin_p
         return false;
     }
 
-    // Transition state
+    // Transition state to EXECUTING
     auncient_sdk_transition_typestate(ctx, SDK_STATE_EXECUTING);
 
-    bool ok = auncient_sdk_execute_dat_bin_internal(ctx, dat_bin_path, results, max_results);
+    bool ok = false;
+    sdk_register_t transaction_snapshot[SDK_NUM_NODES];
+    memcpy(transaction_snapshot, ctx->env->registers, sizeof(transaction_snapshot));
+
+    // Autonomic Transactional Retry Loop
+    for (int attempt = 0; attempt < SDK_TRANSACTION_RETRY_LIMIT; attempt++) {
+        ok = auncient_sdk_execute_dat_bin_internal(ctx, dat_bin_path, results, max_results);
+        if (ok) {
+            break;
+        }
+
+        // Try resilient recovery before next retry
+        if (ctx->recovery_handler) {
+            ctx->recovery_handler(ctx, SDK_STATUS_ERR_TRANSACTION);
+            // Restore snapshot for clean slate on retry
+            memcpy(ctx->env->registers, transaction_snapshot, sizeof(transaction_snapshot));
+        } else {
+            break; // No handler to recover state, abort immediately
+        }
+    }
 
     if (ok) {
-        auncient_sdk_transition_typestate(ctx, SDK_STATE_COMMITTED);
+        // Attempt transition to COMMITTED
+        if (!auncient_sdk_transition_typestate(ctx, SDK_STATE_COMMITTED)) {
+            // Dependent typestate failed to commit: rollback registers and transition back
+            memcpy(ctx->env->registers, transaction_snapshot, sizeof(transaction_snapshot));
+            auncient_sdk_transition_typestate(ctx, SDK_STATE_UNLOCKED);
+            ok = false;
+        }
     } else {
         auncient_sdk_transition_typestate(ctx, SDK_STATE_UNLOCKED);
     }

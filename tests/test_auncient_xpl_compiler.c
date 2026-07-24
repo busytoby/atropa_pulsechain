@@ -6,7 +6,7 @@
 
 // Resilient recovery callback for testing
 static void test_recovery_callback(sdk_cics_context_t *ctx, sdk_status_code_t error_code) {
-    if (error_code == SDK_STATUS_ERR_SECURITY) {
+    if (error_code == SDK_STATUS_ERR_SECURITY || error_code == SDK_STATUS_ERR_TRANSACTION) {
         // Recover by elevating security clearance level to satisfy pre-conditions
         ctx->security_clearance = 3;
     }
@@ -186,7 +186,7 @@ int main(void) {
     assert(ok == true);
     // Write should pass now under executing state (if lock is active)
     low_clearance_ctx.has_lock = true;
-    ok = auncient_sdk_alu_execute(&low_clearance_ctx, ALU_OP_WRITE_ABD, 555, approvals, &results[0]);
+    ok = auncient_sdk_alu_execute(&low_clearance_ctx, ALU_OP_WRITE_ABD, 556, approvals, &results[0]);
     assert(ok == true);
     printf("   ✓ Typestate transition lifecycle verified successfully.\n");
     fflush(stdout);
@@ -300,7 +300,43 @@ int main(void) {
     printf("   ✓ Resilient recovery handler executed and recovered state successfully.\n");
     fflush(stdout);
 
-    // 17. Test Transition Invariants (Pre/Post Relation Constraints)
+    // 17. Test Dependent Typestates (Grid Quorum locks transition unless all registers are even values)
+    printf("[TEST] Testing dependent typestate transition rules...\n");
+    fflush(stdout);
+    low_clearance_ctx.quorum_type = SDK_QUORUM_GRID;
+    low_clearance_ctx.state = SDK_STATE_EXECUTING;
+    // Set node register to odd value 555
+    env.registers[0].value = 555;
+    // Attempting transition to COMMITTED state should be rejected
+    ok = auncient_sdk_transition_typestate(&low_clearance_ctx, SDK_STATE_COMMITTED);
+    assert(ok == false);
+
+    // Set node register to even value 556
+    env.registers[0].value = 556;
+    // Attempting transition to COMMITTED state should succeed now
+    ok = auncient_sdk_transition_typestate(&low_clearance_ctx, SDK_STATE_COMMITTED);
+    assert(ok == true);
+    printf("   ✓ Dependent typestate transition constraints validated correctly.\n");
+    fflush(stdout);
+
+    // 18. Test Autonomic Transactional Retries
+    printf("[TEST] Testing autonomic transactional retry loops...\n");
+    fflush(stdout);
+    // Set clearance to 1 (will trigger pre-condition fail on TopSecret sub-binary execution)
+    low_clearance_ctx.security_clearance = 1;
+    low_clearance_ctx.quorum_type = SDK_QUORUM_MAJORITY;
+    low_clearance_ctx.state = SDK_STATE_UNLOCKED;
+    low_clearance_ctx.recovery_handler = test_recovery_callback; // Handler will elevate clearance on retry
+
+    // Execute dat.bin containing TopSecret write instructions.
+    // It will fail on the first run, rollback to snapshot, execute recovery handler, and succeed on the retry!
+    ok = auncient_sdk_execute_dat_bin(&low_clearance_ctx, sub_bin_path, NULL, 0);
+    assert(ok == true);
+    assert(low_clearance_ctx.security_clearance == 3);
+    printf("   ✓ Autonomic transactional retry completed and committed transaction successfully.\n");
+    fflush(stdout);
+
+    // 19. Test Transition Invariants (Pre/Post Relation Constraints)
     printf("[TEST] Testing pre/post relation transition invariants...\n");
     fflush(stdout);
     env.registers[0].value = 500; // Baseline state

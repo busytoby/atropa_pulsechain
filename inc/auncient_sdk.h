@@ -10,6 +10,7 @@
 #define ALU_OP_LOAD_SUB_XPL   0x40
 
 #define SDK_NUM_NODES 4
+#define SDK_TRANSACTION_RETRY_LIMIT 3
 
 typedef enum {
     SDK_STATE_UNLOCKED = 0,
@@ -44,7 +45,8 @@ typedef enum {
     SDK_STATUS_ERR_PURITY = 14,
     SDK_STATUS_ERR_REFINEMENT = 15,
     SDK_STATUS_ERR_TRANSITION = 16,
-    SDK_STATUS_ERR_INVARIANT_STRENGTHENING = 17
+    SDK_STATUS_ERR_INVARIANT_STRENGTHENING = 17,
+    SDK_STATUS_ERR_TRANSACTION = 18
 } sdk_status_code_t;
 
 // Forward declaration of context structure
@@ -146,7 +148,7 @@ bool auncient_sdk_validate_history_constraints(const sdk_coaxial_env_t *old_env,
 // Frame Conditions (Modify Clauses)
 bool auncient_sdk_validate_frame_conditions(uint8_t opcode, const bool *approvals, int modified_node_idx);
 
-// Typestate transition validator
+// Typestate transition validator (supports Dependent Typestates)
 bool auncient_sdk_transition_typestate(sdk_cics_context_t *ctx, sdk_typestate_t next_state);
 
 // Dependent Types Boundary Verification
@@ -185,7 +187,7 @@ bool auncient_sdk_compile_xpl_to_dat_bin(const char *xpl_source_path, const char
 // Primary Executable (.bin) Loader and Executor (allocates dedicated AUTODIN environment in memory)
 bool auncient_sdk_execute_primary_bin(const char *bin_path, uint32_t *results, int max_results);
 
-// .dat.bin Binary Stream Executor (executes on an existing AUTODIN environment)
+// .dat.bin Binary Stream Executor (executes on an existing AUTODIN environment with Transactional Retries)
 bool auncient_sdk_execute_dat_bin(sdk_cics_context_t *ctx, const char *dat_bin_path, uint32_t *results, int max_results);
 
 bool auncient_sdk_alu_execute(sdk_cics_context_t *ctx, uint8_t alu_opcode, uint32_t target_val, const bool *approvals, uint32_t *result_val);
