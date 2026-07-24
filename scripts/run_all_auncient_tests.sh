@@ -87,6 +87,10 @@ gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -O3 tests/test_aunc
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -O3 tests/test_auncient_apdl_xplos.c -o tests/test_auncient_apdl_xplos -lm -lrt
 ./tests/test_auncient_apdl_xplos
 
+# Compile and run APDL Convergence
+gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -O3 tests/test_auncient_apdl_convergence.c -o tests/test_auncient_apdl_convergence -lm -lrt
+./tests/test_auncient_apdl_convergence
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
