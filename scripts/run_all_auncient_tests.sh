@@ -367,4 +367,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_siggraph_projector.c 
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_siggraph_renderer.c -o tests/test_auncient_siggraph_renderer -lm -lrt
 ./tests/test_auncient_siggraph_renderer
 
+# Compile and run SIGGRAPH Verlet FET Discharge Simulator
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_siggraph_discharge.c -o tests/test_auncient_siggraph_discharge -lm -lrt
+./tests/test_auncient_siggraph_discharge
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="

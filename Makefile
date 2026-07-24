@@ -21,6 +21,9 @@ siggraph-projector:
 	./tests/test_auncient_siggraph_projector
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_siggraph_renderer.c -o tests/test_auncient_siggraph_renderer -lm -lrt
 	./tests/test_auncient_siggraph_renderer
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_siggraph_discharge.c -o tests/test_auncient_siggraph_discharge -lm -lrt
+	./tests/test_auncient_siggraph_discharge
+
 
 
 

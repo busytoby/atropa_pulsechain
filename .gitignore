@@ -339,5 +339,8 @@ frontend/compiled_yul.json
 /tests/test_auncient_siggraph_projector
 /tests/test_auncient_siggraph_renderer
 /tests/siggraph_frame.ppm
+/tests/test_auncient_siggraph_discharge
+/tests/siggraph_physics.dat.bin
+
 
 
