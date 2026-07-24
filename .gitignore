@@ -239,6 +239,7 @@ libtsfi2.so
 /tests/test_auncient_jin_li_rate
 /tests/test_auncient_jin_li_quant
 /tests/test_auncient_sigplan_ifc
+/tests/test_auncient_autodin_ifc
 /tests/output.xpl
 /scripts/compile_apdl
 /scripts/alsa_player
