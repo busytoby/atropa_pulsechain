@@ -259,6 +259,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_structured_bench.c -o
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_fault_tolerant_clock.c -o tests/test_auncient_fault_tolerant_clock -lm -lrt
 ./tests/test_auncient_fault_tolerant_clock
 
+# Compile and run Bakery Distributed Lock
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_bakery_lock.c -o tests/test_auncient_bakery_lock -lm -lrt
+./tests/test_auncient_bakery_lock
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
