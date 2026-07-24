@@ -276,6 +276,7 @@ libtsfi2.so
 /tests/test_auncient_similarity_search
 /tests/test_auncient_voodoo_sli
 /tests/test_auncient_contract_invariant
+/tests/test_auncient_behavioral_subtyping
 /libauncient_sdk.a
 /src/auncient_sdk.o
 /dist/
