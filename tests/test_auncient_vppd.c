@@ -11,6 +11,8 @@
 #define STACK_CAPACITY 64
 #define PAYLOAD_SIZE 64
 #define LATENCY_LIMIT_NS 150000
+#define MAX_TASKS 4
+#define MAX_MEMBERS 4
 
 // vppd.bin ABI definition
 typedef enum {
@@ -37,6 +39,15 @@ typedef struct {
     uint64_t total_packets;
     double pll_phase_error;
     uint64_t tsc_cycles;
+
+    // Dynamic tasks spawned from CICS
+    char active_tasks[MAX_TASKS][160];
+    int task_count;
+
+    // Dynamic schema members added from CICS
+    char dynamic_members[MAX_MEMBERS][64];
+    int64_t dynamic_values[MAX_MEMBERS];
+    int member_count;
 } vppd_context_t;
 
 // Stack helpers
@@ -62,6 +73,18 @@ static void render_cics_terminal(const vppd_context_t *ctx) {
     printf("  PLL PHASE ERROR: %.4f\n", ctx->pll_phase_error);
     printf("  SYSTEM CYCLES  : %lu\n", ctx->tsc_cycles);
     printf("  STACK DEPTH    : %d\n", ctx->stack.top);
+    
+    // Display active spawned tasks
+    printf("  SPAWNED TASKS  : %d\n", ctx->task_count);
+    for (int i = 0; i < ctx->task_count; i++) {
+        printf("    [%d] %s\n", i, ctx->active_tasks[i]);
+    }
+
+    // Display dynamic schema members
+    printf("  DYNAMIC MEMBERS: %d\n", ctx->member_count);
+    for (int i = 0; i < ctx->member_count; i++) {
+        printf("    -> %s = %ld\n", ctx->dynamic_members[i], ctx->dynamic_values[i]);
+    }
     printf("========================================\n");
     fflush(stdout);
 }
@@ -83,7 +106,7 @@ bool vppd_abi_entry(vppd_context_t *ctx, vppd_abi_cmd_t cmd, const vppd_packet_t
             strcpy(out_status, "ABI_PONG");
             break;
         case ABI_CMD_STATUS:
-            sprintf(out_status, "OK;packets=%lu;phase=%.4f", ctx->total_packets, ctx->pll_phase_error);
+            sprintf(out_status, "OK;packets=%lu;phase=%.4f;tasks=%d", ctx->total_packets, ctx->pll_phase_error, ctx->task_count);
             break;
         case ABI_CMD_ROUTE:
             if (!pkt) return false;
@@ -135,10 +158,12 @@ static void run_interactive_mode(vppd_context_t *ctx) {
             break;
         } else if (strcmp(input_line, "help") == 0) {
             printf("Commands:\n");
-            printf("  ping       - Query daemon responsiveness\n");
-            printf("  status     - Query current telemetry statistics\n");
-            printf("  route <N>  - Route a simulated transaction packet with sequence N\n");
-            printf("  exit       - Terminate the session\n");
+            printf("  ping                       - Query daemon responsiveness\n");
+            printf("  status                     - Query current telemetry statistics\n");
+            printf("  route <N>                  - Route a simulated transaction packet with sequence N\n");
+            printf("  spawn <name> <clearance>   - Spawn a dynamic contract process task\n");
+            printf("  add-member <name> <v> <m>  - Add a dynamic data member with val <v> and signature mask <m>\n");
+            printf("  exit                       - Terminate the session\n");
             fflush(stdout);
         } else if (strcmp(input_line, "ping") == 0) {
             vppd_abi_entry(ctx, ABI_CMD_PING, NULL, abi_buffer);
@@ -157,6 +182,50 @@ static void run_interactive_mode(vppd_context_t *ctx) {
             
             vppd_abi_entry(ctx, ABI_CMD_ROUTE, &pkt, abi_buffer);
             printf("Result: %s\n", abi_buffer);
+            fflush(stdout);
+        } else if (strncmp(input_line, "spawn ", 6) == 0) {
+            char name[64];
+            char clearance[64];
+            if (sscanf(input_line + 6, "%63s %63s", name, clearance) == 2) {
+                if (ctx->task_count < MAX_TASKS) {
+                    snprintf(ctx->active_tasks[ctx->task_count++], 160, "%s(%s)", name, clearance);
+                    ctx->tsc_cycles += 100;
+                    printf("Result: Task spawned successfully.\n");
+                } else {
+                    printf("Result: Spawn failed. Maximum task capacity reached.\n");
+                }
+            } else {
+                printf("Usage: spawn <name> <clearance>\n");
+            }
+            fflush(stdout);
+        } else if (strncmp(input_line, "add-member ", 11) == 0) {
+            char name[64];
+            int64_t val = 0;
+            uint32_t mask = 0;
+            if (sscanf(input_line + 11, "%63s %ld %u", name, &val, &mask) == 3) {
+                // Count signatures in mask (Ackerman communal proof threshold check)
+                int signatures = 0;
+                for (int i = 0; i < 32; i++) {
+                    if ((mask >> i) & 1) {
+                        signatures++;
+                    }
+                }
+                if (signatures >= 3) {
+                    if (ctx->member_count < MAX_MEMBERS) {
+                        snprintf(ctx->dynamic_members[ctx->member_count], 64, "%s", name);
+                        ctx->dynamic_values[ctx->member_count] = val;
+                        ctx->member_count++;
+                        ctx->tsc_cycles += 150;
+                        printf("Result: Dynamic schema member added successfully.\n");
+                    } else {
+                        printf("Result: Expansion failed. Member capacity reached.\n");
+                    }
+                } else {
+                    printf("Result: Ackerman Quorum failed. Insufficient signatures (%d/3 required).\n", signatures);
+                }
+            } else {
+                printf("Usage: add-member <name> <value> <signature_mask>\n");
+            }
             fflush(stdout);
         } else if (strlen(input_line) > 0) {
             printf("Unknown command: %s\n", input_line);
