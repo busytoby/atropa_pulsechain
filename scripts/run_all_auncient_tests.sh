@@ -363,4 +363,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_aunci
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_siggraph_projector.c -o tests/test_auncient_siggraph_projector -lm -lrt
 ./tests/test_auncient_siggraph_projector
 
+# Compile and run SIGGRAPH 3D Coordinate Projection Renderer
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_siggraph_renderer.c -o tests/test_auncient_siggraph_renderer -lm -lrt
+./tests/test_auncient_siggraph_renderer
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="

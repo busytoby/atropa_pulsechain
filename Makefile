@@ -19,6 +19,9 @@ sdk-benchmark:
 siggraph-projector:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_siggraph_projector.c -o tests/test_auncient_siggraph_projector -lm -lrt
 	./tests/test_auncient_siggraph_projector
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_siggraph_renderer.c -o tests/test_auncient_siggraph_renderer -lm -lrt
+	./tests/test_auncient_siggraph_renderer
+
 
 
 

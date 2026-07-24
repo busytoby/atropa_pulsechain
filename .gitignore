@@ -337,4 +337,7 @@ frontend/compiled_yul.json
 
 # SIGGRAPH projector binary
 /tests/test_auncient_siggraph_projector
+/tests/test_auncient_siggraph_renderer
+/tests/siggraph_frame.ppm
+
 
