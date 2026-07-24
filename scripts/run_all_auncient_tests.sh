@@ -535,4 +535,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_transactional_q
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_reconciliation_v2.c -o tests/test_auncient_hogan_reconciliation_v2 -lm -lrt
 ./tests/test_auncient_hogan_reconciliation_v2
 
+# Compile and run Auncient Hogan ILS Loan Consensus Verification
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_ils_consensus.c -o tests/test_auncient_hogan_ils_consensus -lm -lrt
+./tests/test_auncient_hogan_ils_consensus
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
