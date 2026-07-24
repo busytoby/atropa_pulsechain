@@ -135,6 +135,10 @@ gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -O3 tests/test_aunc
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -O3 tests/test_auncient_chin_monopole.c -o tests/test_auncient_chin_monopole -lm -lrt
 ./tests/test_auncient_chin_monopole
 
+# Compile and run Interactive Debugger Front End
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_interactive_db.c -o tests/test_auncient_interactive_db -lm -lrt
+./tests/test_auncient_interactive_db --non-interactive
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
