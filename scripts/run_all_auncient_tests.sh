@@ -507,4 +507,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_huc_vgpr.c -o tests/t
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_sgpr_vgpr.c -o tests/test_auncient_hogan_sgpr_vgpr -lm -lrt
 ./tests/test_auncient_hogan_sgpr_vgpr
 
+# Compile and run Auncient Hogan-Hudson Ocean Protocol Integration
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_huc_ocean.c -o tests/test_auncient_hogan_huc_ocean -lm -lrt
+./tests/test_auncient_hogan_huc_ocean
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
