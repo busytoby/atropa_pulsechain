@@ -235,6 +235,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_lutters_boundary.c -o
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_sigact_byzantine.c -o tests/test_auncient_sigact_byzantine -lm -lrt
 ./tests/test_auncient_sigact_byzantine
 
+# Compile and run EDTC Self-Checking DMR
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_edtc_self_test.c -o tests/test_auncient_edtc_self_test -lm -lrt
+./tests/test_auncient_edtc_self_test
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
