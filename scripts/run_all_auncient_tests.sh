@@ -471,4 +471,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_binary_optimizer.c -o
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_binary_optimizer_v2.c -o tests/test_auncient_binary_optimizer_v2 -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_binary_optimizer_v2
 
+# Compile and run Auncient Binary Layout Optimizer Level 3
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_binary_optimizer_v3.c -o tests/test_auncient_binary_optimizer_v3 -lm -lrt
+./tests/test_auncient_binary_optimizer_v3
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
