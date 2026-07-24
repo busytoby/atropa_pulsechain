@@ -547,4 +547,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_sweep_quorum.c 
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_accumulator_quorum.c -o tests/test_auncient_accumulator_quorum -lm -lrt
 ./tests/test_auncient_accumulator_quorum
 
+# Compile and run Auncient Hogan Reconciliation Quorum Verification
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_reconciliation_quorum.c -o tests/test_auncient_hogan_reconciliation_quorum -lm -lrt
+./tests/test_auncient_hogan_reconciliation_quorum
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
