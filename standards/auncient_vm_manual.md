@@ -50,6 +50,11 @@ Logical invariant contracts are compiled directly to branchless hardware write g
 * **Formula**: $?\phi ; ?\psi$
 * **Implementation**: Couples preconditions (e.g. tag privilege) with postconditions (e.g. address limits) into sequential tests.
 
+### G. Physical Transistor Gating (Black-Red Mapping)
+* **Precondition $\phi$ (NPN Black)**: Mapped to active-high NPN gate conduction (value `1` represents truth).
+* **Postcondition $\psi$ (PNP Red)**: Mapped to active-low PNP gate conduction (value `0` represents truth).
+* **Conduction Path**: Path is open only when NPN Black is high and PNP Red is low. All other combinations force immediate `TRANSISTOR_CUTOFF`.
+
 ---
 
 ## 3. System Register Maps
