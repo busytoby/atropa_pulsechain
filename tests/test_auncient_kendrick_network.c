@@ -68,6 +68,23 @@ int main(void) {
     assert(res == 0);
     assert(rtt_result > 120.0); // 1.05^5 * 100.0
     printf("   ✓ Kendrick RTT integration step pass (Result: %.2f ms).\n", rtt_result);
+    // 4. Diagnostic Logging for network events
+    printf("[TEST] Running Kendrick diagnostic event logger...\n");
+    fflush(stdout);
+    tsfi_cw_kendrick_log_entry k_logs[4];
+    int current_log_count = 0;
+
+    // Log connection and security quarantine events
+    res = tsfi_cw_kendrick_log_event(101, "CI_RCVD", k_logs, 4, &current_log_count);
+    assert(res == 0);
+    assert(current_log_count == 1);
+    assert(strcmp(k_logs[0].status, "CI_RCVD") == 0);
+
+    res = tsfi_cw_kendrick_log_event(101, "QUARANTINED", k_logs, 4, &current_log_count);
+    assert(res == 0);
+    assert(current_log_count == 2);
+    assert(strcmp(k_logs[1].status, "QUARANTINED") == 0);
+    printf("   ✓ Kendrick network event diagnostic logging pass.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
