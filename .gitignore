@@ -151,6 +151,7 @@ libtsfi2.so
 /tests/test_auncient_timing_audit
 /tests/test_auncient_plexus_gated_device
 /tests/test_auncient_23tree_net_device
+/tests/test_auncient_shared_memory_auditor
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
