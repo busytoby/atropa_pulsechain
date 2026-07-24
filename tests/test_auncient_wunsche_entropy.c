@@ -14,7 +14,9 @@ typedef enum {
 typedef struct {
     char header[5]; // Must be "ADIN" for valid structure
     uint32_t payload_id;
-    bool is_formatted;
+    bool pre_txn_schema_ok;  // Pre-transaction schema validation status
+    bool per_txn_format_ok;  // Per-transaction frame layout validation status
+    bool post_txn_hash_ok;   // Post-transaction commitment validation status
 } autodin_profile_t;
 
 // Simulated Wünsche channel transmission packet
@@ -41,11 +43,14 @@ double calculate_wunsche_entropy(const wunsche_packet_t *pkt) {
 bool evaluate_wunsche_gate(wunsche_packet_t *pkt, double max_entropy_threshold) {
     pkt->conduction_gate = CUTOFF_STATE;
 
-    // Better Defined AUTODIN Gating:
-    // If the message contains a structured, valid AUTODIN information profile,
+    // Better Defined AUTODIN Gating (Pre, Per, and Post Transaction Basis):
+    // If the message contains a structured, valid AUTODIN information profile at all three phases,
     // its layout is fully deterministic, meaning its entropy is resolved to 0.0,
-    // preventing Wünsche entropy violations entirely on valid structured data.
-    if (pkt->profile.is_formatted && strcmp(pkt->profile.header, "ADIN") == 0) {
+    // preventing Wünsche entropy violations entirely.
+    if (pkt->profile.pre_txn_schema_ok &&
+        pkt->profile.per_txn_format_ok &&
+        pkt->profile.post_txn_hash_ok &&
+        strcmp(pkt->profile.header, "ADIN") == 0) {
         pkt->conduction_gate = CONDUC_STATE;
         return true;
     }
@@ -72,7 +77,7 @@ int main(void) {
     // 1. Compliant Case: Highly ordered signal (Low entropy: 0.811) -> Should conduct
     wunsche_packet_t pkt_ordered = {
         .probabilities = { 0.8, 0.2, 0.0, 0.0 }, // Clear dominant state
-        .profile = { .is_formatted = false },
+        .profile = { .pre_txn_schema_ok = false, .per_txn_format_ok = false, .post_txn_hash_ok = false },
         .conduction_gate = CUTOFF_STATE
     };
 
@@ -89,7 +94,7 @@ int main(void) {
     // 2. Reject Case: Noisy/disordered signal (High entropy: 2.0) -> Should cutoff
     wunsche_packet_t pkt_noisy = {
         .probabilities = { 0.25, 0.25, 0.25, 0.25 }, // Uniform noise
-        .profile = { .is_formatted = false },
+        .profile = { .pre_txn_schema_ok = false, .per_txn_format_ok = false, .post_txn_hash_ok = false },
         .conduction_gate = CUTOFF_STATE
     };
 
@@ -103,18 +108,20 @@ int main(void) {
     printf("   ✓ Degraded signal cutoff trapped successfully. Conduction blocked.\n");
     fflush(stdout);
 
-    // 3. AUTODIN Gating Case: Noisy probabilities but correctly formatted AUTODIN packet -> Should bypass raw entropy check
+    // 3. AUTODIN Gating Case: Noisy probabilities but valid pre, per, and post transaction phases -> Should bypass raw entropy check
     wunsche_packet_t pkt_adin = {
         .probabilities = { 0.25, 0.25, 0.25, 0.25 }, // Noisy probabilities
         .profile = {
             .header = "ADIN",
             .payload_id = 42,
-            .is_formatted = true
+            .pre_txn_schema_ok = true,
+            .per_txn_format_ok = true,
+            .post_txn_hash_ok = true
         },
         .conduction_gate = CUTOFF_STATE
     };
 
-    printf("[TEST] Checking structured AUTODIN packet (bypasses raw entropy check)...\n");
+    printf("[TEST] Checking structured three-phase AUTODIN packet (bypasses raw entropy check)...\n");
     fflush(stdout);
     ok = evaluate_wunsche_gate(&pkt_adin, 1.5);
     assert(ok == true);
