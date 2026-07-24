@@ -275,6 +275,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_socket_link_state.c -
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_quadtree_link_down.c -o tests/test_auncient_quadtree_link_down -lm -lrt
 ./tests/test_auncient_quadtree_link_down
 
+# Compile and run Quadtree Reactive Paging Validation
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_quadtree_paging.c -o tests/test_auncient_quadtree_paging -lm -lrt
+./tests/test_auncient_quadtree_paging
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
