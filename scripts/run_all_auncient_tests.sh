@@ -379,4 +379,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_siggraph_presenter.c 
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_tws_improved.c -o tests/test_auncient_tws_improved -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_tws_improved
 
+# Compile and run Dataplane Multiplexer
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_dataplane_multiplexer.c -o tests/test_auncient_dataplane_multiplexer -lm -lrt
+./tests/test_auncient_dataplane_multiplexer
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
