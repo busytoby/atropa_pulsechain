@@ -206,6 +206,7 @@ libtsfi2.so
 /tests/test_auncient_pdl_contract
 /tests/test_auncient_pdl_implication
 /tests/test_auncient_fourier_implication
+/tests/test_auncient_coaxial_only
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
