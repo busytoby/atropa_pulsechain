@@ -249,6 +249,7 @@ libtsfi2.so
 /tests/test_auncient_ackerman_consensus
 /tests/test_auncient_kermit_cache
 /tests/test_auncient_autodin_ackerman
+/tests/test_auncient_kermit_state_consensus
 /tests/output.xpl
 /scripts/compile_apdl
 /scripts/alsa_player
