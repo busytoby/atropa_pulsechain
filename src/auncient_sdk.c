@@ -350,6 +350,20 @@ bool auncient_sdk_autodin_spin_lock(sdk_cics_context_t *ctx, uint32_t lock_token
     else if (precedence == 'I') priority = 3;
     else if (precedence == 'P') priority = 2;
 
+    // Enforce lock hierarchy ordering rules to prevent deadlocks:
+    // Requested priority must be strictly lower than the priority of the currently held lock
+    if (ctx->has_lock) {
+        uint8_t cur_priority = 1;
+        if (ctx->current_lock_precedence == 'F') cur_priority = 4;
+        else if (ctx->current_lock_precedence == 'I') cur_priority = 3;
+        else if (ctx->current_lock_precedence == 'P') cur_priority = 2;
+
+        if (priority >= cur_priority) {
+            auncient_sdk_assign_blame(ctx, SDK_BLAME_CALLER);
+            return false; // Trapped lock precedence violation
+        }
+    }
+
     // Write a lock request envelope into the AUTODIN spin-lock loop containing priority metadata
     auncient_abi_packet_t packet = {
         .alu_opcode = ALU_OP_EVAL_ACKERMAN,
@@ -373,6 +387,7 @@ bool auncient_sdk_autodin_spin_lock(sdk_cics_context_t *ctx, uint32_t lock_token
 
     if (rx_packet.payload_value == lock_token) {
         ctx->has_lock = true;
+        ctx->current_lock_precedence = precedence;
         auncient_sdk_transition_typestate(ctx, SDK_STATE_LOCKED);
         return true;
     }
@@ -396,6 +411,7 @@ void auncient_sdk_autodin_spin_unlock(sdk_cics_context_t *ctx, uint32_t lock_tok
     read(ctx->env->socket_fds[1], &rx_packet, sizeof(auncient_abi_packet_t));
     assert(rx_packet.payload_value == 0);
     ctx->has_lock = false;
+    ctx->current_lock_precedence = '\0';
     auncient_sdk_transition_typestate(ctx, SDK_STATE_UNLOCKED);
     (void)lock_token;
 }
@@ -488,6 +504,7 @@ bool auncient_sdk_execute_primary_bin(const char *bin_path, uint32_t *results, i
         .writer_id = 100,
         .security_clearance = 3,
         .has_lock = false,
+        .current_lock_precedence = '\0',
         .state = SDK_STATE_UNLOCKED,
         .is_contract_checking = false,
         .last_blame = SDK_BLAME_NONE,

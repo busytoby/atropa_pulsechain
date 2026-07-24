@@ -48,7 +48,8 @@ typedef enum {
     SDK_STATUS_ERR_TRANSITION = 16,
     SDK_STATUS_ERR_INVARIANT_STRENGTHENING = 17,
     SDK_STATUS_ERR_TRANSACTION = 18,
-    SDK_STATUS_ERR_TRACE = 19
+    SDK_STATUS_ERR_TRACE = 19,
+    SDK_STATUS_ERR_LOCK_ORDER = 20
 } sdk_status_code_t;
 
 // Forward declaration of context structure
@@ -118,6 +119,7 @@ typedef struct sdk_cics_context {
     uint32_t writer_id;
     uint8_t security_clearance; // Embedded security clearance level
     bool has_lock;             // Tracks whether the active context holds the AUTODIN lock
+    char current_lock_precedence; // Priority precedence of currently held lock ('F', 'I', 'P', 'R')
     sdk_typestate_t state;     // Typestate identifier
     bool is_contract_checking; // Purity check flag
     sdk_blame_t last_blame;    // Blame identifier
