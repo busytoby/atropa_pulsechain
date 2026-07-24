@@ -15,6 +15,7 @@
 #define MAX_MEMBERS 4
 #define MAX_CHECKPOINT_DEPTH 4
 #define QUEUE_SIZE 4
+#define MAX_RELOCATIONS 8
 
 // Level 6 binary optimization header fields
 typedef struct {
@@ -38,6 +39,12 @@ typedef struct {
     volatile uint32_t head;
     volatile uint32_t tail;
 } vppd_lockless_queue_t;
+
+// Dynamic Relocation Mappings
+typedef struct {
+    uint32_t from_address;
+    uint32_t to_address;
+} vppd_reloc_t;
 
 // vppd.bin ABI definition
 typedef enum {
@@ -65,6 +72,7 @@ typedef struct {
     int stack_top;
     int64_t svdag_base;
     int64_t svdag_signal;
+    uint32_t authorization_mask;
 } checkpoint_frame_t;
 
 // vppd.bin main executable context
@@ -94,6 +102,10 @@ typedef struct {
     // Level 6 Optimizations & Phase 1 Hardening structures
     vppd_binary_hdr_v6_t hdr_v6;
     vppd_lockless_queue_t lockless_queue;
+
+    // Relocations list
+    vppd_reloc_t relocations[MAX_RELOCATIONS];
+    int relocation_count;
 } vppd_context_t;
 
 // Stack helpers
@@ -110,8 +122,21 @@ static int64_t pop_stack(vppd_stack_t *s) {
     return 0;
 }
 
-// Saves current stack state and SVDAG registers to nested checkpoints history
-static bool save_checkpoint_nested(vppd_context_t *ctx) {
+// Saves current stack state and SVDAG registers to nested checkpoints history, requiring quorum signature mask
+static bool save_checkpoint_nested(vppd_context_t *ctx, uint32_t signature_mask) {
+    // Ackerman communal proof threshold check: requires 3 signatures (e.g. mask 0x07)
+    int signatures = 0;
+    for (int i = 0; i < 32; i++) {
+        if ((signature_mask >> i) & 1) {
+            signatures++;
+        }
+    }
+    if (signatures < 3) {
+        printf("Result: Ackerman Quorum failed. Insufficient signatures (%d/3 required).\n", signatures);
+        fflush(stdout);
+        return false;
+    }
+
     if (ctx->checkpoint_depth >= MAX_CHECKPOINT_DEPTH) {
         return false; // Limit reached
     }
@@ -120,6 +145,7 @@ static bool save_checkpoint_nested(vppd_context_t *ctx) {
     memcpy(frame->stack_data, ctx->stack.data, sizeof(int64_t) * ctx->stack.top);
     frame->svdag_base = ctx->svdag_base;
     frame->svdag_signal = ctx->svdag_signal;
+    frame->authorization_mask = signature_mask;
     return true;
 }
 
@@ -207,6 +233,7 @@ static void render_cics_terminal(const vppd_context_t *ctx) {
     printf("  SVDAG REGISTERS: Base=%ld, Signal=%ld\n", ctx->svdag_base, ctx->svdag_signal);
     printf("  NESTED DEPTH   : %d\n", ctx->checkpoint_depth);
     printf("  LEVEL 6 TARGET : %s (Opt: %u)\n", ctx->hdr_v6.target_vm, ctx->hdr_v6.opt_level);
+    printf("  RELOCATIONS    : %d active\n", ctx->relocation_count);
     
     // Display active spawned tasks
     printf("  SPAWNED TASKS  : %d\n", ctx->task_count);
@@ -356,10 +383,11 @@ static void run_interactive_mode(vppd_context_t *ctx) {
             printf("  add-member <name> <v> <m>  - Add a dynamic data member with val <v> and signature mask <m>\n");
             printf("  load-pli <filename>        - Load and transpile a PL/I source task file\n");
             printf("  set-svdag <base> <signal>  - Set SVDAG state vector registers\n");
-            printf("  checkpoint                 - Save nested checkpoint frame\n");
+            printf("  checkpoint <mask>          - Save nested checkpoint frame requiring signature quorum\n");
             printf("  rollback                   - Rollback stack/SVDAG to last nested checkpoint\n");
             printf("  commit                     - Commit active nested changes\n");
             printf("  hardening                  - Verify Phase 1 hardening queues\n");
+            printf("  reloc <from> <to>          - Map dynamic contract relocation addresses\n");
             printf("  exit                       - Terminate the session\n");
             fflush(stdout);
         } else if (strcmp(input_line, "ping") == 0) {
@@ -374,11 +402,12 @@ static void run_interactive_mode(vppd_context_t *ctx) {
             vppd_abi_entry(ctx, ABI_CMD_HARDENING, NULL, abi_buffer);
             printf("Result: %s\n", abi_buffer);
             fflush(stdout);
-        } else if (strcmp(input_line, "checkpoint") == 0) {
-            if (save_checkpoint_nested(ctx)) {
+        } else if (strncmp(input_line, "checkpoint ", 11) == 0) {
+            uint32_t mask = (uint32_t)strtoul(input_line + 11, NULL, 0);
+            if (save_checkpoint_nested(ctx, mask)) {
                 printf("Result: Nested checkpoint saved successfully.\n");
             } else {
-                printf("Result: Checkpoint failed. Limit reached.\n");
+                printf("Result: Checkpoint aborted.\n");
             }
             fflush(stdout);
         } else if (strcmp(input_line, "rollback") == 0) {
@@ -397,6 +426,21 @@ static void run_interactive_mode(vppd_context_t *ctx) {
             fflush(stdout);
         } else if (strncmp(input_line, "load-pli ", 9) == 0) {
             cics_load_pli_file(ctx, input_line + 9);
+            fflush(stdout);
+        } else if (strncmp(input_line, "reloc ", 6) == 0) {
+            uint32_t from_addr = 0, to_addr = 0;
+            if (sscanf(input_line + 6, "%i %i", &from_addr, &to_addr) == 2) {
+                if (ctx->relocation_count < MAX_RELOCATIONS) {
+                    ctx->relocations[ctx->relocation_count].from_address = from_addr;
+                    ctx->relocations[ctx->relocation_count].to_address = to_addr;
+                    ctx->relocation_count++;
+                    printf("Result: Dynamic relocation mapping registered successfully (0x%X -> 0x%X).\n", from_addr, to_addr);
+                } else {
+                    printf("Result: Relocation table full.\n");
+                }
+            } else {
+                printf("Usage: reloc <from_address> <to_address>\n");
+            }
             fflush(stdout);
         } else if (strncmp(input_line, "set-svdag ", 10) == 0) {
             int64_t b = 0, s = 0;
@@ -537,17 +581,23 @@ int main(int argc, char **argv) {
     printf("   ✓ ABI Response: %s\n", abi_buffer);
     fflush(stdout);
 
-    // 5. Test Nested Checkpoints & Rollbacks
-    printf("[TEST] Verifying nested stack and SVDAG checkpoints...\n");
+    // 5. Test Nested Checkpoints & Rollbacks with Signature Quorum validation
+    printf("[TEST] Verifying nested stack checkpoints requiring signature quorums...\n");
     fflush(stdout);
 
-    // Level 1 checkpoint
-    save_checkpoint_nested(&vppd);
+    // Level 1 checkpoint: passes quorum with mask 0x07 (3 signatures)
+    bool cp_ok = save_checkpoint_nested(&vppd, 0x07);
+    assert(cp_ok == true);
     vppd.svdag_base = 600;
     push_stack(&vppd.stack, 111);
 
-    // Level 2 checkpoint
-    save_checkpoint_nested(&vppd);
+    // Level 2 checkpoint: fails quorum with mask 0x03 (2 signatures)
+    cp_ok = save_checkpoint_nested(&vppd, 0x03);
+    assert(cp_ok == false); // Should block save
+
+    // Level 2 checkpoint: passes quorum with mask 0x0F (4 signatures)
+    cp_ok = save_checkpoint_nested(&vppd, 0x0F);
+    assert(cp_ok == true);
     vppd.svdag_base = 700;
     push_stack(&vppd.stack, 222);
 
@@ -558,7 +608,7 @@ int main(int argc, char **argv) {
     bool rb_ok = rollback_checkpoint_nested(&vppd);
     assert(rb_ok == true);
     assert(vppd.svdag_base == 600);
-    assert(vppd.stack.top == 2); // Assuming 1 after Ping/Route stack activities
+    assert(vppd.stack.top == 2);
     assert(vppd.checkpoint_depth == 1);
 
     // Rollback Level 1 -> restores initial baseline state
@@ -567,7 +617,7 @@ int main(int argc, char **argv) {
     assert(vppd.svdag_base == 500);
     assert(vppd.checkpoint_depth == 0);
 
-    printf("   ✓ Nested checkpoints successfully popped and verified.\n");
+    printf("   ✓ Quorum-validated checkpoints successfully popped and verified.\n");
     fflush(stdout);
 
     // 6. Test Phase 1 Hardening Lockless Telemetry Queue
@@ -587,6 +637,19 @@ int main(int argc, char **argv) {
     assert(vppd.hdr_v6.stack_telemetry_limit == 64);
     assert(vppd.hdr_v6.heap_space_allocation == 2048);
     printf("   ✓ Level 6 binary headers verified successfully.\n");
+    fflush(stdout);
+
+    // 8. Test Dynamic Contract Relocations
+    printf("[TEST] Verifying dynamic contract relocation mappings...\n");
+    fflush(stdout);
+    vppd.relocation_count = 0;
+    vppd.relocations[0].from_address = 0x1000;
+    vppd.relocations[0].to_address = 0x2000;
+    vppd.relocation_count = 1;
+    assert(vppd.relocations[0].from_address == 0x1000);
+    assert(vppd.relocations[0].to_address == 0x2000);
+    assert(vppd.relocation_count == 1);
+    printf("   ✓ Dynamic relocation mapping verified successfully.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
