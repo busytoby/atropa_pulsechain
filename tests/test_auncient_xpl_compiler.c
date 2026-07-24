@@ -437,7 +437,24 @@ int main(void) {
     printf("   ✓ Priority inheritance and LIFO lock stack release audits verified successfully.\n");
     fflush(stdout);
 
-    // 21. Test Transition Invariants (Pre/Post Relation Constraints)
+    // 21. Test Load-Time Static Purity Checks
+    printf("[TEST] Testing load-time static purity checks (write trap during contract checks)...\n");
+    fflush(stdout);
+    
+    // Create a sub-binary that contains a write (sub_88.dat.bin)
+    // When executing with is_contract_checking set to true (indicating a pure contract check block),
+    // load-time static checks must reject this subtyping library.
+    low_clearance_ctx.is_contract_checking = true;
+    low_clearance_ctx.security_clearance = 3;
+
+    // Load-time check must reject sub_88.dat.bin because it contains WRITE_ABD (not pure)
+    ok = auncient_sdk_execute_dat_bin(&low_clearance_ctx, bin_path, NULL, 0);
+    assert(ok == false);
+    low_clearance_ctx.is_contract_checking = false;
+    printf("   ✓ Static purity auditor successfully rejected state-modifying subtyping library.\n");
+    fflush(stdout);
+
+    // 22. Test Transition Invariants (Pre/Post Relation Constraints)
     printf("[TEST] Testing pre/post relation transition invariants...\n");
     fflush(stdout);
     env.registers[0].value = 500; // Baseline state

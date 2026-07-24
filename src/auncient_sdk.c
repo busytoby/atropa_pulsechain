@@ -470,6 +470,11 @@ bool auncient_sdk_compile_xpl_to_dat_bin(const char *xpl_source_path, const char
     uint32_t val;
     int a0, a1, a2, a3;
 
+    // Track contract-guided symbolic metadata for exporter
+    uint32_t max_clearance = 1;
+    uint32_t requires_lock = 0;
+    uint32_t dependent_parity = 0;
+
     while (fscanf(in, "%63s", op_str) == 1) {
         uint8_t opcode = 0;
         uint32_t payload_val = 0;
@@ -480,6 +485,9 @@ bool auncient_sdk_compile_xpl_to_dat_bin(const char *xpl_source_path, const char
             if (fscanf(in, "%u %d %d %d %d", &val, &a0, &a1, &a2, &a3) == 5) {
                 payload_val = val;
                 approvals_mask = (a0 ? 1 : 0) | (a1 ? 2 : 0) | (a2 ? 4 : 0) | (a3 ? 8 : 0);
+
+                if (val > 900000) max_clearance = 3;
+                requires_lock = 1;
             }
         } else if (strcmp(op_str, "READ_KERMIT") == 0) {
             opcode = ALU_OP_READ_KERMIT;
@@ -509,6 +517,14 @@ bool auncient_sdk_compile_xpl_to_dat_bin(const char *xpl_source_path, const char
     // Patch instruction count at position 4
     fseek(out, sizeof(uint32_t), SEEK_SET);
     fwrite(&instruction_count, sizeof(uint32_t), 1, out);
+
+    // Append Symbolic Metadata Header at the end of the file
+    fseek(out, 0, SEEK_END);
+    uint32_t sym_sig = 0x53594D42; // "SYMB"
+    fwrite(&sym_sig, sizeof(uint32_t), 1, out);
+    fwrite(&max_clearance, sizeof(uint32_t), 1, out);
+    fwrite(&requires_lock, sizeof(uint32_t), 1, out);
+    fwrite(&dependent_parity, sizeof(uint32_t), 1, out);
 
     fclose(in);
     fclose(out);
@@ -611,13 +627,37 @@ static bool verify_subtyping(const sdk_cics_context_t *ctx, const char *path) {
         return false;
     }
 
+    // Parse the Symbolic Metadata Header directly from the footer
+    long inst_block_size = count * (sizeof(uint8_t) + sizeof(uint32_t) + sizeof(uint32_t));
+    fseek(bin, sizeof(uint32_t) + sizeof(uint32_t) + inst_block_size, SEEK_SET);
+
+    uint32_t sym_sig = 0, max_clearance = 1, requires_lock = 0, dependent_parity = 0;
+    if (fread(&sym_sig, sizeof(uint32_t), 1, bin) == 1 && sym_sig == 0x53594D42) {
+        fread(&max_clearance, sizeof(uint32_t), 1, bin);
+        fread(&requires_lock, sizeof(uint32_t), 1, bin);
+        fread(&dependent_parity, sizeof(uint32_t), 1, bin);
+    }
+
+    // Static Pre-condition checks via symbolic metadata
+    if (max_clearance > ctx->security_clearance) {
+        auncient_sdk_assign_blame((sdk_cics_context_t *)ctx, SDK_BLAME_SUBLIBRARY);
+        fclose(bin);
+        return false; // Pre-condition weakening violation detected statically
+    }
+
     // Build simulated child context to check inheritance refinement rules
     sdk_cics_context_t child_ctx = *ctx;
-    
-    // Set validation flag
     child_ctx.is_contract_checking = true;
+    child_ctx.security_clearance = max_clearance;
 
-    // Scan all instructions to check for behavioral subtyping compliance
+    if (!auncient_sdk_validate_contract_refinement(ctx, &child_ctx)) {
+        auncient_sdk_assign_blame((sdk_cics_context_t *)ctx, SDK_BLAME_SUBLIBRARY);
+        fclose(bin);
+        return false;
+    }
+
+    // Scan instructions for static load-time checks (Purity and Lock Compliance)
+    fseek(bin, sizeof(uint32_t) + sizeof(uint32_t), SEEK_SET);
     for (uint32_t i = 0; i < count; i++) {
         uint8_t opcode = 0;
         uint32_t val = 0;
@@ -630,25 +670,11 @@ static bool verify_subtyping(const sdk_cics_context_t *ctx, const char *path) {
             return false;
         }
 
-        // Subtyping Rule: A loaded child library must not require security clearances higher than the parent
-        if (!auncient_sdk_check_clearance(ctx, val)) {
+        // Static Purity Verification: No write instructions allowed if context is pure contract check
+        if (ctx->is_contract_checking && (opcode == ALU_OP_WRITE_ABD)) {
             auncient_sdk_assign_blame((sdk_cics_context_t *)ctx, SDK_BLAME_SUBLIBRARY);
             fclose(bin);
-            return false; // Violates pre-condition weakening rule
-        }
-
-        // Simulate child's assumed clearance requirements
-        if (val > 900000) {
-            child_ctx.security_clearance = 3;
-        } else {
-            child_ctx.security_clearance = 1;
-        }
-
-        // Contract Inheritance refinement verification
-        if (!auncient_sdk_validate_contract_refinement(ctx, &child_ctx)) {
-            auncient_sdk_assign_blame((sdk_cics_context_t *)ctx, SDK_BLAME_SUBLIBRARY);
-            fclose(bin);
-            return false;
+            return false; // Static purity violation
         }
 
         // Invariant Strengthening Verification
@@ -704,7 +730,7 @@ static bool auncient_sdk_execute_dat_bin_internal(sdk_cics_context_t *ctx, const
             char path[128];
             snprintf(path, sizeof(path), "tests/sub_%u.dat.bin", val);
 
-            // Behavioral Subtyping Verification
+            // Behavioral Subtyping Verification (using load-time purity & symbolic header audits)
             if (!verify_subtyping(ctx, path)) {
                 overall_ok = false;
                 break; // Reject load due to subtyping violation
