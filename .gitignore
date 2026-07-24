@@ -222,6 +222,7 @@ libtsfi2.so
 /tests/test_auncient_exoskeleton
 /tests/test_auncient_black_skeleton_red_exo
 /tests/test_auncient_unified_alu_coax
+/tests/test_auncient_transistor_alu
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
