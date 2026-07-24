@@ -76,6 +76,53 @@ bool auncient_sdk_validate_temporal_invariants(const sdk_cics_context_t *ctx, ui
     return true;
 }
 
+bool auncient_sdk_validate_monotonicity(const sdk_coaxial_env_t *env, int node_idx, uint64_t new_counter) {
+    if (!env || node_idx < 0 || node_idx >= SDK_NUM_NODES) {
+        return false;
+    }
+    return (new_counter > env->registers[node_idx].ts.counter);
+}
+
+static bool check_ackerman_quorum(sdk_quorum_type_t type, const bool *approvals, const uint32_t *weights) {
+    if (type == SDK_QUORUM_MAJORITY) {
+        int count = 0;
+        for (int i = 0; i < SDK_NUM_NODES; i++) {
+            if (approvals[i]) count++;
+        }
+        return (count > SDK_NUM_NODES / 2);
+    }
+
+    if (type == SDK_QUORUM_GRID) {
+        // 2x2 grid row + column rule
+        bool row0 = (approvals[0] && approvals[1]);
+        bool row1 = (approvals[2] && approvals[3]);
+        bool col0 = (approvals[0] && approvals[2]);
+        bool col1 = (approvals[1] && approvals[3]);
+        return ((row0 || row1) && (col0 || col1));
+    }
+
+    if (type == SDK_QUORUM_WEIGHTED) {
+        uint32_t total = 0;
+        for (int i = 0; i < SDK_NUM_NODES; i++) {
+            if (approvals[i]) {
+                total += weights[i];
+            }
+        }
+        return (total >= 4);
+    }
+
+    return false;
+}
+
+bool auncient_sdk_verify_postcondition_oracle(const sdk_cics_context_t *ctx, uint8_t opcode, const bool *approvals, uint32_t result) {
+    if (opcode == ALU_OP_EVAL_ACKERMAN) {
+        bool expected = check_ackerman_quorum(ctx->quorum_type, approvals, ctx->env->weights);
+        uint32_t expected_val = expected ? 1 : 0;
+        return (result == expected_val);
+    }
+    return true;
+}
+
 bool auncient_sdk_autodin_spin_lock(sdk_cics_context_t *ctx, uint32_t lock_token, char precedence) {
     // Map precedence character to priority level ('F'=4, 'I'=3, 'P'=2, 'R'=1)
     uint8_t priority = 1;
@@ -372,37 +419,6 @@ static bool auncient_sdk_execute_dat_bin_internal(sdk_cics_context_t *ctx, const
     return overall_ok;
 }
 
-static bool check_ackerman_quorum(sdk_quorum_type_t type, const bool *approvals, const uint32_t *weights) {
-    if (type == SDK_QUORUM_MAJORITY) {
-        int count = 0;
-        for (int i = 0; i < SDK_NUM_NODES; i++) {
-            if (approvals[i]) count++;
-        }
-        return (count > SDK_NUM_NODES / 2);
-    }
-
-    if (type == SDK_QUORUM_GRID) {
-        // 2x2 grid row + column rule
-        bool row0 = (approvals[0] && approvals[1]);
-        bool row1 = (approvals[2] && approvals[3]);
-        bool col0 = (approvals[0] && approvals[2]);
-        bool col1 = (approvals[1] && approvals[3]);
-        return ((row0 || row1) && (col0 || col1));
-    }
-
-    if (type == SDK_QUORUM_WEIGHTED) {
-        uint32_t total = 0;
-        for (int i = 0; i < SDK_NUM_NODES; i++) {
-            if (approvals[i]) {
-                total += weights[i];
-            }
-        }
-        return (total >= 4);
-    }
-
-    return false;
-}
-
 bool auncient_sdk_alu_execute(sdk_cics_context_t *ctx, uint8_t alu_opcode, uint32_t target_val, const bool *approvals, uint32_t *result_val) {
     sdk_coaxial_env_t *env = ctx->env;
     sdk_kermit_cache_t *cache = ctx->cache;
@@ -441,7 +457,14 @@ bool auncient_sdk_alu_execute(sdk_cics_context_t *ctx, uint8_t alu_opcode, uint3
     if (alu_opcode == ALU_OP_EVAL_ACKERMAN) {
         // Evaluate approvals against selected quorum system
         bool ok = check_ackerman_quorum(ctx->quorum_type, approvals, env->weights);
-        *result_val = ok ? 1 : 0;
+        uint32_t res = ok ? 1 : 0;
+
+        // Post-Condition Oracle Verification
+        if (!auncient_sdk_verify_postcondition_oracle(ctx, alu_opcode, approvals, res)) {
+            return false; // Oracle mismatch detected
+        }
+
+        *result_val = res;
         return true;
     }
 
@@ -454,8 +477,19 @@ bool auncient_sdk_alu_execute(sdk_cics_context_t *ctx, uint8_t alu_opcode, uint3
             }
         }
 
+        uint64_t next_counter = max_counter + 1;
+
+        // Invariant Monotonicity Auditing: Validate counter is strictly greater for all receiving nodes
+        for (int i = 0; i < SDK_NUM_NODES; i++) {
+            if (approvals[i]) {
+                if (!auncient_sdk_validate_monotonicity(env, i, next_counter)) {
+                    return false; // Monotonicity violation
+                }
+            }
+        }
+
         sdk_timestamp_t new_ts = {
-            .counter = max_counter + 1,
+            .counter = next_counter,
             .writer_id = ctx->writer_id
         };
 

@@ -104,6 +104,30 @@ int main(void) {
     printf("   ✓ Write without active lock rejected by temporal check.\n");
     fflush(stdout);
 
+    // 7. Test Invariant Monotonicity Auditing (Welch Sequence Rules)
+    printf("[TEST] Testing monotonicity invariants (sequence rollback)...\n");
+    fflush(stdout);
+    env.registers[0].ts.counter = 50; // Current timestamp
+    ok = auncient_sdk_validate_monotonicity(&env, 0, 45); // Stale sequence target
+    assert(ok == false);
+    ok = auncient_sdk_validate_monotonicity(&env, 0, 55); // Valid sequential sequence
+    assert(ok == true);
+    printf("   ✓ Monotonicity constraints validated correctly.\n");
+    fflush(stdout);
+
+    // 8. Test Post-Condition Oracle Verification
+    printf("[TEST] Testing post-condition oracle validations...\n");
+    fflush(stdout);
+    bool approvals[SDK_NUM_NODES] = { true, true, true, false };
+    // Majority quorum approvals (3 of 4) evaluates mathematically to 1 (true)
+    ok = auncient_sdk_verify_postcondition_oracle(&low_clearance_ctx, ALU_OP_EVAL_ACKERMAN, approvals, 1);
+    assert(ok == true);
+    // Supplying a result mismatch (0 instead of 1) should be trapped by the oracle
+    ok = auncient_sdk_verify_postcondition_oracle(&low_clearance_ctx, ALU_OP_EVAL_ACKERMAN, approvals, 0);
+    assert(ok == false);
+    printf("   ✓ Post-condition oracle verification trapped discrepancies successfully.\n");
+    fflush(stdout);
+
     auncient_sdk_close_coaxial(&env);
 
     // Clean up temporary files
