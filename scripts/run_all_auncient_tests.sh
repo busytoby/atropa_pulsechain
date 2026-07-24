@@ -435,4 +435,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpp_profiler.c -o tes
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpp_autodin_input.c -o tests/test_auncient_vpp_autodin_input -lm -lrt
 ./tests/test_auncient_vpp_autodin_input
 
+# Compile and run VPP SDK End-to-End Pipeline Example
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpp_example.c -o tests/test_auncient_vpp_example -lm -lrt
+./tests/test_auncient_vpp_example
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
