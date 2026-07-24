@@ -583,4 +583,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_mdev_audio.c -o tests
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_alu_penetration.c -o tests/test_auncient_alu_penetration -lm -lrt
 ./tests/test_auncient_alu_penetration
 
+# Compile and run Auncient LAU & SVDAG Element Resolution
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_lau_svdag.c -o tests/test_auncient_lau_svdag -lm -lrt
+./tests/test_auncient_lau_svdag
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
