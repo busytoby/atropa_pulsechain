@@ -8,7 +8,16 @@ DECLARE COAX_FREQ_REG      LITERALLY '64100'; /* Coaxial Frequency register */
 DECLARE COAX_Q_REG         LITERALLY '64110'; /* Coaxial Q-Factor register */
 DECLARE IPL_STATUS_REG     LITERALLY '64200'; /* I/PL boot status */
 
-/* 2. Device Initialization Wrapper (I/PL Gated) */
+/* 2. XPLSM System Monitor Registers */
+DECLARE XPLSM_HEARTBEAT   LITERALLY '64300'; /* Heartbeat counter register */
+DECLARE XPLSM_INTERRUPT   LITERALLY '64310'; /* Supervisor Trap Interrupt */
+
+/* 3. XCOM WinchesterMQ SCSI Handshake Registers */
+DECLARE XCOM_REQ          LITERALLY '64256'; /* SCSI REQ signal */
+DECLARE XCOM_ACK          LITERALLY '64257'; /* SCSI ACK signal */
+DECLARE XCOM_DATA         LITERALLY '64258'; /* SCSI Data register */
+
+/* 4. Device Initialization Wrapper (I/PL & XCOM Gated) */
 SETUP_SYSTEM_DEVICE: PROCEDURE(PORT_ID) FIXED;
     DECLARE PORT_ID FIXED;
     
@@ -19,6 +28,13 @@ SETUP_SYSTEM_DEVICE: PROCEDURE(PORT_ID) FIXED;
 
     /* Transition state to CONFIGURING */
     BYTE(DEVICE_STATUS) = 1;
+
+    /* Perform XCOM SCSI Handshake to announce device startup */
+    BYTE(XCOM_REQ) = 1;
+    IF BYTE(XCOM_ACK) == 1 THEN
+        BYTE(XCOM_DATA) = PORT_ID;
+        BYTE(XCOM_REQ) = 0;
+    END;
     
     /* Write local Port configuration */
     BYTE(TX_BUFFER_BASE) = PORT_ID;
@@ -29,21 +45,28 @@ SETUP_SYSTEM_DEVICE: PROCEDURE(PORT_ID) FIXED;
     RETURN 1;
 END SETUP_SYSTEM_DEVICE;
 
-/* 3. Unified Packet Demux and Dispatch Loop (Fourier Implication Gated) */
+/* 5. Unified Packet Demux and Dispatch Loop (Fourier Implication Gated) */
 DISPATCH_INCOMING_PACKET: PROCEDURE(PACKET_ADDR) FIXED;
     DECLARE PACKET_ADDR FIXED;
     DECLARE (ETHER_TYPE, PORT, PAYLOAD_OFFSET) FIXED;
     DECLARE (FREQ, Q_FACTOR) FIXED;
     DECLARE BACKUP_STATUS FIXED;
     
-    /* 1. Precondition check ?phi_fourier (Frequency resonance validation) */
+    /* Increment XPLSM liveness heartbeat counter */
+    BYTE(XPLSM_HEARTBEAT) = BYTE(XPLSM_HEARTBEAT) + 1;
+
+    /* Precondition check ?phi_fourier (Frequency resonance validation) */
     FREQ = BYTE(COAX_FREQ_REG);
     Q_FACTOR = BYTE(COAX_Q_REG);
     
     IF FREQ != 44 THEN
+        /* Trigger XPLSM trap interrupt (Code 10: Frequency mismatch) */
+        BYTE(XPLSM_INTERRUPT) = 10;
         RETURN 0; /* Precondition failed: de-tuned signal */
     END;
-    IF Q_FACTOR < 50 THEN
+    if Q_FACTOR < 50 THEN
+        /* Trigger XPLSM trap interrupt (Code 11: Low Q-factor) */
+        BYTE(XPLSM_INTERRUPT) = 11;
         RETURN 0; /* Precondition failed: Q-factor resonance too low */
     END;
 
