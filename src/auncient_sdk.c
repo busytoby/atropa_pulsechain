@@ -110,14 +110,6 @@ bool auncient_sdk_transition_typestate(sdk_cics_context_t *ctx, sdk_typestate_t 
         return false;
     }
     sdk_typestate_t cur = ctx->state;
-
-    // Allowed State Transitions:
-    // UNLOCKED -> LOCKED (via spin-lock)
-    // LOCKED -> EXECUTING (when executor starts)
-    // EXECUTING -> COMMITTED (when executor completes successfully)
-    // COMMITTED -> UNLOCKED (via spin-unlock)
-    // EXECUTING -> UNLOCKED (on load failure / rollback)
-    // LOCKED -> UNLOCKED (direct unlock without exec)
     
     if (next_state == SDK_STATE_LOCKED && cur == SDK_STATE_UNLOCKED) {
         ctx->state = next_state;
@@ -146,6 +138,28 @@ bool auncient_sdk_validate_dependent_types(const sdk_cics_context_t *ctx, uint8_
         if (ctx->quorum_type == SDK_QUORUM_GRID && (val % 2 != 0)) {
             return false;
         }
+    }
+    return true;
+}
+
+bool auncient_sdk_validate_purity(const sdk_cics_context_t *ctx, uint8_t opcode) {
+    if (ctx && ctx->is_contract_checking && (opcode == ALU_OP_WRITE_ABD)) {
+        return false; // Purity violation: attempting write during check
+    }
+    return true;
+}
+
+bool auncient_sdk_validate_contract_refinement(const sdk_cics_context_t *parent_ctx, const sdk_cics_context_t *child_ctx) {
+    if (!parent_ctx || !child_ctx) {
+        return false;
+    }
+    // Pre-condition weakening: child clearance requirements must be less than or equal to parent
+    if (child_ctx->security_clearance > parent_ctx->security_clearance) {
+        return false;
+    }
+    // Post-condition strengthening: child's quorum policy must match or be equivalent to parent's
+    if (parent_ctx->quorum_type == SDK_QUORUM_WEIGHTED && child_ctx->quorum_type != SDK_QUORUM_WEIGHTED) {
+        return false;
     }
     return true;
 }
@@ -335,7 +349,8 @@ bool auncient_sdk_execute_primary_bin(const char *bin_path, uint32_t *results, i
         .writer_id = 100,
         .security_clearance = 3,
         .has_lock = false,
-        .state = SDK_STATE_UNLOCKED
+        .state = SDK_STATE_UNLOCKED,
+        .is_contract_checking = false
     };
 
     // 3. Execute
@@ -380,6 +395,12 @@ static bool verify_subtyping(const sdk_cics_context_t *ctx, const char *path) {
         return false;
     }
 
+    // Build simulated child context to check inheritance refinement rules
+    sdk_cics_context_t child_ctx = *ctx;
+    
+    // Set validation flag
+    child_ctx.is_contract_checking = true;
+
     // Scan all instructions to check for behavioral subtyping compliance
     for (uint32_t i = 0; i < count; i++) {
         uint8_t opcode = 0;
@@ -397,6 +418,19 @@ static bool verify_subtyping(const sdk_cics_context_t *ctx, const char *path) {
         if (!auncient_sdk_check_clearance(ctx, val)) {
             fclose(bin);
             return false; // Violates pre-condition weakening rule
+        }
+
+        // Simulate child's assumed clearance requirements
+        if (val > 900000) {
+            child_ctx.security_clearance = 3;
+        } else {
+            child_ctx.security_clearance = 1;
+        }
+
+        // Contract Inheritance refinement verification
+        if (!auncient_sdk_validate_contract_refinement(ctx, &child_ctx)) {
+            fclose(bin);
+            return false;
         }
     }
 
@@ -464,10 +498,13 @@ static bool auncient_sdk_execute_dat_bin_internal(sdk_cics_context_t *ctx, const
         }
 
         // Temporal Invariant Enforcement
+        ctx->is_contract_checking = true;
         if (!auncient_sdk_validate_temporal_invariants(ctx, opcode, val)) {
+            ctx->is_contract_checking = false;
             overall_ok = false;
             break;
         }
+        ctx->is_contract_checking = false;
 
         bool approvals[SDK_NUM_NODES] = {
             (mask & 1) ? true : false,
@@ -499,10 +536,13 @@ static bool auncient_sdk_execute_dat_bin_internal(sdk_cics_context_t *ctx, const
         memcpy(old_env.registers, register_snapshot, sizeof(register_snapshot));
         memcpy(old_env.weights, ctx->env->weights, sizeof(ctx->env->weights));
 
+        ctx->is_contract_checking = true;
         if (!auncient_sdk_validate_history_constraints(&old_env, ctx->env)) {
+            ctx->is_contract_checking = false;
             overall_ok = false;
             memcpy(ctx->env->registers, register_snapshot, sizeof(register_snapshot));
         }
+        ctx->is_contract_checking = false;
     }
 
     return overall_ok;
@@ -511,6 +551,11 @@ static bool auncient_sdk_execute_dat_bin_internal(sdk_cics_context_t *ctx, const
 bool auncient_sdk_alu_execute(sdk_cics_context_t *ctx, uint8_t alu_opcode, uint32_t target_val, const bool *approvals, uint32_t *result_val) {
     sdk_coaxial_env_t *env = ctx->env;
     sdk_kermit_cache_t *cache = ctx->cache;
+
+    // Enforce active Purity rules
+    if (!auncient_sdk_validate_purity(ctx, alu_opcode)) {
+        return false;
+    }
 
     // Enforce Active Security Clearance check
     if (!auncient_sdk_check_clearance(ctx, target_val)) {
@@ -554,9 +599,12 @@ bool auncient_sdk_alu_execute(sdk_cics_context_t *ctx, uint8_t alu_opcode, uint3
         uint32_t res = ok ? 1 : 0;
 
         // Post-Condition Oracle Verification
+        ctx->is_contract_checking = true;
         if (!auncient_sdk_verify_postcondition_oracle(ctx, alu_opcode, approvals, res)) {
+            ctx->is_contract_checking = false;
             return false; // Oracle mismatch detected
         }
+        ctx->is_contract_checking = false;
 
         *result_val = res;
         return true;

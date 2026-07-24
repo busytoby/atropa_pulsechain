@@ -33,7 +33,9 @@ typedef enum {
     SDK_STATUS_ERR_HISTORY = 10,
     SDK_STATUS_ERR_FRAME = 11,
     SDK_STATUS_ERR_TYPESTATE = 12,
-    SDK_STATUS_ERR_DEPENDENT_TYPE = 13
+    SDK_STATUS_ERR_DEPENDENT_TYPE = 13,
+    SDK_STATUS_ERR_PURITY = 14,
+    SDK_STATUS_ERR_REFINEMENT = 15
 } sdk_status_code_t;
 
 // Auncient ABI Packet Layout for Coaxial Socket Transmission
@@ -82,6 +84,7 @@ typedef struct {
     uint8_t security_clearance; // Embedded security clearance level
     bool has_lock;             // Tracks whether the active context holds the AUTODIN lock
     sdk_typestate_t state;     // Typestate identifier
+    bool is_contract_checking; // Purity check flag
 } sdk_cics_context_t;
 
 // Batched operation structure
@@ -122,6 +125,12 @@ bool auncient_sdk_transition_typestate(sdk_cics_context_t *ctx, sdk_typestate_t 
 
 // Dependent Types Boundary Verification
 bool auncient_sdk_validate_dependent_types(const sdk_cics_context_t *ctx, uint8_t opcode, uint32_t val);
+
+// Purity validation check
+bool auncient_sdk_validate_purity(const sdk_cics_context_t *ctx, uint8_t opcode);
+
+// Contract Refinement check
+bool auncient_sdk_validate_contract_refinement(const sdk_cics_context_t *parent_ctx, const sdk_cics_context_t *child_ctx);
 
 // Precedence-Aware AUTODIN Spin-Lock Interface
 bool auncient_sdk_autodin_spin_lock(sdk_cics_context_t *ctx, uint32_t lock_token, char precedence);

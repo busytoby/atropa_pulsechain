@@ -83,7 +83,8 @@ int main(void) {
         .writer_id = 88,
         .security_clearance = 2, // Insufficient for TopSecret write
         .has_lock = false,
-        .state = SDK_STATE_UNLOCKED
+        .state = SDK_STATE_UNLOCKED,
+        .is_contract_checking = false
     };
 
     // Attempting load should fail behavioral subtyping verification
@@ -190,6 +191,39 @@ int main(void) {
     ok = auncient_sdk_validate_dependent_types(&low_clearance_ctx, ALU_OP_WRITE_ABD, 223);
     assert(ok == false);
     printf("   ✓ Dependent type grid parity checks verified successfully.\n");
+    fflush(stdout);
+
+    // 13. Test Purity auditing (Side-Effect-Free verification checks)
+    printf("[TEST] Testing purity audits (write block on check flag)...\n");
+    fflush(stdout);
+    low_clearance_ctx.is_contract_checking = true;
+    ok = auncient_sdk_validate_purity(&low_clearance_ctx, ALU_OP_WRITE_ABD);
+    assert(ok == false); // Write should trigger purity violation
+    ok = auncient_sdk_validate_purity(&low_clearance_ctx, ALU_OP_READ_KERMIT);
+    assert(ok == true);  // Read is pure/allowed
+    printf("   ✓ Purity validations confirmed: writes blocked during contracts.\n");
+    fflush(stdout);
+
+    // 14. Test Contract Refinement checking (Behavioral subtyping refinement)
+    printf("[TEST] Testing contract refinement validations...\n");
+    fflush(stdout);
+    sdk_cics_context_t parent_ctx = low_clearance_ctx;
+    parent_ctx.security_clearance = 3;
+    parent_ctx.quorum_type = SDK_QUORUM_WEIGHTED;
+
+    sdk_cics_context_t child_ctx = low_clearance_ctx;
+    child_ctx.security_clearance = 2; // Weakened pre-condition (requires LESS clearance)
+    child_ctx.quorum_type = SDK_QUORUM_WEIGHTED;
+
+    // Conforming refinement
+    ok = auncient_sdk_validate_contract_refinement(&parent_ctx, &child_ctx);
+    assert(ok == true);
+
+    // Non-conforming refinement (child requires MORE clearance, strengthening pre-condition)
+    child_ctx.security_clearance = 4;
+    ok = auncient_sdk_validate_contract_refinement(&parent_ctx, &child_ctx);
+    assert(ok == false);
+    printf("   ✓ Contract refinement pre/post rules verified successfully.\n");
     fflush(stdout);
 
     auncient_sdk_close_coaxial(&env);
