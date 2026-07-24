@@ -447,4 +447,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vppd.c -o tests/test_
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpdl.c -o tests/test_auncient_vpdl -lm -lrt
 ./tests/test_auncient_vpdl
 
+# Compile and run VPDL Agentic Blame and Quarantine
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpdl_blame.c -o tests/test_auncient_vpdl_blame -lm -lrt
+./tests/test_auncient_vpdl_blame
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
