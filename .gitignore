@@ -270,6 +270,7 @@ libtsfi2.so
 /tests/test_auncient_sdk_integration
 /tests/test_auncient_sdk_usage
 /tests/test_auncient_self_stabilizing_tree
+/tests/test_auncient_vectorized_scan
 /libauncient_sdk.a
 /src/auncient_sdk.o
 /dist/
