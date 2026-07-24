@@ -195,6 +195,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_sigplan_contracts.c -
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_cscw_crdt.c -o tests/test_auncient_cscw_crdt -lm -lrt
 ./tests/test_auncient_cscw_crdt
 
+# Compile and run CSCW-Black CRDT-Red Gating
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_cscw_black_crdt_red.c -o tests/test_auncient_cscw_black_crdt_red -lm -lrt
+./tests/test_auncient_cscw_black_crdt_red
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
