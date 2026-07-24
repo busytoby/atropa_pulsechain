@@ -287,6 +287,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_abd_consistency.c -o 
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_stanag_abd.c -o tests/test_auncient_stanag_abd -lm -lrt
 ./tests/test_auncient_stanag_abd
 
+# Compile and run MWMR-ABD Consistent Registers
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_mwmw_abd.c -o tests/test_auncient_mwmw_abd -lm -lrt
+./tests/test_auncient_mwmw_abd
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
