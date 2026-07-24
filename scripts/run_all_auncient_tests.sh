@@ -315,6 +315,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vectorized_scan.c -o 
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_coprocessing_router.c -o tests/test_auncient_coprocessing_router -lm -lrt
 ./tests/test_auncient_coprocessing_router
 
+# Compile and run Stack Search
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_stack_search.c -o tests/test_auncient_stack_search -lm -lrt
+./tests/test_auncient_stack_search
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
