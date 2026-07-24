@@ -539,4 +539,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_reconciliation_
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_ils_consensus.c -o tests/test_auncient_hogan_ils_consensus -lm -lrt
 ./tests/test_auncient_hogan_ils_consensus
 
+# Compile and run Auncient Hogan DDO Sweep Consensus Verification
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_sweep_quorum.c -o tests/test_auncient_hogan_sweep_quorum -lm -lrt
+./tests/test_auncient_hogan_sweep_quorum
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
