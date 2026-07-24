@@ -67,6 +67,15 @@ bool auncient_sdk_check_clearance(const sdk_cics_context_t *ctx, uint32_t value)
     return true;
 }
 
+bool auncient_sdk_validate_temporal_invariants(const sdk_cics_context_t *ctx, uint8_t opcode, uint32_t target_val) {
+    // Temporal Lock Check: writing requires holding the AUTODIN lock
+    if (opcode == ALU_OP_WRITE_ABD && !ctx->has_lock) {
+        return false;
+    }
+    (void)target_val;
+    return true;
+}
+
 bool auncient_sdk_autodin_spin_lock(sdk_cics_context_t *ctx, uint32_t lock_token, char precedence) {
     // Map precedence character to priority level ('F'=4, 'I'=3, 'P'=2, 'R'=1)
     uint8_t priority = 1;
@@ -95,7 +104,11 @@ bool auncient_sdk_autodin_spin_lock(sdk_cics_context_t *ctx, uint32_t lock_token
         return false;
     }
 
-    return (rx_packet.payload_value == lock_token);
+    if (rx_packet.payload_value == lock_token) {
+        ctx->has_lock = true;
+        return true;
+    }
+    return false;
 }
 
 void auncient_sdk_autodin_spin_unlock(sdk_cics_context_t *ctx, uint32_t lock_token) {
@@ -114,6 +127,7 @@ void auncient_sdk_autodin_spin_unlock(sdk_cics_context_t *ctx, uint32_t lock_tok
     auncient_abi_packet_t rx_packet;
     read(ctx->env->socket_fds[1], &rx_packet, sizeof(auncient_abi_packet_t));
     assert(rx_packet.payload_value == 0);
+    ctx->has_lock = false;
     (void)lock_token;
 }
 
@@ -203,7 +217,8 @@ bool auncient_sdk_execute_primary_bin(const char *bin_path, uint32_t *results, i
         .cache = &cache,
         .quorum_type = SDK_QUORUM_MAJORITY,
         .writer_id = 100,
-        .security_clearance = 3
+        .security_clearance = 3,
+        .has_lock = false
     };
 
     // 3. Execute
@@ -226,7 +241,48 @@ bool auncient_sdk_execute_dat_bin(sdk_cics_context_t *ctx, const char *dat_bin_p
     return ok;
 }
 
+static bool verify_subtyping(const sdk_cics_context_t *ctx, const char *path) {
+    FILE *bin = fopen(path, "rb");
+    if (!bin) {
+        return false;
+    }
+
+    uint32_t sig = 0, count = 0;
+    if (fread(&sig, sizeof(uint32_t), 1, bin) != 1 || sig != 0x58504C00 ||
+        fread(&count, sizeof(uint32_t), 1, bin) != 1) {
+        fclose(bin);
+        return false;
+    }
+
+    // Scan all instructions to check for behavioral subtyping compliance
+    for (uint32_t i = 0; i < count; i++) {
+        uint8_t opcode = 0;
+        uint32_t val = 0;
+        uint32_t mask = 0;
+
+        if (fread(&opcode, sizeof(uint8_t), 1, bin) != 1 ||
+            fread(&val, sizeof(uint32_t), 1, bin) != 1 ||
+            fread(&mask, sizeof(uint32_t), 1, bin) != 1) {
+            fclose(bin);
+            return false;
+        }
+
+        // Subtyping Rule: A loaded child library must not require security clearances higher than the parent
+        if (!auncient_sdk_check_clearance(ctx, val)) {
+            fclose(bin);
+            return false; // Violates pre-condition weakening rule
+        }
+    }
+
+    fclose(bin);
+    return true;
+}
+
 static bool auncient_sdk_execute_dat_bin_internal(sdk_cics_context_t *ctx, const char *dat_bin_path, uint32_t *results, int max_results) {
+    // Checkpoint registers for Cascaded State Rollback
+    sdk_register_t register_snapshot[SDK_NUM_NODES];
+    memcpy(register_snapshot, ctx->env->registers, sizeof(register_snapshot));
+
     FILE *bin = fopen(dat_bin_path, "rb");
     if (!bin) {
         return false;
@@ -259,11 +315,17 @@ static bool auncient_sdk_execute_dat_bin_internal(sdk_cics_context_t *ctx, const
         }
 
         if (opcode == ALU_OP_LOAD_SUB_XPL) {
-            // Cascaded load of other .dat.bin binaries from disk
+            // Target file path
             char path[128];
             snprintf(path, sizeof(path), "tests/sub_%u.dat.bin", val);
+
+            // Behavioral Subtyping Verification
+            if (!verify_subtyping(ctx, path)) {
+                overall_ok = false;
+                break; // Reject load due to subtyping violation
+            }
             
-            // Execute the loaded dat.bin stream on the same AUTODIN loopback pipeline context
+            // Execute the loaded dat.bin stream
             bool sub_ok = auncient_sdk_execute_dat_bin_internal(ctx, path, NULL, 0);
             if (!sub_ok) {
                 overall_ok = false;
@@ -273,6 +335,12 @@ static bool auncient_sdk_execute_dat_bin_internal(sdk_cics_context_t *ctx, const
                 results[i] = val; // Store loaded ID as execution trace
             }
             continue;
+        }
+
+        // Temporal Invariant Enforcement
+        if (!auncient_sdk_validate_temporal_invariants(ctx, opcode, val)) {
+            overall_ok = false;
+            break;
         }
 
         bool approvals[SDK_NUM_NODES] = {
@@ -295,6 +363,12 @@ static bool auncient_sdk_execute_dat_bin_internal(sdk_cics_context_t *ctx, const
     }
 
     fclose(bin);
+
+    // Cascaded Rollback: If execution failed, restore snapshot
+    if (!overall_ok) {
+        memcpy(ctx->env->registers, register_snapshot, sizeof(register_snapshot));
+    }
+
     return overall_ok;
 }
 
@@ -406,11 +480,14 @@ bool auncient_sdk_alu_execute(sdk_cics_context_t *ctx, uint8_t alu_opcode, uint3
 }
 
 bool auncient_sdk_cics_exec(sdk_cics_context_t *ctx, uint32_t value, const bool *approvals) {
+    bool orig_lock = ctx->has_lock;
+    ctx->has_lock = true;
     uint32_t quorum_val = 0;
     
     // Step 1: Execute Ackerman Quorum Evaluation ALU instruction
     auncient_sdk_alu_execute(ctx, ALU_OP_EVAL_ACKERMAN, 0, approvals, &quorum_val);
     if (quorum_val == 0) {
+        ctx->has_lock = orig_lock;
         return false; // Rollback
     }
 
@@ -439,6 +516,7 @@ bool auncient_sdk_cics_exec(sdk_cics_context_t *ctx, uint32_t value, const bool 
     assert(rx_packet.payload_value == value);
     assert(rx_packet.writer_id == ctx->writer_id);
 
+    ctx->has_lock = orig_lock;
     return true;
 }
 
@@ -446,6 +524,9 @@ bool auncient_sdk_batch_exec(sdk_cics_context_t *ctx, const sdk_batched_op_t *op
     if (!ctx || !ops || num_ops <= 0 || !results) {
         return false;
     }
+
+    bool orig_lock = ctx->has_lock;
+    ctx->has_lock = true;
 
     // Pirk co-processing router logic: If the batch contains more than 2 operations,
     // flag the operation route status.
@@ -466,10 +547,12 @@ bool auncient_sdk_batch_exec(sdk_cics_context_t *ctx, const sdk_batched_op_t *op
         uint32_t res = 0;
         bool ok = auncient_sdk_alu_execute(ctx, ops[i].opcode, ops[i].value, ops[i].approvals, &res);
         if (!ok) {
+            ctx->has_lock = orig_lock;
             return false; // Abort whole batch on ALU failure
         }
         results[i] = res;
     }
 
+    ctx->has_lock = orig_lock;
     return true;
 }

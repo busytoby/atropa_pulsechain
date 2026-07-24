@@ -18,7 +18,9 @@ typedef enum {
     SDK_STATUS_ERR_STALE = 2,
     SDK_STATUS_ERR_SECURITY = 3,
     SDK_STATUS_ERR_GENERIC = 4,
-    SDK_STATUS_COPROCESSOR_ROUTE = 5
+    SDK_STATUS_COPROCESSOR_ROUTE = 5,
+    SDK_STATUS_ERR_SUBTYPING = 6,
+    SDK_STATUS_ERR_TEMPORAL = 7
 } sdk_status_code_t;
 
 // Auncient ABI Packet Layout for Coaxial Socket Transmission
@@ -65,6 +67,7 @@ typedef struct {
     sdk_quorum_type_t quorum_type;
     uint32_t writer_id;
     uint8_t security_clearance; // Embedded security clearance level
+    bool has_lock;             // Tracks whether the active context holds the AUTODIN lock
 } sdk_cics_context_t;
 
 // Batched operation structure
@@ -84,6 +87,9 @@ void auncient_sdk_void_registers(sdk_coaxial_env_t *env);
 
 // Active Security Clearance check
 bool auncient_sdk_check_clearance(const sdk_cics_context_t *ctx, uint32_t value);
+
+// Temporal Invariant Enforcement
+bool auncient_sdk_validate_temporal_invariants(const sdk_cics_context_t *ctx, uint8_t opcode, uint32_t target_val);
 
 // Precedence-Aware AUTODIN Spin-Lock Interface
 bool auncient_sdk_autodin_spin_lock(sdk_cics_context_t *ctx, uint32_t lock_token, char precedence);

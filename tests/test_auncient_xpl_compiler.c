@@ -57,6 +57,55 @@ int main(void) {
     printf("   ✓ Primary execution succeeded. Result 0 (sub-load ID): %u, Result 1 (read value): %u.\n", results[0], results[1]);
     fflush(stdout);
 
+    // 5. Test Behavioral Subtyping Violation (Sub-binary requires TopSecret 950000 but context has level 2 clearance)
+    printf("[TEST] Testing behavioral subtyping violations on load...\n");
+    fflush(stdout);
+
+    FILE *sub_violator = fopen(sub_src_path, "w");
+    assert(sub_violator != NULL);
+    fprintf(sub_violator, "WRITE_ABD 950000 1 1 1 0\n"); // TopSecret write
+    fclose(sub_violator);
+
+    ok = auncient_sdk_compile_xpl_to_dat_bin(sub_src_path, sub_bin_path);
+    assert(ok == true);
+
+    sdk_coaxial_env_t env;
+    ok = auncient_sdk_init_coaxial(&env);
+    assert(ok == true);
+    // Initialize node value to 444
+    env.registers[0].value = 444;
+
+    sdk_kermit_cache_t cache = { .cached_value = 444, .cached_ts = { 0, 0 }, .is_warm = true };
+    sdk_cics_context_t low_clearance_ctx = {
+        .env = &env,
+        .cache = &cache,
+        .quorum_type = SDK_QUORUM_MAJORITY,
+        .writer_id = 88,
+        .security_clearance = 2, // Insufficient for TopSecret write
+        .has_lock = false
+    };
+
+    // Attempting load should fail behavioral subtyping verification
+    ok = auncient_sdk_execute_dat_bin(&low_clearance_ctx, bin_path, results, 2);
+    assert(ok == false);
+    printf("   ✓ Load failed successfully due to subtyping violation.\n");
+    fflush(stdout);
+
+    // Verify Cascaded Rollback (register remains 444, not corrupted by failed execution)
+    assert(env.registers[0].value == 444);
+    printf("   ✓ Cascaded rollback confirmed: register value preserved at 444.\n");
+    fflush(stdout);
+
+    // 6. Test Temporal Invariant Enforcement (attempt to write without holding lock)
+    printf("[TEST] Testing temporal invariant checks (write without lock block)...\n");
+    fflush(stdout);
+    ok = auncient_sdk_validate_temporal_invariants(&low_clearance_ctx, ALU_OP_WRITE_ABD, 888);
+    assert(ok == false); // Should fail temporal lock validation
+    printf("   ✓ Write without active lock rejected by temporal check.\n");
+    fflush(stdout);
+
+    auncient_sdk_close_coaxial(&env);
+
     // Clean up temporary files
     remove(src_path);
     remove(bin_path);
