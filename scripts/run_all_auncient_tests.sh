@@ -431,4 +431,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_autodin_prefetch.c -o
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpp_profiler.c -o tests/test_auncient_vpp_profiler -lm -lrt
 ./tests/test_auncient_vpp_profiler
 
+# Compile and run AUTODIN First Node Event Logger
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpp_autodin_input.c -o tests/test_auncient_vpp_autodin_input -lm -lrt
+./tests/test_auncient_vpp_autodin_input
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
