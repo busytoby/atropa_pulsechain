@@ -503,4 +503,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_ocean_loader.c -o tes
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_huc_vgpr.c -o tests/test_auncient_huc_vgpr -lm -lrt
 ./tests/test_auncient_huc_vgpr
 
+# Compile and run Auncient Hogan SGPR/VGPR Ledger Resolution
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_sgpr_vgpr.c -o tests/test_auncient_hogan_sgpr_vgpr -lm -lrt
+./tests/test_auncient_hogan_sgpr_vgpr
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
