@@ -527,4 +527,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_huc_ocean_v3.c 
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_huc_ocean_v4.c -o tests/test_auncient_hogan_huc_ocean_v4 -lm -lrt
 ./tests/test_auncient_hogan_huc_ocean_v4
 
+# Compile and run Auncient Hogan Transactional Quorum Verification
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_transactional_quorum.c -o tests/test_auncient_hogan_transactional_quorum -lm -lrt
+./tests/test_auncient_hogan_transactional_quorum
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="

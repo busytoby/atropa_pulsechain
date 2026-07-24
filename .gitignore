@@ -380,7 +380,9 @@ frontend/compiled_yul.json
 /tests/test_auncient_hogan_reconciliation
 /tests/test_auncient_hogan_huc_ocean_v3
 /tests/test_auncient_hogan_huc_ocean_v4
+/tests/test_auncient_hogan_transactional_quorum
 /tests/autodin_events.dat.bin
+
 
 
 
