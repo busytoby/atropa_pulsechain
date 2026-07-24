@@ -17,6 +17,7 @@ int main(void) {
     const char *bin_path = "tests/test_compiled.dat.bin";
     const char *sub_src_path = "tests/sub_source.xpl";
     const char *sub_bin_path = "tests/sub_99.dat.bin";
+    const char *log_dat_bin_path = "tests/blame_log.dat.bin";
 
     // 1. Create a dummy sub .xpl source text file (sets value to 1234)
     FILE *sub_src = fopen(sub_src_path, "w");
@@ -227,8 +228,8 @@ int main(void) {
     printf("   ✓ Contract refinement pre/post rules verified successfully.\n");
     fflush(stdout);
 
-    // 15. Test Blame Assignment semantics
-    printf("[TEST] Testing Findler-Felleisen blame assignments...\n");
+    // 15. Test Blame Assignment semantics & PLD logging
+    printf("[TEST] Testing Findler-Felleisen blame assignments & logging...\n");
     fflush(stdout);
     low_clearance_ctx.last_blame = SDK_BLAME_NONE;
     low_clearance_ctx.security_clearance = 1; // Low clearance
@@ -240,11 +241,25 @@ int main(void) {
     // Broadcast blame over physical driver socket
     ok = auncient_pld_broadcast_blame(&low_clearance_ctx);
     assert(ok == true);
-    
+
+    // Log blame to disk (.dat.bin)
+    ok = auncient_pld_log_blame_to_disk(&low_clearance_ctx, log_dat_bin_path);
+    assert(ok == true);
+
+    // Read back log from disk and verify its structure
+    FILE *log_f = fopen(log_dat_bin_path, "rb");
+    assert(log_f != NULL);
+    sdk_blame_record_t read_record;
+    size_t read_bytes = fread(&read_record, sizeof(sdk_blame_record_t), 1, log_f);
+    fclose(log_f);
+    assert(read_bytes == 1);
+    assert(read_record.writer_id == low_clearance_ctx.writer_id);
+    assert(read_record.blame_target == SDK_BLAME_CALLER);
+
     // Clear blame via driver query
     auncient_pld_clear_blame(&low_clearance_ctx);
     assert(auncient_pld_verify_blame(&low_clearance_ctx, SDK_BLAME_NONE) == true);
-    printf("   ✓ Blame correctly verified, broadcasted, and cleared via PLD driver functions.\n");
+    printf("   ✓ Blame correctly verified, logged to disk, and cleared via PLD driver functions.\n");
     fflush(stdout);
 
     // 16. Test Transition Invariants (Pre/Post Relation Constraints)
@@ -267,6 +282,7 @@ int main(void) {
     remove(bin_path);
     remove(sub_src_path);
     remove(sub_bin_path);
+    remove(log_dat_bin_path);
 
     printf("=============================================================\n");
     printf("XPL COMPILER & EXECUTION TESTS PASSED\n");

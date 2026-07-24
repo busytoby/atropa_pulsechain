@@ -25,6 +25,15 @@ typedef enum {
     SDK_BLAME_SUBLIBRARY = 3
 } sdk_blame_t;
 
+// Layout for immutable blame records preserved to disk (.dat.bin files)
+typedef struct {
+    uint32_t writer_id;
+    uint8_t blame_target; // Maps to sdk_blame_t
+    uint8_t reserved1;
+    uint16_t reserved2;
+    uint64_t timestamp_counter;
+} sdk_blame_record_t;
+
 // Rich status and diagnostic codes for ABI packets
 typedef enum {
     SDK_STATUS_OK = 0,
@@ -151,6 +160,9 @@ bool auncient_sdk_validate_transition_invariant(const sdk_coaxial_env_t *env, in
 bool auncient_pld_verify_blame(const sdk_cics_context_t *ctx, sdk_blame_t expected_blame);
 void auncient_pld_clear_blame(sdk_cics_context_t *ctx);
 bool auncient_pld_broadcast_blame(const sdk_cics_context_t *ctx);
+
+// Immutable disk logger for blame verification
+bool auncient_pld_log_blame_to_disk(const sdk_cics_context_t *ctx, const char *log_dat_bin_path);
 
 // Precedence-Aware AUTODIN Spin-Lock Interface
 bool auncient_sdk_autodin_spin_lock(sdk_cics_context_t *ctx, uint32_t lock_token, char precedence);

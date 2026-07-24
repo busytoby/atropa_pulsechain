@@ -218,6 +218,30 @@ bool auncient_pld_broadcast_blame(const sdk_cics_context_t *ctx) {
     return (rx_packet.status_flag == ctx->last_blame);
 }
 
+bool auncient_pld_log_blame_to_disk(const sdk_cics_context_t *ctx, const char *log_dat_bin_path) {
+    if (!ctx || !log_dat_bin_path) {
+        return false;
+    }
+
+    FILE *f = fopen(log_dat_bin_path, "ab");
+    if (!f) {
+        return false;
+    }
+
+    sdk_blame_record_t record = {
+        .writer_id = ctx->writer_id,
+        .blame_target = ctx->last_blame,
+        .reserved1 = 0,
+        .reserved2 = 0,
+        .timestamp_counter = ctx->cache ? ctx->cache->cached_ts.counter : 0
+    };
+
+    size_t written = fwrite(&record, sizeof(sdk_blame_record_t), 1, f);
+    fclose(f);
+
+    return (written == 1);
+}
+
 static bool check_ackerman_quorum(sdk_quorum_type_t type, const bool *approvals, const uint32_t *weights) {
     if (type == SDK_QUORUM_MAJORITY) {
         int count = 0;
