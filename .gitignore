@@ -245,6 +245,7 @@ libtsfi2.so
 /tests/test_auncient_cscw_black_crdt_red
 /tests/test_auncient_cscw_pn_counter
 /tests/test_auncient_accumulator_redirection
+/tests/test_auncient_voodoo_best_practices
 /tests/output.xpl
 /scripts/compile_apdl
 /scripts/alsa_player
