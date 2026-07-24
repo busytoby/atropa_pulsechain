@@ -183,6 +183,7 @@ libtsfi2.so
 /tests/test_auncient_cad_automatic_discharge
 /tests/test_auncient_alu_verlet_pll
 /tests/test_auncient_fourier_registry
+/tests/test_auncient_fourier_registry_improved
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
