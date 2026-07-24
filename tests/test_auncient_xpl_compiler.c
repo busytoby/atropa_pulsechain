@@ -95,7 +95,9 @@ int main(void) {
         .state = SDK_STATE_UNLOCKED,
         .is_contract_checking = false,
         .last_blame = SDK_BLAME_NONE,
-        .recovery_handler = NULL
+        .recovery_handler = NULL,
+        .trace_index = 0,
+        .trace_count = 0
     };
 
     // Attempting load should fail behavioral subtyping verification
@@ -369,7 +371,33 @@ int main(void) {
     printf("   ✓ Isolated sandboxing successfully isolated state. Register value remained: %u.\n", env.registers[0].value);
     fflush(stdout);
 
-    // 19. Test Transition Invariants (Pre/Post Relation Constraints)
+    // 19. Test Historical Trace Invariant Auditing
+    printf("[TEST] Testing historical trace invariant auditing...\n");
+    fflush(stdout);
+    low_clearance_ctx.trace_index = 0;
+    low_clearance_ctx.trace_count = 0;
+
+    // Simulate trace pushing
+    low_clearance_ctx.writer_id = 1;
+    env.registers[0].value = 100;
+    auncient_sdk_push_trace_entry(&low_clearance_ctx); // Sum 100
+
+    env.registers[0].value = 200;
+    auncient_sdk_push_trace_entry(&low_clearance_ctx); // Sum 200
+
+    // Conforming trace: register sums are non-decreasing (100 -> 200)
+    ok = auncient_sdk_validate_trace_invariants(&low_clearance_ctx);
+    assert(ok == true);
+
+    // Corrupted trace: register sum regresses (200 -> 150)
+    env.registers[0].value = 150;
+    auncient_sdk_push_trace_entry(&low_clearance_ctx); // Sum 150
+    ok = auncient_sdk_validate_trace_invariants(&low_clearance_ctx);
+    assert(ok == false);
+    printf("   ✓ Historical trace checks trapped trajectory regressions correctly.\n");
+    fflush(stdout);
+
+    // 20. Test Transition Invariants (Pre/Post Relation Constraints)
     printf("[TEST] Testing pre/post relation transition invariants...\n");
     fflush(stdout);
     env.registers[0].value = 500; // Baseline state

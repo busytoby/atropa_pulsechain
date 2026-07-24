@@ -202,11 +202,48 @@ bool auncient_sdk_validate_invariant_strengthening(const sdk_cics_context_t *par
     return true;
 }
 
-bool auncient_pld_verify_blame(const sdk_cics_context_t *ctx, sdk_blame_t expected_blame) {
+bool auncient_sdk_validate_trace_invariants(const sdk_cics_context_t *ctx) {
+    if (!ctx || ctx->trace_count < 2) {
+        return true;
+    }
+    // Reconstruction chronological order from trace_index
+    int start = (ctx->trace_index - ctx->trace_count + SDK_TRACE_LIMIT) % SDK_TRACE_LIMIT;
+    uint32_t last_sum = ctx->history_trace[start].register_sum;
+    for (int i = 1; i < ctx->trace_count; i++) {
+        int idx = (start + i) % SDK_TRACE_LIMIT;
+        uint32_t cur_sum = ctx->history_trace[idx].register_sum;
+        if (cur_sum < last_sum) {
+            return false; // Trapped trajectory regression over trace history
+        }
+        last_sum = cur_sum;
+    }
+    return true;
+}
+
+void auncient_sdk_push_trace_entry(sdk_cics_context_t *ctx) {
+    if (!ctx) {
+        return;
+    }
+    uint32_t register_sum = 0;
+    for (int i = 0; i < SDK_NUM_NODES; i++) {
+        register_sum += ctx->env->registers[i].value;
+    }
+
+    ctx->history_trace[ctx->trace_index].register_sum = register_sum;
+    ctx->history_trace[ctx->trace_index].timestamp_counter = ctx->cache ? ctx->cache->cached_ts.counter : 0;
+    ctx->history_trace[ctx->trace_index].writer_id = ctx->writer_id;
+
+    ctx->trace_index = (ctx->trace_index + 1) % SDK_TRACE_LIMIT;
+    if (ctx->trace_count < SDK_TRACE_LIMIT) {
+        ctx->trace_count++;
+    }
+}
+
+bool auncient_pld_verify_blame(const sdk_cics_context_t *ctx, sdk_blame_t blame_target) {
     if (!ctx) {
         return false;
     }
-    return (ctx->last_blame == expected_blame);
+    return (ctx->last_blame == blame_target);
 }
 
 void auncient_pld_clear_blame(sdk_cics_context_t *ctx) {
@@ -454,7 +491,9 @@ bool auncient_sdk_execute_primary_bin(const char *bin_path, uint32_t *results, i
         .state = SDK_STATE_UNLOCKED,
         .is_contract_checking = false,
         .last_blame = SDK_BLAME_NONE,
-        .recovery_handler = NULL
+        .recovery_handler = NULL,
+        .trace_index = 0,
+        .trace_count = 0
     };
 
     // 3. Execute
@@ -884,6 +923,18 @@ bool auncient_sdk_alu_execute(sdk_cics_context_t *ctx, uint8_t alu_opcode, uint3
         cache->cached_value = target_val;
         cache->cached_ts = new_ts;
         cache->is_warm = true;
+
+        // Push state to Historical Trace ring-buffer
+        auncient_sdk_push_trace_entry(ctx);
+
+        // Historical Trace Invariant Auditing: Verify trace trajectory does not regress
+        ctx->is_contract_checking = true;
+        if (!auncient_sdk_validate_trace_invariants(ctx)) {
+            ctx->is_contract_checking = false;
+            auncient_sdk_assign_blame(ctx, SDK_BLAME_CALLER);
+            return false; // Historical trace invariant violation
+        }
+        ctx->is_contract_checking = false;
 
         *result_val = target_val;
         return true;

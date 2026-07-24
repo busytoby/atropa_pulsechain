@@ -11,6 +11,7 @@
 
 #define SDK_NUM_NODES 4
 #define SDK_TRANSACTION_RETRY_LIMIT 3
+#define SDK_TRACE_LIMIT 8
 
 typedef enum {
     SDK_STATE_UNLOCKED = 0,
@@ -46,7 +47,8 @@ typedef enum {
     SDK_STATUS_ERR_REFINEMENT = 15,
     SDK_STATUS_ERR_TRANSITION = 16,
     SDK_STATUS_ERR_INVARIANT_STRENGTHENING = 17,
-    SDK_STATUS_ERR_TRANSACTION = 18
+    SDK_STATUS_ERR_TRANSACTION = 18,
+    SDK_STATUS_ERR_TRACE = 19
 } sdk_status_code_t;
 
 // Forward declaration of context structure
@@ -102,6 +104,13 @@ typedef struct {
     bool is_warm;
 } sdk_kermit_cache_t;
 
+// Historical state signature for trace auditing
+typedef struct {
+    uint64_t timestamp_counter;
+    uint32_t writer_id;
+    uint32_t register_sum;
+} sdk_trace_entry_t;
+
 typedef struct sdk_cics_context {
     sdk_coaxial_env_t *env;
     sdk_kermit_cache_t *cache;
@@ -113,6 +122,9 @@ typedef struct sdk_cics_context {
     bool is_contract_checking; // Purity check flag
     sdk_blame_t last_blame;    // Blame identifier
     sdk_contract_recovery_handler_t recovery_handler; // Resilient recovery handler hook
+    sdk_trace_entry_t history_trace[SDK_TRACE_LIMIT]; // Historical state signature trace
+    uint8_t trace_index;
+    uint8_t trace_count;
 } sdk_cics_context_t;
 
 // Batched operation structure
@@ -168,6 +180,10 @@ bool auncient_sdk_validate_transition_invariant(const sdk_coaxial_env_t *env, in
 
 // Invariant Strengthening Verification
 bool auncient_sdk_validate_invariant_strengthening(const sdk_cics_context_t *parent_ctx, const sdk_cics_context_t *child_ctx);
+
+// Historical Trace Invariant Auditing
+bool auncient_sdk_validate_trace_invariants(const sdk_cics_context_t *ctx);
+void auncient_sdk_push_trace_entry(sdk_cics_context_t *ctx);
 
 // Physical Layer Driver (PLD) Blame Verification Diagnostic
 bool auncient_pld_verify_blame(const sdk_cics_context_t *ctx, sdk_blame_t expected_blame);
