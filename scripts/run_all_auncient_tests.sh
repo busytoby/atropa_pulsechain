@@ -211,6 +211,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_accumulator_redirecti
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_voodoo_best_practices.c -o tests/test_auncient_voodoo_best_practices -lm -lrt
 ./tests/test_auncient_voodoo_best_practices
 
+# Compile and run Ackerman Collaborative Consensus
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_ackerman_consensus.c -o tests/test_auncient_ackerman_consensus -lm -lrt
+./tests/test_auncient_ackerman_consensus
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
