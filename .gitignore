@@ -278,6 +278,7 @@ libtsfi2.so
 /tests/test_auncient_contract_invariant
 /tests/test_auncient_behavioral_subtyping
 /tests/test_auncient_autodin_contract
+/tests/test_auncient_sdk_precedence_locks
 /libauncient_sdk.a
 /src/auncient_sdk.o
 /dist/
