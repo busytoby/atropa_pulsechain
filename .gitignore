@@ -368,7 +368,9 @@ frontend/compiled_yul.json
 /tests/test_auncient_binary_optimizer_v2
 /tests/test_auncient_binary_optimizer_v3
 /tests/test_auncient_binary_optimizer_v4
+/tests/test_auncient_binary_optimizer_v5
 /tests/autodin_events.dat.bin
+
 
 
 
