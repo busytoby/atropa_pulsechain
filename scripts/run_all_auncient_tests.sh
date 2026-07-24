@@ -443,4 +443,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpp_example.c -o test
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vppd.c -o tests/test_auncient_vppd -lm -lrt
 ./tests/test_auncient_vppd
 
+# Compile and run VPDL Dynamic Policy Hot-Swap
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpdl.c -o tests/test_auncient_vpdl -lm -lrt
+./tests/test_auncient_vpdl
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
