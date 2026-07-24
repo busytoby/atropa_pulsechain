@@ -371,4 +371,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_siggraph_renderer.c -
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_siggraph_discharge.c -o tests/test_auncient_siggraph_discharge -lm -lrt
 ./tests/test_auncient_siggraph_discharge
 
+# Compile and run SIGGRAPH Real-Time Terminal Presenter
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_siggraph_presenter.c -o tests/test_auncient_siggraph_presenter -lm -lrt
+./tests/test_auncient_siggraph_presenter
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
