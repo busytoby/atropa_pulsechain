@@ -265,6 +265,7 @@ libtsfi2.so
 /tests/test_auncient_quadtree_paging
 /tests/test_auncient_abd_consistency
 /tests/test_auncient_stanag_abd
+/tests/test_auncient_mwmw_abd
 /tests/output.xpl
 /scripts/compile_apdl
 /scripts/alsa_player
