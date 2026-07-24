@@ -319,8 +319,8 @@ int main(void) {
     printf("   ✓ Dependent typestate transition constraints validated correctly.\n");
     fflush(stdout);
 
-    // 18. Test Autonomic Transactional Retries
-    printf("[TEST] Testing autonomic transactional retry loops...\n");
+    // 18. Test Autonomic Transactional Retries & Isolated Sandboxing
+    printf("[TEST] Testing autonomic transactional retries & isolated sandboxing...\n");
     fflush(stdout);
     // Set clearance to 1 (will trigger pre-condition fail on TopSecret sub-binary execution)
     low_clearance_ctx.security_clearance = 1;
@@ -333,7 +333,40 @@ int main(void) {
     ok = auncient_sdk_execute_dat_bin(&low_clearance_ctx, sub_bin_path, NULL, 0);
     assert(ok == true);
     assert(low_clearance_ctx.security_clearance == 3);
-    printf("   ✓ Autonomic transactional retry completed and committed transaction successfully.\n");
+
+    // Verify Isolated Sandboxing pollution protection:
+    // Create a sub-binary that writes to node 0, but then fails clearance.
+    // Parent will execute with low clearance and NO recovery handler to force a final failure.
+    FILE *sub_sandbox_src = fopen(sub_src_path, "w");
+    assert(sub_sandbox_src != NULL);
+    fprintf(sub_sandbox_src, "WRITE_ABD 888 1 0 0 0\n");      // Sandbox write 888 to node 0
+    fprintf(sub_sandbox_src, "WRITE_ABD 950000 1 0 0 0\n");   // TopSecret write (fails clearance)
+    fclose(sub_sandbox_src);
+
+    const char *sub_sandbox_bin_path = "tests/sub_88.dat.bin";
+    ok = auncient_sdk_compile_xpl_to_dat_bin(sub_src_path, sub_sandbox_bin_path);
+    assert(ok == true);
+
+    FILE *parent_sandbox_src = fopen(src_path, "w");
+    assert(parent_sandbox_src != NULL);
+    fprintf(parent_sandbox_src, "LOAD_SUB_XPL 88\n");
+    fclose(parent_sandbox_src);
+
+    ok = auncient_sdk_compile_xpl_to_dat_bin(src_path, bin_path);
+    assert(ok == true);
+
+    // Execute parent sandbox under clearance 1 (no recovery handler)
+    env.registers[0].value = 400; // Baseline
+    low_clearance_ctx.security_clearance = 1;
+    low_clearance_ctx.recovery_handler = NULL;
+    low_clearance_ctx.state = SDK_STATE_UNLOCKED;
+
+    ok = auncient_sdk_execute_dat_bin(&low_clearance_ctx, bin_path, NULL, 0);
+    assert(ok == false); // Must fail
+
+    // Under isolated sandboxing, node 0 must NOT be polluted with 888 on sub-binary failure!
+    assert(env.registers[0].value == 400); // Should remain 400
+    printf("   ✓ Isolated sandboxing successfully isolated state. Register value remained: %u.\n", env.registers[0].value);
     fflush(stdout);
 
     // 19. Test Transition Invariants (Pre/Post Relation Constraints)
@@ -356,6 +389,7 @@ int main(void) {
     remove(bin_path);
     remove(sub_src_path);
     remove(sub_bin_path);
+    remove(sub_sandbox_bin_path);
     remove(log_dat_bin_path);
 
     printf("=============================================================\n");

@@ -623,10 +623,34 @@ static bool auncient_sdk_execute_dat_bin_internal(sdk_cics_context_t *ctx, const
                 break; // Reject load due to subtyping violation
             }
             
-            // Execute the loaded dat.bin stream
-            bool sub_ok = auncient_sdk_execute_dat_bin_internal(ctx, path, NULL, 0);
-            if (!sub_ok) {
+            // Allocate Isolated Sandbox Coaxial Environment
+            sdk_coaxial_env_t sandbox_env;
+            if (!auncient_sdk_init_coaxial(&sandbox_env)) {
                 overall_ok = false;
+                break;
+            }
+            // Copy parent registers and weights
+            memcpy(sandbox_env.registers, ctx->env->registers, sizeof(sandbox_env.registers));
+            memcpy(sandbox_env.weights, ctx->env->weights, sizeof(sandbox_env.weights));
+
+            // Create sandboxed context pointing to the sandbox environment
+            sdk_cics_context_t sandbox_ctx = *ctx;
+            sandbox_ctx.env = &sandbox_env;
+
+            // Execute the loaded dat.bin stream against sandbox
+            bool sub_ok = auncient_sdk_execute_dat_bin_internal(&sandbox_ctx, path, NULL, 0);
+            
+            if (sub_ok) {
+                // Commit phase: flush sandbox updates to parent environment
+                memcpy(ctx->env->registers, sandbox_env.registers, sizeof(sandbox_env.registers));
+            } else {
+                overall_ok = false;
+            }
+
+            // Cleanup sandbox coaxial loops
+            auncient_sdk_close_coaxial(&sandbox_env);
+
+            if (!overall_ok) {
                 break;
             }
             if (results && (int)i < max_results) {
