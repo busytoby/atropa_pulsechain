@@ -167,6 +167,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_sigplan_tmu.c -o test
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_sigplan_voodoo.c -o tests/test_auncient_sigplan_voodoo -lm -lrt
 ./tests/test_auncient_sigplan_voodoo
 
+# Compile and run Jin Li Concurrent Cache Gating
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_jin_li_cache.c -o tests/test_auncient_jin_li_cache -lm -lrt
+./tests/test_auncient_jin_li_cache
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
