@@ -59,6 +59,58 @@ void auncient_sdk_void_registers(sdk_coaxial_env_t *env) {
     }
 }
 
+bool auncient_sdk_check_clearance(const sdk_cics_context_t *ctx, uint32_t value) {
+    // If value > 900000, it is TopSecret (level 3). Context clearance must be >= 3.
+    if (value > 900000 && ctx->security_clearance < 3) {
+        return false;
+    }
+    return true;
+}
+
+bool auncient_sdk_autodin_spin_lock(sdk_cics_context_t *ctx, uint32_t lock_token) {
+    // Write a lock request envelope into the AUTODIN spin-lock loop
+    auncient_abi_packet_t packet = {
+        .alu_opcode = ALU_OP_EVAL_ACKERMAN,
+        .status_flag = SDK_STATUS_OK,
+        .payload_length = sizeof(uint32_t),
+        .payload_value = lock_token,
+        .timestamp_counter = 1,
+        .writer_id = ctx->writer_id
+    };
+
+    // Broadcast over coaxial link
+    if (write(ctx->env->socket_fds[0], &packet, sizeof(auncient_abi_packet_t)) < 0) {
+        return false;
+    }
+
+    // Read back frame to verify lock acquisition
+    auncient_abi_packet_t rx_packet;
+    if (read(ctx->env->socket_fds[1], &rx_packet, sizeof(auncient_abi_packet_t)) < 0) {
+        return false;
+    }
+
+    return (rx_packet.payload_value == lock_token);
+}
+
+void auncient_sdk_autodin_spin_unlock(sdk_cics_context_t *ctx, uint32_t lock_token) {
+    // Write an unlock/release envelope into the AUTODIN spin-lock loop
+    auncient_abi_packet_t packet = {
+        .alu_opcode = ALU_OP_EVAL_ACKERMAN,
+        .status_flag = SDK_STATUS_OK,
+        .payload_length = sizeof(uint32_t),
+        .payload_value = 0, // 0 indicates lock release
+        .timestamp_counter = 2,
+        .writer_id = ctx->writer_id
+    };
+
+    write(ctx->env->socket_fds[0], &packet, sizeof(auncient_abi_packet_t));
+    
+    auncient_abi_packet_t rx_packet;
+    read(ctx->env->socket_fds[1], &rx_packet, sizeof(auncient_abi_packet_t));
+    assert(rx_packet.payload_value == 0);
+    (void)lock_token;
+}
+
 static bool check_ackerman_quorum(sdk_quorum_type_t type, const bool *approvals, const uint32_t *weights) {
     if (type == SDK_QUORUM_MAJORITY) {
         int count = 0;
@@ -93,6 +145,11 @@ static bool check_ackerman_quorum(sdk_quorum_type_t type, const bool *approvals,
 bool auncient_sdk_alu_execute(sdk_cics_context_t *ctx, uint8_t alu_opcode, uint32_t target_val, const bool *approvals, uint32_t *result_val) {
     sdk_coaxial_env_t *env = ctx->env;
     sdk_kermit_cache_t *cache = ctx->cache;
+
+    // Enforce Active Security Clearance check
+    if (!auncient_sdk_check_clearance(ctx, target_val)) {
+        return false; // Trapped security violation
+    }
 
     if (alu_opcode == ALU_OP_READ_KERMIT) {
         // Read fast-path from warm cache

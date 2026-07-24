@@ -90,6 +90,29 @@ int main(void) {
     printf("   ✓ Contextual register reset verified.\n");
     fflush(stdout);
 
+    // 7. Test active security clearance checks (Value 999999 requires clearance 3, ctx has 2)
+    printf("[TEST] Writing classified value without clearance (expected fail)...\n");
+    fflush(stdout);
+    uint32_t dummy_res = 0;
+    ok = auncient_sdk_alu_execute(&ctx, ALU_OP_WRITE_ABD, 999999, approvals_majority, &dummy_res);
+    assert(ok == false);
+    printf("   ✓ Security clearance check blocked unauthorized access.\n");
+    fflush(stdout);
+
+    // 8. Test AUTODIN spin-lock acquisition and release
+    printf("[TEST] Acquiring lock via AUTODIN loopback spin-lock...\n");
+    fflush(stdout);
+    ok = auncient_sdk_autodin_spin_lock(&ctx, 0xABC);
+    assert(ok == true);
+    printf("   ✓ AUTODIN spin-lock acquired successfully.\n");
+    fflush(stdout);
+
+    printf("[TEST] Releasing lock via AUTODIN spin-lock...\n");
+    fflush(stdout);
+    auncient_sdk_autodin_spin_unlock(&ctx, 0xABC);
+    printf("   ✓ AUTODIN spin-lock released successfully.\n");
+    fflush(stdout);
+
     auncient_sdk_close_coaxial(&env);
     printf("=============================================================\n");
     printf("SDK INTEGRATION TESTS PASSED\n");
