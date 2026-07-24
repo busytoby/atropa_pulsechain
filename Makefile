@@ -1,0 +1,41 @@
+.PHONY: help test-all test-dashboard test-container test-git-ci test-unit
+
+help:
+	@echo "Available test targets:"
+	@echo "  make test-all        - Run all E2E and unit tests in the project"
+	@echo "  make test-dashboard  - Run NoNukes Dashboard E2E tests (including SPA)"
+	@echo "  make test-container  - Run Teddy Bear Diagnostics container E2E tests"
+	@echo "  make test-git-ci     - Run Git post-commit hook pipeline E2E tests"
+	@echo "  make test-unit       - Run Python unit tests under tests/"
+
+test-all: test-dashboard test-container test-git-ci test-unit
+	@echo "All tests completed successfully."
+
+test-dashboard:
+	python3 -m unittest tests/e2e/test_nonukes_dashboard.py
+	python3 -m unittest tests/e2e/test_nonukes_dashboard_spa.py
+	python3 -m unittest tests/e2e/test_nonukes_adversarial.py
+
+test-container:
+	python3 -m unittest tests/e2e/test_dashboard_container.py
+
+test-git-ci:
+	python3 tests/e2e/run_e2e_tests.py
+
+test-unit:
+	python3 -m unittest discover -s tests -p "test_*.py"
+
+.PHONY: sdk-build sdk-minify sdk-package
+
+sdk-build:
+	mkdir -p dist
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -c src/auncient_sdk.c -o src/auncient_sdk.o
+	ar rcs libauncient_sdk.a src/auncient_sdk.o
+
+sdk-minify: sdk-build
+	strip --strip-unneeded src/auncient_sdk.o
+	ar rcs libauncient_sdk.a src/auncient_sdk.o
+	strip -S libauncient_sdk.a
+
+sdk-package: sdk-minify
+	tar -czf dist/auncient_sdk.tar.gz inc/auncient_sdk.h libauncient_sdk.a
