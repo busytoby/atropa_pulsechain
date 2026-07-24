@@ -451,4 +451,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpdl.c -o tests/test_
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpdl_blame.c -o tests/test_auncient_vpdl_blame -lm -lrt
 ./tests/test_auncient_vpdl_blame
 
+# Compile and run CICS Dynamic Process & Ackerman Quorum
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vppd_ackerman.c -o tests/test_auncient_vppd_ackerman -lm -lrt
+./tests/test_auncient_vppd_ackerman
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
