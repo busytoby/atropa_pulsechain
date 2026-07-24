@@ -205,6 +205,7 @@ libtsfi2.so
 /tests/test_auncient_pdl_loop_guard
 /tests/test_auncient_pdl_contract
 /tests/test_auncient_pdl_implication
+/tests/test_auncient_fourier_implication
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
