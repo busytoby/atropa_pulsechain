@@ -223,6 +223,10 @@ gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_aunc
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_autodin_ackerman.c -o tests/test_auncient_autodin_ackerman -lm -lrt
 ./tests/test_auncient_autodin_ackerman
 
+# Compile and run Kermit State Consensus
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_kermit_state_consensus.c -o tests/test_auncient_kermit_state_consensus -lm -lrt
+./tests/test_auncient_kermit_state_consensus
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
