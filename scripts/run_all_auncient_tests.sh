@@ -411,4 +411,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpp_forwarding.c -o t
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpp_tws_batch.c -o tests/test_auncient_vpp_tws_batch -lm -lrt
 ./tests/test_auncient_vpp_tws_batch
 
+# Compile and run VPP SIMD Checksum Node
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpp_simd.c -o tests/test_auncient_vpp_simd -lm -lrt
+./tests/test_auncient_vpp_simd
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
