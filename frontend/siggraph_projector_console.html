@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auncient ALU Projector Console</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #060814;
+            --panel-bg: rgba(10, 15, 30, 0.7);
+            --border-color: rgba(0, 242, 254, 0.2);
+            --neon-blue: #00f2fe;
+            --neon-purple: #9b51e0;
+            --neon-pink: #ff007f;
+            --text-main: #f0f4f8;
+            --text-muted: #8a99ad;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 242, 254, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(155, 81, 224, 0.05) 0%, transparent 40%);
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Sidebar Control Panel */
+        .sidebar {
+            background: var(--panel-bg);
+            border-right: 1px solid var(--border-color);
+            backdrop-filter: blur(12px);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        .header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            background: linear-gradient(to right, var(--neon-blue), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .control-label span.value {
+            color: var(--neon-blue);
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--neon-blue);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--neon-blue);
+            transition: transform 0.1s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(255, 0, 127, 0.3);
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 0, 127, 0.5);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            box-shadow: none;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 242, 254, 0.1);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+        }
+
+        /* Viewport Panel */
+        .viewport {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at center, #0b112c 0%, var(--bg-dark) 100%);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            max-width: 800px;
+            max-height: 800px;
+        }
+
+        .telemetry {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            background: rgba(6, 8, 20, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            backdrop-filter: blur(8px);
+        }
+
+        .telemetry-item {
+            display: flex;
+            justify-content: space-between;
+            gap: 2rem;
+        }
+
+        .telemetry-label {
+            color: var(--text-muted);
+        }
+
+        .telemetry-value {
+            color: var(--neon-blue);
+        }
+
+        .glow {
+            text-shadow: 0 0 8px var(--neon-blue);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar Controls -->
+        <div class="sidebar">
+            <div class="header">
+                <h1>Auncient Projector</h1>
+                <p>WinchesterMQ Console</p>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--border-color)">
+
+            <div class="control-group">
+                <div class="control-label">
+                    <span>Base (Phase Offset)</span>
+                    <span class="value" id="baseVal">2.00</span>
+                </div>
+                <input type="range" id="baseSlider" min="0" max="6.28" step="0.05" value="2.00">
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">
+                    <span>Channel (X Freq)</span>
+                    <span class="value" id="channelVal">3.00</span>
+                </div>
+                <input type="range" id="channelSlider" min="1" max="10" step="0.5" value="3.00">
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">
+                    <span>Dynamo (Y Freq)</span>
+                    <span class="value" id="dynamoVal">2.00</span>
+                </div>
+                <input type="range" id="dynamoSlider" min="1" max="10" step="0.5" value="2.00">
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">
+                    <span>Foundation (Z Freq)</span>
+                    <span class="value" id="foundationVal">1.00</span>
+                </div>
+                <input type="range" id="foundationSlider" min="1" max="10" step="0.5" value="1.00">
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">
+                    <span>Chin Asymmetry Warp</span>
+                    <span class="value" id="chinVal">0.50</span>
+                </div>
+                <input type="range" id="chinSlider" min="0" max="1" step="0.05" value="0.50">
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">
+                    <span>Element (Density)</span>
+                    <span class="value" id="elementVal">150</span>
+                </div>
+                <input type="range" id="elementSlider" min="50" max="300" step="10" value="150">
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">
+                    <span>Polarization (Rotation)</span>
+                    <span class="value" id="rotationVal">0.78</span>
+                </div>
+                <input type="range" id="rotationSlider" min="0" max="6.28" step="0.05" value="0.78">
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--border-color)">
+
+            <button class="btn" id="dischargeBtn">Discharge FET</button>
+            <button class="btn btn-secondary" id="seedBtn">Seed (Reset)</button>
+        </div>
+
+        <!-- Viewport Area -->
+        <div class="viewport">
+            <div class="telemetry">
+                <div class="telemetry-item">
+                    <span class="telemetry-label">Status:</span>
+                    <span class="telemetry-value glow" id="statusTelemetry">ACTIVE</span>
+                </div>
+                <div class="telemetry-item">
+                    <span class="telemetry-label">Charge level:</span>
+                    <span class="telemetry-value" id="chargeTelemetry">100.0%</span>
+                </div>
+                <div class="telemetry-item">
+                    <span class="telemetry-label">Prime Field:</span>
+                    <span class="telemetry-value">953467954114363</span>
+                </div>
+            </div>
+            <canvas id="projectorCanvas"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('projectorCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Sliders & Values
+        const baseSlider = document.getElementById('baseSlider');
+        const channelSlider = document.getElementById('channelSlider');
+        const dynamoSlider = document.getElementById('dynamoSlider');
+        const foundationSlider = document.getElementById('foundationSlider');
+        const chinSlider = document.getElementById('chinSlider');
+        const elementSlider = document.getElementById('elementSlider');
+        const rotationSlider = document.getElementById('rotationSlider');
+
+        const baseVal = document.getElementById('baseVal');
+        const channelVal = document.getElementById('channelVal');
+        const dynamoVal = document.getElementById('dynamoVal');
+        const foundationVal = document.getElementById('foundationVal');
+        const chinVal = document.getElementById('chinVal');
+        const elementVal = document.getElementById('elementVal');
+        const rotationVal = document.getElementById('rotationVal');
+
+        const dischargeBtn = document.getElementById('dischargeBtn');
+        const seedBtn = document.getElementById('seedBtn');
+        const statusTelemetry = document.getElementById('statusTelemetry');
+        const chargeTelemetry = document.getElementById('chargeTelemetry');
+
+        // Physics State variables
+        let points = [];
+        let springs = [];
+        let isDischarging = false;
+        let chargeLevel = 1.0;
+        let dragAngleX = 0.5;
+        let dragAngleY = 0.5;
+
+        // Resize Canvas
+        function resizeCanvas() {
+            const size = Math.min(canvas.parentElement.clientWidth, canvas.parentElement.clientHeight) - 40;
+            canvas.width = size;
+            canvas.height = size;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Generate coordinate points based on register parameters
+        function generateTrajectory() {
+            points = [];
+            springs = [];
+            const count = parseInt(elementSlider.value);
+            const freqX = parseFloat(channelSlider.value);
+            const freqY = parseFloat(dynamoSlider.value);
+            const freqZ = parseFloat(foundationSlider.value);
+            const phaseW = parseFloat(baseSlider.value);
+            const chinWarp = parseFloat(chinSlider.value);
+
+            for (let i = 0; i < count; i++) {
+                const t = (i * 2.0 * Math.PI) / count;
+                let x = Math.sin(freqX * t + phaseW);
+                let y = Math.sin(freqY * t);
+                let z = Math.sin(freqZ * t);
+
+                // Apply Chin lower boundary warp asymmetry
+                if (y < 0) {
+                    y *= (1.0 + chinWarp * 0.5);
+                }
+
+                points.push({
+                    x: x, y: y, z: z,
+                    px: x, py: y, pz: z, // Verlet histories
+                    ox: x, oy: y, oz: z  // Anchor references
+                });
+            }
+
+            // Map spring links between coordinates
+            for (let i = 0; i < count; i++) {
+                const next = (i + 1) % count;
+                const dist = Math.sqrt(
+                    Math.pow(points[next].x - points[i].x, 2) +
+                    Math.pow(points[next].y - points[i].y, 2) +
+                    Math.pow(points[next].z - points[i].z, 2)
+                );
+                springs.push({ a: i, b: next, length: dist });
+            }
+        }
+
+        // Draw Loop
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const center = canvas.width / 2;
+            const scale = canvas.width * 0.35;
+
+            // Polarization angle mapping
+            const polarRotation = parseFloat(rotationSlider.value);
+            const cosP = Math.cos(polarRotation + dragAngleX);
+            const sinP = Math.sin(polarRotation + dragAngleX);
+            const cosY = Math.cos(dragAngleY);
+            const sinY = Math.sin(dragAngleY);
+
+            // Project 3D to 2D
+            const screenPoints = points.map(p => {
+                // Apply polarization matrix rotation
+                let rx = p.x * cosP - p.z * sinP;
+                let rz = p.x * sinP + p.z * cosP;
+                let ry = p.y * cosY - rz * sinY;
+                rz = p.y * sinY + rz * cosY;
+
+                // Perspective projection mapping
+                const depth = 2.0 / (2.0 + rz * 0.5);
+                return {
+                    x: center + rx * scale * depth,
+                    y: center + ry * scale * depth,
+                    depth: rz
+                };
+            });
+
+            // Draw line coordinates
+            ctx.lineWidth = 2.0;
+            ctx.shadowBlur = 12;
+            
+            for (let i = 0; i < screenPoints.length; i++) {
+                const next = (i + 1) % screenPoints.length;
+                const depthVal = (screenPoints[i].depth + 1.2) / 2.4;
+
+                // Identity color octave gradients (Purple to Blue to Pink)
+                const identityVal = parseFloat(foundationSlider.value);
+                const r = Math.floor(128 + 127 * Math.sin(i / screenPoints.length * Math.PI + identityVal));
+                const g = Math.floor(128 + 127 * Math.sin(i / screenPoints.length * Math.PI * 2));
+                const b = Math.floor(255 - r);
+
+                // Set line style with opacity weight from Element
+                const opacity = (0.2 + depthVal * 0.8) * chargeLevel;
+                ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+                ctx.shadowColor = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+
+                ctx.beginPath();
+                ctx.moveTo(screenPoints[i].x, screenPoints[i].y);
+                ctx.lineTo(screenPoints[next].x, screenPoints[next].y);
+                ctx.stroke();
+            }
+
+            // Draw coordinate dots
+            ctx.shadowBlur = 0;
+            for (let i = 0; i < screenPoints.length; i++) {
+                const depthVal = (screenPoints[i].depth + 1.2) / 2.4;
+                ctx.fillStyle = `rgba(0, 242, 254, ${(0.3 + depthVal * 0.7) * chargeLevel})`;
+                ctx.beginPath();
+                ctx.arc(screenPoints[i].x, screenPoints[i].y, 3 * depthVal, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Verlet Integration and Mass-Spring solver loop (FET Discharge Cycle)
+        function solvePhysics() {
+            if (!isDischarging) return;
+
+            // Decay charge envelope
+            chargeLevel *= 0.98;
+            chargeTelemetry.innerText = (chargeLevel * 100).toFixed(1) + "%";
+
+            if (chargeLevel < 0.01) {
+                chargeLevel = 0.0;
+                isDischarging = false;
+                statusTelemetry.innerText = "DISCHARGED";
+                statusTelemetry.style.color = "var(--neon-pink)";
+                statusTelemetry.style.textShadow = "0 0 8px var(--neon-pink)";
+            }
+
+            const springK = 0.4;
+            const damping = 0.98;
+            const dt = 0.05;
+
+            // Verlet positions solver step
+            for (let i = 0; i < points.length; i++) {
+                const p = points[i];
+                const tempX = p.x;
+                const tempY = p.y;
+                const tempZ = p.z;
+
+                // Electrostative anchor force decays with chargeLevel
+                const fx = (p.ox - p.x) * springK * chargeLevel;
+                const fy = (p.oy - p.y) * springK * chargeLevel - (1.0 - chargeLevel) * 0.2; // simulated gravity pull during decay
+                const fz = (p.oz - p.z) * springK * chargeLevel;
+
+                p.x = p.x + (p.x - p.px) * damping + fx * dt * dt;
+                p.y = p.y + (p.y - p.py) * damping + fy * dt * dt;
+                p.z = p.z + (p.z - p.pz) * damping + fz * dt * dt;
+
+                p.px = tempX;
+                p.py = tempY;
+                p.pz = tempZ;
+            }
+
+            // Spring relaxation constraints mapping
+            for (let iter = 0; iter < 5; iter++) {
+                for (let i = 0; i < springs.length; i++) {
+                    const s = springs[i];
+                    const pa = points[s.a];
+                    const pb = points[s.b];
+
+                    const dx = pb.x - pa.x;
+                    const dy = pb.y - pa.y;
+                    const dz = pb.z - pa.z;
+                    const dist = Math.sqrt(dx*dx + dy*dy + dz*dz) || 0.001;
+
+                    const diff = (s.length - dist) / dist * 0.5;
+                    const dispX = dx * diff;
+                    const dispY = dy * diff;
+                    const dispZ = dz * diff;
+
+                    pa.x -= dispX;
+                    pa.y -= dispY;
+                    pa.z -= dispZ;
+                    pb.x += dispX;
+                    pb.y += dispY;
+                    pb.z += dispZ;
+                }
+            }
+        }
+
+        // Animation Loop
+        function animate() {
+            solvePhysics();
+            draw();
+            requestAnimationFrame(animate);
+        }
+
+        // Hook up sliders
+        function initControls() {
+            const sliders = [
+                { slider: baseSlider, valEl: baseVal, format: v => parseFloat(v).toFixed(2) },
+                { slider: channelSlider, valEl: channelVal, format: v => parseFloat(v).toFixed(2) },
+                { slider: dynamoSlider, valEl: dynamoVal, format: v => parseFloat(v).toFixed(2) },
+                { slider: foundationSlider, valEl: foundationVal, format: v => parseFloat(v).toFixed(2) },
+                { slider: chinSlider, valEl: chinVal, format: v => parseFloat(v).toFixed(2) },
+                { slider: elementSlider, valEl: elementVal, format: v => parseInt(v) },
+                { slider: rotationSlider, valEl: rotationVal, format: v => parseFloat(v).toFixed(2) }
+            ];
+
+            sliders.forEach(item => {
+                item.slider.addEventListener('input', () => {
+                    item.valEl.innerText = item.format(item.slider.value);
+                    if (!isDischarging) {
+                        generateTrajectory();
+                    }
+                });
+            });
+
+            dischargeBtn.addEventListener('click', () => {
+                isDischarging = true;
+                statusTelemetry.innerText = "DISCHARGING";
+                statusTelemetry.style.color = "var(--neon-purple)";
+                statusTelemetry.style.textShadow = "0 0 8px var(--neon-purple)";
+            });
+
+            seedBtn.addEventListener('click', () => {
+                isDischarging = false;
+                chargeLevel = 1.0;
+                chargeTelemetry.innerText = "100.0%";
+                statusTelemetry.innerText = "ACTIVE";
+                statusTelemetry.style.color = "var(--neon-blue)";
+                statusTelemetry.style.textShadow = "0 0 8px var(--neon-blue)";
+                generateTrajectory();
+            });
+        }
+
+        // Mouse Drag Interaction for projection angles rotation
+        let isDragging = false;
+        let prevMouseX = 0;
+        let prevMouseY = 0;
+
+        canvas.addEventListener('mousedown', e => {
+            isDragging = true;
+            prevMouseX = e.clientX;
+            prevMouseY = e.clientY;
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        window.addEventListener('mousemove', e => {
+            if (!isDragging) return;
+            const deltaX = e.clientX - prevMouseX;
+            const deltaY = e.clientY - prevMouseY;
+            dragAngleX += deltaX * 0.01;
+            dragAngleY += deltaY * 0.01;
+            prevMouseX = e.clientX;
+            prevMouseY = e.clientY;
+        });
+
+        // Initialize and Start
+        generateTrajectory();
+        initControls();
+        animate();
+    </script>
+</body>
+</html>
