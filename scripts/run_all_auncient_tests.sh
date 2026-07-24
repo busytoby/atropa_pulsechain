@@ -143,6 +143,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_interactive_db.c -o t
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -O3 tests/test_auncient_ipl_vol1.c -o tests/test_auncient_ipl_vol1 -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_ipl_vol1
 
+# Compile and run SIGPLAN Loop Bounds Verification
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_sigplan_loop_bound.c -o tests/test_auncient_sigplan_loop_bound -lm -lrt
+./tests/test_auncient_sigplan_loop_bound
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
