@@ -203,6 +203,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_cscw_black_crdt_red.c
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_cscw_pn_counter.c -o tests/test_auncient_cscw_pn_counter -lm -lrt
 ./tests/test_auncient_cscw_pn_counter
 
+# Compile and run Rule 12 Accumulator Redirection
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_accumulator_redirection.c -o tests/test_auncient_accumulator_redirection -lm -lrt
+./tests/test_auncient_accumulator_redirection
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
