@@ -423,4 +423,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpp_cache.c -o tests/
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpp_pipeline.c -o tests/test_auncient_vpp_pipeline -lm -lrt
 ./tests/test_auncient_vpp_pipeline
 
+# Compile and run AUTODIN Prefetch Verification
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_autodin_prefetch.c -o tests/test_auncient_autodin_prefetch -lm -lrt
+./tests/test_auncient_autodin_prefetch
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
