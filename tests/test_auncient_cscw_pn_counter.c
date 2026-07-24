@@ -53,6 +53,22 @@ void merge_pn_counter(pn_counter_t *local, const pn_counter_t *incoming) {
 }
 
 // -------------------------------------------------------------
+// Synthesizer Accumulator Integration
+// -------------------------------------------------------------
+uint32_t resolve_synth_accumulator_phase(const pn_counter_t *counter, uint32_t phase_limit) {
+    int32_t net_value = resolve_pn_counter_value(counter);
+    if (net_value < 0) {
+        // Handle negative wrapping
+        int32_t remainder = net_value % (int32_t)phase_limit;
+        if (remainder < 0) {
+            remainder += (int32_t)phase_limit;
+        }
+        return (uint32_t)remainder;
+    }
+    return (uint32_t)net_value % phase_limit;
+}
+
+// -------------------------------------------------------------
 // Unit Tests
 // -------------------------------------------------------------
 int main(void) {
@@ -85,6 +101,22 @@ int main(void) {
     int32_t resolved = resolve_pn_counter_value(&node0);
     assert(resolved == 17);
     printf("   ✓ Eventual consistency reached. Resolved value: %d\n", resolved);
+    fflush(stdout);
+
+    // 3. Synthesizer Accumulator Integration Case -> Should wrap phase correctly
+    printf("[TEST] Checking PN-counter as synthesizer phase accumulator (positive)...\n");
+    fflush(stdout);
+    uint32_t phase = resolve_synth_accumulator_phase(&node0, 1024);
+    assert(phase == 17); // 17 % 1024 = 17
+    printf("   ✓ Positive phase accumulator resolved to %u.\n", phase);
+    fflush(stdout);
+
+    printf("[TEST] Checking PN-counter as synthesizer phase accumulator (negative)...\n");
+    fflush(stdout);
+    decrement_pn_counter(&node0, 0, 30); // Net value becomes 17 - 30 = -13
+    phase = resolve_synth_accumulator_phase(&node0, 1024);
+    assert(phase == 1011); // -13 % 1024 wraps to 1011
+    printf("   ✓ Wrapped negative phase accumulator resolved to %u.\n", phase);
     fflush(stdout);
 
     printf("=============================================================\n");
