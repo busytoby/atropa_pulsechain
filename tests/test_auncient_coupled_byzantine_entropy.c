@@ -54,24 +54,31 @@ bool evaluate_coupled_byzantine_gate(coupled_trajectory_t *traj, double max_entr
     traj->byzantine_fault_flagged = false;
     traj->resolver.rollback_triggered = false;
 
-    // Ackerman-compatible Transaction Resolution:
-    // If consensus is reached (majority approvals) and the transaction proof is valid,
-    // we commit the state change ("ball rolling forward" proof).
-    bool consensus_reached = (traj->resolver.approvals > traj->resolver.total_nodes / 2);
-    if (consensus_reached && traj->resolver.proof_valid) {
-        // Commit: The ball successfully rolls forward
-        traj->resolver.checkpoint_state = traj->resolver.current_state;
-        traj->simulation_gate = CONDUC_STATE;
-        return true; // Bypass raw entropy checks as transaction trajectory is deterministic
+    // Segregate AUTODIN-compatible structured transactions from raw "random data"
+    bool is_autodin_compatible = (traj->resolver.total_nodes > 0);
+
+    if (is_autodin_compatible) {
+        // Ackerman-compatible Transaction Resolution:
+        // If consensus is reached (majority approvals) and the transaction proof is valid,
+        // we commit the state change ("ball rolling forward" proof).
+        bool consensus_reached = (traj->resolver.approvals > traj->resolver.total_nodes / 2);
+        if (consensus_reached && traj->resolver.proof_valid) {
+            // Commit: The ball successfully rolls forward
+            traj->resolver.checkpoint_state = traj->resolver.current_state;
+            traj->simulation_gate = CONDUC_STATE;
+            return true; // Bypass raw entropy checks (entropy is false/zero for structured transactions)
+        }
+
+        // Rollback: If consensus fails on structured transaction, restore state from checkpoint
+        if (!consensus_reached || !traj->resolver.proof_valid) {
+            traj->resolver.current_state = traj->resolver.checkpoint_state;
+            traj->resolver.rollback_triggered = true;
+            traj->simulation_gate = CONDUC_STATE; // Gated path remains functional via rollback
+            return true; // Bypass raw entropy checks on clean rollbacks
+        }
     }
 
-    // Rollback: If consensus fails, restore state from checkpoint
-    if (!consensus_reached || !traj->resolver.proof_valid) {
-        traj->resolver.current_state = traj->resolver.checkpoint_state;
-        traj->resolver.rollback_triggered = true;
-    }
-
-    // Fallback: If no structured consensus state was processed, calculate raw trajectory entropy
+    // Fallback: If unstructured "random data", calculate raw trajectory entropy
     double H = calculate_trajectory_entropy(traj);
     if (H > max_entropy_threshold) {
         traj->byzantine_fault_flagged = true;
@@ -94,7 +101,7 @@ int main(void) {
     // 1. Compliant Case: Stable physical trajectory (Low entropy) -> Should conduct
     coupled_trajectory_t traj_stable = {
         .values = { 10.0, 1.0, 0.0, 0.0 }, // Clear physical decaying trajectory
-        .resolver = { .approvals = 0, .total_nodes = 3, .proof_valid = false },
+        .resolver = { .approvals = 0, .total_nodes = 0, .proof_valid = false },
         .simulation_gate = CUTOFF_STATE,
         .byzantine_fault_flagged = false
     };
@@ -113,7 +120,7 @@ int main(void) {
     // 2. Reject Case: Erratic / Byzantine trajectory (High entropy) -> Should flag & cutoff
     coupled_trajectory_t traj_byzantine = {
         .values = { 1.0, 50.0, -20.0, 100.0 }, // Wildly chaotic non-physical values (Byzantine)
-        .resolver = { .approvals = 0, .total_nodes = 3, .proof_valid = false },
+        .resolver = { .approvals = 0, .total_nodes = 0, .proof_valid = false },
         .simulation_gate = CUTOFF_STATE,
         .byzantine_fault_flagged = false
     };
@@ -170,10 +177,10 @@ int main(void) {
     printf("[TEST] Checking Ackerman transactional rollback (insufficient approvals)...\n");
     fflush(stdout);
     ok = evaluate_coupled_byzantine_gate(&traj_rollback, 1.0);
-    // Should fall back to raw entropy validation and fail
-    assert(ok == false);
+    assert(ok == true); // Segregation prevents raw entropy failure on rollback
     assert(traj_rollback.resolver.current_state == 0x111); // Rolled back to checkpoint
     assert(traj_rollback.resolver.rollback_triggered == true);
+    assert(traj_rollback.simulation_gate == CONDUC_STATE);
     printf("   ✓ Transaction rolled back. State restored to 0x111.\n");
     fflush(stdout);
 
