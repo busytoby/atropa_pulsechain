@@ -232,6 +232,7 @@ libtsfi2.so
 /tests/test_auncient_sigplan_loop_bound
 /tests/test_auncient_sigplan_regions
 /tests/test_auncient_sigplan_linear
+/tests/test_auncient_voodoo_tmu
 /tests/output.xpl
 /scripts/compile_apdl
 /scripts/alsa_player
