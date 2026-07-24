@@ -408,9 +408,12 @@ frontend/compiled_yul.json
 /tests/test_auncient_vppd_avail
 /tools/auncient_gcc_vppd
 /tools/auncient_gcc_vppd.c
+/tools/tsfi_gcc_plugin
+/tools/tsfi_gcc_plugin.c
 /std/ddl_rod.algol61
 /strategies/dml_cone.cobol
 /tests/autodin_events.dat.bin
+
 
 
 
