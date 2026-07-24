@@ -120,6 +120,21 @@ bool dispatch_unified_coax_frame(unified_exoskeleton_t *exo,
         return false;
     }
 
+    // 6b. Policy Negotiation Check: If type == 'P' (Policy frame), check Ackerman consensus
+    if (pkt->type == 'P') {
+        uint32_t approvals = 0;
+        if (pkt->data[0] == '1') approvals++;
+        if (pkt->data[1] == '1') approvals++;
+        if (pkt->data[2] == '1') approvals++;
+
+        if (approvals < 2) {
+            // Insufficient social approvals -> Roll back and reject
+            strcpy(exo->nodes[target_id].buffer, exo->nodes[target_id].backup_val);
+            memcpy(exo->nodes[target_id].buffer_hash, exo->nodes[target_id].backup_hash, HASH_SIZE);
+            return false;
+        }
+    }
+
     // 7. Conduction established: Commit payload to target buffer
     exo->nodes[target_id].write_gate = CONDUC_STATE;
     strcpy(exo->nodes[target_id].buffer, pkt->data);
@@ -210,6 +225,53 @@ int main(void) {
     assert(strcmp(exo.nodes[2].buffer, "VAL_2") == 0); // Preserved
     assert(memcmp(hash_before, exo.nodes[2].buffer_hash, HASH_SIZE) == 0); // Hash preserved
     printf("   ✓ Corrupted frame dropped. Target Node 2 state rolled back.\n");
+    fflush(stdout);
+
+    // 4. Policy frames: Dispatching Kermit frame with type 'P'
+    // Node 1 currently holds the token (rotated to Node 1 in test 1)
+    
+    // Case 4a: Valid Ackerman Consensus (Node 0 and Node 1 approve -> "110") -> Should pass
+    printf("[TEST] Dispatching Kermit policy frame with majority approvals (110)...\n");
+    fflush(stdout);
+    
+    coax_kermit_packet_t policy_pkt = {
+        .mark = SOH,
+        .len = 6,
+        .seq = 2,
+        .type = 'P',
+        .data = "110"
+    };
+    policy_pkt.checksum = coax_kermit_checksum(&policy_pkt);
+    
+    // Advance target Node 2 heartbeat
+    exo.nodes[2].curr_heartbeat = 3;
+    
+    ok = dispatch_unified_coax_frame(&exo, 1, 2, &policy_pkt, 440.0, 0.85);
+    assert(ok == true);
+    assert(strcmp(exo.nodes[2].buffer, "110") == 0);
+    printf("   ✓ Policy frame committed. Consensus resolved successfully.\n");
+    fflush(stdout);
+
+    // Case 4b: Invalid Ackerman Consensus (only Node 0 approves -> "100") -> Should fail
+    printf("[TEST] Dispatching Kermit policy frame with insufficient approvals (100)...\n");
+    fflush(stdout);
+
+    coax_kermit_packet_t bad_policy_pkt = {
+        .mark = SOH,
+        .len = 6,
+        .seq = 3,
+        .type = 'P',
+        .data = "100"
+    };
+    bad_policy_pkt.checksum = coax_kermit_checksum(&bad_policy_pkt);
+
+    // Node 2 currently holds the token (rotated to Node 2 in case 4a)
+    // Advance target Node 0 heartbeat
+    exo.nodes[0].curr_heartbeat = 4;
+
+    ok = dispatch_unified_coax_frame(&exo, 2, 0, &bad_policy_pkt, 440.0, 0.85);
+    assert(ok == false);
+    printf("   ✓ Insufficient approvals policy frame successfully blocked.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
