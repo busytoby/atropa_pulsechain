@@ -7,9 +7,15 @@ help:
 	@echo "  make test-container  - Run Teddy Bear Diagnostics container E2E tests"
 	@echo "  make test-git-ci     - Run Git post-commit hook pipeline E2E tests"
 	@echo "  make test-unit       - Run Python unit tests under tests/"
+	@echo "  make sdk-benchmark   - Run Auncient SDK DbC contract latency benchmarks"
 
 test-all: test-dashboard test-container test-git-ci test-unit
 	@echo "All tests completed successfully."
+
+sdk-benchmark:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_sdk_benchmarks.c -o tests/test_auncient_sdk_benchmarks -lm -lrt
+	./tests/test_auncient_sdk_benchmarks
+
 
 test-dashboard:
 	python3 -m unittest tests/e2e/test_nonukes_dashboard.py
