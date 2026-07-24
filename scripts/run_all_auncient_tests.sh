@@ -611,4 +611,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_bgp_peering.c -o test
 gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_sdk_bgp_demo.c -o tests/test_auncient_sdk_bgp_demo -lm -lrt
 ./tests/test_auncient_sdk_bgp_demo
 
+# Compile and run Auncient BGP Route Reflector & Broadcast
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_bgp_reflector.c -o tests/test_auncient_bgp_reflector -lm -lrt
+./tests/test_auncient_bgp_reflector
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
