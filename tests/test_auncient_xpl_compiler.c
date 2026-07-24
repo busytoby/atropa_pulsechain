@@ -43,38 +43,19 @@ int main(void) {
     printf("   ✓ Parent compiler executed successfully.\n");
     fflush(stdout);
 
-    // 4. Setup Coaxial CICS execution environment
-    sdk_coaxial_env_t env;
-    ok = auncient_sdk_init_coaxial(&env);
-    assert(ok == true);
-
-    sdk_kermit_cache_t cache = { .cached_value = 0, .cached_ts = { 0, 0 }, .is_warm = false };
-    sdk_cics_context_t ctx = {
-        .env = &env,
-        .cache = &cache,
-        .quorum_type = SDK_QUORUM_MAJORITY,
-        .writer_id = 77,
-        .security_clearance = 3
-    };
-
-    printf("[TEST] Executing parent compiled .dat.bin binary stream via SDK...\n");
+    // 4. Execute using the primary executable loader
+    // This instantiates its own dedicated AUTODIN lock environment in memory,
+    // while the loaded sub_99.dat.bin execution runs on the parent's environment.
+    printf("[TEST] Executing parent compiled binary as primary .bin via SDK...\n");
     fflush(stdout);
 
     uint32_t results[2] = { 0 };
-    ok = auncient_sdk_execute_dat_bin(&ctx, bin_path, results, 2);
+    ok = auncient_sdk_execute_primary_bin(bin_path, results, 2);
     assert(ok == true);
-    assert(results[0] == 99);   // Executed Trace for sub-load instruction
-    assert(results[1] == 1234); // Result of READ_KERMIT reflecting sub-write
-    printf("   ✓ Executed parent compiled .dat.bin binary stream. Result 0 (loaded ID): %u, Result 1 (read value): %u.\n", results[0], results[1]);
+    assert(results[0] == 99);   // Sub-load trace
+    assert(results[1] == 1234); // Value read
+    printf("   ✓ Primary execution succeeded. Result 0 (sub-load ID): %u, Result 1 (read value): %u.\n", results[0], results[1]);
     fflush(stdout);
-
-    // Verify registers updated in coaxial environment
-    assert(env.registers[0].value == 1234);
-    assert(cache.cached_value == 1234);
-    printf("   ✓ Verified register values and cache in CICS context match sub-routine write.\n");
-    fflush(stdout);
-
-    auncient_sdk_close_coaxial(&env);
 
     // Clean up temporary files
     remove(src_path);

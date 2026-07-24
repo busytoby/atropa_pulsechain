@@ -189,6 +189,31 @@ bool auncient_sdk_compile_xpl_to_dat_bin(const char *xpl_source_path, const char
 // Forward declaration of internal executor to support clean cascading locks
 static bool auncient_sdk_execute_dat_bin_internal(sdk_cics_context_t *ctx, const char *dat_bin_path, uint32_t *results, int max_results);
 
+bool auncient_sdk_execute_primary_bin(const char *bin_path, uint32_t *results, int max_results) {
+    // 1. Initialize dedicated AUTODIN Spin-Lock environment in memory
+    sdk_coaxial_env_t env;
+    if (!auncient_sdk_init_coaxial(&env)) {
+        return false;
+    }
+
+    // 2. Setup context
+    sdk_kermit_cache_t cache = { .cached_value = 0, .cached_ts = { 0, 0 }, .is_warm = false };
+    sdk_cics_context_t ctx = {
+        .env = &env,
+        .cache = &cache,
+        .quorum_type = SDK_QUORUM_MAJORITY,
+        .writer_id = 100,
+        .security_clearance = 3
+    };
+
+    // 3. Execute
+    bool ok = auncient_sdk_execute_dat_bin(&ctx, bin_path, results, max_results);
+
+    // 4. Clean up allocated loopback
+    auncient_sdk_close_coaxial(&env);
+    return ok;
+}
+
 bool auncient_sdk_execute_dat_bin(sdk_cics_context_t *ctx, const char *dat_bin_path, uint32_t *results, int max_results) {
     // Acquire AUTODIN spin-lock for primary execution serialization
     if (!auncient_sdk_autodin_spin_lock(ctx, 0x111, 'F')) {
