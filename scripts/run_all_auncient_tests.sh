@@ -579,4 +579,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_mdev_coaxial.c -o tes
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_mdev_audio.c -o tests/test_auncient_mdev_audio -lm -lrt
 ./tests/test_auncient_mdev_audio
 
+# Compile and run Auncient ALU Penetration & Deployment
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_alu_penetration.c -o tests/test_auncient_alu_penetration -lm -lrt
+./tests/test_auncient_alu_penetration
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
