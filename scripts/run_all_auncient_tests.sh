@@ -335,6 +335,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_contract_invariant.c 
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_behavioral_subtyping.c -o tests/test_auncient_behavioral_subtyping -lm -lrt
 ./tests/test_auncient_behavioral_subtyping
 
+# Compile and run AUTODIN Contract Auditing
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_autodin_contract.c -o tests/test_auncient_autodin_contract -lm -lrt
+./tests/test_auncient_autodin_contract
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
