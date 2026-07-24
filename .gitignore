@@ -355,6 +355,8 @@ frontend/compiled_yul.json
 /tests/test_auncient_vpp_cache
 /tests/test_auncient_vpp_pipeline
 /tests/test_auncient_autodin_prefetch
+/tests/test_auncient_vpp_profiler
+
 
 
 

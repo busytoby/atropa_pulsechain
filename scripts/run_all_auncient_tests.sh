@@ -427,4 +427,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpp_pipeline.c -o tes
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_autodin_prefetch.c -o tests/test_auncient_autodin_prefetch -lm -lrt
 ./tests/test_auncient_autodin_prefetch
 
+# Compile and run VPP Latency Profiler Guard
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vpp_profiler.c -o tests/test_auncient_vpp_profiler -lm -lrt
+./tests/test_auncient_vpp_profiler
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
