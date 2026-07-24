@@ -172,6 +172,7 @@ libtsfi2.so
 /tests/test_auncient_pli_exception
 /tests/test_auncient_xplos_scheduler
 /tests/test_auncient_pli_based
+/tests/test_auncient_pli_based_dat
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
