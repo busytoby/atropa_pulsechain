@@ -95,6 +95,10 @@ gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -O3 tests/test_aunc
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -O3 tests/test_auncient_vca_fet.c -o tests/test_auncient_vca_fet -lm -lrt
 ./tests/test_auncient_vca_fet
 
+# Compile and run MKK FET Discharge
+gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -O3 tests/test_auncient_mkk_fet.c -o tests/test_auncient_mkk_fet -lm -lrt
+./tests/test_auncient_mkk_fet
+
 # Compile and run Integration Benchmarks
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_auncient_integration_bench.c -o tests/test_auncient_integration_bench -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_integration_bench
