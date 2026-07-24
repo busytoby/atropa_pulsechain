@@ -212,6 +212,7 @@ libtsfi2.so
 /tests/test_auncient_kermit_coax
 /tests/test_auncient_decnet_routing
 /tests/test_auncient_pdl_hoare
+/tests/test_auncient_safety_learning
 /scripts/alsa_player
 /temp_frames/
 /temp_tts/
