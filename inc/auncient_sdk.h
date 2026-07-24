@@ -11,6 +11,13 @@
 
 #define SDK_NUM_NODES 4
 
+typedef enum {
+    SDK_STATE_UNLOCKED = 0,
+    SDK_STATE_LOCKED = 1,
+    SDK_STATE_EXECUTING = 2,
+    SDK_STATE_COMMITTED = 3
+} sdk_typestate_t;
+
 // Rich status and diagnostic codes for ABI packets
 typedef enum {
     SDK_STATUS_OK = 0,
@@ -24,7 +31,9 @@ typedef enum {
     SDK_STATUS_ERR_MONOTONIC = 8,
     SDK_STATUS_ERR_ORACLE = 9,
     SDK_STATUS_ERR_HISTORY = 10,
-    SDK_STATUS_ERR_FRAME = 11
+    SDK_STATUS_ERR_FRAME = 11,
+    SDK_STATUS_ERR_TYPESTATE = 12,
+    SDK_STATUS_ERR_DEPENDENT_TYPE = 13
 } sdk_status_code_t;
 
 // Auncient ABI Packet Layout for Coaxial Socket Transmission
@@ -72,6 +81,7 @@ typedef struct {
     uint32_t writer_id;
     uint8_t security_clearance; // Embedded security clearance level
     bool has_lock;             // Tracks whether the active context holds the AUTODIN lock
+    sdk_typestate_t state;     // Typestate identifier
 } sdk_cics_context_t;
 
 // Batched operation structure
@@ -106,6 +116,12 @@ bool auncient_sdk_validate_history_constraints(const sdk_coaxial_env_t *old_env,
 
 // Frame Conditions (Modify Clauses)
 bool auncient_sdk_validate_frame_conditions(uint8_t opcode, const bool *approvals, int modified_node_idx);
+
+// Typestate transition validator
+bool auncient_sdk_transition_typestate(sdk_cics_context_t *ctx, sdk_typestate_t next_state);
+
+// Dependent Types Boundary Verification
+bool auncient_sdk_validate_dependent_types(const sdk_cics_context_t *ctx, uint8_t opcode, uint32_t val);
 
 // Precedence-Aware AUTODIN Spin-Lock Interface
 bool auncient_sdk_autodin_spin_lock(sdk_cics_context_t *ctx, uint32_t lock_token, char precedence);

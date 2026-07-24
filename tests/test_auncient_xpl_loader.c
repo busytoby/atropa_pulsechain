@@ -24,6 +24,7 @@ bool execute_xpl_payload(sdk_cics_context_t *ctx, const xpl_instruction_t *instr
     }
 
     // Execute instruction stream
+    auncient_sdk_transition_typestate(ctx, SDK_STATE_EXECUTING);
     for (int i = 0; i < count; i++) {
         uint32_t result = 0;
         printf("   [LOADER] Executing .xpl instruction %d: Opcode 0x%02X, Value %u\n",
@@ -32,12 +33,14 @@ bool execute_xpl_payload(sdk_cics_context_t *ctx, const xpl_instruction_t *instr
         bool ok = auncient_sdk_alu_execute(ctx, instructions[i].opcode, instructions[i].value, instructions[i].approvals, &result);
         if (!ok) {
             printf("   [LOADER] Instruction execution failed. Aborting and unlocking.\n");
+            auncient_sdk_transition_typestate(ctx, SDK_STATE_UNLOCKED);
             auncient_sdk_autodin_spin_unlock(ctx, 0x999);
             return false;
         }
     }
 
     // Release lock
+    auncient_sdk_transition_typestate(ctx, SDK_STATE_COMMITTED);
     auncient_sdk_autodin_spin_unlock(ctx, 0x999);
     printf("   [LOADER] Execution complete. AUTODIN spin-lock released.\n");
     return true;

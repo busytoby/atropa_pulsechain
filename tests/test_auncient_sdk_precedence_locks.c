@@ -23,7 +23,8 @@ void test_sdk_security_clearance_levels(void) {
         .cache = &cache,
         .quorum_type = SDK_QUORUM_MAJORITY,
         .writer_id = 10,
-        .security_clearance = 1 // Low clearance
+        .security_clearance = 1, // Low clearance
+        .state = SDK_STATE_EXECUTING
     };
 
     bool approvals[SDK_NUM_NODES] = { true, true, true, false };
@@ -39,7 +40,8 @@ void test_sdk_security_clearance_levels(void) {
         .cache = &cache,
         .quorum_type = SDK_QUORUM_MAJORITY,
         .writer_id = 11,
-        .security_clearance = 3 // High clearance
+        .security_clearance = 3, // High clearance
+        .state = SDK_STATE_EXECUTING
     };
 
     ok = auncient_sdk_alu_execute(&ctx_high, ALU_OP_WRITE_ABD, 950000, approvals, &result);

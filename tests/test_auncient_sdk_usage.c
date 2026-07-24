@@ -32,12 +32,12 @@ void test_sdk_grid_quorum(void) {
 
     // Case 2: Sufficient approvals for Grid (Nodes 0, 1, 2 approve -> Row 0 [0,1] + Col 0 [0,2])
     bool approvals_pass[SDK_NUM_NODES] = { true, true, true, false };
-    ok = auncient_sdk_cics_exec(&ctx, 9999, approvals_pass);
+    ok = auncient_sdk_cics_exec(&ctx, 9998, approvals_pass);
     assert(ok == true); // Should commit
 
     uint32_t val = 0;
     auncient_sdk_alu_execute(&ctx, ALU_OP_READ_KERMIT, 0, NULL, &val);
-    assert(val == 9999);
+    assert(val == 9998);
     printf("   ✓ Row + Column approvals committed successfully.\n");
     fflush(stdout);
 
@@ -91,7 +91,8 @@ void test_sdk_kermit_cache_invalidation(void) {
         .env = &env,
         .cache = &cache,
         .quorum_type = SDK_QUORUM_MAJORITY,
-        .writer_id = 3
+        .writer_id = 3,
+        .state = SDK_STATE_EXECUTING
     };
 
     // Direct ALU Write instruction (Node 0, 1, 2 approve)

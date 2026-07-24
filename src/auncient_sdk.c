@@ -105,6 +105,51 @@ bool auncient_sdk_validate_frame_conditions(uint8_t opcode, const bool *approval
     return true;
 }
 
+bool auncient_sdk_transition_typestate(sdk_cics_context_t *ctx, sdk_typestate_t next_state) {
+    if (!ctx) {
+        return false;
+    }
+    sdk_typestate_t cur = ctx->state;
+
+    // Allowed State Transitions:
+    // UNLOCKED -> LOCKED (via spin-lock)
+    // LOCKED -> EXECUTING (when executor starts)
+    // EXECUTING -> COMMITTED (when executor completes successfully)
+    // COMMITTED -> UNLOCKED (via spin-unlock)
+    // EXECUTING -> UNLOCKED (on load failure / rollback)
+    // LOCKED -> UNLOCKED (direct unlock without exec)
+    
+    if (next_state == SDK_STATE_LOCKED && cur == SDK_STATE_UNLOCKED) {
+        ctx->state = next_state;
+        return true;
+    }
+    if (next_state == SDK_STATE_EXECUTING && cur == SDK_STATE_LOCKED) {
+        ctx->state = next_state;
+        return true;
+    }
+    if (next_state == SDK_STATE_COMMITTED && cur == SDK_STATE_EXECUTING) {
+        ctx->state = next_state;
+        return true;
+    }
+    if (next_state == SDK_STATE_UNLOCKED &&
+        (cur == SDK_STATE_COMMITTED || cur == SDK_STATE_LOCKED || cur == SDK_STATE_EXECUTING)) {
+        ctx->state = next_state;
+        return true;
+    }
+
+    return false;
+}
+
+bool auncient_sdk_validate_dependent_types(const sdk_cics_context_t *ctx, uint8_t opcode, uint32_t val) {
+    if (opcode == ALU_OP_WRITE_ABD) {
+        // Dependent Parity Constraint: Grid Quorum requires even values
+        if (ctx->quorum_type == SDK_QUORUM_GRID && (val % 2 != 0)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 static bool check_ackerman_quorum(sdk_quorum_type_t type, const bool *approvals, const uint32_t *weights) {
     if (type == SDK_QUORUM_MAJORITY) {
         int count = 0;
@@ -175,6 +220,7 @@ bool auncient_sdk_autodin_spin_lock(sdk_cics_context_t *ctx, uint32_t lock_token
 
     if (rx_packet.payload_value == lock_token) {
         ctx->has_lock = true;
+        auncient_sdk_transition_typestate(ctx, SDK_STATE_LOCKED);
         return true;
     }
     return false;
@@ -197,6 +243,7 @@ void auncient_sdk_autodin_spin_unlock(sdk_cics_context_t *ctx, uint32_t lock_tok
     read(ctx->env->socket_fds[1], &rx_packet, sizeof(auncient_abi_packet_t));
     assert(rx_packet.payload_value == 0);
     ctx->has_lock = false;
+    auncient_sdk_transition_typestate(ctx, SDK_STATE_UNLOCKED);
     (void)lock_token;
 }
 
@@ -287,7 +334,8 @@ bool auncient_sdk_execute_primary_bin(const char *bin_path, uint32_t *results, i
         .quorum_type = SDK_QUORUM_MAJORITY,
         .writer_id = 100,
         .security_clearance = 3,
-        .has_lock = false
+        .has_lock = false,
+        .state = SDK_STATE_UNLOCKED
     };
 
     // 3. Execute
@@ -304,7 +352,16 @@ bool auncient_sdk_execute_dat_bin(sdk_cics_context_t *ctx, const char *dat_bin_p
         return false;
     }
 
+    // Transition state
+    auncient_sdk_transition_typestate(ctx, SDK_STATE_EXECUTING);
+
     bool ok = auncient_sdk_execute_dat_bin_internal(ctx, dat_bin_path, results, max_results);
+
+    if (ok) {
+        auncient_sdk_transition_typestate(ctx, SDK_STATE_COMMITTED);
+    } else {
+        auncient_sdk_transition_typestate(ctx, SDK_STATE_UNLOCKED);
+    }
 
     auncient_sdk_autodin_spin_unlock(ctx, 0x111);
     return ok;
@@ -460,6 +517,11 @@ bool auncient_sdk_alu_execute(sdk_cics_context_t *ctx, uint8_t alu_opcode, uint3
         return false; // Trapped security violation
     }
 
+    // Enforce Dependent Types PARITY checks
+    if (!auncient_sdk_validate_dependent_types(ctx, alu_opcode, target_val)) {
+        return false;
+    }
+
     if (alu_opcode == ALU_OP_READ_KERMIT) {
         // Read fast-path from warm cache
         if (cache->is_warm) {
@@ -501,6 +563,11 @@ bool auncient_sdk_alu_execute(sdk_cics_context_t *ctx, uint8_t alu_opcode, uint3
     }
 
     if (alu_opcode == ALU_OP_WRITE_ABD) {
+        // Typestate check: writing registers is strictly forbidden unless context is in EXECUTING/COMMITTED typestate
+        if (ctx->state != SDK_STATE_EXECUTING && ctx->state != SDK_STATE_COMMITTED) {
+            return false; // Typestate violation
+        }
+
         // Find max counter
         uint64_t max_counter = 0;
         for (int i = 0; i < SDK_NUM_NODES; i++) {
@@ -551,12 +618,15 @@ bool auncient_sdk_alu_execute(sdk_cics_context_t *ctx, uint8_t alu_opcode, uint3
 bool auncient_sdk_cics_exec(sdk_cics_context_t *ctx, uint32_t value, const bool *approvals) {
     bool orig_lock = ctx->has_lock;
     ctx->has_lock = true;
+    sdk_typestate_t orig_state = ctx->state;
+    ctx->state = SDK_STATE_EXECUTING;
     uint32_t quorum_val = 0;
     
     // Step 1: Execute Ackerman Quorum Evaluation ALU instruction
     auncient_sdk_alu_execute(ctx, ALU_OP_EVAL_ACKERMAN, 0, approvals, &quorum_val);
     if (quorum_val == 0) {
         ctx->has_lock = orig_lock;
+        ctx->state = orig_state;
         return false; // Rollback
     }
 
@@ -586,6 +656,7 @@ bool auncient_sdk_cics_exec(sdk_cics_context_t *ctx, uint32_t value, const bool 
     assert(rx_packet.writer_id == ctx->writer_id);
 
     ctx->has_lock = orig_lock;
+    ctx->state = orig_state;
     return true;
 }
 
@@ -596,6 +667,8 @@ bool auncient_sdk_batch_exec(sdk_cics_context_t *ctx, const sdk_batched_op_t *op
 
     bool orig_lock = ctx->has_lock;
     ctx->has_lock = true;
+    sdk_typestate_t orig_state = ctx->state;
+    ctx->state = SDK_STATE_EXECUTING;
 
     // Pirk co-processing router logic: If the batch contains more than 2 operations,
     // flag the operation route status.
@@ -617,11 +690,13 @@ bool auncient_sdk_batch_exec(sdk_cics_context_t *ctx, const sdk_batched_op_t *op
         bool ok = auncient_sdk_alu_execute(ctx, ops[i].opcode, ops[i].value, ops[i].approvals, &res);
         if (!ok) {
             ctx->has_lock = orig_lock;
+            ctx->state = orig_state;
             return false; // Abort whole batch on ALU failure
         }
         results[i] = res;
     }
 
     ctx->has_lock = orig_lock;
+    ctx->state = orig_state;
     return true;
 }

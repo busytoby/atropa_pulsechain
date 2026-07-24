@@ -82,7 +82,8 @@ int main(void) {
         .quorum_type = SDK_QUORUM_MAJORITY,
         .writer_id = 88,
         .security_clearance = 2, // Insufficient for TopSecret write
-        .has_lock = false
+        .has_lock = false,
+        .state = SDK_STATE_UNLOCKED
     };
 
     // Attempting load should fail behavioral subtyping verification
@@ -157,6 +158,38 @@ int main(void) {
     ok = auncient_sdk_validate_frame_conditions(ALU_OP_WRITE_ABD, approvals, 3);
     assert(ok == false);
     printf("   ✓ Frame conditions modification clause validated correctly.\n");
+    fflush(stdout);
+
+    // 11. Test Typestate Lifecycle transitions
+    printf("[TEST] Testing typestate lifecycle transitions...\n");
+    fflush(stdout);
+    low_clearance_ctx.state = SDK_STATE_UNLOCKED;
+    // Direct ALU execute of ABD write should be blocked in SDK_STATE_UNLOCKED state
+    ok = auncient_sdk_alu_execute(&low_clearance_ctx, ALU_OP_WRITE_ABD, 222, approvals, &results[0]);
+    assert(ok == false);
+    // Move to executing state
+    ok = auncient_sdk_transition_typestate(&low_clearance_ctx, SDK_STATE_LOCKED);
+    assert(ok == true);
+    ok = auncient_sdk_transition_typestate(&low_clearance_ctx, SDK_STATE_EXECUTING);
+    assert(ok == true);
+    // Write should pass now under executing state (if lock is active)
+    low_clearance_ctx.has_lock = true;
+    ok = auncient_sdk_alu_execute(&low_clearance_ctx, ALU_OP_WRITE_ABD, 222, approvals, &results[0]);
+    assert(ok == true);
+    printf("   ✓ Typestate transition lifecycle verified successfully.\n");
+    fflush(stdout);
+
+    // 12. Test Dependent Types boundary conditions (Grid Quorum requires Even parity values)
+    printf("[TEST] Testing dependent types boundary conditions...\n");
+    fflush(stdout);
+    low_clearance_ctx.quorum_type = SDK_QUORUM_GRID;
+    // Even value 222 (valid dependent type under Grid Quorum)
+    ok = auncient_sdk_validate_dependent_types(&low_clearance_ctx, ALU_OP_WRITE_ABD, 222);
+    assert(ok == true);
+    // Odd value 223 (invalid dependent type under Grid Quorum)
+    ok = auncient_sdk_validate_dependent_types(&low_clearance_ctx, ALU_OP_WRITE_ABD, 223);
+    assert(ok == false);
+    printf("   ✓ Dependent type grid parity checks verified successfully.\n");
     fflush(stdout);
 
     auncient_sdk_close_coaxial(&env);
