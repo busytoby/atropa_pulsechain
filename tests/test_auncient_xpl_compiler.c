@@ -128,6 +128,37 @@ int main(void) {
     printf("   ✓ Post-condition oracle verification trapped discrepancies successfully.\n");
     fflush(stdout);
 
+    // 9. Test History Constraints (Liskov-Wing Weight Conservation)
+    printf("[TEST] Testing history constraints (weight sum conservation)...\n");
+    fflush(stdout);
+    sdk_coaxial_env_t old_env;
+    sdk_coaxial_env_t new_env;
+    for (int i = 0; i < SDK_NUM_NODES; i++) {
+        old_env.weights[i] = 1;
+        new_env.weights[i] = 1;
+    }
+    // Conserved sum
+    ok = auncient_sdk_validate_history_constraints(&old_env, &new_env);
+    assert(ok == true);
+    // Violated sum
+    new_env.weights[0] = 5;
+    ok = auncient_sdk_validate_history_constraints(&old_env, &new_env);
+    assert(ok == false);
+    printf("   ✓ History constraints validated correctly.\n");
+    fflush(stdout);
+
+    // 10. Test Frame Conditions (Modify Clauses)
+    printf("[TEST] Testing frame conditions (modify clause gate)...\n");
+    fflush(stdout);
+    // Node 0 is approved in approvals list
+    ok = auncient_sdk_validate_frame_conditions(ALU_OP_WRITE_ABD, approvals, 0);
+    assert(ok == true);
+    // Node 3 is unapproved in approvals list (should fail write access)
+    ok = auncient_sdk_validate_frame_conditions(ALU_OP_WRITE_ABD, approvals, 3);
+    assert(ok == false);
+    printf("   ✓ Frame conditions modification clause validated correctly.\n");
+    fflush(stdout);
+
     auncient_sdk_close_coaxial(&env);
 
     // Clean up temporary files

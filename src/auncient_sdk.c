@@ -83,6 +83,28 @@ bool auncient_sdk_validate_monotonicity(const sdk_coaxial_env_t *env, int node_i
     return (new_counter > env->registers[node_idx].ts.counter);
 }
 
+bool auncient_sdk_validate_history_constraints(const sdk_coaxial_env_t *old_env, const sdk_coaxial_env_t *new_env) {
+    if (!old_env || !new_env) {
+        return false;
+    }
+    uint32_t old_sum = 0, new_sum = 0;
+    for (int i = 0; i < SDK_NUM_NODES; i++) {
+        old_sum += old_env->weights[i];
+        new_sum += new_env->weights[i];
+    }
+    return (old_sum == new_sum);
+}
+
+bool auncient_sdk_validate_frame_conditions(uint8_t opcode, const bool *approvals, int modified_node_idx) {
+    if (opcode == ALU_OP_WRITE_ABD) {
+        if (!approvals || modified_node_idx < 0 || modified_node_idx >= SDK_NUM_NODES) {
+            return false;
+        }
+        return approvals[modified_node_idx];
+    }
+    return true;
+}
+
 static bool check_ackerman_quorum(sdk_quorum_type_t type, const bool *approvals, const uint32_t *weights) {
     if (type == SDK_QUORUM_MAJORITY) {
         int count = 0;
@@ -414,6 +436,16 @@ static bool auncient_sdk_execute_dat_bin_internal(sdk_cics_context_t *ctx, const
     // Cascaded Rollback: If execution failed, restore snapshot
     if (!overall_ok) {
         memcpy(ctx->env->registers, register_snapshot, sizeof(register_snapshot));
+    } else {
+        // Liskov-Wing History Constraint Verification
+        sdk_coaxial_env_t old_env;
+        memcpy(old_env.registers, register_snapshot, sizeof(register_snapshot));
+        memcpy(old_env.weights, ctx->env->weights, sizeof(ctx->env->weights));
+
+        if (!auncient_sdk_validate_history_constraints(&old_env, ctx->env)) {
+            overall_ok = false;
+            memcpy(ctx->env->registers, register_snapshot, sizeof(register_snapshot));
+        }
     }
 
     return overall_ok;
@@ -493,9 +525,12 @@ bool auncient_sdk_alu_execute(sdk_cics_context_t *ctx, uint8_t alu_opcode, uint3
             .writer_id = ctx->writer_id
         };
 
-        // Write update to approving nodes
+        // Write update to approving nodes (guarded by Frame Conditions/Modify Clauses)
         for (int i = 0; i < SDK_NUM_NODES; i++) {
             if (approvals[i]) {
+                if (!auncient_sdk_validate_frame_conditions(alu_opcode, approvals, i)) {
+                    return false; // Frame Condition violation
+                }
                 env->registers[i].value = target_val;
                 env->registers[i].ts = new_ts;
             }

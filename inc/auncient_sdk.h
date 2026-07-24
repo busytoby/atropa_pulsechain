@@ -22,7 +22,9 @@ typedef enum {
     SDK_STATUS_ERR_SUBTYPING = 6,
     SDK_STATUS_ERR_TEMPORAL = 7,
     SDK_STATUS_ERR_MONOTONIC = 8,
-    SDK_STATUS_ERR_ORACLE = 9
+    SDK_STATUS_ERR_ORACLE = 9,
+    SDK_STATUS_ERR_HISTORY = 10,
+    SDK_STATUS_ERR_FRAME = 11
 } sdk_status_code_t;
 
 // Auncient ABI Packet Layout for Coaxial Socket Transmission
@@ -98,6 +100,12 @@ bool auncient_sdk_validate_monotonicity(const sdk_coaxial_env_t *env, int node_i
 
 // Post-Condition Oracle Verification
 bool auncient_sdk_verify_postcondition_oracle(const sdk_cics_context_t *ctx, uint8_t opcode, const bool *approvals, uint32_t result);
+
+// Liskov-Wing History Constraints
+bool auncient_sdk_validate_history_constraints(const sdk_coaxial_env_t *old_env, const sdk_coaxial_env_t *new_env);
+
+// Frame Conditions (Modify Clauses)
+bool auncient_sdk_validate_frame_conditions(uint8_t opcode, const bool *approvals, int modified_node_idx);
 
 // Precedence-Aware AUTODIN Spin-Lock Interface
 bool auncient_sdk_autodin_spin_lock(sdk_cics_context_t *ctx, uint32_t lock_token, char precedence);
