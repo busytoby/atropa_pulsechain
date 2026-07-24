@@ -159,6 +159,11 @@ bool auncient_sdk_compile_xpl_to_dat_bin(const char *xpl_source_path, const char
             if (fscanf(in, "%d %d %d %d", &a0, &a1, &a2, &a3) == 4) {
                 approvals_mask = (a0 ? 1 : 0) | (a1 ? 2 : 0) | (a2 ? 4 : 0) | (a3 ? 8 : 0);
             }
+        } else if (strcmp(op_str, "LOAD_SUB_XPL") == 0) {
+            opcode = ALU_OP_LOAD_SUB_XPL;
+            if (fscanf(in, "%u", &val) == 1) {
+                payload_val = val;
+            }
         } else {
             // Unknown opcode, skip line
             continue;
@@ -181,7 +186,22 @@ bool auncient_sdk_compile_xpl_to_dat_bin(const char *xpl_source_path, const char
     return true;
 }
 
+// Forward declaration of internal executor to support clean cascading locks
+static bool auncient_sdk_execute_dat_bin_internal(sdk_cics_context_t *ctx, const char *dat_bin_path, uint32_t *results, int max_results);
+
 bool auncient_sdk_execute_dat_bin(sdk_cics_context_t *ctx, const char *dat_bin_path, uint32_t *results, int max_results) {
+    // Acquire AUTODIN spin-lock for primary execution serialization
+    if (!auncient_sdk_autodin_spin_lock(ctx, 0x111, 'F')) {
+        return false;
+    }
+
+    bool ok = auncient_sdk_execute_dat_bin_internal(ctx, dat_bin_path, results, max_results);
+
+    auncient_sdk_autodin_spin_unlock(ctx, 0x111);
+    return ok;
+}
+
+static bool auncient_sdk_execute_dat_bin_internal(sdk_cics_context_t *ctx, const char *dat_bin_path, uint32_t *results, int max_results) {
     FILE *bin = fopen(dat_bin_path, "rb");
     if (!bin) {
         return false;
@@ -199,12 +219,6 @@ bool auncient_sdk_execute_dat_bin(sdk_cics_context_t *ctx, const char *dat_bin_p
         return false;
     }
 
-    // Acquire AUTODIN spin-lock for serialized execution
-    if (!auncient_sdk_autodin_spin_lock(ctx, 0x111, 'F')) {
-        fclose(bin);
-        return false;
-    }
-
     bool overall_ok = true;
 
     for (uint32_t i = 0; i < count; i++) {
@@ -217,6 +231,23 @@ bool auncient_sdk_execute_dat_bin(sdk_cics_context_t *ctx, const char *dat_bin_p
             fread(&mask, sizeof(uint32_t), 1, bin) != 1) {
             overall_ok = false;
             break;
+        }
+
+        if (opcode == ALU_OP_LOAD_SUB_XPL) {
+            // Cascaded load of other .dat.bin binaries from disk
+            char path[128];
+            snprintf(path, sizeof(path), "tests/sub_%u.dat.bin", val);
+            
+            // Execute the loaded dat.bin stream on the same AUTODIN loopback pipeline context
+            bool sub_ok = auncient_sdk_execute_dat_bin_internal(ctx, path, NULL, 0);
+            if (!sub_ok) {
+                overall_ok = false;
+                break;
+            }
+            if (results && (int)i < max_results) {
+                results[i] = val; // Store loaded ID as execution trace
+            }
+            continue;
         }
 
         bool approvals[SDK_NUM_NODES] = {
@@ -238,7 +269,6 @@ bool auncient_sdk_execute_dat_bin(sdk_cics_context_t *ctx, const char *dat_bin_p
         }
     }
 
-    auncient_sdk_autodin_spin_unlock(ctx, 0x111);
     fclose(bin);
     return overall_ok;
 }

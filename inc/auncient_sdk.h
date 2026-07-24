@@ -7,6 +7,7 @@
 #define ALU_OP_READ_KERMIT    0x10
 #define ALU_OP_WRITE_ABD      0x20
 #define ALU_OP_EVAL_ACKERMAN  0x30
+#define ALU_OP_LOAD_SUB_XPL   0x40
 
 #define SDK_NUM_NODES 4
 
