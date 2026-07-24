@@ -84,7 +84,8 @@ int main(void) {
         .security_clearance = 2, // Insufficient for TopSecret write
         .has_lock = false,
         .state = SDK_STATE_UNLOCKED,
-        .is_contract_checking = false
+        .is_contract_checking = false,
+        .last_blame = SDK_BLAME_NONE
     };
 
     // Attempting load should fail behavioral subtyping verification
@@ -175,7 +176,7 @@ int main(void) {
     assert(ok == true);
     // Write should pass now under executing state (if lock is active)
     low_clearance_ctx.has_lock = true;
-    ok = auncient_sdk_alu_execute(&low_clearance_ctx, ALU_OP_WRITE_ABD, 222, approvals, &results[0]);
+    ok = auncient_sdk_alu_execute(&low_clearance_ctx, ALU_OP_WRITE_ABD, 555, approvals, &results[0]);
     assert(ok == true);
     printf("   ✓ Typestate transition lifecycle verified successfully.\n");
     fflush(stdout);
@@ -224,6 +225,31 @@ int main(void) {
     ok = auncient_sdk_validate_contract_refinement(&parent_ctx, &child_ctx);
     assert(ok == false);
     printf("   ✓ Contract refinement pre/post rules verified successfully.\n");
+    fflush(stdout);
+
+    // 15. Test Blame Assignment semantics
+    printf("[TEST] Testing Findler-Felleisen blame assignments...\n");
+    fflush(stdout);
+    low_clearance_ctx.last_blame = SDK_BLAME_NONE;
+    low_clearance_ctx.security_clearance = 1; // Low clearance
+    // High-clearance value write (950000) fails pre-condition: blames the Caller
+    ok = auncient_sdk_alu_execute(&low_clearance_ctx, ALU_OP_WRITE_ABD, 950000, approvals, &results[0]);
+    assert(ok == false);
+    assert(low_clearance_ctx.last_blame == SDK_BLAME_CALLER);
+    printf("   ✓ Blame correctly assigned to Caller context.\n");
+    fflush(stdout);
+
+    // 16. Test Transition Invariants (Pre/Post Relation Constraints)
+    printf("[TEST] Testing pre/post relation transition invariants...\n");
+    fflush(stdout);
+    env.registers[0].value = 500; // Baseline state
+    // Conforming value transition (increasing/no regression)
+    ok = auncient_sdk_validate_transition_invariant(&env, 0, 600);
+    assert(ok == true);
+    // Non-conforming value transition (regressing value from 500 to 499)
+    ok = auncient_sdk_validate_transition_invariant(&env, 0, 499);
+    assert(ok == false);
+    printf("   ✓ Transition invariants trapped regression updates correctly.\n");
     fflush(stdout);
 
     auncient_sdk_close_coaxial(&env);

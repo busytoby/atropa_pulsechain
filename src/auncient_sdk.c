@@ -164,6 +164,20 @@ bool auncient_sdk_validate_contract_refinement(const sdk_cics_context_t *parent_
     return true;
 }
 
+void auncient_sdk_assign_blame(sdk_cics_context_t *ctx, sdk_blame_t blame_target) {
+    if (ctx) {
+        ctx->last_blame = blame_target;
+    }
+}
+
+bool auncient_sdk_validate_transition_invariant(const sdk_coaxial_env_t *env, int node_idx, uint32_t new_val) {
+    if (!env || node_idx < 0 || node_idx >= SDK_NUM_NODES) {
+        return false;
+    }
+    // Transition Invariant: values must not regress (new value >= pre-state value)
+    return (new_val >= env->registers[node_idx].value);
+}
+
 static bool check_ackerman_quorum(sdk_quorum_type_t type, const bool *approvals, const uint32_t *weights) {
     if (type == SDK_QUORUM_MAJORITY) {
         int count = 0;
@@ -350,7 +364,8 @@ bool auncient_sdk_execute_primary_bin(const char *bin_path, uint32_t *results, i
         .security_clearance = 3,
         .has_lock = false,
         .state = SDK_STATE_UNLOCKED,
-        .is_contract_checking = false
+        .is_contract_checking = false,
+        .last_blame = SDK_BLAME_NONE
     };
 
     // 3. Execute
@@ -416,6 +431,7 @@ static bool verify_subtyping(const sdk_cics_context_t *ctx, const char *path) {
 
         // Subtyping Rule: A loaded child library must not require security clearances higher than the parent
         if (!auncient_sdk_check_clearance(ctx, val)) {
+            auncient_sdk_assign_blame((sdk_cics_context_t *)ctx, SDK_BLAME_SUBLIBRARY);
             fclose(bin);
             return false; // Violates pre-condition weakening rule
         }
@@ -429,6 +445,7 @@ static bool verify_subtyping(const sdk_cics_context_t *ctx, const char *path) {
 
         // Contract Inheritance refinement verification
         if (!auncient_sdk_validate_contract_refinement(ctx, &child_ctx)) {
+            auncient_sdk_assign_blame((sdk_cics_context_t *)ctx, SDK_BLAME_SUBLIBRARY);
             fclose(bin);
             return false;
         }
@@ -501,6 +518,7 @@ static bool auncient_sdk_execute_dat_bin_internal(sdk_cics_context_t *ctx, const
         ctx->is_contract_checking = true;
         if (!auncient_sdk_validate_temporal_invariants(ctx, opcode, val)) {
             ctx->is_contract_checking = false;
+            auncient_sdk_assign_blame(ctx, SDK_BLAME_CALLER);
             overall_ok = false;
             break;
         }
@@ -539,6 +557,7 @@ static bool auncient_sdk_execute_dat_bin_internal(sdk_cics_context_t *ctx, const
         ctx->is_contract_checking = true;
         if (!auncient_sdk_validate_history_constraints(&old_env, ctx->env)) {
             ctx->is_contract_checking = false;
+            auncient_sdk_assign_blame(ctx, SDK_BLAME_CALLER);
             overall_ok = false;
             memcpy(ctx->env->registers, register_snapshot, sizeof(register_snapshot));
         }
@@ -554,16 +573,19 @@ bool auncient_sdk_alu_execute(sdk_cics_context_t *ctx, uint8_t alu_opcode, uint3
 
     // Enforce active Purity rules
     if (!auncient_sdk_validate_purity(ctx, alu_opcode)) {
+        auncient_sdk_assign_blame(ctx, SDK_BLAME_CALLER);
         return false;
     }
 
     // Enforce Active Security Clearance check
     if (!auncient_sdk_check_clearance(ctx, target_val)) {
+        auncient_sdk_assign_blame(ctx, SDK_BLAME_CALLER);
         return false; // Trapped security violation
     }
 
     // Enforce Dependent Types PARITY checks
     if (!auncient_sdk_validate_dependent_types(ctx, alu_opcode, target_val)) {
+        auncient_sdk_assign_blame(ctx, SDK_BLAME_CALLER);
         return false;
     }
 
@@ -602,6 +624,7 @@ bool auncient_sdk_alu_execute(sdk_cics_context_t *ctx, uint8_t alu_opcode, uint3
         ctx->is_contract_checking = true;
         if (!auncient_sdk_verify_postcondition_oracle(ctx, alu_opcode, approvals, res)) {
             ctx->is_contract_checking = false;
+            auncient_sdk_assign_blame(ctx, SDK_BLAME_CALLEE);
             return false; // Oracle mismatch detected
         }
         ctx->is_contract_checking = false;
@@ -613,6 +636,7 @@ bool auncient_sdk_alu_execute(sdk_cics_context_t *ctx, uint8_t alu_opcode, uint3
     if (alu_opcode == ALU_OP_WRITE_ABD) {
         // Typestate check: writing registers is strictly forbidden unless context is in EXECUTING/COMMITTED typestate
         if (ctx->state != SDK_STATE_EXECUTING && ctx->state != SDK_STATE_COMMITTED) {
+            auncient_sdk_assign_blame(ctx, SDK_BLAME_CALLER);
             return false; // Typestate violation
         }
 
@@ -630,6 +654,7 @@ bool auncient_sdk_alu_execute(sdk_cics_context_t *ctx, uint8_t alu_opcode, uint3
         for (int i = 0; i < SDK_NUM_NODES; i++) {
             if (approvals[i]) {
                 if (!auncient_sdk_validate_monotonicity(env, i, next_counter)) {
+                    auncient_sdk_assign_blame(ctx, SDK_BLAME_CALLER);
                     return false; // Monotonicity violation
                 }
             }
@@ -640,10 +665,21 @@ bool auncient_sdk_alu_execute(sdk_cics_context_t *ctx, uint8_t alu_opcode, uint3
             .writer_id = ctx->writer_id
         };
 
+        // Transition Invariant: Validate that new values do not regress (new value >= current register value)
+        for (int i = 0; i < SDK_NUM_NODES; i++) {
+            if (approvals[i]) {
+                if (!auncient_sdk_validate_transition_invariant(env, i, target_val)) {
+                    auncient_sdk_assign_blame(ctx, SDK_BLAME_CALLER);
+                    return false; // Transition invariant failure (value regression)
+                }
+            }
+        }
+
         // Write update to approving nodes (guarded by Frame Conditions/Modify Clauses)
         for (int i = 0; i < SDK_NUM_NODES; i++) {
             if (approvals[i]) {
                 if (!auncient_sdk_validate_frame_conditions(alu_opcode, approvals, i)) {
+                    auncient_sdk_assign_blame(ctx, SDK_BLAME_CALLER);
                     return false; // Frame Condition violation
                 }
                 env->registers[i].value = target_val;

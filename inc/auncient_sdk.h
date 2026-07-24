@@ -18,6 +18,13 @@ typedef enum {
     SDK_STATE_COMMITTED = 3
 } sdk_typestate_t;
 
+typedef enum {
+    SDK_BLAME_NONE = 0,
+    SDK_BLAME_CALLER = 1,
+    SDK_BLAME_CALLEE = 2,
+    SDK_BLAME_SUBLIBRARY = 3
+} sdk_blame_t;
+
 // Rich status and diagnostic codes for ABI packets
 typedef enum {
     SDK_STATUS_OK = 0,
@@ -35,7 +42,8 @@ typedef enum {
     SDK_STATUS_ERR_TYPESTATE = 12,
     SDK_STATUS_ERR_DEPENDENT_TYPE = 13,
     SDK_STATUS_ERR_PURITY = 14,
-    SDK_STATUS_ERR_REFINEMENT = 15
+    SDK_STATUS_ERR_REFINEMENT = 15,
+    SDK_STATUS_ERR_TRANSITION = 16
 } sdk_status_code_t;
 
 // Auncient ABI Packet Layout for Coaxial Socket Transmission
@@ -85,6 +93,7 @@ typedef struct {
     bool has_lock;             // Tracks whether the active context holds the AUTODIN lock
     sdk_typestate_t state;     // Typestate identifier
     bool is_contract_checking; // Purity check flag
+    sdk_blame_t last_blame;    // Blame identifier
 } sdk_cics_context_t;
 
 // Batched operation structure
@@ -131,6 +140,12 @@ bool auncient_sdk_validate_purity(const sdk_cics_context_t *ctx, uint8_t opcode)
 
 // Contract Refinement check
 bool auncient_sdk_validate_contract_refinement(const sdk_cics_context_t *parent_ctx, const sdk_cics_context_t *child_ctx);
+
+// Blame Assignment
+void auncient_sdk_assign_blame(sdk_cics_context_t *ctx, sdk_blame_t blame_target);
+
+// Transition Invariants (Pre/Post Relation Constraints)
+bool auncient_sdk_validate_transition_invariant(const sdk_coaxial_env_t *env, int node_idx, uint32_t new_val);
 
 // Precedence-Aware AUTODIN Spin-Lock Interface
 bool auncient_sdk_autodin_spin_lock(sdk_cics_context_t *ctx, uint32_t lock_token, char precedence);
