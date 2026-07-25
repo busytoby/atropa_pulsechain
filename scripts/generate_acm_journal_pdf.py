@@ -59,17 +59,17 @@ class NumberedCanvas(canvas.Canvas):
         is_even = (self._pageNumber % 2 == 0)
         
         left_header_margin = 0.5 * inch if is_even else 0.75 * inch
-        right_header_margin = 8.5 * inch if is_even else 8.25 * inch
+        right_header_margin = 6.5 * inch if is_even else 6.25 * inch
         
         if is_even:
-            self.drawString(left_header_margin, 6.5 * inch, "LORE COMPENDIUM")
-            self.drawRightString(right_header_margin, 6.5 * inch, "AUNCIENT RECORDS")
+            self.drawString(left_header_margin, 8.5 * inch, "LORE COMPENDIUM")
+            self.drawRightString(right_header_margin, 8.5 * inch, "AUNCIENT RECORDS")
         else:
-            self.drawString(left_header_margin, 6.5 * inch, "AUNCIENT RECORDS")
-            self.drawRightString(right_header_margin, 6.5 * inch, "LORE COMPENDIUM")
+            self.drawString(left_header_margin, 8.5 * inch, "AUNCIENT RECORDS")
+            self.drawRightString(right_header_margin, 8.5 * inch, "LORE COMPENDIUM")
             
         self.setLineWidth(0.5)
-        self.line(left_header_margin, 6.4 * inch, right_header_margin, 6.4 * inch)
+        self.line(left_header_margin, 8.4 * inch, right_header_margin, 8.4 * inch)
         
         # Footer text
         self.line(left_header_margin, 0.6 * inch, right_header_margin, 0.6 * inch)
@@ -148,13 +148,22 @@ def parse_markdown_table(rows, body_style, col_width):
         while len(row) < num_cols:
             row.append(Paragraph("", body_style))
             
+    # Compute padding based on column count to avoid negative availWidth exceptions
+    padding = 2
+    if num_cols > 8:
+        padding = 0.5
+    elif num_cols > 4:
+        padding = 1
+        
     t = Table(data, colWidths=col_widths)
     t.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
         ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
-        ('TOPPADDING', (0,0), (-1,-1), 2),
+        ('BOTTOMPADDING', (0,0), (-1,-1), padding),
+        ('TOPPADDING', (0,0), (-1,-1), padding),
+        ('LEFTPADDING', (0,0), (-1,-1), padding),
+        ('RIGHTPADDING', (0,0), (-1,-1), padding),
     ]))
     return t
 
@@ -203,9 +212,10 @@ def build_pdf():
             
     files.sort(key=lambda x: x[0])
     
-    page_width = 9.0 * inch
-    page_height = 7.0 * inch
-    spacing = 0.4 * inch
+    # 7x9 inch portrait page size (Standard Amazon KDP format)
+    page_width = 7.0 * inch
+    page_height = 9.0 * inch
+    spacing = 0.3 * inch
     col_width = (page_width - 1.25 * inch - spacing) / 2.0
     col_height = page_height - 1.0 * inch - 0.5 * inch
     
@@ -247,7 +257,6 @@ def build_pdf():
     
     story = []
     
-    # Establish the alternating page template cycle starting with odd page
     story.append(NextPageTemplate(['even_page', 'odd_page']))
     
     story.append(Paragraph("<b>COMPENDIUM OF LORE AND HISTORICAL TRANSCRIPTS</b>", title_style))
