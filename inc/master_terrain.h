@@ -113,4 +113,7 @@ bool master_terrain_batchelder_consumption(const uint32_t *scheduled_path, uint3
 /* Wallenstein Scan Statistic: Scans the terrain grid for spatial clusters of high-elevation points using a sliding window */
 bool master_terrain_wallenstein_scan(const terrain_cell_t *cell, uint32_t threshold, uint32_t *out_cluster_count);
 
+/* Grid Smoothing Filter: Attenuates and smooths coordinate heights to pass the Wallenstein spatial scan below threshold */
+bool master_terrain_smooth_grid(terrain_cell_t *cell, uint32_t target_max_sum);
+
 #endif /* MASTER_TERRAIN_H */
