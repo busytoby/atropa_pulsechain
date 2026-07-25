@@ -129,6 +129,7 @@ libtsfi2.so
 /tests/test_auncient_register_parity
 /tests/test_auncient_autodin_dyseac
 /tests/test_auncient_discovery_replenishment
+/tests/test_auncient_spe_audit
 /tests/test_auncient_fourier_alsa_feedback
 /tests/test_auncient_fourier_bus
 /tests/test_auncient_gguf_acab
