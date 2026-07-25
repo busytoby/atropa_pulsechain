@@ -110,7 +110,13 @@ int main(void) {
     status = tsfi_cli_process_line(ws, cmd_lex_imp_pass);
     assert(status == 0);
 
+    printf("[TEST] Dispatching LEXICON_LIST to print active vocabulary...\n");
+    char cmd_lex_list[128] = "LEXICON_LIST";
+    status = tsfi_cli_process_line(ws, cmd_lex_list);
+    assert(status == 0);
+
     remove("target_dictionary.dat.bin"); // Clean up generated file
+
 
 
 

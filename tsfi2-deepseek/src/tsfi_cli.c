@@ -784,7 +784,23 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
         return 0;
     }
 
+    // Check if the input is a LEXICON_LIST command
+    if (strcmp(input, "LEXICON_LIST") == 0) {
+        uint32_t count = tpu_registry.total_registered;
+        tsfi_io_printf(stdout, "=================================================================================\n");
+        tsfi_io_printf(stdout, "IDX | WORD NAME                      | F1 (Hz) | F2 (Hz) | DECAY (s) | WMQ  | ABI \n");
+        tsfi_io_printf(stdout, "---------------------------------------------------------------------------------\n");
+        for (uint32_t i = 0; i < count; i++) {
+            auncient_transfluxor_word_t *w = &tpu_registry.registered_words[i];
+            tsfi_io_printf(stdout, "%03u | %-30s | %7.1f | %7.1f | %9.3f | 0x%02X | 0x%02X\n",
+                           i, w->name, w->f1, w->f2, w->decay, w->wmq_cmd, w->abi_op);
+        }
+        tsfi_io_printf(stdout, "=================================================================================\n");
+        return 0;
+    }
+
     // Check if the input is a COBOL_ALTER command
+
 
 
 
