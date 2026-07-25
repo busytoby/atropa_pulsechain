@@ -547,3 +547,30 @@ bool master_terrain_smooth_grid(terrain_cell_t *cell, uint32_t target_max_sum) {
 
     return true;
 }
+
+/* Scan Criteria Verification: Iteratively applies smoothing filters until zero hotspots are detected, meeting the criteria to pass the scan */
+bool master_terrain_verify_scan_criteria(terrain_cell_t *cell, uint32_t threshold) {
+    if (!cell || threshold == 0) return false;
+
+    uint32_t cluster_count = 0;
+    uint32_t passes = 0;
+
+    /* Loop until spatial clusters sum exactly to zero to meet compliance criteria */
+    while (passes < 5) {
+        if (!master_terrain_wallenstein_scan(cell, threshold, &cluster_count)) {
+            return false;
+        }
+
+        if (cluster_count == 0) {
+            return true; /* Scan criteria successfully met */
+        }
+
+        /* Apply smoothing filter targeting the threshold criteria */
+        if (!master_terrain_smooth_grid(cell, threshold)) {
+            return false;
+        }
+        passes++;
+    }
+
+    return (cluster_count == 0);
+}

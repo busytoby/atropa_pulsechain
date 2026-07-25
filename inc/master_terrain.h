@@ -116,4 +116,7 @@ bool master_terrain_wallenstein_scan(const terrain_cell_t *cell, uint32_t thresh
 /* Grid Smoothing Filter: Attenuates and smooths coordinate heights to pass the Wallenstein spatial scan below threshold */
 bool master_terrain_smooth_grid(terrain_cell_t *cell, uint32_t target_max_sum);
 
+/* Scan Criteria Verification: Iteratively applies smoothing filters until zero hotspots are detected, meeting the criteria to pass the scan */
+bool master_terrain_verify_scan_criteria(terrain_cell_t *cell, uint32_t threshold);
+
 #endif /* MASTER_TERRAIN_H */
