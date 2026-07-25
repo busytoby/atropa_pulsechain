@@ -80,3 +80,12 @@ To preserve system safety, all agent modules (including Antigravity and spawned 
 1.  **Coaxial Loopback Transmission:** Agents must write compiled words to the shared Unix socket loops (`socket_fds`). This simulates physical coaxial transmission and forces all commands through the hardware gating filters.
 2.  **Shared Registry Memory:** The vocabulary database must reside in a centralized, shared registry. Agents cannot define ad-hoc registries; they must query the shared master registry to ensure coherent word mapping.
 3.  **Continuous Hash Verification:** Pre-commit hooks and validation workflows must parse compiled `.dat.bin` files and verify their calculated hashes against the shared registry before finalizing state modifications.
+
+---
+
+## 4. Acoustic Passwords & Security Windows
+
+Speaking an acoustic handshake functions as a dynamic **acoustic password** rather than a static authentication token:
+*   **Dynamic Wave Authentication:** Instead of sending cleartext strings, the agent speaks a complementary wave profile. The password is only validated if the summation of the challenge and response frequencies achieves perfect resonance ($1000\text{Hz}$ / $2000\text{Hz}$).
+*   **Temporal Expiration:** The Wheeler Jump opens the validation window, which naturally closes as the vactrol LDR decays. This ensures the acoustic password expires within milliseconds, preventing replay attacks.
+
