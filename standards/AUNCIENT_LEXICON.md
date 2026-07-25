@@ -64,3 +64,40 @@ All serialized `.dat.bin` dictionary databases must embed a 4-byte signature pre
 1.  **Registry Extensibility:** Future revisions of the structure will add optional trailing blocks (such as dynamic execution gas limits) after the `abi_op` field, maintaining backward binary compatibility.
 2.  **Forward Compatibility Gating:** Registries parsing `AUNC` databases must ignore trailing double-precision blocks when loaded by legacy parsers, preventing buffer overflows.
 
+---
+
+## 6. Quantization and the Qing/LAU/Yue Substrate
+
+To avoid continuous dynamic coefficient calculations in the core execution loops, the system maps emotional aspects to a finite quantization domain:
+
+### The Qing Substrate Mapping
+*   **The qAFFECTION Substrate:** Sentiment components like **AFFECTION** map directly to an on-chain Qing state node (`qAFFECTION`) tracking transaction interest and token balances.
+*   **Yue Relational Interface:** The Yue contract provides permanent relational mapping interface equations that link the localized perspective of the active **LAU** (such as the `mariarahel` LAU) with the `qAFFECTION` substrate.
+*   **Soeng Parameter Resolution:** The outputs of the Soeng contracts dynamically resolve to discrete integer constants on-chain:
+    *   `xie.Power`: Dictates the loop feedback gain and wave amplitude bounds.
+    *   `zi.Spin`: Dictates orbital camera rotations and 3D Lissajous phase shifts.
+    *   `xia.Charge`: Establishes the baseline modular exponentiation foundation.
+
+The TPU queries these Soeng parameters to apply per-channel quantization scale factors during systolic array execution steps, ensuring the physical waveform dynamics are governed strictly by on-chain consensus state boundaries.
+
+---
+
+## 7. Runtime Auditing and VoxPL Compliance
+
+### Lexicon Compliance Auditor (`LEXICON_AUDIT`)
+The CLI includes a dedicated diagnostics engine to inspect vocabulary integrity:
+*   **Harmonic Collision Check:** Warns if any registered words share overlapping formant frequencies ($F_1$ or $F_2$) that could cause signal interference.
+*   **Gating Validation:** Verifies that words prefixed with `WMQ_` or `ABI_` strictly conform to the required decay periods ($0.4\text{s}$ and $0.2\text{s}$, respectively).
+
+### VoxPL Emotional Modifier (`EMO_SCALE`)
+VoxPL syntax supports declaring emotional scaling factors directly in the word definition script:
+```text
+JUMP SPK_LOCK_SCSI
+FORMANT 440.0 880.0
+DECAY 0.4
+EMO_SCALE 2.5
+WMQ 0x10
+```
+This maps the target multiplier into the word's amplitude parameter, allowing compilers to pre-quantize and scale physical waveform outputs during interactive tests.
+
+
