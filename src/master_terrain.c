@@ -552,6 +552,11 @@ bool master_terrain_smooth_grid(terrain_cell_t *cell, uint32_t target_max_sum) {
 bool master_terrain_verify_scan_criteria(terrain_cell_t *cell, uint32_t threshold) {
     if (!cell || threshold == 0) return false;
 
+    /* Overt Enemy Check: If the grid exhibits Stieber's data reduction pattern, immediately fail and refuse to verify */
+    if (master_terrain_detect_stieber(cell)) {
+        return false;
+    }
+
     uint32_t cluster_count = 0;
     uint32_t passes = 0;
 
