@@ -5,6 +5,8 @@
 
 extern const struct wl_pointer_listener pointer_listener;
 extern const struct wl_keyboard_listener keyboard_listener;
+extern const struct wl_touch_listener touch_listener;
+
 extern const struct wl_data_device_listener data_device_listener;
 extern const struct wl_seat_listener_v10 seat_listener;
 

@@ -289,6 +289,51 @@ const struct wl_keyboard_listener keyboard_listener = {
     .repeat_info = keyboard_handle_repeat_info
 };
 
+static void touch_handle_down(void *data, struct wl_touch *touch, uint32_t serial, uint32_t time, struct wl_surface *surface, int32_t id, wl_fixed_t x, wl_fixed_t y) {
+    (void)touch; (void)serial; (void)time; (void)surface; (void)id;
+    VulkanSystem *s = (VulkanSystem *)data;
+    s->mouse_x = wl_fixed_to_int(x);
+    s->mouse_y = wl_fixed_to_int(y);
+    s->mouse_down = true;
+}
+
+static void touch_handle_up(void *data, struct wl_touch *touch, uint32_t serial, uint32_t time, int32_t id) {
+    (void)touch; (void)serial; (void)time; (void)id;
+    VulkanSystem *s = (VulkanSystem *)data;
+    s->mouse_down = false;
+}
+
+static void touch_handle_motion(void *data, struct wl_touch *touch, uint32_t time, int32_t id, wl_fixed_t x, wl_fixed_t y) {
+    (void)touch; (void)time; (void)id;
+    VulkanSystem *s = (VulkanSystem *)data;
+    s->mouse_x = wl_fixed_to_int(x);
+    s->mouse_y = wl_fixed_to_int(y);
+
+    if (s->mouse_down && s->paint_buffer) {
+        uint32_t *pixels = (uint32_t *)s->paint_buffer->data;
+        int radius = 5;
+        for (int dy = -radius; dy <= radius; dy++) {
+            for (int dx = -radius; dx <= radius; dx++) {
+                int px = s->mouse_x + dx;
+                int py = s->mouse_y + dy;
+                if (px >= 0 && px < (int)s->paint_buffer->width && py >= 0 && py < (int)s->paint_buffer->height) {
+                    if (dx*dx + dy*dy <= radius*radius) {
+                        pixels[py * s->paint_buffer->width + px] = 0xFFFFFFFF; // White
+                    }
+                }
+            }
+        }
+    }
+}
+
+const struct wl_touch_listener touch_listener = {
+    .down = touch_handle_down,
+    .up = touch_handle_up,
+    .motion = touch_handle_motion,
+    .frame = (void*)input_noop,
+    .cancel = (void*)input_noop,
+};
+
 static void seat_handle_name(void *data, struct wl_seat *seat, const char *name) {
     (void)data; (void)seat;
     printf("[TSFI_VULKAN] Seat Name: %s\n", name);
@@ -311,6 +356,12 @@ static void seat_handle_capabilities(void *data, struct wl_seat *seat, uint32_t 
         wl_pointer_add_listener(s->pointer, &pointer_listener, s);
         printf("[TSFI_VULKAN] Pointer Attached.\n");
     }
+    // Bind WL_SEAT_CAPABILITY_TOUCH for tablet stylus/pen inputs
+    if ((caps & 4) && !s->touch) {
+        s->touch = wl_seat_get_touch(seat);
+        wl_touch_add_listener(s->touch, &touch_listener, s);
+        printf("[TSFI_VULKAN] Touch/Tablet Pen Attached.\n");
+    }
 }
 
 const struct wl_seat_listener_v10 seat_listener = { 
@@ -318,3 +369,4 @@ const struct wl_seat_listener_v10 seat_listener = {
     .name = seat_handle_name,
     .release = seat_handle_release
 };
+

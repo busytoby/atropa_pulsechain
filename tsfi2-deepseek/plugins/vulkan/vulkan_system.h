@@ -37,7 +37,9 @@ DEFINE_MAPPED_STRUCT(VulkanSystem,
 
     struct wl_pointer *pointer;
     struct wl_keyboard *keyboard;
+    struct wl_touch *touch;
     struct wl_surface *surface;
+
     struct zwp_linux_dmabuf_v1 *dmabuf;
     struct wl_buffer *dma_buffer;
     VkImage dma_image;
