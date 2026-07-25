@@ -727,7 +727,65 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
         return 0;
     }
 
+    // Check if the input is a LEXICON_IMPORT command
+    if (strncmp(input, "LEXICON_IMPORT ", 15) == 0) {
+        char filename[128] = "";
+        int parsed = sscanf(input, "LEXICON_IMPORT %127s", filename);
+        if (parsed != 1) {
+            tsfi_io_printf(stdout, "[LEXICON ERROR] Invalid LEXICON_IMPORT syntax.\n");
+            return 1;
+        }
+
+        // Rule 13: Enforce conforming .dat.bin extension check
+        size_t len_fn = strlen(filename);
+        if (len_fn < 8 || (strcasecmp(filename + len_fn - 8, ".dat.bin") != 0)) {
+            tsfi_io_printf(stdout, "[LEXICON REJECT] Lexicon import target must have a .dat.bin extension.\n");
+            return 1;
+        }
+
+        FILE *f = fopen(filename, "rb");
+        if (!f) {
+            tsfi_io_printf(stdout, "[LEXICON ERROR] Could not open file '%s' for reading.\n", filename);
+            return 1;
+        }
+
+        // Read and validate Auncient signature
+        char sig[4];
+        if (fread(sig, 1, 4, f) != 4 || memcmp(sig, "AUNC", 4) != 0) {
+            tsfi_io_printf(stdout, "[LEXICON REJECT] Invalid dictionary file header signature.\n");
+            fclose(f);
+            return 1;
+        }
+
+        // Read word count
+        uint32_t count = 0;
+        if (fread(&count, sizeof(count), 1, f) != 1) {
+            tsfi_io_printf(stdout, "[LEXICON ERROR] Failed to read word count.\n");
+            fclose(f);
+            return 1;
+        }
+
+        // Reset and load vocabulary
+        auncient_sdk_init_transfluxor_registry(&tpu_registry);
+        double now = get_time_sec();
+        uint32_t loaded_count = 0;
+
+        for (uint32_t i = 0; i < count; i++) {
+            auncient_transfluxor_word_t word;
+            if (fread(&word, sizeof(auncient_transfluxor_word_t), 1, f) == 1) {
+                if (auncient_sdk_register_transfluxor_word(&tpu_registry, &word)) {
+                    tpu_registration_times[loaded_count++] = now;
+                }
+            }
+        }
+        fclose(f);
+
+        tsfi_io_printf(stdout, "[LEXICON IMPORT SUCCESS] Imported %u words from '%s' successfully.\n", loaded_count, filename);
+        return 0;
+    }
+
     // Check if the input is a COBOL_ALTER command
+
 
 
 
