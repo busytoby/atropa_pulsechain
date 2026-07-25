@@ -1438,6 +1438,10 @@ bin/test_contract_coefficients_suite: tests/test_contract_coefficients_suite.c $
 	@mkdir -p bin
 	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LDFLAGS)
 
+bin/test_mariarahel_lau_view: tests/test_mariarahel_lau_view.c $(OBJ_DIR)/tsfi_parc_contract_coefficients.o
+	@mkdir -p bin
+	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LDFLAGS)
+
 bin/test_pulsechain_lp_matrix_suite: tests/test_pulsechain_lp_matrix_suite.c $(OBJ_DIR)/tsfi_parc_pulsechain_lp_matrix.o $(OBJ_DIR)/tsfi_parc_ingerman_alg141.o
 	@mkdir -p bin
 	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LDFLAGS)
