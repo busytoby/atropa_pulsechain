@@ -740,3 +740,16 @@ bool master_terrain_verify_ref_count(int32_t current_ref, int32_t decrement_val,
     }
     return true;
 }
+
+/* Buffer Limit Verification: Validates write length boundaries against container storage limits to prevent overfills */
+bool master_terrain_verify_buffer_limits(uint32_t write_len, uint32_t current_len, uint32_t max_capacity, bool *out_overfill_detected) {
+    if (!out_overfill_detected) return false;
+
+    /* Check if the incoming payload size exceeds remaining container capacity */
+    if (write_len > (max_capacity - current_len)) {
+        *out_overfill_detected = true;
+    } else {
+        *out_overfill_detected = false;
+    }
+    return true;
+}
