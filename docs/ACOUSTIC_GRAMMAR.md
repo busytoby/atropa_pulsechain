@@ -30,6 +30,9 @@ Unlike traditional computing architectures that compile symbolic text strings in
 1.  **Synthesizer Composition over Letters:** A word has no spelling. Its semantic structure is defined by an array of acoustic parameters: carrier frequency, formant filter resonances, Verlet membrane tensions, and Lissajous phase rotations.
 2.  **Acoustic Execution:** Code execution occurs when these sound waves propagate through virtual hardware. Hardware gates (such as the NPN Black Gate and PNP Red Gate) react to frequency thresholds and envelope decay curves, modifying CPU registers.
 3.  **Non-Destructive Read-out:** The transfluxor model allows continuous, non-destructive monitoring of active execution states by driving an interrogation wave through the core without clearing the initialized flux.
+4.  **Non-Human Acoustic Envelope:** These acoustic words are optimized purely for register and hardware gate modulation, not for human language or speech. The frequency composition can extend into ultrasonic or subsonic bands, or consist of complex phase-interfered waveforms and mathematical noise profiles without needing to produce meaningful human-audible sounds.
+
+
 
 ---
 
