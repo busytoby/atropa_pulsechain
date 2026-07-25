@@ -138,6 +138,7 @@ libtsfi2.so
 /tests/test_auncient_electrostatic_sustain
 /tests/test_auncient_cs3_wse_scanner
 /tests/test_auncient_word_resolver
+/tests/test_auncient_word_validation
 /tests/test_auncient_fourier_alsa_feedback
 /tests/test_auncient_fourier_bus
 /tests/test_auncient_gguf_acab
