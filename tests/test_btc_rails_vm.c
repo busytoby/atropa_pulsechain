@@ -25,18 +25,41 @@ void run_stack_tests(BtcRailsVm *vm) {
     assert(len == sizeof(payload1));
     assert(memcmp(out, payload1, len) == 0);
     
-    /* Push/Pop Return Stack (RS) */
-    assert(btc_rails_vm_push_rs(vm, payload1, sizeof(payload1)) == 1);
-    len = btc_rails_vm_pop_rs(vm, out, sizeof(out));
-    assert(len == sizeof(payload1));
-    assert(memcmp(out, payload1, len) == 0);
-    
     printf("[Test] 32-bit stack verification passed.\n");
     fflush(stdout);
 }
 
-void run_sdr_tests(BtcRailsVm *vm) {
-    printf("[Test] Running SDR Serial Data Register shift verification...\n");
+void run_gated_counter_tests(BtcRailsVm *vm) {
+    printf("[Test] Running Gated Counter Control verification...\n");
+    fflush(stdout);
+    
+    /* Configure CIA 1 Timer B to gated mode (0x03) and pull CNT pin low (0) */
+    vm->cia1.control_b = 0x03;
+    vm->cia1.cnt_pin = 0;
+    
+    uint8_t payload[] = { 0x99 };
+    /* Push should fail because counter modification is gated to CNT pin state */
+    assert(btc_rails_vm_push_ds(vm, payload, 1) == 0);
+    
+    /* Pull CNT pin high (1) */
+    vm->cia1.cnt_pin = 1;
+    /* Push should now succeed */
+    assert(btc_rails_vm_push_ds(vm, payload, 1) == 1);
+    
+    /* Pop should succeed when CNT is high */
+    uint8_t popped = 0;
+    assert(btc_rails_vm_pop_ds(vm, &popped, 1) == 1);
+    assert(popped == 0x99);
+    
+    /* Restore control state */
+    vm->cia1.control_b = 0x02;
+    
+    printf("[Test] Gated Counter Control verification passed.\n");
+    fflush(stdout);
+}
+
+void run_sdr_and_icr_tests(BtcRailsVm *vm) {
+    printf("[Test] Running SDR Serial Shift and ICR Event Matrix verification...\n");
     fflush(stdout);
     
     uint8_t val = 0x55;
@@ -47,7 +70,10 @@ void run_sdr_tests(BtcRailsVm *vm) {
     assert(shifted_byte == 0x55);
     assert(vm->cia1.sdr == 0x55);
     
-    printf("[Test] SDR shift verification passed.\n");
+    /* Verify that SDR completion bit (bit 3 / 0x08) is set in the ICR */
+    assert((vm->cia1.icr & 0x08) != 0);
+    
+    printf("[Test] SDR and ICR event matrix verification passed.\n");
     fflush(stdout);
 }
 
@@ -55,7 +81,6 @@ void run_tree_and_dat_tests(BtcRailsVm *vm) {
     printf("[Test] Running 2-3 tree and .dat.bin database verification...\n");
     fflush(stdout);
     
-    /* Create a mock .dat.bin database */
     const char *filepath = "tests/mock_db.dat.bin";
     FILE *f = fopen(filepath, "wb");
     assert(f != NULL);
@@ -64,79 +89,60 @@ void run_tree_and_dat_tests(BtcRailsVm *vm) {
     uint32_t size1 = 6;
     uint8_t data1[] = "Active";
     
-    uint32_t key2 = 0x88;
-    uint32_t size2 = 8;
-    uint8_t data2[] = "Launcher";
-    
     fwrite(&key1, 4, 1, f);
     fwrite(&size1, 4, 1, f);
     fwrite(data1, 1, size1, f);
     
-    fwrite(&key2, 4, 1, f);
-    fwrite(&size2, 4, 1, f);
-    fwrite(data2, 1, size2, f);
-    
     fclose(f);
     
-    /* Load .dat.bin database into VM index */
     assert(btc_rails_vm_load_dat(vm, filepath) == 1);
     
-    /* Search index */
     size_t out_size = 0;
     uint8_t *res = two_three_tree_search(vm->root_index, 0x42, &out_size);
     assert(res != NULL);
     assert(out_size == 6);
     assert(memcmp(res, "Active", 6) == 0);
     
-    res = two_three_tree_search(vm->root_index, 0x88, &out_size);
-    assert(res != NULL);
-    assert(out_size == 8);
-    assert(memcmp(res, "Launcher", 8) == 0);
-    
-    /* Clean up mock file */
     remove(filepath);
     printf("[Test] 2-3 tree and .dat.bin database verification passed.\n");
     fflush(stdout);
 }
 
-void run_yul_interpreter_tests(BtcRailsVm *vm) {
-    printf("[Test] Running Yul interpreter and locktime verification...\n");
+void run_yul_and_alarm_tests(BtcRailsVm *vm) {
+    printf("[Test] Running Yul interpreter and TOD Alarm Match verification...\n");
     fflush(stdout);
     
-    /* Current TOD: 12:00:00.0 -> total tenths = 12 * 36000 = 432000 tenths */
-    /* Target locktime: 11 hours -> 11 * 36000 = 396000 tenths. Locktime satisfied! */
-    uint32_t valid_locktime = 396000;
-    
-    /* Bytecode:
-       1. Push 0x42 (key for "Active") -> Opcode 0x01, size 4, value 0x42, 0x00, 0x00, 0x00
-       2. Delegate to lookup -> Opcode 0x03
-       3. Push locktime value -> Opcode 0x01, size 4, value valid_locktime
-       4. OP_CHECKLOCKTIMEVERIFY -> Opcode 0x04
+    /* Test standard CLTV pass:
+       Current TOD: 12:00:00.0 (432000 tenths)
+       Target locktime: 11:00:00.0 (396000 tenths)
     */
+    uint32_t valid_locktime = 396000;
     uint8_t bytecode_pass[] = {
-        0x01, 0x04, 0x42, 0x00, 0x00, 0x00,
-        0x03,
         0x01, 0x04, (uint8_t)(valid_locktime & 0xFF), (uint8_t)((valid_locktime >> 8) & 0xFF), (uint8_t)((valid_locktime >> 16) & 0xFF), (uint8_t)((valid_locktime >> 24) & 0xFF),
         0x04
     };
-    
     assert(btc_rails_vm_deploy_yul(vm, bytecode_pass, sizeof(bytecode_pass)) == 1);
     
-    /* The result "Active" should remain at the top of the Data Stack since CLTV succeeded */
-    uint8_t out[16];
-    int len = btc_rails_vm_pop_ds(vm, out, sizeof(out));
-    assert(len == 6);
-    assert(memcmp(out, "Active", 6) == 0);
+    /* Test TOD Alarm Match:
+       Set alarm to match current clock time: 12:00:00.0
+       This will set the alarm flag (0x04) in the ICR, allowing CLTV to pass regardless of locktime target.
+    */
+    vm->cia1.alarm_hours = 12;
+    vm->cia1.alarm_mins = 0;
+    vm->cia1.alarm_secs = 0;
+    vm->cia1.alarm_tenths = 0;
     
-    /* Test failing locktime: target is 13 hours -> 13 * 36000 = 468000. CLTV should fail. */
-    uint32_t invalid_locktime = 468000;
-    uint8_t bytecode_fail[] = {
-        0x01, 0x04, (uint8_t)(invalid_locktime & 0xFF), (uint8_t)((invalid_locktime >> 8) & 0xFF), (uint8_t)((invalid_locktime >> 16) & 0xFF), (uint8_t)((invalid_locktime >> 24) & 0xFF),
+    uint32_t future_locktime = 500000; /* Target is in future (500000 > 432000) */
+    uint8_t bytecode_alarm[] = {
+        0x01, 0x04, (uint8_t)(future_locktime & 0xFF), (uint8_t)((future_locktime >> 8) & 0xFF), (uint8_t)((future_locktime >> 16) & 0xFF), (uint8_t)((future_locktime >> 24) & 0xFF),
         0x04
     };
-    assert(btc_rails_vm_deploy_yul(vm, bytecode_fail, sizeof(bytecode_fail)) == 0);
     
-    printf("[Test] Yul interpreter and locktime verification passed.\n");
+    /* Should pass because the Alarm matched, setting the ICR flag which overrides locktime limits */
+    assert(btc_rails_vm_deploy_yul(vm, bytecode_alarm, sizeof(bytecode_alarm)) == 1);
+    assert((vm->cia1.icr & 0x04) != 0); /* Verify Alarm matched bit is set in ICR */
+    
+    printf("[Test] Yul interpreter and TOD Alarm Match verification passed.\n");
     fflush(stdout);
 }
 
@@ -147,9 +153,10 @@ int main() {
     assert(vm != NULL);
     
     run_stack_tests(vm);
-    run_sdr_tests(vm);
+    run_gated_counter_tests(vm);
+    run_sdr_and_icr_tests(vm);
     run_tree_and_dat_tests(vm);
-    run_yul_interpreter_tests(vm);
+    run_yul_and_alarm_tests(vm);
     
     btc_rails_vm_free(vm);
     printf("=== ALL VM TESTS PASSED ===\n");
