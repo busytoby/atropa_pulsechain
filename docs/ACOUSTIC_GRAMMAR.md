@@ -69,12 +69,33 @@ Execution is driven by passing the synthesized sound wave through virtual optoel
     *   **NPN Black Gate (Voiced):** Conduction through this gate represents voiced excitation (sound pressure), enabling register writes.
     *   **PNP Red Gate (Unvoiced):** Conduction through this gate represents unvoiced friction noise, routing execution to diagnostic subroutines.
 
+## 5. Dual-Domain Transfluxor Words (ABI and WinchesterMQ Coordination)
+
+A Transfluxor word is structurally divided into two concurrent domains that operate in phase lock:
+
+1.  **The Acoustic Domain:** Governs the physical parameters of sound generation, containing the bowing force amplitude, vactrol LDR decay lag, and active voltage signal level.
+2.  **The Operational Domain:** Governs system-level execution, containing the WinchesterMQ SCSI command, the target ABI Accessor contract address, and the required security clearance level.
+
+```
+       +-------------------------------------------------------+
+       |                  TRANSFLUXOR WORD                     |
+       +---------------------------+---------------------------+
+       |      ACOUSTIC DOMAIN      |    OPERATIONAL DOMAIN     |
+       |  - Bowing Force           |  - WinchesterMQ Command   |
+       |  - Vactrol Decay Lag      |  - ABI Opcode             |
+       |  - Signal Voltage         |  - Target Address         |
+       +---------------------------+---------------------------+
+```
+
+When the Wheeler Jump initializes a Transfluxor word, it writes to both domains simultaneously. The physical parameters establish the decay bounds and visual trajectories, while the operational parameters configure the bus locks and register modifications. Execution cycles automatically halt once the physical signal decays below the $2.0\text{V}$ retention limit.
+
 ---
 
-## 5. Summary of Operation
+## 6. Summary of Operation
 
 To compile and run a program under the Acoustic Grammar:
 1.  The compiler outputs a sequence of frequency-formant sweep coordinates instead of an assembly text file.
-2.  The loader executes a Wheeler Jump, setting the initial state of the virtual transfluxor.
+2.  The loader executes a Wheeler Jump, setting the initial state of the virtual transfluxor and configuring the ABI/WMQ routes.
 3.  The synthesizer plays the wave sweeps, driving the vactrol coils and transistor gates.
 4.  The system transitions its CPU registers dynamically in response to the sound, completing execution when the audio envelope decays.
+
