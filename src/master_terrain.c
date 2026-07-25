@@ -664,3 +664,14 @@ bool master_terrain_write_descriptor(const master_terrain_descriptor_t *desc, ui
     memory[desc->address + index_val] = val;
     return true;
 }
+
+/* Signal Amplification: Compensates for coaxial transmission line loss using a boost gain factor based on distance attenuation */
+bool master_terrain_amplify_signal(double input_signal, double attenuation, double *out_amplified) {
+    if (input_signal < 0.0 || attenuation < 0.0 || !out_amplified) return false;
+
+    /* Signal boost logic:
+       Multiplies input signal by a gain factor directly proportional to the measured attenuation loss */
+    double gain_factor = 1.0 + (attenuation * 0.15);
+    *out_amplified = input_signal * gain_factor;
+    return true;
+}

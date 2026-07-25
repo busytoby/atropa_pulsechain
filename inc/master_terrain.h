@@ -134,4 +134,7 @@ bool master_terrain_defragment_pool(uint32_t *page_addresses, uint32_t count, ui
 /* Descriptor-Based Safe Write: Validates bounds and write permissions before writing data, protecting descriptors from corruptive overwrites */
 bool master_terrain_write_descriptor(const master_terrain_descriptor_t *desc, uint8_t *memory, uint32_t index_val, uint8_t val);
 
+/* Signal Amplification: Compensates for coaxial transmission line loss using a boost gain factor based on distance attenuation */
+bool master_terrain_amplify_signal(double input_signal, double attenuation, double *out_amplified);
+
 #endif /* MASTER_TERRAIN_H */
