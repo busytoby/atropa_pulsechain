@@ -3,14 +3,14 @@ import re
 import datetime
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
-from reportlab.platypus import BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer, PageBreak, FrameBreak
+from reportlab.platypus import BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer, PageBreak, FrameBreak, Table, TableStyle, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_JUSTIFY, TA_CENTER
+from reportlab.lib import colors
 from reportlab.pdfgen import canvas
 
 def get_file_date(filepath):
     filename = os.path.basename(filepath)
-    # Check for date in filename: YYYY_MM_DD or YYYY-MM-DD
     match = re.search(r'(\d{4})[_-](\d{2})[_-](\d{2})', filename)
     if match:
         try:
@@ -18,7 +18,6 @@ def get_file_date(filepath):
         except ValueError:
             pass
             
-    # Try reading the first few lines of the file for dates
     try:
         with open(filepath, 'r', encoding='utf-8') as f:
             for _ in range(15):
@@ -69,17 +68,87 @@ class NumberedCanvas(canvas.Canvas):
         self.drawCentredString(4.5 * inch, 0.4 * inch, page_text)
         self.restoreState()
 
-def clean_markdown_text(text):
+def inline_md_to_html(text):
     import html
-    # Strip markdown headers
-    text = re.sub(r'^#+\s*', '', text, flags=re.MULTILINE)
-    # Strip links formatting
-    text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text)
-    # Strip formatting chars
-    text = text.replace('**', '').replace('*', '').replace('`', '').replace('_', '')
-    # Escape HTML special characters
     text = html.escape(text)
-    return text.strip()
+    
+    # Balance backticks to prevent tags mismatching
+    if text.count('`') % 2 != 0:
+        text = text.rsplit('`', 1)[0]
+        
+    parts = text.split('`')
+    new_parts = []
+    for idx, part in enumerate(parts):
+        if idx % 2 == 1:
+            new_parts.append(f'<font face="Courier">{part}</font>')
+        else:
+            if part.count('**') % 2 == 0:
+                bold_parts = part.split('**')
+                b_new = []
+                for b_idx, b_part in enumerate(bold_parts):
+                    if b_idx % 2 == 1:
+                        b_new.append(f'<b>{b_part}</b>')
+                    else:
+                        if b_part.count('*') % 2 == 0:
+                            italic_parts = b_part.split('*')
+                            i_new = []
+                            for i_idx, i_part in enumerate(italic_parts):
+                                if i_idx % 2 == 1:
+                                    i_new.append(f'<i>{i_part}</i>')
+                                else:
+                                    i_new.append(i_part)
+                            b_new.append(''.join(i_new))
+                        else:
+                            b_new.append(b_part.replace('*', ''))
+                part = ''.join(b_new)
+            else:
+                part = part.replace('**', '')
+            new_parts.append(part)
+    return ''.join(new_parts)
+
+def parse_markdown_table(rows, body_style, col_width):
+    # Parse table rows into cell paragraph flowables
+    data = []
+    headers_done = False
+    for r in rows:
+        r = r.strip()
+        if not r or r.startswith('|---') or r.startswith('|:---') or r.startswith('|-'):
+            continue
+        cells = [c.strip() for c in r.split('|')]
+        # Filter empty leading/trailing split cells
+        if cells and cells[0] == '':
+            cells = cells[1:]
+        if cells and cells[-1] == '':
+            cells = cells[:-1]
+        
+        parsed_row = []
+        for cell in cells:
+            html_cell = inline_md_to_html(cell)
+            parsed_row.append(Paragraph(html_cell, body_style))
+        if parsed_row:
+            data.append(parsed_row)
+            
+    if not data:
+        return None
+        
+    num_cols = max(len(row) for row in data)
+    # Equal columns distribution
+    col_widths = [col_width / float(num_cols)] * num_cols
+    
+    # Pad shorter rows to match max columns
+    for row in data:
+        while len(row) < num_cols:
+            row.append(Paragraph("", body_style))
+            
+    t = Table(data, colWidths=col_widths)
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+        ('TOPPADDING', (0,0), (-1,-1), 2),
+    ]))
+    return t
 
 def build_pdf():
     lore_dir = "lore"
@@ -90,10 +159,8 @@ def build_pdf():
             date = get_file_date(path)
             files.append((date, path))
             
-    # Sort chronologically
     files.sort(key=lambda x: x[0])
     
-    # 9x7 inch custom page size
     page_width = 9.0 * inch
     page_height = 7.0 * inch
     margin = 0.5 * inch
@@ -149,12 +216,62 @@ def build_pdf():
         story.append(Paragraph(f"<i>Published: {date.strftime('%B %d, %Y')}</i>", ParagraphStyle('ArtDate', parent=body_style, fontName='Times-Italic', fontSize=7.5)))
         
         with open(path, 'r', encoding='utf-8') as file_in:
-            content = file_in.read()
-            paragraphs = content.split('\n\n')
-            for p in paragraphs:
-                cleaned = clean_markdown_text(p)
-                if cleaned:
-                    story.append(Paragraph(cleaned, body_style))
+            lines = file_in.readlines()
+            
+        i = 0
+        while i < len(lines):
+            line = lines[i].strip()
+            
+            # Detect and parse tables
+            if line.startswith('|'):
+                table_lines = []
+                while i < len(lines) and lines[i].strip().startswith('|'):
+                    table_lines.append(lines[i])
+                    i += 1
+                t_flowable = parse_markdown_table(table_lines, body_style, col_width)
+                if t_flowable:
+                    story.append(Spacer(1, 4))
+                    story.append(t_flowable)
+                    story.append(Spacer(1, 4))
+                continue
+                
+            # Detect images: ![alt](path)
+            img_match = re.search(r'!\[[^\]]*\]\(([^)]+)\)', line)
+            if img_match:
+                img_path = img_match.group(1).strip()
+                # Clean up query params if any
+                img_path = img_path.split('?')[0]
+                ext = os.path.splitext(img_path)[1].lower()
+                if ext in ['.jpg', '.jpeg', '.png', '.gif', '.bmp'] and os.path.exists(img_path):
+                    try:
+                        # Wrap image with correct proportional dimensions
+                        img_flow = Image(img_path)
+                        img_flow.drawWidth = col_width - 10
+                        img_flow.drawHeight = 1.2 * inch
+                        story.append(Spacer(1, 4))
+                        story.append(img_flow)
+                        story.append(Spacer(1, 4))
+                    except Exception:
+                        pass
+                i += 1
+                continue
+                
+            # Process standard paragraphs
+            if line:
+                # Accumulate paragraphs split by empty lines
+                p_text = []
+                while i < len(lines) and lines[i].strip():
+                    p_text.append(lines[i].strip())
+                    i += 1
+                full_p = ' '.join(p_text)
+                # Strip markdown headers if any
+                full_p = re.sub(r'^#+\s*', '', full_p)
+                html_p = inline_md_to_html(full_p)
+                if html_p:
+                    story.append(Paragraph(html_p, body_style))
+            else:
+                i += 1
+                
         story.append(Spacer(1, 0.1 * inch))
         
     doc.build(story, canvasmaker=NumberedCanvas)
