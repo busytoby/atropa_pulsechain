@@ -131,4 +131,7 @@ bool master_terrain_document_qloss(uint64_t waat, uint64_t luo, uint32_t loss_va
 /* Defragment Pool: Consolidates active and fragmented memory pages to recover locked address blocks */
 bool master_terrain_defragment_pool(uint32_t *page_addresses, uint32_t count, uint32_t *out_consolidated_count);
 
+/* Descriptor-Based Safe Write: Validates bounds and write permissions before writing data, protecting descriptors from corruptive overwrites */
+bool master_terrain_write_descriptor(const master_terrain_descriptor_t *desc, uint8_t *memory, uint32_t index_val, uint8_t val);
+
 #endif /* MASTER_TERRAIN_H */

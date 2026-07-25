@@ -645,3 +645,22 @@ bool master_terrain_defragment_pool(uint32_t *page_addresses, uint32_t count, ui
     *out_consolidated_count = write_idx;
     return true;
 }
+
+/* Descriptor-Based Safe Write: Validates bounds and write permissions before writing data, protecting descriptors from corruptive overwrites */
+bool master_terrain_write_descriptor(const master_terrain_descriptor_t *desc, uint8_t *memory, uint32_t index_val, uint8_t val) {
+    if (!desc || !memory) return false;
+
+    /* Out of bounds write protection check */
+    if (index_val >= desc->length) {
+        return false;
+    }
+
+    /* Write permission tag check (e.g. flag 0x02 represents write permissions enabled) */
+    if ((desc->flags & 0x02) == 0) {
+        return false; /* Write access violation */
+    }
+
+    /* Perform memory write securely inside descriptor bounds */
+    memory[desc->address + index_val] = val;
+    return true;
+}
