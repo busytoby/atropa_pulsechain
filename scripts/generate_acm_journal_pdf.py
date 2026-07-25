@@ -3,7 +3,7 @@ import re
 import datetime
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
-from reportlab.platypus import BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer, PageBreak, FrameBreak, Table, TableStyle, Image, NextPageTemplate
+from reportlab.platypus import BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer, PageBreak, FrameBreak, Table, TableStyle, Image, NextPageTemplate, KeepTogether
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_JUSTIFY, TA_CENTER, TA_LEFT
 from reportlab.lib import colors
@@ -228,8 +228,10 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
     
     for date, path in files:
         title = os.path.basename(path).replace(".md", "").replace("_", " ").title()
-        story.append(Paragraph(f"<b>ARTICLE: {title}</b>", ParagraphStyle('ArtTitle', parent=title_style, alignment=TA_LEFT, fontSize=9.5, spaceBefore=8)))
-        story.append(Paragraph(f"<i>Published: {date.strftime('%B %d, %Y')}</i>", ParagraphStyle('ArtDate', parent=body_style, fontName='Times-Italic', fontSize=7.5)))
+        
+        art_flowables = []
+        art_flowables.append(Paragraph(f"<b>ARTICLE: {title}</b>", ParagraphStyle('ArtTitle', parent=title_style, alignment=TA_LEFT, fontSize=9.5, spaceBefore=8)))
+        art_flowables.append(Paragraph(f"<i>Published: {date.strftime('%B %d, %Y')}</i>", ParagraphStyle('ArtDate', parent=body_style, fontName='Times-Italic', fontSize=7.5)))
         
         with open(path, 'r', encoding='utf-8') as file_in:
             lines = file_in.readlines()
@@ -245,9 +247,9 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                     i += 1
                 t_flowable = parse_markdown_table(table_lines, body_style, col_width)
                 if t_flowable:
-                    story.append(Spacer(1, 4))
-                    story.append(t_flowable)
-                    story.append(Spacer(1, 4))
+                    art_flowables.append(Spacer(1, 4))
+                    art_flowables.append(t_flowable)
+                    art_flowables.append(Spacer(1, 4))
                 continue
                 
             if line:
@@ -256,10 +258,19 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                     p_text.append(lines[i].strip())
                     i += 1
                 full_p = ' '.join(p_text)
-                process_text_block(full_p, body_style, col_width, story)
+                process_text_block(full_p, body_style, col_width, art_flowables)
             else:
                 i += 1
                 
+        # Group Title, Date, and the first text paragraph/table together to prevent orphans
+        if len(art_flowables) >= 3:
+            together_flowables = art_flowables[:3]
+            remaining_flowables = art_flowables[3:]
+            story.append(KeepTogether(together_flowables))
+            story.extend(remaining_flowables)
+        else:
+            story.extend(art_flowables)
+            
         story.append(Spacer(1, 0.1 * inch))
         
     doc.build(story, canvasmaker=NumberedCanvas)
