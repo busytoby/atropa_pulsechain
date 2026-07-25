@@ -36,4 +36,14 @@ bool master_terrain_rosenfeld_tensor(double charge, double velocity, double *out
 /* Ferractor Word Accumulator: Packages multiple 16-bit word values into a single 32-bit register value */
 bool master_terrain_ferractor_pack(const uint16_t *words, uint32_t count, uint32_t *out_packed);
 
+#define TRACKER_MAX_WORDS 32
+typedef struct {
+    uint32_t word_ids[TRACKER_MAX_WORDS];
+    uint32_t counts[TRACKER_MAX_WORDS];
+    uint32_t unique_count;
+} master_terrain_word_tracker_t;
+
+/* Track word usage and increment frequency counter */
+bool master_terrain_track_word(master_terrain_word_tracker_t *tracker, uint32_t word_id);
+
 #endif /* MASTER_TERRAIN_H */

@@ -110,3 +110,26 @@ bool master_terrain_ferractor_pack(const uint16_t *words, uint32_t count, uint32
     *out_packed = accumulator;
     return true;
 }
+
+/* Track word usage and increment frequency counter */
+bool master_terrain_track_word(master_terrain_word_tracker_t *tracker, uint32_t word_id) {
+    if (!tracker) return false;
+
+    /* Search if word is already tracked */
+    for (uint32_t i = 0; i < tracker->unique_count; i++) {
+        if (tracker->word_ids[i] == word_id) {
+            tracker->counts[i]++;
+            return true;
+        }
+    }
+
+    /* Add new word if space permits */
+    if (tracker->unique_count < TRACKER_MAX_WORDS) {
+        uint32_t idx = tracker->unique_count++;
+        tracker->word_ids[idx] = word_id;
+        tracker->counts[idx] = 1;
+        return true;
+    }
+
+    return false;
+}
