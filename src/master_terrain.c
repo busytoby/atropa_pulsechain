@@ -136,3 +136,28 @@ bool master_terrain_track_word(master_terrain_word_tracker_t *tracker, uint32_t 
 
     return false;
 }
+
+/* Relative QING Packaging: Packs coordinate values of multiple target cells relative to a parent cell context */
+bool master_terrain_pack_relative_qings(const terrain_cell_t *parent, const terrain_cell_t *targets, uint32_t count, uint32_t *out_packed) {
+    if (!parent || !targets || count == 0 || !out_packed) return false;
+
+    /* Pack coordinate values relative to the parent context values */
+    uint32_t accumulator = 0;
+    uint32_t parent_val = 0;
+    for (int i = 0; i < 4; i++) {
+        parent_val += parent->latitude_bytes[i];
+    }
+
+    for (uint32_t i = 0; i < count && i < 4; i++) {
+        uint32_t target_val = 0;
+        for (int j = 0; j < 4; j++) {
+            target_val += targets[i].latitude_bytes[j];
+        }
+        /* Relative calculation modulo 256 for each coordinate field slot */
+        uint8_t relative_diff = (uint8_t)((target_val - parent_val) & 0xFF);
+        accumulator |= ((uint32_t)relative_diff << (i * 8));
+    }
+    
+    *out_packed = accumulator;
+    return true;
+}

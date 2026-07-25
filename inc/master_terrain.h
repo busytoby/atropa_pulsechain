@@ -46,4 +46,7 @@ typedef struct {
 /* Track word usage and increment frequency counter */
 bool master_terrain_track_word(master_terrain_word_tracker_t *tracker, uint32_t word_id);
 
+/* Relative QING Packaging: Packs coordinate values of multiple target cells relative to a parent cell context */
+bool master_terrain_pack_relative_qings(const terrain_cell_t *parent, const terrain_cell_t *targets, uint32_t count, uint32_t *out_packed);
+
 #endif /* MASTER_TERRAIN_H */
