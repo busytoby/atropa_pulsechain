@@ -274,11 +274,17 @@ static int handle_query_command(WaveSystem *ws, const char *new_d) {
             } else {
                 tsfi_io_printf(stdout, "[RPC] Error: Storage read failed.\n");
             }
+        } else if (strcmp(action, "SEND") == 0) {
+            if (tsfi_pulse_rpc_send_wmq_transaction(resolved_address, formatted_data)) {
+                tsfi_io_printf(stdout, "[RPC] Transaction sent successfully.\n");
+            } else {
+                tsfi_io_printf(stdout, "[RPC] Error: Transaction send failed.\n");
+            }
         } else {
             tsfi_io_printf(stdout, "[RPC] Error: Unknown query action '%s'.\n", action);
         }
     } else {
-        tsfi_io_printf(stdout, "[RPC] Usage: 0.0 <CALL|STORAGE> <address|alias> <hex_data|alias> OR 0.0 KB <alias|address>\n");
+        tsfi_io_printf(stdout, "[RPC] Usage: 0.0 <CALL|STORAGE|SEND> <address|alias> <hex_data|alias> OR 0.0 KB <alias|address>\n");
     }
     return 0;
 }

@@ -155,6 +155,10 @@ int main(void) {
     assert(sub_run == 0); // Exits 0 if WMQ_BOOTSTRAP was successfully auto-loaded and spoken
     remove("lexicon_default.dat.bin");
 
+    printf("[TEST] Dispatching 0.0 SEND command (mock transaction broadcast)...\n");
+    char cmd_send[128] = "0.0 SEND 0xD32c39fEE49391c7952d1b30b15921b0D3b42E69 0x24f0154c";
+    tsfi_cli_process_line(ws, cmd_send);
+
 
 
 
