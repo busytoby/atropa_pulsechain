@@ -188,3 +188,17 @@ bool master_terrain_ferractor_pack_reaction(const uint16_t *words, uint32_t coun
     *out_packed = base_packed ^ state_modulator;
     return true;
 }
+
+/* Voxpd programming instruction execution: Parses and executes a packed word as a voxpd control instruction */
+bool master_terrain_ferractor_execute_voxpd(uint32_t packed_word, uint8_t *out_opcode, uint16_t *out_frequency, uint8_t *out_amplitude) {
+    if (!out_opcode || !out_frequency || !out_amplitude) return false;
+
+    /* Decode the packed word as voxpd instruction fields:
+       Bits 0-7: Opcode (VOXPD instruction command)
+       Bits 8-23: Frequency/Pitch setting
+       Bits 24-31: Amplitude/Envelope level */
+    *out_opcode = (uint8_t)(packed_word & 0xFF);
+    *out_frequency = (uint16_t)((packed_word >> 8) & 0xFFFF);
+    *out_amplitude = (uint8_t)((packed_word >> 24) & 0xFF);
+    return true;
+}

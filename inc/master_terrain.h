@@ -55,4 +55,7 @@ bool master_terrain_ferractor_accumulate_emotions(const uint64_t *emotion_weight
 /* Pack word relative to reaction states */
 bool master_terrain_ferractor_pack_reaction(const uint16_t *words, uint32_t count, uint64_t waat, uint64_t luo, uint64_t reaction_state, uint32_t *out_packed);
 
+/* Voxpd programming instruction execution: Parses and executes a packed word as a voxpd control instruction */
+bool master_terrain_ferractor_execute_voxpd(uint32_t packed_word, uint8_t *out_opcode, uint16_t *out_frequency, uint8_t *out_amplitude);
+
 #endif /* MASTER_TERRAIN_H */
