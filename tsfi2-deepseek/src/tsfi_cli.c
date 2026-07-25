@@ -480,6 +480,7 @@ static bool tsfi_cli_evaluate_word_strategy(const auncient_transfluxor_word_t *w
 
 static auncient_transfluxor_registry_t tpu_registry;
 static double tpu_registration_times[MAX_REGISTRY_WORDS];
+static tsfi_speroni_conway_cobol_t cached_cobol_layout;
 static bool tpu_initialized = false;
 
 
@@ -490,6 +491,19 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
     if (!tpu_initialized) {
         auncient_sdk_init_transfluxor_registry(&tpu_registry);
         double now = get_time_sec();
+
+        // Pre-compile COBOL layout once to preserve sub-microsecond latency
+        tsfi_speroni_conway_cobol_init(0, &cached_cobol_layout);
+        tsfi_speroni_conway_cobol_add_field(&cached_cobol_layout, 5, "WORD-NAME", 32);
+        tsfi_speroni_conway_cobol_add_field(&cached_cobol_layout, 5, "WORD-ID", 4);
+        tsfi_speroni_conway_cobol_add_field(&cached_cobol_layout, 5, "PAD-1", 4); // Alignment padding
+        tsfi_speroni_conway_cobol_add_field(&cached_cobol_layout, 5, "WORD-F1", 8);
+        tsfi_speroni_conway_cobol_add_field(&cached_cobol_layout, 5, "WORD-F2", 8);
+        tsfi_speroni_conway_cobol_add_field(&cached_cobol_layout, 5, "WORD-DECAY", 8);
+        tsfi_speroni_conway_cobol_add_field(&cached_cobol_layout, 5, "WORD-AMP", 8);
+        tsfi_speroni_conway_cobol_add_field(&cached_cobol_layout, 5, "WORD-WMQ", 4);
+        tsfi_speroni_conway_cobol_add_field(&cached_cobol_layout, 5, "WORD-ABI", 4);
+
 
         // Pre-load default Auncient command words
         auncient_transfluxor_word_t w1, w2, w3;
@@ -563,23 +577,10 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
             return 1;
         }
 
-        // Initialize COBOL layout for auncient_transfluxor_word_t (exactly matching alignment)
-        tsfi_speroni_conway_cobol_t cobol_layout;
-        tsfi_speroni_conway_cobol_init(word_idx, &cobol_layout);
-        tsfi_speroni_conway_cobol_add_field(&cobol_layout, 5, "WORD-NAME", 32);
-        tsfi_speroni_conway_cobol_add_field(&cobol_layout, 5, "WORD-ID", 4);
-        tsfi_speroni_conway_cobol_add_field(&cobol_layout, 5, "PAD-1", 4); // Alignment padding
-        tsfi_speroni_conway_cobol_add_field(&cobol_layout, 5, "WORD-F1", 8);
-        tsfi_speroni_conway_cobol_add_field(&cobol_layout, 5, "WORD-F2", 8);
-        tsfi_speroni_conway_cobol_add_field(&cobol_layout, 5, "WORD-DECAY", 8);
-        tsfi_speroni_conway_cobol_add_field(&cobol_layout, 5, "WORD-AMP", 8);
-        tsfi_speroni_conway_cobol_add_field(&cobol_layout, 5, "WORD-WMQ", 4);
-        tsfi_speroni_conway_cobol_add_field(&cobol_layout, 5, "WORD-ABI", 4);
-
-        // Find the field in the COBOL record layout
+        // Find the field in the cached COBOL record layout
         int field_idx = -1;
-        for (size_t i = 0; i < cobol_layout.field_count; i++) {
-            if (strcmp(cobol_layout.fields[i].field_name, field_name) == 0) {
+        for (size_t i = 0; i < cached_cobol_layout.field_count; i++) {
+            if (strcmp(cached_cobol_layout.fields[i].field_name, field_name) == 0) {
                 field_idx = (int)i;
                 break;
             }
@@ -590,8 +591,9 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
             return 1;
         }
 
-        uint32_t offset_val = cobol_layout.fields[field_idx].arithmetized_off;
+        uint32_t offset_val = cached_cobol_layout.fields[field_idx].arithmetized_off;
         char *target_mem = ((char *)&tpu_registry.registered_words[word_idx]) + offset_val;
+
 
         // Alter memory directly based on compiled delay/offset
         if (strcmp(field_name, "WORD-NAME") == 0 && parsed_str == 3) {
