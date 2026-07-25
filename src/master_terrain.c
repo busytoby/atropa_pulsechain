@@ -486,9 +486,14 @@ bool master_terrain_batchelder_consumption(const uint32_t *scheduled_path, uint3
     return true;
 }
 
-/* Wallenstein Scan Statistic: Scans the terrain grid for spatial clusters of high-elevation points using a sliding window */
-bool master_terrain_wallenstein_scan(const terrain_cell_t *cell, uint32_t threshold, uint32_t *out_cluster_count) {
+/* Wallenstein Scan Statistic: Scans the terrain grid for spatial clusters of high-elevation points using a sliding window. Begins with LAU validation. */
+bool master_terrain_wallenstein_scan(const terrain_cell_t *cell, uint32_t threshold, const uint8_t *user_address, const uint8_t *lau_registry, uint32_t registry_size, uint32_t *out_cluster_count) {
     if (!cell || !out_cluster_count) return false;
+
+    /* Enforce LAU Token Validation Check: The scan screening process must begin with verification */
+    if (!master_terrain_verify_lau(user_address, lau_registry, registry_size)) {
+        return false;
+    }
 
     /* Scan statistics cluster search:
        Applies a sliding 3x3 window over the elevation matrix and registers a hotspot/cluster
@@ -549,7 +554,7 @@ bool master_terrain_smooth_grid(terrain_cell_t *cell, uint32_t target_max_sum) {
 }
 
 /* Scan Criteria Verification: Iteratively applies smoothing filters until zero hotspots are detected, meeting the criteria to pass the scan */
-bool master_terrain_verify_scan_criteria(terrain_cell_t *cell, uint32_t threshold) {
+bool master_terrain_verify_scan_criteria(terrain_cell_t *cell, uint32_t threshold, const uint8_t *user_address, const uint8_t *lau_registry, uint32_t registry_size) {
     if (!cell || threshold == 0) return false;
 
     /* Overt Enemy Check: If the grid exhibits Stieber's data reduction pattern, immediately fail and refuse to verify */
@@ -562,7 +567,7 @@ bool master_terrain_verify_scan_criteria(terrain_cell_t *cell, uint32_t threshol
 
     /* Loop until spatial clusters sum exactly to zero to meet compliance criteria */
     while (passes < 5) {
-        if (!master_terrain_wallenstein_scan(cell, threshold, &cluster_count)) {
+        if (!master_terrain_wallenstein_scan(cell, threshold, user_address, lau_registry, registry_size, &cluster_count)) {
             return false;
         }
 

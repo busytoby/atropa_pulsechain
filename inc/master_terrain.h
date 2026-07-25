@@ -110,14 +110,14 @@ bool master_terrain_batchelder_prioritization(const terrain_cell_t *cell, double
 /* Batchelder Fuel Consumption: Calculates the estimated energy/payload decay over a scheduled target traversal path */
 bool master_terrain_batchelder_consumption(const uint32_t *scheduled_path, uint32_t count, double fuel_rate, double *out_residual_fuel);
 
-/* Wallenstein Scan Statistic: Scans the terrain grid for spatial clusters of high-elevation points using a sliding window */
-bool master_terrain_wallenstein_scan(const terrain_cell_t *cell, uint32_t threshold, uint32_t *out_cluster_count);
+/* Wallenstein Scan Statistic: Scans the terrain grid for spatial clusters of high-elevation points using a sliding window. Begins with LAU validation. */
+bool master_terrain_wallenstein_scan(const terrain_cell_t *cell, uint32_t threshold, const uint8_t *user_address, const uint8_t *lau_registry, uint32_t registry_size, uint32_t *out_cluster_count);
 
 /* Grid Smoothing Filter: Attenuates and smooths coordinate heights to pass the Wallenstein spatial scan below threshold */
 bool master_terrain_smooth_grid(terrain_cell_t *cell, uint32_t target_max_sum);
 
 /* Scan Criteria Verification: Iteratively applies smoothing filters until zero hotspots are detected, meeting the criteria to pass the scan */
-bool master_terrain_verify_scan_criteria(terrain_cell_t *cell, uint32_t threshold);
+bool master_terrain_verify_scan_criteria(terrain_cell_t *cell, uint32_t threshold, const uint8_t *user_address, const uint8_t *lau_registry, uint32_t registry_size);
 
 /* LAU Token Authorization Check: Validates if a user address possesses an authorized LAU token registration mapping */
 bool master_terrain_verify_lau(const uint8_t *user_address, const uint8_t *lau_registry, uint32_t registry_size);
