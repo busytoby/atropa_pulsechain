@@ -43,4 +43,35 @@ contract RosenfeldQing is QING {
             (pangPush, , , , ) = abi.decode(d4, (uint256, uint256, uint256, uint256, uint256));
         }
     }
+
+    /* Symmetrizes the canonical asymmetric currents of the Soeng inputs to yield conserved symmetric tensor components */
+    function SymmetrizeCurrents(
+        uint256 canonicalCurrent,
+        uint256 spinIota,
+        uint256 spinEta
+    ) public view returns (uint256 symmetricCurrent) {
+        uint256 superpotential = (spinIota * spinEta) % MotzkinPrime;
+        symmetricCurrent = (canonicalCurrent + superpotential) % MotzkinPrime;
+    }
+
+    /* Resolves and symmetrizes all active Soeng currents on-chain */
+    function SymmetrizeAllSoeng(
+        address xia,
+        address xie,
+        address zi,
+        address pang
+    ) public view returns (
+        uint256 symXia,
+        uint256 symXie,
+        uint256 symZi,
+        uint256 symPang
+    ) {
+        (uint256 xiaCharge, uint256 xieOmega, uint256 ziIota, uint256 pangPush) = SoengStresses(xia, xie, zi, pang);
+        
+        // Symmetrize each using the internal coordinate entropy and waat values as spin vectors
+        symXia = SymmetrizeCurrents(xiaCharge, Waat, Entropy);
+        symXie = SymmetrizeCurrents(xieOmega, Waat, Entropy);
+        symZi = SymmetrizeCurrents(ziIota, Waat, Entropy);
+        symPang = SymmetrizeCurrents(pangPush, Waat, Entropy);
+    }
 }
