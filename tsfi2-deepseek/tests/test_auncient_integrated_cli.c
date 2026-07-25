@@ -84,6 +84,11 @@ int main(void) {
     char cmd_lex_speak[128] = "SPEAK 650.0 1300.0 0.4 7";
     status = tsfi_cli_process_line(ws, cmd_lex_speak);
     assert(status == 0);
+    // 7. Test atomic sentence execution using LEXICON_EXECUTE
+    printf("[TEST] Dispatching LEXICON_EXECUTE sentence (SPK_LOCK_SCSI SPK_WRITE_LEDGER)...\n");
+    char cmd_lex_execute[128] = "LEXICON_EXECUTE SPK_LOCK_SCSI SPK_WRITE_LEDGER";
+    status = tsfi_cli_process_line(ws, cmd_lex_execute);
+    assert(status == 0);
 
 
 

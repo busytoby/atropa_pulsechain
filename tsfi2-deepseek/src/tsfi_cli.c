@@ -600,7 +600,97 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
         return 1;
     }
 
+    // Check if the input is a LEXICON_EXECUTE command
+    if (strncmp(input, "LEXICON_EXECUTE ", 16) == 0) {
+        char words_list[256];
+        strncpy(words_list, input + 16, sizeof(words_list) - 1);
+        words_list[sizeof(words_list) - 1] = '\0';
+
+        // Parse individual word names from standard list
+        char *word_names[16];
+        int num_words = 0;
+        char *tok = strtok(words_list, " \t");
+        while (tok && num_words < 16) {
+            word_names[num_words++] = tok;
+            tok = strtok(NULL, " \t");
+        }
+
+        if (num_words == 0) {
+            tsfi_io_printf(stdout, "[LEXICON ERROR] No words provided for sentence execution.\n");
+            return 1;
+        }
+
+        // 1. Resolve and pre-audit all words in the sentence
+        auncient_transfluxor_word_t *resolved_words[16];
+        for (int w = 0; w < num_words; w++) {
+            auncient_transfluxor_word_t *match = NULL;
+            uint32_t match_idx = 0;
+            for (uint32_t i = 0; i < tpu_registry.total_registered; i++) {
+                if (strcmp(tpu_registry.registered_words[i].name, word_names[w]) == 0) {
+                    match = &tpu_registry.registered_words[i];
+                    match_idx = i;
+                    break;
+                }
+            }
+
+            if (!match) {
+                tsfi_io_printf(stdout, "[LEXICON REJECT] Unknown word '%s' in sentence. Execution aborted.\n", word_names[w]);
+                return 1;
+            }
+
+            // Check Wheeler Jump temporal decay window gating
+            double elapsed = get_time_sec() - tpu_registration_times[match_idx];
+            if (elapsed > match->decay) {
+                tsfi_io_printf(stdout, "[LEXICON REJECT] Word '%s' is expired by %.3fs. Sentence aborted.\n",
+                               match->name, elapsed - match->decay);
+                return 1;
+            }
+
+            // Verify strategy rules (contention, frequency collision)
+            if (!tsfi_cli_evaluate_word_strategy(match)) {
+                tsfi_io_printf(stdout, "[LEXICON REJECT] Word '%s' failed strategy checks. Sentence aborted.\n", match->name);
+                return 1;
+            }
+
+            resolved_words[w] = match;
+        }
+
+
+        // 2. All words passed pre-audit, execute the entire sentence atomically
+        tsfi_io_printf(stdout, "[LEXICON EXECUTE] Executing atomic sentence of %d words...\n", num_words);
+        for (int w = 0; w < num_words; w++) {
+            auncient_transfluxor_word_t *word = resolved_words[w];
+            double feedback_freq = 0.0;
+            if (auncient_sdk_dispatch_transfluxor_word(&tpu_registry, word, &feedback_freq)) {
+                tsfi_io_printf(stdout, "  [SPEAK SUCCESS] '%s' -> WMQ: 0x%02X, ABI: 0x%02X. Feedback: %.2fHz\n",
+                               word->name, word->wmq_cmd, word->abi_op, feedback_freq);
+
+                // Call synthetic elliptic synthesizer
+                tsfi_clendenin_synth_summary_t summary;
+                memset(&summary, 0, sizeof(summary));
+                if (tsfi_clendenin_synth_sample(feedback_freq, 0.5, 0.0, &summary) == 0) {
+                    tsfi_io_printf(stdout, "  [CLENDENIN SYNTH] Generated sample: %.4f (FET: %.4fW, Gas: %u units)\n",
+                                   summary.sample_out, summary.fet_power_watts, summary.evm_gas_units);
+                }
+
+                // Simulate execution outcomes directly on WaveSystem if commands are set
+                if (word->wmq_cmd == 0x10) {
+                    tsfi_io_printf(stdout, "  [HELMHOLTZ MQ] Winchester SCSI channel locked.\n");
+                }
+                if (word->abi_op == 0x02) {
+                    tsfi_io_printf(stdout, "  [ABI EXEC] Ledger write complete.\n");
+                }
+            } else {
+                tsfi_io_printf(stdout, "[LEXICON EXECUTE FAILURE] Failed to speak word '%s'.\n", word->name);
+                return 1;
+            }
+        }
+        tsfi_io_printf(stdout, "[LEXICON EXECUTE SUCCESS] Sentence transaction complete.\n");
+        return 0;
+    }
+
     // Check if the input is a COBOL_ALTER command
+
 
     if (strncmp(input, "COBOL_ALTER ", 12) == 0) {
         uint32_t word_idx = 0;
