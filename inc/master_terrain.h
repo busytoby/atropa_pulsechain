@@ -173,4 +173,7 @@ bool master_terrain_replenish_orbital_radius(double *radii, uint32_t count, doub
 /* Bar Levels Replenishment: Restores epibar and hypobar levels that have decayed due to inactive cycles, bringing them back to baseline values */
 bool master_terrain_replenish_bar_levels(double *epibar, double *hypobar, double low_threshold, double target_val, bool *out_replenished);
 
+/* Hecke-Romberg Integration: Computes numerical integrals over Luo coordinates using Hecke-like averaging transforms with Waat refinement steps */
+bool master_terrain_hecke_romberg(const double *luo_function_vals, uint32_t count, uint64_t waat_refinement, double *out_integral_val);
+
 #endif /* MASTER_TERRAIN_H */

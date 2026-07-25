@@ -853,3 +853,38 @@ bool master_terrain_replenish_bar_levels(double *epibar, double *hypobar, double
     }
     return true;
 }
+
+/* Hecke-Romberg Integration: Computes numerical integrals over Luo coordinates using Hecke-like averaging transforms with Waat refinement steps */
+bool master_terrain_hecke_romberg(const double *luo_function_vals, uint32_t count, uint64_t waat_refinement, double *out_integral_val) {
+    if (!luo_function_vals || count < 4 || waat_refinement == 0 || !out_integral_val) return false;
+
+    /* Hecke-Romberg integration matrix:
+       Approximates the integral by taking linear combinations of Hecke refinement levels.
+       We construct a simplified Romberg table using Hecke averaging step refinements */
+    double r_table[4];
+    
+    /* Initial step size governed by Waat number scaling */
+    double step = (double)waat_refinement / (double)count;
+    
+    /* Column 0: Trapezoidal estimates at refined steps */
+    r_table[0] = (luo_function_vals[0] + luo_function_vals[count - 1]) * 0.5;
+    for (uint32_t j = 1; j < 4; j++) {
+        uint32_t step_refine = 1 << j;
+        double sum = 0.0;
+        for (uint32_t i = 1; i < count; i += (count / step_refine)) {
+            sum += luo_function_vals[i];
+        }
+        r_table[j] = (r_table[0] + sum) * step / (double)step_refine;
+    }
+
+    /* Perform Romberg Richardson extrapolation using Hecke algebraic combinations */
+    for (uint32_t col = 1; col < 4; col++) {
+        for (uint32_t row = 3; row >= col; row--) {
+            double factor = (double)(1 << (2 * col));
+            r_table[row] = (factor * r_table[row] - r_table[row - 1]) / (factor - 1.0);
+        }
+    }
+
+    *out_integral_val = r_table[3];
+    return true;
+}
