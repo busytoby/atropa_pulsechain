@@ -1,11 +1,11 @@
 CC       = gcc
 CXX      = g++
-CFLAGS   = -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -Iplugins -Iplugins/vulkan -Iplugins/window_inc -Iplugins/window_src -Iassets/sd_cpp/include -Isrc/firmware \
+CFLAGS   = -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -I../inc -Isrc -Iplugins -Iplugins/vulkan -Iplugins/window_inc -Iplugins/window_src -Iassets/sd_cpp/include -Isrc/firmware \
            -O3 -g -march=native -flax-vector-conversions -fopenmp \
            -fstack-protector-strong -D_FORTIFY_SOURCE=3 -fPIC \
            -DTSFI_PROVENANCE_KEY=\"SIG_2026_USLM_AFFIRMED\"
 CXXFLAGS = -Wall -Wextra -Wno-error -std=c++17 -O3 -g -march=native -fopenmp -fPIC -Iinc -Iplugins -Iplugins/vulkan -Iassets/sd_cpp/include
-LDFLAGS  = -L/usr/local/lib -ljpeg -rdynamic -lwayland-client -lvulkan -Wl,-z,noexecstack -lm -lgomp -lrt -lpthread -ldl -lstdc++ -lasound -fopenmp -lssl -lcrypto -lpulse-simple -lpulse
+LDFLAGS  = -L/usr/local/lib -ljpeg -rdynamic -lwayland-client -lvulkan -Wl,-z,noexecstack -lm -lgomp -lrt -lpthread -ldl -lstdc++ -lasound -fopenmp -lssl -lcrypto -lpulse-simple -lpulse ../src/auncient_sdk.o
 
 OBJ_DIR  = obj
 BIN_DIR  = bin

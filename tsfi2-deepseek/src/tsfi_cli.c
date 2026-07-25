@@ -9,6 +9,7 @@
 #include "tsfi_io.h"
 #include "tsfi_pulsechain_rpc.h"
 #include "tsfi_block_monitor.h"
+#include "auncient_sdk.h"
 #include <stdio.h>
 #include <string.h>
 #include <strings.h>
@@ -454,11 +455,96 @@ static int handle_resolve_command(WaveSystem *ws, const char *new_d) {
     return 0;
 }
 
+static auncient_transfluxor_registry_t tpu_registry;
+static bool tpu_initialized = false;
+
 int tsfi_cli_process_line(WaveSystem *ws, char *input) {
     // --- ALLIGATOR MANDATORY AUDIT BYPASSED FOR OPERATIONAL SIMULATOR ---
     (void)ws;
 
+    if (!tpu_initialized) {
+        auncient_sdk_init_transfluxor_registry(&tpu_registry);
+        tpu_initialized = true;
+    }
+
     input[strcspn(input, "\n")] = 0;
+
+    // Check if the input is a VoxPL WORD command
+    if (strncmp(input, "WORD ", 5) == 0) {
+        char name[32] = "";
+        uint32_t word_id = 0;
+        double f1 = 0.0, f2 = 0.0, decay = 0.0;
+        uint32_t wmq = 0, abi = 0;
+
+        int parsed = sscanf(input, "WORD %31s %u %lf %lf %lf %x %x", 
+                            name, &word_id, &f1, &f2, &decay, &wmq, &abi);
+
+        if (parsed == 7) {
+            auncient_transfluxor_word_t word;
+            if (auncient_sdk_compile_transfluxor_word(&word, name, word_id, f1, f2, decay, wmq, abi)) {
+                if (auncient_sdk_register_transfluxor_word(&tpu_registry, &word)) {
+                    tsfi_io_printf(stdout, "[TPU] Registered: %s (ID %u) -> Hash: %lu\n", 
+                                   word.name, word.word_id, 
+                                   auncient_sdk_calculate_transfluxor_hash(f1, f2, decay, word_id));
+                    return 0;
+                } else {
+                    tsfi_io_printf(stdout, "[TPU ERROR] Hash collision or registry full for '%s'.\n", name);
+                    return 1;
+                }
+            }
+        }
+        tsfi_io_printf(stdout, "[TPU ERROR] Invalid WORD syntax.\n");
+        return 1;
+    }
+
+    // Check if the input is a VoxPL SPEAK command
+    if (strncmp(input, "SPEAK ", 6) == 0) {
+        double f1 = 0.0, f2 = 0.0, decay = 0.0;
+        uint32_t word_id = 0;
+        int parsed = sscanf(input, "SPEAK %lf %lf %lf %u", &f1, &f2, &decay, &word_id);
+        if (parsed == 4) {
+            auncient_transfluxor_word_t query_word;
+            auncient_sdk_compile_transfluxor_word(&query_word, "QUERY", word_id, f1, f2, decay, 0x00, 0x00);
+            
+            double feedback_freq = 0.0;
+            if (auncient_sdk_dispatch_transfluxor_word(&tpu_registry, &query_word, &feedback_freq)) {
+                // Find matching registered word to get actual commands
+                uint64_t target_hash = auncient_sdk_calculate_transfluxor_hash(f1, f2, decay, word_id);
+                auncient_transfluxor_word_t *match = NULL;
+                for (uint32_t i = 0; i < tpu_registry.total_registered; i++) {
+                    uint64_t existing_hash = auncient_sdk_calculate_transfluxor_hash(
+                        tpu_registry.registered_words[i].f1,
+                        tpu_registry.registered_words[i].f2,
+                        tpu_registry.registered_words[i].decay,
+                        tpu_registry.registered_words[i].word_id
+                    );
+                    if (existing_hash == target_hash) {
+                        match = &tpu_registry.registered_words[i];
+                        break;
+                    }
+                }
+
+                if (match) {
+                    tsfi_io_printf(stdout, "[TPU SUCCESS] Spoken word: '%s'. Executing WMQ: 0x%02X, ABI: 0x%02X. Feedback: %.2fHz\n",
+                                   match->name, match->wmq_cmd, match->abi_op, feedback_freq);
+                    // Simulate execution outcomes directly on WaveSystem if commands are set
+                    if (match->wmq_cmd == 0x10) {
+                        tsfi_io_printf(stdout, "[HELMHOLTZ MQ] Winchester SCSI channel locked.\n");
+                    }
+                    if (match->abi_op == 0x02) {
+                        tsfi_io_printf(stdout, "[ABI EXEC] Ledger write complete.\n");
+                    }
+                    return 0;
+                }
+            } else {
+                tsfi_io_printf(stdout, "[TPU FAILURE] Unknown spoken waveform. Feedback: %.2fHz\n", feedback_freq);
+                return 1;
+            }
+        }
+        tsfi_io_printf(stdout, "[TPU ERROR] Invalid SPEAK syntax.\n");
+        return 1;
+    }
+
     fprintf(stderr, "[CLI_DEBUG] Processing line: \"%s\"\n", input);
     double new_i;
     char new_d[256];
