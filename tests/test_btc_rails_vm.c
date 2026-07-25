@@ -4,7 +4,6 @@
 #include <assert.h>
 #include <stdlib.h>
 
-/* Helper helper to set stack pointer externally in tests */
 static void set_cia_pointer(M6526Cia *cia, uint32_t val) {
     cia->timer_a_count = val & 0xFFFF;
     cia->timer_b_count = (val >> 16) & 0xFFFF;
@@ -37,7 +36,8 @@ void run_gated_counter_tests(BtcRailsVm *vm) {
     printf("[Test] Running Gated Counter Control verification...\n");
     fflush(stdout);
     
-    vm->cia1.control_b = 0x03;
+    /* Gated pointer mode: bit 6 set (0x40) + bits 1-0 set to 0x03 for gated mode */
+    vm->cia1.control_b = 0x43;
     vm->cia1.cnt_pin = 0;
     
     uint8_t payload[] = { 0x99 };
@@ -50,7 +50,7 @@ void run_gated_counter_tests(BtcRailsVm *vm) {
     assert(btc_rails_vm_pop_ds(vm, &popped, 1) == 1);
     assert(popped == 0x99);
     
-    vm->cia1.control_b = 0x02;
+    vm->cia1.control_b = 0x40; /* Restore default cascaded mode */
     
     printf("[Test] Gated Counter Control verification passed.\n");
     fflush(stdout);
@@ -77,30 +77,31 @@ void run_pbon_clock_tests(BtcRailsVm *vm) {
     printf("[Test] Running PBON Port B Pin Modulation verification...\n");
     fflush(stdout);
     
-    /* Save current stack pointer to avoid clock cycle test side-effects */
     uint16_t save_a = vm->cia1.timer_a_count;
     uint16_t save_b = vm->cia1.timer_b_count;
+    uint8_t save_ctrl_a = vm->cia1.control_a;
+    uint8_t save_ctrl_b = vm->cia1.control_b;
     
-    /* Configure Timer A to start at 1000 and enable PBON output enable (bit 1) */
+    /* Disable cascaded mode temporarily for timer B clock test */
+    vm->cia1.control_b = 0x00; /* System clock mode for Timer B */
     vm->cia1.timer_a_count = 1000;
     vm->cia1.timer_a_latch = 1000;
     vm->cia1.control_a = 0x03; /* bit 0 = start, bit 1 = PBON */
     vm->cia1.port_b_data = 0x00;
     
-    /* Step clock less than 1000 cycles, should not toggle PBON */
     btc_rails_vm_step_clock(vm, 500);
     assert(vm->cia1.timer_a_count == 500);
     assert((vm->cia1.port_b_data & 0x40) == 0);
     
-    /* Step remaining cycles to force underflow, toggling Pin 6 (0x40) */
     btc_rails_vm_step_clock(vm, 505);
-    assert((vm->cia1.port_b_data & 0x40) != 0); /* Pin 6 toggled to high */
-    assert((vm->cia1.icr & 0x01) != 0);        /* Timer A underflow set in ICR */
+    assert((vm->cia1.port_b_data & 0x40) != 0);
+    assert((vm->cia1.icr & 0x01) != 0);
     
-    /* Restore stack pointer */
+    /* Restore stack pointers and Control configurations */
     vm->cia1.timer_a_count = save_a;
     vm->cia1.timer_b_count = save_b;
-    vm->cia1.control_a = 0x01;
+    vm->cia1.control_a = save_ctrl_a;
+    vm->cia1.control_b = save_ctrl_b;
     
     printf("[Test] PBON Port B Pin Modulation verification passed.\n");
     fflush(stdout);
@@ -110,15 +111,13 @@ void run_keycode_scan_tests(BtcRailsVm *vm) {
     printf("[Test] Running Keypad Matrix keycode verification...\n");
     fflush(stdout);
     
-    /* Scan D keycode */
     assert(btc_rails_vm_scan_keycode(vm, KEYCODE_D) == 1);
-    assert(vm->cia1.port_a_data == 0xF7); /* Column 3 low */
-    assert(vm->cia1.port_b_data == 0xFB); /* Row 2 low */
+    assert(vm->cia1.port_a_data == 0xF7);
+    assert(vm->cia1.port_b_data == 0xFB);
     
-    /* Scan A keycode */
     assert(btc_rails_vm_scan_keycode(vm, KEYCODE_A) == 1);
-    assert(vm->cia1.port_a_data == 0xFD); /* Column 1 low */
-    assert(vm->cia1.port_b_data == 0xFD); /* Row 1 low */
+    assert(vm->cia1.port_a_data == 0xFD);
+    assert(vm->cia1.port_b_data == 0xFD);
     
     printf("[Test] Keypad Matrix keycode verification passed.\n");
     fflush(stdout);
@@ -159,9 +158,8 @@ void run_yul_and_alarm_tests(BtcRailsVm *vm) {
     printf("[Test] Running Yul interpreter and TOD Alarm Match verification...\n");
     fflush(stdout);
     
-    /* Restore pointer in case of any clock drift */
     set_cia_pointer(&(vm->cia1), 0x00018000);
-    vm->cia1.control_b = 0x02;
+    vm->cia1.control_b = 0x40; /* Restore correct cascaded configuration */
     
     uint32_t valid_locktime = 396000;
     uint8_t bytecode_pass[] = {
@@ -188,6 +186,61 @@ void run_yul_and_alarm_tests(BtcRailsVm *vm) {
     fflush(stdout);
 }
 
+void run_diyat_tax_tests(BtcRailsVm *vm) {
+    printf("[Test] Running Diyat taxation mechanisms verification...\n");
+    fflush(stdout);
+    
+    set_cia_pointer(&(vm->cia1), 0x00018000);
+    vm->cia1.control_b = 0x40; /* Chained/Cascaded mode */
+    
+    uint32_t balance = 100000;
+    
+    /* 1. Performance Latency Tax: Measure counts and apply fee */
+    vm->cia1.timer_a_count = 1000;
+    btc_rails_vm_step_clock(vm, 150); /* Simulate execution cycles spent */
+    
+    uint32_t cycles_spent = 1000 - vm->cia1.timer_a_count;
+    uint32_t performance_tax = cycles_spent * 10;
+    assert(performance_tax == 1500);
+    balance -= performance_tax;
+    assert(balance == 98500);
+    
+    /* 2. Bandwidth SDR Tax: Deduct fee for serial transmission */
+    vm->cia1.icr = 0;
+    uint8_t val = 0xAA;
+    assert(btc_rails_vm_push_ds(vm, &val, 1) == 1);
+    
+    uint8_t shifted_byte = 0;
+    assert(btc_rails_vm_shift_sdr(vm, &shifted_byte) == 1);
+    
+    if (vm->cia1.icr & 0x08) {
+        uint32_t bandwidth_tax = 500;
+        balance -= bandwidth_tax;
+    }
+    assert(balance == 98000);
+    
+    /* 3. Gated Counter Penalty: Deduct fine if stack pointer is locked */
+    vm->cia1.control_b = 0x43; /* Gated cascaded mode */
+    vm->cia1.cnt_pin = 0;
+    
+    uint8_t val2 = 0xBB;
+    int push_result = btc_rails_vm_push_ds(vm, &val2, 1);
+    assert(push_result == 0);
+    
+    if (push_result == 0) {
+        uint32_t lock_penalty = 5000;
+        balance -= lock_penalty;
+    }
+    assert(balance == 93000);
+    
+    /* Restore control state */
+    vm->cia1.control_b = 0x40;
+    vm->cia1.cnt_pin = 1;
+    
+    printf("[Test] Diyat taxation verification passed. Remaining balance: %u satoshis.\n", balance);
+    fflush(stdout);
+}
+
 int main() {
     printf("=== AUNCIENT BTC RAILS VM TESTING ===\n");
     fflush(stdout);
@@ -201,6 +254,7 @@ int main() {
     run_keycode_scan_tests(vm);
     run_tree_and_dat_tests(vm);
     run_yul_and_alarm_tests(vm);
+    run_diyat_tax_tests(vm);
     
     btc_rails_vm_free(vm);
     printf("=== ALL VM TESTS PASSED ===\n");

@@ -25,13 +25,17 @@ static void update_tod_alarm_status(M6526Cia *cia) {
 
 /* Simulate CIA Timer cycles (accounting for PBON pin modulation on underflow) */
 static void step_single_cia_timers(M6526Cia *cia, uint32_t cycles) {
+    int timer_a_underflowed = 0;
+    
     /* Timer A down-counting */
     if (cia->timer_a_count > cycles) {
         cia->timer_a_count -= cycles;
     } else {
         /* Timer A underflow */
         cia->icr |= 0x01; /* Set Timer A interrupt flag */
-        cia->timer_a_count = cia->timer_a_latch - (cycles - cia->timer_a_count);
+        uint32_t excess = cycles - cia->timer_a_count;
+        cia->timer_a_count = cia->timer_a_latch - excess;
+        timer_a_underflowed = 1;
         
         /* PBON Modulates Port B Pin 6 on Timer A underflow */
         if (cia->control_a & 0x02) {
@@ -39,17 +43,33 @@ static void step_single_cia_timers(M6526Cia *cia, uint32_t cycles) {
         }
     }
     
-    /* Timer B down-counting */
-    if (cia->timer_b_count > cycles) {
-        cia->timer_b_count -= cycles;
+    /* Timer B down-counting (Respecting Cascaded vs System Clock configuration) */
+    uint8_t mode_b = cia->control_b & 0x60; /* Bits 6 and 5 */
+    if (mode_b == 0x00) {
+        /* System clock mode: Timer B decrements on system clock cycles */
+        if (cia->timer_b_count > cycles) {
+            cia->timer_b_count -= cycles;
+        } else {
+            cia->icr |= 0x02; /* Set Timer B interrupt flag */
+            cia->timer_b_count = cia->timer_b_latch - (cycles - cia->timer_b_count);
+            
+            /* PBON Modulates Port B Pin 7 on Timer B underflow */
+            if (cia->control_b & 0x02) {
+                cia->port_b_data ^= 0x80; /* Toggle bit 7 */
+            }
+        }
     } else {
-        /* Timer B underflow */
-        cia->icr |= 0x02; /* Set Timer B interrupt flag */
-        cia->timer_b_count = cia->timer_b_latch - (cycles - cia->timer_b_count);
-        
-        /* PBON Modulates Port B Pin 7 on Timer B underflow */
-        if (cia->control_b & 0x02) {
-            cia->port_b_data ^= 0x80; /* Toggle bit 7 */
+        /* Cascaded mode: Timer B only decrements on Timer A underflows */
+        if (timer_a_underflowed) {
+            if (cia->timer_b_count > 0) {
+                cia->timer_b_count--;
+            } else {
+                cia->icr |= 0x02;
+                cia->timer_b_count = cia->timer_b_latch;
+                if (cia->control_b & 0x02) {
+                    cia->port_b_data ^= 0x80;
+                }
+            }
         }
     }
 }
@@ -111,7 +131,7 @@ BtcRailsVm *btc_rails_vm_init(size_t sram_size) {
     vm->cia1.timer_b_latch = 2000;
     set_cia_pointer(&(vm->cia1), 0x00018000);
     vm->cia1.control_a = 0x01;
-    vm->cia1.control_b = 0x02; /* Default cascaded mode */
+    vm->cia1.control_b = 0x40; /* Chained/Cascaded mode (bit 6 set) */
     vm->cia1.cnt_pin = 1;      /* Default high */
     vm->cia1.flag_pin = 1;
     vm->cia1.icr = 0;
@@ -132,7 +152,7 @@ BtcRailsVm *btc_rails_vm_init(size_t sram_size) {
     vm->cia2.timer_b_latch = 2000;
     set_cia_pointer(&(vm->cia2), 0x0002F000);
     vm->cia2.control_a = 0x01;
-    vm->cia2.control_b = 0x02;
+    vm->cia2.control_b = 0x40; /* Chained/Cascaded mode */
     vm->cia2.cnt_pin = 1;
     vm->cia2.flag_pin = 1;
     vm->cia2.icr = 0;
@@ -166,8 +186,9 @@ void btc_rails_vm_free(BtcRailsVm *vm) {
 int btc_rails_vm_push_ds(BtcRailsVm *vm, const uint8_t *data, size_t size) {
     if (!vm || !data || size == 0) return 0;
     
-    if (vm->cia1.control_b == 0x03 && vm->cia1.cnt_pin == 0) {
-        return 0;
+    /* Gated Counter Check: block if mode is 0x03 or contains gated bit and CNT pin is low */
+    if ((vm->cia1.control_b & 0x03) == 0x03 && vm->cia1.cnt_pin == 0) {
+        return 0; /* Gated pointer modification blocked */
     }
     
     uint32_t sp = get_cia_pointer(&(vm->cia1));
@@ -189,7 +210,7 @@ int btc_rails_vm_push_ds(BtcRailsVm *vm, const uint8_t *data, size_t size) {
 int btc_rails_vm_pop_ds(BtcRailsVm *vm, uint8_t *data_out, size_t max_size) {
     if (!vm || !data_out) return 0;
     
-    if (vm->cia1.control_b == 0x03 && vm->cia1.cnt_pin == 0) {
+    if ((vm->cia1.control_b & 0x03) == 0x03 && vm->cia1.cnt_pin == 0) {
         return 0;
     }
     
@@ -213,7 +234,7 @@ int btc_rails_vm_pop_ds(BtcRailsVm *vm, uint8_t *data_out, size_t max_size) {
 int btc_rails_vm_push_rs(BtcRailsVm *vm, const uint8_t *data, size_t size) {
     if (!vm || !data || size == 0) return 0;
     
-    if (vm->cia2.control_b == 0x03 && vm->cia2.cnt_pin == 0) {
+    if ((vm->cia2.control_b & 0x03) == 0x03 && vm->cia2.cnt_pin == 0) {
         return 0;
     }
     
@@ -236,7 +257,7 @@ int btc_rails_vm_push_rs(BtcRailsVm *vm, const uint8_t *data, size_t size) {
 int btc_rails_vm_pop_rs(BtcRailsVm *vm, uint8_t *data_out, size_t max_size) {
     if (!vm || !data_out) return 0;
     
-    if (vm->cia2.control_b == 0x03 && vm->cia2.cnt_pin == 0) {
+    if ((vm->cia2.control_b & 0x03) == 0x03 && vm->cia2.cnt_pin == 0) {
         return 0;
     }
     
