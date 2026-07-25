@@ -18,7 +18,13 @@
 #define RPC_HOST "pulsechain-rpc.publicnode.com"
 #define RPC_PORT "443"
 
-bool exec_raw_http_rpc(const char *json_payload, char *out_hex_buffer, size_t out_max_len) {
+static bool exec_raw_http_rpc_common(const char *json_payload, char *out_buffer, size_t out_max_len, bool parse_result_only) {
+    const char *host = getenv("TSFI_RPC_HOST");
+    const char *port = getenv("TSFI_RPC_PORT");
+    if (!host) host = RPC_HOST;
+    if (!port) port = RPC_PORT;
+    bool use_tls = (strcmp(port, "443") == 0);
+
     struct addrinfo hints, *res;
     int sockfd = -1;
     bool success = false;
@@ -28,8 +34,8 @@ bool exec_raw_http_rpc(const char *json_payload, char *out_hex_buffer, size_t ou
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
 
-    if (getaddrinfo(RPC_HOST, RPC_PORT, &hints, &res) != 0) {
-        fprintf(stderr, "[RPC DEBUG] getaddrinfo failed for %s:%s\n", RPC_HOST, RPC_PORT);
+    if (getaddrinfo(host, port, &hints, &res) != 0) {
+        fprintf(stderr, "[RPC DEBUG] getaddrinfo failed for %s:%s\n", host, port);
         return false;
     }
 
@@ -47,7 +53,7 @@ bool exec_raw_http_rpc(const char *json_payload, char *out_hex_buffer, size_t ou
     setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (const char*)&tv, sizeof(tv));
 
     if (connect(sockfd, res->ai_addr, res->ai_addrlen) < 0) {
-        fprintf(stderr, "[RPC DEBUG] connect failed to %s:%s\n", RPC_HOST, RPC_PORT);
+        fprintf(stderr, "[RPC DEBUG] connect failed to %s:%s\n", host, port);
         close(sockfd);
         freeaddrinfo(res);
         return false;
@@ -55,12 +61,14 @@ bool exec_raw_http_rpc(const char *json_payload, char *out_hex_buffer, size_t ou
     freeaddrinfo(res);
 
     TsfiTlsContext tls;
-    tsfi_tls_init(&tls, sockfd);
-    if (!tsfi_tls_handshake(&tls, RPC_HOST)) {
-        fprintf(stderr, "[RPC DEBUG] TLS handshake failed for %s\n", RPC_HOST);
-        tsfi_tls_close(&tls);
-        close(sockfd);
-        return false;
+    if (use_tls) {
+        tsfi_tls_init(&tls, sockfd);
+        if (!tsfi_tls_handshake(&tls, host)) {
+            fprintf(stderr, "[RPC DEBUG] TLS handshake failed for %s\n", host);
+            tsfi_tls_close(&tls);
+            close(sockfd);
+            return false;
+        }
     }
 
     char request[131072];
@@ -73,208 +81,17 @@ bool exec_raw_http_rpc(const char *json_payload, char *out_hex_buffer, size_t ou
              "Connection: close\r\n"
              "\r\n"
              "%s",
-             RPC_HOST, strlen(json_payload), json_payload);
+             host, strlen(json_payload), json_payload);
 
-    fprintf(stderr, "[RPC DEBUG] Sending Request: %s\n", request);
-
-    if (tsfi_tls_write(&tls, request, strlen(request)) < 0) {
-        fprintf(stderr, "[RPC DEBUG] tsfi_tls_write failed\n");
-        tsfi_tls_close(&tls);
-        close(sockfd);
-        return false;
+    ssize_t written;
+    if (use_tls) {
+        written = tsfi_tls_write(&tls, request, strlen(request));
+    } else {
+        written = write(sockfd, request, strlen(request));
     }
-
-    response = malloc(262144);
-    if (!response) {
-        fprintf(stderr, "[RPC DEBUG] malloc failed for response buffer\n");
-        tsfi_tls_close(&tls);
-        close(sockfd);
-        return false;
-    }
-    memset(response, 0, 262144);
-    size_t total_read = 0;
-    ssize_t n;
-    int content_length = -1;
-    size_t header_end = 0;
-
-    while (1) {
-        n = tsfi_tls_read(&tls, response + total_read, 262144 - 1 - total_read);
-        if (n <= 0) break;
-        total_read += n;
-        response[total_read] = '\0';
-
-        if (header_end == 0) {
-            char *hdr_end_ptr = strstr(response, "\r\n\r\n");
-            if (hdr_end_ptr) {
-                header_end = (hdr_end_ptr - response) + 4;
-                const char *cl_ptr = response;
-                while ((cl_ptr = strchr(cl_ptr, '\n'))) {
-                    cl_ptr++;
-                    if (strncasecmp(cl_ptr, "content-length:", 15) == 0) {
-                        content_length = atoi(cl_ptr + 15);
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (content_length >= 0 && header_end > 0) {
-            if (total_read >= header_end + content_length) {
-                break;
-            }
-        }
-
-        if (header_end > 0) {
-            const char *te_ptr = response;
-            bool is_chunked = false;
-            while ((te_ptr = strchr(te_ptr, '\n'))) {
-                te_ptr++;
-                if (strncasecmp(te_ptr, "transfer-encoding: chunked", 26) == 0) {
-                    is_chunked = true;
-                    break;
-                }
-            }
-            if (is_chunked) {
-                if (strstr(response + header_end, "\r\n0\r\n\r\n") || strstr(response + header_end, "0\r\n\r\n")) {
-                    break;
-                }
-            }
-        }
-
-        if (total_read >= 262144 - 1) {
-            break;
-        }
-    }
-    tsfi_tls_close(&tls);
-    close(sockfd);
-    
-    response[total_read] = '\0';
-
-    char *body = strstr(response, "\r\n\r\n");
-    if (!body) goto cleanup;
-    body += 4;
-
-    char *result_ptr = strstr(body, "\"result\":\"");
-    if (result_ptr) {
-        result_ptr += 10;
-        char *end_quote = strchr(result_ptr, '"');
-        if (end_quote) {
-            size_t hex_len = end_quote - result_ptr;
-            if (hex_len < out_max_len) {
-                memcpy(out_hex_buffer, result_ptr, hex_len);
-                out_hex_buffer[hex_len] = '\0';
-                success = true;
-                goto cleanup;
-            } else {
-                fprintf(stderr, "[RPC DEBUG] result_ptr found but hex_len (%zu) >= out_max_len (%zu)\n", hex_len, out_max_len);
-            }
-        }
-    }
-
-    // fallback for JSON arrays (starting with '[')
-    char *result_arr = strstr(body, "\"result\":");
-    if (result_arr) {
-        result_arr += 9;
-        fprintf(stderr, "[RPC DEBUG] result_arr found, first char: '%c'\n", *result_arr);
-        if (*result_arr == '[') {
-            char *end_arr = strrchr(result_arr, ']');
-            if (end_arr) {
-                size_t arr_len = end_arr - result_arr + 1;
-                fprintf(stderr, "[RPC DEBUG] Found end of array, length: %zu\n", arr_len);
-                if (arr_len < out_max_len) {
-                    memcpy(out_hex_buffer, result_arr, arr_len);
-                    out_hex_buffer[arr_len] = '\0';
-                    success = true;
-                    goto cleanup;
-                } else {
-                    fprintf(stderr, "[RPC DEBUG] arr_len (%zu) >= out_max_len (%zu)\n", arr_len, out_max_len);
-                }
-            } else {
-                fprintf(stderr, "[RPC DEBUG] Could not find end of array ']' in result_arr\n");
-            }
-        }
-    }
-
-    // fallback for non-quoted result object strings
-    char *result_obj = strstr(body, "\"result\":");
-    if (result_obj) {
-        result_obj += 9;
-        if (*result_obj == '"') {
-            result_obj++;
-            char *end_quote = strchr(result_obj, '"');
-            if (end_quote) {
-                size_t hex_len = end_quote - result_obj;
-                if (hex_len < out_max_len) {
-                    memcpy(out_hex_buffer, result_obj, hex_len);
-                    out_hex_buffer[hex_len] = '\0';
-                    success = true;
-                    goto cleanup;
-                }
-            }
-        }
-    }
-
-    fprintf(stderr, "[RPC DEBUG] All parsing pathways failed for body: %.200s...\n", body);
-
-cleanup:
-    if (response) free(response);
-    return success;
-}
-
-static bool exec_raw_http_rpc_body(const char *json_payload, char *out_buffer, size_t out_max_len) {
-    struct addrinfo hints, *res;
-    int sockfd = -1;
-    bool success = false;
-    char *response = NULL;
-
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-
-    if (getaddrinfo(RPC_HOST, RPC_PORT, &hints, &res) != 0) {
-        fprintf(stderr, "[RPC DEBUG] getaddrinfo failed for %s:%s\n", RPC_HOST, RPC_PORT);
-        return false;
-    }
-
-    sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-    if (sockfd < 0) {
-        fprintf(stderr, "[RPC DEBUG] socket creation failed\n");
-        freeaddrinfo(res);
-        return false;
-    }
-
-    if (connect(sockfd, res->ai_addr, res->ai_addrlen) < 0) {
-        fprintf(stderr, "[RPC DEBUG] connect failed to %s:%s\n", RPC_HOST, RPC_PORT);
-        close(sockfd);
-        freeaddrinfo(res);
-        return false;
-    }
-    freeaddrinfo(res);
-
-    TsfiTlsContext tls;
-    tsfi_tls_init(&tls, sockfd);
-    if (!tsfi_tls_handshake(&tls, RPC_HOST)) {
-        fprintf(stderr, "[RPC DEBUG] TLS handshake failed for %s\n", RPC_HOST);
-        tsfi_tls_close(&tls);
-        close(sockfd);
-        return false;
-    }
-
-    char request[131072];
-    snprintf(request, sizeof(request),
-             "POST / HTTP/1.1\r\n"
-             "Host: %s\r\n"
-             "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) Antigravity/2.0\r\n"
-             "Content-Type: application/json\r\n"
-             "Content-Length: %zu\r\n"
-             "Connection: close\r\n"
-             "\r\n"
-             "%s",
-             RPC_HOST, strlen(json_payload), json_payload);
-
-    if (tsfi_tls_write(&tls, request, strlen(request)) < 0) {
-        fprintf(stderr, "[RPC DEBUG] tsfi_tls_write failed\n");
-        tsfi_tls_close(&tls);
+    if (written < 0) {
+        fprintf(stderr, "[RPC DEBUG] write failed\n");
+        if (use_tls) tsfi_tls_close(&tls);
         close(sockfd);
         return false;
     }
@@ -282,7 +99,7 @@ static bool exec_raw_http_rpc_body(const char *json_payload, char *out_buffer, s
     response = malloc(524288);
     if (!response) {
         fprintf(stderr, "[RPC DEBUG] malloc failed for response buffer\n");
-        tsfi_tls_close(&tls);
+        if (use_tls) tsfi_tls_close(&tls);
         close(sockfd);
         return false;
     }
@@ -293,7 +110,11 @@ static bool exec_raw_http_rpc_body(const char *json_payload, char *out_buffer, s
     size_t header_end = 0;
 
     while (1) {
-        n = tsfi_tls_read(&tls, response + total_read, 524288 - 1 - total_read);
+        if (use_tls) {
+            n = tsfi_tls_read(&tls, response + total_read, 524288 - 1 - total_read);
+        } else {
+            n = read(sockfd, response + total_read, 524288 - 1 - total_read);
+        }
         if (n <= 0) break;
         total_read += n;
         response[total_read] = '\0';
@@ -313,7 +134,7 @@ static bool exec_raw_http_rpc_body(const char *json_payload, char *out_buffer, s
             }
         }
 
-        if (content_length >= 0 && header_end > 0) {
+        if (header_end > 0 && content_length > 0) {
             if (total_read >= header_end + content_length) {
                 break;
             }
@@ -340,26 +161,47 @@ static bool exec_raw_http_rpc_body(const char *json_payload, char *out_buffer, s
             break;
         }
     }
-    tsfi_tls_close(&tls);
-    close(sockfd);
-    
-    response[total_read] = '\0';
 
-    char *body = strstr(response, "\r\n\r\n");
-    if (!body) goto cleanup;
-    body += 4;
-
-    size_t body_len = strlen(body);
-    if (body_len < out_max_len) {
-        strcpy(out_buffer, body);
-        success = true;
-    } else {
-        fprintf(stderr, "[RPC DEBUG] body_len (%zu) >= out_max_len (%zu)\n", body_len, out_max_len);
+    if (total_read > 0) {
+        char *body = strstr(response, "\r\n\r\n");
+        if (body) {
+            body += 4;
+            if (parse_result_only) {
+                char *res_ptr = strstr(body, "\"result\":");
+                if (res_ptr) {
+                    res_ptr += 9;
+                    while (*res_ptr == ' ' || *res_ptr == '"') res_ptr++;
+                    size_t out_len = 0;
+                    while (res_ptr[out_len] != '\0' && res_ptr[out_len] != '"' && res_ptr[out_len] != ',' && res_ptr[out_len] != '}' && res_ptr[out_len] != '\n' && res_ptr[out_len] != '\r') {
+                        out_len++;
+                    }
+                    if (out_len < out_max_len) {
+                        memcpy(out_buffer, res_ptr, out_len);
+                        out_buffer[out_len] = '\0';
+                        success = true;
+                    }
+                }
+            } else {
+                if (strlen(body) < out_max_len) {
+                    strcpy(out_buffer, body);
+                    success = true;
+                }
+            }
+        }
     }
 
-cleanup:
     if (response) free(response);
+    if (use_tls) tsfi_tls_close(&tls);
+    close(sockfd);
     return success;
+}
+
+bool exec_raw_http_rpc(const char *json_payload, char *out_hex_buffer, size_t out_max_len) {
+    return exec_raw_http_rpc_common(json_payload, out_hex_buffer, out_max_len, true);
+}
+
+static bool exec_raw_http_rpc_body(const char *json_payload, char *out_buffer, size_t out_max_len) {
+    return exec_raw_http_rpc_common(json_payload, out_buffer, out_max_len, false);
 }
 
 static void ensure_cache_dirs() {
