@@ -689,7 +689,46 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
         return 0;
     }
 
+    // Check if the input is a LEXICON_EXPORT command
+    if (strncmp(input, "LEXICON_EXPORT ", 15) == 0) {
+        char filename[128] = "";
+        int parsed = sscanf(input, "LEXICON_EXPORT %127s", filename);
+        if (parsed != 1) {
+            tsfi_io_printf(stdout, "[LEXICON ERROR] Invalid LEXICON_EXPORT syntax.\n");
+            return 1;
+        }
+
+        // Rule 13: Enforce conforming .dat.bin extension check
+        size_t len_fn = strlen(filename);
+        if (len_fn < 8 || (strcasecmp(filename + len_fn - 8, ".dat.bin") != 0)) {
+            tsfi_io_printf(stdout, "[LEXICON REJECT] Lexicon export target must have a .dat.bin extension.\n");
+            return 1;
+        }
+
+        FILE *f = fopen(filename, "wb");
+        if (!f) {
+            tsfi_io_printf(stdout, "[LEXICON ERROR] Could not open file '%s' for writing.\n", filename);
+            return 1;
+        }
+
+        // Write Auncient signature and word count
+        char sig[4] = {'A', 'U', 'N', 'C'};
+        fwrite(sig, 1, 4, f);
+        uint32_t count = tpu_registry.total_registered;
+        fwrite(&count, sizeof(count), 1, f);
+
+        // Write all registered words
+        for (uint32_t i = 0; i < count; i++) {
+            fwrite(&tpu_registry.registered_words[i], sizeof(auncient_transfluxor_word_t), 1, f);
+        }
+        fclose(f);
+
+        tsfi_io_printf(stdout, "[LEXICON EXPORT SUCCESS] Exported %u words to '%s' successfully.\n", count, filename);
+        return 0;
+    }
+
     // Check if the input is a COBOL_ALTER command
+
 
 
     if (strncmp(input, "COBOL_ALTER ", 12) == 0) {

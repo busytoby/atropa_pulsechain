@@ -89,6 +89,17 @@ int main(void) {
     char cmd_lex_execute[128] = "LEXICON_EXECUTE SPK_LOCK_SCSI SPK_WRITE_LEDGER";
     status = tsfi_cli_process_line(ws, cmd_lex_execute);
     assert(status == 0);
+    // 8. Test lexicon exporter and Rule 13 extension constraint
+    printf("[TEST] Dispatching LEXICON_EXPORT with invalid extension .json (should fail)...\n");
+    char cmd_lex_exp_fail[128] = "LEXICON_EXPORT target_dictionary.json";
+    status = tsfi_cli_process_line(ws, cmd_lex_exp_fail);
+    assert(status == 1); // Confirms non-.dat.bin file extension is rejected
+
+    printf("[TEST] Dispatching LEXICON_EXPORT with valid .dat.bin extension...\n");
+    char cmd_lex_exp_pass[128] = "LEXICON_EXPORT target_dictionary.dat.bin";
+    status = tsfi_cli_process_line(ws, cmd_lex_exp_pass);
+    assert(status == 0);
+    remove("target_dictionary.dat.bin"); // Clean up generated file
 
 
 
