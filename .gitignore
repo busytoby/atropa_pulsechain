@@ -159,6 +159,7 @@ libtsfi2.so
 /tests/test_auncient_tpu_spelling_benchmark
 /tests/test_auncient_tpu_bond_benchmark
 /tests/test_auncient_swarm_consensus
+/tests/test_auncient_swarm_metaprogramming
 /tests/test_auncient_fourier_alsa_feedback
 /tests/test_auncient_fourier_bus
 /tests/test_auncient_gguf_acab
