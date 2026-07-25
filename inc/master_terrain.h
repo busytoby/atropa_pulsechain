@@ -128,4 +128,7 @@ bool master_terrain_identify_losses(const double *page_healths, uint32_t count, 
 /* Document QLoss: Records ongoing attrition losses onto the virtual qLOSS Qing data structure using Waat and Luo coordinates */
 bool master_terrain_document_qloss(uint64_t waat, uint64_t luo, uint32_t loss_value, uint32_t *out_qloss_register);
 
+/* Defragment Pool: Consolidates active and fragmented memory pages to recover locked address blocks */
+bool master_terrain_defragment_pool(uint32_t *page_addresses, uint32_t count, uint32_t *out_consolidated_count);
+
 #endif /* MASTER_TERRAIN_H */

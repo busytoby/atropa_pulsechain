@@ -623,3 +623,25 @@ bool master_terrain_document_qloss(uint64_t waat, uint64_t luo, uint32_t loss_va
     *out_qloss_register = ((loss_value & 0xFFFF) << 16) | coord_hash;
     return true;
 }
+
+/* Defragment Pool: Consolidates active and fragmented memory pages to recover locked address blocks */
+bool master_terrain_defragment_pool(uint32_t *page_addresses, uint32_t count, uint32_t *out_consolidated_count) {
+    if (!page_addresses || count == 0 || !out_consolidated_count) return false;
+
+    /* Defragments active pages by shifting zero address gaps out of the allocation index:
+       Identifies active blocks, compacts the list, and clears trailing allocations */
+    uint32_t write_idx = 0;
+    for (uint32_t read_idx = 0; read_idx < count; read_idx++) {
+        if (page_addresses[read_idx] != 0) {
+            page_addresses[write_idx++] = page_addresses[read_idx];
+        }
+    }
+
+    /* Zero out the remainder of the pool to clean fragmentation holes */
+    for (uint32_t i = write_idx; i < count; i++) {
+        page_addresses[i] = 0;
+    }
+
+    *out_consolidated_count = write_idx;
+    return true;
+}
