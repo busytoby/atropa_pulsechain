@@ -568,28 +568,15 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
 
         int parsed = sscanf(input, "LEXICON_REGISTER %31s %u %x %x", name, &command_id, &wmq, &abi);
         if (parsed == 4) {
-            // Apply standard prefix gating for decay duration
-            double decay = 0.3;
-            if (strncmp(name, "WMQ_", 4) == 0) {
-                decay = 0.4;
-            } else if (strncmp(name, "ABI_", 4) == 0) {
-                decay = 0.2;
-            } else if (strncmp(name, "SPK_RELEASE", 11) == 0) {
-                decay = 0.5;
-            }
-
-            // Derive frequencies according to standard formulas
-            double f1 = 300.0 + (double)((command_id * 50) % 700);
-            double f2 = f1 * 2.0;
-
             auncient_transfluxor_word_t word;
-            if (auncient_sdk_compile_transfluxor_word(&word, name, command_id, f1, f2, decay, wmq, abi)) {
+            if (auncient_sdk_compile_lexicon_word(&word, name, command_id, wmq, abi)) {
                 if (auncient_sdk_register_transfluxor_word(&tpu_registry, &word)) {
                     uint32_t idx = tpu_registry.total_registered - 1;
                     tpu_registration_times[idx] = get_time_sec();
                     tsfi_io_printf(stdout, "[LEXICON] Compiled & Registered: %s (ID %u) -> F1: %.1fHz, F2: %.1fHz, Decay: %.1fs\n", 
-                                   word.name, word.word_id, f1, f2, decay);
+                                   word.name, word.word_id, word.f1, word.f2, word.decay);
                     return 0;
+
                 } else {
                     tsfi_io_printf(stdout, "[LEXICON ERROR] Registry collision or full for '%s'.\n", name);
                     return 1;

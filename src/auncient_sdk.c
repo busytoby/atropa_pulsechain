@@ -1127,6 +1127,27 @@ bool auncient_sdk_compile_transfluxor_word(auncient_transfluxor_word_t *word, co
     return true;
 }
 
+bool auncient_sdk_compile_lexicon_word(auncient_transfluxor_word_t *word, const char *name, uint32_t command_id, uint32_t wmq_cmd, uint32_t abi_op) {
+    if (!word || !name) return false;
+
+    // Apply standard prefix gating for decay duration
+    double decay = 0.3;
+    if (strncmp(name, "WMQ_", 4) == 0) {
+        decay = 0.4;
+    } else if (strncmp(name, "ABI_", 4) == 0) {
+        decay = 0.2;
+    } else if (strncmp(name, "SPK_RELEASE", 11) == 0) {
+        decay = 0.5;
+    }
+
+    // Derive frequencies according to standard formulas
+    double f1 = 300.0 + (double)((command_id * 50) % 700);
+    double f2 = f1 * 2.0;
+
+    return auncient_sdk_compile_transfluxor_word(word, name, command_id, f1, f2, decay, wmq_cmd, abi_op);
+}
+
+
 void auncient_sdk_init_transfluxor_registry(auncient_transfluxor_registry_t *reg) {
     if (!reg) return;
     reg->total_registered = 0;

@@ -240,7 +240,9 @@ typedef struct {
 
 uint64_t auncient_sdk_calculate_transfluxor_hash(double f1, double f2, double decay, uint32_t word_id);
 bool auncient_sdk_compile_transfluxor_word(auncient_transfluxor_word_t *word, const char *name, uint32_t word_id, double f1, double f2, double decay, uint32_t wmq_cmd, uint32_t abi_op);
+bool auncient_sdk_compile_lexicon_word(auncient_transfluxor_word_t *word, const char *name, uint32_t command_id, uint32_t wmq_cmd, uint32_t abi_op);
 void auncient_sdk_init_transfluxor_registry(auncient_transfluxor_registry_t *reg);
+
 bool auncient_sdk_register_transfluxor_word(auncient_transfluxor_registry_t *reg, const auncient_transfluxor_word_t *word);
 bool auncient_sdk_dispatch_transfluxor_word(const auncient_transfluxor_registry_t *reg, const auncient_transfluxor_word_t *word, double *feedback_freq);
 bool auncient_sdk_tpu_execute_layer(const auncient_transfluxor_registry_t *reg, const auncient_transfluxor_word_t *inputs, int num_inputs, auncient_transfluxor_word_t *output);
