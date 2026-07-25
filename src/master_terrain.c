@@ -766,3 +766,24 @@ bool master_terrain_verify_pointer(const void *ptr, bool *out_is_valid) {
     }
     return true;
 }
+
+/* Stack Bounds Verification: Validates stack pointer boundaries against limit ranges to prevent stack underflows or overflows */
+bool master_terrain_verify_stack_bounds(uint32_t stack_ptr, uint32_t stack_limit, bool is_push, bool *out_bounds_violation) {
+    if (!out_bounds_violation) return false;
+
+    /* Push bounds evaluation */
+    if (is_push) {
+        if (stack_ptr >= stack_limit) {
+            *out_bounds_violation = true; /* Stack overflow */
+        } else {
+            *out_bounds_violation = false;
+        }
+    } else { /* Pop bounds evaluation */
+        if (stack_ptr == 0) {
+            *out_bounds_violation = true; /* Stack underflow */
+        } else {
+            *out_bounds_violation = false;
+        }
+    }
+    return true;
+}

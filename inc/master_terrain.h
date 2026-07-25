@@ -158,4 +158,7 @@ bool master_terrain_verify_buffer_limits(uint32_t write_len, uint32_t current_le
 /* Pointer Verification: Assures that active pointer memory addresses are non-null and fall inside valid system spaces, avoiding dereference faults */
 bool master_terrain_verify_pointer(const void *ptr, bool *out_is_valid);
 
+/* Stack Bounds Verification: Validates stack pointer boundaries against limit ranges to prevent stack underflows or overflows */
+bool master_terrain_verify_stack_bounds(uint32_t stack_ptr, uint32_t stack_limit, bool is_push, bool *out_bounds_violation);
+
 #endif /* MASTER_TERRAIN_H */
