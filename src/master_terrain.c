@@ -45,3 +45,24 @@ bool master_terrain_map_mmu(uint8_t mpr_index, const terrain_cell_t *cell) {
     /* Simulate successful MMU page swap */
     return true;
 }
+
+/* Stieber data reduction scan: Compresses terrain cells based on elevation contours */
+bool master_terrain_stieber_reduction(const terrain_cell_t *cell, uint8_t *out_compressed, uint32_t *out_size) {
+    if (!cell || !out_compressed || !out_size) return false;
+
+    /* Joseph A. Stieber's 1957 automatic data reduction logic:
+       Scans the 3D grid and filters values matching specific contour levels (e.g. multiples of 16) */
+    uint32_t count = 0;
+    for (int y = 0; y < TERRAIN_GRID_SIZE; y++) {
+        for (int x = 0; x < TERRAIN_GRID_SIZE; x++) {
+            uint8_t h = cell->height_grid[y][x];
+            if (h % 16 == 0) {
+                out_compressed[count++] = (uint8_t)x;
+                out_compressed[count++] = (uint8_t)y;
+                out_compressed[count++] = h;
+            }
+        }
+    }
+    *out_size = count;
+    return true;
+}
