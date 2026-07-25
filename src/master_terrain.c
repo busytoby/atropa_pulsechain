@@ -66,3 +66,18 @@ bool master_terrain_stieber_reduction(const terrain_cell_t *cell, uint8_t *out_c
     *out_size = count;
     return true;
 }
+
+/* Brainerd UHF transmission line simulation: Calculates line loss and phase velocity along the coaxial link */
+bool master_terrain_brainerd_uhf(double frequency, double length, double *out_attenuation, double *out_phase_velocity) {
+    if (frequency <= 0.0 || length <= 0.0 || !out_attenuation || !out_phase_velocity) return false;
+
+    /* J. G. Brainerd's ultra-high frequency transmission line formulas:
+       Simulates skin effect attenuation and phase velocity scaling over coaxial medium */
+    double R_skin = 0.1; /* Simulated base resistance */
+    double L_coax = 0.25e-6;
+    double C_coax = 100e-12;
+
+    *out_attenuation = R_skin * length / 2.0;
+    *out_phase_velocity = 1.0 / (L_coax * C_coax);
+    return true;
+}

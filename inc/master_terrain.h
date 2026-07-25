@@ -27,4 +27,7 @@ bool master_terrain_map_mmu(uint8_t mpr_index, const terrain_cell_t *cell);
 /* Stieber data reduction scan: Compresses terrain cells based on elevation contours */
 bool master_terrain_stieber_reduction(const terrain_cell_t *cell, uint8_t *out_compressed, uint32_t *out_size);
 
+/* Brainerd UHF transmission line simulation: Calculates line loss and phase velocity along the coaxial link */
+bool master_terrain_brainerd_uhf(double frequency, double length, double *out_attenuation, double *out_phase_velocity);
+
 #endif /* MASTER_TERRAIN_H */
