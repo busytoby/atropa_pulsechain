@@ -150,6 +150,7 @@ libtsfi2.so
 /tests/test_auncient_tpu_neural_layer
 /tests/test_auncient_tpu_recurrent
 /tests/test_auncient_tpu_neural_benchmark
+/tests/test_auncient_tpu_recurrent_benchmark
 /tests/test_auncient_fourier_alsa_feedback
 /tests/test_auncient_fourier_bus
 /tests/test_auncient_gguf_acab
