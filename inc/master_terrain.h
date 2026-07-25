@@ -61,4 +61,14 @@ bool master_terrain_ferractor_execute_voxpd(uint32_t packed_word, uint8_t *out_o
 /* Self-Defining Language Compiler: Dynamically names a compiler dialect based on coordinate seed and parses input bytecode */
 bool master_terrain_nameless_compiler(uint64_t seed, const uint8_t *bytecode, uint32_t length, char *out_lang_name, uint32_t *out_result);
 
+typedef struct {
+    uint32_t address;
+    uint32_t length;
+    uint8_t tag;        /* 0: Data, 1: Descriptor, 2: Code */
+    uint8_t flags;      /* Read/Write/Execute permissions */
+} master_terrain_descriptor_t;
+
+/* Descriptor-Based Safe Read: Validates bounds and tag matching Robert S. Barton's Burroughs B5000 memory architecture */
+bool master_terrain_read_descriptor(const master_terrain_descriptor_t *desc, const uint8_t *memory, uint32_t index_val, uint8_t *out_val);
+
 #endif /* MASTER_TERRAIN_H */

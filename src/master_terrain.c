@@ -242,3 +242,24 @@ bool master_terrain_nameless_compiler(uint64_t seed, const uint8_t *bytecode, ui
     }
     return false;
 }
+
+/* Descriptor-Based Safe Read: Validates bounds and tag matching Robert S. Barton's Burroughs B5000 memory architecture */
+bool master_terrain_read_descriptor(const master_terrain_descriptor_t *desc, const uint8_t *memory, uint32_t index_val, uint8_t *out_val) {
+    if (!desc || !memory || !out_val) return false;
+
+    /* Burroughs descriptor bounds and permissions checks */
+    if (index_val >= desc->length) {
+        /* Out of bounds hardware interrupt simulation */
+        return false;
+    }
+
+    /* Tag validation check (e.g. tag 0 represents safe read data) */
+    if (desc->tag != 0) {
+        /* Type mismatch hardware interrupt simulation */
+        return false;
+    }
+
+    /* Read memory byte dynamically using descriptor base address */
+    *out_val = memory[desc->address + index_val];
+    return true;
+}
