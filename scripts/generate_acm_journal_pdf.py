@@ -3,7 +3,7 @@ import re
 import datetime
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
-from reportlab.platypus import BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer, PageBreak, FrameBreak, Table, TableStyle, Image
+from reportlab.platypus import BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer, PageBreak, FrameBreak, Table, TableStyle, Image, NextPageTemplate
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_JUSTIFY, TA_CENTER, TA_LEFT
 from reportlab.lib import colors
@@ -56,16 +56,30 @@ class NumberedCanvas(canvas.Canvas):
         self.saveState()
         self.setFont("Times-Roman", 8)
         
-        # Header text
-        self.drawString(0.5 * inch, 6.5 * inch, "PROCEEDINGS OF THE ACM, VOL. 18, 1961")
-        self.drawRightString(8.5 * inch, 6.5 * inch, "LORE COMPENDIUM")
+        is_even = (self._pageNumber % 2 == 0)
+        
+        left_header_margin = 0.5 * inch if is_even else 0.75 * inch
+        right_header_margin = 8.5 * inch if is_even else 8.25 * inch
+        
+        if is_even:
+            self.drawString(left_header_margin, 6.5 * inch, "LORE COMPENDIUM")
+            self.drawRightString(right_header_margin, 6.5 * inch, "AUNCIENT RECORDS")
+        else:
+            self.drawString(left_header_margin, 6.5 * inch, "AUNCIENT RECORDS")
+            self.drawRightString(right_header_margin, 6.5 * inch, "LORE COMPENDIUM")
+            
         self.setLineWidth(0.5)
-        self.line(0.5 * inch, 6.4 * inch, 8.5 * inch, 6.4 * inch)
+        self.line(left_header_margin, 6.4 * inch, right_header_margin, 6.4 * inch)
         
         # Footer text
-        self.line(0.5 * inch, 0.6 * inch, 8.5 * inch, 0.6 * inch)
+        self.line(left_header_margin, 0.6 * inch, right_header_margin, 0.6 * inch)
         page_text = f"Page {self._pageNumber} of {page_count}"
-        self.drawCentredString(4.5 * inch, 0.4 * inch, page_text)
+        
+        if is_even:
+            self.drawString(left_header_margin, 0.4 * inch, page_text)
+        else:
+            self.drawRightString(right_header_margin, 0.4 * inch, page_text)
+            
         self.restoreState()
 
 def inline_md_to_html(text):
@@ -145,7 +159,6 @@ def parse_markdown_table(rows, body_style, col_width):
     return t
 
 def process_text_block(text, body_style, col_width, story):
-    # Find all images in this block of text: ![alt](path)
     pattern = r'!\[[^\]]*\]\(([^)]+)\)'
     last_idx = 0
     for match in re.finditer(pattern, text):
@@ -157,6 +170,7 @@ def process_text_block(text, body_style, col_width, story):
                 story.append(Paragraph(html_p, body_style))
                 
         img_path = match.group(1).strip().split('?')[0]
+        print(f"Found image: {img_path}")
         ext = os.path.splitext(img_path)[1].lower()
         if ext in ['.jpg', '.jpeg', '.png', '.gif', '.bmp'] and os.path.exists(img_path):
             try:
@@ -191,25 +205,24 @@ def build_pdf():
     
     page_width = 9.0 * inch
     page_height = 7.0 * inch
-    margin = 0.5 * inch
     spacing = 0.4 * inch
-    col_width = (page_width - 2 * margin - spacing) / 2.0
-    col_height = page_height - 2 * margin - 0.5 * inch
+    col_width = (page_width - 1.25 * inch - spacing) / 2.0
+    col_height = page_height - 1.0 * inch - 0.5 * inch
     
     doc = BaseDocTemplate(
         "lore_compendium.pdf",
-        pagesize=(page_width, page_height),
-        leftMargin=margin,
-        rightMargin=margin,
-        topMargin=margin,
-        bottomMargin=margin
+        pagesize=(page_width, page_height)
     )
     
-    frame_left = Frame(margin, margin + 0.2 * inch, col_width, col_height, id='col1')
-    frame_right = Frame(margin + col_width + spacing, margin + 0.2 * inch, col_width, col_height, id='col2')
+    frame_left_odd = Frame(0.75 * inch, 0.7 * inch, col_width, col_height, id='col1_odd')
+    frame_right_odd = Frame(0.75 * inch + col_width + spacing, 0.7 * inch, col_width, col_height, id='col2_odd')
+    template_odd = PageTemplate(id='odd_page', frames=[frame_left_odd, frame_right_odd])
     
-    template = PageTemplate(id='two_column', frames=[frame_left, frame_right])
-    doc.addPageTemplates([template])
+    frame_left_even = Frame(0.5 * inch, 0.7 * inch, col_width, col_height, id='col1_even')
+    frame_right_even = Frame(0.5 * inch + col_width + spacing, 0.7 * inch, col_width, col_height, id='col2_even')
+    template_even = PageTemplate(id='even_page', frames=[frame_left_even, frame_right_even])
+    
+    doc.addPageTemplates([template_odd, template_even])
     
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle(
@@ -234,6 +247,9 @@ def build_pdf():
     
     story = []
     
+    # Establish the alternating page template cycle starting with odd page
+    story.append(NextPageTemplate(['even_page', 'odd_page']))
+    
     story.append(Paragraph("<b>COMPENDIUM OF LORE AND HISTORICAL TRANSCRIPTS</b>", title_style))
     story.append(Paragraph("Compiled Chronologically under ACM 1961 Standards", ParagraphStyle('Sub', parent=title_style, fontName='Times-Italic', fontSize=9)))
     story.append(Spacer(1, 0.2 * inch))
@@ -250,7 +266,6 @@ def build_pdf():
         while i < len(lines):
             line = lines[i].strip()
             
-            # Detect and parse tables
             if line.startswith('|'):
                 table_lines = []
                 while i < len(lines) and lines[i].strip().startswith('|'):
@@ -263,7 +278,6 @@ def build_pdf():
                     story.append(Spacer(1, 4))
                 continue
                 
-            # Process standard paragraphs and extract embedded images
             if line:
                 p_text = []
                 while i < len(lines) and lines[i].strip() and not lines[i].strip().startswith('|'):
