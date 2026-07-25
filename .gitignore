@@ -142,6 +142,7 @@ libtsfi2.so
 /tests/test_auncient_integration_speech_control
 /tests/test_auncient_agent_coordination
 /tests/test_auncient_polyphonic_gating
+/tests/test_auncient_emotional_modulation
 /tests/test_auncient_fourier_alsa_feedback
 /tests/test_auncient_fourier_bus
 /tests/test_auncient_gguf_acab
