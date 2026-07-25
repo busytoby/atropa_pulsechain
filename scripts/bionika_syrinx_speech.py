@@ -37,6 +37,7 @@ PHONEME_TABLE = {
     "z": (300.0, 1800.0, 2700.0, True),  # voiced fricative z
     "ng": (300.0, 1800.0, 2700.0, True),  # nasal ng
     "un": (400.0, 1500.0, 2500.0, True),  # nasal un
+    "j": (1500.0, 3000.0, 5000.0, False),  # wheeler jump transient stop
     " ": (0.0, 0.0, 0.0, False),  # silence
 }
 
@@ -46,7 +47,7 @@ def text_to_phonemes(text):
     Supports basic G2P rules for English/latin spelling representation.
     """
     text = text.lower()
-    phonemes = []
+    phonemes = ["j"]
     i = 0
     while i < len(text):
         char = text[i]
@@ -82,10 +83,11 @@ def text_to_phonemes(text):
                 i += 2
                 continue
 
-        if char in PHONEME_TABLE:
-            phonemes.append(char)
-        elif char.isspace():
+        if char.isspace():
             phonemes.append(" ")
+            phonemes.append("j")
+        elif char in PHONEME_TABLE:
+            phonemes.append(char)
         i += 1
     return phonemes
 
@@ -203,8 +205,10 @@ def generate_syrinx_speech(text, output_wav="bionika_syrinx_speech.wav"):
             # Scale transient attack gain with the sub-accumulator (higher energy under stress)
             attack_gain = 1.0 + (bionika_vsub * 1.5)
             # Stop consonants like "t" decay rapidly, fricatives like "s", "f" have fast rise
-            if curr_ph in ["t"]:
-                envelope = math.exp(-15.0 * ph_progress) * 0.40 * attack_gain
+            if curr_ph in ["t", "j"]:
+                decay_rate = 30.0 if curr_ph == "j" else 15.0
+                gain = 0.85 if curr_ph == "j" else 0.40
+                envelope = math.exp(-decay_rate * ph_progress) * gain * attack_gain
             else: # "s", "f"
                 envelope = (1.0 - math.exp(-15.0 * ph_progress)) * 0.35 * attack_gain
             excitation = noise[s] * envelope
@@ -249,11 +253,12 @@ def generate_syrinx_speech(text, output_wav="bionika_syrinx_speech.wav"):
     byte_data[36:40] = b"data"
     byte_data[40:44] = int(len(out_signal) * 2).to_bytes(4, "little")
     
-    offset = 44
+    write_pos = 44
     for val in out_signal:
         v = int(val * 32767) if val >= 0 else int(val * 32768)
-        byte_data[offset:offset+2] = v.to_bytes(2, "little", signed=True)
-        offset += 2
+        byte_data[write_pos:write_pos+2] = v.to_bytes(2, "little", signed=True)
+        write_pos += 2
+
         
     with open(output_wav, "wb") as f:
         f.write(byte_data)

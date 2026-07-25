@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auncient Syrinx Breadboard Synthesizer Cockpit</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #05050a;
+            --card-bg: rgba(15, 15, 30, 0.65);
+            --border-glow: rgba(0, 255, 200, 0.25);
+            --accent-cyan: #00ffc8;
+            --accent-red: #ff3c64;
+            --accent-orange: #ff9100;
+            --text-main: #f0f0ff;
+            --text-muted: #8c8cab;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at 50% 30%, #101035 0%, #05050a 70%);
+            min-height: 100vh;
+        }
+
+        header {
+            padding: 24px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            background: linear-gradient(90deg, #00ffc8, #ff3c64);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: 2px;
+        }
+
+        main {
+            padding: 30px 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 30px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+        }
+
+        .panel {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .panel:hover {
+            border-color: var(--border-glow);
+            box-shadow: 0 8px 32px 0 rgba(0, 255, 200, 0.08);
+        }
+
+        .panel-full {
+            grid-column: span 2;
+        }
+
+        .panel-title {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 20px;
+            color: var(--text-main);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--accent-cyan);
+            background: rgba(0, 255, 200, 0.1);
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        /* Controls styling */
+        .control-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        input[type="range"] {
+            flex-grow: 1;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--accent-cyan);
+        }
+
+        .value-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            width: 50px;
+            text-align: right;
+            color: var(--accent-cyan);
+        }
+
+        /* Toggle switches */
+        .switch-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+        }
+
+        .switch-label-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.15);
+            transition: .3s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent-cyan);
+            box-shadow: 0 0 12px var(--accent-cyan);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        /* Visualizers */
+        canvas {
+            width: 100%;
+            height: 140px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .lissajous-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+
+        #lissajousCanvas {
+            width: 100%;
+            height: 300px;
+        }
+
+        /* Keyboard */
+        .keyboard {
+            display: flex;
+            gap: 6px;
+            padding: 10px 0;
+            overflow-x: auto;
+        }
+
+        .key {
+            height: 90px;
+            flex-grow: 1;
+            background: rgba(255, 255, 255, 0.85);
+            color: #111;
+            border-radius: 4px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            user-select: none;
+            min-width: 40px;
+        }
+
+        .key.black {
+            background: #111;
+            color: #eee;
+            height: 60px;
+            margin-left: -15px;
+            margin-right: -15px;
+            z-index: 2;
+            min-width: 28px;
+        }
+
+        .key:active, .key.active {
+            background: var(--accent-cyan);
+            color: #111;
+            box-shadow: 0 0 15px var(--accent-cyan);
+        }
+
+        /* Vactrol diagram */
+        .vactrol-diagram {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .vactrol-node {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .vactrol-led {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #222;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.15s ease;
+            box-shadow: 0 0 0px transparent;
+        }
+
+        .vactrol-ldr {
+            width: 40px;
+            height: 20px;
+            background: #333;
+            border-radius: 4px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .vactrol-ldr::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 10%;
+            right: 10%;
+            height: 2px;
+            background: var(--accent-orange);
+            transform: translateY(-50%);
+        }
+
+        .info-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .info-card h4 {
+            font-size: 14px;
+            color: var(--accent-cyan);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        /* Status indicators */
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-red);
+            box-shadow: 0 0 6px var(--accent-red);
+            margin-right: 8px;
+        }
+
+        .status-indicator.active {
+            background: var(--accent-cyan);
+            box-shadow: 0 0 8px var(--accent-cyan);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div>
+            <h1>PL/EXUS Unified Synthesizer</h1>
+            <div class="subtitle">WinchesterMQ SCSI Phase Modulation Interface</div>
+        </div>
+        <div style="text-align: right;">
+            <div style="font-size: 12px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">
+                Motzkin Prime divisor active
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="dashboard-grid">
+            <!-- Audio Output Visualization -->
+            <div class="panel panel-full">
+                <div class="panel-title">
+                    <span>Acoustic Output Waveform</span>
+                    <span class="panel-tag">Live Oscilloscope</span>
+                </div>
+                <canvas id="scopeCanvas"></canvas>
+            </div>
+
+            <!-- Pluggable DSP modules -->
+            <div class="panel">
+                <div class="panel-title">
+                    <span>SEAC & Raydac Pluggable Logic</span>
+                    <span class="panel-tag">Burroughs PCU</span>
+                </div>
+                <div class="switch-container">
+                    <div>
+                        <strong>Whirlwind Holding Gun</strong>
+                        <div class="switch-label-desc">Continuous electron sustain over vactrols</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="holdingGunToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="switch-container">
+                    <div>
+                        <strong>Burroughs Clock Gating</strong>
+                        <div class="switch-label-desc">Mutes processing cycle below threshold</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="clockGatingToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="switch-container">
+                    <div>
+                        <strong>Sparklefly Compressor</strong>
+                        <div class="switch-label-desc">Auto dynamic gain reduction limit</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="compressorToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Vactrol Coils Configuration -->
+            <div class="panel">
+                <div class="panel-title">
+                    <span>Optoelectronic Vactrol Coils</span>
+                    <span class="panel-tag">LDR Lag Solver</span>
+                </div>
+                <div class="vactrol-diagram">
+                    <div class="vactrol-node">
+                        <div class="vactrol-led" id="vactrolLed"></div>
+                        <div style="font-size: 10px; font-family: 'JetBrains Mono', monospace;">LED DRIVE</div>
+                    </div>
+                    <div style="color: var(--accent-cyan); font-size: 20px;">──►</div>
+                    <div class="vactrol-node">
+                        <div class="vactrol-ldr" id="vactrolLdr"></div>
+                        <div style="font-size: 10px; font-family: 'JetBrains Mono', monospace;">LDR LAG</div>
+                    </div>
+                </div>
+                <div style="margin-top: 15px;">
+                    <div class="control-group">
+                        <label>Vactrol Envelope Decay (Lag)</label>
+                        <div class="slider-container">
+                            <input type="range" id="vactrolLag" min="0.05" max="2.0" step="0.05" value="0.4">
+                            <div class="value-display" id="vactrolLagVal">0.4s</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controller Knobs -->
+            <div class="panel panel-full">
+                <div class="panel-title">
+                    <span>Syrinx Membrane & Bowing Parameters</span>
+                    <span class="panel-tag">Verlet Integrator</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                    <div>
+                        <div class="control-group">
+                            <label>Sustained Bow Force (Holding Gun V_in)</label>
+                            <div class="slider-container">
+                                <input type="range" id="bowForce" min="0.0" max="1.5" step="0.05" value="0.8">
+                                <div class="value-display" id="bowForceVal">0.8V</div>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label>Membrane Mass / Weight</label>
+                            <div class="slider-container">
+                                <input type="range" id="membraneMass" min="0.01" max="0.3" step="0.01" value="0.07">
+                                <div class="value-display" id="membraneMassVal">0.07</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="control-group">
+                            <label>Compressor Threshold</label>
+                            <div class="slider-container">
+                                <input type="range" id="compThreshold" min="-40" max="0" step="1" value="-15">
+                                <div class="value-display" id="compThresholdVal">-15dB</div>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label>Voice Release (ADSR)</label>
+                            <div class="slider-container">
+                                <input type="range" id="voiceRelease" min="0.1" max="3.0" step="0.1" value="0.8">
+                                <div class="value-display" id="voiceReleaseVal">0.8s</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live keyboard player -->
+            <div class="panel panel-full">
+                <div class="panel-title">
+                    <span>Auncient Keybed Controller</span>
+                    <span class="panel-tag">Lissajous Tuning Grid</span>
+                </div>
+                <div class="keyboard" id="pianoKeyboard">
+                    <!-- Dynamic keys generated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Lissajous Quaternions -->
+        <div style="display: flex; flex-direction: column; gap: 30px;">
+            <div class="panel">
+                <div class="panel-title">
+                    <span>Lissajous Projection</span>
+                    <span class="panel-tag">3D Phase Orbit</span>
+                </div>
+                <div class="lissajous-container">
+                    <canvas id="lissajousCanvas"></canvas>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">
+                    <span>Junction State Metrics</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 12px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>NPN BLACK GATE (Voiced)</span>
+                        <span id="npnStatus"><span class="status-indicator"></span>CUTOFF</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>PNP RED GATE (Unvoiced)</span>
+                        <span id="pnpStatus"><span class="status-indicator"></span>CUTOFF</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>CLOCK GATE RATIO</span>
+                        <span id="clockGateVal">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <h4>System Architecture</h4>
+                <p>
+                    This console integrates WinchesterMQ SCSI loops directly with optoelectronic vactrol simulations and mechanical Verlet solvers. Selecting keys initiates the Wheeler Jump, generating formant-resonant sound waves and modulating the 3D phase envelope in real-time.
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Web Audio API Synthesizer Context
+        let audioCtx = null;
+        let vactrolLFO = null;
+        let globalOsc = null;
+        let globalGain = null;
+        let globalFilter = null;
+        let globalCompressor = null;
+
+        const synthKeys = [
+            { note: "C4", freq: 261.63, label: "C" },
+            { note: "C#4", freq: 277.18, label: "W", isBlack: true },
+            { note: "D4", freq: 293.66, label: "D" },
+            { note: "D#4", freq: 311.13, label: "E", isBlack: true },
+            { note: "E4", freq: 329.63, label: "E" },
+            { note: "F4", freq: 349.23, label: "F" },
+            { note: "F#4", freq: 369.99, label: "T", isBlack: true },
+            { note: "G4", freq: 392.00, label: "G" },
+            { note: "G#4", freq: 415.30, label: "Y", isBlack: true },
+            { note: "A4", freq: 440.00, label: "A" },
+            { note: "A#4", freq: 466.16, label: "U", isBlack: true },
+            { note: "B4", freq: 493.88, label: "B" },
+            { note: "C5", freq: 523.25, label: "C" }
+        ];
+
+        // UI References
+        const holdingGunToggle = document.getElementById("holdingGunToggle");
+        const clockGatingToggle = document.getElementById("clockGatingToggle");
+        const compressorToggle = document.getElementById("compressorToggle");
+        const vactrolLag = document.getElementById("vactrolLag");
+        const vactrolLagVal = document.getElementById("vactrolLagVal");
+        const bowForce = document.getElementById("bowForce");
+        const bowForceVal = document.getElementById("bowForceVal");
+        const membraneMass = document.getElementById("membraneMass");
+        const membraneMassVal = document.getElementById("membraneMassVal");
+        const compThreshold = document.getElementById("compThreshold");
+        const compThresholdVal = document.getElementById("compThresholdVal");
+        const voiceRelease = document.getElementById("voiceRelease");
+        const voiceReleaseVal = document.getElementById("voiceReleaseVal");
+        const vactrolLed = document.getElementById("vactrolLed");
+        const vactrolLdr = document.getElementById("vactrolLdr");
+        const npnStatus = document.getElementById("npnStatus");
+        const pnpStatus = document.getElementById("pnpStatus");
+        const clockGateVal = document.getElementById("clockGateVal");
+
+        // Initialization Web Audio
+        function initAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Nodes setup
+            globalOsc = audioCtx.createOscillator();
+            globalOsc.type = "sawtooth";
+            globalOsc.frequency.setValueAtTime(440, audioCtx.currentTime);
+
+            // Filter (Vactrol simulation target)
+            globalFilter = audioCtx.createBiquadFilter();
+            globalFilter.type = "lowpass";
+            globalFilter.Q.setValueAtTime(6, audioCtx.currentTime);
+            globalFilter.frequency.setValueAtTime(100, audioCtx.currentTime);
+
+            // Vactrol LED/LDR control envelope simulator
+            globalGain = audioCtx.createGain();
+            globalGain.gain.setValueAtTime(0, audioCtx.currentTime);
+
+            // Compressor (Sparklefly)
+            globalCompressor = audioCtx.createDynamicsCompressor();
+            globalCompressor.threshold.setValueAtTime(-15, audioCtx.currentTime);
+            globalCompressor.knee.setValueAtTime(12, audioCtx.currentTime);
+            globalCompressor.ratio.setValueAtTime(4, audioCtx.currentTime);
+            globalCompressor.attack.setValueAtTime(0.003, audioCtx.currentTime);
+            globalCompressor.release.setValueAtTime(0.08, audioCtx.currentTime);
+
+            // Analyzer
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 512;
+
+            // Connections
+            globalOsc.connect(globalFilter);
+            globalFilter.connect(globalGain);
+            
+            if (compressorToggle.checked) {
+                globalGain.connect(globalCompressor);
+                globalCompressor.connect(analyser);
+            } else {
+                globalGain.connect(analyser);
+            }
+            
+            analyser.connect(audioCtx.destination);
+            globalOsc.start();
+        }
+
+        // Key controls
+        let activeKey = null;
+
+        function playNote(freq) {
+            initAudio();
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            // Wheeler Jump: Initiate dynamic parameters
+            const bow_force_val = parseFloat(bowForce.value);
+            const lag = parseFloat(vactrolLag.value);
+            const release = parseFloat(voiceRelease.value);
+            const mass = parseFloat(membraneMass.value);
+
+            // Modulation of oscillator frequency based on SCSI parameter scaling
+            const finalFreq = freq * (1.0 + (mass * 0.15));
+            globalOsc.frequency.setValueAtTime(finalFreq, audioCtx.currentTime);
+
+            // Vactrol simulation: Slowly rise brightness of LDR
+            const targetFilterFreq = 100 + (freq * 4.0 * (bow_force_val + 0.2));
+            globalFilter.frequency.setTargetAtTime(targetFilterFreq, audioCtx.currentTime, lag * 0.2);
+
+            // Gain envelope attack
+            globalGain.gain.cancelScheduledValues(audioCtx.currentTime);
+            globalGain.gain.setValueAtTime(globalGain.gain.value, audioCtx.currentTime);
+            globalGain.gain.setTargetAtTime(0.7, audioCtx.currentTime, 0.05);
+
+            // Visual led feedback
+            vactrolLed.style.background = `rgba(0, 255, 200, ${0.4 + bow_force_val * 0.4})`;
+            vactrolLed.style.boxShadow = `0 0 ${10 + bow_force_val * 20}px #00ffc8`;
+            vactrolLdr.style.background = `rgba(255, 145, 0, ${0.3 + bow_force_val * 0.5})`;
+
+            // Update junction state UI: NPN is active (conducting voiced signal)
+            npnStatus.innerHTML = '<span class="status-indicator active"></span>CONDUC';
+            pnpStatus.innerHTML = '<span class="status-indicator"></span>CUTOFF';
+            clockGateVal.innerText = "100%";
+        }
+
+        function releaseNote() {
+            if (!audioCtx) return;
+            const release = parseFloat(voiceRelease.value);
+            const lag = parseFloat(vactrolLag.value);
+
+            // Check if holding gun is active (infinitely sustains string sound)
+            if (holdingGunToggle.checked) {
+                // Sustain at holding gun level
+                const bow_force_val = parseFloat(bowForce.value);
+                globalGain.gain.setTargetAtTime(0.2 * bow_force_val, audioCtx.currentTime, 0.5);
+                vactrolLed.style.background = `rgba(0, 255, 200, 0.3)`;
+                vactrolLed.style.boxShadow = `0 0 10px #00ffc8`;
+                return;
+            }
+
+            // Standard release
+            globalGain.gain.cancelScheduledValues(audioCtx.currentTime);
+            globalGain.gain.setValueAtTime(globalGain.gain.value, audioCtx.currentTime);
+            globalGain.gain.setTargetAtTime(0.0, audioCtx.currentTime, release);
+
+            // Vactrol decay
+            globalFilter.frequency.setTargetAtTime(100, audioCtx.currentTime, lag);
+
+            // Reset vactrol visuals
+            vactrolLed.style.background = '#222';
+            vactrolLed.style.boxShadow = '0 0 0px transparent';
+            vactrolLdr.style.background = '#333';
+
+            // Clock gating: Mute processor if below threshold
+            setTimeout(() => {
+                if (globalGain.gain.value < 0.01 && clockGatingToggle.checked && !holdingGunToggle.checked) {
+                    npnStatus.innerHTML = '<span class="status-indicator"></span>CUTOFF';
+                    pnpStatus.innerHTML = '<span class="status-indicator active"></span>CUTOFF';
+                    clockGateVal.innerText = "0%";
+                }
+            }, release * 1000);
+        }
+
+        // Draw Keyboard GUI
+        const keyboard = document.getElementById("pianoKeyboard");
+        synthKeys.forEach(k => {
+            const keyEl = document.createElement("div");
+            keyEl.className = `key ${k.isBlack ? 'black' : ''}`;
+            keyEl.innerText = k.label;
+            keyEl.addEventListener("mousedown", () => {
+                playNote(k.freq);
+                activeKey = keyEl;
+                keyEl.classList.add("active");
+            });
+            keyEl.addEventListener("mouseup", () => {
+                releaseNote();
+                keyEl.classList.remove("active");
+            });
+            keyboard.appendChild(keyEl);
+        });
+
+        // Global mouseup release
+        window.addEventListener("mouseup", () => {
+            if (activeKey) {
+                releaseNote();
+                activeKey.classList.remove("active");
+                activeKey = null;
+            }
+        });
+
+        // Controls Change Listener
+        vactrolLag.addEventListener("input", (e) => {
+            vactrolLagVal.innerText = `${e.target.value}s`;
+        });
+        bowForce.addEventListener("input", (e) => {
+            bowForceVal.innerText = `${e.target.value}V`;
+        });
+        membraneMass.addEventListener("input", (e) => {
+            membraneMassVal.innerText = e.target.value;
+        });
+        compThreshold.addEventListener("input", (e) => {
+            compThresholdVal.innerText = `${e.target.value}dB`;
+            if (globalCompressor) {
+                globalCompressor.threshold.setValueAtTime(parseFloat(e.target.value), audioCtx.currentTime);
+            }
+        });
+        voiceRelease.addEventListener("input", (e) => {
+            voiceReleaseVal.innerText = `${e.target.value}s`;
+        });
+
+        // Dynamic visualizers
+        const scopeCanvas = document.getElementById("scopeCanvas");
+        const scopeCtx = scopeCanvas.getContext("2d");
+        const lissajousCanvas = document.getElementById("lissajousCanvas");
+        const lissaCtx = lissajousCanvas.getContext("2d");
+
+        // Fit canvases
+        function resizeCanvases() {
+            scopeCanvas.width = scopeCanvas.clientWidth;
+            scopeCanvas.height = scopeCanvas.clientHeight;
+            lissajousCanvas.width = lissajousCanvas.clientWidth;
+            lissajousCanvas.height = lissajousCanvas.clientHeight;
+        }
+        window.addEventListener("resize", resizeCanvases);
+        resizeCanvases();
+
+        // Draw loop
+        let phaseOffset = 0;
+        function drawVisuals() {
+            requestAnimationFrame(drawVisuals);
+            
+            // 1. Oscilloscope Draw
+            scopeCtx.fillStyle = "rgba(5, 5, 10, 0.4)";
+            scopeCtx.fillRect(0, 0, scopeCanvas.width, scopeCanvas.height);
+            
+            scopeCtx.lineWidth = 2;
+            scopeCtx.strokeStyle = "#00ffc8";
+            scopeCtx.beginPath();
+            
+            const sliceWidth = scopeCanvas.width / 100;
+            let x = 0;
+            
+            // Fake wave if not playing, real wave if playing
+            let active = audioCtx && globalGain && globalGain.gain.value > 0.01;
+            
+            for (let i = 0; i < 100; i++) {
+                let y = scopeCanvas.height / 2;
+                if (active) {
+                    y += Math.sin(i * 0.2 + phaseOffset) * 40 * globalGain.gain.value;
+                } else if (holdingGunToggle.checked) {
+                    y += Math.sin(i * 0.15 + phaseOffset) * 8 * parseFloat(bowForce.value);
+                }
+                if (i === 0) {
+                    scopeCtx.moveTo(x, y);
+                } else {
+                    scopeCtx.lineTo(x, y);
+                }
+                x += sliceWidth;
+            }
+            scopeCtx.stroke();
+            
+            // 2. Lissajous Draw
+            lissaCtx.fillStyle = "rgba(5, 5, 10, 0.2)";
+            lissaCtx.fillRect(0, 0, lissajousCanvas.width, lissajousCanvas.height);
+            
+            lissaCtx.lineWidth = 1.5;
+            lissaCtx.strokeStyle = "#ff3c64";
+            lissaCtx.beginPath();
+            
+            const centerX = lissajousCanvas.width / 2;
+            const centerY = lissajousCanvas.height / 2;
+            const radius = Math.min(centerX, centerY) * 0.75;
+            
+            let scaling = active ? 1.0 : (holdingGunToggle.checked ? 0.3 : 0.05);
+            let speed_x = active ? 3.0 : 1.0;
+            let speed_y = active ? 2.0 : 1.0;
+            
+            for (let t = 0; t < 200; t++) {
+                let lx = centerX + Math.sin(t * 0.08 * speed_x + phaseOffset) * radius * scaling;
+                let ly = centerY + Math.cos(t * 0.12 * speed_y + phaseOffset) * radius * scaling;
+                if (t === 0) {
+                    lissaCtx.moveTo(lx, ly);
+                } else {
+                    lissaCtx.lineTo(lx, ly);
+                }
+            }
+            lissaCtx.stroke();
+            
+            phaseOffset += 0.05;
+        }
+        
+        drawVisuals();
+    </script>
+</body>
+</html>

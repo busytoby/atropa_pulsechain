@@ -18,7 +18,16 @@ typedef struct {
 } loader_stack_t;
 
 typedef struct {
+    uint8_t buffer[64];
+    size_t write_ptr;
+    size_t read_ptr;
+    bool transfer_active;
+    uint32_t transfer_cycles;
+} tape_channel_t;
+
+typedef struct {
     loader_stack_t stack;
+    tape_channel_t tape;
     uint32_t border_color;
     uint32_t psg_frequency;
     
@@ -26,6 +35,7 @@ typedef struct {
     bool blame_quarantine;
     uint32_t blamed_port;
 } ocean_loader_ctx_t;
+
 
 // 1. Dynamic Split-Raster Stripe Generator (modulates border lines based on SCSI bits)
 static void update_raster_border(ocean_loader_ctx_t *ctx, uint8_t scsi_byte) {
@@ -37,27 +47,51 @@ static void update_raster_border(ocean_loader_ctx_t *ctx, uint8_t scsi_byte) {
     }
 }
 
+// 1.5. Asynchronous Uniservo Tape Channel Tick
+static void tick_tape_channel(ocean_loader_ctx_t *ctx) {
+    tape_channel_t *channel = &ctx->tape;
+    if (!channel->transfer_active) return;
+
+    channel->transfer_cycles++;
+    if (channel->transfer_cycles >= 5) { // 1 byte every 5 cycles
+        channel->transfer_cycles = 0;
+        if (channel->read_ptr < channel->write_ptr) {
+            uint8_t byte = channel->buffer[channel->read_ptr++];
+            update_raster_border(ctx, byte);
+            if (ctx->stack.top < STACK_CAPACITY) {
+                ctx->stack.data[ctx->stack.top++] = byte;
+            }
+        } else {
+            channel->transfer_active = false;
+            ctx->psg_frequency = 330; // Success arpeggio tone E4
+        }
+    }
+}
+
+
 // 2. PSG Audio Failure Alarm Drone
 static void set_psg_alarm(ocean_loader_ctx_t *ctx) {
     ctx->psg_frequency = WARNING_DRONE;
     printf("   [AUDIO] PSG Channel 1 output warning drone (%d Hz).\n", WARNING_DRONE);
 }
 
-// 3. SCSI Ingestion Checksum Blame & Revert
-static bool ingest_scsi_block(ocean_loader_ctx_t *ctx, const uint8_t *data, size_t size, uint8_t expected_checksum, uint32_t input_port) {
+// 3. SCSI Ingestion Checksum Blame & Revert (Bidirectional)
+static bool ingest_scsi_block_bidirectional(ocean_loader_ctx_t *ctx, const uint8_t *data, size_t size, uint8_t expected_checksum, bool forward, uint32_t input_port) {
     // Save stack checkpoint before loading
     ctx->stack.checkpoint_top = ctx->stack.top;
-    
+
     uint8_t calculated_checksum = 0;
     for (size_t i = 0; i < size; i++) {
-        calculated_checksum ^= data[i];
-        
+        size_t idx = forward ? i : (size - 1 - i);
+        uint8_t val = data[idx];
+        calculated_checksum ^= val;
+
         // Dynamic split-raster striped border updates
-        update_raster_border(ctx, data[i]);
-        
+        update_raster_border(ctx, val);
+
         // Push loaded bytes onto stack
         if (ctx->stack.top < STACK_CAPACITY) {
-            ctx->stack.data[ctx->stack.top++] = data[i];
+            ctx->stack.data[ctx->stack.top++] = val;
         }
     }
 
@@ -97,7 +131,7 @@ int main(void) {
     uint8_t valid_block[4] = { 0x12, 0x34, 0x56, 0x78 };
     uint8_t valid_checksum = 0x12 ^ 0x34 ^ 0x56 ^ 0x78;
 
-    bool success = ingest_scsi_block(&loader, valid_block, 4, valid_checksum, 5);
+    bool success = ingest_scsi_block_bidirectional(&loader, valid_block, 4, valid_checksum, true, 5);
     assert(success == true);
     assert(loader.blame_quarantine == false);
     assert(loader.stack.top == 6);
@@ -111,7 +145,7 @@ int main(void) {
     uint8_t corrupt_block[4] = { 0x11, 0x22, 0x33, 0x44 };
     uint8_t bad_checksum = 0xFF; // Mismatch
 
-    success = ingest_scsi_block(&loader, corrupt_block, 4, bad_checksum, 5);
+    success = ingest_scsi_block_bidirectional(&loader, corrupt_block, 4, bad_checksum, true, 5);
     assert(success == false);
     assert(loader.blame_quarantine == true);
     assert(loader.blamed_port == 5);
@@ -119,6 +153,42 @@ int main(void) {
     assert(loader.psg_frequency == WARNING_DRONE);
     printf("   ✓ Ingestion rollback, blame quarantine, and PSG audio warning verified.\n");
     fflush(stdout);
+
+    // 3. Asynchronous Uniservo Tape Load Ingestion
+    printf("[TEST] Loading data asynchronously via Uniservo tape channel emulation...\n");
+    fflush(stdout);
+    loader.tape.buffer[0] = 0xAA;
+    loader.tape.buffer[1] = 0x55;
+    loader.tape.write_ptr = 2;
+    loader.tape.read_ptr = 0;
+    loader.tape.transfer_active = true;
+    loader.tape.transfer_cycles = 0;
+
+    // Main execution loop: step cycles and tick tape channel
+    int cycles = 0;
+    while (loader.tape.transfer_active && cycles < 100) {
+        tick_tape_channel(&loader);
+        cycles++;
+    }
+
+    // Verify it loaded successfully in the background
+    assert(loader.stack.top == 8);
+    assert(loader.stack.data[6] == 0xAA);
+    assert(loader.stack.data[7] == 0x55);
+    assert(loader.tape.transfer_active == false);
+    printf("   ✓ Uniservo background tape data load verified. Loaded: 0x%02X, 0x%02X. Cycles: %d\n",
+           (uint8_t)loader.stack.data[6], (uint8_t)loader.stack.data[7], cycles);
+    fflush(stdout);
+    // 4. Backward Ingestion Success
+    printf("[TEST] Ingesting valid SCSI block backward (expected pass)...\n");
+    fflush(stdout);
+    loader.blame_quarantine = false;
+    success = ingest_scsi_block_bidirectional(&loader, valid_block, 4, valid_checksum, false, 5);
+    assert(success == true);
+    assert(loader.blame_quarantine == false);
+    printf("   ✓ Backward ingestion and parity check passed.\n");
+    fflush(stdout);
+
 
     printf("=============================================================\n");
     printf("HUCOCEAN LOADER TESTS COMPLETE\n");
