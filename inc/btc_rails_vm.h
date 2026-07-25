@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-/* MOS 6526 CIA Timer Emulation Registers */
+/* MOS 6526 CIA Timer Emulation Registers with TOD support */
 typedef struct {
     uint16_t timer_a_latch;
     uint16_t timer_a_count;
@@ -15,6 +15,12 @@ typedef struct {
     uint8_t port_a_data;
     uint8_t port_b_data;
     uint8_t sdr; /* Serial Data Register */
+    
+    /* Time-of-Day Clock Registers */
+    uint8_t tod_hours;
+    uint8_t tod_mins;
+    uint8_t tod_secs;
+    uint8_t tod_tenths;
 } M6526Cia;
 
 /* 2-3 Tree Node Structure for Transaction Indexing */
@@ -45,6 +51,9 @@ int btc_rails_vm_push_ds(BtcRailsVm *vm, const uint8_t *data, size_t size);
 int btc_rails_vm_pop_ds(BtcRailsVm *vm, uint8_t *data_out, size_t max_size);
 int btc_rails_vm_push_rs(BtcRailsVm *vm, const uint8_t *data, size_t size);
 int btc_rails_vm_pop_rs(BtcRailsVm *vm, uint8_t *data_out, size_t max_size);
+
+/* SDR Serial Shift Register Operation */
+int btc_rails_vm_shift_sdr(BtcRailsVm *vm, uint8_t *byte_out);
 
 /* 2-3 Tree operations (Registry Indexing) */
 TwoThreeNode *two_three_tree_insert(TwoThreeNode *root, uint32_t key, const uint8_t *payload, size_t size);

@@ -3,6 +3,16 @@
 #include <string.h>
 #include <stdio.h>
 
+/* Helpers to get/set 32-bit stack pointers cascaded over Timers A and B */
+static uint32_t get_cia_pointer(const M6526Cia *cia) {
+    return (uint32_t)cia->timer_a_count | ((uint32_t)cia->timer_b_count << 16);
+}
+
+static void set_cia_pointer(M6526Cia *cia, uint32_t val) {
+    cia->timer_a_count = val & 0xFFFF;
+    cia->timer_b_count = (val >> 16) & 0xFFFF;
+}
+
 /* Helper function to allocate a new 2-3 tree node */
 static TwoThreeNode *create_node(int is_leaf) {
     TwoThreeNode *node = (TwoThreeNode *)calloc(1, sizeof(TwoThreeNode));
@@ -34,27 +44,30 @@ BtcRailsVm *btc_rails_vm_init(size_t sram_size) {
     vm->sram_size = sram_size;
     vm->root_index = NULL;
     
-    /* Initialize CIA 1 (Data Stack) */
+    /* Initialize CIA 1 (Data Stack) with Cascaded 32-bit pointer */
     vm->cia1.timer_a_latch = 0xFFFF;
-    vm->cia1.timer_a_count = 0x8000; /* DS Stack Pointer starts at middle of memory */
     vm->cia1.timer_b_latch = 0xFFFF;
-    vm->cia1.timer_b_count = 0;
-    vm->cia1.control_a = 0x01; /* Start timer */
-    vm->cia1.control_b = 0x00;
-    vm->cia1.port_a_data = 0;
-    vm->cia1.port_b_data = 0;
-    vm->cia1.sdr = 0;
+    set_cia_pointer(&(vm->cia1), 0x00018000); /* Cascaded DS Pointer starting point */
+    vm->cia1.control_a = 0x01;
+    vm->cia1.control_b = 0x02; /* Count underflows of Timer A (cascaded mode) */
     
-    /* Initialize CIA 2 (Return Stack) */
+    /* Set Time-of-Day clock values */
+    vm->cia1.tod_hours = 12;
+    vm->cia1.tod_mins = 0;
+    vm->cia1.tod_secs = 0;
+    vm->cia1.tod_tenths = 0;
+    
+    /* Initialize CIA 2 (Return Stack) with Cascaded 32-bit pointer */
     vm->cia2.timer_a_latch = 0xFFFF;
-    vm->cia2.timer_a_count = 0xF000; /* RS Stack Pointer starts near top of memory */
     vm->cia2.timer_b_latch = 0xFFFF;
-    vm->cia2.timer_b_count = 0;
+    set_cia_pointer(&(vm->cia2), 0x0002F000); /* Cascaded RS Pointer starting point */
     vm->cia2.control_a = 0x01;
-    vm->cia2.control_b = 0x00;
-    vm->cia2.port_a_data = 0;
-    vm->cia2.port_b_data = 0;
-    vm->cia2.sdr = 0;
+    vm->cia2.control_b = 0x02; /* Cascaded mode */
+    
+    vm->cia2.tod_hours = 12;
+    vm->cia2.tod_mins = 0;
+    vm->cia2.tod_secs = 0;
+    vm->cia2.tod_tenths = 0;
     
     return vm;
 }
@@ -74,81 +87,95 @@ void btc_rails_vm_free(BtcRailsVm *vm) {
 int btc_rails_vm_push_ds(BtcRailsVm *vm, const uint8_t *data, size_t size) {
     if (!vm || !data || size == 0) return 0;
     
-    /* Ensure there is enough space in the Data Stack segment */
-    uint16_t required_space = (uint16_t)(size + 2);
-    if (vm->cia1.timer_a_count < required_space) {
+    uint32_t sp = get_cia_pointer(&(vm->cia1));
+    uint32_t required_space = (uint32_t)(size + 2);
+    if (sp < required_space) {
         return 0; /* Stack Overflow */
     }
     
-    /* Decrement the stack pointer count */
-    vm->cia1.timer_a_count -= required_space;
-    uint32_t address = vm->cia1.timer_a_count;
+    sp -= required_space;
+    set_cia_pointer(&(vm->cia1), sp);
     
     /* Write 16-bit size prefix */
-    vm->sram_pool[address] = (uint8_t)(size & 0xFF);
-    vm->sram_pool[address + 1] = (uint8_t)((size >> 8) & 0xFF);
+    vm->sram_pool[sp] = (uint8_t)(size & 0xFF);
+    vm->sram_pool[sp + 1] = (uint8_t)((size >> 8) & 0xFF);
     
     /* Copy data payload */
-    memcpy(&(vm->sram_pool[address + 2]), data, size);
+    memcpy(&(vm->sram_pool[sp + 2]), data, size);
     return 1;
 }
 
 int btc_rails_vm_pop_ds(BtcRailsVm *vm, uint8_t *data_out, size_t max_size) {
     if (!vm || !data_out) return 0;
     
-    uint32_t address = vm->cia1.timer_a_count;
-    if (address >= 0x8000) {
+    uint32_t sp = get_cia_pointer(&(vm->cia1));
+    if (sp >= 0x00018000) {
         return 0; /* Stack Underflow */
     }
     
     /* Read size prefix */
-    uint16_t size = vm->sram_pool[address] | (vm->sram_pool[address + 1] << 8);
+    uint16_t size = vm->sram_pool[sp] | (vm->sram_pool[sp + 1] << 8);
     if (size > max_size) {
-        return 0; /* Output buffer too small */
+        return 0;
     }
     
     /* Copy data payload */
-    memcpy(data_out, &(vm->sram_pool[address + 2]), size);
+    memcpy(data_out, &(vm->sram_pool[sp + 2]), size);
     
-    /* Increment stack pointer count */
-    vm->cia1.timer_a_count += (size + 2);
+    /* Increment pointer count */
+    sp += (size + 2);
+    set_cia_pointer(&(vm->cia1), sp);
     return (int)size;
 }
 
 int btc_rails_vm_push_rs(BtcRailsVm *vm, const uint8_t *data, size_t size) {
     if (!vm || !data || size == 0) return 0;
     
-    uint16_t required_space = (uint16_t)(size + 2);
-    if (vm->cia2.timer_a_count < required_space || vm->cia2.timer_a_count < 0x8000) {
-        return 0; /* Stack Overflow or boundary overlap */
+    uint32_t sp = get_cia_pointer(&(vm->cia2));
+    uint32_t required_space = (uint32_t)(size + 2);
+    if (sp < required_space || sp < 0x00018000) {
+        return 0; /* Stack Overflow */
     }
     
-    vm->cia2.timer_a_count -= required_space;
-    uint32_t address = vm->cia2.timer_a_count;
+    sp -= required_space;
+    set_cia_pointer(&(vm->cia2), sp);
     
-    vm->sram_pool[address] = (uint8_t)(size & 0xFF);
-    vm->sram_pool[address + 1] = (uint8_t)((size >> 8) & 0xFF);
+    vm->sram_pool[sp] = (uint8_t)(size & 0xFF);
+    vm->sram_pool[sp + 1] = (uint8_t)((size >> 8) & 0xFF);
     
-    memcpy(&(vm->sram_pool[address + 2]), data, size);
+    memcpy(&(vm->sram_pool[sp + 2]), data, size);
     return 1;
 }
 
 int btc_rails_vm_pop_rs(BtcRailsVm *vm, uint8_t *data_out, size_t max_size) {
     if (!vm || !data_out) return 0;
     
-    uint32_t address = vm->cia2.timer_a_count;
-    if (address >= 0xF000) {
+    uint32_t sp = get_cia_pointer(&(vm->cia2));
+    if (sp >= 0x0002F000) {
         return 0; /* Stack Underflow */
     }
     
-    uint16_t size = vm->sram_pool[address] | (vm->sram_pool[address + 1] << 8);
+    uint16_t size = vm->sram_pool[sp] | (vm->sram_pool[sp + 1] << 8);
     if (size > max_size) {
         return 0;
     }
     
-    memcpy(data_out, &(vm->sram_pool[address + 2]), size);
-    vm->cia2.timer_a_count += (size + 2);
+    memcpy(data_out, &(vm->sram_pool[sp + 2]), size);
+    sp += (size + 2);
+    set_cia_pointer(&(vm->cia2), sp);
     return (int)size;
+}
+
+int btc_rails_vm_shift_sdr(BtcRailsVm *vm, uint8_t *byte_out) {
+    if (!vm || !byte_out) return 0;
+    
+    uint8_t popped_byte = 0;
+    int len = btc_rails_vm_pop_ds(vm, &popped_byte, 1);
+    if (len != 1) return 0;
+    
+    vm->cia1.sdr = popped_byte;
+    *byte_out = popped_byte;
+    return 1;
 }
 
 /* 2-3 Tree implementation details */
@@ -156,7 +183,6 @@ static void split_node(TwoThreeNode *parent, int child_idx, TwoThreeNode *child)
     TwoThreeNode *new_sibling = create_node(child->is_leaf);
     if (!new_sibling) return;
     
-    /* The middle key rises to the parent */
     new_sibling->keys[0] = child->keys[1];
     new_sibling->data_payloads[0] = child->data_payloads[1];
     new_sibling->payload_sizes[0] = child->payload_sizes[1];
@@ -174,7 +200,6 @@ static void split_node(TwoThreeNode *parent, int child_idx, TwoThreeNode *child)
         child->children[2] = NULL;
     }
     
-    /* Shift parent's children to insert the sibling */
     for (int i = parent->key_count; i > child_idx; i--) {
         parent->children[i + 1] = parent->children[i];
         parent->keys[i] = parent->keys[i - 1];
@@ -293,7 +318,6 @@ void two_three_tree_free(TwoThreeNode *node) {
     }
 }
 
-/* Load data from .dat.bin file format */
 int btc_rails_vm_load_dat(BtcRailsVm *vm, const char *dat_bin_path) {
     if (!vm || !dat_bin_path) return 0;
     
@@ -304,12 +328,11 @@ int btc_rails_vm_load_dat(BtcRailsVm *vm, const char *dat_bin_path) {
     uint32_t payload_size;
     uint8_t buffer[1024];
     
-    /* Read sequential binary records: [key (4B)][size (4B)][payload (size B)] */
     while (fread(&key, 4, 1, f) == 1) {
         if (fread(&payload_size, 4, 1, f) != 1) break;
         if (payload_size > sizeof(buffer)) {
             fclose(f);
-            return 0; /* Exceeds buffer size limits */
+            return 0;
         }
         if (fread(buffer, 1, payload_size, f) != payload_size) break;
         
@@ -320,11 +343,9 @@ int btc_rails_vm_load_dat(BtcRailsVm *vm, const char *dat_bin_path) {
     return 1;
 }
 
-/* Yul interpreter execution support */
 int btc_rails_vm_deploy_yul(BtcRailsVm *vm, const uint8_t *bytecode, size_t size) {
     if (!vm || !bytecode || size == 0) return 0;
     
-    /* Auncient WinchesterMQ-like opcode executor */
     size_t pc = 0;
     uint8_t buffer[64];
     
@@ -332,7 +353,7 @@ int btc_rails_vm_deploy_yul(BtcRailsVm *vm, const uint8_t *bytecode, size_t size
         uint8_t opcode = bytecode[pc++];
         
         switch (opcode) {
-            case 0x01: { /* PUSH data onto DS (Yul-like constructor state) */
+            case 0x01: { /* PUSH data onto DS */
                 if (pc + 1 > size) return 0;
                 uint8_t val_size = bytecode[pc++];
                 if (pc + val_size > size) return 0;
@@ -341,7 +362,7 @@ int btc_rails_vm_deploy_yul(BtcRailsVm *vm, const uint8_t *bytecode, size_t size
                 pc += val_size;
                 break;
             }
-            case 0x02: { /* ADD (pop two elements from DS, add, push result) */
+            case 0x02: { /* ADD */
                 int len1 = btc_rails_vm_pop_ds(vm, buffer, sizeof(buffer));
                 if (len1 <= 0) return 0;
                 uint32_t val1 = 0;
@@ -356,7 +377,7 @@ int btc_rails_vm_deploy_yul(BtcRailsVm *vm, const uint8_t *bytecode, size_t size
                 btc_rails_vm_push_ds(vm, (uint8_t *)&sum, sizeof(sum));
                 break;
             }
-            case 0x03: { /* DELEGATE instruction (pop key from DS, search index, push payload onto DS) */
+            case 0x03: { /* DELEGATE lookup */
                 int len = btc_rails_vm_pop_ds(vm, buffer, sizeof(buffer));
                 if (len <= 0) return 0;
                 
@@ -373,8 +394,27 @@ int btc_rails_vm_deploy_yul(BtcRailsVm *vm, const uint8_t *bytecode, size_t size
                 }
                 break;
             }
+            case 0x04: { /* OP_CHECKLOCKTIMEVERIFY */
+                int len = btc_rails_vm_pop_ds(vm, buffer, sizeof(buffer));
+                if (len <= 0) return 0;
+                
+                uint32_t target_locktime = 0;
+                memcpy(&target_locktime, buffer, len < 4 ? len : 4);
+                
+                /* Decode CIA 1 TOD clock to raw tenth-seconds count */
+                uint32_t current_tod = 
+                    (uint32_t)vm->cia1.tod_hours * 36000 + 
+                    (uint32_t)vm->cia1.tod_mins * 600 + 
+                    (uint32_t)vm->cia1.tod_secs * 10 + 
+                    (uint32_t)vm->cia1.tod_tenths;
+                
+                if (current_tod < target_locktime) {
+                    return 0; /* Halt execution (locktime not satisfied) */
+                }
+                break;
+            }
             default:
-                return 0; /* Invalid opcode */
+                return 0;
         }
     }
     return 1;

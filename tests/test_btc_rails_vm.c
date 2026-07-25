@@ -5,13 +5,13 @@
 #include <stdlib.h>
 
 void run_stack_tests(BtcRailsVm *vm) {
-    printf("[Test] Running stack verification...\n");
+    printf("[Test] Running 32-bit cascaded stack verification...\n");
     fflush(stdout);
     
     uint8_t payload1[] = { 0xAA, 0xBB, 0xCC, 0xDD };
     uint8_t payload2[] = { 0x11, 0x22, 0x33 };
     
-    /* Push onto Data Stack (DS) */
+    /* Push onto 32-bit Data Stack (DS) */
     assert(btc_rails_vm_push_ds(vm, payload1, sizeof(payload1)) == 1);
     assert(btc_rails_vm_push_ds(vm, payload2, sizeof(payload2)) == 1);
     
@@ -31,7 +31,23 @@ void run_stack_tests(BtcRailsVm *vm) {
     assert(len == sizeof(payload1));
     assert(memcmp(out, payload1, len) == 0);
     
-    printf("[Test] Stack verification passed.\n");
+    printf("[Test] 32-bit stack verification passed.\n");
+    fflush(stdout);
+}
+
+void run_sdr_tests(BtcRailsVm *vm) {
+    printf("[Test] Running SDR Serial Data Register shift verification...\n");
+    fflush(stdout);
+    
+    uint8_t val = 0x55;
+    assert(btc_rails_vm_push_ds(vm, &val, 1) == 1);
+    
+    uint8_t shifted_byte = 0;
+    assert(btc_rails_vm_shift_sdr(vm, &shifted_byte) == 1);
+    assert(shifted_byte == 0x55);
+    assert(vm->cia1.sdr == 0x55);
+    
+    printf("[Test] SDR shift verification passed.\n");
     fflush(stdout);
 }
 
@@ -84,37 +100,54 @@ void run_tree_and_dat_tests(BtcRailsVm *vm) {
 }
 
 void run_yul_interpreter_tests(BtcRailsVm *vm) {
-    printf("[Test] Running Yul interpreter verification...\n");
+    printf("[Test] Running Yul interpreter and locktime verification...\n");
     fflush(stdout);
+    
+    /* Current TOD: 12:00:00.0 -> total tenths = 12 * 36000 = 432000 tenths */
+    /* Target locktime: 11 hours -> 11 * 36000 = 396000 tenths. Locktime satisfied! */
+    uint32_t valid_locktime = 396000;
     
     /* Bytecode:
        1. Push 0x42 (key for "Active") -> Opcode 0x01, size 4, value 0x42, 0x00, 0x00, 0x00
        2. Delegate to lookup -> Opcode 0x03
+       3. Push locktime value -> Opcode 0x01, size 4, value valid_locktime
+       4. OP_CHECKLOCKTIMEVERIFY -> Opcode 0x04
     */
-    uint8_t bytecode[] = {
+    uint8_t bytecode_pass[] = {
         0x01, 0x04, 0x42, 0x00, 0x00, 0x00,
-        0x03
+        0x03,
+        0x01, 0x04, (uint8_t)(valid_locktime & 0xFF), (uint8_t)((valid_locktime >> 8) & 0xFF), (uint8_t)((valid_locktime >> 16) & 0xFF), (uint8_t)((valid_locktime >> 24) & 0xFF),
+        0x04
     };
     
-    assert(btc_rails_vm_deploy_yul(vm, bytecode, sizeof(bytecode)) == 1);
+    assert(btc_rails_vm_deploy_yul(vm, bytecode_pass, sizeof(bytecode_pass)) == 1);
     
-    /* The result "Active" should now be at the top of the Data Stack */
+    /* The result "Active" should remain at the top of the Data Stack since CLTV succeeded */
     uint8_t out[16];
     int len = btc_rails_vm_pop_ds(vm, out, sizeof(out));
     assert(len == 6);
     assert(memcmp(out, "Active", 6) == 0);
     
-    printf("[Test] Yul interpreter verification passed.\n");
+    /* Test failing locktime: target is 13 hours -> 13 * 36000 = 468000. CLTV should fail. */
+    uint32_t invalid_locktime = 468000;
+    uint8_t bytecode_fail[] = {
+        0x01, 0x04, (uint8_t)(invalid_locktime & 0xFF), (uint8_t)((invalid_locktime >> 8) & 0xFF), (uint8_t)((invalid_locktime >> 16) & 0xFF), (uint8_t)((invalid_locktime >> 24) & 0xFF),
+        0x04
+    };
+    assert(btc_rails_vm_deploy_yul(vm, bytecode_fail, sizeof(bytecode_fail)) == 0);
+    
+    printf("[Test] Yul interpreter and locktime verification passed.\n");
     fflush(stdout);
 }
 
 int main() {
     printf("=== AUNCIENT BTC RAILS VM TESTING ===\n");
     fflush(stdout);
-    BtcRailsVm *vm = btc_rails_vm_init(65536);
+    BtcRailsVm *vm = btc_rails_vm_init(262144);
     assert(vm != NULL);
     
     run_stack_tests(vm);
+    run_sdr_tests(vm);
     run_tree_and_dat_tests(vm);
     run_yul_interpreter_tests(vm);
     

@@ -46,8 +46,8 @@ void bench_cia_rails_vm() {
     /* Simulate basic stack operations directly */
     clock_t start = clock();
     for (int i = 0; i < ITERATIONS; i++) {
-        /* Reset stack pointer */
         vm->cia1.timer_a_count = 0x8000;
+        vm->cia1.timer_b_count = 0x0001;
         
         btc_rails_vm_push_ds(vm, val1, 4);
         btc_rails_vm_push_ds(vm, val2, 4);
