@@ -579,3 +579,16 @@ bool master_terrain_verify_scan_criteria(terrain_cell_t *cell, uint32_t threshol
 
     return (cluster_count == 0);
 }
+
+/* LAU Token Authorization Check: Validates if a user address possesses an authorized LAU token registration mapping */
+bool master_terrain_verify_lau(const uint8_t *user_address, const uint8_t *lau_registry, uint32_t registry_size) {
+    if (!user_address || !lau_registry || registry_size < 32) return false;
+
+    /* Search the authorized LAU registration registry (linking user identifiers to validated contracts) */
+    for (uint32_t idx = 0; idx < registry_size; idx += 32) {
+        if (memcmp(&lau_registry[idx], user_address, 32) == 0) {
+            return true; /* Authorized LAU registration found */
+        }
+    }
+    return false; /* Unauthorized user address */
+}

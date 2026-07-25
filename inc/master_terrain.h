@@ -119,4 +119,7 @@ bool master_terrain_smooth_grid(terrain_cell_t *cell, uint32_t target_max_sum);
 /* Scan Criteria Verification: Iteratively applies smoothing filters until zero hotspots are detected, meeting the criteria to pass the scan */
 bool master_terrain_verify_scan_criteria(terrain_cell_t *cell, uint32_t threshold);
 
+/* LAU Token Authorization Check: Validates if a user address possesses an authorized LAU token registration mapping */
+bool master_terrain_verify_lau(const uint8_t *user_address, const uint8_t *lau_registry, uint32_t registry_size);
+
 #endif /* MASTER_TERRAIN_H */
