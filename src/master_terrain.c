@@ -93,3 +93,20 @@ bool master_terrain_rosenfeld_tensor(double charge, double velocity, double *out
     *out_stress_y = charge * (velocity * velocity) * planck_constant * 1e34;
     return true;
 }
+
+/* Ferractor Word Accumulator: Packages multiple 16-bit word values into a single 32-bit register value */
+bool master_terrain_ferractor_pack(const uint16_t *words, uint32_t count, uint32_t *out_packed) {
+    if (!words || count == 0 || !out_packed) return false;
+
+    /* UNIVAC Ferractor magnetic core shift-register packing:
+       Accumulates up to two 16-bit words into a single 32-bit logical register value */
+    uint32_t accumulator = 0;
+    if (count >= 1) {
+        accumulator |= ((uint32_t)words[0] & 0xFFFF);
+    }
+    if (count >= 2) {
+        accumulator |= (((uint32_t)words[1] & 0xFFFF) << 16);
+    }
+    *out_packed = accumulator;
+    return true;
+}
