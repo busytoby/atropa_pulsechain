@@ -42,6 +42,7 @@ def clean_tex_text(text):
     text = text.replace('^', '\\textasciicircum ')
     
     # Inline markdown styles conversion
+    text = re.sub(r'\|\s*', '', text) # clean any remaining pipes
     text = re.sub(r'\*\*([^*]+)\*\*', r'\\textbf{\1}', text)
     text = re.sub(r'\*([^*]+)\*', r'\\textit{\1}', text)
     text = re.sub(r'`([^`]+)`', r'\\texttt{\1}', text)
@@ -74,7 +75,7 @@ def parse_table_to_tex(rows):
     header_line = ' & '.join(headers) + ' \\\\ \\hline\\hline'
     
     tex_table = []
-    tex_table.append('\\begin{table}[h]')
+    tex_table.append('\\begin{table}[H]')
     tex_table.append('\\centering')
     tex_table.append(f'\\begin{{tabular}}{{{col_spec}}}')
     tex_table.append('\\hline')
@@ -88,7 +89,8 @@ def parse_table_to_tex(rows):
 def convert_md_file_to_tex(filepath, date):
     title = os.path.basename(filepath).replace(".md", "").replace("_", " ").title()
     tex_content = []
-    tex_content.append(f"\\section*{{ARTICLE: {title}}}")
+    # Use normal sectioning to automatically populate the table of contents
+    tex_content.append(f"\\section{{{title}}}")
     tex_content.append(f"\\noindent\\textit{{Published: {date.strftime('%B %d, %Y')}}}\\\\")
     tex_content.append("\\vspace{0.1in}")
     
@@ -116,7 +118,7 @@ def convert_md_file_to_tex(filepath, date):
             img_path = img_match.group(1).strip().split('?')[0]
             ext = os.path.splitext(img_path)[1].lower()
             if ext in ['.jpg', '.jpeg', '.png', '.gif', '.pdf']:
-                tex_content.append('\\begin{figure}[h]')
+                tex_content.append('\\begin{figure}[H]')
                 tex_content.append('\\centering')
                 tex_content.append(f'\\includegraphics[width=\\linewidth]{{{img_path}}}')
                 tex_content.append(f'\\caption{{{clean_tex_text(os.path.basename(img_path))}}}')
@@ -158,8 +160,12 @@ def build_tex():
     tex_document.append("\\usepackage[paperwidth=9in,paperheight=7in,margin=0.5in]{geometry}")
     tex_document.append("\\usepackage{mathptmx}") # Times-Roman font
     tex_document.append("\\usepackage{graphicx}")
+    tex_document.append("\\usepackage{float}") # Strict placement control [H]
+    tex_document.append("\\usepackage{microtype}") # Spacing optimizations
     tex_document.append("\\usepackage{multicol}")
     tex_document.append("\\usepackage{fancyhdr}")
+    tex_document.append("\\usepackage[hidelinks]{hyperref}") # Table of contents and reference links
+    
     tex_document.append("\\pagestyle{fancy}")
     tex_document.append("\\fancyhf{}")
     tex_document.append("\\fancyhead[L]{PROCEEDINGS OF THE ACM, VOL. 18, 1961}")
@@ -178,6 +184,10 @@ def build_tex():
     tex_document.append("{\\large\\it Compiled Chronologically under ACM 1961 Standards}\\\\")
     tex_document.append("\\vspace{0.2in}")
     tex_document.append("\\end{center}")
+    
+    # Include Table of Contents
+    tex_document.append("\\tableofcontents")
+    tex_document.append("\\vspace{0.3in}")
     tex_document.append("]")
     
     # Add each article content
