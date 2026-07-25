@@ -286,13 +286,25 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
     print(f"PDF build complete: {output_filename}")
 
 def build_pdf():
+    import json
     lore_dir = "lore"
+    
+    # Load published registry
+    registry = {}
+    registry_path = os.path.join(lore_dir, "published_registry.json")
+    if os.path.exists(registry_path):
+        try:
+            with open(registry_path, "r", encoding="utf-8") as f_reg:
+                registry = json.load(f_reg)
+        except Exception as e:
+            print(f"Error loading registry: {e}")
+            
     files = []
     for f in os.listdir(lore_dir):
-        if f.endswith(".md"):
+        if f.endswith(".md") and f != "published_registry.json":
             path = os.path.join(lore_dir, f)
             date = get_file_date(path)
-            files.append((date, path))
+            files.append((date, path, f))
             
     files.sort(key=lambda x: x[0])
     
@@ -323,19 +335,35 @@ def build_pdf():
         spaceAfter=6
     )
     
-    # Split files into 4 volumes without breaking any article
-    total_files = len(files)
-    vol_size = total_files // 4
+    # Partition files based on registry
+    vols = {1: [], 2: [], 3: [], 4: [], 5: []}
     
-    vols = [
-        files[0:vol_size],
-        files[vol_size:2*vol_size],
-        files[2*vol_size:3*vol_size],
-        files[3*vol_size:]
-    ]
-    
-    for idx, vol_files in enumerate(vols):
-        build_volume(idx + 1, vol_files, page_width, page_height, col_width, col_height, spacing, title_style, body_style)
+    if registry:
+        for date, path, filename in files:
+            if filename in registry:
+                vol_num = registry[filename].get("published_volume", 1)
+                vols[vol_num].append((date, path))
+            else:
+                # Any new, unregistered files automatically go to Volume 5!
+                vols[5].append((date, path))
+    else:
+        # Fallback to partition if no registry exists
+        total_files = len(files)
+        vol_size = total_files // 4
+        vols[1] = [(f[0], f[1]) for f in files[0:vol_size]]
+        vols[2] = [(f[0], f[1]) for f in files[vol_size:2*vol_size]]
+        vols[3] = [(f[0], f[1]) for f in files[2*vol_size:3*vol_size]]
+        vols[4] = [(f[0], f[1]) for f in files[3*vol_size:]]
+        
+    # Build Volumes 1 to 4
+    for vol_num in [1, 2, 3, 4]:
+        if vols[vol_num]:
+            build_volume(vol_num, vols[vol_num], page_width, page_height, col_width, col_height, spacing, title_style, body_style)
+            
+    # Build Volume 5 if there are any new unregistered articles!
+    if vols[5]:
+        print(f"Detected {len(vols[5])} new articles for Volume V!")
+        build_volume(5, vols[5], page_width, page_height, col_width, col_height, spacing, title_style, body_style)
 
 if __name__ == "__main__":
     build_pdf()
