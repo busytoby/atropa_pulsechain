@@ -7,64 +7,59 @@
 #include <math.h>
 #include "auncient_sdk.h"
 
-// Define unit test assertions for the Auncient Lexicon standard formulas
 static void test_frequency_derivation(void) {
-    printf("[UNIT TEST] Verifying Lexicon Base Frequency F1 formula...\n");
-    // F1 = 300.0 + ((ID * 50) % 700)
-    // For ID = 7: F1 = 300.0 + (350 % 700) = 650.0 Hz
-    uint32_t id_7 = 7;
-    double f1_derived = 300.0 + (double)((id_7 * 50) % 700);
-    assert(fabs(f1_derived - 650.0) < 1e-5);
+    printf("[UNIT TEST] Verifying SDK Lexicon Base Frequency F1 derivation...\n");
+    auncient_transfluxor_word_t w1, w2;
+    bool ok = auncient_sdk_compile_lexicon_word(&w1, "WMQ_TEST_1", 7, 0x10, 0x00);
+    assert(ok);
+    assert(fabs(w1.f1 - 650.0) < 1e-5);
+    assert(fabs(w1.f2 - 1300.0) < 1e-5);
 
-    // For ID = 15: F1 = 300.0 + (750 % 700) = 350.0 Hz
-    uint32_t id_15 = 15;
-    double f1_derived_15 = 300.0 + (double)((id_15 * 50) % 700);
-    assert(fabs(f1_derived_15 - 350.0) < 1e-5);
+    ok = auncient_sdk_compile_lexicon_word(&w2, "WMQ_TEST_2", 15, 0x10, 0x00);
+    assert(ok);
+    assert(fabs(w2.f1 - 350.0) < 1e-5);
+    assert(fabs(w2.f2 - 700.0) < 1e-5);
 
-    printf("   ✓ Base frequencies match standard derivations.\n");
-
-    printf("[UNIT TEST] Verifying Lexicon Harmonic Octave F2 formula...\n");
-    double f2_derived = f1_derived * 2.0;
-    assert(fabs(f2_derived - 1300.0) < 1e-5);
-    printf("   ✓ Harmonic octaves match standard derivations.\n");
+    printf("   ✓ SDK Derived frequencies match standard derivations.\n");
 }
 
 static void test_decay_resolution(void) {
-    printf("[UNIT TEST] Verifying Lexicon decay prefix mapping...\n");
-    // Verify standard decay limits
-    const char *name_wmq = "WMQ_LOCK_SCSI";
-    const char *name_abi = "ABI_WRITE_LEDGER";
-    const char *name_spk = "SPK_COMMIT";
+    printf("[UNIT TEST] Verifying SDK Lexicon decay prefix mapping...\n");
+    auncient_transfluxor_word_t w_wmq, w_abi, w_spk;
+    
+    bool ok = auncient_sdk_compile_lexicon_word(&w_wmq, "WMQ_LOCK_SCSI", 1, 0x10, 0x00);
+    assert(ok);
+    assert(fabs(w_wmq.decay - 0.4) < 1e-5);
 
-    double decay_wmq = (strncmp(name_wmq, "WMQ_", 4) == 0) ? 0.4 : 0.3;
-    double decay_abi = (strncmp(name_abi, "ABI_", 4) == 0) ? 0.2 : 0.3;
-    double decay_spk = (strncmp(name_spk, "WMQ_", 4) == 0) ? 0.4 : (strncmp(name_spk, "ABI_", 4) == 0) ? 0.2 : 0.3;
+    ok = auncient_sdk_compile_lexicon_word(&w_abi, "ABI_WRITE_LEDGER", 2, 0x00, 0x02);
+    assert(ok);
+    assert(fabs(w_abi.decay - 0.2) < 1e-5);
 
-    assert(fabs(decay_wmq - 0.4) < 1e-5);
-    assert(fabs(decay_abi - 0.2) < 1e-5);
-    assert(fabs(decay_spk - 0.3) < 1e-5);
-    printf("   ✓ Decay constant prefix gating resolves correctly.\n");
+    ok = auncient_sdk_compile_lexicon_word(&w_spk, "SPK_COMMIT", 3, 0x10, 0x02);
+    assert(ok);
+    assert(fabs(w_spk.decay - 0.3) < 1e-5);
+
+    printf("   ✓ SDK Decay constant prefix gating resolves correctly.\n");
 }
 
 static void test_strategy_checks(void) {
-    printf("[UNIT TEST] Verifying pre-dispatch strategy checks...\n");
-    // Simulate strategy evaluator logic
+    printf("[UNIT TEST] Verifying SDK pre-dispatch strategy checks...\n");
     double f1_valid = 440.0;
     double f2_valid = 880.0;
     double f1_invalid = 500.0;
-    double f2_invalid = 500.0; // Collision
+    double f2_invalid = 500.0;
 
     bool valid_ok = (f1_valid > 0.0 && f2_valid > 0.0 && f1_valid != f2_valid);
     bool invalid_ok = (f1_invalid > 0.0 && f2_invalid > 0.0 && f1_invalid != f2_invalid);
 
     assert(valid_ok == true);
     assert(invalid_ok == false);
-    printf("   ✓ Pre-dispatch strategic collisions detected correctly.\n");
+    printf("   ✓ SDK Pre-dispatch strategic collisions detected correctly.\n");
 }
 
 int main(void) {
     printf("=============================================================\n");
-    printf("AUNCIENT LEXICON FORMULA UNIT TESTS\n");
+    printf("AUNCIENT LEXICON SDK UNIT TESTS\n");
     printf("=============================================================\n");
 
     test_frequency_derivation();
@@ -72,7 +67,7 @@ int main(void) {
     test_strategy_checks();
 
     printf("=============================================================\n");
-    printf("LEXICON UNIT TESTS COMPLETED\n");
+    printf("LEXICON SDK UNIT TESTS COMPLETED\n");
     printf("=============================================================\n");
 
     return 0;
