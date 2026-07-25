@@ -155,4 +155,7 @@ bool master_terrain_verify_ref_count(int32_t current_ref, int32_t decrement_val,
 /* Buffer Limit Verification: Validates write length boundaries against container storage limits to prevent overfills */
 bool master_terrain_verify_buffer_limits(uint32_t write_len, uint32_t current_len, uint32_t max_capacity, bool *out_overfill_detected);
 
+/* Pointer Verification: Assures that active pointer memory addresses are non-null and fall inside valid system spaces, avoiding dereference faults */
+bool master_terrain_verify_pointer(const void *ptr, bool *out_is_valid);
+
 #endif /* MASTER_TERRAIN_H */

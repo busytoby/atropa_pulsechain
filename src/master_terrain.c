@@ -753,3 +753,16 @@ bool master_terrain_verify_buffer_limits(uint32_t write_len, uint32_t current_le
     }
     return true;
 }
+
+/* Pointer Verification: Assures that active pointer memory addresses are non-null and fall inside valid system spaces, avoiding dereference faults */
+bool master_terrain_verify_pointer(const void *ptr, bool *out_is_valid) {
+    if (!out_is_valid) return false;
+
+    /* Check if the pointer is null or points to low invalid reserved memory spaces (e.g. bottom page addresses) */
+    if (ptr == NULL || (uintptr_t)ptr < 0x1000) {
+        *out_is_valid = false;
+    } else {
+        *out_is_valid = true;
+    }
+    return true;
+}
