@@ -1,4 +1,4 @@
-.PHONY: help test-all test-dashboard test-container test-git-ci test-unit
+.PHONY: help test-all test-dashboard test-container test-git-ci test-unit tpu-benchmarks
 
 help:
 	@echo "Available test targets:"
@@ -8,6 +8,8 @@ help:
 	@echo "  make test-git-ci     - Run Git post-commit hook pipeline E2E tests"
 	@echo "  make test-unit       - Run Python unit tests under tests/"
 	@echo "  make sdk-benchmark   - Run Auncient SDK DbC contract latency benchmarks"
+	@echo "  make tpu-benchmarks  - Run all TPU fast inference performance benchmarks"
+
 
 test-all: test-dashboard test-container test-git-ci test-unit
 	@echo "All tests completed successfully."
@@ -15,6 +17,34 @@ test-all: test-dashboard test-container test-git-ci test-unit
 sdk-benchmark:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_sdk_benchmarks.c -o tests/test_auncient_sdk_benchmarks -lm -lrt
 	./tests/test_auncient_sdk_benchmarks
+
+tpu-benchmarks: sdk-build
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc tests/test_auncient_fast_inference_benchmark.c src/auncient_sdk.o -o tests/test_auncient_fast_inference_benchmark -lm -lrt
+	./tests/test_auncient_fast_inference_benchmark
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc tests/test_auncient_tpu_neural_benchmark.c src/auncient_sdk.o -o tests/test_auncient_tpu_neural_benchmark -lm -lrt
+	./tests/test_auncient_tpu_neural_benchmark
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc tests/test_auncient_tpu_recurrent_benchmark.c src/auncient_sdk.o -o tests/test_auncient_tpu_recurrent_benchmark -lm -lrt
+	./tests/test_auncient_tpu_recurrent_benchmark
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc tests/test_auncient_tpu_polyphonic_benchmark.c src/auncient_sdk.o -o tests/test_auncient_tpu_polyphonic_benchmark -lm -lrt
+	./tests/test_auncient_tpu_polyphonic_benchmark
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc tests/test_auncient_tpu_security_benchmark.c src/auncient_sdk.o -o tests/test_auncient_tpu_security_benchmark -lm -lrt
+	./tests/test_auncient_tpu_security_benchmark
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc tests/test_auncient_tpu_gating_benchmark.c src/auncient_sdk.o -o tests/test_auncient_tpu_gating_benchmark -lm -lrt
+	./tests/test_auncient_tpu_gating_benchmark
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc tests/test_auncient_tpu_mesh_benchmark.c src/auncient_sdk.o -o tests/test_auncient_tpu_mesh_benchmark -lm -lrt
+	./tests/test_auncient_tpu_mesh_benchmark
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc tests/test_auncient_tpu_decay_benchmark.c src/auncient_sdk.o -o tests/test_auncient_tpu_decay_benchmark -lm -lrt
+	./tests/test_auncient_tpu_decay_benchmark
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc tests/test_auncient_tpu_spelling_benchmark.c src/auncient_sdk.o -o tests/test_auncient_tpu_spelling_benchmark -lm -lrt
+	./tests/test_auncient_tpu_spelling_benchmark
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc tests/test_auncient_tpu_bond_benchmark.c src/auncient_sdk.o -o tests/test_auncient_tpu_bond_benchmark -lm -lrt
+	./tests/test_auncient_tpu_bond_benchmark
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc tests/test_auncient_swarm_consensus.c src/auncient_sdk.o -o tests/test_auncient_swarm_consensus -lm -lrt
+	./tests/test_auncient_swarm_consensus
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc tests/test_auncient_swarm_metaprogramming.c src/auncient_sdk.o -o tests/test_auncient_swarm_metaprogramming -lm -lrt
+	./tests/test_auncient_swarm_metaprogramming
+	@rm -f tests/test_auncient_fast_inference_benchmark tests/test_auncient_tpu_neural_benchmark tests/test_auncient_tpu_recurrent_benchmark tests/test_auncient_tpu_polyphonic_benchmark tests/test_auncient_tpu_security_benchmark tests/test_auncient_tpu_gating_benchmark tests/test_auncient_tpu_mesh_benchmark tests/test_auncient_tpu_decay_benchmark tests/test_auncient_tpu_spelling_benchmark tests/test_auncient_tpu_bond_benchmark tests/test_auncient_swarm_consensus tests/test_auncient_swarm_metaprogramming
+
 
 siggraph-projector:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_siggraph_projector.c -o tests/test_auncient_siggraph_projector -lm -lrt
