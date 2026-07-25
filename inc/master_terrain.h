@@ -140,4 +140,7 @@ bool master_terrain_amplify_signal(double input_signal, double attenuation, doub
 /* Winchester Flow Control: Resolves SCSI queue depth congestion to prevent buffer overflows */
 bool master_terrain_winchester_flow_control(uint32_t current_depth, uint32_t max_capacity, bool *out_backpressure_active);
 
+/* Modulo Overflow Verification: Checks if multiplication operations exceed system prime field boundaries, preventing arithmetic overflows */
+bool master_terrain_verify_modulo_overflow(uint64_t a, uint64_t b, uint64_t modulus, bool *out_overflow_detected);
+
 #endif /* MASTER_TERRAIN_H */

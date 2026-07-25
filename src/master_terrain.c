@@ -689,3 +689,16 @@ bool master_terrain_winchester_flow_control(uint32_t current_depth, uint32_t max
     }
     return true;
 }
+
+/* Modulo Overflow Verification: Checks if multiplication operations exceed system prime field boundaries, preventing arithmetic overflows */
+bool master_terrain_verify_modulo_overflow(uint64_t a, uint64_t b, uint64_t modulus, bool *out_overflow_detected) {
+    if (modulus == 0 || !out_overflow_detected) return false;
+
+    /* Check if a * b would overflow standard 64-bit integer limits before modulo calculation */
+    if (a != 0 && b > (0xFFFFFFFFFFFFFFFFULL / a)) {
+        *out_overflow_detected = true;
+    } else {
+        *out_overflow_detected = false;
+    }
+    return true;
+}
