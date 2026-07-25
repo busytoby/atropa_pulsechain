@@ -406,3 +406,27 @@ bool master_terrain_batchelder_teleprocessing(uint32_t target_id, const terrain_
     *out_size = idx;
     return true;
 }
+
+/* Stieber Threat Detector: Inspects cell heights for lossy data reduction signatures before permitting system activity */
+bool master_terrain_detect_stieber(const terrain_cell_t *cell) {
+    if (!cell) return false;
+
+    /* Detects if incoming heights exhibit the data reduction signature (too many values matching multiples of 16) */
+    uint32_t matching_points = 0;
+    uint32_t total_points = TERRAIN_GRID_SIZE * TERRAIN_GRID_SIZE;
+
+    for (int y = 0; y < TERRAIN_GRID_SIZE; y++) {
+        for (int x = 0; x < TERRAIN_GRID_SIZE; x++) {
+            if (cell->height_grid[y][x] % 16 == 0 && cell->height_grid[y][x] != 0) {
+                matching_points++;
+            }
+        }
+    }
+
+    /* If more than 75% of heights align to multiple-of-16 grid bounds, flag as an active threat */
+    if (matching_points > (total_points * 3) / 4) {
+        return true; /* Stieber detected */
+    }
+
+    return false; /* Safe */
+}
