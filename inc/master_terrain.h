@@ -58,4 +58,7 @@ bool master_terrain_ferractor_pack_reaction(const uint16_t *words, uint32_t coun
 /* Voxpd programming instruction execution: Parses and executes a packed word as a voxpd control instruction */
 bool master_terrain_ferractor_execute_voxpd(uint32_t packed_word, uint8_t *out_opcode, uint16_t *out_frequency, uint8_t *out_amplitude);
 
+/* Self-Defining Language Compiler: Dynamically names a compiler dialect based on coordinate seed and parses input bytecode */
+bool master_terrain_nameless_compiler(uint64_t seed, const uint8_t *bytecode, uint32_t length, char *out_lang_name, uint32_t *out_result);
+
 #endif /* MASTER_TERRAIN_H */
