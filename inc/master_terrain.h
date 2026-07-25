@@ -110,4 +110,7 @@ bool master_terrain_batchelder_prioritization(const terrain_cell_t *cell, double
 /* Batchelder Fuel Consumption: Calculates the estimated energy/payload decay over a scheduled target traversal path */
 bool master_terrain_batchelder_consumption(const uint32_t *scheduled_path, uint32_t count, double fuel_rate, double *out_residual_fuel);
 
+/* Wallenstein Scan Statistic: Scans the terrain grid for spatial clusters of high-elevation points using a sliding window */
+bool master_terrain_wallenstein_scan(const terrain_cell_t *cell, uint32_t threshold, uint32_t *out_cluster_count);
+
 #endif /* MASTER_TERRAIN_H */

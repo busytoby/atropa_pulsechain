@@ -485,3 +485,28 @@ bool master_terrain_batchelder_consumption(const uint32_t *scheduled_path, uint3
     *out_residual_fuel = remaining;
     return true;
 }
+
+/* Wallenstein Scan Statistic: Scans the terrain grid for spatial clusters of high-elevation points using a sliding window */
+bool master_terrain_wallenstein_scan(const terrain_cell_t *cell, uint32_t threshold, uint32_t *out_cluster_count) {
+    if (!cell || !out_cluster_count) return false;
+
+    /* Scan statistics cluster search:
+       Applies a sliding 3x3 window over the elevation matrix and registers a hotspot/cluster
+       whenever the sum of heights inside the window exceeds the specified threshold value */
+    uint32_t clusters = 0;
+    for (int y = 1; y < TERRAIN_GRID_SIZE - 1; y++) {
+        for (int x = 1; x < TERRAIN_GRID_SIZE - 1; x++) {
+            uint32_t window_sum = 0;
+            for (int wy = -1; wy <= 1; wy++) {
+                for (int wx = -1; wx <= 1; wx++) {
+                    window_sum += cell->height_grid[y + wy][x + wx];
+                }
+            }
+            if (window_sum > threshold) {
+                clusters++;
+            }
+        }
+    }
+    *out_cluster_count = clusters;
+    return true;
+}
