@@ -263,3 +263,30 @@ bool master_terrain_read_descriptor(const master_terrain_descriptor_t *desc, con
     *out_val = memory[desc->address + index_val];
     return true;
 }
+
+/* Push activation record to hardware stack: Supports hardware-level recursive calls matching Robert S. Barton's Burroughs design */
+bool master_terrain_push_stack_frame(master_terrain_activation_stack_t *stack, uint32_t return_addr, const uint32_t *locals, uint32_t local_count) {
+    if (!stack || local_count > 8) return false;
+
+    if (stack->depth >= STACK_FRAME_MAX_DEPTH) {
+        /* Stack overflow hardware interrupt simulation */
+        return false;
+    }
+
+    master_terrain_stack_frame_t *frame = &stack->frames[stack->depth++];
+    frame->return_address = return_addr;
+    frame->locals_count = local_count;
+    for (uint32_t i = 0; i < local_count; i++) {
+        frame->locals[i] = locals[i];
+    }
+    return true;
+}
+
+/* Pop activation record from hardware stack */
+bool master_terrain_pop_stack_frame(master_terrain_activation_stack_t *stack, uint32_t *out_return_addr) {
+    if (!stack || !out_return_addr || stack->depth == 0) return false;
+
+    master_terrain_stack_frame_t *frame = &stack->frames[--stack->depth];
+    *out_return_addr = frame->return_address;
+    return true;
+}

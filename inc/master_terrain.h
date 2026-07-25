@@ -71,4 +71,22 @@ typedef struct {
 /* Descriptor-Based Safe Read: Validates bounds and tag matching Robert S. Barton's Burroughs B5000 memory architecture */
 bool master_terrain_read_descriptor(const master_terrain_descriptor_t *desc, const uint8_t *memory, uint32_t index_val, uint8_t *out_val);
 
+#define STACK_FRAME_MAX_DEPTH 8
+typedef struct {
+    uint32_t return_address;
+    uint32_t locals[8];
+    uint32_t locals_count;
+} master_terrain_stack_frame_t;
+
+typedef struct {
+    master_terrain_stack_frame_t frames[STACK_FRAME_MAX_DEPTH];
+    uint32_t depth;
+} master_terrain_activation_stack_t;
+
+/* Push activation record to hardware stack: Supports hardware-level recursive calls matching Robert S. Barton's Burroughs design */
+bool master_terrain_push_stack_frame(master_terrain_activation_stack_t *stack, uint32_t return_addr, const uint32_t *locals, uint32_t local_count);
+
+/* Pop activation record from hardware stack */
+bool master_terrain_pop_stack_frame(master_terrain_activation_stack_t *stack, uint32_t *out_return_addr);
+
 #endif /* MASTER_TERRAIN_H */
