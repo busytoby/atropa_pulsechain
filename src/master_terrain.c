@@ -361,3 +361,21 @@ bool master_terrain_rpn_evaluator(const uint32_t *tokens, uint32_t count, uint32
     }
     return false;
 }
+
+/* Attrition Damage Assessment Model (ADAM): Calculates residual survival probability of virtual hardware command nodes */
+bool master_terrain_attrition_adam(double initial_health, double threat_intensity, uint32_t cycles, double *out_residual_health) {
+    if (initial_health <= 0.0 || threat_intensity < 0.0 || !out_residual_health) return false;
+
+    /* ADAM exponential decay attrition calculations:
+       Simulates combat wear/damage over discrete tactical cycles */
+    double health = initial_health;
+    for (uint32_t i = 0; i < cycles; i++) {
+        health = health * (1.0 - (threat_intensity * 0.01));
+        if (health < 0.0) {
+            health = 0.0;
+            break;
+        }
+    }
+    *out_residual_health = health;
+    return true;
+}

@@ -95,4 +95,7 @@ bool master_terrain_astacopsis_classification(const terrain_cell_t *cell, char *
 /* RPN Expression Evaluator: Evaluates mathematical expressions using a hardware-managed evaluation stack Modulo MotzkinPrime */
 bool master_terrain_rpn_evaluator(const uint32_t *tokens, uint32_t count, uint32_t *out_result);
 
+/* Attrition Damage Assessment Model (ADAM): Calculates residual survival probability of virtual hardware command nodes */
+bool master_terrain_attrition_adam(double initial_health, double threat_intensity, uint32_t cycles, double *out_residual_health);
+
 #endif /* MASTER_TERRAIN_H */
