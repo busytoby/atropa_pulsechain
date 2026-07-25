@@ -100,6 +100,23 @@ static void gating_process(dsp_module_t *self, double input, double *output) {
     }
 }
 
+typedef struct {
+    bool gates[4][4]; // 4 input channels, 4 output channels
+} macwilliams_matrix_t;
+
+// Route input signals through the transistor gating matrix to outputs
+void process_gating_matrix(const macwilliams_matrix_t *matrix, const double *inputs, double *outputs) {
+    for (int out_idx = 0; out_idx < 4; out_idx++) {
+        outputs[out_idx] = 0.0;
+        for (int in_idx = 0; in_idx < 4; in_idx++) {
+            if (matrix->gates[in_idx][out_idx]) {
+                outputs[out_idx] += inputs[in_idx]; // Mix routed input into destination bus
+            }
+        }
+    }
+}
+
+
 
 // Plug a logic package module into the synthesizer breadboard
 bool plug_module(synthesizer_breadboard_t *board, dsp_module_t *module, size_t slot) {
@@ -244,6 +261,32 @@ int main(void) {
     assert(output_val == 0.0);
     printf("   ✓ Sparklefly, Holding-Gun, and Clock-Gating modules verified.\n");
     fflush(stdout);
+
+    // 5. Verification of MacWilliams Transistor Gating Matrix
+    printf("[TEST] Verifying MacWilliams transistor gating matrix routing...\n");
+    fflush(stdout);
+    macwilliams_matrix_t routing_matrix;
+    memset(&routing_matrix, 0, sizeof(routing_matrix));
+
+    // Configure routes:
+    // Input 0 (Noise) -> Output 1 (Filter)
+    // Input 2 (Excitation) -> Output 3 (Envelope) and Output 1 (Filter) (Mixing)
+    routing_matrix.gates[0][1] = true;
+    routing_matrix.gates[2][3] = true;
+    routing_matrix.gates[2][1] = true;
+
+    double input_signals[4] = { 0.4, 0.0, 0.9, 0.0 };
+    double output_buses[4] = { 0 };
+
+    process_gating_matrix(&routing_matrix, input_signals, output_buses);
+
+    assert(output_buses[0] == 0.0); // Output 0: unrouted
+    assert(output_buses[1] == 1.3); // Output 1: Input 0 (0.4) + Input 2 (0.9) = 1.3
+    assert(output_buses[2] == 0.0); // Output 2: unrouted
+    assert(output_buses[3] == 0.9); // Output 3: Input 2 (0.9)
+    printf("   ✓ Gating matrix dynamic routing and mixing verified.\n");
+    fflush(stdout);
+
 
 
     printf("=============================================================\n");
