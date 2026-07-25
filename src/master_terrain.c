@@ -440,3 +440,30 @@ bool master_terrain_detect_stieber(const terrain_cell_t *cell) {
 
     return false; /* Safe */
 }
+
+/* Batchelder Target Prioritization: Calculates threat priority score based on cell coordinates and height variances */
+bool master_terrain_batchelder_prioritization(const terrain_cell_t *cell, double *out_priority_score) {
+    if (!cell || !out_priority_score) return false;
+
+    /* SAGE target evaluation matrix:
+       Priority Score = (Mean Elevation Variance + Latitude Hash Index) * Physical Bank Weight */
+    double sum = 0.0;
+    for (int y = 0; y < TERRAIN_GRID_SIZE; y++) {
+        for (int x = 0; x < TERRAIN_GRID_SIZE; x++) {
+            sum += cell->height_grid[y][x];
+        }
+    }
+    double mean = sum / (TERRAIN_GRID_SIZE * TERRAIN_GRID_SIZE);
+
+    double variance = 0.0;
+    for (int y = 0; y < TERRAIN_GRID_SIZE; y++) {
+        for (int x = 0; x < TERRAIN_GRID_SIZE; x++) {
+            double diff = cell->height_grid[y][x] - mean;
+            variance += diff * diff;
+        }
+    }
+    variance = variance / (TERRAIN_GRID_SIZE * TERRAIN_GRID_SIZE);
+
+    *out_priority_score = (variance + cell->latitude_bytes[0]) * (cell->physical_bank + 1.0);
+    return true;
+}

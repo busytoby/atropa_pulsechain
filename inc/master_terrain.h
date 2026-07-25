@@ -104,4 +104,7 @@ bool master_terrain_batchelder_teleprocessing(uint32_t target_id, const terrain_
 /* Stieber Threat Detector: Inspects cell heights for lossy data reduction signatures before permitting system activity */
 bool master_terrain_detect_stieber(const terrain_cell_t *cell);
 
+/* Batchelder Target Prioritization: Calculates threat priority score based on cell coordinates and height variances */
+bool master_terrain_batchelder_prioritization(const terrain_cell_t *cell, double *out_priority_score);
+
 #endif /* MASTER_TERRAIN_H */
