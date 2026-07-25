@@ -317,3 +317,47 @@ bool master_terrain_astacopsis_classification(const terrain_cell_t *cell, char *
 
     return true;
 }
+
+/* RPN Expression Evaluator: Evaluates mathematical expressions using a hardware-managed evaluation stack Modulo MotzkinPrime */
+bool master_terrain_rpn_evaluator(const uint32_t *tokens, uint32_t count, uint32_t *out_result) {
+    if (!tokens || count == 0 || !out_result) return false;
+
+    uint32_t stack[32] = {0};
+    uint32_t stack_ptr = 0;
+    uint64_t motzkin = 953467954114363ULL;
+
+    for (uint32_t i = 0; i < count; i++) {
+        uint32_t token = tokens[i];
+        if (token < 0xFFFFFFF0) {
+            /* Push operand to stack */
+            if (stack_ptr < 32) {
+                stack[stack_ptr++] = token;
+            } else {
+                return false; /* Stack overflow */
+            }
+        } else {
+            /* Operator token: 0xFFFFFFF0 = ADD, 0xFFFFFFF1 = SUB, 0xFFFFFFF2 = MUL */
+            if (stack_ptr < 2) return false; /* Stack underflow */
+            uint64_t b = stack[--stack_ptr];
+            uint64_t a = stack[--stack_ptr];
+            uint64_t res = 0;
+
+            if (token == 0xFFFFFFF0) {
+                res = (a + b) % motzkin;
+            } else if (token == 0xFFFFFFF1) {
+                res = (a + motzkin - b) % motzkin;
+            } else if (token == 0xFFFFFFF2) {
+                res = (a * b) % motzkin;
+            } else {
+                return false; /* Invalid operator */
+            }
+            stack[stack_ptr++] = (uint32_t)res;
+        }
+    }
+
+    if (stack_ptr == 1) {
+        *out_result = stack[0];
+        return true;
+    }
+    return false;
+}

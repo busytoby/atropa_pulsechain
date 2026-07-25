@@ -92,4 +92,7 @@ bool master_terrain_pop_stack_frame(master_terrain_activation_stack_t *stack, ui
 /* Astacopsis Classification: Taxonomy system classifying terrain height cells into biological habitat taxonomy groups */
 bool master_terrain_astacopsis_classification(const terrain_cell_t *cell, char *out_taxonomy_class);
 
+/* RPN Expression Evaluator: Evaluates mathematical expressions using a hardware-managed evaluation stack Modulo MotzkinPrime */
+bool master_terrain_rpn_evaluator(const uint32_t *tokens, uint32_t count, uint32_t *out_result);
+
 #endif /* MASTER_TERRAIN_H */
