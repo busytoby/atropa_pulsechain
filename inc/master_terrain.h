@@ -167,4 +167,7 @@ bool master_terrain_replenish_page(double *page_healths, uint32_t count, double 
 /* Transistor Charge Replenishment: Recharges simulated field-effect transistor gates that have discharged below active threshold levels */
 bool master_terrain_replenish_fet_charge(double *fet_voltages, uint32_t count, double low_threshold, double target_voltage, uint32_t *out_recharged_count);
 
+/* Orbital Radius Replenishment: Restores coordinate projection radii that have decayed due to shear distortion displacements */
+bool master_terrain_replenish_orbital_radius(double *radii, uint32_t count, double low_threshold, double target_radius, uint32_t *out_replenished_count);
+
 #endif /* MASTER_TERRAIN_H */

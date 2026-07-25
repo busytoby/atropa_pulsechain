@@ -819,3 +819,19 @@ bool master_terrain_replenish_fet_charge(double *fet_voltages, uint32_t count, d
     *out_recharged_count = recharged_count;
     return true;
 }
+
+/* Orbital Radius Replenishment: Restores coordinate projection radii that have decayed due to shear distortion displacements */
+bool master_terrain_replenish_orbital_radius(double *radii, uint32_t count, double low_threshold, double target_radius, uint32_t *out_replenished_count) {
+    if (!radii || count == 0 || !out_replenished_count) return false;
+
+    /* Scan orbital path parameters and boost values that have decayed below operational range */
+    uint32_t replenished_count = 0;
+    for (uint32_t i = 0; i < count; i++) {
+        if (radii[i] < low_threshold) {
+            radii[i] = target_radius;
+            replenished_count++;
+        }
+    }
+    *out_replenished_count = replenished_count;
+    return true;
+}
