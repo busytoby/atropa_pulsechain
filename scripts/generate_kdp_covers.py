@@ -3,7 +3,7 @@ from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 
-# Configuration for the 4 volumes (Updated for 6x9 page counts, spine widths, and reviews)
+# Configuration for the 4 volumes (Updated for 6x9 page counts, spine widths, reviews, and ISBNs)
 VOLUMES_CONFIG = {
     1: {
         "title": "VOLUME I: VM GENESIS",
@@ -11,7 +11,8 @@ VOLUMES_CONFIG = {
         "spine_width": 0.489,
         "front_image": "/home/mariarahel/.gemini/antigravity-cli/brain/6d0129c5-eb0b-4333-a95f-e0f48861d972/volume_1_cover_v2_1785015239664.jpg",
         "description": "This volume details the initial Genesis and design constraints of the Auncient VM architecture. Explore the cryptographic underpinnings and execution pipelines that govern the state machine layers.",
-        "review": "\"A masterclass in low-level virtual machine architecture. The meticulous mapping of the Auncient VM sets a new standard for deterministic system design.\" — Dysnomia Technical Journal"
+        "review": "\"A masterclass in low-level virtual machine architecture. The meticulous mapping of the Auncient VM sets a new standard for deterministic system design.\" — Dysnomia Technical Journal",
+        "isbn": "979-8-18902-668-3"
     },
     2: {
         "title": "VOLUME II: WINCHESTER MQ",
@@ -104,7 +105,6 @@ def build_full_cover(vol_num, config):
     
     # Draw Review Quote block (further down)
     review_y = total_height - 4.2 * inch
-    # Light gold/beige color for quotes
     c.setFillColor(colors.HexColor('#d4af37'))
     c.setFont("Times-Italic", 9.0)
     
@@ -131,6 +131,12 @@ def build_full_cover(vol_num, config):
     c.setFont("Helvetica", 7)
     c.drawCentredString(barcode_x + 1.0 * inch, barcode_y + 0.2 * inch, "BARCODE PLACEHOLDER")
     
+    # Draw ISBN if available
+    if "isbn" in config:
+        c.setFillColor(colors.HexColor('#cbd5e1'))
+        c.setFont("Helvetica-Bold", 8)
+        c.drawString(barcode_x, barcode_y + 1.3 * inch, f"ISBN {config['isbn']}")
+        
     # Draw Front Cover Image (right side)
     front_left = bleed + page_width + spine_width
     front_width = page_width
@@ -147,7 +153,6 @@ def build_full_cover(vol_num, config):
     
     # Rotated Spine Text
     c.saveState()
-    # Translate to center of spine and rotate by 270 degrees
     c.translate(spine_left + spine_width / 2.0, total_height / 2.0)
     c.rotate(270)
     
