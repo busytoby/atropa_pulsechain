@@ -3,42 +3,42 @@ from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 
-# Configuration for the 4 volumes
+# Configuration for the 4 volumes (Updated for 6x9 page counts and spine widths)
 VOLUMES_CONFIG = {
     1: {
         "title": "VOLUME I: VM GENESIS",
-        "pages": 183,
-        "spine_width": 0.412,
+        "pages": 217,
+        "spine_width": 0.489,
         "front_image": "/home/mariarahel/.gemini/antigravity-cli/brain/6d0129c5-eb0b-4333-a95f-e0f48861d972/volume_1_cover_v2_1785015239664.jpg",
         "description": "This volume details the initial Genesis and design constraints of the Auncient VM architecture. Explore the cryptographic underpinnings and execution pipelines that govern the state machine layers."
     },
     2: {
         "title": "VOLUME II: WINCHESTER MQ",
-        "pages": 144,
-        "spine_width": 0.324,
+        "pages": 172,
+        "spine_width": 0.387,
         "front_image": "/home/mariarahel/.gemini/antigravity-cli/brain/6d0129c5-eb0b-4333-a95f-e0f48861d972/volume_2_cover_v2_1785015250191.jpg",
         "description": "Focusing on low-level SCSI handshake loops and state machines, Volume II chronicles the implementation of Winchester MQ storage arrays and the validation of Lau tokens."
     },
     3: {
         "title": "VOLUME III: HECKE-ROMBERG",
-        "pages": 249,
-        "spine_width": 0.561,
+        "pages": 311,
+        "spine_width": 0.700,
         "front_image": "/home/mariarahel/.gemini/antigravity-cli/brain/6d0129c5-eb0b-4333-a95f-e0f48861d972/volume_3_cover_v2_1785015261399.jpg",
         "description": "Analyzing convergence behavior through Hecke operators and Romberg Richardson extrapolation. This volume investigates mathematical continuity constraints and error analysis in the Banach space."
     },
     4: {
         "title": "VOLUME IV: SOVEREIGN MONOLITH",
-        "pages": 154,
-        "spine_width": 0.347,
+        "pages": 184,
+        "spine_width": 0.414,
         "front_image": "/home/mariarahel/.gemini/antigravity-cli/brain/6d0129c5-eb0b-4333-a95f-e0f48861d972/volume_4_cover_v2_1785015271838.jpg",
         "description": "The concluding volume explores the execution of position-independent JIT code in ThunkProxy structures. Witness the ultimate mathematical crystallization and seal parameters of the absolute state."
     }
 }
 
 def build_full_cover(vol_num, config):
-    # KDP paperback specifications
+    # KDP paperback specifications for 6x9 inches
     bleed = 0.125 * inch
-    page_width = 7.0 * inch
+    page_width = 6.0 * inch
     page_height = 9.0 * inch
     
     spine_width = config["spine_width"] * inch

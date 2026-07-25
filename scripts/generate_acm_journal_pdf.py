@@ -59,7 +59,7 @@ class NumberedCanvas(canvas.Canvas):
         is_even = (self._pageNumber % 2 == 0)
         
         left_header_margin = 0.5 * inch if is_even else 0.75 * inch
-        right_header_margin = 6.5 * inch if is_even else 6.25 * inch
+        right_header_margin = 5.5 * inch if is_even else 5.25 * inch
         
         if is_even:
             self.drawString(left_header_margin, 8.5 * inch, "LORE COMPENDIUM")
@@ -201,26 +201,11 @@ def process_text_block(text, body_style, col_width, story):
         if html_p:
             story.append(Paragraph(html_p, body_style))
 
-def build_pdf():
-    lore_dir = "lore"
-    files = []
-    for f in os.listdir(lore_dir):
-        if f.endswith(".md"):
-            path = os.path.join(lore_dir, f)
-            date = get_file_date(path)
-            files.append((date, path))
-            
-    files.sort(key=lambda x: x[0])
-    
-    # 7x9 inch portrait page size (Standard Amazon KDP format)
-    page_width = 7.0 * inch
-    page_height = 9.0 * inch
-    spacing = 0.3 * inch
-    col_width = (page_width - 1.25 * inch - spacing) / 2.0
-    col_height = page_height - 1.0 * inch - 0.5 * inch
+def build_volume(volume_num, files, page_width, page_height, col_width, col_height, spacing, title_style, body_style):
+    output_filename = f"lore_compendium_vol{volume_num}.pdf"
     
     doc = BaseDocTemplate(
-        "lore_compendium.pdf",
+        output_filename,
         pagesize=(page_width, page_height)
     )
     
@@ -234,32 +219,10 @@ def build_pdf():
     
     doc.addPageTemplates([template_odd, template_even])
     
-    styles = getSampleStyleSheet()
-    title_style = ParagraphStyle(
-        'ACMTitle',
-        parent=styles['Normal'],
-        fontName='Times-Bold',
-        fontSize=12,
-        leading=14,
-        alignment=TA_CENTER,
-        spaceAfter=10
-    )
-    
-    body_style = ParagraphStyle(
-        'ACMBody',
-        parent=styles['Normal'],
-        fontName='Times-Roman',
-        fontSize=8.5,
-        leading=10.5,
-        alignment=TA_LEFT,
-        spaceAfter=6
-    )
-    
     story = []
-    
     story.append(NextPageTemplate(['even_page', 'odd_page']))
     
-    story.append(Paragraph("<b>COMPENDIUM OF LORE AND HISTORICAL TRANSCRIPTS</b>", title_style))
+    story.append(Paragraph(f"<b>COMPENDIUM OF LORE AND HISTORICAL TRANSCRIPTS - VOLUME {volume_num}</b>", title_style))
     story.append(Paragraph("Compiled Chronologically under ACM 1961 Standards", ParagraphStyle('Sub', parent=title_style, fontName='Times-Italic', fontSize=9)))
     story.append(Spacer(1, 0.2 * inch))
     
@@ -300,7 +263,59 @@ def build_pdf():
         story.append(Spacer(1, 0.1 * inch))
         
     doc.build(story, canvasmaker=NumberedCanvas)
-    print("PDF build complete: lore_compendium.pdf")
+    print(f"PDF build complete: {output_filename}")
+
+def build_pdf():
+    lore_dir = "lore"
+    files = []
+    for f in os.listdir(lore_dir):
+        if f.endswith(".md"):
+            path = os.path.join(lore_dir, f)
+            date = get_file_date(path)
+            files.append((date, path))
+            
+    files.sort(key=lambda x: x[0])
+    
+    page_width = 6.0 * inch
+    page_height = 9.0 * inch
+    spacing = 0.3 * inch
+    col_width = (page_width - 1.25 * inch - spacing) / 2.0
+    col_height = page_height - 1.0 * inch - 0.5 * inch
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'ACMTitle',
+        parent=styles['Normal'],
+        fontName='Times-Bold',
+        fontSize=12,
+        leading=14,
+        alignment=TA_CENTER,
+        spaceAfter=10
+    )
+    
+    body_style = ParagraphStyle(
+        'ACMBody',
+        parent=styles['Normal'],
+        fontName='Times-Roman',
+        fontSize=8.5,
+        leading=10.5,
+        alignment=TA_LEFT,
+        spaceAfter=6
+    )
+    
+    # Split files into 4 volumes without breaking any article
+    total_files = len(files)
+    vol_size = total_files // 4
+    
+    vols = [
+        files[0:vol_size],
+        files[vol_size:2*vol_size],
+        files[2*vol_size:3*vol_size],
+        files[3*vol_size:]
+    ]
+    
+    for idx, vol_files in enumerate(vols):
+        build_volume(idx + 1, vol_files, page_width, page_height, col_width, col_height, spacing, title_style, body_style)
 
 if __name__ == "__main__":
     build_pdf()
