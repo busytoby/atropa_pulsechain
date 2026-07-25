@@ -74,21 +74,47 @@ int tsfi_cade_draw_dashboard_panel(uint32_t *pixels, int w, int h, CadeVulkanDas
         line = strtok(NULL, "\n");
     }
 
-    // Viewport 3 (Right): Real-time Transaction Graphs
-    tsfi_quantel_paintbox_typographer(pixels, w, h, separator2_x + 10, start_y + 12, "DAILY BATCH GRAPH", 0xFFe6dfd3, 8.0f);
+    // Viewport 3 (Right): MacWilliams Transistor Gating Matrix representation
+    tsfi_quantel_paintbox_typographer(pixels, w, h, separator2_x + 10, start_y + 12, "GATING MATRIX ROUTER", 0xFFe6dfd3, 8.0f);
+    
+    // Draw 4x4 matrix grid of transistor junction indicators
+    int matrix_start_x = separator2_x + 45;
+    int matrix_start_y = start_y + 35;
+    int cell_spacing = 15;
+    
+    // Label input/output lines
+    tsfi_quantel_paintbox_typographer(pixels, w, h, separator2_x + 10, matrix_start_y, "IN", 0xFF8c7241, 6.0f);
+    tsfi_quantel_paintbox_typographer(pixels, w, h, matrix_start_x, start_y + 24, "OUT: 0  1  2  3", 0xFF8c7241, 6.0f);
 
-    // Draw dynamic bezier curve representing transaction daily batch volumes
-    float p0_x = separator2_x + 15;
-    float p0_y = end_y - 15;
-    float p1_x = separator2_x + 45;
-    float p1_y = start_y + 20 + 10.0f * sinf(t * 2.0f);
-    float p2_x = separator2_x + 85;
-    float p2_y = start_y + 20 + 10.0f * cosf(t * 3.0f);
-    float p3_x = end_x - 15;
-    float p3_y = end_y - 15;
-
-    // Draw a smooth gold spline using the paintbox bezier stroke pipeline
-    tsfi_quantel_paintbox_bezier_stroke(pixels, w, h, p0_x, p0_y, p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, 2, 0.8f, 0xFFc5a059);
+    for (int in_idx = 0; in_idx < 4; in_idx++) {
+        char in_lbl[8];
+        snprintf(in_lbl, sizeof(in_lbl), "%d", in_idx);
+        tsfi_quantel_paintbox_typographer(pixels, w, h, separator2_x + 28, matrix_start_y + in_idx * cell_spacing, in_lbl, 0xFF8c7241, 6.0f);
+        
+        for (int out_idx = 0; out_idx < 4; out_idx++) {
+            int cx = matrix_start_x + out_idx * cell_spacing;
+            int cy = matrix_start_y + in_idx * cell_spacing;
+            
+            // Highlight active paths dynamically based on time t (simulate dynamic routes)
+            bool gate_active = false;
+            if (in_idx == 0 && out_idx == 1) gate_active = true; // Noise -> Filter
+            if (in_idx == 2 && out_idx == 3) gate_active = true; // Excitation -> Envelope
+            if (in_idx == 2 && out_idx == 1) gate_active = ((int)t % 2 == 0); // Dynamic path
+            
+            uint32_t cell_color = gate_active ? 0xFF00ffc8 : 0xFFff3c64; // Neon Cyan for open, Red for closed
+            
+            // Draw a solid 5x5 pixel block for the transistor junction
+            for (int dy = -2; dy <= 2; dy++) {
+                for (int dx = -2; dx <= 2; dx++) {
+                    int px = cx + dx;
+                    int py = cy + dy;
+                    if (px >= 0 && px < w && py >= 0 && py < h) {
+                        pixels[py * w + px] = cell_color;
+                    }
+                }
+            }
+        }
+    }
 
     return 0;
 }
