@@ -107,4 +107,7 @@ bool master_terrain_detect_stieber(const terrain_cell_t *cell);
 /* Batchelder Target Prioritization: Calculates threat priority score based on cell coordinates and height variances */
 bool master_terrain_batchelder_prioritization(const terrain_cell_t *cell, double *out_priority_score);
 
+/* Batchelder Fuel Consumption: Calculates the estimated energy/payload decay over a scheduled target traversal path */
+bool master_terrain_batchelder_consumption(const uint32_t *scheduled_path, uint32_t count, double fuel_rate, double *out_residual_fuel);
+
 #endif /* MASTER_TERRAIN_H */

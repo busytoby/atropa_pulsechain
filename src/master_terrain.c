@@ -467,3 +467,21 @@ bool master_terrain_batchelder_prioritization(const terrain_cell_t *cell, double
     *out_priority_score = (variance + cell->latitude_bytes[0]) * (cell->physical_bank + 1.0);
     return true;
 }
+
+/* Batchelder Fuel Consumption: Calculates the estimated energy/payload decay over a scheduled target traversal path */
+bool master_terrain_batchelder_consumption(const uint32_t *scheduled_path, uint32_t count, double fuel_rate, double *out_residual_fuel) {
+    if (!scheduled_path || count == 0 || fuel_rate < 0.0 || !out_residual_fuel) return false;
+
+    /* SAGE flight path simulator:
+       Reduces fuel linearly proportional to path length and exponential distance coefficients */
+    double remaining = 100.0;
+    for (uint32_t i = 0; i < count; i++) {
+        remaining -= fuel_rate * (1.0 + (scheduled_path[i] * 0.05));
+        if (remaining < 0.0) {
+            remaining = 0.0;
+            break;
+        }
+    }
+    *out_residual_fuel = remaining;
+    return true;
+}
