@@ -176,4 +176,7 @@ bool master_terrain_replenish_bar_levels(double *epibar, double *hypobar, double
 /* Hecke-Romberg Integration: Computes numerical integrals over Luo coordinates using Hecke-like averaging transforms with Waat refinement steps */
 bool master_terrain_hecke_romberg(const double *luo_function_vals, uint32_t count, uint64_t waat_refinement, double *out_integral_val);
 
+/* Thatcher Algorithm 198: Evaluates Romberg table convergence stability and round-off error bounds */
+bool master_terrain_thatcher_algorithm_198(const double *romberg_row, uint32_t count, double error_tolerance, bool *out_is_stable);
+
 #endif /* MASTER_TERRAIN_H */

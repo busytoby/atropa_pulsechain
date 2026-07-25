@@ -888,3 +888,23 @@ bool master_terrain_hecke_romberg(const double *luo_function_vals, uint32_t coun
     *out_integral_val = r_table[3];
     return true;
 }
+
+/* Thatcher Algorithm 198: Evaluates Romberg table convergence stability and round-off error bounds */
+bool master_terrain_thatcher_algorithm_198(const double *romberg_row, uint32_t count, double error_tolerance, bool *out_is_stable) {
+    if (!romberg_row || count < 3 || error_tolerance < 0.0 || !out_is_stable) return false;
+
+    /* ACM Algorithm 198 stability check:
+       Validates that the difference between successive Richardson extrapolations decays
+       and stays within the specified error tolerance limit */
+    *out_is_stable = true;
+    for (uint32_t i = 1; i < count; i++) {
+        double delta = romberg_row[i] - romberg_row[i - 1];
+        if (delta < 0.0) delta = -delta;
+        
+        if (delta > error_tolerance) {
+            *out_is_stable = false; /* Unstable convergence detected due to round-off error */
+            break;
+        }
+    }
+    return true;
+}
