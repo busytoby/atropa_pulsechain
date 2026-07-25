@@ -47,7 +47,7 @@ bool compile_voxpl_script(auncient_transfluxor_registry_t *reg, const char *scri
             
             // Start building new word
             memset(&current_word, 0, sizeof(current_word));
-            snprintf(current_word.name, sizeof(current_word.name), "%s", arg1);
+            snprintf(current_word.name, sizeof(current_word.name), "%.31s", arg1);
             current_word.amplitude = 5.0; // Default Wheeler Jump amplitude
             building_word = true;
 
@@ -59,12 +59,16 @@ bool compile_voxpl_script(auncient_transfluxor_registry_t *reg, const char *scri
         } else if (strcmp(command, "DECAY") == 0 && building_word) {
             current_word.decay = atof(arg1);
             
+        } else if (strcmp(command, "EMO_SCALE") == 0 && building_word) {
+            current_word.amplitude = atof(arg1);
+            
         } else if (strcmp(command, "WMQ") == 0 && building_word) {
             current_word.wmq_cmd = (uint32_t)strtoul(arg1, NULL, 16);
             
         } else if (strcmp(command, "ABI") == 0 && building_word) {
             current_word.abi_op = (uint32_t)strtoul(arg1, NULL, 16);
         }
+
 
         line = strtok(NULL, "\n");
     }
@@ -95,11 +99,13 @@ int main(void) {
         "JUMP SPK_LOCK_SCSI\n"
         "FORMANT 440.0 880.0\n"
         "DECAY 0.4\n"
+        "EMO_SCALE 2.5\n"
         "WMQ 0x10\n"
         "\n"
         "JUMP SPK_WRITE_LEDGER\n"
         "FORMANT 350.0 700.0\n"
         "DECAY 0.2\n"
+        "EMO_SCALE 0.2\n"
         "ABI 0x02\n";
 
     printf("[COMPILER] Compiling VoxPL source script...\n");
@@ -117,11 +123,14 @@ int main(void) {
     assert(registry.total_registered == 2);
     assert(strcmp(registry.registered_words[0].name, "SPK_LOCK_SCSI") == 0);
     assert(registry.registered_words[0].f1 == 440.0);
+    assert(registry.registered_words[0].amplitude == 2.5);
     assert(registry.registered_words[0].wmq_cmd == 0x10);
 
     assert(strcmp(registry.registered_words[1].name, "SPK_WRITE_LEDGER") == 0);
     assert(registry.registered_words[1].f1 == 350.0);
+    assert(registry.registered_words[1].amplitude == 0.2);
     assert(registry.registered_words[1].abi_op == 0x02);
+
 
     printf("=============================================================\n");
     printf("VOXPL COMPILER AUDIT COMPLETE\n");
