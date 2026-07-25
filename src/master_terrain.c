@@ -612,3 +612,14 @@ bool master_terrain_identify_losses(const double *page_healths, uint32_t count, 
     *out_loss_count = loss_count;
     return true;
 }
+
+/* Document QLoss: Records ongoing attrition losses onto the virtual qLOSS Qing data structure using Waat and Luo coordinates */
+bool master_terrain_document_qloss(uint64_t waat, uint64_t luo, uint32_t loss_value, uint32_t *out_qloss_register) {
+    if (!out_qloss_register) return false;
+
+    /* Pack coordinates and loss value into a virtual qLOSS register layout:
+       Format: [Loss Value (16 bits)] [Waat + Luo Hash (16 bits)] */
+    uint32_t coord_hash = (uint32_t)((waat + luo) % 65536);
+    *out_qloss_register = ((loss_value & 0xFFFF) << 16) | coord_hash;
+    return true;
+}

@@ -125,4 +125,7 @@ bool master_terrain_verify_lau(const uint8_t *user_address, const uint8_t *lau_r
 /* Identify Ongoing Losses: Scans active allocations and calculates cumulative resource capacity losses due to attrition */
 bool master_terrain_identify_losses(const double *page_healths, uint32_t count, double failure_threshold, uint32_t *out_loss_count);
 
+/* Document QLoss: Records ongoing attrition losses onto the virtual qLOSS Qing data structure using Waat and Luo coordinates */
+bool master_terrain_document_qloss(uint64_t waat, uint64_t luo, uint32_t loss_value, uint32_t *out_qloss_register);
+
 #endif /* MASTER_TERRAIN_H */
