@@ -243,6 +243,7 @@ bool auncient_sdk_compile_transfluxor_word(auncient_transfluxor_word_t *word, co
 void auncient_sdk_init_transfluxor_registry(auncient_transfluxor_registry_t *reg);
 bool auncient_sdk_register_transfluxor_word(auncient_transfluxor_registry_t *reg, const auncient_transfluxor_word_t *word);
 bool auncient_sdk_dispatch_transfluxor_word(const auncient_transfluxor_registry_t *reg, const auncient_transfluxor_word_t *word, double *feedback_freq);
+bool auncient_sdk_tpu_execute_layer(const auncient_transfluxor_registry_t *reg, const auncient_transfluxor_word_t *inputs, int num_inputs, auncient_transfluxor_word_t *output);
 
 #endif // AUNCIENT_SDK_H
 

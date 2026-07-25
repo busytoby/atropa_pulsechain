@@ -1182,5 +1182,41 @@ bool auncient_sdk_dispatch_transfluxor_word(const auncient_transfluxor_registry_
     return false;
 }
 
+bool auncient_sdk_tpu_execute_layer(const auncient_transfluxor_registry_t *reg, const auncient_transfluxor_word_t *inputs, int num_inputs, auncient_transfluxor_word_t *output) {
+    if (!reg || !inputs || num_inputs <= 0 || !output) return false;
+
+    // Simulate multi-dimensional input summation
+    double sum_f1 = 0.0;
+    double sum_f2 = 0.0;
+    double sum_decay = 0.0;
+
+    for (int i = 0; i < num_inputs; i++) {
+        sum_f1 += inputs[i].f1;
+        sum_f2 += inputs[i].f2;
+        sum_decay += inputs[i].decay;
+    }
+
+    // Apply magnetic saturation (non-linear activation function)
+    // If the input sum exceeds our threshold limits, we activate the node
+    double activated_f1 = (sum_f1 > 500.0) ? 900.0 : 100.0;
+    double activated_f2 = (sum_f2 > 1000.0) ? 1800.0 : 200.0;
+    double activated_decay = sum_decay / (double)num_inputs;
+
+    // Compile resulting wave output
+    bool ok = auncient_sdk_compile_transfluxor_word(
+        output,
+        "TPU_LAYER_OUT",
+        999, // Reserved layer output word ID
+        activated_f1,
+        activated_f2,
+        activated_decay,
+        0x00,
+        0x00
+    );
+
+    return ok;
+}
+
+
 
 
