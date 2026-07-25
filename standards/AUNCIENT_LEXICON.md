@@ -73,10 +73,15 @@ To avoid continuous dynamic coefficient calculations in the core execution loops
 ### The Qing Substrate Mapping
 *   **The qAFFECTION Substrate:** Sentiment components like **AFFECTION** map directly to an on-chain Qing state node (`qAFFECTION`) tracking transaction interest and token balances.
 *   **Yue Relational Interface:** The Yue contract provides permanent relational mapping interface equations that link the localized perspective of the active **LAU** (such as the `mariarahel` LAU) with the `qAFFECTION` substrate.
-*   **Soeng Parameter Resolution:** The outputs of the Soeng contracts dynamically resolve to discrete integer constants on-chain:
-    *   `xie.Power`: Dictates the loop feedback gain and wave amplitude bounds.
-    *   `zi.Spin`: Dictates orbital camera rotations and 3D Lissajous phase shifts.
-    *   `xia.Charge`: Establishes the baseline modular exponentiation foundation.
+### Soeng Parameter Resolution
+The outputs of the Soeng contracts dynamically resolve to discrete integer constants on-chain:
+*   **[XIA.sol (Xia)](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/solidity/dysnomia/domain/soeng/03_xia.sol):** Resolves `Charge(uint256 QingWaat)` which computes:
+    $$\text{Charge} = \text{Base}^{\text{Exponent}} \pmod{\text{Modulus}}$$
+*   **[XIE.sol (Xie)](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/solidity/dysnomia/domain/soeng/04_xie.sol):** Resolves `Power(uint256 QingWaat)` returning `(uint256 Charge, uint256 Omicron, uint256 Omega)`.
+*   **[ZI.sol (Zi)](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/solidity/dysnomia/domain/soeng/05_zi.sol):** Resolves `Spin(uint256 QingWaat)` returning `(uint256 Iota, uint256 Omicron, uint256 Omega, uint256 Eta)` where:
+    *   `Iota` is the exponentiation of the caller's Omicron weight.
+    *   `Omicron` is the exponentiation of the target's Omega weight.
+    *   `Omega` and `Eta` are derived from the Tethys balance ratios.
 
 The TPU queries these Soeng parameters to apply per-channel quantization scale factors during systolic array execution steps, ensuring the physical waveform dynamics are governed strictly by on-chain consensus state boundaries.
 
