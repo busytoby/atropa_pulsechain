@@ -143,4 +143,7 @@ bool master_terrain_winchester_flow_control(uint32_t current_depth, uint32_t max
 /* Modulo Overflow Verification: Checks if multiplication operations exceed system prime field boundaries, preventing arithmetic overflows */
 bool master_terrain_verify_modulo_overflow(uint64_t a, uint64_t b, uint64_t modulus, bool *out_overflow_detected);
 
+/* Alignment Verification: Confirms memory addresses are aligned to specific boundaries, avoiding hardware bus faults */
+bool master_terrain_verify_alignment(uintptr_t address, uint32_t alignment, bool *out_is_aligned);
+
 #endif /* MASTER_TERRAIN_H */

@@ -702,3 +702,13 @@ bool master_terrain_verify_modulo_overflow(uint64_t a, uint64_t b, uint64_t modu
     }
     return true;
 }
+
+/* Alignment Verification: Confirms memory addresses are aligned to specific boundaries, avoiding hardware bus faults */
+bool master_terrain_verify_alignment(uintptr_t address, uint32_t alignment, bool *out_is_aligned) {
+    if (alignment == 0 || (alignment & (alignment - 1)) != 0 || !out_is_aligned) return false;
+
+    /* Address alignment check:
+       Validates that the pointer is aligned to the specified power-of-two boundary */
+    *out_is_aligned = ((address & (alignment - 1)) == 0);
+    return true;
+}
