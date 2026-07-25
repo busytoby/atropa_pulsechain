@@ -5,7 +5,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
 from reportlab.platypus import BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer, PageBreak, FrameBreak, Table, TableStyle, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_JUSTIFY, TA_CENTER
+from reportlab.lib.enums import TA_JUSTIFY, TA_CENTER, TA_LEFT
 from reportlab.lib import colors
 from reportlab.pdfgen import canvas
 
@@ -72,7 +72,6 @@ def inline_md_to_html(text):
     import html
     text = html.escape(text)
     
-    # Balance backticks to prevent tags mismatching
     if text.count('`') % 2 != 0:
         text = text.rsplit('`', 1)[0]
         
@@ -107,15 +106,12 @@ def inline_md_to_html(text):
     return ''.join(new_parts)
 
 def parse_markdown_table(rows, body_style, col_width):
-    # Parse table rows into cell paragraph flowables
     data = []
-    headers_done = False
     for r in rows:
         r = r.strip()
         if not r or r.startswith('|---') or r.startswith('|:---') or r.startswith('|-'):
             continue
         cells = [c.strip() for c in r.split('|')]
-        # Filter empty leading/trailing split cells
         if cells and cells[0] == '':
             cells = cells[1:]
         if cells and cells[-1] == '':
@@ -132,10 +128,8 @@ def parse_markdown_table(rows, body_style, col_width):
         return None
         
     num_cols = max(len(row) for row in data)
-    # Equal columns distribution
     col_widths = [col_width / float(num_cols)] * num_cols
     
-    # Pad shorter rows to match max columns
     for row in data:
         while len(row) < num_cols:
             row.append(Paragraph("", body_style))
@@ -149,6 +143,40 @@ def parse_markdown_table(rows, body_style, col_width):
         ('TOPPADDING', (0,0), (-1,-1), 2),
     ]))
     return t
+
+def process_text_block(text, body_style, col_width, story):
+    # Find all images in this block of text: ![alt](path)
+    pattern = r'!\[[^\]]*\]\(([^)]+)\)'
+    last_idx = 0
+    for match in re.finditer(pattern, text):
+        pre_text = text[last_idx:match.start()].strip()
+        if pre_text:
+            pre_text = re.sub(r'^#+\s*', '', pre_text)
+            html_p = inline_md_to_html(pre_text)
+            if html_p:
+                story.append(Paragraph(html_p, body_style))
+                
+        img_path = match.group(1).strip().split('?')[0]
+        ext = os.path.splitext(img_path)[1].lower()
+        if ext in ['.jpg', '.jpeg', '.png', '.gif', '.bmp'] and os.path.exists(img_path):
+            try:
+                img_flow = Image(img_path)
+                img_flow.drawWidth = col_width - 10
+                img_flow.drawHeight = 1.5 * inch
+                story.append(Spacer(1, 4))
+                story.append(img_flow)
+                story.append(Spacer(1, 4))
+            except Exception as e:
+                print(f"Image error for {img_path}: {e}")
+                
+        last_idx = match.end()
+        
+    post_text = text[last_idx:].strip()
+    if post_text:
+        post_text = re.sub(r'^#+\s*', '', post_text)
+        html_p = inline_md_to_html(post_text)
+        if html_p:
+            story.append(Paragraph(html_p, body_style))
 
 def build_pdf():
     lore_dir = "lore"
@@ -200,7 +228,7 @@ def build_pdf():
         fontName='Times-Roman',
         fontSize=8.5,
         leading=10.5,
-        alignment=TA_JUSTIFY,
+        alignment=TA_LEFT,
         spaceAfter=6
     )
     
@@ -212,7 +240,7 @@ def build_pdf():
     
     for date, path in files:
         title = os.path.basename(path).replace(".md", "").replace("_", " ").title()
-        story.append(Paragraph(f"<b>ARTICLE: {title}</b>", ParagraphStyle('ArtTitle', parent=title_style, alignment=TA_JUSTIFY, fontSize=9.5, spaceBefore=8)))
+        story.append(Paragraph(f"<b>ARTICLE: {title}</b>", ParagraphStyle('ArtTitle', parent=title_style, alignment=TA_LEFT, fontSize=9.5, spaceBefore=8)))
         story.append(Paragraph(f"<i>Published: {date.strftime('%B %d, %Y')}</i>", ParagraphStyle('ArtDate', parent=body_style, fontName='Times-Italic', fontSize=7.5)))
         
         with open(path, 'r', encoding='utf-8') as file_in:
@@ -235,40 +263,14 @@ def build_pdf():
                     story.append(Spacer(1, 4))
                 continue
                 
-            # Detect images: ![alt](path)
-            img_match = re.search(r'!\[[^\]]*\]\(([^)]+)\)', line)
-            if img_match:
-                img_path = img_match.group(1).strip()
-                # Clean up query params if any
-                img_path = img_path.split('?')[0]
-                ext = os.path.splitext(img_path)[1].lower()
-                if ext in ['.jpg', '.jpeg', '.png', '.gif', '.bmp'] and os.path.exists(img_path):
-                    try:
-                        # Wrap image with correct proportional dimensions
-                        img_flow = Image(img_path)
-                        img_flow.drawWidth = col_width - 10
-                        img_flow.drawHeight = 1.2 * inch
-                        story.append(Spacer(1, 4))
-                        story.append(img_flow)
-                        story.append(Spacer(1, 4))
-                    except Exception:
-                        pass
-                i += 1
-                continue
-                
-            # Process standard paragraphs
+            # Process standard paragraphs and extract embedded images
             if line:
-                # Accumulate paragraphs split by empty lines
                 p_text = []
-                while i < len(lines) and lines[i].strip():
+                while i < len(lines) and lines[i].strip() and not lines[i].strip().startswith('|'):
                     p_text.append(lines[i].strip())
                     i += 1
                 full_p = ' '.join(p_text)
-                # Strip markdown headers if any
-                full_p = re.sub(r'^#+\s*', '', full_p)
-                html_p = inline_md_to_html(full_p)
-                if html_p:
-                    story.append(Paragraph(html_p, body_style))
+                process_text_block(full_p, body_style, col_width, story)
             else:
                 i += 1
                 
