@@ -46,27 +46,6 @@ bool master_terrain_map_mmu(uint8_t mpr_index, const terrain_cell_t *cell) {
     return true;
 }
 
-/* Stieber data reduction scan: Compresses terrain cells based on elevation contours */
-bool master_terrain_stieber_reduction(const terrain_cell_t *cell, uint8_t *out_compressed, uint32_t *out_size) {
-    if (!cell || !out_compressed || !out_size) return false;
-
-    /* Joseph A. Stieber's 1957 automatic data reduction logic:
-       Scans the 3D grid and filters values matching specific contour levels (e.g. multiples of 16) */
-    uint32_t count = 0;
-    for (int y = 0; y < TERRAIN_GRID_SIZE; y++) {
-        for (int x = 0; x < TERRAIN_GRID_SIZE; x++) {
-            uint8_t h = cell->height_grid[y][x];
-            if (h % 16 == 0) {
-                out_compressed[count++] = (uint8_t)x;
-                out_compressed[count++] = (uint8_t)y;
-                out_compressed[count++] = h;
-            }
-        }
-    }
-    *out_size = count;
-    return true;
-}
-
 /* Brainerd UHF transmission line simulation: Calculates line loss and phase velocity along the coaxial link */
 bool master_terrain_brainerd_uhf(double frequency, double length, double *out_attenuation, double *out_phase_velocity) {
     if (frequency <= 0.0 || length <= 0.0 || !out_attenuation || !out_phase_velocity) return false;
@@ -425,19 +404,5 @@ bool master_terrain_batchelder_teleprocessing(uint32_t target_id, const terrain_
     out_payload[idx++] = cell->physical_bank;
 
     *out_size = idx;
-    return true;
-}
-
-/* Stieber Obfuscation Filter: Scrambles elevation coordinates to defend against data reduction scanning */
-bool master_terrain_defend_stieber(terrain_cell_t *cell, uint64_t key) {
-    if (!cell) return false;
-
-    /* Obfuscates coordinates by XOR scrambling heights, preventing the data reduction scanner from reading raw contour levels */
-    uint8_t key_byte = (uint8_t)(key & 0xFF);
-    for (int y = 0; y < TERRAIN_GRID_SIZE; y++) {
-        for (int x = 0; x < TERRAIN_GRID_SIZE; x++) {
-            cell->height_grid[y][x] ^= key_byte;
-        }
-    }
     return true;
 }

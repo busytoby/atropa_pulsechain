@@ -24,9 +24,6 @@ bool master_terrain_load_cell(uint64_t waat, terrain_cell_t *out_cell);
 /* Map terrain bank to HuC MMU page index */
 bool master_terrain_map_mmu(uint8_t mpr_index, const terrain_cell_t *cell);
 
-/* Stieber data reduction scan: Compresses terrain cells based on elevation contours */
-bool master_terrain_stieber_reduction(const terrain_cell_t *cell, uint8_t *out_compressed, uint32_t *out_size);
-
 /* Brainerd UHF transmission line simulation: Calculates line loss and phase velocity along the coaxial link */
 bool master_terrain_brainerd_uhf(double frequency, double length, double *out_attenuation, double *out_phase_velocity);
 
@@ -103,8 +100,5 @@ bool master_terrain_cain_scheduler(const double *node_risks, const uint32_t *nod
 
 /* Batchelder Teleprocessing Router: Formats and serializes a SAGE SAGE direction center target telemetry payload */
 bool master_terrain_batchelder_teleprocessing(uint32_t target_id, const terrain_cell_t *cell, uint8_t *out_payload, uint32_t *out_size);
-
-/* Stieber Obfuscation Filter: Scrambles elevation coordinates to defend against data reduction scanning */
-bool master_terrain_defend_stieber(terrain_cell_t *cell, uint64_t key);
 
 #endif /* MASTER_TERRAIN_H */
