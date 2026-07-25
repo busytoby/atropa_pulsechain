@@ -464,8 +464,27 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
 
     if (!tpu_initialized) {
         auncient_sdk_init_transfluxor_registry(&tpu_registry);
+
+        // Pre-load default Auncient command words
+        auncient_transfluxor_word_t w1, w2, w3;
+        bool ok = auncient_sdk_compile_transfluxor_word(&w1, "SPK_LOCK_SCSI", 1, 440.0, 880.0, 0.4, 0x10, 0x00);
+        assert(ok);
+        ok = auncient_sdk_register_transfluxor_word(&tpu_registry, &w1);
+        assert(ok);
+
+        ok = auncient_sdk_compile_transfluxor_word(&w2, "SPK_WRITE_LEDGER", 2, 350.0, 700.0, 0.2, 0x00, 0x02);
+        assert(ok);
+        ok = auncient_sdk_register_transfluxor_word(&tpu_registry, &w2);
+        assert(ok);
+
+        ok = auncient_sdk_compile_transfluxor_word(&w3, "SPK_RELEASE_SCSI", 3, 600.0, 1200.0, 0.5, 0x20, 0x00);
+        assert(ok);
+        ok = auncient_sdk_register_transfluxor_word(&tpu_registry, &w3);
+        assert(ok);
+
         tpu_initialized = true;
     }
+
 
     input[strcspn(input, "\n")] = 0;
 
