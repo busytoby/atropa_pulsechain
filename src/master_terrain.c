@@ -31,12 +31,22 @@ bool master_terrain_load_cell(uint64_t waat, terrain_cell_t *out_cell) {
     /* Assign physical bank based on waat hash modulo */
     out_cell->physical_bank = (uint8_t)(waat % 256);
 
+    /* Overt Enemy Check: Block cell load if Stieber threat pattern is detected */
+    if (master_terrain_detect_stieber(out_cell)) {
+        return false;
+    }
+
     return true;
 }
 
 /* Map terrain bank to HuC MMU page index */
 bool master_terrain_map_mmu(uint8_t mpr_index, const terrain_cell_t *cell) {
     if (mpr_index > 7 || !cell) return false;
+
+    /* Overt Enemy Check: Block MMU mapping if Stieber threat pattern is detected */
+    if (master_terrain_detect_stieber(cell)) {
+        return false;
+    }
 
     /* Simulate writing physical bank ID to HuC6280 MPR registers */
     /* MPR registers base is 0xF000 */
