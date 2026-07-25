@@ -74,6 +74,16 @@ int main(void) {
     char cmd_invalid_speak[128] = "SPEAK 500.0 500.0 0.3 6";
     status = tsfi_cli_process_line(ws, cmd_invalid_speak);
     assert(status == 1); // Confirms pre-dispatch strategy check blocked execution
+    // 6. Test lexicon compiler auto-derivation
+    printf("[TEST] Dispatching LEXICON_REGISTER for WMQ_AUTO_LOCK...\n");
+    char cmd_lex_register[128] = "LEXICON_REGISTER WMQ_AUTO_LOCK 7 10 00"; // ID 7 -> F1 = 650Hz, F2 = 1300Hz, decay = 0.4s
+    status = tsfi_cli_process_line(ws, cmd_lex_register);
+    assert(status == 0);
+
+    printf("[TEST] Speaking derived WMQ_AUTO_LOCK (should succeed)...\n");
+    char cmd_lex_speak[128] = "SPEAK 650.0 1300.0 0.4 7";
+    status = tsfi_cli_process_line(ws, cmd_lex_speak);
+    assert(status == 0);
 
 
 
