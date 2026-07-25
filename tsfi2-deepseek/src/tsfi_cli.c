@@ -866,7 +866,53 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
         return 0;
     }
 
+    // Check if the input is a LEXICON_AUDIT command
+    if (strcmp(input, "LEXICON_AUDIT") == 0) {
+        uint32_t count = tpu_registry.total_registered;
+        uint32_t warnings = 0;
+        double now = get_time_sec();
+
+        tsfi_io_printf(stdout, "=== AUNCIENT LEXICON COMPLIANCE AUDIT ===\n");
+        for (uint32_t i = 0; i < count; i++) {
+            auncient_transfluxor_word_t *w1 = &tpu_registry.registered_words[i];
+            
+            // 1. Check for frequency collisions with other words
+            for (uint32_t j = i + 1; j < count; j++) {
+                auncient_transfluxor_word_t *w2 = &tpu_registry.registered_words[j];
+                if (w1->f1 == w2->f1 || w1->f2 == w2->f2) {
+                    tsfi_io_printf(stdout, "[WARNING] Frequency collision: '%s' and '%s' share frequency (F1: %.1fHz, F2: %.1fHz)\n",
+                                   w1->name, w2->name, w1->f1, w1->f2);
+                    warnings++;
+                }
+            }
+
+            // 2. Check for prefix decay mismatches
+            if (strncmp(w1->name, "WMQ_", 4) == 0 && w1->decay != 0.4) {
+                tsfi_io_printf(stdout, "[WARNING] Decay mismatch: '%s' decay is %.2fs (standard requires 0.40s)\n",
+                               w1->name, w1->decay);
+                warnings++;
+            } else if (strncmp(w1->name, "ABI_", 4) == 0 && w1->decay != 0.2) {
+                tsfi_io_printf(stdout, "[WARNING] Decay mismatch: '%s' decay is %.2fs (standard requires 0.20s)\n",
+                               w1->name, w1->decay);
+                warnings++;
+            }
+
+            // 3. Check for expired/near-expired words
+            double elapsed = now - tpu_registration_times[i];
+            if (elapsed > w1->decay) {
+                tsfi_io_printf(stdout, "[INFO] Word '%s' is expired (elapsed: %.3fs, decay: %.3fs)\n",
+                               w1->name, elapsed, w1->decay);
+            } else if (elapsed > w1->decay * 0.9) {
+                tsfi_io_printf(stdout, "[INFO] Word '%s' is near expiration (elapsed: %.3fs, decay: %.3fs)\n",
+                               w1->name, elapsed, w1->decay);
+            }
+        }
+        tsfi_io_printf(stdout, "Audit complete. Found %u compliance warnings.\n", warnings);
+        return 0;
+    }
+
     // Check if the input is a COBOL_ALTER command
+
 
 
 

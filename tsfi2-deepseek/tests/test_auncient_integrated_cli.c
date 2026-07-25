@@ -122,6 +122,12 @@ int main(void) {
     status = tsfi_cli_process_line(ws, cmd_lex_list);
     assert(status == 0);
 
+    printf("[TEST] Dispatching LEXICON_AUDIT to check vocabulary compliance...\n");
+    char cmd_lex_audit[128] = "LEXICON_AUDIT";
+    status = tsfi_cli_process_line(ws, cmd_lex_audit);
+    assert(status == 0);
+
+
     remove("target_dictionary.dat.bin"); // Clean up generated file
 
     // 9. Test Python dictionary generator integration
