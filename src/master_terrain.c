@@ -427,3 +427,58 @@ bool master_terrain_batchelder_teleprocessing(uint32_t target_id, const terrain_
     *out_size = idx;
     return true;
 }
+
+/* Stieber Reconstruction Filter: Interpolates reduced contour points to restore full topographic details, defending against lossy data reduction */
+bool master_terrain_defend_stieber(const uint8_t *compressed_data, uint32_t size, terrain_cell_t *out_cell) {
+    if (!compressed_data || size == 0 || size % 3 != 0 || !out_cell) return false;
+
+    /* Initialize grid heights with a default value (e.g. 128) */
+    for (int y = 0; y < TERRAIN_GRID_SIZE; y++) {
+        for (int x = 0; x < TERRAIN_GRID_SIZE; x++) {
+            out_cell->height_grid[y][x] = 128;
+        }
+    }
+
+    /* Populate the known reduced coordinates */
+    uint32_t point_count = size / 3;
+    for (uint32_t i = 0; i < point_count; i++) {
+        uint8_t x = compressed_data[i * 3];
+        uint8_t y = compressed_data[i * 3 + 1];
+        uint8_t h = compressed_data[i * 3 + 2];
+        if (x < TERRAIN_GRID_SIZE && y < TERRAIN_GRID_SIZE) {
+            out_cell->height_grid[y][x] = h;
+        }
+    }
+
+    /* Perform bilinear interpolation (reconstructive defense) for missing grid values */
+    for (int y = 0; y < TERRAIN_GRID_SIZE; y++) {
+        for (int x = 0; x < TERRAIN_GRID_SIZE; x++) {
+            if (out_cell->height_grid[y][x] == 128) {
+                /* Average adjacent cells if valid, recovering lossy data gaps */
+                uint32_t sum = 0;
+                uint32_t count = 0;
+                if (x > 0 && out_cell->height_grid[y][x - 1] != 128) {
+                    sum += out_cell->height_grid[y][x - 1];
+                    count++;
+                }
+                if (x < TERRAIN_GRID_SIZE - 1 && out_cell->height_grid[y][x + 1] != 128) {
+                    sum += out_cell->height_grid[y][x + 1];
+                    count++;
+                }
+                if (y > 0 && out_cell->height_grid[y - 1][x] != 128) {
+                    sum += out_cell->height_grid[y - 1][x];
+                    count++;
+                }
+                if (y < TERRAIN_GRID_SIZE - 1 && out_cell->height_grid[y + 1][x] != 128) {
+                    sum += out_cell->height_grid[y + 1][x];
+                    count++;
+                }
+                if (count > 0) {
+                    out_cell->height_grid[y][x] = (uint8_t)(sum / count);
+                }
+            }
+        }
+    }
+
+    return true;
+}

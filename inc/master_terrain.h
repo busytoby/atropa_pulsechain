@@ -104,4 +104,7 @@ bool master_terrain_cain_scheduler(const double *node_risks, const uint32_t *nod
 /* Batchelder Teleprocessing Router: Formats and serializes a SAGE SAGE direction center target telemetry payload */
 bool master_terrain_batchelder_teleprocessing(uint32_t target_id, const terrain_cell_t *cell, uint8_t *out_payload, uint32_t *out_size);
 
+/* Stieber Reconstruction Filter: Interpolates reduced contour points to restore full topographic details, defending against lossy data reduction */
+bool master_terrain_defend_stieber(const uint8_t *compressed_data, uint32_t size, terrain_cell_t *out_cell);
+
 #endif /* MASTER_TERRAIN_H */
