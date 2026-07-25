@@ -101,10 +101,11 @@ int main(void) {
     status = tsfi_cli_process_line(ws, cmd_lex_exp_fail);
     assert(status == 1); // Confirms non-.dat.bin file extension is rejected
 
-    printf("[TEST] Dispatching LEXICON_EXPORT with valid .dat.bin extension...\n");
-    char cmd_lex_exp_pass[128] = "LEXICON_EXPORT target_dictionary.dat.bin";
+    printf("[TEST] Dispatching LEXICON_EXPORT with valid .dat.bin extension (version 2)...\n");
+    char cmd_lex_exp_pass[128] = "LEXICON_EXPORT target_dictionary.dat.bin 2";
     status = tsfi_cli_process_line(ws, cmd_lex_exp_pass);
     assert(status == 0);
+
 
     printf("[TEST] Dispatching LEXICON_IMPORT with invalid extension .json (should fail)...\n");
     char cmd_lex_imp_fail[128] = "LEXICON_IMPORT target_dictionary.json";

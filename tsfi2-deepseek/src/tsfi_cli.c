@@ -707,9 +707,15 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
     // Check if the input is a LEXICON_EXPORT command
     if (strncmp(input, "LEXICON_EXPORT ", 15) == 0) {
         char filename[128] = "";
-        int parsed = sscanf(input, "LEXICON_EXPORT %127s", filename);
-        if (parsed != 1) {
+        int export_version = 1;
+        int parsed = sscanf(input, "LEXICON_EXPORT %127s %d", filename, &export_version);
+        if (parsed < 1) {
             tsfi_io_printf(stdout, "[LEXICON ERROR] Invalid LEXICON_EXPORT syntax.\n");
+            return 1;
+        }
+
+        if (export_version != 1 && export_version != 2) {
+            tsfi_io_printf(stdout, "[LEXICON REJECT] Unsupported export version. Supported: 1 or 2.\n");
             return 1;
         }
 
@@ -726,8 +732,11 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
             return 1;
         }
 
-        // Write Auncient signature and word count
+        // Write signature according to requested version
         char sig[4] = {'A', 'U', 'N', 'C'};
+        if (export_version == 2) {
+            sig[3] = '2';
+        }
         fwrite(sig, 1, 4, f);
         uint32_t count = tpu_registry.total_registered;
         fwrite(&count, sizeof(count), 1, f);
@@ -738,7 +747,7 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
         }
         fclose(f);
 
-        tsfi_io_printf(stdout, "[LEXICON EXPORT SUCCESS] Exported %u words to '%s' successfully.\n", count, filename);
+        tsfi_io_printf(stdout, "[LEXICON EXPORT SUCCESS] Exported %u words (Format version %d) to '%s' successfully.\n", count, export_version, filename);
         return 0;
     }
 
@@ -766,13 +775,25 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
 
         // Read and validate Auncient signature
         char sig[4];
-        if (fread(sig, 1, 4, f) != 4 || memcmp(sig, "AUNC", 4) != 0) {
+        if (fread(sig, 1, 4, f) != 4) {
+            tsfi_io_printf(stdout, "[LEXICON REJECT] Failed to read dictionary file header.\n");
+            fclose(f);
+            return 1;
+        }
+
+        int version = 0;
+        if (memcmp(sig, "AUNC", 4) == 0) {
+            version = 1;
+        } else if (memcmp(sig, "AUN2", 4) == 0) {
+            version = 2;
+        } else {
             tsfi_io_printf(stdout, "[LEXICON REJECT] Invalid dictionary file header signature.\n");
             fclose(f);
             return 1;
         }
 
         // Read word count
+
         uint32_t count = 0;
         if (fread(&count, sizeof(count), 1, f) != 1) {
             tsfi_io_printf(stdout, "[LEXICON ERROR] Failed to read word count.\n");
@@ -795,8 +816,9 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
         }
         fclose(f);
 
-        tsfi_io_printf(stdout, "[LEXICON IMPORT SUCCESS] Imported %u words from '%s' successfully.\n", loaded_count, filename);
+        tsfi_io_printf(stdout, "[LEXICON IMPORT SUCCESS] Imported %u words (Format version %d) from '%s' successfully.\n", loaded_count, version, filename);
         return 0;
+
     }
 
     // Check if the input is a LEXICON_LIST command
