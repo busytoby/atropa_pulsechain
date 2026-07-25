@@ -30,4 +30,7 @@ bool master_terrain_stieber_reduction(const terrain_cell_t *cell, uint8_t *out_c
 /* Brainerd UHF transmission line simulation: Calculates line loss and phase velocity along the coaxial link */
 bool master_terrain_brainerd_uhf(double frequency, double length, double *out_attenuation, double *out_phase_velocity);
 
+/* Rosenfeld stress-energy tensor mapping: Computes quantum field stress tensor components for virtual terrain grids */
+bool master_terrain_rosenfeld_tensor(double charge, double velocity, double *out_stress_x, double *out_stress_y);
+
 #endif /* MASTER_TERRAIN_H */

@@ -81,3 +81,15 @@ bool master_terrain_brainerd_uhf(double frequency, double length, double *out_at
     *out_phase_velocity = 1.0 / (L_coax * C_coax);
     return true;
 }
+
+/* Rosenfeld stress-energy tensor mapping: Computes quantum field stress tensor components for virtual terrain grids */
+bool master_terrain_rosenfeld_tensor(double charge, double velocity, double *out_stress_x, double *out_stress_y) {
+    if (!out_stress_x || !out_stress_y) return false;
+
+    /* Léon Rosenfeld's Hamiltonian gauge stress tensor components:
+       Computes symmetric energy distribution matrices along two orthogonal grid lines */
+    double planck_constant = 6.626e-34;
+    *out_stress_x = charge * velocity * planck_constant * 1e34;
+    *out_stress_y = charge * (velocity * velocity) * planck_constant * 1e34;
+    return true;
+}
