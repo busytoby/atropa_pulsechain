@@ -803,3 +803,19 @@ bool master_terrain_replenish_page(double *page_healths, uint32_t count, double 
     *out_replenished_count = replenish_count;
     return true;
 }
+
+/* Transistor Charge Replenishment: Recharges simulated field-effect transistor gates that have discharged below active threshold levels */
+bool master_terrain_replenish_fet_charge(double *fet_voltages, uint32_t count, double low_threshold, double target_voltage, uint32_t *out_recharged_count) {
+    if (!fet_voltages || count == 0 || !out_recharged_count) return false;
+
+    /* Scan simulated gates and restore target voltage levels for those experiencing discharge cycle decay */
+    uint32_t recharged_count = 0;
+    for (uint32_t i = 0; i < count; i++) {
+        if (fet_voltages[i] < low_threshold) {
+            fet_voltages[i] = target_voltage;
+            recharged_count++;
+        }
+    }
+    *out_recharged_count = recharged_count;
+    return true;
+}

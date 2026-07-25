@@ -164,4 +164,7 @@ bool master_terrain_verify_stack_bounds(uint32_t stack_ptr, uint32_t stack_limit
 /* Page Replenishment: Restores the health of decayed pages in the allocator pool, resetting their state values to baseline levels */
 bool master_terrain_replenish_page(double *page_healths, uint32_t count, double failure_threshold, double reset_val, uint32_t *out_replenished_count);
 
+/* Transistor Charge Replenishment: Recharges simulated field-effect transistor gates that have discharged below active threshold levels */
+bool master_terrain_replenish_fet_charge(double *fet_voltages, uint32_t count, double low_threshold, double target_voltage, uint32_t *out_recharged_count);
+
 #endif /* MASTER_TERRAIN_H */
