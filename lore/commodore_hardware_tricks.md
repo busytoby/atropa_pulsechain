@@ -16,44 +16,38 @@ The VIC-II tracks the current scanline of the electron beam.
 
 ### 1.2 Sprite Multiplexing (VIC-II Channel Reuse)
 To render more than 8 sprites on screen, developers reused the 8 hardware sprite registers ($D000–$D00F) as the beam traveled vertically:
-1. **Y-Sorting:** The system sorts all "virtual" sprite coordinates by their vertical ($Y$) position.
+1. **Y-Sorting:** The system sorts all "logical" sprite coordinates by their vertical ($Y$) position.
 2. **Scanline Handshake:** A raster interrupt is set at line $Y_i$.
-3. **Register Swapping:** When the interrupt triggers, the CPU swaps the hardware registers of the sprites that just finished drawing (Y-coordinate + height of 21 scanlines) with the coordinates and data pointers of the next virtual sprites.
+3. **Register Swapping:** When the interrupt triggers, the CPU swaps the hardware registers of the sprites that just finished drawing (Y-coordinate + height of 21 scanlines) with the coordinates and data pointers of the next logical sprites.
 4. **Reschedule:** The next interrupt is scheduled at scanline $Y_{i+1}$.
 
-```
-  Scanline (Y)
-   Line 50: [Physical Sprite 0] draws Virtual Sprite A
-   Line 70: [Physical Sprite 0] finished.
-            --> Raster IRQ triggers. Registers for Sprite 0 updated with Virtual Sprite B.
-   Line 90: [Physical Sprite 0] draws Virtual Sprite B further down.
-```
+![Sprite Multiplexing Diagram](lore/sprite_multiplexing_diagram.jpg)
 
 ---
 
-## 2. On-Chain Emulation Schema: Virtual Sprite Multiplexer
+## 2. On-Chain Emulation Schema: Logical Sprite Multiplexer
 
-To simulate this VIC-II multiplexer scheduling loop in Yul, we sort virtual sprites by Y-coordinate and map them to the 8 physical hardware slots.
+To simulate this VIC-II multiplexer scheduling loop in Yul, we sort logical sprites by Y-coordinate and map them to the 8 physical hardware slots.
 
-### 2.1 Virtual Sprite Layout (Calldata Input)
-Each virtual sprite is represented by a single packed `uint256` word:
-* **Bits 0 - 15:** Virtual Sprite ID
+### 2.1 Logical Sprite Layout (Calldata Input)
+Each logical sprite is represented by a single packed `uint256` word:
+* **Bits 0 - 15:** Logical Sprite ID
 * **Bits 16 - 31:** Sprite X Coordinate
 * **Bits 32 - 47:** Sprite Y Coordinate
 * **Bits 48 - 63:** Pointer/Texture ID
 
 ### 2.2 Yul Multiplexer Scheduler
-The following Yul function acts as a scheduling resolver. It takes a list of virtual sprites, sorts them by Y-coordinate, and maps them to physical sprite channels, outputting the raster line interrupt trigger points.
+The following Yul function acts as a scheduling resolver. It takes a list of logical sprites, sorts them by Y-coordinate, and maps them to physical sprite channels, outputting the raster line interrupt trigger points.
 
 ```yul
-// Method 19: scheduleVirtualSprites(numVirtualSprites, virtualSprites...)
+// Method 19: scheduleLogicalSprites(numLogicalSprites, logicalSprites...)
 // Selector: 0x6d1b8fa2
 if eq(selector, 0x6d1b8fa2) {
     let numSprites := calldataload(4)
-    if gt(numSprites, 16) { revert(0, 0) } // Cap at 16 virtual sprites for stack limits
+    if gt(numSprites, 16) { revert(0, 0) } // Cap at 16 logical sprites for stack limits
 
     // 1. Load sprites into memory for sorting
-    // Memory offsets: 0x00 to 0x1f0 (32 bytes per sprite)
+    // Memory displacements: 0x00 to 0x1f0 (32 bytes per sprite)
     for { let i := 0 } lt(i, numSprites) { i := add(i, 1) } {
         let word := calldataload(add(36, mul(i, 32)))
         mstore(mul(i, 32), word)
@@ -76,17 +70,17 @@ if eq(selector, 0x6d1b8fa2) {
         }
     }
 
-    // 3. Map virtual sprites to 8 physical registers down the Y-axis
-    // physicalYOffset[8] stores the Y scanline where each physical slot becomes free (lastY + 21)
+    // 3. Map logical sprites to 8 physical registers down the Y-axis
+    // physicalYBound[8] stores the Y scanline where each physical slot becomes free (lastY + 21)
     // Initialize physical slots to 0
-    let mOffset := 0x200
+    let mBase := 0x200
     for { let p := 0 } lt(p, 8) { p := add(p, 1) } {
-        mstore(add(mOffset, mul(p, 32)), 0)
+        mstore(add(mBase, mul(p, 32)), 0)
     }
 
     // output buffer starts at 0x300. We write the physical register assignments:
-    // (virtualSpriteId, physicalRegisterIndex, rasterTriggerLine)
-    let outOffset := 0x300
+    // (logicalSpriteId, physicalRegisterIndex, rasterTriggerLine)
+    let outBase := 0x300
     let scheduledCount := 0
 
     for { let i := 0 } lt(i, numSprites) { i := add(i, 1) } {
@@ -98,8 +92,8 @@ if eq(selector, 0x6d1b8fa2) {
         // Find the first free physical register slot
         let assignedSlot := 9
         for { let p := 0 } lt(p, 8) { p := add(p, 1) } {
-            let freeY := mload(add(mOffset, mul(p, 32)))
-            // If physical slot is free at or before the virtual sprite's Y coordinate
+            let freeY := mload(add(mBase, mul(p, 32)))
+            // If physical slot is free at or before the logical sprite's Y coordinate
             if iszero(gt(freeY, vY)) {
                 assignedSlot := p
                 p := 8 // break loop
@@ -109,19 +103,19 @@ if eq(selector, 0x6d1b8fa2) {
         // If a physical register was found (assignedSlot < 8)
         if lt(assignedSlot, 8) {
             // Update the physical register's free scanline (vY + 21 scanlines height)
-            mstore(add(mOffset, mul(assignedSlot, 32)), add(vY, 21))
+            mstore(add(mBase, mul(assignedSlot, 32)), add(vY, 21))
 
             // Write assignment details to output
-            mstore(add(outOffset, mul(scheduledCount, 96)), vId)
-            mstore(add(add(outOffset, mul(scheduledCount, 96)), 32), assignedSlot)
-            mstore(add(add(outOffset, mul(scheduledCount, 96)), 64), vY)
+            mstore(add(outBase, mul(scheduledCount, 96)), vId)
+            mstore(add(add(outBase, mul(scheduledCount, 96)), 32), assignedSlot)
+            mstore(add(add(outBase, mul(scheduledCount, 96)), 64), vY)
 
             scheduledCount := add(scheduledCount, 1)
         }
     }
 
-    // Return the scheduled virtual sprite timeline
-    return(outOffset, mul(scheduledCount, 96))
+    // Return the scheduled logical sprite timeline
+    return(outBase, mul(scheduledCount, 96))
 }
 ```
 
@@ -129,15 +123,15 @@ if eq(selector, 0x6d1b8fa2) {
 
 ## 3. Physical Limits & Safety Rules
 
-When utilizing the on-chain virtual scheduler or programming the physical VIC-II:
-1. **Horizontal Contention:** No more than 8 virtual sprites can share the same horizontal band. If a 9th sprite is scheduled at the same Y-level, `assignedSlot` returns `9` (exceeds registers) and the sprite is dropped from the active frame timeline.
+When utilizing the on-chain logical scheduler or programming the physical VIC-II:
+1. **Horizontal Contention:** No more than 8 logical sprites can share the same horizontal band. If a 9th sprite is scheduled at the same Y-level, `assignedSlot` returns `9` (exceeds registers) and the sprite is dropped from the active frame timeline.
 2. **Cycle Overhead:** The interrupt routine must execute within the horizontal blanking period (approx 40 CPU cycles) to avoid "shearing" or sprite tearing glitches.
 
 ---
 
 ## 4. ZMM VM Verification
 
-The Yul-based sprite multiplexer scheduler has been fully verified inside the C-based ZMM Virtual Machine test suite ([test_zmm_fighter.c](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/tests/test_zmm_fighter.c)):
+The Yul-based sprite multiplexer scheduler has been fully verified inside the C-based ZMM Logical Machine test suite ([test_zmm_fighter.c](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/tests/test_zmm_fighter.c)):
 
 * **Test Input Parameters**:
   * `numSprites` = 5
@@ -159,5 +153,5 @@ All assertions passed successfully, demonstrating correct physical register reas
 ---
 
 > [!TIP]
-> The sorting algorithm is the critical phase. Without sorting virtual sprites by Y-coordinate, the raster interrupt routine cannot progress sequentially down the screen, causing the VIC-II to miss triggers and drop entire sprite groups.
+> The sorting algorithm is the critical phase. Without sorting logical sprites by Y-coordinate, the raster interrupt routine cannot progress sequentially down the screen, causing the VIC-II to miss triggers and drop entire sprite groups.
 
