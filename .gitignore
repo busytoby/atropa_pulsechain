@@ -155,6 +155,7 @@ libtsfi2.so
 /tests/test_auncient_tpu_security_benchmark
 /tests/test_auncient_tpu_gating_benchmark
 /tests/test_auncient_tpu_mesh_benchmark
+/tests/test_auncient_tpu_decay_benchmark
 /tests/test_auncient_fourier_alsa_feedback
 /tests/test_auncient_fourier_bus
 /tests/test_auncient_gguf_acab
