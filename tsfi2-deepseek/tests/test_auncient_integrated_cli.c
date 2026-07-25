@@ -55,6 +55,25 @@ int main(void) {
     char cmd_expired_speak[128] = "SPEAK 400.0 800.0 0.1 5";
     status = tsfi_cli_process_line(ws, cmd_expired_speak);
     assert(status == 1); // Confirms the CLI rejected the expired command wave
+    // 4. Test altering words in memory using COBOL strategy
+    printf("[TEST] Dispatching COBOL_ALTER command to modify SPK_CUSTOM_CMD WMQ byte in memory...\n");
+    char cmd_alter[128] = "COBOL_ALTER 3 WORD-WMQ 32"; // Index 3 is SPK_CUSTOM_CMD (Preloaded 0, 1, 2, then Custom at 3)
+    status = tsfi_cli_process_line(ws, cmd_alter);
+    assert(status == 0);
+
+    printf("[TEST] Speaking SPK_CUSTOM_CMD again to confirm memory alteration (should now show WMQ: 0x20)...\n");
+    status = tsfi_cli_process_line(ws, cmd_speak);
+    assert(status == 0);
+    // 5. Test pre-dispatch strategy validation
+    printf("[TEST] Dispatching WORD compile directive for strategically invalid SPK_INVALID_CMD...\n");
+    char cmd_invalid_word[128] = "WORD SPK_INVALID_CMD 6 500.0 500.0 0.3 00 02"; // f1 == f2 is invalid
+    status = tsfi_cli_process_line(ws, cmd_invalid_word);
+    assert(status == 0);
+
+    printf("[TEST] Speaking invalid SPK_INVALID_CMD (should be rejected by strategy rules)...\n");
+    char cmd_invalid_speak[128] = "SPEAK 500.0 500.0 0.3 6";
+    status = tsfi_cli_process_line(ws, cmd_invalid_speak);
+    assert(status == 1); // Confirms pre-dispatch strategy check blocked execution
 
 
 

@@ -463,6 +463,21 @@ static double get_time_sec(void) {
     return (double)ts.tv_sec + (double)ts.tv_nsec * 1e-9;
 }
 
+static bool tsfi_cli_evaluate_word_strategy(const auncient_transfluxor_word_t *word) {
+    // Enforce strategic and safety validations on Auncient spoken commands
+    if (word->f1 <= 0.0 || word->f2 <= 0.0) {
+        return false;
+    }
+    if (word->f1 == word->f2) {
+        return false; // Harmonic frequency collision
+    }
+    if (word->decay > 5.0) {
+        return false; // Exceeds temporal gate limits, risk of channel leakage
+    }
+    return true;
+}
+
+
 static auncient_transfluxor_registry_t tpu_registry;
 static double tpu_registration_times[MAX_REGISTRY_WORDS];
 static bool tpu_initialized = false;
@@ -645,8 +660,15 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
                         return 1;
                     }
 
+                    // Apply complex strategical thought process before speaking
+                    if (!tsfi_cli_evaluate_word_strategy(match)) {
+                        tsfi_io_printf(stdout, "[TPU STRATEGY REJECT] Word '%s' failed pre-dispatch verification checks.\n", match->name);
+                        return 1;
+                    }
+
                     tsfi_io_printf(stdout, "[TPU SUCCESS] Spoken word: '%s'. Executing WMQ: 0x%02X, ABI: 0x%02X. Feedback: %.2fHz\n",
                                    match->name, match->wmq_cmd, match->abi_op, feedback_freq);
+
 
                     // Call synthetic elliptic synthesizer
                     tsfi_clendenin_synth_summary_t summary;
