@@ -3,7 +3,11 @@
 #include <stdbool.h>
 #include <string.h>
 #include <assert.h>
+#include <unistd.h>
+#include <time.h>
+
 #include "tsfi_types.h"
+
 #include "tsfi_wiring.h"
 #include "tsfi_cli.h"
 #include "auncient_sdk.h"
@@ -36,6 +40,22 @@ int main(void) {
     char cmd_speak[128] = "SPEAK 500.0 1000.0 0.3 4";
     status = tsfi_cli_process_line(ws, cmd_speak);
     assert(status == 0);
+
+    // 3. Register a short-lived command and verify temporal expiration (Wheeler Jump Replay Gating)
+    printf("[TEST] Dispatching short-lived SPK_EXPIRED_CMD...\n");
+    char cmd_expired_word[128] = "WORD SPK_EXPIRED_CMD 5 400.0 800.0 0.1 00 02";
+    status = tsfi_cli_process_line(ws, cmd_expired_word);
+    assert(status == 0);
+
+    struct timespec slp = { .tv_sec = 0, .tv_nsec = 150000000 };
+    nanosleep(&slp, NULL); // 150ms > 100ms decay limit
+
+
+    printf("[TEST] Speaking expired SPK_EXPIRED_CMD (should fail)...\n");
+    char cmd_expired_speak[128] = "SPEAK 400.0 800.0 0.1 5";
+    status = tsfi_cli_process_line(ws, cmd_expired_speak);
+    assert(status == 1); // Confirms the CLI rejected the expired command wave
+
 
 
     printf("   ✓ Integrated CLI commands executed and verified successfully.\n");

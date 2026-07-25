@@ -455,8 +455,16 @@ static int handle_resolve_command(WaveSystem *ws, const char *new_d) {
     return 0;
 }
 
+static double get_time_sec(void) {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (double)ts.tv_sec + (double)ts.tv_nsec * 1e-9;
+}
+
 static auncient_transfluxor_registry_t tpu_registry;
+static double tpu_registration_times[MAX_REGISTRY_WORDS];
 static bool tpu_initialized = false;
+
 
 int tsfi_cli_process_line(WaveSystem *ws, char *input) {
     // --- ALLIGATOR MANDATORY AUDIT BYPASSED FOR OPERATIONAL SIMULATOR ---
@@ -464,6 +472,7 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
 
     if (!tpu_initialized) {
         auncient_sdk_init_transfluxor_registry(&tpu_registry);
+        double now = get_time_sec();
 
         // Pre-load default Auncient command words
         auncient_transfluxor_word_t w1, w2, w3;
@@ -471,20 +480,22 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
         assert(ok);
         ok = auncient_sdk_register_transfluxor_word(&tpu_registry, &w1);
         assert(ok);
+        tpu_registration_times[0] = now;
 
         ok = auncient_sdk_compile_transfluxor_word(&w2, "SPK_WRITE_LEDGER", 2, 350.0, 700.0, 0.2, 0x00, 0x02);
         assert(ok);
         ok = auncient_sdk_register_transfluxor_word(&tpu_registry, &w2);
         assert(ok);
+        tpu_registration_times[1] = now;
 
         ok = auncient_sdk_compile_transfluxor_word(&w3, "SPK_RELEASE_SCSI", 3, 600.0, 1200.0, 0.5, 0x20, 0x00);
         assert(ok);
         ok = auncient_sdk_register_transfluxor_word(&tpu_registry, &w3);
         assert(ok);
+        tpu_registration_times[2] = now;
 
         tpu_initialized = true;
     }
-
 
     input[strcspn(input, "\n")] = 0;
 
@@ -502,6 +513,8 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
             auncient_transfluxor_word_t word;
             if (auncient_sdk_compile_transfluxor_word(&word, name, word_id, f1, f2, decay, wmq, abi)) {
                 if (auncient_sdk_register_transfluxor_word(&tpu_registry, &word)) {
+                    uint32_t idx = tpu_registry.total_registered - 1;
+                    tpu_registration_times[idx] = get_time_sec();
                     tsfi_io_printf(stdout, "[TPU] Registered: %s (ID %u) -> Hash: %lu\n", 
                                    word.name, word.word_id, 
                                    auncient_sdk_calculate_transfluxor_hash(f1, f2, decay, word_id));
@@ -530,6 +543,7 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
                 // Find matching registered word to get actual commands
                 uint64_t target_hash = auncient_sdk_calculate_transfluxor_hash(f1, f2, decay, word_id);
                 auncient_transfluxor_word_t *match = NULL;
+                uint32_t match_idx = 0;
                 for (uint32_t i = 0; i < tpu_registry.total_registered; i++) {
                     uint64_t existing_hash = auncient_sdk_calculate_transfluxor_hash(
                         tpu_registry.registered_words[i].f1,
@@ -539,11 +553,20 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
                     );
                     if (existing_hash == target_hash) {
                         match = &tpu_registry.registered_words[i];
+                        match_idx = i;
                         break;
                     }
                 }
 
                 if (match) {
+                    // Enforce Wheeler Jump temporal decay window gating
+                    double elapsed = get_time_sec() - tpu_registration_times[match_idx];
+                    if (elapsed > match->decay) {
+                        tsfi_io_printf(stdout, "[TPU REJECT] Wheeler Jump collapsed. Waveform expired by %.3fs (Replay blocked).\n",
+                                       elapsed - match->decay);
+                        return 1;
+                    }
+
                     tsfi_io_printf(stdout, "[TPU SUCCESS] Spoken word: '%s'. Executing WMQ: 0x%02X, ABI: 0x%02X. Feedback: %.2fHz\n",
                                    match->name, match->wmq_cmd, match->abi_op, feedback_freq);
                     // Simulate execution outcomes directly on WaveSystem if commands are set
@@ -560,6 +583,7 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
                 return 1;
             }
         }
+
         tsfi_io_printf(stdout, "[TPU ERROR] Invalid SPEAK syntax.\n");
         return 1;
     }
