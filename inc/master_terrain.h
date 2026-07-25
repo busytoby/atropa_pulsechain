@@ -98,4 +98,7 @@ bool master_terrain_rpn_evaluator(const uint32_t *tokens, uint32_t count, uint32
 /* Attrition Damage Assessment Model (ADAM): Calculates residual survival probability of virtual hardware command nodes */
 bool master_terrain_attrition_adam(double initial_health, double threat_intensity, uint32_t cycles, double *out_residual_health);
 
+/* CAIN Mission Planning Scheduler: Schedules optimal target nodes traversal sequence minimizing ADAM attrition risk */
+bool master_terrain_cain_scheduler(const double *node_risks, const uint32_t *node_ids, uint32_t count, uint32_t *out_scheduled_nodes);
+
 #endif /* MASTER_TERRAIN_H */

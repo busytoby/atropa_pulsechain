@@ -379,3 +379,27 @@ bool master_terrain_attrition_adam(double initial_health, double threat_intensit
     *out_residual_health = health;
     return true;
 }
+
+/* CAIN Mission Planning Scheduler: Schedules optimal target nodes traversal sequence minimizing ADAM attrition risk */
+bool master_terrain_cain_scheduler(const double *node_risks, const uint32_t *node_ids, uint32_t count, uint32_t *out_scheduled_nodes) {
+    if (!node_risks || !node_ids || count == 0 || !out_scheduled_nodes) return false;
+
+    /* Copy indices to output buffer */
+    for (uint32_t i = 0; i < count; i++) {
+        out_scheduled_nodes[i] = node_ids[i];
+    }
+
+    /* Simple greedy sorting implementation of CAIN:
+       Sorts target nodes in ascending order of threat/attrition risk to maximize early survival */
+    for (uint32_t i = 0; i < count - 1; i++) {
+        for (uint32_t j = 0; j < count - i - 1; j++) {
+            if (node_risks[out_scheduled_nodes[j]] > node_risks[out_scheduled_nodes[j + 1]]) {
+                uint32_t temp = out_scheduled_nodes[j];
+                out_scheduled_nodes[j] = out_scheduled_nodes[j + 1];
+                out_scheduled_nodes[j + 1] = temp;
+            }
+        }
+    }
+
+    return true;
+}
