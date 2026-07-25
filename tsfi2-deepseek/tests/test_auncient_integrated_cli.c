@@ -55,6 +55,12 @@ int main(void) {
     char cmd_expired_speak[128] = "SPEAK 400.0 800.0 0.1 5";
     status = tsfi_cli_process_line(ws, cmd_expired_speak);
     assert(status == 1); // Confirms the CLI rejected the expired command wave
+    // 3.5. Test lexicon compaction/garbage collection of expired words
+    printf("[TEST] Dispatching LEXICON_COMPACT to prune expired words...\n");
+    char cmd_compact[128] = "LEXICON_COMPACT";
+    status = tsfi_cli_process_line(ws, cmd_compact);
+    assert(status == 0);
+
     // 4. Test altering words in memory using COBOL strategy
     printf("[TEST] Dispatching COBOL_ALTER command to modify SPK_CUSTOM_CMD WMQ byte in memory...\n");
     char cmd_alter[128] = "COBOL_ALTER 3 WORD-WMQ 32"; // Index 3 is SPK_CUSTOM_CMD (Preloaded 0, 1, 2, then Custom at 3)

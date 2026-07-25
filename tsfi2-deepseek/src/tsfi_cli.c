@@ -814,7 +814,38 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
         return 0;
     }
 
+    // Check if the input is a LEXICON_COMPACT command
+    if (strcmp(input, "LEXICON_COMPACT") == 0) {
+        uint32_t active_count = 0;
+        double now = get_time_sec();
+        
+        auncient_transfluxor_registry_t temp_reg;
+        auncient_sdk_init_transfluxor_registry(&temp_reg);
+        double temp_times[MAX_REGISTRY_WORDS];
+        memset(temp_times, 0, sizeof(temp_times));
+
+        for (uint32_t i = 0; i < tpu_registry.total_registered; i++) {
+            auncient_transfluxor_word_t *w = &tpu_registry.registered_words[i];
+            double elapsed = now - tpu_registration_times[i];
+            if (elapsed <= w->decay) {
+                if (auncient_sdk_register_transfluxor_word(&temp_reg, w)) {
+                    temp_times[temp_reg.total_registered - 1] = tpu_registration_times[i];
+                    active_count++;
+                }
+            }
+        }
+
+        uint32_t removed = tpu_registry.total_registered - active_count;
+        tpu_registry = temp_reg;
+        memcpy(tpu_registration_times, temp_times, sizeof(tpu_registration_times));
+
+        tsfi_io_printf(stdout, "[LEXICON COMPACT SUCCESS] Pruned %u expired words from the registry. Active count: %u/%d\n",
+                       removed, active_count, MAX_REGISTRY_WORDS);
+        return 0;
+    }
+
     // Check if the input is a COBOL_ALTER command
+
 
 
 
