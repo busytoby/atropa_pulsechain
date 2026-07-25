@@ -218,4 +218,19 @@ bool auncient_sdk_cics_exec(sdk_cics_context_t *ctx, uint32_t value, const bool 
 
 bool auncient_sdk_batch_exec(sdk_cics_context_t *ctx, const sdk_batched_op_t *ops, int num_ops, uint32_t *results);
 
+// Transfluxor Word Structure combining physical and logical domains
+typedef struct {
+    char name[32];
+    double f1;
+    double f2;
+    double decay;
+    double amplitude;
+    uint32_t wmq_cmd;
+    uint32_t abi_op;
+} auncient_transfluxor_word_t;
+
+uint64_t auncient_sdk_calculate_transfluxor_hash(double f1, double f2, double decay);
+bool auncient_sdk_compile_transfluxor_word(auncient_transfluxor_word_t *word, const char *name, double f1, double f2, double decay, uint32_t wmq_cmd, uint32_t abi_op);
+
 #endif // AUNCIENT_SDK_H
+

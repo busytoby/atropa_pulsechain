@@ -6,6 +6,8 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <assert.h>
+#include <math.h>
+
 
 bool auncient_sdk_init_coaxial(sdk_coaxial_env_t *env) {
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, env->socket_fds) < 0) {
@@ -1102,3 +1104,25 @@ bool auncient_sdk_batch_exec(sdk_cics_context_t *ctx, const sdk_batched_op_t *op
     ctx->state = orig_state;
     return true;
 }
+
+uint64_t auncient_sdk_calculate_transfluxor_hash(double f1, double f2, double decay) {
+    uint64_t f1_val = (uint64_t)round(f1);
+    uint64_t f2_val = (uint64_t)round(f2);
+    uint64_t decay_val = (uint64_t)round(decay * 100.0);
+    uint64_t mixed = (f1_val * 1000ULL) + (f2_val * 10ULL) + decay_val;
+    return mixed % 953467954114363ULL; // MotzkinPrime field divisor
+}
+
+bool auncient_sdk_compile_transfluxor_word(auncient_transfluxor_word_t *word, const char *name, double f1, double f2, double decay, uint32_t wmq_cmd, uint32_t abi_op) {
+    if (!word || !name) return false;
+    strncpy(word->name, name, sizeof(word->name) - 1);
+    word->name[sizeof(word->name) - 1] = '\0';
+    word->f1 = f1;
+    word->f2 = f2;
+    word->decay = decay;
+    word->amplitude = 5.0; // Default Wheeler Jump amplitude
+    word->wmq_cmd = wmq_cmd;
+    word->abi_op = abi_op;
+    return true;
+}
+
