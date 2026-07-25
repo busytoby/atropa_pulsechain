@@ -2,6 +2,15 @@ import os
 from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+
+# Register system TrueType fonts under standard names to force 100% embedding in cover PDFs for KDP
+pdfmetrics.registerFont(TTFont('Times-Roman', '/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf'))
+pdfmetrics.registerFont(TTFont('Times-Bold', '/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf'))
+pdfmetrics.registerFont(TTFont('Times-Italic', '/usr/share/fonts/truetype/liberation/LiberationSerif-Italic.ttf'))
+pdfmetrics.registerFont(TTFont('Helvetica', '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf'))
+pdfmetrics.registerFont(TTFont('Helvetica-Bold', '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf'))
 
 # Configuration for the 4 volumes (Updated for 6x9 page counts, spine widths, reviews, and ISBNs)
 VOLUMES_CONFIG = {

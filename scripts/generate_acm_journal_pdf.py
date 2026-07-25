@@ -8,6 +8,15 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_JUSTIFY, TA_CENTER, TA_LEFT
 from reportlab.lib import colors
 from reportlab.pdfgen import canvas
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+
+# Register system LiberationSerif fonts under the standard Times-Roman names.
+# This forces ReportLab to fully embed these TTF files in the PDF, solving the KDP font embedding requirement.
+pdfmetrics.registerFont(TTFont('Times-Roman', '/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf'))
+pdfmetrics.registerFont(TTFont('Times-Bold', '/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf'))
+pdfmetrics.registerFont(TTFont('Times-Italic', '/usr/share/fonts/truetype/liberation/LiberationSerif-Italic.ttf'))
+pdfmetrics.registerFont(TTFont('Times-BoldItalic', '/usr/share/fonts/truetype/liberation/LiberationSerif-BoldItalic.ttf'))
 
 def get_file_date(filepath):
     filename = os.path.basename(filepath)
@@ -59,7 +68,7 @@ class NumberedCanvas(canvas.Canvas):
         is_even = (self._pageNumber % 2 == 0)
         
         left_header_margin = 0.5 * inch if is_even else 0.75 * inch
-        right_header_margin = 5.5 * inch if is_even else 5.25 * inch
+        right_header_margin = 5.25 * inch if is_even else 5.5 * inch
         
         if is_even:
             self.drawString(left_header_margin, 8.5 * inch, "LORE COMPENDIUM")
