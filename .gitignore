@@ -514,6 +514,7 @@ frontend/compiled_yul.json
 /tests/test_auncient_dataplane_telemetry
 /tests/drift_blame.dat.bin
 /tools/vox_compiler
+/tests/test_btc_rails_vm
 
 
 
