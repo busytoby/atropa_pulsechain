@@ -601,6 +601,18 @@
         const pnpStatus = document.getElementById("pnpStatus");
         const clockGateVal = document.getElementById("clockGateVal");
 
+        // APL Vector-Array Mathematics (John C. McPherson Array Gating Concept)
+        const APL = {
+            // Vector addition: V1 + V2
+            add: (v1, v2) => v1.map((x, i) => x + (v2[i] || 0)),
+            // Scalar multiply: V * s
+            smul: (v, s) => v.map(x => x * s),
+            // Map function: f(V)
+            map: (v, f) => v.map(x => f(x)),
+            // Generate sequence: index vectors
+            iota: (n) => Array.from({length: n}, (_, i) => i)
+        };
+
         // Initialization Web Audio
         function initAudio() {
             if (audioCtx) return;
@@ -804,16 +816,22 @@
             const sliceWidth = scopeCanvas.width / 100;
             let x = 0;
             
-            // Fake wave if not playing, real wave if playing
             let active = audioCtx && globalGain && globalGain.gain.value > 0.01;
             
+            // APL Vector calculation of wave coordinates
+
+            const t_arr = APL.iota(100);
+            let y_wave;
+            if (active) {
+                y_wave = APL.map(t_arr, i => Math.sin(i * 0.2 + phaseOffset) * 40 * globalGain.gain.value);
+            } else if (holdingGunToggle.checked) {
+                y_wave = APL.map(t_arr, i => Math.sin(i * 0.15 + phaseOffset) * 8 * parseFloat(bowForce.value));
+            } else {
+                y_wave = APL.map(t_arr, () => 0.0);
+            }
+            
             for (let i = 0; i < 100; i++) {
-                let y = scopeCanvas.height / 2;
-                if (active) {
-                    y += Math.sin(i * 0.2 + phaseOffset) * 40 * globalGain.gain.value;
-                } else if (holdingGunToggle.checked) {
-                    y += Math.sin(i * 0.15 + phaseOffset) * 8 * parseFloat(bowForce.value);
-                }
+                let y = scopeCanvas.height / 2 + y_wave[i];
                 if (i === 0) {
                     scopeCtx.moveTo(x, y);
                 } else {
@@ -839,13 +857,16 @@
             let speed_x = active ? 3.0 : 1.0;
             let speed_y = active ? 2.0 : 1.0;
             
+            // APL Vector calculation of Lissajous coordinates
+            const lissa_t = APL.iota(200);
+            const x_coords = APL.map(lissa_t, t => centerX + Math.sin(t * 0.08 * speed_x + phaseOffset) * radius * scaling);
+            const y_coords = APL.map(lissa_t, t => centerY + Math.cos(t * 0.12 * speed_y + phaseOffset) * radius * scaling);
+            
             for (let t = 0; t < 200; t++) {
-                let lx = centerX + Math.sin(t * 0.08 * speed_x + phaseOffset) * radius * scaling;
-                let ly = centerY + Math.cos(t * 0.12 * speed_y + phaseOffset) * radius * scaling;
                 if (t === 0) {
-                    lissaCtx.moveTo(lx, ly);
+                    lissaCtx.moveTo(x_coords[0], y_coords[0]);
                 } else {
-                    lissaCtx.lineTo(lx, ly);
+                    lissaCtx.lineTo(x_coords[t], y_coords[t]);
                 }
             }
             lissaCtx.stroke();
