@@ -835,3 +835,21 @@ bool master_terrain_replenish_orbital_radius(double *radii, uint32_t count, doub
     *out_replenished_count = replenished_count;
     return true;
 }
+
+/* Bar Levels Replenishment: Restores epibar and hypobar levels that have decayed due to inactive cycles, bringing them back to baseline values */
+bool master_terrain_replenish_bar_levels(double *epibar, double *hypobar, double low_threshold, double target_val, bool *out_replenished) {
+    if (!epibar || !hypobar || !out_replenished) return false;
+
+    *out_replenished = false;
+    /* Replenish epibar if below threshold */
+    if (*epibar < low_threshold) {
+        *epibar = target_val;
+        *out_replenished = true;
+    }
+    /* Replenish hypobar if below threshold */
+    if (*hypobar < low_threshold) {
+        *hypobar = target_val;
+        *out_replenished = true;
+    }
+    return true;
+}

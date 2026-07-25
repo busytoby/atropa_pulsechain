@@ -170,4 +170,7 @@ bool master_terrain_replenish_fet_charge(double *fet_voltages, uint32_t count, d
 /* Orbital Radius Replenishment: Restores coordinate projection radii that have decayed due to shear distortion displacements */
 bool master_terrain_replenish_orbital_radius(double *radii, uint32_t count, double low_threshold, double target_radius, uint32_t *out_replenished_count);
 
+/* Bar Levels Replenishment: Restores epibar and hypobar levels that have decayed due to inactive cycles, bringing them back to baseline values */
+bool master_terrain_replenish_bar_levels(double *epibar, double *hypobar, double low_threshold, double target_val, bool *out_replenished);
+
 #endif /* MASTER_TERRAIN_H */
