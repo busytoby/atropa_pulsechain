@@ -467,7 +467,7 @@
                     <span>Syrinx Membrane & Bowing Parameters</span>
                     <span class="panel-tag">Verlet Integrator</span>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px;">
                     <div>
                         <div class="control-group">
                             <label>Sustained Bow Force (Holding Gun V_in)</label>
@@ -500,7 +500,24 @@
                             </div>
                         </div>
                     </div>
+                    <div>
+                        <div class="control-group">
+                            <label>Transfluxor Flux (Voiced/Noise)</label>
+                            <div class="slider-container">
+                                <input type="range" id="fluxState" min="0.0" max="1.0" step="0.05" value="1.0">
+                                <div class="value-display" id="fluxStateVal">Voiced</div>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label>Transfluxor Control Current</label>
+                            <div class="slider-container">
+                                <input type="range" id="transCurrent" min="0.1" max="5.0" step="0.1" value="5.0">
+                                <div class="value-display" id="transCurrentVal">5.0V</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
             </div>
 
             <!-- Live keyboard player -->
@@ -561,9 +578,15 @@
         let audioCtx = null;
         let vactrolLFO = null;
         let globalOsc = null;
+        let globalNoise = null;
+        let voicedGain = null;
+        let unvoicedGain = null;
         let globalGain = null;
         let globalFilter = null;
         let globalCompressor = null;
+        let magneticCompressor = null;
+
+
 
         const synthKeys = [
             { note: "C4", freq: 261.63, label: "C" },
@@ -600,6 +623,11 @@
         const npnStatus = document.getElementById("npnStatus");
         const pnpStatus = document.getElementById("pnpStatus");
         const clockGateVal = document.getElementById("clockGateVal");
+        const fluxState = document.getElementById("fluxState");
+        const fluxStateVal = document.getElementById("fluxStateVal");
+        const transCurrent = document.getElementById("transCurrent");
+        const transCurrentVal = document.getElementById("transCurrentVal");
+
 
         // APL Vector-Array Mathematics (John C. McPherson Array Gating Concept)
         const APL = {
@@ -618,46 +646,87 @@
             if (audioCtx) return;
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             
-            // Nodes setup
+            // 1. Voiced Sawtooth Oscillator
             globalOsc = audioCtx.createOscillator();
             globalOsc.type = "sawtooth";
             globalOsc.frequency.setValueAtTime(440, audioCtx.currentTime);
 
-            // Filter (Vactrol simulation target)
+            // 2. Unvoiced White Noise Source
+            const bufferSize = audioCtx.sampleRate * 2;
+            const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                output[i] = Math.random() * 2 - 1;
+            }
+            globalNoise = audioCtx.createBufferSource();
+            globalNoise.buffer = noiseBuffer;
+            globalNoise.loop = true;
+
+            // 3. Transfluxor Gating Gain nodes
+            voicedGain = audioCtx.createGain();
+            unvoicedGain = audioCtx.createGain();
+            
+            const activeFlux = parseFloat(fluxState.value);
+            voicedGain.gain.setValueAtTime(activeFlux, audioCtx.currentTime);
+            unvoicedGain.gain.setValueAtTime(1.0 - activeFlux, audioCtx.currentTime);
+
+            globalOsc.connect(voicedGain);
+            globalNoise.connect(unvoicedGain);
+
+            // 4. Mixer
+            const mixer = audioCtx.createGain();
+            voicedGain.connect(mixer);
+            unvoicedGain.connect(mixer);
+
+            // 5. Lowpass Filter (Vactrol Formant Target)
             globalFilter = audioCtx.createBiquadFilter();
             globalFilter.type = "lowpass";
             globalFilter.Q.setValueAtTime(6, audioCtx.currentTime);
             globalFilter.frequency.setValueAtTime(100, audioCtx.currentTime);
 
-            // Vactrol LED/LDR control envelope simulator
+            mixer.connect(globalFilter);
+
+            // 6. Vactrol envelope gain
             globalGain = audioCtx.createGain();
             globalGain.gain.setValueAtTime(0, audioCtx.currentTime);
 
-            // Compressor (Sparklefly)
+            globalFilter.connect(globalGain);
+
+            // 7. Non-linear Magnetic Saturation WaveShaper (Compression)
+            magneticCompressor = audioCtx.createWaveShaper();
+            const curveSamples = 44100;
+            const curve = new Float32Array(curveSamples);
+            for (let i = 0; i < curveSamples; i++) {
+                const x = (i * 2) / curveSamples - 1;
+                // tanh shape for magnetic hysteresis saturation
+                curve[i] = Math.tanh(x * 2.5);
+            }
+            magneticCompressor.curve = curve;
+
+            // 7.5. Sparklefly Compressor
             globalCompressor = audioCtx.createDynamicsCompressor();
-            globalCompressor.threshold.setValueAtTime(-15, audioCtx.currentTime);
+            globalCompressor.threshold.setValueAtTime(parseFloat(compThreshold.value), audioCtx.currentTime);
             globalCompressor.knee.setValueAtTime(12, audioCtx.currentTime);
             globalCompressor.ratio.setValueAtTime(4, audioCtx.currentTime);
             globalCompressor.attack.setValueAtTime(0.003, audioCtx.currentTime);
             globalCompressor.release.setValueAtTime(0.08, audioCtx.currentTime);
 
-            // Analyzer
+            // 8. Analyzer
             analyser = audioCtx.createAnalyser();
             analyser.fftSize = 512;
 
-            // Connections
-            globalOsc.connect(globalFilter);
-            globalFilter.connect(globalGain);
-            
             if (compressorToggle.checked) {
-                globalGain.connect(globalCompressor);
+                globalGain.connect(magneticCompressor);
+                magneticCompressor.connect(globalCompressor);
                 globalCompressor.connect(analyser);
             } else {
                 globalGain.connect(analyser);
             }
+
             
             analyser.connect(audioCtx.destination);
             globalOsc.start();
+            globalNoise.start();
         }
 
         // Key controls
@@ -675,13 +744,24 @@
             const release = parseFloat(voiceRelease.value);
             const mass = parseFloat(membraneMass.value);
 
+            // Update transfluxor flux mix gains dynamically
+            const activeFlux = parseFloat(fluxState.value);
+            voicedGain.gain.setValueAtTime(activeFlux, audioCtx.currentTime);
+            unvoicedGain.gain.setValueAtTime(1.0 - activeFlux, audioCtx.currentTime);
+
+            // Transfluxor Formant Filter Cutoff calculation (variable inductance modulation)
+            const current_val = parseFloat(transCurrent.value);
+            const inductance = 1.0 / (current_val + 0.1);
+            const formantCutoffScale = 1.0 - (inductance * 0.1);
+
             // Modulation of oscillator frequency based on SCSI parameter scaling
             const finalFreq = freq * (1.0 + (mass * 0.15));
             globalOsc.frequency.setValueAtTime(finalFreq, audioCtx.currentTime);
 
             // Vactrol simulation: Slowly rise brightness of LDR
-            const targetFilterFreq = 100 + (freq * 4.0 * (bow_force_val + 0.2));
+            const targetFilterFreq = (100 + (freq * 4.0 * (bow_force_val + 0.2))) * formantCutoffScale;
             globalFilter.frequency.setTargetAtTime(targetFilterFreq, audioCtx.currentTime, lag * 0.2);
+
 
             // Gain envelope attack
             globalGain.gain.cancelScheduledValues(audioCtx.currentTime);
@@ -783,6 +863,18 @@
         voiceRelease.addEventListener("input", (e) => {
             voiceReleaseVal.innerText = `${e.target.value}s`;
         });
+        fluxState.addEventListener("input", (e) => {
+            const val = parseFloat(e.target.value);
+            fluxStateVal.innerText = val === 1.0 ? "Voiced" : (val === 0.0 ? "Noise" : `Mix:${val}`);
+            if (audioCtx && voicedGain && unvoicedGain) {
+                voicedGain.gain.setValueAtTime(val, audioCtx.currentTime);
+                unvoicedGain.gain.setValueAtTime(1.0 - val, audioCtx.currentTime);
+            }
+        });
+        transCurrent.addEventListener("input", (e) => {
+            transCurrentVal.innerText = `${e.target.value}V`;
+        });
+
 
         // Dynamic visualizers
         const scopeCanvas = document.getElementById("scopeCanvas");
