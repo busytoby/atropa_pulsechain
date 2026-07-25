@@ -1217,6 +1217,30 @@ bool auncient_sdk_tpu_execute_layer(const auncient_transfluxor_registry_t *reg, 
     return ok;
 }
 
+bool auncient_sdk_tpu_execute_recurrent_step(const auncient_transfluxor_registry_t *reg, const auncient_transfluxor_word_t *input, auncient_transfluxor_word_t *state_in_out) {
+    if (!reg || !input || !state_in_out) return false;
+
+    // Recurrent state transition mixing current input with prior feedback state
+    double next_f1 = (input->f1 * 0.7) + (state_in_out->f1 * 0.3);
+    double next_f2 = (input->f2 * 0.7) + (state_in_out->f2 * 0.3);
+    double next_decay = (input->decay * 0.5) + (state_in_out->decay * 0.5);
+
+    // Compile updated state word
+    bool ok = auncient_sdk_compile_transfluxor_word(
+        state_in_out,
+        "TPU_STATE_RECUR",
+        888, // Reserved recurrent state word ID
+        next_f1,
+        next_f2,
+        next_decay,
+        0x00,
+        0x00
+    );
+
+    return ok;
+}
+
+
 
 
 
