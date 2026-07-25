@@ -10,6 +10,7 @@
 #include "tsfi_pulsechain_rpc.h"
 #include "tsfi_block_monitor.h"
 #include "auncient_sdk.h"
+#include "tsfi_clendenin_synth.h"
 #include <stdio.h>
 #include <string.h>
 #include <strings.h>
@@ -569,6 +570,15 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
 
                     tsfi_io_printf(stdout, "[TPU SUCCESS] Spoken word: '%s'. Executing WMQ: 0x%02X, ABI: 0x%02X. Feedback: %.2fHz\n",
                                    match->name, match->wmq_cmd, match->abi_op, feedback_freq);
+
+                    // Call synthetic elliptic synthesizer
+                    tsfi_clendenin_synth_summary_t summary;
+                    memset(&summary, 0, sizeof(summary));
+                    if (tsfi_clendenin_synth_sample(feedback_freq, 0.5, 0.0, &summary) == 0) {
+                        tsfi_io_printf(stdout, "[CLENDENIN SYNTH] Generated sample: %.4f (FET: %.4fW, Gas: %u units)\n",
+                                       summary.sample_out, summary.fet_power_watts, summary.evm_gas_units);
+                    }
+
                     // Simulate execution outcomes directly on WaveSystem if commands are set
                     if (match->wmq_cmd == 0x10) {
                         tsfi_io_printf(stdout, "[HELMHOLTZ MQ] Winchester SCSI channel locked.\n");
@@ -578,6 +588,7 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
                     }
                     return 0;
                 }
+
             } else {
                 tsfi_io_printf(stdout, "[TPU FAILURE] Unknown spoken waveform. Feedback: %.2fHz\n", feedback_freq);
                 return 1;
