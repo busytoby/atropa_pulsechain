@@ -91,6 +91,48 @@ class NumberedCanvas(canvas.Canvas):
             
         self.restoreState()
 
+def convert_latex_math_to_html(text):
+    import re
+    
+    def replace_frac(match):
+        num = match.group(1)
+        den = match.group(2)
+        return f"<sup>{num}</sup>/<sub>{den}</sub>"
+
+    pattern_frac = r'\\frac\{([^}]+)\}\{([^}]+)\}'
+    
+    replacements = [
+        (r'\\theta', 'θ'),
+        (r'\\phi', 'φ'),
+        (r'\\cdot', '·'),
+        (r'\\cos', 'cos'),
+        (r'\\sin', 'sin'),
+        (r'\\text\{([^}]+)\}', r'\1'),
+    ]
+    
+    def replace_math_block(match):
+        math_content = match.group(1)
+        # Avoid modifying standard C64 hex address ranges like "$D000–$DFFF"
+        # and prevent matching across HTML tags
+        if '<' in math_content or '>' in math_content or not re.search(r'[+\-*=/_\\^θφ·]|cos|sin', math_content):
+            return f"${math_content}$"
+            
+        for _ in range(3): # up to 3 levels of nesting fractions
+            math_content = re.sub(pattern_frac, replace_frac, math_content)
+        for pat, repl in replacements:
+            math_content = re.sub(pat, repl, math_content)
+        math_content = re.sub(r'_\{([^}]+)\}', r'<sub>\1</sub>', math_content)
+        math_content = re.sub(r'_([a-zA-Z0-9]+)', r'<sub>\1</sub>', math_content)
+        return f'<font color="#0066cc"><i>{math_content}</i></font>'
+        
+    text = re.sub(r'\$\$(.*?)\$\$', replace_math_block, text)
+    text = re.sub(r'\$(.*?)\$', replace_math_block, text)
+    
+    # Strip remaining standalone single dollar signs around C64 hex addresses for clean output
+    # E.g. $D000 becomes D000
+    text = re.sub(r'\$([0-9A-Fa-f]{4})', r'\1', text)
+    return text
+
 def inline_md_to_html(text):
     import html
     text = html.escape(text)
@@ -126,7 +168,9 @@ def inline_md_to_html(text):
             else:
                 part = part.replace('**', '')
             new_parts.append(part)
-    return ''.join(new_parts)
+    res_text = ''.join(new_parts)
+    return convert_latex_math_to_html(res_text)
+
 
 def parse_markdown_table(rows, body_style, col_width):
     data = []
