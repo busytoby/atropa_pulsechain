@@ -1126,3 +1126,57 @@ bool auncient_sdk_compile_transfluxor_word(auncient_transfluxor_word_t *word, co
     return true;
 }
 
+void auncient_sdk_init_transfluxor_registry(auncient_transfluxor_registry_t *reg) {
+    if (!reg) return;
+    reg->total_registered = 0;
+    memset(reg->registered_words, 0, sizeof(reg->registered_words));
+}
+
+bool auncient_sdk_register_transfluxor_word(auncient_transfluxor_registry_t *reg, const auncient_transfluxor_word_t *word) {
+    if (!reg || !word) return false;
+    if (reg->total_registered >= MAX_REGISTRY_WORDS) return false;
+
+    // Check for hash collisions
+    uint64_t new_hash = auncient_sdk_calculate_transfluxor_hash(word->f1, word->f2, word->decay);
+    for (uint32_t i = 0; i < reg->total_registered; i++) {
+        uint64_t existing_hash = auncient_sdk_calculate_transfluxor_hash(
+            reg->registered_words[i].f1,
+            reg->registered_words[i].f2,
+            reg->registered_words[i].decay
+        );
+        if (existing_hash == new_hash) {
+            return false; // Collision blocked
+        }
+    }
+
+    reg->registered_words[reg->total_registered++] = *word;
+    return true;
+}
+
+bool auncient_sdk_dispatch_transfluxor_word(const auncient_transfluxor_registry_t *reg, const auncient_transfluxor_word_t *word, double *feedback_freq) {
+    if (!reg || !word || !feedback_freq) return false;
+
+    // Wheeler Jump amplitude check
+    if (word->amplitude < 4.5) {
+        *feedback_freq = 110.0; // Failure drone
+        return false;
+    }
+
+    uint64_t target_hash = auncient_sdk_calculate_transfluxor_hash(word->f1, word->f2, word->decay);
+    for (uint32_t i = 0; i < reg->total_registered; i++) {
+        uint64_t existing_hash = auncient_sdk_calculate_transfluxor_hash(
+            reg->registered_words[i].f1,
+            reg->registered_words[i].f2,
+            reg->registered_words[i].decay
+        );
+        if (existing_hash == target_hash) {
+            *feedback_freq = 523.25; // Success tone
+            return true;
+        }
+    }
+
+    *feedback_freq = 110.0; // Failure drone
+    return false;
+}
+
+
