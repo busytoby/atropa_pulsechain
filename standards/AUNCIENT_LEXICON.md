@@ -48,3 +48,19 @@ Decay constants ($t_{\text{decay}}$) define the Wheeler Jump temporal gate windo
 | `ABI_WRITE_LEDGER` | 2 | 400.0 | 800.0 | 0.2 | 0x00 | 0x02 |
 | `WMQ_RELEASE_SCSI` | 3 | 450.0 | 900.0 | 0.5 | 0x20 | 0x00 |
 | `SPK_MUTUAL_COMMIT` | 4 | 500.0 | 1000.0 | 0.3 | 0x10 | 0x02 |
+
+---
+
+## 5. Evolution and Versioning Protocol
+
+To support significant vocabulary scaling over time, the Lexicon standard implements a versioned schema layout:
+
+### Versioned Header Signature
+All serialized `.dat.bin` dictionary databases must embed a 4-byte signature prefix defining the active parser version:
+*   `AUNC` (0x434e5541): **Version 1.0.0** (Standard $F_1 = 300 + (ID \cdot 50) \pmod{700}$ derivation).
+*   `AUN2` (0x324e5541): **Version 2.0.0** (Future-proof scale: custom $F_1$ parameters and dynamic decay arrays).
+
+### Layout Migration Strategy
+1.  **Registry Extensibility:** Future revisions of the structure will add optional trailing blocks (such as dynamic execution gas limits) after the `abi_op` field, maintaining backward binary compatibility.
+2.  **Forward Compatibility Gating:** Registries parsing `AUNC` databases must ignore trailing double-precision blocks when loaded by legacy parsers, preventing buffer overflows.
+
