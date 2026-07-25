@@ -161,4 +161,7 @@ bool master_terrain_verify_pointer(const void *ptr, bool *out_is_valid);
 /* Stack Bounds Verification: Validates stack pointer boundaries against limit ranges to prevent stack underflows or overflows */
 bool master_terrain_verify_stack_bounds(uint32_t stack_ptr, uint32_t stack_limit, bool is_push, bool *out_bounds_violation);
 
+/* Page Replenishment: Restores the health of decayed pages in the allocator pool, resetting their state values to baseline levels */
+bool master_terrain_replenish_page(double *page_healths, uint32_t count, double failure_threshold, double reset_val, uint32_t *out_replenished_count);
+
 #endif /* MASTER_TERRAIN_H */

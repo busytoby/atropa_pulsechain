@@ -787,3 +787,19 @@ bool master_terrain_verify_stack_bounds(uint32_t stack_ptr, uint32_t stack_limit
     }
     return true;
 }
+
+/* Page Replenishment: Restores the health of decayed pages in the allocator pool, resetting their state values to baseline levels */
+bool master_terrain_replenish_page(double *page_healths, uint32_t count, double failure_threshold, double reset_val, uint32_t *out_replenished_count) {
+    if (!page_healths || count == 0 || !out_replenished_count) return false;
+
+    /* Scan through pages and restore those that are degraded back to active levels */
+    uint32_t replenish_count = 0;
+    for (uint32_t i = 0; i < count; i++) {
+        if (page_healths[i] < failure_threshold) {
+            page_healths[i] = reset_val;
+            replenish_count++;
+        }
+    }
+    *out_replenished_count = replenish_count;
+    return true;
+}
