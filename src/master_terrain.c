@@ -161,3 +161,16 @@ bool master_terrain_pack_relative_qings(const terrain_cell_t *parent, const terr
     *out_packed = accumulator;
     return true;
 }
+
+/* Ferractor Emotional Energy Accumulator: Sums and integrates all 5 Vaesen emotion weights into the core register */
+bool master_terrain_ferractor_accumulate_emotions(const uint64_t *emotion_weights, uint32_t count, uint64_t *out_accumulated_energy) {
+    if (!emotion_weights || count == 0 || !out_accumulated_energy) return false;
+
+    /* Accumulates the weights of the emotional inputs (AFFECTION, FEAR, ANGER, JOY, SADNESS) */
+    uint64_t total = 0;
+    for (uint32_t i = 0; i < count; i++) {
+        total += emotion_weights[i];
+    }
+    *out_accumulated_energy = total;
+    return true;
+}
