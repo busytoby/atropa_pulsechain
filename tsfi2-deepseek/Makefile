@@ -776,7 +776,7 @@ tests/test_rooted_browser_wmq_collision: tests/test_rooted_browser_wmq_collision
 tests/test_zmm_epibar_hypobar: tests/test_zmm_epibar_hypobar.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-tests/test_zmm_yue_contracts: tests/test_zmm_yue_contracts.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+tests/test_zmm_yue_contracts: tests/test_zmm_yue_contracts.c $(CORE_OBJS) $(OBJ_DIR)/tsfi_paint.o $(OBJ_DIR)/tsfi_dom.o $(VULKAN_PLUGIN_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 tests/test_zmm_btc_rails: tests/test_zmm_btc_rails.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o

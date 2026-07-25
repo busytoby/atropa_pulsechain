@@ -43,6 +43,14 @@ int main(int argc, char *argv[]) {
     // Clear evm_storage.json before initializing compilers to clear previous state
     remove("evm_storage.json");
     remove("tsfi2-deepseek/evm_storage.json");
+    remove("evm_storage.dat.bin");
+    remove("tsfi2-deepseek/evm_storage.dat.bin");
+    remove("assets/contract_cache.dat.bin");
+    remove("tsfi2-deepseek/assets/contract_cache.dat.bin");
+    remove(".yul_cache/YueReactSimulator.hex");
+    remove("tsfi2-deepseek/.yul_cache/YueReactSimulator.hex");
+    int rm_cached = system("rm -f assets/thunk_cache_*.json tsfi2-deepseek/assets/thunk_cache_*.json");
+    (void)rm_cached;
 
     // Initialize dependencies
     tsfi_wire_firmware_init();
@@ -292,6 +300,46 @@ int main(int argc, char *argv[]) {
     assert(ranked_score == (crows_hypo_acc + crows_epi_acc));
 
     printf("[SUCCESS] Verified CrowsRank leaderboard updates and opt-in gates successfully.\n");
+
+    // 5. Audit all dynamic Soeng intermediate contracts (XIA, XIE, ZI)
+    printf("[ZMM TEST] Querying XIA.Charge(0x9999)...\n");
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, "YULEXEC \"YueReactSimulator\", \"cb1b70ff0000000000000000000000000000000000000000000000000000000000009999\"");
+    uint64_t charge_val = 0;
+    parse_vm_uint256(vm.output_buffer, 0, &charge_val);
+    printf("   XIA.Charge: %lu\n", charge_val);
+    assert(charge_val == 125);
+
+    printf("[ZMM TEST] Querying XIE.Power(0x9999)...\n");
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, "YULEXEC \"YueReactSimulator\", \"4858e8b20000000000000000000000000000000000000000000000000000000000009999\"");
+    uint64_t power_charge = 0, power_omi = 0, power_omega = 0;
+    parse_vm_uint256(vm.output_buffer, 0, &power_charge);
+    parse_vm_uint256(vm.output_buffer, 1, &power_omi);
+    parse_vm_uint256(vm.output_buffer, 2, &power_omega);
+    printf("   XIE.Power -> Charge: %lu, Omicron: %lu, Omega: %lu\n", power_charge, power_omi, power_omega);
+    assert(power_charge == 125);
+    assert(power_omi == 25000000000ULL);
+    assert(power_omega == 77700000000ULL);
+
+    printf("[ZMM TEST] Querying ZI.Spin(0x9999)...\n");
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, "YULEXEC \"YueReactSimulator\", \"dc0042a90000000000000000000000000000000000000000000000000000000000009999\"");
+    uint64_t spin_iota = 0, spin_omi = 0, spin_omega = 0, spin_eta = 0;
+    parse_vm_uint256(vm.output_buffer, 0, &spin_iota);
+    parse_vm_uint256(vm.output_buffer, 1, &spin_omi);
+    parse_vm_uint256(vm.output_buffer, 2, &spin_omega);
+    parse_vm_uint256(vm.output_buffer, 3, &spin_eta);
+    printf("   ZI.Spin -> Iota: %lu, Omicron: %lu, Omega: %lu, Eta: %lu\n", spin_iota, spin_omi, spin_omega, spin_eta);
+    assert(spin_iota == 12000);
+    assert(spin_omi == 8877);
+    assert(spin_omega == 4433);
+    assert(spin_eta == 5522);
+
+    printf("[SUCCESS] Verified all intermediate Soeng parameter functions (Xia, Xie, Zi) successfully.\n");
 
     // Cleanup
     tsfi_zmm_vm_destroy(&vm);
