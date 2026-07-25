@@ -432,6 +432,12 @@ contract MockVMREQ {
             const entropyKey = "0x" + (BigInt(baseKey) + 8n).toString(16);
             await provider.send("anvil_setStorageAt", [localhost.CHO, entropyKey, "0x0000000000000000000000000000000000000000000000000000000000000001"]);
 
+            // Accumulate word in the Ferractor register before React
+            const wordVal1 = BigInt(item.qingAddress) & 0xFFFFn;
+            const wordVal2 = (BigInt(item.qingAddress) >> 16n) & 0xFFFFn;
+            const packedFerractorWord = wordVal1 | (wordVal2 << 16n);
+            console.log(` -> Ferractor Accumulator: Packed coordinate registers to ${packedFerractorWord.toString()}`);
+
             // Trigger react through CHAN contract
             const reactTx = await chan.ReactYue(activeYue, item.qingAddress, { gasLimit: 5000000 });
             await reactTx.wait();
