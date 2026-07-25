@@ -137,4 +137,7 @@ bool master_terrain_write_descriptor(const master_terrain_descriptor_t *desc, ui
 /* Signal Amplification: Compensates for coaxial transmission line loss using a boost gain factor based on distance attenuation */
 bool master_terrain_amplify_signal(double input_signal, double attenuation, double *out_amplified);
 
+/* Winchester Flow Control: Resolves SCSI queue depth congestion to prevent buffer overflows */
+bool master_terrain_winchester_flow_control(uint32_t current_depth, uint32_t max_capacity, bool *out_backpressure_active);
+
 #endif /* MASTER_TERRAIN_H */

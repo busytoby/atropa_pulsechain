@@ -675,3 +675,17 @@ bool master_terrain_amplify_signal(double input_signal, double attenuation, doub
     *out_amplified = input_signal * gain_factor;
     return true;
 }
+
+/* Winchester Flow Control: Resolves SCSI queue depth congestion to prevent buffer overflows */
+bool master_terrain_winchester_flow_control(uint32_t current_depth, uint32_t max_capacity, bool *out_backpressure_active) {
+    if (max_capacity == 0 || !out_backpressure_active) return false;
+
+    /* SCSI handshake queue check:
+       Activates backpressure if the active queue depth exceeds 80% of maximum capacity */
+    if (current_depth >= (max_capacity * 4) / 5) {
+        *out_backpressure_active = true;
+    } else {
+        *out_backpressure_active = false;
+    }
+    return true;
+}
