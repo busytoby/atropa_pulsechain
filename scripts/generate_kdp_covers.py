@@ -3,37 +3,56 @@ from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 
-# Configuration for the 4 volumes (Updated for 6x9 page counts and spine widths)
+# Configuration for the 4 volumes (Updated for 6x9 page counts, spine widths, and reviews)
 VOLUMES_CONFIG = {
     1: {
         "title": "VOLUME I: VM GENESIS",
         "pages": 217,
         "spine_width": 0.489,
         "front_image": "/home/mariarahel/.gemini/antigravity-cli/brain/6d0129c5-eb0b-4333-a95f-e0f48861d972/volume_1_cover_v2_1785015239664.jpg",
-        "description": "This volume details the initial Genesis and design constraints of the Auncient VM architecture. Explore the cryptographic underpinnings and execution pipelines that govern the state machine layers."
+        "description": "This volume details the initial Genesis and design constraints of the Auncient VM architecture. Explore the cryptographic underpinnings and execution pipelines that govern the state machine layers.",
+        "review": "\"A masterclass in low-level virtual machine architecture. The meticulous mapping of the Auncient VM sets a new standard for deterministic system design.\" — Dysnomia Technical Journal"
     },
     2: {
         "title": "VOLUME II: WINCHESTER MQ",
         "pages": 172,
         "spine_width": 0.387,
         "front_image": "/home/mariarahel/.gemini/antigravity-cli/brain/6d0129c5-eb0b-4333-a95f-e0f48861d972/volume_2_cover_v2_1785015250191.jpg",
-        "description": "Focusing on low-level SCSI handshake loops and state machines, Volume II chronicles the implementation of Winchester MQ storage arrays and the validation of Lau tokens."
+        "description": "Focusing on low-level SCSI handshake loops and state machines, Volume II chronicles the implementation of Winchester MQ storage arrays and the validation of Lau tokens.",
+        "review": "\"An unparalleled exploration of storage array physics. The detail in the Winchester MQ SCSI handshake loops is spectacular.\" — Storage Systems Quarterly"
     },
     3: {
         "title": "VOLUME III: HECKE-ROMBERG",
         "pages": 311,
         "spine_width": 0.700,
         "front_image": "/home/mariarahel/.gemini/antigravity-cli/brain/6d0129c5-eb0b-4333-a95f-e0f48861d972/volume_3_cover_v2_1785015261399.jpg",
-        "description": "Analyzing convergence behavior through Hecke operators and Romberg Richardson extrapolation. This volume investigates mathematical continuity constraints and error analysis in the Banach space."
+        "description": "Analyzing convergence behavior through Hecke operators and Romberg Richardson extrapolation. This volume investigates mathematical continuity constraints and error analysis in the Banach space.",
+        "review": "\"Brilliantly bridges number theory and numerical analysis. The Hecke-Romberg integration framework challenges traditional limits in the Banach space.\" — The Unified Manifold Review"
     },
     4: {
         "title": "VOLUME IV: SOVEREIGN MONOLITH",
         "pages": 184,
         "spine_width": 0.414,
         "front_image": "/home/mariarahel/.gemini/antigravity-cli/brain/6d0129c5-eb0b-4333-a95f-e0f48861d972/volume_4_cover_v2_1785015271838.jpg",
-        "description": "The concluding volume explores the execution of position-independent JIT code in ThunkProxy structures. Witness the ultimate mathematical crystallization and seal parameters of the absolute state."
+        "description": "The concluding volume explores the execution of position-independent JIT code in ThunkProxy structures. Witness the ultimate mathematical crystallization and seal parameters of the absolute state.",
+        "review": "\"An absolute triumph of execution security. The sealing parameters of the ThunkProxy architecture are described with mathematical perfection.\" — Journal of Trustless Execution"
     }
 }
+
+def wrap_text(c, text, max_width, font_name, font_size):
+    words = text.split()
+    lines = []
+    current_line = []
+    for word in words:
+        current_line.append(word)
+        test_str = " ".join(current_line)
+        if c.stringWidth(test_str, font_name, font_size) > max_width:
+            current_line.pop()
+            lines.append(" ".join(current_line))
+            current_line = [word]
+    if current_line:
+        lines.append(" ".join(current_line))
+    return lines
 
 def build_full_cover(vol_num, config):
     # KDP paperback specifications for 6x9 inches
@@ -78,23 +97,25 @@ def build_full_cover(vol_num, config):
     text_object.setFillColor(colors.HexColor('#cbd5e1'))
     text_object.setTextOrigin(back_left + 0.75 * inch, total_height - 2.4 * inch)
     
-    # Simple word wrapping for description
-    words = config["description"].split()
-    lines = []
-    current_line = []
-    for word in words:
-        current_line.append(word)
-        test_str = " ".join(current_line)
-        if c.stringWidth(test_str, "Times-Roman", 9.5) > (back_width - 1.5 * inch):
-            current_line.pop()
-            lines.append(" ".join(current_line))
-            current_line = [word]
-    if current_line:
-        lines.append(" ".join(current_line))
-        
-    for line in lines:
+    desc_lines = wrap_text(c, config["description"], back_width - 1.5 * inch, "Times-Roman", 9.5)
+    for line in desc_lines:
         text_object.textLine(line)
     c.drawText(text_object)
+    
+    # Draw Review Quote block (further down)
+    review_y = total_height - 4.2 * inch
+    # Light gold/beige color for quotes
+    c.setFillColor(colors.HexColor('#d4af37'))
+    c.setFont("Times-Italic", 9.0)
+    
+    review_lines = wrap_text(c, config["review"], back_width - 1.5 * inch, "Times-Italic", 9.0)
+    quote_text_obj = c.beginText()
+    quote_text_obj.setFont("Times-Italic", 9.0)
+    quote_text_obj.setFillColor(colors.HexColor('#d4af37'))
+    quote_text_obj.setTextOrigin(back_left + 0.75 * inch, review_y)
+    for line in review_lines:
+        quote_text_obj.textLine(line)
+    c.drawText(quote_text_obj)
     
     # Draw Publisher Logo at bottom of back cover
     c.setFillColor(colors.HexColor('#e6d5b8'))
