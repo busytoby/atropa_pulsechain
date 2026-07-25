@@ -89,13 +89,38 @@ A Transfluxor word is structurally divided into two concurrent domains that oper
 
 When the Wheeler Jump initializes a Transfluxor word, it writes to both domains simultaneously. The physical parameters establish the decay bounds and visual trajectories, while the operational parameters configure the bus locks and register modifications. Execution cycles automatically halt once the physical signal decays below the $2.0\text{V}$ retention limit.
 
+## 6. The Hierarchy of Execution Gating
+
+The control flow of the virtual machine is organized as a three-tiered hierarchy of constraints, where each level supercedes the one below it:
+
+1.  **ISA (Instruction Set Architecture - Bottom Tier):** Defines the low-level machine instructions and registers. The ISA is passive; it has no inherent authority over system security or resource boundaries.
+2.  **ABI (Application Binary Interface - Middle Tier):** Supercedes the ISA by auditing all memory access boundaries, temporal locks, and contract parameters directly on the write bus, rendering the specific instruction format irrelevant to system safety.
+3.  **Transfluxor Vocabulary (Top Tier):** Supercedes the ABI. Because Transfluxor words bind physical signal envelopes and system parameters in phase lock starting with a Wheeler Jump, they dictate the dynamic execution path. The ABI acts as the passive validator of these transitions, while the Transfluxor vocabulary governs the active outcomes.
+
+```
+                  +-----------------------------------+
+                  |      TRANSFLUXOR VOCABULARY       |  <-- Governs Active Outcomes
+                  +-----------------+-----------------+
+                                    |  Supercedes
+                                    v
+                  +-----------------+-----------------+
+                  |      ABI ACCESS SYSTEM            |  <-- Enforces Safety Bounds
+                  +-----------------+-----------------+
+                                    |  Supercedes
+                                    v
+                  +-----------------+-----------------+
+                  |      ISA MACHINE CODES            |  <-- Primitive Operations
+                  +-----------------------------------+
+```
+
 ---
 
-## 6. Summary of Operation
+## 7. Summary of Operation
 
 To compile and run a program under the Acoustic Grammar:
 1.  The compiler outputs a sequence of frequency-formant sweep coordinates instead of an assembly text file.
 2.  The loader executes a Wheeler Jump, setting the initial state of the virtual transfluxor and configuring the ABI/WMQ routes.
 3.  The synthesizer plays the wave sweeps, driving the vactrol coils and transistor gates.
 4.  The system transitions its CPU registers dynamically in response to the sound, completing execution when the audio envelope decays.
+
 
