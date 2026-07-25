@@ -815,6 +815,11 @@ tests/test_zmm_lau_proof: tests/test_zmm_lau_proof.c $(CORE_OBJS) $(OBJ_DIR)/vul
 tests/test_base0_protocol: tests/test_base0_protocol.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+tests/test_auncient_integrated_cli: tests/test_auncient_integrated_cli.c $(CORE_OBJS) $(OBJ_DIR)/tsfi_paint.o $(OBJ_DIR)/tsfi_dom.o $(VULKAN_PLUGIN_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+
+
 tests/test_dilemma_synthesizer: tests/test_dilemma_synthesizer.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
