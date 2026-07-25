@@ -146,4 +146,7 @@ bool master_terrain_verify_modulo_overflow(uint64_t a, uint64_t b, uint64_t modu
 /* Alignment Verification: Confirms memory addresses are aligned to specific boundaries, avoiding hardware bus faults */
 bool master_terrain_verify_alignment(uintptr_t address, uint32_t alignment, bool *out_is_aligned);
 
+/* Descriptor-Based Safe Read: Validates bounds before reading data, protecting descriptors from buffer overreads */
+bool master_terrain_read_descriptor_safe(const master_terrain_descriptor_t *desc, const uint8_t *memory, uint32_t index_val, uint8_t *out_val);
+
 #endif /* MASTER_TERRAIN_H */

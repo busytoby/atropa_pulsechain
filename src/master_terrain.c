@@ -712,3 +712,17 @@ bool master_terrain_verify_alignment(uintptr_t address, uint32_t alignment, bool
     *out_is_aligned = ((address & (alignment - 1)) == 0);
     return true;
 }
+
+/* Descriptor-Based Safe Read: Validates bounds before reading data, protecting descriptors from buffer overreads */
+bool master_terrain_read_descriptor_safe(const master_terrain_descriptor_t *desc, const uint8_t *memory, uint32_t index_val, uint8_t *out_val) {
+    if (!desc || !memory || !out_val) return false;
+
+    /* Out of bounds read protection check */
+    if (index_val >= desc->length) {
+        return false;
+    }
+
+    /* Perform memory read securely inside descriptor bounds */
+    *out_val = memory[desc->address + index_val];
+    return true;
+}
