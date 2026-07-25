@@ -174,3 +174,17 @@ bool master_terrain_ferractor_accumulate_emotions(const uint64_t *emotion_weight
     *out_accumulated_energy = total;
     return true;
 }
+
+/* Pack word relative to reaction states */
+bool master_terrain_ferractor_pack_reaction(const uint16_t *words, uint32_t count, uint64_t waat, uint64_t luo, uint64_t reaction_state, uint32_t *out_packed) {
+    if (!words || count == 0 || !out_packed) return false;
+
+    /* Base Ferractor packaging context */
+    uint32_t base_packed = 0;
+    if (!master_terrain_ferractor_pack(words, count, waat, luo, &base_packed)) return false;
+
+    /* Modulate the packed word register using the specified reaction state */
+    uint32_t state_modulator = (uint32_t)(reaction_state & 0xFFFFFFFF);
+    *out_packed = base_packed ^ state_modulator;
+    return true;
+}

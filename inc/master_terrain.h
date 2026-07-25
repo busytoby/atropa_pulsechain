@@ -52,4 +52,7 @@ bool master_terrain_pack_relative_qings(const terrain_cell_t *parent, const terr
 /* Ferractor Emotional Energy Accumulator: Sums and integrates all 5 Vaesen emotion weights into the core register */
 bool master_terrain_ferractor_accumulate_emotions(const uint64_t *emotion_weights, uint32_t count, uint64_t *out_accumulated_energy);
 
+/* Pack word relative to reaction states */
+bool master_terrain_ferractor_pack_reaction(const uint16_t *words, uint32_t count, uint64_t waat, uint64_t luo, uint64_t reaction_state, uint32_t *out_packed);
+
 #endif /* MASTER_TERRAIN_H */
