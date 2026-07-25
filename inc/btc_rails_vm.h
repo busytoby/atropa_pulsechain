@@ -4,7 +4,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
-/* MOS 6526 CIA Timer Emulation Registers with TOD support */
+#define KEYCODE_D 32
+#define KEYCODE_A 30
+
+/* MOS 6526 CIA Timer Emulation Registers with TOD, ICR, Alarm, and PBON support */
 typedef struct {
     uint16_t timer_a_latch;
     uint16_t timer_a_count;
@@ -21,6 +24,17 @@ typedef struct {
     uint8_t tod_mins;
     uint8_t tod_secs;
     uint8_t tod_tenths;
+    
+    /* Alarm Registers */
+    uint8_t alarm_hours;
+    uint8_t alarm_mins;
+    uint8_t alarm_secs;
+    uint8_t alarm_tenths;
+    
+    /* Interrupt and Pin Controls */
+    uint8_t icr;       /* Interrupt Control Register */
+    uint8_t cnt_pin;   /* Mock CNT Pin (0 or 1) */
+    uint8_t flag_pin;  /* Mock FLAG Pin (0 or 1) */
 } M6526Cia;
 
 /* 2-3 Tree Node Structure for Transaction Indexing */
@@ -54,6 +68,12 @@ int btc_rails_vm_pop_rs(BtcRailsVm *vm, uint8_t *data_out, size_t max_size);
 
 /* SDR Serial Shift Register Operation */
 int btc_rails_vm_shift_sdr(BtcRailsVm *vm, uint8_t *byte_out);
+
+/* Keyboard matrix scanner keycode verification */
+int btc_rails_vm_scan_keycode(BtcRailsVm *vm, uint8_t keycode);
+
+/* Clock cycle updates for hardware timer simulation (PBON line toggling) */
+void btc_rails_vm_step_clock(BtcRailsVm *vm, uint32_t cycles);
 
 /* 2-3 Tree operations (Registry Indexing) */
 TwoThreeNode *two_three_tree_insert(TwoThreeNode *root, uint32_t key, const uint8_t *payload, size_t size);

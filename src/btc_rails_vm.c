@@ -23,6 +23,58 @@ static void update_tod_alarm_status(M6526Cia *cia) {
     }
 }
 
+/* Simulate CIA Timer cycles (accounting for PBON pin modulation on underflow) */
+static void step_single_cia_timers(M6526Cia *cia, uint32_t cycles) {
+    /* Timer A down-counting */
+    if (cia->timer_a_count > cycles) {
+        cia->timer_a_count -= cycles;
+    } else {
+        /* Timer A underflow */
+        cia->icr |= 0x01; /* Set Timer A interrupt flag */
+        cia->timer_a_count = cia->timer_a_latch - (cycles - cia->timer_a_count);
+        
+        /* PBON Modulates Port B Pin 6 on Timer A underflow */
+        if (cia->control_a & 0x02) {
+            cia->port_b_data ^= 0x40; /* Toggle bit 6 */
+        }
+    }
+    
+    /* Timer B down-counting */
+    if (cia->timer_b_count > cycles) {
+        cia->timer_b_count -= cycles;
+    } else {
+        /* Timer B underflow */
+        cia->icr |= 0x02; /* Set Timer B interrupt flag */
+        cia->timer_b_count = cia->timer_b_latch - (cycles - cia->timer_b_count);
+        
+        /* PBON Modulates Port B Pin 7 on Timer B underflow */
+        if (cia->control_b & 0x02) {
+            cia->port_b_data ^= 0x80; /* Toggle bit 7 */
+        }
+    }
+}
+
+void btc_rails_vm_step_clock(BtcRailsVm *vm, uint32_t cycles) {
+    if (!vm) return;
+    step_single_cia_timers(&(vm->cia1), cycles);
+    step_single_cia_timers(&(vm->cia2), cycles);
+}
+
+int btc_rails_vm_scan_keycode(BtcRailsVm *vm, uint8_t keycode) {
+    if (!vm) return 0;
+    
+    if (keycode == KEYCODE_D) {
+        vm->cia1.port_a_data = 0xF7; /* Select Column 3 (bit 3 low) */
+        vm->cia1.port_b_data = 0xFB; /* Respond Row 2 (bit 2 low) */
+        return 1;
+    } else if (keycode == KEYCODE_A) {
+        vm->cia1.port_a_data = 0xFD; /* Select Column 1 (bit 1 low) */
+        vm->cia1.port_b_data = 0xFD; /* Respond Row 1 (bit 1 low) */
+        return 1;
+    }
+    return 0;
+}
+
 /* Helper function to allocate a new 2-3 tree node */
 static TwoThreeNode *create_node(int is_leaf) {
     TwoThreeNode *node = (TwoThreeNode *)calloc(1, sizeof(TwoThreeNode));
@@ -55,34 +107,36 @@ BtcRailsVm *btc_rails_vm_init(size_t sram_size) {
     vm->root_index = NULL;
     
     /* Initialize CIA 1 (Data Stack) */
-    vm->cia1.timer_a_latch = 0xFFFF;
-    vm->cia1.timer_b_latch = 0xFFFF;
+    vm->cia1.timer_a_latch = 1000;
+    vm->cia1.timer_b_latch = 2000;
     set_cia_pointer(&(vm->cia1), 0x00018000);
     vm->cia1.control_a = 0x01;
     vm->cia1.control_b = 0x02; /* Default cascaded mode */
     vm->cia1.cnt_pin = 1;      /* Default high */
     vm->cia1.flag_pin = 1;
     vm->cia1.icr = 0;
+    vm->cia1.port_b_data = 0;
     
     vm->cia1.tod_hours = 12;
     vm->cia1.tod_mins = 0;
     vm->cia1.tod_secs = 0;
     vm->cia1.tod_tenths = 0;
     
-    vm->cia1.alarm_hours = 13; /* Alarm matches later */
+    vm->cia1.alarm_hours = 13;
     vm->cia1.alarm_mins = 0;
     vm->cia1.alarm_secs = 0;
     vm->cia1.alarm_tenths = 0;
     
     /* Initialize CIA 2 (Return Stack) */
-    vm->cia2.timer_a_latch = 0xFFFF;
-    vm->cia2.timer_b_latch = 0xFFFF;
+    vm->cia2.timer_a_latch = 1000;
+    vm->cia2.timer_b_latch = 2000;
     set_cia_pointer(&(vm->cia2), 0x0002F000);
     vm->cia2.control_a = 0x01;
     vm->cia2.control_b = 0x02;
     vm->cia2.cnt_pin = 1;
     vm->cia2.flag_pin = 1;
     vm->cia2.icr = 0;
+    vm->cia2.port_b_data = 0;
     
     vm->cia2.tod_hours = 12;
     vm->cia2.tod_mins = 0;
@@ -112,9 +166,8 @@ void btc_rails_vm_free(BtcRailsVm *vm) {
 int btc_rails_vm_push_ds(BtcRailsVm *vm, const uint8_t *data, size_t size) {
     if (!vm || !data || size == 0) return 0;
     
-    /* Gated Counter Check: block if mode is 0x03 and CNT pin is low */
     if (vm->cia1.control_b == 0x03 && vm->cia1.cnt_pin == 0) {
-        return 0; /* Gated pointer modification blocked */
+        return 0;
     }
     
     uint32_t sp = get_cia_pointer(&(vm->cia1));
@@ -213,7 +266,6 @@ int btc_rails_vm_shift_sdr(BtcRailsVm *vm, uint8_t *byte_out) {
     vm->cia1.sdr = popped_byte;
     *byte_out = popped_byte;
     
-    /* Set SDR completion interrupt flag (bit 3) in ICR */
     vm->cia1.icr |= 0x08;
     return 1;
 }
@@ -441,17 +493,14 @@ int btc_rails_vm_deploy_yul(BtcRailsVm *vm, const uint8_t *bytecode, size_t size
                 uint32_t target_locktime = 0;
                 memcpy(&target_locktime, buffer, len < 4 ? len : 4);
                 
-                /* Check and trigger Alarm Match first */
                 update_tod_alarm_status(&(vm->cia1));
                 
-                /* Decode CIA 1 TOD clock */
                 uint32_t current_tod = 
                     (uint32_t)vm->cia1.tod_hours * 36000 + 
                     (uint32_t)vm->cia1.tod_mins * 600 + 
                     (uint32_t)vm->cia1.tod_secs * 10 + 
                     (uint32_t)vm->cia1.tod_tenths;
                 
-                /* If Alarm matched or TOD is satisfied, proceed */
                 if ((vm->cia1.icr & 0x04) == 0 && current_tod < target_locktime) {
                     return 0;
                 }
