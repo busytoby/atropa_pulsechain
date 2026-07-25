@@ -117,6 +117,24 @@ int main(void) {
 
     remove("target_dictionary.dat.bin"); // Clean up generated file
 
+    // 9. Test Python dictionary generator integration
+    printf("[TEST] Running generate_lexicon_db.py to compile binary dictionary...\n");
+    int py_ret = system("python3 ../tools/generate_lexicon_db.py -o py_dictionary.dat.bin --words WMQ_PYTHON_LOCK,8,10,00 ABI_PYTHON_WRITE,9,00,02");
+    assert(py_ret == 0);
+
+    printf("[TEST] Importing Python-compiled dictionary...\n");
+    char cmd_py_imp[128] = "LEXICON_IMPORT py_dictionary.dat.bin";
+    status = tsfi_cli_process_line(ws, cmd_py_imp);
+    assert(status == 0);
+
+    printf("[TEST] Speaking Python-derived word (F1 = 300 + 400 = 700Hz)...\n");
+    char cmd_py_speak[128] = "SPEAK 700.0 1400.0 0.4 8";
+    status = tsfi_cli_process_line(ws, cmd_py_speak);
+
+    assert(status == 0);
+    remove("py_dictionary.dat.bin");
+
+
 
 
 
