@@ -505,25 +505,53 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
         tsfi_speroni_conway_cobol_add_field(&cached_cobol_layout, 5, "WORD-ABI", 4);
 
 
-        // Pre-load default Auncient command words
-        auncient_transfluxor_word_t w1, w2, w3;
-        bool ok = auncient_sdk_compile_transfluxor_word(&w1, "SPK_LOCK_SCSI", 1, 440.0, 880.0, 0.4, 0x10, 0x00);
-        assert(ok);
-        ok = auncient_sdk_register_transfluxor_word(&tpu_registry, &w1);
-        assert(ok);
-        tpu_registration_times[0] = now;
+        // Try to auto-load default lexicon file from disk if it exists
+        bool loaded_from_disk = false;
+        FILE *default_f = fopen("lexicon_default.dat.bin", "rb");
+        if (default_f) {
+            char sig[4];
+            uint32_t count = 0;
+            if (fread(sig, 1, 4, default_f) == 4 && memcmp(sig, "AUNC", 4) == 0) {
+                if (fread(&count, sizeof(count), 1, default_f) == 1) {
+                    uint32_t loaded_count = 0;
+                    for (uint32_t i = 0; i < count; i++) {
+                        auncient_transfluxor_word_t word;
+                        if (fread(&word, sizeof(auncient_transfluxor_word_t), 1, default_f) == 1) {
+                            if (auncient_sdk_register_transfluxor_word(&tpu_registry, &word)) {
+                                tpu_registration_times[loaded_count++] = now;
+                            }
+                        }
+                    }
+                    if (loaded_count > 0) {
+                        loaded_from_disk = true;
+                    }
+                }
+            }
+            fclose(default_f);
+        }
 
-        ok = auncient_sdk_compile_transfluxor_word(&w2, "SPK_WRITE_LEDGER", 2, 350.0, 700.0, 0.2, 0x00, 0x02);
-        assert(ok);
-        ok = auncient_sdk_register_transfluxor_word(&tpu_registry, &w2);
-        assert(ok);
-        tpu_registration_times[1] = now;
+        if (!loaded_from_disk) {
+            // Pre-load default Auncient command words
+            auncient_transfluxor_word_t w1, w2, w3;
+            bool ok = auncient_sdk_compile_transfluxor_word(&w1, "SPK_LOCK_SCSI", 1, 440.0, 880.0, 0.4, 0x10, 0x00);
+            assert(ok);
+            ok = auncient_sdk_register_transfluxor_word(&tpu_registry, &w1);
+            assert(ok);
+            tpu_registration_times[0] = now;
 
-        ok = auncient_sdk_compile_transfluxor_word(&w3, "SPK_RELEASE_SCSI", 3, 600.0, 1200.0, 0.5, 0x20, 0x00);
-        assert(ok);
-        ok = auncient_sdk_register_transfluxor_word(&tpu_registry, &w3);
-        assert(ok);
-        tpu_registration_times[2] = now;
+            ok = auncient_sdk_compile_transfluxor_word(&w2, "SPK_WRITE_LEDGER", 2, 350.0, 700.0, 0.2, 0x00, 0x02);
+            assert(ok);
+            ok = auncient_sdk_register_transfluxor_word(&tpu_registry, &w2);
+            assert(ok);
+            tpu_registration_times[1] = now;
+
+            ok = auncient_sdk_compile_transfluxor_word(&w3, "SPK_RELEASE_SCSI", 3, 600.0, 1200.0, 0.5, 0x20, 0x00);
+            assert(ok);
+            ok = auncient_sdk_register_transfluxor_word(&tpu_registry, &w3);
+            assert(ok);
+            tpu_registration_times[2] = now;
+        }
+
 
         tpu_initialized = true;
     }

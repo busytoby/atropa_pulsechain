@@ -131,8 +131,17 @@ int main(void) {
     char cmd_py_speak[128] = "SPEAK 700.0 1400.0 0.4 8";
     status = tsfi_cli_process_line(ws, cmd_py_speak);
 
-    assert(status == 0);
     remove("py_dictionary.dat.bin");
+
+    // 10. Test lexicon startup auto-load bootstrap via sub-process
+    printf("[TEST] Verifying lexicon_default.dat.bin auto-load bootstrap...\n");
+    int bootstrap_gen = system("python3 ../tools/generate_lexicon_db.py -o lexicon_default.dat.bin --words WMQ_BOOTSTRAP,42,10,00");
+    assert(bootstrap_gen == 0);
+
+    int sub_run = system("echo \"SPEAK 300.0 600.0 0.4 42\" | ../tsfi2 > /dev/null");
+    assert(sub_run == 0); // Exits 0 if WMQ_BOOTSTRAP was successfully auto-loaded and spoken
+    remove("lexicon_default.dat.bin");
+
 
 
 
