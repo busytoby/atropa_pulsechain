@@ -908,3 +908,58 @@ bool master_terrain_thatcher_algorithm_198(const double *romberg_row, uint32_t c
     }
     return true;
 }
+
+/* Crout Matrix Solver: Performs Crout LU decomposition and solves linear systems representing coordinate grids */
+bool master_terrain_crout_solver(const double *matrix_a, const double *vector_b, uint32_t size, double *out_vector_x) {
+    if (!matrix_a || !vector_b || size == 0 || size > 16 || !out_vector_x) return false;
+
+    double l[16][16] = {{0}};
+    double u[16][16] = {{0}};
+    double y[16] = {0};
+
+    /* Initialize Upper matrix diagonal to 1 */
+    for (uint32_t i = 0; i < size; i++) {
+        u[i][i] = 1.0;
+    }
+
+    /* Perform Crout LU Decomposition */
+    for (uint32_t j = 0; j < size; j++) {
+        for (uint32_t i = j; i < size; i++) {
+            double sum = 0.0;
+            for (uint32_t k = 0; k < j; k++) {
+                sum += l[i][k] * u[k][j];
+            }
+            l[i][j] = matrix_a[i * size + j] - sum;
+        }
+
+        for (uint32_t i = j + 1; i < size; i++) {
+            double sum = 0.0;
+            for (uint32_t k = 0; k < j; k++) {
+                sum += l[j][k] * u[k][i];
+            }
+            if (l[j][j] == 0.0) return false; /* Singular matrix check */
+            u[j][i] = (matrix_a[j * size + i] - sum) / l[j][j];
+        }
+    }
+
+    /* Forward substitution: solve L y = b */
+    for (uint32_t i = 0; i < size; i++) {
+        double sum = 0.0;
+        for (uint32_t k = 0; k < i; k++) {
+            sum += l[i][k] * y[k];
+        }
+        if (l[i][i] == 0.0) return false;
+        y[i] = (vector_b[i] - sum) / l[i][i];
+    }
+
+    /* Back substitution: solve U x = y */
+    for (int32_t i = (int32_t)size - 1; i >= 0; i--) {
+        double sum = 0.0;
+        for (uint32_t k = i + 1; k < size; k++) {
+            sum += u[i][k] * out_vector_x[k];
+        }
+        out_vector_x[i] = y[i] - sum;
+    }
+
+    return true;
+}

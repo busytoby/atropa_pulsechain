@@ -179,4 +179,7 @@ bool master_terrain_hecke_romberg(const double *luo_function_vals, uint32_t coun
 /* Thatcher Algorithm 198: Evaluates Romberg table convergence stability and round-off error bounds */
 bool master_terrain_thatcher_algorithm_198(const double *romberg_row, uint32_t count, double error_tolerance, bool *out_is_stable);
 
+/* Crout Matrix Solver: Performs Crout LU decomposition and solves linear systems representing coordinate grids */
+bool master_terrain_crout_solver(const double *matrix_a, const double *vector_b, uint32_t size, double *out_vector_x);
+
 #endif /* MASTER_TERRAIN_H */
