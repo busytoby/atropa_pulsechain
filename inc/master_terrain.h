@@ -89,4 +89,7 @@ bool master_terrain_push_stack_frame(master_terrain_activation_stack_t *stack, u
 /* Pop activation record from hardware stack */
 bool master_terrain_pop_stack_frame(master_terrain_activation_stack_t *stack, uint32_t *out_return_addr);
 
+/* Astacopsis Classification: Taxonomy system classifying terrain height cells into biological habitat taxonomy groups */
+bool master_terrain_astacopsis_classification(const terrain_cell_t *cell, char *out_taxonomy_class);
+
 #endif /* MASTER_TERRAIN_H */

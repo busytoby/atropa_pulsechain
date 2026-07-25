@@ -290,3 +290,30 @@ bool master_terrain_pop_stack_frame(master_terrain_activation_stack_t *stack, ui
     *out_return_addr = frame->return_address;
     return true;
 }
+
+/* Astacopsis Classification: Taxonomy system classifying terrain height cells into biological habitat taxonomy groups */
+bool master_terrain_astacopsis_classification(const terrain_cell_t *cell, char *out_taxonomy_class) {
+    if (!cell || !out_taxonomy_class) return false;
+
+    /* Classify the terrain cell by averaging the grid heights to find appropriate crayfish habitat levels:
+       Low average height (< 64): Astacopsis franklinii (lowland creek)
+       Medium average height (64-128): Astacopsis gouldi (major river basin)
+       High average height (> 128): Astacopsis tricornis (subalpine mountain stream) */
+    uint64_t total_height = 0;
+    for (int y = 0; y < TERRAIN_GRID_SIZE; y++) {
+        for (int x = 0; x < TERRAIN_GRID_SIZE; x++) {
+            total_height += cell->height_grid[y][x];
+        }
+    }
+    uint64_t average_height = total_height / (TERRAIN_GRID_SIZE * TERRAIN_GRID_SIZE);
+
+    if (average_height < 64) {
+        strcpy(out_taxonomy_class, "Astacopsis franklinii");
+    } else if (average_height <= 128) {
+        strcpy(out_taxonomy_class, "Astacopsis gouldi");
+    } else {
+        strcpy(out_taxonomy_class, "Astacopsis tricornis");
+    }
+
+    return true;
+}
