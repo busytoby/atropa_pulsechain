@@ -1,0 +1,17 @@
+DATA DIVISION.
+01 WORD-INDEX PIC 9 USAGE R0.
+01 FIELD-OFFSET PIC 9 USAGE R1.
+01 NEW-VALUE PIC 9 USAGE R2.
+01 TEMP PIC 9 USAGE R3.
+PROCEDURE DIVISION.
+    MOVE 3 TO WORD-INDEX.
+    MOVE 32 TO NEW-VALUE.
+    PERFORM ALTER-WORD.
+    EVAL.
+    GO TO END-STRATEGY.
+ALTER-WORD.
+    # Enforce Auncient memory alteration state mapping using literal integers
+    SET depth 3.
+    SET abductive 32.
+    EXIT.
+END-STRATEGY.

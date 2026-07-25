@@ -11,6 +11,7 @@
 #include "tsfi_block_monitor.h"
 #include "auncient_sdk.h"
 #include "tsfi_clendenin_synth.h"
+#include "tsfi_speroni_conway_cobol.h"
 #include <stdio.h>
 #include <string.h>
 #include <strings.h>
@@ -530,7 +531,83 @@ int tsfi_cli_process_line(WaveSystem *ws, char *input) {
         return 1;
     }
 
+    // Check if the input is a COBOL_ALTER command
+    if (strncmp(input, "COBOL_ALTER ", 12) == 0) {
+        uint32_t word_idx = 0;
+        char field_name[32] = "";
+        double double_val = 0.0;
+        uint32_t uint_val = 0;
+        char str_val[32] = "";
+
+        int parsed_double = sscanf(input, "COBOL_ALTER %u %31s %lf", &word_idx, field_name, &double_val);
+        int parsed_uint = sscanf(input, "COBOL_ALTER %u %31s %u", &word_idx, field_name, &uint_val);
+        int parsed_str = sscanf(input, "COBOL_ALTER %u %31s %31s", &word_idx, field_name, str_val);
+
+        if (word_idx >= tpu_registry.total_registered) {
+            tsfi_io_printf(stdout, "[COBOL ERROR] Word index out of bounds.\n");
+            return 1;
+        }
+
+        // Initialize COBOL layout for auncient_transfluxor_word_t (exactly matching alignment)
+        tsfi_speroni_conway_cobol_t cobol_layout;
+        tsfi_speroni_conway_cobol_init(word_idx, &cobol_layout);
+        tsfi_speroni_conway_cobol_add_field(&cobol_layout, 5, "WORD-NAME", 32);
+        tsfi_speroni_conway_cobol_add_field(&cobol_layout, 5, "WORD-ID", 4);
+        tsfi_speroni_conway_cobol_add_field(&cobol_layout, 5, "PAD-1", 4); // Alignment padding
+        tsfi_speroni_conway_cobol_add_field(&cobol_layout, 5, "WORD-F1", 8);
+        tsfi_speroni_conway_cobol_add_field(&cobol_layout, 5, "WORD-F2", 8);
+        tsfi_speroni_conway_cobol_add_field(&cobol_layout, 5, "WORD-DECAY", 8);
+        tsfi_speroni_conway_cobol_add_field(&cobol_layout, 5, "WORD-AMP", 8);
+        tsfi_speroni_conway_cobol_add_field(&cobol_layout, 5, "WORD-WMQ", 4);
+        tsfi_speroni_conway_cobol_add_field(&cobol_layout, 5, "WORD-ABI", 4);
+
+        // Find the field in the COBOL record layout
+        int field_idx = -1;
+        for (size_t i = 0; i < cobol_layout.field_count; i++) {
+            if (strcmp(cobol_layout.fields[i].field_name, field_name) == 0) {
+                field_idx = (int)i;
+                break;
+            }
+        }
+
+        if (field_idx == -1) {
+            tsfi_io_printf(stdout, "[COBOL ERROR] Field '%s' not found in record layout.\n", field_name);
+            return 1;
+        }
+
+        uint32_t offset_val = cobol_layout.fields[field_idx].arithmetized_off;
+        char *target_mem = ((char *)&tpu_registry.registered_words[word_idx]) + offset_val;
+
+        // Alter memory directly based on compiled delay/offset
+        if (strcmp(field_name, "WORD-NAME") == 0 && parsed_str == 3) {
+            strncpy(target_mem, str_val, 31);
+            target_mem[31] = '\0';
+        } else if (strcmp(field_name, "WORD-ID") == 0 && parsed_uint == 3) {
+            *(uint32_t *)target_mem = uint_val;
+        } else if (strcmp(field_name, "WORD-F1") == 0 && parsed_double == 3) {
+            *(double *)target_mem = double_val;
+        } else if (strcmp(field_name, "WORD-F2") == 0 && parsed_double == 3) {
+            *(double *)target_mem = double_val;
+        } else if (strcmp(field_name, "WORD-DECAY") == 0 && parsed_double == 3) {
+            *(double *)target_mem = double_val;
+        } else if (strcmp(field_name, "WORD-AMP") == 0 && parsed_double == 3) {
+            *(double *)target_mem = double_val;
+        } else if (strcmp(field_name, "WORD-WMQ") == 0 && parsed_uint == 3) {
+            *(uint32_t *)target_mem = uint_val;
+        } else if (strcmp(field_name, "WORD-ABI") == 0 && parsed_uint == 3) {
+            *(uint32_t *)target_mem = uint_val;
+        } else {
+            tsfi_io_printf(stdout, "[COBOL ERROR] Invalid field value type.\n");
+            return 1;
+        }
+
+        tsfi_io_printf(stdout, "[COBOL ALTER SUCCESS] Altered memory field '%s' (Offset: %u bytes). New value saved.\n",
+                       field_name, offset_val);
+        return 0;
+    }
+
     // Check if the input is a VoxPL SPEAK command
+
     if (strncmp(input, "SPEAK ", 6) == 0) {
         double f1 = 0.0, f2 = 0.0, decay = 0.0;
         uint32_t word_id = 0;

@@ -818,6 +818,11 @@ tests/test_base0_protocol: tests/test_base0_protocol.c $(CORE_OBJS) $(OBJ_DIR)/v
 tests/test_auncient_integrated_cli: tests/test_auncient_integrated_cli.c $(CORE_OBJS) $(OBJ_DIR)/tsfi_paint.o $(OBJ_DIR)/tsfi_dom.o $(VULKAN_PLUGIN_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+tests/test_auncient_cobol_strategy: tests/test_auncient_cobol_strategy.c $(CORE_OBJS) $(OBJ_DIR)/tsfi_paint.o $(OBJ_DIR)/tsfi_dom.o $(VULKAN_PLUGIN_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+
+
 
 
 tests/test_dilemma_synthesizer: tests/test_dilemma_synthesizer.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
