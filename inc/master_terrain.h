@@ -149,4 +149,7 @@ bool master_terrain_verify_alignment(uintptr_t address, uint32_t alignment, bool
 /* Descriptor-Based Safe Read: Validates bounds before reading data, protecting descriptors from buffer overreads */
 bool master_terrain_read_descriptor_safe(const master_terrain_descriptor_t *desc, const uint8_t *memory, uint32_t index_val, uint8_t *out_val);
 
+/* Reference Count Verification: Protects resource allocations by preventing reference counts from dropping below zero, avoiding premature free states */
+bool master_terrain_verify_ref_count(int32_t current_ref, int32_t decrement_val, bool *out_underrun_detected);
+
 #endif /* MASTER_TERRAIN_H */

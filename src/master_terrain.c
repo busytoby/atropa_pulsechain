@@ -726,3 +726,17 @@ bool master_terrain_read_descriptor_safe(const master_terrain_descriptor_t *desc
     *out_val = memory[desc->address + index_val];
     return true;
 }
+
+/* Reference Count Verification: Protects resource allocations by preventing reference counts from dropping below zero, avoiding premature free states */
+bool master_terrain_verify_ref_count(int32_t current_ref, int32_t decrement_val, bool *out_underrun_detected) {
+    if (!out_underrun_detected) return false;
+
+    /* Underrun detection logic:
+       Flag an error if subtracting the decrement value results in a reference count below zero */
+    if (decrement_val > current_ref) {
+        *out_underrun_detected = true;
+    } else {
+        *out_underrun_detected = false;
+    }
+    return true;
+}
