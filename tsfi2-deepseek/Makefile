@@ -821,6 +821,10 @@ tests/test_auncient_integrated_cli: tests/test_auncient_integrated_cli.c $(CORE_
 tests/test_auncient_cobol_strategy: tests/test_auncient_cobol_strategy.c $(CORE_OBJS) $(OBJ_DIR)/tsfi_paint.o $(OBJ_DIR)/tsfi_dom.o $(VULKAN_PLUGIN_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+tests/test_auncient_lexicon_unit: tests/test_auncient_lexicon_unit.c ../src/auncient_sdk.o
+	$(CC) $(CFLAGS) -o $@ $^ -lm
+
+
 
 
 
