@@ -94,12 +94,12 @@ bool master_terrain_rosenfeld_tensor(double charge, double velocity, double *out
     return true;
 }
 
-/* Ferractor Word Accumulator: Packages multiple 16-bit word values into a single 32-bit register value */
-bool master_terrain_ferractor_pack(const uint16_t *words, uint32_t count, uint32_t *out_packed) {
+/* Ferractor Word Accumulator: Packages multiple 16-bit word values along with Waat and Luo coordinates into a 32-bit register value */
+bool master_terrain_ferractor_pack(const uint16_t *words, uint32_t count, uint64_t waat, uint64_t luo, uint32_t *out_packed) {
     if (!words || count == 0 || !out_packed) return false;
 
-    /* UNIVAC Ferractor magnetic core shift-register packing:
-       Accumulates up to two 16-bit words into a single 32-bit logical register value */
+    /* UNIVAC Ferractor magnetic core shift-register packing with location context:
+       Accumulates up to two 16-bit words, modulated by the Waat and Luo spatial coordinates */
     uint32_t accumulator = 0;
     if (count >= 1) {
         accumulator |= ((uint32_t)words[0] & 0xFFFF);
@@ -107,7 +107,10 @@ bool master_terrain_ferractor_pack(const uint16_t *words, uint32_t count, uint32
     if (count >= 2) {
         accumulator |= (((uint32_t)words[1] & 0xFFFF) << 16);
     }
-    *out_packed = accumulator;
+
+    /* Modulate accumulator state using location context to represent physical spatial influence */
+    uint32_t context_factor = (uint32_t)((waat ^ luo) & 0xFFFFFFFF);
+    *out_packed = accumulator ^ context_factor;
     return true;
 }
 

@@ -33,8 +33,8 @@ bool master_terrain_brainerd_uhf(double frequency, double length, double *out_at
 /* Rosenfeld stress-energy tensor mapping: Computes quantum field stress tensor components for virtual terrain grids */
 bool master_terrain_rosenfeld_tensor(double charge, double velocity, double *out_stress_x, double *out_stress_y);
 
-/* Ferractor Word Accumulator: Packages multiple 16-bit word values into a single 32-bit register value */
-bool master_terrain_ferractor_pack(const uint16_t *words, uint32_t count, uint32_t *out_packed);
+/* Ferractor Word Accumulator: Packages multiple 16-bit word values along with Waat and Luo coordinates into a 32-bit register value */
+bool master_terrain_ferractor_pack(const uint16_t *words, uint32_t count, uint64_t waat, uint64_t luo, uint32_t *out_packed);
 
 #define TRACKER_MAX_WORDS 32
 typedef struct {
