@@ -4,7 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <unistd.h>
 #include "auncient_sdk.h"
+
 
 // Parse and run diagnostics on a test script
 void run_tpu_diagnostics(const char *script_source) {
@@ -77,14 +79,22 @@ int main(void) {
     printf("ANTIGRAVITY TPU DEVELOPMENT DIAGNOSTIC TOOL\n");
     printf("=============================================================\n");
 
-    // Sample diagnostic script
-    const char *test_script = 
-        "# Command Format: WORD [name] [id] [f1] [f2] [decay] [wmq_hex] [abi_hex]\n"
-        "WORD SPK_LOCK 1 440.0 880.0 0.4 10 00\n"
-        "WORD SPK_WRITE 2 350.0 700.0 0.2 00 20\n"
-        "WORD SPK_COLLIDE 3 440.0 880.0 0.4 00 00\n"; // Should collide with SPK_LOCK if word_id matches (but word_id=3 prevents it)
+    char buffer[1024];
+    memset(buffer, 0, sizeof(buffer));
 
-    run_tpu_diagnostics(test_script);
+    // If input is piped on stdin
+    if (!isatty(0)) {
+        size_t bytes_read = fread(buffer, 1, sizeof(buffer) - 1, stdin);
+        buffer[bytes_read] = '\0';
+        run_tpu_diagnostics(buffer);
+    } else {
+        const char *test_script = 
+            "# Command Format: WORD [name] [id] [f1] [f2] [decay] [wmq_hex] [abi_hex]\n"
+            "WORD SPK_LOCK 1 440.0 880.0 0.4 10 00\n"
+            "WORD SPK_WRITE 2 350.0 700.0 0.2 00 20\n"
+            "WORD SPK_COLLIDE 3 440.0 880.0 0.4 00 00\n";
+        run_tpu_diagnostics(test_script);
+    }
 
     printf("=============================================================\n");
     printf("DIAGNOSTIC PROCESSOR COMPLETE\n");
@@ -92,3 +102,4 @@ int main(void) {
 
     return 0;
 }
+
