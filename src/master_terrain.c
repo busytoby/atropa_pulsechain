@@ -403,3 +403,27 @@ bool master_terrain_cain_scheduler(const double *node_risks, const uint32_t *nod
 
     return true;
 }
+
+/* Batchelder Teleprocessing Router: Formats and serializes a SAGE direction center target telemetry payload */
+bool master_terrain_batchelder_teleprocessing(uint32_t target_id, const terrain_cell_t *cell, uint8_t *out_payload, uint32_t *out_size) {
+    if (!cell || !out_payload || !out_size) return false;
+
+    /* SAGE direction center telemetry data packaging:
+       Format: [Target ID (4 bytes)] [Latitude Seed (4 bytes)] [Longitude Seed (4 bytes)] [Physical Bank ID (1 byte)] */
+    uint32_t idx = 0;
+    out_payload[idx++] = (uint8_t)(target_id & 0xFF);
+    out_payload[idx++] = (uint8_t)((target_id >> 8) & 0xFF);
+    out_payload[idx++] = (uint8_t)((target_id >> 16) & 0xFF);
+    out_payload[idx++] = (uint8_t)((target_id >> 24) & 0xFF);
+
+    for (int i = 0; i < 4; i++) {
+        out_payload[idx++] = cell->latitude_bytes[i];
+    }
+    for (int i = 0; i < 4; i++) {
+        out_payload[idx++] = cell->longitude_bytes[i];
+    }
+    out_payload[idx++] = cell->physical_bank;
+
+    *out_size = idx;
+    return true;
+}
