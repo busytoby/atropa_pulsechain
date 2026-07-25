@@ -597,3 +597,18 @@ bool master_terrain_verify_lau(const uint8_t *user_address, const uint8_t *lau_r
     }
     return false; /* Unauthorized user address */
 }
+
+/* Identify Ongoing Losses: Scans active allocations and calculates cumulative resource capacity losses due to attrition */
+bool master_terrain_identify_losses(const double *page_healths, uint32_t count, double failure_threshold, uint32_t *out_loss_count) {
+    if (!page_healths || count == 0 || !out_loss_count) return false;
+
+    /* Loop through pages and count how many have fallen below the failure threshold */
+    uint32_t loss_count = 0;
+    for (uint32_t i = 0; i < count; i++) {
+        if (page_healths[i] < failure_threshold) {
+            loss_count++;
+        }
+    }
+    *out_loss_count = loss_count;
+    return true;
+}

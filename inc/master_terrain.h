@@ -122,4 +122,7 @@ bool master_terrain_verify_scan_criteria(terrain_cell_t *cell, uint32_t threshol
 /* LAU Token Authorization Check: Validates if a user address possesses an authorized LAU token registration mapping */
 bool master_terrain_verify_lau(const uint8_t *user_address, const uint8_t *lau_registry, uint32_t registry_size);
 
+/* Identify Ongoing Losses: Scans active allocations and calculates cumulative resource capacity losses due to attrition */
+bool master_terrain_identify_losses(const double *page_healths, uint32_t count, double failure_threshold, uint32_t *out_loss_count);
+
 #endif /* MASTER_TERRAIN_H */
