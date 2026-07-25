@@ -1105,18 +1105,19 @@ bool auncient_sdk_batch_exec(sdk_cics_context_t *ctx, const sdk_batched_op_t *op
     return true;
 }
 
-uint64_t auncient_sdk_calculate_transfluxor_hash(double f1, double f2, double decay) {
+uint64_t auncient_sdk_calculate_transfluxor_hash(double f1, double f2, double decay, uint32_t word_id) {
     uint64_t f1_val = (uint64_t)round(f1);
     uint64_t f2_val = (uint64_t)round(f2);
     uint64_t decay_val = (uint64_t)round(decay * 100.0);
-    uint64_t mixed = (f1_val * 1000ULL) + (f2_val * 10ULL) + decay_val;
+    uint64_t mixed = (f1_val * 1000ULL) + (f2_val * 10ULL) + decay_val + (uint64_t)word_id;
     return mixed % 953467954114363ULL; // MotzkinPrime field divisor
 }
 
-bool auncient_sdk_compile_transfluxor_word(auncient_transfluxor_word_t *word, const char *name, double f1, double f2, double decay, uint32_t wmq_cmd, uint32_t abi_op) {
+bool auncient_sdk_compile_transfluxor_word(auncient_transfluxor_word_t *word, const char *name, uint32_t word_id, double f1, double f2, double decay, uint32_t wmq_cmd, uint32_t abi_op) {
     if (!word || !name) return false;
     strncpy(word->name, name, sizeof(word->name) - 1);
     word->name[sizeof(word->name) - 1] = '\0';
+    word->word_id = word_id;
     word->f1 = f1;
     word->f2 = f2;
     word->decay = decay;
@@ -1137,12 +1138,13 @@ bool auncient_sdk_register_transfluxor_word(auncient_transfluxor_registry_t *reg
     if (reg->total_registered >= MAX_REGISTRY_WORDS) return false;
 
     // Check for hash collisions
-    uint64_t new_hash = auncient_sdk_calculate_transfluxor_hash(word->f1, word->f2, word->decay);
+    uint64_t new_hash = auncient_sdk_calculate_transfluxor_hash(word->f1, word->f2, word->decay, word->word_id);
     for (uint32_t i = 0; i < reg->total_registered; i++) {
         uint64_t existing_hash = auncient_sdk_calculate_transfluxor_hash(
             reg->registered_words[i].f1,
             reg->registered_words[i].f2,
-            reg->registered_words[i].decay
+            reg->registered_words[i].decay,
+            reg->registered_words[i].word_id
         );
         if (existing_hash == new_hash) {
             return false; // Collision blocked
@@ -1162,12 +1164,13 @@ bool auncient_sdk_dispatch_transfluxor_word(const auncient_transfluxor_registry_
         return false;
     }
 
-    uint64_t target_hash = auncient_sdk_calculate_transfluxor_hash(word->f1, word->f2, word->decay);
+    uint64_t target_hash = auncient_sdk_calculate_transfluxor_hash(word->f1, word->f2, word->decay, word->word_id);
     for (uint32_t i = 0; i < reg->total_registered; i++) {
         uint64_t existing_hash = auncient_sdk_calculate_transfluxor_hash(
             reg->registered_words[i].f1,
             reg->registered_words[i].f2,
-            reg->registered_words[i].decay
+            reg->registered_words[i].decay,
+            reg->registered_words[i].word_id
         );
         if (existing_hash == target_hash) {
             *feedback_freq = 523.25; // Success tone
@@ -1178,5 +1181,6 @@ bool auncient_sdk_dispatch_transfluxor_word(const auncient_transfluxor_registry_
     *feedback_freq = 110.0; // Failure drone
     return false;
 }
+
 
 

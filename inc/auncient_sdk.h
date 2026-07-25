@@ -221,6 +221,7 @@ bool auncient_sdk_batch_exec(sdk_cics_context_t *ctx, const sdk_batched_op_t *op
 // Transfluxor Word Structure combining physical and logical domains
 typedef struct {
     char name[32];
+    uint32_t word_id; // Unique transfluxor identifier mapping
     double f1;
     double f2;
     double decay;
@@ -237,8 +238,8 @@ typedef struct {
     uint32_t total_registered;
 } auncient_transfluxor_registry_t;
 
-uint64_t auncient_sdk_calculate_transfluxor_hash(double f1, double f2, double decay);
-bool auncient_sdk_compile_transfluxor_word(auncient_transfluxor_word_t *word, const char *name, double f1, double f2, double decay, uint32_t wmq_cmd, uint32_t abi_op);
+uint64_t auncient_sdk_calculate_transfluxor_hash(double f1, double f2, double decay, uint32_t word_id);
+bool auncient_sdk_compile_transfluxor_word(auncient_transfluxor_word_t *word, const char *name, uint32_t word_id, double f1, double f2, double decay, uint32_t wmq_cmd, uint32_t abi_op);
 void auncient_sdk_init_transfluxor_registry(auncient_transfluxor_registry_t *reg);
 bool auncient_sdk_register_transfluxor_word(auncient_transfluxor_registry_t *reg, const auncient_transfluxor_word_t *word);
 bool auncient_sdk_dispatch_transfluxor_word(const auncient_transfluxor_registry_t *reg, const auncient_transfluxor_word_t *word, double *feedback_freq);
