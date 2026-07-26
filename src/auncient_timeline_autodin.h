@@ -242,6 +242,9 @@ typedef struct {
 // Executes an ABI transition on a cell-addressable WinchesterMQ state to modulate its local properties
 void auncient_ansi_cell_transition(AuncientAnsiCell *cell, const char *transition, uint64_t val1, uint64_t val2);
 
+// Dynamically wraps input text into character columns without splitting words across lines
+void auncient_word_wrap_text(const char *input, char *output, int width, int max_rows);
+
 #ifdef __cplusplus
 }
 #endif

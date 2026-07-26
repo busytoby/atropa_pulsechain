@@ -391,6 +391,12 @@ int main(void) {
     assert(test_cell.point.x >= 1.0f); // Coordinate updated by transition displacement
     printf("   ✓ Cell-addressable WinchesterMQ ABI transitions verified.\n");
 
+    // Test word wrapping
+    char wrap_out[50];
+    auncient_word_wrap_text("HELLO WORLD TEST", wrap_out, 6, 3);
+    assert(wrap_out[5] == '\n'); // Wrapped at space
+    printf("   ✓ Word-wrapping paragraph layout engine verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");

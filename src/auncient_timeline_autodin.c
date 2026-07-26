@@ -971,3 +971,53 @@ void auncient_ansi_cell_transition(AuncientAnsiCell *cell, const char *transitio
     cell->point.x += disp_x;
     cell->point.y += disp_y;
 }
+
+void auncient_word_wrap_text(const char *input, char *output, int width, int max_rows) {
+    if (!input || !output || width <= 0 || max_rows <= 0) return;
+
+    int input_len = (int)strlen(input);
+    int input_idx = 0;
+    int output_idx = 0;
+    int current_line_len = 0;
+    int rows_written = 0;
+
+    while (input_idx < input_len && rows_written < max_rows) {
+        int word_start = input_idx;
+        while (input_idx < input_len && input[input_idx] != ' ' && input[input_idx] != '\n') {
+            input_idx++;
+        }
+        int word_len = input_idx - word_start;
+
+        if (word_len > 0) {
+            if (current_line_len + word_len > width) {
+                output[output_idx++] = '\n';
+                rows_written++;
+                current_line_len = 0;
+            }
+
+            for (int i = 0; i < word_len; i++) {
+                output[output_idx++] = input[word_start + i];
+            }
+            current_line_len += word_len;
+        }
+
+        if (input_idx < input_len) {
+            if (input[input_idx] == '\n') {
+                output[output_idx++] = '\n';
+                rows_written++;
+                current_line_len = 0;
+            } else if (input[input_idx] == ' ') {
+                if (current_line_len + 1 <= width) {
+                    output[output_idx++] = ' ';
+                    current_line_len++;
+                } else {
+                    output[output_idx++] = '\n';
+                    rows_written++;
+                    current_line_len = 0;
+                }
+            }
+            input_idx++;
+        }
+    }
+    output[output_idx] = '\0';
+}
