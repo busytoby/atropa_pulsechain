@@ -289,6 +289,20 @@ static void resolve_variant_spec_conflict(const usd_variant_spec_conflict_t *con
     }
 }
 
+typedef struct {
+    char inherits_opinion[32];
+    char variant_opinion[32];
+} usd_inh_variant_conflict_t;
+
+static void resolve_inh_variant_conflict(const usd_inh_variant_conflict_t *conflict, char *resolved_val) {
+    if (strlen(conflict->inherits_opinion) > 0) {
+        strcpy(resolved_val, conflict->inherits_opinion);
+    } else {
+        strcpy(resolved_val, conflict->variant_opinion);
+    }
+}
+
+
 
 
 
@@ -585,6 +599,27 @@ int main(void) {
     resolve_variant_spec_conflict(&vs_conflict_no_var, resolved_vs_no_var);
     assert(strcmp(resolved_vs_no_var, "specialized_base_attrib") == 0);
     printf("   ✓ VariantSet opinion taking precedence over Specializes (S) verified.\n");
+    fflush(stdout);
+
+    // 16. Test Inherits vs Variant Precedence Conflicts
+    printf("[TEST] Testing Inherits vs Variant Precedence Conflicts...\n");
+    fflush(stdout);
+    usd_inh_variant_conflict_t iv_conflict = {
+        .inherits_opinion = "class_inherited_look",
+        .variant_opinion = "variant_look"
+    };
+    char resolved_iv[32] = "";
+    resolve_inh_variant_conflict(&iv_conflict, resolved_iv);
+    assert(strcmp(resolved_iv, "class_inherited_look") == 0);
+
+    usd_inh_variant_conflict_t iv_conflict_no_inh = {
+        .inherits_opinion = "",
+        .variant_opinion = "variant_look"
+    };
+    char resolved_iv_no_inh[32] = "";
+    resolve_inh_variant_conflict(&iv_conflict_no_inh, resolved_iv_no_inh);
+    assert(strcmp(resolved_iv_no_inh, "variant_look") == 0);
+    printf("   ✓ Inherits (I) taking precedence over VariantSet (V) verified.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
