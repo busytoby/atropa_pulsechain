@@ -447,6 +447,24 @@ int main(void) {
     }
 
     // 6. Local Overrides (L - Strongest composition arc)
+    // Local layer includes sub-layers evaluated from weakest to strongest (index 0 to 2)
+    const char *sublayers[3] = {
+        "assets/usd_sublayer_2.dat.bin",
+        "assets/usd_sublayer_1.dat.bin",
+        "assets/usd_sublayer_0.dat.bin"
+    };
+    for (int i = 0; i < 3; i++) {
+        FILE *f_sub = fopen(sublayers[i], "rb");
+        if (f_sub) {
+            USDStageRecord sub_layer;
+            if (fread(&sub_layer, sizeof(sub_layer), 1, f_sub) == 1) {
+                raymarch_mode = (int)sub_layer.active_model;
+                material_variant = (int)sub_layer.material_variant;
+                printf("[USD] LIVRPS: Resolved Sub-layer [%s]\n", sublayers[i]);
+            }
+            fclose(f_sub);
+        }
+    }
     FILE *f_usd_local = fopen("assets/usd_local.dat.bin", "rb");
     if (f_usd_local) {
         USDStageRecord local_layer;
