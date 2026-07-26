@@ -371,8 +371,32 @@ int main(void) {
 
     precompute_morph_cache();
 
-    // USD Composition Resolver: LIVRPS (Local -> VariantSets -> References) Precedence Resolution
-    // 1. References (Weakest layer in our composition stack)
+    // USD Composition Resolver: LIVRPS (Local > Inherits > VariantSets > References > Payloads > Specializes) Precedence Stack
+    // 1. Specializes (S - Weakest composition arc)
+    FILE *f_usd_spec = fopen("assets/usd_special.dat.bin", "rb");
+    if (f_usd_spec) {
+        USDStageRecord spec_layer;
+        if (fread(&spec_layer, sizeof(spec_layer), 1, f_usd_spec) == 1) {
+            raymarch_mode = (int)spec_layer.active_model;
+            material_variant = (int)spec_layer.material_variant;
+            printf("[USD] LIVRPS: Resolved Specializes Layer from assets/usd_special.dat.bin\n");
+        }
+        fclose(f_usd_spec);
+    }
+
+    // 2. Payloads (P)
+    FILE *f_usd_pay = fopen("assets/usd_payload.dat.bin", "rb");
+    if (f_usd_pay) {
+        USDStageRecord pay_layer;
+        if (fread(&pay_layer, sizeof(pay_layer), 1, f_usd_pay) == 1) {
+            raymarch_mode = (int)pay_layer.active_model;
+            material_variant = (int)pay_layer.material_variant;
+            printf("[USD] LIVRPS: Resolved Payload Layer from assets/usd_payload.dat.bin\n");
+        }
+        fclose(f_usd_pay);
+    }
+
+    // 3. References (R)
     FILE *f_usd_ref = fopen("assets/usd_reference.dat.bin", "rb");
     if (f_usd_ref) {
         USDStageRecord ref_layer;
@@ -384,7 +408,7 @@ int main(void) {
         fclose(f_usd_ref);
     }
 
-    // 2. VariantSets & Base Stage (Medium precedence)
+    // 4. VariantSets & Base Stage (V)
     FILE *f_usd_load = fopen("assets/usd_stage.dat.bin", "rb");
     if (f_usd_load) {
         USDStageRecord stage;
@@ -410,7 +434,19 @@ int main(void) {
         }
     }
 
-    // 3. Local Layer Overrides (Strongest layer)
+    // 5. Inherits (I)
+    FILE *f_usd_inh = fopen("assets/usd_class.dat.bin", "rb");
+    if (f_usd_inh) {
+        USDStageRecord inh_layer;
+        if (fread(&inh_layer, sizeof(inh_layer), 1, f_usd_inh) == 1) {
+            raymarch_mode = (int)inh_layer.active_model;
+            material_variant = (int)inh_layer.material_variant;
+            printf("[USD] LIVRPS: Resolved Inherits Layer from assets/usd_class.dat.bin\n");
+        }
+        fclose(f_usd_inh);
+    }
+
+    // 6. Local Overrides (L - Strongest composition arc)
     FILE *f_usd_local = fopen("assets/usd_local.dat.bin", "rb");
     if (f_usd_local) {
         USDStageRecord local_layer;
