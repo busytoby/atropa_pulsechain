@@ -424,3 +424,83 @@ void auncient_couple_spline_to_cloth(SplinePhysNode *spline_node, ClothPoint *cl
     spline_node->py = cloth_point->py;
     spline_node->pz = cloth_point->pz;
 }
+
+float auncient_hermite_interpolate(float p1, float p2, float r1, float r2, float t) {
+    float t2 = t * t;
+    float t3 = t2 * t;
+
+    return p1 * (2.0f * t3 - 3.0f * t2 + 1.0f) +
+           r1 * (t3 - 2.0f * t2 + t) +
+           p2 * (-2.0f * t3 + 3.0f * t2) +
+           r2 * (t3 - t2);
+}
+
+void auncient_tcb_calculate_tangents(TcbKeyframe *keys, int count) {
+    if (!keys || count < 2) return;
+
+    for (int i = 0; i < count; i++) {
+        float pn_1, pn, pn1;
+        pn = keys[i].data;
+
+        if (i == 0) {
+            pn1 = keys[1].data;
+            keys[i].an = (pn1 - pn) * (1.0f - keys[i].tens);
+            keys[i].bn = keys[i].an;
+        } 
+        else if (i == count - 1) {
+            pn_1 = keys[i-1].data;
+            keys[i].an = (pn - pn_1) * (1.0f - keys[i].tens);
+            keys[i].bn = keys[i].an;
+        } 
+        else {
+            pn_1 = keys[i-1].data;
+            pn1 = keys[i+1].data;
+
+            float g1 = (pn - pn_1) * (1.0f + keys[i].bias_val);
+            float g2 = (pn1 - pn) * (1.0f - keys[i].bias_val);
+
+            // Compute entry tangent an (sel == 0 -> f = 0.5)
+            keys[i].an = (g1 + (g2 - g1) * (0.5f + 0.5f * keys[i].cont)) * (1.0f - keys[i].tens);
+            // Compute exit tangent bn (sel == 1 -> f == -0.5)
+            keys[i].bn = (g1 + (g2 - g1) * (0.5f - 0.5f * keys[i].cont)) * (1.0f - keys[i].tens);
+        }
+    }
+}
+
+float auncient_tcb_evaluate(const TcbKeyframe *keys, int count, float frame) {
+    if (!keys || count <= 0) return 0.0f;
+    if (count == 1 || frame <= keys[0].frame) return keys[0].data;
+    if (frame >= keys[count - 1].frame) return keys[count - 1].data;
+
+    int y = -1;
+    for (int x = 0; x < count - 1; x++) {
+        if (frame >= keys[x].frame && frame <= keys[x+1].frame) {
+            y = x;
+            break;
+        }
+    }
+
+    if (y == -1) return keys[count - 1].data;
+
+    float t = (frame - keys[y].frame) / (keys[y+1].frame - keys[y].frame);
+    return auncient_hermite_interpolate(keys[y].data, keys[y+1].data, keys[y].bn, keys[y+1].an, t);
+}
+
+void auncient_xpl_write_spline_register(TcbKeyframe *keys, int max_keys, uint32_t reg_addr, float value) {
+    if (!keys || max_keys <= 0) return;
+
+    // Map address format: 0xF200 + key_index * 8 + property_id
+    uint32_t key_index = (reg_addr - 0xF200) / 8;
+    uint32_t prop_id = (reg_addr - 0xF200) % 8;
+
+    if (key_index >= (uint32_t)max_keys) return;
+
+    switch (prop_id) {
+        case 0: keys[key_index].frame = value; break;
+        case 1: keys[key_index].data = value; break;
+        case 2: keys[key_index].tens = value; break;
+        case 3: keys[key_index].bias_val = value; break;
+        case 4: keys[key_index].cont = value; break;
+        default: break;
+    }
+}

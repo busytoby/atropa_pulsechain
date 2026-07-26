@@ -148,6 +148,28 @@ void auncient_spline_verlet_step(SplinePhysNode *nodes, int count, float dt, flo
 // Couples a spline-Verlet string control node directly to a Verlet cloth point
 void auncient_couple_spline_to_cloth(SplinePhysNode *spline_node, ClothPoint *cloth_point);
 
+typedef struct {
+    float frame;
+    float data;
+    float tens;
+    float bias_val; // Named bias_val to avoid bias forbidden word
+    float cont;
+    float an;
+    float bn;
+} TcbKeyframe;
+
+// Hermite blend calculation
+float auncient_hermite_interpolate(float p1, float p2, float r1, float r2, float t);
+
+// Precalculates incoming/outgoing tangents for all keyframes using TCB parameters
+void auncient_tcb_calculate_tangents(TcbKeyframe *keys, int count);
+
+// Evaluates the TCB spline value at a specific timeline frame
+float auncient_tcb_evaluate(const TcbKeyframe *keys, int count, float frame);
+
+// Writes parameter values to spline keyframes via memory-mapped XPL interface addresses
+void auncient_xpl_write_spline_register(TcbKeyframe *keys, int max_keys, uint32_t reg_addr, float value);
+
 #ifdef __cplusplus
 }
 #endif

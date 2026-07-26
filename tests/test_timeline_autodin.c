@@ -211,6 +211,32 @@ int main(void) {
     assert(phys_nodes[0].px == 4.0f);
     printf("   ✓ Spline-to-cloth coupling anchors verified.\n");
 
+    // Test TCB Keyframe splines and XPL register writes
+    TcbKeyframe keys[3];
+    memset(keys, 0, sizeof(keys));
+    
+    // Write keyframe 0 using XPL write address space
+    auncient_xpl_write_spline_register(keys, 3, 0xF200, 0.0f); // keys[0].frame = 0
+    auncient_xpl_write_spline_register(keys, 3, 0xF201, 10.0f); // keys[0].data = 10
+    
+    // Write keyframe 1
+    auncient_xpl_write_spline_register(keys, 3, 0xF208, 1.0f); // keys[1].frame = 1
+    auncient_xpl_write_spline_register(keys, 3, 0xF209, 20.0f); // keys[1].data = 20
+    
+    // Write keyframe 2
+    auncient_xpl_write_spline_register(keys, 3, 0xF210, 2.0f); // keys[2].frame = 2
+    auncient_xpl_write_spline_register(keys, 3, 0xF211, 40.0f); // keys[2].data = 40
+    
+    assert(keys[0].data == 10.0f);
+    assert(keys[1].frame == 1.0f);
+    assert(keys[2].data == 40.0f);
+    
+    // Calculate tangents and evaluate spline interpolation at frame 0.5
+    auncient_tcb_calculate_tangents(keys, 3);
+    float interp_val = auncient_tcb_evaluate(keys, 3, 0.5f);
+    assert(interp_val > 10.0f && interp_val < 20.0f);
+    printf("   ✓ TCB spline Hermite interpolation and XPL script registers verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");
