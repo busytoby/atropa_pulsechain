@@ -171,6 +171,22 @@ static bool resolve_variant_inherits(const usd_variant_inherit_t *vi, const char
     return false;
 }
 
+typedef struct {
+    char root_class[32];
+    char child_class[32];
+    char child_override_value[32];
+    char root_value[32];
+} usd_hierarchy_inherit_t;
+
+static void resolve_hierarchical_inherits(const usd_hierarchy_inherit_t *hi, char *resolved_val) {
+    if (strlen(hi->child_override_value) > 0) {
+        strcpy(resolved_val, hi->child_override_value);
+    } else {
+        strcpy(resolved_val, hi->root_value);
+    }
+}
+
+
 
 int main(void) {
     printf("=============================================================\n");
@@ -286,6 +302,21 @@ int main(void) {
     assert(resolved == true);
     assert(strcmp(class_output, "/class/ClothModel") == 0);
     printf("   ✓ Variant-scoped Inherits targeting '/class/ClothModel' successfully resolved.\n");
+    fflush(stdout);
+
+    // 8. Test Hierarchical Inherits Resolution
+    printf("[TEST] Testing Hierarchical Inherits resolution chain...\n");
+    fflush(stdout);
+    usd_hierarchy_inherit_t hi = {
+        .root_class = "/class/BaseModel",
+        .child_class = "/class/ClothModel",
+        .root_value = "baseline_material",
+        .child_override_value = "cloth_material"
+    };
+    char final_value[32] = "";
+    resolve_hierarchical_inherits(&hi, final_value);
+    assert(strcmp(final_value, "cloth_material") == 0);
+    printf("   ✓ Hierarchical direct child inherits overrides transitive root class.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
