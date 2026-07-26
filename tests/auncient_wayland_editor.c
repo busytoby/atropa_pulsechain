@@ -164,6 +164,7 @@ static uint8_t vic_d021 = 0x06; // Background Color (Blue)
 
 // Interactive Loader state variables
 static float loader_flash_time = 0.0f;
+static float type_activity = 0.0f;
 
 // Glitch Screen Shake displacement coordinates
 static int glitch_x = 0;
@@ -402,10 +403,15 @@ static void redraw_screen(void) {
         }
     }
 
-    // Calculate dynamic scaling factor
-    int scale = win_width / 280;
-    if (scale < 1) scale = 1;
-    if (scale > 6) scale = 6;
+    // Audio Peak Border Pulsing: Scale factor pulses with SID volume
+    int base_scale = win_width / 280;
+    if (base_scale < 1) base_scale = 1;
+    if (base_scale > 6) base_scale = 6;
+    
+    int scale = base_scale;
+    if (sid_chip.volume > 8) {
+        scale = base_scale + 1; // Pulse size up
+    }
     
     // Center document grid dynamically (apply glitch screen shake offsets)
     int grid_w = 40 * 6 * scale;
@@ -461,13 +467,19 @@ static void redraw_screen(void) {
             int dist_c = c - cursor_c;
             float dist = sqrtf((float)(dist_r * dist_r + dist_c * dist_c));
             
+            // Typing-Speed Font Color Flasher
             uint32_t color = 0xFFCCCCCC; // Default
-            if (dist < 4.0f) {
-                color = 0xFF00FF00; // Bright green close to cursor
-            } else if (dist < 8.0f) {
-                color = 0xFF00A200; // Medium green
+            if (type_activity > 1.0f) {
+                int type_color_idx = (int)(retro_time * 25.0f + c) & 0x0F;
+                color = color_cycle_lut[type_color_idx]; // Flash text color dynamically when typing fast
             } else {
-                color = 0xFF005500; // Shaded dark green far away
+                if (dist < 4.0f) {
+                    color = 0xFF00FF00; // Bright green close to cursor
+                } else if (dist < 8.0f) {
+                    color = 0xFF00A200; // Medium green
+                } else {
+                    color = 0xFF005500; // Shaded dark green far away
+                }
             }
             
             if (ch == '|') color = 0xFF00FFFF;
@@ -481,6 +493,17 @@ static void redraw_screen(void) {
         }
     }
     
+    // PETSCII Screen Border Frames scrolling around the text canvas margins
+    int frame_y_top = start_y - 12 * scale;
+    int frame_y_bottom = start_y + 15 * 8 * scale + 4 * scale;
+    for (int col = 0; col < 40; col++) {
+        int frame_char_idx = (col + (int)(retro_time * 12.0f)) % 6;
+        char frame_chars[] = "[=#=-]";
+        char ch = frame_chars[frame_char_idx];
+        draw_char(pixels, win_width, win_height, start_x + col * 6 * scale, frame_y_top, ch, 0xFFFFFF00, scale);
+        draw_char(pixels, win_width, win_height, start_x + col * 6 * scale, frame_y_bottom, ch, 0xFFFFFF00, scale);
+    }
+
     // Render PETSCII Portrait / Symbol Art in top-right corner
     int portrait_start_x = win_width - 150 + glitch_x;
     int portrait_start_y = 50 + glitch_y;
@@ -690,6 +713,10 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *wl_keyboard, uin
         redraw_screen();
         return;
     }
+
+    // Keystroke activity acceleration
+    type_activity += 1.2f;
+    if (type_activity > 5.0f) type_activity = 5.0f;
 
     char typed_char = '\0';
     if (key == 28) { // Enter key -> Newline / Commit history transaction
@@ -958,6 +985,11 @@ int main(void) {
         // Decrease active loader flash duration
         if (loader_flash_time > 0.0f) {
             loader_flash_time -= dt;
+        }
+
+        // Decay keystroke activity level
+        if (type_activity > 0.0f) {
+            type_activity -= dt * 2.5f;
         }
 
         // Animate 3D Starfield coordinates
