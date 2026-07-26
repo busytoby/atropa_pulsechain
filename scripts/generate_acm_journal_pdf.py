@@ -217,7 +217,12 @@ def inline_md_to_html(text):
     new_parts = []
     for idx, part in enumerate(parts):
         if idx % 2 == 1:
-            new_parts.append(f'<font face="Courier" color="#0077b6"><b>{part}</b></font>')
+            wrapped = ""
+            for c_idx, char in enumerate(part):
+                wrapped += char
+                if c_idx > 0 and c_idx % 8 == 0 and c_idx < len(part) - 1:
+                    wrapped += "\u200B"
+            new_parts.append(f'<font face="Courier" color="#0077b6"><b>{wrapped}</b></font>')
         else:
             if part.count('**') % 2 == 0:
                 bold_parts = part.split('**')
@@ -398,14 +403,32 @@ def render_mermaid_flowchart(lines, col_width):
     return d
 
 def render_standard_code_block(code_lines, col_width, body_style):
-    code_text = ''.join(code_lines)
+    # Dynamically wrap lines that cannot fit even at minimum font size
+    min_font = 3.2
+    char_w = 0.6
+    max_chars = max(15, int((col_width - 8.0) / (min_font * char_w)))
+    
+    wrapped_lines = []
+    for line in code_lines:
+        line_strip = line.rstrip('\r\n')
+        if len(line_strip) <= max_chars:
+            wrapped_lines.append(line)
+        else:
+            start = 0
+            while start < len(line_strip):
+                chunk = line_strip[start:start + max_chars]
+                if start > 0:
+                    wrapped_lines.append("  ↳ " + chunk + "\n")
+                else:
+                    wrapped_lines.append(chunk + "\n")
+                start += max_chars
+                
+    code_text = ''.join(wrapped_lines)
     from reportlab.platypus import Preformatted
     
-    # Calculate the maximum line length to dynamically scale font size
-    max_len = max((len(line.rstrip('\r\n')) for line in code_lines), default=30)
+    # Calculate the maximum line length of wrapped lines to dynamically scale font size
+    max_len = max((len(line.rstrip('\r\n')) for line in wrapped_lines), default=30)
     
-    # Approximate monospace character width to fit within column margins
-    char_w = 0.6
     font_size = min(6.0, (col_width - 8.0) / float(max_len * char_w))
     font_size = max(3.2, font_size)
     leading = font_size + 1.2
