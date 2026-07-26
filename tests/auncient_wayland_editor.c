@@ -135,6 +135,24 @@ static uint8_t vic_d016 = 0;    // Fine scroll shift (0-7 pixels)
 static uint8_t vic_d020 = 0x05; // Border Color (Purple)
 static uint8_t vic_d021 = 0x06; // Background Color (Blue)
 
+// SID Audio Chip Register Emulation
+typedef struct {
+    uint16_t freq;
+    uint16_t pw;
+    uint8_t ctrl;
+    uint8_t adsr[2];
+} SidVoice;
+
+static struct {
+    SidVoice voices[3];
+    uint16_t filter_freq;
+    uint8_t filter_ctrl;
+    uint8_t volume;
+} sid_chip;
+
+static int sid_arp_step = 0;
+static const uint16_t sid_arp_notes[3] = {0x1100, 0x1500, 0x1A00}; // C-4, E-4, G-4 equivalent frequencies
+
 // Binary History Record (No Mocking)
 typedef struct {
     uint32_t transaction_id;
@@ -279,7 +297,7 @@ static void redraw_screen(void) {
     float scroll_x_total = retro_time * scroll_x_speed;
     int base_char_idx = (int)(scroll_x_total / 18.0f) % strlen(scroller_text);
     int pixel_shift = (int)fmodf(scroll_x_total, 18.0f);
-    int scroller_y_base = win_height - 90;
+    int scroller_y_base = win_height - 120;
     
     for (int col = 0; col < 70; col++) {
         int char_idx = (base_char_idx + col) % strlen(scroller_text);
@@ -291,6 +309,14 @@ static void redraw_screen(void) {
     // Display header details
     draw_string(pixels, win_width, win_height, 100, 30, "AUNCIENT WAYLAND VULKAN MARKDOWN EDITOR", 0xFF00FF00, 2);
     
+    // Render Simulated SID Chip register state array
+    char sid_buf[256];
+    snprintf(sid_buf, sizeof(sid_buf), 
+             "SID AUDIO REGISTERS: V1_FREQ=0x%04X V2_PW=0x%04X ADSR=0x%02X%02X", 
+             sid_chip.voices[0].freq, sid_chip.voices[1].pw,
+             sid_chip.voices[0].adsr[0], sid_chip.voices[0].adsr[1]);
+    draw_string(pixels, win_width, win_height, 100, win_height - 65, sid_buf, 0xFF00FFFF, 2);
+
     char help_buf[256];
     snprintf(help_buf, sizeof(help_buf), 
              "SCALE: %d - VIC-II: d012=%d d016=%d d020=%d - ESC TO QUIT", 
@@ -445,6 +471,11 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *wl_keyboard, uin
     if (typed_char && doc_len < (int)sizeof(doc_buf) - 1) {
         doc_buf[doc_len++] = typed_char;
         doc_buf[doc_len] = '\0';
+        
+        // Trigger a pitch sweep on simulated SID Voice 1 when typing
+        sid_chip.voices[0].freq = 0x2200 + (doc_len * 32);
+        sid_chip.voices[0].ctrl = 0x21; // Triangle waveform start
+        
         redraw_screen();
     }
 }
@@ -510,6 +541,13 @@ static const struct wl_registry_listener registry_listener = {
 };
 
 int main(void) {
+    // Initialize simulated SID chip register defaults
+    sid_chip.voices[0].adsr[0] = 0x21; // Attack / Decay
+    sid_chip.voices[0].adsr[1] = 0xF5; // Sustain / Release
+    sid_chip.voices[1].adsr[0] = 0x42;
+    sid_chip.voices[1].adsr[1] = 0x99;
+    sid_chip.volume = 0x0F;
+
     struct wl_display *display = wl_display_connect(NULL);
     if (!display) {
         fprintf(stderr, "[ERROR] Connect to Wayland compositor failed.\n");
@@ -574,6 +612,19 @@ int main(void) {
         // Mutate simulated VIC-II hardware register states
         vic_d016 = (uint8_t)(retro_time * 8.0f) & 0x07; // 0-7 pixel fine scroll shift
         vic_d012 = 120 + (uint8_t)(sinf(retro_time * 2.0f) * 20.0f); // Modulate raster split line
+        
+        // Run simulated 50Hz SID playroutine updates
+        static float last_sid_tick = 0.0f;
+        if (retro_time - last_sid_tick >= 0.020f) { // 50Hz Interval
+            last_sid_tick = retro_time;
+            
+            // 3-note arpeggiator step loop on Voice 1
+            sid_arp_step = (sid_arp_step + 1) % 3;
+            sid_chip.voices[0].freq = sid_arp_notes[sid_arp_step] + (int)(sinf(retro_time * 5.0f) * 200.0f);
+            
+            // Pulse Width LFO sweep modulation on Voice 2
+            sid_chip.voices[1].pw = 0x0400 + (uint16_t)(sinf(retro_time * 3.0f) * 512.0f + 512.0f);
+        }
         
         redraw_screen();
     }
