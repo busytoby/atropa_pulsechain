@@ -15,6 +15,14 @@ typedef struct {
     bool triggered;
 } TimelineEvent;
 
+typedef struct {
+    uint32_t account_id;
+    uint8_t clearance_level;
+    uint32_t balance_saat;
+    uint32_t verified_dna_hash;
+    bool is_active;
+} HoganAccount;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,6 +32,9 @@ void auncient_timeline_process(TimelineEvent *events, int count, float current_t
 
 // Reconciles asset integrity with the Hogan transaction registry before staging to Vulkan
 bool auncient_hogan_reconcile_asset(uint32_t asset_id, const uint8_t *dna_bytes, int size);
+
+// Registers a .dna asset as a first-class Hogan account holder
+bool auncient_hogan_register_account(uint32_t account_id, const uint8_t *dna_bytes, int size, HoganAccount *account_out);
 
 #ifdef __cplusplus
 }

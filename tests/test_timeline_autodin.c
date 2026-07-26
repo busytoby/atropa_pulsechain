@@ -35,7 +35,17 @@ int main(void) {
     uint8_t mock_dna[4] = {0x12, 0x34, 0x56, 0x78};
     bool reconciled = auncient_hogan_reconcile_asset(999, mock_dna, 4);
     assert(reconciled);
+    assert(reconciled);
     printf("   ✓ Hogan transaction consensus verified.\n");
+
+    // 4. Hogan Account Registration Test
+    HoganAccount account;
+    bool registered = auncient_hogan_register_account(777, mock_dna, 4, &account);
+    assert(registered);
+    assert(account.account_id == 777);
+    assert(account.balance_saat == 1000000);
+    assert(account.is_active == true);
+    printf("   ✓ First-class Hogan account holder registration verified.\n");
 
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");

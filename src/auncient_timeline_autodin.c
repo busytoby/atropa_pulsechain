@@ -34,3 +34,22 @@ bool auncient_hogan_reconcile_asset(uint32_t asset_id, const uint8_t *dna_bytes,
     
     return false;
 }
+
+bool auncient_hogan_register_account(uint32_t account_id, const uint8_t *dna_bytes, int size, HoganAccount *account_out) {
+    if (!dna_bytes || size <= 0 || !account_out) return false;
+
+    // Calculate DNA signature hash using FNV-1a
+    uint32_t hash = 0x811C9DC5;
+    for (int i = 0; i < size; i++) {
+        hash = (hash ^ dna_bytes[i]) * 0x01000193;
+    }
+
+    // Populate first-class Hogan account parameters
+    account_out->account_id = account_id;
+    account_out->clearance_level = 1; // Default security clearance
+    account_out->balance_saat = 1000000; // Initialize with 1M Saat balance
+    account_out->verified_dna_hash = hash;
+    account_out->is_active = true;
+
+    return true;
+}
