@@ -12,3 +12,10 @@ class "AuncientTextureAPI" (
     float stiffness = 0.5
     string texture = "cloth"
 }
+
+class "AuncientPhysicsAPI" (
+    inherits = </API>
+) {
+    float mass = 10.0
+    float damping = 0.1
+}
