@@ -185,6 +185,7 @@ static struct {
 } sid_chip;
 
 static int sid_arp_step = 0;
+static bool voice_active[3] = {true, true, true};
 
 // 4 different compiled SID tunes (Tune 3 is hidden!)
 static const uint16_t sid_tunes[4][3] = {
@@ -523,19 +524,22 @@ static void redraw_screen(void) {
     // Render Simulated SID Chip register state array and active tune info
     char sid_buf[256];
     snprintf(sid_buf, sizeof(sid_buf), 
-             "SID TUNE %d %s | FREQ=0x%04X PW=0x%04X ADSR=0x%02X%02X VOL=%d", 
+             "SID TUNE %d %s | FREQ=0x%04X PW=0x%04X ADSR=0x%02X%02X VOL=%d | V1:%s V2:%s V3:%s", 
              active_tune, (active_tune == 3) ? "(HIDDEN UNLOCKED!)" : "(ACTIVE)",
              sid_chip.voices[0].freq, sid_chip.voices[1].pw,
              sid_chip.voices[0].adsr[0], sid_chip.voices[0].adsr[1],
-             sid_chip.volume);
+             sid_chip.volume,
+             voice_active[0] ? "ON" : "OFF",
+             voice_active[1] ? "ON" : "OFF",
+             voice_active[2] ? "ON" : "OFF");
     draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 65 + glitch_y, sid_buf, 0xFF00FFFF, 2);
 
     // Initials Anagram Mapping: Alternate "TSN" and "TNS" dynamically every second
     const char *initials = ((int)retro_time % 2 == 0) ? "TSN" : "TNS";
     char help_buf[256];
     snprintf(help_buf, sizeof(help_buf), 
-             "SCALE: %d - VIC-II: d012=%d - TRIBUTE: %s - PRESS '#' TO CYCLE TUNES", 
-             scale, vic_d012, initials);
+             "VIC-II: d012=%d - TRIBUTE: %s - PRESS '#' FOR TUNES | KEYS '1'-'3' TO MUTE VOICES", 
+             vic_d012, initials);
     draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 35 + glitch_y, help_buf, 0xFFFFFF00, 2);
     
     wl_surface_attach(surface, wl_buffers[current_buffer_idx], 0, 0);
@@ -613,6 +617,24 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *wl_keyboard, uin
     if (key == 1) { // ESC key scancode -> Exit
         running = false;
         printf("[INFO] Escape key pressed. Editor shutting down...\n");
+        return;
+    }
+
+    // Toggle simulated audio voices (scancodes: 2='1', 3='2', 4='3')
+    if (key == 2) {
+        voice_active[0] = !voice_active[0];
+        printf("[AUDIO] Voice 1 toggled: %s\n", voice_active[0] ? "ON" : "OFF");
+        redraw_screen();
+        return;
+    } else if (key == 3) {
+        voice_active[1] = !voice_active[1];
+        printf("[AUDIO] Voice 2 toggled: %s\n", voice_active[1] ? "ON" : "OFF");
+        redraw_screen();
+        return;
+    } else if (key == 4) {
+        voice_active[2] = !voice_active[2];
+        printf("[AUDIO] Voice 3 toggled: %s\n", voice_active[2] ? "ON" : "OFF");
+        redraw_screen();
         return;
     }
 
@@ -711,8 +733,10 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *wl_keyboard, uin
         doc_buf[doc_len] = '\0';
         
         // Trigger pitch sweeps on simulated SID Voice 1 when typing
-        sid_chip.voices[0].freq = 0x2200 + (doc_len * 32);
-        sid_chip.voices[0].ctrl = 0x21; // Triangle waveform start
+        if (voice_active[0]) {
+            sid_chip.voices[0].freq = 0x2200 + (doc_len * 32);
+            sid_chip.voices[0].ctrl = 0x21; // Triangle waveform start
+        }
         
         redraw_screen();
     }
@@ -891,16 +915,24 @@ int main(void) {
         if (retro_time - last_sid_tick >= 0.020f) { // 50Hz Interval
             last_sid_tick = retro_time;
             
-            // 3-note arpeggiator step loop based on active tune selection
-            sid_arp_step = (sid_arp_step + 1) % 3;
-            sid_chip.voices[0].freq = sid_tunes[active_tune][sid_arp_step] + (int)(sinf(retro_time * 5.0f) * 200.0f);
+            // 3-note arpeggiator step loop based on active tune selection (Skip Voice 1 updates if muted)
+            if (voice_active[0]) {
+                sid_arp_step = (sid_arp_step + 1) % 3;
+                sid_chip.voices[0].freq = sid_tunes[active_tune][sid_arp_step] + (int)(sinf(retro_time * 5.0f) * 200.0f);
+            } else {
+                sid_chip.voices[0].freq = 0;
+            }
             
-            // Pulse Width LFO sweep modulation on Voice 2
-            sid_chip.voices[1].pw = 0x0400 + (uint16_t)(sinf(retro_time * 3.0f) * 512.0f + 512.0f);
+            // Pulse Width LFO sweep modulation on Voice 2 (Skip Voice 2 updates if muted)
+            if (voice_active[1]) {
+                sid_chip.voices[1].pw = 0x0400 + (uint16_t)(sinf(retro_time * 3.0f) * 512.0f + 512.0f);
+            } else {
+                sid_chip.voices[1].pw = 0;
+            }
             
             // Logarithmic SID Volume Fader simulation
             int fade_index = ((int)(retro_time * 4.0f)) & 0x0F;
-            sid_chip.volume = log_volume_lut[fade_index]; // Map volume logarithmic fade curve LUT
+            sid_chip.volume = voice_active[2] ? log_volume_lut[fade_index] : 0; // Map volume logarithmic fade curve LUT
         }
         
         redraw_screen();
