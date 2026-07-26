@@ -1,5 +1,7 @@
 #include "auncient_timeline_autodin.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <math.h>
 
 void auncient_timeline_process(TimelineEvent *events, int count, float current_time, sdk_cics_context_t *ctx, const HoganAccount *accounts, int account_count, uint64_t expected_total_saat) {
@@ -558,4 +560,39 @@ void auncient_mesh_generate_normals(ClothVertex *vertices, int vertex_count, con
             vertices[i].nz = 0.0f;
         }
     }
+}
+
+void auncient_termcap_query(AuncientTermcap *tc) {
+    if (!tc) return;
+
+    // Default fallbacks
+    tc->max_colors = 8;
+    tc->cols = 80;
+    tc->rows = 24;
+
+    // Check TERM environment variables to query terminal capabilities
+    const char *term = getenv("TERM");
+    if (term) {
+        if (strstr(term, "256color")) {
+            tc->max_colors = 256;
+        } else if (strstr(term, "color") || strstr(term, "xterm")) {
+            tc->max_colors = 16;
+        }
+    }
+
+    const char *lines = getenv("LINES");
+    if (lines) {
+        tc->rows = atoi(lines);
+    }
+    const char *columns = getenv("COLUMNS");
+    if (columns) {
+        tc->cols = atoi(columns);
+    }
+}
+
+float auncient_calculate_coaxial_kerning(float tension, float target_spacing) {
+    // Dynamic kerning spacing calculation: higher tension forces tighter character layout spacing
+    float factor = 1.0f - (tension * 0.5f);
+    if (factor < 0.1f) factor = 0.1f;
+    return target_spacing * factor;
 }

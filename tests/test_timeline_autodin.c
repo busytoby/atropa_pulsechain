@@ -248,6 +248,19 @@ int main(void) {
     assert(v_normal[0].nz == 1.0f); // Normal points straight up out of XY plane (z-axis)
     printf("   ✓ Smooth vertex normal generation verified.\n");
 
+    // Test termcap capabilities query
+    AuncientTermcap tc;
+    auncient_termcap_query(&tc);
+    assert(tc.max_colors >= 8);
+    assert(tc.cols > 0);
+    assert(tc.rows > 0);
+    printf("   ✓ ANSI Termcap capabilities query verified.\n");
+
+    // Test coaxial kerning spacing updates
+    float spacing = auncient_calculate_coaxial_kerning(0.8f, 2.0f);
+    assert(spacing < 2.0f); // Spacing decreases under tension
+    printf("   ✓ Coaxial kerning character spacing verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");

@@ -173,6 +173,18 @@ float auncient_tcb_evaluate(const TcbKeyframe *keys, int count, float frame);
 // Writes parameter values to spline keyframes via memory-mapped XPL interface addresses
 void auncient_xpl_write_spline_register(TcbKeyframe *keys, int max_keys, uint32_t reg_addr, float value);
 
+typedef struct {
+    int max_colors;
+    int cols;
+    int rows;
+} AuncientTermcap;
+
+// Queries environment variables to initialize console terminal dimensions and color support
+void auncient_termcap_query(AuncientTermcap *tc);
+
+// Calculates dynamic character spacing based on spline string tension values
+float auncient_calculate_coaxial_kerning(float tension, float target_spacing);
+
 #ifdef __cplusplus
 }
 #endif
