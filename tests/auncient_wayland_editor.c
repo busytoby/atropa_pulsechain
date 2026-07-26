@@ -124,46 +124,7 @@ static float type_activity = 0.0f;
 static int glitch_x = 0;
 static int glitch_y = 0;
 
-typedef struct {
-    uint16_t freq;
-    uint16_t pw;
-    uint8_t ctrl;
-    uint8_t adsr[2];
-} SidVoice;
-
-static struct {
-    SidVoice voices[3];
-    uint16_t filter_freq;
-    uint8_t filter_ctrl;
-    uint8_t volume;
-    // Hard Sync & Ring Mod Emulator registers
-    bool hard_sync_enabled;
-    bool ring_mod_enabled;
-} sid_chip;
-
-// Hudson Soft HuC6280 PSG Sound Chip emulation registers
-static struct {
-    struct {
-        uint16_t freq;
-        uint8_t volume;
-        uint8_t pan;
-        uint8_t waveform[32];
-    } channels[6];
-} huc6280_psg;
-
-// Commodore Plus/4 TED MOS 8360 Video/Sound Chip Emulation registers
-static struct {
-    uint8_t ff06; // Control register (Bitmap Mode)
-    uint8_t ff07; // Multicolor register
-    uint8_t ff09; // Raster interrupt status
-    uint8_t ff0a; // Raster line high bit
-    uint8_t ff0b; // Raster line low byte
-    uint8_t ff12; // Bitmap base address page
-    uint8_t ff14; // Attribute/Color RAM address
-    uint8_t ff15; // Voice 2 freq high
-    uint8_t ff16; // Voice 1 control / freq low
-    uint8_t ff19; // Voice 1 freq high
-} ted_chip;
+#include "auncient_wayland_audio.c"
 
 // Pre-computed Morphological character frames (simulating pre-baked sprite assets)
 typedef struct {
@@ -174,22 +135,9 @@ typedef struct {
 
 static MorphFrame morph_cache[6][5];
 
-static int sid_arp_step = 0;
-static bool voice_active[3] = {true, true, true};
 static int current_water_idx = 0;
 static int raymarch_mode = 0;
 static int material_variant = 0;
-
-// 4 different compiled SID tunes (Tune 3 is hidden!)
-static const uint16_t sid_tunes[4][3] = {
-    {0x1100, 0x1500, 0x1A00}, // Tune 0: C-4, E-4, G-4
-    {0x1200, 0x1600, 0x1C00}, // Tune 1: D-4, F-4, A-4
-    {0x1400, 0x1800, 0x1E00}, // Tune 2: E-4, G-4, B-4
-    {0x0800, 0x0C00, 0x1100}  // Tune 3 (Hidden): C-3, G-3, C-4
-};
-
-static int active_tune = 0;
-static bool hidden_unlocked = false;
 
 static char key_history[3] = {'\0', '\0', '\0'};
 
