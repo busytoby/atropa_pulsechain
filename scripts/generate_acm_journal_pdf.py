@@ -309,7 +309,7 @@ def render_standard_code_block(code_lines, col_width, body_style):
     # Approximate monospace character width to fit within column margins
     char_w = 0.6
     font_size = min(6.0, (col_width - 8.0) / float(max_len * char_w))
-    font_size = max(4.0, font_size)
+    font_size = max(3.2, font_size)
     leading = font_size + 1.2
     
     code_style = ParagraphStyle(
@@ -557,7 +557,7 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                 
                 # Determine block width
                 max_len = max((len(bl.rstrip('\r\n')) for bl in block_lines), default=0)
-                is_wide = max_len > 55
+                is_wide = max_len > 70
                 
                 if is_mermaid:
                     m_flowable = render_mermaid_flowchart(block_lines, col_width_1col if is_wide else col_width)
@@ -600,7 +600,7 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                     i += 1
                     
                 max_len = max((len(bl.rstrip('\r\n')) for bl in box_lines), default=0)
-                is_wide = max_len > 55
+                is_wide = max_len > 70
                 
                 if box_lines:
                     if is_wide:
@@ -631,7 +631,7 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                 col_count = 0
                 if table_lines:
                     col_count = len(table_lines[0].split('|')) - 2
-                is_wide = col_count > 3
+                is_wide = col_count > 5
                 
                 if is_wide:
                     flush_art_flowables(art_flowables)
