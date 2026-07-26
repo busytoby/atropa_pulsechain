@@ -220,49 +220,85 @@ def render_sunset_frame(frame, width, height):
     draw.rectangle([cac_x + 20, cac_y - 90, cac_x + 35, cac_y - 60], fill=(0, 160, 0))
 
     # 5. Render Volumetric 3D Glossy Bubbly Font logo of "TSFi/2" centered on the screen
-    # Character spacing is 64. Total width = 6 * 64 = 384 pixels.
-    # To center in 888 width: 888 // 2 - 384 // 2 = 444 - 192 = 252.
     logo_start_x = 252
     logo_start_y = int(height * 0.22)
     char_spacing = 64
     
-    # 3D Elastic breathing/squishing scaling factor over time
-    elastic_scale_x = 4.0 + 0.35 * math.sin(t_val * 4.5)
-    elastic_scale_y = 4.0 - 0.35 * math.sin(t_val * 4.5)
+    # 6502-style Deterministic Physics Simulation (Gravity + Scripted Collisions + Inflation updates)
+    sim_x = [logo_start_x + i * char_spacing for i in range(6)]
+    sim_y = [logo_start_y] * 6
+    sim_vy = [0.0] * 6
+    sim_inflation = [1.0] * 6
+    sim_scale_x = [4.0] * 6
+    sim_scale_y = [4.0] * 6
+    
+    gravity = 0.14
+    ground = 220
+    
+    for f in range(frame):
+        for i in range(6):
+            sim_vy[i] += gravity
+            sim_y[i] += sim_vy[i]
+            
+            sim_inflation[i] += (1.0 - sim_inflation[i]) * 0.02
+            sim_scale_x[i] += (4.0 - sim_scale_x[i]) * 0.1
+            sim_scale_y[i] += (4.0 - sim_scale_y[i]) * 0.1
+            
+            # Ground boundary collision (bounce)
+            if sim_y[i] >= ground:
+                sim_y[i] = ground
+                sim_vy[i] = -sim_vy[i] * 0.65
+                sim_inflation[i] = min(3.0, sim_inflation[i] + 0.45)
+                sim_scale_x[i] = 5.2
+                sim_scale_y[i] = 2.8
+                
+            # Pre-scripted collision triggers (Staggered bounce kicks)
+            kick_tick = 80 + i * 90 + (f // 600) * 600
+            if f == kick_tick:
+                sim_vy[i] = -7.5
+                sim_inflation[i] = min(3.0, sim_inflation[i] + 0.6)
+                sim_scale_x[i] = 2.8
+                sim_scale_y[i] = 5.2
+
     # Calculate Z-depth sorted rendering order for character overlapping (Painter's depth-sorting)
     # Characters float dynamically left-to-right, overlapping as they shift in depth layers.
-    sorted_chars = [(i, math.sin(t_val * 2.5 + i * 1.2)) for i in range(len(BUBBLE_FONT))]
+    sorted_chars = [(i, math.sin(t_val * 2.5 + i * 1.2)) for i in range(6)]
     sorted_chars.sort(key=lambda x: x[1])
     
     # 5a. Render Drop Shadow first in depth order
     for char_idx, depth_z in sorted_chars:
-        depth_offset_x = int(16.0 * math.sin(t_val * 2.2 + char_idx * 0.9))
+        depth_displacement_x = int(16.0 * math.sin(t_val * 2.2 + char_idx * 0.9))
+        elastic_scale_x = sim_scale_x[char_idx]
+        elastic_scale_y = sim_scale_y[char_idx]
         for r in range(16):
             row_bits = BUBBLE_FONT[char_idx][r]
             for c in range(16):
                 if row_bits & (1 << (15 - c)):
-                    wobble_x = int(4.0 * math.sin(t_val * 5.0 + r * 0.5 + c * 0.2)) + depth_offset_x
+                    wobble_x = int(4.0 * math.sin(t_val * 5.0 + r * 0.5 + c * 0.2)) + depth_displacement_x
                     wobble_y = int(3.5 * math.cos(t_val * 4.0 + r * 0.3 + c * 0.3))
                     
-                    px = int(logo_start_x + char_idx * char_spacing + c * elastic_scale_x + wobble_x + 8)
-                    py = int(logo_start_y + r * elastic_scale_y + wobble_y + 8)
+                    px = int(sim_x[char_idx] + c * elastic_scale_x + wobble_x + 8)
+                    py = int(sim_y[char_idx] + r * elastic_scale_y + wobble_y + 8)
                     
                     draw.rectangle([px, py, px + 3, py + 3], fill=(20, 5, 0))
                     
     # 5b. Render Inflated, color cycled main body with specular glint highlights in depth order
     for char_idx, depth_z in sorted_chars:
-        depth_offset_x = int(16.0 * math.sin(t_val * 2.2 + char_idx * 0.9))
+        depth_displacement_x = int(16.0 * math.sin(t_val * 2.2 + char_idx * 0.9))
+        elastic_scale_x = sim_scale_x[char_idx]
+        elastic_scale_y = sim_scale_y[char_idx]
+        current_inflation = sim_inflation[char_idx]
         for r in range(16):
             row_bits = BUBBLE_FONT[char_idx][r]
             prev_row_bits = BUBBLE_FONT[char_idx][r - 1] if r > 0 else 0
             
             for c in range(16):
                 if row_bits & (1 << (15 - c)):
-                    wobble_x = int(4.0 * math.sin(t_val * 5.0 + r * 0.5 + c * 0.2)) + depth_offset_x
+                    wobble_x = int(4.0 * math.sin(t_val * 5.0 + r * 0.5 + c * 0.2)) + depth_displacement_x
                     wobble_y = int(3.5 * math.cos(t_val * 4.0 + r * 0.3 + c * 0.3))
                     
-                    px = int(logo_start_x + char_idx * char_spacing + c * elastic_scale_x + wobble_x)
-                    py = int(logo_start_y + r * elastic_scale_y + wobble_y)
+                    px = int(sim_x[char_idx] + c * elastic_scale_x + wobble_x)
+                    py = int(sim_y[char_idx] + r * elastic_scale_y + wobble_y)
                     
                     dist_sq = 16
                     for dr in range(-2, 3):
@@ -278,8 +314,8 @@ def render_sunset_frame(frame, width, height):
                     is_left_edge = (c == 0) or not (row_bits & (1 << (15 - (c - 1))))
                     is_glossy = is_top_edge and is_left_edge
                     
-                    # Dynamic morphological inflation cycles (simulating assembly dilation/erosion)
-                    inflation = 1.0 + math.sin(t_val * 3.0)
+                    # Dynamic morphological inflation based on physics bounce collisions
+                    inflation = current_inflation
                     if dist_sq > (2.0 * inflation):
                         color = (255, 204, 0)
                     elif dist_sq > (1.0 * inflation):
@@ -290,7 +326,7 @@ def render_sunset_frame(frame, width, height):
                         
                     # Diagonal sheen sweep (from left to right, width of sweep = 12 pixels)
                     sheen_pos = int(t_val * 200.0) % 900 - 200
-                    dist_to_sheen = abs((char_idx * char_spacing + c * 4 + r * 4 + depth_offset_x) - sheen_pos)
+                    dist_to_sheen = abs((char_idx * char_spacing + c * 4 + r * 4 + depth_displacement_x) - sheen_pos)
                     if dist_to_sheen < 12:
                         color = (255, 255, 255)
                         
@@ -383,7 +419,7 @@ def render_sunset_frame(frame, width, height):
 
 def main():
     width, height = 888, 480  # 1.85:1 Aspect Ratio
-    fps = 30
+    fps = FPS
     total_frames = int(fps * DURATION)
     
     video_output = "/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2_bubble_sunset_demo.mp4"
