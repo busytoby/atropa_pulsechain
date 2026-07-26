@@ -132,8 +132,29 @@ static const char *scroller_text = "PAGADATA 2026 RETRO C64 INTRO -- TISSEPAUSE 
 // VIC-II Simulated Register state maps
 static uint8_t vic_d012 = 130;  // Raster split scanline
 static uint8_t vic_d016 = 0;    // Fine scroll shift (0-7 pixels)
-static uint8_t vic_d020 = 0x05; // Border Color (Purple)
 static uint8_t vic_d021 = 0x06; // Background Color (Blue)
+
+// Static 256-entry Sine Lookup Table (LUT)
+static float sine_lut[256];
+
+// Color Cycle Palette LUT
+static const uint32_t color_cycle_lut[16] = {
+    0xFF3A1A4A, 0xFF4A2A5A, 0xFF5A3A6A, 0xFF6A4A7A,
+    0xFF7A5A8A, 0xFF8A6A9A, 0xFF9A7ABA, 0xFF8A6A9A,
+    0xFF7A5A8A, 0xFF6A4A7A, 0xFF5A3A6A, 0xFF4A2A5A,
+    0xFF3A1A4A, 0xFF2A0A3A, 0xFF1A002A, 0xFF2A0A3A
+};
+
+// PETSCII Custom Charset Translation Map LUT
+static const char charset_map_lut[128] = {
+    ['a'] = 'A', ['b'] = 'B', ['c'] = 'C', ['d'] = 'D',
+    ['e'] = 'E', ['f'] = 'F', ['g'] = 'G', ['h'] = 'H',
+    ['i'] = 'I', ['j'] = 'J', ['k'] = 'K', ['l'] = 'L',
+    ['m'] = 'M', ['n'] = 'N', ['o'] = 'O', ['p'] = 'P',
+    ['q'] = 'Q', ['r'] = 'R', ['s'] = 'S', ['t'] = 'T',
+    ['u'] = 'U', ['v'] = 'V', ['w'] = 'W', ['x'] = 'X',
+    ['y'] = 'Y', ['z'] = 'Z'
+};
 
 // Glitch Screen Shake displacement coordinates
 static int glitch_x = 0;
@@ -262,16 +283,19 @@ static void redraw_screen(void) {
     for (int y = 0; y < win_height; y++) {
         uint32_t bg_color = 0xFF222222;
         
-        // High frequency color sweeps relative to time + y scanline
-        float color_sweep = sinf((float)y * 0.1f + retro_time * 45.0f);
+        // High frequency color sweeps relative to time + y scanline (using Sine LUT)
+        int sweep_idx = (int)(y * 0.5f + retro_time * 200.0f) & 0xFF;
+        float color_sweep = sine_lut[sweep_idx];
+        
         if (color_sweep > 0.8f) {
             bg_color = 0xFF882200; // Red-orange sweep band
         } else if (color_sweep < -0.8f) {
             bg_color = 0xFF004488; // Blue sweep band
         } else {
-            // Evaluates VIC-II simulated splits
+            // Evaluates VIC-II simulated splits (using Color Cycle LUT for borders)
             if (y < (int)vic_d012 * 3) {
-                bg_color = (vic_d020 == 0x05) ? 0xFF3a1a4a : 0xFF220033;
+                int pal_idx = (int)(retro_time * 8.0f) & 0x0F;
+                bg_color = color_cycle_lut[pal_idx]; // Cycle border color via LUT
             } else {
                 bg_color = (vic_d021 == 0x06) ? 0xFF1b253d : 0xFF112222;
             }
@@ -306,17 +330,21 @@ static void redraw_screen(void) {
     
     // Render the parsed ANSI grid onto the pixel canvas
     for (int r = 0; r < 15; r++) {
-        // PETSCII-Style Border Splits
+        // PETSCII-Style Border Splits (using Sine LUT)
         int fine_shift = (vic_d016 & 0x07);
-        int row_displace = (int)(sinf((float)r * 0.6f + retro_time * 4.0f) * 3.0f * scale) + fine_shift;
+        int wave_idx = (int)(r * 15.0f + retro_time * 150.0f) & 0xFF;
+        int row_displace = (int)(sine_lut[wave_idx] * 3.0f * scale) + fine_shift;
         
         for (int c = 0; c < 40; c++) {
             char ch = ansi_grid[r * 40 + c];
             
-            // PETSCII Fluid Plasma Waves: Superposition of 2D sine waves
-            float wave1 = sinf((float)c * 0.2f + retro_time * 4.0f);
-            float wave2 = cosf((float)r * 0.3f + retro_time * 3.0f);
-            float wave3 = sinf((float)(c + r) * 0.15f + retro_time * 5.0f);
+            // PETSCII Fluid Plasma Waves: Superposition of 2D sine waves (using Sine LUT)
+            int idx1 = (int)(c * 12.0f + retro_time * 180.0f) & 0xFF;
+            int idx2 = (int)(r * 18.0f + retro_time * 120.0f) & 0xFF;
+            int idx3 = (int)((c + r) * 9.0f + retro_time * 220.0f) & 0xFF;
+            float wave1 = sine_lut[idx1];
+            float wave2 = sine_lut[idx2];
+            float wave3 = sine_lut[idx3];
             float plasma = (wave1 + wave2 + wave3) / 3.0f;
             
             // Only blend plasma into empty background spacing cells to keep document legible
@@ -326,6 +354,10 @@ static void redraw_screen(void) {
                 if (p_idx < 0) p_idx = 0;
                 if (p_idx > 6) p_idx = 6;
                 ch = plasma_chars[p_idx];
+            } else {
+                // Apply PETSCII Custom Charset Mapping LUT for letters
+                char mapped = charset_map_lut[(uint8_t)ch];
+                if (mapped) ch = mapped;
             }
             
             // Dynamic Screen Shading RAM: modulate color based on distance from the cursor
@@ -368,17 +400,18 @@ static void redraw_screen(void) {
         }
     }
     
-    // Render Amoeba Flag Waving effect in top-left corner
+    // Render Amoeba Flag Waving effect in top-left corner (using Sine LUT)
     int flag_start_x = 40 + glitch_x;
     int flag_start_y = 80 + glitch_y;
     for (int fr = 0; fr < 8; fr++) {
-        // Waving Flag displacement offset
-        int flag_displace = (int)(sinf((float)fr * 0.5f + retro_time * 5.0f) * 6.0f);
+        int wave_idx = (int)(fr * 20.0f + retro_time * 220.0f) & 0xFF;
+        int flag_displace = (int)(sine_lut[wave_idx] * 6.0f);
         
         for (int fc = 0; fc < 12; fc++) {
-            // Morphing Amoeba Texture: cellular sin calculation
-            float val1 = sinf((float)fc * 0.4f + retro_time * 3.5f);
-            float val2 = cosf((float)fr * 0.5f + retro_time * 2.5f);
+            int idx1 = (int)(fc * 25.0f + retro_time * 160.0f) & 0xFF;
+            int idx2 = (int)(fr * 30.0f + retro_time * 110.0f) & 0xFF;
+            float val1 = sine_lut[idx1];
+            float val2 = sine_lut[idx2];
             float amoeba = val1 + val2;
             
             char amoeba_char = (amoeba > 0.3f) ? 'o' : (amoeba < -0.3f) ? '.' : ' ';
@@ -390,6 +423,12 @@ static void redraw_screen(void) {
                       amoeba_char, amoeba_color, 2);
         }
     }
+    
+    // Sprite Path Trajectories: Floating invader orbiting dynamically (using Sine LUT)
+    int orbit_step = (int)(retro_time * 80.0f);
+    int sprite_x = win_width / 2 + (int)(sine_lut[orbit_step & 0xFF] * 280.0f);
+    int sprite_y = win_height / 2 + (int)(sine_lut[(orbit_step + 64) & 0xFF] * 160.0f); // +64 steps represents Cosine offset
+    draw_char(pixels, win_width, win_height, sprite_x + glitch_x, sprite_y + glitch_y, '*', 0xFFFF00FF, 3);
     
     // Dynamic scroller speed linked to the active SID tune selection (Interactive speed sync)
     float scroll_x_speed = 30.0f;
@@ -405,7 +444,11 @@ static void redraw_screen(void) {
     for (int col = 0; col < 70; col++) {
         int char_idx = (base_char_idx + col) % strlen(scroller_text);
         char ch = scroller_text[char_idx];
-        int dy = (int)(sinf((float)col * 0.25f + retro_time * 10.0f) * 15.0f);
+        
+        // Sine Scroller height offset calculation via lookup table
+        int lut_step = (col * 10 + (int)(retro_time * 250.0f)) & 0xFF;
+        int dy = (int)(sine_lut[lut_step] * 15.0f);
+        
         draw_char(pixels, win_width, win_height, 40 + col * 18 - pixel_shift + glitch_x, scroller_y_base + dy, ch, 0xFF00FF00, 3);
     }
     
@@ -668,6 +711,11 @@ static const struct wl_registry_listener registry_listener = {
 
 int main(void) {
     srand(time(NULL));
+
+    // Precalculate Sine Lookup Table (LUT) covering full wave cycle
+    for (int i = 0; i < 256; i++) {
+        sine_lut[i] = sinf((float)i * (2.0f * M_PI / 256.0f));
+    }
 
     // Initialize simulated SID chip register defaults
     sid_chip.voices[0].adsr[0] = 0x21; // Attack / Decay
