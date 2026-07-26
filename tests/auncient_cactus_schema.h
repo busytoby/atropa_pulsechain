@@ -6,14 +6,20 @@
 
 typedef struct {
     float density;
-    float stiffness;
-    char texture[32];
 } usd_auncient_cactus_schema_t;
 
 static inline void usd_init_auncient_cactus_schema(usd_auncient_cactus_schema_t *schema) {
     schema->density = 1.00f;
-    schema->stiffness = 0.50f;
-    strcpy(schema->texture, "cloth");
+}
+
+typedef struct {
+    float stiffness;
+    char texture[32];
+} usd_auncient_texture_api_t;
+
+static inline void usd_init_auncient_texture_api(usd_auncient_texture_api_t *api) {
+    api->stiffness = 0.50f;
+    strcpy(api->texture, "cloth");
 }
 
 #endif /* AUNCIENT_CACTUS_SCHEMA_H */

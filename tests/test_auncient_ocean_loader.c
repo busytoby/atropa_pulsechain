@@ -427,11 +427,12 @@ typedef struct {
     float vertex_density;
 } hydra_scene_index_prim_t;
 
-static void hydra_scene_index_sync_delegate(const usd_auncient_cactus_schema_t *schema, const char *path, hydra_scene_index_prim_t *render_prim) {
+static void hydra_scene_index_sync_delegate(const usd_auncient_cactus_schema_t *schema, const usd_auncient_texture_api_t *api, const char *path, hydra_scene_index_prim_t *render_prim) {
     strcpy(render_prim->prim_path, path);
-    strcpy(render_prim->material_type, schema->texture);
+    strcpy(render_prim->material_type, api->texture);
     render_prim->vertex_density = schema->density;
 }
+
 
 typedef struct {
     char listened_path[64];
@@ -974,16 +975,19 @@ int main(void) {
     usd_auncient_cactus_schema_t cactus;
     usd_init_auncient_cactus_schema(&cactus);
     assert(cactus.density == 1.00f);
-    assert(cactus.stiffness == 0.50f);
-    assert(strcmp(cactus.texture, "cloth") == 0);
+
+    usd_auncient_texture_api_t api;
+    usd_init_auncient_texture_api(&api);
+    assert(api.stiffness == 0.50f);
+    assert(strcmp(api.texture, "cloth") == 0);
     
     // Modify schema values
     cactus.density = 2.50f;
-    cactus.stiffness = 0.95f;
-    strcpy(cactus.texture, "stationary_cloth");
+    api.stiffness = 0.95f;
+    strcpy(api.texture, "stationary_cloth");
     assert(cactus.density == 2.50f);
-    assert(cactus.stiffness == 0.95f);
-    assert(strcmp(cactus.texture, "stationary_cloth") == 0);
+    assert(api.stiffness == 0.95f);
+    assert(strcmp(api.texture, "stationary_cloth") == 0);
     printf("   ✓ Custom Auncient Cactus schema codegen validation verified.\n");
     fflush(stdout);
 
@@ -991,7 +995,7 @@ int main(void) {
     printf("[TEST] Testing Hydra Scene Index & Render Delegate Integration...\n");
     fflush(stdout);
     hydra_scene_index_prim_t render_prim;
-    hydra_scene_index_sync_delegate(&cactus, "/World/Cactus", &render_prim);
+    hydra_scene_index_sync_delegate(&cactus, &api, "/World/Cactus", &render_prim);
     assert(strcmp(render_prim.prim_path, "/World/Cactus") == 0);
     assert(strcmp(render_prim.material_type, "stationary_cloth") == 0);
     assert(render_prim.vertex_density == 2.50f);

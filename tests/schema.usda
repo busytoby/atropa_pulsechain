@@ -4,6 +4,11 @@ class "AuncientCactusSchema" (
     inherits = </Typed>
 ) {
     float density = 1.0
+}
+
+class "AuncientTextureAPI" (
+    inherits = </API>
+) {
     float stiffness = 0.5
     string texture = "cloth"
 }

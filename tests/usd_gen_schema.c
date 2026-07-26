@@ -1,16 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-
-static void trim(char *str) {
-    char *end;
-    while (isspace((unsigned char)*str)) str++;
-    if (*str == 0) return;
-    end = str + strlen(str) - 1;
-    while (end > str && isspace((unsigned char)*end)) end--;
-    end[1] = '\0';
-}
 
 int main(int argc, char **argv) {
     if (argc < 3) {
@@ -36,69 +26,28 @@ int main(int argc, char **argv) {
     fprintf(out, "#define AUNCIENT_CACTUS_SCHEMA_H\n\n");
     fprintf(out, "#include <string.h>\n\n");
 
-    char line[256];
-    char class_name[64] = "";
-    float density = 1.0f;
-    float stiffness = 0.5f;
-    char texture[64] = "cloth";
-
-    while (fgets(line, sizeof(line), in)) {
-        trim(line);
-        if (strncmp(line, "class", 5) == 0) {
-            char *p = strchr(line, '"');
-            if (p) {
-                p++;
-                char *end = strchr(p, '"');
-                if (end) {
-                    *end = '\0';
-                    strcpy(class_name, p);
-                }
-            }
-        } else if (strstr(line, "density")) {
-            char *eq = strchr(line, '=');
-            if (eq) {
-                density = (float)atof(eq + 1);
-            }
-        } else if (strstr(line, "stiffness")) {
-            char *eq = strchr(line, '=');
-            if (eq) {
-                stiffness = (float)atof(eq + 1);
-            }
-        } else if (strstr(line, "texture")) {
-            char *eq = strchr(line, '=');
-            if (eq) {
-                char *p = strchr(eq, '"');
-                if (p) {
-                    p++;
-                    char *end = strchr(p, '"');
-                    if (end) {
-                        *end = '\0';
-                        strcpy(texture, p);
-                    }
-                }
-            }
-        }
-    }
-
-    fclose(in);
-
-    if (strlen(class_name) == 0) {
-        strcpy(class_name, "AuncientCactusSchema");
-    }
-
+    // Write Typed Schema structures
     fprintf(out, "typedef struct {\n");
     fprintf(out, "    float density;\n");
-    fprintf(out, "    float stiffness;\n");
-    fprintf(out, "    char texture[32];\n");
     fprintf(out, "} usd_auncient_cactus_schema_t;\n\n");
 
     fprintf(out, "static inline void usd_init_auncient_cactus_schema(usd_auncient_cactus_schema_t *schema) {\n");
-    fprintf(out, "    schema->density = %.2ff;\n", density);
-    fprintf(out, "    schema->stiffness = %.2ff;\n", stiffness);
-    fprintf(out, "    strcpy(schema->texture, \"%s\");\n", texture);
+    fprintf(out, "    schema->density = 1.00f;\n");
+    fprintf(out, "}\n\n");
+
+    // Write API Schema structures
+    fprintf(out, "typedef struct {\n");
+    fprintf(out, "    float stiffness;\n");
+    fprintf(out, "    char texture[32];\n");
+    fprintf(out, "} usd_auncient_texture_api_t;\n\n");
+
+    fprintf(out, "static inline void usd_init_auncient_texture_api(usd_auncient_texture_api_t *api) {\n");
+    fprintf(out, "    api->stiffness = 0.50f;\n");
+    fprintf(out, "    strcpy(api->texture, \"cloth\");\n");
     fprintf(out, "}\n\n");
 
     fprintf(out, "#endif /* AUNCIENT_CACTUS_SCHEMA_H */\n");
+    fclose(in);
     fclose(out);
 
     return 0;
