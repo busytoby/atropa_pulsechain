@@ -411,3 +411,16 @@ void auncient_spline_verlet_step(SplinePhysNode *nodes, int count, float dt, flo
         }
     }
 }
+
+void auncient_couple_spline_to_cloth(SplinePhysNode *spline_node, ClothPoint *cloth_point) {
+    if (!spline_node || !cloth_point) return;
+
+    // Anchor the spline control node to the cloth physical point position
+    spline_node->x = cloth_point->x;
+    spline_node->y = cloth_point->y;
+    spline_node->z = cloth_point->z;
+
+    spline_node->px = cloth_point->px;
+    spline_node->py = cloth_point->py;
+    spline_node->pz = cloth_point->pz;
+}

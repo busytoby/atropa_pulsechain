@@ -202,6 +202,15 @@ int main(void) {
     assert(phys_nodes[0].x != 0.0f || phys_nodes[1].x != 2.0f);
     printf("   ✓ Spline-Verlet physical step integration verified.\n");
 
+    // Test spline to cloth coupling
+    ClothPoint cp;
+    cp.x = 5.0f; cp.y = 10.0f; cp.z = 15.0f;
+    cp.px = 4.0f; cp.py = 9.0f; cp.pz = 14.0f;
+    auncient_couple_spline_to_cloth(&phys_nodes[0], &cp);
+    assert(phys_nodes[0].x == 5.0f);
+    assert(phys_nodes[0].px == 4.0f);
+    printf("   ✓ Spline-to-cloth coupling anchors verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");

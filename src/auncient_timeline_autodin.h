@@ -145,6 +145,9 @@ typedef struct {
 // Updates spline control point positions using Verlet integration and distance constraints
 void auncient_spline_verlet_step(SplinePhysNode *nodes, int count, float dt, float damping, float wind_x, float wind_y, float wind_z);
 
+// Couples a spline-Verlet string control node directly to a Verlet cloth point
+void auncient_couple_spline_to_cloth(SplinePhysNode *spline_node, ClothPoint *cloth_point);
+
 #ifdef __cplusplus
 }
 #endif
