@@ -76,33 +76,7 @@ static const uint8_t font5x7[128][5] = {
     ['Z'] = {0x61, 0x51, 0x49, 0x45, 0x43},
     ['['] = {0x00, 0x7f, 0x41, 0x41, 0x00},
     [']'] = {0x00, 0x41, 0x41, 0x7f, 0x00},
-    ['_'] = {0x40, 0x40, 0x40, 0x40, 0x40},
-    ['a'] = {0x20, 0x54, 0x54, 0x54, 0x78},
-    ['b'] = {0x7f, 0x48, 0x44, 0x44, 0x38},
-    ['c'] = {0x38, 0x44, 0x44, 0x44, 0x20},
-    ['d'] = {0x38, 0x44, 0x44, 0x48, 0x7f},
-    ['e'] = {0x38, 0x54, 0x54, 0x54, 0x18},
-    ['f'] = {0x08, 0x7e, 0x09, 0x01, 0x02},
-    ['g'] = {0x0c, 0x52, 0x52, 0x52, 0x3e},
-    ['h'] = {0x7f, 0x08, 0x04, 0x04, 0x78},
-    ['i'] = {0x00, 0x44, 0x7d, 0x40, 0x00},
-    ['j'] = {0x20, 0x40, 0x44, 0x3d, 0x00},
-    ['k'] = {0x7f, 0x10, 0x28, 0x44, 0x00},
-    ['l'] = {0x00, 0x41, 0x7f, 0x40, 0x00},
-    ['m'] = {0x7c, 0x04, 0x18, 0x04, 0x78},
-    ['n'] = {0x7c, 0x08, 0x04, 0x04, 0x78},
-    ['o'] = {0x38, 0x44, 0x44, 0x44, 0x38},
-    ['p'] = {0x7c, 0x14, 0x14, 0x14, 0x08},
-    ['q'] = {0x08, 0x14, 0x14, 0x18, 0x7c},
-    ['r'] = {0x7c, 0x08, 0x04, 0x04, 0x08},
-    ['s'] = {0x48, 0x54, 0x54, 0x54, 0x20},
-    ['t'] = {0x04, 0x3f, 0x44, 0x40, 0x20},
-    ['u'] = {0x3c, 0x40, 0x40, 0x20, 0x7c},
-    ['v'] = {0x1c, 0x20, 0x40, 0x20, 0x1c},
-    ['w'] = {0x3c, 0x40, 0x30, 0x40, 0x3c},
-    ['x'] = {0x44, 0x28, 0x10, 0x28, 0x44},
-    ['y'] = {0x0c, 0x50, 0x50, 0x50, 0x3c},
-    ['z'] = {0x44, 0x64, 0x54, 0x4c, 0x44}
+    ['_'] = {0x40, 0x40, 0x40, 0x40, 0x40}
 };
 
 static struct wl_compositor *compositor = NULL;
@@ -541,6 +515,32 @@ static const PrebakedFrame prebaked_script[10] = {
     {1, 0, {{4, 342, 150}, {5, 402, 150}}, 2},
     {65, 2, {{0, 102, 150}, {1, 162, 150}}, 2}
 };
+
+static inline float sd_capsule(float px, float py, float pz, float ax, float ay, float az, float bx, float by, float bz, float r) {
+    float pax = px - ax, pay = py - ay, paz = pz - az;
+    float bax = bx - ax, bay = by - ay, baz = bz - az;
+    float h = (pax*bax + pay*bay + paz*baz) / (bax*bax + bay*bay + baz*baz);
+    if (h < 0.0f) h = 0.0f;
+    if (h > 1.0f) h = 1.0f;
+    float dx = pax - bax * h;
+    float dy = pay - bay * h;
+    float dz = paz - baz * h;
+    return sqrtf(dx*dx + dy*dy + dz*dz) - r;
+}
+
+static inline float sd_cactus(float px, float py, float pz) {
+    float d1 = sd_capsule(px, py, pz, 0.0f, -3.5f, 0.0f, 0.0f, 3.5f, 0.0f, 0.8f);
+    float d2 = sd_capsule(px, py, pz, 0.0f, 0.5f, 0.0f, -1.8f, 0.5f, 0.0f, 0.6f);
+    float d3 = sd_capsule(px, py, pz, -1.8f, 0.5f, 0.0f, -1.8f, 2.5f, 0.0f, 0.6f);
+    float d4 = sd_capsule(px, py, pz, 0.0f, -0.5f, 0.0f, 1.8f, -0.5f, 0.0f, 0.6f);
+    float d5 = sd_capsule(px, py, pz, 1.8f, -0.5f, 0.0f, 1.8f, 1.5f, 0.0f, 0.6f);
+    float d = d1;
+    if (d2 < d) d = d2;
+    if (d3 < d) d = d3;
+    if (d4 < d) d = d4;
+    if (d5 < d) d = d5;
+    return d;
+}
 
 static inline uint32_t blend_color_add(uint32_t base, uint32_t add) {
     uint8_t r1 = (base >> 16) & 0xFF;
@@ -1114,30 +1114,30 @@ static void redraw_screen(void) {
         }
     }
  
-    // Simulate real-time 3D Sphere Tracer Ray Marching to populate step count profile
+    // Raymarch rotating 3D Cactus (sd_cactus) to populate step count profile
     uint8_t ray_steps[32];
-    float sphere_z = 8.0f + sinf(retro_time * 4.0f) * 3.0f;
+    float angle = retro_time * 1.2f;
+    float cos_a = cosf(angle);
+    float sin_a = sinf(angle);
+    float ry = sinf(retro_time * 2.0f) * 2.2f;
+    
     for (int col = 0; col < 32; col++) {
-        // Ray setup: parallel orthographic rays
-        float rx = (col - 15.5f) * 0.4f;
-        float ry = 0.0f;
+        float rx = (col - 15.5f) * 0.25f;
         float rz = -5.0f;
         int steps = 0;
         
-        // WinchesterMQ loop emulation
         while (steps < 16) {
             steps++;
-            // SDF evaluation: sphere centered at (0, 0, sphere_z) with radius 3.5
-            float dx = rx;
-            float dy = ry;
-            float dz = rz - sphere_z;
-            float dist = sqrtf(dx*dx + dy*dy + dz*dz) - 3.5f;
+            // Rotate ray coordinate around Y axis
+            float rot_x = rx * cos_a - rz * sin_a;
+            float rot_z = rx * sin_a + rz * cos_a;
+            float dist = sd_cactus(rot_x, ry, rot_z);
             
-            if (dist < 0.05f) break; // Surface hit
-            rz += dist; // Step forward along ray vector
-            if (rz > 15.0f) { steps = 16; break; } // Escaped scene bounds
+            if (dist < 0.05f) break;
+            rz += dist;
+            if (rz > 15.0f) { steps = 16; break; }
         }
-        ray_steps[col] = (uint8_t)(steps * 31 / 16); // Map 16 steps to 0-31 range
+        ray_steps[col] = (uint8_t)(steps * 31 / 16);
     }
  
     // Render 7th diagnostic oscilloscope panel for Ray Marching Step Profiles
