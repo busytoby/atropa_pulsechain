@@ -118,8 +118,8 @@ static int current_buffer_idx = 0;
 static bool running = true;
 
 // Window dimensions
-static int win_width = 1280;
-static int win_height = 720;
+static int win_width = 1024;
+static int win_height = 554;
 
 // Editor Document buffer (Markdown input)
 static char doc_buf[2048] = "# AUNCIENT MD EDITOR\n> TYPE YOUR DOCUMENT HERE\n";
@@ -905,30 +905,30 @@ static void redraw_screen(void) {
         draw_char(pixels, win_width, win_height, px, p_scroller_y - (dyn_scale * 2), ch, 0xFFFFCC00, dyn_scale);
     }
 
-    // 2. Bottom Main Scroller moving LEFT
+    // 2. Bottom Main Scroller moving LEFT (compacted size for widescreen 1.85:1 aspect)
     float scroll_x_speed = 30.0f;
     if (active_tune == 1) scroll_x_speed = 45.0f;
     else if (active_tune == 2) scroll_x_speed = 60.0f;
     else if (active_tune == 3) scroll_x_speed = 90.0f;
     
     float scroll_x_total = retro_time * scroll_x_speed;
-    int base_char_idx = (int)(scroll_x_total / 36.0f) % strlen(decompressed_scroller);
-    int pixel_shift = (int)fmodf(scroll_x_total, 36.0f);
-    int scroller_y_base = win_height - 120 + glitch_y;
+    int base_char_idx = (int)(scroll_x_total / 24.0f) % strlen(decompressed_scroller);
+    int pixel_shift = (int)fmodf(scroll_x_total, 24.0f);
+    int scroller_y_base = win_height - 100 + glitch_y;
     
-    // Calculate number of visible columns based on 36px character spacing
-    int visible_cols = win_width / 36 + 2;
+    // Calculate number of visible columns based on 24px character spacing (scale=2 multicolor)
+    int visible_cols = win_width / 24 + 2;
     for (int col = 0; col < visible_cols; col++) {
         int char_idx = (base_char_idx + col) % strlen(decompressed_scroller);
         char ch = decompressed_scroller[char_idx];
         
         int lut_step = (col * 10 + (int)(retro_time * 250.0f)) & 0xFF;
-        int dy = (int)(sine_lut[lut_step] * 15.0f);
+        int dy = (int)(sine_lut[lut_step] * 10.0f);
         
         // Multi-color charset color wash (Rainbow Chroming)
         uint32_t wash_color = color_cycle_lut[(col + (int)(retro_time * 20.0f)) & 0x0F];
         
-        draw_char(pixels, win_width, win_height, 40 + col * 36 - pixel_shift + glitch_x, scroller_y_base + dy, ch, wash_color, 3);
+        draw_char(pixels, win_width, win_height, 40 + col * 24 - pixel_shift + glitch_x, scroller_y_base + dy, ch, wash_color, 2);
     }
     
     // Display header details
@@ -947,7 +947,7 @@ static void redraw_screen(void) {
              voice_active[0] ? "ON" : "OFF",
              voice_active[1] ? "ON" : "OFF",
              voice_active[2] ? "ON" : "OFF");
-    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 85 + glitch_y, sid_buf, 0xFFFFFF00, 2);
+    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 70 + glitch_y, sid_buf, 0xFFFFFF00, 2);
 
     // Update Hudson Soft PSG register states dynamically based on SID audio track parameters
     huc6280_psg.channels[0].freq = sid_chip.voices[0].freq / 2;
@@ -967,19 +967,19 @@ static void redraw_screen(void) {
         huc6280_psg.channels[5].waveform[i] = (uint8_t)(i < 8 ? 31 : 0); // Pulse
     }
 
-    // Draw 6 channel wavetable oscilloscopes (32x32 pixels each, spaced 80 pixels apart)
+    // Draw 6 channel wavetable oscilloscopes (32x12 pixels each, compacted for 1.85:1 aspect)
     int osc_base_x = 120 + glitch_x;
-    int osc_base_y = win_height - 110 + glitch_y;
+    int osc_base_y = win_height - 60 + glitch_y;
     for (int c = 0; c < 6; c++) {
         // Draw oscilloscope label
         char osc_label[8];
         snprintf(osc_label, sizeof(osc_label), "CH%d", c + 1);
-        draw_string(pixels, win_width, win_height, osc_base_x + c * 80, osc_base_y - 35, osc_label, 0xFF888888, 1);
+        draw_string(pixels, win_width, win_height, osc_base_x + c * 80, osc_base_y - 15, osc_label, 0xFF888888, 1);
         
         // Draw visual waveform line
         for (int col = 0; col < 32; col++) {
             int wave_val = huc6280_psg.channels[c].waveform[(col + (int)(retro_time * 40.0f)) % 32];
-            int py = osc_base_y - (wave_val * 24 / 32); // Scale to 24px height
+            int py = osc_base_y - (wave_val * 12 / 32); // Scale to 12px height
             if (py >= 0 && py < win_height && (osc_base_x + c * 80 + col) < win_width) {
                 pixels[py * win_width + osc_base_x + c * 80 + col] = 0xFF00FF00; // Bright green scope line
             }
@@ -991,7 +991,7 @@ static void redraw_screen(void) {
              "HUDSON HUC6280 PSG | CH1: FREQ=0x%04X VOL=%2d PAN=0x%02X | CH2: FREQ=0x%04X VOL=%2d PAN=0x%02X",
              huc6280_psg.channels[0].freq, huc6280_psg.channels[0].volume, huc6280_psg.channels[0].pan,
              huc6280_psg.channels[1].freq, huc6280_psg.channels[1].volume, huc6280_psg.channels[1].pan);
-    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 65 + glitch_y, psg_buf, 0xFF00FF00, 2);
+    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 50 + glitch_y, psg_buf, 0xFF00FF00, 2);
 
     // Update TED registers dynamically
     ted_chip.ff09 = (ted_chip.ff09 + 1) & 0xFF; // Increment raster status flag (acknowledgment flow)
@@ -1004,7 +1004,7 @@ static void redraw_screen(void) {
              "TED MOS 8360 | ff06=0x%02X ff07=0x%02X ff09=0x%02X ff0b=%3d | SOUND: V1=0x%02X V2=0x%02X",
              ted_chip.ff06, ted_chip.ff07, ted_chip.ff09, ted_chip.ff0b,
              ted_chip.ff19, ted_chip.ff15);
-    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 45 + glitch_y, ted_buf, 0xFF00FFFF, 2);
+    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 35 + glitch_y, ted_buf, 0xFF00FFFF, 2);
 
     // Initials Anagram Mapping: Alternate "TSN" and "TNS" dynamically every second
     const char *initials = ((int)retro_time % 2 == 0) ? "TSN" : "TNS";
