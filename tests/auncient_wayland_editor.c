@@ -320,14 +320,20 @@ static struct wl_buffer *create_shm_buffer(int width, int height, uint32_t **out
 static void draw_char(uint32_t *pixels, int w, int h, int start_x, int start_y, uint8_t ch, uint32_t color, int scale) {
     if (ch >= 128) return;
     
-    // ECM (Extended Background Color Mode) Background Shading (4 static colors selected by char code bits)
-    uint8_t ecm_mode = (ch >> 6) & 0x03;
+    // ECM (Extended Background Color Mode) Background Shading (mapped safely using ASCII ranges to prevent character corruption)
+    uint8_t ecm_mode = (ch >= 'a' && ch <= 'z') ? 1 : ((ch == '|' || ch == '=') ? 2 : 0);
     uint32_t ecm_bg_colors[4] = {0x00000000, 0xFF3C0E00, 0xFF251000, 0xFF051224};
     uint32_t bg_color = ecm_bg_colors[ecm_mode];
     
+    int scale_x = scale;
+    bool is_multicolor = (start_y >= 200);
+    if (is_multicolor) {
+        scale_x = scale * 2; // Double pixel width to mimic 4x8 multicolor pixels
+    }
+    
     if (bg_color != 0x00000000) {
         for (int r = 0; r < 7 * scale; r++) {
-            for (int c = 0; c < 5 * scale; c++) {
+            for (int c = 0; c < 5 * scale_x; c++) {
                 int px = start_x + c;
                 int py = start_y + r;
                 if (px >= 0 && px < w && py >= 0 && py < h) {
@@ -337,15 +343,8 @@ static void draw_char(uint32_t *pixels, int w, int h, int start_x, int start_y, 
         }
     }
 
-    const uint8_t *glyph = font5x7[(int)(ch & 0x3F)]; // Mask out ECM bits
+    const uint8_t *glyph = font5x7[(int)ch]; // Uncorrupted ASCII lookup
     
-    // Hires vs Multicolor raster split mode simulation based on vertical coordinate
-    int scale_x = scale;
-    bool is_multicolor = (start_y >= 200);
-    if (is_multicolor) {
-        scale_x = scale * 2; // Double pixel width to mimic 4x8 multicolor pixels
-    }
-
     for (int col = 0; col < 5; col++) {
         uint8_t byte = glyph[col];
         for (int row = 0; row < 7; row++) {
@@ -366,9 +365,10 @@ static void draw_char(uint32_t *pixels, int w, int h, int start_x, int start_y, 
 
 static void draw_string(uint32_t *pixels, int w, int h, int start_x, int start_y, const char *str, uint32_t color, int scale) {
     int cur_x = start_x;
+    int char_width = (start_y >= 200) ? (6 * scale * 2) : (6 * scale); // Scale character stride in multicolor split
     while (*str) {
         draw_char(pixels, w, h, cur_x, start_y, *str, color, scale);
-        cur_x += 6 * scale;
+        cur_x += char_width;
         str++;
     }
 }
