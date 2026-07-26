@@ -144,6 +144,7 @@ def convert_latex_math_to_html(text):
         (r'\\sum', '∑'),
         (r'\\Delta', 'Δ'),
         (r'\\hbar', 'ℏ'),
+        (r'\\parallel', '∥'),
         (r'\\alpha', 'α'),
         (r'\\beta', 'β'),
         (r'\\gamma', 'γ'),
