@@ -7,12 +7,15 @@
 #include <stdbool.h>
 #include <time.h>
 #include <poll.h>
+#include <fcntl.h>
+#include <sys/mman.h>
 #include <dlfcn.h>
 #include <wayland-client.h>
 #include "xdg-shell-client-protocol.h"
 #include "../src/auncient_timeline_autodin.h"
 
 static struct wl_compositor *compositor = NULL;
+static struct wl_shm *shm = NULL;
 static struct wl_seat *seat = NULL;
 static struct wl_keyboard *keyboard = NULL;
 static struct xdg_wm_base *xdg_wm_base = NULL;
@@ -43,6 +46,32 @@ static PFN_vkCreateDevice pfn_vkCreateDevice = NULL;
 static PFN_vkDestroyDevice pfn_vkDestroyDevice = NULL;
 static PFN_vkDestroySurfaceKHR pfn_vkDestroySurfaceKHR = NULL;
 static PFN_vkDestroyInstance pfn_vkDestroyInstance = NULL;
+
+// SHM Buffer Helper
+static struct wl_buffer *create_shm_buffer(int width, int height, uint32_t **out_pixels) {
+    int stride = width * 4;
+    int size = stride * height;
+    
+    int fd = memfd_create("shm-cics", MFD_CLOEXEC);
+    if (fd < 0) return NULL;
+    if (ftruncate(fd, size) < 0) {
+        close(fd);
+        return NULL;
+    }
+    
+    *out_pixels = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if (*out_pixels == MAP_FAILED) {
+        close(fd);
+        return NULL;
+    }
+    
+    struct wl_shm_pool *pool = wl_shm_create_pool(shm, fd, size);
+    struct wl_buffer *buffer = wl_shm_pool_create_buffer(pool, 0, width, height, stride, WL_SHM_FORMAT_ARGB8888);
+    wl_shm_pool_destroy(pool);
+    close(fd);
+    
+    return buffer;
+}
 
 // XDG Shell listeners
 static void xdg_surface_handle_configure(void *data, struct xdg_surface *xdg_surface, uint32_t serial) {
@@ -153,6 +182,8 @@ static void registry_handle_global(void *data, struct wl_registry *registry, uin
     (void)data;
     if (strcmp(interface, "wl_compositor") == 0) {
         compositor = wl_registry_bind(registry, name, &wl_compositor_interface, version);
+    } else if (strcmp(interface, "wl_shm") == 0) {
+        shm = wl_registry_bind(registry, name, &wl_shm_interface, 1);
     } else if (strcmp(interface, "wl_seat") == 0) {
         seat = wl_registry_bind(registry, name, &wl_seat_interface, version);
         wl_seat_add_listener(seat, &seat_listener, NULL);
@@ -325,7 +356,8 @@ int main(void) {
     
     wl_display_roundtrip(display);
 
-    if (compositor && xdg_wm_base) {
+    struct wl_buffer *buffer = NULL;
+    if (compositor && xdg_wm_base && shm) {
         surface = wl_compositor_create_surface(compositor);
         xdg_surface = xdg_wm_base_get_xdg_surface(xdg_wm_base, surface);
         xdg_surface_add_listener(xdg_surface, &xdg_surface_listener, NULL);
@@ -333,12 +365,28 @@ int main(void) {
         xdg_toplevel = xdg_surface_get_toplevel(xdg_surface);
         xdg_toplevel_add_listener(xdg_toplevel, &xdg_toplevel_listener, NULL);
 
+        // Commit and roundtrip to set up initial configurations
         wl_surface_commit(surface);
         wl_display_roundtrip(display);
         printf("[WAYLAND] Surface and XDG toplevel window opened successfully.\n");
 
         if (init_vulkan_dynamic(display, surface)) {
             printf("[SUCCESS] Vulkan graphics context bound dynamically to Wayland compositor output.\n");
+        }
+
+        // Attach non-empty frame buffer to map/display the window physically on-screen
+        uint32_t *pixels = NULL;
+        buffer = create_shm_buffer(1280, 720, &pixels);
+        if (buffer && pixels) {
+            // Fill background with distinct dark blue terminal color
+            for (int i = 0; i < 1280 * 720; i++) {
+                pixels[i] = 0xFF0000AA; // ARGB full opacity blue
+            }
+            wl_surface_attach(surface, buffer, 0, 0);
+            wl_surface_damage(surface, 0, 0, 1280, 720);
+            wl_surface_commit(surface);
+            wl_display_roundtrip(display);
+            printf("[WAYLAND] SHM frame buffer attached and committed to show window.\n");
         }
     }
 
@@ -365,6 +413,7 @@ int main(void) {
     if (vulkan_lib) dlclose(vulkan_lib);
 
     // Cleanup Wayland resources
+    if (buffer) wl_buffer_destroy(buffer);
     if (xdg_toplevel) xdg_toplevel_destroy(xdg_toplevel);
     if (xdg_surface) xdg_surface_destroy(xdg_surface);
     if (surface) wl_surface_destroy(surface);
@@ -372,6 +421,7 @@ int main(void) {
     if (seat) wl_seat_destroy(seat);
     if (compositor) wl_compositor_destroy(compositor);
     if (xdg_wm_base) xdg_wm_base_destroy(xdg_wm_base);
+    if (shm) wl_shm_destroy(shm);
     wl_registry_destroy(registry);
     wl_display_disconnect(display);
 
