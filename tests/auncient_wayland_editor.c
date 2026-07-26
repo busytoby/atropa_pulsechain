@@ -200,6 +200,20 @@ static struct {
     } channels[6];
 } huc6280_psg;
 
+// Commodore Plus/4 TED MOS 8360 Video/Sound Chip Emulation registers
+static struct {
+    uint8_t ff06; // Control register (Bitmap Mode)
+    uint8_t ff07; // Multicolor register
+    uint8_t ff09; // Raster interrupt status
+    uint8_t ff0a; // Raster line high bit
+    uint8_t ff0b; // Raster line low byte
+    uint8_t ff12; // Bitmap base address page
+    uint8_t ff14; // Attribute/Color RAM address
+    uint8_t ff15; // Voice 2 freq high
+    uint8_t ff16; // Voice 1 control / freq low
+    uint8_t ff19; // Voice 1 freq high
+} ted_chip;
+
 static int sid_arp_step = 0;
 static bool voice_active[3] = {true, true, true};
 
@@ -977,7 +991,20 @@ static void redraw_screen(void) {
              "HUDSON HUC6280 PSG | CH1: FREQ=0x%04X VOL=%2d PAN=0x%02X | CH2: FREQ=0x%04X VOL=%2d PAN=0x%02X",
              huc6280_psg.channels[0].freq, huc6280_psg.channels[0].volume, huc6280_psg.channels[0].pan,
              huc6280_psg.channels[1].freq, huc6280_psg.channels[1].volume, huc6280_psg.channels[1].pan);
-    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 60 + glitch_y, psg_buf, 0xFF00FF00, 2);
+    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 65 + glitch_y, psg_buf, 0xFF00FF00, 2);
+
+    // Update TED registers dynamically
+    ted_chip.ff09 = (ted_chip.ff09 + 1) & 0xFF; // Increment raster status flag (acknowledgment flow)
+    ted_chip.ff0b = vic_d012; // Share VIC-II/TED raster scanline values
+    ted_chip.ff15 = (uint8_t)(sid_chip.voices[1].freq >> 8);
+    ted_chip.ff19 = (uint8_t)(sid_chip.voices[0].freq >> 8);
+
+    char ted_buf[256];
+    snprintf(ted_buf, sizeof(ted_buf),
+             "TED MOS 8360 | ff06=0x%02X ff07=0x%02X ff09=0x%02X ff0b=%3d | SOUND: V1=0x%02X V2=0x%02X",
+             ted_chip.ff06, ted_chip.ff07, ted_chip.ff09, ted_chip.ff0b,
+             ted_chip.ff19, ted_chip.ff15);
+    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 45 + glitch_y, ted_buf, 0xFF00FFFF, 2);
 
     // Initials Anagram Mapping: Alternate "TSN" and "TNS" dynamically every second
     const char *initials = ((int)retro_time % 2 == 0) ? "TSN" : "TNS";
@@ -985,7 +1012,7 @@ static void redraw_screen(void) {
     snprintf(help_buf, sizeof(help_buf), 
              "VIC-II: d012=%d - TRIBUTE: %s - PRESS '#' FOR TUNES | KEYS '1'-'3' TO MUTE VOICES", 
              vic_d012, initials);
-    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 35 + glitch_y, help_buf, 0xFFFFCC00, 2);
+    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 25 + glitch_y, help_buf, 0xFFFFCC00, 2);
     
     wl_surface_attach(surface, wl_buffers[current_buffer_idx], 0, 0);
     wl_surface_damage(surface, 0, 0, win_width, win_height);
@@ -1301,6 +1328,13 @@ int main(void) {
     sid_chip.volume = 0x0F;
     sid_chip.hard_sync_enabled = true;
     sid_chip.ring_mod_enabled = true;
+
+    // Initialize simulated Commodore Plus/4 TED chip register defaults
+    ted_chip.ff06 = 0x28; // Bitmap Mode ON
+    ted_chip.ff07 = 0x18; // Multicolor ON
+    ted_chip.ff12 = 0x20; // IMAGEADDR base page
+    ted_chip.ff14 = 0x78; // Attribute/Color RAM high page
+    ted_chip.ff16 = 0x41; // Voice 1 Square Wave ON
 
     struct wl_display *display = wl_display_connect(NULL);
     if (!display) {
