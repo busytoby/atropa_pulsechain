@@ -88,88 +88,87 @@ def get_ballet_geometry(time_sec):
     body_yaw = 1.0
     body_roll = 0.0
     
-    # 4 legs (Front pair indices 1, Back pair indices 2)
-    t_lthigh1, t_rthigh1 = 0.0, 0.0
-    t_lknee1, t_rknee1 = 0.0, 0.0
-    t_lthigh2, t_rthigh2 = 0.0, 0.0
-    t_lknee2, t_rknee2 = 0.0, 0.0
+    # 8 legs
+    t_lthigh = [0.0]*5
+    t_rthigh = [0.0]*5
+    t_lknee = [0.0]*5
+    t_rknee = [0.0]*5
     
-    # 4 arms (Front pair indices 1, Back pair indices 2)
-    t_luarm1, t_ruarm1 = 0.2, 0.2
-    t_lelbow1, t_relbow1 = 0.3, 0.3
-    t_luarm2, t_ruarm2 = 0.3, 0.3
-    t_lelbow2, t_relbow2 = 0.4, 0.4
+    # 8 arms
+    t_luarm = [0.2]*5
+    t_ruarm = [0.2]*5
+    t_lelbow = [0.3]*5
+    t_relbow = [0.3]*5
     
     m_name = "Ouverture"
     
+    # Distribute phase offsets across the 4 sets of limbs for dynamic overlapping movements
     if movement == 0:
         m_name = "Ouverture (Opening)"
-        t_luarm1 = t_ruarm1 = -0.5 * m_progress + 0.2 * (1.0 - m_progress)
-        t_luarm2 = t_ruarm2 = -0.3 * m_progress + 0.3 * (1.0 - m_progress)
-        t_lelbow1 = t_relbow1 = 0.4 * m_progress + 0.3 * (1.0 - m_progress)
-        t_lelbow2 = t_relbow2 = 0.5 * m_progress + 0.4 * (1.0 - m_progress)
-        
+        for i in range(1, 5):
+            phase = i * 0.2
+            t_luarm[i] = t_ruarm[i] = -0.5 * m_progress + phase
+            t_lelbow[i] = t_relbow[i] = 0.4 * m_progress + phase
+            
     elif movement == 1:
-        m_name = "Plier (Plie 4 Legs)"
+        m_name = "Plier (Plie 8 Legs)"
         plie_amp = math.sin(m_progress * math.pi)
         y_disp -= 0.25 * plie_amp
-        t_lthigh1 = t_rthigh1 = t_lthigh2 = t_rthigh2 = 0.4 * plie_amp
-        t_lknee1 = t_rknee1 = t_lknee2 = t_rknee2 = 0.8 * plie_amp
-        t_luarm1 = t_ruarm1 = -0.1 * plie_amp - 0.5 * (1.0 - plie_amp)
-        t_luarm2 = t_ruarm2 = 0.1 * plie_amp - 0.3 * (1.0 - plie_amp)
-        
+        for i in range(1, 5):
+            t_lthigh[i] = t_rthigh[i] = 0.45 * plie_amp
+            t_lknee[i] = t_rknee[i] = 0.85 * plie_amp
+            
     elif movement == 2:
-        m_name = "Relever & Pointe (4 Legs Pointe)"
+        m_name = "Relever & Pointe (8 Legs Pointe)"
         rise_amp = math.sin(m_progress * math.pi)
-        y_disp += 0.25 * rise_amp
-        t_luarm1 = t_ruarm1 = -0.7 * rise_amp
-        t_luarm2 = t_ruarm2 = -0.5 * rise_amp
-        
+        y_disp += 0.3 * rise_amp
+        for i in range(1, 5):
+            t_luarm[i] = t_ruarm[i] = -0.7 * rise_amp + (i * 0.05)
+            
     elif movement == 3:
-        m_name = "Sauter & Batterie (Leap with 4 Leg Beats)"
+        m_name = "Sauter & Batterie (Leap with 8 Leg Beats)"
         leap_phase = m_progress * math.pi
         y_disp += 1.1 * math.sin(leap_phase)
-        
         click_amp = 0.0
         if 0.25 < m_progress < 0.75:
             click_amp = math.sin((m_progress - 0.25) * 2.0 * math.pi * 2.5)
+        for i in range(1, 5):
+            t_lthigh[i] = 0.35 * click_amp * (1.0 if i % 2 == 0 else -1.0)
+            t_rthigh[i] = -0.35 * click_amp * (1.0 if i % 2 == 0 else -1.0)
             
-        t_lthigh1 = t_lthigh2 = 0.35 * click_amp
-        t_rthigh1 = t_rthigh2 = -0.35 * click_amp
-        
     elif movement == 4:
-        m_name = "Tourner (Pirouette Spin)"
+        m_name = "Tourner (Pirouette 8-Armed Spin)"
         body_yaw = m_progress * 2.0 * math.pi * 2.0 + 1.0
-        t_lthigh1 = t_lthigh2 = 0.75
-        t_lknee1 = t_lknee2 = 1.3
-        
+        for i in range(1, 5):
+            t_lthigh[i] = 0.75
+            t_lknee[i] = 1.3
+            
     elif movement == 5:
-        m_name = "Arabesque (Balance on 2 Legs)"
+        m_name = "Arabesque (Balance on 4 Legs)"
         adagio_amp = math.sin(m_progress * math.pi)
         body_pitch = 0.35 * adagio_amp
-        t_lthigh1 = t_lthigh2 = -0.1 * adagio_amp
-        t_rthigh1 = t_rthigh2 = -0.75 * adagio_amp
-        t_rknee1 = t_rknee2 = 0.3 * adagio_amp
-        t_luarm1 = -0.6 * adagio_amp
-        t_ruarm1 = 0.6 * adagio_amp
-        t_luarm2 = 0.6 * adagio_amp
-        t_ruarm2 = -0.6 * adagio_amp
-        
+        for i in range(1, 5):
+            t_lthigh[i] = -0.1 * adagio_amp
+            t_rthigh[i] = -0.75 * adagio_amp
+            t_rknee[i] = 0.3 * adagio_amp
+            
     elif movement == 6:
         m_name = "Elancer (Darting Split Leap)"
         x_disp = -2.5 + 5.0 * m_progress
         y_disp += 0.5 * math.sin(m_progress * math.pi)
-        t_lthigh1 = t_lthigh2 = -0.5 * math.sin(m_progress * math.pi)
-        t_rthigh1 = t_rthigh2 = 0.5 * math.sin(m_progress * math.pi)
-        
+        for i in range(1, 5):
+            t_lthigh[i] = -0.5 * math.sin(m_progress * math.pi + i * 0.1)
+            t_rthigh[i] = 0.5 * math.sin(m_progress * math.pi + i * 0.1)
+            
     elif movement == 7:
-        m_name = "Reverence (4-Armed Bow)"
+        m_name = "Reverence (8-Armed Bow)"
         bow_amp = math.sin(m_progress * math.pi)
         body_pitch = 0.5 * bow_amp
         y_disp -= 0.15 * bow_amp
-        t_lthigh2 = t_rthigh2 = -0.4 * bow_amp
-        t_luarm1 = t_ruarm1 = t_luarm2 = t_ruarm2 = 0.4 * bow_amp
-        
+        for i in range(1, 5):
+            t_lthigh[i] = -0.4 * bow_amp
+            t_luarm[i] = t_ruarm[i] = 0.45 * bow_amp
+            
     parts = {}
     
     parts["Body"] = {
@@ -178,11 +177,11 @@ def get_ballet_geometry(time_sec):
         "local_pos": (x_disp, 0.55 + y_disp, z_disp),
         "local_rot": (body_pitch, body_yaw, body_roll),
         "shape": "ellipsoid",
-        "size": (0.7, 0.9, 0.75),
+        "size": (0.7, 0.95, 1.05),
         "color": (120, 80, 54)
     }
     
-    head_local_pos = (0.0, 0.95, 0.0)
+    head_local_pos = (0.0, 1.0, 0.0)
     head_local_rot = (0.05 * math.sin(time_sec * 4.0), 0.0, 0.0)
     hx, hy, hz = rotate_x(head_local_pos[0], head_local_pos[1], head_local_pos[2], body_pitch)
     hx, hy, hz = rotate_y(hx, hy, hz, body_yaw)
@@ -218,7 +217,8 @@ def get_ballet_geometry(time_sec):
     
     def add_arm(side, index, uarm_pitch, elbow_pitch, color_u, color_f):
         side_sign = -1.0 if side == "Left" else 1.0
-        z_offset = -0.22 if index == 2 else 0.22 # Front is index 1 (+0.22), Back is index 2 (-0.22)
+        # Index 1: Z = 0.35, Index 2: Z = 0.12, Index 3: Z = -0.12, Index 4: Z = -0.35
+        z_offset = 0.45 - (index - 1) * 0.3
         
         uarm_local_pos = (side_sign * 0.65, 0.35, z_offset)
         uarm_local_rot = (uarm_pitch, 0.0, 0.0)
@@ -233,7 +233,7 @@ def get_ballet_geometry(time_sec):
             "local_pos": uarm_local_pos,
             "local_rot": uarm_local_rot,
             "shape": "ellipsoid",
-            "size": (0.16, 0.26, 0.16),
+            "size": (0.14, 0.24, 0.14),
             "color": color_u
         }
         
@@ -250,13 +250,13 @@ def get_ballet_geometry(time_sec):
             "local_pos": forearm_local_pos,
             "local_rot": forearm_local_rot,
             "shape": "ellipsoid",
-            "size": (0.13, 0.22, 0.13),
+            "size": (0.11, 0.2, 0.11),
             "color": color_f
         }
         
     def add_leg(side, index, thigh_pitch, knee_pitch, color_t, color_c):
         side_sign = -1.0 if side == "Left" else 1.0
-        z_offset = -0.22 if index == 2 else 0.22 # Front is index 1 (+0.22), Back is index 2 (-0.22)
+        z_offset = 0.45 - (index - 1) * 0.3
         
         thigh_local_pos = (side_sign * 0.35, -0.25, z_offset)
         thigh_local_rot = (thigh_pitch, 0.0, 0.0)
@@ -271,7 +271,7 @@ def get_ballet_geometry(time_sec):
             "local_pos": thigh_local_pos,
             "local_rot": thigh_local_rot,
             "shape": "ellipsoid",
-            "size": (0.2, 0.3, 0.2),
+            "size": (0.18, 0.28, 0.18),
             "color": color_t
         }
         
@@ -288,22 +288,22 @@ def get_ballet_geometry(time_sec):
             "local_pos": calf_local_pos,
             "local_rot": calf_local_rot,
             "shape": "ellipsoid",
-            "size": (0.16, 0.25, 0.16),
+            "size": (0.14, 0.22, 0.14),
             "color": color_c
         }
 
-    # Add 4 Arms (Front set = 1, Back set = 2)
-    add_arm("Left", 1, t_luarm1, t_lelbow1, (120, 80, 54), (100, 65, 40))
-    add_arm("Right", 1, t_ruarm1, t_relbow1, (120, 80, 54), (100, 65, 40))
-    add_arm("Left", 2, t_luarm2, t_lelbow2, (110, 72, 48), (90, 58, 35))
-    add_arm("Right", 2, t_ruarm2, t_relbow2, (110, 72, 48), (90, 58, 35))
-    
-    # Add 4 Legs (Front set = 1, Back set = 2)
-    add_leg("Left", 1, t_lthigh1, t_lknee1, (120, 80, 54), (100, 65, 40))
-    add_leg("Right", 1, t_rthigh1, t_rknee1, (120, 80, 54), (100, 65, 40))
-    add_leg("Left", 2, t_lthigh2, t_lknee2, (110, 72, 48), (90, 58, 35))
-    add_leg("Right", 2, t_rthigh2, t_rknee2, (110, 72, 48), (90, 58, 35))
-    
+    # Add 8 Arms and 8 Legs (4 sets on each side)
+    for i in range(1, 5):
+        # Alternate color shades for depth readability
+        shade = 1.0 - (i - 1) * 0.1
+        c_u = (int(120 * shade), int(80 * shade), int(54 * shade))
+        c_f = (int(100 * shade), int(65 * shade), int(40 * shade))
+        
+        add_arm("Left", i, t_luarm[i], t_lelbow[i], c_u, c_f)
+        add_arm("Right", i, t_ruarm[i], t_relbow[i], c_u, c_f)
+        add_leg("Left", i, t_lthigh[i], t_lknee[i], c_u, c_f)
+        add_leg("Right", i, t_rthigh[i], t_rknee[i], c_u, c_f)
+        
     return parts, m_name
 
 def generate_ellipsoid_mesh(size, num_segments=10):
@@ -415,7 +415,7 @@ def main():
                     draw.polygon(poly, fill=fill_color, outline=outline_color)
                     
         # Onscreen HUD
-        draw.text((20, 20), "TSFi2 AUNCIENT 4-ARMED 4-LEGGED BALLET PERFORMANCE", fill=(255, 215, 0))
+        draw.text((20, 20), "TSFi2 AUNCIENT 8-ARMED 8-LEGGED BALLET PERFORMANCE", fill=(255, 215, 0))
         draw.text((20, 35), f"MOVEMENT: {current_movement_name}", fill=(0, 255, 255))
         draw.text((20, 50), f"TIME CODE: {time_sec:.2f}s / {DURATION:.2f}s", fill=(0, 255, 0))
         
@@ -425,7 +425,6 @@ def main():
     process.wait()
     print(f"[SUCCESS] Teddy ballet video rendered: {video_output}")
     
-    # Write fully nested and connected skeleton Xform hierarchy to USDA file
     usda_output = "/home/mariarahel/src/tsfi2/atropa_pulsechain/teddy_ballet_scene.usda"
     
     def write_usda_joint(f, name, samples, indent_level):
@@ -465,54 +464,28 @@ def main():
         f.write("        }\n")
         f.write("    }\n") # close Head
         
-        # 4. Front Left Arm (nested under Body)
-        write_usda_joint(f, "LeftUpperArm1", usd_samples["LeftUpperArm1"], 2)
-        write_usda_joint(f, "LeftForearm1", usd_samples["LeftForearm1"], 3)
-        f.write("        }\n")
-        f.write("    }\n")
-        
-        # 5. Front Right Arm (nested under Body)
-        write_usda_joint(f, "RightUpperArm1", usd_samples["RightUpperArm1"], 2)
-        write_usda_joint(f, "RightForearm1", usd_samples["RightForearm1"], 3)
-        f.write("        }\n")
-        f.write("    }\n")
-        
-        # 6. Back Left Arm (nested under Body)
-        write_usda_joint(f, "LeftUpperArm2", usd_samples["LeftUpperArm2"], 2)
-        write_usda_joint(f, "LeftForearm2", usd_samples["LeftForearm2"], 3)
-        f.write("        }\n")
-        f.write("    }\n")
-        
-        # 7. Back Right Arm (nested under Body)
-        write_usda_joint(f, "RightUpperArm2", usd_samples["RightUpperArm2"], 2)
-        write_usda_joint(f, "RightForearm2", usd_samples["RightForearm2"], 3)
-        f.write("        }\n")
-        f.write("    }\n")
-        
-        # 8. Front Left Leg (nested under Body)
-        write_usda_joint(f, "LeftThigh1", usd_samples["LeftThigh1"], 2)
-        write_usda_joint(f, "LeftCalf1", usd_samples["LeftCalf1"], 3)
-        f.write("        }\n")
-        f.write("    }\n")
-        
-        # 9. Front Right Leg (nested under Body)
-        write_usda_joint(f, "RightThigh1", usd_samples["RightThigh1"], 2)
-        write_usda_joint(f, "RightCalf1", usd_samples["RightCalf1"], 3)
-        f.write("        }\n")
-        f.write("    }\n")
-        
-        # 10. Back Left Leg (nested under Body)
-        write_usda_joint(f, "LeftThigh2", usd_samples["LeftThigh2"], 2)
-        write_usda_joint(f, "LeftCalf2", usd_samples["LeftCalf2"], 3)
-        f.write("        }\n")
-        f.write("    }\n")
-        
-        # 11. Back Right Leg (nested under Body)
-        write_usda_joint(f, "RightThigh2", usd_samples["RightThigh2"], 2)
-        write_usda_joint(f, "RightCalf2", usd_samples["RightCalf2"], 3)
-        f.write("        }\n")
-        f.write("    }\n")
-        
+        # Nested Arm and Leg segments (1 to 4)
+        for i in range(1, 5):
+            write_usda_joint(f, f"LeftUpperArm{i}", usd_samples[f"LeftUpperArm{i}"], 2)
+            write_usda_joint(f, f"LeftForearm{i}", usd_samples[f"LeftForearm{i}"], 3)
+            f.write("        }\n")
+            f.write("    }\n")
+            
+            write_usda_joint(f, f"RightUpperArm{i}", usd_samples[f"RightUpperArm{i}"], 2)
+            write_usda_joint(f, f"RightForearm{i}", usd_samples[f"RightForearm{i}"], 3)
+            f.write("        }\n")
+            f.write("    }\n")
+            
+            write_usda_joint(f, f"LeftThigh{i}", usd_samples[f"LeftThigh{i}"], 2)
+            write_usda_joint(f, f"LeftCalf{i}", usd_samples[f"LeftCalf{i}"], 3)
+            f.write("        }\n")
+            f.write("    }\n")
+            
+            write_usda_joint(f, f"RightThigh{i}", usd_samples[f"RightThigh{i}"], 2)
+            write_usda_joint(f, f"RightCalf{i}", usd_samples[f"RightCalf{i}"], 3)
+            f.write("        }\n")
+            f.write("    }\n")
+            
         f.write("}\n") # close Body
         f.write("}\n") # close scene
         
