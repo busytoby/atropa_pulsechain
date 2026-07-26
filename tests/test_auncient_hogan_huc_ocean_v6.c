@@ -61,11 +61,49 @@ static void synthesize_texture_grid_rgb(huc_ocean_system_t *huc, double phase, i
     }
 }
 
-// 2. Procedural 3D Mesh / Lissajous Pathing
+typedef struct {
+    float x;
+    float y;
+    float z;
+} vertex3d_t;
+
+static void apply_mesh_modifiers(vertex3d_t *vertices, int count, float taper, float twist, float displace) {
+    for (int i = 0; i < count; i++) {
+        // Non-destructive Taper Operator
+        float scale = 1.0f - taper * (vertices[i].z + 1.0f) * 0.5f;
+        vertices[i].x *= scale;
+        vertices[i].y *= scale;
+        
+        // Non-destructive Twist Operator
+        float angle = vertices[i].z * twist;
+        float tx = vertices[i].x * tsfi_texgen_cos(angle) - vertices[i].y * tsfi_texgen_sin(angle);
+        float ty = vertices[i].x * tsfi_texgen_sin(angle) + vertices[i].y * tsfi_texgen_cos(angle);
+        vertices[i].x = tx;
+        vertices[i].y = ty;
+        
+        // Non-destructive Displace Operator
+        vertices[i].x += displace * tsfi_texgen_sin(vertices[i].z * 5.0f);
+        vertices[i].y += displace * tsfi_texgen_cos(vertices[i].z * 5.0f);
+    }
+}
+
+// 2. Procedural 3D Mesh / Lissajous Pathing with Modifier Operators
 static void update_lissajous_mesh(huc_ocean_system_t *huc, double signal) {
-    huc->lissajous_x = tsfi_texgen_sin(signal * 2.5);
-    huc->lissajous_y = tsfi_texgen_cos(signal * 1.8);
-    huc->lissajous_z = tsfi_texgen_sin(signal * 3.2 + 0.5);
+    // Generate initial vertex mapping representing the receptor path
+    vertex3d_t vertices[1] = {
+        {
+            .x = (float)tsfi_texgen_sin(signal * 2.5),
+            .y = (float)tsfi_texgen_cos(signal * 1.8),
+            .z = (float)tsfi_texgen_sin(signal * 3.2 + 0.5)
+        }
+    };
+    
+    // Apply non-destructive operators: Taper (0.2), Twist (0.5), Displace (0.1)
+    apply_mesh_modifiers(vertices, 1, 0.2f, 0.5f, 0.1f);
+    
+    huc->lissajous_x = vertices[0].x;
+    huc->lissajous_y = vertices[0].y;
+    huc->lissajous_z = vertices[0].z;
 }
 
 // 3. Low-Level Tape Ingest process
