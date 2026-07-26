@@ -86,8 +86,8 @@ static void hd_embree_render(uint32_t *pixels, int w, int h, const CoaxialUBO *u
 
     for (int vy = 0; vy < 80; vy++) {
         for (int vx = 0; vx < 80; vx++) {
-            float rx = (vx - 40.0f) * 0.08f;
-            float ry_val = (vy - 40.0f) * 0.08f + ry;
+            float rx = (vx - 40.0f) * 0.11f;
+            float ry_val = (vy - 40.0f) * 0.11f + ry;
             float rz = -5.0f;
             int steps = 0;
             
