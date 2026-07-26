@@ -38,15 +38,65 @@ typedef struct {
     char texture_grid[GRID_SIZE][GRID_SIZE];
 } huc_ocean_system_t;
 
-// 1. Procedural Texture Synthesis (Demoscene feedback coordinates mapping)
+// Deterministic hash function for pseudo-random coordinates
+static uint8_t hash_noise(int x, int y, uint32_t seed) {
+    uint32_t h = (uint32_t)x * 374761393U + (uint32_t)y * 668265263U + seed;
+    h = (h ^ (h >> 13)) * 12741261U;
+    return (uint8_t)(h & 0xFF);
+}
+
+// 1. Procedural Texture Synthesis (Layer-based TexGen with Bilinear Distortion)
 static void synthesize_texture_grid(huc_ocean_system_t *huc, double phase) {
+    uint8_t layer0[GRID_SIZE][GRID_SIZE]; // Base Sine Plasma Layer
+    uint8_t layer1[GRID_SIZE][GRID_SIZE]; // Noise Distortion Map Layer
+    
+    // Step 1: Generate Sine Plasma on Layer 0
+    for (int y = 0; y < GRID_SIZE; y++) {
+        for (int x = 0; x < GRID_SIZE; x++) {
+            double val = 127.5 + 63.75 * sin(x * 1.2 + phase) + 63.75 * cos(y * 1.2 + phase * 0.8);
+            layer0[y][x] = (uint8_t)val;
+        }
+    }
+    
+    // Step 2: Generate Deterministic Noise Map on Layer 1
+    for (int y = 0; y < GRID_SIZE; y++) {
+        for (int x = 0; x < GRID_SIZE; x++) {
+            layer1[y][x] = hash_noise(x, y, 999U);
+        }
+    }
+    
+    // Step 3: Warp Layer 0 using Layer 1 (with Bilinear-style coordinate interpolation & wrap-around tiling)
     const char glyphs[] = " .:-=+*#%@";
     for (int y = 0; y < GRID_SIZE; y++) {
         for (int x = 0; x < GRID_SIZE; x++) {
-            double nx = (double)x / (GRID_SIZE - 1) - 0.5;
-            double ny = (double)y / (GRID_SIZE - 1) - 0.5;
-            double wave = sin(nx * 4.0 + phase) * cos(ny * 4.0 + phase * 0.7);
-            int idx = (int)((wave + 1.0) * 4.5);
+            // Read warp displacements from layer 1
+            double warp_x = (double)layer1[y][x] / 255.0 * 2.0; // range 0 to 2
+            double warp_y = (double)layer1[x][y] / 255.0 * 2.0; // range 0 to 2
+            
+            double target_x = x + warp_x;
+            double target_y = y + warp_y;
+            
+            // Bilinear interpolation bounds
+            int x0 = ((int)target_x) % GRID_SIZE;
+            int x1 = (x0 + 1) % GRID_SIZE;
+            int y0 = ((int)target_y) % GRID_SIZE;
+            int y1 = (y0 + 1) % GRID_SIZE;
+            
+            double dx = target_x - (int)target_x;
+            double dy = target_y - (int)target_y;
+            
+            // Interpolate weights
+            double w00 = (1.0 - dx) * (1.0 - dy);
+            double w10 = dx * (1.0 - dy);
+            double w01 = (1.0 - dx) * dy;
+            double w11 = dx * dy;
+            
+            double interpolated = w00 * layer0[y0][x0] +
+                                 w10 * layer0[y0][x1] +
+                                 w01 * layer0[y1][x0] +
+                                 w11 * layer0[y1][x1];
+                                 
+            int idx = (int)(interpolated / 25.6);
             if (idx < 0) idx = 0;
             if (idx > 9) idx = 9;
             huc->texture_grid[y][x] = glyphs[idx];
