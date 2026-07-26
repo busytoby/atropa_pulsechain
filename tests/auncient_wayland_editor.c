@@ -259,14 +259,18 @@ static void redraw_screen(void) {
         }
     }
     
-    // 2. Dynamic Character-Cell Sinusoidal Scroller
-    int scroller_start_char = (int)(retro_time * 1.5f) % strlen(scroller_text);
+    // 2. Dynamic Character-Cell Sinusoidal Scroller (smooth pixel-by-pixel sliding)
+    float scroll_x_speed = 30.0f; // pixels per second
+    float scroll_x_total = retro_time * scroll_x_speed;
+    int base_char_idx = (int)(scroll_x_total / 18.0f) % strlen(scroller_text);
+    int pixel_shift = (int)fmodf(scroll_x_total, 18.0f);
     int scroller_y_base = win_height - 90;
-    for (int col = 0; col < 60; col++) {
-        int char_idx = (scroller_start_char + col) % strlen(scroller_text);
+    
+    for (int col = 0; col < 70; col++) {
+        int char_idx = (base_char_idx + col) % strlen(scroller_text);
         char ch = scroller_text[char_idx];
         int dy = (int)(sinf((float)col * 0.25f + retro_time * 10.0f) * 15.0f);
-        draw_char(pixels, win_width, win_height, 40 + col * 18, scroller_y_base + dy, ch, 0xFF00FF00, 3);
+        draw_char(pixels, win_width, win_height, 40 + col * 18 - pixel_shift, scroller_y_base + dy, ch, 0xFF00FF00, 3);
     }
     
     // Display header details
