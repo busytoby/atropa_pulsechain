@@ -122,6 +122,14 @@ typedef struct {
     const VkDescriptorPoolSize* pPoolSizes;
 } VkDescriptorPoolCreateInfo;
 
+typedef struct {
+    uint32_t sType;
+    const void* pNext;
+    void* descriptorPool; // Mock VkDescriptorPool handle
+    uint32_t descriptorSetCount;
+    const void* pSetLayouts; // Mock VkDescriptorSetLayout handle array
+} VkDescriptorSetAllocateInfo;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -135,6 +143,7 @@ void auncient_vulkan_materials_build_buffer_info(void *buffer, uint64_t displace
 void auncient_vulkan_materials_build_write_set(void *dst_set, uint32_t binding, VkDescriptorType type, const VkDescriptorBufferInfo *buffer_info, VkWriteDescriptorSet *write_set);
 void auncient_vulkan_materials_build_pool_sizes(int material_count, int instance_count, VkDescriptorPoolSize *sizes, int *size_count);
 void auncient_vulkan_materials_build_pool_info(uint32_t max_sets, const VkDescriptorPoolSize *sizes, int size_count, VkDescriptorPoolCreateInfo *info);
+void auncient_vulkan_materials_build_allocate_info(void *pool, const void *set_layouts, int count, VkDescriptorSetAllocateInfo *info);
 
 #ifdef __cplusplus
 }

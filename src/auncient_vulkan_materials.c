@@ -132,3 +132,13 @@ void auncient_vulkan_materials_build_pool_info(uint32_t max_sets, const VkDescri
     info->poolSizeCount = (uint32_t)size_count;
     info->pPoolSizes = sizes;
 }
+
+void auncient_vulkan_materials_build_allocate_info(void *pool, const void *set_layouts, int count, VkDescriptorSetAllocateInfo *info) {
+    if (!info) return;
+
+    info->sType = 9; // VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO
+    info->pNext = NULL;
+    info->descriptorPool = pool;
+    info->descriptorSetCount = (uint32_t)count;
+    info->pSetLayouts = set_layouts;
+}

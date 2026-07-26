@@ -103,6 +103,16 @@ int main(void) {
     assert(pool_info.pPoolSizes == pool_sizes);
     printf("   ✓ Descriptor pool info builder verified.\n");
 
+    // Test Descriptor Set Allocation info builder
+    VkDescriptorSetAllocateInfo alloc_info;
+    void* mock_pool = (void*)0x7777;
+    auncient_vulkan_materials_build_allocate_info(mock_pool, mock_set_layouts, 3, &alloc_info);
+    assert(alloc_info.sType == 9);
+    assert(alloc_info.descriptorPool == mock_pool);
+    assert(alloc_info.descriptorSetCount == 3);
+    assert(alloc_info.pSetLayouts == mock_set_layouts);
+    printf("   ✓ Descriptor set allocation info builder verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT VULKAN MATERIALS TEST COMPLETE\n");
     printf("=============================================================\n");
