@@ -544,8 +544,8 @@ static void redraw_screen(void) {
         }
     }
 
-    // Render TSFi/2 bubble logo in the top-right corner next to the cactus art (16x16 pixel bitmaps with 3D layers)
-    int logo_start_x = art_start_x + 300;
+    // Render TSFi/2 bubble logo centered above the cactus art (16x16 pixel bitmaps with 3D layers)
+    int logo_start_x = art_start_x - 50;
     int logo_start_y = 120 + glitch_y;
     int char_spacing = 64; // Distance between characters (16 pixels * scale 4)
     
