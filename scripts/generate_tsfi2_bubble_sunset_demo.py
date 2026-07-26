@@ -207,9 +207,7 @@ def render_sunset_frame(frame, width, height):
     sun_r = 50 + int(4.0 * math.sin(t_val * 4.0))
     draw.ellipse([sun_x - sun_r, sun_y - sun_r, sun_x + sun_r, sun_y + sun_r], fill=(255, 204, 0))
 
-    # 4. Draw static Western Desert Silhouette (Mesa landscape & Green Cactus)
-    draw.rectangle([0, int(height * 0.65), width, height], fill=(28, 11, 0))
-    
+    # 4. Draw static Western Desert Silhouette (Cactus outline)
     # Draw Cactus Silhouette on the far left (cac_x = 100) to avoid obstructing the centered logo
     cac_x, cac_y = 100, int(height * 0.65)
     # Main trunk
@@ -292,8 +290,31 @@ def render_sunset_frame(frame, width, height):
                     
                     if is_glossy:
                         draw.rectangle([px, py, px + 1, py + 1], fill=(255, 255, 255))
-                        
-    # 5c. Render dynamic bottom scrolling text scroller banner
+
+    # 5c. Dynamic Water Ripple Mirror Reflection Pass
+    pixels = img.load()
+    water_y = int(height * 0.65)
+    for y in range(water_y, height):
+        y_mirror = int(water_y * 2.0 - y)
+        if y_mirror < 0: y_mirror = 0
+        ripple_x = int(6.0 * math.sin(t_val * 6.0 + y * 0.15))
+        
+        # Ground color blend factor
+        factor = float(y - water_y) / float(height - water_y)
+        blend = 0.35 + 0.25 * factor
+        
+        for x in range(width):
+            x_sample = (x + ripple_x) % width
+            r_s, g_s, b_s = pixels[x_sample, y_mirror]
+            
+            # Blend mirrored sky pixel with dark desert floor color (28, 11, 0)
+            r_f = int(r_s * (1.0 - blend) + 28.0 * blend)
+            g_f = int(g_s * (1.0 - blend) + 11.0 * blend)
+            b_f = int(b_s * (1.0 - blend) + 0.0 * blend)
+            
+            pixels[x, y] = (r_f, g_f, b_f)
+            
+    # 5d. Render dynamic bottom scrolling text scroller banner on top of the water reflection
     scroller_msg = "   *** TSFI/2 BUBBLE SUNSET DEMO ***   GREETINGS TO SECTION 31 ... DEVELOPED FOR THE DYSNOMIA VM PLATFORM ... FEATURING 11 SYNTHESIZED INSTRUMENTS ... VOLUMETRIC DISTANCE FIELD INFLATION SHADER ... 1.85:1 ASPECT RATIO SUPER8 FILM SIMULATOR ... "
     scroller_y = int(height * 0.88)
     draw.rectangle([0, scroller_y - 12, width, scroller_y + 12], fill=(20, 10, 5))
