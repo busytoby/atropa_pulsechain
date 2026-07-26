@@ -95,18 +95,18 @@ static bool running = true;
 static int win_width = 1024;
 static int win_height = 554;
 
-// Document buffer
+// Doc
 static char doc_buf[2048] = "# AUNCIENT MD EDITOR\n> TYPE YOUR DOCUMENT HERE\n";
 static int doc_len = 46;
 
-// Compressed text
+// ZL
 static const char compressed_scroller[32] = "PAGADATA_2026_RETRO_C64_INTRO_";
 static char decompressed_scroller[128];
 
-// Parallax text
+// PL
 static const char *parallax_scroller_text = "CONSPIRACY & SINGULAR HUNGARIAN TRIBUTE -- INTRODUCING MULTI-LAYER PARALLAX SCROLLER PATHS -- ";
 
-// Sine LUT
+// SL
 static float sine_lut[256];
 
 // Color Cycle Palette LUT (Sunset Theme: Warm colors)
@@ -225,19 +225,13 @@ static const char *western_desert_art[6] = {
     "========================"
 };
 
-// 16x16 Bubble Font Bitmaps for TSFi/2
+// Font Bitmaps
 static const uint16_t bubble_font_tsfi2[6][16] = {
-    // T
     {0x3FFC, 0x7FFE, 0xFFFF, 0xE3C7, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x0180},
-    // S
     {0x3FFC, 0x7FFE, 0xC003, 0xC000, 0x7FE0, 0x3FF8, 0x01FC, 0x007E, 0x000F, 0xC007, 0xC003, 0xE007, 0x7FFE, 0x7FFE, 0x3FFC, 0x0000},
-    // F
     {0xFFFF, 0xFFFF, 0xC000, 0xC000, 0xFFF0, 0xFFF0, 0xC000, 0xC000, 0xC000, 0xC000, 0xC000, 0xC000, 0xC000, 0xC000, 0xC000, 0x0000},
-    // i
     {0x0180, 0x03C0, 0x03C0, 0x0180, 0x0000, 0x0000, 0x0180, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x0180},
-    // /
     {0x000F, 0x001F, 0x003E, 0x007C, 0x00F8, 0x01F0, 0x03E0, 0x07C0, 0x0F80, 0x1F00, 0x3E00, 0x7C00, 0xF800, 0xF000, 0xE000, 0x0000},
-    // 2
     {0x3FFC, 0x7FFE, 0xC007, 0x000F, 0x001E, 0x003C, 0x0078, 0x00F0, 0x01E0, 0x03C0, 0x0780, 0x0F00, 0xFFFF, 0xFFFF, 0xFFFF, 0x0000}
 };
 
@@ -250,7 +244,6 @@ static void precompute_morph_cache(void) {
                 uint16_t prev = (r > 0) ? bubble_font_tsfi2[char_idx][r - 1] : 0;
                 uint16_t next = (r < 15) ? bubble_font_tsfi2[char_idx][r + 1] : 0;
                 
-                // Bitwise shifts based on current pre-calculated inflation step
                 uint16_t shift_l = curr | (curr << (step >= 3 ? 2 : 1));
                 uint16_t shift_r = curr | (curr >> (step >= 3 ? 2 : 1));
                 mf->dilated[r] = shift_l | shift_r | prev | next;
@@ -540,6 +533,12 @@ static inline float sd_cactus(float px, float py, float pz) {
     if (d4 < d) d = d4;
     if (d5 < d) d = d5;
     return d;
+}
+
+static inline float sd_letter_t(float px, float py, float pz) {
+    float d1 = sd_capsule(px, py, pz, -1.5f, 2.0f, 0.0f, 1.5f, 2.0f, 0.0f, 0.5f); // Top bar
+    float d2 = sd_capsule(px, py, pz, 0.0f, -2.0f, 0.0f, 0.0f, 2.0f, 0.0f, 0.5f); // Stem
+    return (d1 < d2) ? d1 : d2;
 }
 
 static inline uint32_t blend_color_add(uint32_t base, uint32_t add) {
@@ -1114,7 +1113,7 @@ static void redraw_screen(void) {
         }
     }
  
-    // Raymarch rotating 3D Cactus (sd_cactus) to populate step count profile
+    // Raymarch rotating 3D models (sd_cactus or sd_letter_t) dynamically based on active SID audio track
     uint8_t ray_steps[32];
     float angle = retro_time * 1.2f;
     float cos_a = cosf(angle);
@@ -1131,7 +1130,13 @@ static void redraw_screen(void) {
             // Rotate ray coordinate around Y axis
             float rot_x = rx * cos_a - rz * sin_a;
             float rot_z = rx * sin_a + rz * cos_a;
-            float dist = sd_cactus(rot_x, ry, rot_z);
+            
+            float dist;
+            if (active_tune >= 2) {
+                dist = sd_letter_t(rot_x, ry, rot_z);
+            } else {
+                dist = sd_cactus(rot_x, ry, rot_z);
+            }
             
             if (dist < 0.05f) break;
             rz += dist;
