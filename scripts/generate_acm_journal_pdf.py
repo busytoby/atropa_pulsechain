@@ -431,6 +431,10 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
         while i < len(lines):
             line = lines[i].strip()
             
+            if not line:
+                i += 1
+                continue
+                
             if line.startswith('```'):
                 is_mermaid = line.startswith('```mermaid')
                 i += 1
@@ -467,15 +471,91 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                     art_flowables.append(Spacer(1, 4))
                 continue
                 
-            if line:
-                p_text = []
-                while i < len(lines) and lines[i].strip() and not lines[i].strip().startswith('|') and not lines[i].strip().startswith('```'):
-                    p_text.append(lines[i].strip())
-                    i += 1
-                full_p = ' '.join(p_text)
-                process_text_block(full_p, body_style, col_width, art_flowables)
-            else:
+            if line.startswith('---') or line.startswith('***'):
+                hr = Table([[Paragraph("", body_style)]], colWidths=[col_width])
+                hr.setStyle(TableStyle([
+                    ('LINEABOVE', (0,0), (-1,-1), 0.5, colors.HexColor('#dddddd')),
+                    ('BOTTOMPADDING', (0,0), (-1,-1), 1),
+                    ('TOPPADDING', (0,0), (-1,-1), 1),
+                ]))
+                art_flowables.append(Spacer(1, 3))
+                art_flowables.append(hr)
+                art_flowables.append(Spacer(1, 3))
                 i += 1
+                continue
+                
+            if line.startswith('#'):
+                level = len(line) - len(line.lstrip('#'))
+                heading_text = line.lstrip('#').strip()
+                h_style = ParagraphStyle(
+                    f'H{level}',
+                    parent=body_style,
+                    fontName='Times-Bold',
+                    fontSize=max(7.5, 9.5 - (level * 0.5)),
+                    leading=max(8.5, 10.5 - (level * 0.5)),
+                    spaceBefore=5,
+                    spaceAfter=2,
+                    keepWithNext=True,
+                )
+                art_flowables.append(Paragraph(inline_md_to_html(heading_text), h_style))
+                i += 1
+                continue
+                
+            if line.startswith('>'):
+                bq_text = []
+                while i < len(lines) and lines[i].strip().startswith('>'):
+                    bq_text.append(lines[i].strip().lstrip('>').strip())
+                    i += 1
+                bq_content = ' '.join(bq_text)
+                bq_style = ParagraphStyle(
+                    'BlockQuote',
+                    parent=body_style,
+                    fontName='Times-Italic',
+                    leftIndent=10,
+                    textColor=colors.HexColor('#444444'),
+                    spaceBefore=3,
+                    spaceAfter=3,
+                )
+                art_flowables.append(Paragraph(inline_md_to_html(bq_content), bq_style))
+                continue
+                
+            # Lists: Bullet points
+            if line.startswith('* ') or line.startswith('- '):
+                bullet_text = line[2:].strip()
+                bullet_style = ParagraphStyle(
+                    'BulletItem',
+                    parent=body_style,
+                    leftIndent=10,
+                    firstLineIndent=-6,
+                    spaceAfter=1.5,
+                )
+                art_flowables.append(Paragraph(f"• {inline_md_to_html(bullet_text)}", bullet_style))
+                i += 1
+                continue
+                
+            # Lists: Numbered lists
+            num_match = re.match(r'^(\d+)\.\s+(.*)', line)
+            if num_match:
+                num = num_match.group(1)
+                item_text = num_match.group(2)
+                num_style = ParagraphStyle(
+                    'NumItem',
+                    parent=body_style,
+                    leftIndent=10,
+                    firstLineIndent=-6,
+                    spaceAfter=1.5,
+                )
+                art_flowables.append(Paragraph(f"{num}. {inline_md_to_html(item_text)}", num_style))
+                i += 1
+                continue
+                
+            # Fallback to standard paragraph blocks
+            p_text = []
+            while i < len(lines) and lines[i].strip() and not lines[i].strip().startswith('|') and not lines[i].strip().startswith('```') and not lines[i].strip().startswith('#') and not lines[i].strip().startswith('>') and not lines[i].strip().startswith('* ') and not lines[i].strip().startswith('- ') and not re.match(r'^\d+\.\s+', lines[i].strip()):
+                p_text.append(lines[i].strip())
+                i += 1
+            full_p = ' '.join(p_text)
+            process_text_block(full_p, body_style, col_width, art_flowables)
                 
         # Group Title, Date, and the first text paragraph/table together to prevent orphans
         if len(art_flowables) >= 3:
