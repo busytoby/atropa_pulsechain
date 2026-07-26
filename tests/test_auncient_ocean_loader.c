@@ -5,6 +5,8 @@
 #include <string.h>
 #include <assert.h>
 #include <math.h>
+#include "auncient_cactus_schema.h"
+
 
 #define STACK_CAPACITY 32
 #define COLOR_RED      0x00FF
@@ -935,6 +937,25 @@ int main(void) {
     resolve_payload_spec_conflict(&ps_conflict_no_pay, resolved_ps_no_pay);
     assert(strcmp(resolved_ps_no_pay, "specialized_look") == 0);
     printf("   ✓ Payload opinion (P) taking precedence over Specializes (S) verified.\n");
+    fflush(stdout);
+
+    // 26. Test Generated Schema API validation
+    printf("[TEST] Testing Custom Schema API Code Generation validation...\n");
+    fflush(stdout);
+    usd_auncient_cactus_schema_t cactus;
+    usd_init_auncient_cactus_schema(&cactus);
+    assert(cactus.density == 1.00f);
+    assert(cactus.stiffness == 0.50f);
+    assert(strcmp(cactus.texture, "cloth") == 0);
+    
+    // Modify schema values
+    cactus.density = 2.50f;
+    cactus.stiffness = 0.95f;
+    strcpy(cactus.texture, "stationary_cloth");
+    assert(cactus.density == 2.50f);
+    assert(cactus.stiffness == 0.95f);
+    assert(strcmp(cactus.texture, "stationary_cloth") == 0);
+    printf("   ✓ Custom Auncient Cactus schema codegen validation verified.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
