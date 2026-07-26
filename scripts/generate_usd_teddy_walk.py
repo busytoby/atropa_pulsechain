@@ -67,35 +67,50 @@ def rotate_z(x, y, z, angle):
     return x * c - y * s, x * s + y * c, z
 
 def get_teddy_geometry(time_sec):
-    # Walk parameters: frequency = 1.5 Hz
-    walk_freq = 1.5
+    # Walk parameters: frequency = 1.6 Hz
+    walk_freq = 1.6
     phase = time_sec * 2.0 * math.pi * walk_freq
     
     # Forward translation: walks from left to right across viewport
-    # Range: -5.0 to 5.0
     progress = time_sec / DURATION
     x_disp = -4.0 + 8.0 * progress
     
-    # Bobbing up and down
-    y_bob = 0.1 * abs(math.sin(phase))
+    # Realistic double-step bobbing (lowest at transition/support, highest at mid-stance)
+    y_bob = 0.06 * math.cos(2.0 * phase) + 0.1
     
-    # Left/Right leg swings (out of phase)
-    theta_lleg = 0.45 * math.sin(phase)
-    theta_rleg = -0.45 * math.sin(phase)
+    # Body tilt/lean forward
+    body_pitch = 0.08 + 0.04 * math.sin(2.0 * phase)
+    body_yaw = 0.1 * math.sin(phase * 0.1) + 1.2
     
-    # Left/Right arm swings (opposite legs)
-    theta_larm = -0.35 * math.sin(phase)
-    theta_rarm = 0.35 * math.sin(phase)
+    # Leg/Knee angles
+    # Hip swing back and forth
+    theta_lthigh = 0.5 * math.sin(phase)
+    theta_rthigh = 0.5 * math.sin(phase + math.pi)
     
-    # Body orientation (angled slightly towards direction of walk)
-    body_yaw = 0.15 * math.sin(phase * 0.1) + 1.2
+    # Knee bends during forward swing phase to clear the floor
+    # Left leg swings forward when cosine of phase > 0
+    theta_lknee = 0.0
+    if math.cos(phase) > -0.2:
+        theta_lknee = 0.55 * (1.0 - math.sin(phase))
+        
+    # Right leg swings forward when cosine of (phase + pi) > -0.2
+    theta_rknee = 0.0
+    if math.cos(phase + math.pi) > -0.2:
+        theta_rknee = 0.55 * (1.0 - math.sin(phase + math.pi))
+        
+    # Arm/Elbow angles
+    theta_luarm = -0.4 * math.sin(phase)
+    theta_ruarm = -0.4 * math.sin(phase + math.pi)
+    
+    theta_lelbow = 0.35 * (1.0 + math.cos(phase))
+    theta_relbow = 0.35 * (1.0 + math.cos(phase + math.pi))
     
     parts = {}
     
     # 1. Main body translation
     parts["Body"] = {
-        "pos": (x_disp, 0.5 + y_bob, 0.0),
-        "rot": (0.0, body_yaw, 0.0),
+        "pos": (x_disp, 0.55 + y_bob, 0.0),
+        "rot": (body_pitch, body_yaw, 0.0),
         "shape": "ellipsoid",
         "size": (0.7, 0.85, 0.6),
         "color": (120, 80, 54) # Brown
@@ -104,7 +119,7 @@ def get_teddy_geometry(time_sec):
     # 2. Head (local translation relative to body)
     parts["Head"] = {
         "pos": (x_disp, 1.45 + y_bob, 0.0),
-        "rot": (0.05 * math.sin(phase), body_yaw, 0.0),
+        "rot": (body_pitch + 0.05 * math.sin(phase), body_yaw, 0.0),
         "shape": "ellipsoid",
         "size": (0.55, 0.55, 0.5),
         "color": (120, 80, 54)
@@ -113,68 +128,116 @@ def get_teddy_geometry(time_sec):
     # 3. Ears
     parts["LeftEar"] = {
         "pos": (x_disp - 0.4, 1.85 + y_bob, 0.0),
-        "rot": (0.0, body_yaw, 0.0),
+        "rot": (body_pitch, body_yaw, 0.0),
         "shape": "ellipsoid",
         "size": (0.2, 0.2, 0.15),
         "color": (100, 65, 40)
     }
     parts["RightEar"] = {
         "pos": (x_disp + 0.4, 1.85 + y_bob, 0.0),
-        "rot": (0.0, body_yaw, 0.0),
+        "rot": (body_pitch, body_yaw, 0.0),
         "shape": "ellipsoid",
         "size": (0.2, 0.2, 0.15),
         "color": (100, 65, 40)
     }
     
-    # 4. Left Arm (swings back and forth)
-    # Hinge point: (x_disp - 0.6, 0.8 + y_bob, 0.0)
-    al_x, al_y, al_z = rotate_y(0.0, -0.4, 0.0, body_yaw)
-    al_x, al_y, al_z = rotate_z(al_x, al_y, al_z, theta_larm)
-    parts["LeftArm"] = {
-        "pos": (x_disp - 0.65 + al_x, 0.8 + y_bob + al_y, al_z),
-        "rot": (theta_larm, body_yaw, 0.0),
+    # 4. Left Arm (Upper Arm & Forearm)
+    larm_pitch = theta_luarm + body_pitch
+    al_x, al_y, al_z = rotate_y(0.0, -0.25, 0.0, body_yaw)
+    al_x, al_y, al_z = rotate_z(al_x, al_y, al_z, larm_pitch)
+    parts["LeftUpperArm"] = {
+        "pos": (x_disp - 0.65 + al_x, 0.9 + y_bob + al_y, al_z),
+        "rot": (larm_pitch, body_yaw, 0.0),
         "shape": "ellipsoid",
-        "size": (0.2, 0.45, 0.2),
+        "size": (0.18, 0.3, 0.18),
         "color": (120, 80, 54)
     }
     
-    # 5. Right Arm
-    ar_x, ar_y, ar_z = rotate_y(0.0, -0.4, 0.0, body_yaw)
-    ar_x, ar_y, ar_z = rotate_z(ar_x, ar_y, ar_z, theta_rarm)
-    parts["RightArm"] = {
-        "pos": (x_disp + 0.65 + ar_x, 0.8 + y_bob + ar_y, ar_z),
-        "rot": (theta_rarm, body_yaw, 0.0),
+    # Forearm pivot at the end of Upper Arm (length ~0.25)
+    f_larm_pitch = larm_pitch + theta_lelbow
+    fl_x, fl_y, fl_z = rotate_y(0.0, -0.45, 0.0, body_yaw)
+    fl_x, fl_y, fl_z = rotate_z(fl_x, fl_y, fl_z, f_larm_pitch)
+    parts["LeftForearm"] = {
+        "pos": (x_disp - 0.65 + fl_x, 0.9 + y_bob + fl_y, fl_z),
+        "rot": (f_larm_pitch, body_yaw, 0.0),
         "shape": "ellipsoid",
-        "size": (0.2, 0.45, 0.2),
-        "color": (120, 80, 54)
-    }
-    
-    # 6. Left Leg (swings opposite)
-    ll_x, ll_y, ll_z = rotate_y(0.0, -0.45, 0.0, body_yaw)
-    ll_x, ll_y, ll_z = rotate_z(ll_x, ll_y, ll_z, theta_lleg)
-    parts["LeftLeg"] = {
-        "pos": (x_disp - 0.35 + ll_x, 0.1 + y_bob + ll_y, ll_z),
-        "rot": (theta_lleg, body_yaw, 0.0),
-        "shape": "ellipsoid",
-        "size": (0.25, 0.5, 0.25),
+        "size": (0.15, 0.25, 0.15),
         "color": (100, 65, 40)
     }
     
-    # 7. Right Leg
-    lr_x, lr_y, lr_z = rotate_y(0.0, -0.45, 0.0, body_yaw)
-    lr_x, lr_y, lr_z = rotate_z(lr_x, lr_y, lr_z, theta_rleg)
-    parts["RightLeg"] = {
-        "pos": (x_disp + 0.35 + lr_x, 0.1 + y_bob + lr_y, lr_z),
-        "rot": (theta_rleg, body_yaw, 0.0),
+    # 5. Right Arm (Upper Arm & Forearm)
+    rarm_pitch = theta_ruarm + body_pitch
+    ar_x, ar_y, ar_z = rotate_y(0.0, -0.25, 0.0, body_yaw)
+    ar_x, ar_y, ar_z = rotate_z(ar_x, ar_y, ar_z, rarm_pitch)
+    parts["RightUpperArm"] = {
+        "pos": (x_disp + 0.65 + ar_x, 0.9 + y_bob + ar_y, ar_z),
+        "rot": (rarm_pitch, body_yaw, 0.0),
         "shape": "ellipsoid",
-        "size": (0.25, 0.5, 0.25),
+        "size": (0.18, 0.3, 0.18),
+        "color": (120, 80, 54)
+    }
+    
+    f_rarm_pitch = rarm_pitch + theta_relbow
+    fr_x, fr_y, fr_z = rotate_y(0.0, -0.45, 0.0, body_yaw)
+    fr_x, fr_y, fr_z = rotate_z(fr_x, fr_y, fr_z, f_rarm_pitch)
+    parts["RightForearm"] = {
+        "pos": (x_disp + 0.65 + fr_x, 0.9 + y_bob + fr_y, fr_z),
+        "rot": (f_rarm_pitch, body_yaw, 0.0),
+        "shape": "ellipsoid",
+        "size": (0.15, 0.25, 0.15),
+        "color": (100, 65, 40)
+    }
+    
+    # 6. Left Leg (Thigh & Calf)
+    lthigh_pitch = theta_lthigh + body_pitch
+    llt_x, llt_y, llt_z = rotate_y(0.0, -0.25, 0.0, body_yaw)
+    llt_x, llt_y, llt_z = rotate_z(llt_x, llt_y, llt_z, lthigh_pitch)
+    parts["LeftThigh"] = {
+        "pos": (x_disp - 0.35 + llt_x, 0.3 + y_bob + llt_y, llt_z),
+        "rot": (lthigh_pitch, body_yaw, 0.0),
+        "shape": "ellipsoid",
+        "size": (0.22, 0.35, 0.22),
+        "color": (120, 80, 54)
+    }
+    
+    # Knee bend: Thigh pitch + Knee flexion
+    lknee_pitch = lthigh_pitch - theta_lknee
+    llc_x, llc_y, llc_z = rotate_y(0.0, -0.55, 0.0, body_yaw)
+    llc_x, llc_y, llc_z = rotate_z(llc_x, llc_y, llc_z, lknee_pitch)
+    parts["LeftCalf"] = {
+        "pos": (x_disp - 0.35 + llc_x, 0.3 + y_bob + llc_y, llc_z),
+        "rot": (lknee_pitch, body_yaw, 0.0),
+        "shape": "ellipsoid",
+        "size": (0.18, 0.3, 0.18),
+        "color": (100, 65, 40)
+    }
+    
+    # 7. Right Leg (Thigh & Calf)
+    rthigh_pitch = theta_rthigh + body_pitch
+    rrt_x, rrt_y, rrt_z = rotate_y(0.0, -0.25, 0.0, body_yaw)
+    rrt_x, rrt_y, rrt_z = rotate_z(rrt_x, rrt_y, rrt_z, rthigh_pitch)
+    parts["RightThigh"] = {
+        "pos": (x_disp + 0.35 + rrt_x, 0.3 + y_bob + rrt_y, rrt_z),
+        "rot": (rthigh_pitch, body_yaw, 0.0),
+        "shape": "ellipsoid",
+        "size": (0.22, 0.35, 0.22),
+        "color": (120, 80, 54)
+    }
+    
+    rknee_pitch = rthigh_pitch - theta_rknee
+    rrc_x, rrc_y, rrc_z = rotate_y(0.0, -0.55, 0.0, body_yaw)
+    rrc_x, rrc_y, rrc_z = rotate_z(rrc_x, rrc_y, rrc_z, rknee_pitch)
+    parts["RightCalf"] = {
+        "pos": (x_disp + 0.35 + rrc_x, 0.3 + y_bob + rrc_y, rrc_z),
+        "rot": (rknee_pitch, body_yaw, 0.0),
+        "shape": "ellipsoid",
+        "size": (0.18, 0.3, 0.18),
         "color": (100, 65, 40)
     }
     
     return parts
 
-def generate_ellipsoid_mesh(size, num_segments=12):
-    # Generates 3D points on an ellipsoid
+def generate_ellipsoid_mesh(size, num_segments=10):
     sx, sy, sz = size
     vertices = []
     for i in range(num_segments):
@@ -196,7 +259,6 @@ def main():
     
     width, height = 640, 480
     
-    # Initialize FFmpeg pipeline
     ffmpeg_cmd = [
         "ffmpeg", "-y",
         "-f", "image2pipe",
@@ -213,71 +275,68 @@ def main():
     ]
     
     process = subprocess.Popen(ffmpeg_cmd, stdin=subprocess.PIPE)
-    
-    # Track joint translation time samples for USD export
     usd_samples = {}
     
     for f in range(total_frames):
         time_sec = f / float(FPS)
         parts = get_teddy_geometry(time_sec)
         
-        # Render frame
         img = Image.new("RGB", (width, height), (15, 10, 25))
         draw = ImageDraw.Draw(img)
         
-        # Draw dynamic background grid
+        # Grid backdrop
         grid_pos = int(time_sec * 60.0) % 80
         for x_g in range(-80, width + 80, 80):
             draw.line([(x_g - grid_pos, 0), (x_g - grid_pos, height)], fill=(30, 20, 50), width=1)
         for y_g in range(0, height, 60):
             draw.line([(0, y_g), (width, y_g)], fill=(30, 20, 50), width=1)
             
-        # Draw perspective floor
+        # Perspective floor
         draw.rectangle([0, 320, width, height], fill=(10, 5, 20))
         for x_floor in range(-200, width + 200, 50):
             draw.line([(320, 320), (x_floor, height)], fill=(50, 30, 80), width=2)
             
-        # Collect and project 3D parts
-        # For simple sorting/rendering, draw back parts first
-        draw_order = ["LeftLeg", "RightLeg", "LeftArm", "RightArm", "Body", "Head", "LeftEar", "RightEar"]
+        # Dynamic depth-sorting based on center projected Z coordinate
+        render_queue = []
+        for part_name, part in parts.items():
+            px, py, pz = part["pos"]
+            # Rotated Z coordinate for simple back-to-front sorting
+            rotated_z = pz + 4.5
+            render_queue.append((rotated_z, part_name))
+            
+        # Sort desc (larger Z = further away = render first)
+        render_queue.sort(key=lambda item: item[0], reverse=True)
         
-        for part_name in draw_order:
+        for rz_val, part_name in render_queue:
             part = parts[part_name]
             px, py, pz = part["pos"]
             rx_ang, ry_ang, rz_ang = part["rot"]
             
-            # Save USDA time samples
             if part_name not in usd_samples:
                 usd_samples[part_name] = []
             usd_samples[part_name].append((f, px, py, pz, rx_ang, ry_ang, rz_ang))
             
-            # Generate ellipsoid vertices
             verts = generate_ellipsoid_mesh(part["size"])
             projected_pts = []
             
             for vx, vy, vz in verts:
-                # Rotate
                 vx, vy, vz = rotate_x(vx, vy, vz, rx_ang)
                 vx, vy, vz = rotate_y(vx, vy, vz, ry_ang)
                 vx, vy, vz = rotate_z(vx, vy, vz, rz_ang)
                 
-                # Global translation
                 gx = vx + px
                 gy = vy + py
-                gz = vz + pz + 4.5 # Push back in Z
+                gz = vz + pz + 4.5
                 
-                # Perspective Projection
                 fov = 420.0
                 screen_x = int(width / 2.0 + (gx * fov) / gz)
                 screen_y = int(height / 2.0 - (gy * fov) / gz)
                 projected_pts.append((screen_x, screen_y))
                 
-            # Draw mesh wireframe
-            outline_color = (255, 255, 255) # High visibility white border outline
+            outline_color = (255, 255, 255)
             fill_color = part["color"]
             
-            # Draw polygon mesh segments
-            num_seg = 12
+            num_seg = 10
             for i in range(num_seg - 1):
                 for j in range(num_seg):
                     p1_idx = i * num_seg + j
@@ -286,22 +345,19 @@ def main():
                     p4_idx = (i + 1) * num_seg + j
                     
                     poly = [projected_pts[p1_idx], projected_pts[p2_idx], projected_pts[p3_idx], projected_pts[p4_idx]]
-                    # Draw flat shading with light outline
                     draw.polygon(poly, fill=fill_color, outline=outline_color)
                     
         # Onscreen HUD
-        draw.text((20, 20), "USD TEDDY BEAR WALKER DEMO", fill=(255, 215, 0))
+        draw.text((20, 20), "USD TEDDY BEAR WALKER DEMO (REALISTIC)", fill=(255, 215, 0))
         draw.text((20, 35), f"FRAME: {f:03d} / {total_frames:03d}", fill=(0, 255, 255))
         draw.text((20, 50), f"X-POS: {parts['Body']['pos'][0]:.3f}", fill=(0, 255, 0))
         
-        # Pipe frame
         img.save(process.stdin, "PNG")
         
     process.stdin.close()
     process.wait()
     print(f"[SUCCESS] Teddy walking video rendered: {video_output}")
     
-    # Export Pixar USD ASCII (USDA) file mapping the walking joints hierarchy
     usda_output = "/home/mariarahel/src/tsfi2/atropa_pulsechain/teddy_walk_scene.usda"
     with open(usda_output, "w") as f:
         f.write("#usda 1.0\n")
@@ -330,7 +386,6 @@ def main():
         f.write("}\n")
     print(f"[SUCCESS] Pixar USDA scene description exported: {usda_output}")
     
-    # Clean up temp WAV
     try:
         os.remove(wav_output)
     except Exception:
