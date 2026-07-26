@@ -7,9 +7,11 @@
 
 typedef struct {
     float x, y, z;
-    float vx, vy, vz;
+    float px, py, pz; // Previous positions for Verlet integration
     float fx, fy, fz;
     float nx, ny, nz;
+    int is_anchored;
+    float anchor_x, anchor_y, anchor_z;
 } ClothPoint;
 
 typedef struct {
@@ -28,6 +30,7 @@ extern "C" {
 
 void cloth_init(void);
 void cloth_update(float wind_x, float wind_y, float wind_z);
+void cloth_set_anchor(int x, int y, float tx, float ty, float tz);
 void cloth_apply_sphere_collision(float cx, float cy, float cz, float radius);
 void cloth_generate_mesh(ClothVertex *vertices, int *indices, int *vertex_count, int *index_count);
 

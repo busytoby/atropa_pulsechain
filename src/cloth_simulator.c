@@ -7,8 +7,7 @@ static const float gravity_x = -0.0007f;
 static const float gravity_y = -0.0008f;
 static const float gravity_z = 0.0001f;
 
-static int is_anchored(int x, int y) {
-    // Anchor top edge nodes at interval step displacements (every 4th column)
+static int is_default_anchor(int x, int y) {
     return (y == CLOTH_HEIGHT - 1 && x % 4 == 0);
 }
 
@@ -18,25 +17,43 @@ void cloth_init(void) {
             cloth_grid[x][y].x = (float)x * 0.25f;
             cloth_grid[x][y].y = (float)y * 0.25f;
             cloth_grid[x][y].z = 0.0f;
-            cloth_grid[x][y].vx = 0.0f;
-            cloth_grid[x][y].vy = 0.0f;
-            cloth_grid[x][y].vz = 0.0f;
+            
+            cloth_grid[x][y].px = cloth_grid[x][y].x;
+            cloth_grid[x][y].py = cloth_grid[x][y].y;
+            cloth_grid[x][y].pz = cloth_grid[x][y].z;
+            
             cloth_grid[x][y].fx = 0.0f;
             cloth_grid[x][y].fy = 0.0f;
             cloth_grid[x][y].fz = 0.0f;
             cloth_grid[x][y].nx = 0.0f;
             cloth_grid[x][y].ny = 1.0f;
             cloth_grid[x][y].nz = 0.0f;
+
+            if (is_default_anchor(x, y)) {
+                cloth_grid[x][y].is_anchored = 1;
+                cloth_grid[x][y].anchor_x = cloth_grid[x][y].x;
+                cloth_grid[x][y].anchor_y = cloth_grid[x][y].y;
+                cloth_grid[x][y].anchor_z = cloth_grid[x][y].z;
+            } else {
+                cloth_grid[x][y].is_anchored = 0;
+            }
         }
     }
 }
 
-static void apply_spring(int x1, int y1, int x2, int y2, float rest_dist) {
+void cloth_set_anchor(int x, int y, float tx, float ty, float tz) {
+    if (x >= 0 && x < CLOTH_WIDTH && y >= 0 && y < CLOTH_HEIGHT) {
+        cloth_grid[x][y].is_anchored = 1;
+        cloth_grid[x][y].anchor_x = tx;
+        cloth_grid[x][y].anchor_y = ty;
+        cloth_grid[x][y].anchor_z = tz;
+    }
+}
+
+static void solve_constraint(int x1, int y1, int x2, int y2, float rest_dist) {
     if (x1 < 0 || x1 >= CLOTH_WIDTH || y1 < 0 || y1 >= CLOTH_HEIGHT) return;
     if (x2 < 0 || x2 >= CLOTH_WIDTH || y2 < 0 || y2 >= CLOTH_HEIGHT) return;
-
-    float ks = 0.324f; // Stiffness
-    float kd = 0.04f;  // Damping
+    if (cloth_grid[x1][y1].is_anchored && cloth_grid[x2][y2].is_anchored) return;
 
     float dx = cloth_grid[x1][y1].x - cloth_grid[x2][y2].x;
     float dy = cloth_grid[x1][y1].y - cloth_grid[x2][y2].y;
@@ -44,25 +61,21 @@ static void apply_spring(int x1, int y1, int x2, int y2, float rest_dist) {
     float dist = sqrtf(dx*dx + dy*dy + dz*dz);
     if (dist < 0.0001f) return;
 
-    float h_term = (dist - rest_dist) * ks;
+    float diff = (rest_dist - dist) / dist * 0.5f;
+    float displacement_x = dx * diff;
+    float displacement_y = dy * diff;
+    float displacement_z = dz * diff;
 
-    float dvx = cloth_grid[x1][y1].vx - cloth_grid[x2][y2].vx;
-    float dvy = cloth_grid[x1][y1].vy - cloth_grid[x2][y2].vy;
-    float dvz = cloth_grid[x1][y1].vz - cloth_grid[x2][y2].vz;
-    float d_term = (dvx*dx + dvy*dy + dvz*dz) * kd / dist;
-
-    float f_mag = -(h_term + d_term);
-    float fx = (dx / dist) * f_mag;
-    float fy = (dy / dist) * f_mag;
-    float fz = (dz / dist) * f_mag;
-
-    cloth_grid[x1][y1].fx += fx;
-    cloth_grid[x1][y1].fy += fy;
-    cloth_grid[x1][y1].fz += fz;
-
-    cloth_grid[x2][y2].fx -= fx;
-    cloth_grid[x2][y2].fy -= fy;
-    cloth_grid[x2][y2].fz -= fz;
+    if (!cloth_grid[x1][y1].is_anchored) {
+        cloth_grid[x1][y1].x += displacement_x;
+        cloth_grid[x1][y1].y += displacement_y;
+        cloth_grid[x1][y1].z += displacement_z;
+    }
+    if (!cloth_grid[x2][y2].is_anchored) {
+        cloth_grid[x2][y2].x -= displacement_x;
+        cloth_grid[x2][y2].y -= displacement_y;
+        cloth_grid[x2][y2].z -= displacement_z;
+    }
 }
 
 static void compute_face_normal(int x1, int y1, int x2, int y2, int x3, int y3, float wx, float wy, float wz) {
@@ -74,7 +87,6 @@ static void compute_face_normal(int x1, int y1, int x2, int y2, int x3, int y3, 
     float dy2 = cloth_grid[x1][y1].y - cloth_grid[x3][y3].y;
     float dz2 = cloth_grid[x1][y1].z - cloth_grid[x3][y3].z;
 
-    // Cross product
     float nx = dy1*dz2 - dz1*dy2;
     float ny = dz1*dx2 - dx1*dz2;
     float nz = dx1*dy2 - dy1*dx2;
@@ -86,7 +98,6 @@ static void compute_face_normal(int x1, int y1, int x2, int y2, int x3, int y3, 
     float nny = ny * inv_len;
     float nnz = nz * inv_len;
 
-    // Wind force projection
     float dot = nnx*wx + nny*wy + nnz*wz;
     float fx = nnx * dot;
     float fy = nny * dot;
@@ -102,23 +113,16 @@ static void compute_face_normal(int x1, int y1, int x2, int y2, int x3, int y3, 
 }
 
 void cloth_update(float wind_x, float wind_y, float wind_z) {
-    // Reset forces and normals
     for (int x = 0; x < CLOTH_WIDTH; x++) {
         for (int y = 0; y < CLOTH_HEIGHT; y++) {
             cloth_grid[x][y].nx = 0.0f;
             cloth_grid[x][y].ny = 0.0f;
             cloth_grid[x][y].nz = 0.0f;
 
-            // Anchor point check
-            if (!is_anchored(x, y)) {
+            if (!cloth_grid[x][y].is_anchored) {
                 cloth_grid[x][y].fx = gravity_x;
                 cloth_grid[x][y].fy = gravity_y;
                 cloth_grid[x][y].fz = gravity_z;
-
-                // Air resistance drag
-                cloth_grid[x][y].fx += cloth_grid[x][y].vx * -0.02f;
-                cloth_grid[x][y].fy += cloth_grid[x][y].vy * -0.02f;
-                cloth_grid[x][y].fz += cloth_grid[x][y].vz * -0.02f;
             } else {
                 cloth_grid[x][y].fx = 0.0f;
                 cloth_grid[x][y].fy = 0.0f;
@@ -127,7 +131,6 @@ void cloth_update(float wind_x, float wind_y, float wind_z) {
         }
     }
 
-    // Compute aerodynamics
     for (int x = 0; x < CLOTH_WIDTH - 1; x++) {
         for (int y = 0; y < CLOTH_HEIGHT - 1; y++) {
             compute_face_normal(x, y, x+1, y+1, x+1, y, wind_x, wind_y, wind_z);
@@ -135,7 +138,6 @@ void cloth_update(float wind_x, float wind_y, float wind_z) {
         }
     }
 
-    // Normalize node normals
     for (int x = 0; x < CLOTH_WIDTH; x++) {
         for (int y = 0; y < CLOTH_HEIGHT; y++) {
             float len = sqrtf(cloth_grid[x][y].nx * cloth_grid[x][y].nx +
@@ -153,30 +155,40 @@ void cloth_update(float wind_x, float wind_y, float wind_z) {
         }
     }
 
-    // Apply springs
+    const float time_step = 0.1f;
+    const float damping = 0.98f;
     for (int x = 0; x < CLOTH_WIDTH; x++) {
         for (int y = 0; y < CLOTH_HEIGHT; y++) {
-            apply_spring(x, y, x+1, y, 0.25f);
-            apply_spring(x, y, x, y+1, 0.25f);
-            apply_spring(x, y, x+1, y+1, 0.3535f);
-            apply_spring(x, y+1, x+1, y, 0.3535f);
+            if (cloth_grid[x][y].is_anchored) {
+                cloth_grid[x][y].x = cloth_grid[x][y].anchor_x;
+                cloth_grid[x][y].y = cloth_grid[x][y].anchor_y;
+                cloth_grid[x][y].z = cloth_grid[x][y].anchor_z;
+                cloth_grid[x][y].px = cloth_grid[x][y].x;
+                cloth_grid[x][y].py = cloth_grid[x][y].y;
+                cloth_grid[x][y].pz = cloth_grid[x][y].z;
+            } else {
+                float temp_x = cloth_grid[x][y].x;
+                float temp_y = cloth_grid[x][y].y;
+                float temp_z = cloth_grid[x][y].z;
+
+                cloth_grid[x][y].x += (cloth_grid[x][y].x - cloth_grid[x][y].px) * damping + cloth_grid[x][y].fx * time_step * time_step;
+                cloth_grid[x][y].y += (cloth_grid[x][y].y - cloth_grid[x][y].py) * damping + cloth_grid[x][y].fy * time_step * time_step;
+                cloth_grid[x][y].z += (cloth_grid[x][y].z - cloth_grid[x][y].pz) * damping + cloth_grid[x][y].fz * time_step * time_step;
+
+                cloth_grid[x][y].px = temp_x;
+                cloth_grid[x][y].py = temp_y;
+                cloth_grid[x][y].pz = temp_z;
+            }
         }
     }
 
-    // Integrate forces into velocity and positions
-    for (int x = 0; x < CLOTH_WIDTH; x++) {
-        for (int y = 0; y < CLOTH_HEIGHT; y++) {
-            if (!is_anchored(x, y)) {
-                cloth_grid[x][y].vx += cloth_grid[x][y].fx;
-                cloth_grid[x][y].vy += cloth_grid[x][y].fy;
-                cloth_grid[x][y].vz += cloth_grid[x][y].fz;
-                cloth_grid[x][y].x += cloth_grid[x][y].vx;
-                cloth_grid[x][y].y += cloth_grid[x][y].vy;
-                cloth_grid[x][y].z += cloth_grid[x][y].vz;
-            } else {
-                cloth_grid[x][y].vx = 0.0f;
-                cloth_grid[x][y].vy = 0.0f;
-                cloth_grid[x][y].vz = 0.0f;
+    for (int iter = 0; iter < 3; iter++) {
+        for (int x = 0; x < CLOTH_WIDTH; x++) {
+            for (int y = 0; y < CLOTH_HEIGHT; y++) {
+                solve_constraint(x, y, x+1, y, 0.25f);
+                solve_constraint(x, y, x, y+1, 0.25f);
+                solve_constraint(x, y, x+1, y+1, 0.3535f);
+                solve_constraint(x, y+1, x+1, y, 0.3535f);
             }
         }
     }
@@ -185,36 +197,23 @@ void cloth_update(float wind_x, float wind_y, float wind_z) {
 void cloth_apply_sphere_collision(float cx, float cy, float cz, float radius) {
     for (int x = 0; x < CLOTH_WIDTH; x++) {
         for (int y = 0; y < CLOTH_HEIGHT; y++) {
-            // Calculate distance to sphere center
+            if (cloth_grid[x][y].is_anchored) continue;
+
             float dx = cloth_grid[x][y].x - cx;
             float dy = cloth_grid[x][y].y - cy;
             float dz = cloth_grid[x][y].z - cz;
             float dist = sqrtf(dx*dx + dy*dy + dz*dz);
-            
+
             if (dist < radius) {
                 if (dist < 0.0001f) dist = 0.0001f;
-                // Project position outward to sphere surface boundary
                 float inv_dist = 1.0f / dist;
                 float nx = dx * inv_dist;
                 float ny = dy * inv_dist;
                 float nz = dz * inv_dist;
-                
+
                 cloth_grid[x][y].x = cx + nx * radius;
                 cloth_grid[x][y].y = cy + ny * radius;
                 cloth_grid[x][y].z = cz + nz * radius;
-                
-                // Zero/damp velocity along the contact normal to simulate friction
-                float dot_v = cloth_grid[x][y].vx*nx + cloth_grid[x][y].vy*ny + cloth_grid[x][y].vz*nz;
-                if (dot_v < 0.0f) {
-                    cloth_grid[x][y].vx -= nx * dot_v;
-                    cloth_grid[x][y].vy -= ny * dot_v;
-                    cloth_grid[x][y].vz -= nz * dot_v;
-                    
-                    // Friction damping parallel to surface
-                    cloth_grid[x][y].vx *= 0.5f;
-                    cloth_grid[x][y].vy *= 0.5f;
-                    cloth_grid[x][y].vz *= 0.5f;
-                }
             }
         }
     }
@@ -234,14 +233,13 @@ void cloth_generate_mesh(ClothVertex *vertices, int *indices, int *vertex_count,
             vertices[*vertex_count].nz = cloth_grid[x][y].nz;
             vertices[*vertex_count].u = (float)x / (float)(CLOTH_WIDTH - 1);
             vertices[*vertex_count].v = (float)y / (float)(CLOTH_HEIGHT - 1);
-            
-            // Map red-to-white color flag bands
+
             if (y < CLOTH_HEIGHT / 3) {
-                vertices[*vertex_count].color = 0xFF009900; // Green band
+                vertices[*vertex_count].color = 0xFF009900;
             } else if (y < (CLOTH_HEIGHT * 2) / 3) {
-                vertices[*vertex_count].color = 0xFFFFFFFF; // White band
+                vertices[*vertex_count].color = 0xFFFFFFFF;
             } else {
-                vertices[*vertex_count].color = 0xFFCC0000; // Red band
+                vertices[*vertex_count].color = 0xFFCC0000;
             }
             (*vertex_count)++;
         }

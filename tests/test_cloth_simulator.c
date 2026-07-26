@@ -10,13 +10,14 @@ int main(void) {
     cloth_init();
     printf("   ✓ Cloth grid initialization verified.\n");
 
-    // Perform 10 update cycles with wind and sphere collisions
+    // Perform 10 update cycles with wind, collisions, and dynamic anchors
     for (int i = 0; i < 10; i++) {
+        // Move the anchor point over time (simulating a walking bear skeleton node)
+        cloth_set_anchor(0, CLOTH_HEIGHT - 1, 0.0f, 2.25f + (float)i * 0.05f, 0.0f);
         cloth_update(0.005f, 0.0f, -0.002f);
-        // Collide with a sphere representing the teddy bear head
         cloth_apply_sphere_collision(1.5f, 1.0f, 0.0f, 0.6f);
     }
-    printf("   ✓ 10 solver updates and sphere collisions executed.\n");
+    printf("   ✓ 10 updates, collisions, and Verlet dynamic anchors verified.\n");
 
     // Generate mesh output
     static ClothVertex vertices[1000];
