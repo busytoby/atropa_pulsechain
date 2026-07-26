@@ -73,6 +73,17 @@ static void hd_embree_render(uint32_t *pixels, int w, int h, const CoaxialUBO *u
     if (abs_ry > 1.8f) max_steps = 6;
     else if (abs_ry > 1.0f) max_steps = 10;
     
+    int resolved_variant = (int)ubo->material_variant;
+    if (resolved_variant < 0 || resolved_variant > 2) {
+        int fallbacks[3] = {1, 0, 2};
+        for (int f = 0; f < 3; f++) {
+            if (fallbacks[f] >= 0 && fallbacks[f] <= 2) {
+                resolved_variant = fallbacks[f];
+                break;
+            }
+        }
+    }
+    
     int vp_x = 700, vp_y = 120, vp_w = 160, vp_h = 160;
     for (int x = 0; x < vp_w; x++) {
         if (vp_y >= 0 && vp_y < h && (vp_x + x) < w) pixels[vp_y * w + vp_x + x] = 0xFF555555;
@@ -113,11 +124,11 @@ static void hd_embree_render(uint32_t *pixels, int w, int h, const CoaxialUBO *u
             if (steps < max_steps) {
                 uint8_t r_col, g_col, b_col;
                 float shade = 1.0f - ((float)steps / (float)max_steps);
-                if (ubo->material_variant == 1) {
+                if (resolved_variant == 1) {
                     r_col = (uint8_t)(255 * shade);
                     g_col = (uint8_t)(85 * shade);
                     b_col = (uint8_t)(85 * shade);
-                } else if (ubo->material_variant == 2) {
+                } else if (resolved_variant == 2) {
                     bool cross_hatch = ((vx / 2) % 2 == 0) ^ ((vy / 2) % 2 == 0);
                     float pattern_scale = cross_hatch ? 0.85f : 1.1f;
                     float cloth_shade = shade * pattern_scale;
