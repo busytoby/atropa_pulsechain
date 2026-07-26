@@ -197,8 +197,18 @@ static const uint16_t sid_tunes[4][3] = {
 static int active_tune = 0;
 static bool hidden_unlocked = false;
 
-// Sequential key history to unlock hidden tune ("tsn")
 static char key_history[3] = {'\0', '\0', '\0'};
+
+// Coaxial Uniform Buffer Object (UBO) mapping the WinchesterMQ register channel
+typedef struct {
+    float rotation_angle;
+    float camera_y;
+    uint32_t active_model;
+    float raster_intensity;
+    float padding[12]; // 64-byte alignment alignment boundary
+} CoaxialUBO;
+
+static CoaxialUBO active_ubo;
 
 // PETSCII Western Desert Artwork Split Screen (Cactus & Sunset Sunset mesa)
 static const char *western_desert_art[6] = {
@@ -242,14 +252,12 @@ static void precompute_morph_cache(void) {
                 uint16_t curr_dilated = mf->dilated[r];
                 uint16_t prev_dilated = (r > 0) ? mf->dilated[r - 1] : 0;
                 
-                // Top-left boundary specular highlight mapping
                 mf->glints[r] = (curr_dilated & ~prev_dilated) & ~(curr_dilated << 1);
             }
         }
     }
 }
 
-// Multiplexed Sprite Structure
 typedef struct {
     int x;
     int y;
@@ -267,7 +275,6 @@ static MultiplexSprite sprites[5] = {
 
 static int sorted_sprite_indices[5] = {0, 1, 2, 3, 4};
 
-// 3D Starfield Array
 typedef struct {
     float x;
     float y;
@@ -277,7 +284,6 @@ typedef struct {
 
 static Star starfield[15];
 
-// 2D horizontal scrolling background stars
 typedef struct {
     float x;
     int y;
@@ -296,7 +302,6 @@ typedef struct {
     uint32_t hash;
 } EditorHistoryRecord;
 
-// Helper for allocating SHM pool memory
 static struct wl_buffer *create_shm_buffer(int width, int height, uint32_t **out_pixels) {
     int stride = width * 4;
     int size = stride * height;
@@ -334,7 +339,7 @@ static void draw_char(uint32_t *pixels, int w, int h, int start_x, int start_y, 
     int scale_x = scale;
     bool is_multicolor = (start_y >= 200);
     if (is_multicolor) {
-        scale_x = scale * 2; // Double pixel width to mimic 4x8 multicolor pixels
+        scale_x = scale * 2;
     }
     
     if (bg_color != 0x00000000) {
@@ -349,7 +354,7 @@ static void draw_char(uint32_t *pixels, int w, int h, int start_x, int start_y, 
         }
     }
 
-    const uint8_t *glyph = font5x7[(int)ch]; // Uncorrupted ASCII lookup
+    const uint8_t *glyph = font5x7[(int)ch];
     
     for (int col = 0; col < 5; col++) {
         uint8_t byte = glyph[col];
@@ -1098,12 +1103,18 @@ static void redraw_screen(void) {
         }
     }
  
-    // Raymarch rotating 3D models (sd_cactus or sd_letter_t) dynamically based on active SID audio track
+    // Populate Coaxial Uniform Buffer Object (UBO) fields
+    active_ubo.rotation_angle = retro_time * 1.2f;
+    active_ubo.camera_y = sinf(retro_time * 2.0f) * 2.2f;
+    active_ubo.active_model = (uint32_t)raymarch_mode;
+    active_ubo.raster_intensity = 1.0f;
+ 
+    // Raymarch rotating 3D models using parameters fetched from active_ubo
     uint8_t ray_steps[32];
-    float angle = retro_time * 1.2f;
+    float angle = active_ubo.rotation_angle;
     float cos_a = cosf(angle);
     float sin_a = sinf(angle);
-    float ry = sinf(retro_time * 2.0f) * 2.2f;
+    float ry = active_ubo.camera_y;
     
     for (int col = 0; col < 32; col++) {
         float rx = (col - 15.5f) * 0.25f;
@@ -1117,9 +1128,9 @@ static void redraw_screen(void) {
             float rot_z = rx * sin_a + rz * cos_a;
             
             float dist;
-            if (raymarch_mode == 0) {
+            if (active_ubo.active_model == 0) {
                 dist = sd_cactus(rot_x, ry, rot_z);
-            } else if (raymarch_mode == 1) {
+            } else if (active_ubo.active_model == 1) {
                 dist = sd_letter_t(rot_x, ry, rot_z);
             } else {
                 float d_c = sd_cactus(rot_x, ry, rot_z);
