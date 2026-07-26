@@ -373,6 +373,44 @@ static void draw_string(uint32_t *pixels, int w, int h, int start_x, int start_y
     }
 }
 
+// Simulated Self-Modifying Code (SMC) line remover and ZMM-style backup mirroring
+static void simulate_smc_remove_next_line(uint32_t *active, uint32_t *backup, int win_w, int win_h, int ground, float flood_height) {
+    if (flood_height <= 0.0f) return;
+    
+    // Simulate runtime-compiled SMC operand values (rewriting instructions in RAM)
+    struct {
+        uint32_t op_start_mask;
+        uint32_t op_count;
+        uint32_t op_end_mask;
+    } smc_inst;
+    
+    smc_inst.op_start_mask = 0x00FFFFFF; // Immediate AND mask operand
+    smc_inst.op_count = (int)(flood_height * 4.0f) % 40; // CPX comparison loop operand
+    smc_inst.op_end_mask = 0x00FFFFFF;
+    
+    int row_displacement = ground + 30 - (int)flood_height;
+    if (row_displacement < 0 || row_displacement >= win_h) return;
+    
+    int row_start = row_displacement * win_w;
+    
+    // Mirror write to BOTH active screen and backup cache using EOR mapping simulation
+    for (int col = 0; col < win_w; col++) {
+        int idx_active = row_start + col;
+        
+        // Emulate compiler/assembler instruction self-modification checks
+        if (col == 0) {
+            active[idx_active] &= smc_inst.op_start_mask;
+            backup[idx_active] &= smc_inst.op_start_mask;
+        } else if (col < (int)smc_inst.op_count) {
+            active[idx_active] = 0xFF051224; // Blue clear color
+            backup[idx_active] = 0xFF051224;
+        } else if (col == (int)smc_inst.op_count) {
+            active[idx_active] &= smc_inst.op_end_mask;
+            backup[idx_active] &= smc_inst.op_end_mask;
+        }
+    }
+}
+
 // Redraw screen with real-time PETSCII / C64 effects
 static void redraw_screen(void) {
     if (!surface) return;
@@ -649,15 +687,8 @@ static void redraw_screen(void) {
         }
     }
     
-    // Apply flood rising tide dynamically to active pixels (keeps bg_cache backup pristine)
-    if (water_flood_height > 0.0f) {
-        int flood_limit = ground + 30 - (int)water_flood_height;
-        for (int y = flood_limit; y < win_height; y++) {
-            for (int x = 0; x < win_width; x++) {
-                pixels[y * win_width + x] = 0xFF051224; // Blue flood color
-            }
-        }
-    }
+    // Apply simulated SMC remove_next_line to both active screen and backup cache
+    simulate_smc_remove_next_line(pixels, bg_cache, win_width, win_height, ground, water_flood_height);
 
     // 1. Draw 3D Drop Shadow / Extrusion layer with matching wobble displacement
     for (int char_idx = 0; char_idx < 6; char_idx++) {
