@@ -412,6 +412,25 @@ static void redraw_screen(void) {
         }
     }
 
+    // Infinite Zooming Tunnel/Zoomer Effect: concentric boxes scaling outward
+    int tunnel_center_x = win_width / 2;
+    int tunnel_center_y = win_height / 2;
+    for (int i = 0; i < 4; i++) {
+        float zoom_rad = fmodf(retro_time * 80.0f + i * 90.0f, 360.0f);
+        int w_size = (int)(zoom_rad * 1.6f);
+        int h_size = (int)(zoom_rad * 0.9f);
+        
+        // Draw outline borders using blocks
+        for (int tx = -w_size; tx <= w_size; tx += 12) {
+            draw_char(pixels, win_width, win_height, tunnel_center_x + tx + glitch_x, tunnel_center_y - h_size + glitch_y, '=', 0xFF555555, 1);
+            draw_char(pixels, win_width, win_height, tunnel_center_x + tx + glitch_x, tunnel_center_y + h_size + glitch_y, '=', 0xFF555555, 1);
+        }
+        for (int ty = -h_size; ty <= h_size; ty += 12) {
+            draw_char(pixels, win_width, win_height, tunnel_center_x - w_size + glitch_x, tunnel_center_y + ty + glitch_y, '|', 0xFF555555, 1);
+            draw_char(pixels, win_width, win_height, tunnel_center_x + w_size + glitch_x, tunnel_center_y + ty + glitch_y, '|', 0xFF555555, 1);
+        }
+    }
+
     // Audio Peak Border Pulsing: Scale factor pulses with SID volume
     int base_scale = win_width / 280;
     if (base_scale < 1) base_scale = 1;
@@ -597,7 +616,8 @@ static void redraw_screen(void) {
                   sprites[idx].color, 3);
     }
     
-    // Multi-Layer Parallax Background Scroll (Singular / Conspiracy speed-2 scroller)
+    // Dual opposite-direction scrolltexts (Interlaced layout)
+    // 1. Top Parallax Scroller moving RIGHT
     float p_scroll_speed = 60.0f;
     float p_scroll_x_total = retro_time * p_scroll_speed;
     int p_base_char_idx = (int)(p_scroll_x_total / 12.0f) % strlen(parallax_scroller_text);
@@ -606,10 +626,11 @@ static void redraw_screen(void) {
     for (int col = 0; col < 90; col++) {
         int char_idx = (p_base_char_idx + col) % strlen(parallax_scroller_text);
         char ch = parallax_scroller_text[char_idx];
-        draw_char(pixels, win_width, win_height, 20 + col * 12 - p_pixel_shift + glitch_x, p_scroller_y, ch, 0xFF00FFFF, 2);
+        // Note: positive subtraction shifts pixels rightwards (scrolling opposite direction)
+        draw_char(pixels, win_width, win_height, 20 + col * 12 + p_pixel_shift + glitch_x, p_scroller_y, ch, 0xFF00FFFF, 2);
     }
 
-    // Dynamic scroller speed linked to the active SID tune selection (Interactive speed sync)
+    // 2. Bottom Main Scroller moving LEFT
     float scroll_x_speed = 30.0f;
     if (active_tune == 1) scroll_x_speed = 45.0f;
     else if (active_tune == 2) scroll_x_speed = 60.0f;
@@ -1040,10 +1061,6 @@ int main(void) {
             }
         }
 
-        // Mutate simulated VIC-II hardware register states
-        vic_d016 = (uint8_t)(retro_time * 8.0f) & 0x07; // 0-7 pixel fine scroll shift
-        vic_d012 = 120 + (uint8_t)(sinf(retro_time * 2.0f) * 20.0f); // Modulate raster split line
-        
         // Run VIC-II screen shake displacement glitches only during typing activity to keep layout smooth
         if (type_activity > 1.0f && ((int)(retro_time * 12.0f) % 2 == 0)) {
             glitch_x = (rand() % 3) - 1; // Subtle horizontal bump
