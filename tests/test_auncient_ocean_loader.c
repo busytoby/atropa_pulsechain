@@ -632,6 +632,21 @@ static int usd_deserialize_cactus_stage(const char *filename, usd_auncient_cactu
     return 1;
 }
 
+typedef struct {
+    usd_auncient_cactus_schema_t sublayers[4];
+    int sublayers_count;
+} usd_auncient_cactus_stage_t;
+
+static float usd_resolve_composed_density(const usd_auncient_cactus_stage_t *stage) {
+    for (int i = stage->sublayers_count - 1; i >= 0; i--) {
+        if (stage->sublayers[i].density != 0.0f) {
+            return stage->sublayers[i].density;
+        }
+    }
+    return 1.0f;
+}
+
+
 
 
 
@@ -1440,6 +1455,27 @@ int main(void) {
     
     remove(slice_path); // Clean up disk file
     printf("   ✓ Stage slice serialization and deserialization verified.\n");
+    fflush(stdout);
+
+    // 39. Test Sublayer Composition
+    printf("[TEST] Testing Sublayer Composition...\n");
+    fflush(stdout);
+    usd_auncient_cactus_stage_t stage = {
+        .sublayers = {
+            {.density = 1.25f}, // Sublayer 0 (bottom)
+            {.density = 3.50f}, // Sublayer 1 (middle)
+            {.density = 0.00f}  // Sublayer 2 (top; empty/fallback)
+        },
+        .sublayers_count = 3
+    };
+    
+    // Middle sublayer overrides bottom sublayer
+    assert(usd_resolve_composed_density(&stage) == 3.50f);
+    
+    // Add new sublayer to overlay mid-layer
+    stage.sublayers[2].density = 7.15f;
+    assert(usd_resolve_composed_density(&stage) == 7.15f);
+    printf("   ✓ Sublayer composition override resolution verified.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
