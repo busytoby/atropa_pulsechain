@@ -322,12 +322,6 @@ static void redraw_screen(void) {
     uint32_t *pixels = NULL;
     wl_buffers[current_buffer_idx] = create_shm_buffer(win_width, win_height, &pixels);
     if (!wl_buffers[current_buffer_idx] || !pixels) return;
-    
-    // Warm Sunset Copper Raster Sweep Bands
-    int bar1_y = win_height / 2 + (int)(sine_lut[(int)(retro_time * 60.0f) & 0xFF] * 200.0f);
-    int bar2_y = win_height / 2 + (int)(sine_lut[(int)(retro_time * 80.0f + 80) & 0xFF] * 150.0f);
-    int bar3_y = win_height / 2 + (int)(sine_lut[(int)(retro_time * 100.0f + 160) & 0xFF] * 180.0f);
-
     // Background raster scanline coloring loop
     for (int y = 0; y < win_height; y++) {
         if (y >= 100 && y < 550 && (y % 24) == 0) {
@@ -343,47 +337,21 @@ static void redraw_screen(void) {
             int rand_color_idx = (int)(y * 0.15f + retro_time * 800.0f + (rand() % 4)) & 0x0F;
             bg_color = color_cycle_lut[rand_color_idx];
         } else {
-            // Warm copper sunset bands
-            int d1 = abs(y - bar1_y);
-            int d2 = abs(y - bar2_y);
-            int d3 = abs(y - bar3_y);
-            uint32_t bar_color = 0;
-            
-            if (d1 < 30) {
-                int intensity = (30 - d1) * 8;
-                bar_color = (intensity << 16) | (intensity << 8); // Orange/Red Sunset
-            } else if (d2 < 25) {
-                int intensity = (25 - d2) * 10;
-                bar_color = (intensity << 16) | (intensity << 7); // Deep Amber
-            } else if (d3 < 20) {
-                int intensity = (20 - d3) * 12;
-                bar_color = (intensity << 16) | intensity; // Purple Sunset
-            }
-            
-            if (bar_color != 0) {
-                bg_color = bar_color;
+            // Calm, normal sunset gradient based on vertical coordinate y
+            float factor = (float)y / (float)win_height;
+            uint8_t r_val, g_val, b_val;
+            if (factor < 0.6f) {
+                float t = factor / 0.6f;
+                r_val = (uint8_t)(0x1A * (1.0f - t) + 0xFF * t);
+                g_val = (uint8_t)(0x00 * (1.0f - t) + 0x55 * t);
+                b_val = (uint8_t)(0x2A * (1.0f - t) + 0x00 * t);
             } else {
-                int sweep_idx = (int)(y * 0.5f + retro_time * 200.0f) & 0xFF;
-                float color_sweep = sine_lut[sweep_idx];
-                
-                float p_noise = sine_lut[(sweep_idx * 3) & 0xFF] * sine_lut[(sweep_idx + 128) & 0xFF];
-                if (p_noise > 0.4f) {
-                    bg_color ^= 0x00110000;
-                }
-                
-                if (color_sweep > 0.8f) {
-                    bg_color = 0xFF551100;
-                } else if (color_sweep < -0.8f) {
-                    bg_color = 0xFF330011;
-                } else {
-                    if (y < (int)vic_d012 * 3) {
-                        int pal_idx = (int)(retro_time * 8.0f) & 0x0F;
-                        bg_color = color_cycle_lut[pal_idx];
-                    } else {
-                        bg_color = 0xFF1c0b00;
-                    }
-                }
+                float t = (factor - 0.6f) / 0.4f;
+                r_val = (uint8_t)(0xFF * (1.0f - t) + 0x1C * t);
+                g_val = (uint8_t)(0x55 * (1.0f - t) + 0x0B * t);
+                b_val = (uint8_t)(0x00 * (1.0f - t) + 0x00 * t);
             }
+            bg_color = (0xFF << 24) | (r_val << 16) | (g_val << 8) | b_val;
         }
         
         for (int x = 0; x < win_width; x++) {
