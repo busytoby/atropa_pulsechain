@@ -14,6 +14,11 @@ int main(void) {
     assert(fabs(dof.lens_radius - 0.5) < 1e-5);
     assert(fabs(dof.target_z - 10.0) < 1e-5);
 
+    // Verify unconfigured warning trigger (focal_distance = 0.0)
+    TSFiDepthOfField unconfig_dof;
+    tsfi_depthoffield_init(&unconfig_dof, 0.0, 0.5, 10.0);
+    tsfi_depthoffield_eval_blur(&unconfig_dof, 10.0);
+
     // Verify Circle of Confusion evaluations
     double blur_at_focus = tsfi_depthoffield_eval_blur(&dof, 10.0);
     double blur_out = tsfi_depthoffield_eval_blur(&dof, 20.0);

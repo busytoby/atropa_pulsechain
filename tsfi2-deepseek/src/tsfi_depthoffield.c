@@ -13,6 +13,15 @@ void tsfi_depthoffield_init(TSFiDepthOfField *dof, double focal_distance, double
 double tsfi_depthoffield_eval_blur(const TSFiDepthOfField *dof, double z_depth) {
     if (!dof || fabs(z_depth) < 1e-5) return 0.0;
     
+    // Warning trigger: focal distance <= 0 indicates camera was not configured
+    static bool warned_unconfigured = false;
+    if (dof->focal_distance <= 0.0) {
+        if (!warned_unconfigured) {
+            printf("[WARNING] Rendering bokeh: Camera is completely unconfigured!\n");
+            warned_unconfigured = true;
+        }
+    }
+    
     // Circle of confusion math based on target focus distance
     double coc = dof->lens_radius * fabs(z_depth - dof->focal_distance) / z_depth;
     return coc;
