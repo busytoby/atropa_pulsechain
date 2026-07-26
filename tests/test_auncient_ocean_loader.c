@@ -262,6 +262,21 @@ static void resolve_spec_inh_conflict(const usd_spec_inh_conflict_t *conflict, c
     }
 }
 
+typedef struct {
+    char class_opinions[3][32];
+    int total_classes;
+} usd_multiple_inherits_t;
+
+static void resolve_multiple_inherits(const usd_multiple_inherits_t *mi, char *resolved_val) {
+    for (int i = 0; i < mi->total_classes; i++) {
+        if (strlen(mi->class_opinions[i]) > 0) {
+            strcpy(resolved_val, mi->class_opinions[i]);
+            return;
+        }
+    }
+}
+
+
 
 
 
@@ -506,6 +521,35 @@ int main(void) {
     resolve_spec_inh_conflict(&si_conflict_no_inh, resolved_si_no_inh);
     assert(strcmp(resolved_si_no_inh, "specialized_base_property") == 0);
     printf("   ✓ Inherits (I) taking precedence over Specializes (S) verified.\n");
+    fflush(stdout);
+
+    // 14. Test Multiple Inherits Precedence Order
+    printf("[TEST] Testing Multiple Inherits Precedence Order...\n");
+    fflush(stdout);
+    usd_multiple_inherits_t mi = {
+        .class_opinions = {
+            "first_class_opinion",
+            "second_class_opinion",
+            "third_class_opinion"
+        },
+        .total_classes = 3
+    };
+    char resolved_mi[32] = "";
+    resolve_multiple_inherits(&mi, resolved_mi);
+    assert(strcmp(resolved_mi, "first_class_opinion") == 0);
+
+    usd_multiple_inherits_t mi_weak = {
+        .class_opinions = {
+            "",
+            "second_class_opinion",
+            "third_class_opinion"
+        },
+        .total_classes = 3
+    };
+    char resolved_mi_weak[32] = "";
+    resolve_multiple_inherits(&mi_weak, resolved_mi_weak);
+    assert(strcmp(resolved_mi_weak, "second_class_opinion") == 0);
+    printf("   ✓ Sequential inherits priority mapping (first active resolves) verified.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
