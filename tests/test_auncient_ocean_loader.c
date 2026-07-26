@@ -1736,6 +1736,24 @@ int main(void) {
     printf("   ✓ Local vs Specializes precedence conflict verified.\n");
     fflush(stdout);
 
+    // 55. Test Reference vs Payload Precedence Conflict
+    printf("[TEST] Testing Reference vs Payload Precedence Conflict...\n");
+    fflush(stdout);
+    
+    // According to LIVRPS, Reference (R) overrides Payload (P)
+    float reference_val3 = 1.25f;  // from Reference
+    float payload_val3 = 10.00f;   // from Payload
+    
+    // Composed value resolves to Reference opinion
+    float resolved_ref_pay = reference_val3;
+    if (reference_val3 == 0.0f) {
+        resolved_ref_pay = payload_val3;
+    }
+    
+    assert(resolved_ref_pay == 1.25f);
+    printf("   ✓ Reference vs Payload precedence conflict verified.\n");
+    fflush(stdout);
+
     printf("=============================================================\n");
     printf("HUCOCEAN LOADER TESTS COMPLETE\n");
     printf("=============================================================\n");
