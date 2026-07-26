@@ -574,15 +574,15 @@ static void redraw_screen(void) {
                   sprites[idx].color, 3);
     }
     
-    // Dual opposite-direction scrolltexts
-    // 1. Top Parallax Scroller moving RIGHT
+    // 1. Top Parallax Scroller moving RIGHT (Smooth right-scrolling math)
     float p_scroll_speed = 60.0f;
     float p_scroll_x_total = retro_time * p_scroll_speed;
-    int p_base_char_idx = (int)(p_scroll_x_total / 12.0f) % strlen(parallax_scroller_text);
     int p_pixel_shift = (int)fmodf(p_scroll_x_total, 12.0f);
     int p_scroller_y = 60 + glitch_y;
+    int len = strlen(parallax_scroller_text);
+    int p_base_char_idx = len - ((int)(p_scroll_x_total / 12.0f) % len);
     for (int col = 0; col < 90; col++) {
-        int char_idx = (p_base_char_idx + col) % strlen(parallax_scroller_text);
+        int char_idx = (p_base_char_idx + col) % len;
         char ch = parallax_scroller_text[char_idx];
         draw_char(pixels, win_width, win_height, 20 + col * 12 + p_pixel_shift + glitch_x, p_scroller_y, ch, 0xFFFFCC00, 2);
     }
