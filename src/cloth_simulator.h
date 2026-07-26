@@ -28,6 +28,7 @@ extern "C" {
 
 void cloth_init(void);
 void cloth_update(float wind_x, float wind_y, float wind_z);
+void cloth_apply_sphere_collision(float cx, float cy, float cz, float radius);
 void cloth_generate_mesh(ClothVertex *vertices, int *indices, int *vertex_count, int *index_count);
 
 #ifdef __cplusplus

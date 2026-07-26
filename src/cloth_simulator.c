@@ -177,6 +177,44 @@ void cloth_update(float wind_x, float wind_y, float wind_z) {
     }
 }
 
+void cloth_apply_sphere_collision(float cx, float cy, float cz, float radius) {
+    for (int x = 0; x < CLOTH_WIDTH; x++) {
+        for (int y = 0; y < CLOTH_HEIGHT; y++) {
+            // Calculate distance to sphere center
+            float dx = cloth_grid[x][y].x - cx;
+            float dy = cloth_grid[x][y].y - cy;
+            float dz = cloth_grid[x][y].z - cz;
+            float dist = sqrtf(dx*dx + dy*dy + dz*dz);
+            
+            if (dist < radius) {
+                if (dist < 0.0001f) dist = 0.0001f;
+                // Project position outward to sphere surface boundary
+                float inv_dist = 1.0f / dist;
+                float nx = dx * inv_dist;
+                float ny = dy * inv_dist;
+                float nz = dz * inv_dist;
+                
+                cloth_grid[x][y].x = cx + nx * radius;
+                cloth_grid[x][y].y = cy + ny * radius;
+                cloth_grid[x][y].z = cz + nz * radius;
+                
+                // Zero/damp velocity along the contact normal to simulate friction
+                float dot_v = cloth_grid[x][y].vx*nx + cloth_grid[x][y].vy*ny + cloth_grid[x][y].vz*nz;
+                if (dot_v < 0.0f) {
+                    cloth_grid[x][y].vx -= nx * dot_v;
+                    cloth_grid[x][y].vy -= ny * dot_v;
+                    cloth_grid[x][y].vz -= nz * dot_v;
+                    
+                    // Friction damping parallel to surface
+                    cloth_grid[x][y].vx *= 0.5f;
+                    cloth_grid[x][y].vy *= 0.5f;
+                    cloth_grid[x][y].vz *= 0.5f;
+                }
+            }
+        }
+    }
+}
+
 void cloth_generate_mesh(ClothVertex *vertices, int *indices, int *vertex_count, int *index_count) {
     *vertex_count = 0;
     *index_count = 0;

@@ -10,11 +10,13 @@ int main(void) {
     cloth_init();
     printf("   ✓ Cloth grid initialization verified.\n");
 
-    // Perform 10 update cycles with wind
+    // Perform 10 update cycles with wind and sphere collisions
     for (int i = 0; i < 10; i++) {
         cloth_update(0.005f, 0.0f, -0.002f);
+        // Collide with a sphere representing the teddy bear head
+        cloth_apply_sphere_collision(1.5f, 1.0f, 0.0f, 0.6f);
     }
-    printf("   ✓ 10 solver update steps executed.\n");
+    printf("   ✓ 10 solver updates and sphere collisions executed.\n");
 
     // Generate mesh output
     static ClothVertex vertices[1000];
