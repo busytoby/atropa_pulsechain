@@ -12,6 +12,10 @@ double tsfi_displacementshader_eval(const TSFiDisplacementShader *ds, double aut
     
     // Wave equation linked directly to dynamic AUTODIN scheduler timeline execution frame ticks
     double phase = autodin_time * ds->frequency + vertex_coord;
+    
+    // WinchesterMQ SCSI registers clamp coordinate parameters to 8-bit boundary constraints (0-255)
+    phase = fmod(phase, 256.0);
+    
     return ds->amplitude * sin(phase);
 }
 
