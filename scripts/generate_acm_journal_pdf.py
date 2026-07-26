@@ -193,6 +193,10 @@ def inline_md_to_html(text):
     import html
     text = html.escape(text)
     
+    # Strip local file:/// links and convert standard web links
+    text = re.sub(r'\[([^\]]+)\]\(file:///[^)]+\)', r'\1', text)
+    text = re.sub(r'\[([^\]]+)\]\((https?://[^)]+)\)', r'<a href="\2"><font color="#0066cc"><u>\1</u></font></a>', text)
+    
     if text.count('`') % 2 != 0:
         text = text.rsplit('`', 1)[0]
         
