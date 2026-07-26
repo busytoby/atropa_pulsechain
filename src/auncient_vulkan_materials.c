@@ -89,3 +89,26 @@ void auncient_vulkan_materials_get_sizes(int set_index, uint32_t gpu_alignment, 
         *aligned_size = size;
     }
 }
+
+void auncient_vulkan_materials_build_buffer_info(void *buffer, uint64_t displacement, uint64_t range, VkDescriptorBufferInfo *info) {
+    if (!info) return;
+
+    info->buffer = buffer;
+    info->offset_bytes = displacement;
+    info->range = range;
+}
+
+void auncient_vulkan_materials_build_write_set(void *dst_set, uint32_t binding, VkDescriptorType type, const VkDescriptorBufferInfo *buffer_info, VkWriteDescriptorSet *write_set) {
+    if (!write_set) return;
+
+    write_set->sType = 35; // VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET
+    write_set->pNext = NULL;
+    write_set->dstSet = dst_set;
+    write_set->dstBinding = binding;
+    write_set->dstArrayElement = 0;
+    write_set->descriptorCount = 1;
+    write_set->descriptorType = type;
+    write_set->pImageInfo = NULL;
+    write_set->pBufferInfo = buffer_info;
+    write_set->pTexelBufferView = NULL;
+}

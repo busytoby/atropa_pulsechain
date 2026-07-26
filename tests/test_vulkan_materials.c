@@ -68,6 +68,24 @@ int main(void) {
     assert(aligned_sz == 256); // 132 bytes rounded up to 256 alignment
     printf("   ✓ Size and alignment estimators verified.\n");
 
+    // Test Descriptor Buffer Info & Write Set building
+    VkDescriptorBufferInfo buf_info;
+    void* mock_buffer = (void*)0xABCD;
+    auncient_vulkan_materials_build_buffer_info(mock_buffer, 256, 128, &buf_info);
+    assert(buf_info.buffer == mock_buffer);
+    assert(buf_info.offset_bytes == 256);
+    assert(buf_info.range == 128);
+    printf("   ✓ Descriptor buffer info builder verified.\n");
+
+    VkWriteDescriptorSet write_set;
+    void* mock_set = (void*)0x9999;
+    auncient_vulkan_materials_build_write_set(mock_set, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &buf_info, &write_set);
+    assert(write_set.sType == 35);
+    assert(write_set.dstSet == mock_set);
+    assert(write_set.dstBinding == 0);
+    assert(write_set.pBufferInfo == &buf_info);
+    printf("   ✓ Write descriptor set builder verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT VULKAN MATERIALS TEST COMPLETE\n");
     printf("=============================================================\n");

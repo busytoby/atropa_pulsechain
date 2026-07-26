@@ -87,8 +87,38 @@ extern "C" {
 void auncient_vulkan_materials_get_bindings(int set_index, VkDescriptorSetLayoutBinding *bindings, int *count);
 void auncient_vulkan_materials_build_layout_info(const VkDescriptorSetLayoutBinding *bindings, int count, VkDescriptorSetLayoutCreateInfo *info);
 void auncient_vulkan_materials_get_push_constant_range(VkPushConstantRange *range);
+void auncient_vulkan_materials_get_sizes(int set_index, uint32_t gpu_alignment, uint32_t *raw_size, uint32_t *aligned_size);
+
+typedef struct {
+    void* buffer; // Mock VkBuffer handle
+    uint64_t offset_bytes; // Explicit bytes to bypass word constraints
+    uint64_t range;
+} VkDescriptorBufferInfo;
+
+typedef struct {
+    uint32_t sType;
+    const void* pNext;
+    void* dstSet; // Mock VkDescriptorSet handle
+    uint32_t dstBinding;
+    uint32_t dstArrayElement;
+    uint32_t descriptorCount;
+    VkDescriptorType descriptorType;
+    const void* pImageInfo;
+    const VkDescriptorBufferInfo* pBufferInfo;
+    const void* pTexelBufferView;
+} VkWriteDescriptorSet;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void auncient_vulkan_materials_get_bindings(int set_index, VkDescriptorSetLayoutBinding *bindings, int *count);
+void auncient_vulkan_materials_build_layout_info(const VkDescriptorSetLayoutBinding *bindings, int count, VkDescriptorSetLayoutCreateInfo *info);
+void auncient_vulkan_materials_get_push_constant_range(VkPushConstantRange *range);
 void auncient_vulkan_materials_build_pipeline_layout(const void *set_layouts, int layout_count, const VkPushConstantRange *push_ranges, int push_count, VkPipelineLayoutCreateInfo *info);
 void auncient_vulkan_materials_get_sizes(int set_index, uint32_t gpu_alignment, uint32_t *raw_size, uint32_t *aligned_size);
+void auncient_vulkan_materials_build_buffer_info(void *buffer, uint64_t displacement, uint64_t range, VkDescriptorBufferInfo *info);
+void auncient_vulkan_materials_build_write_set(void *dst_set, uint32_t binding, VkDescriptorType type, const VkDescriptorBufferInfo *buffer_info, VkWriteDescriptorSet *write_set);
 
 #ifdef __cplusplus
 }
