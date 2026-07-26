@@ -828,18 +828,17 @@ static void redraw_screen(void) {
     int len = strlen(parallax_scroller_text);
     int p_base_char_idx = len - ((int)(p_scroll_x_total / 12.0f) % len);
     
-    int cur_x = 20 + p_pixel_shift + glitch_x;
-    for (int col = 0; col < 60; col++) {
+    for (int col = 0; col < 90; col++) {
         int char_idx = (p_base_char_idx + col) % len;
         char ch = parallax_scroller_text[char_idx];
         
         // Calculate dynamic zoom scale factor based on position and time
-        int dyn_scale = 2 + (int)(sinf(retro_time * 4.0f + col * 0.25f) * 1.1f);
+        int dyn_scale = 2 + (int)(sinf(retro_time * 4.0f + col * 0.25f) * 0.6f);
         if (dyn_scale < 1) dyn_scale = 1;
         
-        // Draw character offset vertically to keep it centered on the row
-        draw_char(pixels, win_width, win_height, cur_x, p_scroller_y - (dyn_scale * 2), ch, 0xFFFFCC00, dyn_scale);
-        cur_x += 6 * dyn_scale; // Stride scales dynamically to prevent overlapping
+        // Draw character at fixed step grid coordinate (removes horizontal cumulative jitter)
+        int px = 20 + col * 12 + p_pixel_shift + glitch_x;
+        draw_char(pixels, win_width, win_height, px, p_scroller_y - (dyn_scale * 2), ch, 0xFFFFCC00, dyn_scale);
     }
 
     // 2. Bottom Main Scroller moving LEFT
