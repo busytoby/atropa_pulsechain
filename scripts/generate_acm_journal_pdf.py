@@ -646,7 +646,7 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                 
                 # Determine block width
                 max_len = max((len(bl.rstrip('\r\n')) for bl in block_lines), default=0)
-                is_wide = (max_len > 55)
+                is_wide = (max_len > 55) or is_mermaid
                 
                 if is_mermaid:
                     m_flowable = render_mermaid_flowchart(block_lines, col_width_1col if is_wide else col_width)
