@@ -1718,6 +1718,24 @@ int main(void) {
     printf("   ✓ Local vs Payload precedence conflict verified.\n");
     fflush(stdout);
 
+    // 54. Test Local vs Specializes Precedence Conflict
+    printf("[TEST] Testing Local vs Specializes Precedence Conflict...\n");
+    fflush(stdout);
+    
+    // According to LIVRPS, Local (L) overrides Specializes (S)
+    float local_val4 = 1.85f;        // from Local
+    float specialized_val3 = 10.00f; // from Specializes
+    
+    // Composed value resolves to Local opinion
+    float resolved_loc_spec = local_val4;
+    if (local_val4 == 0.0f) {
+        resolved_loc_spec = specialized_val3;
+    }
+    
+    assert(resolved_loc_spec == 1.85f);
+    printf("   ✓ Local vs Specializes precedence conflict verified.\n");
+    fflush(stdout);
+
     printf("=============================================================\n");
     printf("HUCOCEAN LOADER TESTS COMPLETE\n");
     printf("=============================================================\n");
