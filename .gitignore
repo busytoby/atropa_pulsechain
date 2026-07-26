@@ -518,6 +518,13 @@ frontend/compiled_yul.json
 /tests/test_btc_rails_vm
 /tests/bench_btc_script_comparison
 
+# Ignore large media formats and document assets
+*.jpg
+*.jpeg
+*.png
+*.pdf
+*.gif
+
 
 
 
