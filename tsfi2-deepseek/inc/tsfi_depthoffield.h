@@ -1,0 +1,22 @@
+#ifndef TSFI_DEPTHOFFIELD_H
+#define TSFI_DEPTHOFFIELD_H
+
+#include <stdint.h>
+#include <stdbool.h>
+
+typedef struct {
+    double focal_distance;
+    double lens_radius;
+    double target_z; // TARG focal coordinate boundary
+} TSFiDepthOfField;
+
+// Initialize the DepthOfField context
+void tsfi_depthoffield_init(TSFiDepthOfField *dof, double focal_distance, double lens_radius, double target_z);
+
+// Calculates the bokeh blur radius coefficient for a given geometry vertex Z depth
+double tsfi_depthoffield_eval_blur(const TSFiDepthOfField *dof, double z_depth);
+
+// Resolves target configuration from Z-machine virtual execution bounds
+bool tsfi_depthoffield_resolve_zmachine(TSFiDepthOfField *dof, uint32_t zmachine_address);
+
+#endif // TSFI_DEPTHOFFIELD_H
