@@ -282,6 +282,12 @@ def render_sunset_frame(frame, width, height):
                         col_step = int(t_val * 15.0 + char_idx * 4 + c) % 8
                         color = (180 + col_step * 8, 40 + col_step * 10, 0)
                         
+                    # Diagonal sheen sweep (from left to right, width of sweep = 12 pixels)
+                    sheen_pos = int(t_val * 200.0) % 900 - 200
+                    dist_to_sheen = abs((char_idx * char_spacing + c * 4 + r * 4) - sheen_pos)
+                    if dist_to_sheen < 12:
+                        color = (255, 255, 255)
+                        
                     draw.rectangle([px, py, px + 3, py + 3], fill=color)
                     
                     if is_glossy:
