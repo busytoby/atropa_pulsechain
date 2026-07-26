@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auncient Material Editor - TSFI2 Graphics Suite</title>
+    <meta name="description" content="A premium procedural material editor and shader permutation tool for Auncient Vulkan pipeline layouts.">
+    <style>
+        :root {
+            --bg-color: #0d0f13;
+            --panel-bg: rgba(22, 28, 36, 0.75);
+            --primary-accent: #3a86ff;
+            --accent-glow: rgba(58, 134, 255, 0.4);
+            --text-color: #f1f3f5;
+            --muted-text: #adb5bd;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-family);
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Glassmorphic Panel Layout */
+        .sidebar {
+            width: 360px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            border-right: 1px solid var(--border-color);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+
+        .main-view {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            height: 100%;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin: 0 0 4px 0;
+            background: linear-gradient(135deg, #fff, #3a86ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: var(--muted-text);
+            margin: 0 0 16px 0;
+        }
+
+        .section-title {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--primary-accent);
+            margin: 16px 0 8px 0;
+            font-weight: 600;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        label {
+            font-size: 0.8rem;
+            color: var(--muted-text);
+        }
+
+        input[type="text"], select {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            border-radius: 6px;
+            color: var(--text-color);
+            font-family: inherit;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+
+        input[type="text"]:focus, select:focus {
+            border-color: var(--primary-accent);
+            outline: none;
+            box-shadow: 0 0 8px var(--accent-glow);
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            accent-color: var(--primary-accent);
+        }
+
+        .slider-val {
+            font-size: 0.8rem;
+            width: 32px;
+            text-align: right;
+        }
+
+        /* 3D Preview Canvas */
+        #preview-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .canvas-overlay {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            pointer-events: none;
+        }
+
+        .badge {
+            background: rgba(58, 134, 255, 0.15);
+            border: 1px solid var(--primary-accent);
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        /* Code Export Area */
+        .export-panel {
+            position: absolute;
+            bottom: 24px;
+            left: 24px;
+            right: 24px;
+            background: rgba(10, 12, 16, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+        }
+
+        .export-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .export-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--primary-accent);
+        }
+
+        .export-btn {
+            background: var(--primary-accent);
+            border: none;
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .export-btn:hover {
+            opacity: 0.9;
+            box-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        pre {
+            margin: 0;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 12px;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.8rem;
+            color: #8da1b9;
+            overflow-x: auto;
+            max-height: 120px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div>
+            <h1>Auncient Material</h1>
+            <div class="subtitle">TSFI2 Permutation & Pipeline Editor</div>
+        </div>
+
+        <div class="section-title">Identity & Hashing</div>
+        <div class="control-group">
+            <label for="symbol-name">Material Registration Key</label>
+            <input type="text" id="symbol-name" value="Terrain_Map_Layer">
+        </div>
+        <div class="control-group">
+            <label>16-bit FNV-1a Hash Symbol</label>
+            <input type="text" id="symbol-hash" value="0x068B" readonly style="color: var(--muted-text); text-align: center; font-weight: bold; background: rgba(0,0,0,0.6);">
+        </div>
+
+        <div class="section-title">Surface Properties</div>
+        <div class="control-group">
+            <label for="clut-preset">Color Palette CLUT</label>
+            <select id="clut-preset">
+                <option value="2" selected>Fire (Matted Brown)</option>
+                <option value="1">Ocean (Deep Blue)</option>
+                <option value="3">Obsidian (Purple Violet)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label for="shininess">Specular Shininess</label>
+            <div class="slider-container">
+                <input type="range" id="shininess" min="8" max="64" value="24">
+                <span class="slider-val" id="shininess-val">24</span>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label for="priority">Render Priority</label>
+            <div class="slider-container">
+                <input type="range" id="priority" min="0" max="10" value="5">
+                <span class="slider-val" id="priority-val">5</span>
+            </div>
+        </div>
+
+        <div class="section-title">Vulkan Pipeline State</div>
+        <div class="control-group">
+            <label for="cull-mode">Culling Mode</label>
+            <select id="cull-mode">
+                <option value="back">CULL_MODE_BACK</option>
+                <option value="front">CULL_MODE_FRONT</option>
+                <option value="none">CULL_MODE_NONE</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label for="blend-mode">Blending Configuration</label>
+            <select id="blend-mode">
+                <option value="add">BLEND_OP_ADD</option>
+                <option value="multiply">BLEND_OP_MULTIPLY</option>
+                <option value="difference">BLEND_OP_DIFFERENCE</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="main-view">
+        <div class="canvas-overlay">
+            <span class="badge">Realtime WebGL Preview</span>
+        </div>
+        <canvas id="preview-canvas"></canvas>
+
+        <div class="export-panel">
+            <div class="export-header">
+                <div class="export-title">Vulkan Struct Representation (DNATerrainUniforms)</div>
+                <button class="export-btn" id="copy-btn">Copy Config</button>
+            </div>
+            <pre id="code-output">// Generated Uniform configuration block</pre>
+        </div>
+    </div>
+
+    <script>
+        // Case-insensitive FNV-1a Hash function matching Vulkan helpers
+        function hashSymbol(name) {
+            let hash = 0x811C9DC5;
+            for (let i = 0; i < name.length; i++) {
+                let c = name.charCodeAt(i);
+                if (c >= 65 && c <= 90) c += 32; // Lowercase Conversion
+                hash = ((hash ^ c) * 0x01000193) >>> 0;
+            }
+            const res = ((hash >>> 16) ^ (hash & 0xFFFF)) & 0xFFFF;
+            return "0x" + res.toString(16).toUpperCase().padStart(4, "0");
+        }
+
+        // DOM elements
+        const symbolInput = document.getElementById("symbol-name");
+        const hashOutput = document.getElementById("symbol-hash");
+        const clutPreset = document.getElementById("clut-preset");
+        const shininessSlider = document.getElementById("shininess");
+        const shininessVal = document.getElementById("shininess-val");
+        const prioritySlider = document.getElementById("priority");
+        const priorityVal = document.getElementById("priority-val");
+        const codeOutput = document.getElementById("code-output");
+
+        function updateExportCode() {
+            const presetVal = clutPreset.value;
+            const shininess = shininessSlider.value;
+            const priority = prioritySlider.value;
+            const hash = hashOutput.value;
+            const symbol = symbolInput.value;
+
+            const code = `// Case-insensitive register key: "${symbol}" (Hash: ${hash})\n` +
+                         `DNATerrainUniforms uniforms = {\n` +
+                         `    .terrain_height_scale = 1.25f,\n` +
+                         `    .noise_persistence = 0.50f,\n` +
+                         `    .noise_lacunarity = 2.0f,\n` +
+                         `    .octaves = 4,\n` +
+                         `    .color_preset = ${presetVal},\n` +
+                         `    // Specular shininess: ${shininess}, Render Priority: ${priority}\n` +
+                         `};`;
+            codeOutput.textContent = code;
+        }
+
+        // Input listeners
+        symbolInput.addEventListener("input", () => {
+            hashOutput.value = hashSymbol(symbolInput.value);
+            updateExportCode();
+        });
+
+        clutPreset.addEventListener("change", updateExportCode);
+        shininessSlider.addEventListener("input", () => {
+            shininessVal.textContent = shininessSlider.value;
+            updateExportCode();
+        });
+        prioritySlider.addEventListener("input", () => {
+            priorityVal.textContent = prioritySlider.value;
+            updateExportCode();
+        });
+
+        document.getElementById("copy-btn").addEventListener("click", () => {
+            navigator.clipboard.writeText(codeOutput.textContent);
+            alert("Vulkan uniform configuration copied to clipboard.");
+        });
+
+        // Setup simple canvas-based 3D rotation shader preview
+        const canvas = document.getElementById("preview-canvas");
+        const ctx = canvas.getContext("2d");
+
+        function resizeCanvas() {
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+        }
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        let angle = 0;
+        function drawScene() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw background ambient grid
+            ctx.strokeStyle = "rgba(58, 134, 255, 0.05)";
+            ctx.lineWidth = 1;
+            const spacing = 40;
+            for (let x = 0; x < canvas.width; x += spacing) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += spacing) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2 - 40;
+            const scale = 110;
+
+            // Generate simple rotating procedural teddy bear vertices
+            ctx.save();
+            ctx.translate(cx, cy);
+
+            const preset = clutPreset.value;
+            let primaryColor = "#8b5a2b"; // fire
+            let highlightColor = "#ffe4b5";
+            if (preset === "1") { // ocean
+                primaryColor = "#008b8b";
+                highlightColor = "#e0ffff";
+            } else if (preset === "3") { // obsidian
+                primaryColor = "#4b0082";
+                highlightColor = "#ee82ee";
+            }
+
+            // Draw shadow
+            ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
+            ctx.beginPath();
+            ctx.ellipse(0, 180, 80, 15, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Simple orbital 3D projection of spheres
+            const drawSphere = (ox, oy, oz, r, color, isRightEye = false) => {
+                // Apply rotation around Y axis
+                const cosA = Math.cos(angle);
+                const sinA = Math.sin(angle);
+                const rx = ox * cosA - oz * sinA;
+                const rz = ox * sinA + oz * cosA;
+
+                const zScale = 1.0 + rz / 3.0;
+                const px = rx * scale;
+                const py = oy * scale;
+                const pr = r * scale * zScale;
+
+                // Lighting calculation (Light source at center front)
+                const normalZ = zScale;
+                const diffuse = Math.max(0.1, normalZ);
+
+                // Draw sphere with gradient
+                const grad = ctx.createRadialGradient(px - pr/3, py - pr/3, pr/10, px, py, pr);
+                if (isRightEye) {
+                    // Right Eye void Sickness cavity (dark green void)
+                    grad.addColorStop(0, "#050f02");
+                    grad.addColorStop(1, "#14280a");
+                } else {
+                    grad.addColorStop(0, highlightColor);
+                    grad.addColorStop(0.3, color);
+                    grad.addColorStop(1, "#0d0f13");
+                }
+
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(px, py, pr, 0, Math.PI * 2);
+                ctx.fill();
+            };
+
+            // Draw limbs, ears, head, snout, nose, tail with orbital offsets
+            drawSphere(0, 0.8, -0.95, 0.22, primaryColor); // Tail
+            drawSphere(-0.6, -1.1, 0, 0.35, primaryColor); // Left Leg
+            drawSphere(0.6, -1.1, 0, 0.35, primaryColor); // Right Leg
+            drawSphere(0, 0, 0, 1.0, primaryColor); // Torso
+            drawSphere(-1.1, 0.3, 0, 0.28, primaryColor); // Left Arm
+            drawSphere(1.1, 0.3, 0, 0.28, primaryColor); // Right Arm
+            drawSphere(-0.6, 2.4, 0, 0.2, primaryColor); // Left Ear
+            drawSphere(0.6, 2.4, 0, 0.2, primaryColor); // Right Ear
+            drawSphere(0, 1.8, 0, 0.8, primaryColor); // Head
+            drawSphere(0, 1.65, 0.6, 0.3, highlightColor); // Snout
+            drawSphere(0, 1.7, 0.8, 0.08, "#101010"); // Nose
+
+            // Draw eye cavity on the right side of the head
+            drawSphere(0.3, 1.8, 0.7, 0.15, primaryColor, true); // Right eye cavity
+
+            ctx.restore();
+
+            angle += 0.015;
+            requestAnimationFrame(drawScene);
+        }
+
+        updateExportCode();
+        drawScene();
+    </script>
+</body>
+</html>
