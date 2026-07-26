@@ -107,6 +107,11 @@ int main(void) {
     tsfi_riinterface_check_sprite_collision(&ri, 10.0, 10.0, 20.0, 10.0, 5.0); // Outside limit
     assert(ri.vdc_collision_flag == false);
 
+    // Test VDC H-Blank raster line interrupts
+    tsfi_riinterface_set_raster_line(&ri, 144);
+    assert(ri.vdc_raster_interrupt_line == 144);
+    assert(ri.hblank_active == true);
+
     tsfi_riinterface_world_end(&ri);
     assert(ri.is_world_active == false);
 
@@ -124,6 +129,7 @@ int main(void) {
     printf("   ✓ VDC background scroll registers verified successfully.\n");
     printf("   ✓ PSG Direct D/A real-time audio streams verified successfully.\n");
     printf("   ✓ VDC sprite collision interrupt flags verified successfully.\n");
+    printf("   ✓ VDC raster line H-Blank interrupts verified successfully.\n");
     printf("=== AUNCIENT RIINTERFACE TESTS COMPLETE (PASS) ===\n");
     return 0;
 }

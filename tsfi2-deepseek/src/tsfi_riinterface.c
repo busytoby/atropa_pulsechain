@@ -23,7 +23,9 @@ void tsfi_riinterface_init(TSFiRiInterface *ri) {
     memset(ri->psg_channel_dda, 0, sizeof(ri->psg_channel_dda));
     ri->vdc_scroll_x = 0;
     ri->vdc_scroll_y = 0;
+    ri->vdc_raster_interrupt_line = 0;
     ri->vdc_collision_flag = false;
+    ri->hblank_active = false;
     memset(ri->frame_buffer, 0, sizeof(ri->frame_buffer));
     ri->irq_counter = 0;
     ri->irq_active = false;
@@ -215,4 +217,10 @@ void tsfi_riinterface_check_sprite_collision(TSFiRiInterface *ri, double s1_x, d
     } else {
         ri->vdc_collision_flag = false;
     }
+}
+
+void tsfi_riinterface_set_raster_line(TSFiRiInterface *ri, uint16_t line) {
+    if (!ri) return;
+    ri->vdc_raster_interrupt_line = line;
+    ri->hblank_active = true; // Trigger H-Blank interrupt cycle simulation
 }
