@@ -537,21 +537,47 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                 i += 1
                 continue
                 
-            # Lists: Numbered lists
-            num_match = re.match(r'^(\d+)\.\s+(.*)', line)
+            # Lists or Headings starting with numbers (e.g. "1. " or "1.1 ")
+            num_match = re.match(r'^(\d+(?:\.\d+)*)\.?\s+(.*)', line)
             if num_match:
-                num = num_match.group(1)
+                prefix = num_match.group(1)
                 item_text = num_match.group(2)
-                num_style = ParagraphStyle(
-                    'NumItem',
-                    parent=body_style,
-                    leftIndent=10,
-                    firstLineIndent=-6,
-                    spaceAfter=1.5,
-                )
-                art_flowables.append(Paragraph(f"{num}. {inline_md_to_html(item_text)}", num_style))
-                i += 1
-                continue
+                
+                is_heading = False
+                level = 1
+                if '.' in prefix:
+                    is_heading = True
+                    level = len(prefix.split('.'))
+                else:
+                    if item_text and item_text[0].isupper() and len(line) < 80:
+                        is_heading = True
+                        level = 1
+                
+                if is_heading:
+                    h_style = ParagraphStyle(
+                        f'NumH{level}',
+                        parent=body_style,
+                        fontName='Times-Bold',
+                        fontSize=max(7.5, 9.5 - (level * 0.5)),
+                        leading=max(8.5, 10.5 - (level * 0.5)),
+                        spaceBefore=5,
+                        spaceAfter=2,
+                        keepWithNext=True,
+                    )
+                    art_flowables.append(Paragraph(inline_md_to_html(f"{prefix}. {item_text}"), h_style))
+                    i += 1
+                    continue
+                else:
+                    num_style = ParagraphStyle(
+                        'NumItem',
+                        parent=body_style,
+                        leftIndent=10,
+                        firstLineIndent=-6,
+                        spaceAfter=1.5,
+                    )
+                    art_flowables.append(Paragraph(f"{prefix}. {inline_md_to_html(item_text)}", num_style))
+                    i += 1
+                    continue
                 
             # Fallback to standard paragraph blocks
             p_text = []
