@@ -646,6 +646,78 @@ static float usd_resolve_composed_density(const usd_auncient_cactus_stage_t *sta
     return 1.0f;
 }
 
+static int usd_generate_new_cactus_asset(const char *filename, const usd_auncient_cactus_schema_t *schema, const usd_auncient_texture_api_t *texture, const usd_auncient_physics_api_t *physics) {
+    FILE *f = fopen(filename, "w");
+    if (!f) return 0;
+    fprintf(f, "#usda 1.0\n\n");
+    fprintf(f, "def \"CactusAsset\" (\n");
+    fprintf(f, "    inherits = </AuncientCactusSchema>\n");
+    fprintf(f, ") {\n");
+    fprintf(f, "    float density = %f\n", schema->density);
+    fprintf(f, "    float stiffness = %f\n", texture->stiffness);
+    fprintf(f, "    string texture = \"%s\"\n", texture->texture);
+    fprintf(f, "    float mass = %f\n", physics->mass);
+    fprintf(f, "    float damping = %f\n", physics->damping);
+    fprintf(f, "}\n");
+    fclose(f);
+    return 1;
+}
+
+typedef struct {
+    int texture_count;
+    float vertex_density;
+} usd_hydra_render_delegate_t;
+
+typedef struct {
+    char prim_path[64];
+    char material[32];
+    float density;
+    usd_hydra_render_delegate_t *delegate;
+} usd_hydra_scene_index_t;
+
+static void usd_hydra_add_prim(usd_hydra_scene_index_t *si, const char *path) {
+    strcpy(si->prim_path, path);
+    si->delegate->texture_count++;
+}
+
+static void usd_hydra_update_prim(usd_hydra_scene_index_t *si, const char *mat, float dens) {
+    strcpy(si->material, mat);
+    si->density = dens;
+    si->delegate->vertex_density = dens;
+}
+
+static void usd_hydra_remove_prim(usd_hydra_scene_index_t *si) {
+    si->prim_path[0] = '\0';
+    si->delegate->texture_count--;
+}
+
+typedef struct {
+    char symbol_name[32];
+    void *symbol_ptr;
+} xplsm_symbol_t;
+
+static xplsm_symbol_t g_xplsm_registry[16];
+static int g_xplsm_count = 0;
+
+static void xplsm_register_shared_symbol(const char *name, void *ptr) {
+    if (g_xplsm_count < 16) {
+        strcpy(g_xplsm_registry[g_xplsm_count].symbol_name, name);
+        g_xplsm_registry[g_xplsm_count].symbol_ptr = ptr;
+        g_xplsm_count++;
+    }
+}
+
+static void *xplsm_resolve_symbol(const char *name) {
+    for (int i = 0; i < g_xplsm_count; i++) {
+        if (strcmp(g_xplsm_registry[i].symbol_name, name) == 0) {
+            return g_xplsm_registry[i].symbol_ptr;
+        }
+    }
+    return NULL;
+}
+
+
+
 
 
 
@@ -1476,6 +1548,77 @@ int main(void) {
     stage.sublayers[2].density = 7.15f;
     assert(usd_resolve_composed_density(&stage) == 7.15f);
     printf("   ✓ Sublayer composition override resolution verified.\n");
+    fflush(stdout);
+
+    // 40. Test Generating New Assets with Code
+    printf("[TEST] Testing Generating New Assets with Code...\n");
+    fflush(stdout);
+    usd_auncient_cactus_schema_t code_cactus = {.density = 5.50f};
+    usd_auncient_texture_api_t code_texture = {.stiffness = 0.75f};
+    strcpy(code_texture.texture, "dynamic_cloth");
+    usd_auncient_physics_api_t code_physics = {.mass = 12.0f, .damping = 0.25f};
+    
+    const char *gen_usda_path = "tests/generated_cactus_asset.usda";
+    int gen_ok = usd_generate_new_cactus_asset(gen_usda_path, &code_cactus, &code_texture, &code_physics);
+    assert(gen_ok == 1);
+    
+    // Read generated asset back to verify contents
+    FILE *rf = fopen(gen_usda_path, "r");
+    assert(rf != NULL);
+    char buf[128];
+    bool density_found = false;
+    bool texture_found = false;
+    while (fgets(buf, sizeof(buf), rf)) {
+        if (strstr(buf, "float density = 5.500000")) {
+            density_found = true;
+        }
+        if (strstr(buf, "string texture = \"dynamic_cloth\"")) {
+            texture_found = true;
+        }
+    }
+    fclose(rf);
+    assert(density_found == true);
+    assert(texture_found == true);
+    
+    remove(gen_usda_path); // Clean up generated file
+    printf("   ✓ Code-driven dynamic asset generation verified.\n");
+    fflush(stdout);
+
+    // 41. Test Hydra Scene Index & Render Delegate with XPLSM
+    printf("[TEST] Testing Hydra Scene Index & Render Delegate with XPLSM...\n");
+    fflush(stdout);
+    
+    // Register Hydra callbacks under XPLSM dynamic symbol table
+    xplsm_register_shared_symbol("usd_hydra_add_prim", (void*)usd_hydra_add_prim);
+    xplsm_register_shared_symbol("usd_hydra_update_prim", (void*)usd_hydra_update_prim);
+    xplsm_register_shared_symbol("usd_hydra_remove_prim", (void*)usd_hydra_remove_prim);
+    
+    usd_hydra_render_delegate_t render_delegate = {.texture_count = 0, .vertex_density = 0.0f};
+    usd_hydra_scene_index_t scene_index = {.delegate = &render_delegate};
+    
+    // Resolve and execute add prim using XPLSM resolved pointer
+    void (*add_func)(usd_hydra_scene_index_t *, const char *) = xplsm_resolve_symbol("usd_hydra_add_prim");
+    assert(add_func != NULL);
+    add_func(&scene_index, "/World/Cactus");
+    assert(strcmp(scene_index.prim_path, "/World/Cactus") == 0);
+    assert(render_delegate.texture_count == 1);
+    
+    // Resolve and execute update prim using XPLSM resolved pointer
+    void (*update_func)(usd_hydra_scene_index_t *, const char *, float) = xplsm_resolve_symbol("usd_hydra_update_prim");
+    assert(update_func != NULL);
+    update_func(&scene_index, "woven_cloth", 4.5f);
+    assert(strcmp(scene_index.material, "woven_cloth") == 0);
+    assert(scene_index.density == 4.5f);
+    assert(render_delegate.vertex_density == 4.5f);
+    
+    // Resolve and execute remove prim using XPLSM resolved pointer
+    void (*remove_func)(usd_hydra_scene_index_t *) = xplsm_resolve_symbol("usd_hydra_remove_prim");
+    assert(remove_func != NULL);
+    remove_func(&scene_index);
+    assert(scene_index.prim_path[0] == '\0');
+    assert(render_delegate.texture_count == 0);
+    
+    printf("   ✓ Hydra scene index and render delegate with XPLSM verified.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
