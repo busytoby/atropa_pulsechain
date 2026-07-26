@@ -117,6 +117,21 @@ static void resolve_local_payload_conflict(const usd_local_payload_conflict_t *c
     }
 }
 
+// 7. Local vs Specializes
+typedef struct {
+    char local_opinion[32];
+    char specializes_opinion[32];
+} usd_local_spec_conflict_t;
+
+static void resolve_local_spec_conflict(const usd_local_spec_conflict_t *conflict, char *resolved_val) {
+    if (strlen(conflict->local_opinion) > 0) {
+        strcpy(resolved_val, conflict->local_opinion);
+    } else {
+        strcpy(resolved_val, conflict->specializes_opinion);
+    }
+}
+
+
 
 int main(void) {
     printf("=============================================================\n");
@@ -238,6 +253,23 @@ int main(void) {
     }
     double end_lp = get_time_ns();
     printf("   ✓ Local vs Payload Conflict Average Latency: %.2f ns/run\n", (end_lp - start) / iterations);
+    fflush(stdout);
+
+    // 7. Local vs Specializes Priority Benchmark
+    printf("[BENCHMARK] Running %d iterations of Local vs Specializes Conflicts...\n", iterations);
+    fflush(stdout);
+    usd_local_spec_conflict_t ls_conflict = {
+        .local_opinion = "local_specialized_override",
+        .specializes_opinion = "specialized_deep_base"
+    };
+    char resolved_ls[32] = "";
+    start = get_time_ns();
+    for (int i = 0; i < iterations; i++) {
+        resolve_local_spec_conflict(&ls_conflict, resolved_ls);
+        checksum += resolved_ls[0];
+    }
+    double end_ls = get_time_ns();
+    printf("   ✓ Local vs Specializes Conflict Average Latency: %.2f ns/run\n", (end_ls - start) / iterations);
     fflush(stdout);
 
     // Print checksum to ensure values are not optimized away
