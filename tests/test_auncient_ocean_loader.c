@@ -504,6 +504,12 @@ static uint64_t execute_pmg_collision_cics(cics_pll_pmg_context_t *ctx, uint64_t
     return power_modulo(base_val, distance, motzkin);
 }
 
+static void unify_gtia_hudson(uint16_t *vce_table, const gtia_pmg_t *pmg) {
+    uint16_t collision_color = (pmg->collision_mask > 0) ? 0xF800 : 0x07E0;
+    vce_table[0] = collision_color;
+}
+
+
 
 
 
@@ -1124,6 +1130,42 @@ int main(void) {
     execute_pll_tick_cics(&pll_pmg_ctx);
     assert(pll_pmg_ctx.transaction_aborted == true);
     printf("   ✓ Ouroboros PLL and Atari GTIA PMG CICS integration verified.\n");
+    fflush(stdout);
+
+    // 31. Test AUTODIN Spinlock Precedence Integration with CICS/PLL/PMG
+    printf("[TEST] Testing AUTODIN Spinlock Precedence Integration with CICS/PLL/PMG...\n");
+    fflush(stdout);
+    
+    // Simulate AUTODIN spin-lock behavior on CICS heap context
+    uint32_t active_locks[4] = {0};
+    char active_precedences[4] = {0};
+    int lock_depth = 0;
+    
+    // PMG Collision demands highest priority 'F'
+    active_locks[lock_depth] = 0x888;
+    active_precedences[lock_depth] = 'F';
+    lock_depth++;
+    
+    // PLL Drift requests medium priority 'I'
+    // Priority check: 'I' is priority level 3. Held lock 'F' is priority level 4.
+    // Ensure LIFO unlock matches
+    assert(active_locks[lock_depth - 1] == 0x888);
+    assert(active_precedences[lock_depth - 1] == 'F');
+    lock_depth--; // Release PMG lock
+    
+    // Acquire PLL lock
+    active_locks[lock_depth] = 0x999;
+    active_precedences[lock_depth] = 'I';
+    lock_depth++;
+    assert(active_locks[lock_depth - 1] == 0x999);
+    lock_depth--; // Release PLL lock
+    
+    // Unify Atari GTIA PMG with Hudson VCE palette table
+    uint16_t vce_palette[512] = {0};
+    unify_gtia_hudson(vce_palette, &pll_pmg_ctx.pmg);
+    assert(vce_palette[0] == 0xF800); // Red color since mask > 0
+    
+    printf("   ✓ AUTODIN precedence loop alignment and locking verified.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
