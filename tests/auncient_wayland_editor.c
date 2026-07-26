@@ -229,6 +229,16 @@ static MultiplexSprite sprites[5] = {
 
 static int sorted_sprite_indices[5] = {0, 1, 2, 3, 4};
 
+// 3D Starfield Array
+typedef struct {
+    float x;
+    float y;
+    float z;
+    char glyph;
+} Star;
+
+static Star starfield[15];
+
 // Binary History Record (No Mocking)
 typedef struct {
     uint32_t transaction_id;
@@ -375,6 +385,23 @@ static void redraw_screen(void) {
         }
     }
     
+    // Draw 3D PETSCII Starfield behind the document text
+    for (int i = 0; i < 15; i++) {
+        if (starfield[i].z > 0.1f) {
+            int px = win_width / 2 + (int)((starfield[i].x / starfield[i].z) * (win_width / 2)) + glitch_x;
+            int py = win_height / 2 + (int)((starfield[i].y / starfield[i].z) * (win_height / 2)) + glitch_y;
+            
+            if (px >= 0 && px < win_width && py >= 0 && py < win_height) {
+                // Dimmer colors for stars further away
+                uint32_t star_color = 0xFF555555;
+                if (starfield[i].z < 3.0f) star_color = 0xFFFFFFFF;
+                else if (starfield[i].z < 6.0f) star_color = 0xFFAAAAAA;
+                
+                draw_char(pixels, win_width, win_height, px, py, starfield[i].glyph, star_color, 2);
+            }
+        }
+    }
+
     // Calculate dynamic scaling factor
     int scale = win_width / 280;
     if (scale < 1) scale = 1;
@@ -846,6 +873,16 @@ int main(void) {
         sine_lut[i] = sinf((float)i * (2.0f * M_PI / 256.0f));
     }
 
+    // Initialize 3D Starfield coordinates
+    for (int i = 0; i < 15; i++) {
+        starfield[i].x = (float)((rand() % 200) - 100) / 10.0f;
+        starfield[i].y = (float)((rand() % 200) - 100) / 10.0f;
+        starfield[i].z = (float)(rand() % 100) / 10.0f + 0.5f;
+        
+        char glyphs[] = ".*+o";
+        starfield[i].glyph = glyphs[rand() % 4];
+    }
+
     // Initialize simulated SID chip register defaults
     sid_chip.voices[0].adsr[0] = 0x21; // Attack / Decay
     sid_chip.voices[0].adsr[1] = 0xF5; // Sustain / Release
@@ -921,6 +958,17 @@ int main(void) {
         // Decrease active loader flash duration
         if (loader_flash_time > 0.0f) {
             loader_flash_time -= dt;
+        }
+
+        // Animate 3D Starfield coordinates
+        float star_speed = active_tune == 3 ? 6.0f : 2.5f; // Warp speed sync
+        for (int i = 0; i < 15; i++) {
+            starfield[i].z -= dt * star_speed;
+            if (starfield[i].z <= 0.1f) {
+                starfield[i].x = (float)((rand() % 200) - 100) / 10.0f;
+                starfield[i].y = (float)((rand() % 200) - 100) / 10.0f;
+                starfield[i].z = 10.0f; // Reset to far boundary
+            }
         }
 
         // Mutate simulated VIC-II hardware register states
