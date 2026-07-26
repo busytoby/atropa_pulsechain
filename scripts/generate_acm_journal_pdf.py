@@ -490,23 +490,43 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
         pagesize=(page_width, page_height)
     )
     
+    # 2-column templates
     frame_left_odd = Frame(0.75 * inch, 0.7 * inch, col_width, col_height, id='col1_odd')
     frame_right_odd = Frame(0.75 * inch + col_width + spacing, 0.7 * inch, col_width, col_height, id='col2_odd')
-    template_odd = PageTemplate(id='odd_page', frames=[frame_left_odd, frame_right_odd])
+    template_odd = PageTemplate(id='odd_page_2col', frames=[frame_left_odd, frame_right_odd])
     
     frame_left_even = Frame(0.5 * inch, 0.7 * inch, col_width, col_height, id='col1_even')
     frame_right_even = Frame(0.5 * inch + col_width + spacing, 0.7 * inch, col_width, col_height, id='col2_even')
-    template_even = PageTemplate(id='even_page', frames=[frame_left_even, frame_right_even])
+    template_even = PageTemplate(id='even_page_2col', frames=[frame_left_even, frame_right_even])
     
-    doc.addPageTemplates([template_odd, template_even])
+    # 1-column templates
+    col_width_1col = page_width - 1.25 * inch
+    frame_odd_1col = Frame(0.75 * inch, 0.7 * inch, col_width_1col, col_height, id='col_odd_1col')
+    template_odd_1col = PageTemplate(id='odd_page_1col', frames=[frame_odd_1col])
+    
+    frame_even_1col = Frame(0.5 * inch, 0.7 * inch, col_width_1col, col_height, id='col_even_1col')
+    template_even_1col = PageTemplate(id='even_page_1col', frames=[frame_even_1col])
+    
+    doc.addPageTemplates([template_odd, template_even, template_odd_1col, template_even_1col])
     
     story = []
-    story.append(NextPageTemplate(['even_page', 'odd_page']))
+    story.append(NextPageTemplate(['even_page_2col', 'odd_page_2col']))
     
     story.append(Paragraph(f"<b>COMPENDIUM OF LORE AND HISTORICAL TRANSCRIPTS - VOLUME {volume_num}</b>", title_style))
     story.append(Paragraph("Compiled Chronologically under ACM 1961 Standards", ParagraphStyle('Sub', parent=title_style, fontName='Times-Italic', fontSize=9)))
     story.append(Spacer(1, 0.2 * inch))
     
+    def flush_art_flowables(art_flowables_list):
+        if art_flowables_list:
+            if len(art_flowables_list) >= 3:
+                together = art_flowables_list[:3]
+                remaining = art_flowables_list[3:]
+                story.append(KeepTogether(together))
+                story.extend(remaining)
+            else:
+                story.extend(art_flowables_list)
+            art_flowables_list.clear()
+            
     for idx, (date, path) in enumerate(files):
         title = os.path.basename(path).replace(".md", "").replace("_", " ").title()
         
@@ -516,8 +536,6 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
         
         with open(path, 'r', encoding='utf-8') as file_in:
             lines = file_in.readlines()
-            
-        current_col_width = col_width
             
         i = 0
         while i < len(lines):
@@ -537,18 +555,44 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                 if i < len(lines):
                     i += 1
                 
+                # Determine block width
+                max_len = max((len(bl.rstrip('\r\n')) for bl in block_lines), default=0)
+                is_wide = max_len > 42
+                
                 if is_mermaid:
-                    m_flowable = render_mermaid_flowchart(block_lines, current_col_width)
+                    m_flowable = render_mermaid_flowchart(block_lines, col_width_1col if is_wide else col_width)
                     if m_flowable:
-                        art_flowables.append(Spacer(1, 4))
-                        art_flowables.append(m_flowable)
-                        art_flowables.append(Spacer(1, 4))
+                        if is_wide:
+                            flush_art_flowables(art_flowables)
+                            story.append(NextPageTemplate(['even_page_1col', 'odd_page_1col']))
+                            story.append(PageBreak())
+                            story.append(Spacer(1, 4))
+                            story.append(m_flowable)
+                            story.append(Spacer(1, 4))
+                            story.append(NextPageTemplate(['even_page_2col', 'odd_page_2col']))
+                            story.append(PageBreak())
+                        else:
+                            art_flowables.append(Spacer(1, 4))
+                            art_flowables.append(m_flowable)
+                            art_flowables.append(Spacer(1, 4))
                 else:
-                    c_flowable = render_standard_code_block(block_lines, current_col_width, body_style)
-                    if c_flowable:
-                        art_flowables.append(Spacer(1, 4))
-                        art_flowables.append(c_flowable)
-                        art_flowables.append(Spacer(1, 4))
+                    if is_wide:
+                        flush_art_flowables(art_flowables)
+                        story.append(NextPageTemplate(['even_page_1col', 'odd_page_1col']))
+                        story.append(PageBreak())
+                        c_flowable = render_standard_code_block(block_lines, col_width_1col, body_style)
+                        if c_flowable:
+                            story.append(Spacer(1, 4))
+                            story.append(c_flowable)
+                            story.append(Spacer(1, 4))
+                        story.append(NextPageTemplate(['even_page_2col', 'odd_page_2col']))
+                        story.append(PageBreak())
+                    else:
+                        c_flowable = render_standard_code_block(block_lines, col_width, body_style)
+                        if c_flowable:
+                            art_flowables.append(Spacer(1, 4))
+                            art_flowables.append(c_flowable)
+                            art_flowables.append(Spacer(1, 4))
                 continue
                 
             if line.startswith('+') or line.startswith('┌'):
@@ -556,12 +600,28 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                 while i < len(lines) and (lines[i].strip().startswith('+') or lines[i].strip().startswith('|') or lines[i].strip().startswith('┌') or lines[i].strip().startswith('└') or lines[i].strip().startswith('│') or lines[i].strip().startswith('-') or lines[i].strip().startswith('├') or lines[i].strip().startswith('┤') or lines[i].strip().startswith('┼') or lines[i].strip().startswith('┐') or lines[i].strip().startswith('┘')):
                     box_lines.append(lines[i])
                     i += 1
+                    
+                max_len = max((len(bl.rstrip('\r\n')) for bl in box_lines), default=0)
+                is_wide = max_len > 42
+                
                 if box_lines:
-                    c_flowable = render_standard_code_block(box_lines, current_col_width, body_style)
-                    if c_flowable:
-                        art_flowables.append(Spacer(1, 4))
-                        art_flowables.append(c_flowable)
-                        art_flowables.append(Spacer(1, 4))
+                    if is_wide:
+                        flush_art_flowables(art_flowables)
+                        story.append(NextPageTemplate(['even_page_1col', 'odd_page_1col']))
+                        story.append(PageBreak())
+                        c_flowable = render_standard_code_block(box_lines, col_width_1col, body_style)
+                        if c_flowable:
+                            story.append(Spacer(1, 4))
+                            story.append(c_flowable)
+                            story.append(Spacer(1, 4))
+                        story.append(NextPageTemplate(['even_page_2col', 'odd_page_2col']))
+                        story.append(PageBreak())
+                    else:
+                        c_flowable = render_standard_code_block(box_lines, col_width, body_style)
+                        if c_flowable:
+                            art_flowables.append(Spacer(1, 4))
+                            art_flowables.append(c_flowable)
+                            art_flowables.append(Spacer(1, 4))
                 continue
 
             if line.startswith('|'):
@@ -569,21 +629,46 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                 while i < len(lines) and (lines[i].strip().startswith('|') or lines[i].strip().startswith('+') or lines[i].strip().startswith('-')):
                     table_lines.append(lines[i])
                     i += 1
-                t_flowable = parse_markdown_table(table_lines, body_style, current_col_width)
-                if t_flowable:
-                    art_flowables.append(Spacer(1, 4))
-                    art_flowables.append(t_flowable)
-                    art_flowables.append(Spacer(1, 4))
+                
+                # Check column count
+                col_count = 0
+                if table_lines:
+                    col_count = len(table_lines[0].split('|')) - 2
+                is_wide = col_count > 3
+                
+                if is_wide:
+                    flush_art_flowables(art_flowables)
+                    story.append(NextPageTemplate(['even_page_1col', 'odd_page_1col']))
+                    story.append(PageBreak())
+                    t_flowable = parse_markdown_table(table_lines, body_style, col_width_1col)
+                    if t_flowable:
+                        story.append(Spacer(1, 4))
+                        story.append(t_flowable)
+                        story.append(Spacer(1, 4))
+                    else:
+                        c_flowable = render_standard_code_block(table_lines, col_width_1col, body_style)
+                        if c_flowable:
+                            story.append(Spacer(1, 4))
+                            story.append(c_flowable)
+                            story.append(Spacer(1, 4))
+                    story.append(NextPageTemplate(['even_page_2col', 'odd_page_2col']))
+                    story.append(PageBreak())
                 else:
-                    c_flowable = render_standard_code_block(table_lines, current_col_width, body_style)
-                    if c_flowable:
+                    t_flowable = parse_markdown_table(table_lines, body_style, col_width)
+                    if t_flowable:
                         art_flowables.append(Spacer(1, 4))
-                        art_flowables.append(c_flowable)
+                        art_flowables.append(t_flowable)
                         art_flowables.append(Spacer(1, 4))
+                    else:
+                        c_flowable = render_standard_code_block(table_lines, col_width, body_style)
+                        if c_flowable:
+                            art_flowables.append(Spacer(1, 4))
+                            art_flowables.append(c_flowable)
+                            art_flowables.append(Spacer(1, 4))
                 continue
                 
             if line.startswith('---') or line.startswith('***'):
-                hr = Table([[Paragraph("", body_style)]], colWidths=[current_col_width])
+                hr = Table([[Paragraph("", body_style)]], colWidths=[col_width])
                 hr.setStyle(TableStyle([
                     ('LINEABOVE', (0,0), (-1,-1), 0.5, colors.HexColor('#dddddd')),
                     ('BOTTOMPADDING', (0,0), (-1,-1), 1),
@@ -692,17 +777,9 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                 p_text.append(lines[i].strip())
                 i += 1
             full_p = ' '.join(p_text)
-            process_text_block(full_p, body_style, current_col_width, art_flowables)
+            process_text_block(full_p, body_style, col_width, art_flowables)
                 
-        # Group Title, Date, and the first text paragraph/table together to prevent orphans
-        if len(art_flowables) >= 3:
-            together_flowables = art_flowables[:3]
-            remaining_flowables = art_flowables[3:]
-            story.append(KeepTogether(together_flowables))
-            story.extend(remaining_flowables)
-        else:
-            story.extend(art_flowables)
-            
+        flush_art_flowables(art_flowables)
         story.append(Spacer(1, 0.1 * inch))
         
     doc.build(story, canvasmaker=NumberedCanvas)
