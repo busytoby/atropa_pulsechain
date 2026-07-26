@@ -469,10 +469,37 @@ def main():
             px = rope_nodes[i][0]
             py = rope_nodes[i][1]
 
-            # Proximity contact shadowing (contact shadow occlusion) - rendered as a glossy black bubble balloon
-            draw.ellipse([px - 22, py - 22, px + 22, py + 22], fill=(5, 5, 10))
-            draw.ellipse([px - 20, py - 20, px + 20, py + 20], fill=(25, 20, 30))
-            draw.ellipse([px - 14, py - 14, px - 6, py - 6], fill=(255, 255, 255))
+            # Proximity contact shadowing (contact shadow occlusion) - rendered as a glossy black bubble balloon with procedural texgen
+            bx_min, by_min, bx_max, by_max = int(px - 20), int(py - 20), int(px + 20), int(py + 20)
+            for by in range(by_min, by_max + 1):
+                for bx in range(bx_min, bx_max + 1):
+                    dx_val = (bx - px) / 20.0
+                    dy_val = (by - py) / 20.0
+                    dist_sq_val = dx_val * dx_val + dy_val * dy_val
+                    if dist_sq_val <= 1.0:
+                        dz_val = math.sqrt(1.0 - dist_sq_val)
+                        u = 0.5 + math.atan2(dx_val, dz_val) / (2.0 * math.pi)
+                        v = 0.5 - math.asin(dy_val) / math.pi
+                        
+                        tex = math.sin(u * 12.0) * math.cos(v * 12.0)
+                        spot = 0.5 + 0.5 * tex
+                        
+                        lx, ly, lz = -0.577, -0.577, 0.577
+                        diffuse = max(0.1, dx_val * lx + dy_val * ly + dz_val * lz)
+                        
+                        hx, hy, hz = -0.325, -0.325, 0.888
+                        specular = max(0.0, dx_val * hx + dy_val * hy + dz_val * hz) ** 24.0
+                        
+                        r_b = int((15 + spot * 10) * diffuse + specular * 240)
+                        g_b = int((10 + spot * 8) * diffuse + specular * 240)
+                        b_b = int((20 + spot * 15) * diffuse + specular * 240)
+                        
+                        r_b = min(255, max(0, r_b))
+                        g_b = min(255, max(0, g_b))
+                        b_b = min(255, max(0, b_b))
+                        
+                        if 0 <= bx < width and 0 <= by < height:
+                            img.putpixel((bx, by), (r_b, g_b, b_b))
 
             # Sub-surface scattering (translucent soft tissue outlines)
             draw_retro_char(draw, char, px, py, 42, (r // 4, g // 4, b // 4))
