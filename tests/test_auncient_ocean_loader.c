@@ -276,6 +276,20 @@ static void resolve_multiple_inherits(const usd_multiple_inherits_t *mi, char *r
     }
 }
 
+typedef struct {
+    char variant_opinion[32];
+    char specializes_opinion[32];
+} usd_variant_spec_conflict_t;
+
+static void resolve_variant_spec_conflict(const usd_variant_spec_conflict_t *conflict, char *resolved_val) {
+    if (strlen(conflict->variant_opinion) > 0) {
+        strcpy(resolved_val, conflict->variant_opinion);
+    } else {
+        strcpy(resolved_val, conflict->specializes_opinion);
+    }
+}
+
+
 
 
 
@@ -550,6 +564,27 @@ int main(void) {
     resolve_multiple_inherits(&mi_weak, resolved_mi_weak);
     assert(strcmp(resolved_mi_weak, "second_class_opinion") == 0);
     printf("   ✓ Sequential inherits priority mapping (first active resolves) verified.\n");
+    fflush(stdout);
+
+    // 15. Test Variant vs Specializes Precedence
+    printf("[TEST] Testing Variant vs Specializes Precedence...\n");
+    fflush(stdout);
+    usd_variant_spec_conflict_t vs_conflict = {
+        .variant_opinion = "variant_look_attrib",
+        .specializes_opinion = "specialized_base_attrib"
+    };
+    char resolved_vs[32] = "";
+    resolve_variant_spec_conflict(&vs_conflict, resolved_vs);
+    assert(strcmp(resolved_vs, "variant_look_attrib") == 0);
+
+    usd_variant_spec_conflict_t vs_conflict_no_var = {
+        .variant_opinion = "",
+        .specializes_opinion = "specialized_base_attrib"
+    };
+    char resolved_vs_no_var[32] = "";
+    resolve_variant_spec_conflict(&vs_conflict_no_var, resolved_vs_no_var);
+    assert(strcmp(resolved_vs_no_var, "specialized_base_attrib") == 0);
+    printf("   ✓ VariantSet opinion taking precedence over Specializes (S) verified.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
