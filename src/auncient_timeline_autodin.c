@@ -1078,3 +1078,20 @@ void auncient_parse_markdown_to_ansi(const char *markdown_text, char *ansi_grid,
 
     free(temp_wrapped);
 }
+
+void auncient_autodin_audit_edit(const char *buffer, int len, int cursor_pos, char action_char) {
+    if (!buffer || len < 0) return;
+
+    uint32_t hash = 2166136261U;
+    for (int i = 0; i < len; i++) {
+        hash ^= (uint8_t)buffer[i];
+        hash *= 16777619U;
+    }
+
+    char audit_log_buffer[256];
+    snprintf(audit_log_buffer, sizeof(audit_log_buffer), 
+             "[AUTODIN AUDIT] Action='%c' Cursor=%d Len=%d Checksum=0x%08X", 
+             action_char, cursor_pos, len, hash);
+
+    printf("%s\n", audit_log_buffer);
+}

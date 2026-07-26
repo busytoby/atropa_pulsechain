@@ -248,6 +248,9 @@ void auncient_word_wrap_text(const char *input, char *output, int width, int max
 // Parses markdown formatting tokens into styled character outputs in ANSI grid buffers
 void auncient_parse_markdown_to_ansi(const char *markdown_text, char *ansi_grid, int width, int height, int scroll_row);
 
+// Performs real-time validation auditing on text buffer edits and logs transactions to the AUTODIN ledger
+void auncient_autodin_audit_edit(const char *buffer, int len, int cursor_pos, char action_char);
+
 #ifdef __cplusplus
 }
 #endif

@@ -404,6 +404,10 @@ int main(void) {
     assert(md_grid[2] == '*'); // Header character converted
     printf("   ✓ Markdown-to-ANSI styled layout engine verified.\n");
 
+    // Test AUTODIN edit auditing
+    auncient_autodin_audit_edit("DATA", 4, 2, 'I');
+    printf("   ✓ AUTODIN edit auditing verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");
