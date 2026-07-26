@@ -93,7 +93,6 @@ static const char *parallax_scroller_text = "CONSPIRACY & SINGULAR HUNGARIAN TRI
 // SL
 static float sine_lut[256];
 
-// Color Cycle Palette LUT (Sunset Theme: Warm colors)
 static const uint32_t color_cycle_lut[16] = {
     0xFF6A1B00, 0xFF8A2B00, 0xFFAA3B00, 0xFFCA4B00,
     0xFFEA5B00, 0xFFFF6B00, 0xFFFF8B20, 0xFFFFAB40,
@@ -101,12 +100,10 @@ static const uint32_t color_cycle_lut[16] = {
     0xFFAA3B00, 0xFF8A2B00, 0xFF6A1B00, 0xFF4A0A00
 };
 
-// Logarithmic SID Volume Fader LUT
 static const uint8_t log_volume_lut[16] = {
     0, 1, 1, 2, 2, 3, 4, 5, 6, 7, 9, 10, 12, 13, 14, 15
 };
 
-// PETSCII Custom Charset Translation Map LUT
 static const char charset_map_lut[128] = {
     ['a'] = 'A', ['b'] = 'B', ['c'] = 'C', ['d'] = 'D',
     ['e'] = 'E', ['f'] = 'F', ['g'] = 'G', ['h'] = 'H',
@@ -117,20 +114,16 @@ static const char charset_map_lut[128] = {
     ['y'] = 'Y', ['z'] = 'Z'
 };
 
-// VIC-II Simulated Register state maps
 static float retro_time = 0.0f;
-static uint8_t vic_d012 = 130;  // Raster split scanline
-static uint8_t vic_d016 = 0;    // Fine scroll shift (0-7 pixels)
+static uint8_t vic_d012 = 130;
+static uint8_t vic_d016 = 0;
 
-// Interactive Loader state variables
 static float loader_flash_time = 0.0f;
 static float type_activity = 0.0f;
 
-// Glitch Screen Shake displacement coordinates
 static int glitch_x = 0;
 static int glitch_y = 0;
 
-// SID Audio Chip Register Emulation
 typedef struct {
     uint16_t freq;
     uint16_t pw;
@@ -533,8 +526,8 @@ static inline float sd_cactus(float px, float py, float pz) {
 }
 
 static inline float sd_letter_t(float px, float py, float pz) {
-    float d1 = sd_capsule(px, py, pz, -1.5f, 2.0f, 0.0f, 1.5f, 2.0f, 0.0f, 0.5f); // Top bar
-    float d2 = sd_capsule(px, py, pz, 0.0f, -2.0f, 0.0f, 0.0f, 2.0f, 0.0f, 0.5f); // Stem
+    float d1 = sd_capsule(px, py, pz, -1.5f, 2.0f, 0.0f, 1.5f, 2.0f, 0.0f, 0.5f);
+    float d2 = sd_capsule(px, py, pz, 0.0f, -2.0f, 0.0f, 0.0f, 2.0f, 0.0f, 0.5f);
     return (d1 < d2) ? d1 : d2;
 }
 
@@ -609,11 +602,11 @@ static void hd_embree_render(uint32_t *pixels, int w, int h, const CoaxialUBO *u
 
     int osc_base_x = 100;
     int osc_base_y = 500;
-    uint32_t trace_color = 0xFF00FFFF; // Default: Gold/Aqua
+    uint32_t trace_color = 0xFF00FFFF;
     if (ubo->material_variant == 1) {
-        trace_color = 0xFFFF5555; // Clay/Terracotta
+        trace_color = 0xFFFF5555;
     } else if (ubo->material_variant == 2) {
-        trace_color = 0xFFE6DFD3; // Chalk/Off-white
+        trace_color = 0xFFE6DFD3;
     }
     
     draw_string(pixels, w, h, osc_base_x + 480, osc_base_y - 15, "RAY", trace_color, 1);
@@ -1528,6 +1521,17 @@ int main(void) {
             printf("[USD] Deserialized saved scene stage layer from assets/usd_stage.dat.bin\n");
         }
         fclose(f_usd_load);
+    }
+
+    FILE *f_usd_overlay = fopen("assets/usd_overlay.dat.bin", "rb");
+    if (f_usd_overlay) {
+        USDStageRecord overlay;
+        if (fread(&overlay, sizeof(overlay), 1, f_usd_overlay) == 1) {
+            raymarch_mode = (int)overlay.active_model;
+            material_variant = (int)overlay.material_variant;
+            printf("[USD] Composition Overlay Layer applied overrides from assets/usd_overlay.dat.bin\n");
+        }
+        fclose(f_usd_overlay);
     }
 
     for (int i = 0; i < 15; i++) {
