@@ -151,7 +151,20 @@ static struct {
 } sid_chip;
 
 static int sid_arp_step = 0;
-static const uint16_t sid_arp_notes[3] = {0x1100, 0x1500, 0x1A00}; // C-4, E-4, G-4 equivalent frequencies
+
+// 4 different compiled SID tunes (Tune 3 is hidden!)
+static const uint16_t sid_tunes[4][3] = {
+    {0x1100, 0x1500, 0x1A00}, // Tune 0: C-4, E-4, G-4
+    {0x1200, 0x1600, 0x1C00}, // Tune 1: D-4, F-4, A-4
+    {0x1400, 0x1800, 0x1E00}, // Tune 2: E-4, G-4, B-4
+    {0x0800, 0x0C00, 0x1100}  // Tune 3 (Hidden): C-3, G-3, C-4
+};
+
+static int active_tune = 0;
+static bool hidden_unlocked = false;
+
+// Sequential key history to unlock hidden tune ("tsn")
+static char key_history[3] = {'\0', '\0', '\0'};
 
 // Binary History Record (No Mocking)
 typedef struct {
@@ -292,8 +305,12 @@ static void redraw_screen(void) {
         }
     }
     
-    // Dynamic Character-Cell Sinusoidal Scroller (smooth pixel-by-pixel sliding using real timeline)
-    float scroll_x_speed = 30.0f; // pixels per second
+    // Dynamic scroller speed linked to the active SID tune selection (Interactive speed sync)
+    float scroll_x_speed = 30.0f;
+    if (active_tune == 1) scroll_x_speed = 45.0f;
+    else if (active_tune == 2) scroll_x_speed = 60.0f;
+    else if (active_tune == 3) scroll_x_speed = 90.0f; // Hidden Warp speed
+    
     float scroll_x_total = retro_time * scroll_x_speed;
     int base_char_idx = (int)(scroll_x_total / 18.0f) % strlen(scroller_text);
     int pixel_shift = (int)fmodf(scroll_x_total, 18.0f);
@@ -309,18 +326,19 @@ static void redraw_screen(void) {
     // Display header details
     draw_string(pixels, win_width, win_height, 100, 30, "AUNCIENT WAYLAND VULKAN MARKDOWN EDITOR", 0xFF00FF00, 2);
     
-    // Render Simulated SID Chip register state array
+    // Render Simulated SID Chip register state array and active tune info
     char sid_buf[256];
     snprintf(sid_buf, sizeof(sid_buf), 
-             "SID AUDIO REGISTERS: V1_FREQ=0x%04X V2_PW=0x%04X ADSR=0x%02X%02X", 
+             "SID TUNE %d %s | FREQ=0x%04X PW=0x%04X ADSR=0x%02X%02X", 
+             active_tune, (active_tune == 3) ? "(HIDDEN UNLOCKED!)" : "(ACTIVE)",
              sid_chip.voices[0].freq, sid_chip.voices[1].pw,
              sid_chip.voices[0].adsr[0], sid_chip.voices[0].adsr[1]);
     draw_string(pixels, win_width, win_height, 100, win_height - 65, sid_buf, 0xFF00FFFF, 2);
 
     char help_buf[256];
     snprintf(help_buf, sizeof(help_buf), 
-             "SCALE: %d - VIC-II: d012=%d d016=%d d020=%d - ESC TO QUIT", 
-             scale, vic_d012, vic_d016, vic_d020);
+             "SCALE: %d - VIC-II: d012=%d d016=%d - PRESS '#' TO CYCLE TUNES - TYPE 'TSN'", 
+             scale, vic_d012, vic_d016);
     draw_string(pixels, win_width, win_height, 100, win_height - 35, help_buf, 0xFFFFFF00, 2);
     
     wl_surface_attach(surface, wl_buffers[current_buffer_idx], 0, 0);
@@ -468,11 +486,31 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *wl_keyboard, uin
         }
     }
 
+    // Capture key history for secret code unlock ("tsn")
+    if (typed_char >= 'a' && typed_char <= 'z') {
+        key_history[0] = key_history[1];
+        key_history[1] = key_history[2];
+        key_history[2] = typed_char;
+        
+        if (key_history[0] == 't' && key_history[1] == 's' && key_history[2] == 'n') {
+            hidden_unlocked = true;
+            active_tune = 3; // Trigger Hidden Tune
+            printf("[INFO] Hidden SID Tune 3 Unlocked! Warp Scroll Enabled.\n");
+        }
+    }
+
+    // Cycled tune manually via '#' key
+    if (typed_char == '#') {
+        active_tune = (active_tune + 1) % 3; // Cycle normal tunes 0, 1, 2
+        redraw_screen();
+        return;
+    }
+
     if (typed_char && doc_len < (int)sizeof(doc_buf) - 1) {
         doc_buf[doc_len++] = typed_char;
         doc_buf[doc_len] = '\0';
         
-        // Trigger a pitch sweep on simulated SID Voice 1 when typing
+        // Trigger pitch sweeps on simulated SID Voice 1 when typing
         sid_chip.voices[0].freq = 0x2200 + (doc_len * 32);
         sid_chip.voices[0].ctrl = 0x21; // Triangle waveform start
         
@@ -618,9 +656,9 @@ int main(void) {
         if (retro_time - last_sid_tick >= 0.020f) { // 50Hz Interval
             last_sid_tick = retro_time;
             
-            // 3-note arpeggiator step loop on Voice 1
+            // 3-note arpeggiator step loop based on active tune selection
             sid_arp_step = (sid_arp_step + 1) % 3;
-            sid_chip.voices[0].freq = sid_arp_notes[sid_arp_step] + (int)(sinf(retro_time * 5.0f) * 200.0f);
+            sid_chip.voices[0].freq = sid_tunes[active_tune][sid_arp_step] + (int)(sinf(retro_time * 5.0f) * 200.0f);
             
             // Pulse Width LFO sweep modulation on Voice 2
             sid_chip.voices[1].pw = 0x0400 + (uint16_t)(sinf(retro_time * 3.0f) * 512.0f + 512.0f);
