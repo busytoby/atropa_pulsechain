@@ -300,7 +300,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                     $(OBJ_DIR)/tsfi_comp_pass.o \
                     $(OBJ_DIR)/tsfi_mvarsel.o \
                     $(OBJ_DIR)/tsfi_reroute.o \
-                    $(OBJ_DIR)/tsfi_delegate_sig.o
+                    $(OBJ_DIR)/tsfi_delegate_sig.o \
+                    $(OBJ_DIR)/tsfi_stagecomp.o
 
 
 
