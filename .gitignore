@@ -520,6 +520,7 @@ frontend/compiled_yul.json
 /tests/demo_cics_terminal
 /tests/demo_cics_vulkan_wayland
 /tests/auncient_wayland_editor
+/tests/bench_cinefex
 
 # Ignore large media formats and document assets
 *.jpg
