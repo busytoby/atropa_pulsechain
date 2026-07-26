@@ -820,17 +820,26 @@ static void redraw_screen(void) {
                   sprites[idx].color, 3);
     }
     
-    // 1. Top Parallax Scroller moving RIGHT (Smooth right-scrolling math)
+    // 1. Top Zooming Parallax Scroller moving RIGHT (Dynamic sine scale zoomer)
     float p_scroll_speed = 60.0f;
     float p_scroll_x_total = retro_time * p_scroll_speed;
     int p_pixel_shift = (int)fmodf(p_scroll_x_total, 12.0f);
     int p_scroller_y = 60 + glitch_y;
     int len = strlen(parallax_scroller_text);
     int p_base_char_idx = len - ((int)(p_scroll_x_total / 12.0f) % len);
-    for (int col = 0; col < 90; col++) {
+    
+    int cur_x = 20 + p_pixel_shift + glitch_x;
+    for (int col = 0; col < 60; col++) {
         int char_idx = (p_base_char_idx + col) % len;
         char ch = parallax_scroller_text[char_idx];
-        draw_char(pixels, win_width, win_height, 20 + col * 12 + p_pixel_shift + glitch_x, p_scroller_y, ch, 0xFFFFCC00, 2);
+        
+        // Calculate dynamic zoom scale factor based on position and time
+        int dyn_scale = 2 + (int)(sinf(retro_time * 4.0f + col * 0.25f) * 1.1f);
+        if (dyn_scale < 1) dyn_scale = 1;
+        
+        // Draw character offset vertically to keep it centered on the row
+        draw_char(pixels, win_width, win_height, cur_x, p_scroller_y - (dyn_scale * 2), ch, 0xFFFFCC00, dyn_scale);
+        cur_x += 6 * dyn_scale; // Stride scales dynamically to prevent overlapping
     }
 
     // 2. Bottom Main Scroller moving LEFT
