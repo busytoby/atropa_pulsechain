@@ -315,6 +315,20 @@ static void resolve_inh_payload_conflict(const usd_inh_payload_conflict_t *confl
     }
 }
 
+typedef struct {
+    char inherits_opinion[32];
+    char reference_opinion[32];
+} usd_inh_ref_conflict_t;
+
+static void resolve_inh_ref_conflict(const usd_inh_ref_conflict_t *conflict, char *resolved_val) {
+    if (strlen(conflict->inherits_opinion) > 0) {
+        strcpy(resolved_val, conflict->inherits_opinion);
+    } else {
+        strcpy(resolved_val, conflict->reference_opinion);
+    }
+}
+
+
 
 
 
@@ -655,6 +669,27 @@ int main(void) {
     resolve_inh_payload_conflict(&ip_conflict_no_inh, resolved_ip_no_inh);
     assert(strcmp(resolved_ip_no_inh, "payload_data") == 0);
     printf("   ✓ Inherits (I) taking precedence over Payload (P) verified.\n");
+    fflush(stdout);
+
+    // 18. Test Inherits vs Reference Precedence Conflicts
+    printf("[TEST] Testing Inherits vs Reference Precedence Conflicts...\n");
+    fflush(stdout);
+    usd_inh_ref_conflict_t ir_conflict = {
+        .inherits_opinion = "class_inherited_transform",
+        .reference_opinion = "reference_transform"
+    };
+    char resolved_ir[32] = "";
+    resolve_inh_ref_conflict(&ir_conflict, resolved_ir);
+    assert(strcmp(resolved_ir, "class_inherited_transform") == 0);
+
+    usd_inh_ref_conflict_t ir_conflict_no_inh = {
+        .inherits_opinion = "",
+        .reference_opinion = "reference_transform"
+    };
+    char resolved_ir_no_inh[32] = "";
+    resolve_inh_ref_conflict(&ir_conflict_no_inh, resolved_ir_no_inh);
+    assert(strcmp(resolved_ir_no_inh, "reference_transform") == 0);
+    printf("   ✓ Inherits (I) taking precedence over Reference (R) verified.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
