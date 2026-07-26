@@ -396,7 +396,9 @@ def process_text_block(text, body_style, col_width, story):
                     print(f"Image error: {e}")
         else:
             t_idx = 0
-            # Use finditer to handle multiple file links in the same text segment
+            # Convert raw file:/// URLs to standard markdown links first to unify embedding logic
+            val = re.sub(r'(?<![\(\[])file:///([^\s\)]+)', r'[\1](file:///\1)', val)
+            
             matches = list(re.finditer(file_pattern, val))
             if not matches:
                 val = re.sub(r'^#+\s*', '', val)
