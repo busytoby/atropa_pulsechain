@@ -559,6 +559,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_reconciliation_
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_huc_ocean_v5.c -o tests/test_auncient_hogan_huc_ocean_v5 -lm -lrt
 ./tests/test_auncient_hogan_huc_ocean_v5
 
+# Compile and run Auncient Hogan-Hudson Ocean Protocol Integration Level 6 (Demoscene Edition)
+gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_huc_ocean_v6.c -o tests/test_auncient_hogan_huc_ocean_v6 -lm -lrt
+./tests/test_auncient_hogan_huc_ocean_v6
+
 # Compile and run Auncient Fourier Switch Residency Verification
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_fourier_switch.c -o tests/test_auncient_fourier_switch -lm -lrt
 ./tests/test_auncient_fourier_switch
