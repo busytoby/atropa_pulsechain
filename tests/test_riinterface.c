@@ -80,6 +80,10 @@ int main(void) {
     assert(ri.psg_lfo_ctrl == 0x80);
     assert(ri.psg_lfo_freq == 0x3F);
 
+    // Test PSG LFO phase displacement controls
+    tsfi_riinterface_set_lfo_phase(&ri, 0x4B);
+    assert(ri.psg_lfo_phase == 0x4B);
+
     // Test PSG white noise generator enable on channel 5
     tsfi_riinterface_enable_noise(&ri, 5, true, 0x1A);
     assert(ri.psg_noise_ctrl[1] == (0x80 | 0x1A));
@@ -115,6 +119,7 @@ int main(void) {
     printf("   ✓ End-to-end 8-step RenderMan execution sequence verified successfully.\n");
     printf("   ✓ Custom 5-bit PSG audio wavetables verified successfully.\n");
     printf("   ✓ PSG hardware LFO frequency modulation controls verified successfully.\n");
+    printf("   ✓ PSG hardware LFO phase displacement controls verified successfully.\n");
     printf("   ✓ PSG white noise generator frequency controls verified successfully.\n");
     printf("   ✓ VDC background scroll registers verified successfully.\n");
     printf("   ✓ PSG Direct D/A real-time audio streams verified successfully.\n");

@@ -16,6 +16,7 @@ typedef struct {
     uint8_t psg_channel_wavetable[6][32]; // huC6280 PSG 5-bit custom wavetable
     uint8_t psg_lfo_ctrl; // huC6280 PSG LFO control
     uint8_t psg_lfo_freq; // huC6280 PSG LFO frequency
+    uint8_t psg_lfo_phase; // huC6280 PSG LFO phase displacement
     uint8_t psg_noise_ctrl[2]; // huC6280 PSG noise control for channels 5-6
     uint8_t psg_channel_dda[6]; // huC6280 PSG Direct D/A data registers
     uint16_t vdc_scroll_x; // huC6270 VDC background scroll X
@@ -61,6 +62,9 @@ void tsfi_riinterface_write_wavetable(TSFiRiInterface *ri, int channel, const ui
 
 // Enables low-frequency oscillator (LFO) registers for channels 1 and 2
 void tsfi_riinterface_enable_lfo(TSFiRiInterface *ri, uint8_t ctrl, uint8_t freq);
+
+// Sets the phase displacement parameters for the PSG LFO modulation
+void tsfi_riinterface_set_lfo_phase(TSFiRiInterface *ri, uint8_t phase);
 
 // Enables white noise generation on channels 5 and 6
 void tsfi_riinterface_enable_noise(TSFiRiInterface *ri, int channel, bool enable, uint8_t frequency);
