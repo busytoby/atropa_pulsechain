@@ -66,6 +66,18 @@ def main():
         ry = 240.0
         rope_nodes.append([rx, ry, 0.0, rx, ry, 0.0]) # x, y, z, px, py, pz
 
+    # Initialize Verlet hair/fiber strands for each character node
+    # Each strand has 3 segments: [x, y, px, py]
+    hair_strands = []
+    for i in range(node_count):
+        node_hairs = []
+        for h in range(3):
+            strand = []
+            for s in range(3):
+                strand.append([0.0, 0.0, 0.0, 0.0])
+            node_hairs.append(strand)
+        hair_strands.append(node_hairs)
+
     # Simulation loop
     for frame in range(total_frames):
         time = frame / float(fps)
@@ -109,6 +121,36 @@ def main():
                     if i + 1 < node_count - 1:
                         rope_nodes[i+1][0] += dx * diff
                         rope_nodes[i+1][1] += dy * diff
+
+        # Update Verlet hair strands anchored to each character node
+        for i in range(node_count):
+            px = rope_nodes[i][0]
+            py = rope_nodes[i][1]
+            for h in range(3):
+                # Anchor node 0
+                hair_strands[i][h][0][0] = px + (h - 1) * 12.0
+                hair_strands[i][h][0][1] = py + 18.0
+                
+                # Step segment nodes 1 and 2
+                for s in range(1, 3):
+                    curr = hair_strands[i][h][s]
+                    prev = hair_strands[i][h][s-1]
+                    
+                    tx, ty = curr[0], curr[1]
+                    h_dx = (curr[0] - curr[2]) * 0.9 + wind_x * 0.01
+                    h_dy = (curr[1] - curr[3]) * 0.9 + wind_y * 0.01 + 2.0 # gravity
+                    
+                    curr[0] += h_dx
+                    curr[1] += h_dy
+                    curr[2], curr[3] = tx, ty
+                    
+                    # Constrain segment length
+                    hx = curr[0] - prev[0]
+                    hy = curr[1] - prev[1]
+                    h_dist = math.sqrt(hx*hx + hy*hy)
+                    if h_dist > 15.0:
+                        curr[0] = prev[0] + (hx / h_dist) * 15.0
+                        curr[1] = prev[1] + (hy / h_dist) * 15.0
 
         # Render frame
         img = Image.new("RGB", (width, height), (5, 5, 10)) # Very dark background
@@ -177,6 +219,25 @@ def main():
             # Draw block character with environment map specular reflection highlight glints
             draw_retro_char(draw, char, px, py, 36, color)
             draw_retro_char(draw, char, px - 2, py - 2, 28, (255, 255, 255)) # Specular reflection glint
+
+            # Draw Verlet hair strands with Kajiya-Kay specular highlights
+            for h in range(3):
+                points = []
+                for s in range(3):
+                    points.append((hair_strands[i][h][s][0], hair_strands[i][h][s][1]))
+                
+                tx_seg = points[2][0] - points[0][0]
+                ty_seg = points[2][1] - points[0][1]
+                t_len = math.sqrt(tx_seg*tx_seg + ty_seg*ty_seg)
+                spec = 1.0
+                if t_len > 0.1:
+                    dot_tl = -ty_seg / t_len
+                    spec = math.pow(math.sqrt(1.0 - dot_tl*dot_tl), 6.0)
+                
+                hair_r = int(r * (0.3 + 0.7 * spec))
+                hair_g = int(g * (0.3 + 0.7 * spec))
+                hair_b = int(b * (0.3 + 0.7 * spec))
+                draw.line(points, fill=(hair_r, hair_g, hair_b), width=2)
 
         # Pipe image frame to FFmpeg
         img.save(process.stdin, "PNG")
