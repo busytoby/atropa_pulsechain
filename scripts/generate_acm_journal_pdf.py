@@ -530,58 +530,31 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
         if not art_flowables_list:
             return
             
-        left_side = []
-        right_side = []
-        left_h = 0
-        right_h = 0
-        for f in art_flowables_list:
-            h = 10
-            if isinstance(f, Spacer):
-                h = f.height
-            elif isinstance(f, Paragraph):
-                lines_est = max(1, len(f.text) / 40.0)
-                h = lines_est * f.style.leading + f.style.spaceBefore + f.style.spaceAfter
-            elif isinstance(f, Preformatted):
-                lines = getattr(f, 'raw_text', '').count('\n') + 1
-                h = lines * f.style.leading + f.style.spaceBefore + f.style.spaceAfter
-            elif isinstance(f, Table):
-                h = 40
-                
-            if left_h <= right_h:
-                left_side.append(f)
-                left_h += h
+        i = 0
+        while i < len(art_flowables_list):
+            f1 = art_flowables_list[i]
+            if i + 1 < len(art_flowables_list):
+                f2 = art_flowables_list[i+1]
+                i += 2
             else:
-                right_side.append(f)
-                right_h += h
+                f2 = ""
+                i += 1
                 
-        t = Table([[left_side, "", right_side]], colWidths=[col_width, spacing, col_width])
-        t.setStyle(TableStyle([
-            ('VALIGN', (0,0), (-1,-1), 'TOP'),
-            ('LEFTPADDING', (0,0), (-1,-1), 0),
-            ('RIGHTPADDING', (0,0), (-1,-1), 0),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 0),
-            ('TOPPADDING', (0,0), (-1,-1), 0),
-        ]))
-        story.append(t)
-        story.append(Spacer(1, 4))
+            t = Table([[f1, "", f2]], colWidths=[col_width, spacing, col_width])
+            t.setStyle(TableStyle([
+                ('VALIGN', (0,0), (-1,-1), 'TOP'),
+                ('LEFTPADDING', (0,0), (-1,-1), 0),
+                ('RIGHTPADDING', (0,0), (-1,-1), 0),
+                ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+                ('TOPPADDING', (0,0), (-1,-1), 0),
+            ]))
+            story.append(t)
+            story.append(Spacer(1, 4))
+            
         art_flowables_list.clear()
 
     def append_flowable(f):
         art_flowables.append(f)
-        est_h = 0
-        for x in art_flowables:
-            if hasattr(x, 'style') and x.style.name in ('ArtTitle', 'ArtDate'):
-                continue
-            if isinstance(x, Spacer):
-                est_h += x.height
-            elif isinstance(x, Paragraph):
-                val_h = max(1, len(x.text) / 40.0) * x.style.leading + x.style.spaceBefore + x.style.spaceAfter
-                est_h += val_h
-            elif isinstance(x, Preformatted):
-                val_h = (getattr(x, 'raw_text', '').count('\n') + 1) * x.style.leading + x.style.spaceBefore + x.style.spaceAfter
-                est_h += val_h
-        if est_h > 180:
-            flush_art_flowables(art_flowables)
             
     for idx, (date, path) in enumerate(files):
         title = os.path.basename(path).replace(".md", "").replace("_", " ").title()
