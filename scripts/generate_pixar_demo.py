@@ -231,7 +231,7 @@ def main():
         cam_zoom = 290.0 + 100.0 * mann_allocation_gate
         
         draw.text((30, 90), f"Camera Path: /auncient/camera/main", fill=(130, 200, 255))
-        draw.text((30, 110), f"Subdiv Scheme: CATMULL-ROM (Edge Interpolate)", fill=(255, 180, 100))
+        draw.text((30, 110), f"BBox Cache: ACTIVE (Min: -100, Max: 100)", fill=(255, 180, 100))
         draw.text((30, 130), f"CurvesBasis: CATMULL-ROM (Wrap: PERIODIC)", fill=(200, 200, 220))
         
         # Active LuxLight position (LuxLight)
@@ -361,7 +361,7 @@ def main():
                 v_val1 = (v + 1) * 2.0 * math.pi / num_v
                 p11 = [(R + r * math.cos(v_val1)) * math.cos(u_val1), (R + r * math.cos(v_val1)) * math.sin(u_val1), r * math.sin(v_val1)]
                 
-                p01 = [(R + r * math.cos(v_val1)) * math.cos(u_val), (R + r * math.cos(v_val1)) * math.sin(u_val), r * math.sin(v_val1)]
+                p01 = [(R + r * math.cos(v_val1)) * math.cos(u), (R + r * math.cos(v_val1)) * math.sin(u), r * math.sin(v_val1)]
                 
                 c00_x, c00_y, z00 = project_pt(p00)
                 c10_x, c10_y, z10 = project_pt(p10)
