@@ -555,11 +555,76 @@ static void redraw_screen(void) {
 
     // Render TSFi/2 bubble logo centered above the cactus art (16x16 pixel bitmaps with 3D layers)
     int logo_start_x = art_start_x - 50;
-    int logo_start_y = 120 + glitch_y;
     int char_spacing = 64; // Distance between characters (16 pixels * scale 4)
     
+    // 6502-style C64 physics simulation
+    static float sim_y[6] = {120.0f, 120.0f, 120.0f, 120.0f, 120.0f, 120.0f};
+    static float sim_vy[6] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    static float sim_inflation[6] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+    static float sim_scale_x[6] = {4.0f, 4.0f, 4.0f, 4.0f, 4.0f, 4.0f};
+    static float sim_scale_y[6] = {4.0f, 4.0f, 4.0f, 4.0f, 4.0f, 4.0f};
+    static float water_flood_height = 0.0f;
+    static float last_sim_time = 0.0f;
+    
+    if (last_sim_time == 0.0f) {
+        last_sim_time = retro_time;
+    }
+    float dt = retro_time - last_sim_time;
+    if (dt > 0.1f) dt = 0.1f; // Cap delta time
+    last_sim_time = retro_time;
+    
+    float gravity = 9.8f * dt * 2.0f;
+    int ground = 220;
+    
+    for (int i = 0; i < 6; i++) {
+        sim_vy[i] += gravity;
+        sim_y[i] += sim_vy[i];
+        
+        sim_inflation[i] += (1.0f - sim_inflation[i]) * dt * 1.5f;
+        sim_scale_x[i] += (4.0f - sim_scale_x[i]) * dt * 6.0f;
+        sim_scale_y[i] += (4.0f - sim_scale_y[i]) * dt * 6.0f;
+        
+        if (sim_y[i] >= ground) {
+            sim_y[i] = (float)ground;
+            sim_vy[i] = -sim_vy[i] * 0.65f;
+            sim_inflation[i] += 0.45f;
+            if (sim_inflation[i] > 3.0f) sim_inflation[i] = 3.0f;
+            sim_scale_x[i] = 5.2f;
+            sim_scale_y[i] = 2.8f;
+            
+            // Raise water level on collision
+            water_flood_height += 2.0f;
+            if (water_flood_height > 100.0f) water_flood_height = 100.0f;
+        }
+        
+        // Staggered bounce kicks
+        static float last_kick[6] = {0};
+        if (retro_time - last_kick[i] > 3.0f + i * 0.8f) {
+            last_kick[i] = retro_time;
+            sim_vy[i] = -4.5f;
+            sim_inflation[i] += 0.6f;
+            if (sim_inflation[i] > 3.0f) sim_inflation[i] = 3.0f;
+            sim_scale_x[i] = 2.8f;
+            sim_scale_y[i] = 5.2f;
+        }
+    }
+    
+    // Apply flood rising tide to BOTH pixels (active) and bg_cache (backup)
+    if (water_flood_height > 0.0f) {
+        int flood_limit = ground + 30 - (int)water_flood_height;
+        for (int y = flood_limit; y < win_height; y++) {
+            for (int x = 0; x < win_width; x++) {
+                pixels[y * win_width + x] = 0xFF051224; // Blue flood color
+                bg_cache[y * win_width + x] = 0xFF051224; // Perm update backup
+            }
+        }
+    }
+
     // 1. Draw 3D Drop Shadow / Extrusion layer with matching wobble displacement
     for (int char_idx = 0; char_idx < 6; char_idx++) {
+        int logo_start_y = (int)sim_y[char_idx];
+        float elastic_scale_x = sim_scale_x[char_idx];
+        float elastic_scale_y = sim_scale_y[char_idx];
         for (int r = 0; r < 16; r++) {
             uint16_t row_bits = bubble_font_tsfi2[char_idx][r];
             for (int c = 0; c < 16; c++) {
@@ -569,10 +634,10 @@ static void redraw_screen(void) {
                     int wobble_x = (int)(sine_lut[wobble_idx_x] * 3.0f);
                     int wobble_y = (int)(sine_lut[wobble_idx_y] * 3.0f);
                     
-                    int pixel_x = logo_start_x + char_idx * char_spacing + c * 4 + wobble_x + 6; // Shifted right
-                    int pixel_y = logo_start_y + r * 4 + wobble_y + 6; // Shifted down
-                    for (int sy = 0; sy < 4; sy++) {
-                        for (int sx = 0; sx < 4; sx++) {
+                    int pixel_x = logo_start_x + char_idx * char_spacing + c * elastic_scale_x + wobble_x + 6; // Shifted right
+                    int pixel_y = logo_start_y + r * elastic_scale_y + wobble_y + 6; // Shifted down
+                    for (int sy = 0; sy < (int)elastic_scale_y; sy++) {
+                        for (int sx = 0; sx < (int)elastic_scale_x; sx++) {
                             int px = pixel_x + sx;
                             int py = pixel_y + sy;
                             if (px >= 0 && px < win_width && py >= 0 && py < win_height) {
@@ -587,6 +652,9 @@ static void redraw_screen(void) {
 
     // 2. Draw Main Body with Dynamic Volumetric Distance Field Inflation and Glossy Specular Highlights
     for (int char_idx = 0; char_idx < 6; char_idx++) {
+        int logo_start_y = (int)sim_y[char_idx];
+        float elastic_scale_x = sim_scale_x[char_idx];
+        float elastic_scale_y = sim_scale_y[char_idx];
         for (int r = 0; r < 16; r++) {
             uint16_t row_bits = bubble_font_tsfi2[char_idx][r];
             uint16_t prev_row_bits = (r > 0) ? bubble_font_tsfi2[char_idx][r - 1] : 0;
@@ -597,8 +665,8 @@ static void redraw_screen(void) {
                     int wobble_x = (int)(sine_lut[wobble_idx_x] * 3.0f);
                     int wobble_y = (int)(sine_lut[wobble_idx_y] * 3.0f);
                     
-                    int pixel_x = logo_start_x + char_idx * char_spacing + c * 4 + wobble_x;
-                    int pixel_y = logo_start_y + r * 4 + wobble_y;
+                    int pixel_x = logo_start_x + char_idx * char_spacing + c * elastic_scale_x + wobble_x;
+                    int pixel_y = logo_start_y + r * elastic_scale_y + wobble_y;
                     
                     // Calculate distance to nearest empty pixel (volumetric inflation depth)
                     int dist_sq = 16;
@@ -642,19 +710,15 @@ static void redraw_screen(void) {
                         pixel_color = 0xFFFFFFFF;
                     }
                     
-                    // Pointer XOR reflection to fetch original background from bg_cache
-                    uintptr_t ptr_reflection_mask = (uintptr_t)pixels ^ (uintptr_t)bg_cache;
-                    
-                    for (int sy = 0; sy < 4; sy++) {
-                        for (int sx = 0; sx < 4; sx++) {
+                    for (int sy = 0; sy < (int)elastic_scale_y; sy++) {
+                        for (int sx = 0; sx < (int)elastic_scale_x; sx++) {
                             int px = pixel_x + sx;
                             int py = pixel_y + sy;
                             if (px >= 0 && px < win_width && py >= 0 && py < win_height) {
                                 uint32_t *dest_pixel = &pixels[py * win_width + px];
                                 
-                                // XOR reflection to get matching background pixel without lookup branches
-                                uint32_t *bg_pixel = (uint32_t *)((uintptr_t)dest_pixel ^ ptr_reflection_mask);
-                                uint32_t bg_val = *bg_pixel;
+                                // Fetch original background from cache using matched index
+                                uint32_t bg_val = bg_cache[py * win_width + px];
                                 
                                 // Dynamic boundary mask to clip graphics overlapping the desert horizon
                                 uint32_t boundary_mask = (py >= ground + 30) ? 0x00FFFFFF : 0xFFFFFFFF;
