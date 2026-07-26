@@ -529,14 +529,19 @@ static void redraw_screen(void) {
     int logo_start_y = 120 + glitch_y;
     int char_spacing = 64; // Distance between characters (16 pixels * scale 4)
     
-    // 1. Draw 3D Drop Shadow / Extrusion layer in deep dark red-brown
+    // 1. Draw 3D Drop Shadow / Extrusion layer with matching wobble displacement
     for (int char_idx = 0; char_idx < 6; char_idx++) {
         for (int r = 0; r < 16; r++) {
             uint16_t row_bits = bubble_font_tsfi2[char_idx][r];
             for (int c = 0; c < 16; c++) {
                 if (row_bits & (1 << (15 - c))) {
-                    int pixel_x = logo_start_x + char_idx * char_spacing + c * 4 + 6; // Shifted right
-                    int pixel_y = logo_start_y + r * 4 + 6; // Shifted down
+                    int wobble_idx_x = (int)(retro_time * 90.0f + r * 12 + c * 6 + char_idx * 24) & 0xFF;
+                    int wobble_idx_y = (int)(retro_time * 75.0f + r * 8 + c * 10 + char_idx * 30) & 0xFF;
+                    int wobble_x = (int)(sine_lut[wobble_idx_x] * 3.0f);
+                    int wobble_y = (int)(sine_lut[wobble_idx_y] * 3.0f);
+                    
+                    int pixel_x = logo_start_x + char_idx * char_spacing + c * 4 + wobble_x + 6; // Shifted right
+                    int pixel_y = logo_start_y + r * 4 + wobble_y + 6; // Shifted down
                     for (int sy = 0; sy < 4; sy++) {
                         for (int sx = 0; sx < 4; sx++) {
                             int px = pixel_x + sx;
@@ -551,15 +556,20 @@ static void redraw_screen(void) {
         }
     }
 
-    // 2. Draw Main Body with Glossy 3D Highlight points
+    // 2. Draw Main Body with Glossy 3D Highlight points and dynamic organic bubble wobble evolution
     for (int char_idx = 0; char_idx < 6; char_idx++) {
         for (int r = 0; r < 16; r++) {
             uint16_t row_bits = bubble_font_tsfi2[char_idx][r];
             uint16_t prev_row_bits = (r > 0) ? bubble_font_tsfi2[char_idx][r - 1] : 0;
             for (int c = 0; c < 16; c++) {
                 if (row_bits & (1 << (15 - c))) {
-                    int pixel_x = logo_start_x + char_idx * char_spacing + c * 4;
-                    int pixel_y = logo_start_y + r * 4;
+                    int wobble_idx_x = (int)(retro_time * 90.0f + r * 12 + c * 6 + char_idx * 24) & 0xFF;
+                    int wobble_idx_y = (int)(retro_time * 75.0f + r * 8 + c * 10 + char_idx * 30) & 0xFF;
+                    int wobble_x = (int)(sine_lut[wobble_idx_x] * 3.0f);
+                    int wobble_y = (int)(sine_lut[wobble_idx_y] * 3.0f);
+                    
+                    int pixel_x = logo_start_x + char_idx * char_spacing + c * 4 + wobble_x;
+                    int pixel_y = logo_start_y + r * 4 + wobble_y;
                     int color_idx = (int)(retro_time * 15.0f + char_idx * 4 + c) & 0x0F;
                     uint32_t pixel_color = color_cycle_lut[color_idx];
                     
