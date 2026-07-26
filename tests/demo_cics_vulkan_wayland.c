@@ -382,6 +382,16 @@ int main(void) {
             for (int i = 0; i < 1280 * 720; i++) {
                 pixels[i] = 0xFF0000AA; // ARGB full opacity blue
             }
+            
+            // Draw a beautiful screen visual representation (classic 3270 border and header box)
+            for (int y = 20; y < 700; y++) {
+                for (int x = 20; x < 1260; x++) {
+                    if (y < 25 || y > 695 || x < 25 || x > 1255) {
+                        pixels[y * 1280 + x] = 0xFFFFFFFF; // White frame border
+                    }
+                }
+            }
+
             wl_surface_attach(surface, buffer, 0, 0);
             wl_surface_damage(surface, 0, 0, 1280, 720);
             wl_surface_commit(surface);
@@ -394,15 +404,15 @@ int main(void) {
         { wl_display_get_fd(display), POLLIN, 0 }
     };
     
-    printf("[INFO] Entering live interactive loop. Press keys inside the window to trigger CICS audits. Session will auto-close after 15 seconds of inactivity.\n");
+    printf("[INFO] Entering live interactive loop. Press keys inside the window to trigger CICS audits. Close the window to exit cleanly.\n");
     
-    time_t start_time = time(NULL);
-    while (running && (time(NULL) - start_time < 15)) {
+    while (running) {
         wl_display_flush(display);
-        int ret = poll(fds, 1, 1000);
+        int ret = poll(fds, 1, 100);
         if (ret > 0) {
-            wl_display_dispatch(display);
-            start_time = time(NULL);
+            if (wl_display_dispatch(display) < 0) {
+                break;
+            }
         }
     }
 
