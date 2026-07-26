@@ -45,15 +45,58 @@ static uint8_t hash_noise(int x, int y, uint32_t seed) {
     return (uint8_t)(h & 0xFF);
 }
 
+// Cosine interpolation for smooth gradients
+static double cosine_interpolate(double a, double b, double mu) {
+    double mu2 = (1.0 - cos(mu * 3.141592653589793)) / 2.0;
+    return (a * (1.0 - mu2) + b * mu2);
+}
+
+// 2D Noise generator with Cosine Interpolation
+static double noise_2d(double x, double y, uint32_t seed) {
+    int x0 = (int)floor(x);
+    int y0 = (int)floor(y);
+    int x1 = x0 + 1;
+    int y1 = y0 + 1;
+    
+    double dx = x - x0;
+    double dy = y - y0;
+    
+    double v00 = (double)hash_noise(x0, y0, seed) / 255.0;
+    double v10 = (double)hash_noise(x1, y0, seed) / 255.0;
+    double v01 = (double)hash_noise(x0, y1, seed) / 255.0;
+    double v11 = (double)hash_noise(x1, y1, seed) / 255.0;
+    
+    double i1 = cosine_interpolate(v00, v10, dx);
+    double i2 = cosine_interpolate(v01, v11, dx);
+    
+    return cosine_interpolate(i1, i2, dy);
+}
+
 // 1. Procedural Texture Synthesis (Layer-based TexGen with Bilinear Distortion)
-static void synthesize_texture_grid(huc_ocean_system_t *huc, double phase) {
-    uint8_t layer0[GRID_SIZE][GRID_SIZE]; // Base Sine Plasma Layer
+static void synthesize_texture_grid(huc_ocean_system_t *huc, double phase, int mode) {
+    uint8_t layer0[GRID_SIZE][GRID_SIZE]; // Base Plasma Layer
     uint8_t layer1[GRID_SIZE][GRID_SIZE]; // Noise Distortion Map Layer
     
-    // Step 1: Generate Sine Plasma on Layer 0
+    // Step 1: Generate Base Plasma Layer based on selected mode
     for (int y = 0; y < GRID_SIZE; y++) {
         for (int x = 0; x < GRID_SIZE; x++) {
-            double val = 127.5 + 63.75 * sin(x * 1.2 + phase) + 63.75 * cos(y * 1.2 + phase * 0.8);
+            double val = 0.0;
+            if (mode == 0) {
+                // Standard Multi-Component Plasma
+                val = 127.5 + 42.5 * sin(x * 1.0 + phase) +
+                              42.5 * sin(y * 1.5 - phase) +
+                              42.5 * sin((x + y) * 0.8 + phase);
+            } else if (mode == 1) {
+                // Sine Plasma
+                val = 127.5 + 63.75 * sin(x * 1.2 + phase) + 63.75 * cos(y * 1.2 + phase * 0.8);
+            } else {
+                // Fractal Plasma (Multi-Octave Perlin Noise with Cosine Interpolation)
+                double f_val = 0.0;
+                f_val += noise_2d((double)x * 0.25, (double)y * 0.25, 100U) * 1.0;
+                f_val += noise_2d((double)x * 0.5, (double)y * 0.5, 200U) * 0.5;
+                f_val += noise_2d((double)x * 1.0, (double)y * 1.0, 300U) * 0.25;
+                val = (f_val / 1.75) * 255.0;
+            }
             layer0[y][x] = (uint8_t)val;
         }
     }
@@ -159,7 +202,7 @@ static void process_tape_ingest_v6(huc_ocean_system_t *huc,
         huc->psg_frequency = (uint32_t)(261.0 + (huc->transaction_count * 20.0) + lfo_mod);
 
         // Update procedural visualizers
-        synthesize_texture_grid(huc, huc->transaction_count * 1.5);
+        synthesize_texture_grid(huc, huc->transaction_count * 1.5, lane % 3);
         update_lissajous_mesh(huc, huc->transaction_count * 1.2);
 
         printf("   [INGEST PASS] Lane %d: Account %d balance reconciled. Color: 0x%06X. LFO Freq: %u Hz.\n", 
