@@ -12,6 +12,14 @@ static inline void usd_init_auncient_cactus_schema(usd_auncient_cactus_schema_t 
     schema->density = 1.00f;
 }
 
+static inline float usd_cactus_schema_get_density(const usd_auncient_cactus_schema_t *schema) {
+    return schema->density;
+}
+
+static inline void usd_cactus_schema_set_density(usd_auncient_cactus_schema_t *schema, float density) {
+    schema->density = density;
+}
+
 typedef struct {
     float stiffness;
     char texture[32];
@@ -20,6 +28,24 @@ typedef struct {
 static inline void usd_init_auncient_texture_api(usd_auncient_texture_api_t *api) {
     api->stiffness = 0.50f;
     strcpy(api->texture, "cloth");
+}
+
+static inline float usd_texture_api_get_stiffness(const usd_auncient_texture_api_t *api) {
+    return api->stiffness;
+}
+
+static inline void usd_texture_api_set_stiffness(usd_auncient_texture_api_t *api, float stiffness) {
+    api->stiffness = stiffness;
+}
+
+typedef struct {
+    float mass;
+    float damping;
+} usd_auncient_physics_api_t;
+
+static inline void usd_init_auncient_physics_api(usd_auncient_physics_api_t *api) {
+    api->mass = 10.00f;
+    api->damping = 0.10f;
 }
 
 #endif /* AUNCIENT_CACTUS_SCHEMA_H */

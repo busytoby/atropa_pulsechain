@@ -35,7 +35,15 @@ int main(int argc, char **argv) {
     fprintf(out, "    schema->density = 1.00f;\n");
     fprintf(out, "}\n\n");
 
-    // Write API Schema structures
+    fprintf(out, "static inline float usd_cactus_schema_get_density(const usd_auncient_cactus_schema_t *schema) {\n");
+    fprintf(out, "    return schema->density;\n");
+    fprintf(out, "}\n\n");
+
+    fprintf(out, "static inline void usd_cactus_schema_set_density(usd_auncient_cactus_schema_t *schema, float density) {\n");
+    fprintf(out, "    schema->density = density;\n");
+    fprintf(out, "}\n\n");
+
+    // Write API Schema structures - Texture
     fprintf(out, "typedef struct {\n");
     fprintf(out, "    float stiffness;\n");
     fprintf(out, "    char texture[32];\n");
@@ -44,6 +52,25 @@ int main(int argc, char **argv) {
     fprintf(out, "static inline void usd_init_auncient_texture_api(usd_auncient_texture_api_t *api) {\n");
     fprintf(out, "    api->stiffness = 0.50f;\n");
     fprintf(out, "    strcpy(api->texture, \"cloth\");\n");
+    fprintf(out, "}\n\n");
+
+    fprintf(out, "static inline float usd_texture_api_get_stiffness(const usd_auncient_texture_api_t *api) {\n");
+    fprintf(out, "    return api->stiffness;\n");
+    fprintf(out, "}\n\n");
+
+    fprintf(out, "static inline void usd_texture_api_set_stiffness(usd_auncient_texture_api_t *api, float stiffness) {\n");
+    fprintf(out, "    api->stiffness = stiffness;\n");
+    fprintf(out, "}\n\n");
+
+    // Write API Schema structures - Physics
+    fprintf(out, "typedef struct {\n");
+    fprintf(out, "    float mass;\n");
+    fprintf(out, "    float damping;\n");
+    fprintf(out, "} usd_auncient_physics_api_t;\n\n");
+
+    fprintf(out, "static inline void usd_init_auncient_physics_api(usd_auncient_physics_api_t *api) {\n");
+    fprintf(out, "    api->mass = 10.00f;\n");
+    fprintf(out, "    api->damping = 0.10f;\n");
     fprintf(out, "}\n\n");
 
     fprintf(out, "#endif /* AUNCIENT_CACTUS_SCHEMA_H */\n");

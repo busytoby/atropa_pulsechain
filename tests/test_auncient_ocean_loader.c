@@ -1369,6 +1369,25 @@ int main(void) {
     printf("   ✓ VariantSet schema customization verified.\n");
     fflush(stdout);
 
+    // 37. Test Flat C API Generated Wrappers
+    printf("[TEST] Testing Flat C API Generated Wrappers...\n");
+    fflush(stdout);
+    usd_auncient_cactus_schema_t wrapper_cactus;
+    usd_init_auncient_cactus_schema(&wrapper_cactus);
+    assert(usd_cactus_schema_get_density(&wrapper_cactus) == 1.00f);
+    
+    usd_cactus_schema_set_density(&wrapper_cactus, 4.25f);
+    assert(usd_cactus_schema_get_density(&wrapper_cactus) == 4.25f);
+    
+    usd_auncient_texture_api_t wrapper_texture;
+    usd_init_auncient_texture_api(&wrapper_texture);
+    assert(usd_texture_api_get_stiffness(&wrapper_texture) == 0.50f);
+    
+    usd_texture_api_set_stiffness(&wrapper_texture, 0.85f);
+    assert(usd_texture_api_get_stiffness(&wrapper_texture) == 0.85f);
+    printf("   ✓ Flat C API generated wrapper functions verified.\n");
+    fflush(stdout);
+
     printf("=============================================================\n");
     printf("HUCOCEAN LOADER TESTS COMPLETE\n");
     printf("=============================================================\n");
