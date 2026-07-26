@@ -3,6 +3,7 @@
 #include <string.h>
 
 static ClothPoint cloth_grid[CLOTH_WIDTH][CLOTH_HEIGHT];
+static int springs_torn[CLOTH_WIDTH][CLOTH_HEIGHT][4]; // 0: Horiz, 1: Vert, 2: Diag1, 3: Diag2
 static const float gravity_x = -0.0007f;
 static const float gravity_y = -0.0008f;
 static const float gravity_z = 0.0001f;
@@ -12,6 +13,7 @@ static int is_default_anchor(int x, int y) {
 }
 
 void cloth_init(void) {
+    memset(springs_torn, 0, sizeof(springs_torn));
     for (int x = 0; x < CLOTH_WIDTH; x++) {
         for (int y = 0; y < CLOTH_HEIGHT; y++) {
             cloth_grid[x][y].x = (float)x * 0.25f;
@@ -50,9 +52,10 @@ void cloth_set_anchor(int x, int y, float tx, float ty, float tz) {
     }
 }
 
-static void solve_constraint(int x1, int y1, int x2, int y2, float rest_dist) {
+static void solve_constraint(int x1, int y1, int x2, int y2, float rest_dist, int spring_idx) {
     if (x1 < 0 || x1 >= CLOTH_WIDTH || y1 < 0 || y1 >= CLOTH_HEIGHT) return;
     if (x2 < 0 || x2 >= CLOTH_WIDTH || y2 < 0 || y2 >= CLOTH_HEIGHT) return;
+    if (springs_torn[x1][y1][spring_idx]) return;
     if (cloth_grid[x1][y1].is_anchored && cloth_grid[x2][y2].is_anchored) return;
 
     float dx = cloth_grid[x1][y1].x - cloth_grid[x2][y2].x;
@@ -60,6 +63,12 @@ static void solve_constraint(int x1, int y1, int x2, int y2, float rest_dist) {
     float dz = cloth_grid[x1][y1].z - cloth_grid[x2][y2].z;
     float dist = sqrtf(dx*dx + dy*dy + dz*dz);
     if (dist < 0.0001f) return;
+
+    // Tear threshold: 1.5x structural displacement stretch limit
+    if (dist > rest_dist * 1.5f) {
+        springs_torn[x1][y1][spring_idx] = 1;
+        return;
+    }
 
     float diff = (rest_dist - dist) / dist * 0.5f;
     float displacement_x = dx * diff;
@@ -182,13 +191,48 @@ void cloth_update(float wind_x, float wind_y, float wind_z) {
         }
     }
 
+    static const float min_self_dist = 0.12f;
     for (int iter = 0; iter < 3; iter++) {
+        // Resolve spring length constraints
         for (int x = 0; x < CLOTH_WIDTH; x++) {
             for (int y = 0; y < CLOTH_HEIGHT; y++) {
-                solve_constraint(x, y, x+1, y, 0.25f);
-                solve_constraint(x, y, x, y+1, 0.25f);
-                solve_constraint(x, y, x+1, y+1, 0.3535f);
-                solve_constraint(x, y+1, x+1, y, 0.3535f);
+                solve_constraint(x, y, x+1, y, 0.25f, 0);
+                solve_constraint(x, y, x, y+1, 0.25f, 1);
+                solve_constraint(x, y, x+1, y+1, 0.3535f, 2);
+                solve_constraint(x, y+1, x+1, y, 0.3535f, 3);
+            }
+        }
+
+        // Solve node proximity self-collisions to prevent overlap during foldbacks
+        for (int y1 = 0; y1 < CLOTH_HEIGHT; y1++) {
+            for (int x1 = 0; x1 < CLOTH_WIDTH; x1++) {
+                for (int y2 = y1; y2 < CLOTH_HEIGHT; y2++) {
+                    int start_x = (y1 == y2) ? x1 + 1 : 0;
+                    for (int x2 = start_x; x2 < CLOTH_WIDTH; x2++) {
+                        float sdx = cloth_grid[x1][y1].x - cloth_grid[x2][y2].x;
+                        float sdy = cloth_grid[x1][y1].y - cloth_grid[x2][y2].y;
+                        float sdz = cloth_grid[x1][y1].z - cloth_grid[x2][y2].z;
+                        float sdist = sqrtf(sdx*sdx + sdy*sdy + sdz*sdz);
+                        
+                        if (sdist < min_self_dist && sdist > 0.0001f) {
+                            float sdiff = (min_self_dist - sdist) / sdist * 0.5f;
+                            float spx = sdx * sdiff;
+                            float spy = sdy * sdiff;
+                            float spz = sdz * sdiff;
+                            
+                            if (!cloth_grid[x1][y1].is_anchored) {
+                                cloth_grid[x1][y1].x += spx;
+                                cloth_grid[x1][y1].y += spy;
+                                cloth_grid[x1][y1].z += spz;
+                            }
+                            if (!cloth_grid[x2][y2].is_anchored) {
+                                cloth_grid[x2][y2].x -= spx;
+                                cloth_grid[x2][y2].y -= spy;
+                                cloth_grid[x2][y2].z -= spz;
+                            }
+                        }
+                    }
+                }
             }
         }
     }
