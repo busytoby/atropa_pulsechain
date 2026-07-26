@@ -365,36 +365,94 @@ def parse_markdown_table(rows, body_style, col_width):
 def process_text_block(text, body_style, col_width, story):
     pattern = r'!\[[^\]]*\]\(([^)]+)\)'
     last_idx = 0
+    segments = []
+    
     for match in re.finditer(pattern, text):
         pre_text = text[last_idx:match.start()].strip()
         if pre_text:
-            pre_text = re.sub(r'^#+\s*', '', pre_text)
-            html_p = inline_md_to_html(pre_text)
-            if html_p:
-                story.append(Paragraph(html_p, body_style))
-                
+            segments.append(('text', pre_text))
         img_path = match.group(1).strip().split('?')[0]
-        print(f"Found image: {img_path}")
-        ext = os.path.splitext(img_path)[1].lower()
-        if ext in ['.jpg', '.jpeg', '.png', '.gif', '.bmp'] and os.path.exists(img_path):
-            try:
-                img_flow = Image(img_path)
-                img_flow.drawWidth = col_width - 10
-                img_flow.drawHeight = 1.5 * inch
-                story.append(Spacer(1, 4))
-                story.append(img_flow)
-                story.append(Spacer(1, 4))
-            except Exception as e:
-                print(f"Image error for {img_path}: {e}")
-                
+        segments.append(('image', img_path))
         last_idx = match.end()
         
     post_text = text[last_idx:].strip()
     if post_text:
-        post_text = re.sub(r'^#+\s*', '', post_text)
-        html_p = inline_md_to_html(post_text)
-        if html_p:
-            story.append(Paragraph(html_p, body_style))
+        segments.append(('text', post_text))
+        
+    file_pattern = r'\[([^\]]+)\]\(file:///?([^)]+)\)'
+    
+    for seg_type, val in segments:
+        if seg_type == 'image':
+            ext = os.path.splitext(val)[1].lower()
+            if ext in ['.jpg', '.jpeg', '.png', '.gif', '.bmp'] and os.path.exists(val):
+                try:
+                    img_flow = Image(val)
+                    img_flow.drawWidth = col_width - 10
+                    img_flow.drawHeight = 1.5 * inch
+                    story.append(Spacer(1, 4))
+                    story.append(img_flow)
+                    story.append(Spacer(1, 4))
+                except Exception as e:
+                    print(f"Image error: {e}")
+        else:
+            t_idx = 0
+            # Use finditer to handle multiple file links in the same text segment
+            matches = list(re.finditer(file_pattern, val))
+            if not matches:
+                val = re.sub(r'^#+\s*', '', val)
+                html_p = inline_md_to_html(val)
+                if html_p:
+                    story.append(Paragraph(html_p, body_style))
+                continue
+                
+            for f_match in matches:
+                pre_f = val[t_idx:f_match.start()].strip()
+                if pre_f:
+                    pre_f = re.sub(r'^#+\s*', '', pre_f)
+                    html_p = inline_md_to_html(pre_f)
+                    if html_p:
+                        story.append(Paragraph(html_p, body_style))
+                
+                link_text = f_match.group(1)
+                file_path = '/' + f_match.group(2).strip().split('#')[0].lstrip('/')
+                
+                ext_embed = os.path.splitext(file_path)[1].lower()
+                allowed_exts = ['.js', '.py', '.c', '.yul', '.h', '.cpp', '.sh', '.json', '.txt', '.strategy', '.algol61']
+                
+                if os.path.exists(file_path) and os.path.isfile(file_path) and ext_embed in allowed_exts:
+                    try:
+                        with open(file_path, 'r', encoding='utf-8') as f_embed:
+                            embed_lines = f_embed.readlines()
+                        
+                        truncated = False
+                        if len(embed_lines) > 40:
+                            embed_lines = embed_lines[:30]
+                            truncated = True
+                            
+                        caption = Paragraph(f"<b>File Reference: <font face='Courier'>{os.path.basename(file_path)}</font></b>", ParagraphStyle('Cap', parent=body_style, fontName='Times-Bold', fontSize=7.5, spaceBefore=4))
+                        story.append(caption)
+                        
+                        c_flow = render_standard_code_block(embed_lines, col_width, body_style)
+                        if c_flow:
+                            story.append(Spacer(1, 2))
+                            story.append(c_flow)
+                            if truncated:
+                                story.append(Paragraph("<i>... (truncated for compendium)</i>", ParagraphStyle('Trunc', parent=body_style, fontName='Times-Italic', fontSize=6.5)))
+                            story.append(Spacer(1, 4))
+                    except Exception as e:
+                        print(f"File embedding error: {e}")
+                        story.append(Paragraph(f"<u>{link_text}</u>", body_style))
+                else:
+                    story.append(Paragraph(f"<u>{link_text}</u>", body_style))
+                    
+                t_idx = f_match.end()
+                
+            post_f = val[t_idx:].strip()
+            if post_f:
+                post_f = re.sub(r'^#+\s*', '', post_f)
+                html_p = inline_md_to_html(post_f)
+                if html_p:
+                    story.append(Paragraph(html_p, body_style))
 
 def build_volume(volume_num, files, page_width, page_height, col_width, col_height, spacing, title_style, body_style):
     output_filename = f"lore_compendium_vol{volume_num}.pdf"
