@@ -366,6 +366,54 @@ static void get_cylinder_vertex(vertex3d_t *vertex, float u, float h, float radi
 }
 
 typedef struct {
+    float attack;
+    float decay;
+    float sustain;
+    float release;
+    float frequency;
+} synth_voice_t;
+
+static float generate_synth_sample(const synth_voice_t *voice, float time) {
+    float amp = 0.0f;
+    if (time < voice->attack) {
+        amp = time / voice->attack;
+    } else if (time < voice->attack + voice->decay) {
+        float dt = (time - voice->attack) / voice->decay;
+        amp = 1.0f - (1.0f - voice->sustain) * dt;
+    } else {
+        amp = voice->sustain;
+    }
+    float phase = time * voice->frequency * 2.0f * 3.14159265f;
+    return amp * tsfi_texgen_sin(phase);
+}
+
+typedef struct {
+    float start_time;
+    float end_time;
+    int32_t active_effect;
+} timeline_event_t;
+
+static int32_t get_active_effect(const timeline_event_t *events, int event_count, float time) {
+    for (int i = 0; i < event_count; i++) {
+        if (time >= events[i].start_time && time <= events[i].end_time) {
+            return events[i].active_effect;
+        }
+    }
+    return -1;
+}
+
+static void serialize_demo_assets(const char *filepath, const synth_voice_t *voice, const timeline_event_t *events, int event_count) {
+    FILE *f = fopen(filepath, "wb");
+    if (!f) return;
+    uint32_t magic = 0xAA00D4DE;
+    fwrite(&magic, 4, 1, f);
+    fwrite(voice, sizeof(synth_voice_t), 1, f);
+    fwrite(&event_count, 4, 1, f);
+    fwrite(events, sizeof(timeline_event_t), event_count, f);
+    fclose(f);
+}
+
+typedef struct {
     float r[3]; // Right
     float u[3]; // Up
     float f[3]; // Forward
@@ -488,6 +536,28 @@ static void run_digital_dynamite_tests(void) {
     get_cylinder_vertex(&cyl_v, 0.25f, 1.5f, 2.0f);
     assert(cyl_v.x <= 0.1f && cyl_v.y > 1.9f && cyl_v.z > 1.4f);
     printf("   ✓ Cylinder vertex generator verified successfully.\n");
+    
+    // 11. Test Synthesizer Sample Generation
+    synth_voice_t voice = { 0.1f, 0.1f, 0.8f, 0.2f, 440.0f };
+    float sample = generate_synth_sample(&voice, 0.05f);
+    assert(sample >= -1.0f && sample <= 1.0f);
+    printf("   ✓ Procedural synthesizer voice generator verified successfully.\n");
+    
+    // 12. Test Timeline Sequencer
+    timeline_event_t events[2] = { {0.0f, 5.0f, 101}, {5.0f, 10.0f, 102} };
+    int32_t active = get_active_effect(events, 2, 2.5f);
+    assert(active == 101);
+    printf("   ✓ Timeline event scheduler verified successfully.\n");
+    
+    // 13. Test Unified Demo Asset Serialization
+    serialize_demo_assets("tests/demo_assets.dat.bin", &voice, events, 2);
+    FILE *f_check = fopen("tests/demo_assets.dat.bin", "rb");
+    assert(f_check != NULL);
+    uint32_t check_magic = 0;
+    fread(&check_magic, 4, 1, f_check);
+    assert(check_magic == 0xAA00D4DE);
+    fclose(f_check);
+    printf("   ✓ Unified demo asset database serialization verified successfully.\n");
     fflush(stdout);
 }
 
