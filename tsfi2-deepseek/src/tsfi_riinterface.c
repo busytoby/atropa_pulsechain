@@ -18,6 +18,7 @@ void tsfi_riinterface_init(TSFiRiInterface *ri) {
     memset(ri->psg_channel_wavetable, 0, sizeof(ri->psg_channel_wavetable));
     ri->psg_lfo_ctrl = 0;
     ri->psg_lfo_freq = 0;
+    memset(ri->psg_noise_ctrl, 0, sizeof(ri->psg_noise_ctrl));
     memset(ri->frame_buffer, 0, sizeof(ri->frame_buffer));
     ri->irq_counter = 0;
     ri->irq_active = false;
@@ -169,4 +170,12 @@ void tsfi_riinterface_enable_lfo(TSFiRiInterface *ri, uint8_t ctrl, uint8_t freq
     if (!ri) return;
     ri->psg_lfo_ctrl = ctrl;
     ri->psg_lfo_freq = freq;
+}
+
+void tsfi_riinterface_enable_noise(TSFiRiInterface *ri, int channel, bool enable, uint8_t frequency) {
+    if (!ri || channel < 4 || channel > 5) return;
+    
+    int idx = channel - 4;
+    // Map noise configuration (Bit 7: enable, Bits 0-4: noise frequency parameter)
+    ri->psg_noise_ctrl[idx] = (enable ? 0x80 : 0x00) | (frequency & 0x1F);
 }
