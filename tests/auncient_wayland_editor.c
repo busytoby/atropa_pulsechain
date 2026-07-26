@@ -121,18 +121,18 @@ static bool running = true;
 static int win_width = 1024;
 static int win_height = 554;
 
-// Editor Document buffer (Markdown input)
+// Document buffer
 static char doc_buf[2048] = "# AUNCIENT MD EDITOR\n> TYPE YOUR DOCUMENT HERE\n";
 static int doc_len = 46;
 
-// Compressed scroller payload text (Decompression simulation LUT)
+// Compressed text
 static const char compressed_scroller[32] = "PAGADATA_2026_RETRO_C64_INTRO_";
 static char decompressed_scroller[128];
 
-// Parallax Scroller text: Singular / HHH Tribute scroll
+// Parallax text
 static const char *parallax_scroller_text = "CONSPIRACY & SINGULAR HUNGARIAN TRIBUTE -- INTRODUCING MULTI-LAYER PARALLAX SCROLLER PATHS -- ";
 
-// Static 256-entry Sine Lookup Table (LUT)
+// Sine LUT
 static float sine_lut[256];
 
 // Color Cycle Palette LUT (Sunset Theme: Warm colors)
@@ -647,7 +647,7 @@ static void redraw_screen(void) {
         }
     }
     
-    // Draw 2D scrolling background stars (Parallax background depth layer)
+    // Draw scrolling background stars
     for (int i = 0; i < 30; i++) {
         int px = (int)scroll_stars[i].x + glitch_x;
         int py = scroll_stars[i].y + glitch_y;
@@ -656,7 +656,7 @@ static void redraw_screen(void) {
         }
     }
 
-    // Draw 3D PETSCII Starfield behind the document text
+    // Draw 3D starfield
     for (int i = 0; i < 15; i++) {
         if (starfield[i].z > 0.1f) {
             int px = win_width / 2 + (int)((starfield[i].x / starfield[i].z) * (win_width / 2)) + glitch_x;
@@ -1047,7 +1047,6 @@ static void redraw_screen(void) {
     int pixel_shift = (int)fmodf(scroll_x_total, 24.0f);
     int scroller_y_base = win_height - 100 + glitch_y;
     
-    // Calculate number of visible columns based on 24px character spacing (scale=2 multicolor)
     int visible_cols = win_width / 24 + 2;
     for (int col = 0; col < visible_cols; col++) {
         int char_idx = (base_char_idx + col) % strlen(decompressed_scroller);
@@ -1056,13 +1055,11 @@ static void redraw_screen(void) {
         int lut_step = (col * 10 + (int)(retro_time * 250.0f)) & 0xFF;
         int dy = (int)(sine_lut[lut_step] * 10.0f);
         
-        // Multi-color charset color wash (Rainbow Chroming)
         uint32_t wash_color = color_cycle_lut[(col + (int)(retro_time * 20.0f)) & 0x0F];
         
         draw_char(pixels, win_width, win_height, 40 + col * 24 - pixel_shift + glitch_x, scroller_y_base + dy, ch, wash_color, 2);
     }
     
-    // Display header details
     draw_string(pixels, win_width, win_height, 100 + glitch_x, 30 + glitch_y, "AUNCIENT WAYLAND VULKAN MARKDOWN EDITOR", 0xFFFF8800, 2);
     
     // Render Simulated SID Chip register state array and active tune info
@@ -1114,6 +1111,42 @@ static void redraw_screen(void) {
             if (py >= 0 && py < win_height && (osc_base_x + c * 80 + col) < win_width) {
                 pixels[py * win_width + osc_base_x + c * 80 + col] = 0xFF00FF00; // Bright green scope line
             }
+        }
+    }
+ 
+    // Simulate real-time 3D Sphere Tracer Ray Marching to populate step count profile
+    uint8_t ray_steps[32];
+    float sphere_z = 8.0f + sinf(retro_time * 4.0f) * 3.0f;
+    for (int col = 0; col < 32; col++) {
+        // Ray setup: parallel orthographic rays
+        float rx = (col - 15.5f) * 0.4f;
+        float ry = 0.0f;
+        float rz = -5.0f;
+        int steps = 0;
+        
+        // WinchesterMQ loop emulation
+        while (steps < 16) {
+            steps++;
+            // SDF evaluation: sphere centered at (0, 0, sphere_z) with radius 3.5
+            float dx = rx;
+            float dy = ry;
+            float dz = rz - sphere_z;
+            float dist = sqrtf(dx*dx + dy*dy + dz*dz) - 3.5f;
+            
+            if (dist < 0.05f) break; // Surface hit
+            rz += dist; // Step forward along ray vector
+            if (rz > 15.0f) { steps = 16; break; } // Escaped scene bounds
+        }
+        ray_steps[col] = (uint8_t)(steps * 31 / 16); // Map 16 steps to 0-31 range
+    }
+ 
+    // Render 7th diagnostic oscilloscope panel for Ray Marching Step Profiles
+    draw_string(pixels, win_width, win_height, osc_base_x + 480, osc_base_y - 15, "RAY", 0xFF00FFFF, 1);
+    for (int col = 0; col < 32; col++) {
+        int val = ray_steps[col];
+        int py = osc_base_y - (val * 12 / 32);
+        if (py >= 0 && py < win_height && (osc_base_x + 480 + col) < win_width) {
+            pixels[py * win_width + osc_base_x + 480 + col] = 0xFF00FFFF; // Bright cyan trace line
         }
     }
  
