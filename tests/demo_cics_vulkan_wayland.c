@@ -6,13 +6,56 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <wayland-client.h>
+#include "xdg-shell-client-protocol.h"
 #include "../src/auncient_timeline_autodin.h"
 
-// Globals for Wayland setup
 static struct wl_compositor *compositor = NULL;
 static struct wl_seat *seat = NULL;
 static struct wl_keyboard *keyboard = NULL;
+static struct xdg_wm_base *xdg_wm_base = NULL;
+static struct wl_surface *surface = NULL;
+static struct xdg_surface *xdg_surface = NULL;
+static struct xdg_toplevel *xdg_toplevel = NULL;
 static bool running = true;
+
+// XDG Shell listeners
+static void xdg_surface_handle_configure(void *data, struct xdg_surface *xdg_surface, uint32_t serial) {
+    (void)data;
+    xdg_surface_ack_configure(xdg_surface, serial);
+    printf("[XDG] Configure event acknowledged.\n");
+}
+
+static const struct xdg_surface_listener xdg_surface_listener = {
+    .configure = xdg_surface_handle_configure,
+};
+
+static void xdg_toplevel_handle_configure(void *data, struct xdg_toplevel *xdg_toplevel, int32_t width, int32_t height, struct wl_array *states) {
+    (void)data; (void)xdg_toplevel; (void)width; (void)height; (void)states;
+    printf("[XDG] Toplevel configure: width=%d height=%d\n", width, height);
+}
+
+static void xdg_toplevel_handle_close(void *data, struct xdg_toplevel *xdg_toplevel) {
+    (void)data; (void)xdg_toplevel;
+    running = false;
+    printf("[XDG] Toplevel close event received.\n");
+}
+
+static void xdg_toplevel_handle_configure_bounds(void *data, struct xdg_toplevel *xdg_toplevel, int32_t width, int32_t height) {
+    (void)data; (void)xdg_toplevel; (void)width; (void)height;
+    printf("[XDG] Configure bounds: width=%d height=%d\n", width, height);
+}
+
+static void xdg_toplevel_handle_wm_capabilities(void *data, struct xdg_toplevel *xdg_toplevel, struct wl_array *capabilities) {
+    (void)data; (void)xdg_toplevel; (void)capabilities;
+    printf("[XDG] WM capabilities received.\n");
+}
+
+static const struct xdg_toplevel_listener xdg_toplevel_listener = {
+    .configure = xdg_toplevel_handle_configure,
+    .close = xdg_toplevel_handle_close,
+    .configure_bounds = xdg_toplevel_handle_configure_bounds,
+    .wm_capabilities = xdg_toplevel_handle_wm_capabilities,
+};
 
 // Keyboard listener callbacks
 static void keyboard_handle_keymap(void *data, struct wl_keyboard *wl_keyboard, uint32_t format, int32_t fd, uint32_t size) {
@@ -35,8 +78,7 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *wl_keyboard, uin
 
     printf("[WAYLAND EVENT] Key pressed scancode: %u\n", key);
     
-    // Trigger real-time edit auditing and CICS transactions based on key inputs
-    char typed_char = (char)(key + 'a' - 30); // Mock mapping from scancode to char
+    char typed_char = (char)(key + 'a' - 30);
     if (typed_char < 'a' || typed_char > 'z') typed_char = 'x';
     
     auncient_autodin_audit_edit("INPUT_BUFF", 10, 0, typed_char);
@@ -88,6 +130,8 @@ static void registry_handle_global(void *data, struct wl_registry *registry, uin
     } else if (strcmp(interface, "wl_seat") == 0) {
         seat = wl_registry_bind(registry, name, &wl_seat_interface, version);
         wl_seat_add_listener(seat, &seat_listener, NULL);
+    } else if (strcmp(interface, "xdg_wm_base") == 0) {
+        xdg_wm_base = wl_registry_bind(registry, name, &xdg_wm_base_interface, version);
     }
 }
 
@@ -117,17 +161,34 @@ int main(void) {
     
     wl_display_roundtrip(display);
 
+    if (compositor && xdg_wm_base) {
+        surface = wl_compositor_create_surface(compositor);
+        xdg_surface = xdg_wm_base_get_xdg_surface(xdg_wm_base, surface);
+        xdg_surface_add_listener(xdg_surface, &xdg_surface_listener, NULL);
+
+        xdg_toplevel = xdg_surface_get_toplevel(xdg_surface);
+        xdg_toplevel_add_listener(xdg_toplevel, &xdg_toplevel_listener, NULL);
+
+        wl_surface_commit(surface);
+        wl_display_roundtrip(display);
+        printf("[WAYLAND] Surface and XDG toplevel window opened successfully.\n");
+    }
+
     // Run short event dispatch loop for verification
-    int loop_ticks = 5;
+    int loop_ticks = 10;
     while (running && loop_ticks-- > 0) {
         wl_display_dispatch_pending(display);
         usleep(10000);
     }
 
     // Cleanup resources
+    if (xdg_toplevel) xdg_toplevel_destroy(xdg_toplevel);
+    if (xdg_surface) xdg_surface_destroy(xdg_surface);
+    if (surface) wl_surface_destroy(surface);
     if (keyboard) wl_keyboard_destroy(keyboard);
     if (seat) wl_seat_destroy(seat);
     if (compositor) wl_compositor_destroy(compositor);
+    if (xdg_wm_base) xdg_wm_base_destroy(xdg_wm_base);
     wl_registry_destroy(registry);
     wl_display_disconnect(display);
 
