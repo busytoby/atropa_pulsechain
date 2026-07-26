@@ -105,7 +105,7 @@ def draw_cash_cow(draw, width, time):
     big_img = small_img.resize((big_w, big_h), Image.Resampling.NEAREST)
     
     start_x = (width - big_w) // 2
-    start_y = 20
+    start_y = 20 + int(8.0 * math.sin(time * 6.0))
     
     for y in range(big_h):
         for x in range(big_w):
