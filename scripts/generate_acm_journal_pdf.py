@@ -3,7 +3,7 @@ import re
 import datetime
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
-from reportlab.platypus import BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer, PageBreak, FrameBreak, Table, TableStyle, Image, NextPageTemplate, KeepTogether, Flowable
+from reportlab.platypus import BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer, PageBreak, FrameBreak, Table, TableStyle, Image, NextPageTemplate, KeepTogether, Flowable, Preformatted
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_JUSTIFY, TA_CENTER, TA_LEFT
 
@@ -349,6 +349,7 @@ def render_standard_code_block(code_lines, col_width, body_style):
         spaceAfter=4,
     )
     p = Preformatted(code_text, code_style)
+    p.raw_text = code_text
     return p
 
 
@@ -784,7 +785,7 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
             story.append(SetLayoutMode(False))
             story.append(PageBreak())
         else:
-            story.append(Spacer(1, 0.1 * inch))
+            story.append(Spacer(1, 0.15 * inch))
         
     doc.build(story, canvasmaker=NumberedCanvas)
     print(f"PDF build complete: {output_filename}")
