@@ -127,10 +127,10 @@ def convert_latex_math_to_html(text):
             
         for pat, repl in replacements:
             math_content = re.sub(pat, repl, math_content)
-        for _ in range(3): # up to 3 levels of nesting fractions
-            math_content = re.sub(pattern_frac, replace_frac, math_content)
         math_content = re.sub(r'_\{([^}]+)\}', r'<sub>\1</sub>', math_content)
         math_content = re.sub(r'_([a-zA-Z0-9]+)', r'<sub>\1</sub>', math_content)
+        for _ in range(3): # up to 3 levels of nesting fractions
+            math_content = re.sub(pattern_frac, replace_frac, math_content)
         return f'<font color="#0066cc"><i>{math_content}</i></font>'
         
     text = re.sub(r'\$\$(.*?)\$\$', replace_math_block, text)
