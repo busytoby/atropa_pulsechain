@@ -49,6 +49,13 @@ int main(void) {
     assert(inst_block.joint_swing_angle > 0.0f);
     printf("   ✓ Physics wind magnitude feedback loop verified.\n");
 
+    // 4. Test Material-Modulated dynamic physics updates
+    mat_block.wind_turbulence_frequency = 4.0f;
+    mat_block.fabric_friction_coefficient = 0.8f;
+    cloth_init();
+    auncient_bridge_update_cloth_physics(&mat_block, 1.5f, 0.01f, 0.0f, -0.015f);
+    printf("   ✓ Material-driven simulation step executed.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT CLOTH TO MATERIAL BRIDGE TEST COMPLETE\n");
     printf("=============================================================\n");

@@ -16,6 +16,9 @@ void auncient_bridge_material_to_cloth_color(const MaterialUniformBlock *mat_blo
 // Links physics properties (wind vector force) to update instance uniforms
 void auncient_bridge_cloth_to_instance(float wind_x, float wind_y, float wind_z, InstanceUniformBlock *inst_block);
 
+// Runs the cloth simulation update step using parameters driven by the material template settings
+void auncient_bridge_update_cloth_physics(const MaterialUniformBlock *mat_block, float global_time, float base_wind_x, float base_wind_y, float base_wind_z);
+
 #ifdef __cplusplus
 }
 #endif

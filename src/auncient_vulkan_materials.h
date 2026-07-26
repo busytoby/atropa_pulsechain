@@ -21,6 +21,8 @@ typedef struct {
     uint32_t octaves;
     uint32_t color_preset;
     float material_blend_factor;
+    float wind_turbulence_frequency;
+    float fabric_friction_coefficient;
 } MaterialUniformBlock;
 
 // Descriptor Set 2: Binds once per draw call (Object instance variables)

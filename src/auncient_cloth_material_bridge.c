@@ -36,3 +36,24 @@ void auncient_bridge_cloth_to_instance(float wind_x, float wind_y, float wind_z,
     // Scale swing parameter feedback (15.0 radian scalar)
     inst_block->joint_swing_angle = wind_mag * 15.0f;
 }
+
+void auncient_bridge_update_cloth_physics(const MaterialUniformBlock *mat_block, float global_time, float base_wind_x, float base_wind_y, float base_wind_z) {
+    if (!mat_block) return;
+
+    // Dynamic wind turbulence modulation using material frequency
+    float freq = mat_block->wind_turbulence_frequency;
+    float turb = sinf(global_time * freq) * 0.005f;
+
+    float active_wind_x = base_wind_x + turb;
+    float active_wind_y = base_wind_y + sinf(global_time * freq * 1.5f) * 0.002f;
+    float active_wind_z = base_wind_z + cosf(global_time * freq * 0.8f) * 0.003f;
+
+    // Scale active wind by the inverse of the fabric friction coefficient to simulate resistance drag
+    float drag_scale = 1.0f / (mat_block->fabric_friction_coefficient + 0.1f);
+    active_wind_x *= drag_scale;
+    active_wind_y *= drag_scale;
+    active_wind_z *= drag_scale;
+
+    // Invoke soft body Verlet physics update step
+    cloth_update(active_wind_x, active_wind_y, active_wind_z);
+}
