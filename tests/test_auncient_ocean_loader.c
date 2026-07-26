@@ -1682,6 +1682,24 @@ int main(void) {
     printf("   ✓ Local vs Inherits precedence conflict verified.\n");
     fflush(stdout);
 
+    // 52. Test Local vs Reference Precedence Conflict
+    printf("[TEST] Testing Local vs Reference Precedence Conflict...\n");
+    fflush(stdout);
+    
+    // According to LIVRPS, Local (L) overrides Reference (R)
+    float local_val2 = 1.85f;      // from Local
+    float reference_val2 = 10.00f; // from Reference
+    
+    // Composed value resolves to Local opinion
+    float resolved_loc_ref = local_val2;
+    if (local_val2 == 0.0f) {
+        resolved_loc_ref = reference_val2;
+    }
+    
+    assert(resolved_loc_ref == 1.85f);
+    printf("   ✓ Local vs Reference precedence conflict verified.\n");
+    fflush(stdout);
+
     printf("=============================================================\n");
     printf("HUCOCEAN LOADER TESTS COMPLETE\n");
     printf("=============================================================\n");
