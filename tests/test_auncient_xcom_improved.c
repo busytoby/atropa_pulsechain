@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <openssl/sha.h>
+#include "../tsfi2-deepseek/inc/tsfi_ar.h"
 
 typedef enum {
     CUTOFF_STATE,
@@ -58,13 +59,26 @@ bool xcom_process_packet(xcom_receiver_t *rx, const xcom_packet_t *pkt, uint8_t 
         return false;
     }
 
-    // 4. Challenge-Response nonce verification
+    // Challenge-Response nonce verification
     if (pkt->nonce != rx->last_nonce + 1) {
         return false;
     }
 
-    // Conduction established -> commit write
-    rx->write_gate = CONDUC_STATE;
+    // Enforce scheme validation for URIs via Asset Resolver integration
+    if (strncmp(pkt->payload, "auncient://", 11) == 0) {
+        TSFiAssetResolver ar;
+        tsfi_ar_init(&ar);
+        char resolved_path[128];
+        bool resolved_ok = tsfi_ar_resolve(&ar, pkt->payload, resolved_path);
+        tsfi_ar_integrate_xcom(resolved_ok, rx);
+        if (!resolved_ok) {
+            return false;
+        }
+    } else {
+        // Conduction established -> commit write
+        rx->write_gate = CONDUC_STATE;
+    }
+
     strcpy(rx->rx_buffer, pkt->payload);
     rx->expected_seq++;
     rx->last_nonce = pkt->nonce;
@@ -134,6 +148,22 @@ int main(void) {
     assert(ok == false);
     assert(rx.write_gate == CUTOFF_STATE); // Dropped
     printf("   ✓ Replayed packet blocked successfully by sequence check.\n");
+    fflush(stdout);
+
+    // 4. Resolve custom URI via Asset Resolver integration
+    printf("[TEST] Processing custom URI scheme packet...\n");
+    fflush(stdout);
+    xcom_packet_t pkt_uri = {
+        .seq = 101,
+        .nonce = 502,
+        .payload = "auncient://mesh_metadata"
+    };
+
+    ok = xcom_process_packet(&rx, &pkt_uri, 0x01);
+    assert(ok == true);
+    assert(rx.write_gate == CONDUC_STATE);
+    assert(strcmp(rx.rx_buffer, "auncient://mesh_metadata") == 0);
+    printf("   ✓ Custom scheme resolution and XCOM gate conduction verified successfully.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
