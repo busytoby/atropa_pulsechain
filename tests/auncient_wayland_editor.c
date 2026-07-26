@@ -261,6 +261,17 @@ typedef struct {
 
 static Star starfield[15];
 
+// 2D horizontal scrolling background stars
+typedef struct {
+    float x;
+    int y;
+    float speed;
+    char glyph;
+    uint32_t color;
+} ScrollStar;
+
+static ScrollStar scroll_stars[30];
+
 // Binary History Record (No Mocking)
 typedef struct {
     uint32_t transaction_id;
@@ -376,6 +387,15 @@ static void redraw_screen(void) {
         }
     }
     
+    // Draw 2D scrolling background stars (Parallax background depth layer)
+    for (int i = 0; i < 30; i++) {
+        int px = (int)scroll_stars[i].x + glitch_x;
+        int py = scroll_stars[i].y + glitch_y;
+        if (px >= 0 && px < win_width && py >= 0 && py < win_height) {
+            draw_char(pixels, win_width, win_height, px, py, scroll_stars[i].glyph, scroll_stars[i].color, 1);
+        }
+    }
+
     // Draw 3D PETSCII Starfield behind the document text
     for (int i = 0; i < 15; i++) {
         if (starfield[i].z > 0.1f) {
@@ -556,12 +576,11 @@ static void redraw_screen(void) {
         }
     }
 
-    // 2. Draw Main Body with multi-layer edge shading (Gold inner fill, color-cycled rubbery borders, and white glossy glints)
+    // 2. Draw Main Body with Dynamic Volumetric Distance Field Inflation and Glossy Specular Highlights
     for (int char_idx = 0; char_idx < 6; char_idx++) {
         for (int r = 0; r < 16; r++) {
             uint16_t row_bits = bubble_font_tsfi2[char_idx][r];
             uint16_t prev_row_bits = (r > 0) ? bubble_font_tsfi2[char_idx][r - 1] : 0;
-            uint16_t next_row_bits = (r < 15) ? bubble_font_tsfi2[char_idx][r + 1] : 0;
             for (int c = 0; c < 16; c++) {
                 if (row_bits & (1 << (15 - c))) {
                     int wobble_idx_x = (int)(retro_time * 90.0f + r * 12 + c * 6 + char_idx * 24) & 0xFF;
@@ -572,24 +591,38 @@ static void redraw_screen(void) {
                     int pixel_x = logo_start_x + char_idx * char_spacing + c * 4 + wobble_x;
                     int pixel_y = logo_start_y + r * 4 + wobble_y;
                     
-                    // Determine neighbors to classify border vs inner fill
-                    bool has_left = (c > 0) && (row_bits & (1 << (15 - (c - 1))));
-                    bool has_right = (c < 15) && (row_bits & (1 << (15 - (c + 1))));
-                    bool has_top = (r > 0) && (prev_row_bits & (1 << (15 - c)));
-                    bool has_bottom = (r < 15) && (next_row_bits & (1 << (15 - c)));
-                    
-                    bool is_inner_fill = has_left && has_right && has_top && has_bottom;
+                    // Calculate distance to nearest empty pixel (volumetric inflation depth)
+                    int dist_sq = 16;
+                    for (int dr = -2; dr <= 2; dr++) {
+                        for (int dc = -2; dc <= 2; dc++) {
+                            int nr = r + dr;
+                            int nc = c + dc;
+                            bool is_inside = (nr >= 0 && nr < 16 && nc >= 0 && nc < 16);
+                            bool is_filled = is_inside && (bubble_font_tsfi2[char_idx][nr] & (1 << (15 - nc)));
+                            if (!is_filled) {
+                                int d = dr * dr + dc * dc;
+                                if (d < dist_sq) dist_sq = d;
+                            }
+                        }
+                    }
                     
                     // Detect if this is a top-left edge pixel (empty to top or left)
                     bool is_top_edge = (r == 0) || !(prev_row_bits & (1 << (15 - c)));
                     bool is_left_edge = (c == 0) || !(row_bits & (1 << (15 - (c - 1))));
                     bool is_glossy = is_top_edge && is_left_edge;
                     
-                    // Base color cycling for outer border
+                    // Color calculation based on inflation depth
                     int color_idx = (int)(retro_time * 15.0f + char_idx * 4 + c) & 0x0F;
                     uint32_t border_color = color_cycle_lut[color_idx];
+                    uint32_t pixel_color = border_color;
                     
-                    uint32_t fill_color = 0xFFFFCC00; // Gold/yellow glossy inner fill
+                    if (dist_sq > 2) {
+                        // Inflated center: Golden yellow
+                        pixel_color = 0xFFFFCC00;
+                    } else if (dist_sq > 1) {
+                        // Intermediate slope: Orange
+                        pixel_color = 0xFFFF6600;
+                    }
                     
                     for (int sy = 0; sy < 4; sy++) {
                         for (int sx = 0; sx < 4; sx++) {
@@ -597,11 +630,9 @@ static void redraw_screen(void) {
                             int py = pixel_y + sy;
                             if (px >= 0 && px < win_width && py >= 0 && py < win_height) {
                                 if (is_glossy && sx < 2 && sy < 2) {
-                                    pixels[py * win_width + px] = 0xFFFFFFFF; // Pure white highlight
-                                } else if (is_inner_fill) {
-                                    pixels[py * win_width + px] = fill_color; // Gold fill
+                                    pixels[py * win_width + px] = 0xFFFFFFFF; // Specular highlight glint
                                 } else {
-                                    pixels[py * win_width + px] = border_color; // Color-cycled border
+                                    pixels[py * win_width + px] = pixel_color;
                                 }
                             }
                         }
@@ -1007,6 +1038,16 @@ int main(void) {
         starfield[i].glyph = glyphs[rand() % 4];
     }
 
+    // Initialize 2D horizontal scrolling background stars
+    for (int i = 0; i < 30; i++) {
+        scroll_stars[i].x = (float)(rand() % 1280);
+        scroll_stars[i].y = rand() % 720;
+        scroll_stars[i].speed = 15.0f + (float)(rand() % 45);
+        char glyphs[] = ".*+";
+        scroll_stars[i].glyph = glyphs[rand() % 3];
+        scroll_stars[i].color = (scroll_stars[i].speed > 35.0f) ? 0xFFFFCC00 : 0xFF884400;
+    }
+
     // Initialize simulated SID chip register defaults
     sid_chip.voices[0].adsr[0] = 0x21; // Attack / Decay
     sid_chip.voices[0].adsr[1] = 0xF5; // Sustain / Release
@@ -1099,6 +1140,14 @@ int main(void) {
                 starfield[i].x = (float)((rand() % 200) - 100) / 10.0f;
                 starfield[i].y = (float)((rand() % 200) - 100) / 10.0f;
                 starfield[i].z = 10.0f; // Reset to far boundary
+            }
+        }
+        // Animate 2D scrolling stars
+        for (int i = 0; i < 30; i++) {
+            scroll_stars[i].x -= dt * scroll_stars[i].speed;
+            if (scroll_stars[i].x < 0.0f) {
+                scroll_stars[i].x = (float)win_width;
+                scroll_stars[i].y = rand() % win_height;
             }
         }
 
