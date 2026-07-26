@@ -15,4 +15,7 @@ void tsfi_displacementshader_init(TSFiDisplacementShader *ds, double amplitude, 
 // Computes the geometric displacement value for a vertex based on active AUTODIN timeline time
 double tsfi_displacementshader_eval(const TSFiDisplacementShader *ds, double autodin_time, double vertex_coord);
 
+// Registers the evaluator in the XPLSM dynamic symbol table
+void tsfi_displacementshader_register_xplsm(void (*register_func)(const char *, void *));
+
 #endif // TSFI_DISPLACEMENTSHADER_H

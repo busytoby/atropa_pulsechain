@@ -24,8 +24,19 @@ int main(void) {
     assert(fabs(disp0 - 0.0) < 1e-5);
     assert(fabs(disp_peak - 2.5) < 1e-5);
 
+    // Verify registration callback gets execution pointer
+    void *registered_ptr = NULL;
+    void mock_register(const char *name, void *ptr) {
+        if (strcmp(name, "tsfi_displacementshader_eval") == 0) {
+            registered_ptr = ptr;
+        }
+    }
+    tsfi_displacementshader_register_xplsm(mock_register);
+    assert(registered_ptr == (void*)tsfi_displacementshader_eval);
+
     printf("   ✓ Displacement amplitude and frequency initialized.\n");
     printf("   ✓ AUTODIN lock-paced coordinate displacement evaluated successfully.\n");
+    printf("   ✓ XPLSM dynamic symbol registration verified successfully.\n");
     printf("=== AUNCIENT DISPLACEMENTSHADER TESTS COMPLETE (PASS) ===\n");
     return 0;
 }

@@ -43,7 +43,10 @@
 ## 13. Quadtree Media Formatting
 * **Support Only .dat.bin Extension:** The codebase must only support `.dat.bin` extensions for quadtree index, database slices, and block-ledger assets. No `.json` storage media layout is permitted on disk for quadtrees.
 
-## 14. Permanent Glossary
+## 14. DisplacementShader & WinchesterMQ Linking
+* **WinchesterMQ ("wm") Reference**: Whenever the token "wm" (or WinchesterMQ) is discussed, return to the `DisplacementShader` to ensure vertex displacement math scales in perfect synchronization with WinchesterMQ register boundary constraints.
+
+## 15. Permanent Glossary
 
 ### Glossary Composition Rules
 Every definition in this glossary must follow a strict tripartite structure:
