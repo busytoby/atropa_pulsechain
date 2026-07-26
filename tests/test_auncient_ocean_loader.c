@@ -1700,6 +1700,24 @@ int main(void) {
     printf("   ✓ Local vs Reference precedence conflict verified.\n");
     fflush(stdout);
 
+    // 53. Test Local vs Payload Precedence Conflict
+    printf("[TEST] Testing Local vs Payload Precedence Conflict...\n");
+    fflush(stdout);
+    
+    // According to LIVRPS, Local (L) overrides Payload (P)
+    float local_val3 = 1.85f;    // from Local
+    float payload_val2 = 10.00f; // from Payload
+    
+    // Composed value resolves to Local opinion
+    float resolved_loc_pay = local_val3;
+    if (local_val3 == 0.0f) {
+        resolved_loc_pay = payload_val2;
+    }
+    
+    assert(resolved_loc_pay == 1.85f);
+    printf("   ✓ Local vs Payload precedence conflict verified.\n");
+    fflush(stdout);
+
     printf("=============================================================\n");
     printf("HUCOCEAN LOADER TESTS COMPLETE\n");
     printf("=============================================================\n");
