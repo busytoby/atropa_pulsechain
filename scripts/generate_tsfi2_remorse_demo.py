@@ -217,12 +217,18 @@ def draw_cash_cow(draw, width, time):
                                 # Gold material
                                 base_r, base_g, base_b = 255, 215, 0
                             else:
-                                # CASH COW cow spots material
-                                spot = math.sin(px * 0.2) * math.cos(py * 0.2) + math.sin(px * 0.08 + py * 0.12)
-                                if spot > 0.1:
-                                    base_r, base_g, base_b = 240, 240, 240
-                                else:
-                                    base_r, base_g, base_b = 15, 15, 15
+                                 # CASH COW cow spots material
+                                 if d_c <= 1.2:
+                                     # Highlight border to ensure visibility against background
+                                     base_r, base_g, base_b = 180, 180, 180
+                                 else:
+                                     noise_x = px + 4.0 * math.sin(py * 0.15)
+                                     noise_y = py + 4.0 * math.cos(px * 0.15)
+                                     spot = math.sin(noise_x * 0.2) * math.sin(noise_y * 0.2)
+                                     if spot > -0.15:
+                                         base_r, base_g, base_b = 240, 240, 240
+                                     else:
+                                         base_r, base_g, base_b = 45, 45, 55
                                     
                             # Diffuse shading
                             r_c = int(base_r * (0.35 + 0.65 * diffuse) + specular * 220)
