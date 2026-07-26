@@ -25,4 +25,7 @@ void tsfi_depthoffield_set_shot(TSFiDepthOfField *dof, int shot_index);
 // Fast 1D separable post-process Gaussian convolution replacing multi-sample lens bokeh
 void tsfi_depthoffield_bokeh_replace_gaussian(const double *input_image, double *output_image, int width, int height, double coc_radius);
 
+// Configures the camera parameters for 1.85:1 Super 8 widescreen aspect ratios
+void tsfi_depthoffield_set_super8_vaesen(TSFiDepthOfField *dof, int width, int *height);
+
 #endif // TSFI_DEPTHOFFIELD_H

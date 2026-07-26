@@ -122,3 +122,15 @@ void tsfi_depthoffield_bokeh_replace_gaussian(const double *input_image, double 
     
     free(temp_image);
 }
+
+void tsfi_depthoffield_set_super8_vaesen(TSFiDepthOfField *dof, int width, int *height) {
+    if (!dof || width <= 0 || !height) return;
+    
+    // 1.85:1 aspect ratio height resolution calculation
+    *height = (int)round((double)width / 1.85);
+    
+    // Simulate Super 8 lens values (narrower focal depth scale)
+    dof->focal_distance = 10.0;
+    dof->lens_radius = 0.15;
+    dof->target_z = 10.0;
+}
