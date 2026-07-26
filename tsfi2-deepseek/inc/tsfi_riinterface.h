@@ -10,6 +10,8 @@ typedef struct {
     double clip_min_x, clip_min_y;
     double clip_max_x, clip_max_y;
     bool is_world_active;
+    uint16_t psg_channel_freq[6]; // huC6280 PSG voice channels
+    uint8_t psg_channel_vol[6];
 } TSFiRiInterface;
 
 // Initialize the RiInterface context
@@ -26,5 +28,11 @@ bool tsfi_riinterface_sphere(TSFiRiInterface *ri, int sprite_id, double radius);
 
 // Emulates Tom Hudson's clipLine boundary checks for coordinate vectors
 bool tsfi_riinterface_clip_check(const TSFiRiInterface *ri, double x, double y);
+
+// Dynamic sound modulation based on RenderMan camera panning speed
+void tsfi_riinterface_modulate_psg(TSFiRiInterface *ri, double velocity);
+
+// Hardware-level VDC DMA block transfer simulation
+void tsfi_riinterface_vdc_dma_copy(TSFiRiInterface *ri, uint16_t src_idx, uint16_t dest_idx, uint16_t length);
 
 #endif // TSFI_RIINTERFACE_H

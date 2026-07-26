@@ -28,11 +28,22 @@ int main(void) {
     assert(tsfi_riinterface_clip_check(&ri, 100.0, 100.0) == true);
     assert(tsfi_riinterface_clip_check(&ri, 800.0, 100.0) == false); // Out of bounds: clipped
 
+    // Test camera-panning speed PSG audio modulation
+    tsfi_riinterface_modulate_psg(&ri, 5.0);
+    assert(ri.psg_channel_freq[0] == 600);
+    assert(ri.psg_channel_vol[0] == 20);
+
+    // Test VDC DMA block transfer of registers
+    tsfi_riinterface_vdc_dma_copy(&ri, 5, 8, 2);
+    assert(ri.hudson_vce_color_reg[8] == (20 << 5)); // Copied color value
+
     tsfi_riinterface_world_end(&ri);
     assert(ri.is_world_active == false);
 
     printf("   ✓ RiWorldBegin and RiSphere mirrored to Hudson VCE and VDC successfully.\n");
     printf("   ✓ Tom Hudson clipLine boundary checks verified successfully.\n");
+    printf("   ✓ Camera panning dynamic PSG frequency modulation verified successfully.\n");
+    printf("   ✓ VDC hardware DMA block transfers verified successfully.\n");
     printf("=== AUNCIENT RIINTERFACE TESTS COMPLETE (PASS) ===\n");
     return 0;
 }

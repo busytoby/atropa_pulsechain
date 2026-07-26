@@ -10,6 +10,8 @@ void tsfi_riinterface_init(TSFiRiInterface *ri) {
     ri->clip_max_x = 640.0;
     ri->clip_max_y = 480.0;
     ri->is_world_active = false;
+    memset(ri->psg_channel_freq, 0, sizeof(ri->psg_channel_freq));
+    memset(ri->psg_channel_vol, 0, sizeof(ri->psg_channel_vol));
 }
 
 void tsfi_riinterface_world_begin(TSFiRiInterface *ri) {
@@ -49,4 +51,25 @@ bool tsfi_riinterface_clip_check(const TSFiRiInterface *ri, double x, double y) 
         return true; // Inside boundaries, do not clip
     }
     return false; // Clipped
+}
+
+void tsfi_riinterface_modulate_psg(TSFiRiInterface *ri, double velocity) {
+    if (!ri) return;
+    
+    // Translate rendering velocity parameters directly to audio frequency and volume parameters
+    uint16_t base_freq = (uint16_t)(350 + (int)(velocity * 50.0));
+    for (int i = 0; i < 6; i++) {
+        ri->psg_channel_freq[i] = base_freq + (i * 20);
+        ri->psg_channel_vol[i] = (uint8_t)(10 + (int)(velocity * 2.0));
+        if (ri->psg_channel_vol[i] > 31) ri->psg_channel_vol[i] = 31;
+    }
+}
+
+void tsfi_riinterface_vdc_dma_copy(TSFiRiInterface *ri, uint16_t src_idx, uint16_t dest_idx, uint16_t length) {
+    if (!ri || src_idx >= 16 || dest_idx >= 16) return;
+    
+    // Perform block copies of color palette registers to emulate hardware DMA loops
+    for (uint16_t i = 0; i < length && (src_idx + i < 16) && (dest_idx + i < 16); i++) {
+        ri->hudson_vce_color_reg[dest_idx + i] = ri->hudson_vce_color_reg[src_idx + i];
+    }
 }
