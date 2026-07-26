@@ -135,6 +135,10 @@ static uint8_t vic_d016 = 0;    // Fine scroll shift (0-7 pixels)
 static uint8_t vic_d020 = 0x05; // Border Color (Purple)
 static uint8_t vic_d021 = 0x06; // Background Color (Blue)
 
+// Glitch Screen Shake displacement coordinates
+static int glitch_x = 0;
+static int glitch_y = 0;
+
 // SID Audio Chip Register Emulation
 typedef struct {
     uint16_t freq;
@@ -254,20 +258,22 @@ static void redraw_screen(void) {
     wl_buffers[current_buffer_idx] = create_shm_buffer(win_width, win_height, &pixels);
     if (!wl_buffers[current_buffer_idx] || !pixels) return;
     
-    // Simulate VIC-II raster scanline color splits (Teledeltos C64 style)
+    // Rainbow Color Barf Sweeps: high frequency background color modulation
     for (int y = 0; y < win_height; y++) {
-        uint32_t bg_color = 0xFF222222; // default
+        uint32_t bg_color = 0xFF222222;
         
-        // Raster split scanline evaluation (using vic_d012 register simulation)
-        if (y < (int)vic_d012 * 3) {
-            bg_color = (vic_d020 == 0x05) ? 0xFF3a1a4a : 0xFF220033; // Border color split 1
+        // High frequency color sweeps relative to time + y scanline
+        float color_sweep = sinf((float)y * 0.1f + retro_time * 45.0f);
+        if (color_sweep > 0.8f) {
+            bg_color = 0xFF882200; // Red-orange sweep band
+        } else if (color_sweep < -0.8f) {
+            bg_color = 0xFF004488; // Blue sweep band
         } else {
-            bg_color = (vic_d021 == 0x06) ? 0xFF1b253d : 0xFF112222; // Background color split 2
-            
-            // Dynamic raster wave bands
-            float wave = sinf((float)y * 0.015f + retro_time * 6.0f);
-            if (wave > 0.85f) {
-                bg_color = 0xFF440055;
+            // Evaluates VIC-II simulated splits
+            if (y < (int)vic_d012 * 3) {
+                bg_color = (vic_d020 == 0x05) ? 0xFF3a1a4a : 0xFF220033;
+            } else {
+                bg_color = (vic_d021 == 0x06) ? 0xFF1b253d : 0xFF112222;
             }
         }
         
@@ -281,11 +287,11 @@ static void redraw_screen(void) {
     if (scale < 1) scale = 1;
     if (scale > 6) scale = 6;
     
-    // Center document grid dynamically
+    // Center document grid dynamically (apply glitch screen shake offsets)
     int grid_w = 40 * 6 * scale;
     int grid_h = 15 * 8 * scale;
-    int start_x = (win_width - grid_w) / 2;
-    int start_y = (win_height - grid_h) / 2;
+    int start_x = (win_width - grid_w) / 2 + glitch_x;
+    int start_y = (win_height - grid_h) / 2 + glitch_y;
     if (start_x < 20) start_x = 20;
     if (start_y < 80) start_y = 80;
     
@@ -306,6 +312,21 @@ static void redraw_screen(void) {
         
         for (int c = 0; c < 40; c++) {
             char ch = ansi_grid[r * 40 + c];
+            
+            // PETSCII Fluid Plasma Waves: Superposition of 2D sine waves
+            float wave1 = sinf((float)c * 0.2f + retro_time * 4.0f);
+            float wave2 = cosf((float)r * 0.3f + retro_time * 3.0f);
+            float wave3 = sinf((float)(c + r) * 0.15f + retro_time * 5.0f);
+            float plasma = (wave1 + wave2 + wave3) / 3.0f;
+            
+            // Only blend plasma into empty background spacing cells to keep document legible
+            if (ch == ' ') {
+                char plasma_chars[] = " .:-=+*";
+                int p_idx = (int)((plasma + 1.0f) * 3.0f);
+                if (p_idx < 0) p_idx = 0;
+                if (p_idx > 6) p_idx = 6;
+                ch = plasma_chars[p_idx];
+            }
             
             // Dynamic Screen Shading RAM: modulate color based on distance from the cursor
             int dist_r = r - cursor_r;
@@ -333,8 +354,8 @@ static void redraw_screen(void) {
     }
     
     // Render PETSCII Portrait / Symbol Art in top-right corner
-    int portrait_start_x = win_width - 150;
-    int portrait_start_y = 50;
+    int portrait_start_x = win_width - 150 + glitch_x;
+    int portrait_start_y = 50 + glitch_y;
     for (int pr = 0; pr < 6; pr++) {
         for (int pc = 0; pc < 9; pc++) {
             char symbol = petscii_portrait[pr][pc];
@@ -356,17 +377,17 @@ static void redraw_screen(void) {
     float scroll_x_total = retro_time * scroll_x_speed;
     int base_char_idx = (int)(scroll_x_total / 18.0f) % strlen(scroller_text);
     int pixel_shift = (int)fmodf(scroll_x_total, 18.0f);
-    int scroller_y_base = win_height - 120;
+    int scroller_y_base = win_height - 120 + glitch_y;
     
     for (int col = 0; col < 70; col++) {
         int char_idx = (base_char_idx + col) % strlen(scroller_text);
         char ch = scroller_text[char_idx];
         int dy = (int)(sinf((float)col * 0.25f + retro_time * 10.0f) * 15.0f);
-        draw_char(pixels, win_width, win_height, 40 + col * 18 - pixel_shift, scroller_y_base + dy, ch, 0xFF00FF00, 3);
+        draw_char(pixels, win_width, win_height, 40 + col * 18 - pixel_shift + glitch_x, scroller_y_base + dy, ch, 0xFF00FF00, 3);
     }
     
     // Display header details
-    draw_string(pixels, win_width, win_height, 100, 30, "AUNCIENT WAYLAND VULKAN MARKDOWN EDITOR", 0xFF00FF00, 2);
+    draw_string(pixels, win_width, win_height, 100 + glitch_x, 30 + glitch_y, "AUNCIENT WAYLAND VULKAN MARKDOWN EDITOR", 0xFF00FF00, 2);
     
     // Render Simulated SID Chip register state array and active tune info
     char sid_buf[256];
@@ -375,7 +396,7 @@ static void redraw_screen(void) {
              active_tune, (active_tune == 3) ? "(HIDDEN UNLOCKED!)" : "(ACTIVE)",
              sid_chip.voices[0].freq, sid_chip.voices[1].pw,
              sid_chip.voices[0].adsr[0], sid_chip.voices[0].adsr[1]);
-    draw_string(pixels, win_width, win_height, 100, win_height - 65, sid_buf, 0xFF00FFFF, 2);
+    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 65 + glitch_y, sid_buf, 0xFF00FFFF, 2);
 
     // Initials Anagram Mapping: Alternate "TSN" and "TNS" dynamically every second
     const char *initials = ((int)retro_time % 2 == 0) ? "TSN" : "TNS";
@@ -383,7 +404,7 @@ static void redraw_screen(void) {
     snprintf(help_buf, sizeof(help_buf), 
              "SCALE: %d - VIC-II: d012=%d - TRIBUTE: %s - PRESS '#' TO CYCLE TUNES", 
              scale, vic_d012, initials);
-    draw_string(pixels, win_width, win_height, 100, win_height - 35, help_buf, 0xFFFFFF00, 2);
+    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 35 + glitch_y, help_buf, 0xFFFFFF00, 2);
     
     wl_surface_attach(surface, wl_buffers[current_buffer_idx], 0, 0);
     wl_surface_damage(surface, 0, 0, win_width, win_height);
@@ -623,6 +644,8 @@ static const struct wl_registry_listener registry_listener = {
 };
 
 int main(void) {
+    srand(time(NULL));
+
     // Initialize simulated SID chip register defaults
     sid_chip.voices[0].adsr[0] = 0x21; // Attack / Decay
     sid_chip.voices[0].adsr[1] = 0xF5; // Sustain / Release
@@ -695,6 +718,15 @@ int main(void) {
         vic_d016 = (uint8_t)(retro_time * 8.0f) & 0x07; // 0-7 pixel fine scroll shift
         vic_d012 = 120 + (uint8_t)(sinf(retro_time * 2.0f) * 20.0f); // Modulate raster split line
         
+        // Run VIC-II screen shake displacement glitches periodically (Software of Sweden style)
+        if (((int)(retro_time * 2.0f) % 6) == 0) {
+            glitch_x = (rand() % 9) - 4; // Shake horizontal bounds
+            glitch_y = (rand() % 9) - 4; // Shake vertical bounds
+        } else {
+            glitch_x = 0;
+            glitch_y = 0;
+        }
+
         // Run simulated 50Hz SID playroutine updates
         static float last_sid_tick = 0.0f;
         if (retro_time - last_sid_tick >= 0.020f) { // 50Hz Interval
