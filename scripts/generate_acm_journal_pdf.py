@@ -222,7 +222,7 @@ def inline_md_to_html(text):
             for c_idx, char in enumerate(part):
                 wrapped += char
                 if c_idx > 0 and c_idx % 8 == 0 and c_idx < len(part) - 1:
-                    wrapped += '</b></font><font face="Helvetica">\u200B</font><font face="Courier" color="#0077b6"><b>'
+                    wrapped += "<wbr/>"
             new_parts.append(f'<font face="Courier" color="#0077b6"><b>{wrapped}</b></font>')
         else:
             if part.count('**') % 2 == 0:
