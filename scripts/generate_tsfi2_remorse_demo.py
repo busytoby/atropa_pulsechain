@@ -103,20 +103,43 @@ def draw_cash_cow(draw, width, time):
                 py = start_y + y
                 ratio = x / float(big_w)
                 
-                # Left or right "$$" gets glossy gold shading
-                if ratio < 0.18 or ratio > 0.82:
-                    glow = math.sin((x + y) * 0.2 - time * 5.0) * 0.5 + 0.5
-                    r_g = int(255 * (0.8 + 0.2 * glow))
-                    g_g = int(215 * (0.8 + 0.2 * glow))
-                    b_g = int(50 * (0.8 + 0.2 * glow))
-                    draw.point((px, py), fill=(r_g, g_g, b_g))
+                # Calculate distance to nearest empty boundary pixel
+                dist_sq = 16
+                for dy in range(-2, 3):
+                    for dx in range(-2, 3):
+                        nx, ny_val = x + dx, y + dy
+                        is_inside = (0 <= nx < big_w) and (0 <= ny_val < big_h)
+                        is_filled = is_inside and (big_img.getpixel((nx, ny_val)) > 128)
+                        if not is_filled:
+                            d = dx*dx + dy*dy
+                            if d < dist_sq: dist_sq = d
+                
+                # Detect top-left edge gloss highlights
+                is_top_edge = (y == 0) or (big_img.getpixel((x, y - 1)) <= 128)
+                is_left_edge = (x == 0) or (big_img.getpixel((x - 1, y)) <= 128)
+                is_glossy = is_top_edge or is_left_edge
+
+                if dist_sq <= 1:
+                    # Black outer border
+                    draw.point((px, py), fill=(0, 0, 0))
+                elif is_glossy and dist_sq >= 2:
+                    # Glossy specular reflection highlight
+                    draw.point((px, py), fill=(255, 255, 255))
                 else:
-                    # "CASH COW" gets black and white cow spots
-                    spot = math.sin(x * 0.25) * math.cos(y * 0.25) + math.sin(x * 0.1 + y * 0.15)
-                    if spot > 0.1:
-                        draw.point((px, py), fill=(255, 255, 255))
+                    # Left or right "$$" gets glossy gold shading
+                    if ratio < 0.18 or ratio > 0.82:
+                        glow = math.sin((x + y) * 0.2 - time * 5.0) * 0.5 + 0.5
+                        r_g = int(255 * (0.8 + 0.2 * glow))
+                        g_g = int(215 * (0.8 + 0.2 * glow))
+                        b_g = int(50 * (0.8 + 0.2 * glow))
+                        draw.point((px, py), fill=(r_g, g_g, b_g))
                     else:
-                        draw.point((px, py), fill=(0, 0, 0))
+                        # "CASH COW" gets black and white cow spots
+                        spot = math.sin(x * 0.25) * math.cos(y * 0.25) + math.sin(x * 0.1 + y * 0.15)
+                        if spot > 0.1:
+                            draw.point((px, py), fill=(240, 240, 240))
+                        else:
+                            draw.point((px, py), fill=(15, 15, 15))
 
 def draw_retro_char(draw, char, x, y, size, color):
     # Draw simple retro styled grid-like characters
@@ -366,8 +389,10 @@ def main():
             px = rope_nodes[i][0]
             py = rope_nodes[i][1]
 
-            # Proximity contact shadowing (contact shadow occlusion)
-            draw.ellipse([px - 20, py - 20, px + 20, py + 20], fill=(0, 0, 0))
+            # Proximity contact shadowing (contact shadow occlusion) - rendered as a glossy black bubble balloon
+            draw.ellipse([px - 22, py - 22, px + 22, py + 22], fill=(5, 5, 10))
+            draw.ellipse([px - 20, py - 20, px + 20, py + 20], fill=(25, 20, 30))
+            draw.ellipse([px - 14, py - 14, px - 6, py - 6], fill=(255, 255, 255))
 
             # Sub-surface scattering (translucent soft tissue outlines)
             draw_retro_char(draw, char, px, py, 42, (r // 4, g // 4, b // 4))
