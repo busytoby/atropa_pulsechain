@@ -269,6 +269,29 @@ def main():
                 curve_points.append((cx, cy))
         
         curve_points.append((rope_nodes[-1][0], rope_nodes[-1][1]))
+
+        # Draw a cute, 3D-shaded red heart balloon in the center background
+        heart_poly = []
+        for s_h in range(36):
+            theta = (s_h / 36.0) * 2.0 * math.pi
+            hx = 16.0 * (math.sin(theta) ** 3)
+            hy = 13.0 * math.cos(theta) - 5.0 * math.cos(2.0*theta) - 2.0 * math.cos(3.0*theta) - math.cos(4.0*theta)
+            px_h = int(hx * 7.0 + 320.0)
+            py_h = int(hy * -7.0 + 240.0)
+            heart_poly.append((px_h, py_h))
+        
+        # Red balloon body and pinkish highlight gloss layer
+        draw.polygon(heart_poly, fill=(230, 25, 65))
+        highlight_poly = []
+        for s_h in range(36):
+            theta = (s_h / 36.0) * 2.0 * math.pi
+            hx = 16.0 * (math.sin(theta) ** 3)
+            hy = 13.0 * math.cos(theta) - 5.0 * math.cos(2.0*theta) - 2.0 * math.cos(3.0*theta) - math.cos(4.0*theta)
+            px_h = int(hx * 3.0 + 300.0)
+            py_h = int(hy * -3.0 + 210.0)
+            highlight_poly.append((px_h, py_h))
+        draw.polygon(highlight_poly, fill=(255, 120, 140))
+
         draw.line(curve_points, fill=(40, 20, 60), width=2) # Dark connector thread
 
         # Atmospheric Volumetric light raymarching rays radiating from the center anchor
