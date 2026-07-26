@@ -88,103 +88,89 @@ def get_ballet_geometry(time_sec):
     body_yaw = 1.0
     body_roll = 0.0
     
-    # 4 legs (Front pair indices 1, Back pair indices 2)
-    t_lthigh1, t_rthigh1 = 0.0, 0.0
-    t_lknee1, t_rknee1 = 0.0, 0.0
-    t_lthigh2, t_rthigh2 = 0.0, 0.0
-    t_lknee2, t_rknee2 = 0.0, 0.0
+    # Standard Leg parameters
+    t_lthigh, t_rthigh = 0.0, 0.0
+    t_lknee, t_rknee = 0.0, 0.0
     
-    # 4 arms (Upper pair indices 1, Lower pair indices 2)
-    t_luarm1, t_ruarm1 = 0.2, 0.2
-    t_lelbow1, t_relbow1 = 0.3, 0.3
-    t_luarm2, t_ruarm2 = 0.3, 0.3
-    t_lelbow2, t_relbow2 = 0.4, 0.4
+    # Standard Arm parameters
+    t_luarm, t_ruarm = 0.2, 0.2
+    t_lelbow, t_relbow = 0.3, 0.3
     
     m_name = "Ouverture"
     
     if movement == 0:
         m_name = "Ouverture (Opening)"
-        # Gracefully raise all 4 arms in synchronized patterns
-        t_luarm1 = t_ruarm1 = -0.5 * m_progress + 0.2 * (1.0 - m_progress)
-        t_luarm2 = t_ruarm2 = -0.3 * m_progress + 0.3 * (1.0 - m_progress)
-        t_lelbow1 = t_relbow1 = 0.4 * m_progress + 0.3 * (1.0 - m_progress)
-        t_lelbow2 = t_relbow2 = 0.5 * m_progress + 0.4 * (1.0 - m_progress)
+        t_luarm = t_ruarm = -0.5 * m_progress + 0.2 * (1.0 - m_progress)
+        t_lelbow = t_relbow = 0.4 * m_progress + 0.3 * (1.0 - m_progress)
         
     elif movement == 1:
-        m_name = "Plier (Plie 4 Legs)"
-        # Plie bending all 4 knees outward
+        m_name = "Plier (Plie Knee Bend)"
         plie_amp = math.sin(m_progress * math.pi)
         y_disp -= 0.25 * plie_amp
-        t_lthigh1 = t_rthigh1 = t_lthigh2 = t_rthigh2 = 0.4 * plie_amp
-        t_lknee1 = t_rknee1 = t_lknee2 = t_rknee2 = 0.8 * plie_amp
-        
-        # Extend arms to sides
-        t_luarm1 = t_ruarm1 = -0.1 * plie_amp - 0.5 * (1.0 - plie_amp)
-        t_luarm2 = t_ruarm2 = 0.1 * plie_amp - 0.3 * (1.0 - plie_amp)
+        t_lthigh = t_rthigh = 0.4 * plie_amp
+        t_lknee = t_rknee = 0.8 * plie_amp
+        t_luarm = t_ruarm = -0.1 * plie_amp - 0.5 * (1.0 - plie_amp)
+        t_lelbow = t_relbow = 0.15 * plie_amp + 0.4 * (1.0 - plie_amp)
         
     elif movement == 2:
-        m_name = "Relever & Pointe (4 Legs Pointe)"
-        # Rise on all 4 sets of toes
+        m_name = "Relever & Pointe (On Toes)"
         rise_amp = math.sin(m_progress * math.pi)
-        y_disp += 0.25 * rise_amp
-        t_luarm1 = t_ruarm1 = -0.7 * rise_amp
-        t_luarm2 = t_ruarm2 = -0.5 * rise_amp
+        y_disp += 0.2 * rise_amp
+        t_lthigh = t_rthigh = -0.1 * rise_amp
+        t_luarm = t_ruarm = -0.7 * rise_amp
+        t_lelbow = t_relbow = 0.5 * rise_amp
         
     elif movement == 3:
-        m_name = "Sauter & Batterie (Leap with 4 Leg Beats)"
-        # Leap and click all 4 legs together
+        m_name = "Sauter & Batterie (Leap & Beats)"
         leap_phase = m_progress * math.pi
         y_disp += 1.1 * math.sin(leap_phase)
         
         click_amp = 0.0
         if 0.25 < m_progress < 0.75:
-            click_amp = math.sin((m_progress - 0.25) * 2.0 * math.pi * 2.5)
+            click_amp = math.sin((m_progress - 0.25) * 2.0 * math.pi * 2.0)
             
-        t_lthigh1 = t_lthigh2 = 0.35 * click_amp
-        t_rthigh1 = t_rthigh2 = -0.35 * click_amp
+        t_lthigh = 0.3 * click_amp
+        t_rthigh = -0.3 * click_amp
+        t_luarm = t_ruarm = -0.8
+        t_lelbow = t_relbow = 0.6
         
     elif movement == 4:
         m_name = "Tourner (Pirouette Spin)"
         body_yaw = m_progress * 2.0 * math.pi * 2.0 + 1.0
-        # Hold left legs bent in passé
-        t_lthigh1 = t_lthigh2 = 0.75
-        t_lknee1 = t_lknee2 = 1.3
+        t_lthigh = 0.75
+        t_lknee = 1.3
+        t_rthigh = -0.1
+        t_luarm = t_ruarm = -0.2
+        t_lelbow = t_relbow = 0.6
         
     elif movement == 5:
-        m_name = "Arabesque (Balance on 2 Legs)"
-        # Stand on two left legs, raise both right legs high behind
+        m_name = "Arabesque (Slow Balance)"
         adagio_amp = math.sin(m_progress * math.pi)
         body_pitch = 0.35 * adagio_amp
-        t_lthigh1 = t_lthigh2 = -0.1 * adagio_amp
-        t_rthigh1 = t_rthigh2 = -0.75 * adagio_amp
-        t_rknee1 = t_rknee2 = 0.3 * adagio_amp
-        
-        # Extend upper arms forward, lower arms backward
-        t_luarm1 = -0.6 * adagio_amp
-        t_ruarm1 = 0.6 * adagio_amp
-        t_luarm2 = 0.6 * adagio_amp
-        t_ruarm2 = -0.6 * adagio_amp
+        t_lthigh = -0.1 * adagio_amp
+        t_rthigh = -0.75 * adagio_amp
+        t_rknee = 0.3 * adagio_amp
+        t_luarm = -0.6 * adagio_amp
+        t_ruarm = 0.6 * adagio_amp
         
     elif movement == 6:
-        m_name = "Elancer (Darting Split Leap)"
+        m_name = "Elancer (Darting Glide)"
         x_disp = -2.5 + 5.0 * m_progress
-        y_disp += 0.5 * math.sin(m_progress * math.pi)
-        
-        # Split leg stretch
-        t_lthigh1 = t_lthigh2 = -0.5 * math.sin(m_progress * math.pi)
-        t_rthigh1 = t_rthigh2 = 0.5 * math.sin(m_progress * math.pi)
+        y_disp += 0.45 * math.sin(m_progress * math.pi)
+        t_lthigh = -0.5 * math.sin(m_progress * math.pi)
+        t_rthigh = 0.5 * math.sin(m_progress * math.pi)
+        t_luarm = -0.5
+        t_ruarm = -0.2
         
     elif movement == 7:
-        m_name = "Reverence (4-Armed Bow)"
+        m_name = "Reverence (Bow)"
         bow_amp = math.sin(m_progress * math.pi)
         body_pitch = 0.5 * bow_amp
         y_disp -= 0.15 * bow_amp
-        
-        # Slide back legs back
-        t_lthigh2 = t_rthigh2 = -0.4 * bow_amp
-        
-        # Sweep all 4 arms down in reverence
-        t_luarm1 = t_ruarm1 = t_luarm2 = t_ruarm2 = 0.4 * bow_amp
+        t_lthigh = -0.4 * bow_amp
+        t_rthigh = 0.1 * bow_amp
+        t_luarm = t_ruarm = 0.4 * bow_amp
+        t_lelbow = t_relbow = 0.1 * bow_amp
         
     parts = {}
     
@@ -193,13 +179,13 @@ def get_ballet_geometry(time_sec):
         "pos": (x_disp, 0.55 + y_disp, z_disp),
         "rot": (body_pitch, body_yaw, body_roll),
         "shape": "ellipsoid",
-        "size": (0.7, 0.9, 0.75), # Slightly deeper Z size to accommodate 4 legs/arms
+        "size": (0.7, 0.85, 0.6),
         "color": (120, 80, 54)
     }
     
     # 2. Head
     parts["Head"] = {
-        "pos": (x_disp, 1.5 + y_disp, z_disp),
+        "pos": (x_disp, 1.45 + y_disp, z_disp),
         "rot": (body_pitch + 0.05 * math.sin(time_sec * 4.0), body_yaw, 0.0),
         "shape": "ellipsoid",
         "size": (0.55, 0.55, 0.5),
@@ -208,14 +194,14 @@ def get_ballet_geometry(time_sec):
     
     # 3. Ears
     parts["LeftEar"] = {
-        "pos": (x_disp - 0.4, 1.9 + y_disp, z_disp),
+        "pos": (x_disp - 0.4, 1.85 + y_disp, z_disp),
         "rot": (body_pitch, body_yaw, 0.0),
         "shape": "ellipsoid",
         "size": (0.2, 0.2, 0.15),
         "color": (100, 65, 40)
     }
     parts["RightEar"] = {
-        "pos": (x_disp + 0.4, 1.9 + y_disp, z_disp),
+        "pos": (x_disp + 0.4, 1.85 + y_disp, z_disp),
         "rot": (body_pitch, body_yaw, 0.0),
         "shape": "ellipsoid",
         "size": (0.2, 0.2, 0.15),
@@ -223,86 +209,76 @@ def get_ballet_geometry(time_sec):
     }
     
     # Helper to register upper arm and forearm segments
-    def add_arm(side, index, y_pivot, z_pivot, uarm_pitch, elbow_pitch, color_u, color_f):
+    def add_arm(side, uarm_pitch, elbow_pitch, color_u, color_f):
         side_sign = -1.0 if side == "Left" else 1.0
         # Upper Arm
         uarm_rot_pitch = uarm_pitch + body_pitch
-        ax, ay, az = rotate_y(0.0, -0.22, 0.0, body_yaw)
+        ax, ay, az = rotate_y(0.0, -0.25, 0.0, body_yaw)
         ax, ay, az = rotate_z(ax, ay, az, uarm_rot_pitch)
         
-        # Arm pivot is displaced along Z based on index (1=Front, 2=Back)
-        z_offset = -0.18 if index == 2 else 0.18
         px = x_disp + side_sign * 0.65 + ax
-        py = 0.95 + y_disp + ay + y_pivot
-        pz = z_disp + az + z_offset
+        py = 0.9 + y_disp + ay
+        pz = z_disp + az
         
-        parts[f"{side}UpperArm{index}"] = {
+        parts[f"{side}UpperArm"] = {
             "pos": (px, py, pz),
             "rot": (uarm_rot_pitch, body_yaw, 0.0),
             "shape": "ellipsoid",
-            "size": (0.16, 0.26, 0.16),
+            "size": (0.18, 0.3, 0.18),
             "color": color_u
         }
         
         # Forearm
         f_pitch = uarm_rot_pitch + elbow_pitch
-        fx, fy, fz = rotate_y(0.0, -0.42, 0.0, body_yaw)
+        fx, fy, fz = rotate_y(0.0, -0.45, 0.0, body_yaw)
         fx, fy, fz = rotate_z(fx, fy, fz, f_pitch)
-        parts[f"{side}Forearm{index}"] = {
-            "pos": (x_disp + side_sign * 0.65 + fx, 0.95 + y_disp + fy + y_pivot, z_disp + fz + z_offset),
+        parts[f"{side}Forearm"] = {
+            "pos": (x_disp + side_sign * 0.65 + fx, 0.9 + y_disp + fy, z_disp + fz),
             "rot": (f_pitch, body_yaw, 0.0),
             "shape": "ellipsoid",
-            "size": (0.13, 0.22, 0.13),
+            "size": (0.15, 0.25, 0.15),
             "color": color_f
         }
         
     # Helper to register thigh and calf segments
-    def add_leg(side, index, z_pivot, thigh_pitch, knee_pitch, color_t, color_c):
+    def add_leg(side, thigh_pitch, knee_pitch, color_t, color_c):
         side_sign = -1.0 if side == "Left" else 1.0
         # Thigh
         t_rot_pitch = thigh_pitch + body_pitch
-        lx, ly, lz = rotate_y(0.0, -0.22, 0.0, body_yaw)
+        lx, ly, lz = rotate_y(0.0, -0.25, 0.0, body_yaw)
         lx, ly, lz = rotate_z(lx, ly, lz, t_rot_pitch)
         
         px = x_disp + side_sign * 0.35 + lx
         py = 0.3 + y_disp + ly
-        pz = z_disp + lz + z_pivot
+        pz = z_disp + lz
         
-        parts[f"{side}Thigh{index}"] = {
+        parts[f"{side}Thigh"] = {
             "pos": (px, py, pz),
             "rot": (t_rot_pitch, body_yaw, 0.0),
             "shape": "ellipsoid",
-            "size": (0.2, 0.3, 0.2),
+            "size": (0.22, 0.35, 0.22),
             "color": color_t
         }
         
         # Calf
         k_pitch = t_rot_pitch - knee_pitch
-        cx, cy, cz = rotate_y(0.0, -0.48, 0.0, body_yaw)
+        cx, cy, cz = rotate_y(0.0, -0.55, 0.0, body_yaw)
         cx, cy, cz = rotate_z(cx, cy, cz, k_pitch)
-        parts[f"{side}Calf{index}"] = {
-            "pos": (x_disp + side_sign * 0.35 + cx, 0.3 + y_disp + cy, z_disp + cz + z_pivot),
+        parts[f"{side}Calf"] = {
+            "pos": (x_disp + side_sign * 0.35 + cx, 0.3 + y_disp + cy, z_disp + cz),
             "rot": (k_pitch, body_yaw, 0.0),
             "shape": "ellipsoid",
-            "size": (0.16, 0.25, 0.16),
+            "size": (0.18, 0.3, 0.18),
             "color": color_c
         }
 
-    # Add 4 Arms (Front Arms index 1, Back Arms index 2)
-    # Upper/Front Arms
-    add_arm("Left", 1, 0.0, 0.18, t_luarm1, t_lelbow1, (120, 80, 54), (100, 65, 40))
-    add_arm("Right", 1, 0.0, 0.18, t_ruarm1, t_relbow1, (120, 80, 54), (100, 65, 40))
-    # Lower/Back Arms
-    add_arm("Left", 2, -0.22, -0.18, t_luarm2, t_lelbow2, (110, 72, 48), (90, 58, 35))
-    add_arm("Right", 2, -0.22, -0.18, t_ruarm2, t_relbow2, (110, 72, 48), (90, 58, 35))
+    # Add 2 Arms
+    add_arm("Left", t_luarm, t_lelbow, (120, 80, 54), (100, 65, 40))
+    add_arm("Right", t_ruarm, t_relbow, (120, 80, 54), (100, 65, 40))
     
-    # Add 4 Legs (Front Legs index 1, Back Legs index 2)
-    # Front pair: offset Z = +0.22
-    add_leg("Left", 1, 0.22, t_lthigh1, t_lknee1, (120, 80, 54), (100, 65, 40))
-    add_leg("Right", 1, 0.22, t_rthigh1, t_rknee1, (120, 80, 54), (100, 65, 40))
-    # Back pair: offset Z = -0.22
-    add_leg("Left", 2, -0.22, t_lthigh2, t_lknee2, (110, 72, 48), (90, 58, 35))
-    add_leg("Right", 2, -0.22, t_rthigh2, t_rknee2, (110, 72, 48), (90, 58, 35))
+    # Add 2 Legs
+    add_leg("Left", t_lthigh, t_lknee, (120, 80, 54), (100, 65, 40))
+    add_leg("Right", t_rthigh, t_rknee, (120, 80, 54), (100, 65, 40))
     
     return parts, m_name
 
@@ -412,7 +388,7 @@ def main():
                     draw.polygon(poly, fill=fill_color, outline=outline_color)
                     
         # Onscreen HUD
-        draw.text((20, 20), "TSFi2 AUNCIENT 4-ARMED 4-LEGGED BALLET PERFORMANCE", fill=(255, 215, 0))
+        draw.text((20, 20), "TSFi2 AUNCIENT BALLET PERFORMANCE", fill=(255, 215, 0))
         draw.text((20, 35), f"MOVEMENT: {current_movement_name}", fill=(0, 255, 255))
         draw.text((20, 50), f"TIME CODE: {time_sec:.2f}s / {DURATION:.2f}s", fill=(0, 255, 0))
         
