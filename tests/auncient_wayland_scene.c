@@ -107,9 +107,13 @@ static void hd_embree_render(uint32_t *pixels, int w, int h, const CoaxialUBO *u
                 float rot_x = rx * cos_a - rz * sin_a;
                 float rot_z = rx * sin_a + rz * cos_a;
                 float dist;
-                if (ubo->active_model == 0) {
+                int model_to_render = ubo->active_model;
+                if (resolved_variant == 2) {
+                    model_to_render = 1;
+                }
+                if (model_to_render == 0) {
                     dist = sd_cactus(rot_x, ry_val, rot_z);
-                } else if (ubo->active_model == 1) {
+                } else if (model_to_render == 1) {
                     dist = sd_letter_t(rot_x, ry_val, rot_z);
                 } else {
                     float d_c = sd_cactus(rot_x, ry_val, rot_z);
