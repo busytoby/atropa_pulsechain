@@ -2,6 +2,7 @@
 #define AUNCIENT_TIMELINE_AUTODIN_H
 
 #include "../inc/auncient_sdk.h"
+#include "auncient_vulkan_materials.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -124,6 +125,12 @@ uint32_t auncient_texgen_modulated_seed(const WinchesterMQState *state);
 
 // Permutes noise values to ARGB colors based on active material presets and blend factors
 uint32_t auncient_texgen_permute_palette(float noise_val, uint32_t color_preset, float blend_factor);
+
+// Evaluates a 3D Catmull-Rom spline coordinate at parameter t [0, 1]
+void auncient_spline_evaluate(float t, const float *p0, const float *p1, const float *p2, const float *p3, float *out_pos);
+
+// Copies spline-evaluated camera coordinates to GlobalUniformBlock structures
+void auncient_spline_to_global_uniform(const float *camera_pos, GlobalUniformBlock *glob_block);
 
 #ifdef __cplusplus
 }

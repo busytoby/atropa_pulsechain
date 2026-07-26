@@ -311,3 +311,27 @@ uint32_t auncient_texgen_permute_palette(float noise_val, uint32_t color_preset,
 
     return 0xFF000000 | (r << 16) | (g << 8) | b;
 }
+
+void auncient_spline_evaluate(float t, const float *p0, const float *p1, const float *p2, const float *p3, float *out_pos) {
+    if (!p0 || !p1 || !p2 || !p3 || !out_pos) return;
+
+    float t2 = t * t;
+    float t3 = t2 * t;
+
+    for (int i = 0; i < 3; i++) {
+        out_pos[i] = 0.5f * (
+            (2.0f * p1[i]) +
+            (-p0[i] + p2[i]) * t +
+            (2.0f * p0[i] - 5.0f * p1[i] + 4.0f * p2[i] - p3[i]) * t2 +
+            (-p0[i] + 3.0f * p1[i] - 3.0f * p2[i] + p3[i]) * t3
+        );
+    }
+}
+
+void auncient_spline_to_global_uniform(const float *camera_pos, GlobalUniformBlock *glob_block) {
+    if (!camera_pos || !glob_block) return;
+
+    glob_block->camera_position[0] = camera_pos[0];
+    glob_block->camera_position[1] = camera_pos[1];
+    glob_block->camera_position[2] = camera_pos[2];
+}

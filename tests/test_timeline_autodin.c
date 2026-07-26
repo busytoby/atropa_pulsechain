@@ -1,7 +1,7 @@
 #include "../src/auncient_timeline_autodin.h"
+#include "../src/auncient_vulkan_materials.h"
 #include <stdio.h>
 #include <assert.h>
-
 #include <string.h>
 
 int main(void) {
@@ -162,6 +162,23 @@ int main(void) {
     uint32_t fire_col = auncient_texgen_permute_palette(0.8f, 2, 1.0f); // Fire red
     assert((fire_col & 0x00FF0000) != 0); // Red channel present
     printf("   ✓ Material-driven palette color grading verified.\n");
+
+    // Test Catmull-Rom spline camera paths
+    float p0[3] = {0.0f, 0.0f, 0.0f};
+    float p1[3] = {1.0f, 2.0f, 3.0f};
+    float p2[3] = {2.0f, 4.0f, 6.0f};
+    float p3[3] = {3.0f, 6.0f, 9.0f};
+    float camera_pos[3];
+    auncient_spline_evaluate(0.5f, p0, p1, p2, p3, camera_pos);
+    assert(camera_pos[0] > 0.0f);
+    assert(camera_pos[1] > 0.0f);
+    assert(camera_pos[2] > 0.0f);
+    printf("   ✓ Catmull-Rom camera position calculation verified.\n");
+
+    GlobalUniformBlock glob_block;
+    auncient_spline_to_global_uniform(camera_pos, &glob_block);
+    assert(glob_block.camera_position[0] == camera_pos[0]);
+    printf("   ✓ Camera coordinates written to Vulkan global uniform block.\n");
 
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
