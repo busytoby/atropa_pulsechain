@@ -217,13 +217,13 @@ static const char *western_desert_art[6] = {
     "========================"
 };
 
-// Bubble Logo Matrix for TSFi/2
+// Bubble Logo Matrix for TSFi/2 (Hollow outline bubble font)
 static const char *bubble_logo[5] = {
-    "#####  ###  ####  #  /  ###",
-    "  #   #     #     # /     #",
-    "  #    ###  ###   #/    ###",
-    "  #       # #     # /   #  ",
-    "  #    ###  #     #  /  ###"
+    " .###.  .###.  .###.  ..#..  ....#  .###. ",
+    " ..#..  #....  #....  .....  ...#.  ....# ",
+    " ..#..  .##..  .##..  ..#..  ..#..  ..##. ",
+    " ..#..  ...#.  #....  ..#..  ..#..  .#... ",
+    " ..#..  .###.  #....  ..#..  #....  .#### "
 };
 
 // Multiplexed Sprite Structure
@@ -331,6 +331,7 @@ static void redraw_screen(void) {
     uint32_t *pixels = NULL;
     wl_buffers[current_buffer_idx] = create_shm_buffer(win_width, win_height, &pixels);
     if (!wl_buffers[current_buffer_idx] || !pixels) return;
+    
     // Background raster scanline coloring loop
     for (int y = 0; y < win_height; y++) {
         if (y >= 100 && y < 550 && (y % 24) == 0) {
@@ -413,7 +414,6 @@ static void redraw_screen(void) {
     }
     
     // Split Screen Layout: Art in top half, Editor text grid in bottom half
-    // Center document grid dynamically (apply glitch screen shake offsets)
     int grid_w = 40 * 6 * scale;
     int start_x = (win_width - grid_w) / 2 + glitch_x;
     int start_y = win_height / 2 + 10 + glitch_y; // Lower half
@@ -521,7 +521,7 @@ static void redraw_screen(void) {
     int logo_start_x = art_start_x + 320;
     int logo_start_y = 120 + glitch_y;
     for (int pr = 0; pr < 5; pr++) {
-        for (int pc = 0; pc < 27; pc++) {
+        for (int pc = 0; pc < 44; pc++) {
             char symbol = bubble_logo[pr][pc];
             if (symbol != ' ') {
                 int logo_color_idx = (int)(retro_time * 15.0f + pc) & 0x0F;
