@@ -5,12 +5,11 @@ from reportlab.lib import colors
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
-# Register system TrueType fonts under standard names to force 100% embedding in cover PDFs for KDP
-pdfmetrics.registerFont(TTFont('Times-Roman', '/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf'))
-pdfmetrics.registerFont(TTFont('Times-Bold', '/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf'))
-pdfmetrics.registerFont(TTFont('Times-Italic', '/usr/share/fonts/truetype/liberation/LiberationSerif-Italic.ttf'))
-pdfmetrics.registerFont(TTFont('Helvetica', '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf'))
-pdfmetrics.registerFont(TTFont('Helvetica-Bold', '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf'))
+pdfmetrics.registerFont(TTFont('LiberationSerif', '/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf'))
+pdfmetrics.registerFont(TTFont('LiberationSerif-Bold', '/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf'))
+pdfmetrics.registerFont(TTFont('LiberationSerif-Italic', '/usr/share/fonts/truetype/liberation/LiberationSerif-Italic.ttf'))
+pdfmetrics.registerFont(TTFont('LiberationSans', '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf'))
+pdfmetrics.registerFont(TTFont('LiberationSans-Bold', '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf'))
 
 # Configuration for the 4 volumes (Updated for 6x9 page counts, spine widths, reviews, and ISBNs)
 VOLUMES_CONFIG = {
@@ -89,10 +88,10 @@ def build_full_cover(vol_num, config):
     
     # Title on back
     c.setFillColor(colors.HexColor('#e6d5b8'))
-    c.setFont("Times-Bold", 14)
+    c.setFont("LiberationSerif-Bold", 14)
     c.drawString(back_left + 0.75 * inch, total_height - 1.5 * inch, "AUNCIENT RECORDS")
     
-    c.setFont("Times-Bold", 11)
+    c.setFont("LiberationSerif-Bold", 11)
     c.setFillColor(colors.HexColor('#a2b5cd'))
     c.drawString(back_left + 0.75 * inch, total_height - 1.8 * inch, config["title"])
     
@@ -103,11 +102,11 @@ def build_full_cover(vol_num, config):
     
     # Description text block
     text_object = c.beginText()
-    text_object.setFont("Times-Roman", 9.5)
+    text_object.setFont("LiberationSerif", 9.5)
     text_object.setFillColor(colors.HexColor('#cbd5e1'))
     text_object.setTextOrigin(back_left + 0.75 * inch, total_height - 2.4 * inch)
     
-    desc_lines = wrap_text(c, config["description"], back_width - 1.5 * inch, "Times-Roman", 9.5)
+    desc_lines = wrap_text(c, config["description"], back_width - 1.5 * inch, "LiberationSerif", 9.5)
     for line in desc_lines:
         text_object.textLine(line)
     c.drawText(text_object)
@@ -115,11 +114,11 @@ def build_full_cover(vol_num, config):
     # Draw Review Quote block (further down)
     review_y = total_height - 4.2 * inch
     c.setFillColor(colors.HexColor('#d4af37'))
-    c.setFont("Times-Italic", 9.0)
+    c.setFont("LiberationSerif-Italic", 9.0)
     
-    review_lines = wrap_text(c, config["review"], back_width - 1.5 * inch, "Times-Italic", 9.0)
+    review_lines = wrap_text(c, config["review"], back_width - 1.5 * inch, "LiberationSerif-Italic", 9.0)
     quote_text_obj = c.beginText()
-    quote_text_obj.setFont("Times-Italic", 9.0)
+    quote_text_obj.setFont("LiberationSerif-Italic", 9.0)
     quote_text_obj.setFillColor(colors.HexColor('#d4af37'))
     quote_text_obj.setTextOrigin(back_left + 0.75 * inch, review_y)
     for line in review_lines:
@@ -128,7 +127,7 @@ def build_full_cover(vol_num, config):
     
     # Draw Publisher Logo at bottom of back cover
     c.setFillColor(colors.HexColor('#e6d5b8'))
-    c.setFont("Times-Bold", 10)
+    c.setFont("LiberationSerif-Bold", 10)
     c.drawCentredString(back_left + back_width / 2.0, 1.2 * inch, "DYSNOMIA")
     
     # Draw Barcode Area placeholder (KDP requires 2" x 1.2" clean area at bottom right of back cover)
@@ -137,13 +136,13 @@ def build_full_cover(vol_num, config):
     c.setFillColor(colors.white)
     c.rect(barcode_x, barcode_y, 2.0 * inch, 1.2 * inch, stroke=0, fill=1)
     c.setFillColor(colors.black)
-    c.setFont("Helvetica", 7)
+    c.setFont("LiberationSans", 7)
     c.drawCentredString(barcode_x + 1.0 * inch, barcode_y + 0.2 * inch, "BARCODE PLACEHOLDER")
     
     # Draw ISBN if available
     if "isbn" in config:
         c.setFillColor(colors.HexColor('#cbd5e1'))
-        c.setFont("Helvetica-Bold", 8)
+        c.setFont("LiberationSans-Bold", 8)
         c.drawString(barcode_x, barcode_y + 1.3 * inch, f"ISBN {config['isbn']}")
         
     # Draw Front Cover Image (right side)
@@ -167,7 +166,7 @@ def build_full_cover(vol_num, config):
     
     # Draw Spine Title
     c.setFillColor(colors.HexColor('#e6d5b8'))
-    c.setFont("Times-Bold", 10)
+    c.setFont("LiberationSerif-Bold", 10)
     spine_str = f"AUNCIENT RECORDS - VOL. {vol_num} - DYSNOMIA"
     c.drawCentredString(0, 0, spine_str)
     c.restoreState()
