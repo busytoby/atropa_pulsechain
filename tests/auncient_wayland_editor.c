@@ -542,6 +542,22 @@ static const PrebakedFrame prebaked_script[10] = {
     {65, 2, {{0, 102, 150}, {1, 162, 150}}, 2}
 };
 
+static inline uint32_t blend_color_add(uint32_t base, uint32_t add) {
+    uint8_t r1 = (base >> 16) & 0xFF;
+    uint8_t g1 = (base >> 8) & 0xFF;
+    uint8_t b1 = base & 0xFF;
+    
+    uint8_t r2 = (add >> 16) & 0xFF;
+    uint8_t g2 = (add >> 8) & 0xFF;
+    uint8_t b2 = add & 0xFF;
+    
+    int r = r1 + r2; if (r > 255) r = 255;
+    int g = g1 + g2; if (g > 255) g = 255;
+    int b = b1 + b2; if (b > 255) b = 255;
+    
+    return (0xFF000000 | (r << 16) | (g << 8) | b);
+}
+
 // Redraw screen with real-time PETSCII / C64 effects
 static void redraw_screen(void) {
     if (!surface) return;
@@ -601,8 +617,35 @@ static void redraw_screen(void) {
         }
     }
     
-    // Copy the background cache directly (IMAGEADDR_BACKUP restore)
-    memcpy(pixels, bg_cache, win_width * win_height * sizeof(uint32_t));
+    // Copy the background cache directly and overlay dynamic copper raster bars (Burglarized.prg style)
+    for (int y = 0; y < win_height; y++) {
+        int b1_dist = abs(y - (120 + (int)(sinf(retro_time * 1.8f) * 90.0f)));
+        int b2_dist = abs(y - (240 + (int)(sinf(retro_time * 2.5f) * 70.0f)));
+        int b3_dist = abs(y - (360 + (int)(sinf(retro_time * 1.3f) * 100.0f)));
+        
+        uint32_t add_color = 0;
+        if (b1_dist < 15) {
+            uint8_t intensity = (15 - b1_dist) * 8;
+            add_color = blend_color_add(add_color, (intensity << 16) | ((intensity / 3) << 8)); // Glowing Red-Orange
+        }
+        if (b2_dist < 20) {
+            uint8_t intensity = (20 - b2_dist) * 6;
+            add_color = blend_color_add(add_color, ((intensity / 2) << 16) | (intensity << 8)); // Glowing Green-Gold
+        }
+        if (b3_dist < 12) {
+            uint8_t intensity = (12 - b3_dist) * 12;
+            add_color = blend_color_add(add_color, intensity); // Glowing Blue-Indigo
+        }
+        
+        for (int x = 0; x < win_width; x++) {
+            int idx = y * win_width + x;
+            if (add_color != 0) {
+                pixels[idx] = blend_color_add(bg_cache[idx], add_color);
+            } else {
+                pixels[idx] = bg_cache[idx];
+            }
+        }
+    }
     
     // Draw 2D scrolling background stars (Parallax background depth layer)
     for (int i = 0; i < 30; i++) {
