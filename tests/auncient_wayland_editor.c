@@ -321,7 +321,7 @@ static void draw_char(uint32_t *pixels, int w, int h, int start_x, int start_y, 
     if (ch >= 128) return;
     
     // ECM (Extended Background Color Mode) Background Shading (mapped safely using ASCII ranges to prevent character corruption)
-    uint8_t ecm_mode = (ch >= 'a' && ch <= 'z') ? 1 : ((ch == '|' || ch == '=') ? 2 : 0);
+    uint8_t ecm_mode = (ch >= 'a' && ch <= 'z') ? 1 : 0;
     uint32_t ecm_bg_colors[4] = {0x00000000, 0xFF3C0E00, 0xFF251000, 0xFF051224};
     uint32_t bg_color = ecm_bg_colors[ecm_mode];
     
@@ -632,9 +632,9 @@ static void redraw_screen(void) {
             sim_scale_x[i] = 5.2f;
             sim_scale_y[i] = 2.8f;
             
-            // Raise water level on collision
-            water_flood_height += 2.0f;
-            if (water_flood_height > 100.0f) water_flood_height = 100.0f;
+            // Raise water level slowly on collision (capped to protect desert sky and cactus art)
+            water_flood_height += 0.08f;
+            if (water_flood_height > 25.0f) water_flood_height = 25.0f;
         }
         
         // Staggered bounce kicks
@@ -689,89 +689,108 @@ static void redraw_screen(void) {
         }
     }
 
-    // 2. Draw Main Body with Dynamic Volumetric Distance Field Inflation and Glossy Specular Highlights
+    // 2. Draw Main Body with C64 Assembly-Aligned Morphological Bitwise Dilation, Erosion, and Specular Glints
     for (int char_idx = 0; char_idx < 6; char_idx++) {
         int logo_start_y = (int)sim_y[char_idx];
         float elastic_scale_x = sim_scale_x[char_idx];
         float elastic_scale_y = sim_scale_y[char_idx];
+        
+        // Run morphological blitter passes (16x16 bitwise carry shifts)
+        uint16_t dilated[16] = {0};
+        uint16_t eroded[16] = {0};
+        uint16_t glints[16] = {0};
+        
         for (int r = 0; r < 16; r++) {
-            uint16_t row_bits = bubble_font_tsfi2[char_idx][r];
-            uint16_t prev_row_bits = (r > 0) ? bubble_font_tsfi2[char_idx][r - 1] : 0;
+            uint16_t curr = bubble_font_tsfi2[char_idx][r];
+            uint16_t prev = (r > 0) ? bubble_font_tsfi2[char_idx][r - 1] : 0;
+            uint16_t next = (r < 15) ? bubble_font_tsfi2[char_idx][r + 1] : 0;
+            
+            // Carry-over shift propagation
+            uint16_t shift_l = curr | (curr << 1);
+            uint16_t shift_r = curr | (curr >> 1);
+            dilated[r] = shift_l | shift_r | prev | next;
+        }
+        
+        for (int r = 0; r < 16; r++) {
+            uint16_t curr = bubble_font_tsfi2[char_idx][r];
+            uint16_t prev = (r > 0) ? bubble_font_tsfi2[char_idx][r - 1] : 0;
+            uint16_t next = (r < 15) ? bubble_font_tsfi2[char_idx][r + 1] : 0;
+            
+            uint16_t shift_l = curr & (curr << 1);
+            uint16_t shift_r = curr & (curr >> 1);
+            eroded[r] = shift_l & shift_r & prev & next;
+        }
+        
+        for (int r = 0; r < 16; r++) {
+            uint16_t curr_dilated = dilated[r];
+            uint16_t prev_dilated = (r > 0) ? dilated[r - 1] : 0;
+            
+            // Top-left boundary highlight logic
+            uint16_t top_edge = curr_dilated & ~prev_dilated;
+            glints[r] = top_edge & ~(curr_dilated << 1);
+        }
+        
+        // Render characters based on bitwise morphological maps
+        for (int r = 0; r < 16; r++) {
             for (int c = 0; c < 16; c++) {
-                if (row_bits & (1 << (15 - c))) {
-                    int wobble_idx_x = (int)(retro_time * 90.0f + r * 12 + c * 6 + char_idx * 24) & 0xFF;
-                    int wobble_idx_y = (int)(retro_time * 75.0f + r * 8 + c * 10 + char_idx * 30) & 0xFF;
-                    int wobble_x = (int)(sine_lut[wobble_idx_x] * 3.0f);
-                    int wobble_y = (int)(sine_lut[wobble_idx_y] * 3.0f);
-                    
-                    int pixel_x = logo_start_x + char_idx * char_spacing + c * elastic_scale_x + wobble_x;
-                    int pixel_y = logo_start_y + r * elastic_scale_y + wobble_y;
-                    
-                    // Calculate distance to nearest empty pixel (volumetric inflation depth)
-                    int dist_sq = 16;
-                    for (int dr = -2; dr <= 2; dr++) {
-                        for (int dc = -2; dc <= 2; dc++) {
-                            int nr = r + dr;
-                            int nc = c + dc;
-                            bool is_inside = (nr >= 0 && nr < 16 && nc >= 0 && nc < 16);
-                            bool is_filled = is_inside && (bubble_font_tsfi2[char_idx][nr] & (1 << (15 - nc)));
-                            if (!is_filled) {
-                                int d = dr * dr + dc * dc;
-                                if (d < dist_sq) dist_sq = d;
-                            }
-                        }
-                    }
-                    
-                    // Detect if this is a top-left edge pixel (empty to top or left)
-                    bool is_top_edge = (r == 0) || !(prev_row_bits & (1 << (15 - c)));
-                    bool is_left_edge = (c == 0) || !(row_bits & (1 << (15 - (c - 1))));
-                    bool is_glossy = is_top_edge && is_left_edge;
-                    
-                    // Color calculation based on inflation depth
+                uint16_t mask = 1 << (15 - c);
+                bool is_dilated = dilated[r] & mask;
+                if (!is_dilated) continue;
+                
+                int wobble_idx_x = (int)(retro_time * 90.0f + r * 12 + c * 6 + char_idx * 24) & 0xFF;
+                int wobble_idx_y = (int)(retro_time * 75.0f + r * 8 + c * 10 + char_idx * 30) & 0xFF;
+                int wobble_x = (int)(sine_lut[wobble_idx_x] * 3.0f);
+                int wobble_y = (int)(sine_lut[wobble_idx_y] * 3.0f);
+                
+                int pixel_x = logo_start_x + char_idx * char_spacing + c * elastic_scale_x + wobble_x;
+                int pixel_y = logo_start_y + r * elastic_scale_y + wobble_y;
+                
+                // Classify layer based on morphological level
+                uint32_t pixel_color = 0x00000000;
+                bool is_eroded = eroded[r] & mask;
+                bool is_source = bubble_font_tsfi2[char_idx][r] & mask;
+                bool is_glint = glints[r] & mask;
+                
+                if (is_glint) {
+                    pixel_color = 0xFFFFFFFF; // High-gloss specular glint
+                } else if (is_eroded) {
+                    pixel_color = 0xFFFFCC00; // Inner Core (Gold)
+                } else if (is_source) {
+                    pixel_color = 0xFFFF6600; // Intermediate Slope (Orange)
+                } else {
+                    // Outer contour ring: Cycle color
                     int color_idx = (int)(retro_time * 15.0f + char_idx * 4 + c) & 0x0F;
-                    uint32_t border_color = color_cycle_lut[color_idx];
-                    uint32_t pixel_color = border_color;
-                    
-                    int ground = 220;
-                    
-                    if (dist_sq > 2) {
-                        // Inflated center: Golden yellow
-                        pixel_color = 0xFFFFCC00;
-                    } else if (dist_sq > 1) {
-                        // Intermediate slope: Orange
-                        pixel_color = 0xFFFF6600;
-                    }
-                    
-                    // Diagonal sheen sweep (from left to right, width of sweep = 16 pixels)
-                    int sheen_pos = ((int)(retro_time * 200.0f)) % 900 - 200;
-                    int dist_to_sheen = abs((char_idx * char_spacing + c * 4 + r * 4) - sheen_pos);
-                    if (dist_to_sheen < 12) {
-                        pixel_color = 0xFFFFFFFF;
-                    }
-                    
-                    for (int sy = 0; sy < (int)elastic_scale_y; sy++) {
-                        for (int sx = 0; sx < (int)elastic_scale_x; sx++) {
-                            int px = pixel_x + sx;
-                            int py = pixel_y + sy;
-                            if (px >= 0 && px < win_width && py >= 0 && py < win_height) {
-                                uint32_t *dest_pixel = &pixels[py * win_width + px];
-                                
-                                // Fetch original background from cache using matched index
-                                uint32_t bg_val = bg_cache[py * win_width + px];
-                                
-                                // Dynamic boundary mask to clip graphics overlapping the desert horizon
-                                uint32_t boundary_mask = (py >= ground + 30) ? 0x00FFFFFF : 0xFFFFFFFF;
-                                
-                                if (is_glossy && sx < 2 && sy < 2) {
-                                    *dest_pixel = (*dest_pixel & ~boundary_mask) | (0xFFFFFFFF & boundary_mask);
-                                } else {
-                                    // Blend with background if partially masked
-                                    uint32_t blended_color = pixel_color;
-                                    if (boundary_mask != 0xFFFFFFFF) {
-                                        blended_color = bg_val;
-                                    }
-                                    *dest_pixel = blended_color;
+                    pixel_color = color_cycle_lut[color_idx];
+                }
+                
+                // Diagonal sheen sweep (from left to right)
+                int sheen_pos = ((int)(retro_time * 200.0f)) % 900 - 200;
+                int dist_to_sheen = abs((char_idx * char_spacing + c * 4 + r * 4) - sheen_pos);
+                if (dist_to_sheen < 12) {
+                    pixel_color = 0xFFFFFFFF;
+                }
+                
+                int ground = 220;
+                
+                for (int sy = 0; sy < (int)elastic_scale_y; sy++) {
+                    for (int sx = 0; sx < (int)elastic_scale_x; sx++) {
+                        int px = pixel_x + sx;
+                        int py = pixel_y + sy;
+                        if (px >= 0 && px < win_width && py >= 0 && py < win_height) {
+                            uint32_t *dest_pixel = &pixels[py * win_width + px];
+                            uint32_t bg_val = bg_cache[py * win_width + px];
+                            
+                            // Horizon boundary mask
+                            uint32_t boundary_mask = (py >= ground + 30) ? 0x00FFFFFF : 0xFFFFFFFF;
+                            
+                            if (is_glint && sx < 2 && sy < 2) {
+                                *dest_pixel = (*dest_pixel & ~boundary_mask) | (0xFFFFFFFF & boundary_mask);
+                            } else {
+                                uint32_t blended_color = pixel_color;
+                                if (boundary_mask != 0xFFFFFFFF) {
+                                    blended_color = bg_val;
                                 }
+                                *dest_pixel = blended_color;
                             }
                         }
                     }
@@ -848,11 +867,13 @@ static void redraw_screen(void) {
     else if (active_tune == 3) scroll_x_speed = 90.0f;
     
     float scroll_x_total = retro_time * scroll_x_speed;
-    int base_char_idx = (int)(scroll_x_total / 18.0f) % strlen(decompressed_scroller);
-    int pixel_shift = (int)fmodf(scroll_x_total, 18.0f);
+    int base_char_idx = (int)(scroll_x_total / 36.0f) % strlen(decompressed_scroller);
+    int pixel_shift = (int)fmodf(scroll_x_total, 36.0f);
     int scroller_y_base = win_height - 120 + glitch_y;
     
-    for (int col = 0; col < 70; col++) {
+    // Calculate number of visible columns based on 36px character spacing
+    int visible_cols = win_width / 36 + 2;
+    for (int col = 0; col < visible_cols; col++) {
         int char_idx = (base_char_idx + col) % strlen(decompressed_scroller);
         char ch = decompressed_scroller[char_idx];
         
@@ -862,7 +883,7 @@ static void redraw_screen(void) {
         // Multi-color charset color wash (Rainbow Chroming)
         uint32_t wash_color = color_cycle_lut[(col + (int)(retro_time * 20.0f)) & 0x0F];
         
-        draw_char(pixels, win_width, win_height, 40 + col * 18 - pixel_shift + glitch_x, scroller_y_base + dy, ch, wash_color, 3);
+        draw_char(pixels, win_width, win_height, 40 + col * 36 - pixel_shift + glitch_x, scroller_y_base + dy, ch, wash_color, 3);
     }
     
     // Display header details
