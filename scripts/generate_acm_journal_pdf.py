@@ -122,13 +122,18 @@ def convert_latex_math_to_html(text):
     
     def replace_math_block(match):
         math_content = match.group(1)
-        if '<' in math_content or '>' in math_content or not re.search(r'[+\-*=/_\\^θφ·]|cos|sin|mathbf|mathit|mathrm', math_content):
+        if '<' in math_content or '>' in math_content or not re.search(r'[+\-*=/_\\^θφ·]|cos|sin|mathbf|mathit|mathrm|sqrt', math_content):
             return f"${math_content}$"
             
         for pat, repl in replacements:
             math_content = re.sub(pat, repl, math_content)
         math_content = re.sub(r'_\{([^}]+)\}', r'<sub>\1</sub>', math_content)
         math_content = re.sub(r'_([a-zA-Z0-9]+)', r'<sub>\1</sub>', math_content)
+        
+        for _ in range(3):
+            math_content = re.sub(r'\\sqrt\{([^}]+)\}', r'√(<b>\1</b>)', math_content)
+            math_content = re.sub(r'\\sqrt\s*([a-zA-Z0-9])', r'√(<b>\1</b>)', math_content)
+            
         for _ in range(3): # up to 3 levels of nesting fractions
             math_content = re.sub(pattern_frac, replace_frac, math_content)
         return f'<font color="#0066cc"><i>{math_content}</i></font>'
