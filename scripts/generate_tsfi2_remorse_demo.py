@@ -169,54 +169,83 @@ def draw_cash_cow(draw, width, time):
                             draw.rectangle([px + 8, py + 8, px + 10, py + 10], fill=(20, 5, 0))
                         else:
                             # Foreground body
-                            # Compute distance to empty pixels within mask
-                            dist_sq = 16
-                            for dy in range(-2, 3):
-                                for dx in range(-2, 3):
-                                    nx, ny_val = x + dx, y + dy
-                                    is_inside = (0 <= nx < glyph_w) and (0 <= ny_val < glyph_h)
-                                    is_filled = is_inside and (glyph_img.getpixel((nx, ny_val)) > 128)
-                                    if not is_filled:
-                                        d = dx*dx + dy*dy
-                                        if d < dist_sq: dist_sq = d
+                            # Helper to compute distance field
+                            def get_dist_d(gx_v, gy_v):
+                                if not (0 <= gx_v < glyph_w and 0 <= gy_v < glyph_h):
+                                    return 0.0
+                                if glyph_img.getpixel((gx_v, gy_v)) <= 128:
+                                    return 0.0
+                                b_d2 = 16
+                                for dy in range(-2, 3):
+                                    for dx in range(-2, 3):
+                                        nx, ny_v = gx_v + dx, gy_v + dy
+                                        if 0 <= nx < glyph_w and 0 <= ny_v < glyph_h:
+                                            if glyph_img.getpixel((nx, ny_v)) <= 128:
+                                                d2 = dx*dx + dy*dy
+                                                if d2 < b_d2:
+                                                    b_d2 = d2
+                                return math.sqrt(b_d2)
+
+                            d_c = get_dist_d(x, y)
+                            d_l = get_dist_d(x - 1, y)
+                            d_r = get_dist_d(x + 1, y)
+                            d_u = get_dist_d(x, y - 1)
+                            d_d = get_dist_d(x, y + 1)
+                            
+                            # Normal vector calculation via gradient
+                            gx_val = d_r - d_l
+                            gy_val = d_d - d_u
+                            gz_val = 1.4
+                            
+                            mag = math.sqrt(gx_val * gx_val + gy_val * gy_val + gz_val * gz_val)
+                            nx_val = -gx_val / mag
+                            ny_val = -gy_val / mag
+                            nz_val = gz_val / mag
+
+                            # Lighting calculations
+                            lx, ly, lz = -0.577, -0.577, 0.577
+                            diffuse = max(0.2, nx_val * lx + ny_val * ly + nz_val * lz)
+                            
+                            hx_val, hy_val, hz_val = -0.325, -0.325, 0.888
+                            specular = max(0.0, nx_val * hx_val + ny_val * hy_val + nz_val * hz_val) ** 20.0
+                            
+                            inflation = current_inflation * 0.8
+                            base_r, base_g, base_b = 0, 0, 0
+                            
+                            is_dollar = (char == '$')
+                            if is_dollar:
+                                # Gold material
+                                base_r, base_g, base_b = 255, 215, 0
+                            else:
+                                # CASH COW cow spots material
+                                spot = math.sin(px * 0.2) * math.cos(py * 0.2) + math.sin(px * 0.08 + py * 0.12)
+                                if spot > 0.1:
+                                    base_r, base_g, base_b = 240, 240, 240
+                                else:
+                                    base_r, base_g, base_b = 15, 15, 15
+                                    
+                            # Diffuse shading
+                            r_c = int(base_r * (0.35 + 0.65 * diffuse) + specular * 220)
+                            g_c = int(base_g * (0.35 + 0.65 * diffuse) + specular * 220)
+                            b_c = int(base_b * (0.35 + 0.65 * diffuse) + specular * 220)
+                            
+                            # Specular sheen sweep animation
+                            sheen_pos = int(time * 200.0) % 900 - 200
+                            dist_to_sheen = abs(px - sheen_pos)
+                            if dist_to_sheen < 12 and d_c > 1.0:
+                                r_c, g_c, b_c = 255, 255, 255
+                                
+                            r_c = min(255, max(0, r_c))
+                            g_c = min(255, max(0, g_c))
+                            b_c = min(255, max(0, b_c))
+                            
+                            color = (r_c, g_c, b_c)
+                            draw.rectangle([px, py, px + 2, py + 2], fill=color)
                             
                             is_top_edge = (y == 0) or (glyph_img.getpixel((x, y - 1)) <= 128)
                             is_left_edge = (x == 0) or (glyph_img.getpixel((x - 1, y)) <= 128)
                             is_glossy = is_top_edge and is_left_edge
-                            
-                            inflation = current_inflation * 0.8
-                            color = (0, 0, 0)
-                            
-                            is_dollar = (char == '$')
-                            if is_dollar:
-                                # Gold inflated body
-                                if dist_sq > (3.0 * inflation):
-                                    color = (255, 204, 0)
-                                elif dist_sq > (2.0 * inflation):
-                                    color = (80, 20, 0)
-                                elif dist_sq > (1.0 * inflation):
-                                    col_step = int(time * 15.0 + x) % 8
-                                    color = (180 + col_step * 8, 40 + col_step * 10, 0)
-                                else:
-                                    color = (0, 0, 0)
-                            else:
-                                # CASH COW cow spots body
-                                if dist_sq > (1.0 * inflation):
-                                    spot = math.sin(px * 0.25) * math.cos(py * 0.25) + math.sin(px * 0.1 + py * 0.15)
-                                    if spot > 0.1:
-                                        color = (240, 240, 240)
-                                    else:
-                                        color = (15, 15, 15)
-                                else:
-                                    color = (0, 0, 0)
-                                    
-                            # Specular sheen sweep animation
-                            sheen_pos = int(time * 200.0) % 900 - 200
-                            dist_to_sheen = abs(px - sheen_pos)
-                            if dist_to_sheen < 12 and dist_sq > 1.0:
-                                color = (255, 255, 255)
-                                
-                            draw.rectangle([px, py, px + 2, py + 2], fill=color)
+                            dist_sq = d_c * d_c
                             
                             if is_glossy and dist_sq >= 2:
                                 draw.rectangle([px, py, px + 1, py + 1], fill=(255, 255, 255))
