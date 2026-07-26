@@ -790,6 +790,20 @@ static float resolve_hogan_inherits_lane(const hogan_inherits_sgpr_t *sgpr, cons
     }
 }
 
+typedef struct {
+    float gate_voltage;
+    float charge_state;
+} fet_discharge_cycle_t;
+
+static void usd_resolve_fet_verlet_discharge(fet_discharge_cycle_t *fet, float mass, float damping) {
+    if (fet->gate_voltage < 1.0f) {
+        float force = -fet->charge_state * 2.0f;
+        float acceleration = force / (mass > 0.0f ? mass : 1.0f);
+        fet->charge_state += acceleration * (1.0f - damping);
+    }
+}
+
+
 
 
 
@@ -1730,6 +1744,30 @@ int main(void) {
     assert(resolve_hogan_inherits_lane(&sgpr, &vgpr, 2) == 9.85f);
     assert(resolve_hogan_inherits_lane(&sgpr, &vgpr, 3) == 2.50f);
     printf("   ✓ Hogan SGPR/VGPR inherits resolution verified.\n");
+    fflush(stdout);
+
+    // 44. Test Verlet Soft-Body FET Discharge Physics
+    printf("[TEST] Testing Verlet Soft-Body FET Discharge Physics...\n");
+    fflush(stdout);
+    
+    fet_discharge_cycle_t fet = {
+        .gate_voltage = 0.5f,  // Under threshold, triggers discharge
+        .charge_state = 10.0f
+    };
+    
+    // Resolve Verlet physics using physical properties from AuncientPhysicsAPI (stiffness/damping)
+    usd_resolve_fet_verlet_discharge(&fet, 5.0f, 0.1f);
+    
+    // Charge state should fall during discharge cycle
+    assert(fet.charge_state < 10.0f);
+    
+    // Test high gate voltage (charging/active phase), Verlet physics must NOT apply
+    fet.gate_voltage = 5.0f;
+    fet.charge_state = 10.0f;
+    usd_resolve_fet_verlet_discharge(&fet, 5.0f, 0.1f);
+    assert(fet.charge_state == 10.0f);
+    
+    printf("   ✓ Verlet soft-body FET discharge physics verified.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
