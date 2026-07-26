@@ -529,6 +529,8 @@ frontend/compiled_yul.json
 *.png
 *.pdf
 *.gif
+*.usda
+*.wav
 
 
 

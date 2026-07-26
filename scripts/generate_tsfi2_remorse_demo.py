@@ -132,6 +132,10 @@ def main():
     chars = ['T', 'S', 'F', 'i', '2']
     node_count = len(chars)
 
+    # Dictionaries to track Pixar USD animation timesamples
+    points_samples = {}
+    translation_samples = {i: {} for i in range(node_count)}
+
     # Physical spline rope nodes matching the letters
     rope_nodes = []
     for i in range(node_count):
@@ -225,6 +229,11 @@ def main():
                     if h_dist > 15.0:
                         curr[0] = prev[0] + (hx / h_dist) * 15.0
                         curr[1] = prev[1] + (hy / h_dist) * 15.0
+
+        # Collect USD animation timesamples
+        points_samples[frame] = [(n[0], n[1], 0.0) for n in rope_nodes]
+        for i in range(node_count):
+            translation_samples[i][frame] = (rope_nodes[i][0], rope_nodes[i][1], 0.0)
 
         # Render frame
         img = Image.new("RGB", (width, height), (5, 5, 10)) # Very dark background
@@ -322,6 +331,41 @@ def main():
     process.stdin.close()
     process.wait()
     print(f"[SUCCESS] Remorse style video rendered: {video_output}")
+
+    # Write Pixar USD ASCII file (USDA) detailing dynamic nodes and curves
+    usda_output = "/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2_remorse_scene.usda"
+    with open(usda_output, "w") as f:
+        f.write("#usda 1.0\n")
+        f.write("(\n")
+        f.write("    startTimeCode = 0\n")
+        f.write(f"    endTimeCode = {total_frames - 1}\n")
+        f.write("    upAxis = \"Y\"\n")
+        f.write(")\n\n")
+        f.write("def Xform \"RemorseScene\"\n")
+        f.write("{\n")
+        f.write("    def BasisCurves \"RopeSpline\"\n")
+        f.write("    {\n")
+        f.write("        uniform token basis = \"bezier\"\n")
+        f.write("        uniform token type = \"cubic\"\n")
+        f.write("        int[] curveVertexCounts = [5]\n")
+        f.write("        point3f[] points.timeSamples = {\n")
+        for f_idx in sorted(points_samples.keys()):
+            pts_str = ", ".join([f"({x:.3f}, {y:.3f}, {z:.3f})" for x, y, z in points_samples[f_idx]])
+            f.write(f"            {f_idx}: [{pts_str}],\n")
+        f.write("        }\n")
+        f.write("    }\n\n")
+        for i, char in enumerate(chars):
+            f.write(f"    def Xform \"Letter_{char}_{i}\"\n")
+            f.write("    {\n")
+            f.write("        double3 xformOp:translate.timeSamples = {\n")
+            for f_idx in sorted(translation_samples[i].keys()):
+                tx, ty, tz = translation_samples[i][f_idx]
+                f.write(f"            {f_idx}: ({tx:.3f}, {ty:.3f}, {tz:.3f}),\n")
+            f.write("        }\n")
+            f.write("        uniform token[] xformOpOrder = [\"xformOp:translate\"]\n")
+            f.write("    }\n")
+        f.write("}\n")
+    print(f"[SUCCESS] Pixar USDA scene description exported: {usda_output}")
 
 if __name__ == "__main__":
     main()
