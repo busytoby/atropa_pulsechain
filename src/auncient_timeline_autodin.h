@@ -209,6 +209,9 @@ void auncient_hudson_vce_write_color(uint16_t *vce_table, uint16_t color_idx, ui
 // Cycles VCE colors within a specified register range to simulate hardware palette shifting
 void auncient_hudson_vce_cycle_palette(uint16_t *vce_table, uint16_t start_idx, uint16_t end_idx, int shift_count);
 
+// Synchronizes Hudson VCE color palette tables dynamically based on WinchesterMQ register states
+void auncient_hudson_vce_sync_winchester(uint16_t *vce_table, const WinchesterMQState *mq_state);
+
 #ifdef __cplusplus
 }
 #endif

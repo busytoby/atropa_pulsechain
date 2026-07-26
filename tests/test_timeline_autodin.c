@@ -328,6 +328,17 @@ int main(void) {
     assert(vce_table[11] == 0xF800); // Red shifted to index 11
     printf("   ✓ Hudson VCE palette registers and color cycling shifts verified.\n");
 
+    // Test WinchesterMQ VCE synchronization
+    WinchesterMQState mq_sync = {
+        .channel = 10,
+        .dynamo = 20,
+        .pole = 5,
+        .signal = 3
+    };
+    auncient_hudson_vce_sync_winchester(vce_table, &mq_sync);
+    assert(vce_table[0] != 0); // Background color populated
+    printf("   ✓ WinchesterMQ to Hudson VCE synchronization verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");

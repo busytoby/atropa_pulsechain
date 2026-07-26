@@ -834,3 +834,17 @@ void auncient_hudson_vce_cycle_palette(uint16_t *vce_table, uint16_t start_idx, 
 
     free(temp);
 }
+
+void auncient_hudson_vce_sync_winchester(uint16_t *vce_table, const WinchesterMQState *mq_state) {
+    if (!vce_table || !mq_state) return;
+
+    uint16_t r = (uint16_t)((mq_state->channel ^ 0xAA) & 0x1F);
+    uint16_t g = (uint16_t)((mq_state->dynamo ^ 0x55) & 0x3F);
+    uint16_t b = (uint16_t)((mq_state->pole ^ 0xF0) & 0x1F);
+
+    uint16_t rgb565 = (r << 11) | (g << 5) | b;
+    vce_table[0] = rgb565;
+
+    int shift = (int)(mq_state->signal % 16);
+    auncient_hudson_vce_cycle_palette(vce_table, 16, 31, shift);
+}
