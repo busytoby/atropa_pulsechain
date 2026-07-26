@@ -31,9 +31,6 @@ def generate_audio():
     total_samples = int(SAMPLE_RATE * DURATION)
     audio = np.zeros(total_samples, dtype=np.float32)
     
-    # Time array for the whole song
-    t_arr = np.arange(total_samples) / float(SAMPLE_RATE)
-    
     # 1. 5 Drums: Kick, Snare, Hihat, Cowbell, Rimshot
     kick_seq =   [1,0,0,0, 0,0,1,0, 1,0,0,0, 0,0,0,0]
     snare_seq =  [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0]
@@ -41,16 +38,11 @@ def generate_audio():
     cowbell_seq =[0,0,0,0, 0,0,0,1, 0,1,0,0, 0,0,0,0]
     rim_seq =    [0,1,0,0, 0,0,0,0, 0,0,0,1, 0,0,0,0]
     
-    # Synthesize Drums into the track
     step_samples = int(SAMPLE_RATE * STEP_DUR)
     for step in range(int(DURATION / STEP_DUR)):
         step_start = step * step_samples
-        step_time = step * STEP_DUR
-        
-        # 16-step pattern indexes
         pat_idx = step % 16
         
-        # Trigger Kick (Sine wave frequency sweep: 150Hz -> 45Hz)
         if kick_seq[pat_idx] and step_start < total_samples:
             dur = int(SAMPLE_RATE * 0.15)
             t = np.arange(min(dur, total_samples - step_start)) / float(SAMPLE_RATE)
@@ -59,7 +51,6 @@ def generate_audio():
             env = np.exp(-t * 12.0)
             audio[step_start:step_start+len(t)] += 0.5 * np.sin(phase) * env
             
-        # Trigger Snare (White noise with decay envelope)
         if snare_seq[pat_idx] and step_start < total_samples:
             dur = int(SAMPLE_RATE * 0.20)
             length = min(dur, total_samples - step_start)
@@ -68,7 +59,6 @@ def generate_audio():
             env = np.exp(-t * 15.0)
             audio[step_start:step_start+length] += 0.35 * noise * env
             
-        # Trigger Hihat (Short noise burst)
         if hihat_seq[pat_idx] and step_start < total_samples:
             dur = int(SAMPLE_RATE * 0.04)
             length = min(dur, total_samples - step_start)
@@ -77,7 +67,6 @@ def generate_audio():
             env = np.exp(-t * 60.0)
             audio[step_start:step_start+length] += 0.15 * noise * env
 
-        # Trigger Cowbell (Detuned metallic dual sines)
         if cowbell_seq[pat_idx] and step_start < total_samples:
             dur = int(SAMPLE_RATE * 0.12)
             t = np.arange(min(dur, total_samples - step_start)) / float(SAMPLE_RATE)
@@ -85,15 +74,13 @@ def generate_audio():
             cb = np.sin(2.0 * np.pi * 540.0 * t) + 0.5 * np.sin(2.0 * np.pi * 800.0 * t)
             audio[step_start:step_start+len(t)] += 0.2 * cb * env
             
-        # Trigger Rimshot (High sine burst)
         if rim_seq[pat_idx] and step_start < total_samples:
             dur = int(SAMPLE_RATE * 0.03)
             t = np.arange(min(dur, total_samples - step_start)) / float(SAMPLE_RATE)
             env = np.exp(-t * 80.0)
             audio[step_start:step_start+len(t)] += 0.15 * np.sin(2.0 * np.pi * 1200.0 * t) * env
 
-    # 2. 2 Growls: Saw-LFO Growl & Formant-Sweep Growl
-    # Growl 1 (Wobble Bass: Sawtooth wave modulated by LFO)
+    # 2. 2 Growls
     growl1_notes = [55.0, 65.4, 73.4, 48.9, 55.0, 65.4, 82.4, 73.4]
     for step in range(int(DURATION / STEP_DUR)):
         step_start = step * step_samples
@@ -101,32 +88,22 @@ def generate_audio():
             length = min(step_samples * 8, total_samples - step_start)
             t = np.arange(length) / float(SAMPLE_RATE)
             freq = growl1_notes[(step // 8) % len(growl1_notes)]
-            
-            # Sawtooth wave
             saw = 2.0 * (t * freq - np.floor(0.5 + t * freq))
-            
-            # LFO modulation on lowpass filter cutoff
-            lfo = 0.5 + 0.5 * np.sin(2.0 * np.pi * 6.0 * t) # 6Hz wobble
+            lfo = 0.5 + 0.5 * np.sin(2.0 * np.pi * 6.0 * t)
             env = np.exp(-t * 0.5)
             audio[step_start:step_start+length] += 0.25 * saw * lfo * env
 
-    # Growl 2 (Fuzz Bass: Formant bandpass-swept triangle)
     for step in range(int(DURATION / STEP_DUR)):
         step_start = step * step_samples
         if (step + 4) % 8 == 0 and step_start < total_samples:
             length = min(step_samples * 4, total_samples - step_start)
             t = np.arange(length) / float(SAMPLE_RATE)
-            freq = 65.41 # C-2
-            
-            # Triangle wave
+            freq = 65.41
             tri = 2.0 * np.abs(2.0 * (t * freq - np.floor(t * freq + 0.5))) - 1.0
-            
-            # Formant simulation: phase sweeps from 1000Hz down to 200Hz
             formant_sweep = np.sin(2.0 * np.pi * (freq * 4.0 * t + 8.0 * np.sin(2.0 * np.pi * 2.0 * t)))
             audio[step_start:step_start+length] += 0.2 * tri * formant_sweep
 
-    # 3. 2 Leads: Detuned Square Arpeggiator & Vibrato PWM Lead
-    # Lead 1 (Fast Square Arpeggiator playing A minor)
+    # 3. 2 Leads
     lead_seq = [220.0, 261.6, 293.7, 329.6, 392.0, 440.0, 523.3, 587.3]
     for step in range(int(DURATION / STEP_DUR)):
         step_start = step * step_samples
@@ -134,14 +111,11 @@ def generate_audio():
             length = min(step_samples, total_samples - step_start)
             t = np.arange(length) / float(SAMPLE_RATE)
             freq = lead_seq[step % len(lead_seq)]
-            
-            # Detuned square waves
             sq1 = np.sign(np.sin(2.0 * np.pi * freq * t))
             sq2 = np.sign(np.sin(2.0 * np.pi * (freq + 1.5) * t))
             env = np.exp(-t * 8.0)
             audio[step_start:step_start+length] += 0.08 * (sq1 + sq2) * env
 
-    # Lead 2 (Vibrato PWM Lead playing melody)
     melody = [440.0, 440.0, 523.3, 440.0, 392.0, 392.0, 349.2, 392.0]
     for step in range(int(DURATION / STEP_DUR)):
         step_start = step * step_samples
@@ -149,20 +123,14 @@ def generate_audio():
             length = min(step_samples * 4, total_samples - step_start)
             t = np.arange(length) / float(SAMPLE_RATE)
             freq = melody[(step // 4) % len(melody)]
-            
-            # Vibrato
             vib = 1.0 + 0.015 * np.sin(2.0 * np.pi * 5.0 * t)
             phase = 2.0 * np.pi * freq * vib * t
-            
-            # PWM wave: compare sine against dynamic threshold
             pwm_threshold = 0.5 * np.sin(2.0 * np.pi * 1.5 * t)
             pwm = np.where(np.sin(phase) > pwm_threshold, 1.0, -1.0)
-            
             env = np.exp(-t * 1.5)
             audio[step_start:step_start+length] += 0.07 * pwm * env
 
-    # 4. 2 Rhythm Sounds: Detuned Saw Chords & Bass Line
-    # Rhythm 1 (Detuned Saw Chords on offbeats)
+    # 4. 2 Rhythm Sounds
     chords = [
         [220.0, 261.6, 329.6], # Am
         [196.0, 246.9, 293.7], # G
@@ -175,15 +143,12 @@ def generate_audio():
             length = min(step_samples * 2, total_samples - step_start)
             t = np.arange(length) / float(SAMPLE_RATE)
             chord = chords[(step // 4) % len(chords)]
-            
             detuned_saws = np.zeros(length)
             for f in chord:
                 detuned_saws += np.sin(2.0 * np.pi * f * t) + 0.5 * np.sin(2.0 * np.pi * (f + 0.8) * t)
-                
             env = np.exp(-t * 4.0)
             audio[step_start:step_start+length] += 0.06 * detuned_saws * env
 
-    # Rhythm 2 (Syncopated Bass line)
     bass_notes = [110.0, 110.0, 130.8, 110.0, 98.0, 98.0, 87.3, 98.0]
     for step in range(int(DURATION / STEP_DUR)):
         step_start = step * step_samples
@@ -191,21 +156,18 @@ def generate_audio():
             length = min(step_samples, total_samples - step_start)
             t = np.arange(length) / float(SAMPLE_RATE)
             freq = bass_notes[(step // 2) % len(bass_notes)]
-            
-            # Detuned Triangle Bass
             tri = np.abs(4.0 * (t * freq - np.floor(t * freq + 0.5))) - 1.0
             env = np.exp(-t * 6.0)
             audio[step_start:step_start+length] += 0.12 * tri * env
 
-    # Master Limiter
     max_val = np.max(np.abs(audio))
     if max_val > 0.98:
         audio = audio / max_val * 0.98
-        
     return audio
 
 def render_sunset_frame(frame, width, height):
     t_val = frame / float(FPS)
+    np.random.seed(frame) # For temporal film grain and scratches
     
     # 1. Warm Sunset vertical gradient (orange/red/purple)
     img = Image.new("RGB", (width, height))
@@ -227,16 +189,11 @@ def render_sunset_frame(frame, width, height):
         
     # 2. Draw 2D Scrolling Parallax Stars (Background)
     for i in range(35):
-        # Generate stable pseudo-random star position based on star index i
         np.random.seed(i * 1234)
         base_x = np.random.randint(0, width)
         base_y = np.random.randint(0, int(height * 0.8))
         speed = 20.0 + i * 2.5
-        
-        # Horizontal scrolling offset
         px = int(base_x - t_val * speed) % width
-        
-        # Scale/brightness of stars
         brightness = int(120 + (i % 5) * 25)
         color = (brightness, int(brightness * 0.7), int(brightness * 0.2))
         
@@ -245,18 +202,16 @@ def render_sunset_frame(frame, width, height):
         else:
             draw.ellipse([px - 1, base_y - 1, px + 1, base_y + 1], fill=color)
 
-    # 3. Draw Sunset Yellow/Orange Mesa (Sun)
-    # Drawing sunset sun in the horizon (centered)
+    # 3. Draw Sunset Yellow/Orange Sun in the horizon
     sun_x, sun_y = width // 2, int(height * 0.6)
     sun_r = 50 + int(4.0 * math.sin(t_val * 4.0))
     draw.ellipse([sun_x - sun_r, sun_y - sun_r, sun_x + sun_r, sun_y + sun_r], fill=(255, 204, 0))
 
     # 4. Draw static Western Desert Silhouette (Mesa landscape & Green Cactus)
-    # Draw horizontal ground line
     draw.rectangle([0, int(height * 0.65), width, height], fill=(28, 11, 0))
     
-    # Draw Cactus Silhouette in PETSCII outline style (Green outline)
-    cac_x, cac_y = width // 3, int(height * 0.65)
+    # Draw Cactus Silhouette on the far left (cac_x = 100) to avoid obstructing the centered logo
+    cac_x, cac_y = 100, int(height * 0.65)
     # Main trunk
     draw.rectangle([cac_x - 10, cac_y - 120, cac_x + 10, cac_y], fill=(0, 160, 0))
     # Left arm
@@ -266,10 +221,16 @@ def render_sunset_frame(frame, width, height):
     draw.rectangle([cac_x + 10, cac_y - 65, cac_x + 35, cac_y - 50], fill=(0, 160, 0))
     draw.rectangle([cac_x + 20, cac_y - 90, cac_x + 35, cac_y - 60], fill=(0, 160, 0))
 
-    # 5. Render Volumetric 3D Glossy Bubbly Font logo of "TSFi/2"
-    logo_start_x = width // 2 - 40
-    logo_start_y = int(height * 0.25)
-    char_spacing = 72
+    # 5. Render Volumetric 3D Glossy Bubbly Font logo of "TSFi/2" centered on the screen
+    # Character spacing is 64. Total width = 6 * 64 = 384 pixels.
+    # To center in 888 width: 888 // 2 - 384 // 2 = 444 - 192 = 252.
+    logo_start_x = 252
+    logo_start_y = int(height * 0.22)
+    char_spacing = 64
+    
+    # 3D Elastic breathing/squishing scaling factor over time
+    elastic_scale_x = 4.0 + 0.35 * math.sin(t_val * 4.5)
+    elastic_scale_y = 4.0 - 0.35 * math.sin(t_val * 4.5)
     
     # 5a. Render Drop Shadow first
     for char_idx in range(len(BUBBLE_FONT)):
@@ -277,12 +238,11 @@ def render_sunset_frame(frame, width, height):
             row_bits = BUBBLE_FONT[char_idx][r]
             for c in range(16):
                 if row_bits & (1 << (15 - c)):
-                    # Wobble animation
-                    wobble_x = int(5.0 * math.sin(t_val * 5.0 + r * 0.5 + c * 0.2))
-                    wobble_y = int(4.0 * math.cos(t_val * 4.0 + r * 0.3 + c * 0.3))
+                    wobble_x = int(4.0 * math.sin(t_val * 5.0 + r * 0.5 + c * 0.2))
+                    wobble_y = int(3.5 * math.cos(t_val * 4.0 + r * 0.3 + c * 0.3))
                     
-                    px = logo_start_x + char_idx * char_spacing + c * 4 + wobble_x + 8
-                    py = logo_start_y + r * 4 + wobble_y + 8
+                    px = int(logo_start_x + char_idx * char_spacing + c * elastic_scale_x + wobble_x + 8)
+                    py = int(logo_start_y + r * elastic_scale_y + wobble_y + 8)
                     
                     draw.rectangle([px, py, px + 3, py + 3], fill=(20, 5, 0))
                     
@@ -294,14 +254,12 @@ def render_sunset_frame(frame, width, height):
             
             for c in range(16):
                 if row_bits & (1 << (15 - c)):
-                    # Wobble animation
-                    wobble_x = int(5.0 * math.sin(t_val * 5.0 + r * 0.5 + c * 0.2))
-                    wobble_y = int(4.0 * math.cos(t_val * 4.0 + r * 0.3 + c * 0.3))
+                    wobble_x = int(4.0 * math.sin(t_val * 5.0 + r * 0.5 + c * 0.2))
+                    wobble_y = int(3.5 * math.cos(t_val * 4.0 + r * 0.3 + c * 0.3))
                     
-                    px = logo_start_x + char_idx * char_spacing + c * 4 + wobble_x
-                    py = logo_start_y + r * 4 + wobble_y
+                    px = int(logo_start_x + char_idx * char_spacing + c * elastic_scale_x + wobble_x)
+                    py = int(logo_start_y + r * elastic_scale_y + wobble_y)
                     
-                    # 3D Distance field logic (inflation)
                     dist_sq = 16
                     for dr in range(-2, 3):
                         for dc in range(-2, 3):
@@ -312,31 +270,69 @@ def render_sunset_frame(frame, width, height):
                                 d = dr*dr + dc*dc
                                 if d < dist_sq: dist_sq = d
                                 
-                    # Highlights
                     is_top_edge = (r == 0) or not (prev_row_bits & (1 << (15 - c)))
                     is_left_edge = (c == 0) or not (row_bits & (1 << (15 - (c - 1))))
                     is_glossy = is_top_edge and is_left_edge
                     
-                    # Shading layers
                     if dist_sq > 2:
-                        color = (255, 204, 0) # Gold center
+                        color = (255, 204, 0)
                     elif dist_sq > 1:
-                        color = (255, 102, 0) # Orange slope
+                        color = (255, 102, 0)
                     else:
-                        # Color cycle border
                         col_step = int(t_val * 15.0 + char_idx * 4 + c) % 8
                         color = (180 + col_step * 8, 40 + col_step * 10, 0)
                         
                     draw.rectangle([px, py, px + 3, py + 3], fill=color)
                     
-                    # Glossy specular glint
                     if is_glossy:
                         draw.rectangle([px, py, px + 1, py + 1], fill=(255, 255, 255))
                         
+    # 6. Apply Super8 Vintage Film Effects
+    # 6a. Dynamic Film Grain (Low opacity noise overlay)
+    pixels = img.load()
+    for _ in range(3500):
+        gx = np.random.randint(0, width)
+        gy = np.random.randint(0, height)
+        # Apply dark/light speckles
+        tint = np.random.randint(-18, 18)
+        r, g, b = pixels[gx, gy]
+        pixels[gx, gy] = (
+            max(0, min(255, r + tint)),
+            max(0, min(255, g + tint)),
+            max(0, min(255, b + tint))
+        )
+        
+    # 6b. Dynamic Light Flicker (Randomly tint whole image slightly)
+    flicker = 0.95 + 0.05 * math.sin(t_val * 18.0) + np.random.uniform(-0.02, 0.02)
+    # 6c. Dynamic Scratches & Hairs (Occasional vertical lines/specs)
+    if np.random.uniform(0, 1.0) < 0.25:
+        # Draw vertical scratch
+        sx = np.random.randint(40, width - 40)
+        draw.line([(sx, 0), (sx + np.random.randint(-5, 5), height)], fill=(40, 35, 30), width=1)
+    if np.random.uniform(0, 1.0) < 0.15:
+        # Draw tiny dust hair
+        hx = np.random.randint(100, width - 100)
+        hy = np.random.randint(100, height - 100)
+        draw.arc([hx, hy, hx + 10, hy + 8], 0, 180, fill=(10, 10, 10), width=1)
+
+    # 6d. Rounded Film-Gate Vignette Border Mask
+    # Draw dark black framing on the borders with rounded corners
+    border_w = 12
+    draw.rectangle([0, 0, width, border_w], fill=(0, 0, 0)) # Top
+    draw.rectangle([0, height - border_w, width, height], fill=(0, 0, 0)) # Bottom
+    draw.rectangle([0, 0, border_w, height], fill=(0, 0, 0)) # Left
+    draw.rectangle([width - border_w, 0, width, height], fill=(0, 0, 0)) # Right
+    # Rounded corners overlay
+    corner_r = 16
+    draw.ellipse([border_w, border_w, border_w + corner_r*2, border_w + corner_r*2], outline=(0, 0, 0), width=border_w)
+    draw.ellipse([width - border_w - corner_r*2, border_w, width - border_w, border_w + corner_r*2], outline=(0, 0, 0), width=border_w)
+    draw.ellipse([border_w, height - border_w - corner_r*2, border_w + corner_r*2, height - border_w], outline=(0, 0, 0), width=border_w)
+    draw.ellipse([width - border_w - corner_r*2, height - border_w - corner_r*2, width - border_w, height - border_w], outline=(0, 0, 0), width=border_w)
+
     return img
 
 def main():
-    width, height = 720, 480
+    width, height = 888, 480  # 1.85:1 Aspect Ratio
     fps = 30
     total_frames = int(fps * DURATION)
     
@@ -352,7 +348,6 @@ def main():
         w.setnchannels(1)
         w.setsampwidth(2)
         w.setframerate(SAMPLE_RATE)
-        # Convert floats to int16 PCM
         pcm = (audio_data * 32767.0).astype(np.int16)
         w.writeframes(pcm.tobytes())
         
