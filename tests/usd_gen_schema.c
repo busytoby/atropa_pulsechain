@@ -157,6 +157,8 @@ int main(int argc, char **argv) {
             schema_field_t *f = &c->fields[j];
             if (strcmp(f->type, "string") == 0) {
                 fprintf(out, "    char %s[32];\n", f->name);
+            } else if (strcmp(f->type, "int") == 0) {
+                fprintf(out, "    int %s;\n", f->name);
             } else {
                 fprintf(out, "    float %s;\n", f->name);
             }
@@ -182,6 +184,8 @@ int main(int argc, char **argv) {
             schema_field_t *f = &c->fields[j];
             if (strcmp(f->type, "string") == 0) {
                 fprintf(out, "    strcpy(obj->%s, %s);\n", f->name, f->default_val);
+            } else if (strcmp(f->type, "int") == 0) {
+                fprintf(out, "    obj->%s = %s;\n", f->name, f->default_val);
             } else {
                 fprintf(out, "    obj->%s = %sf;\n", f->name, f->default_val);
             }
@@ -191,7 +195,7 @@ int main(int argc, char **argv) {
         // Getters and setters for compatibility
         for (int j = 0; j < c->field_count; j++) {
             schema_field_t *f = &c->fields[j];
-            if (strcmp(f->type, "float") == 0) {
+            if (strcmp(f->type, "float") == 0 || strcmp(f->type, "int") == 0) {
                 char prefix[128];
                 if (strcmp(c->name, "AuncientCactusSchema") == 0) {
                     strcpy(prefix, "usd_cactus_schema");
@@ -203,11 +207,13 @@ int main(int argc, char **argv) {
                     strcpy(prefix, "usd_physics_api");
                 }
                 
-                fprintf(out, "static inline float %s_get_%s(const %s *obj) {\n", prefix, f->name, struct_name);
+                const char *type_str = strcmp(f->type, "int") == 0 ? "int" : "float";
+                
+                fprintf(out, "static inline %s %s_get_%s(const %s *obj) {\n", type_str, prefix, f->name, struct_name);
                 fprintf(out, "    return obj->%s;\n", f->name);
                 fprintf(out, "}\n\n");
                 
-                fprintf(out, "static inline void %s_set_%s(%s *obj, float val) {\n", prefix, f->name, struct_name);
+                fprintf(out, "static inline void %s_set_%s(%s *obj, %s val) {\n", prefix, f->name, struct_name, type_str);
                 fprintf(out, "    obj->%s = val;\n", f->name);
                 fprintf(out, "}\n\n");
             }
