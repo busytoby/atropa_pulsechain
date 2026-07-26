@@ -275,6 +275,45 @@ static void process_tape_ingest_v6(huc_ocean_system_t *huc,
     }
 }
 
+static float interpolate_catmull_rom(float p0, float p1, float p2, float p3, float t) {
+    return 0.5f * ((2.0f * p1) +
+                   (-p0 + p2) * t +
+                   (2.0f * p0 - 5.0f * p1 + 4.0f * p2 - p3) * t * t +
+                   (-p0 + 3.0f * p1 - 3.0f * p2 + p3) * t * t * t);
+}
+
+static void displace_vertex_by_texture(vertex3d_t *vertex, const uint8_t *texture_rgba, int width, int height, float u, float v, float amount) {
+    int x = (int)(u * (width - 1)) % width;
+    int y = (int)(v * (height - 1)) % height;
+    if (x < 0) x += width;
+    if (y < 0) y += height;
+    int idx = (y * width + x) * 4;
+    float height_val = (float)texture_rgba[idx] / 255.0f; // Red channel as height
+    vertex->z += height_val * amount;
+}
+
+static void run_digital_dynamite_tests(void) {
+    printf("[TEST] Running Digital Dynamite hermite interpolation and texture displacement tests...\n");
+    fflush(stdout);
+    
+    // 1. Test Catmull-Rom Keyframe Interpolation
+    float p0 = 0.0f, p1 = 1.0f, p2 = 2.0f, p3 = 3.0f;
+    float val = interpolate_catmull_rom(p0, p1, p2, p3, 0.5f);
+    assert(val >= 0.9f && val <= 2.1f);
+    printf("   ✓ Catmull-Rom interpolation verified successfully.\n");
+    
+    // 2. Test Texture-Driven Vertex Displacement
+    uint8_t mock_tex[16] = {
+        255, 0, 0, 255,   0, 0, 0, 255,
+        0, 0, 0, 255,     128, 0, 0, 255
+    };
+    vertex3d_t vertex = {0.0f, 0.0f, 0.0f};
+    displace_vertex_by_texture(&vertex, mock_tex, 2, 2, 0.0f, 0.0f, 1.5f);
+    assert(vertex.z > 1.4f);
+    printf("   ✓ Texture-driven vertex displacement verified successfully.\n");
+    fflush(stdout);
+}
+
 int main(void) {
     printf("=============================================================\n");
     printf("AUNCIENT HOGAN-HUDSON OCEAN INTEGRATION LEVEL 6 (DEMOSCENE EDITION)\n");
@@ -283,6 +322,9 @@ int main(void) {
 
     // Initialise standardized texgen tables
     tsfi_texgen_init();
+    
+    // Execute Digital Dynamite unit tests
+    run_digital_dynamite_tests();
 
     // SGPR settings
     sgpr_bank_t sgprs = {
