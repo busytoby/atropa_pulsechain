@@ -649,13 +649,12 @@ static void redraw_screen(void) {
         }
     }
     
-    // Apply flood rising tide to BOTH pixels (active) and bg_cache (backup)
+    // Apply flood rising tide dynamically to active pixels (keeps bg_cache backup pristine)
     if (water_flood_height > 0.0f) {
         int flood_limit = ground + 30 - (int)water_flood_height;
         for (int y = flood_limit; y < win_height; y++) {
             for (int x = 0; x < win_width; x++) {
                 pixels[y * win_width + x] = 0xFF051224; // Blue flood color
-                bg_cache[y * win_width + x] = 0xFF051224; // Perm update backup
             }
         }
     }
