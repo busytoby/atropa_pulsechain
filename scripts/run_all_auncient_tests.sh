@@ -560,7 +560,7 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_huc_ocean_v5.c 
 ./tests/test_auncient_hogan_huc_ocean_v5
 
 # Compile and run Auncient Hogan-Hudson Ocean Protocol Integration Level 6 (Demoscene Edition)
-gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_hogan_huc_ocean_v6.c -o tests/test_auncient_hogan_huc_ocean_v6 -lm -lrt
+gcc -Wall -Wextra -Werror -std=c11 -Itsfi2-deepseek/inc -O3 tsfi2-deepseek/src/tsfi_texgen.c tests/test_auncient_hogan_huc_ocean_v6.c -o tests/test_auncient_hogan_huc_ocean_v6 -lm -lrt
 ./tests/test_auncient_hogan_huc_ocean_v6
 
 # Compile and run Auncient Fourier Switch Residency Verification
