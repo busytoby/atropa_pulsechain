@@ -67,29 +67,46 @@ typedef struct {
     float z;
 } vertex3d_t;
 
-static void apply_mesh_modifiers(vertex3d_t *vertices, int count, float taper, float twist, float displace) {
-    for (int i = 0; i < count; i++) {
-        // Non-destructive Taper Operator
-        float scale = 1.0f - taper * (vertices[i].z + 1.0f) * 0.5f;
-        vertices[i].x *= scale;
-        vertices[i].y *= scale;
+// Decodes a .dna byte stream representing operator sequences (1: Taper, 2: Twist, 3: Displace)
+static void decode_dna_and_apply(vertex3d_t *vertices, int count, const uint8_t *dna, int dna_len) {
+    int pos = 0;
+    while (pos < dna_len) {
+        if (pos >= dna_len) break;
+        uint8_t op_id = dna[pos++];
         
-        // Non-destructive Twist Operator
-        float angle = vertices[i].z * twist;
-        float tx = vertices[i].x * tsfi_texgen_cos(angle) - vertices[i].y * tsfi_texgen_sin(angle);
-        float ty = vertices[i].x * tsfi_texgen_sin(angle) + vertices[i].y * tsfi_texgen_cos(angle);
-        vertices[i].x = tx;
-        vertices[i].y = ty;
+        if (pos + 4 > dna_len) break;
+        float val;
+        memcpy(&val, &dna[pos], 4);
+        pos += 4;
         
-        // Non-destructive Displace Operator
-        vertices[i].x += displace * tsfi_texgen_sin(vertices[i].z * 5.0f);
-        vertices[i].y += displace * tsfi_texgen_cos(vertices[i].z * 5.0f);
+        if (op_id == 1) {
+            // Taper Operator decoded from DNA
+            for (int v = 0; v < count; v++) {
+                float scale = 1.0f - val * (vertices[v].z + 1.0f) * 0.5f;
+                vertices[v].x *= scale;
+                vertices[v].y *= scale;
+            }
+        } else if (op_id == 2) {
+            // Twist Operator decoded from DNA
+            for (int v = 0; v < count; v++) {
+                float angle = vertices[v].z * val;
+                float tx = vertices[v].x * tsfi_texgen_cos(angle) - vertices[v].y * tsfi_texgen_sin(angle);
+                float ty = vertices[v].x * tsfi_texgen_sin(angle) + vertices[v].y * tsfi_texgen_cos(angle);
+                vertices[v].x = tx;
+                vertices[v].y = ty;
+            }
+        } else if (op_id == 3) {
+            // Displace Operator decoded from DNA
+            for (int v = 0; v < count; v++) {
+                vertices[v].x += val * tsfi_texgen_sin(vertices[v].z * 5.0f);
+                vertices[v].y += val * tsfi_texgen_cos(vertices[v].z * 5.0f);
+            }
+        }
     }
 }
 
-// 2. Procedural 3D Mesh / Lissajous Pathing with Modifier Operators
+// 2. Procedural 3D Mesh / Lissajous Pathing using DNA stream decoding
 static void update_lissajous_mesh(huc_ocean_system_t *huc, double signal) {
-    // Generate initial vertex mapping representing the receptor path
     vertex3d_t vertices[1] = {
         {
             .x = (float)tsfi_texgen_sin(signal * 2.5),
@@ -98,8 +115,18 @@ static void update_lissajous_mesh(huc_ocean_system_t *huc, double signal) {
         }
     };
     
-    // Apply non-destructive operators: Taper (0.2), Twist (0.5), Displace (0.1)
-    apply_mesh_modifiers(vertices, 1, 0.2f, 0.5f, 0.1f);
+    // Serialized DNA instruction stream (Taper 0.2f, Twist 0.5f, Displace 0.1f)
+    float val_taper = 0.2f;
+    float val_twist = 0.5f;
+    float val_displace = 0.1f;
+    
+    uint8_t dna[15];
+    dna[0] = 1; memcpy(&dna[1], &val_taper, 4);
+    dna[5] = 2; memcpy(&dna[6], &val_twist, 4);
+    dna[10] = 3; memcpy(&dna[11], &val_displace, 4);
+    
+    // Decode and apply DNA operators
+    decode_dna_and_apply(vertices, 1, dna, 15);
     
     huc->lissajous_x = vertices[0].x;
     huc->lissajous_y = vertices[0].y;
