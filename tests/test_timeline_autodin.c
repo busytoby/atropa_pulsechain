@@ -63,6 +63,12 @@ int main(void) {
     assert(account.balance_saat == 500000);
     printf("   ✓ Hogan overdraft protection verified.\n");
 
+    // 6. Test Timeline Rollback and Checkpoint recovery
+    auncient_timeline_rollback(events, 2, 0.4f, &account, 1000000);
+    assert(!events[0].triggered); // Reset since 0.5 > 0.4
+    assert(account.balance_saat == 1000000); // Checkpoint restored
+    printf("   ✓ Timeline seek rollback and checkpoint recovery verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");

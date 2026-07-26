@@ -42,6 +42,9 @@ bool auncient_hogan_deposit(HoganAccount *account, uint32_t amount);
 // Withdraws funds from a Hogan account holder balance
 bool auncient_hogan_withdraw(HoganAccount *account, uint32_t amount);
 
+// Rolls back timeline events and recovers Hogan account balances to matching historical checkpoints
+void auncient_timeline_rollback(TimelineEvent *events, int count, float target_time, HoganAccount *account, uint32_t checkpoint_balance);
+
 #ifdef __cplusplus
 }
 #endif

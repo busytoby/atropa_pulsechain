@@ -70,3 +70,19 @@ bool auncient_hogan_withdraw(HoganAccount *account, uint32_t amount) {
     account->balance_saat -= amount;
     return true;
 }
+
+void auncient_timeline_rollback(TimelineEvent *events, int count, float target_time, HoganAccount *account, uint32_t checkpoint_balance) {
+    if (!events) return;
+
+    for (int i = 0; i < count; i++) {
+        // If the event occurs after the target seeking timestamp, reset its trigger status
+        if (events[i].timestamp > target_time) {
+            events[i].triggered = false;
+        }
+    }
+
+    // Recover transaction balance state to target checkpoint limits
+    if (account && account->is_active) {
+        account->balance_saat = checkpoint_balance;
+    }
+}
