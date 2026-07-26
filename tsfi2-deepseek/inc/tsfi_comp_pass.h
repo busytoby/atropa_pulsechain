@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "../../tests/auncient_cactus_schema.h"
 
 #define MAX_COMP_LAYERS 8
 
@@ -25,5 +26,8 @@ void tsfi_comp_pass_add_layer(TSFiCompPass *pass, float r, float g, float b, flo
 
 // Resolves composited pixel colors using WinchesterMQ multi-layer composition formula
 void tsfi_comp_pass_resolve(const TSFiCompPass *pass, float *out_color);
+
+// Bridge function loading layer alpha from custom USD Cactus Schema density
+void tsfi_comp_pass_load_cactus_density(TSFiCompPass *pass, const usd_auncient_cactus_schema_t *cactus);
 
 #endif // TSFI_COMP_PASS_H

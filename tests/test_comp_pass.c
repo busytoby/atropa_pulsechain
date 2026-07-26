@@ -31,6 +31,18 @@ int main(void) {
     assert(fabs(resolved[2] - 0.0f) < 1e-5f);
 
     printf("   ✓ CompPass blending verified successfully.\n");
+
+    printf("2. Testing USD schema bridge integration...\n");
+    usd_auncient_cactus_schema_t cactus;
+    usd_init_auncient_cactus_schema(&cactus);
+    cactus.density = 0.6f;
+
+    tsfi_comp_pass_init(&pass);
+    tsfi_comp_pass_load_cactus_density(&pass, &cactus);
+    assert(pass.layer_count == 1);
+    assert(fabs(pass.layers[0].alpha - 0.6f) < 1e-5f);
+    printf("   ✓ USD schema bridge verified successfully.\n");
+
     printf("=== AUNCIENT COMPOSITION PASS (COMPPASS) TESTS COMPLETE (PASS) ===\n");
     return 0;
 }

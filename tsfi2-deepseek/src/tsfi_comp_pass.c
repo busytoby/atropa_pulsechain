@@ -36,3 +36,8 @@ void tsfi_comp_pass_resolve(const TSFiCompPass *pass, float *out_color) {
         out_color[2] += pass->layers[l].color[2] * weight;
     }
 }
+
+void tsfi_comp_pass_load_cactus_density(TSFiCompPass *pass, const usd_auncient_cactus_schema_t *cactus) {
+    if (!pass || !cactus) return;
+    tsfi_comp_pass_add_layer(pass, 0.1f, 0.8f, 0.2f, cactus->density);
+}
