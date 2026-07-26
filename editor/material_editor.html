@@ -247,6 +247,22 @@
             </div>
         </div>
 
+        <div class="section-title">Fur Design Parameters</div>
+        <div class="control-group">
+            <label for="fur-density">Fur Density (Scale)</label>
+            <div class="slider-container">
+                <input type="range" id="fur-density" min="10" max="150" value="80">
+                <span class="slider-val" id="fur-density-val">80</span>
+            </div>
+        </div>
+        <div class="control-group">
+            <label for="fur-amplitude">Fur Bump Amplitude</label>
+            <div class="slider-container">
+                <input type="range" id="fur-amplitude" min="1" max="30" value="12">
+                <span class="slider-val" id="fur-amplitude-val">0.12</span>
+            </div>
+        </div>
+
         <div class="section-title">Vulkan Pipeline State</div>
         <div class="control-group">
             <label for="cull-mode">Culling Mode</label>
@@ -302,12 +318,18 @@
         const shininessVal = document.getElementById("shininess-val");
         const prioritySlider = document.getElementById("priority");
         const priorityVal = document.getElementById("priority-val");
+        const furDensitySlider = document.getElementById("fur-density");
+        const furDensityVal = document.getElementById("fur-density-val");
+        const furAmplitudeSlider = document.getElementById("fur-amplitude");
+        const furAmplitudeVal = document.getElementById("fur-amplitude-val");
         const codeOutput = document.getElementById("code-output");
 
         function updateExportCode() {
             const presetVal = clutPreset.value;
             const shininess = shininessSlider.value;
             const priority = prioritySlider.value;
+            const furDensity = furDensitySlider.value;
+            const furAmplitude = (furAmplitudeSlider.value / 100).toFixed(2);
             const hash = hashOutput.value;
             const symbol = symbolInput.value;
 
@@ -318,6 +340,8 @@
                          `    .noise_lacunarity = 2.0f,\n` +
                          `    .octaves = 4,\n` +
                          `    .color_preset = ${presetVal},\n` +
+                         `    .fur_scale = ${furDensity}.0f,\n` +
+                         `    .fur_bump_amplitude = ${furAmplitude}f,\n` +
                          `    // Specular shininess: ${shininess}, Render Priority: ${priority}\n` +
                          `};`;
             codeOutput.textContent = code;
@@ -336,6 +360,14 @@
         });
         prioritySlider.addEventListener("input", () => {
             priorityVal.textContent = prioritySlider.value;
+            updateExportCode();
+        });
+        furDensitySlider.addEventListener("input", () => {
+            furDensityVal.textContent = furDensitySlider.value;
+            updateExportCode();
+        });
+        furAmplitudeSlider.addEventListener("input", () => {
+            furAmplitudeVal.textContent = (furAmplitudeSlider.value / 100).toFixed(2);
             updateExportCode();
         });
 
@@ -403,7 +435,6 @@
 
             // Simple orbital 3D projection of spheres
             const drawSphere = (ox, oy, oz, r, color, isRightEye = false) => {
-                // Apply rotation around Y axis
                 const cosA = Math.cos(angle);
                 const sinA = Math.sin(angle);
                 const rx = ox * cosA - oz * sinA;
@@ -414,14 +445,12 @@
                 const py = oy * scale;
                 const pr = r * scale * zScale;
 
-                // Lighting calculation (Light source at center front)
                 const normalZ = zScale;
                 const diffuse = Math.max(0.1, normalZ);
 
                 // Draw sphere with gradient
                 const grad = ctx.createRadialGradient(px - pr/3, py - pr/3, pr/10, px, py, pr);
                 if (isRightEye) {
-                    // Right Eye void Sickness cavity (dark green void)
                     grad.addColorStop(0, "#050f02");
                     grad.addColorStop(1, "#14280a");
                 } else {
@@ -434,6 +463,25 @@
                 ctx.beginPath();
                 ctx.arc(px, py, pr, 0, Math.PI * 2);
                 ctx.fill();
+
+                // Overlay procedural fur mapping hash patterns if not right eye or nose
+                if (!isRightEye && color !== "#101010") {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(px, py, pr, 0, Math.PI * 2);
+                    ctx.clip();
+
+                    ctx.strokeStyle = "rgba(0, 0, 0, " + (furAmplitudeSlider.value / 60) + ")";
+                    ctx.lineWidth = 1;
+                    const lines = furDensitySlider.value / 4;
+                    for (let j = -pr; j < pr; j += pr / lines) {
+                        ctx.beginPath();
+                        ctx.moveTo(px + j, py - pr);
+                        ctx.lineTo(px + j + pr/5, py + pr);
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+                }
             };
 
             // Draw limbs, ears, head, snout, nose, tail with orbital offsets
@@ -448,8 +496,6 @@
             drawSphere(0, 1.8, 0, 0.8, primaryColor); // Head
             drawSphere(0, 1.65, 0.6, 0.3, highlightColor); // Snout
             drawSphere(0, 1.7, 0.8, 0.08, "#101010"); // Nose
-
-            // Draw eye cavity on the right side of the head
             drawSphere(0.3, 1.8, 0.7, 0.15, primaryColor, true); // Right eye cavity
 
             ctx.restore();
