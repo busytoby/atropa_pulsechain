@@ -884,6 +884,35 @@ static void redraw_screen(void) {
     huc6280_psg.channels[1].volume = (sid_chip.volume * 24) / 15;
     huc6280_psg.channels[1].pan = 0x24;
 
+    // Dynamically calculate and fill 32-byte PSG wavetable channels with classic waveforms
+    for (int i = 0; i < 32; i++) {
+        huc6280_psg.channels[0].waveform[i] = (uint8_t)(15.0f + 15.0f * sinf(i * 2.0f * M_PI / 32.0f)); // Sine
+        huc6280_psg.channels[1].waveform[i] = (uint8_t)(i < 16 ? i * 2 : (31 - i) * 2); // Triangle
+        huc6280_psg.channels[2].waveform[i] = (uint8_t)(i * 31 / 32); // Sawtooth
+        huc6280_psg.channels[3].waveform[i] = (uint8_t)(i < 16 ? 31 : 0); // Square
+        huc6280_psg.channels[4].waveform[i] = (uint8_t)((i + (int)(retro_time * 50.0f)) % 7 == 0 ? 25 : 5); // Pseudo-noise
+        huc6280_psg.channels[5].waveform[i] = (uint8_t)(i < 8 ? 31 : 0); // Pulse
+    }
+
+    // Draw 6 channel wavetable oscilloscopes (32x32 pixels each, spaced 80 pixels apart)
+    int osc_base_x = 120 + glitch_x;
+    int osc_base_y = win_height - 110 + glitch_y;
+    for (int c = 0; c < 6; c++) {
+        // Draw oscilloscope label
+        char osc_label[8];
+        snprintf(osc_label, sizeof(osc_label), "CH%d", c + 1);
+        draw_string(pixels, win_width, win_height, osc_base_x + c * 80, osc_base_y - 35, osc_label, 0xFF888888, 1);
+        
+        // Draw visual waveform line
+        for (int col = 0; col < 32; col++) {
+            int wave_val = huc6280_psg.channels[c].waveform[(col + (int)(retro_time * 40.0f)) % 32];
+            int py = osc_base_y - (wave_val * 24 / 32); // Scale to 24px height
+            if (py >= 0 && py < win_height && (osc_base_x + c * 80 + col) < win_width) {
+                pixels[py * win_width + osc_base_x + c * 80 + col] = 0xFF00FF00; // Bright green scope line
+            }
+        }
+    }
+
     char psg_buf[256];
     snprintf(psg_buf, sizeof(psg_buf), 
              "HUDSON HUC6280 PSG | CH1: FREQ=0x%04X VOL=%2d PAN=0x%02X | CH2: FREQ=0x%04X VOL=%2d PAN=0x%02X",
