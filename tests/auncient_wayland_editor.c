@@ -210,7 +210,6 @@ typedef struct {
 
 static CoaxialUBO active_ubo;
 
-// Hydra Render Delegate interface supporting swap-able graphics backends
 typedef struct {
     void (*render_scene)(uint32_t *pixels, int w, int h, const CoaxialUBO *ubo);
 } HydraRenderDelegate;
@@ -547,6 +546,24 @@ static inline uint32_t blend_color_add(uint32_t base, uint32_t add) {
     return (0xFF000000 | (r << 16) | (g << 8) | b);
 }
 
+static void hd_storm_render(uint32_t *pixels, int w, int h, const CoaxialUBO *ubo) {
+    (void)ubo;
+    for (int i = 0; i < 15; i++) {
+        if (starfield[i].z > 0.1f) {
+            int px = w / 2 + (int)((starfield[i].x / starfield[i].z) * (w / 2)) + glitch_x;
+            int py = h / 2 + (int)((starfield[i].y / starfield[i].z) * (h / 2)) + glitch_y;
+            
+            if (px >= 0 && px < w && py >= 0 && py < h) {
+                uint32_t star_color = 0xFF884400;
+                if (starfield[i].z < 3.0f) star_color = 0xFFFFCC00;
+                else if (starfield[i].z < 6.0f) star_color = 0xFFAA6600;
+                
+                draw_char(pixels, w, h, px, py, starfield[i].glyph, star_color, 2);
+            }
+        }
+    }
+}
+
 static void hd_embree_render(uint32_t *pixels, int w, int h, const CoaxialUBO *ubo) {
     uint8_t ray_steps[32];
     float angle = ubo->rotation_angle;
@@ -689,21 +706,8 @@ static void redraw_screen(void) {
         }
     }
 
-    // Draw 3D starfield
-    for (int i = 0; i < 15; i++) {
-        if (starfield[i].z > 0.1f) {
-            int px = win_width / 2 + (int)((starfield[i].x / starfield[i].z) * (win_width / 2)) + glitch_x;
-            int py = win_height / 2 + (int)((starfield[i].y / starfield[i].z) * (win_height / 2)) + glitch_y;
-            
-            if (px >= 0 && px < win_width && py >= 0 && py < win_height) {
-                uint32_t star_color = 0xFF884400;
-                if (starfield[i].z < 3.0f) star_color = 0xFFFFCC00;
-                else if (starfield[i].z < 6.0f) star_color = 0xFFAA6600;
-                
-                draw_char(pixels, win_width, win_height, px, py, starfield[i].glyph, star_color, 2);
-            }
-        }
-    }
+    static const HydraRenderDelegate hd_storm = { .render_scene = hd_storm_render };
+    hd_storm.render_scene(pixels, win_width, win_height, &active_ubo);
 
     // Infinite Zooming Tunnel/Zoomer Effect
     int tunnel_center_x = win_width / 2;
