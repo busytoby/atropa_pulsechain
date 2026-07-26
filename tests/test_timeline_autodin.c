@@ -397,6 +397,13 @@ int main(void) {
     assert(wrap_out[5] == '\n'); // Wrapped at space
     printf("   ✓ Word-wrapping paragraph layout engine verified.\n");
 
+    // Test markdown parsing to ANSI grid
+    char md_grid[100];
+    auncient_parse_markdown_to_ansi("# HEADER\n> QUOTE", md_grid, 10, 10, 0);
+    assert(md_grid[0] == '|'); // Border populated
+    assert(md_grid[2] == '*'); // Header character converted
+    printf("   ✓ Markdown-to-ANSI styled layout engine verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");

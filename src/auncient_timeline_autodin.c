@@ -1021,3 +1021,60 @@ void auncient_word_wrap_text(const char *input, char *output, int width, int max
     }
     output[output_idx] = '\0';
 }
+
+void auncient_parse_markdown_to_ansi(const char *markdown_text, char *ansi_grid, int width, int height, int scroll_row) {
+    if (!markdown_text || !ansi_grid || width <= 0 || height <= 0) return;
+
+    memset(ansi_grid, ' ', width * height);
+
+    int max_temp_size = (int)strlen(markdown_text) * 2 + 100;
+    char *temp_wrapped = malloc(max_temp_size);
+    if (!temp_wrapped) return;
+
+    auncient_word_wrap_text(markdown_text, temp_wrapped, width - 4, height);
+
+    int text_len = (int)strlen(temp_wrapped);
+    int text_idx = 0;
+    int current_row = 0;
+
+    int lines_skipped = 0;
+    while (text_idx < text_len && lines_skipped < scroll_row) {
+        if (temp_wrapped[text_idx] == '\n') {
+            lines_skipped++;
+        }
+        text_idx++;
+    }
+
+    while (text_idx < text_len && current_row < height) {
+        ansi_grid[current_row * width] = '|';
+
+        bool is_header = (temp_wrapped[text_idx] == '#');
+        bool is_blockquote = (temp_wrapped[text_idx] == '>');
+
+        int col_idx = 2;
+        while (text_idx < text_len && temp_wrapped[text_idx] != '\n') {
+            if (col_idx < width - 2) {
+                char ch = temp_wrapped[text_idx];
+                
+                if (is_header && ch == '#') {
+                    ansi_grid[current_row * width + col_idx] = '*';
+                } else if (is_blockquote && ch == '>') {
+                    ansi_grid[current_row * width + col_idx] = '=';
+                } else {
+                    ansi_grid[current_row * width + col_idx] = ch;
+                }
+                col_idx++;
+            }
+            text_idx++;
+        }
+
+        ansi_grid[current_row * width + width - 1] = '|';
+        current_row++;
+
+        if (text_idx < text_len && temp_wrapped[text_idx] == '\n') {
+            text_idx++;
+        }
+    }
+
+    free(temp_wrapped);
+}

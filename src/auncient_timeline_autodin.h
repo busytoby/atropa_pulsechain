@@ -245,6 +245,9 @@ void auncient_ansi_cell_transition(AuncientAnsiCell *cell, const char *transitio
 // Dynamically wraps input text into character columns without splitting words across lines
 void auncient_word_wrap_text(const char *input, char *output, int width, int max_rows);
 
+// Parses markdown formatting tokens into styled character outputs in ANSI grid buffers
+void auncient_parse_markdown_to_ansi(const char *markdown_text, char *ansi_grid, int width, int height, int scroll_row);
+
 #ifdef __cplusplus
 }
 #endif
