@@ -421,6 +421,19 @@ static void resolve_payload_spec_conflict(const usd_payload_spec_conflict_t *con
     }
 }
 
+typedef struct {
+    char prim_path[64];
+    char material_type[32];
+    float vertex_density;
+} hydra_scene_index_prim_t;
+
+static void hydra_scene_index_sync_delegate(const usd_auncient_cactus_schema_t *schema, const char *path, hydra_scene_index_prim_t *render_prim) {
+    strcpy(render_prim->prim_path, path);
+    strcpy(render_prim->material_type, schema->texture);
+    render_prim->vertex_density = schema->density;
+}
+
+
 
 
 
@@ -956,6 +969,17 @@ int main(void) {
     assert(cactus.stiffness == 0.95f);
     assert(strcmp(cactus.texture, "stationary_cloth") == 0);
     printf("   ✓ Custom Auncient Cactus schema codegen validation verified.\n");
+    fflush(stdout);
+
+    // 27. Test Hydra Scene Index & Render Delegate Integration
+    printf("[TEST] Testing Hydra Scene Index & Render Delegate Integration...\n");
+    fflush(stdout);
+    hydra_scene_index_prim_t render_prim;
+    hydra_scene_index_sync_delegate(&cactus, "/World/Cactus", &render_prim);
+    assert(strcmp(render_prim.prim_path, "/World/Cactus") == 0);
+    assert(strcmp(render_prim.material_type, "stationary_cloth") == 0);
+    assert(render_prim.vertex_density == 2.50f);
+    printf("   ✓ Hydra scene index prim synchronization verified.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
