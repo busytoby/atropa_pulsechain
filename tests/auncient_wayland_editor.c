@@ -1044,10 +1044,10 @@ int main(void) {
         vic_d016 = (uint8_t)(retro_time * 8.0f) & 0x07; // 0-7 pixel fine scroll shift
         vic_d012 = 120 + (uint8_t)(sinf(retro_time * 2.0f) * 20.0f); // Modulate raster split line
         
-        // Run VIC-II screen shake displacement glitches periodically (Software of Sweden style)
-        if (((int)(retro_time * 2.0f) % 6) == 0) {
-            glitch_x = (rand() % 9) - 4; // Shake horizontal bounds
-            glitch_y = (rand() % 9) - 4; // Shake vertical bounds
+        // Run VIC-II screen shake displacement glitches only during typing activity to keep layout smooth
+        if (type_activity > 1.0f && ((int)(retro_time * 12.0f) % 2 == 0)) {
+            glitch_x = (rand() % 3) - 1; // Subtle horizontal bump
+            glitch_y = (rand() % 3) - 1; // Subtle vertical bump
         } else {
             glitch_x = 0;
             glitch_y = 0;
