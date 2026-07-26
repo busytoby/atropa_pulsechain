@@ -62,16 +62,23 @@ def get_walking_geometry(time_sec):
     body_yaw = 1.0 + 0.05 * math.cos(freq * time_sec)
     body_roll = 0.04 * math.sin(freq * time_sec)
     
-    swing_l = 0.35 * math.sin(freq * time_sec)
-    swing_r = -0.35 * math.sin(freq * time_sec)
+    swing_l = 0.45 * math.sin(freq * time_sec)
+    swing_r = -0.45 * math.sin(freq * time_sec)
     
-    t_luarm = -0.3 * math.sin(freq * time_sec) + 0.1
-    t_ruarm = 0.3 * math.sin(freq * time_sec) + 0.1
+    # Bending angles
+    t_lknee = 0.5 * (1.0 + math.cos(freq * time_sec)) if swing_l < 0 else 0.15
+    t_rknee = 0.5 * (1.0 - math.cos(freq * time_sec)) if swing_r < 0 else 0.15
+    
+    t_luarm = -0.4 * math.sin(freq * time_sec) + 0.1
+    t_ruarm = 0.4 * math.sin(freq * time_sec) + 0.1
+    t_lelbow = 0.5 + 0.2 * math.cos(freq * time_sec)
+    t_relbow = 0.5 - 0.2 * math.cos(freq * time_sec)
     
     m_name = "Walking Cycle"
     
     parts = {}
     
+    # 1. Body
     parts["Body"] = {
         "pos": (x_disp, 0.55 + y_disp, z_disp),
         "rot": (body_pitch, body_yaw, body_roll),
@@ -82,6 +89,7 @@ def get_walking_geometry(time_sec):
         "color": (120, 80, 54)
     }
     
+    # Red felt heart
     heart_local_pos = (0.0, 0.1, 0.5)
     hx, hy, hz = rotate_x(heart_local_pos[0], heart_local_pos[1], heart_local_pos[2], body_pitch)
     hx, hy, hz = rotate_y(hx, hy, hz, body_yaw)
@@ -96,6 +104,7 @@ def get_walking_geometry(time_sec):
         "color": (200, 30, 40)
     }
     
+    # 2. Head
     head_local_pos = (0.0, 0.9, 0.0)
     head_local_rot = (0.04 * math.sin(freq * time_sec * 2.0), 0.0, 0.0)
     hx, hy, hz = rotate_x(head_local_pos[0], head_local_pos[1], head_local_pos[2], body_pitch)
@@ -175,48 +184,122 @@ def get_walking_geometry(time_sec):
         "color": (40, 30, 25)
     }
     
-    def add_arm(side, arm_pitch, color):
+    def add_jointed_arm(side, uarm_pitch, elbow_pitch, color_u, color_f):
         side_sign = -1.0 if side == "Left" else 1.0
-        arm_local_pos = (side_sign * 0.65, 0.2, 0.0)
-        arm_local_rot = (arm_pitch, 0.0, 0.0)
         
-        ax, ay, az = rotate_x(arm_local_pos[0], arm_local_pos[1], arm_local_pos[2], body_pitch)
-        ax, ay, az = rotate_y(ax, ay, az, body_yaw)
-        ax, ay, az = rotate_z(ax, ay, az, body_roll)
+        # Shoulder joint world pos
+        shoulder_local = (side_sign * 0.65, 0.35, 0.0)
+        sx, sy, sz = rotate_x(shoulder_local[0], shoulder_local[1], shoulder_local[2], body_pitch)
+        sx, sy, sz = rotate_y(sx, sy, sz, body_yaw)
+        sx, sy, sz = rotate_z(sx, sy, sz, body_roll)
+        shoulder_world = (x_disp + sx, 0.55 + y_disp + sy, z_disp + sz)
         
-        parts[f"{side}Arm"] = {
-            "pos": (x_disp + ax, 0.55 + y_disp + ay, z_disp + az),
-            "rot": (body_pitch + arm_pitch, body_yaw, body_roll),
-            "local_pos": arm_local_pos,
-            "local_rot": arm_local_rot,
+        # UpperArm center is offset along upper arm rotation
+        uarm_len = 0.28
+        uarm_rot = (body_pitch + uarm_pitch, body_yaw, body_roll)
+        
+        # Center of upper arm ellipsoid
+        ucx, ucy, ucz = rotate_x(0.0, -uarm_len / 2.0, 0.0, uarm_pitch)
+        ucx, ucy, ucz = rotate_x(ucx, ucy, ucz, body_pitch)
+        ucx, ucy, ucz = rotate_y(ucx, ucy, ucz, body_yaw)
+        ucx, ucy, ucz = rotate_z(ucx, ucy, ucz, body_roll)
+        
+        parts[f"{side}UpperArm"] = {
+            "pos": (shoulder_world[0] + ucx, shoulder_world[1] + ucy, shoulder_world[2] + ucz),
+            "rot": uarm_rot,
+            "local_pos": shoulder_local,
+            "local_rot": (uarm_pitch, 0.0, 0.0),
             "shape": "ellipsoid",
-            "size": (0.18, 0.45, 0.18),
-            "color": color
+            "size": (0.16, uarm_len, 0.16),
+            "color": color_u
         }
         
-    def add_leg(side, leg_pitch, color):
-        side_sign = -1.0 if side == "Left" else 1.0
-        leg_local_pos = (side_sign * 0.35, -0.4, 0.0)
-        leg_local_rot = (leg_pitch, 0.0, 0.0)
+        # Elbow joint location
+        ecx, ecy, ecz = rotate_x(0.0, -uarm_len, 0.0, uarm_pitch)
+        ecx, ecy, ecz = rotate_x(ecx, ecy, ecz, body_pitch)
+        ecx, ecy, ecz = rotate_y(ecx, ecy, ecz, body_yaw)
+        ecx, ecy, ecz = rotate_z(ecx, ecy, ecz, body_roll)
+        elbow_world = (shoulder_world[0] + ecx, shoulder_world[1] + ecy, shoulder_world[2] + ecz)
         
-        lx, ly, lz = rotate_x(leg_local_pos[0], leg_local_pos[1], leg_local_pos[2], body_pitch)
-        lx, ly, lz = rotate_y(lx, ly, lz, body_yaw)
-        lx, ly, lz = rotate_z(lx, ly, lz, body_roll)
+        # Forearm direction
+        fore_len = 0.24
+        fore_rot = (body_pitch + uarm_pitch + elbow_pitch, body_yaw, body_roll)
         
-        parts[f"{side}Leg"] = {
-            "pos": (x_disp + lx, 0.55 + y_disp + ly, z_disp + lz),
-            "rot": (body_pitch + leg_pitch, body_yaw, body_roll),
-            "local_pos": leg_local_pos,
-            "local_rot": leg_local_rot,
+        # Forearm center
+        fcx, fcy, fcz = rotate_x(0.0, -fore_len / 2.0, 0.0, uarm_pitch + elbow_pitch)
+        fcx, fcy, fcz = rotate_x(fcx, fcy, fcz, body_pitch)
+        fcx, fcy, fcz = rotate_y(fcx, fcy, fcz, body_yaw)
+        fcx, fcy, fcz = rotate_z(fcx, fcy, fcz, body_roll)
+        
+        parts[f"{side}Forearm"] = {
+            "pos": (elbow_world[0] + fcx, elbow_world[1] + fcy, elbow_world[2] + fcz),
+            "rot": fore_rot,
+            "local_pos": (0.0, -uarm_len, 0.0),
+            "local_rot": (elbow_pitch, 0.0, 0.0),
             "shape": "ellipsoid",
-            "size": (0.22, 0.5, 0.22),
-            "color": color
+            "size": (0.13, fore_len, 0.13),
+            "color": color_f
+        }
+        
+    def add_jointed_leg(side, thigh_pitch, knee_pitch, color_t, color_c):
+        side_sign = -1.0 if side == "Left" else 1.0
+        
+        # Hip joint world pos
+        hip_local = (side_sign * 0.35, -0.25, 0.0)
+        hx, hy, hz = rotate_x(hip_local[0], hip_local[1], hip_local[2], body_pitch)
+        hx, hy, hz = rotate_y(hx, hy, hz, body_yaw)
+        hx, hy, hz = rotate_z(hx, hy, hz, body_roll)
+        hip_world = (x_disp + hx, 0.55 + y_disp + hy, z_disp + hz)
+        
+        thigh_len = 0.32
+        thigh_rot = (body_pitch + thigh_pitch, body_yaw, body_roll)
+        
+        # Center of thigh ellipsoid
+        tcx, tcy, tcz = rotate_x(0.0, -thigh_len / 2.0, 0.0, thigh_pitch)
+        tcx, tcy, tcz = rotate_x(tcx, tcy, tcz, body_pitch)
+        tcx, tcy, tcz = rotate_y(tcx, tcy, tcz, body_yaw)
+        tcx, tcy, tcz = rotate_z(tcx, tcy, tcz, body_roll)
+        
+        parts[f"{side}Thigh"] = {
+            "pos": (hip_world[0] + tcx, hip_world[1] + tcy, hip_world[2] + tcz),
+            "rot": thigh_rot,
+            "local_pos": hip_local,
+            "local_rot": (thigh_pitch, 0.0, 0.0),
+            "shape": "ellipsoid",
+            "size": (0.2, thigh_len, 0.2),
+            "color": color_t
+        }
+        
+        # Knee joint world pos
+        kcx, kcy, kcz = rotate_x(0.0, -thigh_len, 0.0, thigh_pitch)
+        kcx, kcy, kcz = rotate_x(kcx, kcy, kcz, body_pitch)
+        kcx, kcy, kcz = rotate_y(kcx, kcy, kcz, body_yaw)
+        kcx, kcy, kcz = rotate_z(kcx, kcy, kcz, body_roll)
+        knee_world = (hip_world[0] + kcx, hip_world[1] + kcy, hip_world[2] + kcz)
+        
+        calf_len = 0.28
+        calf_rot = (body_pitch + thigh_pitch - knee_pitch, body_yaw, body_roll)
+        
+        # Center of calf ellipsoid
+        ccx, ccy, ccz = rotate_x(0.0, -calf_len / 2.0, 0.0, thigh_pitch - knee_pitch)
+        ccx, ccy, ccz = rotate_x(ccx, ccy, ccz, body_pitch)
+        ccx, ccy, ccz = rotate_y(ccx, ccy, ccz, body_yaw)
+        ccx, ccy, ccz = rotate_z(ccx, ccy, ccz, body_roll)
+        
+        parts[f"{side}Calf"] = {
+            "pos": (knee_world[0] + ccx, knee_world[1] + ccy, knee_world[2] + ccz),
+            "rot": calf_rot,
+            "local_pos": (0.0, -thigh_len, 0.0),
+            "local_rot": (-knee_pitch, 0.0, 0.0),
+            "shape": "ellipsoid",
+            "size": (0.16, calf_len, 0.16),
+            "color": color_c
         }
 
-    add_arm("Left", t_luarm, (120, 80, 54))
-    add_arm("Right", t_ruarm, (120, 80, 54))
-    add_leg("Left", swing_l, (120, 80, 54))
-    add_leg("Right", swing_r, (120, 80, 54))
+    add_jointed_arm("Left", t_luarm, t_lelbow, (120, 80, 54), (100, 65, 40))
+    add_jointed_arm("Right", t_ruarm, t_relbow, (120, 80, 54), (100, 65, 40))
+    add_jointed_leg("Left", swing_l, t_lknee, (120, 80, 54), (100, 65, 40))
+    add_jointed_leg("Right", swing_r, t_rknee, (120, 80, 54), (100, 65, 40))
     
     return parts, m_name
 
@@ -431,8 +514,10 @@ def main():
         f.write("            \"/\", \"/Head\", \"/Head/LeftEar\", \"/Head/RightEar\",\n")
         f.write("            \"/Head/LeftEye\", \"/Head/RightEye\", \"/Head/Muzzle\", \"/Head/Nose\",\n")
         f.write("            \"/SewnHeart\",\n")
-        f.write("            \"/LeftArm\", \"/RightArm\",\n")
-        f.write("            \"/LeftLeg\", \"/RightLeg\"\n")
+        f.write("            \"/LeftUpperArm\", \"/LeftUpperArm/LeftForearm\",\n")
+        f.write("            \"/RightUpperArm\", \"/RightUpperArm/RightForearm\",\n")
+        f.write("            \"/LeftThigh\", \"/LeftThigh/LeftCalf\",\n")
+        f.write("            \"/RightThigh\", \"/RightThigh/RightCalf\"\n")
         f.write("        ]\n")
         f.write("    }\n\n")
         
@@ -442,8 +527,10 @@ def main():
         f.write("            \"/\", \"/Head\", \"/Head/LeftEar\", \"/Head/RightEar\",\n")
         f.write("            \"/Head/LeftEye\", \"/Head/RightEye\", \"/Head/Muzzle\", \"/Head/Nose\",\n")
         f.write("            \"/SewnHeart\",\n")
-        f.write("            \"/LeftArm\", \"/RightArm\",\n")
-        f.write("            \"/LeftLeg\", \"/RightLeg\"\n")
+        f.write("            \"/LeftUpperArm\", \"/LeftUpperArm/LeftForearm\",\n")
+        f.write("            \"/RightUpperArm\", \"/RightUpperArm/RightForearm\",\n")
+        f.write("            \"/LeftThigh\", \"/LeftThigh/LeftCalf\",\n")
+        f.write("            \"/RightThigh\", \"/RightThigh/RightCalf\"\n")
         f.write("        ]\n")
         f.write("    }\n\n")
         
