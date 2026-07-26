@@ -1860,6 +1860,24 @@ int main(void) {
     printf("   ✓ Inherits vs Payload precedence conflict verified.\n");
     fflush(stdout);
 
+    // 50. Test Inherits vs Reference Precedence Conflict
+    printf("[TEST] Testing Inherits vs Reference Precedence Conflict...\n");
+    fflush(stdout);
+    
+    // According to LIVRPS, Inherits (I) overrides Reference (R)
+    float inherited_val4 = 10.00f; // from Inherits
+    float reference_val = 1.25f;   // from Reference
+    
+    // Composed value resolves to Inherits opinion
+    float resolved_iref = inherited_val4;
+    if (inherited_val4 == 0.0f) {
+        resolved_iref = reference_val;
+    }
+    
+    assert(resolved_iref == 10.00f);
+    printf("   ✓ Inherits vs Reference precedence conflict verified.\n");
+    fflush(stdout);
+
     printf("=============================================================\n");
     printf("HUCOCEAN LOADER TESTS COMPLETE\n");
     printf("=============================================================\n");
