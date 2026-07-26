@@ -293,6 +293,14 @@ def render_sunset_frame(frame, width, height):
                     if is_glossy:
                         draw.rectangle([px, py, px + 1, py + 1], fill=(255, 255, 255))
                         
+    # 5c. Render dynamic bottom scrolling text scroller banner
+    scroller_msg = "   *** TSFI/2 BUBBLE SUNSET DEMO ***   GREETINGS TO SECTION 31 ... DEVELOPED FOR THE DYSNOMIA VM PLATFORM ... FEATURING 11 SYNTHESIZED INSTRUMENTS ... VOLUMETRIC DISTANCE FIELD INFLATION SHADER ... 1.85:1 ASPECT RATIO SUPER8 FILM SIMULATOR ... "
+    scroller_y = int(height * 0.88)
+    draw.rectangle([0, scroller_y - 12, width, scroller_y + 12], fill=(20, 10, 5))
+    scroll_speed = 4.0
+    scroll_x = int(width - frame * scroll_speed)
+    draw.text((scroll_x, scroller_y - 6), scroller_msg, fill=(255, 204, 0))
+
     # 6. Apply Super8 Vintage Film Effects
     # 6a. Dynamic Film Grain (Low opacity noise overlay)
     pixels = img.load()
