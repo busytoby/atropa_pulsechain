@@ -153,3 +153,76 @@ void auncient_hypervisor_monitor_audit(float duration_seconds, bool status) {
                duration_seconds, status ? "PASS" : "FAIL");
     }
 }
+
+static uint64_t w_mod_mul(uint64_t a, uint64_t b, uint64_t m) {
+    return (uint64_t)(((unsigned __int128)a * b) % m);
+}
+
+static uint64_t w_mod_pow(uint64_t b, uint64_t e, uint64_t m) {
+    uint64_t r = 1;
+    b = b % m;
+    while (e > 0) {
+        if (e & 1) r = w_mod_mul(r, b, m);
+        b = w_mod_mul(b, b, m);
+        e >>= 1;
+    }
+    return r;
+}
+
+void winchester_mq_seed(WinchesterMQState *state, uint64_t base, uint64_t secret, uint64_t signal) {
+    if (!state) return;
+    state->base = base;
+    state->secret = secret;
+    state->signal = signal;
+}
+
+void winchester_mq_fuse(WinchesterMQState *state, uint64_t base, uint64_t secret, uint64_t signal) {
+    if (!state) return;
+    if (base == 0) {
+        // Zeroing base collapses dependent registers to zero
+        state->base = 0;
+        state->channel = 0;
+        state->pole = 0;
+        state->foundation = 0;
+        state->dynamo = 0;
+    } else {
+        state->base = base;
+        state->secret = secret;
+        state->signal = signal;
+    }
+}
+
+void winchester_mq_form(WinchesterMQState *state, uint64_t chi) {
+    if (!state) return;
+    state->base = w_mod_pow(chi, state->secret, MOTZKIN_PRIME);
+}
+
+void winchester_mq_tune(WinchesterMQState *state) {
+    if (!state) return;
+    state->channel = w_mod_pow(state->base, state->signal, MOTZKIN_PRIME);
+}
+
+void winchester_mq_polarize(WinchesterMQState *state) {
+    if (!state) return;
+    state->pole = w_mod_pow(state->base, state->secret, MOTZKIN_PRIME);
+}
+
+void winchester_mq_conify(WinchesterMQState *state) {
+    if (!state) return;
+    state->foundation = w_mod_pow(state->base, state->identity, MOTZKIN_PRIME);
+}
+
+void winchester_mq_bond(WinchesterMQState *state) {
+    if (!state) return;
+    if (state->element > 0) {
+        state->dynamo = w_mod_pow(state->base, state->signal, state->element);
+    }
+    state->pole = 0;
+}
+
+void winchester_mq_saturate(WinchesterMQState *state, uint64_t beta, uint64_t eta, uint64_t charge) {
+    if (!state) return;
+    state->element = beta + charge;
+    state->chin = (beta + eta) % MOTZKIN_PRIME;
+    state->monopole = w_mod_pow(state->chin, state->identity, MOTZKIN_PRIME);
+}

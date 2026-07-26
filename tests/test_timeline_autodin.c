@@ -116,6 +116,26 @@ int main(void) {
     auncient_hypervisor_monitor_audit(0.0000050f, false); // Long-running warning
     printf("   ✓ Hypervisor audit logging verified.\n");
 
+    // Test WinchesterMQ ABI transitions and registers
+    WinchesterMQState w_state;
+    memset(&w_state, 0, sizeof(w_state));
+    w_state.identity = 3;
+    
+    // Seed
+    winchester_mq_seed(&w_state, 5, 2, 4);
+    assert(w_state.base == 5);
+    
+    // Tune (Channel = 5^4 % MOTZKIN_PRIME = 625)
+    winchester_mq_tune(&w_state);
+    assert(w_state.channel == 625);
+    
+    // Saturate
+    winchester_mq_saturate(&w_state, 10, 20, 100);
+    assert(w_state.element == 110);
+    assert(w_state.chin == 30);
+    assert(w_state.monopole == (30 * 30 * 30)); // 30^3
+    printf("   ✓ WinchesterMQ state transitions and ABI equations verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");

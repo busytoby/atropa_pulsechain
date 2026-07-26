@@ -57,6 +57,32 @@ bool auncient_hogan_audit_ledger(const HoganAccount *accounts, int count, uint64
 // Monitors and records latency of long-running audit operations at the hypervisor level
 void auncient_hypervisor_monitor_audit(float duration_seconds, bool status);
 
+#define MOTZKIN_PRIME 953467954114363ULL
+
+typedef struct {
+    uint64_t base;
+    uint64_t channel;
+    uint64_t signal;
+    uint64_t monopole;
+    uint64_t pole;
+    uint64_t secret;
+    uint64_t foundation;
+    uint64_t identity;
+    uint64_t element;
+    uint64_t chin;
+    uint64_t dynamo;
+} WinchesterMQState;
+
+// Low-level WinchesterMQ virtual hardware transition ABI functions
+void winchester_mq_seed(WinchesterMQState *state, uint64_t base, uint64_t secret, uint64_t signal);
+void winchester_mq_form(WinchesterMQState *state, uint64_t chi);
+void winchester_mq_fuse(WinchesterMQState *state, uint64_t base, uint64_t secret, uint64_t signal);
+void winchester_mq_tune(WinchesterMQState *state);
+void winchester_mq_polarize(WinchesterMQState *state);
+void winchester_mq_conify(WinchesterMQState *state);
+void winchester_mq_bond(WinchesterMQState *state);
+void winchester_mq_saturate(WinchesterMQState *state, uint64_t beta, uint64_t eta, uint64_t charge);
+
 #ifdef __cplusplus
 }
 #endif
