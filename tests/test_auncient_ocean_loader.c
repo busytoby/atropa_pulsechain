@@ -568,6 +568,42 @@ static void switch_gtia_context(gtia_context_switcher_t *switcher, uint32_t next
     }
 }
 
+static void gtia_device_composite(const gtia_context_switcher_t *switcher, uint32_t prior_reg, uint32_t *output, int size) {
+    // Fill with background color initially
+    for (int i = 0; i < size; i++) {
+        output[i] = 0x000000;
+    }
+    
+    // Composite layers 0 to 3 based on priority rules
+    // If prior_reg & 1, lower index players win, otherwise higher index wins.
+    bool reverse = (prior_reg & 0x01) != 0;
+    int start = reverse ? 3 : 0;
+    int end = reverse ? -1 : 4;
+    int step = reverse ? -1 : 1;
+    
+    for (int p = start; p != end; p += step) {
+        // registers[p][0] is coordinate x
+        // registers[p][1] is color value
+        uint32_t x = switcher->registers[p][0];
+        uint32_t color = switcher->registers[p][1];
+        if (x < (uint32_t)size) {
+            output[x] = color;
+        }
+    }
+}
+
+static void resolve_cactus_variant_schema(usd_auncient_cactus_schema_t *schema, const char *variant_name) {
+    if (strcmp(variant_name, "high_density") == 0) {
+        schema->density = 10.0f;
+    } else if (strcmp(variant_name, "low_density") == 0) {
+        schema->density = 0.5f;
+    } else {
+        schema->density = 1.0f;
+    }
+}
+
+
+
 
 
 
@@ -1290,9 +1326,53 @@ int main(void) {
     printf("   ✓ Atari GTIA 4-context switcher verified.\n");
     fflush(stdout);
 
+    // 35. Test Atari GTIA as Compositing Device
+    printf("[TEST] Testing Atari GTIA as Compositing Device...\n");
+    fflush(stdout);
+    
+    // Set colors and overlapping coordinates
+    // Player 0 (High priority normally) color Red at index 10
+    switcher.registers[0][0] = 10;
+    switcher.registers[0][1] = 0xFF0000;
+    
+    // Player 1 (Medium priority normally) color Green at index 10
+    switcher.registers[1][0] = 10;
+    switcher.registers[1][1] = 0x00FF00;
+    
+    uint32_t render_buffer[32] = {0};
+    
+    // Standard priority: Player 0 writes first, then Player 1 overwrites
+    gtia_device_composite(&switcher, 0x00, render_buffer, 32);
+    assert(render_buffer[10] == 0x00FF00); // Player 1 wins
+    
+    // Reversed priority: prior_reg & 1 is set, Player 1 writes first, Player 0 overwrites
+    gtia_device_composite(&switcher, 0x01, render_buffer, 32);
+    assert(render_buffer[10] == 0xFF0000); // Player 0 wins
+    
+    printf("   ✓ Atari GTIA compositing device layers verified.\n");
+    fflush(stdout);
+
+    // 36. Test VariantSet Schema Customization
+    printf("[TEST] Testing VariantSet Schema Customization...\n");
+    fflush(stdout);
+    usd_auncient_cactus_schema_t variant_cactus;
+    usd_init_auncient_cactus_schema(&variant_cactus);
+    
+    resolve_cactus_variant_schema(&variant_cactus, "high_density");
+    assert(variant_cactus.density == 10.00f);
+    
+    resolve_cactus_variant_schema(&variant_cactus, "low_density");
+    assert(variant_cactus.density == 0.50f);
+    
+    resolve_cactus_variant_schema(&variant_cactus, "default");
+    assert(variant_cactus.density == 1.00f);
+    printf("   ✓ VariantSet schema customization verified.\n");
+    fflush(stdout);
+
     printf("=============================================================\n");
     printf("HUCOCEAN LOADER TESTS COMPLETE\n");
     printf("=============================================================\n");
     fflush(stdout);
     return 0;
 }
+
