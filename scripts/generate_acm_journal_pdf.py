@@ -549,14 +549,25 @@ def process_text_block(text, body_style, col_width, append_func):
                             truncated = True
                             
                         caption = Paragraph(f"<b>File Reference: <font face='Courier'>{os.path.basename(file_path)}</font></b>", ParagraphStyle('Cap', parent=body_style, fontName='Times-Bold', fontSize=7.5, spaceBefore=4))
-                        append_func(caption)
                         
-                        c_flow = render_standard_code_block(embed_lines, col_width, body_style)
+                        max_len = max((len(line.rstrip('\r\n')) for line in embed_lines), default=0)
+                        is_wide = (max_len > 55)
+                        col_width_1col = 342.0
+                        
+                        c_flow = render_standard_code_block(embed_lines, col_width_1col if is_wide else col_width, body_style)
                         if c_flow:
+                            c_flow.is_wide = is_wide
+                            if is_wide:
+                                caption.is_wide = True
+                            
+                            append_func(caption)
                             append_func(Spacer(1, 2))
                             append_func(c_flow)
                             if truncated:
-                                append_func(Paragraph("<i>... (truncated for compendium)</i>", ParagraphStyle('Trunc', parent=body_style, fontName='Times-Italic', fontSize=6.5)))
+                                trunc_label = Paragraph("<i>... (truncated for compendium)</i>", ParagraphStyle('Trunc', parent=body_style, fontName='Times-Italic', fontSize=6.5))
+                                if is_wide:
+                                    trunc_label.is_wide = True
+                                append_func(trunc_label)
                             append_func(Spacer(1, 4))
                     except Exception as e:
                         print(f"File embedding error: {e}")
@@ -616,7 +627,13 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
         art_flowables_list.clear()
 
     def append_flowable(f):
-        art_flowables.append(f)
+        if getattr(f, 'is_wide', False):
+            flush_art_flowables(art_flowables)
+            story.append(Spacer(1, 4))
+            story.append(f)
+            story.append(Spacer(1, 4))
+        else:
+            art_flowables.append(f)
             
     for idx, (date, path) in enumerate(files):
         title = os.path.basename(path).replace(".md", "").replace("_", " ").title()
