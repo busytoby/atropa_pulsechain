@@ -8,9 +8,9 @@ int main(void) {
     printf("=== RUNNING AUNCIENT SUBDIVSCHEME REFINEMENT TESTS ===\n");
 
     TSFiSubdivScheme ss;
-    tsfi_subdivscheme_init(&ss, TSFI_SCHEME_CATMULLCLARK, TSFI_BOUNDARY_INTERPOLATE_EDGES);
+    tsfi_subdivscheme_init(&ss, TSFI_SCHEME_CATMULLROM, TSFI_BOUNDARY_INTERPOLATE_EDGES);
 
-    assert(ss.scheme == TSFI_SCHEME_CATMULLCLARK);
+    assert(ss.scheme == TSFI_SCHEME_CATMULLROM);
     assert(ss.boundary_rule == TSFI_BOUNDARY_INTERPOLATE_EDGES);
     assert(fabs(ss.smoothness_factor - 0.625) < 1e-5);
 
@@ -23,7 +23,7 @@ int main(void) {
     assert(out_pos[0] > 10.0 && out_pos[0] < 12.0);
 
     // Verify boundary culling override
-    tsfi_subdivscheme_init(&ss, TSFI_SCHEME_CATMULLCLARK, TSFI_BOUNDARY_INTERPOLATE_NONE);
+    tsfi_subdivscheme_init(&ss, TSFI_SCHEME_CATMULLROM, TSFI_BOUNDARY_INTERPOLATE_NONE);
     tsfi_subdivscheme_refine_vertex(&ss, current_pos, neighbors_avg, out_pos);
     assert(fabs(out_pos[0] - 10.0) < 1e-5);
 

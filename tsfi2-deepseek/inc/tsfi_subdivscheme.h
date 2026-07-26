@@ -5,7 +5,7 @@
 #include <stdbool.h>
 
 typedef enum {
-    TSFI_SCHEME_CATMULLCLARK,
+    TSFI_SCHEME_CATMULLROM,
     TSFI_SCHEME_LOOP,
     TSFI_SCHEME_BILINEAR,
     TSFI_SCHEME_NONE

@@ -7,8 +7,8 @@ void tsfi_subdivscheme_init(TSFiSubdivScheme *ss, TSFiSubdivSchemeType scheme, T
     ss->boundary_rule = boundary_rule;
     
     switch (scheme) {
-        case TSFI_SCHEME_CATMULLCLARK:
-            ss->smoothness_factor = 0.625; // Catmull-Clark standard centroid weight
+        case TSFI_SCHEME_CATMULLROM:
+            ss->smoothness_factor = 0.625; // Catmull-Rom refinement centroid weight
             break;
         case TSFI_SCHEME_LOOP:
             ss->smoothness_factor = 0.375; // Loop standard weight
