@@ -357,6 +357,15 @@ int main(void) {
     assert(volume != 0.5f);
     printf("   ✓ Tracker tremolo volume modulation verified.\n");
 
+    // Test Fourier passengers on Verlet splines
+    SplinePhysNode fourier_nodes[2] = {
+        { .x = 0.0f, .y = 0.0f, .z = 0.0f },
+        { .x = 10.0f, .y = 0.0f, .z = 0.0f }
+    };
+    auncient_apply_fourier_passengers(fourier_nodes, 2, 1.0f, 0.5f);
+    assert(fourier_nodes[0].y != 0.0f); // Harmonic wave displacement applied
+    printf("   ✓ Fourier passenger harmonic wave modulations verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");

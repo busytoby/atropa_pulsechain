@@ -221,6 +221,9 @@ void auncient_apply_tracker_portamento(float *freq, float target_freq, float sli
 // Modulates audio volume level dynamically using a sinusoidal tremolo sweep
 void auncient_apply_tracker_tremolo(float *volume, float time, float depth, float rate);
 
+// Applies Fourier wave passengers to modulate Verlet spline coordinates dynamically
+void auncient_apply_fourier_passengers(SplinePhysNode *nodes, int count, float time, float fundamental_freq);
+
 #ifdef __cplusplus
 }
 #endif

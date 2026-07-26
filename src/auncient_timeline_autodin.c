@@ -878,3 +878,20 @@ void auncient_apply_tracker_tremolo(float *volume, float time, float depth, floa
     if (*volume < 0.0f) *volume = 0.0f;
     if (*volume > 1.0f) *volume = 1.0f;
 }
+
+void auncient_apply_fourier_passengers(SplinePhysNode *nodes, int count, float time, float fundamental_freq) {
+    if (!nodes || count <= 0) return;
+
+    for (int i = 0; i < count; i++) {
+        float t = (float)i / (float)count;
+        
+        // Sum of three Fourier harmonics (passengers)
+        float fourier_y = 0.0f;
+        fourier_y += 3.0f * sinf(1.0f * fundamental_freq * time + t * 2.0f); // Harmonic 1
+        fourier_y += 1.5f * sinf(2.0f * fundamental_freq * time + t * 4.0f); // Harmonic 2
+        fourier_y += 0.5f * sinf(3.0f * fundamental_freq * time + t * 6.0f); // Harmonic 3
+
+        // Displace the physical positions along the Y axis
+        nodes[i].y += fourier_y * 0.1f;
+    }
+}
