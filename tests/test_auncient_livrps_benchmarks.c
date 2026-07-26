@@ -145,6 +145,21 @@ static void resolve_ref_payload_conflict(const usd_ref_payload_conflict_t *confl
     }
 }
 
+// 9. Reference vs Specializes
+typedef struct {
+    char reference_opinion[32];
+    char specializes_opinion[32];
+} usd_ref_spec_conflict_t;
+
+static void resolve_ref_spec_conflict(const usd_ref_spec_conflict_t *conflict, char *resolved_val) {
+    if (strlen(conflict->reference_opinion) > 0) {
+        strcpy(resolved_val, conflict->reference_opinion);
+    } else {
+        strcpy(resolved_val, conflict->specializes_opinion);
+    }
+}
+
+
 
 
 
@@ -302,6 +317,23 @@ int main(void) {
     }
     double end_rp = get_time_ns();
     printf("   ✓ Reference vs Payload Conflict Average Latency: %.2f ns/run\n", (end_rp - start) / iterations);
+    fflush(stdout);
+
+    // 9. Reference vs Specializes Priority Benchmark
+    printf("[BENCHMARK] Running %d iterations of Reference vs Specializes Conflicts...\n", iterations);
+    fflush(stdout);
+    usd_ref_spec_conflict_t rs_conflict = {
+        .reference_opinion = "referenced_attribute",
+        .specializes_opinion = "specialized_attribute"
+    };
+    char resolved_rs[32] = "";
+    start = get_time_ns();
+    for (int i = 0; i < iterations; i++) {
+        resolve_ref_spec_conflict(&rs_conflict, resolved_rs);
+        checksum += resolved_rs[0];
+    }
+    double end_rs = get_time_ns();
+    printf("   ✓ Reference vs Specializes Conflict Average Latency: %.2f ns/run\n", (end_rs - start) / iterations);
     fflush(stdout);
 
     // Print checksum to ensure values are not optimized away
