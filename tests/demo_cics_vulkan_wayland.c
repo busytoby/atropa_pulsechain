@@ -400,19 +400,11 @@ int main(void) {
         }
     }
 
-    struct pollfd fds[] = {
-        { wl_display_get_fd(display), POLLIN, 0 }
-    };
-    
     printf("[INFO] Entering live interactive loop. Press keys inside the window to trigger CICS audits. Close the window to exit cleanly.\n");
     
     while (running) {
-        wl_display_flush(display);
-        int ret = poll(fds, 1, 100);
-        if (ret > 0) {
-            if (wl_display_dispatch(display) < 0) {
-                break;
-            }
+        if (wl_display_dispatch(display) < 0) {
+            break;
         }
     }
 
