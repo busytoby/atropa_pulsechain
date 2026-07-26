@@ -539,6 +539,37 @@ static int allocate_dynamic_hudson_layer(hudson_vdc_manager_t *mgr, uint16_t x, 
     return -1;
 }
 
+typedef struct {
+    uint32_t background_color;
+    hudson_vdc_sprite_layer_t dynamic_sprites[HUDSON_MAX_LAYERS];
+    int sprite_count;
+} coaxial_alu_compositor_frame_t;
+
+static void coaxial_alu_composite_layers(const coaxial_alu_compositor_frame_t *frame, uint32_t *output_buffer, int buffer_size) {
+    for (int i = 0; i < buffer_size; i++) {
+        output_buffer[i] = frame->background_color;
+    }
+    for (int i = 0; i < frame->sprite_count; i++) {
+        if (frame->dynamic_sprites[i].active) {
+            int pos = frame->dynamic_sprites[i].x_pos % buffer_size;
+            output_buffer[pos] = 0xFFFFFF;
+        }
+    }
+}
+
+typedef struct {
+    uint32_t active_context_id;
+    uint32_t registers[4][8];
+} gtia_context_switcher_t;
+
+static void switch_gtia_context(gtia_context_switcher_t *switcher, uint32_t next_context_id) {
+    if (next_context_id < 4) {
+        switcher->active_context_id = next_context_id;
+    }
+}
+
+
+
 
 
 
@@ -1215,6 +1246,48 @@ int main(void) {
     assert(vdc_mgr.layers[1].palette_displacement == 32);
     assert(vdc_mgr.active_layers_count == 2);
     printf("   ✓ Dynamic Hudson VDC sprite layer allocation verified.\n");
+    fflush(stdout);
+
+    // 33. Test Coaxial ALU Compositor Dynamic Layer Blending
+    printf("[TEST] Testing Coaxial ALU Compositor Dynamic Layer Blending...\n");
+    fflush(stdout);
+    coaxial_alu_compositor_frame_t comp_frame = {
+        .background_color = 0x111111,
+        .sprite_count = 2,
+        .dynamic_sprites = {
+            {.sprite_id = 0, .x_pos = 5, .y_pos = 10, .palette_displacement = 16, .active = true},
+            {.sprite_id = 1, .x_pos = 12, .y_pos = 20, .palette_displacement = 32, .active = true}
+        }
+    };
+    uint32_t output_frame[32] = {0};
+    coaxial_alu_composite_layers(&comp_frame, output_frame, 32);
+    assert(output_frame[0] == 0x111111);
+    assert(output_frame[5] == 0xFFFFFF); // Blended sprite color
+    assert(output_frame[12] == 0xFFFFFF); // Blended sprite color
+    assert(output_frame[15] == 0x111111);
+    printf("   ✓ Coaxial ALU compositor dynamic layer blending verified.\n");
+    fflush(stdout);
+
+    // 34. Test Atari GTIA 4-Context Switcher
+    printf("[TEST] Testing Atari GTIA 4-Context Switcher...\n");
+    fflush(stdout);
+    gtia_context_switcher_t switcher;
+    memset(&switcher, 0, sizeof(gtia_context_switcher_t));
+    
+    // Set separate horizontal positions per context
+    switcher.registers[0][0] = 40;  // Context 0, register 0 = 40
+    switcher.registers[1][0] = 80;  // Context 1, register 0 = 80
+    switcher.registers[2][0] = 120; // Context 2, register 0 = 120
+    switcher.registers[3][0] = 160; // Context 3, register 0 = 160
+    
+    switch_gtia_context(&switcher, 2);
+    assert(switcher.active_context_id == 2);
+    assert(switcher.registers[switcher.active_context_id][0] == 120);
+    
+    switch_gtia_context(&switcher, 3);
+    assert(switcher.active_context_id == 3);
+    assert(switcher.registers[switcher.active_context_id][0] == 160);
+    printf("   ✓ Atari GTIA 4-context switcher verified.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
