@@ -236,6 +236,20 @@ static void resolve_payload_ref_conflict(const usd_payload_ref_conflict_t *confl
     }
 }
 
+typedef struct {
+    char local_opinion[32];
+    char variant_opinion[32];
+} usd_local_variant_conflict_t;
+
+static void resolve_local_variant_conflict(const usd_local_variant_conflict_t *conflict, char *resolved_val) {
+    if (strlen(conflict->local_opinion) > 0) {
+        strcpy(resolved_val, conflict->local_opinion);
+    } else {
+        strcpy(resolved_val, conflict->variant_opinion);
+    }
+}
+
+
 
 
 
@@ -436,6 +450,27 @@ int main(void) {
     resolve_payload_ref_conflict(&pr_conflict_no_ref, resolved_model_no_ref);
     assert(strcmp(resolved_model_no_ref, "payload_model") == 0);
     printf("   ✓ LIVRPS precedence (Reference > Payload > Specializes) priority resolution verified.\n");
+    fflush(stdout);
+
+    // 12. Test Local vs Variant Override Precedence
+    printf("[TEST] Testing Local vs Variant Override Precedence...\n");
+    fflush(stdout);
+    usd_local_variant_conflict_t lv_conflict = {
+        .local_opinion = "local_mesh_override",
+        .variant_opinion = "variant_mesh_look"
+    };
+    char resolved_lv[32] = "";
+    resolve_local_variant_conflict(&lv_conflict, resolved_lv);
+    assert(strcmp(resolved_lv, "local_mesh_override") == 0);
+
+    usd_local_variant_conflict_t lv_conflict_no_local = {
+        .local_opinion = "",
+        .variant_opinion = "variant_mesh_look"
+    };
+    char resolved_lv_no_local[32] = "";
+    resolve_local_variant_conflict(&lv_conflict_no_local, resolved_lv_no_local);
+    assert(strcmp(resolved_lv_no_local, "variant_mesh_look") == 0);
+    printf("   ✓ Local override taking precedence over VariantSet look-development verified.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
