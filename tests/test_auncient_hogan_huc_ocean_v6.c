@@ -162,14 +162,18 @@ static void synthesize_texture_grid(huc_ocean_system_t *huc, double phase, int m
         }
     }
     
-    // Step 3: Generate Deterministic Noise Map on Layer 1
+    // Step 3: Generate Deterministic Noise Map on Layer 1 and Multiply Blend
     for (int y = 0; y < GRID_SIZE; y++) {
         for (int x = 0; x < GRID_SIZE; x++) {
             layer1[y][x] = hash_noise(x, y, 999U);
+            
+            // Multiply Blend Mode: Blend base plasma with noise map
+            uint32_t blended = (uint32_t)layer_twirl[y][x] * (uint32_t)layer1[y][x] / 255U;
+            layer_twirl[y][x] = (uint8_t)blended;
         }
     }
     
-    // Step 4: Warp Layer Twirl using Layer 1 and compute Normal and Gradient Maps
+    // Step 4: Warp Layer Twirl using Layer 1 and apply Sine Waveform Modulator
     double warped_intensity[GRID_SIZE][GRID_SIZE];
     for (int y = 0; y < GRID_SIZE; y++) {
         for (int x = 0; x < GRID_SIZE; x++) {
@@ -195,10 +199,13 @@ static void synthesize_texture_grid(huc_ocean_system_t *huc, double phase, int m
             double w01 = (1.0 - dx) * dy;
             double w11 = dx * dy;
             
-            warped_intensity[y][x] = w00 * layer_twirl[y0][x0] +
-                                     w10 * layer_twirl[y0][x1] +
-                                     w01 * layer_twirl[y1][x0] +
-                                     w11 * layer_twirl[y1][x1];
+            double interpolated = w00 * layer_twirl[y0][x0] +
+                                  w10 * layer_twirl[y0][x1] +
+                                  w01 * layer_twirl[y1][x0] +
+                                  w11 * layer_twirl[y1][x1];
+                                  
+            // Sine Waveform Modulator: Map linear gradients to wood/wave rings
+            warped_intensity[y][x] = 127.5 + 127.5 * sin(interpolated * 0.15);
         }
     }
     
@@ -223,14 +230,32 @@ static void synthesize_texture_grid(huc_ocean_system_t *huc, double phase, int m
             ny /= len;
             nz /= len;
             
+            // Phong specular light calculations
+            double lx = 1.0, ly = 1.0, lz = 1.5;
+            double llen = sqrt(lx*lx + ly*ly + lz*lz);
+            lx /= llen; ly /= llen; lz /= llen;
+            
+            double diffuse = nx*lx + ny*ly + nz*lz;
+            if (diffuse < 0.0) diffuse = 0.0;
+            
+            double rz = 2.0 * diffuse * nz - lz;
+            
+            double spec = rz; // dot(R, V) where V = (0, 0, 1)
+            if (spec < 0.0) spec = 0.0;
+            spec = pow(spec, 16.0); // Shininess exponent
+            
+            // Combine diffuse and specular light components
+            double combined_light = diffuse * 0.65 + spec * 0.35;
+            if (combined_light > 1.0) combined_light = 1.0;
+            
             if (mode % 2 == 0) {
-                // Normal Map mapping: RGB color corresponds directly to normal vector directions
-                huc->texture_grid[y][x].r = (uint8_t)((nx + 1.0) * 127.5);
-                huc->texture_grid[y][x].g = (uint8_t)((ny + 1.0) * 127.5);
-                huc->texture_grid[y][x].b = (uint8_t)((nz + 1.0) * 127.5);
+                // Normal Map mapping modulated by light intensity
+                huc->texture_grid[y][x].r = (uint8_t)(((nx + 1.0) * 127.5) * combined_light);
+                huc->texture_grid[y][x].g = (uint8_t)(((ny + 1.0) * 127.5) * combined_light);
+                huc->texture_grid[y][x].b = (uint8_t)(((nz + 1.0) * 127.5) * combined_light);
             } else {
-                // Gradient Map mapping: Interpolated color ramp representing depth
-                double intensity = warped_intensity[y][x] / 255.0;
+                // Gradient Map mapping modulated by light intensity
+                double intensity = warped_intensity[y][x] / 255.0 * combined_light;
                 if (intensity < 0.5) {
                     double t = intensity * 2.0;
                     huc->texture_grid[y][x].r = (uint8_t)(2.0 + t * 12.0);
@@ -244,7 +269,7 @@ static void synthesize_texture_grid(huc_ocean_system_t *huc, double phase, int m
                 }
             }
             
-            int idx = (int)(warped_intensity[y][x] / 25.6);
+            int idx = (int)((warped_intensity[y][x] * combined_light) / 25.6);
             if (idx < 0) idx = 0;
             if (idx > 9) idx = 9;
             huc->texture_grid[y][x].glyph = glyphs[idx];
