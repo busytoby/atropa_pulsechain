@@ -83,100 +83,143 @@ def draw_cash_cow(draw, width, time):
         'W': [0x3f, 0x40, 0x38, 0x40, 0x3f]
     }
     text = "$$ CASH COW $$"
+    char_count = len(text)
+    frame = int(time * 30.0)
+
+    # Staggered bounce physics simulated per-frame up to the current frame:
+    sim_y = [0.0] * char_count
+    sim_vy = [0.0] * char_count
+    sim_inflation = [1.0] * char_count
+    sim_scale_x = [3.0] * char_count
+    sim_scale_y = [3.0] * char_count
     
-    small_w = len(text) * 6 + 10
-    small_h = 12
-    small_img = Image.new("L", (small_w, small_h), 0)
+    gravity = 0.14
+    ground = 25.0
     
-    current_x = 2
-    for char in text:
-        if char in font_map:
+    for f in range(frame + 1):
+        for i in range(char_count):
+            sim_vy[i] += gravity
+            sim_y[i] += sim_vy[i]
+            
+            sim_inflation[i] += (1.0 - sim_inflation[i]) * 0.02
+            sim_scale_x[i] += (3.0 - sim_scale_x[i]) * 0.1
+            sim_scale_y[i] += (3.0 - sim_scale_y[i]) * 0.1
+            
+            # Ground boundary collision (bounce)
+            if sim_y[i] >= ground:
+                sim_y[i] = ground
+                sim_vy[i] = -sim_vy[i] * 0.65
+                sim_inflation[i] = min(3.0, sim_inflation[i] + 0.45)
+                sim_scale_x[i] = 3.9
+                sim_scale_y[i] = 2.1
+                
+            # Staggered bounce kicks (pattern period = 200 frames)
+            kick_tick = 30 + i * 12 + (f // 200) * 200
+            if f == kick_tick:
+                sim_vy[i] = -5.0
+                sim_inflation[i] = min(3.0, sim_inflation[i] + 0.6)
+                sim_scale_x[i] = 2.1
+                sim_scale_y[i] = 3.9
+
+    start_x = (width - char_count * 20) // 2
+    
+    # Painter's order: Render drop shadow pass, then body pass
+    for pass_idx in range(2):
+        for i, char in enumerate(text):
+            if char not in font_map:
+                continue
             cols = font_map[char]
+            
+            # Base position
+            cx = start_x + i * 20
+            cy = 20 + sim_y[i]
+            
+            elastic_scale_x = sim_scale_x[i]
+            elastic_scale_y = sim_scale_y[i]
+            current_inflation = sim_inflation[i]
+            
+            # Temporary glyph image to compute exact distance field/edge glints
+            glyph_w = int(5 * elastic_scale_x + 8)
+            glyph_h = int(7 * elastic_scale_y + 8)
+            glyph_img = Image.new("L", (glyph_w, glyph_h), 0)
+            
+            # Draw raw 5x7 glyph onto the temporary mask
             for c in range(5):
                 col_val = cols[c]
                 for r in range(7):
                     if (col_val >> r) & 1:
-                        small_img.putpixel((current_x + c, r + 1), 255)
-        current_x += 6
-    
-    scale = 3
-    big_w = small_w * scale
-    big_h = small_h * scale
-    big_img = small_img.resize((big_w, big_h), Image.Resampling.NEAREST)
-    
-    start_x = (width - big_w * 3) // 2
-    start_y = 20 + int(8.0 * math.sin(time * 6.0))
-    
-    # Pass 1: Render background block drop shadows
-    for y in range(big_h):
-        for x in range(big_w):
-            val = big_img.getpixel((x, y))
-            if val > 128:
-                px = start_x + x * 3
-                py = start_y + y * 3
-                draw.rectangle([px + 8, py + 8, px + 10, py + 10], fill=(20, 5, 0))
-                
-    # Pass 2: Render foreground inflated bodies, sheen sweeps, and glint highlights
-    for y in range(big_h):
-        for x in range(big_w):
-            val = big_img.getpixel((x, y))
-            if val > 128:
-                px = start_x + x * 3
-                py = start_y + y * 3
-                ratio = x / float(big_w)
-                
-                # Distance field calculation
-                dist_sq = 16
-                for dy in range(-2, 3):
-                    for dx in range(-2, 3):
-                        nx, ny_val = x + dx, y + dy
-                        is_inside = (0 <= nx < big_w) and (0 <= ny_val < big_h)
-                        is_filled = is_inside and (big_img.getpixel((nx, ny_val)) > 128)
-                        if not is_filled:
-                            d = dx*dx + dy*dy
-                            if d < dist_sq: dist_sq = d
-                
-                # Edge gloss detection
-                is_top_edge = (y == 0) or (big_img.getpixel((x, y - 1)) <= 128)
-                is_left_edge = (x == 0) or (big_img.getpixel((x - 1, y)) <= 128)
-                is_glossy = is_top_edge and is_left_edge
-
-                inflation = 0.8
-                color = (0, 0, 0)
-                
-                # Shading based on character zone
-                if ratio < 0.18 or ratio > 0.82:
-                    # Gold shading
-                    if dist_sq > (3.0 * inflation):
-                        color = (255, 204, 0)
-                    elif dist_sq > (2.0 * inflation):
-                        color = (80, 20, 0)
-                    elif dist_sq > (1.0 * inflation):
-                        col_step = int(time * 15.0 + x) % 8
-                        color = (180 + col_step * 8, 40 + col_step * 10, 0)
-                    else:
-                        color = (0, 0, 0)
-                else:
-                    # CASH COW cow spots shading
-                    if dist_sq > (1.0 * inflation):
-                        spot = math.sin(x * 0.25) * math.cos(y * 0.25) + math.sin(x * 0.1 + y * 0.15)
-                        if spot > 0.1:
-                            color = (240, 240, 240)
+                        # Draw scaled pixel block on glyph mask
+                        for sy in range(int(elastic_scale_y)):
+                            for sx in range(int(elastic_scale_x)):
+                                gx = int(c * elastic_scale_x + sx + 4)
+                                gy = int(r * elastic_scale_y + sy + 4)
+                                if 0 <= gx < glyph_w and 0 <= gy < glyph_h:
+                                    glyph_img.putpixel((gx, gy), 255)
+            
+            # Render pixels from the temporary mask
+            for y in range(glyph_h):
+                for x in range(glyph_w):
+                    val = glyph_img.getpixel((x, y))
+                    if val > 128:
+                        px = int(cx + x - 4)
+                        py = int(cy + y - 4)
+                        
+                        if pass_idx == 0:
+                            # Drop shadow
+                            draw.rectangle([px + 8, py + 8, px + 10, py + 10], fill=(20, 5, 0))
                         else:
-                            color = (15, 15, 15)
-                    else:
-                        color = (0, 0, 0)
-
-                # Specular sheen sweep animation
-                sheen_pos = int(time * 200.0) % 900 - 200
-                dist_to_sheen = abs(px - sheen_pos)
-                if dist_to_sheen < 12 and dist_sq > 1.0:
-                    color = (255, 255, 255)
-
-                draw.rectangle([px, py, px + 2, py + 2], fill=color)
-                
-                if is_glossy and dist_sq >= 2:
-                    draw.rectangle([px, py, px + 1, py + 1], fill=(255, 255, 255))
+                            # Foreground body
+                            # Compute distance to empty pixels within mask
+                            dist_sq = 16
+                            for dy in range(-2, 3):
+                                for dx in range(-2, 3):
+                                    nx, ny_val = x + dx, y + dy
+                                    is_inside = (0 <= nx < glyph_w) and (0 <= ny_val < glyph_h)
+                                    is_filled = is_inside and (glyph_img.getpixel((nx, ny_val)) > 128)
+                                    if not is_filled:
+                                        d = dx*dx + dy*dy
+                                        if d < dist_sq: dist_sq = d
+                            
+                            is_top_edge = (y == 0) or (glyph_img.getpixel((x, y - 1)) <= 128)
+                            is_left_edge = (x == 0) or (glyph_img.getpixel((x - 1, y)) <= 128)
+                            is_glossy = is_top_edge and is_left_edge
+                            
+                            inflation = current_inflation * 0.8
+                            color = (0, 0, 0)
+                            
+                            is_dollar = (char == '$')
+                            if is_dollar:
+                                # Gold inflated body
+                                if dist_sq > (3.0 * inflation):
+                                    color = (255, 204, 0)
+                                elif dist_sq > (2.0 * inflation):
+                                    color = (80, 20, 0)
+                                elif dist_sq > (1.0 * inflation):
+                                    col_step = int(time * 15.0 + x) % 8
+                                    color = (180 + col_step * 8, 40 + col_step * 10, 0)
+                                else:
+                                    color = (0, 0, 0)
+                            else:
+                                # CASH COW cow spots body
+                                if dist_sq > (1.0 * inflation):
+                                    spot = math.sin(px * 0.25) * math.cos(py * 0.25) + math.sin(px * 0.1 + py * 0.15)
+                                    if spot > 0.1:
+                                        color = (240, 240, 240)
+                                    else:
+                                        color = (15, 15, 15)
+                                else:
+                                    color = (0, 0, 0)
+                                    
+                            # Specular sheen sweep animation
+                            sheen_pos = int(time * 200.0) % 900 - 200
+                            dist_to_sheen = abs(px - sheen_pos)
+                            if dist_to_sheen < 12 and dist_sq > 1.0:
+                                color = (255, 255, 255)
+                                
+                            draw.rectangle([px, py, px + 2, py + 2], fill=color)
+                            
+                            if is_glossy and dist_sq >= 2:
+                                draw.rectangle([px, py, px + 1, py + 1], fill=(255, 255, 255))
 
 def draw_retro_char(draw, char, x, y, size, color):
     # Draw simple retro styled grid-like characters
