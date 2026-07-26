@@ -17,16 +17,16 @@ from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
-# Register system LiberationSerif fonts under the standard Times-Roman names.
-# This forces ReportLab to fully embed these TTF files in the PDF, solving the KDP font embedding requirement.
-pdfmetrics.registerFont(TTFont('Times-Roman', '/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf'))
-pdfmetrics.registerFont(TTFont('Times-Bold', '/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf'))
-pdfmetrics.registerFont(TTFont('Times-Italic', '/usr/share/fonts/truetype/liberation/LiberationSerif-Italic.ttf'))
-pdfmetrics.registerFont(TTFont('Times-BoldItalic', '/usr/share/fonts/truetype/liberation/LiberationSerif-BoldItalic.ttf'))
-pdfmetrics.registerFont(TTFont('Courier', '/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf'))
-pdfmetrics.registerFont(TTFont('Courier-Bold', '/usr/share/fonts/truetype/liberation/LiberationMono-Bold.ttf'))
-pdfmetrics.registerFont(TTFont('Courier-Oblique', '/usr/share/fonts/truetype/liberation/LiberationMono-Italic.ttf'))
-pdfmetrics.registerFont(TTFont('Courier-BoldOblique', '/usr/share/fonts/truetype/liberation/LiberationMono-BoldItalic.ttf'))
+pdfmetrics.registerFont(TTFont('LiberationSerif', '/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf'))
+pdfmetrics.registerFont(TTFont('LiberationSerif-Bold', '/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf'))
+pdfmetrics.registerFont(TTFont('LiberationSerif-Italic', '/usr/share/fonts/truetype/liberation/LiberationSerif-Italic.ttf'))
+pdfmetrics.registerFont(TTFont('LiberationSerif-BoldItalic', '/usr/share/fonts/truetype/liberation/LiberationSerif-BoldItalic.ttf'))
+pdfmetrics.registerFont(TTFont('LiberationMono', '/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf'))
+pdfmetrics.registerFont(TTFont('LiberationMono-Bold', '/usr/share/fonts/truetype/liberation/LiberationMono-Bold.ttf'))
+pdfmetrics.registerFont(TTFont('LiberationMono-Italic', '/usr/share/fonts/truetype/liberation/LiberationMono-Italic.ttf'))
+pdfmetrics.registerFont(TTFont('LiberationMono-BoldItalic', '/usr/share/fonts/truetype/liberation/LiberationMono-BoldItalic.ttf'))
+pdfmetrics.registerFont(TTFont('LiberationSans', '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf'))
+pdfmetrics.registerFont(TTFont('LiberationSans-Bold', '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf'))
 
 def get_file_date(filepath):
     filename = os.path.basename(filepath)
@@ -73,7 +73,7 @@ class NumberedCanvas(canvas.Canvas):
 
     def draw_page_decorations(self, page_count):
         self.saveState()
-        self.setFont("Times-Roman", 8)
+        self.setFont("LiberationSerif", 8)
         
         is_even = (self._pageNumber % 2 == 0)
         
@@ -232,7 +232,7 @@ def inline_md_to_html(text):
                 wrapped += char
                 if c_idx > 0 and c_idx % 8 == 0 and c_idx < len(part) - 1:
                     wrapped += "\u00AD"
-            new_parts.append(f'<font face="Courier" color="#0077b6"><b>{wrapped}</b></font>')
+            new_parts.append(f'<font face="LiberationMono" color="#0077b6"><b>{wrapped}</b></font>')
         else:
             if part.count('**') % 2 == 0:
                 bold_parts = part.split('**')
@@ -349,7 +349,7 @@ def render_mermaid_flowchart(lines, col_width):
     d.add(bg_rect)
     
     bg_lbl = String(col_width * 0.74, draw_h - 18, "EVM Node (Anvil)", textAnchor='middle')
-    bg_lbl.fontName = 'Helvetica-Bold'
+    bg_lbl.fontName = 'LiberationSans-Bold'
     bg_lbl.fontSize = 6
     bg_lbl.fillColor = colors.HexColor('#667788')
     d.add(bg_lbl)
@@ -378,7 +378,7 @@ def render_mermaid_flowchart(lines, col_width):
         if len(text_str) > 22:
             text_str = text_str[:19] + "..."
         s = String(x, y - 2.5, text_str, textAnchor='middle')
-        s.fontName = 'Helvetica-Bold'
+        s.fontName = 'LiberationSans-Bold'
         s.fontSize = 7
         s.fillColor = colors.HexColor('#ffffff')
         d.add(s)
@@ -405,7 +405,7 @@ def render_mermaid_flowchart(lines, col_width):
                 x_mid = (x_start + x_end) / 2
                 y_mid = (y1 + y2) / 2
                 lbl = String(x_mid, y_mid + 2, label.strip(), textAnchor='middle')
-                lbl.fontName = 'Helvetica'
+                lbl.fontName = 'LiberationSans'
                 lbl.fontSize = 5.5
                 lbl.fillColor = colors.HexColor('#94a3b8')
                 d.add(lbl)
@@ -446,7 +446,7 @@ def render_standard_code_block(code_lines, col_width, body_style):
     code_style = ParagraphStyle(
         'CodeBlock',
         parent=body_style,
-        fontName='Courier',
+        fontName='LiberationMono',
         fontSize=font_size,
         leading=leading,
         textColor=colors.HexColor('#222222'),
@@ -589,7 +589,7 @@ def process_text_block(text, body_style, col_width, append_func):
                             embed_lines = embed_lines[:30]
                             truncated = True
                             
-                        caption = Paragraph(f"<b>File Reference: <font face='Courier'>{os.path.basename(file_path)}</font></b>", ParagraphStyle('Cap', parent=body_style, fontName='Times-Bold', fontSize=7.5, spaceBefore=4))
+                        caption = Paragraph(f"<b>File Reference: <font face='LiberationMono'>{os.path.basename(file_path)}</font></b>", ParagraphStyle('Cap', parent=body_style, fontName='LiberationSerif-Bold', fontSize=7.5, spaceBefore=4))
                         
                         max_len = max((len(line.rstrip('\r\n')) for line in embed_lines), default=0)
                         is_wide = (max_len > 55)
@@ -605,7 +605,7 @@ def process_text_block(text, body_style, col_width, append_func):
                             append_func(Spacer(1, 2))
                             append_func(c_flow)
                             if truncated:
-                                trunc_label = Paragraph("<i>... (truncated for compendium)</i>", ParagraphStyle('Trunc', parent=body_style, fontName='Times-Italic', fontSize=6.5))
+                                trunc_label = Paragraph("<i>... (truncated for compendium)</i>", ParagraphStyle('Trunc', parent=body_style, fontName='LiberationSerif-Italic', fontSize=6.5))
                                 if is_wide:
                                     trunc_label.is_wide = True
                                 append_func(trunc_label)
@@ -646,7 +646,7 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
     story = []
     
     story.append(Paragraph(f"<b>COMPENDIUM OF LORE AND HISTORICAL TRANSCRIPTS - VOLUME {volume_num}</b>", title_style))
-    story.append(Paragraph("Compiled Chronologically under ACM 1961 Standards", ParagraphStyle('Sub', parent=title_style, fontName='Times-Italic', fontSize=9)))
+    story.append(Paragraph("Compiled Chronologically under ACM 1961 Standards", ParagraphStyle('Sub', parent=title_style, fontName='LiberationSerif-Italic', fontSize=9)))
     story.append(Spacer(1, 0.2 * inch))
     
     def flush_art_flowables(art_flowables_list):
@@ -684,7 +684,7 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
             
         art_flowables = []
         art_flowables.append(Paragraph(f"<b>ARTICLE: {title}</b>", ParagraphStyle('ArtTitle', parent=title_style, alignment=TA_LEFT, fontSize=9.5, spaceBefore=8)))
-        art_flowables.append(Paragraph(f"<i>Published: {date.strftime('%B %d, %Y')}</i>", ParagraphStyle('ArtDate', parent=body_style, fontName='Times-Italic', fontSize=7.5)))
+        art_flowables.append(Paragraph(f"<i>Published: {date.strftime('%B %d, %Y')}</i>", ParagraphStyle('ArtDate', parent=body_style, fontName='LiberationSerif-Italic', fontSize=7.5)))
         
         article_wide_blocks = []
         listing_counter = 1
@@ -820,7 +820,7 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                 h_style = ParagraphStyle(
                     f'H{level}',
                     parent=body_style,
-                    fontName='Times-Bold',
+                    fontName='LiberationSerif-Bold',
                     fontSize=max(7.5, 9.5 - (level * 0.5)),
                     leading=max(8.5, 10.5 - (level * 0.5)),
                     spaceBefore=5,
@@ -840,7 +840,7 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                 bq_style = ParagraphStyle(
                     'BlockQuote',
                     parent=body_style,
-                    fontName='Times-Italic',
+                    fontName='LiberationSerif-Italic',
                     leftIndent=10,
                     textColor=colors.HexColor('#444444'),
                     spaceBefore=3,
@@ -883,7 +883,7 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                     h_style = ParagraphStyle(
                         f'NumH{level}',
                         parent=body_style,
-                        fontName='Times-Bold',
+                        fontName='LiberationSerif-Bold',
                         fontSize=max(7.5, 9.5 - (level * 0.5)),
                         leading=max(8.5, 10.5 - (level * 0.5)),
                         spaceBefore=5,
@@ -952,7 +952,7 @@ def build_pdf():
     title_style = ParagraphStyle(
         'ACMTitle',
         parent=styles['Normal'],
-        fontName='Times-Bold',
+        fontName='LiberationSerif-Bold',
         fontSize=12,
         leading=14,
         alignment=TA_CENTER,
@@ -962,7 +962,7 @@ def build_pdf():
     body_style = ParagraphStyle(
         'ACMBody',
         parent=styles['Normal'],
-        fontName='Times-Roman',
+        fontName='LiberationSerif',
         fontSize=8.5,
         leading=10.5,
         alignment=TA_LEFT,
