@@ -100,6 +100,11 @@ int main(void) {
     tsfi_riinterface_write_dda(&ri, 3, 0x25); // Over-limit: clamped
     assert(ri.psg_channel_dda[3] == (0x25 & 0x1F));
 
+    // Test PSG global master volume controls
+    tsfi_riinterface_set_master_volume(&ri, 12, 18);
+    assert(ri.psg_master_volume_l == 12);
+    assert(ri.psg_master_volume_r == (18 & 0x0F)); // Clamped to 4-bit range
+
     // Test VDC sprite collision flag triggers
     tsfi_riinterface_check_sprite_collision(&ri, 10.0, 10.0, 12.0, 10.0, 5.0); // Inside limit
     assert(ri.vdc_collision_flag == true);
@@ -128,6 +133,7 @@ int main(void) {
     printf("   ✓ PSG white noise generator frequency controls verified successfully.\n");
     printf("   ✓ VDC background scroll registers verified successfully.\n");
     printf("   ✓ PSG Direct D/A real-time audio streams verified successfully.\n");
+    printf("   ✓ PSG global master stereo volume controls verified successfully.\n");
     printf("   ✓ VDC sprite collision interrupt flags verified successfully.\n");
     printf("   ✓ VDC raster line H-Blank interrupts verified successfully.\n");
     printf("=== AUNCIENT RIINTERFACE TESTS COMPLETE (PASS) ===\n");

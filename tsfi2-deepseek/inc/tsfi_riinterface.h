@@ -19,6 +19,8 @@ typedef struct {
     uint8_t psg_lfo_phase; // huC6280 PSG LFO phase displacement
     uint8_t psg_noise_ctrl[2]; // huC6280 PSG noise control for channels 5-6
     uint8_t psg_channel_dda[6]; // huC6280 PSG Direct D/A data registers
+    uint8_t psg_master_volume_l; // huC6280 PSG Master Left volume
+    uint8_t psg_master_volume_r; // huC6280 PSG Master Right volume
     uint16_t vdc_scroll_x; // huC6270 VDC background scroll X
     uint16_t vdc_scroll_y; // huC6270 VDC background scroll Y
     uint16_t vdc_raster_interrupt_line; // huC6270 VDC scanline target for H-Blank interrupt
@@ -76,6 +78,9 @@ void tsfi_riinterface_scroll_background(TSFiRiInterface *ri, uint16_t x, uint16_
 
 // Writes direct digital-to-analog sound samples to specified audio channels
 void tsfi_riinterface_write_dda(TSFiRiInterface *ri, int channel, uint8_t sample);
+
+// Configures the global stereo master volume registers of the PSG mixer
+void tsfi_riinterface_set_master_volume(TSFiRiInterface *ri, uint8_t volume_l, uint8_t volume_r);
 
 // Emulates VDC hardware collision flags updates based on coordinate distance checks
 void tsfi_riinterface_check_sprite_collision(TSFiRiInterface *ri, double s1_x, double s1_y, double s2_x, double s2_y, double threshold);

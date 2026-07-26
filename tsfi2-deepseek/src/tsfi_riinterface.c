@@ -21,6 +21,8 @@ void tsfi_riinterface_init(TSFiRiInterface *ri) {
     ri->psg_lfo_phase = 0;
     memset(ri->psg_noise_ctrl, 0, sizeof(ri->psg_noise_ctrl));
     memset(ri->psg_channel_dda, 0, sizeof(ri->psg_channel_dda));
+    ri->psg_master_volume_l = 15; // Set to full volume at start
+    ri->psg_master_volume_r = 15;
     ri->vdc_scroll_x = 0;
     ri->vdc_scroll_y = 0;
     // VDC H-Blank interrupts must remain disabled during the initial power-on state
@@ -204,6 +206,13 @@ void tsfi_riinterface_write_dda(TSFiRiInterface *ri, int channel, uint8_t sample
     
     // Clamp to 5-bit depth constraint (value limit 0-31) matching HuC6280 PSG D/A registers
     ri->psg_channel_dda[channel] = sample & 0x1F;
+}
+
+void tsfi_riinterface_set_master_volume(TSFiRiInterface *ri, uint8_t volume_l, uint8_t volume_r) {
+    if (!ri) return;
+    // Master volume parameters must be clamped to 4-bit depth constraints (limit 0-15)
+    ri->psg_master_volume_l = volume_l & 0x0F;
+    ri->psg_master_volume_r = volume_r & 0x0F;
 }
 
 void tsfi_riinterface_check_sprite_collision(TSFiRiInterface *ri, double s1_x, double s1_y, double s2_x, double s2_y, double threshold) {
