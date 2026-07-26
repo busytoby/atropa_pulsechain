@@ -62,7 +62,7 @@ typedef struct {
     uint8_t b;
 } rgb_pix_t;
 
-void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase, int mode, const tsfi_texgen_params_t *params) {
+void tsfi_texgen_render(uint8_t *output_rgba, int width, int height, double phase, int mode, const tsfi_texgen_params_t *params) {
     if (!lut_initialized) tsfi_texgen_init();
     
     rgb_pix_t *layer0 = (rgb_pix_t *)malloc(width * height * sizeof(rgb_pix_t));
@@ -232,7 +232,6 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
         for (int x = 0; x < width; x++) {
             int idx = y * width + x;
             
-            // Warp coordinate calculated with feedback strength from phase loops & ripple distortion
             double ripple_x = tsfi_texgen_sin(y * 0.2 + phase) * 2.0;
             double ripple_y = tsfi_texgen_cos(x * 0.2 + phase) * 2.0;
             
@@ -278,7 +277,7 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
         }
     }
     
-    // Step 5: Sobel filter normal calculations, Phong highlights & Output CLUT preset mappings
+    // Step 5: Sobel filter normal calculations, Anisotropic spec shading, Ambient occlusion & RGBA packing
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             int x_prev = (x - 1 + width) % width;
@@ -288,7 +287,6 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
             
             int idx = y * width + x;
             
-            // Extract neighboring heights for $3\times3$ Sobel normal filter
             double h00 = (warped_r[y_prev*width + x_prev] + warped_g[y_prev*width + x_prev] + warped_b[y_prev*width + x_prev]) / 3.0;
             double h01 = (warped_r[y_prev*width + x] + warped_g[y_prev*width + x] + warped_b[y_prev*width + x]) / 3.0;
             double h02 = (warped_r[y_prev*width + x_next] + warped_g[y_prev*width + x_next] + warped_b[y_prev*width + x_next]) / 3.0;
@@ -300,7 +298,6 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
             double h21 = (warped_r[y_next*width + x] + warped_g[y_next*width + x] + warped_b[y_next*width + x]) / 3.0;
             double h22 = (warped_r[y_next*width + x_next] + warped_g[y_next*width + x_next] + warped_b[y_next*width + x_next]) / 3.0;
             
-            // $3\times3$ Sobel gradient computation
             double dh_dx = (h02 + 2.0*h12 + h22 - h00 - 2.0*h10 - h20) / 8.0;
             double dh_dy = (h20 + 2.0*h21 + h22 - h00 - 2.0*h01 - h02) / 8.0;
             
@@ -317,32 +314,48 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
             double diffuse = nx*lx + ny*ly + nz*lz;
             if (diffuse < 0.0) diffuse = 0.0;
             
+            // Standard isotropic specular reflection
             double rz = 2.0 * diffuse * nz - lz;
             double spec = rz;
             if (spec < 0.0) spec = 0.0;
-            
             spec = spec * spec;
             spec = spec * spec;
             spec = spec * spec;
             spec = spec * spec;
             
-            double combined_light = diffuse * 0.65 + spec * 0.35;
+            // Kajiya-Kay Anisotropic shading model approximation for strands
+            double tx = ny;
+            double ty = -nx;
+            double tz = 0.0;
+            double tlen = sqrt(tx*tx + ty*ty);
+            if (tlen > 0.0) { tx /= tlen; ty /= tlen; }
+            double t_dot_l = tx*lx + ty*ly + tz*lz;
+            double sin_tl = sqrt(1.0 - t_dot_l*t_dot_l);
+            double spec_aniso = sin_tl;
+            if (spec_aniso < 0.0) spec_aniso = 0.0;
+            spec_aniso = spec_aniso * spec_aniso;
+            spec_aniso = spec_aniso * spec_aniso;
+            spec_aniso = spec_aniso * spec_aniso;
+            spec_aniso = spec_aniso * spec_aniso;
+            
+            double final_spec = (1.0 - params->anisotropy) * spec + params->anisotropy * spec_aniso;
+            
+            // Ambient Occlusion depth factor
+            double ao_factor = 1.0 - (params->shell_ao * (1.0 / (1.0 + phase)));
+            if (ao_factor < 0.0) ao_factor = 0.0;
+            if (ao_factor > 1.0) ao_factor = 1.0;
+            
+            double combined_light = (diffuse * 0.65 + final_spec * 0.35) * ao_factor;
             if (combined_light > 1.0) combined_light = 1.0;
             
-            int out_idx = idx * 3;
+            int out_idx = idx * 4;
             double raw_r = 0.0, raw_g = 0.0, raw_b = 0.0;
             
             double h_center = ((warped_r[idx] + warped_g[idx] + warped_b[idx]) / 3.0);
             
-            // Binarization mask filter
-            if (params->threshold_limit > 0.0f) {
-                h_center = (h_center >= params->threshold_limit) ? 255.0 : 0.0;
-            }
-            
             double intensity = h_center / 255.0 * combined_light;
             
             if (params->clut_preset == 0) {
-                // Ocean CLUT Gradient (Preset 0)
                 if (intensity < 0.5) {
                     double t = intensity * 2.0;
                     raw_r = 2.0 + t * 12.0;
@@ -355,7 +368,6 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
                     raw_b = 233.0 + t * 22.0;
                 }
             } else if (params->clut_preset == 1) {
-                // Fire CLUT Gradient (Preset 1)
                 if (intensity < 0.33) {
                     double t = intensity * 3.0;
                     raw_r = t * 255.0;
@@ -373,23 +385,19 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
                     raw_b = t * 255.0;
                 }
             } else if (params->clut_preset == 2) {
-                // Crystalline CLUT (Preset 2)
                 raw_r = intensity * 180.0 + 50.0;
                 raw_g = intensity * 50.0;
                 raw_b = intensity * 255.0;
             } else {
-                // Obsidian/Gold CLUT (Preset 3)
                 raw_r = intensity * 212.0;
                 raw_g = intensity * 175.0;
                 raw_b = intensity * 55.0;
             }
             
-            // Post-processing brightness & contrast
             double adj_r = (raw_r - 128.0) * params->contrast + 128.0 + params->brightness;
             double adj_g = (raw_g - 128.0) * params->contrast + 128.0 + params->brightness;
             double adj_b = (raw_b - 128.0) * params->contrast + 128.0 + params->brightness;
             
-            // Vignette edge occlusion darkening filter
             double dx_vig = (double)x / width - 0.5;
             double dy_vig = (double)y / height - 0.5;
             double r_vig = sqrt(dx_vig*dx_vig + dy_vig*dy_vig);
@@ -400,9 +408,21 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
             adj_g *= vig_factor;
             adj_b *= vig_factor;
             
-            output_rgb[out_idx]   = adj_r < 0.0 ? 0 : (adj_r > 255.0 ? 255 : (uint8_t)adj_r);
-            output_rgb[out_idx+1] = adj_g < 0.0 ? 0 : (adj_g > 255.0 ? 255 : (uint8_t)adj_g);
-            output_rgb[out_idx+2] = adj_b < 0.0 ? 0 : (adj_b > 255.0 ? 255 : (uint8_t)adj_b);
+            output_rgba[out_idx]   = adj_r < 0.0 ? 0 : (adj_r > 255.0 ? 255 : (uint8_t)adj_r);
+            output_rgba[out_idx+1] = adj_g < 0.0 ? 0 : (adj_g > 255.0 ? 255 : (uint8_t)adj_g);
+            output_rgba[out_idx+2] = adj_b < 0.0 ? 0 : (adj_b > 255.0 ? 255 : (uint8_t)adj_b);
+            
+            // RGBA Alpha threshold masking mapping
+            uint8_t alpha = 255;
+            if (params->threshold_limit > 0.0f) {
+                if (h_center < params->threshold_limit) {
+                    alpha = 0;
+                } else {
+                    double delta = (h_center - params->threshold_limit) / (255.0 - params->threshold_limit);
+                    alpha = (uint8_t)(delta * 255.0);
+                }
+            }
+            output_rgba[out_idx+3] = alpha;
         }
     }
     

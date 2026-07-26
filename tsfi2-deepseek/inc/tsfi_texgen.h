@@ -11,7 +11,7 @@ typedef struct {
     char glyph;
 } color_pixel_t;
 
-// Standardized parameters under 200 bytes limit (Size: 60 bytes)
+// Standardized parameters under 200 bytes limit (Size: 68 bytes)
 typedef struct {
     uint32_t seed;
     float phase_scale;
@@ -30,11 +30,13 @@ typedef struct {
     uint8_t clut_preset;     // Color lookup table selector
     float vignette_strength; // Vignette boundary darkening scale
     float threshold_limit;   // Binarization limit (0 to 255, 0 to disable)
+    float shell_ao;          // Shell depth ambient occlusion scale
+    float anisotropy;        // Anisotropic highlight strength (0 to 1)
 } tsfi_texgen_params_t;
 
 void tsfi_texgen_init(void);
 double tsfi_texgen_sin(double angle);
 double tsfi_texgen_cos(double angle);
-void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase, int mode, const tsfi_texgen_params_t *params);
+void tsfi_texgen_render(uint8_t *output_rgba, int width, int height, double phase, int mode, const tsfi_texgen_params_t *params);
 
 #endif

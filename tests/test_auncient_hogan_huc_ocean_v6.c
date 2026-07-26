@@ -41,19 +41,18 @@ typedef struct {
 
 // Wrapper calling the standardized texture generator and converting output to console grid format
 static void synthesize_texture_grid_rgb(huc_ocean_system_t *huc, double phase, int mode, const tsfi_texgen_params_t *params) {
-    uint8_t output_rgb[GRID_SIZE * GRID_SIZE * 3];
-    tsfi_texgen_render(output_rgb, GRID_SIZE, GRID_SIZE, phase, mode, params);
+    uint8_t output_rgba[GRID_SIZE * GRID_SIZE * 4];
+    tsfi_texgen_render(output_rgba, GRID_SIZE, GRID_SIZE, phase, mode, params);
     
     const char glyphs[] = " .:-=+*#%@";
     for (int y = 0; y < GRID_SIZE; y++) {
         for (int x = 0; x < GRID_SIZE; x++) {
-            int out_idx = (y * GRID_SIZE + x) * 3;
-            huc->texture_grid[y][x].r = output_rgb[out_idx];
-            huc->texture_grid[y][x].g = output_rgb[out_idx+1];
-            huc->texture_grid[y][x].b = output_rgb[out_idx+2];
+            int out_idx = (y * GRID_SIZE + x) * 4;
+            huc->texture_grid[y][x].r = output_rgba[out_idx];
+            huc->texture_grid[y][x].g = output_rgba[out_idx+1];
+            huc->texture_grid[y][x].b = output_rgba[out_idx+2];
             
-            // Map average intensity back to glyph symbol index
-            double h_center = (output_rgb[out_idx] + output_rgb[out_idx+1] + output_rgb[out_idx+2]) / 3.0;
+            double h_center = (output_rgba[out_idx] + output_rgba[out_idx+1] + output_rgba[out_idx+2]) / 3.0;
             int idx = (int)(h_center / 25.6);
             if (idx < 0) idx = 0;
             if (idx > 9) idx = 9;
@@ -94,7 +93,9 @@ static void process_tape_ingest_v6(huc_ocean_system_t *huc,
         .feedback_strength = 0.5f,
         .clut_preset = 0U,
         .vignette_strength = 0.3f,
-        .threshold_limit = 0.0f
+        .threshold_limit = 0.0f,
+        .shell_ao = 0.4f,
+        .anisotropy = 0.5f
     };
 
     for (int lane = 0; lane < LANES; lane++) {
