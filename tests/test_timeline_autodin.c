@@ -291,6 +291,17 @@ int main(void) {
     assert(line_grid[99] != ' '); // Last pixel rasterized
     printf("   ✓ Sub-pixel antialiased line rasterization verified.\n");
 
+    // Test XPL spline text-grid renderer
+    TcbKeyframe test_keys[3] = {
+        { .frame = 0.0f, .data = 1.0f },
+        { .frame = 1.0f, .data = 5.0f },
+        { .frame = 2.0f, .data = 9.0f }
+    };
+    char xpl_grid[100];
+    auncient_xpl_render_spline_to_grid(test_keys, 3, xpl_grid, 10, 10);
+    assert(xpl_grid[0] != ' '); // First segment drawn
+    printf("   ✓ XPL spline rendering to text grid verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");

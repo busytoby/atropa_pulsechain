@@ -718,3 +718,42 @@ void auncient_rasterize_antialiased_line(float x0, float y0, float x1, float y1,
         cy += y_inc;
     }
 }
+
+void auncient_xpl_render_spline_to_grid(const TcbKeyframe *keys, int key_count, char *grid, int width, int height) {
+    if (!keys || key_count < 2 || !grid || width <= 0 || height <= 0) return;
+
+    // Clear grid buffer to spaces first
+    memset(grid, ' ', width * height);
+
+    // Calculate TCB tangents
+    TcbKeyframe *temp_keys = malloc(sizeof(TcbKeyframe) * key_count);
+    if (!temp_keys) return;
+    memcpy(temp_keys, keys, sizeof(TcbKeyframe) * key_count);
+    auncient_tcb_calculate_tangents(temp_keys, key_count);
+
+    // Subdivide spline paths and draw antialiased line segments
+    float last_val = auncient_tcb_evaluate(temp_keys, key_count, temp_keys[0].frame);
+    float last_x = 0.0f;
+    float last_y = last_val;
+
+    int steps = 20;
+    float start_frame = temp_keys[0].frame;
+    float end_frame = temp_keys[key_count - 1].frame;
+    float step_size = (end_frame - start_frame) / (float)steps;
+
+    for (int i = 1; i <= steps; i++) {
+        float f = start_frame + (float)i * step_size;
+        float val = auncient_tcb_evaluate(temp_keys, key_count, f);
+
+        // Map keyframe parameters to grid screen coordinates
+        float curr_x = ((float)i / (float)steps) * (float)(width - 1);
+        float curr_y = val;
+
+        auncient_rasterize_antialiased_line(last_x, last_y, curr_x, curr_y, grid, width, height);
+
+        last_x = curr_x;
+        last_y = curr_y;
+    }
+
+    free(temp_keys);
+}

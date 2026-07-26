@@ -194,6 +194,9 @@ void auncient_resolve_box_collisions(ClothPoint *square1, int count1, ClothPoint
 // Rasterizes an antialiased line into a character grid buffer using sub-pixel density steps
 void auncient_rasterize_antialiased_line(float x0, float y0, float x1, float y1, char *grid, int width, int height);
 
+// Renders TCB spline paths from XPL registers onto a text-based terminal grid buffer
+void auncient_xpl_render_spline_to_grid(const TcbKeyframe *keys, int key_count, char *grid, int width, int height);
+
 #ifdef __cplusplus
 }
 #endif
