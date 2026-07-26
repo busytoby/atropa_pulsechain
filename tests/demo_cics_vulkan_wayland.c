@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <time.h>
+#include <poll.h>
 #include <dlfcn.h>
 #include <wayland-client.h>
 #include "xdg-shell-client-protocol.h"
@@ -340,10 +342,20 @@ int main(void) {
         }
     }
 
-    int loop_ticks = 10;
-    while (running && loop_ticks-- > 0) {
-        wl_display_dispatch_pending(display);
-        usleep(10000);
+    struct pollfd fds[] = {
+        { wl_display_get_fd(display), POLLIN, 0 }
+    };
+    
+    printf("[INFO] Entering live interactive loop. Press keys inside the window to trigger CICS audits. Session will auto-close after 15 seconds of inactivity.\n");
+    
+    time_t start_time = time(NULL);
+    while (running && (time(NULL) - start_time < 15)) {
+        wl_display_flush(display);
+        int ret = poll(fds, 1, 1000);
+        if (ret > 0) {
+            wl_display_dispatch(display);
+            start_time = time(NULL);
+        }
     }
 
     // Cleanup Vulkan dynamically bound resources
