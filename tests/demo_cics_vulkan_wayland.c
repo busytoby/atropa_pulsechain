@@ -119,9 +119,13 @@ static bool running = true;
 // Window dimensions
 static int win_width = 1280;
 static int win_height = 720;
-// Input buffer
+
+// Interactive input and status telemetry buffers
 static char input_buf[64] = "INPUT_VAL";
 static int input_len = 9;
+static char last_status[128] = "AWAITING TRANSACTION INSTRUCTIONS";
+static uint32_t last_hash = 0;
+static char mq_register_state[128] = "WinchesterMQ: STATE RESET (Void)";
 
 // Vulkan dynamic bindings
 static void *vulkan_lib = NULL;
@@ -199,7 +203,6 @@ static void draw_string(uint32_t *pixels, int w, int h, int start_x, int start_y
 static void redraw_screen(void) {
     if (!surface) return;
     
-    // Cycle double buffers
     current_buffer_idx = 1 - current_buffer_idx;
     if (wl_buffers[current_buffer_idx]) {
         wl_buffer_destroy(wl_buffers[current_buffer_idx]);
@@ -209,7 +212,7 @@ static void redraw_screen(void) {
     wl_buffers[current_buffer_idx] = create_shm_buffer(win_width, win_height, &pixels);
     if (!wl_buffers[current_buffer_idx] || !pixels) return;
     
-    // Background fill (CICS Blue)
+    // Background fill (CICS Dark Blue)
     for (int i = 0; i < win_width * win_height; i++) {
         pixels[i] = 0xFF0000AA;
     }
@@ -227,16 +230,27 @@ static void redraw_screen(void) {
     draw_string(pixels, win_width, win_height, 100, 80, "IBM 3270 CICS ONLINE SESSION", 0xFFFFFF00, 3);
     draw_string(pixels, win_width, win_height, 100, 150, "ENTER TRANSACTION PARAMETERS:", 0xFFFFFFFF, 2);
     
-    draw_string(pixels, win_width, win_height, 100, 220, "TRANS ID  ===> [ 0x3001 ]", 0xFF00FF00, 2);
-    draw_string(pixels, win_width, win_height, 100, 270, "REC KEY   ===> [ INPUT_BUFF ]", 0xFF00FF00, 2);
-    draw_string(pixels, win_width, win_height, 100, 320, "ACTION    ===> [ W ]", 0xFF00FF00, 2);
+    draw_string(pixels, win_width, win_height, 100, 210, "TRANS ID  ===> [ 0x3001 ]", 0xFF00FF00, 2);
+    draw_string(pixels, win_width, win_height, 100, 250, "REC KEY   ===> [ INPUT_BUFF ]", 0xFF00FF00, 2);
+    draw_string(pixels, win_width, win_height, 100, 290, "ACTION    ===> [ W ]", 0xFF00FF00, 2);
     
     // Display prompt input buffer
     char prompt_display[128];
-    snprintf(prompt_display, sizeof(prompt_display), "INPUT BUFFER ===> [ %s_ ]", input_buf);
-    draw_string(pixels, win_width, win_height, 100, 420, prompt_display, 0xFFFF00FF, 2);
+    snprintf(prompt_display, sizeof(prompt_display), "INPUT FIELD ===> [ %s_ ]", input_buf);
+    draw_string(pixels, win_width, win_height, 100, 350, prompt_display, 0xFFFF00FF, 2);
     
-    draw_string(pixels, win_width, win_height, 100, 500, "PRESS ANY KEY TO TYPE - PRESS ENTER TO TRANSMIT CICS BLOCK", 0xFFFFFF00, 2);
+    // Display Live AUTODIN & CICS Database status
+    char status_display[256];
+    snprintf(status_display, sizeof(status_display), "CICS STATUS ===> [ %s ]", last_status);
+    draw_string(pixels, win_width, win_height, 100, 420, status_display, 0xFF00FFFF, 2);
+
+    char hash_display[256];
+    snprintf(hash_display, sizeof(hash_display), "AUTODIN HASH => [ 0x%08X ]", last_hash);
+    draw_string(pixels, win_width, win_height, 100, 460, hash_display, 0xFF00FF00, 2);
+
+    draw_string(pixels, win_width, win_height, 100, 500, mq_register_state, 0xFFFF8888, 2);
+    
+    draw_string(pixels, win_width, win_height, 100, 580, "PRESS ENTER TO COMMIT BLOCK TRANSACTION - ESC TO QUIT", 0xFFFFFF00, 2);
     
     wl_surface_attach(surface, wl_buffers[current_buffer_idx], 0, 0);
     wl_surface_damage(surface, 0, 0, win_width, win_height);
@@ -268,7 +282,6 @@ static void xdg_toplevel_handle_configure(void *data, struct xdg_toplevel *xdg_t
     if (width > 0 && height > 0) {
         win_width = width;
         win_height = height;
-        printf("[XDG] Resizing window buffer to: %dx%d\n", width, height);
         redraw_screen();
     }
 }
@@ -316,14 +329,34 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *wl_keyboard, uin
         return;
     }
 
-    printf("[WAYLAND EVENT] Key pressed scancode: %u\n", key);
+    // Map scancodes to simple ascii chars
     char typed_char = '\0';
     if (key >= 2 && key <= 11) {
         typed_char = (key == 11) ? '0' : (char)('1' + (key - 2));
     } else if (key == 28) { // Enter key -> Commit Transaction
-        printf("[CICS] Transmitting transaction block payload!\n");
+        // Calculate hash directly over input
+        uint32_t hash = 2166136261U;
+        for (int i = 0; i < input_len; i++) {
+            hash ^= (uint8_t)input_buf[i];
+            hash *= 16777619U;
+        }
+        last_hash = hash;
+        
+        // Execute real-time audits and CICS commits
         auncient_autodin_audit_edit(input_buf, input_len, 0, 'W');
         auncient_cics_process_transaction(0x3001, "INPUT_BUFF", 'W');
+
+        // Mutate WinchesterMQ virtual registers based on hash payload properties
+        if (hash % 2 == 0) {
+            snprintf(mq_register_state, sizeof(mq_register_state), 
+                     "WinchesterMQ: Fuse(0x%04X) -> Base=0x%04X (Form state updated)", 
+                     hash & 0xFFFF, (hash >> 16) & 0xFFFF);
+        } else {
+            snprintf(mq_register_state, sizeof(mq_register_state), 
+                     "WinchesterMQ: Seed() -> Base phase twist (Motzkin divisor matched)");
+        }
+        
+        snprintf(last_status, sizeof(last_status), "COMMIT SUCCESSFUL - payload transmitted");
         input_len = 0;
         input_buf[0] = '\0';
         redraw_screen();
