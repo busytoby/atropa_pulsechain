@@ -103,6 +103,21 @@ static void resolve_local_inh_conflict(const usd_local_inh_conflict_t *conflict,
     }
 }
 
+// 6. Local vs Payload
+typedef struct {
+    char local_opinion[32];
+    char payload_opinion[32];
+} usd_local_payload_conflict_t;
+
+static void resolve_local_payload_conflict(const usd_local_payload_conflict_t *conflict, char *resolved_val) {
+    if (strlen(conflict->local_opinion) > 0) {
+        strcpy(resolved_val, conflict->local_opinion);
+    } else {
+        strcpy(resolved_val, conflict->payload_opinion);
+    }
+}
+
+
 int main(void) {
     printf("=============================================================\n");
     printf("AUNCIENT USD LIVRPS LATENCY MICROBENCHMARK SUITE\n");
@@ -206,6 +221,23 @@ int main(void) {
     }
     double end_li = get_time_ns();
     printf("   ✓ Local vs Inherits Conflict Average Latency: %.2f ns/run\n", (end_li - start) / iterations);
+    fflush(stdout);
+
+    // 6. Local vs Payload Priority Benchmark
+    printf("[BENCHMARK] Running %d iterations of Local vs Payload Conflicts...\n", iterations);
+    fflush(stdout);
+    usd_local_payload_conflict_t lp_conflict = {
+        .local_opinion = "local_payload_override",
+        .payload_opinion = "payload_base_representation"
+    };
+    char resolved_lp[32] = "";
+    start = get_time_ns();
+    for (int i = 0; i < iterations; i++) {
+        resolve_local_payload_conflict(&lp_conflict, resolved_lp);
+        checksum += resolved_lp[0];
+    }
+    double end_lp = get_time_ns();
+    printf("   ✓ Local vs Payload Conflict Average Latency: %.2f ns/run\n", (end_lp - start) / iterations);
     fflush(stdout);
 
     // Print checksum to ensure values are not optimized away
