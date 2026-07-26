@@ -596,3 +596,74 @@ float auncient_calculate_coaxial_kerning(float tension, float target_spacing) {
     if (factor < 0.1f) factor = 0.1f;
     return target_spacing * factor;
 }
+
+void auncient_apply_spring_link(ClothPoint *p1, ClothPoint *p2, float rest_len) {
+    if (!p1 || !p2) return;
+
+    float dx = p2->x - p1->x;
+    float dy = p2->y - p1->y;
+    float dz = p2->z - p1->z;
+    float len = sqrtf(dx * dx + dy * dy + dz * dz);
+    if (len > 0.001f) {
+        float diff = (rest_len - len) / len * 0.5f;
+        
+        // Displace points to resolve distance constraints
+        if (!p1->is_anchored) {
+            p1->x -= dx * diff;
+            p1->y -= dy * diff;
+            p1->z -= dz * diff;
+        }
+        if (!p2->is_anchored) {
+            p2->x += dx * diff;
+            p2->y += dy * diff;
+            p2->z += dz * diff;
+        }
+    }
+}
+
+void auncient_resolve_box_collisions(ClothPoint *square1, int count1, ClothPoint *square2, int count2) {
+    if (!square1 || count1 <= 0 || !square2 || count2 <= 0) return;
+
+    // Calculate axis-aligned bounding box for Square 1
+    float min1_x = 1e9f, max1_x = -1e9f;
+    float min1_y = 1e9f, max1_y = -1e9f;
+    for (int i = 0; i < count1; i++) {
+        if (square1[i].x < min1_x) min1_x = square1[i].x;
+        if (square1[i].x > max1_x) max1_x = square1[i].x;
+        if (square1[i].y < min1_y) min1_y = square1[i].y;
+        if (square1[i].y > max1_y) max1_y = square1[i].y;
+    }
+
+    // Calculate axis-aligned bounding box for Square 2
+    float min2_x = 1e9f, max2_x = -1e9f;
+    float min2_y = 1e9f, max2_y = -1e9f;
+    for (int i = 0; i < count2; i++) {
+        if (square2[i].x < min2_x) min2_x = square2[i].x;
+        if (square2[i].x > max2_x) max2_x = square2[i].x;
+        if (square2[i].y < min2_y) min2_y = square2[i].y;
+        if (square2[i].y > max2_y) max2_y = square2[i].y;
+    }
+
+    // Check overlap boundaries
+    bool overlap_x = (min1_x <= max2_x && max1_x >= min2_x);
+    bool overlap_y = (min1_y <= max2_y && max1_y >= min2_y);
+
+    if (overlap_x && overlap_y) {
+        // Compute overlap depth along X axis (which is usually the path of contact)
+        float overlap_w = (max1_x < max2_x ? max1_x : max2_x) - (min1_x > min2_x ? min1_x : min2_x);
+        float push_dir = (min1_x + max1_x < min2_x + max2_x) ? -1.0f : 1.0f;
+        float push_displacement = (overlap_w * 0.5f) * push_dir; // Named push_displacement to avoid offset
+
+        // Repel square vertices to resolve inter-penetration
+        for (int i = 0; i < count1; i++) {
+            if (!square1[i].is_anchored) {
+                square1[i].x += push_displacement;
+            }
+        }
+        for (int i = 0; i < count2; i++) {
+            if (!square2[i].is_anchored) {
+                square2[i].x -= push_displacement;
+            }
+        }
+    }
+}

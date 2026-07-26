@@ -185,6 +185,12 @@ void auncient_termcap_query(AuncientTermcap *tc);
 // Calculates dynamic character spacing based on spline string tension values
 float auncient_calculate_coaxial_kerning(float tension, float target_spacing);
 
+// Applies a spring link constraint to pull two physical points toward their rest length
+void auncient_apply_spring_link(ClothPoint *p1, ClothPoint *p2, float rest_len);
+
+// Resolves collision responses between two bounding boxes representing physical squares
+void auncient_resolve_box_collisions(ClothPoint *square1, int count1, ClothPoint *square2, int count2);
+
 #ifdef __cplusplus
 }
 #endif

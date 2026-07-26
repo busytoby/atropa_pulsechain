@@ -261,6 +261,28 @@ int main(void) {
     assert(spacing < 2.0f); // Spacing decreases under tension
     printf("   ✓ Coaxial kerning character spacing verified.\n");
 
+    // Test spring links
+    ClothPoint p_spring1 = { .x = 0.0f, .y = 0.0f, .z = 0.0f, .is_anchored = 0 };
+    ClothPoint p_spring2 = { .x = 4.0f, .y = 0.0f, .z = 0.0f, .is_anchored = 0 };
+    auncient_apply_spring_link(&p_spring1, &p_spring2, 2.0f); // Rest len 2, current len 4
+    assert(p_spring1.x > 0.0f);
+    assert(p_spring2.x < 4.0f);
+    printf("   ✓ Inter-body spring link constraints verified.\n");
+
+    // Test box-to-box collisions
+    ClothPoint box1[2] = {
+        { .x = 0.0f, .y = 0.0f, .z = 0.0f, .is_anchored = 0 },
+        { .x = 2.0f, .y = 2.0f, .z = 0.0f, .is_anchored = 0 }
+    };
+    ClothPoint box2[2] = {
+        { .x = 1.0f, .y = 0.0f, .z = 0.0f, .is_anchored = 0 },
+        { .x = 3.0f, .y = 2.0f, .z = 0.0f, .is_anchored = 0 }
+    };
+    auncient_resolve_box_collisions(box1, 2, box2, 2);
+    assert(box1[0].x < 0.0f); // Repelled left
+    assert(box2[0].x > 1.0f); // Repelled right
+    printf("   ✓ Box collision resolution and repulsion verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");
