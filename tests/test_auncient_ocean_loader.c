@@ -186,6 +186,25 @@ static void resolve_hierarchical_inherits(const usd_hierarchy_inherit_t *hi, cha
     }
 }
 
+typedef struct {
+    char source_path[64];
+    char target_prefix[64];
+} usd_reroute_t;
+
+static void resolve_reroot_path(const usd_reroute_t *rr, const char *relative_path, char *absolute_out) {
+    sprintf(absolute_out, "%s%s", rr->target_prefix, relative_path);
+}
+
+typedef struct {
+    double time_displacement;
+    double time_scale;
+} usd_reference_displacement_t;
+
+static double resolve_reference_time(const usd_reference_displacement_t *disp, double input_time) {
+    return (input_time * disp->time_scale) + disp->time_displacement;
+}
+
+
 
 
 int main(void) {
@@ -317,6 +336,26 @@ int main(void) {
     resolve_hierarchical_inherits(&hi, final_value);
     assert(strcmp(final_value, "cloth_material") == 0);
     printf("   ✓ Hierarchical direct child inherits overrides transitive root class.\n");
+    fflush(stdout);
+
+    // 9. Test Namespace Re-routing and Reference Displacements
+    printf("[TEST] Testing Namespace Re-routing and Reference Displacements...\n");
+    fflush(stdout);
+    usd_reroute_t rr = {
+        .source_path = "/Cactus",
+        .target_prefix = "/World/Cactus"
+    };
+    char absolute_path[128] = "";
+    resolve_reroot_path(&rr, "/Body", absolute_path);
+    assert(strcmp(absolute_path, "/World/Cactus/Body") == 0);
+
+    usd_reference_displacement_t disp = {
+        .time_displacement = 1.5,
+        .time_scale = 2.0
+    };
+    double resolved_time = resolve_reference_time(&disp, 0.5);
+    assert(resolved_time == 2.5);
+    printf("   ✓ Namespace re-routing path mapping and reference time displacements successfully resolved.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
