@@ -3,9 +3,31 @@ import re
 import datetime
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
-from reportlab.platypus import BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer, PageBreak, FrameBreak, Table, TableStyle, Image, NextPageTemplate, KeepTogether
+from reportlab.platypus import BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer, PageBreak, FrameBreak, Table, TableStyle, Image, NextPageTemplate, KeepTogether, Flowable
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_JUSTIFY, TA_CENTER, TA_LEFT
+
+class ACMDocTemplate(BaseDocTemplate):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.use_1col = False
+        
+    def handle_pageBegin(self):
+        if self.use_1col:
+            template_id = 'even_page_1col' if self.page % 2 == 0 else 'odd_page_1col'
+        else:
+            template_id = 'even_page_2col' if self.page % 2 == 0 else 'odd_page_2col'
+        self._handle_nextPageTemplate(template_id)
+        super().handle_pageBegin()
+
+class SetLayoutMode(Flowable):
+    def __init__(self, use_1col):
+        super().__init__()
+        self.use_1col = use_1col
+        
+    def draw(self):
+        if hasattr(self.canv, '_doctemplate'):
+            self.canv._doctemplate.use_1col = self.use_1col
 from reportlab.lib import colors
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
@@ -485,7 +507,7 @@ def process_text_block(text, body_style, col_width, story):
 def build_volume(volume_num, files, page_width, page_height, col_width, col_height, spacing, title_style, body_style):
     output_filename = f"lore_compendium_vol{volume_num}.pdf"
     
-    doc = BaseDocTemplate(
+    doc = ACMDocTemplate(
         output_filename,
         pagesize=(page_width, page_height)
     )
@@ -510,7 +532,7 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
     doc.addPageTemplates([template_odd, template_even, template_odd_1col, template_even_1col])
     
     story = []
-    story.append(NextPageTemplate(['even_page_2col', 'odd_page_2col']))
+    story.append(SetLayoutMode(False))
     
     story.append(Paragraph(f"<b>COMPENDIUM OF LORE AND HISTORICAL TRANSCRIPTS - VOLUME {volume_num}</b>", title_style))
     story.append(Paragraph("Compiled Chronologically under ACM 1961 Standards", ParagraphStyle('Sub', parent=title_style, fontName='Times-Italic', fontSize=9)))
@@ -567,12 +589,7 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                     m_flowable = render_mermaid_flowchart(block_lines, col_width_1col if is_wide else col_width)
                     if m_flowable:
                         if is_wide:
-                            caption_text = f"<b>Flowchart {listing_counter}</b>: System schematic structure referenced in <i>{title}</i>"
-                            article_wide_blocks.append((caption_text, m_flowable))
-                            art_flowables.append(Spacer(1, 4))
-                            art_flowables.append(Paragraph(f'<font color="#0077b6"><b>[Flowchart {listing_counter}: See Appendix at the end of this article]</b></font>', ParagraphStyle('FlowPlaceholder', parent=body_style, fontName='Times-Italic', fontSize=7.0, spaceBefore=2, spaceAfter=2)))
-                            art_flowables.append(Spacer(1, 4))
-                            listing_counter += 1
+                            article_wide_blocks.append(m_flowable)
                         else:
                             art_flowables.append(Spacer(1, 4))
                             art_flowables.append(m_flowable)
@@ -581,12 +598,7 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                     if is_wide:
                         c_flowable = render_standard_code_block(block_lines, col_width_1col, body_style)
                         if c_flowable:
-                            caption_text = f"<b>Listing {listing_counter}</b>: Monospace source block referenced in <i>{title}</i>"
-                            article_wide_blocks.append((caption_text, c_flowable))
-                            art_flowables.append(Spacer(1, 4))
-                            art_flowables.append(Paragraph(f'<font color="#0077b6"><b>[Listing {listing_counter}: See Appendix at the end of this article]</b></font>', ParagraphStyle('ListPlaceholder', parent=body_style, fontName='Times-Italic', fontSize=7.0, spaceBefore=2, spaceAfter=2)))
-                            art_flowables.append(Spacer(1, 4))
-                            listing_counter += 1
+                            article_wide_blocks.append(c_flowable)
                     else:
                         c_flowable = render_standard_code_block(block_lines, col_width, body_style)
                         if c_flowable:
@@ -608,12 +620,7 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                     if is_wide:
                         c_flowable = render_standard_code_block(box_lines, col_width_1col, body_style)
                         if c_flowable:
-                            caption_text = f"<b>Diagram {listing_counter}</b>: Monospace layout diagram referenced in <i>{title}</i>"
-                            article_wide_blocks.append((caption_text, c_flowable))
-                            art_flowables.append(Spacer(1, 4))
-                            art_flowables.append(Paragraph(f'<font color="#0077b6"><b>[Diagram {listing_counter}: See Appendix at the end of this article]</b></font>', ParagraphStyle('DiagPlaceholder', parent=body_style, fontName='Times-Italic', fontSize=7.0, spaceBefore=2, spaceAfter=2)))
-                            art_flowables.append(Spacer(1, 4))
-                            listing_counter += 1
+                            article_wide_blocks.append(c_flowable)
                     else:
                         c_flowable = render_standard_code_block(box_lines, col_width, body_style)
                         if c_flowable:
@@ -639,12 +646,7 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                     if not t_flowable:
                         t_flowable = render_standard_code_block(table_lines, col_width_1col, body_style)
                     if t_flowable:
-                        caption_text = f"<b>Table {table_counter}</b>: System state parameters referenced in <i>{title}</i>"
-                        article_wide_blocks.append((caption_text, t_flowable))
-                        art_flowables.append(Spacer(1, 4))
-                        art_flowables.append(Paragraph(f'<font color="#0077b6"><b>[Table {table_counter}: See Appendix at the end of this article]</b></font>', ParagraphStyle('TablePlaceholder', parent=body_style, fontName='Times-Italic', fontSize=7.0, spaceBefore=2, spaceAfter=2)))
-                        art_flowables.append(Spacer(1, 4))
-                        table_counter += 1
+                        article_wide_blocks.append(t_flowable)
                 else:
                     t_flowable = parse_markdown_table(table_lines, body_style, col_width)
                     if not t_flowable:
@@ -770,17 +772,16 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
         flush_art_flowables(art_flowables)
         
         if article_wide_blocks:
-            story.append(NextPageTemplate(['even_page_1col', 'odd_page_1col']))
+            story.append(SetLayoutMode(True))
             story.append(PageBreak())
             story.append(Paragraph(f"<b>APPENDIX: SYSTEM SCHEMATICS AND MONOSPACE DATA - {title.upper()}</b>", ParagraphStyle('AppHead', parent=title_style, alignment=TA_LEFT, fontSize=9.5, spaceBefore=8, spaceAfter=4)))
             story.append(Spacer(1, 0.1 * inch))
             
-            for caption, block in article_wide_blocks:
-                story.append(Paragraph(caption, ParagraphStyle('AppCap', parent=body_style, fontName='Times-Italic', fontSize=8.0, spaceBefore=4, spaceAfter=2)))
+            for block in article_wide_blocks:
                 story.append(block)
                 story.append(Spacer(1, 0.1 * inch))
                 
-            story.append(NextPageTemplate(['even_page_2col', 'odd_page_2col']))
+            story.append(SetLayoutMode(False))
             story.append(PageBreak())
         else:
             story.append(Spacer(1, 0.1 * inch))
