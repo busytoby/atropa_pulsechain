@@ -214,6 +214,15 @@ static struct {
     uint8_t ff19; // Voice 1 freq high
 } ted_chip;
 
+// Pre-computed Morphological character frames (simulating pre-baked sprite assets)
+typedef struct {
+    uint16_t dilated[16];
+    uint16_t eroded[16];
+    uint16_t glints[16];
+} MorphFrame;
+
+static MorphFrame morph_cache[6][5];
+
 static int sid_arp_step = 0;
 static bool voice_active[3] = {true, true, true};
 
@@ -256,6 +265,36 @@ static const uint16_t bubble_font_tsfi2[6][16] = {
     // 2
     {0x3FFC, 0x7FFE, 0xC007, 0x000F, 0x001E, 0x003C, 0x0078, 0x00F0, 0x01E0, 0x03C0, 0x0780, 0x0F00, 0xFFFF, 0xFFFF, 0xFFFF, 0x0000}
 };
+
+static void precompute_morph_cache(void) {
+    for (int char_idx = 0; char_idx < 6; char_idx++) {
+        for (int step = 0; step < 5; step++) {
+            MorphFrame *mf = &morph_cache[char_idx][step];
+            for (int r = 0; r < 16; r++) {
+                uint16_t curr = bubble_font_tsfi2[char_idx][r];
+                uint16_t prev = (r > 0) ? bubble_font_tsfi2[char_idx][r - 1] : 0;
+                uint16_t next = (r < 15) ? bubble_font_tsfi2[char_idx][r + 1] : 0;
+                
+                // Bitwise shifts based on current pre-calculated inflation step
+                uint16_t shift_l = curr | (curr << (step >= 3 ? 2 : 1));
+                uint16_t shift_r = curr | (curr >> (step >= 3 ? 2 : 1));
+                mf->dilated[r] = shift_l | shift_r | prev | next;
+                
+                uint16_t eshift_l = curr & (curr << (step <= 1 ? 2 : 1));
+                uint16_t eshift_r = curr & (curr >> (step <= 1 ? 2 : 1));
+                mf->eroded[r] = eshift_l & eshift_r & prev & next;
+            }
+            
+            for (int r = 0; r < 16; r++) {
+                uint16_t curr_dilated = mf->dilated[r];
+                uint16_t prev_dilated = (r > 0) ? mf->dilated[r - 1] : 0;
+                
+                // Top-left boundary specular highlight mapping
+                mf->glints[r] = (curr_dilated & ~prev_dilated) & ~(curr_dilated << 1);
+            }
+        }
+    }
+}
 
 // Multiplexed Sprite Structure
 typedef struct {
@@ -387,40 +426,82 @@ static void draw_string(uint32_t *pixels, int w, int h, int start_x, int start_y
     }
 }
 
+// 40-entry water level data table mapped directly from water_remove.inc
+static const uint8_t water_remove_raw[40][5] = {
+    {96, 25, 0, 16, 255},
+    {97, 25, 192, 15, 3},
+    {98, 25, 192, 15, 3},
+    {99, 25, 240, 15, 15},
+    {100, 25, 252, 15, 63},
+    {101, 25, 252, 15, 63},
+    {110, 25, 0, 14, 255},
+    {111, 25, 192, 13, 3},
+    {168, 26, 192, 13, 3},
+    {169, 26, 240, 13, 15},
+    {170, 26, 252, 13, 63},
+    {179, 26, 0, 12, 255},
+    {180, 26, 192, 11, 3},
+    {181, 26, 240, 11, 15},
+    {182, 26, 252, 11, 63},
+    {191, 26, 0, 10, 255},
+    {248, 27, 192, 9, 3},
+    {249, 27, 240, 9, 15},
+    {2, 28, 0, 8, 255},
+    {3, 28, 0, 8, 255},
+    {4, 28, 0, 8, 255},
+    {5, 28, 0, 8, 255},
+    {6, 28, 0, 8, 255},
+    {7, 28, 0, 8, 255},
+    {64, 29, 0, 8, 255},
+    {65, 29, 0, 8, 255},
+    {66, 29, 0, 8, 255},
+    {67, 29, 0, 8, 255},
+    {68, 29, 0, 8, 255},
+    {69, 29, 0, 8, 255},
+    {70, 29, 0, 8, 255},
+    {71, 29, 0, 8, 255},
+    {128, 30, 0, 8, 255},
+    {129, 30, 0, 8, 255},
+    {130, 30, 0, 8, 255},
+    {131, 30, 0, 8, 255},
+    {132, 30, 0, 8, 255},
+    {133, 30, 0, 8, 255},
+    {134, 30, 0, 8, 255},
+    {135, 30, 0, 8, 255}
+};
+
 // Simulated Self-Modifying Code (SMC) line remover and ZMM-style backup mirroring
 static void simulate_smc_remove_next_line(uint32_t *active, uint32_t *backup, int win_w, int win_h, int ground, float flood_height) {
     if (flood_height <= 0.0f) return;
     
-    // Simulate runtime-compiled SMC operand values (rewriting instructions in RAM)
-    struct {
-        uint32_t op_start_mask;
-        uint32_t op_count;
-        uint32_t op_end_mask;
-    } smc_inst;
+    // Determine table lookup index based on flood height
+    int table_idx = (int)(flood_height * 1.5f);
+    if (table_idx < 0) table_idx = 0;
+    if (table_idx >= 40) table_idx = 39;
     
-    smc_inst.op_start_mask = 0x00FFFFFF; // Immediate AND mask operand
-    smc_inst.op_count = (int)(flood_height * 4.0f) % 40; // CPX comparison loop operand
-    smc_inst.op_end_mask = 0x00FFFFFF;
+    // Extract parameters from raw water remove table configuration data
+    uint8_t count = water_remove_raw[table_idx][3];
+    uint32_t start_mask = ((uint32_t)water_remove_raw[table_idx][2] << 24) | 0x00FFFFFF;
+    uint32_t end_mask = ((uint32_t)water_remove_raw[table_idx][4] << 24) | 0x00FFFFFF;
     
     int row_displacement = ground + 30 - (int)flood_height;
     if (row_displacement < 0 || row_displacement >= win_h) return;
     
     int row_start = row_displacement * win_w;
     
-    // Mirror write to BOTH active screen and backup cache using EOR mapping simulation
+    // Clear elements on both active screen and backup cache using simulated SMC loops
     for (int col = 0; col < win_w; col++) {
         int idx_active = row_start + col;
         
-        // Emulate compiler/assembler instruction self-modification checks
-        if (col == 0) {
-            active[idx_active] &= smc_inst.op_start_mask;
-            backup[idx_active] &= smc_inst.op_start_mask;
-        } else if (col < (int)smc_inst.op_count) {
+        if (col < 10) {
+            active[idx_active] &= start_mask;
+            backup[idx_active] &= start_mask;
+        } else if (col < 10 + count * 8) {
             active[idx_active] = 0xFF051224; // Blue clear color
             backup[idx_active] = 0xFF051224;
-        } else if (col == (int)smc_inst.op_count) {
-            active[idx_active] &= smc_inst.op_end_mask;
-            backup[idx_active] &= smc_inst.op_end_mask;
+        } else if (col < 10 + count * 8 + 10) {
+            active[idx_active] &= end_mask;
+            backup[idx_active] &= end_mask;
         }
     }
 }
@@ -740,46 +821,18 @@ static void redraw_screen(void) {
         float elastic_scale_x = sim_scale_x[char_idx];
         float elastic_scale_y = sim_scale_y[char_idx];
         
-        // Run morphological blitter passes (16x16 bitwise carry shifts)
-        uint16_t dilated[16] = {0};
-        uint16_t eroded[16] = {0};
-        uint16_t glints[16] = {0};
+        // Look up pre-calculated morphological inflation stage frame from cache (simulating pre-baked sprite assets)
+        int step_idx = (int)((sim_inflation[char_idx] - 1.0f) * 2.0f);
+        if (step_idx < 0) step_idx = 0;
+        if (step_idx > 4) step_idx = 4;
         
-        for (int r = 0; r < 16; r++) {
-            uint16_t curr = bubble_font_tsfi2[char_idx][r];
-            uint16_t prev = (r > 0) ? bubble_font_tsfi2[char_idx][r - 1] : 0;
-            uint16_t next = (r < 15) ? bubble_font_tsfi2[char_idx][r + 1] : 0;
-            
-            // Carry-over shift propagation
-            uint16_t shift_l = curr | (curr << 1);
-            uint16_t shift_r = curr | (curr >> 1);
-            dilated[r] = shift_l | shift_r | prev | next;
-        }
-        
-        for (int r = 0; r < 16; r++) {
-            uint16_t curr = bubble_font_tsfi2[char_idx][r];
-            uint16_t prev = (r > 0) ? bubble_font_tsfi2[char_idx][r - 1] : 0;
-            uint16_t next = (r < 15) ? bubble_font_tsfi2[char_idx][r + 1] : 0;
-            
-            uint16_t shift_l = curr & (curr << 1);
-            uint16_t shift_r = curr & (curr >> 1);
-            eroded[r] = shift_l & shift_r & prev & next;
-        }
-        
-        for (int r = 0; r < 16; r++) {
-            uint16_t curr_dilated = dilated[r];
-            uint16_t prev_dilated = (r > 0) ? dilated[r - 1] : 0;
-            
-            // Top-left boundary highlight logic
-            uint16_t top_edge = curr_dilated & ~prev_dilated;
-            glints[r] = top_edge & ~(curr_dilated << 1);
-        }
+        MorphFrame *frame = &morph_cache[char_idx][step_idx];
         
         // Render characters based on bitwise morphological maps
         for (int r = 0; r < 16; r++) {
             for (int c = 0; c < 16; c++) {
                 uint16_t mask = 1 << (15 - c);
-                bool is_dilated = dilated[r] & mask;
+                bool is_dilated = frame->dilated[r] & mask;
                 if (!is_dilated) continue;
                 
                 int wobble_idx_x = (int)(retro_time * 90.0f + r * 12 + c * 6 + char_idx * 24) & 0xFF;
@@ -792,9 +845,9 @@ static void redraw_screen(void) {
                 
                 // Classify layer based on morphological level
                 uint32_t pixel_color = 0x00000000;
-                bool is_eroded = eroded[r] & mask;
+                bool is_eroded = frame->eroded[r] & mask;
                 bool is_source = bubble_font_tsfi2[char_idx][r] & mask;
-                bool is_glint = glints[r] & mask;
+                bool is_glint = frame->glints[r] & mask;
                 
                 if (is_glint) {
                     pixel_color = 0xFFFFFFFF; // High-gloss specular glint
@@ -947,8 +1000,8 @@ static void redraw_screen(void) {
              voice_active[0] ? "ON" : "OFF",
              voice_active[1] ? "ON" : "OFF",
              voice_active[2] ? "ON" : "OFF");
-    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 70 + glitch_y, sid_buf, 0xFFFFFF00, 2);
-
+    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 65 + glitch_y, sid_buf, 0xFFFFFF00, 1);
+ 
     // Update Hudson Soft PSG register states dynamically based on SID audio track parameters
     huc6280_psg.channels[0].freq = sid_chip.voices[0].freq / 2;
     huc6280_psg.channels[0].volume = (sid_chip.volume * 31) / 15; // Map 4-bit to 5-bit volume
@@ -956,7 +1009,7 @@ static void redraw_screen(void) {
     huc6280_psg.channels[1].freq = sid_chip.voices[1].freq / 2;
     huc6280_psg.channels[1].volume = (sid_chip.volume * 24) / 15;
     huc6280_psg.channels[1].pan = 0x24;
-
+ 
     // Dynamically calculate and fill 32-byte PSG wavetable channels with classic waveforms
     for (int i = 0; i < 32; i++) {
         huc6280_psg.channels[0].waveform[i] = (uint8_t)(15.0f + 15.0f * sinf(i * 2.0f * M_PI / 32.0f)); // Sine
@@ -966,10 +1019,10 @@ static void redraw_screen(void) {
         huc6280_psg.channels[4].waveform[i] = (uint8_t)((i + (int)(retro_time * 50.0f)) % 7 == 0 ? 25 : 5); // Pseudo-noise
         huc6280_psg.channels[5].waveform[i] = (uint8_t)(i < 8 ? 31 : 0); // Pulse
     }
-
+ 
     // Draw 6 channel wavetable oscilloscopes (32x12 pixels each, compacted for 1.85:1 aspect)
     int osc_base_x = 120 + glitch_x;
-    int osc_base_y = win_height - 60 + glitch_y;
+    int osc_base_y = win_height - 80 + glitch_y;
     for (int c = 0; c < 6; c++) {
         // Draw oscilloscope label
         char osc_label[8];
@@ -985,34 +1038,34 @@ static void redraw_screen(void) {
             }
         }
     }
-
+ 
     char psg_buf[256];
     snprintf(psg_buf, sizeof(psg_buf), 
              "HUDSON HUC6280 PSG | CH1: FREQ=0x%04X VOL=%2d PAN=0x%02X | CH2: FREQ=0x%04X VOL=%2d PAN=0x%02X",
              huc6280_psg.channels[0].freq, huc6280_psg.channels[0].volume, huc6280_psg.channels[0].pan,
              huc6280_psg.channels[1].freq, huc6280_psg.channels[1].volume, huc6280_psg.channels[1].pan);
-    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 50 + glitch_y, psg_buf, 0xFF00FF00, 2);
-
+    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 52 + glitch_y, psg_buf, 0xFF00FF00, 1);
+ 
     // Update TED registers dynamically
     ted_chip.ff09 = (ted_chip.ff09 + 1) & 0xFF; // Increment raster status flag (acknowledgment flow)
     ted_chip.ff0b = vic_d012; // Share VIC-II/TED raster scanline values
     ted_chip.ff15 = (uint8_t)(sid_chip.voices[1].freq >> 8);
     ted_chip.ff19 = (uint8_t)(sid_chip.voices[0].freq >> 8);
-
+ 
     char ted_buf[256];
     snprintf(ted_buf, sizeof(ted_buf),
              "TED MOS 8360 | ff06=0x%02X ff07=0x%02X ff09=0x%02X ff0b=%3d | SOUND: V1=0x%02X V2=0x%02X",
              ted_chip.ff06, ted_chip.ff07, ted_chip.ff09, ted_chip.ff0b,
              ted_chip.ff19, ted_chip.ff15);
-    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 35 + glitch_y, ted_buf, 0xFF00FFFF, 2);
-
+    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 39 + glitch_y, ted_buf, 0xFF00FFFF, 1);
+ 
     // Initials Anagram Mapping: Alternate "TSN" and "TNS" dynamically every second
     const char *initials = ((int)retro_time % 2 == 0) ? "TSN" : "TNS";
     char help_buf[256];
     snprintf(help_buf, sizeof(help_buf), 
              "VIC-II: d012=%d - TRIBUTE: %s - PRESS '#' FOR TUNES | KEYS '1'-'3' TO MUTE VOICES", 
              vic_d012, initials);
-    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 25 + glitch_y, help_buf, 0xFFFFCC00, 2);
+    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 26 + glitch_y, help_buf, 0xFFFFCC00, 1);
     
     wl_surface_attach(surface, wl_buffers[current_buffer_idx], 0, 0);
     wl_surface_damage(surface, 0, 0, win_width, win_height);
@@ -1299,6 +1352,9 @@ int main(void) {
     for (int i = 0; i < 256; i++) {
         sine_lut[i] = sinf((float)i * (2.0f * M_PI / 256.0f));
     }
+
+    // Precompute morphological character frames cache (sprite asset simulation)
+    precompute_morph_cache();
 
     // Initialize 3D Starfield coordinates
     for (int i = 0; i < 15; i++) {
