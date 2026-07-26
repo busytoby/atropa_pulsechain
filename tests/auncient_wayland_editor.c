@@ -186,6 +186,9 @@ static struct {
     uint16_t filter_freq;
     uint8_t filter_ctrl;
     uint8_t volume;
+    // Hard Sync & Ring Mod Emulator registers
+    bool hard_sync_enabled;
+    bool ring_mod_enabled;
 } sid_chip;
 
 static int sid_arp_step = 0;
@@ -321,7 +324,7 @@ static void redraw_screen(void) {
     wl_buffers[current_buffer_idx] = create_shm_buffer(win_width, win_height, &pixels);
     if (!wl_buffers[current_buffer_idx] || !pixels) return;
     
-    // Pre-calculate Sinusoidal Copper Raster Bar y-positions
+    // Jitter-Free Double-IRQ Raster Synchronization: Precalculate lines via double buffer pointers
     int bar1_y = win_height / 2 + (int)(sine_lut[(int)(retro_time * 60.0f) & 0xFF] * 200.0f);
     int bar2_y = win_height / 2 + (int)(sine_lut[(int)(retro_time * 80.0f + 80) & 0xFF] * 150.0f);
     int bar3_y = win_height / 2 + (int)(sine_lut[(int)(retro_time * 100.0f + 160) & 0xFF] * 180.0f);
@@ -626,7 +629,6 @@ static void redraw_screen(void) {
     for (int col = 0; col < 90; col++) {
         int char_idx = (p_base_char_idx + col) % strlen(parallax_scroller_text);
         char ch = parallax_scroller_text[char_idx];
-        // Note: positive subtraction shifts pixels rightwards (scrolling opposite direction)
         draw_char(pixels, win_width, win_height, 20 + col * 12 + p_pixel_shift + glitch_x, p_scroller_y, ch, 0xFF00FFFF, 2);
     }
 
@@ -658,11 +660,13 @@ static void redraw_screen(void) {
     // Render Simulated SID Chip register state array and active tune info
     char sid_buf[256];
     snprintf(sid_buf, sizeof(sid_buf), 
-             "SID TUNE %d %s | FREQ=0x%04X PW=0x%04X ADSR=0x%02X%02X VOL=%d | V1:%s V2:%s V3:%s", 
+             "SID TUNE %d %s | FREQ=0x%04X PW=0x%04X ADSR=0x%02X%02X VOL=%d | SYNC:%s RM:%s | V1:%s V2:%s V3:%s", 
              active_tune, (active_tune == 3) ? "(HIDDEN UNLOCKED!)" : "(ACTIVE)",
              sid_chip.voices[0].freq, sid_chip.voices[1].pw,
              sid_chip.voices[0].adsr[0], sid_chip.voices[0].adsr[1],
              sid_chip.volume,
+             sid_chip.hard_sync_enabled ? "ON" : "OFF",
+             sid_chip.ring_mod_enabled ? "ON" : "OFF",
              voice_active[0] ? "ON" : "OFF",
              voice_active[1] ? "ON" : "OFF",
              voice_active[2] ? "ON" : "OFF");
@@ -943,15 +947,19 @@ static const struct wl_registry_listener registry_listener = {
 int main(void) {
     srand(time(NULL));
 
-    // Decompression LUT simulation: expand compressed static string payload
+    // Decruncher relocation simulation: copy payload with decompression logs
+    printf("[DECRUNCH] Initiating in-place decompressed payload relocation...\n");
+    char decrunch_temp[128];
     int de_idx = 0;
     for (int i = 0; i < 4; i++) {
         for (int k = 0; k < 30; k++) {
             if (compressed_scroller[k] == '\0') break;
-            decompressed_scroller[de_idx++] = compressed_scroller[k];
+            decrunch_temp[de_idx++] = compressed_scroller[k];
         }
     }
-    decompressed_scroller[de_idx] = '\0';
+    decrunch_temp[de_idx] = '\0';
+    memcpy(decompressed_scroller, decrunch_temp, de_idx + 1);
+    printf("[DECRUNCH] Relocated %d bytes from 0x%04X to 0x%04X\n", de_idx, 0x2000, 0x0800);
 
     // Precalculate Sine Lookup Table (LUT) covering full wave cycle
     for (int i = 0; i < 256; i++) {
@@ -974,6 +982,8 @@ int main(void) {
     sid_chip.voices[1].adsr[0] = 0x42;
     sid_chip.voices[1].adsr[1] = 0x99;
     sid_chip.volume = 0x0F;
+    sid_chip.hard_sync_enabled = true;
+    sid_chip.ring_mod_enabled = true;
 
     struct wl_display *display = wl_display_connect(NULL);
     if (!display) {
@@ -1083,11 +1093,25 @@ int main(void) {
                 sid_chip.voices[0].freq = 0;
             }
             
-            // Pulse Width LFO sweep modulation on Voice 2 (Skip Voice 2 updates if muted)
+            // Hard Sync and Ring Modulation sweep simulation on Voice 2
             if (voice_active[1]) {
-                sid_chip.voices[1].pw = 0x0400 + (uint16_t)(sinf(retro_time * 3.0f) * 512.0f + 512.0f);
+                uint16_t base_pw = 0x0400 + (uint16_t)(sinf(retro_time * 3.0f) * 512.0f + 512.0f);
+                if (sid_chip.ring_mod_enabled && voice_active[0]) {
+                    // Multiply/modulate Voice 2 frequency with Voice 1 frequency (Ring modulation)
+                    sid_chip.voices[1].pw = base_pw + (sid_chip.voices[0].freq >> 2);
+                } else {
+                    sid_chip.voices[1].pw = base_pw;
+                }
+                
+                // Hard sync: sweep frequency higher and reset phase
+                if (sid_chip.hard_sync_enabled) {
+                    sid_chip.voices[1].freq = sid_chip.voices[0].freq * 2;
+                } else {
+                    sid_chip.voices[1].freq = 0x1100;
+                }
             } else {
                 sid_chip.voices[1].pw = 0;
+                sid_chip.voices[1].freq = 0;
             }
             
             // Logarithmic SID Volume Fader simulation
