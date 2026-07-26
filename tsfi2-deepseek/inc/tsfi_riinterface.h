@@ -14,6 +14,8 @@ typedef struct {
     uint8_t psg_channel_vol[6];
     uint8_t psg_channel_pan[6]; // huC6280 PSG panning control
     uint8_t psg_channel_wavetable[6][32]; // huC6280 PSG 5-bit custom wavetable
+    uint8_t psg_lfo_ctrl; // huC6280 PSG LFO control
+    uint8_t psg_lfo_freq; // huC6280 PSG LFO frequency
     uint8_t frame_buffer[256 * 256]; // Simulated VDC screen memory (256x256)
     uint32_t irq_counter; // hardware interrupt counter
     bool irq_active;
@@ -51,5 +53,8 @@ void tsfi_riinterface_run_8step_loop(TSFiRiInterface *ri, double camera_velocity
 
 // Writes custom 5-bit wavetable arrays to the active PSG channel buffer
 void tsfi_riinterface_write_wavetable(TSFiRiInterface *ri, int channel, const uint8_t *wave_data);
+
+// Enables low-frequency oscillator (LFO) registers for channels 1 and 2
+void tsfi_riinterface_enable_lfo(TSFiRiInterface *ri, uint8_t ctrl, uint8_t freq);
 
 #endif // TSFI_RIINTERFACE_H

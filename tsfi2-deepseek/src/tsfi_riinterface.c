@@ -16,6 +16,8 @@ void tsfi_riinterface_init(TSFiRiInterface *ri) {
     memset(ri->psg_channel_vol, 0, sizeof(ri->psg_channel_vol));
     memset(ri->psg_channel_pan, 0, sizeof(ri->psg_channel_pan));
     memset(ri->psg_channel_wavetable, 0, sizeof(ri->psg_channel_wavetable));
+    ri->psg_lfo_ctrl = 0;
+    ri->psg_lfo_freq = 0;
     memset(ri->frame_buffer, 0, sizeof(ri->frame_buffer));
     ri->irq_counter = 0;
     ri->irq_active = false;
@@ -161,4 +163,10 @@ void tsfi_riinterface_write_wavetable(TSFiRiInterface *ri, int channel, const ui
         // Enforce 5-bit depth constraint (value limit 0-31) matching HuC6280 PSG wavetable registers
         ri->psg_channel_wavetable[channel][i] = wave_data[i] & 0x1F;
     }
+}
+
+void tsfi_riinterface_enable_lfo(TSFiRiInterface *ri, uint8_t ctrl, uint8_t freq) {
+    if (!ri) return;
+    ri->psg_lfo_ctrl = ctrl;
+    ri->psg_lfo_freq = freq;
 }
