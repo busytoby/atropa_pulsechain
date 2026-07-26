@@ -45,6 +45,9 @@ bool auncient_hogan_withdraw(HoganAccount *account, uint32_t amount);
 // Rolls back timeline events and recovers Hogan account balances to matching historical checkpoints
 void auncient_timeline_rollback(TimelineEvent *events, int count, float target_time, HoganAccount *account, uint32_t checkpoint_balance);
 
+// Distributes salary payouts to a Hogan account holder
+void auncient_timeline_payroll_payout(HoganAccount *account, uint32_t salary_amount);
+
 #ifdef __cplusplus
 }
 #endif

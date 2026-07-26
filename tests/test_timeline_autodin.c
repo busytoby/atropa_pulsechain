@@ -69,6 +69,11 @@ int main(void) {
     assert(account.balance_saat == 1000000); // Checkpoint restored
     printf("   ✓ Timeline seek rollback and checkpoint recovery verified.\n");
 
+    // 7. Test Timeline Payroll distribution
+    auncient_timeline_payroll_payout(&account, 250000);
+    assert(account.balance_saat == 1250000); // 1.0M restored balance + 0.25M payout
+    printf("   ✓ Timeline payroll salary distribution verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");

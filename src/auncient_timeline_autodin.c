@@ -86,3 +86,10 @@ void auncient_timeline_rollback(TimelineEvent *events, int count, float target_t
         account->balance_saat = checkpoint_balance;
     }
 }
+
+void auncient_timeline_payroll_payout(HoganAccount *account, uint32_t salary_amount) {
+    if (!account || !account->is_active) return;
+
+    // Distribute salary directly into the registered Hogan account
+    auncient_hogan_deposit(account, salary_amount);
+}
