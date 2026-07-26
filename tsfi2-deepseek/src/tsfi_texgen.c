@@ -72,7 +72,7 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
     double *warped_g = (double *)malloc(width * height * sizeof(double));
     double *warped_b = (double *)malloc(width * height * sizeof(double));
     
-    // Step 1: Base Plasma generation with dynamic lacunarity / persistence noise octaves
+    // Step 1: Base Plasma generation with dynamic lacunarity / persistence noise octaves & Voronoi cellular mode
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             double p_val = 0.0;
@@ -97,7 +97,7 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
                     amp *= params->persistence;
                 }
                 p_val = (f_val / max_amp) * 255.0;
-            } else {
+            } else if (mode == 3) {
                 double cx = (width - 1) / 2.0;
                 double cy = (height - 1) / 2.0;
                 double dx = x - cx;
@@ -110,6 +110,25 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
                 double v_scroll = v + phase * 0.1;
                 int check = ((int)(u_scroll * 12.0) % 2) ^ ((int)(v_scroll * 12.0) % 2);
                 p_val = check ? 255.0 : 0.0;
+            } else {
+                // Voronoi Cellular Noise (Worley Noise)
+                double min_dist = 999.0;
+                for (int cell_y = -2; cell_y <= 2; cell_y++) {
+                    for (int cell_x = -2; cell_x <= 2; cell_x++) {
+                        int grid_cx = ((x + cell_x) % width + width) % width;
+                        int grid_cy = ((y + cell_y) % height + height) % height;
+                        
+                        double px = grid_cx + (double)hash_noise(grid_cx, grid_cy, params->seed) / 255.0;
+                        double py = grid_cy + (double)hash_noise(grid_cx, grid_cy, params->seed + 50U) / 255.0;
+                        
+                        double dx = x - px;
+                        double dy = y - py;
+                        double dist = sqrt(dx*dx + dy*dy);
+                        if (dist < min_dist) min_dist = dist;
+                    }
+                }
+                p_val = min_dist * 80.0;
+                if (p_val > 255.0) p_val = 255.0;
             }
             
             int idx = y * width + x;
@@ -196,12 +215,14 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
         }
     }
     
-    // Step 4: Bilinear Warp & Waveform modulation type configurations
+    // Step 4: Bilinear Warp & Waveform modulation & feedback recursion loop
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             int idx = y * width + x;
-            double warp_x = (double)layer1[idx].r / 255.0 * 2.0;
-            double warp_y = (double)layer1[(x % width) * width + (y % height)].g / 255.0 * 2.0;
+            
+            // Warp coordinate calculated with feedback strength from phase loops
+            double warp_x = (double)layer1[idx].r / 255.0 * 2.0 + params->feedback_strength * tsfi_texgen_sin(x * 0.1);
+            double warp_y = (double)layer1[(x % width) * width + (y % height)].g / 255.0 * 2.0 + params->feedback_strength * tsfi_texgen_cos(y * 0.1);
             
             double target_x = x + warp_x;
             double target_y = y + warp_y;
@@ -242,7 +263,7 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
         }
     }
     
-    // Step 5: Normal calculations, Phong highlights & Output packing (with post contrast/brightness adjustments)
+    // Step 5: Sobel filter normal calculations, Phong highlights & Output CLUT preset mappings
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             int x_prev = (x - 1 + width) % width;
@@ -251,15 +272,22 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
             int y_next = (y + 1) % height;
             
             int idx = y * width + x;
-            double h_center = (warped_r[idx] + warped_g[idx] + warped_b[idx]) / 3.0;
             
-            double h_x_next = (warped_r[y*width + x_next] + warped_g[y*width + x_next] + warped_b[y*width + x_next]) / 3.0;
-            double h_x_prev = (warped_r[y*width + x_prev] + warped_g[y*width + x_prev] + warped_b[y*width + x_prev]) / 3.0;
-            double h_y_next = (warped_r[y_next*width + x] + warped_g[y_next*width + x] + warped_b[y_next*width + x]) / 3.0;
-            double h_y_prev = (warped_r[y_prev*width + x] + warped_g[y_prev*width + x] + warped_b[y_prev*width + x]) / 3.0;
+            // Extract neighboring heights for $3\times3$ Sobel normal filter
+            double h00 = (warped_r[y_prev*width + x_prev] + warped_g[y_prev*width + x_prev] + warped_b[y_prev*width + x_prev]) / 3.0;
+            double h01 = (warped_r[y_prev*width + x] + warped_g[y_prev*width + x] + warped_b[y_prev*width + x]) / 3.0;
+            double h02 = (warped_r[y_prev*width + x_next] + warped_g[y_prev*width + x_next] + warped_b[y_prev*width + x_next]) / 3.0;
             
-            double dh_dx = (h_x_next - h_x_prev) / 2.0;
-            double dh_dy = (h_y_next - h_y_prev) / 2.0;
+            double h10 = (warped_r[y*width + x_prev] + warped_g[y*width + x_prev] + warped_b[y*width + x_prev]) / 3.0;
+            double h12 = (warped_r[y*width + x_next] + warped_g[y*width + x_next] + warped_b[y*width + x_next]) / 3.0;
+            
+            double h20 = (warped_r[y_next*width + x_prev] + warped_g[y_next*width + x_prev] + warped_b[y_next*width + x_prev]) / 3.0;
+            double h21 = (warped_r[y_next*width + x] + warped_g[y_next*width + x] + warped_b[y_next*width + x]) / 3.0;
+            double h22 = (warped_r[y_next*width + x_next] + warped_g[y_next*width + x_next] + warped_b[y_next*width + x_next]) / 3.0;
+            
+            // $3\times3$ Sobel gradient computation
+            double dh_dx = (h02 + 2.0*h12 + h22 - h00 - 2.0*h10 - h20) / 8.0;
+            double dh_dy = (h20 + 2.0*h21 + h22 - h00 - 2.0*h01 - h02) / 8.0;
             
             double nx = -dh_dx;
             double ny = -dh_dy;
@@ -288,12 +316,11 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
             
             int out_idx = idx * 3;
             double raw_r = 0.0, raw_g = 0.0, raw_b = 0.0;
-            if (mode % 2 == 0) {
-                raw_r = ((nx + 1.0) * 127.5) * combined_light;
-                raw_g = ((ny + 1.0) * 127.5) * combined_light;
-                raw_b = ((nz + 1.0) * 127.5) * combined_light;
-            } else {
-                double intensity = h_center / 255.0 * combined_light;
+            
+            double intensity = ((warped_r[idx] + warped_g[idx] + warped_b[idx]) / 3.0) / 255.0 * combined_light;
+            
+            if (params->clut_preset == 0) {
+                // Ocean CLUT Gradient (Preset 0)
                 if (intensity < 0.5) {
                     double t = intensity * 2.0;
                     raw_r = 2.0 + t * 12.0;
@@ -305,9 +332,37 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
                     raw_g = 165.0 + t * 90.0;
                     raw_b = 233.0 + t * 22.0;
                 }
+            } else if (params->clut_preset == 1) {
+                // Fire CLUT Gradient (Preset 1)
+                if (intensity < 0.33) {
+                    double t = intensity * 3.0;
+                    raw_r = t * 255.0;
+                    raw_g = 0.0;
+                    raw_b = 0.0;
+                } else if (intensity < 0.66) {
+                    double t = (intensity - 0.33) * 3.0;
+                    raw_r = 255.0;
+                    raw_g = t * 255.0;
+                    raw_b = 0.0;
+                } else {
+                    double t = (intensity - 0.66) * 3.0;
+                    raw_r = 255.0;
+                    raw_g = 255.0;
+                    raw_b = t * 255.0;
+                }
+            } else if (params->clut_preset == 2) {
+                // Crystalline CLUT (Preset 2)
+                raw_r = intensity * 180.0 + 50.0;
+                raw_g = intensity * 50.0;
+                raw_b = intensity * 255.0;
+            } else {
+                // Obsidian/Gold CLUT (Preset 3)
+                raw_r = intensity * 212.0;
+                raw_g = intensity * 175.0;
+                raw_b = intensity * 55.0;
             }
             
-            // Post-processing: Contrast and brightness adjustment filters
+            // Post-processing brightness & contrast
             double adj_r = (raw_r - 128.0) * params->contrast + 128.0 + params->brightness;
             double adj_g = (raw_g - 128.0) * params->contrast + 128.0 + params->brightness;
             double adj_b = (raw_b - 128.0) * params->contrast + 128.0 + params->brightness;
