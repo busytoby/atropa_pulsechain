@@ -99,23 +99,33 @@ def draw_cash_cow(draw, width, time):
                         small_img.putpixel((current_x + c, r + 1), 255)
         current_x += 6
     
-    scale = 4
+    scale = 3
     big_w = small_w * scale
     big_h = small_h * scale
     big_img = small_img.resize((big_w, big_h), Image.Resampling.NEAREST)
     
-    start_x = (width - big_w) // 2
+    start_x = (width - big_w * 3) // 2
     start_y = 20 + int(8.0 * math.sin(time * 6.0))
     
+    # Pass 1: Render background block drop shadows
     for y in range(big_h):
         for x in range(big_w):
             val = big_img.getpixel((x, y))
             if val > 128:
-                px = start_x + x
-                py = start_y + y
+                px = start_x + x * 3
+                py = start_y + y * 3
+                draw.rectangle([px + 8, py + 8, px + 10, py + 10], fill=(20, 5, 0))
+                
+    # Pass 2: Render foreground inflated bodies, sheen sweeps, and glint highlights
+    for y in range(big_h):
+        for x in range(big_w):
+            val = big_img.getpixel((x, y))
+            if val > 128:
+                px = start_x + x * 3
+                py = start_y + y * 3
                 ratio = x / float(big_w)
                 
-                # Calculate distance to nearest empty boundary pixel
+                # Distance field calculation
                 dist_sq = 16
                 for dy in range(-2, 3):
                     for dx in range(-2, 3):
@@ -126,32 +136,47 @@ def draw_cash_cow(draw, width, time):
                             d = dx*dx + dy*dy
                             if d < dist_sq: dist_sq = d
                 
-                # Detect top-left edge gloss highlights
+                # Edge gloss detection
                 is_top_edge = (y == 0) or (big_img.getpixel((x, y - 1)) <= 128)
                 is_left_edge = (x == 0) or (big_img.getpixel((x - 1, y)) <= 128)
-                is_glossy = is_top_edge or is_left_edge
+                is_glossy = is_top_edge and is_left_edge
 
-                if dist_sq <= 1:
-                    # Black outer border
-                    draw.point((px, py), fill=(0, 0, 0))
-                elif is_glossy and dist_sq >= 2:
-                    # Glossy specular reflection highlight
-                    draw.point((px, py), fill=(255, 255, 255))
-                else:
-                    # Left or right "$$" gets glossy gold shading
-                    if ratio < 0.18 or ratio > 0.82:
-                        glow = math.sin((x + y) * 0.2 - time * 5.0) * 0.5 + 0.5
-                        r_g = int(255 * (0.8 + 0.2 * glow))
-                        g_g = int(215 * (0.8 + 0.2 * glow))
-                        b_g = int(50 * (0.8 + 0.2 * glow))
-                        draw.point((px, py), fill=(r_g, g_g, b_g))
+                inflation = 0.8
+                color = (0, 0, 0)
+                
+                # Shading based on character zone
+                if ratio < 0.18 or ratio > 0.82:
+                    # Gold shading
+                    if dist_sq > (3.0 * inflation):
+                        color = (255, 204, 0)
+                    elif dist_sq > (2.0 * inflation):
+                        color = (80, 20, 0)
+                    elif dist_sq > (1.0 * inflation):
+                        col_step = int(time * 15.0 + x) % 8
+                        color = (180 + col_step * 8, 40 + col_step * 10, 0)
                     else:
-                        # "CASH COW" gets black and white cow spots
+                        color = (0, 0, 0)
+                else:
+                    # CASH COW cow spots shading
+                    if dist_sq > (1.0 * inflation):
                         spot = math.sin(x * 0.25) * math.cos(y * 0.25) + math.sin(x * 0.1 + y * 0.15)
                         if spot > 0.1:
-                            draw.point((px, py), fill=(240, 240, 240))
+                            color = (240, 240, 240)
                         else:
-                            draw.point((px, py), fill=(15, 15, 15))
+                            color = (15, 15, 15)
+                    else:
+                        color = (0, 0, 0)
+
+                # Specular sheen sweep animation
+                sheen_pos = int(time * 200.0) % 900 - 200
+                dist_to_sheen = abs(px - sheen_pos)
+                if dist_to_sheen < 12 and dist_sq > 1.0:
+                    color = (255, 255, 255)
+
+                draw.rectangle([px, py, px + 2, py + 2], fill=color)
+                
+                if is_glossy and dist_sq >= 2:
+                    draw.rectangle([px, py, px + 1, py + 1], fill=(255, 255, 255))
 
 def draw_retro_char(draw, char, x, y, size, color):
     # Draw simple retro styled grid-like characters
