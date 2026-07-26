@@ -190,6 +190,16 @@ static struct {
     bool ring_mod_enabled;
 } sid_chip;
 
+// Hudson Soft HuC6280 PSG Sound Chip emulation registers
+static struct {
+    struct {
+        uint16_t freq;
+        uint8_t volume;
+        uint8_t pan;
+        uint8_t waveform[32];
+    } channels[6];
+} huc6280_psg;
+
 static int sid_arp_step = 0;
 static bool voice_active[3] = {true, true, true};
 
@@ -309,14 +319,40 @@ static struct wl_buffer *create_shm_buffer(int width, int height, uint32_t **out
 // Drawing text helpers
 static void draw_char(uint32_t *pixels, int w, int h, int start_x, int start_y, uint8_t ch, uint32_t color, int scale) {
     if (ch >= 128) return;
-    const uint8_t *glyph = font5x7[(int)ch];
+    
+    // ECM (Extended Background Color Mode) Background Shading (4 static colors selected by char code bits)
+    uint8_t ecm_mode = (ch >> 6) & 0x03;
+    uint32_t ecm_bg_colors[4] = {0x00000000, 0xFF3C0E00, 0xFF251000, 0xFF051224};
+    uint32_t bg_color = ecm_bg_colors[ecm_mode];
+    
+    if (bg_color != 0x00000000) {
+        for (int r = 0; r < 7 * scale; r++) {
+            for (int c = 0; c < 5 * scale; c++) {
+                int px = start_x + c;
+                int py = start_y + r;
+                if (px >= 0 && px < w && py >= 0 && py < h) {
+                    pixels[py * w + px] = bg_color;
+                }
+            }
+        }
+    }
+
+    const uint8_t *glyph = font5x7[(int)(ch & 0x3F)]; // Mask out ECM bits
+    
+    // Hires vs Multicolor raster split mode simulation based on vertical coordinate
+    int scale_x = scale;
+    bool is_multicolor = (start_y >= 200);
+    if (is_multicolor) {
+        scale_x = scale * 2; // Double pixel width to mimic 4x8 multicolor pixels
+    }
+
     for (int col = 0; col < 5; col++) {
         uint8_t byte = glyph[col];
         for (int row = 0; row < 7; row++) {
             if (byte & (1 << row)) {
                 for (int sy = 0; sy < scale; sy++) {
-                    for (int sx = 0; sx < scale; sx++) {
-                        int px = start_x + col * scale + sx;
+                    for (int sx = 0; sx < scale_x; sx++) {
+                        int px = start_x + col * scale_x + sx;
                         int py = start_y + row * scale + sy;
                         if (px >= 0 && px < w && py >= 0 && py < h) {
                             pixels[py * w + px] = color;
@@ -838,7 +874,22 @@ static void redraw_screen(void) {
              voice_active[0] ? "ON" : "OFF",
              voice_active[1] ? "ON" : "OFF",
              voice_active[2] ? "ON" : "OFF");
-    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 65 + glitch_y, sid_buf, 0xFFFFFF00, 2);
+    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 85 + glitch_y, sid_buf, 0xFFFFFF00, 2);
+
+    // Update Hudson Soft PSG register states dynamically based on SID audio track parameters
+    huc6280_psg.channels[0].freq = sid_chip.voices[0].freq / 2;
+    huc6280_psg.channels[0].volume = (sid_chip.volume * 31) / 15; // Map 4-bit to 5-bit volume
+    huc6280_psg.channels[0].pan = 0xDA; // Stereophonic panning value
+    huc6280_psg.channels[1].freq = sid_chip.voices[1].freq / 2;
+    huc6280_psg.channels[1].volume = (sid_chip.volume * 24) / 15;
+    huc6280_psg.channels[1].pan = 0x24;
+
+    char psg_buf[256];
+    snprintf(psg_buf, sizeof(psg_buf), 
+             "HUDSON HUC6280 PSG | CH1: FREQ=0x%04X VOL=%2d PAN=0x%02X | CH2: FREQ=0x%04X VOL=%2d PAN=0x%02X",
+             huc6280_psg.channels[0].freq, huc6280_psg.channels[0].volume, huc6280_psg.channels[0].pan,
+             huc6280_psg.channels[1].freq, huc6280_psg.channels[1].volume, huc6280_psg.channels[1].pan);
+    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 60 + glitch_y, psg_buf, 0xFF00FF00, 2);
 
     // Initials Anagram Mapping: Alternate "TSN" and "TNS" dynamically every second
     const char *initials = ((int)retro_time % 2 == 0) ? "TSN" : "TNS";
