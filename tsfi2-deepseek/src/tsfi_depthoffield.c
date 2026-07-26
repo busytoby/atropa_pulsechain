@@ -1,5 +1,6 @@
 #include "tsfi_depthoffield.h"
 #include <math.h>
+#include <stdlib.h>
 
 void tsfi_depthoffield_init(TSFiDepthOfField *dof, double focal_distance, double lens_radius, double target_z) {
     if (!dof) return;
@@ -43,4 +44,51 @@ void tsfi_depthoffield_set_shot(TSFiDepthOfField *dof, int shot_index) {
         dof->lens_radius = 0.4;
         dof->target_z = 12.0;
     }
+}
+
+void tsfi_depthoffield_bokeh_replace_gaussian(const double *input_image, double *output_image, int width, int height, double coc_radius) {
+    if (!input_image || !output_image || width <= 0 || height <= 0) return;
+    
+    double *temp_image = (double *)malloc(width * height * sizeof(double));
+    if (!temp_image) return;
+    
+    int radius = (int)ceil(coc_radius);
+    if (radius < 1) radius = 1;
+    if (radius > 10) radius = 10; // Cap blur filter size
+    
+    // Horizontal Gaussian pass
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            double sum = 0.0;
+            double weight_sum = 0.0;
+            for (int k = -radius; k <= radius; k++) {
+                int px = x + k;
+                if (px >= 0 && px < width) {
+                    double weight = exp(-(double)(k * k) / (2.0 * radius * radius));
+                    sum += input_image[y * width + px] * weight;
+                    weight_sum += weight;
+                }
+            }
+            temp_image[y * width + x] = sum / weight_sum;
+        }
+    }
+    
+    // Vertical Gaussian pass
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            double sum = 0.0;
+            double weight_sum = 0.0;
+            for (int k = -radius; k <= radius; k++) {
+                int py = y + k;
+                if (py >= 0 && py < height) {
+                    double weight = exp(-(double)(k * k) / (2.0 * radius * radius));
+                    sum += temp_image[py * width + x] * weight;
+                    weight_sum += weight;
+                }
+            }
+            output_image[y * width + x] = sum / weight_sum;
+        }
+    }
+    
+    free(temp_image);
 }

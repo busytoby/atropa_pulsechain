@@ -22,4 +22,7 @@ bool tsfi_depthoffield_resolve_zmachine(TSFiDepthOfField *dof, uint32_t zmachine
 // Updates focus configuration based on active shot index for cinematic sequences
 void tsfi_depthoffield_set_shot(TSFiDepthOfField *dof, int shot_index);
 
+// Fast 1D separable post-process Gaussian convolution replacing multi-sample lens bokeh
+void tsfi_depthoffield_bokeh_replace_gaussian(const double *input_image, double *output_image, int width, int height, double coc_radius);
+
 #endif // TSFI_DEPTHOFFIELD_H
