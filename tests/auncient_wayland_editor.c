@@ -260,7 +260,7 @@ static void redraw_screen(void) {
     }
     
     // 2. Dynamic Character-Cell Sinusoidal Scroller
-    int scroller_start_char = (int)(retro_time * 5.0f) % strlen(scroller_text);
+    int scroller_start_char = (int)(retro_time * 1.5f) % strlen(scroller_text);
     int scroller_y_base = win_height - 90;
     for (int col = 0; col < 60; col++) {
         int char_idx = (scroller_start_char + col) % strlen(scroller_text);
