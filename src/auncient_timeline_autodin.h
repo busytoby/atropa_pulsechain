@@ -233,6 +233,15 @@ int auncient_check_cursor_hover(int cx, int cy, int bx, int by, int bw, int bh);
 // Unified Verlet drawing loop compiling physics, ANSI grids, cursor hovers, and tremolos
 void auncient_verlet_draw_scene(char *grid, int width, int height, const ClothPoint *points, int count, int cursor_x, int cursor_y, float time);
 
+typedef struct {
+    WinchesterMQState mq_state;
+    ClothPoint point;
+    char glyph;
+} AuncientAnsiCell;
+
+// Executes an ABI transition on a cell-addressable WinchesterMQ state to modulate its local properties
+void auncient_ansi_cell_transition(AuncientAnsiCell *cell, const char *transition, uint64_t val1, uint64_t val2);
+
 #ifdef __cplusplus
 }
 #endif

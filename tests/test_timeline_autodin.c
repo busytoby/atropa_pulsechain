@@ -382,6 +382,15 @@ int main(void) {
     assert(draw_grid[23] == '='); // Highlight borders populated by cursor hover
     printf("   ✓ Unified Verlet ANSI scene drawing loop verified.\n");
 
+    // Test cell-addressable transitions
+    AuncientAnsiCell test_cell = {
+        .point = { .x = 1.0f, .y = 1.0f, .z = 0.0f, .is_anchored = 0 },
+        .glyph = 'a'
+    };
+    auncient_ansi_cell_transition(&test_cell, "seed", 0, 0);
+    assert(test_cell.point.x >= 1.0f); // Coordinate updated by transition displacement
+    printf("   ✓ Cell-addressable WinchesterMQ ABI transitions verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");

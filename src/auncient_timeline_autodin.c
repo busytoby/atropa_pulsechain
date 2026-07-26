@@ -945,3 +945,29 @@ void auncient_verlet_draw_scene(char *grid, int width, int height, const ClothPo
         }
     }
 }
+
+void auncient_ansi_cell_transition(AuncientAnsiCell *cell, const char *transition, uint64_t val1, uint64_t val2) {
+    if (!cell || !transition) return;
+
+    if (strcmp(transition, "seed") == 0) {
+        winchester_mq_seed(&cell->mq_state, val1, val2, 100);
+    } else if (strcmp(transition, "fuse") == 0) {
+        winchester_mq_fuse(&cell->mq_state, val1, val2, 100);
+    } else if (strcmp(transition, "form") == 0) {
+        winchester_mq_form(&cell->mq_state, val1);
+    } else if (strcmp(transition, "tune") == 0) {
+        winchester_mq_tune(&cell->mq_state);
+    } else if (strcmp(transition, "polarize") == 0) {
+        winchester_mq_polarize(&cell->mq_state);
+    } else if (strcmp(transition, "conify") == 0) {
+        winchester_mq_conify(&cell->mq_state);
+    } else if (strcmp(transition, "bond") == 0) {
+        winchester_mq_bond(&cell->mq_state);
+    }
+
+    float disp_x = (float)(cell->mq_state.channel % 10) * 0.1f;
+    float disp_y = (float)(cell->mq_state.dynamo % 10) * 0.1f;
+    
+    cell->point.x += disp_x;
+    cell->point.y += disp_y;
+}
