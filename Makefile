@@ -1,4 +1,4 @@
-.PHONY: help test-all test-dashboard test-container test-git-ci test-unit tpu-benchmarks livrps-benchmark test-mann
+.PHONY: help test-all test-dashboard test-container test-git-ci test-unit tpu-benchmarks livrps-benchmark test-mann test-comp-pass
 
 help:
 	@echo "Available test targets:"
@@ -12,13 +12,18 @@ help:
 	@echo "  make livrps-benchmark - Run LIVRPS USD composition latency benchmarks"
 
 
-test-all: test-dashboard test-container test-git-ci test-unit test-mann
+test-all: test-dashboard test-container test-git-ci test-unit test-mann test-comp-pass
 	@echo "All tests completed successfully."
 
 test-mann:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_mann_controller.c tsfi2-deepseek/src/tsfi_mann_controller.c -o tests/test_mann_controller -lm -lrt
 	./tests/test_mann_controller
 	@rm -f tests/test_mann_controller
+
+test-comp-pass:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_comp_pass.c tsfi2-deepseek/src/tsfi_comp_pass.c -o tests/test_comp_pass -lm -lrt
+	./tests/test_comp_pass
+	@rm -f tests/test_comp_pass
 
 sdk-benchmark:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_sdk_benchmarks.c -o tests/test_auncient_sdk_benchmarks -lm -lrt
