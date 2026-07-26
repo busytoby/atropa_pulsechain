@@ -518,13 +518,19 @@ int main(void) {
     };
 
     while (running) {
+        if (wl_display_get_error(display)) {
+            break;
+        }
+        
         wl_display_prepare_read(display);
-        wl_display_dispatch_pending(display);
+        while (wl_display_dispatch_pending(display) > 0);
         wl_display_flush(display);
         
         int ret = poll(fds, 1, 16); // ~60 FPS update tick
         if (ret > 0) {
-            wl_display_read_events(display);
+            if (wl_display_read_events(display) < 0) {
+                break;
+            }
         } else {
             wl_display_cancel_read(display);
         }
