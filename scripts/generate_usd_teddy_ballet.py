@@ -174,35 +174,54 @@ def get_ballet_geometry(time_sec):
         
     parts = {}
     
-    # 1. Main body translation
+    # 1. Main body translation (Root of the fully connected skeleton)
     parts["Body"] = {
         "pos": (x_disp, 0.55 + y_disp, z_disp),
         "rot": (body_pitch, body_yaw, body_roll),
+        "local_pos": (x_disp, 0.55 + y_disp, z_disp),
+        "local_rot": (body_pitch, body_yaw, body_roll),
         "shape": "ellipsoid",
         "size": (0.7, 0.85, 0.6),
         "color": (120, 80, 54)
     }
     
-    # 2. Head
+    # 2. Head (local relative to body)
+    head_local_pos = (0.0, 0.9, 0.0)
+    head_local_rot = (0.05 * math.sin(time_sec * 4.0), 0.0, 0.0)
+    
+    # Calculate global head pos
+    hx, hy, hz = rotate_x(head_local_pos[0], head_local_pos[1], head_local_pos[2], body_pitch)
+    hx, hy, hz = rotate_y(hx, hy, hz, body_yaw)
+    hx, hy, hz = rotate_z(hx, hy, hz, body_roll)
     parts["Head"] = {
-        "pos": (x_disp, 1.45 + y_disp, z_disp),
-        "rot": (body_pitch + 0.05 * math.sin(time_sec * 4.0), body_yaw, 0.0),
+        "pos": (x_disp + hx, 0.55 + y_disp + hy, z_disp + hz),
+        "rot": (body_pitch + head_local_rot[0], body_yaw + head_local_rot[1], body_roll + head_local_rot[2]),
+        "local_pos": head_local_pos,
+        "local_rot": head_local_rot,
         "shape": "ellipsoid",
         "size": (0.55, 0.55, 0.5),
         "color": (120, 80, 54)
     }
     
-    # 3. Ears
+    # 3. Ears (local relative to head)
+    # Left Ear
+    le_local_pos = (-0.4, 0.4, 0.0)
     parts["LeftEar"] = {
-        "pos": (x_disp - 0.4, 1.85 + y_disp, z_disp),
-        "rot": (body_pitch, body_yaw, 0.0),
+        "pos": (parts["Head"]["pos"][0] - 0.4, parts["Head"]["pos"][1] + 0.4, parts["Head"]["pos"][2]),
+        "rot": parts["Head"]["rot"],
+        "local_pos": le_local_pos,
+        "local_rot": (0.0, 0.0, 0.0),
         "shape": "ellipsoid",
         "size": (0.2, 0.2, 0.15),
         "color": (100, 65, 40)
     }
+    # Right Ear
+    re_local_pos = (0.4, 0.4, 0.0)
     parts["RightEar"] = {
-        "pos": (x_disp + 0.4, 1.85 + y_disp, z_disp),
-        "rot": (body_pitch, body_yaw, 0.0),
+        "pos": (parts["Head"]["pos"][0] + 0.4, parts["Head"]["pos"][1] + 0.4, parts["Head"]["pos"][2]),
+        "rot": parts["Head"]["rot"],
+        "local_pos": re_local_pos,
+        "local_rot": (0.0, 0.0, 0.0),
         "shape": "ellipsoid",
         "size": (0.2, 0.2, 0.15),
         "color": (100, 65, 40)
@@ -211,30 +230,38 @@ def get_ballet_geometry(time_sec):
     # Helper to register upper arm and forearm segments
     def add_arm(side, uarm_pitch, elbow_pitch, color_u, color_f):
         side_sign = -1.0 if side == "Left" else 1.0
-        # Upper Arm
-        uarm_rot_pitch = uarm_pitch + body_pitch
-        ax, ay, az = rotate_y(0.0, -0.25, 0.0, body_yaw)
-        ax, ay, az = rotate_z(ax, ay, az, uarm_rot_pitch)
         
-        px = x_disp + side_sign * 0.65 + ax
-        py = 0.9 + y_disp + ay
-        pz = z_disp + az
+        # Upper Arm (local to body)
+        uarm_local_pos = (side_sign * 0.65, 0.35, 0.0)
+        uarm_local_rot = (uarm_pitch, 0.0, 0.0)
+        
+        ax, ay, az = rotate_x(uarm_local_pos[0], uarm_local_pos[1], uarm_local_pos[2], body_pitch)
+        ax, ay, az = rotate_y(ax, ay, az, body_yaw)
+        ax, ay, az = rotate_z(ax, ay, az, body_roll)
         
         parts[f"{side}UpperArm"] = {
-            "pos": (px, py, pz),
-            "rot": (uarm_rot_pitch, body_yaw, 0.0),
+            "pos": (x_disp + ax, 0.55 + y_disp + ay, z_disp + az),
+            "rot": (body_pitch + uarm_pitch, body_yaw, body_roll),
+            "local_pos": uarm_local_pos,
+            "local_rot": uarm_local_rot,
             "shape": "ellipsoid",
             "size": (0.18, 0.3, 0.18),
             "color": color_u
         }
         
-        # Forearm
-        f_pitch = uarm_rot_pitch + elbow_pitch
-        fx, fy, fz = rotate_y(0.0, -0.45, 0.0, body_yaw)
-        fx, fy, fz = rotate_z(fx, fy, fz, f_pitch)
+        # Forearm (local to Upper Arm)
+        forearm_local_pos = (0.0, -0.3, 0.0)
+        forearm_local_rot = (elbow_pitch, 0.0, 0.0)
+        
+        fx, fy, fz = rotate_x(forearm_local_pos[0], forearm_local_pos[1], forearm_local_pos[2], body_pitch + uarm_pitch)
+        fx, fy, fz = rotate_y(fx, fy, fz, body_yaw)
+        fx, fy, fz = rotate_z(fx, fy, fz, body_roll)
+        
         parts[f"{side}Forearm"] = {
-            "pos": (x_disp + side_sign * 0.65 + fx, 0.9 + y_disp + fy, z_disp + fz),
-            "rot": (f_pitch, body_yaw, 0.0),
+            "pos": (parts[f"{side}UpperArm"]["pos"][0] + fx, parts[f"{side}UpperArm"]["pos"][1] + fy, parts[f"{side}UpperArm"]["pos"][2] + fz),
+            "rot": (body_pitch + uarm_pitch + elbow_pitch, body_yaw, body_roll),
+            "local_pos": forearm_local_pos,
+            "local_rot": forearm_local_rot,
             "shape": "ellipsoid",
             "size": (0.15, 0.25, 0.15),
             "color": color_f
@@ -243,40 +270,46 @@ def get_ballet_geometry(time_sec):
     # Helper to register thigh and calf segments
     def add_leg(side, thigh_pitch, knee_pitch, color_t, color_c):
         side_sign = -1.0 if side == "Left" else 1.0
-        # Thigh
-        t_rot_pitch = thigh_pitch + body_pitch
-        lx, ly, lz = rotate_y(0.0, -0.25, 0.0, body_yaw)
-        lx, ly, lz = rotate_z(lx, ly, lz, t_rot_pitch)
         
-        px = x_disp + side_sign * 0.35 + lx
-        py = 0.3 + y_disp + ly
-        pz = z_disp + lz
+        # Thigh (local to body)
+        thigh_local_pos = (side_sign * 0.35, -0.25, 0.0)
+        thigh_local_rot = (thigh_pitch, 0.0, 0.0)
+        
+        lx, ly, lz = rotate_x(thigh_local_pos[0], thigh_local_pos[1], thigh_local_pos[2], body_pitch)
+        lx, ly, lz = rotate_y(lx, ly, lz, body_yaw)
+        lx, ly, lz = rotate_z(lx, ly, lz, body_roll)
         
         parts[f"{side}Thigh"] = {
-            "pos": (px, py, pz),
-            "rot": (t_rot_pitch, body_yaw, 0.0),
+            "pos": (x_disp + lx, 0.55 + y_disp + ly, z_disp + lz),
+            "rot": (body_pitch + thigh_pitch, body_yaw, body_roll),
+            "local_pos": thigh_local_pos,
+            "local_rot": thigh_local_rot,
             "shape": "ellipsoid",
             "size": (0.22, 0.35, 0.22),
             "color": color_t
         }
         
-        # Calf
-        k_pitch = t_rot_pitch - knee_pitch
-        cx, cy, cz = rotate_y(0.0, -0.55, 0.0, body_yaw)
-        cx, cy, cz = rotate_z(cx, cy, cz, k_pitch)
+        # Calf (local to Thigh)
+        calf_local_pos = (0.0, -0.3, 0.0)
+        calf_local_rot = (-knee_pitch, 0.0, 0.0)
+        
+        cx, cy, cz = rotate_x(calf_local_pos[0], calf_local_pos[1], calf_local_pos[2], body_pitch + thigh_pitch)
+        cx, cy, cz = rotate_y(cx, cy, cz, body_yaw)
+        cx, cy, cz = rotate_z(cx, cy, cz, body_roll)
+        
         parts[f"{side}Calf"] = {
-            "pos": (x_disp + side_sign * 0.35 + cx, 0.3 + y_disp + cy, z_disp + cz),
-            "rot": (k_pitch, body_yaw, 0.0),
+            "pos": (parts[f"{side}Thigh"]["pos"][0] + cx, parts[f"{side}Thigh"]["pos"][1] + cy, parts[f"{side}Thigh"]["pos"][2] + cz),
+            "rot": (body_pitch + thigh_pitch - knee_pitch, body_yaw, body_roll),
+            "local_pos": calf_local_pos,
+            "local_rot": calf_local_rot,
             "shape": "ellipsoid",
             "size": (0.18, 0.3, 0.18),
             "color": color_c
         }
 
-    # Add 2 Arms
+    # Add standard limbs
     add_arm("Left", t_luarm, t_lelbow, (120, 80, 54), (100, 65, 40))
     add_arm("Right", t_ruarm, t_relbow, (120, 80, 54), (100, 65, 40))
-    
-    # Add 2 Legs
     add_leg("Left", t_lthigh, t_lknee, (120, 80, 54), (100, 65, 40))
     add_leg("Right", t_rthigh, t_rknee, (120, 80, 54), (100, 65, 40))
     
@@ -352,9 +385,13 @@ def main():
             px, py, pz = part["pos"]
             rx_ang, ry_ang, rz_ang = part["rot"]
             
+            # For USD export, save the local transformations to establish a connected skeleton
+            lpx, lpy, lpz = part["local_pos"]
+            lrx, lry, lrz = part["local_rot"]
+            
             if part_name not in usd_samples:
                 usd_samples[part_name] = []
-            usd_samples[part_name].append((f, px, py, pz, rx_ang, ry_ang, rz_ang))
+            usd_samples[part_name].append((f, lpx, lpy, lpz, lrx, lry, lrz))
             
             verts = generate_ellipsoid_mesh(part["size"])
             projected_pts = []
@@ -398,7 +435,23 @@ def main():
     process.wait()
     print(f"[SUCCESS] Teddy ballet video rendered: {video_output}")
     
+    # Write fully nested and connected skeleton Xform hierarchy to USDA file
     usda_output = "/home/mariarahel/src/tsfi2/atropa_pulsechain/teddy_ballet_scene.usda"
+    
+    def write_usda_joint(f, name, samples, indent_level):
+        ind = "    " * indent_level
+        f.write(f"{ind}def Xform \"{name}\"\n")
+        f.write(f"{ind}{{\n")
+        f.write(f"{ind}    double3 xformOp:translate.timeSamples = {{\n")
+        for f_idx, px, py, pz, rx, ry, rz in samples:
+            f.write(f"{ind}        {f_idx}: ({px:.4f}, {py:.4f}, {pz:.4f}),\n")
+        f.write(f"{ind}    }}\n")
+        f.write(f"{ind}    double3 xformOp:rotateXYZ.timeSamples = {{\n")
+        for f_idx, px, py, pz, rx, ry, rz in samples:
+            f.write(f"{ind}        {f_idx}: ({rx * 57.2958:.4f}, {ry * 57.2958:.4f}, {rz * 57.2958:.4f}),\n")
+        f.write(f"{ind}    }}\n")
+        f.write(f"{ind}    uniform token[] xformOpOrder = [\"xformOp:translate\", \"xformOp:rotateXYZ\"]\n")
+        
     with open(usda_output, "w") as f:
         f.write("#usda 1.0\n")
         f.write("(\n")
@@ -406,24 +459,50 @@ def main():
         f.write(f"    endTimeCode = {total_frames - 1}\n")
         f.write("    upAxis = \"Y\"\n")
         f.write(")\n\n")
-        f.write("def Xform \"TeddyBalletScene\"\n")
+        f.write("def Xform \"TeddyWalkerScene\"\n")
         f.write("{\n")
         
-        for part_name, samples in usd_samples.items():
-            f.write(f"    def Xform \"{part_name}\"\n")
-            f.write("    {\n")
-            f.write("        double3 xformOp:translate.timeSamples = {\n")
-            for f_idx, px, py, pz, rx, ry, rz in samples:
-                f.write(f"            {f_idx}: ({px:.4f}, {py:.4f}, {pz:.4f}),\n")
-            f.write("        }\n")
-            f.write("        double3 xformOp:rotateXYZ.timeSamples = {\n")
-            for f_idx, px, py, pz, rx, ry, rz in samples:
-                f.write(f"            {f_idx}: ({rx * 57.2958:.4f}, {ry * 57.2958:.4f}, {rz * 57.2958:.4f}),\n")
-            f.write("        }\n")
-            f.write("        uniform token[] xformOpOrder = [\"xformOp:translate\", \"xformOp:rotateXYZ\"]\n")
-            f.write("    }\n")
-            
-        f.write("}\n")
+        # 1. Body (Parent Root)
+        write_usda_joint(f, "Body", usd_samples["Body"], 1)
+        
+        # 2. Head (nested under Body)
+        write_usda_joint(f, "Head", usd_samples["Head"], 2)
+        
+        # 3. Ears (nested under Head)
+        write_usda_joint(f, "LeftEar", usd_samples["LeftEar"], 3)
+        f.write("        }\n")
+        write_usda_joint(f, "RightEar", usd_samples["RightEar"], 3)
+        f.write("        }\n")
+        f.write("    }\n") # close Head
+        
+        # 4. Left Arm (nested under Body)
+        write_usda_joint(f, "LeftUpperArm", usd_samples["LeftUpperArm"], 2)
+        # Left Forearm (nested under LeftUpperArm)
+        write_usda_joint(f, "LeftForearm", usd_samples["LeftForearm"], 3)
+        f.write("        }\n")
+        f.write("    }\n") # close LeftUpperArm
+        
+        # 5. Right Arm (nested under Body)
+        write_usda_joint(f, "RightUpperArm", usd_samples["RightUpperArm"], 2)
+        write_usda_joint(f, "RightForearm", usd_samples["RightForearm"], 3)
+        f.write("        }\n")
+        f.write("    }\n") # close RightUpperArm
+        
+        # 6. Left Leg (nested under Body)
+        write_usda_joint(f, "LeftThigh", usd_samples["LeftThigh"], 2)
+        write_usda_joint(f, "LeftCalf", usd_samples["LeftCalf"], 3)
+        f.write("        }\n")
+        f.write("    }\n") # close LeftThigh
+        
+        # 7. Right Leg (nested under Body)
+        write_usda_joint(f, "RightThigh", usd_samples["RightThigh"], 2)
+        write_usda_joint(f, "RightCalf", usd_samples["RightCalf"], 3)
+        f.write("        }\n")
+        f.write("    }\n") # close RightThigh
+        
+        f.write("}\n") # close Body
+        f.write("}\n") # close scene
+        
     print(f"[SUCCESS] Pixar USDA scene description exported: {usda_output}")
     
     try:
