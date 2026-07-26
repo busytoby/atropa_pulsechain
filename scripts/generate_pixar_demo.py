@@ -231,7 +231,7 @@ def main():
         cam_zoom = 290.0 + 100.0 * mann_allocation_gate
         
         draw.text((30, 90), f"Camera Path: /auncient/camera/main", fill=(130, 200, 255))
-        draw.text((30, 110), f"BBox Cache: ACTIVE (Min: -100, Max: 100)", fill=(255, 180, 100))
+        draw.text((30, 110), f"TimeSampleInterpolation: LINEAR", fill=(255, 180, 100))
         draw.text((30, 130), f"CurvesBasis: CATMULL-ROM (Wrap: PERIODIC)", fill=(200, 200, 220))
         
         # Active LuxLight position (LuxLight)
@@ -341,7 +341,7 @@ def main():
             ty0 = tw_cy + int((tw_r - 5) * math.sin(angle))
             tx1 = tw_cx + int((tw_r + 5) * math.cos(angle))
             ty1 = tw_cy + int((tw_r + 5) * math.sin(angle))
-            draw.line([tx0, ty0, tx1, ty1], fill=(200, 210, 220), width=2)
+            draw.line([tx0, tw_cy, tx1, tw_cy], fill=(200, 210, 220), width=2)
         draw.rectangle([tw_cx + tw_r - 10, tw_cy - 12, tw_cx + tw_r + 15, tw_cy + 12], fill=(40, 44, 56), outline=(80, 90, 110))
         led_glow = int(150 + 105 * math.sin(time * 6.0))
         draw.ellipse([tw_cx + tw_r - 5, tw_cy - 5, tw_cx + tw_r + 5, tw_cy + 5], fill=(led_glow, 50, 50))
