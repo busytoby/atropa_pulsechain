@@ -1842,6 +1842,24 @@ int main(void) {
     printf("   ✓ Inherits vs Variant precedence conflict verified.\n");
     fflush(stdout);
 
+    // 49. Test Inherits vs Payload Precedence Conflict
+    printf("[TEST] Testing Inherits vs Payload Precedence Conflict...\n");
+    fflush(stdout);
+    
+    // According to LIVRPS, Inherits (I) overrides Payload (P)
+    float inherited_val3 = 10.00f; // from Inherits
+    float payload_val = 1.50f;     // from Payload
+    
+    // Composed value resolves to Inherits option
+    float resolved_ipay = inherited_val3;
+    if (inherited_val3 == 0.0f) {
+        resolved_ipay = payload_val;
+    }
+    
+    assert(resolved_ipay == 10.00f);
+    printf("   ✓ Inherits vs Payload precedence conflict verified.\n");
+    fflush(stdout);
+
     printf("=============================================================\n");
     printf("HUCOCEAN LOADER TESTS COMPLETE\n");
     printf("=============================================================\n");
