@@ -1,4 +1,4 @@
-.PHONY: help test-all test-dashboard test-container test-git-ci test-unit tpu-benchmarks
+.PHONY: help test-all test-dashboard test-container test-git-ci test-unit tpu-benchmarks livrps-benchmark
 
 help:
 	@echo "Available test targets:"
@@ -9,6 +9,7 @@ help:
 	@echo "  make test-unit       - Run Python unit tests under tests/"
 	@echo "  make sdk-benchmark   - Run Auncient SDK DbC contract latency benchmarks"
 	@echo "  make tpu-benchmarks  - Run all TPU fast inference performance benchmarks"
+	@echo "  make livrps-benchmark - Run LIVRPS USD composition latency benchmarks"
 
 
 test-all: test-dashboard test-container test-git-ci test-unit
@@ -17,6 +18,11 @@ test-all: test-dashboard test-container test-git-ci test-unit
 sdk-benchmark:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_sdk_benchmarks.c -o tests/test_auncient_sdk_benchmarks -lm -lrt
 	./tests/test_auncient_sdk_benchmarks
+
+livrps-benchmark:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_livrps_benchmarks.c -o tests/test_auncient_livrps_benchmarks -lm -lrt
+	./tests/test_auncient_livrps_benchmarks
+
 
 tpu-benchmarks: sdk-build
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc tests/test_auncient_fast_inference_benchmark.c src/auncient_sdk.o -o tests/test_auncient_fast_inference_benchmark -lm -lrt
