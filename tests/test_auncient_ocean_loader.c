@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <assert.h>
+#include <math.h>
 
 #define STACK_CAPACITY 32
 #define COLOR_RED      0x00FF
@@ -35,6 +36,32 @@ typedef struct {
     bool blame_quarantine;
     uint32_t blamed_port;
 } ocean_loader_ctx_t;
+
+typedef struct {
+    double f, q, low, band, high;
+} Resonator;
+
+static void resonator_init(Resonator *r, double freq, double Q) {
+    double omega = 2.0 * 3.141592653589793 * freq / 8000.0;
+    r->f = 2.0 * sin(omega / 2.0);
+    r->q = 1.0 / Q;
+    r->low = 0.0;
+    r->band = 0.0;
+    r->high = 0.0;
+}
+
+static double resonator_tick(Resonator *r, double input) {
+    r->high = input - r->low - r->q * r->band;
+    r->band += r->f * r->high;
+    r->low += r->f * r->band;
+    return r->band;
+}
+
+static float generate_chiptune_sample(uint32_t frequency, float time, Resonator *r) {
+    if (frequency == 0) return 0.0f;
+    float raw_wave = sin(time * frequency * 2.0f * 3.14159265f);
+    return (float)resonator_tick(r, raw_wave);
+}
 
 static uint32_t cycle_border_raster(uint32_t frame_count) {
     if (frame_count % 3 == 0) {
@@ -219,6 +246,16 @@ int main(void) {
     assert(play_loader_arpeggio(1) == 329);
     assert(play_loader_arpeggio(2) == 392);
     printf("   ✓ Split-raster border colors and C-Major arpeggio frequencies verified.\n");
+    fflush(stdout);
+
+    // 6. Test SVF Instrument Synthesizer
+    printf("[TEST] Testing SVF resonant synthesizer instrument rendering...\n");
+    fflush(stdout);
+    Resonator synth_res;
+    resonator_init(&synth_res, 440.0, 1.5);
+    float chiptune_out = generate_chiptune_sample(440, 0.005f, &synth_res);
+    assert(chiptune_out != 0.0f);
+    printf("   ✓ Resonant lead voice sample generation validated successfully.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
