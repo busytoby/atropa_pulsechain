@@ -157,6 +157,21 @@ static bool ingest_scsi_block_bidirectional(ocean_loader_ctx_t *ctx, const uint8
     return true;
 }
 
+typedef struct {
+    char active_variant[16];
+    char inherited_class[32];
+    bool class_active;
+} usd_variant_inherit_t;
+
+static bool resolve_variant_inherits(const usd_variant_inherit_t *vi, const char *variant_name, char *class_out) {
+    if (strcmp(vi->active_variant, variant_name) == 0 && vi->class_active) {
+        strcpy(class_out, vi->inherited_class);
+        return true;
+    }
+    return false;
+}
+
+
 int main(void) {
     printf("=============================================================\n");
     printf("AUNCIENT HUCOCEAN LOADER SIMULATION SUITE\n");
@@ -256,6 +271,21 @@ int main(void) {
     float chiptune_out = generate_chiptune_sample(440, 0.005f, &synth_res);
     assert(chiptune_out != 0.0f);
     printf("   ✓ Resonant lead voice sample generation validated successfully.\n");
+    fflush(stdout);
+
+    // 7. Test Variant-scoped Inherits Resolution
+    printf("[TEST] Testing Variant-scoped Inherits resolution pipeline...\n");
+    fflush(stdout);
+    usd_variant_inherit_t vi = {
+        .active_variant = "CLO",
+        .inherited_class = "/class/ClothModel",
+        .class_active = true
+    };
+    char class_output[32] = "";
+    bool resolved = resolve_variant_inherits(&vi, "CLO", class_output);
+    assert(resolved == true);
+    assert(strcmp(class_output, "/class/ClothModel") == 0);
+    printf("   ✓ Variant-scoped Inherits targeting '/class/ClothModel' successfully resolved.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
