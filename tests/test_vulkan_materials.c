@@ -86,6 +86,23 @@ int main(void) {
     assert(write_set.pBufferInfo == &buf_info);
     printf("   ✓ Write descriptor set builder verified.\n");
 
+    // Test Descriptor Pool creation builders
+    VkDescriptorPoolSize pool_sizes[2];
+    int pool_size_cnt = 0;
+    auncient_vulkan_materials_build_pool_sizes(10, 20, pool_sizes, &pool_size_cnt);
+    assert(pool_size_cnt == 1);
+    assert(pool_sizes[0].type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    assert(pool_sizes[0].descriptorCount == 31); // 1 (Global) + 10 (Materials) + 20 (Instances)
+    printf("   ✓ Descriptor pool sizes builder verified.\n");
+
+    VkDescriptorPoolCreateInfo pool_info;
+    auncient_vulkan_materials_build_pool_info(35, pool_sizes, pool_size_cnt, &pool_info);
+    assert(pool_info.sType == 33);
+    assert(pool_info.maxSets == 35);
+    assert(pool_info.poolSizeCount == 1);
+    assert(pool_info.pPoolSizes == pool_sizes);
+    printf("   ✓ Descriptor pool info builder verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT VULKAN MATERIALS TEST COMPLETE\n");
     printf("=============================================================\n");

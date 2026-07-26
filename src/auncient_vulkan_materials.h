@@ -108,6 +108,20 @@ typedef struct {
     const void* pTexelBufferView;
 } VkWriteDescriptorSet;
 
+typedef struct {
+    VkDescriptorType type;
+    uint32_t descriptorCount;
+} VkDescriptorPoolSize;
+
+typedef struct {
+    uint32_t sType;
+    const void* pNext;
+    uint32_t flags;
+    uint32_t maxSets;
+    uint32_t poolSizeCount;
+    const VkDescriptorPoolSize* pPoolSizes;
+} VkDescriptorPoolCreateInfo;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -119,6 +133,8 @@ void auncient_vulkan_materials_build_pipeline_layout(const void *set_layouts, in
 void auncient_vulkan_materials_get_sizes(int set_index, uint32_t gpu_alignment, uint32_t *raw_size, uint32_t *aligned_size);
 void auncient_vulkan_materials_build_buffer_info(void *buffer, uint64_t displacement, uint64_t range, VkDescriptorBufferInfo *info);
 void auncient_vulkan_materials_build_write_set(void *dst_set, uint32_t binding, VkDescriptorType type, const VkDescriptorBufferInfo *buffer_info, VkWriteDescriptorSet *write_set);
+void auncient_vulkan_materials_build_pool_sizes(int material_count, int instance_count, VkDescriptorPoolSize *sizes, int *size_count);
+void auncient_vulkan_materials_build_pool_info(uint32_t max_sets, const VkDescriptorPoolSize *sizes, int size_count, VkDescriptorPoolCreateInfo *info);
 
 #ifdef __cplusplus
 }

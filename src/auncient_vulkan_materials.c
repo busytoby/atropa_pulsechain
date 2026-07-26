@@ -112,3 +112,23 @@ void auncient_vulkan_materials_build_write_set(void *dst_set, uint32_t binding, 
     write_set->pBufferInfo = buffer_info;
     write_set->pTexelBufferView = NULL;
 }
+
+void auncient_vulkan_materials_build_pool_sizes(int material_count, int instance_count, VkDescriptorPoolSize *sizes, int *size_count) {
+    if (!sizes || !size_count) return;
+
+    // We allocate 1 Uniform Buffer slot for Global context, N slots for Materials, and M slots for Instances
+    sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    sizes[0].descriptorCount = (uint32_t)(1 + material_count + instance_count);
+    *size_count = 1;
+}
+
+void auncient_vulkan_materials_build_pool_info(uint32_t max_sets, const VkDescriptorPoolSize *sizes, int size_count, VkDescriptorPoolCreateInfo *info) {
+    if (!info) return;
+
+    info->sType = 33; // VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO
+    info->pNext = NULL;
+    info->flags = 0;
+    info->maxSets = max_sets;
+    info->poolSizeCount = (uint32_t)size_count;
+    info->pPoolSizes = sizes;
+}
