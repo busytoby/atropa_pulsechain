@@ -534,6 +534,10 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
         art_flowables.append(Paragraph(f"<b>ARTICLE: {title}</b>", ParagraphStyle('ArtTitle', parent=title_style, alignment=TA_LEFT, fontSize=9.5, spaceBefore=8)))
         art_flowables.append(Paragraph(f"<i>Published: {date.strftime('%B %d, %Y')}</i>", ParagraphStyle('ArtDate', parent=body_style, fontName='Times-Italic', fontSize=7.5)))
         
+        article_wide_blocks = []
+        listing_counter = 1
+        table_counter = 1
+        
         with open(path, 'r', encoding='utf-8') as file_in:
             lines = file_in.readlines()
             
@@ -563,30 +567,26 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                     m_flowable = render_mermaid_flowchart(block_lines, col_width_1col if is_wide else col_width)
                     if m_flowable:
                         if is_wide:
-                            flush_art_flowables(art_flowables)
-                            story.append(NextPageTemplate(['even_page_1col', 'odd_page_1col']))
-                            story.append(PageBreak())
-                            story.append(Spacer(1, 4))
-                            story.append(m_flowable)
-                            story.append(Spacer(1, 4))
-                            story.append(NextPageTemplate(['even_page_2col', 'odd_page_2col']))
-                            story.append(PageBreak())
+                            caption_text = f"<b>Flowchart {listing_counter}</b>: System schematic structure referenced in <i>{title}</i>"
+                            article_wide_blocks.append((caption_text, m_flowable))
+                            art_flowables.append(Spacer(1, 4))
+                            art_flowables.append(Paragraph(f'<font color="#0077b6"><b>[Flowchart {listing_counter}: See Appendix at the end of this article]</b></font>', ParagraphStyle('FlowPlaceholder', parent=body_style, fontName='Times-Italic', fontSize=7.0, spaceBefore=2, spaceAfter=2)))
+                            art_flowables.append(Spacer(1, 4))
+                            listing_counter += 1
                         else:
                             art_flowables.append(Spacer(1, 4))
                             art_flowables.append(m_flowable)
                             art_flowables.append(Spacer(1, 4))
                 else:
                     if is_wide:
-                        flush_art_flowables(art_flowables)
-                        story.append(NextPageTemplate(['even_page_1col', 'odd_page_1col']))
-                        story.append(PageBreak())
                         c_flowable = render_standard_code_block(block_lines, col_width_1col, body_style)
                         if c_flowable:
-                            story.append(Spacer(1, 4))
-                            story.append(c_flowable)
-                            story.append(Spacer(1, 4))
-                        story.append(NextPageTemplate(['even_page_2col', 'odd_page_2col']))
-                        story.append(PageBreak())
+                            caption_text = f"<b>Listing {listing_counter}</b>: Monospace source block referenced in <i>{title}</i>"
+                            article_wide_blocks.append((caption_text, c_flowable))
+                            art_flowables.append(Spacer(1, 4))
+                            art_flowables.append(Paragraph(f'<font color="#0077b6"><b>[Listing {listing_counter}: See Appendix at the end of this article]</b></font>', ParagraphStyle('ListPlaceholder', parent=body_style, fontName='Times-Italic', fontSize=7.0, spaceBefore=2, spaceAfter=2)))
+                            art_flowables.append(Spacer(1, 4))
+                            listing_counter += 1
                     else:
                         c_flowable = render_standard_code_block(block_lines, col_width, body_style)
                         if c_flowable:
@@ -606,16 +606,14 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                 
                 if box_lines:
                     if is_wide:
-                        flush_art_flowables(art_flowables)
-                        story.append(NextPageTemplate(['even_page_1col', 'odd_page_1col']))
-                        story.append(PageBreak())
                         c_flowable = render_standard_code_block(box_lines, col_width_1col, body_style)
                         if c_flowable:
-                            story.append(Spacer(1, 4))
-                            story.append(c_flowable)
-                            story.append(Spacer(1, 4))
-                        story.append(NextPageTemplate(['even_page_2col', 'odd_page_2col']))
-                        story.append(PageBreak())
+                            caption_text = f"<b>Diagram {listing_counter}</b>: Monospace layout diagram referenced in <i>{title}</i>"
+                            article_wide_blocks.append((caption_text, c_flowable))
+                            art_flowables.append(Spacer(1, 4))
+                            art_flowables.append(Paragraph(f'<font color="#0077b6"><b>[Diagram {listing_counter}: See Appendix at the end of this article]</b></font>', ParagraphStyle('DiagPlaceholder', parent=body_style, fontName='Times-Italic', fontSize=7.0, spaceBefore=2, spaceAfter=2)))
+                            art_flowables.append(Spacer(1, 4))
+                            listing_counter += 1
                     else:
                         c_flowable = render_standard_code_block(box_lines, col_width, body_style)
                         if c_flowable:
@@ -637,34 +635,24 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                 is_wide = (col_count > 5) and (len(table_lines) > 8)
                 
                 if is_wide:
-                    flush_art_flowables(art_flowables)
-                    story.append(NextPageTemplate(['even_page_1col', 'odd_page_1col']))
-                    story.append(PageBreak())
                     t_flowable = parse_markdown_table(table_lines, body_style, col_width_1col)
+                    if not t_flowable:
+                        t_flowable = render_standard_code_block(table_lines, col_width_1col, body_style)
                     if t_flowable:
-                        story.append(Spacer(1, 4))
-                        story.append(t_flowable)
-                        story.append(Spacer(1, 4))
-                    else:
-                        c_flowable = render_standard_code_block(table_lines, col_width_1col, body_style)
-                        if c_flowable:
-                            story.append(Spacer(1, 4))
-                            story.append(c_flowable)
-                            story.append(Spacer(1, 4))
-                    story.append(NextPageTemplate(['even_page_2col', 'odd_page_2col']))
-                    story.append(PageBreak())
+                        caption_text = f"<b>Table {table_counter}</b>: System state parameters referenced in <i>{title}</i>"
+                        article_wide_blocks.append((caption_text, t_flowable))
+                        art_flowables.append(Spacer(1, 4))
+                        art_flowables.append(Paragraph(f'<font color="#0077b6"><b>[Table {table_counter}: See Appendix at the end of this article]</b></font>', ParagraphStyle('TablePlaceholder', parent=body_style, fontName='Times-Italic', fontSize=7.0, spaceBefore=2, spaceAfter=2)))
+                        art_flowables.append(Spacer(1, 4))
+                        table_counter += 1
                 else:
                     t_flowable = parse_markdown_table(table_lines, body_style, col_width)
+                    if not t_flowable:
+                        t_flowable = render_standard_code_block(table_lines, col_width, body_style)
                     if t_flowable:
                         art_flowables.append(Spacer(1, 4))
                         art_flowables.append(t_flowable)
                         art_flowables.append(Spacer(1, 4))
-                    else:
-                        c_flowable = render_standard_code_block(table_lines, col_width, body_style)
-                        if c_flowable:
-                            art_flowables.append(Spacer(1, 4))
-                            art_flowables.append(c_flowable)
-                            art_flowables.append(Spacer(1, 4))
                 continue
                 
             if line.startswith('---') or line.startswith('***'):
@@ -780,7 +768,22 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
             process_text_block(full_p, body_style, col_width, art_flowables)
                 
         flush_art_flowables(art_flowables)
-        story.append(Spacer(1, 0.1 * inch))
+        
+        if article_wide_blocks:
+            story.append(NextPageTemplate(['even_page_1col', 'odd_page_1col']))
+            story.append(PageBreak())
+            story.append(Paragraph(f"<b>APPENDIX: SYSTEM SCHEMATICS AND MONOSPACE DATA - {title.upper()}</b>", ParagraphStyle('AppHead', parent=title_style, alignment=TA_LEFT, fontSize=9.5, spaceBefore=8, spaceAfter=4)))
+            story.append(Spacer(1, 0.1 * inch))
+            
+            for caption, block in article_wide_blocks:
+                story.append(Paragraph(caption, ParagraphStyle('AppCap', parent=body_style, fontName='Times-Italic', fontSize=8.0, spaceBefore=4, spaceAfter=2)))
+                story.append(block)
+                story.append(Spacer(1, 0.1 * inch))
+                
+            story.append(NextPageTemplate(['even_page_2col', 'odd_page_2col']))
+            story.append(PageBreak())
+        else:
+            story.append(Spacer(1, 0.1 * inch))
         
     doc.build(story, canvasmaker=NumberedCanvas)
     print(f"PDF build complete: {output_filename}")
