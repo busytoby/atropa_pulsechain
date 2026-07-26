@@ -162,6 +162,9 @@ static uint8_t vic_d012 = 130;  // Raster split scanline
 static uint8_t vic_d016 = 0;    // Fine scroll shift (0-7 pixels)
 static uint8_t vic_d021 = 0x06; // Background Color (Blue)
 
+// Interactive Loader state variables
+static float loader_flash_time = 0.0f;
+
 // Glitch Screen Shake displacement coordinates
 static int glitch_x = 0;
 static int glitch_y = 0;
@@ -315,21 +318,28 @@ static void redraw_screen(void) {
 
         uint32_t bg_color = 0xFF222222;
         
-        // High frequency color sweeps relative to time + y scanline (using Sine LUT)
-        int sweep_idx = (int)(y * 0.5f + retro_time * 200.0f) & 0xFF;
-        float color_sweep = sine_lut[sweep_idx];
-        
-        if (color_sweep > 0.8f) {
-            bg_color = 0xFF882200; // Red-orange sweep band
-        } else if (color_sweep < -0.8f) {
-            bg_color = 0xFF004488; // Blue sweep band
+        // Check if Fast Loader border flash effect is active
+        if (loader_flash_time > 0.0f && (y < (int)vic_d012 * 3 || y > win_height - 100)) {
+            // Turbo tape loading lines: high-speed randomized color bands
+            int rand_color_idx = (int)(y * 0.15f + retro_time * 800.0f + (rand() % 4)) & 0x0F;
+            bg_color = color_cycle_lut[rand_color_idx];
         } else {
-            // Evaluates VIC-II simulated splits (using Color Cycle LUT for borders)
-            if (y < (int)vic_d012 * 3) {
-                int pal_idx = (int)(retro_time * 8.0f) & 0x0F;
-                bg_color = color_cycle_lut[pal_idx]; // Cycle border color via LUT
+            // High frequency color sweeps relative to time + y scanline (using Sine LUT)
+            int sweep_idx = (int)(y * 0.5f + retro_time * 200.0f) & 0xFF;
+            float color_sweep = sine_lut[sweep_idx];
+            
+            if (color_sweep > 0.8f) {
+                bg_color = 0xFF882200; // Red-orange sweep band
+            } else if (color_sweep < -0.8f) {
+                bg_color = 0xFF004488; // Blue sweep band
             } else {
-                bg_color = (vic_d021 == 0x06) ? 0xFF1b253d : 0xFF112222;
+                // Evaluates VIC-II simulated splits (using Color Cycle LUT for borders)
+                if (y < (int)vic_d012 * 3) {
+                    int pal_idx = (int)(retro_time * 8.0f) & 0x0F;
+                    bg_color = color_cycle_lut[pal_idx]; // Cycle border color via LUT
+                } else {
+                    bg_color = (vic_d021 == 0x06) ? 0xFF1b253d : 0xFF112222;
+                }
             }
         }
         
@@ -626,6 +636,9 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *wl_keyboard, uin
             fwrite(&rec, sizeof(rec), 1, f);
             fclose(f);
             printf("[LEDGER] Transaction committed to assets/editor_history.dat.bin\n");
+            
+            // Trigger 0.5s Fast Loader flash on write transaction
+            loader_flash_time = 0.5f;
         }
         
         typed_char = '\n';
@@ -820,6 +833,7 @@ int main(void) {
 
     struct timespec start_ts;
     clock_gettime(CLOCK_MONOTONIC, &start_ts);
+    float last_time = 0.0f;
 
     while (running) {
         if (wl_display_get_error(display)) {
@@ -851,6 +865,14 @@ int main(void) {
         retro_time = (float)(cur_ts.tv_sec - start_ts.tv_sec) + 
                      (float)(cur_ts.tv_nsec - start_ts.tv_nsec) * 1e-9f;
         
+        float dt = retro_time - last_time;
+        last_time = retro_time;
+
+        // Decrease active loader flash duration
+        if (loader_flash_time > 0.0f) {
+            loader_flash_time -= dt;
+        }
+
         // Mutate simulated VIC-II hardware register states
         vic_d016 = (uint8_t)(retro_time * 8.0f) & 0x07; // 0-7 pixel fine scroll shift
         vic_d012 = 120 + (uint8_t)(sinf(retro_time * 2.0f) * 20.0f); // Modulate raster split line
