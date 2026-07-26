@@ -65,13 +65,8 @@ def get_walking_geometry(time_sec):
     swing_l = 0.35 * math.sin(freq * time_sec)
     swing_r = -0.35 * math.sin(freq * time_sec)
     
-    t_lknee = 0.4 * (1.0 + math.cos(freq * time_sec)) if swing_l < 0 else 0.1
-    t_rknee = 0.4 * (1.0 - math.cos(freq * time_sec)) if swing_r < 0 else 0.1
-    
     t_luarm = -0.3 * math.sin(freq * time_sec) + 0.1
     t_ruarm = 0.3 * math.sin(freq * time_sec) + 0.1
-    t_lelbow = 0.3
-    t_relbow = 0.3
     
     m_name = "Walking Cycle"
     
@@ -87,7 +82,6 @@ def get_walking_geometry(time_sec):
         "color": (120, 80, 54)
     }
     
-    # Red felt heart on the chest of the body
     heart_local_pos = (0.0, 0.1, 0.5)
     hx, hy, hz = rotate_x(heart_local_pos[0], heart_local_pos[1], heart_local_pos[2], body_pitch)
     hx, hy, hz = rotate_y(hx, hy, hz, body_yaw)
@@ -117,9 +111,7 @@ def get_walking_geometry(time_sec):
         "color": (120, 80, 54)
     }
     
-    # Face details parented to Head
     def get_world_head_child(local_offset):
-        # Rotate relative to Head orientation
         cx, cy, cz = rotate_x(local_offset[0], local_offset[1], local_offset[2], parts["Head"]["rot"][0])
         cx, cy, cz = rotate_y(cx, cy, cz, parts["Head"]["rot"][1])
         cx, cy, cz = rotate_z(cx, cy, cz, parts["Head"]["rot"][2])
@@ -144,7 +136,6 @@ def get_walking_geometry(time_sec):
         "color": (100, 65, 40)
     }
     
-    # Black bead eyes
     parts["LeftEye"] = {
         "pos": get_world_head_child((-0.2, 0.15, 0.45)),
         "rot": parts["Head"]["rot"],
@@ -164,7 +155,6 @@ def get_walking_geometry(time_sec):
         "color": (20, 20, 20)
     }
     
-    # Muzzle (cotton snout patch)
     parts["Muzzle"] = {
         "pos": get_world_head_child((0.0, -0.05, 0.45)),
         "rot": parts["Head"]["rot"],
@@ -175,7 +165,6 @@ def get_walking_geometry(time_sec):
         "color": (220, 200, 180)
     }
     
-    # Stitched velvet nose
     parts["Nose"] = {
         "pos": get_world_head_child((0.0, 0.02, 0.56)),
         "rot": parts["Head"]["rot"],
@@ -186,82 +175,48 @@ def get_walking_geometry(time_sec):
         "color": (40, 30, 25)
     }
     
-    def add_arm(side, uarm_pitch, elbow_pitch, color_u, color_f):
+    def add_arm(side, arm_pitch, color):
         side_sign = -1.0 if side == "Left" else 1.0
-        uarm_local_pos = (side_sign * 0.65, 0.35, 0.0)
-        uarm_local_rot = (uarm_pitch, 0.0, 0.0)
+        arm_local_pos = (side_sign * 0.65, 0.2, 0.0)
+        arm_local_rot = (arm_pitch, 0.0, 0.0)
         
-        ax, ay, az = rotate_x(uarm_local_pos[0], uarm_local_pos[1], uarm_local_pos[2], body_pitch)
+        ax, ay, az = rotate_x(arm_local_pos[0], arm_local_pos[1], arm_local_pos[2], body_pitch)
         ax, ay, az = rotate_y(ax, ay, az, body_yaw)
         ax, ay, az = rotate_z(ax, ay, az, body_roll)
         
-        parts[f"{side}UpperArm"] = {
+        parts[f"{side}Arm"] = {
             "pos": (x_disp + ax, 0.55 + y_disp + ay, z_disp + az),
-            "rot": (body_pitch + uarm_pitch, body_yaw, body_roll),
-            "local_pos": uarm_local_pos,
-            "local_rot": uarm_local_rot,
+            "rot": (body_pitch + arm_pitch, body_yaw, body_roll),
+            "local_pos": arm_local_pos,
+            "local_rot": arm_local_rot,
             "shape": "ellipsoid",
-            "size": (0.18, 0.3, 0.18),
-            "color": color_u
+            "size": (0.18, 0.45, 0.18),
+            "color": color
         }
         
-        forearm_local_pos = (0.0, -0.3, 0.0)
-        forearm_local_rot = (elbow_pitch, 0.0, 0.0)
-        
-        fx, fy, fz = rotate_x(forearm_local_pos[0], forearm_local_pos[1], forearm_local_pos[2], body_pitch + uarm_pitch)
-        fx, fy, fz = rotate_y(fx, fy, fz, body_yaw)
-        fx, fy, fz = rotate_z(fx, fy, fz, body_roll)
-        
-        parts[f"{side}Forearm"] = {
-            "pos": (parts[f"{side}UpperArm"]["pos"][0] + fx, parts[f"{side}UpperArm"]["pos"][1] + fy, parts[f"{side}UpperArm"]["pos"][2] + fz),
-            "rot": (body_pitch + uarm_pitch + elbow_pitch, body_yaw, body_roll),
-            "local_pos": forearm_local_pos,
-            "local_rot": forearm_local_rot,
-            "shape": "ellipsoid",
-            "size": (0.15, 0.25, 0.15),
-            "color": color_f
-        }
-        
-    def add_leg(side, thigh_pitch, knee_pitch, color_t, color_c):
+    def add_leg(side, leg_pitch, color):
         side_sign = -1.0 if side == "Left" else 1.0
-        thigh_local_pos = (side_sign * 0.35, -0.25, 0.0)
-        thigh_local_rot = (thigh_pitch, 0.0, 0.0)
+        leg_local_pos = (side_sign * 0.35, -0.4, 0.0)
+        leg_local_rot = (leg_pitch, 0.0, 0.0)
         
-        lx, ly, lz = rotate_x(thigh_local_pos[0], thigh_local_pos[1], thigh_local_pos[2], body_pitch)
+        lx, ly, lz = rotate_x(leg_local_pos[0], leg_local_pos[1], leg_local_pos[2], body_pitch)
         lx, ly, lz = rotate_y(lx, ly, lz, body_yaw)
         lx, ly, lz = rotate_z(lx, ly, lz, body_roll)
         
-        parts[f"{side}Thigh"] = {
+        parts[f"{side}Leg"] = {
             "pos": (x_disp + lx, 0.55 + y_disp + ly, z_disp + lz),
-            "rot": (body_pitch + thigh_pitch, body_yaw, body_roll),
-            "local_pos": thigh_local_pos,
-            "local_rot": thigh_local_rot,
+            "rot": (body_pitch + leg_pitch, body_yaw, body_roll),
+            "local_pos": leg_local_pos,
+            "local_rot": leg_local_rot,
             "shape": "ellipsoid",
-            "size": (0.22, 0.35, 0.22),
-            "color": color_t
-        }
-        
-        calf_local_pos = (0.0, -0.3, 0.0)
-        calf_local_rot = (-knee_pitch, 0.0, 0.0)
-        
-        cx, cy, cz = rotate_x(calf_local_pos[0], calf_local_pos[1], calf_local_pos[2], body_pitch + thigh_pitch)
-        cx, cy, cz = rotate_y(cx, cy, cz, body_yaw)
-        cx, cy, cz = rotate_z(cx, cy, cz, body_roll)
-        
-        parts[f"{side}Calf"] = {
-            "pos": (parts[f"{side}Thigh"]["pos"][0] + cx, parts[f"{side}Thigh"]["pos"][1] + cy, parts[f"{side}Thigh"]["pos"][2] + cz),
-            "rot": (body_pitch + thigh_pitch - knee_pitch, body_yaw, body_roll),
-            "local_pos": calf_local_pos,
-            "local_rot": calf_local_rot,
-            "shape": "ellipsoid",
-            "size": (0.18, 0.3, 0.18),
-            "color": color_c
+            "size": (0.22, 0.5, 0.22),
+            "color": color
         }
 
-    add_arm("Left", t_luarm, t_lelbow, (120, 80, 54), (100, 65, 40))
-    add_arm("Right", t_ruarm, t_relbow, (120, 80, 54), (100, 65, 40))
-    add_leg("Left", swing_l, t_lknee, (120, 80, 54), (100, 65, 40))
-    add_leg("Right", swing_r, t_rknee, (120, 80, 54), (100, 65, 40))
+    add_arm("Left", t_luarm, (120, 80, 54))
+    add_arm("Right", t_ruarm, (120, 80, 54))
+    add_leg("Left", swing_l, (120, 80, 54))
+    add_leg("Right", swing_r, (120, 80, 54))
     
     return parts, m_name
 
@@ -416,7 +371,6 @@ def main():
                 
             fill_color = part["color"]
             if part["shape"] == "heart":
-                # Draw simple polygon heart
                 if len(projected_pts) > 0:
                     draw.ellipse([projected_pts[0][0]-15, projected_pts[0][1]-15, projected_pts[0][0]+15, projected_pts[0][1]+15], fill=fill_color)
             else:
@@ -477,10 +431,8 @@ def main():
         f.write("            \"/\", \"/Head\", \"/Head/LeftEar\", \"/Head/RightEar\",\n")
         f.write("            \"/Head/LeftEye\", \"/Head/RightEye\", \"/Head/Muzzle\", \"/Head/Nose\",\n")
         f.write("            \"/SewnHeart\",\n")
-        f.write("            \"/LeftUpperArm\", \"/LeftUpperArm/LeftForearm\",\n")
-        f.write("            \"/RightUpperArm\", \"/RightUpperArm/RightForearm\",\n")
-        f.write("            \"/LeftThigh\", \"/LeftThigh/LeftCalf\",\n")
-        f.write("            \"/RightThigh\", \"/RightThigh/RightCalf\"\n")
+        f.write("            \"/LeftArm\", \"/RightArm\",\n")
+        f.write("            \"/LeftLeg\", \"/RightLeg\"\n")
         f.write("        ]\n")
         f.write("    }\n\n")
         
@@ -490,10 +442,8 @@ def main():
         f.write("            \"/\", \"/Head\", \"/Head/LeftEar\", \"/Head/RightEar\",\n")
         f.write("            \"/Head/LeftEye\", \"/Head/RightEye\", \"/Head/Muzzle\", \"/Head/Nose\",\n")
         f.write("            \"/SewnHeart\",\n")
-        f.write("            \"/LeftUpperArm\", \"/LeftUpperArm/LeftForearm\",\n")
-        f.write("            \"/RightUpperArm\", \"/RightUpperArm/RightForearm\",\n")
-        f.write("            \"/LeftThigh\", \"/LeftThigh/LeftCalf\",\n")
-        f.write("            \"/RightThigh\", \"/RightThigh/RightCalf\"\n")
+        f.write("            \"/LeftArm\", \"/RightArm\",\n")
+        f.write("            \"/LeftLeg\", \"/RightLeg\"\n")
         f.write("        ]\n")
         f.write("    }\n\n")
         
