@@ -203,6 +203,12 @@ void auncient_ansi_layout_partition(const char *text, char *col1, int w1, char *
 // Handles keyboard navigation menu selections using Auncient virtual hardware keycode registers
 int auncient_navigate_ansi_menu(int keycode, int current_selection, int max_selections);
 
+// Writes a 16-bit RGB565 color to the Hudson VCE color register table
+void auncient_hudson_vce_write_color(uint16_t *vce_table, uint16_t color_idx, uint16_t rgb565_color);
+
+// Cycles VCE colors within a specified register range to simulate hardware palette shifting
+void auncient_hudson_vce_cycle_palette(uint16_t *vce_table, uint16_t start_idx, uint16_t end_idx, int shift_count);
+
 #ifdef __cplusplus
 }
 #endif

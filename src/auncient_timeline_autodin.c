@@ -806,3 +806,31 @@ int auncient_navigate_ansi_menu(int keycode, int current_selection, int max_sele
     }
     return current_selection;
 }
+
+void auncient_hudson_vce_write_color(uint16_t *vce_table, uint16_t color_idx, uint16_t rgb565_color) {
+    if (!vce_table || color_idx >= 512) return; // Hudson VCE supports 512 colors
+    vce_table[color_idx] = rgb565_color;
+}
+
+void auncient_hudson_vce_cycle_palette(uint16_t *vce_table, uint16_t start_idx, uint16_t end_idx, int shift_count) {
+    if (!vce_table || start_idx >= end_idx || end_idx >= 512) return;
+
+    int range = end_idx - start_idx + 1;
+    shift_count = shift_count % range;
+    if (shift_count < 0) shift_count += range;
+    if (shift_count == 0) return;
+
+    uint16_t *temp = malloc(sizeof(uint16_t) * range);
+    if (!temp) return;
+
+    for (int i = 0; i < range; i++) {
+        temp[i] = vce_table[start_idx + i];
+    }
+
+    for (int i = 0; i < range; i++) {
+        int target = (i + shift_count) % range;
+        vce_table[start_idx + target] = temp[i];
+    }
+
+    free(temp);
+}

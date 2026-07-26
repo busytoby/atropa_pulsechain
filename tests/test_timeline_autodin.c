@@ -317,6 +317,17 @@ int main(void) {
     assert(sel == 0);
     printf("   ✓ Keyboard menu selection navigation verified.\n");
 
+    // Test Hudson VCE color registers
+    uint16_t vce_table[512] = { 0 };
+    auncient_hudson_vce_write_color(vce_table, 10, 0xF800); // Write Red color
+    assert(vce_table[10] == 0xF800);
+    
+    auncient_hudson_vce_write_color(vce_table, 11, 0x07E0); // Write Green color
+    auncient_hudson_vce_cycle_palette(vce_table, 10, 11, 1); // Shift range by 1
+    assert(vce_table[10] == 0x07E0); // Green shifted to index 10
+    assert(vce_table[11] == 0xF800); // Red shifted to index 11
+    printf("   ✓ Hudson VCE palette registers and color cycling shifts verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");
