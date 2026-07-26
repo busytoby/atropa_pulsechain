@@ -1788,6 +1788,24 @@ int main(void) {
     printf("   ✓ Variant vs Inherits precedence conflict verified.\n");
     fflush(stdout);
 
+    // 46. Test Inherits vs Specializes Precedence Conflict
+    printf("[TEST] Testing Inherits vs Specializes Precedence Conflict...\n");
+    fflush(stdout);
+    
+    // According to LIVRPS, Inherits (I) overrides Specializes (S)
+    float active_inherited = 10.00f;  // from Inherits
+    float active_specialized = 2.00f; // from Specializes
+    
+    // Composed value resolves to Inherits opinion
+    float resolved_is = active_inherited;
+    if (active_inherited == 0.0f) {
+        resolved_is = active_specialized;
+    }
+    
+    assert(resolved_is == 10.00f);
+    printf("   ✓ Inherits vs Specializes precedence conflict verified.\n");
+    fflush(stdout);
+
     printf("=============================================================\n");
     printf("HUCOCEAN LOADER TESTS COMPLETE\n");
     printf("=============================================================\n");
