@@ -217,6 +217,15 @@ static const char *western_desert_art[6] = {
     "========================"
 };
 
+// Bubble Logo Matrix for TSFi/2
+static const char *bubble_logo[5] = {
+    "#####  ###  ####  #  /  ###",
+    "  #   #     #     # /     #",
+    "  #    ###  ###   #/    ###",
+    "  #       # #     # /   #  ",
+    "  #    ###  #     #  /  ###"
+};
+
 // Multiplexed Sprite Structure
 typedef struct {
     int x;
@@ -504,6 +513,23 @@ static void redraw_screen(void) {
                           art_start_x + pc * 12, 
                           art_start_y + pr * 16, 
                           symbol, art_color, 2);
+            }
+        }
+    }
+
+    // Render TSFi/2 bubble logo in the top-right corner next to the cactus art
+    int logo_start_x = art_start_x + 320;
+    int logo_start_y = 120 + glitch_y;
+    for (int pr = 0; pr < 5; pr++) {
+        for (int pc = 0; pc < 27; pc++) {
+            char symbol = bubble_logo[pr][pc];
+            if (symbol != ' ') {
+                int logo_color_idx = (int)(retro_time * 15.0f + pc) & 0x0F;
+                uint32_t logo_color = color_cycle_lut[logo_color_idx];
+                draw_char(pixels, win_width, win_height, 
+                          logo_start_x + pc * 8, 
+                          logo_start_y + pr * 12, 
+                          127, logo_color, 2); // 127 is solid block symbol
             }
         }
     }
