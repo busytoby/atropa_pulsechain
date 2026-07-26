@@ -237,6 +237,17 @@ int main(void) {
     assert(interp_val > 10.0f && interp_val < 20.0f);
     printf("   ✓ TCB spline Hermite interpolation and XPL script registers verified.\n");
 
+    // Test smooth normal generation
+    ClothVertex v_normal[3] = {
+        { .x = 0.0f, .y = 0.0f, .z = 0.0f },
+        { .x = 1.0f, .y = 0.0f, .z = 0.0f },
+        { .x = 0.0f, .y = 1.0f, .z = 0.0f }
+    };
+    int indices[3] = { 0, 1, 2 };
+    auncient_mesh_generate_normals(v_normal, 3, indices, 3);
+    assert(v_normal[0].nz == 1.0f); // Normal points straight up out of XY plane (z-axis)
+    printf("   ✓ Smooth vertex normal generation verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");

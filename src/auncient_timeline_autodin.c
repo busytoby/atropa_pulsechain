@@ -504,3 +504,58 @@ void auncient_xpl_write_spline_register(TcbKeyframe *keys, int max_keys, uint32_
         default: break;
     }
 }
+
+void auncient_mesh_generate_normals(ClothVertex *vertices, int vertex_count, const int *indices, int index_count) {
+    if (!vertices || vertex_count <= 0 || !indices || index_count < 3) return;
+
+    // 1. Reset all vertex normal vectors to zero
+    for (int i = 0; i < vertex_count; i++) {
+        vertices[i].nx = 0.0f;
+        vertices[i].ny = 0.0f;
+        vertices[i].nz = 0.0f;
+    }
+
+    // 2. Accumulate facet normals into sharing vertices
+    for (int i = 0; i < index_count; i += 3) {
+        int idx0 = indices[i];
+        int idx1 = indices[i+1];
+        int idx2 = indices[i+2];
+
+        if (idx0 >= vertex_count || idx1 >= vertex_count || idx2 >= vertex_count) continue;
+
+        // Edge vectors
+        float ux = vertices[idx1].x - vertices[idx0].x;
+        float uy = vertices[idx1].y - vertices[idx0].y;
+        float uz = vertices[idx1].z - vertices[idx0].z;
+
+        float vx = vertices[idx2].x - vertices[idx0].x;
+        float vy = vertices[idx2].y - vertices[idx0].y;
+        float vz = vertices[idx2].z - vertices[idx0].z;
+
+        // Cross product
+        float nx = uy * vz - uz * vy;
+        float ny = uz * vx - ux * vz;
+        float nz = ux * vy - uy * vx;
+
+        // Accumulate
+        vertices[idx0].nx += nx; vertices[idx0].ny += ny; vertices[idx0].nz += nz;
+        vertices[idx1].nx += nx; vertices[idx1].ny += ny; vertices[idx1].nz += nz;
+        vertices[idx2].nx += nx; vertices[idx2].ny += ny; vertices[idx2].nz += nz;
+    }
+
+    // 3. Normalize all vertex normals
+    for (int i = 0; i < vertex_count; i++) {
+        float len = sqrtf(vertices[i].nx * vertices[i].nx +
+                          vertices[i].ny * vertices[i].ny +
+                          vertices[i].nz * vertices[i].nz);
+        if (len > 0.001f) {
+            vertices[i].nx /= len;
+            vertices[i].ny /= len;
+            vertices[i].nz /= len;
+        } else {
+            vertices[i].nx = 0.0f;
+            vertices[i].ny = 1.0f; // Default upward normal vector
+            vertices[i].nz = 0.0f;
+        }
+    }
+}

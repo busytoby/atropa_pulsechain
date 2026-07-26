@@ -148,6 +148,9 @@ void auncient_spline_verlet_step(SplinePhysNode *nodes, int count, float dt, flo
 // Couples a spline-Verlet string control node directly to a Verlet cloth point
 void auncient_couple_spline_to_cloth(SplinePhysNode *spline_node, ClothPoint *cloth_point);
 
+// Recalculates smooth unit normals for a 3D vertex pool from index arrays
+void auncient_mesh_generate_normals(ClothVertex *vertices, int vertex_count, const int *indices, int index_count);
+
 typedef struct {
     float frame;
     float data;
