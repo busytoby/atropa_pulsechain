@@ -28,7 +28,7 @@ extern "C" {
 #endif
 
 // Processes timeline events and coordinates lock scheduling via AUTODIN precedence locks
-void auncient_timeline_process(TimelineEvent *events, int count, float current_time, sdk_cics_context_t *ctx);
+void auncient_timeline_process(TimelineEvent *events, int count, float current_time, sdk_cics_context_t *ctx, const HoganAccount *accounts, int account_count, uint64_t expected_total_saat);
 
 // Reconciles asset integrity with the Hogan transaction registry before staging to Vulkan
 bool auncient_hogan_reconcile_asset(uint32_t asset_id, const uint8_t *dna_bytes, int size);

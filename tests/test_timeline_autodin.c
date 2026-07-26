@@ -20,13 +20,13 @@ int main(void) {
     };
 
     // Process at time 0.1 (nothing should trigger)
-    auncient_timeline_process(events, 2, 0.1f, &ctx);
+    auncient_timeline_process(events, 2, 0.1f, &ctx, NULL, 0, 0);
     assert(!events[0].triggered);
     assert(!events[1].triggered);
     printf("   ✓ Timeline boundary guard verified.\n");
 
     // Process at time 0.8 (first event should trigger)
-    auncient_timeline_process(events, 2, 0.8f, &ctx);
+    auncient_timeline_process(events, 2, 0.8f, &ctx, NULL, 0, 0);
     assert(events[0].triggered);
     assert(!events[1].triggered);
     printf("   ✓ AUTODIN precedence event locking verified.\n");
@@ -96,6 +96,20 @@ int main(void) {
     bool audit_ok = auncient_hogan_audit_ledger(ledger, 2, 2250000); // 1.0M + 1.25M
     assert(audit_ok);
     printf("   ✓ Ledger auditing and checks verified.\n");
+
+    // Verify ongoing recurring audits
+    sdk_cics_context_t audit_ctx;
+    memset(&audit_ctx, 0, sizeof(audit_ctx));
+    
+    // First audit at time 1.1 with correct balance (should pass, last_blame = 0)
+    auncient_timeline_process(events, 2, 1.1f, &audit_ctx, ledger, 2, 2250000);
+    assert(audit_ctx.last_blame == 0);
+    printf("   ✓ Recurring AUTODIN audit success path verified.\n");
+
+    // Second audit at time 2.2 with mismatched balance (should fail, last_blame = 1)
+    auncient_timeline_process(events, 2, 2.2f, &audit_ctx, ledger, 2, 3000000);
+    assert(audit_ctx.last_blame == 1);
+    printf("   ✓ Recurring AUTODIN audit violation blame verified.\n");
 
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");

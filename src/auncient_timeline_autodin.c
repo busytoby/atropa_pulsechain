@@ -1,8 +1,27 @@
 #include "auncient_timeline_autodin.h"
 #include <stdio.h>
 
-void auncient_timeline_process(TimelineEvent *events, int count, float current_time, sdk_cics_context_t *ctx) {
+void auncient_timeline_process(TimelineEvent *events, int count, float current_time, sdk_cics_context_t *ctx, const HoganAccount *accounts, int account_count, uint64_t expected_total_saat) {
     if (!events || !ctx) return;
+
+    static float last_audit_time = 0.0f;
+    if (current_time < last_audit_time) {
+        last_audit_time = current_time;
+    }
+
+    // Ongoing recurring audit check every 1.0 units of time via AUTODIN spin lock
+    if (current_time >= last_audit_time + 1.0f) {
+        if (auncient_sdk_autodin_spin_lock(ctx, 0x999, 'P')) {
+            if (accounts && account_count > 0) {
+                bool audit_ok = auncient_hogan_audit_ledger(accounts, account_count, expected_total_saat);
+                if (!audit_ok) {
+                    ctx->last_blame = 1; // Raise blame code for ledger discrepancy
+                }
+            }
+            auncient_sdk_autodin_spin_unlock(ctx, 0x999);
+            last_audit_time = current_time;
+        }
+    }
 
     for (int i = 0; i < count; i++) {
         if (current_time >= events[i].timestamp && !events[i].triggered) {
