@@ -42,13 +42,22 @@ int main(void) {
     assert(layout_info.pBindings == bindings);
     printf("   ✓ Descriptor set layout builder verified.\n");
 
-    // Test Pipeline Layout Info building
+    // Test Pipeline Layout Info building with Push Constants
+    VkPushConstantRange push_range;
+    auncient_vulkan_materials_get_push_constant_range(&push_range);
+    assert(push_range.stageFlags == (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT));
+    assert(push_range.offset_bytes == 0);
+    assert(push_range.size == sizeof(MaterialPushConstants));
+    printf("   ✓ Push constant range builder verified.\n");
+
     void* mock_set_layouts[3] = {(void*)0x1, (void*)0x2, (void*)0x3};
     VkPipelineLayoutCreateInfo pipeline_layout_info;
-    auncient_vulkan_materials_build_pipeline_layout(mock_set_layouts, 3, &pipeline_layout_info);
+    auncient_vulkan_materials_build_pipeline_layout(mock_set_layouts, 3, &push_range, 1, &pipeline_layout_info);
     assert(pipeline_layout_info.sType == 30);
     assert(pipeline_layout_info.setLayoutCount == 3);
     assert(pipeline_layout_info.pSetLayouts == (const void*)mock_set_layouts);
+    assert(pipeline_layout_info.pushConstantRangeCount == 1);
+    assert(pipeline_layout_info.pPushConstantRanges == &push_range);
     printf("   ✓ Pipeline layout builder verified.\n");
 
     printf("=============================================================\n");

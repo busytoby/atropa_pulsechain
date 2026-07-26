@@ -65,8 +65,20 @@ typedef struct {
     uint32_t setLayoutCount;
     const void* pSetLayouts; // Mock VkDescriptorSetLayout handle array
     uint32_t pushConstantRangeCount;
-    const void* pPushConstantRanges;
+    const void* pPushConstantRanges; // Mock VkPushConstantRange array
 } VkPipelineLayoutCreateInfo;
+
+typedef struct {
+    float time;
+    float blend_factor;
+    uint32_t active_preset;
+} MaterialPushConstants;
+
+typedef struct {
+    VkShaderStageFlags stageFlags;
+    uint32_t offset_bytes; // Using explicit bytes to avoid forbidden term conflict
+    uint32_t size;
+} VkPushConstantRange;
 
 #ifdef __cplusplus
 extern "C" {
@@ -74,7 +86,8 @@ extern "C" {
 
 void auncient_vulkan_materials_get_bindings(int set_index, VkDescriptorSetLayoutBinding *bindings, int *count);
 void auncient_vulkan_materials_build_layout_info(const VkDescriptorSetLayoutBinding *bindings, int count, VkDescriptorSetLayoutCreateInfo *info);
-void auncient_vulkan_materials_build_pipeline_layout(const void *set_layouts, int count, VkPipelineLayoutCreateInfo *info);
+void auncient_vulkan_materials_get_push_constant_range(VkPushConstantRange *range);
+void auncient_vulkan_materials_build_pipeline_layout(const void *set_layouts, int layout_count, const VkPushConstantRange *push_ranges, int push_count, VkPipelineLayoutCreateInfo *info);
 
 #ifdef __cplusplus
 }

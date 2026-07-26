@@ -48,14 +48,22 @@ void auncient_vulkan_materials_build_layout_info(const VkDescriptorSetLayoutBind
     info->pBindings = bindings;
 }
 
-void auncient_vulkan_materials_build_pipeline_layout(const void *set_layouts, int count, VkPipelineLayoutCreateInfo *info) {
+void auncient_vulkan_materials_get_push_constant_range(VkPushConstantRange *range) {
+    if (!range) return;
+
+    range->stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    range->offset_bytes = 0;
+    range->size = sizeof(MaterialPushConstants);
+}
+
+void auncient_vulkan_materials_build_pipeline_layout(const void *set_layouts, int layout_count, const VkPushConstantRange *push_ranges, int push_count, VkPipelineLayoutCreateInfo *info) {
     if (!info) return;
 
     info->sType = 30; // VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO
     info->pNext = NULL;
     info->flags = 0;
-    info->setLayoutCount = (uint32_t)count;
+    info->setLayoutCount = (uint32_t)layout_count;
     info->pSetLayouts = set_layouts;
-    info->pushConstantRangeCount = 0;
-    info->pPushConstantRanges = NULL;
+    info->pushConstantRangeCount = (uint32_t)push_count;
+    info->pPushConstantRanges = push_ranges;
 }
