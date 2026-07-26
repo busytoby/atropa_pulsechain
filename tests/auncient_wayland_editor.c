@@ -199,6 +199,19 @@ static void redraw_screen(void) {
         pixels[i] = 0xFF222222;
     }
     
+    // Calculate dynamic scaling factor based on current window size
+    int scale = win_width / 280;
+    if (scale < 1) scale = 1;
+    if (scale > 6) scale = 6;
+    
+    // Center document grid dynamically
+    int grid_w = 40 * 6 * scale;
+    int grid_h = 15 * 8 * scale;
+    int start_x = (win_width - grid_w) / 2;
+    int start_y = (win_height - grid_h) / 2;
+    if (start_x < 20) start_x = 20;
+    if (start_y < 80) start_y = 80;
+    
     // Parse Markdown to ANSI grid (40 columns, 15 rows)
     char ansi_grid[600];
     memset(ansi_grid, ' ', sizeof(ansi_grid));
@@ -210,18 +223,20 @@ static void redraw_screen(void) {
             char ch = ansi_grid[r * 40 + c];
             uint32_t color = 0xFFCCCCCC; // Default light gray
             
-            // Stylize header border markers differently
             if (ch == '|') color = 0xFF00FFFF;
             else if (ch == '*') color = 0xFFFF00FF;
             else if (ch == '=') color = 0xFFFFFF00;
             
-            draw_char(pixels, win_width, win_height, 100 + c * 18, 100 + r * 24, ch, color, 3);
+            draw_char(pixels, win_width, win_height, start_x + c * 6 * scale, start_y + r * 8 * scale, ch, color, scale);
         }
     }
     
     // Display instructions
-    draw_string(pixels, win_width, win_height, 100, 50, "AUNCIENT WAYLAND VULKAN MARKDOWN EDITOR", 0xFF00FF00, 2);
-    draw_string(pixels, win_width, win_height, 100, 550, "TYPE TO EDIT - PRESS ENTER FOR NEWLINE - ESC TO QUIT", 0xFFFFFF00, 2);
+    draw_string(pixels, win_width, win_height, 100, 30, "AUNCIENT WAYLAND VULKAN MARKDOWN EDITOR", 0xFF00FF00, 2);
+    
+    char help_buf[128];
+    snprintf(help_buf, sizeof(help_buf), "SCALE: %d - TYPE TO EDIT - ESC TO QUIT", scale);
+    draw_string(pixels, win_width, win_height, 100, win_height - 60, help_buf, 0xFFFFFF00, 2);
     
     wl_surface_attach(surface, wl_buffers[current_buffer_idx], 0, 0);
     wl_surface_damage(surface, 0, 0, win_width, win_height);
