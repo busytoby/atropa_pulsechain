@@ -302,6 +302,20 @@ static void resolve_inh_variant_conflict(const usd_inh_variant_conflict_t *confl
     }
 }
 
+typedef struct {
+    char inherits_opinion[32];
+    char payload_opinion[32];
+} usd_inh_payload_conflict_t;
+
+static void resolve_inh_payload_conflict(const usd_inh_payload_conflict_t *conflict, char *resolved_val) {
+    if (strlen(conflict->inherits_opinion) > 0) {
+        strcpy(resolved_val, conflict->inherits_opinion);
+    } else {
+        strcpy(resolved_val, conflict->payload_opinion);
+    }
+}
+
+
 
 
 
@@ -620,6 +634,27 @@ int main(void) {
     resolve_inh_variant_conflict(&iv_conflict_no_inh, resolved_iv_no_inh);
     assert(strcmp(resolved_iv_no_inh, "variant_look") == 0);
     printf("   ✓ Inherits (I) taking precedence over VariantSet (V) verified.\n");
+    fflush(stdout);
+
+    // 17. Test Inherits vs Payload Precedence Conflicts
+    printf("[TEST] Testing Inherits vs Payload Precedence Conflicts...\n");
+    fflush(stdout);
+    usd_inh_payload_conflict_t ip_conflict = {
+        .inherits_opinion = "class_inherited_data",
+        .payload_opinion = "payload_data"
+    };
+    char resolved_ip[32] = "";
+    resolve_inh_payload_conflict(&ip_conflict, resolved_ip);
+    assert(strcmp(resolved_ip, "class_inherited_data") == 0);
+
+    usd_inh_payload_conflict_t ip_conflict_no_inh = {
+        .inherits_opinion = "",
+        .payload_opinion = "payload_data"
+    };
+    char resolved_ip_no_inh[32] = "";
+    resolve_inh_payload_conflict(&ip_conflict_no_inh, resolved_ip_no_inh);
+    assert(strcmp(resolved_ip_no_inh, "payload_data") == 0);
+    printf("   ✓ Inherits (I) taking precedence over Payload (P) verified.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
