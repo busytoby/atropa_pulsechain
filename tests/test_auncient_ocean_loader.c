@@ -341,6 +341,90 @@ static void resolve_local_inh_conflict(const usd_local_inh_conflict_t *conflict,
     }
 }
 
+typedef struct {
+    char local_opinion[32];
+    char reference_opinion[32];
+} usd_local_ref_conflict_t;
+
+static void resolve_local_ref_conflict(const usd_local_ref_conflict_t *conflict, char *resolved_val) {
+    if (strlen(conflict->local_opinion) > 0) {
+        strcpy(resolved_val, conflict->local_opinion);
+    } else {
+        strcpy(resolved_val, conflict->reference_opinion);
+    }
+}
+
+typedef struct {
+    char local_opinion[32];
+    char payload_opinion[32];
+} usd_local_payload_conflict_t;
+
+static void resolve_local_payload_conflict(const usd_local_payload_conflict_t *conflict, char *resolved_val) {
+    if (strlen(conflict->local_opinion) > 0) {
+        strcpy(resolved_val, conflict->local_opinion);
+    } else {
+        strcpy(resolved_val, conflict->payload_opinion);
+    }
+}
+
+typedef struct {
+    char local_opinion[32];
+    char specializes_opinion[32];
+} usd_local_spec_conflict_t;
+
+static void resolve_local_spec_conflict(const usd_local_spec_conflict_t *conflict, char *resolved_val) {
+    if (strlen(conflict->local_opinion) > 0) {
+        strcpy(resolved_val, conflict->local_opinion);
+    } else {
+        strcpy(resolved_val, conflict->specializes_opinion);
+    }
+}
+
+typedef struct {
+    char reference_opinion[32];
+    char payload_opinion[32];
+} usd_ref_payload_conflict_t;
+
+static void resolve_ref_payload_conflict(const usd_ref_payload_conflict_t *conflict, char *resolved_val) {
+    if (strlen(conflict->reference_opinion) > 0) {
+        strcpy(resolved_val, conflict->reference_opinion);
+    } else {
+        strcpy(resolved_val, conflict->payload_opinion);
+    }
+}
+
+typedef struct {
+    char reference_opinion[32];
+    char specializes_opinion[32];
+} usd_ref_spec_conflict_t;
+
+static void resolve_ref_spec_conflict(const usd_ref_spec_conflict_t *conflict, char *resolved_val) {
+    if (strlen(conflict->reference_opinion) > 0) {
+        strcpy(resolved_val, conflict->reference_opinion);
+    } else {
+        strcpy(resolved_val, conflict->specializes_opinion);
+    }
+}
+
+typedef struct {
+    char payload_opinion[32];
+    char specializes_opinion[32];
+} usd_payload_spec_conflict_t;
+
+static void resolve_payload_spec_conflict(const usd_payload_spec_conflict_t *conflict, char *resolved_val) {
+    if (strlen(conflict->payload_opinion) > 0) {
+        strcpy(resolved_val, conflict->payload_opinion);
+    } else {
+        strcpy(resolved_val, conflict->specializes_opinion);
+    }
+}
+
+
+
+
+
+
+
 
 
 
@@ -725,6 +809,132 @@ int main(void) {
     resolve_local_inh_conflict(&li_conflict_no_local, resolved_li_no_local);
     assert(strcmp(resolved_li_no_local, "class_inherited_geometric_state") == 0);
     printf("   ✓ Local override (L) taking precedence over Inherits (I) verified.\n");
+    fflush(stdout);
+
+    // 20. Test Local vs Reference Precedence Conflicts
+    printf("[TEST] Testing Local vs Reference Precedence Conflicts...\n");
+    fflush(stdout);
+    usd_local_ref_conflict_t lr_conflict = {
+        .local_opinion = "local_transform_override",
+        .reference_opinion = "referenced_base_transform"
+    };
+    char resolved_lr[32] = "";
+    resolve_local_ref_conflict(&lr_conflict, resolved_lr);
+    assert(strcmp(resolved_lr, "local_transform_override") == 0);
+
+    usd_local_ref_conflict_t lr_conflict_no_local = {
+        .local_opinion = "",
+        .reference_opinion = "referenced_base_transform"
+    };
+    char resolved_lr_no_local[32] = "";
+    resolve_local_ref_conflict(&lr_conflict_no_local, resolved_lr_no_local);
+    assert(strcmp(resolved_lr_no_local, "referenced_base_transform") == 0);
+    printf("   ✓ Local override (L) taking precedence over Reference (R) verified.\n");
+    fflush(stdout);
+
+    // 21. Test Local vs Payload Precedence Conflicts
+    printf("[TEST] Testing Local vs Payload Precedence Conflicts...\n");
+    fflush(stdout);
+    usd_local_payload_conflict_t lp_conflict = {
+        .local_opinion = "local_payload_override",
+        .payload_opinion = "payload_base_representation"
+    };
+    char resolved_lp[32] = "";
+    resolve_local_payload_conflict(&lp_conflict, resolved_lp);
+    assert(strcmp(resolved_lp, "local_payload_override") == 0);
+
+    usd_local_payload_conflict_t lp_conflict_no_local = {
+        .local_opinion = "",
+        .payload_opinion = "payload_base_representation"
+    };
+    char resolved_lp_no_local[32] = "";
+    resolve_local_payload_conflict(&lp_conflict_no_local, resolved_lp_no_local);
+    assert(strcmp(resolved_lp_no_local, "payload_base_representation") == 0);
+    printf("   ✓ Local override (L) taking precedence over Payload (P) verified.\n");
+    fflush(stdout);
+
+    // 22. Test Local vs Specializes Precedence Conflicts
+    printf("[TEST] Testing Local vs Specializes Precedence Conflicts...\n");
+    fflush(stdout);
+    usd_local_spec_conflict_t ls_conflict = {
+        .local_opinion = "local_specialized_override",
+        .specializes_opinion = "specialized_deep_base"
+    };
+    char resolved_ls[32] = "";
+    resolve_local_spec_conflict(&ls_conflict, resolved_ls);
+    assert(strcmp(resolved_ls, "local_specialized_override") == 0);
+
+    usd_local_spec_conflict_t ls_conflict_no_local = {
+        .local_opinion = "",
+        .specializes_opinion = "specialized_deep_base"
+    };
+    char resolved_ls_no_local[32] = "";
+    resolve_local_spec_conflict(&ls_conflict_no_local, resolved_ls_no_local);
+    assert(strcmp(resolved_ls_no_local, "specialized_deep_base") == 0);
+    printf("   ✓ Local override (L) taking precedence over Specializes (S) verified.\n");
+    fflush(stdout);
+
+    // 23. Test Reference vs Payload Precedence Conflicts
+    printf("[TEST] Testing Reference vs Payload Precedence Conflicts...\n");
+    fflush(stdout);
+    usd_ref_payload_conflict_t rp_conflict = {
+        .reference_opinion = "referenced_representation",
+        .payload_opinion = "payload_representation"
+    };
+    char resolved_rp[32] = "";
+    resolve_ref_payload_conflict(&rp_conflict, resolved_rp);
+    assert(strcmp(resolved_rp, "referenced_representation") == 0);
+
+    usd_ref_payload_conflict_t rp_conflict_no_ref = {
+        .reference_opinion = "",
+        .payload_opinion = "payload_representation"
+    };
+    char resolved_rp_no_ref[32] = "";
+    resolve_ref_payload_conflict(&rp_conflict_no_ref, resolved_rp_no_ref);
+    assert(strcmp(resolved_rp_no_ref, "payload_representation") == 0);
+    printf("   ✓ Reference opinion (R) taking precedence over Payload (P) verified.\n");
+    fflush(stdout);
+
+    // 24. Test Reference vs Specializes Precedence Conflicts
+    printf("[TEST] Testing Reference vs Specializes Precedence Conflicts...\n");
+    fflush(stdout);
+    usd_ref_spec_conflict_t rs_conflict = {
+        .reference_opinion = "referenced_attribute",
+        .specializes_opinion = "specialized_attribute"
+    };
+    char resolved_rs[32] = "";
+    resolve_ref_spec_conflict(&rs_conflict, resolved_rs);
+    assert(strcmp(resolved_rs, "referenced_attribute") == 0);
+
+    usd_ref_spec_conflict_t rs_conflict_no_ref = {
+        .reference_opinion = "",
+        .specializes_opinion = "specialized_attribute"
+    };
+    char resolved_rs_no_ref[32] = "";
+    resolve_ref_spec_conflict(&rs_conflict_no_ref, resolved_rs_no_ref);
+    assert(strcmp(resolved_rs_no_ref, "specialized_attribute") == 0);
+    printf("   ✓ Reference opinion (R) taking precedence over Specializes (S) verified.\n");
+    fflush(stdout);
+
+    // 25. Test Payload vs Specializes Precedence Conflicts
+    printf("[TEST] Testing Payload vs Specializes Precedence Conflicts...\n");
+    fflush(stdout);
+    usd_payload_spec_conflict_t ps_conflict = {
+        .payload_opinion = "payload_look",
+        .specializes_opinion = "specialized_look"
+    };
+    char resolved_ps[32] = "";
+    resolve_payload_spec_conflict(&ps_conflict, resolved_ps);
+    assert(strcmp(resolved_ps, "payload_look") == 0);
+
+    usd_payload_spec_conflict_t ps_conflict_no_pay = {
+        .payload_opinion = "",
+        .specializes_opinion = "specialized_look"
+    };
+    char resolved_ps_no_pay[32] = "";
+    resolve_payload_spec_conflict(&ps_conflict_no_pay, resolved_ps_no_pay);
+    assert(strcmp(resolved_ps_no_pay, "specialized_look") == 0);
+    printf("   ✓ Payload opinion (P) taking precedence over Specializes (S) verified.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
