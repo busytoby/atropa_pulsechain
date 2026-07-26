@@ -212,6 +212,9 @@ void auncient_hudson_vce_cycle_palette(uint16_t *vce_table, uint16_t start_idx, 
 // Synchronizes Hudson VCE color palette tables dynamically based on WinchesterMQ register states
 void auncient_hudson_vce_sync_winchester(uint16_t *vce_table, const WinchesterMQState *mq_state);
 
+// Simulates a Hudson VDC DMA block transfer to shift or copy palette ranges in hardware
+void auncient_hudson_vdc_dma_palette_shift(uint16_t *vce_table, uint16_t src_addr, uint16_t dest_addr, uint16_t length);
+
 #ifdef __cplusplus
 }
 #endif

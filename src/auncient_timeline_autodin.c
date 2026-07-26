@@ -848,3 +848,11 @@ void auncient_hudson_vce_sync_winchester(uint16_t *vce_table, const WinchesterMQ
     int shift = (int)(mq_state->signal % 16);
     auncient_hudson_vce_cycle_palette(vce_table, 16, 31, shift);
 }
+
+void auncient_hudson_vdc_dma_palette_shift(uint16_t *vce_table, uint16_t src_addr, uint16_t dest_addr, uint16_t length) {
+    if (!vce_table || src_addr >= 512 || dest_addr >= 512) return;
+    if (src_addr + length > 512 || dest_addr + length > 512) return;
+
+    // Use memory move to simulate hardware DMA transfer
+    memmove(&vce_table[dest_addr], &vce_table[src_addr], sizeof(uint16_t) * length);
+}

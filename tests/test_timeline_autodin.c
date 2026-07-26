@@ -339,6 +339,12 @@ int main(void) {
     assert(vce_table[0] != 0); // Background color populated
     printf("   ✓ WinchesterMQ to Hudson VCE synchronization verified.\n");
 
+    // Test Hudson VDC DMA block transfer palette shift
+    auncient_hudson_vce_write_color(vce_table, 50, 0x07E0); // Green color at 50
+    auncient_hudson_vdc_dma_palette_shift(vce_table, 50, 60, 1); // DMA copy to 60
+    assert(vce_table[60] == 0x07E0);
+    printf("   ✓ Hudson VDC DMA hardware palette shift verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");
