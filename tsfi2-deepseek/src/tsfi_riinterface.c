@@ -19,6 +19,7 @@ void tsfi_riinterface_init(TSFiRiInterface *ri) {
     ri->psg_lfo_ctrl = 0;
     ri->psg_lfo_freq = 0;
     memset(ri->psg_noise_ctrl, 0, sizeof(ri->psg_noise_ctrl));
+    memset(ri->psg_channel_dda, 0, sizeof(ri->psg_channel_dda));
     ri->vdc_scroll_x = 0;
     ri->vdc_scroll_y = 0;
     memset(ri->frame_buffer, 0, sizeof(ri->frame_buffer));
@@ -186,4 +187,11 @@ void tsfi_riinterface_scroll_background(TSFiRiInterface *ri, uint16_t x, uint16_
     if (!ri) return;
     ri->vdc_scroll_x = x;
     ri->vdc_scroll_y = y;
+}
+
+void tsfi_riinterface_write_dda(TSFiRiInterface *ri, int channel, uint8_t sample) {
+    if (!ri || channel < 0 || channel >= 6) return;
+    
+    // Clamp to 5-bit depth constraint (value limit 0-31) matching HuC6280 PSG D/A registers
+    ri->psg_channel_dda[channel] = sample & 0x1F;
 }

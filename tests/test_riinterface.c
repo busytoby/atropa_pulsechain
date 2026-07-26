@@ -89,6 +89,13 @@ int main(void) {
     assert(ri.vdc_scroll_x == 128);
     assert(ri.vdc_scroll_y == 64);
 
+    // Test PSG Direct D/A (DDA) voice stream writes
+    tsfi_riinterface_write_dda(&ri, 1, 0x1F); // Maximum D/A value
+    assert(ri.psg_channel_dda[1] == 0x1F);
+
+    tsfi_riinterface_write_dda(&ri, 3, 0x25); // Over-limit: clamped
+    assert(ri.psg_channel_dda[3] == (0x25 & 0x1F));
+
     tsfi_riinterface_world_end(&ri);
     assert(ri.is_world_active == false);
 
@@ -103,6 +110,7 @@ int main(void) {
     printf("   ✓ PSG hardware LFO frequency modulation controls verified successfully.\n");
     printf("   ✓ PSG white noise generator frequency controls verified successfully.\n");
     printf("   ✓ VDC background scroll registers verified successfully.\n");
+    printf("   ✓ PSG Direct D/A real-time audio streams verified successfully.\n");
     printf("=== AUNCIENT RIINTERFACE TESTS COMPLETE (PASS) ===\n");
     return 0;
 }
