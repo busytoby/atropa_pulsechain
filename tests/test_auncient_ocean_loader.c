@@ -509,6 +509,37 @@ static void unify_gtia_hudson(uint16_t *vce_table, const gtia_pmg_t *pmg) {
     vce_table[0] = collision_color;
 }
 
+#define HUDSON_MAX_LAYERS 8
+
+typedef struct {
+    uint16_t sprite_id;
+    uint16_t x_pos;
+    uint16_t y_pos;
+    uint16_t palette_displacement;
+    bool active;
+} hudson_vdc_sprite_layer_t;
+
+typedef struct {
+    hudson_vdc_sprite_layer_t layers[HUDSON_MAX_LAYERS];
+    int active_layers_count;
+} hudson_vdc_manager_t;
+
+static int allocate_dynamic_hudson_layer(hudson_vdc_manager_t *mgr, uint16_t x, uint16_t y, uint16_t pal_disp) {
+    for (int i = 0; i < HUDSON_MAX_LAYERS; i++) {
+        if (!mgr->layers[i].active) {
+            mgr->layers[i].sprite_id = (uint16_t)i;
+            mgr->layers[i].x_pos = x;
+            mgr->layers[i].y_pos = y;
+            mgr->layers[i].palette_displacement = pal_disp;
+            mgr->layers[i].active = true;
+            mgr->active_layers_count++;
+            return i;
+        }
+    }
+    return -1;
+}
+
+
 
 
 
@@ -1166,6 +1197,24 @@ int main(void) {
     assert(vce_palette[0] == 0xF800); // Red color since mask > 0
     
     printf("   ✓ AUTODIN precedence loop alignment and locking verified.\n");
+    fflush(stdout);
+
+    // 32. Test Dynamic Hudson VDC Sprite Layer Allocation
+    printf("[TEST] Testing Dynamic Hudson VDC Sprite Layer Allocation...\n");
+    fflush(stdout);
+    hudson_vdc_manager_t vdc_mgr;
+    memset(&vdc_mgr, 0, sizeof(hudson_vdc_manager_t));
+    
+    // Dynamically allocate layers to represent GTIA sprites
+    int id1 = allocate_dynamic_hudson_layer(&vdc_mgr, 120, 80, 16);
+    int id2 = allocate_dynamic_hudson_layer(&vdc_mgr, 150, 95, 32);
+    
+    assert(id1 == 0);
+    assert(id2 == 1);
+    assert(vdc_mgr.layers[0].x_pos == 120);
+    assert(vdc_mgr.layers[1].palette_displacement == 32);
+    assert(vdc_mgr.active_layers_count == 2);
+    printf("   ✓ Dynamic Hudson VDC sprite layer allocation verified.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
