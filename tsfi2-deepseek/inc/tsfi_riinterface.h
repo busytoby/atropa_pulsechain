@@ -20,6 +20,7 @@ typedef struct {
     uint8_t psg_channel_dda[6]; // huC6280 PSG Direct D/A data registers
     uint16_t vdc_scroll_x; // huC6270 VDC background scroll X
     uint16_t vdc_scroll_y; // huC6270 VDC background scroll Y
+    bool vdc_collision_flag; // huC6270 VDC sprite collision flag
     uint8_t frame_buffer[256 * 256]; // Simulated VDC screen memory (256x256)
     uint32_t irq_counter; // hardware interrupt counter
     bool irq_active;
@@ -69,5 +70,8 @@ void tsfi_riinterface_scroll_background(TSFiRiInterface *ri, uint16_t x, uint16_
 
 // Writes direct digital-to-analog sound samples to specified audio channels
 void tsfi_riinterface_write_dda(TSFiRiInterface *ri, int channel, uint8_t sample);
+
+// Emulates VDC hardware collision flags updates based on coordinate distance checks
+void tsfi_riinterface_check_sprite_collision(TSFiRiInterface *ri, double s1_x, double s1_y, double s2_x, double s2_y, double threshold);
 
 #endif // TSFI_RIINTERFACE_H

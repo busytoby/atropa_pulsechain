@@ -22,6 +22,7 @@ void tsfi_riinterface_init(TSFiRiInterface *ri) {
     memset(ri->psg_channel_dda, 0, sizeof(ri->psg_channel_dda));
     ri->vdc_scroll_x = 0;
     ri->vdc_scroll_y = 0;
+    ri->vdc_collision_flag = false;
     memset(ri->frame_buffer, 0, sizeof(ri->frame_buffer));
     ri->irq_counter = 0;
     ri->irq_active = false;
@@ -194,4 +195,18 @@ void tsfi_riinterface_write_dda(TSFiRiInterface *ri, int channel, uint8_t sample
     
     // Clamp to 5-bit depth constraint (value limit 0-31) matching HuC6280 PSG D/A registers
     ri->psg_channel_dda[channel] = sample & 0x1F;
+}
+
+void tsfi_riinterface_check_sprite_collision(TSFiRiInterface *ri, double s1_x, double s1_y, double s2_x, double s2_y, double threshold) {
+    if (!ri) return;
+    
+    double dx = s1_x - s2_x;
+    double dy = s1_y - s2_y;
+    double distance = sqrt(dx * dx + dy * dy);
+    
+    if (distance <= threshold) {
+        ri->vdc_collision_flag = true;
+    } else {
+        ri->vdc_collision_flag = false;
+    }
 }
