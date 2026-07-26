@@ -535,18 +535,6 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
 
     def append_flowable(f):
         art_flowables.append(f)
-        est_h = 0
-        for x in art_flowables:
-            if hasattr(x, 'style') and x.style.name in ('ArtTitle', 'ArtDate'):
-                continue
-            if isinstance(x, Spacer):
-                est_h += x.height
-            elif isinstance(x, Paragraph):
-                est_h += max(1, len(x.text) / 40.0) * x.style.leading + x.style.spaceBefore + x.style.spaceAfter
-            elif isinstance(x, Preformatted):
-                est_h += (getattr(x, 'raw_text', '').count('\n') + 1) * x.style.leading + x.style.spaceBefore + x.style.spaceAfter
-        if est_h > 160:
-            flush_art_flowables(art_flowables)
             
     for idx, (date, path) in enumerate(files):
         title = os.path.basename(path).replace(".md", "").replace("_", " ").title()
