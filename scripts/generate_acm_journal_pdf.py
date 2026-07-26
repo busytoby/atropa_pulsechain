@@ -126,8 +126,6 @@ def convert_latex_math_to_html(text):
         (r'\\mathrm\{([^}]+)\}', r'\1'),
         (r'\\pmod\{([^}]+)\}', r' (mod \1)'),
         (r'\\pmod\s*([a-zA-Z0-9])', r' (mod \1)'),
-        (r'\\left', ''),
-        (r'\\right', ''),
         (r'\\quad', '  '),
         (r'\\rightarrow', '→'),
         (r'\\leftarrow', '←'),
@@ -161,6 +159,8 @@ def convert_latex_math_to_html(text):
         (r'\\epsilon', 'ε'),
         (r'\\eta', 'η'),
         (r'\\sigma', 'σ'),
+        (r'\\left', ''),
+        (r'\\right', ''),
     ]
     
     def replace_math_block(match):
