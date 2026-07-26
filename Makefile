@@ -13,7 +13,7 @@ help:
 	@echo "  make curves-benchmark - Run Curves schema latency benchmarks"
 
 
-test-all: test-dashboard test-container test-git-ci test-unit test-mann test-comp-pass test-mvarsel test-reroute test-delegate-sig test-stagecomp test-ar test-sdfformat test-hydrascene test-renderdelegate test-stagelock test-renderindex test-usdshade test-geomcamera test-geomcurves test-geompoints test-luxlight test-geomxform test-stageroot test-primroot test-stagepop test-attributeroot test-stagecache test-stagemask test-geomsubset test-stagearc test-stageinherits test-stagepayloads test-stagevariants test-stagetraverser test-stagemetadata test-camerafrustum test-stagereferences test-stagespecializes test-stagerelationship test-stagetimecodes test-vactrolpickup test-npnpnpvalve test-curvesbasis test-singularityring test-subdivcurves test-subdivscheme test-curvestension test-curveswidths test-curveswrap test-timesamples
+test-all: test-dashboard test-container test-git-ci test-unit test-mann test-comp-pass test-mvarsel test-reroute test-delegate-sig test-stagecomp test-ar test-sdfformat test-hydrascene test-renderdelegate test-stagelock test-renderindex test-usdshade test-geomcamera test-geomcurves test-geompoints test-luxlight test-geomxform test-stageroot test-primroot test-stagepop test-attributeroot test-stagecache test-stagemask test-geomsubset test-stagearc test-stageinherits test-stagepayloads test-stagevariants test-stagetraverser test-stagemetadata test-camerafrustum test-stagereferences test-stagespecializes test-stagerelationship test-stagetimecodes test-vactrolpickup test-npnpnpvalve test-curvesbasis test-singularityring test-subdivcurves test-subdivscheme test-curvestension test-curveswidths test-curveswrap test-timesamples test-micropolygonmesh
 	@echo "All tests completed successfully."
 
 test-mann:
@@ -245,6 +245,11 @@ test-timesamples:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_timesamples.c tsfi2-deepseek/src/tsfi_timesamples.c -o tests/test_timesamples -lm -lrt
 	./tests/test_timesamples
 	@rm -f tests/test_timesamples
+
+test-micropolygonmesh:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_micropolygonmesh.c tsfi2-deepseek/src/tsfi_micropolygonmesh.c -o tests/test_micropolygonmesh -lm -lrt
+	./tests/test_micropolygonmesh
+	@rm -f tests/test_micropolygonmesh
 
 sdk-benchmark:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_sdk_benchmarks.c -o tests/test_auncient_sdk_benchmarks -lm -lrt
