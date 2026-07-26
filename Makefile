@@ -1,4 +1,4 @@
-.PHONY: help test-all test-dashboard test-container test-git-ci test-unit tpu-benchmarks livrps-benchmark test-mann test-comp-pass test-mvarsel test-reroute test-delegate-sig test-stagecomp test-ar test-sdfformat test-hydrascene test-renderdelegate test-stagelock test-renderindex
+.PHONY: help test-all test-dashboard test-container test-git-ci test-unit tpu-benchmarks livrps-benchmark test-mann test-comp-pass test-mvarsel test-reroute test-delegate-sig test-stagecomp test-ar test-sdfformat test-hydrascene test-renderdelegate test-stagelock test-renderindex test-usdshade
 
 help:
 	@echo "Available test targets:"
@@ -12,7 +12,7 @@ help:
 	@echo "  make livrps-benchmark - Run LIVRPS USD composition latency benchmarks"
 
 
-test-all: test-dashboard test-container test-git-ci test-unit test-mann test-comp-pass test-mvarsel test-reroute test-delegate-sig test-stagecomp test-ar test-sdfformat test-hydrascene test-renderdelegate test-stagelock test-renderindex
+test-all: test-dashboard test-container test-git-ci test-unit test-mann test-comp-pass test-mvarsel test-reroute test-delegate-sig test-stagecomp test-ar test-sdfformat test-hydrascene test-renderdelegate test-stagelock test-renderindex test-usdshade test-geomcamera test-geomcurves test-geompoints test-luxlight test-geomxform test-stageroot test-primroot test-stagepop test-attributeroot
 	@echo "All tests completed successfully."
 
 test-mann:
@@ -74,6 +74,56 @@ test-renderindex:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_renderindex.c tsfi2-deepseek/src/tsfi_renderindex.c tsfi2-deepseek/src/tsfi_hydrascene.c tsfi2-deepseek/src/tsfi_renderdelegate.c -o tests/test_renderindex -lm -lrt
 	./tests/test_renderindex
 	@rm -f tests/test_renderindex
+
+test-usdshade:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_usdshade.c tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_usdshade -lm -lrt
+	./tests/test_usdshade
+	@rm -f tests/test_usdshade
+
+test-geomcamera:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_geomcamera.c tsfi2-deepseek/src/tsfi_geomcamera.c -o tests/test_geomcamera -lm -lrt
+	./tests/test_geomcamera
+	@rm -f tests/test_geomcamera
+
+test-geomcurves:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_geomcurves.c tsfi2-deepseek/src/tsfi_geomcurves.c -o tests/test_geomcurves -lm -lrt
+	./tests/test_geomcurves
+	@rm -f tests/test_geomcurves
+
+test-geompoints:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_geompoints.c tsfi2-deepseek/src/tsfi_geompoints.c -o tests/test_geompoints -lm -lrt
+	./tests/test_geompoints
+	@rm -f tests/test_geompoints
+
+test-luxlight:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_luxlight.c tsfi2-deepseek/src/tsfi_luxlight.c -o tests/test_luxlight -lm -lrt
+	./tests/test_luxlight
+	@rm -f tests/test_luxlight
+
+test-geomxform:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_geomxform.c tsfi2-deepseek/src/tsfi_geomxform.c -o tests/test_geomxform -lm -lrt
+	./tests/test_geomxform
+	@rm -f tests/test_geomxform
+
+test-stageroot:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_stageroot.c tsfi2-deepseek/src/tsfi_stageroot.c -o tests/test_stageroot -lm -lrt
+	./tests/test_stageroot
+	@rm -f tests/test_stageroot
+
+test-primroot:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_primroot.c tsfi2-deepseek/src/tsfi_primroot.c -o tests/test_primroot -lm -lrt
+	./tests/test_primroot
+	@rm -f tests/test_primroot
+
+test-stagepop:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_stagepop.c tsfi2-deepseek/src/tsfi_stagepop.c tsfi2-deepseek/src/tsfi_primroot.c -o tests/test_stagepop -lm -lrt
+	./tests/test_stagepop
+	@rm -f tests/test_stagepop
+
+test-attributeroot:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_attributeroot.c tsfi2-deepseek/src/tsfi_attributeroot.c -o tests/test_attributeroot -lm -lrt
+	./tests/test_attributeroot
+	@rm -f tests/test_attributeroot
 
 sdk-benchmark:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_sdk_benchmarks.c -o tests/test_auncient_sdk_benchmarks -lm -lrt
