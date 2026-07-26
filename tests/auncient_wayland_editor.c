@@ -129,6 +129,9 @@ static int doc_len = 46;
 static const char compressed_scroller[32] = "PAGADATA_2026_RETRO_C64_INTRO_";
 static char decompressed_scroller[128];
 
+// Parallax Scroller text: Singular / HHH Tribute scroll
+static const char *parallax_scroller_text = "CONSPIRACY & SINGULAR HUNGARIAN TRIBUTE -- INTRODUCING MULTI-LAYER PARALLAX SCROLLER PATHS -- ";
+
 // Static 256-entry Sine Lookup Table (LUT)
 static float sine_lut[256];
 
@@ -365,6 +368,12 @@ static void redraw_screen(void) {
                 int sweep_idx = (int)(y * 0.5f + retro_time * 200.0f) & 0xFF;
                 float color_sweep = sine_lut[sweep_idx];
                 
+                // Procedural noise texture modulation on top of base sweeps
+                float p_noise = sine_lut[(sweep_idx * 3) & 0xFF] * sine_lut[(sweep_idx + 128) & 0xFF];
+                if (p_noise > 0.4f) {
+                    bg_color ^= 0x00112233; // Shift bits via procedural math
+                }
+                
                 if (color_sweep > 0.8f) {
                     bg_color = 0xFF882200; // Red-orange sweep band
                 } else if (color_sweep < -0.8f) {
@@ -439,6 +448,22 @@ static void redraw_screen(void) {
         
         for (int c = 0; c < 40; c++) {
             char ch = ansi_grid[r * 40 + c];
+            
+            // 3D Raymarched Spherical Object projection directly onto character cells
+            float nx = ((float)c - 20.0f) / 10.0f;
+            float ny = ((float)r - 7.5f) / 5.0f;
+            float time_sin = sine_lut[(int)(retro_time * 120.0f) & 0xFF];
+            float sphere_radius = 1.0f + time_sin * 0.2f;
+            float dist_from_sphere = sqrtf(nx*nx + ny*ny) - sphere_radius;
+            
+            if (dist_from_sphere < 0.0f && ch == ' ') {
+                // Inside raymarched sphere, override character block shade (conspiracy style)
+                char sphere_shades[] = "%#*+=-:. ";
+                int shade_idx = (int)(fabsf(dist_from_sphere) * 8.0f);
+                if (shade_idx < 0) shade_idx = 0;
+                if (shade_idx > 8) shade_idx = 8;
+                ch = sphere_shades[shade_idx];
+            }
             
             // PETSCII Fluid Plasma Waves: Superposition of 2D sine waves (using Sine LUT)
             int idx1 = (int)(c * 12.0f + retro_time * 180.0f) & 0xFF;
@@ -572,6 +597,18 @@ static void redraw_screen(void) {
                   sprites[idx].color, 3);
     }
     
+    // Multi-Layer Parallax Background Scroll (Singular / Conspiracy speed-2 scroller)
+    float p_scroll_speed = 60.0f;
+    float p_scroll_x_total = retro_time * p_scroll_speed;
+    int p_base_char_idx = (int)(p_scroll_x_total / 12.0f) % strlen(parallax_scroller_text);
+    int p_pixel_shift = (int)fmodf(p_scroll_x_total, 12.0f);
+    int p_scroller_y = 60 + glitch_y;
+    for (int col = 0; col < 90; col++) {
+        int char_idx = (p_base_char_idx + col) % strlen(parallax_scroller_text);
+        char ch = parallax_scroller_text[char_idx];
+        draw_char(pixels, win_width, win_height, 20 + col * 12 - p_pixel_shift + glitch_x, p_scroller_y, ch, 0xFF00FFFF, 2);
+    }
+
     // Dynamic scroller speed linked to the active SID tune selection (Interactive speed sync)
     float scroll_x_speed = 30.0f;
     if (active_tune == 1) scroll_x_speed = 45.0f;
