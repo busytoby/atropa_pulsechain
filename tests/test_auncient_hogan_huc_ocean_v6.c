@@ -14,6 +14,24 @@
 #define GRID_SIZE      8
 
 typedef struct {
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+    char glyph;
+} color_pixel_t;
+
+// 200 Bytes or less parameter structure (Size: 24 bytes)
+typedef struct {
+    uint32_t seed;
+    float phase_scale;
+    float twirl_strength;
+    uint8_t blend_mode;
+    float light_x;
+    float light_y;
+    float light_z;
+} texgen_params_t;
+
+typedef struct {
     uint32_t max_allowed_transactions; // Transaction count ceiling
     uint64_t consensus_threshold;      // Accumulator quorum threshold
     uint32_t baseline_color;           // Black SGPR base
@@ -25,13 +43,6 @@ typedef struct {
     uint64_t accumulated_votes[LANES]; // Accumulator values
     uint32_t status[LANES];            // Red VGPR alert indicator
 } vgpr_bank_t;
-
-typedef struct {
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
-    char glyph;
-} color_pixel_t;
 
 typedef struct {
     uint32_t border_color;
@@ -58,7 +69,6 @@ static void init_sin_table(void) {
 
 static double fast_sin(double angle) {
     if (!lut_initialized) init_sin_table();
-    // Convert angle to table index (scaled to 256 units per 2*pi cycle)
     int idx = (int)(angle * 256.0 / (2.0 * 3.141592653589793));
     return ((double)sin_table[(idx % 256 + 256) % 256] - 127.5) / 127.5;
 }
@@ -103,57 +113,63 @@ static double noise_2d(double x, double y, uint32_t seed) {
     return cosine_interpolate(i1, i2, dy);
 }
 
-// 1. Procedural Texture Synthesis (Layer-based TexGen with Bilinear Distortion)
-static void synthesize_texture_grid(huc_ocean_system_t *huc, double phase, int mode) {
-    uint8_t layer0[GRID_SIZE][GRID_SIZE]; // Base Plasma Layer
-    uint8_t layer1[GRID_SIZE][GRID_SIZE]; // Noise Distortion Map Layer
+// 1. Procedural Texture Synthesis (Layer-based 3-Channel TexGen with Twirl, Blending & Phong shading)
+static void synthesize_texture_grid_rgb(huc_ocean_system_t *huc, double phase, int mode, const texgen_params_t *params) {
+    color_pixel_t layer0[GRID_SIZE][GRID_SIZE]; // Base Plasma Layer (RGB channels)
+    color_pixel_t layer1[GRID_SIZE][GRID_SIZE]; // Noise Distortion Map Layer (RGB channels)
+    color_pixel_t layer_twirl[GRID_SIZE][GRID_SIZE];
     
-    // Step 1: Generate Base Plasma Layer based on selected mode
+    // Step 1: Generation - base plasma maps per channel
     for (int y = 0; y < GRID_SIZE; y++) {
         for (int x = 0; x < GRID_SIZE; x++) {
-            double val = 0.0;
+            double p_val = 0.0;
             if (mode == 0) {
-                // Standard Multi-Component Plasma
-                val = 127.5 + 42.5 * fast_sin(x * 1.0 + phase) +
+                p_val = 127.5 + 42.5 * fast_sin(x * 1.0 + phase) +
                               42.5 * fast_sin(y * 1.5 - phase) +
                               42.5 * fast_sin((x + y) * 0.8 + phase);
             } else if (mode == 1) {
-                // Sine Plasma
-                val = 127.5 + 63.75 * fast_sin(x * 1.2 + phase) + 63.75 * fast_cos(y * 1.2 + phase * 0.8);
+                p_val = 127.5 + 63.75 * fast_sin(x * 1.2 + phase) + 63.75 * fast_cos(y * 1.2 + phase * 0.8);
             } else if (mode == 2) {
-                // Fractal Plasma (Multi-Octave Perlin Noise with Cosine Interpolation)
                 double f_val = 0.0;
-                f_val += noise_2d((double)x * 0.25, (double)y * 0.25, 100U) * 1.0;
-                f_val += noise_2d((double)x * 0.5, (double)y * 0.5, 200U) * 0.5;
-                f_val += noise_2d((double)x * 1.0, (double)y * 1.0, 300U) * 0.25;
-                val = (f_val / 1.75) * 255.0;
+                f_val += noise_2d((double)x * 0.25, (double)y * 0.25, params->seed) * 1.0;
+                f_val += noise_2d((double)x * 0.5, (double)y * 0.5, params->seed + 100U) * 0.5;
+                f_val += noise_2d((double)x * 1.0, (double)y * 1.0, params->seed + 200U) * 0.25;
+                p_val = (f_val / 1.75) * 255.0;
             } else {
-                // 3D Swirling Passage Tunnel (Inverse distance and angle mapping)
                 double cx = (GRID_SIZE - 1) / 2.0;
                 double cy = (GRID_SIZE - 1) / 2.0;
                 double dx = x - cx;
                 double dy = y - cy;
                 double r = sqrt(dx*dx + dy*dy);
                 double theta = atan2(dy, dx);
-                
                 double u = (theta + 3.141592653589793) / (2.0 * 3.141592653589793);
                 double v = 1.0 / (r + 0.1);
-                
                 double u_scroll = u + phase * 0.05;
                 double v_scroll = v + phase * 0.1;
-                
                 int check = ((int)(u_scroll * 12.0) % 2) ^ ((int)(v_scroll * 12.0) % 2);
-                val = check ? 255.0 : 0.0;
+                p_val = check ? 255.0 : 0.0;
             }
-            layer0[y][x] = (uint8_t)val;
+            
+            // Assign distinct variations per channel
+            layer0[y][x].r = (uint8_t)p_val;
+            layer0[y][x].g = (uint8_t)(p_val * 0.7 + 30.0);
+            layer0[y][x].b = (uint8_t)(p_val * 0.4 + 60.0);
         }
     }
     
-    // Step 2: Apply Twirl Distortion to Base Plasma Layer
-    uint8_t layer_twirl[GRID_SIZE][GRID_SIZE];
+    // Step 2: Generation - Noise layers
+    for (int y = 0; y < GRID_SIZE; y++) {
+        for (int x = 0; x < GRID_SIZE; x++) {
+            layer1[y][x].r = hash_noise(x, y, params->seed);
+            layer1[y][x].g = hash_noise(x, y, params->seed + 50U);
+            layer1[y][x].b = hash_noise(x, y, params->seed + 100U);
+        }
+    }
+    
+    // Step 3: Twirl Distortion & Multi-Layer Blending
     double cx = (GRID_SIZE - 1) / 2.0;
     double cy = (GRID_SIZE - 1) / 2.0;
-    double twirl_strength = 2.0 + fast_sin(phase) * 1.5; // Dynamic twirl strength
+    double twirl_strength = params->twirl_strength + fast_sin(phase) * 1.5;
     
     for (int y = 0; y < GRID_SIZE; y++) {
         for (int x = 0; x < GRID_SIZE; x++) {
@@ -161,14 +177,11 @@ static void synthesize_texture_grid(huc_ocean_system_t *huc, double phase, int m
             double dy = y - cy;
             double r = sqrt(dx*dx + dy*dy);
             double theta = atan2(dy, dx);
-            
-            // Add twist proportional to distance
             double theta_new = theta + twirl_strength * (1.0 - r / (GRID_SIZE * 0.707));
             
             double tx = cx + r * fast_cos(theta_new);
             double ty = cy + r * fast_sin(theta_new);
             
-            // Bilinear interpolation bounds for twirl mapping
             int x0 = ((int)floor(tx) % GRID_SIZE + GRID_SIZE) % GRID_SIZE;
             int x1 = (x0 + 1) % GRID_SIZE;
             int y0 = ((int)floor(ty) % GRID_SIZE + GRID_SIZE) % GRID_SIZE;
@@ -177,38 +190,36 @@ static void synthesize_texture_grid(huc_ocean_system_t *huc, double phase, int m
             double frac_x = tx - floor(tx);
             double frac_y = ty - floor(ty);
             
-            double val = (1.0 - frac_x) * (1.0 - frac_y) * layer0[y0][x0] +
-                         frac_x * (1.0 - frac_y) * layer0[y0][x1] +
-                         (1.0 - frac_x) * frac_y * layer0[y1][x0] +
-                         frac_x * frac_y * layer0[y1][x1];
-                         
-            layer_twirl[y][x] = (uint8_t)val;
-        }
-    }
-    
-    // Step 3: Generate Deterministic Noise Map on Layer 1 and Multiply Blend
-    for (int y = 0; y < GRID_SIZE; y++) {
-        for (int x = 0; x < GRID_SIZE; x++) {
-            layer1[y][x] = hash_noise(x, y, 999U);
+            double w00 = (1.0 - frac_x) * (1.0 - frac_y);
+            double w10 = frac_x * (1.0 - frac_y);
+            double w01 = (1.0 - frac_x) * frac_y;
+            double w11 = frac_x * frac_y;
             
-            // Multiply Blend Mode: Blend base plasma with noise map
-            uint32_t blended = (uint32_t)layer_twirl[y][x] * (uint32_t)layer1[y][x] / 255U;
-            layer_twirl[y][x] = (uint8_t)blended;
+            // Apply twirl per channel
+            layer_twirl[y][x].r = w00 * layer0[y0][x0].r + w10 * layer0[y0][x1].r + w01 * layer0[y1][x0].r + w11 * layer0[y1][x1].r;
+            layer_twirl[y][x].g = w00 * layer0[y0][x0].g + w10 * layer0[y0][x1].g + w01 * layer0[y1][x0].g + w11 * layer0[y1][x1].g;
+            layer_twirl[y][x].b = w00 * layer0[y0][x0].b + w10 * layer0[y0][x1].b + w01 * layer0[y1][x0].b + w11 * layer0[y1][x1].b;
+            
+            // Multiply Blend Mode with Layer 1
+            layer_twirl[y][x].r = (uint8_t)((uint32_t)layer_twirl[y][x].r * layer1[y][x].r / 255U);
+            layer_twirl[y][x].g = (uint8_t)((uint32_t)layer_twirl[y][x].g * layer1[y][x].g / 255U);
+            layer_twirl[y][x].b = (uint8_t)((uint32_t)layer_twirl[y][x].b * layer1[y][x].b / 255U);
         }
     }
     
-    // Step 4: Warp Layer Twirl using Layer 1 and apply Sine Waveform Modulator
-    double warped_intensity[GRID_SIZE][GRID_SIZE];
+    // Step 4: Bilinear Warp
+    double warped_r[GRID_SIZE][GRID_SIZE];
+    double warped_g[GRID_SIZE][GRID_SIZE];
+    double warped_b[GRID_SIZE][GRID_SIZE];
+    
     for (int y = 0; y < GRID_SIZE; y++) {
         for (int x = 0; x < GRID_SIZE; x++) {
-            // Read warp displacements from layer 1
-            double warp_x = (double)layer1[y][x] / 255.0 * 2.0; // range 0 to 2
-            double warp_y = (double)layer1[x][y] / 255.0 * 2.0; // range 0 to 2
+            double warp_x = (double)layer1[y][x].r / 255.0 * 2.0;
+            double warp_y = (double)layer1[x][y].g / 255.0 * 2.0;
             
             double target_x = x + warp_x;
             double target_y = y + warp_y;
             
-            // Bilinear interpolation bounds for warp mapping
             int x0 = ((int)target_x) % GRID_SIZE;
             int x1 = (x0 + 1) % GRID_SIZE;
             int y0 = ((int)target_y) % GRID_SIZE;
@@ -217,23 +228,23 @@ static void synthesize_texture_grid(huc_ocean_system_t *huc, double phase, int m
             double dx = target_x - (int)target_x;
             double dy = target_y - (int)target_y;
             
-            // Interpolate weights
             double w00 = (1.0 - dx) * (1.0 - dy);
             double w10 = dx * (1.0 - dy);
             double w01 = (1.0 - dx) * dy;
             double w11 = dx * dy;
             
-            double interpolated = w00 * layer_twirl[y0][x0] +
-                                  w10 * layer_twirl[y0][x1] +
-                                  w01 * layer_twirl[y1][x0] +
-                                  w11 * layer_twirl[y1][x1];
-                                  
-            // Sine Waveform Modulator: Map linear gradients to wood/wave rings
-            warped_intensity[y][x] = 127.5 + 127.5 * fast_sin(interpolated * 0.15);
+            warped_r[y][x] = w00 * layer_twirl[y0][x0].r + w10 * layer_twirl[y0][x1].r + w01 * layer_twirl[y1][x0].r + w11 * layer_twirl[y1][x1].r;
+            warped_g[y][x] = w00 * layer_twirl[y0][x0].g + w10 * layer_twirl[y0][x1].g + w01 * layer_twirl[y1][x0].g + w11 * layer_twirl[y1][x1].g;
+            warped_b[y][x] = w00 * layer_twirl[y0][x0].b + w10 * layer_twirl[y0][x1].b + w01 * layer_twirl[y1][x0].b + w11 * layer_twirl[y1][x1].b;
+            
+            // Waveform Modulators: Apply sine modulations to warp intensities
+            warped_r[y][x] = 127.5 + 127.5 * fast_sin(warped_r[y][x] * 0.15);
+            warped_g[y][x] = 127.5 + 127.5 * fast_sin(warped_g[y][x] * 0.15);
+            warped_b[y][x] = 127.5 + 127.5 * fast_sin(warped_b[y][x] * 0.15);
         }
     }
     
-    // Step 5: Compute bump normals and map pixel color gradients
+    // Step 5: Bump normals & Phong Specular highlight mapping
     const char glyphs[] = " .:-=+*#%@";
     for (int y = 0; y < GRID_SIZE; y++) {
         for (int x = 0; x < GRID_SIZE; x++) {
@@ -242,49 +253,51 @@ static void synthesize_texture_grid(huc_ocean_system_t *huc, double phase, int m
             int y_prev = (y - 1 + GRID_SIZE) % GRID_SIZE;
             int y_next = (y + 1) % GRID_SIZE;
             
-            // Height-map normal calculation
-            double dh_dx = (warped_intensity[y][x_next] - warped_intensity[y][x_prev]) / 2.0;
-            double dh_dy = (warped_intensity[y_next][x] - warped_intensity[y_prev][x]) / 2.0;
+            // Calculate normals using grayscale heightmap average
+            double h_center = (warped_r[y][x] + warped_g[y][x] + warped_b[y][x]) / 3.0;
+            double h_x_next = (warped_r[y][x_next] + warped_g[y][x_next] + warped_b[y][x_next]) / 3.0;
+            double h_x_prev = (warped_r[y][x_prev] + warped_g[y][x_prev] + warped_b[y][x_prev]) / 3.0;
+            double h_y_next = (warped_r[y_next][x] + warped_g[y_next][x] + warped_b[y_next][x]) / 3.0;
+            double h_y_prev = (warped_r[y_prev][x] + warped_g[y_prev][x] + warped_b[y_prev][x]) / 3.0;
+            
+            double dh_dx = (h_x_next - h_x_prev) / 2.0;
+            double dh_dy = (h_y_next - h_y_prev) / 2.0;
             
             double nx = -dh_dx;
             double ny = -dh_dy;
-            double nz = 32.0; // Scaling factor
+            double nz = 32.0;
             double len = sqrt(nx*nx + ny*ny + nz*nz);
-            nx /= len;
-            ny /= len;
-            nz /= len;
+            nx /= len; ny /= len; nz /= len;
             
-            // 4KB Intro Optimization: Pre-normalized light vector to avoid sqrt and division
-            double lx = 0.5773502691896257; 
-            double ly = 0.5773502691896257; 
-            double lz = 0.5773502691896257;
+            // Phong specular light calculations using pre-normalized vector (4KB style)
+            double lx = params->light_x; 
+            double ly = params->light_y; 
+            double lz = params->light_z;
             
             double diffuse = nx*lx + ny*ly + nz*lz;
             if (diffuse < 0.0) diffuse = 0.0;
             
             double rz = 2.0 * diffuse * nz - lz;
-            
-            double spec = rz; // dot(R, V) where V = (0, 0, 1)
+            double spec = rz;
             if (spec < 0.0) spec = 0.0;
             
-            // 4KB Intro Optimization: Fast squaring instead of pow() to avoid linking math libraries
-            spec = spec * spec; // spec^2
-            spec = spec * spec; // spec^4
-            spec = spec * spec; // spec^8
-            spec = spec * spec; // spec^16
+            // Fast squaring shininess exponent
+            spec = spec * spec;
+            spec = spec * spec;
+            spec = spec * spec;
+            spec = spec * spec;
             
-            // Combine diffuse and specular light components
             double combined_light = diffuse * 0.65 + spec * 0.35;
             if (combined_light > 1.0) combined_light = 1.0;
             
             if (mode % 2 == 0) {
-                // Normal Map mapping modulated by light intensity
+                // Normal Map color mode modulated by light intensity
                 huc->texture_grid[y][x].r = (uint8_t)(((nx + 1.0) * 127.5) * combined_light);
                 huc->texture_grid[y][x].g = (uint8_t)(((ny + 1.0) * 127.5) * combined_light);
                 huc->texture_grid[y][x].b = (uint8_t)(((nz + 1.0) * 127.5) * combined_light);
             } else {
-                // Gradient Map mapping modulated by light intensity
-                double intensity = warped_intensity[y][x] / 255.0 * combined_light;
+                // Gradient Map color mode modulated by light intensity
+                double intensity = h_center / 255.0 * combined_light;
                 if (intensity < 0.5) {
                     double t = intensity * 2.0;
                     huc->texture_grid[y][x].r = (uint8_t)(2.0 + t * 12.0);
@@ -298,7 +311,7 @@ static void synthesize_texture_grid(huc_ocean_system_t *huc, double phase, int m
                 }
             }
             
-            int idx = (int)((warped_intensity[y][x] * combined_light) / 25.6);
+            int idx = (int)((h_center * combined_light) / 25.6);
             if (idx < 0) idx = 0;
             if (idx > 9) idx = 9;
             huc->texture_grid[y][x].glyph = glyphs[idx];
@@ -308,30 +321,39 @@ static void synthesize_texture_grid(huc_ocean_system_t *huc, double phase, int m
 
 // 2. Procedural 3D Mesh / Lissajous Pathing
 static void update_lissajous_mesh(huc_ocean_system_t *huc, double signal) {
-    // Standard demoscene harmonic rotation formula
     huc->lissajous_x = fast_sin(signal * 2.5);
     huc->lissajous_y = fast_cos(signal * 1.8);
     huc->lissajous_z = fast_sin(signal * 3.2 + 0.5);
 }
 
-// 3. Low-Level Tape Ingest process with Conspiracy Demoscene integrations
+// 3. Low-Level Tape Ingest process
 static void process_tape_ingest_v6(huc_ocean_system_t *huc,
                                    const sgpr_bank_t *sgprs,
                                    vgpr_bank_t *vgprs) {
     printf("[PROCESS] Executing Level 6 Hogan-Hudson Ocean Tape Ingest...\n");
     fflush(stdout);
 
+    // Initialized parameter struct under 200 bytes limit
+    texgen_params_t params = {
+        .seed = 999U,
+        .phase_scale = 1.5f,
+        .twirl_strength = 2.0f,
+        .blend_mode = 1U,
+        .light_x = 0.57735f,
+        .light_y = 0.57735f,
+        .light_z = 0.57735f
+    };
+
     for (int lane = 0; lane < LANES; lane++) {
         uint32_t acc = vgprs->account_id[lane];
         uint64_t votes = vgprs->accumulated_votes[lane];
         
-        // Default to black SGPR baseline color
         huc->border_color = sgprs->baseline_color;
 
-        // 1. Check Transaction Count Limit
+        // Check Transaction Count Limit
         if (huc->transaction_count >= sgprs->max_allowed_transactions) {
             vgprs->status[lane] = COLOR_RED;
-            huc->border_color = COLOR_RED; // Red VGPR alert color
+            huc->border_color = COLOR_RED;
             huc->psg_frequency = WARNING_DRONE;
             huc->blame_quarantine = true;
             printf("   [INGEST FAIL] Lane %d: Transaction count ceiling exceeded! Ingest aborted.\n", lane);
@@ -339,10 +361,10 @@ static void process_tape_ingest_v6(huc_ocean_system_t *huc,
             break;
         }
 
-        // 2. Check Accumulator Quorum Threshold
+        // Check Accumulator Quorum Threshold
         if (votes < sgprs->consensus_threshold) {
             vgprs->status[lane] = COLOR_RED;
-            huc->border_color = COLOR_RED; // Red VGPR alert color due to failed quorum threshold
+            huc->border_color = COLOR_RED;
             huc->psg_frequency = WARNING_DRONE;
             huc->blame_quarantine = true;
             printf("   [INGEST FAIL] Lane %d: Account %d lacks sufficient quorum votes (%lu < %lu)! Ingest aborted.\n", 
@@ -351,17 +373,15 @@ static void process_tape_ingest_v6(huc_ocean_system_t *huc,
             break;
         }
 
-        // Success: Process transaction
         huc->transaction_count++;
         vgprs->status[lane] = COLOR_CYAN;
         huc->border_color = COLOR_CYAN;
 
-        // Conspiracy LFO Modulator: Dynamic sound synthesis utilizing a Low-Frequency Oscillator
         double lfo_mod = fast_sin(huc->transaction_count * 0.8) * 50.0;
         huc->psg_frequency = (uint32_t)(261.0 + (huc->transaction_count * 20.0) + lfo_mod);
 
         // Update procedural visualizers
-        synthesize_texture_grid(huc, huc->transaction_count * 1.5, lane % 4);
+        synthesize_texture_grid_rgb(huc, huc->transaction_count * params.phase_scale, lane % 4, &params);
         update_lissajous_mesh(huc, huc->transaction_count * 1.2);
 
         printf("   [INGEST PASS] Lane %d: Account %d balance reconciled. Color: 0x%06X. LFO Freq: %u Hz.\n", 
@@ -389,7 +409,7 @@ int main(void) {
     printf("=============================================================\n");
     fflush(stdout);
 
-    // SGPR settings: limit of 2 transactions, consensus threshold of 600
+    // SGPR settings
     sgpr_bank_t sgprs = {
         .max_allowed_transactions = 2,
         .consensus_threshold = 600,
@@ -401,10 +421,10 @@ int main(void) {
         .account_id = { 101, 102, 103, 104 },
         .balance = { 4000, 2500, 3000, 5000 },
         .accumulated_votes = {
-            600, // Lane 0: Pass (meets threshold)
-            600, // Lane 1: Pass (meets threshold)
-            300, // Lane 2: Fail (below threshold)
-            600  // Lane 3: Fail (would meet threshold, but count ceiling hit)
+            600, // Lane 0: Pass
+            600, // Lane 1: Pass
+            300, // Lane 2: Fail
+            600  // Lane 3: Fail
         },
         .status = { 0 }
     };
@@ -419,20 +439,14 @@ int main(void) {
         .lissajous_z = 0.0
     };
 
-    // Process Level 6 tape ingest
     process_tape_ingest_v6(&huc, &sgprs, &vgprs);
 
     // Verify assertions
     printf("[TEST] Verifying combined system states...\n");
     fflush(stdout);
 
-    // Lane 0: Pass
     assert(vgprs.status[0] == COLOR_CYAN);
-    
-    // Lane 1: Pass
     assert(vgprs.status[1] == COLOR_CYAN);
-    
-    // Lane 2: Fail (Quorum votes 300 < 600)
     assert(vgprs.status[2] == COLOR_RED);
     assert(huc.border_color == COLOR_RED);
     assert(huc.psg_frequency == WARNING_DRONE);
