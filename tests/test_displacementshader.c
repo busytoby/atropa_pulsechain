@@ -24,6 +24,10 @@ int main(void) {
     assert(fabs(disp0 - 0.0) < 1e-5);
     assert(fabs(disp_peak - 2.5) < 1e-5);
 
+    // Verify WinchesterMQ 8-bit boundary constraint scaling wrapping
+    double disp_wrap = tsfi_displacementshader_eval(&ds, 256.0 + M_PI / 3.0, 0.0);
+    assert(fabs(disp_wrap - 2.5) < 1e-5);
+
     // Verify registration callback gets execution pointer
     void *registered_ptr = NULL;
     void mock_register(const char *name, void *ptr) {
@@ -36,6 +40,7 @@ int main(void) {
 
     printf("   ✓ Displacement amplitude and frequency initialized.\n");
     printf("   ✓ AUTODIN lock-paced coordinate displacement evaluated successfully.\n");
+    printf("   ✓ WinchesterMQ register boundary constraint scaling verified successfully.\n");
     printf("   ✓ XPLSM dynamic symbol registration verified successfully.\n");
     printf("=== AUNCIENT DISPLACEMENTSHADER TESTS COMPLETE (PASS) ===\n");
     return 0;
