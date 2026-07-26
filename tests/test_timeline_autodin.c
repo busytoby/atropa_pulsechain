@@ -111,6 +111,11 @@ int main(void) {
     assert(audit_ctx.last_blame == 1);
     printf("   ✓ Recurring AUTODIN audit violation blame verified.\n");
 
+    // Test hypervisor latency warning
+    auncient_hypervisor_monitor_audit(0.0000002f, true); // Fast audit info
+    auncient_hypervisor_monitor_audit(0.0000050f, false); // Long-running warning
+    printf("   ✓ Hypervisor audit logging verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");

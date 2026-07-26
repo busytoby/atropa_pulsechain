@@ -54,6 +54,9 @@ bool auncient_hogan_transfer(HoganAccount *sender, HoganAccount *recipient, uint
 // Audits the ledger state to ensure total Saat matches the expected aggregate balance
 bool auncient_hogan_audit_ledger(const HoganAccount *accounts, int count, uint64_t expected_total_saat);
 
+// Monitors and records latency of long-running audit operations at the hypervisor level
+void auncient_hypervisor_monitor_audit(float duration_seconds, bool status);
+
 #ifdef __cplusplus
 }
 #endif
