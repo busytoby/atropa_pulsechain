@@ -556,11 +556,12 @@ static void redraw_screen(void) {
         }
     }
 
-    // 2. Draw Main Body with Glossy 3D Highlight points and dynamic organic bubble wobble evolution
+    // 2. Draw Main Body with multi-layer edge shading (Gold inner fill, color-cycled rubbery borders, and white glossy glints)
     for (int char_idx = 0; char_idx < 6; char_idx++) {
         for (int r = 0; r < 16; r++) {
             uint16_t row_bits = bubble_font_tsfi2[char_idx][r];
             uint16_t prev_row_bits = (r > 0) ? bubble_font_tsfi2[char_idx][r - 1] : 0;
+            uint16_t next_row_bits = (r < 15) ? bubble_font_tsfi2[char_idx][r + 1] : 0;
             for (int c = 0; c < 16; c++) {
                 if (row_bits & (1 << (15 - c))) {
                     int wobble_idx_x = (int)(retro_time * 90.0f + r * 12 + c * 6 + char_idx * 24) & 0xFF;
@@ -570,13 +571,25 @@ static void redraw_screen(void) {
                     
                     int pixel_x = logo_start_x + char_idx * char_spacing + c * 4 + wobble_x;
                     int pixel_y = logo_start_y + r * 4 + wobble_y;
-                    int color_idx = (int)(retro_time * 15.0f + char_idx * 4 + c) & 0x0F;
-                    uint32_t pixel_color = color_cycle_lut[color_idx];
+                    
+                    // Determine neighbors to classify border vs inner fill
+                    bool has_left = (c > 0) && (row_bits & (1 << (15 - (c - 1))));
+                    bool has_right = (c < 15) && (row_bits & (1 << (15 - (c + 1))));
+                    bool has_top = (r > 0) && (prev_row_bits & (1 << (15 - c)));
+                    bool has_bottom = (r < 15) && (next_row_bits & (1 << (15 - c)));
+                    
+                    bool is_inner_fill = has_left && has_right && has_top && has_bottom;
                     
                     // Detect if this is a top-left edge pixel (empty to top or left)
                     bool is_top_edge = (r == 0) || !(prev_row_bits & (1 << (15 - c)));
                     bool is_left_edge = (c == 0) || !(row_bits & (1 << (15 - (c - 1))));
                     bool is_glossy = is_top_edge && is_left_edge;
+                    
+                    // Base color cycling for outer border
+                    int color_idx = (int)(retro_time * 15.0f + char_idx * 4 + c) & 0x0F;
+                    uint32_t border_color = color_cycle_lut[color_idx];
+                    
+                    uint32_t fill_color = 0xFFFFCC00; // Gold/yellow glossy inner fill
                     
                     for (int sy = 0; sy < 4; sy++) {
                         for (int sx = 0; sx < 4; sx++) {
@@ -585,8 +598,10 @@ static void redraw_screen(void) {
                             if (px >= 0 && px < win_width && py >= 0 && py < win_height) {
                                 if (is_glossy && sx < 2 && sy < 2) {
                                     pixels[py * win_width + px] = 0xFFFFFFFF; // Pure white highlight
+                                } else if (is_inner_fill) {
+                                    pixels[py * win_width + px] = fill_color; // Gold fill
                                 } else {
-                                    pixels[py * win_width + px] = pixel_color;
+                                    pixels[py * win_width + px] = border_color; // Color-cycled border
                                 }
                             }
                         }
