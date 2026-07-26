@@ -27,6 +27,13 @@ typedef struct {
 } vgpr_bank_t;
 
 typedef struct {
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+    char glyph;
+} color_pixel_t;
+
+typedef struct {
     uint32_t border_color;
     uint32_t psg_frequency;
     bool blame_quarantine;
@@ -35,7 +42,7 @@ typedef struct {
     double lissajous_x;
     double lissajous_y;
     double lissajous_z;
-    char texture_grid[GRID_SIZE][GRID_SIZE];
+    color_pixel_t texture_grid[GRID_SIZE][GRID_SIZE];
 } huc_ocean_system_t;
 
 // Deterministic hash function for pseudo-random coordinates
@@ -162,8 +169,8 @@ static void synthesize_texture_grid(huc_ocean_system_t *huc, double phase, int m
         }
     }
     
-    // Step 4: Warp Layer Twirl using Layer 1 (with Bilinear-style coordinate interpolation & wrap-around tiling)
-    const char glyphs[] = " .:-=+*#%@";
+    // Step 4: Warp Layer Twirl using Layer 1 and compute Normal and Gradient Maps
+    double warped_intensity[GRID_SIZE][GRID_SIZE];
     for (int y = 0; y < GRID_SIZE; y++) {
         for (int x = 0; x < GRID_SIZE; x++) {
             // Read warp displacements from layer 1
@@ -188,15 +195,59 @@ static void synthesize_texture_grid(huc_ocean_system_t *huc, double phase, int m
             double w01 = (1.0 - dx) * dy;
             double w11 = dx * dy;
             
-            double interpolated = w00 * layer_twirl[y0][x0] +
-                                 w10 * layer_twirl[y0][x1] +
-                                 w01 * layer_twirl[y1][x0] +
-                                 w11 * layer_twirl[y1][x1];
-                                 
-            int idx = (int)(interpolated / 25.6);
+            warped_intensity[y][x] = w00 * layer_twirl[y0][x0] +
+                                     w10 * layer_twirl[y0][x1] +
+                                     w01 * layer_twirl[y1][x0] +
+                                     w11 * layer_twirl[y1][x1];
+        }
+    }
+    
+    // Step 5: Compute bump normals and map pixel color gradients
+    const char glyphs[] = " .:-=+*#%@";
+    for (int y = 0; y < GRID_SIZE; y++) {
+        for (int x = 0; x < GRID_SIZE; x++) {
+            int x_prev = (x - 1 + GRID_SIZE) % GRID_SIZE;
+            int x_next = (x + 1) % GRID_SIZE;
+            int y_prev = (y - 1 + GRID_SIZE) % GRID_SIZE;
+            int y_next = (y + 1) % GRID_SIZE;
+            
+            // Height-map normal calculation
+            double dh_dx = (warped_intensity[y][x_next] - warped_intensity[y][x_prev]) / 2.0;
+            double dh_dy = (warped_intensity[y_next][x] - warped_intensity[y_prev][x]) / 2.0;
+            
+            double nx = -dh_dx;
+            double ny = -dh_dy;
+            double nz = 32.0; // Scaling factor
+            double len = sqrt(nx*nx + ny*ny + nz*nz);
+            nx /= len;
+            ny /= len;
+            nz /= len;
+            
+            if (mode % 2 == 0) {
+                // Normal Map mapping: RGB color corresponds directly to normal vector directions
+                huc->texture_grid[y][x].r = (uint8_t)((nx + 1.0) * 127.5);
+                huc->texture_grid[y][x].g = (uint8_t)((ny + 1.0) * 127.5);
+                huc->texture_grid[y][x].b = (uint8_t)((nz + 1.0) * 127.5);
+            } else {
+                // Gradient Map mapping: Interpolated color ramp representing depth
+                double intensity = warped_intensity[y][x] / 255.0;
+                if (intensity < 0.5) {
+                    double t = intensity * 2.0;
+                    huc->texture_grid[y][x].r = (uint8_t)(2.0 + t * 12.0);
+                    huc->texture_grid[y][x].g = (uint8_t)(8.0 + t * 157.0);
+                    huc->texture_grid[y][x].b = (uint8_t)(19.0 + t * 214.0);
+                } else {
+                    double t = (intensity - 0.5) * 2.0;
+                    huc->texture_grid[y][x].r = (uint8_t)(14.0 + t * 241.0);
+                    huc->texture_grid[y][x].g = (uint8_t)(165.0 + t * 90.0);
+                    huc->texture_grid[y][x].b = (uint8_t)(233.0 + t * 22.0);
+                }
+            }
+            
+            int idx = (int)(warped_intensity[y][x] / 25.6);
             if (idx < 0) idx = 0;
             if (idx > 9) idx = 9;
-            huc->texture_grid[y][x] = glyphs[idx];
+            huc->texture_grid[y][x].glyph = glyphs[idx];
         }
     }
 }
@@ -263,13 +314,14 @@ static void process_tape_ingest_v6(huc_ocean_system_t *huc,
                lane, acc, huc->border_color, huc->psg_frequency);
         
         // Output procedural text matrix
-        printf("   [PROCEDURAL TEXTURE LAYER]:\n");
+        printf("   [PROCEDURAL TEXTURE LAYER] (%s Mode):\n", (lane % 2 == 0) ? "Normal Map" : "Gradient Map");
         for (int y = 0; y < GRID_SIZE; y++) {
             printf("      ");
             for (int x = 0; x < GRID_SIZE; x++) {
-                putchar(huc->texture_grid[y][x]);
+                color_pixel_t px = huc->texture_grid[y][x];
+                printf("\033[38;2;%u;%u;%um%c", px.r, px.g, px.b, px.glyph);
             }
-            putchar('\n');
+            printf("\033[0m\n");
         }
         printf("   [LORE GEOMETRY MESH] Coordinate: (%.3f, %.3f, %.3f)\n", 
                huc->lissajous_x, huc->lissajous_y, huc->lissajous_z);
