@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 SAMPLE_RATE = 44100
-FPS = 30
+FPS = 60
 DURATION = 30.0  # 30 seconds
 BPM = 125
 STEP_DUR = 60.0 / (BPM * 4)  # 16th note step duration (~0.12s)
@@ -324,7 +324,7 @@ def render_sunset_frame(frame, width, height):
     scroller_msg = "   *** TSFI/2 BUBBLE SUNSET DEMO ***   GREETINGS TO SECTION 31 ... DEVELOPED FOR THE DYSNOMIA VM PLATFORM ... FEATURING 11 SYNTHESIZED INSTRUMENTS ... VOLUMETRIC DISTANCE FIELD INFLATION SHADER ... 1.85:1 ASPECT RATIO SUPER8 FILM SIMULATOR ... "
     scroller_y = int(height * 0.88)
     draw.rectangle([0, scroller_y - 12, width, scroller_y + 12], fill=(20, 10, 5))
-    scroll_speed = 4.0
+    scroll_speed = 2.0
     scroll_x = int(width - frame * scroll_speed)
     draw.text((scroll_x, scroller_y - 6), scroller_msg, fill=(255, 204, 0))
 
