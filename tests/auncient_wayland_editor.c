@@ -409,62 +409,84 @@ static void hd_storm_render(uint32_t *pixels, int w, int h, const CoaxialUBO *ub
 }
 
 static void hd_embree_render(uint32_t *pixels, int w, int h, const CoaxialUBO *ubo) {
-    uint8_t ray_steps[32];
     float angle = ubo->rotation_angle;
     float cos_a = cosf(angle);
     float sin_a = sinf(angle);
     float ry = ubo->camera_y;
     int max_steps = 16;
     float abs_ry = fabsf(ry);
-    if (abs_ry > 1.8f) {
-        max_steps = 6;
-    } else if (abs_ry > 1.0f) {
-        max_steps = 10;
-    }
+    if (abs_ry > 1.8f) max_steps = 6;
+    else if (abs_ry > 1.0f) max_steps = 10;
     
-    for (int col = 0; col < 32; col++) {
-        float rx = (col - 15.5f) * 0.25f;
-        float rz = -5.0f;
-        int steps = 0;
-        
-        while (steps < max_steps) {
-            steps++;
-            float rot_x = rx * cos_a - rz * sin_a;
-            float rot_z = rx * sin_a + rz * cos_a;
+    int vp_x = 700, vp_y = 120, vp_w = 160, vp_h = 160;
+    for (int x = 0; x < vp_w; x++) {
+        if (vp_y >= 0 && vp_y < h && (vp_x + x) < w) pixels[vp_y * w + vp_x + x] = 0xFF555555;
+        if ((vp_y + vp_h) >= 0 && (vp_y + vp_h) < h && (vp_x + x) < w) pixels[(vp_y + vp_h) * w + vp_x + x] = 0xFF555555;
+    }
+    for (int y = 0; y <= vp_h; y++) {
+        if ((vp_y + y) >= 0 && (vp_y + y) < h && vp_x < w) pixels[(vp_y + y) * w + vp_x] = 0xFF555555;
+        if ((vp_y + y) >= 0 && (vp_y + y) < h && (vp_x + vp_w) < w) pixels[(vp_y + y) * w + vp_x + vp_w] = 0xFF555555;
+    }
+    draw_string(pixels, w, h, vp_x + 5, vp_y - 12, "HYDRA: HD_EMBREE", 0xFF888888, 1);
+
+    for (int vy = 0; vy < 80; vy++) {
+        for (int vx = 0; vx < 80; vx++) {
+            float rx = (vx - 40.0f) * 0.08f;
+            float ry_val = (vy - 40.0f) * 0.08f + ry;
+            float rz = -5.0f;
+            int steps = 0;
             
-            float dist;
-            if (ubo->active_model == 0) {
-                dist = sd_cactus(rot_x, ry, rot_z);
-            } else if (ubo->active_model == 1) {
-                dist = sd_letter_t(rot_x, ry, rot_z);
-            } else {
-                float d_c = sd_cactus(rot_x, ry, rot_z);
-                float d_l = sd_letter_t(rot_x, ry, rot_z);
-                dist = (d_c < d_l) ? d_c : d_l;
+            while (steps < max_steps) {
+                steps++;
+                float rot_x = rx * cos_a - rz * sin_a;
+                float rot_z = rx * sin_a + rz * cos_a;
+                float dist;
+                
+                if (ubo->active_model == 0) {
+                    dist = sd_cactus(rot_x, ry_val, rot_z);
+                } else if (ubo->active_model == 1) {
+                    dist = sd_letter_t(rot_x, ry_val, rot_z);
+                } else {
+                    float d_c = sd_cactus(rot_x, ry_val, rot_z);
+                    float d_l = sd_letter_t(rot_x, ry_val, rot_z);
+                    dist = (d_c < d_l) ? d_c : d_l;
+                }
+                
+                if (dist < 0.05f) break;
+                rz += dist;
+                if (rz > 15.0f) { steps = max_steps; break; }
             }
             
-            if (dist < 0.05f) break;
-            rz += dist;
-            if (rz > 15.0f) { steps = max_steps; break; }
-        }
-        ray_steps[col] = (uint8_t)(steps * 31 / max_steps);
-    }
-
-    int osc_base_x = 100;
-    int osc_base_y = 500;
-    uint32_t trace_color = 0xFF00FFFF;
-    if (ubo->material_variant == 1) {
-        trace_color = 0xFFFF5555;
-    } else if (ubo->material_variant == 2) {
-        trace_color = 0xFFE6DFD3;
-    }
-    
-    draw_string(pixels, w, h, osc_base_x + 480, osc_base_y - 15, "RAY", trace_color, 1);
-    for (int col = 0; col < 32; col++) {
-        int val = ray_steps[col];
-        int py = osc_base_y - (val * 12 / 32);
-        if (py >= 0 && py < h && (osc_base_x + 480 + col) < w) {
-            pixels[py * w + osc_base_x + 480 + col] = trace_color;
+            if (steps < max_steps) {
+                uint8_t r_col, g_col, b_col;
+                float shade = 1.0f - ((float)steps / (float)max_steps);
+                
+                if (ubo->material_variant == 1) {
+                    r_col = (uint8_t)(255 * shade);
+                    g_col = (uint8_t)(85 * shade);
+                    b_col = (uint8_t)(85 * shade);
+                } else if (ubo->material_variant == 2) {
+                    r_col = (uint8_t)(230 * shade);
+                    g_col = (uint8_t)(223 * shade);
+                    b_col = (uint8_t)(211 * shade);
+                } else {
+                    r_col = (uint8_t)(255 * shade);
+                    g_col = (uint8_t)(204 * shade);
+                    b_col = 0;
+                }
+                
+                uint32_t color = 0xFF000000 | (r_col << 16) | (g_col << 8) | b_col;
+                
+                for (int dy = 0; dy < 2; dy++) {
+                    for (int dx = 0; dx < 2; dx++) {
+                        int px = vp_x + vx * 2 + dx;
+                        int py = vp_y + vy * 2 + dy;
+                        if (px >= 0 && px < w && py >= 0 && py < h) {
+                            pixels[py * w + px] = color;
+                        }
+                    }
+                }
+            }
         }
     }
 }
