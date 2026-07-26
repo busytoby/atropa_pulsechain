@@ -135,12 +135,12 @@ static const char *parallax_scroller_text = "CONSPIRACY & SINGULAR HUNGARIAN TRI
 // Static 256-entry Sine Lookup Table (LUT)
 static float sine_lut[256];
 
-// Color Cycle Palette LUT
+// Color Cycle Palette LUT (Sunset Theme: Warm colors)
 static const uint32_t color_cycle_lut[16] = {
-    0xFF3A1A4A, 0xFF4A2A5A, 0xFF5A3A6A, 0xFF6A4A7A,
-    0xFF7A5A8A, 0xFF8A6A9A, 0xFF9A7ABA, 0xFF8A6A9A,
-    0xFF7A5A8A, 0xFF6A4A7A, 0xFF5A3A6A, 0xFF4A2A5A,
-    0xFF3A1A4A, 0xFF2A0A3A, 0xFF1A002A, 0xFF2A0A3A
+    0xFF6A1B00, 0xFF8A2B00, 0xFFAA3B00, 0xFFCA4B00,
+    0xFFEA5B00, 0xFFFF6B00, 0xFFFF8B20, 0xFFFFAB40,
+    0xFFFF8B20, 0xFFFF6B00, 0xFFEA5B00, 0xFFCA4B00,
+    0xFFAA3B00, 0xFF8A2B00, 0xFF6A1B00, 0xFF4A0A00
 };
 
 // Logarithmic SID Volume Fader LUT
@@ -163,7 +163,6 @@ static const char charset_map_lut[128] = {
 static float retro_time = 0.0f;
 static uint8_t vic_d012 = 130;  // Raster split scanline
 static uint8_t vic_d016 = 0;    // Fine scroll shift (0-7 pixels)
-static uint8_t vic_d021 = 0x06; // Background Color (Blue)
 
 // Interactive Loader state variables
 static float loader_flash_time = 0.0f;
@@ -208,14 +207,14 @@ static bool hidden_unlocked = false;
 // Sequential key history to unlock hidden tune ("tsn")
 static char key_history[3] = {'\0', '\0', '\0'};
 
-// PETSCII Character Portrait / Symbol Outline (TNS Memorial Invader shape)
-static const char *petscii_portrait[6] = {
-    " #     # ",
-    "  #   #  ",
-    " ####### ",
-    "### ###  ",
-    "#########",
-    "# #   # #"
+// PETSCII Western Desert Artwork Split Screen (Cactus & Sunset Sunset mesa)
+static const char *western_desert_art[6] = {
+    "      #      .   .      ",
+    "    #####    .   .      ",
+    "      #    *       *    ",
+    "    ###       ###       ",
+    "   #####     #####      ",
+    "========================"
 };
 
 // Multiplexed Sprite Structure
@@ -324,70 +323,64 @@ static void redraw_screen(void) {
     wl_buffers[current_buffer_idx] = create_shm_buffer(win_width, win_height, &pixels);
     if (!wl_buffers[current_buffer_idx] || !pixels) return;
     
-    // Jitter-Free Double-IRQ Raster Synchronization: Precalculate lines via double buffer pointers
+    // Warm Sunset Copper Raster Sweep Bands
     int bar1_y = win_height / 2 + (int)(sine_lut[(int)(retro_time * 60.0f) & 0xFF] * 200.0f);
     int bar2_y = win_height / 2 + (int)(sine_lut[(int)(retro_time * 80.0f + 80) & 0xFF] * 150.0f);
     int bar3_y = win_height / 2 + (int)(sine_lut[(int)(retro_time * 100.0f + 160) & 0xFF] * 180.0f);
 
-    // Rainbow Color Barf Sweeps: high frequency background color modulation
+    // Background raster scanline coloring loop
     for (int y = 0; y < win_height; y++) {
-        // Bad Line Cycle Steals Simulation: insert blank scanline gaps every 24 pixels in the text region
         if (y >= 100 && y < 550 && (y % 24) == 0) {
             for (int x = 0; x < win_width; x++) {
-                pixels[y * win_width + x] = 0xFF000000; // Black bad-line cycle steal gap
+                pixels[y * win_width + x] = 0xFF000000;
             }
             continue;
         }
 
-        uint32_t bg_color = 0xFF222222;
+        uint32_t bg_color = 0xFF221100; // Warm dark base
         
-        // Check if Fast Loader border flash effect is active
         if (loader_flash_time > 0.0f && (y < (int)vic_d012 * 3 || y > win_height - 100)) {
-            // Turbo tape loading lines: high-speed randomized color bands
             int rand_color_idx = (int)(y * 0.15f + retro_time * 800.0f + (rand() % 4)) & 0x0F;
             bg_color = color_cycle_lut[rand_color_idx];
         } else {
-            // Sinusoidal Copper Raster Bars Layer Blending
+            // Warm copper sunset bands
             int d1 = abs(y - bar1_y);
             int d2 = abs(y - bar2_y);
             int d3 = abs(y - bar3_y);
             uint32_t bar_color = 0;
             
             if (d1 < 30) {
-                int intensity = (30 - d1) * 8; // 0 to 240
-                bar_color = (intensity << 16); // Red gradient bar
+                int intensity = (30 - d1) * 8;
+                bar_color = (intensity << 16) | (intensity << 8); // Orange/Red Sunset
             } else if (d2 < 25) {
                 int intensity = (25 - d2) * 10;
-                bar_color = intensity; // Blue gradient bar
+                bar_color = (intensity << 16) | (intensity << 7); // Deep Amber
             } else if (d3 < 20) {
                 int intensity = (20 - d3) * 12;
-                bar_color = (intensity << 16) | intensity; // Purple gradient bar
+                bar_color = (intensity << 16) | intensity; // Purple Sunset
             }
             
             if (bar_color != 0) {
                 bg_color = bar_color;
             } else {
-                // High frequency color sweeps relative to time + y scanline (using Sine LUT)
                 int sweep_idx = (int)(y * 0.5f + retro_time * 200.0f) & 0xFF;
                 float color_sweep = sine_lut[sweep_idx];
                 
-                // Procedural noise texture modulation on top of base sweeps
                 float p_noise = sine_lut[(sweep_idx * 3) & 0xFF] * sine_lut[(sweep_idx + 128) & 0xFF];
                 if (p_noise > 0.4f) {
-                    bg_color ^= 0x00112233; // Shift bits via procedural math
+                    bg_color ^= 0x00110000;
                 }
                 
                 if (color_sweep > 0.8f) {
-                    bg_color = 0xFF882200; // Red-orange sweep band
+                    bg_color = 0xFF551100;
                 } else if (color_sweep < -0.8f) {
-                    bg_color = 0xFF004488; // Blue sweep band
+                    bg_color = 0xFF330011;
                 } else {
-                    // Evaluates VIC-II simulated splits (using Color Cycle LUT for borders)
                     if (y < (int)vic_d012 * 3) {
                         int pal_idx = (int)(retro_time * 8.0f) & 0x0F;
-                        bg_color = color_cycle_lut[pal_idx]; // Cycle border color via LUT
+                        bg_color = color_cycle_lut[pal_idx];
                     } else {
-                        bg_color = (vic_d021 == 0x06) ? 0xFF1b253d : 0xFF112222;
+                        bg_color = 0xFF1c0b00;
                     }
                 }
             }
@@ -405,17 +398,16 @@ static void redraw_screen(void) {
             int py = win_height / 2 + (int)((starfield[i].y / starfield[i].z) * (win_height / 2)) + glitch_y;
             
             if (px >= 0 && px < win_width && py >= 0 && py < win_height) {
-                // Dimmer colors for stars further away
-                uint32_t star_color = 0xFF555555;
-                if (starfield[i].z < 3.0f) star_color = 0xFFFFFFFF;
-                else if (starfield[i].z < 6.0f) star_color = 0xFFAAAAAA;
+                uint32_t star_color = 0xFF884400;
+                if (starfield[i].z < 3.0f) star_color = 0xFFFFCC00;
+                else if (starfield[i].z < 6.0f) star_color = 0xFFAA6600;
                 
                 draw_char(pixels, win_width, win_height, px, py, starfield[i].glyph, star_color, 2);
             }
         }
     }
 
-    // Infinite Zooming Tunnel/Zoomer Effect: concentric boxes scaling outward
+    // Infinite Zooming Tunnel/Zoomer Effect
     int tunnel_center_x = win_width / 2;
     int tunnel_center_y = win_height / 2;
     for (int i = 0; i < 4; i++) {
@@ -423,47 +415,44 @@ static void redraw_screen(void) {
         int w_size = (int)(zoom_rad * 1.6f);
         int h_size = (int)(zoom_rad * 0.9f);
         
-        // Draw outline borders using blocks
         for (int tx = -w_size; tx <= w_size; tx += 12) {
-            draw_char(pixels, win_width, win_height, tunnel_center_x + tx + glitch_x, tunnel_center_y - h_size + glitch_y, '=', 0xFF555555, 1);
-            draw_char(pixels, win_width, win_height, tunnel_center_x + tx + glitch_x, tunnel_center_y + h_size + glitch_y, '=', 0xFF555555, 1);
+            draw_char(pixels, win_width, win_height, tunnel_center_x + tx + glitch_x, tunnel_center_y - h_size + glitch_y, '=', 0xFF331100, 1);
+            draw_char(pixels, win_width, win_height, tunnel_center_x + tx + glitch_x, tunnel_center_y + h_size + glitch_y, '=', 0xFF331100, 1);
         }
         for (int ty = -h_size; ty <= h_size; ty += 12) {
-            draw_char(pixels, win_width, win_height, tunnel_center_x - w_size + glitch_x, tunnel_center_y + ty + glitch_y, '|', 0xFF555555, 1);
-            draw_char(pixels, win_width, win_height, tunnel_center_x + w_size + glitch_x, tunnel_center_y + ty + glitch_y, '|', 0xFF555555, 1);
+            draw_char(pixels, win_width, win_height, tunnel_center_x - w_size + glitch_x, tunnel_center_y + ty + glitch_y, '|', 0xFF331100, 1);
+            draw_char(pixels, win_width, win_height, tunnel_center_x + w_size + glitch_x, tunnel_center_y + ty + glitch_y, '|', 0xFF331100, 1);
         }
     }
 
-    // Audio Peak Border Pulsing: Scale factor pulses with SID volume
+    // Audio Peak Border Pulsing
     int base_scale = win_width / 280;
     if (base_scale < 1) base_scale = 1;
     if (base_scale > 6) base_scale = 6;
     
     int scale = base_scale;
     if (sid_chip.volume > 8) {
-        scale = base_scale + 1; // Pulse size up
+        scale = base_scale + 1;
     }
     
+    // Split Screen Layout: Art in top half, Editor text grid in bottom half
     // Center document grid dynamically (apply glitch screen shake offsets)
     int grid_w = 40 * 6 * scale;
-    int grid_h = 15 * 8 * scale;
     int start_x = (win_width - grid_w) / 2 + glitch_x;
-    int start_y = (win_height - grid_h) / 2 + glitch_y;
+    int start_y = win_height / 2 + 10 + glitch_y; // Lower half
     if (start_x < 20) start_x = 20;
-    if (start_y < 80) start_y = 80;
+    if (start_y < win_height / 2) start_y = win_height / 2;
     
-    // Parse Markdown to ANSI grid (40 columns, 15 rows)
-    char ansi_grid[600];
+    // Parse Markdown to ANSI grid (40 columns, 7 rows for split screen)
+    char ansi_grid[280];
     memset(ansi_grid, ' ', sizeof(ansi_grid));
-    auncient_parse_markdown_to_ansi(doc_buf, ansi_grid, 40, 15, 0);
+    auncient_parse_markdown_to_ansi(doc_buf, ansi_grid, 40, 7, 0);
     
-    // Calculate current typing cursor position in grid space
     int cursor_r = doc_len / 40;
     int cursor_c = doc_len % 40;
     
-    // Render the parsed ANSI grid onto the pixel canvas
-    for (int r = 0; r < 15; r++) {
-        // PETSCII-Style Border Splits (using Sine LUT)
+    // Render bottom half editor grid
+    for (int r = 0; r < 7; r++) {
         int fine_shift = (vic_d016 & 0x07);
         int wave_idx = (int)(r * 15.0f + retro_time * 150.0f) & 0xFF;
         int row_displace = (int)(sine_lut[wave_idx] * 3.0f * scale) + fine_shift;
@@ -471,15 +460,14 @@ static void redraw_screen(void) {
         for (int c = 0; c < 40; c++) {
             char ch = ansi_grid[r * 40 + c];
             
-            // 3D Raymarched Spherical Object projection directly onto character cells
+            // Apply raymarched sphere overlay inside empty cells
             float nx = ((float)c - 20.0f) / 10.0f;
-            float ny = ((float)r - 7.5f) / 5.0f;
+            float ny = ((float)r - 3.5f) / 3.0f;
             float time_sin = sine_lut[(int)(retro_time * 120.0f) & 0xFF];
             float sphere_radius = 1.0f + time_sin * 0.2f;
             float dist_from_sphere = sqrtf(nx*nx + ny*ny) - sphere_radius;
             
             if (dist_from_sphere < 0.0f && ch == ' ') {
-                // Inside raymarched sphere, override character block shade (conspiracy style)
                 char sphere_shades[] = "%#*+=-:. ";
                 int shade_idx = (int)(fabsf(dist_from_sphere) * 8.0f);
                 if (shade_idx < 0) shade_idx = 0;
@@ -487,16 +475,12 @@ static void redraw_screen(void) {
                 ch = sphere_shades[shade_idx];
             }
             
-            // PETSCII Fluid Plasma Waves: Superposition of 2D sine waves (using Sine LUT)
             int idx1 = (int)(c * 12.0f + retro_time * 180.0f) & 0xFF;
             int idx2 = (int)(r * 18.0f + retro_time * 120.0f) & 0xFF;
-            int idx3 = (int)((c + r) * 9.0f + retro_time * 220.0f) & 0xFF;
             float wave1 = sine_lut[idx1];
             float wave2 = sine_lut[idx2];
-            float wave3 = sine_lut[idx3];
-            float plasma = (wave1 + wave2 + wave3) / 3.0f;
+            float plasma = (wave1 + wave2) / 2.0f;
             
-            // Only blend plasma into empty background spacing cells to keep document legible
             if (ch == ' ') {
                 char plasma_chars[] = " .:-=+*";
                 int p_idx = (int)((plasma + 1.0f) * 3.0f);
@@ -504,34 +488,30 @@ static void redraw_screen(void) {
                 if (p_idx > 6) p_idx = 6;
                 ch = plasma_chars[p_idx];
             } else {
-                // Apply PETSCII Custom Charset Mapping LUT for letters
                 char mapped = charset_map_lut[(uint8_t)ch];
                 if (mapped) ch = mapped;
             }
             
-            // Dynamic Screen Shading RAM: modulate color based on distance from the cursor
             int dist_r = r - cursor_r;
             int dist_c = c - cursor_c;
             float dist = sqrtf((float)(dist_r * dist_r + dist_c * dist_c));
             
-            // Typing-Speed Font Color Flasher
-            uint32_t color = 0xFFCCCCCC; // Default
+            uint32_t color = 0xFFFFCC00; // Warm gold default
             if (type_activity > 1.0f) {
                 int type_color_idx = (int)(retro_time * 25.0f + c) & 0x0F;
-                color = color_cycle_lut[type_color_idx]; // Flash text color dynamically when typing fast
+                color = color_cycle_lut[type_color_idx];
             } else {
                 if (dist < 4.0f) {
-                    color = 0xFF00FF00; // Bright green close to cursor
+                    color = 0xFFFF8800; // Flame orange near cursor
                 } else if (dist < 8.0f) {
-                    color = 0xFF00A200; // Medium green
+                    color = 0xFFCC4400; // Dark red
                 } else {
-                    color = 0xFF005500; // Shaded dark green far away
+                    color = 0xFF882200; // Muted dark brown
                 }
             }
             
-            if (ch == '|') color = 0xFF00FFFF;
-            else if (ch == '*') color = 0xFFFF00FF;
-            else if (ch == '=') color = 0xFFFFFF00;
+            if (ch == '|') color = 0xFFFFFF00;
+            else if (ch == '*') color = 0xFFFF5500;
             
             draw_char(pixels, win_width, win_height, 
                       start_x + c * 6 * scale + row_displace, 
@@ -540,61 +520,42 @@ static void redraw_screen(void) {
         }
     }
     
-    // PETSCII Screen Border Frames scrolling around the text canvas margins
+    // Render top half Western Desert Artwork (Cactus & mesa Sunset)
+    int art_start_x = (win_width - 24 * 12) / 2 + glitch_x;
+    int art_start_y = 120 + glitch_y;
+    for (int pr = 0; pr < 6; pr++) {
+        for (int pc = 0; pc < 24; pc++) {
+            char symbol = western_desert_art[pr][pc];
+            if (symbol != ' ') {
+                uint32_t art_color = 0xFF00FF00; // Green cactus
+                if (symbol == '*') art_color = 0xFFFFCC00; // Yellow sun
+                else if (symbol == '.') art_color = 0xFFFF5500; // Red sunset dots
+                else if (symbol == '=') art_color = 0xFF884400; // Brown ground
+                
+                draw_char(pixels, win_width, win_height, 
+                          art_start_x + pc * 12, 
+                          art_start_y + pr * 16, 
+                          symbol, art_color, 2);
+            }
+        }
+    }
+
+    // Render PETSCII Screen Border Frames scrolling around the bottom editor text canvas margins
     int frame_y_top = start_y - 12 * scale;
-    int frame_y_bottom = start_y + 15 * 8 * scale + 4 * scale;
+    int frame_y_bottom = start_y + 7 * 8 * scale + 4 * scale;
     for (int col = 0; col < 40; col++) {
         int frame_char_idx = (col + (int)(retro_time * 12.0f)) % 6;
         char frame_chars[] = "[=#=-]";
         char ch = frame_chars[frame_char_idx];
-        draw_char(pixels, win_width, win_height, start_x + col * 6 * scale, frame_y_top, ch, 0xFFFFFF00, scale);
-        draw_char(pixels, win_width, win_height, start_x + col * 6 * scale, frame_y_bottom, ch, 0xFFFFFF00, scale);
+        draw_char(pixels, win_width, win_height, start_x + col * 6 * scale, frame_y_top, ch, 0xFFFF8800, scale);
+        draw_char(pixels, win_width, win_height, start_x + col * 6 * scale, frame_y_bottom, ch, 0xFFFF8800, scale);
     }
 
-    // Render PETSCII Portrait / Symbol Art in top-right corner
-    int portrait_start_x = win_width - 150 + glitch_x;
-    int portrait_start_y = 50 + glitch_y;
-    for (int pr = 0; pr < 6; pr++) {
-        for (int pc = 0; pc < 9; pc++) {
-            char symbol = petscii_portrait[pr][pc];
-            if (symbol == '#') {
-                draw_char(pixels, win_width, win_height, 
-                          portrait_start_x + pc * 12, 
-                          portrait_start_y + pr * 16, 
-                          127, 0xFFFF5555, 2); // Block symbol
-            }
-        }
-    }
-    
-    // Render Amoeba Flag Waving effect in top-left corner (using Sine LUT)
-    int flag_start_x = 40 + glitch_x;
-    int flag_start_y = 80 + glitch_y;
-    for (int fr = 0; fr < 8; fr++) {
-        int wave_idx = (int)(fr * 20.0f + retro_time * 220.0f) & 0xFF;
-        int flag_displace = (int)(sine_lut[wave_idx] * 6.0f);
-        
-        for (int fc = 0; fc < 12; fc++) {
-            int idx1 = (int)(fc * 25.0f + retro_time * 160.0f) & 0xFF;
-            int idx2 = (int)(fr * 30.0f + retro_time * 110.0f) & 0xFF;
-            float val1 = sine_lut[idx1];
-            float val2 = sine_lut[idx2];
-            float amoeba = val1 + val2;
-            
-            char amoeba_char = (amoeba > 0.3f) ? 'o' : (amoeba < -0.3f) ? '.' : ' ';
-            uint32_t amoeba_color = (amoeba > 0.0f) ? 0xFFFFFF00 : 0xFF33AAFF;
-            
-            draw_char(pixels, win_width, win_height, 
-                      flag_start_x + fc * 10 + flag_displace, 
-                      flag_start_y + fr * 12, 
-                      amoeba_char, amoeba_color, 2);
-        }
-    }
-    
-    // Update Sprite Coordinates dynamically (using Sine LUT for orbital paths)
-    int orbit_step = (int)(retro_time * 80.0f);
+    // Update Sprite Coordinates dynamically (Tracing a sinusoidal trailing path - Western style)
     for (int i = 0; i < 5; i++) {
-        sprites[i].x = win_width / 2 + (int)(sine_lut[(orbit_step + i * 30) & 0xFF] * 280.0f);
-        sprites[i].y = win_height / 2 + (int)(sine_lut[(orbit_step + i * 30 + 64) & 0xFF] * 160.0f);
+        sprites[i].x = 100 + i * 200 + (int)(retro_time * 60.0f) % (win_width - 200);
+        int wave_idx = ((int)(retro_time * 80.0f) + i * 40) & 0xFF;
+        sprites[i].y = win_height / 2 + (int)(sine_lut[wave_idx] * 80.0f);
     }
     
     // Sort Sprites by Y Coordinate (VIC-II Multiplexer simulation sorting LUT)
@@ -619,7 +580,7 @@ static void redraw_screen(void) {
                   sprites[idx].color, 3);
     }
     
-    // Dual opposite-direction scrolltexts (Interlaced layout)
+    // Dual opposite-direction scrolltexts
     // 1. Top Parallax Scroller moving RIGHT
     float p_scroll_speed = 60.0f;
     float p_scroll_x_total = retro_time * p_scroll_speed;
@@ -629,14 +590,14 @@ static void redraw_screen(void) {
     for (int col = 0; col < 90; col++) {
         int char_idx = (p_base_char_idx + col) % strlen(parallax_scroller_text);
         char ch = parallax_scroller_text[char_idx];
-        draw_char(pixels, win_width, win_height, 20 + col * 12 + p_pixel_shift + glitch_x, p_scroller_y, ch, 0xFF00FFFF, 2);
+        draw_char(pixels, win_width, win_height, 20 + col * 12 + p_pixel_shift + glitch_x, p_scroller_y, ch, 0xFFFFCC00, 2);
     }
 
     // 2. Bottom Main Scroller moving LEFT
     float scroll_x_speed = 30.0f;
     if (active_tune == 1) scroll_x_speed = 45.0f;
     else if (active_tune == 2) scroll_x_speed = 60.0f;
-    else if (active_tune == 3) scroll_x_speed = 90.0f; // Hidden Warp speed
+    else if (active_tune == 3) scroll_x_speed = 90.0f;
     
     float scroll_x_total = retro_time * scroll_x_speed;
     int base_char_idx = (int)(scroll_x_total / 18.0f) % strlen(decompressed_scroller);
@@ -647,15 +608,14 @@ static void redraw_screen(void) {
         int char_idx = (base_char_idx + col) % strlen(decompressed_scroller);
         char ch = decompressed_scroller[char_idx];
         
-        // Sine Scroller height offset calculation via lookup table
         int lut_step = (col * 10 + (int)(retro_time * 250.0f)) & 0xFF;
         int dy = (int)(sine_lut[lut_step] * 15.0f);
         
-        draw_char(pixels, win_width, win_height, 40 + col * 18 - pixel_shift + glitch_x, scroller_y_base + dy, ch, 0xFF00FF00, 3);
+        draw_char(pixels, win_width, win_height, 40 + col * 18 - pixel_shift + glitch_x, scroller_y_base + dy, ch, 0xFFFF5500, 3);
     }
     
     // Display header details
-    draw_string(pixels, win_width, win_height, 100 + glitch_x, 30 + glitch_y, "AUNCIENT WAYLAND VULKAN MARKDOWN EDITOR", 0xFF00FF00, 2);
+    draw_string(pixels, win_width, win_height, 100 + glitch_x, 30 + glitch_y, "AUNCIENT WAYLAND VULKAN MARKDOWN EDITOR", 0xFFFF8800, 2);
     
     // Render Simulated SID Chip register state array and active tune info
     char sid_buf[256];
@@ -670,7 +630,7 @@ static void redraw_screen(void) {
              voice_active[0] ? "ON" : "OFF",
              voice_active[1] ? "ON" : "OFF",
              voice_active[2] ? "ON" : "OFF");
-    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 65 + glitch_y, sid_buf, 0xFF00FFFF, 2);
+    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 65 + glitch_y, sid_buf, 0xFFFFFF00, 2);
 
     // Initials Anagram Mapping: Alternate "TSN" and "TNS" dynamically every second
     const char *initials = ((int)retro_time % 2 == 0) ? "TSN" : "TNS";
@@ -678,7 +638,7 @@ static void redraw_screen(void) {
     snprintf(help_buf, sizeof(help_buf), 
              "VIC-II: d012=%d - TRIBUTE: %s - PRESS '#' FOR TUNES | KEYS '1'-'3' TO MUTE VOICES", 
              vic_d012, initials);
-    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 35 + glitch_y, help_buf, 0xFFFFFF00, 2);
+    draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 35 + glitch_y, help_buf, 0xFFFFCC00, 2);
     
     wl_surface_attach(surface, wl_buffers[current_buffer_idx], 0, 0);
     wl_surface_damage(surface, 0, 0, win_width, win_height);
@@ -959,7 +919,7 @@ int main(void) {
     }
     decrunch_temp[de_idx] = '\0';
     memcpy(decompressed_scroller, decrunch_temp, de_idx + 1);
-    printf("[DECRUNCH] Relocated %d bytes from 0x%04X to 0x%04X\n", de_idx, 0x2000, 0x0800);
+    printf("[DECRUNCH] Relocated %d bytes from 0x2000 to 0x0800\n", de_idx);
 
     // Precalculate Sine Lookup Table (LUT) covering full wave cycle
     for (int i = 0; i < 256; i++) {
