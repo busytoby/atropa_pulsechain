@@ -757,3 +757,52 @@ void auncient_xpl_render_spline_to_grid(const TcbKeyframe *keys, int key_count, 
 
     free(temp_keys);
 }
+
+void auncient_ansi_layout_partition(const char *text, char *col1, int w1, char *col2, int w2, int rows) {
+    if (!text || !col1 || !col2 || w1 <= 0 || w2 <= 0 || rows <= 0) return;
+
+    memset(col1, ' ', w1 * rows);
+    memset(col2, ' ', w2 * rows);
+
+    int text_len = (int)strlen(text);
+    int text_idx = 0;
+
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < w1; c++) {
+            if (text_idx < text_len) {
+                if (text[text_idx] == '\n') {
+                    text_idx++;
+                    break;
+                }
+                col1[r * w1 + c] = text[text_idx++];
+            }
+        }
+        for (int c = 0; c < w2; c++) {
+            if (text_idx < text_len) {
+                if (text[text_idx] == '\n') {
+                    text_idx++;
+                    break;
+                }
+                col2[r * w2 + c] = text[text_idx++];
+            }
+        }
+    }
+}
+
+int auncient_navigate_ansi_menu(int keycode, int current_selection, int max_selections) {
+    if (max_selections <= 0) return 0;
+
+    // Auncient hardware mapping: keycode 32 is 'D' / Right, keycode 30 is 'A' / Left
+    if (keycode == 32) {
+        current_selection++;
+        if (current_selection >= max_selections) {
+            current_selection = 0;
+        }
+    } else if (keycode == 30) {
+        current_selection--;
+        if (current_selection < 0) {
+            current_selection = max_selections - 1;
+        }
+    }
+    return current_selection;
+}

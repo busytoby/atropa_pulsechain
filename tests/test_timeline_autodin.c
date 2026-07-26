@@ -302,6 +302,21 @@ int main(void) {
     assert(xpl_grid[0] != ' '); // First segment drawn
     printf("   ✓ XPL spline rendering to text grid verified.\n");
 
+    // Test dual-column text partitioning
+    char col1[30], col2[30];
+    auncient_ansi_layout_partition("LEFT\nRIGHT", col1, 10, col2, 10, 3);
+    assert(col1[0] == 'L');
+    assert(col2[0] == 'R');
+    printf("   ✓ Dual-column ANSI text layout partitioning verified.\n");
+
+    // Test keyboard navigation menus
+    int sel = 0;
+    sel = auncient_navigate_ansi_menu(32, sel, 4); // Keycode 32 is 'D' / Right
+    assert(sel == 1);
+    sel = auncient_navigate_ansi_menu(30, sel, 4); // Keycode 30 is 'A' / Left
+    assert(sel == 0);
+    printf("   ✓ Keyboard menu selection navigation verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");

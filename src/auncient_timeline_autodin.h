@@ -197,6 +197,12 @@ void auncient_rasterize_antialiased_line(float x0, float y0, float x1, float y1,
 // Renders TCB spline paths from XPL registers onto a text-based terminal grid buffer
 void auncient_xpl_render_spline_to_grid(const TcbKeyframe *keys, int key_count, char *grid, int width, int height);
 
+// Partitions a raw text buffer into two separate columns with static character formatting
+void auncient_ansi_layout_partition(const char *text, char *col1, int w1, char *col2, int w2, int rows);
+
+// Handles keyboard navigation menu selections using Auncient virtual hardware keycode registers
+int auncient_navigate_ansi_menu(int keycode, int current_selection, int max_selections);
+
 #ifdef __cplusplus
 }
 #endif
