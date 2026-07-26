@@ -159,6 +159,21 @@ static void resolve_ref_spec_conflict(const usd_ref_spec_conflict_t *conflict, c
     }
 }
 
+// 10. Payload vs Specializes
+typedef struct {
+    char payload_opinion[32];
+    char specializes_opinion[32];
+} usd_payload_spec_conflict_t;
+
+static void resolve_payload_spec_conflict(const usd_payload_spec_conflict_t *conflict, char *resolved_val) {
+    if (strlen(conflict->payload_opinion) > 0) {
+        strcpy(resolved_val, conflict->payload_opinion);
+    } else {
+        strcpy(resolved_val, conflict->specializes_opinion);
+    }
+}
+
+
 
 
 
@@ -334,6 +349,23 @@ int main(void) {
     }
     double end_rs = get_time_ns();
     printf("   ✓ Reference vs Specializes Conflict Average Latency: %.2f ns/run\n", (end_rs - start) / iterations);
+    fflush(stdout);
+
+    // 10. Payload vs Specializes Priority Benchmark
+    printf("[BENCHMARK] Running %d iterations of Payload vs Specializes Conflicts...\n", iterations);
+    fflush(stdout);
+    usd_payload_spec_conflict_t ps_conflict = {
+        .payload_opinion = "payload_look",
+        .specializes_opinion = "specialized_look"
+    };
+    char resolved_ps[32] = "";
+    start = get_time_ns();
+    for (int i = 0; i < iterations; i++) {
+        resolve_payload_spec_conflict(&ps_conflict, resolved_ps);
+        checksum += resolved_ps[0];
+    }
+    double end_ps = get_time_ns();
+    printf("   ✓ Payload vs Specializes Conflict Average Latency: %.2f ns/run\n", (end_ps - start) / iterations);
     fflush(stdout);
 
     // Print checksum to ensure values are not optimized away
