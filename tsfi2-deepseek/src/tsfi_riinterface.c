@@ -124,3 +124,31 @@ void tsfi_riinterface_tick_irq(TSFiRiInterface *ri, double dt) {
         ri->irq_active = false;
     }
 }
+
+void tsfi_riinterface_run_8step_loop(TSFiRiInterface *ri, double camera_velocity, double *pos_x, double *prev_pos_x, int count) {
+    if (!ri) return;
+    
+    // Stage 1: RiBegin - CPU/VDC Initialization
+    tsfi_riinterface_init(ri);
+    
+    // Stage 2: RiFrameBegin - Trigger initial timer IRQ tick
+    tsfi_riinterface_tick_irq(ri, 0.016);
+    
+    // Stage 3: RiCamera - Map camera velocity to PSG tone
+    tsfi_riinterface_modulate_psg(ri, camera_velocity);
+    
+    // Stage 4: RiWorldBegin - Establish VCE palette base
+    tsfi_riinterface_world_begin(ri);
+    
+    // Stage 5: Traversal (`RiSphere`) - Emit geometry to VDC active sprite registry
+    tsfi_riinterface_sphere(ri, 1, 8.0);
+    
+    // Stage 6: RiWorldEnd - Verlet FET discharge calculations written to display memory
+    tsfi_riinterface_discharge_verlet(ri, pos_x, prev_pos_x, count, 0.1, 0.99);
+    
+    // Stage 7: RiFrameEnd - Execute VDC DMA hardware block transfer
+    tsfi_riinterface_vdc_dma_copy(ri, 1, 5, 2);
+    
+    // Stage 8: RiEnd - Shutdown world scope
+    tsfi_riinterface_world_end(ri);
+}

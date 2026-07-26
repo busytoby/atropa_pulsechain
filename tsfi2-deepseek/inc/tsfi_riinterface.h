@@ -45,4 +45,7 @@ void tsfi_riinterface_discharge_verlet(TSFiRiInterface *ri, double *pos_x, doubl
 // Ticks the hardware timer to trigger periodic interrupts (IRQs)
 void tsfi_riinterface_tick_irq(TSFiRiInterface *ri, double dt);
 
+// Executes the complete 8-step RenderMan sequence loop mapped to Hudson hardware
+void tsfi_riinterface_run_8step_loop(TSFiRiInterface *ri, double camera_velocity, double *pos_x, double *prev_pos_x, int count);
+
 #endif // TSFI_RIINTERFACE_H

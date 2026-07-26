@@ -56,6 +56,18 @@ int main(void) {
     assert(ri.irq_active == true);
     assert(ri.irq_counter == 1);
 
+    // Test complete 8-step sequence execution loop mapped to Hudson hardware
+    TSFiRiInterface loop_ri;
+    double loop_pos_x[1] = {10.0};
+    double loop_prev_pos_x[1] = {9.5};
+    tsfi_riinterface_run_8step_loop(&loop_ri, 4.0, loop_pos_x, loop_prev_pos_x, 1);
+
+    // Assert that hardware states across all 8 sequence stages were set correctly
+    assert(loop_ri.irq_counter == 1);
+    assert(loop_ri.psg_channel_freq[0] == 550);
+    assert(loop_ri.active_sprite_id == 1);
+    assert(loop_ri.is_world_active == false); // Reset by RiEnd
+
     tsfi_riinterface_world_end(&ri);
     assert(ri.is_world_active == false);
 
@@ -65,6 +77,7 @@ int main(void) {
     printf("   ✓ VDC hardware DMA block transfers verified successfully.\n");
     printf("   ✓ Soft body physics Verlet FET discharge integration verified successfully.\n");
     printf("   ✓ Hudson soft periodic timer IRQ interrupts verified successfully.\n");
+    printf("   ✓ End-to-end 8-step RenderMan execution sequence verified successfully.\n");
     printf("=== AUNCIENT RIINTERFACE TESTS COMPLETE (PASS) ===\n");
     return 0;
 }
