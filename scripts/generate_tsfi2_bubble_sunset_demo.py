@@ -314,15 +314,18 @@ def render_sunset_frame(frame, width, height):
                     is_left_edge = (c == 0) or not (row_bits & (1 << (15 - (c - 1))))
                     is_glossy = is_top_edge and is_left_edge
                     
-                    # Dynamic morphological inflation based on physics bounce collisions
+                    # Crisp C64 sprite multicolor overlay shader with black borders and dark inner contours
                     inflation = current_inflation
-                    if dist_sq > (2.0 * inflation):
-                        color = (255, 204, 0)
+                    if dist_sq > (3.0 * inflation):
+                        color = (255, 204, 0)       # Gold inflated core
+                    elif dist_sq > (2.0 * inflation):
+                        color = (80, 20, 0)         # Inner dark shadow contour
                     elif dist_sq > (1.0 * inflation):
-                        color = (255, 102, 0)
-                    else:
+                        # Color cycle middle slope
                         col_step = int(t_val * 15.0 + char_idx * 4 + c) % 8
                         color = (180 + col_step * 8, 40 + col_step * 10, 0)
+                    else:
+                        color = (0, 0, 0)           # Crisp black outer border
                         
                     # Diagonal sheen sweep (from left to right, width of sweep = 12 pixels)
                     sheen_pos = int(t_val * 200.0) % 900 - 200
