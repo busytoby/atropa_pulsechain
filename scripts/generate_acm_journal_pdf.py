@@ -171,6 +171,144 @@ def inline_md_to_html(text):
     res_text = ''.join(new_parts)
     return convert_latex_math_to_html(res_text)
 
+def render_mermaid_flowchart(lines, col_width):
+    import re
+    from reportlab.graphics.shapes import Drawing, Rect, String, Line, Polygon
+    from reportlab.lib import colors
+    
+    nodes = {}
+    links = []
+    
+    for line in lines:
+        line = line.strip()
+        if not line or line.startswith('graph'):
+            continue
+        link_matches = re.findall(r'([A-Za-z0-9_]+)\s*-->\s*(?:\|(.*?)\|\s*)?([A-Za-z0-9_]+)', line)
+        for from_id, label, to_id in link_matches:
+            links.append((from_id, to_id, label))
+            
+        node_defs = re.findall(r'([A-Za-z0-9_]+)(?:\[(.*?)\]|\((.*?)\)|\{(.*?)\})', line)
+        for nid, txt1, txt2, txt3 in node_defs:
+            txt = txt1 or txt2 or txt3
+            nodes[nid] = txt.strip()
+            
+    for from_id, to_id, _ in links:
+        if from_id not in nodes:
+            nodes[from_id] = from_id
+        if to_id not in nodes:
+            nodes[to_id] = to_id
+            
+    if not nodes:
+        return None
+        
+    ordered_nodes = []
+    incoming = {nid: set() for nid in nodes}
+    for from_id, to_id, _ in links:
+        incoming[to_id].add(from_id)
+        
+    sources = [nid for nid in nodes if not incoming[nid]]
+    visited = set()
+    
+    def visit(nid):
+        if nid in visited:
+            return
+        visited.add(nid)
+        ordered_nodes.append(nid)
+        for from_id, to_id, _ in links:
+            if from_id == nid:
+                visit(to_id)
+                
+    for src in sources:
+        visit(src)
+    for nid in nodes:
+        visit(nid)
+        
+    num_nodes = len(ordered_nodes)
+    max_h = 280.0
+    y_step = 55.0
+    if num_nodes * y_step > max_h:
+        y_step = max_h / float(num_nodes)
+        
+    box_w = 125
+    box_h = min(30, int(y_step * 0.6))
+    draw_h = num_nodes * y_step + 15
+    
+    d = Drawing(col_width, draw_h)
+    node_coords = {}
+    
+    for idx, nid in enumerate(ordered_nodes):
+        x = col_width / 2
+        y = draw_h - (idx * y_step + 30)
+        node_coords[nid] = (x, y)
+        
+        rx = x - box_w / 2
+        ry = y - box_h / 2
+        rect = Rect(rx, ry, box_w, box_h, rx=4, ry=4)
+        rect.fillColor = colors.HexColor('#121820')
+        rect.strokeColor = colors.HexColor('#00b4d8')
+        rect.strokeWidth = 1
+        d.add(rect)
+        
+        text_str = nodes.get(nid, nid)
+        if len(text_str) > 22:
+            text_str = text_str[:19] + "..."
+        s = String(x, y - 3, text_str, textAnchor='middle')
+        s.fontName = 'Helvetica'
+        s.fontSize = 7.5
+        s.fillColor = colors.HexColor('#ffffff')
+        d.add(s)
+        
+    for from_id, to_id, label in links:
+        if from_id in node_coords and to_id in node_coords:
+            x1, y1 = node_coords[from_id]
+            x2, y2 = node_coords[to_id]
+            
+            y_start = y1 - box_h / 2
+            y_end = y2 + box_h / 2
+            
+            line = Line(x1, y_start, x1, y_end)
+            line.strokeColor = colors.HexColor('#8899a6')
+            line.strokeWidth = 0.8
+            d.add(line)
+            
+            arrow = Polygon([x1, y_end, x1 - 3, y_end + 5, x1 + 3, y_end + 5])
+            arrow.fillColor = colors.HexColor('#8899a6')
+            arrow.strokeColor = colors.HexColor('#8899a6')
+            d.add(arrow)
+            
+            if label:
+                y_mid = (y_start + y_end) / 2
+                lbl = String(x1 + 6, y_mid - 2, label.strip())
+                lbl.fontName = 'Helvetica-Oblique'
+                lbl.fontSize = 6.5
+                lbl.fillColor = colors.HexColor('#8899a6')
+                d.add(lbl)
+                
+    return d
+
+def render_standard_code_block(code_lines, col_width, body_style):
+    code_text = ''.join(code_lines)
+    import html
+    escaped_code = html.escape(code_text)
+    
+    code_style = ParagraphStyle(
+        'CodeBlock',
+        parent=body_style,
+        fontName='Courier',
+        fontSize=6.5,
+        leading=8,
+        textColor=colors.HexColor('#222222'),
+        backColor=colors.HexColor('#f5f6f8'),
+        borderColor=colors.HexColor('#e1e4e8'),
+        borderWidth=0.5,
+        borderPadding=5,
+        spaceBefore=4,
+        spaceAfter=4,
+    )
+    p = Paragraph(f"<pre>{escaped_code}</pre>", code_style)
+    return p
+
+
 
 def parse_markdown_table(rows, body_style, col_width):
     data = []
@@ -293,6 +431,30 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
         while i < len(lines):
             line = lines[i].strip()
             
+            if line.startswith('```'):
+                is_mermaid = line.startswith('```mermaid')
+                i += 1
+                block_lines = []
+                while i < len(lines) and not lines[i].strip().startswith('```'):
+                    block_lines.append(lines[i])
+                    i += 1
+                if i < len(lines):
+                    i += 1
+                
+                if is_mermaid:
+                    m_flowable = render_mermaid_flowchart(block_lines, col_width)
+                    if m_flowable:
+                        art_flowables.append(Spacer(1, 4))
+                        art_flowables.append(m_flowable)
+                        art_flowables.append(Spacer(1, 4))
+                else:
+                    c_flowable = render_standard_code_block(block_lines, col_width, body_style)
+                    if c_flowable:
+                        art_flowables.append(Spacer(1, 4))
+                        art_flowables.append(c_flowable)
+                        art_flowables.append(Spacer(1, 4))
+                continue
+                
             if line.startswith('|'):
                 table_lines = []
                 while i < len(lines) and lines[i].strip().startswith('|'):
@@ -307,7 +469,7 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                 
             if line:
                 p_text = []
-                while i < len(lines) and lines[i].strip() and not lines[i].strip().startswith('|'):
+                while i < len(lines) and lines[i].strip() and not lines[i].strip().startswith('|') and not lines[i].strip().startswith('```'):
                     p_text.append(lines[i].strip())
                     i += 1
                 full_p = ' '.join(p_text)
