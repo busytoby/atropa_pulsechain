@@ -38,5 +38,6 @@ void tsfi_texgen_init(void);
 double tsfi_texgen_sin(double angle);
 double tsfi_texgen_cos(double angle);
 void tsfi_texgen_render(uint8_t *output_rgba, int width, int height, double phase, int mode, const tsfi_texgen_params_t *params);
+void tsfi_texgen_sample(const uint8_t *texture_data, int tex_width, int tex_height, double u, double v, uint8_t *r, uint8_t *g, uint8_t *b);
 
 #endif

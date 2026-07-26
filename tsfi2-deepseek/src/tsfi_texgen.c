@@ -433,3 +433,21 @@ void tsfi_texgen_render(uint8_t *output_rgba, int width, int height, double phas
     free(warped_g);
     free(warped_b);
 }
+
+void tsfi_texgen_sample(const uint8_t *texture_data, int tex_width, int tex_height, double u, double v, uint8_t *r, uint8_t *g, uint8_t *b) {
+    if (!texture_data || tex_width <= 0 || tex_height <= 0 || !r || !g || !b) return;
+
+    // Wrap UV coordinates periodic modulo constraints
+    double u_wrapped = u - floor(u);
+    double v_wrapped = v - floor(v);
+
+    int px = (int)(u_wrapped * tex_width) % tex_width;
+    int py = (int)(v_wrapped * tex_height) % tex_height;
+    if (px < 0) px += tex_width;
+    if (py < 0) py += tex_height;
+
+    int index = (py * tex_width + px) * 4; // 4 bytes per pixel (RGBA)
+    *r = texture_data[index];
+    *g = texture_data[index + 1];
+    *b = texture_data[index + 2];
+}
