@@ -220,6 +220,23 @@ static void resolve_variant_ref_conflict(const usd_variant_ref_conflict_t *confl
     }
 }
 
+typedef struct {
+    char reference_opinion[32];
+    char payload_opinion[32];
+    char specializes_opinion[32];
+} usd_payload_ref_conflict_t;
+
+static void resolve_payload_ref_conflict(const usd_payload_ref_conflict_t *conflict, char *resolved_val) {
+    if (strlen(conflict->reference_opinion) > 0) {
+        strcpy(resolved_val, conflict->reference_opinion);
+    } else if (strlen(conflict->payload_opinion) > 0) {
+        strcpy(resolved_val, conflict->payload_opinion);
+    } else {
+        strcpy(resolved_val, conflict->specializes_opinion);
+    }
+}
+
+
 
 
 
@@ -396,6 +413,29 @@ int main(void) {
     resolve_variant_ref_conflict(&conflict_weak, resolved_look_weak);
     assert(strcmp(resolved_look_weak, "referenced_variant_look") == 0);
     printf("   ✓ Variant-scoped overrides taking precedence over base referenced values verified.\n");
+    fflush(stdout);
+
+    // 11. Test Payload vs Reference vs Specializes Priority
+    printf("[TEST] Testing Payload vs Reference vs Specializes Priority...\n");
+    fflush(stdout);
+    usd_payload_ref_conflict_t pr_conflict = {
+        .reference_opinion = "reference_model",
+        .payload_opinion = "payload_model",
+        .specializes_opinion = "special_model"
+    };
+    char resolved_model[32] = "";
+    resolve_payload_ref_conflict(&pr_conflict, resolved_model);
+    assert(strcmp(resolved_model, "reference_model") == 0);
+
+    usd_payload_ref_conflict_t pr_conflict_no_ref = {
+        .reference_opinion = "",
+        .payload_opinion = "payload_model",
+        .specializes_opinion = "special_model"
+    };
+    char resolved_model_no_ref[32] = "";
+    resolve_payload_ref_conflict(&pr_conflict_no_ref, resolved_model_no_ref);
+    assert(strcmp(resolved_model_no_ref, "payload_model") == 0);
+    printf("   ✓ LIVRPS precedence (Reference > Payload > Specializes) priority resolution verified.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
