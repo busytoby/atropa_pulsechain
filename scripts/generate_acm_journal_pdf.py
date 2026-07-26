@@ -157,7 +157,7 @@ def inline_md_to_html(text):
     new_parts = []
     for idx, part in enumerate(parts):
         if idx % 2 == 1:
-            new_parts.append(f'<font face="Courier">{part}</font>')
+            new_parts.append(f'<font face="Courier" color="#0077b6"><b>{part}</b></font>')
         else:
             if part.count('**') % 2 == 0:
                 bold_parts = part.split('**')
@@ -319,11 +319,11 @@ def render_standard_code_block(code_lines, col_width, body_style):
         fontName='Courier',
         fontSize=font_size,
         leading=leading,
-        textColor=colors.HexColor('#222222'),
-        backColor=colors.HexColor('#f5f6f8'),
-        borderColor=colors.HexColor('#e1e4e8'),
+        textColor=colors.HexColor('#f8f9fa'),
+        backColor=colors.HexColor('#121820'),
+        borderColor=colors.HexColor('#00b4d8'),
         borderWidth=0.5,
-        borderPadding=4,
+        borderPadding=5,
         spaceBefore=4,
         spaceAfter=4,
         leftIndent=8,
