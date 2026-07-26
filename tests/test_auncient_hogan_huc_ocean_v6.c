@@ -124,11 +124,15 @@ static void synthesize_texture_grid_rgb(huc_ocean_system_t *huc, double phase, i
         for (int x = 0; x < GRID_SIZE; x++) {
             double p_val = 0.0;
             if (mode == 0) {
-                p_val = 127.5 + 42.5 * fast_sin(x * 1.0 + phase) +
-                              42.5 * fast_sin(y * 1.5 - phase) +
-                              42.5 * fast_sin((x + y) * 0.8 + phase);
+                // Conspiracy Directional Plasma using dynamic angle modulations
+                double angle1 = phase * 0.1;
+                double angle2 = phase * 0.25;
+                p_val = 127.5 + 63.75 * fast_sin(x * fast_cos(angle1) + y * fast_sin(angle1)) +
+                              63.75 * fast_cos(x * fast_sin(angle2) - y * fast_cos(angle2));
             } else if (mode == 1) {
-                p_val = 127.5 + 63.75 * fast_sin(x * 1.2 + phase) + 63.75 * fast_cos(y * 1.2 + phase * 0.8);
+                // Cross-directional modulated Sine Plasma
+                double angle = phase * 0.15;
+                p_val = 127.5 + 63.75 * fast_sin((x + y) * fast_cos(angle)) + 63.75 * fast_cos((x - y) * fast_sin(angle));
             } else if (mode == 2) {
                 double f_val = 0.0;
                 f_val += noise_2d((double)x * 0.25, (double)y * 0.25, params->seed) * 1.0;
@@ -200,10 +204,20 @@ static void synthesize_texture_grid_rgb(huc_ocean_system_t *huc, double phase, i
             layer_twirl[y][x].g = w00 * layer0[y0][x0].g + w10 * layer0[y0][x1].g + w01 * layer0[y1][x0].g + w11 * layer0[y1][x1].g;
             layer_twirl[y][x].b = w00 * layer0[y0][x0].b + w10 * layer0[y0][x1].b + w01 * layer0[y1][x0].b + w11 * layer0[y1][x1].b;
             
-            // Multiply Blend Mode with Layer 1
-            layer_twirl[y][x].r = (uint8_t)((uint32_t)layer_twirl[y][x].r * layer1[y][x].r / 255U);
-            layer_twirl[y][x].g = (uint8_t)((uint32_t)layer_twirl[y][x].g * layer1[y][x].g / 255U);
-            layer_twirl[y][x].b = (uint8_t)((uint32_t)layer_twirl[y][x].b * layer1[y][x].b / 255U);
+            // Dynamic Blending Modes: Multiply (1) or Difference (2)
+            if (params->blend_mode == 1) {
+                layer_twirl[y][x].r = (uint8_t)((uint32_t)layer_twirl[y][x].r * layer1[y][x].r / 255U);
+                layer_twirl[y][x].g = (uint8_t)((uint32_t)layer_twirl[y][x].g * layer1[y][x].g / 255U);
+                layer_twirl[y][x].b = (uint8_t)((uint32_t)layer_twirl[y][x].b * layer1[y][x].b / 255U);
+            } else {
+                // Difference Blend Mode: abs(A - B)
+                int dr = (int)layer_twirl[y][x].r - (int)layer1[y][x].r;
+                int dg = (int)layer_twirl[y][x].g - (int)layer1[y][x].g;
+                int db = (int)layer_twirl[y][x].b - (int)layer1[y][x].b;
+                layer_twirl[y][x].r = (uint8_t)(dr < 0 ? -dr : dr);
+                layer_twirl[y][x].g = (uint8_t)(dg < 0 ? -dg : dg);
+                layer_twirl[y][x].b = (uint8_t)(db < 0 ? -db : db);
+            }
         }
     }
     
@@ -379,6 +393,9 @@ static void process_tape_ingest_v6(huc_ocean_system_t *huc,
 
         double lfo_mod = fast_sin(huc->transaction_count * 0.8) * 50.0;
         huc->psg_frequency = (uint32_t)(261.0 + (huc->transaction_count * 20.0) + lfo_mod);
+
+        // Dynamically alternate blend modes between Multiply (1) and Difference (2)
+        params.blend_mode = (lane % 2 == 0) ? 1U : 2U;
 
         // Update procedural visualizers
         synthesize_texture_grid_rgb(huc, huc->transaction_count * params.phase_scale, lane % 4, &params);
