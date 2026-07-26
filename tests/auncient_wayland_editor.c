@@ -350,24 +350,30 @@ static void redraw_screen(void) {
     wl_buffers[current_buffer_idx] = create_shm_buffer(win_width, win_height, &pixels);
     if (!wl_buffers[current_buffer_idx] || !pixels) return;
     
-    // Background raster scanline coloring loop
-    for (int y = 0; y < win_height; y++) {
-        if (y >= 100 && y < 550 && (y % 24) == 0) {
-            for (int x = 0; x < win_width; x++) {
-                pixels[y * win_width + x] = 0xFF000000;
-            }
-            continue;
-        }
-
-        uint32_t bg_color = 0xFF221100; // Warm dark base
+    // C64-style IMAGEADDR_BACKUP restoration system (Background cache)
+    static uint32_t *bg_cache = NULL;
+    static int bg_cache_w = 0;
+    static int bg_cache_h = 0;
+    
+    if (bg_cache == NULL || bg_cache_w != win_width || bg_cache_h != win_height) {
+        if (bg_cache) free(bg_cache);
+        bg_cache = malloc(win_width * win_height * sizeof(uint32_t));
+        bg_cache_w = win_width;
+        bg_cache_h = win_height;
         
-        if (loader_flash_time > 0.0f && (y < (int)vic_d012 * 3 || y > win_height - 100)) {
-            int rand_color_idx = (int)(y * 0.15f + retro_time * 800.0f + (rand() % 4)) & 0x0F;
-            bg_color = color_cycle_lut[rand_color_idx];
-        } else {
-            // Calm, normal sunset gradient based on vertical coordinate y
+        // Render sunset backdrop once to cache
+        for (int y = 0; y < win_height; y++) {
+            if (y >= 100 && y < 550 && (y % 24) == 0) {
+                for (int x = 0; x < win_width; x++) {
+                    bg_cache[y * win_width + x] = 0xFF000000;
+                }
+                continue;
+            }
+            
+            uint32_t bg_color = 0xFF221100;
             float factor = (float)y / (float)win_height;
             uint8_t r_val, g_val, b_val;
+            
             if (factor < 0.6f) {
                 float t = factor / 0.6f;
                 r_val = (uint8_t)(0x1A * (1.0f - t) + 0xFF * t);
@@ -380,12 +386,15 @@ static void redraw_screen(void) {
                 b_val = (uint8_t)(0x00 * (1.0f - t) + 0x00 * t);
             }
             bg_color = (0xFF << 24) | (r_val << 16) | (g_val << 8) | b_val;
-        }
-        
-        for (int x = 0; x < win_width; x++) {
-            pixels[y * win_width + x] = bg_color;
+            
+            for (int x = 0; x < win_width; x++) {
+                bg_cache[y * win_width + x] = bg_color;
+            }
         }
     }
+    
+    // Copy the background cache directly (IMAGEADDR_BACKUP restore)
+    memcpy(pixels, bg_cache, win_width * win_height * sizeof(uint32_t));
     
     // Draw 2D scrolling background stars (Parallax background depth layer)
     for (int i = 0; i < 30; i++) {
@@ -622,6 +631,13 @@ static void redraw_screen(void) {
                     } else if (dist_sq > 1) {
                         // Intermediate slope: Orange
                         pixel_color = 0xFFFF6600;
+                    }
+                    
+                    // Diagonal sheen sweep (from left to right, width of sweep = 16 pixels)
+                    int sheen_pos = ((int)(retro_time * 200.0f)) % 900 - 200;
+                    int dist_to_sheen = abs((char_idx * char_spacing + c * 4 + r * 4) - sheen_pos);
+                    if (dist_to_sheen < 12) {
+                        pixel_color = 0xFFFFFFFF; // Pure white sheen glow
                     }
                     
                     for (int sy = 0; sy < 4; sy++) {
