@@ -71,6 +71,53 @@ def generate_soundtrack(wav_path, duration=22, sample_rate=44100):
             
         wav_file.writeframes(b''.join(audio_data))
 
+def draw_cash_cow(draw, width, time):
+    font = ImageFont.load_default()
+    text = "$$ CASH COW $$"
+    
+    # Calculate text size using bounding box
+    bbox = draw.textbbox((0, 0), text, font=font)
+    text_w = bbox[2] - bbox[0]
+    text_h = bbox[3] - bbox[1]
+    
+    # Render text onto small image and upscale for retro pixel block look
+    small_w = text_w + 10
+    small_h = text_h + 4
+    small_img = Image.new("L", (small_w, small_h), 0)
+    small_draw = ImageDraw.Draw(small_img)
+    small_draw.text((5, 2), text, fill=255, font=font)
+    
+    scale = 3
+    big_w = small_w * scale
+    big_h = small_h * scale
+    big_img = small_img.resize((big_w, big_h), Image.Resampling.NEAREST)
+    
+    start_x = (width - big_w) // 2
+    start_y = 20
+    
+    for y in range(big_h):
+        for x in range(big_w):
+            val = big_img.getpixel((x, y))
+            if val > 128:
+                px = start_x + x
+                py = start_y + y
+                ratio = x / float(big_w)
+                
+                # Left or right "$$" gets glossy gold shading
+                if ratio < 0.18 or ratio > 0.82:
+                    glow = math.sin((x + y) * 0.2 - time * 5.0) * 0.5 + 0.5
+                    r_g = int(255 * (0.8 + 0.2 * glow))
+                    g_g = int(215 * (0.8 + 0.2 * glow))
+                    b_g = int(50 * (0.8 + 0.2 * glow))
+                    draw.point((px, py), fill=(r_g, g_g, b_g))
+                else:
+                    # "CASH COW" gets black and white cow spots
+                    spot = math.sin(x * 0.25) * math.cos(y * 0.25) + math.sin(x * 0.1 + y * 0.15)
+                    if spot > 0.1:
+                        draw.point((px, py), fill=(255, 255, 255))
+                    else:
+                        draw.point((px, py), fill=(0, 0, 0))
+
 def draw_retro_char(draw, char, x, y, size, color):
     # Draw simple retro styled grid-like characters
     # to emulate the classic remorse ANSI block style
@@ -251,6 +298,9 @@ def main():
         # Draw diagonal grid lines for retro remorse scene backdrop
         for grid_idx in range(-height, width, 40):
             draw.line([(grid_idx, 0), (grid_idx + height, height)], fill=(20, 15, 35), width=1)
+
+        # Draw "$$ CASH COW $$" logo header at the top
+        draw_cash_cow(draw, width, time)
 
         # Interpolate a smooth curve connecting the letters
         curve_points = []
