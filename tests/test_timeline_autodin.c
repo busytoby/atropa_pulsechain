@@ -74,6 +74,29 @@ int main(void) {
     assert(account.balance_saat == 1250000); // 1.0M restored balance + 0.25M payout
     printf("   ✓ Timeline payroll salary distribution verified.\n");
 
+    // 8. Test Account Transfer and double-entry auditing
+    HoganAccount recipient_acc;
+    uint8_t rec_dna[4] = {0xAA, 0xBB, 0xCC, 0xDD};
+    auncient_hogan_register_account(888, rec_dna, 4, &recipient_acc);
+    
+    // Attempt high-value transfer with clearance level 1 (should fail)
+    bool unauth_tx = auncient_hogan_transfer(&account, &recipient_acc, 200000);
+    assert(!unauth_tx);
+    
+    // Escalate clearance and transfer successfully
+    account.clearance_level = 2;
+    bool auth_tx = auncient_hogan_transfer(&account, &recipient_acc, 250000);
+    assert(auth_tx);
+    assert(account.balance_saat == 1000000); // 1.25M - 250k
+    assert(recipient_acc.balance_saat == 1250000); // 1.0M + 250k
+    printf("   ✓ Double-entry transfer and clearance authorizations verified.\n");
+
+    // Verify ledger audit
+    HoganAccount ledger[2] = { account, recipient_acc };
+    bool audit_ok = auncient_hogan_audit_ledger(ledger, 2, 2250000); // 1.0M + 1.25M
+    assert(audit_ok);
+    printf("   ✓ Ledger auditing and checks verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");

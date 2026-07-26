@@ -48,6 +48,12 @@ void auncient_timeline_rollback(TimelineEvent *events, int count, float target_t
 // Distributes salary payouts to a Hogan account holder
 void auncient_timeline_payroll_payout(HoganAccount *account, uint32_t salary_amount);
 
+// Transfers funds between two Hogan accounts with double-entry safety checks
+bool auncient_hogan_transfer(HoganAccount *sender, HoganAccount *recipient, uint32_t amount);
+
+// Audits the ledger state to ensure total Saat matches the expected aggregate balance
+bool auncient_hogan_audit_ledger(const HoganAccount *accounts, int count, uint64_t expected_total_saat);
+
 #ifdef __cplusplus
 }
 #endif

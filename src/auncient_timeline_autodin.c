@@ -93,3 +93,33 @@ void auncient_timeline_payroll_payout(HoganAccount *account, uint32_t salary_amo
     // Distribute salary directly into the registered Hogan account
     auncient_hogan_deposit(account, salary_amount);
 }
+
+bool auncient_hogan_transfer(HoganAccount *sender, HoganAccount *recipient, uint32_t amount) {
+    if (!sender || !recipient || !sender->is_active || !recipient->is_active) return false;
+
+    // Apply authorization barrier based on clearance level for high-value transactions
+    if (amount > 100000 && sender->clearance_level < 2) {
+        return false; // Unauthorized
+    }
+
+    // Execute double-entry transfer
+    if (auncient_hogan_withdraw(sender, amount)) {
+        auncient_hogan_deposit(recipient, amount);
+        return true;
+    }
+
+    return false;
+}
+
+bool auncient_hogan_audit_ledger(const HoganAccount *accounts, int count, uint64_t expected_total_saat) {
+    if (!accounts || count <= 0) return false;
+
+    uint64_t total = 0;
+    for (int i = 0; i < count; i++) {
+        if (accounts[i].is_active) {
+            total += accounts[i].balance_saat;
+        }
+    }
+
+    return (total == expected_total_saat);
+}
