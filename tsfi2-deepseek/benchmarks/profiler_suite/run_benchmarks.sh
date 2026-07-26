@@ -92,6 +92,7 @@ make tests/test_shm_ipc_cooperative > /dev/null 2>&1 &
 make tests/test_shm_kermit_cooperative > /dev/null 2>&1 &
 make tests/test_shm_ring_cooperative > /dev/null 2>&1 &
 make benchmarks/profiler_suite/bench_strategy_vm > /dev/null 2>&1 &
+gcc -Wall -Wextra -Werror -std=c11 -O3 "${WORKSPACE_DIR}/../benchmarks/bench_usd_codegen.c" -o "${WORKSPACE_DIR}/../benchmarks/bench_usd_codegen" &
 wait
 
 # 2. Run Wavelet Arena Aho-Corasick Benchmark
@@ -153,6 +154,12 @@ echo "[RUN] LogOS Agent Kernel Latency Guard Benchmark..."
 # 16. Run Strategy VM Execution Benchmark
 echo "[RUN] Strategy VM Execution Benchmark..."
 ./benchmarks/profiler_suite/bench_strategy_vm > "${TMP_DIR}/bench_strategy_vm.log"
+
+# 17. Run Custom USD Codegen Benchmark
+echo "[RUN] Custom USD Codegen Benchmark..."
+"${WORKSPACE_DIR}/../benchmarks/bench_usd_codegen" > "${TMP_DIR}/bench_usd_codegen.log"
+
+
 
 ./tests/test_datalog_unification > /dev/null 2>&1
 ./tests/test_algebraic_unification > /dev/null 2>&1
@@ -266,6 +273,8 @@ GRAPH_PROP=$(grep -oP 'AVX-512 Weight Propagation Latency: \K[0-9\.]+' "${TMP_DI
 GRAPH_PRUNE=$(grep -oP 'Decision Tree Edge Pruning Latency: \K[0-9\.]+' "${TMP_DIR}/bench_graph.log" || echo "0.0")
 GRAPH_NTM=$(grep -oP 'NTM Path Optimization Latency: \K[0-9\.]+' "${TMP_DIR}/bench_graph.log" || echo "0.0")
 
+USD_CODEGEN_LATENCY=$(grep -oP 'Dynamic schema parse & codegen latency: \K[0-9\.]+' "${TMP_DIR}/bench_usd_codegen.log" || echo "0.0")
+
 # Read Vulkan details if JSON file exists (which was written by vulkan teddy bear benchmark run)
 VK_JSON="${PROFILER_DIR}/benchmark_results.json"
 if [ -f "${VK_JSON}" ]; then
@@ -339,6 +348,9 @@ cat <<EOF > "${OUTPUT_JSON}"
     "propagate_latency_ns": ${GRAPH_PROP},
     "prune_latency_ns": ${GRAPH_PRUNE},
     "ntm_latency_ns": ${GRAPH_NTM}
+  },
+  "usd_codegen": {
+    "latency_us": ${USD_CODEGEN_LATENCY}
   }
 }
 EOF

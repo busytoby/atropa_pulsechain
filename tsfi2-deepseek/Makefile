@@ -291,12 +291,11 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                   $(OBJ_DIR)/tsfi_autodin_cumulative_telemetry.o \
                   $(OBJ_DIR)/tsfi_autodin_cumulative_gateway.o \
                   $(OBJ_DIR)/tsfi_autodin_cumulative_quadtree.o \
-                  $(OBJ_DIR)/tsfi_autodin_cumulative_winchester.o \
-                  $(OBJ_DIR)/tsfi_autodin_cumulative_contract_resolver.o \
-                  $(OBJ_DIR)/tsfi_autodin_cumulative_contract_comprehensive.o \
-                  $(OBJ_DIR)/tsfi_vulkan_guide_engine.o \
-                  $(OBJ_DIR)/tsfi_vulkan_guide_app.o \
-                  $(OBJ_DIR)/tsfi_parc_dahm_lock.o
+                   $(OBJ_DIR)/tsfi_autodin_cumulative_winchester.o \
+                   $(OBJ_DIR)/tsfi_autodin_cumulative_contract_resolver.o \
+                   $(OBJ_DIR)/tsfi_autodin_cumulative_contract_comprehensive.o \
+                   $(OBJ_DIR)/tsfi_parc_dahm_lock.o \
+                   $(OBJ_DIR)/tsfi_paint.o $(OBJ_DIR)/tsfi_dom.o
 
 
 
@@ -307,7 +306,8 @@ VULKAN_PLUGIN_OBJS = $(OBJ_DIR)/vulkan_init.o $(OBJ_DIR)/vulkan_main.o $(OBJ_DIR
                      $(OBJ_DIR)/tsfi_input.o $(OBJ_DIR)/window_rendering.o \
                      $(OBJ_DIR)/vulkan_logic.o $(OBJ_DIR)/vulkan_xdg.o $(OBJ_DIR)/vulkan_dmabuf.o \
                      $(OBJ_DIR)/xdg-shell-protocol.o $(OBJ_DIR)/linux-dmabuf-v1-protocol.o \
-                     $(OBJ_DIR)/wlr-layer-shell-unstable-v1-protocol.o
+                     $(OBJ_DIR)/wlr-layer-shell-unstable-v1-protocol.o \
+                     $(OBJ_DIR)/tsfi_vulkan_guide_engine.o $(OBJ_DIR)/tsfi_vulkan_guide_app.o
 
 .PHONY: all clean test
 
@@ -321,7 +321,7 @@ all: tsfi2 bin/tsfi_paint_app bin/tsfi_mcp_server bin/tsfi_mcp_worker bin/tsfi_s
 tsfi2: $(OBJ_DIR)/main.o $(CORE_OBJS) $(OBJ_DIR)/tsfi_paint.o $(OBJ_DIR)/tsfi_dom.o $(VULKAN_PLUGIN_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-libtsfi2.so: $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
+libtsfi2.so: $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS) $(OBJ_DIR)/tsfi_paint.o $(OBJ_DIR)/tsfi_dom.o
 	$(CC) $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
 
 bin/test_genesis_standalone: tests/test_genesis_standard_cell.c $(CORE_OBJS) $(OBJ_DIR)/Genesis_rtl.o $(OBJ_DIR)/Dai_rtl.o $(OBJ_DIR)/vulkan_init.o
@@ -719,7 +719,7 @@ bin/test_active_window_ocr: tests/test_active_window_ocr.c $(CORE_OBJS) $(VULKAN
 bin/test_aerial_llm_bridge: tests/test_aerial_llm_bridge.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-bin/test_vulkan_teddy: tests/test_vulkan_teddy.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS) | $(BIN_DIR)
+bin/test_vulkan_teddy: tests/test_vulkan_teddy.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS) $(OBJ_DIR)/tsfi_paint.o $(OBJ_DIR)/tsfi_dom.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 bin/test_vulkan_terminal: tests/test_vulkan_terminal.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)

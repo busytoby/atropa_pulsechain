@@ -292,7 +292,8 @@ bool tsfi_pulse_rpc_send_raw_transaction(const char *signed_tx_hex, char *out_tx
     return result;
 }
 
-bool tsfi_pulse_rpc_send_wmq_transaction(const char *to_address, const char *from_address, const char *data_hex) {
+bool tsfi_pulse_rpc_send_wmq_transaction(const char *to_address, const char *data_hex) {
+    const char *from_address = "0xD32c39fEE49391c7952d1b30b15921b0D3b42E69";
     char payload[2048];
     snprintf(payload, sizeof(payload),
              "{\"jsonrpc\":\"2.0\",\"method\":\"eth_sendTransaction\",\"params\":[{"
@@ -442,7 +443,7 @@ void tsfi_thunk_publish_mq(const char *cmd) {
         sprintf(tx_data + 10 + i * 2, "%02x", data_bytes[i]);
     }
     
-    bool ok = tsfi_pulse_rpc_send_wmq_transaction(wmq_addr_str, "0xD32c39fEE49391c7952d1b30b15921b0D3b42E69", tx_data);
+    bool ok = tsfi_pulse_rpc_send_wmq_transaction(wmq_addr_str, tx_data);
     printf("[THUNK_MQ] Event published to Auncient WinchesterMQ: %s (status: %s)\n", processed, ok ? "SUCCESS" : "FAILED");
     forward_to_mcp_server(processed);
 }

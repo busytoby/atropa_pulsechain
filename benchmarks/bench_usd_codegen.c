@@ -3,6 +3,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <string.h>
+#include <unistd.h>
 
 static double get_time_us(void) {
     struct timeval tv;
@@ -11,6 +12,14 @@ static double get_time_us(void) {
 }
 
 int main(void) {
+    char cwd[1024];
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        if (strstr(cwd, "tsfi2-deepseek") != NULL) {
+            if (chdir("..") != 0) {
+                // Ignore failure
+            }
+        }
+    }
     printf("=== RUNNING AUNCIENT USD CODEGEN & PARSER BENCHMARK ===\n");
     
     // 1. Measure Schema Generation Compiler run time

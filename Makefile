@@ -85,7 +85,7 @@ test-unit:
 
 sdk-build:
 	mkdir -p dist
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -c src/auncient_sdk.c -o src/auncient_sdk.o
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -fPIC -Iinc -c src/auncient_sdk.c -o src/auncient_sdk.o
 	ar rcs libauncient_sdk.a src/auncient_sdk.o
 
 sdk-minify: sdk-build

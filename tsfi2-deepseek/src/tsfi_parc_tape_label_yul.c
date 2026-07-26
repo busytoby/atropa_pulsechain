@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include "tsfi_parc_tape_label_yul.h"
 
+int tsfi_tape_label_apply_seal(uint8_t *header_buf);
+
 // Yul DDL Offset Resolvers (matching Yul TapeLabelDDL contract layout)
 static int yul_get_label_offset(int label_type, int field_id) {
     switch (label_type) {
