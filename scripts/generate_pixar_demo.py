@@ -123,69 +123,114 @@ def main():
     
     # 1. Torus Mesh geometry (UsdGeomMesh)
     num_u, num_v = 16, 16
-    R, r = 75.0, 28.0
+    R, r = 70.0, 24.0
     
-    # 2. Simulated FET lattice nodes (UsdShade)
-    fet_grid_size = 6
+    # 2. B-spline curve control points (UsdGeomCurves)
+    curve_controls = [
+        [-120.0, 80.0, -50.0],
+        [-60.0, -80.0, 0.0],
+        [60.0, 100.0, 50.0],
+        [120.0, -80.0, -50.0],
+        [160.0, 60.0, 20.0]
+    ]
+    
+    # Cubic B-spline interpolation helper
+    def interpolate_b_spline(t):
+        num_segments = len(curve_controls) - 3
+        scaled_t = t * num_segments
+        seg_idx = int(math.floor(scaled_t))
+        if seg_idx >= num_segments:
+            seg_idx = num_segments - 1
+        local_t = scaled_t - seg_idx
+        t2 = local_t * local_t
+        t3 = t2 * local_t
+        
+        p0 = curve_controls[seg_idx]
+        p1 = curve_controls[seg_idx + 1]
+        p2 = curve_controls[seg_idx + 2]
+        p3 = curve_controls[seg_idx + 3]
+        
+        b0 = (-t3 + 3.0*t2 - 3.0*local_t + 1.0) / 6.0
+        b1 = (3.0*t3 - 6.0*t2 + 4.0) / 6.0
+        b2 = (-3.0*t3 + 3.0*t2 + 3.0*local_t + 1.0) / 6.0
+        b3 = t3 / 6.0
+        
+        return [
+            b0*p0[0] + b1*p1[0] + b2*p2[0] + b3*p3[0],
+            b0*p0[1] + b1*p1[1] + b2*p2[1] + b3*p3[1],
+            b0*p0[2] + b1*p1[2] + b2*p2[2] + b3*p3[2]
+        ]
+        
+    # 3. Particle System coordinates and velocities (UsdGeomPoints)
+    num_particles = 12
+    particles = []
+    for i in range(num_particles):
+        angle = i * 2.0 * math.pi / num_particles
+        particles.append({
+            "pos": [100.0 * math.cos(angle), 120.0 * math.sin(angle), 50.0 + i * 10.0],
+            "vel": [-15.0 * math.sin(angle), 15.0 * math.cos(angle), -8.0],
+            "width": 3.0 + (i % 3) * 1.5
+        })
+        
+    # 4. Simulated FET lattice nodes (UsdShade)
+    fet_grid_size = 5
     fet_nodes = []
     for row in range(fet_grid_size):
         for col in range(fet_grid_size):
             fet_nodes.append([
-                (col - 2.5) * 20.0,
-                -75.0, # Placed below the torus
-                (row - 2.5) * 20.0
+                (col - 2.0) * 24.0,
+                -70.0,
+                (row - 2.0) * 24.0
             ])
             
     print("[PixarDemo] Rendering 3D viewport cinematic simulation video...")
     for frame in range(total_frames):
         time = frame / float(FPS)
         
-        # Draw all elements directly onto a clean solid dark-mode canvas to save compile time
+        # Solid dark-mode canvas background
         img = Image.new("RGB", (width, height), (12, 14, 20))
         draw = ImageDraw.Draw(img)
         
-        # Subtle coordinate grid lines
+        # Grid blueprint overlay
         for x in range(0, width, 40):
             draw.line([x, 0, x, height], fill=(18, 20, 28), width=1)
         for y in range(0, height, 40):
             draw.line([0, y, width, y], fill=(18, 20, 28), width=1)
             
-        # Outer border
+        # Outer viewport border
         draw.rectangle([10, 10, width - 10, height - 10], outline=(38, 42, 60), width=2)
         
         # HUD Panel headers
         draw.rectangle([20, 20, 620, 70], fill=(20, 22, 34))
-        draw.text((35, 33), "AUNCIENT DYSNOMIA VM: USD CINEMATIC RENDER DEMO", fill=(255, 255, 255))
+        draw.text((35, 33), "AUNCIENT DYSNOMIA VM: INTEGRATED USD VIEWPORT SIMULATOR", fill=(255, 255, 255))
         
         # Camera variables (GeomCamera)
-        cam_rot_y = time * 0.65
-        cam_rot_x = 0.35 + 0.12 * math.sin(time * 0.5)
-        cam_zoom = 280.0 + 90.0 * math.sin(time * 0.35)
+        cam_rot_y = time * 0.55
+        cam_rot_x = 0.4 + 0.1 * math.sin(time * 0.4)
+        cam_zoom = 290.0 + 70.0 * math.sin(time * 0.3)
         
         draw.text((30, 90), f"Camera Path: /auncient/camera/main", fill=(130, 200, 255))
-        draw.text((30, 115), f"Focal Length: {int(45 + 25*math.sin(time))}mm", fill=(200, 200, 220))
-        draw.text((30, 140), f"Clipping: [0.1, 1000.0]", fill=(200, 200, 220))
+        draw.text((30, 115), f"Focal Length: {int(48 + 22*math.sin(time))}mm", fill=(200, 200, 220))
+        
+        # Active LuxLight position (LuxLight)
+        light_pos = [
+            120.0 * math.cos(time * 1.5),
+            120.0 * math.sin(time * 1.5),
+            100.0
+        ]
+        draw.text((30, 150), f"LuxLight Path: /auncient/light/sunlight", fill=(130, 200, 255))
+        draw.text((30, 175), f"Intensity: 2.0 (Exposure: 3.0)", fill=(200, 200, 220))
         
         # Material parameters (UsdShade)
         charge_level = 0.5 + 0.5 * math.sin(time * 2.0 * math.pi * (BPM / 120.0))
         roughness = 1.0 - charge_level
         metallic = charge_level
         
-        draw.text((30, 180), f"Material: gold_foil_interface", fill=(130, 200, 255))
-        draw.text((30, 205), f"Roughness: {roughness:.3f}", fill=(200, 200, 220))
-        draw.text((30, 230), f"Metallic: {metallic:.3f}", fill=(200, 200, 220))
+        draw.text((30, 210), f"Material: gold_foil_interface", fill=(130, 200, 255))
+        draw.text((30, 235), f"Roughness: {roughness:.3f}", fill=(200, 200, 220))
+        draw.text((30, 260), f"Metallic: {metallic:.3f}", fill=(200, 200, 220))
         
-        # Directional light source orbiting in 3D
-        light_dir = [
-            math.cos(time * 1.5),
-            math.sin(time * 1.5),
-            0.5
-        ]
-        # Normalize light vector
-        l_len = math.sqrt(light_dir[0]**2 + light_dir[1]**2 + light_dir[2]**2)
-        light_dir = [light_dir[0]/l_len, light_dir[1]/l_len, light_dir[2]/l_len]
-        
-        # Project 3D point function
+        # 3D projection function
         def project_pt(pt):
             # Rotate Y
             x1 = pt[0] * math.cos(cam_rot_y) - pt[2] * math.sin(cam_rot_y)
@@ -199,14 +244,40 @@ def main():
             cy = 280 + int(y2 * scale)
             return cx, cy, z2
 
-        # 3. Draw deforming FET lattice nodes (UsdShade)
+        # 5. Draw background B-spline paths (UsdGeomCurves)
+        curve_pts = []
+        for step_c in range(50):
+            tc = step_c / 49.0
+            pt = interpolate_b_spline(tc)
+            cx, cy, _ = project_pt(pt)
+            curve_pts.append((cx, cy))
+        draw.line(curve_pts, fill=(100, 100, 255, 120), width=3)
+        
+        # 6. Update and draw falling particle emitters (UsdGeomPoints)
+        for p in particles:
+            # Integrate physics (gravitational acceleration along Z axis)
+            p["vel"][2] -= 9.8 * 0.033 # delta_time = 1/30
+            p["pos"][0] += p["vel"][0] * 0.033
+            p["pos"][1] += p["vel"][1] * 0.033
+            p["pos"][2] += p["vel"][2] * 0.033
+            
+            # Wrap bounds
+            if p["pos"][2] < -120.0:
+                p["pos"][2] = 120.0
+                p["vel"][2] = -8.0
+                
+            cx, cy, _ = project_pt(p["pos"])
+            w = int(p["width"])
+            draw.ellipse([cx - w, cy - w, cx + w, cy + w], fill=(255, 255, 150, 180))
+
+        # 7. Draw deforming FET lattice nodes (UsdShade)
         fet_proj = []
         for pt in fet_nodes:
-            displacement_z = 22.0 * math.sin(time * 3.5 + pt[0]*0.02) * charge_level
+            displacement_z = 20.0 * math.sin(time * 3.2 + pt[0]*0.02) * charge_level
             deformed_pt = [pt[0], pt[1] + displacement_z, pt[2]]
             cx, cy, _ = project_pt(deformed_pt)
             fet_proj.append((cx, cy))
-            draw.ellipse([cx - 2, cy - 2, cx + 2, cy + 2], fill=(100, 255, 100, 160))
+            draw.ellipse([cx - 2, cy - 2, cx + 2, cy + 2], fill=(100, 255, 100, 150))
             
         # Draw lattice springs
         for r in range(fet_grid_size):
@@ -214,39 +285,28 @@ def main():
                 idx = r * fet_grid_size + c
                 if c + 1 < fet_grid_size:
                     idx2 = r * fet_grid_size + (c + 1)
-                    draw.line([fet_proj[idx][0], fet_proj[idx][1], fet_proj[idx2][0], fet_proj[idx2][1]], fill=(50, 150, 50, 110), width=1)
+                    draw.line([fet_proj[idx][0], fet_proj[idx][1], fet_proj[idx2][0], fet_proj[idx2][1]], fill=(50, 150, 50, 90), width=1)
                 if r + 1 < fet_grid_size:
                     idx2 = (r + 1) * fet_grid_size + c
-                    draw.line([fet_proj[idx][0], fet_proj[idx][1], fet_proj[idx2][0], fet_proj[idx2][1]], fill=(50, 150, 50, 110), width=1)
+                    draw.line([fet_proj[idx][0], fet_proj[idx][1], fet_proj[idx2][0], fet_proj[idx2][1]], fill=(50, 150, 50, 90), width=1)
 
-        # 4. Draw shaded solid torus faces (UsdGeomMesh) using Painter's Algorithm for depth sorting
+        # 8. Draw shaded solid torus faces (UsdGeomMesh) using dynamic light source attenuation
         faces = []
         for u in range(num_u):
             for v in range(num_v):
-                # Fetch indices of the 4 corners of a quadrilateral face
-                idx00 = u * num_v + v
-                idx10 = ((u + 1) % num_u) * num_v + v
-                idx11 = ((u + 1) % num_u) * num_v + ((v + 1) % num_v)
-                idx01 = u * num_v + ((v + 1) % num_v)
-                
-                # Fetch original 3D coordinates
-                # Corner 00
+                # Corners of a quad face
                 u_val = u * 2.0 * math.pi / num_u
                 v_val = v * 2.0 * math.pi / num_v
                 p00 = [(R + r * math.cos(v_val)) * math.cos(u_val), (R + r * math.cos(v_val)) * math.sin(u_val), r * math.sin(v_val)]
                 
-                # Corner 10
                 u_val1 = (u + 1) * 2.0 * math.pi / num_u
                 p10 = [(R + r * math.cos(v_val)) * math.cos(u_val1), (R + r * math.cos(v_val)) * math.sin(u_val1), r * math.sin(v_val)]
                 
-                # Corner 11
                 v_val1 = (v + 1) * 2.0 * math.pi / num_v
                 p11 = [(R + r * math.cos(v_val1)) * math.cos(u_val1), (R + r * math.cos(v_val1)) * math.sin(u_val1), r * math.sin(v_val1)]
                 
-                # Corner 01
                 p01 = [(R + r * math.cos(v_val1)) * math.cos(u_val), (R + r * math.cos(v_val1)) * math.sin(u_val), r * math.sin(v_val1)]
                 
-                # Project coordinates
                 c00_x, c00_y, z00 = project_pt(p00)
                 c10_x, c10_y, z10 = project_pt(p10)
                 c11_x, c11_y, z11 = project_pt(p11)
@@ -254,7 +314,21 @@ def main():
                 
                 avg_z = (z00 + z10 + z11 + z01) / 4.0
                 
-                # Calculate normal vector of the face using cross product
+                # Dynamic light vector to the center of the face
+                face_center = [
+                    (p00[0] + p11[0]) / 2.0,
+                    (p00[1] + p11[1]) / 2.0,
+                    (p00[2] + p11[2]) / 2.0
+                ]
+                
+                # Inverse-square law attenuation
+                dx = face_center[0] - light_pos[0]
+                dy = face_center[1] - light_pos[1]
+                dz = face_center[2] - light_pos[2]
+                dist_sq = dx*dx + dy*dy + dz*dz
+                light_attenuation = 15000.0 / (dist_sq + 1.0)
+                
+                # Lambertian dot product
                 v1 = [p10[0] - p00[0], p10[1] - p00[1], p10[2] - p00[2]]
                 v2 = [p01[0] - p00[0], p01[1] - p00[1], p01[2] - p00[2]]
                 normal = [
@@ -268,28 +342,30 @@ def main():
                 else:
                     normal = [0.0, 0.0, 1.0]
                     
-                # Lambertian diffuse lighting dot product
-                dot = normal[0]*light_dir[0] + normal[1]*light_dir[1] + normal[2]*light_dir[2]
-                brightness = max(0.1, dot)
+                # Light direction
+                ld = [light_pos[0] - face_center[0], light_pos[1] - face_center[1], light_pos[2] - face_center[2]]
+                ld_len = math.sqrt(ld[0]**2 + ld[1]**2 + ld[2]**2)
+                if ld_len > 1e-4:
+                    ld = [ld[0]/ld_len, ld[1]/ld_len, ld[2]/ld_len]
+                    
+                dot = normal[0]*ld[0] + normal[1]*ld[1] + normal[2]*ld[2]
+                brightness = max(0.1, dot) * min(2.0, light_attenuation)
                 
                 faces.append((avg_z, [ (c00_x, c00_y), (c10_x, c10_y), (c11_x, c11_y), (c01_x, c01_y) ], brightness))
                 
-        # Sort faces by depth (back to front) for Painter's algorithm
         faces.sort(key=lambda x: x[0], reverse=True)
         
-        # Draw shaded polygons
         for avg_z, poly, brightness in faces:
-            # Dynamic albedo colors modulated by charge and specular highlights
             color_r = int((50 + 205 * metallic) * brightness)
             color_g = int((150 + 105 * (1.0 - roughness)) * brightness)
             color_b = int((255 * metallic) * brightness)
             
-            draw.polygon(poly, fill=(color_r, color_g, color_b), outline=(38, 42, 60))
+            # Clip bounds
+            color_r = max(0, min(255, color_r))
+            color_g = max(0, min(255, color_g))
+            color_b = max(0, min(255, color_b))
             
-        # Draw some vertex points on top with bloom
-        for avg_z, poly, _ in faces[::4]:
-            cx, cy = poly[0]
-            draw.ellipse([cx - 3, cy - 3, cx + 3, cy + 3], fill=(255, 255, 200))
+            draw.polygon(poly, fill=(color_r, color_g, color_b), outline=(38, 42, 60))
             
         img.save(process.stdin, "PNG")
         
