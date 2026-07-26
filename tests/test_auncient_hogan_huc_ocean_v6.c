@@ -329,6 +329,70 @@ static float sdf_union(float d1, float d2) {
     return d1 < d2 ? d1 : d2;
 }
 
+static void get_torus_vertex(vertex3d_t *vertex, float u, float v, float r_major, float r_minor) {
+    float theta = u * 2.0f * 3.14159265f;
+    float phi = v * 2.0f * 3.14159265f;
+    float cos_theta = tsfi_texgen_cos(theta);
+    float sin_theta = tsfi_texgen_sin(theta);
+    float cos_phi = tsfi_texgen_cos(phi);
+    float sin_phi = tsfi_texgen_sin(phi);
+    
+    vertex->x = (r_major + r_minor * cos_phi) * cos_theta;
+    vertex->y = (r_major + r_minor * cos_phi) * sin_theta;
+    vertex->z = r_minor * sin_phi;
+}
+
+static void hsv_to_rgb(float h, float s, float v, uint8_t *r, uint8_t *g, uint8_t *b) {
+    float c = v * s;
+    float x = c * (1.0f - fabs(fmodf(h / 60.0f, 2.0f) - 1.0f));
+    float m = v - c;
+    float r1 = 0.0f, g1 = 0.0f, b1 = 0.0f;
+    if (h >= 0.0f && h < 60.0f) { r1 = c; g1 = x; }
+    else if (h >= 60.0f && h < 120.0f) { r1 = x; g1 = c; }
+    else if (h >= 120.0f && h < 180.0f) { g1 = c; b1 = x; }
+    else if (h >= 180.0f && h < 240.0f) { g1 = x; b1 = c; }
+    else if (h >= 240.0f && h < 300.0f) { r1 = x; b1 = c; }
+    else { r1 = c; b1 = x; }
+    *r = (uint8_t)((r1 + m) * 255.0f);
+    *g = (uint8_t)((g1 + m) * 255.0f);
+    *b = (uint8_t)((b1 + m) * 255.0f);
+}
+
+static void get_cylinder_vertex(vertex3d_t *vertex, float u, float h, float radius) {
+    float theta = u * 2.0f * 3.14159265f;
+    vertex->x = radius * tsfi_texgen_cos(theta);
+    vertex->y = radius * tsfi_texgen_sin(theta);
+    vertex->z = h;
+}
+
+typedef struct {
+    float r[3]; // Right
+    float u[3]; // Up
+    float f[3]; // Forward
+} camera_frame_t;
+
+static void compute_lookat_frame(camera_frame_t *frame, const vertex3d_t *eye, const vertex3d_t *target) {
+    float fx = target->x - eye->x;
+    float fy = target->y - eye->y;
+    float fz = target->z - eye->z;
+    float flen = sqrt(fx*fx + fy*fy + fz*fz);
+    if (flen > 0.0f) { fx /= flen; fy /= flen; fz /= flen; }
+    frame->f[0] = fx; frame->f[1] = fy; frame->f[2] = fz;
+    
+    float ux = 0.0f, uy = 0.0f, uz = 1.0f;
+    
+    float rx = fy*uz - fz*uy;
+    float ry = fz*ux - fx*uz;
+    float rz = fx*uy - fy*ux;
+    float rlen = sqrt(rx*rx + ry*ry + rz*rz);
+    if (rlen > 0.0f) { rx /= rlen; ry /= rlen; rz /= rlen; }
+    frame->r[0] = rx; frame->r[1] = ry; frame->r[2] = rz;
+    
+    frame->u[0] = ry*fz - rz*fy;
+    frame->u[1] = rz*fx - rx*fz;
+    frame->u[2] = rx*fy - ry*fx;
+}
+
 static float interpolate_catmull_rom(float p0, float p1, float p2, float p3, float t) {
     return 0.5f * ((2.0f * p1) +
                    (-p0 + p2) * t +
@@ -398,6 +462,32 @@ static void run_digital_dynamite_tests(void) {
     float d_union = sdf_union(d_sphere, 5.0f);
     assert(d_sphere < 0.0f && d_union < 0.0f);
     printf("   ✓ SDF primitives and Union operations verified successfully.\n");
+    
+    // 7. Test Procedural Torus Generator
+    vertex3d_t tor_v;
+    get_torus_vertex(&tor_v, 0.25f, 0.25f, 2.0f, 0.5f);
+    assert(tor_v.x <= 2.1f && tor_v.z <= 0.6f);
+    printf("   ✓ Torus vertex generator verified successfully.\n");
+    
+    // 8. Test LookAt View Matrix Generator
+    vertex3d_t eye = {0.0f, -5.0f, 0.0f};
+    vertex3d_t target = {0.0f, 0.0f, 0.0f};
+    camera_frame_t frame;
+    compute_lookat_frame(&frame, &eye, &target);
+    assert(frame.f[1] > 0.9f);
+    printf("   ✓ LookAt view frame computation verified successfully.\n");
+    
+    // 9. Test HSV to RGB Conversion
+    uint8_t cr = 0, cg = 0, cb = 0;
+    hsv_to_rgb(180.0f, 1.0f, 1.0f, &cr, &cg, &cb);
+    assert(cr == 0 && cg == 255 && cb == 255);
+    printf("   ✓ HSV to RGB conversion verified successfully.\n");
+    
+    // 10. Test Procedural Cylinder Generator
+    vertex3d_t cyl_v;
+    get_cylinder_vertex(&cyl_v, 0.25f, 1.5f, 2.0f);
+    assert(cyl_v.x <= 0.1f && cyl_v.y > 1.9f && cyl_v.z > 1.4f);
+    printf("   ✓ Cylinder vertex generator verified successfully.\n");
     fflush(stdout);
 }
 
