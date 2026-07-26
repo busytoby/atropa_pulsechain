@@ -6,26 +6,12 @@ The **Sega Dreamcast** graphics pipeline is powered by the **NEC PowerVR2 (CLX2)
 
 ## 1. The TBDR Pipeline
 
-```
-               [ 3D Scene Geometry ]
-                         │
-                         ▼
-        ┌───────────────────────────────────┐
-        │  1. Tile Accelerator (Binning)    │ (Group polygons into 32x32 tiles)
-        └───────────────────────────────────┘
-                         │
-                         ▼
-        ┌───────────────────────────────────┐
-        │  2. ISP (Image Synthesis Proc)    │ (Deferred Depth Test & Z-Sort)
-        └───────────────────────────────────┘
-                         │
-                         ▼
-        ┌───────────────────────────────────┐
-        │  3. TSP (Texture/Shading Proc)    │ (Shade only VISIBLE pixels)
-        └───────────────────────────────────┘
-                         │
-                         ▼
-             [ On-Chip Frame Buffer ]
+```mermaid
+graph TD
+    A[3D Scene Geometry] --> B[1. Tile Accelerator Binning<br/>Group polygons into 32x32 tiles]
+    B --> C[2. ISP Image Synthesis Proc<br/>Deferred Depth Test & Z-Sort]
+    C --> D[3. TSP Texture/Shading Proc<br/>Shade only VISIBLE pixels]
+    D --> E[On-Chip Frame Buffer]
 ```
 
 ### 1.1 Tile Accelerator (Binning)

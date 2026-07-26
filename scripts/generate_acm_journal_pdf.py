@@ -17,6 +17,10 @@ pdfmetrics.registerFont(TTFont('Times-Roman', '/usr/share/fonts/truetype/liberat
 pdfmetrics.registerFont(TTFont('Times-Bold', '/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf'))
 pdfmetrics.registerFont(TTFont('Times-Italic', '/usr/share/fonts/truetype/liberation/LiberationSerif-Italic.ttf'))
 pdfmetrics.registerFont(TTFont('Times-BoldItalic', '/usr/share/fonts/truetype/liberation/LiberationSerif-BoldItalic.ttf'))
+pdfmetrics.registerFont(TTFont('Courier', '/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf'))
+pdfmetrics.registerFont(TTFont('Courier-Bold', '/usr/share/fonts/truetype/liberation/LiberationMono-Bold.ttf'))
+pdfmetrics.registerFont(TTFont('Courier-Oblique', '/usr/share/fonts/truetype/liberation/LiberationMono-Italic.ttf'))
+pdfmetrics.registerFont(TTFont('Courier-BoldOblique', '/usr/share/fonts/truetype/liberation/LiberationMono-BoldItalic.ttf'))
 
 def get_file_date(filepath):
     filename = os.path.basename(filepath)
