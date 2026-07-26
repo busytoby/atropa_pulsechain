@@ -16,8 +16,8 @@ pdfmetrics.registerFont(TTFont('Helvetica-Bold', '/usr/share/fonts/truetype/libe
 VOLUMES_CONFIG = {
     1: {
         "title": "VOLUME I: VM GENESIS",
-        "pages": 217,
-        "spine_width": 0.489,
+        "pages": 269,
+        "spine_width": 0.605,
         "front_image": "/home/mariarahel/.gemini/antigravity-cli/brain/6d0129c5-eb0b-4333-a95f-e0f48861d972/volume_1_cover_v2_1785015239664.jpg",
         "description": "This volume details the initial Genesis and design constraints of the Auncient VM architecture. Explore the cryptographic underpinnings and execution pipelines that govern the state machine layers.",
         "review": "\"A masterclass in low-level virtual machine architecture. The meticulous mapping of the Auncient VM sets a new standard for deterministic system design.\" — Dysnomia Technical Journal",
@@ -25,24 +25,24 @@ VOLUMES_CONFIG = {
     },
     2: {
         "title": "VOLUME II: WINCHESTER MQ",
-        "pages": 172,
-        "spine_width": 0.387,
+        "pages": 209,
+        "spine_width": 0.470,
         "front_image": "/home/mariarahel/.gemini/antigravity-cli/brain/6d0129c5-eb0b-4333-a95f-e0f48861d972/volume_2_cover_v2_1785015250191.jpg",
         "description": "Focusing on low-level SCSI handshake loops and state machines, Volume II chronicles the implementation of Winchester MQ storage arrays and the validation of Lau tokens.",
         "review": "\"An unparalleled exploration of storage array physics. The detail in the Winchester MQ SCSI handshake loops is spectacular.\" — Storage Systems Quarterly"
     },
     3: {
         "title": "VOLUME III: HECKE-ROMBERG",
-        "pages": 311,
-        "spine_width": 0.700,
+        "pages": 360,
+        "spine_width": 0.810,
         "front_image": "/home/mariarahel/.gemini/antigravity-cli/brain/6d0129c5-eb0b-4333-a95f-e0f48861d972/volume_3_cover_v2_1785015261399.jpg",
         "description": "Analyzing convergence behavior through Hecke operators and Romberg Richardson extrapolation. This volume investigates mathematical continuity constraints and error analysis in the Banach space.",
         "review": "\"Brilliantly bridges number theory and numerical analysis. The Hecke-Romberg integration framework challenges traditional limits in the Banach space.\" — The Unified Manifold Review"
     },
     4: {
         "title": "VOLUME IV: SOVEREIGN MONOLITH",
-        "pages": 184,
-        "spine_width": 0.414,
+        "pages": 215,
+        "spine_width": 0.484,
         "front_image": "/home/mariarahel/.gemini/antigravity-cli/brain/6d0129c5-eb0b-4333-a95f-e0f48861d972/volume_4_cover_v2_1785015271838.jpg",
         "description": "The concluding volume explores the execution of position-independent JIT code in ThunkProxy structures. Witness the ultimate mathematical crystallization and seal parameters of the absolute state.",
         "review": "\"An absolute triumph of execution security. The sealing parameters of the ThunkProxy architecture are described with mathematical perfection.\" — Journal of Trustless Execution"
