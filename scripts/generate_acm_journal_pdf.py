@@ -112,19 +112,23 @@ def convert_latex_math_to_html(text):
         (r'\\cos', 'cos'),
         (r'\\sin', 'sin'),
         (r'\\text\{([^}]+)\}', r'\1'),
+        (r'\\mathbf\s*([a-zA-Z0-9])', r'<b>\1</b>'),
+        (r'\\mathbf\{([^}]+)\}', r'<b>\1</b>'),
+        (r'\\mathit\s*([a-zA-Z0-9])', r'<i>\1</i>'),
+        (r'\\mathit\{([^}]+)\}', r'<i>\1</i>'),
+        (r'\\mathrm\s*([a-zA-Z0-9])', r'\1'),
+        (r'\\mathrm\{([^}]+)\}', r'\1'),
     ]
     
     def replace_math_block(match):
         math_content = match.group(1)
-        # Avoid modifying standard C64 hex address ranges like "$D000–$DFFF"
-        # and prevent matching across HTML tags
-        if '<' in math_content or '>' in math_content or not re.search(r'[+\-*=/_\\^θφ·]|cos|sin', math_content):
+        if '<' in math_content or '>' in math_content or not re.search(r'[+\-*=/_\\^θφ·]|cos|sin|mathbf|mathit|mathrm', math_content):
             return f"${math_content}$"
             
-        for _ in range(3): # up to 3 levels of nesting fractions
-            math_content = re.sub(pattern_frac, replace_frac, math_content)
         for pat, repl in replacements:
             math_content = re.sub(pat, repl, math_content)
+        for _ in range(3): # up to 3 levels of nesting fractions
+            math_content = re.sub(pattern_frac, replace_frac, math_content)
         math_content = re.sub(r'_\{([^}]+)\}', r'<sub>\1</sub>', math_content)
         math_content = re.sub(r'_([a-zA-Z0-9]+)', r'<sub>\1</sub>', math_content)
         return f'<font color="#0066cc"><i>{math_content}</i></font>'
