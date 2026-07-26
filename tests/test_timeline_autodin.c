@@ -47,6 +47,22 @@ int main(void) {
     assert(account.is_active == true);
     printf("   ✓ First-class Hogan account holder registration verified.\n");
 
+    // 5. Test Deposit, Withdraw, and Overdraft protection
+    bool dep_ok = auncient_hogan_deposit(&account, 500000);
+    assert(dep_ok);
+    assert(account.balance_saat == 1500000); // 1.0M + 0.5M
+    printf("   ✓ Hogan account deposit verified.\n");
+
+    bool withdraw_ok = auncient_hogan_withdraw(&account, 1000000);
+    assert(withdraw_ok);
+    assert(account.balance_saat == 500000); // 1.5M - 1.0M
+    printf("   ✓ Hogan account withdrawal verified.\n");
+
+    bool overdraft_fail = auncient_hogan_withdraw(&account, 600000);
+    assert(!overdraft_fail); // Should fail due to insufficient balance
+    assert(account.balance_saat == 500000);
+    printf("   ✓ Hogan overdraft protection verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");

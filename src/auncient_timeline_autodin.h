@@ -36,6 +36,12 @@ bool auncient_hogan_reconcile_asset(uint32_t asset_id, const uint8_t *dna_bytes,
 // Registers a .dna asset as a first-class Hogan account holder
 bool auncient_hogan_register_account(uint32_t account_id, const uint8_t *dna_bytes, int size, HoganAccount *account_out);
 
+// Deposits funds into a Hogan account holder balance
+bool auncient_hogan_deposit(HoganAccount *account, uint32_t amount);
+
+// Withdraws funds from a Hogan account holder balance
+bool auncient_hogan_withdraw(HoganAccount *account, uint32_t amount);
+
 #ifdef __cplusplus
 }
 #endif

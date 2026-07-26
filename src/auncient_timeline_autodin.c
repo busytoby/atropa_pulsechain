@@ -53,3 +53,20 @@ bool auncient_hogan_register_account(uint32_t account_id, const uint8_t *dna_byt
 
     return true;
 }
+
+bool auncient_hogan_deposit(HoganAccount *account, uint32_t amount) {
+    if (!account || !account->is_active) return false;
+
+    account->balance_saat += amount;
+    return true;
+}
+
+bool auncient_hogan_withdraw(HoganAccount *account, uint32_t amount) {
+    if (!account || !account->is_active) return false;
+
+    // Overdraft protection logic
+    if (account->balance_saat < amount) return false;
+
+    account->balance_saat -= amount;
+    return true;
+}
