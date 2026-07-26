@@ -895,3 +895,21 @@ void auncient_apply_fourier_passengers(SplinePhysNode *nodes, int count, float t
         nodes[i].y += fourier_y * 0.1f;
     }
 }
+
+void auncient_apply_ansi_tremolo_char(char *grid, int width, int height, int target_x, int target_y, float time, float rate) {
+    if (!grid || target_x < 0 || target_x >= width || target_y < 0 || target_y >= height) return;
+
+    int idx = target_y * width + target_x;
+    if (grid[idx] == ' ') return;
+
+    float s = sinf(time * rate);
+    if (s > 0.5f) {
+        grid[idx] = '@';
+    } else if (s > 0.0f) {
+        grid[idx] = 'o';
+    } else if (s > -0.5f) {
+        grid[idx] = '*';
+    } else {
+        grid[idx] = '.';
+    }
+}

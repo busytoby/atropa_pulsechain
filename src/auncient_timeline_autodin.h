@@ -224,6 +224,9 @@ void auncient_apply_tracker_tremolo(float *volume, float time, float depth, floa
 // Applies Fourier wave passengers to modulate Verlet spline coordinates dynamically
 void auncient_apply_fourier_passengers(SplinePhysNode *nodes, int count, float time, float fundamental_freq);
 
+// Modulates a single target character cell in the ANSI grid over time to produce a tremolo flicker
+void auncient_apply_ansi_tremolo_char(char *grid, int width, int height, int target_x, int target_y, float time, float rate);
+
 #ifdef __cplusplus
 }
 #endif

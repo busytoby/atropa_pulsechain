@@ -366,6 +366,12 @@ int main(void) {
     assert(fourier_nodes[0].y != 0.0f); // Harmonic wave displacement applied
     printf("   ✓ Fourier passenger harmonic wave modulations verified.\n");
 
+    // Test visual character tremolo
+    char t_grid[4] = "abc";
+    auncient_apply_ansi_tremolo_char(t_grid, 2, 2, 0, 0, 1.0f, 10.0f);
+    assert(t_grid[0] != 'a'); // Character modulated
+    printf("   ✓ Visual character tremolo grid cell modulations verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");
