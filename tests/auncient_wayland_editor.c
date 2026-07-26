@@ -571,13 +571,20 @@ static void hd_embree_render(uint32_t *pixels, int w, int h, const CoaxialUBO *u
     float cos_a = cosf(angle);
     float sin_a = sinf(angle);
     float ry = ubo->camera_y;
+    int max_steps = 16;
+    float abs_ry = fabsf(ry);
+    if (abs_ry > 1.8f) {
+        max_steps = 6;
+    } else if (abs_ry > 1.0f) {
+        max_steps = 10;
+    }
     
     for (int col = 0; col < 32; col++) {
         float rx = (col - 15.5f) * 0.25f;
         float rz = -5.0f;
         int steps = 0;
         
-        while (steps < 16) {
+        while (steps < max_steps) {
             steps++;
             float rot_x = rx * cos_a - rz * sin_a;
             float rot_z = rx * sin_a + rz * cos_a;
@@ -595,9 +602,9 @@ static void hd_embree_render(uint32_t *pixels, int w, int h, const CoaxialUBO *u
             
             if (dist < 0.05f) break;
             rz += dist;
-            if (rz > 15.0f) { steps = 16; break; }
+            if (rz > 15.0f) { steps = max_steps; break; }
         }
-        ray_steps[col] = (uint8_t)(steps * 31 / 16);
+        ray_steps[col] = (uint8_t)(steps * 31 / max_steps);
     }
 
     int osc_base_x = 100;
@@ -1355,7 +1362,7 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *wl_keyboard, uin
         typed_char = '\n';
     } else if (key == 57) {
         typed_char = ' ';
-    } else if (key == 14) { // Backspace
+    } else if (key == 14) {
         if (doc_len > 0) {
             doc_len--;
             doc_buf[doc_len] = '\0';
@@ -1363,7 +1370,6 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *wl_keyboard, uin
         }
         return;
     } else {
-        // Map common letter keys
         switch (key) {
             case 30: typed_char = 'a'; break;
             case 48: typed_char = 'b'; break;
@@ -1397,7 +1403,6 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *wl_keyboard, uin
         }
     }
 
-    // Capture key history for secret code unlock ("tsn")
     if (typed_char >= 'a' && typed_char <= 'z') {
         key_history[0] = key_history[1];
         key_history[1] = key_history[2];
@@ -1492,7 +1497,6 @@ static const struct wl_registry_listener registry_listener = {
 int main(void) {
     srand(time(NULL));
 
-    // Decruncher relocation simulation: copy payload with decompression logs
     printf("[DECRUNCH] Initiating in-place decompressed payload relocation...\n");
     char decrunch_temp[128];
     int de_idx = 0;
