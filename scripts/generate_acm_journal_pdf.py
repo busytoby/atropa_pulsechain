@@ -457,7 +457,7 @@ def parse_markdown_table(rows, body_style, col_width):
     has_separator = False
     for r in rows:
         r_strip = r.strip()
-        if r_strip.startswith('|---') or r_strip.startswith('|:---') or r_strip.startswith('|-'):
+        if re.match(r'^\|\s*:?-+:?\s*\|', r_strip):
             has_separator = True
             break
     if not has_separator:
