@@ -433,6 +433,22 @@ static void hydra_scene_index_sync_delegate(const usd_auncient_cactus_schema_t *
     render_prim->vertex_density = schema->density;
 }
 
+typedef struct {
+    char listened_path[64];
+    bool invalidation_triggered;
+    uint32_t autodin_lock_token;
+    char autodin_precedence;
+} usd_notice_listener_t;
+
+static void usd_notice_send_invalidation(usd_notice_listener_t *listener, const char *changed_path) {
+    if (strcmp(listener->listened_path, changed_path) == 0) {
+        listener->invalidation_triggered = true;
+        printf("[AUTODIN] Notice Listener triggered invalidation for path: %s. Lock token: 0x%X (Precedence: %c).\n", 
+               changed_path, listener->autodin_lock_token, listener->autodin_precedence);
+    }
+}
+
+
 
 
 
@@ -980,6 +996,20 @@ int main(void) {
     assert(strcmp(render_prim.material_type, "stationary_cloth") == 0);
     assert(render_prim.vertex_density == 2.50f);
     printf("   ✓ Hydra scene index prim synchronization verified.\n");
+    fflush(stdout);
+
+    // 28. Test AUTODIN-integrated Stage Invalidation & Notice Processing
+    printf("[TEST] Testing AUTODIN-integrated Stage Invalidation & Notice Processing...\n");
+    fflush(stdout);
+    usd_notice_listener_t listener = {
+        .listened_path = "/World/Cactus",
+        .invalidation_triggered = false,
+        .autodin_lock_token = 0x999,
+        .autodin_precedence = 'P'
+    };
+    usd_notice_send_invalidation(&listener, "/World/Cactus");
+    assert(listener.invalidation_triggered == true);
+    printf("   ✓ AUTODIN-integrated notice listener invalidation verified.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
