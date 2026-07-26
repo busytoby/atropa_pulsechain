@@ -1129,25 +1129,21 @@ static void redraw_screen(void) {
              voice_active[2] ? "ON" : "OFF");
     draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 65 + glitch_y, sid_buf, 0xFFFFFF00, 1);
  
-    // Update Hudson Soft PSG register states dynamically based on SID audio track parameters
     huc6280_psg.channels[0].freq = sid_chip.voices[0].freq / 2;
-    huc6280_psg.channels[0].volume = (sid_chip.volume * 31) / 15; // Map 4-bit to 5-bit volume
-    huc6280_psg.channels[0].pan = 0xDA; // Stereophonic panning value
+    huc6280_psg.channels[0].volume = (sid_chip.volume * 31) / 15;
+    huc6280_psg.channels[0].pan = 0xDA;
     huc6280_psg.channels[1].freq = sid_chip.voices[1].freq / 2;
     huc6280_psg.channels[1].volume = (sid_chip.volume * 24) / 15;
     huc6280_psg.channels[1].pan = 0x24;
  
-    // Dynamically calculate and fill 32-byte PSG wavetable channels with classic waveforms
     for (int i = 0; i < 32; i++) {
-        huc6280_psg.channels[0].waveform[i] = (uint8_t)(15.0f + 15.0f * sinf(i * 2.0f * M_PI / 32.0f)); // Sine
-        huc6280_psg.channels[1].waveform[i] = (uint8_t)(i < 16 ? i * 2 : (31 - i) * 2); // Triangle
-        huc6280_psg.channels[2].waveform[i] = (uint8_t)(i * 31 / 32); // Sawtooth
-        huc6280_psg.channels[3].waveform[i] = (uint8_t)(i < 16 ? 31 : 0); // Square
-        huc6280_psg.channels[4].waveform[i] = (uint8_t)((i + (int)(retro_time * 50.0f)) % 7 == 0 ? 25 : 5); // Pseudo-noise
-        huc6280_psg.channels[5].waveform[i] = (uint8_t)(i < 8 ? 31 : 0); // Pulse
+        huc6280_psg.channels[0].waveform[i] = (uint8_t)(15.0f + 15.0f * sinf(i * 2.0f * M_PI / 32.0f));
+        huc6280_psg.channels[1].waveform[i] = (uint8_t)(i < 16 ? i * 2 : (31 - i) * 2);
+        huc6280_psg.channels[2].waveform[i] = (uint8_t)(i * 31 / 32);
+        huc6280_psg.channels[3].waveform[i] = (uint8_t)(i < 16 ? 31 : 0);
+        huc6280_psg.channels[4].waveform[i] = (uint8_t)((i + (int)(retro_time * 50.0f)) % 7 == 0 ? 25 : 5);
+        huc6280_psg.channels[5].waveform[i] = (uint8_t)(i < 8 ? 31 : 0);
     }
- 
-    // Draw 6 channel wavetable oscilloscopes (32x12 pixels each, compacted for 1.85:1 aspect)
     int osc_base_x = 120 + glitch_x;
     int osc_base_y = win_height - 80 + glitch_y;
     for (int c = 0; c < 6; c++) {
@@ -1360,12 +1356,11 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *wl_keyboard, uin
             fclose(f);
             printf("[LEDGER] Transaction committed to assets/editor_history.dat.bin\n");
             
-            // Trigger 0.5s Fast Loader flash on write transaction
             loader_flash_time = 0.5f;
         }
         
         typed_char = '\n';
-    } else if (key == 57) { // Space
+    } else if (key == 57) {
         typed_char = ' ';
     } else if (key == 14) { // Backspace
         if (doc_len > 0) {
@@ -1523,6 +1518,17 @@ int main(void) {
     }
 
     precompute_morph_cache();
+
+    FILE *f_usd_load = fopen("assets/usd_stage.dat.bin", "rb");
+    if (f_usd_load) {
+        USDStageRecord stage;
+        if (fread(&stage, sizeof(stage), 1, f_usd_load) == 1) {
+            raymarch_mode = (int)stage.active_model;
+            material_variant = (int)stage.material_variant;
+            printf("[USD] Deserialized saved scene stage layer from assets/usd_stage.dat.bin\n");
+        }
+        fclose(f_usd_load);
+    }
 
     for (int i = 0; i < 15; i++) {
         starfield[i].x = (float)((rand() % 200) - 100) / 10.0f;
