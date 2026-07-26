@@ -12,6 +12,7 @@ typedef struct {
     bool is_world_active;
     uint16_t psg_channel_freq[6]; // huC6280 PSG voice channels
     uint8_t psg_channel_vol[6];
+    uint8_t psg_channel_pan[6]; // huC6280 PSG panning control
     uint8_t frame_buffer[256 * 256]; // Simulated VDC screen memory (256x256)
 } TSFiRiInterface;
 

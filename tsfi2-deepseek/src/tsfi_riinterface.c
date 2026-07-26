@@ -14,6 +14,7 @@ void tsfi_riinterface_init(TSFiRiInterface *ri) {
     ri->is_world_active = false;
     memset(ri->psg_channel_freq, 0, sizeof(ri->psg_channel_freq));
     memset(ri->psg_channel_vol, 0, sizeof(ri->psg_channel_vol));
+    memset(ri->psg_channel_pan, 0, sizeof(ri->psg_channel_pan));
     memset(ri->frame_buffer, 0, sizeof(ri->frame_buffer));
 }
 
@@ -65,6 +66,9 @@ void tsfi_riinterface_modulate_psg(TSFiRiInterface *ri, double velocity) {
         ri->psg_channel_freq[i] = base_freq + (i * 20);
         ri->psg_channel_vol[i] = (uint8_t)(10 + (int)(velocity * 2.0));
         if (ri->psg_channel_vol[i] > 31) ri->psg_channel_vol[i] = 31;
+        
+        // Map pan based on channel index parameters: channel 0-2 left-heavy, 3-5 right-heavy
+        ri->psg_channel_pan[i] = (i < 3) ? 0xF0 : 0x0F;
     }
 }
 

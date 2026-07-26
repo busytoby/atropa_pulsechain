@@ -32,6 +32,8 @@ int main(void) {
     tsfi_riinterface_modulate_psg(&ri, 5.0);
     assert(ri.psg_channel_freq[0] == 600);
     assert(ri.psg_channel_vol[0] == 20);
+    assert(ri.psg_channel_pan[0] == 0xF0); // Left channel balance
+    assert(ri.psg_channel_pan[4] == 0x0F); // Right channel balance
 
     // Test VDC DMA block transfer of registers
     tsfi_riinterface_vdc_dma_copy(&ri, 5, 8, 2);
