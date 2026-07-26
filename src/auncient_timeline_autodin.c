@@ -226,3 +226,50 @@ void winchester_mq_saturate(WinchesterMQState *state, uint64_t beta, uint64_t et
     state->chin = (beta + eta) % MOTZKIN_PRIME;
     state->monopole = w_mod_pow(state->chin, state->identity, MOTZKIN_PRIME);
 }
+
+void auncient_texgen_build_image_info(uint32_t w, uint32_t h, VkImageCreateInfo *info) {
+    if (!info) return;
+
+    info->sType = 14; // VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO
+    info->pNext = NULL;
+    info->flags = 0;
+    info->imageType = 1; // VK_IMAGE_TYPE_2D
+    info->format = 37; // VK_FORMAT_R8G8B8A8_UNORM
+    info->width = w;
+    info->height = h;
+    info->depth = 1;
+    info->mipLevels = 1;
+    info->arrayLayers = 1;
+    info->samples = 1; // VK_SAMPLE_COUNT_1_BIT
+    info->tiling = 0; // VK_IMAGE_TILING_OPTIMAL
+    info->usage = 6; // VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
+    info->sharingMode = 0; // VK_SHARING_MODE_EXCLUSIVE
+    info->initialLayout = 0; // VK_IMAGE_LAYOUT_UNDEFINED
+}
+
+void auncient_texgen_build_copy_info(uint32_t w, uint32_t h, VkBufferImageCopy *copy) {
+    if (!copy) return;
+
+    copy->bufferOffset = 0;
+    copy->bufferRowLength = 0;
+    copy->bufferImageHeight = 0;
+    copy->imageSubresourceAspect = 1; // VK_IMAGE_ASPECT_COLOR_BIT
+    copy->imageSubresourceMipLevel = 0;
+    copy->imageSubresourceBaseArrayLayer = 0;
+    copy->imageSubresourceLayerCount = 1;
+    copy->imageDisplacement[0] = 0;
+    copy->imageDisplacement[1] = 0;
+    copy->imageDisplacement[2] = 0;
+    copy->imageExtent[0] = w;
+    copy->imageExtent[1] = h;
+    copy->imageExtent[2] = 1;
+}
+
+uint32_t auncient_texgen_modulated_seed(const WinchesterMQState *state) {
+    if (!state) return 0;
+
+    // Use WinchesterMQ state registers to calculate seed values dynamically
+    uint64_t base_signal = state->base ^ state->signal;
+    uint32_t dynamic_seed = (uint32_t)(base_signal & 0xFFFFFFFF) ^ (uint32_t)(state->channel & 0xFFFFFFFF);
+    return (dynamic_seed > 0) ? dynamic_seed : 421337U;
+}

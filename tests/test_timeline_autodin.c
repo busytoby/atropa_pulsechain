@@ -136,6 +136,25 @@ int main(void) {
     assert(w_state.monopole == (30 * 30 * 30)); // 30^3
     printf("   ✓ WinchesterMQ state transitions and ABI equations verified.\n");
 
+    // Test Vulkan texgen configurations
+    VkImageCreateInfo img_info;
+    auncient_texgen_build_image_info(512, 512, &img_info);
+    assert(img_info.sType == 14);
+    assert(img_info.width == 512);
+    assert(img_info.height == 512);
+    printf("   ✓ Vulkan image staging configuration verified.\n");
+
+    VkBufferImageCopy copy_info;
+    auncient_texgen_build_copy_info(512, 512, &copy_info);
+    assert(copy_info.imageExtent[0] == 512);
+    assert(copy_info.imageDisplacement[0] == 0);
+    printf("   ✓ Vulkan buffer-to-image copy regions verified.\n");
+
+    // Test WinchesterMQ dynamic seed modulation
+    uint32_t active_seed = auncient_texgen_modulated_seed(&w_state);
+    assert(active_seed > 0);
+    printf("   ✓ WinchesterMQ noise seed modulation verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");

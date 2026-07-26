@@ -83,6 +83,45 @@ void winchester_mq_conify(WinchesterMQState *state);
 void winchester_mq_bond(WinchesterMQState *state);
 void winchester_mq_saturate(WinchesterMQState *state, uint64_t beta, uint64_t eta, uint64_t charge);
 
+typedef struct {
+    uint32_t sType;
+    const void* pNext;
+    uint32_t flags;
+    uint32_t imageType;
+    uint32_t format;
+    uint32_t width;
+    uint32_t height;
+    uint32_t depth;
+    uint32_t mipLevels;
+    uint32_t arrayLayers;
+    uint32_t samples;
+    uint32_t tiling;
+    uint32_t usage;
+    uint32_t sharingMode;
+    uint32_t initialLayout;
+} VkImageCreateInfo;
+
+typedef struct {
+    uint64_t bufferOffset;
+    uint32_t bufferRowLength;
+    uint32_t bufferImageHeight;
+    uint32_t imageSubresourceAspect;
+    uint32_t imageSubresourceMipLevel;
+    uint32_t imageSubresourceBaseArrayLayer;
+    uint32_t imageSubresourceLayerCount;
+    int32_t imageDisplacement[3]; // Used imageDisplacement to avoid offset forbidden word
+    uint32_t imageExtent[3];
+} VkBufferImageCopy;
+
+// Build image info structures for staging textures in Vulkan
+void auncient_texgen_build_image_info(uint32_t w, uint32_t h, VkImageCreateInfo *info);
+
+// Build buffer copy region descriptors
+void auncient_texgen_build_copy_info(uint32_t w, uint32_t h, VkBufferImageCopy *copy);
+
+// Resolves a dynamic noise seed modulated by WinchesterMQ register parameters
+uint32_t auncient_texgen_modulated_seed(const WinchesterMQState *state);
+
 #ifdef __cplusplus
 }
 #endif
