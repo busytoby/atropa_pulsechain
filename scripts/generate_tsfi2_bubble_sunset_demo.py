@@ -320,13 +320,20 @@ def render_sunset_frame(frame, width, height):
             
             pixels[x, y] = (r_f, g_f, b_f)
             
-    # 5d. Render dynamic bottom scrolling text scroller banner on top of the water reflection
-    scroller_msg = "   *** TSFI/2 BUBBLE SUNSET DEMO ***   GREETINGS TO SECTION 31 ... DEVELOPED FOR THE DYSNOMIA VM PLATFORM ... FEATURING 11 SYNTHESIZED INSTRUMENTS ... VOLUMETRIC DISTANCE FIELD INFLATION SHADER ... 1.85:1 ASPECT RATIO SUPER8 FILM SIMULATOR ... "
-    scroller_y = int(height * 0.88)
-    draw.rectangle([0, scroller_y - 12, width, scroller_y + 12], fill=(20, 10, 5))
-    scroll_speed = 2.0
-    scroll_x = int(width - frame * scroll_speed)
-    draw.text((scroll_x, scroller_y - 6), scroller_msg, fill=(255, 204, 0))
+    # 5d. Render C64-style Cake Scroller (stacked parallax text lines scrolling in opposite directions)
+    scroller_msg1 = "   *** TSFI/2 BUBBLE SUNSET DEMO ***   GREETINGS TO SECTION 31 ... DEVELOPED FOR THE DYSNOMIA VM PLATFORM ... "
+    scroller_msg2 = "   --- 1.85:1 ASPECT RATIO SUPER8 FILM SIMULATOR --- VOLUMETRIC DISTANCE FIELD INFLATION SHADER --- 11 SYNTHESIZED INSTRUMENTS --- "
+    
+    # Backing banner
+    draw.rectangle([0, int(height * 0.81), width, int(height * 0.94)], fill=(20, 10, 5))
+    
+    # Layer 1: Left Scroll (Gold)
+    scroll_x1 = int(width - (frame * 2.0) % 1800)
+    draw.text((scroll_x1, int(height * 0.83)), scroller_msg1, fill=(255, 204, 0))
+    
+    # Layer 2: Right Scroll (Orange)
+    scroll_x2 = int(-600 + (frame * 1.5) % 1800)
+    draw.text((scroll_x2, int(height * 0.89)), scroller_msg2, fill=(255, 102, 0))
 
     # 6. Apply Super8 Vintage Film Effects
     # 6a. Dynamic Film Grain (Low opacity noise overlay)
