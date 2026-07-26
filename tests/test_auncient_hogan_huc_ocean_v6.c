@@ -84,7 +84,13 @@ static void process_tape_ingest_v6(huc_ocean_system_t *huc,
         .blend_mode = 1U,
         .light_x = 0.57735f,
         .light_y = 0.57735f,
-        .light_z = 0.57735f
+        .light_z = 0.57735f,
+        .persistence = 0.5f,
+        .lacunarity = 2.0f,
+        .octaves = 3U,
+        .brightness = 0.0f,
+        .contrast = 1.0f,
+        .wave_type = 0U
     };
 
     for (int lane = 0; lane < LANES; lane++) {

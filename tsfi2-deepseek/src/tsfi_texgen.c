@@ -65,7 +65,6 @@ typedef struct {
 void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase, int mode, const tsfi_texgen_params_t *params) {
     if (!lut_initialized) tsfi_texgen_init();
     
-    // Allocate temporary layers dynamically based on width/height
     rgb_pix_t *layer0 = (rgb_pix_t *)malloc(width * height * sizeof(rgb_pix_t));
     rgb_pix_t *layer1 = (rgb_pix_t *)malloc(width * height * sizeof(rgb_pix_t));
     rgb_pix_t *layer_twirl = (rgb_pix_t *)malloc(width * height * sizeof(rgb_pix_t));
@@ -73,7 +72,7 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
     double *warped_g = (double *)malloc(width * height * sizeof(double));
     double *warped_b = (double *)malloc(width * height * sizeof(double));
     
-    // Step 1: Base Plasma generation
+    // Step 1: Base Plasma generation with dynamic lacunarity / persistence noise octaves
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             double p_val = 0.0;
@@ -88,10 +87,16 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
                               63.75 * tsfi_texgen_cos((x - y) * tsfi_texgen_sin(angle));
             } else if (mode == 2) {
                 double f_val = 0.0;
-                f_val += noise_2d((double)x * 0.25, (double)y * 0.25, params->seed) * 1.0;
-                f_val += noise_2d((double)x * 0.5, (double)y * 0.5, params->seed + 100U) * 0.5;
-                f_val += noise_2d((double)x * 1.0, (double)y * 1.0, params->seed + 200U) * 0.25;
-                p_val = (f_val / 1.75) * 255.0;
+                double freq = 0.25;
+                double amp = 1.0;
+                double max_amp = 0.0;
+                for (int o = 0; o < params->octaves; o++) {
+                    f_val += noise_2d((double)x * freq, (double)y * freq, params->seed + o * 100U) * amp;
+                    max_amp += amp;
+                    freq *= params->lacunarity;
+                    amp *= params->persistence;
+                }
+                p_val = (f_val / max_amp) * 255.0;
             } else {
                 double cx = (width - 1) / 2.0;
                 double cy = (height - 1) / 2.0;
@@ -124,7 +129,7 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
         }
     }
     
-    // Step 3: Twirl & Blend
+    // Step 3: Twirl & Blending mode options (Multiply, Difference, Screen, Add, Subtract)
     double cx = (width - 1) / 2.0;
     double cy = (height - 1) / 2.0;
     double twirl_strength = params->twirl_strength + tsfi_texgen_sin(phase) * 1.5;
@@ -158,22 +163,40 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
             layer_twirl[idx].g = w00 * layer0[y0*width + x0].g + w10 * layer0[y0*width + x1].g + w01 * layer0[y1*width + x0].g + w11 * layer0[y1*width + x1].g;
             layer_twirl[idx].b = w00 * layer0[y0*width + x0].b + w10 * layer0[y0*width + x1].b + w01 * layer0[y1*width + x0].b + w11 * layer0[y1*width + x1].b;
             
-            if (params->blend_mode == 1) {
+            if (params->blend_mode == 1) { // Multiply
                 layer_twirl[idx].r = (uint8_t)((uint32_t)layer_twirl[idx].r * layer1[idx].r / 255U);
                 layer_twirl[idx].g = (uint8_t)((uint32_t)layer_twirl[idx].g * layer1[idx].g / 255U);
                 layer_twirl[idx].b = (uint8_t)((uint32_t)layer_twirl[idx].b * layer1[idx].b / 255U);
-            } else {
+            } else if (params->blend_mode == 2) { // Difference
                 int dr = (int)layer_twirl[idx].r - (int)layer1[idx].r;
                 int dg = (int)layer_twirl[idx].g - (int)layer1[idx].g;
                 int db = (int)layer_twirl[idx].b - (int)layer1[idx].b;
                 layer_twirl[idx].r = (uint8_t)(dr < 0 ? -dr : dr);
                 layer_twirl[idx].g = (uint8_t)(dg < 0 ? -dg : dg);
                 layer_twirl[idx].b = (uint8_t)(db < 0 ? -db : db);
+            } else if (params->blend_mode == 3) { // Screen
+                layer_twirl[idx].r = (uint8_t)(255 - ((255 - layer_twirl[idx].r) * (255 - layer1[idx].r) / 255));
+                layer_twirl[idx].g = (uint8_t)(255 - ((255 - layer_twirl[idx].g) * (255 - layer1[idx].g) / 255));
+                layer_twirl[idx].b = (uint8_t)(255 - ((255 - layer_twirl[idx].b) * (255 - layer1[idx].b) / 255));
+            } else if (params->blend_mode == 4) { // Add
+                uint32_t r_add = (uint32_t)layer_twirl[idx].r + layer1[idx].r;
+                uint32_t g_add = (uint32_t)layer_twirl[idx].g + layer1[idx].g;
+                uint32_t b_add = (uint32_t)layer_twirl[idx].b + layer1[idx].b;
+                layer_twirl[idx].r = r_add > 255 ? 255 : r_add;
+                layer_twirl[idx].g = g_add > 255 ? 255 : g_add;
+                layer_twirl[idx].b = b_add > 255 ? 255 : b_add;
+            } else { // Subtract
+                int r_sub = (int)layer_twirl[idx].r - layer1[idx].r;
+                int g_sub = (int)layer_twirl[idx].g - layer1[idx].g;
+                int b_sub = (int)layer_twirl[idx].b - layer1[idx].b;
+                layer_twirl[idx].r = r_sub < 0 ? 0 : r_sub;
+                layer_twirl[idx].g = g_sub < 0 ? 0 : g_sub;
+                layer_twirl[idx].b = b_sub < 0 ? 0 : b_sub;
             }
         }
     }
     
-    // Step 4: Bilinear Warp & Waveform modulation
+    // Step 4: Bilinear Warp & Waveform modulation type configurations
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             int idx = y * width + x;
@@ -200,13 +223,26 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
             double g_val = w00 * layer_twirl[y0*width + x0].g + w10 * layer_twirl[y0*width + x1].g + w01 * layer_twirl[y1*width + x0].g + w11 * layer_twirl[y1*width + x1].g;
             double b_val = w00 * layer_twirl[y0*width + x0].b + w10 * layer_twirl[y0*width + x1].b + w01 * layer_twirl[y1*width + x0].b + w11 * layer_twirl[y1*width + x1].b;
             
-            warped_r[idx] = 127.5 + 127.5 * tsfi_texgen_sin(r_val * 0.15);
-            warped_g[idx] = 127.5 + 127.5 * tsfi_texgen_sin(g_val * 0.15);
-            warped_b[idx] = 127.5 + 127.5 * tsfi_texgen_sin(b_val * 0.15);
+            if (params->wave_type == 0) { // Sine waveform
+                warped_r[idx] = 127.5 + 127.5 * tsfi_texgen_sin(r_val * 0.15);
+                warped_g[idx] = 127.5 + 127.5 * tsfi_texgen_sin(g_val * 0.15);
+                warped_b[idx] = 127.5 + 127.5 * tsfi_texgen_sin(b_val * 0.15);
+            } else if (params->wave_type == 1) { // Sawtooth waveform
+                double rs = (r_val * 0.05);
+                double gs = (g_val * 0.05);
+                double bs = (b_val * 0.05);
+                warped_r[idx] = (rs - floor(rs)) * 255.0;
+                warped_g[idx] = (gs - floor(gs)) * 255.0;
+                warped_b[idx] = (bs - floor(bs)) * 255.0;
+            } else { // Square waveform
+                warped_r[idx] = (tsfi_texgen_sin(r_val * 0.15) >= 0.0) ? 255.0 : 0.0;
+                warped_g[idx] = (tsfi_texgen_sin(g_val * 0.15) >= 0.0) ? 255.0 : 0.0;
+                warped_b[idx] = (tsfi_texgen_sin(b_val * 0.15) >= 0.0) ? 255.0 : 0.0;
+            }
         }
     }
     
-    // Step 5: Normal calculations, Phong highlights & Output packing
+    // Step 5: Normal calculations, Phong highlights & Output packing (with post contrast/brightness adjustments)
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             int x_prev = (x - 1 + width) % width;
@@ -251,28 +287,37 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
             if (combined_light > 1.0) combined_light = 1.0;
             
             int out_idx = idx * 3;
+            double raw_r = 0.0, raw_g = 0.0, raw_b = 0.0;
             if (mode % 2 == 0) {
-                output_rgb[out_idx]   = (uint8_t)(((nx + 1.0) * 127.5) * combined_light);
-                output_rgb[out_idx+1] = (uint8_t)(((ny + 1.0) * 127.5) * combined_light);
-                output_rgb[out_idx+2] = (uint8_t)(((nz + 1.0) * 127.5) * combined_light);
+                raw_r = ((nx + 1.0) * 127.5) * combined_light;
+                raw_g = ((ny + 1.0) * 127.5) * combined_light;
+                raw_b = ((nz + 1.0) * 127.5) * combined_light;
             } else {
                 double intensity = h_center / 255.0 * combined_light;
                 if (intensity < 0.5) {
                     double t = intensity * 2.0;
-                    output_rgb[out_idx]   = (uint8_t)(2.0 + t * 12.0);
-                    output_rgb[out_idx+1] = (uint8_t)(8.0 + t * 157.0);
-                    output_rgb[out_idx+2] = (uint8_t)(19.0 + t * 214.0);
+                    raw_r = 2.0 + t * 12.0;
+                    raw_g = 8.0 + t * 157.0;
+                    raw_b = 19.0 + t * 214.0;
                 } else {
                     double t = (intensity - 0.5) * 2.0;
-                    output_rgb[out_idx]   = (uint8_t)(14.0 + t * 241.0);
-                    output_rgb[out_idx+1] = (uint8_t)(165.0 + t * 90.0);
-                    output_rgb[out_idx+2] = (uint8_t)(233.0 + t * 22.0);
+                    raw_r = 14.0 + t * 241.0;
+                    raw_g = 165.0 + t * 90.0;
+                    raw_b = 233.0 + t * 22.0;
                 }
             }
+            
+            // Post-processing: Contrast and brightness adjustment filters
+            double adj_r = (raw_r - 128.0) * params->contrast + 128.0 + params->brightness;
+            double adj_g = (raw_g - 128.0) * params->contrast + 128.0 + params->brightness;
+            double adj_b = (raw_b - 128.0) * params->contrast + 128.0 + params->brightness;
+            
+            output_rgb[out_idx]   = adj_r < 0.0 ? 0 : (adj_r > 255.0 ? 255 : (uint8_t)adj_r);
+            output_rgb[out_idx+1] = adj_g < 0.0 ? 0 : (adj_g > 255.0 ? 255 : (uint8_t)adj_g);
+            output_rgb[out_idx+2] = adj_b < 0.0 ? 0 : (adj_b > 255.0 ? 255 : (uint8_t)adj_b);
         }
     }
     
-    // Free temporary memory buffers
     free(layer0);
     free(layer1);
     free(layer_twirl);

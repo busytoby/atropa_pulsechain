@@ -11,14 +11,21 @@ typedef struct {
     char glyph;
 } color_pixel_t;
 
+// Standardized parameters under 200 bytes limit (Size: 44 bytes)
 typedef struct {
     uint32_t seed;
     float phase_scale;
     float twirl_strength;
-    uint8_t blend_mode;
+    uint8_t blend_mode; // 1: Multiply, 2: Difference, 3: Screen, 4: Add, 5: Subtract
     float light_x;
     float light_y;
     float light_z;
+    float persistence;  // Noise octave amplitude scale
+    float lacunarity;   // Noise octave frequency scale
+    uint8_t octaves;    // Number of noise octaves
+    float brightness;   // Color adjustments
+    float contrast;     // Color adjustments
+    uint8_t wave_type;  // 0: Sine, 1: Sawtooth, 2: Square
 } tsfi_texgen_params_t;
 
 void tsfi_texgen_init(void);
