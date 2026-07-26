@@ -210,6 +210,11 @@ typedef struct {
 
 static CoaxialUBO active_ubo;
 
+// Hydra Render Delegate interface supporting swap-able graphics backends
+typedef struct {
+    void (*render_scene)(uint32_t *pixels, int w, int h, const CoaxialUBO *ubo);
+} HydraRenderDelegate;
+
 // PETSCII Western Desert Artwork Split Screen (Cactus & Sunset Sunset mesa)
 static const char *western_desert_art[6] = {
     "      #      .   .      ",
@@ -486,17 +491,12 @@ typedef struct {
     uint8_t update_count;
 } PrebakedFrame;
 
-static const PrebakedFrame prebaked_script[10] = {
+static const PrebakedFrame prebaked_script[5] = {
     {0, 0, {{0, 100, 120}, {1, 160, 130}, {2, 220, 140}, {3, 280, 150}, {4, 340, 160}, {5, 400, 170}}, 6},
     {72, 0, {{1, 162, 148}, {2, 222, 148}, {3, 282, 148}}, 3},
     {13, 1, {{4, 342, 157}, {5, 402, 157}}, 2},
     {1, 1, {{0, 102, 145}, {1, 162, 145}}, 2},
-    {1, 2, {{2, 222, 160}, {3, 282, 160}, {4, 342, 160}, {5, 402, 160}}, 4},
-    {1, 0, {{0, 102, 140}}, 1},
-    {3, 1, {{1, 162, 150}}, 1},
-    {12, 0, {{2, 222, 150}, {3, 282, 150}}, 2},
-    {1, 0, {{4, 342, 150}, {5, 402, 150}}, 2},
-    {65, 2, {{0, 102, 150}, {1, 162, 150}}, 2}
+    {1, 2, {{2, 222, 160}, {3, 282, 160}, {4, 342, 160}, {5, 402, 160}}, 4}
 };
 
 static inline float sd_capsule(float px, float py, float pz, float ax, float ay, float az, float bx, float by, float bz, float r) {
@@ -547,7 +547,53 @@ static inline uint32_t blend_color_add(uint32_t base, uint32_t add) {
     return (0xFF000000 | (r << 16) | (g << 8) | b);
 }
 
-// Redraw screen with real-time PETSCII / C64 effects
+static void hd_embree_render(uint32_t *pixels, int w, int h, const CoaxialUBO *ubo) {
+    uint8_t ray_steps[32];
+    float angle = ubo->rotation_angle;
+    float cos_a = cosf(angle);
+    float sin_a = sinf(angle);
+    float ry = ubo->camera_y;
+    
+    for (int col = 0; col < 32; col++) {
+        float rx = (col - 15.5f) * 0.25f;
+        float rz = -5.0f;
+        int steps = 0;
+        
+        while (steps < 16) {
+            steps++;
+            float rot_x = rx * cos_a - rz * sin_a;
+            float rot_z = rx * sin_a + rz * cos_a;
+            
+            float dist;
+            if (ubo->active_model == 0) {
+                dist = sd_cactus(rot_x, ry, rot_z);
+            } else if (ubo->active_model == 1) {
+                dist = sd_letter_t(rot_x, ry, rot_z);
+            } else {
+                float d_c = sd_cactus(rot_x, ry, rot_z);
+                float d_l = sd_letter_t(rot_x, ry, rot_z);
+                dist = (d_c < d_l) ? d_c : d_l;
+            }
+            
+            if (dist < 0.05f) break;
+            rz += dist;
+            if (rz > 15.0f) { steps = 16; break; }
+        }
+        ray_steps[col] = (uint8_t)(steps * 31 / 16);
+    }
+
+    int osc_base_x = 100;
+    int osc_base_y = 500;
+    draw_string(pixels, w, h, osc_base_x + 480, osc_base_y - 15, "RAY", 0xFF00FFFF, 1);
+    for (int col = 0; col < 32; col++) {
+        int val = ray_steps[col];
+        int py = osc_base_y - (val * 12 / 32);
+        if (py >= 0 && py < h && (osc_base_x + 480 + col) < w) {
+            pixels[py * w + osc_base_x + 480 + col] = 0xFF00FFFF;
+        }
+    }
+}
+
 static void redraw_screen(void) {
     if (!surface) return;
     
@@ -563,7 +609,6 @@ static void redraw_screen(void) {
     wl_buffers[current_buffer_idx] = create_shm_buffer(win_width, win_height, &pixels);
     if (!wl_buffers[current_buffer_idx] || !pixels) return;
     
-    // C64-style IMAGEADDR_BACKUP restoration system (Background cache)
     static uint32_t *bg_cache = NULL;
     static int bg_cache_w = 0;
     static int bg_cache_h = 0;
@@ -574,7 +619,6 @@ static void redraw_screen(void) {
         bg_cache_w = win_width;
         bg_cache_h = win_height;
         
-        // Render sunset backdrop once to cache
         for (int y = 0; y < win_height; y++) {
             if (y >= 100 && y < 550 && (y % 24) == 0) {
                 for (int x = 0; x < win_width; x++) {
@@ -825,7 +869,7 @@ static void redraw_screen(void) {
     static float last_frame_time = 0.0f;
     if (retro_time - last_frame_time > 0.12f) { // ~8 Hz update speed
         last_frame_time = retro_time;
-        prebaked_frame_idx = (prebaked_frame_idx + 1) % 10;
+        prebaked_frame_idx = (prebaked_frame_idx + 1) % 5;
         
         PrebakedFrame f = prebaked_script[prebaked_frame_idx];
         water_flood_height += f.water_change * 0.12f;
@@ -1109,51 +1153,9 @@ static void redraw_screen(void) {
     active_ubo.active_model = (uint32_t)raymarch_mode;
     active_ubo.raster_intensity = 1.0f;
  
-    // Raymarch rotating 3D models using parameters fetched from active_ubo
-    uint8_t ray_steps[32];
-    float angle = active_ubo.rotation_angle;
-    float cos_a = cosf(angle);
-    float sin_a = sinf(angle);
-    float ry = active_ubo.camera_y;
-    
-    for (int col = 0; col < 32; col++) {
-        float rx = (col - 15.5f) * 0.25f;
-        float rz = -5.0f;
-        int steps = 0;
-        
-        while (steps < 16) {
-            steps++;
-            // Rotate ray coordinate around Y axis
-            float rot_x = rx * cos_a - rz * sin_a;
-            float rot_z = rx * sin_a + rz * cos_a;
-            
-            float dist;
-            if (active_ubo.active_model == 0) {
-                dist = sd_cactus(rot_x, ry, rot_z);
-            } else if (active_ubo.active_model == 1) {
-                dist = sd_letter_t(rot_x, ry, rot_z);
-            } else {
-                float d_c = sd_cactus(rot_x, ry, rot_z);
-                float d_l = sd_letter_t(rot_x, ry, rot_z);
-                dist = (d_c < d_l) ? d_c : d_l;
-            }
-            
-            if (dist < 0.05f) break;
-            rz += dist;
-            if (rz > 15.0f) { steps = 16; break; }
-        }
-        ray_steps[col] = (uint8_t)(steps * 31 / 16);
-    }
- 
-    // Render 7th diagnostic oscilloscope panel for Ray Marching Step Profiles
-    draw_string(pixels, win_width, win_height, osc_base_x + 480, osc_base_y - 15, "RAY", 0xFF00FFFF, 1);
-    for (int col = 0; col < 32; col++) {
-        int val = ray_steps[col];
-        int py = osc_base_y - (val * 12 / 32);
-        if (py >= 0 && py < win_height && (osc_base_x + 480 + col) < win_width) {
-            pixels[py * win_width + osc_base_x + 480 + col] = 0xFF00FFFF; // Bright cyan trace line
-        }
-    }
+    // Invoke the composed Hydra Render Delegate to render 3D assets to screen
+    static const HydraRenderDelegate hd_embree = { .render_scene = hd_embree_render };
+    hd_embree.render_scene(pixels, win_width, win_height, &active_ubo);
  
     char psg_buf[256];
     snprintf(psg_buf, sizeof(psg_buf), 
