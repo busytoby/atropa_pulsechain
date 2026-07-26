@@ -185,6 +185,7 @@ static int sid_arp_step = 0;
 static bool voice_active[3] = {true, true, true};
 static int current_water_idx = 0;
 static int raymarch_mode = 0;
+static int material_variant = 0;
 
 // 4 different compiled SID tunes (Tune 3 is hidden!)
 static const uint16_t sid_tunes[4][3] = {
@@ -205,7 +206,8 @@ typedef struct {
     float camera_y;
     uint32_t active_model;
     float raster_intensity;
-    float padding[12]; // 64-byte alignment alignment boundary
+    uint32_t material_variant; // USD Material VariantSet selection!
+    float padding[11];
 } CoaxialUBO;
 
 static CoaxialUBO active_ubo;
@@ -380,7 +382,7 @@ static void draw_char(uint32_t *pixels, int w, int h, int start_x, int start_y, 
 
 static void draw_string(uint32_t *pixels, int w, int h, int start_x, int start_y, const char *str, uint32_t color, int scale) {
     int cur_x = start_x;
-    int char_width = (start_y >= 200) ? (6 * scale * 2) : (6 * scale); // Scale character stride in multicolor split
+    int char_width = (start_y >= 200) ? (6 * scale * 2) : (6 * scale);
     while (*str) {
         draw_char(pixels, w, h, cur_x, start_y, *str, color, scale);
         cur_x += char_width;
@@ -388,7 +390,6 @@ static void draw_string(uint32_t *pixels, int w, int h, int start_x, int start_y
     }
 }
 
-// 40-entry water level data table mapped directly from water_remove.inc
 static const uint8_t water_remove_raw[40][5] = {
     {96, 25, 0, 16, 255},
     {97, 25, 192, 15, 3},
@@ -601,12 +602,19 @@ static void hd_embree_render(uint32_t *pixels, int w, int h, const CoaxialUBO *u
 
     int osc_base_x = 100;
     int osc_base_y = 500;
-    draw_string(pixels, w, h, osc_base_x + 480, osc_base_y - 15, "RAY", 0xFF00FFFF, 1);
+    uint32_t trace_color = 0xFF00FFFF; // Default: Gold/Aqua
+    if (ubo->material_variant == 1) {
+        trace_color = 0xFFFF5555; // Clay/Terracotta
+    } else if (ubo->material_variant == 2) {
+        trace_color = 0xFFE6DFD3; // Chalk/Off-white
+    }
+    
+    draw_string(pixels, w, h, osc_base_x + 480, osc_base_y - 15, "RAY", trace_color, 1);
     for (int col = 0; col < 32; col++) {
         int val = ray_steps[col];
         int py = osc_base_y - (val * 12 / 32);
         if (py >= 0 && py < h && (osc_base_x + 480 + col) < w) {
-            pixels[py * w + osc_base_x + 480 + col] = 0xFF00FFFF;
+            pixels[py * w + osc_base_x + 480 + col] = trace_color;
         }
     }
 }
@@ -1156,6 +1164,7 @@ static void redraw_screen(void) {
     active_ubo.camera_y = sinf(retro_time * 2.0f) * 2.2f;
     active_ubo.active_model = (uint32_t)raymarch_mode;
     active_ubo.raster_intensity = 1.0f;
+    active_ubo.material_variant = (uint32_t)material_variant;
  
     // Invoke the composed Hydra Render Delegate to render 3D assets to screen
     static const HydraRenderDelegate hd_embree = { .render_scene = hd_embree_render };
@@ -1196,10 +1205,11 @@ static void redraw_screen(void) {
     bar_str[10] = '\0';
 
     const char *m_names[3] = {"CAC", "LET", "UNI"};
+    const char *v_names[3] = {"GLD", "CLY", "CHK"};
     char help_buf[256];
     snprintf(help_buf, sizeof(help_buf), 
-             "VIC-II: d012=%d | RAY: %s | RAST: %3.0fus [%s] | KEYS '1'-'3' TO MUTE | TR: %s", 
-             vic_d012, m_names[raymarch_mode], latency_us, bar_str, initials);
+             "VIC: d012=%d | RAY: %s (%s) | RAST: %3.0fus [%s] | 'B' TO VAR | TR: %s", 
+             vic_d012, m_names[raymarch_mode], v_names[material_variant], latency_us, bar_str, initials);
     draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 26 + glitch_y, help_buf, 0xFFFFCC00, 1);
     
     wl_surface_attach(surface, wl_buffers[current_buffer_idx], 0, 0);
@@ -1296,6 +1306,11 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *wl_keyboard, uin
         printf("[RAY] Ray Marching Mode changed: %d\n", raymarch_mode);
         redraw_screen();
         return;
+    } else if (key == 48) { // 'B' key scancode
+        material_variant = (material_variant + 1) % 3;
+        printf("[USD] Material Variant Set changed: %d\n", material_variant);
+        redraw_screen();
+        return;
     } else if (key == 4) {
         voice_active[2] = !voice_active[2];
         printf("[AUDIO] Voice 3 toggled: %s\n", voice_active[2] ? "ON" : "OFF");
@@ -1303,12 +1318,11 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *wl_keyboard, uin
         return;
     }
 
-    // Keystroke activity acceleration
     type_activity += 1.2f;
     if (type_activity > 5.0f) type_activity = 5.0f;
 
     char typed_char = '\0';
-    if (key == 28) { // Enter key -> Newline / Commit history transaction
+    if (key == 28) {
         uint32_t hash = 2166136261U;
         for (int i = 0; i < doc_len; i++) {
             hash ^= (uint8_t)doc_buf[i];
@@ -1385,14 +1399,13 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *wl_keyboard, uin
         
         if (key_history[0] == 't' && key_history[1] == 's' && key_history[2] == 'n') {
             hidden_unlocked = true;
-            active_tune = 3; // Trigger Hidden Tune
+            active_tune = 3;
             printf("[INFO] Hidden SID Tune 3 Unlocked! Warp Scroll Enabled.\n");
         }
     }
 
-    // Cycled tune manually via '#' key
     if (typed_char == '#') {
-        active_tune = (active_tune + 1) % 3; // Cycle normal tunes 0, 1, 2
+        active_tune = (active_tune + 1) % 3;
         redraw_screen();
         return;
     }
@@ -1401,10 +1414,9 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *wl_keyboard, uin
         doc_buf[doc_len++] = typed_char;
         doc_buf[doc_len] = '\0';
         
-        // Trigger pitch sweeps on simulated SID Voice 1 when typing
         if (voice_active[0]) {
             sid_chip.voices[0].freq = 0x2200 + (doc_len * 32);
-            sid_chip.voices[0].ctrl = 0x21; // Triangle waveform start
+            sid_chip.voices[0].ctrl = 0x21;
         }
         
         redraw_screen();
@@ -1488,15 +1500,12 @@ int main(void) {
     memcpy(decompressed_scroller, decrunch_temp, de_idx + 1);
     printf("[DECRUNCH] Relocated %d bytes from 0x2000 to 0x0800\n", de_idx);
 
-    // Precalculate Sine Lookup Table (LUT) covering full wave cycle
     for (int i = 0; i < 256; i++) {
         sine_lut[i] = sinf((float)i * (2.0f * M_PI / 256.0f));
     }
 
-    // Precompute morphological character frames cache (sprite asset simulation)
     precompute_morph_cache();
 
-    // Initialize 3D Starfield coordinates
     for (int i = 0; i < 15; i++) {
         starfield[i].x = (float)((rand() % 200) - 100) / 10.0f;
         starfield[i].y = (float)((rand() % 200) - 100) / 10.0f;
@@ -1506,7 +1515,6 @@ int main(void) {
         starfield[i].glyph = glyphs[rand() % 4];
     }
 
-    // Initialize 2D horizontal scrolling background stars
     for (int i = 0; i < 30; i++) {
         scroll_stars[i].x = (float)(rand() % 1280);
         scroll_stars[i].y = rand() % 720;
@@ -1516,7 +1524,6 @@ int main(void) {
         scroll_stars[i].color = (scroll_stars[i].speed > 35.0f) ? 0xFFFFCC00 : 0xFF884400;
     }
 
-    // Initialize simulated SID chip register defaults
     sid_chip.voices[0].adsr[0] = 0x21; // Attack / Decay
     sid_chip.voices[0].adsr[1] = 0xF5; // Sustain / Release
     sid_chip.voices[1].adsr[0] = 0x42;
