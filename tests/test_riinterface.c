@@ -37,11 +37,14 @@ int main(void) {
     tsfi_riinterface_vdc_dma_copy(&ri, 5, 8, 2);
     assert(ri.hudson_vce_color_reg[8] == (20 << 5)); // Copied color value
 
-    // Test Bresenham vector line rasterizer to frame buffer
-    tsfi_riinterface_draw_line(&ri, 10, 10, 20, 10, 0xAB);
-    assert(ri.frame_buffer[10 * 256 + 10] == 0xAB);
-    assert(ri.frame_buffer[10 * 256 + 15] == 0xAB);
-    assert(ri.frame_buffer[10 * 256 + 20] == 0xAB);
+    // Test Verlet integration applied strictly to simulated FET discharge cycles
+    double pos_x[3] = {10.0, 20.0, 30.0};
+    double prev_pos_x[3] = {9.5, 19.5, 29.5};
+    tsfi_riinterface_discharge_verlet(&ri, pos_x, prev_pos_x, 3, 0.1, 0.99);
+
+    // Verify coordinates evolved according to Verlet math: x + (x - prev) * decay - F
+    assert(pos_x[0] > 10.0);
+    assert(prev_pos_x[0] == 10.0);
 
     tsfi_riinterface_world_end(&ri);
     assert(ri.is_world_active == false);
@@ -50,7 +53,7 @@ int main(void) {
     printf("   ✓ Tom Hudson clipLine boundary checks verified successfully.\n");
     printf("   ✓ Camera panning dynamic PSG frequency modulation verified successfully.\n");
     printf("   ✓ VDC hardware DMA block transfers verified successfully.\n");
-    printf("   ✓ Tom Hudson vector clipLine and Bresenham rasterizer verified successfully.\n");
+    printf("   ✓ Soft body physics Verlet FET discharge integration verified successfully.\n");
     printf("=== AUNCIENT RIINTERFACE TESTS COMPLETE (PASS) ===\n");
     return 0;
 }

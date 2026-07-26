@@ -36,7 +36,7 @@ void tsfi_riinterface_modulate_psg(TSFiRiInterface *ri, double velocity);
 // Hardware-level VDC DMA block transfer simulation
 void tsfi_riinterface_vdc_dma_copy(TSFiRiInterface *ri, uint16_t src_idx, uint16_t dest_idx, uint16_t length);
 
-// Rasterizes a line into the simulated frame buffer using Bresenham's algorithm
-void tsfi_riinterface_draw_line(TSFiRiInterface *ri, int x0, int y0, int x1, int y1, uint8_t color_val);
+// Simulates the discharge cycles of field-effect transistors (FETs) using Verlet integration
+void tsfi_riinterface_discharge_verlet(TSFiRiInterface *ri, double *pos_x, double *prev_pos_x, int count, double dt, double decay);
 
 #endif // TSFI_RIINTERFACE_H
