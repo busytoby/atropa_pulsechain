@@ -19,4 +19,7 @@ bool tsfi_shadowmap_set_depth(TSFiShadowMap *sm, int x, int y, double depth);
 // Performs O(1) constant-time shadow lookup comparing point depth to shadow map depth
 bool tsfi_shadowmap_is_in_shadow(const TSFiShadowMap *sm, int x, int y, double point_depth);
 
+// Packs the depth grid array into a compressed 8-bit XPLSM shadow map byte layout
+void tsfi_shadowmap_pack_xplsm(const TSFiShadowMap *sm, uint8_t *dest_xpl_buffer);
+
 #endif // TSFI_SHADOWMAP_H

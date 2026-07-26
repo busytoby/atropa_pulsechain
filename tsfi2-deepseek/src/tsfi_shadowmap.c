@@ -25,3 +25,17 @@ bool tsfi_shadowmap_is_in_shadow(const TSFiShadowMap *sm, int x, int y, double p
     }
     return false; // Illuminated
 }
+
+void tsfi_shadowmap_pack_xplsm(const TSFiShadowMap *sm, uint8_t *dest_xpl_buffer) {
+    if (!sm || !dest_xpl_buffer) return;
+    
+    for (int y = 0; y < TSFI_SHADOW_SIZE; y++) {
+        for (int x = 0; x < TSFI_SHADOW_SIZE; x++) {
+            double depth = sm->depth_grid[y][x];
+            // Clamp and scale to fit into an 8-bit quantized byte representation (0-255)
+            if (depth < 0.0) depth = 0.0;
+            if (depth > 255.0) depth = 255.0;
+            dest_xpl_buffer[y * TSFI_SHADOW_SIZE + x] = (uint8_t)depth;
+        }
+    }
+}
