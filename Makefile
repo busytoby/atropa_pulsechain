@@ -12,7 +12,7 @@ help:
 	@echo "  make livrps-benchmark - Run LIVRPS USD composition latency benchmarks"
 
 
-test-all: test-dashboard test-container test-git-ci test-unit test-mann test-comp-pass test-mvarsel test-reroute test-delegate-sig test-stagecomp test-ar test-sdfformat test-hydrascene test-renderdelegate test-stagelock test-renderindex test-usdshade test-geomcamera test-geomcurves test-geompoints test-luxlight test-geomxform test-stageroot test-primroot test-stagepop test-attributeroot test-stagecache test-stagemask test-geomsubset test-stagearc test-stageinherits test-stagepayloads test-stagevariants test-stagetraverser test-stagemetadata test-camerafrustum test-stagereferences test-stagespecializes test-stagerelationship test-stagetimecodes test-vactrolpickup test-npnpnpvalve test-curvesbasis test-singularityring test-subdivcurves
+test-all: test-dashboard test-container test-git-ci test-unit test-mann test-comp-pass test-mvarsel test-reroute test-delegate-sig test-stagecomp test-ar test-sdfformat test-hydrascene test-renderdelegate test-stagelock test-renderindex test-usdshade test-geomcamera test-geomcurves test-geompoints test-luxlight test-geomxform test-stageroot test-primroot test-stagepop test-attributeroot test-stagecache test-stagemask test-geomsubset test-stagearc test-stageinherits test-stagepayloads test-stagevariants test-stagetraverser test-stagemetadata test-camerafrustum test-stagereferences test-stagespecializes test-stagerelationship test-stagetimecodes test-vactrolpickup test-npnpnpvalve test-curvesbasis test-singularityring test-subdivcurves test-subdivscheme
 	@echo "All tests completed successfully."
 
 test-mann:
@@ -219,6 +219,11 @@ test-subdivcurves:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_subdivcurves.c tsfi2-deepseek/src/tsfi_subdivcurves.c -o tests/test_subdivcurves -lm -lrt
 	./tests/test_subdivcurves
 	@rm -f tests/test_subdivcurves
+
+test-subdivscheme:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_subdivscheme.c tsfi2-deepseek/src/tsfi_subdivscheme.c -o tests/test_subdivscheme -lm -lrt
+	./tests/test_subdivscheme
+	@rm -f tests/test_subdivscheme
 
 sdk-benchmark:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_sdk_benchmarks.c -o tests/test_auncient_sdk_benchmarks -lm -lrt
