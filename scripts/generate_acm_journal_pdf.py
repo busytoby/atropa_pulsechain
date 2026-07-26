@@ -299,14 +299,14 @@ def render_mermaid_flowchart(lines, col_width):
     sources = sorted(list(set(sources)))
     sinks = sorted(list(set(sinks)))
     
-    box_w = 95
+    box_w = 80
     num_rows = max(len(sources), len(sinks), 1)
-    y_step = 45.0
-    max_draw_h = 320.0
+    y_step = 55.0
+    max_draw_h = 350.0
     if num_rows * y_step + 20 > max_draw_h:
         y_step = (max_draw_h - 20) / float(num_rows)
     draw_h = num_rows * y_step + 20
-    box_h = min(24, int(y_step * 0.6))
+    box_h = min(24, int(y_step * 0.5))
     
     d = Drawing(col_width, draw_h)
     
