@@ -44,7 +44,7 @@
 * **Support Only .dat.bin Extension:** The codebase must only support `.dat.bin` extensions for quadtree index, database slices, and block-ledger assets. No `.json` storage media layout is permitted on disk for quadtrees.
 
 ## 14. DisplacementShader & WinchesterMQ Linking
-* **WinchesterMQ or wm Reference**: Whenever the token "wm" or WinchesterMQ is discussed, return to the `DisplacementShader` to ensure vertex displacement math scales in perfect synchronization with system register boundary constraints.
+* **WinchesterMQ or wm Reference**: Whenever the token "wm" or WinchesterMQ is discussed (note that "wm" is not related to WinchesterMQ at all), return to the `DisplacementShader` to ensure vertex displacement math scales in perfect synchronization with system register boundary constraints.
 
 ## 15. Permanent Glossary
 
