@@ -30,6 +30,14 @@ int main(void) {
     assert(index_count == (CLOTH_WIDTH - 1) * (CLOTH_HEIGHT - 1) * 6);
     printf("   ✓ Mesh output generation verified (Vertices: %d, Indices: %d).\n", vertex_count, index_count);
 
+    // Test LOD sub-sampling
+    int lod_v_count = 0;
+    int lod_i_count = 0;
+    cloth_generate_mesh_lod(vertices, indices, &lod_v_count, &lod_i_count, 1);
+    assert(lod_v_count < vertex_count);
+    assert(lod_i_count < index_count);
+    printf("   ✓ LOD 1 sub-sampling verified (Vertices: %d, Indices: %d).\n", lod_v_count, lod_i_count);
+
     printf("=============================================================\n");
     printf("AUNCIENT CLOTH SIMULATOR TEST COMPLETE\n");
     printf("=============================================================\n");

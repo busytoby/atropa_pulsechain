@@ -307,3 +307,58 @@ void cloth_generate_mesh(ClothVertex *vertices, int *indices, int *vertex_count,
         }
     }
 }
+
+void cloth_generate_mesh_lod(ClothVertex *vertices, int *indices, int *vertex_count, int *index_count, int lod_level) {
+    *vertex_count = 0;
+    *index_count = 0;
+
+    int step = 1 << lod_level;
+    if (step < 1) step = 1;
+
+    // Track mapped vertex indices for correct index ordering
+    int local_indices[CLOTH_WIDTH][CLOTH_HEIGHT];
+    memset(local_indices, -1, sizeof(local_indices));
+
+    for (int y = 0; y < CLOTH_HEIGHT; y += step) {
+        for (int x = 0; x < CLOTH_WIDTH; x += step) {
+            vertices[*vertex_count].x = cloth_grid[x][y].x;
+            vertices[*vertex_count].y = cloth_grid[x][y].y;
+            vertices[*vertex_count].z = cloth_grid[x][y].z;
+            vertices[*vertex_count].nx = cloth_grid[x][y].nx;
+            vertices[*vertex_count].ny = cloth_grid[x][y].ny;
+            vertices[*vertex_count].nz = cloth_grid[x][y].nz;
+            vertices[*vertex_count].u = (float)x / (float)(CLOTH_WIDTH - 1);
+            vertices[*vertex_count].v = (float)y / (float)(CLOTH_HEIGHT - 1);
+
+            if (y < CLOTH_HEIGHT / 3) {
+                vertices[*vertex_count].color = 0xFF009900;
+            } else if (y < (CLOTH_HEIGHT * 2) / 3) {
+                vertices[*vertex_count].color = 0xFFFFFFFF;
+            } else {
+                vertices[*vertex_count].color = 0xFFCC0000;
+            }
+            local_indices[x][y] = *vertex_count;
+            (*vertex_count)++;
+        }
+    }
+
+    for (int y = 0; y < CLOTH_HEIGHT - step; y += step) {
+        for (int x = 0; x < CLOTH_WIDTH - step; x += step) {
+            int i0 = local_indices[x][y];
+            int i1 = local_indices[x + step][y];
+            int i2 = local_indices[x][y + step];
+            int i3 = local_indices[x + step][y + step];
+
+            if (i0 != -1 && i1 != -1 && i2 != -1 && i3 != -1) {
+                indices[*index_count] = i0;
+                indices[*index_count + 1] = i2;
+                indices[*index_count + 2] = i1;
+
+                indices[*index_count + 3] = i1;
+                indices[*index_count + 4] = i2;
+                indices[*index_count + 5] = i3;
+                *index_count += 6;
+            }
+        }
+    }
+}

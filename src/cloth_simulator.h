@@ -33,6 +33,7 @@ void cloth_update(float wind_x, float wind_y, float wind_z);
 void cloth_set_anchor(int x, int y, float tx, float ty, float tz);
 void cloth_apply_sphere_collision(float cx, float cy, float cz, float radius);
 void cloth_generate_mesh(ClothVertex *vertices, int *indices, int *vertex_count, int *index_count);
+void cloth_generate_mesh_lod(ClothVertex *vertices, int *indices, int *vertex_count, int *index_count, int lod_level);
 
 #ifdef __cplusplus
 }
