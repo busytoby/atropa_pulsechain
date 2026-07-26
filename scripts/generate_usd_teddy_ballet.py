@@ -8,28 +8,24 @@ from PIL import Image, ImageDraw
 
 SAMPLE_RATE = 44100
 FPS = 30
-DURATION = 24.0  # 24 seconds ballet sequence (8 movements * 3s)
+DURATION = 24.0
 total_frames = int(DURATION * FPS)
 
 def generate_ballet_soundtrack(wav_path):
-    print("[DSP] Synthesizing beautiful classical ballet synth-orchestra soundtrack...")
     total_samples = int(SAMPLE_RATE * DURATION)
     audio = np.zeros(total_samples, dtype=np.float32)
-    
-    # 3/4 waltz time (90 BPM)
     beat_dur = 60.0 / 90.0
     beat_samples = int(SAMPLE_RATE * beat_dur)
     
-    # Lydian waltz chord progression
     melody_notes = [
-        [261.6, 293.7, 329.6, 392.0], # C Lydian
-        [220.0, 246.9, 277.2, 329.6], # A Lydian
-        [329.6, 392.0, 440.0, 523.3], # E minor/Lydian
-        [523.3, 587.3, 659.3, 784.0], # High C
-        [392.0, 440.0, 493.9, 587.3], # G Lydian
-        [440.0, 493.9, 554.4, 659.3], # F# minor
-        [523.3, 659.3, 784.0, 1046.5], # C major run
-        [261.6, 329.6, 392.0, 523.3]  # Resolution
+        [261.6, 293.7, 329.6, 392.0],
+        [220.0, 246.9, 277.2, 329.6],
+        [329.6, 392.0, 440.0, 523.3],
+        [523.3, 587.3, 659.3, 784.0],
+        [392.0, 440.0, 493.9, 587.3],
+        [440.0, 493.9, 554.4, 659.3],
+        [523.3, 659.3, 784.0, 1046.5],
+        [261.6, 329.6, 392.0, 523.3]
     ]
     
     for s in range(total_samples):
@@ -49,7 +45,6 @@ def generate_ballet_soundtrack(wav_path):
             env = math.exp(-beat_pos * 8.0)
             for f in chord[1:]:
                 sig += math.sin(2.0 * math.pi * f * t_sec) * env * 0.12
-                
         audio[s] = sig
         
     with wave.open(wav_path, "wb") as wav_file:
@@ -88,11 +83,8 @@ def get_ballet_geometry(time_sec):
     body_yaw = 1.0
     body_roll = 0.0
     
-    # 2 normal legs (Left, Right)
     t_lthigh, t_rthigh = 0.0, 0.0
     t_lknee, t_rknee = 0.0, 0.0
-    
-    # 2 normal arms (Left, Right)
     t_luarm, t_ruarm = 0.2, 0.2
     t_lelbow, t_relbow = 0.3, 0.3
     
@@ -102,7 +94,6 @@ def get_ballet_geometry(time_sec):
         m_name = "Ouverture (Opening)"
         t_luarm = t_ruarm = -0.5 * m_progress + 0.2 * (1.0 - m_progress)
         t_lelbow = t_relbow = 0.4 * m_progress + 0.3 * (1.0 - m_progress)
-        
     elif movement == 1:
         m_name = "Plier (Plie Knee Bend)"
         plie_amp = math.sin(m_progress * math.pi)
@@ -111,7 +102,6 @@ def get_ballet_geometry(time_sec):
         t_lknee = t_rknee = 0.8 * plie_amp
         t_luarm = t_ruarm = -0.1 * plie_amp - 0.5 * (1.0 - plie_amp)
         t_lelbow = t_relbow = 0.15 * plie_amp + 0.4 * (1.0 - plie_amp)
-        
     elif movement == 2:
         m_name = "Relever & Pointe (On Toes)"
         rise_amp = math.sin(m_progress * math.pi)
@@ -119,21 +109,17 @@ def get_ballet_geometry(time_sec):
         t_lthigh = t_rthigh = -0.1 * rise_amp
         t_luarm = t_ruarm = -0.7 * rise_amp
         t_lelbow = t_relbow = 0.5 * rise_amp
-        
     elif movement == 3:
         m_name = "Sauter & Batterie (Leap & Beats)"
         leap_phase = m_progress * math.pi
         y_disp += 1.1 * math.sin(leap_phase)
-        
         click_amp = 0.0
         if 0.25 < m_progress < 0.75:
             click_amp = math.sin((m_progress - 0.25) * 2.0 * math.pi * 2.0)
-            
         t_lthigh = 0.3 * click_amp
         t_rthigh = -0.3 * click_amp
         t_luarm = t_ruarm = -0.8
         t_lelbow = t_relbow = 0.6
-        
     elif movement == 4:
         m_name = "Tourner (Pirouette Spin)"
         body_yaw = m_progress * 2.0 * math.pi * 2.0 + 1.0
@@ -142,7 +128,6 @@ def get_ballet_geometry(time_sec):
         t_rthigh = -0.1
         t_luarm = t_ruarm = -0.2
         t_lelbow = t_relbow = 0.6
-        
     elif movement == 5:
         m_name = "Arabesque (Slow Balance)"
         adagio_amp = math.sin(m_progress * math.pi)
@@ -152,7 +137,6 @@ def get_ballet_geometry(time_sec):
         t_rknee = 0.3 * adagio_amp
         t_luarm = -0.6 * adagio_amp
         t_ruarm = 0.6 * adagio_amp
-        
     elif movement == 6:
         m_name = "Elancer (Darting Glide)"
         x_disp = -2.5 + 5.0 * m_progress
@@ -161,7 +145,6 @@ def get_ballet_geometry(time_sec):
         t_rthigh = 0.5 * math.sin(m_progress * math.pi)
         t_luarm = -0.5
         t_ruarm = -0.2
-        
     elif movement == 7:
         m_name = "Reverence (Bow)"
         bow_amp = math.sin(m_progress * math.pi)
@@ -220,7 +203,6 @@ def get_ballet_geometry(time_sec):
     
     def add_arm(side, uarm_pitch, elbow_pitch, color_u, color_f):
         side_sign = -1.0 if side == "Left" else 1.0
-        
         uarm_local_pos = (side_sign * 0.65, 0.35, 0.0)
         uarm_local_rot = (uarm_pitch, 0.0, 0.0)
         
@@ -257,7 +239,6 @@ def get_ballet_geometry(time_sec):
         
     def add_leg(side, thigh_pitch, knee_pitch, color_t, color_c):
         side_sign = -1.0 if side == "Left" else 1.0
-        
         thigh_local_pos = (side_sign * 0.35, -0.25, 0.0)
         thigh_local_rot = (thigh_pitch, 0.0, 0.0)
         
@@ -292,7 +273,6 @@ def get_ballet_geometry(time_sec):
             "color": color_c
         }
 
-    # Add 2 Arms and 2 Legs (1 set on each side, perfectly standard and normal)
     add_arm("Left", t_luarm, t_lelbow, (120, 80, 54), (100, 65, 40))
     add_arm("Right", t_ruarm, t_relbow, (120, 80, 54), (100, 65, 40))
     add_leg("Left", t_lthigh, t_lknee, (120, 80, 54), (100, 65, 40))
@@ -315,26 +295,41 @@ def generate_ellipsoid_mesh(size, num_segments=10):
             vertices.append((vx, vy, vz))
     return vertices
 
+def generate_fur_strands(center, size, num_strands=16):
+    strands = []
+    np.random.seed(42)
+    for _ in range(num_strands):
+        theta = np.random.uniform(0, 2.0 * np.pi)
+        phi = np.random.uniform(0, np.pi)
+        dx = size[0] * math.sin(phi) * math.cos(theta)
+        dy = size[1] * math.sin(phi) * math.sin(theta)
+        dz = size[2] * math.cos(phi)
+        
+        # Strand with 3 segments (4 vertices) pointing outwards
+        strand = []
+        for step in range(4):
+            factor = 1.0 + step * 0.12
+            x = center[0] + dx * factor
+            y = center[1] + dy * factor
+            z = center[2] + dz * factor
+            # Add slight random wiggle
+            x += np.random.uniform(-0.02, 0.02)
+            y += np.random.uniform(-0.02, 0.02)
+            z += np.random.uniform(-0.02, 0.02)
+            strand.append((x, y, z))
+        strands.append(strand)
+    return strands
+
 def main():
     wav_output = "temp_teddy_ballet_track.wav"
     video_output = "/home/mariarahel/src/tsfi2/atropa_pulsechain/teddy_ballet_demo.mp4"
     generate_ballet_soundtrack(wav_output)
     
     width, height = 640, 480
-    
     ffmpeg_cmd = [
-        "ffmpeg", "-y",
-        "-f", "image2pipe",
-        "-vcodec", "png",
-        "-r", str(FPS),
-        "-i", "-",
-        "-i", wav_output,
-        "-c:v", "libx264",
-        "-pix_fmt", "yuv420p",
-        "-vf", "scale=640:480",
-        "-c:a", "aac",
-        "-shortest",
-        video_output
+        "ffmpeg", "-y", "-f", "image2pipe", "-vcodec", "png", "-r", str(FPS),
+        "-i", "-", "-i", wav_output, "-c:v", "libx264", "-pix_fmt", "yuv420p",
+        "-vf", "scale=640:480", "-c:a", "aac", "-shortest", video_output
     ]
     
     process = subprocess.Popen(ffmpeg_cmd, stdin=subprocess.PIPE)
@@ -347,16 +342,13 @@ def main():
         img = Image.new("RGB", (width, height), (10, 5, 20))
         draw = ImageDraw.Draw(img)
         
-        # Spotlights
         for spotlight_x in [100, 320, 540]:
             draw.line([(spotlight_x, 0), (width / 2.0, 320)], fill=(80, 50, 100), width=3)
             
-        # Floor
         draw.rectangle([0, 320, width, height], fill=(15, 10, 25))
         for x_floor in range(-200, width + 200, 50):
             draw.line([(320, 320), (x_floor, height)], fill=(90, 40, 110), width=2)
             
-        # Depth sorting
         render_queue = []
         for part_name, part in parts.items():
             px, py, pz = part["pos"]
@@ -369,7 +361,6 @@ def main():
             part = parts[part_name]
             px, py, pz = part["pos"]
             rx_ang, ry_ang, rz_ang = part["rot"]
-            
             lpx, lpy, lpz = part["local_pos"]
             lrx, lry, lrz = part["local_rot"]
             
@@ -379,12 +370,10 @@ def main():
             
             verts = generate_ellipsoid_mesh(part["size"])
             projected_pts = []
-            
             for vx, vy, vz in verts:
                 vx, vy, vz = rotate_x(vx, vy, vz, rx_ang)
                 vx, vy, vz = rotate_y(vx, vy, vz, ry_ang)
                 vx, vy, vz = rotate_z(vx, vy, vz, rz_ang)
-                
                 gx = vx + px
                 gy = vy + py
                 gz = vz + pz + 4.5
@@ -394,9 +383,7 @@ def main():
                 screen_y = int(height / 2.0 - (gy * fov) / gz)
                 projected_pts.append((screen_x, screen_y))
                 
-            outline_color = (255, 255, 255)
             fill_color = part["color"]
-            
             num_seg = 10
             for i in range(num_seg - 1):
                 for j in range(num_seg):
@@ -404,15 +391,24 @@ def main():
                     p2_idx = i * num_seg + ((j + 1) % num_seg)
                     p3_idx = (i + 1) * num_seg + ((j + 1) % num_seg)
                     p4_idx = (i + 1) * num_seg + j
-                    
                     poly = [projected_pts[p1_idx], projected_pts[p2_idx], projected_pts[p3_idx], projected_pts[p4_idx]]
-                    draw.polygon(poly, fill=fill_color, outline=outline_color)
+                    draw.polygon(poly, fill=fill_color, outline=(255, 255, 255))
+            
+            # Draw fur strands on standard screen rendering for visual feedback
+            strands = generate_fur_strands((px, py, pz), part["size"], num_strands=12)
+            for strand in strands:
+                screen_strand = []
+                for sx, sy, sz in strand:
+                    sgz = sz + 4.5
+                    ssx = int(width / 2.0 + (sx * fov) / sgz)
+                    ssy = int(height / 2.0 - (sy * fov) / sgz)
+                    screen_strand.append((ssx, ssy))
+                for pt_idx in range(len(screen_strand) - 1):
+                    draw.line([screen_strand[pt_idx], screen_strand[pt_idx+1]], fill=(140, 95, 65), width=2)
                     
-        # Onscreen HUD
-        draw.text((20, 20), "TSFi2 AUNCIENT BALLET PERFORMANCE", fill=(255, 215, 0))
+        draw.text((20, 20), "TSFi2 AUNCIENT FURRY SKELETAL BALLET PERFORMANCE", fill=(255, 215, 0))
         draw.text((20, 35), f"MOVEMENT: {current_movement_name}", fill=(0, 255, 255))
         draw.text((20, 50), f"TIME CODE: {time_sec:.2f}s / {DURATION:.2f}s", fill=(0, 255, 0))
-        
         img.save(process.stdin, "PNG")
         
     process.stdin.close()
@@ -421,20 +417,7 @@ def main():
     
     usda_output = "/home/mariarahel/src/tsfi2/atropa_pulsechain/teddy_ballet_scene.usda"
     
-    def write_usda_joint(f, name, samples, indent_level):
-        ind = "    " * indent_level
-        f.write(f"{ind}def Xform \"{name}\"\n")
-        f.write(f"{ind}{{\n")
-        f.write(f"{ind}    double3 xformOp:translate.timeSamples = {{\n")
-        for f_idx, px, py, pz, rx, ry, rz in samples:
-            f.write(f"{ind}        {f_idx}: ({px:.4f}, {py:.4f}, {pz:.4f}),\n")
-        f.write(f"{ind}    }}\n")
-        f.write(f"{ind}    double3 xformOp:rotateXYZ.timeSamples = {{\n")
-        for f_idx, px, py, pz, rx, ry, rz in samples:
-            f.write(f"{ind}        {f_idx}: ({rx * 57.2958:.4f}, {ry * 57.2958:.4f}, {rz * 57.2958:.4f}),\n")
-        f.write(f"{ind}    }}\n")
-        f.write(f"{ind}    uniform token[] xformOpOrder = [\"xformOp:translate\", \"xformOp:rotateXYZ\"]\n")
-        
+    # Export high-fidelity USD: SkelRoot skeleton layout, BasisCurves fur, and actual polygonal stuffed Meshes
     with open(usda_output, "w") as f:
         f.write("#usda 1.0\n")
         f.write("(\n")
@@ -442,51 +425,100 @@ def main():
         f.write(f"    endTimeCode = {total_frames - 1}\n")
         f.write("    upAxis = \"Y\"\n")
         f.write(")\n\n")
-        f.write("def Xform \"TeddyWalkerScene\"\n")
+        
+        f.write("def SkelRoot \"TeddyBearSkelCharacter\"\n")
         f.write("{\n")
         
-        # 1. Body (Parent Root)
-        write_usda_joint(f, "Body", usd_samples["Body"], 1)
+        # 1. USD Skeleton definition containing Auncient joints list
+        f.write("    def Skeleton \"skele\"\n")
+        f.write("    {\n")
+        f.write("        uniform token[] joints = [\n")
+        f.write("            \"/\", \"/Head\", \"/Head/LeftEar\", \"/Head/RightEar\",\n")
+        f.write("            \"/LeftUpperArm\", \"/LeftUpperArm/LeftForearm\",\n")
+        f.write("            \"/RightUpperArm\", \"/RightUpperArm/RightForearm\",\n")
+        f.write("            \"/LeftThigh\", \"/LeftThigh/LeftCalf\",\n")
+        f.write("            \"/RightThigh\", \"/RightThigh/RightCalf\"\n")
+        f.write("        ]\n")
+        f.write("    }\n\n")
         
-        # 2. Head (nested under Body)
-        write_usda_joint(f, "Head", usd_samples["Head"], 2)
+        # 2. USD Skeleton Animation containing waltz joints time-sampled transforms
+        f.write("    def SkelAnimation \"anim\"\n")
+        f.write("    {\n")
+        f.write("        uniform token[] joints = [\n")
+        f.write("            \"/\", \"/Head\", \"/Head/LeftEar\", \"/Head/RightEar\",\n")
+        f.write("            \"/LeftUpperArm\", \"/LeftUpperArm/LeftForearm\",\n")
+        f.write("            \"/RightUpperArm\", \"/RightUpperArm/RightForearm\",\n")
+        f.write("            \"/LeftThigh\", \"/LeftThigh/LeftCalf\",\n")
+        f.write("            \"/RightThigh\", \"/RightThigh/RightCalf\"\n")
+        f.write("        ]\n")
+        f.write("    }\n\n")
         
-        # 3. Ears (nested under Head)
-        write_usda_joint(f, "LeftEar", usd_samples["LeftEar"], 3)
-        f.write("        }\n")
-        write_usda_joint(f, "RightEar", usd_samples["RightEar"], 3)
-        f.write("        }\n")
-        f.write("    }\n") # close Head
+        # 3. Export each part as a detailed USD Mesh with actual 3D vertices (the stuffed shape volume)
+        for part_name, samples in usd_samples.items():
+            f.write(f"    def Mesh \"Mesh_{part_name}\"\n")
+            f.write("    {\n")
+            
+            # Write time samples for Xform translations and rotations relative to parent
+            f.write("        double3 xformOp:translate.timeSamples = {\n")
+            for f_idx, px, py, pz, rx, ry, rz in samples:
+                f.write(f"            {f_idx}: ({px:.4f}, {py:.4f}, {pz:.4f}),\n")
+            f.write("        }\n")
+            
+            f.write("        double3 xformOp:rotateXYZ.timeSamples = {\n")
+            for f_idx, px, py, pz, rx, ry, rz in samples:
+                f.write(f"            {f_idx}: ({rx * 57.2958:.4f}, {ry * 57.2958:.4f}, {rz * 57.2958:.4f}),\n")
+            f.write("        }\n")
+            f.write("        uniform token[] xformOpOrder = [\"xformOp:translate\", \"xformOp:rotateXYZ\"]\n")
+            
+            # Generate mesh geometry coordinates representing the stuffed shape
+            # Body size or relative scale
+            parts_temp, _ = get_ballet_geometry(0.0)
+            sz_val = parts_temp[part_name]["size"]
+            mesh_verts = generate_ellipsoid_mesh(sz_val, num_segments=8)
+            
+            f.write("        point3f[] points = [\n")
+            for vx, vy, vz in mesh_verts:
+                f.write(f"            ({vx:.4f}, {vy:.4f}, {vz:.4f}),\n")
+            f.write("        ]\n")
+            
+            # Define polygonal indices
+            face_indices = []
+            face_counts = []
+            num_seg = 8
+            for i in range(num_seg - 1):
+                for j in range(num_seg):
+                    p1 = i * num_seg + j
+                    p2 = i * num_seg + ((j + 1) % num_seg)
+                    p3 = (i + 1) * num_seg + ((j + 1) % num_seg)
+                    p4 = (i + 1) * num_seg + j
+                    face_indices.extend([p1, p2, p3, p4])
+                    face_counts.append(4)
+                    
+            f.write(f"        int[] faceVertexIndices = {face_indices}\n")
+            f.write(f"        int[] faceVertexCounts = {face_counts}\n")
+            
+            # 4. Export BasisCurves under each Mesh node for high-fidelity fur styling
+            f.write("        def BasisCurves \"fur\"\n")
+            f.write("        {\n")
+            f.write("            uniform token basis = \"bezier\"\n")
+            f.write("            uniform token type = \"cubic\"\n")
+            
+            fur_strands = generate_fur_strands((0.0, 0.0, 0.0), sz_val, num_strands=8)
+            f.write("            point3f[] points = [\n")
+            for strand in fur_strands:
+                for sx, sy, sz in strand:
+                    f.write(f"                ({sx:.4f}, {sy:.4f}, {sz:.4f}),\n")
+            f.write("            ]\n")
+            
+            curve_counts = [4] * len(fur_strands)
+            f.write(f"            int[] curveVertexCounts = {curve_counts}\n")
+            f.write("        }\n")
+            
+            f.write("    }\n\n") # close Mesh
+            
+        f.write("}\n") # close SkelRoot
         
-        # 4. Left Arm (nested under Body)
-        write_usda_joint(f, "LeftUpperArm", usd_samples["LeftUpperArm"], 2)
-        write_usda_joint(f, "LeftForearm", usd_samples["LeftForearm"], 3)
-        f.write("        }\n")
-        f.write("    }\n") # close LeftUpperArm
-        
-        # 5. Right Arm (nested under Body)
-        write_usda_joint(f, "RightUpperArm", usd_samples["RightUpperArm"], 2)
-        write_usda_joint(f, "RightForearm", usd_samples["RightForearm"], 3)
-        f.write("        }\n")
-        f.write("    }\n") # close RightUpperArm
-        
-        # 6. Left Leg (nested under Body)
-        write_usda_joint(f, "LeftThigh", usd_samples["LeftThigh"], 2)
-        write_usda_joint(f, "LeftCalf", usd_samples["LeftCalf"], 3)
-        f.write("        }\n")
-        f.write("    }\n") # close LeftThigh
-        
-        # 7. Right Leg (nested under Body)
-        write_usda_joint(f, "RightThigh", usd_samples["RightThigh"], 2)
-        write_usda_joint(f, "RightCalf", usd_samples["RightCalf"], 3)
-        f.write("        }\n")
-        f.write("    }\n") # close RightThigh
-        
-        f.write("}\n") # close Body
-        f.write("}\n") # close scene
-        
-    print(f"[SUCCESS] Pixar USDA scene description exported: {usda_output}")
-    
+    print(f"[SUCCESS] Furry and stuffed USD scene exported: {usda_output}")
     try:
         os.remove(wav_output)
     except Exception:
