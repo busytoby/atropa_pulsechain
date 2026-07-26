@@ -627,6 +627,69 @@ def main():
         f.write("        int[] faceVertexIndices = [" + ", ".join(map(str, face_indices)) + "]\n")
         pts_str = ", ".join([f"({x:.3f}, {y:.3f}, {z:.3f})" for x, y, z in heart_points])
         f.write(f"        point3f[] points = [{pts_str}]\n")
+        f.write("    }\n\n")
+
+        # Calculate dynamic displacements for USD text export
+        sim_y_samples = {idx: {} for idx in range(14)}
+        for idx in range(14):
+            y_val = 0.0
+            vy_val = 0.0
+            for frame_idx in range(total_frames):
+                vy_val += 0.14
+                y_val += vy_val
+                if y_val >= 25.0:
+                    y_val = 25.0
+                    vy_val = -vy_val * 0.65
+                kick_tick = 30 + idx * 12 + (frame_idx // 200) * 200
+                if frame_idx == kick_tick:
+                    vy_val = -5.0
+                sim_y_samples[idx][frame_idx] = y_val
+
+        f.write("    def Xform \"CashCowText\"\n")
+        f.write("    {\n")
+        f.write("        def Scope \"Materials\"\n")
+        f.write("        {\n")
+        f.write("            def Material \"GoldMaterial\"\n")
+        f.write("            {\n")
+        f.write("                token outputs:surface.connect = </RemorseScene/CashCowText/Materials/GoldMaterial/Shader.outputs:surface>\n")
+        f.write("                def Shader \"Shader\"\n")
+        f.write("                {\n")
+        f.write("                    uniform token info:id = \"UsdPreviewSurface\"\n")
+        f.write("                    color3f inputs:diffuseColor = (1.0, 0.84, 0.0)\n")
+        f.write("                    float inputs:metallic = 1.0\n")
+        f.write("                    float inputs:roughness = 0.1\n")
+        f.write("                }\n")
+        f.write("            }\n")
+        f.write("            def Material \"CowSpotMaterial\"\n")
+        f.write("            {\n")
+        f.write("                token outputs:surface.connect = </RemorseScene/CashCowText/Materials/CowSpotMaterial/Shader.outputs:surface>\n")
+        f.write("                def Shader \"Shader\"\n")
+        f.write("                {\n")
+        f.write("                    uniform token info:id = \"UsdPreviewSurface\"\n")
+        f.write("                    color3f inputs:diffuseColor = (0.95, 0.95, 0.95)\n")
+        f.write("                    float inputs:roughness = 0.3\n")
+        f.write("                }\n")
+        f.write("            }\n")
+        f.write("        }\n")
+        
+        for idx, char in enumerate("$$ CASH COW $$"):
+            char_tag = "Dollar" if char == '$' else f"Char_{char}"
+            f.write(f"        def Xform \"{char_tag}_{idx}\"\n")
+            f.write("        {\n")
+            f.write("            double3 xformOp:translate.timeSamples = {\n")
+            for frame_idx in range(total_frames):
+                y_disp = sim_y_samples[idx][frame_idx]
+                f.write(f"                {frame_idx}: ({idx * 1.5}, {-y_disp * 0.1}, 0.0),\n")
+            f.write("            }\n")
+            f.write("            uniform token[] xformOpOrder = [\"xformOp:translate\"]\n")
+            
+            is_gold = (char == '$')
+            mat_path = "GoldMaterial" if is_gold else "CowSpotMaterial"
+            f.write("            def Cube \"Mesh\"\n")
+            f.write("            {\n")
+            f.write(f"                rel material:binding = </RemorseScene/CashCowText/Materials/{mat_path}>\n")
+            f.write("            }\n")
+            f.write("        }\n")
         f.write("    }\n")
         f.write("}\n")
     print(f"[SUCCESS] Pixar USDA scene description exported: {usda_output}")
