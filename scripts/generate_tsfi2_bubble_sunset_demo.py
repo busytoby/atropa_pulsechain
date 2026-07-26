@@ -278,9 +278,11 @@ def render_sunset_frame(frame, width, height):
                     is_left_edge = (c == 0) or not (row_bits & (1 << (15 - (c - 1))))
                     is_glossy = is_top_edge and is_left_edge
                     
-                    if dist_sq > 2:
+                    # Dynamic morphological inflation cycles (simulating assembly dilation/erosion)
+                    inflation = 1.0 + math.sin(t_val * 3.0)
+                    if dist_sq > (2.0 * inflation):
                         color = (255, 204, 0)
-                    elif dist_sq > 1:
+                    elif dist_sq > (1.0 * inflation):
                         color = (255, 102, 0)
                     else:
                         col_step = int(t_val * 15.0 + char_idx * 4 + c) % 8
