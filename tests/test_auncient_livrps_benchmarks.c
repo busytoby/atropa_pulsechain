@@ -131,6 +131,21 @@ static void resolve_local_spec_conflict(const usd_local_spec_conflict_t *conflic
     }
 }
 
+// 8. Reference vs Payload
+typedef struct {
+    char reference_opinion[32];
+    char payload_opinion[32];
+} usd_ref_payload_conflict_t;
+
+static void resolve_ref_payload_conflict(const usd_ref_payload_conflict_t *conflict, char *resolved_val) {
+    if (strlen(conflict->reference_opinion) > 0) {
+        strcpy(resolved_val, conflict->reference_opinion);
+    } else {
+        strcpy(resolved_val, conflict->payload_opinion);
+    }
+}
+
+
 
 
 int main(void) {
@@ -270,6 +285,23 @@ int main(void) {
     }
     double end_ls = get_time_ns();
     printf("   ✓ Local vs Specializes Conflict Average Latency: %.2f ns/run\n", (end_ls - start) / iterations);
+    fflush(stdout);
+
+    // 8. Reference vs Payload Priority Benchmark
+    printf("[BENCHMARK] Running %d iterations of Reference vs Payload Conflicts...\n", iterations);
+    fflush(stdout);
+    usd_ref_payload_conflict_t rp_conflict = {
+        .reference_opinion = "referenced_representation",
+        .payload_opinion = "payload_representation"
+    };
+    char resolved_rp[32] = "";
+    start = get_time_ns();
+    for (int i = 0; i < iterations; i++) {
+        resolve_ref_payload_conflict(&rp_conflict, resolved_rp);
+        checksum += resolved_rp[0];
+    }
+    double end_rp = get_time_ns();
+    printf("   ✓ Reference vs Payload Conflict Average Latency: %.2f ns/run\n", (end_rp - start) / iterations);
     fflush(stdout);
 
     // Print checksum to ensure values are not optimized away
