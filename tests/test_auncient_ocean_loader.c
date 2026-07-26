@@ -449,6 +449,62 @@ static void usd_notice_send_invalidation(usd_notice_listener_t *listener, const 
     }
 }
 
+typedef struct {
+    float ref_phase;
+    float vco_phase;
+    float error_sum;
+    float kp;
+    float ki;
+} ouroboros_pll_t;
+
+typedef struct {
+    int player_x;
+    int missile_x;
+    uint32_t collision_mask;
+} gtia_pmg_t;
+
+typedef struct {
+    ouroboros_pll_t pll;
+    gtia_pmg_t pmg;
+    uint32_t register_f125;
+    bool transaction_aborted;
+} cics_pll_pmg_context_t;
+
+static uint64_t power_modulo(uint64_t base_val, uint64_t exp, uint64_t mod) {
+    uint64_t res = 1;
+    base_val = base_val % mod;
+    while (exp > 0) {
+        if (exp & 1) {
+            res = (uint64_t)(((__uint128_t)res * base_val) % mod);
+        }
+        base_val = (uint64_t)(((__uint128_t)base_val * base_val) % mod);
+        exp >>= 1;
+    }
+    return res;
+}
+
+static void execute_pll_tick_cics(cics_pll_pmg_context_t *ctx) {
+    float error_val = ctx->pll.ref_phase - ctx->pll.vco_phase;
+    ctx->pll.error_sum += error_val;
+    float adjustment = (ctx->pll.kp * error_val) + (ctx->pll.ki * ctx->pll.error_sum);
+    
+    // Update register 0xF125 with absolute phase deviation
+    ctx->register_f125 = (uint32_t)(fabs(error_val) * 1000.0f);
+    
+    // If adjustment exceeds stability limits, abort CICS transaction
+    if (fabs(adjustment) > 2.0f) {
+        ctx->transaction_aborted = true;
+    }
+}
+
+static uint64_t execute_pmg_collision_cics(cics_pll_pmg_context_t *ctx, uint64_t base_val) {
+    uint64_t distance = (uint64_t)abs(ctx->pmg.player_x - ctx->pmg.missile_x);
+    // Cryptographic TDMA proof: proof = base^distance mod MotzkinPrime
+    uint64_t motzkin = 953467954114363ULL;
+    return power_modulo(base_val, distance, motzkin);
+}
+
+
 
 
 
@@ -1014,6 +1070,60 @@ int main(void) {
     usd_notice_send_invalidation(&listener, "/World/Cactus");
     assert(listener.invalidation_triggered == true);
     printf("   ✓ AUTODIN-integrated notice listener invalidation verified.\n");
+    fflush(stdout);
+
+    // 29. Test Multiple API Schemas Application
+    printf("[TEST] Testing Multiple API Schemas Application...\n");
+    fflush(stdout);
+    usd_auncient_cactus_schema_t prim_typed;
+    usd_auncient_texture_api_t prim_texture_api;
+    usd_auncient_physics_api_t prim_physics_api;
+    
+    usd_init_auncient_cactus_schema(&prim_typed);
+    usd_init_auncient_texture_api(&prim_texture_api);
+    usd_init_auncient_physics_api(&prim_physics_api);
+    
+    assert(prim_typed.density == 1.00f);
+    assert(prim_texture_api.stiffness == 0.50f);
+    assert(strcmp(prim_texture_api.texture, "cloth") == 0);
+    assert(prim_physics_api.mass == 10.00f);
+    assert(prim_physics_api.damping == 0.10f);
+    printf("   ✓ Multiple API schema applications verified successfully.\n");
+    fflush(stdout);
+
+    // 30. Test Ouroboros PLL and Atari GTIA PMG CICS Integration
+    printf("[TEST] Testing Ouroboros PLL and Atari GTIA PMG CICS Integration...\n");
+    fflush(stdout);
+    cics_pll_pmg_context_t pll_pmg_ctx = {
+        .pll = {
+            .ref_phase = 1.0f,
+            .vco_phase = 0.95f,
+            .error_sum = 0.0f,
+            .kp = 0.5f,
+            .ki = 0.1f
+        },
+        .pmg = {
+            .player_x = 45,
+            .missile_x = 42,
+            .collision_mask = 0x01
+        },
+        .register_f125 = 0,
+        .transaction_aborted = false
+    };
+
+    execute_pll_tick_cics(&pll_pmg_ctx);
+    assert(pll_pmg_ctx.register_f125 == 50); // 0.05 * 1000
+    assert(pll_pmg_ctx.transaction_aborted == false);
+
+    uint64_t tdma_proof = execute_pmg_collision_cics(&pll_pmg_ctx, 3ULL);
+    // distance = 45 - 42 = 3. proof = 3^3 mod 953467954114363 = 27
+    assert(tdma_proof == 27ULL);
+    
+    // Simulate high phase drift triggering transaction abort
+    pll_pmg_ctx.pll.vco_phase = -5.0f; // drift phase error
+    execute_pll_tick_cics(&pll_pmg_ctx);
+    assert(pll_pmg_ctx.transaction_aborted == true);
+    printf("   ✓ Ouroboros PLL and Atari GTIA PMG CICS integration verified.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
