@@ -304,9 +304,9 @@ def render_standard_code_block(code_lines, col_width, body_style):
     
     # Approximate monospace character width to fit within column margins
     char_w = 0.6
-    font_size = min(7.0, (col_width - 12.0) / float(max_len * char_w))
-    font_size = max(5.5, font_size)
-    leading = font_size + 1.5
+    font_size = min(6.0, (col_width - 8.0) / float(max_len * char_w))
+    font_size = max(5.0, font_size)
+    leading = font_size + 1.2
     
     code_style = ParagraphStyle(
         'CodeBlock',
@@ -321,6 +321,8 @@ def render_standard_code_block(code_lines, col_width, body_style):
         borderPadding=4,
         spaceBefore=4,
         spaceAfter=4,
+        leftIndent=8,
+        firstLineIndent=-8,
     )
     p = Paragraph(f"<pre>{escaped_code}</pre>", code_style)
     return p
@@ -486,29 +488,18 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
         pagesize=(page_width, page_height)
     )
     
-    # Define mandatory two-column layout templates
-    col_width_2col = (page_width - 1.25 * inch - 0.25 * inch) / 2.0
-    spacing_2col = 0.25 * inch
+    frame_left_odd = Frame(0.75 * inch, 0.7 * inch, col_width, col_height, id='col1_odd')
+    frame_right_odd = Frame(0.75 * inch + col_width + spacing, 0.7 * inch, col_width, col_height, id='col2_odd')
+    template_odd = PageTemplate(id='odd_page', frames=[frame_left_odd, frame_right_odd])
     
-    frame_left_odd = Frame(0.75 * inch, 0.7 * inch, col_width_2col, col_height, id='col1_odd')
-    frame_right_odd = Frame(0.75 * inch + col_width_2col + spacing_2col, 0.7 * inch, col_width_2col, col_height, id='col2_odd')
-    template_odd_2col = PageTemplate(id='odd_page_2col', frames=[frame_left_odd, frame_right_odd])
+    frame_left_even = Frame(0.5 * inch, 0.7 * inch, col_width, col_height, id='col1_even')
+    frame_right_even = Frame(0.5 * inch + col_width + spacing, 0.7 * inch, col_width, col_height, id='col2_even')
+    template_even = PageTemplate(id='even_page', frames=[frame_left_even, frame_right_even])
     
-    frame_left_even = Frame(0.5 * inch, 0.7 * inch, col_width_2col, col_height, id='col1_even')
-    frame_right_even = Frame(0.5 * inch + col_width_2col + spacing_2col, 0.7 * inch, col_width_2col, col_height, id='col2_even')
-    template_even_2col = PageTemplate(id='even_page_2col', frames=[frame_left_even, frame_right_even])
-    
-    # Define single-column layout templates for wide code/diagram pages
-    col_width_1col = page_width - 1.25 * inch
-    frame_odd_1col = Frame(0.75 * inch, 0.7 * inch, col_width_1col, col_height, id='col_odd_1col')
-    template_odd_1col = PageTemplate(id='odd_page_1col', frames=[frame_odd_1col])
-    
-    frame_even_1col = Frame(0.5 * inch, 0.7 * inch, col_width_1col, col_height, id='col_even_1col')
-    template_even_1col = PageTemplate(id='even_page_1col', frames=[frame_even_1col])
-    
-    doc.addPageTemplates([template_odd_2col, template_even_2col, template_odd_1col, template_even_1col])
+    doc.addPageTemplates([template_odd, template_even])
     
     story = []
+    story.append(NextPageTemplate(['even_page', 'odd_page']))
     
     story.append(Paragraph(f"<b>COMPENDIUM OF LORE AND HISTORICAL TRANSCRIPTS - VOLUME {volume_num}</b>", title_style))
     story.append(Paragraph("Compiled Chronologically under ACM 1961 Standards", ParagraphStyle('Sub', parent=title_style, fontName='Times-Italic', fontSize=9)))
@@ -517,38 +508,14 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
     for idx, (date, path) in enumerate(files):
         title = os.path.basename(path).replace(".md", "").replace("_", " ").title()
         
-        with open(path, 'r', encoding='utf-8') as file_in:
-            lines = file_in.readlines()
-            
-        # Scan for wide lines in code blocks/ASCII diagrams
-        use_single_column = False
-        in_code = False
-        for line in lines:
-            l_strip = line.strip()
-            if l_strip.startswith('```'):
-                in_code = not in_code
-            elif in_code or l_strip.startswith('+') or l_strip.startswith('|') or l_strip.startswith('┌') or l_strip.startswith('│') or l_strip.startswith('└'):
-                if len(l_strip) > 42:
-                    use_single_column = True
-                    break
-                    
-        # Select active template cycle and column width
-        if use_single_column:
-            cycle = ['even_page_1col', 'odd_page_1col']
-            current_col_width = col_width_1col
-        else:
-            cycle = ['even_page_2col', 'odd_page_2col']
-            current_col_width = col_width_2col
-            
-        if idx > 0:
-            story.append(NextPageTemplate(cycle))
-            story.append(PageBreak())
-        else:
-            story.append(NextPageTemplate(cycle))
-            
         art_flowables = []
         art_flowables.append(Paragraph(f"<b>ARTICLE: {title}</b>", ParagraphStyle('ArtTitle', parent=title_style, alignment=TA_LEFT, fontSize=9.5, spaceBefore=8)))
         art_flowables.append(Paragraph(f"<i>Published: {date.strftime('%B %d, %Y')}</i>", ParagraphStyle('ArtDate', parent=body_style, fontName='Times-Italic', fontSize=7.5)))
+        
+        with open(path, 'r', encoding='utf-8') as file_in:
+            lines = file_in.readlines()
+            
+        current_col_width = col_width
             
         i = 0
         while i < len(lines):
