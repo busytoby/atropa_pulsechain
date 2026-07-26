@@ -64,6 +64,23 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *wl_keyboard, uin
         }
         redraw_screen();
         return;
+    } else if (key == 22) {
+        USDStageRecord stage = {
+            .active_model = (uint32_t)raymarch_mode,
+            .material_variant = (uint32_t)material_variant,
+            .rotation_angle = active_ubo.rotation_angle,
+            .camera_y = active_ubo.camera_y,
+            .starfield_count = 15
+        };
+        FILE *f_usd = fopen("assets/usd_special.dat.bin", "wb");
+        if (f_usd) {
+            fwrite(&stage, sizeof(stage), 1, f_usd);
+            fclose(f_usd);
+            printf("[USD] Specialized template layer exported to assets/usd_special.dat.bin\n");
+            loader_flash_time = 0.5f;
+        }
+        redraw_screen();
+        return;
     } else if (key == 4) {
         voice_active[2] = !voice_active[2];
         printf("[AUDIO] Voice 3 toggled: %s\n", voice_active[2] ? "ON" : "OFF");
