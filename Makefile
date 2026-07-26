@@ -12,7 +12,7 @@ help:
 	@echo "  make livrps-benchmark - Run LIVRPS USD composition latency benchmarks"
 
 
-test-all: test-dashboard test-container test-git-ci test-unit test-mann test-comp-pass test-mvarsel test-reroute test-delegate-sig test-stagecomp test-ar test-sdfformat test-hydrascene test-renderdelegate test-stagelock test-renderindex test-usdshade test-geomcamera test-geomcurves test-geompoints test-luxlight test-geomxform test-stageroot test-primroot test-stagepop test-attributeroot test-stagecache test-stagemask test-geomsubset test-stagearc test-stageinherits test-stagepayloads test-stagevariants test-stagetraverser
+test-all: test-dashboard test-container test-git-ci test-unit test-mann test-comp-pass test-mvarsel test-reroute test-delegate-sig test-stagecomp test-ar test-sdfformat test-hydrascene test-renderdelegate test-stagelock test-renderindex test-usdshade test-geomcamera test-geomcurves test-geompoints test-luxlight test-geomxform test-stageroot test-primroot test-stagepop test-attributeroot test-stagecache test-stagemask test-geomsubset test-stagearc test-stageinherits test-stagepayloads test-stagevariants test-stagetraverser test-stagemetadata
 	@echo "All tests completed successfully."
 
 test-mann:
@@ -164,6 +164,11 @@ test-stagetraverser:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_stagetraverser.c tsfi2-deepseek/src/tsfi_stagetraverser.c tsfi2-deepseek/src/tsfi_primroot.c -o tests/test_stagetraverser -lm -lrt
 	./tests/test_stagetraverser
 	@rm -f tests/test_stagetraverser
+
+test-stagemetadata:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_stagemetadata.c tsfi2-deepseek/src/tsfi_stagemetadata.c -o tests/test_stagemetadata -lm -lrt
+	./tests/test_stagemetadata
+	@rm -f tests/test_stagemetadata
 
 sdk-benchmark:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_sdk_benchmarks.c -o tests/test_auncient_sdk_benchmarks -lm -lrt
