@@ -275,6 +275,36 @@ static void process_tape_ingest_v6(huc_ocean_system_t *huc,
     }
 }
 
+typedef struct {
+    float m[3][3];
+    float t[3];
+} bone_transform_t;
+
+static float interpolate_hermite(float p0, float m0, float p1, float m1, float t) {
+    float t2 = t * t;
+    float t3 = t2 * t;
+    return (2.0f*t3 - 3.0f*t2 + 1.0f)*p0 + (t3 - 2.0f*t2 + t)*m0 + (-2.0f*t3 + 3.0f*t2)*p1 + (t3 - t2)*m1;
+}
+
+static void apply_vertex_skinning(const vertex3d_t *src, vertex3d_t *dest, const bone_transform_t *bones, const float *weights, const int32_t *bone_indices, int weight_count) {
+    dest->x = 0.0f;
+    dest->y = 0.0f;
+    dest->z = 0.0f;
+    for (int i = 0; i < weight_count; i++) {
+        int b_idx = bone_indices[i];
+        const bone_transform_t *b = &bones[b_idx];
+        float w = weights[i];
+        
+        float rx = b->m[0][0]*src->x + b->m[0][1]*src->y + b->m[0][2]*src->z + b->t[0];
+        float ry = b->m[1][0]*src->x + b->m[1][1]*src->y + b->m[1][2]*src->z + b->t[1];
+        float rz = b->m[2][0]*src->x + b->m[2][1]*src->y + b->m[2][2]*src->z + b->t[2];
+        
+        dest->x += rx * w;
+        dest->y += ry * w;
+        dest->z += rz * w;
+    }
+}
+
 static float interpolate_catmull_rom(float p0, float p1, float p2, float p3, float t) {
     return 0.5f * ((2.0f * p1) +
                    (-p0 + p2) * t +
@@ -311,6 +341,26 @@ static void run_digital_dynamite_tests(void) {
     displace_vertex_by_texture(&vertex, mock_tex, 2, 2, 0.0f, 0.0f, 1.5f);
     assert(vertex.z > 1.4f);
     printf("   ✓ Texture-driven vertex displacement verified successfully.\n");
+    
+    // 3. Test Hermite Curve Spline Pathing
+    float h_val = interpolate_hermite(0.0f, 1.0f, 1.0f, 1.0f, 0.5f);
+    assert(h_val >= 0.4f && h_val <= 0.6f);
+    printf("   ✓ Hermite spline pathing verified successfully.\n");
+    
+    // 4. Test Skeletal Bone Transform & Weight-Based Skinning
+    bone_transform_t bones[1] = {
+        {
+            .m = { {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f} },
+            .t = { 1.0f, 2.0f, 3.0f }
+        }
+    };
+    vertex3d_t src_v = { 0.0f, 0.0f, 0.0f };
+    vertex3d_t dest_v;
+    float weights[1] = { 1.0f };
+    int32_t bone_indices[1] = { 0 };
+    apply_vertex_skinning(&src_v, &dest_v, bones, weights, bone_indices, 1);
+    assert(dest_v.x > 0.9f && dest_v.y > 1.9f && dest_v.z > 2.9f);
+    printf("   ✓ Skeletal weight-based skinning verified successfully.\n");
     fflush(stdout);
 }
 
