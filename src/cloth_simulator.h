@@ -1,0 +1,37 @@
+#ifndef CLOTH_SIMULATOR_H
+#define CLOTH_SIMULATOR_H
+
+#include <stdint.h>
+
+// Auncient Cloth Physics Mass-Spring Solver for TSFI2
+
+typedef struct {
+    float x, y, z;
+    float vx, vy, vz;
+    float fx, fy, fz;
+    float nx, ny, nz;
+} ClothPoint;
+
+typedef struct {
+    float x, y, z;
+    float nx, ny, nz;
+    float u, v;
+    uint32_t color;
+} ClothVertex;
+
+#define CLOTH_WIDTH 15
+#define CLOTH_HEIGHT 10
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void cloth_init(void);
+void cloth_update(float wind_x, float wind_y, float wind_z);
+void cloth_generate_mesh(ClothVertex *vertices, int *indices, int *vertex_count, int *index_count);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // CLOTH_SIMULATOR_H
