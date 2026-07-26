@@ -72,22 +72,34 @@ def generate_soundtrack(wav_path, duration=22, sample_rate=44100):
         wav_file.writeframes(b''.join(audio_data))
 
 def draw_cash_cow(draw, width, time):
-    font = ImageFont.load_default()
+    font_map = {
+        ' ': [0x00, 0x00, 0x00, 0x00, 0x00],
+        '$': [0x24, 0x2a, 0x7f, 0x2a, 0x12],
+        'C': [0x3e, 0x41, 0x41, 0x41, 0x22],
+        'A': [0x7e, 0x11, 0x11, 0x11, 0x7e],
+        'S': [0x46, 0x49, 0x49, 0x49, 0x31],
+        'H': [0x7f, 0x08, 0x08, 0x08, 0x7f],
+        'O': [0x3e, 0x41, 0x41, 0x41, 0x3e],
+        'W': [0x3f, 0x40, 0x38, 0x40, 0x3f]
+    }
     text = "$$ CASH COW $$"
     
-    # Calculate text size using bounding box
-    bbox = draw.textbbox((0, 0), text, font=font)
-    text_w = bbox[2] - bbox[0]
-    text_h = bbox[3] - bbox[1]
-    
-    # Render text onto small image and upscale for retro pixel block look
-    small_w = text_w + 10
-    small_h = text_h + 4
+    small_w = len(text) * 6 + 10
+    small_h = 12
     small_img = Image.new("L", (small_w, small_h), 0)
-    small_draw = ImageDraw.Draw(small_img)
-    small_draw.text((5, 2), text, fill=255, font=font)
     
-    scale = 3
+    current_x = 2
+    for char in text:
+        if char in font_map:
+            cols = font_map[char]
+            for c in range(5):
+                col_val = cols[c]
+                for r in range(7):
+                    if (col_val >> r) & 1:
+                        small_img.putpixel((current_x + c, r + 1), 255)
+        current_x += 6
+    
+    scale = 4
     big_w = small_w * scale
     big_h = small_h * scale
     big_img = small_img.resize((big_w, big_h), Image.Resampling.NEAREST)
