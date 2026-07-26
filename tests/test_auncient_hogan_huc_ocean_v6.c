@@ -67,17 +67,57 @@ typedef struct {
     float z;
 } vertex3d_t;
 
+typedef struct {
+    float min_x;
+    float min_y;
+    float max_x;
+    float max_y;
+    int32_t child_pointers[4];
+    int32_t is_leaf;
+    int32_t vertex_count;
+    vertex3d_t vertices[4];
+} quadtree_node_t;
+
+static uint32_t calculate_crc32(const uint8_t *data, size_t len) {
+    uint32_t crc = 0xFFFFFFFF;
+    for (size_t i = 0; i < len; i++) {
+        crc ^= data[i];
+        for (int j = 0; j < 8; j++) {
+            if (crc & 1) {
+                crc = (crc >> 1) ^ 0xEDB88320;
+            } else {
+                crc >>= 1;
+            }
+        }
+    }
+    return ~crc;
+}
+
+static void serialize_quadtree_to_bin(const char *filename, const quadtree_node_t *node) {
+    FILE *f = fopen(filename, "wb");
+    if (!f) return;
+    fwrite(node, sizeof(quadtree_node_t), 1, f);
+    
+    // Calculate and append CRC32 checksum trailer
+    uint32_t crc = calculate_crc32((const uint8_t*)node, sizeof(quadtree_node_t));
+    fwrite(&crc, sizeof(uint32_t), 1, f);
+    fclose(f);
+}
+
 // Decodes a .dna byte stream representing operator sequences (1: Taper, 2: Twist, 3: Displace)
+// Uses compressed 16-bit fixed point parameters (divided by 10000.0f)
 static void decode_dna_and_apply(vertex3d_t *vertices, int count, const uint8_t *dna, int dna_len) {
     int pos = 0;
     while (pos < dna_len) {
         if (pos >= dna_len) break;
         uint8_t op_id = dna[pos++];
         
-        if (pos + 4 > dna_len) break;
-        float val;
-        memcpy(&val, &dna[pos], 4);
-        pos += 4;
+        if (pos + 2 > dna_len) break;
+        int16_t fixed_val;
+        memcpy(&fixed_val, &dna[pos], 2);
+        pos += 2;
+        
+        float val = (float)fixed_val / 10000.0f;
         
         if (op_id == 1) {
             // Taper Operator decoded from DNA
@@ -105,7 +145,7 @@ static void decode_dna_and_apply(vertex3d_t *vertices, int count, const uint8_t 
     }
 }
 
-// 2. Procedural 3D Mesh / Lissajous Pathing using DNA stream decoding
+// 2. Procedural 3D Mesh / Lissajous Pathing using DNA stream decoding & Quadtree serialization
 static void update_lissajous_mesh(huc_ocean_system_t *huc, double signal) {
     vertex3d_t vertices[1] = {
         {
@@ -115,18 +155,28 @@ static void update_lissajous_mesh(huc_ocean_system_t *huc, double signal) {
         }
     };
     
-    // Serialized DNA instruction stream (Taper 0.2f, Twist 0.5f, Displace 0.1f)
-    float val_taper = 0.2f;
-    float val_twist = 0.5f;
-    float val_displace = 0.1f;
+    // Serialized DNA instruction stream using 16-bit fixed point mapping (Taper 0.2f, Twist 0.5f, Displace 0.1f)
+    int16_t fixed_taper = (int16_t)(0.2f * 10000.0f);
+    int16_t fixed_twist = (int16_t)(0.5f * 10000.0f);
+    int16_t fixed_displace = (int16_t)(0.1f * 10000.0f);
     
-    uint8_t dna[15];
-    dna[0] = 1; memcpy(&dna[1], &val_taper, 4);
-    dna[5] = 2; memcpy(&dna[6], &val_twist, 4);
-    dna[10] = 3; memcpy(&dna[11], &val_displace, 4);
+    uint8_t dna[9];
+    dna[0] = 1; memcpy(&dna[1], &fixed_taper, 2);
+    dna[3] = 2; memcpy(&dna[4], &fixed_twist, 2);
+    dna[6] = 3; memcpy(&dna[7], &fixed_displace, 2);
     
     // Decode and apply DNA operators
-    decode_dna_and_apply(vertices, 1, dna, 15);
+    decode_dna_and_apply(vertices, 1, dna, 9);
+    
+    // Save coordinate as quadtree root slice to .dat.bin file
+    quadtree_node_t root_node = {
+        .min_x = -2.0f, .min_y = -2.0f, .max_x = 2.0f, .max_y = 2.0f,
+        .child_pointers = {-1, -1, -1, -1},
+        .is_leaf = 1,
+        .vertex_count = 1,
+        .vertices = { {vertices[0].x, vertices[0].y, vertices[0].z} }
+    };
+    serialize_quadtree_to_bin("targ_map_quadtree.dat.bin", &root_node);
     
     huc->lissajous_x = vertices[0].x;
     huc->lissajous_y = vertices[0].y;
