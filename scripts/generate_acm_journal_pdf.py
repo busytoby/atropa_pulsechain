@@ -159,6 +159,10 @@ def convert_latex_math_to_html(text):
         (r'\\epsilon', 'ε'),
         (r'\\eta', 'η'),
         (r'\\sigma', 'σ'),
+        (r'\\begin\{[^}]+\}', ''),
+        (r'\\end\{[^}]+\}', ''),
+        (r'\\\{', '{'),
+        (r'\\\}', '}'),
         (r'\\left', ''),
         (r'\\right', ''),
     ]
