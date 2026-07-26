@@ -16,7 +16,7 @@ This document performs a technical breakdown of Access Software's core breakthro
 | **1986** | Physics Simulation Engine | *Leader Board Golf* physics | First sports game with wind, drag, and Magnus hooks/slices |
 | **1988** | RealSound Digital Audio | Cycle-accurate PC Speaker PWM toggling | First 6-bit DAC emulation yielding software digitized speech |
 | **1990** | Vector Topography Golf | *Links: The Challenge of Golf* | Advanced course physics and terrain layout simulations |
-| **1994** | Virtual World 3D Engine | 6-DoF texture-mapped lookups | Full 3D camera rotations for adventure FMV titles (*Tex Murphy*) |
+| **1994** | Abstract World 3D Engine | 6-DoF texture-mapped lookups | Full 3D camera rotations for adventure FMV titles (*Tex Murphy*) |
 
 ---
 
@@ -88,11 +88,11 @@ Our [diskSystem.yul](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/solidit
 
 ---
 
-### 1.4 Virtual World Engine (6-DoF Real-Time 3D)
+### 1.4 Abstract World Engine (6-DoF Real-Time 3D)
 In the mid-1990s, Access transitioned to full 3D navigation in interactive adventures like the *Tex Murphy* series.
 
 #### Core Math
-The Virtual World Engine projected 3D wireframes into 2D screens using perspective projection:
+The Abstract World Engine projected 3D wireframes into 2D screens using perspective projection:
 * **Rotation Matrices (Yaw/Pitch):**
   $$X_{rot} = X_{diff} \cos(\theta) - Z_{diff} \sin(\theta)$$
   $$Z_{rot} = X_{diff} \sin(\theta) + Z_{diff} \cos(\theta)$$
@@ -136,17 +136,7 @@ To scale distribution and navigate early 8-bit platform requirements, Access Sof
 
 The dashboard at http://127.0.0.1:3000/datamost.html allows you to interact with all these systems simultaneously:
 
-```mermaid
-graph TD
-    A[Launch Web Server: port 3000] --> B[Connect Wallet in Browser]
-    B --> C{Select Mode}
-    C -->|Golf Simulator| D[Tee off with timed Swing meter]
-    D -->|Spacebar / Click| E[Calculate trajectory on-chain]
-    E -->|RealSound trigger| F[Play Whoosh & Hit sound synthesis]
-    C -->|Explore Targ| G[Enable 3D Mercenary Mode]
-    G -->|Key triggers| H[RealSound: 'Welcome back, Tex']
-    G -->|W/A/S/D/Q/E/R/F| I[Navigate wireframes with engine throb audio]
-```
+![Interaction Dashboard Flowchart](lore/dashboard_flowchart.jpg)
 
 ### Keyboard Navigation & Shortcuts
 
