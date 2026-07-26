@@ -129,6 +129,12 @@ static int doc_len = 46;
 static float retro_time = 0.0f;
 static const char *scroller_text = "PAGADATA 2026 RETRO C64 INTRO -- TISSEPAUSE BY SINATRA BRINGS PETSCII LINE AND CHARACTER BASED DRAWING BACK -- ";
 
+// VIC-II Simulated Register state maps
+static uint8_t vic_d012 = 130;  // Raster split scanline
+static uint8_t vic_d016 = 0;    // Fine scroll shift (0-7 pixels)
+static uint8_t vic_d020 = 0x05; // Border Color (Purple)
+static uint8_t vic_d021 = 0x06; // Background Color (Blue)
+
 // Binary History Record (No Mocking)
 typedef struct {
     uint32_t transaction_id;
@@ -207,15 +213,23 @@ static void redraw_screen(void) {
     wl_buffers[current_buffer_idx] = create_shm_buffer(win_width, win_height, &pixels);
     if (!wl_buffers[current_buffer_idx] || !pixels) return;
     
-    // 3. Hudson VCE Raster Color Sweeps (dynamic background cycling)
+    // Simulate VIC-II raster scanline color splits (Teledeltos C64 style)
     for (int y = 0; y < win_height; y++) {
-        float wave = sinf((float)y * 0.015f + retro_time * 6.0f);
-        uint32_t bg_color = 0xFF222222; // default background
-        if (wave > 0.85f) {
-            bg_color = 0xFF440055; // purple raster bar
-        } else if (wave > 0.70f) {
-            bg_color = 0xFF220033; // dark purple blend
+        uint32_t bg_color = 0xFF222222; // default
+        
+        // Raster split scanline evaluation (using vic_d012 register simulation)
+        if (y < (int)vic_d012 * 3) {
+            bg_color = (vic_d020 == 0x05) ? 0xFF3a1a4a : 0xFF220033; // Border color split 1
+        } else {
+            bg_color = (vic_d021 == 0x06) ? 0xFF1b253d : 0xFF112222; // Background color split 2
+            
+            // Dynamic raster wave bands
+            float wave = sinf((float)y * 0.015f + retro_time * 6.0f);
+            if (wave > 0.85f) {
+                bg_color = 0xFF440055;
+            }
         }
+        
         for (int x = 0; x < win_width; x++) {
             pixels[y * win_width + x] = bg_color;
         }
@@ -241,8 +255,9 @@ static void redraw_screen(void) {
     
     // Render the parsed ANSI grid onto the pixel canvas
     for (int r = 0; r < 15; r++) {
-        // 1. PETSCII-Style Border Split Transitions (horizontal row shifting)
-        int row_displace = (int)(sinf((float)r * 0.6f + retro_time * 4.0f) * 3.0f * scale);
+        // PETSCII-Style Border Split Transitions (using sin + dynamic vic_d016 scroll shift)
+        int fine_shift = (vic_d016 & 0x07);
+        int row_displace = (int)(sinf((float)r * 0.6f + retro_time * 4.0f) * 3.0f * scale) + fine_shift;
         
         for (int c = 0; c < 40; c++) {
             char ch = ansi_grid[r * 40 + c];
@@ -259,7 +274,7 @@ static void redraw_screen(void) {
         }
     }
     
-    // 2. Dynamic Character-Cell Sinusoidal Scroller (smooth pixel-by-pixel sliding)
+    // Dynamic Character-Cell Sinusoidal Scroller (smooth pixel-by-pixel sliding using real timeline)
     float scroll_x_speed = 30.0f; // pixels per second
     float scroll_x_total = retro_time * scroll_x_speed;
     int base_char_idx = (int)(scroll_x_total / 18.0f) % strlen(scroller_text);
@@ -276,8 +291,10 @@ static void redraw_screen(void) {
     // Display header details
     draw_string(pixels, win_width, win_height, 100, 30, "AUNCIENT WAYLAND VULKAN MARKDOWN EDITOR", 0xFF00FF00, 2);
     
-    char help_buf[128];
-    snprintf(help_buf, sizeof(help_buf), "SCALE: %d - PETSCII SPLIT IN FULL EFFECT - ESC TO QUIT", scale);
+    char help_buf[256];
+    snprintf(help_buf, sizeof(help_buf), 
+             "SCALE: %d - VIC-II: d012=%d d016=%d d020=%d - ESC TO QUIT", 
+             scale, vic_d012, vic_d016, vic_d020);
     draw_string(pixels, win_width, win_height, 100, win_height - 35, help_buf, 0xFFFFFF00, 2);
     
     wl_surface_attach(surface, wl_buffers[current_buffer_idx], 0, 0);
@@ -553,6 +570,11 @@ int main(void) {
         clock_gettime(CLOCK_MONOTONIC, &cur_ts);
         retro_time = (float)(cur_ts.tv_sec - start_ts.tv_sec) + 
                      (float)(cur_ts.tv_nsec - start_ts.tv_nsec) * 1e-9f;
+        
+        // Mutate simulated VIC-II hardware register states
+        vic_d016 = (uint8_t)(retro_time * 8.0f) & 0x07; // 0-7 pixel fine scroll shift
+        vic_d012 = 120 + (uint8_t)(sinf(retro_time * 2.0f) * 20.0f); // Modulate raster split line
+        
         redraw_screen();
     }
 
