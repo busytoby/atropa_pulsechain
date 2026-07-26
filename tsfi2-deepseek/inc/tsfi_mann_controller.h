@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "../../tests/auncient_cactus_schema.h"
 
 #define MANN_MEMORY_SLOTS 16
 #define MANN_SLOT_WIDTH 32
@@ -27,5 +28,8 @@ void tsfi_mann_controller_write(TSFiMANNController *mann, const float *key_vecto
 
 // Differentiable read head operation reading from memory matrix using cosine similarity matching key vector
 void tsfi_mann_controller_read(TSFiMANNController *mann, const float *key_vector, float strength, float *out_read_vector);
+
+// Bridge function loading gate variables from custom USD MANN API schema
+void tsfi_mann_controller_load_usd_gates(TSFiMANNController *mann, const usd_auncient_mann_api_t *mann_api);
 
 #endif // TSFI_MANN_CONTROLLER_H

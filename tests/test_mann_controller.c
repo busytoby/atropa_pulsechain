@@ -57,6 +57,19 @@ int main(void) {
     assert(read_vector[0] > 0.0f);
     printf("   ✓ Read match verified successfully.\n");
 
+    printf("3. Testing USD MANN schema bridge integration...\n");
+    usd_auncient_mann_api_t mann_api;
+    usd_init_auncient_mann_api(&mann_api);
+    usd_mann_api_set_write_gate(&mann_api, 0.88f);
+    usd_mann_api_set_read_gate(&mann_api, 0.77f);
+    usd_mann_api_set_allocation_gate(&mann_api, 0.66f);
+
+    tsfi_mann_controller_load_usd_gates(&mann, &mann_api);
+    assert(fabs(mann.write_gate - 0.88f) < 1e-5f);
+    assert(fabs(mann.read_gate - 0.77f) < 1e-5f);
+    assert(fabs(mann.allocation_gate - 0.66f) < 1e-5f);
+    printf("   ✓ USD MANN schema bridge verified successfully.\n");
+
     printf("=== AUNCIENT MANN MEMORY CONTROLLER TESTS COMPLETE (PASS) ===\n");
     return 0;
 }

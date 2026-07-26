@@ -126,3 +126,10 @@ void tsfi_mann_controller_read(TSFiMANNController *mann,
         mann->usage_vector[i] += w * 0.1f;
     }
 }
+
+void tsfi_mann_controller_load_usd_gates(TSFiMANNController *mann, const usd_auncient_mann_api_t *mann_api) {
+    if (!mann || !mann_api) return;
+    mann->write_gate = usd_mann_api_get_write_gate(mann_api);
+    mann->read_gate = usd_mann_api_get_read_gate(mann_api);
+    mann->allocation_gate = usd_mann_api_get_allocation_gate(mann_api);
+}
