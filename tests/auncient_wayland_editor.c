@@ -200,7 +200,14 @@ static bool hidden_unlocked = false;
 
 static char key_history[3] = {'\0', '\0', '\0'};
 
-// Coaxial Uniform Buffer Object (UBO) mapping the WinchesterMQ register channel
+typedef struct {
+    uint32_t active_model;
+    uint32_t material_variant;
+    float rotation_angle;
+    float camera_y;
+    uint32_t starfield_count;
+} USDStageRecord;
+
 typedef struct {
     float rotation_angle;
     float camera_y;
@@ -1196,20 +1203,14 @@ static void redraw_screen(void) {
     struct timespec t_end;
     clock_gettime(CLOCK_MONOTONIC, &t_end);
     double latency_us = (t_end.tv_sec - t_start.tv_sec) * 1000000.0 + (t_end.tv_nsec - t_start.tv_nsec) / 1000.0;
-    int bar_ticks = (int)(latency_us / 25.0); // 1 tick per 25us of raster load
-    if (bar_ticks > 10) bar_ticks = 10;
-    char bar_str[16];
-    int b;
-    for (b = 0; b < bar_ticks; b++) bar_str[b] = '|';
-    for (; b < 10; b++) bar_str[b] = '.';
-    bar_str[10] = '\0';
+    (void)latency_us;
 
     const char *m_names[3] = {"CAC", "LET", "UNI"};
     const char *v_names[3] = {"GLD", "CLY", "CHK"};
     char help_buf[256];
     snprintf(help_buf, sizeof(help_buf), 
-             "VIC: d012=%d | RAY: %s (%s) | RAST: %3.0fus [%s] | 'B' TO VAR | TR: %s", 
-             vic_d012, m_names[raymarch_mode], v_names[material_variant], latency_us, bar_str, initials);
+             "VIC: d012=%d | RAY: %s (%s) | RAST: %3.0fus | 'B' VAR, 'S' SAVE | TR: %s", 
+             vic_d012, m_names[raymarch_mode], v_names[material_variant], latency_us, initials);
     draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 26 + glitch_y, help_buf, 0xFFFFCC00, 1);
     
     wl_surface_attach(surface, wl_buffers[current_buffer_idx], 0, 0);
@@ -1309,6 +1310,23 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *wl_keyboard, uin
     } else if (key == 48) { // 'B' key scancode
         material_variant = (material_variant + 1) % 3;
         printf("[USD] Material Variant Set changed: %d\n", material_variant);
+        redraw_screen();
+        return;
+    } else if (key == 31) { // 'S' key scancode
+        USDStageRecord stage = {
+            .active_model = (uint32_t)raymarch_mode,
+            .material_variant = (uint32_t)material_variant,
+            .rotation_angle = active_ubo.rotation_angle,
+            .camera_y = active_ubo.camera_y,
+            .starfield_count = 15
+        };
+        FILE *f_usd = fopen("assets/usd_stage.dat.bin", "wb");
+        if (f_usd) {
+            fwrite(&stage, sizeof(stage), 1, f_usd);
+            fclose(f_usd);
+            printf("[USD] Scene stage layer exported to assets/usd_stage.dat.bin\n");
+            loader_flash_time = 0.5f;
+        }
         redraw_screen();
         return;
     } else if (key == 4) {
@@ -1524,20 +1542,19 @@ int main(void) {
         scroll_stars[i].color = (scroll_stars[i].speed > 35.0f) ? 0xFFFFCC00 : 0xFF884400;
     }
 
-    sid_chip.voices[0].adsr[0] = 0x21; // Attack / Decay
-    sid_chip.voices[0].adsr[1] = 0xF5; // Sustain / Release
+    sid_chip.voices[0].adsr[0] = 0x21;
+    sid_chip.voices[0].adsr[1] = 0xF5;
     sid_chip.voices[1].adsr[0] = 0x42;
     sid_chip.voices[1].adsr[1] = 0x99;
     sid_chip.volume = 0x0F;
     sid_chip.hard_sync_enabled = true;
     sid_chip.ring_mod_enabled = true;
 
-    // Initialize simulated Commodore Plus/4 TED chip register defaults
-    ted_chip.ff06 = 0x28; // Bitmap Mode ON
-    ted_chip.ff07 = 0x18; // Multicolor ON
-    ted_chip.ff12 = 0x20; // IMAGEADDR base page
-    ted_chip.ff14 = 0x78; // Attribute/Color RAM high page
-    ted_chip.ff16 = 0x41; // Voice 1 Square Wave ON
+    ted_chip.ff06 = 0x28;
+    ted_chip.ff07 = 0x18;
+    ted_chip.ff12 = 0x20;
+    ted_chip.ff14 = 0x78;
+    ted_chip.ff16 = 0x41;
 
     struct wl_display *display = wl_display_connect(NULL);
     if (!display) {
@@ -1581,7 +1598,7 @@ int main(void) {
         }
         wl_display_flush(display);
         
-        int ret = poll(fds, 1, 16); // ~60 FPS update tick
+        int ret = poll(fds, 1, 16);
         if (ret > 0) {
             if (fds[0].revents & POLLIN) {
                 if (wl_display_read_events(display) < 0) {
@@ -1595,7 +1612,6 @@ int main(void) {
             wl_display_cancel_read(display);
         }
         
-        // Progress active timeline based on real elapsed time
         struct timespec cur_ts;
         clock_gettime(CLOCK_MONOTONIC, &cur_ts);
         retro_time = (float)(cur_ts.tv_sec - start_ts.tv_sec) + 
@@ -1604,18 +1620,15 @@ int main(void) {
         float dt = retro_time - last_time;
         last_time = retro_time;
 
-        // Decrease active loader flash duration
         if (loader_flash_time > 0.0f) {
             loader_flash_time -= dt;
         }
 
-        // Decay keystroke activity level
         if (type_activity > 0.0f) {
             type_activity -= dt * 2.5f;
         }
 
-        // Animate 3D Starfield coordinates
-        float star_speed = active_tune == 3 ? 6.0f : 2.5f; // Warp speed sync
+        float star_speed = active_tune == 3 ? 6.0f : 2.5f;
         for (int i = 0; i < 15; i++) {
             starfield[i].z -= dt * star_speed;
             if (starfield[i].z <= 0.1f) {
