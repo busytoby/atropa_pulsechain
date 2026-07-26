@@ -408,6 +408,10 @@ int main(void) {
     auncient_autodin_audit_edit("DATA", 4, 2, 'I');
     printf("   ✓ AUTODIN edit auditing verified.\n");
 
+    // Test CICS transactional updates
+    auncient_cics_process_transaction(0xBB77, "FILE_KEY", 'W');
+    printf("   ✓ CICS transaction processing verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");

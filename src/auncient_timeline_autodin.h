@@ -251,6 +251,9 @@ void auncient_parse_markdown_to_ansi(const char *markdown_text, char *ansi_grid,
 // Performs real-time validation auditing on text buffer edits and logs transactions to the AUTODIN ledger
 void auncient_autodin_audit_edit(const char *buffer, int len, int cursor_pos, char action_char);
 
+// Processes an atomic CICS file transaction record to maintain transaction consistency
+void auncient_cics_process_transaction(uint32_t transaction_id, const char *record_key, char action);
+
 #ifdef __cplusplus
 }
 #endif

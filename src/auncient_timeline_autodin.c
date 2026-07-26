@@ -1095,3 +1095,21 @@ void auncient_autodin_audit_edit(const char *buffer, int len, int cursor_pos, ch
 
     printf("%s\n", audit_log_buffer);
 }
+
+void auncient_cics_process_transaction(uint32_t transaction_id, const char *record_key, char action) {
+    if (!record_key) return;
+
+    uint32_t state_code = 0;
+    const char *ptr = record_key;
+    while (*ptr) {
+        state_code += (uint32_t)(*ptr);
+        ptr++;
+    }
+
+    char cics_log_buffer[256];
+    snprintf(cics_log_buffer, sizeof(cics_log_buffer), 
+             "[CICS TRANS] ID=0x%08X StateCode=0x%08X Action='%c' Status='COMMIT'", 
+             transaction_id, state_code, action);
+
+    printf("%s\n", cics_log_buffer);
+}
