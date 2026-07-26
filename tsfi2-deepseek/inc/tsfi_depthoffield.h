@@ -19,4 +19,7 @@ double tsfi_depthoffield_eval_blur(const TSFiDepthOfField *dof, double z_depth);
 // Resolves target configuration from Z-machine virtual execution bounds
 bool tsfi_depthoffield_resolve_zmachine(TSFiDepthOfField *dof, uint32_t zmachine_address);
 
+// Updates focus configuration based on active shot index for cinematic sequences
+void tsfi_depthoffield_set_shot(TSFiDepthOfField *dof, int shot_index);
+
 #endif // TSFI_DEPTHOFFIELD_H

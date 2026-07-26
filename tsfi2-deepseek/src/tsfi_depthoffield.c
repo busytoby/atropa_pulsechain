@@ -25,3 +25,22 @@ bool tsfi_depthoffield_resolve_zmachine(TSFiDepthOfField *dof, uint32_t zmachine
     dof->target_z = 15.0; // Set TARG focus to Z-machine target state
     return true;
 }
+
+void tsfi_depthoffield_set_shot(TSFiDepthOfField *dof, int shot_index) {
+    if (!dof) return;
+    
+    // O(1) constant-time shot configuration tables for dynamic cinematics swaps
+    if (shot_index == 1) {
+        dof->focal_distance = 8.0;
+        dof->lens_radius = 0.8;
+        dof->target_z = 8.0;
+    } else if (shot_index == 2) {
+        dof->focal_distance = 25.0;
+        dof->lens_radius = 0.2;
+        dof->target_z = 25.0;
+    } else {
+        dof->focal_distance = 12.0;
+        dof->lens_radius = 0.4;
+        dof->target_z = 12.0;
+    }
+}
