@@ -1,4 +1,4 @@
-.PHONY: help test-all test-dashboard test-container test-git-ci test-unit tpu-benchmarks livrps-benchmark test-mann test-comp-pass test-mvarsel test-reroute test-delegate-sig test-stagecomp
+.PHONY: help test-all test-dashboard test-container test-git-ci test-unit tpu-benchmarks livrps-benchmark test-mann test-comp-pass test-mvarsel test-reroute test-delegate-sig test-stagecomp test-ar
 
 help:
 	@echo "Available test targets:"
@@ -12,7 +12,7 @@ help:
 	@echo "  make livrps-benchmark - Run LIVRPS USD composition latency benchmarks"
 
 
-test-all: test-dashboard test-container test-git-ci test-unit test-mann test-comp-pass test-mvarsel test-reroute test-delegate-sig test-stagecomp
+test-all: test-dashboard test-container test-git-ci test-unit test-mann test-comp-pass test-mvarsel test-reroute test-delegate-sig test-stagecomp test-ar
 	@echo "All tests completed successfully."
 
 test-mann:
@@ -44,6 +44,11 @@ test-stagecomp:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_stagecomp.c tsfi2-deepseek/src/tsfi_stagecomp.c -o tests/test_stagecomp -lm -lrt
 	./tests/test_stagecomp
 	@rm -f tests/test_stagecomp
+
+test-ar:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_ar.c tsfi2-deepseek/src/tsfi_ar.c -o tests/test_ar -lm -lrt
+	./tests/test_ar
+	@rm -f tests/test_ar
 
 sdk-benchmark:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_sdk_benchmarks.c -o tests/test_auncient_sdk_benchmarks -lm -lrt
