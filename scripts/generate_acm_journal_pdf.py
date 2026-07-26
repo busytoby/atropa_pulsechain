@@ -279,38 +279,75 @@ def render_mermaid_flowchart(lines, col_width):
     for nid in nodes:
         visit(nid)
         
-    num_nodes = len(ordered_nodes)
-    max_h = 280.0
-    y_step = 55.0
-    if num_nodes * y_step > max_h:
-        y_step = max_h / float(num_nodes)
-        
-    box_w = 125
-    box_h = min(30, int(y_step * 0.6))
-    draw_h = num_nodes * y_step + 15
+    sources = []
+    sinks = []
+    for nid in nodes:
+        has_incoming = False
+        has_outgoing = False
+        for from_id, to_id, _ in links:
+            if to_id == nid:
+                has_incoming = True
+            if from_id == nid:
+                has_outgoing = True
+        if has_outgoing and not has_incoming:
+            sources.append(nid)
+        elif has_incoming and not has_outgoing:
+            sinks.append(nid)
+        else:
+            sources.append(nid)
+            
+    sources = sorted(list(set(sources)))
+    sinks = sorted(list(set(sinks)))
+    
+    box_w = 95
+    num_rows = max(len(sources), len(sinks), 1)
+    y_step = 45.0
+    max_draw_h = 320.0
+    if num_rows * y_step + 20 > max_draw_h:
+        y_step = (max_draw_h - 20) / float(num_rows)
+    draw_h = num_rows * y_step + 20
+    box_h = min(24, int(y_step * 0.6))
     
     d = Drawing(col_width, draw_h)
-    node_coords = {}
     
-    for idx, nid in enumerate(ordered_nodes):
-        x = col_width / 2
-        y = draw_h - (idx * y_step + 30)
+    bg_rect = Rect(col_width * 0.52, 10, col_width * 0.44, draw_h - 20, rx=5, ry=5)
+    bg_rect.fillColor = colors.HexColor('#161c24')
+    bg_rect.strokeColor = colors.HexColor('#222d3b')
+    bg_rect.strokeWidth = 0.5
+    d.add(bg_rect)
+    
+    bg_lbl = String(col_width * 0.74, draw_h - 18, "EVM Node (Anvil)", textAnchor='middle')
+    bg_lbl.fontName = 'Helvetica-Bold'
+    bg_lbl.fontSize = 6
+    bg_lbl.fillColor = colors.HexColor('#667788')
+    d.add(bg_lbl)
+    
+    node_coords = {}
+    for idx, nid in enumerate(sources):
+        x = col_width * 0.26
+        y = draw_h - (idx * (draw_h - 30) / max(len(sources) - 1, 1) + 20) if len(sources) > 1 else draw_h / 2
         node_coords[nid] = (x, y)
         
+    for idx, nid in enumerate(sinks):
+        x = col_width * 0.74
+        y = draw_h - (idx * (draw_h - 40) / max(len(sinks) - 1, 1) + 25) if len(sinks) > 1 else draw_h / 2
+        node_coords[nid] = (x, y)
+        
+    for nid, (x, y) in node_coords.items():
         rx = x - box_w / 2
         ry = y - box_h / 2
-        rect = Rect(rx, ry, box_w, box_h, rx=4, ry=4)
-        rect.fillColor = colors.HexColor('#121820')
-        rect.strokeColor = colors.HexColor('#00b4d8')
-        rect.strokeWidth = 1
+        rect = Rect(rx, ry, box_w, box_h, rx=3, ry=3)
+        rect.fillColor = colors.HexColor('#1e293b')
+        rect.strokeColor = colors.HexColor('#0ea5e9')
+        rect.strokeWidth = 0.8
         d.add(rect)
         
         text_str = nodes.get(nid, nid)
         if len(text_str) > 22:
             text_str = text_str[:19] + "..."
-        s = String(x, y - 3, text_str, textAnchor='middle')
-        s.fontName = 'Helvetica'
-        s.fontSize = 7.5
+        s = String(x, y - 2.5, text_str, textAnchor='middle')
+        s.fontName = 'Helvetica-Bold'
+        s.fontSize = 7
         s.fillColor = colors.HexColor('#ffffff')
         d.add(s)
         
@@ -319,25 +356,26 @@ def render_mermaid_flowchart(lines, col_width):
             x1, y1 = node_coords[from_id]
             x2, y2 = node_coords[to_id]
             
-            y_start = y1 - box_h / 2
-            y_end = y2 + box_h / 2
+            x_start = x1 + box_w / 2
+            x_end = x2 - box_w / 2
             
-            line = Line(x1, y_start, x1, y_end)
-            line.strokeColor = colors.HexColor('#8899a6')
+            line = Line(x_start, y1, x_end, y2)
+            line.strokeColor = colors.HexColor('#64748b')
             line.strokeWidth = 0.8
             d.add(line)
             
-            arrow = Polygon([x1, y_end, x1 - 3, y_end + 5, x1 + 3, y_end + 5])
-            arrow.fillColor = colors.HexColor('#8899a6')
-            arrow.strokeColor = colors.HexColor('#8899a6')
+            arrow = Polygon([x_end, y2, x_end - 4, y2 + 3, x_end - 4, y2 - 3])
+            arrow.fillColor = colors.HexColor('#64748b')
+            arrow.strokeColor = colors.HexColor('#64748b')
             d.add(arrow)
             
             if label:
-                y_mid = (y_start + y_end) / 2
-                lbl = String(x1 + 6, y_mid - 2, label.strip())
-                lbl.fontName = 'Helvetica-Oblique'
-                lbl.fontSize = 6.5
-                lbl.fillColor = colors.HexColor('#8899a6')
+                x_mid = (x_start + x_end) / 2
+                y_mid = (y1 + y2) / 2
+                lbl = String(x_mid, y_mid + 2, label.strip(), textAnchor='middle')
+                lbl.fontName = 'Helvetica'
+                lbl.fontSize = 5.5
+                lbl.fillColor = colors.HexColor('#94a3b8')
                 d.add(lbl)
                 
     return d
