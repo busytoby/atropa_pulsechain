@@ -297,7 +297,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                    $(OBJ_DIR)/tsfi_parc_dahm_lock.o \
                     $(OBJ_DIR)/tsfi_paint.o $(OBJ_DIR)/tsfi_dom.o \
                     $(OBJ_DIR)/tsfi_mann_controller.o \
-                    $(OBJ_DIR)/tsfi_comp_pass.o
+                    $(OBJ_DIR)/tsfi_comp_pass.o \
+                    $(OBJ_DIR)/tsfi_mvarsel.o
 
 
 
