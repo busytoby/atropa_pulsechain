@@ -14,6 +14,8 @@ typedef struct {
     uint8_t psg_channel_vol[6];
     uint8_t psg_channel_pan[6]; // huC6280 PSG panning control
     uint8_t frame_buffer[256 * 256]; // Simulated VDC screen memory (256x256)
+    uint32_t irq_counter; // hardware interrupt counter
+    bool irq_active;
 } TSFiRiInterface;
 
 // Initialize the RiInterface context
@@ -39,5 +41,8 @@ void tsfi_riinterface_vdc_dma_copy(TSFiRiInterface *ri, uint16_t src_idx, uint16
 
 // Simulates the discharge cycles of field-effect transistors (FETs) using Verlet integration
 void tsfi_riinterface_discharge_verlet(TSFiRiInterface *ri, double *pos_x, double *prev_pos_x, int count, double dt, double decay);
+
+// Ticks the hardware timer to trigger periodic interrupts (IRQs)
+void tsfi_riinterface_tick_irq(TSFiRiInterface *ri, double dt);
 
 #endif // TSFI_RIINTERFACE_H

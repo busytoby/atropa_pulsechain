@@ -16,6 +16,8 @@ void tsfi_riinterface_init(TSFiRiInterface *ri) {
     memset(ri->psg_channel_vol, 0, sizeof(ri->psg_channel_vol));
     memset(ri->psg_channel_pan, 0, sizeof(ri->psg_channel_pan));
     memset(ri->frame_buffer, 0, sizeof(ri->frame_buffer));
+    ri->irq_counter = 0;
+    ri->irq_active = false;
 }
 
 void tsfi_riinterface_world_begin(TSFiRiInterface *ri) {
@@ -98,5 +100,27 @@ void tsfi_riinterface_discharge_verlet(TSFiRiInterface *ri, double *pos_x, doubl
         // Mirror the active discharge levels to simulated VDC frame buffer registers
         int idx = i % 256;
         ri->frame_buffer[idx] = (uint8_t)(fabs(next) * 10.0);
+    }
+}
+
+void tsfi_riinterface_tick_irq(TSFiRiInterface *ri, double dt) {
+    if (!ri) return;
+    
+    // Trigger periodic timer IRQ interrupts on 15ms thresholds
+    static double accumulator = 0.0;
+    accumulator += dt;
+    if (accumulator >= 0.015) {
+        ri->irq_counter++;
+        ri->irq_active = true;
+        accumulator = 0.0;
+        
+        // Cycle colors on IRQ fire to demonstrate dynamic interrupt-driven sync
+        uint16_t first_color = ri->hudson_vce_color_reg[0];
+        for (int i = 0; i < 15; i++) {
+            ri->hudson_vce_color_reg[i] = ri->hudson_vce_color_reg[i + 1];
+        }
+        ri->hudson_vce_color_reg[15] = first_color;
+    } else {
+        ri->irq_active = false;
     }
 }

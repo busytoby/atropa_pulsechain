@@ -48,6 +48,14 @@ int main(void) {
     assert(pos_x[0] > 10.0);
     assert(prev_pos_x[0] == 10.0);
 
+    // Test periodic timer interrupts (IRQs)
+    tsfi_riinterface_tick_irq(&ri, 0.010);
+    assert(ri.irq_active == false);
+
+    tsfi_riinterface_tick_irq(&ri, 0.010); // Exceeds 15ms total
+    assert(ri.irq_active == true);
+    assert(ri.irq_counter == 1);
+
     tsfi_riinterface_world_end(&ri);
     assert(ri.is_world_active == false);
 
@@ -56,6 +64,7 @@ int main(void) {
     printf("   ✓ Camera panning dynamic PSG frequency modulation verified successfully.\n");
     printf("   ✓ VDC hardware DMA block transfers verified successfully.\n");
     printf("   ✓ Soft body physics Verlet FET discharge integration verified successfully.\n");
+    printf("   ✓ Hudson soft periodic timer IRQ interrupts verified successfully.\n");
     printf("=== AUNCIENT RIINTERFACE TESTS COMPLETE (PASS) ===\n");
     return 0;
 }
