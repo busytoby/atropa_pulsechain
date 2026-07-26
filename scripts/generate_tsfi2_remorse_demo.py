@@ -2,7 +2,74 @@ import os
 import sys
 import math
 import subprocess
+import wave
+import struct
 from PIL import Image, ImageDraw, ImageFont
+
+def generate_soundtrack(wav_path, duration=22, sample_rate=44100):
+    bpm = 160
+    total_samples = int(sample_rate * duration)
+    step_samples = int(sample_rate * (60.0 / bpm) / 4) # 16th step
+    
+    with wave.open(wav_path, 'wb') as wav_file:
+        wav_file.setnchannels(1)
+        wav_file.setsampwidth(2)
+        wav_file.setframerate(sample_rate)
+        
+        audio_data = []
+        bass_phase = 0.0
+        noise_state = 12345
+        
+        for i in range(total_samples):
+            step = i // step_samples
+            beat = step // 4
+            step_in_beat = step % 4
+            sample_in_step = i % step_samples
+            
+            # 1. Synthesizer bass growl pattern
+            bass_chords = [77.78, 65.41, 87.31, 58.27]
+            freq = bass_chords[(beat // 4) % len(bass_chords)]
+            bass_out = 0.0
+            if step_in_beat in [0, 2, 3]:
+                bass_phase += 2.0 * math.pi * freq / sample_rate
+                bass_out = 0.35 * math.sin(bass_phase) + 0.12 * math.sin(bass_phase * 2.0)
+                t_step = sample_in_step / float(sample_rate)
+                bass_out *= math.exp(-t_step * 14.0)
+            
+            # 2. Kick drum
+            kick_out = 0.0
+            if step_in_beat == 0:
+                t_kick = sample_in_step / float(sample_rate)
+                if t_kick < 0.15:
+                    k_freq = 110.0 * math.exp(-t_kick * 30.0) + 40.0
+                    kick_out = 0.45 * math.sin(2.0 * math.pi * k_freq * t_kick) * math.exp(-t_kick * 9.0)
+            
+            # 3. Snare drum (white noise)
+            snare_out = 0.0
+            if step_in_beat == 2:
+                t_snare = sample_in_step / float(sample_rate)
+                if t_snare < 0.2:
+                    noise_state = (noise_state * 1103515245 + 12345) & 0x7fffffff
+                    noise_val = ((noise_state / 0x7fffffff) * 2.0) - 1.0
+                    snare_out = 0.28 * noise_val * math.exp(-t_snare * 14.0)
+            
+            # 4. Hi-Hat
+            hat_out = 0.0
+            if step_in_beat in [1, 3]:
+                t_hat = sample_in_step / float(sample_rate)
+                if t_hat < 0.05:
+                    noise_state = (noise_state * 1103515245 + 12345) & 0x7fffffff
+                    noise_val = ((noise_state / 0x7fffffff) * 2.0) - 1.0
+                    hat_out = 0.18 * noise_val * math.exp(-t_hat * 48.0)
+            
+            mixed = kick_out + snare_out + hat_out + bass_out
+            if mixed > 1.0: mixed = 1.0
+            elif mixed < -1.0: mixed = -1.0
+            
+            sample_val = int(mixed * 32767.0)
+            audio_data.append(struct.pack('<h', sample_val))
+            
+        wav_file.writeframes(b''.join(audio_data))
 
 def draw_retro_char(draw, char, x, y, size, color):
     # Draw simple retro styled grid-like characters
@@ -38,17 +105,24 @@ def main():
     total_frames = fps * duration
 
     video_output = "/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2_remorse_demo.mp4"
+    wav_output = "/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2_remorse_soundtrack.wav"
 
-    # Initialize FFmpeg pipeline
+    # Pre-generate cute drum and bass audio soundtrack
+    generate_soundtrack(wav_output, duration=duration)
+
+    # Initialize FFmpeg pipeline with video input and audio track
     ffmpeg_cmd = [
         "ffmpeg", "-y",
         "-f", "image2pipe",
         "-vcodec", "png",
         "-r", str(fps),
         "-i", "-",
+        "-i", wav_output,
         "-c:v", "libx264",
         "-pix_fmt", "yuv420p",
         "-vf", "scale=640:480",
+        "-c:a", "aac",
+        "-shortest",
         video_output
     ]
 
@@ -209,6 +283,9 @@ def main():
 
             px = rope_nodes[i][0]
             py = rope_nodes[i][1]
+
+            # Proximity contact shadowing (contact shadow occlusion)
+            draw.ellipse([px - 20, py - 20, px + 20, py + 20], fill=(0, 0, 0))
 
             # Sub-surface scattering (translucent soft tissue outlines)
             draw_retro_char(draw, char, px, py, 42, (r // 4, g // 4, b // 4))
