@@ -180,6 +180,19 @@ int main(void) {
     assert(glob_block.camera_position[0] == camera_pos[0]);
     printf("   ✓ Camera coordinates written to Vulkan global uniform block.\n");
 
+    // Test spline mesh deformation
+    ClothVertex v;
+    v.x = 0.0f; v.y = 0.0f; v.z = 0.0f;
+    float spline_path[6] = {
+        10.0f, 20.0f, 30.0f,
+        15.0f, 25.0f, 35.0f
+    };
+    auncient_mesh_deform_along_spline(&v, 1, spline_path, 2);
+    assert(v.x > 0.0f);
+    assert(v.y > 0.0f);
+    assert(v.z > 0.0f);
+    printf("   ✓ Spline-deformed mesh vertex updates verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");

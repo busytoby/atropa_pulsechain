@@ -3,6 +3,7 @@
 
 #include "../inc/auncient_sdk.h"
 #include "auncient_vulkan_materials.h"
+#include "cloth_simulator.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -131,6 +132,9 @@ void auncient_spline_evaluate(float t, const float *p0, const float *p1, const f
 
 // Copies spline-evaluated camera coordinates to GlobalUniformBlock structures
 void auncient_spline_to_global_uniform(const float *camera_pos, GlobalUniformBlock *glob_block);
+
+// Deforms 3D vertices dynamically along evaluated spline path nodes
+void auncient_mesh_deform_along_spline(ClothVertex *vertices, int count, const float *spline_path, int spline_points_count);
 
 #ifdef __cplusplus
 }

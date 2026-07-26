@@ -335,3 +335,33 @@ void auncient_spline_to_global_uniform(const float *camera_pos, GlobalUniformBlo
     glob_block->camera_position[1] = camera_pos[1];
     glob_block->camera_position[2] = camera_pos[2];
 }
+
+void auncient_mesh_deform_along_spline(ClothVertex *vertices, int count, const float *spline_path, int spline_points_count) {
+    if (!vertices || count <= 0 || !spline_path || spline_points_count < 2) return;
+
+    for (int i = 0; i < count; i++) {
+        // Map the vertex y position (height) to parameter t along the spline path
+        // Assume vertex coordinates are centered, we scale them to t in [0.0, 1.0]
+        float t = (vertices[i].y + 1.0f) * 0.5f;
+        if (t < 0.0f) t = 0.0f;
+        if (t > 1.0f) t = 1.0f;
+
+        // Linear lookup along the evaluated spline path coordinates
+        float idx_float = t * (spline_points_count - 1);
+        int idx = (int)idx_float;
+        if (idx >= spline_points_count - 1) {
+            idx = spline_points_count - 2;
+        }
+        float t_sub = idx_float - idx;
+
+        // Perform linear interpolation between adjacent spline path points
+        float target_x = (1.0f - t_sub) * spline_path[3 * idx] + t_sub * spline_path[3 * (idx + 1)];
+        float target_y = (1.0f - t_sub) * spline_path[3 * idx + 1] + t_sub * spline_path[3 * (idx + 1) + 1];
+        float target_z = (1.0f - t_sub) * spline_path[3 * idx + 2] + t_sub * spline_path[3 * (idx + 1) + 2];
+
+        // Apply deformation bending displacement to the vertex position
+        vertices[i].x += target_x;
+        vertices[i].y += target_y;
+        vertices[i].z += target_z;
+    }
+}
