@@ -7,6 +7,11 @@ static const float gravity_x = -0.0007f;
 static const float gravity_y = -0.0008f;
 static const float gravity_z = 0.0001f;
 
+static int is_anchored(int x, int y) {
+    // Anchor top edge nodes at interval step displacements (every 4th column)
+    return (y == CLOTH_HEIGHT - 1 && x % 4 == 0);
+}
+
 void cloth_init(void) {
     for (int x = 0; x < CLOTH_WIDTH; x++) {
         for (int y = 0; y < CLOTH_HEIGHT; y++) {
@@ -104,8 +109,8 @@ void cloth_update(float wind_x, float wind_y, float wind_z) {
             cloth_grid[x][y].ny = 0.0f;
             cloth_grid[x][y].nz = 0.0f;
 
-            // Anchor point check (let's anchor top-left and top-right points)
-            if (!((x == 0 && y == CLOTH_HEIGHT - 1) || (x == CLOTH_WIDTH - 1 && y == CLOTH_HEIGHT - 1))) {
+            // Anchor point check
+            if (!is_anchored(x, y)) {
                 cloth_grid[x][y].fx = gravity_x;
                 cloth_grid[x][y].fy = gravity_y;
                 cloth_grid[x][y].fz = gravity_z;
@@ -161,7 +166,7 @@ void cloth_update(float wind_x, float wind_y, float wind_z) {
     // Integrate forces into velocity and positions
     for (int x = 0; x < CLOTH_WIDTH; x++) {
         for (int y = 0; y < CLOTH_HEIGHT; y++) {
-            if (!((x == 0 && y == CLOTH_HEIGHT - 1) || (x == CLOTH_WIDTH - 1 && y == CLOTH_HEIGHT - 1))) {
+            if (!is_anchored(x, y)) {
                 cloth_grid[x][y].vx += cloth_grid[x][y].fx;
                 cloth_grid[x][y].vy += cloth_grid[x][y].fy;
                 cloth_grid[x][y].vz += cloth_grid[x][y].fz;
