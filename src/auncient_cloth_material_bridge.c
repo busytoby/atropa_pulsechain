@@ -1,5 +1,6 @@
 #include "auncient_cloth_material_bridge.h"
 #include <math.h>
+#include <stdio.h>
 
 void auncient_bridge_material_to_cloth_color(const MaterialUniformBlock *mat_block, ClothVertex *vertices, int count) {
     if (!mat_block || !vertices) return;
@@ -56,4 +57,19 @@ void auncient_bridge_update_cloth_physics(const MaterialUniformBlock *mat_block,
 
     // Invoke soft body Verlet physics update step
     cloth_update(active_wind_x, active_wind_y, active_wind_z);
+}
+
+extern int tsfi_mf_ssa_resolve_issuance_site(const char *ssn, char *site_name_out, int max_len);
+
+void auncient_bridge_dna_to_ssa(const MaterialUniformBlock *mat_block, char *ssn_out, char *site_out, int max_len) {
+    if (!mat_block || !ssn_out || !site_out || max_len < 16) return;
+
+    // Deterministic Area Lot from seed: value from 1 to 9 (e.g. area = (seed % 9) + 1)
+    int area = (int)(mat_block->seed % 9) + 1;
+
+    // Format the simulated SSN: AAA-12-3456
+    snprintf(ssn_out, 12, "%03d-12-3456", area);
+
+    // Resolve historical creation location via the SSA site resolver
+    tsfi_mf_ssa_resolve_issuance_site(ssn_out, site_out, max_len);
 }

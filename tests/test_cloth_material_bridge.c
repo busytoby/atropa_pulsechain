@@ -1,6 +1,7 @@
 #include "../src/auncient_cloth_material_bridge.h"
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 
 int main(void) {
     printf("=============================================================\n");
@@ -55,6 +56,20 @@ int main(void) {
     cloth_init();
     auncient_bridge_update_cloth_physics(&mat_block, 1.5f, 0.01f, 0.0f, -0.015f);
     printf("   ✓ Material-driven simulation step executed.\n");
+
+    // 5. Test DNA-to-SSA lot allocation bridge
+    char ssn_buf[16];
+    char site_buf[32];
+    mat_block.seed = 1; // Maps to Area Lot 002 -> New Hampshire
+    auncient_bridge_dna_to_ssa(&mat_block, ssn_buf, site_buf, sizeof(site_buf));
+    assert(strcmp(ssn_buf, "002-12-3456") == 0);
+    assert(strcmp(site_buf, "New Hampshire") == 0);
+
+    mat_block.seed = 7; // Maps to Area Lot 008 -> Vermont
+    auncient_bridge_dna_to_ssa(&mat_block, ssn_buf, site_buf, sizeof(site_buf));
+    assert(strcmp(ssn_buf, "008-12-3456") == 0);
+    assert(strcmp(site_buf, "Vermont") == 0);
+    printf("   ✓ DNA-to-SSA Area Lot matching verified.\n");
 
     printf("=============================================================\n");
     printf("AUNCIENT CLOTH TO MATERIAL BRIDGE TEST COMPLETE\n");
