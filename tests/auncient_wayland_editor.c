@@ -166,6 +166,16 @@ static bool hidden_unlocked = false;
 // Sequential key history to unlock hidden tune ("tsn")
 static char key_history[3] = {'\0', '\0', '\0'};
 
+// PETSCII Character Portrait / Symbol Outline (TNS Memorial Invader shape)
+static const char *petscii_portrait[6] = {
+    " #     # ",
+    "  #   #  ",
+    " ####### ",
+    "### ###  ",
+    "#########",
+    "# #   # #"
+};
+
 // Binary History Record (No Mocking)
 typedef struct {
     uint32_t transaction_id;
@@ -284,15 +294,32 @@ static void redraw_screen(void) {
     memset(ansi_grid, ' ', sizeof(ansi_grid));
     auncient_parse_markdown_to_ansi(doc_buf, ansi_grid, 40, 15, 0);
     
+    // Calculate current typing cursor position in grid space
+    int cursor_r = doc_len / 40;
+    int cursor_c = doc_len % 40;
+    
     // Render the parsed ANSI grid onto the pixel canvas
     for (int r = 0; r < 15; r++) {
-        // PETSCII-Style Border Split Transitions (using sin + dynamic vic_d016 scroll shift)
+        // PETSCII-Style Border Splits
         int fine_shift = (vic_d016 & 0x07);
         int row_displace = (int)(sinf((float)r * 0.6f + retro_time * 4.0f) * 3.0f * scale) + fine_shift;
         
         for (int c = 0; c < 40; c++) {
             char ch = ansi_grid[r * 40 + c];
-            uint32_t color = 0xFFCCCCCC;
+            
+            // Dynamic Screen Shading RAM: modulate color based on distance from the cursor
+            int dist_r = r - cursor_r;
+            int dist_c = c - cursor_c;
+            float dist = sqrtf((float)(dist_r * dist_r + dist_c * dist_c));
+            
+            uint32_t color = 0xFFCCCCCC; // Default
+            if (dist < 4.0f) {
+                color = 0xFF00FF00; // Bright green close to cursor
+            } else if (dist < 8.0f) {
+                color = 0xFF00A200; // Medium green
+            } else {
+                color = 0xFF005500; // Shaded dark green far away
+            }
             
             if (ch == '|') color = 0xFF00FFFF;
             else if (ch == '*') color = 0xFFFF00FF;
@@ -302,6 +329,21 @@ static void redraw_screen(void) {
                       start_x + c * 6 * scale + row_displace, 
                       start_y + r * 8 * scale, 
                       ch, color, scale);
+        }
+    }
+    
+    // Render PETSCII Portrait / Symbol Art in top-right corner
+    int portrait_start_x = win_width - 150;
+    int portrait_start_y = 50;
+    for (int pr = 0; pr < 6; pr++) {
+        for (int pc = 0; pc < 9; pc++) {
+            char symbol = petscii_portrait[pr][pc];
+            if (symbol == '#') {
+                draw_char(pixels, win_width, win_height, 
+                          portrait_start_x + pc * 12, 
+                          portrait_start_y + pr * 16, 
+                          127, 0xFFFF5555, 2); // Block symbol
+            }
         }
     }
     
@@ -335,10 +377,12 @@ static void redraw_screen(void) {
              sid_chip.voices[0].adsr[0], sid_chip.voices[0].adsr[1]);
     draw_string(pixels, win_width, win_height, 100, win_height - 65, sid_buf, 0xFF00FFFF, 2);
 
+    // Initials Anagram Mapping: Alternate "TSN" and "TNS" dynamically every second
+    const char *initials = ((int)retro_time % 2 == 0) ? "TSN" : "TNS";
     char help_buf[256];
     snprintf(help_buf, sizeof(help_buf), 
-             "SCALE: %d - VIC-II: d012=%d d016=%d - PRESS '#' TO CYCLE TUNES - TYPE 'TSN'", 
-             scale, vic_d012, vic_d016);
+             "SCALE: %d - VIC-II: d012=%d - TRIBUTE: %s - PRESS '#' TO CYCLE TUNES", 
+             scale, vic_d012, initials);
     draw_string(pixels, win_width, win_height, 100, win_height - 35, help_buf, 0xFFFFFF00, 2);
     
     wl_surface_attach(surface, wl_buffers[current_buffer_idx], 0, 0);
