@@ -45,6 +45,30 @@ typedef struct {
     color_pixel_t texture_grid[GRID_SIZE][GRID_SIZE];
 } huc_ocean_system_t;
 
+// Assembly-style 256-byte precalculated lookup table (LUT) for FPU-less fast sine/cosine
+static uint8_t sin_table[256];
+static bool lut_initialized = false;
+
+static void init_sin_table(void) {
+    for (int i = 0; i < 256; i++) {
+        sin_table[i] = (uint8_t)(127.5 + 127.5 * sin(i * 2.0 * 3.141592653589793 / 256.0));
+    }
+    lut_initialized = true;
+}
+
+static double fast_sin(double angle) {
+    if (!lut_initialized) init_sin_table();
+    // Convert angle to table index (scaled to 256 units per 2*pi cycle)
+    int idx = (int)(angle * 256.0 / (2.0 * 3.141592653589793));
+    return ((double)sin_table[(idx % 256 + 256) % 256] - 127.5) / 127.5;
+}
+
+static double fast_cos(double angle) {
+    if (!lut_initialized) init_sin_table();
+    int idx = (int)(angle * 256.0 / (2.0 * 3.141592653589793)) + 64; // cos(x) = sin(x + pi/2)
+    return ((double)sin_table[(idx % 256 + 256) % 256] - 127.5) / 127.5;
+}
+
 // Deterministic hash function for pseudo-random coordinates
 static uint8_t hash_noise(int x, int y, uint32_t seed) {
     uint32_t h = (uint32_t)x * 374761393U + (uint32_t)y * 668265263U + seed;
@@ -52,9 +76,9 @@ static uint8_t hash_noise(int x, int y, uint32_t seed) {
     return (uint8_t)(h & 0xFF);
 }
 
-// Cosine interpolation for smooth gradients
+// Cosine interpolation for smooth gradients using fast Cosine lookup
 static double cosine_interpolate(double a, double b, double mu) {
-    double mu2 = (1.0 - cos(mu * 3.141592653589793)) / 2.0;
+    double mu2 = (1.0 - fast_cos(mu * 3.141592653589793)) / 2.0;
     return (a * (1.0 - mu2) + b * mu2);
 }
 
@@ -90,12 +114,12 @@ static void synthesize_texture_grid(huc_ocean_system_t *huc, double phase, int m
             double val = 0.0;
             if (mode == 0) {
                 // Standard Multi-Component Plasma
-                val = 127.5 + 42.5 * sin(x * 1.0 + phase) +
-                              42.5 * sin(y * 1.5 - phase) +
-                              42.5 * sin((x + y) * 0.8 + phase);
+                val = 127.5 + 42.5 * fast_sin(x * 1.0 + phase) +
+                              42.5 * fast_sin(y * 1.5 - phase) +
+                              42.5 * fast_sin((x + y) * 0.8 + phase);
             } else if (mode == 1) {
                 // Sine Plasma
-                val = 127.5 + 63.75 * sin(x * 1.2 + phase) + 63.75 * cos(y * 1.2 + phase * 0.8);
+                val = 127.5 + 63.75 * fast_sin(x * 1.2 + phase) + 63.75 * fast_cos(y * 1.2 + phase * 0.8);
             } else if (mode == 2) {
                 // Fractal Plasma (Multi-Octave Perlin Noise with Cosine Interpolation)
                 double f_val = 0.0;
@@ -129,7 +153,7 @@ static void synthesize_texture_grid(huc_ocean_system_t *huc, double phase, int m
     uint8_t layer_twirl[GRID_SIZE][GRID_SIZE];
     double cx = (GRID_SIZE - 1) / 2.0;
     double cy = (GRID_SIZE - 1) / 2.0;
-    double twirl_strength = 2.0 + sin(phase) * 1.5; // Dynamic twirl strength
+    double twirl_strength = 2.0 + fast_sin(phase) * 1.5; // Dynamic twirl strength
     
     for (int y = 0; y < GRID_SIZE; y++) {
         for (int x = 0; x < GRID_SIZE; x++) {
@@ -141,8 +165,8 @@ static void synthesize_texture_grid(huc_ocean_system_t *huc, double phase, int m
             // Add twist proportional to distance
             double theta_new = theta + twirl_strength * (1.0 - r / (GRID_SIZE * 0.707));
             
-            double tx = cx + r * cos(theta_new);
-            double ty = cy + r * sin(theta_new);
+            double tx = cx + r * fast_cos(theta_new);
+            double ty = cy + r * fast_sin(theta_new);
             
             // Bilinear interpolation bounds for twirl mapping
             int x0 = ((int)floor(tx) % GRID_SIZE + GRID_SIZE) % GRID_SIZE;
@@ -205,7 +229,7 @@ static void synthesize_texture_grid(huc_ocean_system_t *huc, double phase, int m
                                   w11 * layer_twirl[y1][x1];
                                   
             // Sine Waveform Modulator: Map linear gradients to wood/wave rings
-            warped_intensity[y][x] = 127.5 + 127.5 * sin(interpolated * 0.15);
+            warped_intensity[y][x] = 127.5 + 127.5 * fast_sin(interpolated * 0.15);
         }
     }
     
@@ -285,9 +309,9 @@ static void synthesize_texture_grid(huc_ocean_system_t *huc, double phase, int m
 // 2. Procedural 3D Mesh / Lissajous Pathing
 static void update_lissajous_mesh(huc_ocean_system_t *huc, double signal) {
     // Standard demoscene harmonic rotation formula
-    huc->lissajous_x = sin(signal * 2.5);
-    huc->lissajous_y = cos(signal * 1.8);
-    huc->lissajous_z = sin(signal * 3.2 + 0.5);
+    huc->lissajous_x = fast_sin(signal * 2.5);
+    huc->lissajous_y = fast_cos(signal * 1.8);
+    huc->lissajous_z = fast_sin(signal * 3.2 + 0.5);
 }
 
 // 3. Low-Level Tape Ingest process with Conspiracy Demoscene integrations
@@ -333,7 +357,7 @@ static void process_tape_ingest_v6(huc_ocean_system_t *huc,
         huc->border_color = COLOR_CYAN;
 
         // Conspiracy LFO Modulator: Dynamic sound synthesis utilizing a Low-Frequency Oscillator
-        double lfo_mod = sin(huc->transaction_count * 0.8) * 50.0;
+        double lfo_mod = fast_sin(huc->transaction_count * 0.8) * 50.0;
         huc->psg_frequency = (uint32_t)(261.0 + (huc->transaction_count * 20.0) + lfo_mod);
 
         // Update procedural visualizers
