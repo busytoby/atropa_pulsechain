@@ -300,8 +300,8 @@ def render_standard_code_block(code_lines, col_width, body_style):
     
     # Approximate monospace character width to fit within column margins
     char_w = 0.6
-    font_size = min(6.5, (col_width - 12.0) / float(max_len * char_w))
-    font_size = max(4.0, font_size)
+    font_size = min(7.0, (col_width - 12.0) / float(max_len * char_w))
+    font_size = max(5.5, font_size)
     leading = font_size + 1.5
     
     code_style = ParagraphStyle(
@@ -482,13 +482,12 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
         pagesize=(page_width, page_height)
     )
     
-    frame_left_odd = Frame(0.75 * inch, 0.7 * inch, col_width, col_height, id='col1_odd')
-    frame_right_odd = Frame(0.75 * inch + col_width + spacing, 0.7 * inch, col_width, col_height, id='col2_odd')
-    template_odd = PageTemplate(id='odd_page', frames=[frame_left_odd, frame_right_odd])
+    frame_width = col_width
+    frame_odd = Frame(0.75 * inch, 0.7 * inch, frame_width, col_height, id='col_odd')
+    template_odd = PageTemplate(id='odd_page', frames=[frame_odd])
     
-    frame_left_even = Frame(0.5 * inch, 0.7 * inch, col_width, col_height, id='col1_even')
-    frame_right_even = Frame(0.5 * inch + col_width + spacing, 0.7 * inch, col_width, col_height, id='col2_even')
-    template_even = PageTemplate(id='even_page', frames=[frame_left_even, frame_right_even])
+    frame_even = Frame(0.5 * inch, 0.7 * inch, frame_width, col_height, id='col_even')
+    template_even = PageTemplate(id='even_page', frames=[frame_even])
     
     doc.addPageTemplates([template_odd, template_even])
     
@@ -723,8 +722,8 @@ def build_pdf():
     
     page_width = 6.0 * inch
     page_height = 9.0 * inch
-    spacing = 0.3 * inch
-    col_width = (page_width - 1.25 * inch - spacing) / 2.0
+    spacing = 0.0
+    col_width = page_width - 1.25 * inch
     col_height = page_height - 1.0 * inch - 0.5 * inch
     
     styles = getSampleStyleSheet()
