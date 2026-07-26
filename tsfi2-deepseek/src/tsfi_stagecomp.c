@@ -32,3 +32,17 @@ bool tsfi_stagecomp_resolve(const TSFiStageComp *comp, char *out_val) {
     }
     return false;
 }
+
+void tsfi_stagecomp_tune_pll(const TSFiStageComp *comp, tsfi_sage_pll_fabric *pll) {
+    if (!comp || !pll) return;
+    char resolved[64];
+    if (tsfi_stagecomp_resolve(comp, resolved)) {
+        if (strcmp(resolved, "high_frequency") == 0) {
+            pll->reference_phase = 1000;
+        } else if (strcmp(resolved, "low_frequency") == 0) {
+            pll->reference_phase = 100;
+        } else {
+            pll->reference_phase = 500;
+        }
+    }
+}

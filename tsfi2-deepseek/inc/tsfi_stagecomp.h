@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "tsfi_autodin_sage.h"
 
 #define MAX_LIVRPS_LAYERS 6
 
@@ -33,5 +34,8 @@ void tsfi_stagecomp_set_opinion(TSFiStageComp *comp, LivrpsLayerType layer, cons
 
 // Resolves the terminal attribute state applying the LIVRPS override order (Local > ... > Specializes)
 bool tsfi_stagecomp_resolve(const TSFiStageComp *comp, char *out_val);
+
+// Bridge function integrating StageComp resolution with SAGE PLL reference phase synchronization
+void tsfi_stagecomp_tune_pll(const TSFiStageComp *comp, tsfi_sage_pll_fabric *pll);
 
 #endif // TSFI_STAGECOMP_H
