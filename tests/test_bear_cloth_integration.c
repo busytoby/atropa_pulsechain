@@ -4,6 +4,9 @@
 #include <assert.h>
 #include <math.h>
 
+#include "../src/auncient_cloth_material_bridge.h"
+#include <string.h>
+
 int main(void) {
     printf("=============================================================\n");
     printf("AUNCIENT TEDDY BEAR AND CLOTH VERLET INTEGRATION TEST\n");
@@ -13,6 +16,16 @@ int main(void) {
     uint8_t dna_bytes[8] = {0x80, 0x80, 0x80, 0x80, 0x01, 0x00, 0x00, 0x00};
     DNATeddySculptDesc bear_desc;
     dna_teddy_decode_dna(&bear_desc, dna_bytes);
+
+    // Verify SSA lot registration for newly born teddy bear
+    MaterialUniformBlock bear_mat;
+    bear_mat.seed = 7; // Seed resolves to Area Lot 008 (Vermont)
+    char ssn_out[16];
+    char site_out[32];
+    auncient_bridge_dna_to_ssa(&bear_mat, ssn_out, site_out, sizeof(site_out));
+    assert(strcmp(ssn_out, "008-12-3456") == 0);
+    assert(strcmp(site_out, "Vermont") == 0);
+    printf("   ✓ Newly born teddy bear successfully allocated SSN %s in Area Lot (%s).\n", ssn_out, site_out);
 
     static DNATeddyVertex bear_vertices[5000];
     static int bear_indices[30000];
