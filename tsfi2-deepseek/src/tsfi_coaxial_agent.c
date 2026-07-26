@@ -9,6 +9,7 @@ void tsfi_coaxial_agent_init(TSFiCoaxialAgent *agent, TSFiCoaxialObserver *obs, 
     agent->zmm = zmm;
     agent->transaction_dispatch_count = 0;
     memset(agent->last_dispatched_payload, 0, sizeof(agent->last_dispatched_payload));
+    tsfi_mann_controller_init(&agent->mann);
 }
 
 int tsfi_coaxial_agent_tick(TSFiCoaxialAgent *agent) {
@@ -18,6 +19,23 @@ int tsfi_coaxial_agent_tick(TSFiCoaxialAgent *agent) {
     int event_status = tsfi_coaxial_observer_poll(agent->observer, &event);
 
     if (event_status == 1) {
+        // Map payload value to neural vectors for MANN differentiable queries
+        float key_vector[MANN_SLOT_WIDTH];
+        float erase_vector[MANN_SLOT_WIDTH];
+        float write_vector[MANN_SLOT_WIDTH];
+        memset(key_vector, 0, sizeof(key_vector));
+        memset(erase_vector, 0, sizeof(erase_vector));
+        memset(write_vector, 0, sizeof(write_vector));
+
+        key_vector[0] = (float)event.payload_value;
+        erase_vector[0] = 1.0f;
+        write_vector[0] = (float)event.payload_value * 2.0f;
+
+        // Perform differentiable write and read query
+        tsfi_mann_controller_write(&agent->mann, key_vector, 5.0f, erase_vector, write_vector);
+        float read_vector[MANN_SLOT_WIDTH];
+        tsfi_mann_controller_read(&agent->mann, key_vector, 5.0f, read_vector);
+
         // Observer captured an event -> Agent resolves dynamic agency dispatch
         char zmm_tx_payload[256];
         

@@ -3,6 +3,7 @@
 
 #include "tsfi_coaxial_observer.h"
 #include "tsfi_zmm_vm.h"
+#include "tsfi_mann_controller.h"
 
 // Coaxial Agent Context
 typedef struct {
@@ -10,6 +11,7 @@ typedef struct {
     TsfiZmmVmState *zmm;
     int transaction_dispatch_count;
     char last_dispatched_payload[256];
+    TSFiMANNController mann;
 } TSFiCoaxialAgent;
 
 // Initialize the Coaxial Agent Context
