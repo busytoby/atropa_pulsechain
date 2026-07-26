@@ -14,6 +14,9 @@ void tsfi_hairshading_init(TSFiHairShading *hs, double specular_exponent, double
 // Configures animatronic parameters for synthetic fiber reflections
 void tsfi_hairshading_set_animatronic(TSFiHairShading *hs, double secondary_shift, double jitter_amplitude);
 
+// Runs a Verlet integration step resolving mechanical vibration displacement
+void tsfi_hairshading_verlet_step(TSFiHairShading *hs, double *x, double *x_prev, double force, double dt);
+
 // Evaluates Kajiya-Kay anisotropic fiber reflection intensity
 double tsfi_hairshading_eval(const TSFiHairShading *hs, const double *tangent, const double *light_dir, const double *view_dir);
 

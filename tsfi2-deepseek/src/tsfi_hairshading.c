@@ -15,6 +15,23 @@ void tsfi_hairshading_set_animatronic(TSFiHairShading *hs, double secondary_shif
     hs->jitter_amplitude = jitter_amplitude;
 }
 
+void tsfi_hairshading_verlet_step(TSFiHairShading *hs, double *x, double *x_prev, double force, double dt) {
+    if (!hs || !x || !x_prev || dt <= 0.0) return;
+    
+    // Verlet integration step: x_next = 2 * x - x_prev + acc * dt^2
+    double stiffness = 10.0;
+    double damping = 0.5;
+    double velocity = (*x - *x_prev) / dt;
+    double acceleration = force - stiffness * (*x) - damping * velocity;
+    
+    double x_next = 2.0 * (*x) - (*x_prev) + acceleration * (dt * dt);
+    *x_prev = *x;
+    *x = x_next;
+    
+    // Bind resulting displacement value directly to the jitter parameter
+    hs->jitter_amplitude = fabs(x_next);
+}
+
 static double dot_vectors(const double *a, const double *b) {
     return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 }
