@@ -14,7 +14,6 @@ total_frames = int(DURATION * FPS)
 def generate_walking_soundtrack(wav_path):
     total_samples = int(SAMPLE_RATE * DURATION)
     audio = np.zeros(total_samples, dtype=np.float32)
-    # Rhythmic heavy footsteps (90 BPM -> 1.5 steps per second)
     step_dur = 60.0 / 90.0
     step_samples = int(SAMPLE_RATE * step_dur)
     
@@ -22,10 +21,8 @@ def generate_walking_soundtrack(wav_path):
         t_sec = s / float(SAMPLE_RATE)
         step_pos = (s % step_samples) / float(step_samples)
         
-        # Heavy thumbing bass drum footstep sound
         env = math.exp(-step_pos * 12.0)
         sig = math.sin(2.0 * math.pi * 55.0 * t_sec) * env * 0.7
-        # Soft structural cotton squeak/rustle
         rustle_env = math.exp(-step_pos * 4.0)
         sig += math.sin(2.0 * math.pi * 880.0 * t_sec) * rustle_env * 0.05
         
@@ -55,29 +52,22 @@ def rotate_z(x, y, z, angle):
     return x * c - y * s, x * s + y * c, z
 
 def get_walking_geometry(time_sec):
-    # Walk cycle frequency
-    freq = 2.0 * math.pi * 1.5 # 1.5 Hz walk cycle
+    freq = 2.0 * math.pi * 1.5
     
-    # Forward translation along X-axis, loop across screen
     x_disp = -2.5 + (time_sec * 0.6) % 5.0
-    # Gentle up-down bobbing of the body twice per cycle
     y_disp = 0.05 + 0.06 * abs(math.sin(freq * time_sec))
     z_disp = 0.0
     
-    # Body sway (roll) and twist (yaw)
     body_pitch = 0.08 * math.sin(freq * time_sec)
     body_yaw = 1.0 + 0.05 * math.cos(freq * time_sec)
     body_roll = 0.04 * math.sin(freq * time_sec)
     
-    # Alternating leg swing
     swing_l = 0.35 * math.sin(freq * time_sec)
     swing_r = -0.35 * math.sin(freq * time_sec)
     
-    # Knee bends on backswing
     t_lknee = 0.4 * (1.0 + math.cos(freq * time_sec)) if swing_l < 0 else 0.1
     t_rknee = 0.4 * (1.0 - math.cos(freq * time_sec)) if swing_r < 0 else 0.1
     
-    # Alternating arm swing (opposite to legs)
     t_luarm = -0.3 * math.sin(freq * time_sec) + 0.1
     t_ruarm = 0.3 * math.sin(freq * time_sec) + 0.1
     t_lelbow = 0.3
@@ -97,6 +87,21 @@ def get_walking_geometry(time_sec):
         "color": (120, 80, 54)
     }
     
+    # Red felt heart on the chest of the body
+    heart_local_pos = (0.0, 0.1, 0.5)
+    hx, hy, hz = rotate_x(heart_local_pos[0], heart_local_pos[1], heart_local_pos[2], body_pitch)
+    hx, hy, hz = rotate_y(hx, hy, hz, body_yaw)
+    hx, hy, hz = rotate_z(hx, hy, hz, body_roll)
+    parts["SewnHeart"] = {
+        "pos": (x_disp + hx, 0.55 + y_disp + hy, z_disp + hz),
+        "rot": (body_pitch, body_yaw, body_roll),
+        "local_pos": heart_local_pos,
+        "local_rot": (0.0, 0.0, 0.0),
+        "shape": "heart",
+        "size": (0.2, 0.2, 0.08),
+        "color": (200, 30, 40)
+    }
+    
     head_local_pos = (0.0, 0.9, 0.0)
     head_local_rot = (0.04 * math.sin(freq * time_sec * 2.0), 0.0, 0.0)
     hx, hy, hz = rotate_x(head_local_pos[0], head_local_pos[1], head_local_pos[2], body_pitch)
@@ -112,8 +117,16 @@ def get_walking_geometry(time_sec):
         "color": (120, 80, 54)
     }
     
+    # Face details parented to Head
+    def get_world_head_child(local_offset):
+        # Rotate relative to Head orientation
+        cx, cy, cz = rotate_x(local_offset[0], local_offset[1], local_offset[2], parts["Head"]["rot"][0])
+        cx, cy, cz = rotate_y(cx, cy, cz, parts["Head"]["rot"][1])
+        cx, cy, cz = rotate_z(cx, cy, cz, parts["Head"]["rot"][2])
+        return (parts["Head"]["pos"][0] + cx, parts["Head"]["pos"][1] + cy, parts["Head"]["pos"][2] + cz)
+
     parts["LeftEar"] = {
-        "pos": (parts["Head"]["pos"][0] - 0.4, parts["Head"]["pos"][1] + 0.4, parts["Head"]["pos"][2]),
+        "pos": get_world_head_child((-0.4, 0.4, 0.0)),
         "rot": parts["Head"]["rot"],
         "local_pos": (-0.4, 0.4, 0.0),
         "local_rot": (0.0, 0.0, 0.0),
@@ -122,13 +135,55 @@ def get_walking_geometry(time_sec):
         "color": (100, 65, 40)
     }
     parts["RightEar"] = {
-        "pos": (parts["Head"]["pos"][0] + 0.4, parts["Head"]["pos"][1] + 0.4, parts["Head"]["pos"][2]),
+        "pos": get_world_head_child((0.4, 0.4, 0.0)),
         "rot": parts["Head"]["rot"],
         "local_pos": (0.4, 0.4, 0.0),
         "local_rot": (0.0, 0.0, 0.0),
         "shape": "ellipsoid",
         "size": (0.2, 0.2, 0.15),
         "color": (100, 65, 40)
+    }
+    
+    # Black bead eyes
+    parts["LeftEye"] = {
+        "pos": get_world_head_child((-0.2, 0.15, 0.45)),
+        "rot": parts["Head"]["rot"],
+        "local_pos": (-0.2, 0.15, 0.45),
+        "local_rot": (0.0, 0.0, 0.0),
+        "shape": "ellipsoid",
+        "size": (0.06, 0.06, 0.06),
+        "color": (20, 20, 20)
+    }
+    parts["RightEye"] = {
+        "pos": get_world_head_child((0.2, 0.15, 0.45)),
+        "rot": parts["Head"]["rot"],
+        "local_pos": (0.2, 0.15, 0.45),
+        "local_rot": (0.0, 0.0, 0.0),
+        "shape": "ellipsoid",
+        "size": (0.06, 0.06, 0.06),
+        "color": (20, 20, 20)
+    }
+    
+    # Muzzle (cotton snout patch)
+    parts["Muzzle"] = {
+        "pos": get_world_head_child((0.0, -0.05, 0.45)),
+        "rot": parts["Head"]["rot"],
+        "local_pos": (0.0, -0.05, 0.45),
+        "local_rot": (0.0, 0.0, 0.0),
+        "shape": "ellipsoid",
+        "size": (0.2, 0.15, 0.12),
+        "color": (220, 200, 180)
+    }
+    
+    # Stitched velvet nose
+    parts["Nose"] = {
+        "pos": get_world_head_child((0.0, 0.02, 0.56)),
+        "rot": parts["Head"]["rot"],
+        "local_pos": (0.0, 0.02, 0.56),
+        "local_rot": (0.0, 0.0, 0.0),
+        "shape": "ellipsoid",
+        "size": (0.08, 0.05, 0.05),
+        "color": (40, 30, 25)
     }
     
     def add_arm(side, uarm_pitch, elbow_pitch, color_u, color_f):
@@ -248,7 +303,7 @@ def generate_fur_strands(center, size, num_strands=16):
         strands.append(strand)
     return strands
 
-def write_static_usda_asset(filepath, name, size):
+def write_static_usda_asset(filepath, name, size, is_heart=False):
     mesh_verts = generate_ellipsoid_mesh(size, num_segments=8)
     
     with open(filepath, "w") as f:
@@ -278,21 +333,22 @@ def write_static_usda_asset(filepath, name, size):
         f.write(f"    int[] faceVertexIndices = {face_indices}\n")
         f.write(f"    int[] faceVertexCounts = {face_counts}\n")
         
-        f.write("    def BasisCurves \"fur\"\n")
-        f.write("    {\n")
-        f.write("        uniform token basis = \"bezier\"\n")
-        f.write("        uniform token type = \"cubic\"\n")
-        
-        fur_strands = generate_fur_strands((0.0, 0.0, 0.0), size, num_strands=8)
-        f.write("        point3f[] points = [\n")
-        for strand in fur_strands:
-            for sx, sy, sz in strand:
-                f.write(f"            ({sx:.4f}, {sy:.4f}, {sz:.4f}),\n")
-        f.write("        ]\n")
-        
-        curve_counts = [4] * len(fur_strands)
-        f.write(f"            int[] curveVertexCounts = {curve_counts}\n")
-        f.write("    }\n")
+        if not is_heart and "Eye" not in name and "Nose" not in name:
+            f.write("    def BasisCurves \"fur\"\n")
+            f.write("    {\n")
+            f.write("        uniform token basis = \"bezier\"\n")
+            f.write("        uniform token type = \"cubic\"\n")
+            
+            fur_strands = generate_fur_strands((0.0, 0.0, 0.0), size, num_strands=8)
+            f.write("        point3f[] points = [\n")
+            for strand in fur_strands:
+                for sx, sy, sz in strand:
+                    f.write(f"            ({sx:.4f}, {sy:.4f}, {sz:.4f}),\n")
+            f.write("        ]\n")
+            
+            curve_counts = [4] * len(fur_strands)
+            f.write(f"            int[] curveVertexCounts = {curve_counts}\n")
+            f.write("    }\n")
         f.write("}\n")
 
 def main():
@@ -317,7 +373,6 @@ def main():
         img = Image.new("RGB", (width, height), (10, 5, 20))
         draw = ImageDraw.Draw(img)
         
-        # Spotlights / stage backdrop
         for spotlight_x in [100, 320, 540]:
             draw.line([(spotlight_x, 0), (width / 2.0, 320)], fill=(80, 50, 100), width=3)
             
@@ -360,26 +415,32 @@ def main():
                 projected_pts.append((screen_x, screen_y))
                 
             fill_color = part["color"]
-            num_seg = 10
-            for i in range(num_seg - 1):
-                for j in range(num_seg):
-                    p1_idx = i * num_seg + j
-                    p2_idx = i * num_seg + ((j + 1) % num_seg)
-                    p3_idx = (i + 1) * num_seg + ((j + 1) % num_seg)
-                    p4_idx = (i + 1) * num_seg + j
-                    poly = [projected_pts[p1_idx], projected_pts[p2_idx], projected_pts[p3_idx], projected_pts[p4_idx]]
-                    draw.polygon(poly, fill=fill_color, outline=(255, 255, 255))
+            if part["shape"] == "heart":
+                # Draw simple polygon heart
+                if len(projected_pts) > 0:
+                    draw.ellipse([projected_pts[0][0]-15, projected_pts[0][1]-15, projected_pts[0][0]+15, projected_pts[0][1]+15], fill=fill_color)
+            else:
+                num_seg = 10
+                for i in range(num_seg - 1):
+                    for j in range(num_seg):
+                        p1_idx = i * num_seg + j
+                        p2_idx = i * num_seg + ((j + 1) % num_seg)
+                        p3_idx = (i + 1) * num_seg + ((j + 1) % num_seg)
+                        p4_idx = (i + 1) * num_seg + j
+                        poly = [projected_pts[p1_idx], projected_pts[p2_idx], projected_pts[p3_idx], projected_pts[p4_idx]]
+                        draw.polygon(poly, fill=fill_color, outline=(255, 255, 255))
             
-            strands = generate_fur_strands((px, py, pz), part["size"], num_strands=12)
-            for strand in strands:
-                screen_strand = []
-                for sx, sy, sz in strand:
-                    sgz = sz + 4.5
-                    ssx = int(width / 2.0 + (sx * fov) / sgz)
-                    ssy = int(height / 2.0 - (sy * fov) / sgz)
-                    screen_strand.append((ssx, ssy))
-                for pt_idx in range(len(screen_strand) - 1):
-                    draw.line([screen_strand[pt_idx], screen_strand[pt_idx+1]], fill=(140, 95, 65), width=2)
+            if part["shape"] != "heart" and "Eye" not in part_name and "Nose" not in part_name:
+                strands = generate_fur_strands((px, py, pz), part["size"], num_strands=12)
+                for strand in strands:
+                    screen_strand = []
+                    for sx, sy, sz in strand:
+                        sgz = sz + 4.5
+                        ssx = int(width / 2.0 + (sx * fov) / sgz)
+                        ssy = int(height / 2.0 - (sy * fov) / sgz)
+                        screen_strand.append((ssx, ssy))
+                    for pt_idx in range(len(screen_strand) - 1):
+                        draw.line([screen_strand[pt_idx], screen_strand[pt_idx+1]], fill=(140, 95, 65), width=2)
                     
         draw.text((20, 20), "TSFi2 AUNCIENT FURRY SKELETAL WALK CYCLE", fill=(255, 215, 0))
         draw.text((20, 35), f"MOVEMENT: {current_movement_name}", fill=(0, 255, 255))
@@ -396,7 +457,7 @@ def main():
     parts_zero, _ = get_walking_geometry(0.0)
     for part_name, part in parts_zero.items():
         asset_file = os.path.join(assets_dir, f"teddy_{part_name.lower()}.usda")
-        write_static_usda_asset(asset_file, f"Mesh_{part_name}", part["size"])
+        write_static_usda_asset(asset_file, f"Mesh_{part_name}", part["size"], is_heart=(part["shape"] == "heart"))
         
     usda_output = "/home/mariarahel/src/tsfi2/atropa_pulsechain/teddy_ballet_scene.usda"
     with open(usda_output, "w") as f:
@@ -414,6 +475,8 @@ def main():
         f.write("    {\n")
         f.write("        uniform token[] joints = [\n")
         f.write("            \"/\", \"/Head\", \"/Head/LeftEar\", \"/Head/RightEar\",\n")
+        f.write("            \"/Head/LeftEye\", \"/Head/RightEye\", \"/Head/Muzzle\", \"/Head/Nose\",\n")
+        f.write("            \"/SewnHeart\",\n")
         f.write("            \"/LeftUpperArm\", \"/LeftUpperArm/LeftForearm\",\n")
         f.write("            \"/RightUpperArm\", \"/RightUpperArm/RightForearm\",\n")
         f.write("            \"/LeftThigh\", \"/LeftThigh/LeftCalf\",\n")
@@ -425,6 +488,8 @@ def main():
         f.write("    {\n")
         f.write("        uniform token[] joints = [\n")
         f.write("            \"/\", \"/Head\", \"/Head/LeftEar\", \"/Head/RightEar\",\n")
+        f.write("            \"/Head/LeftEye\", \"/Head/RightEye\", \"/Head/Muzzle\", \"/Head/Nose\",\n")
+        f.write("            \"/SewnHeart\",\n")
         f.write("            \"/LeftUpperArm\", \"/LeftUpperArm/LeftForearm\",\n")
         f.write("            \"/RightUpperArm\", \"/RightUpperArm/RightForearm\",\n")
         f.write("            \"/LeftThigh\", \"/LeftThigh/LeftCalf\",\n")
