@@ -3,7 +3,7 @@ import re
 import datetime
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
-from reportlab.platypus import BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer, PageBreak, FrameBreak, Table, TableStyle, Image, NextPageTemplate, KeepTogether, Flowable, Preformatted
+from reportlab.platypus import BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer, PageBreak, FrameBreak, Table, TableStyle, Image, NextPageTemplate, KeepTogether, Flowable, Preformatted, BalancedColumns
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_JUSTIFY, TA_CENTER, TA_LEFT
 
@@ -501,10 +501,10 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
     
     # 1-column templates
     col_width_1col = page_width - 1.25 * inch
-    frame_odd_1col = Frame(0.75 * inch, 0.7 * inch, col_width_1col, col_height, id='col_odd_1col')
+    frame_odd_1col = Frame(0.75 * inch, 0.7 * inch, col_width_1col, col_height, id='col_odd_1col', topPadding=0, bottomPadding=0, leftPadding=0, rightPadding=0)
     template_odd_1col = PageTemplate(id='odd_page_1col', frames=[frame_odd_1col])
     
-    frame_even_1col = Frame(0.5 * inch, 0.7 * inch, col_width_1col, col_height, id='col_even_1col')
+    frame_even_1col = Frame(0.5 * inch, 0.7 * inch, col_width_1col, col_height, id='col_even_1col', topPadding=0, bottomPadding=0, leftPadding=0, rightPadding=0)
     template_even_1col = PageTemplate(id='even_page_1col', frames=[frame_even_1col])
     
     doc.addPageTemplates([template_odd_1col, template_even_1col])
@@ -530,31 +530,23 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
         if not art_flowables_list:
             return
             
-        i = 0
-        while i < len(art_flowables_list):
-            f1 = art_flowables_list[i]
-            if i + 1 < len(art_flowables_list):
-                f2 = art_flowables_list[i+1]
-                i += 2
-            else:
-                f2 = ""
-                i += 1
-                
-            t = Table([[f1, "", f2]], colWidths=[col_width, spacing, col_width])
-            t.setStyle(TableStyle([
-                ('VALIGN', (0,0), (-1,-1), 'TOP'),
-                ('LEFTPADDING', (0,0), (-1,-1), 0),
-                ('RIGHTPADDING', (0,0), (-1,-1), 0),
-                ('BOTTOMPADDING', (0,0), (-1,-1), 0),
-                ('TOPPADDING', (0,0), (-1,-1), 0),
-            ]))
-            story.append(t)
-            story.append(Spacer(1, 4))
-            
+        story.append(BalancedColumns(art_flowables_list[:], nCols=2, innerPadding=spacing, spaceBefore=4, spaceAfter=4))
         art_flowables_list.clear()
 
     def append_flowable(f):
         art_flowables.append(f)
+        est_h = 0
+        for x in art_flowables:
+            if hasattr(x, 'style') and x.style.name in ('ArtTitle', 'ArtDate'):
+                continue
+            if isinstance(x, Spacer):
+                est_h += x.height
+            elif isinstance(x, Paragraph):
+                est_h += max(1, len(x.text) / 40.0) * x.style.leading + x.style.spaceBefore + x.style.spaceAfter
+            elif isinstance(x, Preformatted):
+                est_h += (getattr(x, 'raw_text', '').count('\n') + 1) * x.style.leading + x.style.spaceBefore + x.style.spaceAfter
+        if est_h > 160:
+            flush_art_flowables(art_flowables)
             
     for idx, (date, path) in enumerate(files):
         title = os.path.basename(path).replace(".md", "").replace("_", " ").title()
