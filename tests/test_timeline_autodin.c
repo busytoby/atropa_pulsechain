@@ -155,6 +155,14 @@ int main(void) {
     assert(active_seed > 0);
     printf("   ✓ WinchesterMQ noise seed modulation verified.\n");
 
+    // Test palette permutation gradients
+    uint32_t ocean_col = auncient_texgen_permute_palette(0.8f, 1, 1.0f); // Ocean blue
+    assert((ocean_col & 0x000000FF) != 0); // Blue channel present
+    
+    uint32_t fire_col = auncient_texgen_permute_palette(0.8f, 2, 1.0f); // Fire red
+    assert((fire_col & 0x00FF0000) != 0); // Red channel present
+    printf("   ✓ Material-driven palette color grading verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");

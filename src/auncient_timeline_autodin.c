@@ -273,3 +273,41 @@ uint32_t auncient_texgen_modulated_seed(const WinchesterMQState *state) {
     uint32_t dynamic_seed = (uint32_t)(base_signal & 0xFFFFFFFF) ^ (uint32_t)(state->channel & 0xFFFFFFFF);
     return (dynamic_seed > 0) ? dynamic_seed : 421337U;
 }
+
+uint32_t auncient_texgen_permute_palette(float noise_val, uint32_t color_preset, float blend_factor) {
+    // Clamp noise value between 0.0 and 1.0
+    if (noise_val < 0.0f) noise_val = 0.0f;
+    if (noise_val > 1.0f) noise_val = 1.0f;
+
+    uint8_t r = 0, g = 0, b = 0;
+
+    if (color_preset == 1) {
+        // Ocean preset: blue-cyan gradient
+        b = (uint8_t)(155.0f * noise_val + 100.0f);
+        g = (uint8_t)(80.0f * noise_val + 20.0f);
+        r = (uint8_t)(20.0f * (1.0f - noise_val));
+    } 
+    else if (color_preset == 2) {
+        // Fire preset: orange-red gradient
+        r = (uint8_t)(155.0f * noise_val + 100.0f);
+        g = (uint8_t)(100.0f * noise_val + 10.0f);
+        b = (uint8_t)(10.0f * (1.0f - noise_val));
+    } 
+    else if (color_preset == 3) {
+        // Obsidian preset: dark purple-black gradient
+        r = (uint8_t)(30.0f * noise_val + 10.0f);
+        b = (uint8_t)(50.0f * noise_val + 20.0f);
+        g = 0;
+    } 
+    else {
+        // Default grayscale mapping
+        r = g = b = (uint8_t)(255.0f * noise_val);
+    }
+
+    // Apply blend factor to scale the color magnitude
+    r = (uint8_t)(r * blend_factor);
+    g = (uint8_t)(g * blend_factor);
+    b = (uint8_t)(b * blend_factor);
+
+    return 0xFF000000 | (r << 16) | (g << 8) | b;
+}

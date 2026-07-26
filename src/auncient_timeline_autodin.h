@@ -122,6 +122,9 @@ void auncient_texgen_build_copy_info(uint32_t w, uint32_t h, VkBufferImageCopy *
 // Resolves a dynamic noise seed modulated by WinchesterMQ register parameters
 uint32_t auncient_texgen_modulated_seed(const WinchesterMQState *state);
 
+// Permutes noise values to ARGB colors based on active material presets and blend factors
+uint32_t auncient_texgen_permute_palette(float noise_val, uint32_t color_preset, float blend_factor);
+
 #ifdef __cplusplus
 }
 #endif
