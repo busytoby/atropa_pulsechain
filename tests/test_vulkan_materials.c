@@ -60,6 +60,14 @@ int main(void) {
     assert(pipeline_layout_info.pPushConstantRanges == &push_range);
     printf("   ✓ Pipeline layout builder verified.\n");
 
+    // Test Size and Alignment Estimator
+    uint32_t raw_sz = 0;
+    uint32_t aligned_sz = 0;
+    auncient_vulkan_materials_get_sizes(0, 256, &raw_sz, &aligned_sz);
+    assert(raw_sz == sizeof(GlobalUniformBlock));
+    assert(aligned_sz == 256); // 132 bytes rounded up to 256 alignment
+    printf("   ✓ Size and alignment estimators verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT VULKAN MATERIALS TEST COMPLETE\n");
     printf("=============================================================\n");

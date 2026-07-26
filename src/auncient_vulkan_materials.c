@@ -67,3 +67,25 @@ void auncient_vulkan_materials_build_pipeline_layout(const void *set_layouts, in
     info->pushConstantRangeCount = (uint32_t)push_count;
     info->pPushConstantRanges = push_ranges;
 }
+
+void auncient_vulkan_materials_get_sizes(int set_index, uint32_t gpu_alignment, uint32_t *raw_size, uint32_t *aligned_size) {
+    if (!raw_size || !aligned_size) return;
+
+    uint32_t size = 0;
+    if (set_index == 0) {
+        size = sizeof(GlobalUniformBlock);
+    } else if (set_index == 1) {
+        size = sizeof(MaterialUniformBlock);
+    } else if (set_index == 2) {
+        size = sizeof(InstanceUniformBlock);
+    }
+
+    *raw_size = size;
+    
+    if (gpu_alignment > 0) {
+        // Round up to nearest gpu_alignment boundary
+        *aligned_size = (size + gpu_alignment - 1) & ~(gpu_alignment - 1);
+    } else {
+        *aligned_size = size;
+    }
+}

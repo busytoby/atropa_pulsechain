@@ -88,6 +88,7 @@ void auncient_vulkan_materials_get_bindings(int set_index, VkDescriptorSetLayout
 void auncient_vulkan_materials_build_layout_info(const VkDescriptorSetLayoutBinding *bindings, int count, VkDescriptorSetLayoutCreateInfo *info);
 void auncient_vulkan_materials_get_push_constant_range(VkPushConstantRange *range);
 void auncient_vulkan_materials_build_pipeline_layout(const void *set_layouts, int layout_count, const VkPushConstantRange *push_ranges, int push_count, VkPipelineLayoutCreateInfo *info);
+void auncient_vulkan_materials_get_sizes(int set_index, uint32_t gpu_alignment, uint32_t *raw_size, uint32_t *aligned_size);
 
 #ifdef __cplusplus
 }
