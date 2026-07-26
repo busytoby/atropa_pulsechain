@@ -89,13 +89,30 @@ static void synthesize_texture_grid(huc_ocean_system_t *huc, double phase, int m
             } else if (mode == 1) {
                 // Sine Plasma
                 val = 127.5 + 63.75 * sin(x * 1.2 + phase) + 63.75 * cos(y * 1.2 + phase * 0.8);
-            } else {
+            } else if (mode == 2) {
                 // Fractal Plasma (Multi-Octave Perlin Noise with Cosine Interpolation)
                 double f_val = 0.0;
                 f_val += noise_2d((double)x * 0.25, (double)y * 0.25, 100U) * 1.0;
                 f_val += noise_2d((double)x * 0.5, (double)y * 0.5, 200U) * 0.5;
                 f_val += noise_2d((double)x * 1.0, (double)y * 1.0, 300U) * 0.25;
                 val = (f_val / 1.75) * 255.0;
+            } else {
+                // 3D Swirling Passage Tunnel (Inverse distance and angle mapping)
+                double cx = (GRID_SIZE - 1) / 2.0;
+                double cy = (GRID_SIZE - 1) / 2.0;
+                double dx = x - cx;
+                double dy = y - cy;
+                double r = sqrt(dx*dx + dy*dy);
+                double theta = atan2(dy, dx);
+                
+                double u = (theta + 3.141592653589793) / (2.0 * 3.141592653589793);
+                double v = 1.0 / (r + 0.1);
+                
+                double u_scroll = u + phase * 0.05;
+                double v_scroll = v + phase * 0.1;
+                
+                int check = ((int)(u_scroll * 12.0) % 2) ^ ((int)(v_scroll * 12.0) % 2);
+                val = check ? 255.0 : 0.0;
             }
             layer0[y][x] = (uint8_t)val;
         }
@@ -239,7 +256,7 @@ static void process_tape_ingest_v6(huc_ocean_system_t *huc,
         huc->psg_frequency = (uint32_t)(261.0 + (huc->transaction_count * 20.0) + lfo_mod);
 
         // Update procedural visualizers
-        synthesize_texture_grid(huc, huc->transaction_count * 1.5, lane % 3);
+        synthesize_texture_grid(huc, huc->transaction_count * 1.5, lane % 4);
         update_lissajous_mesh(huc, huc->transaction_count * 1.2);
 
         printf("   [INGEST PASS] Lane %d: Account %d balance reconciled. Color: 0x%06X. LFO Freq: %u Hz.\n", 
