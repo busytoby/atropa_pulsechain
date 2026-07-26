@@ -506,6 +506,31 @@ static void simulate_smc_remove_next_line(uint32_t *active, uint32_t *backup, in
     }
 }
 
+// Pre-baked physics collision timeline frame structure mapping collision_20250902081037.inc
+typedef struct {
+    uint8_t delta_frame;
+    uint8_t water_change;
+    struct {
+        uint8_t char_id;
+        int16_t x;
+        int16_t y;
+    } updates[6];
+    uint8_t update_count;
+} PrebakedFrame;
+
+static const PrebakedFrame prebaked_script[10] = {
+    {0, 0, {{0, 100, 120}, {1, 160, 130}, {2, 220, 140}, {3, 280, 150}, {4, 340, 160}, {5, 400, 170}}, 6},
+    {72, 0, {{1, 162, 148}, {2, 222, 148}, {3, 282, 148}}, 3},
+    {13, 1, {{4, 342, 157}, {5, 402, 157}}, 2},
+    {1, 1, {{0, 102, 145}, {1, 162, 145}}, 2},
+    {1, 2, {{2, 222, 160}, {3, 282, 160}, {4, 342, 160}, {5, 402, 160}}, 4},
+    {1, 0, {{0, 102, 140}}, 1},
+    {3, 1, {{1, 162, 150}}, 1},
+    {12, 0, {{2, 222, 150}, {3, 282, 150}}, 2},
+    {1, 0, {{4, 342, 150}, {5, 402, 150}}, 2},
+    {65, 2, {{0, 102, 150}, {1, 162, 150}}, 2}
+};
+
 // Redraw screen with real-time PETSCII / C64 effects
 static void redraw_screen(void) {
     if (!surface) return;
@@ -743,43 +768,39 @@ static void redraw_screen(void) {
         last_sim_time = retro_time;
     }
     float dt = retro_time - last_sim_time;
-    if (dt > 0.1f) dt = 0.1f; // Cap delta time
+    if (dt > 0.1f) dt = 0.1f;
     last_sim_time = retro_time;
     
-    float gravity = 9.8f * dt * 2.0f;
     int ground = 220;
+    (void)sim_vy;
     
+    // Playback pre-baked coordinate steps from the collision script
+    static int prebaked_frame_idx = 0;
+    static float last_frame_time = 0.0f;
+    if (retro_time - last_frame_time > 0.12f) { // ~8 Hz update speed
+        last_frame_time = retro_time;
+        prebaked_frame_idx = (prebaked_frame_idx + 1) % 10;
+        
+        PrebakedFrame f = prebaked_script[prebaked_frame_idx];
+        water_flood_height += f.water_change * 0.12f;
+        if (water_flood_height > 25.0f) water_flood_height = 25.0f;
+        
+        for (int i = 0; i < f.update_count; i++) {
+            int id = f.updates[i].char_id;
+            if (id < 6) {
+                sim_y[id] = f.updates[i].y;
+                sim_scale_x[id] = 4.2f;
+                sim_scale_y[id] = 3.8f;
+                sim_inflation[id] = 2.2f;
+            }
+        }
+    }
+    
+    // Smoothly decay scale parameters back to defaults
     for (int i = 0; i < 6; i++) {
-        sim_vy[i] += gravity;
-        sim_y[i] += sim_vy[i];
-        
-        sim_inflation[i] += (1.0f - sim_inflation[i]) * dt * 1.5f;
-        sim_scale_x[i] += (4.0f - sim_scale_x[i]) * dt * 6.0f;
-        sim_scale_y[i] += (4.0f - sim_scale_y[i]) * dt * 6.0f;
-        
-        if (sim_y[i] >= ground) {
-            sim_y[i] = (float)ground;
-            sim_vy[i] = -sim_vy[i] * 0.65f;
-            sim_inflation[i] += 0.45f;
-            if (sim_inflation[i] > 3.0f) sim_inflation[i] = 3.0f;
-            sim_scale_x[i] = 5.2f;
-            sim_scale_y[i] = 2.8f;
-            
-            // Raise water level slowly on collision (capped to protect desert sky and cactus art)
-            water_flood_height += 0.08f;
-            if (water_flood_height > 25.0f) water_flood_height = 25.0f;
-        }
-        
-        // Staggered bounce kicks
-        static float last_kick[6] = {0};
-        if (retro_time - last_kick[i] > 3.0f + i * 0.8f) {
-            last_kick[i] = retro_time;
-            sim_vy[i] = -4.5f;
-            sim_inflation[i] += 0.6f;
-            if (sim_inflation[i] > 3.0f) sim_inflation[i] = 3.0f;
-            sim_scale_x[i] = 2.8f;
-            sim_scale_y[i] = 5.2f;
-        }
+        sim_inflation[i] += (1.0f - sim_inflation[i]) * dt * 2.0f;
+        sim_scale_x[i] += (4.0f - sim_scale_x[i]) * dt * 4.0f;
+        sim_scale_y[i] += (4.0f - sim_scale_y[i]) * dt * 4.0f;
     }
     
     // Apply simulated SMC remove_next_line to both active screen and backup cache
