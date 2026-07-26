@@ -173,6 +173,12 @@ int main(int argc, char *argv[]) {
     resonator_init(&snare_res, 1000.0, 4.0);
     resonator_init(&lead_res, 800.0, 2.0);
 
+    // Feedback echo delay line
+    #define DELAY_LINE_LEN 2000
+    double delay_line_buf[DELAY_LINE_LEN];
+    memset(delay_line_buf, 0, sizeof(delay_line_buf));
+    int delay_line_ptr = 0;
+
     unsigned int seed = 0x12345678;
 
     for (int step = 0; step < num_steps; step++) {
@@ -252,6 +258,12 @@ int main(int argc, char *argv[]) {
 
             // Mix all 7 instruments
             double mixed = kick_out + snare_out + hh_out + clap_out + lead_out + bass_out + arp_out;
+            
+            // Apply delay line echo
+            double delay_out = delay_line_buf[delay_line_ptr];
+            delay_line_buf[delay_line_ptr] = mixed + delay_out * 0.4;
+            delay_line_ptr = (delay_line_ptr + 1) % DELAY_LINE_LEN;
+            mixed += delay_out * 0.35;
             
             // Hard clipping limiter
             if (mixed > 1.0) mixed = 1.0;
