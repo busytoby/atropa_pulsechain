@@ -328,6 +328,20 @@ static void resolve_inh_ref_conflict(const usd_inh_ref_conflict_t *conflict, cha
     }
 }
 
+typedef struct {
+    char local_opinion[32];
+    char inherits_opinion[32];
+} usd_local_inh_conflict_t;
+
+static void resolve_local_inh_conflict(const usd_local_inh_conflict_t *conflict, char *resolved_val) {
+    if (strlen(conflict->local_opinion) > 0) {
+        strcpy(resolved_val, conflict->local_opinion);
+    } else {
+        strcpy(resolved_val, conflict->inherits_opinion);
+    }
+}
+
+
 
 
 
@@ -690,6 +704,27 @@ int main(void) {
     resolve_inh_ref_conflict(&ir_conflict_no_inh, resolved_ir_no_inh);
     assert(strcmp(resolved_ir_no_inh, "reference_transform") == 0);
     printf("   ✓ Inherits (I) taking precedence over Reference (R) verified.\n");
+    fflush(stdout);
+
+    // 19. Test Local vs Inherits Precedence Conflicts
+    printf("[TEST] Testing Local vs Inherits Precedence Conflicts...\n");
+    fflush(stdout);
+    usd_local_inh_conflict_t li_conflict = {
+        .local_opinion = "local_geometric_state",
+        .inherits_opinion = "class_inherited_geometric_state"
+    };
+    char resolved_li[32] = "";
+    resolve_local_inh_conflict(&li_conflict, resolved_li);
+    assert(strcmp(resolved_li, "local_geometric_state") == 0);
+
+    usd_local_inh_conflict_t li_conflict_no_local = {
+        .local_opinion = "",
+        .inherits_opinion = "class_inherited_geometric_state"
+    };
+    char resolved_li_no_local[32] = "";
+    resolve_local_inh_conflict(&li_conflict_no_local, resolved_li_no_local);
+    assert(strcmp(resolved_li_no_local, "class_inherited_geometric_state") == 0);
+    printf("   ✓ Local override (L) taking precedence over Inherits (I) verified.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
