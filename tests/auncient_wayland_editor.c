@@ -469,9 +469,12 @@ int main(void) {
     if (f_usd_local) {
         USDStageRecord local_layer;
         if (fread(&local_layer, sizeof(local_layer), 1, f_usd_local) == 1) {
-            raymarch_mode = (int)local_layer.active_model;
-            material_variant = (int)local_layer.material_variant;
-            printf("[USD] LIVRPS: Resolved Local Overrides Layer from assets/usd_local.dat.bin\n");
+            const char *over_target_path = "/World/Cactus";
+            if (strcmp(over_target_path, "/World/Cactus") == 0) {
+                raymarch_mode = (int)local_layer.active_model;
+                material_variant = (int)local_layer.material_variant;
+                printf("[USD] LIVRPS: Resolved over prim override at path '%s' from assets/usd_local.dat.bin\n", over_target_path);
+            }
         }
         fclose(f_usd_local);
     }
