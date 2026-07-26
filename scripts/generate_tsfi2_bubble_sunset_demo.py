@@ -229,14 +229,19 @@ def render_sunset_frame(frame, width, height):
     # 3D Elastic breathing/squishing scaling factor over time
     elastic_scale_x = 4.0 + 0.35 * math.sin(t_val * 4.5)
     elastic_scale_y = 4.0 - 0.35 * math.sin(t_val * 4.5)
+    # Calculate Z-depth sorted rendering order for character overlapping (Painter's depth-sorting)
+    # Characters float dynamically left-to-right, overlapping as they shift in depth layers.
+    sorted_chars = [(i, math.sin(t_val * 2.5 + i * 1.2)) for i in range(len(BUBBLE_FONT))]
+    sorted_chars.sort(key=lambda x: x[1])
     
-    # 5a. Render Drop Shadow first
-    for char_idx in range(len(BUBBLE_FONT)):
+    # 5a. Render Drop Shadow first in depth order
+    for char_idx, depth_z in sorted_chars:
+        depth_offset_x = int(16.0 * math.sin(t_val * 2.2 + char_idx * 0.9))
         for r in range(16):
             row_bits = BUBBLE_FONT[char_idx][r]
             for c in range(16):
                 if row_bits & (1 << (15 - c)):
-                    wobble_x = int(4.0 * math.sin(t_val * 5.0 + r * 0.5 + c * 0.2))
+                    wobble_x = int(4.0 * math.sin(t_val * 5.0 + r * 0.5 + c * 0.2)) + depth_offset_x
                     wobble_y = int(3.5 * math.cos(t_val * 4.0 + r * 0.3 + c * 0.3))
                     
                     px = int(logo_start_x + char_idx * char_spacing + c * elastic_scale_x + wobble_x + 8)
@@ -244,15 +249,16 @@ def render_sunset_frame(frame, width, height):
                     
                     draw.rectangle([px, py, px + 3, py + 3], fill=(20, 5, 0))
                     
-    # 5b. Render Inflated, color cycled main body with specular glint highlights
-    for char_idx in range(len(BUBBLE_FONT)):
+    # 5b. Render Inflated, color cycled main body with specular glint highlights in depth order
+    for char_idx, depth_z in sorted_chars:
+        depth_offset_x = int(16.0 * math.sin(t_val * 2.2 + char_idx * 0.9))
         for r in range(16):
             row_bits = BUBBLE_FONT[char_idx][r]
             prev_row_bits = BUBBLE_FONT[char_idx][r - 1] if r > 0 else 0
             
             for c in range(16):
                 if row_bits & (1 << (15 - c)):
-                    wobble_x = int(4.0 * math.sin(t_val * 5.0 + r * 0.5 + c * 0.2))
+                    wobble_x = int(4.0 * math.sin(t_val * 5.0 + r * 0.5 + c * 0.2)) + depth_offset_x
                     wobble_y = int(3.5 * math.cos(t_val * 4.0 + r * 0.3 + c * 0.3))
                     
                     px = int(logo_start_x + char_idx * char_spacing + c * elastic_scale_x + wobble_x)
@@ -282,7 +288,7 @@ def render_sunset_frame(frame, width, height):
                         
                     # Diagonal sheen sweep (from left to right, width of sweep = 12 pixels)
                     sheen_pos = int(t_val * 200.0) % 900 - 200
-                    dist_to_sheen = abs((char_idx * char_spacing + c * 4 + r * 4) - sheen_pos)
+                    dist_to_sheen = abs((char_idx * char_spacing + c * 4 + r * 4 + depth_offset_x) - sheen_pos)
                     if dist_to_sheen < 12:
                         color = (255, 255, 255)
                         
