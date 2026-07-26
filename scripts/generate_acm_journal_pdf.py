@@ -557,7 +557,7 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                 
                 # Determine block width
                 max_len = max((len(bl.rstrip('\r\n')) for bl in block_lines), default=0)
-                is_wide = max_len > 70
+                is_wide = (max_len > 70) and (len(block_lines) > 8)
                 
                 if is_mermaid:
                     m_flowable = render_mermaid_flowchart(block_lines, col_width_1col if is_wide else col_width)
@@ -570,6 +570,7 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                             story.append(m_flowable)
                             story.append(Spacer(1, 4))
                             story.append(NextPageTemplate(['even_page_2col', 'odd_page_2col']))
+                            story.append(PageBreak())
                         else:
                             art_flowables.append(Spacer(1, 4))
                             art_flowables.append(m_flowable)
@@ -585,6 +586,7 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                             story.append(c_flowable)
                             story.append(Spacer(1, 4))
                         story.append(NextPageTemplate(['even_page_2col', 'odd_page_2col']))
+                        story.append(PageBreak())
                     else:
                         c_flowable = render_standard_code_block(block_lines, col_width, body_style)
                         if c_flowable:
@@ -600,7 +602,7 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                     i += 1
                     
                 max_len = max((len(bl.rstrip('\r\n')) for bl in box_lines), default=0)
-                is_wide = max_len > 70
+                is_wide = (max_len > 70) and (len(box_lines) > 8)
                 
                 if box_lines:
                     if is_wide:
@@ -613,6 +615,7 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                             story.append(c_flowable)
                             story.append(Spacer(1, 4))
                         story.append(NextPageTemplate(['even_page_2col', 'odd_page_2col']))
+                        story.append(PageBreak())
                     else:
                         c_flowable = render_standard_code_block(box_lines, col_width, body_style)
                         if c_flowable:
@@ -631,7 +634,7 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                 col_count = 0
                 if table_lines:
                     col_count = len(table_lines[0].split('|')) - 2
-                is_wide = col_count > 5
+                is_wide = (col_count > 5) and (len(table_lines) > 8)
                 
                 if is_wide:
                     flush_art_flowables(art_flowables)
@@ -649,6 +652,7 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                             story.append(c_flowable)
                             story.append(Spacer(1, 4))
                     story.append(NextPageTemplate(['even_page_2col', 'odd_page_2col']))
+                    story.append(PageBreak())
                 else:
                     t_flowable = parse_markdown_table(table_lines, body_style, col_width)
                     if t_flowable:
