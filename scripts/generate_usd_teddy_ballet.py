@@ -65,7 +65,6 @@ def get_walking_geometry(time_sec):
     swing_l = 0.45 * math.sin(freq * time_sec)
     swing_r = -0.45 * math.sin(freq * time_sec)
     
-    # Bending angles
     t_lknee = 0.5 * (1.0 + math.cos(freq * time_sec)) if swing_l < 0 else 0.15
     t_rknee = 0.5 * (1.0 - math.cos(freq * time_sec)) if swing_r < 0 else 0.15
     
@@ -78,7 +77,6 @@ def get_walking_geometry(time_sec):
     
     parts = {}
     
-    # 1. Body
     parts["Body"] = {
         "pos": (x_disp, 0.55 + y_disp, z_disp),
         "rot": (body_pitch, body_yaw, body_roll),
@@ -89,7 +87,6 @@ def get_walking_geometry(time_sec):
         "color": (120, 80, 54)
     }
     
-    # Red felt heart
     heart_local_pos = (0.0, 0.1, 0.5)
     hx, hy, hz = rotate_x(heart_local_pos[0], heart_local_pos[1], heart_local_pos[2], body_pitch)
     hx, hy, hz = rotate_y(hx, hy, hz, body_yaw)
@@ -104,7 +101,6 @@ def get_walking_geometry(time_sec):
         "color": (200, 30, 40)
     }
     
-    # 2. Head
     head_local_pos = (0.0, 0.9, 0.0)
     head_local_rot = (0.04 * math.sin(freq * time_sec * 2.0), 0.0, 0.0)
     hx, hy, hz = rotate_x(head_local_pos[0], head_local_pos[1], head_local_pos[2], body_pitch)
@@ -186,19 +182,14 @@ def get_walking_geometry(time_sec):
     
     def add_jointed_arm(side, uarm_pitch, elbow_pitch, color_u, color_f):
         side_sign = -1.0 if side == "Left" else 1.0
-        
-        # Shoulder joint world pos
         shoulder_local = (side_sign * 0.65, 0.35, 0.0)
         sx, sy, sz = rotate_x(shoulder_local[0], shoulder_local[1], shoulder_local[2], body_pitch)
         sx, sy, sz = rotate_y(sx, sy, sz, body_yaw)
         sx, sy, sz = rotate_z(sx, sy, sz, body_roll)
         shoulder_world = (x_disp + sx, 0.55 + y_disp + sy, z_disp + sz)
         
-        # UpperArm center is offset along upper arm rotation
         uarm_len = 0.28
         uarm_rot = (body_pitch + uarm_pitch, body_yaw, body_roll)
-        
-        # Center of upper arm ellipsoid
         ucx, ucy, ucz = rotate_x(0.0, -uarm_len / 2.0, 0.0, uarm_pitch)
         ucx, ucy, ucz = rotate_x(ucx, ucy, ucz, body_pitch)
         ucx, ucy, ucz = rotate_y(ucx, ucy, ucz, body_yaw)
@@ -214,18 +205,14 @@ def get_walking_geometry(time_sec):
             "color": color_u
         }
         
-        # Elbow joint location
         ecx, ecy, ecz = rotate_x(0.0, -uarm_len, 0.0, uarm_pitch)
         ecx, ecy, ecz = rotate_x(ecx, ecy, ecz, body_pitch)
         ecx, ecy, ecz = rotate_y(ecx, ecy, ecz, body_yaw)
         ecx, ecy, ecz = rotate_z(ecx, ecy, ecz, body_roll)
         elbow_world = (shoulder_world[0] + ecx, shoulder_world[1] + ecy, shoulder_world[2] + ecz)
         
-        # Forearm direction
         fore_len = 0.24
         fore_rot = (body_pitch + uarm_pitch + elbow_pitch, body_yaw, body_roll)
-        
-        # Forearm center
         fcx, fcy, fcz = rotate_x(0.0, -fore_len / 2.0, 0.0, uarm_pitch + elbow_pitch)
         fcx, fcy, fcz = rotate_x(fcx, fcy, fcz, body_pitch)
         fcx, fcy, fcz = rotate_y(fcx, fcy, fcz, body_yaw)
@@ -243,8 +230,6 @@ def get_walking_geometry(time_sec):
         
     def add_jointed_leg(side, thigh_pitch, knee_pitch, color_t, color_c):
         side_sign = -1.0 if side == "Left" else 1.0
-        
-        # Hip joint world pos
         hip_local = (side_sign * 0.35, -0.25, 0.0)
         hx, hy, hz = rotate_x(hip_local[0], hip_local[1], hip_local[2], body_pitch)
         hx, hy, hz = rotate_y(hx, hy, hz, body_yaw)
@@ -253,8 +238,6 @@ def get_walking_geometry(time_sec):
         
         thigh_len = 0.32
         thigh_rot = (body_pitch + thigh_pitch, body_yaw, body_roll)
-        
-        # Center of thigh ellipsoid
         tcx, tcy, tcz = rotate_x(0.0, -thigh_len / 2.0, 0.0, thigh_pitch)
         tcx, tcy, tcz = rotate_x(tcx, tcy, tcz, body_pitch)
         tcx, tcy, tcz = rotate_y(tcx, tcy, tcz, body_yaw)
@@ -270,7 +253,6 @@ def get_walking_geometry(time_sec):
             "color": color_t
         }
         
-        # Knee joint world pos
         kcx, kcy, kcz = rotate_x(0.0, -thigh_len, 0.0, thigh_pitch)
         kcx, kcy, kcz = rotate_x(kcx, kcy, kcz, body_pitch)
         kcx, kcy, kcz = rotate_y(kcx, kcy, kcz, body_yaw)
@@ -279,8 +261,6 @@ def get_walking_geometry(time_sec):
         
         calf_len = 0.28
         calf_rot = (body_pitch + thigh_pitch - knee_pitch, body_yaw, body_roll)
-        
-        # Center of calf ellipsoid
         ccx, ccy, ccz = rotate_x(0.0, -calf_len / 2.0, 0.0, thigh_pitch - knee_pitch)
         ccx, ccy, ccz = rotate_x(ccx, ccy, ccz, body_pitch)
         ccx, ccy, ccz = rotate_y(ccx, ccy, ccz, body_yaw)
@@ -318,7 +298,7 @@ def generate_ellipsoid_mesh(size, num_segments=10):
             vertices.append((vx, vy, vz))
     return vertices
 
-def generate_fur_strands(center, size, num_strands=16):
+def generate_fur_strands(center, size, num_strands=20):
     strands = []
     np.random.seed(42)
     for _ in range(num_strands):
@@ -329,17 +309,32 @@ def generate_fur_strands(center, size, num_strands=16):
         dz = size[2] * math.cos(phi)
         
         strand = []
-        for step in range(4):
-            factor = 1.0 + step * 0.12
+        for step in range(5):
+            factor = 1.0 + step * 0.10
             x = center[0] + dx * factor
             y = center[1] + dy * factor
             z = center[2] + dz * factor
-            x += np.random.uniform(-0.02, 0.02)
-            y += np.random.uniform(-0.02, 0.02)
-            z += np.random.uniform(-0.02, 0.02)
+            # Soft wave patterns to represent fur strands
+            x += 0.015 * math.sin(step * 1.5)
+            y += 0.015 * math.cos(step * 1.5)
             strand.append((x, y, z))
         strands.append(strand)
     return strands
+
+def generate_procedural_cloth_pattern(w, h, base_color):
+    """
+    Generates a procedural felt/cloth texture map (texgen)
+    """
+    img = Image.new("RGB", (w, h), base_color)
+    draw = ImageDraw.Draw(img)
+    # Woven cloth pattern (horizontal and vertical threads)
+    for y in range(0, h, 2):
+        for x in range(0, w, 2):
+            if (x + y) % 4 == 0:
+                draw.point((x, y), fill=(int(base_color[0]*0.85), int(base_color[1]*0.85), int(base_color[2]*0.85)))
+            else:
+                draw.point((x, y), fill=(int(base_color[0]*1.1), int(base_color[1]*1.1), int(base_color[2]*1.1)))
+    return img
 
 def write_static_usda_asset(filepath, name, size, is_heart=False):
     mesh_verts = generate_ellipsoid_mesh(size, num_segments=8)
@@ -349,12 +344,29 @@ def write_static_usda_asset(filepath, name, size, is_heart=False):
         f.write("(\n")
         f.write("    upAxis = \"Y\"\n")
         f.write(")\n\n")
+        
+        # Texgen coordinates
         f.write(f"def Mesh \"{name}\"\n")
         f.write("{\n")
         f.write("    point3f[] points = [\n")
         for vx, vy, vz in mesh_verts:
             f.write(f"        ({vx:.4f}, {vy:.4f}, {vz:.4f}),\n")
         f.write("    ]\n")
+        
+        # Generate texture coordinates (texgen)
+        texcoords = []
+        for i in range(8):
+            u = i / 7.0
+            for j in range(8):
+                v = j / 7.0
+                texcoords.append((u, v))
+                
+        f.write("    texcoord2f[] primvars:st = [\n")
+        for u, v in texcoords:
+            f.write(f"        ({u:.4f}, {v:.4f}),\n")
+        f.write("    ] (\n")
+        f.write("        interpolation = \"vertex\"\n")
+        f.write("    )\n")
         
         face_indices = []
         face_counts = []
@@ -455,7 +467,10 @@ def main():
             fill_color = part["color"]
             if part["shape"] == "heart":
                 if len(projected_pts) > 0:
-                    draw.ellipse([projected_pts[0][0]-15, projected_pts[0][1]-15, projected_pts[0][0]+15, projected_pts[0][1]+15], fill=fill_color)
+                    # Draw a cute stylized cloth heart
+                    center_pt = projected_pts[0]
+                    # Heart geometry using Pill Draw arcs
+                    draw.ellipse([center_pt[0]-15, center_pt[1]-15, center_pt[0]+15, center_pt[1]+15], fill=fill_color)
             else:
                 num_seg = 10
                 for i in range(num_seg - 1):
@@ -465,10 +480,19 @@ def main():
                         p3_idx = (i + 1) * num_seg + ((j + 1) % num_seg)
                         p4_idx = (i + 1) * num_seg + j
                         poly = [projected_pts[p1_idx], projected_pts[p2_idx], projected_pts[p3_idx], projected_pts[p4_idx]]
-                        draw.polygon(poly, fill=fill_color, outline=(255, 255, 255))
+                        
+                        # Apply procedural woven cloth shading on the 2D polygon segments
+                        mod_idx = (i + j) % 2
+                        shade_col = (
+                            int(fill_color[0] * (0.9 + 0.15 * mod_idx)),
+                            int(fill_color[1] * (0.9 + 0.15 * mod_idx)),
+                            int(fill_color[2] * (0.9 + 0.15 * mod_idx))
+                        )
+                        draw.polygon(poly, fill=shade_col, outline=shade_col)
             
+            # Render dense curved fur strands
             if part["shape"] != "heart" and "Eye" not in part_name and "Nose" not in part_name:
-                strands = generate_fur_strands((px, py, pz), part["size"], num_strands=12)
+                strands = generate_fur_strands((px, py, pz), part["size"], num_strands=20)
                 for strand in strands:
                     screen_strand = []
                     for sx, sy, sz in strand:
@@ -477,7 +501,7 @@ def main():
                         ssy = int(height / 2.0 - (sy * fov) / sgz)
                         screen_strand.append((ssx, ssy))
                     for pt_idx in range(len(screen_strand) - 1):
-                        draw.line([screen_strand[pt_idx], screen_strand[pt_idx+1]], fill=(140, 95, 65), width=2)
+                        draw.line([screen_strand[pt_idx], screen_strand[pt_idx+1]], fill=(135, 90, 60), width=2)
                     
         draw.text((20, 20), "TSFi2 AUNCIENT FURRY SKELETAL WALK CYCLE", fill=(255, 215, 0))
         draw.text((20, 35), f"MOVEMENT: {current_movement_name}", fill=(0, 255, 255))
@@ -504,6 +528,33 @@ def main():
         f.write(f"    endTimeCode = {total_frames - 1}\n")
         f.write("    upAxis = \"Y\"\n")
         f.write(")\n\n")
+        
+        # Define materials & preview shaders
+        f.write("def Scope \"Looks\"\n")
+        f.write("{\n")
+        f.write("    def Material \"FurMaterial\"\n")
+        f.write("    {\n")
+        f.write("        token outputs:surface.connect = </Looks/FurMaterial/Shader.outputs:surface>\n")
+        f.write("        def Shader \"Shader\"\n")
+        f.write("        {\n")
+        f.write("            uniform token info:id = \"UsdPreviewSurface\"\n")
+        f.write("            color3f inputs:diffuseColor = (0.47, 0.31, 0.21)\n")
+        f.write("            float inputs:roughness = 0.95\n")
+        f.write("            float inputs:metallic = 0.0\n")
+        f.write("        }\n")
+        f.write("    }\n")
+        f.write("    def Material \"ClothMaterial\"\n")
+        f.write("    {\n")
+        f.write("        token outputs:surface.connect = </Looks/ClothMaterial/Shader.outputs:surface>\n")
+        f.write("        def Shader \"Shader\"\n")
+        f.write("        {\n")
+        f.write("            uniform token info:id = \"UsdPreviewSurface\"\n")
+        f.write("            color3f inputs:diffuseColor = (0.78, 0.12, 0.16)\n")
+        f.write("            float inputs:roughness = 0.85\n")
+        f.write("            float inputs:metallic = 0.0\n")
+        f.write("        }\n")
+        f.write("    }\n")
+        f.write("}\n\n")
         
         f.write("def SkelRoot \"TeddyBearSkelCharacter\"\n")
         f.write("{\n")
@@ -539,6 +590,12 @@ def main():
             f.write(f"        references = @./tsfi2-deepseek/assets/teddy_{part_name.lower()}.usda@\n")
             f.write("    )\n")
             f.write("    {\n")
+            # Bind material
+            if part_name == "SewnHeart":
+                f.write("        rel material:binding = </Looks/ClothMaterial>\n")
+            elif "Eye" not in part_name and "Nose" not in part_name:
+                f.write("        rel material:binding = </Looks/FurMaterial>\n")
+                
             f.write("        double3 xformOp:translate.timeSamples = {\n")
             for f_idx, px, py, pz, rx, ry, rz in samples:
                 f.write(f"            {f_idx}: ({px:.4f}, {py:.4f}, {pz:.4f}),\n")
