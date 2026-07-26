@@ -249,6 +249,20 @@ static void resolve_local_variant_conflict(const usd_local_variant_conflict_t *c
     }
 }
 
+typedef struct {
+    char inherits_opinion[32];
+    char specializes_opinion[32];
+} usd_spec_inh_conflict_t;
+
+static void resolve_spec_inh_conflict(const usd_spec_inh_conflict_t *conflict, char *resolved_val) {
+    if (strlen(conflict->inherits_opinion) > 0) {
+        strcpy(resolved_val, conflict->inherits_opinion);
+    } else {
+        strcpy(resolved_val, conflict->specializes_opinion);
+    }
+}
+
+
 
 
 
@@ -471,6 +485,27 @@ int main(void) {
     resolve_local_variant_conflict(&lv_conflict_no_local, resolved_lv_no_local);
     assert(strcmp(resolved_lv_no_local, "variant_mesh_look") == 0);
     printf("   ✓ Local override taking precedence over VariantSet look-development verified.\n");
+    fflush(stdout);
+
+    // 13. Test Specializes vs Inherits Priority
+    printf("[TEST] Testing Specializes vs Inherits Priority...\n");
+    fflush(stdout);
+    usd_spec_inh_conflict_t si_conflict = {
+        .inherits_opinion = "class_inherited_property",
+        .specializes_opinion = "specialized_base_property"
+    };
+    char resolved_si[32] = "";
+    resolve_spec_inh_conflict(&si_conflict, resolved_si);
+    assert(strcmp(resolved_si, "class_inherited_property") == 0);
+
+    usd_spec_inh_conflict_t si_conflict_no_inh = {
+        .inherits_opinion = "",
+        .specializes_opinion = "specialized_base_property"
+    };
+    char resolved_si_no_inh[32] = "";
+    resolve_spec_inh_conflict(&si_conflict_no_inh, resolved_si_no_inh);
+    assert(strcmp(resolved_si_no_inh, "specialized_base_property") == 0);
+    printf("   ✓ Inherits (I) taking precedence over Specializes (S) verified.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
