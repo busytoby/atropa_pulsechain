@@ -28,4 +28,7 @@ float tsfi_mvarsel_resolve_phase(const TSFiMVarSel *sel);
 // Retrieves the variant descriptor string based on current index
 const char* tsfi_mvarsel_get_descriptor(const TSFiMVarSel *sel);
 
+// Bridge function adjusting variant selection index based on Hogan market price and tax rates
+void tsfi_mvarsel_update_from_hogan_market(TSFiMVarSel *sel, double market_price, double tax_rate);
+
 #endif // TSFI_MVARSEL_H

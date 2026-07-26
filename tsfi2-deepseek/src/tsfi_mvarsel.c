@@ -31,3 +31,14 @@ const char* tsfi_mvarsel_get_descriptor(const TSFiMVarSel *sel) {
         default: return "UNKNOWN";
     }
 }
+
+void tsfi_mvarsel_update_from_hogan_market(TSFiMVarSel *sel, double market_price, double tax_rate) {
+    if (!sel) return;
+    if (market_price > 1000.0) {
+        sel->variant_index = MVARSEL_GOLD;
+    } else if (tax_rate > 0.20) {
+        sel->variant_index = MVARSEL_CLAY;
+    } else {
+        sel->variant_index = MVARSEL_CLOTH;
+    }
+}
