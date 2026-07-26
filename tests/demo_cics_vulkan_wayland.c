@@ -310,7 +310,13 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *wl_keyboard, uin
     (void)data; (void)wl_keyboard; (void)serial; (void)time;
     if (state == 0) return;
 
-    // Map scancodes to simple ascii chars
+    if (key == 1) { // ESC key scancode
+        running = false;
+        printf("[INFO] Escape key pressed. Initiating shutdown...\n");
+        return;
+    }
+
+    printf("[WAYLAND EVENT] Key pressed scancode: %u\n", key);
     char typed_char = '\0';
     if (key >= 2 && key <= 11) {
         typed_char = (key == 11) ? '0' : (char)('1' + (key - 2));
