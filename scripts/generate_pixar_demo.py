@@ -231,7 +231,7 @@ def main():
         cam_zoom = 290.0 + 100.0 * mann_allocation_gate
         
         draw.text((30, 90), f"Camera Path: /auncient/camera/main", fill=(130, 200, 255))
-        draw.text((30, 110), f"TimeSampleInterpolation: LINEAR", fill=(255, 180, 100))
+        draw.text((30, 110), f"PointsSizes: [1.5, 3.0, 4.5] (Varying)", fill=(255, 180, 100))
         draw.text((30, 130), f"CurvesBasis: CATMULL-ROM (Wrap: PERIODIC)", fill=(200, 200, 220))
         
         # Active LuxLight position (LuxLight)
@@ -293,8 +293,8 @@ def main():
         for i in range(4):
             draw.line([proj_corners[i][:2], proj_corners[i+4][:2]], fill=(0, 255, 150, 40), width=1)
 
-        # 6. Update and draw falling particle emitters (UsdGeomPoints)
-        for p in particles:
+        # 6. Update and draw falling particle emitters (UsdGeomPoints with PointsSizes)
+        for idx, p in enumerate(particles):
             p["vel"][2] -= 9.8 * 0.033
             p["pos"][0] += p["vel"][0] * 0.033
             p["pos"][1] += p["vel"][1] * 0.033
@@ -306,7 +306,11 @@ def main():
                 
             is_visible = p["pos"][2] <= 130.0
             cx, cy, _ = project_pt(p["pos"])
-            w = int(p["width"])
+            
+            # Retrieve diameter from point sizes mapping
+            ps_vals = [1.5, 3.0, 4.5]
+            w = int(ps_vals[idx % len(ps_vals)] * 1.5)
+            
             fill_color = (255, 255, 150, 180) if is_visible else (100, 100, 80, 80)
             draw.ellipse([cx - w, cy - w, cx + w, cy + w], fill=fill_color)
 
