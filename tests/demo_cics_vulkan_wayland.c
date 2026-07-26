@@ -73,7 +73,18 @@ static struct wl_buffer *create_shm_buffer(int width, int height, uint32_t **out
     return buffer;
 }
 
-// XDG Shell listeners
+// XDG Shell Base listeners (Pings)
+static void xdg_wm_base_handle_ping(void *data, struct xdg_wm_base *xdg_wm_base, uint32_t serial) {
+    (void)data;
+    xdg_wm_base_pong(xdg_wm_base, serial);
+    printf("[XDG] Ping received, Pong returned (serial %u).\n", serial);
+}
+
+static const struct xdg_wm_base_listener xdg_wm_base_listener = {
+    .ping = xdg_wm_base_handle_ping,
+};
+
+// XDG Surface listeners
 static void xdg_surface_handle_configure(void *data, struct xdg_surface *xdg_surface, uint32_t serial) {
     (void)data;
     xdg_surface_ack_configure(xdg_surface, serial);
@@ -189,6 +200,7 @@ static void registry_handle_global(void *data, struct wl_registry *registry, uin
         wl_seat_add_listener(seat, &seat_listener, NULL);
     } else if (strcmp(interface, "xdg_wm_base") == 0) {
         xdg_wm_base = wl_registry_bind(registry, name, &xdg_wm_base_interface, version);
+        xdg_wm_base_add_listener(xdg_wm_base, &xdg_wm_base_listener, NULL);
     }
 }
 
