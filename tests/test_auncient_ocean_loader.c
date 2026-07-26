@@ -204,6 +204,23 @@ static double resolve_reference_time(const usd_reference_displacement_t *disp, d
     return (input_time * disp->time_scale) + disp->time_displacement;
 }
 
+typedef struct {
+    char local_variant_opinion[32];
+    char referenced_variant_opinion[32];
+    char reference_opinion[32];
+} usd_variant_ref_conflict_t;
+
+static void resolve_variant_ref_conflict(const usd_variant_ref_conflict_t *conflict, char *resolved_val) {
+    if (strlen(conflict->local_variant_opinion) > 0) {
+        strcpy(resolved_val, conflict->local_variant_opinion);
+    } else if (strlen(conflict->referenced_variant_opinion) > 0) {
+        strcpy(resolved_val, conflict->referenced_variant_opinion);
+    } else {
+        strcpy(resolved_val, conflict->reference_opinion);
+    }
+}
+
+
 
 
 
@@ -356,6 +373,29 @@ int main(void) {
     double resolved_time = resolve_reference_time(&disp, 0.5);
     assert(resolved_time == 2.5);
     printf("   ✓ Namespace re-routing path mapping and reference time displacements successfully resolved.\n");
+    fflush(stdout);
+
+    // 10. Test Variant vs Reference Precedence Conflicts
+    printf("[TEST] Testing Variant vs Reference Precedence Conflicts...\n");
+    fflush(stdout);
+    usd_variant_ref_conflict_t conflict = {
+        .local_variant_opinion = "local_variant_look",
+        .referenced_variant_opinion = "referenced_variant_look",
+        .reference_opinion = "base_reference_look"
+    };
+    char resolved_look[32] = "";
+    resolve_variant_ref_conflict(&conflict, resolved_look);
+    assert(strcmp(resolved_look, "local_variant_look") == 0);
+
+    usd_variant_ref_conflict_t conflict_weak = {
+        .local_variant_opinion = "",
+        .referenced_variant_opinion = "referenced_variant_look",
+        .reference_opinion = "base_reference_look"
+    };
+    char resolved_look_weak[32] = "";
+    resolve_variant_ref_conflict(&conflict_weak, resolved_look_weak);
+    assert(strcmp(resolved_look_weak, "referenced_variant_look") == 0);
+    printf("   ✓ Variant-scoped overrides taking precedence over base referenced values verified.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
