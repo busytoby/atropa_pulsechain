@@ -216,7 +216,6 @@ typedef struct {
     void (*render_scene)(uint32_t *pixels, int w, int h, const CoaxialUBO *ubo);
 } HydraRenderDelegate;
 
-// PETSCII Western Desert Artwork Split Screen (Cactus & Sunset Sunset mesa)
 static const char *western_desert_art[6] = {
     "      #      .   .      ",
     "    #####    .   .      ",
@@ -226,7 +225,6 @@ static const char *western_desert_art[6] = {
     "========================"
 };
 
-// Font Bitmaps
 static const uint16_t bubble_font_tsfi2[6][16] = {
     {0x3FFC, 0x7FFE, 0xFFFF, 0xE3C7, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x0180},
     {0x3FFC, 0x7FFE, 0xC003, 0xC000, 0x7FE0, 0x3FF8, 0x01FC, 0x007E, 0x000F, 0xC007, 0xC003, 0xE007, 0x7FFE, 0x7FFE, 0x3FFC, 0x0000},
@@ -1057,7 +1055,6 @@ static void redraw_screen(void) {
         }
     }
     
-    // Draw sorted multiplexed sprites on canvas
     for (int i = 0; i < 5; i++) {
         int idx = sorted_sprite_indices[i];
         draw_char(pixels, win_width, win_height, 
@@ -1067,7 +1064,6 @@ static void redraw_screen(void) {
                   sprites[idx].color, 3);
     }
     
-    // 1. Top Zooming Parallax Scroller moving RIGHT (Dynamic sine scale zoomer)
     float p_scroll_speed = 60.0f;
     float p_scroll_x_total = retro_time * p_scroll_speed;
     int p_pixel_shift = (int)fmodf(p_scroll_x_total, 12.0f);
@@ -1079,16 +1075,13 @@ static void redraw_screen(void) {
         int char_idx = (p_base_char_idx + col) % len;
         char ch = parallax_scroller_text[char_idx];
         
-        // Calculate dynamic zoom scale factor based on position and time
         int dyn_scale = 2 + (int)(sinf(retro_time * 4.0f + col * 0.25f) * 0.6f);
         if (dyn_scale < 1) dyn_scale = 1;
         
-        // Draw character at fixed step grid coordinate (removes horizontal cumulative jitter)
         int px = 20 + col * 12 + p_pixel_shift + glitch_x;
         draw_char(pixels, win_width, win_height, px, p_scroller_y - (dyn_scale * 2), ch, 0xFFFFCC00, dyn_scale);
     }
 
-    // 2. Bottom Main Scroller moving LEFT (compacted size for widescreen 1.85:1 aspect)
     float scroll_x_speed = 30.0f;
     if (active_tune == 1) scroll_x_speed = 45.0f;
     else if (active_tune == 2) scroll_x_speed = 60.0f;
@@ -1114,7 +1107,6 @@ static void redraw_screen(void) {
     
     draw_string(pixels, win_width, win_height, 100 + glitch_x, 30 + glitch_y, "AUNCIENT WAYLAND VULKAN MARKDOWN EDITOR", 0xFFFF8800, 2);
     
-    // Render Simulated SID Chip register state array and active tune info
     char sid_buf[256];
     snprintf(sid_buf, sizeof(sid_buf), 
              "SID TUNE %d %s | FREQ=0x%04X PW=0x%04X ADSR=0x%02X%02X VOL=%d | SYNC:%s RM:%s | V1:%s V2:%s V3:%s", 
@@ -1525,6 +1517,20 @@ int main(void) {
             printf("[USD] Deserialized saved scene stage layer from assets/usd_stage.dat.bin\n");
         }
         fclose(f_usd_load);
+    } else {
+        USDStageRecord default_stage = {
+            .active_model = 0,
+            .material_variant = 0,
+            .rotation_angle = 0.0f,
+            .camera_y = 0.0f,
+            .starfield_count = 15
+        };
+        FILE *f_usd_write = fopen("assets/usd_stage.dat.bin", "wb");
+        if (f_usd_write) {
+            fwrite(&default_stage, sizeof(default_stage), 1, f_usd_write);
+            fclose(f_usd_write);
+            printf("[USD] Created default scene stage containing Cactus asset at assets/usd_stage.dat.bin\n");
+        }
     }
 
     FILE *f_usd_overlay = fopen("assets/usd_overlay.dat.bin", "rb");
