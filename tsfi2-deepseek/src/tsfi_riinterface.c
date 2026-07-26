@@ -1,5 +1,6 @@
 #include "tsfi_riinterface.h"
 #include <string.h>
+#include <stdlib.h>
 
 void tsfi_riinterface_init(TSFiRiInterface *ri) {
     if (!ri) return;
@@ -7,11 +8,12 @@ void tsfi_riinterface_init(TSFiRiInterface *ri) {
     ri->active_sprite_id = 0;
     ri->clip_min_x = 0.0;
     ri->clip_min_y = 0.0;
-    ri->clip_max_x = 640.0;
-    ri->clip_max_y = 480.0;
+    ri->clip_max_x = 256.0; // Align coordinate clipping limits with simulated VDC resolution
+    ri->clip_max_y = 256.0;
     ri->is_world_active = false;
     memset(ri->psg_channel_freq, 0, sizeof(ri->psg_channel_freq));
     memset(ri->psg_channel_vol, 0, sizeof(ri->psg_channel_vol));
+    memset(ri->frame_buffer, 0, sizeof(ri->frame_buffer));
 }
 
 void tsfi_riinterface_world_begin(TSFiRiInterface *ri) {
@@ -71,5 +73,34 @@ void tsfi_riinterface_vdc_dma_copy(TSFiRiInterface *ri, uint16_t src_idx, uint16
     // Perform block copies of color palette registers to emulate hardware DMA loops
     for (uint16_t i = 0; i < length && (src_idx + i < 16) && (dest_idx + i < 16); i++) {
         ri->hudson_vce_color_reg[dest_idx + i] = ri->hudson_vce_color_reg[src_idx + i];
+    }
+}
+
+void tsfi_riinterface_draw_line(TSFiRiInterface *ri, int x0, int y0, int x1, int y1, uint8_t color_val) {
+    if (!ri) return;
+    
+    // Bresenham's line algorithm rasterizing to simulated video display memory
+    int dx = abs(x1 - x0);
+    int dy = abs(y1 - y0);
+    int sx = (x0 < x1) ? 1 : -1;
+    int sy = (y0 < y1) ? 1 : -1;
+    int err = dx - dy;
+    
+    while (1) {
+        // Apply clipping constraints before rasterizing pixel
+        if (tsfi_riinterface_clip_check(ri, x0, y0)) {
+            ri->frame_buffer[y0 * 256 + x0] = color_val;
+        }
+        
+        if (x0 == x1 && y0 == y1) break;
+        int e2 = 2 * err;
+        if (e2 > -dy) {
+            err -= dy;
+            x0 += sx;
+        }
+        if (e2 < dx) {
+            err += dx;
+            y0 += sy;
+        }
     }
 }

@@ -12,6 +12,7 @@ typedef struct {
     bool is_world_active;
     uint16_t psg_channel_freq[6]; // huC6280 PSG voice channels
     uint8_t psg_channel_vol[6];
+    uint8_t frame_buffer[256 * 256]; // Simulated VDC screen memory (256x256)
 } TSFiRiInterface;
 
 // Initialize the RiInterface context
@@ -34,5 +35,8 @@ void tsfi_riinterface_modulate_psg(TSFiRiInterface *ri, double velocity);
 
 // Hardware-level VDC DMA block transfer simulation
 void tsfi_riinterface_vdc_dma_copy(TSFiRiInterface *ri, uint16_t src_idx, uint16_t dest_idx, uint16_t length);
+
+// Rasterizes a line into the simulated frame buffer using Bresenham's algorithm
+void tsfi_riinterface_draw_line(TSFiRiInterface *ri, int x0, int y0, int x1, int y1, uint8_t color_val);
 
 #endif // TSFI_RIINTERFACE_H
