@@ -125,14 +125,9 @@ static int win_height = 720;
 static char doc_buf[2048] = "# AUNCIENT MD EDITOR\n> TYPE YOUR DOCUMENT HERE\n";
 static int doc_len = 46;
 
-// Retro demo animation parameters
-static float retro_time = 0.0f;
-static const char *scroller_text = "PAGADATA 2026 RETRO C64 INTRO -- TISSEPAUSE BY SINATRA BRINGS PETSCII LINE AND CHARACTER BASED DRAWING BACK -- ";
-
-// VIC-II Simulated Register state maps
-static uint8_t vic_d012 = 130;  // Raster split scanline
-static uint8_t vic_d016 = 0;    // Fine scroll shift (0-7 pixels)
-static uint8_t vic_d021 = 0x06; // Background Color (Blue)
+// Compressed scroller payload text (Decompression simulation LUT)
+static const char compressed_scroller[32] = "PAGADATA_2026_RETRO_C64_INTRO_";
+static char decompressed_scroller[128];
 
 // Static 256-entry Sine Lookup Table (LUT)
 static float sine_lut[256];
@@ -145,6 +140,11 @@ static const uint32_t color_cycle_lut[16] = {
     0xFF3A1A4A, 0xFF2A0A3A, 0xFF1A002A, 0xFF2A0A3A
 };
 
+// Logarithmic SID Volume Fader LUT
+static const uint8_t log_volume_lut[16] = {
+    0, 1, 1, 2, 2, 3, 4, 5, 6, 7, 9, 10, 12, 13, 14, 15
+};
+
 // PETSCII Custom Charset Translation Map LUT
 static const char charset_map_lut[128] = {
     ['a'] = 'A', ['b'] = 'B', ['c'] = 'C', ['d'] = 'D',
@@ -155,6 +155,12 @@ static const char charset_map_lut[128] = {
     ['u'] = 'U', ['v'] = 'V', ['w'] = 'W', ['x'] = 'X',
     ['y'] = 'Y', ['z'] = 'Z'
 };
+
+// VIC-II Simulated Register state maps
+static float retro_time = 0.0f;
+static uint8_t vic_d012 = 130;  // Raster split scanline
+static uint8_t vic_d016 = 0;    // Fine scroll shift (0-7 pixels)
+static uint8_t vic_d021 = 0x06; // Background Color (Blue)
 
 // Glitch Screen Shake displacement coordinates
 static int glitch_x = 0;
@@ -200,6 +206,24 @@ static const char *petscii_portrait[6] = {
     "#########",
     "# #   # #"
 };
+
+// Multiplexed Sprite Structure
+typedef struct {
+    int x;
+    int y;
+    char glyph;
+    uint32_t color;
+} MultiplexSprite;
+
+static MultiplexSprite sprites[5] = {
+    {100, 150, 'A', 0xFFFF00FF},
+    {200, 250, 'B', 0xFF00FFFF},
+    {300, 100, 'C', 0xFFFFFF00},
+    {150, 300, 'D', 0xFF00FF00},
+    {250, 80,  'E', 0xFFFF5555}
+};
+
+static int sorted_sprite_indices[5] = {0, 1, 2, 3, 4};
 
 // Binary History Record (No Mocking)
 typedef struct {
@@ -281,6 +305,14 @@ static void redraw_screen(void) {
     
     // Rainbow Color Barf Sweeps: high frequency background color modulation
     for (int y = 0; y < win_height; y++) {
+        // Bad Line Cycle Steals Simulation: insert blank scanline gaps every 24 pixels in the text region
+        if (y >= 100 && y < 550 && (y % 24) == 0) {
+            for (int x = 0; x < win_width; x++) {
+                pixels[y * win_width + x] = 0xFF000000; // Black bad-line cycle steal gap
+            }
+            continue;
+        }
+
         uint32_t bg_color = 0xFF222222;
         
         // High frequency color sweeps relative to time + y scanline (using Sine LUT)
@@ -424,11 +456,34 @@ static void redraw_screen(void) {
         }
     }
     
-    // Sprite Path Trajectories: Floating invader orbiting dynamically (using Sine LUT)
+    // Update Sprite Coordinates dynamically (using Sine LUT for orbital paths)
     int orbit_step = (int)(retro_time * 80.0f);
-    int sprite_x = win_width / 2 + (int)(sine_lut[orbit_step & 0xFF] * 280.0f);
-    int sprite_y = win_height / 2 + (int)(sine_lut[(orbit_step + 64) & 0xFF] * 160.0f); // +64 steps represents Cosine offset
-    draw_char(pixels, win_width, win_height, sprite_x + glitch_x, sprite_y + glitch_y, '*', 0xFFFF00FF, 3);
+    for (int i = 0; i < 5; i++) {
+        sprites[i].x = win_width / 2 + (int)(sine_lut[(orbit_step + i * 30) & 0xFF] * 280.0f);
+        sprites[i].y = win_height / 2 + (int)(sine_lut[(orbit_step + i * 30 + 64) & 0xFF] * 160.0f);
+    }
+    
+    // Sort Sprites by Y Coordinate (VIC-II Multiplexer simulation sorting LUT)
+    for (int i = 0; i < 5; i++) sorted_sprite_indices[i] = i;
+    for (int i = 0; i < 4; i++) {
+        for (int j = i + 1; j < 5; j++) {
+            if (sprites[sorted_sprite_indices[i]].y > sprites[sorted_sprite_indices[j]].y) {
+                int temp = sorted_sprite_indices[i];
+                sorted_sprite_indices[i] = sorted_sprite_indices[j];
+                sorted_sprite_indices[j] = temp;
+            }
+        }
+    }
+    
+    // Draw sorted multiplexed sprites on canvas
+    for (int i = 0; i < 5; i++) {
+        int idx = sorted_sprite_indices[i];
+        draw_char(pixels, win_width, win_height, 
+                  sprites[idx].x + glitch_x, 
+                  sprites[idx].y + glitch_y, 
+                  sprites[idx].glyph, 
+                  sprites[idx].color, 3);
+    }
     
     // Dynamic scroller speed linked to the active SID tune selection (Interactive speed sync)
     float scroll_x_speed = 30.0f;
@@ -437,13 +492,13 @@ static void redraw_screen(void) {
     else if (active_tune == 3) scroll_x_speed = 90.0f; // Hidden Warp speed
     
     float scroll_x_total = retro_time * scroll_x_speed;
-    int base_char_idx = (int)(scroll_x_total / 18.0f) % strlen(scroller_text);
+    int base_char_idx = (int)(scroll_x_total / 18.0f) % strlen(decompressed_scroller);
     int pixel_shift = (int)fmodf(scroll_x_total, 18.0f);
     int scroller_y_base = win_height - 120 + glitch_y;
     
     for (int col = 0; col < 70; col++) {
-        int char_idx = (base_char_idx + col) % strlen(scroller_text);
-        char ch = scroller_text[char_idx];
+        int char_idx = (base_char_idx + col) % strlen(decompressed_scroller);
+        char ch = decompressed_scroller[char_idx];
         
         // Sine Scroller height offset calculation via lookup table
         int lut_step = (col * 10 + (int)(retro_time * 250.0f)) & 0xFF;
@@ -458,10 +513,11 @@ static void redraw_screen(void) {
     // Render Simulated SID Chip register state array and active tune info
     char sid_buf[256];
     snprintf(sid_buf, sizeof(sid_buf), 
-             "SID TUNE %d %s | FREQ=0x%04X PW=0x%04X ADSR=0x%02X%02X", 
+             "SID TUNE %d %s | FREQ=0x%04X PW=0x%04X ADSR=0x%02X%02X VOL=%d", 
              active_tune, (active_tune == 3) ? "(HIDDEN UNLOCKED!)" : "(ACTIVE)",
              sid_chip.voices[0].freq, sid_chip.voices[1].pw,
-             sid_chip.voices[0].adsr[0], sid_chip.voices[0].adsr[1]);
+             sid_chip.voices[0].adsr[0], sid_chip.voices[0].adsr[1],
+             sid_chip.volume);
     draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 65 + glitch_y, sid_buf, 0xFF00FFFF, 2);
 
     // Initials Anagram Mapping: Alternate "TSN" and "TNS" dynamically every second
@@ -712,6 +768,16 @@ static const struct wl_registry_listener registry_listener = {
 int main(void) {
     srand(time(NULL));
 
+    // Decompression LUT simulation: expand compressed static string payload
+    int de_idx = 0;
+    for (int i = 0; i < 4; i++) {
+        for (int k = 0; k < 30; k++) {
+            if (compressed_scroller[k] == '\0') break;
+            decompressed_scroller[de_idx++] = compressed_scroller[k];
+        }
+    }
+    decompressed_scroller[de_idx] = '\0';
+
     // Precalculate Sine Lookup Table (LUT) covering full wave cycle
     for (int i = 0; i < 256; i++) {
         sine_lut[i] = sinf((float)i * (2.0f * M_PI / 256.0f));
@@ -809,6 +875,10 @@ int main(void) {
             
             // Pulse Width LFO sweep modulation on Voice 2
             sid_chip.voices[1].pw = 0x0400 + (uint16_t)(sinf(retro_time * 3.0f) * 512.0f + 512.0f);
+            
+            // Logarithmic SID Volume Fader simulation
+            int fade_index = ((int)(retro_time * 4.0f)) & 0x0F;
+            sid_chip.volume = log_volume_lut[fade_index]; // Map volume logarithmic fade curve LUT
         }
         
         redraw_screen();
