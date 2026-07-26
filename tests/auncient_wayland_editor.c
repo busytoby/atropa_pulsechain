@@ -8,6 +8,7 @@
 #include <time.h>
 #include <poll.h>
 #include <fcntl.h>
+#include <math.h>
 #include <sys/mman.h>
 #include <dlfcn.h>
 #include <wayland-client.h>
@@ -124,7 +125,11 @@ static int win_height = 720;
 static char doc_buf[2048] = "# AUNCIENT MD EDITOR\n> TYPE YOUR DOCUMENT HERE\n";
 static int doc_len = 46;
 
-// Binary History Record (No Mocking, standard database schema)
+// Retro demo animation parameters
+static float retro_time = 0.0f;
+static const char *scroller_text = "PAGADATA 2026 RETRO C64 INTRO -- TISSEPAUSE BY SINATRA BRINGS PETSCII LINE AND CHARACTER BASED DRAWING BACK -- ";
+
+// Binary History Record (No Mocking)
 typedef struct {
     uint32_t transaction_id;
     uint32_t state_code;
@@ -189,7 +194,7 @@ static void draw_string(uint32_t *pixels, int w, int h, int start_x, int start_y
     }
 }
 
-// Redraw current window contents
+// Redraw screen with real-time PETSCII / C64 effects
 static void redraw_screen(void) {
     if (!surface) return;
     
@@ -202,12 +207,21 @@ static void redraw_screen(void) {
     wl_buffers[current_buffer_idx] = create_shm_buffer(win_width, win_height, &pixels);
     if (!wl_buffers[current_buffer_idx] || !pixels) return;
     
-    // Background fill (Editor Dark Gray)
-    for (int i = 0; i < win_width * win_height; i++) {
-        pixels[i] = 0xFF222222;
+    // 3. Hudson VCE Raster Color Sweeps (dynamic background cycling)
+    for (int y = 0; y < win_height; y++) {
+        float wave = sinf((float)y * 0.015f + retro_time * 6.0f);
+        uint32_t bg_color = 0xFF222222; // default background
+        if (wave > 0.85f) {
+            bg_color = 0xFF440055; // purple raster bar
+        } else if (wave > 0.70f) {
+            bg_color = 0xFF220033; // dark purple blend
+        }
+        for (int x = 0; x < win_width; x++) {
+            pixels[y * win_width + x] = bg_color;
+        }
     }
     
-    // Calculate dynamic scaling factor based on current window size
+    // Calculate dynamic scaling factor
     int scale = win_width / 280;
     if (scale < 1) scale = 1;
     if (scale > 6) scale = 6;
@@ -227,24 +241,40 @@ static void redraw_screen(void) {
     
     // Render the parsed ANSI grid onto the pixel canvas
     for (int r = 0; r < 15; r++) {
+        // 1. PETSCII-Style Border Split Transitions (horizontal row shifting)
+        int row_displace = (int)(sinf((float)r * 0.6f + retro_time * 4.0f) * 3.0f * scale);
+        
         for (int c = 0; c < 40; c++) {
             char ch = ansi_grid[r * 40 + c];
-            uint32_t color = 0xFFCCCCCC; // Default light gray
+            uint32_t color = 0xFFCCCCCC;
             
             if (ch == '|') color = 0xFF00FFFF;
             else if (ch == '*') color = 0xFFFF00FF;
             else if (ch == '=') color = 0xFFFFFF00;
             
-            draw_char(pixels, win_width, win_height, start_x + c * 6 * scale, start_y + r * 8 * scale, ch, color, scale);
+            draw_char(pixels, win_width, win_height, 
+                      start_x + c * 6 * scale + row_displace, 
+                      start_y + r * 8 * scale, 
+                      ch, color, scale);
         }
     }
     
-    // Display instructions
+    // 2. Dynamic Character-Cell Sinusoidal Scroller
+    int scroller_start_char = (int)(retro_time * 15.0f) % strlen(scroller_text);
+    int scroller_y_base = win_height - 90;
+    for (int col = 0; col < 60; col++) {
+        int char_idx = (scroller_start_char + col) % strlen(scroller_text);
+        char ch = scroller_text[char_idx];
+        int dy = (int)(sinf((float)col * 0.25f + retro_time * 10.0f) * 15.0f);
+        draw_char(pixels, win_width, win_height, 40 + col * 18, scroller_y_base + dy, ch, 0xFF00FF00, 3);
+    }
+    
+    // Display header details
     draw_string(pixels, win_width, win_height, 100, 30, "AUNCIENT WAYLAND VULKAN MARKDOWN EDITOR", 0xFF00FF00, 2);
     
     char help_buf[128];
-    snprintf(help_buf, sizeof(help_buf), "SCALE: %d - TYPE TO EDIT - ESC TO QUIT", scale);
-    draw_string(pixels, win_width, win_height, 100, win_height - 60, help_buf, 0xFFFFFF00, 2);
+    snprintf(help_buf, sizeof(help_buf), "SCALE: %d - PETSCII SPLIT IN FULL EFFECT - ESC TO QUIT", scale);
+    draw_string(pixels, win_width, win_height, 100, win_height - 35, help_buf, 0xFFFFFF00, 2);
     
     wl_surface_attach(surface, wl_buffers[current_buffer_idx], 0, 0);
     wl_surface_damage(surface, 0, 0, win_width, win_height);
@@ -326,14 +356,12 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *wl_keyboard, uin
 
     char typed_char = '\0';
     if (key == 28) { // Enter key -> Newline / Commit history transaction
-        // Calculate hash over document buffer
         uint32_t hash = 2166136261U;
         for (int i = 0; i < doc_len; i++) {
             hash ^= (uint8_t)doc_buf[i];
             hash *= 16777619U;
         }
         
-        // Populate standard transaction record log structure
         EditorHistoryRecord rec = {
             .transaction_id = 0x4001,
             .state_code = doc_len,
@@ -341,7 +369,6 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *wl_keyboard, uin
             .hash = hash
         };
         
-        // Write record directly to binary quadtree/block-ledger asset
         FILE *f = fopen("assets/editor_history.dat.bin", "ab");
         if (f) {
             fwrite(&rec, sizeof(rec), 1, f);
@@ -388,9 +415,7 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *wl_keyboard, uin
             case 45: typed_char = 'x'; break;
             case 21: typed_char = 'y'; break;
             case 44: typed_char = 'z'; break;
-            // Map header symbol '#'
             case 41: typed_char = '#'; break;
-            // Map quote symbol '>'
             case 52: typed_char = '>'; break;
             default: typed_char = '\0'; break;
         }
@@ -488,10 +513,25 @@ int main(void) {
         redraw_screen();
     }
 
+    struct pollfd fds[1] = {
+        { .fd = wl_display_get_fd(display), .events = POLLIN }
+    };
+
     while (running) {
-        if (wl_display_dispatch(display) < 0) {
-            break;
+        wl_display_prepare_read(display);
+        wl_display_dispatch_pending(display);
+        wl_display_flush(display);
+        
+        int ret = poll(fds, 1, 16); // ~60 FPS update tick
+        if (ret > 0) {
+            wl_display_read_events(display);
+        } else {
+            wl_display_cancel_read(display);
         }
+        
+        // Progress active timeline and redraw screen
+        retro_time += 0.016f;
+        redraw_screen();
     }
 
     // Cleanup Wayland resources
