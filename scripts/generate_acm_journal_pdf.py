@@ -295,17 +295,26 @@ def render_standard_code_block(code_lines, col_width, body_style):
     import html
     escaped_code = html.escape(code_text)
     
+    # Calculate the maximum line length to dynamically scale font size
+    max_len = max((len(line.rstrip('\r\n')) for line in code_lines), default=30)
+    
+    # Approximate monospace character width to fit within column margins
+    char_w = 0.6
+    font_size = min(6.5, (col_width - 12.0) / float(max_len * char_w))
+    font_size = max(4.0, font_size)
+    leading = font_size + 1.5
+    
     code_style = ParagraphStyle(
         'CodeBlock',
         parent=body_style,
         fontName='Courier',
-        fontSize=6.5,
-        leading=8,
+        fontSize=font_size,
+        leading=leading,
         textColor=colors.HexColor('#222222'),
         backColor=colors.HexColor('#f5f6f8'),
         borderColor=colors.HexColor('#e1e4e8'),
         borderWidth=0.5,
-        borderPadding=5,
+        borderPadding=4,
         spaceBefore=4,
         spaceAfter=4,
     )
