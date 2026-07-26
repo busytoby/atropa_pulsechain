@@ -368,6 +368,29 @@ static void redraw_screen(void) {
         }
     }
     
+    // Render Amoeba Flag Waving effect in top-left corner
+    int flag_start_x = 40 + glitch_x;
+    int flag_start_y = 80 + glitch_y;
+    for (int fr = 0; fr < 8; fr++) {
+        // Waving Flag displacement offset
+        int flag_displace = (int)(sinf((float)fr * 0.5f + retro_time * 5.0f) * 6.0f);
+        
+        for (int fc = 0; fc < 12; fc++) {
+            // Morphing Amoeba Texture: cellular sin calculation
+            float val1 = sinf((float)fc * 0.4f + retro_time * 3.5f);
+            float val2 = cosf((float)fr * 0.5f + retro_time * 2.5f);
+            float amoeba = val1 + val2;
+            
+            char amoeba_char = (amoeba > 0.3f) ? 'o' : (amoeba < -0.3f) ? '.' : ' ';
+            uint32_t amoeba_color = (amoeba > 0.0f) ? 0xFFFFFF00 : 0xFF33AAFF;
+            
+            draw_char(pixels, win_width, win_height, 
+                      flag_start_x + fc * 10 + flag_displace, 
+                      flag_start_y + fr * 12, 
+                      amoeba_char, amoeba_color, 2);
+        }
+    }
+    
     // Dynamic scroller speed linked to the active SID tune selection (Interactive speed sync)
     float scroll_x_speed = 30.0f;
     if (active_tune == 1) scroll_x_speed = 45.0f;
