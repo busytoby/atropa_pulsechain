@@ -315,6 +315,15 @@ def render_standard_code_block(code_lines, col_width, body_style):
 
 
 def parse_markdown_table(rows, body_style, col_width):
+    has_separator = False
+    for r in rows:
+        r_strip = r.strip()
+        if r_strip.startswith('|---') or r_strip.startswith('|:---') or r_strip.startswith('|-'):
+            has_separator = True
+            break
+    if not has_separator:
+        return None
+        
     data = []
     for r in rows:
         r = r.strip()
@@ -523,9 +532,22 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                         art_flowables.append(Spacer(1, 4))
                 continue
                 
+            if line.startswith('+') or line.startswith('┌'):
+                box_lines = []
+                while i < len(lines) and (lines[i].strip().startswith('+') or lines[i].strip().startswith('|') or lines[i].strip().startswith('┌') or lines[i].strip().startswith('└') or lines[i].strip().startswith('│') or lines[i].strip().startswith('-') or lines[i].strip().startswith('├') or lines[i].strip().startswith('┤') or lines[i].strip().startswith('┼') or lines[i].strip().startswith('┐') or lines[i].strip().startswith('┘')):
+                    box_lines.append(lines[i])
+                    i += 1
+                if box_lines:
+                    c_flowable = render_standard_code_block(box_lines, col_width, body_style)
+                    if c_flowable:
+                        art_flowables.append(Spacer(1, 4))
+                        art_flowables.append(c_flowable)
+                        art_flowables.append(Spacer(1, 4))
+                continue
+
             if line.startswith('|'):
                 table_lines = []
-                while i < len(lines) and lines[i].strip().startswith('|'):
+                while i < len(lines) and (lines[i].strip().startswith('|') or lines[i].strip().startswith('+') or lines[i].strip().startswith('-')):
                     table_lines.append(lines[i])
                     i += 1
                 t_flowable = parse_markdown_table(table_lines, body_style, col_width)
@@ -533,6 +555,12 @@ def build_volume(volume_num, files, page_width, page_height, col_width, col_heig
                     art_flowables.append(Spacer(1, 4))
                     art_flowables.append(t_flowable)
                     art_flowables.append(Spacer(1, 4))
+                else:
+                    c_flowable = render_standard_code_block(table_lines, col_width, body_style)
+                    if c_flowable:
+                        art_flowables.append(Spacer(1, 4))
+                        art_flowables.append(c_flowable)
+                        art_flowables.append(Spacer(1, 4))
                 continue
                 
             if line.startswith('---') or line.startswith('***'):
