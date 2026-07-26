@@ -602,6 +602,37 @@ static void resolve_cactus_variant_schema(usd_auncient_cactus_schema_t *schema, 
     }
 }
 
+static int usd_serialize_cactus_stage(const char *filename, const usd_auncient_cactus_schema_t *schema, const usd_auncient_texture_api_t *api) {
+    FILE *f = fopen(filename, "wb");
+    if (!f) return 0;
+    if (fwrite(schema, sizeof(usd_auncient_cactus_schema_t), 1, f) != 1) {
+        fclose(f);
+        return 0;
+    }
+    if (fwrite(api, sizeof(usd_auncient_texture_api_t), 1, f) != 1) {
+        fclose(f);
+        return 0;
+    }
+    fclose(f);
+    return 1;
+}
+
+static int usd_deserialize_cactus_stage(const char *filename, usd_auncient_cactus_schema_t *schema, usd_auncient_texture_api_t *api) {
+    FILE *f = fopen(filename, "rb");
+    if (!f) return 0;
+    if (fread(schema, sizeof(usd_auncient_cactus_schema_t), 1, f) != 1) {
+        fclose(f);
+        return 0;
+    }
+    if (fread(api, sizeof(usd_auncient_texture_api_t), 1, f) != 1) {
+        fclose(f);
+        return 0;
+    }
+    fclose(f);
+    return 1;
+}
+
+
 
 
 
@@ -1386,6 +1417,29 @@ int main(void) {
     usd_texture_api_set_stiffness(&wrapper_texture, 0.85f);
     assert(usd_texture_api_get_stiffness(&wrapper_texture) == 0.85f);
     printf("   ✓ Flat C API generated wrapper functions verified.\n");
+    fflush(stdout);
+
+    // 38. Test Stage Slice Serialization to .dat.bin
+    printf("[TEST] Testing Stage Slice Serialization to .dat.bin...\n");
+    fflush(stdout);
+    usd_auncient_cactus_schema_t save_cactus = {.density = 8.75f};
+    usd_auncient_texture_api_t save_texture = {.stiffness = 0.65f};
+    strcpy(save_texture.texture, "woven_fabric");
+    
+    const char *slice_path = "tests/cactus_slice.dat.bin";
+    int write_ok = usd_serialize_cactus_stage(slice_path, &save_cactus, &save_texture);
+    assert(write_ok == 1);
+    
+    usd_auncient_cactus_schema_t load_cactus;
+    usd_auncient_texture_api_t load_texture;
+    int read_ok = usd_deserialize_cactus_stage(slice_path, &load_cactus, &load_texture);
+    assert(read_ok == 1);
+    assert(load_cactus.density == 8.75f);
+    assert(load_texture.stiffness == 0.65f);
+    assert(strcmp(load_texture.texture, "woven_fabric") == 0);
+    
+    remove(slice_path); // Clean up disk file
+    printf("   ✓ Stage slice serialization and deserialization verified.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
