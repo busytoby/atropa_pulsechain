@@ -227,6 +227,12 @@ void auncient_apply_fourier_passengers(SplinePhysNode *nodes, int count, float t
 // Modulates a single target character cell in the ANSI grid over time to produce a tremolo flicker
 void auncient_apply_ansi_tremolo_char(char *grid, int width, int height, int target_x, int target_y, float time, float rate);
 
+// Checks if the virtual cursor coordinates reside within a specified button bounding box
+int auncient_check_cursor_hover(int cx, int cy, int bx, int by, int bw, int bh);
+
+// Unified Verlet drawing loop compiling physics, ANSI grids, cursor hovers, and tremolos
+void auncient_verlet_draw_scene(char *grid, int width, int height, const ClothPoint *points, int count, int cursor_x, int cursor_y, float time);
+
 #ifdef __cplusplus
 }
 #endif

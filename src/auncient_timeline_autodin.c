@@ -913,3 +913,35 @@ void auncient_apply_ansi_tremolo_char(char *grid, int width, int height, int tar
         grid[idx] = '.';
     }
 }
+
+int auncient_check_cursor_hover(int cx, int cy, int bx, int by, int bw, int bh) {
+    return (cx >= bx && cx < bx + bw && cy >= by && cy < by + bh);
+}
+
+void auncient_verlet_draw_scene(char *grid, int width, int height, const ClothPoint *points, int count, int cursor_x, int cursor_y, float time) {
+    if (!grid || width <= 0 || height <= 0) return;
+
+    memset(grid, ' ', width * height);
+
+    for (int i = 0; i < count; i++) {
+        int gx = (int)(points[i].x);
+        int gy = (int)(points[i].y);
+        
+        if (gx >= 0 && gx < width && gy >= 0 && gy < height) {
+            grid[gy * width + gx] = '#';
+        }
+    }
+
+    int cx = width / 2;
+    int cy = height / 2;
+    auncient_apply_ansi_tremolo_char(grid, width, height, cx, cy, time, 8.0f);
+
+    if (auncient_check_cursor_hover(cursor_x, cursor_y, 2, 2, 5, 2)) {
+        for (int x = 2; x < 7; x++) {
+            if (x < width) {
+                grid[2 * width + x] = '=';
+                grid[3 * width + x] = '=';
+            }
+        }
+    }
+}

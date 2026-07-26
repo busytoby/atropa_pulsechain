@@ -372,6 +372,16 @@ int main(void) {
     assert(t_grid[0] != 'a'); // Character modulated
     printf("   ✓ Visual character tremolo grid cell modulations verified.\n");
 
+    // Test unified Verlet scene drawing
+    char draw_grid[100];
+    ClothPoint draw_points[2] = {
+        { .x = 5.0f, .y = 5.0f, .z = 0.0f, .is_anchored = 0 },
+        { .x = 2.0f, .y = 2.0f, .z = 0.0f, .is_anchored = 0 }
+    };
+    auncient_verlet_draw_scene(draw_grid, 10, 10, draw_points, 2, 3, 3, 1.0f); // Cursor hovering over button
+    assert(draw_grid[23] == '='); // Highlight borders populated by cursor hover
+    printf("   ✓ Unified Verlet ANSI scene drawing loop verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");
