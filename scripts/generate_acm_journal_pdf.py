@@ -301,8 +301,7 @@ def render_mermaid_flowchart(lines, col_width):
 
 def render_standard_code_block(code_lines, col_width, body_style):
     code_text = ''.join(code_lines)
-    import html
-    escaped_code = html.escape(code_text)
+    from reportlab.platypus import Preformatted
     
     # Calculate the maximum line length to dynamically scale font size
     max_len = max((len(line.rstrip('\r\n')) for line in code_lines), default=30)
@@ -310,7 +309,7 @@ def render_standard_code_block(code_lines, col_width, body_style):
     # Approximate monospace character width to fit within column margins
     char_w = 0.6
     font_size = min(6.0, (col_width - 8.0) / float(max_len * char_w))
-    font_size = max(5.0, font_size)
+    font_size = max(4.0, font_size)
     leading = font_size + 1.2
     
     code_style = ParagraphStyle(
@@ -319,17 +318,15 @@ def render_standard_code_block(code_lines, col_width, body_style):
         fontName='Courier',
         fontSize=font_size,
         leading=leading,
-        textColor=colors.HexColor('#f8f9fa'),
-        backColor=colors.HexColor('#121820'),
-        borderColor=colors.HexColor('#00b4d8'),
+        textColor=colors.HexColor('#222222'),
+        backColor=colors.HexColor('#f5f6f8'),
+        borderColor=colors.HexColor('#e1e4e8'),
         borderWidth=0.5,
-        borderPadding=5,
+        borderPadding=4,
         spaceBefore=4,
         spaceAfter=4,
-        leftIndent=8,
-        firstLineIndent=-8,
     )
-    p = Paragraph(f"<pre>{escaped_code}</pre>", code_style)
+    p = Preformatted(code_text, code_style)
     return p
 
 
