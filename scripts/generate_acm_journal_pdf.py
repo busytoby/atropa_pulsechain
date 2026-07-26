@@ -124,11 +124,13 @@ def convert_latex_math_to_html(text):
         (r'\\mathit\{([^}]+)\}', r'<i>\1</i>'),
         (r'\\mathrm\s*([a-zA-Z0-9])', r'\1'),
         (r'\\mathrm\{([^}]+)\}', r'\1'),
+        (r'\\pmod\{([^}]+)\}', r' (mod \1)'),
+        (r'\\pmod\s*([a-zA-Z0-9])', r' (mod \1)'),
     ]
     
     def replace_math_block(match):
         math_content = match.group(1)
-        if '<' in math_content or '>' in math_content or not re.search(r'[+\-*=/_\\^θφ·]|cos|sin|mathbf|mathit|mathrm|sqrt', math_content):
+        if '<' in math_content or '>' in math_content or not re.search(r'[+\-*=/_\\^θφ·]|cos|sin|mathbf|mathit|mathrm|sqrt|pmod', math_content):
             return f"${math_content}$"
             
         for pat, repl in replacements:
