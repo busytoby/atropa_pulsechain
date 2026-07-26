@@ -68,6 +68,13 @@ int main(void) {
     assert(loop_ri.active_sprite_id == 1);
     assert(loop_ri.is_world_active == false); // Reset by RiEnd
 
+    // Test custom 5-bit PSG wavetable writes
+    uint8_t wave_src[32];
+    for (int i = 0; i < 32; i++) wave_src[i] = (uint8_t)(i + 10);
+    tsfi_riinterface_write_wavetable(&ri, 2, wave_src);
+    assert(ri.psg_channel_wavetable[2][0] == 10);
+    assert(ri.psg_channel_wavetable[2][31] == (41 & 0x1F)); // 5-bit mask clamp
+
     tsfi_riinterface_world_end(&ri);
     assert(ri.is_world_active == false);
 
@@ -78,6 +85,7 @@ int main(void) {
     printf("   ✓ Soft body physics Verlet FET discharge integration verified successfully.\n");
     printf("   ✓ Hudson soft periodic timer IRQ interrupts verified successfully.\n");
     printf("   ✓ End-to-end 8-step RenderMan execution sequence verified successfully.\n");
+    printf("   ✓ Custom 5-bit PSG audio wavetables verified successfully.\n");
     printf("=== AUNCIENT RIINTERFACE TESTS COMPLETE (PASS) ===\n");
     return 0;
 }

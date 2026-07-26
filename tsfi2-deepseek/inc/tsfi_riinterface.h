@@ -13,6 +13,7 @@ typedef struct {
     uint16_t psg_channel_freq[6]; // huC6280 PSG voice channels
     uint8_t psg_channel_vol[6];
     uint8_t psg_channel_pan[6]; // huC6280 PSG panning control
+    uint8_t psg_channel_wavetable[6][32]; // huC6280 PSG 5-bit custom wavetable
     uint8_t frame_buffer[256 * 256]; // Simulated VDC screen memory (256x256)
     uint32_t irq_counter; // hardware interrupt counter
     bool irq_active;
@@ -47,5 +48,8 @@ void tsfi_riinterface_tick_irq(TSFiRiInterface *ri, double dt);
 
 // Executes the complete 8-step RenderMan sequence loop mapped to Hudson hardware
 void tsfi_riinterface_run_8step_loop(TSFiRiInterface *ri, double camera_velocity, double *pos_x, double *prev_pos_x, int count);
+
+// Writes custom 5-bit wavetable arrays to the active PSG channel buffer
+void tsfi_riinterface_write_wavetable(TSFiRiInterface *ri, int channel, const uint8_t *wave_data);
 
 #endif // TSFI_RIINTERFACE_H

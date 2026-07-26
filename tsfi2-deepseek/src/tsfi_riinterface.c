@@ -15,6 +15,7 @@ void tsfi_riinterface_init(TSFiRiInterface *ri) {
     memset(ri->psg_channel_freq, 0, sizeof(ri->psg_channel_freq));
     memset(ri->psg_channel_vol, 0, sizeof(ri->psg_channel_vol));
     memset(ri->psg_channel_pan, 0, sizeof(ri->psg_channel_pan));
+    memset(ri->psg_channel_wavetable, 0, sizeof(ri->psg_channel_wavetable));
     memset(ri->frame_buffer, 0, sizeof(ri->frame_buffer));
     ri->irq_counter = 0;
     ri->irq_active = false;
@@ -151,4 +152,13 @@ void tsfi_riinterface_run_8step_loop(TSFiRiInterface *ri, double camera_velocity
     
     // Stage 8: RiEnd - Shutdown world scope
     tsfi_riinterface_world_end(ri);
+}
+
+void tsfi_riinterface_write_wavetable(TSFiRiInterface *ri, int channel, const uint8_t *wave_data) {
+    if (!ri || !wave_data || channel < 0 || channel >= 6) return;
+    
+    for (int i = 0; i < 32; i++) {
+        // Enforce 5-bit depth constraint (value limit 0-31) matching HuC6280 PSG wavetable registers
+        ri->psg_channel_wavetable[channel][i] = wave_data[i] & 0x1F;
+    }
 }
