@@ -139,13 +139,15 @@ int main(int argc, char **argv) {
         schema_class_t *c = &classes[i];
         
         // Define struct name mapping camelCase/PascalCase to snake_case
-        char struct_name[128];
+        char struct_name[256];
         if (strcmp(c->name, "AuncientCactusSchema") == 0) {
             strcpy(struct_name, "usd_auncient_cactus_schema_t");
         } else if (strcmp(c->name, "AuncientTextureAPI") == 0) {
             strcpy(struct_name, "usd_auncient_texture_api_t");
         } else if (strcmp(c->name, "AuncientPhysicsAPI") == 0) {
             strcpy(struct_name, "usd_auncient_physics_api_t");
+        } else if (strcmp(c->name, "AuncientMANNAPI") == 0) {
+            strcpy(struct_name, "usd_auncient_mann_api_t");
         } else {
             snprintf(struct_name, sizeof(struct_name), "usd_%s_t", c->name);
         }
@@ -162,13 +164,15 @@ int main(int argc, char **argv) {
         fprintf(out, "} %s;\n\n", struct_name);
 
         // Define initializer
-        char init_name[128];
+        char init_name[256];
         if (strcmp(c->name, "AuncientCactusSchema") == 0) {
             strcpy(init_name, "usd_init_auncient_cactus_schema");
         } else if (strcmp(c->name, "AuncientTextureAPI") == 0) {
             strcpy(init_name, "usd_init_auncient_texture_api");
         } else if (strcmp(c->name, "AuncientPhysicsAPI") == 0) {
             strcpy(init_name, "usd_init_auncient_physics_api");
+        } else if (strcmp(c->name, "AuncientMANNAPI") == 0) {
+            strcpy(init_name, "usd_init_auncient_mann_api");
         } else {
             snprintf(init_name, sizeof(init_name), "usd_init_%s", c->name);
         }
@@ -193,6 +197,8 @@ int main(int argc, char **argv) {
                     strcpy(prefix, "usd_cactus_schema");
                 } else if (strcmp(c->name, "AuncientTextureAPI") == 0) {
                     strcpy(prefix, "usd_texture_api");
+                } else if (strcmp(c->name, "AuncientMANNAPI") == 0) {
+                    strcpy(prefix, "usd_mann_api");
                 } else {
                     strcpy(prefix, "usd_physics_api");
                 }

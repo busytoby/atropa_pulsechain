@@ -19,3 +19,11 @@ class "AuncientPhysicsAPI" (
     float mass = 10.0
     float damping = 0.1
 }
+
+class "AuncientMANNAPI" (
+    inherits = </API>
+) {
+    float write_gate = 0.5
+    float read_gate = 0.5
+    float allocation_gate = 0.5
+}

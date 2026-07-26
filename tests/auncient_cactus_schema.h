@@ -64,4 +64,40 @@ static inline void usd_physics_api_set_damping(usd_auncient_physics_api_t *obj, 
     obj->damping = val;
 }
 
+typedef struct {
+    float write_gate;
+    float read_gate;
+    float allocation_gate;
+} usd_auncient_mann_api_t;
+
+static inline void usd_init_auncient_mann_api(usd_auncient_mann_api_t *obj) {
+    obj->write_gate = 0.5f;
+    obj->read_gate = 0.5f;
+    obj->allocation_gate = 0.5f;
+}
+
+static inline float usd_mann_api_get_write_gate(const usd_auncient_mann_api_t *obj) {
+    return obj->write_gate;
+}
+
+static inline void usd_mann_api_set_write_gate(usd_auncient_mann_api_t *obj, float val) {
+    obj->write_gate = val;
+}
+
+static inline float usd_mann_api_get_read_gate(const usd_auncient_mann_api_t *obj) {
+    return obj->read_gate;
+}
+
+static inline void usd_mann_api_set_read_gate(usd_auncient_mann_api_t *obj, float val) {
+    obj->read_gate = val;
+}
+
+static inline float usd_mann_api_get_allocation_gate(const usd_auncient_mann_api_t *obj) {
+    return obj->allocation_gate;
+}
+
+static inline void usd_mann_api_set_allocation_gate(usd_auncient_mann_api_t *obj, float val) {
+    obj->allocation_gate = val;
+}
+
 #endif /* AUNCIENT_CACTUS_SCHEMA_H */
