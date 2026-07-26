@@ -225,6 +225,7 @@ static MorphFrame morph_cache[6][5];
 
 static int sid_arp_step = 0;
 static bool voice_active[3] = {true, true, true};
+static int current_water_idx = 0;
 
 // 4 different compiled SID tunes (Tune 3 is hidden!)
 static const uint16_t sid_tunes[4][3] = {
@@ -478,6 +479,7 @@ static void simulate_smc_remove_next_line(uint32_t *active, uint32_t *backup, in
     int table_idx = (int)(flood_height * 1.5f);
     if (table_idx < 0) table_idx = 0;
     if (table_idx >= 40) table_idx = 39;
+    current_water_idx = table_idx;
     
     // Extract parameters from raw water remove table configuration data
     uint8_t count = water_remove_raw[table_idx][3];
@@ -543,6 +545,9 @@ static const PrebakedFrame prebaked_script[10] = {
 // Redraw screen with real-time PETSCII / C64 effects
 static void redraw_screen(void) {
     if (!surface) return;
+    
+    struct timespec t_start;
+    clock_gettime(CLOCK_MONOTONIC, &t_start);
     
     current_buffer_idx = 1 - current_buffer_idx;
     if (wl_buffers[current_buffer_idx]) {
@@ -1084,17 +1089,29 @@ static void redraw_screen(void) {
  
     char ted_buf[256];
     snprintf(ted_buf, sizeof(ted_buf),
-             "TED MOS 8360 | ff06=0x%02X ff07=0x%02X ff09=0x%02X ff0b=%3d | SOUND: V1=0x%02X V2=0x%02X",
+             "TED MOS 8360 | ff06=0x%02X ff07=0x%02X ff09=0x%02X ff0b=%3d | WATER INDEX: %02d/40",
              ted_chip.ff06, ted_chip.ff07, ted_chip.ff09, ted_chip.ff0b,
-             ted_chip.ff19, ted_chip.ff15);
+             current_water_idx);
     draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 39 + glitch_y, ted_buf, 0xFF00FFFF, 1);
  
     // Initials Anagram Mapping: Alternate "TSN" and "TNS" dynamically every second
     const char *initials = ((int)retro_time % 2 == 0) ? "TSN" : "TNS";
+    
+    struct timespec t_end;
+    clock_gettime(CLOCK_MONOTONIC, &t_end);
+    double latency_us = (t_end.tv_sec - t_start.tv_sec) * 1000000.0 + (t_end.tv_nsec - t_start.tv_nsec) / 1000.0;
+    int bar_ticks = (int)(latency_us / 25.0); // 1 tick per 25us of raster load
+    if (bar_ticks > 10) bar_ticks = 10;
+    char bar_str[16];
+    int b;
+    for (b = 0; b < bar_ticks; b++) bar_str[b] = '|';
+    for (; b < 10; b++) bar_str[b] = '.';
+    bar_str[10] = '\0';
+
     char help_buf[256];
     snprintf(help_buf, sizeof(help_buf), 
-             "VIC-II: d012=%d - TRIBUTE: %s - PRESS '#' FOR TUNES | KEYS '1'-'3' TO MUTE VOICES", 
-             vic_d012, initials);
+             "VIC-II: d012=%d | RASTER TIME: %3.0fus [%s] | KEYS '1'-'3' TO MUTE | TRIBUTE: %s", 
+             vic_d012, latency_us, bar_str, initials);
     draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 26 + glitch_y, help_buf, 0xFFFFCC00, 1);
     
     wl_surface_attach(surface, wl_buffers[current_buffer_idx], 0, 0);
