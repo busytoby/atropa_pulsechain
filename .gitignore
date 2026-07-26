@@ -517,6 +517,7 @@ frontend/compiled_yul.json
 /tools/vox_compiler
 /tests/test_btc_rails_vm
 /tests/bench_btc_script_comparison
+/tests/demo_cics_terminal
 
 # Ignore large media formats and document assets
 *.jpg
