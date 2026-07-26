@@ -517,6 +517,9 @@ int main(void) {
         { .fd = wl_display_get_fd(display), .events = POLLIN }
     };
 
+    struct timespec start_ts;
+    clock_gettime(CLOCK_MONOTONIC, &start_ts);
+
     while (running) {
         if (wl_display_get_error(display)) {
             break;
@@ -541,8 +544,11 @@ int main(void) {
             wl_display_cancel_read(display);
         }
         
-        // Progress active timeline and redraw screen
-        retro_time += 0.016f;
+        // Progress active timeline based on real elapsed time
+        struct timespec cur_ts;
+        clock_gettime(CLOCK_MONOTONIC, &cur_ts);
+        retro_time = (float)(cur_ts.tv_sec - start_ts.tv_sec) + 
+                     (float)(cur_ts.tv_nsec - start_ts.tv_nsec) * 1e-9f;
         redraw_screen();
     }
 
