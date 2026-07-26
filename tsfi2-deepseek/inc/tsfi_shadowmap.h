@@ -25,4 +25,7 @@ void tsfi_shadowmap_pack_xplsm(const TSFiShadowMap *sm, uint8_t *dest_xpl_buffer
 // Prints a visual ASCII representation of the shadow map grid to stdout
 void tsfi_shadowmap_print_grid(const TSFiShadowMap *sm);
 
+// Reflects simulated substrate frame buffers directly into the shadow map depth grid
+void tsfi_shadowmap_reflect_substrate(TSFiShadowMap *sm, const uint8_t *frame_buffer, int width, int height);
+
 #endif // TSFI_SHADOWMAP_H

@@ -57,3 +57,18 @@ void tsfi_shadowmap_print_grid(const TSFiShadowMap *sm) {
         printf("\n");
     }
 }
+
+void tsfi_shadowmap_reflect_substrate(TSFiShadowMap *sm, const uint8_t *frame_buffer, int width, int height) {
+    if (!sm || !frame_buffer || width <= 0 || height <= 0) return;
+    
+    // Map and downsample the frame buffer coordinates into the 16x16 shadow map grid
+    for (int y = 0; y < TSFI_SHADOW_SIZE; y++) {
+        int src_y = (y * height) / TSFI_SHADOW_SIZE;
+        for (int x = 0; x < TSFI_SHADOW_SIZE; x++) {
+            int src_x = (x * width) / TSFI_SHADOW_SIZE;
+            uint8_t pixel_val = frame_buffer[src_y * width + src_x];
+            // Normalize pixel values (0-255) as reflected depth points
+            sm->depth_grid[y][x] = (double)pixel_val;
+        }
+    }
+}
