@@ -126,7 +126,6 @@ def convert_latex_math_to_html(text):
         (r'\\mathrm\{([^}]+)\}', r'\1'),
         (r'\\pmod\{([^}]+)\}', r' (mod \1)'),
         (r'\\pmod\s*([a-zA-Z0-9])', r' (mod \1)'),
-        (r'\\overline\{([^}]+)\}', r'overline(\1)'),
         (r'\\quad', '  '),
         (r'\\rightarrow', '→'),
         (r'\\leftarrow', '←'),
@@ -160,6 +159,9 @@ def convert_latex_math_to_html(text):
         (r'\\epsilon', 'ε'),
         (r'\\eta', 'η'),
         (r'\\sigma', 'σ'),
+        (r'\\rho', 'ρ'),
+        (r'\\theta', 'θ'),
+        (r'\\phi', 'φ'),
         (r'\\begin\{[^}]+\}', ''),
         (r'\\end\{[^}]+\}', ''),
         (r'\\\{', '{'),
@@ -175,6 +177,12 @@ def convert_latex_math_to_html(text):
             
         for pat, repl in replacements:
             math_content = re.sub(pat, repl, math_content)
+        
+        # Convert overline using Unicode combining overline character \u0305
+        def replace_overline(m):
+            return "".join(c + "\u0305" for c in m.group(1))
+        math_content = re.sub(r'\\overline\{([^}]+)\}', replace_overline, math_content)
+        
         math_content = re.sub(r'_\{([^}]+)\}', r'<sub>\1</sub>', math_content)
         math_content = re.sub(r'_([a-zA-Z0-9]+)', r'<sub>\1</sub>', math_content)
         
