@@ -487,21 +487,30 @@ static void simulate_smc_remove_next_line(uint32_t *active, uint32_t *backup, in
     int row_displacement = ground + 30 - (int)flood_height;
     if (row_displacement < 0 || row_displacement >= win_h) return;
     
-    int row_start = row_displacement * win_w;
-    
-    // Clear elements on both active screen and backup cache using simulated SMC loops
+    // Clear elements on both active screen and backup cache using simulated SMC loops and dynamic ripples
     for (int col = 0; col < win_w; col++) {
-        int idx_active = row_start + col;
+        // Calculate sinusoidal water ripple wave coordinates dynamically
+        int ripple_y = row_displacement + (int)(sinf(retro_time * 6.0f + col * 0.06f) * 4.0f);
+        if (ripple_y < 0) ripple_y = 0;
+        if (ripple_y >= win_h) continue;
+        
+        int idx_boundary = ripple_y * win_w + col;
         
         if (col < 10) {
-            active[idx_active] &= start_mask;
-            backup[idx_active] &= start_mask;
+            active[idx_boundary] &= start_mask;
+            backup[idx_boundary] &= start_mask;
         } else if (col < 10 + count * 8) {
-            active[idx_active] = 0xFF051224; // Blue clear color
-            backup[idx_active] = 0xFF051224;
+            active[idx_boundary] = 0xFF051224; // Blue clear color at surface boundary
+            backup[idx_boundary] = 0xFF051224;
         } else if (col < 10 + count * 8 + 10) {
-            active[idx_active] &= end_mask;
-            backup[idx_active] &= end_mask;
+            active[idx_boundary] &= end_mask;
+            backup[idx_boundary] &= end_mask;
+        }
+        
+        // Volumetric water body: Fill everything below the wavy surface with solid blue water
+        for (int y = ripple_y + 1; y < win_h; y++) {
+            active[y * win_w + col] = 0xFF051224;
+            backup[y * win_w + col] = 0xFF051224;
         }
     }
 }
