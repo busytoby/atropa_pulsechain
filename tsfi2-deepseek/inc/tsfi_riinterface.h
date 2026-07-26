@@ -17,6 +17,8 @@ typedef struct {
     uint8_t psg_lfo_ctrl; // huC6280 PSG LFO control
     uint8_t psg_lfo_freq; // huC6280 PSG LFO frequency
     uint8_t psg_noise_ctrl[2]; // huC6280 PSG noise control for channels 5-6
+    uint16_t vdc_scroll_x; // huC6270 VDC background scroll X
+    uint16_t vdc_scroll_y; // huC6270 VDC background scroll Y
     uint8_t frame_buffer[256 * 256]; // Simulated VDC screen memory (256x256)
     uint32_t irq_counter; // hardware interrupt counter
     bool irq_active;
@@ -60,5 +62,8 @@ void tsfi_riinterface_enable_lfo(TSFiRiInterface *ri, uint8_t ctrl, uint8_t freq
 
 // Enables white noise generation on channels 5 and 6
 void tsfi_riinterface_enable_noise(TSFiRiInterface *ri, int channel, bool enable, uint8_t frequency);
+
+// Updates background scroll position registers to map camera coordinates
+void tsfi_riinterface_scroll_background(TSFiRiInterface *ri, uint16_t x, uint16_t y);
 
 #endif // TSFI_RIINTERFACE_H

@@ -84,6 +84,11 @@ int main(void) {
     tsfi_riinterface_enable_noise(&ri, 5, true, 0x1A);
     assert(ri.psg_noise_ctrl[1] == (0x80 | 0x1A));
 
+    // Test VDC background scrolling
+    tsfi_riinterface_scroll_background(&ri, 128, 64);
+    assert(ri.vdc_scroll_x == 128);
+    assert(ri.vdc_scroll_y == 64);
+
     tsfi_riinterface_world_end(&ri);
     assert(ri.is_world_active == false);
 
@@ -97,6 +102,7 @@ int main(void) {
     printf("   ✓ Custom 5-bit PSG audio wavetables verified successfully.\n");
     printf("   ✓ PSG hardware LFO frequency modulation controls verified successfully.\n");
     printf("   ✓ PSG white noise generator frequency controls verified successfully.\n");
+    printf("   ✓ VDC background scroll registers verified successfully.\n");
     printf("=== AUNCIENT RIINTERFACE TESTS COMPLETE (PASS) ===\n");
     return 0;
 }

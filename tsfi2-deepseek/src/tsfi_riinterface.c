@@ -19,6 +19,8 @@ void tsfi_riinterface_init(TSFiRiInterface *ri) {
     ri->psg_lfo_ctrl = 0;
     ri->psg_lfo_freq = 0;
     memset(ri->psg_noise_ctrl, 0, sizeof(ri->psg_noise_ctrl));
+    ri->vdc_scroll_x = 0;
+    ri->vdc_scroll_y = 0;
     memset(ri->frame_buffer, 0, sizeof(ri->frame_buffer));
     ri->irq_counter = 0;
     ri->irq_active = false;
@@ -178,4 +180,10 @@ void tsfi_riinterface_enable_noise(TSFiRiInterface *ri, int channel, bool enable
     int idx = channel - 4;
     // Map noise configuration (Bit 7: enable, Bits 0-4: noise frequency parameter)
     ri->psg_noise_ctrl[idx] = (enable ? 0x80 : 0x00) | (frequency & 0x1F);
+}
+
+void tsfi_riinterface_scroll_background(TSFiRiInterface *ri, uint16_t x, uint16_t y) {
+    if (!ri) return;
+    ri->vdc_scroll_x = x;
+    ri->vdc_scroll_y = y;
 }
