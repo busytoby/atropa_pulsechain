@@ -217,13 +217,20 @@ static const char *western_desert_art[6] = {
     "========================"
 };
 
-// Bubble Logo Matrix for TSFi/2 (Hollow outline bubble font)
-static const char *bubble_logo[5] = {
-    " .###.  .###.  .###.  ..#..  ....#  .###. ",
-    " ..#..  #....  #....  .....  ...#.  ....# ",
-    " ..#..  .##..  .##..  ..#..  ..#..  ..##. ",
-    " ..#..  ...#.  #....  ..#..  ..#..  .#... ",
-    " ..#..  .###.  #....  ..#..  #....  .#### "
+// 16x16 Bubble Font Bitmaps for TSFi/2
+static const uint16_t bubble_font_tsfi2[6][16] = {
+    // T
+    {0x3FFC, 0x7FFE, 0xFFFF, 0xE3C7, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x0180},
+    // S
+    {0x3FFC, 0x7FFE, 0xC003, 0xC000, 0x7FE0, 0x3FF8, 0x01FC, 0x007E, 0x000F, 0xC007, 0xC003, 0xE007, 0x7FFE, 0x7FFE, 0x3FFC, 0x0000},
+    // F
+    {0xFFFF, 0xFFFF, 0xC000, 0xC000, 0xFFF0, 0xFFF0, 0xC000, 0xC000, 0xC000, 0xC000, 0xC000, 0xC000, 0xC000, 0xC000, 0xC000, 0x0000},
+    // i
+    {0x0180, 0x03C0, 0x03C0, 0x0180, 0x0000, 0x0000, 0x0180, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x03C0, 0x0180},
+    // /
+    {0x000F, 0x001F, 0x003E, 0x007C, 0x00F8, 0x01F0, 0x03E0, 0x07C0, 0x0F80, 0x1F00, 0x3E00, 0x7C00, 0xF800, 0xF000, 0xE000, 0x0000},
+    // 2
+    {0x3FFC, 0x7FFE, 0xC007, 0x000F, 0x001E, 0x003C, 0x0078, 0x00F0, 0x01E0, 0x03C0, 0x0780, 0x0F00, 0xFFFF, 0xFFFF, 0xFFFF, 0x0000}
 };
 
 // Multiplexed Sprite Structure
@@ -517,19 +524,31 @@ static void redraw_screen(void) {
         }
     }
 
-    // Render TSFi/2 bubble logo in the top-right corner next to the cactus art
-    int logo_start_x = art_start_x + 320;
+    // Render TSFi/2 bubble logo in the top-right corner next to the cactus art (16x16 pixel bitmaps)
+    int logo_start_x = art_start_x + 300;
     int logo_start_y = 120 + glitch_y;
-    for (int pr = 0; pr < 5; pr++) {
-        for (int pc = 0; pc < 44; pc++) {
-            char symbol = bubble_logo[pr][pc];
-            if (symbol != ' ') {
-                int logo_color_idx = (int)(retro_time * 15.0f + pc) & 0x0F;
-                uint32_t logo_color = color_cycle_lut[logo_color_idx];
-                draw_char(pixels, win_width, win_height, 
-                          logo_start_x + pc * 8, 
-                          logo_start_y + pr * 12, 
-                          127, logo_color, 2); // 127 is solid block symbol
+    int char_spacing = 64; // Distance between characters (16 pixels * scale 4)
+    for (int char_idx = 0; char_idx < 6; char_idx++) {
+        for (int r = 0; r < 16; r++) {
+            uint16_t row_bits = bubble_font_tsfi2[char_idx][r];
+            for (int c = 0; c < 16; c++) {
+                if (row_bits & (1 << (15 - c))) {
+                    int pixel_x = logo_start_x + char_idx * char_spacing + c * 4;
+                    int pixel_y = logo_start_y + r * 4;
+                    int color_idx = (int)(retro_time * 15.0f + char_idx * 4 + c) & 0x0F;
+                    uint32_t pixel_color = color_cycle_lut[color_idx];
+                    
+                    // Draw each pixel of the 16x16 bubble font block as a solid 4x4 block
+                    for (int sy = 0; sy < 4; sy++) {
+                        for (int sx = 0; sx < 4; sx++) {
+                            int px = pixel_x + sx;
+                            int py = pixel_y + sy;
+                            if (px >= 0 && px < win_width && py >= 0 && py < win_height) {
+                                pixels[py * win_width + px] = pixel_color;
+                            }
+                        }
+                    }
+                }
             }
         }
     }
