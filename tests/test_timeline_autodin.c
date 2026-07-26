@@ -283,6 +283,14 @@ int main(void) {
     assert(box2[0].x > 1.0f); // Repelled right
     printf("   ✓ Box collision resolution and repulsion verified.\n");
 
+    // Test antialiased line rasterization
+    char line_grid[100];
+    memset(line_grid, ' ', sizeof(line_grid));
+    auncient_rasterize_antialiased_line(0.0f, 0.0f, 8.0f, 8.0f, line_grid, 10, 10);
+    assert(line_grid[0] != ' '); // First pixel rasterized
+    assert(line_grid[99] != ' '); // Last pixel rasterized
+    printf("   ✓ Sub-pixel antialiased line rasterization verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");

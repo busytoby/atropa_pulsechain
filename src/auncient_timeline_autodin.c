@@ -667,3 +667,54 @@ void auncient_resolve_box_collisions(ClothPoint *square1, int count1, ClothPoint
         }
     }
 }
+
+void auncient_rasterize_antialiased_line(float x0, float y0, float x1, float y1, char *grid, int width, int height) {
+    if (!grid || width <= 0 || height <= 0) return;
+
+    float dx = x1 - x0;
+    float dy = y1 - y0;
+    float steps = (fabsf(dx) > fabsf(dy)) ? fabsf(dx) : fabsf(dy);
+    if (steps < 0.01f) return;
+
+    float x_inc = dx / steps;
+    float y_inc = dy / steps;
+
+    float cx = x0;
+    float cy = y0;
+
+    for (int step = 0; step <= (int)steps; step++) {
+        int ix = (int)cx;
+        int iy = (int)cy;
+
+        // Perform sub-pixel interpolation on the pixel boundary
+        float fx = cx - ix;
+        float fy = cy - iy;
+
+        if (ix >= 0 && ix < width && iy >= 0 && iy < height) {
+            float intensity = (1.0f - fx) * (1.0f - fy);
+            char glyph = '.';
+            if (intensity > 0.8f) glyph = '@';
+            else if (intensity > 0.5f) glyph = 'o';
+            else if (intensity > 0.2f) glyph = '*';
+
+            grid[iy * width + ix] = glyph;
+        }
+
+        // Blend neighbor pixels
+        if (ix + 1 < width && iy >= 0 && iy < height) {
+            float intensity = fx * (1.0f - fy);
+            if (intensity > 0.2f && grid[iy * width + ix + 1] == ' ') {
+                grid[iy * width + ix + 1] = '*';
+            }
+        }
+        if (ix >= 0 && ix < width && iy + 1 < height) {
+            float intensity = (1.0f - fx) * fy;
+            if (intensity > 0.2f && grid[(iy + 1) * width + ix] == ' ') {
+                grid[(iy + 1) * width + ix] = '*';
+            }
+        }
+
+        cx += x_inc;
+        cy += y_inc;
+    }
+}

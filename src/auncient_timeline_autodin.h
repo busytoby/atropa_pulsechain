@@ -191,6 +191,9 @@ void auncient_apply_spring_link(ClothPoint *p1, ClothPoint *p2, float rest_len);
 // Resolves collision responses between two bounding boxes representing physical squares
 void auncient_resolve_box_collisions(ClothPoint *square1, int count1, ClothPoint *square2, int count2);
 
+// Rasterizes an antialiased line into a character grid buffer using sub-pixel density steps
+void auncient_rasterize_antialiased_line(float x0, float y0, float x1, float y1, char *grid, int width, int height);
+
 #ifdef __cplusplus
 }
 #endif
