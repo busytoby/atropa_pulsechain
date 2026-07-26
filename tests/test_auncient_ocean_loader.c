@@ -36,6 +36,26 @@ typedef struct {
     uint32_t blamed_port;
 } ocean_loader_ctx_t;
 
+static uint32_t cycle_border_raster(uint32_t frame_count) {
+    if (frame_count % 3 == 0) {
+        return COLOR_RED;
+    } else if (frame_count % 3 == 1) {
+        return COLOR_CYAN;
+    } else {
+        return COLOR_BLUE;
+    }
+}
+
+static uint32_t play_loader_arpeggio(uint32_t frame_count) {
+    uint32_t note_index = frame_count % 3;
+    if (note_index == 0) {
+        return 261;
+    } else if (note_index == 1) {
+        return 329;
+    } else {
+        return 392;
+    }
+}
 
 // 1. Dynamic Split-Raster Stripe Generator (modulates border lines based on SCSI bits)
 static void update_raster_border(ocean_loader_ctx_t *ctx, uint8_t scsi_byte) {
@@ -189,6 +209,17 @@ int main(void) {
     printf("   ✓ Backward ingestion and parity check passed.\n");
     fflush(stdout);
 
+    // 5. Test Split-Raster Border and Chiptune Arpeggiator
+    printf("[TEST] Testing sequential split-raster border and PSG audio arpeggio loops...\n");
+    fflush(stdout);
+    assert(cycle_border_raster(0) == COLOR_RED);
+    assert(cycle_border_raster(1) == COLOR_CYAN);
+    assert(cycle_border_raster(2) == COLOR_BLUE);
+    assert(play_loader_arpeggio(0) == 261);
+    assert(play_loader_arpeggio(1) == 329);
+    assert(play_loader_arpeggio(2) == 392);
+    printf("   ✓ Split-raster border colors and C-Major arpeggio frequencies verified.\n");
+    fflush(stdout);
 
     printf("=============================================================\n");
     printf("HUCOCEAN LOADER TESTS COMPLETE\n");
