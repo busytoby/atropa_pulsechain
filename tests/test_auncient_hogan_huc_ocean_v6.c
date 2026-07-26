@@ -305,6 +305,30 @@ static void apply_vertex_skinning(const vertex3d_t *src, vertex3d_t *dest, const
     }
 }
 
+typedef struct {
+    float x, y, z;
+    float vx, vy, vz;
+} particle3d_t;
+
+static void update_particles(particle3d_t *particles, int count, float gravity, float wind_x, float wind_y) {
+    for (int i = 0; i < count; i++) {
+        particles[i].vx += wind_x;
+        particles[i].vy += wind_y;
+        particles[i].vz -= gravity;
+        particles[i].x += particles[i].vx;
+        particles[i].y += particles[i].vy;
+        particles[i].z += particles[i].vz;
+    }
+}
+
+static float sdf_sphere(const vertex3d_t *p, float radius) {
+    return sqrt(p->x*p->x + p->y*p->y + p->z*p->z) - radius;
+}
+
+static float sdf_union(float d1, float d2) {
+    return d1 < d2 ? d1 : d2;
+}
+
 static float interpolate_catmull_rom(float p0, float p1, float p2, float p3, float t) {
     return 0.5f * ((2.0f * p1) +
                    (-p0 + p2) * t +
@@ -361,6 +385,19 @@ static void run_digital_dynamite_tests(void) {
     apply_vertex_skinning(&src_v, &dest_v, bones, weights, bone_indices, 1);
     assert(dest_v.x > 0.9f && dest_v.y > 1.9f && dest_v.z > 2.9f);
     printf("   ✓ Skeletal weight-based skinning verified successfully.\n");
+    
+    // 5. Test Procedural Particle Flow Field
+    particle3d_t p = { 0.0f, 0.0f, 10.0f, 0.0f, 0.0f, 0.0f };
+    update_particles(&p, 1, 0.5f, 0.1f, -0.1f);
+    assert(p.z < 10.0f && p.vx > 0.0f);
+    printf("   ✓ Procedural particle flow field verified successfully.\n");
+    
+    // 6. Test SDF Sphere and Union Operator
+    vertex3d_t sp_v = { 0.0f, 0.0f, 0.5f };
+    float d_sphere = sdf_sphere(&sp_v, 1.0f);
+    float d_union = sdf_union(d_sphere, 5.0f);
+    assert(d_sphere < 0.0f && d_union < 0.0f);
+    printf("   ✓ SDF primitives and Union operations verified successfully.\n");
     fflush(stdout);
 }
 
