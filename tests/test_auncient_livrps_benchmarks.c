@@ -75,6 +75,34 @@ static void resolve_payload_ref_conflict(const usd_payload_ref_conflict_t *confl
     }
 }
 
+// 4. Local vs Reference
+typedef struct {
+    char local_opinion[32];
+    char reference_opinion[32];
+} usd_local_ref_conflict_t;
+
+static void resolve_local_ref_conflict(const usd_local_ref_conflict_t *conflict, char *resolved_val) {
+    if (strlen(conflict->local_opinion) > 0) {
+        strcpy(resolved_val, conflict->local_opinion);
+    } else {
+        strcpy(resolved_val, conflict->reference_opinion);
+    }
+}
+
+// 5. Local vs Inherits
+typedef struct {
+    char local_opinion[32];
+    char inherits_opinion[32];
+} usd_local_inh_conflict_t;
+
+static void resolve_local_inh_conflict(const usd_local_inh_conflict_t *conflict, char *resolved_val) {
+    if (strlen(conflict->local_opinion) > 0) {
+        strcpy(resolved_val, conflict->local_opinion);
+    } else {
+        strcpy(resolved_val, conflict->inherits_opinion);
+    }
+}
+
 int main(void) {
     printf("=============================================================\n");
     printf("AUNCIENT USD LIVRPS LATENCY MICROBENCHMARK SUITE\n");
@@ -144,6 +172,40 @@ int main(void) {
     }
     double end_conflict = get_time_ns();
     printf("   ✓ Payload vs Reference Conflict Average Latency: %.2f ns/run\n", (end_conflict - start) / iterations);
+    fflush(stdout);
+
+    // 4. Local vs Reference Priority Benchmark
+    printf("[BENCHMARK] Running %d iterations of Local vs Reference Conflicts...\n", iterations);
+    fflush(stdout);
+    usd_local_ref_conflict_t lr_conflict = {
+        .local_opinion = "local_transform_override",
+        .reference_opinion = "referenced_base_transform"
+    };
+    char resolved_lr[32] = "";
+    start = get_time_ns();
+    for (int i = 0; i < iterations; i++) {
+        resolve_local_ref_conflict(&lr_conflict, resolved_lr);
+        checksum += resolved_lr[0];
+    }
+    double end_lr = get_time_ns();
+    printf("   ✓ Local vs Reference Conflict Average Latency: %.2f ns/run\n", (end_lr - start) / iterations);
+    fflush(stdout);
+
+    // 5. Local vs Inherits Priority Benchmark
+    printf("[BENCHMARK] Running %d iterations of Local vs Inherits Conflicts...\n", iterations);
+    fflush(stdout);
+    usd_local_inh_conflict_t li_conflict = {
+        .local_opinion = "local_geometric_state",
+        .inherits_opinion = "class_inherited_geometric_state"
+    };
+    char resolved_li[32] = "";
+    start = get_time_ns();
+    for (int i = 0; i < iterations; i++) {
+        resolve_local_inh_conflict(&li_conflict, resolved_li);
+        checksum += resolved_li[0];
+    }
+    double end_li = get_time_ns();
+    printf("   ✓ Local vs Inherits Conflict Average Latency: %.2f ns/run\n", (end_li - start) / iterations);
     fflush(stdout);
 
     // Print checksum to ensure values are not optimized away
