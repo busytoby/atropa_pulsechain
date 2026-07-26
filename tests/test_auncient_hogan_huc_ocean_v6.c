@@ -92,7 +92,9 @@ static void process_tape_ingest_v6(huc_ocean_system_t *huc,
         .contrast = 1.0f,
         .wave_type = 0U,
         .feedback_strength = 0.5f,
-        .clut_preset = 0U
+        .clut_preset = 0U,
+        .vignette_strength = 0.3f,
+        .threshold_limit = 0.0f
     };
 
     for (int lane = 0; lane < LANES; lane++) {

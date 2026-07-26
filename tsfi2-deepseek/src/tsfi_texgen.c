@@ -72,7 +72,7 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
     double *warped_g = (double *)malloc(width * height * sizeof(double));
     double *warped_b = (double *)malloc(width * height * sizeof(double));
     
-    // Step 1: Base Plasma generation with dynamic lacunarity / persistence noise octaves & Voronoi cellular mode
+    // Step 1: Base Plasma generation with dynamic lacunarity / persistence noise octaves, Voronoi, and Marble
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             double p_val = 0.0;
@@ -110,17 +110,15 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
                 double v_scroll = v + phase * 0.1;
                 int check = ((int)(u_scroll * 12.0) % 2) ^ ((int)(v_scroll * 12.0) % 2);
                 p_val = check ? 255.0 : 0.0;
-            } else {
+            } else if (mode == 4) {
                 // Voronoi Cellular Noise (Worley Noise)
                 double min_dist = 999.0;
                 for (int cell_y = -2; cell_y <= 2; cell_y++) {
                     for (int cell_x = -2; cell_x <= 2; cell_x++) {
                         int grid_cx = ((x + cell_x) % width + width) % width;
                         int grid_cy = ((y + cell_y) % height + height) % height;
-                        
                         double px = grid_cx + (double)hash_noise(grid_cx, grid_cy, params->seed) / 255.0;
                         double py = grid_cy + (double)hash_noise(grid_cx, grid_cy, params->seed + 50U) / 255.0;
-                        
                         double dx = x - px;
                         double dy = y - py;
                         double dist = sqrt(dx*dx + dy*dy);
@@ -129,6 +127,20 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
                 }
                 p_val = min_dist * 80.0;
                 if (p_val > 255.0) p_val = 255.0;
+            } else {
+                // Turbulence Marble pattern: sin(x + turbulence * noise)
+                double f_val = 0.0;
+                double freq = 0.25;
+                double amp = 1.0;
+                double max_amp = 0.0;
+                for (int o = 0; o < params->octaves; o++) {
+                    f_val += noise_2d((double)x * freq, (double)y * freq, params->seed + o * 100U) * amp;
+                    max_amp += amp;
+                    freq *= params->lacunarity;
+                    amp *= params->persistence;
+                }
+                double noise_val = (f_val / max_amp);
+                p_val = 127.5 + 127.5 * tsfi_texgen_sin(x * 0.15 + noise_val * 10.0);
             }
             
             int idx = y * width + x;
@@ -215,14 +227,17 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
         }
     }
     
-    // Step 4: Bilinear Warp & Waveform modulation & feedback recursion loop
+    // Step 4: Bilinear Warp & Waveform modulation & feedback recursion loop & Sine coordinate ripple warp
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             int idx = y * width + x;
             
-            // Warp coordinate calculated with feedback strength from phase loops
-            double warp_x = (double)layer1[idx].r / 255.0 * 2.0 + params->feedback_strength * tsfi_texgen_sin(x * 0.1);
-            double warp_y = (double)layer1[(x % width) * width + (y % height)].g / 255.0 * 2.0 + params->feedback_strength * tsfi_texgen_cos(y * 0.1);
+            // Warp coordinate calculated with feedback strength from phase loops & ripple distortion
+            double ripple_x = tsfi_texgen_sin(y * 0.2 + phase) * 2.0;
+            double ripple_y = tsfi_texgen_cos(x * 0.2 + phase) * 2.0;
+            
+            double warp_x = (double)layer1[idx].r / 255.0 * 2.0 + params->feedback_strength * tsfi_texgen_sin(x * 0.1) + ripple_x;
+            double warp_y = (double)layer1[(x % width) * width + (y % height)].g / 255.0 * 2.0 + params->feedback_strength * tsfi_texgen_cos(y * 0.1) + ripple_y;
             
             double target_x = x + warp_x;
             double target_y = y + warp_y;
@@ -317,7 +332,14 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
             int out_idx = idx * 3;
             double raw_r = 0.0, raw_g = 0.0, raw_b = 0.0;
             
-            double intensity = ((warped_r[idx] + warped_g[idx] + warped_b[idx]) / 3.0) / 255.0 * combined_light;
+            double h_center = ((warped_r[idx] + warped_g[idx] + warped_b[idx]) / 3.0);
+            
+            // Binarization mask filter
+            if (params->threshold_limit > 0.0f) {
+                h_center = (h_center >= params->threshold_limit) ? 255.0 : 0.0;
+            }
+            
+            double intensity = h_center / 255.0 * combined_light;
             
             if (params->clut_preset == 0) {
                 // Ocean CLUT Gradient (Preset 0)
@@ -366,6 +388,17 @@ void tsfi_texgen_render(uint8_t *output_rgb, int width, int height, double phase
             double adj_r = (raw_r - 128.0) * params->contrast + 128.0 + params->brightness;
             double adj_g = (raw_g - 128.0) * params->contrast + 128.0 + params->brightness;
             double adj_b = (raw_b - 128.0) * params->contrast + 128.0 + params->brightness;
+            
+            // Vignette edge occlusion darkening filter
+            double dx_vig = (double)x / width - 0.5;
+            double dy_vig = (double)y / height - 0.5;
+            double r_vig = sqrt(dx_vig*dx_vig + dy_vig*dy_vig);
+            double vig_factor = 1.0 - params->vignette_strength * (r_vig * 1.414);
+            if (vig_factor < 0.0) vig_factor = 0.0;
+            
+            adj_r *= vig_factor;
+            adj_g *= vig_factor;
+            adj_b *= vig_factor;
             
             output_rgb[out_idx]   = adj_r < 0.0 ? 0 : (adj_r > 255.0 ? 255 : (uint8_t)adj_r);
             output_rgb[out_idx+1] = adj_g < 0.0 ? 0 : (adj_g > 255.0 ? 255 : (uint8_t)adj_g);
