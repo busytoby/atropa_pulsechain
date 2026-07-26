@@ -625,6 +625,8 @@ static void redraw_screen(void) {
                     uint32_t border_color = color_cycle_lut[color_idx];
                     uint32_t pixel_color = border_color;
                     
+                    int ground = 220;
+                    
                     if (dist_sq > 2) {
                         // Inflated center: Golden yellow
                         pixel_color = 0xFFFFCC00;
@@ -637,18 +639,35 @@ static void redraw_screen(void) {
                     int sheen_pos = ((int)(retro_time * 200.0f)) % 900 - 200;
                     int dist_to_sheen = abs((char_idx * char_spacing + c * 4 + r * 4) - sheen_pos);
                     if (dist_to_sheen < 12) {
-                        pixel_color = 0xFFFFFFFF; // Pure white sheen glow
+                        pixel_color = 0xFFFFFFFF;
                     }
+                    
+                    // Pointer XOR reflection to fetch original background from bg_cache
+                    uintptr_t ptr_reflection_mask = (uintptr_t)pixels ^ (uintptr_t)bg_cache;
                     
                     for (int sy = 0; sy < 4; sy++) {
                         for (int sx = 0; sx < 4; sx++) {
                             int px = pixel_x + sx;
                             int py = pixel_y + sy;
                             if (px >= 0 && px < win_width && py >= 0 && py < win_height) {
+                                uint32_t *dest_pixel = &pixels[py * win_width + px];
+                                
+                                // XOR reflection to get matching background pixel without lookup branches
+                                uint32_t *bg_pixel = (uint32_t *)((uintptr_t)dest_pixel ^ ptr_reflection_mask);
+                                uint32_t bg_val = *bg_pixel;
+                                
+                                // Dynamic boundary mask to clip graphics overlapping the desert horizon
+                                uint32_t boundary_mask = (py >= ground + 30) ? 0x00FFFFFF : 0xFFFFFFFF;
+                                
                                 if (is_glossy && sx < 2 && sy < 2) {
-                                    pixels[py * win_width + px] = 0xFFFFFFFF; // Specular highlight glint
+                                    *dest_pixel = (*dest_pixel & ~boundary_mask) | (0xFFFFFFFF & boundary_mask);
                                 } else {
-                                    pixels[py * win_width + px] = pixel_color;
+                                    // Blend with background if partially masked
+                                    uint32_t blended_color = pixel_color;
+                                    if (boundary_mask != 0xFFFFFFFF) {
+                                        blended_color = bg_val;
+                                    }
+                                    *dest_pixel = blended_color;
                                 }
                             }
                         }
