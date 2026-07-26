@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <dlfcn.h>
 #include <wayland-client.h>
 #include "xdg-shell-client-protocol.h"
 #include "../src/auncient_timeline_autodin.h"
@@ -17,6 +18,29 @@ static struct wl_surface *surface = NULL;
 static struct xdg_surface *xdg_surface = NULL;
 static struct xdg_toplevel *xdg_toplevel = NULL;
 static bool running = true;
+
+// Vulkan dynamic bindings
+static void *vulkan_lib = NULL;
+static void *vk_instance = NULL;
+static void *vk_surface_khr = NULL;
+static void *vk_physical_device = NULL;
+static void *vk_device = NULL;
+
+typedef int (*PFN_vkCreateInstance)(const void *pCreateInfo, const void *pAllocator, void **pInstance);
+typedef int (*PFN_vkCreateWaylandSurfaceKHR)(void *instance, const void *pCreateInfo, const void *pAllocator, void **pSurface);
+typedef int (*PFN_vkEnumeratePhysicalDevices)(void *instance, uint32_t *pPhysicalDeviceCount, void **pPhysicalDevices);
+typedef int (*PFN_vkCreateDevice)(void *physicalDevice, const void *pCreateInfo, const void *pAllocator, void **pDevice);
+typedef void (*PFN_vkDestroyDevice)(void *device, const void *pAllocator);
+typedef void (*PFN_vkDestroySurfaceKHR)(void *instance, void *surface, const void *pAllocator);
+typedef void (*PFN_vkDestroyInstance)(void *instance, const void *pAllocator);
+
+static PFN_vkCreateInstance pfn_vkCreateInstance = NULL;
+static PFN_vkCreateWaylandSurfaceKHR pfn_vkCreateWaylandSurfaceKHR = NULL;
+static PFN_vkEnumeratePhysicalDevices pfn_vkEnumeratePhysicalDevices = NULL;
+static PFN_vkCreateDevice pfn_vkCreateDevice = NULL;
+static PFN_vkDestroyDevice pfn_vkDestroyDevice = NULL;
+static PFN_vkDestroySurfaceKHR pfn_vkDestroySurfaceKHR = NULL;
+static PFN_vkDestroyInstance pfn_vkDestroyInstance = NULL;
 
 // XDG Shell listeners
 static void xdg_surface_handle_configure(void *data, struct xdg_surface *xdg_surface, uint32_t serial) {
@@ -74,7 +98,7 @@ static void keyboard_handle_leave(void *data, struct wl_keyboard *wl_keyboard, u
 
 static void keyboard_handle_key(void *data, struct wl_keyboard *wl_keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state) {
     (void)data; (void)wl_keyboard; (void)serial; (void)time;
-    if (state == 0) return; // Ignore key release
+    if (state == 0) return;
 
     printf("[WAYLAND EVENT] Key pressed scancode: %u\n", key);
     
@@ -144,6 +168,144 @@ static const struct wl_registry_listener registry_listener = {
     .global_remove = registry_handle_global_remove,
 };
 
+// Dynamic Vulkan loading
+static bool init_vulkan_dynamic(struct wl_display *wl_disp, struct wl_surface *wl_surf) {
+    vulkan_lib = dlopen("libvulkan.so.1", RTLD_NOW);
+    if (!vulkan_lib) {
+        vulkan_lib = dlopen("libvulkan.so", RTLD_NOW);
+    }
+    if (!vulkan_lib) {
+        fprintf(stderr, "[VULKAN] Failed to load libvulkan shared library.\n");
+        return false;
+    }
+
+    pfn_vkCreateInstance = (PFN_vkCreateInstance)dlsym(vulkan_lib, "vkCreateInstance");
+    pfn_vkCreateWaylandSurfaceKHR = (PFN_vkCreateWaylandSurfaceKHR)dlsym(vulkan_lib, "vkCreateWaylandSurfaceKHR");
+    pfn_vkEnumeratePhysicalDevices = (PFN_vkEnumeratePhysicalDevices)dlsym(vulkan_lib, "vkEnumeratePhysicalDevices");
+    pfn_vkCreateDevice = (PFN_vkCreateDevice)dlsym(vulkan_lib, "vkCreateDevice");
+    pfn_vkDestroyDevice = (PFN_vkDestroyDevice)dlsym(vulkan_lib, "vkDestroyDevice");
+    pfn_vkDestroySurfaceKHR = (PFN_vkDestroySurfaceKHR)dlsym(vulkan_lib, "vkDestroySurfaceKHR");
+    pfn_vkDestroyInstance = (PFN_vkDestroyInstance)dlsym(vulkan_lib, "vkDestroyInstance");
+
+    if (!pfn_vkCreateInstance || !pfn_vkCreateWaylandSurfaceKHR || !pfn_vkEnumeratePhysicalDevices ||
+        !pfn_vkCreateDevice || !pfn_vkDestroyDevice || !pfn_vkDestroySurfaceKHR || !pfn_vkDestroyInstance) {
+        fprintf(stderr, "[VULKAN] Missing expected Vulkan API entry points.\n");
+        dlclose(vulkan_lib);
+        return false;
+    }
+
+    const char *extensions[] = {
+        "VK_KHR_surface",
+        "VK_KHR_wayland_surface"
+    };
+
+    struct {
+        uint32_t sType;
+        const void *pNext;
+        const char *pApplicationName;
+        uint32_t applicationVersion;
+        const char *pEngineName;
+        uint32_t engineVersion;
+        uint32_t apiVersion;
+    } app_info = {
+        .sType = 4, // VK_STRUCTURE_TYPE_APPLICATION_INFO
+        .pApplicationName = "CICS Terminal",
+        .apiVersion = (1 << 22) // VK_API_VERSION_1_0
+    };
+
+    struct {
+        uint32_t sType;
+        const void *pNext;
+        uint32_t flags;
+        const void *pApplicationInfo;
+        uint32_t enabledLayerCount;
+        const char *const *ppEnabledLayerNames;
+        uint32_t enabledExtensionCount;
+        const char *const *ppEnabledExtensionNames;
+    } inst_info = {
+        .sType = 1, // VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO
+        .pApplicationInfo = &app_info,
+        .enabledExtensionCount = 2,
+        .ppEnabledExtensionNames = extensions
+    };
+
+    if (pfn_vkCreateInstance(&inst_info, NULL, &vk_instance) != 0) {
+        fprintf(stderr, "[VULKAN] vkCreateInstance failed.\n");
+        return false;
+    }
+    printf("[VULKAN] Instance created dynamically.\n");
+
+    struct {
+        uint32_t sType;
+        const void *pNext;
+        uint32_t flags;
+        struct wl_display *display;
+        struct wl_surface *surface;
+    } surf_info = {
+        .sType = 1000006000, // VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR
+        .display = wl_disp,
+        .surface = wl_surf
+    };
+
+    if (pfn_vkCreateWaylandSurfaceKHR(vk_instance, &surf_info, NULL, &vk_surface_khr) != 0) {
+        fprintf(stderr, "[VULKAN] vkCreateWaylandSurfaceKHR failed.\n");
+        return false;
+    }
+    printf("[VULKAN] Wayland surface mapped dynamically.\n");
+
+    uint32_t count = 0;
+    pfn_vkEnumeratePhysicalDevices(vk_instance, &count, NULL);
+    if (count == 0) {
+        fprintf(stderr, "[VULKAN] No physical devices found.\n");
+        return false;
+    }
+
+    void **devices = malloc(sizeof(void *) * count);
+    pfn_vkEnumeratePhysicalDevices(vk_instance, &count, devices);
+    vk_physical_device = devices[0];
+    free(devices);
+    printf("[VULKAN] Primary GPU physical device resolved.\n");
+
+    float priority = 1.0f;
+    struct {
+        uint32_t sType;
+        const void *pNext;
+        uint32_t flags;
+        uint32_t queueFamilyIndex;
+        uint32_t queueCount;
+        const float *pQueuePriorities;
+    } q_info = {
+        .sType = 2, // VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO
+        .queueCount = 1,
+        .pQueuePriorities = &priority
+    };
+
+    struct {
+        uint32_t sType;
+        const void *pNext;
+        uint32_t flags;
+        uint32_t queueCreateInfoCount;
+        const void *pQueueCreateInfos;
+        uint32_t enabledLayerCount;
+        const char *const *ppEnabledLayerNames;
+        uint32_t enabledExtensionCount;
+        const char *const *ppEnabledExtensionNames;
+        const void *pEnabledFeatures;
+    } dev_info = {
+        .sType = 3, // VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO
+        .queueCreateInfoCount = 1,
+        .pQueueCreateInfos = &q_info
+    };
+
+    if (pfn_vkCreateDevice(vk_physical_device, &dev_info, NULL, &vk_device) != 0) {
+        fprintf(stderr, "[VULKAN] vkCreateDevice failed.\n");
+        return false;
+    }
+    printf("[VULKAN] Logical VkDevice established dynamically.\n");
+
+    return true;
+}
+
 int main(void) {
     printf("=============================================================\n");
     printf("AUNCIENT WAYLAND VULKAN LIVE CICS TERMINAL INTERFACE\n");
@@ -172,16 +334,25 @@ int main(void) {
         wl_surface_commit(surface);
         wl_display_roundtrip(display);
         printf("[WAYLAND] Surface and XDG toplevel window opened successfully.\n");
+
+        if (init_vulkan_dynamic(display, surface)) {
+            printf("[SUCCESS] Vulkan graphics context bound dynamically to Wayland compositor output.\n");
+        }
     }
 
-    // Run short event dispatch loop for verification
     int loop_ticks = 10;
     while (running && loop_ticks-- > 0) {
         wl_display_dispatch_pending(display);
         usleep(10000);
     }
 
-    // Cleanup resources
+    // Cleanup Vulkan dynamically bound resources
+    if (vk_device && pfn_vkDestroyDevice) pfn_vkDestroyDevice(vk_device, NULL);
+    if (vk_surface_khr && pfn_vkDestroySurfaceKHR) pfn_vkDestroySurfaceKHR(vk_instance, vk_surface_khr, NULL);
+    if (vk_instance && pfn_vkDestroyInstance) pfn_vkDestroyInstance(vk_instance, NULL);
+    if (vulkan_lib) dlclose(vulkan_lib);
+
+    // Cleanup Wayland resources
     if (xdg_toplevel) xdg_toplevel_destroy(xdg_toplevel);
     if (xdg_surface) xdg_surface_destroy(xdg_surface);
     if (surface) wl_surface_destroy(surface);
