@@ -518,6 +518,7 @@ frontend/compiled_yul.json
 /tests/test_btc_rails_vm
 /tests/bench_btc_script_comparison
 /tests/demo_cics_terminal
+/tests/demo_cics_vulkan_wayland
 
 # Ignore large media formats and document assets
 *.jpg
