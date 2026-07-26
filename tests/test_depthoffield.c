@@ -41,11 +41,17 @@ int main(void) {
     // Center pixel should be smoothed and distributed
     assert(output_img[4] < 10.0);
 
+    // Verify last fallback: Zero-Op sharp bypass copies input exactly
+    double output_img_bypass[9] = {0.0};
+    tsfi_depthoffield_bokeh_replace_gaussian(input_img, output_img_bypass, 3, 3, 0.0);
+    assert(output_img_bypass[4] == 10.0);
+
     printf("   ✓ Focal distance and lens parameters initialized.\n");
     printf("   ✓ Circle of Confusion blur factor calculated successfully.\n");
     printf("   ✓ Z-machine target resolution verified successfully.\n");
     printf("   ✓ Dynamic shot parameters swaps verified successfully.\n");
     printf("   ✓ Post-process Gaussian blur bokeh replacement verified successfully.\n");
+    printf("   ✓ Last fallback Zero-Op sharp bypass verified successfully.\n");
     printf("=== AUNCIENT DEPTHOFFIELD TESTS COMPLETE (PASS) ===\n");
     return 0;
 }

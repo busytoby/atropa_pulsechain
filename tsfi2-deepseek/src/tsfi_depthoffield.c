@@ -1,6 +1,7 @@
 #include "tsfi_depthoffield.h"
 #include <math.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 void tsfi_depthoffield_init(TSFiDepthOfField *dof, double focal_distance, double lens_radius, double target_z) {
     if (!dof) return;
@@ -48,6 +49,26 @@ void tsfi_depthoffield_set_shot(TSFiDepthOfField *dof, int shot_index) {
 
 void tsfi_depthoffield_bokeh_replace_gaussian(const double *input_image, double *output_image, int width, int height, double coc_radius) {
     if (!input_image || !output_image || width <= 0 || height <= 0) return;
+    
+    static bool warned_bypass = false;
+    static bool warned_gaussian = false;
+    
+    // Last fallback: Zero-Op sharp bypass if CoC radius is below threshold
+    if (coc_radius < 0.5) {
+        if (!warned_bypass) {
+            printf("[WARNING] Bokeh disabled: falling back to Zero-Op sharp bypass.\n");
+            warned_bypass = true;
+        }
+        for (int i = 0; i < width * height; i++) {
+            output_image[i] = input_image[i];
+        }
+        return;
+    }
+    
+    if (!warned_gaussian) {
+        printf("[WARNING] Bokeh disabled: falling back to Gaussian post-process.\n");
+        warned_gaussian = true;
+    }
     
     double *temp_image = (double *)malloc(width * height * sizeof(double));
     if (!temp_image) return;
