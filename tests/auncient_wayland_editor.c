@@ -307,6 +307,11 @@ static void redraw_screen(void) {
     wl_buffers[current_buffer_idx] = create_shm_buffer(win_width, win_height, &pixels);
     if (!wl_buffers[current_buffer_idx] || !pixels) return;
     
+    // Pre-calculate Sinusoidal Copper Raster Bar y-positions
+    int bar1_y = win_height / 2 + (int)(sine_lut[(int)(retro_time * 60.0f) & 0xFF] * 200.0f);
+    int bar2_y = win_height / 2 + (int)(sine_lut[(int)(retro_time * 80.0f + 80) & 0xFF] * 150.0f);
+    int bar3_y = win_height / 2 + (int)(sine_lut[(int)(retro_time * 100.0f + 160) & 0xFF] * 180.0f);
+
     // Rainbow Color Barf Sweeps: high frequency background color modulation
     for (int y = 0; y < win_height; y++) {
         // Bad Line Cycle Steals Simulation: insert blank scanline gaps every 24 pixels in the text region
@@ -325,21 +330,42 @@ static void redraw_screen(void) {
             int rand_color_idx = (int)(y * 0.15f + retro_time * 800.0f + (rand() % 4)) & 0x0F;
             bg_color = color_cycle_lut[rand_color_idx];
         } else {
-            // High frequency color sweeps relative to time + y scanline (using Sine LUT)
-            int sweep_idx = (int)(y * 0.5f + retro_time * 200.0f) & 0xFF;
-            float color_sweep = sine_lut[sweep_idx];
+            // Sinusoidal Copper Raster Bars Layer Blending
+            int d1 = abs(y - bar1_y);
+            int d2 = abs(y - bar2_y);
+            int d3 = abs(y - bar3_y);
+            uint32_t bar_color = 0;
             
-            if (color_sweep > 0.8f) {
-                bg_color = 0xFF882200; // Red-orange sweep band
-            } else if (color_sweep < -0.8f) {
-                bg_color = 0xFF004488; // Blue sweep band
+            if (d1 < 30) {
+                int intensity = (30 - d1) * 8; // 0 to 240
+                bar_color = (intensity << 16); // Red gradient bar
+            } else if (d2 < 25) {
+                int intensity = (25 - d2) * 10;
+                bar_color = intensity; // Blue gradient bar
+            } else if (d3 < 20) {
+                int intensity = (20 - d3) * 12;
+                bar_color = (intensity << 16) | intensity; // Purple gradient bar
+            }
+            
+            if (bar_color != 0) {
+                bg_color = bar_color;
             } else {
-                // Evaluates VIC-II simulated splits (using Color Cycle LUT for borders)
-                if (y < (int)vic_d012 * 3) {
-                    int pal_idx = (int)(retro_time * 8.0f) & 0x0F;
-                    bg_color = color_cycle_lut[pal_idx]; // Cycle border color via LUT
+                // High frequency color sweeps relative to time + y scanline (using Sine LUT)
+                int sweep_idx = (int)(y * 0.5f + retro_time * 200.0f) & 0xFF;
+                float color_sweep = sine_lut[sweep_idx];
+                
+                if (color_sweep > 0.8f) {
+                    bg_color = 0xFF882200; // Red-orange sweep band
+                } else if (color_sweep < -0.8f) {
+                    bg_color = 0xFF004488; // Blue sweep band
                 } else {
-                    bg_color = (vic_d021 == 0x06) ? 0xFF1b253d : 0xFF112222;
+                    // Evaluates VIC-II simulated splits (using Color Cycle LUT for borders)
+                    if (y < (int)vic_d012 * 3) {
+                        int pal_idx = (int)(retro_time * 8.0f) & 0x0F;
+                        bg_color = color_cycle_lut[pal_idx]; // Cycle border color via LUT
+                    } else {
+                        bg_color = (vic_d021 == 0x06) ? 0xFF1b253d : 0xFF112222;
+                    }
                 }
             }
         }
