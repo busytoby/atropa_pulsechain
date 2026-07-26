@@ -18,16 +18,6 @@
 // Font definition (5x7 bits per character)
 static const uint8_t font5x7[128][5] = {
     [' '] = {0x00, 0x00, 0x00, 0x00, 0x00},
-    ['!'] = {0x00, 0x00, 0x5f, 0x00, 0x00},
-    ['#'] = {0x14, 0x7f, 0x14, 0x7f, 0x14},
-    ['$'] = {0x24, 0x2a, 0x7f, 0x2a, 0x12},
-    ['%'] = {0x23, 0x13, 0x08, 0x64, 0x62},
-    ['&'] = {0x36, 0x49, 0x55, 0x22, 0x50},
-    ['('] = {0x00, 0x1c, 0x22, 0x41, 0x00},
-    [')'] = {0x00, 0x41, 0x22, 0x1c, 0x00},
-    ['*'] = {0x14, 0x08, 0x3e, 0x08, 0x14},
-    ['+'] = {0x08, 0x08, 0x3e, 0x08, 0x08},
-    [','] = {0x00, 0x50, 0x30, 0x00, 0x00},
     ['-'] = {0x08, 0x08, 0x08, 0x08, 0x08},
     ['.'] = {0x00, 0x60, 0x60, 0x00, 0x00},
     ['/'] = {0x20, 0x10, 0x08, 0x04, 0x02},
@@ -42,12 +32,6 @@ static const uint8_t font5x7[128][5] = {
     ['8'] = {0x36, 0x49, 0x49, 0x49, 0x36},
     ['9'] = {0x06, 0x49, 0x49, 0x29, 0x1e},
     [':'] = {0x00, 0x36, 0x36, 0x00, 0x00},
-    [';'] = {0x00, 0x56, 0x36, 0x00, 0x00},
-    ['<'] = {0x08, 0x14, 0x22, 0x41, 0x00},
-    ['='] = {0x14, 0x14, 0x14, 0x14, 0x14},
-    ['>'] = {0x00, 0x41, 0x22, 0x14, 0x08},
-    ['?'] = {0x02, 0x01, 0x51, 0x09, 0x06},
-    ['@'] = {0x32, 0x49, 0x79, 0x41, 0x3e},
     ['A'] = {0x7e, 0x11, 0x11, 0x11, 0x7e},
     ['B'] = {0x7f, 0x49, 0x49, 0x49, 0x36},
     ['C'] = {0x3e, 0x41, 0x41, 0x41, 0x22},
@@ -200,6 +184,7 @@ static MorphFrame morph_cache[6][5];
 static int sid_arp_step = 0;
 static bool voice_active[3] = {true, true, true};
 static int current_water_idx = 0;
+static int raymarch_mode = 0;
 
 // 4 different compiled SID tunes (Tune 3 is hidden!)
 static const uint16_t sid_tunes[4][3] = {
@@ -1132,10 +1117,14 @@ static void redraw_screen(void) {
             float rot_z = rx * sin_a + rz * cos_a;
             
             float dist;
-            if (active_tune >= 2) {
+            if (raymarch_mode == 0) {
+                dist = sd_cactus(rot_x, ry, rot_z);
+            } else if (raymarch_mode == 1) {
                 dist = sd_letter_t(rot_x, ry, rot_z);
             } else {
-                dist = sd_cactus(rot_x, ry, rot_z);
+                float d_c = sd_cactus(rot_x, ry, rot_z);
+                float d_l = sd_letter_t(rot_x, ry, rot_z);
+                dist = (d_c < d_l) ? d_c : d_l;
             }
             
             if (dist < 0.05f) break;
@@ -1189,10 +1178,11 @@ static void redraw_screen(void) {
     for (; b < 10; b++) bar_str[b] = '.';
     bar_str[10] = '\0';
 
+    const char *m_names[3] = {"CAC", "LET", "UNI"};
     char help_buf[256];
     snprintf(help_buf, sizeof(help_buf), 
-             "VIC-II: d012=%d | RASTER TIME: %3.0fus [%s] | KEYS '1'-'3' TO MUTE | TRIBUTE: %s", 
-             vic_d012, latency_us, bar_str, initials);
+             "VIC-II: d012=%d | RAY: %s | RAST: %3.0fus [%s] | KEYS '1'-'3' TO MUTE | TR: %s", 
+             vic_d012, m_names[raymarch_mode], latency_us, bar_str, initials);
     draw_string(pixels, win_width, win_height, 100 + glitch_x, win_height - 26 + glitch_y, help_buf, 0xFFFFCC00, 1);
     
     wl_surface_attach(surface, wl_buffers[current_buffer_idx], 0, 0);
@@ -1282,6 +1272,11 @@ static void keyboard_handle_key(void *data, struct wl_keyboard *wl_keyboard, uin
     } else if (key == 3) {
         voice_active[1] = !voice_active[1];
         printf("[AUDIO] Voice 2 toggled: %s\n", voice_active[1] ? "ON" : "OFF");
+        redraw_screen();
+        return;
+    } else if (key == 50) { // 'M' key scancode
+        raymarch_mode = (raymarch_mode + 1) % 3;
+        printf("[RAY] Ray Marching Mode changed: %d\n", raymarch_mode);
         redraw_screen();
         return;
     } else if (key == 4) {
