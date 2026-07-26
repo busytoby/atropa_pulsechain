@@ -526,9 +526,13 @@ static void redraw_screen(void) {
             if (ch == '|') color = 0xFFFFFF00;
             else if (ch == '*') color = 0xFFFF5500;
             
+            // Flexible Line Distance (FLD) accordion vertical stretching
+            int fld_stretch = (int)(sinf(retro_time * 2.5f) * 3.0f * scale);
+            int row_y = start_y + r * (8 * scale + fld_stretch);
+            
             draw_char(pixels, win_width, win_height, 
                       start_x + c * 6 * scale + row_displace, 
-                      start_y + r * 8 * scale, 
+                      row_y, 
                       ch, color, scale);
         }
     }
@@ -812,7 +816,10 @@ static void redraw_screen(void) {
         int lut_step = (col * 10 + (int)(retro_time * 250.0f)) & 0xFF;
         int dy = (int)(sine_lut[lut_step] * 15.0f);
         
-        draw_char(pixels, win_width, win_height, 40 + col * 18 - pixel_shift + glitch_x, scroller_y_base + dy, ch, 0xFFFF5500, 3);
+        // Multi-color charset color wash (Rainbow Chroming)
+        uint32_t wash_color = color_cycle_lut[(col + (int)(retro_time * 20.0f)) & 0x0F];
+        
+        draw_char(pixels, win_width, win_height, 40 + col * 18 - pixel_shift + glitch_x, scroller_y_base + dy, ch, wash_color, 3);
     }
     
     // Display header details
