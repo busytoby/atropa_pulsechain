@@ -101,14 +101,51 @@ static void synthesize_texture_grid(huc_ocean_system_t *huc, double phase, int m
         }
     }
     
-    // Step 2: Generate Deterministic Noise Map on Layer 1
+    // Step 2: Apply Twirl Distortion to Base Plasma Layer
+    uint8_t layer_twirl[GRID_SIZE][GRID_SIZE];
+    double cx = (GRID_SIZE - 1) / 2.0;
+    double cy = (GRID_SIZE - 1) / 2.0;
+    double twirl_strength = 2.0 + sin(phase) * 1.5; // Dynamic twirl strength
+    
+    for (int y = 0; y < GRID_SIZE; y++) {
+        for (int x = 0; x < GRID_SIZE; x++) {
+            double dx = x - cx;
+            double dy = y - cy;
+            double r = sqrt(dx*dx + dy*dy);
+            double theta = atan2(dy, dx);
+            
+            // Add twist proportional to distance
+            double theta_new = theta + twirl_strength * (1.0 - r / (GRID_SIZE * 0.707));
+            
+            double tx = cx + r * cos(theta_new);
+            double ty = cy + r * sin(theta_new);
+            
+            // Bilinear interpolation bounds for twirl mapping
+            int x0 = ((int)floor(tx) % GRID_SIZE + GRID_SIZE) % GRID_SIZE;
+            int x1 = (x0 + 1) % GRID_SIZE;
+            int y0 = ((int)floor(ty) % GRID_SIZE + GRID_SIZE) % GRID_SIZE;
+            int y1 = (y0 + 1) % GRID_SIZE;
+            
+            double frac_x = tx - floor(tx);
+            double frac_y = ty - floor(ty);
+            
+            double val = (1.0 - frac_x) * (1.0 - frac_y) * layer0[y0][x0] +
+                         frac_x * (1.0 - frac_y) * layer0[y0][x1] +
+                         (1.0 - frac_x) * frac_y * layer0[y1][x0] +
+                         frac_x * frac_y * layer0[y1][x1];
+                         
+            layer_twirl[y][x] = (uint8_t)val;
+        }
+    }
+    
+    // Step 3: Generate Deterministic Noise Map on Layer 1
     for (int y = 0; y < GRID_SIZE; y++) {
         for (int x = 0; x < GRID_SIZE; x++) {
             layer1[y][x] = hash_noise(x, y, 999U);
         }
     }
     
-    // Step 3: Warp Layer 0 using Layer 1 (with Bilinear-style coordinate interpolation & wrap-around tiling)
+    // Step 4: Warp Layer Twirl using Layer 1 (with Bilinear-style coordinate interpolation & wrap-around tiling)
     const char glyphs[] = " .:-=+*#%@";
     for (int y = 0; y < GRID_SIZE; y++) {
         for (int x = 0; x < GRID_SIZE; x++) {
@@ -119,7 +156,7 @@ static void synthesize_texture_grid(huc_ocean_system_t *huc, double phase, int m
             double target_x = x + warp_x;
             double target_y = y + warp_y;
             
-            // Bilinear interpolation bounds
+            // Bilinear interpolation bounds for warp mapping
             int x0 = ((int)target_x) % GRID_SIZE;
             int x1 = (x0 + 1) % GRID_SIZE;
             int y0 = ((int)target_y) % GRID_SIZE;
@@ -134,10 +171,10 @@ static void synthesize_texture_grid(huc_ocean_system_t *huc, double phase, int m
             double w01 = (1.0 - dx) * dy;
             double w11 = dx * dy;
             
-            double interpolated = w00 * layer0[y0][x0] +
-                                 w10 * layer0[y0][x1] +
-                                 w01 * layer0[y1][x0] +
-                                 w11 * layer0[y1][x1];
+            double interpolated = w00 * layer_twirl[y0][x0] +
+                                 w10 * layer_twirl[y0][x1] +
+                                 w01 * layer_twirl[y1][x0] +
+                                 w11 * layer_twirl[y1][x1];
                                  
             int idx = (int)(interpolated / 25.6);
             if (idx < 0) idx = 0;
