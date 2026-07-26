@@ -364,6 +364,36 @@ def main():
             f.write("        }\n")
             f.write("        uniform token[] xformOpOrder = [\"xformOp:translate\"]\n")
             f.write("    }\n")
+
+        # Generate 3D Heart Balloon Mesh points
+        heart_points = []
+        steps_h = 24
+        heart_points.append((0.0, 0.0, 15.0)) # Index 0
+        heart_points.append((0.0, 0.0, -15.0)) # Index 1
+        for s_h in range(steps_h):
+            theta = (s_h / float(steps_h)) * 2.0 * math.pi
+            hx = 16.0 * (math.sin(theta) ** 3)
+            hy = 13.0 * math.cos(theta) - 5.0 * math.cos(2.0*theta) - 2.0 * math.cos(3.0*theta) - math.cos(4.0*theta)
+            heart_points.append((hx * 6.0 + 320.0, hy * -6.0 + 240.0, 0.0))
+
+        face_counts = []
+        face_indices = []
+        for s_h in range(steps_h):
+            next_s = (s_h + 1) % steps_h
+            face_counts.append(3)
+            face_indices.extend([0, 2 + s_h, 2 + next_s])
+        for s_h in range(steps_h):
+            next_s = (s_h + 1) % steps_h
+            face_counts.append(3)
+            face_indices.extend([1, 2 + next_s, 2 + s_h])
+
+        f.write("    def Mesh \"HeartBalloon\"\n")
+        f.write("    {\n")
+        f.write("        int[] faceVertexCounts = [" + ", ".join(map(str, face_counts)) + "]\n")
+        f.write("        int[] faceVertexIndices = [" + ", ".join(map(str, face_indices)) + "]\n")
+        pts_str = ", ".join([f"({x:.3f}, {y:.3f}, {z:.3f})" for x, y, z in heart_points])
+        f.write(f"        point3f[] points = [{pts_str}]\n")
+        f.write("    }\n")
         f.write("}\n")
     print(f"[SUCCESS] Pixar USDA scene description exported: {usda_output}")
 
