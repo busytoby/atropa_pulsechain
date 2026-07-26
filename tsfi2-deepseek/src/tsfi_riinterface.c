@@ -23,6 +23,7 @@ void tsfi_riinterface_init(TSFiRiInterface *ri) {
     memset(ri->psg_channel_dda, 0, sizeof(ri->psg_channel_dda));
     ri->vdc_scroll_x = 0;
     ri->vdc_scroll_y = 0;
+    // VDC H-Blank interrupts must remain disabled during the initial power-on state
     ri->vdc_raster_interrupt_line = 0;
     ri->vdc_collision_flag = false;
     ri->hblank_active = false;
