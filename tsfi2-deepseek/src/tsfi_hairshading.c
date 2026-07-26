@@ -18,6 +18,11 @@ void tsfi_hairshading_set_animatronic(TSFiHairShading *hs, double secondary_shif
 void tsfi_hairshading_verlet_step(TSFiHairShading *hs, double *x, double *x_prev, double force, double dt) {
     if (!hs || !x || !x_prev || dt <= 0.0) return;
     
+    // Dead-zone gate to avoid excessive dynamic node calculations under low forces
+    if (fabs(force) < 1e-4 && fabs(*x - *x_prev) < 1e-4) {
+        return;
+    }
+    
     // Verlet integration step: x_next = 2 * x - x_prev + acc * dt^2
     double stiffness = 10.0;
     double damping = 0.5;
