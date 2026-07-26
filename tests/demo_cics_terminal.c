@@ -28,10 +28,32 @@ int main(void) {
     auncient_cics_process_transaction(0x1001, "REC_01", 'R');
     printf("\n");
 
+    // Render Transaction 1 State using the Markdown-to-ANSI grid engine
+    char grid1[120];
+    auncient_parse_markdown_to_ansi("# CICS READ COMMIT\n> TRANS: 0x1001\n> KEY: REC_01", grid1, 40, 3, 0);
+    for (int r = 0; r < 3; r++) {
+        for (int c = 0; c < 40; c++) {
+            putchar(grid1[r * 40 + c]);
+        }
+        putchar('\n');
+    }
+    printf("\n");
+
     // Transaction 2: Write operation
     printf("[CICS] Simulating offline form filling: TransID=0x1002, Key='REC_02', Action='W'\n");
     auncient_autodin_audit_edit("REC_02", 6, 0, 'W');
     auncient_cics_process_transaction(0x1002, "REC_02", 'W');
+    printf("\n");
+
+    // Render Transaction 2 State
+    char grid2[120];
+    auncient_parse_markdown_to_ansi("# CICS WRITE COMMIT\n> TRANS: 0x1002\n> KEY: REC_02", grid2, 40, 3, 0);
+    for (int r = 0; r < 3; r++) {
+        for (int c = 0; c < 40; c++) {
+            putchar(grid2[r * 40 + c]);
+        }
+        putchar('\n');
+    }
 
     printf("=============================================================\n");
     printf("CICS TERMINAL DEMO RUN COMPLETE\n");
