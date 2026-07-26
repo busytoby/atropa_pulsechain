@@ -1,5 +1,6 @@
 #include "auncient_timeline_autodin.h"
 #include <stdio.h>
+#include <math.h>
 
 void auncient_timeline_process(TimelineEvent *events, int count, float current_time, sdk_cics_context_t *ctx, const HoganAccount *accounts, int account_count, uint64_t expected_total_saat) {
     if (!events || !ctx) return;
@@ -363,5 +364,50 @@ void auncient_mesh_deform_along_spline(ClothVertex *vertices, int count, const f
         vertices[i].x += target_x;
         vertices[i].y += target_y;
         vertices[i].z += target_z;
+    }
+}
+
+void auncient_spline_verlet_step(SplinePhysNode *nodes, int count, float dt, float damping, float wind_x, float wind_y, float wind_z) {
+    if (!nodes || count <= 0) return;
+
+    // 1. Verlet integration step
+    for (int i = 0; i < count; i++) {
+        float temp_x = nodes[i].x;
+        float temp_y = nodes[i].y;
+        float temp_z = nodes[i].z;
+
+        // Apply Verlet integration equations
+        nodes[i].x += (nodes[i].x - nodes[i].px) * damping + nodes[i].ax * dt * dt;
+        nodes[i].y += (nodes[i].y - nodes[i].py) * damping + nodes[i].ay * dt * dt;
+        nodes[i].z += (nodes[i].z - nodes[i].pz) * damping + nodes[i].az * dt * dt;
+
+        nodes[i].px = temp_x;
+        nodes[i].py = temp_y;
+        nodes[i].pz = temp_z;
+
+        // Apply external wind force to node acceleration
+        nodes[i].ax = wind_x;
+        nodes[i].ay = wind_y;
+        nodes[i].az = wind_z;
+    }
+
+    // 2. Spline segment distance constraint enforcement
+    float target_len = 2.0f;
+    for (int iter = 0; iter < 3; iter++) {
+        for (int i = 0; i < count - 1; i++) {
+            float dx = nodes[i+1].x - nodes[i].x;
+            float dy = nodes[i+1].y - nodes[i].y;
+            float dz = nodes[i+1].z - nodes[i].z;
+            float len = sqrtf(dx * dx + dy * dy + dz * dz);
+            if (len > 0.001f) {
+                float diff = (target_len - len) / len * 0.5f;
+                nodes[i].x -= dx * diff;
+                nodes[i].y -= dy * diff;
+                nodes[i].z -= dz * diff;
+                nodes[i+1].x += dx * diff;
+                nodes[i+1].y += dy * diff;
+                nodes[i+1].z += dz * diff;
+            }
+        }
     }
 }

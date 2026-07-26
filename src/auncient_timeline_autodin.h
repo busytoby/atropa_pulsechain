@@ -136,6 +136,15 @@ void auncient_spline_to_global_uniform(const float *camera_pos, GlobalUniformBlo
 // Deforms 3D vertices dynamically along evaluated spline path nodes
 void auncient_mesh_deform_along_spline(ClothVertex *vertices, int count, const float *spline_path, int spline_points_count);
 
+typedef struct {
+    float x, y, z;
+    float px, py, pz;
+    float ax, ay, az;
+} SplinePhysNode;
+
+// Updates spline control point positions using Verlet integration and distance constraints
+void auncient_spline_verlet_step(SplinePhysNode *nodes, int count, float dt, float damping, float wind_x, float wind_y, float wind_z);
+
 #ifdef __cplusplus
 }
 #endif

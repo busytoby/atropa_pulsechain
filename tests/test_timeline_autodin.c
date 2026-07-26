@@ -193,6 +193,15 @@ int main(void) {
     assert(v.z > 0.0f);
     printf("   ✓ Spline-deformed mesh vertex updates verified.\n");
 
+    // Test spline-Verlet physics integrations
+    SplinePhysNode phys_nodes[2] = {
+        { .x = 0.0f, .y = 0.0f, .z = 0.0f, .px = 0.0f, .py = 0.0f, .pz = 0.0f, .ax = 0.0f, .ay = 0.0f, .az = 0.0f },
+        { .x = 2.0f, .y = 0.0f, .z = 0.0f, .px = 2.0f, .py = 0.0f, .pz = 0.0f, .ax = 0.0f, .ay = 0.0f, .az = 0.0f }
+    };
+    auncient_spline_verlet_step(phys_nodes, 2, 0.1f, 0.99f, 10.0f, 0.0f, 0.0f);
+    assert(phys_nodes[0].x != 0.0f || phys_nodes[1].x != 2.0f);
+    printf("   ✓ Spline-Verlet physical step integration verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");
