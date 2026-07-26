@@ -230,10 +230,10 @@ static void synthesize_texture_grid(huc_ocean_system_t *huc, double phase, int m
             ny /= len;
             nz /= len;
             
-            // Phong specular light calculations
-            double lx = 1.0, ly = 1.0, lz = 1.5;
-            double llen = sqrt(lx*lx + ly*ly + lz*lz);
-            lx /= llen; ly /= llen; lz /= llen;
+            // 4KB Intro Optimization: Pre-normalized light vector to avoid sqrt and division
+            double lx = 0.5773502691896257; 
+            double ly = 0.5773502691896257; 
+            double lz = 0.5773502691896257;
             
             double diffuse = nx*lx + ny*ly + nz*lz;
             if (diffuse < 0.0) diffuse = 0.0;
@@ -242,7 +242,12 @@ static void synthesize_texture_grid(huc_ocean_system_t *huc, double phase, int m
             
             double spec = rz; // dot(R, V) where V = (0, 0, 1)
             if (spec < 0.0) spec = 0.0;
-            spec = pow(spec, 16.0); // Shininess exponent
+            
+            // 4KB Intro Optimization: Fast squaring instead of pow() to avoid linking math libraries
+            spec = spec * spec; // spec^2
+            spec = spec * spec; // spec^4
+            spec = spec * spec; // spec^8
+            spec = spec * spec; // spec^16
             
             // Combine diffuse and specular light components
             double combined_light = diffuse * 0.65 + spec * 0.35;
