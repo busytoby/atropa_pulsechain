@@ -345,6 +345,18 @@ int main(void) {
     assert(vce_table[60] == 0x07E0);
     printf("   ✓ Hudson VDC DMA hardware palette shift verified.\n");
 
+    // Test tracker portamento (pitch slide)
+    float freq = 440.0f;
+    auncient_apply_tracker_portamento(&freq, 480.0f, 10.0f);
+    assert(freq == 450.0f);
+    printf("   ✓ Tracker portamento pitch slide sweeps verified.\n");
+
+    // Test tracker tremolo (volume modulation)
+    float volume = 0.5f;
+    auncient_apply_tracker_tremolo(&volume, 1.0f, 0.2f, 1.5f);
+    assert(volume != 0.5f);
+    printf("   ✓ Tracker tremolo volume modulation verified.\n");
+
     printf("=============================================================\n");
     printf("AUNCIENT INTEGRATION TEST COMPLETE\n");
     printf("=============================================================\n");

@@ -215,6 +215,12 @@ void auncient_hudson_vce_sync_winchester(uint16_t *vce_table, const WinchesterMQ
 // Simulates a Hudson VDC DMA block transfer to shift or copy palette ranges in hardware
 void auncient_hudson_vdc_dma_palette_shift(uint16_t *vce_table, uint16_t src_addr, uint16_t dest_addr, uint16_t length);
 
+// Smoothly sweeps frequency pitch toward a target note speed
+void auncient_apply_tracker_portamento(float *freq, float target_freq, float slide_speed);
+
+// Modulates audio volume level dynamically using a sinusoidal tremolo sweep
+void auncient_apply_tracker_tremolo(float *volume, float time, float depth, float rate);
+
 #ifdef __cplusplus
 }
 #endif

@@ -856,3 +856,25 @@ void auncient_hudson_vdc_dma_palette_shift(uint16_t *vce_table, uint16_t src_add
     // Use memory move to simulate hardware DMA transfer
     memmove(&vce_table[dest_addr], &vce_table[src_addr], sizeof(uint16_t) * length);
 }
+
+void auncient_apply_tracker_portamento(float *freq, float target_freq, float slide_speed) {
+    if (!freq || slide_speed <= 0.0f) return;
+
+    if (*freq < target_freq) {
+        *freq += slide_speed;
+        if (*freq > target_freq) *freq = target_freq;
+    } else if (*freq > target_freq) {
+        *freq -= slide_speed;
+        if (*freq < target_freq) *freq = target_freq;
+    }
+}
+
+void auncient_apply_tracker_tremolo(float *volume, float time, float depth, float rate) {
+    if (!volume || depth <= 0.0f) return;
+
+    float base_val = *volume;
+    *volume = base_val + sinf(time * rate) * depth;
+
+    if (*volume < 0.0f) *volume = 0.0f;
+    if (*volume > 1.0f) *volume = 1.0f;
+}
