@@ -529,6 +529,7 @@ frontend/compiled_yul.json
 /tests/test_auncient_edsac_system_firewall
 /tests/test_auncient_federal_worker
 /tests/test_auncient_stl
+/tests/test_auncient_usd_stl_bridge
 
 # Ignore large media formats and document assets
 *.jpg
