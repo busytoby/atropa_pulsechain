@@ -525,6 +525,7 @@ frontend/compiled_yul.json
 /tests/test_auncient_edsac_firewall
 /tests/test_auncient_xdc_debugger
 /tests/test_auncient_xdg_debug_portal
+/tests/test_auncient_teddy_walk_again
 
 # Ignore large media formats and document assets
 *.jpg
