@@ -254,7 +254,7 @@ int main(void) {
                     if (leap_y < 0.0f) leap_y = 0.0f;
 
                     sx[v] = (int)(rx * 250.0f) + WIDTH / 2 + (int)sway;
-                    sy[v] = (int)(ry * 250.0f) + HEIGHT / 2 - 100 - (int)leap_y;
+                    sy[v] = HEIGHT / 2 + 50 - (int)(ry * 250.0f) - (int)leap_y;
                 }
 
                 if (tri_list) {
