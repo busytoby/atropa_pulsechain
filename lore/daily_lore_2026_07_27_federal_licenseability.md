@@ -7,11 +7,12 @@ In standard software architectures, developers routinely link third-party librar
 * **License Collapse**: Introducing a single external module can invoke restrictive copyleft licenses (such as GPL/AGPL). This would legally require the system to expose its proprietary register structures, disqualifying it from federal compliance.
 * **Security Vector**: External code introduces unverified execution paths, breaking the absolute audit boundary maintained by the system-wide gate.
 
-### 2. The Four-Library Constraint
-To establish a legally defensible and auditable boundary, the simulation loop is restricted to four standard libraries:
+### 2. The Library Constraint
+To establish a legally defensible and auditable boundary, the simulation loop is restricted to standard libraries:
 1. `glibc` (Standard C Library)
 2. `libm` (Standard Math Library)
 3. `librt` (Realtime Extensions)
 4. `libcrypto` (Standard Hashing Library for FNV-1a DNA generation)
+5. `libssl` (Standard SSL/TLS library for secure transport channels)
 
 By developing exclusively in pure ISO C11 with these libraries, the code contains no proprietary or copyleft third-party code. The entire platform remains clean, deterministic, and fully eligible for national verification.
