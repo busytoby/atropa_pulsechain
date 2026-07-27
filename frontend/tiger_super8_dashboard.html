@@ -240,6 +240,15 @@
             </div>
 
             <div class="slider-group">
+                <label><span>Planar Projection Plane</span></label>
+                <div class="controls">
+                    <button id="proj-xy" style="background-color: var(--vaesen-gold); color: var(--vaesen-ink);">Front (XY)</button>
+                    <button id="proj-xz">Top (XZ)</button>
+                    <button id="proj-zy">Side (ZY)</button>
+                </div>
+            </div>
+
+            <div class="slider-group">
                 <label><span>Undo/Redo History</span></label>
                 <div class="controls">
                     <button id="btn-undo">Undo</button>
@@ -307,6 +316,8 @@
 
         const paramSnap = document.getElementById('param-snap');
         const lblSnap = document.getElementById('lbl-snap');
+
+        let projectionPlane = 'xy'; // 'xy', 'xz', 'zy'
 
         let playing = true;
         let t = 0;
@@ -412,7 +423,15 @@
             const cos = Math.cos(rotRad + t);
             const sin = Math.sin(rotRad + t);
 
-            // 1. Project all vertices to screen coordinates
+            // Draw axis crossing guidelines
+            ctx.strokeStyle = 'rgba(197, 160, 89, 0.12)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(cx - 50, cy); ctx.lineTo(cx + 50, cy);
+            ctx.moveTo(cx, cy - 50); ctx.lineTo(cx, cy + 50);
+            ctx.stroke();
+
+            // 1. Project all vertices to screen coordinates based on plane
             const projPts = [];
             for (let i = 0; i < usdVertices.length; i++) {
                 const pt = usdVertices[i];
@@ -424,9 +443,23 @@
                 const rz = hx * sin + hz * cos;
                 const ry = hy;
 
-                const factor = 120.0 / (200.0 - rz);
-                const px = cx + (rx * factor);
-                const py = cy + (ry * factor);
+                let px, py;
+                if (projectionPlane === 'xz') {
+                    // Top (XZ)
+                    const factor = 120.0 / (200.0 - ry);
+                    px = cx + (rx * factor);
+                    py = cy + (-rz * factor);
+                } else if (projectionPlane === 'zy') {
+                    // Side (ZY)
+                    const factor = 120.0 / (200.0 - rx);
+                    px = cx + (rz * factor);
+                    py = cy + (ry * factor);
+                } else {
+                    // Front (XY)
+                    const factor = 120.0 / (200.0 - rz);
+                    px = cx + (rx * factor);
+                    py = cy + (ry * factor);
+                }
                 projPts.push({ x: px, y: py });
             }
 
@@ -596,9 +629,21 @@
                     const rx = hx * cos - hz * sin;
                     const rz = hx * sin + hz * cos;
                     const ry = hy;
-                    const factor = 120.0 / (200.0 - rz);
-                    const px = cx + (rx * factor);
-                    const py = cy + (ry * factor);
+
+                    let px, py;
+                    if (projectionPlane === 'xz') {
+                        const factor = 120.0 / (200.0 - ry);
+                        px = cx + (rx * factor);
+                        py = cy + (-rz * factor);
+                    } else if (projectionPlane === 'zy') {
+                        const factor = 120.0 / (200.0 - rx);
+                        px = cx + (rz * factor);
+                        py = cy + (ry * factor);
+                    } else {
+                        const factor = 120.0 / (200.0 - rz);
+                        px = cx + (rx * factor);
+                        py = cy + (ry * factor);
+                    }
 
                     const dist = Math.sqrt((px - mouseX) ** 2 + (py - mouseY) ** 2);
                     if (dist < minDist) {
@@ -646,12 +691,23 @@
                 }
                 
                 // Track relative shift of the grabbed node
-                const shiftX = dx - usdVertices[canvas.activeVertexIdx][0];
-                const shiftY = dy - usdVertices[canvas.activeVertexIdx][1];
-                
-                // Save old position
-                usdVertices[canvas.activeVertexIdx][0] = dx;
-                usdVertices[canvas.activeVertexIdx][1] = dy;
+                let shiftX = 0, shiftY = 0, shiftZ = 0;
+                if (projectionPlane === 'xz') {
+                    shiftX = dx - usdVertices[canvas.activeVertexIdx][0];
+                    shiftZ = -dy - usdVertices[canvas.activeVertexIdx][2];
+                    usdVertices[canvas.activeVertexIdx][0] = dx;
+                    usdVertices[canvas.activeVertexIdx][2] = -dy;
+                } else if (projectionPlane === 'zy') {
+                    shiftZ = dx - usdVertices[canvas.activeVertexIdx][2];
+                    shiftY = dy - usdVertices[canvas.activeVertexIdx][1];
+                    usdVertices[canvas.activeVertexIdx][2] = dx;
+                    usdVertices[canvas.activeVertexIdx][1] = dy;
+                } else {
+                    shiftX = dx - usdVertices[canvas.activeVertexIdx][0];
+                    shiftY = dy - usdVertices[canvas.activeVertexIdx][1];
+                    usdVertices[canvas.activeVertexIdx][0] = dx;
+                    usdVertices[canvas.activeVertexIdx][1] = dy;
+                }
                 
                 // Apply proportional shift to neighbors within the brush radius
                 const brushRadVal = parseInt(paramBrush.value);
@@ -668,9 +724,21 @@
                     const arx = ahx * cos - ahz * sin;
                     const arz = ahx * sin + ahz * cos;
                     const ary = ahy;
-                    const afactor = 120.0 / (200.0 - arz);
-                    const apx = cx + (arx * afactor);
-                    const apy = cy + (ary * afactor);
+                    
+                    let apx, apy;
+                    if (projectionPlane === 'xz') {
+                        const afactor = 120.0 / (200.0 - ary);
+                        apx = cx + (arx * afactor);
+                        apy = cy + (-arz * afactor);
+                    } else if (projectionPlane === 'zy') {
+                        const afactor = 120.0 / (200.0 - arx);
+                        apx = cx + (arz * afactor);
+                        apy = cy + (ary * afactor);
+                    } else {
+                        const afactor = 120.0 / (200.0 - arz);
+                        apx = cx + (arx * afactor);
+                        apy = cy + (ary * afactor);
+                    }
                     
                     for (let i = 0; i < usdVertices.length; i++) {
                         if (i === canvas.activeVertexIdx) continue;
@@ -682,15 +750,35 @@
                         const rx = hx * cos - hz * sin;
                         const rz = hx * sin + hz * cos;
                         const ry = hy;
-                        const factor = 120.0 / (200.0 - rz);
-                        const px = cx + (rx * factor);
-                        const py = cy + (ry * factor);
+                        
+                        let px, py;
+                        if (projectionPlane === 'xz') {
+                            const factor = 120.0 / (200.0 - ry);
+                            px = cx + (rx * factor);
+                            py = cy + (-rz * factor);
+                        } else if (projectionPlane === 'zy') {
+                            const factor = 120.0 / (200.0 - rx);
+                            px = cx + (rz * factor);
+                            py = cy + (ry * factor);
+                        } else {
+                            const factor = 120.0 / (200.0 - rz);
+                            px = cx + (rx * factor);
+                            py = cy + (ry * factor);
+                        }
                         
                         const dist = Math.sqrt((px - apx) ** 2 + (py - apy) ** 2);
                         if (dist < brushRadVal) {
                             const weight = 1.0 - (dist / brushRadVal);
-                            usdVertices[i][0] += shiftX * weight;
-                            usdVertices[i][1] += shiftY * weight;
+                            if (projectionPlane === 'xz') {
+                                usdVertices[i][0] += shiftX * weight;
+                                usdVertices[i][2] += shiftZ * weight;
+                            } else if (projectionPlane === 'zy') {
+                                usdVertices[i][2] += shiftZ * weight;
+                                usdVertices[i][1] += shiftY * weight;
+                            } else {
+                                usdVertices[i][0] += shiftX * weight;
+                                usdVertices[i][1] += shiftY * weight;
+                            }
                         }
                     }
                 }
@@ -826,6 +914,26 @@
             toolWarp.style.color = 'var(--vaesen-gold)';
             log("[MODE] Active tool: Paint Spline (click and drag canvas to draw lines).");
         });
+
+        // Projection plane controls
+        const btnProjXY = document.getElementById('proj-xy');
+        const btnProjXZ = document.getElementById('proj-xz');
+        const btnProjZY = document.getElementById('proj-zy');
+
+        function setProjectionPlane(plane) {
+            projectionPlane = plane;
+            btnProjXY.style.backgroundColor = (plane === 'xy') ? 'var(--vaesen-gold)' : 'transparent';
+            btnProjXY.style.color = (plane === 'xy') ? 'var(--vaesen-ink)' : 'var(--vaesen-gold)';
+            btnProjXZ.style.backgroundColor = (plane === 'xz') ? 'var(--vaesen-gold)' : 'transparent';
+            btnProjXZ.style.color = (plane === 'xz') ? 'var(--vaesen-ink)' : 'var(--vaesen-gold)';
+            btnProjZY.style.backgroundColor = (plane === 'zy') ? 'var(--vaesen-gold)' : 'transparent';
+            btnProjZY.style.color = (plane === 'zy') ? 'var(--vaesen-ink)' : 'var(--vaesen-gold)';
+            log(`[PROJECTION] Switched view perspective to ${plane.toUpperCase()}`);
+        }
+
+        btnProjXY.addEventListener('click', () => setProjectionPlane('xy'));
+        btnProjXZ.addEventListener('click', () => setProjectionPlane('xz'));
+        btnProjZY.addEventListener('click', () => setProjectionPlane('zy'));
 
         function getUSDAText() {
             let usdaText = `#usda 1.0\n(\n    upAxis = "Y"\n)\n\ndef Mesh "Mesh_Head"\n{\n    point3f[] points = [\n`;
