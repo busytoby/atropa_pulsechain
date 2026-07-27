@@ -51,16 +51,54 @@ bool auncient_bridge_stl_to_usda(const AuncientStlMesh *stl_mesh, const char *us
     
     float scale = 1.0f / max_extent;
 
-    // 1. Write unique points list (centered and normalized)
-    fprintf(file, "    point3f[] points = [\n");
+    // Weld vertices to construct shared points topology
+    uint32_t max_verts = stl_mesh->facet_count * 3;
+    float (*unique_verts)[3] = (float (*)[3])malloc(sizeof(float) * 3 * max_verts);
+    uint32_t *face_indices = (uint32_t *)malloc(sizeof(uint32_t) * max_verts);
+    if (!unique_verts || !face_indices) {
+        if (unique_verts) free(unique_verts);
+        if (face_indices) free(face_indices);
+        fclose(file);
+        return false;
+    }
+    uint32_t unique_count = 0;
+
     for (uint32_t i = 0; i < stl_mesh->facet_count; i++) {
         const AuncientStlFacet *f = &stl_mesh->facets[i];
         for (int v = 0; v < 3; v++) {
-            fprintf(file, "        (%.6f, %.6f, %.6f),\n", 
-                    (f->vertices[v][0] - center_x) * scale,
-                    (f->vertices[v][1] - center_y) * scale,
-                    (f->vertices[v][2] - center_z) * scale);
+            float vx = (f->vertices[v][0] - center_x) * scale;
+            float vy = (f->vertices[v][1] - center_y) * scale;
+            float vz = (f->vertices[v][2] - center_z) * scale;
+            
+            int found_idx = -1;
+            for (uint32_t u = 0; u < unique_count; u++) {
+                float dx = unique_verts[u][0] - vx;
+                float dy = unique_verts[u][1] - vy;
+                float dz = unique_verts[u][2] - vz;
+                float dist_sq = dx*dx + dy*dy + dz*dz;
+                if (dist_sq < 1e-10f) {
+                    found_idx = (int)u;
+                    break;
+                }
+            }
+            
+            if (found_idx == -1) {
+                unique_verts[unique_count][0] = vx;
+                unique_verts[unique_count][1] = vy;
+                unique_verts[unique_count][2] = vz;
+                face_indices[i * 3 + v] = unique_count;
+                unique_count++;
+            } else {
+                face_indices[i * 3 + v] = (uint32_t)found_idx;
+            }
         }
+    }
+
+    // 1. Write unique points list (centered and normalized)
+    fprintf(file, "    point3f[] points = [\n");
+    for (uint32_t i = 0; i < unique_count; i++) {
+        fprintf(file, "        (%.6f, %.6f, %.6f),\n", 
+                unique_verts[i][0], unique_verts[i][1], unique_verts[i][2]);
     }
     fprintf(file, "    ]\n");
 
@@ -73,8 +111,9 @@ bool auncient_bridge_stl_to_usda(const AuncientStlMesh *stl_mesh, const char *us
 
     // 3. Write face vertex indices sequential order
     fprintf(file, "    int[] faceVertexIndices = [\n");
-    for (uint32_t i = 0; i < stl_mesh->facet_count * 3; i += 3) {
-        fprintf(file, "        %u, %u, %u,\n", i, i + 1, i + 2);
+    for (uint32_t i = 0; i < stl_mesh->facet_count; i++) {
+        fprintf(file, "        %u, %u, %u,\n", 
+                face_indices[i * 3 + 0], face_indices[i * 3 + 1], face_indices[i * 3 + 2]);
     }
     fprintf(file, "    ]\n");
 
@@ -90,7 +129,10 @@ bool auncient_bridge_stl_to_usda(const AuncientStlMesh *stl_mesh, const char *us
     fprintf(file, "}\n");
     fclose(file);
 
-    printf("[USD_STL_BRIDGE SUCCESS] Successfully bridged %u STL facets to USDA file: %s\n", 
-           stl_mesh->facet_count, usda_filepath);
+    free(unique_verts);
+    free(face_indices);
+
+    printf("[USD_STL_BRIDGE SUCCESS] Successfully bridged %u STL facets to USDA file: %s (welded to %u unique vertices)\n", 
+           stl_mesh->facet_count, usda_filepath, unique_count);
     return true;
 }
