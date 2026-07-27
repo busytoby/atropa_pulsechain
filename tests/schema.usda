@@ -36,4 +36,9 @@ class "AuncientTeddySchema" (
     float leg_length = 1.0
     float head_size = 1.0
     float ear_size = 1.0
+    float sickness = 0.0
+    int missing_eye = 0
+    float lighting_angle = 135.0
 }
+
+

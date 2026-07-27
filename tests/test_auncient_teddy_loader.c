@@ -55,6 +55,9 @@ static int usd_generate_new_teddy_asset(const char *filename, const usd_Auncient
     fprintf(f, "    float leg_length = %f\n", schema->leg_length);
     fprintf(f, "    float head_size = %f\n", schema->head_size);
     fprintf(f, "    float ear_size = %f\n", schema->ear_size);
+    fprintf(f, "    float sickness = %f\n", schema->sickness);
+    fprintf(f, "    int missing_eye = %d\n", schema->missing_eye);
+    fprintf(f, "    float lighting_angle = %f\n", schema->lighting_angle);
     fprintf(f, "    float mass = %f\n", physics->mass);
     fprintf(f, "    float damping = %f\n", physics->damping);
     fprintf(f, "}\n");
@@ -72,6 +75,9 @@ int main(void) {
     save_teddy.stuffing = 1.8f;
     save_teddy.arm_length = 1.1f;
     save_teddy.leg_length = 0.9f;
+    save_teddy.sickness = 0.75f;
+    save_teddy.missing_eye = 1;
+    save_teddy.lighting_angle = 210.0f;
 
     usd_auncient_physics_api_t save_physics;
     usd_init_auncient_physics_api(&save_physics);
@@ -94,6 +100,9 @@ int main(void) {
     assert(fabs(load_teddy.stuffing - 1.8f) < 1e-5f);
     assert(fabs(load_teddy.arm_length - 1.1f) < 1e-5f);
     assert(fabs(load_teddy.leg_length - 0.9f) < 1e-5f);
+    assert(fabs(load_teddy.sickness - 0.75f) < 1e-5f);
+    assert(load_teddy.missing_eye == 1);
+    assert(fabs(load_teddy.lighting_angle - 210.0f) < 1e-5f);
     assert(fabs(load_physics.mass - 12.0f) < 1e-5f);
     assert(fabs(load_physics.damping - 0.15f) < 1e-5f);
     printf("   ✓ USDC binary serialization & deserialization verified.\n");
@@ -108,14 +117,21 @@ int main(void) {
     char buf[128];
     bool found_usda = false;
     bool found_stuffing = false;
+    bool found_sickness = false;
+    bool found_missing_eye = false;
     while (fgets(buf, sizeof(buf), rf)) {
         if (strstr(buf, "#usda 1.0")) found_usda = true;
         if (strstr(buf, "stuffing = 1.8")) found_stuffing = true;
+        if (strstr(buf, "sickness = 0.75")) found_sickness = true;
+        if (strstr(buf, "missing_eye = 1")) found_missing_eye = true;
     }
     fclose(rf);
     assert(found_usda);
     assert(found_stuffing);
+    assert(found_sickness);
+    assert(found_missing_eye);
     printf("   ✓ USDA ASCII scene format output verified.\n");
+
 
     // Cleanup generated files
     remove(binary_usdc_path);

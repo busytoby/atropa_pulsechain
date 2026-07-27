@@ -107,6 +107,9 @@ typedef struct {
     float leg_length;
     float head_size;
     float ear_size;
+    float sickness;
+    int missing_eye;
+    float lighting_angle;
 } usd_AuncientTeddySchema_t;
 
 static inline void usd_init_AuncientTeddySchema(usd_AuncientTeddySchema_t *obj) {
@@ -116,6 +119,9 @@ static inline void usd_init_AuncientTeddySchema(usd_AuncientTeddySchema_t *obj) 
     obj->leg_length = 1.0f;
     obj->head_size = 1.0f;
     obj->ear_size = 1.0f;
+    obj->sickness = 0.0f;
+    obj->missing_eye = 0;
+    obj->lighting_angle = 135.0f;
 }
 
 static inline float usd_physics_api_get_scale(const usd_AuncientTeddySchema_t *obj) {
@@ -164,6 +170,30 @@ static inline float usd_physics_api_get_ear_size(const usd_AuncientTeddySchema_t
 
 static inline void usd_physics_api_set_ear_size(usd_AuncientTeddySchema_t *obj, float val) {
     obj->ear_size = val;
+}
+
+static inline float usd_physics_api_get_sickness(const usd_AuncientTeddySchema_t *obj) {
+    return obj->sickness;
+}
+
+static inline void usd_physics_api_set_sickness(usd_AuncientTeddySchema_t *obj, float val) {
+    obj->sickness = val;
+}
+
+static inline int usd_physics_api_get_missing_eye(const usd_AuncientTeddySchema_t *obj) {
+    return obj->missing_eye;
+}
+
+static inline void usd_physics_api_set_missing_eye(usd_AuncientTeddySchema_t *obj, int val) {
+    obj->missing_eye = val;
+}
+
+static inline float usd_physics_api_get_lighting_angle(const usd_AuncientTeddySchema_t *obj) {
+    return obj->lighting_angle;
+}
+
+static inline void usd_physics_api_set_lighting_angle(usd_AuncientTeddySchema_t *obj, float val) {
+    obj->lighting_angle = val;
 }
 
 #endif /* AUNCIENT_CACTUS_SCHEMA_H */
