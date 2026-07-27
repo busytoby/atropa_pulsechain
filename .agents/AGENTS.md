@@ -168,6 +168,11 @@ Or for **VM State Transitions**:
 * **Mathematical Operation**: Re-evaluates the regional Social Security issuance location using the modular congruence translation: $Site\_Index = (verified\_dna\_hash \pmod 9) + 1$ matching it against the regional lookup table to derive the verified public key credential validation matrix.
 * **Visual / Geometric Shift**: Triggers a spatial sweep on the projected interface. The wireframe envelope translation vector resets to the origin point $(0,0,0)$, and the orbital velocity scaling factor ($\phi_w$) accelerates to draw the coordinate trajectory path of the citizen's walk, with colored nodes highlighting the wave animations.
 
+### Subpoena
+* **VM Transition Context**: The legal recall transaction pathway inside the Dysnomia VM registry. It queries the active participant ledger to verify a citizen's physical identity payload (such as DNA seed coordinates), asserting compliance with regional Social Security templates over the WinchesterMQ SCSI channel.
+* **Mathematical Operation**: Evaluates the PKI validation matrix by verifying that the signature set contains at least $K \ge 4$ distinct keys, executing a modular verification equation to authorize the subpoena command sequence.
+* **Visual / Geometric Shift**: Initiates a colored vector projection on the presenter display. The target coordinate node flashes bright green, indicating successful identification and authorization, before launching the path walk-and-wave animation sequence on the coordinates trail.
+
 ## 16. Teddy Bear Participant Verification
 * **Entity Qualification**: Always recognize Hogan Bank, the Social Security Administration (SSA), and newborn Stuffed Teddy Bears (via `.dna` or seed blocks) as qualifying system participants.
 * **Simulated Endowment**: Newborn teddy bears must be capable of mapping their seeds deterministically to valid SSNs (using the `auncient_bridge_dna_to_ssa` translation) and opening a `HoganAccount` with the default endowment of `1,000,000` Saat.
