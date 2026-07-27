@@ -68,10 +68,15 @@ int main(void) {
     // 1. Load component meshes
     AuncientStlMesh head_mesh = {0};
     AuncientStlMesh joint_mesh = {0};
+    AuncientStlMesh torso_mesh = {0};
     
     if (!auncient_stl_load("tsfi2-deepseek/assets/toy_bear_head.stl", &head_mesh) ||
-        !auncient_stl_load("tsfi2-deepseek/assets/toy_bear_joint.stl", &joint_mesh)) {
+        !auncient_stl_load("tsfi2-deepseek/assets/toy_bear_joint.stl", &joint_mesh) ||
+        !auncient_stl_load("tsfi2-deepseek/assets/toy_bear_torso.stl", &torso_mesh)) {
         printf("[RENDER ERROR] Failed to load STL component assets.\n");
+        auncient_stl_free_mesh(&head_mesh);
+        auncient_stl_free_mesh(&joint_mesh);
+        auncient_stl_free_mesh(&torso_mesh);
         return 1;
     }
 
@@ -80,6 +85,7 @@ int main(void) {
     if (!auncient_ballet_register_bear("Ballet_Bear_01", "BLOCK_SEED_7777", &bear)) {
         auncient_stl_free_mesh(&head_mesh);
         auncient_stl_free_mesh(&joint_mesh);
+        auncient_stl_free_mesh(&torso_mesh);
         return 1;
     }
 
@@ -128,7 +134,7 @@ int main(void) {
         draw_line(rgb_out, 0, HEIGHT / 2, WIDTH - 1, HEIGHT / 2, 0x88, 0x66, 0x33);
 
         // Rasterize meshes with wireframe lines representing full joint assembly (9 segments for recognizable teddy bear)
-        AuncientStlMesh segment_meshes[9] = { joint_mesh, head_mesh, joint_mesh, joint_mesh, joint_mesh, joint_mesh, head_mesh, head_mesh, joint_mesh };
+        AuncientStlMesh segment_meshes[9] = { torso_mesh, head_mesh, joint_mesh, joint_mesh, joint_mesh, joint_mesh, head_mesh, head_mesh, joint_mesh };
         const char *segment_names[9] = { "Torso", "Head", "LeftLeg", "RightLeg", "LeftArm", "RightArm", "LeftEar", "RightEar", "Snout" };
 
         // Set distinct joint rotations over time
@@ -410,6 +416,7 @@ int main(void) {
 
     auncient_stl_free_mesh(&head_mesh);
     auncient_stl_free_mesh(&joint_mesh);
+    auncient_stl_free_mesh(&torso_mesh);
 
     printf("[SUCCESS] Ballet animation successfully rendered to bin/teddy_ballet_demo.mp4\n");
     return 0;
