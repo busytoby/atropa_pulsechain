@@ -5,10 +5,13 @@ This document outlines the official instructions for a Dysnomia Federal Worker t
 ---
 
 ## 1. Prerequisites & Environment Setup
-The simulation runs on any standard Linux environment. Ensure the following tooling is installed:
+The simulation runs on any standard Linux environment. Ensure the following minimal tooling is installed:
 * **Compiler**: `gcc` (support for C11 standard)
-* **Libraries**: OpenSSL (`libssl-dev` / `libcrypto-dev` for FNV-1a and hashing loops)
-* **Build System**: `make` or terminal execution terminal access
+* **Standard Libraries**: The simulation is written in pure C with zero external framework dependencies, relying exclusively on the following four standard libraries:
+  1. `glibc` (Standard C Library)
+  2. `libm` (Math Library)
+  3. `librt` (Realtime Extensions)
+  4. `libcrypto` (OpenSSL cryptography library for FNV-1a hashing)
 
 ---
 
@@ -46,16 +49,15 @@ The local simulation walks a raw mathematical coordinate through 4 specific vali
 
 ---
 
-## 4. Running the Local Simulation Test
-To compile and execute the complete verification suite locally, run:
+## 4. Running the Minimal Local Simulation Test
+Because the codebase is self-contained with no external graphics or framework dependencies, the compilation requirements are minimal. To compile and execute the complete verification suite locally, run:
 ```bash
-# Compile and run the automated test suite
+# Compile and run using only the 4 standard libraries
 gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc \
   tests/test_auncient_federal_worker.c src/auncient_federal_worker_sim.c \
   src/auncient_edsac_firewall.c src/auncient_timeline_autodin.c \
   src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c \
-  src/auncient_sdk.c src/auncient_vulkan_materials.c src/cloth_simulator.c \
-  tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_auncient_federal_worker -lm -lrt -lssl -lcrypto
+  -o tests/test_auncient_federal_worker -lm -lrt -lssl -lcrypto
 
 ./tests/test_auncient_federal_worker
 ```
