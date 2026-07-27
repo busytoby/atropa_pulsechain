@@ -53,8 +53,9 @@ int main(void) {
         return 1;
     }
 
-    // Create bin directory for output
+    // Create bin and frames directory
     system("mkdir -p bin");
+    system("mkdir -p tests/frames");
 
     // Open FFmpeg pipe
     FILE *ffmpeg_pipe = popen("ffmpeg -y -f rawvideo -pix_fmt rgb24 -s 1280x720 -r 30 -i - -an -vcodec libx264 -pix_fmt yuv420p bin/teddy_ballet_demo.mp4", "w");
@@ -149,6 +150,58 @@ int main(void) {
                 draw_line(rgb_out, sx[1], sy[1], sx[2], sy[2], 0x39, 0xFF, 0x14);
                 draw_line(rgb_out, sx[2], sy[2], sx[0], sy[0], 0x39, 0xFF, 0x14);
             }
+        }
+
+        // Export current pose frame segments to USDA files for text telemetry verification
+        AuncientStlMesh head_posed = {0}, joint_posed = {0};
+        head_posed.facet_count = head_mesh.facet_count;
+        head_posed.facets = (AuncientStlFacet *)malloc(sizeof(AuncientStlFacet) * head_posed.facet_count);
+        joint_posed.facet_count = joint_mesh.facet_count;
+        joint_posed.facets = (AuncientStlFacet *)malloc(sizeof(AuncientStlFacet) * joint_posed.facet_count);
+
+        if (head_posed.facets && joint_posed.facets) {
+            float head_theta = -0.4f * cosf(t * 3.0f);
+            float cos_h = cosf(head_theta), sin_h = sinf(head_theta);
+            for (uint32_t i = 0; i < head_mesh.facet_count; i++) {
+                for (int v = 0; v < 3; v++) {
+                    float x = head_mesh.facets[i].vertices[v][0];
+                    float y = head_mesh.facets[i].vertices[v][1];
+                    float z = head_mesh.facets[i].vertices[v][2];
+                    head_posed.facets[i].vertices[v][0] = x * cos_h - z * sin_h;
+                    head_posed.facets[i].vertices[v][1] = y + 0.5f;
+                    head_posed.facets[i].vertices[v][2] = x * sin_h + z * cos_h;
+                    head_posed.facets[i].normal[0] = head_mesh.facets[i].normal[0];
+                    head_posed.facets[i].normal[1] = head_mesh.facets[i].normal[1];
+                    head_posed.facets[i].normal[2] = head_mesh.facets[i].normal[2];
+                }
+            }
+
+            float leg_kick = 1.2f * sinf(t * 3.0f);
+            float cos_l = cosf(leg_kick), sin_l = sinf(leg_kick);
+            for (uint32_t i = 0; i < joint_mesh.facet_count; i++) {
+                for (int v = 0; v < 3; v++) {
+                    float x = joint_mesh.facets[i].vertices[v][0];
+                    float y = joint_mesh.facets[i].vertices[v][1];
+                    float z = joint_mesh.facets[i].vertices[v][2];
+                    joint_posed.facets[i].vertices[v][0] = (x - 0.5f) * cos_l - z * sin_l + 0.5f;
+                    joint_posed.facets[i].vertices[v][1] = y - 0.5f;
+                    float rz = (x - 0.5f) * sin_l + z * cos_l;
+                    if (rz < 0.0f) rz *= stretch;
+                    joint_posed.facets[i].vertices[v][2] = rz;
+                    joint_posed.facets[i].normal[0] = joint_mesh.facets[i].normal[0];
+                    joint_posed.facets[i].normal[1] = joint_mesh.facets[i].normal[1];
+                    joint_posed.facets[i].normal[2] = joint_mesh.facets[i].normal[2];
+                }
+            }
+
+            char frame_path[64];
+            sprintf(frame_path, "tests/frames/pose_%04d.usda", f);
+            AuncientStlMesh meshes_posed[2] = { head_posed, joint_posed };
+            const char *names[2] = { "HeadMesh", "JointMesh" };
+            auncient_bridge_multi_stl_to_usda(meshes_posed, names, 2, frame_path);
+            
+            free(head_posed.facets);
+            free(joint_posed.facets);
         }
 
         fwrite(rgb_out, 1, WIDTH * HEIGHT * 3, ffmpeg_pipe);
