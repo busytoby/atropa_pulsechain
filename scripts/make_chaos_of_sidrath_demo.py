@@ -344,6 +344,19 @@ def generate_video_direct(audio_path, output_mp4):
         # Map and scale points so the butterfly shape stands upright
         lorenz_pts.append((lx * 4.5, (lz - 25.0) * 4.5, ly * 4.5))
 
+    # Initialize Verlet soft-body FET discharge grid (Rule 10: Verlet constraints apply to FET discharge)
+    fet_grid = []
+    for r in range(4):
+        for c in range(4):
+            fet_grid.append({
+                'x': (c - 1.5) * 20.0,
+                'y': (r - 1.5) * 20.0,
+                'z': 0.0,
+                'px': (c - 1.5) * 20.0,
+                'py': (r - 1.5) * 20.0,
+                'pz': 0.0
+            })
+
     for frame in range(total_frames):
         time = frame / float(FPS)
         
@@ -544,6 +557,66 @@ def generate_video_direct(audio_path, output_mp4):
             fade = j / len(la_projected)
             color = (0, int(150 * fade + 105 * beat_amplitude), int(50 * fade))
             draw.line([p1, p2], fill=color, width=2)
+
+        # 4d. Update and Draw Verlet soft-body FET grid (Rule 10: soft body physics applies only to FET discharge cycles)
+        grid_rot_y = time * 2.2
+        cos_gr, sin_gr = math.cos(grid_rot_y), math.sin(grid_rot_y)
+        
+        # Apply Verlet step to node coordinates reacting to beat_amplitude
+        for node in fet_grid:
+            temp_x, temp_y, temp_z = node['x'], node['y'], node['z']
+            
+            # Simple spring constraint pull towards origin plus beat oscillation force
+            accel_z = -0.1 * node['z'] + beat_amplitude * 60.0 * math.sin(time * 16.0 + node['x'] * 0.1)
+            accel_x = -0.05 * node['x']
+            accel_y = -0.05 * node['y']
+            
+            # Verlet integration: x_new = 2*x - x_prev + accel * dt^2 (dt = 0.033)
+            node['x'] = 2.0 * node['x'] - node['px'] + accel_x * 0.001
+            node['y'] = 2.0 * node['y'] - node['py'] + accel_y * 0.001
+            node['z'] = 2.0 * node['z'] - node['pz'] + accel_z * 0.001
+            
+            node['px'], node['py'], node['pz'] = temp_x, temp_y, temp_z
+
+        # Project and draw grid connections
+        gr_projected = []
+        for node in fet_grid:
+            # Scale coordinates and rotate around Y
+            sx, sy, sz = node['x'] * 1.5, node['y'] * 1.5, node['z'] * 1.5
+            rx = sx * cos_gr - sz * sin_gr
+            rz = sx * sin_gr + sz * cos_gr
+            ry = sy
+            
+            d_cam = 450.0
+            factor = 320.0 / (d_cam - rz)
+            proj_x = 240 + int(rx * factor) # Drawn on the left margin
+            proj_y = 520 + int(ry * factor)
+            gr_projected.append((proj_x, proj_y))
+
+        # Draw grid wireframe connections
+        for r in range(4):
+            for c in range(4):
+                curr_idx = r * 4 + c
+                p_curr = gr_projected[curr_idx]
+                if c < 3:
+                    p_right = gr_projected[curr_idx + 1]
+                    draw.line([p_curr, p_right], fill="#c5a059", width=1)
+                if r < 3:
+                    p_down = gr_projected[curr_idx + 4]
+                    draw.line([p_curr, p_down], fill="#c5a059", width=1)
+
+        # 4e. Draw Federal Worker active phase progress indicator on left margin
+        phases_names = ["Imposition", "Qualified", "Audited", "Confirmed", "Selected"]
+        current_phase_idx = int((time / DURATION) * 5) % 5
+        for p_idx, p_name in enumerate(phases_names):
+            py_pos = 140 + p_idx * 30
+            is_active = (p_idx == current_phase_idx)
+            is_past = (p_idx < current_phase_idx)
+            
+            circle_color = "#c5a059" if (is_active or is_past) else "#332211"
+            draw.ellipse([60, py_pos, 70, py_pos + 10], fill=circle_color)
+            text_color = "#e6dfd3" if is_active else "#665544"
+            draw.text((80, py_pos - 2), p_name, fill=text_color)
             
         # 5. Draw Demoscene Bouncing Block Text "TSFi/2" in 3D Space
         text_to_draw = "TSFi/2"
