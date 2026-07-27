@@ -111,9 +111,9 @@ int main(void) {
         draw_line(rgb_out, WIDTH / 2 - 240, HEIGHT / 2 + 50, WIDTH / 2 + 240, HEIGHT / 2 + 50, 0x22, 0x22, 0x55);
         draw_line(rgb_out, WIDTH / 2 - 880, HEIGHT - 40, WIDTH / 2 + 880, HEIGHT - 40, 0x22, 0x22, 0x55);
 
-        // Rasterize meshes with wireframe lines representing full joint assembly
-        AuncientStlMesh segment_meshes[6] = { joint_mesh, head_mesh, joint_mesh, joint_mesh, joint_mesh, joint_mesh };
-        const char *segment_names[6] = { "Torso", "Head", "LeftLeg", "RightLeg", "LeftArm", "RightArm" };
+        // Rasterize meshes with wireframe lines representing full joint assembly (9 segments for recognizable teddy bear)
+        AuncientStlMesh segment_meshes[9] = { joint_mesh, head_mesh, joint_mesh, joint_mesh, joint_mesh, joint_mesh, head_mesh, head_mesh, joint_mesh };
+        const char *segment_names[9] = { "Torso", "Head", "LeftLeg", "RightLeg", "LeftArm", "RightArm", "LeftEar", "RightEar", "Snout" };
 
         // Set distinct joint rotations over time
         float head_tilt = -0.3f * cosf(t * 3.0f);
@@ -122,9 +122,10 @@ int main(void) {
         float l_arm_wave = 0.8f * cosf(t * 3.5f);
         float r_arm_wave = -0.8f * cosf(t * 3.5f);
 
-        for (int m = 0; m < 6; m++) {
+        for (int m = 0; m < 9; m++) {
             float joint_theta = 0.0f;
-            if (m == 1) joint_theta = head_tilt;
+            // Ears and snout inherit head tilt sway
+            if (m == 1 || m == 6 || m == 7 || m == 8) joint_theta = head_tilt;
             else if (m == 2) joint_theta = l_leg_kick;
             else if (m == 3) joint_theta = r_leg_kick;
             else if (m == 4) joint_theta = l_arm_wave;
@@ -188,6 +189,30 @@ int main(void) {
                         rx = ax + 0.6f;
                         ry = local_y * cos_j - az * sin_j + 0.3f;
                         rz = local_y * sin_j + az * cos_j;
+                    } else if (m == 6) {
+                        // Left Ear: small sphere on top-left of the head
+                        float ex = x * 0.25f - 0.3f;
+                        float ey = y * 0.25f + 0.3f;
+                        float ez = z * 0.25f;
+                        rx = ex * cos_j - ez * sin_j;
+                        rz = ex * sin_j + ez * cos_j;
+                        ry = ey + 0.9f;
+                    } else if (m == 7) {
+                        // Right Ear: small sphere on top-right of the head
+                        float ex = x * 0.25f + 0.3f;
+                        float ey = y * 0.25f + 0.3f;
+                        float ez = z * 0.25f;
+                        rx = ex * cos_j - ez * sin_j;
+                        rz = ex * sin_j + ez * cos_j;
+                        ry = ey + 0.9f;
+                    } else if (m == 8) {
+                        // Snout: small horizontal cylinder on face
+                        float sx_pt = x * 0.25f;
+                        float sy_pt = y * 0.2f;
+                        float sz_pt = z * 0.25f + 0.3f;
+                        rx = sx_pt * cos_j - sz_pt * sin_j;
+                        rz = sx_pt * sin_j + sz_pt * cos_j;
+                        ry = sy_pt + 0.9f;
                     }
 
                     // Verlet stretch (Rule 10)
@@ -213,13 +238,13 @@ int main(void) {
         }
 
         // Export current pose frame segments to USDA files for text telemetry verification
-        AuncientStlMesh meshes_posed[6];
-        for (int m = 0; m < 6; m++) {
+        AuncientStlMesh meshes_posed[9];
+        for (int m = 0; m < 9; m++) {
             meshes_posed[m].facet_count = segment_meshes[m].facet_count;
             meshes_posed[m].facets = (AuncientStlFacet *)malloc(sizeof(AuncientStlFacet) * meshes_posed[m].facet_count);
             if (meshes_posed[m].facets) {
                 float joint_theta = 0.0f;
-                if (m == 1) joint_theta = head_tilt;
+                if (m == 1 || m == 6 || m == 7 || m == 8) joint_theta = head_tilt;
                 else if (m == 2) joint_theta = l_leg_kick;
                 else if (m == 3) joint_theta = r_leg_kick;
                 else if (m == 4) joint_theta = l_arm_wave;
@@ -276,6 +301,27 @@ int main(void) {
                             rx = ax + 0.6f;
                             ry = local_y * cos_j - az * sin_j + 0.3f;
                             rz = local_y * sin_j + az * cos_j;
+                        } else if (m == 6) {
+                            float ex = x * 0.25f - 0.3f;
+                            float ey = y * 0.25f + 0.3f;
+                            float ez = z * 0.25f;
+                            rx = ex * cos_j - ez * sin_j;
+                            rz = ex * sin_j + ez * cos_j;
+                            ry = ey + 0.9f;
+                        } else if (m == 7) {
+                            float ex = x * 0.25f + 0.3f;
+                            float ey = y * 0.25f + 0.3f;
+                            float ez = z * 0.25f;
+                            rx = ex * cos_j - ez * sin_j;
+                            rz = ex * sin_j + ez * cos_j;
+                            ry = ey + 0.9f;
+                        } else if (m == 8) {
+                            float sx_pt = x * 0.25f;
+                            float sy_pt = y * 0.2f;
+                            float sz_pt = z * 0.25f + 0.3f;
+                            rx = sx_pt * cos_j - sz_pt * sin_j;
+                            rz = sx_pt * sin_j + sz_pt * cos_j;
+                            ry = sy_pt + 0.9f;
                         }
 
                         if (rz < 0.0f) {
@@ -295,9 +341,9 @@ int main(void) {
 
         char frame_path[64];
         sprintf(frame_path, "tests/frames/pose_%04d.usda", f);
-        auncient_bridge_multi_stl_to_usda(meshes_posed, segment_names, 6, frame_path);
+        auncient_bridge_multi_stl_to_usda(meshes_posed, segment_names, 9, frame_path);
         
-        for (int m = 0; m < 6; m++) {
+        for (int m = 0; m < 9; m++) {
             if (meshes_posed[m].facets) free(meshes_posed[m].facets);
         }
 
