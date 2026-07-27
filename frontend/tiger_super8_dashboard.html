@@ -538,6 +538,34 @@
                     ctx.arc(px, py, 8, 0, Math.PI * 2);
                     ctx.stroke();
 
+                    if (symmetryX) {
+                        const activePtOrig = usdVerticesBaseline[i];
+                        let mirrorIdx = -1;
+                        let bestDist = 9999;
+                        for (let j = 0; j < usdVertices.length; j++) {
+                            if (j === i) continue;
+                            const ptOrig = usdVerticesBaseline[j];
+                            const tx = -activePtOrig[0];
+                            const ty = activePtOrig[1];
+                            const tz = activePtOrig[2];
+                            const dist = Math.sqrt((ptOrig[0] - tx)**2 + (ptOrig[1] - ty)**2 + (ptOrig[2] - tz)**2);
+                            if (dist < bestDist) {
+                                bestDist = dist;
+                                mirrorIdx = j;
+                            }
+                        }
+                        if (mirrorIdx !== -1 && bestDist < 0.1) {
+                            ctx.save();
+                            ctx.strokeStyle = 'rgba(255, 215, 0, 0.4)';
+                            ctx.setLineDash([3, 3]);
+                            ctx.beginPath();
+                            ctx.moveTo(px, py);
+                            ctx.lineTo(projPts[mirrorIdx].x, projPts[mirrorIdx].y);
+                            ctx.stroke();
+                            ctx.restore();
+                        }
+                    }
+
                     ctx.fillStyle = '#ffd700';
                     ctx.font = '9px monospace';
                     ctx.fillText(`V[${i}]: (${pt[0].toFixed(2)}, ${pt[1].toFixed(2)})`, px + 10, py - 5);
@@ -886,9 +914,36 @@
         function handleCoordInput() {
             if (selectedVertexIdx !== -1) {
                 saveHistoryState();
-                usdVertices[selectedVertexIdx][0] = parseFloat(inputCoordX.value) || 0;
-                usdVertices[selectedVertexIdx][1] = parseFloat(inputCoordY.value) || 0;
-                usdVertices[selectedVertexIdx][2] = parseFloat(inputCoordZ.value) || 0;
+                const xVal = parseFloat(inputCoordX.value) || 0;
+                const yVal = parseFloat(inputCoordY.value) || 0;
+                const zVal = parseFloat(inputCoordZ.value) || 0;
+
+                usdVertices[selectedVertexIdx][0] = xVal;
+                usdVertices[selectedVertexIdx][1] = yVal;
+                usdVertices[selectedVertexIdx][2] = zVal;
+
+                if (symmetryX) {
+                    const activePtOrig = usdVerticesBaseline[selectedVertexIdx];
+                    let mirrorIdx = -1;
+                    let bestDist = 9999;
+                    for (let j = 0; j < usdVertices.length; j++) {
+                        if (j === selectedVertexIdx) continue;
+                        const ptOrig = usdVerticesBaseline[j];
+                        const tx = -activePtOrig[0];
+                        const ty = activePtOrig[1];
+                        const tz = activePtOrig[2];
+                        const dist = Math.sqrt((ptOrig[0] - tx)**2 + (ptOrig[1] - ty)**2 + (ptOrig[2] - tz)**2);
+                        if (dist < bestDist) {
+                            bestDist = dist;
+                            mirrorIdx = j;
+                        }
+                    }
+                    if (mirrorIdx !== -1 && bestDist < 0.1) {
+                        usdVertices[mirrorIdx][0] = -xVal;
+                        usdVertices[mirrorIdx][1] = yVal;
+                        usdVertices[mirrorIdx][2] = zVal;
+                    }
+                }
             }
         }
         inputCoordX.addEventListener('change', handleCoordInput);
