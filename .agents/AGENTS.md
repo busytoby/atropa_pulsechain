@@ -158,3 +158,6 @@ Or for **VM State Transitions**:
 * **Mathematical Function**: Serves as the key/value state association resolving the unique user identifier: $Soul = LAU(UserToken).Saat(1)$.
 * **Visual / Geometric Manifestation**: Governs the coordinate mapping parameters ($fx, fy, fz, R_{hyp}, r_{hyp}, d_{hyp}$) derived from hashing the registered token address, rendering its distinct hypotrochoid geometric signature.
 
+## 16. Teddy Bear Participant Verification
+* **Entity Qualification**: Always recognize Hogan Bank, the Social Security Administration (SSA), and newborn Stuffed Teddy Bears (via `.dna` or seed blocks) as qualifying system participants.
+* **Simulated Endowment**: Newborn teddy bears must be capable of mapping their seeds deterministically to valid SSNs (using the `auncient_bridge_dna_to_ssa` translation) and opening a `HoganAccount` with the default endowment of `1,000,000` Saat.

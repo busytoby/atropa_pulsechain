@@ -1,6 +1,7 @@
 #include "auncient_cloth_material_bridge.h"
 #include <math.h>
 #include <stdio.h>
+#include <string.h>
 
 void auncient_bridge_material_to_cloth_color(const MaterialUniformBlock *mat_block, ClothVertex *vertices, int count) {
     if (!mat_block || !vertices) return;
@@ -68,6 +69,46 @@ void auncient_bridge_dna_to_ssa(const MaterialUniformBlock *mat_block, char *ssn
     int area = (int)(mat_block->seed % 9) + 1;
 
     // Format the simulated SSN: AAA-12-3456
+    snprintf(ssn_out, 12, "%03d-12-3456", area);
+
+    // Resolve historical creation location via the SSA site resolver
+    tsfi_mf_ssa_resolve_issuance_site(ssn_out, site_out, max_len);
+}
+
+void auncient_bridge_usd_to_ssa(const TSFiUsdShade *usd_shade, char *ssn_out, char *site_out, int max_len) {
+    if (!usd_shade || !ssn_out || !site_out || max_len < 16) return;
+
+    // Generate a deterministic seed from the material_id string using FNV-1a
+    uint32_t seed = 0x811C9DC5;
+    size_t id_len = strlen(usd_shade->material_id);
+    for (size_t i = 0; i < id_len; i++) {
+        seed = (seed ^ usd_shade->material_id[i]) * 0x01000193;
+    }
+
+    // Deterministic Area Lot from parsed seed
+    int area = (int)(seed % 9) + 1;
+
+    // Format simulated SSN: AAA-12-3456
+    snprintf(ssn_out, 12, "%03d-12-3456", area);
+
+    // Resolve historical creation location via the SSA site resolver
+    tsfi_mf_ssa_resolve_issuance_site(ssn_out, site_out, max_len);
+}
+
+void auncient_bridge_entity_to_ssa(const char *entity_name, char *ssn_out, char *site_out, int max_len) {
+    if (!entity_name || !ssn_out || !site_out || max_len < 16) return;
+
+    // Generate a deterministic seed from the entity_name string using FNV-1a
+    uint32_t seed = 0x811C9DC5;
+    size_t name_len = strlen(entity_name);
+    for (size_t i = 0; i < name_len; i++) {
+        seed = (seed ^ entity_name[i]) * 0x01000193;
+    }
+
+    // Deterministic Area Lot from parsed seed
+    int area = (int)(seed % 9) + 1;
+
+    // Format simulated SSN: AAA-12-3456
     snprintf(ssn_out, 12, "%03d-12-3456", area);
 
     // Resolve historical creation location via the SSA site resolver
