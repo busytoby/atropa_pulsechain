@@ -308,6 +308,18 @@ int main(void) {
     assert(cpu.halted == true);
     printf("   ✓ AUTODIN rejected invalid instruction and halted CPU.\n");
 
+    // 10. Test Initial Orders 2 Relocation Resolution
+    printf("[INFO] Testing Initial Orders 2 Relocation Resolution...\n");
+    uint32_t unresolv_inst = encode_instruction('A', 10, 'D'); // Relocatable modifier
+    uint32_t resolved_inst = auncient_initial_orders_2_resolve(unresolv_inst, 500);
+    
+    instruction_t final_inst;
+    decode_instruction(resolved_inst, &final_inst);
+    assert(final_inst.op == 'A');
+    assert(final_inst.address == 510); // Offset 10 + 500
+    assert(final_inst.modifier == 'D');
+    printf("   ✓ Relocation offset parameter resolved successfully under Initial Orders 2.\n");
+
     printf("=============================================================\n");
     printf("EDSAC SIMULATION AND WHEELER JUMP VERIFIED SUCCESS\n");
     printf("=============================================================\n");

@@ -1234,3 +1234,21 @@ bool auncient_autodin_audit_edsac(uint32_t pc, uint32_t instruction, int64_t acc
         return false;
     }
 }
+
+uint32_t auncient_initial_orders_2_resolve(uint32_t instruction, uint32_t relocation_offset) {
+    char op = (char)((instruction >> 24) & 0xFF);
+    uint32_t address = (instruction >> 2) & 0x3FFFFF;
+    uint8_t mod = instruction & 3;
+
+    // Relocatable address update if modifier is 'D' (long/relocatable) or 'L' (large/relocatable)
+    if (mod == 1 || mod == 2) {
+        address += relocation_offset;
+    }
+
+    // Re-encode instruction with resolved address
+    uint32_t resolved = ((uint32_t)op & 0xFF) << 24;
+    resolved |= (address & 0x3FFFFF) << 2;
+    resolved |= mod;
+
+    return resolved;
+}

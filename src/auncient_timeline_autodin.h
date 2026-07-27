@@ -266,6 +266,9 @@ bool auncient_hogan_load_ledger(HoganAccount *accounts, int *count_out, int max_
 // Performs validation auditing on executed EDSAC instructions and logs them to the AUTODIN audit ledger. Returns false if rejected.
 bool auncient_autodin_audit_edsac(uint32_t pc, uint32_t instruction, int64_t accumulator);
 
+// Resolves relocatable parameter offsets according to Initial Orders 2 specifications
+uint32_t auncient_initial_orders_2_resolve(uint32_t instruction, uint32_t relocation_offset);
+
 #ifdef __cplusplus
 }
 #endif
