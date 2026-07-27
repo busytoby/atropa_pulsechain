@@ -751,6 +751,17 @@ def generate_video_direct_extended(audio_path, output_mp4):
     except Exception:
         pass
 
+    # Parse USD head mesh vertices
+    head_vertices = []
+    try:
+        with open("tsfi2-deepseek/assets/teddy_head.usda", "r") as f_head:
+            head_content = f_head.read()
+            pts_matches = re.findall(r"\(([-0-9.]+),\s*([-0-9.]+),\s*([-0-9.]+)\)", head_content)
+            for px_str, py_str, pz_str in pts_matches:
+                head_vertices.append((float(px_str)*150.0, float(py_str)*150.0, float(pz_str)*150.0))
+    except Exception:
+        pass
+
     CX = 360
     CY = 560
 
@@ -1074,6 +1085,25 @@ def generate_video_direct_extended(audio_path, output_mp4):
             walk_pts.append((walk_x, walk_y))
         if len(walk_pts) > 1:
             draw.line(walk_pts, fill=usd_color, width=2)
+
+        # 9e. Draw projected USD Teddy Head Mesh point cloud (General research topic)
+        if head_vertices:
+            rot_a = time * 0.8
+            cos_a, sin_a = math.cos(rot_a), math.sin(rot_a)
+            for hx, hy, hz in head_vertices:
+                # Rotate around Y axis
+                rx = hx * cos_a - hz * sin_a
+                rz = hx * sin_a + hz * cos_a
+                ry = hy
+                
+                # Project to screen
+                d_cam = 450.0
+                factor = 280.0 / (d_cam - rz)
+                proj_x = CX + int(rx * factor)
+                proj_y = CY - 200 + int(ry * factor)
+                
+                # Draw node dot
+                draw.ellipse([proj_x - 2, proj_y - 2, proj_x + 2, proj_y + 2], fill=usd_color)
 
         # Telemetry Display in Vaesen Gothic styling colors (#c5a059 gold, #e6dfd3 cream)
         draw.text((40, 60), "TSFi/2: PROGRESSIVE SET", fill="#c5a059")
