@@ -137,12 +137,25 @@ int main(void) {
         AuncientStlMesh segment_meshes[9] = { torso_mesh, head_mesh, joint_mesh, joint_mesh, joint_mesh, joint_mesh, head_mesh, head_mesh, joint_mesh };
         const char *segment_names[9] = { "Torso", "Head", "LeftLeg", "RightLeg", "LeftArm", "RightArm", "LeftEar", "RightEar", "Snout" };
 
-        // Set distinct joint rotations over time
-        float head_tilt = -0.3f * cosf(t * 3.0f);
-        float l_leg_kick = 1.0f * sinf(t * 3.0f);
-        float r_leg_kick = -0.8f * sinf(t * 2.5f);
-        float l_arm_wave = 0.8f * cosf(t * 3.5f);
-        float r_arm_wave = -0.8f * cosf(t * 3.5f);
+        // Set distinct joint rotations over time (contralateral walking & arabesque split leaps)
+        float norm_t = fmodf(t, 1.0f);
+        float leap_val = 150.0f * (1.0f - 4.0f * (norm_t - 0.5f) * (norm_t - 0.5f));
+        if (leap_val < 0.0f) leap_val = 0.0f;
+
+        float head_tilt = -0.2f * cosf(t * 5.0f);
+        float l_leg_kick = 0.7f * sinf(t * 5.0f);
+        float r_leg_kick = -0.7f * sinf(t * 5.0f);
+        float l_arm_wave = -0.5f * sinf(t * 5.0f);
+        float r_arm_wave = 0.5f * sinf(t * 5.0f);
+
+        // Arabesque grand jete leap posing extension
+        if (leap_val > 40.0f) {
+            l_leg_kick = 0.9f;
+            r_leg_kick = -1.1f;
+            l_arm_wave = -0.7f;
+            r_arm_wave = 0.7f;
+            head_tilt = -0.4f;
+        }
 
         int total_triangles = 0;
         for (int m = 0; m < 9; m++) {
