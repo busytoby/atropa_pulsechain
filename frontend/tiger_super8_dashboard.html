@@ -221,11 +221,24 @@
             </div>
 
             <div class="slider-group">
+                <label><span>Mesh Snapping Bounds</span><span id="lbl-snap">0.0 (None)</span></label>
+                <input type="range" id="param-snap" min="0" max="10" value="0">
+            </div>
+
+            <div class="slider-group">
                 <label><span>Active Tool</span></label>
                 <div class="controls">
                     <button id="tool-warp" style="background-color: var(--vaesen-gold); color: var(--vaesen-ink);">Warp Mesh</button>
                     <button id="tool-paint">Draw Spline</button>
                     <button id="btn-save-mainchain">Verify & Save to Mainchain</button>
+                </div>
+            </div>
+
+            <div class="slider-group">
+                <label><span>Undo/Redo History</span></label>
+                <div class="controls">
+                    <button id="btn-undo">Undo</button>
+                    <button id="btn-redo">Redo</button>
                 </div>
             </div>
 
@@ -253,11 +266,27 @@
         const lblScale = document.getElementById('lbl-scale');
         const lblSize = document.getElementById('lbl-size');
 
+        const paramSnap = document.getElementById('param-snap');
+        const lblSnap = document.getElementById('lbl-snap');
+
         let playing = true;
         let t = 0;
         let activeTool = 'warp'; // 'warp' or 'paint'
         let isDrawing = false;
         let customSplines = [];
+        let selectedVertexIdx = -1;
+
+        // Undo/Redo history tracking
+        let undoStack = [];
+        let redoStack = [];
+
+        function saveHistoryState() {
+            undoStack.push(JSON.parse(JSON.stringify(usdVertices)));
+            redoStack = []; // Reset redo on new action
+            if (undoStack.length > 50) {
+                undoStack.shift(); // Limit stack size
+            }
+        }
 
         // Static parsed USD head vertices from teddy_head.usda
         const usdVertices = [
@@ -344,9 +373,8 @@
             const cos = Math.cos(rotRad + t);
             const sin = Math.sin(rotRad + t);
 
-            ctx.fillStyle = '#c5a059';
-
-            for (const pt of usdVertices) {
+            for (let i = 0; i < usdVertices.length; i++) {
+                const pt = usdVertices[i];
                 const hx = pt[0] * scaleVal;
                 const hy = pt[1] * scaleVal;
                 const hz = pt[2] * scaleVal;
@@ -359,9 +387,26 @@
                 const px = cx + (rx * factor);
                 const py = cy + (ry * factor);
 
+                const isSelected = (i === selectedVertexIdx);
+                ctx.fillStyle = isSelected ? '#ff4500' : '#c5a059';
+
                 ctx.beginPath();
-                ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+                ctx.arc(px, py, isSelected ? 4.5 : 2.5, 0, Math.PI * 2);
                 ctx.fill();
+
+                if (isSelected) {
+                    // Draw outer selection ring
+                    ctx.strokeStyle = '#ffd700';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.arc(px, py, 8, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    // Text display coords
+                    ctx.fillStyle = '#ffd700';
+                    ctx.font = '9px monospace';
+                    ctx.fillText(`V[${i}]: (${pt[0].toFixed(2)}, ${pt[1].toFixed(2)})`, px + 10, py - 5);
+                }
             }
         }
 
@@ -474,7 +519,9 @@
                 }
 
                 if (closestIdx !== -1) {
+                    saveHistoryState();
                     canvas.activeVertexIdx = closestIdx;
+                    selectedVertexIdx = closestIdx;
                     log(`[WARP] Selected USD Vertex ${closestIdx} for mesh editing.`);
                 }
             } else if (activeTool === 'paint') {
@@ -489,14 +536,19 @@
             const mouseY = ((e.clientY - rect.top) / rect.height) * canvas.height;
 
             if (activeTool === 'warp' && canvas.activeVertexIdx !== undefined) {
-                // Modify vertex coordinates relative to Screen 1 center
                 const cx = scr_x[1];
                 const cy = scr_y[1];
                 const scaleVal = paramScale.value;
                 
-                // Backproject relative screen coordinates into USD scale
-                const dx = (mouseX - cx) / (scaleVal * 0.8);
-                const dy = (mouseY - cy) / (scaleVal * 0.8);
+                let dx = (mouseX - cx) / (scaleVal * 0.8);
+                let dy = (mouseY - cy) / (scaleVal * 0.8);
+                
+                const snapVal = parseInt(paramSnap.value);
+                if (snapVal > 0) {
+                    const snapStep = 0.05 * snapVal;
+                    dx = Math.round(dx / snapStep) * snapStep;
+                    dy = Math.round(dy / snapStep) * snapStep;
+                }
                 
                 usdVertices[canvas.activeVertexIdx][0] = dx;
                 usdVertices[canvas.activeVertexIdx][1] = dy;
@@ -517,8 +569,38 @@
         paramRot.addEventListener('input', () => lblRot.textContent = `${paramRot.value}°`);
         paramScale.addEventListener('input', () => lblScale.textContent = `${(paramScale.value / 15.0).toFixed(2)}x`);
         paramSize.addEventListener('input', () => lblSize.textContent = `${paramSize.value}px`);
+        paramSnap.addEventListener('input', () => {
+            const snapVal = parseInt(paramSnap.value);
+            lblSnap.textContent = snapVal > 0 ? (0.05 * snapVal).toFixed(2) : "0.0 (None)";
+        });
 
         // Controls
+        document.getElementById('btn-undo').addEventListener('click', () => {
+            if (undoStack.length > 0) {
+                redoStack.push(JSON.parse(JSON.stringify(usdVertices)));
+                const prevState = undoStack.pop();
+                for (let i = 0; i < usdVertices.length; i++) {
+                    usdVertices[i] = prevState[i];
+                }
+                log("[UNDO] Reverted last mesh modification.");
+            } else {
+                log("[UNDO] Nothing to undo.");
+            }
+        });
+
+        document.getElementById('btn-redo').addEventListener('click', () => {
+            if (redoStack.length > 0) {
+                undoStack.push(JSON.parse(JSON.stringify(usdVertices)));
+                const nextState = redoStack.pop();
+                for (let i = 0; i < usdVertices.length; i++) {
+                    usdVertices[i] = nextState[i];
+                }
+                log("[REDO] Reapplied mesh modification.");
+            } else {
+                log("[REDO] Nothing to redo.");
+            }
+        });
+
         document.getElementById('btn-play').addEventListener('click', () => {
             playing = !playing;
             document.getElementById('btn-play').textContent = playing ? "Pause Clocks" : "Resume Clocks";
