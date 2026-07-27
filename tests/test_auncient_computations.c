@@ -1,6 +1,6 @@
-#include "auncient_edsac_firewall.h"
 #include <stdio.h>
 #include <assert.h>
+#include <stdint.h>
 #include <math.h>
 
 #ifndef M_PI
@@ -8,14 +8,38 @@
 #endif
 
 // Tripartite Tri-axis Lissajous modulation equation helper for test verification
-// Computed via modular scaling index: Value = sin(phase) * scale
+// Modulates coordinates based on frequency, amplitude, and phase offset.
 static double calculate_lissajous_coordinate(double phase, double frequency, double amplitude) {
     return sin(phase * frequency) * amplitude;
 }
 
+// Modular exponentiation helper for WinchesterMQ register computations
+static uint64_t modular_pow(uint64_t base, uint64_t exponent, uint64_t modulus) {
+    uint64_t result = 1;
+    base = base % modulus;
+    while (exponent > 0) {
+        if (exponent % 2 == 1) {
+            result = (__uint128_t)result * base % modulus;
+        }
+        exponent = exponent >> 1;
+        base = (__uint128_t)base * base % modulus;
+    }
+    return result;
+}
+
+// FNV-1a Hashing algorithm verification helper
+static uint32_t fnv1a_hash(const uint8_t *data, size_t len) {
+    uint32_t hash = 2166136261U;
+    for (size_t i = 0; i < len; i++) {
+        hash ^= data[i];
+        hash *= 16777619U;
+    }
+    return hash;
+}
+
 int main(void) {
     printf("=============================================================\n");
-    printf("AUNCIENT MATHEMATICAL COMPUTATION UNIT TESTS\n");
+    printf("DYSNOMIA COMPUTATION SPECIFIC UNIT TESTS\n");
     printf("=============================================================\n");
 
     // Test Case 1: Lissajous geometry phase translation
@@ -30,35 +54,26 @@ int main(void) {
     printf("   ✓ Lissajous coordinate generation matches modular amplitude bounds.\n");
 
     // Test Case 2: WinchesterMQ register parameter derivation
-    // Base = 3, Identity = 2. Foundation = Base^Identity % MotzkinPrime (953467954114363)
-    // Foundation = 9
+    // Base = 3, Identity = 5. Foundation = Base^Identity % MotzkinPrime (953467954114363)
+    // 3^5 = 243
     printf("[TEST] Verifying modular exponentiation for system register Foundation...\n");
     uint64_t base = 3;
-    uint64_t identity = 2;
+    uint64_t identity = 5;
     uint64_t motzkin_prime = 953467954114363ULL;
     
-    uint64_t foundation = 1;
-    for (uint64_t i = 0; i < identity; i++) {
-        foundation = (foundation * base) % motzkin_prime;
-    }
-    assert(foundation == 9);
+    uint64_t foundation = modular_pow(base, identity, motzkin_prime);
+    assert(foundation == 243);
     printf("   ✓ Foundation register derivation verified (%lu).\n", foundation);
 
     // Test Case 3: FNV-1a Hashing algorithm verification
-    // 32-bit FNV-1a constants: basis = 2166136261, prime = 16777619
     printf("[TEST] Verifying FNV-1a signature computation hash alignment...\n");
     const uint8_t data[4] = { 0x12, 0x34, 0x56, 0x78 };
-    uint32_t hash = 2166136261U;
-    for (int i = 0; i < 4; i++) {
-        hash ^= data[i];
-        hash *= 16777619U;
-    }
-    // Pre-calculated FNV-1a hash of [0x12, 0x34, 0x56, 0x78] = 0x3344AA18
+    uint32_t hash = fnv1a_hash(data, 4);
     assert(hash != 0); 
     printf("   ✓ FNV-1a computation hash output aligns with non-zero integrity check.\n");
 
     printf("=============================================================\n");
-    printf("ALL MATHEMATICAL COMPUTATION TESTS PASSED SUCCESSFULLY\n");
+    printf("ALL COMPUTATION SPECIFIC TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
