@@ -270,8 +270,15 @@ int main(void) {
                     float leap_y = 150.0f * (1.0f - 4.0f * (norm_t - 0.5f) * (norm_t - 0.5f));
                     if (leap_y < 0.0f) leap_y = 0.0f;
 
-                    sx[v] = (int)(rx * 250.0f) + WIDTH / 2 + (int)sway;
-                    sy[v] = HEIGHT / 2 + 50 - (int)(ry * 250.0f) - (int)leap_y;
+                    // Apply 3D Camera Yaw/Pitch (isometric view to render Z-axis kicks laterally)
+                    float yaw = 0.5f;
+                    float pitch = 0.2f;
+                    float cx_val = rx * cosf(yaw) - rz * sinf(yaw);
+                    float cz_val = rx * sinf(yaw) + rz * cosf(yaw);
+                    float cy_val = ry * cosf(pitch) - cz_val * sinf(pitch);
+
+                    sx[v] = (int)(cx_val * 250.0f) + WIDTH / 2 + (int)sway;
+                    sy[v] = HEIGHT / 2 + 50 - (int)(cy_val * 250.0f) - (int)leap_y;
                 }
 
                 if (tri_list) {
