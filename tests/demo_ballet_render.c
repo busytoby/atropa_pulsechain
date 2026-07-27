@@ -100,37 +100,79 @@ int main(void) {
         // Rasterize meshes with wireframe lines
         float stretch = bear.verlet_charge_decay[0];
 
-        AuncientStlMesh meshes[2] = { head_mesh, joint_mesh };
-        for (int m = 0; m < 2; m++) {
-            // Apply explicit ballet pose transition angles (arabesque kick & balancing head tilt)
-            float leg_kick = 1.2f * sinf(t * 3.0f);
-            float head_tilt = -0.4f * cosf(t * 3.0f);
-            float joint_theta = (m == 0) ? head_tilt : leg_kick;
+        // Draw perspective ballet stage floor grid
+        for (int d = -4; d <= 4; d++) {
+            int bx = WIDTH / 2 + d * 60;
+            int by = HEIGHT / 2 + 50;
+            int fx = WIDTH / 2 + d * 220;
+            int fy = HEIGHT - 40;
+            draw_line(rgb_out, bx, by, fx, fy, 0x22, 0x22, 0x55);
+        }
+        draw_line(rgb_out, WIDTH / 2 - 240, HEIGHT / 2 + 50, WIDTH / 2 + 240, HEIGHT / 2 + 50, 0x22, 0x22, 0x55);
+        draw_line(rgb_out, WIDTH / 2 - 880, HEIGHT - 40, WIDTH / 2 + 880, HEIGHT - 40, 0x22, 0x22, 0x55);
+
+        // Rasterize meshes with wireframe lines representing full joint assembly
+        AuncientStlMesh segment_meshes[6] = { joint_mesh, head_mesh, joint_mesh, joint_mesh, joint_mesh, joint_mesh };
+        const char *segment_names[6] = { "Torso", "Head", "LeftLeg", "RightLeg", "LeftArm", "RightArm" };
+
+        // Set distinct joint rotations over time
+        float head_tilt = -0.3f * cosf(t * 3.0f);
+        float l_leg_kick = 1.0f * sinf(t * 3.0f);
+        float r_leg_kick = -0.8f * sinf(t * 2.5f);
+        float l_arm_wave = 0.8f * cosf(t * 3.5f);
+        float r_arm_wave = -0.8f * cosf(t * 3.5f);
+
+        for (int m = 0; m < 6; m++) {
+            float joint_theta = 0.0f;
+            if (m == 1) joint_theta = head_tilt;
+            else if (m == 2) joint_theta = l_leg_kick;
+            else if (m == 3) joint_theta = r_leg_kick;
+            else if (m == 4) joint_theta = l_arm_wave;
+            else if (m == 5) joint_theta = r_arm_wave;
+
             float cos_j = cosf(joint_theta);
             float sin_j = sinf(joint_theta);
 
-            for (uint32_t i = 0; i < meshes[m].facet_count; i++) {
+            for (uint32_t i = 0; i < segment_meshes[m].facet_count; i++) {
                 int sx[3], sy[3];
                 for (int v = 0; v < 3; v++) {
-                    float x = meshes[m].facets[i].vertices[v][0];
-                    float y = meshes[m].facets[i].vertices[v][1];
-                    float z = meshes[m].facets[i].vertices[v][2];
+                    float x = segment_meshes[m].facets[i].vertices[v][0];
+                    float y = segment_meshes[m].facets[i].vertices[v][1];
+                    float z = segment_meshes[m].facets[i].vertices[v][2];
 
-                    float rx, ry, rz;
+                    float rx = x, ry = y, rz = z;
 
                     if (m == 0) {
-                        // Head Segment: neck joint sway rotation, offset upwards by +0.5
+                        // Torso Segment: root core coordinate bounds
+                        ry = y * 1.2f;
+                    } else if (m == 1) {
+                        // Head Segment: neck joint sway, offset upwards
                         rx = x * cos_j - z * sin_j;
                         rz = x * sin_j + z * cos_j;
-                        ry = y + 0.5f;
-                    } else {
-                        // Limb Segment: hip joint kick extension, offset downwards by -0.5
-                        rx = (x - 0.5f) * cos_j - z * sin_j + 0.5f;
-                        rz = (x - 0.5f) * sin_j + z * cos_j;
-                        ry = y - 0.5f;
+                        ry = y + 0.8f;
+                    } else if (m == 2) {
+                        // Left Leg: left hip joint kick, offset left/downwards
+                        rx = (x - 0.3f) * cos_j - z * sin_j - 0.3f;
+                        rz = (x - 0.3f) * sin_j + z * cos_j;
+                        ry = y - 0.8f;
+                    } else if (m == 3) {
+                        // Right Leg: right hip joint kick, offset right/downwards
+                        rx = (x + 0.3f) * cos_j - z * sin_j + 0.3f;
+                        rz = (x + 0.3f) * sin_j + z * cos_j;
+                        ry = y - 0.8f;
+                    } else if (m == 4) {
+                        // Left Arm: left shoulder joint sway, offset left/upwards
+                        rx = (x - 0.4f) * cos_j - z * sin_j - 0.5f;
+                        rz = (x - 0.4f) * sin_j + z * cos_j;
+                        ry = y + 0.3f;
+                    } else if (m == 5) {
+                        // Right Arm: right shoulder joint sway, offset right/upwards
+                        rx = (x + 0.4f) * cos_j - z * sin_j + 0.5f;
+                        rz = (x + 0.4f) * sin_j + z * cos_j;
+                        ry = y + 0.3f;
                     }
 
-                    // 2. Verlet stretch (Rule 10)
+                    // Verlet stretch (Rule 10)
                     if (rz < 0.0f) {
                         rz *= stretch;
                     }
@@ -141,8 +183,8 @@ int main(void) {
                     float leap_y = 150.0f * (1.0f - 4.0f * (norm_t - 0.5f) * (norm_t - 0.5f));
                     if (leap_y < 0.0f) leap_y = 0.0f;
 
-                    sx[v] = (int)(rx * 300.0f) + WIDTH / 2 + (int)sway;
-                    sy[v] = (int)(ry * 300.0f) + HEIGHT / 2 - (int)leap_y;
+                    sx[v] = (int)(rx * 250.0f) + WIDTH / 2 + (int)sway;
+                    sy[v] = (int)(ry * 250.0f) + HEIGHT / 2 - 100 - (int)leap_y;
                 }
 
                 // Draw wireframe links representing Verlet FET network (Rule 10)
@@ -153,55 +195,74 @@ int main(void) {
         }
 
         // Export current pose frame segments to USDA files for text telemetry verification
-        AuncientStlMesh head_posed = {0}, joint_posed = {0};
-        head_posed.facet_count = head_mesh.facet_count;
-        head_posed.facets = (AuncientStlFacet *)malloc(sizeof(AuncientStlFacet) * head_posed.facet_count);
-        joint_posed.facet_count = joint_mesh.facet_count;
-        joint_posed.facets = (AuncientStlFacet *)malloc(sizeof(AuncientStlFacet) * joint_posed.facet_count);
+        AuncientStlMesh meshes_posed[6];
+        for (int m = 0; m < 6; m++) {
+            meshes_posed[m].facet_count = segment_meshes[m].facet_count;
+            meshes_posed[m].facets = (AuncientStlFacet *)malloc(sizeof(AuncientStlFacet) * meshes_posed[m].facet_count);
+            if (meshes_posed[m].facets) {
+                float joint_theta = 0.0f;
+                if (m == 1) joint_theta = head_tilt;
+                else if (m == 2) joint_theta = l_leg_kick;
+                else if (m == 3) joint_theta = r_leg_kick;
+                else if (m == 4) joint_theta = l_arm_wave;
+                else if (m == 5) joint_theta = r_arm_wave;
 
-        if (head_posed.facets && joint_posed.facets) {
-            float head_theta = -0.4f * cosf(t * 3.0f);
-            float cos_h = cosf(head_theta), sin_h = sinf(head_theta);
-            for (uint32_t i = 0; i < head_mesh.facet_count; i++) {
-                for (int v = 0; v < 3; v++) {
-                    float x = head_mesh.facets[i].vertices[v][0];
-                    float y = head_mesh.facets[i].vertices[v][1];
-                    float z = head_mesh.facets[i].vertices[v][2];
-                    head_posed.facets[i].vertices[v][0] = x * cos_h - z * sin_h;
-                    head_posed.facets[i].vertices[v][1] = y + 0.5f;
-                    head_posed.facets[i].vertices[v][2] = x * sin_h + z * cos_h;
-                    head_posed.facets[i].normal[0] = head_mesh.facets[i].normal[0];
-                    head_posed.facets[i].normal[1] = head_mesh.facets[i].normal[1];
-                    head_posed.facets[i].normal[2] = head_mesh.facets[i].normal[2];
+                float cos_j = cosf(joint_theta);
+                float sin_j = sinf(joint_theta);
+
+                for (uint32_t i = 0; i < segment_meshes[m].facet_count; i++) {
+                    for (int v = 0; v < 3; v++) {
+                        float x = segment_meshes[m].facets[i].vertices[v][0];
+                        float y = segment_meshes[m].facets[i].vertices[v][1];
+                        float z = segment_meshes[m].facets[i].vertices[v][2];
+
+                        float rx = x, ry = y, rz = z;
+
+                        if (m == 0) {
+                            ry = y * 1.2f;
+                        } else if (m == 1) {
+                            rx = x * cos_j - z * sin_j;
+                            rz = x * sin_j + z * cos_j;
+                            ry = y + 0.8f;
+                        } else if (m == 2) {
+                            rx = (x - 0.3f) * cos_j - z * sin_j - 0.3f;
+                            rz = (x - 0.3f) * sin_j + z * cos_j;
+                            ry = y - 0.8f;
+                        } else if (m == 3) {
+                            rx = (x + 0.3f) * cos_j - z * sin_j + 0.3f;
+                            rz = (x + 0.3f) * sin_j + z * cos_j;
+                            ry = y - 0.8f;
+                        } else if (m == 4) {
+                            rx = (x - 0.4f) * cos_j - z * sin_j - 0.5f;
+                            rz = (x - 0.4f) * sin_j + z * cos_j;
+                            ry = y + 0.3f;
+                        } else if (m == 5) {
+                            rx = (x + 0.4f) * cos_j - z * sin_j + 0.5f;
+                            rz = (x + 0.4f) * sin_j + z * cos_j;
+                            ry = y + 0.3f;
+                        }
+
+                        if (rz < 0.0f) {
+                            rz *= stretch;
+                        }
+
+                        meshes_posed[m].facets[i].vertices[v][0] = rx;
+                        meshes_posed[m].facets[i].vertices[v][1] = ry;
+                        meshes_posed[m].facets[i].vertices[v][2] = rz;
+                        meshes_posed[m].facets[i].normal[0] = segment_meshes[m].facets[i].normal[0];
+                        meshes_posed[m].facets[i].normal[1] = segment_meshes[m].facets[i].normal[1];
+                        meshes_posed[m].facets[i].normal[2] = segment_meshes[m].facets[i].normal[2];
+                    }
                 }
             }
+        }
 
-            float leg_kick = 1.2f * sinf(t * 3.0f);
-            float cos_l = cosf(leg_kick), sin_l = sinf(leg_kick);
-            for (uint32_t i = 0; i < joint_mesh.facet_count; i++) {
-                for (int v = 0; v < 3; v++) {
-                    float x = joint_mesh.facets[i].vertices[v][0];
-                    float y = joint_mesh.facets[i].vertices[v][1];
-                    float z = joint_mesh.facets[i].vertices[v][2];
-                    joint_posed.facets[i].vertices[v][0] = (x - 0.5f) * cos_l - z * sin_l + 0.5f;
-                    joint_posed.facets[i].vertices[v][1] = y - 0.5f;
-                    float rz = (x - 0.5f) * sin_l + z * cos_l;
-                    if (rz < 0.0f) rz *= stretch;
-                    joint_posed.facets[i].vertices[v][2] = rz;
-                    joint_posed.facets[i].normal[0] = joint_mesh.facets[i].normal[0];
-                    joint_posed.facets[i].normal[1] = joint_mesh.facets[i].normal[1];
-                    joint_posed.facets[i].normal[2] = joint_mesh.facets[i].normal[2];
-                }
-            }
-
-            char frame_path[64];
-            sprintf(frame_path, "tests/frames/pose_%04d.usda", f);
-            AuncientStlMesh meshes_posed[2] = { head_posed, joint_posed };
-            const char *names[2] = { "HeadMesh", "JointMesh" };
-            auncient_bridge_multi_stl_to_usda(meshes_posed, names, 2, frame_path);
-            
-            free(head_posed.facets);
-            free(joint_posed.facets);
+        char frame_path[64];
+        sprintf(frame_path, "tests/frames/pose_%04d.usda", f);
+        auncient_bridge_multi_stl_to_usda(meshes_posed, segment_names, 6, frame_path);
+        
+        for (int m = 0; m < 6; m++) {
+            if (meshes_posed[m].facets) free(meshes_posed[m].facets);
         }
 
         fwrite(rgb_out, 1, WIDTH * HEIGHT * 3, ffmpeg_pipe);
