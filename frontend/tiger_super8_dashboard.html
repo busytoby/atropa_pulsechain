@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auncient Tiger Super8 Real-Time Evolution Dashboard</title>
+    <title>Auncient Tiger Super8 WYSIWYG Editor</title>
     <style>
         :root {
             --vaesen-gold: #c5a059;
@@ -94,6 +94,7 @@
             border-radius: 8px;
             border: 2px solid var(--vaesen-gold);
             box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+            cursor: crosshair;
         }
 
         .slider-group {
@@ -126,7 +127,7 @@
             border: 1px solid rgba(197, 160, 89, 0.1);
             border-radius: 8px;
             padding: 15px;
-            height: 140px;
+            height: 120px;
             overflow-y: auto;
             font-family: monospace;
             font-size: 11px;
@@ -160,34 +161,49 @@
             background-color: var(--vaesen-gold);
             color: var(--vaesen-ink);
         }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+            background-color: #050403;
+            color: var(--vaesen-cream);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 10px;
+            padding: 10px;
+            resize: none;
+            box-sizing: border-box;
+        }
     </style>
 </head>
 <body>
     <header>
         <div>
             <h1>Auncient Tiger Super8</h1>
-            <div class="subtitle">Real-Time CRT Raster Simulation & Shading Interop</div>
+            <div class="subtitle">WYSIWYG Planar Layout & Mesh Editor</div>
         </div>
         <div style="text-align: right;">
-            <div class="subtitle">PIXAR SYSTEM</div>
-            <div style="color: #c5a059; font-weight: bold; font-size: 12px;" id="pixar-status">ACTIVE (USD INTEROP)</div>
+            <div class="subtitle">EDITOR MODE</div>
+            <div style="color: #c5a059; font-weight: bold; font-size: 12px;">INTERACTIVE CANVAS</div>
         </div>
     </header>
 
     <div class="main-container">
-        <!-- Left Column: CRT Viewport -->
+        <!-- Left Column: WYSIWYG Interactive Canvas -->
         <div class="card">
-            <h2>Real-Time CRT Raster Monitor</h2>
+            <h2>Quantel Paintbox WYSIWYG Screen Layout</h2>
             <canvas id="viewport-canvas" width="512" height="512"></canvas>
             <div class="controls">
-                <button id="btn-play">Pause Engine</button>
-                <button id="btn-reset">Reset Phase</button>
+                <button id="btn-play">Pause Clocks</button>
+                <button id="btn-clear-splines">Clear Custom Splines</button>
+                <button id="btn-export">Generate USDA</button>
             </div>
         </div>
 
-        <!-- Right Column: Accessors and Modifiers -->
+        <!-- Right Column: Inspector and Modifiers -->
         <div class="card">
-            <h2>Accessors & Modifiers</h2>
+            <h2>USD Inspector & Layout Modifiers</h2>
             
             <div class="slider-group">
                 <label><span>USD Rotator (Head Yaw)</span><span id="lbl-rot">0°</span></label>
@@ -200,23 +216,24 @@
             </div>
 
             <div class="slider-group">
-                <label><span>Lissajous Frequency X</span><span id="lbl-freqx">3.0</span></label>
-                <input type="range" id="param-freqx" min="10" max="80" value="30">
+                <label><span>Active CRT Screen Size</span><span id="lbl-size">22px</span></label>
+                <input type="range" id="param-size" min="15" max="35" value="22">
             </div>
 
             <div class="slider-group">
-                <label><span>Lissajous Frequency Y</span><span id="lbl-freqy">5.0</span></label>
-                <input type="range" id="param-freqy" min="10" max="80" value="50">
+                <label><span>Active Tool</span></label>
+                <div class="controls">
+                    <button id="tool-warp" style="background-color: var(--vaesen-gold); color: var(--vaesen-ink);">Warp Mesh</button>
+                    <button id="tool-paint">Draw Spline</button>
+                </div>
             </div>
 
-            <div class="slider-group">
-                <label><span>Vaesen Hue Accent</span><span id="lbl-hue">Gold (45)</span></label>
-                <input type="range" id="param-hue" min="0" max="360" value="45">
-            </div>
+            <textarea id="export-output" readonly placeholder="USDA output will be generated here..."></textarea>
 
             <div class="log-panel" id="log-console">
-                <div>[SYSTEM] Initializing Super8 Real-Time CRT emulation loop...</div>
-                <div>[USD] Dynamic head vertices mapped directly to CRT Screen 1 coordinates.</div>
+                <div>[SYSTEM] WYSIWYG interface initialized.</div>
+                <div>[USD] Drag points in Screen 1 to warp mesh geometry in real-time.</div>
+                <div>[PAINT] Click and drag on empty space to sketch spline tracks.</div>
             </div>
         </div>
     </div>
@@ -225,24 +242,23 @@
         const canvas = document.getElementById('viewport-canvas');
         const ctx = canvas.getContext('2d');
         const logConsole = document.getElementById('log-console');
+        const exportOutput = document.getElementById('export-output');
 
-        // Parameter Modifiers
         const paramRot = document.getElementById('param-rot');
         const paramScale = document.getElementById('param-scale');
-        const paramFreqx = document.getElementById('param-freqx');
-        const paramFreqy = document.getElementById('param-freqy');
-        const paramHue = document.getElementById('param-hue');
+        const paramSize = document.getElementById('param-size');
 
         const lblRot = document.getElementById('lbl-rot');
         const lblScale = document.getElementById('lbl-scale');
-        const lblFreqx = document.getElementById('lbl-freqx');
-        const lblFreqy = document.getElementById('lbl-freqy');
-        const lblHue = document.getElementById('lbl-hue');
+        const lblSize = document.getElementById('lbl-size');
 
         let playing = true;
         let t = 0;
+        let activeTool = 'warp'; // 'warp' or 'paint'
+        let isDrawing = false;
+        let customSplines = [];
 
-        // Static parsed USD head vertices from teddy_head.usda (Rule 7: No Mocking / Interop matches actual coordinates)
+        // Static parsed USD head vertices from teddy_head.usda
         const usdVertices = [
             [0.0000, -0.5500, 0.0000], [0.2386, -0.4955, 0.0000], [0.1687, -0.4955, 0.1534],
             [0.0000, -0.4955, 0.2169], [-0.1687, -0.4955, 0.1534], [-0.2386, -0.4955, 0.0000],
@@ -263,17 +279,15 @@
             logConsole.scrollTop = logConsole.scrollHeight;
         }
 
-        // Screen mapping coordinates matching demo_tiger_super8.c
         const scr_x = [ 256, 70, 130, 190, 322, 382, 442 ];
         const scr_y = [ 260, 160, 180, 200, 200, 180, 160 ];
         const scr_r = [ 65,  22,  22,  22,  22,  22,  22  ];
 
         function drawCRTGrid() {
-            // Draw bronze menorah base trunk
+            // Menorah bronze branches
             ctx.fillStyle = '#8c7241';
             ctx.fillRect(252, 260, 8, 120);
 
-            // Left and Right arc branches
             ctx.beginPath();
             ctx.strokeStyle = '#8c7241';
             ctx.lineWidth = 6;
@@ -285,16 +299,17 @@
             }
             ctx.stroke();
 
-            // Draw screen bezels and CRT tubes
+            // Bezels and dark tubes
             for (let s = 0; s < 7; s++) {
+                const radius = s === 0 ? scr_r[s] : parseInt(paramSize.value);
                 ctx.beginPath();
-                ctx.arc(scr_x[s], scr_y[s], scr_r[s] + 2, 0, Math.PI * 2);
+                ctx.arc(scr_x[s], scr_y[s], radius + 2, 0, Math.PI * 2);
                 ctx.strokeStyle = '#8c7241';
                 ctx.lineWidth = 2;
                 ctx.stroke();
 
                 ctx.beginPath();
-                ctx.arc(scr_x[s], scr_y[s], scr_r[s], 0, Math.PI * 2);
+                ctx.arc(scr_x[s], scr_y[s], radius, 0, Math.PI * 2);
                 ctx.fillStyle = '#0d0c0a';
                 ctx.fill();
             }
@@ -306,10 +321,9 @@
             const r = scr_r[0];
 
             ctx.beginPath();
-            ctx.strokeStyle = `hsl(${paramHue.value}, 50%, 60%)`;
+            ctx.strokeStyle = '#c5a059';
             ctx.lineWidth = 1.5;
 
-            // Draw eye frame contour
             for (let theta = 0; theta < 360; theta += 10) {
                 const rad = (theta * Math.PI) / 180.0;
                 const ex = cx + (r - 20) * Math.cos(rad) * pulse;
@@ -320,7 +334,6 @@
             ctx.closePath();
             ctx.stroke();
 
-            // Vertical Tiger pupil slit
             ctx.fillStyle = '#0d0c0a';
             ctx.fillRect(cx - 3, cy - 30, 6, 60);
         }
@@ -330,14 +343,13 @@
             const cos = Math.cos(rotRad + t);
             const sin = Math.sin(rotRad + t);
 
-            ctx.fillStyle = `hsl(${paramHue.value}, 50%, 60%)`;
+            ctx.fillStyle = '#c5a059';
 
             for (const pt of usdVertices) {
                 const hx = pt[0] * scaleVal;
                 const hy = pt[1] * scaleVal;
                 const hz = pt[2] * scaleVal;
 
-                // Rotate around Y axis
                 const rx = hx * cos - hz * sin;
                 const rz = hx * sin + hz * cos;
                 const ry = hy;
@@ -347,18 +359,19 @@
                 const py = cy + (ry * factor);
 
                 ctx.beginPath();
-                ctx.arc(px, py, 1.5, 0, Math.PI * 2);
+                ctx.arc(px, py, 2.5, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
 
-        function drawLissajousScreen(s, freqX, freqY, colorStr) {
+        function drawLissajousScreen(s, freqX, freqY) {
             const cx = scr_x[s];
             const cy = scr_y[s];
-            const r = scr_r[s] - 4;
+            const radius = s === 0 ? scr_r[s] : parseInt(paramSize.value);
+            const r = radius - 4;
 
             ctx.beginPath();
-            ctx.strokeStyle = colorStr;
+            ctx.strokeStyle = '#e6dfd3';
             ctx.lineWidth = 1.2;
 
             for (let i = 0; i < 50; i++) {
@@ -374,11 +387,10 @@
         function render() {
             if (!playing) return;
 
-            // Paintbox Gradient background fill simulation
             ctx.fillStyle = '#12100e';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw background raster grid lines
+            // Grid background
             ctx.strokeStyle = 'rgba(197, 160, 89, 0.03)';
             ctx.lineWidth = 1;
             for (let x = 0; x < canvas.width; x += 16) {
@@ -390,71 +402,163 @@
 
             drawCRTGrid();
 
-            // Modifiers mappings
-            const fX = paramFreqx.value / 10.0;
-            const fY = paramFreqy.value / 10.0;
-            const hue = paramHue.value;
-            const rot = paramRot.value;
-            const scale = paramScale.value;
-
-            // Pulses
             const pulse = 1.0 + 0.12 * Math.sin(t * 8.0);
-
-            // Screen 0: Glowing Attractor Center Eye
             drawTigerEye(pulse);
 
-            // Screen 1: USD Head Mesh Projection
-            drawUSDHead(scr_x[1], scr_y[1], rot, scale);
+            // Screen 1: USD head
+            drawUSDHead(scr_x[1], scr_y[1], paramRot.value, paramScale.value);
 
-            // Screen 2 to 6: Modulated Lissajous Oscillations
-            drawLissajousScreen(2, fX, fY, `hsl(${hue}, 40%, 50%)`);
-            drawLissajousScreen(3, fX + 0.5, fY + 1.0, '#ff4500');
-            drawLissajousScreen(4, fX * 1.5, fY * 0.8, `hsl(${hue}, 50%, 60%)`);
-            drawLissajousScreen(5, fX + 1.0, fY * 1.2, '#e6dfd3');
-            drawLissajousScreen(6, fX * 2.0, fY * 1.5, `hsl(${hue}, 30%, 40%)`);
+            // Lissajous Screens
+            drawLissajousScreen(2, 3.0, 5.0);
+            drawLissajousScreen(3, 4.0, 6.0);
+            drawLissajousScreen(4, 2.5, 4.5);
+            drawLissajousScreen(5, 3.5, 5.5);
+            drawLissajousScreen(6, 4.5, 6.5);
 
-            // Draw dynamic tiger stripes sweeping across viewport
-            ctx.beginPath();
-            ctx.strokeStyle = '#ff4500';
-            ctx.lineWidth = 12;
-            ctx.globalAlpha = 0.15;
-            ctx.moveTo(120, 200 + 20 * Math.sin(t));
-            ctx.bezierCurveTo(200, 250 + 30 * Math.cos(t), 300, 150 + 10 * Math.sin(t), 400, 220);
-            ctx.stroke();
-            ctx.globalAlpha = 1.0;
+            // Draw custom user splines
+            if (customSplines.length > 0) {
+                ctx.beginPath();
+                ctx.strokeStyle = '#ff4500';
+                ctx.lineWidth = 3;
+                ctx.globalAlpha = 0.8;
+                for (let i = 0; i < customSplines.length; i++) {
+                    const pt = customSplines[i];
+                    if (i === 0) ctx.moveTo(pt.x, pt.y);
+                    else ctx.lineTo(pt.x, pt.y);
+                }
+                ctx.stroke();
+                ctx.globalAlpha = 1.0;
+            }
 
             t += 0.033;
             requestAnimationFrame(render);
         }
 
-        // Action Sliders Handlers
-        paramRot.addEventListener('input', () => {
-            lblRot.textContent = `${paramRot.value}°`;
+        // Mouse Drag warping and spline painting logic
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = ((e.clientX - rect.left) / rect.width) * canvas.width;
+            const mouseY = ((e.clientY - rect.top) / rect.height) * canvas.height;
+
+            if (activeTool === 'warp') {
+                // Find closest USD point in Screen 1 viewport
+                const cx = scr_x[1];
+                const cy = scr_y[1];
+                const scaleVal = paramScale.value;
+                const rotRad = (paramRot.value * Math.PI) / 180.0;
+                const cos = Math.cos(rotRad + t);
+                const sin = Math.sin(rotRad + t);
+
+                let closestIdx = -1;
+                let minDist = 30;
+
+                for (let i = 0; i < usdVertices.length; i++) {
+                    const pt = usdVertices[i];
+                    const hx = pt[0] * scaleVal;
+                    const hy = pt[1] * scaleVal;
+                    const hz = pt[2] * scaleVal;
+                    const rx = hx * cos - hz * sin;
+                    const rz = hx * sin + hz * cos;
+                    const ry = hy;
+                    const factor = 120.0 / (200.0 - rz);
+                    const px = cx + (rx * factor);
+                    const py = cy + (ry * factor);
+
+                    const dist = Math.sqrt((px - mouseX) ** 2 + (py - mouseY) ** 2);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        closestIdx = i;
+                    }
+                }
+
+                if (closestIdx !== -1) {
+                    canvas.activeVertexIdx = closestIdx;
+                    log(`[WARP] Selected USD Vertex ${closestIdx} for mesh editing.`);
+                }
+            } else if (activeTool === 'paint') {
+                customSplines = [{ x: mouseX, y: mouseY }];
+            }
         });
-        paramScale.addEventListener('input', () => {
-            lblScale.textContent = `${(paramScale.value / 15.0).toFixed(2)}x`;
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = ((e.clientX - rect.left) / rect.width) * canvas.width;
+            const mouseY = ((e.clientY - rect.top) / rect.height) * canvas.height;
+
+            if (activeTool === 'warp' && canvas.activeVertexIdx !== undefined) {
+                // Modify vertex coordinates relative to Screen 1 center
+                const cx = scr_x[1];
+                const cy = scr_y[1];
+                const scaleVal = paramScale.value;
+                
+                // Backproject relative screen coordinates into USD scale
+                const dx = (mouseX - cx) / (scaleVal * 0.8);
+                const dy = (mouseY - cy) / (scaleVal * 0.8);
+                
+                usdVertices[canvas.activeVertexIdx][0] = dx;
+                usdVertices[canvas.activeVertexIdx][1] = dy;
+            } else if (activeTool === 'paint') {
+                customSplines.push({ x: mouseX, y: mouseY });
+            }
         });
-        paramFreqx.addEventListener('input', () => {
-            lblFreqx.textContent = `${(paramFreqx.value / 10.0).toFixed(1)}`;
+
+        canvas.addEventListener('mouseup', () => {
+            isDrawing = false;
+            canvas.activeVertexIdx = undefined;
+            if (activeTool === 'paint') {
+                log(`[PAINT] Custom Bezier/Stylus spline registered with ${customSplines.length} coordinates.`);
+            }
         });
-        paramFreqy.addEventListener('input', () => {
-            lblFreqy.textContent = `${(paramFreqy.value / 10.0).toFixed(1)}`;
-        });
-        paramHue.addEventListener('input', () => {
-            lblHue.textContent = `Hue (${paramHue.value})`;
-            document.documentElement.style.setProperty('--vaesen-gold', `hsl(${paramHue.value}, 45%, 56%)`);
-        });
+
+        // Sliders
+        paramRot.addEventListener('input', () => lblRot.textContent = `${paramRot.value}°`);
+        paramScale.addEventListener('input', () => lblScale.textContent = `${(paramScale.value / 15.0).toFixed(2)}x`);
+        paramSize.addEventListener('input', () => lblSize.textContent = `${paramSize.value}px`);
 
         // Controls
         document.getElementById('btn-play').addEventListener('click', () => {
             playing = !playing;
-            document.getElementById('btn-play').textContent = playing ? "Pause Engine" : "Resume Engine";
+            document.getElementById('btn-play').textContent = playing ? "Pause Clocks" : "Resume Clocks";
             if (playing) render();
         });
 
-        document.getElementById('btn-reset').addEventListener('click', () => {
-            t = 0;
-            log("[SYSTEM] Re-initializing CRT phase clocks to 0.");
+        document.getElementById('btn-clear-splines').addEventListener('click', () => {
+            customSplines = [];
+            log("[PAINT] Cleared custom splines.");
+        });
+
+        // Active tools
+        const toolWarp = document.getElementById('tool-warp');
+        const toolPaint = document.getElementById('tool-paint');
+
+        toolWarp.addEventListener('click', () => {
+            activeTool = 'warp';
+            toolWarp.style.backgroundColor = 'var(--vaesen-gold)';
+            toolWarp.style.color = 'var(--vaesen-ink)';
+            toolPaint.style.backgroundColor = 'transparent';
+            toolPaint.style.color = 'var(--vaesen-gold)';
+            log("[MODE] Active tool: Warp Mesh (click and drag USD vertices).");
+        });
+
+        toolPaint.addEventListener('click', () => {
+            activeTool = 'paint';
+            toolPaint.style.backgroundColor = 'var(--vaesen-gold)';
+            toolPaint.style.color = 'var(--vaesen-ink)';
+            toolWarp.style.backgroundColor = 'transparent';
+            toolWarp.style.color = 'var(--vaesen-gold)';
+            log("[MODE] Active tool: Paint Spline (click and drag canvas to draw lines).");
+        });
+
+        document.getElementById('btn-export').addEventListener('click', () => {
+            let usdaText = `#usda 1.0\n(\n    upAxis = "Y"\n)\n\ndef Mesh "WarpedHead"\n{\n    point3f[] points = [\n`;
+            for (const pt of usdVertices) {
+                usdaText += `        (${pt[0].toFixed(4)}, ${pt[1].toFixed(4)}, ${pt[2].toFixed(4)}),\n`;
+            }
+            usdaText += `    ]\n}\n`;
+            exportOutput.value = usdaText;
+            log("[EXPORT] Warped USD points exported into USDA format below.");
         });
 
         // Start Loop
