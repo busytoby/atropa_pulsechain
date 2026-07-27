@@ -64,11 +64,27 @@ bool auncient_ballet_export_pose_usda(const AuncientStlMesh *base_stl, const Aun
     }
     memcpy(deformed.facets, base_stl->facets, sizeof(AuncientStlFacet) * deformed.facet_count);
 
-    // Rule 10 physics: Apply Verlet charge decay decay multiplier to deformation
-    float scale = bear->verlet_charge_decay[0];
+    // Apply joint rotation and Verlet FET stretch transitions
+    float theta = bear->joint_angle_hip;
+    float cos_t = cosf(theta);
+    float sin_t = sinf(theta);
+
+    // Rule 10 physics: Apply Verlet charge decay multiplier to stretch transition regions
+    float stretch = bear->verlet_charge_decay[0];
+
     for (uint32_t i = 0; i < deformed.facet_count; i++) {
         for (int v = 0; v < 3; v++) {
-            deformed.facets[i].vertices[v][2] *= scale;
+            float x = deformed.facets[i].vertices[v][0];
+            float z = deformed.facets[i].vertices[v][2];
+
+            // 1. Joint Rotation (XZ plane transformation)
+            deformed.facets[i].vertices[v][0] = x * cos_t - z * sin_t;
+            deformed.facets[i].vertices[v][2] = x * sin_t + z * cos_t;
+
+            // 2. Verlet soft-body FET stretch transition boundary (stretch coordinates near joint)
+            if (deformed.facets[i].vertices[v][2] < 0.0f) {
+                deformed.facets[i].vertices[v][2] *= stretch;
+            }
         }
     }
 
