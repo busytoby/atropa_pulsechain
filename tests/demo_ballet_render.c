@@ -9,7 +9,26 @@
 
 #define WIDTH 1280
 #define HEIGHT 720
-#define FRAMES 90 // Run a short 3-second demo for verification
+#define FRAMES 90
+
+static void draw_line(uint8_t *canvas, int x0, int y0, int x1, int y1, uint8_t r, uint8_t g, uint8_t b) {
+    int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+    int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+    int err = dx + dy, e2;
+
+    while (1) {
+        if (x0 >= 0 && x0 < WIDTH && y0 >= 0 && y0 < HEIGHT) {
+            int idx = (y0 * WIDTH + x0) * 3;
+            canvas[idx + 0] = r;
+            canvas[idx + 1] = g;
+            canvas[idx + 2] = b;
+        }
+        if (x0 == x1 && y0 == y1) break;
+        e2 = 2 * err;
+        if (e2 >= dy) { err += dy; x0 += sx; }
+        if (e2 <= dx) { err += dx; y0 += sy; }
+    }
+}
 
 int main(void) {
     printf("=============================================================\n");
@@ -63,9 +82,21 @@ int main(void) {
         auncient_ballet_step_pose(&bear, t);
 
         // Clear canvas to dark blue
-        memset(rgb_out, 0x10, WIDTH * HEIGHT * 3);
+        memset(rgb_out, 0x05, WIDTH * HEIGHT * 3);
 
-        // Rasterize meshes
+        // Draw oscilloscope background grids
+        for (int y = 0; y < HEIGHT; y += 40) {
+            draw_line(rgb_out, 0, y, WIDTH - 1, y, 0x11, 0x22, 0x11);
+        }
+        for (int x = 0; x < WIDTH; x += 40) {
+            draw_line(rgb_out, x, 0, x, HEIGHT - 1, 0x11, 0x22, 0x11);
+        }
+
+        // Draw primary diagnostic axis split lines
+        draw_line(rgb_out, WIDTH / 2, 0, WIDTH / 2, HEIGHT - 1, 0x88, 0x66, 0x33);
+        draw_line(rgb_out, 0, HEIGHT / 2, WIDTH - 1, HEIGHT / 2, 0x88, 0x66, 0x33);
+
+        // Rasterize meshes with wireframe lines
         float theta = bear.joint_angle_hip;
         float cos_t = cosf(theta);
         float sin_t = sinf(theta);
@@ -74,6 +105,7 @@ int main(void) {
         AuncientStlMesh meshes[2] = { head_mesh, joint_mesh };
         for (int m = 0; m < 2; m++) {
             for (uint32_t i = 0; i < meshes[m].facet_count; i++) {
+                int sx[3], sy[3];
                 for (int v = 0; v < 3; v++) {
                     float x = meshes[m].facets[i].vertices[v][0];
                     float y = meshes[m].facets[i].vertices[v][1];
@@ -88,18 +120,16 @@ int main(void) {
                         rz *= stretch;
                     }
 
-                    // Map 3D to 2D screen coordinates (centered at screen center)
-                    int sx = (int)(rx * 300.0f) + WIDTH / 2;
-                    int sy = (int)(y * 300.0f) + HEIGHT / 2;
-
-                    if (sx >= 0 && sx < WIDTH && sy >= 0 && sy < HEIGHT) {
-                        int idx = (sy * WIDTH + sx) * 3;
-                        // Bright green points
-                        rgb_out[idx + 0] = 0x39;
-                        rgb_out[idx + 1] = 0xFF;
-                        rgb_out[idx + 2] = 0x14;
-                    }
+                    // Map to screen coordinates (centered at screen center with sway offset)
+                    float sway = 200.0f * sinf(t * 1.5f);
+                    sx[v] = (int)(rx * 300.0f) + WIDTH / 2 + (int)sway;
+                    sy[v] = (int)(y * 300.0f) + HEIGHT / 2;
                 }
+
+                // Draw wireframe links representing Verlet FET network (Rule 10)
+                draw_line(rgb_out, sx[0], sy[0], sx[1], sy[1], 0x39, 0xFF, 0x14);
+                draw_line(rgb_out, sx[1], sy[1], sx[2], sy[2], 0x39, 0xFF, 0x14);
+                draw_line(rgb_out, sx[2], sy[2], sx[0], sy[0], 0x39, 0xFF, 0x14);
             }
         }
 
