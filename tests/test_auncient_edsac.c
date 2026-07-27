@@ -90,9 +90,13 @@ uint32_t access_memory(edsac_cpu_t *cpu, uint16_t address, bool write, word_t *w
 void load_initial_orders(edsac_cpu_t *cpu, const char *tape_input, uint16_t start_addr) {
     char line[128];
     const char *ptr = tape_input;
-    uint16_t current_addr = start_addr;
+    uint32_t temp_instructions[256] = {0};
+    instruction_t temp_insts[256];
+    memset(temp_insts, 0, sizeof(temp_insts));
+    int count = 0;
 
-    while (*ptr != '\0') {
+    // 1. Speculatively parse instructions from paper tape into temporary array
+    while (*ptr != '\0' && count < 256) {
         int i = 0;
         while (*ptr != '\n' && *ptr != '\0' && i < 127) {
             line[i++] = *ptr++;
@@ -106,15 +110,29 @@ void load_initial_orders(edsac_cpu_t *cpu, const char *tape_input, uint16_t star
         int address;
         char modifier;
         if (sscanf(line, "%c %d %c", &op, &address, &modifier) == 3) {
-            word_t w;
-            w.is_instruction = true;
-            w.inst.op = op;
-            w.inst.address = address;
-            w.inst.modifier = modifier;
-            w.raw_value = encode_instruction(op, address, modifier);
-            access_memory(cpu, current_addr, true, &w);
-            current_addr++;
+            temp_insts[count].op = op;
+            temp_insts[count].address = address;
+            temp_insts[count].modifier = modifier;
+            temp_instructions[count] = encode_instruction(op, address, modifier);
+            count++;
         }
+    }
+
+    // 2. Validate the entire batch using AUTODIN's speculative prefetch validator
+    if (!auncient_autodin_speculative_prefetch_validate(start_addr, temp_instructions, count)) {
+        printf("[INITIAL ORDERS REJECT] Speculative validation failed. Refusing to write batch to memory.\n");
+        return;
+    }
+
+    // 3. Commit only if validation succeeded
+    uint16_t current_addr = start_addr;
+    for (int idx = 0; idx < count; idx++) {
+        word_t w;
+        w.is_instruction = true;
+        w.inst = temp_insts[idx];
+        w.raw_value = temp_instructions[idx];
+        access_memory(cpu, current_addr, true, &w);
+        current_addr++;
     }
 }
 
@@ -345,6 +363,28 @@ int main(void) {
     bool bad_batch_ok = auncient_autodin_speculative_prefetch_validate(300, bad_batch, 3);
     assert(bad_batch_ok == false);
     printf("   ✓ Speculative prefetch batch commits and rejections validated.\n");
+
+    // 13. Test Speculative Rejection in load_initial_orders
+    printf("[INFO] Testing speculative tape rejection...\n");
+    const char *corrupt_tape = 
+        "A 10 F\n"
+        "X 99 F\n"  // Invalid opcode 'X'
+        "T 22 F\n";
+    
+    // Clear target memory slots first
+    for (uint16_t addr = 400; addr < 403; addr++) {
+        word_t zero_w = { 0, false, { '\0', 0, '\0' } };
+        access_memory(&cpu, addr, true, &zero_w);
+    }
+    
+    load_initial_orders(&cpu, corrupt_tape, 400);
+    
+    // Verify nothing was written to memory at start_addr 400
+    word_t check_w;
+    access_memory(&cpu, 400, false, &check_w);
+    assert(check_w.raw_value == 0);
+    assert(check_w.is_instruction == false);
+    printf("   ✓ Corrupted tape successfully rejected and skipped.\n");
 
     printf("=============================================================\n");
     printf("EDSAC SIMULATION AND WHEELER JUMP VERIFIED SUCCESS\n");
