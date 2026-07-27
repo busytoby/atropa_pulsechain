@@ -501,10 +501,14 @@ int main(void) {
         double dna_y_step = (dna_y_end - dna_y_start) / dna_steps;
         double dna_rot_speed = 0.25;
 
+        double dna_cx = -45.0;
+        double dna_cy = 0.0;
+        double dna_cz = 0.0;
+
         for (int i = 0; i < dna_steps; i++) {
             double angle = (double)i * 0.45 + time_val * dna_rot_speed;
-            Point3D dna_p1 = { -45.0 + dna_radius * cos(angle), dna_y_start + i * dna_y_step, dna_radius * sin(angle) };
-            Point3D dna_p2 = { -45.0 + dna_radius * cos(angle + M_PI), dna_y_start + i * dna_y_step, dna_radius * sin(angle + M_PI) };
+            Point3D dna_p1 = { dna_cx + dna_radius * cos(angle), dna_cy + dna_y_start + i * dna_y_step, dna_cz + dna_radius * sin(angle) };
+            Point3D dna_p2 = { dna_cx + dna_radius * cos(angle + M_PI), dna_cy + dna_y_start + i * dna_y_step, dna_cz + dna_radius * sin(angle + M_PI) };
 
             int sx_dna1, sy_dna1, sx_dna2, sy_dna2;
             bool v1 = project_point(dna_p1, cam_x, cam_y, cam_z, time_val, &sx_dna1, &sy_dna1);
@@ -516,8 +520,8 @@ int main(void) {
 
             if (i > 0) {
                 double prev_angle = (double)(i - 1) * 0.45 + time_val * dna_rot_speed;
-                Point3D prev_dna_p1 = { -45.0 + dna_radius * cos(prev_angle), dna_y_start + (i - 1) * dna_y_step, dna_radius * sin(prev_angle) };
-                Point3D prev_dna_p2 = { -45.0 + dna_radius * cos(prev_angle + M_PI), dna_y_start + (i - 1) * dna_y_step, dna_radius * sin(prev_angle + M_PI) };
+                Point3D prev_dna_p1 = { dna_cx + dna_radius * cos(prev_angle), dna_cy + dna_y_start + (i - 1) * dna_y_step, dna_cz + dna_radius * sin(prev_angle) };
+                Point3D prev_dna_p2 = { dna_cx + dna_radius * cos(prev_angle + M_PI), dna_cy + dna_y_start + (i - 1) * dna_y_step, dna_cz + dna_radius * sin(prev_angle + M_PI) };
 
                 int prev_sx1, prev_sy1, prev_sx2, prev_sy2;
                 if (project_point(prev_dna_p1, cam_x, cam_y, cam_z, time_val, &prev_sx1, &prev_sy1) && v1) {
@@ -529,7 +533,7 @@ int main(void) {
             }
         }
 
-        // Draw Purple Root (on the Right, X = 45.0)
+        // Draw Red DNA Root (on the Right, X = 45.0) - stationary root
         for (int i = 0; i < dna_steps; i++) {
             double angle = (double)i * 0.45 + time_val * dna_rot_speed;
             Point3D dna_p1 = { 45.0 + dna_radius * cos(angle), dna_y_start + i * dna_y_step, dna_radius * sin(angle) };
@@ -540,7 +544,7 @@ int main(void) {
             bool v2 = project_point(dna_p2, cam_x, cam_y, cam_z, time_val, &sx_dna2, &sy_dna2);
 
             if (v1 && v2 && i % 2 == 0) {
-                draw_line_blur(sx_dna1, sy_dna1, sx_dna2, sy_dna2, 180, 50, 255, 1, 0.7f); // Purple root rung
+                draw_line_blur(sx_dna1, sy_dna1, sx_dna2, sy_dna2, 255, 50, 50, 1, 0.7f); // Red root rung
             }
 
             if (i > 0) {
@@ -550,15 +554,15 @@ int main(void) {
 
                 int prev_sx1, prev_sy1, prev_sx2, prev_sy2;
                 if (project_point(prev_dna_p1, cam_x, cam_y, cam_z, time_val, &prev_sx1, &prev_sy1) && v1) {
-                    draw_line_blur(prev_sx1, prev_sy1, sx_dna1, sy_dna1, 160, 30, 240, 2, 0.85f); // Purple backbone
+                    draw_line_blur(prev_sx1, prev_sy1, sx_dna1, sy_dna1, 255, 30, 30, 2, 0.85f); // Red backbone
                 }
                 if (project_point(prev_dna_p2, cam_x, cam_y, cam_z, time_val, &prev_sx2, &prev_sy2) && v2) {
-                    draw_line_blur(prev_sx2, prev_sy2, sx_dna2, sy_dna2, 160, 30, 240, 2, 0.85f); // Purple backbone
+                    draw_line_blur(prev_sx2, prev_sy2, sx_dna2, sy_dna2, 255, 30, 30, 2, 0.85f); // Red backbone
                 }
             }
         }
 
-        // 3. Draw Blue Moth (T4 Phage) - resting on purple root, then taking off and flying
+        // 3. Draw Red Moth (Delicate small moth model - NO phage/root elements)
         double takeoff_duration = 5.0; // Take off over 5 seconds
         double takeoff_factor = time_val / takeoff_duration;
         if (takeoff_factor > 1.0) takeoff_factor = 1.0;
@@ -593,90 +597,67 @@ int main(void) {
         Point3D ph_head_target;
 
         if (v_len > 0.001) {
-            ph_head_target.x = ph_x + (vx / v_len) * 12.0;
-            ph_head_target.y = ph_y + 30.0 + (vy / v_len) * 5.0;
-            ph_head_target.z = ph_z + (vz / v_len) * 12.0;
+            ph_head_target.x = ph_x + (vx / v_len) * 6.0;
+            ph_head_target.y = ph_y + 15.0 + (vy / v_len) * 2.0;
+            ph_head_target.z = ph_z + (vz / v_len) * 6.0;
         } else {
-            ph_head_target = (Point3D){ ph_x, ph_y + 30.0, ph_z };
+            ph_head_target = (Point3D){ ph_x, ph_y + 15.0, ph_z };
         }
 
         // Set targets and anchor state for Moth Verlet Nodes
         moth_nodes[0].target = ph_root_target; moth_nodes[0].anchored = 1;
         moth_nodes[1].target = ph_head_target; moth_nodes[1].anchored = 1;
 
-        double ph_step = sin(time_val * 5.0 + active_note_pitch * 0.1) * 3.5;
-        for (int f = 0; f < 6; f++) {
-            double fiber_angle = (double)f * 60.0 * M_PI / 180.0 + sin(time_val * 2.0) * 0.1;
-            Point3D fiber_joint_target = { ph_root_target.x + (10.0 + ph_step) * cos(fiber_angle), ph_root_target.y - 12.0, ph_root_target.z + (10.0 + ph_step) * sin(fiber_angle) };
-            Point3D fiber_tip_target = { ph_root_target.x + (22.0 + ph_step * 2.0) * cos(fiber_angle), -50.0, ph_root_target.z + (22.0 + ph_step * 2.0) * sin(fiber_angle) };
-
-            moth_nodes[2 + f].target = fiber_joint_target; moth_nodes[2 + f].anchored = 0;
-            moth_nodes[8 + f].target = fiber_tip_target;   moth_nodes[8 + f].anchored = 0;
-        }
-
         if (frame == 0) {
-            for (int k = 0; k < 14; k++) {
+            for (int k = 0; k < 2; k++) {
                 moth_nodes[k].pos = moth_nodes[k].target;
                 moth_nodes[k].prev = moth_nodes[k].target;
             }
         }
 
         // Apply Verlet updates to Moth Nodes
-        for (int k = 0; k < 14; k++) {
-            update_verlet_node(&moth_nodes[k], dt, 140.0, 0.85); // Stiff moth springs
+        for (int k = 0; k < 2; k++) {
+            update_verlet_node(&moth_nodes[k], dt, 140.0, 0.85);
         }
 
         // Resolve distance constraints for Moth skeleton limbs
         for (int iteration = 0; iteration < 4; iteration++) {
-            satisfy_distance(&moth_nodes[0], &moth_nodes[1], 30.0);
-            for (int f = 0; f < 6; f++) {
-                satisfy_distance(&moth_nodes[0], &moth_nodes[2 + f], 15.0);
-                satisfy_distance(&moth_nodes[2 + f], &moth_nodes[8 + f], 15.0);
-            }
+            satisfy_distance(&moth_nodes[0], &moth_nodes[1], 15.0);
         }
 
-        // Draw blue icosahedral head capsid on Verlet head node (Guarded)
+        // Draw small red head on Verlet head node (Guarded)
         bool m_head_ok = false;
         int m_hx = 0, m_hy = 0;
         if (project_point(moth_nodes[1].pos, cam_x, cam_y, cam_z, time_val, &m_hx, &m_hy)) {
-            draw_sphere_turtle(moth_nodes[1].pos, 14.0, cam_x, cam_y, cam_z, time_val, 0, 140, 255); // Blue Capsid
+            draw_sphere_turtle(moth_nodes[1].pos, 5.0, cam_x, cam_y, cam_z, time_val, 255, 40, 40); // Red Capsid
             m_head_ok = true;
         }
 
-        // Project and Draw Moth sheath from Verlet nodes (Guarded)
+        // Project and Draw small Moth body line from Verlet nodes (Guarded)
         int sh_base_x, sh_base_y;
         bool m_root_ok = project_point(moth_nodes[0].pos, cam_x, cam_y, cam_z, time_val, &sh_base_x, &sh_base_y);
         if (m_root_ok && m_head_ok) {
-            draw_line_blur(sh_base_x, sh_base_y, m_hx, m_hy, 0, 140, 255, 4, 0.8f); // Blue Sheath
+            draw_line_blur(sh_base_x, sh_base_y, m_hx, m_hy, 255, 40, 40, 2, 0.8f); // Red body
         }
 
-        // Draw flapping wings for the blue moth (ensuring it is visually identified as a moth)
+        // Draw small flapping wings (ensuring it is visually identified as a small moth)
         if (m_root_ok) {
-            double wing_span = 22.0;
-            double flap_y = sin(time_val * 20.0) * 12.0; // Flapping frequency
-            Point3D wing_l_tip = { moth_nodes[0].pos.x - wing_span, moth_nodes[0].pos.y + flap_y, moth_nodes[0].pos.z - 5.0 };
-            Point3D wing_r_tip = { moth_nodes[0].pos.x + wing_span, moth_nodes[0].pos.y + flap_y, moth_nodes[0].pos.z - 5.0 };
+            double wing_span = 14.0;
+            double flap_y = sin(time_val * 24.0) * 8.0; // Flapping frequency
+            Point3D wing_l_tip = { moth_nodes[0].pos.x - wing_span, moth_nodes[0].pos.y + flap_y, moth_nodes[0].pos.z - 3.0 };
+            Point3D wing_r_tip = { moth_nodes[0].pos.x + wing_span, moth_nodes[0].pos.y + flap_y, moth_nodes[0].pos.z - 3.0 };
             int wl_x, wl_y, wr_x, wr_y;
             if (project_point(wing_l_tip, cam_x, cam_y, cam_z, time_val, &wl_x, &wl_y)) {
-                draw_line_blur(sh_base_x, sh_base_y, wl_x, wl_y, 0, 140, 255, 2, 0.75f);
+                draw_line_blur(sh_base_x, sh_base_y, wl_x, wl_y, 255, 40, 40, 1, 0.75f);
             }
             if (project_point(wing_r_tip, cam_x, cam_y, cam_z, time_val, &wr_x, &wr_y)) {
-                draw_line_blur(sh_base_x, sh_base_y, wr_x, wr_y, 0, 140, 255, 2, 0.75f);
+                draw_line_blur(sh_base_x, sh_base_y, wr_x, wr_y, 255, 40, 40, 1, 0.75f);
             }
         }
 
-        // Project and Draw tail fibers from Verlet nodes (Guarded)
-        for (int f = 0; f < 6; f++) {
-            int f_joint_x, f_joint_y, f_tip_x, f_tip_y;
-            bool v_joint = project_point(moth_nodes[2 + f].pos, cam_x, cam_y, cam_z, time_val, &f_joint_x, &f_joint_y);
-            bool v_tip = project_point(moth_nodes[8 + f].pos, cam_x, cam_y, cam_z, time_val, &f_tip_x, &f_tip_y);
-            if (m_root_ok && v_joint) {
-                draw_line_blur(sh_base_x, sh_base_y, f_joint_x, f_joint_y, 0, 100, 255, 2, 0.7f); // Blue fibers
-            }
-            if (v_joint && v_tip) {
-                draw_line_blur(f_joint_x, f_joint_y, f_tip_x, f_tip_y, 0, 100, 255, 2, 0.7f); // Blue fibers
-            }
-        }
+        // T4 Phage moth removed entirely as requested
+
+
 
         // Verlet Soft-Body Physics tethered to the pelvis
         float perturb_x = (float)(bear_nodes[0].pos.x + sin(time_val * 6.0) * 3.0);
