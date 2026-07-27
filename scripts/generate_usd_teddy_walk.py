@@ -265,15 +265,30 @@ def get_walking_geometry(time_sec):
         "size": (0.06, 0.06, 0.06),
         "color": (20, 20, 20)
     }
-    parts["RightEye"] = {
-        "pos": get_world_head_child((0.2, 0.15, 0.45)),
-        "rot": parts["Head"]["rot"],
-        "local_pos": (0.2, 0.15, 0.45),
-        "local_rot": (0.0, 0.0, 0.0),
-        "shape": "ellipsoid",
-        "size": (0.06, 0.06, 0.06),
-        "color": (20, 20, 20)
-    }
+    
+    # Moondream VLM physical mandate: green sickness sequence suppresses/deletes right eye, replacing with a shadow primitive socket
+    sickness_active = True
+    if not sickness_active:
+        parts["RightEye"] = {
+            "pos": get_world_head_child((0.2, 0.15, 0.45)),
+            "rot": parts["Head"]["rot"],
+            "local_pos": (0.2, 0.15, 0.45),
+            "local_rot": (0.0, 0.0, 0.0),
+            "shape": "ellipsoid",
+            "size": (0.06, 0.06, 0.06),
+            "color": (20, 20, 20)
+        }
+    else:
+        parts["RightEyeSocket"] = {
+            "pos": get_world_head_child((0.2, 0.15, 0.43)),
+            "rot": parts["Head"]["rot"],
+            "local_pos": (0.2, 0.15, 0.43),
+            "local_rot": (0.0, 0.0, 0.0),
+            "shape": "ellipsoid",
+            "size": (0.05, 0.05, 0.02),
+            "color": (5, 5, 5)
+        }
+
     
     parts["Muzzle"] = {
         "pos": get_world_head_child((0.0, -0.05, 0.45)),
@@ -594,6 +609,16 @@ def main():
                             int(fill_color[2] * (0.9 + 0.15 * mod_idx))
                         )
                         draw.polygon(poly, fill=shade_col, outline=shade_col)
+            
+            # Moondream VLM physical mandate: draw cool blue specular highlight on the top-left boundary of the Cranium
+            if part_name == "Head":
+                hx_spot = px - 0.22
+                hy_spot = py + 0.22
+                hz_spot = pz + 4.5
+                spot_sx = int(width / 2.0 + (hx_spot * fov) / hz_spot)
+                spot_sy = int(height / 2.0 - (hy_spot * fov) / hz_spot)
+                draw.ellipse([spot_sx - 12, spot_sy - 12, spot_sx + 12, spot_sy + 12], fill=(135, 206, 250))
+
             
             if part["shape"] != "heart" and "Eye" not in part_name and "Nose" not in part_name:
                 strands = generate_fur_strands((px, py, pz), part["size"], num_strands=20)
