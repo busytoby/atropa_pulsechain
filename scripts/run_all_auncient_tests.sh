@@ -515,6 +515,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/te
 gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_teddy_walk_again.c src/auncient_timeline_autodin.c src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c src/auncient_sdk.c src/auncient_vulkan_materials.c src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_auncient_teddy_walk_again -lm -lrt -lssl -lcrypto
 ./tests/test_auncient_teddy_walk_again
 
+# Compile and run Auncient EDSAC System Wide Firewall Simulation
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_edsac_system_firewall.c src/auncient_edsac_firewall.c src/auncient_timeline_autodin.c src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c src/auncient_sdk.c src/auncient_vulkan_materials.c src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_auncient_edsac_system_firewall -lm -lrt -lssl -lcrypto
+./tests/test_auncient_edsac_system_firewall
+
 # Compile and run Auncient Hudson Soft to VGPR Register Mirroring
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_huc_vgpr.c -o tests/test_auncient_huc_vgpr -lm -lrt
 ./tests/test_auncient_huc_vgpr
