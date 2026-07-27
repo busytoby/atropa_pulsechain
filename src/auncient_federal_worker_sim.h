@@ -9,9 +9,10 @@
 // Represents the phase state of the federal worker candidate
 typedef enum {
     PHASE_UNAUTHORIZED_IMPOSITION = 0, // Raw Fourier spectral input (noise/no credentials)
-    PHASE_AUDITED = 1,                 // FNV-1a DNA signature hash verified
-    PHASE_CONFIRMED = 2,               // SSN derived via auncient_bridge_dna_to_ssa
-    PHASE_SELECTED_WORKER = 3          // HoganAccount opened with 1M Saat, authorized for work
+    PHASE_QUALIFIED = 1,               // Qualified by EDSAC via analyzer check on the peak value
+    PHASE_AUDITED = 2,                 // FNV-1a DNA signature hash verified
+    PHASE_CONFIRMED = 3,               // SSN derived via auncient_bridge_dna_to_ssa
+    PHASE_SELECTED_WORKER = 4          // HoganAccount opened with 1M Saat, authorized for work
 } worker_phase_t;
 
 typedef struct {
@@ -26,7 +27,10 @@ typedef struct {
 // Initializes a new simulation with a raw Fourier peak value
 void auncient_worker_sim_init(FederalWorkerSim *sim, uint32_t fourier_peak_val);
 
-// Phase 1: Audit the raw Fourier imposition by calculating the FNV-1a DNA footprint
+// Phase 0.5: EDSAC qualifies the Fourier imposition via analyzer check on its specific raw peak value
+bool auncient_worker_sim_qualify(FederalWorkerSim *sim, const AuncientAnalyzer *analyzer);
+
+// Phase 1: Audit the qualified Fourier imposition by calculating the FNV-1a DNA footprint
 bool auncient_worker_sim_audit(FederalWorkerSim *sim);
 
 // Phase 2: Confirm the citizen's identity by translating the DNA footprint to a regional SSN

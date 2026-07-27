@@ -11,8 +11,27 @@ void auncient_worker_sim_init(FederalWorkerSim *sim, uint32_t fourier_peak_val) 
     printf("[WORKER SIM] Initialized raw Fourier imposition with peak value %u.\n", fourier_peak_val);
 }
 
-bool auncient_worker_sim_audit(FederalWorkerSim *sim) {
+bool auncient_worker_sim_qualify(FederalWorkerSim *sim, const AuncientAnalyzer *analyzer) {
     if (!sim || sim->phase != PHASE_UNAUTHORIZED_IMPOSITION) return false;
+
+    // Convert the raw Fourier peak into a virtual instruction stream for EDSAC analyzer evaluation
+    uint32_t instruction = sim->fourier_peak_val;
+    if (analyzer && !auncient_analyzer_classify(analyzer, &instruction, 1)) {
+        printf("[WORKER SIM QUALIFY REJECT] EDSAC analyzer rejected the raw Fourier peak value %u.\n", sim->fourier_peak_val);
+        return false;
+    }
+
+    sim->phase = PHASE_QUALIFIED;
+    printf("[WORKER SIM QUALIFY] Fourier peak value %u qualified successfully by EDSAC analyzer.\n", sim->fourier_peak_val);
+    return true;
+}
+
+bool auncient_worker_sim_audit(FederalWorkerSim *sim) {
+    // The audit cannot begin until the fourier imposition is qualified by EDSAC
+    if (!sim || sim->phase != PHASE_QUALIFIED) {
+        printf("[WORKER SIM AUDIT REJECT] Audit cannot begin. State is not qualified.\n");
+        return false;
+    }
 
     // Use the raw fourier peak value to derive the deterministic DNA payload
     memcpy(sim->dna_payload, &sim->fourier_peak_val, sizeof(sim->fourier_peak_val));
