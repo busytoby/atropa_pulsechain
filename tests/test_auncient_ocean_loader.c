@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <math.h>
 #include "auncient_cactus_schema.h"
+#include "../src/auncient_timeline_autodin.h"
 
 
 #define STACK_CAPACITY 32
@@ -630,6 +631,17 @@ int main(void) {
     printf("AUNCIENT HUCOCEAN LOADER SIMULATION SUITE\n");
     printf("=============================================================\n");
     fflush(stdout);
+
+    // 0. Verify system participants (Hogan Bank, SSA, and Stuffed Teddy Bear) at startup
+    printf("[AUTODIN STARTUP] Initiating Ocean Loader participant validation...\n");
+    HoganAccount startup_bear;
+    startup_bear.account_id = 123;
+    startup_bear.is_active = true;
+    startup_bear.verified_dna_hash = 0xABCDE; // Non-zero verified DNA footprint
+    startup_bear.balance_saat = 1000000;
+    
+    bool verified = auncient_autodin_verify_system_start(&startup_bear, 1);
+    assert(verified == true);
 
     ocean_loader_ctx_t loader;
     memset(&loader, 0, sizeof(ocean_loader_ctx_t));

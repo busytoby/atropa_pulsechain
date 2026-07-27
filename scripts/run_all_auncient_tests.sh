@@ -496,7 +496,7 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_consensus_optimizer_v
 ./tests/test_auncient_consensus_optimizer_v2
 
 # Compile and run Auncient HuCOcean Loader Simulation
-gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_ocean_loader.c -o tests/test_auncient_ocean_loader -lm -lrt
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_ocean_loader.c src/auncient_timeline_autodin.c src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c src/auncient_sdk.c src/auncient_vulkan_materials.c src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_auncient_ocean_loader -lm -lrt -lssl -lcrypto
 ./tests/test_auncient_ocean_loader
 
 # Compile and run Auncient Hudson Soft to VGPR Register Mirroring
