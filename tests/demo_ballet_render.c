@@ -143,33 +143,47 @@ int main(void) {
                     float rx = x, ry = y, rz = z;
 
                     if (m == 0) {
-                        // Torso Segment: root core coordinate bounds
+                        // Torso: thick vertical body cylinder
+                        rx = x * 1.3f;
                         ry = y * 1.2f;
+                        rz = z * 1.3f;
                     } else if (m == 1) {
-                        // Head Segment: neck joint sway, offset upwards
-                        rx = x * cos_j - z * sin_j;
-                        rz = x * sin_j + z * cos_j;
-                        ry = y + 0.8f;
+                        // Head: medium sphere sitting on neck joint (+0.9)
+                        rx = (x * 0.8f) * cos_j - (z * 0.8f) * sin_j;
+                        rz = (x * 0.8f) * sin_j + (z * 0.8f) * cos_j;
+                        ry = y * 0.8f + 0.9f;
                     } else if (m == 2) {
-                        // Left Leg: left hip joint kick, offset left/downwards
-                        rx = (x - 0.3f) * cos_j - z * sin_j - 0.3f;
-                        rz = (x - 0.3f) * sin_j + z * cos_j;
-                        ry = y - 0.8f;
+                        // Left Leg: slender leg cylinder rotating at left hip (-0.3, -0.9)
+                        float lx = x * 0.6f;
+                        float ly = y * 0.8f;
+                        float lz = z * 0.6f;
+                        rx = lx * cos_j - lz * sin_j - 0.4f;
+                        rz = lx * sin_j + lz * cos_j;
+                        ry = ly - 0.9f;
                     } else if (m == 3) {
-                        // Right Leg: right hip joint kick, offset right/downwards
-                        rx = (x + 0.3f) * cos_j - z * sin_j + 0.3f;
-                        rz = (x + 0.3f) * sin_j + z * cos_j;
-                        ry = y - 0.8f;
+                        // Right Leg: slender leg cylinder rotating at right hip (+0.3, -0.9)
+                        float lx = x * 0.6f;
+                        float ly = y * 0.8f;
+                        float lz = z * 0.6f;
+                        rx = lx * cos_j - lz * sin_j + 0.4f;
+                        rz = lx * sin_j + lz * cos_j;
+                        ry = ly - 0.9f;
                     } else if (m == 4) {
-                        // Left Arm: left shoulder joint sway, offset left/upwards
-                        rx = (x - 0.4f) * cos_j - z * sin_j - 0.5f;
-                        rz = (x - 0.4f) * sin_j + z * cos_j;
-                        ry = y + 0.3f;
+                        // Left Arm: slender arm cylinder rotating at left shoulder (-0.5, +0.3)
+                        float ax = x * 0.5f;
+                        float ay = y * 0.7f;
+                        float az = z * 0.5f;
+                        rx = ax * cos_j - az * sin_j - 0.6f;
+                        rz = ax * sin_j + az * cos_j;
+                        ry = ay + 0.3f;
                     } else if (m == 5) {
-                        // Right Arm: right shoulder joint sway, offset right/upwards
-                        rx = (x + 0.4f) * cos_j - z * sin_j + 0.5f;
-                        rz = (x + 0.4f) * sin_j + z * cos_j;
-                        ry = y + 0.3f;
+                        // Right Arm: slender arm cylinder rotating at right shoulder (+0.5, +0.3)
+                        float ax = x * 0.5f;
+                        float ay = y * 0.7f;
+                        float az = z * 0.5f;
+                        rx = ax * cos_j - az * sin_j + 0.6f;
+                        rz = ax * sin_j + az * cos_j;
+                        ry = ay + 0.3f;
                     }
 
                     // Verlet stretch (Rule 10)
@@ -219,27 +233,41 @@ int main(void) {
                         float rx = x, ry = y, rz = z;
 
                         if (m == 0) {
+                            rx = x * 1.3f;
                             ry = y * 1.2f;
+                            rz = z * 1.3f;
                         } else if (m == 1) {
-                            rx = x * cos_j - z * sin_j;
-                            rz = x * sin_j + z * cos_j;
-                            ry = y + 0.8f;
+                            rx = (x * 0.8f) * cos_j - (z * 0.8f) * sin_j;
+                            rz = (x * 0.8f) * sin_j + (z * 0.8f) * cos_j;
+                            ry = y * 0.8f + 0.9f;
                         } else if (m == 2) {
-                            rx = (x - 0.3f) * cos_j - z * sin_j - 0.3f;
-                            rz = (x - 0.3f) * sin_j + z * cos_j;
-                            ry = y - 0.8f;
+                            float lx = x * 0.6f;
+                            float ly = y * 0.8f;
+                            float lz = z * 0.6f;
+                            rx = lx * cos_j - lz * sin_j - 0.4f;
+                            rz = lx * sin_j + lz * cos_j;
+                            ry = ly - 0.9f;
                         } else if (m == 3) {
-                            rx = (x + 0.3f) * cos_j - z * sin_j + 0.3f;
-                            rz = (x + 0.3f) * sin_j + z * cos_j;
-                            ry = y - 0.8f;
+                            float lx = x * 0.6f;
+                            float ly = y * 0.8f;
+                            float lz = z * 0.6f;
+                            rx = lx * cos_j - lz * sin_j + 0.4f;
+                            rz = lx * sin_j + lz * cos_j;
+                            ry = ly - 0.9f;
                         } else if (m == 4) {
-                            rx = (x - 0.4f) * cos_j - z * sin_j - 0.5f;
-                            rz = (x - 0.4f) * sin_j + z * cos_j;
-                            ry = y + 0.3f;
+                            float ax = x * 0.5f;
+                            float ay = y * 0.7f;
+                            float az = z * 0.5f;
+                            rx = ax * cos_j - az * sin_j - 0.6f;
+                            rz = ax * sin_j + az * cos_j;
+                            ry = ay + 0.3f;
                         } else if (m == 5) {
-                            rx = (x + 0.4f) * cos_j - z * sin_j + 0.5f;
-                            rz = (x + 0.4f) * sin_j + z * cos_j;
-                            ry = y + 0.3f;
+                            float ax = x * 0.5f;
+                            float ay = y * 0.7f;
+                            float az = z * 0.5f;
+                            rx = ax * cos_j - az * sin_j + 0.6f;
+                            rz = ax * sin_j + az * cos_j;
+                            ry = ay + 0.3f;
                         }
 
                         if (rz < 0.0f) {
