@@ -11,6 +11,12 @@
 #define HEIGHT 720
 #define FRAMES 90
 
+typedef struct {
+    int sx[3], sy[3];
+    float depth;
+    uint8_t r, g, b;
+} TransformedTriangle;
+
 static void draw_line(uint8_t *canvas, int x0, int y0, int x1, int y1, uint8_t r, uint8_t g, uint8_t b) {
     int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
     int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
@@ -27,6 +33,30 @@ static void draw_line(uint8_t *canvas, int x0, int y0, int x1, int y1, uint8_t r
         e2 = 2 * err;
         if (e2 >= dy) { err += dy; x0 += sx; }
         if (e2 <= dx) { err += dx; y0 += sy; }
+    }
+}
+
+static void fill_triangle(uint8_t *canvas, int x0, int y0, int x1, int y1, int x2, int y2, uint8_t r, uint8_t g, uint8_t b) {
+    if (y0 > y1) { int t = x0; x0 = x1; x1 = t; t = y0; y0 = y1; y1 = t; }
+    if (y1 > y2) { int t = x1; x1 = x2; x2 = t; t = y1; y1 = y2; y2 = t; }
+    if (y0 > y1) { int t = x0; x0 = x1; x1 = t; t = y0; y0 = y1; y1 = t; }
+    if (y2 == y0) return;
+
+    for (int y = y0; y <= y2; y++) {
+        if (y < 0 || y >= HEIGHT) continue;
+        float alpha = (float)(y - y0) / (y2 - y0);
+        float beta = (y <= y1 && y1 != y0) ? (float)(y - y0) / (y1 - y0) : (float)(y - y1) / (y2 - y1);
+        int xa = x0 + (int)(alpha * (x2 - x0));
+        int xb = (y <= y1 && y1 != y0) ? x0 + (int)(beta * (x1 - x0)) : x1 + (int)(beta * (x2 - x1));
+        if (xa > xb) { int t = xa; xa = xb; xb = t; }
+        for (int x = xa; x <= xb; x++) {
+            if (x >= 0 && x < WIDTH) {
+                int idx = (y * WIDTH + x) * 3;
+                canvas[idx + 0] = r;
+                canvas[idx + 1] = g;
+                canvas[idx + 2] = b;
+            }
+        }
     }
 }
 
@@ -97,20 +127,6 @@ int main(void) {
         draw_line(rgb_out, WIDTH / 2, 0, WIDTH / 2, HEIGHT - 1, 0x88, 0x66, 0x33);
         draw_line(rgb_out, 0, HEIGHT / 2, WIDTH - 1, HEIGHT / 2, 0x88, 0x66, 0x33);
 
-        // Rasterize meshes with wireframe lines
-        float stretch = bear.verlet_charge_decay[0];
-
-        // Draw perspective ballet stage floor grid
-        for (int d = -4; d <= 4; d++) {
-            int bx = WIDTH / 2 + d * 60;
-            int by = HEIGHT / 2 + 50;
-            int fx = WIDTH / 2 + d * 220;
-            int fy = HEIGHT - 40;
-            draw_line(rgb_out, bx, by, fx, fy, 0x22, 0x22, 0x55);
-        }
-        draw_line(rgb_out, WIDTH / 2 - 240, HEIGHT / 2 + 50, WIDTH / 2 + 240, HEIGHT / 2 + 50, 0x22, 0x22, 0x55);
-        draw_line(rgb_out, WIDTH / 2 - 880, HEIGHT - 40, WIDTH / 2 + 880, HEIGHT - 40, 0x22, 0x22, 0x55);
-
         // Rasterize meshes with wireframe lines representing full joint assembly (9 segments for recognizable teddy bear)
         AuncientStlMesh segment_meshes[9] = { joint_mesh, head_mesh, joint_mesh, joint_mesh, joint_mesh, joint_mesh, head_mesh, head_mesh, joint_mesh };
         const char *segment_names[9] = { "Torso", "Head", "LeftLeg", "RightLeg", "LeftArm", "RightArm", "LeftEar", "RightEar", "Snout" };
@@ -122,9 +138,17 @@ int main(void) {
         float l_arm_wave = 0.8f * cosf(t * 3.5f);
         float r_arm_wave = -0.8f * cosf(t * 3.5f);
 
+        int total_triangles = 0;
+        for (int m = 0; m < 9; m++) {
+            total_triangles += segment_meshes[m].facet_count;
+        }
+
+        TransformedTriangle *tri_list = (TransformedTriangle *)malloc(sizeof(TransformedTriangle) * total_triangles);
+        int tri_idx = 0;
+        float stretch = bear.verlet_charge_decay[0];
+
         for (int m = 0; m < 9; m++) {
             float joint_theta = 0.0f;
-            // Ears and snout inherit head tilt sway
             if (m == 1 || m == 6 || m == 7 || m == 8) joint_theta = head_tilt;
             else if (m == 2) joint_theta = l_leg_kick;
             else if (m == 3) joint_theta = r_leg_kick;
@@ -134,7 +158,13 @@ int main(void) {
             float cos_j = cosf(joint_theta);
             float sin_j = sinf(joint_theta);
 
+            // Shaded colors representing stuffed teddy bear parts
+            uint8_t r = 0x8B, g = 0x5A, b = 0x2B; // Stuffed warm brown
+            if (m == 6 || m == 7) { r = 0xCD; g = 0x9B; b = 0x1D; } // Golden ears
+            if (m == 8) { r = 0xEE; g = 0xC5; b = 0x91; } // Tan muzzle snout
+
             for (uint32_t i = 0; i < segment_meshes[m].facet_count; i++) {
+                float sum_z = 0.0f;
                 int sx[3], sy[3];
                 for (int v = 0; v < 3; v++) {
                     float x = segment_meshes[m].facets[i].vertices[v][0];
@@ -144,17 +174,14 @@ int main(void) {
                     float rx = x, ry = y, rz = z;
 
                     if (m == 0) {
-                        // Torso: thick vertical body cylinder
                         rx = x * 1.3f;
                         ry = y * 1.2f;
                         rz = z * 1.3f;
                     } else if (m == 1) {
-                        // Head: medium sphere sitting on neck joint (+0.9)
                         rx = (x * 0.8f) * cos_j - (z * 0.8f) * sin_j;
                         rz = (x * 0.8f) * sin_j + (z * 0.8f) * cos_j;
                         ry = y * 0.8f + 0.9f;
                     } else if (m == 2) {
-                        // Left Leg: YZ pitch swing pivoting at hip (-0.4, -0.6)
                         float lx = x * 0.4f;
                         float ly = y * 0.8f;
                         float lz = z * 0.4f;
@@ -163,7 +190,6 @@ int main(void) {
                         ry = local_y * cos_j - lz * sin_j - 0.6f;
                         rz = local_y * sin_j + lz * cos_j;
                     } else if (m == 3) {
-                        // Right Leg: YZ pitch swing pivoting at hip (+0.4, -0.6)
                         float lx = x * 0.4f;
                         float ly = y * 0.8f;
                         float lz = z * 0.4f;
@@ -172,7 +198,6 @@ int main(void) {
                         ry = local_y * cos_j - lz * sin_j - 0.6f;
                         rz = local_y * sin_j + lz * cos_j;
                     } else if (m == 4) {
-                        // Left Arm: YZ pitch swing pivoting at shoulder (-0.6, +0.3)
                         float ax = x * 0.3f;
                         float ay = y * 0.7f;
                         float az = z * 0.3f;
@@ -181,7 +206,6 @@ int main(void) {
                         ry = local_y * cos_j - az * sin_j + 0.3f;
                         rz = local_y * sin_j + az * cos_j;
                     } else if (m == 5) {
-                        // Right Arm: YZ pitch swing pivoting at shoulder (+0.6, +0.3)
                         float ax = x * 0.3f;
                         float ay = y * 0.7f;
                         float az = z * 0.3f;
@@ -190,7 +214,6 @@ int main(void) {
                         ry = local_y * cos_j - az * sin_j + 0.3f;
                         rz = local_y * sin_j + az * cos_j;
                     } else if (m == 6) {
-                        // Left Ear: small sphere on top-left of the head
                         float ex = x * 0.25f - 0.3f;
                         float ey = y * 0.25f + 0.3f;
                         float ez = z * 0.25f;
@@ -198,7 +221,6 @@ int main(void) {
                         rz = ex * sin_j + ez * cos_j;
                         ry = ey + 0.9f;
                     } else if (m == 7) {
-                        // Right Ear: small sphere on top-right of the head
                         float ex = x * 0.25f + 0.3f;
                         float ey = y * 0.25f + 0.3f;
                         float ez = z * 0.25f;
@@ -206,7 +228,6 @@ int main(void) {
                         rz = ex * sin_j + ez * cos_j;
                         ry = ey + 0.9f;
                     } else if (m == 8) {
-                        // Snout: small horizontal cylinder on face
                         float sx_pt = x * 0.25f;
                         float sy_pt = y * 0.2f;
                         float sz_pt = z * 0.25f + 0.3f;
@@ -215,12 +236,12 @@ int main(void) {
                         ry = sy_pt + 0.9f;
                     }
 
-                    // Verlet stretch (Rule 10)
                     if (rz < 0.0f) {
                         rz *= stretch;
                     }
 
-                    // Map to screen coordinates (centered at screen center with sway and leap offsets)
+                    sum_z += rz;
+
                     float sway = 200.0f * sinf(t * 1.5f);
                     float norm_t = fmodf(t, 1.0f);
                     float leap_y = 150.0f * (1.0f - 4.0f * (norm_t - 0.5f) * (norm_t - 0.5f));
@@ -230,11 +251,45 @@ int main(void) {
                     sy[v] = (int)(ry * 250.0f) + HEIGHT / 2 - 100 - (int)leap_y;
                 }
 
-                // Draw wireframe links representing Verlet FET network (Rule 10)
-                draw_line(rgb_out, sx[0], sy[0], sx[1], sy[1], 0x39, 0xFF, 0x14);
-                draw_line(rgb_out, sx[1], sy[1], sx[2], sy[2], 0x39, 0xFF, 0x14);
-                draw_line(rgb_out, sx[2], sy[2], sx[0], sy[0], 0x39, 0xFF, 0x14);
+                if (tri_list) {
+                    tri_list[tri_idx].sx[0] = sx[0];
+                    tri_list[tri_idx].sx[1] = sx[1];
+                    tri_list[tri_idx].sx[2] = sx[2];
+                    tri_list[tri_idx].sy[0] = sy[0];
+                    tri_list[tri_idx].sy[1] = sy[1];
+                    tri_list[tri_idx].sy[2] = sy[2];
+                    tri_list[tri_idx].depth = sum_z / 3.0f;
+                    tri_list[tri_idx].r = r;
+                    tri_list[tri_idx].g = g;
+                    tri_list[tri_idx].b = b;
+                    tri_idx++;
+                }
             }
+        }
+
+        // Painter's Depth Sorting (back-to-front rendering)
+        if (tri_list) {
+            for (int i = 0; i < total_triangles - 1; i++) {
+                for (int j = 0; j < total_triangles - i - 1; j++) {
+                    if (tri_list[j].depth > tri_list[j + 1].depth) {
+                        TransformedTriangle tmp = tri_list[j];
+                        tri_list[j] = tri_list[j + 1];
+                        tri_list[j + 1] = tmp;
+                    }
+                }
+            }
+
+            // Fill solid polygons and outline boundaries
+            for (int i = 0; i < total_triangles; i++) {
+                fill_triangle(rgb_out, tri_list[i].sx[0], tri_list[i].sy[0],
+                                      tri_list[i].sx[1], tri_list[i].sy[1],
+                                      tri_list[i].sx[2], tri_list[i].sy[2],
+                                      tri_list[i].r, tri_list[i].g, tri_list[i].b);
+                draw_line(rgb_out, tri_list[i].sx[0], tri_list[i].sy[0], tri_list[i].sx[1], tri_list[i].sy[1], 0x30, 0x10, 0x05);
+                draw_line(rgb_out, tri_list[i].sx[1], tri_list[i].sy[1], tri_list[i].sx[2], tri_list[i].sy[2], 0x30, 0x10, 0x05);
+                draw_line(rgb_out, tri_list[i].sx[2], tri_list[i].sy[2], tri_list[i].sx[0], tri_list[i].sy[0], 0x30, 0x10, 0x05);
+            }
+            free(tri_list);
         }
 
         // Export current pose frame segments to USDA files for text telemetry verification
