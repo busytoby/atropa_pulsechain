@@ -105,3 +105,18 @@ This file serves as the permanent repository glossary defining the key registers
 * **VM Transition Context**: Finalization transition binding dynamic velocity.
 * **Mathematical Operation**: Resolves $Dynamo = Base^{Signal} \pmod{Element}$ and zeroes `Pole`.
 * **Visual / Geometric Shift**: Binds Y-axis frequencies and aligns the spatial rotation axis.
+
+#### XDC
+* **VM Register Context**: The external debug boundary control word in the SHA structure. It intercepts raw SCSI handshake frames on the WinchesterMQ interface to halt program execution loops, allowing external inspection of standard registers (`Chin`, `Monopole`, `Identity`).
+* **Mathematical Function**: Resolves the cryptographic modular parity signature of the PKI public key set: $XDC\_Auth = \sum_{i=1}^{K} Key_i \pmod{MotzkinPrime}$ where $K \ge 4$ keys are required to establish valid execution.
+* **Visual / Geometric Manifestation**: Modulates the projected orbital trail opacity ($\alpha$) and vector line dashes of the 3D wireframe envelope. When XDC halts the program, the rendered trail turns solid cyan with highlighted vertex spheres indicating breakpoint coordinates.
+
+#### Recall
+* **VM Transition Context**: The state retrieval execution pathway inside the Dysnomia VM registry. It queries the contract ledger using account addresses (`dynamic_<address>`), validates the FNV-1a DNA signature hash in the active participant buffer, and establishes a secure execution thread over the WinchesterMQ SCSI channel.
+* **Mathematical Operation**: Re-evaluates the regional Social Security issuance location using the modular congruence translation: $Site\_Index = (verified\_dna\_hash \pmod 9) + 1$ matching it against the regional lookup table to derive the verified public key credential validation matrix.
+* **Visual / Geometric Shift**: Triggers a spatial sweep on the projected interface. The wireframe envelope translation vector resets to the origin point $(0,0,0)$, and the orbital velocity scaling factor ($\phi_w$) accelerates to draw the coordinate trajectory path of the citizen's walk, with colored nodes highlighting the wave animations.
+
+#### Subpoena
+* **VM Transition Context**: The legal recall transaction pathway inside the Dysnomia VM registry. It queries the active participant ledger to verify a citizen's physical identity payload (such as DNA seed coordinates), asserting compliance with regional Social Security templates over the WinchesterMQ SCSI channel.
+* **Mathematical Operation**: Evaluates the PKI validation matrix by verifying that the signature set contains at least $K \ge 4$ distinct keys, executing a modular verification equation to authorize the subpoena command sequence.
+* **Visual / Geometric Shift**: Initiates a colored vector projection on the presenter display. The target coordinate node flashes bright green, indicating successful identification and authorization, before launching the path walk-and-wave animation sequence on the coordinates trail.
