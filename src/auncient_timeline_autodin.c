@@ -1203,11 +1203,34 @@ bool auncient_hogan_load_ledger(HoganAccount *accounts, int *count_out, int max_
     return true;
 }
 
-void auncient_autodin_audit_edsac(uint32_t pc, uint32_t instruction, int64_t accumulator) {
-    char audit_log_buffer[256];
-    snprintf(audit_log_buffer, sizeof(audit_log_buffer), 
-             "[AUTODIN EDSAC AUDIT] PC=0x%04X Instruction=0x%08X Accumulator=%lld", 
-             pc, instruction, (long long)accumulator);
+bool auncient_autodin_audit_edsac(uint32_t pc, uint32_t instruction, int64_t accumulator) {
+    char op = (char)((instruction >> 24) & 0xFF);
+    uint32_t address = (instruction >> 2) & 0x3FFFFF;
+    uint8_t mod = instruction & 3;
 
-    printf("%s\n", audit_log_buffer);
+    // Validate Opcode: Must be a known EDSAC / Folklore opcode character
+    bool op_ok = (op == 'A' || op == 'S' || op == 'T' || op == 'U' || 
+                  op == 'G' || op == 'E' || op == 'Z' || op == 'H' || 
+                  op == 'V' || op == 'N' || op == 'F');
+
+    // Validate Memory Bounds: standard EDSAC memory is 1024, Folklore has extended bounds
+    bool addr_ok = (address < 1024 || (op == 'F' && address <= 0x3FFFFF));
+
+    // Validate Modifier bits
+    bool mod_ok = (mod <= 2);
+
+    char audit_log_buffer[256];
+    if (op_ok && addr_ok && mod_ok) {
+        snprintf(audit_log_buffer, sizeof(audit_log_buffer), 
+                 "[AUTODIN EDSAC COMMIT] PC=0x%04X Instruction=0x%08X (Op=%c Addr=%u Mod=%d) Acc=%lld", 
+                 pc, instruction, op, address, mod, (long long)accumulator);
+        printf("%s\n", audit_log_buffer);
+        return true;
+    } else {
+        snprintf(audit_log_buffer, sizeof(audit_log_buffer), 
+                 "[AUTODIN EDSAC REJECT] Invalid instruction bounds at PC=0x%04X (Op=%c Addr=%u Mod=%d)", 
+                 pc, op_ok ? op : '?', address, mod);
+        printf("%s\n", audit_log_buffer);
+        return false;
+    }
 }

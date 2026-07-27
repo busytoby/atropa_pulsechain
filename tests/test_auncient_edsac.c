@@ -127,7 +127,10 @@ void step_cpu(edsac_cpu_t *cpu) {
     uint16_t next_pc = cpu->pc + 1;
 
     // Log the instruction execution to the AUTODIN audit ledger
-    auncient_autodin_audit_edsac(cpu->pc, fetch_word.raw_value, cpu->accumulator);
+    if (!auncient_autodin_audit_edsac(cpu->pc, fetch_word.raw_value, cpu->accumulator)) {
+        cpu->halted = true;
+        return;
+    }
 
     switch (inst.op) {
         case 'F': { // Folklore instruction (Custom shift/hash transformation)
@@ -288,6 +291,22 @@ int main(void) {
     int64_t expected_acc = 0xAA55 ^ ((int64_t)0x1FFFFF << 16);
     assert(cpu.accumulator == expected_acc);
     printf("   ✓ 32-bit Folklore instruction execution and AUTODIN audit verified.\n");
+
+    // 9. Test AUTODIN instruction rejection (invalid instruction opcode/bounds)
+    printf("[INFO] Testing AUTODIN rejection of invalid instruction...\n");
+    uint32_t invalid_inst = 0xFF000000; // Opcode 0xFF is invalid
+    word_t invalid_word;
+    invalid_word.is_instruction = true;
+    invalid_word.raw_value = invalid_inst;
+    decode_instruction(invalid_inst, &invalid_word.inst);
+    
+    cpu.pc = 200;
+    cpu.halted = false;
+    access_memory(&cpu, 200, true, &invalid_word);
+    
+    step_cpu(&cpu);
+    assert(cpu.halted == true);
+    printf("   ✓ AUTODIN rejected invalid instruction and halted CPU.\n");
 
     printf("=============================================================\n");
     printf("EDSAC SIMULATION AND WHEELER JUMP VERIFIED SUCCESS\n");
