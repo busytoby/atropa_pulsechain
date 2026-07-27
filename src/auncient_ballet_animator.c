@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <stdlib.h>
 
 extern void auncient_bridge_entity_to_ssa(const char *entity_name, char *ssn_out, char *site_out, int max_len);
 
@@ -48,4 +49,31 @@ void auncient_ballet_step_pose(AuncientBalletBear *bear, float t) {
         float rate = 0.05f * (i + 1);
         bear->verlet_charge_decay[i] = expf(-rate * t);
     }
+}
+
+bool auncient_ballet_export_pose_usda(const AuncientStlMesh *base_stl, const AuncientBalletBear *bear, const char *usda_filepath) {
+    if (!base_stl || !bear || !usda_filepath) {
+        return false;
+    }
+
+    AuncientStlMesh deformed;
+    deformed.facet_count = base_stl->facet_count;
+    deformed.facets = (AuncientStlFacet *)malloc(sizeof(AuncientStlFacet) * deformed.facet_count);
+    if (!deformed.facets) {
+        return false;
+    }
+    memcpy(deformed.facets, base_stl->facets, sizeof(AuncientStlFacet) * deformed.facet_count);
+
+    // Rule 10 physics: Apply Verlet charge decay decay multiplier to deformation
+    float scale = bear->verlet_charge_decay[0];
+    for (uint32_t i = 0; i < deformed.facet_count; i++) {
+        for (int v = 0; v < 3; v++) {
+            deformed.facets[i].vertices[v][2] *= scale;
+        }
+    }
+
+    extern bool auncient_bridge_stl_to_usda(const AuncientStlMesh *stl_mesh, const char *usda_filepath);
+    bool ok = auncient_bridge_stl_to_usda(&deformed, usda_filepath);
+    free(deformed.facets);
+    return ok;
 }

@@ -19,4 +19,7 @@ bool auncient_ballet_register_bear(const char *name, const char *dna_seed_block,
 // Animates the bear's joints and Verlet FET potentials over a time step t
 void auncient_ballet_step_pose(AuncientBalletBear *bear, float t);
 
+// Deforms an STL mesh using Verlet physics state and writes it to a USDA scene
+bool auncient_ballet_export_pose_usda(const AuncientStlMesh *base_stl, const AuncientBalletBear *bear, const char *usda_filepath);
+
 #endif // AUNCIENT_BALLET_ANIMATOR_H
