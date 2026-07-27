@@ -82,7 +82,7 @@ def get_walking_geometry(time_sec):
         t = (time_sec - 7.0) / 2.0
         x_disp = 0.0
         
-        body_yaw = (1.0 - t) * 1.0
+        body_yaw = 1.0 + t * (math.pi - 1.0)
         
         y_disp = 0.05 + (1.0 - t) * 0.06 * abs(math.sin(freq * 7.0))
         body_pitch = (1.0 - t) * 0.08 * math.sin(freq * 7.0)
@@ -113,7 +113,7 @@ def get_walking_geometry(time_sec):
         x_disp = 0.0
         y_disp = 0.05
         body_pitch = 0.0
-        body_yaw = 0.0
+        body_yaw = math.pi
         body_roll = 0.0
         
         swing_l = 0.0
@@ -135,7 +135,8 @@ def get_walking_geometry(time_sec):
         t = (time_sec - 15.0) / 2.0
         x_disp = 0.0
         
-        body_yaw = t * 1.0
+        body_yaw = math.pi - t * (math.pi - 1.0)
+
         
         walk_start_time = 17.0
         
