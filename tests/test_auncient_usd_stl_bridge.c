@@ -46,6 +46,34 @@ int main(void) {
     // Clean up
     remove(usda_output_path);
 
+    // 2. Test reverse conversion USDA back to ASCII STL
+    printf("[TEST] Converting USDA mesh structure back to ASCII STL...\n");
+    float points[9] = {
+        0.0f, 0.0f, 0.0f,
+        1.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f
+    };
+    uint32_t indices[3] = { 0, 1, 2 };
+    const char *stl_output_path = "tests/test_reverse.stl";
+
+    bool rev_success = auncient_bridge_usda_to_stl(points, 3, indices, 3, stl_output_path);
+    assert(rev_success == true);
+
+    FILE *stl_file = fopen(stl_output_path, "r");
+    assert(stl_file != NULL);
+    char stl_buf[128];
+    bool found_solid = false;
+    while (fgets(stl_buf, sizeof(stl_buf), stl_file)) {
+        if (strstr(stl_buf, "solid GeneratedMesh") != NULL) {
+            found_solid = true;
+            break;
+        }
+    }
+    fclose(stl_file);
+    assert(found_solid == true);
+    remove(stl_output_path);
+    printf("   ✓ Reverse conversion back to ASCII STL verified.\n");
+
     printf("=============================================================\n");
     printf("ALL AUNCIENT USD-STL BRIDGE TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
