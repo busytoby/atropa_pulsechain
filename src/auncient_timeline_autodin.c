@@ -1225,8 +1225,8 @@ bool auncient_autodin_audit_edsac(uint32_t pc, uint32_t instruction, int64_t acc
                   op == 'G' || op == 'E' || op == 'Z' || op == 'H' || 
                   op == 'V' || op == 'N' || op == 'F');
 
-    // Validate Memory Bounds: standard EDSAC memory is 1024, Folklore has extended bounds
-    bool addr_ok = (address < 1024 || (op == 'F' && address <= 0x3FFFFF));
+    // Validate Memory Bounds: support extended 22-bit address space
+    bool addr_ok = (address <= 0x3FFFFF);
 
     // Validate Modifier bits
     bool mod_ok = (mod <= 2);
@@ -1304,7 +1304,8 @@ bool auncient_autodin_speculative_prefetch_validate(uint32_t start_pc, const uin
         bool op_ok = (op == 'A' || op == 'S' || op == 'T' || op == 'U' || 
                       op == 'G' || op == 'E' || op == 'Z' || op == 'H' || 
                       op == 'V' || op == 'N' || op == 'F');
-        bool addr_ok = (address < 1024 || (op == 'F' && address <= 0x3FFFFF));
+        // Validate Memory Bounds: support extended 22-bit address space
+        bool addr_ok = (address <= 0x3FFFFF);
         bool mod_ok = (mod <= 2);
 
         if (!op_ok || !addr_ok || !mod_ok) {
