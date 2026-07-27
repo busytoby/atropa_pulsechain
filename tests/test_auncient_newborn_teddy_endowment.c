@@ -143,6 +143,30 @@ int main(void) {
     assert(start_ok);
     printf("   ✓ AUTODIN system startup verification successful.\n");
 
+    // 8. Test Active .dat.bin Ledger Persistence (Rule 13 compliance)
+    printf("   Testing active ledger file persistence (.dat.bin)...\n");
+    const char *db_path = "tests/test_hogan_ledger.dat.bin";
+    bool saved = auncient_hogan_save_ledger(active_ledger, 3, db_path);
+    assert(saved);
+
+    HoganAccount loaded_ledger[3];
+    int loaded_count = 0;
+    bool loaded = auncient_hogan_load_ledger(loaded_ledger, &loaded_count, 3, db_path);
+    assert(loaded);
+    assert(loaded_count == 3);
+    assert(loaded_ledger[0].account_id == 999);
+    assert(loaded_ledger[1].account_id == 777);
+    assert(loaded_ledger[2].account_id == 555);
+    
+    // Verify file format checks (must reject non-.dat.bin files)
+    bool bad_save = auncient_hogan_save_ledger(active_ledger, 3, "tests/test_hogan_ledger.txt");
+    assert(!bad_save);
+    bool bad_load = auncient_hogan_load_ledger(loaded_ledger, &loaded_count, 3, "tests/test_hogan_ledger.json");
+    assert(!bad_load);
+
+    remove(db_path);
+    printf("   ✓ Active database persistence and file extension guard verified.\n");
+
     printf("=============================================================\n");
     printf("ALL NEWBORN TEDDY BEAR ENDOWMENT TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

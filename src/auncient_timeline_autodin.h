@@ -257,6 +257,12 @@ void auncient_cics_process_transaction(uint32_t transaction_id, const char *reco
 // Verifies the presence of Hogan Bank, SSA, and at least one Stuffed Teddy Bear at AUTODIN start
 bool auncient_autodin_verify_system_start(const HoganAccount *accounts, int account_count);
 
+// Saves the active simulated Hogan ledger to a binary .dat.bin file
+bool auncient_hogan_save_ledger(const HoganAccount *accounts, int count, const char *bin_path);
+
+// Loads the simulated Hogan ledger from a binary .dat.bin file
+bool auncient_hogan_load_ledger(HoganAccount *accounts, int *count_out, int max_accounts, const char *bin_path);
+
 #ifdef __cplusplus
 }
 #endif

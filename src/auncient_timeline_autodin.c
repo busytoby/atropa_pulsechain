@@ -1148,3 +1148,57 @@ bool auncient_autodin_verify_system_start(const HoganAccount *accounts, int acco
     printf("[AUTODIN STARTUP SUCCESS] All system participants (Hogan Bank, SSA, and Stuffed Teddy Bear) successfully verified.\n");
     return true;
 }
+
+bool auncient_hogan_save_ledger(const HoganAccount *accounts, int count, const char *bin_path) {
+    if (!accounts || count <= 0 || !bin_path) return false;
+
+    // Rule 13 validation: Support only .dat.bin extensions
+    size_t len = strlen(bin_path);
+    if (len < 8 || strcmp(bin_path + len - 8, ".dat.bin") != 0) {
+        printf("[HOGAN LEDGER ERROR] Only .dat.bin file extension is supported.\n");
+        return false;
+    }
+
+    FILE *f = fopen(bin_path, "wb");
+    if (!f) return false;
+
+    uint32_t count_val = (uint32_t)count;
+    fwrite(&count_val, sizeof(uint32_t), 1, f);
+    fwrite(accounts, sizeof(HoganAccount), count, f);
+
+    fclose(f);
+    return true;
+}
+
+bool auncient_hogan_load_ledger(HoganAccount *accounts, int *count_out, int max_accounts, const char *bin_path) {
+    if (!accounts || !count_out || max_accounts <= 0 || !bin_path) return false;
+
+    // Rule 13 validation: Support only .dat.bin extensions
+    size_t len = strlen(bin_path);
+    if (len < 8 || strcmp(bin_path + len - 8, ".dat.bin") != 0) {
+        printf("[HOGAN LEDGER ERROR] Only .dat.bin file extension is supported.\n");
+        return false;
+    }
+
+    FILE *f = fopen(bin_path, "rb");
+    if (!f) return false;
+
+    uint32_t count_val = 0;
+    if (fread(&count_val, sizeof(uint32_t), 1, f) != 1) {
+        fclose(f);
+        return false;
+    }
+
+    if (count_val > (uint32_t)max_accounts) {
+        count_val = (uint32_t)max_accounts;
+    }
+
+    if (fread(accounts, sizeof(HoganAccount), count_val, f) != count_val) {
+        fclose(f);
+        return false;
+    }
+
+    *count_out = (int)count_val;
+    fclose(f);
+    return true;
+}
