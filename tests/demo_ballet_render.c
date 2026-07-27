@@ -97,13 +97,15 @@ int main(void) {
         draw_line(rgb_out, 0, HEIGHT / 2, WIDTH - 1, HEIGHT / 2, 0x88, 0x66, 0x33);
 
         // Rasterize meshes with wireframe lines
-        float theta = bear.joint_angle_hip;
-        float cos_t = cosf(theta);
-        float sin_t = sinf(theta);
         float stretch = bear.verlet_charge_decay[0];
 
         AuncientStlMesh meshes[2] = { head_mesh, joint_mesh };
         for (int m = 0; m < 2; m++) {
+            // Setup distinct joint angles for ballet pose transitions
+            float joint_theta = (m == 0) ? (0.3f * sinf(t * 4.0f)) : bear.joint_angle_shoulder;
+            float cos_j = cosf(joint_theta);
+            float sin_j = sinf(joint_theta);
+
             for (uint32_t i = 0; i < meshes[m].facet_count; i++) {
                 int sx[3], sy[3];
                 for (int v = 0; v < 3; v++) {
@@ -111,9 +113,19 @@ int main(void) {
                     float y = meshes[m].facets[i].vertices[v][1];
                     float z = meshes[m].facets[i].vertices[v][2];
 
-                    // 1. Joint Rotation (XZ plane transformation)
-                    float rx = x * cos_t - z * sin_t;
-                    float rz = x * sin_t + z * cos_t;
+                    float rx, ry, rz;
+
+                    if (m == 0) {
+                        // Head Segment: neck joint sway rotation, offset upwards by +0.5
+                        rx = x * cos_j - z * sin_j;
+                        rz = x * sin_j + z * cos_j;
+                        ry = y + 0.5f;
+                    } else {
+                        // Limb Segment: hip joint kick extension, offset downwards by -0.5
+                        rx = (x - 0.5f) * cos_j - z * sin_j + 0.5f;
+                        rz = (x - 0.5f) * sin_j + z * cos_j;
+                        ry = y - 0.5f;
+                    }
 
                     // 2. Verlet stretch (Rule 10)
                     if (rz < 0.0f) {
@@ -123,7 +135,7 @@ int main(void) {
                     // Map to screen coordinates (centered at screen center with sway offset)
                     float sway = 200.0f * sinf(t * 1.5f);
                     sx[v] = (int)(rx * 300.0f) + WIDTH / 2 + (int)sway;
-                    sy[v] = (int)(y * 300.0f) + HEIGHT / 2;
+                    sy[v] = (int)(ry * 300.0f) + HEIGHT / 2;
                 }
 
                 // Draw wireframe links representing Verlet FET network (Rule 10)
