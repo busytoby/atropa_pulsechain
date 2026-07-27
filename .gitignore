@@ -522,6 +522,7 @@ frontend/compiled_yul.json
 /tests/auncient_wayland_editor
 /tests/bench_cinefex
 /tests/bench_cinefex_shaders
+/tests/test_auncient_edsac_firewall
 
 # Ignore large media formats and document assets
 *.jpg
