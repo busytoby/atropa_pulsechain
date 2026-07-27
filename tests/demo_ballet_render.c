@@ -101,8 +101,10 @@ int main(void) {
 
         AuncientStlMesh meshes[2] = { head_mesh, joint_mesh };
         for (int m = 0; m < 2; m++) {
-            // Setup distinct joint angles for ballet pose transitions
-            float joint_theta = (m == 0) ? (0.3f * sinf(t * 4.0f)) : bear.joint_angle_shoulder;
+            // Apply explicit ballet pose transition angles (arabesque kick & balancing head tilt)
+            float leg_kick = 1.2f * sinf(t * 3.0f);
+            float head_tilt = -0.4f * cosf(t * 3.0f);
+            float joint_theta = (m == 0) ? head_tilt : leg_kick;
             float cos_j = cosf(joint_theta);
             float sin_j = sinf(joint_theta);
 
@@ -132,10 +134,14 @@ int main(void) {
                         rz *= stretch;
                     }
 
-                    // Map to screen coordinates (centered at screen center with sway offset)
+                    // Map to screen coordinates (centered at screen center with sway and leap offsets)
                     float sway = 200.0f * sinf(t * 1.5f);
+                    float norm_t = fmodf(t, 1.0f);
+                    float leap_y = 150.0f * (1.0f - 4.0f * (norm_t - 0.5f) * (norm_t - 0.5f));
+                    if (leap_y < 0.0f) leap_y = 0.0f;
+
                     sx[v] = (int)(rx * 300.0f) + WIDTH / 2 + (int)sway;
-                    sy[v] = (int)(ry * 300.0f) + HEIGHT / 2;
+                    sy[v] = (int)(ry * 300.0f) + HEIGHT / 2 - (int)leap_y;
                 }
 
                 // Draw wireframe links representing Verlet FET network (Rule 10)
