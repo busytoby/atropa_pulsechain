@@ -507,6 +507,10 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/te
 gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_xdc_debugger.c src/auncient_xdc_debugger.c src/auncient_timeline_autodin.c src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c src/auncient_sdk.c src/auncient_vulkan_materials.c src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_auncient_xdc_debugger -lm -lrt -lssl -lcrypto
 ./tests/test_auncient_xdc_debugger
 
+# Compile and run Auncient XDG Debug Portal Simulation
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_xdg_debug_portal.c src/auncient_xdg_debug_portal.c src/auncient_xdc_debugger.c src/auncient_timeline_autodin.c src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c src/auncient_sdk.c src/auncient_vulkan_materials.c src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_auncient_xdg_debug_portal -lm -lrt -lssl -lcrypto
+./tests/test_auncient_xdg_debug_portal
+
 # Compile and run Auncient Hudson Soft to VGPR Register Mirroring
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_huc_vgpr.c -o tests/test_auncient_huc_vgpr -lm -lrt
 ./tests/test_auncient_huc_vgpr
