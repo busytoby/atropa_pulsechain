@@ -811,7 +811,31 @@ static void draw_string_1bit(uint16_t *buf, int cx, int cy, const char *str) {
     }
 }
 
+static float g_head_vertices[128][3];
+static int g_head_vertex_count = 0;
+
+void load_usd_head_vertices(void) {
+    FILE *f = fopen("tsfi2-deepseek/assets/teddy_head.usda", "r");
+    if (!f) f = fopen("assets/teddy_head.usda", "r");
+    if (!f) return;
+    char line[256];
+    while (fgets(line, sizeof(line), f)) {
+        float x, y, z;
+        if (sscanf(line, " (%f, %f, %f),", &x, &y, &z) == 3) {
+            if (g_head_vertex_count < 128) {
+                g_head_vertices[g_head_vertex_count][0] = x;
+                g_head_vertices[g_head_vertex_count][1] = y;
+                g_head_vertices[g_head_vertex_count][2] = z;
+                g_head_vertex_count++;
+            }
+        }
+    }
+    fclose(f);
+}
+
 int main() {
+    load_usd_head_vertices();
+
     srand((unsigned int)time(NULL));
     const char *audio_file = "/tmp/tsfi_tiger_demo.wav";
     
@@ -1642,7 +1666,7 @@ int main() {
     tsfi_autodin_zmm_tx_req_t autodin_transaction_request;
     memset(&autodin_transaction_request, 0, sizeof(tsfi_autodin_zmm_tx_req_t));
     snprintf(autodin_transaction_request.from_addr, 43, "0x1111222233334444555566667777888899990000");
-    snprintf(autodin_transaction_request.to_addr, 43, "dynamic_0x9999888877776666555544443333222211110000");
+    snprintf(autodin_transaction_request.to_addr, 43, "dynamic_0x999988887777666655554444");
     autodin_transaction_request.nonce = 1;
     autodin_transaction_request.selector = 0xA9059CBB;
     autodin_transaction_request.calldata_len = 64;
@@ -1712,13 +1736,7 @@ int main() {
         float stops_positions[3] = { 0.0f, 0.5f, 1.0f };
         tsfi_quantel_paintbox_multistop_gradient(canvas, WIDTH, HEIGHT, 0, 0, WIDTH, HEIGHT, stops_colors, stops_positions, 3);
 
-        // Paintbox: Dynamic Stencil mask application
-        uint8_t *stencil_mask = calloc(WIDTH * HEIGHT, sizeof(uint8_t));
-        for (int i = 0; i < WIDTH * HEIGHT; i++) {
-            stencil_mask[i] = ((i % WIDTH) > 40 && (i % WIDTH) < 80) ? 255 : 0;
-        }
-        tsfi_quantel_paintbox_apply_stencil(canvas, WIDTH, HEIGHT, stencil_mask, 0xFF1c1815);
-        free(stencil_mask);
+        // Paintbox: Dynamic Stencil mask application (Removed obstruction artifact)
 
         float center_x = WIDTH / 2.0f;
         float center_y = HEIGHT / 2.0f;
@@ -1873,15 +1891,41 @@ int main() {
             tsfi_quantel_paintbox_pressure_jitter_hue(canvas, WIDTH, HEIGHT, (int)lx, (int)ly, 2, 0.8f, 0.2f, 0xFFFF4500); // Red-Orange
         }
 
-        // 6. Sub Growl Tube (Screen 1, negative-resistance wobble)
-        float growl_scale = 8.0f + 6.0f * sinf(t * 5.8f);
+        // 6. Sub Growl Tube (Screen 1, negative-resistance wobble / USD Head Mesh)
         int g_cx = scr_x[1];
         int g_cy = scr_y[1];
-        for (int i = 0; i < 50; i++) {
-            float theta_l = (float)i * 2.0f * (float)M_PI / 50.0f;
-            float lx = g_cx + growl_scale * sinf(theta_l * 2.0f + t * 2.0f);
-            float ly = g_cy + growl_scale * cosf(theta_l * 3.0f + t * 1.5f);
-            tsfi_quantel_paintbox_pressure_jitter_hue(canvas, WIDTH, HEIGHT, (int)lx, (int)ly, 3, 0.8f, 0.1f, 0xFF8c7241); // Dim Gold
+        if (g_head_vertex_count > 0) {
+            float cos_gr = cosf(t * 1.5f);
+            float sin_gr = sinf(t * 1.5f);
+            for (int i = 0; i < g_head_vertex_count; i++) {
+                float hx = g_head_vertices[i][0] * 32.0f;
+                float hy = g_head_vertices[i][1] * 32.0f;
+                float hz = g_head_vertices[i][2] * 32.0f;
+                
+                // Rotate around Y
+                float rx = hx * cos_gr - hz * sin_gr;
+                float rz = hx * sin_gr + hz * cos_gr;
+                float ry = hy;
+                
+                // Project
+                float d_cam = 200.0f;
+                float factor = 120.0f / (d_cam - rz);
+                int proj_x = g_cx + (int)(rx * factor);
+                int proj_y = g_cy + (int)(ry * factor);
+                
+                // Draw point
+                if (proj_x >= 0 && proj_x < WIDTH && proj_y >= 0 && proj_y < HEIGHT) {
+                    canvas[proj_y * WIDTH + proj_x] = 0xFFc5a059;
+                }
+            }
+        } else {
+            float growl_scale = 8.0f + 6.0f * sinf(t * 5.8f);
+            for (int i = 0; i < 50; i++) {
+                float theta_l = (float)i * 2.0f * (float)M_PI / 50.0f;
+                float lx = g_cx + growl_scale * sinf(theta_l * 2.0f + t * 2.0f);
+                float ly = g_cy + growl_scale * cosf(theta_l * 3.0f + t * 1.5f);
+                tsfi_quantel_paintbox_pressure_jitter_hue(canvas, WIDTH, HEIGHT, (int)lx, (int)ly, 3, 0.8f, 0.1f, 0xFF8c7241);
+            }
         }
 
         // Suppress unused warning

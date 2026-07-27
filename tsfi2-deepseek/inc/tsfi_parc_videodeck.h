@@ -40,4 +40,11 @@ int tsfi_parc_deck_flip(tsfi_parc_video_deck_t *deck);
 /* Dispatch user commands (Play, Pause, Stop, Seek, Switch Track) */
 int tsfi_parc_deck_control(tsfi_parc_video_deck_t *deck, int command, int arg);
 
+/* Load digital track descriptors from block-ledger file structures */
+int tsfi_parc_deck_load_track(tsfi_parc_video_deck_t *deck, const char *filepath);
+
+/* Record raw headed/headless video frames to designated file descriptor */
+int tsfi_parc_deck_record_frame(const uint16_t *display_mem, void *file_handle);
+
 #endif // TSFI_PARC_VIDEODECK_H
+
