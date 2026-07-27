@@ -275,6 +275,9 @@ bool auncient_autodin_dispatch_wmq(uint32_t resolved_instruction, uint32_t targe
 // Speculatively validates a batch of instructions before they are loaded into simulated delay lines
 bool auncient_autodin_speculative_prefetch_validate(uint32_t start_pc, const uint32_t *instructions, int count);
 
+// Sets the authorization status for EDSAC AUTODIN Initial Orders execution
+void auncient_autodin_edsac_authorize(bool authorize);
+
 #ifdef __cplusplus
 }
 #endif

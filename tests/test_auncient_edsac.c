@@ -246,6 +246,18 @@ int main(void) {
         "A 109 F\n"  // Set accumulator dummy non-negative to satisfy exit branch conditions
         "Z 0 F\n";   // Return cell placeholder (will be overwritten with G 22 F)
 
+    // 0. Test default-reject behavior (must reject loading unauthorized programs)
+    printf("[INFO] Testing default-reject tape loading...\n");
+    load_initial_orders(&cpu, caller_tape, 20);
+    word_t empty_w;
+    access_memory(&cpu, 20, false, &empty_w);
+    assert(empty_w.raw_value == 0);
+    assert(empty_w.is_instruction == false);
+    printf("   ✓ Unauthorized tape loading successfully blocked by default.\n");
+
+    // Grant authorization for system operations
+    auncient_autodin_edsac_authorize(true);
+
     printf("[INFO] Loading Caller Program via Initial Orders...\n");
     load_initial_orders(&cpu, caller_tape, 20);
 
@@ -385,6 +397,17 @@ int main(void) {
     assert(check_w.raw_value == 0);
     assert(check_w.is_instruction == false);
     printf("   ✓ Corrupted tape successfully rejected and skipped.\n");
+
+    // 14. Test Revoking Authorization
+    printf("[INFO] Testing revoking authorization...\n");
+    auncient_autodin_edsac_authorize(false);
+    
+    // Attempt to run step should halt CPU due to rejection
+    cpu.pc = 150;
+    cpu.halted = false;
+    step_cpu(&cpu);
+    assert(cpu.halted == true);
+    printf("   ✓ Revoked authorization successfully halts execution.\n");
 
     printf("=============================================================\n");
     printf("EDSAC SIMULATION AND WHEELER JUMP VERIFIED SUCCESS\n");

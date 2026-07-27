@@ -1203,7 +1203,19 @@ bool auncient_hogan_load_ledger(HoganAccount *accounts, int *count_out, int max_
     return true;
 }
 
+static bool edsac_autodin_authorized = false;
+
+void auncient_autodin_edsac_authorize(bool authorize) {
+    edsac_autodin_authorized = authorize;
+    printf("[AUTODIN AUTHORIZATION] EDSAC execution authorization state set to: %s\n", 
+           authorize ? "GRANTED" : "REVOKED");
+}
+
 bool auncient_autodin_audit_edsac(uint32_t pc, uint32_t instruction, int64_t accumulator) {
+    if (!edsac_autodin_authorized) {
+        printf("[AUTODIN EDSAC REJECT] Access Denied. Sufficient authorization not provided.\n");
+        return false;
+    }
     char op = (char)((instruction >> 24) & 0xFF);
     uint32_t address = (instruction >> 2) & 0x3FFFFF;
     uint8_t mod = instruction & 3;
@@ -1266,6 +1278,10 @@ bool auncient_autodin_dispatch_wmq(uint32_t resolved_instruction, uint32_t targe
 }
 
 bool auncient_autodin_speculative_prefetch_validate(uint32_t start_pc, const uint32_t *instructions, int count) {
+    if (!edsac_autodin_authorized) {
+        printf("[AUTODIN SPECULATIVE REJECT] Access Denied. Sufficient authorization not provided.\n");
+        return false;
+    }
     if (!instructions || count <= 0) return false;
 
     printf("[AUTODIN SPECULATIVE PREFETCH] Starting batch validation of %d instructions at start PC 0x%04X...\n", 
