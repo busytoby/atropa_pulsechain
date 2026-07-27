@@ -13,8 +13,20 @@ typedef struct {
     int key_count;
 } AuncientPacket;
 
-// Initializes the firewall environment and loads rules from the paper tape input
-bool auncient_firewall_init(const char *rules_tape, uint32_t base_addr, const uint32_t *pki_keys, int key_count);
+// The Analyzer layout for classifying permissible and impermissible operations at Initial Orders 1
+typedef struct {
+    uint32_t prohibited_opcodes; // Bitmask of prohibited ASCII opcodes
+} AuncientAnalyzer;
+
+// Initializes an analyzer instance
+void auncient_analyzer_init(AuncientAnalyzer *analyzer, uint32_t prohibited_opcodes);
+
+// Evaluates compiled instruction tape against classification rules. 
+// Returns true if permissible, false if impermissible (default-reject).
+bool auncient_analyzer_classify(const AuncientAnalyzer *analyzer, const uint32_t *instructions, int count);
+
+// Initializes the firewall environment and loads rules from the paper tape input using an analyzer at Initial Orders 1
+bool auncient_firewall_init(const char *rules_tape, uint32_t base_addr, const uint32_t *pki_keys, int key_count, const AuncientAnalyzer *analyzer);
 
 // Evaluates an incoming packet against the compiled rules inside the EDSAC memory lines
 bool auncient_firewall_eval_packet(const AuncientPacket *packet);

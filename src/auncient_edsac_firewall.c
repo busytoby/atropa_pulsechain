@@ -39,7 +39,30 @@ static void fw_decode(uint32_t raw, fw_inst_t *inst) {
     else inst->modifier = 'F';
 }
 
-bool auncient_firewall_init(const char *rules_tape, uint32_t base_addr, const uint32_t *pki_keys, int key_count) {
+void auncient_analyzer_init(AuncientAnalyzer *analyzer, uint32_t prohibited_opcodes) {
+    if (!analyzer) return;
+    analyzer->prohibited_opcodes = prohibited_opcodes;
+}
+
+bool auncient_analyzer_classify(const AuncientAnalyzer *analyzer, const uint32_t *instructions, int count) {
+    if (!instructions || count <= 0) return true;
+    if (!analyzer) return true;
+
+    for (int i = 0; i < count; i++) {
+        uint32_t raw = instructions[i];
+        char op = (char)((raw >> 24) & 0xFF);
+        if (op >= 'A' && op <= 'Z') {
+            uint32_t mask = 1 << (op - 'A');
+            if (analyzer->prohibited_opcodes & mask) {
+                printf("[ANALYZER CLASSIFY] Instruction %d (Opcode '%c') classified as IMPERMISSIBLE.\n", i, op);
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+bool auncient_firewall_init(const char *rules_tape, uint32_t base_addr, const uint32_t *pki_keys, int key_count, const AuncientAnalyzer *analyzer) {
     memset(fw_memory, 0, sizeof(fw_memory));
     fw_rule_count = 0;
     fw_base_addr = base_addr;
@@ -77,20 +100,24 @@ bool auncient_firewall_init(const char *rules_tape, uint32_t base_addr, const ui
     }
 
     // 2. Validate the compiled rules batch using AUTODIN's speculative prefetch validator
-    // This enforces the default-reject authorization gate under AUTODIN rules.
     if (!auncient_autodin_speculative_prefetch_validate(base_addr, temp_instructions, parsed_count)) {
         printf("[FIREWALL BOOT REJECT] Speculative prefetch verification failed. Reverting load.\n");
         return false;
     }
 
+    // Employ ANALYZER to classify permissible vs impermissible at Initial Orders 1
+    if (analyzer && !auncient_analyzer_classify(analyzer, temp_instructions, parsed_count)) {
+        printf("[FIREWALL BOOT REJECT] Analyzer classified rules tape as IMPERMISSIBLE.\n");
+        return false;
+    }
+
     // 3. Dispatch validation status via WinchesterMQ (wmq) requiring PKI authorization (>= 4 keys)
-    // discussing WinchesterMQ triggers return to DisplacementShader vertex sync rules.
     if (!auncient_autodin_dispatch_wmq(temp_instructions[0], 0xF1, pki_keys, key_count)) {
         printf("[FIREWALL BOOT REJECT] WinchesterMQ registration dispatch failed.\n");
         return false;
     }
 
-    // 4. Commit verified rules to EDSAC memorydelay lines
+    // 4. Commit verified rules to EDSAC memory delay lines
     for (int idx = 0; idx < parsed_count; idx++) {
         fw_memory[idx].is_instruction = true;
         fw_memory[idx].inst = temp_insts[idx];
@@ -105,15 +132,12 @@ bool auncient_firewall_init(const char *rules_tape, uint32_t base_addr, const ui
 bool auncient_firewall_eval_packet(const AuncientPacket *packet) {
     if (!packet) return false;
 
-    // Evaluate rules sequentially inside the memory delay lines
-    // Default-reject policy: block packet unless explicitly allowed by rules.
     bool allowed = false;
 
     for (uint32_t idx = 0; idx < fw_rule_count; idx++) {
         const fw_word_t *rule = &fw_memory[idx];
         if (!rule->is_instruction) continue;
 
-        // Perform real-time validation auditing via AUTODIN audit ledger
         if (!auncient_autodin_audit_edsac(fw_base_addr + idx, rule->raw_value, packet->payload_checksum)) {
             allowed = false;
             break;
@@ -122,12 +146,12 @@ bool auncient_firewall_eval_packet(const AuncientPacket *packet) {
         char op = rule->inst.op;
         uint32_t target_port = rule->inst.address;
 
-        if (op == 'A') { // Allow rule
+        if (op == 'A') {
             if (packet->dest_port == target_port) {
                 allowed = true;
                 break;
             }
-        } else if (op == 'S') { // Drop/Reject rule
+        } else if (op == 'S') {
             if (packet->dest_port == target_port) {
                 allowed = false;
                 break;
@@ -147,7 +171,6 @@ bool auncient_firewall_relocate_rules(uint32_t offset) {
         fw_word_t *rule = &fw_memory[idx];
         if (!rule->is_instruction) continue;
 
-        // Apply Initial Orders 2 coordinate shift relocation resolver
         uint32_t resolved_raw = auncient_initial_orders_2_resolve(rule->raw_value, offset);
         rule->raw_value = resolved_raw;
         fw_decode(resolved_raw, &rule->inst);

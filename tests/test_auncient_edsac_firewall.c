@@ -19,7 +19,7 @@ int main(void) {
 
     // 1. Verify default-reject initialization without authorization
     printf("[TEST] Booting firewall without AUTODIN authorization (expected block)...\n");
-    bool boot_fail = auncient_firewall_init(firewall_rules_tape, 500, valid_pki, 4);
+    bool boot_fail = auncient_firewall_init(firewall_rules_tape, 500, valid_pki, 4, NULL);
     assert(boot_fail == false);
     printf("   ✓ Blocked unauthorized boot successful.\n");
 
@@ -28,20 +28,30 @@ int main(void) {
 
     // 2. Verify boot rejection on insufficient PKI keys (< 4 keys)
     printf("[TEST] Booting firewall with insufficient PKI keys (expected block)...\n");
-    bool boot_fail_pki = auncient_firewall_init(firewall_rules_tape, 500, invalid_pki, 3);
+    bool boot_fail_pki = auncient_firewall_init(firewall_rules_tape, 500, invalid_pki, 3, NULL);
     assert(boot_fail_pki == false);
     printf("   ✓ Blocked insufficient PKI boot successful.\n");
 
-    // 3. Boot successfully with valid authorization and PKI keys
+    // 3. Test analyzer classification at Initial Orders 1
+    // Setup analyzer that prohibits 'S' (Drop/Reject) opcodes
+    AuncientAnalyzer analyzer;
+    auncient_analyzer_init(&analyzer, 1 << ('S' - 'A'));
+
+    printf("[TEST] Booting firewall with prohibited opcode in tape (expected analyzer block)...\n");
+    bool boot_fail_analyzer = auncient_firewall_init(firewall_rules_tape, 500, valid_pki, 4, &analyzer);
+    assert(boot_fail_analyzer == false);
+    printf("   ✓ Analyzer classification block verified.\n");
+
+    // 4. Boot successfully with valid credentials and no prohibited opcodes (using NULL or empty analyzer)
     printf("[TEST] Booting firewall with valid credentials (expected pass)...\n");
-    bool boot_pass = auncient_firewall_init(firewall_rules_tape, 500, valid_pki, 4);
+    bool boot_pass = auncient_firewall_init(firewall_rules_tape, 500, valid_pki, 4, NULL);
     assert(boot_pass == true);
     printf("   ✓ Firewall successfully booted.\n");
 
-    // 4. Evaluate packets
+    // 5. Evaluate packets
     AuncientPacket p1 = { .source_ip = 0x0A000001, .dest_port = 80, .payload_checksum = 0xAA55, .key_count = 4 };
     AuncientPacket p2 = { .source_ip = 0x0A000001, .dest_port = 22, .payload_checksum = 0xBB66, .key_count = 4 };
-    AuncientPacket p3 = { .source_ip = 0x0A000001, .dest_port = 8080, .payload_checksum = 0xCC77, .key_count = 4 }; // Untracked port -> default drop
+    AuncientPacket p3 = { .source_ip = 0x0A000001, .dest_port = 8080, .payload_checksum = 0xCC77, .key_count = 4 }; 
     AuncientPacket p4 = { .source_ip = 0x0A000001, .dest_port = 443, .payload_checksum = 0xDD88, .key_count = 4 };
 
     printf("[TEST] Evaluating HTTP packet (expected ALLOW)...\n");
@@ -57,8 +67,7 @@ int main(void) {
     assert(auncient_firewall_eval_packet(&p4) == true);
     printf("   ✓ Packet evaluation controls verified.\n");
 
-    // 5. Relocate rules using Initial Orders 2 coordinate shifts
-    // Relocates by offset +1000. HTTPS (port 443 D) becomes (port 1443 D). HTTP (port 80 F) does not shift (modifier 'F').
+    // 6. Relocate rules using Initial Orders 2 coordinate shifts
     printf("[TEST] Testing Initial Orders 2 coordinate shift rule relocation...\n");
     auncient_firewall_relocate_rules(1000);
 
@@ -76,7 +85,7 @@ int main(void) {
     assert(auncient_firewall_eval_packet(&p1) == true);
     printf("   ✓ Relocatable rule shifting verified.\n");
 
-    // 6. Test evaluation block upon revoking authorization
+    // 7. Test evaluation block upon revoking authorization
     auncient_autodin_edsac_authorize(false);
     printf("[TEST] Evaluating HTTP packet after revoking authorization (expected DENY due to audit block)...\n");
     assert(auncient_firewall_eval_packet(&p1) == false);
