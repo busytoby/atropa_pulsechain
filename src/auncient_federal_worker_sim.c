@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <string.h>
 
+static int consecutive_noise_count = 0;
+
 void auncient_worker_sim_init(FederalWorkerSim *sim, uint32_t fourier_peak_val) {
     if (!sim) return;
     memset(sim, 0, sizeof(FederalWorkerSim));
@@ -14,8 +16,28 @@ void auncient_worker_sim_init(FederalWorkerSim *sim, uint32_t fourier_peak_val) 
 bool auncient_worker_sim_qualify(FederalWorkerSim *sim, const AuncientAnalyzer *analyzer) {
     if (!sim || sim->phase != PHASE_UNAUTHORIZED_IMPOSITION) return false;
 
-    // Convert the raw Fourier peak into a virtual instruction stream for EDSAC analyzer evaluation
+    // Determine if raw peak is structured or noise
     uint32_t instruction = sim->fourier_peak_val;
+    char op = (char)((instruction >> 24) & 0xFF);
+    bool is_noise = (op < 'A' || op > 'Z');
+
+    if (is_noise) {
+        consecutive_noise_count++;
+        // If the noise exceeds the threshold limit of 3, raise a DEFCON alarm through CADE_IMF_NATO
+        if (consecutive_noise_count >= 3) {
+            uint16_t status_word = 0;
+            int is_valid = 0;
+            extern int tsfi_mf_norad_encode_defcon(int defcon_level, int radar_contacts, uint16_t *out_status, int *is_valid);
+            tsfi_mf_norad_encode_defcon(2, consecutive_noise_count, &status_word, &is_valid);
+            printf("[DEFCON ALARM] CADE_IMF_NATO raised DEFCON 2 alarm. Noise threshold exceeded! Status: 0x%04X\n", status_word);
+        }
+        return false; // Noise is blocked and not qualified, audit cannot start
+    }
+
+    // Reset noise counter if valid structured opcode is processed
+    consecutive_noise_count = 0;
+
+    // Convert the raw Fourier peak into a virtual instruction stream for EDSAC analyzer evaluation
     if (analyzer && !auncient_analyzer_classify(analyzer, &instruction, 1)) {
         printf("[WORKER SIM QUALIFY REJECT] EDSAC analyzer rejected the raw Fourier peak value %u.\n", sim->fourier_peak_val);
         return false;
