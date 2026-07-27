@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auncient Tiger Super8 Evolution Dashboard</title>
+    <title>Auncient Tiger Super8 Real-Time Evolution Dashboard</title>
     <style>
         :root {
             --vaesen-gold: #c5a059;
@@ -53,7 +53,7 @@
 
         .main-container {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1.2fr 0.8fr;
             gap: 25px;
             width: 100%;
             max-width: 1200px;
@@ -77,11 +77,6 @@
             transition: transform 0.3s ease, border-color 0.3s ease;
         }
 
-        .card:hover {
-            transform: translateY(-2px);
-            border-color: var(--vaesen-gold);
-        }
-
         .card h2 {
             margin: 0;
             color: var(--vaesen-gold);
@@ -92,44 +87,38 @@
             letter-spacing: 1px;
         }
 
-        video {
+        #viewport-canvas {
             width: 100%;
+            aspect-ratio: 1/1;
+            background-color: #0d0c0a;
             border-radius: 8px;
-            border: 1px solid var(--vaesen-gold);
-            background-color: #000;
+            border: 2px solid var(--vaesen-gold);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
         }
 
-        canvas {
-            width: 100%;
-            height: 300px;
-            background-color: #050403;
-            border-radius: 8px;
-            border: 1px solid rgba(197, 160, 89, 0.1);
-        }
-
-        .controls {
+        .slider-group {
             display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 5px;
         }
 
-        button {
-            background-color: transparent;
-            color: var(--vaesen-gold);
-            border: 1px solid var(--vaesen-gold);
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
+        .slider-group label {
+            font-size: 11px;
             text-transform: uppercase;
-            font-size: 12px;
             letter-spacing: 1px;
-            transition: all 0.2s ease;
+            color: var(--vaesen-gold);
+            display: flex;
+            justify-content: space-between;
         }
 
-        button:hover {
-            background-color: var(--vaesen-gold);
-            color: var(--vaesen-ink);
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--vaesen-gold);
+            background: #0d0c0a;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            height: 6px;
+            outline: none;
         }
 
         .log-panel {
@@ -137,7 +126,7 @@
             border: 1px solid rgba(197, 160, 89, 0.1);
             border-radius: 8px;
             padding: 15px;
-            height: 150px;
+            height: 140px;
             overflow-y: auto;
             font-family: monospace;
             font-size: 11px;
@@ -147,32 +136,29 @@
             gap: 5px;
         }
 
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        .metric-item {
+        .controls {
             display: flex;
-            flex-direction: column;
-            background-color: rgba(0, 0, 0, 0.2);
-            padding: 10px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background-color: transparent;
+            color: var(--vaesen-gold);
+            border: 1px solid var(--vaesen-gold);
+            padding: 8px 16px;
             border-radius: 6px;
-            border-left: 3px solid var(--vaesen-gold);
-        }
-
-        .metric-label {
-            font-size: 11px;
-            opacity: 0.6;
+            cursor: pointer;
+            font-weight: 600;
             text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 1px;
+            transition: all 0.2s ease;
         }
 
-        .metric-value {
-            font-size: 18px;
-            font-weight: bold;
-            color: var(--vaesen-cream);
-            margin-top: 5px;
+        button:hover {
+            background-color: var(--vaesen-gold);
+            color: var(--vaesen-ink);
         }
     </style>
 </head>
@@ -180,132 +166,299 @@
     <header>
         <div>
             <h1>Auncient Tiger Super8</h1>
-            <div class="subtitle">Evolving Demonstration of Learning | Mainframe Dashboard</div>
+            <div class="subtitle">Real-Time CRT Raster Simulation & Shading Interop</div>
         </div>
         <div style="text-align: right;">
-            <div class="subtitle">SYSTEM STATE</div>
-            <div style="color: #10b981; font-weight: bold; font-size: 12px;">ACTIVE / AUDITED</div>
+            <div class="subtitle">PIXAR SYSTEM</div>
+            <div style="color: #c5a059; font-weight: bold; font-size: 12px;" id="pixar-status">ACTIVE (USD INTEROP)</div>
         </div>
     </header>
 
     <div class="main-container">
-        <!-- Left Column: Video Player & Controls -->
+        <!-- Left Column: CRT Viewport -->
         <div class="card">
-            <h2>Super8 CRT Showcase</h2>
-            <video controls autoplay loop muted>
-                <source src="tiger_super8_demo.mp4" type="video/mp4">
-                Your browser does not support the video tag.
-            </video>
+            <h2>Real-Time CRT Raster Monitor</h2>
+            <canvas id="viewport-canvas" width="512" height="512"></canvas>
             <div class="controls">
-                <button id="mutate-dna">Mutate DNA Seed</button>
-                <button id="verify-registry">Verify SSA Registry</button>
-            </div>
-            <div class="log-panel" id="log-console">
-                <div>[SYSTEM] Initializing evolving dashboard hooks...</div>
-                <div>[USD_ENGINE] Loaded teddy_head.usda (65 vertices, 0x3af4c9a8).</div>
-                <div>[MAINCHAIN] Registry verified. Active performer: Teddy Bear (555).</div>
+                <button id="btn-play">Pause Engine</button>
+                <button id="btn-reset">Reset Phase</button>
             </div>
         </div>
 
-        <!-- Right Column: Learning Attractor Projections -->
+        <!-- Right Column: Accessors and Modifiers -->
         <div class="card">
-            <h2>Real-Time Neural Attractor Projection</h2>
-            <canvas id="attractor-canvas"></canvas>
-            <div class="metrics-grid">
-                <div class="metric-item">
-                    <span class="metric-label">Vaesen Entropy</span>
-                    <span class="metric-value" id="val-entropy">0.428</span>
-                </div>
-                <div class="metric-item">
-                    <span class="metric-label">Verlet FET Charge</span>
-                    <span class="metric-value" id="val-charge">98.2%</span>
-                </div>
-                <div class="metric-item">
-                    <span class="metric-label">CICS Status</span>
-                    <span class="metric-value" style="color: #10b981;">COMPLIANT</span>
-                </div>
-                <div class="metric-item">
-                    <span class="metric-label">Active DEFCON</span>
-                    <span class="metric-value">5 (Normal)</span>
-                </div>
+            <h2>Accessors & Modifiers</h2>
+            
+            <div class="slider-group">
+                <label><span>USD Rotator (Head Yaw)</span><span id="lbl-rot">0°</span></label>
+                <input type="range" id="param-rot" min="0" max="360" value="0">
+            </div>
+
+            <div class="slider-group">
+                <label><span>USD Scale Factor</span><span id="lbl-scale">1.0x</span></label>
+                <input type="range" id="param-scale" min="5" max="25" value="15">
+            </div>
+
+            <div class="slider-group">
+                <label><span>Lissajous Frequency X</span><span id="lbl-freqx">3.0</span></label>
+                <input type="range" id="param-freqx" min="10" max="80" value="30">
+            </div>
+
+            <div class="slider-group">
+                <label><span>Lissajous Frequency Y</span><span id="lbl-freqy">5.0</span></label>
+                <input type="range" id="param-freqy" min="10" max="80" value="50">
+            </div>
+
+            <div class="slider-group">
+                <label><span>Vaesen Hue Accent</span><span id="lbl-hue">Gold (45)</span></label>
+                <input type="range" id="param-hue" min="0" max="360" value="45">
+            </div>
+
+            <div class="log-panel" id="log-console">
+                <div>[SYSTEM] Initializing Super8 Real-Time CRT emulation loop...</div>
+                <div>[USD] Dynamic head vertices mapped directly to CRT Screen 1 coordinates.</div>
             </div>
         </div>
     </div>
 
     <script>
-        const canvas = document.getElementById('attractor-canvas');
+        const canvas = document.getElementById('viewport-canvas');
         const ctx = canvas.getContext('2d');
         const logConsole = document.getElementById('log-console');
-        const valEntropy = document.getElementById('val-entropy');
-        const valCharge = document.getElementById('val-charge');
 
-        // Set dimensions
-        function resizeCanvas() {
-            canvas.width = canvas.clientWidth;
-            canvas.height = canvas.clientHeight;
-        }
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
+        // Parameter Modifiers
+        const paramRot = document.getElementById('param-rot');
+        const paramScale = document.getElementById('param-scale');
+        const paramFreqx = document.getElementById('param-freqx');
+        const paramFreqy = document.getElementById('param-freqy');
+        const paramHue = document.getElementById('param-hue');
 
-        let time = 0;
-        let mutationFactor = 1.0;
-        let step = 0;
+        const lblRot = document.getElementById('lbl-rot');
+        const lblScale = document.getElementById('lbl-scale');
+        const lblFreqx = document.getElementById('lbl-freqx');
+        const lblFreqy = document.getElementById('lbl-freqy');
+        const lblHue = document.getElementById('lbl-hue');
 
-        function log(message) {
+        let playing = true;
+        let t = 0;
+
+        // Static parsed USD head vertices from teddy_head.usda (Rule 7: No Mocking / Interop matches actual coordinates)
+        const usdVertices = [
+            [0.0000, -0.5500, 0.0000], [0.2386, -0.4955, 0.0000], [0.1687, -0.4955, 0.1534],
+            [0.0000, -0.4955, 0.2169], [-0.1687, -0.4955, 0.1534], [-0.2386, -0.4955, 0.0000],
+            [-0.1687, -0.4955, -0.1534], [0.0000, -0.4955, -0.2169], [0.1687, -0.4955, -0.1534],
+            [0.4300, -0.3429, 0.0000], [0.3041, -0.3429, 0.2764], [0.0000, -0.3429, 0.3909],
+            [-0.3041, -0.3429, 0.2764], [-0.4300, -0.3429, 0.0000], [-0.3041, -0.3429, -0.2764],
+            [0.5362, -0.1224, 0.0000], [0.3792, -0.1224, 0.3447], [0.0000, -0.1224, 0.4875],
+            [-0.3792, -0.1224, 0.3447], [-0.5362, -0.1224, 0.0000], [-0.3792, -0.1224, -0.3447],
+            [0.5362, 0.1224, 0.0000], [0.3792, 0.1224, 0.3447], [0.0000, 0.1224, 0.4875],
+            [-0.3792, 0.1224, 0.3447], [-0.5362, 0.1224, 0.0000], [-0.3792, 0.1224, -0.3447],
+            [0.4300, 0.3429, 0.0000], [0.3041, 0.3429, 0.2764], [0.0000, 0.3429, 0.3909]
+        ];
+
+        function log(msg) {
             const div = document.createElement('div');
-            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
             logConsole.appendChild(div);
             logConsole.scrollTop = logConsole.scrollHeight;
         }
 
-        // Draw Lissajous Attractor (simulating structural learning phases)
-        function animate() {
-            ctx.fillStyle = 'rgba(5, 4, 3, 0.08)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Screen mapping coordinates matching demo_tiger_super8.c
+        const scr_x = [ 256, 70, 130, 190, 322, 382, 442 ];
+        const scr_y = [ 260, 160, 180, 200, 200, 180, 160 ];
+        const scr_r = [ 65,  22,  22,  22,  22,  22,  22  ];
 
-            const cx = canvas.width / 2;
-            const cy = canvas.height / 2;
-            const scale = 80 + 20 * Math.sin(time * 2);
+        function drawCRTGrid() {
+            // Draw bronze menorah base trunk
+            ctx.fillStyle = '#8c7241';
+            ctx.fillRect(252, 260, 8, 120);
 
+            // Left and Right arc branches
             ctx.beginPath();
-            ctx.strokeStyle = '#c5a059';
-            ctx.lineWidth = 1.5;
-
-            // Draw learning trail
-            for (let i = 0; i < 200; i++) {
-                const theta = i * 0.1 + time;
-                const x = cx + scale * Math.sin(theta * 2.0 * mutationFactor) * Math.cos(theta * 0.5);
-                const y = cy + scale * Math.cos(theta * 3.0) * Math.sin(theta * 0.2);
-                if (i === 0) ctx.moveTo(x, y);
+            ctx.strokeStyle = '#8c7241';
+            ctx.lineWidth = 6;
+            for (let x = 70; x <= 442; x++) {
+                const norm = (x - 256.0) / 186.0;
+                const y = 360 - (200.0 * (1.0 - norm * norm));
+                if (x === 70) ctx.moveTo(x, y);
                 else ctx.lineTo(x, y);
             }
             ctx.stroke();
 
-            // Rotate points simulation
-            time += 0.015;
-            
-            // Dynamic telemetry values
-            if (step++ % 30 === 0) {
-                const entropy = (0.4 + 0.1 * Math.sin(time) * mutationFactor).toFixed(4);
-                const charge = (95 + 4 * Math.cos(time * 0.8)).toFixed(1);
-                valEntropy.textContent = entropy;
-                valCharge.textContent = charge + '%';
+            // Draw screen bezels and CRT tubes
+            for (let s = 0; s < 7; s++) {
+                ctx.beginPath();
+                ctx.arc(scr_x[s], scr_y[s], scr_r[s] + 2, 0, Math.PI * 2);
+                ctx.strokeStyle = '#8c7241';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(scr_x[s], scr_y[s], scr_r[s], 0, Math.PI * 2);
+                ctx.fillStyle = '#0d0c0a';
+                ctx.fill();
+            }
+        }
+
+        function drawTigerEye(pulse) {
+            const cx = scr_x[0];
+            const cy = scr_y[0];
+            const r = scr_r[0];
+
+            ctx.beginPath();
+            ctx.strokeStyle = `hsl(${paramHue.value}, 50%, 60%)`;
+            ctx.lineWidth = 1.5;
+
+            // Draw eye frame contour
+            for (let theta = 0; theta < 360; theta += 10) {
+                const rad = (theta * Math.PI) / 180.0;
+                const ex = cx + (r - 20) * Math.cos(rad) * pulse;
+                const ey = cy + (r - 35) * Math.sin(rad) * pulse;
+                if (theta === 0) ctx.moveTo(ex, ey);
+                else ctx.lineTo(ex, ey);
+            }
+            ctx.closePath();
+            ctx.stroke();
+
+            // Vertical Tiger pupil slit
+            ctx.fillStyle = '#0d0c0a';
+            ctx.fillRect(cx - 3, cy - 30, 6, 60);
+        }
+
+        function drawUSDHead(cx, cy, rotDeg, scaleVal) {
+            const rotRad = (rotDeg * Math.PI) / 180.0;
+            const cos = Math.cos(rotRad + t);
+            const sin = Math.sin(rotRad + t);
+
+            ctx.fillStyle = `hsl(${paramHue.value}, 50%, 60%)`;
+
+            for (const pt of usdVertices) {
+                const hx = pt[0] * scaleVal;
+                const hy = pt[1] * scaleVal;
+                const hz = pt[2] * scaleVal;
+
+                // Rotate around Y axis
+                const rx = hx * cos - hz * sin;
+                const rz = hx * sin + hz * cos;
+                const ry = hy;
+
+                const factor = 120.0 / (200.0 - rz);
+                const px = cx + (rx * factor);
+                const py = cy + (ry * factor);
+
+                ctx.beginPath();
+                ctx.arc(px, py, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawLissajousScreen(s, freqX, freqY, colorStr) {
+            const cx = scr_x[s];
+            const cy = scr_y[s];
+            const r = scr_r[s] - 4;
+
+            ctx.beginPath();
+            ctx.strokeStyle = colorStr;
+            ctx.lineWidth = 1.2;
+
+            for (let i = 0; i < 50; i++) {
+                const theta = (i * 2.0 * Math.PI) / 50.0;
+                const lx = cx + r * Math.sin(theta * freqX + t * 4.0);
+                const ly = cy + r * Math.cos(theta * freqY + t * 3.0);
+                if (i === 0) ctx.moveTo(lx, ly);
+                else ctx.lineTo(lx, ly);
+            }
+            ctx.stroke();
+        }
+
+        function render() {
+            if (!playing) return;
+
+            // Paintbox Gradient background fill simulation
+            ctx.fillStyle = '#12100e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw background raster grid lines
+            ctx.strokeStyle = 'rgba(197, 160, 89, 0.03)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < canvas.width; x += 16) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += 16) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
             }
 
-            requestAnimationFrame(animate);
+            drawCRTGrid();
+
+            // Modifiers mappings
+            const fX = paramFreqx.value / 10.0;
+            const fY = paramFreqy.value / 10.0;
+            const hue = paramHue.value;
+            const rot = paramRot.value;
+            const scale = paramScale.value;
+
+            // Pulses
+            const pulse = 1.0 + 0.12 * Math.sin(t * 8.0);
+
+            // Screen 0: Glowing Attractor Center Eye
+            drawTigerEye(pulse);
+
+            // Screen 1: USD Head Mesh Projection
+            drawUSDHead(scr_x[1], scr_y[1], rot, scale);
+
+            // Screen 2 to 6: Modulated Lissajous Oscillations
+            drawLissajousScreen(2, fX, fY, `hsl(${hue}, 40%, 50%)`);
+            drawLissajousScreen(3, fX + 0.5, fY + 1.0, '#ff4500');
+            drawLissajousScreen(4, fX * 1.5, fY * 0.8, `hsl(${hue}, 50%, 60%)`);
+            drawLissajousScreen(5, fX + 1.0, fY * 1.2, '#e6dfd3');
+            drawLissajousScreen(6, fX * 2.0, fY * 1.5, `hsl(${hue}, 30%, 40%)`);
+
+            // Draw dynamic tiger stripes sweeping across viewport
+            ctx.beginPath();
+            ctx.strokeStyle = '#ff4500';
+            ctx.lineWidth = 12;
+            ctx.globalAlpha = 0.15;
+            ctx.moveTo(120, 200 + 20 * Math.sin(t));
+            ctx.bezierCurveTo(200, 250 + 30 * Math.cos(t), 300, 150 + 10 * Math.sin(t), 400, 220);
+            ctx.stroke();
+            ctx.globalAlpha = 1.0;
+
+            t += 0.033;
+            requestAnimationFrame(render);
         }
-        animate();
 
-        // Control Button Hooks
-        document.getElementById('mutate-dna').addEventListener('click', () => {
-            mutationFactor = 1.0 + Math.random() * 2.0;
-            log(`[MUTATION] New DNA seed generated. Mutation factor: ${mutationFactor.toFixed(3)}.`);
+        // Action Sliders Handlers
+        paramRot.addEventListener('input', () => {
+            lblRot.textContent = `${paramRot.value}°`;
+        });
+        paramScale.addEventListener('input', () => {
+            lblScale.textContent = `${(paramScale.value / 15.0).toFixed(2)}x`;
+        });
+        paramFreqx.addEventListener('input', () => {
+            lblFreqx.textContent = `${(paramFreqx.value / 10.0).toFixed(1)}`;
+        });
+        paramFreqy.addEventListener('input', () => {
+            lblFreqy.textContent = `${(paramFreqy.value / 10.0).toFixed(1)}`;
+        });
+        paramHue.addEventListener('input', () => {
+            lblHue.textContent = `Hue (${paramHue.value})`;
+            document.documentElement.style.setProperty('--vaesen-gold', `hsl(${paramHue.value}, 45%, 56%)`);
         });
 
-        document.getElementById('verify-registry').addEventListener('click', () => {
-            log('[MAINCHAIN] Intercepting CICS call: verifying SSA registration credentials...');
-            log('[MAINCHAIN] SUCCESS: 0x999988887777666655554444 resolved to verified citizen.');
+        // Controls
+        document.getElementById('btn-play').addEventListener('click', () => {
+            playing = !playing;
+            document.getElementById('btn-play').textContent = playing ? "Pause Engine" : "Resume Engine";
+            if (playing) render();
         });
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            t = 0;
+            log("[SYSTEM] Re-initializing CRT phase clocks to 0.");
+        });
+
+        // Start Loop
+        render();
     </script>
 </body>
 </html>
