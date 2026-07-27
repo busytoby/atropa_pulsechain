@@ -1113,3 +1113,38 @@ void auncient_cics_process_transaction(uint32_t transaction_id, const char *reco
 
     printf("%s\n", cics_log_buffer);
 }
+
+extern int tsfi_mf_ssa_resolve_issuance_site(const char *ssn, char *site_name_out, int max_len);
+
+bool auncient_autodin_verify_system_start(const HoganAccount *accounts, int account_count) {
+    // 1. Verify Hogan Bank Presence
+    if (!accounts || account_count <= 0) {
+        printf("[AUTODIN STARTUP ERROR] Hogan Bank account registry not initialized or empty.\n");
+        return false;
+    }
+
+    // 2. Verify Social Security Administration Presence
+    char test_site[32];
+    memset(test_site, 0, sizeof(test_site));
+    if (tsfi_mf_ssa_resolve_issuance_site("006-12-3456", test_site, sizeof(test_site)) != 0 || strlen(test_site) == 0) {
+        printf("[AUTODIN STARTUP ERROR] SSA Identity Registry connection failed.\n");
+        return false;
+    }
+
+    // 3. Verify the presence of at least one qualifying Stuffed Teddy Bear participant
+    bool bear_found = false;
+    for (int i = 0; i < account_count; i++) {
+        if (accounts[i].is_active && accounts[i].verified_dna_hash != 0) {
+            bear_found = true;
+            break;
+        }
+    }
+
+    if (!bear_found) {
+        printf("[AUTODIN STARTUP ERROR] No qualifying Stuffed Teddy Bear participant found.\n");
+        return false;
+    }
+
+    printf("[AUTODIN STARTUP SUCCESS] All system participants (Hogan Bank, SSA, and Stuffed Teddy Bear) successfully verified.\n");
+    return true;
+}

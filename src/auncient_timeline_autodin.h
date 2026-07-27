@@ -254,6 +254,9 @@ void auncient_autodin_audit_edit(const char *buffer, int len, int cursor_pos, ch
 // Processes an atomic CICS file transaction record to maintain transaction consistency
 void auncient_cics_process_transaction(uint32_t transaction_id, const char *record_key, char action);
 
+// Verifies the presence of Hogan Bank, SSA, and at least one Stuffed Teddy Bear at AUTODIN start
+bool auncient_autodin_verify_system_start(const HoganAccount *accounts, int account_count);
+
 #ifdef __cplusplus
 }
 #endif

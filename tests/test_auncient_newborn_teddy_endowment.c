@@ -136,6 +136,13 @@ int main(void) {
     assert(entity_account.balance_saat == 1000000);
     printf("   ✓ Singular Teddy Bear Entity registered to Hogan Bank with 1M Saat endowment.\n");
 
+    // 7. Test AUTODIN Startup verification of participants
+    printf("   Testing AUTODIN system startup verification...\n");
+    HoganAccount active_ledger[3] = { newborn_account, usd_account, entity_account };
+    bool start_ok = auncient_autodin_verify_system_start(active_ledger, 3);
+    assert(start_ok);
+    printf("   ✓ AUTODIN system startup verification successful.\n");
+
     printf("=============================================================\n");
     printf("ALL NEWBORN TEDDY BEAR ENDOWMENT TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
