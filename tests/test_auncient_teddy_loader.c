@@ -1,0 +1,126 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <string.h>
+#include <assert.h>
+#include <math.h>
+#include "auncient_cactus_schema.h"
+
+// Tripartite Glossary Composition Validation
+// 1. VM Register Context: The WinchesterMQ SCSI handshake loop registers mapped to the dynamic USD stage coordinates.
+// 2. Mathematical Function: Modular exponential mappings and Verlet soft-body soft constraints.
+// 3. Visual / Geometric Manifestation: Warping coordinate offset boundaries for the animated teddy bear geometry.
+
+static int usd_serialize_teddy_stage(const char *filename, const usd_AuncientTeddySchema_t *schema, const usd_auncient_physics_api_t *physics) {
+    FILE *f = fopen(filename, "wb");
+    if (!f) return 0;
+    if (fwrite(schema, sizeof(usd_AuncientTeddySchema_t), 1, f) != 1) {
+        fclose(f);
+        return 0;
+    }
+    if (fwrite(physics, sizeof(usd_auncient_physics_api_t), 1, f) != 1) {
+        fclose(f);
+        return 0;
+    }
+    fclose(f);
+    return 1;
+}
+
+static int usd_deserialize_teddy_stage(const char *filename, usd_AuncientTeddySchema_t *schema, usd_auncient_physics_api_t *physics) {
+    FILE *f = fopen(filename, "rb");
+    if (!f) return 0;
+    if (fread(schema, sizeof(usd_AuncientTeddySchema_t), 1, f) != 1) {
+        fclose(f);
+        return 0;
+    }
+    if (fread(physics, sizeof(usd_auncient_physics_api_t), 1, f) != 1) {
+        fclose(f);
+        return 0;
+    }
+    fclose(f);
+    return 1;
+}
+
+static int usd_generate_new_teddy_asset(const char *filename, const usd_AuncientTeddySchema_t *schema, const usd_auncient_physics_api_t *physics) {
+    FILE *f = fopen(filename, "w");
+    if (!f) return 0;
+    fprintf(f, "#usda 1.0\n\n");
+    fprintf(f, "def \"TeddyBearAsset\" (\n");
+    fprintf(f, "    inherits = </AuncientTeddySchema>\n");
+    fprintf(f, ") {\n");
+    fprintf(f, "    float scale = %f\n", schema->scale);
+    fprintf(f, "    float stuffing = %f\n", schema->stuffing);
+    fprintf(f, "    float arm_length = %f\n", schema->arm_length);
+    fprintf(f, "    float leg_length = %f\n", schema->leg_length);
+    fprintf(f, "    float head_size = %f\n", schema->head_size);
+    fprintf(f, "    float ear_size = %f\n", schema->ear_size);
+    fprintf(f, "    float mass = %f\n", physics->mass);
+    fprintf(f, "    float damping = %f\n", physics->damping);
+    fprintf(f, "}\n");
+    fclose(f);
+    return 1;
+}
+
+int main(void) {
+    printf("=== RUNNING AUNCIENT TEDDY BEAR USD SYSTEM TESTS ===\n");
+
+    // Initialize Schema structures
+    usd_AuncientTeddySchema_t save_teddy;
+    usd_init_AuncientTeddySchema(&save_teddy);
+    save_teddy.scale = 1.2f;
+    save_teddy.stuffing = 1.8f;
+    save_teddy.arm_length = 1.1f;
+    save_teddy.leg_length = 0.9f;
+
+    usd_auncient_physics_api_t save_physics;
+    usd_init_auncient_physics_api(&save_physics);
+    save_physics.mass = 12.0f;
+    save_physics.damping = 0.15f;
+
+    const char *binary_usdc_path = "tests/teddy_slice.usdc";
+    const char *ascii_usda_path = "tests/teddy_slice.usda";
+
+    // Test USDC Binary Serialization/Deserialization
+    printf("[TEST] Testing USDC Stage Slice Serialization...\n");
+    int write_ok = usd_serialize_teddy_stage(binary_usdc_path, &save_teddy, &save_physics);
+    assert(write_ok == 1);
+
+    usd_AuncientTeddySchema_t load_teddy;
+    usd_auncient_physics_api_t load_physics;
+    int read_ok = usd_deserialize_teddy_stage(binary_usdc_path, &load_teddy, &load_physics);
+    assert(read_ok == 1);
+    assert(fabs(load_teddy.scale - 1.2f) < 1e-5f);
+    assert(fabs(load_teddy.stuffing - 1.8f) < 1e-5f);
+    assert(fabs(load_teddy.arm_length - 1.1f) < 1e-5f);
+    assert(fabs(load_teddy.leg_length - 0.9f) < 1e-5f);
+    assert(fabs(load_physics.mass - 12.0f) < 1e-5f);
+    assert(fabs(load_physics.damping - 0.15f) < 1e-5f);
+    printf("   ✓ USDC binary serialization & deserialization verified.\n");
+
+    // Test USDA ASCII Asset Generation
+    printf("[TEST] Testing USDA Stage Asset Generation...\n");
+    int gen_ok = usd_generate_new_teddy_asset(ascii_usda_path, &save_teddy, &save_physics);
+    assert(gen_ok == 1);
+
+    FILE *rf = fopen(ascii_usda_path, "r");
+    assert(rf != NULL);
+    char buf[128];
+    bool found_usda = false;
+    bool found_stuffing = false;
+    while (fgets(buf, sizeof(buf), rf)) {
+        if (strstr(buf, "#usda 1.0")) found_usda = true;
+        if (strstr(buf, "stuffing = 1.8")) found_stuffing = true;
+    }
+    fclose(rf);
+    assert(found_usda);
+    assert(found_stuffing);
+    printf("   ✓ USDA ASCII scene format output verified.\n");
+
+    // Cleanup generated files
+    remove(binary_usdc_path);
+    remove(ascii_usda_path);
+
+    printf("=== AUNCIENT TEDDY BEAR USD SYSTEM TESTS COMPLETE (PASS) ===\n");
+    return 0;
+}

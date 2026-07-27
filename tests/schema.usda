@@ -27,3 +27,13 @@ class "AuncientMANNAPI" (
     float read_gate = 0.5
     float allocation_gate = 0.5
 }
+class "AuncientTeddySchema" (
+    inherits = </Typed>
+) {
+    float scale = 1.0
+    float stuffing = 1.5
+    float arm_length = 1.0
+    float leg_length = 1.0
+    float head_size = 1.0
+    float ear_size = 1.0
+}

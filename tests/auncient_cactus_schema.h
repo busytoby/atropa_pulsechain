@@ -100,4 +100,70 @@ static inline void usd_mann_api_set_allocation_gate(usd_auncient_mann_api_t *obj
     obj->allocation_gate = val;
 }
 
+typedef struct {
+    float scale;
+    float stuffing;
+    float arm_length;
+    float leg_length;
+    float head_size;
+    float ear_size;
+} usd_AuncientTeddySchema_t;
+
+static inline void usd_init_AuncientTeddySchema(usd_AuncientTeddySchema_t *obj) {
+    obj->scale = 1.0f;
+    obj->stuffing = 1.5f;
+    obj->arm_length = 1.0f;
+    obj->leg_length = 1.0f;
+    obj->head_size = 1.0f;
+    obj->ear_size = 1.0f;
+}
+
+static inline float usd_physics_api_get_scale(const usd_AuncientTeddySchema_t *obj) {
+    return obj->scale;
+}
+
+static inline void usd_physics_api_set_scale(usd_AuncientTeddySchema_t *obj, float val) {
+    obj->scale = val;
+}
+
+static inline float usd_physics_api_get_stuffing(const usd_AuncientTeddySchema_t *obj) {
+    return obj->stuffing;
+}
+
+static inline void usd_physics_api_set_stuffing(usd_AuncientTeddySchema_t *obj, float val) {
+    obj->stuffing = val;
+}
+
+static inline float usd_physics_api_get_arm_length(const usd_AuncientTeddySchema_t *obj) {
+    return obj->arm_length;
+}
+
+static inline void usd_physics_api_set_arm_length(usd_AuncientTeddySchema_t *obj, float val) {
+    obj->arm_length = val;
+}
+
+static inline float usd_physics_api_get_leg_length(const usd_AuncientTeddySchema_t *obj) {
+    return obj->leg_length;
+}
+
+static inline void usd_physics_api_set_leg_length(usd_AuncientTeddySchema_t *obj, float val) {
+    obj->leg_length = val;
+}
+
+static inline float usd_physics_api_get_head_size(const usd_AuncientTeddySchema_t *obj) {
+    return obj->head_size;
+}
+
+static inline void usd_physics_api_set_head_size(usd_AuncientTeddySchema_t *obj, float val) {
+    obj->head_size = val;
+}
+
+static inline float usd_physics_api_get_ear_size(const usd_AuncientTeddySchema_t *obj) {
+    return obj->ear_size;
+}
+
+static inline void usd_physics_api_set_ear_size(usd_AuncientTeddySchema_t *obj, float val) {
+    obj->ear_size = val;
+}
+
 #endif /* AUNCIENT_CACTUS_SCHEMA_H */

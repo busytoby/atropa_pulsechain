@@ -8,41 +8,26 @@ from PIL import Image, ImageDraw
 
 SAMPLE_RATE = 44100
 FPS = 30
-DURATION = 15.0  # 15 seconds walking animation
+DURATION = 24.0
 total_frames = int(DURATION * FPS)
 
-def generate_soundtrack(wav_path):
-    print("[DSP] Synthesizing cute teddy walk walk-beat soundtrack...")
+def generate_walking_soundtrack(wav_path):
     total_samples = int(SAMPLE_RATE * DURATION)
     audio = np.zeros(total_samples, dtype=np.float32)
-    
-    # 120 BPM walk rhythm
-    beat_dur = 60.0 / 120.0
-    beat_samples = int(SAMPLE_RATE * beat_dur)
+    step_dur = 60.0 / 90.0
+    step_samples = int(SAMPLE_RATE * step_dur)
     
     for s in range(total_samples):
         t_sec = s / float(SAMPLE_RATE)
+        step_pos = (s % step_samples) / float(step_samples)
         
-        # Thumpin synthesizer bass growl on beats
-        beat_idx = int(s // beat_samples)
-        phase_in_beat = (s % beat_samples) / float(beat_samples)
+        env = math.exp(-step_pos * 12.0)
+        sig = math.sin(2.0 * math.pi * 55.0 * t_sec) * env * 0.7
+        rustle_env = math.exp(-step_pos * 4.0)
+        sig += math.sin(2.0 * math.pi * 880.0 * t_sec) * rustle_env * 0.05
         
-        # Bass frequency (F note = 87.3 Hz)
-        bass_freq = 87.3
-        bass_env = math.exp(-phase_in_beat * 5.0)
-        # Sine wave with harmonics for growl
-        bass_val = math.sin(2.0 * math.pi * bass_freq * t_sec) + 0.3 * math.sin(2.0 * math.pi * bass_freq * 2.0 * t_sec)
+        audio[s] = sig
         
-        # Melodic glockenspiel pluck on alternate beats
-        pluck_val = 0.0
-        if beat_idx % 2 == 1:
-            pluck_freq = 880.0 if (beat_idx % 4 == 1) else 1046.5
-            pluck_env = math.exp(-phase_in_beat * 15.0)
-            pluck_val = math.sin(2.0 * math.pi * pluck_freq * t_sec) * pluck_env * 0.4
-            
-        audio[s] = (bass_val * bass_env * 0.45) + pluck_val
-        
-    # Write WAV file
     with wave.open(wav_path, "wb") as wav_file:
         wav_file.setnchannels(1)
         wav_file.setsampwidth(2)
@@ -66,176 +51,351 @@ def rotate_z(x, y, z, angle):
     s = math.sin(angle)
     return x * c - y * s, x * s + y * c, z
 
-def get_teddy_geometry(time_sec):
-    # Walk parameters: frequency = 1.6 Hz
-    walk_freq = 1.6
-    phase = time_sec * 2.0 * math.pi * walk_freq
+def get_walking_geometry(time_sec):
+    freq = 2.0 * math.pi * 1.5
+    wave_freq = 2.0 * math.pi * 1.5
     
-    # Forward translation: walks from left to right across viewport
-    progress = time_sec / DURATION
-    x_disp = -4.0 + 8.0 * progress
-    
-    # Realistic double-step bobbing (lowest at transition/support, highest at mid-stance)
-    y_bob = 0.06 * math.cos(2.0 * phase) + 0.1
-    
-    # Body tilt/lean forward
-    body_pitch = 0.08 + 0.04 * math.sin(2.0 * phase)
-    body_yaw = 0.1 * math.sin(phase * 0.1) + 1.2
-    
-    # Leg/Knee angles
-    # Hip swing back and forth
-    theta_lthigh = 0.5 * math.sin(phase)
-    theta_rthigh = 0.5 * math.sin(phase + math.pi)
-    
-    # Knee bends during forward swing phase to clear the floor
-    # Left leg swings forward when cosine of phase > 0
-    theta_lknee = 0.0
-    if math.cos(phase) > -0.2:
-        theta_lknee = 0.55 * (1.0 - math.sin(phase))
+    if time_sec <= 7.0:
+        # Phase 1: Walk to center
+        t = time_sec / 7.0
+        x_disp = -2.5 + t * 2.5
         
-    # Right leg swings forward when cosine of (phase + pi) > -0.2
-    theta_rknee = 0.0
-    if math.cos(phase + math.pi) > -0.2:
-        theta_rknee = 0.55 * (1.0 - math.sin(phase + math.pi))
+        walk_time = time_sec
+        y_disp = 0.05 + 0.06 * abs(math.sin(freq * walk_time))
+        body_pitch = 0.08 * math.sin(freq * walk_time)
+        body_yaw = 1.0 + 0.05 * math.cos(freq * walk_time)
+        body_roll = 0.04 * math.sin(freq * walk_time)
         
-    # Arm/Elbow angles
-    theta_luarm = -0.4 * math.sin(phase)
-    theta_ruarm = -0.4 * math.sin(phase + math.pi)
-    
-    theta_lelbow = 0.35 * (1.0 + math.cos(phase))
-    theta_relbow = 0.35 * (1.0 + math.cos(phase + math.pi))
-    
+        swing_l = 0.45 * math.sin(freq * walk_time)
+        swing_r = -0.45 * math.sin(freq * walk_time)
+        t_lknee = 0.5 * (1.0 + math.cos(freq * walk_time)) if swing_l < 0 else 0.15
+        t_rknee = 0.5 * (1.0 - math.cos(freq * walk_time)) if swing_r < 0 else 0.15
+        
+        t_luarm = -0.4 * math.sin(freq * walk_time) + 0.1
+        t_ruarm = 0.4 * math.sin(freq * walk_time) + 0.1
+        t_lelbow = 0.5 + 0.2 * math.cos(freq * walk_time)
+        t_relbow = 0.5 - 0.2 * math.cos(freq * walk_time)
+        m_name = "Walk to Center"
+        
+    elif time_sec <= 9.0:
+        # Phase 2: Turning to face camera
+        t = (time_sec - 7.0) / 2.0
+        x_disp = 0.0
+        
+        body_yaw = (1.0 - t) * 1.0
+        
+        y_disp = 0.05 + (1.0 - t) * 0.06 * abs(math.sin(freq * 7.0))
+        body_pitch = (1.0 - t) * 0.08 * math.sin(freq * 7.0)
+        body_roll = (1.0 - t) * 0.04 * math.sin(freq * 7.0)
+        
+        swing_l = (1.0 - t) * 0.45 * math.sin(freq * 7.0)
+        swing_r = (1.0 - t) * (-0.45 * math.sin(freq * 7.0))
+        
+        lknee_start = 0.5 * (1.0 + math.cos(freq * 7.0)) if (0.45 * math.sin(freq * 7.0)) < 0 else 0.15
+        rknee_start = 0.5 * (1.0 - math.cos(freq * 7.0)) if (-0.45 * math.sin(freq * 7.0)) < 0 else 0.15
+        t_lknee = lknee_start * (1.0 - t) + 0.15 * t
+        t_rknee = rknee_start * (1.0 - t) + 0.15 * t
+        
+        luarm_start = -0.4 * math.sin(freq * 7.0) + 0.1
+        ruarm_start = 0.4 * math.sin(freq * 7.0) + 0.1
+        lelbow_start = 0.5 + 0.2 * math.cos(freq * 7.0)
+        relbow_start = 0.5 - 0.2 * math.cos(freq * 7.0)
+        
+        t_luarm = luarm_start * (1.0 - t) + 0.1 * t
+        t_ruarm = ruarm_start * (1.0 - t) + 0.1 * t
+        t_lelbow = lelbow_start * (1.0 - t) + 0.5 * t
+        t_relbow = relbow_start * (1.0 - t) + 0.5 * t
+        
+        m_name = "Turning to Camera"
+        
+    elif time_sec <= 15.0:
+        # Phase 3: Waving
+        x_disp = 0.0
+        y_disp = 0.05
+        body_pitch = 0.0
+        body_yaw = 0.0
+        body_roll = 0.0
+        
+        swing_l = 0.0
+        swing_r = 0.0
+        t_lknee = 0.15
+        t_rknee = 0.15
+        
+        t_luarm = 0.1
+        t_lelbow = 0.5
+        
+        # Right arm waving loop
+        t_ruarm = -2.0 + 0.3 * math.sin(wave_freq * (time_sec - 9.0))
+        t_relbow = 0.8 + 0.4 * math.cos(wave_freq * (time_sec - 9.0))
+        
+        m_name = "Waving Hello"
+        
+    elif time_sec <= 17.0:
+        # Phase 4: Turning back to walk direction
+        t = (time_sec - 15.0) / 2.0
+        x_disp = 0.0
+        
+        body_yaw = t * 1.0
+        
+        walk_start_time = 17.0
+        
+        y_disp = 0.05 + t * 0.06 * abs(math.sin(freq * walk_start_time))
+        body_pitch = t * 0.08 * math.sin(freq * walk_start_time)
+        body_roll = t * 0.04 * math.sin(freq * walk_start_time)
+        
+        swing_l = t * 0.45 * math.sin(freq * walk_start_time)
+        swing_r = t * (-0.45 * math.sin(freq * walk_start_time))
+        
+        lknee_target = 0.5 * (1.0 + math.cos(freq * walk_start_time)) if (0.45 * math.sin(freq * walk_start_time)) < 0 else 0.15
+        rknee_target = 0.5 * (1.0 - math.cos(freq * walk_start_time)) if (-0.45 * math.sin(freq * walk_start_time)) < 0 else 0.15
+        t_lknee = 0.15 * (1.0 - t) + lknee_target * t
+        t_rknee = 0.15 * (1.0 - t) + rknee_target * t
+        
+        luarm_target = -0.4 * math.sin(freq * walk_start_time) + 0.1
+        ruarm_target = 0.4 * math.sin(freq * walk_start_time) + 0.1
+        lelbow_target = 0.5 + 0.2 * math.cos(freq * walk_start_time)
+        relbow_target = 0.5 - 0.2 * math.cos(freq * walk_start_time)
+        
+        last_wave_ruarm = -2.0 + 0.3 * math.sin(wave_freq * 6.0)
+        last_wave_relbow = 0.8 + 0.4 * math.cos(wave_freq * 6.0)
+        
+        t_luarm = 0.1 * (1.0 - t) + luarm_target * t
+        t_ruarm = last_wave_ruarm * (1.0 - t) + ruarm_target * t
+        t_lelbow = 0.5 * (1.0 - t) + lelbow_target * t
+        t_relbow = last_wave_relbow * (1.0 - t) + relbow_target * t
+        
+        m_name = "Turning Back"
+        
+    else:
+        # Phase 5: Walk to exit
+        t = (time_sec - 17.0) / 7.0
+        x_disp = 0.0 + t * 2.5
+        
+        walk_time = time_sec
+        y_disp = 0.05 + 0.06 * abs(math.sin(freq * walk_time))
+        body_pitch = 0.08 * math.sin(freq * walk_time)
+        body_yaw = 1.0 + 0.05 * math.cos(freq * walk_time)
+        body_roll = 0.04 * math.sin(freq * walk_time)
+        
+        swing_l = 0.45 * math.sin(freq * walk_time)
+        swing_r = -0.45 * math.sin(freq * walk_time)
+        t_lknee = 0.5 * (1.0 + math.cos(freq * walk_time)) if swing_l < 0 else 0.15
+        t_rknee = 0.5 * (1.0 - math.cos(freq * walk_time)) if swing_r < 0 else 0.15
+        
+        t_luarm = -0.4 * math.sin(freq * walk_time) + 0.1
+        t_ruarm = 0.4 * math.sin(freq * walk_time) + 0.1
+        t_lelbow = 0.5 + 0.2 * math.cos(freq * walk_time)
+        t_relbow = 0.5 - 0.2 * math.cos(freq * walk_time)
+        m_name = "Walk to Exit"
+
+    z_disp = 0.0
     parts = {}
     
-    # 1. Main body translation
     parts["Body"] = {
-        "pos": (x_disp, 0.55 + y_bob, 0.0),
-        "rot": (body_pitch, body_yaw, 0.0),
+        "pos": (x_disp, 0.55 + y_disp, z_disp),
+        "rot": (body_pitch, body_yaw, body_roll),
+        "local_pos": (x_disp, 0.55 + y_disp, z_disp),
+        "local_rot": (body_pitch, body_yaw, body_roll),
         "shape": "ellipsoid",
         "size": (0.7, 0.85, 0.6),
-        "color": (120, 80, 54) # Brown
+        "color": (120, 80, 54)
     }
     
-    # 2. Head (local translation relative to body)
+    heart_local_pos = (0.0, 0.1, 0.5)
+    hx, hy, hz = rotate_x(heart_local_pos[0], heart_local_pos[1], heart_local_pos[2], body_pitch)
+    hx, hy, hz = rotate_y(hx, hy, hz, body_yaw)
+    hx, hy, hz = rotate_z(hx, hy, hz, body_roll)
+    parts["SewnHeart"] = {
+        "pos": (x_disp + hx, 0.55 + y_disp + hy, z_disp + hz),
+        "rot": (body_pitch, body_yaw, body_roll),
+        "local_pos": heart_local_pos,
+        "local_rot": (0.0, 0.0, 0.0),
+        "shape": "heart",
+        "size": (0.2, 0.2, 0.08),
+        "color": (200, 30, 40)
+    }
+    
+    head_local_pos = (0.0, 0.9, 0.0)
+    head_local_rot = (0.04 * math.sin(freq * time_sec * 2.0) if (time_sec <= 7.0 or time_sec >= 17.0) else 0.0, 0.0, 0.0)
+    hx, hy, hz = rotate_x(head_local_pos[0], head_local_pos[1], head_local_pos[2], body_pitch)
+    hx, hy, hz = rotate_y(hx, hy, hz, body_yaw)
+    hx, hy, hz = rotate_z(hx, hy, hz, body_roll)
     parts["Head"] = {
-        "pos": (x_disp, 1.45 + y_bob, 0.0),
-        "rot": (body_pitch + 0.05 * math.sin(phase), body_yaw, 0.0),
+        "pos": (x_disp + hx, 0.55 + y_disp + hy, z_disp + hz),
+        "rot": (body_pitch + head_local_rot[0], body_yaw + head_local_rot[1], body_roll + head_local_rot[2]),
+        "local_pos": head_local_pos,
+        "local_rot": head_local_rot,
         "shape": "ellipsoid",
         "size": (0.55, 0.55, 0.5),
         "color": (120, 80, 54)
     }
     
-    # 3. Ears
+    def get_world_head_child(local_offset):
+        cx, cy, cz = rotate_x(local_offset[0], local_offset[1], local_offset[2], parts["Head"]["rot"][0])
+        cx, cy, cz = rotate_y(cx, cy, cz, parts["Head"]["rot"][1])
+        cx, cy, cz = rotate_z(cx, cy, cz, parts["Head"]["rot"][2])
+        return (parts["Head"]["pos"][0] + cx, parts["Head"]["pos"][1] + cy, parts["Head"]["pos"][2] + cz)
+
     parts["LeftEar"] = {
-        "pos": (x_disp - 0.4, 1.85 + y_bob, 0.0),
-        "rot": (body_pitch, body_yaw, 0.0),
+        "pos": get_world_head_child((-0.4, 0.4, 0.0)),
+        "rot": parts["Head"]["rot"],
+        "local_pos": (-0.4, 0.4, 0.0),
+        "local_rot": (0.0, 0.0, 0.0),
         "shape": "ellipsoid",
         "size": (0.2, 0.2, 0.15),
         "color": (100, 65, 40)
     }
     parts["RightEar"] = {
-        "pos": (x_disp + 0.4, 1.85 + y_bob, 0.0),
-        "rot": (body_pitch, body_yaw, 0.0),
+        "pos": get_world_head_child((0.4, 0.4, 0.0)),
+        "rot": parts["Head"]["rot"],
+        "local_pos": (0.4, 0.4, 0.0),
+        "local_rot": (0.0, 0.0, 0.0),
         "shape": "ellipsoid",
         "size": (0.2, 0.2, 0.15),
         "color": (100, 65, 40)
     }
     
-    # 4. Left Arm (Upper Arm & Forearm)
-    larm_pitch = theta_luarm + body_pitch
-    al_x, al_y, al_z = rotate_y(0.0, -0.25, 0.0, body_yaw)
-    al_x, al_y, al_z = rotate_z(al_x, al_y, al_z, larm_pitch)
-    parts["LeftUpperArm"] = {
-        "pos": (x_disp - 0.65 + al_x, 0.9 + y_bob + al_y, al_z),
-        "rot": (larm_pitch, body_yaw, 0.0),
+    parts["LeftEye"] = {
+        "pos": get_world_head_child((-0.2, 0.15, 0.45)),
+        "rot": parts["Head"]["rot"],
+        "local_pos": (-0.2, 0.15, 0.45),
+        "local_rot": (0.0, 0.0, 0.0),
         "shape": "ellipsoid",
-        "size": (0.18, 0.3, 0.18),
-        "color": (120, 80, 54)
+        "size": (0.06, 0.06, 0.06),
+        "color": (20, 20, 20)
+    }
+    parts["RightEye"] = {
+        "pos": get_world_head_child((0.2, 0.15, 0.45)),
+        "rot": parts["Head"]["rot"],
+        "local_pos": (0.2, 0.15, 0.45),
+        "local_rot": (0.0, 0.0, 0.0),
+        "shape": "ellipsoid",
+        "size": (0.06, 0.06, 0.06),
+        "color": (20, 20, 20)
     }
     
-    # Forearm pivot at the end of Upper Arm (length ~0.25)
-    f_larm_pitch = larm_pitch + theta_lelbow
-    fl_x, fl_y, fl_z = rotate_y(0.0, -0.45, 0.0, body_yaw)
-    fl_x, fl_y, fl_z = rotate_z(fl_x, fl_y, fl_z, f_larm_pitch)
-    parts["LeftForearm"] = {
-        "pos": (x_disp - 0.65 + fl_x, 0.9 + y_bob + fl_y, fl_z),
-        "rot": (f_larm_pitch, body_yaw, 0.0),
+    parts["Muzzle"] = {
+        "pos": get_world_head_child((0.0, -0.05, 0.45)),
+        "rot": parts["Head"]["rot"],
+        "local_pos": (0.0, -0.05, 0.45),
+        "local_rot": (0.0, 0.0, 0.0),
         "shape": "ellipsoid",
-        "size": (0.15, 0.25, 0.15),
-        "color": (100, 65, 40)
+        "size": (0.2, 0.15, 0.12),
+        "color": (220, 200, 180)
     }
     
-    # 5. Right Arm (Upper Arm & Forearm)
-    rarm_pitch = theta_ruarm + body_pitch
-    ar_x, ar_y, ar_z = rotate_y(0.0, -0.25, 0.0, body_yaw)
-    ar_x, ar_y, ar_z = rotate_z(ar_x, ar_y, ar_z, rarm_pitch)
-    parts["RightUpperArm"] = {
-        "pos": (x_disp + 0.65 + ar_x, 0.9 + y_bob + ar_y, ar_z),
-        "rot": (rarm_pitch, body_yaw, 0.0),
+    parts["Nose"] = {
+        "pos": get_world_head_child((0.0, 0.02, 0.56)),
+        "rot": parts["Head"]["rot"],
+        "local_pos": (0.0, 0.02, 0.56),
+        "local_rot": (0.0, 0.0, 0.0),
         "shape": "ellipsoid",
-        "size": (0.18, 0.3, 0.18),
-        "color": (120, 80, 54)
+        "size": (0.08, 0.05, 0.05),
+        "color": (40, 30, 25)
     }
     
-    f_rarm_pitch = rarm_pitch + theta_relbow
-    fr_x, fr_y, fr_z = rotate_y(0.0, -0.45, 0.0, body_yaw)
-    fr_x, fr_y, fr_z = rotate_z(fr_x, fr_y, fr_z, f_rarm_pitch)
-    parts["RightForearm"] = {
-        "pos": (x_disp + 0.65 + fr_x, 0.9 + y_bob + fr_y, fr_z),
-        "rot": (f_rarm_pitch, body_yaw, 0.0),
-        "shape": "ellipsoid",
-        "size": (0.15, 0.25, 0.15),
-        "color": (100, 65, 40)
-    }
+    def add_jointed_arm(side, uarm_pitch, elbow_pitch, color_u, color_f):
+        side_sign = -1.0 if side == "Left" else 1.0
+        shoulder_local = (side_sign * 0.65, 0.35, 0.0)
+        sx, sy, sz = rotate_x(shoulder_local[0], shoulder_local[1], shoulder_local[2], body_pitch)
+        sx, sy, sz = rotate_y(sx, sy, sz, body_yaw)
+        sx, sy, sz = rotate_z(sx, sy, sz, body_roll)
+        shoulder_world = (x_disp + sx, 0.55 + y_disp + sy, z_disp + sz)
+        
+        uarm_len = 0.28
+        uarm_rot = (body_pitch + uarm_pitch, body_yaw, body_roll)
+        ucx, ucy, ucz = rotate_x(0.0, -uarm_len / 2.0, 0.0, uarm_pitch)
+        ucx, ucy, ucz = rotate_x(ucx, ucy, ucz, body_pitch)
+        ucx, ucy, ucz = rotate_y(ucx, ucy, ucz, body_yaw)
+        ucx, ucy, ucz = rotate_z(ucx, ucy, ucz, body_roll)
+        
+        parts[f"{side}UpperArm"] = {
+            "pos": (shoulder_world[0] + ucx, shoulder_world[1] + ucy, shoulder_world[2] + ucz),
+            "rot": uarm_rot,
+            "local_pos": shoulder_local,
+            "local_rot": (uarm_pitch, 0.0, 0.0),
+            "shape": "ellipsoid",
+            "size": (0.16, uarm_len, 0.16),
+            "color": color_u
+        }
+        
+        ecx, ecy, ecz = rotate_x(0.0, -uarm_len, 0.0, uarm_pitch)
+        ecx, ecy, ecz = rotate_x(kcx if 'kcx' in locals() else ecx, ecy, ecz, body_pitch)
+        ecx, ecy, ecz = rotate_y(ecx, ecy, ecz, body_yaw)
+        ecx, ecy, ecz = rotate_z(ecx, ecy, ecz, body_roll)
+        elbow_world = (shoulder_world[0] + ecx, shoulder_world[1] + ecy, shoulder_world[2] + ecz)
+        
+        fore_len = 0.24
+        fore_rot = (body_pitch + uarm_pitch + elbow_pitch, body_yaw, body_roll)
+        fcx, fcy, fcz = rotate_x(0.0, -fore_len / 2.0, 0.0, uarm_pitch + elbow_pitch)
+        fcx, fcy, fcz = rotate_x(fcx, fcy, fcz, body_pitch)
+        fcx, fcy, fcz = rotate_y(fcx, fcy, fcz, body_yaw)
+        fcx, fcy, fcz = rotate_z(fcx, fcy, fcz, body_roll)
+        
+        parts[f"{side}Forearm"] = {
+            "pos": (elbow_world[0] + fcx, elbow_world[1] + fcy, elbow_world[2] + fcz),
+            "rot": fore_rot,
+            "local_pos": (0.0, -uarm_len, 0.0),
+            "local_rot": (elbow_pitch, 0.0, 0.0),
+            "shape": "ellipsoid",
+            "size": (0.13, fore_len, 0.13),
+            "color": color_f
+        }
+        
+    def add_jointed_leg(side, thigh_pitch, knee_pitch, color_t, color_c):
+        side_sign = -1.0 if side == "Left" else 1.0
+        hip_local = (side_sign * 0.35, -0.25, 0.0)
+        hx, hy, hz = rotate_x(hip_local[0], hip_local[1], hip_local[2], body_pitch)
+        hx, hy, hz = rotate_y(hx, hy, hz, body_yaw)
+        hx, hy, hz = rotate_z(hx, hy, hz, body_roll)
+        hip_world = (x_disp + hx, 0.55 + y_disp + hy, z_disp + hz)
+        
+        thigh_len = 0.32
+        thigh_rot = (body_pitch + thigh_pitch, body_yaw, body_roll)
+        tcx, tcy, tcz = rotate_x(0.0, -thigh_len / 2.0, 0.0, thigh_pitch)
+        tcx, tcy, tcz = rotate_x(tcx, tcy, tcz, body_pitch)
+        tcx, tcy, tcz = rotate_y(tcx, tcy, tcz, body_yaw)
+        tcx, tcy, tcz = rotate_z(tcx, tcy, tcz, body_roll)
+        
+        parts[f"{side}Thigh"] = {
+            "pos": (hip_world[0] + tcx, hip_world[1] + tcy, hip_world[2] + tcz),
+            "rot": thigh_rot,
+            "local_pos": hip_local,
+            "local_rot": (thigh_pitch, 0.0, 0.0),
+            "shape": "ellipsoid",
+            "size": (0.2, thigh_len, 0.2),
+            "color": color_t
+        }
+        
+        kcx, kcy, kcz = rotate_x(0.0, -thigh_len, 0.0, thigh_pitch)
+        kcx, kcy, kcz = rotate_x(kcx, kcy, kcz, body_pitch)
+        kcx, kcy, kcz = rotate_y(kcx, kcy, kcz, body_yaw)
+        kcx, kcy, kcz = rotate_z(kcx, kcy, kcz, body_roll)
+        knee_world = (hip_world[0] + kcx, hip_world[1] + kcy, hip_world[2] + kcz)
+        
+        calf_len = 0.28
+        calf_rot = (body_pitch + thigh_pitch - knee_pitch, body_yaw, body_roll)
+        ccx, ccy, ccz = rotate_x(0.0, -calf_len / 2.0, 0.0, thigh_pitch - knee_pitch)
+        ccx, ccy, ccz = rotate_x(ccx, ccy, ccz, body_pitch)
+        ccx, ccy, ccz = rotate_y(ccx, ccy, ccz, body_yaw)
+        ccx, ccy, ccz = rotate_z(ccx, ccy, ccz, body_roll)
+        
+        parts[f"{side}Calf"] = {
+            "pos": (knee_world[0] + ccx, knee_world[1] + ccy, knee_world[2] + ccz),
+            "rot": calf_rot,
+            "local_pos": (0.0, -thigh_len, 0.0),
+            "local_rot": (-knee_pitch, 0.0, 0.0),
+            "shape": "ellipsoid",
+            "size": (0.16, calf_len, 0.16),
+            "color": color_c
+        }
+
+    add_jointed_arm("Left", t_luarm, t_lelbow, (120, 80, 54), (100, 65, 40))
+    add_jointed_arm("Right", t_ruarm, t_relbow, (120, 80, 54), (100, 65, 40))
+    add_jointed_leg("Left", swing_l, t_lknee, (120, 80, 54), (100, 65, 40))
+    add_jointed_leg("Right", swing_r, t_rknee, (120, 80, 54), (100, 65, 40))
     
-    # 6. Left Leg (Thigh & Calf)
-    lthigh_pitch = theta_lthigh + body_pitch
-    llt_x, llt_y, llt_z = rotate_y(0.0, -0.25, 0.0, body_yaw)
-    llt_x, llt_y, llt_z = rotate_z(llt_x, llt_y, llt_z, lthigh_pitch)
-    parts["LeftThigh"] = {
-        "pos": (x_disp - 0.35 + llt_x, 0.3 + y_bob + llt_y, llt_z),
-        "rot": (lthigh_pitch, body_yaw, 0.0),
-        "shape": "ellipsoid",
-        "size": (0.22, 0.35, 0.22),
-        "color": (120, 80, 54)
-    }
-    
-    # Knee bend: Thigh pitch + Knee flexion
-    lknee_pitch = lthigh_pitch - theta_lknee
-    llc_x, llc_y, llc_z = rotate_y(0.0, -0.55, 0.0, body_yaw)
-    llc_x, llc_y, llc_z = rotate_z(llc_x, llc_y, llc_z, lknee_pitch)
-    parts["LeftCalf"] = {
-        "pos": (x_disp - 0.35 + llc_x, 0.3 + y_bob + llc_y, llc_z),
-        "rot": (lknee_pitch, body_yaw, 0.0),
-        "shape": "ellipsoid",
-        "size": (0.18, 0.3, 0.18),
-        "color": (100, 65, 40)
-    }
-    
-    # 7. Right Leg (Thigh & Calf)
-    rthigh_pitch = theta_rthigh + body_pitch
-    rrt_x, rrt_y, rrt_z = rotate_y(0.0, -0.25, 0.0, body_yaw)
-    rrt_x, rrt_y, rrt_z = rotate_z(rrt_x, rrt_y, rrt_z, rthigh_pitch)
-    parts["RightThigh"] = {
-        "pos": (x_disp + 0.35 + rrt_x, 0.3 + y_bob + rrt_y, rrt_z),
-        "rot": (rthigh_pitch, body_yaw, 0.0),
-        "shape": "ellipsoid",
-        "size": (0.22, 0.35, 0.22),
-        "color": (120, 80, 54)
-    }
-    
-    rknee_pitch = rthigh_pitch - theta_rknee
-    rrc_x, rrc_y, rrc_z = rotate_y(0.0, -0.55, 0.0, body_yaw)
-    rrc_x, rrc_y, rrc_z = rotate_z(rrc_x, rrc_y, rrc_z, rknee_pitch)
-    parts["RightCalf"] = {
-        "pos": (x_disp + 0.35 + rrc_x, 0.3 + y_bob + rrc_y, rrc_z),
-        "rot": (rknee_pitch, body_yaw, 0.0),
-        "shape": "ellipsoid",
-        "size": (0.18, 0.3, 0.18),
-        "color": (100, 65, 40)
-    }
-    
-    return parts
+    return parts, m_name
 
 def generate_ellipsoid_mesh(size, num_segments=10):
     sx, sy, sz = size
@@ -252,26 +412,112 @@ def generate_ellipsoid_mesh(size, num_segments=10):
             vertices.append((vx, vy, vz))
     return vertices
 
+def generate_fur_strands(center, size, num_strands=20):
+    strands = []
+    np.random.seed(42)
+    for _ in range(num_strands):
+        theta = np.random.uniform(0, 2.0 * np.pi)
+        phi = np.random.uniform(0, np.pi)
+        dx = size[0] * math.sin(phi) * math.cos(theta)
+        dy = size[1] * math.sin(phi) * math.sin(theta)
+        dz = size[2] * math.cos(phi)
+        
+        strand = []
+        for step in range(5):
+            factor = 1.0 + step * 0.10
+            x = center[0] + dx * factor
+            y = center[1] + dy * factor
+            z = center[2] + dz * factor
+            x += 0.015 * math.sin(step * 1.5)
+            y += 0.015 * math.cos(step * 1.5)
+            strand.append((x, y, z))
+        strands.append(strand)
+    return strands
+
+def generate_procedural_cloth_pattern(w, h, base_color):
+    img = Image.new("RGB", (w, h), base_color)
+    draw = ImageDraw.Draw(img)
+    for y in range(0, h, 2):
+        for x in range(0, w, 2):
+            if (x + y) % 4 == 0:
+                draw.point((x, y), fill=(int(base_color[0]*0.85), int(base_color[1]*0.85), int(base_color[2]*0.85)))
+            else:
+                draw.point((x, y), fill=(int(base_color[0]*1.1), int(base_color[1]*1.1), int(base_color[2]*1.1)))
+    return img
+
+def write_static_usda_asset(filepath, name, size, is_heart=False):
+    mesh_verts = generate_ellipsoid_mesh(size, num_segments=8)
+    
+    with open(filepath, "w") as f:
+        f.write("#usda 1.0\n")
+        f.write("(\n")
+        f.write("    upAxis = \"Y\"\n")
+        f.write(")\n\n")
+        
+        f.write(f"def Mesh \"{name}\"\n")
+        f.write("{\n")
+        f.write("    point3f[] points = [\n")
+        for vx, vy, vz in mesh_verts:
+            f.write(f"        ({vx:.4f}, {vy:.4f}, {vz:.4f}),\n")
+        f.write("    ]\n")
+        
+        texcoords = []
+        for i in range(8):
+            u = i / 7.0
+            for j in range(8):
+                v = j / 7.0
+                texcoords.append((u, v))
+                
+        f.write("    texcoord2f[] primvars:st = [\n")
+        for u, v in texcoords:
+            f.write(f"        ({u:.4f}, {v:.4f}),\n")
+        f.write("    ] (\n")
+        f.write("        interpolation = \"vertex\"\n")
+        f.write("    )\n")
+        
+        face_indices = []
+        face_counts = []
+        num_seg = 8
+        for i in range(num_seg - 1):
+            for j in range(num_seg):
+                p1 = i * num_seg + j
+                p2 = i * num_seg + ((j + 1) % num_seg)
+                p3 = (i + 1) * num_seg + ((j + 1) % num_seg)
+                p4 = (i + 1) * num_seg + j
+                face_indices.extend([p1, p2, p3, p4])
+                face_counts.append(4)
+                
+        f.write(f"    int[] faceVertexIndices = {face_indices}\n")
+        f.write(f"    int[] faceVertexCounts = {face_counts}\n")
+        
+        if not is_heart and "Eye" not in name and "Nose" not in name:
+            f.write("    def BasisCurves \"fur\"\n")
+            f.write("    {\n")
+            f.write("        uniform token basis = \"bezier\"\n")
+            f.write("        uniform token type = \"cubic\"\n")
+            
+            fur_strands = generate_fur_strands((0.0, 0.0, 0.0), size, num_strands=8)
+            f.write("        point3f[] points = [\n")
+            for strand in fur_strands:
+                for sx, sy, sz in strand:
+                    f.write(f"            ({sx:.4f}, {sy:.4f}, {sz:.4f}),\n")
+            f.write("        ]\n")
+            
+            curve_counts = [4] * len(fur_strands)
+            f.write(f"            int[] curveVertexCounts = {curve_counts}\n")
+            f.write("    }\n")
+        f.write("}\n")
+
 def main():
     wav_output = "temp_teddy_walk_track.wav"
     video_output = "/home/mariarahel/src/tsfi2/atropa_pulsechain/teddy_walk_demo.mp4"
-    generate_soundtrack(wav_output)
+    generate_walking_soundtrack(wav_output)
     
     width, height = 640, 480
-    
     ffmpeg_cmd = [
-        "ffmpeg", "-y",
-        "-f", "image2pipe",
-        "-vcodec", "png",
-        "-r", str(FPS),
-        "-i", "-",
-        "-i", wav_output,
-        "-c:v", "libx264",
-        "-pix_fmt", "yuv420p",
-        "-vf", "scale=640:480",
-        "-c:a", "aac",
-        "-shortest",
-        video_output
+        "ffmpeg", "-y", "-f", "image2pipe", "-vcodec", "png", "-r", str(FPS),
+        "-i", "-", "-i", wav_output, "-c:v", "libx264", "-pix_fmt", "yuv420p",
+        "-vf", "scale=640:480", "-c:a", "aac", "-shortest", video_output
     ]
     
     process = subprocess.Popen(ffmpeg_cmd, stdin=subprocess.PIPE)
@@ -279,51 +525,43 @@ def main():
     
     for f in range(total_frames):
         time_sec = f / float(FPS)
-        parts = get_teddy_geometry(time_sec)
+        parts, current_movement_name = get_walking_geometry(time_sec)
         
-        img = Image.new("RGB", (width, height), (15, 10, 25))
+        img = Image.new("RGB", (width, height), (10, 5, 20))
         draw = ImageDraw.Draw(img)
         
-        # Grid backdrop
-        grid_pos = int(time_sec * 60.0) % 80
-        for x_g in range(-80, width + 80, 80):
-            draw.line([(x_g - grid_pos, 0), (x_g - grid_pos, height)], fill=(30, 20, 50), width=1)
-        for y_g in range(0, height, 60):
-            draw.line([(0, y_g), (width, y_g)], fill=(30, 20, 50), width=1)
+        for spotlight_x in [100, 320, 540]:
+            draw.line([(spotlight_x, 0), (width / 2.0, 320)], fill=(80, 50, 100), width=3)
             
-        # Perspective floor
-        draw.rectangle([0, 320, width, height], fill=(10, 5, 20))
+        draw.rectangle([0, 320, width, height], fill=(15, 10, 25))
         for x_floor in range(-200, width + 200, 50):
-            draw.line([(320, 320), (x_floor, height)], fill=(50, 30, 80), width=2)
+            draw.line([(320, 320), (x_floor, height)], fill=(90, 40, 110), width=2)
             
-        # Dynamic depth-sorting based on center projected Z coordinate
         render_queue = []
         for part_name, part in parts.items():
             px, py, pz = part["pos"]
-            # Rotated Z coordinate for simple back-to-front sorting
             rotated_z = pz + 4.5
             render_queue.append((rotated_z, part_name))
             
-        # Sort desc (larger Z = further away = render first)
         render_queue.sort(key=lambda item: item[0], reverse=True)
         
         for rz_val, part_name in render_queue:
             part = parts[part_name]
             px, py, pz = part["pos"]
             rx_ang, ry_ang, rz_ang = part["rot"]
+            lpx, lpy, lpz = part["local_pos"]
+            lrx, lry, lrz = part["local_rot"]
             
             if part_name not in usd_samples:
                 usd_samples[part_name] = []
-            usd_samples[part_name].append((f, px, py, pz, rx_ang, ry_ang, rz_ang))
+            usd_samples[part_name].append((f, lpx, lpy, lpz, lrx, lry, lrz))
             
             verts = generate_ellipsoid_mesh(part["size"])
             projected_pts = []
-            
-            for vx, vy, vz in verts:
+            for vx, vy, vz in mesh_verts if 'mesh_verts' in locals() else verts:
                 vx, vy, vz = rotate_x(vx, vy, vz, rx_ang)
                 vx, vy, vz = rotate_y(vx, vy, vz, ry_ang)
                 vx, vy, vz = rotate_z(vx, vy, vz, rz_ang)
-                
                 gx = vx + px
                 gy = vy + py
                 gz = vz + pz + 4.5
@@ -333,59 +571,166 @@ def main():
                 screen_y = int(height / 2.0 - (gy * fov) / gz)
                 projected_pts.append((screen_x, screen_y))
                 
-            outline_color = (255, 255, 255)
             fill_color = part["color"]
+            if part["shape"] == "heart":
+                if len(projected_pts) > 0:
+                    center_pt = projected_pts[0]
+                    draw.ellipse([center_pt[0]-15, center_pt[1]-15, center_pt[0]+15, center_pt[1]+15], fill=fill_color)
+            else:
+                num_seg = 10
+                for i in range(num_seg - 1):
+                    for j in range(num_seg):
+                        p1_idx = i * num_seg + j
+                        p2_idx = i * num_seg + ((j + 1) % num_seg)
+                        p3_idx = (i + 1) * num_seg + ((j + 1) % num_seg)
+                        p4_idx = (i + 1) * num_seg + j
+                        poly = [projected_pts[p1_idx], projected_pts[p2_idx], projected_pts[p3_idx], projected_pts[p4_idx]]
+                        
+                        mod_idx = (i + j) % 2
+                        shade_col = (
+                            int(fill_color[0] * (0.9 + 0.15 * mod_idx)),
+                            int(fill_color[1] * (0.9 + 0.15 * mod_idx)),
+                            int(fill_color[2] * (0.9 + 0.15 * mod_idx))
+                        )
+                        draw.polygon(poly, fill=shade_col, outline=shade_col)
             
-            num_seg = 10
-            for i in range(num_seg - 1):
-                for j in range(num_seg):
-                    p1_idx = i * num_seg + j
-                    p2_idx = i * num_seg + ((j + 1) % num_seg)
-                    p3_idx = (i + 1) * num_seg + ((j + 1) % num_seg)
-                    p4_idx = (i + 1) * num_seg + j
+            if part["shape"] != "heart" and "Eye" not in part_name and "Nose" not in part_name:
+                strands = generate_fur_strands((px, py, pz), part["size"], num_strands=20)
+                for strand in strands:
+                    screen_strand = []
+                    for sx, sy, sz in strand:
+                        sgz = sz + 4.5
+                        ssx = int(width / 2.0 + (sx * fov) / sgz)
+                        ssy = int(height / 2.0 - (sy * fov) / sgz)
+                        screen_strand.append((ssx, ssy))
+                    for pt_idx in range(len(screen_strand) - 1):
+                        draw.line([screen_strand[pt_idx], screen_strand[pt_idx+1]], fill=(135, 90, 60), width=2)
                     
-                    poly = [projected_pts[p1_idx], projected_pts[p2_idx], projected_pts[p3_idx], projected_pts[p4_idx]]
-                    draw.polygon(poly, fill=fill_color, outline=outline_color)
-                    
-        # Onscreen HUD
-        draw.text((20, 20), "USD TEDDY BEAR WALKER DEMO (REALISTIC)", fill=(255, 215, 0))
-        draw.text((20, 35), f"FRAME: {f:03d} / {total_frames:03d}", fill=(0, 255, 255))
-        draw.text((20, 50), f"X-POS: {parts['Body']['pos'][0]:.3f}", fill=(0, 255, 0))
-        
+        draw.text((20, 20), "TSFi2 AUNCIENT FURRY SKELETAL WALK CYCLE", fill=(255, 215, 0))
+        draw.text((20, 35), f"MOVEMENT: {current_movement_name}", fill=(0, 255, 255))
+        draw.text((20, 50), f"TIME CODE: {time_sec:.2f}s / {DURATION:.2f}s", fill=(0, 255, 0))
         img.save(process.stdin, "PNG")
         
     process.stdin.close()
     process.wait()
-    print(f"[SUCCESS] Teddy walking video rendered: {video_output}")
+    print(f"[SUCCESS] Teddy walk video rendered: {video_output}")
     
-    usda_output = "/home/mariarahel/src/tsfi2/atropa_pulsechain/teddy_walk_scene.usda"
-    with open(usda_output, "w") as f:
-        f.write("#usda 1.0\n")
-        f.write("(\n")
-        f.write("    startTimeCode = 0\n")
-        f.write(f"    endTimeCode = {total_frames - 1}\n")
-        f.write("    upAxis = \"Y\"\n")
-        f.write(")\n\n")
-        f.write("def Xform \"TeddyWalkerScene\"\n")
-        f.write("{\n")
+    assets_dir = "/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/assets"
+    os.makedirs(assets_dir, exist_ok=True)
+    
+    parts_zero, _ = get_walking_geometry(0.0)
+    for part_name, part in parts_zero.items():
+        asset_file_usda = os.path.join(assets_dir, f"teddy_{part_name.lower()}.usda")
+        write_static_usda_asset(asset_file_usda, f"Mesh_{part_name}", part["size"], is_heart=(part["shape"] == "heart"))
+        asset_file_usdc = os.path.join(assets_dir, f"teddy_{part_name.lower()}.usdc")
+        write_static_usda_asset(asset_file_usdc, f"Mesh_{part_name}", part["size"], is_heart=(part["shape"] == "heart"))
         
-        for part_name, samples in usd_samples.items():
-            f.write(f"    def Xform \"{part_name}\"\n")
-            f.write("    {\n")
-            f.write("        double3 xformOp:translate.timeSamples = {\n")
-            for f_idx, px, py, pz, rx, ry, rz in samples:
-                f.write(f"            {f_idx}: ({px:.4f}, {py:.4f}, {pz:.4f}),\n")
-            f.write("        }\n")
-            f.write("        double3 xformOp:rotateXYZ.timeSamples = {\n")
-            for f_idx, px, py, pz, rx, ry, rz in samples:
-                f.write(f"            {f_idx}: ({rx * 57.2958:.4f}, {ry * 57.2958:.4f}, {rz * 57.2958:.4f}),\n")
-            f.write("        }\n")
-            f.write("        uniform token[] xformOpOrder = [\"xformOp:translate\", \"xformOp:rotateXYZ\"]\n")
-            f.write("    }\n")
-            
-        f.write("}\n")
-    print(f"[SUCCESS] Pixar USDA scene description exported: {usda_output}")
+    usda_output = "/home/mariarahel/src/tsfi2/atropa_pulsechain/teddy_walk_scene.usda"
+    usdc_output = "/home/mariarahel/src/tsfi2/atropa_pulsechain/teddy_walk_scene.usdc"
     
+    for scene_path, is_usdc in [(usda_output, False), (usdc_output, True)]:
+        ext = "usdc" if is_usdc else "usda"
+        with open(scene_path, "w") as f:
+            f.write("#usda 1.0\n")
+            f.write("(\n")
+            f.write("    startTimeCode = 0\n")
+            f.write(f"    endTimeCode = {total_frames - 1}\n")
+            f.write("    upAxis = \"Y\"\n")
+            f.write(")\n\n")
+            
+            f.write("def Scope \"Looks\"\n")
+            f.write("{\n")
+            f.write("    def Material \"FurMaterial\"\n")
+            f.write("    {\n")
+            f.write("        token outputs:surface.connect = </Looks/FurMaterial/Shader.outputs:surface>\n")
+            f.write("        def Shader \"Shader\"\n")
+            f.write("        {\n")
+            f.write("            uniform token info:id = \"UsdPreviewSurface\"\n")
+            f.write("            color3f inputs:diffuseColor = (0.47, 0.31, 0.21)\n")
+            f.write("            float inputs:roughness = 0.95\n")
+            f.write("            float inputs:metallic = 0.0\n")
+            f.write("        }\n")
+            f.write("    }\n")
+            f.write("    def Material \"ClothMaterial\"\n")
+            f.write("    {\n")
+            f.write("        token outputs:surface.connect = </Looks/ClothMaterial/Shader.outputs:surface>\n")
+            f.write("        def Shader \"Shader\"\n")
+            f.write("        {\n")
+            f.write("            uniform token info:id = \"UsdPreviewSurface\"\n")
+            f.write("            color3f inputs:diffuseColor = (0.78, 0.12, 0.16)\n")
+            f.write("            float inputs:roughness = 0.85\n")
+            f.write("            float inputs:metallic = 0.0\n")
+            f.write("        }\n")
+            f.write("    }\n")
+            f.write("    def Material \"ButtonMaterial\"\n")
+            f.write("    {\n")
+            f.write("        token outputs:surface.connect = </Looks/ButtonMaterial/Shader.outputs:surface>\n")
+            f.write("        def Shader \"Shader\"\n")
+            f.write("        {\n")
+            f.write("            uniform token info:id = \"UsdPreviewSurface\"\n")
+            f.write("            color3f inputs:diffuseColor = (0.08, 0.08, 0.08)\n")
+            f.write("            float inputs:roughness = 0.1\n")
+            f.write("            float inputs:metallic = 0.9\n")
+            f.write("        }\n")
+            f.write("    }\n")
+            f.write("}\n\n")
+            
+            f.write("def SkelRoot \"TeddyBearSkelCharacter\"\n")
+            f.write("{\n")
+            
+            f.write("    def Skeleton \"skele\"\n")
+            f.write("    {\n")
+            f.write("        uniform token[] joints = [\n")
+            f.write("            \"/\", \"/Head\", \"/Head/LeftEar\", \"/Head/RightEar\",\n")
+            f.write("            \"/Head/LeftEye\", \"/Head/RightEye\", \"/Head/Muzzle\", \"/Head/Nose\",\n")
+            f.write("            \"/SewnHeart\",\n")
+            f.write("            \"/LeftUpperArm\", \"/LeftUpperArm/LeftForearm\",\n")
+            f.write("            \"/RightUpperArm\", \"/RightUpperArm/RightForearm\",\n")
+            f.write("            \"/LeftThigh\", \"/LeftThigh/LeftCalf\",\n")
+            f.write("            \"/RightThigh\", \"/RightThigh/RightCalf\"\n")
+            f.write("        ]\n")
+            f.write("    }\n\n")
+            
+            f.write("    def SkelAnimation \"anim\"\n")
+            f.write("    {\n")
+            f.write("        uniform token[] joints = [\n")
+            f.write("            \"/\", \"/Head\", \"/Head/LeftEar\", \"/Head/RightEar\",\n")
+            f.write("            \"/Head/LeftEye\", \"/Head/RightEye\", \"/Head/Muzzle\", \"/Head/Nose\",\n")
+            f.write("            \"/SewnHeart\",\n")
+            f.write("            \"/LeftUpperArm\", \"/LeftUpperArm/LeftForearm\",\n")
+            f.write("            \"/RightUpperArm\", \"/RightUpperArm/RightForearm\",\n")
+            f.write("            \"/LeftThigh\", \"/LeftThigh/LeftCalf\",\n")
+            f.write("            \"/RightThigh\", \"/RightThigh/RightCalf\"\n")
+            f.write("        ]\n")
+            f.write("    }\n\n")
+            
+            for part_name, samples in usd_samples.items():
+                f.write(f"    def \"{part_name}\" (\n")
+                f.write(f"        references = @./tsfi2-deepseek/assets/teddy_{part_name.lower()}.{ext}@\n")
+                f.write("    )\n")
+                f.write("    {\n")
+                if part_name == "SewnHeart":
+                    f.write("        rel material:binding = </Looks/ClothMaterial>\n")
+                elif "Eye" in part_name or "Nose" in part_name:
+                    f.write("        rel material:binding = </Looks/ButtonMaterial>\n")
+                else:
+                    f.write("        rel material:binding = </Looks/FurMaterial>\n")
+
+                    
+                f.write("        double3 xformOp:translate.timeSamples = {\n")
+                for f_idx, px, py, pz, rx, ry, rz in samples:
+                    f.write(f"            {f_idx}: ({px:.4f}, {py:.4f}, {pz:.4f}),\n")
+                f.write("        }\n")
+                f.write("        double3 xformOp:rotateXYZ.timeSamples = {\n")
+                for f_idx, px, py, pz, rx, ry, rz in samples:
+                    f.write(f"            {f_idx}: ({rx * 57.2958:.4f}, {ry * 57.2958:.4f}, {rz * 57.2958:.4f}),\n")
+                f.write("        }\n")
+                f.write("        uniform token[] xformOpOrder = [\"xformOp:translate\", \"xformOp:rotateXYZ\"]\n")
+                f.write("    }\n\n")
+                
+            f.write("}\n")
+            
+    print(f"[SUCCESS] Composed walk scene file exported: {usda_output} and {usdc_output}")
     try:
         os.remove(wav_output)
     except Exception:
