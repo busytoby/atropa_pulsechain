@@ -242,6 +242,24 @@
                 </div>
             </div>
 
+            <div class="slider-group" id="coords-panel" style="display: none; border: 1px solid rgba(197, 160, 89, 0.3); padding: 10px; border-radius: 6px; background-color: rgba(0,0,0,0.2);">
+                <label><span style="color: #ffd700;">Selected Vertex Coordinates</span></label>
+                <div style="display: flex; gap: 8px; margin-top: 5px;">
+                    <div style="flex: 1;">
+                        <span style="font-size: 9px; opacity: 0.7;">X:</span>
+                        <input type="number" id="input-coord-x" step="0.01" style="width: 100%; background: #050403; color: #fff; border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 4px; padding: 4px; font-size: 11px;">
+                    </div>
+                    <div style="flex: 1;">
+                        <span style="font-size: 9px; opacity: 0.7;">Y:</span>
+                        <input type="number" id="input-coord-y" step="0.01" style="width: 100%; background: #050403; color: #fff; border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 4px; padding: 4px; font-size: 11px;">
+                    </div>
+                    <div style="flex: 1;">
+                        <span style="font-size: 9px; opacity: 0.7;">Z:</span>
+                        <input type="number" id="input-coord-z" step="0.01" style="width: 100%; background: #050403; color: #fff; border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 4px; padding: 4px; font-size: 11px;">
+                    </div>
+                </div>
+            </div>
+
             <textarea id="export-output" readonly placeholder="USDA output will be generated here..."></textarea>
 
             <div class="log-panel" id="log-console">
@@ -265,6 +283,11 @@
         const lblRot = document.getElementById('lbl-rot');
         const lblScale = document.getElementById('lbl-scale');
         const lblSize = document.getElementById('lbl-size');
+
+        const coordsPanel = document.getElementById('coords-panel');
+        const inputCoordX = document.getElementById('input-coord-x');
+        const inputCoordY = document.getElementById('input-coord-y');
+        const inputCoordZ = document.getElementById('input-coord-z');
 
         const paramSnap = document.getElementById('param-snap');
         const lblSnap = document.getElementById('lbl-snap');
@@ -522,6 +545,7 @@
                     saveHistoryState();
                     canvas.activeVertexIdx = closestIdx;
                     selectedVertexIdx = closestIdx;
+                    updateCoordsPanel();
                     log(`[WARP] Selected USD Vertex ${closestIdx} for mesh editing.`);
                 }
             } else if (activeTool === 'paint') {
@@ -552,6 +576,7 @@
                 
                 usdVertices[canvas.activeVertexIdx][0] = dx;
                 usdVertices[canvas.activeVertexIdx][1] = dy;
+                updateCoordsPanel();
             } else if (activeTool === 'paint') {
                 customSplines.push({ x: mouseX, y: mouseY });
             }
@@ -564,6 +589,31 @@
                 log(`[PAINT] Custom Bezier/Stylus spline registered with ${customSplines.length} coordinates.`);
             }
         });
+
+        // Numerical coordinate fields helpers
+        function updateCoordsPanel() {
+            if (selectedVertexIdx !== -1) {
+                coordsPanel.style.display = 'block';
+                const pt = usdVertices[selectedVertexIdx];
+                inputCoordX.value = pt[0].toFixed(4);
+                inputCoordY.value = pt[1].toFixed(4);
+                inputCoordZ.value = pt[2].toFixed(4);
+            } else {
+                coordsPanel.style.display = 'none';
+            }
+        }
+
+        function handleCoordInput() {
+            if (selectedVertexIdx !== -1) {
+                saveHistoryState();
+                usdVertices[selectedVertexIdx][0] = parseFloat(inputCoordX.value) || 0;
+                usdVertices[selectedVertexIdx][1] = parseFloat(inputCoordY.value) || 0;
+                usdVertices[selectedVertexIdx][2] = parseFloat(inputCoordZ.value) || 0;
+            }
+        }
+        inputCoordX.addEventListener('change', handleCoordInput);
+        inputCoordY.addEventListener('change', handleCoordInput);
+        inputCoordZ.addEventListener('change', handleCoordInput);
 
         // Sliders
         paramRot.addEventListener('input', () => lblRot.textContent = `${paramRot.value}°`);
