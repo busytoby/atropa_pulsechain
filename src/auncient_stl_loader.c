@@ -1,6 +1,7 @@
 #include "auncient_stl_loader.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 bool auncient_stl_load_binary(const char *filepath, AuncientStlMesh *mesh_out) {
     if (!filepath || !mesh_out) {
@@ -51,6 +52,71 @@ bool auncient_stl_load_binary(const char *filepath, AuncientStlMesh *mesh_out) {
     fclose(file);
     printf("[STL LOAD SUCCESS] Loaded binary STL: %s (%u facets parsed)\n", filepath, num_facets);
     return true;
+}
+
+bool auncient_stl_load_ascii(const char *filepath, AuncientStlMesh *mesh_out) {
+    FILE *file = fopen(filepath, "r");
+    if (!file) return false;
+
+    char line[256];
+    uint32_t num_facets = 0;
+    while (fgets(line, sizeof(line), file)) {
+        if (strstr(line, "facet normal") != NULL) {
+            num_facets++;
+        }
+    }
+    rewind(file);
+
+    mesh_out->facet_count = num_facets;
+    mesh_out->facets = (AuncientStlFacet *)malloc(sizeof(AuncientStlFacet) * num_facets);
+    if (!mesh_out->facets) {
+        fclose(file);
+        return false;
+    }
+
+    uint32_t f_idx = 0;
+    int v_idx = 0;
+    while (fgets(line, sizeof(line), file) && f_idx < num_facets) {
+        float nx, ny, nz;
+        if (sscanf(line, " facet normal %f %f %f", &nx, &ny, &nz) == 3) {
+            mesh_out->facets[f_idx].normal[0] = nx;
+            mesh_out->facets[f_idx].normal[1] = ny;
+            mesh_out->facets[f_idx].normal[2] = nz;
+            v_idx = 0;
+        } else {
+            float vx, vy, vz;
+            if (sscanf(line, " vertex %f %f %f", &vx, &vy, &vz) == 3 && v_idx < 3) {
+                mesh_out->facets[f_idx].vertices[v_idx][0] = vx;
+                mesh_out->facets[f_idx].vertices[v_idx][1] = vy;
+                mesh_out->facets[f_idx].vertices[v_idx][2] = vz;
+                v_idx++;
+                if (v_idx == 3) {
+                    mesh_out->facets[f_idx].attribute_byte_count = 0;
+                    f_idx++;
+                }
+            }
+        }
+    }
+
+    fclose(file);
+    printf("[STL LOAD SUCCESS] Loaded ASCII STL: %s (%u facets parsed)\n", filepath, num_facets);
+    return true;
+}
+
+bool auncient_stl_load(const char *filepath, AuncientStlMesh *mesh_out) {
+    if (!filepath || !mesh_out) return false;
+
+    FILE *file = fopen(filepath, "r");
+    if (!file) return false;
+
+    char check[8] = {0};
+    size_t r = fread(check, 1, 5, file);
+    fclose(file);
+
+    if (r == 5 && strncmp(check, "solid", 5) == 0) {
+        return auncient_stl_load_ascii(filepath, mesh_out);
+    }
+    return auncient_stl_load_binary(filepath, mesh_out);
 }
 
 void auncient_stl_free_mesh(AuncientStlMesh *mesh) {

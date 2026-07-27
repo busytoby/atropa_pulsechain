@@ -20,6 +20,9 @@ typedef struct {
 // Parses a binary STL file stream into an AuncientStlMesh buffer
 bool auncient_stl_load_binary(const char *filepath, AuncientStlMesh *mesh_out);
 
+// Parses either ASCII or binary STL files based on header detection
+bool auncient_stl_load(const char *filepath, AuncientStlMesh *mesh_out);
+
 // Frees the allocated facets memory within the mesh structure
 void auncient_stl_free_mesh(AuncientStlMesh *mesh);
 
