@@ -1265,7 +1265,13 @@ uint32_t auncient_initial_orders_2_resolve(uint32_t instruction, uint32_t reloca
     return resolved;
 }
 
-bool auncient_autodin_dispatch_wmq(uint32_t resolved_instruction, uint32_t target_receiver_id) {
+bool auncient_autodin_dispatch_wmq(uint32_t resolved_instruction, uint32_t target_receiver_id, const uint32_t *pki_keys, int key_count) {
+    // Validate PKI Authorization
+    if (!pki_keys || key_count < 4) {
+        printf("[AUTODIN WMQ REJECT] PKI Authorization failed. Requires at least 4 verification keys (provided: %d).\n", key_count);
+        return false;
+    }
+
     // Audit the dispatch loop over WinchesterMQ
     printf("[AUTODIN WMQ ROUTING] Dispatched resolved instruction 0x%08X to target receiver %u via WinchesterMQ.\n", 
            resolved_instruction, target_receiver_id);

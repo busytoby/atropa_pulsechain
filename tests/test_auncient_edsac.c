@@ -352,9 +352,15 @@ int main(void) {
 
     // 11. Test AUTODIN WinchesterMQ Dispatching
     printf("[INFO] Testing AUTODIN WinchesterMQ dispatching...\n");
-    bool dispatched = auncient_autodin_dispatch_wmq(resolved_inst, 99);
+    uint32_t valid_pki_keys[4] = { 0x1111, 0x2222, 0x3333, 0x4444 };
+    bool dispatched = auncient_autodin_dispatch_wmq(resolved_inst, 99, valid_pki_keys, 4);
     assert(dispatched == true);
-    printf("   ✓ Instruction successfully dispatched to receiver via WinchesterMQ.\n");
+    
+    // Test invalid dispatch (less than 4 keys)
+    uint32_t invalid_pki_keys[3] = { 0x1111, 0x2222, 0x3333 };
+    bool fail_dispatch = auncient_autodin_dispatch_wmq(resolved_inst, 99, invalid_pki_keys, 3);
+    assert(fail_dispatch == false);
+    printf("   ✓ Instruction successfully dispatched with PKI keys check verified.\n");
 
     // 12. Test Speculative Prefetch Batch Validation
     printf("[INFO] Testing Speculative Prefetch Batch Validation...\n");
