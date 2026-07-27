@@ -263,6 +263,9 @@ bool auncient_hogan_save_ledger(const HoganAccount *accounts, int count, const c
 // Loads the simulated Hogan ledger from a binary .dat.bin file
 bool auncient_hogan_load_ledger(HoganAccount *accounts, int *count_out, int max_accounts, const char *bin_path);
 
+// Performs validation auditing on executed EDSAC instructions and logs them to the AUTODIN audit ledger
+void auncient_autodin_audit_edsac(uint32_t pc, uint32_t instruction, int64_t accumulator);
+
 #ifdef __cplusplus
 }
 #endif

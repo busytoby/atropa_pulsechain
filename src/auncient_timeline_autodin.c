@@ -1202,3 +1202,12 @@ bool auncient_hogan_load_ledger(HoganAccount *accounts, int *count_out, int max_
     fclose(f);
     return true;
 }
+
+void auncient_autodin_audit_edsac(uint32_t pc, uint32_t instruction, int64_t accumulator) {
+    char audit_log_buffer[256];
+    snprintf(audit_log_buffer, sizeof(audit_log_buffer), 
+             "[AUTODIN EDSAC AUDIT] PC=0x%04X Instruction=0x%08X Accumulator=%lld", 
+             pc, instruction, (long long)accumulator);
+
+    printf("%s\n", audit_log_buffer);
+}

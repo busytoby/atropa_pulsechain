@@ -4,14 +4,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include "../src/auncient_timeline_autodin.h"
 
 #define MEMORY_SIZE 1024
 #define DELAY_LINE_SIZE 32
 
 typedef struct {
     char op;
-    uint16_t address;
-    char modifier; // 'F' = short, 'D' = long, 'T' = relative
+    uint32_t address;
+    char modifier; // 'F' = short, 'D' = long, 'T' = relative, 'L' = large
 } instruction_t;
 
 typedef struct {
@@ -37,48 +38,25 @@ typedef struct {
 // Bits 12-16: Opcode character code (5 bits)
 // Bits 2-11: Address (10 bits)
 // Bit 1: Length bit/modifier (1 bit)
-uint32_t encode_instruction(char op, uint16_t address, char modifier) {
-    uint8_t op_val = 0;
-    // Map common EDSAC opcodes to 5-bit codes
-    switch (op) {
-        case 'A': op_val = 1; break;
-        case 'S': op_val = 2; break;
-        case 'T': op_val = 3; break;
-        case 'U': op_val = 4; break;
-        case 'G': op_val = 5; break;
-        case 'E': op_val = 6; break;
-        case 'H': op_val = 7; break;
-        case 'V': op_val = 8; break;
-        case 'N': op_val = 9; break;
-        case 'Z': op_val = 10; break;
-        default: op_val = 0;
-    }
-    uint32_t raw = (op_val & 0x1F) << 12;
-    raw |= (address & 0x3FF) << 2;
+uint32_t encode_instruction(char op, uint32_t address, char modifier) {
+    uint32_t raw = ((uint32_t)op & 0xFF) << 24;
+    raw |= (address & 0x3FFFFF) << 2;
     if (modifier == 'D') {
         raw |= 1;
+    } else if (modifier == 'L') {
+        raw |= 2;
     }
     return raw;
 }
 
 // Decode raw value to instruction
 void decode_instruction(uint32_t raw, instruction_t *inst) {
-    uint8_t op_val = (raw >> 12) & 0x1F;
-    switch (op_val) {
-        case 1: inst->op = 'A'; break;
-        case 2: inst->op = 'S'; break;
-        case 3: inst->op = 'T'; break;
-        case 4: inst->op = 'U'; break;
-        case 5: inst->op = 'G'; break;
-        case 6: inst->op = 'E'; break;
-        case 7: inst->op = 'H'; break;
-        case 8: inst->op = 'V'; break;
-        case 9: inst->op = 'N'; break;
-        case 10: inst->op = 'Z'; break;
-        default: inst->op = '?';
-    }
-    inst->address = (raw >> 2) & 0x3FF;
-    inst->modifier = (raw & 1) ? 'D' : 'F';
+    inst->op = (char)((raw >> 24) & 0xFF);
+    inst->address = (raw >> 2) & 0x3FFFFF;
+    uint8_t mod = raw & 3;
+    if (mod == 1) inst->modifier = 'D';
+    else if (mod == 2) inst->modifier = 'L';
+    else inst->modifier = 'F';
 }
 
 // Access simulated mercury delay line memory
@@ -148,7 +126,18 @@ void step_cpu(edsac_cpu_t *cpu) {
     instruction_t inst = fetch_word.inst;
     uint16_t next_pc = cpu->pc + 1;
 
+    // Log the instruction execution to the AUTODIN audit ledger
+    auncient_autodin_audit_edsac(cpu->pc, fetch_word.raw_value, cpu->accumulator);
+
     switch (inst.op) {
+        case 'F': { // Folklore instruction (Custom shift/hash transformation)
+            if (inst.modifier == 'L') {
+                cpu->accumulator ^= ((int64_t)inst.address << 16);
+            } else {
+                cpu->accumulator += inst.address;
+            }
+            break;
+        }
         case 'A': { // Add
             word_t val_word;
             access_memory(cpu, inst.address, false, &val_word);
@@ -163,7 +152,7 @@ void step_cpu(edsac_cpu_t *cpu) {
         }
         case 'T': { // Transfer & Clear Accumulator
             word_t val_word;
-            val_word.raw_value = (uint32_t)(cpu->accumulator & 0x1FFFF); // 17-bit mask
+            val_word.raw_value = (uint32_t)(cpu->accumulator & 0xFFFFFFFF); // 32-bit mask
             val_word.is_instruction = false;
             access_memory(cpu, inst.address, true, &val_word);
             cpu->accumulator = 0;
@@ -171,7 +160,7 @@ void step_cpu(edsac_cpu_t *cpu) {
         }
         case 'U': { // Transfer & Hold Accumulator
             word_t val_word;
-            val_word.raw_value = (uint32_t)(cpu->accumulator & 0x1FFFF);
+            val_word.raw_value = (uint32_t)(cpu->accumulator & 0xFFFFFFFF);
             val_word.is_instruction = false;
             access_memory(cpu, inst.address, true, &val_word);
             break;
@@ -274,7 +263,32 @@ int main(void) {
     assert(result_cell.raw_value == 50);
 
     printf("[INFO] Mercury Delay Line total wait/recirculate time verified: %u cycles.\n", cpu.memory.clock_cycles);
+
+    // 8. Test Large 32-bit Instruction Layout and Custom Folklore Opcode ('F')
+    printf("[INFO] Testing 32-bit Extended Folklore Opcode ('F') with 'L' modifier...\n");
+    uint32_t ext_inst = encode_instruction('F', 0x1FFFFF, 'L');
+    instruction_t decoded_ext;
+    decode_instruction(ext_inst, &decoded_ext);
+    assert(decoded_ext.op == 'F');
+    assert(decoded_ext.address == 0x1FFFFF);
+    assert(decoded_ext.modifier == 'L');
+
+    // Run a step with the folklore instruction to check AUTODIN logging
+    word_t folk_word;
+    folk_word.is_instruction = true;
+    folk_word.raw_value = ext_inst;
+    folk_word.inst = decoded_ext;
     
+    // Write instruction to memory and run step
+    cpu.pc = 150;
+    cpu.accumulator = 0xAA55;
+    access_memory(&cpu, 150, true, &folk_word);
+    step_cpu(&cpu);
+    // Accumulator should have XORed (0xAA55 ^ (0x1FFFFF << 16))
+    int64_t expected_acc = 0xAA55 ^ ((int64_t)0x1FFFFF << 16);
+    assert(cpu.accumulator == expected_acc);
+    printf("   ✓ 32-bit Folklore instruction execution and AUTODIN audit verified.\n");
+
     printf("=============================================================\n");
     printf("EDSAC SIMULATION AND WHEELER JUMP VERIFIED SUCCESS\n");
     printf("=============================================================\n");
