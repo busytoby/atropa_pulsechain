@@ -256,6 +256,15 @@
                 </div>
             </div>
 
+            <div class="slider-group">
+                <label><span>Mesh Deformer Presets</span></label>
+                <div class="controls">
+                    <button id="preset-sine">Sine Wave</button>
+                    <button id="preset-inflate">Inflate</button>
+                    <button id="preset-reset">Reset Mesh</button>
+                </div>
+            </div>
+
             <div class="slider-group" id="coords-panel" style="display: none; border: 1px solid rgba(197, 160, 89, 0.3); padding: 10px; border-radius: 6px; background-color: rgba(0,0,0,0.2);">
                 <label><span style="color: #ffd700;">Selected Vertex Coordinates</span></label>
                 <div style="display: flex; gap: 8px; margin-top: 5px;">
@@ -338,6 +347,9 @@
         for (let i = 0; i < 30; i++) {
             usdVerticesColor.push('#c5a059'); // Default bronze gold
         }
+
+        // Deep copy baseline vertex positions for reset action
+        const usdVerticesBaseline = JSON.parse(JSON.stringify(usdVertices));
 
         // Undo/Redo history tracking
         let undoStack = [];
@@ -958,6 +970,43 @@
         btnProjXY.addEventListener('click', () => setProjectionPlane('xy'));
         btnProjXZ.addEventListener('click', () => setProjectionPlane('xz'));
         btnProjZY.addEventListener('click', () => setProjectionPlane('zy'));
+
+        // Preset deformation math functions
+        document.getElementById('preset-sine').addEventListener('click', () => {
+            saveHistoryState();
+            for (let i = 0; i < usdVertices.length; i++) {
+                const pt = usdVertices[i];
+                usdVertices[i][0] = pt[0] + 0.08 * Math.sin(pt[1] * 8);
+                usdVertices[i][2] = pt[2] + 0.08 * Math.cos(pt[1] * 8);
+            }
+            updateCoordsPanel();
+            log("[PRESET] Applied Sine Wave displacement deformation to mesh.");
+        });
+
+        document.getElementById('preset-inflate').addEventListener('click', () => {
+            saveHistoryState();
+            for (let i = 0; i < usdVertices.length; i++) {
+                const pt = usdVertices[i];
+                const dx = pt[0];
+                const dy = pt[1] + 0.25;
+                const dz = pt[2];
+                const len = Math.sqrt(dx*dx + dy*dy + dz*dz) || 1;
+                usdVertices[i][0] += (dx / len) * 0.06;
+                usdVertices[i][1] += (dy / len) * 0.06;
+                usdVertices[i][2] += (dz / len) * 0.06;
+            }
+            updateCoordsPanel();
+            log("[PRESET] Applied Spherical Inflation deformation to mesh.");
+        });
+
+        document.getElementById('preset-reset').addEventListener('click', () => {
+            saveHistoryState();
+            for (let i = 0; i < usdVertices.length; i++) {
+                usdVertices[i] = JSON.parse(JSON.stringify(usdVerticesBaseline[i]));
+            }
+            updateCoordsPanel();
+            log("[PRESET] Reset mesh to baseline USDA geometry.");
+        });
 
         function hexToRGB(hex) {
             const r = parseInt(hex.slice(1, 3), 16) / 255.0;
