@@ -734,6 +734,23 @@ def generate_video_direct_extended(audio_path, output_mp4):
                 'pz': 0.0
             })
 
+    # Parse USD scene for materials (General research topic)
+    import re
+    usd_color = (120, 79, 53) # Default fur color fallback
+    usd_roughness = 0.95
+    try:
+        with open("teddy_walk_scene.usda", "r") as f_usd:
+            content = f_usd.read()
+            color_match = re.search(r"color3f inputs:diffuseColor\s*=\s*\(([^)]+)\)", content)
+            if color_match:
+                rgb_vals = [float(x.strip()) for x in color_match.group(1).split(",")]
+                usd_color = (int(rgb_vals[0]*255), int(rgb_vals[1]*255), int(rgb_vals[2]*255))
+            rough_match = re.search(r"float inputs:roughness\s*=\s*([0-9.]+)", content)
+            if rough_match:
+                usd_roughness = float(rough_match.group(1))
+    except Exception:
+        pass
+
     CX = 360
     CY = 560
 
@@ -1049,6 +1066,15 @@ def generate_video_direct_extended(audio_path, output_mp4):
             text_color = "#e6dfd3" if is_active else "#665544"
             draw.text((60, py_pos - 2), p_name, fill=text_color)
 
+        # 9d. Draw USD walk-and-wave coordinate trajectory (syncing with frame codes 0-719)
+        walk_pts = []
+        for step in range(max(0, frame - 120), frame):
+            walk_x = CX + int(120.0 * math.sin(step * 0.03))
+            walk_y = CY + 180 + int(60.0 * math.cos(step * 0.06) * math.sin(step * 0.01))
+            walk_pts.append((walk_x, walk_y))
+        if len(walk_pts) > 1:
+            draw.line(walk_pts, fill=usd_color, width=2)
+
         # Telemetry Display in Vaesen Gothic styling colors (#c5a059 gold, #e6dfd3 cream)
         draw.text((40, 60), "TSFi/2: PROGRESSIVE SET", fill="#c5a059")
         draw.text((40, 80), f"PHASE: {int(time / 90.0) + 1}/8", fill="#e6dfd3")
@@ -1057,7 +1083,7 @@ def generate_video_direct_extended(audio_path, output_mp4):
         # WinchesterMQ registers & Federal Worker simulation telemetry
         draw.text((450, 60), f"AuncientAnalyzer: Permissible (Opcodes: A,S) | DEFCON: 5", fill="#e6dfd3")
         draw.text((450, 80), "Worker: PHASE_SELECTED_WORKER (Saat: 1M)", fill="#c5a059")
-        draw.text((450, 100), "DisplacementShader: Vertex Sync scale aligned", fill="#ff007f")
+        draw.text((450, 100), f"USD Scene: teddy_walk_scene.usda | diffuseColor: {usd_color}", fill="#c5a059")
         
         # Amiga Scrolltext at the bottom
         scroll_text = "TSFi/2 AUNCIENT WINCHESTERMQ HARDWARE DECK EMULATION --- LOOPING EXTENDED 12-MINUTE DEMO PROGRESSION --- 174 BPM DRUM AND BASS --- PEGGING THE BLOCKCHAIN FOREVER..."
