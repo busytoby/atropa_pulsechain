@@ -32,6 +32,8 @@ Before staging or committing any modifications, developers must audit compiled b
    ```
    Verify that the output contains *only* system paths mapping to `linux-vdso.so`, `libm.so`, `libc.so`, and dynamic linker modules. Any other entries (such as unauthorized external shared libraries) will disqualify the commit.
 
+3. **Git Pre-Commit Hook Enforcement**: The repository includes a pre-commit hook located at `.git/hooks/pre-commit` which automatically executes these tests and dependency audits on every commit attempt. If compilation fails or dynamic library pollution is detected, the commit is aborted.
+
 ---
 
 ## 3. ABI & WinchesterMQ Execution Gating
