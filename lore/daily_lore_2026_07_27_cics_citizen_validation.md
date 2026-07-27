@@ -10,3 +10,8 @@ During the CICS execution cycle (`auncient_sdk_cics_exec`), the system intercept
 * **Resolution Pathway**: The analyzer forwards the writer ID to the material-to-cloth bridge. The bridge attempts to resolve a corresponding character entity name (e.g. `"TeddyBearSkelCharacter"` or `"AuncientFederalWorkerCharacter"`).
 * **SSA Verification**: The resolved name is passed to `auncient_bridge_entity_to_ssa` to derive its Social Security Number and issuance site through the `tsfi_mf_ssa_resolve_issuance_site` registry.
 * **Instruction Gating**: If the SSN fails to resolve, maps to the default unallocated SSN (`000-00-0000`), or if the writer ID is unregistered, the instruction is rejected at the gate (`[CICS REJECT]`) and immediately aborted, ensuring zero unrecorded or unauthorized execution.
+
+### 3. DNA and USD Identity Retention
+For a system participant (such as a Stuffed Teddy Bear) to dynamically authorize its instructions, the mainframe retains its entire `.dna` block or USD geometry profile within the registry:
+* **The Cryptographic Anchor**: Retaining the complete DNA footprint ensures that the participant's identity is anchored to an immutable FNV-1a hash value.
+* **Agent Authorization**: When the citizen commands CICS, the analyzer verifies the active caller's footprint against this registered database. By proving their identity is continuous and intact, their instructions are classified as coming from a valid citizen, granting them full clearance to perform their duties as authorized agents of the federal mainframe.
