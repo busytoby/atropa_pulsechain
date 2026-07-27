@@ -153,41 +153,41 @@ int main(void) {
                         rz = (x * 0.8f) * sin_j + (z * 0.8f) * cos_j;
                         ry = y * 0.8f + 0.9f;
                     } else if (m == 2) {
-                        // Left Leg: slender leg cylinder pivoting at hip (-0.4, -0.6)
+                        // Left Leg: YZ pitch swing pivoting at hip (-0.4, -0.6)
                         float lx = x * 0.4f;
                         float ly = y * 0.8f;
                         float lz = z * 0.4f;
                         float local_y = ly - 0.4f;
-                        rx = lx * cos_j - local_y * sin_j - 0.4f;
-                        ry = lx * sin_j + local_y * cos_j - 0.6f;
-                        rz = lz;
+                        rx = lx - 0.4f;
+                        ry = local_y * cos_j - lz * sin_j - 0.6f;
+                        rz = local_y * sin_j + lz * cos_j;
                     } else if (m == 3) {
-                        // Right Leg: slender leg cylinder pivoting at hip (+0.4, -0.6)
+                        // Right Leg: YZ pitch swing pivoting at hip (+0.4, -0.6)
                         float lx = x * 0.4f;
                         float ly = y * 0.8f;
                         float lz = z * 0.4f;
                         float local_y = ly - 0.4f;
-                        rx = lx * cos_j - local_y * sin_j + 0.4f;
-                        ry = lx * sin_j + local_y * cos_j - 0.6f;
-                        rz = lz;
+                        rx = lx + 0.4f;
+                        ry = local_y * cos_j - lz * sin_j - 0.6f;
+                        rz = local_y * sin_j + lz * cos_j;
                     } else if (m == 4) {
-                        // Left Arm: slender arm cylinder pivoting at shoulder (-0.6, +0.3)
+                        // Left Arm: YZ pitch swing pivoting at shoulder (-0.6, +0.3)
                         float ax = x * 0.3f;
                         float ay = y * 0.7f;
                         float az = z * 0.3f;
                         float local_y = ay - 0.35f;
-                        rx = ax * cos_j - local_y * sin_j - 0.6f;
-                        ry = ax * sin_j + local_y * cos_j + 0.3f;
-                        rz = az;
+                        rx = ax - 0.6f;
+                        ry = local_y * cos_j - az * sin_j + 0.3f;
+                        rz = local_y * sin_j + az * cos_j;
                     } else if (m == 5) {
-                        // Right Arm: slender arm cylinder pivoting at shoulder (+0.6, +0.3)
+                        // Right Arm: YZ pitch swing pivoting at shoulder (+0.6, +0.3)
                         float ax = x * 0.3f;
                         float ay = y * 0.7f;
                         float az = z * 0.3f;
                         float local_y = ay - 0.35f;
-                        rx = ax * cos_j - local_y * sin_j + 0.6f;
-                        ry = ax * sin_j + local_y * cos_j + 0.3f;
-                        rz = az;
+                        rx = ax + 0.6f;
+                        ry = local_y * cos_j - az * sin_j + 0.3f;
+                        rz = local_y * sin_j + az * cos_j;
                     }
 
                     // Verlet stretch (Rule 10)
@@ -249,33 +249,33 @@ int main(void) {
                             float ly = y * 0.8f;
                             float lz = z * 0.4f;
                             float local_y = ly - 0.4f;
-                            rx = lx * cos_j - local_y * sin_j - 0.4f;
-                            ry = lx * sin_j + local_y * cos_j - 0.6f;
-                            rz = lz;
+                            rx = lx - 0.4f;
+                            ry = local_y * cos_j - lz * sin_j - 0.6f;
+                            rz = local_y * sin_j + lz * cos_j;
                         } else if (m == 3) {
                             float lx = x * 0.4f;
                             float ly = y * 0.8f;
                             float lz = z * 0.4f;
                             float local_y = ly - 0.4f;
-                            rx = lx * cos_j - local_y * sin_j + 0.4f;
-                            ry = lx * sin_j + local_y * cos_j - 0.6f;
-                            rz = lz;
+                            rx = lx + 0.4f;
+                            ry = local_y * cos_j - lz * sin_j - 0.6f;
+                            rz = local_y * sin_j + lz * cos_j;
                         } else if (m == 4) {
                             float ax = x * 0.3f;
                             float ay = y * 0.7f;
                             float az = z * 0.3f;
                             float local_y = ay - 0.35f;
-                            rx = ax * cos_j - local_y * sin_j - 0.6f;
-                            ry = ax * sin_j + local_y * cos_j + 0.3f;
-                            rz = az;
+                            rx = ax - 0.6f;
+                            ry = local_y * cos_j - az * sin_j + 0.3f;
+                            rz = local_y * sin_j + az * cos_j;
                         } else if (m == 5) {
                             float ax = x * 0.3f;
                             float ay = y * 0.7f;
                             float az = z * 0.3f;
                             float local_y = ay - 0.35f;
-                            rx = ax * cos_j - local_y * sin_j + 0.6f;
-                            ry = ax * sin_j + local_y * cos_j + 0.3f;
-                            rz = az;
+                            rx = ax + 0.6f;
+                            ry = local_y * cos_j - az * sin_j + 0.3f;
+                            rz = local_y * sin_j + az * cos_j;
                         }
 
                         if (rz < 0.0f) {
