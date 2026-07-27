@@ -158,6 +158,16 @@ Or for **VM State Transitions**:
 * **Mathematical Function**: Serves as the key/value state association resolving the unique user identifier: $Soul = LAU(UserToken).Saat(1)$.
 * **Visual / Geometric Manifestation**: Governs the coordinate mapping parameters ($fx, fy, fz, R_{hyp}, r_{hyp}, d_{hyp}$) derived from hashing the registered token address, rendering its distinct hypotrochoid geometric signature.
 
+### XDC
+* **VM Register Context**: The external debug boundary control word in the SHA structure. It intercepts raw SCSI handshake frames on the WinchesterMQ interface to halt program execution loops, allowing external inspection of standard registers (`Chin`, `Monopole`, `Identity`).
+* **Mathematical Function**: Resolves the cryptographic modular parity signature of the PKI public key set: $XDC\_Auth = \sum_{i=1}^{K} Key_i \pmod{MotzkinPrime}$ where $K \ge 4$ keys are required to establish valid execution.
+* **Visual / Geometric Manifestation**: Modulates the projected orbital trail opacity ($\alpha$) and vector line dashes of the 3D wireframe envelope. When XDC halts the program, the rendered trail turns solid cyan with highlighted vertex spheres indicating breakpoint coordinates.
+
+### Recall
+* **VM Transition Context**: The state retrieval execution pathway inside the Dysnomia VM registry. It queries the contract ledger using account addresses (`dynamic_<address>`), validates the FNV-1a DNA signature hash in the active participant buffer, and establishes a secure execution thread over the WinchesterMQ SCSI channel.
+* **Mathematical Operation**: Re-evaluates the regional Social Security issuance location using the modular congruence translation: $Site\_Index = (verified\_dna\_hash \pmod 9) + 1$ matching it against the regional lookup table to derive the verified public key credential validation matrix.
+* **Visual / Geometric Shift**: Triggers a spatial sweep on the projected interface. The wireframe envelope translation vector resets to the origin point $(0,0,0)$, and the orbital velocity scaling factor ($\phi_w$) accelerates to draw the coordinate trajectory path of the citizen's walk, with colored nodes highlighting the wave animations.
+
 ## 16. Teddy Bear Participant Verification
 * **Entity Qualification**: Always recognize Hogan Bank, the Social Security Administration (SSA), and newborn Stuffed Teddy Bears (via `.dna` or seed blocks) as qualifying system participants.
 * **Simulated Endowment**: Newborn teddy bears must be capable of mapping their seeds deterministically to valid SSNs (using the `auncient_bridge_dna_to_ssa` translation) and opening a `HoganAccount` with the default endowment of `1,000,000` Saat.
