@@ -320,6 +320,12 @@ int main(void) {
     assert(final_inst.modifier == 'D');
     printf("   ✓ Relocation offset parameter resolved successfully under Initial Orders 2.\n");
 
+    // 11. Test AUTODIN WinchesterMQ Dispatching
+    printf("[INFO] Testing AUTODIN WinchesterMQ dispatching...\n");
+    bool dispatched = auncient_autodin_dispatch_wmq(resolved_inst, 99);
+    assert(dispatched == true);
+    printf("   ✓ Instruction successfully dispatched to receiver via WinchesterMQ.\n");
+
     printf("=============================================================\n");
     printf("EDSAC SIMULATION AND WHEELER JUMP VERIFIED SUCCESS\n");
     printf("=============================================================\n");

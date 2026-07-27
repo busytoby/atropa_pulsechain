@@ -269,6 +269,9 @@ bool auncient_autodin_audit_edsac(uint32_t pc, uint32_t instruction, int64_t acc
 // Resolves relocatable parameter offsets according to Initial Orders 2 specifications
 uint32_t auncient_initial_orders_2_resolve(uint32_t instruction, uint32_t relocation_offset);
 
+// Dispatches a resolved Initial Orders 2 instruction to a receiver target via WinchesterMQ (wmq)
+bool auncient_autodin_dispatch_wmq(uint32_t resolved_instruction, uint32_t target_receiver_id);
+
 #ifdef __cplusplus
 }
 #endif
