@@ -262,6 +262,7 @@
                     <button id="preset-sine">Sine Wave</button>
                     <button id="preset-inflate">Inflate</button>
                     <button id="preset-reset">Reset Mesh</button>
+                    <button id="btn-animate-preset">Animate Preset</button>
                 </div>
             </div>
 
@@ -341,6 +342,7 @@
         let isDrawing = false;
         let customSplines = [];
         let selectedVertexIdx = -1;
+        let animatePreset = false;
 
         // Display color tracker for each vertex
         let usdVerticesColor = [];
@@ -581,6 +583,15 @@
 
             const pulse = 1.0 + 0.12 * Math.sin(t * 8.0);
             drawTigerEye(pulse);
+
+            if (animatePreset) {
+                for (let i = 0; i < usdVertices.length; i++) {
+                    const base = usdVerticesBaseline[i];
+                    usdVertices[i][0] = base[0] + 0.06 * Math.sin(base[1] * 8 + t * 4.5);
+                    usdVertices[i][2] = base[2] + 0.06 * Math.cos(base[1] * 8 + t * 4.5);
+                }
+                updateCoordsPanel();
+            }
 
             // Screen 1: USD head
             drawUSDHead(scr_x[1], scr_y[1], paramRot.value, paramScale.value);
@@ -1006,6 +1017,14 @@
             }
             updateCoordsPanel();
             log("[PRESET] Reset mesh to baseline USDA geometry.");
+        });
+
+        const btnAnimatePreset = document.getElementById('btn-animate-preset');
+        btnAnimatePreset.addEventListener('click', () => {
+            animatePreset = !animatePreset;
+            btnAnimatePreset.style.backgroundColor = animatePreset ? 'var(--vaesen-gold)' : 'transparent';
+            btnAnimatePreset.style.color = animatePreset ? 'var(--vaesen-ink)' : 'var(--vaesen-gold)';
+            log(`[PRESET] Dynamic preset sweep animation toggled: ${animatePreset ? "ON" : "OFF"}`);
         });
 
         function hexToRGB(hex) {
