@@ -258,6 +258,10 @@
                         <input type="number" id="input-coord-z" step="0.01" style="width: 100%; background: #050403; color: #fff; border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 4px; padding: 4px; font-size: 11px;">
                     </div>
                 </div>
+                <div style="display: flex; gap: 8px; margin-top: 10px;">
+                    <button id="btn-prev-vertex" style="flex: 1; padding: 4px; font-size: 9px;">Prev Vertex</button>
+                    <button id="btn-next-vertex" style="flex: 1; padding: 4px; font-size: 9px;">Next Vertex</button>
+                </div>
             </div>
 
             <textarea id="export-output" readonly placeholder="USDA output will be generated here..."></textarea>
@@ -396,6 +400,8 @@
             const cos = Math.cos(rotRad + t);
             const sin = Math.sin(rotRad + t);
 
+            // 1. Project all vertices to screen coordinates
+            const projPts = [];
             for (let i = 0; i < usdVertices.length; i++) {
                 const pt = usdVertices[i];
                 const hx = pt[0] * scaleVal;
@@ -409,6 +415,40 @@
                 const factor = 120.0 / (200.0 - rz);
                 const px = cx + (rx * factor);
                 const py = cy + (ry * factor);
+                projPts.push({ x: px, y: py });
+            }
+
+            // 2. Draw wireframe edges between adjacent loop points (rings of 8)
+            ctx.strokeStyle = 'rgba(197, 160, 89, 0.25)';
+            ctx.lineWidth = 0.8;
+            for (let i = 0; i < usdVertices.length; i++) {
+                const ringSize = 8;
+                const baseIdx = Math.floor(i / ringSize) * ringSize;
+                const nextRingIdx = baseIdx + ((i + 1) % ringSize);
+                
+                // Connect ring neighbors
+                if (nextRingIdx < usdVertices.length) {
+                    ctx.beginPath();
+                    ctx.moveTo(projPts[i].x, projPts[i].y);
+                    ctx.lineTo(projPts[nextRingIdx].x, projPts[nextRingIdx].y);
+                    ctx.stroke();
+                }
+                
+                // Connect vertical neighbors
+                const vertIdx = i + ringSize;
+                if (vertIdx < usdVertices.length) {
+                    ctx.beginPath();
+                    ctx.moveTo(projPts[i].x, projPts[i].y);
+                    ctx.lineTo(projPts[vertIdx].x, projPts[vertIdx].y);
+                    ctx.stroke();
+                }
+            }
+
+            // 3. Draw nodes
+            for (let i = 0; i < usdVertices.length; i++) {
+                const pt = usdVertices[i];
+                const px = projPts[i].x;
+                const py = projPts[i].y;
 
                 const isSelected = (i === selectedVertexIdx);
                 ctx.fillStyle = isSelected ? '#ff4500' : '#c5a059';
@@ -418,14 +458,12 @@
                 ctx.fill();
 
                 if (isSelected) {
-                    // Draw outer selection ring
                     ctx.strokeStyle = '#ffd700';
                     ctx.lineWidth = 1;
                     ctx.beginPath();
                     ctx.arc(px, py, 8, 0, Math.PI * 2);
                     ctx.stroke();
 
-                    // Text display coords
                     ctx.fillStyle = '#ffd700';
                     ctx.font = '9px monospace';
                     ctx.fillText(`V[${i}]: (${pt[0].toFixed(2)}, ${pt[1].toFixed(2)})`, px + 10, py - 5);
@@ -649,6 +687,26 @@
             } else {
                 log("[REDO] Nothing to redo.");
             }
+        });
+
+        document.getElementById('btn-prev-vertex').addEventListener('click', () => {
+            if (selectedVertexIdx > 0) {
+                selectedVertexIdx--;
+            } else {
+                selectedVertexIdx = usdVertices.length - 1;
+            }
+            updateCoordsPanel();
+            log(`[NAVIGATE] Selected USD Vertex ${selectedVertexIdx}.`);
+        });
+
+        document.getElementById('btn-next-vertex').addEventListener('click', () => {
+            if (selectedVertexIdx < usdVertices.length - 1) {
+                selectedVertexIdx++;
+            } else {
+                selectedVertexIdx = 0;
+            }
+            updateCoordsPanel();
+            log(`[NAVIGATE] Selected USD Vertex ${selectedVertexIdx}.`);
         });
 
         document.getElementById('btn-play').addEventListener('click', () => {
