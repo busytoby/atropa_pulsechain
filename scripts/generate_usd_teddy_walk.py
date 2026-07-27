@@ -675,8 +675,15 @@ def main():
             f.write("    }\n")
             f.write("}\n\n")
             
-            f.write("def SkelRoot \"TeddyBearSkelCharacter\"\n")
+            f.write("def SkelRoot \"TeddyBearSkelCharacter\" (\n")
+            f.write("    inherits = </AuncientTeddySchema>\n")
+            f.write(")\n")
             f.write("{\n")
+            f.write("    float scale = 1.2\n")
+            f.write("    float sickness = 0.75\n")
+            f.write("    int missing_eye = 1\n")
+            f.write("    float lighting_angle = 210.0\n")
+
             
             f.write("    def Skeleton \"skele\"\n")
             f.write("    {\n")

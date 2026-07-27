@@ -53,28 +53,142 @@ def rotate_z(x, y, z, angle):
 
 def get_walking_geometry(time_sec):
     freq = 2.0 * math.pi * 1.5
+    wave_freq = 2.0 * math.pi * 1.5
     
-    x_disp = -2.5 + (time_sec * 0.6) % 5.0
-    y_disp = 0.05 + 0.06 * abs(math.sin(freq * time_sec))
+    if time_sec <= 7.0:
+        # Phase 1: Walk to center
+        t = time_sec / 7.0
+        x_disp = -2.5 + t * 2.5
+        
+        walk_time = time_sec
+        y_disp = 0.05 + 0.06 * abs(math.sin(freq * walk_time))
+        body_pitch = 0.08 * math.sin(freq * walk_time)
+        body_yaw = 1.0 + 0.05 * math.cos(freq * walk_time)
+        body_roll = 0.04 * math.sin(freq * walk_time)
+        
+        swing_l = 0.45 * math.sin(freq * walk_time)
+        swing_r = -0.45 * math.sin(freq * walk_time)
+        t_lknee = 0.5 * (1.0 + math.cos(freq * walk_time)) if swing_l < 0 else 0.15
+        t_rknee = 0.5 * (1.0 - math.cos(freq * walk_time)) if swing_r < 0 else 0.15
+        
+        t_luarm = -0.4 * math.sin(freq * walk_time) + 0.1
+        t_ruarm = 0.4 * math.sin(freq * walk_time) + 0.1
+        t_lelbow = 0.5 + 0.2 * math.cos(freq * walk_time)
+        t_relbow = 0.5 - 0.2 * math.cos(freq * walk_time)
+        m_name = "Walk to Center"
+        
+    elif time_sec <= 9.0:
+        # Phase 2: Turning to face camera
+        t = (time_sec - 7.0) / 2.0
+        x_disp = 0.0
+        
+        body_yaw = (1.0 - t) * 1.0
+        
+        y_disp = 0.05 + (1.0 - t) * 0.06 * abs(math.sin(freq * 7.0))
+        body_pitch = (1.0 - t) * 0.08 * math.sin(freq * 7.0)
+        body_roll = (1.0 - t) * 0.04 * math.sin(freq * 7.0)
+        
+        swing_l = (1.0 - t) * 0.45 * math.sin(freq * 7.0)
+        swing_r = (1.0 - t) * (-0.45 * math.sin(freq * 7.0))
+        
+        lknee_start = 0.5 * (1.0 + math.cos(freq * 7.0)) if (0.45 * math.sin(freq * 7.0)) < 0 else 0.15
+        rknee_start = 0.5 * (1.0 - math.cos(freq * 7.0)) if (-0.45 * math.sin(freq * 7.0)) < 0 else 0.15
+        t_lknee = lknee_start * (1.0 - t) + 0.15 * t
+        t_rknee = rknee_start * (1.0 - t) + 0.15 * t
+        
+        luarm_start = -0.4 * math.sin(freq * 7.0) + 0.1
+        ruarm_start = 0.4 * math.sin(freq * 7.0) + 0.1
+        lelbow_start = 0.5 + 0.2 * math.cos(freq * 7.0)
+        relbow_start = 0.5 - 0.2 * math.cos(freq * 7.0)
+        
+        t_luarm = luarm_start * (1.0 - t) + 0.1 * t
+        t_ruarm = ruarm_start * (1.0 - t) + 0.1 * t
+        t_lelbow = lelbow_start * (1.0 - t) + 0.5 * t
+        t_relbow = relbow_start * (1.0 - t) + 0.5 * t
+        
+        m_name = "Turning to Camera"
+        
+    elif time_sec <= 15.0:
+        # Phase 3: Waving
+        x_disp = 0.0
+        y_disp = 0.05
+        body_pitch = 0.0
+        body_yaw = 0.0
+        body_roll = 0.0
+        
+        swing_l = 0.0
+        swing_r = 0.0
+        t_lknee = 0.15
+        t_rknee = 0.15
+        
+        t_luarm = 0.1
+        t_lelbow = 0.5
+        
+        # Right arm waving loop
+        t_ruarm = -2.0 + 0.3 * math.sin(wave_freq * (time_sec - 9.0))
+        t_relbow = 0.8 + 0.4 * math.cos(wave_freq * (time_sec - 9.0))
+        
+        m_name = "Waving Hello"
+        
+    elif time_sec <= 17.0:
+        # Phase 4: Turning back to walk direction
+        t = (time_sec - 15.0) / 2.0
+        x_disp = 0.0
+        
+        body_yaw = t * 1.0
+        
+        walk_start_time = 17.0
+        
+        y_disp = 0.05 + t * 0.06 * abs(math.sin(freq * walk_start_time))
+        body_pitch = t * 0.08 * math.sin(freq * walk_start_time)
+        body_roll = t * 0.04 * math.sin(freq * walk_start_time)
+        
+        swing_l = t * 0.45 * math.sin(freq * walk_start_time)
+        swing_r = t * (-0.45 * math.sin(freq * walk_start_time))
+        
+        lknee_target = 0.5 * (1.0 + math.cos(freq * walk_start_time)) if (0.45 * math.sin(freq * walk_start_time)) < 0 else 0.15
+        rknee_target = 0.5 * (1.0 - math.cos(freq * walk_start_time)) if (-0.45 * math.sin(freq * walk_start_time)) < 0 else 0.15
+        t_lknee = 0.15 * (1.0 - t) + lknee_target * t
+        t_rknee = 0.15 * (1.0 - t) + rknee_target * t
+        
+        luarm_target = -0.4 * math.sin(freq * walk_start_time) + 0.1
+        ruarm_target = 0.4 * math.sin(freq * walk_start_time) + 0.1
+        lelbow_target = 0.5 + 0.2 * math.cos(freq * walk_start_time)
+        relbow_target = 0.5 - 0.2 * math.cos(freq * walk_start_time)
+        
+        last_wave_ruarm = -2.0 + 0.3 * math.sin(wave_freq * 6.0)
+        last_wave_relbow = 0.8 + 0.4 * math.cos(wave_freq * 6.0)
+        
+        t_luarm = 0.1 * (1.0 - t) + luarm_target * t
+        t_ruarm = last_wave_ruarm * (1.0 - t) + ruarm_target * t
+        t_lelbow = 0.5 * (1.0 - t) + lelbow_target * t
+        t_relbow = last_wave_relbow * (1.0 - t) + relbow_target * t
+        
+        m_name = "Turning Back"
+        
+    else:
+        # Phase 5: Walk to exit
+        t = (time_sec - 17.0) / 7.0
+        x_disp = 0.0 + t * 2.5
+        
+        walk_time = time_sec
+        y_disp = 0.05 + 0.06 * abs(math.sin(freq * walk_time))
+        body_pitch = 0.08 * math.sin(freq * walk_time)
+        body_yaw = 1.0 + 0.05 * math.cos(freq * walk_time)
+        body_roll = 0.04 * math.sin(freq * walk_time)
+        
+        swing_l = 0.45 * math.sin(freq * walk_time)
+        swing_r = -0.45 * math.sin(freq * walk_time)
+        t_lknee = 0.5 * (1.0 + math.cos(freq * walk_time)) if swing_l < 0 else 0.15
+        t_rknee = 0.5 * (1.0 - math.cos(freq * walk_time)) if swing_r < 0 else 0.15
+        
+        t_luarm = -0.4 * math.sin(freq * walk_time) + 0.1
+        t_ruarm = 0.4 * math.sin(freq * walk_time) + 0.1
+        t_lelbow = 0.5 + 0.2 * math.cos(freq * walk_time)
+        t_relbow = 0.5 - 0.2 * math.cos(freq * walk_time)
+        m_name = "Walk to Exit"
+
     z_disp = 0.0
-    
-    body_pitch = 0.08 * math.sin(freq * time_sec)
-    body_yaw = 1.0 + 0.05 * math.cos(freq * time_sec)
-    body_roll = 0.04 * math.sin(freq * time_sec)
-    
-    swing_l = 0.45 * math.sin(freq * time_sec)
-    swing_r = -0.45 * math.sin(freq * time_sec)
-    
-    t_lknee = 0.5 * (1.0 + math.cos(freq * time_sec)) if swing_l < 0 else 0.15
-    t_rknee = 0.5 * (1.0 - math.cos(freq * time_sec)) if swing_r < 0 else 0.15
-    
-    t_luarm = -0.4 * math.sin(freq * time_sec) + 0.1
-    t_ruarm = 0.4 * math.sin(freq * time_sec) + 0.1
-    t_lelbow = 0.5 + 0.2 * math.cos(freq * time_sec)
-    t_relbow = 0.5 - 0.2 * math.cos(freq * time_sec)
-    
-    m_name = "Walking Cycle"
-    
     parts = {}
     
     parts["Body"] = {
@@ -102,7 +216,7 @@ def get_walking_geometry(time_sec):
     }
     
     head_local_pos = (0.0, 0.9, 0.0)
-    head_local_rot = (0.04 * math.sin(freq * time_sec * 2.0), 0.0, 0.0)
+    head_local_rot = (0.04 * math.sin(freq * time_sec * 2.0) if (time_sec <= 7.0 or time_sec >= 17.0) else 0.0, 0.0, 0.0)
     hx, hy, hz = rotate_x(head_local_pos[0], head_local_pos[1], head_local_pos[2], body_pitch)
     hx, hy, hz = rotate_y(hx, hy, hz, body_yaw)
     hx, hy, hz = rotate_z(hx, hy, hz, body_roll)
@@ -517,99 +631,105 @@ def main():
     
     parts_zero, _ = get_walking_geometry(0.0)
     for part_name, part in parts_zero.items():
-        asset_file = os.path.join(assets_dir, f"teddy_{part_name.lower()}.usda")
-        write_static_usda_asset(asset_file, f"Mesh_{part_name}", part["size"], is_heart=(part["shape"] == "heart"))
+        asset_file_usda = os.path.join(assets_dir, f"teddy_{part_name.lower()}.usda")
+        write_static_usda_asset(asset_file_usda, f"Mesh_{part_name}", part["size"], is_heart=(part["shape"] == "heart"))
+        asset_file_usdc = os.path.join(assets_dir, f"teddy_{part_name.lower()}.usdc")
+        write_static_usda_asset(asset_file_usdc, f"Mesh_{part_name}", part["size"], is_heart=(part["shape"] == "heart"))
         
     usda_output = "/home/mariarahel/src/tsfi2/atropa_pulsechain/teddy_ballet_scene.usda"
-    with open(usda_output, "w") as f:
-        f.write("#usda 1.0\n")
-        f.write("(\n")
-        f.write("    startTimeCode = 0\n")
-        f.write(f"    endTimeCode = {total_frames - 1}\n")
-        f.write("    upAxis = \"Y\"\n")
-        f.write(")\n\n")
-        
-        # Define materials & preview shaders
-        f.write("def Scope \"Looks\"\n")
-        f.write("{\n")
-        f.write("    def Material \"FurMaterial\"\n")
-        f.write("    {\n")
-        f.write("        token outputs:surface.connect = </Looks/FurMaterial/Shader.outputs:surface>\n")
-        f.write("        def Shader \"Shader\"\n")
-        f.write("        {\n")
-        f.write("            uniform token info:id = \"UsdPreviewSurface\"\n")
-        f.write("            color3f inputs:diffuseColor = (0.47, 0.31, 0.21)\n")
-        f.write("            float inputs:roughness = 0.95\n")
-        f.write("            float inputs:metallic = 0.0\n")
-        f.write("        }\n")
-        f.write("    }\n")
-        f.write("    def Material \"ClothMaterial\"\n")
-        f.write("    {\n")
-        f.write("        token outputs:surface.connect = </Looks/ClothMaterial/Shader.outputs:surface>\n")
-        f.write("        def Shader \"Shader\"\n")
-        f.write("        {\n")
-        f.write("            uniform token info:id = \"UsdPreviewSurface\"\n")
-        f.write("            color3f inputs:diffuseColor = (0.78, 0.12, 0.16)\n")
-        f.write("            float inputs:roughness = 0.85\n")
-        f.write("            float inputs:metallic = 0.0\n")
-        f.write("        }\n")
-        f.write("    }\n")
-        f.write("}\n\n")
-        
-        f.write("def SkelRoot \"TeddyBearSkelCharacter\"\n")
-        f.write("{\n")
-        
-        f.write("    def Skeleton \"skele\"\n")
-        f.write("    {\n")
-        f.write("        uniform token[] joints = [\n")
-        f.write("            \"/\", \"/Head\", \"/Head/LeftEar\", \"/Head/RightEar\",\n")
-        f.write("            \"/Head/LeftEye\", \"/Head/RightEye\", \"/Head/Muzzle\", \"/Head/Nose\",\n")
-        f.write("            \"/SewnHeart\",\n")
-        f.write("            \"/LeftUpperArm\", \"/LeftUpperArm/LeftForearm\",\n")
-        f.write("            \"/RightUpperArm\", \"/RightUpperArm/RightForearm\",\n")
-        f.write("            \"/LeftThigh\", \"/LeftThigh/LeftCalf\",\n")
-        f.write("            \"/RightThigh\", \"/RightThigh/RightCalf\"\n")
-        f.write("        ]\n")
-        f.write("    }\n\n")
-        
-        f.write("    def SkelAnimation \"anim\"\n")
-        f.write("    {\n")
-        f.write("        uniform token[] joints = [\n")
-        f.write("            \"/\", \"/Head\", \"/Head/LeftEar\", \"/Head/RightEar\",\n")
-        f.write("            \"/Head/LeftEye\", \"/Head/RightEye\", \"/Head/Muzzle\", \"/Head/Nose\",\n")
-        f.write("            \"/SewnHeart\",\n")
-        f.write("            \"/LeftUpperArm\", \"/LeftUpperArm/LeftForearm\",\n")
-        f.write("            \"/RightUpperArm\", \"/RightUpperArm/RightForearm\",\n")
-        f.write("            \"/LeftThigh\", \"/LeftThigh/LeftCalf\",\n")
-        f.write("            \"/RightThigh\", \"/RightThigh/RightCalf\"\n")
-        f.write("        ]\n")
-        f.write("    }\n\n")
-        
-        for part_name, samples in usd_samples.items():
-            f.write(f"    def \"{part_name}\" (\n")
-            f.write(f"        references = @./tsfi2-deepseek/assets/teddy_{part_name.lower()}.usda@\n")
-            f.write("    )\n")
+    usdc_output = "/home/mariarahel/src/tsfi2/atropa_pulsechain/teddy_ballet_scene.usdc"
+    
+    for scene_path, is_usdc in [(usda_output, False), (usdc_output, True)]:
+        ext = "usdc" if is_usdc else "usda"
+        with open(scene_path, "w") as f:
+            f.write("#usda 1.0\n")
+            f.write("(\n")
+            f.write("    startTimeCode = 0\n")
+            f.write(f"    endTimeCode = {total_frames - 1}\n")
+            f.write("    upAxis = \"Y\"\n")
+            f.write(")\n\n")
+            
+            # Define materials & preview shaders
+            f.write("def Scope \"Looks\"\n")
+            f.write("{\n")
+            f.write("    def Material \"FurMaterial\"\n")
             f.write("    {\n")
-            # Bind material
-            if part_name == "SewnHeart":
-                f.write("        rel material:binding = </Looks/ClothMaterial>\n")
-            elif "Eye" not in part_name and "Nose" not in part_name:
-                f.write("        rel material:binding = </Looks/FurMaterial>\n")
-                
-            f.write("        double3 xformOp:translate.timeSamples = {\n")
-            for f_idx, px, py, pz, rx, ry, rz in samples:
-                f.write(f"            {f_idx}: ({px:.4f}, {py:.4f}, {pz:.4f}),\n")
+            f.write("        token outputs:surface.connect = </Looks/FurMaterial/Shader.outputs:surface>\n")
+            f.write("        def Shader \"Shader\"\n")
+            f.write("        {\n")
+            f.write("            uniform token info:id = \"UsdPreviewSurface\"\n")
+            f.write("            color3f inputs:diffuseColor = (0.47, 0.31, 0.21)\n")
+            f.write("            float inputs:roughness = 0.95\n")
+            f.write("            float inputs:metallic = 0.0\n")
             f.write("        }\n")
-            f.write("        double3 xformOp:rotateXYZ.timeSamples = {\n")
-            for f_idx, px, py, pz, rx, ry, rz in samples:
-                f.write(f"            {f_idx}: ({rx * 57.2958:.4f}, {ry * 57.2958:.4f}, {rz * 57.2958:.4f}),\n")
+            f.write("    }\n")
+            f.write("    def Material \"ClothMaterial\"\n")
+            f.write("    {\n")
+            f.write("        token outputs:surface.connect = </Looks/ClothMaterial/Shader.outputs:surface>\n")
+            f.write("        def Shader \"Shader\"\n")
+            f.write("        {\n")
+            f.write("            uniform token info:id = \"UsdPreviewSurface\"\n")
+            f.write("            color3f inputs:diffuseColor = (0.78, 0.12, 0.16)\n")
+            f.write("            float inputs:roughness = 0.85\n")
+            f.write("            float inputs:metallic = 0.0\n")
             f.write("        }\n")
-            f.write("        uniform token[] xformOpOrder = [\"xformOp:translate\", \"xformOp:rotateXYZ\"]\n")
+            f.write("    }\n")
+            f.write("}\n\n")
+            
+            f.write("def SkelRoot \"TeddyBearSkelCharacter\"\n")
+            f.write("{\n")
+            
+            f.write("    def Skeleton \"skele\"\n")
+            f.write("    {\n")
+            f.write("        uniform token[] joints = [\n")
+            f.write("            \"/\", \"/Head\", \"/Head/LeftEar\", \"/Head/RightEar\",\n")
+            f.write("            \"/Head/LeftEye\", \"/Head/RightEye\", \"/Head/Muzzle\", \"/Head/Nose\",\n")
+            f.write("            \"/SewnHeart\",\n")
+            f.write("            \"/LeftUpperArm\", \"/LeftUpperArm/LeftForearm\",\n")
+            f.write("            \"/RightUpperArm\", \"/RightUpperArm/RightForearm\",\n")
+            f.write("            \"/LeftThigh\", \"/LeftThigh/LeftCalf\",\n")
+            f.write("            \"/RightThigh\", \"/RightThigh/RightCalf\"\n")
+            f.write("        ]\n")
             f.write("    }\n\n")
             
-        f.write("}\n")
-        
-    print(f"[SUCCESS] Composed walk scene file exported: {usda_output}")
+            f.write("    def SkelAnimation \"anim\"\n")
+            f.write("    {\n")
+            f.write("        uniform token[] joints = [\n")
+            f.write("            \"/\", \"/Head\", \"/Head/LeftEar\", \"/Head/RightEar\",\n")
+            f.write("            \"/Head/LeftEye\", \"/Head/RightEye\", \"/Head/Muzzle\", \"/Head/Nose\",\n")
+            f.write("            \"/SewnHeart\",\n")
+            f.write("            \"/LeftUpperArm\", \"/LeftUpperArm/LeftForearm\",\n")
+            f.write("            \"/RightUpperArm\", \"/RightUpperArm/RightForearm\",\n")
+            f.write("            \"/LeftThigh\", \"/LeftThigh/LeftCalf\",\n")
+            f.write("            \"/RightThigh\", \"/RightThigh/RightCalf\"\n")
+            f.write("        ]\n")
+            f.write("    }\n\n")
+            
+            for part_name, samples in usd_samples.items():
+                f.write(f"    def \"{part_name}\" (\n")
+                f.write(f"        references = @./tsfi2-deepseek/assets/teddy_{part_name.lower()}.{ext}@\n")
+                f.write("    )\n")
+                f.write("    {\n")
+                # Bind material
+                if part_name == "SewnHeart":
+                    f.write("        rel material:binding = </Looks/ClothMaterial>\n")
+                elif "Eye" not in part_name and "Nose" not in part_name:
+                    f.write("        rel material:binding = </Looks/FurMaterial>\n")
+                    
+                f.write("        double3 xformOp:translate.timeSamples = {\n")
+                for f_idx, px, py, pz, rx, ry, rz in samples:
+                    f.write(f"            {f_idx}: ({px:.4f}, {py:.4f}, {pz:.4f}),\n")
+                f.write("        }\n")
+                f.write("        double3 xformOp:rotateXYZ.timeSamples = {\n")
+                for f_idx, px, py, pz, rx, ry, rz in samples:
+                    f.write(f"            {f_idx}: ({rx * 57.2958:.4f}, {ry * 57.2958:.4f}, {rz * 57.2958:.4f}),\n")
+                f.write("        }\n")
+                f.write("        uniform token[] xformOpOrder = [\"xformOp:translate\", \"xformOp:rotateXYZ\"]\n")
+                f.write("    }\n\n")
+                
+            f.write("}\n")
+            
+    print(f"[SUCCESS] Composed walk scene file exported: {usda_output} and {usdc_output}")
     try:
         os.remove(wav_output)
     except Exception:
