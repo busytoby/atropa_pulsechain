@@ -193,3 +193,136 @@ bool auncient_bridge_usda_to_stl(const float *points, uint32_t point_count, cons
     printf("[USD_STL_BRIDGE SUCCESS] Successfully converted USDA mesh to ASCII STL: %s\n", stl_filepath);
     return true;
 }
+
+bool auncient_bridge_multi_stl_to_usda(const AuncientStlMesh *meshes, const char **segment_names, uint32_t count, const char *usda_filepath) {
+    if (!meshes || !segment_names || !usda_filepath || count == 0) {
+        return false;
+    }
+
+    FILE *file = fopen(usda_filepath, "w");
+    if (!file) {
+        printf("[USD_STL_BRIDGE ERROR] Failed to create output file: %s\n", usda_filepath);
+        return false;
+    }
+
+    fprintf(file, "#usda 1.0\n(\n    upAxis = \"Y\"\n)\n\n");
+
+    for (uint32_t s = 0; s < count; s++) {
+        const AuncientStlMesh *stl_mesh = &meshes[s];
+        const char *name = segment_names[s];
+
+        fprintf(file, "def Mesh \"%s\"\n{\n", name);
+
+        float min_x = 99999.0f, max_x = -99999.0f;
+        float min_y = 99999.0f, max_y = -99999.0f;
+        float min_z = 99999.0f, max_z = -99999.0f;
+        
+        for (uint32_t i = 0; i < stl_mesh->facet_count; i++) {
+            const AuncientStlFacet *f = &stl_mesh->facets[i];
+            for (int v = 0; v < 3; v++) {
+                float x = f->vertices[v][0];
+                float y = f->vertices[v][1];
+                float z = f->vertices[v][2];
+                if (x < min_x) min_x = x;
+                if (x > max_x) max_x = x;
+                if (y < min_y) min_y = y;
+                if (y > max_y) max_y = y;
+                if (z < min_z) min_z = z;
+                if (z > max_z) max_z = z;
+            }
+        }
+        
+        float center_x = (min_x + max_x) * 0.5f;
+        float center_y = (min_y + max_y) * 0.5f;
+        float center_z = (min_z + max_z) * 0.5f;
+        
+        float ext_x = max_x - min_x;
+        float ext_y = max_y - min_y;
+        float ext_z = max_z - min_z;
+        float max_extent = ext_x;
+        if (ext_y > max_extent) max_extent = ext_y;
+        if (ext_z > max_extent) max_extent = ext_z;
+        if (max_extent == 0.0f) max_extent = 1.0f;
+        
+        float scale = 1.0f / max_extent;
+
+        uint32_t max_verts = stl_mesh->facet_count * 3;
+        float (*unique_verts)[3] = (float (*)[3])malloc(sizeof(float) * 3 * max_verts);
+        uint32_t *face_indices = (uint32_t *)malloc(sizeof(uint32_t) * max_verts);
+        if (!unique_verts || !face_indices) {
+            if (unique_verts) free(unique_verts);
+            if (face_indices) free(face_indices);
+            fclose(file);
+            return false;
+        }
+        uint32_t unique_count = 0;
+
+        for (uint32_t i = 0; i < stl_mesh->facet_count; i++) {
+            const AuncientStlFacet *f = &stl_mesh->facets[i];
+            for (int v = 0; v < 3; v++) {
+                float vx = (f->vertices[v][0] - center_x) * scale;
+                float vy = (f->vertices[v][1] - center_y) * scale;
+                float vz = (f->vertices[v][2] - center_z) * scale;
+                
+                int found_idx = -1;
+                for (uint32_t u = 0; u < unique_count; u++) {
+                    float dx = unique_verts[u][0] - vx;
+                    float dy = unique_verts[u][1] - vy;
+                    float dz = unique_verts[u][2] - vz;
+                    float dist_sq = dx*dx + dy*dy + dz*dz;
+                    if (dist_sq < 1e-10f) {
+                        found_idx = (int)u;
+                        break;
+                    }
+                }
+                
+                if (found_idx == -1) {
+                    unique_verts[unique_count][0] = vx;
+                    unique_verts[unique_count][1] = vy;
+                    unique_verts[unique_count][2] = vz;
+                    face_indices[i * 3 + v] = unique_count;
+                    unique_count++;
+                } else {
+                    face_indices[i * 3 + v] = (uint32_t)found_idx;
+                }
+            }
+        }
+
+        fprintf(file, "    point3f[] points = [\n");
+        for (uint32_t i = 0; i < unique_count; i++) {
+            fprintf(file, "        (%.6f, %.6f, %.6f),\n", 
+                    unique_verts[i][0], unique_verts[i][1], unique_verts[i][2]);
+        }
+        fprintf(file, "    ]\n");
+
+        fprintf(file, "    int[] faceVertexCounts = [\n");
+        for (uint32_t i = 0; i < stl_mesh->facet_count; i++) {
+            fprintf(file, "        3,\n");
+        }
+        fprintf(file, "    ]\n");
+
+        fprintf(file, "    int[] faceVertexIndices = [\n");
+        for (uint32_t i = 0; i < stl_mesh->facet_count; i++) {
+            fprintf(file, "        %u, %u, %u,\n", 
+                    face_indices[i * 3 + 0], face_indices[i * 3 + 1], face_indices[i * 3 + 2]);
+        }
+        fprintf(file, "    ]\n");
+
+        fprintf(file, "    vector3f[] normals = [\n");
+        for (uint32_t i = 0; i < stl_mesh->facet_count; i++) {
+            const AuncientStlFacet *f = &stl_mesh->facets[i];
+            fprintf(file, "        (%.6f, %.6f, %.6f),\n", 
+                    f->normal[0], f->normal[1], f->normal[2]);
+        }
+        fprintf(file, "    ]\n");
+
+        fprintf(file, "}\n\n");
+
+        free(unique_verts);
+        free(face_indices);
+    }
+
+    fclose(file);
+    printf("[USD_STL_BRIDGE SUCCESS] Successfully assembled %u segments into: %s\n", count, usda_filepath);
+    return true;
+}

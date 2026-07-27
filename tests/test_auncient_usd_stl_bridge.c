@@ -74,6 +74,30 @@ int main(void) {
     remove(stl_output_path);
     printf("   ✓ Reverse conversion back to ASCII STL verified.\n");
 
+    // 3. Test multi-segment STL to USDA assembly
+    printf("[TEST] Assembling multiple STL segments into a single USDA stage...\n");
+    AuncientStlMesh mock_meshes[2] = { mock_stl, mock_stl };
+    const char *names[2] = { "HeadSegment", "TorsoSegment" };
+    const char *multi_usda_path = "tests/test_multi.usda";
+
+    bool multi_ok = auncient_bridge_multi_stl_to_usda(mock_meshes, names, 2, multi_usda_path);
+    assert(multi_ok == true);
+
+    FILE *multi_file = fopen(multi_usda_path, "r");
+    assert(multi_file != NULL);
+    char multi_buf[128];
+    int segment_count = 0;
+    while (fgets(multi_buf, sizeof(multi_buf), multi_file)) {
+        if (strstr(multi_buf, "def Mesh \"HeadSegment\"") != NULL ||
+            strstr(multi_buf, "def Mesh \"TorsoSegment\"") != NULL) {
+            segment_count++;
+        }
+    }
+    fclose(multi_file);
+    assert(segment_count == 2);
+    remove(multi_usda_path);
+    printf("   ✓ Multi-segment STL to USDA assembly verified.\n");
+
     printf("=============================================================\n");
     printf("ALL AUNCIENT USD-STL BRIDGE TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
