@@ -1264,3 +1264,34 @@ bool auncient_autodin_dispatch_wmq(uint32_t resolved_instruction, uint32_t targe
 
     return true;
 }
+
+bool auncient_autodin_speculative_prefetch_validate(uint32_t start_pc, const uint32_t *instructions, int count) {
+    if (!instructions || count <= 0) return false;
+
+    printf("[AUTODIN SPECULATIVE PREFETCH] Starting batch validation of %d instructions at start PC 0x%04X...\n", 
+           count, start_pc);
+
+    for (int i = 0; i < count; i++) {
+        uint32_t pc = start_pc + i;
+        uint32_t instruction = instructions[i];
+        
+        char op = (char)((instruction >> 24) & 0xFF);
+        uint32_t address = (instruction >> 2) & 0x3FFFFF;
+        uint8_t mod = instruction & 3;
+
+        bool op_ok = (op == 'A' || op == 'S' || op == 'T' || op == 'U' || 
+                      op == 'G' || op == 'E' || op == 'Z' || op == 'H' || 
+                      op == 'V' || op == 'N' || op == 'F');
+        bool addr_ok = (address < 1024 || (op == 'F' && address <= 0x3FFFFF));
+        bool mod_ok = (mod <= 2);
+
+        if (!op_ok || !addr_ok || !mod_ok) {
+            printf("[AUTODIN SPECULATIVE REJECT] Speculative check FAILED at offset %d (PC=0x%04X, Op=%c Addr=%u Mod=%d). Batch aborted.\n", 
+                   i, pc, op_ok ? op : '?', address, mod);
+            return false;
+        }
+    }
+
+    printf("[AUTODIN SPECULATIVE COMMIT] All %d instructions in prefetch batch successfully validated.\n", count);
+    return true;
+}

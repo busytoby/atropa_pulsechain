@@ -326,6 +326,26 @@ int main(void) {
     assert(dispatched == true);
     printf("   ✓ Instruction successfully dispatched to receiver via WinchesterMQ.\n");
 
+    // 12. Test Speculative Prefetch Batch Validation
+    printf("[INFO] Testing Speculative Prefetch Batch Validation...\n");
+    uint32_t batch[3] = {
+        encode_instruction('A', 10, 'F'),
+        encode_instruction('F', 200, 'L'),
+        encode_instruction('T', 22, 'F')
+    };
+    bool batch_ok = auncient_autodin_speculative_prefetch_validate(300, batch, 3);
+    assert(batch_ok == true);
+    
+    // Test invalid batch rejection
+    uint32_t bad_batch[3] = {
+        encode_instruction('A', 10, 'F'),
+        0xFF000000, // Invalid opcode
+        encode_instruction('T', 22, 'F')
+    };
+    bool bad_batch_ok = auncient_autodin_speculative_prefetch_validate(300, bad_batch, 3);
+    assert(bad_batch_ok == false);
+    printf("   ✓ Speculative prefetch batch commits and rejections validated.\n");
+
     printf("=============================================================\n");
     printf("EDSAC SIMULATION AND WHEELER JUMP VERIFIED SUCCESS\n");
     printf("=============================================================\n");
