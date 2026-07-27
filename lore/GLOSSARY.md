@@ -120,3 +120,8 @@ This file serves as the permanent repository glossary defining the key registers
 * **VM Transition Context**: The legal recall transaction pathway inside the Dysnomia VM registry. It queries the active participant ledger to verify a citizen's physical identity payload (such as DNA seed coordinates), asserting compliance with regional Social Security templates over the WinchesterMQ SCSI channel.
 * **Mathematical Operation**: Evaluates the PKI validation matrix by verifying that the signature set contains at least $K \ge 4$ distinct keys, executing a modular verification equation to authorize the subpoena command sequence.
 * **Visual / Geometric Shift**: Initiates a colored vector projection on the presenter display. The target coordinate node flashes bright green, indicating successful identification and authorization, before launching the path walk-and-wave animation sequence on the coordinates trail.
+
+#### EDSAC
+* **VM Transition Context**: The compiler firewall and packet routing auditing alliance pathway coordinating the Initial Orders loader. It bridges the virtual hardware register state machine and the external AUTODIN and WinchesterMQ boundaries, establishing central instruction gating.
+* **Mathematical Operation**: Performs the speculative prefetch verification checks and evaluates the ASCII instruction opcodes against the prohibited bitmask: $Permitted = \prod_{i=1}^{count} (1 - ((\text{prohibited\_opcodes} \gg (\text{opcode}_i - 'A')) \ \& \ 1))$ where a zero result triggers system-wide reject.
+* **Visual / Geometric Shift**: Scales the wireframe projection coordinate grid offsets in response to relocatable instructions, shifting the rendered 3D vertices along the coordinate axes to enforce visual partition boundaries.

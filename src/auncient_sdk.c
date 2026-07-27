@@ -7,6 +7,12 @@
 #include <sys/types.h>
 #include <assert.h>
 #include <math.h>
+#ifdef __GNUC__
+__attribute__((weak)) bool auncient_analyzer_validate_cics_citizen(uint32_t writer_id) {
+    (void)writer_id;
+    return true;
+}
+#endif
 
 
 bool auncient_sdk_init_coaxial(sdk_coaxial_env_t *env) {

@@ -636,7 +636,7 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_bgp_peering.c -o test
 ./tests/test_auncient_bgp_peering
 
 # Compile and run Auncient SDK BGP Demo
-gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_sdk_bgp_demo.c -o tests/test_auncient_sdk_bgp_demo -lm -lrt
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_sdk_bgp_demo.c src/auncient_sdk.c src/auncient_edsac_firewall.c src/auncient_timeline_autodin.c src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c src/auncient_vulkan_materials.c src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_auncient_sdk_bgp_demo -lm -lrt -lssl -lcrypto
 ./tests/test_auncient_sdk_bgp_demo
 
 # Compile and run Auncient BGP Route Reflector & Broadcast
@@ -658,5 +658,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_bgp_fault_tolerance.c
 # Compile and run Auncient VPPD STANAG AVAIL Handshake
 gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vppd_avail.c -o tests/test_auncient_vppd_avail -lm -lrt
 ./tests/test_auncient_vppd_avail
+
+# Compile and run Auncient Turtle Graphics to Pixar USD Bridge
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_turtle_usd.c src/auncient_turtle_usd.c src/auncient_timeline_autodin.c src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_riinterface.c src/auncient_sdk.c src/auncient_vulkan_materials.c src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_auncient_turtle_usd -lm -lrt -lssl -lcrypto
+./tests/test_auncient_turtle_usd
 
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="

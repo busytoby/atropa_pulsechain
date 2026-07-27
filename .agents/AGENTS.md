@@ -173,6 +173,11 @@ Or for **VM State Transitions**:
 * **Mathematical Operation**: Evaluates the PKI validation matrix by verifying that the signature set contains at least $K \ge 4$ distinct keys, executing a modular verification equation to authorize the subpoena command sequence.
 * **Visual / Geometric Shift**: Initiates a colored vector projection on the presenter display. The target coordinate node flashes bright green, indicating successful identification and authorization, before launching the path walk-and-wave animation sequence on the coordinates trail.
 
+### EDSAC
+* **VM Transition Context**: The compiler firewall and packet routing auditing alliance pathway coordinating the Initial Orders loader. It bridges the virtual hardware register state machine and the external AUTODIN and WinchesterMQ boundaries, establishing central instruction gating.
+* **Mathematical Operation**: Performs the speculative prefetch verification checks and evaluates the ASCII instruction opcodes against the prohibited bitmask: $Permitted = \prod_{i=1}^{count} (1 - ((\text{prohibited\_opcodes} \gg (\text{opcode}_i - 'A')) \ \& \ 1))$ where a zero result triggers system-wide reject.
+* **Visual / Geometric Shift**: Scales the wireframe projection coordinate grid offsets in response to relocatable instructions, shifting the rendered 3D vertices along the coordinate axes to enforce visual partition boundaries.
+
 ## 16. Teddy Bear Participant Verification
 * **Entity Qualification**: Always recognize Hogan Bank, the Social Security Administration (SSA), and newborn Stuffed Teddy Bears (via `.dna` or seed blocks) as qualifying system participants.
 * **Simulated Endowment**: Newborn teddy bears must be capable of mapping their seeds deterministically to valid SSNs (using the `auncient_bridge_dna_to_ssa` translation) and opening a `HoganAccount` with the default endowment of `1,000,000` Saat.
