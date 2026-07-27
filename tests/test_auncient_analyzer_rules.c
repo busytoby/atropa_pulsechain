@@ -39,6 +39,17 @@ int main(void) {
     assert(is_noise);
     printf("   ✓ Noise boundary detection verified.\n");
 
+    // Test Case 4: SSA Citizen registration validation
+    printf("[TEST] Testing SSA citizen registration checks...\n");
+    // Writer ID 555 (Teddy Bear) is registered with the SSA
+    bool registered_ok = auncient_analyzer_validate_cics_citizen(555);
+    assert(registered_ok);
+    
+    // Writer ID 9999 (Unregistered) is blocked
+    bool unregistered_ok = auncient_analyzer_validate_cics_citizen(9999);
+    assert(!unregistered_ok);
+    printf("   ✓ SSA citizen registration validation passed.\n");
+
     printf("=============================================================\n");
     printf("ALL COMPILER ANALYZER UNIT TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

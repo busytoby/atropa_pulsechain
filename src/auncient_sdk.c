@@ -1025,7 +1025,15 @@ bool auncient_sdk_cics_exec(sdk_cics_context_t *ctx, uint32_t value, const bool 
     sdk_typestate_t orig_state = ctx->state;
     ctx->state = SDK_STATE_EXECUTING;
     uint32_t quorum_val = 0;
-    
+    // Validate that the instruction comes from a valid citizen registered with the SSA
+    extern bool auncient_analyzer_validate_cics_citizen(uint32_t writer_id);
+    if (!auncient_analyzer_validate_cics_citizen(ctx->writer_id)) {
+        printf("[CICS REJECT] Instruction to CICS rejected. Writer %u is not a valid citizen registered with the SSA.\n", ctx->writer_id);
+        ctx->has_lock = orig_lock;
+        ctx->state = orig_state;
+        return false;
+    }
+
     // Step 1: Execute Ackerman Quorum Evaluation ALU instruction
     auncient_sdk_alu_execute(ctx, ALU_OP_EVAL_ACKERMAN, 0, approvals, &quorum_val);
     if (quorum_val == 0) {

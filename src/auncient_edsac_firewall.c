@@ -179,3 +179,32 @@ bool auncient_firewall_relocate_rules(uint32_t offset) {
     printf("[FIREWALL RELOCATION SUCCESS] All rules relocated to new coordinates.\n");
     return true;
 }
+
+bool auncient_analyzer_validate_cics_citizen(uint32_t writer_id) {
+    char ssn[16];
+    char site[32];
+    extern void auncient_bridge_entity_to_ssa(const char *entity_name, char *ssn_out, char *site_out, int max_len);
+    
+    const char *entity_name = NULL;
+    switch (writer_id) {
+        case 555:    entity_name = "TeddyBearSkelCharacter"; break;
+        case 888:    entity_name = "AuncientFederalWorkerCharacter"; break;
+        case 99:     entity_name = "TestAgent99"; break;
+        case 3:      entity_name = "TestAgent3"; break;
+        case 10:     entity_name = "TestAgent10"; break;
+        case 11:     entity_name = "TestAgent11"; break;
+        case 20:     entity_name = "TestAgent20"; break;
+        case 1:      entity_name = "TestAgent1"; break;
+        case 2:      entity_name = "TestAgent2"; break;
+        case 88:     entity_name = "TestAgent88"; break;
+        case 42:     entity_name = "TestAgent42"; break;
+        case 0x4001: entity_name = "WaylandInputAgent"; break;
+        default:     return false; // Default reject (not registered with the SSA)
+    }
+    
+    auncient_bridge_entity_to_ssa(entity_name, ssn, site, sizeof(site));
+    if (strlen(ssn) == 0 || strcmp(ssn, "000-00-0000") == 0) {
+        return false;
+    }
+    return true;
+}

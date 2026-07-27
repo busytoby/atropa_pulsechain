@@ -34,4 +34,7 @@ bool auncient_firewall_eval_packet(const AuncientPacket *packet);
 // Relocates the active firewall rules to a new port offset dynamically using Initial Orders 2 coordinate shifts
 bool auncient_firewall_relocate_rules(uint32_t offset);
 
+// Validates that the CICS writer ID is registered as a valid citizen with the SSA
+bool auncient_analyzer_validate_cics_citizen(uint32_t writer_id);
+
 #endif // AUNCIENT_EDSAC_FIREWALL_H
