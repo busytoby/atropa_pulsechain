@@ -1138,6 +1138,9 @@ tests/test_xpl_daf_quadtree: tests/test_xpl_daf_quadtree.c
 tests/test_xpl_folklore_cpu: tests/test_xpl_folklore_cpu.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
+tests/test_xpl_folklore_cpu_e2e: tests/test_xpl_folklore_cpu_e2e.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
+
 benchmarks/profiler_suite/bench_xplos_bus: benchmarks/profiler_suite/bench_xplos_bus.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
