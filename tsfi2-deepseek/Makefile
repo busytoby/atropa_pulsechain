@@ -1147,6 +1147,9 @@ tests/test_xpl_fvmp: tests/test_xpl_fvmp.c
 tests/test_xpl_tiger_sunset: tests/test_xpl_tiger_sunset.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
+tests/test_xpl_graphics_db: tests/test_xpl_graphics_db.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
+
 benchmarks/profiler_suite/bench_xplos_bus: benchmarks/profiler_suite/bench_xplos_bus.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
