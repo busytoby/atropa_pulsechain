@@ -1132,6 +1132,12 @@ tests/test_xpl_lams_disk: tests/test_xpl_lams_disk.c
 tests/test_xpl_daf: tests/test_xpl_daf.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
+tests/test_xpl_daf_quadtree: tests/test_xpl_daf_quadtree.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
+
+tests/test_xpl_folklore_cpu: tests/test_xpl_folklore_cpu.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
+
 benchmarks/profiler_suite/bench_xplos_bus: benchmarks/profiler_suite/bench_xplos_bus.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
