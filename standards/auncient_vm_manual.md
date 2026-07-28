@@ -80,5 +80,19 @@ Logical invariant contracts are compiled directly to branchless hardware write g
 
 ---
 
-## 4. Compliance Auditing
+## 4. Instruction Set Architecture (ISA)
+
+The Auncient VM execution engine processes binary instruction records composed of a 1-byte opcode, a 4-byte payload value, and a 4-byte approvals mask.
+
+| Instruction Opcode | Hex Code | Description |
+|---|---|---|
+| **READ_KERMIT** | `0x10` | Read register value from warm cache |
+| **WRITE_ABD** | `0x20` | Write register value (requires active AUTODIN lock) |
+| **EVAL_ACKERMAN** | `0x30` | Evaluate approvals against selected quorum system |
+| **LOAD_SUB_XPL** | `0x40` | Load sub-binary stream for execution |
+| **INIT_RAU** | `0x50` | Construct initial RAU and active network ID (boot-phase only) |
+
+---
+
+## 5. Compliance Auditing
 All compiler bootstrap logic and guest VDM routing configurations must pass the master automated test runner [run_all_auncient_tests.sh](file:///scripts/run_all_auncient_tests.sh). Average integration latency must measure under $1000\text{ ns}$ to satisfy performance limits.
