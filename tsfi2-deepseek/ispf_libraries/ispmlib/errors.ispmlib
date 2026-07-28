@@ -1,0 +1,8 @@
+TSSO001E 'TSSO Opcode Violation' .ALARM=YES
+'XCOM compiled prohibited or non-compliant opcode. RED rail activated.'
+
+TSSO002E 'TSSO Clearance Denied' .ALARM=YES
+'Operator token verification failed. BLACK rail rejected authorization.'
+
+TSSO003I 'TSSO Command Executed' .ALARM=NO
+'Task submitted and successfully conducted against the RAU.'

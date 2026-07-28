@@ -1,0 +1,17 @@
+)BODY
+%----------------- TSSO Task Submission Option Panel -----------------
+% Command Option ===>_ZCMD
+%
+% Enter Register Number   ===>_PANEL_REG
+% Enter Value to Write    ===>_PANEL_VAL
+% Enter Operator Token    ===>_OP_TOKEN
+%
+)INIT
+  &PANEL_REG = '1'
+  &PANEL_VAL = '0'
+  &OP_TOKEN = '000'
+)PROC
+  VER (&PANEL_REG,NUM)
+  VER (&PANEL_VAL,NUM)
+  VER (&OP_TOKEN,NUM)
+)END

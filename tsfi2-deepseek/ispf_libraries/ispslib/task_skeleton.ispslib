@@ -1,0 +1,2 @@
+/* ISPSLIB Template for XCOM dynamic code generation */
+WRITE_ABD &PANEL_VAL &A0 &A1 &A2 &A3
