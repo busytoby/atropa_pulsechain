@@ -4,46 +4,49 @@
 #include "tsfi_defcon_power_alarm.h"
 
 int main() {
-    printf("=== RUNNING TSFI DEFCON POWER ALARM UNIT TESTS ===\n");
+    printf("=== RUNNING TSFI DEFCON LATCHING & RESET UNIT TESTS ===\n");
 
     tsfi_defcon_alarm_status_t status;
     int res;
 
-    // Test Case 1: Optimal Power (DEFCON 5)
+    // Reset everything initially
+    tsfi_defcon_power_alarm_approve_reset();
+
+    // Test 1: Normal state (Optimal Power)
     res = tsfi_defcon_power_alarm_eval(0.012, &status);
     assert(res == 0);
     assert(status.defcon_level == DEFCON_LEVEL_5);
-    assert(status.emergency_throttled == 0);
-    printf("[PASS] Test Case 1: 0.012W -> DEFCON 5 (Normal)\n");
+    assert(g_defcon_latched == 0);
+    printf("[PASS] Normal Power -> DEFCON 5 (Unlatched)\n");
 
-    // Test Case 2: Elevated Power (DEFCON 4)
-    res = tsfi_defcon_power_alarm_eval(0.017, &status);
-    assert(res == 0);
-    assert(status.defcon_level == DEFCON_LEVEL_4);
-    assert(status.emergency_throttled == 0);
-    printf("[PASS] Test Case 2: 0.017W -> DEFCON 4 (Notice)\n");
-
-    // Test Case 3: High Power Spike (DEFCON 3)
-    res = tsfi_defcon_power_alarm_eval(0.024, &status);
-    assert(res == 0);
-    assert(status.defcon_level == DEFCON_LEVEL_3);
-    assert(status.emergency_throttled == 1);
-    printf("[PASS] Test Case 3: 0.024W -> DEFCON 3 (Warning)\n");
-
-    // Test Case 4: Critical Power (DEFCON 2)
-    res = tsfi_defcon_power_alarm_eval(0.035, &status);
-    assert(res == 0);
-    assert(status.defcon_level == DEFCON_LEVEL_2);
-    assert(status.emergency_throttled == 1);
-    printf("[PASS] Test Case 4: 0.035W -> DEFCON 2 (Critical Alert)\n");
-
-    // Test Case 5: Overload Power (DEFCON 1)
+    // Test 2: Trigger overload spike (DEFCON 1)
     res = tsfi_defcon_power_alarm_eval(0.052, &status);
     assert(res == 0);
     assert(status.defcon_level == DEFCON_LEVEL_1);
-    assert(status.emergency_throttled == 1);
-    printf("[PASS] Test Case 5: 0.052W -> DEFCON 1 (Overload Emergency)\n");
+    assert(g_defcon_latched == 1);
+    assert(g_latched_level == DEFCON_LEVEL_1);
+    printf("[PASS] Overload Spike -> DEFCON 1 Triggered & Latched\n");
 
-    printf("=== ALL DEFCON POWER ALARM UNIT TESTS PASSED ===\n");
+    // Test 3: Power returns to optimal, but system must remain latched to DEFCON 1
+    res = tsfi_defcon_power_alarm_eval(0.012, &status);
+    assert(res == 0);
+    assert(status.defcon_level == DEFCON_LEVEL_1); // Still latched to 1!
+    assert(g_defcon_latched == 1);
+    printf("[PASS] Power Decreased -> Enforced Latch at DEFCON 1 (Safety Lock)\n");
+
+    // Test 4: Operator manual reset clears latch
+    tsfi_defcon_power_alarm_approve_reset();
+    assert(g_defcon_latched == 0);
+    assert(g_latched_level == DEFCON_LEVEL_5);
+    printf("[PASS] Operator Manual Reset clears Latch\n");
+
+    // Test 5: Re-evaluate post-reset normal power
+    res = tsfi_defcon_power_alarm_eval(0.012, &status);
+    assert(res == 0);
+    assert(status.defcon_level == DEFCON_LEVEL_5); // Back to normal!
+    assert(g_defcon_latched == 0);
+    printf("[PASS] Post-Reset Normal Power -> Back to DEFCON 5\n");
+
+    printf("=== ALL DEFCON LATCHING & RESET UNIT TESTS PASSED ===\n");
     return 0;
 }

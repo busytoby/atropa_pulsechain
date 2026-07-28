@@ -19,6 +19,11 @@ typedef struct {
     uint8_t emergency_throttled;    // 1 if emergency DVFS throttle triggered
 } tsfi_defcon_alarm_status_t;
 
+extern uint8_t g_defcon_latched;
+extern tsfi_defcon_level_t g_latched_level;
+
+void tsfi_defcon_power_alarm_approve_reset(void);
+
 /* Evaluate current power consumption and trigger DEFCON warning if excessive */
 int tsfi_defcon_power_alarm_eval(
     double current_power_watts,
