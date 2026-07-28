@@ -1141,6 +1141,12 @@ tests/test_xpl_folklore_cpu: tests/test_xpl_folklore_cpu.c
 tests/test_xpl_folklore_cpu_e2e: tests/test_xpl_folklore_cpu_e2e.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
+tests/test_xpl_fvmp: tests/test_xpl_fvmp.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
+
+tests/test_xpl_tiger_sunset: tests/test_xpl_tiger_sunset.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
+
 benchmarks/profiler_suite/bench_xplos_bus: benchmarks/profiler_suite/bench_xplos_bus.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
