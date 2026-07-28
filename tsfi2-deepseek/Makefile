@@ -1129,6 +1129,9 @@ tests/test_xpl_lams: tests/test_xpl_lams.c
 tests/test_xpl_lams_disk: tests/test_xpl_lams_disk.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
+tests/test_xpl_daf: tests/test_xpl_daf.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
+
 benchmarks/profiler_suite/bench_xplos_bus: benchmarks/profiler_suite/bench_xplos_bus.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
