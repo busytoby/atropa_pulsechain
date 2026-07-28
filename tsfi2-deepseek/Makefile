@@ -1053,8 +1053,8 @@ tests/benchmark_neuro_folklore: tests/benchmark_neuro_folklore.c $(CORE_OBJS) $(
 tests/benchmark_neurology: tests/benchmark_neurology.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-.PHONY: turnkey_tools
-turnkey_tools: tools/tsfi_copymods_terse tools/tsfi_tapemap_terse tools/tsfi_pdsload_terse tools/tsfi_offload_terse tools/tsfi_cbtupd_terse tools/tsfi_docfile_terse
+.PHONY: virtual_tape_suite
+virtual_tape_suite: tools/tsfi_copymods_terse tools/tsfi_tapemap_terse tools/tsfi_pdsload_terse tools/tsfi_offload_terse tools/tsfi_cbtupd_terse tools/tsfi_docfile_terse
 
 tools/tsfi_copymods_terse: tools/tsfi_copymods_terse.c src/tsfi_terse_fieldata.c
 	$(CC) $(CFLAGS) -o $@ $^ -lm
