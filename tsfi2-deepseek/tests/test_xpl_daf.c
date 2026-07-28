@@ -97,6 +97,32 @@ static uint32_t black_xplsm_run_daf_report(const daf_filter_t *filter, char *rep
     return match_count;
 }
 
+// 3. DAF to DAT Binary Serializer
+static bool serialize_daf_to_dat_bin(const char *filepath, const daf_filter_t *filter) {
+    if (!filepath || !filter) return false;
+
+    // Rule 13: Codebase must only support .dat.bin extensions for block assets
+    if (strstr(filepath, ".dat.bin") == NULL) {
+        return false; // Rejected by RED rail
+    }
+
+    FILE *f = fopen(filepath, "wb");
+    if (!f) return false;
+
+    for (size_t i = 0; i < 3; i++) {
+        smf_record_t rec = mock_smf_db[i];
+        if (filter->has_dsn_filter && strcmp(rec.dataset_name, filter->filter_dsn) != 0) {
+            continue;
+        }
+        if (filter->has_job_filter && strcmp(rec.job_name, filter->filter_job) != 0) {
+            continue;
+        }
+        fwrite(&rec, sizeof(smf_record_t), 1, f);
+    }
+    fclose(f);
+    return true;
+}
+
 int main(void) {
     printf("=============================================================\n");
     printf("AUNCIENT DAF DATASET AUDIT FACILITY VALIDATION SUITE\n");
@@ -142,6 +168,29 @@ int main(void) {
     matches = black_xplsm_run_daf_report(&empty_filter, report, sizeof(report));
     assert(matches == 0);
     printf("   ✓ BLACK rail successfully filtered SMF records and generated formatted diagnostics.\n");
+
+    // Test 3: DAF serialization to DAT binary (.dat.bin)
+    printf("[TEST] Testing DAF serialization to binary .dat.bin files...\n");
+    const char *bin_report = "daf_report.dat.bin";
+    const char *txt_report = "daf_report.txt";
+
+    // Valid path serialize
+    assert(serialize_daf_to_dat_bin(bin_report, &dsn_filter) == true);
+    
+    // Invalid path serialize (should be rejected by RED rail due to extension constraint)
+    assert(serialize_daf_to_dat_bin(txt_report, &dsn_filter) == false);
+
+    // Read back and verify blocks
+    FILE *verify = fopen(bin_report, "rb");
+    assert(verify != NULL);
+    smf_record_t read_rec;
+    assert(fread(&read_rec, sizeof(smf_record_t), 1, verify) == 1);
+    assert(strcmp(read_rec.dataset_name, "SYS1.ISPSLIB") == 0);
+    assert(read_rec.excp_count == 45);
+    fclose(verify);
+    remove(bin_report);
+
+    printf("   ✓ DAF binary serialization and validation completed successfully.\n");
 
     printf("=============================================================\n");
     printf("ALL DAF DATASET AUDIT FACILITY TESTS PASSED CLEANLY\n");
