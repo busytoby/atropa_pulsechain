@@ -10,11 +10,9 @@ void print_label_string(const char *name, const char *data, int len) {
     printf("  %-16s: '%.*s'\n", name, len, data);
 }
 
-// Dynamic inspector for decompressed payload content
 void inspect_decompressed_payload(const char *dataset_name, const uint8_t *payload, size_t len) {
     printf("\n--- PAYLOAD CONTENT INSPECTION ---\n");
 
-    // Case 1: EVM/ZMM Contract Bytecode Inspection
     if (strstr(dataset_name, "CONTRACT") != NULL || payload[0] == 0x60 || payload[0] == 0x00) {
         printf("  Detected Type: ZMM/EVM Deployable Code Object\n");
         size_t push_count = 0;
@@ -31,11 +29,9 @@ void inspect_decompressed_payload(const char *dataset_name, const uint8_t *paylo
         printf("    SSTORE Operations : %lu\n", sstore_count);
         printf("    LOG/Emit Events   : %lu\n", log_count);
     } 
-    // Case 2: RDBMS Schema and Token Database Inspection
     else if (strstr(dataset_name, "RDBMS") != NULL || strstr(dataset_name, "FILE") != NULL) {
         printf("  Detected Type: Relational Database Table Slice\n");
         
-        // Scan for readable symbols or tokens
         size_t valid_printable = 0;
         for (size_t i = 0; i < len && i < 256; i++) {
             if (payload[i] >= 32 && payload[i] <= 126) {
@@ -43,7 +39,7 @@ void inspect_decompressed_payload(const char *dataset_name, const uint8_t *paylo
             }
         }
         printf("  [Database Analysis - Sample Records]:\n");
-        printf("    Relational Tuples : %lu\n", len / 5); // 5 symbols per record in CAMMA layout
+        printf("    Relational Tuples : %lu\n", len / 5);
         printf("    Printable symbols : %lu/256 bytes\n", valid_printable);
     } else {
         printf("  Detected Type: Undefined Binary Media Asset\n");
@@ -54,11 +50,24 @@ int main(int argc, char **argv) {
     printf("=== TAPEMAP: COAXIAL RDBMS TAPE MAPPING UTILITY ===\n");
 
     if (argc < 2) {
-        fprintf(stderr, "Usage: tsfi_tapemap_terse <input_labeled_file.dat.bin>\n");
+        fprintf(stderr, "Usage: tsfi_tapemap_terse <input_labeled_file.dat.bin> [--find <query>]\n");
         return 1;
     }
 
     const char *filepath = argv[1];
+    const char *find_query = NULL;
+    uint8_t find_query_symbols[128];
+    size_t find_query_len = 0;
+
+    if (argc >= 4 && strcmp(argv[2], "--find") == 0) {
+        find_query = argv[3];
+        find_query_len = strlen(find_query);
+        for (size_t i = 0; i < find_query_len && i < 128; i++) {
+            find_query_symbols[i] = find_query[i] & 0x3F; // Mask to 6-bit FIELDATA format
+        }
+        printf("[SEARCH] Enabled member-level scan for query: '%s'\n", find_query);
+    }
+
     FILE *f = fopen(filepath, "rb");
     if (!f) {
         fprintf(stderr, "Error: Cannot open target file %s\n", filepath);
@@ -82,7 +91,6 @@ int main(int argc, char **argv) {
     memset(dataset_name, 0, sizeof(dataset_name));
     if (strncmp(hdr1, "HDR1", 4) == 0) {
         memcpy(dataset_name, hdr1 + 4, 16);
-        // Trim trailing spaces
         for (int i = 15; i >= 0; i--) {
             if (dataset_name[i] == ' ') dataset_name[i] = '\0';
             else break;
@@ -119,7 +127,7 @@ int main(int argc, char **argv) {
         printf("  [WARN] HDR2 Label Identifier invalid: '%.4s'\n", hdr2);
     }
 
-    // 2. Scan data blocks and measure compression
+    // 2. Scan data blocks, decompress and search
     printf("\n--- DATA BLOCK SCAN ---\n");
     size_t block_count = 0;
     size_t total_compressed_bytes = 0;
@@ -140,20 +148,31 @@ int main(int argc, char **argv) {
             break;
         }
 
-        // Decompress to measure content output size
         int res = fieldata_terse_decompress(comp_buf, comp_len, decomp_buf, BLOCK_SIZE);
         if (res == 0) {
             total_decompressed_bytes += BLOCK_SIZE;
             if (block_count == 0) {
                 memcpy(first_block_payload, decomp_buf, BLOCK_SIZE);
             }
+
+            // Perform active query matching in 6-bit space
+            if (find_query) {
+                for (size_t offset = 0; offset <= BLOCK_SIZE - find_query_len; offset++) {
+                    if (memcmp(decomp_buf + offset, find_query_symbols, find_query_len) == 0) {
+                        printf("  [MATCH] Found query '%s' at Block #%lu, Offset %lu\n", 
+                               find_query, block_count + 1, offset);
+                    }
+                }
+            }
         } else {
             fprintf(stderr, "  [WARN] Failed to decompress block #%lu content\n", block_count + 1);
         }
 
         block_count++;
-        printf("  Block #%-4lu: Compressed Size = %4u bytes | Content Size = %d bytes\n", 
-               block_count, comp_len, BLOCK_SIZE);
+        if (!find_query) {
+            printf("  Block #%-4lu: Compressed Size = %4u bytes | Content Size = %d bytes\n", 
+                   block_count, comp_len, BLOCK_SIZE);
+        }
     }
 
     printf("\n--- SUMMARY METRICS ---\n");
@@ -165,8 +184,7 @@ int main(int argc, char **argv) {
                (double)(total_compressed_bytes) / total_decompressed_bytes * 100.0);
     }
 
-    // 3. Dynamic Payload Inspection
-    if (block_count > 0) {
+    if (block_count > 0 && !find_query) {
         inspect_decompressed_payload(dataset_name, first_block_payload, BLOCK_SIZE);
     }
 
