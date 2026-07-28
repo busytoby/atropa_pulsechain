@@ -17,8 +17,9 @@ object "RAUCoprocessor" {
             //           0x066f3078 -> pop_context()
             //           0x077a4189 -> dump_registers(uint256 mem_ptr)
             //           0x088b529a -> load_registers(uint256 mem_ptr)
-            // [4:36]  - Parameter 1 (v_reg, v_a, or mem_ptr)
-            // [36:68] - Parameter 2 (val or v_b)
+            //           0x099c63ab -> sync_register_with_core(uint256 target_core_id, uint256 v_reg)
+            // [4:36]  - Parameter 1 (v_reg, v_a, mem_ptr, or target_core_id)
+            // [36:68] - Parameter 2 (val, v_b, or v_reg)
             // [68:100]- Parameter 3 (v_dest)
 
             let selector := shr(224, calldataload(0))
@@ -30,6 +31,9 @@ object "RAUCoprocessor" {
             // 0x200: LRU Access Order Array (4 bytes tracking R0-R3 access age)
             // 0x210: Dirty Bit Mask (4 bits representing R0-R3 dirty state)
             // 0x220: Context Stack Pointer (SP, initialized to 0x1000)
+            // 0x4800: WinchesterMQ SCSI Output Port (Destination Core ID)
+            // 0x4820: WinchesterMQ SCSI Register Index Port
+            // 0x4840: WinchesterMQ SCSI Data Value Port
             // 0x1000+: Context Stack Memory (160 bytes per context frame)
 
             // Initialize stack pointer if it is zero
@@ -84,6 +88,12 @@ object "RAUCoprocessor" {
             case 0x088b529a {
                 let mem_ptr := calldataload(4)
                 load_registers(mem_ptr)
+                return(0, 0)
+            }
+            case 0x099c63ab {
+                let target_core_id := calldataload(4)
+                let v_reg := calldataload(36)
+                sync_register_with_core(target_core_id, v_reg)
                 return(0, 0)
             }
             default {
@@ -255,7 +265,7 @@ object "RAUCoprocessor" {
                 mstore(0x220, target_sp)
             }
 
-            // Bulk dump all 32 virtual registers to destination memory pointer
+            // Bulk dump all 32 virtual registers
             function dump_registers(mem_ptr) {
                 for { let i := 0 } lt(i, 32) { i := add(i, 1) } {
                     let val := read_reg(i)
@@ -263,12 +273,21 @@ object "RAUCoprocessor" {
                 }
             }
 
-            // Bulk load all 32 virtual registers from source memory pointer
+            // Bulk load all 32 virtual registers
             function load_registers(mem_ptr) {
                 for { let i := 0 } lt(i, 32) { i := add(i, 1) } {
                     let val := mload(add(mem_ptr, mul(i, 32)))
                     write_reg(i, val)
                 }
+            }
+
+            // Inter-ALU register synchronization via WinchesterMQ SCSI ports
+            function sync_register_with_core(target_core_id, v_reg) {
+                let val := read_reg(v_reg)
+                // Write packet directly to memory-mapped WMQ SCSI ports
+                mstore(0x4800, target_core_id)
+                mstore(0x4820, v_reg)
+                mstore(0x4840, val)
             }
         }
     }
