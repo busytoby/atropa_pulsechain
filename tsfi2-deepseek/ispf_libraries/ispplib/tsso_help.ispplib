@@ -1,0 +1,17 @@
+)BODY
+%----------------- TSOHELP System Message Finder -----------------
+% Command Option ===>_ZCMD
+%
+% Enter Message Code ===>_MSG_INPUT  (e.g., TSSO001E)
+%
+% Diagnostics:
+% ------------
+% Message:     _MSG_CODE
+% Short Text:  _MSG_SHORT
+% Description: _MSG_LONG
+%
+)INIT
+  &MSG_INPUT = 'TSSO001E'
+)PROC
+  VER (&MSG_INPUT,NONBLANK)
+)END

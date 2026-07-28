@@ -1096,6 +1096,9 @@ tests/test_xpl_smoke_mirrors: tests/test_xpl_smoke_mirrors.c
 tests/test_xpl_pds_lister: tests/test_xpl_pds_lister.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
+tests/test_xpl_tsso_help: tests/test_xpl_tsso_help.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
+
 benchmarks/profiler_suite/bench_xplos_bus: benchmarks/profiler_suite/bench_xplos_bus.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
