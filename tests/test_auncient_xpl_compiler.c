@@ -66,6 +66,32 @@ int main(void) {
     printf("   ✓ Primary execution succeeded. Result 0 (sub-load ID): %u, Result 1 (read value): %u.\n", results[0], results[1]);
     fflush(stdout);
 
+    // 4.5. Test XCOM compilation and XPLSM execution of INIT_RAU instruction
+    printf("[TEST] Testing XCOM compilation and XPLSM execution of INIT_RAU...\n");
+    FILE *rau_src = fopen(src_path, "w");
+    assert(rau_src != NULL);
+    fprintf(rau_src, "INIT_RAU 42\n");
+    fclose(rau_src);
+
+    ok = auncient_sdk_compile_xpl_to_dat_bin(src_path, bin_path);
+    assert(ok == true);
+
+    uint32_t rau_results[1] = { 0 };
+    ok = auncient_sdk_execute_primary_bin(bin_path, rau_results, 1);
+    assert(ok == true);
+    assert(rau_results[0] == 42);
+    printf("   ✓ INIT_RAU compiled and executed. Active Network ID set to: %u\n", rau_results[0]);
+    fflush(stdout);
+
+    // Restore parent .xpl state for subsequent tests
+    FILE *restore_src = fopen(src_path, "w");
+    assert(restore_src != NULL);
+    fprintf(restore_src, "LOAD_SUB_XPL 99\n");
+    fprintf(restore_src, "READ_KERMIT\n");
+    fclose(restore_src);
+    ok = auncient_sdk_compile_xpl_to_dat_bin(src_path, bin_path);
+    assert(ok == true);
+
     // 5. Test Behavioral Subtyping Violation (Sub-binary requires TopSecret 950000 but context has level 2 clearance)
     printf("[TEST] Testing behavioral subtyping violations on load...\n");
     fflush(stdout);

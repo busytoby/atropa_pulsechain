@@ -3,11 +3,13 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 
 #define ALU_OP_READ_KERMIT    0x10
 #define ALU_OP_WRITE_ABD      0x20
 #define ALU_OP_EVAL_ACKERMAN  0x30
 #define ALU_OP_LOAD_SUB_XPL   0x40
+#define ALU_OP_INIT_RAU       0x50
 
 #define SDK_NUM_NODES 4
 #define SDK_TRANSACTION_RETRY_LIMIT 3
@@ -98,7 +100,33 @@ typedef struct {
     sdk_register_t registers[SDK_NUM_NODES];
     uint32_t weights[SDK_NUM_NODES];
     int socket_fds[2]; // Coaxial access socket pair
+
+    // Stateless Coaxial RAU Backplane
+    uint8_t memory[0x10000];       // 64KB virtual RAM mapping
+    uint32_t active_window_offset; // Dynamic register window offset
+    uint32_t active_network_id;     // Active isolated network identifier
 } sdk_coaxial_env_t;
+
+// RAU Peek and Poke access helper definitions for xpl registers (A=V1, X=V2, etc.)
+static inline uint32_t auncient_rau_resolve_reg(sdk_coaxial_env_t *env, uint32_t v_reg) {
+    if (v_reg == 0) return 0;
+    uint32_t mapped_reg = (v_reg + env->active_window_offset) % 32;
+    return 0x4000 + (mapped_reg * 32);
+}
+
+static inline uint32_t auncient_rau_peek(sdk_coaxial_env_t *env, uint32_t v_reg) {
+    if (v_reg == 0) return 0;
+    uint32_t offset = auncient_rau_resolve_reg(env, v_reg);
+    uint32_t val = 0;
+    memcpy(&val, &env->memory[offset], sizeof(uint32_t));
+    return val;
+}
+
+static inline void auncient_rau_poke(sdk_coaxial_env_t *env, uint32_t v_reg, uint32_t val) {
+    if (v_reg == 0) return;
+    uint32_t offset = auncient_rau_resolve_reg(env, v_reg);
+    memcpy(&env->memory[offset], &val, sizeof(uint32_t));
+}
 
 typedef struct {
     uint32_t cached_value;

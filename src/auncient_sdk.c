@@ -30,6 +30,11 @@ bool auncient_sdk_init_coaxial(sdk_coaxial_env_t *env) {
     // Node 0 has high weight for weighted test support
     env->weights[0] = 3;
 
+    // Initialize Stateless Coaxial RAU Backplane
+    memset(env->memory, 0, sizeof(env->memory));
+    env->active_window_offset = 0;
+    env->active_network_id = 0;
+
     return true;
 }
 
@@ -78,6 +83,10 @@ bool auncient_sdk_check_clearance(const sdk_cics_context_t *ctx, uint32_t value)
 bool auncient_sdk_validate_temporal_invariants(const sdk_cics_context_t *ctx, uint8_t opcode, uint32_t target_val) {
     // Temporal Lock Check: writing requires holding the AUTODIN lock
     if (opcode == ALU_OP_WRITE_ABD && !ctx->has_lock) {
+        return false;
+    }
+    // INIT_RAU must be called to establish network context, but cannot be re-run if already initialized
+    if (opcode == ALU_OP_INIT_RAU && ctx->env->active_network_id != 0) {
         return false;
     }
     (void)target_val;
@@ -509,6 +518,11 @@ bool auncient_sdk_compile_xpl_to_dat_bin(const char *xpl_source_path, const char
             if (fscanf(in, "%u", &val) == 1) {
                 payload_val = val;
             }
+        } else if (strcmp(op_str, "INIT_RAU") == 0) {
+            opcode = ALU_OP_INIT_RAU;
+            if (fscanf(in, "%u", &val) == 1) {
+                payload_val = val;
+            }
         } else {
             // Unknown opcode, skip line
             continue;
@@ -906,6 +920,14 @@ bool auncient_sdk_alu_execute(sdk_cics_context_t *ctx, uint8_t alu_opcode, uint3
         cache->is_warm = true;
 
         *result_val = highest.value;
+        return true;
+    }
+
+    if (alu_opcode == ALU_OP_INIT_RAU) {
+        memset(env->memory, 0, sizeof(env->memory));
+        env->active_window_offset = 0;
+        env->active_network_id = target_val;
+        *result_val = target_val;
         return true;
     }
 
