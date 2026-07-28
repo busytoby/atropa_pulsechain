@@ -1090,6 +1090,9 @@ tests/test_xpl_ispf_parser: tests/test_xpl_ispf_parser.c
 tests/test_xpl_vtoc: tests/test_xpl_vtoc.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
+tests/test_xpl_smoke_mirrors: tests/test_xpl_smoke_mirrors.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
+
 benchmarks/profiler_suite/bench_xplos_bus: benchmarks/profiler_suite/bench_xplos_bus.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 

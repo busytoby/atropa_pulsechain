@@ -1,0 +1,14 @@
+)BODY
+%----------------- ISPF Smoke & Mirrors Control Panel -----------------
+% Command Option ===>_ZCMD
+%
+% Enter Target Library    ===>_TARGET_DSN  (e.g., SYS1.ISPSLIB)
+% Enter Target Network ID ===>_TARGET_NET  (e.g., 42)
+%
+)INIT
+  &TARGET_DSN = 'SYS1.ISPSLIB'
+  &TARGET_NET = '42'
+)PROC
+  VER (&TARGET_DSN,NONBLANK)
+  VER (&TARGET_NET,NUM,MSG=TSSO001E)
+)END
