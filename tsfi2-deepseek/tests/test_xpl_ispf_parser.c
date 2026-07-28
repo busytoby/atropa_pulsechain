@@ -206,6 +206,80 @@ static bool validate_panel_field_rules(const char *filepath, const char *field_n
     return checked ? passed : true;
 }
 
+// 5. Dynamic Panel Renderer and Dialog Manager
+static void render_ispf_panel(
+    const char *panel_path,
+    const char *msg_lib_path,
+    const char *msg_code,
+    const char *reg_val,
+    const char *val_val,
+    const char *tok_val
+) {
+    FILE *f = fopen(panel_path, "r");
+    if (!f) return;
+
+    char line[128];
+    bool in_body = false;
+    printf("\n=== ISPF TERMINAL SCREEN START ===\n");
+
+    while (fgets(line, sizeof(line), f)) {
+        // Strip trailing newline/whitespace
+        size_t len = strlen(line);
+        while (len > 0 && (line[len - 1] == '\r' || line[len - 1] == '\n')) {
+            line[len - 1] = '\0';
+            len--;
+        }
+
+        if (strncmp(line, ")BODY", 5) == 0) {
+            in_body = true;
+            continue;
+        }
+        if (line[0] == ')') {
+            in_body = false;
+        }
+
+        if (in_body) {
+            // Replace variables
+            char rendered[256] = {0};
+            char *src = line;
+            char *dst = rendered;
+            
+            while (*src) {
+                if (strncmp(src, "_PANEL_REG", 10) == 0) {
+                    dst += sprintf(dst, "%-10s", reg_val);
+                    src += 10;
+                } else if (strncmp(src, "_PANEL_VAL", 10) == 0) {
+                    dst += sprintf(dst, "%-10s", val_val);
+                    src += 10;
+                } else if (strncmp(src, "_OP_TOKEN", 9) == 0) {
+                    dst += sprintf(dst, "%-9s", tok_val);
+                    src += 9;
+                } else if (strncmp(src, "_ZCMD", 5) == 0) {
+                    dst += sprintf(dst, "     ");
+                    src += 5;
+                } else {
+                    *dst++ = *src++;
+                }
+            }
+            *dst = '\0';
+            printf("%s\n", rendered);
+        }
+    }
+    fclose(f);
+
+    if (msg_code && msg_code[0]) {
+        ispf_message_t msg;
+        if (lookup_ispf_message(msg_lib_path, msg_code, &msg)) {
+            printf("\n*** %s: %s ***\n", msg.code, msg.short_text);
+            printf("Message Description: %s\n", msg.long_text);
+            if (msg.alarm) {
+                printf("* BEEP * [System Alarm Activated]\n");
+            }
+        }
+    }
+    printf("=== ISPF TERMINAL SCREEN END ===\n\n");
+}
+
 int main(void) {
     printf("=============================================================\n");
     printf("AUNCIENT ISPF FRONTEHD COMPILER LIBRARIES VALIDATION SUITE\n");
@@ -309,6 +383,15 @@ int main(void) {
     assert(load_panel_defaults(panel_lib, "NON_EXIST", default_val, sizeof(default_val)) == false);
 
     printf("   ✓ Panel default initialization parameters verified successfully.\n");
+
+    // Test 6: Verify Panel Rendering & Message Display
+    printf("[TEST] Testing panel dynamic terminal rendering and warning messages...\n");
+    // Render normal successful state
+    render_ispf_panel(panel_lib, msg_lib, "", "1", "1234", "999");
+    // Render error state with alarm
+    render_ispf_panel(panel_lib, msg_lib, "TSSO001E", "abc", "1234", "999");
+
+    printf("   ✓ Panel renderer execution verified.\n");
 
     printf("=============================================================\n");
     printf("ALL ISPF LIBRARIES TESTS COMPLETED SUCCESSFULLY\n");
