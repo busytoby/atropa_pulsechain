@@ -138,3 +138,43 @@ int fieldata_terse_decompress(
 
     return 0;
 }
+
+void fieldata_pack_36bit(const uint8_t *symbols, size_t sym_len, uint64_t *words, size_t *word_count) {
+    if (!symbols || !words || !word_count) return;
+    
+    size_t count = 0;
+    uint64_t current_word = 0;
+    int bit_offset = 30; // Packing six 6-bit symbols: bits 30, 24, 18, 12, 6, 0
+    
+    for (size_t i = 0; i < sym_len; i++) {
+        uint64_t sym_val = symbols[i] & 0x3F;
+        current_word |= (sym_val << bit_offset);
+        bit_offset -= 6;
+        
+        if (bit_offset < 0) {
+            words[count++] = current_word;
+            current_word = 0;
+            bit_offset = 30;
+        }
+    }
+    
+    if (bit_offset < 30) {
+        words[count++] = current_word; // Flush partially packed word
+    }
+    *word_count = count;
+}
+
+void fieldata_unpack_36bit(const uint64_t *words, size_t word_count, uint8_t *symbols, size_t *sym_len) {
+    if (!words || !symbols || !sym_len) return;
+    
+    size_t count = 0;
+    for (size_t i = 0; i < word_count; i++) {
+        uint64_t word = words[i];
+        int bit_offset = 30;
+        while (bit_offset >= 0) {
+            symbols[count++] = (uint8_t)((word >> bit_offset) & 0x3F);
+            bit_offset -= 6;
+        }
+    }
+    *sym_len = count;
+}

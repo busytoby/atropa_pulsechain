@@ -33,5 +33,10 @@ int fieldata_terse_decompress(
     uint8_t *output_symbols,
     size_t expected_len
 );
+// Pack 6-bit FIELDATA symbols into 36-bit words (stored in lower 36 bits of uint64_t)
+void fieldata_pack_36bit(const uint8_t *symbols, size_t sym_len, uint64_t *words, size_t *word_count);
+
+// Unpack 36-bit words back into 6-bit FIELDATA symbols
+void fieldata_unpack_36bit(const uint64_t *words, size_t word_count, uint8_t *symbols, size_t *sym_len);
 
 #endif // TSFI_TERSE_FIELDATA_H
