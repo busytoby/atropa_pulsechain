@@ -1120,6 +1120,9 @@ tests/test_xpl_clist: tests/test_xpl_clist.c
 tests/test_xpl_vtoc_util: tests/test_xpl_vtoc_util.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
+tests/test_xpl_file300: tests/test_xpl_file300.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
+
 benchmarks/profiler_suite/bench_xplos_bus: benchmarks/profiler_suite/bench_xplos_bus.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
