@@ -1059,6 +1059,9 @@ tests/test_xplos_active_bus: tests/test_xplos_active_bus.c
 tests/test_ast_optimizer: tests/test_ast_optimizer.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
+tests/test_rau_coprocessor: tests/test_rau_coprocessor.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
+
 benchmarks/profiler_suite/bench_xplos_bus: benchmarks/profiler_suite/bench_xplos_bus.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
