@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <strings.h>
+#include <stdint.h>
 
 typedef struct {
     char name[32];
@@ -48,12 +49,47 @@ const ContractABI GLOSSARY_REGISTRY[] = {
 };
 #define REGISTRY_SIZE 3
 
+// EVM 4-byte selector mapping structure
+typedef struct {
+    uint32_t selector;
+    char signature[64];
+    char description[128];
+} EVMSelectorMap;
+
+const EVMSelectorMap EVM_SELECTORS[] = {
+    {0x70a08231, "balanceOf(address)", "Queries the token balance of the specified account address."},
+    {0xa9059cbb, "transfer(address,uint256)", "Transfers the specified amount of tokens to a target address."},
+    {0x095ea7b3, "approve(address,uint256)", "Approves the target spender to withdraw tokens up to the specified allowance."},
+    {0xdd62ed3e, "allowance(address,address)", "Returns the remaining number of tokens that the spender is allowed to withdraw."},
+    {0x06fdde03, "name()", "Returns the name of the token."},
+    {0x95d89b41, "symbol()", "Returns the symbol of the token."}
+};
+#define EVM_SELECTORS_SIZE 6
+
+// WinchesterMQ Virtual SCSI Register mapping
+typedef struct {
+    uint16_t reg_addr;
+    char name[32];
+    char role[128];
+} WMQRegisterMap;
+
+const WMQRegisterMap WMQ_REGISTERS[] = {
+    {0x4080, "DEFCON_LATCH", "Persistent state latch preventing de-escalation of power warning alarms."},
+    {0x4800, "FIELDATA_MODEL", "RDBMS database weights tracking context-adaptive arithmetic probabilities."},
+    {0x4840, "RANGE_VALUE", "Current value code bounds inside the TERSE arithmetic range coder."},
+    {0x4860, "UTF6_ESCAPE", "Shift indicator registry mapping 18, 24, and 36-bit variable Unicode points."},
+    {0xFFFF, "CMD_ABI_HELP", "Low-level SCSI query address returning raw ABI reflection schemas."}
+};
+#define WMQ_REGISTERS_SIZE 5
+
 void print_help_menu(void) {
     printf("=== ZMM VM CLIST HELP SYSTEM ===\n");
     printf("Usage:\n");
     printf("  LIST                       - List all registered contracts\n");
     printf("  HELP <address>             - Show all methods for a contract\n");
     printf("  HELP <address> <method>    - Show detailed help for a specific method\n");
+    printf("  HELP <evm_selector>        - Decode and explain a 4-byte EVM hex selector (e.g. 0x70a08231)\n");
+    printf("  WMQ <register>             - Query WinchesterMQ SCSI register role (e.g. 0x4800 or 0xFFFF)\n");
     printf("\n");
 }
 
@@ -87,8 +123,31 @@ int main(int argc, char **argv) {
         }
 
         const char *addr = argv[2];
-        const ContractABI *target = NULL;
 
+        // 1. Check if argument is a 4-byte EVM Selector (e.g. starts with "0x" and is 10 chars long)
+        if (strncmp(addr, "0x", 2) == 0 && strlen(addr) == 10) {
+            unsigned int sel_val = 0;
+            if (sscanf(addr, "0x%x", &sel_val) == 1) {
+                int found_evm = 0;
+                for (int i = 0; i < EVM_SELECTORS_SIZE; i++) {
+                    if (EVM_SELECTORS[i].selector == sel_val) {
+                        printf("EVM Selector : %s (0x%08X)\n", addr, EVM_SELECTORS[i].selector);
+                        printf("Signature    : %s\n", EVM_SELECTORS[i].signature);
+                        printf("Description  : %s\n", EVM_SELECTORS[i].description);
+                        found_evm = 1;
+                        break;
+                    }
+                }
+                if (!found_evm) {
+                    fprintf(stderr, "Error: EVM Selector '%s' not found in decoder mapping.\n", addr);
+                    return 1;
+                }
+                return 0;
+            }
+        }
+
+        // 2. Resolve target contract address
+        const ContractABI *target = NULL;
         for (int i = 0; i < REGISTRY_SIZE; i++) {
             if (strcmp(GLOSSARY_REGISTRY[i].contract_address, addr) == 0 || 
                 strcasecmp(GLOSSARY_REGISTRY[i].contract_name, addr) == 0) {
@@ -98,7 +157,7 @@ int main(int argc, char **argv) {
         }
 
         if (!target) {
-            fprintf(stderr, "Error: Contract '%s' not found in registry.\n", addr);
+            fprintf(stderr, "Error: Contract/Selector '%s' not found in registry.\n", addr);
             return 1;
         }
 
@@ -130,6 +189,37 @@ int main(int argc, char **argv) {
                 fprintf(stderr, "Error: Method '%s' not found on contract '%s'.\n", method_name, target->contract_name);
                 return 1;
             }
+        }
+        return 0;
+    }
+
+    if (strcmp(cmd, "WMQ") == 0) {
+        if (argc < 3) {
+            print_help_menu();
+            return 1;
+        }
+
+        const char *reg_str = argv[2];
+        unsigned int reg_val = 0;
+        if (sscanf(reg_str, "0x%x", &reg_val) != 1) {
+            fprintf(stderr, "Error: Register address must be in hex format (e.g. 0x4800).\n");
+            return 1;
+        }
+
+        int found_reg = 0;
+        for (int i = 0; i < WMQ_REGISTERS_SIZE; i++) {
+            if (WMQ_REGISTERS[i].reg_addr == reg_val) {
+                printf("WinchesterMQ SCSI Register: 0x%04X\n", WMQ_REGISTERS[i].reg_addr);
+                printf("Name                      : %s\n", WMQ_REGISTERS[i].name);
+                printf("Description/Role          : %s\n", WMQ_REGISTERS[i].role);
+                found_reg = 1;
+                break;
+            }
+        }
+
+        if (!found_reg) {
+            fprintf(stderr, "Error: WinchesterMQ register 0x%04X not found in mapping.\n", reg_val);
+            return 1;
         }
         return 0;
     }
