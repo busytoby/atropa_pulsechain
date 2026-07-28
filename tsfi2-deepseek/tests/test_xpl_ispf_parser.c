@@ -296,6 +296,33 @@ static bool select_ispf_option(const char *option_cmd, char *msg_out) {
     }
 }
 
+// 7. ISPF Command Stack Processor (delimited by ';')
+static bool execute_ispf_command_stack(const char *command_stack, char *msg_out) {
+    if (!command_stack || !msg_out) return false;
+    
+    char stack_copy[128];
+    snprintf(stack_copy, sizeof(stack_copy), "%s", command_stack);
+    
+    char *token = strtok(stack_copy, ";");
+    while (token != NULL) {
+        // Strip leading/trailing spaces from token
+        while (*token == ' ') token++;
+        size_t len = strlen(token);
+        while (len > 0 && token[len - 1] == ' ') {
+            token[len - 1] = '\0';
+            len--;
+        }
+        
+        if (len > 0) {
+            if (!select_ispf_option(token, msg_out)) {
+                return false; // Command execution failed
+            }
+        }
+        token = strtok(NULL, ";");
+    }
+    return true;
+}
+
 int main(void) {
     printf("=============================================================\n");
     printf("AUNCIENT ISPF FRONTEHD COMPILER LIBRARIES VALIDATION SUITE\n");
@@ -423,6 +450,16 @@ int main(void) {
     render_ispf_panel(panel_lib, msg_lib, opt_msg, "1", "0", "000", "BAD");
 
     printf("   ✓ Panel option dispatcher verified successfully.\n");
+
+    // Test 8: Verify Panel Command Stack Processing (ISPPLIB Stacked Inputs)
+    printf("[TEST] Testing panel command stack processor (';' delimited)...\n");
+    char stack_msg[16] = {0};
+    
+    assert(execute_ispf_command_stack("1; 1; X", stack_msg) == true);
+    assert(execute_ispf_command_stack("1; INVALID; X", stack_msg) == false);
+    assert(strcmp(stack_msg, "TSSO004E") == 0);
+    
+    printf("   ✓ Panel command stack processing verified successfully.\n");
 
     printf("=============================================================\n");
     printf("ALL ISPF LIBRARIES TESTS COMPLETED SUCCESSFULLY\n");
