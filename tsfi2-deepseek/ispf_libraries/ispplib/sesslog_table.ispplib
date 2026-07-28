@@ -1,0 +1,15 @@
+)BODY
+%----------------- SESSLOG Audit Log Table Display -----------------
+% Command Option ===>_ZCMD
+%
+% Row  Sequence  Type        Details
+% ---  --------  ----        -------
+% _R1  _SEQ1     _TYP1       _DET1
+% _R2  _SEQ2     _TYP2       _DET2
+% _R3  _SEQ3     _TYP3       _DET3
+%
+)INIT
+  &ZCMD = '1'
+)PROC
+  VER (&ZCMD,NONBLANK)
+)END
