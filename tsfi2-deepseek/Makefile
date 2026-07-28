@@ -1105,6 +1105,9 @@ tests/test_xpl_copypds: tests/test_xpl_copypds.c
 tests/test_xpl_compress: tests/test_xpl_compress.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
+tests/test_xpl_renel: tests/test_xpl_renel.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
+
 benchmarks/profiler_suite/bench_xplos_bus: benchmarks/profiler_suite/bench_xplos_bus.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
