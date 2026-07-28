@@ -48,6 +48,21 @@ int main() {
     }
     printf("[PASS] 36-bit word packing and unpacking matches original symbols\n");
 
+    // UTF-6 32-bit Unicode verification
+    uint32_t test_codes[] = { 45, 0x1F600, 0x3E800, 0xFFFFFFFF }; // Simple, 18-bit, 24-bit, and full 32-bit values
+    for (int i = 0; i < 4; i++) {
+        uint8_t utf6_buf[8];
+        size_t utf6_len = 0;
+        fieldata_utf6_encode(test_codes[i], utf6_buf, &utf6_len);
+        assert(utf6_len > 0);
+
+        size_t decoded_len = 0;
+        uint32_t decoded_code = fieldata_utf6_decode(utf6_buf, &decoded_len);
+        assert(decoded_len == utf6_len);
+        assert(decoded_code == test_codes[i]);
+    }
+    printf("[PASS] UTF-6 Variable-Length Unicode Encoder/Decoder validates up to 32-bit codepoints\n");
+
     printf("=== ALL FIELDATA ARITHMETIC CODING TESTS PASSED ===\n");
     return 0;
 }

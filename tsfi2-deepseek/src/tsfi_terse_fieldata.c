@@ -178,3 +178,55 @@ void fieldata_unpack_36bit(const uint64_t *words, size_t word_count, uint8_t *sy
     }
     *sym_len = count;
 }
+
+void fieldata_utf6_encode(uint32_t codepoint, uint8_t *out_symbols, size_t *out_len) {
+    if (!out_symbols || !out_len) return;
+
+    if (codepoint <= 60) {
+        out_symbols[0] = (uint8_t)codepoint;
+        *out_len = 1;
+    } else if (codepoint <= 0x3FFFF) {
+        out_symbols[0] = 61; // Shift-18 indicator
+        out_symbols[1] = (uint8_t)((codepoint >> 12) & 0x3F);
+        out_symbols[2] = (uint8_t)((codepoint >> 6) & 0x3F);
+        out_symbols[3] = (uint8_t)(codepoint & 0x3F);
+        *out_len = 4;
+    } else if (codepoint <= 0xFFFFFF) {
+        out_symbols[0] = 62; // Shift-24 indicator
+        out_symbols[1] = (uint8_t)((codepoint >> 18) & 0x3F);
+        out_symbols[2] = (uint8_t)((codepoint >> 12) & 0x3F);
+        out_symbols[3] = (uint8_t)((codepoint >> 6) & 0x3F);
+        out_symbols[4] = (uint8_t)(codepoint & 0x3F);
+        *out_len = 5;
+    } else {
+        out_symbols[0] = 63; // Shift-36 indicator (holds full 32-bit codepoint)
+        out_symbols[1] = (uint8_t)((codepoint >> 30) & 0x3F);
+        out_symbols[2] = (uint8_t)((codepoint >> 24) & 0x3F);
+        out_symbols[3] = (uint8_t)((codepoint >> 18) & 0x3F);
+        out_symbols[4] = (uint8_t)((codepoint >> 12) & 0x3F);
+        out_symbols[5] = (uint8_t)((codepoint >> 6) & 0x3F);
+        out_symbols[6] = (uint8_t)(codepoint & 0x3F);
+        *out_len = 7;
+    }
+}
+
+uint32_t fieldata_utf6_decode(const uint8_t *symbols, size_t *in_len) {
+    if (!symbols || !in_len) return 0;
+
+    uint8_t lead = symbols[0];
+    if (lead <= 60) {
+        *in_len = 1;
+        return lead;
+    } else if (lead == 61) {
+        *in_len = 4;
+        return ((uint32_t)symbols[1] << 12) | ((uint32_t)symbols[2] << 6) | (symbols[3]);
+    } else if (lead == 62) {
+        *in_len = 5;
+        return ((uint32_t)symbols[1] << 18) | ((uint32_t)symbols[2] << 12) | ((uint32_t)symbols[3] << 6) | (symbols[4]);
+    } else if (lead == 63) {
+        *in_len = 7;
+        return ((uint32_t)symbols[1] << 30) | ((uint32_t)symbols[2] << 24) | ((uint32_t)symbols[3] << 18) |
+               ((uint32_t)symbols[4] << 12) | ((uint32_t)symbols[5] << 6) | (symbols[6]);
+    }
+    return 0;
+}

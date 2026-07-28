@@ -39,4 +39,10 @@ void fieldata_pack_36bit(const uint8_t *symbols, size_t sym_len, uint64_t *words
 // Unpack 36-bit words back into 6-bit FIELDATA symbols
 void fieldata_unpack_36bit(const uint64_t *words, size_t word_count, uint8_t *symbols, size_t *sym_len);
 
+// Encode a 32-bit Unicode codepoint into 6-bit FIELDATA symbols
+void fieldata_utf6_encode(uint32_t codepoint, uint8_t *out_symbols, size_t *out_len);
+
+// Decode 6-bit FIELDATA symbols back into a 32-bit Unicode codepoint
+uint32_t fieldata_utf6_decode(const uint8_t *symbols, size_t *in_len);
+
 #endif // TSFI_TERSE_FIELDATA_H
