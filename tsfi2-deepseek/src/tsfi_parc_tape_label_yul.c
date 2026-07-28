@@ -282,3 +282,48 @@ int tsfi_tape_label_yul_check_governance(const uint8_t *header_buf, uint8_t requ
 
     return 0;
 }
+
+int tsfi_tape_label_split_volume(
+    uint8_t *eov_buf,
+    uint8_t *next_vol_buf,
+    const char *current_volume_id,
+    const char *next_volume_id
+) {
+    if (!eov_buf || !next_vol_buf || !current_volume_id || !next_volume_id) return -1;
+
+    // 1. Format the EOV1 buffer: representing the End of Volume sequence
+    memset(eov_buf, ' ', 720);
+    memcpy(eov_buf + yul_get_label_offset(TAPE_LABEL_VOL1, 0), "EOV1", 4);
+    memcpy(eov_buf + yul_get_label_offset(TAPE_LABEL_VOL1, 1), current_volume_id, strlen(current_volume_id) > 6 ? 6 : strlen(current_volume_id));
+    memcpy(eov_buf + yul_get_label_offset(TAPE_LABEL_VOL1, 2), "AUNCIENT_ZMM01", 14);
+    
+    // Set file identifier
+    memcpy(eov_buf + yul_get_label_offset(TAPE_LABEL_HDR1, 0), "HDR1", 4);
+    memcpy(eov_buf + yul_get_label_offset(TAPE_LABEL_HDR1, 1), "INTERCHANGE", 11);
+    
+    // Set previous and next volume linkages in HDR5
+    memcpy(eov_buf + yul_get_label_offset(TAPE_LABEL_HDR5, 0), "HDR5", 4);
+    memcpy(eov_buf + yul_get_label_offset(TAPE_LABEL_HDR5, 2), next_volume_id, strlen(next_volume_id) > 6 ? 6 : strlen(next_volume_id));
+
+    // Sign the EOV1 buffer
+    tsfi_tape_label_apply_seal(eov_buf);
+
+    // 2. Format the new VOL1 buffer: representing the next volume sequence
+    memset(next_vol_buf, ' ', 720);
+    memcpy(next_vol_buf + yul_get_label_offset(TAPE_LABEL_VOL1, 0), "VOL1", 4);
+    memcpy(next_vol_buf + yul_get_label_offset(TAPE_LABEL_VOL1, 1), next_volume_id, strlen(next_volume_id) > 6 ? 6 : strlen(next_volume_id));
+    memcpy(next_vol_buf + yul_get_label_offset(TAPE_LABEL_VOL1, 2), "AUNCIENT_ZMM01", 14);
+
+    // Set file identifier
+    memcpy(next_vol_buf + yul_get_label_offset(TAPE_LABEL_HDR1, 0), "HDR1", 4);
+    memcpy(next_vol_buf + yul_get_label_offset(TAPE_LABEL_HDR1, 1), "INTERCHANGE", 11);
+
+    // Set previous and next volume linkages in HDR5
+    memcpy(next_vol_buf + yul_get_label_offset(TAPE_LABEL_HDR5, 0), "HDR5", 4);
+    memcpy(next_vol_buf + yul_get_label_offset(TAPE_LABEL_HDR5, 1), current_volume_id, strlen(current_volume_id) > 6 ? 6 : strlen(current_volume_id));
+
+    // Sign the VOL1 buffer
+    tsfi_tape_label_apply_seal(next_vol_buf);
+
+    return 0;
+}

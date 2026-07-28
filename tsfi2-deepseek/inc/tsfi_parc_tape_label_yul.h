@@ -36,6 +36,14 @@ int tsfi_tape_label_yul_format_full_header(
 /* Format an 80-byte trailer label (EOF1 / EOV2) with block counts for data integrity check */
 int tsfi_tape_label_yul_format_trailer(uint8_t *trailer_buf, int label_type, uint32_t block_count);
 
+/* Perform dynamic volume splitting generating EOV1 and VOL1 sequence increments */
+int tsfi_tape_label_split_volume(
+    uint8_t *eov_buf,
+    uint8_t *next_vol_buf,
+    const char *current_volume_id,
+    const char *next_volume_id
+);
+
 /* Validate a full 720-byte .dat.bin full header buffer sequence against Yul DDL rules */
 int tsfi_tape_label_yul_validate_sequence(const uint8_t *header_buf);
 
