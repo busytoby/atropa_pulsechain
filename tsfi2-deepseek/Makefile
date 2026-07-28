@@ -978,6 +978,10 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+$(OBJ_DIR)/%.o: thunks/%.c | $(OBJ_DIR)
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
 $(OBJ_DIR)/%.o: src/firmware/%.c | $(OBJ_DIR)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c -o $@ $<
