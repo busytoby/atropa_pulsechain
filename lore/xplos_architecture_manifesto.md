@@ -175,3 +175,18 @@ The SKELETON library acts as the relocatable layout dictionary defining standard
 ### 2. Runtime Bounds Enforcement (BLACK Rail / XPLSM)
 *   **The Check:** Once mounted, the XPLSM anchors the SKELETON's coordinate template to the virtual backplane.
 *   **Containment:** During execution, it validates that all register writes conform strictly to the mounted template. The conduction path remains active (`1`) only as long as register accesses stay within the coordinates defined in the SKELETON. Any violation triggers immediate cutoff.
+
+---
+
+## The Naur-Form Grammar and Parser Latency Bounds
+
+To guarantee compilation deterministic behavior and shield the virtual hardware from parser-level side-channel latency vectors, the XCOM compiler strictly enforces the **Naur-Form** grammar rule set:
+
+### 1. Backus-Naur Syntax Specifications (BNF)
+*   **The Grammar:** The XCOM parser evaluates instruction records using a minimal, non-recursive Backus-Naur Form:
+    `instruction ::= opcode [ whitespace payload [ whitespace approvals ] ]`
+*   **Safety Gating:** The ANALYZER verifies syntax layout before codegen. Grammatically non-compliant instruction lines are rejected instantly, preventing parser state exploitation.
+
+### 2. Hard Real-Time Performance Limits
+*   **Latency Bounds:** The Unified Profiler enforces a strict latency bound of $< 1000\text{ ns}$ per parsed line.
+*   **Significance:** Keeping parser operations within sub-microsecond bounds (~110 ns average) ensures that compilation runs synchronously during high-frequency WinchesterMQ SCSI bus operations, neutralizing temporal jitter.
