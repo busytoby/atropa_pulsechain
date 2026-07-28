@@ -51,3 +51,19 @@ This manifesto establishes the architectural design for **xplos** (XPL Operating
 *   **Mathematical Function**: Resolves dynamic state transitions by querying target address registers:
     $$State = Base^{Signal} \pmod{Element}$$
 *   **Visual / Geometric Manifestation**: Governs the camera's orbital velocity scaling and bloom radius, rendering animated wave patterns to show real-time program execution.
+
+### ALU_SEMICONDUCTOR
+*   **VM Register Context**: The active logic execution and gating register layer of the Auncient VM. It natively integrates coaxial signals, ABI reflection maps, and WinchesterMQ registers, acting as the dynamic logic substrate that gates all data transitions.
+*   **Mathematical Function**: Resolves the dynamic routing barrier function based on verification parameters:
+    $$Conduction = \prod_{i=1}^{K} \left( 1 - \left( \left( Key_i \pmod{MotzkinPrime} \right) \ \& \ 1 \right) \right)$$
+*   **Visual / Geometric Manifestation**: Controls the global coordinate alpha transparency ($\alpha$) and vertex color gradients of the wireframe. As the ALU gates the bus data, the rendered model morphs from a high-frequency wireframe envelope into a solid, glowing volumetric matrix.
+
+---
+
+## The ALU as the Semiconductor of the Bus
+
+In the **xplos** architecture, the relationship between the transport layer and the execution unit is defined by a semiconductor mapping:
+
+1.  **The Coaxial Bus (XCOM / WMQ):** Serves as the passive copper conduction paths, carrying raw frames, parameters, and compiled contract binaries across the node network.
+2.  **The Active Substrate (ALU / VM Core):** The ALU serves as the semiconductor material. It does not simply process static numbers; it natively gates the flow of the bus itself using built-in coaxial interfaces, ABI reflection checks, and direct WinchesterMQ register overrides.
+3.  **Dynamic Gating:** Just as a silicon gate controls current based on charge, the ALU changes the routing behavior of the bus on-the-fly, allowing transactions to execute and commit atomically to RDBMS tables only when the state matches verification invariants.
