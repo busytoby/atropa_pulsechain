@@ -18,7 +18,7 @@ int main(void) {
     printf("=============================================================\n");
 
     const char *src_path = "xpl/tiger_sunset.xpl";
-    const char *bin_path = "tests/tiger_sunset.dat.bin";
+    const char *bin_path = "../tests/tiger_sunset.dat.bin";
 
     // 1. Compile the tiger_sunset.xpl source file using XCOM compiler API (without GCC)
     printf("[TEST] Compiling %s to %s via XCOM compiler API...\n", src_path, bin_path);
