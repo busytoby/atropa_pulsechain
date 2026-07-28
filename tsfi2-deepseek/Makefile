@@ -1102,6 +1102,9 @@ tests/test_xpl_tsso_help: tests/test_xpl_tsso_help.c
 tests/test_xpl_copypds: tests/test_xpl_copypds.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
+tests/test_xpl_compress: tests/test_xpl_compress.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
+
 benchmarks/profiler_suite/bench_xplos_bus: benchmarks/profiler_suite/bench_xplos_bus.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
