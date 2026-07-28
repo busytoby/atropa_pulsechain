@@ -131,3 +131,18 @@ While the standard configuration maps RAU virtual registers to standard transien
 ### 2. GPU Cache Gating (Wide-Parallel Bandwidth)
 *   The RAU can allocate register offsets directly to local GPU SRAM/scratchpad structures (shared memory).
 *   This maps register states directly to GPU shader calculation blocks, supplying high-bandwidth parallel vector data streams needed for intensive soft-body physics or real-time vertex displacement algorithms.
+
+---
+
+## The SKELETON RAU and Future VM Execution Manifold
+
+As XCOM compiles the bootstrap sequence, the initial register layout is established via the `INIT_RAU` instruction, defining the **SKELETON RAU** execution manifold for the custom xpl virtual machine.
+
+### 1. The Boot-Phase Manifold (XPLSM Control)
+*   **The Concept:** At system bootstrap, the XPLSM executes `INIT_RAU` to initialize the coaxial memory space at `0x4000`. This maps virtual registers `V0`–`V31` directly onto the coaxial bus.
+*   **ANALYZER Constraint:** The ANALYZER audits this sequence, ensuring `INIT_RAU` occurs strictly during the boot phase before execution states transition. This locks the register topology and prevents runtime address injection.
+
+### 2. Relocatable Instruction Gating
+*   This stateless SKELETON RAU serves as the structural foundation for the custom Auncient VM compiler.
+*   By resolving all machine operations as direct memory-mapped byte writes (peeking and poking the coaxial offsets), future VM capabilities (such as relocatable assembly, dynamic instruction patching, and thread-local register isolation) can be built purely as software abstractions on top of this hardware-coupled backplane.
+*   This decouples execution logic from host state constraints, allowing the custom VM to achieve total architectural mobility across standard RAM, CPU caches, and parallel GPU lanes.
