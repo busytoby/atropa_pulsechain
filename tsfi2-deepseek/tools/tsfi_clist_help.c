@@ -161,6 +161,72 @@ int main(int argc, char **argv) {
             return 1;
         }
 
+        // Check for --export flag
+        int export_json = 0;
+        int export_yaml = 0;
+        for (int argi = 2; argi < argc; argi++) {
+            if (strcmp(argv[argi], "--export") == 0 && argi + 1 < argc) {
+                if (strcasecmp(argv[argi+1], "json") == 0) export_json = 1;
+                if (strcasecmp(argv[argi+1], "yaml") == 0) export_yaml = 1;
+            }
+        }
+
+        if (export_json) {
+            printf("[\n");
+            for (int j = 0; j < target->method_count; j++) {
+                printf("  {\n");
+                printf("    \"name\": \"%s\",\n", target->methods[j].name);
+                printf("    \"type\": \"function\",\n");
+                printf("    \"inputs\": [\n");
+                if (strcmp(target->methods[j].args, "None") != 0) {
+                    // Split space-separated args
+                    char args_copy[64];
+                    strncpy(args_copy, target->methods[j].args, sizeof(args_copy));
+                    args_copy[sizeof(args_copy)-1] = '\0';
+                    char *token = strtok(args_copy, " ");
+                    int first = 1;
+                    while (token) {
+                        if (!first) printf(",\n");
+                        printf("      {\"name\": \"%s\", \"type\": \"uint256\"}", token);
+                        first = 0;
+                        token = strtok(NULL, " ");
+                    }
+                    printf("\n");
+                }
+                printf("    ],\n");
+                printf("    \"description\": \"%s\"\n", target->methods[j].desc);
+                printf("  }%s\n", (j == target->method_count - 1) ? "" : ",");
+            }
+            printf("]\n");
+            return 0;
+        }
+
+        if (export_yaml) {
+            printf("contract: %s\n", target->contract_name);
+            printf("address: %s\n", target->contract_address);
+            printf("methods:\n");
+            for (int j = 0; j < target->method_count; j++) {
+                printf("  - name: %s\n", target->methods[j].name);
+                printf("    description: \"%s\"\n", target->methods[j].desc);
+                printf("    inputs: [");
+                if (strcmp(target->methods[j].args, "None") != 0) {
+                    char args_copy[64];
+                    strncpy(args_copy, target->methods[j].args, sizeof(args_copy));
+                    args_copy[sizeof(args_copy)-1] = '\0';
+                    char *token = strtok(args_copy, " ");
+                    int first = 1;
+                    while (token) {
+                        if (!first) printf(", ");
+                        printf("%s", token);
+                        first = 0;
+                        token = strtok(NULL, " ");
+                    }
+                }
+                printf("]\n");
+            }
+            return 0;
+        }
+
         if (argc < 4) {
             // Print all methods for the contract
             printf("Contract: %s (%s)\n", target->contract_name, target->contract_address);
