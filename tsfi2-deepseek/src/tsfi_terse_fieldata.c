@@ -79,12 +79,20 @@ int fieldata_terse_decompress(
         uint64_t range = (uint64_t)high - low + 1;
         uint32_t scaled_val = (uint32_t)((((uint64_t)value - low + 1) * model.total_freq - 1) / range);
 
-        // Find corresponding symbol matching cumulative frequency
+        // Binary search corresponding symbol matching cumulative frequency
         uint8_t sym = 0;
-        for (int s = 0; s < FIELDATA_SYMBOLS; s++) {
-            if (model.low_cum[s + 1] > scaled_val) {
-                sym = s;
+        int low_idx = 0;
+        int high_idx = FIELDATA_SYMBOLS - 1;
+        while (low_idx <= high_idx) {
+            int mid = (low_idx + high_idx) / 2;
+            if (model.low_cum[mid] <= scaled_val && model.low_cum[mid + 1] > scaled_val) {
+                sym = mid;
                 break;
+            }
+            if (model.low_cum[mid] > scaled_val) {
+                high_idx = mid - 1;
+            } else {
+                low_idx = mid + 1;
             }
         }
 
