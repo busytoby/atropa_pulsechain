@@ -1072,6 +1072,9 @@ tests/test_rau_mcp_mount: tests/test_rau_mcp_mount.c
 tests/test_rau_thunk: tests/test_rau_thunk.c thunks/tsfi_rau_thunk.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
+tests/test_xplos_alu_rau_integration: tests/test_xplos_alu_rau_integration.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
+
 benchmarks/profiler_suite/bench_xplos_bus: benchmarks/profiler_suite/bench_xplos_bus.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
