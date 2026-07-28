@@ -15,6 +15,11 @@ object "RAUCoprocessor" {
             //           0x044d1e56 -> mul_virtual(uint256 v_a, uint256 v_b, uint256 v_dest)
             //           0x055e2f67 -> push_context()
             //           0x066f3078 -> pop_context()
+            //           0x077a4189 -> dump_registers(uint256 mem_ptr)
+            //           0x088b529a -> load_registers(uint256 mem_ptr)
+            // [4:36]  - Parameter 1 (v_reg, v_a, or mem_ptr)
+            // [36:68] - Parameter 2 (val or v_b)
+            // [68:100]- Parameter 3 (v_dest)
 
             let selector := shr(224, calldataload(0))
             
@@ -71,17 +76,30 @@ object "RAUCoprocessor" {
                 pop_context()
                 return(0, 0)
             }
+            case 0x077a4189 {
+                let mem_ptr := calldataload(4)
+                dump_registers(mem_ptr)
+                return(0, 0)
+            }
+            case 0x088b529a {
+                let mem_ptr := calldataload(4)
+                load_registers(mem_ptr)
+                return(0, 0)
+            }
             default {
                 revert(0, 0)
             }
 
-            // Reads the 32-byte value of virtual register v_reg
+            // Reads the 32-byte value of virtual register v_reg (V0 hardwired to constant 0)
             function read_reg(v_reg) -> val {
+                if iszero(v_reg) {
+                    val := 0
+                    leave
+                }
                 let p_reg := get_mapping(v_reg)
                 // If not mapped (0xff), fetch from spill cache
                 if eq(p_reg, 0xff) {
                     val := mload(add(0xa0, mul(v_reg, 32)))
-                    // Load into a new physical slot, clearing dirty status since cache matches
                     p_reg := allocate_physical_reg(v_reg)
                     mstore(add(0x20, mul(p_reg, 32)), val)
                     clear_dirty(p_reg)
@@ -91,8 +109,11 @@ object "RAUCoprocessor" {
                 val := mload(add(0x20, mul(p_reg, 32)))
             }
 
-            // Writes 32-byte value to virtual register v_reg
+            // Writes 32-byte value to virtual register v_reg (Writes to V0 are ignored)
             function write_reg(v_reg, val) {
+                if iszero(v_reg) {
+                    leave
+                }
                 let p_reg := get_mapping(v_reg)
                 if eq(p_reg, 0xff) {
                     p_reg := allocate_physical_reg(v_reg)
@@ -189,7 +210,6 @@ object "RAUCoprocessor" {
 
             // Spills physical register state with dirty bit checking
             function spill_to_cache(v_reg, p_reg) {
-                // Spill to cache only if register is dirty (modified)
                 if is_dirty(p_reg) {
                     let val := mload(add(0x20, mul(p_reg, 32)))
                     mstore(add(0xa0, mul(v_reg, 32)), val)
@@ -198,24 +218,20 @@ object "RAUCoprocessor" {
                 set_mapping(v_reg, 0xff)
             }
 
-            // Push entire context to stack (mappings, registers, LRU queue, dirty mask)
+            // Push entire context to stack
             function push_context() {
                 let sp := mload(0x220)
-                
-                // Copy active mappings, registers, and metadata into stack frame
-                mstore(sp, mload(0))       // Mapping word
-                mstore(add(sp, 32), mload(0x20))  // R0
-                mstore(add(sp, 64), mload(0x40))  // R1
-                mstore(add(sp, 96), mload(0x60))  // R2
-                mstore(add(sp, 128), mload(0x80)) // R3
-                mstore(add(sp, 160), mload(0x200)) // LRU Queue
-                mstore(add(sp, 192), mload(0x210)) // Dirty mask
-
-                // Update stack pointer (increment by 224 bytes)
+                mstore(sp, mload(0))
+                mstore(add(sp, 32), mload(0x20))
+                mstore(add(sp, 64), mload(0x40))
+                mstore(add(sp, 96), mload(0x60))
+                mstore(add(sp, 128), mload(0x80))
+                mstore(add(sp, 160), mload(0x200))
+                mstore(add(sp, 192), mload(0x210))
                 mstore(0x220, add(sp, 224))
 
                 // Reset active context
-                mstore(0, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff) // Clear mappings
+                mstore(0, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
                 mstore(0x20, 0)
                 mstore(0x40, 0)
                 mstore(0x60, 0)
@@ -227,11 +243,8 @@ object "RAUCoprocessor" {
             // Pop context from stack
             function pop_context() {
                 let sp := mload(0x220)
-                if eq(sp, 0x1000) { revert(0, 0) } // Underflow check
-
+                if eq(sp, 0x1000) { revert(0, 0) }
                 let target_sp := sub(sp, 224)
-
-                // Restore active context from stack frame
                 mstore(0, mload(target_sp))
                 mstore(0x20, mload(add(target_sp, 32)))
                 mstore(0x40, mload(add(target_sp, 64)))
@@ -239,9 +252,23 @@ object "RAUCoprocessor" {
                 mstore(0x80, mload(add(target_sp, 128)))
                 mstore(0x200, mload(add(target_sp, 160)))
                 mstore(0x210, mload(add(target_sp, 192)))
-
-                // Update stack pointer
                 mstore(0x220, target_sp)
+            }
+
+            // Bulk dump all 32 virtual registers to destination memory pointer
+            function dump_registers(mem_ptr) {
+                for { let i := 0 } lt(i, 32) { i := add(i, 1) } {
+                    let val := read_reg(i)
+                    mstore(add(mem_ptr, mul(i, 32)), val)
+                }
+            }
+
+            // Bulk load all 32 virtual registers from source memory pointer
+            function load_registers(mem_ptr) {
+                for { let i := 0 } lt(i, 32) { i := add(i, 1) } {
+                    let val := mload(add(mem_ptr, mul(i, 32)))
+                    write_reg(i, val)
+                }
             }
         }
     }
