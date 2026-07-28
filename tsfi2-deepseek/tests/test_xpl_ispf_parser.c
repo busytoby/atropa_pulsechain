@@ -109,6 +109,56 @@ static bool generate_xcom_from_skeleton(
     return true;
 }
 
+// 4. ISPF Panel input validation rule checker (VER rule parser)
+static bool validate_panel_field_rules(const char *filepath, const char *field_name, const char *value_str) {
+    FILE *f = fopen(filepath, "r");
+    if (!f) return false;
+
+    char line[128];
+    bool in_proc = false;
+    bool checked = false;
+    bool passed = true;
+
+    while (fgets(line, sizeof(line), f)) {
+        // Strip trailing newline/whitespace
+        size_t len = strlen(line);
+        while (len > 0 && (line[len - 1] == '\r' || line[len - 1] == '\n' || line[len - 1] == ' ')) {
+            line[len - 1] = '\0';
+            len--;
+        }
+
+        if (strcmp(line, ")PROC") == 0) {
+            in_proc = true;
+            continue;
+        }
+        if (line[0] == ')') {
+            in_proc = false;
+        }
+
+        if (in_proc) {
+            char name[64] = {0};
+            char type[32] = {0};
+            // Match VER (&NAME,TYPE)
+            if (sscanf(line, "  VER (&%63[^,],%31[^)])", name, type) == 2) {
+                if (strcmp(name, field_name) == 0) {
+                    checked = true;
+                    if (strcmp(type, "NUM") == 0) {
+                        // Check if numeric
+                        for (size_t i = 0; i < strlen(value_str); i++) {
+                            if (value_str[i] < '0' || value_str[i] > '9') {
+                                passed = false;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    fclose(f);
+    return checked ? passed : true;
+}
+
 int main(void) {
     printf("=============================================================\n");
     printf("AUNCIENT ISPF FRONTEHD COMPILER LIBRARIES VALIDATION SUITE\n");
@@ -169,6 +219,19 @@ int main(void) {
     remove(output_jcl);
 
     printf("   ✓ Dynamic JCL generation and variable substitution verified.\n");
+
+    // Test 4: Verify Panel Input Validation Rules (ISPPLIB)
+    printf("[TEST] Testing panel input validation rules (VER checks)...\n");
+    const char *panel_lib = "ispf_libraries/ispplib/submit_task.ispplib";
+    
+    // Numeric checks on PANEL_REG, PANEL_VAL, and OP_TOKEN
+    assert(validate_panel_field_rules(panel_lib, "PANEL_REG", "123") == true);
+    assert(validate_panel_field_rules(panel_lib, "PANEL_REG", "abc") == false);
+    assert(validate_panel_field_rules(panel_lib, "PANEL_VAL", "9999") == true);
+    assert(validate_panel_field_rules(panel_lib, "PANEL_VAL", "12a34") == false);
+    assert(validate_panel_field_rules(panel_lib, "OP_TOKEN", "999") == true);
+    
+    printf("   ✓ Panel validation rule processor verified successfully.\n");
 
     printf("=============================================================\n");
     printf("ALL ISPF LIBRARIES TESTS COMPLETED SUCCESSFULLY\n");
