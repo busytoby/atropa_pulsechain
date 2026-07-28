@@ -85,3 +85,21 @@ The multi-ALU bus topology in **xplos** unlocks key connectivity potentials acro
 ### 3. ABI-WMQ Native Bridging (Self-Orchestrated Routines)
 *   **The Potential:** Function reflection and WinchesterMQ message routing are handled directly inside the ALU's silicon paths, rather than as separate software libraries.
 *   **Operational Execution:** When a transaction payload is received, the ALU dynamically decodes the 4-byte EVM selector, resolves its parameter definitions via the reflection database, and maps the output to target SCSI registers in a single instruction sequence. This merges self-documenting code with hardware-level execution speed.
+
+---
+
+## The Stateless Coaxial RAU and Dual-Pathway Routing
+
+Following compiler benchmarks and virtual hardware profiles, the final execution topology of the **xplos** Register Allocation Unit is established as a **Stateless Coaxial Crossbar**:
+
+### 1. Stateless Crossbar Gating
+*   All physical register arrays, dirty status masks, and context copy operations are discarded.
+*   The virtual registers `V0`–`V31` are mapped directly to memory-mapped coaxial bus offsets at base `0x4000` to `0x43ff` (32 bytes per slot).
+*   Peek (read) and Poke (write) operations map directly onto these coaxial offsets, creating a zero-storage register file that is structurally unified with the network bus.
+
+### 2. Dual-Pathway Performance Profiles
+*   **ABI Dynamic Dispatch (Logical Path):** High-level entry point resolution utilizing EVM selectors (e.g. `read_reg` and `write_reg`) allows the compiler to inline memory offsets and perform dead-code branch predictions, running at maximum instruction throughput.
+*   **WinchesterMQ Write-Through (Hardware Path):** Low-level packet synchronization targeting the SCSI register ports (`0x4800` base) executes as a pure, unidirectional write-through pipeline. Because it requires no validation checks or read returns, write-through packets achieve **0.00 ns latency** on the bus.
+
+### 3. Dynamic Coaxial Network Creation
+*   To support multi-context stack isolation, the ALU can dynamically instantiate new coaxial network page offsets at runtime (e.g. page `0x5000`), registering them with the RAU to partition register environments and guarantee parallel task security.
