@@ -6,3 +6,6 @@ TSSO002E 'TSSO Clearance Denied' .ALARM=YES
 
 TSSO003I 'TSSO Command Executed' .ALARM=NO
 'Task submitted and successfully conducted against the RAU.'
+
+TSSO004E 'Invalid Option Selected' .ALARM=YES
+'Select a valid command option from the ISPF panel (1 to Compile, X to Exit).'

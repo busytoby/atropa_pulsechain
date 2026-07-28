@@ -213,7 +213,8 @@ static void render_ispf_panel(
     const char *msg_code,
     const char *reg_val,
     const char *val_val,
-    const char *tok_val
+    const char *tok_val,
+    const char *zcmd
 ) {
     FILE *f = fopen(panel_path, "r");
     if (!f) return;
@@ -255,7 +256,7 @@ static void render_ispf_panel(
                     dst += sprintf(dst, "%-9s", tok_val);
                     src += 9;
                 } else if (strncmp(src, "_ZCMD", 5) == 0) {
-                    dst += sprintf(dst, "     ");
+                    dst += sprintf(dst, "%-5s", zcmd);
                     src += 5;
                 } else {
                     *dst++ = *src++;
@@ -278,6 +279,21 @@ static void render_ispf_panel(
         }
     }
     printf("=== ISPF TERMINAL SCREEN END ===\n\n");
+}
+
+// 6. ISPF Dialog option selection and dispatcher
+static bool select_ispf_option(const char *option_cmd, char *msg_out) {
+    if (strcmp(option_cmd, "1") == 0) {
+        // Option 1: Compile task
+        return true;
+    } else if (strcmp(option_cmd, "X") == 0) {
+        // Option X: Exit
+        return true;
+    } else {
+        // Invalid option selected: load TSSO004E message
+        snprintf(msg_out, 15, "TSSO004E");
+        return false;
+    }
 }
 
 int main(void) {
@@ -387,11 +403,26 @@ int main(void) {
     // Test 6: Verify Panel Rendering & Message Display
     printf("[TEST] Testing panel dynamic terminal rendering and warning messages...\n");
     // Render normal successful state
-    render_ispf_panel(panel_lib, msg_lib, "", "1", "1234", "999");
+    render_ispf_panel(panel_lib, msg_lib, "", "1", "1234", "999", "1");
     // Render error state with alarm
-    render_ispf_panel(panel_lib, msg_lib, "TSSO001E", "abc", "1234", "999");
+    render_ispf_panel(panel_lib, msg_lib, "TSSO001E", "abc", "1234", "999", "X");
 
     printf("   ✓ Panel renderer execution verified.\n");
+
+    // Test 7: Verify Panel Option Selection & Dispatch (ISPPLIB ZCMD)
+    printf("[TEST] Testing panel command option selection (ZCMD dispatch)...\n");
+    char opt_msg[16] = {0};
+    
+    assert(select_ispf_option("1", opt_msg) == true);
+    assert(select_ispf_option("X", opt_msg) == true);
+    
+    assert(select_ispf_option("INVALID", opt_msg) == false);
+    assert(strcmp(opt_msg, "TSSO004E") == 0);
+
+    // Look up and display looked up invalid option message
+    render_ispf_panel(panel_lib, msg_lib, opt_msg, "1", "0", "000", "BAD");
+
+    printf("   ✓ Panel option dispatcher verified successfully.\n");
 
     printf("=============================================================\n");
     printf("ALL ISPF LIBRARIES TESTS COMPLETED SUCCESSFULLY\n");
