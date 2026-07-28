@@ -109,6 +109,48 @@ static bool generate_xcom_from_skeleton(
     return true;
 }
 
+// 3.5. ISPF Panel default variable loader (INIT section parser)
+static bool load_panel_defaults(const char *filepath, const char *var_name, char *val_out, size_t max_val_len) {
+    FILE *f = fopen(filepath, "r");
+    if (!f) return false;
+
+    char line[128];
+    bool in_init = false;
+    bool found = false;
+
+    while (fgets(line, sizeof(line), f)) {
+        // Strip trailing newline/whitespace
+        size_t len = strlen(line);
+        while (len > 0 && (line[len - 1] == '\r' || line[len - 1] == '\n' || line[len - 1] == ' ')) {
+            line[len - 1] = '\0';
+            len--;
+        }
+
+        if (strcmp(line, ")INIT") == 0) {
+            in_init = true;
+            continue;
+        }
+        if (line[0] == ')' && strcmp(line, ")INIT") != 0) {
+            in_init = false;
+        }
+
+        if (in_init) {
+            char name[64] = {0};
+            char val[64] = {0};
+            // Match &NAME = 'VAL'
+            if (sscanf(line, "  &%63[^ ] = '%63[^']'", name, val) == 2) {
+                if (strcmp(name, var_name) == 0) {
+                    snprintf(val_out, max_val_len, "%s", val);
+                    found = true;
+                    break;
+                }
+            }
+        }
+    }
+    fclose(f);
+    return found;
+}
+
 // 4. ISPF Panel input validation rule checker (VER rule parser)
 static bool validate_panel_field_rules(const char *filepath, const char *field_name, const char *value_str, char *msg_out) {
     FILE *f = fopen(filepath, "r");
@@ -250,6 +292,23 @@ int main(void) {
     assert(strcmp(err_msg, "TSSO002E") == 0);
     
     printf("   ✓ Panel validation rule processor and MSG mapping verified successfully.\n");
+
+    // Test 5: Verify Panel Initialization Defaults (ISPPLIB INIT)
+    printf("[TEST] Testing panel default variable loading (INIT block)...\n");
+    char default_val[64] = {0};
+    
+    assert(load_panel_defaults(panel_lib, "PANEL_REG", default_val, sizeof(default_val)) == true);
+    assert(strcmp(default_val, "1") == 0);
+
+    assert(load_panel_defaults(panel_lib, "PANEL_VAL", default_val, sizeof(default_val)) == true);
+    assert(strcmp(default_val, "0") == 0);
+
+    assert(load_panel_defaults(panel_lib, "OP_TOKEN", default_val, sizeof(default_val)) == true);
+    assert(strcmp(default_val, "000") == 0);
+
+    assert(load_panel_defaults(panel_lib, "NON_EXIST", default_val, sizeof(default_val)) == false);
+
+    printf("   ✓ Panel default initialization parameters verified successfully.\n");
 
     printf("=============================================================\n");
     printf("ALL ISPF LIBRARIES TESTS COMPLETED SUCCESSFULLY\n");
