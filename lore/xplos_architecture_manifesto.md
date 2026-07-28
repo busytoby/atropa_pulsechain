@@ -103,3 +103,17 @@ Following compiler benchmarks and virtual hardware profiles, the final execution
 
 ### 3. Dynamic Coaxial Network Creation
 *   To support multi-context stack isolation, the ALU can dynamically instantiate new coaxial network page offsets at runtime (e.g. page `0x5000`), registering them with the RAU to partition register environments and guarantee parallel task security.
+
+---
+
+## Stateless Folklore CPU Integration and Arbitrary Register Scaling
+
+By remapping the register layer of the **Folklore CPU** directly onto the stateless coaxial RAU slots, the processor's internal execution state is fully unified with the communication line:
+
+### 1. Stateless CPU Remapping
+*   The Folklore CPU discards all persistent storage slots and local cache variables for its core registers: Accumulator `A`, index registers `X`/`Y`, Stack Pointer `SP`, Status Register `SR`, and Program Counter `PC`.
+*   These registers are remapped directly to coaxial bus offsets at base `0x4000` (`0x4020` to `0x40c0`), forcing all machine instructions to execute as native peek and poke transmissions over the active coaxial network.
+
+### 2. Arbitrary Register Configurations and State Scaling
+*   **Variable Register Size & Count:** Decoupled from physical CPU architecture limitations, registers can be scaled to any size (from 8-bit to full 256-bit words) or quantity by dynamically shifting the offset multipliers on the memory-mapped page.
+*   **Dynamic Windowing & Clustering:** CPU cores can dynamically slide their active register offsets to establish overlapping input/output frames, or cluster together on the same coaxial segment to share register states in real-time. This turns the physical network medium into a relocatable register allocation space.
