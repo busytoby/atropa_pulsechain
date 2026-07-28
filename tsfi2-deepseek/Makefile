@@ -1053,7 +1053,7 @@ tests/benchmark_neuro_folklore: tests/benchmark_neuro_folklore.c $(CORE_OBJS) $(
 tests/benchmark_neurology: tests/benchmark_neurology.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-virtual_tape_suite: tools/tsfi_copymods_terse tools/tsfi_tapemap_terse tools/tsfi_pdsload_terse tools/tsfi_offload_terse tools/tsfi_cbtupd_terse tools/tsfi_docfile_terse tools/tsfi_blkdisk_terse tools/tsfi_clist_help
+virtual_tape_suite: tools/tsfi_copymods_terse tools/tsfi_tapemap_terse tools/tsfi_pdsload_terse tools/tsfi_offload_terse tools/tsfi_cbtupd_terse tools/tsfi_docfile_terse tools/tsfi_blkdisk_terse tools/tsfi_clist_help tools/tsfi_abi_monitor
 
 tools/tsfi_copymods_terse: tools/tsfi_copymods_terse.c src/tsfi_terse_fieldata.c
 	$(CC) $(CFLAGS) -o $@ $^ -lm
@@ -1077,6 +1077,9 @@ tools/tsfi_blkdisk_terse: tools/tsfi_blkdisk_terse.c src/tsfi_terse_fieldata.c
 	$(CC) $(CFLAGS) -o $@ $^ -lm
 
 tools/tsfi_clist_help: tools/tsfi_clist_help.c
+	$(CC) $(CFLAGS) -o $@ $^ -lm
+
+tools/tsfi_abi_monitor: tools/tsfi_abi_monitor.c
 	$(CC) $(CFLAGS) -o $@ $^ -lm
 
 clean:
