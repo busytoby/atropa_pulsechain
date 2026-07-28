@@ -161,3 +161,17 @@ At the heart of the binary compiler technology discovery front sits the unificat
 *   **The RED Rail (Active-Low ANALYZER):** Acts as the static security grid. It parses XCOM-compiled bytecode for forbidden signatures or out-of-bounds memory scopes before execution, keeping threat lines low (`0`).
 *   **The BLACK Rail (Active-High XPLSM):** Acts as the dynamic verification check. It monitors execution quorums and state transitions in real time, requiring positive authorization keys to remain high (`1`).
 *   **Conduction:** Together, they enforce a hardware-coupled validation tree. Any anomaly immediately drops the gate, triggering converse rollback to isolate the console line and restore the RAU registers.
+
+---
+
+## Mounting the SKELETON Library on the RED/BLACK Rails
+
+The SKELETON library acts as the relocatable layout dictionary defining standard offset properties and execution templates. Mounting it on the RED and BLACK rails establishes the execution contract:
+
+### 1. Static Layout Verification (RED Rail / ANALYZER)
+*   **The Check:** When a SKELETON file is mounted, the ANALYZER checks all memory-mapped definitions statically.
+*   **Containment:** It verifies that trace boundaries do not write to forbidden supervisor registers. Only configurations that present zero memory conflicts (`0` threat signals) are permitted to mount.
+
+### 2. Runtime Bounds Enforcement (BLACK Rail / XPLSM)
+*   **The Check:** Once mounted, the XPLSM anchors the SKELETON's coordinate template to the virtual backplane.
+*   **Containment:** During execution, it validates that all register writes conform strictly to the mounted template. The conduction path remains active (`1`) only as long as register accesses stay within the coordinates defined in the SKELETON. Any violation triggers immediate cutoff.
