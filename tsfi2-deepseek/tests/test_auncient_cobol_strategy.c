@@ -15,12 +15,12 @@ int main(void) {
     printf("=============================================================\n");
 
     // Read the strategy file content
-    FILE *f = fopen("solidity/dysnomia/domain/strategies/tpu_word_alter.strategy", "r");
+    FILE *f = fopen("solidity/dysnomia/domain/strategies/tape_loader.strategy", "r");
     if (!f) {
-        f = fopen("../solidity/dysnomia/domain/strategies/tpu_word_alter.strategy", "r");
+        f = fopen("../solidity/dysnomia/domain/strategies/tape_loader.strategy", "r");
     }
     if (!f) {
-        fprintf(stderr, "FATAL: Could not open tpu_word_alter.strategy from root or subfolder\n");
+        fprintf(stderr, "FATAL: Could not open tape_loader.strategy from root or subfolder\n");
         return 1;
     }
 
@@ -54,10 +54,10 @@ int main(void) {
     assert(res == 0);
 
     // Verify VM state alterations
-    printf("   ✓ Depth Scale: %d (Expected: 3)\n", vm.depth_priority_scale);
-    printf("   ✓ Abductive Scale: %d (Expected: 32)\n", vm.abductive_priority_scale);
-    assert(vm.depth_priority_scale == 3);
-    assert(vm.abductive_priority_scale == 32);
+    printf("   ✓ Depth Scale: %d (Expected: 5)\n", vm.depth_priority_scale);
+    printf("   ✓ Abductive Scale: %d (Expected: 8)\n", vm.abductive_priority_scale);
+    assert(vm.depth_priority_scale == 5);
+    assert(vm.abductive_priority_scale == 8);
 
     printf("=============================================================\n");
     printf("COBOL STRATEGY TESTS COMPLETED\n");
