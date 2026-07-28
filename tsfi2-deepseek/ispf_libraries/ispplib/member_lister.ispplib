@@ -1,0 +1,16 @@
+)BODY
+%----------------- ISPF PDS Member Directory Lister -----------------
+% Command Option ===>_ZCMD
+%
+% Dataset Name: _DSN
+%
+% Member Name  Size (Bytes)   Status
+% -----------  ------------   ------
+% _M1          _S1            _ST1
+% _M2          _S2            _ST2
+%
+)INIT
+  &DSN = 'SYS1.ISPSLIB'
+)PROC
+  VER (&DSN,NONBLANK)
+)END
