@@ -117,3 +117,17 @@ By remapping the register layer of the **Folklore CPU** directly onto the statel
 ### 2. Arbitrary Register Configurations and State Scaling
 *   **Variable Register Size & Count:** Decoupled from physical CPU architecture limitations, registers can be scaled to any size (from 8-bit to full 256-bit words) or quantity by dynamically shifting the offset multipliers on the memory-mapped page.
 *   **Dynamic Windowing & Clustering:** CPU cores can dynamically slide their active register offsets to establish overlapping input/output frames, or cluster together on the same coaxial segment to share register states in real-time. This turns the physical network medium into a relocatable register allocation space.
+
+---
+
+## Multi-Tier Cache Allocation and Hardware Gating
+
+While the standard configuration maps RAU virtual registers to standard transient system RAM, the crossbar interface supports target gating across different physical cache tiers:
+
+### 1. CPU Cache Gating (Thread-Local Low Latency)
+*   The RAU can route register windows directly onto the L1/L2 CPU caches.
+*   This configures high-speed thread-local register lanes, bypassing system memory controllers entirely to execute hot-path logical operations at raw core clock speeds.
+
+### 2. GPU Cache Gating (Wide-Parallel Bandwidth)
+*   The RAU can allocate register offsets directly to local GPU SRAM/scratchpad structures (shared memory).
+*   This maps register states directly to GPU shader calculation blocks, supplying high-bandwidth parallel vector data streams needed for intensive soft-body physics or real-time vertex displacement algorithms.
