@@ -26,7 +26,7 @@ void generate_sl_record(char *buf, const char *label_type, const char *dataset_n
 
         time_t t = time(NULL);
         struct tm *lt = localtime(&t);
-        char date_str[7];
+        char date_str[256];
         snprintf(date_str, sizeof(date_str), " %02d%03d", lt->tm_year % 100, lt->tm_yday + 1);
         memcpy(buf + 41, date_str, 6);
     } else if (strcmp(label_type, "HDR2") == 0) {
@@ -96,9 +96,11 @@ int main(int argc, char **argv) {
         memset(member_name, 0, sizeof(member_name));
         char *dot = strchr(entry->d_name, '.');
         if (dot) {
-            snprintf(member_name, sizeof(member_name), "%.*s", (int)(dot - entry->d_name), entry->d_name);
+            int len = (int)(dot - entry->d_name);
+            if (len > 8) len = 8;
+            snprintf(member_name, sizeof(member_name), "%.*s", len, entry->d_name);
         } else {
-            snprintf(member_name, sizeof(member_name), "%s", entry->d_name);
+            snprintf(member_name, sizeof(member_name), "%.8s", entry->d_name);
         }
 
         printf("[OFFLOAD] Packing Member: %-8s from %s\n", member_name, filepath);

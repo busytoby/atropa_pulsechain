@@ -41,7 +41,7 @@ void generate_sl_record(char *buf, const char *label_type, const char *dataset_n
         // Bytes 41-47: Creation Date (Julian format yyddd)
         time_t t = time(NULL);
         struct tm *lt = localtime(&t);
-        char date_str[7];
+        char date_str[256];
         snprintf(date_str, sizeof(date_str), " %02d%03d", lt->tm_year % 100, lt->tm_yday + 1);
         memcpy(buf + 41, date_str, 6);
     } else if (strcmp(label_type, "HDR2") == 0) {
