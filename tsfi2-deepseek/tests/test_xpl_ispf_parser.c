@@ -110,7 +110,7 @@ static bool generate_xcom_from_skeleton(
 }
 
 // 4. ISPF Panel input validation rule checker (VER rule parser)
-static bool validate_panel_field_rules(const char *filepath, const char *field_name, const char *value_str) {
+static bool validate_panel_field_rules(const char *filepath, const char *field_name, const char *value_str, char *msg_out) {
     FILE *f = fopen(filepath, "r");
     if (!f) return false;
 
@@ -138,8 +138,10 @@ static bool validate_panel_field_rules(const char *filepath, const char *field_n
         if (in_proc) {
             char name[64] = {0};
             char type[32] = {0};
-            // Match VER (&NAME,TYPE)
-            if (sscanf(line, "  VER (&%63[^,],%31[^)])", name, type) == 2) {
+            char msg[16] = {0};
+            // Match VER (&NAME,TYPE,MSG=CODE) or VER (&NAME,TYPE)
+            if (sscanf(line, "  VER (&%63[^,],%31[^,],MSG=%15[^)])", name, type, msg) == 3 ||
+                sscanf(line, "  VER (&%63[^,],%31[^)])", name, type) == 2) {
                 if (strcmp(name, field_name) == 0) {
                     checked = true;
                     if (strcmp(type, "NUM") == 0) {
@@ -147,6 +149,9 @@ static bool validate_panel_field_rules(const char *filepath, const char *field_n
                         for (size_t i = 0; i < strlen(value_str); i++) {
                             if (value_str[i] < '0' || value_str[i] > '9') {
                                 passed = false;
+                                if (msg_out && msg[0]) {
+                                    snprintf(msg_out, 15, "%s", msg);
+                                }
                                 break;
                             }
                         }
@@ -223,15 +228,28 @@ int main(void) {
     // Test 4: Verify Panel Input Validation Rules (ISPPLIB)
     printf("[TEST] Testing panel input validation rules (VER checks)...\n");
     const char *panel_lib = "ispf_libraries/ispplib/submit_task.ispplib";
+    char err_msg[16] = {0};
     
     // Numeric checks on PANEL_REG, PANEL_VAL, and OP_TOKEN
-    assert(validate_panel_field_rules(panel_lib, "PANEL_REG", "123") == true);
-    assert(validate_panel_field_rules(panel_lib, "PANEL_REG", "abc") == false);
-    assert(validate_panel_field_rules(panel_lib, "PANEL_VAL", "9999") == true);
-    assert(validate_panel_field_rules(panel_lib, "PANEL_VAL", "12a34") == false);
-    assert(validate_panel_field_rules(panel_lib, "OP_TOKEN", "999") == true);
+    assert(validate_panel_field_rules(panel_lib, "PANEL_REG", "123", err_msg) == true);
     
-    printf("   ✓ Panel validation rule processor verified successfully.\n");
+    err_msg[0] = '\0';
+    assert(validate_panel_field_rules(panel_lib, "PANEL_REG", "abc", err_msg) == false);
+    assert(strcmp(err_msg, "TSSO001E") == 0);
+
+    assert(validate_panel_field_rules(panel_lib, "PANEL_VAL", "9999", err_msg) == true);
+    
+    err_msg[0] = '\0';
+    assert(validate_panel_field_rules(panel_lib, "PANEL_VAL", "12a34", err_msg) == false);
+    assert(strcmp(err_msg, "TSSO001E") == 0);
+
+    assert(validate_panel_field_rules(panel_lib, "OP_TOKEN", "999", err_msg) == true);
+    
+    err_msg[0] = '\0';
+    assert(validate_panel_field_rules(panel_lib, "OP_TOKEN", "99a", err_msg) == false);
+    assert(strcmp(err_msg, "TSSO002E") == 0);
+    
+    printf("   ✓ Panel validation rule processor and MSG mapping verified successfully.\n");
 
     printf("=============================================================\n");
     printf("ALL ISPF LIBRARIES TESTS COMPLETED SUCCESSFULLY\n");
