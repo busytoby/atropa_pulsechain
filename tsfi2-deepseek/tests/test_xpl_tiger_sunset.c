@@ -62,8 +62,8 @@ int main(void) {
     }
     printf("-------------------------------------------\n\n");
 
-    // Clean up compiled asset
-    remove(bin_path);
+    // Clean up compiled asset (disabled to preserve the self-contained output executable)
+    // remove(bin_path);
 
     printf("=============================================================\n");
     printf("XPL COMPILER TIGER SUNSET GRAPHICS COMPLETED SUCCESSFULLY\n");
