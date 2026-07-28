@@ -26,3 +26,14 @@ Today's work establishes the architectural integration of the **Auncient** 36-bi
 * **Mathematical Operation**: Performs recursive interval subdivision and MSB byte shifts:
   $$\text{If } (low \oplus high) < \text{0x01000000}, \text{ shift out top byte.}$$
 * **Visual / Geometric Shift**: Projected text blocks fade smoothly from amber to bright teal as the compression pipeline completes, reducing the screen footprint of the compiled data card.
+
+---
+
+## 3. UTF-6 Variable-Length Shift Architecture
+
+### UTF6_ESCAPE
+* **VM Register Context**: The shift-state register at address `0x4860` in the ZMM VM. It tracks the escape prefix state of incoming 6-bit symbols during lexical parsing of compiler token files.
+* **Mathematical Function**: Maps a variable sequence of 6-bit symbols to a single 32-bit Unicode codepoint based on the lead escape indicator:
+  $$\text{Length}(\text{lead}) = \begin{cases} 1 & \text{if } \text{lead} \le 60 \\ 4 & \text{if } \text{lead} = 61 \\ 5 & \text{if } \text{lead} = 62 \\ 7 & \text{if } \text{lead} = 63 \end{cases}$$
+* **Visual / Geometric Manifestation**: Dynamically shifts the rendering font weight and glyph geometry. Standard values ($\le 60$) produce thin monospaced stroke lines, while escaped supplemental symbols (e.g., emojis or specialized mathematical notation) trigger complex spline boundary envelopes and bright gold line glows.
+
