@@ -1056,6 +1056,9 @@ tests/benchmark_neurology: tests/benchmark_neurology.c $(CORE_OBJS) $(OBJ_DIR)/v
 tests/test_xplos_active_bus: tests/test_xplos_active_bus.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
+tests/test_ast_optimizer: tests/test_ast_optimizer.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
+
 benchmarks/profiler_suite/bench_xplos_bus: benchmarks/profiler_suite/bench_xplos_bus.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
