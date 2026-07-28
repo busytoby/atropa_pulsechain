@@ -1114,6 +1114,9 @@ tests/test_xpl_sesslog: tests/test_xpl_sesslog.c
 tests/test_xpl_tbdispl: tests/test_xpl_tbdispl.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
+tests/test_xpl_clist: tests/test_xpl_clist.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
+
 benchmarks/profiler_suite/bench_xplos_bus: benchmarks/profiler_suite/bench_xplos_bus.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
