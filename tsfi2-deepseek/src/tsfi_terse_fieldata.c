@@ -13,7 +13,29 @@ void fieldata_model_init(FIELDATAProbabilityModel *model) {
     }
 }
 
-// Helper to write bits or bytes during arithmetic range coding
+void fieldata_model_update(FIELDATAProbabilityModel *model, uint8_t sym) {
+    if (!model) return;
+
+    // Increment frequencies of all values after sym to shift cumulative bands
+    for (int s = sym + 1; s <= FIELDATA_SYMBOLS; s++) {
+        model->low_cum[s]++;
+    }
+    model->total_freq++;
+
+    // Halve frequencies if total accumulates past limit to prevent overflow & maintain adaptivity
+    if (model->total_freq >= 16384) {
+        uint32_t current_cum = 0;
+        for (int s = 0; s < FIELDATA_SYMBOLS; s++) {
+            uint32_t freq = model->low_cum[s + 1] - model->low_cum[s];
+            freq = (freq >> 1) | 1; // Halve, preserving minimum frequency of 1
+            model->low_cum[s] = current_cum;
+            current_cum += freq;
+        }
+        model->low_cum[FIELDATA_SYMBOLS] = current_cum;
+        model->total_freq = current_cum;
+    }
+}
+
 int fieldata_terse_compress(
     const uint8_t *input_symbols,
     size_t input_len,
@@ -35,6 +57,9 @@ int fieldata_terse_compress(
         uint64_t range = (uint64_t)high - low + 1;
         high = low + (uint32_t)((range * model.low_cum[sym + 1]) / model.total_freq) - 1;
         low = low + (uint32_t)((range * model.low_cum[sym]) / model.total_freq);
+
+        // Update probability model dynamically
+        fieldata_model_update(&model, sym);
 
         // Shift out matching MSBs
         while ((low ^ high) < 0x01000000) {
@@ -100,6 +125,9 @@ int fieldata_terse_decompress(
 
         high = low + (uint32_t)((range * model.low_cum[sym + 1]) / model.total_freq) - 1;
         low = low + (uint32_t)((range * model.low_cum[sym]) / model.total_freq);
+
+        // Update probability model dynamically in lockstep with compressor
+        fieldata_model_update(&model, sym);
 
         while ((low ^ high) < 0x01000000) {
             low <<= 8;

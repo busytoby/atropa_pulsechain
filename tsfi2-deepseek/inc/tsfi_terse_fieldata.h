@@ -15,6 +15,9 @@ typedef struct {
 // Initialize model with flat or predefined frequencies
 void fieldata_model_init(FIELDATAProbabilityModel *model);
 
+// Update model counts adaptively for dynamic arithmetic coding
+void fieldata_model_update(FIELDATAProbabilityModel *model, uint8_t sym);
+
 // Encode a stream of 6-bit FIELDATA symbols using arithmetic range coding
 int fieldata_terse_compress(
     const uint8_t *input_symbols,
