@@ -230,3 +230,51 @@ uint32_t fieldata_utf6_decode(const uint8_t *symbols, size_t *in_len) {
     }
     return 0;
 }
+
+int tsfi_compiler_load_tables_from_rdbms(const char *db_path, uint8_t *out_parse_table, size_t *out_len) {
+    if (!db_path || !out_parse_table || !out_len) return -1;
+
+    FILE *f = fopen(db_path, "rb");
+    if (!f) return -2;
+
+    // Skip the 240-byte IBM Standard Tape Label Headers (VOL1, HDR1, HDR2)
+    if (fseek(f, 240, SEEK_SET) != 0) {
+        fclose(f);
+        return -3;
+    }
+
+    size_t decompressed_idx = 0;
+    uint8_t meta[2];
+    uint8_t comp_buf[4096];
+
+    while (fread(meta, 1, 2, f) == 2) {
+        uint16_t comp_len = ((uint16_t)meta[0] << 8) | meta[1];
+        if (comp_len > sizeof(comp_buf)) {
+            fclose(f);
+            return -4;
+        }
+
+        if (fread(comp_buf, 1, comp_len, f) != comp_len) {
+            fclose(f);
+            return -5;
+        }
+
+        // Decompress blocks of 1024 symbols at a time (corresponding to our BLOCK_SIZE write block)
+        size_t block_decomp_len = 1024;
+        int res = fieldata_terse_decompress(
+            comp_buf,
+            comp_len,
+            out_parse_table + decompressed_idx,
+            block_decomp_len
+        );
+        if (res != 0) {
+            fclose(f);
+            return -6;
+        }
+        decompressed_idx += block_decomp_len;
+    }
+
+    *out_len = decompressed_idx;
+    fclose(f);
+    return 0;
+}

@@ -63,6 +63,50 @@ int main() {
     }
     printf("[PASS] UTF-6 Variable-Length Unicode Encoder/Decoder validates up to 32-bit codepoints\n");
 
+    // Dynamic RDBMS Parser Table loading verification
+    uint8_t mock_parser_table[1024];
+    for (int i = 0; i < 1024; i++) {
+        mock_parser_table[i] = (uint8_t)(i % 64); // Populate with repeating 6-bit symbols
+    }
+
+    // Write a mock database slice with labels
+    FILE *f_mock = fopen("mock_rdbms_table.dat.bin", "wb");
+    assert(f_mock != NULL);
+
+    // Write standard labels (240 bytes placeholder)
+    uint8_t dummy_labels[240];
+    memset(dummy_labels, 'A', 240);
+    fwrite(dummy_labels, 1, 240, f_mock);
+
+    // Compress table using TERSE
+    uint8_t comp_buf[2048];
+    size_t comp_len = 0;
+    int comp_res = fieldata_terse_compress(mock_parser_table, 1024, comp_buf, &comp_len);
+    assert(comp_res == 0);
+
+    // Write metadata and compressed block
+    uint8_t meta[2];
+    meta[0] = (uint8_t)(comp_len >> 8);
+    meta[1] = (uint8_t)(comp_len & 0xFF);
+    fwrite(meta, 1, 2, f_mock);
+    fwrite(comp_buf, 1, comp_len, f_mock);
+    fclose(f_mock);
+
+    // Rehydrate parser table using dynamic loader
+    uint8_t loaded_table[1024];
+    size_t loaded_len = 0;
+    int load_res = tsfi_compiler_load_tables_from_rdbms("mock_rdbms_table.dat.bin", loaded_table, &loaded_len);
+    assert(load_res == 0);
+    assert(loaded_len == 1024);
+
+    for (int i = 0; i < 1024; i++) {
+        assert(loaded_table[i] == mock_parser_table[i]);
+    }
+    printf("[PASS] Dynamic RDBMS Parser Table rehydration verified successfully\n");
+
+    // Cleanup mock database file
+    remove("mock_rdbms_table.dat.bin");
+
     printf("=== ALL FIELDATA ARITHMETIC CODING TESTS PASSED ===\n");
     return 0;
 }

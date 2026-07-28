@@ -45,4 +45,7 @@ void fieldata_utf6_encode(uint32_t codepoint, uint8_t *out_symbols, size_t *out_
 // Decode 6-bit FIELDATA symbols back into a 32-bit Unicode codepoint
 uint32_t fieldata_utf6_decode(const uint8_t *symbols, size_t *in_len);
 
+// Load and decompress compiler parser tables dynamically from RDBMS .dat.bin files
+int tsfi_compiler_load_tables_from_rdbms(const char *db_path, uint8_t *out_parse_table, size_t *out_len);
+
 #endif // TSFI_TERSE_FIELDATA_H
