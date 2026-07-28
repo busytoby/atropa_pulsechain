@@ -7,7 +7,7 @@
 #include <assert.h>
 
 #define MAX_ALUS 4
-#define BENCH_ITERATIONS 10000000 // 10 Million messages to get solid profile figures
+#define PHASE_ITERATIONS 3000000 // 3 Million iterations per phase to measure paths cleanly
 
 // Simulated ALU state mapping
 typedef struct {
@@ -26,6 +26,19 @@ typedef struct {
     uint32_t active_transactions;
 } XCOMActiveBus;
 
+// EVM selector mapping for ABI tests
+typedef struct {
+    uint32_t selector;
+    char signature[32];
+} EVMSelectorMap;
+
+const EVMSelectorMap EVM_SELECTORS[] = {
+    {0x70a08231, "balanceOf(address)"},
+    {0xa9059cbb, "transfer(address,uint256)"},
+    {0x095ea7b3, "approve(address,uint256)"},
+    {0xdd62ed3e, "allowance(address,address)"}
+};
+
 static inline void xplos_bus_init(XCOMActiveBus *bus) {
     memset(bus, 0, sizeof(XCOMActiveBus));
 }
@@ -42,69 +55,90 @@ static inline int xplos_bus_register_alu(XCOMActiveBus *bus, uint32_t alu_id) {
     return 0;
 }
 
-// Inlined message routing for maximum throughput testing
-static inline int xplos_xcom_route_active_message(XCOMActiveBus *bus, uint32_t src_alu_idx, uint32_t dst_alu_idx, uint16_t target_reg, uint64_t payload) {
-    SimulatedALU *dst = &bus->alus[dst_alu_idx];
-    bus->active_transactions++;
+// 1. Direct ALU to ALU pathway
+static inline void path_alu_to_alu(SimulatedALU *src, SimulatedALU *dst, uint32_t val) {
+    dst->registers[val % 4] = src->registers[0] + val;
+}
 
-    // Routing branches
-    if (target_reg == 0x4800) {
-        dst->fieldata_model = payload;
-    } else if (target_reg == 0x4080) {
-        dst->defcon_latch = payload;
-    } else if (target_reg == 0x4840) {
-        dst->range_value = payload;
-    } else {
-        dst->registers[src_alu_idx % 4] = payload;
+// 2. ALU to ABI reflection pathway
+static inline const char* path_alu_to_abi(uint32_t selector) {
+    // Simulates looking up function metadata via selector
+    for (int i = 0; i < 4; i++) {
+        if (EVM_SELECTORS[i].selector == selector) {
+            return EVM_SELECTORS[i].signature;
+        }
     }
-    return 0;
+    return NULL;
+}
+
+// 3. ALU to WMQ register pathway
+static inline void path_alu_to_wmq(SimulatedALU *dst, uint16_t reg, uint64_t val) {
+    if (reg == 0x4800) {
+        dst->fieldata_model = val;
+    } else if (reg == 0x4080) {
+        dst->defcon_latch = val;
+    } else if (reg == 0x4840) {
+        dst->range_value = val;
+    }
 }
 
 int main(void) {
     printf("=============================================================\n");
-    printf("xplos XCOM ACTIVE VM BUS PERFORMANCE PROFILE BENCHMARK\n");
+    printf("xplos XCOM ACTIVE VM BUS MULTI-PATHWAY PERFORMANCE BENCHMARK\n");
     printf("=============================================================\n");
 
     XCOMActiveBus bus;
     xplos_bus_init(&bus);
 
-    // Register 4 ALUs to simulate a quad-core active bus configuration
     for (uint32_t i = 0; i < 4; i++) {
         xplos_bus_register_alu(&bus, 100 + i);
     }
 
-    printf("[BENCH] Starting execution loop: %d messages...\n", BENCH_ITERATIONS);
+    struct timespec start, end;
+    double elapsed;
 
-    struct timespec start_time, end_time;
-    clock_gettime(CLOCK_MONOTONIC, &start_time);
-
-    // Main benchmark execution loop: routing packets round-robin among the 4 cores
-    for (uint32_t i = 0; i < BENCH_ITERATIONS; i++) {
-        uint32_t src = i % 4;
-        uint32_t dst = (i + 1) % 4;
-        // Alternate between different VM registers to exercise the decoder logic
-        uint16_t reg = (i % 3 == 0) ? 0x4800 : ((i % 3 == 1) ? 0x4080 : 0x4840);
-        
-        xplos_xcom_route_active_message(&bus, src, dst, reg, i);
+    // --- PHASE 1: ALU to ALU Direct Routing ---
+    printf("[BENCH] Phase 1: ALU-to-ALU Direct Transfer (%d messages)...\n", PHASE_ITERATIONS);
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    for (uint32_t i = 0; i < PHASE_ITERATIONS; i++) {
+        uint32_t src_idx = i % 4;
+        uint32_t dst_idx = (i + 1) % 4;
+        path_alu_to_alu(&bus.alus[src_idx], &bus.alus[dst_idx], i);
     }
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    elapsed = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+    printf("  -> ALU-to-ALU Throughput: %.2f MTPS | Latency: %.2f ns\n\n", 
+           (PHASE_ITERATIONS / elapsed) / 1e6, (elapsed / PHASE_ITERATIONS) * 1e9);
 
-    clock_gettime(CLOCK_MONOTONIC, &end_time);
+    // --- PHASE 2: ALU to ABI Reflection ---
+    printf("[BENCH] Phase 2: ALU-to-ABI Reflection Lookup (%d queries)...\n", PHASE_ITERATIONS);
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    volatile const char *sig_sink = NULL;
+    for (uint32_t i = 0; i < PHASE_ITERATIONS; i++) {
+        uint32_t sel = (i % 4 == 0) ? 0x70a08231 : ((i % 4 == 1) ? 0xa9059cbb : ((i % 4 == 2) ? 0x095ea7b3 : 0xdd62ed3e));
+        sig_sink = path_alu_to_abi(sel);
+    }
+    (void)sig_sink; // Prevent compiler from optimizing away the loop
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    elapsed = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+    printf("  -> ALU-to-ABI Throughput: %.2f MTPS | Latency: %.2f ns\n\n", 
+           (PHASE_ITERATIONS / elapsed) / 1e6, (elapsed / PHASE_ITERATIONS) * 1e9);
 
-    double elapsed_sec = (end_time.tv_sec - start_time.tv_sec) + 
-                         (end_time.tv_nsec - start_time.tv_nsec) / 1e9;
+    // --- PHASE 3: ALU to WMQ Register Overrides ---
+    printf("[BENCH] Phase 3: ALU-to-WMQ Register Writes (%d overrides)...\n", PHASE_ITERATIONS);
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    for (uint32_t i = 0; i < PHASE_ITERATIONS; i++) {
+        uint32_t dst_idx = i % 4;
+        uint16_t reg = (i % 3 == 0) ? 0x4800 : ((i % 3 == 1) ? 0x4080 : 0x4840);
+        path_alu_to_wmq(&bus.alus[dst_idx], reg, i);
+    }
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    elapsed = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+    printf("  -> ALU-to-WMQ Throughput: %.2f MTPS | Latency: %.2f ns\n\n", 
+           (PHASE_ITERATIONS / elapsed) / 1e6, (elapsed / PHASE_ITERATIONS) * 1e9);
 
-    double mtps = (BENCH_ITERATIONS / elapsed_sec) / 1e6; // Million Transactions Per Second
-    double latency_ns = (elapsed_sec / BENCH_ITERATIONS) * 1e9; // Nanoseconds per message
-
-    printf("\n--- PROFILE RESULTS ---\n");
-    printf("  Elapsed Time   : %.4f seconds\n", elapsed_sec);
-    printf("  Throughput     : %.2f Million Messages/sec (MTPS)\n", mtps);
-    printf("  Average Latency: %.2f nanoseconds per transmission\n", latency_ns);
-    printf("-------------------------\n");
-
-    // Assert that the state was updated to verify loop wasn't optimized away
-    assert(bus.active_transactions == BENCH_ITERATIONS);
-    printf("   ✓ State verification passed successfully.\n");
+    printf("=============================================================\n");
+    printf("xplos MULTI-PATHWAY PROFILE COMPLETE\n");
     printf("=============================================================\n");
 
     return 0;
