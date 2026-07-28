@@ -1081,6 +1081,9 @@ tests/test_xplos_dynamic_coax: tests/test_xplos_dynamic_coax.c
 tests/test_tape_spanning: tests/test_tape_spanning.c $(OBJ_DIR)/tsfi_parc_tape_label_yul.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
+tests/test_xpl_naur_parser: tests/test_xpl_naur_parser.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
+
 benchmarks/profiler_suite/bench_xplos_bus: benchmarks/profiler_suite/bench_xplos_bus.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
