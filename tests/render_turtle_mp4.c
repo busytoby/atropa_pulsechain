@@ -223,54 +223,103 @@ static void draw_sphere_turtle(Point3D center, double radius, double cam_x, doub
     }
 }
 
-// Multi-threaded Super 8 camera post-processing worker with Kodak film sepia tinting
+#include <immintrin.h>
+
+// Multi-threaded Super 8 camera post-processing worker with Kodak film sepia tinting (AVX2 optimized)
 static void *super8_thread_worker(void *arg) {
     ThreadArgs *t_args = (ThreadArgs *)arg;
     int chunk = HEIGHT / NUM_THREADS;
     int start_y = t_args->thread_id * chunk;
     int end_y = (t_args->thread_id == NUM_THREADS - 1) ? HEIGHT : start_y + chunk;
-    double flicker = t_args->flicker;
+    float flicker_f = (float)t_args->flicker;
+
+    __m256 v_flicker = _mm256_set1_ps(flicker_f);
+    __m256 v_r_sepia = _mm256_set1_ps(1.18f);
+    __m256 v_g_sepia = _mm256_set1_ps(0.98f);
+    __m256 v_b_sepia = _mm256_set1_ps(0.74f);
+    __m256 v_zero = _mm256_setzero_ps();
+    __m256 v_255 = _mm256_set1_ps(255.0f);
+    __m256 v_half = _mm256_set1_ps(0.5f);
 
     for (int y = start_y; y < end_y; y++) {
-        for (int x = 0; x < WIDTH; x++) {
-            int out_idx = (y * WIDTH + x) * 3;
+        // Process pixels in steps of 8
+        for (int x = 0; x < WIDTH; x += 8) {
+            float vignette_arr[8];
+            float grain_arr[8];
+            int r_idx_arr[8];
+            int b_idx_arr[8];
 
-            // Vignette shading
-            double dx_v = (x - WIDTH * 0.5) / (WIDTH * 0.5);
-            double dy_v = (y - HEIGHT * 0.5) / (HEIGHT * 0.5);
-            double vignette = fmax(0.0, 1.0 - (dx_v*dx_v + dy_v*dy_v) * 0.58);
+            for (int i = 0; i < 8; i++) {
+                int px = x + i;
+                double dx_v = (px - WIDTH * 0.5) / (WIDTH * 0.5);
+                double dy_v = (y - HEIGHT * 0.5) / (HEIGHT * 0.5);
+                double vignette = fmax(0.0, 1.0 - (dx_v*dx_v + dy_v*dy_v) * 0.58);
+                vignette_arr[i] = (float)vignette;
 
-            // Chromatic aberration color fringe shift
-            int shift = (int)((dx_v*dx_v + dy_v*dy_v) * 4.5);
-            int r_x = x - shift; if (r_x < 0) r_x = 0;
-            int b_x = x + shift; if (b_x >= WIDTH) b_x = WIDTH - 1;
+                // Coarse grain structure
+                double grain = 1.0 + ((double)rand() / RAND_MAX - 0.5) * 0.12;
+                grain_arr[i] = (float)grain;
 
-            int r_idx = (y * WIDTH + r_x) * 3;
-            int b_idx = (y * WIDTH + b_x) * 3;
+                // Chromatic aberration color fringe shift
+                int shift = (int)((dx_v*dx_v + dy_v*dy_v) * 4.5);
+                int r_x = px - shift; if (r_x < 0) r_x = 0;
+                int b_x = px + shift; if (b_x >= WIDTH) b_x = WIDTH - 1;
 
-            uint8_t r_val = raw_fb[r_idx];
-            uint8_t g_val = raw_fb[out_idx + 1];
-            uint8_t b_val = raw_fb[b_idx + 2];
+                r_idx_arr[i] = (y * WIDTH + r_x) * 3;
+                b_idx_arr[i] = (y * WIDTH + b_x) * 3;
+            }
 
-            // Coarse grain structure
-            double grain = 1.0 + ((double)rand() / RAND_MAX - 0.5) * 0.12;
+            __m256 v_vignette = _mm256_loadu_ps(vignette_arr);
+            __m256 v_grain = _mm256_loadu_ps(grain_arr);
 
-            int r_fin = (int)(r_val * flicker * vignette * grain);
-            int g_fin = (int)(g_val * flicker * vignette * grain);
-            int b_fin = (int)(b_val * flicker * vignette * grain);
+            // Compute total multiplier: flicker * vignette * grain
+            __m256 v_mul = _mm256_mul_ps(v_flicker, _mm256_mul_ps(v_vignette, v_grain));
 
-            // Apply Sepia Warm Film Tinting (boosting Red/Green, lowering Blue)
-            r_fin = (int)(r_fin * 1.18);
-            g_fin = (int)(g_fin * 0.98);
-            b_fin = (int)(b_fin * 0.74);
+            // Load color values for 8 pixels
+            float r_vals[8], g_vals[8], b_vals[8];
+            for (int i = 0; i < 8; i++) {
+                int px = x + i;
+                int out_idx = (y * WIDTH + px) * 3;
+                r_vals[i] = (float)raw_fb[r_idx_arr[i]];
+                g_vals[i] = (float)raw_fb[out_idx + 1];
+                b_vals[i] = (float)raw_fb[b_idx_arr[i] + 2];
+            }
 
-            if (r_fin > 255) r_fin = 255;
-            if (g_fin > 255) g_fin = 255;
-            if (b_fin > 255) b_fin = 255;
+            __m256 vr = _mm256_loadu_ps(r_vals);
+            __m256 vg = _mm256_loadu_ps(g_vals);
+            __m256 vb = _mm256_loadu_ps(b_vals);
 
-            final_fb[out_idx] = (uint8_t)r_fin;
-            final_fb[out_idx + 1] = (uint8_t)g_fin;
-            final_fb[out_idx + 2] = (uint8_t)b_fin;
+            // Multiply by flicker/vignette/grain
+            vr = _mm256_mul_ps(vr, v_mul);
+            vg = _mm256_mul_ps(vg, v_mul);
+            vb = _mm256_mul_ps(vb, v_mul);
+
+            // Apply Sepia Warm Film Tinting
+            vr = _mm256_mul_ps(vr, v_r_sepia);
+            vg = _mm256_mul_ps(vg, v_g_sepia);
+            vb = _mm256_mul_ps(vb, v_b_sepia);
+
+            // Clamp and convert to integers with rounding (add 0.5 and truncate)
+            vr = _mm256_min_ps(_mm256_max_ps(_mm256_add_ps(vr, v_half), v_zero), v_255);
+            vg = _mm256_min_ps(_mm256_max_ps(_mm256_add_ps(vg, v_half), v_zero), v_255);
+            vb = _mm256_min_ps(_mm256_max_ps(_mm256_add_ps(vb, v_half), v_zero), v_255);
+
+            __m256i vr_int = _mm256_cvttps_epi32(vr);
+            __m256i vg_int = _mm256_cvttps_epi32(vg);
+            __m256i vb_int = _mm256_cvttps_epi32(vb);
+
+            int r_fin[8], g_fin[8], b_fin[8];
+            _mm256_storeu_si256((__m256i*)r_fin, vr_int);
+            _mm256_storeu_si256((__m256i*)g_fin, vg_int);
+            _mm256_storeu_si256((__m256i*)b_fin, vb_int);
+
+            for (int i = 0; i < 8; i++) {
+                int px = x + i;
+                int out_idx = (y * WIDTH + px) * 3;
+                final_fb[out_idx] = (uint8_t)r_fin[i];
+                final_fb[out_idx + 1] = (uint8_t)g_fin[i];
+                final_fb[out_idx + 2] = (uint8_t)b_fin[i];
+            }
         }
     }
     return NULL;
@@ -494,10 +543,15 @@ int main(void) {
         }
 
         // 2. Draw NIH 3D Public Domain DNA Double Helix Model (Red Ginseng Root - Left)
-        double dna_radius = 16.0;
+        double takeoff_duration = 5.0; // Sprout/growth period
+        double takeoff_factor = time_val / takeoff_duration;
+        if (takeoff_factor > 1.0) takeoff_factor = 1.0;
+        if (takeoff_factor < 0.0) takeoff_factor = 0.0;
+
+        double dna_radius = 16.0 * takeoff_factor;
         int dna_steps = 45;
-        double dna_y_start = -50.0;
-        double dna_y_end = 80.0;
+        double dna_y_start = -50.0 * takeoff_factor;
+        double dna_y_end = 80.0 * takeoff_factor;
         double dna_y_step = (dna_y_end - dna_y_start) / dna_steps;
         double dna_rot_speed = 0.25;
 
@@ -563,10 +617,6 @@ int main(void) {
         }
 
         // 3. Draw Red Moth (Delicate small moth model - NO phage/root elements)
-        double takeoff_duration = 5.0; // Take off over 5 seconds
-        double takeoff_factor = time_val / takeoff_duration;
-        if (takeoff_factor > 1.0) takeoff_factor = 1.0;
-
         // Resting coordinates on the Purple Root (middle Y)
         double ph_x_rest = 45.0 + dna_radius * cos(0.0);
         double ph_y_rest = 0.0;
@@ -597,11 +647,11 @@ int main(void) {
         Point3D ph_head_target;
 
         if (v_len > 0.001) {
-            ph_head_target.x = ph_x + (vx / v_len) * 6.0;
-            ph_head_target.y = ph_y + 15.0 + (vy / v_len) * 2.0;
-            ph_head_target.z = ph_z + (vz / v_len) * 6.0;
+            ph_head_target.x = ph_x + (vx / v_len) * (6.0 * takeoff_factor);
+            ph_head_target.y = ph_y + (15.0 * takeoff_factor) + (vy / v_len) * (2.0 * takeoff_factor);
+            ph_head_target.z = ph_z + (vz / v_len) * (6.0 * takeoff_factor);
         } else {
-            ph_head_target = (Point3D){ ph_x, ph_y + 15.0, ph_z };
+            ph_head_target = (Point3D){ ph_x, ph_y + (15.0 * takeoff_factor), ph_z };
         }
 
         // Set targets and anchor state for Moth Verlet Nodes
@@ -622,14 +672,14 @@ int main(void) {
 
         // Resolve distance constraints for Moth skeleton limbs
         for (int iteration = 0; iteration < 4; iteration++) {
-            satisfy_distance(&moth_nodes[0], &moth_nodes[1], 15.0);
+            satisfy_distance(&moth_nodes[0], &moth_nodes[1], 15.0 * takeoff_factor);
         }
 
         // Draw small red head on Verlet head node (Guarded)
         bool m_head_ok = false;
         int m_hx = 0, m_hy = 0;
         if (project_point(moth_nodes[1].pos, cam_x, cam_y, cam_z, time_val, &m_hx, &m_hy)) {
-            draw_sphere_turtle(moth_nodes[1].pos, 5.0, cam_x, cam_y, cam_z, time_val, 255, 40, 40); // Red Capsid
+            draw_sphere_turtle(moth_nodes[1].pos, 5.0 * takeoff_factor, cam_x, cam_y, cam_z, time_val, 255, 40, 40); // Red Capsid
             m_head_ok = true;
         }
 
@@ -642,7 +692,7 @@ int main(void) {
 
         // Draw small flapping wings (ensuring it is visually identified as a small moth)
         if (m_root_ok) {
-            double wing_span = 14.0;
+            double wing_span = 14.0 * takeoff_factor;
             double flap_y = sin(time_val * 24.0) * 8.0; // Flapping frequency
             Point3D wing_l_tip = { moth_nodes[0].pos.x - wing_span, moth_nodes[0].pos.y + flap_y, moth_nodes[0].pos.z - 3.0 };
             Point3D wing_r_tip = { moth_nodes[0].pos.x + wing_span, moth_nodes[0].pos.y + flap_y, moth_nodes[0].pos.z - 3.0 };
