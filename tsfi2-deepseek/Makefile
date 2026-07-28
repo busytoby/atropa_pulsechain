@@ -1081,6 +1081,9 @@ tests/test_xplos_dynamic_coax: tests/test_xplos_dynamic_coax.c
 benchmarks/profiler_suite/bench_xplos_bus: benchmarks/profiler_suite/bench_xplos_bus.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
+benchmarks/profiler_suite/bench_rau_access: benchmarks/profiler_suite/bench_rau_access.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
+
 virtual_tape_suite: tools/tsfi_copymods_terse tools/tsfi_tapemap_terse tools/tsfi_pdsload_terse tools/tsfi_offload_terse tools/tsfi_cbtupd_terse tools/tsfi_docfile_terse tools/tsfi_blkdisk_terse tools/tsfi_clist_help tools/tsfi_abi_monitor
 
 tools/tsfi_copymods_terse: tools/tsfi_copymods_terse.c src/tsfi_terse_fieldata.c
