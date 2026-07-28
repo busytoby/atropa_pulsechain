@@ -1062,6 +1062,12 @@ tests/test_ast_optimizer: tests/test_ast_optimizer.c
 tests/test_rau_coprocessor: tests/test_rau_coprocessor.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
+tests/test_rau_mcp_mount: tests/test_rau_mcp_mount.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
+
+tests/test_rau_thunk: tests/test_rau_thunk.c thunks/tsfi_rau_thunk.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
+
 benchmarks/profiler_suite/bench_xplos_bus: benchmarks/profiler_suite/bench_xplos_bus.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
