@@ -715,7 +715,12 @@ object "cpu6502" {
                 
                 let oldUser := mload(0x1F0)
                 mstore(0x1F0, player)
-                let val := sload(getUserSlot(addr))
+                let val := 0
+                if and(iszero(lt(addr, 0x80)), lt(addr, 0x86)) {
+                    val := mload(add(0x4000, mul(sub(addr, 0x7f), 32)))
+                } else {
+                    val := sload(getUserSlot(addr))
+                }
                 mstore(0x1F0, oldUser)
                 
                 mstore(0x00, val)
@@ -730,21 +735,24 @@ object "cpu6502" {
                 let addr := calldataload(4)
                 let val := calldataload(36)
                 
-                sstore(getUserSlot(addr), val)
+                if and(iszero(lt(addr, 0x80)), lt(addr, 0x86)) {
+                    mstore(add(0x4000, mul(sub(addr, 0x7f), 32)), val)
+                } else {
+                    sstore(getUserSlot(addr), val)
+                }
                 
-                // Enforce Rule 12 Child-Langmuir Ban
-                let a := sload(getUserSlot(0x80))
-                let x := sload(getUserSlot(0x81))
+                // Enforce Rule 12 Child-Langmuir Ban (reading from coaxial slots)
+                let a := mload(add(0x4000, 32))   // 0x80 -> V1 (offset 32)
+                let x := mload(add(0x4000, 64))   // 0x81 -> V2 (offset 64)
                 let ban_a := sload(getUserSlot(54880)) // 54800 + 0x80
-                let ban_x := sload(getUserSlot(54960)) // 54800 + 0x81 (folklore maps 0x81)
+                let ban_x := sload(getUserSlot(54960)) // 54800 + 0x81
                 
-                // Fallback to static rule if dynamic rules are not configured
                 if iszero(ban_a) { ban_a := 0x32 }
                 if iszero(ban_x) { ban_x := 0x99 }
 
                 if and(eq(and(a, 0xFF), ban_a), eq(and(x, 0xFF), ban_x)) {
                     sstore(getUserSlot(0x9001), a)
-                    sstore(getUserSlot(0x80), 0)
+                    mstore(add(0x4000, 32), 0)    // Clear V1 (A)
                 }
 
                 if eq(addr, 55024) {
@@ -935,7 +943,11 @@ object "cpu6502" {
                     val := div(ticks, 7474048)
                 }
                 default {
-                    val := sload(getUserSlot(addr))
+                    if and(iszero(lt(addr, 0x80)), lt(addr, 0x86)) {
+                        val := mload(add(0x4000, mul(sub(addr, 0x7f), 32)))
+                    } else {
+                        val := sload(getUserSlot(addr))
+                    }
                 }
                 mstore(0x00, val)
                 return(0x00, 32)
