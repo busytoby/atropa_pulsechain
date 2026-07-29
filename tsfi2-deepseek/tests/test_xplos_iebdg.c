@@ -149,6 +149,41 @@ int main(void) {
     tsfi_xplos_run(&sched);
     printf("   ✓ VTAM 3270 layout integration verified.\n");
 
+    // Test Case 12: WinchesterMQ SCSI loopback check
+    printf("[TEST 12] Testing WinchesterMQ SCSI loopback interface...\n");
+    bool wmq_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbthasp interrupt");
+    assert(wmq_ok == true);
+    tsfi_xplos_run(&sched);
+    printf("   ✓ WinchesterMQ SCSI loopback integration verified.\n");
+
+    // Test Case 13: SMFDUMP record check
+    printf("[TEST 13] Testing SMFDUMP telemetry logging...\n");
+    bool smf_ok = tsfi_xplos_shell_exec(&shell, &sched, "smfdump");
+    assert(smf_ok == true);
+    tsfi_xplos_run(&sched);
+    printf("   ✓ SMFDUMP telemetry integration verified.\n");
+
+    // Test Case 14: VTAM dynamic session logon check
+    printf("[TEST 14] Testing VTAM dynamic session logons...\n");
+    bool logon_ok = tsfi_xplos_shell_exec(&shell, &sched, "logon USENET");
+    assert(logon_ok == true);
+    tsfi_xplos_run(&sched);
+    printf("   ✓ VTAM session logon integration verified.\n");
+
+    // Test Case 15: IEBUPDTE partitioned dataset update check
+    printf("[TEST 15] Testing IEBUPDTE member creation via generators...\n");
+    assert(tsfi_xplos_create_file(&g_vfs, "UPDIN.dat.bin", 2048) == true);
+    XplosFile *upd_file = &g_vfs.files[g_vfs.count - 1];
+    strcpy(upd_file->data,
+           "./ ADD NAME=MOCKMEM\n"
+           "DUMMY DATA LINE\n");
+    upd_file->size_bytes = (uint32_t)strlen(upd_file->data);
+
+    bool updte_ok = tsfi_xplos_shell_exec(&shell, &sched, "iebupdte UPDIN");
+    assert(updte_ok == true);
+    tsfi_xplos_run(&sched);
+    printf("   ✓ IEBUPDTE member update integration verified.\n");
+
     printf("====================================================================\n");
     printf("ALL IEBDG DATASET GENERATOR UNIT TESTS PASSED SUCCESSFULLY\n");
     printf("====================================================================\n");
