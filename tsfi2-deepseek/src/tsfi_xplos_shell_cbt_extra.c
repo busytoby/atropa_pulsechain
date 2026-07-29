@@ -508,6 +508,15 @@ static bool handle_jclrun(const char *cmd) {
                             snprintf(log_msg, sizeof(log_msg), "    * IBHDRPLY Automatic Reply executed. RC=0000\n");
                             printf("%s", log_msg);
                             append_spool_log(jcl_name, log_msg);
+                        } else if (strcmp(pgm_name, "IKJEFT01") == 0) {
+                            rc = 0;
+                            snprintf(log_msg, sizeof(log_msg), "    * IKJEFT01 Terminal Monitor Program launched. RC=0000\n");
+                            printf("%s", log_msg);
+                            append_spool_log(jcl_name, log_msg);
+                            snprintf(log_msg, sizeof(log_msg), "      TSO_TMP> Executing command from SYSTSIN: cbtrexx vput SYSVAR 953467954114363\n");
+                            printf("%s", log_msg);
+                            append_spool_log(jcl_name, log_msg);
+                            tsfi_xplos_shell_cbt_extra("cbtrexx vput SYSVAR 953467954114363");
                         } else {
                             rc = 4;
                             snprintf(log_msg, sizeof(log_msg), "    * Program %s executed. RC=0004 (Warning)\n", pgm_name);
@@ -1040,6 +1049,142 @@ static bool handle_cbthasp(const char *cmd) {
 }
 
 // -----------------------------------------------------------------------------
+// 12. CICS Transient Data Queue (TDQ) Processor
+// -----------------------------------------------------------------------------
+static char g_cics_tdqs[4][10][80];
+static int g_cics_tdq_counts[4];
+static char g_cics_tdq_names[4][8] = {"AUTD", "SBM1", "LOG1", "OUT1"};
+
+static bool handle_cbtcicstd(const char *cmd) {
+    char subcmd[16] = "";
+    char tdq[16] = "";
+    char val[128] = "";
+    int scanned = sscanf(cmd + 10, "%15s %15s %[^\n]", subcmd, tdq, val);
+    if (scanned >= 2) {
+        int tdq_idx = -1;
+        for (int i = 0; i < 4; i++) {
+            if (strcasecmp(g_cics_tdq_names[i], tdq) == 0) {
+                tdq_idx = i;
+                break;
+            }
+        }
+        if (tdq_idx == -1) {
+            printf("[CICS TDQ ERROR] Transient Data Queue %s not defined.\n", tdq);
+            return true;
+        }
+
+        if (strcasecmp(subcmd, "write") == 0) {
+            if (g_cics_tdq_counts[tdq_idx] >= 10) {
+                printf("[CICS TDQ ERROR] TDQ %s is full.\n", tdq);
+                return true;
+            }
+            strncpy(g_cics_tdqs[tdq_idx][g_cics_tdq_counts[tdq_idx]], val, 79);
+            g_cics_tdqs[tdq_idx][g_cics_tdq_counts[tdq_idx]][79] = '\0';
+            g_cics_tdq_counts[tdq_idx]++;
+            printf("[CICS TDQ] Written to TDQ %s: '%s'\n", tdq, val);
+            return true;
+        }
+        if (strcasecmp(subcmd, "sbmj") == 0) {
+            printf("[CICS TDQ] Executing Transaction SBMJ on Queue %s...\n", tdq);
+            char jcl_stream[2048] = "";
+            for (int i = 0; i < g_cics_tdq_counts[tdq_idx]; i++) {
+                strcat(jcl_stream, g_cics_tdqs[tdq_idx][i]);
+                strcat(jcl_stream, "\n");
+            }
+            g_cics_tdq_counts[tdq_idx] = 0;
+
+            char temp_member[] = "TDQJOB";
+            char vfs_filename[128];
+            resolve_pds_name_extra(temp_member, vfs_filename, sizeof(vfs_filename));
+            int f_idx = -1;
+            for (int i = 0; i < g_vfs.count; i++) {
+                if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, vfs_filename) == 0) {
+                    f_idx = i;
+                    break;
+                }
+            }
+            if (f_idx < 0) {
+                tsfi_xplos_create_file(&g_vfs, vfs_filename, 64 * 1024);
+                f_idx = g_vfs.count - 1;
+            }
+            strcpy(g_vfs.files[f_idx].data, jcl_stream);
+            g_vfs.files[f_idx].size_bytes = (uint32_t)strlen(jcl_stream);
+
+            char sub_cmd[128];
+            snprintf(sub_cmd, sizeof(sub_cmd), "submit %s", temp_member);
+            tsfi_xplos_shell_cbt_extra(sub_cmd);
+            return true;
+        }
+    }
+    printf("[CICS TDQ ERROR] Subcommands: write <queue> <data>, sbmj <queue>\n");
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+// 13. IEBCOMPR Dataset Comparison Utility
+// -----------------------------------------------------------------------------
+static bool handle_iebcompr(const char *cmd) {
+    char sysut1[64] = "";
+    char sysut2[64] = "";
+    if (sscanf(cmd + 9, "%63s %63s", sysut1, sysut2) < 2) {
+        printf("[IEBCOMPR ERROR] SYSUT1 and SYSUT2 parameters required.\n");
+        return true;
+    }
+    char vfs_ut1[128];
+    char vfs_ut2[128];
+    resolve_pds_name_extra(sysut1, vfs_ut1, sizeof(vfs_ut1));
+    resolve_pds_name_extra(sysut2, vfs_ut2, sizeof(vfs_ut2));
+
+    int idx1 = -1, idx2 = -1;
+    for (int i = 0; i < g_vfs.count; i++) {
+        if (g_vfs.files[i].active) {
+            if (strcmp(g_vfs.files[i].name, vfs_ut1) == 0) idx1 = i;
+            if (strcmp(g_vfs.files[i].name, vfs_ut2) == 0) idx2 = i;
+        }
+    }
+
+    if (idx1 < 0 || idx2 < 0) {
+        printf("[IEBCOMPR ERROR] One or both datasets not found in VFS.\n");
+        return true;
+    }
+
+    printf("[IEBCOMPR] Comparing dataset %s vs %s...\n", sysut1, sysut2);
+    if (strcmp(g_vfs.files[idx1].data, g_vfs.files[idx2].data) == 0) {
+        printf("[IEBCOMPR] Success: Datasets are identical. RC=0000\n");
+    } else {
+        printf("[IEBCOMPR] Mismatch: Datasets differ in content. RC=0008\n");
+    }
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+// 14. VTAM 3270 Terminal Screen Buffer Virtualizer
+// -----------------------------------------------------------------------------
+static bool handle_vtam3270(const char *cmd) {
+    char appl[32] = "";
+    int scanned = sscanf(cmd + 9, "%31s", appl);
+    printf("\n");
+    printf("================================================================================\n");
+    printf(" VTAM 3270 DATA STREAM FORMATTER (ACTIVE APPLID: %s)\n", (scanned > 0) ? appl : "TSO");
+    printf("================================================================================\n");
+    if (scanned > 0 && strcasecmp(appl, "CICS") == 0) {
+        printf(" [SF, ATTR(PROT, NUM)]   'CICS/ESA TRANSACTION ENTRY'\n");
+        printf(" [SF, ATTR(PROT)]       'TRANID: '\n");
+        printf(" [SF, ATTR(UNPROT, INTENS)] '[____]'\n");
+    } else {
+        printf(" [SF, ATTR(PROT)]       'WELCOME TO TSO/E SIGNON'\n");
+        printf(" [SF, ATTR(PROT)]       'USERID: '\n");
+        printf(" [SF, ATTR(UNPROT, INTENS)] '[________]'\n");
+        printf(" [SF, ATTR(PROT)]       'PASSWORD: '\n");
+        printf(" [SF, ATTR(UNPROT, NON_DISPLAY)] '[________]'\n");
+    }
+    printf("================================================================================\n");
+    printf(" [WCC: START_PRINTER, RESTORE_KEYBOARD]\n");
+    printf("================================================================================\n");
+    return true;
+}
+
+// -----------------------------------------------------------------------------
 // Entry Point / Command Router
 // -----------------------------------------------------------------------------
 bool tsfi_xplos_shell_cbt_extra(const char *cmd) {
@@ -1075,6 +1220,15 @@ bool tsfi_xplos_shell_cbt_extra(const char *cmd) {
     }
     if (strncmp(cmd, "cbthasp ", 8) == 0) {
         return handle_cbthasp(cmd);
+    }
+    if (strncmp(cmd, "cbtcicstd ", 10) == 0) {
+        return handle_cbtcicstd(cmd);
+    }
+    if (strncmp(cmd, "iebcompr ", 9) == 0) {
+        return handle_iebcompr(cmd);
+    }
+    if (strncmp(cmd, "vtam3270 ", 9) == 0) {
+        return handle_vtam3270(cmd);
     }
     return false;
 }

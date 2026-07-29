@@ -193,6 +193,48 @@ int main(void) {
     assert(hasp_prg == true);
     tsfi_xplos_run(&sched);
 
+    // 13. Test CICS Transient Data Queue (TDQ) Stream Injection
+    printf("[TEST] Testing CICS Transient Data Queue (TDQ) stream injection...\n");
+    bool tdq_w1 = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicstd write SBM1 //TDQJOB JOB 'CICS SUBMIT',CLASS=A");
+    assert(tdq_w1 == true);
+    tsfi_xplos_run(&sched);
+
+    bool tdq_w2 = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicstd write SBM1 //STEP1 EXEC PGM=IEBCOPY");
+    assert(tdq_w2 == true);
+    tsfi_xplos_run(&sched);
+
+    bool tdq_sbm = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicstd sbmj SBM1");
+    assert(tdq_sbm == true);
+    tsfi_xplos_run(&sched);
+
+    // 14. Test IEBCOMPR Dataset Comparison
+    printf("[TEST] Testing IEBCOMPR Dataset comparison...\n");
+    bool comp_ok = tsfi_xplos_shell_exec(&shell, &sched, "iebcompr GENSRC GENTGT");
+    assert(comp_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 15. Test VTAM 3270 Data Stream Formatter
+    printf("[TEST] Testing VTAM 3270 Terminal Screen buffer...\n");
+    bool v3270_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtam3270 CICS");
+    assert(v3270_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 16. Test IKJEFT01 Terminal Monitor Program (TMP) execution via JCL
+    printf("[TEST] Testing IKJEFT01 execution via JCL step...\n");
+    assert(tsfi_xplos_create_file(&g_vfs, "IKJJOB.dat.bin", 2048) == true);
+    XplosFile *ikj_file = &g_vfs.files[g_vfs.count - 1];
+    strcpy(ikj_file->data,
+           "//IKJJOB JOB 'TSO TMP TEST',CLASS=A\n"
+           "//STEP1 EXEC PGM=IKJEFT01\n"
+           "//SYSTSIN DD *\n"
+           "cbtrexx vput SYSVAR 953467954114363\n"
+           "/*\n");
+    ikj_file->size_bytes = (uint32_t)strlen(ikj_file->data);
+
+    bool ikj_run = tsfi_xplos_shell_exec(&shell, &sched, "jclrun IKJJOB");
+    assert(ikj_run == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }
