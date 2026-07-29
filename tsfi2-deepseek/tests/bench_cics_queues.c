@@ -4,12 +4,23 @@
 #include <time.h>
 #include <stdbool.h>
 
+#include "tsfi_mainframe_computerworld.h"
+
 #define NUM_RUNS 2000
 
 extern bool tsfi_xplos_shell_cbt_cics(const char *cmd);
 
 int main(void) {
     printf("=== RUNNING CICS QUEUES PERFORMANCE BENCHMARK ===\n");
+
+    // Initialize CICS queue VSAM KSDS file
+    tsfi_cw_vsam_ksds cics_queue;
+    remove("CICS_QUEUE.dat.bin");
+    int init_rc = tsfi_cw_vsam_open(&cics_queue, "CICS_QUEUE.dat.bin");
+    if (init_rc != 0) {
+        printf("Failed to open CICS_QUEUE VSAM file\n");
+        return 1;
+    }
 
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);

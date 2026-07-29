@@ -12,6 +12,7 @@
 #include "tsfi_xplos_shell_cbt_cics.h"
 #include "tsfi_xplos_shell_cbt_jcl.h"
 #include "tsfi_parc_runcible_cics.h"
+#include "tsfi_mainframe_computerworld.h"
 
 tsfi_cics_engine_t g_cics_engine;
 extern XplosVirtualDisk g_vfs;
@@ -88,43 +89,33 @@ static bool handle_cbtcicstd(const char *cmd) {
     printf("[CICS TDQ ERROR] Subcommands: write <queue> <data>, sbmj <queue>\n");
     return true;
 }
-static char g_cics_tsq_names[4][16];
-static char g_cics_tsq_data[4][128];
-static int g_cics_tsq_count = 0;
 static bool handle_cbtcicsts(const char *cmd) {
     char action[16] = "";
     char tsq_name[16] = "";
     char val[128] = "";
     int scanned = sscanf(cmd + 10, "%15s %15s %[^\n]", action, tsq_name, val);
     if (scanned >= 2) {
+        tsfi_cw_vsam_ksds ksds;
+        int open_rc = tsfi_cw_vsam_open(&ksds, "CICS_QUEUE.dat.bin");
+        if (open_rc != 0) {
+            printf("[CICS TSQ ERROR] Failed to open CICS_QUEUE.dat.bin (RC=%d)\n", open_rc);
+            return true;
+        }
+
         if (strcasecmp(action, "write") == 0) {
-            int found_idx = -1;
-            for (int i = 0; i < g_cics_tsq_count; i++) {
-                if (strcmp(g_cics_tsq_names[i], tsq_name) == 0) {
-                    found_idx = i;
-                    break;
-                }
-            }
-            if (found_idx == -1 && g_cics_tsq_count < 4) {
-                found_idx = g_cics_tsq_count++;
-                strncpy(g_cics_tsq_names[found_idx], tsq_name, 15);
-                g_cics_tsq_names[found_idx][15] = '\0';
-            }
-            if (found_idx != -1) {
-                strncpy(g_cics_tsq_data[found_idx], val, 127);
-                g_cics_tsq_data[found_idx][127] = '\0';
+            int write_rc = tsfi_cw_vsam_write(&ksds, tsq_name, (uint8_t *)val, strlen(val));
+            if (write_rc == 0) {
                 printf("[CICS TSQ] Written to TSQ %s: '%s'\n", tsq_name, val);
+            } else {
+                printf("[CICS TSQ ERROR] Write failed (RC=%d)\n", write_rc);
             }
             return true;
         }
         if (strcasecmp(action, "read") == 0) {
-            char *out = "(NULL)";
-            for (int i = 0; i < g_cics_tsq_count; i++) {
-                if (strcmp(g_cics_tsq_names[i], tsq_name) == 0) {
-                    out = g_cics_tsq_data[i];
-                    break;
-                }
-            }
+            uint8_t read_buf[128] = {0};
+            int read_len = 0;
+            int read_rc = tsfi_cw_vsam_read(&ksds, tsq_name, read_buf, sizeof(read_buf) - 1, &read_len);
+            char *out = (read_rc == 0 && read_len > 0) ? (char *)read_buf : "(NULL)";
             printf("[CICS TSQ] Read from TSQ %s: '%s'\n", tsq_name, out);
             return true;
         }
