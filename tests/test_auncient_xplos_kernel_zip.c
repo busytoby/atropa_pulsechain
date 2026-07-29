@@ -1155,6 +1155,17 @@ int main(void) {
     tsfi_xplos_run(&sched_class);
     printf("   ✓ CBTJESCLASS execution verified successfully.\n");
 
+    // 75. Test CBTCICSINQ command execution
+    printf("[KERNEL TEST] Dispatching 'cbtcicsinq' command to XplOS shell...\n");
+    XplosShell shell_cicsinq;
+    XplosScheduler sched_cicsinq;
+    tsfi_xplos_init_scheduler(&sched_cicsinq);
+    tsfi_xplos_init_shell(&shell_cicsinq);
+    bool cicsinq_ok = tsfi_xplos_shell_exec(&shell_cicsinq, &sched_cicsinq, "cbtcicsinq JOB00024");
+    assert(cicsinq_ok == true);
+    tsfi_xplos_run(&sched_cicsinq);
+    printf("   ✓ CBTCICSINQ execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

@@ -240,6 +240,22 @@ void tsfi_xplos_init_shell(XplosShell *shell) {
 static XplosVirtualDisk g_vfs;
 static bool g_vfs_initialized = false;
 
+typedef struct {
+    char job_id[16];
+    char job_name[16];
+    char status[16];
+    char class_char;
+    bool active;
+    bool cics_origin;
+} CbtSpoolJob;
+
+static CbtSpoolJob cbt_job_table[10] = {
+    {"JOB00021", "LOADCBT", "COMPLETED", 'A', true, true},
+    {"JOB00022", "RUNREXX", "READY", 'A', true, false},
+    {"JOB00023", "BACKUP", "HELD", 'B', true, false},
+    {"", "", "", ' ', false, false}
+};
+
 // Helper: Task entry that evaluates the shell command in task context
 static void shell_task_handler(void *arg) {
     const char *cmd = (const char *)arg;
@@ -2625,9 +2641,28 @@ static void shell_task_handler(void *arg) {
                 ptr += 16;
             }
             if (found) {
-                printf("[CBTCICSSUBMIT] CICS Transaction 'SBMJ' submitting member %s:\n", member_name);
-                printf("  - Job submitted: LOADCBT (JOB00021) via INTRDR spool interface\n");
-                printf("  - CICS Return Code: EIBRESP=0 (NORMAL)\n");
+                int free_idx = -1;
+                for (int i = 0; i < 10; i++) {
+                    if (!cbt_job_table[i].active) {
+                        free_idx = i;
+                        break;
+                    }
+                }
+                if (free_idx != -1) {
+                    sprintf(cbt_job_table[free_idx].job_id, "JOB000%d", 21 + free_idx);
+                    strncpy(cbt_job_table[free_idx].job_name, member_name, 15);
+                    cbt_job_table[free_idx].job_name[15] = '\0';
+                    strcpy(cbt_job_table[free_idx].status, "READY");
+                    cbt_job_table[free_idx].class_char = 'A';
+                    cbt_job_table[free_idx].active = true;
+                    cbt_job_table[free_idx].cics_origin = true;
+                    
+                    printf("[CBTCICSSUBMIT] CICS Transaction 'SBMJ' submitting member %s:\n", member_name);
+                    printf("  - Job submitted: %s (%s) via INTRDR spool interface\n", cbt_job_table[free_idx].job_name, cbt_job_table[free_idx].job_id);
+                    printf("  - CICS Return Code: EIBRESP=0 (NORMAL)\n");
+                } else {
+                    printf("[CBTCICSSUBMIT ERROR] JES Input Queue Full.\n");
+                }
             } else {
                 printf("[CBTCICSSUBMIT ERROR] Member %s not found in PDS.\n", member_name);
             }
@@ -2638,9 +2673,16 @@ static void shell_task_handler(void *arg) {
     // Check for "cbtjeslist" command
     if (strncmp(cmd, "cbtjeslist", 10) == 0) {
         printf("[CBTJESLIST] Active JES Spool Job Queue:\n");
-        printf("  - JOB00021   LOADCBT    MVSUSER   CLASS A   STATUS: COMPLETED (RC=0000)\n");
-        printf("  - JOB00022   RUNREXX    MVSUSER   CLASS A   STATUS: ACTIVE (EXECUTING)\n");
-        printf("  - JOB00023   BACKUP     SYSTEM    CLASS B   STATUS: HELD\n");
+        for (int i = 0; i < 10; i++) {
+            if (cbt_job_table[i].active) {
+                printf("  - %s   %-10s MVSUSER   CLASS %c   STATUS: %s (CICS Coupled: %s)\n",
+                       cbt_job_table[i].job_id,
+                       cbt_job_table[i].job_name,
+                       cbt_job_table[i].class_char,
+                       cbt_job_table[i].status,
+                       cbt_job_table[i].cics_origin ? "YES" : "NO");
+            }
+        }
         printf("[CBTJESLIST] Queue status displayed successfully.\n");
         return;
     }
@@ -2649,8 +2691,20 @@ static void shell_task_handler(void *arg) {
     if (strncmp(cmd, "cbtjespurge ", 12) == 0) {
         char job_id[32] = "";
         if (sscanf(cmd + 12, "%31s", job_id) == 1) {
-            printf("[CBTJESPURGE] Purging job %s from JES spool queues:\n", job_id);
-            printf("  - Job %s deleted successfully. Reclaimed 14 spool tracks.\n", job_id);
+            bool purged = false;
+            for (int i = 0; i < 10; i++) {
+                if (cbt_job_table[i].active && strcasecmp(cbt_job_table[i].job_id, job_id) == 0) {
+                    cbt_job_table[i].active = false;
+                    purged = true;
+                    break;
+                }
+            }
+            if (purged) {
+                printf("[CBTJESPURGE] Purging job %s from JES spool queues:\n", job_id);
+                printf("  - Job %s deleted successfully. Reclaimed 14 spool tracks.\n", job_id);
+            } else {
+                printf("[CBTJESPURGE ERROR] Job %s not found in spool.\n", job_id);
+            }
         } else {
             printf("[CBTJESPURGE ERROR] Job ID required.\n");
         }
@@ -2661,8 +2715,20 @@ static void shell_task_handler(void *arg) {
     if (strncmp(cmd, "cbtjeshold ", 11) == 0) {
         char job_id[32] = "";
         if (sscanf(cmd + 11, "%31s", job_id) == 1) {
-            printf("[CBTJESHOLD] Holding job %s in JES spool queue.\n", job_id);
-            printf("  - Job %s status set to HELD.\n", job_id);
+            bool found_job = false;
+            for (int i = 0; i < 10; i++) {
+                if (cbt_job_table[i].active && strcasecmp(cbt_job_table[i].job_id, job_id) == 0) {
+                    strcpy(cbt_job_table[i].status, "HELD");
+                    found_job = true;
+                    break;
+                }
+            }
+            if (found_job) {
+                printf("[CBTJESHOLD] Holding job %s in JES spool queue.\n", job_id);
+                printf("  - Job %s status set to HELD.\n", job_id);
+            } else {
+                printf("[CBTJESHOLD ERROR] Job %s not found in spool.\n", job_id);
+            }
         } else {
             printf("[CBTJESHOLD ERROR] Job ID required.\n");
         }
@@ -2673,8 +2739,20 @@ static void shell_task_handler(void *arg) {
     if (strncmp(cmd, "cbtjesrelease ", 14) == 0) {
         char job_id[32] = "";
         if (sscanf(cmd + 14, "%31s", job_id) == 1) {
-            printf("[CBTJESRELEASE] Releasing job %s from HELD status in JES spool queue.\n", job_id);
-            printf("  - Job %s status set to READY.\n", job_id);
+            bool found_job = false;
+            for (int i = 0; i < 10; i++) {
+                if (cbt_job_table[i].active && strcasecmp(cbt_job_table[i].job_id, job_id) == 0) {
+                    strcpy(cbt_job_table[i].status, "READY");
+                    found_job = true;
+                    break;
+                }
+            }
+            if (found_job) {
+                printf("[CBTJESRELEASE] Releasing job %s from HELD status in JES spool queue.\n", job_id);
+                printf("  - Job %s status set to READY.\n", job_id);
+            } else {
+                printf("[CBTJESRELEASE ERROR] Job %s not found in spool.\n", job_id);
+            }
         } else {
             printf("[CBTJESRELEASE ERROR] Job ID required.\n");
         }
@@ -2686,10 +2764,54 @@ static void shell_task_handler(void *arg) {
         char job_id[32] = "";
         char new_class[8] = "";
         if (sscanf(cmd + 12, "%31s %7s", job_id, new_class) == 2) {
-            printf("[CBTJESCLASS] Modifying job %s in JES spool queue.\n", job_id);
-            printf("  - Job %s class updated to %s.\n", job_id, new_class);
+            bool found_job = false;
+            for (int i = 0; i < 10; i++) {
+                if (cbt_job_table[i].active && strcasecmp(cbt_job_table[i].job_id, job_id) == 0) {
+                    cbt_job_table[i].class_char = new_class[0];
+                    found_job = true;
+                    break;
+                }
+            }
+            if (found_job) {
+                printf("[CBTJESCLASS] Modifying job %s in JES spool queue.\n", job_id);
+                printf("  - Job %s class updated to %s.\n", job_id, new_class);
+            } else {
+                printf("[CBTJESCLASS ERROR] Job %s not found in spool.\n", job_id);
+            }
         } else {
             printf("[CBTJESCLASS ERROR] Job ID and new class parameter required.\n");
+        }
+        return;
+    }
+
+    // Check for "cbtcicsinq " command
+    if (strncmp(cmd, "cbtcicsinq ", 11) == 0) {
+        char job_id[32] = "";
+        if (sscanf(cmd + 11, "%31s", job_id) == 1) {
+            bool found_job = false;
+            for (int i = 0; i < 10; i++) {
+                if (cbt_job_table[i].active && strcasecmp(cbt_job_table[i].job_id, job_id) == 0) {
+                    found_job = true;
+                    if (cbt_job_table[i].cics_origin) {
+                        printf("[CBTCICSINQ] Querying CICS-Coupled JES Job: %s\n", job_id);
+                        printf("  - CICS Transaction: SBMJ\n");
+                        printf("  - Target Spool Job: %s\n", cbt_job_table[i].job_name);
+                        printf("  - Current Queue Status: %s\n", cbt_job_table[i].status);
+                        printf("  - CICS Execution Interface Block Status:\n");
+                        printf("    * EIBRESP:   00000000 (DFHRESP(NORMAL))\n");
+                        printf("    * EIBFN:     0x0C02 (INTRDR SPOOLWRITE)\n");
+                        printf("    * EIBAID:    0x7D (ENTER KEY)\n");
+                    } else {
+                        printf("[CBTCICSINQ ERROR] Job %s was not originated/coupled via CICS.\n", job_id);
+                    }
+                    break;
+                }
+            }
+            if (!found_job) {
+                printf("[CBTCICSINQ ERROR] Job %s not found in spool.\n", job_id);
+            }
+        } else {
+            printf("[CBTCICSINQ ERROR] Job ID required.\n");
         }
         return;
     }
