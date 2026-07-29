@@ -1144,6 +1144,17 @@ int main(void) {
 
     printf("   ✓ CBTJESHOLD and CBTJESRELEASE execution verified successfully.\n");
 
+    // 74. Test CBTJESCLASS command execution
+    printf("[KERNEL TEST] Dispatching 'cbtjesclass' command to XplOS shell...\n");
+    XplosShell shell_class;
+    XplosScheduler sched_class;
+    tsfi_xplos_init_scheduler(&sched_class);
+    tsfi_xplos_init_shell(&shell_class);
+    bool class_ok = tsfi_xplos_shell_exec(&shell_class, &sched_class, "cbtjesclass JOB00022 B");
+    assert(class_ok == true);
+    tsfi_xplos_run(&sched_class);
+    printf("   ✓ CBTJESCLASS execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

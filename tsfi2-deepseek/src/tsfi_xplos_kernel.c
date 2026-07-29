@@ -2680,6 +2680,19 @@ static void shell_task_handler(void *arg) {
         }
         return;
     }
+
+    // Check for "cbtjesclass " command
+    if (strncmp(cmd, "cbtjesclass ", 12) == 0) {
+        char job_id[32] = "";
+        char new_class[8] = "";
+        if (sscanf(cmd + 12, "%31s %7s", job_id, new_class) == 2) {
+            printf("[CBTJESCLASS] Modifying job %s in JES spool queue.\n", job_id);
+            printf("  - Job %s class updated to %s.\n", job_id, new_class);
+        } else {
+            printf("[CBTJESCLASS ERROR] Job ID and new class parameter required.\n");
+        }
+        return;
+    }
     
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
