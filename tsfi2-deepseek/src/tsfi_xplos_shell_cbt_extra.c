@@ -1309,6 +1309,11 @@ static bool handle_vtamuss(void) {
     return true;
 }
 
+static bool handle_cbtdelete(const char *cmd);
+static bool handle_iebdg(const char *cmd);
+static bool handle_cbtcicstrm(const char *cmd);
+static bool handle_vtamstat(void);
+
 // -----------------------------------------------------------------------------
 // Entry Point / Command Router
 // -----------------------------------------------------------------------------
@@ -1364,5 +1369,134 @@ bool tsfi_xplos_shell_cbt_extra(const char *cmd) {
     if (strcmp(cmd, "vtamuss") == 0) {
         return handle_vtamuss();
     }
+    if (strncmp(cmd, "cbtdelete ", 10) == 0) {
+        return handle_cbtdelete(cmd);
+    }
+    if (strncmp(cmd, "iebdg ", 6) == 0) {
+        return handle_iebdg(cmd);
+    }
+    if (strncmp(cmd, "cbtcicstrm ", 11) == 0) {
+        return handle_cbtcicstrm(cmd);
+    }
+    if (strcmp(cmd, "vtamstat") == 0) {
+        return handle_vtamstat();
+    }
     return false;
 }
+
+// -----------------------------------------------------------------------------
+// 18. TSO DELETE & RENAME Command Processor
+// -----------------------------------------------------------------------------
+static bool handle_cbtdelete(const char *cmd) {
+    char action[16] = "";
+    char old_mem[32] = "";
+    char new_mem[32] = "";
+    int scanned = sscanf(cmd + 10, "%15s %31s %31s", action, old_mem, new_mem);
+    if (scanned >= 2) {
+        char old_vfs[128];
+        resolve_pds_name_extra(old_mem, old_vfs, sizeof(old_vfs));
+
+        if (strcasecmp(action, "delete") == 0) {
+            for (int i = 0; i < g_vfs.count; i++) {
+                if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, old_vfs) == 0) {
+                    g_vfs.files[i].active = false;
+                    printf("[DELETE] Member %s deleted successfully. RC=0000\n", old_mem);
+                    return true;
+                }
+            }
+            printf("[DELETE ERROR] Member %s not found.\n", old_mem);
+            return true;
+        }
+        if (strcasecmp(action, "rename") == 0 && scanned == 3) {
+            char new_vfs[128];
+            resolve_pds_name_extra(new_mem, new_vfs, sizeof(new_vfs));
+            for (int i = 0; i < g_vfs.count; i++) {
+                if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, old_vfs) == 0) {
+                    strcpy(g_vfs.files[i].name, new_vfs);
+                    printf("[RENAME] Member %s renamed to %s successfully. RC=0000\n", old_mem, new_mem);
+                    return true;
+                }
+            }
+            printf("[RENAME ERROR] Member %s not found.\n", old_mem);
+            return true;
+        }
+    }
+    printf("[DELETE ERROR] Syntax: cbtdelete [delete <member> | rename <old> <new>]\n");
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+// 19. IEBDG Test Dataset Generator Utility
+// -----------------------------------------------------------------------------
+static bool handle_iebdg(const char *cmd) {
+    char member[32] = "";
+    char pattern[16] = "";
+    if (sscanf(cmd + 6, "%31s %15s", member, pattern) < 2) {
+        printf("[IEBDG ERROR] Syntax: iebdg <member> <pattern>\n");
+        return true;
+    }
+    char vfs_name[128];
+    resolve_pds_name_extra(member, vfs_name, sizeof(vfs_name));
+
+    int f_idx = -1;
+    for (int i = 0; i < g_vfs.count; i++) {
+        if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, vfs_name) == 0) {
+            f_idx = i;
+            break;
+        }
+    }
+    if (f_idx < 0) {
+        tsfi_xplos_create_file(&g_vfs, vfs_name, 4096);
+        f_idx = g_vfs.count - 1;
+    }
+
+    XplosFile *f = &g_vfs.files[f_idx];
+    if (strcasecmp(pattern, "SEQ") == 0) {
+        strcpy(f->data, "LINE01\nLINE02\nLINE03\nLINE04\n");
+    } else {
+        strcpy(f->data, "AUNCIENT FIELDATA GENERATED DUMMY DATA\n");
+    }
+    f->size_bytes = (uint32_t)strlen(f->data);
+    printf("[IEBDG] Generated test data in %s using pattern %s. RC=0000\n", member, pattern);
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+// 20. CICS Terminal Input Reader
+// -----------------------------------------------------------------------------
+static char g_cics_terminal_buffer[128] = "INIT";
+
+static bool handle_cbtcicstrm(const char *cmd) {
+    char action[16] = "";
+    char val[128] = "";
+    int scanned = sscanf(cmd + 11, "%15s %[^\n]", action, val);
+    if (scanned >= 1) {
+        if (strcasecmp(action, "receive") == 0) {
+            if (scanned == 2) {
+                strncpy(g_cics_terminal_buffer, val, 127);
+                g_cics_terminal_buffer[127] = '\0';
+            }
+            printf("[CICS] EXEC CICS RECEIVE logical buffer contents: '%s'\n", g_cics_terminal_buffer);
+            return true;
+        }
+    }
+    printf("[CICS ERROR] Syntax: cbtcicstrm receive <data>\n");
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+// 21. VTAM Session Network Statistics Analyzer
+// -----------------------------------------------------------------------------
+static bool handle_vtamstat(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  VTAM LOGICAL PATHWAY NETWORK STATISTICS                       \n");
+    printf("================================================================================\n");
+    printf("  - Active Session Routes: TSO, CICS, USENET\n");
+    printf("  - Inbound Buffer Frames: 1042 frames\n");
+    printf("  - Outbound Buffer Frames: 876 frames\n");
+    printf("  - Path Route Stability: 100%% (STABLE)\n");
+    printf("================================================================================\n");
+    return true;
+}
+

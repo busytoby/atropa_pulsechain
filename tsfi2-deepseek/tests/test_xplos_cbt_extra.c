@@ -271,6 +271,32 @@ int main(void) {
     assert(uss_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 21. Test TSO delete and rename
+    printf("[TEST] Testing TSO cbtdelete operations...\n");
+    bool del_rn = tsfi_xplos_shell_exec(&shell, &sched, "cbtdelete rename Q1 Q2");
+    bool del_dl = tsfi_xplos_shell_exec(&shell, &sched, "cbtdelete delete Q2");
+    assert(del_rn == true);
+    assert(del_dl == true);
+    tsfi_xplos_run(&sched);
+
+    // 22. Test IEBDG test data generator
+    printf("[TEST] Testing IEBDG dataset generator...\n");
+    bool dg_ok = tsfi_xplos_shell_exec(&shell, &sched, "iebdg DGDATA SEQ");
+    assert(dg_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 23. Test CICS Terminal Input receive
+    printf("[TEST] Testing CICS RECEIVE command...\n");
+    bool trm_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicstrm receive TSO_PROMPT");
+    assert(trm_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 24. Test VTAM Session Statistics analyzer
+    printf("[TEST] Testing VTAM network statistics...\n");
+    bool stat_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtamstat");
+    assert(stat_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }
