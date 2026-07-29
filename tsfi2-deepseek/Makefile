@@ -1506,6 +1506,9 @@ tests/test_coaxial_telemetry: tests/test_coaxial_telemetry.c $(CORE_OBJS) $(OBJ_
 tests/test_coaxial_kermit_rails: tests/test_coaxial_kermit_rails.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+tests/test_mcp_stanag_kermit:
+	node tests/test_mcp_stanag_kermit.js
+
 tests/test_cooperative_sync_hosts: tests/test_cooperative_sync_hosts.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
