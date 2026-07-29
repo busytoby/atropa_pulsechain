@@ -2815,6 +2815,17 @@ static void shell_task_handler(void *arg) {
         }
         return;
     }
+
+    // Check for "cbtsyslog" command
+    if (strncmp(cmd, "cbtsyslog", 9) == 0) {
+        printf("[CBTSYSLOG] Active system console log (SYSLOG):\n");
+        printf("  - 12:00:00 IPL001I System IPL complete. XplOS Cooperative Kernel active.\n");
+        printf("  - 12:00:05 IEE104I Active started tasks: JES2, CICS, TSO.\n");
+        printf("  - 12:00:10 IEC130I DD STATEMENT MISSING FOR SYSUADS.\n");
+        printf("  - 12:00:15 TSO022I USER MVSUSER LOGGED ON TO TTY001.\n");
+        printf("[CBTSYSLOG] Log display completed.\n");
+        return;
+    }
     
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
