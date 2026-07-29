@@ -1391,6 +1391,24 @@ int main(void) {
     assert(vtamrouterecresetstatsstatusdetails_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 205. Test VTAM route recovery reset logs audit progress details (vtamrouterecresetstatsstatusdetailsprogress)
+    printf("[TEST] Testing VTAM route recovery reset logs audit progress query...\n");
+    bool vtamrouterecresetstatsstatusdetailsprogress_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtamrouterecresetstatsstatusdetailsprogress");
+    assert(vtamrouterecresetstatsstatusdetailsprogress_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 206. Test VTAM route recovery ignore list reset (vtamrouterecignorelistreset)
+    printf("[TEST] Testing VTAM route recovery ignore list reset...\n");
+    bool vtamrouterecignorelistreset_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtamrouterecignorelistreset");
+    assert(vtamrouterecignorelistreset_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 207. Test VTAM route recovery ignore list reset stats (vtamrouterecignorelistresetstat)
+    printf("[TEST] Testing VTAM route recovery ignore list reset stats query...\n");
+    bool vtamrouterecignorelistresetstat_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtamrouterecignorelistresetstat");
+    assert(vtamrouterecignorelistresetstat_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }

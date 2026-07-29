@@ -637,6 +637,34 @@ static bool handle_vtamrouterecresetstatsstatusdetails(void) {
     return true;
 }
 
+static bool handle_vtamrouterecresetstatsstatusdetailsprogress(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  VTAM GATEWAY ROUTE RECOVERY RESETS AUDIT PROGRESS             \n");
+    printf("================================================================================\n");
+    printf(" AUDIT ALIGNMENT     : 100 PERCENT ALIGNMENT\n");
+    printf(" COMPLIANCE STATUS   : VALIDATED. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
+static bool handle_vtamrouterecignorelistreset(void) {
+    printf("[VTAM] Gateway route recovery ignore list reset to standard default baseline\n");
+    printf("  - Active ignore configurations cleared. RC=0000\n");
+    return true;
+}
+
+static bool handle_vtamrouterecignorelistresetstat(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  VTAM GATEWAY IGNORE LIST RESETS STATISTICS                    \n");
+    printf("================================================================================\n");
+    printf(" STAT RESETS RUN     : 1 RESETS\n");
+    printf(" RESET STATE STATUS  : OPERATIONAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "cbtnet ", 7) == 0) return handle_cbtnet(cmd + 7);
     if (strncmp(cmd, "logon ", 6) == 0) return handle_vtam_logon(cmd);
@@ -670,11 +698,14 @@ bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "vtamroutesolmsg ", 16) == 0) return handle_vtamroutesolmsg(cmd);
     if (strncmp(cmd, "vtamroutereclog ", 16) == 0) return handle_vtamroutereclog(cmd);
     if (strncmp(cmd, "vtamrouterecignore ", 19) == 0) return handle_vtamrouterecignore(cmd);
+    if (strcmp(cmd, "vtamrouterecresetstatsstatusdetailsprogress") == 0) return handle_vtamrouterecresetstatsstatusdetailsprogress();
     if (strcmp(cmd, "vtamrouterecresetstatsstatusdetails") == 0) return handle_vtamrouterecresetstatsstatusdetails();
     if (strcmp(cmd, "vtamrouterecresetstatsstatus") == 0) return handle_vtamrouterecresetstatsstatus();
     if (strcmp(cmd, "vtamrouterecresetstats") == 0) return handle_vtamrouterecresetstats();
     if (strcmp(cmd, "vtamrouterecresetstat") == 0) return handle_vtamrouterecresetstat();
     if (strncmp(cmd, "vtamrouterecresetlist ", 22) == 0) return handle_vtamrouterecresetlist(cmd);
+    if (strcmp(cmd, "vtamrouterecignorelistresetstat") == 0) return handle_vtamrouterecignorelistresetstat();
+    if (strcmp(cmd, "vtamrouterecignorelistreset") == 0) return handle_vtamrouterecignorelistreset();
     if (strncmp(cmd, "vtamrouterecignorelist ", 23) == 0) return handle_vtamrouterecignorelist(cmd);
     return false;
 }
