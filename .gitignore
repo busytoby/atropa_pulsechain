@@ -697,3 +697,6 @@ Dysnomia/bin/
 /lore_compendium.tex
 /tsfi2-deepseek/tools/netcoredbg-fork/
 tests/test_displacementshader
+tests/CBT021.zip
+tests/test_cbt021_inmemory_pds
+tests/test_cbt021_pds
