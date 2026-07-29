@@ -26,3 +26,15 @@ The Chen Jurchen tactical coaxial transmission protocol defines how military-gra
 ### Coaxial TCP Loopback Verification
 * **Transmission Verification:** Successfully established a live coaxial TCP socket connection bridge on loopback port `10045`. Client A (transmitter) and Client B (receiver) streamed 1MB of tactical telemetry data utilizing 128-byte chunk intervals to avoid 8-bit Kermit length field overflows.
 * **Integrity Proof:** Executed on-the-fly Kermit checksumming and sequence validation, extracting the underlying STANAG frames and performing a SHA-256 hash matching check (`fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83`) verifying perfect byte-for-byte data parity.
+
+### Split Oversize ZMM Components
+
+#### ALU GPR
+* **VM Register Context:** The packed data lane storage structure representing the general-purpose registers (`ce_gprs`) carrying the active execution state payload.
+* **Mathematical Function:** Serves as the vector parameter set $\vec{V}$ containing the sixteen 32-bit register variables: $\vec{V} = \langle R_0, R_1, \dots, R_{15} \rangle$.
+* **Visual / Geometric Manifestation:** Directs the translation coordinate offsets of the vertices, displacing individual nodes of the 3D projected envelope based on register updates.
+
+#### Register Allocation Unit (RAU)
+* **VM Register Context:** The metadata mapping supervisor layer mapping the virtual `ce_gprs` lanes onto the physical 512-bit ZMM vector registers.
+* **Mathematical Function:** The bijection mapping matrix $M_{RAU}$ projecting GPR variables to vector slots: $M_{RAU} \times \vec{V} \pmod{MotzkinPrime}$.
+* **Visual / Geometric Manifestation:** Controls the orbital rotation axes and shear parameters, warping the projected shape dynamically during live execution cycles.
