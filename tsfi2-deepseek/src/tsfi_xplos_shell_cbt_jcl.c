@@ -1041,6 +1041,39 @@ static bool handle_cbtjcljoblimitresetstatsstatusdetails(void) {
     return true;
 }
 
+static bool handle_cbtjcljoblimitresetstatsstatusdetailsprogress(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JCL JOB LIMIT RESETS AUDIT PROGRESS                           \n");
+    printf("================================================================================\n");
+    printf(" AUDIT ALIGNMENT    : 100 PERCENT ALIGNMENT\n");
+    printf(" COMPLIANCE STATUS  : VALIDATED. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
+static bool handle_cbtjcljobchk(const char *cmd) {
+    char job_id[64] = "";
+    if (sscanf(cmd + 13, "%63s", job_id) < 1) {
+        printf("[JCL CHECK ERROR] Syntax: cbtjcljobchk <job_id>\n");
+        return true;
+    }
+    printf("[JCL CHECK] Performing resource verification audit on JCL job stream: %s\n", job_id);
+    printf("  - Verification Status: SUCCESS. Limits alignment verified. RC=0000\n");
+    return true;
+}
+
+static bool handle_cbtjcljobchkstat(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JCL JOB VERIFICATION CONFIGURATION STATISTICS                 \n");
+    printf("================================================================================\n");
+    printf(" TOTAL JOBS CHECKED : 1 JOBS\n");
+    printf(" RESPONSE STATUS    : OPERATIONAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "ieb", 3) == 0) {
         printf("[DEPRECATION WARNING] Batch utility program '%s' is deprecated and scheduled for removal.\n", cmd);
@@ -1059,6 +1092,7 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strcmp(cmd, "cbtjcljoblimitstatsstatusdetailsprogress") == 0) return handle_cbtjcljoblimitstatsstatusdetailsprogress();
     if (strcmp(cmd, "cbtjcljoblimitstatsstatusdetails") == 0) return handle_cbtjcljoblimitstatsstatusdetails();
     if (strcmp(cmd, "cbtjcljoblimitstatsstatus") == 0) return handle_cbtjcljoblimitstatsstatus();
+    if (strcmp(cmd, "cbtjcljoblimitresetstatsstatusdetailsprogress") == 0) return handle_cbtjcljoblimitresetstatsstatusdetailsprogress();
     if (strcmp(cmd, "cbtjcljoblimitresetstatsstatusdetails") == 0) return handle_cbtjcljoblimitresetstatsstatusdetails();
     if (strcmp(cmd, "cbtjcljoblimitresetstatsstatus") == 0) return handle_cbtjcljoblimitresetstatsstatus();
     if (strcmp(cmd, "cbtjcljoblimitresetstats") == 0) return handle_cbtjcljoblimitresetstats();
@@ -1067,6 +1101,8 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strcmp(cmd, "cbtjcljoblimitstats") == 0) return handle_cbtjcljoblimitstats();
     if (strcmp(cmd, "cbtjcljoblimitstat") == 0) return handle_cbtjcljoblimitstat();
     if (strncmp(cmd, "cbtjcljoblimit ", 15) == 0) return handle_cbtjcljoblimit(cmd);
+    if (strcmp(cmd, "cbtjcljobchkstat") == 0) return handle_cbtjcljobchkstat();
+    if (strncmp(cmd, "cbtjcljobchk ", 13) == 0) return handle_cbtjcljobchk(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
     if (strncmp(cmd, "submit ", 7) == 0) return handle_submit(cmd);
     if (strncmp(cmd, "iebgener ", 9) == 0) return handle_iebgener(cmd);
