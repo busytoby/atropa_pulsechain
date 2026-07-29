@@ -741,6 +741,30 @@ int main(void) {
     assert(routerecquerylist_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 97. Test CICS subsystem engine telemetry statistics (cbtcicsstats)
+    printf("[TEST] Testing CICS engine statistics telemetry query...\n");
+    bool cicsstats_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicsstats");
+    assert(cicsstats_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 98. Test CICS screen map attribute viewer (cbtcicsmap)
+    printf("[TEST] Testing CICS active map details query...\n");
+    bool cicsmap_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicsmap");
+    assert(cicsmap_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 99. Test CICS active/suspended task dispatcher lists (cbtcicstask)
+    printf("[TEST] Testing CICS task queue console view...\n");
+    bool cicstask_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicstask");
+    assert(cicstask_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 100. Test CICS terminal session refresh reset (cbtcicsrefr)
+    printf("[TEST] Testing CICS pseudo-conversational terminal refresh...\n");
+    bool cicsrefr_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicsrefr");
+    assert(cicsrefr_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }

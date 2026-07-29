@@ -11,6 +11,9 @@
 #include "tsfi_xplos_kernel_internal.h"
 #include "tsfi_xplos_shell_cbt_cics.h"
 #include "tsfi_xplos_shell_cbt_jcl.h"
+#include "tsfi_parc_runcible_cics.h"
+
+tsfi_cics_engine_t g_cics_engine;
 extern XplosVirtualDisk g_vfs;
 extern CbtSpoolJob cbt_job_table[10];
 extern XplosScheduler *g_active_sched;
@@ -380,6 +383,65 @@ static bool handle_cbtcicscleanexceptdel(const char *cmd) {
     return true;
 }
 
+static void ensure_cics_initialized(void) {
+    if (!g_cics_engine.is_initialized) {
+        tsfi_cics_engine_initialize(&g_cics_engine);
+    }
+}
+
+static bool handle_cbtcicsstats(void) {
+    ensure_cics_initialized();
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  CICS RUNTIME SYSTEM ENGINE TELEMETRY STATUS                   \n");
+    printf("================================================================================\n");
+    printf(" INITIALIZED STATE  : %s\n", g_cics_engine.is_initialized ? "TRUE" : "FALSE");
+    printf(" ACTIVE TASK NUMBER : %u\n", g_cics_engine.active_task_number);
+    printf(" CURRENT TRANS ID   : %s\n", g_cics_engine.current_trans_id);
+    printf(" TERMINAL ID        : %s\n", g_cics_engine.terminal_identifier);
+    printf(" PCT ENTRIES REGISTERED: %u\n", g_cics_engine.pct_count);
+    printf(" TS QUEUES CREATED  : %u\n", g_cics_engine.ts_queue_count);
+    printf(" RESPONSE STATUS    : NORMAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
+static bool handle_cbtcicsmap(void) {
+    ensure_cics_initialized();
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  CICS BASIC MAPPING SUPPORT (BMS) Screen Map Definition        \n");
+    printf("================================================================================\n");
+    printf(" ACTIVE MAP NAME    : %s\n", g_cics_engine.active_map.map_name[0] ? g_cics_engine.active_map.map_name : "NONE");
+    printf(" TOTAL BMS FIELDS   : %u\n", g_cics_engine.active_map.field_count);
+    printf(" SCREEN DIMENSIONS  : 24 ROWS x 80 COLS\n");
+    printf(" RESPONSE STATUS    : NORMAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
+static bool handle_cbtcicstask(void) {
+    ensure_cics_initialized();
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  CICS TASK MANAGEMENT DISPATCHER CONSOLE                      \n");
+    printf("================================================================================\n");
+    printf(" TASK NO | TRANS ID | TERM ID | STATE      | PROGRAM   | DYNAMIC ADDR\n");
+    printf("--------------------------------------------------------------------------------\n");
+    printf(" %06u  | %-4s     | %-4s    | RUNNING    | DFHCSN    | dynamic_0x7343d8afa9d6e3376873ea24ccba7c7230aab14b\n",
+           g_cics_engine.active_task_number, g_cics_engine.current_trans_id, g_cics_engine.terminal_identifier);
+    printf(" RESPONSE STATUS    : OPERATIONAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
+static bool handle_cbtcicsrefr(void) {
+    printf("[CICS] Performing pseudo-conversational terminal refresh/reset\n");
+    tsfi_cics_engine_initialize(&g_cics_engine);
+    printf("  - Terminal screen buffers and TSQs refreshed. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
@@ -402,5 +464,9 @@ bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strcmp(cmd, "cbtcicscleanexceptlist") == 0) return handle_cbtcicscleanexceptlist();
     if (strncmp(cmd, "cbtcicscleanexceptchk ", 22) == 0) return handle_cbtcicscleanexceptchk(cmd);
     if (strncmp(cmd, "cbtcicscleanexceptdel ", 22) == 0) return handle_cbtcicscleanexceptdel(cmd);
+    if (strcmp(cmd, "cbtcicsstats") == 0) return handle_cbtcicsstats();
+    if (strcmp(cmd, "cbtcicsmap") == 0) return handle_cbtcicsmap();
+    if (strcmp(cmd, "cbtcicstask") == 0) return handle_cbtcicstask();
+    if (strcmp(cmd, "cbtcicsrefr") == 0) return handle_cbtcicsrefr();
     return false;
 }
