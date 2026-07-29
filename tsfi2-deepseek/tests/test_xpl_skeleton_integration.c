@@ -69,6 +69,33 @@ static void test_thunk_callback(const char *arg) {
     }
 }
 
+static bool execute_transactional_thunk(ThunkProxy *thunk, void *fn, const char *arg, int sector) {
+    extern uint32_t ce_gprs[16];
+    extern bool tsfi_xplos_shell_tape(const char *cmd);
+    
+    uint32_t snapshot[16];
+    memcpy(snapshot, ce_gprs, sizeof(snapshot));
+    
+    // Mutate register to represent active execution state change
+    ce_gprs[7] = 777;
+    
+    typedef void (*thunk_entry)(void);
+    void *jit_fn = ThunkProxy_emit_baked(thunk, fn, 1, arg);
+    ((thunk_entry)jit_fn)();
+    
+    char cmd_buf[128];
+    snprintf(cmd_buf, sizeof(cmd_buf), "cbttape write %d 1", sector);
+    bool write_ok = tsfi_xplos_shell_tape(cmd_buf);
+    
+    if (!write_ok) {
+        memcpy(ce_gprs, snapshot, sizeof(snapshot));
+        printf("[VM TRANSACTION] Transaction failed. Rolled back register states.\n");
+        return false;
+    }
+    printf("[VM TRANSACTION] Transaction committed. Registers persisted.\n");
+    return true;
+}
+
 int main(void) {
     printf("=== RUNNING XPL, XCOM, ANALYZER, XPLSM & SKELETON INTEGRATION PROOFS ===\n");
     
@@ -199,6 +226,15 @@ int main(void) {
     assert(tsfi_xplos_shell_tape("cbttape write 5 187") == true);
     assert(ce_gprs[5] == 888);
     printf("  -> ZMM GPR register restoration verified successfully.\n");
+
+    // 16. Verify transactional thunk execution with closed-loop GPR rollback
+    printf("  -> Testing transactional thunk execution rollback...\n");
+    ce_gprs[7] = 111;
+    // Inject failure, run transactional thunk (which changes it to 777, but rolls back to 111)
+    assert(tsfi_xplos_shell_tape("cbttape inject 0") == true);
+    execute_transactional_thunk(thunk, (void*)test_thunk_callback, "thunk_verify_test", 6);
+    assert(ce_gprs[7] == 111);
+    printf("  -> Transactional thunk execution rollback verified successfully.\n");
 
     printf("\n=== INTEGRATION PROOFS PASSED ===\n");
     return 0;
