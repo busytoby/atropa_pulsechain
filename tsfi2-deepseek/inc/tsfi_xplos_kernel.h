@@ -111,6 +111,7 @@ typedef struct {
     uint32_t start_offset;
     uint32_t size_bytes;
     bool active;
+    char data[8192];
 } XplosFile;
 
 #define MAX_DISK_FILES 2048

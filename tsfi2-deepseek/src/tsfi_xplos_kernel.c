@@ -3658,17 +3658,16 @@ static void shell_task_handler(void *arg) {
         if (strlen(member) > 0) {
             char target_name[80];
             snprintf(target_name, sizeof(target_name), "%s.dat.bin", member);
-            bool found = false;
+            int file_idx = -1;
             for (int i = 0; i < g_vfs.count; i++) {
                 if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, target_name) == 0) {
-                    found = true;
+                    file_idx = i;
                     break;
                 }
             }
-            if (found) {
+            if (file_idx >= 0) {
                 printf("[OCX] Executing operator command script from VFS member: %s\n", target_name);
-                printf("  - Command 01: 'cbtclear'\n");
-                printf("  - Command 02: 'cbtbeep'\n");
+                printf("%s", g_vfs.files[file_idx].data);
                 printf("[OCX] Command execution completed successfully.\n");
             } else {
                 printf("[OCX ERROR] Member %s not found in active VFS. Please mount dataset first.\n", target_name);
@@ -3752,6 +3751,7 @@ bool tsfi_xplos_create_file(XplosVirtualDisk *disk, const char *name, uint32_t s
     f->start_offset = disk->count * 0x10000;
     f->size_bytes = size;
     f->active = true;
+    memset(f->data, 0, sizeof(f->data));
     return true;
 }
 

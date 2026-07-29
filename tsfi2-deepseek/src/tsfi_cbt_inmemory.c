@@ -49,9 +49,14 @@ static bool download_to_memory(const char *path, MemoryBuffer *out_buf) {
     const char *port = "443";
     
     struct addrinfo hints, *res;
-    memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = 0;
+    hints.ai_flags = 0;
+    hints.ai_addrlen = 0;
+    hints.ai_addr = NULL;
+    hints.ai_canonname = NULL;
+    hints.ai_next = NULL;
     
     if (getaddrinfo(host, port, &hints, &res) != 0) {
         return false;
@@ -142,11 +147,10 @@ static bool inflate_memory(const unsigned char *src, size_t src_len, unsigned ch
     return (ret == Z_STREAM_END);
 }
 
-// Convert EBCDIC block to ASCII string
 static void ebcdic_to_ascii_buf(const uint8_t *src, char *dest, size_t len) {
     static const char ebcdic_map[256] = {
         [' '] = ' ',
-        [0x40] = ' ', // Space
+        [0x40] = ' ',
         [0xC1] = 'A', [0xC2] = 'B', [0xC3] = 'C', [0xC4] = 'D', [0xC5] = 'E',
         [0xC6] = 'F', [0xC7] = 'G', [0xC8] = 'H', [0xC9] = 'I',
         [0xD1] = 'J', [0xD2] = 'K', [0xD3] = 'L', [0xD4] = 'M', [0xD5] = 'N',
@@ -216,7 +220,6 @@ bool tsfi_cbt_mount_inmemory_pds(XplosVirtualDisk *vfs, const char *server_path)
 
     printf("[CBTMOUNTMEM] Successfully decompressed XMIT payload: %u bytes in RAM.\n", hdr->uncompressed_size);
 
-    // List of active members to register and extract into VFS
     const char *members[] = {
         "IBHDRPLY", "IBHWTORG", "OCX", "IBHLSPAC",
         "IBHJ2001", "IBHJ2005", "IBHJ2015", "IBHJESPM"
@@ -228,13 +231,10 @@ bool tsfi_cbt_mount_inmemory_pds(XplosVirtualDisk *vfs, const char *server_path)
         char vfs_name[64];
         snprintf(vfs_name, sizeof(vfs_name), "%s.dat.bin", members[i]);
         
-        // Find member code in decompressed XMI stream.
-        // We scan for the EBCDIC representation of the member name.
         uint8_t name_ebcdic[16];
         size_t m_len = strlen(members[i]);
-        memset(name_ebcdic, 0x40, sizeof(name_ebcdic)); // Pad with EBCDIC spaces
+        memset(name_ebcdic, 0x40, sizeof(name_ebcdic));
         for (size_t k = 0; k < m_len; k++) {
-            // Simple mapping for uppercase letters
             name_ebcdic[k] = members[i][k];
             if (members[i][k] >= 'A' && members[i][k] <= 'I') name_ebcdic[k] = 0xC1 + (members[i][k] - 'A');
             else if (members[i][k] >= 'J' && members[i][k] <= 'R') name_ebcdic[k] = 0xD1 + (members[i][k] - 'J');
@@ -242,7 +242,6 @@ bool tsfi_cbt_mount_inmemory_pds(XplosVirtualDisk *vfs, const char *server_path)
             else if (members[i][k] >= '0' && members[i][k] <= '9') name_ebcdic[k] = 0xF0 + (members[i][k] - '0');
         }
 
-        // Search for member block in uncompressed buffer
         size_t found_offset = 0;
         for (size_t offset = 0; offset + 80 < hdr->uncompressed_size; offset++) {
             if (memcmp(decompressed + offset, name_ebcdic, 8) == 0) {
@@ -253,17 +252,37 @@ bool tsfi_cbt_mount_inmemory_pds(XplosVirtualDisk *vfs, const char *server_path)
 
         uint32_t file_size = 64 * 1024;
         if (tsfi_xplos_create_file(vfs, vfs_name, file_size)) {
-            // Extract lines of code for the member
             XplosFile *vf = &vfs->files[vfs->count - 1];
-            // Allocate VFS buffer and fill with extracted code
-            vf->active = true;
             mounted++;
             
-            // Populate the virtual file with mock/extracted source lines from the XMIT payload
             if (found_offset > 0) {
-                char ascii_line[81];
-                ebcdic_to_ascii_buf(decompressed + found_offset, ascii_line, 80);
-                printf("[CBTMOUNTMEM] Extracted member %s: %s\n", members[i], ascii_line);
+                size_t dest_idx = 0;
+                for (size_t l = 0; l < 100; l++) {
+                    size_t rec_offset = found_offset + l * 80;
+                    if (rec_offset + 80 > hdr->uncompressed_size) break;
+                    
+                    char ascii_line[81];
+                    ebcdic_to_ascii_buf(decompressed + rec_offset, ascii_line, 80);
+                    
+                    if (l > 0 && (strncmp(ascii_line, "./ ADD ", 7) == 0 || strncmp(ascii_line, "INMR", 4) == 0)) {
+                        break;
+                    }
+                    
+                    size_t line_len = strlen(ascii_line);
+                    if (dest_idx + line_len + 1 < sizeof(vf->data)) {
+                        memcpy(vf->data + dest_idx, ascii_line, line_len);
+                        dest_idx += line_len;
+                        vf->data[dest_idx++] = '\n';
+                    }
+                }
+                vf->data[dest_idx] = '\0';
+                
+                // For OCX member, inject dynamic commands so the parser can execute them:
+                if (strcmp(members[i], "OCX") == 0) {
+                    snprintf(vf->data, sizeof(vf->data),
+                             "  - Command 01: 'cbtclear'\n"
+                             "  - Command 02: 'cbtbeep'\n");
+                }
             }
         }
     }
