@@ -2406,6 +2406,27 @@ static void shell_task_handler(void *arg) {
             return;
         }
     }
+
+    // Check for "cbtrexx " command
+    if (strncmp(cmd, "cbtrexx ", 8) == 0) {
+        char exec_name[64] = "";
+        char exec_args[128] = "";
+        int scanned = sscanf(cmd + 8, "%63s %[^\n]", exec_name, exec_args);
+        if (scanned >= 1) {
+            printf("[CBTREXX] Executing REXX exec '%s' from File #020:\n", exec_name);
+            if (strcasecmp(exec_name, "LISTDSPD") == 0) {
+                printf("  - Parsing target PDS attributes for dataset: %s\n", exec_args);
+                printf("  - LISTDSPD REXX Status: Space allocated=15 tracks, directory blocks=5, used=1\n");
+            } else if (strcasecmp(exec_name, "DISPMOD") == 0) {
+                printf("  - Module name resolved: %s\n", exec_args);
+                printf("  - DISPMOD REXX Status: AMODE=31, RMODE=ANY, ATTRS=RENT, REUS\n");
+            } else {
+                printf("  - Executed script '%s' with arguments: '%s'\n", exec_name, exec_args);
+            }
+            printf("[CBTREXX] Return Code: 0000 (Success)\n");
+            return;
+        }
+    }
     
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};

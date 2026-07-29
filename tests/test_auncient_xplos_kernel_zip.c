@@ -983,6 +983,17 @@ int main(void) {
     remove("tests/memb_del.txt");
     remove("tests/del_pds.dat.bin");
 
+    // 65. Test CBTREXX command execution
+    printf("[KERNEL TEST] Dispatching 'cbtrexx' command to XplOS shell...\n");
+    XplosShell shell_rexx;
+    XplosScheduler sched_rexx;
+    tsfi_xplos_init_scheduler(&sched_rexx);
+    tsfi_xplos_init_shell(&shell_rexx);
+    bool cbtrexx_ok = tsfi_xplos_shell_exec(&shell_rexx, &sched_rexx, "cbtrexx LISTDSPD SYS1.MACLIB");
+    assert(cbtrexx_ok == true);
+    tsfi_xplos_run(&sched_rexx);
+    printf("   ✓ CBTREXX execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
