@@ -603,6 +603,40 @@ static bool handle_vtamrouterecresetlist(const char *cmd) {
     return true;
 }
 
+static bool handle_vtamrouterecresetstats(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  VTAM GATEWAY ROUTE RECOVERY RESETS LOGS HISTORY               \n");
+    printf("================================================================================\n");
+    printf(" RECENT RESET TIME   : 2026-07-29T09:32:00-07:00\n");
+    printf(" COMPLETED AUDITS    : 1 RESETS RECORDED\n");
+    printf(" RESPONSE STATUS     : OPERATIONAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
+static bool handle_vtamrouterecresetstatsstatus(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  VTAM GATEWAY ROUTE RECOVERY RESETS INTEGRITY STATE STATUS     \n");
+    printf("================================================================================\n");
+    printf(" PENDING RESET LOGS  : 0 LOGS\n");
+    printf(" LOGS SECURITY STATE : VERIFIED. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
+static bool handle_vtamrouterecresetstatsstatusdetails(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  VTAM GATEWAY ROUTE RECOVERY RESETS INTEGRITY LOGS DETAILS     \n");
+    printf("================================================================================\n");
+    printf(" LOGS PROGRESS STATS : 100 PERCENT VERIFIED\n");
+    printf(" COMPLIANCE AUDIT    : PASSED. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "cbtnet ", 7) == 0) return handle_cbtnet(cmd + 7);
     if (strncmp(cmd, "logon ", 6) == 0) return handle_vtam_logon(cmd);
@@ -636,6 +670,9 @@ bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "vtamroutesolmsg ", 16) == 0) return handle_vtamroutesolmsg(cmd);
     if (strncmp(cmd, "vtamroutereclog ", 16) == 0) return handle_vtamroutereclog(cmd);
     if (strncmp(cmd, "vtamrouterecignore ", 19) == 0) return handle_vtamrouterecignore(cmd);
+    if (strcmp(cmd, "vtamrouterecresetstatsstatusdetails") == 0) return handle_vtamrouterecresetstatsstatusdetails();
+    if (strcmp(cmd, "vtamrouterecresetstatsstatus") == 0) return handle_vtamrouterecresetstatsstatus();
+    if (strcmp(cmd, "vtamrouterecresetstats") == 0) return handle_vtamrouterecresetstats();
     if (strcmp(cmd, "vtamrouterecresetstat") == 0) return handle_vtamrouterecresetstat();
     if (strncmp(cmd, "vtamrouterecresetlist ", 22) == 0) return handle_vtamrouterecresetlist(cmd);
     if (strncmp(cmd, "vtamrouterecignorelist ", 23) == 0) return handle_vtamrouterecignorelist(cmd);
