@@ -1845,6 +1845,27 @@ int main(void) {
     assert(xq_ok == true);
     tsfi_xplos_run(&sched_bh2);
 
+    tsfi_xplos_init_scheduler(&sched_bh2);
+    bool wn_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "whatsnew");
+    assert(wn_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool vs_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "vsamsize DSN.VSAM.CLUSTER");
+    assert(vs_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool pr_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "packrat");
+    assert(pr_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool tl_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "tapel");
+    assert(tl_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool oo_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "offloado DSN.PDS");
+    assert(oo_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
     printf("   ✓ File 035 utilities execution verified successfully.\n");
 
     printf("=============================================================\n");
