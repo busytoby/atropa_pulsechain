@@ -218,4 +218,7 @@ XplgConflictType tsfi_xplg_resolve_conflict(XplgTerminal term, XplgPrecedence re
 void tsfi_xplg_init_svdag_registry(SvdagRegistry *registry);
 bool tsfi_xplg_register_svdag_node(SvdagRegistry *registry, const MallgrenRegion *region, uint32_t voxel_id);
 
+// System/370 inline assembler executor for Carmine Cannatello ASM integration
+bool tsfi_xpl_execute_assembler(const char *asm_instruction, uint32_t *gprs, uint8_t *memory);
+
 #endif // TSFI_XPL_MALLGREN_H

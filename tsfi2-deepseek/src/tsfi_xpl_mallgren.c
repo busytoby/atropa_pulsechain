@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 #include <math.h>
 #include <stdlib.h>
 #include "tsfi_xpl_mallgren.h"
@@ -420,4 +421,124 @@ bool tsfi_xplg_register_svdag_node(SvdagRegistry *registry, const MallgrenRegion
     node->active = true;
 
     return true;
+}
+
+// System/370 inline assembler executor for Carmine Cannatello ASM integration
+bool tsfi_xpl_execute_assembler(const char *asm_instruction, uint32_t *gprs, uint8_t *memory) {
+    if (!asm_instruction || !gprs || !memory) return false;
+    
+    char op[16] = "";
+    char arg1[32] = "";
+    char arg2[32] = "";
+    
+    // Parse operands: OP ARG1, ARG2 (accounting for commas inside parentheses)
+    const char *space = strchr(asm_instruction, ' ');
+    if (!space) return false;
+    size_t op_len = space - asm_instruction;
+    if (op_len >= sizeof(op)) op_len = sizeof(op) - 1;
+    strncpy(op, asm_instruction, op_len);
+    op[op_len] = '\0';
+    
+    const char *ptr = space;
+    while (*ptr == ' ') ptr++;
+    
+    const char *comma = NULL;
+    int depth = 0;
+    for (const char *c = ptr; *c != '\0'; c++) {
+        if (*c == '(') depth++;
+        else if (*c == ')') depth--;
+        else if (*c == ',' && depth == 0) {
+            comma = c;
+            break;
+        }
+    }
+    if (!comma) return false;
+    
+    size_t arg1_len = comma - ptr;
+    if (arg1_len >= sizeof(arg1)) arg1_len = sizeof(arg1) - 1;
+    strncpy(arg1, ptr, arg1_len);
+    arg1[arg1_len] = '\0';
+    
+    const char *ptr2 = comma + 1;
+    while (*ptr2 == ' ') ptr2++;
+    strncpy(arg2, ptr2, sizeof(arg2) - 1);
+    arg2[sizeof(arg2) - 1] = '\0';
+    
+    if (strcasecmp(op, "AR") == 0) {
+        int r1 = atoi(arg1 + (arg1[0] == 'R' || arg1[0] == 'r' ? 1 : 0));
+        int r2 = atoi(arg2 + (arg2[0] == 'R' || arg2[0] == 'r' ? 1 : 0));
+        if (r1 >= 0 && r1 < 16 && r2 >= 0 && r2 < 16) {
+            gprs[r1] += gprs[r2];
+            return true;
+        }
+    } else if (strcasecmp(op, "SR") == 0) {
+        int r1 = atoi(arg1 + (arg1[0] == 'R' || arg1[0] == 'r' ? 1 : 0));
+        int r2 = atoi(arg2 + (arg2[0] == 'R' || arg2[0] == 'r' ? 1 : 0));
+        if (r1 >= 0 && r1 < 16 && r2 >= 0 && r2 < 16) {
+            gprs[r1] -= gprs[r2];
+            return true;
+        }
+    } else if (strcasecmp(op, "MVI") == 0) {
+        int offset = 0;
+        int base_reg = 0;
+        sscanf(arg1, "%d(%*[^)])", &offset);
+        char *paren = strchr(arg1, '(');
+        if (paren) {
+            base_reg = atoi(paren + (paren[1] == 'R' || paren[1] == 'r' ? 2 : 1));
+        }
+        int immediate = 0;
+        if (arg2[0] == 'X' || arg2[0] == 'x') {
+            sscanf(arg2 + 1, "'%x'", &immediate);
+        } else {
+            immediate = atoi(arg2);
+        }
+        uint32_t addr = gprs[base_reg] + offset;
+        memory[addr] = (uint8_t)(immediate & 0xFF);
+        return true;
+    } else if (strcasecmp(op, "MVC") == 0) {
+        int offset1 = 0, len = 1, base1 = 0;
+        sscanf(arg1, "%d(%d,%*[^)])", &offset1, &len);
+        char *paren1 = strchr(arg1, '(');
+        if (paren1) {
+            char *comma = strchr(paren1, ',');
+            if (comma) {
+                base1 = atoi(comma + (comma[1] == 'R' || comma[1] == 'r' ? 2 : 1));
+            }
+        }
+        int offset2 = 0, base2 = 0;
+        sscanf(arg2, "%d(%*[^)])", &offset2);
+        char *paren2 = strchr(arg2, '(');
+        if (paren2) {
+            base2 = atoi(paren2 + (paren2[1] == 'R' || paren2[1] == 'r' ? 2 : 1));
+        }
+        uint32_t addr1 = gprs[base1] + offset1;
+        uint32_t addr2 = gprs[base2] + offset2;
+        memmove(memory + addr1, memory + addr2, len);
+        return true;
+    } else if (strcasecmp(op, "TR") == 0) {
+        int offset1 = 0, len = 1, base1 = 0;
+        sscanf(arg1, "%d(%d,%*[^)])", &offset1, &len);
+        char *paren1 = strchr(arg1, '(');
+        if (paren1) {
+            char *comma = strchr(paren1, ',');
+            if (comma) {
+                base1 = atoi(comma + (comma[1] == 'R' || comma[1] == 'r' ? 2 : 1));
+            }
+        }
+        int offset2 = 0, base2 = 0;
+        sscanf(arg2, "%d(%*[^)])", &offset2);
+        char *paren2 = strchr(arg2, '(');
+        if (paren2) {
+            base2 = atoi(paren2 + (paren2[1] == 'R' || paren2[1] == 'r' ? 2 : 1));
+        }
+        uint32_t addr1 = gprs[base1] + offset1;
+        uint32_t addr2 = gprs[base2] + offset2;
+        for (int i = 0; i < len; i++) {
+            uint8_t code = memory[addr1 + i];
+            memory[addr1 + i] = memory[addr2 + code];
+        }
+        return true;
+    }
+    
+    return false;
 }

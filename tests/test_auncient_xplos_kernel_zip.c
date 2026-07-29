@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include "tsfi_xplos_kernel.h"
+#include "tsfi_xpl_mallgren.h"
 #include "tsfi_parc_tape_catalog.h"
 
 int main(void) {
@@ -2041,6 +2042,35 @@ int main(void) {
     tsfi_xplos_run(&sched_bh2);
 
     printf("   ✓ File 134 utilities execution verified successfully.\n");
+
+    printf("[KERNEL TEST] Validating inline System/370 assembler simulator in XPL...\n");
+    uint32_t test_gprs[16] = {0};
+    uint8_t test_mem[1024] = {0};
+    test_gprs[1] = 100;
+    test_gprs[2] = 50;
+    bool ar_ret = tsfi_xpl_execute_assembler("AR R1, R2", test_gprs, test_mem);
+    assert(ar_ret == true);
+    assert(test_gprs[1] == 150);
+    
+    test_gprs[13] = 200;
+    bool mvi_ret = tsfi_xpl_execute_assembler("MVI 4(13), 25", test_gprs, test_mem);
+    assert(mvi_ret == true);
+    assert(test_mem[204] == 25);
+    
+    bool mvc_ret = tsfi_xpl_execute_assembler("MVC 8(4,13), 4(13)", test_gprs, test_mem);
+    assert(mvc_ret == true);
+    assert(test_mem[208] == 25);
+    
+    for (int i = 0; i < 256; i++) {
+        test_mem[400 + i] = (uint8_t)(i + 1);
+    }
+    test_gprs[14] = 400;
+    test_gprs[15] = 500;
+    test_mem[500] = 65;
+    bool tr_ret = tsfi_xpl_execute_assembler("TR 0(1,15), 0(14)", test_gprs, test_mem);
+    assert(tr_ret == true);
+    assert(test_mem[500] == 66);
+    printf("   ✓ System/370 inline assembler executor validated successfully.\n");
 
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
