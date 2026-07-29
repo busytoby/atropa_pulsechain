@@ -1888,6 +1888,28 @@ int main(void) {
     assert(lp_ok == true);
     tsfi_xplos_run(&sched_bh2);
 
+    tsfi_xplos_init_scheduler(&sched_bh2);
+
+    bool l1_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "look 1");
+    assert(l1_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool l4_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "look 4");
+    assert(l4_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool pru_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "packratu DSN.PDS");
+    assert(pru_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool po_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "pdsorig OCX");
+    assert(po_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool xm_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "xmdsmain");
+    assert(xm_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
     printf("   ✓ File 035 utilities execution verified successfully.\n");
 
     printf("=============================================================\n");

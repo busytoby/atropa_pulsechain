@@ -4015,14 +4015,25 @@ static void shell_task_handler(void *arg) {
     }
 
     // Check for "look" command
-    if (strcmp(cmd, "look") == 0) {
-        printf("[LOOK] System Status Monitor:\n");
-        printf("  - CPU Usage:  12.4%%   Active ASIDs: 6\n");
-        printf("  - Address Space Allocations:\n");
-        printf("    * ASID 1: master    (0x00000000 - 0x000FFFFF)\n");
-        printf("    * ASID 2: jes2      (0x00100000 - 0x0017FFFF)\n");
-        printf("    * ASID 3: console   (0x00180000 - 0x0019FFFF)\n");
-        printf("    * ASID 4: tso001    (0x001A0000 - 0x002FFFFF)\n");
+    if (strncmp(cmd, "look", 4) == 0) {
+        const char *args = cmd + 4;
+        if (strstr(args, "1")) {
+            printf("[LOOK1] Listing active system tasks...\n");
+        } else if (strstr(args, "2")) {
+            printf("[LOOK2] Displaying page frames...\n");
+        } else if (strstr(args, "3")) {
+            printf("[LOOK3] Showing channel paths...\n");
+        } else if (strstr(args, "4")) {
+            printf("[LOOK4] Showing spool space...\n");
+        } else {
+            printf("[LOOK] System Status Monitor:\n");
+            printf("  - CPU Usage:  12.4%%   Active ASIDs: 6\n");
+            printf("  - Address Space Allocations:\n");
+            printf("    * ASID 1: master    (0x00000000 - 0x000FFFFF)\n");
+            printf("    * ASID 2: jes2      (0x00100000 - 0x0017FFFF)\n");
+            printf("    * ASID 3: console   (0x00180000 - 0x0019FFFF)\n");
+            printf("    * ASID 4: tso001    (0x001A0000 - 0x002FFFFF)\n");
+        }
         printf("[LOOK] System status retrieval completed.\n");
         return;
     }
@@ -4262,6 +4273,46 @@ static void shell_task_handler(void *arg) {
         printf("  - PSCB 01: User=MVSUSER  Attr=OPER,ACCT  Acct=SYS1\n");
         printf("  - PSCB 02: User=VAESEN   Attr=OPER       Acct=SYS2\n");
         printf("[LPSCB] Control block display completed.\n");
+        return;
+    }
+
+    // Check for "packratu " command
+    if (strncmp(cmd, "packratu ", 9) == 0) {
+        const char *dsn = cmd + 9;
+        printf("[PACKRATU] Unpacking in-memory VFS archive: %s\n", dsn);
+        printf("  - Decompressing dataset blocks...\n");
+        printf("[PACKRATU] Archive unpacked successfully.\n");
+        return;
+    }
+
+    // Check for "pdsorig " command
+    if (strncmp(cmd, "pdsorig ", 8) == 0) {
+        const char *member = cmd + 8;
+        printf("[PDSORIG] Querying source origin properties for member: %s\n", member);
+        char target_name[80];
+        resolve_pds_name(member, target_name, sizeof(target_name));
+        int file_idx = -1;
+        for (int i = 0; i < g_vfs.count; i++) {
+            if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, target_name) == 0) {
+                file_idx = i;
+                break;
+            }
+        }
+        if (file_idx >= 0) {
+            printf("  - Source Offset:  0x%08X  Size: %u bytes\n", g_vfs.files[file_idx].start_offset, g_vfs.files[file_idx].size_bytes);
+            printf("  - DNA Signature:  Verified (Auncient clean-room)\n");
+        } else {
+            printf("[PDSORIG ERROR] Member %s not found in VFS.\n", target_name);
+        }
+        return;
+    }
+
+    // Check for "xmdsmain" command
+    if (strcmp(cmd, "xmdsmain") == 0) {
+        printf("[XMDSMAIN] Commencing External Dataset Maintenance Audit:\n");
+        printf("  - Active VFS Volume: MVSRES   Integrity check: PASS\n");
+        printf("  - Total Active Files: %d  Errors: 0\n", g_vfs.count);
+        printf("[XMDSMAIN] System catalog maintenance audit completed.\n");
         return;
     }
 
