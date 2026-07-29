@@ -256,6 +256,32 @@ int main(void) {
     bool mockjob5_run_ok = tsfi_xplos_shell_cbt_jcl("jclrun MJ5");
     assert(mockjob5_run_ok == true);
 
+    // 17. Verify SMF Archive to Virtual Tape Catalog
+    printf("  -> Phase 15: Verifying SMF Archive to Virtual Tape Catalog...\n");
+    remove("TAPE.SMF.dat.bin");
+    remove("SMF.dat.bin");
+    tsfi_cw_vsam_ksds smf_ksds;
+    int open_smf_rc = tsfi_cw_vsam_open(&smf_ksds, "SMF.dat.bin");
+    assert(open_smf_rc == 0);
+    uint8_t mock_smf_rec[128] = "JOB_NAME=MJ5,PGM=RAUPGM,CPU=0.015,RC=0000";
+    int write_smf_rc = tsfi_cw_vsam_write(&smf_ksds, "MJ5", mock_smf_rec, strlen((char *)mock_smf_rec));
+    assert(write_smf_rc == 0);
+
+    // Trigger archive command
+    bool archive_ok = tsfi_xplos_shell_cbt_jes("smfarchive");
+    assert(archive_ok == true);
+
+    // Read back and verify from TAPE.SMF.dat.bin
+    tsfi_cw_vsam_ksds tape_ksds;
+    int open_tape_rc = tsfi_cw_vsam_open(&tape_ksds, "TAPE.SMF.dat.bin");
+    assert(open_tape_rc == 0);
+    uint8_t read_tape_buf[128] = {0};
+    int read_tape_len = 0;
+    int read_tape_rc = tsfi_cw_vsam_read(&tape_ksds, "MJ5", read_tape_buf, sizeof(read_tape_buf), &read_tape_len);
+    assert(read_tape_rc == 0);
+    assert(read_tape_len > 0);
+    assert(strncmp((char *)read_tape_buf, "JOB_NAME=MJ5", 12) == 0);
+
     printf("  -> End-to-end data pipeline integrity verified successfully.\n");
     printf("\n=== SKELETON HASP BOOK PROOFS PASSED ===\n");
     return 0;

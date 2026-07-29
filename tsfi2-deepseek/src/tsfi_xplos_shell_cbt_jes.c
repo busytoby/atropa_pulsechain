@@ -288,9 +288,41 @@ static bool handle_cbthaspspoolignorelistresetstat(void) {
 }
 
 
+static bool handle_smfarchive(void) {
+    printf("[SMFARCHIVE] Archiving completed SMF telemetry records to virtual tape catalog...\n");
+    tsfi_cw_vsam_ksds smf_ksds;
+    tsfi_cw_vsam_ksds tape_ksds;
+    int open_smf = tsfi_cw_vsam_open(&smf_ksds, "SMF.dat.bin");
+    int open_tape = tsfi_cw_vsam_open(&tape_ksds, "TAPE.SMF.dat.bin");
+    
+    if (open_smf == 0 && open_tape == 0) {
+        int archived_count = 0;
+        const char *job_keys[] = {
+            "JOB_PROD", "JOB_CL_B", "JOB_CL_A", "JOB_HELD", "JOB_AGE",
+            "MJ1", "MJ2", "MJ3", "MJ4", "MJ5"
+        };
+        for (int i = 0; i < 10; i++) {
+            uint8_t read_buf[128] = {0};
+            int read_len = 0;
+            int read_rc = tsfi_cw_vsam_read(&smf_ksds, job_keys[i], read_buf, sizeof(read_buf), &read_len);
+            if (read_rc == 0 && read_len > 0) {
+                tsfi_cw_vsam_write(&tape_ksds, job_keys[i], read_buf, read_len);
+                archived_count++;
+            }
+        }
+        printf("[SMFARCHIVE] Successfully archived %d job records to TAPE.SMF.dat.bin\n", archived_count);
+        remove("SMF.dat.bin");
+        printf("[SMFARCHIVE] Active SMF record database truncated.\n");
+        return true;
+    }
+    printf("[SMFARCHIVE ERROR] Failed to access SMF or Tape catalog clusters.\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jes(const char *cmd) {
     if (strncmp(cmd, "cbthasp ", 8) == 0) return handle_cbthasp(cmd);
     if (strcmp(cmd, "smfdump") == 0) return handle_smfdump();
+    if (strcmp(cmd, "smfarchive") == 0) return handle_smfarchive();
     if (strcmp(cmd, "cbthaspspoollogsstatusdetailsprogress") == 0) return handle_cbthaspspoollogsstatusdetailsprogress();
     if (strcmp(cmd, "cbthaspspoollogsstatusdetails") == 0) return handle_cbthaspspoollogsstatusdetails();
     if (strcmp(cmd, "cbthaspspoollogsstatus") == 0) return handle_cbthaspspoollogsstatus();

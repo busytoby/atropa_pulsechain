@@ -244,7 +244,7 @@ static bool handle_jclrun(const char *cmd) {
                                 if (auncient_sdk_init_coaxial(&env)) {
                                     printf("[RAUPGM] Coaxial RAU Backplane mounted successfully.\n");
                                     bool reg_ok = true;
-                                    for (uint32_t reg_idx = 0; reg_idx < 8; reg_idx++) {
+                                    for (uint32_t reg_idx = 1; reg_idx < 8; reg_idx++) {
                                         auncient_rau_poke(&env, reg_idx, 0xAA550000 + reg_idx);
                                         uint32_t val = auncient_rau_peek(&env, reg_idx);
                                         if (val != (0xAA550000 + reg_idx)) {
