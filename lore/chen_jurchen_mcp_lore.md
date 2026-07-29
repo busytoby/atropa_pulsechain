@@ -38,3 +38,4 @@ The Chen Jurchen tactical coaxial transmission protocol defines how military-gra
 * **VM Register Context:** The metadata mapping supervisor layer mapping the virtual `ce_gprs` lanes onto the physical 512-bit ZMM vector registers.
 * **Mathematical Function:** The bijection mapping matrix $M_{RAU}$ projecting GPR variables to vector slots: $M_{RAU} \times \vec{V} \pmod{MotzkinPrime}$.
 * **Visual / Geometric Manifestation:** Controls the orbital rotation axes and shear parameters, warping the projected shape dynamically during live execution cycles.
+* **Cache-Level Integration:** Direct-mapped index caching (such as Aho-Corasick pipelines) acts as the accelerator loop for the RAU. By caching past register alias resolution hits, the RAU maintains sub-microsecond latency (< 1000 ns) on register lookups, preventing pipeline stalls during dynamic instruction compilation.
