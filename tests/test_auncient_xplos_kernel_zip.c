@@ -1032,6 +1032,33 @@ int main(void) {
     tsfi_xplos_run(&sched_who);
     printf("   ✓ CBTWHO execution verified successfully.\n");
 
+    // 68. Test CBTPDSREN command execution
+    printf("[KERNEL TEST] Dispatching 'cbtpdsren' command to XplOS shell...\n");
+    XplosShell shell_ren;
+    XplosScheduler sched_ren;
+    
+    tsfi_xplos_init_scheduler(&sched_ren);
+    tsfi_xplos_init_shell(&shell_ren);
+    tsfi_xplos_shell_exec(&shell_ren, &sched_ren, "cbtpdsinit tests/ren_pds.dat.bin");
+    tsfi_xplos_run(&sched_ren);
+
+    FILE *f_r_tmp = fopen("tests/memb_ren.txt", "w");
+    fprintf(f_r_tmp, "RENAME TEST LINE DATA\n");
+    fclose(f_r_tmp);
+
+    tsfi_xplos_init_scheduler(&sched_ren);
+    tsfi_xplos_shell_exec(&shell_ren, &sched_ren, "cbtpdsadd tests/ren_pds.dat.bin MEMB1 tests/memb_ren.txt");
+    tsfi_xplos_run(&sched_ren);
+
+    tsfi_xplos_init_scheduler(&sched_ren);
+    bool ren_ok = tsfi_xplos_shell_exec(&shell_ren, &sched_ren, "cbtpdsren tests/ren_pds.dat.bin MEMB1 MEMB2");
+    assert(ren_ok == true);
+    tsfi_xplos_run(&sched_ren);
+
+    printf("   ✓ CBTPDSREN execution verified successfully.\n");
+    remove("tests/memb_ren.txt");
+    remove("tests/ren_pds.dat.bin");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

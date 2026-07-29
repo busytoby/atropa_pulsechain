@@ -2503,6 +2503,56 @@ static void shell_task_handler(void *arg) {
         printf("[CBTWHO] Query completed.\n");
         return;
     }
+
+    // Check for "cbtpdsren " command
+    if (strncmp(cmd, "cbtpdsren ", 10) == 0) {
+        char pds_path[128] = "";
+        char old_name[32] = "";
+        char new_name[32] = "";
+        if (sscanf(cmd + 10, "%127s %31s %31s", pds_path, old_name, new_name) == 3) {
+            if (strstr(pds_path, ".dat.bin") == NULL) {
+                printf("[CBTPDSREN ERROR] Violation of Rule 13: filename must end in .dat.bin\n");
+                return;
+            }
+            FILE *f = fopen(pds_path, "r+b");
+            if (!f) {
+                printf("[CBTPDSREN ERROR] Could not open PDS: %s\n", pds_path);
+                return;
+            }
+            uint8_t dir_block[256];
+            fread(dir_block, 1, 256, f);
+            uint16_t used = (dir_block[0] << 8) | dir_block[1];
+            int ptr = 2;
+            bool found = false;
+            while (ptr < used) {
+                char name[9];
+                memcpy(name, &dir_block[ptr], 8);
+                name[8] = '\0';
+                for (int k = 7; k >= 0; k--) {
+                    if (name[k] == ' ') name[k] = '\0';
+                    else break;
+                }
+                if (strcasecmp(name, old_name) == 0) {
+                    memset(&dir_block[ptr], ' ', 8);
+                    int len = strlen(new_name);
+                    if (len > 8) len = 8;
+                    memcpy(&dir_block[ptr], new_name, len);
+                    found = true;
+                    break;
+                }
+                ptr += 16;
+            }
+            if (found) {
+                fseek(f, 0, SEEK_SET);
+                fwrite(dir_block, 1, 256, f);
+                printf("[CBTPDSREN] Renamed PDS member %s to %s inside: %s\n", old_name, new_name, pds_path);
+            } else {
+                printf("[CBTPDSREN ERROR] Member %s not found in PDS.\n", old_name);
+            }
+            fclose(f);
+            return;
+        }
+    }
     
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
