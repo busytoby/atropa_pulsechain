@@ -1,6 +1,7 @@
 #define _DEFAULT_SOURCE
 #define _POSIX_C_SOURCE 200809L
 #include "tsfi_cbt_inmemory.h"
+#include "tsfi_mainframe_computerworld.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -343,13 +344,15 @@ bool tsfi_cbt_mount_inmemory_pds(XplosVirtualDisk *vfs, const char *server_path)
             }
         }
 
-        uint32_t file_size = 64 * 1024;
-        if (tsfi_xplos_create_file(vfs, vfs_name, file_size)) {
-            XplosFile *vf = &vfs->files[vfs->count - 1];
+        // Route strictly through mainframe VSAM Key-Sequenced Data Set (KSDS)
+        tsfi_cw_vsam_ksds ksds;
+        int open_rc = tsfi_cw_vsam_open(&ksds, vfs_name);
+        if (open_rc == 0) {
             mounted++;
+            char member_data_buf[64 * 1024] = {0};
+            size_t dest_idx = 0;
 
             if (member_offset > 0) {
-                size_t dest_idx = 0;
                 for (size_t l = 0; l < 100; l++) {
                     size_t rec_offset = member_offset + l * 80;
                     if (rec_offset + 80 > clean_size) break;
@@ -362,14 +365,17 @@ bool tsfi_cbt_mount_inmemory_pds(XplosVirtualDisk *vfs, const char *server_path)
                     }
 
                     size_t line_len = strlen(ascii_line);
-                    if (dest_idx + line_len + 1 < sizeof(vf->data)) {
-                        memcpy(vf->data + dest_idx, ascii_line, line_len);
+                    if (dest_idx + line_len + 1 < sizeof(member_data_buf)) {
+                        memcpy(member_data_buf + dest_idx, ascii_line, line_len);
                         dest_idx += line_len;
-                        vf->data[dest_idx++] = '\n';
+                        member_data_buf[dest_idx++] = '\n';
                     }
                 }
-                vf->data[dest_idx] = '\0';
+                member_data_buf[dest_idx] = '\0';
             }
+
+            // Write active member records to VSAM database
+            tsfi_cw_vsam_write(&ksds, found_names[i], (const uint8_t *)member_data_buf, dest_idx > 0 ? (int)dest_idx : 1);
         }
     }
 
