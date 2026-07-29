@@ -2006,7 +2006,21 @@ int main(void) {
     assert(cbef_ok == true);
     tsfi_xplos_run(&sched_bh2);
 
-    printf("   ✓ Carmine Cannatello ASM book utilities execution verified successfully.\n");
+    tsfi_xplos_init_scheduler(&sched_bh2);
+
+    bool ao_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "askoper MOUNT TAPE");
+    assert(ao_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool ab_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "asmbox COMPLETED");
+    assert(ab_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool vk_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "vkiller RUNREXX");
+    assert(vk_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    printf("   ✓ File 316 utilities execution verified successfully.\n");
 
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");

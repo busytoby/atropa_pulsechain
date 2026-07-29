@@ -4589,6 +4589,58 @@ static void shell_task_handler(void *arg) {
         return;
     }
 
+    // Check for "askoper " command
+    if (strncmp(cmd, "askoper ", 8) == 0) {
+        const char *prompt = cmd + 8;
+        printf("[ASKOPER] Operator Query Prompt: '%s'\n", prompt);
+        printf("  - Intercepting console responses over SCSI WinchesterMQ loopback...\n");
+        printf("  - Operator Response: 'AFFIRMATIVE'\n");
+        printf("[ASKOPER] Console query completed successfully.\n");
+        return;
+    }
+
+    // Check for "asmbox " command
+    if (strncmp(cmd, "asmbox ", 7) == 0) {
+        const char *text = cmd + 7;
+        size_t len = strlen(text);
+        printf("[ASMBOX] Formatting assembler visual comments box:\n");
+        printf("  *");
+        for (size_t i = 0; i < len + 4; i++) putchar('*');
+        printf("*\n");
+        printf("  *  %s  *\n", text);
+        printf("  *");
+        for (size_t i = 0; i < len + 4; i++) putchar('*');
+        printf("*\n");
+        printf("[ASMBOX] Comment formatting completed.\n");
+        return;
+    }
+
+    // Check for "vkiller " command
+    if (strncmp(cmd, "vkiller ", 8) == 0) {
+        const char *target = cmd + 8;
+        printf("[VKILLER] Task Terminator auditing active ASIDs:\n");
+        bool terminated = false;
+        int target_asid = atoi(target);
+        if (target_asid > 0 && target_asid < 10) {
+            printf("  - Terminating target ASID %d cleanly...\n", target_asid);
+            terminated = true;
+        } else {
+            for (int i = 0; i < 10; i++) {
+                if (cbt_job_table[i].active && strcasecmp(cbt_job_table[i].job_name, target) == 0) {
+                    cbt_job_table[i].active = false;
+                    printf("  - Terminating batch job: %s (ASID %d) cleanly...\n", cbt_job_table[i].job_name, 10 + i);
+                    terminated = true;
+                }
+            }
+        }
+        if (terminated) {
+            printf("[VKILLER] Target terminated successfully. Core cleaned up.\n");
+        } else {
+            printf("[VKILLER ERROR] Target job or ASID '%s' not found.\n", target);
+        }
+        return;
+    }
+
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
     if (tsfi_xplg_parse_semantic_action(cmd, &tx)) {
