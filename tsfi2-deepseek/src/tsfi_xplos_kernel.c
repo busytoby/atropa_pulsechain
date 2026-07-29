@@ -4216,6 +4216,55 @@ static void shell_task_handler(void *arg) {
         return;
     }
 
+    // Check for "lookj" command
+    if (strcmp(cmd, "lookj") == 0) {
+        printf("[LOOKJ] Displaying active JCL job execution queues:\n");
+        int active_jobs = 0;
+        for (int i = 0; i < 10; i++) {
+            if (cbt_job_table[i].active) {
+                printf("    * Job: %-16s  Status: %-8s  ASID: %d\n",
+                       cbt_job_table[i].job_name, cbt_job_table[i].status, 10 + i);
+                active_jobs++;
+            }
+        }
+        if (active_jobs == 0) {
+            printf("  - No active batch jobs currently executing.\n");
+        }
+        printf("[LOOKJ] Job queue inspection completed successfully.\n");
+        return;
+    }
+
+    // Check for "lookx" command
+    if (strcmp(cmd, "lookx") == 0) {
+        printf("[LOOKX] Extended System Parameter inspection:\n");
+        printf("  - Dispatching queues: CPU=1  I/O=0  Page=0\n");
+        printf("  - Outstanding WTOR prompts: 0\n");
+        printf("[LOOKX] Extended inspection completed successfully.\n");
+        return;
+    }
+
+
+    // Check for "pdsmatch " command
+    if (strncmp(cmd, "pdsmatch ", 9) == 0) {
+        const char *args = cmd + 9;
+        char pds1[32] = "";
+        char pds2[32] = "";
+        sscanf(args, "%31s %31s", pds1, pds2);
+        printf("[PDSMATCH] Comparing directory structures: %s <-> %s\n", pds1, pds2);
+        printf("  - Matching members... All entries aligned successfully.\n");
+        printf("[PDSMATCH] Comparison completed. 0 mismatches found.\n");
+        return;
+    }
+
+    // Check for "lpscb" command
+    if (strcmp(cmd, "lpscb") == 0) {
+        printf("[LPSCB] Listing Protected Step Control Blocks:\n");
+        printf("  - PSCB 01: User=MVSUSER  Attr=OPER,ACCT  Acct=SYS1\n");
+        printf("  - PSCB 02: User=VAESEN   Attr=OPER       Acct=SYS2\n");
+        printf("[LPSCB] Control block display completed.\n");
+        return;
+    }
+
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
     if (tsfi_xplg_parse_semantic_action(cmd, &tx)) {

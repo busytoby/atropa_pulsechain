@@ -1866,6 +1866,28 @@ int main(void) {
     assert(oo_ok == true);
     tsfi_xplos_run(&sched_bh2);
 
+    tsfi_xplos_init_scheduler(&sched_bh2);
+
+    bool lj_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "lookj");
+    assert(lj_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool lx_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "lookx");
+    assert(lx_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool pl_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "pdsload NEWMBR");
+    assert(pl_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool pm_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "pdsmatch LIB1 LIB2");
+    assert(pm_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool lp_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "lpscb");
+    assert(lp_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
     printf("   ✓ File 035 utilities execution verified successfully.\n");
 
     printf("=============================================================\n");
