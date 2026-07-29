@@ -28,6 +28,7 @@ On the WinchesterMQ (`wm`) interface, the SCSI handshake loop maps execution sig
 
 In addition to conversational news, the binary Usenet storage layer is adapted to serve as a distributed transactional ledger:
 * **Ledger Article Packing**: Transaction records (such as Hogan Account balances, SMF activity logs, and CICS submissions) are serialized directly into raw article payload fields (`tsfi_usenet_article.body`).
-* **Newsgroup Ledger Indexing**: Dedicated newsgroups (e.g. `net.ledger.transactions`) store sequential block updates. The sequence is enforced using the incremental `article_number` field as a logical blockchain height.
+* **Hogan Bank Integration**: Every Hogan Bank transaction (including account creations, transfers, and newborn teddy bear seed-to-SSN mappings) is serialized and stored as a distinct Usenet article. The bank processes all operations and validates the default `1,000,000` Saat endowments directly over the replicated newsgroup layers.
+* **Newsgroup Ledger Indexing**: Dedicated newsgroups (e.g. `net.ledger.transactions` or `net.hogan.bank`) store sequential block updates. The sequence is enforced using the incremental `article_number` field as a logical blockchain height.
 * **Auditability via Broadcast Replication**: Once a transaction is posted to the local spool queue, it is broadcasted over the STANAG Link-16/coaxial network to all peer nodes, guaranteeing that all host systems maintain an identical, verified transaction ledger history.
 
