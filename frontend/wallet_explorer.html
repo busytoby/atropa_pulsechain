@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auncient Server-Side Wallet Explorer</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.0/ethers.umd.min.js"></script>
+    <style>
+        .switch-panel {
+            background: rgba(13, 17, 38, 0.55);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .network-selector {
+            display: flex;
+            gap: 15px;
+        }
+        .selector-btn {
+            background: transparent;
+            border: 1px solid var(--neon-purple);
+            color: var(--text-primary);
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .selector-btn.active {
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+            color: #000;
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+            font-weight: 700;
+        }
+        .wallet-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .balance-card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="glass-bg-container">
+        <header>
+            <div class="logo">
+                <span>PORTAL</span>
+                <span class="subtitle">Auncient Wallet Explorer</span>
+            </div>
+            <div class="header-actions">
+                <span class="network-badge connected" id="activeNetworkBadge">Anvil EVM</span>
+            </div>
+        </header>
+
+        <!-- Dynamic Environment Switcher -->
+        <div class="switch-panel">
+            <div>
+                <h3 style="font-family: 'Orbitron', sans-serif; color: var(--neon-blue); margin-bottom: 4px;">Target VM Platform</h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">Querying server-side default wallet: <code>0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266</code></p>
+            </div>
+            <div class="network-selector">
+                <button class="selector-btn active" id="btnLocalEvm" onclick="switchPlatform('evm')">Local Anvil EVM</button>
+                <button class="selector-btn" id="btnZmmVm" onclick="switchPlatform('zmm')">ZMM VM Emulator</button>
+            </div>
+        </div>
+
+        <!-- Wallet Column -->
+        <main class="wallet-column">
+            <section class="card">
+                <h2><span id="platformIcon">🤖</span> <span id="platformTitle">Anvil EVM</span> Holdings</h2>
+                <div class="balance-card-grid" id="balancesContainer">
+                    <div class="balance-item placeholder">Initializing local explorer connection...</div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <div class="terminal-header">
+                <h3>Telemetry Log stream</h3>
+            </div>
+            <div class="terminal-body" id="consoleLogs">
+                <div class="log-line info">Dashboard running. Metamask / extensions connections suppressed. Server-side local RPC routing.</div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        let currentPlatform = 'evm';
+        let config = {};
+        const deployerAddr = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
+        const logs = document.getElementById("consoleLogs");
+        const container = document.getElementById("balancesContainer");
+
+        function log(msg, type = "info") {
+            const time = new Date().toLocaleTimeString();
+            const line = document.createElement("div");
+            line.className = `log-line ${type}`;
+            line.innerText = `[${time}] ${msg}`;
+            logs.appendChild(line);
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        async function switchPlatform(platform) {
+            currentPlatform = platform;
+            
+            document.getElementById("btnLocalEvm").className = platform === 'evm' ? 'selector-btn active' : 'selector-btn';
+            document.getElementById("btnZmmVm").className = platform === 'zmm' ? 'selector-btn active' : 'selector-btn';
+            
+            document.getElementById("activeNetworkBadge").innerText = platform === 'evm' ? 'Anvil EVM' : 'ZMM VM Emulator';
+            document.getElementById("activeNetworkBadge").style.borderColor = platform === 'evm' ? 'var(--neon-blue)' : 'var(--neon-purple)';
+            document.getElementById("activeNetworkBadge").style.color = platform === 'evm' ? 'var(--neon-blue)' : 'var(--neon-purple)';
+
+            document.getElementById("platformTitle").innerText = platform === 'evm' ? 'Anvil EVM' : 'ZMM VM Emulator';
+            document.getElementById("platformIcon").innerText = platform === 'evm' ? '🤖' : '🔮';
+
+            log(`Switched target context to ${platform === 'evm' ? 'Local Anvil EVM' : 'ZMM VM Emulator'}.`);
+            await loadHoldings();
+        }
+
+        async function loadHoldings() {
+            container.innerHTML = "<div class='balance-item placeholder'>Loading balances...</div>";
+            
+            if (currentPlatform === 'evm') {
+                await loadEvmHoldings();
+            } else {
+                await loadZmmHoldings();
+            }
+        }
+
+        async function loadEvmHoldings() {
+            try {
+                const provider = new ethers.JsonRpcProvider("http://" + window.location.hostname + ":8545");
+                const nativeBal = await provider.getBalance(deployerAddr);
+                
+                container.innerHTML = "";
+                
+                // Add Native Bal
+                addBalanceItem("Native Token (PLS/ETH)", parseFloat(ethers.formatEther(nativeBal)).toFixed(2));
+                
+                if (config.networks && config.networks.localhost) {
+                    const contracts = config.networks.localhost;
+                    const erc20Abi = [
+                        "function balanceOf(address) external view returns (uint256)",
+                        "function symbol() external view returns (string)"
+                    ];
+                    
+                    for (const [key, val] of Object.entries(contracts)) {
+                        if (ethers.isAddress(val) && !key.toLowerCase().includes("factory") && !key.toLowerCase().includes("address") && !key.toLowerCase().includes("oracle")) {
+                            try {
+                                const contract = new ethers.Contract(val, erc20Abi, provider);
+                                const symbol = await contract.symbol().catch(() => "DYS");
+                                const bal = await contract.balanceOf(deployerAddr);
+                                addBalanceItem(`${key.replace("Address", "")} (${symbol})`, parseFloat(ethers.formatEther(bal)).toFixed(2));
+                            } catch (e) {}
+                        }
+                    }
+
+                    // Query dynamic EVM tokens
+                    const dynamicTokens = [
+                        { name: 'ERIS', parent: 'QI', selector: '0x05d3d596' },
+                        { name: 'FOMALHAUTE', parent: 'XIA', selector: '0xfff3be7d' },
+                        { name: 'FORNAX', parent: 'XIE', selector: '0xa60d57c8' },
+                        { name: 'Psi_SHIO', parent: 'YI', selector: '0x76fade90' },
+                        { name: 'Theta_SHIO', parent: 'YAU', selector: '0x3b297416', wordIndex: 4 },
+                        { name: 'Lai_SHIO', parent: 'YANG', selector: '0xa4566950', wordIndex: 12 },
+                        { name: 'User_SHIO', parent: 'mariarahelLau', selector: '0x85bcb519', wordIndex: 4 }
+                    ];
+                    for (const item of dynamicTokens) {
+                        const parentVal = contracts[item.parent];
+                        if (parentVal) {
+                            try {
+                                const resolvedAddrHex = await provider.call({
+                                    to: parentVal,
+                                    data: item.selector
+                                });
+                                if (resolvedAddrHex && resolvedAddrHex !== "0x" && resolvedAddrHex !== "") {
+                                    let resolvedAddr = "";
+                                    if (item.wordIndex !== undefined) {
+                                        const hex = resolvedAddrHex.replace("0x", "");
+                                        const offset = item.wordIndex * 64;
+                                        if (hex.length >= offset + 64) {
+                                            resolvedAddr = "0x" + hex.substring(offset + 24, offset + 64);
+                                        } else {
+                                            resolvedAddr = "0x" + resolvedAddrHex.substring(resolvedAddrHex.length - 40);
+                                        }
+                                    } else {
+                                        resolvedAddr = "0x" + resolvedAddrHex.substring(resolvedAddrHex.length - 40);
+                                    }
+                                    if (ethers.isAddress(resolvedAddr) && resolvedAddr !== ethers.ZeroAddress) {
+                                        const contract = new ethers.Contract(resolvedAddr, erc20Abi, provider);
+                                        const symbol = await contract.symbol().catch(() => "DYS");
+                                        const bal = await contract.balanceOf(deployerAddr);
+                                        addBalanceItem(`${item.name} (${symbol})`, parseFloat(ethers.formatEther(bal)).toFixed(2));
+                                    }
+                                }
+                            } catch (e) {
+                                log(`Failed to resolve dynamic EVM token ${item.name}: ${e.message}`, "error");
+                            }
+                        }
+                    }
+                }
+                log("Local Anvil EVM holdings successfully updated.", "success");
+            } catch (err) {
+                log(`Failed to connect to Anvil EVM: ${err.message}`, "error");
+                container.innerHTML = "<div class='balance-item placeholder' style='color: var(--neon-magenta);'>Anvil EVM is offline. Run 'anvil --state state.json' to initiate.</div>";
+            }
+        }
+
+        async function loadZmmHoldings() {
+            try {
+                container.innerHTML = "";
+                const tokens = ["yi", "zheng", "zhou", "yau", "yang", "siu", "void", "lau", "cho", "map", "qi", "mai", "xia", "xie", "chan", "sei", "choa", "cheon"];
+                const calldata = "70a0823100000000000000000000000000000000000000000000000000000000000004cc";
+                
+                for (const name of tokens) {
+                    try {
+                        const res = await fetch("/api/zmm-exec", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ name, calldata })
+                        });
+                        const data = await res.json();
+                        if (data.result && data.result.output) {
+                            const valHex = data.result.output.trim();
+                            const val = BigInt("0x" + valHex);
+                            // Scale by 1e18 (decimals is 18 for these contracts)
+                            const scaledVal = (Number(val) / 1e18).toFixed(2);
+                            addBalanceItem(`${name.toUpperCase()}`, scaledVal);
+                        } else {
+                            addBalanceItem(`${name.toUpperCase()}`, "0.00");
+                        }
+                    } catch (e) {
+                        log(`Failed to query balance for ${name}: ${e.message}`, "error");
+                        addBalanceItem(`${name.toUpperCase()}`, "Error");
+                    }
+                }
+
+                // Query dynamic ZMM tokens
+                const dynamicZmm = [
+                    { name: 'ERIS', parent: 'qi', selector: '05d3d596' },
+                    { name: 'FOMALHAUTE', parent: 'xia', selector: 'fff3be7d' },
+                    { name: 'FORNAX', parent: 'xie', selector: 'a60d57c8' },
+                    { name: 'Psi_SHIO', parent: 'yi', selector: '76fade90' },
+                    { name: 'Theta_SHIO', parent: 'yau', selector: '3b297416', wordIndex: 4 },
+                    { name: 'Lai_SHIO', parent: 'yang', selector: 'a4566950', wordIndex: 12 },
+                    { name: 'User_SHIO', parent: 'lau', selector: '85bcb519', wordIndex: 4 }
+                ];
+                for (const item of dynamicZmm) {
+                    try {
+                        const res = await fetch("/api/zmm-exec", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ name: item.parent, calldata: item.selector })
+                        });
+                        const data = await res.json();
+                        if (data.result && data.result.output) {
+                            const output = data.result.output.trim();
+                            let resolvedZmmAddr = "";
+                            if (item.wordIndex !== undefined) {
+                                const offset = item.wordIndex * 64;
+                                if (output.length >= offset + 64) {
+                                    resolvedZmmAddr = "0x" + output.substring(offset + 24, offset + 64);
+                                } else {
+                                    resolvedZmmAddr = "0x" + output.substring(output.length - 40);
+                                }
+                            } else {
+                                resolvedZmmAddr = "0x" + output.substring(output.length - 40);
+                            }
+                            const zmmName = `dynamic_${resolvedZmmAddr.replace("0x", "").toLowerCase()}`;
+                            
+                            const balRes = await fetch("/api/zmm-exec", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ name: zmmName, calldata: "70a0823100000000000000000000000000000000000000000000000000000000000004cc" })
+                            });
+                            const balData = await balRes.json();
+                            if (balData.result && balData.result.output) {
+                                const valHex = balData.result.output.trim();
+                                const val = BigInt("0x" + valHex);
+                                const scaledVal = (Number(val) / 1e18).toFixed(2);
+                                addBalanceItem(`${item.name}`, scaledVal);
+                            } else {
+                                addBalanceItem(`${item.name}`, "0.00");
+                            }
+                        } else {
+                            addBalanceItem(`${item.name}`, "0.00");
+                        }
+                    } catch (e) {
+                        log(`Failed to query dynamic balance for ${item.name}: ${e.message}`, "error");
+                        addBalanceItem(`${item.name}`, "Error");
+                    }
+                }
+                log("ZMM VM holdings queried dynamically via RPC.", "success");
+            } catch (err) {
+                log(`Failed to fetch ZMM storage thunks: ${err.message}`, "error");
+                container.innerHTML = "<div class='balance-item placeholder' style='color: var(--neon-magenta);'>Failed to query ZMM VM tokens.</div>";
+            }
+        }
+
+        function addBalanceItem(tokenName, value) {
+            const item = document.createElement("div");
+            item.className = "balance-item";
+            item.innerHTML = `
+                <span class="balance-token">${tokenName}</span>
+                <span class="balance-value">${value}</span>
+            `;
+            container.appendChild(item);
+        }
+
+        async function init() {
+            try {
+                const res = await fetch("/api/config");
+                if (res.ok) {
+                    config = await res.json();
+                }
+                await switchPlatform('evm');
+            } catch (e) {
+                log(`Failed to fetch config: ${e.message}`, "error");
+            }
+        }
+
+        window.addEventListener("DOMContentLoaded", init);
+    </script>
+</body>
+</html>

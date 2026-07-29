@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YI & LAU Substrate: Rotary Vocabulary Capture Dashboard</title>
+    <meta name="description" content="Auncient virtual analog substrate telemetry and rotary microphone pronunciation capture dashboard.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --panel-bg: rgba(17, 24, 39, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --neon-green: #10b981;
+            --neon-purple: #8b5cf6;
+            --neon-cyan: #06b6d4;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 40%),
+                              radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.08) 0%, transparent 40%);
+        }
+
+        header {
+            padding: 20px 40px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(12px);
+            background: rgba(11, 15, 25, 0.5);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--neon-green);
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 24px;
+            padding: 30px 40px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .control-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            transition: border-color 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(139, 92, 246, 0.3);
+        }
+
+        h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 18px;
+            margin-top: 0;
+            margin-bottom: 16px;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 10px;
+        }
+
+        .word-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 280px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .word-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .word-item:hover {
+            background: rgba(139, 92, 246, 0.08);
+            border-color: rgba(139, 92, 246, 0.2);
+            transform: translateX(4px);
+        }
+
+        .word-item.active {
+            background: rgba(139, 92, 246, 0.15);
+            border-color: var(--neon-purple);
+            font-weight: 600;
+        }
+
+        .word-item .badge {
+            font-size: 11px;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .word-item.active .badge {
+            background: var(--neon-purple);
+            color: white;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--neon-purple), #7c3aed);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5);
+        }
+
+        .btn:disabled {
+            background: #1f2937;
+            color: #4b5563;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .btn-record {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-record:hover {
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+        }
+
+        .btn-record.recording {
+            animation: pulse-red 1.5s infinite;
+        }
+
+        @keyframes pulse-red {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(0.98); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        .parameter-slider {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        .parameter-slider label {
+            font-size: 12px;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .parameter-slider input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #1f2937;
+            outline: none;
+        }
+
+        .parameter-slider input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--neon-purple);
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+
+        .parameter-slider input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .visualizer-container {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .display-screen {
+            background: #060913;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            position: relative;
+            aspect-ratio: 16/9;
+            box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.8);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .telemetry-overlay {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            pointer-events: none;
+        }
+
+        .telemetry-item {
+            background: rgba(11, 15, 25, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 10px 14px;
+            border-radius: 8px;
+            backdrop-filter: blur(8px);
+        }
+
+        .telemetry-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+
+        .telemetry-value {
+            font-family: monospace;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--neon-cyan);
+        }
+
+        .rotary-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .knob-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .knob {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #2a2f3f, #11141d);
+            border: 2px solid #374151;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            position: relative;
+            cursor: pointer;
+            transform: rotate(0deg);
+        }
+
+        .knob::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            height: 16px;
+            background: var(--neon-cyan);
+            border-radius: 2px;
+            top: 4px;
+            left: 28px;
+        }
+
+        .knob-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>YI & LAU Substrate // Rotary Vocabulary Capture</h1>
+        <div id="mic-status" class="status-badge" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.2);">
+            <span style="display:inline-block; width: 8px; height: 8px; background: #ef4444; border-radius: 50%;"></span>
+            MICROPHONE DISCONNECTED
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        <div class="control-panel">
+            <div class="card">
+                <h2>Rotary Sessions</h2>
+                <div class="word-list" id="word-list">
+                    <!-- Dynamic vocabulary loaded here -->
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Auncient Calibration</h2>
+                <div class="parameter-slider">
+                    <label>YI Base Modulo <span id="yi-val">0.68</span></label>
+                    <input type="range" id="yi-slider" min="0.1" max="1.5" step="0.01" value="0.68">
+                </div>
+                <div class="parameter-slider">
+                    <label>LAU Resonance Q <span id="lau-val">8.00</span></label>
+                    <input type="range" id="lau-slider" min="1.0" max="24.0" step="0.1" value="8.0">
+                </div>
+                <div class="parameter-slider">
+                    <label>Tonewheel Ratio <span id="tw-ratio-val">1.50</span></label>
+                    <input type="range" id="tw-slider" min="0.5" max="4.0" step="0.05" value="1.5">
+                </div>
+            </div>
+
+            <div class="card">
+                <button id="btn-action" class="btn btn-record" disabled>RECORD ROTARY SAMPLE</button>
+            </div>
+        </div>
+
+        <div class="visualizer-container">
+            <div class="display-screen">
+                <canvas id="lissajous-canvas"></canvas>
+                <div class="telemetry-overlay">
+                    <div class="telemetry-item">
+                        <div class="telemetry-label">Base V_c_in</div>
+                        <div class="telemetry-value" id="val-vcin">0.000V</div>
+                    </div>
+                    <div class="telemetry-item">
+                        <div class="telemetry-label">Emitter V_c_e</div>
+                        <div class="telemetry-value" id="val-vce">0.000V</div>
+                    </div>
+                    <div class="telemetry-item">
+                        <div class="telemetry-label">Target Word</div>
+                        <div class="telemetry-value" id="val-word" style="color: var(--neon-purple);">None</div>
+                    </div>
+                    <div class="telemetry-item">
+                        <div class="telemetry-label">Lissajous Knot</div>
+                        <div class="telemetry-value" id="val-knot" style="color: var(--neon-green);">CALIBRATING</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Rotary Modulation Knobs</h2>
+                <div class="rotary-controls">
+                    <div class="knob-container">
+                        <div class="knob" id="knob-chin" style="transform: rotate(45deg);"></div>
+                        <div class="knob-label">CHIN Clamp</div>
+                    </div>
+                    <div class="knob-container">
+                        <div class="knob" id="knob-dynamo" style="transform: rotate(-30deg);"></div>
+                        <div class="knob-label">DYNAMO Gate</div>
+                    </div>
+                    <div class="knob-container">
+                        <div class="knob" id="knob-secret" style="transform: rotate(90deg);"></div>
+                        <div class="knob-label">SECRET Phase</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const words = ["OH", "PULSECHAIN", "RISE", "FROM", "ASHES", "AUNCIENT", "EVM", "DYSNOMIA", "SYNTHESIZER", "CODE"];
+        let activeWordIdx = 0;
+        let isRecording = false;
+
+        // UI Bindings
+        const wordListEl = document.getElementById("word-list");
+        const btnAction = document.getElementById("btn-action");
+        const statusEl = document.getElementById("mic-status");
+        const valWordEl = document.getElementById("val-word");
+        const valVcIn = document.getElementById("val-vcin");
+        const valVcE = document.getElementById("val-vce");
+        const yiSlider = document.getElementById("yi-slider");
+        const yiVal = document.getElementById("yi-val");
+        const lauSlider = document.getElementById("lau-slider");
+        const lauVal = document.getElementById("lau-val");
+        const twSlider = document.getElementById("tw-slider");
+        const twRatioVal = document.getElementById("tw-ratio-val");
+
+        // Audio state
+        let audioContext;
+        let analyserNode;
+        let micStream;
+        let sampleData = new Float32Array(512);
+
+        // Render Loop state
+        const canvas = document.getElementById("lissajous-canvas");
+        const ctx = canvas.getContext("2d");
+
+        function resizeCanvas() {
+            canvas.width = canvas.clientWidth * window.devicePixelRatio;
+            canvas.height = canvas.clientHeight * window.devicePixelRatio;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Populate vocabulary list
+        function renderWordList() {
+            wordListEl.innerHTML = "";
+            words.forEach((w, idx) => {
+                const item = document.createElement("div");
+                item.className = `word-item ${idx === activeWordIdx ? 'active' : ''}`;
+                item.innerHTML = `<span>${w}</span><span class="badge">Session ${idx+1}</span>`;
+                item.onclick = () => {
+                    activeWordIdx = idx;
+                    renderWordList();
+                    valWordEl.textContent = w;
+                };
+                wordListEl.appendChild(item);
+            });
+            valWordEl.textContent = words[activeWordIdx];
+        }
+        renderWordList();
+
+        // sliders logic
+        yiSlider.oninput = () => yiVal.textContent = parseFloat(yiSlider.value).toFixed(2);
+        lauSlider.oninput = () => lauVal.textContent = parseFloat(lauSlider.value).toFixed(2);
+        twSlider.oninput = () => twRatioVal.textContent = parseFloat(twSlider.value).toFixed(2);
+
+        // Request microphone access
+        async function initAudio() {
+            try {
+                micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContext.createMediaStreamSource(micStream);
+                analyserNode = audioContext.createAnalyser();
+                analyserNode.fftSize = 1024;
+                source.connect(analyserNode);
+
+                statusEl.style.background = "rgba(16, 185, 129, 0.1)";
+                statusEl.style.color = "var(--neon-green)";
+                statusEl.style.borderColor = "rgba(16, 185, 129, 0.2)";
+                statusEl.innerHTML = `<span style="display:inline-block; width: 8px; height: 8px; background: var(--neon-green); border-radius: 50%;"></span> MICROPHONE READY`;
+                btnAction.removeAttribute("disabled");
+            } catch (err) {
+                console.error("Microphone access denied:", err);
+                statusEl.style.background = "rgba(239, 68, 68, 0.1)";
+                statusEl.style.color = "#ef4444";
+                statusEl.style.borderColor = "rgba(239, 68, 68, 0.2)";
+                statusEl.innerHTML = `<span style="display:inline-block; width: 8px; height: 8px; background: #ef4444; border-radius: 50%;"></span> MICROPHONE ACCESS DENIED`;
+            }
+        }
+        initAudio();
+
+        // Recording button toggle
+        btnAction.onclick = () => {
+            if (!isRecording) {
+                isRecording = true;
+                btnAction.textContent = "STOP RECORDING";
+                btnAction.classList.add("recording");
+                document.getElementById("val-knot").textContent = "RECORDING ATTRACTOR";
+                document.getElementById("val-knot").style.color = "var(--neon-purple)";
+            } else {
+                isRecording = false;
+                btnAction.textContent = "RECORD ROTARY SAMPLE";
+                btnAction.classList.remove("recording");
+                document.getElementById("val-knot").textContent = "PROCESSED OK";
+                document.getElementById("val-knot").style.color = "var(--neon-green)";
+            }
+        };
+
+        // Simulated Substrate physics
+        let v_c_in = 0.0;
+        let v_c_e = 0.0;
+
+        function updateSubstrateTelemetry(avgAmplitude) {
+            // Charging simulation based on audio amplitude
+            v_c_in = v_c_in + avgAmplitude * 0.1 - v_c_in * 0.05;
+            v_c_e = v_c_e + avgAmplitude * 1.5 * 0.1 - v_c_e * 0.02;
+
+            valVcIn.textContent = `${v_c_in.toFixed(3)}V`;
+            valVcE.textContent = `${v_c_e.toFixed(3)}V`;
+        }
+
+        // Draw Loop (Lissajous Projection mapping using Tonewheels)
+        let phi = 0;
+        function draw() {
+            requestAnimationFrame(draw);
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            let avgAmp = 0;
+            if (analyserNode) {
+                analyserNode.getFloatTimeDomainData(sampleData);
+                for (let i = 0; i < sampleData.length; i++) {
+                    avgAmp += Math.abs(sampleData[i]);
+                }
+                avgAmp /= sampleData.length;
+            }
+            updateSubstrateTelemetry(avgAmp);
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const scaleFactor = Math.min(canvas.width, canvas.height) * 0.35;
+
+            // Draw grid lines
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, cy); ctx.lineTo(canvas.width, cy);
+            ctx.moveTo(cx, 0); ctx.lineTo(cx, canvas.height);
+            ctx.stroke();
+
+            // Calculate Lissajous coordinates modulated by virtual tonewheels
+            ctx.beginPath();
+            ctx.lineWidth = 2.5;
+            
+            // Bright neon trail based on recording state
+            ctx.strokeStyle = isRecording ? "var(--neon-purple)" : "var(--neon-cyan)";
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = isRecording ? "rgba(139, 92, 246, 0.6)" : "rgba(6, 182, 212, 0.6)";
+
+            const ratio = parseFloat(twSlider.value);
+            const yiBase = parseFloat(yiSlider.value);
+            const steps = sampleData.length;
+
+            for (let i = 0; i < steps; i++) {
+                const signal = sampleData[i] * (1.0 + yiBase * 0.5);
+                const angleX = (i / steps) * Math.PI * 4 + phi;
+                const angleY = (i / steps) * Math.PI * 4 * ratio + phi * 1.2;
+
+                const x = cx + (Math.cos(angleX) + signal) * scaleFactor;
+                const y = cy + (Math.sin(angleY) + signal) * scaleFactor;
+
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+            ctx.shadowBlur = 0; // Reset shadow
+
+            phi += 0.02; // Spin the projection
+        }
+        draw();
+
+        // Simple dynamic knob rotation logic
+        document.querySelectorAll(".knob").forEach(knob => {
+            let startY;
+            let currentRotation = 0;
+            knob.addEventListener("mousedown", (e) => {
+                startY = e.clientY;
+                const onMouseMove = (moveEvt) => {
+                    const deltaY = moveEvt.clientY - startY;
+                    currentRotation -= deltaY * 1.5;
+                    knob.style.transform = `rotate(${currentRotation}deg)`;
+                    startY = moveEvt.clientY;
+                };
+                const onMouseUp = () => {
+                    document.removeEventListener("mousemove", onMouseMove);
+                    document.removeEventListener("mouseup", onMouseUp);
+                };
+                document.addEventListener("mousemove", onMouseMove);
+                document.addEventListener("mouseup", onMouseUp);
+            });
+        });
+    </script>
+</body>
+</html>

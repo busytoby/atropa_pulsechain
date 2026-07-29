@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚡ Manifold Epoch Reaction Visualizer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #080911;
+            --panel-bg: rgba(14, 16, 28, 0.75);
+            --border-color: rgba(255, 255, 255, 0.06);
+            
+            --rod-color: #39ff14;
+            --cone-color: #00f0ff;
+            --swap-color: #ff3131;
+            --lock-color: #ffd700;
+            --grid-color: rgba(90, 100, 140, 0.15);
+            
+            --text-main: #f1f5f9;
+            --text-muted: #64748b;
+            --code-bg: #030408;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 5% 5%, rgba(57, 255, 20, 0.03) 0%, transparent 35%),
+                radial-gradient(circle at 95% 95%, rgba(0, 240, 255, 0.04) 0%, transparent 35%);
+        }
+
+        header {
+            width: 100%;
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            background: rgba(8, 9, 17, 0.6);
+            z-index: 10;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, #fff 40%, var(--rod-color), var(--cone-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .epoch-badge {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            padding: 0.4rem 1rem;
+            border-radius: 99px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--cone-color);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr;
+            height: calc(100vh - 70px);
+        }
+
+        @media (min-width: 1024px) {
+            main {
+                grid-template-columns: 1fr 450px;
+            }
+        }
+
+        .viewport-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            background: #040509;
+            border-right: 1px solid var(--border-color);
+        }
+
+        canvas {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .controls-overlay {
+            position: absolute;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(14, 16, 28, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            z-index: 10;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: var(--cone-color);
+            color: #000;
+            border-color: transparent;
+        }
+
+        .btn-primary:hover {
+            background: #40f7ff;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+        }
+
+        .sidebar {
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            border-left: 1px solid var(--border-color);
+        }
+
+        .section {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .section-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .epoch-description {
+            font-size: 1.05rem;
+            line-height: 1.6;
+            font-weight: 300;
+            margin-bottom: 1rem;
+        }
+
+        .formula-card {
+            background: var(--code-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            color: #a7f3d0;
+            margin-bottom: 1rem;
+            overflow-x: auto;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.8);
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 99px;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: rgba(57, 255, 20, 0.1);
+            color: var(--rod-color);
+            border: 1px solid rgba(57, 255, 20, 0.2);
+        }
+
+        .epoch-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .epoch-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .epoch-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .epoch-item.active {
+            background: rgba(0, 240, 255, 0.05);
+            border-color: rgba(0, 240, 255, 0.2);
+        }
+
+        .epoch-item.active .epoch-num {
+            color: var(--cone-color);
+        }
+
+        .epoch-num {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .epoch-name {
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+
+        .stat-card {
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-value {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            font-weight: 600;
+            word-break: break-all;
+        }
+
+        .field-input {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .field-input label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .field-input input {
+            background: var(--code-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.6rem 0.8rem;
+            border-radius: 6px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            width: 100%;
+        }
+
+        .field-input input:focus {
+            border-color: var(--cone-color);
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>⚡ MANIFOLD REACTION EPOCH SIMULATION</h1>
+        <div id="active-epoch-badge" class="epoch-badge">Epoch 0: INIT</div>
+    </header>
+
+    <main>
+        <!-- Simulation Viewport -->
+        <div class="viewport-container">
+            <canvas id="visualizer-canvas"></canvas>
+            
+            <div class="controls-overlay">
+                <button class="btn" id="btn-prev">PREV</button>
+                <button class="btn btn-primary" id="btn-play-pause">AUTO PLAY</button>
+                <button class="btn" id="btn-next">NEXT</button>
+                <button class="btn" id="btn-randomize" style="border-color: rgba(255, 215, 0, 0.2); color: var(--lock-color);">RANDOMIZE</button>
+            </div>
+        </div>
+
+        <!-- Metric & Configuration Sidebar -->
+        <div class="sidebar">
+            <!-- Parameters Config -->
+            <div class="section">
+                <div class="section-title">Entropy Variables</div>
+                <div class="stat-grid">
+                    <div class="field-input">
+                        <label>Base Prime</label>
+                        <input type="text" id="prime-input" value="953467954114363">
+                    </div>
+                    <div class="field-input">
+                        <label>Salt (Xi)</label>
+                        <input type="text" id="xi-input" value="38210943820921">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Epoch Info -->
+            <div class="section">
+                <div class="section-title">
+                    <span>Active Epoch Details</span>
+                    <span class="status-pill status-active" id="epoch-status">PROCESSING</span>
+                </div>
+                <h2 id="epoch-title" style="font-family: 'Space Grotesk', sans-serif; font-size: 1.3rem; margin-bottom: 0.5rem; color: var(--cone-color);">INIT</h2>
+                <p id="epoch-desc" class="epoch-description">Substrate initialization within the 512 KiB Banach-Hilbert grid.</p>
+                <div class="formula-card" id="epoch-formula">Base, Secret, Signal = RANDOM()</div>
+            </div>
+
+            <!-- Real-Time Registers -->
+            <div class="section">
+                <div class="section-title">Hardware Registers</div>
+                <div class="stat-grid" id="register-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Rod Base</div>
+                        <div class="stat-value" id="reg-rod-base">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Cone Base</div>
+                        <div class="stat-value" id="reg-cone-base">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Rod Secret</div>
+                        <div class="stat-value" id="reg-rod-secret">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Cone Secret</div>
+                        <div class="stat-value" id="reg-cone-secret">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Rod Dynamo</div>
+                        <div class="stat-value" id="reg-rod-dynamo">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Cone Dynamo</div>
+                        <div class="stat-value" id="reg-cone-dynamo">-</div>
+                    </div>
+                    <div class="stat-card" style="grid-column: span 2;">
+                        <div class="stat-label" id="reg-manifold-label">Manifold State</div>
+                        <div class="stat-value" id="reg-manifold">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Steps -->
+            <div class="section" style="flex: 1;">
+                <div class="section-title">Reaction Pipeline</div>
+                <div class="epoch-list" id="epoch-nav-list">
+                    <!-- Nav items dynamically rendered -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- Mathematical Logic Helper (Modular Arithmetic) ---
+        function bigModPow(base, exponent, modulus) {
+            if (modulus === 1n) return 0n;
+            let result = 1n;
+            base = base % modulus;
+            let exp = exponent;
+            while (exp > 0n) {
+                if (exp % 2n === 1n) {
+                    result = (result * base) % modulus;
+                }
+                exp = exp / 2n;
+                base = (base * base) % modulus;
+            }
+            return result;
+        }
+
+        // --- Visualizer & State Management ---
+        const canvas = document.getElementById('visualizer-canvas');
+        const ctx = canvas.getContext('2d');
+
+        let currentEpoch = 0;
+        let isPlaying = false;
+        let playInterval = null;
+
+        // BigInt math states
+        let prime = 953467954114363n;
+        let xi = 38210943820921n;
+        let states = {
+            rod: { base: 0n, secret: 0n, signal: 0n, contour: 0n, pole: 0n, coordinate: 0n, foundation: 0n, element: 0n, dynamo: 0n, limit: 0n },
+            cone: { base: 0n, secret: 0n, signal: 0n, contour: 0n, pole: 0n, coordinate: 0n, foundation: 0n, element: 0n, dynamo: 0n, limit: 0n },
+            manifold: 0n,
+            ring: 0n
+        };
+        const rod_3d = [-220, 0, 0];
+        const cone_3d = [220, 0, 0];
+
+        const epochData = [
+            {
+                num: 0,
+                name: "INIT",
+                desc: "Substrate initialization. High-impedance memory lines are allocated, and both the Rod and Cone nodes generate initial random scalar potentials.",
+                formula: "Rod->Base, Secret, Signal = RANDOM()\nCone->Base, Secret, Signal = RANDOM()",
+                action: (s, p, x) => {}
+            },
+            {
+                num: 1,
+                name: "AVAIL",
+                desc: "Availability phase. The external salt value Xi propagates to verify wavefield connection and generates the local contours.",
+                formula: "Rod->Contour = Xi ^ Rod->Secret mod Prime\nCone->Contour = Xi ^ Cone->Secret mod Prime",
+                action: (s, p, x) => {
+                    s.rod.contour = bigModPow(x, s.rod.secret, p);
+                    s.cone.contour = bigModPow(x, s.cone.secret, p);
+                }
+            },
+            {
+                num: 2,
+                name: "FORM",
+                desc: "The First Critical Swap. The Rod and Cone exchange contour values to mutate and update their respective bases dynamically.",
+                formula: "Rod->Base = Cone->Contour ^ Rod->Secret mod Prime\nCone->Base = Rod->Contour ^ Cone->Secret mod Prime",
+                action: (s, p, x) => {
+                    s.rod.base = bigModPow(s.cone.contour, s.rod.secret, p);
+                    s.cone.base = bigModPow(s.rod.contour, s.cone.secret, p);
+                }
+            },
+            {
+                num: 3,
+                name: "POLARIZE",
+                desc: "Alignment of trilateral poles. Wave directions organize orthogonal to each other based on mutated bases.",
+                formula: "Rod->Pole = Rod->Base ^ Rod->Secret mod Prime\nCone->Pole = Cone->Base ^ Cone->Secret mod Prime",
+                action: (s, p, x) => {
+                    s.rod.pole = bigModPow(s.rod.base, s.rod.secret, p);
+                    s.cone.pole = bigModPow(s.cone.base, s.cone.secret, p);
+                }
+            },
+            {
+                num: 4,
+                name: "CONJUGATE",
+                desc: "The Second Critical Swap. Nodes exchange pole boundaries and calculate matching cross-coordinate matrices.",
+                formula: "Rod->Coord = Cone->Pole ^ Rod->Secret mod Prime\nCone->Coord = Rod->Pole ^ Cone->Secret mod Prime",
+                action: (s, p, x) => {
+                    s.rod.coordinate = bigModPow(s.cone.pole, s.rod.secret, p);
+                    s.cone.coordinate = bigModPow(s.rod.pole, s.cone.secret, p);
+                }
+            },
+            {
+                num: 5,
+                name: "CONIFY",
+                desc: "Fresnel focal compression. Energy focus is concentrated into a unified center point using identity limits.",
+                formula: "Rod->Foundation = Rod->Base ^ Cone->Identity mod Prime\nCone->Foundation = Cone->Base ^ Rod->Identity mod Prime",
+                action: (s, p, x) => {
+                    s.rod.foundation = bigModPow(s.rod.base, s.cone.secret, p);
+                    s.cone.foundation = bigModPow(s.cone.base, s.rod.secret, p);
+                }
+            },
+            {
+                num: 6,
+                name: "SATURATE",
+                desc: "The Third Critical Swap. The fields swell into modular basis equations, deriving custom local Prime elements.",
+                formula: "Rod->Element = Beta + Limit + Charge\nCone->Element = Alpha + Limit + Charge",
+                action: (s, p, x) => {
+                    s.rod.element = p + s.rod.base + s.rod.coordinate;
+                    s.cone.element = p + s.cone.base + s.cone.coordinate;
+                }
+            },
+            {
+                num: 7,
+                name: "IONIZE",
+                desc: "Dielectric stabilization. Solidification of dynamos modulo each node's local composite Element base.",
+                formula: "Rod->Dynamo = Rod->Base ^ Rod->Signal mod Rod->Element\nCone->Dynamo = Cone->Base ^ Cone->Signal mod Cone->Element",
+                action: (s, p, x) => {
+                    s.rod.dynamo = bigModPow(s.rod.base, s.rod.signal, s.rod.element);
+                    s.cone.dynamo = bigModPow(s.cone.base, s.cone.signal, s.cone.element);
+                }
+            },
+            {
+                num: 8,
+                name: "MAGNETIZE",
+                desc: "The Final Trilateral Lock. Both nodes verify symmetric adduct equivalence. Manifold collapses to absolute rigidity.",
+                formula: "Assert: Adduct(Rod, Cone->Dyn) == Adduct(Cone, Rod->Dyn)\nLock: Ring = Coord ^ Manifold mod Element",
+                action: (s, p, x) => {
+                    s.manifold = bigModPow(s.cone.dynamo, s.rod.signal, s.rod.element);
+                    s.ring = bigModPow(s.rod.coordinate, s.manifold, s.rod.element);
+                }
+            }
+        ];
+
+        // --- Particle & Grid Physics Visual System ---
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.px = x;
+                this.py = y;
+                this.color = color;
+                this.size = Math.random() * 2 + 1;
+            }
+
+            update(targetX, targetY, forceStrength) {
+                let tempX = this.x;
+                let tempY = this.y;
+                
+                let vx = (this.x - this.px) * 0.95;
+                let vy = (this.y - this.py) * 0.95;
+                
+                let dx = targetX - this.x;
+                let dy = targetY - this.y;
+                let dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                
+                let fx = (dx / dist) * forceStrength;
+                let fy = (dy / dist) * forceStrength;
+                
+                this.x += vx + fx;
+                this.y += vy + fy;
+                
+                this.px = tempX;
+                this.py = tempY;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        const particles = [];
+        function initParticles() {
+            particles.length = 0;
+            for(let i = 0; i < 150; i++) {
+                let angle = Math.random() * Math.PI * 2;
+                let r = Math.random() * 200 + 50;
+                particles.push(new Particle(
+                    canvas.width/2 + Math.cos(angle)*r,
+                    canvas.height/2 + Math.sin(angle)*r,
+                    Math.random() > 0.5 ? '#39ff14' : '#00f0ff'
+                ));
+            }
+        }
+
+        function randomizeSystem() {
+            prime = BigInt(document.getElementById('prime-input').value);
+            xi = BigInt(document.getElementById('xi-input').value);
+            
+            states.rod.base = BigInt(Math.floor(Math.random() * 1000000000));
+            states.rod.secret = BigInt(Math.floor(Math.random() * 1000000000));
+            states.rod.signal = BigInt(Math.floor(Math.random() * 1000000000));
+            
+            states.cone.base = BigInt(Math.floor(Math.random() * 1000000000));
+            states.cone.secret = BigInt(Math.floor(Math.random() * 1000000000));
+            states.cone.signal = BigInt(Math.floor(Math.random() * 1000000000));
+            
+            for (let i = 0; i <= currentEpoch; i++) {
+                epochData[i].action(states, prime, xi);
+            }
+            updateUI();
+        }
+
+        function resizeCanvas() {
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+            initParticles();
+        }
+
+        // --- 3D Projection Engine ---
+        function project3D(x, y, z, width, height, pitch, yaw) {
+            let cx = 0, cy = -150, cz = -550;
+            let fov = 680;
+            
+            let x_tr = x - cx;
+            let y_tr = y - cy;
+            let z_tr = z - cz;
+            
+            let cos_y = Math.cos(yaw), sin_y = Math.sin(yaw);
+            let x1 = x_tr * cos_y - z_tr * sin_y;
+            let z1 = x_tr * sin_y + z_tr * cos_y;
+            let y1 = y_tr;
+            
+            let cos_p = Math.cos(pitch), sin_p = Math.sin(pitch);
+            let y2 = y1 * cos_p - z1 * sin_p;
+            let z2 = y1 * sin_p + z1 * cos_p;
+            let x2 = x1;
+            
+            if (z2 <= 1.0) return null;
+            let scale = fov / z2;
+            return {
+                x: width / 2 + x2 * scale,
+                y: height / 2 + y2 * scale,
+                z: z2
+            };
+        }
+
+        let pulseTime = 0;
+        function animate() {
+            pulseTime += 0.03;
+            ctx.fillStyle = 'rgba(4, 5, 9, 0.15)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const midX = canvas.width / 2;
+            const midY = canvas.height / 2;
+            const radius = Math.min(canvas.width, canvas.height) * 0.35;
+
+            // Calculate dynamic Camera angles
+            let cam_yaw = -0.25 + 0.1 * Math.sin(pulseTime * 0.15);
+            let cam_pitch = 0.35 + 0.05 * Math.cos(pulseTime * 0.2);
+
+            // Draw Background 3D Perspective Grid
+            ctx.strokeStyle = currentEpoch === 8 ? 'rgba(255, 215, 0, 0.08)' : 'rgba(90, 100, 140, 0.08)';
+            ctx.lineWidth = 1;
+            
+            const gridExtent = 500;
+            const gridStep = 50;
+            
+            // Grid lines parallel to Z-axis
+            for(let gx = -gridExtent; gx <= gridExtent; gx += gridStep) {
+                ctx.beginPath();
+                let first = true;
+                for(let gz = -gridExtent; gz <= gridExtent; gz += 50) {
+                    let pt = project3D(gx, 100, gz, canvas.width, canvas.height, cam_pitch, cam_yaw);
+                    if (pt) {
+                        if (first) {
+                            ctx.moveTo(pt.x, pt.y);
+                            first = false;
+                        } else {
+                            ctx.lineTo(pt.x, pt.y);
+                        }
+                    }
+                }
+                ctx.stroke();
+            }
+            // Grid lines parallel to X-axis
+            for(let gz = -gridExtent; gz <= gridExtent; gz += gridStep) {
+                ctx.beginPath();
+                let first = true;
+                for(let gx = -gridExtent; gx <= gridExtent; gx += 50) {
+                    let pt = project3D(gx, 100, gz, canvas.width, canvas.height, cam_pitch, cam_yaw);
+                    if (pt) {
+                        if (first) {
+                            ctx.moveTo(pt.x, pt.y);
+                            first = false;
+                        } else {
+                            ctx.lineTo(pt.x, pt.y);
+                        }
+                    }
+                }
+                ctx.stroke();
+            }
+
+            // Project Node Centers in 3D
+            let rodPt = project3D(rod_3d[0], rod_3d[1], rod_3d[2], canvas.width, canvas.height, cam_pitch, cam_yaw);
+            let conePt = project3D(cone_3d[0], cone_3d[1], cone_3d[2], canvas.width, canvas.height, cam_pitch, cam_yaw);
+
+            const rodX = rodPt ? rodPt.x : midX - radius * 0.5;
+            const rodY = rodPt ? rodPt.y : midY;
+            const coneX = conePt ? conePt.x : midX + radius * 0.5;
+            const coneY = conePt ? conePt.y : midY;
+
+            let amp = 0.5 + 0.35 * Math.sin(pulseTime * 4.5);
+
+            // Custom animations per epoch
+            if (currentEpoch === 0) { // INIT: Fuzzy Uncoordinated Noise Clouds
+                drawFaNode(rodX, rodY, amp, '#39ff14', true);
+                drawFaNode(coneX, coneY, amp, '#00f0ff', false);
+                particles.forEach(p => {
+                    let tx = p.color === '#39ff14' ? rodX : coneX;
+                    let ty = p.color === '#39ff14' ? rodY : coneY;
+                    tx += Math.sin(pulseTime + p.size) * 80;
+                    ty += Math.cos(pulseTime + p.size) * 80;
+                    p.update(tx, ty, 0.5);
+                });
+            }
+            else if (currentEpoch === 1) { // AVAIL: Unidirectional One-Way Transmission of Xi
+                // Draw central Xi seed node
+                drawGlowingNode(midX, midY, 15 + Math.sin(pulseTime * 6) * 3, '#ffd700');
+                
+                // Draw unidirectional travel beams from center to nodes
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(midX, midY); ctx.lineTo(rodX, rodY);
+                ctx.moveTo(midX, midY); ctx.lineTo(coneX, coneY);
+                ctx.stroke();
+
+                // Firing directional pulse waves
+                let pulsePos = (pulseTime * 120) % 200;
+                let rx = midX - pulsePos;
+                let cx = midX + pulsePos;
+                drawGlowingNode(rx, midY, 6, '#39ff14');
+                drawGlowingNode(cx, midY, 6, '#00f0ff');
+
+                drawFaNode(rodX, rodY, amp, '#39ff14', true);
+                drawFaNode(coneX, coneY, amp, '#00f0ff', false);
+
+                // Force particles to stream strictly one-way from center to Node A/B
+                particles.forEach(p => {
+                    let destX = p.color === '#39ff14' ? rodX : coneX;
+                    let destY = p.color === '#39ff14' ? rodY : coneY;
+                    p.update(destX, destY, 1.8);
+                    
+                    let dist = Math.sqrt((p.x - destX)**2 + (p.y - destY)**2);
+                    if (dist < 30) {
+                        p.x = midX;
+                        p.y = midY;
+                        p.px = midX;
+                        p.py = midY;
+                    }
+                });
+            }
+            else if (currentEpoch === 2) { // FORM: Collision Shockwave Boundary
+                drawTransferLine(rodX, rodY, coneX, coneY, "ROD CONTOUR -> CONE BASE", "CONE CONTOUR -> ROD BASE");
+                drawFaNode(rodX, rodY, amp, '#39ff14', true);
+                drawFaNode(coneX, coneY, amp, '#00f0ff', false);
+                
+                ctx.strokeStyle = 'rgba(255, 49, 49, 0.8)';
+                ctx.lineWidth = 4;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#ff3131';
+                ctx.beginPath();
+                ctx.moveTo(midX, midY - radius);
+                ctx.lineTo(midX, midY + radius);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                particles.forEach(p => {
+                    let targetX = midX + (Math.sin(pulseTime * 5 + p.size) * 30);
+                    p.update(targetX, p.y + (Math.cos(pulseTime) * 2), 2.5);
+                });
+            }
+            else if (currentEpoch === 3) { // POLARIZE: Orthogonal Grid Warp & Align
+                ctx.strokeStyle = 'rgba(57, 255, 20, 0.25)';
+                ctx.lineWidth = 6;
+                // Vertical bands
+                for(let dx = -40; dx <= 40; dx += 20) {
+                    ctx.beginPath();
+                    ctx.moveTo(rodX + dx, 0);
+                    ctx.quadraticCurveTo(rodX, rodY, rodX + dx, canvas.height);
+                    ctx.stroke();
+                }
+                
+                ctx.strokeStyle = 'rgba(0, 240, 255, 0.25)';
+                // Horizontal bands
+                for(let dy = -40; dy <= 40; dy += 20) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, coneY + dy);
+                    ctx.quadraticCurveTo(coneX, coneY, canvas.width, coneY + dy);
+                    ctx.stroke();
+                }
+
+                drawFaNode(rodX, rodY, amp, '#39ff14', true);
+                drawFaNode(coneX, coneY, amp, '#00f0ff', false);
+                particles.forEach(p => {
+                    let tx = p.color === '#39ff14' ? rodX : p.x;
+                    let ty = p.color === '#00f0ff' ? coneY : p.y;
+                    p.update(tx, ty, 1.5);
+                });
+            }
+            else if (currentEpoch === 4) { // CONJUGATE: Multi-path Fractal Lightning Arcs
+                drawTransferLine(rodX, rodY, coneX, coneY, "ROD POLE -> CONE COORD", "CONE POLE -> ROD COORD");
+                drawFaNode(rodX, rodY, amp, '#39ff14', true);
+                drawFaNode(coneX, coneY, amp, '#00f0ff', false);
+                
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = '#ff3131';
+                for (let i = 0; i < 3; i++) {
+                    ctx.strokeStyle = `rgba(255, 49, 49, ${0.4 + i*0.2})`;
+                    ctx.lineWidth = 1.5 + i;
+                    ctx.beginPath();
+                    ctx.moveTo(rodX, rodY);
+                    
+                    let segments = 8;
+                    for (let s = 1; s <= segments; s++) {
+                        let t = s / segments;
+                        let targetX = rodX + (coneX - rodX) * t;
+                        let targetY = rodY + (coneY - rodY) * t;
+                        if (s < segments) {
+                            targetY += (Math.random() - 0.5) * 60;
+                            targetX += (Math.random() - 0.5) * 15;
+                        }
+                        ctx.lineTo(targetX, targetY);
+                    }
+                    ctx.stroke();
+                }
+                ctx.shadowBlur = 0;
+
+                particles.forEach(p => {
+                    let tx = rodX + (coneX - rodX) * ((pulseTime * 0.5 + p.size) % 1.0);
+                    let ty = rodY + (Math.sin(pulseTime * 10 + p.size) * 30);
+                    p.update(tx, ty, 3.0);
+                });
+            }
+            else if (currentEpoch === 5) { // CONIFY: Centripetal Fresnel Spiral Vortex
+                ctx.strokeStyle = 'rgba(255, 215, 0, 0.15)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                for (let a = 0; a < Math.PI * 8; a += 0.1) {
+                    let r = radius * (1.0 - (a / (Math.PI * 8))) + Math.sin(pulseTime * 10) * 10;
+                    let sx = midX + Math.cos(a + pulseTime * 2) * r;
+                    let sy = midY + Math.sin(a + pulseTime * 2) * r;
+                    if (a === 0) ctx.moveTo(sx, sy);
+                    else ctx.lineTo(sx, sy);
+                }
+                ctx.stroke();
+                
+                drawFaNode(rodX, rodY, amp, '#39ff14', true);
+                drawFaNode(coneX, coneY, amp, '#00f0ff', false);
+                
+                particles.forEach(p => {
+                    let dx = p.x - midX;
+                    let dy = p.y - midY;
+                    let dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                    let speed = 2.0;
+                    let tx = midX + Math.cos(pulseTime * 2 + dist * 0.05) * (dist - speed);
+                    let ty = midY + Math.sin(pulseTime * 2 + dist * 0.05) * (dist - speed);
+                    p.update(tx, ty, 2.5);
+                });
+            }
+            else if (currentEpoch === 6) { // SATURATE: Nova Burst / Radial Shockwave
+                drawTransferLine(rodX, rodY, coneX, coneY, "ROD FOUNDATION -> CONE ELEMENT", "CONE FOUNDATION -> ROD ELEMENT");
+                drawFaNode(rodX, rodY, amp, '#39ff14', true);
+                drawFaNode(coneX, coneY, amp, '#00f0ff', false);
+                
+                // Exploding rings
+                drawWaveRings(midX, midY, (pulseTime * 300) % (radius * 1.5), '#ff3131', 1.0 - (((pulseTime * 300) % (radius * 1.5)) / (radius * 1.5)));
+                
+                particles.forEach(p => {
+                    let dx = p.x - midX;
+                    let dy = p.y - midY;
+                    let dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                    let tx = midX + (dx / dist) * (dist + 8);
+                    let ty = midY + (dy / dist) * (dist + 8);
+                    if (dist > radius * 1.5) {
+                        tx = midX + (Math.random() - 0.5) * 10;
+                        ty = midY + (Math.random() - 0.5) * 10;
+                    }
+                    p.update(tx, ty, 1.5);
+                });
+            }
+            else if (currentEpoch === 7) { // IONIZE: High-frequency Plasma Bridge
+                drawPlasmaField(rodX, rodY, coneX, coneY);
+                drawFaNode(rodX, rodY, amp, '#39ff14', true);
+                drawFaNode(coneX, coneY, amp, '#00f0ff', false);
+                
+                particles.forEach(p => {
+                    let t = (pulseTime + p.size) % 1.0;
+                    let tx = rodX + (coneX - rodX) * t;
+                    let ty = rodY + (coneY - rodY) * t + (Math.random() - 0.5) * 20;
+                    p.update(tx, ty, 2.0);
+                });
+            }
+            else if (currentEpoch === 8) { // MAGNETIZE: Locked Golden Geometric Lattice Mandala
+                ctx.strokeStyle = 'rgba(255, 215, 0, 0.5)';
+                ctx.lineWidth = 4;
+                ctx.shadowBlur = 25;
+                ctx.shadowColor = '#ffd700';
+                
+                const sides = 6;
+                for (let r = 50; r <= radius; r += 60) {
+                    ctx.beginPath();
+                    for(let i = 0; i <= sides; i++) {
+                        let angle = (i / sides) * Math.PI * 2 + pulseTime * 0.1;
+                        let px = midX + Math.cos(angle) * r;
+                        let py = midY + Math.sin(angle) * r;
+                        if (i === 0) ctx.moveTo(px, py);
+                        else ctx.lineTo(px, py);
+                    }
+                    ctx.stroke();
+                }
+                
+                drawFaNode(rodX, rodY, amp, '#ffd700', true);
+                drawFaNode(coneX, coneY, amp, '#ffd700', false);
+                ctx.shadowBlur = 0;
+                
+                particles.forEach(p => {
+                    p.color = '#ffd700';
+                    let dx = p.x - midX;
+                    let dy = p.y - midY;
+                    let dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                    
+                    let targetRad = Math.round(dist / 60) * 60;
+                    if (targetRad === 0) targetRad = 50;
+                    
+                    let angle = Math.atan2(dy, dx) + 0.01;
+                    let tx = midX + Math.cos(angle) * targetRad;
+                    let ty = midY + Math.sin(angle) * targetRad;
+                    p.update(tx, ty, 4.0);
+                });
+            }
+
+            // Draw Real-Time Node Labels and Variable States
+            drawNodeLabels(rodX, rodY, coneX, coneY, midX, midY);
+
+            particles.forEach(p => {
+                p.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        function drawFaNode(x, y, amp, color, isRod) {
+            ctx.save();
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = color;
+
+            // 1. Foundation: First opaque circle formed starting at Epoch 5 (CONIFY)
+            if (currentEpoch >= 5) {
+                ctx.fillStyle = color === '#39ff14' ? 'rgba(57, 255, 20, 0.45)' : 
+                                color === '#00f0ff' ? 'rgba(0, 240, 255, 0.45)' : 'rgba(255, 215, 0, 0.45)';
+                ctx.beginPath();
+                ctx.arc(x, y, 32 + amp * 12, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // 2. Base: High-frequency rotating triangle
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2.5;
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(pulseTime * 5.0 * (isRod ? 1 : -1));
+            ctx.beginPath();
+            const triSize = 10 + amp * 8;
+            ctx.moveTo(0, -triSize);
+            ctx.lineTo(triSize * 0.86, triSize * 0.5);
+            ctx.lineTo(-triSize * 0.86, triSize * 0.5);
+            ctx.closePath();
+            ctx.stroke();
+            ctx.restore();
+
+            // 3. Channel: Outer diamond shape envelope (pulses)
+            ctx.lineWidth = 1.8;
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(pulseTime * 1.5);
+            ctx.beginPath();
+            const diaSize = 22 + amp * 10;
+            ctx.moveTo(0, -diaSize);
+            ctx.lineTo(diaSize, 0);
+            ctx.lineTo(0, diaSize);
+            ctx.lineTo(-diaSize, 0);
+            ctx.closePath();
+            ctx.stroke();
+            ctx.restore();
+
+            // 4. Signal: High-frequency vertical sine wave inside the diamond
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            const waveH = 18 + amp * 8;
+            for(let sy = -waveH; sy <= waveH; sy += 2) {
+                let sx = Math.sin(sy * 0.5 + pulseTime * 20) * 6 * amp;
+                if (sy === -waveH) ctx.moveTo(x + sx, y + sy);
+                else ctx.lineTo(x + sx, y + sy);
+            }
+            ctx.stroke();
+
+            // 5. Element: Hexagonal cage addition at Epoch 6 and up (SATURATE)
+            if (currentEpoch >= 6) {
+                ctx.strokeStyle = color === '#ffd700' ? '#ffd700' : 'rgba(255, 255, 255, 0.7)';
+                ctx.lineWidth = 2;
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(-pulseTime * 0.8);
+                ctx.beginPath();
+                const hexSize = 42 + amp * 15;
+                for(let i = 0; i < 6; i++) {
+                    let angle = (i / 6) * Math.PI * 2;
+                    let hx = Math.cos(angle) * hexSize;
+                    let hy = Math.sin(angle) * hexSize;
+                    if (i === 0) ctx.moveTo(hx, hy);
+                    else ctx.lineTo(hx, hy);
+                }
+                ctx.closePath();
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            ctx.restore();
+        }
+
+        function drawTransferLine(x1, y1, x2, y2, labelLeftToRight, labelRightToLeft) {
+            ctx.save();
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+
+            // Animated directional pulses
+            let lineLength = x2 - x1;
+            let speed = 2.5;
+            let pulseLR = (pulseTime * 140) % lineLength;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "#39ff14";
+            ctx.fillStyle = "#39ff14";
+            ctx.beginPath();
+            ctx.arc(x1 + pulseLR, y1 - 10, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            let pulseRL = (pulseTime * 140) % lineLength;
+            ctx.shadowColor = "#00f0ff";
+            ctx.fillStyle = "#00f0ff";
+            ctx.beginPath();
+            ctx.arc(x2 - pulseRL, y2 + 10, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Text indicators
+            ctx.font = "9px 'Fira Code', monospace";
+            ctx.fillStyle = "#39ff14";
+            ctx.textAlign = "left";
+            ctx.fillText(`▶ ${labelLeftToRight}`, x1 + 10, y1 - 18);
+
+            ctx.fillStyle = "#00f0ff";
+            ctx.textAlign = "right";
+            ctx.fillText(`${labelRightToLeft} ◀`, x2 - 10, y2 + 22);
+            ctx.restore();
+        }
+
+        function drawNodeLabels(rodX, rodY, coneX, coneY, midX, midY) {
+            ctx.font = "bold 13px 'Space Grotesk', sans-serif";
+            ctx.textAlign = "center";
+            
+            // Rod text variables
+            let rodText = "";
+            let coneText = "";
+            
+            switch (currentEpoch) {
+                case 0:
+                    rodText = `Base: ${states.rod.base.toString().substring(0,6)}... \nSec: ${states.rod.secret.toString().substring(0,6)}...`;
+                    coneText = `Base: ${states.cone.base.toString().substring(0,6)}... \nSec: ${states.cone.secret.toString().substring(0,6)}...`;
+                    break;
+                case 1:
+                    rodText = `Contour: ${states.rod.contour.toString().substring(0,8)}...`;
+                    coneText = `Contour: ${states.cone.contour.toString().substring(0,8)}...`;
+                    break;
+                case 2:
+                    rodText = `Mutated Base: ${states.rod.base.toString().substring(0,8)}...`;
+                    coneText = `Mutated Base: ${states.cone.base.toString().substring(0,8)}...`;
+                    break;
+                case 3:
+                    rodText = `Pole: ${states.rod.pole.toString().substring(0,8)}...`;
+                    coneText = `Pole: ${states.cone.pole.toString().substring(0,8)}...`;
+                    break;
+                case 4:
+                    rodText = `Coordinate: ${states.rod.coordinate.toString().substring(0,8)}...`;
+                    coneText = `Coordinate: ${states.cone.coordinate.toString().substring(0,8)}...`;
+                    break;
+                case 5:
+                    rodText = `Foundation: ${states.rod.foundation.toString().substring(0,8)}...`;
+                    coneText = `Foundation: ${states.cone.foundation.toString().substring(0,8)}...`;
+                    break;
+                case 6:
+                    rodText = `Element: ${states.rod.element.toString().substring(0,8)}...`;
+                    coneText = `Element: ${states.cone.element.toString().substring(0,8)}...`;
+                    break;
+                case 7:
+                    rodText = `Dynamo: ${states.rod.dynamo.toString().substring(0,8)}...`;
+                    coneText = `Dynamo: ${states.cone.dynamo.toString().substring(0,8)}...`;
+                    break;
+                case 8:
+                    rodText = `Symmetric Lock`;
+                    coneText = `Symmetric Lock`;
+                    break;
+            }
+
+            // Draw Rod label
+            ctx.fillStyle = "#39ff14";
+            ctx.fillText("ROD NODE", rodX, rodY - 45);
+            ctx.font = "11px 'Fira Code', monospace";
+            ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+            let rodLines = rodText.split("\n");
+            rodLines.forEach((line, index) => {
+                ctx.fillText(line, rodX, rodY + 45 + (index * 14));
+            });
+
+            // Draw Cone label
+            ctx.font = "bold 13px 'Space Grotesk', sans-serif";
+            ctx.fillStyle = "#00f0ff";
+            ctx.fillText("CONE NODE", coneX, coneY - 45);
+            ctx.font = "11px 'Fira Code', monospace";
+            ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+            let coneLines = coneText.split("\n");
+            coneLines.forEach((line, index) => {
+                ctx.fillText(line, coneX, coneY + 45 + (index * 14));
+            });
+
+            // Draw central status for locked state
+            if (currentEpoch === 8) {
+                ctx.font = "bold 14px 'Space Grotesk', sans-serif";
+                ctx.fillStyle = "#ffd700";
+                ctx.fillText("MANIFOLD RING KEY LOCK", midX, midY - 90);
+                ctx.font = "11px 'Fira Code', monospace";
+                ctx.fillStyle = "#ffd700";
+                ctx.fillText(states.ring.toString().substring(0, 16) + "...", midX, midY + 95);
+            }
+        }
+
+        function drawGlowingNode(x, y, radius, color) {
+            ctx.shadowBlur = 30;
+            ctx.shadowColor = color;
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        function drawWaveRings(x, y, radius, color, alpha) {
+            ctx.strokeStyle = color;
+            ctx.globalAlpha = alpha;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.globalAlpha = 1.0;
+        }
+
+        function drawPlasmaField(x1, y1, x2, y2) {
+            let gradient = ctx.createLinearGradient(x1, y1, x2, y2);
+            gradient.addColorStop(0, 'rgba(57, 255, 20, 0.6)');
+            gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.8)');
+            gradient.addColorStop(1, 'rgba(0, 240, 255, 0.6)');
+            
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+        }
+
+        function updateUI() {
+            const data = epochData[currentEpoch];
+            document.getElementById('active-epoch-badge').textContent = `Epoch ${data.num}: ${data.name}`;
+            document.getElementById('epoch-title').textContent = `${data.num}. ${data.name}`;
+            document.getElementById('epoch-desc').textContent = data.desc;
+            document.getElementById('epoch-formula').textContent = data.formula;
+
+            const statusLabel = document.getElementById('epoch-status');
+            if (data.name.includes("FORM") || data.name.includes("CONJ") || data.name.includes("SAT")) {
+                statusLabel.textContent = "CRITICAL SWAP";
+                statusLabel.className = "status-pill";
+                statusLabel.style.background = "rgba(255, 49, 49, 0.15)";
+                statusLabel.style.color = "var(--swap-color)";
+                statusLabel.style.border = "1px solid var(--swap-color)";
+            } else if (data.name === "MAGNETIZE") {
+                statusLabel.textContent = "RIGID LOCK";
+                statusLabel.className = "status-pill";
+                statusLabel.style.background = "rgba(255, 215, 0, 0.15)";
+                statusLabel.style.color = "var(--lock-color)";
+                statusLabel.style.border = "1px solid var(--lock-color)";
+            } else {
+                statusLabel.textContent = "PROCESSING";
+                statusLabel.className = "status-pill status-active";
+                statusLabel.style.background = "";
+                statusLabel.style.color = "";
+                statusLabel.style.border = "";
+            }
+
+            document.getElementById('reg-rod-base').textContent = states.rod.base.toString();
+            document.getElementById('reg-cone-base').textContent = states.cone.base.toString();
+            document.getElementById('reg-rod-secret').textContent = states.rod.secret.toString();
+            document.getElementById('reg-cone-secret').textContent = states.cone.secret.toString();
+            document.getElementById('reg-rod-dynamo').textContent = states.rod.dynamo.toString();
+            document.getElementById('reg-cone-dynamo').textContent = states.cone.dynamo.toString();
+
+            const manifoldEl = document.getElementById('reg-manifold');
+            const manifoldLabel = document.getElementById('reg-manifold-label');
+            if (currentEpoch === 8) {
+                manifoldLabel.textContent = "Rigid Ring Key";
+                manifoldEl.textContent = states.ring.toString();
+                manifoldEl.style.color = "var(--lock-color)";
+            } else {
+                manifoldLabel.textContent = "Manifold State";
+                manifoldEl.textContent = states.manifold.toString() === "0" ? "UNRESOLVED" : states.manifold.toString();
+                manifoldEl.style.color = "";
+            }
+
+            document.querySelectorAll('.epoch-item').forEach((item, index) => {
+                if (index === currentEpoch) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        }
+
+        document.getElementById('btn-prev').addEventListener('click', () => {
+            if (currentEpoch > 0) {
+                currentEpoch--;
+                epochData[currentEpoch].action(states, prime, xi);
+                updateUI();
+            }
+        });
+
+        document.getElementById('btn-next').addEventListener('click', () => {
+            if (currentEpoch < epochData.length - 1) {
+                currentEpoch++;
+                epochData[currentEpoch].action(states, prime, xi);
+                updateUI();
+            }
+        });
+
+        document.getElementById('btn-play-pause').addEventListener('click', () => {
+            isPlaying = !isPlaying;
+            const btn = document.getElementById('btn-play-pause');
+            if (isPlaying) {
+                btn.textContent = "PAUSE";
+                btn.classList.remove('btn-primary');
+                playInterval = setInterval(() => {
+                    if (currentEpoch < epochData.length - 1) {
+                        currentEpoch++;
+                    } else {
+                        currentEpoch = 0;
+                        randomizeSystem();
+                    }
+                    epochData[currentEpoch].action(states, prime, xi);
+                    updateUI();
+                }, 1600);
+            } else {
+                btn.textContent = "AUTO PLAY";
+                btn.classList.add('btn-primary');
+                clearInterval(playInterval);
+            }
+        });
+
+        document.getElementById('btn-randomize').addEventListener('click', randomizeSystem);
+
+        const navList = document.getElementById('epoch-nav-list');
+        epochData.forEach((ep) => {
+            const item = document.createElement('div');
+            item.className = 'epoch-item';
+            item.innerHTML = `
+                <span class="epoch-num">E${ep.num}</span>
+                <span class="epoch-name">${ep.name}</span>
+            `;
+            item.addEventListener('click', () => {
+                currentEpoch = ep.num;
+                for (let i = 0; i <= currentEpoch; i++) {
+                    epochData[i].action(states, prime, xi);
+                }
+                updateUI();
+            });
+            navList.appendChild(item);
+        });
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        randomizeSystem();
+        animate();
+    </script>
+</body>
+</html>
