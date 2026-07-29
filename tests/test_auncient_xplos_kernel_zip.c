@@ -1549,6 +1549,17 @@ int main(void) {
     tsfi_xplos_run(&sched_acct);
     printf("   ✓ CBTACCT execution verified successfully.\n");
 
+    // 104. Test CBTNEWS command execution
+    printf("[KERNEL TEST] Dispatching 'cbtnews' command to XplOS shell...\n");
+    XplosShell shell_news;
+    XplosScheduler sched_news;
+    tsfi_xplos_init_scheduler(&sched_news);
+    tsfi_xplos_init_shell(&shell_news);
+    bool news_ok = tsfi_xplos_shell_exec(&shell_news, &sched_news, "cbtnews net.books");
+    assert(news_ok == true);
+    tsfi_xplos_run(&sched_news);
+    printf("   ✓ CBTNEWS execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
