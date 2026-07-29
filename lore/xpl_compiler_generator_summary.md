@@ -28,3 +28,11 @@ The conceptual layout of the translator writing system maps directly to mainfram
 * **JES and HASP Spooling**: Compiler jobs are submitted as cards into the JES/HASP spooler queues. Jobs are scheduled and executed dynamically based on priority classes, matching the execution constraints of target programs.
 * **Symbol Tables (XCOM / JCL)**: Dynamic symbol overrides (`//SET`) dynamically substitute variable cards in the execution stream, replicating XCOM's symbol table resolution passes.
 * **Run-Time Monitor (XPLSM / COND)**: Step-level condition checks (`COND`) emulate the state parsing check loops inside the `XPLSM` runtime monitor, bypassing execution steps based on previous return code results.
+
+## 4. Bootstrapping and BNF Grammar Rules
+
+The paper defines specific methodologies for compiling the compiler itself and checking grammatical syntax:
+
+* **Bootstrapping Strategy**: The system implements a multi-stage bootstrap. XCOM (written in XPL) compiles its own updated source code to produce the next iteration of the compiler executable. Porting to a new target host involves using the current working compiler to emit target machine code for the target environment.
+* **BNF Metalanguage Grammar**: Grammars are specified in standard Backus-Naur Form (BNF) metalanguage. The ANALYZER compiles these grammar rules, verifies syntactic correctness, and performs conflict checks (Mixed-Left Association / MLA) to generate shift-reduce parsing decision tables.
+* **Lexical and Semantic Actions**: Lexical analysis handles source scanning and tokenization, feeding terminal codes to the parser. As grammar rules are reduced, the SKELETON invokes semantic routines to perform stack assignments and generate instruction codes.
