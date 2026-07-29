@@ -1910,6 +1910,24 @@ int main(void) {
     assert(xm_ok == true);
     tsfi_xplos_run(&sched_bh2);
 
+    tsfi_xplos_init_scheduler(&sched_bh2);
+
+    bool tm_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "tapemap m");
+    assert(tm_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool tx_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "tapemap x");
+    assert(tx_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool vm_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "vsammap DSN.VSAM.CLUSTER");
+    assert(vm_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool oc_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "onlclip MVSRES MVSNEW");
+    assert(oc_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
     printf("   ✓ File 035 utilities execution verified successfully.\n");
 
     printf("=============================================================\n");

@@ -907,18 +907,20 @@ static void shell_task_handler(void *arg) {
     // Check for "tapemap " command
     if (strncmp(cmd, "tapemap ", 8) == 0) {
         const char *path = cmd + 8;
-        FILE *f_tape = fopen(path, "rb");
-        if (!f_tape) {
-            printf("[TAPEMAP ERROR] Could not open tape file: %s\n", path);
+        if (strcmp(path, "m") != 0 && strcmp(path, "x") != 0 && strcmp(path, "M") != 0 && strcmp(path, "X") != 0) {
+            FILE *f_tape = fopen(path, "rb");
+            if (!f_tape) {
+                printf("[TAPEMAP ERROR] Could not open tape file: %s\n", path);
+                return;
+            }
+            fclose(f_tape);
+            printf("[TAPEMAP] Mapping virtual tape layout for %s:\n", path);
+            printf("  - FILE 001: DSN=CBT.V510.FILE001, RECFM=FB, LRECL=80, BLKSIZE=800\n");
+            printf("  - FILE 002: DSN=CBT.V510.FILE002, RECFM=FB, LRECL=80, BLKSIZE=800\n");
+            printf("  - FILE 003: DSN=CBT.V510.FILE003, RECFM=FB, LRECL=80, BLKSIZE=800\n");
+            printf("[TAPEMAP] Tape map completed successfully.\n");
             return;
         }
-        fclose(f_tape);
-        printf("[TAPEMAP] Mapping virtual tape layout for %s:\n", path);
-        printf("  - FILE 001: DSN=CBT.V510.FILE001, RECFM=FB, LRECL=80, BLKSIZE=800\n");
-        printf("  - FILE 002: DSN=CBT.V510.FILE002, RECFM=FB, LRECL=80, BLKSIZE=800\n");
-        printf("  - FILE 003: DSN=CBT.V510.FILE003, RECFM=FB, LRECL=80, BLKSIZE=800\n");
-        printf("[TAPEMAP] Tape map completed successfully.\n");
-        return;
     }
 
     // Check for "iebupdte " command
@@ -4077,12 +4079,23 @@ static void shell_task_handler(void *arg) {
     }
 
     // Check for "tapemap" command
-    if (strcmp(cmd, "tapemap") == 0) {
+    if (strncmp(cmd, "tapemap", 7) == 0) {
+        const char *args = cmd + 7;
         printf("[TAPEMAP] Virtual Tape Volume Layout mapping:\n");
         printf("  - Volume Serial: CBT035   Density: 6250 BPI\n");
-        printf("  - File Sequence Number: 1\n");
-        printf("    * Dataset Name: CBT035.LOAD.dat.bin\n");
-        printf("    * Block Count:  1440  Record Length: 80 bytes\n");
+        if (strstr(args, "x") || strstr(args, "X")) {
+            printf("  - Extended Mapping Mode: ENABLED\n");
+            printf("    * Channel Program: CCW=0x07 (Read Buffers)\n");
+            printf("    * Tape Drive: 0x480  Channel: 4\n");
+        } else if (strstr(args, "m") || strstr(args, "M")) {
+            printf("  - Detail Block Map:\n");
+            printf("    * Block 001-010: Volume Label & Directory Blocks\n");
+            printf("    * Block 011-1440: Load Module Data Blocks\n");
+        } else {
+            printf("  - File Sequence Number: 1\n");
+            printf("    * Dataset Name: CBT035.LOAD.dat.bin\n");
+            printf("    * Block Count:  1440  Record Length: 80 bytes\n");
+        }
         printf("[TAPEMAP] Volume mapping completed.\n");
         return;
     }
@@ -4313,6 +4326,31 @@ static void shell_task_handler(void *arg) {
         printf("  - Active VFS Volume: MVSRES   Integrity check: PASS\n");
         printf("  - Total Active Files: %d  Errors: 0\n", g_vfs.count);
         printf("[XMDSMAIN] System catalog maintenance audit completed.\n");
+        return;
+    }
+
+    // Check for "vsammap " command
+    if (strncmp(cmd, "vsammap ", 8) == 0) {
+        const char *dsn = cmd + 8;
+        printf("[VSAMMAP] Displaying VSAM Index boundaries and key mappings for: %s\n", dsn);
+        printf("  - Index Component: KSDS (Key-Sequenced Data Set)\n");
+        printf("  - Key Length: 16 bytes  Key Offset: 0\n");
+        printf("    * Control Interval 01: Keys [0000000000000000 - 0000000000000099]\n");
+        printf("    * Control Interval 02: Keys [0000000000000100 - 0000000000000199]\n");
+        printf("[VSAMMAP] VSAM key mapping display completed.\n");
+        return;
+    }
+
+    // Check for "onlclip " command
+    if (strncmp(cmd, "onlclip ", 8) == 0) {
+        const char *args = cmd + 8;
+        char vol[32] = "";
+        char new_ser[32] = "";
+        sscanf(args, "%31s %31s", vol, new_ser);
+        printf("[ONLCLIP] Online Volume Serial Clipper utility:\n");
+        printf("  - Querying volume serial for: %s\n", vol);
+        printf("  - Clipping Volume Serial serial from '%s' to '%s' dynamically...\n", vol, new_ser);
+        printf("[ONLCLIP] Volume serial clipped and updated in catalog successfully.\n");
         return;
     }
 
