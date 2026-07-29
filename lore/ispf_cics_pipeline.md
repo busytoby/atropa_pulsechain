@@ -10,8 +10,9 @@ This document details the low-level virtual hardware roles, register handshakes,
 
 Within the development environment, **ISPF** acts as the user-facing compiler frontend, coordinating panel logic and dataset manipulations over the following pipeline components:
 
-### XCOM (SCSI Message Transport)
-`XCOM` coordinates the transmission and replication of system state datasets, transforming active screen buffers and dataset edits into raw SCSI handshake frames. (Keyboard input and raw terminal interrupts are handled directly by ISPF itself). These frames are transmitted via local loopback sockets to synchronize state registers with the virtual hardware representation.
+### XCOM (SCSI Message Transport & XPL Common Symbol Table)
+* **SCSI Message Transport**: `XCOM` coordinates the transmission and replication of system state datasets, transforming active screen buffers and dataset edits into raw SCSI handshake frames. (Keyboard input and raw terminal interrupts are handled directly by ISPF itself). These frames are transmitted via local loopback sockets to synchronize state registers with the virtual hardware representation.
+* **XPL Compiler Context**: In the XPL compiler hierarchy, `XCOM` serves as the **External Common Symbol Table / Common Symbol Block**. It maps shared compilation symbols and tokens between the parsing engine (`ANALYZER`), the active state runtime machine (`XPLSM`), and the template generator (`SKELETON`) to maintain variable parity across compilation cycles.
 
 ### ANALYZER & Initial Orders 1
 `ANALYZER` evaluates variable strings, panel macros, and JCL variables.
