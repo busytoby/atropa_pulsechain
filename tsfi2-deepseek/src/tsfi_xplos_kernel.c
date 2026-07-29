@@ -4664,6 +4664,56 @@ static void shell_task_handler(void *arg) {
         return;
     }
 
+    // Check for "clrscrn" command
+    if (strcmp(cmd, "clrscrn") == 0) {
+        printf("\033[2J\033[H");
+        printf("[CLRSCRN] Terminal screen cleared successfully.\n");
+        return;
+    }
+
+    // Check for "compare " command
+    if (strncmp(cmd, "compare ", 8) == 0) {
+        const char *args = cmd + 8;
+        char file1[32] = "";
+        char file2[32] = "";
+        sscanf(args, "%31s %31s", file1, file2);
+        printf("[COMPARE] Comparing files: %s <-> %s\n", file1, file2);
+        int idx1 = -1, idx2 = -1;
+        for (int i = 0; i < g_vfs.count; i++) {
+            if (g_vfs.files[i].active) {
+                if (strcmp(g_vfs.files[i].name, file1) == 0) idx1 = i;
+                if (strcmp(g_vfs.files[i].name, file2) == 0) idx2 = i;
+            }
+        }
+        if (idx1 >= 0 && idx2 >= 0) {
+            if (g_vfs.files[idx1].size_bytes == g_vfs.files[idx2].size_bytes &&
+                memcmp(g_vfs.files[idx1].data, g_vfs.files[idx2].data, g_vfs.files[idx1].size_bytes) == 0) {
+                printf("  - Result: Files match exactly (%u bytes).\n", g_vfs.files[idx1].size_bytes);
+            } else {
+                printf("  - Result: Mismatch found.\n");
+            }
+        } else {
+            printf("[COMPARE ERROR] One or both files not found in VFS.\n");
+        }
+        return;
+    }
+
+    // Check for "dynalc " command
+    if (strncmp(cmd, "dynalc ", 7) == 0) {
+        const char *args = cmd + 7;
+        char dsn[64] = "";
+        char dd[32] = "";
+        sscanf(args, "%63s %31s", dsn, dd);
+        printf("[DYNALC] Dynamic allocation SVC 99 processor:\n");
+        printf("  - Allocating DSN: %s -> DD: %s\n", dsn, dd);
+        if (tsfi_xplos_create_file(&g_vfs, dsn, 1024)) {
+            printf("  - Allocation successful.\n");
+        } else {
+            printf("[DYNALC ERROR] Allocation failed.\n");
+        }
+        return;
+    }
+
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
     if (tsfi_xplg_parse_semantic_action(cmd, &tx)) {

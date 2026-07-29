@@ -2026,7 +2026,21 @@ int main(void) {
     assert(bh_ok == true);
     tsfi_xplos_run(&sched_bh2);
 
-    printf("   ✓ File 316 utilities execution verified successfully.\n");
+    tsfi_xplos_init_scheduler(&sched_bh2);
+
+    bool cs_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "clrscrn");
+    assert(cs_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool cp_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "compare OCX.dat.bin OCX.dat.bin");
+    assert(cp_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool da_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "dynalc TEMP.DATA.dat.bin DD1");
+    assert(da_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    printf("   ✓ File 134 utilities execution verified successfully.\n");
 
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
