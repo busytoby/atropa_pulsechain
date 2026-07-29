@@ -353,7 +353,10 @@ bool update_and_present(int fd_wl, uint32_t surf, uint32_t bid, bool force_redra
         pthread_mutex_lock(&g_zmm_vm_mutex);
         run_rooted_zmm_tick();
         // process_logs(g_scanout_px, g_w, g_h);
-        tsfi_mozilla_wmq_bridge_tick(&g_zmm_vm);
+        extern int g_cached_contracts_count;
+        if (g_cached_contracts_count > 0) {
+            tsfi_mozilla_wmq_bridge_tick(&g_zmm_vm);
+        }
         pthread_mutex_unlock(&g_zmm_vm_mutex);
 
         // Runtime tsfi_vision validation against the expected YouTube frame

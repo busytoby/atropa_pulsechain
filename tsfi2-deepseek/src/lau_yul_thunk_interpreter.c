@@ -824,9 +824,11 @@ bool lau_yul_thunk_execute(const char *name, const uint8_t *calldata, size_t cal
     }
 
     if (!c) {
-        printf("[YUL_THUNK] Error: Contract %s not initialized. Registered contracts count: %d\n", name, g_cached_contracts_count);
-        for (int k = 0; k < g_cached_contracts_count; k++) {
-            printf("  - %s (addr: 0x%lx)\n", g_cached_contracts[k].name, g_cached_contracts[k].virtual_address);
+        if (g_cached_contracts_count > 0) {
+            printf("[YUL_THUNK] Error: Contract %s not initialized. Registered contracts count: %d\n", name, g_cached_contracts_count);
+            for (int k = 0; k < g_cached_contracts_count; k++) {
+                printf("  - %s (addr: 0x%lx)\n", g_cached_contracts[k].name, g_cached_contracts[k].virtual_address);
+            }
         }
         pthread_mutex_unlock(&g_thunk_execute_mutex);
         return false;

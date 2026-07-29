@@ -1011,10 +1011,10 @@ $(BIN_DIR):
 tests/node_interop.o: tests/node_interop.cpp tests/node_interop.h
 	$(CXX) $(CXXFLAGS) -I/usr/include/node -c -o $@ $<
 
-tests/rooted_frame_presenter: tests/rooted_frame_presenter.c tests/rooted_wayland_events.c tests/libmozilla_interop.c tests/node_interop.o $(OBJ_DIR)/tsfi_media_decode.o src/tsfi_dom.c src/tsfi_layout.c src/tsfi_paint.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
+tests/rooted_frame_presenter: tests/rooted_frame_presenter.c tests/rooted_wayland_events.c tests/libmozilla_interop.c tests/node_interop.o $(OBJ_DIR)/tsfi_media_decode.o src/tsfi_layout.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
 	$(CC) $(CFLAGS) -I/usr/include/node -I/home/mariarahel/src/pkgs/chromium-142.0.7444.175/third_party/ffmpeg -o $@ $^ $(LDFLAGS) -lnode /usr/lib/x86_64-linux-gnu/libavformat.so.62 -lavcodec -lavutil
 
-tests/rooted_vulkan_presenter: tests/rooted_vulkan_presenter.c tests/rooted_wayland_events.c tests/libmozilla_interop.c tests/node_interop.o $(OBJ_DIR)/tsfi_media_decode.o src/tsfi_dom.c src/tsfi_layout.c src/tsfi_paint.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
+tests/rooted_vulkan_presenter: tests/rooted_vulkan_presenter.c tests/rooted_wayland_events.c tests/libmozilla_interop.c tests/node_interop.o $(OBJ_DIR)/tsfi_media_decode.o src/tsfi_layout.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
 	$(CC) $(CFLAGS) -I/usr/include/node -I/home/mariarahel/src/pkgs/chromium-142.0.7444.175/third_party/ffmpeg -o $@ $^ $(LDFLAGS) -lnode /usr/lib/x86_64-linux-gnu/libavformat.so.62 -lavcodec -lavutil
 
 tests/test_fetch_launcher: tests/test_fetch_launcher.cpp tests/node_interop.o src/tsfi_dom.c src/tsfi_layout.c src/tsfi_paint.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
@@ -1149,6 +1149,12 @@ tests/test_xpl_tiger_sunset: tests/test_xpl_tiger_sunset.c
 
 tests/test_xpl_graphics_db: tests/test_xpl_graphics_db.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
+
+tests/test_xpl_winchester_mq: tests/test_xpl_winchester_mq.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
+
+tools/tsfi_run_fvmp: tools/tsfi_run_fvmp.c
+	$(CC) $(CFLAGS) -o $@ $^ -lm
 
 benchmarks/profiler_suite/bench_xplos_bus: benchmarks/profiler_suite/bench_xplos_bus.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm

@@ -1,8 +1,11 @@
+#define _DEFAULT_SOURCE
+#define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <stdbool.h>
 #include "tsfi_parc_tape_catalog.h"
 #include "tsfi_parc_tape_label_yul.h"
 
@@ -82,6 +85,62 @@ FILE *tsfi_tape_open_guarded(const char *file_path, const char *mode, uint8_t pr
     FILE *f = fopen(file_path, mode);
     if (!f) return NULL;
 
+    // Check if the file is a ZIP archive matching the .dat.bin mask (dynamic mount)
+    if (strchr(mode, 'r')) {
+        uint32_t magic = 0;
+        if (fread(&magic, 1, 4, f) == 4) {
+            if (magic == 0x04034b50) { // ZIP magic: PK\x03\x04
+                fclose(f);
+                
+                // RED Rail: Verify governance label via VOL1.HDR member if present
+                char members[16][128];
+                int member_cnt = tsfi_tape_zip_list_members(file_path, members, 16);
+                bool has_header = false;
+                for (int m = 0; m < member_cnt; m++) {
+                    if (strcmp(members[m], "VOL1.HDR") == 0) {
+                        has_header = true;
+                        break;
+                    }
+                }
+                
+                if (has_header) {
+                    FILE *hdr_f = tsfi_tape_zip_open_member(file_path, "VOL1.HDR");
+                    if (hdr_f) {
+                        uint8_t header_buf[720];
+                        size_t nread = fread(header_buf, 1, 720, hdr_f);
+                        pclose(hdr_f);
+                        if (nread == 720) {
+                            int gov_res = tsfi_tape_label_yul_check_governance(header_buf, process_clearance);
+                            if (gov_res != 0) {
+                                printf("[SECURITY] Access Denied: Governance check failed for zip %s (Code %d)\n", file_path, gov_res);
+                                return NULL;
+                            }
+                        }
+                    }
+                }
+
+                char cmd[512];
+                // Stream primary member file (skipping the VOL1.HDR file if multiple files exist)
+                const char *target_member = (member_cnt > 0) ? members[0] : "";
+                if (member_cnt > 1 && strcmp(members[0], "VOL1.HDR") == 0) {
+                    target_member = members[1];
+                }
+                snprintf(cmd, sizeof(cmd), "unzip -p %s %s", file_path, target_member);
+                FILE *pipe_f = popen(cmd, "r");
+                if (pipe_f) {
+                    printf("[CATALOG] Dynamic Mount: Successfully mounted ZIP archive %s via streaming pipe\n", file_path);
+                    return pipe_f;
+                }
+                // Fallback to standard open if popen fails
+                f = fopen(file_path, mode);
+            } else {
+                fseek(f, 0, SEEK_SET);
+            }
+        } else {
+            fseek(f, 0, SEEK_SET);
+        }
+    }
+
     // If writing a new file, inscribe 720-byte Yul DDL header block
     if (strchr(mode, 'w') || strchr(mode, 'a')) {
         uint8_t header_buf[720];
@@ -156,3 +215,33 @@ int tsfi_tape_catalog_process_all(const char *dir_path, tsfi_tape_catalog_entry_
     closedir(dir);
     return count;
 }
+
+int tsfi_tape_zip_list_members(const char *zip_path, char members_out[][128], int max_members) {
+    if (!zip_path || !members_out || max_members <= 0) return -1;
+    char cmd[512];
+    snprintf(cmd, sizeof(cmd), "unzip -Z -1 %s", zip_path);
+    FILE *pipe_f = popen(cmd, "r");
+    if (!pipe_f) return -2;
+
+    int count = 0;
+    char line[128];
+    while (fgets(line, sizeof(line), pipe_f) && count < max_members) {
+        // Strip trailing newline
+        line[strcspn(line, "\r\n")] = '\0';
+        if (strlen(line) > 0) {
+            snprintf(members_out[count], 128, "%s", line);
+            count++;
+        }
+    }
+    pclose(pipe_f);
+    return count;
+}
+
+FILE *tsfi_tape_zip_open_member(const char *zip_path, const char *member_name) {
+    if (!zip_path || !member_name) return NULL;
+    char cmd[512];
+    snprintf(cmd, sizeof(cmd), "unzip -p %s %s", zip_path, member_name);
+    FILE *pipe_f = popen(cmd, "r");
+    return pipe_f;
+}
+

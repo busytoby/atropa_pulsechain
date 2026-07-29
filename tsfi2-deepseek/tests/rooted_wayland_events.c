@@ -197,7 +197,10 @@ void handle_bridge_command(const char *cmd) {
     }
 
     pthread_mutex_lock(&g_zmm_vm_mutex);
-    tsfi_mozilla_wmq_bridge_tick(&g_zmm_vm);
+    extern int g_cached_contracts_count;
+    if (g_cached_contracts_count > 0) {
+        tsfi_mozilla_wmq_bridge_tick(&g_zmm_vm);
+    }
     pthread_mutex_unlock(&g_zmm_vm_mutex);
 }
 

@@ -90,7 +90,7 @@ bool tsfi_xplg_vulkan_dispatch_shader(
 
 // XplOS Shell state structures
 typedef struct {
-    char cmd_buffer[128];
+    char cmd_buffer[512];
     int cursor;
     bool active;
 } XplosShell;
@@ -107,7 +107,7 @@ bool tsfi_xplos_shell_exec(XplosShell *shell, XplosScheduler *sched, const char 
 // ============================================================================
 
 typedef struct {
-    char name[32];
+    char name[64];
     uint32_t start_offset;
     uint32_t size_bytes;
     bool active;
@@ -180,9 +180,15 @@ bool tsfi_xplos_add_log_block(
 // Sequence check validation algorithm
 bool tsfi_xplos_verify_ledger(const XplosVerificationLedger *ledger);
 
-// Cooperative task entries for skeletonization and syntactic analysis
 void tsfi_xplos_task_skeletonize(void *arg);
 void tsfi_xplos_task_parse_syntax(void *arg);
+
+/* RED ANALYZER: Statically audit a mounted ZIP tape's member names and record line structures */
+bool tsfi_xplos_analyzer_audit_zip(const char *zip_path);
+
+/* BLACK XPLSM: Dynamic execution monitor of a specific tape member card deck */
+bool tsfi_xplos_xplsm_execute_zip_member(const char *zip_path, const char *member_name);
+
 
 
 // ============================================================================

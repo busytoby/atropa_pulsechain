@@ -131,6 +131,24 @@ gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -O3 tests/test_aunc
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -O3 tests/test_auncient_dat_bin_transaction.c -o tests/test_auncient_dat_bin_transaction -lssl -lcrypto -lm -lrt
 ./tests/test_auncient_dat_bin_transaction
 
+# Compile and run UTM RDBMS Gated verification
+gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -O3 tests/test_auncient_utm_rdbms.c -o tests/test_auncient_utm_rdbms -lssl -lcrypto -lm -lrt
+./tests/test_auncient_utm_rdbms
+rm -f tests/test_auncient_utm_rdbms
+
+# Compile and run Dynamic Tape ZIP Mount verification
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/inc -Iinc tests/test_auncient_tape_zip_mount.c tsfi2-deepseek/src/tsfi_parc_tape_catalog.c tsfi2-deepseek/src/tsfi_parc_tape_label_yul.c -o tests/test_auncient_tape_zip_mount -lm -lrt -lssl -lcrypto
+./tests/test_auncient_tape_zip_mount
+rm -f tests/test_auncient_tape_zip_mount
+
+# Compile and run XplOS Kernel ZIP Mount verification
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/inc -Iinc tests/test_auncient_xplos_kernel_zip.c tsfi2-deepseek/src/tsfi_xplos_kernel.c tsfi2-deepseek/src/tsfi_parc_tape_catalog.c tsfi2-deepseek/src/tsfi_parc_tape_label_yul.c tsfi2-deepseek/src/tsfi_lowpower_fet.c tsfi2-deepseek/src/tsfi_nadler_syntactic_parser.c tsfi2-deepseek/src/tsfi_nadler_skeletonizer.c tsfi2-deepseek/src/tsfi_xpl_mallgren.c -o tests/test_auncient_xplos_kernel_zip -lm -lrt -lssl -lcrypto
+./tests/test_auncient_xplos_kernel_zip
+rm -f tests/test_auncient_xplos_kernel_zip
+
+
+
+
 # Compile and run Chin Monopole
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -O3 tests/test_auncient_chin_monopole.c -o tests/test_auncient_chin_monopole -lm -lrt
 ./tests/test_auncient_chin_monopole

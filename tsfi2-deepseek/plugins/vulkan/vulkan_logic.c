@@ -294,10 +294,107 @@ static void update_and_render_datamost_display(VulkanSystem *s) {
     }
 
     // Execute Yul Thunk: checkCollisions()
-    uint8_t calldata[4] = { 0x5a, 0x18, 0xa9, 0x94 };
-    uint8_t retval[32];
-    size_t retval_len = 32;
-    lau_yul_thunk_execute("graphicsSystem", calldata, 4, retval, &retval_len);
+    extern int g_cached_contracts_count;
+    if (g_cached_contracts_count > 0) {
+        uint8_t calldata[4] = { 0x5a, 0x18, 0xa9, 0x94 };
+        uint8_t retval[32];
+        size_t retval_len = 32;
+        lau_yul_thunk_execute("graphicsSystem", calldata, 4, retval, &retval_len);
+    }
+    if (g_cached_contracts_count == 0) {
+        StagingBuffer *sb = s->paint_buffer;
+        // 1. Draw a beautiful multi-stop radial/linear gradient sunset backdrop
+        for (int y = 0; y < (int)sb->height; y++) {
+            float y_ratio = (float)y / sb->height;
+            uint8_t r = (uint8_t)(30.0f + 225.0f * (1.0f - y_ratio));
+            uint8_t g = (uint8_t)(10.0f + 80.0f * (1.0f - y_ratio));
+            uint8_t b = (uint8_t)(15.0f + 30.0f * y_ratio);
+            uint32_t color = 0xFF000000 | (r << 16) | (g << 8) | b;
+            for (int x = 0; x < (int)sb->width; x++) {
+                uint32_t *px = (uint32_t*)sb->data;
+                px[y * sb->width + x] = color;
+            }
+        }
+        
+        // 2. Draw setting sun (glowing yellow circle)
+        float sun_y = 180.0f + 50.0f * sinf(tick * 0.02f);
+        float sun_x = sb->width / 2.0f;
+        float sun_r = 70.0f;
+        for (int y = 0; y < (int)sb->height; y++) {
+            for (int x = 0; x < (int)sb->width; x++) {
+                float dx = x - sun_x;
+                float dy = y - sun_y;
+                float dist = sqrtf(dx * dx + dy * dy);
+                if (dist < sun_r) {
+                    uint32_t *px = (uint32_t*)sb->data;
+                    float ratio = dist / sun_r;
+                    uint8_t r = 255;
+                    uint8_t g = (uint8_t)(200.0f * (1.0f - ratio * ratio));
+                    uint8_t b = (uint8_t)(100.0f * (1.0f - ratio));
+                    px[y * sb->width + x] = 0xFF000000 | (r << 16) | (g << 8) | b;
+                }
+            }
+        }
+
+        // 3. Draw water waves with horizontal sine offsets
+        for (int y = 280; y < (int)sb->height; y++) {
+            float wave_offset = 15.0f * sinf(y * 0.1f + tick * 0.05f);
+            for (int x = 0; x < (int)sb->width; x++) {
+                uint32_t *px = (uint32_t*)sb->data;
+                float dist_to_sun_path = fabsf(x - sun_x + wave_offset);
+                uint32_t water_color = 0xFF121025;
+                if (dist_to_sun_path < 40.0f) {
+                    water_color = 0xFFCC6600; // Orange reflection
+                }
+                px[y * sb->width + x] = water_color;
+            }
+        }
+
+        // 4. Draw palm tree
+        int trunk_x = 80;
+        for (int y = 140; y < 280; y++) {
+            int tx = trunk_x + (int)(10.0f * sinf(y * 0.02f));
+            for (int dx = -4; dx <= 4; dx++) {
+                uint32_t *px = (uint32_t*)sb->data;
+                px[y * sb->width + (tx + dx)] = 0xFF050505;
+            }
+        }
+        for (int angle_deg = 0; angle_deg < 360; angle_deg += 45) {
+            float rad = angle_deg * 3.14159f / 180.0f;
+            for (int len = 0; len < 60; len++) {
+                int lx = trunk_x + (int)(10.0f * sinf(140 * 0.02f)) + (int)(len * cosf(rad));
+                int ly = 140 + (int)(len * sinf(rad) + 5.0f * sinf(len * 0.1f));
+                if (lx >= 0 && lx < (int)sb->width && ly >= 0 && ly < (int)sb->height) {
+                    uint32_t *px = (uint32_t*)sb->data;
+                    px[ly * sb->width + lx] = 0xFF050505;
+                }
+            }
+        }
+
+        // 5. Draw tiger silhouette
+        int tiger_cx = sb->width / 2;
+        int tiger_cy = 280;
+        for (int y = tiger_cy - 40; y < tiger_cy; y++) {
+            float y_ratio = (float)(y - (tiger_cy - 40)) / 40.0f;
+            int width_at_y = (int)(25.0f * sinf(y_ratio * 3.14159f));
+            for (int x = tiger_cx - width_at_y; x <= tiger_cx + width_at_y; x++) {
+                uint32_t *px = (uint32_t*)sb->data;
+                px[y * sb->width + x] = 0xFF050505;
+            }
+        }
+        for (int y = tiger_cy - 52; y < tiger_cy - 40; y++) {
+            for (int x = tiger_cx - 10; x <= tiger_cx + 10; x++) {
+                uint32_t *px = (uint32_t*)sb->data;
+                px[y * sb->width + x] = 0xFF050505;
+            }
+        }
+        uint32_t *px = (uint32_t*)sb->data;
+        px[(tiger_cy - 55) * sb->width + (tiger_cx - 8)] = 0xFF050505;
+        px[(tiger_cy - 55) * sb->width + (tiger_cx + 8)] = 0xFF050505;
+
+        draw_debug_text(sb, 10, 8, "--- TSFI TIGER SUNSET VULKAN NATIVE PRESENTATION ---", 0xFFFFFF00, true);
+        return;
+    }
 
     uint64_t collisionMask = get_register_val(g_graphics_address, 53278);
 
@@ -451,7 +548,8 @@ static void update_and_render_datamost_display(VulkanSystem *s) {
     uint8_t freq_retval[32];
     size_t freq_retval_len = 32;
     uint16_t voice_freq = 220;
-    if (lau_yul_thunk_execute("musicMaker", freq_calldata, 4, freq_retval, &freq_retval_len)) {
+    extern int g_cached_contracts_count;
+    if (g_cached_contracts_count > 0 && lau_yul_thunk_execute("musicMaker", freq_calldata, 4, freq_retval, &freq_retval_len)) {
         voice_freq = (freq_retval[30] << 8) | freq_retval[31];
     }
     if (voice_freq == 0) voice_freq = 220;
@@ -472,7 +570,8 @@ static void update_and_render_datamost_display(VulkanSystem *s) {
     uint8_t disk_retval[32];
     size_t disk_retval_len = 32;
     uint64_t jiffies = 0;
-    if (lau_yul_thunk_execute("diskSystem", disk_calldata, 4, disk_retval, &disk_retval_len)) {
+    extern int g_cached_contracts_count;
+    if (g_cached_contracts_count > 0 && lau_yul_thunk_execute("diskSystem", disk_calldata, 4, disk_retval, &disk_retval_len)) {
         jiffies = ((uint64_t)disk_retval[24] << 56) |
                   ((uint64_t)disk_retval[25] << 48) |
                   ((uint64_t)disk_retval[26] << 40) |
@@ -516,7 +615,10 @@ static void update_and_render_datamost_display(VulkanSystem *s) {
 
     uint8_t ret_input[32] = {0};
     size_t ret_input_len = sizeof(ret_input);
-    lau_yul_thunk_execute("MicroUI", cd_input, sizeof(cd_input), ret_input, &ret_input_len);
+    extern int g_cached_contracts_count;
+    if (g_cached_contracts_count > 0) {
+        lau_yul_thunk_execute("MicroUI", cd_input, sizeof(cd_input), ret_input, &ret_input_len);
+    }
 
     // 2. Clear Button
     uint8_t cd_btn1[132] = {0};
@@ -528,7 +630,10 @@ static void update_and_render_datamost_display(VulkanSystem *s) {
 
     uint8_t ret_btn1[32] = {0};
     size_t ret_btn1_len = sizeof(ret_btn1);
-    lau_yul_thunk_execute("MicroUI", cd_btn1, sizeof(cd_btn1), ret_btn1, &ret_btn1_len);
+    extern int g_cached_contracts_count;
+    if (g_cached_contracts_count > 0) {
+        lau_yul_thunk_execute("MicroUI", cd_btn1, sizeof(cd_btn1), ret_btn1, &ret_btn1_len);
+    }
     bool btn1_clicked = (ret_btn1[31] != 0);
 
     // 3. Invert Button
@@ -541,7 +646,10 @@ static void update_and_render_datamost_display(VulkanSystem *s) {
 
     uint8_t ret_btn2[32] = {0};
     size_t ret_btn2_len = sizeof(ret_btn2);
-    lau_yul_thunk_execute("MicroUI", cd_btn2, sizeof(cd_btn2), ret_btn2, &ret_btn2_len);
+    extern int g_cached_contracts_count;
+    if (g_cached_contracts_count > 0) {
+        lau_yul_thunk_execute("MicroUI", cd_btn2, sizeof(cd_btn2), ret_btn2, &ret_btn2_len);
+    }
     bool btn2_clicked = (ret_btn2[31] != 0);
 
     // 4. Ingest draw calls from Yul log events

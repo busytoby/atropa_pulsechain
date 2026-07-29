@@ -376,7 +376,10 @@ bool update_and_present(int fd_wl, uint32_t surf, uint32_t bid, bool force_redra
         
         pthread_mutex_lock(&g_zmm_vm_mutex);
         run_rooted_zmm_tick();
-        tsfi_mozilla_wmq_bridge_tick(&g_zmm_vm);
+        extern int g_cached_contracts_count;
+        if (g_cached_contracts_count > 0) {
+            tsfi_mozilla_wmq_bridge_tick(&g_zmm_vm);
+        }
         pthread_mutex_unlock(&g_zmm_vm_mutex);
 
         // Runtime validation against the expected YouTube frame
@@ -420,30 +423,33 @@ static void* run_presenter_thread(void* arg) {
     (void)arg;
     tsfi_wire_firmware_init();
 
-    printf("[Auncient Presenter] Initializing global ZMM VM...\n");
-    fflush(stdout);
-    tsfi_zmm_vm_init(&g_zmm_vm);
+    extern int g_cached_contracts_count;
+    if (g_cached_contracts_count > 0) {
+        printf("[Auncient Presenter] Initializing global ZMM VM...\n");
+        fflush(stdout);
+        tsfi_zmm_vm_init(&g_zmm_vm);
 
-    tsfi_zmm_vm_exec(&g_zmm_vm, "YULINIT \"MicroUI\", \"../solidity/bin/microui.yul\", 256");
-    tsfi_zmm_vm_exec(&g_zmm_vm, "YULINIT \"MicroUI\", \"solidity/bin/microui.yul\", 256");
-    tsfi_zmm_vm_exec(&g_zmm_vm, "YULINIT \"WinchesterMQ\", \"../solidity/bin/WinchesterMQ.yul\", 0xccb077a0");
-    tsfi_zmm_vm_exec(&g_zmm_vm, "YULINIT \"WinchesterMQ\", \"solidity/bin/WinchesterMQ.yul\", 0xccb077a0");
-    tsfi_zmm_vm_exec(&g_zmm_vm, "YULINIT \"laufactory\", \"../solidity/bin/laufactory.yul\", 0x0EB4EE7d5Ff28cbF68565A174f7E5e186c36B4b3");
-    tsfi_zmm_vm_exec(&g_zmm_vm, "YULINIT \"laufactory\", \"solidity/bin/laufactory.yul\", 0x0EB4EE7d5Ff28cbF68565A174f7E5e186c36B4b3");
-    
-    tsfi_zmm_vm_exec(&g_zmm_vm, "YULEXEC \"laufactory\", \"c55c7075"
-        "0000000000000000000000000000000000000000000000000000000000000040" // Offset of name
-        "0000000000000000000000000000000000000000000000000000000000000080" // Offset of symbol
-        "000000000000000000000000000000000000000000000000000000000000000e" // Length of name "ROOTED Browser" (14 bytes)
-        "524f4f5445442042726f77736572000000000000000000000000000000000000" // Data "ROOTED Browser"
-        "0000000000000000000000000000000000000000000000000000000000000006" // Length of symbol "ROOTED" (6 bytes)
-        "524f4f5445440000000000000000000000000000000000000000000000000000\""); // Data "ROOTED"
-    
-    printf("[Auncient Presenter] ZMM VM diagnostics, WinchesterMQ, and legal immutable LAU ROOTED Browser username setup completed.\n");
-    fflush(stdout);
+        tsfi_zmm_vm_exec(&g_zmm_vm, "YULINIT \"MicroUI\", \"../solidity/bin/microui.yul\", 256");
+        tsfi_zmm_vm_exec(&g_zmm_vm, "YULINIT \"MicroUI\", \"solidity/bin/microui.yul\", 256");
+        tsfi_zmm_vm_exec(&g_zmm_vm, "YULINIT \"WinchesterMQ\", \"../solidity/bin/WinchesterMQ.yul\", 0xccb077a0");
+        tsfi_zmm_vm_exec(&g_zmm_vm, "YULINIT \"WinchesterMQ\", \"solidity/bin/WinchesterMQ.yul\", 0xccb077a0");
+        tsfi_zmm_vm_exec(&g_zmm_vm, "YULINIT \"laufactory\", \"../solidity/bin/laufactory.yul\", 0x0EB4EE7d5Ff28cbF68565A174f7E5e186c36B4b3");
+        tsfi_zmm_vm_exec(&g_zmm_vm, "YULINIT \"laufactory\", \"solidity/bin/laufactory.yul\", 0x0EB4EE7d5Ff28cbF68565A174f7E5e186c36B4b3");
+        
+        tsfi_zmm_vm_exec(&g_zmm_vm, "YULEXEC \"laufactory\", \"c55c7075"
+            "0000000000000000000000000000000000000000000000000000000000000040" // Offset of name
+            "0000000000000000000000000000000000000000000000000000000000000080" // Offset of symbol
+            "000000000000000000000000000000000000000000000000000000000000000e" // Length of name "ROOTED Browser" (14 bytes)
+            "524f4f5445442042726f77736572000000000000000000000000000000000000" // Data "ROOTED Browser"
+            "0000000000000000000000000000000000000000000000000000000000000006" // Length of symbol "ROOTED" (6 bytes)
+            "524f4f5445440000000000000000000000000000000000000000000000000000\""); // Data "ROOTED"
+        
+        printf("[Auncient Presenter] ZMM VM diagnostics, WinchesterMQ, and legal immutable LAU ROOTED Browser username setup completed.\n");
+        fflush(stdout);
 
-    printf("[Auncient Presenter] Initializing Mozilla WMQ bridge...\n");
-    tsfi_mozilla_wmq_bridge_init("./libtsfi2.so");
+        printf("[Auncient Presenter] Initializing Mozilla WMQ bridge...\n");
+        tsfi_mozilla_wmq_bridge_init("./libtsfi2.so");
+    }
 
     PFN_vkCreateInstance pvkCreateInstance = (PFN_vkCreateInstance)tsfi_vkGetInstanceProcAddr(NULL, "vkCreateInstance");
     PFN_vkCreateDevice pvkCreateDevice = (PFN_vkCreateDevice)tsfi_vkGetInstanceProcAddr(NULL, "vkCreateDevice");
@@ -695,16 +701,6 @@ static void* run_presenter_thread(void* arg) {
                         target_len = 20;
                         total_read = 0;
                     } else if (stream_state == STATE_READ_CMD) {
-                        if (target_len < sizeof(input_buf)) {
-                            input_buf[target_len] = '\0';
-                        } else {
-                            input_buf[sizeof(input_buf) - 1] = '\0';
-                        }
-                        FILE *py_proc = popen("python3 scripts/set_clipboard.py", "w");
-                        if (py_proc) {
-                            fwrite(input_buf, 1, target_len, py_proc);
-                            pclose(py_proc);
-                        }
                         stream_state = STATE_READ_LEN;
                         target_len = 20;
                         total_read = 0;
@@ -752,15 +748,15 @@ int main(int argc, char **argv) {
         fprintf(stderr, "[Auncient Presenter ERR] Failed to create presenter loop thread!\n");
         return 1;
     }
-    pthread_detach(presenter_thread_handle);
 
-    printf("[Auncient Presenter] Spawning embedded Node.js engine on main thread...\n");
-    const char *script_path = "scripts/embedded_browser_controller.js";
-    if (access(script_path, F_OK) != 0) {
-        script_path = "../scripts/embedded_browser_controller.js";
+    extern int g_cached_contracts_count;
+    if (g_cached_contracts_count == 0) {
+        printf("[Auncient Presenter] Pure XPL graphics session active. Running interactive Vulkan Wayland presentation loop...\n");
+        pthread_join(presenter_thread_handle, NULL);
+        return 0;
     }
-    char* args[] = { (char*)"node", (char*)script_path, NULL };
-    start_embedded_node(2, args);
-    printf("[Auncient Presenter] Embedded Node.js engine exited.\n");
+
+    printf("[Auncient Presenter] Pure Vulkan Wayland presentation loop active...\n");
+    pthread_join(presenter_thread_handle, NULL);
     return 0;
 }

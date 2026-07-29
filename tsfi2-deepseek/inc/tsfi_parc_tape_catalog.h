@@ -22,4 +22,10 @@ int tsfi_tape_catalog_next_id(const char *domain_prefix, char *out_vol_id);
 /* Open a .dat.bin tape file with automated Yul DDL header inscription and security governance checks */
 FILE *tsfi_tape_open_guarded(const char *file_path, const char *mode, uint8_t process_clearance);
 
+/* List all member files inside a dynamically mounted ZIP tape */
+int tsfi_tape_zip_list_members(const char *zip_path, char members_out[][128], int max_members);
+
+/* Open a specific member file inside the dynamically mounted ZIP tape */
+FILE *tsfi_tape_zip_open_member(const char *zip_path, const char *member_name);
+
 #endif // TSFI_PARC_TAPE_CATALOG_H
