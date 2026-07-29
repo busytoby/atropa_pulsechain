@@ -478,6 +478,44 @@ bool tsfi_xpl_execute_assembler(const char *asm_instruction, uint32_t *gprs, uin
             gprs[r1] -= gprs[r2];
             return true;
         }
+    } else if (strcasecmp(op, "CR") == 0) {
+        int r1 = atoi(arg1 + (arg1[0] == 'R' || arg1[0] == 'r' ? 1 : 0));
+        int r2 = atoi(arg2 + (arg2[0] == 'R' || arg2[0] == 'r' ? 1 : 0));
+        if (r1 >= 0 && r1 < 16 && r2 >= 0 && r2 < 16) {
+            gprs[0] = (gprs[r1] == gprs[r2]) ? 0 : ((gprs[r1] < gprs[r2]) ? 0xFFFFFFFF : 1);
+            return true;
+        }
+    } else if (strcasecmp(op, "L") == 0) {
+        int r1 = atoi(arg1 + (arg1[0] == 'R' || arg1[0] == 'r' ? 1 : 0));
+        int offset = 0;
+        int base_reg = 0;
+        sscanf(arg2, "%d(%*[^)])", &offset);
+        char *paren = strchr(arg2, '(');
+        if (paren) {
+            base_reg = atoi(paren + (paren[1] == 'R' || paren[1] == 'r' ? 2 : 1));
+        }
+        if (r1 >= 0 && r1 < 16 && base_reg >= 0 && base_reg < 16) {
+            uint32_t addr = gprs[base_reg] + offset;
+            gprs[r1] = ((uint32_t)memory[addr] << 24) | ((uint32_t)memory[addr+1] << 16) | ((uint32_t)memory[addr+2] << 8) | (uint32_t)memory[addr+3];
+            return true;
+        }
+    } else if (strcasecmp(op, "ST") == 0) {
+        int r1 = atoi(arg1 + (arg1[0] == 'R' || arg1[0] == 'r' ? 1 : 0));
+        int offset = 0;
+        int base_reg = 0;
+        sscanf(arg2, "%d(%*[^)])", &offset);
+        char *paren = strchr(arg2, '(');
+        if (paren) {
+            base_reg = atoi(paren + (paren[1] == 'R' || paren[1] == 'r' ? 2 : 1));
+        }
+        if (r1 >= 0 && r1 < 16 && base_reg >= 0 && base_reg < 16) {
+            uint32_t addr = gprs[base_reg] + offset;
+            memory[addr] = (uint8_t)((gprs[r1] >> 24) & 0xFF);
+            memory[addr+1] = (uint8_t)((gprs[r1] >> 16) & 0xFF);
+            memory[addr+2] = (uint8_t)((gprs[r1] >> 8) & 0xFF);
+            memory[addr+3] = (uint8_t)(gprs[r1] & 0xFF);
+            return true;
+        }
     } else if (strcasecmp(op, "MVI") == 0) {
         int offset = 0;
         int base_reg = 0;

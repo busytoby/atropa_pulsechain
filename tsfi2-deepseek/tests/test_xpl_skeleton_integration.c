@@ -296,6 +296,19 @@ int main(void) {
     ce_gprs[4] = 50;
     assert(tsfi_xpl_execute_assembler("AR R3, R4", ce_gprs, ce_memory) == true);
     assert(ce_gprs[3] == 150);
+    
+    // Test Load (L), Store (ST), and Compare (CR) instructions
+    ce_gprs[1] = 500; // Base address
+    ce_gprs[5] = 0xAABBCCDD; // Value to store
+    assert(tsfi_xpl_execute_assembler("ST R5, 10(R1)", ce_gprs, ce_memory) == true); // Store at address 510
+    
+    ce_gprs[6] = 0;
+    assert(tsfi_xpl_execute_assembler("L R6, 10(R1)", ce_gprs, ce_memory) == true); // Load back from 510
+    assert(ce_gprs[6] == 0xAABBCCDD);
+    
+    assert(tsfi_xpl_execute_assembler("CR R5, R6", ce_gprs, ce_memory) == true); // Compare R5 and R6
+    assert(ce_gprs[0] == 0); // Result must be 0 (equal)
+    
     printf("  -> ALU emulated register manipulations verified successfully.\n");
 
     printf("\n=== INTEGRATION PROOFS PASSED ===\n");
