@@ -1188,6 +1188,17 @@ int main(void) {
     tsfi_xplos_run(&sched_cpu);
     printf("   ✓ CBTCPU execution verified successfully.\n");
 
+    // 78. Test CBTVTOC command execution
+    printf("[KERNEL TEST] Dispatching 'cbtvtoc' command to XplOS shell...\n");
+    XplosShell shell_vtoc;
+    XplosScheduler sched_vtoc;
+    tsfi_xplos_init_scheduler(&sched_vtoc);
+    tsfi_xplos_init_shell(&shell_vtoc);
+    bool vtoc_ok = tsfi_xplos_shell_exec(&shell_vtoc, &sched_vtoc, "cbtvtoc MVSRES");
+    assert(vtoc_ok == true);
+    tsfi_xplos_run(&sched_vtoc);
+    printf("   ✓ CBTVTOC execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

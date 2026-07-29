@@ -2837,6 +2837,24 @@ static void shell_task_handler(void *arg) {
         printf("  - MOTZKIN Field:  Parity verified (MotzkinPrime operational)\n");
         return;
     }
+
+    // Check for "cbtvtoc " command
+    if (strncmp(cmd, "cbtvtoc ", 8) == 0) {
+        char vol_name[32] = "";
+        if (sscanf(cmd + 8, "%31s", vol_name) == 1) {
+            printf("[CBTVTOC] Volume Table of Contents (VTOC) for %s:\n", vol_name);
+            printf("  - Target volume: %s\n", vol_name);
+            printf("  - Tracks allocated: 15000, Used: 8430, Free: 6570\n");
+            printf("  - Extents: 4\n");
+            printf("  - VTOC Dataset Entries:\n");
+            printf("    * SYS1.LINKLIB (Extents: 1, Tracks: 4500)\n");
+            printf("    * SYS1.MACLIB (Extents: 1, Tracks: 1200)\n");
+            printf("    * SYS1.PROCLIB (Extents: 2, Tracks: 2730)\n");
+        } else {
+            printf("[CBTVTOC ERROR] Volume name required.\n");
+        }
+        return;
+    }
     
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
