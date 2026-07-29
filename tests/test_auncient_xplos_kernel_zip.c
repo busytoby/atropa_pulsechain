@@ -2082,6 +2082,20 @@ int main(void) {
     assert(ce2_ok == true);
     tsfi_xplos_run(&sched_bh2);
 
+    tsfi_xplos_init_scheduler(&sched_bh2);
+
+    bool xdch_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "xdc halt");
+    assert(xdch_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool xdca_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "xdc auth KEYSET");
+    assert(xdca_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool xdcd_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "xdc");
+    assert(xdcd_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

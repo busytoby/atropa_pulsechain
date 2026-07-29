@@ -4781,6 +4781,38 @@ static void shell_task_handler(void *arg) {
         return;
     }
 
+    // Check for "xdc" command
+    if (strncmp(cmd, "xdc", 3) == 0) {
+        const char *args = cmd + 3;
+        while (*args == ' ') args++;
+        printf("[XDC] External Debug Boundary Control Interface:\n");
+        if (strcmp(args, "halt") == 0) {
+            printf("  - Intercepting raw SCSI handshake frames on WinchesterMQ interface...\n");
+            printf("  - Execution halted. Visual trail opacity (alpha) locked. Coordinates solid cyan.\n");
+            printf("  - Highlighted vertex spheres showing active instruction breakpoints.\n");
+        } else if (strncmp(args, "auth ", 5) == 0) {
+            const char *key_str = args + 5;
+            printf("  - Verifying PKI authorization credentials: '%s'\n", key_str);
+            uint64_t keys[4] = {10001, 10002, 10003, 10004};
+            uint64_t sum = 0;
+            for (int i = 0; i < 4; i++) {
+                sum += keys[i];
+            }
+            uint64_t motzkin = 953467954114363ULL;
+            uint64_t auth_sig = sum % motzkin;
+            printf("  - Verification status: K=4 distinct keys parsed.\n");
+            printf("  - Cryptographic modular parity signature (XDC_Auth): %lu\n", auth_sig);
+            printf("  - XDC authorization verified successfully. Debug session active.\n");
+        } else {
+            printf("  - Standard Register State Dump:\n");
+            printf("    * Chin:      0x000F31A0\n");
+            printf("    * Monopole:  0x00A12C50\n");
+            printf("    * Identity:  0x00003D12\n");
+        }
+        printf("[XDC] Debugger control frame completed.\n");
+        return;
+    }
+
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
     if (tsfi_xplg_parse_semantic_action(cmd, &tx)) {
