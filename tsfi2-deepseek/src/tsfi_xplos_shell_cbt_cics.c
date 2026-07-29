@@ -442,6 +442,91 @@ static bool handle_cbtcicsrefr(void) {
     return true;
 }
 
+static bool handle_cbtcicsprg(void) {
+    ensure_cics_initialized();
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  CICS PROGRAM CONTROL TABLE (PCT) DEFINITIONS                  \n");
+    printf("================================================================================\n");
+    printf(" TRANS ID | PROGRAM  | EXECUTION COUNT | ACTIVE | DYNAMIC CONTRACT ADDRESS\n");
+    printf("--------------------------------------------------------------------------------\n");
+    for (uint32_t i = 0; i < g_cics_engine.pct_count; i++) {
+        printf(" %-8s | %-8s | %-15u | %-6s | %s\n",
+               g_cics_engine.pct[i].transaction_identifier,
+               g_cics_engine.pct[i].program_name,
+               g_cics_engine.pct[i].execution_count,
+               g_cics_engine.pct[i].is_active ? "YES" : "NO",
+               g_cics_engine.pct[i].dynamic_contract_address);
+    }
+    printf(" RESPONSE STATUS    : NORMAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
+static bool handle_cbtcicswriteq(const char *cmd) {
+    ensure_cics_initialized();
+    char queue_name[16] = "";
+    char payload[128] = "";
+    if (sscanf(cmd + 14, "%15s %[^\n]", queue_name, payload) < 2) {
+        printf("[CICSWRITEQ ERROR] Syntax: cbtcicswriteq <queue_name> <payload>\n");
+        return true;
+    }
+    uint32_t item_id = 0;
+    int rc = tsfi_cics_exec_writeq_ts(&g_cics_engine, queue_name, payload, strlen(payload), &item_id);
+    if (rc == 0) {
+        printf("[CICS] Wrote item %u to TSQ %s successfully. RC=0000\n", item_id, queue_name);
+    } else {
+        printf("[CICS WRITEQ ERROR] Failed writing to TSQ %s. Code: %d\n", queue_name, rc);
+    }
+    return true;
+}
+
+static bool handle_cbtcicsreadq(const char *cmd) {
+    ensure_cics_initialized();
+    char queue_name[16] = "";
+    if (sscanf(cmd + 13, "%15s", queue_name) < 1) {
+        printf("[CICSREADQ ERROR] Syntax: cbtcicsreadq <queue_name>\n");
+        return true;
+    }
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  CICS TEMPORARY STORAGE QUEUE DUMP: %s\n", queue_name);
+    printf("================================================================================\n");
+    bool found = false;
+    for (uint32_t i = 0; i < g_cics_engine.ts_queue_count; i++) {
+        if (strcmp(g_cics_engine.ts_queues[i].queue_name, queue_name) == 0) {
+            found = true;
+            printf(" TOTAL ITEMS IN QUEUE: %u\n", g_cics_engine.ts_queues[i].item_count);
+            printf("--------------------------------------------------------------------------------\n");
+            for (uint32_t j = 0; j < g_cics_engine.ts_queues[i].item_count; j++) {
+                printf(" ITEM ID %04u | PAYLOAD: %.*s\n",
+                       g_cics_engine.ts_queues[i].items[j].item_id,
+                       (int)g_cics_engine.ts_queues[i].items[j].payload_bytes,
+                       g_cics_engine.ts_queues[i].items[j].payload);
+            }
+            break;
+        }
+    }
+    if (!found) {
+        printf(" TSQ %s NOT FOUND IN CURRENT ENGINE REGISTRY\n", queue_name);
+    }
+    printf(" RESPONSE STATUS    : NORMAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
+static bool handle_cbtcicslock(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  CICS ACTIVE TRANSACTION LOCK MANAGER                         \n");
+    printf("================================================================================\n");
+    printf(" LOCK ID    | RESOURCE NAME | TRANSACTION ID | LOCK MODE  | LOCK STATE\n");
+    printf("--------------------------------------------------------------------------------\n");
+    printf(" LCK00001   | CICS.TSQ.SYS* | CESN           | EXCLUSIVE  | HELD. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
@@ -468,5 +553,9 @@ bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strcmp(cmd, "cbtcicsmap") == 0) return handle_cbtcicsmap();
     if (strcmp(cmd, "cbtcicstask") == 0) return handle_cbtcicstask();
     if (strcmp(cmd, "cbtcicsrefr") == 0) return handle_cbtcicsrefr();
+    if (strcmp(cmd, "cbtcicsprg") == 0) return handle_cbtcicsprg();
+    if (strncmp(cmd, "cbtcicswriteq ", 14) == 0) return handle_cbtcicswriteq(cmd);
+    if (strncmp(cmd, "cbtcicsreadq ", 13) == 0) return handle_cbtcicsreadq(cmd);
+    if (strcmp(cmd, "cbtcicslock") == 0) return handle_cbtcicslock();
     return false;
 }

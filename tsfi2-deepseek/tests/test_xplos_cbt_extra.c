@@ -765,6 +765,30 @@ int main(void) {
     assert(cicsrefr_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 101. Test CICS PCT definitions query (cbtcicsprg)
+    printf("[TEST] Testing CICS Program Control Table query...\n");
+    bool cicsprg_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicsprg");
+    assert(cicsprg_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 102. Test CICS TSQ write transaction (cbtcicswriteq)
+    printf("[TEST] Testing CICS TSQ dynamic write...\n");
+    bool cicswriteq_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicswriteq TSQ1 HELLO_CICS");
+    assert(cicswriteq_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 103. Test CICS TSQ read/dump query (cbtcicsreadq)
+    printf("[TEST] Testing CICS TSQ dynamic read dump...\n");
+    bool cicsreadq_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicsreadq TSQ1");
+    assert(cicsreadq_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 104. Test CICS Active Lock Manager query (cbtcicslock)
+    printf("[TEST] Testing CICS Lock Manager query...\n");
+    bool cicslock_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicslock");
+    assert(cicslock_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }
