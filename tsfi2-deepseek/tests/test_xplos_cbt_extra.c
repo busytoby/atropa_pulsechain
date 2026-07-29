@@ -1115,6 +1115,24 @@ int main(void) {
     assert(jclresstatresetstatsstatus_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 159. Test JCL telemetry reset integrity verification status details (cbtjclresstatresetstatsstatusdetails)
+    printf("[TEST] Testing JCL telemetry reset logs integrity status details query...\n");
+    bool jclresstatresetstatsstatusdetails_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtjclresstatresetstatsstatusdetails");
+    assert(jclresstatresetstatsstatusdetails_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 160. Test JCL job execution limits config (cbtjcljoblimit)
+    printf("[TEST] Testing JCL job resource limit configuration...\n");
+    bool jcljoblimit_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtjcljoblimit 50");
+    assert(jcljoblimit_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 161. Test JCL job execution limits config stats (cbtjcljoblimitstat)
+    printf("[TEST] Testing JCL job resource limit statistics query...\n");
+    bool jcljoblimitstat_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtjcljoblimitstat");
+    assert(jcljoblimitstat_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }
