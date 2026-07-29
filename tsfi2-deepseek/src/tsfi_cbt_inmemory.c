@@ -335,7 +335,8 @@ bool tsfi_cbt_mount_inmemory_pds(XplosVirtualDisk *vfs, const char *server_path)
         }
 
         size_t member_offset = 0;
-        for (size_t offset_loc = 0; offset_loc + 80 < clean_size; offset_loc++) {
+        // Skip directory blocks (first 2048 bytes) to find actual member source blocks
+        for (size_t offset_loc = 2048; offset_loc + 80 < clean_size; offset_loc++) {
             if (memcmp(clean_buf + offset_loc, name_ebcdic, 8) == 0) {
                 member_offset = offset_loc;
                 break;
