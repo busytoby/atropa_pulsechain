@@ -71,6 +71,9 @@ static bool handle_cbttape(const char *cmd) {
             int data_val = atoi(payload);
             printf("[CAPSTAN WRITE] Transaction initiated for sector %d with data %d\n", sector_id, data_val);
             
+            uint32_t gprs_snapshot[16];
+            memcpy(gprs_snapshot, ce_gprs, sizeof(gprs_snapshot));
+            
             write_attempt:
             printf("[CAPSTAN] Activating pinch roller solenoid (clamp engaged)\n");
             g_capstan_solenoid = 1;
@@ -112,6 +115,9 @@ static bool handle_cbttape(const char *cmd) {
                     g_capstan_brake = 1;
                     goto write_attempt;
                 }
+                
+                memcpy(ce_gprs, gprs_snapshot, sizeof(gprs_snapshot));
+                printf("[CAPSTAN ROLLBACK] Restored ZMM GPR registers to pre-transaction states.\n");
                 printf("[CAPSTAN ERROR] Transaction aborted: maximum rollback retries exceeded.\n");
                 return true;
             }

@@ -29,6 +29,11 @@ typedef struct {
     uint32_t parsed_lines;
 } AnalyzerParser;
 
+uint32_t ce_gprs[16] = {0};
+uint8_t ce_memory[1024] = {0};
+uint32_t xdc_ip = 0;
+
+
 // Perform JCL SKELETON template expansion using ANALYZER variable binding
 bool analyzer_expand_skeleton(AnalyzerParser *parser, const char *skeleton_in, char *jcl_out, size_t max_len) {
     if (!parser || !skeleton_in || !jcl_out) return false;
@@ -185,6 +190,15 @@ int main(void) {
     
     assert(g_thunk_callback_val == 42);
     printf("  -> JIT Thunk dynamic execution verified successfully.\n");
+
+    // 15. Verify CPU Register State Rollback on abort
+    printf("  -> Testing ZMM GPR register restoration on transaction rollback...\n");
+    extern uint32_t ce_gprs[16];
+    ce_gprs[5] = 888;
+    assert(tsfi_xplos_shell_tape("cbttape inject 0") == true);
+    assert(tsfi_xplos_shell_tape("cbttape write 5 187") == true);
+    assert(ce_gprs[5] == 888);
+    printf("  -> ZMM GPR register restoration verified successfully.\n");
 
     printf("\n=== INTEGRATION PROOFS PASSED ===\n");
     return 0;
