@@ -1517,6 +1517,24 @@ int main(void) {
     assert(cbtbookignorelistresetstat_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 226. Test Tape Catalog compliance progress query (cbttapestatsstatusdetailsprogress)
+    printf("[TEST] Testing Tape Catalog compliance progress query...\n");
+    bool cbttapestatsstatusdetailsprogress_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbttapestatsstatusdetailsprogress");
+    assert(cbttapestatsstatusdetailsprogress_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 227. Test Tape Catalog ignore list reset (cbttapeignorelistreset)
+    printf("[TEST] Testing Tape Catalog ignore list reset...\n");
+    bool cbttapeignorelistreset_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbttapeignorelistreset");
+    assert(cbttapeignorelistreset_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 228. Test Tape Catalog ignore list reset stats (cbttapeignorelistresetstat)
+    printf("[TEST] Testing Tape Catalog ignore list reset stats query...\n");
+    bool cbttapeignorelistresetstat_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbttapeignorelistresetstat");
+    assert(cbttapeignorelistresetstat_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }
