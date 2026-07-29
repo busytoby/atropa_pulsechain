@@ -41,6 +41,11 @@ int main(void) {
     bool resetstat_ok = tsfi_xplos_shell_explorer("cbtexplorerignorelistresetstat");
     assert(resetstat_ok == true);
 
+    // 7. Test explorer command "cbtdict" for browsing PDS layout dynamically
+    printf("  -> Testing cbtdict command for PDS directory layout browsing...\n");
+    bool cbtdict_ok = tsfi_xplos_shell_explorer("cbtdict test_vsam.dat.bin");
+    assert(cbtdict_ok == true);
+
     printf("\n=== EXPLORER MAINFRAME VSAM TESTS PASSED ===\n");
     return 0;
 }

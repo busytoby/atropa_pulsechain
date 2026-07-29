@@ -704,15 +704,27 @@ bool tsfi_xplos_shell_explorer(const char *cmd) {
 
     // Check for "cbtdict " command
     if (strncmp(cmd, "cbtdict ", 8) == 0) {
-        const char *dsname = cmd + 8;
-        if (strlen(dsname) > 0) {
-            printf("[CBTDICT] Analyzing dataset dictionary layout for: %s\n", dsname);
-            printf("  - Dataset Attributes:\n");
-            printf("    * Organization:  PO (Partitioned)\n");
-            printf("    * Record Format: FB (Fixed Blocked)\n");
-            printf("    * Record Length: 80 bytes\n");
-            printf("    * Block Size:    3120 bytes\n");
-            printf("[CBTDICT] Dataset layout analysis completed successfully.\n");
+        char dsname[128] = "";
+        if (sscanf(cmd + 8, "%127s", dsname) == 1) {
+            printf("[CBTDICT] Analyzing dataset dictionary layout for PDS: %s\n", dsname);
+            tsfi_cw_vsam_ksds ksds;
+            int open_rc = tsfi_cw_vsam_open(&ksds, dsname);
+            if (open_rc == 0) {
+                printf("  - Dataset Attributes:\n");
+                printf("    * Organization:  PO (Partitioned)\n");
+                printf("    * Record Format: FB (Fixed Blocked)\n");
+                printf("    * Record Length: 80 bytes\n");
+                printf("    * VSAM Members Found: %d\n", ksds.entry_count);
+                for (int i = 0; i < ksds.entry_count; i++) {
+                    if (ksds.index[i].active) {
+                        printf("    * Member: %-8s Offset: %u Length: %u\n", 
+                               ksds.index[i].key, ksds.index[i].offset, ksds.index[i].length);
+                    }
+                }
+                printf("[CBTDICT] Dataset layout analysis completed successfully.\n");
+            } else {
+                printf("[CBTDICT ERROR] Could not open dataset index: %s (RC=%d)\n", dsname, open_rc);
+            }
         } else {
             printf("[CBTDICT ERROR] Dataset name required.\n");
         }
