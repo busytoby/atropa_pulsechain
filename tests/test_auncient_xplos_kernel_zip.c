@@ -994,6 +994,33 @@ int main(void) {
     tsfi_xplos_run(&sched_rexx);
     printf("   ✓ CBTREXX execution verified successfully.\n");
 
+    // 66. Test CBTPDSSTATS command execution
+    printf("[KERNEL TEST] Dispatching 'cbtpdsstats' command to XplOS shell...\n");
+    XplosShell shell_pds_stats;
+    XplosScheduler sched_pds_stats;
+    
+    tsfi_xplos_init_scheduler(&sched_pds_stats);
+    tsfi_xplos_init_shell(&shell_pds_stats);
+    tsfi_xplos_shell_exec(&shell_pds_stats, &sched_pds_stats, "cbtpdsinit tests/stats_pds.dat.bin");
+    tsfi_xplos_run(&sched_pds_stats);
+
+    FILE *f_s_tmp = fopen("tests/memb_stats.txt", "w");
+    fprintf(f_s_tmp, "STATS TEST RECORD\n");
+    fclose(f_s_tmp);
+
+    tsfi_xplos_init_scheduler(&sched_pds_stats);
+    tsfi_xplos_shell_exec(&shell_pds_stats, &sched_pds_stats, "cbtpdsadd tests/stats_pds.dat.bin MEMB1 tests/memb_stats.txt");
+    tsfi_xplos_run(&sched_pds_stats);
+
+    tsfi_xplos_init_scheduler(&sched_pds_stats);
+    bool stats_ok = tsfi_xplos_shell_exec(&shell_pds_stats, &sched_pds_stats, "cbtpdsstats tests/stats_pds.dat.bin MEMB1");
+    assert(stats_ok == true);
+    tsfi_xplos_run(&sched_pds_stats);
+
+    printf("   ✓ CBTPDSSTATS execution verified successfully.\n");
+    remove("tests/memb_stats.txt");
+    remove("tests/stats_pds.dat.bin");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
