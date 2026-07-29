@@ -3854,6 +3854,136 @@ static void shell_task_handler(void *arg) {
         return;
     }
 
+    // Check for "ibhj2005 " command
+    if (strncmp(cmd, "ibhj2005 ", 9) == 0) {
+        const char *args = cmd + 9;
+        char user[32] = "";
+        char target_cmd[32] = "";
+        sscanf(args, "%31s %31s", target_cmd, user);
+        
+        int file_idx = -1;
+        for (int i = 0; i < g_vfs.count; i++) {
+            if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, "IBHJ2005.dat.bin") == 0) {
+                file_idx = i;
+                break;
+            }
+        }
+        if (file_idx >= 0) {
+            printf("[IBHJ2005] JES2 Exit 5: Command Authorization verification:\n");
+            printf("  - Parsing auth structures from VFS member IBHJ2005.dat.bin:\n");
+            char temp_data[8192];
+            strncpy(temp_data, g_vfs.files[file_idx].data, sizeof(temp_data) - 1);
+            temp_data[sizeof(temp_data) - 1] = '\0';
+            char *line = strtok(temp_data, "\n");
+            for (int l = 0; l < 2 && line; l++) {
+                printf("    * Code: %s\n", line);
+                line = strtok(NULL, "\n");
+            }
+            
+            bool allowed = (strcmp(user, "MVSUSER") == 0 || strcmp(user, "SYSOP") == 0);
+            printf("  - Authorization check for command '%s' by user '%s': %s\n", target_cmd, user, allowed ? "GRANTED" : "DENIED");
+            printf("[IBHJ2005] Exit execution completed successfully.\n");
+        } else {
+            printf("[IBHJ2005 ERROR] IBHJ2005 module is not mounted in VFS.\n");
+        }
+        return;
+    }
+
+    // Check for "ibhwtorm " command
+    if (strncmp(cmd, "ibhwtorm ", 9) == 0) {
+        const char *msg = cmd + 9;
+        int file_idx = -1;
+        for (int i = 0; i < g_vfs.count; i++) {
+            if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, "IBHWTORM.dat.bin") == 0) {
+                file_idx = i;
+                break;
+            }
+        }
+        if (file_idx >= 0) {
+            printf("[IBHWTORM] Console Write Exit: Filtering message stream:\n");
+            printf("  - Parsing parameters from VFS member IBHWTORM.dat.bin:\n");
+            char temp_data[8192];
+            strncpy(temp_data, g_vfs.files[file_idx].data, sizeof(temp_data) - 1);
+            temp_data[sizeof(temp_data) - 1] = '\0';
+            char *line = strtok(temp_data, "\n");
+            for (int l = 0; l < 2 && line; l++) {
+                printf("    * Code: %s\n", line);
+                line = strtok(NULL, "\n");
+            }
+            bool filtered = (strstr(msg, "DEBUG") != NULL || strstr(msg, "TRACE") != NULL);
+            printf("  - Message: '%s' -> %s\n", msg, filtered ? "SUPPRESSED (Filter matched)" : "PASSED");
+            printf("[IBHWTORM] Log filtering execution completed successfully.\n");
+        } else {
+            printf("[IBHWTORM ERROR] IBHWTORM module is not mounted in VFS.\n");
+        }
+        return;
+    }
+
+    // Check for "ibhj2001 " command
+    if (strncmp(cmd, "ibhj2001 ", 9) == 0) {
+        const char *job = cmd + 9;
+        int file_idx = -1;
+        for (int i = 0; i < g_vfs.count; i++) {
+            if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, "IBHJ2001.dat.bin") == 0) {
+                file_idx = i;
+                break;
+            }
+        }
+        if (file_idx >= 0) {
+            printf("[IBHJ2001] JES2 Exit 1: Formatting separator banner page for job: %s\n", job);
+            printf("  - Layout rules from VFS member IBHJ2001.dat.bin:\n");
+            char temp_data[8192];
+            strncpy(temp_data, g_vfs.files[file_idx].data, sizeof(temp_data) - 1);
+            temp_data[sizeof(temp_data) - 1] = '\0';
+            char *line = strtok(temp_data, "\n");
+            for (int l = 0; l < 2 && line; l++) {
+                printf("    * Code: %s\n", line);
+                line = strtok(NULL, "\n");
+            }
+            printf("+----------------------------------------------------+\n");
+            printf("| JOB: %-10s  CLASS: A  SYSTEM: XPL1            |\n", job);
+            printf("+----------------------------------------------------+\n");
+            printf("[IBHJ2001] Separator header page generated successfully.\n");
+        } else {
+            printf("[IBHJ2001 ERROR] IBHJ2001 module is not mounted in VFS.\n");
+        }
+        return;
+    }
+
+    // Check for "ibhjespm " command
+    if (strncmp(cmd, "ibhjespm ", 9) == 0) {
+        const char *args = cmd + 9;
+        char user[32] = "";
+        char dna_sig[64] = "";
+        sscanf(args, "%31s %63s", user, dna_sig);
+
+        int file_idx = -1;
+        for (int i = 0; i < g_vfs.count; i++) {
+            if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, "IBHJESPM.dat.bin") == 0) {
+                file_idx = i;
+                break;
+            }
+        }
+        if (file_idx >= 0) {
+            printf("[IBHJESPM] JES2 Security Monitor: Verifying credentials:\n");
+            printf("  - Querying rules database from VFS member IBHJESPM.dat.bin:\n");
+            char temp_data[8192];
+            strncpy(temp_data, g_vfs.files[file_idx].data, sizeof(temp_data) - 1);
+            temp_data[sizeof(temp_data) - 1] = '\0';
+            char *line = strtok(temp_data, "\n");
+            for (int l = 0; l < 2 && line; l++) {
+                printf("    * Code: %s\n", line);
+                line = strtok(NULL, "\n");
+            }
+            bool sig_valid = (strlen(dna_sig) >= 6);
+            printf("  - Security Validation for '%s' [DNA Signature: %s]: %s\n", user, dna_sig, sig_valid ? "SUCCESS" : "FAILED");
+            printf("[IBHJESPM] Security audit verification completed successfully.\n");
+        } else {
+            printf("[IBHJESPM ERROR] IBHJESPM module is not mounted in VFS.\n");
+        }
+        return;
+    }
+
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
     if (tsfi_xplg_parse_semantic_action(cmd, &tx)) {

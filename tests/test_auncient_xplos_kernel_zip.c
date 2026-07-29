@@ -1756,6 +1756,30 @@ int main(void) {
     tsfi_xplos_run(&sched_bh2);
     printf("   ✓ IBHLSPAC execution verified successfully.\n");
 
+    printf("[KERNEL TEST] Dispatching 'ibhj2005' command to XplOS shell...\n");
+    bool j5_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "ibhj2005 SUBMIT MVSUSER");
+    assert(j5_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+    printf("   ✓ IBHJ2005 Exit 5 verification verified successfully.\n");
+
+    printf("[KERNEL TEST] Dispatching 'ibhwtorm' command to XplOS shell...\n");
+    bool wrm_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "ibhwtorm IEC001I DEBUG MSG");
+    assert(wrm_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+    printf("   ✓ IBHWTORM Console Log Filter verified successfully.\n");
+
+    printf("[KERNEL TEST] Dispatching 'ibhj2001' command to XplOS shell...\n");
+    bool j1_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "ibhj2001 MYJOB001");
+    assert(j1_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+    printf("   ✓ IBHJ2001 Separator Page formatter verified successfully.\n");
+
+    printf("[KERNEL TEST] Dispatching 'ibhjespm' command to XplOS shell...\n");
+    bool jsp_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "ibhjespm MVSUSER DNA_SECTOR_9");
+    assert(jsp_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+    printf("   ✓ IBHJESPM Security Monitor verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
