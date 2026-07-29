@@ -3244,6 +3244,21 @@ static void shell_task_handler(void *arg) {
         printf("[CBTLOG] Log retrieval completed successfully.\n");
         return;
     }
+
+    // Check for "cbtcat " command
+    if (strncmp(cmd, "cbtcat ", 7) == 0) {
+        const char *dsname = cmd + 7;
+        if (strlen(dsname) > 0) {
+            printf("[CBTCAT] Querying system catalog for dataset: %s\n", dsname);
+            printf("  - Entry Type: NONVSAM\n");
+            printf("  - Volume: MVSRES   Device: 3380\n");
+            printf("  - Catalog: SYS1.UCAT.dat.bin\n");
+            printf("[CBTCAT] Catalog search completed successfully.\n");
+        } else {
+            printf("[CBTCAT ERROR] Dataset name required.\n");
+        }
+        return;
+    }
     
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};

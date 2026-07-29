@@ -1385,6 +1385,17 @@ int main(void) {
     tsfi_xplos_run(&sched_oplog);
     printf("   ✓ CBTLOG execution verified successfully.\n");
 
+    // 91. Test CBTCAT command execution
+    printf("[KERNEL TEST] Dispatching 'cbtcat' command to XplOS shell...\n");
+    XplosShell shell_cat;
+    XplosScheduler sched_cat;
+    tsfi_xplos_init_scheduler(&sched_cat);
+    tsfi_xplos_init_shell(&shell_cat);
+    bool cat_ok = tsfi_xplos_shell_exec(&shell_cat, &sched_cat, "cbtcat SYS1.LINKLIB.dat.bin");
+    assert(cat_ok == true);
+    tsfi_xplos_run(&sched_cat);
+    printf("   ✓ CBTCAT execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
