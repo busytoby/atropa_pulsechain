@@ -223,6 +223,23 @@ int main(void) {
     assert(strncmp((char *)&dir_block_buf[2], "MJ3     ", 8) == 0);
     assert(dir_block_buf[12] == 0x00);
 
+    // 15. Verify Step-level COND parameter auditing
+    printf("  -> Phase 13: Verifying step-level COND parameter auditing...\n");
+    remove("USERLIB.dat.bin");
+    int open_userlib_rc3 = tsfi_cw_vsam_open(&userlib_ksds, "USERLIB.dat.bin");
+    assert(open_userlib_rc3 == 0);
+
+    // Write a mock JCL job into USERLIB under key "MJ4"
+    uint8_t mock_cond_cards[512] = 
+        "//MJ4 JOB 'CBT COND'\n"
+        "//ST1 EXEC PGM=IEFBR14\n"
+        "//ST2 EXEC PGM=IEBCOPY,COND=(0,EQ,ST1)\n";
+    int write_userlib_rc3 = tsfi_cw_vsam_write(&userlib_ksds, "MJ4", mock_cond_cards, strlen((char *)mock_cond_cards));
+    assert(write_userlib_rc3 == 0);
+
+    bool mockjob4_run_ok = tsfi_xplos_shell_cbt_jcl("jclrun MJ4");
+    assert(mockjob4_run_ok == true);
+
     printf("  -> End-to-end data pipeline integrity verified successfully.\n");
     printf("\n=== SKELETON HASP BOOK PROOFS PASSED ===\n");
     return 0;

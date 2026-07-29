@@ -83,6 +83,10 @@ static bool handle_jclrun(const char *cmd) {
         char sym_vals[10][64] = {0};
         int sym_count = 0;
 
+        char step_names[10][32] = {0};
+        int step_rcs[10] = {0};
+        int step_rc_count = 0;
+
         char *line = strtok(jcl_data, "\n");
         int rc = 0;
         bool skip_block = false;
@@ -157,50 +161,108 @@ static bool handle_jclrun(const char *cmd) {
                         printf("%s", log_msg);
                         append_spool_log(jcl_name, log_msg);
                     } else {
-                        char pgm_name[64] = "";
-                        char *pgm_ptr = strstr(card, "PGM=");
-                        if (pgm_ptr) {
-                            sscanf(pgm_ptr + 4, "%63[^, \r\n]", pgm_name);
+                        // Extract step name from start of the line, e.g. //STEP1 EXEC
+                        char step_name[32] = {0};
+                        sscanf(line + 2, "%31s", step_name);
+                        if (strcasecmp(step_name, "EXEC") == 0) {
+                            step_name[0] = '\0';
                         }
-                        snprintf(log_msg, sizeof(log_msg), "  JCL_STEP> Executing step Program: %s\n", pgm_name);
-                        printf("%s", log_msg);
-                        append_spool_log(jcl_name, log_msg);
-                        if (strcmp(pgm_name, "IEBCOPY") == 0) {
-                            rc = 0;
-                            snprintf(log_msg, sizeof(log_msg), "    * IEBCOPY completed successfully. RC=0000\n");
-                            printf("%s", log_msg);
-                            append_spool_log(jcl_name, log_msg);
-                        } else if (strcmp(pgm_name, "IBHDRPLY") == 0) {
-                            rc = 0;
-                            snprintf(log_msg, sizeof(log_msg), "    * IBHDRPLY Automatic Reply executed. RC=0000\n");
-                            printf("%s", log_msg);
-                            append_spool_log(jcl_name, log_msg);
-                        } else if (strcmp(pgm_name, "IEFBR14") == 0) {
-                            rc = 0;
-                            snprintf(log_msg, sizeof(log_msg), "    * IEFBR14 Dummy Program executed. Resolving DD dispositions. RC=0000\n");
-                            printf("%s", log_msg);
-                            append_spool_log(jcl_name, log_msg);
-                        } else if (strcmp(pgm_name, "TSOTMP") == 0) {
-                            rc = 0;
-                            snprintf(log_msg, sizeof(log_msg), "    * TSOTMP Terminal Monitor Program launched. RC=0000\n");
-                            printf("%s", log_msg);
-                            append_spool_log(jcl_name, log_msg);
 
-                            char coax_cmd[2048] = {0};
-                            tsfi_vtam_coax_read_buffer(coax_cmd, sizeof(coax_cmd));
-                            if (strlen(coax_cmd) > 0) {
-                                char *nl = strchr(coax_cmd, '\n');
-                                if (nl) *nl = '\0';
-                                snprintf(log_msg, sizeof(log_msg), "      TSO_TMP> Executing command routed coaxially: %s\n", coax_cmd);
-                                printf("%s", log_msg);
-                                append_spool_log(jcl_name, log_msg);
-                                tsfi_xplos_shell_cbt_tso(coax_cmd);
+                        // Check for step-level COND parameter, e.g. COND=(0,EQ,STEP1)
+                        bool cond_bypass = false;
+                        char *cond_ptr = strstr(card, "COND=");
+                        if (cond_ptr) {
+                            int cond_code = 0;
+                            char cond_op[8] = "";
+                            char cond_step[32] = "";
+                            int matched = sscanf(cond_ptr + 5, "(%d,%7[^,)],%31[^)])", &cond_code, cond_op, cond_step);
+                            if (matched >= 2) {
+                                int target_rc = rc; // Default to previous/global max RC
+                                if (matched == 3 && strlen(cond_step) > 0) {
+                                    for (int s = 0; s < step_rc_count; s++) {
+                                        if (strcmp(step_names[s], cond_step) == 0) {
+                                            target_rc = step_rcs[s];
+                                            break;
+                                        }
+                                    }
+                                }
+                                if (strcmp(cond_op, "EQ") == 0 && target_rc == cond_code) cond_bypass = true;
+                                else if (strcmp(cond_op, "NE") == 0 && target_rc != cond_code) cond_bypass = true;
+                                else if (strcmp(cond_op, "GT") == 0 && target_rc > cond_code) cond_bypass = true;
+                                else if (strcmp(cond_op, "LT") == 0 && target_rc < cond_code) cond_bypass = true;
+                                else if (strcmp(cond_op, "GE") == 0 && target_rc >= cond_code) cond_bypass = true;
+                                else if (strcmp(cond_op, "LE") == 0 && target_rc <= cond_code) cond_bypass = true;
+
+                                if (cond_bypass) {
+                                    snprintf(log_msg, sizeof(log_msg), "  JCL_STEP> COND met: Bypassing step execution based on comparison %d %s %d\n", target_rc, cond_op, cond_code);
+                                    printf("%s", log_msg);
+                                    append_spool_log(jcl_name, log_msg);
+                                }
+                            }
+                        }
+
+                        if (cond_bypass) {
+                            // Bypassed via COND parameter
+                            if (step_rc_count < 10 && strlen(step_name) > 0) {
+                                strcpy(step_names[step_rc_count], step_name);
+                                step_rcs[step_rc_count] = 0; // Standard bypassed step return code
+                                step_rc_count++;
                             }
                         } else {
-                            rc = 4;
-                            snprintf(log_msg, sizeof(log_msg), "    * Program %s executed. RC=0004 (Warning)\n", pgm_name);
+                            char pgm_name[64] = "";
+                            char *pgm_ptr = strstr(card, "PGM=");
+                            if (pgm_ptr) {
+                                sscanf(pgm_ptr + 4, "%63[^, \r\n]", pgm_name);
+                            }
+                            int step_rc = 0;
+                            snprintf(log_msg, sizeof(log_msg), "  JCL_STEP> Executing step Program: %s\n", pgm_name);
                             printf("%s", log_msg);
                             append_spool_log(jcl_name, log_msg);
+                            if (strcmp(pgm_name, "IEBCOPY") == 0) {
+                                step_rc = 0;
+                                snprintf(log_msg, sizeof(log_msg), "    * IEBCOPY completed successfully. RC=0000\n");
+                                printf("%s", log_msg);
+                                append_spool_log(jcl_name, log_msg);
+                            } else if (strcmp(pgm_name, "IBHDRPLY") == 0) {
+                                step_rc = 0;
+                                snprintf(log_msg, sizeof(log_msg), "    * IBHDRPLY Automatic Reply executed. RC=0000\n");
+                                printf("%s", log_msg);
+                                append_spool_log(jcl_name, log_msg);
+                            } else if (strcmp(pgm_name, "IEFBR14") == 0) {
+                                step_rc = 0;
+                                snprintf(log_msg, sizeof(log_msg), "    * IEFBR14 Dummy Program executed. Resolving DD dispositions. RC=0000\n");
+                                printf("%s", log_msg);
+                                append_spool_log(jcl_name, log_msg);
+                            } else if (strcmp(pgm_name, "TSOTMP") == 0) {
+                                step_rc = 0;
+                                snprintf(log_msg, sizeof(log_msg), "    * TSOTMP Terminal Monitor Program launched. RC=0000\n");
+                                printf("%s", log_msg);
+                                append_spool_log(jcl_name, log_msg);
+
+                                char coax_cmd[2048] = {0};
+                                tsfi_vtam_coax_read_buffer(coax_cmd, sizeof(coax_cmd));
+                                if (strlen(coax_cmd) > 0) {
+                                    char *nl = strchr(coax_cmd, '\n');
+                                    if (nl) *nl = '\0';
+                                    snprintf(log_msg, sizeof(log_msg), "      TSO_TMP> Executing command routed coaxially: %s\n", coax_cmd);
+                                    printf("%s", log_msg);
+                                    append_spool_log(jcl_name, log_msg);
+                                    tsfi_xplos_shell_cbt_tso(coax_cmd);
+                                }
+                            } else {
+                                step_rc = 4;
+                                snprintf(log_msg, sizeof(log_msg), "    * Program %s executed. RC=0004 (Warning)\n", pgm_name);
+                                printf("%s", log_msg);
+                                append_spool_log(jcl_name, log_msg);
+                            }
+                            
+                            rc = (step_rc > rc) ? step_rc : rc; // Track maximum global RC
+
+                            if (step_rc_count < 10 && strlen(step_name) > 0) {
+                                strcpy(step_names[step_rc_count], step_name);
+                                step_rcs[step_rc_count] = step_rc;
+                                step_rc_count++;
+                            }
                         }
                     }
                 }
