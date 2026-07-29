@@ -28,26 +28,33 @@ void append_spool_log(const char *job_name, const char *msg) {
         }
     }
 }
-void hasp_dispatch_highest_priority(void) {
+void hasp_dispatch_highest_priority_class(char class_filter) {
     int best_idx = -1;
     int highest_prty = -1;
     for (int i = 0; i < 10; i++) {
         if (cbt_job_table[i].active && strcmp(cbt_job_table[i].status, "READY") == 0) {
-            if (g_hasp_job_priority[i] > highest_prty) {
-                highest_prty = g_hasp_job_priority[i];
-                best_idx = i;
+            if (class_filter == '\0' || cbt_job_table[i].class_char == class_filter) {
+                if (g_hasp_job_priority[i] > highest_prty) {
+                    highest_prty = g_hasp_job_priority[i];
+                    best_idx = i;
+                }
             }
         }
     }
     if (best_idx != -1) {
         strcpy(cbt_job_table[best_idx].status, "RUNNING");
-        printf("[HASP DISPATCHER] Dispatching Job %s (%s) with Priority %d\n",
-               cbt_job_table[best_idx].job_id, cbt_job_table[best_idx].job_name, highest_prty);
+        printf("[HASP DISPATCHER] Dispatching Job %s (%s) Class %c with Priority %d\n",
+               cbt_job_table[best_idx].job_id, cbt_job_table[best_idx].job_name,
+               cbt_job_table[best_idx].class_char ? cbt_job_table[best_idx].class_char : 'A',
+               highest_prty);
         char run_cmd[128];
         snprintf(run_cmd, sizeof(run_cmd), "jclrun %s", cbt_job_table[best_idx].job_name);
         tsfi_xplos_shell_cbt_jcl(run_cmd);
         strcpy(cbt_job_table[best_idx].status, "COMPLETED");
     }
+}
+void hasp_dispatch_highest_priority(void) {
+    hasp_dispatch_highest_priority_class('\0');
 }
 static bool handle_smfdump(void) {
     printf("[SMFDUMP] Displaying System Management Facility telemetry records:\n");
@@ -71,6 +78,17 @@ static bool handle_cbthasp(const char *cmd) {
     char arg[64] = "";
     int scanned = sscanf(cmd + 8, "%31s %63s", subcmd, arg);
     if (scanned >= 1) {
+        if (strcasecmp(subcmd, "dispatch") == 0) {
+            char class_filter = '\0';
+            if (strlen(arg) > 0) {
+                class_filter = toupper((unsigned char)arg[0]);
+                printf("[HASP] Triggering class-based dispatch for Class %c\n", class_filter);
+            } else {
+                printf("[HASP] Triggering global dispatch for all classes\n");
+            }
+            hasp_dispatch_highest_priority_class(class_filter);
+            return true;
+        }
         if (strcasecmp(subcmd, "log") == 0) {
             if (strlen(arg) == 0) {
                 printf("[HASP ERROR] Job ID required to dump spool log.\n");
