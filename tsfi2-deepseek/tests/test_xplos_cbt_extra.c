@@ -1463,6 +1463,24 @@ int main(void) {
     assert(cbthaspspoolignorelistresetstat_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 217. Test Explorer VTOC audit progress query (cbtexplorertvtocstatsstatusdetailsprogress)
+    printf("[TEST] Testing Explorer VTOC audit progress query...\n");
+    bool cbtexplorertvtocstatsstatusdetailsprogress_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtexplorertvtocstatsstatusdetailsprogress");
+    assert(cbtexplorertvtocstatsstatusdetailsprogress_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 218. Test Explorer ignore list reset (cbtexplorerignorelistreset)
+    printf("[TEST] Testing Explorer ignore list reset...\n");
+    bool cbtexplorerignorelistreset_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtexplorerignorelistreset");
+    assert(cbtexplorerignorelistreset_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 219. Test Explorer ignore list reset stats (cbtexplorerignorelistresetstat)
+    printf("[TEST] Testing Explorer ignore list reset stats query...\n");
+    bool cbtexplorerignorelistresetstat_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtexplorerignorelistresetstat");
+    assert(cbtexplorerignorelistresetstat_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }
