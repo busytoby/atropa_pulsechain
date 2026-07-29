@@ -801,6 +801,18 @@ static bool handle_iebgenerreftabstatresetliststatreset(void) {
     return true;
 }
 
+static bool handle_iebgenerreftabstatresetliststatresetstat(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  IEBGENER SEQUENTIAL DATA CONVERSION SELECTIVE RESET STATS STATUS\n");
+    printf("================================================================================\n");
+    printf(" RECENT RESET TIME   : 2026-07-29T09:32:00-07:00\n");
+    printf(" COMPLETED AUDITS    : 1 OPERATIONS\n");
+    printf(" RESPONSE STATUS     : OPERATIONAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "jclrun ", 7) == 0) return handle_jclrun(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
@@ -833,6 +845,7 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strcmp(cmd, "iebgenerreftabstat") == 0) return handle_iebgenerreftabstat();
     if (strcmp(cmd, "iebgenerreftabstatreset") == 0) return handle_iebgenerreftabstatreset();
     if (strcmp(cmd, "iebgenerreftabstatresetliststatreset") == 0) return handle_iebgenerreftabstatresetliststatreset();
+    if (strcmp(cmd, "iebgenerreftabstatresetliststatresetstat") == 0) return handle_iebgenerreftabstatresetliststatresetstat();
     if (strcmp(cmd, "iebgenerreftabstatresetliststat") == 0) return handle_iebgenerreftabstatresetliststat();
     if (strncmp(cmd, "iebgenerreftabstatresetlist ", 28) == 0) return handle_iebgenerreftabstatresetlist(cmd);
     return false;

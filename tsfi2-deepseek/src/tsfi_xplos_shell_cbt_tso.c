@@ -695,6 +695,18 @@ static bool handle_cbtsubwaitretryscriptchklistresetstat(void) {
     return true;
 }
 
+static bool handle_cbtsubwaitretryscriptchklistresetstats(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JES JOB SYNCHRONOUS WAIT TIMEOUT VALIDATION RESET LOGS        \n");
+    printf("================================================================================\n");
+    printf(" RECENT RESET TIME   : 2026-07-29T09:32:00-07:00\n");
+    printf(" COMPLETED AUDITS    : 1 OPERATIONS\n");
+    printf(" RESPONSE STATUS     : OPERATIONAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtrexx ", 8) == 0) return handle_cbtrexx(cmd);
     if (strncmp(cmd, "ispfmenu", 8) == 0) return handle_ispfmenu(cmd);
@@ -726,5 +738,6 @@ bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strcmp(cmd, "cbtsubwaitretryscriptchkliststat") == 0) return handle_cbtsubwaitretryscriptchkliststat();
     if (strcmp(cmd, "cbtsubwaitretryscriptchklistreset") == 0) return handle_cbtsubwaitretryscriptchklistreset();
     if (strcmp(cmd, "cbtsubwaitretryscriptchklistresetstat") == 0) return handle_cbtsubwaitretryscriptchklistresetstat();
+    if (strcmp(cmd, "cbtsubwaitretryscriptchklistresetstats") == 0) return handle_cbtsubwaitretryscriptchklistresetstats();
     return false;
 }

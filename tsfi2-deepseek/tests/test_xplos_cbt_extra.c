@@ -981,6 +981,32 @@ int main(void) {
     assert(cleanexceptaddlistreset_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 137. Test VTAM gateway route recovery telemetry error limits (vtamroutereccountlimits)
+    printf("[TEST] Testing VTAM gateway telemetry error limits...\n");
+    bool routereccountlimits_ok1 = tsfi_xplos_shell_exec(&shell, &sched, "vtamroutereccountlimits");
+    assert(routereccountlimits_ok1 == true);
+    bool routereccountlimits_ok2 = tsfi_xplos_shell_exec(&shell, &sched, "vtamroutereccountlimits 15");
+    assert(routereccountlimits_ok2 == true);
+    tsfi_xplos_run(&sched);
+
+    // 138. Test TSO spool job timeout script status bulk validation reset history logs (cbtsubwaitretryscriptchklistresetstats)
+    printf("[TEST] Testing TSO spool timeout script status bulk validation reset logs...\n");
+    bool retryscriptchklistresetstats_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtsubwaitretryscriptchklistresetstats");
+    assert(retryscriptchklistresetstats_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 139. Test IEBGENER sequential layout translation table statistics selective reset stats query (iebgenerreftabstatresetliststatresetstat)
+    printf("[TEST] Testing IEBGENER translation table statistics selective reset stats query...\n");
+    bool generreftabstatresetliststatresetstat_ok = tsfi_xplos_shell_exec(&shell, &sched, "iebgenerreftabstatresetliststatresetstat");
+    assert(generreftabstatresetliststatresetstat_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 140. Test CICS TSQ cleanup exclusions bulk registry clear stats (cbtcicscleanexceptaddlistresetstat)
+    printf("[TEST] Testing CICS TSQ exclusions bulk registry clear stats...\n");
+    bool cleanexceptaddlistresetstat_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicscleanexceptaddlistresetstat");
+    assert(cleanexceptaddlistresetstat_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }
