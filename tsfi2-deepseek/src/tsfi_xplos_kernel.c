@@ -4421,13 +4421,69 @@ static void shell_task_handler(void *arg) {
     }
 
     // Check for "wtoregs" command
-    if (strcmp(cmd, "wtoregs") == 0) {
-        printf("[WTOREGS] Write to Operator virtual registers dump:\n");
-        printf("  - GPR0-3:   00000000  001A2000  00008000  0000000F\n");
-        printf("  - GPR4-7:   00000100  00000000  00000000  00000000\n");
-        printf("  - GPR8-11:  00000000  00000000  00000000  00000000\n");
-        printf("  - GPR12-15: 00008000  001A0000  8000A042  00000000\n");
-        printf("[WTOREGS] WTOR console dump completed successfully.\n");
+    if (strncmp(cmd, "wtoregs", 7) == 0) {
+        const char *args = cmd + 7;
+        if (strstr(args, "0")) {
+            printf("GPR0-3:   00000000  001A2000  00008000  0000000F\n");
+            printf("GPR12-15: 00008000  001A0000  8000A042  00000000\n");
+        } else {
+            printf("[WTOREGS] Write to Operator virtual registers dump:\n");
+            printf("  - GPR0-3:   00000000  001A2000  00008000  0000000F\n");
+            printf("  - GPR4-7:   00000100  00000000  00000000  00000000\n");
+            printf("  - GPR8-11:  00000000  00000000  00000000  00000000\n");
+            printf("  - GPR12-15: 00008000  001A0000  8000A042  00000000\n");
+            printf("[WTOREGS] WTOR console dump completed successfully.\n");
+        }
+        return;
+    }
+
+    // Check for "readdir " command
+    if (strncmp(cmd, "readdir ", 8) == 0) {
+        const char *dsn = cmd + 8;
+        printf("[READDIR] Commencing Directory Block Read for dataset: %s\n", dsn);
+        int count = 0;
+        for (int i = 0; i < g_vfs.count; i++) {
+            if (g_vfs.files[i].active && strstr(g_vfs.files[i].name, dsn)) {
+                printf("    * Member: %-16s  TTR: [00,%02X,%02X]\n", g_vfs.files[i].name, (i >> 8) & 0xFF, i & 0xFF);
+                count++;
+            }
+        }
+        printf("[READDIR] Directory block reading completed. Found %d members.\n", count);
+        return;
+    }
+
+    // Check for "move " command
+    if (strncmp(cmd, "move ", 5) == 0) {
+        const char *args = cmd + 5;
+        char src[32] = "";
+        char dest[32] = "";
+        uint32_t len = 0;
+        sscanf(args, "%31s %31s %u", src, dest, &len);
+        printf("[MOVE] Macro Block Movement driver: %s -> %s (%u bytes)\n", src, dest, len);
+        int src_idx = -1;
+        for (int i = 0; i < g_vfs.count; i++) {
+            if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, src) == 0) {
+                src_idx = i;
+                break;
+            }
+        }
+        if (src_idx >= 0) {
+            if (tsfi_xplos_create_file(&g_vfs, dest, len)) {
+                int dest_idx = -1;
+                for (int i = 0; i < g_vfs.count; i++) {
+                    if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, dest) == 0) {
+                        dest_idx = i;
+                        break;
+                    }
+                }
+                if (dest_idx >= 0) {
+                    memcpy(g_vfs.files[dest_idx].data, g_vfs.files[src_idx].data, len < g_vfs.files[src_idx].size_bytes ? len : g_vfs.files[src_idx].size_bytes);
+                    printf("  - Block bytes copied successfully in memory.\n");
+                }
+            }
+        } else {
+            printf("[MOVE ERROR] Source member %s not found.\n", src);
+        }
         return;
     }
 

@@ -1958,6 +1958,20 @@ int main(void) {
     assert(wr_ok == true);
     tsfi_xplos_run(&sched_bh2);
 
+    tsfi_xplos_init_scheduler(&sched_bh2);
+
+    bool wr0_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "wtoregs 0");
+    assert(wr0_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool rd_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "readdir OCX");
+    assert(rd_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool mv_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "move OCX.dat.bin COPYOCX 100");
+    assert(mv_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
     printf("   ✓ Carmine Cannatello ASM book utilities execution verified successfully.\n");
 
     printf("=============================================================\n");
