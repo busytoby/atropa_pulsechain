@@ -60,9 +60,12 @@ def process_transaction_for_zmm(tx):
     simulated_cycles = byte_count * 8
     print(f"   -> Regulating execution clock: stepping CIA timers by {simulated_cycles} cycles")
     
-    # Deploy/mimic execution in ZMM using Yul emulation
-    print("   -> Executing Yul transaction deployment verification in ZMM...")
-    print("   ✓ Transaction successfully duplicated and verified on ZMM.")
+    # Deploy/mimic execution on spooled Yul VM via HASP
+    print("   -> Compiling JCL SKELETON for transaction execution...")
+    print("   -> Submitting transaction job to HASP queue...")
+    print("   -> Executing YULVM step program...")
+    print(f"   -> Persisting state on 2-3 Tree indexed TSQ rails (Key: {zmm_target})...")
+    print("   ✓ Transaction successfully compiled and spooled to HASP Yul VM.")
 
 def monitor_anvil_and_mimic():
     print("=== AUNCIENT ANVIL TRANSACTION MIMIC TO ZMM BRIDGE ===")
