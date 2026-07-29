@@ -754,6 +754,18 @@ static bool handle_iebgenerreftab(void) {
     return true;
 }
 
+static bool handle_iebgenerreftabstat(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  IEBGENER SEQUENTIAL DATA CONVERSION MAPPING TELEMETRY         \n");
+    printf("================================================================================\n");
+    printf(" CONVERSION STATE: OPERATIONAL\n");
+    printf(" TARGET LAYOUTS  : EBCDIC, ASCII, COMP-5\n");
+    printf(" TOTAL ENTRIES   : 256 CHARACTERS. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "jclrun ", 7) == 0) return handle_jclrun(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
@@ -783,5 +795,6 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "iebgenerrecal ", 14) == 0) return handle_iebgenerrecal(cmd);
     if (strcmp(cmd, "iebgenerstat") == 0) return handle_iebgenerstat();
     if (strcmp(cmd, "iebgenerreftab") == 0) return handle_iebgenerreftab();
+    if (strcmp(cmd, "iebgenerreftabstat") == 0) return handle_iebgenerreftabstat();
     return false;
 }

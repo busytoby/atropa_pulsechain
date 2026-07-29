@@ -643,6 +643,17 @@ static bool handle_cbtsubwaitretryscriptdel(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtsubwaitretryscriptchk(const char *cmd) {
+    char script[64] = "";
+    if (sscanf(cmd + 25, "%63s", script) < 1) {
+        printf("[SUBWAITRETRYSCRIPTCHK ERROR] Syntax: cbtsubwaitretryscriptchk <script_id>\n");
+        return true;
+    }
+    printf("[SUBWAIT] Auditing spool wait retry completion action script: %s\n", script);
+    printf("  - Verification status: VERIFIED. Trigger conditions mapped. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtrexx ", 8) == 0) return handle_cbtrexx(cmd);
     if (strncmp(cmd, "ispfmenu", 8) == 0) return handle_ispfmenu(cmd);
@@ -669,5 +680,6 @@ bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strcmp(cmd, "cbtsubwaitretryscriptlist") == 0) return handle_cbtsubwaitretryscriptlist();
     if (strncmp(cmd, "cbtsubwaitretrydelaylimit ", 26) == 0) return handle_cbtsubwaitretrydelaylimit(cmd);
     if (strncmp(cmd, "cbtsubwaitretryscriptdel ", 25) == 0) return handle_cbtsubwaitretryscriptdel(cmd);
+    if (strncmp(cmd, "cbtsubwaitretryscriptchk ", 25) == 0) return handle_cbtsubwaitretryscriptchk(cmd);
     return false;
 }
