@@ -814,6 +814,9 @@ static bool handle_iebgenerreftabstatresetliststatresetstat(void) {
 }
 
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
+    if (strncmp(cmd, "ieb", 3) == 0) {
+        printf("[DEPRECATION WARNING] Batch utility program '%s' is deprecated and scheduled for removal.\n", cmd);
+    }
     if (strncmp(cmd, "jclrun ", 7) == 0) return handle_jclrun(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
     if (strncmp(cmd, "submit ", 7) == 0) return handle_submit(cmd);
