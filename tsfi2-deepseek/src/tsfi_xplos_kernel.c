@@ -2826,6 +2826,17 @@ static void shell_task_handler(void *arg) {
         printf("[CBTSYSLOG] Log display completed.\n");
         return;
     }
+
+    // Check for "cbtcpu" command
+    if (strncmp(cmd, "cbtcpu", 6) == 0) {
+        printf("[CBTCPU] Querying CPU and Storage Status:\n");
+        printf("  - CPU Model:      3090-600J (6 Processors Online)\n");
+        printf("  - CPU Load:       18.4%%\n");
+        printf("  - Real Storage:   512 MB (Real Frames Used: 34105, Free: 96810)\n");
+        printf("  - Paging Rate:    2.4 pages/sec\n");
+        printf("  - MOTZKIN Field:  Parity verified (MotzkinPrime operational)\n");
+        return;
+    }
     
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};

@@ -1177,6 +1177,17 @@ int main(void) {
     tsfi_xplos_run(&sched_syslog);
     printf("   ✓ CBTSYSLOG execution verified successfully.\n");
 
+    // 77. Test CBTCPU command execution
+    printf("[KERNEL TEST] Dispatching 'cbtcpu' command to XplOS shell...\n");
+    XplosShell shell_cpu;
+    XplosScheduler sched_cpu;
+    tsfi_xplos_init_scheduler(&sched_cpu);
+    tsfi_xplos_init_shell(&shell_cpu);
+    bool cpu_ok = tsfi_xplos_shell_exec(&shell_cpu, &sched_cpu, "cbtcpu");
+    assert(cpu_ok == true);
+    tsfi_xplos_run(&sched_cpu);
+    printf("   ✓ CBTCPU execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
