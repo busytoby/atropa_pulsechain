@@ -3678,7 +3678,6 @@ static void shell_task_handler(void *arg) {
         if (file_idx >= 0) {
             printf("[IBHDRPLY] Starting Automatic Reply Program (Bell & Howell):\n");
             printf("  - Parsing active rules from VFS member IBHDRPLY.dat.bin:\n");
-            // Output first 2 lines from the virtual file data
             char temp_data[8192];
             strncpy(temp_data, g_vfs.files[file_idx].data, sizeof(temp_data) - 1);
             temp_data[sizeof(temp_data) - 1] = '\0';
@@ -3687,8 +3686,39 @@ static void shell_task_handler(void *arg) {
                 printf("    * Code: %s\n", line);
                 line = strtok(NULL, "\n");
             }
-            printf("  - Intercepting WTOR: 'IEC141I A,001,SL,VAESEN,VAESEN,SYS1.MACLIB'\n");
-            printf("  - Generated Reply:   'U' (Rule matched dynamically)\n");
+            
+            // Parse WTOR rules from VFS
+            char match_id[32] = "IEC141I";
+            char match_reply[16] = "U";
+            strncpy(temp_data, g_vfs.files[file_idx].data, sizeof(temp_data) - 1);
+            char *rule_line = strtok(temp_data, "\n");
+            while (rule_line) {
+                char *msgid_ptr = strstr(rule_line, "MSGID='");
+                char *reply_ptr = strstr(rule_line, "REPLY='");
+                if (msgid_ptr && reply_ptr) {
+                    msgid_ptr += 7;
+                    char *msgid_end = strchr(msgid_ptr, '\'');
+                    reply_ptr += 7;
+                    char *reply_end = strchr(reply_ptr, '\'');
+                    if (msgid_end && reply_end) {
+                        size_t id_len = msgid_end - msgid_ptr;
+                        size_t rep_len = reply_end - reply_ptr;
+                        if (id_len < sizeof(match_id)) {
+                            memcpy(match_id, msgid_ptr, id_len);
+                            match_id[id_len] = '\0';
+                        }
+                        if (rep_len < sizeof(match_reply)) {
+                            memcpy(match_reply, reply_ptr, rep_len);
+                            match_reply[rep_len] = '\0';
+                        }
+                        break;
+                    }
+                }
+                rule_line = strtok(NULL, "\n");
+            }
+
+            printf("  - Intercepting WTOR: '%s A,001,SL,VAESEN,VAESEN,SYS1.MACLIB'\n", match_id);
+            printf("  - Generated Reply:   '%s' (Rule matched dynamically from VFS)\n", match_reply);
             printf("[IBHDRPLY] Automatic reply executed successfully.\n");
         } else {
             printf("[IBHDRPLY ERROR] IBHDRPLY module is not mounted in VFS.\n");
@@ -3739,7 +3769,31 @@ static void shell_task_handler(void *arg) {
             }
             if (file_idx >= 0) {
                 printf("[OCX] Executing operator command script from VFS member: %s\n", target_name);
-                printf("%s", g_vfs.files[file_idx].data);
+                char temp_data[8192];
+                strncpy(temp_data, g_vfs.files[file_idx].data, sizeof(temp_data) - 1);
+                temp_data[sizeof(temp_data) - 1] = '\0';
+                
+                char *line = strtok(temp_data, "\n");
+                while (line) {
+                    if (strstr(line, "EXEC PGM=")) {
+                        char pgm_name[32] = "";
+                        char *pgm_ptr = strstr(line, "EXEC PGM=");
+                        if (pgm_ptr) {
+                            sscanf(pgm_ptr + 9, "%31[^, \r\n]", pgm_name);
+                        }
+                        printf("  - Dispatching Job Step Program: %s under Scheduler\n", pgm_name);
+                    } else if (strstr(line, "DD DISP=")) {
+                        char dd_name[32] = "";
+                        char dsn_name[64] = "";
+                        sscanf(line, "%31s", dd_name);
+                        char *dsn_ptr = strstr(line, "DSN=");
+                        if (dsn_ptr) {
+                            sscanf(dsn_ptr + 4, "%63[^, \r\n]", dsn_name);
+                        }
+                        printf("  - Allocating DD:%s -> Dataset:%s\n", dd_name, dsn_name);
+                    }
+                    line = strtok(NULL, "\n");
+                }
                 printf("[OCX] Command execution completed successfully.\n");
             } else {
                 printf("[OCX ERROR] Member %s not found in active VFS. Please mount dataset first.\n", target_name);
@@ -3774,10 +3828,22 @@ static void shell_task_handler(void *arg) {
                     printf("    * Code: %s\n", line);
                     line = strtok(NULL, "\n");
                 }
-                printf("  - Allocation Statistics:\n");
-                printf("    * Free Cylinders:  450\n");
-                printf("    * Free Tracks:     6750\n");
-                printf("    * Largest Contig:  220 cylinders\n");
+
+                // Dynamic allocation statistics from memory VFS
+                uint32_t total_size = 0;
+                for (int i = 0; i < g_vfs.count; i++) {
+                    if (g_vfs.files[i].active) {
+                        total_size += g_vfs.files[i].size_bytes;
+                    }
+                }
+                uint32_t free_cyls = 1000 - (total_size / (500 * 1024));
+                uint32_t free_tracks = free_cyls * 15;
+                uint32_t max_contig = free_cyls / 2;
+
+                printf("  - Dynamic VFS Allocation Statistics:\n");
+                printf("    * Free Cylinders:  %u\n", free_cyls);
+                printf("    * Free Tracks:     %u\n", free_tracks);
+                printf("    * Largest Contig:  %u cylinders\n", max_contig);
                 printf("[IBHLSPAC] Volume space listing completed successfully.\n");
             } else {
                 printf("[IBHLSPAC ERROR] IBHLSPAC module is not mounted in VFS.\n");
