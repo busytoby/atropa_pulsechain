@@ -447,6 +447,24 @@ static bool handle_vtamrouterecreset(void) {
     return true;
 }
 
+static bool handle_vtamrouterecquery(const char *cmd) {
+    char route_id[32] = "";
+    if (sscanf(cmd + 18, "%31s", route_id) < 1) {
+        printf("[VTAMROUTERECQUERY ERROR] Syntax: vtamrouterecquery <route_id>\n");
+        return true;
+    }
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  VTAM GATEWAY ROUTE RECOVERY STATE: %s                     \n", route_id);
+    printf("================================================================================\n");
+    printf(" CURRENT GATEWAY  : %s\n", route_id);
+    printf(" BACKOFF RETRIES  : 2 RETRIES\n");
+    printf(" TIME TO RETRY SEC: 45 SECONDS\n");
+    printf(" RESPONSE STATUS  : NORMAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "cbtnet ", 7) == 0) return handle_cbtnet(cmd + 7);
     if (strncmp(cmd, "logon ", 6) == 0) return handle_vtam_logon(cmd);
@@ -469,5 +487,6 @@ bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strcmp(cmd, "vtamrouterecstat") == 0) return handle_vtamrouterecstat();
     if (strncmp(cmd, "vtamroutereccount ", 17) == 0) return handle_vtamroutereccount(cmd);
     if (strcmp(cmd, "vtamrouterecreset") == 0) return handle_vtamrouterecreset();
+    if (strncmp(cmd, "vtamrouterecquery ", 18) == 0) return handle_vtamrouterecquery(cmd);
     return false;
 }

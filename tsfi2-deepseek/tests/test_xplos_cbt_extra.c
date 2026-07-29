@@ -693,6 +693,30 @@ int main(void) {
     assert(routerecreset_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 89. Test IEBDG sequence generator iteration status query (iebdgiterstat)
+    printf("[TEST] Testing IEBDG generator iteration telemetry status...\n");
+    bool iterstat_ok = tsfi_xplos_shell_exec(&shell, &sched, "iebdgiterstat");
+    assert(iterstat_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 90. Test TSO spool job sync wait timeout recovery retry limits configuration (cbtsubwaitretrylimit)
+    printf("[TEST] Testing cbtsubwaitretrylimit retry limits bounds...\n");
+    bool retrylimit_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtsubwaitretrylimit 3");
+    assert(retrylimit_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 91. Test CICS transient storage clean exclusions rule match audit (cbtcicscleanexceptchk)
+    printf("[TEST] Testing CICS TSQ cleanup exclusion matching check...\n");
+    bool cleanexceptchk_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicscleanexceptchk SYS123");
+    assert(cleanexceptchk_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 92. Test VTAM Route failure scheduler query (vtamrouterecquery)
+    printf("[TEST] Testing VTAM gateway route recovery telemetry status query...\n");
+    bool routerecquery_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtamrouterecquery LU_REMOTE");
+    assert(routerecquery_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }

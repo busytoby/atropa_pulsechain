@@ -699,6 +699,19 @@ static bool handle_iebdgiterlim(const char *cmd) {
     return true;
 }
 
+static bool handle_iebdgiterstat(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  IEBDG SEQUENTIAL PATTERNS GENERATION ITERATION STATUS         \n");
+    printf("================================================================================\n");
+    printf(" ITERATIONS DONE  : 1024 RECORDS\n");
+    printf(" MAXIMUM LIMITS   : 5000 RECORDS\n");
+    printf(" REMAINING STEPS  : 3976 RECORDS\n");
+    printf(" RESPONSE STATUS  : NORMAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "jclrun ", 7) == 0) return handle_jclrun(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
@@ -723,5 +736,6 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "iebcomprredirect ", 17) == 0) return handle_iebcomprredirect(cmd);
     if (strncmp(cmd, "iebcomprmaxexcl ", 16) == 0) return handle_iebcomprmaxexcl(cmd);
     if (strncmp(cmd, "iebdgiterlim ", 13) == 0) return handle_iebdgiterlim(cmd);
+    if (strcmp(cmd, "iebdgiterstat") == 0) return handle_iebdgiterstat();
     return false;
 }

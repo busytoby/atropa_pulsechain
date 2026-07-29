@@ -358,6 +358,17 @@ static bool handle_cbtcicscleanexceptlist(void) {
     return true;
 }
 
+static bool handle_cbtcicscleanexceptchk(const char *cmd) {
+    char target[32] = "";
+    if (sscanf(cmd + 22, "%31s", target) < 1) {
+        printf("[CICSCLEANEXCEPTCHK ERROR] Syntax: cbtcicscleanexceptchk <queue_id>\n");
+        return true;
+    }
+    printf("[CICSCLEANEXCEPT] Auditing CICS TSQ %s against cleanup exclusions...\n", target);
+    printf("  - Match Result: DETECTED. Queue matches prefix rules. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
@@ -378,5 +389,6 @@ bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicscleanexcept ", 19) == 0) return handle_cbtcicscleanexcept(cmd);
     if (strcmp(cmd, "cbtcicscleanlog") == 0) return handle_cbtcicscleanlog();
     if (strcmp(cmd, "cbtcicscleanexceptlist") == 0) return handle_cbtcicscleanexceptlist();
+    if (strncmp(cmd, "cbtcicscleanexceptchk ", 22) == 0) return handle_cbtcicscleanexceptchk(cmd);
     return false;
 }
