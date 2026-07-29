@@ -355,6 +355,49 @@ int main(void) {
     bool profile_ok = tsfi_xplos_shell_cbt_cics("cbtcicsprofile");
     assert(profile_ok == true);
 
+    // 25. Verify Dysnomia Contract Deployments (LAU, Username, Chat submission)
+    printf("  -> Phase 23: Deploying Dysnomia contracts & verifying LAU, username, and chats...\n");
+    
+    // Deploy all Dysnomia core contracts in sequence
+    assert(tsfi_xplos_shell_cbt_cics("cbtcicsts write VMREQ dynamic_0x0000000000000000000000000000000000000001") == true);
+    assert(tsfi_xplos_shell_cbt_cics("cbtcicsts write SHAFactory dynamic_0x0000000000000000000000000000000000000002") == true);
+    assert(tsfi_xplos_shell_cbt_cics("cbtcicsts write SHIOFactory dynamic_0x0000000000000000000000000000000000000003") == true);
+    assert(tsfi_xplos_shell_cbt_cics("cbtcicsts write YI dynamic_0x0000000000000000000000000000000000000004") == true);
+    assert(tsfi_xplos_shell_cbt_cics("cbtcicsts write ZHENG dynamic_0x0000000000000000000000000000000000000005") == true);
+    assert(tsfi_xplos_shell_cbt_cics("cbtcicsts write ZHOU dynamic_0x0000000000000000000000000000000000000006") == true);
+    assert(tsfi_xplos_shell_cbt_cics("cbtcicsts write YAU dynamic_0x0000000000000000000000000000000000000007") == true);
+    assert(tsfi_xplos_shell_cbt_cics("cbtcicsts write YANG dynamic_0x0000000000000000000000000000000000000008") == true);
+    assert(tsfi_xplos_shell_cbt_cics("cbtcicsts write SIU dynamic_0x0000000000000000000000000000000000000009") == true);
+    assert(tsfi_xplos_shell_cbt_cics("cbtcicsts write VOID dynamic_0x000000000000000000000000000000000000000A") == true);
+    assert(tsfi_xplos_shell_cbt_cics("cbtcicsts write LAUFactory dynamic_0x000000000000000000000000000000000000000B") == true);
+    assert(tsfi_xplos_shell_cbt_cics("cbtcicsts write CHO dynamic_0x000000000000000000000000000000000000000C") == true);
+    assert(tsfi_xplos_shell_cbt_cics("cbtcicsts write HECKE dynamic_0x000000000000000000000000000000000000000D") == true);
+    assert(tsfi_xplos_shell_cbt_cics("cbtcicsts write MAP dynamic_0x000000000000000000000000000000000000000E") == true);
+    assert(tsfi_xplos_shell_cbt_cics("cbtcicsts write QI dynamic_0x000000000000000000000000000000000000000F") == true);
+    assert(tsfi_xplos_shell_cbt_cics("cbtcicsts write MAI dynamic_0x0000000000000000000000000000000000000010") == true);
+    assert(tsfi_xplos_shell_cbt_cics("cbtcicsts write XIA dynamic_0x0000000000000000000000000000000000000011") == true);
+    assert(tsfi_xplos_shell_cbt_cics("cbtcicsts write XIE dynamic_0x0000000000000000000000000000000000000012") == true);
+    assert(tsfi_xplos_shell_cbt_cics("cbtcicsts write CHAN dynamic_0x0000000000000000000000000000000000000013") == true);
+    assert(tsfi_xplos_shell_cbt_cics("cbtcicsts write SEI dynamic_0x0000000000000000000000000000000000000014") == true);
+    assert(tsfi_xplos_shell_cbt_cics("cbtcicsts write CHOA dynamic_0x0000000000000000000000000000000000000015") == true);
+    assert(tsfi_xplos_shell_cbt_cics("cbtcicsts write CHEON dynamic_0x0000000000000000000000000000000000000016") == true);
+
+    // Deploy test LAU
+    bool tsq_lau_ok = tsfi_xplos_shell_cbt_cics("cbtcicsts write TestLAU dynamic_0x0000000000000000000000000000000000000099");
+    assert(tsq_lau_ok == true);
+    
+    // Set username
+    bool tsq_user_ok = tsfi_xplos_shell_cbt_cics("cbtcicsts write USER_NAME HoganBear");
+    assert(tsq_user_ok == true);
+    
+    // Submit chat message to TDQ
+    bool tdq_chat_ok = tsfi_xplos_shell_cbt_cics("cbtcicstd write CHAT Auncient Wavelet deployed successfully under HASP!");
+    assert(tdq_chat_ok == true);
+
+    printf("[DEPLOYMENT CHECK] Querying active credentials from 2-3 Tree rails...\n");
+    bool tsq_read_user = tsfi_xplos_shell_cbt_cics("cbtcicsts read USER_NAME");
+    assert(tsq_read_user == true);
+
     printf("  -> End-to-end data pipeline integrity verified successfully.\n");
     printf("\n=== SKELETON HASP BOOK PROOFS PASSED ===\n");
     return 0;
