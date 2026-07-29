@@ -194,6 +194,26 @@ int main(void) {
     bool mockjob2_run_ok = tsfi_xplos_shell_cbt_jcl("jclrun MJ2");
     assert(mockjob2_run_ok == true);
 
+    // 13. Verify Coaxial Instream Data Routing (SYSTSIN DD * to TSOTMP)
+    printf("  -> Phase 11: Verifying coaxial instream data routing...\n");
+    remove("USERLIB.dat.bin");
+    int open_userlib_rc2 = tsfi_cw_vsam_open(&userlib_ksds, "USERLIB.dat.bin");
+    assert(open_userlib_rc2 == 0);
+
+    // Write a mock JCL job into USERLIB under key "MJ3" which uses instream data cards
+    uint8_t mock_instream_cards[512] = 
+        "//MJ3 JOB 'CBT COAX'\n"
+        "//SYSTSIN DD *\n"
+        "cbtrexx vput SYSVAR 953467954114363\n"
+        "/*\n"
+        "//STEP1 EXEC PGM=TSOTMP\n";
+    int write_userlib_rc2 = tsfi_cw_vsam_write(&userlib_ksds, "MJ3", mock_instream_cards, strlen((char *)mock_instream_cards));
+    assert(write_userlib_rc2 == 0);
+
+    // Execute the job: it should route the command coaxially and execute cbtrexx
+    bool mockjob3_run_ok = tsfi_xplos_shell_cbt_jcl("jclrun MJ3");
+    assert(mockjob3_run_ok == true);
+
     printf("  -> End-to-end data pipeline integrity verified successfully.\n");
     printf("\n=== SKELETON HASP BOOK PROOFS PASSED ===\n");
     return 0;

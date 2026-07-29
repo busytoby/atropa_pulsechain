@@ -12,6 +12,7 @@
 #include "tsfi_xplos_shell_cbt_jcl.h"
 #include "tsfi_xplos_shell_cbt_jes.h"
 #include "tsfi_xplos_shell_cbt_tso.h"
+#include "tsfi_xplos_shell_cbt_vtam.h"
 #include "tsfi_mainframe_computerworld.h"
 extern XplosVirtualDisk g_vfs;
 extern CbtSpoolJob cbt_job_table[10];
@@ -179,21 +180,49 @@ static bool handle_jclrun(const char *cmd) {
                             snprintf(log_msg, sizeof(log_msg), "    * IEFBR14 Dummy Program executed. Resolving DD dispositions. RC=0000\n");
                             printf("%s", log_msg);
                             append_spool_log(jcl_name, log_msg);
-                        } else if (strcmp(pgm_name, "IKJEFT01") == 0) {
+                        } else if (strcmp(pgm_name, "TSOTMP") == 0) {
                             rc = 0;
-                            snprintf(log_msg, sizeof(log_msg), "    * IKJEFT01 Terminal Monitor Program launched. RC=0000\n");
+                            snprintf(log_msg, sizeof(log_msg), "    * TSOTMP Terminal Monitor Program launched. RC=0000\n");
                             printf("%s", log_msg);
                             append_spool_log(jcl_name, log_msg);
-                            snprintf(log_msg, sizeof(log_msg), "      TSO_TMP> Executing command from SYSTSIN: cbtrexx vput SYSVAR 953467954114363\n");
-                            printf("%s", log_msg);
-                            append_spool_log(jcl_name, log_msg);
-                            tsfi_xplos_shell_cbt_tso("cbtrexx vput SYSVAR 953467954114363");
+
+                            char coax_cmd[2048] = {0};
+                            tsfi_vtam_coax_read_buffer(coax_cmd, sizeof(coax_cmd));
+                            if (strlen(coax_cmd) > 0) {
+                                char *nl = strchr(coax_cmd, '\n');
+                                if (nl) *nl = '\0';
+                                snprintf(log_msg, sizeof(log_msg), "      TSO_TMP> Executing command routed coaxially: %s\n", coax_cmd);
+                                printf("%s", log_msg);
+                                append_spool_log(jcl_name, log_msg);
+                                tsfi_xplos_shell_cbt_tso(coax_cmd);
+                            }
                         } else {
                             rc = 4;
                             snprintf(log_msg, sizeof(log_msg), "    * Program %s executed. RC=0004 (Warning)\n", pgm_name);
                             printf("%s", log_msg);
                             append_spool_log(jcl_name, log_msg);
                         }
+                    }
+                }
+                else if (strstr(card, " DD *") || strstr(card, " dd *")) {
+                    if (!skip_block) {
+                        snprintf(log_msg, sizeof(log_msg), "  JCL_ALLOC> Allocation Instream Data: %s\n", card);
+                        printf("%s", log_msg);
+                        append_spool_log(jcl_name, log_msg);
+
+                        char instream_buf[2048] = {0};
+                        line = strtok(NULL, "\n");
+                        while (line) {
+                            char *trim_line = line;
+                            while (isspace((unsigned char)*trim_line)) trim_line++;
+                            if (strncmp(trim_line, "/*", 2) == 0 || strncmp(trim_line, "//", 2) == 0) {
+                                break;
+                            }
+                            strcat(instream_buf, trim_line);
+                            strcat(instream_buf, "\n");
+                            line = strtok(NULL, "\n");
+                        }
+                        tsfi_vtam_coax_write_buffer(instream_buf);
                     }
                 }
                 else if (strstr(card, " DD ") || strstr(card, " dd ")) {
