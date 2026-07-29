@@ -270,12 +270,6 @@ bool tsfi_cbt_mount_inmemory_pds(XplosVirtualDisk *vfs, const char *server_path)
                     }
                 }
                 vf->data[dest_idx] = '\0';
-
-                if (strcmp(members[i], "OCX") == 0) {
-                    snprintf(vf->data, sizeof(vf->data),
-                             "  - Command 01: 'cbtclear'\n"
-                             "  - Command 02: 'cbtbeep'\n");
-                }
             }
         }
     }
