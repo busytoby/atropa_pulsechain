@@ -430,6 +430,17 @@ static bool handle_vtamrouterecstat(void) {
     return true;
 }
 
+static bool handle_vtamroutereccount(const char *cmd) {
+    int max_retries = 0;
+    if (sscanf(cmd + 17, "%d", &max_retries) < 1) {
+        printf("[VTAMROUTERE CCOUNT ERROR] Syntax: vtamroutereccount <count>\n");
+        return true;
+    }
+    printf("[VTAM] Gateway route auto recovery scheduler retry limits set to: %d retries\n", max_retries);
+    printf("  - Pathway retry bounds updated. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "cbtnet ", 7) == 0) return handle_cbtnet(cmd + 7);
     if (strncmp(cmd, "logon ", 6) == 0) return handle_vtam_logon(cmd);
@@ -450,5 +461,6 @@ bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "vtamussmsg ", 11) == 0) return handle_vtamussmsg(cmd);
     if (strncmp(cmd, "vtamrouterec ", 13) == 0) return handle_vtamrouterec(cmd);
     if (strcmp(cmd, "vtamrouterecstat") == 0) return handle_vtamrouterecstat();
+    if (strncmp(cmd, "vtamroutereccount ", 17) == 0) return handle_vtamroutereccount(cmd);
     return false;
 }

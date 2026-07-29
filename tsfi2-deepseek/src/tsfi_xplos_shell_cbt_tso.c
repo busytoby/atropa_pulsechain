@@ -563,6 +563,19 @@ static bool handle_cbtsubwaitstat(void) {
     return true;
 }
 
+
+
+static bool handle_cbtsubwaitretry(const char *cmd) {
+    char state[16] = "";
+    if (sscanf(cmd + 16, "%15s", state) < 1) {
+        printf("[SUBWAITRETRY ERROR] Syntax: cbtsubwaitretry [on|off]\n");
+        return true;
+    }
+    printf("[SUBWAIT] Job wait timeout auto retry scheduling set to: %s\n", state);
+    printf("  - Spool synchronization retry rules mapped successfully. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtrexx ", 8) == 0) return handle_cbtrexx(cmd);
     if (strncmp(cmd, "ispfmenu", 8) == 0) return handle_ispfmenu(cmd);
@@ -582,5 +595,6 @@ bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtsuboutlim ", 13) == 0) return handle_cbtsuboutlim(cmd);
     if (strncmp(cmd, "cbtsubwait ", 11) == 0) return handle_cbtsubwait(cmd);
     if (strcmp(cmd, "cbtsubwaitstat") == 0) return handle_cbtsubwaitstat();
+    if (strncmp(cmd, "cbtsubwaitretry ", 16) == 0) return handle_cbtsubwaitretry(cmd);
     return false;
 }

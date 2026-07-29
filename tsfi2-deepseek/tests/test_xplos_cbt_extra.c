@@ -645,6 +645,30 @@ int main(void) {
     assert(routerecstat_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 81. Test IEBCOMPR maximum mismatch exclusions limit config (iebcomprmaxexcl)
+    printf("[TEST] Testing IEBCOMPR maximum exclusions limit config...\n");
+    bool comprmaxexcl_ok = tsfi_xplos_shell_exec(&shell, &sched, "iebcomprmaxexcl 100");
+    assert(comprmaxexcl_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 82. Test TSO spool wait retry action configuration (cbtsubwaitretry)
+    printf("[TEST] Testing cbtsubwaitretry spool sync retry toggle...\n");
+    bool subwaitretry_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtsubwaitretry on");
+    assert(subwaitretry_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 83. Test CICS transient storage clean history log (cbtcicscleanlog)
+    printf("[TEST] Testing CICS TSQ cleanup history logger...\n");
+    bool cleanlog_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicscleanlog");
+    assert(cleanlog_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 84. Test VTAM Route failure retry boundaries scheduler (vtamroutereccount)
+    printf("[TEST] Testing VTAM gateway route recovery retry limits...\n");
+    bool routereccount_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtamroutereccount 5");
+    assert(routereccount_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }

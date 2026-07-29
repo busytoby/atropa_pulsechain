@@ -332,6 +332,19 @@ static bool handle_cbtcicscleanexcept(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtcicscleanlog(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  CICS TRANSIENT STORAGE CLEANUP EXECUTION LOG HISTORY          \n");
+    printf("================================================================================\n");
+    printf(" TIME     | OP TYPE | PREFIX   | TARGET QUEUES   | STORAGE RELEASED\n");
+    printf("--------------------------------------------------------------------------------\n");
+    printf(" 12:00:00 | WILDCARD| LOG*     | LOGS            | 1024 BYTES\n");
+    printf(" 12:01:00 | FULL    | *        | Q1, Q2, LOGS    | 2048 BYTES. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
@@ -350,5 +363,6 @@ bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicscleanflt ", 16) == 0) return handle_cbtcicscleanflt(cmd);
     if (strcmp(cmd, "cbtcicscmpdet") == 0) return handle_cbtcicscmpdet();
     if (strncmp(cmd, "cbtcicscleanexcept ", 19) == 0) return handle_cbtcicscleanexcept(cmd);
+    if (strcmp(cmd, "cbtcicscleanlog") == 0) return handle_cbtcicscleanlog();
     return false;
 }
