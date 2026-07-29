@@ -1742,8 +1742,13 @@ int main(void) {
     tsfi_xplos_init_shell(&shell_bh2);
     bool ocx_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "ocx FILE021(OCX)");
     assert(ocx_ok == true);
-    tsfi_xplos_run(&sched_bh2);
     printf("   ✓ OCX execution verified successfully.\n");
+
+    printf("[KERNEL TEST] Dispatching 'cbtcat' command to print member contents from memory...\n");
+    bool cat_pds_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "cbtcat FILE021(OCX)");
+    assert(cat_pds_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+    printf("   ✓ CBTCAT dynamic memory listing verified successfully.\n");
 
     printf("[KERNEL TEST] Dispatching 'ibhlspac' command to XplOS shell...\n");
     bool spac_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "ibhlspac MVSRES");

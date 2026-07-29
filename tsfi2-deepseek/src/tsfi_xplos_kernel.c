@@ -3266,11 +3266,26 @@ static void shell_task_handler(void *arg) {
     if (strncmp(cmd, "cbtcat ", 7) == 0) {
         const char *dsname = cmd + 7;
         if (strlen(dsname) > 0) {
-            printf("[CBTCAT] Querying system catalog for dataset: %s\n", dsname);
-            printf("  - Entry Type: NONVSAM\n");
-            printf("  - Volume: MVSRES   Device: 3380\n");
-            printf("  - Catalog: SYS1.UCAT.dat.bin\n");
-            printf("[CBTCAT] Catalog search completed successfully.\n");
+            char target_name[80];
+            resolve_pds_name(dsname, target_name, sizeof(target_name));
+            int file_idx = -1;
+            for (int i = 0; i < g_vfs.count; i++) {
+                if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, target_name) == 0) {
+                    file_idx = i;
+                    break;
+                }
+            }
+            if (file_idx >= 0) {
+                printf("[CBTCAT] Printing contents of memory VFS member: %s\n", target_name);
+                printf("%s", g_vfs.files[file_idx].data);
+                printf("[CBTCAT] Catalog display completed successfully.\n");
+            } else {
+                printf("[CBTCAT] Querying system catalog for dataset: %s\n", dsname);
+                printf("  - Entry Type: NONVSAM\n");
+                printf("  - Volume: MVSRES   Device: 3380\n");
+                printf("  - Catalog: SYS1.UCAT.dat.bin\n");
+                printf("[CBTCAT] Catalog search completed successfully.\n");
+            }
         } else {
             printf("[CBTCAT ERROR] Dataset name required.\n");
         }
