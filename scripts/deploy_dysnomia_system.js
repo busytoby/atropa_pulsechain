@@ -19,21 +19,34 @@ function getContractArtifact(filename, contractName) {
 }
 
 async function main() {
-    console.log("Connecting to local EVM...");
-    const provider = new ethers.JsonRpcProvider(PROVIDER_URL);
-    const signers = await provider.listAccounts();
-    const deployer = signers[0];
-    console.log(`Deployer address: ${deployer.address}`);
+    const yulOnly = process.argv.includes("--yul-only");
+    let provider = null;
+    let deployer = null;
+
+    if (!yulOnly) {
+        console.log("Connecting to local EVM...");
+        provider = new ethers.JsonRpcProvider(PROVIDER_URL);
+        const signers = await provider.listAccounts();
+        deployer = signers[0];
+        console.log(`Deployer address: ${deployer.address}`);
+    } else {
+        console.log("=== YUL VM DIRECT DEPLOYMENT MODE ===");
+    }
 
     const deployedAddresses = {};
 
     async function deploy(filename, contractName, args = []) {
         console.log(`Deploying ${contractName}...`);
-        const artifact = getContractArtifact(filename, contractName);
-        const factory = new ethers.ContractFactory(artifact.abi, artifact.bin, deployer);
-        const contract = await factory.deploy(...args);
-        await contract.waitForDeployment();
-        const address = await contract.getAddress();
+        let address = "0x" + require("crypto").randomBytes(20).toString("hex");
+
+        if (!yulOnly) {
+            const artifact = getContractArtifact(filename, contractName);
+            const factory = new ethers.ContractFactory(artifact.abi, artifact.bin, deployer);
+            const contract = await factory.deploy(...args);
+            await contract.waitForDeployment();
+            address = await contract.getAddress();
+        }
+
         console.log(` -> ${contractName} deployed at: ${address}`);
         
         // Replicate deployment to the spooled Yul VM on 2-3 Tree DAT rails
@@ -42,7 +55,7 @@ async function main() {
         execSync(`LD_LIBRARY_PATH=./tsfi2-deepseek ./tsfi2-deepseek/bin/cics_cli write ${contractName} dynamic_${address}`, { stdio: 'inherit' });
 
         deployedAddresses[contractName] = address;
-        return contract;
+        return null;
     }
 
     // 1. VMREQ
@@ -95,19 +108,22 @@ async function main() {
     const cho = await deploy("01_cho.sol", "CHO", [deployedAddresses["VOID"]]);
 
     // 17. Register CHO for talk
-    console.log("Registering CHO for Talk in COREREACTIONSLIB...");
-    const corereactions = new ethers.Contract(deployedAddresses["COREREACTIONSLIB"], getContractArtifact("reactions_core.sol", "COREREACTIONSLIB").abi, deployer);
-    const txRegister = await corereactions.RegisterChoForTalk(deployedAddresses["CHO"]);
-    await txRegister.wait();
-    console.log("CHO Registered.");
+    let heckeAddress = "0x" + require("crypto").randomBytes(20).toString("hex");
+    if (!yulOnly) {
+        console.log("Registering CHO for Talk in COREREACTIONSLIB...");
+        const corereactions = new ethers.Contract(deployedAddresses["COREREACTIONSLIB"], getContractArtifact("reactions_core.sol", "COREREACTIONSLIB").abi, deployer);
+        const txRegister = await corereactions.RegisterChoForTalk(deployedAddresses["CHO"]);
+        await txRegister.wait();
+        console.log("CHO Registered.");
 
-    // 14. Deploy Hecke (Real Contract, No Mocks)
-    console.log("Deploying Hecke...");
-    const heckeArtifact = getContractArtifact("heckemeridians.sol", "Hecke");
-    const heckeFactory = new ethers.ContractFactory(heckeArtifact.abi, heckeArtifact.bin, deployer);
-    const hecke = await heckeFactory.deploy(deployedAddresses["CHO"]);
-    await hecke.waitForDeployment();
-    const heckeAddress = await hecke.getAddress();
+        // 14. Deploy Hecke (Real Contract, No Mocks)
+        console.log("Deploying Hecke...");
+        const heckeArtifact = getContractArtifact("heckemeridians.sol", "Hecke");
+        const heckeFactory = new ethers.ContractFactory(heckeArtifact.abi, heckeArtifact.bin, deployer);
+        const hecke = await heckeFactory.deploy(deployedAddresses["CHO"]);
+        await hecke.waitForDeployment();
+        heckeAddress = await hecke.getAddress();
+    }
     deployedAddresses["HECKE"] = heckeAddress;
     console.log(` -> Hecke deployed at: ${heckeAddress}`);
 
@@ -115,23 +131,29 @@ async function main() {
     const map = await deploy("map.sol", "MAP", [deployedAddresses["CHO"], deployedAddresses["HECKE"]]);
 
     // Deploy a test LAU to construct QINGs
-    console.log("Deploying a test LAU token...");
-    const laufactory = new ethers.Contract(deployedAddresses["LAUFactory"], getContractArtifact("11c_laufactory.sol", "LAUFactory").abi, deployer);
-    const txLau = await laufactory.New("User Token 1", "USERTOKEN1");
-    const receiptLau = await txLau.wait();
-    const lauAddress = receiptLau.logs[0].address || receiptLau.logs[0].args[1];
+    let lauAddress = "0x" + require("crypto").randomBytes(20).toString("hex");
+    let qingAddress = "0x" + require("crypto").randomBytes(20).toString("hex");
+
+    if (!yulOnly) {
+        console.log("Deploying a test LAU token...");
+        const laufactory = new ethers.Contract(deployedAddresses["LAUFactory"], getContractArtifact("11c_laufactory.sol", "LAUFactory").abi, deployer);
+        const txLau = await laufactory.New("User Token 1", "USERTOKEN1");
+        const receiptLau = await txLau.wait();
+        lauAddress = receiptLau.logs[0].address || receiptLau.logs[0].args[1];
+
+        // 19. Deploy QI
+        // QING requires an integrative address. We deploy a QING via the MAP contract acting as factory:
+        console.log("Deploying VOID QING via MAP.New()...");
+        const txQing = await map.New(deployedAddresses["VOID"]);
+        const receiptQing = await txQing.wait();
+        
+        // Parse the NewQing event to find the address of the newly deployed QING
+        const newQingEvent = receiptQing.logs.find(x => x.fragment && x.fragment.name === "NewQing") || receiptQing.logs[0];
+        qingAddress = newQingEvent.args ? newQingEvent.args[0] : newQingEvent.address;
+    }
+
     console.log(` -> Test LAU Token deployed at: ${lauAddress}`);
     deployedAddresses["TestLAU"] = lauAddress;
-
-    // 19. Deploy QI
-    // QING requires an integrative address. We deploy a QING via the MAP contract acting as factory:
-    console.log("Deploying VOID QING via MAP.New()...");
-    const txQing = await map.New(deployedAddresses["VOID"]);
-    const receiptQing = await txQing.wait();
-    
-    // Parse the NewQing event to find the address of the newly deployed QING
-    const newQingEvent = receiptQing.logs.find(x => x.fragment && x.fragment.name === "NewQing") || receiptQing.logs[0];
-    const qingAddress = newQingEvent.args ? newQingEvent.args[0] : newQingEvent.address;
     console.log(` -> VOID QING deployed at: ${qingAddress}`);
     deployedAddresses["VOID_QING"] = qingAddress;
 
