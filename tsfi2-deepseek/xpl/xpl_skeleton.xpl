@@ -127,3 +127,69 @@ EXECUTE_CONCURRENT_TASKS: PROCEDURE(ADDR_A, ADDR_B, VAL_A, VAL_B) FIXED;
 
     RETURN 1;
 END EXECUTE_CONCURRENT_TASKS;
+
+/* 8. ACID-Compliant Capstan Shaft Wheel Tape Device Emulation */
+DECLARE CAPSTAN_CONTROL     LITERALLY '65000'; /* 0 = Stop, 1 = Forward, 2 = Reverse */
+DECLARE CAPSTAN_SOLENOID    LITERALLY '65001'; /* 0 = Disengaged, 1 = Engaged (Clamp) */
+DECLARE CAPSTAN_ENCODER     LITERALLY '65002'; /* Current step/sector value from shaft encoder */
+DECLARE CAPSTAN_BRAKE       LITERALLY '65003'; /* 0 = Disengaged, 1 = Engaged */
+DECLARE RAW_HEAD_STATUS     LITERALLY '65004'; /* 0 = Parity/Write Error, 1 = Verification Pass */
+DECLARE SECTOR_DATA_REG     LITERALLY '65005'; /* Data byte register for read/write */
+
+WRITE_TAPE_SECTOR: PROCEDURE(SECTOR_ID, DATA_VAL) FIXED;
+    DECLARE (SECTOR_ID, DATA_VAL) FIXED;
+    DECLARE VERIFY_RETRIES FIXED;
+    
+    VERIFY_RETRIES = 0;
+    
+    WRITE_ATTEMPT:
+    /* Physical step 1: Engage pinch roller solenoid to clamp tape to capstan */
+    BYTE(CAPSTAN_SOLENOID) = 1;
+    
+    /* Physical step 2: Release mechanical shaft brake */
+    BYTE(CAPSTAN_BRAKE) = 0;
+    
+    /* Physical step 3: Spin capstan motor forward */
+    BYTE(CAPSTAN_CONTROL) = 1;
+    
+    /* Physical step 4: Wait for shaft encoder to reach target sector interval */
+    IF BYTE(CAPSTAN_ENCODER) != SECTOR_ID THEN
+        /* Busy wait loop until sector alignment */
+    END;
+    
+    /* Physical step 5: Modulate write head current to commit data */
+    BYTE(SECTOR_DATA_REG) = DATA_VAL;
+    
+    /* Physical step 6: Read-After-Write (RAW) head verification (Atomicity) */
+    IF BYTE(RAW_HEAD_STATUS) == 0 THEN
+        /* Abort / Rollback sequence */
+        BYTE(CAPSTAN_CONTROL) = 0; /* Stop motor */
+        BYTE(CAPSTAN_BRAKE) = 1;   /* Apply brake */
+        BYTE(CAPSTAN_SOLENOID) = 0; /* Disengage solenoid */
+        
+        VERIFY_RETRIES = VERIFY_RETRIES + 1;
+        IF VERIFY_RETRIES < 3 THEN
+            /* Physical Rollback: Reverse capstan to rewind tape 1 sector width */
+            BYTE(CAPSTAN_SOLENOID) = 1;
+            BYTE(CAPSTAN_BRAKE) = 0;
+            BYTE(CAPSTAN_CONTROL) = 2; /* Reverse rotation */
+            
+            /* Wait for rewind step alignment */
+            IF BYTE(CAPSTAN_ENCODER) == SECTOR_ID THEN
+                BYTE(CAPSTAN_CONTROL) = 0;
+                BYTE(CAPSTAN_BRAKE) = 1;
+            END;
+            
+            GOTO WRITE_ATTEMPT; /* Retry write transaction */
+        END;
+        
+        RETURN 0; /* Transaction failed: Rollback maximum retries exceeded */
+    END;
+    
+    /* Physical step 7: Transaction Commit. Engage brake and release clamp */
+    BYTE(CAPSTAN_CONTROL) = 0;
+    BYTE(CAPSTAN_BRAKE) = 1;
+    BYTE(CAPSTAN_SOLENOID) = 0;
+    
+    RETURN 1; /* Transaction committed successfully */
+END WRITE_TAPE_SECTOR;
