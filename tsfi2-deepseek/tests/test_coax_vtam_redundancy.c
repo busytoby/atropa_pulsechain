@@ -60,9 +60,32 @@ int main(void) {
     
     // Verify that the VTAM command routing dispatcher remains completely bypassed
     printf("  -> Asserting VTAM gateway interface bypass...\n");
-    // Verify a dummy cbtnet call is not triggered/needed for this coaxial transmission
     bool vtam_invoked = tsfi_xplos_shell_cbt_vtam("cbtnet status");
     assert(vtam_invoked == true); // VTAM gateway remains present but unused during coax path
+
+    // 1. Verify Logon purpose support via coaxial interface
+    printf("  -> Verifying VTAM LOGON purpose support over coax...\n");
+    coax_adapter_reset(&adapter);
+    const char *logon_payload = "LOGON APPLID(cics)";
+    bool logon_ok = coax_transmit_direct(&adapter, (const uint8_t *)logon_payload, (uint32_t)strlen(logon_payload));
+    assert(logon_ok == true);
+    assert(memcmp(adapter.rx_buffer, logon_payload, strlen(logon_payload)) == 0);
+
+    // 2. Verify Usenet Posting purpose support via coaxial interface
+    printf("  -> Verifying VTAM Usenet Posting purpose support over coax...\n");
+    coax_adapter_reset(&adapter);
+    const char *post_payload = "POST net.books | author | subject | body";
+    bool post_ok = coax_transmit_direct(&adapter, (const uint8_t *)post_payload, (uint32_t)strlen(post_payload));
+    assert(post_ok == true);
+    assert(memcmp(adapter.rx_buffer, post_payload, strlen(post_payload)) == 0);
+
+    // 3. Verify Route Recovery Reset purpose support via coaxial interface
+    printf("  -> Verifying VTAM Route Recovery Reset purpose support over coax...\n");
+    coax_adapter_reset(&adapter);
+    const char *reset_payload = "ROUTE RECOVERY RESET";
+    bool reset_ok = coax_transmit_direct(&adapter, (const uint8_t *)reset_payload, (uint32_t)strlen(reset_payload));
+    assert(reset_ok == true);
+    assert(memcmp(adapter.rx_buffer, reset_payload, strlen(reset_payload)) == 0);
     
     printf("\n=== COAXIAL VTAM BYPASS REDUNDANCY PROOFS PASSED ===\n");
     return 0;
