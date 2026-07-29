@@ -286,3 +286,40 @@ RECONCILE_VOLUME: PROCEDURE FIXED;
     END;
     RETURN 1;
 END RECONCILE_VOLUME;
+
+RECEIVE_KERMIT_PACKET: PROCEDURE(PACKET_PTR, PACKET_LEN) FIXED;
+    DECLARE (PACKET_PTR, PACKET_LEN) FIXED;
+    DECLARE (START_CHAR, SEQ, TYPE, RX_CHECKSUM, COMPUTED_CHECKSUM, SUM, I, PAYLOAD_VAL) FIXED;
+    
+    START_CHAR = BYTE(PACKET_PTR);
+    IF START_CHAR != 35 THEN /* '#' */
+        RETURN 0; /* Invalid Start character */
+    END;
+    
+    SEQ = BYTE(PACKET_PTR + 2);
+    TYPE = BYTE(PACKET_PTR + 3);
+    RX_CHECKSUM = BYTE(PACKET_PTR + PACKET_LEN - 1);
+    
+    SUM = 0;
+    I = 0;
+    DO WHILE I < PACKET_LEN - 1;
+        SUM = SUM + BYTE(PACKET_PTR + I);
+        I = I + 1;
+    END;
+    
+    COMPUTED_CHECKSUM = (SUM & 63) + 32;
+    
+    IF COMPUTED_CHECKSUM != RX_CHECKSUM THEN
+        BYTE(RAW_HEAD_STATUS) = 0; /* Checksum fail */
+    ELSE
+        BYTE(RAW_HEAD_STATUS) = 1; /* Checksum pass */
+    END;
+    
+    PAYLOAD_VAL = BYTE(PACKET_PTR + 4);
+    
+    IF WRITE_TAPE_SECTOR(SEQ, PAYLOAD_VAL) == 0 THEN
+        RETURN 0; /* Hardware write failed/aborted */
+    END;
+    
+    RETURN 1; /* Transaction committed successfully */
+END RECEIVE_KERMIT_PACKET;
