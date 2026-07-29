@@ -1356,6 +1356,24 @@ int main(void) {
     tsfi_xplos_run(&sched_tsk);
     printf("   ✓ CBTTSK execution verified successfully.\n");
 
+    // 89. Test CBTLK command execution
+    printf("[KERNEL TEST] Dispatching 'cbtlk' command to XplOS shell...\n");
+    XplosShell shell_lk;
+    XplosScheduler sched_lk;
+    tsfi_xplos_init_scheduler(&sched_lk);
+    tsfi_xplos_init_shell(&shell_lk);
+    
+    FILE *f_lk_tmp = fopen("tests/load_lib.dat.bin", "wb");
+    uint8_t dummy_lk[8] = {0};
+    fwrite(dummy_lk, 1, 8, f_lk_tmp);
+    fclose(f_lk_tmp);
+
+    bool lk_ok = tsfi_xplos_shell_exec(&shell_lk, &sched_lk, "cbtlk tests/load_lib.dat.bin");
+    assert(lk_ok == true);
+    tsfi_xplos_run(&sched_lk);
+    printf("   ✓ CBTLK execution verified successfully.\n");
+    remove("tests/load_lib.dat.bin");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
