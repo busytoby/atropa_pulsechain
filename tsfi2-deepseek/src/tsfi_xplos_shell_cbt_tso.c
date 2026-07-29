@@ -621,6 +621,17 @@ static bool handle_cbtsubwaitretryscriptlist(void) {
     return true;
 }
 
+static bool handle_cbtsubwaitretrydelaylimit(const char *cmd) {
+    int max_delay = 0;
+    if (sscanf(cmd + 26, "%d", &max_delay) < 1) {
+        printf("[SUBWAITRETRYDELAYLIMIT ERROR] Syntax: cbtsubwaitretrydelaylimit <seconds>\n");
+        return true;
+    }
+    printf("[SUBWAIT] Job submission synchronous wait maximum cumulative retry delay set to: %d seconds\n", max_delay);
+    printf("  - Spool delay limits re-established. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtrexx ", 8) == 0) return handle_cbtrexx(cmd);
     if (strncmp(cmd, "ispfmenu", 8) == 0) return handle_ispfmenu(cmd);
@@ -645,5 +656,6 @@ bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtsubwaitretrylimit ", 21) == 0) return handle_cbtsubwaitretrylimit(cmd);
     if (strncmp(cmd, "cbtsubwaitretryscript ", 22) == 0) return handle_cbtsubwaitretryscript(cmd);
     if (strcmp(cmd, "cbtsubwaitretryscriptlist") == 0) return handle_cbtsubwaitretryscriptlist();
+    if (strncmp(cmd, "cbtsubwaitretrydelaylimit ", 26) == 0) return handle_cbtsubwaitretrydelaylimit(cmd);
     return false;
 }

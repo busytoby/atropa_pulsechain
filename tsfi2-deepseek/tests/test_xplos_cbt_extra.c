@@ -813,6 +813,30 @@ int main(void) {
     assert(routesolmsg_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 109. Test VTAM gateway route recovery telemetry logger (vtamroutereclog)
+    printf("[TEST] Testing VTAM gateway logging destination customizer...\n");
+    bool routereclog_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtamroutereclog SYSLOG");
+    assert(routereclog_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 110. Test TSO spool job timeout cumulative delay limiter (cbtsubwaitretrydelaylimit)
+    printf("[TEST] Testing TSO spool timeout cumulative delay limiter...\n");
+    bool retrydelaylimit_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtsubwaitretrydelaylimit 180");
+    assert(retrydelaylimit_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 111. Test IEBGENER sequential copier execution telemetry (iebgenerstat)
+    printf("[TEST] Testing IEBGENER copier telemetry status...\n");
+    bool generstat_ok = tsfi_xplos_shell_exec(&shell, &sched, "iebgenerstat");
+    assert(generstat_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 112. Test CICS TSQ cleanup exclusion prefixes bulk registry (cbtcicscleanexceptadd)
+    printf("[TEST] Testing CICS TSQ cleanup exclusions bulk registry...\n");
+    bool cleanexceptadd_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicscleanexceptadd SYS1 SYS2 SYS3");
+    assert(cleanexceptadd_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }

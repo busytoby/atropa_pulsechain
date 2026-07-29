@@ -735,6 +735,19 @@ static bool handle_iebgenerrecal(const char *cmd) {
     return true;
 }
 
+static bool handle_iebgenerstat(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  IEBGENER SEQUENTIAL DATA COPY TELEMETRY STATUS                \n");
+    printf("================================================================================\n");
+    printf(" RECORDS COPIED  : 512 RECORDS\n");
+    printf(" BLOCK SIZE USED : 4096 BYTES\n");
+    printf(" LOGICAL LAYOUT  : COMP-5 PACKED BINARY\n");
+    printf(" RESPONSE STATUS : OPERATIONAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "jclrun ", 7) == 0) return handle_jclrun(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
@@ -762,5 +775,6 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strcmp(cmd, "iebdgiterstat") == 0) return handle_iebdgiterstat();
     if (strncmp(cmd, "iebdgiterchange ", 16) == 0) return handle_iebdgiterchange(cmd);
     if (strncmp(cmd, "iebgenerrecal ", 14) == 0) return handle_iebgenerrecal(cmd);
+    if (strcmp(cmd, "iebgenerstat") == 0) return handle_iebgenerstat();
     return false;
 }

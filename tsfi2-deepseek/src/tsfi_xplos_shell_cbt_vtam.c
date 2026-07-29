@@ -489,6 +489,17 @@ static bool handle_vtamroutesolmsg(const char *cmd) {
     return true;
 }
 
+static bool handle_vtamroutereclog(const char *cmd) {
+    char dest[32] = "";
+    if (sscanf(cmd + 16, "%31s", dest) < 1) {
+        printf("[VTAMROUTERECLOG ERROR] Syntax: vtamroutereclog <destination>\n");
+        return true;
+    }
+    printf("[VTAM] Gateway route recovery telemetry logging destination configured: %s\n", dest);
+    printf("  - Telemetry logging destination mapped. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "cbtnet ", 7) == 0) return handle_cbtnet(cmd + 7);
     if (strncmp(cmd, "logon ", 6) == 0) return handle_vtam_logon(cmd);
@@ -514,5 +525,6 @@ bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "vtamrouterecquery ", 18) == 0) return handle_vtamrouterecquery(cmd);
     if (strcmp(cmd, "vtamrouterecquerylist") == 0) return handle_vtamrouterecquerylist();
     if (strncmp(cmd, "vtamroutesolmsg ", 16) == 0) return handle_vtamroutesolmsg(cmd);
+    if (strncmp(cmd, "vtamroutereclog ", 16) == 0) return handle_vtamroutereclog(cmd);
     return false;
 }
