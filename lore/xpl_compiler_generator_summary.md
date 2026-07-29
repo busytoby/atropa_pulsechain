@@ -44,3 +44,11 @@ The compiler generator implements structured mechanisms to recover from syntacti
 * **Syntax Error Recovery**: During parser parsing phases, if an invalid token sequence occurs, the SKELETON invokes automatic error recovery algorithms. It discards symbols on the parsing stack or skips input tokens until a synchronization terminal is found, preventing execution loops from halting.
 * **Intermediate Representation (IR)**: Semantic reduction routines generate an intermediate representation of the source program, mapping variable references to offset locations.
 * **Code Emission**: The compiler generator translates intermediate codes directly to instruction word formats (matching target registers), outputting ready card deck images or load modules.
+
+## 6. Language Specifications and Performance Metrics
+
+The language design features are optimized for memory conservation and string manipulations during processing passes:
+
+* **XPL Data Types**: The language supports native data types tailored for system programming, including `FIXED` (word integers), `BIT` (logical byte flags), and `CHARACTER` (dynamic string byte descriptors).
+* **String Allocation and GC**: String values are managed dynamically using length-byte descriptors. Storage allocation uses a free-heap zone, executing garbage collection routines when memory boundaries are reached.
+* **Historical System Footprint**: The compiler is designed to run in highly constrained environments, compiling complex student programs within a `65,536` byte memory partition on IBM System/360 hardware. This modular efficiency matches the design philosophy of Auncient low-level register boundaries.
