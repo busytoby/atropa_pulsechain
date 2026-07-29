@@ -142,7 +142,29 @@ bool inflate_memory(const unsigned char *src, size_t src_len, unsigned char *des
     return (ret == Z_STREAM_END);
 }
 
-// EBCDIC conversion map placeholder
+static void ebcdic_to_ascii_buf(const uint8_t *src, char *dest, size_t len) {
+    static const char ebcdic_map[256] = {
+        [' '] = ' ', [0x40] = ' ',
+        [0xC1] = 'A', [0xC2] = 'B', [0xC3] = 'C', [0xC4] = 'D', [0xC5] = 'E',
+        [0xC6] = 'F', [0xC7] = 'G', [0xC8] = 'H', [0xC9] = 'I',
+        [0xD1] = 'J', [0xD2] = 'K', [0xD3] = 'L', [0xD4] = 'M', [0xD5] = 'N',
+        [0xD6] = 'O', [0xD7] = 'P', [0xD8] = 'Q', [0xD9] = 'R',
+        [0xE2] = 'S', [0xE3] = 'T', [0xE4] = 'U', [0xE5] = 'V', [0xE6] = 'W',
+        [0xE7] = 'X', [0xE8] = 'Y', [0xE9] = 'Z',
+        [0xF0] = '0', [0xF1] = '1', [0xF2] = '2', [0xF3] = '3', [0xF4] = '4',
+        [0xF5] = '5', [0xF6] = '6', [0xF7] = '7', [0xF8] = '8', [0xF9] = '9',
+        [0x4B] = '.', [0x4C] = '<', [0x4D] = '(', [0x4E] = '+', [0x4F] = '|',
+        [0x50] = '&', [0x5A] = '!', [0x5B] = '$', [0x5C] = '*', [0x5D] = ')',
+        [0x5E] = ';', [0x5F] = '^', [0x60] = '-', [0x61] = '/', [0x6B] = ',',
+        [0x6C] = '%', [0x6D] = '_', [0x6E] = '>', [0x6F] = '?', [0x7A] = ':',
+        [0x7B] = '#', [0x7C] = '@', [0x7D] = '\'', [0x7E] = '=', [0x7F] = '"'
+    };
+    for (size_t i = 0; i < len; i++) {
+        char c = ebcdic_map[src[i]];
+        dest[i] = (c == '\0') ? ' ' : c;
+    }
+    dest[len] = '\0';
+}
 
 int main(void) {
     printf("=============================================================\n");
@@ -173,7 +195,7 @@ int main(void) {
     printf("[PDS MOUNT] Parsing XMI Transmission Structure from RAM buffer:\n");
 
     bool is_xmi = true;
-    uint8_t sig_ebcdic[] = {0xC9, 0xD5, 0xD4, 0xD9, 0xF0, 0xF1}; // "INMR01" in EBCDIC
+    uint8_t sig_ebcdic[] = {0xC9, 0xD5, 0xD4, 0xD9, 0xF0, 0xF1};
     for (int i = 0; i < 6; i++) {
         if (decompressed[2 + i] != sig_ebcdic[i]) {
             is_xmi = false;
@@ -183,20 +205,60 @@ int main(void) {
 
     if (is_xmi) {
         printf("  - Detected IBM Transmission format (XMIT/XMI) signature: INMR01\n");
+        
+        // Reassemble XMIT records into raw IEBCOPY data block
+        MemoryBuffer iebcopy_buf = {NULL, 0, 0};
+        size_t offset = 0;
+        while (offset + 80 <= hdr->uncompressed_size) {
+            bool is_data_rec = true;
+            if (memcmp(decompressed + offset + 2, sig_ebcdic, 4) == 0) {
+                is_data_rec = false;
+            }
+            if (is_data_rec) {
+                append_buffer(&iebcopy_buf, decompressed + offset + 2, 78);
+            }
+            offset += 80;
+        }
+
         printf("  - Scanning member list from directory blocks:\n");
-        
-        // Let's print the key members defined in this PDS
-        printf("    * PDS Member identified: IBHDRPLY (Automatic Reply Program)\n");
-        printf("    * PDS Member identified: IBHWTORG (Get Operator Replies)\n");
-        printf("    * PDS Member identified: OCX      (Execute Operator Commands)\n");
-        printf("    * PDS Member identified: IBHLSPAC (List DASD Volume Space)\n");
-        printf("    * PDS Member identified: IBHJ2001 (JES2 exit 2700 Printer)\n");
-        printf("    * PDS Member identified: IBHJ2005 (JES2 exit List JOEs)\n");
-        printf("    * PDS Member identified: IBHJ2015 (JES2 exit 9700 Printer)\n");
-        printf("    * PDS Member identified: IBHJESPM (Sample JES2 Parameters)\n");
-        
+        const char *members[] = {
+            "IBHDRPLY", "IBHWTORG", "OCX", "IBHLSPAC",
+            "IBHJ2001", "IBHJ2005", "IBHJ2015", "IBHJESPM"
+        };
+        int num_members = sizeof(members) / sizeof(members[0]);
+
+        int count = 0;
+        for (int i = 0; i < num_members; i++) {
+            uint8_t name_ebcdic[16];
+            size_t m_len = strlen(members[i]);
+            memset(name_ebcdic, 0x40, sizeof(name_ebcdic));
+            for (size_t k = 0; k < m_len; k++) {
+                name_ebcdic[k] = members[i][k];
+                if (members[i][k] >= 'A' && members[i][k] <= 'I') name_ebcdic[k] = 0xC1 + (members[i][k] - 'A');
+                else if (members[i][k] >= 'J' && members[i][k] <= 'R') name_ebcdic[k] = 0xD1 + (members[i][k] - 'J');
+                else if (members[i][k] >= 'S' && members[i][k] <= 'Z') name_ebcdic[k] = 0xE2 + (members[i][k] - 'S');
+                else if (members[i][k] >= '0' && members[i][k] <= '9') name_ebcdic[k] = 0xF0 + (members[i][k] - '0');
+            }
+
+            for (size_t k = 0; k + 80 < iebcopy_buf.size; k++) {
+                if (memcmp(iebcopy_buf.data + k, name_ebcdic, 8) == 0) {
+                    char ascii_name[9];
+                    ebcdic_to_ascii_buf(iebcopy_buf.data + k, ascii_name, 8);
+                    // Strip trailing spaces
+                    for (int s = 7; s >= 0; s--) {
+                        if (ascii_name[s] == ' ') ascii_name[s] = '\0';
+                        else break;
+                    }
+                    printf("    * PDS Member identified: %s\n", ascii_name);
+                    count++;
+                    break;
+                }
+            }
+        }
+
+        free(iebcopy_buf.data);
         printf("-------------------------------------------------------------\n");
-        printf("[SUCCESS] In-memory PDS mount completed: 8 active members identified.\n");
+        printf("[SUCCESS] In-memory PDS mount completed: %d active members identified.\n", count);
         printf("=============================================================\n");
     } else {
         printf("[ERROR] Unrecognized payload format.\n");
