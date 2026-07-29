@@ -3175,6 +3175,16 @@ static void shell_task_handler(void *arg) {
         printf("[CBTPARMLIB] PARMLIB parsing completed successfully.\n");
         return;
     }
+
+    // Check for "cbtvol" command
+    if (strcmp(cmd, "cbtvol") == 0) {
+        printf("[CBTVOL] Querying online DASD storage volumes:\n");
+        printf("  - UNIT: 150   VOLSER: MVSRES   STATUS: ONLINE (PRIVATE)   FREE CYL: 657\n");
+        printf("  - UNIT: 151   VOLSER: WORK01   STATUS: ONLINE (PUBLIC)    FREE CYL: 1240\n");
+        printf("  - UNIT: 280   VOLSER: TAPE01   STATUS: ONLINE (MOUNTED)   FREE CYL: 0\n");
+        printf("[CBTVOL] Query completed.\n");
+        return;
+    }
     
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};

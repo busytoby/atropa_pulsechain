@@ -1323,6 +1323,17 @@ int main(void) {
     printf("   ✓ CBTPARMLIB execution verified successfully.\n");
     remove("tests/parm_sys.dat.bin");
 
+    // 86. Test CBTVOL command execution
+    printf("[KERNEL TEST] Dispatching 'cbtvol' command to XplOS shell...\n");
+    XplosShell shell_volstatus;
+    XplosScheduler sched_volstatus;
+    tsfi_xplos_init_scheduler(&sched_volstatus);
+    tsfi_xplos_init_shell(&shell_volstatus);
+    bool vol_ok = tsfi_xplos_shell_exec(&shell_volstatus, &sched_volstatus, "cbtvol");
+    assert(vol_ok == true);
+    tsfi_xplos_run(&sched_volstatus);
+    printf("   ✓ CBTVOL execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
