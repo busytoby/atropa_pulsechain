@@ -1582,6 +1582,17 @@ int main(void) {
     tsfi_xplos_run(&sched_beep);
     printf("   ✓ CBTBEEP execution verified successfully.\n");
 
+    // 107. Test CBTCMD command execution
+    printf("[KERNEL TEST] Dispatching 'cbtcmd' command to XplOS shell...\n");
+    XplosShell shell_cmd;
+    XplosScheduler sched_cmd;
+    tsfi_xplos_init_scheduler(&sched_cmd);
+    tsfi_xplos_init_shell(&shell_cmd);
+    bool cmd_ok = tsfi_xplos_shell_exec(&shell_cmd, &sched_cmd, "cbtcmd TTY001");
+    assert(cmd_ok == true);
+    tsfi_xplos_run(&sched_cmd);
+    printf("   ✓ CBTCMD execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
