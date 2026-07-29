@@ -1465,6 +1465,17 @@ int main(void) {
     printf("   ✓ CBTABEND execution verified successfully.\n");
     remove("tests/dump_crash.dat.bin");
 
+    // 97. Test CBTPATCH command execution
+    printf("[KERNEL TEST] Dispatching 'cbtpatch' command to XplOS shell...\n");
+    XplosShell shell_patch;
+    XplosScheduler sched_patch;
+    tsfi_xplos_init_scheduler(&sched_patch);
+    tsfi_xplos_init_shell(&shell_patch);
+    bool patch_ok = tsfi_xplos_shell_exec(&shell_patch, &sched_patch, "cbtpatch");
+    assert(patch_ok == true);
+    tsfi_xplos_run(&sched_patch);
+    printf("   ✓ CBTPATCH execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

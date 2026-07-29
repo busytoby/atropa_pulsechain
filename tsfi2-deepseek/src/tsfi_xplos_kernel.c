@@ -3350,6 +3350,17 @@ static void shell_task_handler(void *arg) {
         return;
     }
 
+    // Check for "cbtpatch" command
+    if (strcmp(cmd, "cbtpatch") == 0) {
+        printf("[CBTPATCH] Retrieving applied System Modifications (SYSMODs):\n");
+        printf("  - SYSMOD: UZ48012   TYPE: PTF       STATUS: APPLIED (1980/06/15)\n");
+        printf("  - SYSMOD: UZ51240   TYPE: PTF       STATUS: ACCEPTED (1980/07/20)\n");
+        printf("  - SYSMOD: UM00280   TYPE: APAR      STATUS: APPLIED (1980/07/28)\n");
+        printf("  - SYSMOD: USER001   TYPE: USERMOD   STATUS: APPLIED (1980/07/28)\n");
+        printf("[CBTPATCH] Patch inventory retrieval completed successfully.\n");
+        return;
+    }
+
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
     if (tsfi_xplg_parse_semantic_action(cmd, &tx)) {
