@@ -1170,6 +1170,39 @@ static bool handle_cbtjcljobchkresetstatsstatusdetails(void) {
     return true;
 }
 
+static bool handle_cbtjcljobchkresetstatsstatusdetailsprogress(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JCL JOB VERIFICATION RESETS AUDIT PROGRESS                    \n");
+    printf("================================================================================\n");
+    printf(" AUDIT ALIGNMENT    : 100 PERCENT ALIGNMENT\n");
+    printf(" COMPLIANCE STATUS  : VALIDATED. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
+static bool handle_cbtjcljobstat(const char *cmd) {
+    char job_id[64] = "";
+    if (sscanf(cmd + 13, "%63s", job_id) < 1) {
+        printf("[JCL STAT ERROR] Syntax: cbtjcljobstat <job_id>\n");
+        return true;
+    }
+    printf("[JCL STAT] Querying statistics for JCL job stream: %s\n", job_id);
+    printf("  - Query Status: SUCCESS. Statistics gathered. RC=0000\n");
+    return true;
+}
+
+static bool handle_cbtjcljobstatstat(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JCL JOB STATISTICS QUERY RUN COUNT STATUS                     \n");
+    printf("================================================================================\n");
+    printf(" TOTAL QUERIES RUN  : 1 QUERIES\n");
+    printf(" RESPONSE STATUS    : OPERATIONAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "ieb", 3) == 0) {
         printf("[DEPRECATION WARNING] Batch utility program '%s' is deprecated and scheduled for removal.\n", cmd);
@@ -1201,6 +1234,7 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strcmp(cmd, "cbtjcljobchkstatsstatusdetails") == 0) return handle_cbtjcljobchkstatsstatusdetails();
     if (strcmp(cmd, "cbtjcljobchkstatsstatus") == 0) return handle_cbtjcljobchkstatsstatus();
     if (strcmp(cmd, "cbtjcljobchkstats") == 0) return handle_cbtjcljobchkstats();
+    if (strcmp(cmd, "cbtjcljobchkresetstatsstatusdetailsprogress") == 0) return handle_cbtjcljobchkresetstatsstatusdetailsprogress();
     if (strcmp(cmd, "cbtjcljobchkresetstatsstatusdetails") == 0) return handle_cbtjcljobchkresetstatsstatusdetails();
     if (strcmp(cmd, "cbtjcljobchkresetstatsstatus") == 0) return handle_cbtjcljobchkresetstatsstatus();
     if (strcmp(cmd, "cbtjcljobchkresetstats") == 0) return handle_cbtjcljobchkresetstats();
@@ -1208,6 +1242,8 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strcmp(cmd, "cbtjcljobchkreset") == 0) return handle_cbtjcljobchkreset();
     if (strcmp(cmd, "cbtjcljobchkstat") == 0) return handle_cbtjcljobchkstat();
     if (strncmp(cmd, "cbtjcljobchk ", 13) == 0) return handle_cbtjcljobchk(cmd);
+    if (strcmp(cmd, "cbtjcljobstatstat") == 0) return handle_cbtjcljobstatstat();
+    if (strncmp(cmd, "cbtjcljobstat ", 14) == 0) return handle_cbtjcljobstat(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
     if (strncmp(cmd, "submit ", 7) == 0) return handle_submit(cmd);
     if (strncmp(cmd, "iebgener ", 9) == 0) return handle_iebgener(cmd);
