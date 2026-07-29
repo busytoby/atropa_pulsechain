@@ -14,6 +14,9 @@
 #include "tsfi_parc_runcible_cics.h"
 #include "tsfi_mainframe_computerworld.h"
 #include "tsfi_hogan.h"
+#include "tsfi_computel_blue_box.h"
+
+static TwoThreeNode *g_cics_tsq_23_root = NULL;
 
 extern void tsfi_mf_ssa_resolve_issuance_site(const char *ssn, char *site_out, int max_len);
 
@@ -158,21 +161,47 @@ static bool handle_cbtcicsts(const char *cmd) {
             return true;
         }
 
+        uint32_t key = 2166136261U;
+        for (int i = 0; tsq_name[i]; i++) {
+            key = (key ^ tsq_name[i]) * 16777619;
+        }
+
         if (strcasecmp(action, "write") == 0) {
             int write_rc = tsfi_cw_vsam_write(&ksds, tsq_name, (uint8_t *)val, strlen(val));
             if (write_rc == 0) {
                 printf("[CICS TSQ] Written to TSQ %s: '%s'\n", tsq_name, val);
+                
+                // Index via balanced 2-3 tree
+                if (!g_cics_tsq_23_root) {
+                    g_cics_tsq_23_root = blue_box_create_leaf(key, val, 0, NULL);
+                } else {
+                    bool updated = blue_box_store_23_data(g_cics_tsq_23_root, key, val);
+                    if (!updated) {
+                        TwoThreeNode *new_leaf = blue_box_create_leaf(key, val, 0, NULL);
+                        g_cics_tsq_23_root = blue_box_create_internal(g_cics_tsq_23_root, new_leaf, NULL);
+                    }
+                }
+                printf("[CICS 2-3 TREE DAT] Key %u indexed in balanced 2-3 Merkle tree.\n", key);
             } else {
                 printf("[CICS TSQ ERROR] Write failed (RC=%d)\n", write_rc);
             }
             return true;
         }
         if (strcasecmp(action, "read") == 0) {
-            uint8_t read_buf[128] = {0};
-            int read_len = 0;
-            int read_rc = tsfi_cw_vsam_read(&ksds, tsq_name, read_buf, sizeof(read_buf) - 1, &read_len);
-            char *out = (read_rc == 0 && read_len > 0) ? (char *)read_buf : "(NULL)";
-            printf("[CICS TSQ] Read from TSQ %s: '%s'\n", tsq_name, out);
+            // First read from balanced 2-3 tree DAT
+            const char *tree_val = NULL;
+            if (g_cics_tsq_23_root) {
+                tree_val = blue_box_retrieve_23_data(g_cics_tsq_23_root, key);
+            }
+            if (tree_val) {
+                printf("[CICS 2-3 TREE DAT] Read from TSQ %s: '%s'\n", tsq_name, tree_val);
+            } else {
+                uint8_t read_buf[128] = {0};
+                int read_len = 0;
+                int read_rc = tsfi_cw_vsam_read(&ksds, tsq_name, read_buf, sizeof(read_buf) - 1, &read_len);
+                char *out = (read_rc == 0 && read_len > 0) ? (char *)read_buf : "(NULL)";
+                printf("[CICS TSQ] Read from TSQ %s: '%s'\n", tsq_name, out);
+            }
             return true;
         }
     }
