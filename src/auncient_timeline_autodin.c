@@ -74,8 +74,9 @@ bool auncient_hogan_register_account(uint32_t account_id, const uint8_t *dna_byt
     account_out->is_active = true;
     memset(account_out->chain_head, 0, 32);
     account_out->tx_sequence = 0;
+    account_out->representative_id = account_id;
 
-    auncient_hogan_record_block(account_out, 0, 1000000, 0); // OPEN block
+    auncient_hogan_record_block(account_out, 0, 1000000, 0, account_id); // OPEN block
 
     return true;
 }
@@ -131,8 +132,8 @@ bool auncient_hogan_transfer(HoganAccount *sender, HoganAccount *recipient, uint
     // Execute double-entry transfer
     if (auncient_hogan_withdraw(sender, amount)) {
         auncient_hogan_deposit(recipient, amount);
-        auncient_hogan_record_block(sender, 1, amount, recipient->account_id);   // SEND block
-        auncient_hogan_record_block(recipient, 2, amount, sender->account_id); // RECEIVE block
+        auncient_hogan_record_block(sender, 1, amount, recipient->account_id, sender->representative_id);   // SEND block
+        auncient_hogan_record_block(recipient, 2, amount, sender->account_id, recipient->representative_id); // RECEIVE block
         return true;
     }
 
@@ -1324,11 +1325,10 @@ bool auncient_autodin_speculative_prefetch_validate(uint32_t start_pc, const uin
     printf("[AUTODIN SPECULATIVE COMMIT] All %d instructions in prefetch batch successfully validated.\n", count);
     return true;
 }
-
 static HoganBlock g_hogan_blocks[4096];
 static int g_hogan_block_count = 0;
 
-bool auncient_hogan_record_block(HoganAccount *account, uint8_t type, uint32_t amount, uint32_t link_account) {
+bool auncient_hogan_record_block(HoganAccount *account, uint8_t type, uint32_t amount, uint32_t link_account, uint32_t representative_id) {
     if (!account || !account->is_active || g_hogan_block_count >= 4096) return false;
 
     HoganBlock block;
@@ -1339,23 +1339,36 @@ bool auncient_hogan_record_block(HoganAccount *account, uint8_t type, uint32_t a
     block.amount = amount;
     block.sequence = account->tx_sequence;
     block.link_account = link_account;
+    block.representative_id = representative_id;
 
     memcpy(block.previous_hash, account->chain_head, 32);
 
+    uint32_t nonce = 0;
+    uint32_t hash = 0;
     uint8_t temp_buf[64];
-    memset(temp_buf, 0, sizeof(temp_buf));
-    memcpy(temp_buf, block.previous_hash, 32);
-    memcpy(temp_buf + 32, &block.account_id, 4);
-    memcpy(temp_buf + 36, &block.type, 1);
-    memcpy(temp_buf + 37, &block.balance, 4);
-    memcpy(temp_buf + 41, &block.amount, 4);
-    memcpy(temp_buf + 45, &block.sequence, 4);
-    memcpy(temp_buf + 49, &block.link_account, 4);
+    while (1) {
+        memset(temp_buf, 0, sizeof(temp_buf));
+        memcpy(temp_buf, block.previous_hash, 32);
+        memcpy(temp_buf + 32, &block.account_id, 4);
+        memcpy(temp_buf + 36, &block.type, 1);
+        memcpy(temp_buf + 37, &block.balance, 4);
+        memcpy(temp_buf + 41, &block.amount, 4);
+        memcpy(temp_buf + 45, &block.sequence, 4);
+        memcpy(temp_buf + 49, &block.link_account, 4);
+        memcpy(temp_buf + 53, &block.representative_id, 4);
+        memcpy(temp_buf + 57, &nonce, 4);
 
-    uint32_t hash = 0x811C9DC5;
-    for (int i = 0; i < 53; i++) {
-        hash = (hash ^ temp_buf[i]) * 0x01000193;
+        hash = 0x811C9DC5;
+        for (int i = 0; i < 61; i++) {
+            hash = (hash ^ temp_buf[i]) * 0x01000193;
+        }
+
+        if ((hash & 0x07) == 0) { // PoW verification (trailing bits of hash mod 8 == 0)
+            break;
+        }
+        nonce++;
     }
+    block.nonce = nonce;
 
     memset(block.current_hash, 0, 32);
     memcpy(block.current_hash, &hash, 4);
@@ -1366,6 +1379,7 @@ bool auncient_hogan_record_block(HoganAccount *account, uint8_t type, uint32_t a
 
     memcpy(account->chain_head, block.current_hash, 32);
     account->tx_sequence++;
+    account->representative_id = representative_id;
 
     g_hogan_blocks[g_hogan_block_count++] = block;
     return true;
@@ -1375,6 +1389,41 @@ bool auncient_hogan_verify_chain(void) {
     for (int i = 0; i < g_hogan_block_count; i++) {
         HoganBlock *b = &g_hogan_blocks[i];
 
+        // 1. Verify simulated PoW difficulty constraint
+        uint8_t temp_buf[64];
+        memset(temp_buf, 0, sizeof(temp_buf));
+        memcpy(temp_buf, b->previous_hash, 32);
+        memcpy(temp_buf + 32, &b->account_id, 4);
+        memcpy(temp_buf + 36, &b->type, 1);
+        memcpy(temp_buf + 37, &b->balance, 4);
+        memcpy(temp_buf + 41, &b->amount, 4);
+        memcpy(temp_buf + 45, &b->sequence, 4);
+        memcpy(temp_buf + 49, &b->link_account, 4);
+        memcpy(temp_buf + 53, &b->representative_id, 4);
+        memcpy(temp_buf + 57, &b->nonce, 4);
+
+        uint32_t hash = 0x811C9DC5;
+        for (int k = 0; k < 61; k++) {
+            hash = (hash ^ temp_buf[k]) * 0x01000193;
+        }
+
+        if ((hash & 0x07) != 0) {
+            return false;
+        }
+
+        uint8_t expected_hash[32];
+        memset(expected_hash, 0, 32);
+        memcpy(expected_hash, &hash, 4);
+        uint32_t hash2 = hash * 0x01000193;
+        memcpy(expected_hash + 4, &hash2, 4);
+        uint32_t hash3 = hash2 * 0x01000193;
+        memcpy(expected_hash + 8, &hash3, 4);
+
+        if (memcmp(b->current_hash, expected_hash, 32) != 0) {
+            return false;
+        }
+
+        // 2. Predecessor linkage validation
         HoganBlock *prev = NULL;
         for (int j = i - 1; j >= 0; j--) {
             if (g_hogan_blocks[j].account_id == b->account_id) {
@@ -1397,31 +1446,19 @@ bool auncient_hogan_verify_chain(void) {
             if (b->sequence != 0) return false;
         }
 
-        uint8_t temp_buf[64];
-        memset(temp_buf, 0, sizeof(temp_buf));
-        memcpy(temp_buf, b->previous_hash, 32);
-        memcpy(temp_buf + 32, &b->account_id, 4);
-        memcpy(temp_buf + 36, &b->type, 1);
-        memcpy(temp_buf + 37, &b->balance, 4);
-        memcpy(temp_buf + 41, &b->amount, 4);
-        memcpy(temp_buf + 45, &b->sequence, 4);
-        memcpy(temp_buf + 49, &b->link_account, 4);
-
-        uint32_t hash = 0x811C9DC5;
-        for (int k = 0; k < 53; k++) {
-            hash = (hash ^ temp_buf[k]) * 0x01000193;
-        }
-
-        uint8_t expected_hash[32];
-        memset(expected_hash, 0, 32);
-        memcpy(expected_hash, &hash, 4);
-        uint32_t hash2 = hash * 0x01000193;
-        memcpy(expected_hash + 4, &hash2, 4);
-        uint32_t hash3 = hash2 * 0x01000193;
-        memcpy(expected_hash + 8, &hash3, 4);
-
-        if (memcmp(b->current_hash, expected_hash, 32) != 0) {
-            return false;
+        // 3. Dual-Block Correspondence Balance Flow Audit
+        if (b->type == 1) { // SEND block
+            bool receive_found = false;
+            for (int j = 0; j < g_hogan_block_count; j++) {
+                HoganBlock *rec = &g_hogan_blocks[j];
+                if (rec->account_id == b->link_account && rec->type == 2 && rec->link_account == b->account_id && rec->amount == b->amount) {
+                    receive_found = true;
+                    break;
+                }
+            }
+            if (!receive_found) {
+                return false;
+            }
         }
     }
     return true;

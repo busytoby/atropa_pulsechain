@@ -28,3 +28,18 @@ The Hogan Bank block-lattice architecture defines how individual qualifying part
 * **VM Transition Context:** The transaction state transition admitting incoming Saat funds to a recipient account.
 * **Mathematical Operation:** Adds the transfer amount to the recipient's balance, increments `tx_sequence` by 1, and appends a `RECEIVE` block pointing to the recipient's previous `chain_head` while checking link validity against the matching `SEND` block.
 * **Visual / Geometric Shift:** Animates a coordinate vector absorption point, flashing the target node glowing cyan as the transaction registers.
+
+### Open Representative Voting (ORV)
+* **VM Register Context:** The representative selection register (`representative_id`) binding account balance weights.
+* **Mathematical Function:** The delegated consensus power $W_{rep}$ calculated as the sum of all balances selecting representative $R$: $W_{rep} = \sum_{a \in A, rep(a) = R} Balance_a$.
+* **Visual / Geometric Manifestation:** Modulates the orbital line thickness of the connection links between representative node spheres and delegate nodes.
+
+### Transaction Proof-of-Work
+* **VM Register Context:** The mining difficulty register checking that block hashes satisfy leading/trailing zero-bit properties.
+* **Mathematical Function:** The mining nonce check verifying that the compiled block hash terminates with 3 zero bits: $Hash(Block \parallel Nonce) \equiv 0 \pmod 8$.
+* **Visual / Geometric Manifestation:** Determines the rotation rate of coordinate grid vertices during block integration animation frames.
+
+### Dual-Block Balance Audit
+* **VM Transition Context:** The global ledger audit check validating fund conservation across transaction channels.
+* **Mathematical Operation:** Asserts that for every block of type `SEND` (type 1) referencing amount $X$ to recipient $B$, there exists a corresponding block of type `RECEIVE` (type 2) on $B$'s chain referencing amount $X$ from sender $A$.
+* **Visual / Geometric Shift:** Renders solid green flow lines between sending and receiving nodes on the grid; any mismatched block highlights in blinking red.
