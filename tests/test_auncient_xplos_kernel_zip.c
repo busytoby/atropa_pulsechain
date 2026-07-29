@@ -1266,34 +1266,33 @@ int main(void) {
     remove("tests/MEMBERA.txt");
     remove("tests/MEMBERB.txt");
 
-    // 82. Test CBTSMF command execution
+    // 82. Test CBTQDISPATCH command execution (Generates real binary SMF records)
+    printf("[KERNEL TEST] Dispatching 'cbtqdispatch' command to XplOS shell...\n");
+    XplosShell shell_qdisp;
+    XplosScheduler sched_qdisp;
+    tsfi_xplos_init_scheduler(&sched_qdisp);
+    tsfi_xplos_init_shell(&shell_qdisp);
+    
+    // Ensure clean start for SMF log
+    remove("tests/smf_log.dat.bin");
+
+    bool qdisp_ok = tsfi_xplos_shell_exec(&shell_qdisp, &sched_qdisp, "cbtqdispatch 25 MYJOB");
+    assert(qdisp_ok == true);
+    tsfi_xplos_run(&sched_qdisp);
+    printf("   ✓ CBTQDISPATCH execution verified successfully.\n");
+
+    // 83. Test CBTSMF command execution (Parses the generated SMF records)
     printf("[KERNEL TEST] Dispatching 'cbtsmf' command to XplOS shell...\n");
     XplosShell shell_smf;
     XplosScheduler sched_smf;
     tsfi_xplos_init_scheduler(&sched_smf);
     tsfi_xplos_init_shell(&shell_smf);
     
-    FILE *f_smf_tmp = fopen("tests/smf_log.dat.bin", "wb");
-    uint8_t zero_smf[80] = {0};
-    fwrite(zero_smf, 1, 80, f_smf_tmp);
-    fclose(f_smf_tmp);
-
     bool smf_ok = tsfi_xplos_shell_exec(&shell_smf, &sched_smf, "cbtsmf tests/smf_log.dat.bin");
     assert(smf_ok == true);
     tsfi_xplos_run(&sched_smf);
     printf("   ✓ CBTSMF execution verified successfully.\n");
     remove("tests/smf_log.dat.bin");
-
-    // 83. Test CBTQDISPATCH command execution
-    printf("[KERNEL TEST] Dispatching 'cbtqdispatch' command to XplOS shell...\n");
-    XplosShell shell_qdisp;
-    XplosScheduler sched_qdisp;
-    tsfi_xplos_init_scheduler(&sched_qdisp);
-    tsfi_xplos_init_shell(&shell_qdisp);
-    bool qdisp_ok = tsfi_xplos_shell_exec(&shell_qdisp, &sched_qdisp, "cbtqdispatch 25 MYJOB");
-    assert(qdisp_ok == true);
-    tsfi_xplos_run(&sched_qdisp);
-    printf("   ✓ CBTQDISPATCH execution verified successfully.\n");
 
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");

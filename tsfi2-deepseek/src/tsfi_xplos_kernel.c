@@ -265,13 +265,45 @@ typedef struct CbtTreeNode {
     int worker_task_id;
 } CbtTreeNode;
 
+typedef struct {
+    uint16_t record_len;
+    uint16_t segment_desc;
+    uint8_t system_indicator;
+    uint8_t record_type;
+    uint32_t time_hundredths;
+    uint32_t date_packed;
+    char system_id[4];
+} __attribute__((packed)) SmfRecordHeader;
+
 static CbtTreeNode *g_queue_tree_root = NULL;
+
+static void tsfi_xplos_write_smf_record(uint8_t type, const char *job_name) {
+    SmfRecordHeader hdr;
+    hdr.record_len = sizeof(SmfRecordHeader) + 32;
+    hdr.segment_desc = 0;
+    hdr.system_indicator = 2;
+    hdr.record_type = type;
+    hdr.time_hundredths = 4320000;
+    hdr.date_packed = 0x0126209F;
+    memcpy(hdr.system_id, "XPL1", 4);
+    
+    char payload[32] = {0};
+    strncpy(payload, job_name, 31);
+    
+    FILE *f = fopen("tests/smf_log.dat.bin", "ab");
+    if (f) {
+        fwrite(&hdr, 1, sizeof(SmfRecordHeader), f);
+        fwrite(payload, 1, 32, f);
+        fclose(f);
+    }
+}
 
 static void cbt_node_worker_task_handler(void *arg) {
     CbtTreeNode *node = (CbtTreeNode *)arg;
     if (!node || node->queue_count == 0) return;
     
     CbtSpoolJob job = node->queue[0];
+    tsfi_xplos_write_smf_record(30, job.job_name);
     printf("[CBTQWORKER] Active worker processing Job %s on Node (Keys: ", job.job_name);
     for (int i = 0; i < node->num_keys; i++) {
         printf("%d ", node->keys[i]);
@@ -3064,12 +3096,18 @@ static void shell_task_handler(void *arg) {
             printf("[CBTSMF ERROR] Could not open SMF log file: %s\n", smf_path);
             return;
         }
-        fclose(f);
         printf("[CBTSMF] Processing SMF record file: %s\n", smf_path);
-        printf("  - Record 1: Type 30 (Job Start/Step Termination) - Job: LOADCBT, CPU Time: 124ms\n");
-        printf("  - Record 2: Type 80 (RACF Security Event) - User: MVSUSER, Terminal: TTY001, Access: Granted\n");
-        printf("  - Record 3: Type 14 (Input Dataset Open) - Dataset: SYS1.MACLIB.dat.bin\n");
-        printf("[CBTSMF] SMF processing completed. Audited 3 records.\n");
+        int count = 0;
+        SmfRecordHeader hdr;
+        char payload[32];
+        while (fread(&hdr, 1, sizeof(SmfRecordHeader), f) == sizeof(SmfRecordHeader)) {
+            if (fread(payload, 1, 32, f) != 32) break;
+            count++;
+            printf("  - Record %d: Type %d (System Indicator: %d) - Job: %s, CPU Time: 124ms, System ID: %.4s\n",
+                   count, hdr.record_type, hdr.system_indicator, payload, hdr.system_id);
+        }
+        fclose(f);
+        printf("[CBTSMF] SMF processing completed. Audited %d records.\n", count);
         return;
     }
 
