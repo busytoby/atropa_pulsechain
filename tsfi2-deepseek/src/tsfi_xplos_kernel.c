@@ -2210,6 +2210,67 @@ static void shell_task_handler(void *arg) {
         printf("[CBTAUTH] Query completed.\n");
         return;
     }
+
+    // Check for "cbtpdsread " command
+    if (strncmp(cmd, "cbtpdsread ", 11) == 0) {
+        char pds_path[128] = "";
+        char member_name[32] = "";
+        if (sscanf(cmd + 11, "%127s %31s", pds_path, member_name) == 2) {
+            if (strstr(pds_path, ".dat.bin") == NULL) {
+                printf("[CBTPDSREAD ERROR] Violation of Rule 13: filename must end in .dat.bin\n");
+                return;
+            }
+            FILE *f = fopen(pds_path, "rb");
+            if (!f) {
+                printf("[CBTPDSREAD ERROR] Could not open PDS: %s\n", pds_path);
+                return;
+            }
+            uint8_t dir_block[256];
+            fread(dir_block, 1, 256, f);
+            uint16_t used = (dir_block[0] << 8) | dir_block[1];
+            int ptr = 2;
+            uint32_t offset = 0;
+            uint32_t size = 0;
+            bool found = false;
+            while (ptr < used) {
+                char name[9];
+                memcpy(name, &dir_block[ptr], 8);
+                name[8] = '\0';
+                for (int k = 7; k >= 0; k--) {
+                    if (name[k] == ' ') name[k] = '\0';
+                    else break;
+                }
+                if (strcasecmp(name, member_name) == 0) {
+                    offset = (dir_block[ptr + 8] << 16) | (dir_block[ptr + 9] << 8) | dir_block[ptr + 10];
+                    size = (dir_block[ptr + 12] << 24) | (dir_block[ptr + 13] << 16) | (dir_block[ptr + 14] << 8) | dir_block[ptr + 15];
+                    found = true;
+                    break;
+                }
+                ptr += 16;
+            }
+            if (found) {
+                printf("[CBTPDSREAD] Reading member %s from %s (offset: 0x%06X, size: %u bytes):\n", member_name, pds_path, offset, size);
+                fseek(f, offset, SEEK_SET);
+                uint32_t read_bytes = 0;
+                while (read_bytes < size) {
+                    char card[81];
+                    if (fread(card, 1, 80, f) != 80) break;
+                    card[80] = '\0';
+                    int trim_idx = 79;
+                    while (trim_idx >= 0 && card[trim_idx] == ' ') {
+                        card[trim_idx] = '\0';
+                        trim_idx--;
+                    }
+                    printf("  %s\n", card);
+                    read_bytes += 80;
+                }
+            } else {
+                printf("[CBTPDSREAD ERROR] Member %s not found in PDS.\n", member_name);
+            }
+            fclose(f);
+            return;
+        }
+    }
     
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};

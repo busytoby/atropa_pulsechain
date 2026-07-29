@@ -902,6 +902,33 @@ int main(void) {
     tsfi_xplos_run(&sched_cbt_auth);
     printf("   ✓ CBTAUTH execution verified successfully.\n");
 
+    // 62. Test CBTPDSREAD command execution
+    printf("[KERNEL TEST] Dispatching 'cbtpdsread' command to XplOS shell...\n");
+    FILE *f_m_tmp = fopen("tests/memb_read.txt", "w");
+    fprintf(f_m_tmp, "HELLO COOPERATIVE WORLD\nLINE TWO OF RECORD\n");
+    fclose(f_m_tmp);
+
+    XplosShell shell_cbt_pds;
+    XplosScheduler sched_cbt_pds;
+    
+    tsfi_xplos_init_scheduler(&sched_cbt_pds);
+    tsfi_xplos_init_shell(&shell_cbt_pds);
+    tsfi_xplos_shell_exec(&shell_cbt_pds, &sched_cbt_pds, "cbtpdsinit tests/read_pds.dat.bin");
+    tsfi_xplos_run(&sched_cbt_pds);
+
+    tsfi_xplos_init_scheduler(&sched_cbt_pds);
+    tsfi_xplos_shell_exec(&shell_cbt_pds, &sched_cbt_pds, "cbtpdsadd tests/read_pds.dat.bin MEMB1 tests/memb_read.txt");
+    tsfi_xplos_run(&sched_cbt_pds);
+
+    tsfi_xplos_init_scheduler(&sched_cbt_pds);
+    bool read_ok = tsfi_xplos_shell_exec(&shell_cbt_pds, &sched_cbt_pds, "cbtpdsread tests/read_pds.dat.bin MEMB1");
+    assert(read_ok == true);
+    tsfi_xplos_run(&sched_cbt_pds);
+
+    printf("   ✓ CBTPDSREAD execution verified successfully.\n");
+    remove("tests/memb_read.txt");
+    remove("tests/read_pds.dat.bin");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
