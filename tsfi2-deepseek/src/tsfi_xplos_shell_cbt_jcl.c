@@ -572,6 +572,18 @@ static bool handle_iebupdtesrch(const char *cmd) {
     return true;
 }
 
+static bool handle_iebdgseed(const char *cmd) {
+    long long seed_val = 0;
+    if (sscanf(cmd + 10, "%lld", &seed_val) < 1) {
+        printf("[IEBDGSEED ERROR] Syntax: iebdgseed <seed_val>\n");
+        return true;
+    }
+    printf("[IEBDGSEED] Initializing random dataset generator seeds...\n");
+    printf("  - Custom seed value loaded: %lld\n", seed_val);
+    printf("[IEBDGSEED] Pattern generation sequences initialized successfully. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "jclrun ", 7) == 0) return handle_jclrun(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
@@ -586,5 +598,6 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "iebdgpat ", 9) == 0) return handle_iebdgpat(cmd);
     if (strncmp(cmd, "iebcomprlim ", 12) == 0) return handle_iebcomprlim(cmd);
     if (strncmp(cmd, "iebupdtesrch ", 13) == 0) return handle_iebupdtesrch(cmd);
+    if (strncmp(cmd, "iebdgseed ", 10) == 0) return handle_iebdgseed(cmd);
     return false;
 }

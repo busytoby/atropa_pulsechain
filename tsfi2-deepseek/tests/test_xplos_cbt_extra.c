@@ -453,6 +453,30 @@ int main(void) {
     assert(bufdet_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 49. Test IEBDGSEED custom data seed generator
+    printf("[TEST] Testing IEBDGSEED sequential data generator seed...\n");
+    bool dgseed_ok = tsfi_xplos_shell_exec(&shell, &sched, "iebdgseed 953467954114363");
+    assert(dgseed_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 50. Test TSO spool job scheduling priority updater (cbtsubpri)
+    printf("[TEST] Testing cbtsubpri spool Priority modifier...\n");
+    bool subpri_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtsubpri JOB00021 15");
+    assert(subpri_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 51. Test CICS Directory clean allocator (cbtcicsclean)
+    printf("[TEST] Testing CICS TSQ directory storage cleaner...\n");
+    bool clean_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicsclean");
+    assert(clean_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 52. Test VTAM USS logon Solicit terminal monitor (vtamussstat)
+    printf("[TEST] Testing VTAM USS Logon Solicit monitor...\n");
+    bool ussstat_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtamussstat");
+    assert(ussstat_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }

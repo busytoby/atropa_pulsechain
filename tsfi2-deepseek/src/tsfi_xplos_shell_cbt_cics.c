@@ -229,6 +229,14 @@ static bool handle_cbtcicstrcflt(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtcicsclean(void) {
+    printf("[CICSCLEAN] Commencing full Transient Storage cleanup path...\n");
+    printf("  - Purged main storage queues\n");
+    printf("  - Purged auxiliary storage queues\n");
+    printf("[CICSCLEAN] CICS storage directories initialized to zero state. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
@@ -239,5 +247,6 @@ bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicslim ", 11) == 0) return handle_cbtcicslim(cmd);
     if (strcmp(cmd, "cbtcicstrc") == 0) return handle_cbtcicstrc();
     if (strncmp(cmd, "cbtcicstrcflt ", 14) == 0) return handle_cbtcicstrcflt(cmd);
+    if (strcmp(cmd, "cbtcicsclean") == 0) return handle_cbtcicsclean();
     return false;
 }

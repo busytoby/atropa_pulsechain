@@ -465,6 +465,19 @@ static bool handle_cbtsubtrc(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtsubpri(const char *cmd) {
+    char job_id[32] = "";
+    int priority = 0;
+    if (sscanf(cmd + 10, "%31s %d", job_id, &priority) < 2) {
+        printf("[SUBPRI ERROR] Syntax: cbtsubpri <job_id> <priority>\n");
+        return true;
+    }
+    printf("[SUBPRI] Updating JES spool priority for %s...\n", job_id);
+    printf("  - Scheduling priority updated to: %d\n", priority);
+    printf("[SUBPRI] Job priority rescheduled successfully. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtrexx ", 8) == 0) return handle_cbtrexx(cmd);
     if (strncmp(cmd, "ispfmenu", 8) == 0) return handle_ispfmenu(cmd);
@@ -476,5 +489,6 @@ bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtsubrel ", 10) == 0) return handle_cbtsubrel(cmd);
     if (strncmp(cmd, "cbtsubout ", 10) == 0) return handle_cbtsubout(cmd);
     if (strncmp(cmd, "cbtsubtrc ", 10) == 0) return handle_cbtsubtrc(cmd);
+    if (strncmp(cmd, "cbtsubpri ", 10) == 0) return handle_cbtsubpri(cmd);
     return false;
 }

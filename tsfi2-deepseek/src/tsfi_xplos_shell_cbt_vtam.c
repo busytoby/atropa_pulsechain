@@ -337,6 +337,19 @@ static bool handle_vtambufdet(const char *cmd) {
     return true;
 }
 
+static bool handle_vtamussstat(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  **AUNCIENT** VTAM USS LOGON SOLICITS SESSION MONITOR         \n");
+    printf("================================================================================\n");
+    printf(" TERMINAL ID | LOGON APPLID | CONNECT STATUS | LOGON ATTEMPTS | SESSION TYPE\n");
+    printf("--------------------------------------------------------------------------------\n");
+    printf(" LUN00001    | TSO          | CONNECTED      |              1 | TSO LOGON\n");
+    printf(" LUN00002    | CICS         | CONNECTED      |              1 | CICS ENTRY. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "cbtnet ", 7) == 0) return handle_cbtnet(cmd + 7);
     if (strncmp(cmd, "logon ", 6) == 0) return handle_vtam_logon(cmd);
@@ -349,5 +362,6 @@ bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strcmp(cmd, "vtamrefr") == 0) return handle_vtamrefr();
     if (strncmp(cmd, "vtamtracebuf ", 13) == 0) return handle_vtamtracebuf(cmd);
     if (strncmp(cmd, "vtambufdet ", 11) == 0) return handle_vtambufdet(cmd);
+    if (strcmp(cmd, "vtamussstat") == 0) return handle_vtamussstat();
     return false;
 }
