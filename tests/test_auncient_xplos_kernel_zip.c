@@ -956,6 +956,33 @@ int main(void) {
     remove("tests/memb_comp.txt");
     remove("tests/comp_pds.dat.bin");
 
+    // 64. Test CBTPDSDEL command execution
+    printf("[KERNEL TEST] Dispatching 'cbtpdsdel' command to XplOS shell...\n");
+    XplosShell shell_del;
+    XplosScheduler sched_del;
+    
+    tsfi_xplos_init_scheduler(&sched_del);
+    tsfi_xplos_init_shell(&shell_del);
+    tsfi_xplos_shell_exec(&shell_del, &sched_del, "cbtpdsinit tests/del_pds.dat.bin");
+    tsfi_xplos_run(&sched_del);
+
+    FILE *f_d_tmp = fopen("tests/memb_del.txt", "w");
+    fprintf(f_d_tmp, "DELETION TEST LINE DATA\n");
+    fclose(f_d_tmp);
+
+    tsfi_xplos_init_scheduler(&sched_del);
+    tsfi_xplos_shell_exec(&shell_del, &sched_del, "cbtpdsadd tests/del_pds.dat.bin MEMB1 tests/memb_del.txt");
+    tsfi_xplos_run(&sched_del);
+
+    tsfi_xplos_init_scheduler(&sched_del);
+    bool del_ok = tsfi_xplos_shell_exec(&shell_del, &sched_del, "cbtpdsdel tests/del_pds.dat.bin MEMB1");
+    assert(del_ok == true);
+    tsfi_xplos_run(&sched_del);
+
+    printf("   ✓ CBTPDSDEL execution verified successfully.\n");
+    remove("tests/memb_del.txt");
+    remove("tests/del_pds.dat.bin");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

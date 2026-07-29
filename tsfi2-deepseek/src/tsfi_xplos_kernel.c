@@ -2353,6 +2353,59 @@ static void shell_task_handler(void *arg) {
         printf("[CBTPDSCOMPRESS] PDS compression completed. Reclaimed space gaps. New file size: %ld bytes.\n", current_offset);
         return;
     }
+
+    // Check for "cbtpdsdel " command
+    if (strncmp(cmd, "cbtpdsdel ", 10) == 0) {
+        char pds_path[128] = "";
+        char member_name[32] = "";
+        if (sscanf(cmd + 10, "%127s %31s", pds_path, member_name) == 2) {
+            if (strstr(pds_path, ".dat.bin") == NULL) {
+                printf("[CBTPDSDEL ERROR] Violation of Rule 13: filename must end in .dat.bin\n");
+                return;
+            }
+            FILE *f = fopen(pds_path, "r+b");
+            if (!f) {
+                printf("[CBTPDSDEL ERROR] Could not open PDS: %s\n", pds_path);
+                return;
+            }
+            uint8_t dir_block[256];
+            fread(dir_block, 1, 256, f);
+            uint16_t used = (dir_block[0] << 8) | dir_block[1];
+            int ptr = 2;
+            bool found = false;
+            while (ptr < used) {
+                char name[9];
+                memcpy(name, &dir_block[ptr], 8);
+                name[8] = '\0';
+                for (int k = 7; k >= 0; k--) {
+                    if (name[k] == ' ') name[k] = '\0';
+                    else break;
+                }
+                if (strcasecmp(name, member_name) == 0) {
+                    int entries_to_shift = (used - (ptr + 16)) / 16;
+                    if (entries_to_shift > 0) {
+                        memmove(&dir_block[ptr], &dir_block[ptr + 16], entries_to_shift * 16);
+                    }
+                    used -= 16;
+                    memset(&dir_block[used], 0, 16);
+                    dir_block[0] = (used >> 8) & 0xFF;
+                    dir_block[1] = used & 0xFF;
+                    found = true;
+                    break;
+                }
+                ptr += 16;
+            }
+            if (found) {
+                fseek(f, 0, SEEK_SET);
+                fwrite(dir_block, 1, 256, f);
+                printf("[CBTPDSDEL] Deleted member %s from PDS: %s\n", member_name, pds_path);
+            } else {
+                printf("[CBTPDSDEL ERROR] Member %s not found in PDS.\n", member_name);
+            }
+            fclose(f);
+            return;
+        }
+    }
     
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
