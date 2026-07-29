@@ -1499,6 +1499,24 @@ int main(void) {
     assert(cbtxdcignorelistresetstat_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 223. Test Book compliance progress query (cbtbookstatsstatusdetailsprogress)
+    printf("[TEST] Testing Book compliance progress query...\n");
+    bool cbtbookstatsstatusdetailsprogress_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtbookstatsstatusdetailsprogress");
+    assert(cbtbookstatsstatusdetailsprogress_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 224. Test Book ignore list reset (cbtbookignorelistreset)
+    printf("[TEST] Testing Book ignore list reset...\n");
+    bool cbtbookignorelistreset_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtbookignorelistreset");
+    assert(cbtbookignorelistreset_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 225. Test Book ignore list reset stats (cbtbookignorelistresetstat)
+    printf("[TEST] Testing Book ignore list reset stats query...\n");
+    bool cbtbookignorelistresetstat_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtbookignorelistresetstat");
+    assert(cbtbookignorelistresetstat_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }
