@@ -1409,6 +1409,24 @@ int main(void) {
     assert(vtamrouterecignorelistresetstat_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 208. Test CICS transaction logs audit progress details (cbtcicsstatsstatusdetailsprogress)
+    printf("[TEST] Testing CICS transaction logs audit progress query...\n");
+    bool cbtcicsstatsstatusdetailsprogress_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicsstatsstatusdetailsprogress");
+    assert(cbtcicsstatsstatusdetailsprogress_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 209. Test CICS transaction ignore list reset (cbtcicsignorelistreset)
+    printf("[TEST] Testing CICS transaction ignore list reset...\n");
+    bool cbtcicsignorelistreset_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicsignorelistreset");
+    assert(cbtcicsignorelistreset_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 210. Test CICS transaction ignore list reset stats (cbtcicsignorelistresetstat)
+    printf("[TEST] Testing CICS transaction ignore list reset stats query...\n");
+    bool cbtcicsignorelistresetstat_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicsignorelistresetstat");
+    assert(cbtcicsignorelistresetstat_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }

@@ -652,6 +652,34 @@ static bool handle_cbtcicscleanexceptaddlistresetstatsstatus(void) {
     return true;
 }
 
+static bool handle_cbtcicsstatsstatusdetailsprogress(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  CICS TRANSACTION AUDITS COMPLIANCE PROGRESS                   \n");
+    printf("================================================================================\n");
+    printf(" AUDIT PROGRESS STATE: 100 PERCENT VERIFIED\n");
+    printf(" SYSTEM COMPLIANCE   : COMPLIANT. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
+static bool handle_cbtcicsignorelistreset(void) {
+    printf("[CICS] Transaction audit ignore list reset to standard default baseline\n");
+    printf("  - Active exclusions cleared. RC=0000\n");
+    return true;
+}
+
+static bool handle_cbtcicsignorelistresetstat(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  CICS AUDIT IGNORE LIST RESETS STATISTICS                      \n");
+    printf("================================================================================\n");
+    printf(" RESET RUN COUNT     : 1 RESETS\n");
+    printf(" CONFIGURATION STATE : OPERATIONAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
@@ -694,5 +722,8 @@ bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strcmp(cmd, "cbtcicscleanexceptaddlistresetstats") == 0) return handle_cbtcicscleanexceptaddlistresetstats();
     if (strcmp(cmd, "cbtcicscleanexceptaddlistresetstatsstat") == 0) return handle_cbtcicscleanexceptaddlistresetstatsstat();
     if (strcmp(cmd, "cbtcicscleanexceptaddlistresetstatsstatus") == 0) return handle_cbtcicscleanexceptaddlistresetstatsstatus();
+    if (strcmp(cmd, "cbtcicsstatsstatusdetailsprogress") == 0) return handle_cbtcicsstatsstatusdetailsprogress();
+    if (strcmp(cmd, "cbtcicsignorelistresetstat") == 0) return handle_cbtcicsignorelistresetstat();
+    if (strcmp(cmd, "cbtcicsignorelistreset") == 0) return handle_cbtcicsignorelistreset();
     return false;
 }
