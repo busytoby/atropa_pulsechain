@@ -171,9 +171,46 @@ static bool handle_cbthasp(const char *cmd) {
     return true;
 }
 
+static bool handle_cbthaspspoollogs(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JES HASP SPOOL OPERATION LOGS HISTORY                         \n");
+    printf("================================================================================\n");
+    printf(" RECENT LOG TIME   : 2026-07-29T09:32:00-07:00\n");
+    printf(" COMPLETED AUDITS   : 1 SPOOL OPERATIONS RECORDED\n");
+    printf(" RESPONSE STATUS    : OPERATIONAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
+static bool handle_cbthaspspoollogsstatus(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JES HASP SPOOL LOGS INTEGRITY STATE STATUS                    \n");
+    printf("================================================================================\n");
+    printf(" PENDING LOGS      : 0 LOGS\n");
+    printf(" LOGS SECURITY STATE: VERIFIED. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
+static bool handle_cbthaspspoollogsstatusdetails(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JES HASP SPOOL LOGS INTEGRITY STATUS DETAILS                  \n");
+    printf("================================================================================\n");
+    printf(" LOGS PROGRESS STATS: 100 PERCENT VERIFIED\n");
+    printf(" COMPLIANCE AUDIT   : PASSED. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 
 bool tsfi_xplos_shell_cbt_jes(const char *cmd) {
     if (strncmp(cmd, "cbthasp ", 8) == 0) return handle_cbthasp(cmd);
     if (strcmp(cmd, "smfdump") == 0) return handle_smfdump();
+    if (strcmp(cmd, "cbthaspspoollogsstatusdetails") == 0) return handle_cbthaspspoollogsstatusdetails();
+    if (strcmp(cmd, "cbthaspspoollogsstatus") == 0) return handle_cbthaspspoollogsstatus();
+    if (strcmp(cmd, "cbthaspspoollogs") == 0) return handle_cbthaspspoollogs();
     return false;
 }

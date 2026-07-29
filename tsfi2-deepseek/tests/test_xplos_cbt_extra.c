@@ -1427,6 +1427,24 @@ int main(void) {
     assert(cbtcicsignorelistresetstat_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 211. Test JES HASP spool logs history query (cbthaspspoollogs)
+    printf("[TEST] Testing JES HASP spool logs history query...\n");
+    bool cbthaspspoollogs_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbthaspspoollogs");
+    assert(cbthaspspoollogs_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 212. Test JES HASP spool logs integrity status query (cbthaspspoollogsstatus)
+    printf("[TEST] Testing JES HASP spool logs integrity status query...\n");
+    bool cbthaspspoollogsstatus_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbthaspspoollogsstatus");
+    assert(cbthaspspoollogsstatus_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 213. Test JES HASP spool logs integrity details query (cbthaspspoollogsstatusdetails)
+    printf("[TEST] Testing JES HASP spool logs integrity details query...\n");
+    bool cbthaspspoollogsstatusdetails_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbthaspspoollogsstatusdetails");
+    assert(cbthaspspoollogsstatusdetails_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }
