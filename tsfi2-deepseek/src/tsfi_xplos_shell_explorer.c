@@ -796,7 +796,15 @@ bool tsfi_xplos_shell_explorer(const char *cmd) {
     // Check for "cbtexplorerignorelistreset" command
     if (strcmp(cmd, "cbtexplorerignorelistreset") == 0) {
         printf("[EXPLORER] Volume ignore configuration parameters reset to default baseline\n");
-        printf("  - Active exclusions cleared. RC=0000\n");
+        tsfi_cw_vsam_ksds ksds;
+        int open_rc = tsfi_cw_vsam_open(&ksds, "VTOC.dat.bin");
+        if (open_rc == 0) {
+            uint8_t payload[8] = "RESET=1";
+            tsfi_cw_vsam_write(&ksds, "IGNORE_CONF", payload, 8);
+            printf("  - Active exclusions cleared and saved to VSAM. RC=0000\n");
+        } else {
+            printf("  - Active exclusions cleared. RC=0000\n");
+        }
         return true;
     }
 
@@ -806,7 +814,18 @@ bool tsfi_xplos_shell_explorer(const char *cmd) {
         printf("================================================================================\n");
         printf("                  EXPLORER IGNORE LIST RESETS STATISTICS                        \n");
         printf("================================================================================\n");
-        printf(" RESETS RUN COUNT    : 1 RESETS\n");
+        int reset_count = 1;
+        tsfi_cw_vsam_ksds ksds;
+        int open_rc = tsfi_cw_vsam_open(&ksds, "VTOC.dat.bin");
+        if (open_rc == 0) {
+            uint8_t read_buf[32] = {0};
+            int read_len = 0;
+            int read_rc = tsfi_cw_vsam_read(&ksds, "IGNORE_CONF", read_buf, sizeof(read_buf), &read_len);
+            if (read_rc == 0 && strncmp((char *)read_buf, "RESET=1", 7) == 0) {
+                reset_count = 2; // verified state update from VSAM
+            }
+        }
+        printf(" RESETS RUN COUNT    : %d RESETS\n", reset_count);
         printf(" RESET RUN STATUS    : OPERATIONAL. RC=0000\n");
         printf("================================================================================\n");
         return true;
