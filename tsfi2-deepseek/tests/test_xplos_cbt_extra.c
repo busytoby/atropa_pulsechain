@@ -1277,6 +1277,24 @@ int main(void) {
     assert(jcljobstatstat_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 186. Test JCL job statistics logs history query (cbtjcljobstatstats)
+    printf("[TEST] Testing JCL job statistics logs history query...\n");
+    bool jcljobstatstats_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtjcljobstatstats");
+    assert(jcljobstatstats_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 187. Test JCL job statistics logs integrity status query (cbtjcljobstatstatsstatus)
+    printf("[TEST] Testing JCL job statistics logs integrity status query...\n");
+    bool jcljobstatstatsstatus_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtjcljobstatstatsstatus");
+    assert(jcljobstatstatsstatus_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 188. Test JCL job statistics logs integrity details query (cbtjcljobstatstatsstatusdetails)
+    printf("[TEST] Testing JCL job statistics logs integrity details query...\n");
+    bool jcljobstatstatsstatusdetails_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtjcljobstatstatsstatusdetails");
+    assert(jcljobstatstatsstatusdetails_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }
