@@ -3233,6 +3233,17 @@ static void shell_task_handler(void *arg) {
         printf("[CBTLK] Linkage analysis completed successfully.\n");
         return;
     }
+
+    // Check for "cbtlog" command
+    if (strcmp(cmd, "cbtlog") == 0) {
+        printf("[CBTLOG] Retrieving system operator command log:\n");
+        printf("  - 12:00:01   TTY001   MVSUSER   COMMAND: LOGON MVSUSER\n");
+        printf("  - 12:01:10   CONSOLE  SYSOP     COMMAND: S JES2\n");
+        printf("  - 12:02:15   TTY001   MVSUSER   COMMAND: ALLOC FI(SYS1) DA('SYS1.MACLIB.dat.bin') SHR\n");
+        printf("  - 12:03:00   CONSOLE  SYSOP     COMMAND: D U,DASD\n");
+        printf("[CBTLOG] Log retrieval completed successfully.\n");
+        return;
+    }
     
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};

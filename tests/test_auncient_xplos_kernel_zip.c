@@ -1374,6 +1374,17 @@ int main(void) {
     printf("   ✓ CBTLK execution verified successfully.\n");
     remove("tests/load_lib.dat.bin");
 
+    // 90. Test CBTLOG command execution
+    printf("[KERNEL TEST] Dispatching 'cbtlog' command to XplOS shell...\n");
+    XplosShell shell_oplog;
+    XplosScheduler sched_oplog;
+    tsfi_xplos_init_scheduler(&sched_oplog);
+    tsfi_xplos_init_shell(&shell_oplog);
+    bool oplog_ok = tsfi_xplos_shell_exec(&shell_oplog, &sched_oplog, "cbtlog");
+    assert(oplog_ok == true);
+    tsfi_xplos_run(&sched_oplog);
+    printf("   ✓ CBTLOG execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
