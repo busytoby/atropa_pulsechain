@@ -12,6 +12,7 @@
 #include "tsfi_parc_tape_catalog.h"
 #include "tsfi_cbt_inmemory.h"
 #include "tsfi_xplos_shell_cbt_extra.h"
+#include "tsfi_xplos_shell_cbt_diagnostics.h"
 #include <ctype.h>
 #include <unistd.h>
 
@@ -335,6 +336,7 @@ void shell_task_handler(void *arg) {
         g_vfs_initialized = true;
     }
     if (tsfi_xplos_shell_cbt_extra(cmd)) return;
+    if (tsfi_xplos_shell_cbt_diagnostics(cmd)) return;
     if (tsfi_xplos_shell_legacy(cmd)) return;
     if (tsfi_xplos_shell_tape(cmd)) return;
     if (tsfi_xplos_shell_vsam(cmd)) return;

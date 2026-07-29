@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include "tsfi_xplos_kernel.h"
 #include "tsfi_xplos_shell_cbt_extra.h"
+#include "tsfi_xplos_shell_cbt_diagnostics.h"
 
 int main(void) {
     printf("====================================================================\n");
@@ -295,6 +296,38 @@ int main(void) {
     printf("[TEST] Testing VTAM network statistics...\n");
     bool stat_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtamstat");
     assert(stat_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 25. Test TSO JCL Syntax Checker (cbtjclchk)
+    printf("[TEST] Testing TSO JCL syntax checker...\n");
+    // Setup a mock JCL file in VFS
+    assert(tsfi_xplos_create_file(&g_vfs, "CHKJOB.dat.bin", 2048) == true);
+    XplosFile *chk_file = &g_vfs.files[g_vfs.count - 1];
+    strcpy(chk_file->data,
+           "//CHKJOB JOB 'CHECK',CLASS=A\n"
+           "//STEP1 EXEC PGM=IEFBR14\n");
+    chk_file->size_bytes = (uint32_t)strlen(chk_file->data);
+
+    bool jclchk_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtjclchk CHKJOB");
+    assert(jclchk_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 26. Test IEBIMAGE printer buffer formatter
+    printf("[TEST] Testing IEBIMAGE printer formatter...\n");
+    bool img_ok = tsfi_xplos_shell_exec(&shell, &sched, "iebimage PRT01 10");
+    assert(img_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 27. Test CICS Transient Storage directory explorer
+    printf("[TEST] Testing CICS TSQ directory explorer...\n");
+    bool tsd_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicstsd");
+    assert(tsd_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 28. Test VTAM Virtual Route Controller
+    printf("[TEST] Testing VTAM path tunnel routing controller...\n");
+    bool route_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtamroute");
+    assert(route_ok == true);
     tsfi_xplos_run(&sched);
 
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
