@@ -1593,6 +1593,28 @@ int main(void) {
     tsfi_xplos_run(&sched_cmd);
     printf("   ✓ CBTCMD execution verified successfully.\n");
 
+    // 108. Test CBTSEC command execution
+    printf("[KERNEL TEST] Dispatching 'cbtsec' command to XplOS shell...\n");
+    XplosShell shell_sec;
+    XplosScheduler sched_sec;
+    tsfi_xplos_init_scheduler(&sched_sec);
+    tsfi_xplos_init_shell(&shell_sec);
+    bool sec_ok = tsfi_xplos_shell_exec(&shell_sec, &sched_sec, "cbtsec MVSUSER");
+    assert(sec_ok == true);
+    tsfi_xplos_run(&sched_sec);
+    printf("   ✓ CBTSEC execution verified successfully.\n");
+
+    // 109. Test CBTTSO command execution
+    printf("[KERNEL TEST] Dispatching 'cbttso' command to XplOS shell...\n");
+    XplosShell shell_tso;
+    XplosScheduler sched_tso;
+    tsfi_xplos_init_scheduler(&sched_tso);
+    tsfi_xplos_init_shell(&shell_tso);
+    bool tso_ok = tsfi_xplos_shell_exec(&shell_tso, &sched_tso, "cbttso");
+    assert(tso_ok == true);
+    tsfi_xplos_run(&sched_tso);
+    printf("   ✓ CBTTSO execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

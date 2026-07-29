@@ -3493,6 +3493,34 @@ static void shell_task_handler(void *arg) {
         return;
     }
 
+    // Check for "cbtsec " command
+    if (strncmp(cmd, "cbtsec ", 7) == 0) {
+        const char *user = cmd + 7;
+        if (strlen(user) > 0) {
+            printf("[CBTSEC] Querying security permissions and groups for user: %s\n", user);
+            printf("  - Security Group:   SYSADM (System Administrator)\n");
+            printf("  - Datasets Access:  READ/WRITE (All datasets)\n");
+            printf("  - Spool Class Auth: CLASS A, CLASS B (Active)\n");
+            printf("  - VTAM/TCPIP Auth:  AUTHORIZED (Master console)\n");
+            printf("[CBTSEC] Security profile query completed successfully.\n");
+        } else {
+            printf("[CBTSEC ERROR] User ID required.\n");
+        }
+        return;
+    }
+
+    // Check for "cbttso" command
+    if (strcmp(cmd, "cbttso") == 0) {
+        printf("[CBTTSO] Querying authorized TSO command tables:\n");
+        printf("  - Command: ALLOC     EP: 0x01E2A0   Status: AUTHORIZED\n");
+        printf("  - Command: FREE      EP: 0x01E350   Status: AUTHORIZED\n");
+        printf("  - Command: LINK      EP: 0x02A180   Status: AUTHORIZED\n");
+        printf("  - Command: LISTBC    EP: 0x02B240   Status: AUTHORIZED\n");
+        printf("  - Command: SUBMIT    EP: 0x02C3F0   Status: AUTHORIZED\n");
+        printf("[CBTTSO] TSO command table query completed successfully.\n");
+        return;
+    }
+
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
     if (tsfi_xplg_parse_semantic_action(cmd, &tx)) {
