@@ -1986,6 +1986,12 @@ int main(void) {
     assert(vnh_ok == true);
     tsfi_xplos_run(&sched_bh2);
 
+    tsfi_xplos_init_scheduler(&sched_bh2);
+
+    bool ce_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "ce CE050701");
+    assert(ce_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
     printf("   ✓ Carmine Cannatello ASM book utilities execution verified successfully.\n");
 
     printf("=============================================================\n");

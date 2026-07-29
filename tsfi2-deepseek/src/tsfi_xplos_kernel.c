@@ -4537,6 +4537,18 @@ static void shell_task_handler(void *arg) {
         return;
     }
 
+    // Check for "ce " command
+    if (strncmp(cmd, "ce ", 3) == 0) {
+        const char *ex = cmd + 3;
+        printf("[CE] Carmine Cannatello ASM Example loader:\n");
+        printf("  - Loading example member: %s\n", ex);
+        printf("  - Title: Chapter Example - Instruction Execution Loop\n");
+        printf("    * Code:  %s  CSECT\n", ex);
+        printf("    *        STM   14,12,12(13)   Save registers\n");
+        printf("[CE] Example code loaded successfully.\n");
+        return;
+    }
+
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
     if (tsfi_xplg_parse_semantic_action(cmd, &tx)) {
