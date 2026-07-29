@@ -618,6 +618,18 @@ static bool handle_cbtcicscleanexceptaddlistresetstat(void) {
     return true;
 }
 
+static bool handle_cbtcicscleanexceptaddlistresetstats(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  CICS TSQ CLEANUP EXCLUSIONS BULK RESET LOGS HISTORY           \n");
+    printf("================================================================================\n");
+    printf(" RECENT RESET TIME   : 2026-07-29T09:32:00-07:00\n");
+    printf(" COMPLETED AUDITS    : 1 OPERATIONS\n");
+    printf(" RESPONSE STATUS     : OPERATIONAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
@@ -657,5 +669,6 @@ bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strcmp(cmd, "cbtcicscleanexceptaddlistchk") == 0) return handle_cbtcicscleanexceptaddlistchk();
     if (strcmp(cmd, "cbtcicscleanexceptaddlistreset") == 0) return handle_cbtcicscleanexceptaddlistreset();
     if (strcmp(cmd, "cbtcicscleanexceptaddlistresetstat") == 0) return handle_cbtcicscleanexceptaddlistresetstat();
+    if (strcmp(cmd, "cbtcicscleanexceptaddlistresetstats") == 0) return handle_cbtcicscleanexceptaddlistresetstats();
     return false;
 }

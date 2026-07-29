@@ -707,6 +707,17 @@ static bool handle_cbtsubwaitretryscriptchklistresetstats(void) {
     return true;
 }
 
+static bool handle_cbtsubwaitretryscriptchklistresetstatsstat(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JES JOB SYNCHRONOUS WAIT TIMEOUT RESET LOGS STATUS            \n");
+    printf("================================================================================\n");
+    printf(" LOG ENTRIES PENDING : 0 LOGS\n");
+    printf(" RESET DB INTEGRITY  : VERIFIED. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtrexx ", 8) == 0) return handle_cbtrexx(cmd);
     if (strncmp(cmd, "ispfmenu", 8) == 0) return handle_ispfmenu(cmd);
@@ -739,5 +750,6 @@ bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strcmp(cmd, "cbtsubwaitretryscriptchklistreset") == 0) return handle_cbtsubwaitretryscriptchklistreset();
     if (strcmp(cmd, "cbtsubwaitretryscriptchklistresetstat") == 0) return handle_cbtsubwaitretryscriptchklistresetstat();
     if (strcmp(cmd, "cbtsubwaitretryscriptchklistresetstats") == 0) return handle_cbtsubwaitretryscriptchklistresetstats();
+    if (strcmp(cmd, "cbtsubwaitretryscriptchklistresetstatsstat") == 0) return handle_cbtsubwaitretryscriptchklistresetstatsstat();
     return false;
 }

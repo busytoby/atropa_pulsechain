@@ -1007,6 +1007,24 @@ int main(void) {
     assert(cleanexceptaddlistresetstat_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 141. Test VTAM gateway route recovery telemetry error limits reset (vtamroutereccountlimitsreset)
+    printf("[TEST] Testing VTAM gateway telemetry error limits reset...\n");
+    bool routereccountlimitsreset_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtamroutereccountlimitsreset");
+    assert(routereccountlimitsreset_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 142. Test TSO spool job timeout script status bulk validation reset history logs status (cbtsubwaitretryscriptchklistresetstatsstat)
+    printf("[TEST] Testing TSO spool timeout script status bulk validation reset logs status...\n");
+    bool retryscriptchklistresetstatsstat_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtsubwaitretryscriptchklistresetstatsstat");
+    assert(retryscriptchklistresetstatsstat_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 143. Test CICS TSQ cleanup exclusions bulk registry clear stats logs (cbtcicscleanexceptaddlistresetstats)
+    printf("[TEST] Testing CICS TSQ exclusions bulk registry clear stats logs...\n");
+    bool cleanexceptaddlistresetstats_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicscleanexceptaddlistresetstats");
+    assert(cleanexceptaddlistresetstats_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }
