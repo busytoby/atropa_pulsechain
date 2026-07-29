@@ -1481,6 +1481,24 @@ int main(void) {
     assert(cbtexplorerignorelistresetstat_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 220. Test Debugger XDC compliance progress query (cbtxdcstatsstatusdetailsprogress)
+    printf("[TEST] Testing Debugger XDC compliance progress query...\n");
+    bool cbtxdcstatsstatusdetailsprogress_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtxdcstatsstatusdetailsprogress");
+    assert(cbtxdcstatsstatusdetailsprogress_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 221. Test Debugger XDC ignore list reset (cbtxdcignorelistreset)
+    printf("[TEST] Testing Debugger XDC ignore list reset...\n");
+    bool cbtxdcignorelistreset_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtxdcignorelistreset");
+    assert(cbtxdcignorelistreset_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 222. Test Debugger XDC ignore list reset stats (cbtxdcignorelistresetstat)
+    printf("[TEST] Testing Debugger XDC ignore list reset stats query...\n");
+    bool cbtxdcignorelistresetstat_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtxdcignorelistresetstat");
+    assert(cbtxdcignorelistresetstat_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }
