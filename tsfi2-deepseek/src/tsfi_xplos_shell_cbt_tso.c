@@ -513,6 +513,19 @@ static bool handle_cbtsubnot(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtsubmod(const char *cmd) {
+    char job_id[32] = "";
+    char class_char[16] = "";
+    if (sscanf(cmd + 10, "%31s %15s", job_id, class_char) < 2) {
+        printf("[SUBMOD ERROR] Syntax: cbtsubmod <job_id> <class>\n");
+        return true;
+    }
+    printf("[SUBMOD] Modifying parameters for JCL job spool entry: %s...\n", job_id);
+    printf("  - Execution Class updated to: %s\n", class_char);
+    printf("[SUBMOD] Spool parameter modification completed. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtrexx ", 8) == 0) return handle_cbtrexx(cmd);
     if (strncmp(cmd, "ispfmenu", 8) == 0) return handle_ispfmenu(cmd);
@@ -528,5 +541,6 @@ bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtsubprg ", 10) == 0) return handle_cbtsubprg(cmd);
     if (strncmp(cmd, "cbtsubfind ", 11) == 0) return handle_cbtsubfind(cmd);
     if (strncmp(cmd, "cbtsubnot ", 10) == 0) return handle_cbtsubnot(cmd);
+    if (strncmp(cmd, "cbtsubmod ", 10) == 0) return handle_cbtsubmod(cmd);
     return false;
 }

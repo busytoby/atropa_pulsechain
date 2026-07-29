@@ -383,6 +383,17 @@ static bool handle_vtamroutesol(const char *cmd) {
     return true;
 }
 
+static bool handle_vtamroutefail(const char *cmd) {
+    char target[32] = "";
+    if (sscanf(cmd + 14, "%31s", target) < 1) {
+        printf("[VTAMROUTEFAIL ERROR] Syntax: vtamroutefail <luname>\n");
+        return true;
+    }
+    printf("[VTAM] Simulating path connection failure on Gateway: %s\n", target);
+    printf("  - LU status set to INACTIVE; failover route diagnostic triggered. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "cbtnet ", 7) == 0) return handle_cbtnet(cmd + 7);
     if (strncmp(cmd, "logon ", 6) == 0) return handle_vtam_logon(cmd);
@@ -399,5 +410,6 @@ bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "vtamussfmt ", 11) == 0) return handle_vtamussfmt(cmd);
     if (strncmp(cmd, "vtamussdelay ", 13) == 0) return handle_vtamussdelay(cmd);
     if (strncmp(cmd, "vtamroutesol ", 13) == 0) return handle_vtamroutesol(cmd);
+    if (strncmp(cmd, "vtamroutefail ", 14) == 0) return handle_vtamroutefail(cmd);
     return false;
 }

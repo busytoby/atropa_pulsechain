@@ -549,6 +549,30 @@ int main(void) {
     assert(routesol_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 65. Test IEBCOMPRDET detailed record comparison (iebcomprdet)
+    printf("[TEST] Testing IEBCOMPRDET detailed comparison reporter...\n");
+    bool comprdet_ok = tsfi_xplos_shell_exec(&shell, &sched, "iebcomprdet GENSRC GENTGT");
+    assert(comprdet_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 66. Test TSO spool job Class modifier (cbtsubmod)
+    printf("[TEST] Testing cbtsubmod spool parameters modifier...\n");
+    bool submod_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtsubmod JOB00021 B");
+    assert(submod_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 67. Test CICS clean operations log details (cbtcicscleandet)
+    printf("[TEST] Testing CICS TSQ cleanup operations details...\n");
+    bool cleandet_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicscleandet");
+    assert(cleandet_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 68. Test VTAM Route failure simulator (vtamroutefail)
+    printf("[TEST] Testing VTAM path gateway failure simulator...\n");
+    bool routefail_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtamroutefail LU_REMOTE");
+    assert(routefail_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }

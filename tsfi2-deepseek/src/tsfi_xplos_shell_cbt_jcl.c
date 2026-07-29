@@ -618,6 +618,25 @@ static bool handle_iebdatrchk(const char *cmd) {
     return true;
 }
 
+static bool handle_iebcomprdet(const char *cmd) {
+    char dsn1[32] = "";
+    char dsn2[32] = "";
+    if (sscanf(cmd + 12, "%31s %31s", dsn1, dsn2) < 2) {
+        printf("[IEBCOMPRDET ERROR] Syntax: iebcomprdet <dsn1> <dsn2>\n");
+        return true;
+    }
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  IEBCOMPR DETAILED RECORD DISCREPANCY REPORT: %s vs %s        \n", dsn1, dsn2);
+    printf("================================================================================\n");
+    printf(" RECORD NUM | OFFSET | DSN1 BYTE (HEX) | DSN2 BYTE (HEX) | MISMATCH TYPE\n");
+    printf("--------------------------------------------------------------------------------\n");
+    printf(" 00000042   | 000080 | 40 (SPACE)      | C1 (A)          | CHARACTER MISMATCH\n");
+    printf(" 00000104   | 0001B0 | C3 (C)          | 40 (SPACE)      | CHARACTER MISMATCH. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "jclrun ", 7) == 0) return handle_jclrun(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
@@ -636,5 +655,6 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "iebcomprmask ", 13) == 0) return handle_iebcomprmask(cmd);
     if (strncmp(cmd, "iebimagespc ", 12) == 0) return handle_iebimagespc(cmd);
     if (strncmp(cmd, "iebdatrchk ", 11) == 0) return handle_iebdatrchk(cmd);
+    if (strncmp(cmd, "iebcomprdet ", 12) == 0) return handle_iebcomprdet(cmd);
     return false;
 }

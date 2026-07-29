@@ -279,6 +279,19 @@ static bool handle_cbtcicsdet(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtcicscleandet(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  CICS TRANSIENT STORAGE CLEANUP LOG DETAILS                    \n");
+    printf("================================================================================\n");
+    printf(" PURGE TIMESTAMP    : 12:00:00\n");
+    printf(" MAIN TSQS PURGED   : Q1, Q2\n");
+    printf(" AUX TSQS PURGED    : LOGS\n");
+    printf(" TOTAL STORAGE FREED: 2048 BYTES. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
@@ -293,5 +306,6 @@ bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicscmpflg ", 14) == 0) return handle_cbtcicscmpflg(cmd);
     if (strncmp(cmd, "cbtcicscleanmask ", 17) == 0) return handle_cbtcicscleanmask(cmd);
     if (strncmp(cmd, "cbtcicsdet ", 11) == 0) return handle_cbtcicsdet(cmd);
+    if (strcmp(cmd, "cbtcicscleandet") == 0) return handle_cbtcicscleandet();
     return false;
 }
