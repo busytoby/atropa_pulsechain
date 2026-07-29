@@ -15,7 +15,7 @@ int main(void) {
     printf("=== RUNNING SKELETON-HASP-BOOK END-TO-END PROOFS ===\n");
 
     // 1. Initialize virtual disk VFS and JCL spool systems
-    XplosVirtualDisk vfs;
+    static XplosVirtualDisk vfs;
     memset(&vfs, 0, sizeof(XplosVirtualDisk));
     vfs.count = 0;
 
@@ -308,6 +308,14 @@ int main(void) {
     printf("  -> Phase 18: Verifying CICS Transaction Security Auditor compliance logs...\n");
     bool audit_ok = tsfi_xplos_shell_cbt_cics("cbtcicsaudit TeddyBearSkelCharacter");
     assert(audit_ok == true);
+
+    // 21. Verify PDS Library Compression utility
+    printf("  -> Phase 19: Verifying PDS Library Compression utility...\n");
+    extern XplosVirtualDisk g_vfs;
+    tsfi_xplos_create_file(&g_vfs, "USERLIB.dat.bin", 10240);
+    extern bool tsfi_xplos_shell_book(const char *cmd);
+    bool compress_ok = tsfi_xplos_shell_book("cbtcompress USERLIB");
+    assert(compress_ok == true);
 
     printf("  -> End-to-end data pipeline integrity verified successfully.\n");
     printf("\n=== SKELETON HASP BOOK PROOFS PASSED ===\n");

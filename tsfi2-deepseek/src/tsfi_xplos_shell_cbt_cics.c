@@ -14,7 +14,20 @@
 #include "tsfi_parc_runcible_cics.h"
 #include "tsfi_mainframe_computerworld.h"
 #include "tsfi_hogan.h"
-#include "../src/auncient_cloth_material_bridge.h"
+
+extern void tsfi_mf_ssa_resolve_issuance_site(const char *ssn, char *site_out, int max_len);
+
+static void auncient_bridge_entity_to_ssa(const char *entity_name, char *ssn_out, char *site_out, int max_len) {
+    if (!entity_name || !ssn_out || !site_out || max_len < 16) return;
+    uint32_t seed = 0x811C9DC5;
+    size_t name_len = strlen(entity_name);
+    for (size_t i = 0; i < name_len; i++) {
+        seed = (seed ^ entity_name[i]) * 0x01000193;
+    }
+    int area = (int)(seed % 9) + 1;
+    snprintf(ssn_out, 12, "%03d-12-3456", area);
+    tsfi_mf_ssa_resolve_issuance_site(ssn_out, site_out, max_len);
+}
 
 tsfi_cics_engine_t g_cics_engine;
 extern XplosVirtualDisk g_vfs;

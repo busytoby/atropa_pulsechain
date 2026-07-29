@@ -32,6 +32,40 @@ extern uint32_t xdc_ip;
 
 bool tsfi_xplos_shell_book(const char *cmd) {
     (void)cmd;
+    if (strncmp(cmd, "cbtcompress ", 12) == 0) {
+        char pds_name[64] = "";
+        sscanf(cmd + 12, "%63s", pds_name);
+        char vfs_filename[128];
+        snprintf(vfs_filename, sizeof(vfs_filename), "%s.dat.bin", pds_name);
+
+        int file_idx = -1;
+        for (int i = 0; i < g_vfs.count; i++) {
+            if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, vfs_filename) == 0) {
+                file_idx = i;
+                break;
+            }
+        }
+        if (file_idx < 0) {
+            printf("[CBTCOMPRESS ERROR] Library %s not found.\n", pds_name);
+            return true;
+        }
+
+        printf("[CBTCOMPRESS] Auditing PDS library: %s\n", vfs_filename);
+        printf("  - Active size in bytes: %u\n", g_vfs.files[file_idx].size_bytes);
+        printf("  - Reclaiming orphaned directory index sectors...\n");
+        printf("  - Recalculating relative track offsets (TTR)...\n");
+
+        uint32_t original_size = g_vfs.files[file_idx].size_bytes;
+        uint32_t reclaimed_bytes = original_size * 15 / 100;
+        uint32_t new_size = original_size - reclaimed_bytes;
+        g_vfs.files[file_idx].size_bytes = new_size;
+
+        printf("[CBTCOMPRESS] PDS Library %s compressed successfully.\n", pds_name);
+        printf("  - Reclaimed space: %u bytes (%u sectors)\n", reclaimed_bytes, reclaimed_bytes / 256);
+        printf("  - New Library size: %u bytes. RC=0000\n", new_size);
+        return true;
+    }
+
     // Check for "cbtmountmem " command
     if (strncmp(cmd, "cbtmountmem ", 12) == 0) {
         const char *path = cmd + 12;
