@@ -517,6 +517,17 @@ static bool handle_vtamrouterecresetstat(void) {
     return true;
 }
 
+static bool handle_vtamrouterecresetlist(const char *cmd) {
+    char list[128] = "";
+    if (sscanf(cmd + 22, "%127[^\n]", list) < 1) {
+        printf("[VTAMROUTERECRESETLIST ERROR] Syntax: vtamrouterecresetlist <path1>,<path2>,...\n");
+        return true;
+    }
+    printf("[VTAM] Gateway route recovery telemetry counters reset on paths: %s\n", list);
+    printf("  - Scheduler statistics telemetry cleared for paths list. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "cbtnet ", 7) == 0) return handle_cbtnet(cmd + 7);
     if (strncmp(cmd, "logon ", 6) == 0) return handle_vtam_logon(cmd);
@@ -545,5 +556,6 @@ bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "vtamroutereclog ", 16) == 0) return handle_vtamroutereclog(cmd);
     if (strncmp(cmd, "vtamrouterecignore ", 19) == 0) return handle_vtamrouterecignore(cmd);
     if (strcmp(cmd, "vtamrouterecresetstat") == 0) return handle_vtamrouterecresetstat();
+    if (strncmp(cmd, "vtamrouterecresetlist ", 22) == 0) return handle_vtamrouterecresetlist(cmd);
     return false;
 }

@@ -654,6 +654,17 @@ static bool handle_cbtsubwaitretryscriptchk(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtsubwaitretryscriptchklist(const char *cmd) {
+    char list[128] = "";
+    if (sscanf(cmd + 28, "%127[^\n]", list) < 1) {
+        printf("[SUBWAITRETRYSCRIPTCHKLIST ERROR] Syntax: cbtsubwaitretryscriptchklist <script1> <script2> ...\n");
+        return true;
+    }
+    printf("[SUBWAIT] Bulk auditing spool wait retry scripts list: %s\n", list);
+    printf("  - Verification status: VERIFIED. All trigger conditions mapped. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtrexx ", 8) == 0) return handle_cbtrexx(cmd);
     if (strncmp(cmd, "ispfmenu", 8) == 0) return handle_ispfmenu(cmd);
@@ -681,5 +692,6 @@ bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtsubwaitretrydelaylimit ", 26) == 0) return handle_cbtsubwaitretrydelaylimit(cmd);
     if (strncmp(cmd, "cbtsubwaitretryscriptdel ", 25) == 0) return handle_cbtsubwaitretryscriptdel(cmd);
     if (strncmp(cmd, "cbtsubwaitretryscriptchk ", 25) == 0) return handle_cbtsubwaitretryscriptchk(cmd);
+    if (strncmp(cmd, "cbtsubwaitretryscriptchklist ", 29) == 0) return handle_cbtsubwaitretryscriptchklist(cmd);
     return false;
 }

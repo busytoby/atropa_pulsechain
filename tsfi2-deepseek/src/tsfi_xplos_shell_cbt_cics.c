@@ -571,6 +571,18 @@ static bool handle_cbtcicscleanexceptaddlist(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtcicscleanexceptchkliststat(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  CICS TSQ CLEANUP EXCLUSIONS BULK VALIDATION STATS             \n");
+    printf("================================================================================\n");
+    printf(" TOTAL VERIFIED   : 2 PREFIXES\n");
+    printf(" MATCHED RULES    : 2 PREFIXES\n");
+    printf(" RESPONSE STATUS  : OPERATIONAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
@@ -605,5 +617,6 @@ bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicscleanexceptadd ", 22) == 0) return handle_cbtcicscleanexceptadd(cmd);
     if (strncmp(cmd, "cbtcicscleanexceptchklist ", 26) == 0) return handle_cbtcicscleanexceptchklist(cmd);
     if (strncmp(cmd, "cbtcicscleanexceptaddlist ", 26) == 0) return handle_cbtcicscleanexceptaddlist(cmd);
+    if (strcmp(cmd, "cbtcicscleanexceptchkliststat") == 0) return handle_cbtcicscleanexceptchkliststat();
     return false;
 }

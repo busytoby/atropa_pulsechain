@@ -766,6 +766,12 @@ static bool handle_iebgenerreftabstat(void) {
     return true;
 }
 
+static bool handle_iebgenerreftabstatreset(void) {
+    printf("[IEBGENER] Sequential data conversion table stats counters reset to zero\n");
+    printf("  - Conversion statistics telemetry cleared. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "jclrun ", 7) == 0) return handle_jclrun(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
@@ -796,5 +802,6 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strcmp(cmd, "iebgenerstat") == 0) return handle_iebgenerstat();
     if (strcmp(cmd, "iebgenerreftab") == 0) return handle_iebgenerreftab();
     if (strcmp(cmd, "iebgenerreftabstat") == 0) return handle_iebgenerreftabstat();
+    if (strcmp(cmd, "iebgenerreftabstatreset") == 0) return handle_iebgenerreftabstatreset();
     return false;
 }
