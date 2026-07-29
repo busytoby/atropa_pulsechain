@@ -2553,6 +2553,42 @@ static void shell_task_handler(void *arg) {
             return;
         }
     }
+
+    // Check for "cbtpdsdump " command
+    if (strncmp(cmd, "cbtpdsdump ", 11) == 0) {
+        const char *pds_path = cmd + 11;
+        if (strstr(pds_path, ".dat.bin") == NULL) {
+            printf("[CBTPDSDUMP ERROR] Violation of Rule 13: filename must end in .dat.bin\n");
+            return;
+        }
+        FILE *f = fopen(pds_path, "rb");
+        if (!f) {
+            printf("[CBTPDSDUMP ERROR] Could not open PDS: %s\n", pds_path);
+            return;
+        }
+        uint8_t dir_block[256];
+        fread(dir_block, 1, 256, f);
+        fclose(f);
+        printf("[CBTPDSDUMP] Raw Directory Block Hex Dump for: %s\n", pds_path);
+        for (int i = 0; i < 256; i += 16) {
+            printf("  %04X: ", i);
+            for (int j = 0; j < 16; j++) {
+                printf("%02X ", dir_block[i + j]);
+            }
+            printf(" | ");
+            for (int j = 0; j < 16; j++) {
+                char ch = (char)dir_block[i + j];
+                if (isprint((unsigned char)ch)) {
+                    printf("%c", ch);
+                } else {
+                    printf(".");
+                }
+            }
+            printf("\n");
+        }
+        printf("[CBTPDSDUMP] Dump completed.\n");
+        return;
+    }
     
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};

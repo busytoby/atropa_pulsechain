@@ -1059,6 +1059,24 @@ int main(void) {
     remove("tests/memb_ren.txt");
     remove("tests/ren_pds.dat.bin");
 
+    // 69. Test CBTPDSDUMP command execution
+    printf("[KERNEL TEST] Dispatching 'cbtpdsdump' command to XplOS shell...\n");
+    XplosShell shell_dump;
+    XplosScheduler sched_dump;
+    
+    tsfi_xplos_init_scheduler(&sched_dump);
+    tsfi_xplos_init_shell(&shell_dump);
+    tsfi_xplos_shell_exec(&shell_dump, &sched_dump, "cbtpdsinit tests/dump_pds.dat.bin");
+    tsfi_xplos_run(&sched_dump);
+
+    tsfi_xplos_init_scheduler(&sched_dump);
+    bool dump_ok = tsfi_xplos_shell_exec(&shell_dump, &sched_dump, "cbtpdsdump tests/dump_pds.dat.bin");
+    assert(dump_ok == true);
+    tsfi_xplos_run(&sched_dump);
+
+    printf("   ✓ CBTPDSDUMP execution verified successfully.\n");
+    remove("tests/dump_pds.dat.bin");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
