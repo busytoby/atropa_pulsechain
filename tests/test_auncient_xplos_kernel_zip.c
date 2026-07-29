@@ -1294,6 +1294,17 @@ int main(void) {
     printf("   ✓ CBTSMF execution verified successfully.\n");
     remove("tests/smf_log.dat.bin");
 
+    // 84. Test CBTWTO command execution
+    printf("[KERNEL TEST] Dispatching 'cbtwto' command to XplOS shell...\n");
+    XplosShell shell_wto;
+    XplosScheduler sched_wto;
+    tsfi_xplos_init_scheduler(&sched_wto);
+    tsfi_xplos_init_shell(&shell_wto);
+    bool wto_ok = tsfi_xplos_shell_exec(&shell_wto, &sched_wto, "cbtwto SYSTEM SHUTDOWN IN 5 MINUTES");
+    assert(wto_ok == true);
+    tsfi_xplos_run(&sched_wto);
+    printf("   ✓ CBTWTO execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

@@ -3140,8 +3140,19 @@ static void shell_task_handler(void *arg) {
             } else {
                 printf("[CBTQDISPATCH ERROR] Node queue full.\n");
             }
-            return;
         }
+    }
+
+    // Check for "cbtwto " command
+    if (strncmp(cmd, "cbtwto ", 7) == 0) {
+        const char *msg = cmd + 7;
+        if (strlen(msg) > 0) {
+            printf("[CBTWTO] Broadcasted operator alert: %s\n", msg);
+            printf("  - Logged to console SYSLOG buffer.\n");
+        } else {
+            printf("[CBTWTO ERROR] Message required.\n");
+        }
+        return;
     }
     
     // Perform parsing & semantic actions
