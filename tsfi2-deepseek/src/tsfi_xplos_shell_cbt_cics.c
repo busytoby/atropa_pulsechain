@@ -150,9 +150,9 @@ static bool handle_cbtcicstd(const char *cmd) {
 }
 static bool handle_cbtcicsts(const char *cmd) {
     char action[16] = "";
-    char tsq_name[16] = "";
+    char tsq_name[128] = "";
     char val[128] = "";
-    int scanned = sscanf(cmd + 10, "%15s %15s %[^\n]", action, tsq_name, val);
+    int scanned = sscanf(cmd + 10, "%15s %127s %[^\n]", action, tsq_name, val);
     if (scanned >= 2) {
         tsfi_cw_vsam_ksds ksds;
         int open_rc = tsfi_cw_vsam_open(&ksds, "CICS_QUEUE.dat.bin");
