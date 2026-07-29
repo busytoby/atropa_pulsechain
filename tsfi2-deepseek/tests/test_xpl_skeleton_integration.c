@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "tsfi_xplos_kernel.h"
+#include "tsfi_displacementshader.h"
 
 // Simulated XPLSM Monitor State
 typedef struct {
@@ -152,6 +153,15 @@ int main(void) {
     printf("  -> Testing CAPSTAN KERMIT packet validation and commit...\n");
     assert(tsfi_xplos_shell_tape("cbttape kermit 23061e44412c") == true);
     assert(tsfi_xplos_shell_tape("cbttape kermit 23061e444100") == true);
+
+    // 13. Verify DisplacementShader Scaling & Vertex Constraints
+    printf("  -> Testing DisplacementShader boundary wrapping & vertex coordinate scaling...\n");
+    TSFiDisplacementShader ds;
+    tsfi_displacementshader_init(&ds, 5.0, 2.0);
+    double offset1 = tsfi_displacementshader_eval(&ds, 10.0, 20.0);
+    double offset2 = tsfi_displacementshader_eval(&ds, 10.0 + 256.0, 20.0 + 512.0);
+    assert(offset1 == offset2);
+    printf("  -> DisplacementShader coordinate boundary wrap verified successfully.\n");
 
     printf("\n=== INTEGRATION PROOFS PASSED ===\n");
     return 0;
