@@ -1,5 +1,3 @@
-.PHONY: help test-all test-dashboard test-container test-git-ci test-unit tpu-benchmarks livrps-benchmark test-mann test-comp-pass test-mvarsel test-reroute test-delegate-sig test-stagecomp test-ar test-sdfformat test-hydrascene test-renderdelegate test-stagelock test-renderindex test-usdshade test-teddy-loader
-
 help:
 	@echo "Available test targets:"
 	@echo "  make test-all        - Run all E2E and unit tests in the project"
@@ -390,8 +388,6 @@ test-git-ci:
 
 test-unit:
 	python3 -m unittest discover -s tests -p "test_*.py"
-
-.PHONY: sdk-build sdk-minify sdk-package
 
 sdk-build:
 	mkdir -p dist
