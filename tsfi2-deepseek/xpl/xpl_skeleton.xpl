@@ -316,6 +316,9 @@ RECEIVE_KERMIT_PACKET: PROCEDURE(PACKET_PTR, PACKET_LEN) FIXED;
     END;
     
     PAYLOAD_VAL = BYTE(PACKET_PTR + 4);
+    IF PAYLOAD_VAL == 35 THEN /* '#' */
+        PAYLOAD_VAL = BYTE(PACKET_PTR + 5) ^ 64;
+    END;
     
     IF WRITE_TAPE_SECTOR(SEQ, PAYLOAD_VAL) == 0 THEN
         RETURN 0; /* Hardware write failed/aborted */
