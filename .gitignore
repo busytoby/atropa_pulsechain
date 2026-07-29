@@ -543,6 +543,82 @@ frontend/compiled_yul.json
 *.wav
 *.stl
 
+# Ignore GGUF model files
+*.gguf
+
+# Ignore visual outputs and binary data captures
+*.ppm
+*.usdc
+*.raw
+*.log
+*.spv
+
+# Ignore compiler artifacts and build intermediates
+.yul_cache/
+tsfi2-deepseek/.yul_cache/
+tsfi2-deepseek/firmware/build/
+tsfi2-deepseek/firmware/sdkconfig
+tsfi2-deepseek/sd_orchestrator/_build/
+solidity/Batcher.json
+tsfi2-deepseek/evm_storage.json.bak
+tsfi2-deepseek/test.raw
+tsfi2-deepseek/test_sd_output.raw
+tsfi2-deepseek/query_tokens
+tsfi2-deepseek/src/firmware/Genesis_rtl.h
+tsfi2-deepseek/src/firmware/LauWireFirmware_rtl.h
+
+# Ignore Agent workspaces
+.agents/
+
+# Ignore local scratch directories and outputs
+scratch/
+tsfi2-deepseek/scratch/
+test_yi_out.txt
+tmp_git_test/
+presenter_stderr.log
+presenter_stdout.log
+
+# Ignore shared libraries and builds in scripts
+scripts/libverlet.so
+scripts/dysnomia_overlay
+
+# Ignore untracked binaries in tests and tools
+tests/InteropTest/bin/
+tests/InteropTest/obj/
+tests/bench_*
+tests/demo_*
+tests/play_*
+tests/run_*
+tests/test_auncient_*
+tests/test_bear_*
+tests/test_cloth_*
+tests/test_final_*
+tests/test_interop_*
+tests/test_mcp_*
+tests/test_spline_*
+tests/test_stadium_*
+tests/test_timeline_*
+tests/test_vulkan_*
+tests/test_wayland_*
+tests/test_zmm_*
+tests/usd_gen_schema
+tools/cbt_downloader
+tools/antigravity_tpu_diagnostics
+tools/seq_store.sh
+tsfi2
+tsfi2-deepseek/bench_operator_status_rdbms
+tsfi2-deepseek/benchmarks/profiler_suite/bench_*
+tsfi2-deepseek/tools/tsfi_*
+tsfi2-deepseek/tools/demo_doodle_renderman.py
+tsfi2-deepseek/tools/run_vtube_247.sh
+tsfi2-deepseek/tools/validate_ana_speech.py
+tsfi2-deepseek/tests/test_fetch.js
+tsfi2-deepseek/tests/test_phase6.js
+tsfi2-deepseek/tools/tsfi_lore_syndicate.js
+
+# Ignore root benchmarks
+benchmarks/
+Dysnomia/bin/
 
 
 
@@ -556,3 +632,65 @@ frontend/compiled_yul.json
 
 
 
+
+/scripts/add_shared_voice.js
+/scripts/advance_dysnomia_numbers.js
+/scripts/alsa_synth.js
+/scripts/benchmark_fet_discharge.py
+/scripts/design_child_voice.js
+/scripts/discover_thunks.js
+/scripts/fetch_live_quaternion_data.js
+/scripts/find_mainnet_bars.js
+/scripts/generate_1m24s_soundtrack.js
+/scripts/generate_4_yi_quaternion_grid.py
+/scripts/generate_ambient_melody.js
+/scripts/generate_ambient_resonance_video.py
+/scripts/generate_bouncy_wheel_performance.py
+/scripts/generate_breakbeat_soundtrack.js
+/scripts/generate_chebyshev_synthesis.js
+/scripts/generate_coupled_spline_video.py
+/scripts/generate_geommesh_demo.py
+/scripts/generate_hudson_renderman_video.py
+/scripts/generate_jungle_booty_video.py
+/scripts/generate_lau_quaternion_demo.py
+/scripts/generate_mann_coaxial_video.py
+/scripts/generate_photorealistic_bouncy_wheel.py
+/scripts/generate_pll_ouroboros_demo.py
+/scripts/generate_tsfi2_remorse_dense_demo.py
+/scripts/generate_yi_quaternion_demo.py
+/scripts/generate_yi_vocabulary_demo.py
+/scripts/inject_zmm_balances.js
+/scripts/inspect_debug_info.js
+/scripts/interact_yue.js
+/scripts/live_syrinx_performance.py
+/scripts/make_chaos_short_loop.py
+/scripts/make_gabr_epitrochoid_demo.py
+/scripts/make_hardball_1m_demo.py
+/scripts/make_hardball_3m_demo.py
+/scripts/make_teddy_93s_demo.py
+/scripts/make_teddy_dubstep_complex.py
+/scripts/make_teddy_level2_demo.py
+/scripts/make_teddy_tfp_demo.py
+/scripts/manage_qings.js
+/scripts/market_cache.js
+/scripts/mix_cloudburst_ambient.py
+/scripts/mix_cloudburst_booty.py
+/scripts/moondream_daemon.py
+/scripts/optimize_word.js
+/scripts/optimize_word_vlm.py
+/scripts/radio_diagnostic_tool.py
+/scripts/render_storybook_particles.py
+/scripts/run_firmware_test_suite.py
+/scripts/run_interop_pipeline.py
+/scripts/simulate_fet_discharge.py
+/scripts/sweep_syrinx_presets.py
+/scripts/test_gqam_hardware_transfer.py
+/scripts/test_parity_harness.py
+/scripts/test_radio_chat.py
+/scripts/test_schlafli_lora_transfer.py
+/scripts/test_yi_handshake.py
+/scripts/testing_hypervisor.py
+/scripts/twinning_evolution_sim.py
+/solidity/domain/
+/tests/test_synth_dsp.py
+/tsfi2-deepseek/tools/font8x8.h
