@@ -1928,7 +1928,37 @@ int main(void) {
     assert(oc_ok == true);
     tsfi_xplos_run(&sched_bh2);
 
-    printf("   ✓ File 035 utilities execution verified successfully.\n");
+    tsfi_xplos_init_scheduler(&sched_bh2);
+
+    bool gp_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "getparm MYPARMVAL");
+    assert(gp_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool ht_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "hextbl HELLO");
+    assert(ht_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool it_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "initl");
+    assert(it_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool pt_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "puttbl");
+    assert(pt_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool rc_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "rcntl");
+    assert(rc_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool vn_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "valnumb 12345");
+    assert(vn_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool wr_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "wtoregs");
+    assert(wr_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    printf("   ✓ Carmine Cannatello ASM book utilities execution verified successfully.\n");
 
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");

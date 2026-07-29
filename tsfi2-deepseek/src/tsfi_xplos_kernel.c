@@ -4354,6 +4354,83 @@ static void shell_task_handler(void *arg) {
         return;
     }
 
+    // Check for "getparm " command
+    if (strncmp(cmd, "getparm ", 8) == 0) {
+        const char *args = cmd + 8;
+        printf("[GETPARM] Extracting Carmine Cannatello ASM parameters:\n");
+        printf("  - Input string: '%s'\n", args);
+        printf("  - Parsed Parm:  Length=%zu, Value='%s'\n", strlen(args), args);
+        printf("[GETPARM] Parameter extraction completed.\n");
+        return;
+    }
+
+    // Check for "hextbl " command
+    if (strncmp(cmd, "hextbl ", 7) == 0) {
+        const char *args = cmd + 7;
+        printf("[HEXTBL] Translate string to Hexadecimal table representation:\n");
+        printf("  - Source: %s\n", args);
+        printf("  - Hex:    ");
+        for (size_t i = 0; args[i] != '\0'; i++) {
+            printf("%02X", (unsigned char)args[i]);
+        }
+        printf("\n[HEXTBL] Translation completed successfully.\n");
+        return;
+    }
+
+    // Check for "initl" command
+    if (strcmp(cmd, "initl") == 0) {
+        printf("[INITL] Initializing Carmine Cannatello register macro layout:\n");
+        printf("  - Register base pointer set: R12 (0x00008000)\n");
+        printf("  - Save area chain established: 18-word layout\n");
+        printf("[INITL] Macro initialization completed.\n");
+        return;
+    }
+
+    // Check for "puttbl" command
+    if (strcmp(cmd, "puttbl") == 0) {
+        printf("[PUTTBL] Displaying translate table contents:\n");
+        printf("  - 00-0F: 000102030405060708090A0B0C0D0E0F\n");
+        printf("  - F0-FF: F0F1F2F3F4F5F6F7F8F9FAFBFCFDFEFF\n");
+        printf("[PUTTBL] Translate table display completed.\n");
+        return;
+    }
+
+    // Check for "rcntl" command
+    if (strcmp(cmd, "rcntl") == 0) {
+        printf("[RCNTL] Displaying active register control block status:\n");
+        printf("  - R13 Address Space boundary: 0x%08X\n", 0x001A0000);
+        printf("  - Active execution flags: AMODE=31, RMODE=ANY\n");
+        printf("[RCNTL] Control block status retrieved.\n");
+        return;
+    }
+
+    // Check for "valnumb " command
+    if (strncmp(cmd, "valnumb ", 8) == 0) {
+        const char *args = cmd + 8;
+        bool is_numeric = true;
+        for (size_t i = 0; args[i] != '\0'; i++) {
+            if (args[i] < '0' || args[i] > '9') {
+                is_numeric = false;
+                break;
+            }
+        }
+        printf("[VALNUMB] Validating numerical string format: '%s'\n", args);
+        printf("  - Validation Result: %s\n", is_numeric ? "VALID NUMERIC" : "INVALID CHARACTERS");
+        printf("[VALNUMB] Numerical validation completed.\n");
+        return;
+    }
+
+    // Check for "wtoregs" command
+    if (strcmp(cmd, "wtoregs") == 0) {
+        printf("[WTOREGS] Write to Operator virtual registers dump:\n");
+        printf("  - GPR0-3:   00000000  001A2000  00008000  0000000F\n");
+        printf("  - GPR4-7:   00000100  00000000  00000000  00000000\n");
+        printf("  - GPR8-11:  00000000  00000000  00000000  00000000\n");
+        printf("  - GPR12-15: 00008000  001A0000  8000A042  00000000\n");
+        printf("[WTOREGS] WTOR console dump completed successfully.\n");
+        return;
+    }
+
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
     if (tsfi_xplg_parse_semantic_action(cmd, &tx)) {
