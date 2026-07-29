@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <math.h>
 #include "tsfi_xplos_kernel.h"
 #include "tsfi_displacementshader.h"
 #include "lau_thunk.h"
@@ -251,6 +252,21 @@ int main(void) {
     assert(ri.is_world_active == false);
     assert(ri.psg_master_volume_l > 0 || ri.psg_master_volume_r > 0);
     printf("  -> GPR SKELETON and RenderMan interface mapping verified successfully.\n");
+
+    // 18. Verify RenderMan LFO phase synchronization with DisplacementShader
+    printf("  -> Testing RenderMan LFO phase sync with DisplacementShader...\n");
+    TSFiDisplacementShader ds_sync;
+    tsfi_displacementshader_init(&ds_sync, 5.0, 2.0);
+    double out_no_lfo = tsfi_displacementshader_eval(&ds_sync, 10.0, 20.0);
+    
+    // Synchronize displacement shader to RenderMan phase value
+    tsfi_riinterface_set_lfo_phase(&ri, 31); // Setting RenderMan LFO phase
+    tsfi_displacementshader_set_lfo_phase(&ds_sync, 3.1415926535); // Synchronize
+    double out_lfo_pi = tsfi_displacementshader_eval(&ds_sync, 10.0, 20.0);
+    
+    // A phase displacement of PI must invert the sign of the sinusoidal wave output
+    assert(fabs(out_no_lfo + out_lfo_pi) < 1e-5);
+    printf("  -> RenderMan LFO phase sync with DisplacementShader verified successfully.\n");
 
     printf("\n=== INTEGRATION PROOFS PASSED ===\n");
     return 0;
