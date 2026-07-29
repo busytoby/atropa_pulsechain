@@ -1615,6 +1615,72 @@ int main(void) {
     tsfi_xplos_run(&sched_tso);
     printf("   ✓ CBTTSO execution verified successfully.\n");
 
+    // 110. Test CBTDATE command execution
+    printf("[KERNEL TEST] Dispatching 'cbtdate' command to XplOS shell...\n");
+    XplosShell shell_date;
+    XplosScheduler sched_date;
+    tsfi_xplos_init_scheduler(&sched_date);
+    tsfi_xplos_init_shell(&shell_date);
+    bool date_ok = tsfi_xplos_shell_exec(&shell_date, &sched_date, "cbtdate");
+    assert(date_ok == true);
+    tsfi_xplos_run(&sched_date);
+    printf("   ✓ CBTDATE execution verified successfully.\n");
+
+    // 111. Test CBTDU command execution
+    printf("[KERNEL TEST] Dispatching 'cbtdu' command to XplOS shell...\n");
+    XplosShell shell_du;
+    XplosScheduler sched_du;
+    tsfi_xplos_init_scheduler(&sched_du);
+    tsfi_xplos_init_shell(&shell_du);
+    bool du_ok = tsfi_xplos_shell_exec(&shell_du, &sched_du, "cbtdu MVSRES");
+    assert(du_ok == true);
+    tsfi_xplos_run(&sched_du);
+    printf("   ✓ CBTDU execution verified successfully.\n");
+
+    // 112. Test CBTDICT command execution
+    printf("[KERNEL TEST] Dispatching 'cbtdict' command to XplOS shell...\n");
+    XplosShell shell_dict;
+    XplosScheduler sched_dict;
+    tsfi_xplos_init_scheduler(&sched_dict);
+    tsfi_xplos_init_shell(&shell_dict);
+    bool dict_ok = tsfi_xplos_shell_exec(&shell_dict, &sched_dict, "cbtdict SYS1.LINKLIB");
+    assert(dict_ok == true);
+    tsfi_xplos_run(&sched_dict);
+    printf("   ✓ CBTDICT execution verified successfully.\n");
+
+    // 113. Test CBTSEND command execution
+    printf("[KERNEL TEST] Dispatching 'cbtsend' command to XplOS shell...\n");
+    XplosShell shell_send;
+    XplosScheduler sched_send;
+    tsfi_xplos_init_scheduler(&sched_send);
+    tsfi_xplos_init_shell(&shell_send);
+    bool send_ok = tsfi_xplos_shell_exec(&shell_send, &sched_send, "cbtsend SYSTEM SHUTDOWN IN 10 MINUTES");
+    assert(send_ok == true);
+    tsfi_xplos_run(&sched_send);
+    printf("   ✓ CBTSEND execution verified successfully.\n");
+
+    // 114. Test CBTSTAT command execution
+    printf("[KERNEL TEST] Dispatching 'cbtstat' command to XplOS shell...\n");
+    XplosShell shell_stat;
+    XplosScheduler sched_stat;
+    tsfi_xplos_init_scheduler(&sched_stat);
+    tsfi_xplos_init_shell(&shell_stat);
+    bool stat_ok = tsfi_xplos_shell_exec(&shell_stat, &sched_stat, "cbtstat");
+    assert(stat_ok == true);
+    tsfi_xplos_run(&sched_stat);
+    printf("   ✓ CBTSTAT execution verified successfully.\n");
+
+    // 115. Test CBTHELP command execution
+    printf("[KERNEL TEST] Dispatching 'cbthelp' command to XplOS shell...\n");
+    XplosShell shell_help;
+    XplosScheduler sched_help;
+    tsfi_xplos_init_scheduler(&sched_help);
+    tsfi_xplos_init_shell(&shell_help);
+    bool help_ok = tsfi_xplos_shell_exec(&shell_help, &sched_help, "cbthelp");
+    assert(help_ok == true);
+    tsfi_xplos_run(&sched_help);
+    printf("   ✓ CBTHELP execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
