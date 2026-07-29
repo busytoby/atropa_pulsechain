@@ -235,6 +235,42 @@ int main(void) {
     assert(ikj_run == true);
     tsfi_xplos_run(&sched);
 
+    // 17. Test IEFBR14 dummy program step
+    printf("[TEST] Testing IEFBR14 execution via JCL step...\n");
+    assert(tsfi_xplos_create_file(&g_vfs, "BR14JOB.dat.bin", 2048) == true);
+    XplosFile *br_file = &g_vfs.files[g_vfs.count - 1];
+    strcpy(br_file->data,
+           "//BR14JOB JOB 'DUMMY TEST',CLASS=A\n"
+           "//STEP1 EXEC PGM=IEFBR14\n"
+           "//DD1 DD DSN=TEMP.DAT,DISP=(NEW,DELETE)\n");
+    br_file->size_bytes = (uint32_t)strlen(br_file->data);
+
+    bool br_run = tsfi_xplos_shell_exec(&shell, &sched, "jclrun BR14JOB");
+    assert(br_run == true);
+    tsfi_xplos_run(&sched);
+
+    // 18. Test TSO dynamic dataset allocations (cbtalloc)
+    printf("[TEST] Testing TSO dynamic allocations...\n");
+    bool alloc_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtalloc alloc DD1 MYDATA.DAT");
+    bool free_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtalloc free DD1");
+    assert(alloc_ok == true);
+    assert(free_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 19. Test CICS Transient Storage Queues (TSQ)
+    printf("[TEST] Testing CICS TSQ read/write...\n");
+    bool tsq_w = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicsts write Q1 UserDataInfo");
+    bool tsq_r = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicsts read Q1");
+    assert(tsq_w == true);
+    assert(tsq_r == true);
+    tsfi_xplos_run(&sched);
+
+    // 20. Test VTAM Net/USS Logon Solicit Screen
+    printf("[TEST] Testing VTAM USS Logon Solicit screen...\n");
+    bool uss_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtamuss");
+    assert(uss_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }

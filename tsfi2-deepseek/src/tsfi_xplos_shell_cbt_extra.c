@@ -508,6 +508,11 @@ static bool handle_jclrun(const char *cmd) {
                             snprintf(log_msg, sizeof(log_msg), "    * IBHDRPLY Automatic Reply executed. RC=0000\n");
                             printf("%s", log_msg);
                             append_spool_log(jcl_name, log_msg);
+                        } else if (strcmp(pgm_name, "IEFBR14") == 0) {
+                            rc = 0;
+                            snprintf(log_msg, sizeof(log_msg), "    * IEFBR14 Dummy Program executed. Resolving DD dispositions. RC=0000\n");
+                            printf("%s", log_msg);
+                            append_spool_log(jcl_name, log_msg);
                         } else if (strcmp(pgm_name, "IKJEFT01") == 0) {
                             rc = 0;
                             snprintf(log_msg, sizeof(log_msg), "    * IKJEFT01 Terminal Monitor Program launched. RC=0000\n");
@@ -1185,6 +1190,126 @@ static bool handle_vtam3270(const char *cmd) {
 }
 
 // -----------------------------------------------------------------------------
+// 15. TSO ALLOCATE & FREE Dataset Processor
+// -----------------------------------------------------------------------------
+static char g_tso_allocs_dd[5][16];
+static char g_tso_allocs_ds[5][64];
+static int g_tso_alloc_count = 0;
+
+static bool handle_cbtalloc(const char *cmd) {
+    char action[16] = "";
+    char ddname[16] = "";
+    char dsname[64] = "";
+    int scanned = sscanf(cmd + 9, "%15s %15s %63s", action, ddname, dsname);
+    if (scanned >= 2) {
+        if (strcasecmp(action, "alloc") == 0) {
+            if (g_tso_alloc_count >= 5) {
+                printf("[ALLOC ERROR] Maximum dynamic allocations reached.\n");
+                return true;
+            }
+            strncpy(g_tso_allocs_dd[g_tso_alloc_count], ddname, 15);
+            g_tso_allocs_dd[g_tso_alloc_count][15] = '\0';
+            strncpy(g_tso_allocs_ds[g_tso_alloc_count], dsname, 63);
+            g_tso_allocs_ds[g_tso_alloc_count][63] = '\0';
+            g_tso_alloc_count++;
+            printf("[ALLOC] Dataset %s allocated dynamically to DD %s. RC=0000\n", dsname, ddname);
+            return true;
+        }
+        if (strcasecmp(action, "free") == 0) {
+            int found_idx = -1;
+            for (int i = 0; i < g_tso_alloc_count; i++) {
+                if (strcasecmp(g_tso_allocs_dd[i], ddname) == 0) {
+                    found_idx = i;
+                    break;
+                }
+            }
+            if (found_idx != -1) {
+                printf("[FREE] DD %s freed dynamically from dataset %s. RC=0000\n",
+                       g_tso_allocs_dd[found_idx], g_tso_allocs_ds[found_idx]);
+                // Shift array
+                for (int i = found_idx; i < g_tso_alloc_count - 1; i++) {
+                    strcpy(g_tso_allocs_dd[i], g_tso_allocs_dd[i + 1]);
+                    strcpy(g_tso_allocs_ds[i], g_tso_allocs_ds[i + 1]);
+                }
+                g_tso_alloc_count--;
+            } else {
+                printf("[FREE ERROR] DD %s not allocated.\n", ddname);
+            }
+            return true;
+        }
+    }
+    printf("[ALLOC ERROR] Syntax: cbtalloc [alloc <dd> <ds> | free <dd>]\n");
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+// 16. CICS Transient Storage Queue (TSQ) Processor
+// -----------------------------------------------------------------------------
+static char g_cics_tsq_names[4][16];
+static char g_cics_tsq_data[4][128];
+static int g_cics_tsq_count = 0;
+
+static bool handle_cbtcicsts(const char *cmd) {
+    char action[16] = "";
+    char tsq_name[16] = "";
+    char val[128] = "";
+    int scanned = sscanf(cmd + 10, "%15s %15s %[^\n]", action, tsq_name, val);
+    if (scanned >= 2) {
+        if (strcasecmp(action, "write") == 0) {
+            int found_idx = -1;
+            for (int i = 0; i < g_cics_tsq_count; i++) {
+                if (strcmp(g_cics_tsq_names[i], tsq_name) == 0) {
+                    found_idx = i;
+                    break;
+                }
+            }
+            if (found_idx == -1 && g_cics_tsq_count < 4) {
+                found_idx = g_cics_tsq_count++;
+                strncpy(g_cics_tsq_names[found_idx], tsq_name, 15);
+                g_cics_tsq_names[found_idx][15] = '\0';
+            }
+            if (found_idx != -1) {
+                strncpy(g_cics_tsq_data[found_idx], val, 127);
+                g_cics_tsq_data[found_idx][127] = '\0';
+                printf("[CICS TSQ] Written to TSQ %s: '%s'\n", tsq_name, val);
+            }
+            return true;
+        }
+        if (strcasecmp(action, "read") == 0) {
+            char *out = "(NULL)";
+            for (int i = 0; i < g_cics_tsq_count; i++) {
+                if (strcmp(g_cics_tsq_names[i], tsq_name) == 0) {
+                    out = g_cics_tsq_data[i];
+                    break;
+                }
+            }
+            printf("[CICS TSQ] Read from TSQ %s: '%s'\n", tsq_name, out);
+            return true;
+        }
+    }
+    printf("[CICS TSQ ERROR] Syntax: cbtcicsts [write <tsq> <val> | read <tsq>]\n");
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+// 17. VTAM Net/USS Logon Solicit Screen Virtualizer
+// -----------------------------------------------------------------------------
+static bool handle_vtamuss(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  **AUNCIENT** VTAM MULTI-SYSTEM SOLICIT SCREEN                 \n");
+    printf("================================================================================\n");
+    printf("         XPL1 SYSTEM ONLINE (MVS/XA SP2.1) - DATE: 26/07/29 TIME: 12:00:00\n\n");
+    printf(" ENTER APPLID SUB-SYSTEM TO CONNECT LOGICAL TERMINAL PATHWAY:\n");
+    printf("   - TSO     (TSO/E Terminal Session Manager)\n");
+    printf("   - CICS    (Customer Information Control System)\n");
+    printf("   - USENET  (Usenet-Over-SNA Bulletin Board Dispatch)\n\n");
+    printf(" APPLID ===> \n");
+    printf("================================================================================\n");
+    return true;
+}
+
+// -----------------------------------------------------------------------------
 // Entry Point / Command Router
 // -----------------------------------------------------------------------------
 bool tsfi_xplos_shell_cbt_extra(const char *cmd) {
@@ -1229,6 +1354,15 @@ bool tsfi_xplos_shell_cbt_extra(const char *cmd) {
     }
     if (strncmp(cmd, "vtam3270 ", 9) == 0) {
         return handle_vtam3270(cmd);
+    }
+    if (strncmp(cmd, "cbtalloc ", 9) == 0) {
+        return handle_cbtalloc(cmd);
+    }
+    if (strncmp(cmd, "cbtcicsts ", 10) == 0) {
+        return handle_cbtcicsts(cmd);
+    }
+    if (strcmp(cmd, "vtamuss") == 0) {
+        return handle_vtamuss();
     }
     return false;
 }
