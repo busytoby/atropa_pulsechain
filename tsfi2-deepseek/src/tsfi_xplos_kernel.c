@@ -122,6 +122,7 @@ void tsfi_xplos_run(XplosScheduler *sched) {
             tsfi_xplos_yield(sched);
         }
     }
+    sched->task_count = 0;
 }
 
 

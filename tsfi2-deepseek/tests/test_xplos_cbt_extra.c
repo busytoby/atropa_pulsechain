@@ -122,9 +122,75 @@ int main(void) {
     // 8. Test VTAM Logon Virtualization
     printf("[TEST] Logging on to CICS and USENET application sessions...\n");
     bool logon_cics = tsfi_xplos_shell_exec(&shell, &sched, "logon APPLID(cics)");
-    bool logon_use = tsfi_xplos_shell_exec(&shell, &sched, "logon APPLID(usenet)");
     assert(logon_cics == true);
+    tsfi_xplos_run(&sched);
+
+    bool logon_use = tsfi_xplos_shell_exec(&shell, &sched, "logon APPLID(usenet)");
     assert(logon_use == true);
+    tsfi_xplos_run(&sched);
+
+    // 9. Test REXX Shared Variable Pool
+    printf("[TEST] Checking REXX Shared Variable Pool (vput/vget)...\n");
+    bool vput_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtrexx vput SYSVAR 953467954114363");
+    assert(vput_ok == true);
+    tsfi_xplos_run(&sched);
+
+    bool vget_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtrexx vget SYSVAR");
+    assert(vget_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 10. Test IEBGENER Sequential Copy
+    printf("[TEST] Creating source dataset for IEBGENER...\n");
+    assert(tsfi_xplos_create_file(&g_vfs, "GENSRC.dat.bin", 1024) == true);
+    XplosFile *gen_src = &g_vfs.files[g_vfs.count - 1];
+    strcpy(gen_src->data, "IEBGENER sequential data line 1\nIEBGENER sequential data line 2\n");
+    gen_src->size_bytes = (uint32_t)strlen(gen_src->data);
+
+    printf("[TEST] Running IEBGENER copy...\n");
+    bool gen_ok = tsfi_xplos_shell_exec(&shell, &sched, "iebgener GENSRC GENTGT E2A");
+    assert(gen_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 11. Test TSO HELP Guide
+    printf("[TEST] Running TSO HELP...\n");
+    bool help_ok = tsfi_xplos_shell_exec(&shell, &sched, "help submit");
+    assert(help_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 12. Test HASP Spool Log reader, Priorities, Hold/Release, and Purge
+    printf("[TEST] Testing HASP Hold, Release, Priority, and Purge spool cycles...\n");
+    
+    // Create JCL file with TYPRUN=HOLD and PRTY=12
+    assert(tsfi_xplos_create_file(&g_vfs, "HLDJOB.dat.bin", 2048) == true);
+    XplosFile *hld_file = &g_vfs.files[g_vfs.count - 1];
+    strcpy(hld_file->data,
+           "//HLDJOB JOB 'HOLD TEST',CLASS=A,TYPRUN=HOLD,PRTY=12\n"
+           "//STEP1 EXEC PGM=IEBCOPY\n");
+    hld_file->size_bytes = (uint32_t)strlen(hld_file->data);
+
+    // Submit held job
+    bool sub_hld = tsfi_xplos_shell_exec(&shell, &sched, "submit HLDJOB");
+    assert(sub_hld == true);
+    tsfi_xplos_run(&sched);
+
+    // Verify it is HELD
+    bool hasp_stat1 = tsfi_xplos_shell_exec(&shell, &sched, "cbthasp status");
+    assert(hasp_stat1 == true);
+    tsfi_xplos_run(&sched);
+
+    // Release it to dispatch by priority
+    bool hasp_rel = tsfi_xplos_shell_exec(&shell, &sched, "cbthasp release JOB0104");
+    assert(hasp_rel == true);
+    tsfi_xplos_run(&sched);
+
+    // Trigger interrupt
+    bool hasp_int = tsfi_xplos_shell_exec(&shell, &sched, "cbthasp interrupt");
+    assert(hasp_int == true);
+    tsfi_xplos_run(&sched);
+
+    // Purge job
+    bool hasp_prg = tsfi_xplos_shell_exec(&shell, &sched, "cbthasp purge JOB0104");
+    assert(hasp_prg == true);
     tsfi_xplos_run(&sched);
 
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");

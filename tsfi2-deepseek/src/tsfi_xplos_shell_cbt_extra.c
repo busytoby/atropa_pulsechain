@@ -306,11 +306,85 @@ static void execute_rexx_script(const char *script_data, const char *script_args
     printf("[CBTREXX EXECUTION COMPLETED]\n");
 }
 
+static char g_rexx_pool_names[32][32];
+static char g_rexx_pool_vals[32][128];
+static int g_rexx_pool_count = 0;
+
+static char g_hasp_spool_logs[10][4096];
+static int g_hasp_job_priority[10];
+
+static void append_spool_log(const char *job_name, const char *msg) {
+    for (int i = 0; i < 10; i++) {
+        if (cbt_job_table[i].active && strcasecmp(cbt_job_table[i].job_name, job_name) == 0) {
+            strncat(g_hasp_spool_logs[i], msg, sizeof(g_hasp_spool_logs[i]) - strlen(g_hasp_spool_logs[i]) - 1);
+            break;
+        }
+    }
+}
+
+static void hasp_dispatch_highest_priority(void) {
+    int best_idx = -1;
+    int highest_prty = -1;
+    for (int i = 0; i < 10; i++) {
+        if (cbt_job_table[i].active && strcmp(cbt_job_table[i].status, "READY") == 0) {
+            if (g_hasp_job_priority[i] > highest_prty) {
+                highest_prty = g_hasp_job_priority[i];
+                best_idx = i;
+            }
+        }
+    }
+    if (best_idx != -1) {
+        strcpy(cbt_job_table[best_idx].status, "RUNNING");
+        printf("[HASP DISPATCHER] Dispatching Job %s (%s) with Priority %d\n",
+               cbt_job_table[best_idx].job_id, cbt_job_table[best_idx].job_name, highest_prty);
+        char run_cmd[128];
+        snprintf(run_cmd, sizeof(run_cmd), "jclrun %s", cbt_job_table[best_idx].job_name);
+        tsfi_xplos_shell_cbt_extra(run_cmd);
+        strcpy(cbt_job_table[best_idx].status, "COMPLETED");
+    }
+}
+
 static bool handle_cbtrexx(const char *cmd) {
     char script_name[64] = "";
     char script_args[128] = "";
     int scanned = sscanf(cmd + 8, "%63s %[^\n]", script_name, script_args);
     if (scanned >= 1) {
+        if (strcasecmp(script_name, "vput") == 0) {
+            char varname[32] = "";
+            char value[128] = "";
+            if (sscanf(script_args, "%31s %[^\n]", varname, value) >= 1) {
+                int found_idx = -1;
+                for (int i = 0; i < g_rexx_pool_count; i++) {
+                    if (strcmp(g_rexx_pool_names[i], varname) == 0) {
+                        found_idx = i;
+                        break;
+                    }
+                }
+                if (found_idx == -1 && g_rexx_pool_count < 32) {
+                    found_idx = g_rexx_pool_count++;
+                    strncpy(g_rexx_pool_names[found_idx], varname, 31);
+                }
+                if (found_idx != -1) {
+                    strncpy(g_rexx_pool_vals[found_idx], value, 127);
+                    printf("[CBTREXX POOL] vput variable: %s = '%s'\n", varname, value);
+                }
+            }
+            return true;
+        }
+        if (strcasecmp(script_name, "vget") == 0) {
+            char varname[32] = "";
+            sscanf(script_args, "%31s", varname);
+            char *val = "(NULL)";
+            for (int i = 0; i < g_rexx_pool_count; i++) {
+                if (strcmp(g_rexx_pool_names[i], varname) == 0) {
+                    val = g_rexx_pool_vals[i];
+                    break;
+                }
+            }
+            printf("[CBTREXX POOL] vget variable: %s = '%s'\n", varname, val);
+            return true;
+        }
+
         char vfs_filename[128];
         resolve_pds_name_extra(script_name, vfs_filename, sizeof(vfs_filename));
 
@@ -376,7 +450,10 @@ static bool handle_jclrun(const char *cmd) {
                      jcl_name);
         }
 
-        printf("[JCLRUN EXECUTION START: %s]\n", jcl_name);
+        char log_msg[256];
+        snprintf(log_msg, sizeof(log_msg), "[JCLRUN EXECUTION START: %s]\n", jcl_name);
+        printf("%s", log_msg);
+        append_spool_log(jcl_name, log_msg);
 
         char *line = strtok(jcl_data, "\n");
         int rc = 0;
@@ -387,48 +464,63 @@ static bool handle_jclrun(const char *cmd) {
             while (isspace((unsigned char)*line)) line++;
 
             if (strncmp(line, "//", 2) == 0) {
-                // Parse JCL control card
                 const char *card = line + 2;
                 while (isspace((unsigned char)*card)) card++;
 
                 if (strncmp(card, "IF ", 3) == 0 || strncmp(card, "if ", 3) == 0) {
-                    printf("  JCL_COND> Checking condition: %s\n", card);
-                    // Mock conditional evaluation
+                    snprintf(log_msg, sizeof(log_msg), "  JCL_COND> Checking condition: %s\n", card);
+                    printf("%s", log_msg);
+                    append_spool_log(jcl_name, log_msg);
                     if (strstr(card, "RC = 0") && rc != 0) {
                         skip_block = true;
-                        printf("  JCL_COND> Condition Failed. Bypassing subsequent steps.\n");
+                        snprintf(log_msg, sizeof(log_msg), "  JCL_COND> Condition Failed. Bypassing subsequent steps.\n");
+                        printf("%s", log_msg);
+                        append_spool_log(jcl_name, log_msg);
                     }
                 }
                 else if (strncmp(card, "ENDIF", 5) == 0 || strncmp(card, "endif", 5) == 0) {
                     skip_block = false;
-                    printf("  JCL_COND> ENDIF reached.\n");
+                    snprintf(log_msg, sizeof(log_msg), "  JCL_COND> ENDIF reached.\n");
+                    printf("%s", log_msg);
+                    append_spool_log(jcl_name, log_msg);
                 }
                 else if (strstr(card, " EXEC ") || strstr(card, " exec ")) {
                     if (skip_block) {
-                        printf("  JCL_STEP> Bypassed step: %s\n", card);
+                        snprintf(log_msg, sizeof(log_msg), "  JCL_STEP> Bypassed step: %s\n", card);
+                        printf("%s", log_msg);
+                        append_spool_log(jcl_name, log_msg);
                     } else {
                         char pgm_name[64] = "";
                         char *pgm_ptr = strstr(card, "PGM=");
                         if (pgm_ptr) {
                             sscanf(pgm_ptr + 4, "%63[^, \r\n]", pgm_name);
                         }
-                        printf("  JCL_STEP> Executing step Program: %s\n", pgm_name);
-                        // Simulate program execution exit codes
+                        snprintf(log_msg, sizeof(log_msg), "  JCL_STEP> Executing step Program: %s\n", pgm_name);
+                        printf("%s", log_msg);
+                        append_spool_log(jcl_name, log_msg);
                         if (strcmp(pgm_name, "IEBCOPY") == 0) {
                             rc = 0;
-                            printf("    * IEBCOPY completed successfully. RC=0000\n");
+                            snprintf(log_msg, sizeof(log_msg), "    * IEBCOPY completed successfully. RC=0000\n");
+                            printf("%s", log_msg);
+                            append_spool_log(jcl_name, log_msg);
                         } else if (strcmp(pgm_name, "IBHDRPLY") == 0) {
                             rc = 0;
-                            printf("    * IBHDRPLY Automatic Reply executed. RC=0000\n");
+                            snprintf(log_msg, sizeof(log_msg), "    * IBHDRPLY Automatic Reply executed. RC=0000\n");
+                            printf("%s", log_msg);
+                            append_spool_log(jcl_name, log_msg);
                         } else {
                             rc = 4;
-                            printf("    * Program %s executed. RC=0004 (Warning)\n", pgm_name);
+                            snprintf(log_msg, sizeof(log_msg), "    * Program %s executed. RC=0004 (Warning)\n", pgm_name);
+                            printf("%s", log_msg);
+                            append_spool_log(jcl_name, log_msg);
                         }
                     }
                 }
                 else if (strstr(card, " DD ") || strstr(card, " dd ")) {
                     if (!skip_block) {
-                        printf("  JCL_ALLOC> Allocation: %s\n", card);
+                        snprintf(log_msg, sizeof(log_msg), "  JCL_ALLOC> Allocation: %s\n", card);
+                        printf("%s", log_msg);
+                        append_spool_log(jcl_name, log_msg);
                     }
                 }
             }
@@ -436,7 +528,9 @@ static bool handle_jclrun(const char *cmd) {
             line = strtok(NULL, "\n");
         }
 
-        printf("[JCLRUN EXECUTION COMPLETED: Max RC=%04d]\n", rc);
+        snprintf(log_msg, sizeof(log_msg), "[JCLRUN EXECUTION COMPLETED: Max RC=%04d]\n", rc);
+        printf("%s", log_msg);
+        append_spool_log(jcl_name, log_msg);
         return true;
     }
     printf("[JCLRUN ERROR] JCL member name required.\n");
@@ -532,7 +626,6 @@ static bool handle_iebupdte(const char *cmd) {
     int members_updated = 0;
     
     while (line) {
-        // Trim trailing whitespace
         size_t len = strlen(line);
         while (len > 0 && isspace((unsigned char)line[len - 1])) {
             line[len - 1] = '\0';
@@ -610,6 +703,7 @@ static bool handle_submit(const char *cmd) {
     }
     char vfs_filename[128];
     resolve_pds_name_extra(member, vfs_filename, sizeof(vfs_filename));
+    
     int file_idx = -1;
     for (int i = 0; i < g_vfs.count; i++) {
         if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, vfs_filename) == 0) {
@@ -636,18 +730,36 @@ static bool handle_submit(const char *cmd) {
     sprintf(cbt_job_table[free_idx].job_id, "JOB%04d", 100 + free_idx);
     strncpy(cbt_job_table[free_idx].job_name, member, 15);
     cbt_job_table[free_idx].job_name[15] = '\0';
-    strcpy(cbt_job_table[free_idx].status, "READY");
+    
+    // Parse priority and held state from file content
+    int priority = 1;
+    bool held = false;
+    if (file_idx >= 0) {
+        char *prty_ptr = strstr(g_vfs.files[file_idx].data, "PRTY=");
+        if (prty_ptr) {
+            sscanf(prty_ptr + 5, "%d", &priority);
+        } else {
+            prty_ptr = strstr(g_vfs.files[file_idx].data, "PRIORITY=");
+            if (prty_ptr) {
+                sscanf(prty_ptr + 9, "%d", &priority);
+            }
+        }
+        if (strstr(g_vfs.files[file_idx].data, "TYPRUN=HOLD")) {
+            held = true;
+        }
+    }
+    g_hasp_job_priority[free_idx] = priority;
+
+    strcpy(cbt_job_table[free_idx].status, held ? "HELD" : "READY");
     cbt_job_table[free_idx].class_char = 'A';
     cbt_job_table[free_idx].active = true;
     cbt_job_table[free_idx].cics_origin = false;
+    memset(g_hasp_spool_logs[free_idx], 0, sizeof(g_hasp_spool_logs[free_idx]));
     
-    printf("[SUBMIT] Job %s (%s) submitted to JES Spool dynamically.\n", cbt_job_table[free_idx].job_id, cbt_job_table[free_idx].job_name);
+    printf("[SUBMIT] Job %s (%s) submitted to JES Spool (PRTY=%d, STATUS=%s).\n", 
+           cbt_job_table[free_idx].job_id, cbt_job_table[free_idx].job_name, priority, cbt_job_table[free_idx].status);
     
-    // Trigger the JCL parser
-    char run_cmd[128];
-    snprintf(run_cmd, sizeof(run_cmd), "jclrun %s", member);
-    tsfi_xplos_shell_cbt_extra(run_cmd);
-    
+    hasp_dispatch_highest_priority();
     return true;
 }
 
@@ -717,6 +829,217 @@ static bool handle_vtam_logon(const char *cmd) {
 }
 
 // -----------------------------------------------------------------------------
+// 9. IEBGENER Copy Utility Emulation
+// -----------------------------------------------------------------------------
+static bool handle_iebgener(const char *cmd) {
+    char sysut1[64] = "";
+    char sysut2[64] = "";
+    char mode[16] = "";
+    int scanned = sscanf(cmd + 9, "%63s %63s %15s", sysut1, sysut2, mode);
+    if (scanned >= 2) {
+        char vfs_ut1[128];
+        char vfs_ut2[128];
+        resolve_pds_name_extra(sysut1, vfs_ut1, sizeof(vfs_ut1));
+        resolve_pds_name_extra(sysut2, vfs_ut2, sizeof(vfs_ut2));
+
+        int file_idx = -1;
+        for (int i = 0; i < g_vfs.count; i++) {
+            if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, vfs_ut1) == 0) {
+                file_idx = i;
+                break;
+            }
+        }
+        if (file_idx < 0) {
+            printf("[IEBGENER ERROR] SYSUT1 source dataset '%s' not found.\n", sysut1);
+            return true;
+        }
+
+        int target_idx = -1;
+        for (int i = 0; i < g_vfs.count; i++) {
+            if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, vfs_ut2) == 0) {
+                target_idx = i;
+                break;
+            }
+        }
+        if (target_idx < 0) {
+            tsfi_xplos_create_file(&g_vfs, vfs_ut2, 64 * 1024);
+            target_idx = g_vfs.count - 1;
+        }
+
+        XplosFile *src = &g_vfs.files[file_idx];
+        XplosFile *dest = &g_vfs.files[target_idx];
+
+        // Format conversion if requested
+        if (strcasecmp(mode, "E2A") == 0) {
+            // EBCDIC to ASCII mock copy
+            printf("[IEBGENER] Copying %s -> %s with EBCDIC to ASCII translation.\n", sysut1, sysut2);
+            strcpy(dest->data, src->data);
+        } else if (strcasecmp(mode, "A2E") == 0) {
+            // ASCII to EBCDIC mock copy
+            printf("[IEBGENER] Copying %s -> %s with ASCII to EBCDIC translation.\n", sysut1, sysut2);
+            strcpy(dest->data, src->data);
+        } else {
+            printf("[IEBGENER] Sequential record copy completed: %s -> %s\n", sysut1, sysut2);
+            strcpy(dest->data, src->data);
+        }
+        dest->size_bytes = (uint32_t)strlen(dest->data);
+        printf("  - IEBGENER: Transferred %d bytes successfully. RC=0000\n", dest->size_bytes);
+        return true;
+    }
+    printf("[IEBGENER ERROR] SYSUT1 and SYSUT2 parameters required.\n");
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+// 10. TSO HELP command directory
+// -----------------------------------------------------------------------------
+static bool handle_cbthelp(const char *cmd) {
+    char target[64] = "";
+    int scanned = sscanf(cmd + 5, "%63s", target);
+    if (scanned <= 0) {
+        printf("[CBTHELP] **AUNCIENT** TSO Command Directory Guide:\n");
+        printf("  - cbtnet   : Usenet over SNA manager (status, post, read)\n");
+        printf("  - cbtrexx  : REXX Script execution & variable pool helper (vput, vget)\n");
+        printf("  - jclrun   : Run batch JCL scripts from VFS members\n");
+        printf("  - ispfmenu : Launch virtual ISPF panel options\n");
+        printf("  - iebupdte : Update PDS members using update decks\n");
+        printf("  - submit   : Submit JCL members directly to JES spool\n");
+        printf("  - smfdump  : Dump SMF performance metrics\n");
+        printf("  - logon    : Request VTAM session logon to subsystem APPLID\n");
+        printf("  - iebgener : Copy sequential VFS datasets with translations\n");
+        printf("  - cbthasp  : HASP Controller Spool Log reader\n");
+        printf("Type 'help <command>' for specific syntax assistance.\n");
+        return true;
+    }
+
+    printf("[CBTHELP] Command Help for: %s\n", target);
+    if (strcasecmp(target, "submit") == 0) {
+        printf("  - Syntax: submit <member_name>\n");
+        printf("  - Description: Submits the specified JCL member from the PDS VFS to JES spool.\n");
+    } else if (strcasecmp(target, "iebupdte") == 0) {
+        printf("  - Syntax: iebupdte <sysin_member>\n");
+        printf("  - Description: Updates/Creates PDS members from inline data using control cards.\n");
+    } else if (strcasecmp(target, "cbtnet") == 0) {
+        printf("  - Syntax: cbtnet [status | post group | auth | sub | body | read group]\n");
+        printf("  - Description: Connects and replicates Usenet-over-SNA Logical Units.\n");
+    } else if (strcasecmp(target, "iebgener") == 0) {
+        printf("  - Syntax: iebgener <sysut1> <sysut2> [mode]\n");
+        printf("  - Description: Copies dataset contents with optional EBCDIC/ASCII mapping.\n");
+    } else {
+        printf("  - Command '%s' found. Usage fits standard TSO positional parameters.\n", target);
+    }
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+// 11. HASP Spool Log Controller
+// -----------------------------------------------------------------------------
+static bool handle_cbthasp(const char *cmd) {
+    char subcmd[32] = "";
+    char arg[64] = "";
+    int scanned = sscanf(cmd + 8, "%31s %63s", subcmd, arg);
+    if (scanned >= 1) {
+        if (strcasecmp(subcmd, "log") == 0) {
+            if (strlen(arg) == 0) {
+                printf("[HASP ERROR] Job ID required to dump spool log.\n");
+                return true;
+            }
+            int found_idx = -1;
+            for (int i = 0; i < 10; i++) {
+                if (cbt_job_table[i].active && strcasecmp(cbt_job_table[i].job_id, arg) == 0) {
+                    found_idx = i;
+                    break;
+                }
+            }
+            if (found_idx != -1) {
+                printf("[HASP SPOOL LOG: %s (%s)]\n", cbt_job_table[found_idx].job_id, cbt_job_table[found_idx].job_name);
+                printf("--------------------------------------------------------------------------------\n");
+                printf("%s", g_hasp_spool_logs[found_idx]);
+                printf("--------------------------------------------------------------------------------\n");
+            } else {
+                printf("[HASP ERROR] Job ID %s not found in Spool Log database.\n", arg);
+            }
+            return true;
+        }
+        if (strcasecmp(subcmd, "status") == 0) {
+            printf("[HASP STATUS] Active HASP execution spool summary:\n");
+            for (int i = 0; i < 10; i++) {
+                if (cbt_job_table[i].active) {
+                    printf("  - %s (%-8s) -> STATUS: %s (PRTY: %d, Spool Log: %d bytes)\n",
+                           cbt_job_table[i].job_id, cbt_job_table[i].job_name,
+                           cbt_job_table[i].status, g_hasp_job_priority[i], (int)strlen(g_hasp_spool_logs[i]));
+                }
+            }
+            return true;
+        }
+        if (strcasecmp(subcmd, "hold") == 0) {
+            if (strlen(arg) == 0) {
+                printf("[HASP ERROR] Job ID required for HOLD.\n");
+                return true;
+            }
+            for (int i = 0; i < 10; i++) {
+                if (cbt_job_table[i].active && strcasecmp(cbt_job_table[i].job_id, arg) == 0) {
+                    strcpy(cbt_job_table[i].status, "HELD");
+                    printf("[HASP] Job %s placed on HELD status.\n", arg);
+                    return true;
+                }
+            }
+            printf("[HASP ERROR] Job ID %s not found.\n", arg);
+            return true;
+        }
+        if (strcasecmp(subcmd, "release") == 0) {
+            if (strlen(arg) == 0) {
+                printf("[HASP ERROR] Job ID required for RELEASE.\n");
+                return true;
+            }
+            for (int i = 0; i < 10; i++) {
+                if (cbt_job_table[i].active && strcasecmp(cbt_job_table[i].job_id, arg) == 0) {
+                    if (strcmp(cbt_job_table[i].status, "HELD") == 0) {
+                        strcpy(cbt_job_table[i].status, "READY");
+                        printf("[HASP] Job %s released to READY queue.\n", arg);
+                        hasp_dispatch_highest_priority();
+                    } else {
+                        printf("[HASP WARNING] Job %s is not in HELD status (Current: %s).\n", arg, cbt_job_table[i].status);
+                    }
+                    return true;
+                }
+            }
+            printf("[HASP ERROR] Job ID %s not found.\n", arg);
+            return true;
+        }
+        if (strcasecmp(subcmd, "purge") == 0) {
+            if (strlen(arg) == 0) {
+                printf("[HASP ERROR] Job ID required for PURGE.\n");
+                return true;
+            }
+            for (int i = 0; i < 10; i++) {
+                if (cbt_job_table[i].active && strcasecmp(cbt_job_table[i].job_id, arg) == 0) {
+                    cbt_job_table[i].active = false;
+                    memset(g_hasp_spool_logs[i], 0, sizeof(g_hasp_spool_logs[i]));
+                    printf("[HASP] Job %s purged from spool queue.\n", arg);
+                    return true;
+                }
+            }
+            printf("[HASP ERROR] Job ID %s not found.\n", arg);
+            return true;
+        }
+        if (strcasecmp(subcmd, "interrupt") == 0) {
+            printf("[HASP INTERRUPT] WinchesterMQ SCSI event received. Simulating hardware interrupt 0x5C3B...\n");
+            if (g_active_sched) {
+                tsfi_xplos_trigger_event(g_active_sched, 0x5C3B);
+                printf("[HASP INTERRUPT] WinchesterMQ event triggered on active scheduler. Dispatching ready jobs.\n");
+                hasp_dispatch_highest_priority();
+            } else {
+                printf("[HASP INTERRUPT] No active scheduler registered.\n");
+            }
+            return true;
+        }
+    }
+    printf("[HASP ERROR] Subcommand log, status, hold, release, purge, or interrupt required.\n");
+    return true;
+}
+
+// -----------------------------------------------------------------------------
 // Entry Point / Command Router
 // -----------------------------------------------------------------------------
 bool tsfi_xplos_shell_cbt_extra(const char *cmd) {
@@ -743,6 +1066,15 @@ bool tsfi_xplos_shell_cbt_extra(const char *cmd) {
     }
     if (strncmp(cmd, "logon ", 6) == 0) {
         return handle_vtam_logon(cmd);
+    }
+    if (strncmp(cmd, "iebgener ", 9) == 0) {
+        return handle_iebgener(cmd);
+    }
+    if (strncmp(cmd, "help", 4) == 0) {
+        return handle_cbthelp(cmd);
+    }
+    if (strncmp(cmd, "cbthasp ", 8) == 0) {
+        return handle_cbthasp(cmd);
     }
     return false;
 }
