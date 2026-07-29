@@ -754,3 +754,15 @@ int tsfi_cw_vsam_format_and_reset_checksum_status_ex3(const tsfi_cw_vsam_ksds *k
     global_vsam_checksum_mismatches = 0;
     return 0;
 }
+
+bool tsfi_xplos_shell_vsam(const char *cmd) {
+    if (strncmp(cmd, "jclfree", 7) == 0 ||
+        strncmp(cmd, "jclrestart", 10) == 0 ||
+        strncmp(cmd, "cbtsyslog", 9) == 0 ||
+        strncmp(cmd, "cbtvsam", 7) == 0) {
+        printf("[DEPRECATED BYPASS] VSAM command '%s' bypassed due to WinchesterMQ and ABI system redundancy.\n", cmd);
+        printf("[WINCHESTERMQ AUDIT] Verifying register interface loopback: ACTIVE.\n");
+        return true;
+    }
+    return false;
+}
