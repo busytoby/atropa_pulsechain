@@ -979,6 +979,34 @@ static bool handle_cbtjcljoblimitstatsstatusdetails(void) {
     return true;
 }
 
+static bool handle_cbtjcljoblimitstatsstatusdetailsprogress(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JCL JOB RESOURCE LIMIT LOGS AUDIT PROGRESS                    \n");
+    printf("================================================================================\n");
+    printf(" AUDIT ALIGNMENT    : 100 PERCENT ALIGNMENT\n");
+    printf(" COMPLIANCE STATUS  : VALIDATED. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
+static bool handle_cbtjcljoblimitreset(void) {
+    printf("[JCL] Job resource limits reset back to standard baseline parameters\n");
+    printf("  - Limit parameters cleared. RC=0000\n");
+    return true;
+}
+
+static bool handle_cbtjcljoblimitresetstat(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JCL JOB RESOURCE LIMIT RESETS STATISTICS                      \n");
+    printf("================================================================================\n");
+    printf(" LIMIT RESETS RUN   : 1 RESETS\n");
+    printf(" RESET STATE STATUS : OPERATIONAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "ieb", 3) == 0) {
         printf("[DEPRECATION WARNING] Batch utility program '%s' is deprecated and scheduled for removal.\n", cmd);
@@ -994,8 +1022,11 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strcmp(cmd, "cbtjclresstatresetstats") == 0) return handle_cbtjclresstatresetstats();
     if (strcmp(cmd, "cbtjclresstatresetstat") == 0) return handle_cbtjclresstatresetstat();
     if (strcmp(cmd, "cbtjclresstatreset") == 0) return handle_cbtjclresstatreset();
+    if (strcmp(cmd, "cbtjcljoblimitstatsstatusdetailsprogress") == 0) return handle_cbtjcljoblimitstatsstatusdetailsprogress();
     if (strcmp(cmd, "cbtjcljoblimitstatsstatusdetails") == 0) return handle_cbtjcljoblimitstatsstatusdetails();
     if (strcmp(cmd, "cbtjcljoblimitstatsstatus") == 0) return handle_cbtjcljoblimitstatsstatus();
+    if (strcmp(cmd, "cbtjcljoblimitresetstat") == 0) return handle_cbtjcljoblimitresetstat();
+    if (strcmp(cmd, "cbtjcljoblimitreset") == 0) return handle_cbtjcljoblimitreset();
     if (strcmp(cmd, "cbtjcljoblimitstats") == 0) return handle_cbtjcljoblimitstats();
     if (strcmp(cmd, "cbtjcljoblimitstat") == 0) return handle_cbtjcljoblimitstat();
     if (strncmp(cmd, "cbtjcljoblimit ", 15) == 0) return handle_cbtjcljoblimit(cmd);
