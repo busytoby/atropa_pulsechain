@@ -563,6 +563,17 @@ static bool handle_vtamroutereccountlimitsreset(void) {
     return true;
 }
 
+static bool handle_vtamroutereccountlimitsresetstat(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  VTAM GATEWAY LIMITS RESET STATISTICS                          \n");
+    printf("================================================================================\n");
+    printf(" LIMIT RESETS COUNT   : 1 RESETS\n");
+    printf(" RECOVERY STATE STABLE: YES. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 static bool handle_vtamrouterecresetstat(void) {
     printf("[VTAM] Gateway route recovery telemetry counters reset to zero\n");
     printf("  - Scheduler statistics telemetry cleared. RC=0000\n");
@@ -603,6 +614,7 @@ bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strcmp(cmd, "vtamroutereccountreset") == 0) return handle_vtamroutereccountreset();
     if (strcmp(cmd, "vtamroutereccountstat") == 0) return handle_vtamroutereccountstat();
     if (strcmp(cmd, "vtamroutereccountlimitsreset") == 0) return handle_vtamroutereccountlimitsreset();
+    if (strcmp(cmd, "vtamroutereccountlimitsresetstat") == 0) return handle_vtamroutereccountlimitsresetstat();
     if (strncmp(cmd, "vtamroutereccountlimits ", 24) == 0 || strcmp(cmd, "vtamroutereccountlimits") == 0) return handle_vtamroutereccountlimits(cmd);
     if (strncmp(cmd, "vtamroutereccount ", 17) == 0) return handle_vtamroutereccount(cmd);
     if (strcmp(cmd, "vtamrouterecreset") == 0) return handle_vtamrouterecreset();

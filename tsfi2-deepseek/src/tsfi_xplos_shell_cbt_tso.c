@@ -718,6 +718,17 @@ static bool handle_cbtsubwaitretryscriptchklistresetstatsstat(void) {
     return true;
 }
 
+static bool handle_cbtsubwaitretryscriptchklistresetstatsstatus(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JES JOB SYNCHRONOUS WAIT TIMEOUT RESET LOGS STATUS DETAILS    \n");
+    printf("================================================================================\n");
+    printf(" LOGGING COMPLETED   : 100 PERCENT\n");
+    printf(" AUDITED DB CHUNKS   : 4 PARTITIONS. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtrexx ", 8) == 0) return handle_cbtrexx(cmd);
     if (strncmp(cmd, "ispfmenu", 8) == 0) return handle_ispfmenu(cmd);
@@ -751,5 +762,6 @@ bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strcmp(cmd, "cbtsubwaitretryscriptchklistresetstat") == 0) return handle_cbtsubwaitretryscriptchklistresetstat();
     if (strcmp(cmd, "cbtsubwaitretryscriptchklistresetstats") == 0) return handle_cbtsubwaitretryscriptchklistresetstats();
     if (strcmp(cmd, "cbtsubwaitretryscriptchklistresetstatsstat") == 0) return handle_cbtsubwaitretryscriptchklistresetstatsstat();
+    if (strcmp(cmd, "cbtsubwaitretryscriptchklistresetstatsstatus") == 0) return handle_cbtsubwaitretryscriptchklistresetstatsstatus();
     return false;
 }
