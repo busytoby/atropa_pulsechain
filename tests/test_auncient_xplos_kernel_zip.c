@@ -1538,6 +1538,17 @@ int main(void) {
     tsfi_xplos_run(&sched_lic);
     printf("   ✓ CBTLIC execution verified successfully.\n");
 
+    // 103. Test CBTACCT command execution
+    printf("[KERNEL TEST] Dispatching 'cbtacct' command to XplOS shell...\n");
+    XplosShell shell_acct;
+    XplosScheduler sched_acct;
+    tsfi_xplos_init_scheduler(&sched_acct);
+    tsfi_xplos_init_shell(&shell_acct);
+    bool acct_ok = tsfi_xplos_shell_exec(&shell_acct, &sched_acct, "cbtacct");
+    assert(acct_ok == true);
+    tsfi_xplos_run(&sched_acct);
+    printf("   ✓ CBTACCT execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
