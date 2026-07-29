@@ -196,29 +196,24 @@ bool tsfi_cbt_mount_inmemory_pds(XplosVirtualDisk *vfs, const char *server_path)
         return false;
     }
 
-    // 1. Reassemble the XMIT segmented stream into a raw sequential IEBCOPY dataset in RAM
-    printf("[CBTMOUNTMEM] Reassembling XMIT records into raw IEBCOPY blocks...\n");
-    MemoryBuffer iebcopy_buf = {NULL, 0, 0};
-    size_t offset = 0;
-    while (offset + 80 <= hdr->uncompressed_size) {
-        // Skip transmission control records (INMR01, INMR02, etc.)
-        bool is_data_rec = true;
-        uint8_t ctrl[] = {0xC9, 0xD5, 0xD4, 0xD9}; // "INMR"
-        if (memcmp(decompressed + offset + 2, ctrl, 4) == 0) {
-            is_data_rec = false;
+    bool is_xmi = true;
+    uint8_t sig_ebcdic[] = {0xC9, 0xD5, 0xD4, 0xD9, 0xF0, 0xF1};
+    for (int i = 0; i < 6; i++) {
+        if (decompressed[2 + i] != sig_ebcdic[i]) {
+            is_xmi = false;
+            break;
         }
-
-        if (is_data_rec) {
-            // Reassemble payload segments from the 80-byte record
-            // First 2 bytes are RDW/length headers, remaining are payload segments
-            append_buffer(&iebcopy_buf, decompressed + offset + 2, 78);
-        }
-        offset += 80;
     }
 
-    printf("[CBTMOUNTMEM] Reassembled %zu bytes of raw IEBCOPY data.\n", iebcopy_buf.size);
+    if (!is_xmi) {
+        printf("[CBTMOUNTMEM ERROR] Unsupported file format inside archive.\n");
+        free(decompressed);
+        free(zip_buf.data);
+        return false;
+    }
 
-    // 2. Parse the IEBCOPY directory block headers to identify active members
+    printf("[CBTMOUNTMEM] Successfully decompressed XMIT payload: %u bytes in RAM.\n", hdr->uncompressed_size);
+
     const char *members[] = {
         "IBHDRPLY", "IBHWTORG", "OCX", "IBHLSPAC",
         "IBHJ2001", "IBHJ2005", "IBHJ2015", "IBHJESPM"
@@ -229,7 +224,7 @@ bool tsfi_cbt_mount_inmemory_pds(XplosVirtualDisk *vfs, const char *server_path)
     for (int i = 0; i < num_members; i++) {
         char vfs_name[64];
         snprintf(vfs_name, sizeof(vfs_name), "%s.dat.bin", members[i]);
-        
+
         uint8_t name_ebcdic[16];
         size_t m_len = strlen(members[i]);
         memset(name_ebcdic, 0x40, sizeof(name_ebcdic));
@@ -241,32 +236,32 @@ bool tsfi_cbt_mount_inmemory_pds(XplosVirtualDisk *vfs, const char *server_path)
             else if (members[i][k] >= '0' && members[i][k] <= '9') name_ebcdic[k] = 0xF0 + (members[i][k] - '0');
         }
 
-        // Find member records in the reassembled IEBCOPY buffer
         size_t member_offset = 0;
-        for (size_t k = 0; k + 80 < iebcopy_buf.size; k++) {
-            if (memcmp(iebcopy_buf.data + k, name_ebcdic, 8) == 0) {
-                member_offset = k;
+        for (size_t offset_loc = 0; offset_loc + 80 < hdr->uncompressed_size; offset_loc++) {
+            if (memcmp(decompressed + offset_loc, name_ebcdic, 8) == 0) {
+                member_offset = offset_loc;
                 break;
             }
         }
 
-        if (tsfi_xplos_create_file(vfs, vfs_name, 64 * 1024)) {
+        uint32_t file_size = 64 * 1024;
+        if (tsfi_xplos_create_file(vfs, vfs_name, file_size)) {
             XplosFile *vf = &vfs->files[vfs->count - 1];
             mounted++;
-            
+
             if (member_offset > 0) {
                 size_t dest_idx = 0;
                 for (size_t l = 0; l < 100; l++) {
                     size_t rec_offset = member_offset + l * 80;
-                    if (rec_offset + 80 > iebcopy_buf.size) break;
-                    
+                    if (rec_offset + 80 > hdr->uncompressed_size) break;
+
                     char ascii_line[81];
-                    ebcdic_to_ascii_buf(iebcopy_buf.data + rec_offset, ascii_line, 80);
-                    
+                    ebcdic_to_ascii_buf(decompressed + rec_offset, ascii_line, 80);
+
                     if (l > 0 && (strncmp(ascii_line, "./ ADD ", 7) == 0 || strncmp(ascii_line, "INMR", 4) == 0)) {
                         break;
                     }
-                    
+
                     size_t line_len = strlen(ascii_line);
                     if (dest_idx + line_len + 1 < sizeof(vf->data)) {
                         memcpy(vf->data + dest_idx, ascii_line, line_len);
@@ -275,8 +270,7 @@ bool tsfi_cbt_mount_inmemory_pds(XplosVirtualDisk *vfs, const char *server_path)
                     }
                 }
                 vf->data[dest_idx] = '\0';
-                
-                // Inject specific commands for execution
+
                 if (strcmp(members[i], "OCX") == 0) {
                     snprintf(vf->data, sizeof(vf->data),
                              "  - Command 01: 'cbtclear'\n"
@@ -288,7 +282,6 @@ bool tsfi_cbt_mount_inmemory_pds(XplosVirtualDisk *vfs, const char *server_path)
 
     printf("[CBTMOUNTMEM] Mounted %d PDS members into active Virtual Disk VFS.\n", mounted);
 
-    free(iebcopy_buf.data);
     free(decompressed);
     free(zip_buf.data);
     return true;

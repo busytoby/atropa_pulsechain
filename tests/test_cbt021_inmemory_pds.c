@@ -166,6 +166,20 @@ static void ebcdic_to_ascii_buf(const uint8_t *src, char *dest, size_t len) {
     dest[len] = '\0';
 }
 
+static bool is_valid_name_start(uint8_t b) {
+    if (b >= 0xC1 && b <= 0xC9) return true;
+    if (b >= 0xD1 && b <= 0xD9) return true;
+    if (b >= 0xE2 && b <= 0xE9) return true;
+    return false;
+}
+
+static bool is_valid_name_char(uint8_t b) {
+    if (is_valid_name_start(b)) return true;
+    if (b >= 0xF0 && b <= 0xF9) return true;
+    if (b == 0x40) return true;
+    return false;
+}
+
 int main(void) {
     printf("=============================================================\n");
     printf("DISKLESS IN-MEMORY PDS MOUNT & ANALYSIS: FILE 021\n");
@@ -205,58 +219,67 @@ int main(void) {
 
     if (is_xmi) {
         printf("  - Detected IBM Transmission format (XMIT/XMI) signature: INMR01\n");
-        
-        // Reassemble XMIT records into raw IEBCOPY data block
-        MemoryBuffer iebcopy_buf = {NULL, 0, 0};
-        size_t offset = 0;
-        while (offset + 80 <= hdr->uncompressed_size) {
-            bool is_data_rec = true;
-            if (memcmp(decompressed + offset + 2, sig_ebcdic, 4) == 0) {
-                is_data_rec = false;
-            }
-            if (is_data_rec) {
-                append_buffer(&iebcopy_buf, decompressed + offset + 2, 78);
-            }
-            offset += 80;
-        }
-
         printf("  - Scanning member list from directory blocks:\n");
-        const char *members[] = {
-            "IBHDRPLY", "IBHWTORG", "OCX", "IBHLSPAC",
-            "IBHJ2001", "IBHJ2005", "IBHJ2015", "IBHJESPM"
-        };
-        int num_members = sizeof(members) / sizeof(members[0]);
 
+        char found_names[64][9];
         int count = 0;
-        for (int i = 0; i < num_members; i++) {
-            uint8_t name_ebcdic[16];
-            size_t m_len = strlen(members[i]);
-            memset(name_ebcdic, 0x40, sizeof(name_ebcdic));
-            for (size_t k = 0; k < m_len; k++) {
-                name_ebcdic[k] = members[i][k];
-                if (members[i][k] >= 'A' && members[i][k] <= 'I') name_ebcdic[k] = 0xC1 + (members[i][k] - 'A');
-                else if (members[i][k] >= 'J' && members[i][k] <= 'R') name_ebcdic[k] = 0xD1 + (members[i][k] - 'J');
-                else if (members[i][k] >= 'S' && members[i][k] <= 'Z') name_ebcdic[k] = 0xE2 + (members[i][k] - 'S');
-                else if (members[i][k] >= '0' && members[i][k] <= '9') name_ebcdic[k] = 0xF0 + (members[i][k] - '0');
-            }
 
-            for (size_t k = 0; k + 80 < iebcopy_buf.size; k++) {
-                if (memcmp(iebcopy_buf.data + k, name_ebcdic, 8) == 0) {
-                    char ascii_name[9];
-                    ebcdic_to_ascii_buf(iebcopy_buf.data + k, ascii_name, 8);
-                    // Strip trailing spaces
-                    for (int s = 7; s >= 0; s--) {
-                        if (ascii_name[s] == ' ') ascii_name[s] = '\0';
-                        else break;
-                    }
-                    printf("    * PDS Member identified: %s\n", ascii_name);
-                    count++;
+        for (size_t offset = 0; offset + 12 < hdr->uncompressed_size; offset++) {
+            uint8_t first_char = decompressed[offset];
+            if (!is_valid_name_start(first_char)) continue;
+
+            bool valid = true;
+            for (int j = 1; j < 8; j++) {
+                uint8_t b = decompressed[offset + j];
+                if (!is_valid_name_char(b)) {
+                    valid = false;
                     break;
+                }
+            }
+            if (!valid) continue;
+
+            uint8_t ttr0 = decompressed[offset + 8];
+            uint8_t ttr1 = decompressed[offset + 9];
+            uint8_t ttr2 = decompressed[offset + 10];
+            uint8_t flags = decompressed[offset + 11];
+
+            if (ttr0 == 0 && ttr1 < 10 && ttr2 < 20 && flags < 0x20) {
+                char ascii_name[9];
+                ebcdic_to_ascii_buf(decompressed + offset, ascii_name, 8);
+
+                // Strip trailing spaces
+                for (int s = 7; s >= 0; s--) {
+                    if (ascii_name[s] == ' ') ascii_name[s] = '\0';
+                    else break;
+                }
+
+                // Filter names with spaces inside and common metadata fields
+                bool ok = true;
+                for (size_t s = 0; s < strlen(ascii_name); s++) {
+                    if (ascii_name[s] == ' ') ok = false;
+                }
+                if (strcmp(ascii_name, "MEMBER") == 0 || strcmp(ascii_name, "DSNAME") == 0 ||
+                    strcmp(ascii_name, "RECFM") == 0 || strcmp(ascii_name, "LRECL") == 0) {
+                    ok = false;
+                }
+
+                if (ok && strlen(ascii_name) >= 3) {
+                    bool exists = false;
+                    for (int m = 0; m < count; m++) {
+                        if (strcmp(found_names[m], ascii_name) == 0) {
+                            exists = true;
+                            break;
+                        }
+                    }
+                    if (!exists && count < 64) {
+                        strncpy(found_names[count++], ascii_name, 8);
+                        found_names[count - 1][8] = '\0';
+                        printf("    * PDS Member identified: %s\n", ascii_name);
+                    }
                 }
             }
         }
 
-        free(iebcopy_buf.data);
         printf("-------------------------------------------------------------\n");
         printf("[SUCCESS] In-memory PDS mount completed: %d active members identified.\n", count);
         printf("=============================================================\n");
