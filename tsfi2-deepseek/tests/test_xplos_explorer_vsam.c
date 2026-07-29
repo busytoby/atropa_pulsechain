@@ -46,6 +46,16 @@ int main(void) {
     bool cbtdict_ok = tsfi_xplos_shell_explorer("cbtdict test_vsam.dat.bin");
     assert(cbtdict_ok == true);
 
+    // 8. Test explorer command "cbttapemap" with valid format and Rule 13 constraint
+    printf("  -> Testing cbttapemap command format checks...\n");
+    bool tapemap_ok = tsfi_xplos_shell_explorer("cbttapemap test_vsam.dat.bin");
+    assert(tapemap_ok == true);
+
+    // 9. Test explorer command "cbtpdsrep" parameter count and format checks
+    printf("  -> Testing cbtpdsrep command validation...\n");
+    bool pdsrep_ok = tsfi_xplos_shell_explorer("cbtpdsrep test_vsam.dat.bin MEMBER FIND REPLACE");
+    assert(pdsrep_ok == true);
+
     printf("\n=== EXPLORER MAINFRAME VSAM TESTS PASSED ===\n");
     return 0;
 }
