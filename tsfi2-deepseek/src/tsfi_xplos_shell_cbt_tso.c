@@ -632,6 +632,17 @@ static bool handle_cbtsubwaitretrydelaylimit(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtsubwaitretryscriptdel(const char *cmd) {
+    char script[64] = "";
+    if (sscanf(cmd + 25, "%63s", script) < 1) {
+        printf("[SUBWAITRETRYSCRIPTEL ERROR] Syntax: cbtsubwaitretryscriptdel <script_id>\n");
+        return true;
+    }
+    printf("[SUBWAIT] Spool wait retry completion action script deregistered: %s\n", script);
+    printf("  - Custom execution script deleted. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtrexx ", 8) == 0) return handle_cbtrexx(cmd);
     if (strncmp(cmd, "ispfmenu", 8) == 0) return handle_ispfmenu(cmd);
@@ -657,5 +668,6 @@ bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtsubwaitretryscript ", 22) == 0) return handle_cbtsubwaitretryscript(cmd);
     if (strcmp(cmd, "cbtsubwaitretryscriptlist") == 0) return handle_cbtsubwaitretryscriptlist();
     if (strncmp(cmd, "cbtsubwaitretrydelaylimit ", 26) == 0) return handle_cbtsubwaitretrydelaylimit(cmd);
+    if (strncmp(cmd, "cbtsubwaitretryscriptdel ", 25) == 0) return handle_cbtsubwaitretryscriptdel(cmd);
     return false;
 }

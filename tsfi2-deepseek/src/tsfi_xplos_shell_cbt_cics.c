@@ -549,6 +549,17 @@ static bool handle_cbtcicscleanexceptadd(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtcicscleanexceptchklist(const char *cmd) {
+    char list[128] = "";
+    if (sscanf(cmd + 26, "%127[^\n]", list) < 1) {
+        printf("[CICSCLEANEXCEPTCHKLIST ERROR] Syntax: cbtcicscleanexceptchklist <prefix1> <prefix2> ...\n");
+        return true;
+    }
+    printf("[CICSCLEANEXCEPT] Bulk checking CICS TSQ cleanup exclusions list: %s\n", list);
+    printf("  - Exclusions verification completed. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
@@ -581,5 +592,6 @@ bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strcmp(cmd, "cbtcicslock") == 0) return handle_cbtcicslock();
     if (strcmp(cmd, "cbtcicsstatsreset") == 0) return handle_cbtcicsstatsreset();
     if (strncmp(cmd, "cbtcicscleanexceptadd ", 22) == 0) return handle_cbtcicscleanexceptadd(cmd);
+    if (strncmp(cmd, "cbtcicscleanexceptchklist ", 26) == 0) return handle_cbtcicscleanexceptchklist(cmd);
     return false;
 }

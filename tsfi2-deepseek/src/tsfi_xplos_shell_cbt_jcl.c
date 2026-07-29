@@ -748,6 +748,12 @@ static bool handle_iebgenerstat(void) {
     return true;
 }
 
+static bool handle_iebgenerreftab(void) {
+    printf("[IEBGENER] Re-initializing sequential layout translation tables\n");
+    printf("  - Conversion mapping tables refreshed. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "jclrun ", 7) == 0) return handle_jclrun(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
@@ -776,5 +782,6 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "iebdgiterchange ", 16) == 0) return handle_iebdgiterchange(cmd);
     if (strncmp(cmd, "iebgenerrecal ", 14) == 0) return handle_iebgenerrecal(cmd);
     if (strcmp(cmd, "iebgenerstat") == 0) return handle_iebgenerstat();
+    if (strcmp(cmd, "iebgenerreftab") == 0) return handle_iebgenerreftab();
     return false;
 }

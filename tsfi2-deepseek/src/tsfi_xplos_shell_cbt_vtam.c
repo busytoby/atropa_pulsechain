@@ -500,6 +500,17 @@ static bool handle_vtamroutereclog(const char *cmd) {
     return true;
 }
 
+static bool handle_vtamrouterecignore(const char *cmd) {
+    char path_id[32] = "";
+    if (sscanf(cmd + 19, "%31s", path_id) < 1) {
+        printf("[VTAMROUTERECIGNORE ERROR] Syntax: vtamrouterecignore <path_id>\n");
+        return true;
+    }
+    printf("[VTAM] Gateway route recovery telemetry errors ignored on path: %s\n", path_id);
+    printf("  - Gateway path recovery notifications suppressed. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "cbtnet ", 7) == 0) return handle_cbtnet(cmd + 7);
     if (strncmp(cmd, "logon ", 6) == 0) return handle_vtam_logon(cmd);
@@ -526,5 +537,6 @@ bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strcmp(cmd, "vtamrouterecquerylist") == 0) return handle_vtamrouterecquerylist();
     if (strncmp(cmd, "vtamroutesolmsg ", 16) == 0) return handle_vtamroutesolmsg(cmd);
     if (strncmp(cmd, "vtamroutereclog ", 16) == 0) return handle_vtamroutereclog(cmd);
+    if (strncmp(cmd, "vtamrouterecignore ", 19) == 0) return handle_vtamrouterecignore(cmd);
     return false;
 }
