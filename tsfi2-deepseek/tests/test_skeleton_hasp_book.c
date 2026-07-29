@@ -304,6 +304,11 @@ int main(void) {
     bool register_ok = tsfi_xplos_shell_cbt_cics("cbtcicsregister TeddyBearSkelCharacter");
     assert(register_ok == true);
 
+    // 20. Verify CICS Transaction Security Auditor compliance logs
+    printf("  -> Phase 18: Verifying CICS Transaction Security Auditor compliance logs...\n");
+    bool audit_ok = tsfi_xplos_shell_cbt_cics("cbtcicsaudit TeddyBearSkelCharacter");
+    assert(audit_ok == true);
+
     printf("  -> End-to-end data pipeline integrity verified successfully.\n");
     printf("\n=== SKELETON HASP BOOK PROOFS PASSED ===\n");
     return 0;

@@ -716,7 +716,7 @@ static bool handle_cbtcicsignorelistresetstat(void) {
 
 static bool handle_cbtcicsregister(const char *cmd) {
     char entity_name[64] = "";
-    int scanned = sscanf(cmd + 17, "%63s", entity_name);
+    int scanned = sscanf(cmd + 16, "%63s", entity_name);
     if (scanned >= 1) {
         char ssn[16] = {0};
         char site[64] = {0};
@@ -745,7 +745,40 @@ static bool handle_cbtcicsregister(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtcicsaudit(const char *cmd) {
+    char entity_name[64] = "";
+    int scanned = sscanf(cmd + 13, "%63s", entity_name);
+    if (scanned >= 1) {
+        char ssn[16] = {0};
+        char site[64] = {0};
+        auncient_bridge_entity_to_ssa(entity_name, ssn, site, sizeof(site));
+
+        uint32_t account_id = 0x811C9DC5;
+        size_t name_len = strlen(entity_name);
+        for (size_t i = 0; i < name_len; i++) {
+            account_id = (account_id ^ entity_name[i]) * 0x01000193;
+        }
+        account_id = (account_id % 100000) + 100000;
+
+        bool compliant = (strlen(ssn) > 0 && strlen(site) > 0);
+        uint8_t status = compliant ? 1 : 0;
+
+        remove("HOGAN.AUDIT.log");
+        int log_rc = tsfi_hogan_write_audit_log("HOGAN.AUDIT.log", (uint32_t)time(NULL), account_id, "CICS_TX_AUDIT", status);
+
+        printf("[CICS AUDITOR] Completed transaction compliance sweep for %s.\n", entity_name);
+        printf("  - Target Account: %u\n", account_id);
+        printf("  - Registry SSN  : %s\n", ssn);
+        printf("  - Audit Status  : %s\n", compliant ? "COMPLIANT" : "VIOLATION");
+        printf("  - Journal Log   : HOGAN.AUDIT.log (RC=%d)\n", log_rc);
+        return true;
+    }
+    printf("[CICS AUDIT ERROR] Syntax: cbtcicsaudit <entity_name>\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
+    if (strncmp(cmd, "cbtcicsaudit ", 13) == 0) return handle_cbtcicsaudit(cmd);
     if (strncmp(cmd, "cbtcicsregister ", 16) == 0) return handle_cbtcicsregister(cmd);
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
