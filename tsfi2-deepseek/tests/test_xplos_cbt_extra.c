@@ -357,6 +357,30 @@ int main(void) {
     assert(buf_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 33. Test IEBISAM Indexed Sequential dataset converter
+    printf("[TEST] Testing IEBISAM indexed sequential converter...\n");
+    bool isam_ok = tsfi_xplos_shell_exec(&shell, &sched, "iebisam SEQ1 VSAM1");
+    assert(isam_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 34. Test TSO Job spool monitor (cbtsublist)
+    printf("[TEST] Testing cbtsublist spool tracker...\n");
+    bool sublist_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtsublist");
+    assert(sublist_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 35. Test CICS Transient Storage Purge (cbtcicspurge)
+    printf("[TEST] Testing CICS TSQ purge allocator...\n");
+    bool purge_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicspurge LOGS");
+    assert(purge_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 36. Test VTAM Route Hop Tracer (vtamtrace)
+    printf("[TEST] Testing VTAM path routing trace...\n");
+    bool trace_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtamtrace");
+    assert(trace_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }

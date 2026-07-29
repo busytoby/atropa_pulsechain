@@ -173,11 +173,24 @@ static bool handle_cbtcicscmp(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtcicspurge(const char *cmd) {
+    char target[32] = "";
+    if (sscanf(cmd + 13, "%31s", target) < 1) {
+        printf("[CICSPURGE ERROR] Syntax: cbtcicspurge <queue>\n");
+        return true;
+    }
+    printf("[CICSPURGE] Purging active Transient Storage Queue: %s\n", target);
+    printf("  - Storage allocations released: 1024 bytes\n");
+    printf("[CICSPURGE] Queue allocations purged successfully. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
     if (strncmp(cmd, "cbtcicstrm ", 11) == 0) return handle_cbtcicstrm(cmd);
     if (strcmp(cmd, "cbtcicstsd") == 0) return handle_cbtcicstsd();
     if (strncmp(cmd, "cbtcicscmp ", 11) == 0) return handle_cbtcicscmp(cmd);
+    if (strncmp(cmd, "cbtcicspurge ", 13) == 0) return handle_cbtcicspurge(cmd);
     return false;
 }

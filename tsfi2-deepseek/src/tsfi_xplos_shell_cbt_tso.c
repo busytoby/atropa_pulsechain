@@ -408,6 +408,21 @@ static bool handle_cbtsubchk(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtsublist(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  TSO SUBMITTED JOB SPOOL STATUS MONITOR                        \n");
+    printf("================================================================================\n");
+    printf(" JOB ID   | JOB NAME | CLASS | PRTY | STATUS   | STEP NAME\n");
+    printf("--------------------------------------------------------------------------------\n");
+    printf(" JOB00021 | LOADCBT  | A     |    0 | COMPLETED| STEP1\n");
+    printf(" JOB00022 | RUNREXX  | A     |    0 | COMPLETED| STEP1\n");
+    printf(" JOB00023 | BACKUP   | A     |    0 | HELD     | STEP1\n");
+    printf(" JOB0104  | HLDJOB   | A     |   12 | READY    | STEP1\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtrexx ", 8) == 0) return handle_cbtrexx(cmd);
     if (strncmp(cmd, "ispfmenu", 8) == 0) return handle_ispfmenu(cmd);
@@ -415,5 +430,6 @@ bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtalloc ", 9) == 0) return handle_cbtalloc(cmd);
     if (strncmp(cmd, "cbtdelete ", 10) == 0) return handle_cbtdelete(cmd);
     if (strncmp(cmd, "cbtsubchk ", 10) == 0) return handle_cbtsubchk(cmd);
+    if (strcmp(cmd, "cbtsublist") == 0) return handle_cbtsublist();
     return false;
 }

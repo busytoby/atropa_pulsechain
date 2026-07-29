@@ -290,6 +290,18 @@ static bool handle_vtambuf(void) {
     return true;
 }
 
+static bool handle_vtamtrace(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  **AUNCIENT** VTAM PATH ROUTING PATHWAY TRACE\n");
+    printf("================================================================================\n");
+    printf(" CDRM PATH ROUTE HOP TRACE FOR HOST: XPL1 -> TARGET: CDRM_REMOTE\n");
+    printf("   1. [FID2 PATH] DAAF=02 via LU 1 (0.142 ms)\n");
+    printf("   2. [FID2 PATH] DAAF=03 via CDRM Gateway Node (0.284 ms) [STABLE]\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "cbtnet ", 7) == 0) return handle_cbtnet(cmd + 7);
     if (strncmp(cmd, "logon ", 6) == 0) return handle_vtam_logon(cmd);
@@ -298,5 +310,6 @@ bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strcmp(cmd, "vtamstat") == 0) return handle_vtamstat();
     if (strcmp(cmd, "vtamroute") == 0) return handle_vtamroute();
     if (strcmp(cmd, "vtambuf") == 0) return handle_vtambuf();
+    if (strcmp(cmd, "vtamtrace") == 0) return handle_vtamtrace();
     return false;
 }
