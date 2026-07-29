@@ -256,6 +256,41 @@ static CbtSpoolJob cbt_job_table[10] = {
     {"", "", "", ' ', false, false}
 };
 
+typedef struct CbtTreeNode {
+    int keys[2];
+    int num_keys;
+    struct CbtTreeNode *children[3];
+    CbtSpoolJob queue[10];
+    int queue_count;
+    int worker_task_id;
+} CbtTreeNode;
+
+static CbtTreeNode *g_queue_tree_root = NULL;
+
+static void cbt_node_worker_task_handler(void *arg) {
+    CbtTreeNode *node = (CbtTreeNode *)arg;
+    if (!node || node->queue_count == 0) return;
+    
+    CbtSpoolJob job = node->queue[0];
+    printf("[CBTQWORKER] Active worker processing Job %s on Node (Keys: ", job.job_name);
+    for (int i = 0; i < node->num_keys; i++) {
+        printf("%d ", node->keys[i]);
+    }
+    printf(")\n");
+    
+    for (int i = 1; i < node->queue_count; i++) {
+        node->queue[i - 1] = node->queue[i];
+    }
+    node->queue_count--;
+    
+    if (node->queue_count == 0) {
+        printf("[CBTQWORKER] Queue drained. Releasing worker task.\n");
+        node->worker_task_id = -1;
+    }
+}
+
+static XplosScheduler *g_active_sched = NULL;
+
 // Helper: Task entry that evaluates the shell command in task context
 static void shell_task_handler(void *arg) {
     const char *cmd = (const char *)arg;
@@ -3037,6 +3072,39 @@ static void shell_task_handler(void *arg) {
         printf("[CBTSMF] SMF processing completed. Audited 3 records.\n");
         return;
     }
+
+    // Check for "cbtqdispatch " command
+    if (strncmp(cmd, "cbtqdispatch ", 13) == 0) {
+        int key = 0;
+        char job_name[32] = "";
+        if (sscanf(cmd + 13, "%d %31s", &key, job_name) == 2) {
+            if (!g_queue_tree_root) {
+                g_queue_tree_root = (CbtTreeNode *)malloc(sizeof(CbtTreeNode));
+                g_queue_tree_root->keys[0] = 50;
+                g_queue_tree_root->num_keys = 1;
+                g_queue_tree_root->children[0] = NULL;
+                g_queue_tree_root->children[1] = NULL;
+                g_queue_tree_root->children[2] = NULL;
+                g_queue_tree_root->queue_count = 0;
+                g_queue_tree_root->worker_task_id = -1;
+            }
+            CbtTreeNode *target = g_queue_tree_root;
+            if (target->queue_count < 10) {
+                CbtSpoolJob *j = &target->queue[target->queue_count];
+                strcpy(j->job_name, job_name);
+                target->queue_count++;
+                printf("[CBTQDISPATCH] Enqueued Job %s to Node (Key Partition: %d)\n", job_name, key);
+                
+                if (target->worker_task_id == -1 && g_active_sched) {
+                    target->worker_task_id = tsfi_xplos_create_task(g_active_sched, cbt_node_worker_task_handler, target);
+                    printf("[CBTQDISPATCH] Queue non-empty. Dynamically spawned active worker task ID: %d\n", target->worker_task_id);
+                }
+            } else {
+                printf("[CBTQDISPATCH ERROR] Node queue full.\n");
+            }
+            return;
+        }
+    }
     
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
@@ -3049,6 +3117,7 @@ static void shell_task_handler(void *arg) {
 // 10. Processes a command line input and dispatches parsing semantic actions via scheduler tasks
 bool tsfi_xplos_shell_exec(XplosShell *shell, XplosScheduler *sched, const char *cmd) {
     if (!shell || !sched || !cmd) return false;
+    g_active_sched = sched;
 
     strncpy(shell->cmd_buffer, cmd, sizeof(shell->cmd_buffer) - 1);
     shell->cmd_buffer[sizeof(shell->cmd_buffer) - 1] = '\0';

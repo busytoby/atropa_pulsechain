@@ -1284,6 +1284,17 @@ int main(void) {
     printf("   ✓ CBTSMF execution verified successfully.\n");
     remove("tests/smf_log.dat.bin");
 
+    // 83. Test CBTQDISPATCH command execution
+    printf("[KERNEL TEST] Dispatching 'cbtqdispatch' command to XplOS shell...\n");
+    XplosShell shell_qdisp;
+    XplosScheduler sched_qdisp;
+    tsfi_xplos_init_scheduler(&sched_qdisp);
+    tsfi_xplos_init_shell(&shell_qdisp);
+    bool qdisp_ok = tsfi_xplos_shell_exec(&shell_qdisp, &sched_qdisp, "cbtqdispatch 25 MYJOB");
+    assert(qdisp_ok == true);
+    tsfi_xplos_run(&sched_qdisp);
+    printf("   ✓ CBTQDISPATCH execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
