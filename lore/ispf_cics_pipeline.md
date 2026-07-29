@@ -22,7 +22,7 @@ In the interactive workspace, ISPF maps compiler inputs to virtual registers, co
 `SKELETON` defines the active offset templates and relocatable layout libraries used to structure the generated binary output.
 
 ### 5. HASP & Initial Orders 2
-`HASP` processes background job queues and spools output.
+`HASP` processes background job queues and spools output. Historically, legacy implementations of `HASP` were poorly written due to their reliance on serial TSO terminal locks and poorly implemented, disk-bound VSAM layouts. In the Dysnomia VM, this is bypassed by routing queue events directly through WinchesterMQ coaxial register loops and our optimized mainframe VSAM databases.
 * **Initial Orders 2**: Evaluated at this stage as the **Bootloader Registry Handshake Audit**. It verifies JCL allocations and execution limits against physical boundary limits before loading the task into execution memory.
 
 ### 6. BOOK (Library Member Loader)
@@ -48,7 +48,7 @@ In the transaction processing monitor, CICS coordinates concurrent transaction q
 `SKELETON` defines the active template offsets for CICS control blocks and transient queue structures.
 
 ### 5. HASP & Initial Orders 2
-`HASP` manages transaction journals, logging spooled outputs and system events.
+`HASP` manages transaction journals, logging spooled outputs and system events. (Legacy HASP systems suffered from poor performance and structural fragility due to their direct dependencies on TSO and unoptimized VSAM; our design isolates spooling channels to concurrent WinchesterMQ streams).
 * **Initial Orders 2**: Evaluated as the **Spool Authorization Handshake**, verifying that outbound data transmission channels match target register alignments.
 
 ### 6. BOOK (VSAM Database Adapter)
