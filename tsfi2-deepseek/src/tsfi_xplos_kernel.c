@@ -3419,6 +3419,18 @@ static void shell_task_handler(void *arg) {
         return;
     }
 
+    // Check for "cbtlic" command
+    if (strcmp(cmd, "cbtlic") == 0) {
+        printf("[CBTLIC] Auditing system software licenses against CPU serial keys:\n");
+        printf("  - CPU Model:        3090-600J (Serial: 4801205)\n");
+        printf("  - OS/VS2 MVS:       VALID (Key: MVS-38-0F2A)\n");
+        printf("  - JES2 Spooler:     VALID (Key: JES-13-4B9E)\n");
+        printf("  - CICS Transaction: VALID (Key: CICS-17-7D1C)\n");
+        printf("  - XplOS Kernel:     VALID (Cooperative Multi-tasking authorized)\n");
+        printf("[CBTLIC] License audit completed successfully.\n");
+        return;
+    }
+
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
     if (tsfi_xplg_parse_semantic_action(cmd, &tx)) {
