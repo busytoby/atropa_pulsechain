@@ -158,6 +158,20 @@ int main(void) {
     int write_proclib_rc = tsfi_cw_vsam_write(&proclib_ksds, "MJ1", mock_jcl_cards, strlen((char *)mock_jcl_cards));
     assert(write_proclib_rc == 0);
 
+    // Write JOB_CICS_SEC JCL skeleton
+    uint8_t sec_skeleton_cards[256] = 
+        "//MJ7 JOB 'CICS AUDIT'\n"
+        "//STEP1 EXEC PGM=DUMMYPGM\n";
+    int write_sec_rc = tsfi_cw_vsam_write(&proclib_ksds, "MJ7", sec_skeleton_cards, strlen((char *)sec_skeleton_cards));
+    assert(write_sec_rc == 0);
+
+    // Write JOB_PDS_COMP JCL skeleton
+    uint8_t comp_skeleton_cards[256] = 
+        "//MJ8 JOB 'PDS COMPRESS'\n"
+        "//STEP1 EXEC PGM=DUMMYPGM\n";
+    int write_comp_rc = tsfi_cw_vsam_write(&proclib_ksds, "MJ8", comp_skeleton_cards, strlen((char *)comp_skeleton_cards));
+    assert(write_comp_rc == 0);
+
     // Execute the job, which should dynamically load it from the PROCLIB KSDS database
     bool mockjob_run_ok = tsfi_xplos_shell_cbt_jcl("jclrun MJ1");
     assert(mockjob_run_ok == true);
@@ -316,6 +330,13 @@ int main(void) {
     extern bool tsfi_xplos_shell_book(const char *cmd);
     bool compress_ok = tsfi_xplos_shell_book("cbtcompress USERLIB");
     assert(compress_ok == true);
+
+    // 22. Deploy and expand additional skeletons
+    printf("  -> Phase 20: Deploying and expanding additional JCL skeletons...\n");
+    bool run_sec_ok = tsfi_xplos_shell_cbt_jcl("jclrun MJ7");
+    assert(run_sec_ok == true);
+    bool run_comp_ok = tsfi_xplos_shell_cbt_jcl("jclrun MJ8");
+    assert(run_comp_ok == true);
 
     printf("  -> End-to-end data pipeline integrity verified successfully.\n");
     printf("\n=== SKELETON HASP BOOK PROOFS PASSED ===\n");
