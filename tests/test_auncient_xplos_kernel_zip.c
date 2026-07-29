@@ -1266,6 +1266,24 @@ int main(void) {
     remove("tests/MEMBERA.txt");
     remove("tests/MEMBERB.txt");
 
+    // 82. Test CBTSMF command execution
+    printf("[KERNEL TEST] Dispatching 'cbtsmf' command to XplOS shell...\n");
+    XplosShell shell_smf;
+    XplosScheduler sched_smf;
+    tsfi_xplos_init_scheduler(&sched_smf);
+    tsfi_xplos_init_shell(&shell_smf);
+    
+    FILE *f_smf_tmp = fopen("tests/smf_log.dat.bin", "wb");
+    uint8_t zero_smf[80] = {0};
+    fwrite(zero_smf, 1, 80, f_smf_tmp);
+    fclose(f_smf_tmp);
+
+    bool smf_ok = tsfi_xplos_shell_exec(&shell_smf, &sched_smf, "cbtsmf tests/smf_log.dat.bin");
+    assert(smf_ok == true);
+    tsfi_xplos_run(&sched_smf);
+    printf("   ✓ CBTSMF execution verified successfully.\n");
+    remove("tests/smf_log.dat.bin");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
