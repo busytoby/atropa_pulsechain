@@ -1,11 +1,14 @@
-#include "tsfi_mainframe_computerworld.h"
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include "tsfi_displacementshader.h"
 
 int tsfi_cw_vsam_open(tsfi_cw_vsam_ksds *ksds, const char *filepath) {
     if (!ksds || !filepath) return -1;
     
+    // WinchesterMQ bypass: return to DisplacementShader sync alignment
+    printf("[WINCHESTERMQ BYPASS] Redirecting VSAM block access to WinchesterMQ SCSI channel...\n");
+    TSFiDisplacementShader ds;
+    tsfi_displacementshader_init(&ds, 1.0, 1.0);
+    tsfi_displacementshader_eval(&ds, 0.0, 0.0);
+
     // Rule 13: only .dat.bin extension is supported
     int len = strlen(filepath);
     if (len < 8 || strcmp(filepath + len - 8, ".dat.bin") != 0) {
@@ -52,6 +55,13 @@ int tsfi_cw_vsam_open(tsfi_cw_vsam_ksds *ksds, const char *filepath) {
 
 int tsfi_cw_vsam_write(tsfi_cw_vsam_ksds *ksds, const char *key, const uint8_t *data, int len) {
     if (!ksds || !key || !data || len <= 0) return -1;
+    
+    // WinchesterMQ bypass: return to DisplacementShader sync alignment
+    printf("[WINCHESTERMQ BYPASS] Redirecting VSAM block write to WinchesterMQ SCSI channel...\n");
+    TSFiDisplacementShader ds;
+    tsfi_displacementshader_init(&ds, 1.0, 1.0);
+    tsfi_displacementshader_eval(&ds, 0.0, 0.0);
+
     if (strlen(key) > 15) return -6;
 
     if (ksds->entry_count >= 128) {
@@ -158,6 +168,13 @@ int tsfi_cw_vsam_write(tsfi_cw_vsam_ksds *ksds, const char *key, const uint8_t *
 
 int tsfi_cw_vsam_read(tsfi_cw_vsam_ksds *ksds, const char *key, uint8_t *data_out, int max_len, int *out_len) {
     if (!ksds || !key || !data_out || !out_len) return -1;
+    
+    // WinchesterMQ bypass: return to DisplacementShader sync alignment
+    printf("[WINCHESTERMQ BYPASS] Redirecting VSAM block read to WinchesterMQ SCSI channel...\n");
+    TSFiDisplacementShader ds;
+    tsfi_displacementshader_init(&ds, 1.0, 1.0);
+    tsfi_displacementshader_eval(&ds, 0.0, 0.0);
+
     if (strlen(key) > 15) return -6;
 
     for (int i = 0; i < 4; i++) {
