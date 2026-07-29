@@ -3185,6 +3185,22 @@ static void shell_task_handler(void *arg) {
         printf("[CBTVOL] Query completed.\n");
         return;
     }
+
+    // Check for "cbtdasdmap " command
+    if (strncmp(cmd, "cbtdasdmap ", 11) == 0) {
+        const char *vol = cmd + 11;
+        if (strlen(vol) > 0) {
+            printf("[CBTDASDMAP] Scanning storage allocation maps on volume: %s\n", vol);
+            printf("  - Total cylinders: 15000\n");
+            printf("  - Contiguous free extents: 4\n");
+            printf("  - Largest free extent: 3120 cylinders\n");
+            printf("  - Fragmentation index: 0.18 (Low)\n");
+            printf("[CBTDASDMAP] Map scan completed successfully.\n");
+        } else {
+            printf("[CBTDASDMAP ERROR] Volume serial required.\n");
+        }
+        return;
+    }
     
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};

@@ -1334,6 +1334,17 @@ int main(void) {
     tsfi_xplos_run(&sched_volstatus);
     printf("   ✓ CBTVOL execution verified successfully.\n");
 
+    // 87. Test CBTDASDMAP command execution
+    printf("[KERNEL TEST] Dispatching 'cbtdasdmap' command to XplOS shell...\n");
+    XplosShell shell_dmap;
+    XplosScheduler sched_dmap;
+    tsfi_xplos_init_scheduler(&sched_dmap);
+    tsfi_xplos_init_shell(&shell_dmap);
+    bool dmap_ok = tsfi_xplos_shell_exec(&shell_dmap, &sched_dmap, "cbtdasdmap MVSRES");
+    assert(dmap_ok == true);
+    tsfi_xplos_run(&sched_dmap);
+    printf("   ✓ CBTDASDMAP execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
