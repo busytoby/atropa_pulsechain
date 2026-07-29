@@ -8,21 +8,19 @@ This document details the low-level virtual hardware roles, register handshakes,
 
 ## Part I: ISPF (Interactive System Productivity Facility)
 
-Within the development environment, **ISPF** acts as the user-facing compiler frontend, coordinating panel logic and dataset manipulations over the following pipeline components:
+Within the development environment, **ISPF** acts as the user-facing frontend, mapping panel variables to compile parameters. The pipeline coordinates compilation and execution over the following rails:
 
-### XCOM (SCSI Message Transport & XPL Common Symbol Table)
-* **SCSI Message Transport**: `XCOM` coordinates the transmission and replication of system state datasets, transforming active screen buffers and dataset edits into raw SCSI handshake frames. (Keyboard input and raw terminal interrupts are handled directly by ISPF itself). These frames are transmitted via local loopback sockets to synchronize state registers with the virtual hardware representation.
-* **XPL Compiler Context**: In the XPL compiler hierarchy, `XCOM` serves as the **External Common Symbol Table / Common Symbol Block**. It maps shared compilation symbols and tokens between the parsing engine (`ANALYZER`), the active state runtime machine (`XPLSM`), and the template generator (`SKELETON`) to maintain variable parity across compilation cycles.
+### XCOM (Compiler Backend)
+`XCOM` is the compiler backend. It receives task parameters from ISPF panels and streams compiled bytecode directly to target memory-mapped registers.
 
-### ANALYZER & Initial Orders 1
-`ANALYZER` evaluates variable strings, panel macros, and JCL variables.
-* **Initial Orders 1**: Defined at this compile-time phase as the **Relocatable Instruction Pre-Filter Check**. It audits input commands against a prohibited instruction bitmask ($Permitted = \prod_{i=1}^{count} (1 - ((\text{prohibited\_opcodes} \gg (\text{opcode}_i - 'A')) \ \& \ 1))$). Any mismatch immediately halts template compilation before variables are propagated.
+### ANALYZER (RED Rail - Static Grid)
+`ANALYZER` acts as the active-low static security grid. It parses XCOM-compiled bytecode for forbidden signatures, relocation errors, or out-of-bounds scopes before execution. This is where **Initial Orders 1** is evaluated.
 
-### XPLSM (Liveness Heartbeat Supervisor)
-`XPLSM` monitors terminal connectivity. It polls terminal frame coordinates and window visibility states, logging active session heartbeats to guarantee that cursor tracking and overlay scales synchronize with the active compositor cache.
+### XPLSM (BLACK Rail - Dynamic Monitor)
+`XPLSM` acts as the active-high dynamic verification state monitor. It monitors bytecode execution quorums and state transitions in real time.
 
-### SKELETON (JCL Template Compiler)
-`SKELETON` processes raw templates. Upon successful clearance of `Initial Orders 1`, it expands JCL parameters into 6-bit Fieldata word blocks, preparing job steps without introducing disk latency.
+### SKELETON (Relocatable Layout Dictionary)
+`SKELETON` acts as the relocatable layout dictionary containing system templates and offset definitions, which are mounted directly on the RED (ANALYZER) and BLACK (XPLSM) rails to establish the execution contract.
 
 ### HASP & Initial Orders 2
 `HASP` receives the expanded JCL job streams.
