@@ -61,6 +61,11 @@ int main(void) {
     bool cbtdu_ok = tsfi_xplos_shell_explorer("cbtdu test_vsam.dat.bin");
     assert(cbtdu_ok == true);
 
+    // 11. Test explorer command "ibhlspac" for listing volume space parameters
+    printf("  -> Testing ibhlspac command for DASD volume space parameters...\n");
+    bool ibhlspac_ok = tsfi_xplos_shell_explorer("ibhlspac test_vsam.dat.bin");
+    assert(ibhlspac_ok == true);
+
     printf("\n=== EXPLORER MAINFRAME VSAM TESTS PASSED ===\n");
     return 0;
 }

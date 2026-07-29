@@ -750,6 +750,30 @@ bool tsfi_xplos_shell_explorer(const char *cmd) {
         return true;
     }
 
+    // Check for "ibhlspac " command
+    if (strncmp(cmd, "ibhlspac ", 9) == 0) {
+        char volume[128] = "";
+        if (sscanf(cmd + 9, "%127s", volume) == 1) {
+            printf("[IBHLSPAC] Listing DASD volume space parameters for: %s\n", volume);
+            tsfi_cw_vsam_ksds ksds;
+            int open_rc = tsfi_cw_vsam_open(&ksds, volume);
+            if (open_rc == 0) {
+                printf("  - DASD Volume Parameters:\n");
+                printf("    * Device Type:    3380-K Direct Access Storage Device\n");
+                printf("    * Volume Label:   VSAMVOL1\n");
+                printf("    * Total Capacity: 1890000 bytes\n");
+                printf("    * Allocated:      %u bytes\n", ksds.current_file_size);
+                printf("    * Control Splits: %u splits\n", ksds.ci_splits);
+                printf("[IBHLSPAC] Volume space parameters listed successfully.\n");
+            } else {
+                printf("[IBHLSPAC ERROR] Could not read volume space: %s (RC=%d)\n", volume, open_rc);
+            }
+        } else {
+            printf("[IBHLSPAC ERROR] Volume name required.\n");
+        }
+        return true;
+    }
+
     // Check for "cbtstat" command
     if (strcmp(cmd, "cbtstat") == 0) {
         printf("[CBTSTAT] Querying system activity and hardware load statistics:\n");
