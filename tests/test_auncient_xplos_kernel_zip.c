@@ -1407,6 +1407,17 @@ int main(void) {
     tsfi_xplos_run(&sched_con);
     printf("   ✓ CBTCON execution verified successfully.\n");
 
+    // 93. Test CBTPRT command execution
+    printf("[KERNEL TEST] Dispatching 'cbtprt' command to XplOS shell...\n");
+    XplosShell shell_prt;
+    XplosScheduler sched_prt;
+    tsfi_xplos_init_scheduler(&sched_prt);
+    tsfi_xplos_init_shell(&shell_prt);
+    bool prt_ok = tsfi_xplos_shell_exec(&shell_prt, &sched_prt, "cbtprt JOB00021");
+    assert(prt_ok == true);
+    tsfi_xplos_run(&sched_prt);
+    printf("   ✓ CBTPRT execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
