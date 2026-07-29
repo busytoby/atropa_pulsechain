@@ -4786,10 +4786,55 @@ static void shell_task_handler(void *arg) {
         const char *args = cmd + 3;
         while (*args == ' ') args++;
         printf("[XDC] External Debug Boundary Control Interface:\n");
+
+        #define MAX_BREAKPOINTS 8
+        static uint32_t xdc_breakpoints[MAX_BREAKPOINTS] = {0};
+        static int xdc_breakpoint_count = 0;
+
         if (strcmp(args, "halt") == 0) {
             printf("  - Intercepting raw SCSI handshake frames on WinchesterMQ interface...\n");
             printf("  - Execution halted. Visual trail opacity (alpha) locked. Coordinates solid cyan.\n");
             printf("  - Highlighted vertex spheres showing active instruction breakpoints.\n");
+        } else if (strncmp(args, "bp ", 3) == 0) {
+            const char *bp_arg = args + 3;
+            if (strncmp(bp_arg, "add ", 4) == 0) {
+                uint32_t addr = (uint32_t)strtoul(bp_arg + 4, NULL, 0);
+                if (xdc_breakpoint_count < MAX_BREAKPOINTS) {
+                    xdc_breakpoints[xdc_breakpoint_count++] = addr;
+                    printf("  - Breakpoint added at address: 0x%08X\n", addr);
+                } else {
+                    printf("[XDC ERROR] Breakpoint limit reached.\n");
+                }
+            } else if (strncmp(bp_arg, "del ", 4) == 0) {
+                uint32_t addr = (uint32_t)strtoul(bp_arg + 4, NULL, 0);
+                bool found = false;
+                for (int i = 0; i < xdc_breakpoint_count; i++) {
+                    if (xdc_breakpoints[i] == addr) {
+                        for (int j = i; j < xdc_breakpoint_count - 1; j++) {
+                            xdc_breakpoints[j] = xdc_breakpoints[j+1];
+                        }
+                        xdc_breakpoint_count--;
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) {
+                    printf("  - Breakpoint removed at address: 0x%08X\n", addr);
+                } else {
+                    printf("[XDC ERROR] Breakpoint not found.\n");
+                }
+            } else if (strcmp(bp_arg, "list") == 0) {
+                printf("  - Active Breakpoints:\n");
+                for (int i = 0; i < xdc_breakpoint_count; i++) {
+                    printf("    [%d] 0x%08X\n", i + 1, xdc_breakpoints[i]);
+                }
+                if (xdc_breakpoint_count == 0) {
+                    printf("    (none)\n");
+                }
+            } else if (strcmp(bp_arg, "clear") == 0) {
+                xdc_breakpoint_count = 0;
+                printf("  - All breakpoints cleared.\n");
+            }
         } else if (strncmp(args, "auth ", 5) == 0) {
             const char *key_str = args + 5;
             printf("  - Verifying PKI authorization credentials: '%s'\n", key_str);
