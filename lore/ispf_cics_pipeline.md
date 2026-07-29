@@ -11,7 +11,7 @@ This document details the low-level virtual hardware roles, register handshakes,
 Within the development environment, **ISPF** acts as the user-facing compiler frontend, coordinating panel logic and dataset manipulations over the following pipeline components:
 
 ### XCOM (SCSI Message Transport)
-`XCOM` intercepts user keyboard inputs, terminal interrupts, and dataset modifications, transforming ASCII screen buffers into raw SCSI handshake frames. These frames are transmitted via local loopback sockets to synchronize state registers with the virtual hardware representation.
+`XCOM` coordinates the transmission and replication of system state datasets, transforming active screen buffers and dataset edits into raw SCSI handshake frames. (Keyboard input and raw terminal interrupts are handled directly by ISPF itself). These frames are transmitted via local loopback sockets to synchronize state registers with the virtual hardware representation.
 
 ### ANALYZER & Initial Orders 1
 `ANALYZER` evaluates variable strings, panel macros, and JCL variables.
@@ -37,7 +37,7 @@ Within the development environment, **ISPF** acts as the user-facing compiler fr
 Within the transaction processing monitor, **CICS** acts as the high-throughput execution environment, driving database access and message routing:
 
 ### XCOM (Fast Transaction Replication)
-`XCOM` replicates transaction payloads and message streams, translating CICS terminal events into 32-bit register states to bypass slow synthetic terminal drivers and enforce thread-safe execution loops.
+`XCOM` replicates transaction payloads, datasets, and message streams, translating CICS states into 32-bit register configurations to bypass slow synthetic terminal drivers and enforce thread-safe execution loops. (Keyboard input parsing and event handling are managed directly by CICS itself).
 
 ### ANALYZER & Initial Orders 1
 `ANALYZER` parses Basic Mapping Support (BMS) screens and transaction arguments.
