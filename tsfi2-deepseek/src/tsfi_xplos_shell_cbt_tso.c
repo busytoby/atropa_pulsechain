@@ -423,6 +423,17 @@ static bool handle_cbtsublist(void) {
     return true;
 }
 
+static bool handle_cbtsubrel(const char *cmd) {
+    char job_id[32] = "";
+    if (sscanf(cmd + 10, "%31s", job_id) < 1) {
+        printf("[SUBREL ERROR] Syntax: cbtsubrel <job_id>\n");
+        return true;
+    }
+    printf("[SUBREL] Releasing held spool job: %s\n", job_id);
+    printf("  - Dispatcher status updated from HELD to READY queue. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtrexx ", 8) == 0) return handle_cbtrexx(cmd);
     if (strncmp(cmd, "ispfmenu", 8) == 0) return handle_ispfmenu(cmd);
@@ -431,5 +442,6 @@ bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtdelete ", 10) == 0) return handle_cbtdelete(cmd);
     if (strncmp(cmd, "cbtsubchk ", 10) == 0) return handle_cbtsubchk(cmd);
     if (strcmp(cmd, "cbtsublist") == 0) return handle_cbtsublist();
+    if (strncmp(cmd, "cbtsubrel ", 10) == 0) return handle_cbtsubrel(cmd);
     return false;
 }

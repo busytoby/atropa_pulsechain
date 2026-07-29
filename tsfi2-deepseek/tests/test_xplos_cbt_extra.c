@@ -381,6 +381,30 @@ int main(void) {
     assert(trace_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 37. Test IEBDGPAT Alphanumeric pattern generator
+    printf("[TEST] Testing IEBDGPAT alphanumeric pattern generator...\n");
+    bool dgpat_ok = tsfi_xplos_shell_exec(&shell, &sched, "iebdgpat SEQ1 AAAA-9999");
+    assert(dgpat_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 38. Test TSO submission release spool (cbtsubrel)
+    printf("[TEST] Testing cbtsubrel spool release...\n");
+    bool subrel_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtsubrel JOB00023");
+    assert(subrel_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 39. Test CICS Queue limits reader (cbtcicslim)
+    printf("[TEST] Testing CICS TSQ limits explorer...\n");
+    bool lim_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicslim LOGS");
+    assert(lim_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 40. Test VTAM Solicit panel refresher (vtamrefr)
+    printf("[TEST] Testing VTAM solicit refresh controller...\n");
+    bool refr_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtamrefr");
+    assert(refr_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }

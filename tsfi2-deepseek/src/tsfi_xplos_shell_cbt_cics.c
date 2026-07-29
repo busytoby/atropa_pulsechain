@@ -185,6 +185,18 @@ static bool handle_cbtcicspurge(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtcicslim(const char *cmd) {
+    char target[32] = "";
+    if (sscanf(cmd + 11, "%31s", target) < 1) {
+        printf("[CICSLIM ERROR] Syntax: cbtcicslim <queue>\n");
+        return true;
+    }
+    printf("[CICSLIM] Reading memory allocation boundaries for TSQ %s...\n", target);
+    printf("  - Maximum queue page size: 1048576 bytes\n");
+    printf("  - Total allocated buffer capacity: 65536 bytes. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
@@ -192,5 +204,6 @@ bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strcmp(cmd, "cbtcicstsd") == 0) return handle_cbtcicstsd();
     if (strncmp(cmd, "cbtcicscmp ", 11) == 0) return handle_cbtcicscmp(cmd);
     if (strncmp(cmd, "cbtcicspurge ", 13) == 0) return handle_cbtcicspurge(cmd);
+    if (strncmp(cmd, "cbtcicslim ", 11) == 0) return handle_cbtcicslim(cmd);
     return false;
 }

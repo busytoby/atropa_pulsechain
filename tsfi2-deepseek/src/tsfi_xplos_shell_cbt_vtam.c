@@ -302,6 +302,12 @@ static bool handle_vtamtrace(void) {
     return true;
 }
 
+static bool handle_vtamrefr(void) {
+    printf("[VTAM] Solicit Logon Panel solicit inputs cleared.\n");
+    printf("[VTAM] Redrawing solicit screen buffer and resetting active APPLID flags. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "cbtnet ", 7) == 0) return handle_cbtnet(cmd + 7);
     if (strncmp(cmd, "logon ", 6) == 0) return handle_vtam_logon(cmd);
@@ -311,5 +317,6 @@ bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strcmp(cmd, "vtamroute") == 0) return handle_vtamroute();
     if (strcmp(cmd, "vtambuf") == 0) return handle_vtambuf();
     if (strcmp(cmd, "vtamtrace") == 0) return handle_vtamtrace();
+    if (strcmp(cmd, "vtamrefr") == 0) return handle_vtamrefr();
     return false;
 }

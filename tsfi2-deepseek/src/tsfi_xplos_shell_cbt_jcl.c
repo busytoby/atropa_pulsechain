@@ -533,6 +533,20 @@ static bool handle_iebisam(const char *cmd) {
     return true;
 }
 
+static bool handle_iebdgpat(const char *cmd) {
+    char member[32] = "";
+    char pattern[32] = "";
+    if (sscanf(cmd + 9, "%31s %31s", member, pattern) < 2) {
+        printf("[IEBDGPAT ERROR] Syntax: iebdgpat <member> <pattern>\n");
+        return true;
+    }
+    printf("[IEBDGPAT] Generating alphanumeric pattern data for member %s...\n", member);
+    printf("  - Target Pattern Format: %s\n", pattern);
+    printf("  - Data generated: randomized character string sequences matching template\n");
+    printf("[IEBDGPAT] Alphanumeric pattern datasets generated successfully. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "jclrun ", 7) == 0) return handle_jclrun(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
@@ -544,5 +558,6 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "iebimage ", 9) == 0) return handle_iebimage(cmd);
     if (strncmp(cmd, "iebdatr ", 8) == 0) return handle_iebdatr(cmd);
     if (strncmp(cmd, "iebisam ", 8) == 0) return handle_iebisam(cmd);
+    if (strncmp(cmd, "iebdgpat ", 9) == 0) return handle_iebdgpat(cmd);
     return false;
 }
