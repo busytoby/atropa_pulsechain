@@ -1992,6 +1992,20 @@ int main(void) {
     assert(ce_ok == true);
     tsfi_xplos_run(&sched_bh2);
 
+    tsfi_xplos_init_scheduler(&sched_bh2);
+
+    bool cbe_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "cbtexplore catalog");
+    assert(cbe_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool cbe35_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "cbtexplore 35");
+    assert(cbe35_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool cbef_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "cbtexplore find OCX");
+    assert(cbef_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
     printf("   ✓ Carmine Cannatello ASM book utilities execution verified successfully.\n");
 
     printf("=============================================================\n");

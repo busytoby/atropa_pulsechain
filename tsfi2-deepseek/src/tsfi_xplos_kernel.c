@@ -4549,6 +4549,46 @@ static void shell_task_handler(void *arg) {
         return;
     }
 
+    // Check for "cbtexplore" command
+    if (strncmp(cmd, "cbtexplore", 10) == 0) {
+        const char *args = cmd + 10;
+        while (*args == ' ') args++;
+        printf("[CBTEXPLORE] CBT Tape Index and VFS Explorer:\n");
+        if (strcmp(args, "catalog") == 0 || strlen(args) == 0) {
+            printf("  - Available CBT Files in VFS:\n");
+            printf("    * File 021: MVS Exit Processors & JCL Allocators\n");
+            printf("    * File 035: Load Module Utilities & System Monitors\n");
+            printf("    * File 069: Carmine Cannatello ASM Book Coding Examples\n");
+        } else if (strcmp(args, "21") == 0) {
+            printf("  - CBT File 021 metadata:\n");
+            printf("    * Volume Serial: CBT021  Active Members: 10\n");
+            printf("    * Key Utilities: OCX, IBHLSPAC, IBHWTORG, IBHDRPLY\n");
+        } else if (strcmp(args, "35") == 0) {
+            printf("  - CBT File 035 metadata:\n");
+            printf("    * Volume Serial: CBT035  Active Members: 223\n");
+            printf("    * Key Utilities: PDS, VTOC, LOOK, SHOWTCAS, TAPEMAP\n");
+        } else if (strcmp(args, "69") == 0) {
+            printf("  - CBT File 069 metadata:\n");
+            printf("    * Volume Serial: CBT069  Active Members: 237\n");
+            printf("    * Key Utilities: GETPARM, WTOREGS, READDIR, TRTBL\n");
+        } else if (strncmp(args, "find ", 5) == 0) {
+            const char *query = args + 5;
+            printf("  - Searching for members matching query: '%s'\n", query);
+            int matches = 0;
+            for (int i = 0; i < g_vfs.count; i++) {
+                if (g_vfs.files[i].active && strstr(g_vfs.files[i].name, query)) {
+                    printf("    * Member: %-16s  Size: %u bytes\n", g_vfs.files[i].name, g_vfs.files[i].size_bytes);
+                    matches++;
+                }
+            }
+            printf("  - Search completed. Found %d matches.\n", matches);
+        } else {
+            printf("  - Unknown option. Usage: cbtexplore [catalog|21|35|69|find <query>]\n");
+        }
+        printf("[CBTEXPLORE] Explorer query completed successfully.\n");
+        return;
+    }
+
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
     if (tsfi_xplg_parse_semantic_action(cmd, &tx)) {
