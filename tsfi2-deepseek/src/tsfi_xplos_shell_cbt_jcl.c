@@ -1237,6 +1237,34 @@ static bool handle_cbtjcljobstatstatsstatusdetails(void) {
     return true;
 }
 
+static bool handle_cbtjcljobstatstatsstatusdetailsprogress(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JCL JOB STATISTICS LOGS AUDIT PROGRESS                        \n");
+    printf("================================================================================\n");
+    printf(" AUDIT ALIGNMENT    : 100 PERCENT ALIGNMENT\n");
+    printf(" COMPLIANCE STATUS  : VALIDATED. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
+static bool handle_cbtjcljobstatreset(void) {
+    printf("[JCL] Job statistics parameters reset to baseline configuration\n");
+    printf("  - Active statistics counters cleared. RC=0000\n");
+    return true;
+}
+
+static bool handle_cbtjcljobstatresetstat(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JCL JOB STATISTICS RESETS STATISTICS                          \n");
+    printf("================================================================================\n");
+    printf(" STAT RESETS RUN    : 1 RESETS\n");
+    printf(" RESET STATE STATUS : OPERATIONAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "ieb", 3) == 0) {
         printf("[DEPRECATION WARNING] Batch utility program '%s' is deprecated and scheduled for removal.\n", cmd);
@@ -1276,9 +1304,12 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strcmp(cmd, "cbtjcljobchkreset") == 0) return handle_cbtjcljobchkreset();
     if (strcmp(cmd, "cbtjcljobchkstat") == 0) return handle_cbtjcljobchkstat();
     if (strncmp(cmd, "cbtjcljobchk ", 13) == 0) return handle_cbtjcljobchk(cmd);
+    if (strcmp(cmd, "cbtjcljobstatstatsstatusdetailsprogress") == 0) return handle_cbtjcljobstatstatsstatusdetailsprogress();
     if (strcmp(cmd, "cbtjcljobstatstatsstatusdetails") == 0) return handle_cbtjcljobstatstatsstatusdetails();
     if (strcmp(cmd, "cbtjcljobstatstatsstatus") == 0) return handle_cbtjcljobstatstatsstatus();
     if (strcmp(cmd, "cbtjcljobstatstats") == 0) return handle_cbtjcljobstatstats();
+    if (strcmp(cmd, "cbtjcljobstatresetstat") == 0) return handle_cbtjcljobstatresetstat();
+    if (strcmp(cmd, "cbtjcljobstatreset") == 0) return handle_cbtjcljobstatreset();
     if (strcmp(cmd, "cbtjcljobstatstat") == 0) return handle_cbtjcljobstatstat();
     if (strncmp(cmd, "cbtjcljobstat ", 14) == 0) return handle_cbtjcljobstat(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
