@@ -48,6 +48,15 @@ bool auncient_analyzer_classify(const AuncientAnalyzer *analyzer, const uint32_t
     if (!instructions || count <= 0) return true;
     if (!analyzer) return true;
 
+    // Validate 6-bit FIELDATA structures under Initial Orders 1 primary requirements
+    for (int i = 0; i < count; i++) {
+        uint32_t raw = instructions[i];
+        char op = (char)((raw >> 24) & 0xFF);
+        uint8_t fieldata_op = (uint8_t)(op & 0x3F);
+        printf("[INITIAL ORDERS 1] Validating instruction %d: 6-bit FIELDATA primary opcode 0x%02X ('%c')\n", 
+               i, fieldata_op, (op >= 32 && op < 127) ? op : '?');
+    }
+
     for (int i = 0; i < count; i++) {
         uint32_t raw = instructions[i];
         char op = (char)((raw >> 24) & 0xFF);
