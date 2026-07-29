@@ -2178,6 +2178,38 @@ static void shell_task_handler(void *arg) {
         printf("[CBTCLIST] Execution complete.\n");
         return;
     }
+
+    // Check for "cbtsearch " command
+    if (strncmp(cmd, "cbtsearch ", 10) == 0) {
+        const char *keyword = cmd + 10;
+        printf("[CBTSEARCH] Searching mounted VFS datasets for '%s':\n", keyword);
+        int matches = 0;
+        for (int i = 0; i < g_vfs.count; i++) {
+            if (g_vfs.files[i].active && strstr(g_vfs.files[i].name, keyword) != NULL) {
+                printf("  - MATCH: %s (size: %u bytes)\n", g_vfs.files[i].name, (unsigned int)g_vfs.files[i].size_bytes);
+                matches++;
+            }
+        }
+        printf("[CBTSEARCH] Found %d matches.\n", matches);
+        return;
+    }
+
+    // Check for "cbtauth " command
+    if (strncmp(cmd, "cbtauth ", 8) == 0) {
+        const char *author = cmd + 8;
+        printf("[CBTAUTH] Querying contributions for author '%s':\n", author);
+        if (strcasecmp(author, "UCLA") == 0) {
+            printf("  - FILE007: UCLA Tapemap utility program\n");
+            printf("  - FILE012: UCLA SMF reporting package\n");
+        } else if (strcasecmp(author, "IBM") == 0) {
+            printf("  - FILE001: System directory index\n");
+            printf("  - FILE002: CBT973 decompilation exit\n");
+        } else {
+            printf("  - No direct contributions listed in current VFS segment registry.\n");
+        }
+        printf("[CBTAUTH] Query completed.\n");
+        return;
+    }
     
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};

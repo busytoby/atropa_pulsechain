@@ -880,6 +880,28 @@ int main(void) {
     tsfi_xplos_run(&sched_clist);
     printf("   ✓ CBTCLIST execution verified successfully.\n");
 
+    // 60. Test CBTSEARCH command execution
+    printf("[KERNEL TEST] Dispatching 'cbtsearch' command to XplOS shell...\n");
+    XplosShell shell_cbt_search;
+    XplosScheduler sched_cbt_search;
+    tsfi_xplos_init_scheduler(&sched_cbt_search);
+    tsfi_xplos_init_shell(&shell_cbt_search);
+    bool search_ok = tsfi_xplos_shell_exec(&shell_cbt_search, &sched_cbt_search, "cbtsearch FILE00");
+    assert(search_ok == true);
+    tsfi_xplos_run(&sched_cbt_search);
+    printf("   ✓ CBTSEARCH execution verified successfully.\n");
+
+    // 61. Test CBTAUTH command execution
+    printf("[KERNEL TEST] Dispatching 'cbtauth' command to XplOS shell...\n");
+    XplosShell shell_cbt_auth;
+    XplosScheduler sched_cbt_auth;
+    tsfi_xplos_init_scheduler(&sched_cbt_auth);
+    tsfi_xplos_init_shell(&shell_cbt_auth);
+    bool auth_ok = tsfi_xplos_shell_exec(&shell_cbt_auth, &sched_cbt_auth, "cbtauth UCLA");
+    assert(auth_ok == true);
+    tsfi_xplos_run(&sched_cbt_auth);
+    printf("   ✓ CBTAUTH execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
