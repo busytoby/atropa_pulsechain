@@ -1396,6 +1396,17 @@ int main(void) {
     tsfi_xplos_run(&sched_cat);
     printf("   ✓ CBTCAT execution verified successfully.\n");
 
+    // 92. Test CBTCON command execution
+    printf("[KERNEL TEST] Dispatching 'cbtcon' command to XplOS shell...\n");
+    XplosShell shell_con;
+    XplosScheduler sched_con;
+    tsfi_xplos_init_scheduler(&sched_con);
+    tsfi_xplos_init_shell(&shell_con);
+    bool con_ok = tsfi_xplos_shell_exec(&shell_con, &sched_con, "cbtcon");
+    assert(con_ok == true);
+    tsfi_xplos_run(&sched_con);
+    printf("   ✓ CBTCON execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

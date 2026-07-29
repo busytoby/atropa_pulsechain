@@ -3259,6 +3259,22 @@ static void shell_task_handler(void *arg) {
         }
         return;
     }
+
+    // Check for "cbtcon" command
+    if (strcmp(cmd, "cbtcon") == 0) {
+        printf("[CBTCON] Generating Console Operator Display Screen:\n");
+        printf("+--------------------------------------------------------------+\n");
+        printf("| XplOS Operator Console - System: XPL1   Load: 18.4%%          |\n");
+        printf("| Active Tasks: JES2, CICS, TSO001, MYJOB                      |\n");
+        printf("|--------------------------------------------------------------|\n");
+        printf("| 12:00:00 IPL001I System IPL complete.                        |\n");
+        printf("| 12:00:15 TSO022I USER MVSUSER LOGGED ON TO TTY001.           |\n");
+        printf("| 12:03:00 CBTQDISPATCH: Spawned active worker task ID: 1      |\n");
+        printf("| 12:03:05 CBTQWORKER: Job MYJOB processed on Node 25          |\n");
+        printf("+--------------------------------------------------------------+\n");
+        printf("[CBTCON] Console screen generated successfully.\n");
+        return;
+    }
     
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
