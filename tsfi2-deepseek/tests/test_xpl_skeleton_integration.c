@@ -268,6 +268,22 @@ int main(void) {
     assert(fabs(out_no_lfo + out_lfo_pi) < 1e-5);
     printf("  -> RenderMan LFO phase sync with DisplacementShader verified successfully.\n");
 
+    // 19. Verify CAPSTAN KERMIT Quote prefix decoding (escape sequences)
+    printf("  -> Testing CAPSTAN KERMIT quote prefix character decoding...\n");
+    extern char g_tape_journal_payloads[256][64];
+    
+    // Inject verify pass
+    assert(tsfi_xplos_shell_tape("cbttape inject 1") == true);
+    
+    // Process packet with payload containing escaped SOH control character (0x23 0x09 0x20 0x44 0x41 0x23 0x41 0x55)
+    assert(tsfi_xplos_shell_tape("cbttape kermit 2309204441234155") == true);
+    
+    // Assert that the journal matches the unescaped output: 'A' followed by 0x01
+    assert(g_tape_journal_payloads[32][0] == 'A');
+    assert(g_tape_journal_payloads[32][1] == 0x01);
+    assert(g_tape_journal_payloads[32][2] == '\0');
+    printf("  -> CAPSTAN KERMIT quote prefix character decoding verified successfully.\n");
+
     printf("\n=== INTEGRATION PROOFS PASSED ===\n");
     return 0;
 }

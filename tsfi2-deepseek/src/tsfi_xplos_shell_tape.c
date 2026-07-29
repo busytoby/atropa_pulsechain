@@ -38,7 +38,7 @@ static uint8_t g_raw_head_status = 1;   // 0 = Parity Mismatch, 1 = Pass
 static uint8_t g_sector_data_reg = 0;   // Data register
 
 static uint8_t g_tape_sectors[256];
-static char g_tape_journal_payloads[256][64];
+char g_tape_journal_payloads[256][64];
 static uint32_t g_tape_journal_ids[256];
 static bool g_tape_journal_valid[256];
 static uint8_t g_sector_locks[256]; // 0 = Unlocked, 1 = Shared Read, 2 = Exclusive Write
@@ -375,9 +375,18 @@ static bool handle_cbttape(const char *cmd) {
                         g_tape_journal_ids[seq] = seq;
                         int payload_len = len - 5;
                         if (payload_len > 0) {
-                            if (payload_len > 63) payload_len = 63;
-                            memcpy(g_tape_journal_payloads[seq], packet + 4, payload_len);
-                            g_tape_journal_payloads[seq][payload_len] = '\0';
+                            int out_idx = 0;
+                            for (int i = 0; i < payload_len && out_idx < 63; i++) {
+                                uint8_t b = packet[4 + i];
+                                if (b == '#' && i + 1 < payload_len) {
+                                    i++;
+                                    uint8_t escaped_val = packet[4 + i];
+                                    g_tape_journal_payloads[seq][out_idx++] = (char)(escaped_val ^ 64);
+                                } else {
+                                    g_tape_journal_payloads[seq][out_idx++] = (char)b;
+                                }
+                            }
+                            g_tape_journal_payloads[seq][out_idx] = '\0';
                         } else {
                             strcpy(g_tape_journal_payloads[seq], "EMPTY");
                         }
