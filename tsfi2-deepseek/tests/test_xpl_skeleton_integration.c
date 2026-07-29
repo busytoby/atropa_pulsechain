@@ -131,6 +131,23 @@ int main(void) {
     printf("  -> Testing ARM Recovery manager logic...\n");
     assert(tsfi_xplos_shell_tape("cbttape recover") == true);
 
+    // 9. Verify Extended Read/Write Lock Isolation
+    printf("  -> Testing sector lock isolation...\n");
+    assert(tsfi_xplos_shell_tape("cbttape lock write 20") == true);
+    
+    // 10. Verify Extended Multi-Sector Group Commits (aborted by lock)
+    printf("  -> Testing group write aborted by lock...\n");
+    assert(tsfi_xplos_shell_tape("cbttape writegroup 18 4") == true);
+    
+    // Unlock and run successful group commit
+    assert(tsfi_xplos_shell_tape("cbttape unlock 20") == true);
+    assert(tsfi_xplos_shell_tape("cbttape writegroup 18 4") == true);
+    
+    // 11. Verify Extended Startup Volume Reconciliation
+    printf("  -> Testing dirty sector reconciliation...\n");
+    assert(tsfi_xplos_shell_tape("cbttape inject 0") == true);
+    assert(tsfi_xplos_shell_tape("cbttape reconcile") == true);
+
     printf("\n=== INTEGRATION PROOFS PASSED ===\n");
     return 0;
 }

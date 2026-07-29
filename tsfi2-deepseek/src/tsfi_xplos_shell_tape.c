@@ -41,6 +41,7 @@ static uint8_t g_tape_sectors[256];
 static char g_tape_journal_payloads[256][64];
 static uint32_t g_tape_journal_ids[256];
 static bool g_tape_journal_valid[256];
+static uint8_t g_sector_locks[256]; // 0 = Unlocked, 1 = Shared Read, 2 = Exclusive Write
 
 static bool handle_cbttape(const char *cmd) {
     char subcmd[16] = "";
@@ -214,8 +215,111 @@ static bool handle_cbttape(const char *cmd) {
             }
             return true;
         }
+
+        // 4. Extended Multi-Sector Group Commits
+        if (strcasecmp(subcmd, "writegroup") == 0) {
+            int start_sec = 0;
+            int count_sec = 0;
+            if (sscanf(cmd + 8 + 10, "%d %d", &start_sec, &count_sec) == 2) {
+                printf("[CAPSTAN GROUP WRITE] Transaction initiated for %d sectors starting at sector %d\n", count_sec, start_sec);
+                int retries = 0;
+                
+                write_group_attempt:
+                printf("[CAPSTAN] Activating pinch roller solenoid (clamp engaged)\n");
+                g_capstan_solenoid = 1;
+                g_capstan_brake = 0;
+                g_capstan_control = 1; // Forward
+                
+                for (int i = 0; i < count_sec; i++) {
+                    int cur_sector = start_sec + i;
+                    if (cur_sector > 255) break;
+                    
+                    if (g_sector_locks[cur_sector] == 2) {
+                        printf("[CAPSTAN ERROR] Sector %d is exclusively locked! Aborting group write.\n", cur_sector);
+                        g_capstan_control = 0;
+                        g_capstan_brake = 1;
+                        g_capstan_solenoid = 0;
+                        return true;
+                    }
+                    
+                    g_capstan_encoder = cur_sector;
+                    printf("[CAPSTAN] Encoder step matches sector %d\n", g_capstan_encoder);
+                    
+                    g_sector_data_reg = (uint8_t)(100 + i); 
+                    printf("[CAPSTAN] Writing data 0x%02X to SECTOR_DATA_REG\n", g_sector_data_reg);
+                    
+                    printf("[CAPSTAN] Performing RAW verification for sector %d...\n", cur_sector);
+                    if (g_raw_head_status == 0) {
+                        printf("[CAPSTAN ERROR] RAW parity check failed at sector %d! Initiating group rollback...\n", cur_sector);
+                        g_capstan_control = 0;
+                        g_capstan_brake = 1;
+                        g_capstan_solenoid = 0;
+                        
+                        retries++;
+                        if (retries < 3) {
+                            printf("[CAPSTAN ROLLBACK] Reversing motor to rewind group by %d sectors (Retry %d/3)\n", i + 1, retries);
+                            g_capstan_solenoid = 1;
+                            g_capstan_brake = 0;
+                            g_capstan_control = 2; // Reverse
+                            
+                            g_capstan_encoder = start_sec - 1;
+                            printf("[CAPSTAN] Rewind matched preceding group boundary at %d\n", g_capstan_encoder);
+                            
+                            g_capstan_control = 0;
+                            g_capstan_brake = 1;
+                            goto write_group_attempt;
+                        }
+                        printf("[CAPSTAN ERROR] Group transaction aborted: maximum retries exceeded.\n");
+                        return true;
+                    }
+                    g_tape_sectors[cur_sector] = g_sector_data_reg;
+                }
+                
+                g_capstan_control = 0;
+                g_capstan_brake = 1;
+                g_capstan_solenoid = 0;
+                printf("[CAPSTAN COMMIT] Group transaction committed successfully. Brake engaged.\n");
+                return true;
+            }
+        }
+
+        // 5. Extended Startup Volume Reconciliation
+        if (strcasecmp(subcmd, "reconcile") == 0) {
+            printf("[ARM RECONCILE] Initiating volume consistency reconciliation...\n");
+            int fixed_count = 0;
+            for (int i = 0; i < 256; i++) {
+                if (g_tape_sectors[i] != 0 && g_raw_head_status == 0) {
+                    printf("  - [TRUNCATED] Purged dirty sector %d containing stale data 0x%02X\n", i, g_tape_sectors[i]);
+                    g_tape_sectors[i] = 0;
+                    g_tape_journal_valid[i] = false;
+                    fixed_count++;
+                }
+            }
+            printf("[ARM RECONCILE] Reconciliation complete. %d sectors resolved.\n", fixed_count);
+            return true;
+        }
+
+        // 6. Extended Read/Write Lock Isolation
+        if (strcasecmp(subcmd, "lock") == 0) {
+            char lock_mode[16] = "";
+            int target_sector = 0;
+            if (sscanf(cmd + 8 + 4, "%15s %d", lock_mode, &target_sector) == 2) {
+                int lock_type = (strcasecmp(lock_mode, "write") == 0) ? 2 : 1;
+                g_sector_locks[target_sector] = lock_type;
+                printf("[LOCK MANAGER] Sector %d locked in %s mode.\n", target_sector, lock_type == 2 ? "EXCLUSIVE_WRITE" : "SHARED_READ");
+                return true;
+            }
+        }
+        if (strcasecmp(subcmd, "unlock") == 0) {
+            int target_sector = 0;
+            if (sscanf(cmd + 8 + 6, "%d", &target_sector) == 1) {
+                g_sector_locks[target_sector] = 0;
+                printf("[LOCK MANAGER] Sector %d successfully unlocked.\n", target_sector);
+                return true;
+            }
+        }
     }
-    printf("[CAPSTAN ERROR] Syntax: cbttape [status | inject <0|1> | write <sector> <val> | rewind | bsf <count> | fsf <count> | journal <tx_id> <payload> | recover]\n");
+    printf("[CAPSTAN ERROR] Syntax: cbttape [status | inject <0|1> | write <sector> <val> | rewind | bsf <count> | fsf <count> | journal <tx_id> <payload> | recover | writegroup <start> <count> | reconcile | lock <r|w> <sector> | unlock <sector>]\n");
     return true;
 }
 
