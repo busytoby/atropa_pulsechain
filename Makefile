@@ -1,4 +1,4 @@
-.PHONY: help test-all test-dashboard test-container test-git-ci test-unit tpu-benchmarks livrps-benchmark test-mann test-comp-pass test-mvarsel test-reroute test-delegate-sig test-stagecomp test-ar test-sdfformat test-hydrascene test-renderdelegate test-stagelock test-renderindex test-usdshade test-teddy-loader
+.PHONY: help test-all test-dashboard test-container test-git-ci test-unit tpu-benchmarks livrps-benchmark test-mann test-comp-pass test-mvarsel test-reroute test-delegate-sig test-stagecomp test-ar test-sdfformat test-hydrascene test-renderdelegate test-stagelock test-renderindex test-usdshade test-teddy-loader test-cbt021-inmemory-pds
 
 help:
 	@echo "Available test targets:"
@@ -405,3 +405,8 @@ sdk-minify: sdk-build
 
 sdk-package: sdk-minify
 	tar -czf dist/auncient_sdk.tar.gz inc/auncient_sdk.h libauncient_sdk.a
+
+test-cbt021-inmemory-pds:
+	gcc -Wall -Wextra -std=c11 -O3 tests/test_cbt021_inmemory_pds.c -o tests/test_cbt021_inmemory_pds -lssl -lcrypto -lz
+	./tests/test_cbt021_inmemory_pds
+	@rm -f tests/test_cbt021_inmemory_pds
