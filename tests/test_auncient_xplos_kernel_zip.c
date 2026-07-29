@@ -929,6 +929,33 @@ int main(void) {
     remove("tests/memb_read.txt");
     remove("tests/read_pds.dat.bin");
 
+    // 63. Test CBTPDSCOMPRESS command execution
+    printf("[KERNEL TEST] Dispatching 'cbtpdscompress' command to XplOS shell...\n");
+    XplosShell shell_compress;
+    XplosScheduler sched_compress;
+    
+    tsfi_xplos_init_scheduler(&sched_compress);
+    tsfi_xplos_init_shell(&shell_compress);
+    tsfi_xplos_shell_exec(&shell_compress, &sched_compress, "cbtpdsinit tests/comp_pds.dat.bin");
+    tsfi_xplos_run(&sched_compress);
+
+    FILE *f_c_tmp = fopen("tests/memb_comp.txt", "w");
+    fprintf(f_c_tmp, "COMPRESSION TEST LINE DATA\n");
+    fclose(f_c_tmp);
+
+    tsfi_xplos_init_scheduler(&sched_compress);
+    tsfi_xplos_shell_exec(&shell_compress, &sched_compress, "cbtpdsadd tests/comp_pds.dat.bin MEMB1 tests/memb_comp.txt");
+    tsfi_xplos_run(&sched_compress);
+
+    tsfi_xplos_init_scheduler(&sched_compress);
+    bool compress_ok = tsfi_xplos_shell_exec(&shell_compress, &sched_compress, "cbtpdscompress tests/comp_pds.dat.bin");
+    assert(compress_ok == true);
+    tsfi_xplos_run(&sched_compress);
+
+    printf("   ✓ CBTPDSCOMPRESS execution verified successfully.\n");
+    remove("tests/memb_comp.txt");
+    remove("tests/comp_pds.dat.bin");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

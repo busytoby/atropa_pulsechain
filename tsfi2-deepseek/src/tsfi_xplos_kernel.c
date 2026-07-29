@@ -10,6 +10,7 @@
 #include "tsfi_nadler_syntactic_parser.h"
 #include "tsfi_parc_tape_catalog.h"
 #include <ctype.h>
+#include <unistd.h>
 
 // MotzkinPrime system constant
 #define MOTZKIN_PRIME 953467954114363ULL
@@ -2270,6 +2271,87 @@ static void shell_task_handler(void *arg) {
             fclose(f);
             return;
         }
+    }
+
+    // Check for "cbtpdscompress " command
+    if (strncmp(cmd, "cbtpdscompress ", 15) == 0) {
+        const char *pds_path = cmd + 15;
+        if (strstr(pds_path, ".dat.bin") == NULL) {
+            printf("[CBTPDSCOMPRESS ERROR] Violation of Rule 13: filename must end in .dat.bin\n");
+            return;
+        }
+        FILE *f = fopen(pds_path, "r+b");
+        if (!f) {
+            printf("[CBTPDSCOMPRESS ERROR] Could not open PDS: %s\n", pds_path);
+            return;
+        }
+        uint8_t dir_block[256];
+        fread(dir_block, 1, 256, f);
+        uint16_t used = (dir_block[0] << 8) | dir_block[1];
+        
+        int count = (used - 2) / 16;
+        if (count <= 0) {
+            printf("[CBTPDSCOMPRESS] PDS is already compact (0 active members).\n");
+            fclose(f);
+            return;
+        }
+        
+        uint8_t **buffers = malloc(count * sizeof(uint8_t*));
+        uint32_t *sizes = malloc(count * sizeof(uint32_t));
+        uint32_t *old_offsets = malloc(count * sizeof(uint32_t));
+        
+        int ptr = 2;
+        int idx = 0;
+        while (ptr < used) {
+            uint32_t offset = (dir_block[ptr + 8] << 16) | (dir_block[ptr + 9] << 8) | dir_block[ptr + 10];
+            uint32_t size = (dir_block[ptr + 12] << 24) | (dir_block[ptr + 13] << 16) | (dir_block[ptr + 14] << 8) | dir_block[ptr + 15];
+            
+            buffers[idx] = malloc(size);
+            sizes[idx] = size;
+            old_offsets[idx] = offset;
+            
+            fseek(f, offset, SEEK_SET);
+            fread(buffers[idx], 1, size, f);
+            
+            ptr += 16;
+            idx++;
+        }
+        
+        long current_offset = 256;
+        ptr = 2;
+        idx = 0;
+        while (ptr < used) {
+            fseek(f, current_offset, SEEK_SET);
+            fwrite(buffers[idx], 1, sizes[idx], f);
+            
+            dir_block[ptr + 8] = (current_offset >> 16) & 0xFF;
+            dir_block[ptr + 9] = (current_offset >> 8) & 0xFF;
+            dir_block[ptr + 10] = current_offset & 0xFF;
+            
+            printf("  - Repositioned member %d: Offset 0x%06X -> 0x%06lX (%u bytes)\n", idx + 1, old_offsets[idx], current_offset, sizes[idx]);
+            
+            current_offset += sizes[idx];
+            free(buffers[idx]);
+            ptr += 16;
+            idx++;
+        }
+        
+        free(buffers);
+        free(sizes);
+        free(old_offsets);
+        
+        fflush(f);
+        int fd = fileno(f);
+        if (ftruncate(fd, current_offset) != 0) {
+            printf("[CBTPDSCOMPRESS WARNING] Could not truncate file.\n");
+        }
+        
+        fseek(f, 0, SEEK_SET);
+        fwrite(dir_block, 1, 256, f);
+        fclose(f);
+        
+        printf("[CBTPDSCOMPRESS] PDS compression completed. Reclaimed space gaps. New file size: %ld bytes.\n", current_offset);
+        return;
     }
     
     // Perform parsing & semantic actions
