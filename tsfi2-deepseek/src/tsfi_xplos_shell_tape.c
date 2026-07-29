@@ -245,7 +245,7 @@ static bool handle_cbttape(const char *cmd) {
                         g_capstan_control = 0;
                         g_capstan_brake = 1;
                         g_capstan_solenoid = 0;
-                        return true;
+                        return false;
                     }
                     
                     g_capstan_encoder = cur_sector;
@@ -276,7 +276,7 @@ static bool handle_cbttape(const char *cmd) {
                             goto write_group_attempt;
                         }
                         printf("[CAPSTAN ERROR] Group transaction aborted: maximum retries exceeded.\n");
-                        return true;
+                        return false;
                     }
                     g_tape_sectors[cur_sector] = g_sector_data_reg;
                 }

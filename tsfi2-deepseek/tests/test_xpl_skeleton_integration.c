@@ -180,7 +180,7 @@ int main(void) {
     
     // 10. Verify Extended Multi-Sector Group Commits (aborted by lock)
     printf("  -> Testing group write aborted by lock...\n");
-    assert(tsfi_xplos_shell_tape("cbttape writegroup 18 4") == true);
+    assert(tsfi_xplos_shell_tape("cbttape writegroup 18 4") == false);
     
     // Unlock and run successful group commit
     assert(tsfi_xplos_shell_tape("cbttape unlock 20") == true);
