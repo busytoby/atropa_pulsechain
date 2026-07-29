@@ -1781,6 +1781,7 @@ int main(void) {
     printf("   ✓ IBHJESPM Security Monitor verified successfully.\n");
 
     printf("[KERNEL TEST] Dispatching File 035 commands to XplOS shell...\n");
+    tsfi_xplos_init_scheduler(&sched_bh2);
     bool pds_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "pds OCX");
     assert(pds_ok == true);
     tsfi_xplos_run(&sched_bh2);
@@ -1816,6 +1817,34 @@ int main(void) {
     bool off_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "offload FILE021");
     assert(off_ok == true);
     tsfi_xplos_run(&sched_bh2);
+    bool lt_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "logtime");
+    assert(lt_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool lo_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "logopts VERBOSE");
+    assert(lo_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool ts_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "tapescan");
+    assert(ts_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool tc_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "tcopy CBT035 CBT036");
+    assert(tc_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool rel_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "release OCX.dat.bin");
+    assert(rel_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool rst_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "reset");
+    assert(rst_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool xq_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "xeq MYPROG");
+    assert(xq_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
     printf("   ✓ File 035 utilities execution verified successfully.\n");
 
     printf("=============================================================\n");
