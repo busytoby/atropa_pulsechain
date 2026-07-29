@@ -19,3 +19,12 @@ The generator pipeline coordinates translation in sequence:
 4. The generated machine instructions run under the monitor environment (**XPLSM**).
 
 This design allows rapid compiler construction by separating syntactic parsing tables from semantic code generation routines.
+
+## 3. Integration with HASP, BOOK, JES, and PDS
+
+The conceptual layout of the translator writing system maps directly to mainframe job control and partition storage layers:
+
+* **PDS and BOOK Integration**: Compiled output load modules are stored as members in Partitioned Datasets (PDS). The `BOOK` utility serves as the link-editor and directory catalog manager, formatting the binary directory blocks at offset 0 (member tracking) and registering datasets inside persistent VSAM files.
+* **JES and HASP Spooling**: Compiler jobs are submitted as cards into the JES/HASP spooler queues. Jobs are scheduled and executed dynamically based on priority classes, matching the execution constraints of target programs.
+* **Symbol Tables (XCOM / JCL)**: Dynamic symbol overrides (`//SET`) dynamically substitute variable cards in the execution stream, replicating XCOM's symbol table resolution passes.
+* **Run-Time Monitor (XPLSM / COND)**: Step-level condition checks (`COND`) emulate the state parsing check loops inside the `XPLSM` runtime monitor, bypassing execution steps based on previous return code results.
