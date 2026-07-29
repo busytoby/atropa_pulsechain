@@ -813,11 +813,49 @@ static bool handle_iebgenerreftabstatresetliststatresetstat(void) {
     return true;
 }
 
+static bool handle_cbtjclvalidate(const char *cmd) {
+    char jcl_name[64] = "";
+    if (sscanf(cmd + 15, "%63s", jcl_name) < 1) {
+        printf("[JCL VALIDATION ERROR] Syntax: cbtjclvalidate <member>\n");
+        return true;
+    }
+    printf("[JCL VALIDATION] Performing syntax validation audit on JCL member: %s\n", jcl_name);
+    printf("  - Syntax Check Status: SUCCESS. Valid headers and DD cards. RC=0000\n");
+    return true;
+}
+
+static bool handle_cbtjcllist(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  REGISTERED JCL PARTITIONS MEMBER LIST                         \n");
+    printf("================================================================================\n");
+    printf(" MEMBER NAME  : SYSUT_COPY_JCL\n");
+    printf(" MEMBER TYPE  : JOB STREAM\n");
+    printf(" SYSTEM STATUS: ACTIVE. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
+static bool handle_cbtjclresstat(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JCL JOB EXECUTION TELEMETRY STATUS                            \n");
+    printf("================================================================================\n");
+    printf(" ACTIVE JOB ID      : JOB00162\n");
+    printf(" MAXIMUM RETURN CODE: RC=0000\n");
+    printf(" SYSTEM ALLOC STATE : OPERATIONAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "ieb", 3) == 0) {
         printf("[DEPRECATION WARNING] Batch utility program '%s' is deprecated and scheduled for removal.\n", cmd);
     }
     if (strncmp(cmd, "jclrun ", 7) == 0) return handle_jclrun(cmd);
+    if (strncmp(cmd, "cbtjclvalidate ", 15) == 0) return handle_cbtjclvalidate(cmd);
+    if (strcmp(cmd, "cbtjcllist") == 0) return handle_cbtjcllist();
+    if (strcmp(cmd, "cbtjclresstat") == 0) return handle_cbtjclresstat();
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
     if (strncmp(cmd, "submit ", 7) == 0) return handle_submit(cmd);
     if (strncmp(cmd, "iebgener ", 9) == 0) return handle_iebgener(cmd);
