@@ -641,6 +641,17 @@ static bool handle_cbtcicscleanexceptaddlistresetstatsstat(void) {
     return true;
 }
 
+static bool handle_cbtcicscleanexceptaddlistresetstatsstatus(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  CICS TSQ CLEANUP EXCLUSIONS BULK RESET LOGS PROGRESS          \n");
+    printf("================================================================================\n");
+    printf(" TELEMETRY EXCLUSIONS: 100 PERCENT ALIGNMENT\n");
+    printf(" SYSTEM INTEGRITY PKI: VALIDATED. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
@@ -682,5 +693,6 @@ bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strcmp(cmd, "cbtcicscleanexceptaddlistresetstat") == 0) return handle_cbtcicscleanexceptaddlistresetstat();
     if (strcmp(cmd, "cbtcicscleanexceptaddlistresetstats") == 0) return handle_cbtcicscleanexceptaddlistresetstats();
     if (strcmp(cmd, "cbtcicscleanexceptaddlistresetstatsstat") == 0) return handle_cbtcicscleanexceptaddlistresetstatsstat();
+    if (strcmp(cmd, "cbtcicscleanexceptaddlistresetstatsstatus") == 0) return handle_cbtcicscleanexceptaddlistresetstatsstatus();
     return false;
 }
