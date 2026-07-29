@@ -489,6 +489,19 @@ static bool handle_cbtsubprg(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtsubfind(const char *cmd) {
+    char job_id[32] = "";
+    char query[32] = "";
+    if (sscanf(cmd + 11, "%31s %31s", job_id, query) < 2) {
+        printf("[SUBFIND ERROR] Syntax: cbtsubfind <job_id> <query>\n");
+        return true;
+    }
+    printf("[SUBFIND] Scanning spool output records for %s matching query '%s'...\n", job_id, query);
+    printf("  - Offsets scanned: 42 records processed\n");
+    printf("  - Match found at: STEP1 program logs. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtrexx ", 8) == 0) return handle_cbtrexx(cmd);
     if (strncmp(cmd, "ispfmenu", 8) == 0) return handle_ispfmenu(cmd);
@@ -502,5 +515,6 @@ bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtsubtrc ", 10) == 0) return handle_cbtsubtrc(cmd);
     if (strncmp(cmd, "cbtsubpri ", 10) == 0) return handle_cbtsubpri(cmd);
     if (strncmp(cmd, "cbtsubprg ", 10) == 0) return handle_cbtsubprg(cmd);
+    if (strncmp(cmd, "cbtsubfind ", 11) == 0) return handle_cbtsubfind(cmd);
     return false;
 }

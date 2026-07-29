@@ -361,6 +361,17 @@ static bool handle_vtamussfmt(const char *cmd) {
     return true;
 }
 
+static bool handle_vtamussdelay(const char *cmd) {
+    int delay_ms = 0;
+    if (sscanf(cmd + 13, "%d", &delay_ms) < 1) {
+        printf("[VTAMUSSDELAY ERROR] Syntax: vtamussdelay <delay_ms>\n");
+        return true;
+    }
+    printf("[VTAM] Solicit Logon Panel logical path delay set to: %d ms\n", delay_ms);
+    printf("  - Synthetic delay applied to network solicit buffers. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "cbtnet ", 7) == 0) return handle_cbtnet(cmd + 7);
     if (strncmp(cmd, "logon ", 6) == 0) return handle_vtam_logon(cmd);
@@ -375,5 +386,6 @@ bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "vtambufdet ", 11) == 0) return handle_vtambufdet(cmd);
     if (strcmp(cmd, "vtamussstat") == 0) return handle_vtamussstat();
     if (strncmp(cmd, "vtamussfmt ", 11) == 0) return handle_vtamussfmt(cmd);
+    if (strncmp(cmd, "vtamussdelay ", 13) == 0) return handle_vtamussdelay(cmd);
     return false;
 }

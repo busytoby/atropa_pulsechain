@@ -501,6 +501,30 @@ int main(void) {
     assert(ussfmt_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 57. Test IEBIMAGESPC print vertical spacing (iebimagespc)
+    printf("[TEST] Testing IEBIMAGESPC spacing formatter...\n");
+    bool imagespc_ok = tsfi_xplos_shell_exec(&shell, &sched, "iebimagespc 8");
+    assert(imagespc_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 58. Test TSO spool job search (cbtsubfind)
+    printf("[TEST] Testing cbtsubfind spool scanner...\n");
+    bool subfind_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtsubfind JOB00021 SUCCESS");
+    assert(subfind_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 59. Test CICS wildcard Transient Storage Queue purger (cbtcicscleanmask)
+    printf("[TEST] Testing CICS TSQ prefix purger...\n");
+    bool cleanmask_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicscleanmask LOG*");
+    assert(cleanmask_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 60. Test VTAM USS Solicit path delay simulator (vtamussdelay)
+    printf("[TEST] Testing VTAM USS path transmission delay...\n");
+    bool ussdelay_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtamussdelay 120");
+    assert(ussdelay_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }

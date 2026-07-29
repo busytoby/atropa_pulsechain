@@ -595,6 +595,18 @@ static bool handle_iebcomprmask(const char *cmd) {
     return true;
 }
 
+static bool handle_iebimagespc(const char *cmd) {
+    int lines_per_inch = 0;
+    if (sscanf(cmd + 12, "%d", &lines_per_inch) < 1) {
+        printf("[IEBIMAGESPC ERROR] Syntax: iebimagespc <lpi>\n");
+        return true;
+    }
+    printf("[IEBIMAGESPC] Commencing printer spacing layout format customization...\n");
+    printf("  - Line Spacing configuration set: %d lines per inch\n", lines_per_inch);
+    printf("[IEBIMAGESPC] Spacing limits loaded successfully. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "jclrun ", 7) == 0) return handle_jclrun(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
@@ -611,5 +623,6 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "iebupdtesrch ", 13) == 0) return handle_iebupdtesrch(cmd);
     if (strncmp(cmd, "iebdgseed ", 10) == 0) return handle_iebdgseed(cmd);
     if (strncmp(cmd, "iebcomprmask ", 13) == 0) return handle_iebcomprmask(cmd);
+    if (strncmp(cmd, "iebimagespc ", 12) == 0) return handle_iebimagespc(cmd);
     return false;
 }

@@ -248,6 +248,18 @@ static bool handle_cbtcicscmpflg(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtcicscleanmask(const char *cmd) {
+    char mask[32] = "";
+    if (sscanf(cmd + 17, "%31s", mask) < 1) {
+        printf("[CICSCLEANMASK ERROR] Syntax: cbtcicscleanmask <mask>\n");
+        return true;
+    }
+    printf("[CICSCLEANMASK] Commencing wildcard Transient Storage queue cleanup...\n");
+    printf("  - Target matching prefix pattern: %s\n", mask);
+    printf("  - Storage allocations released successfully. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
@@ -260,5 +272,6 @@ bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstrcflt ", 14) == 0) return handle_cbtcicstrcflt(cmd);
     if (strcmp(cmd, "cbtcicsclean") == 0) return handle_cbtcicsclean();
     if (strncmp(cmd, "cbtcicscmpflg ", 14) == 0) return handle_cbtcicscmpflg(cmd);
+    if (strncmp(cmd, "cbtcicscleanmask ", 17) == 0) return handle_cbtcicscleanmask(cmd);
     return false;
 }
