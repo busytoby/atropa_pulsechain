@@ -877,6 +877,35 @@ bool tsfi_xplos_shell_book(const char *cmd) {
         return true;
     }
 
-
     return false;
+}
+
+void tsfi_cbt_pds_format_dir_block(uint8_t *dir_block, const char *member_name, uint32_t offset, uint32_t size) {
+    if (!dir_block) return;
+    memset(dir_block, 0, 256);
+    
+    // Set 'used' bytes: we have 1 entry of 16 bytes starting at ptr=2. So total used is 2 + 16 = 18 bytes.
+    dir_block[0] = 0x00;
+    dir_block[1] = 18;
+    
+    // Member Name: 8 bytes at offset 2
+    int len = strlen(member_name);
+    if (len > 8) len = 8;
+    memcpy(&dir_block[2], member_name, len);
+    for (int i = len; i < 8; i++) {
+        dir_block[2 + i] = ' '; // Pad with space
+    }
+    
+    // Offset (TTR): 3 bytes at offset 10 (ptr + 8)
+    dir_block[10] = (offset >> 16) & 0xFF;
+    dir_block[11] = (offset >> 8) & 0xFF;
+    dir_block[12] = offset & 0xFF;
+    
+    // Size: 4 bytes at offset 14 (ptr + 12)
+    dir_block[14] = (size >> 24) & 0xFF;
+    dir_block[15] = (size >> 16) & 0xFF;
+    dir_block[16] = (size >> 8) & 0xFF;
+    dir_block[17] = size & 0xFF;
+    
+    printf("[BOOK] Formatted binary PDS directory block for member %s (Offset=%u, Size=%u)\n", member_name, offset, size);
 }

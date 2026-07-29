@@ -9,6 +9,7 @@
 extern bool tsfi_xplos_shell_cbt_jcl(const char *cmd);
 extern bool tsfi_xplos_shell_cbt_jes(const char *cmd);
 extern bool tsfi_xplos_shell_book(const char *cmd);
+extern void tsfi_cbt_pds_format_dir_block(uint8_t *dir_block, const char *member_name, uint32_t offset, uint32_t size);
 
 int main(void) {
     printf("=== RUNNING SKELETON-HASP-BOOK END-TO-END PROOFS ===\n");
@@ -213,6 +214,14 @@ int main(void) {
     // Execute the job: it should route the command coaxially and execute cbtrexx
     bool mockjob3_run_ok = tsfi_xplos_shell_cbt_jcl("jclrun MJ3");
     assert(mockjob3_run_ok == true);
+
+    // 14. Verify Binary PDS Directory Block Formatting
+    printf("  -> Phase 12: Verifying binary PDS directory block formatting...\n");
+    uint8_t dir_block_buf[256];
+    tsfi_cbt_pds_format_dir_block(dir_block_buf, "MJ3", 1024, 256);
+    assert(dir_block_buf[1] == 18);
+    assert(strncmp((char *)&dir_block_buf[2], "MJ3     ", 8) == 0);
+    assert(dir_block_buf[12] == 0x00);
 
     printf("  -> End-to-end data pipeline integrity verified successfully.\n");
     printf("\n=== SKELETON HASP BOOK PROOFS PASSED ===\n");
