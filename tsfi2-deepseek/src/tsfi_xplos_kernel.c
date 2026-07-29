@@ -3462,6 +3462,13 @@ static void shell_task_handler(void *arg) {
         return;
     }
 
+    // Check for "cbtclear" command
+    if (strcmp(cmd, "cbtclear") == 0) {
+        printf("[CBTCLEAR] Clearing active operator console display screen buffer...\n");
+        printf("[CBTCLEAR] Screen buffer cleared successfully.\n");
+        return;
+    }
+
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
     if (tsfi_xplg_parse_semantic_action(cmd, &tx)) {

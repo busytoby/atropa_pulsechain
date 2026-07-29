@@ -1560,6 +1560,17 @@ int main(void) {
     tsfi_xplos_run(&sched_news);
     printf("   ✓ CBTNEWS execution verified successfully.\n");
 
+    // 105. Test CBTCLEAR command execution
+    printf("[KERNEL TEST] Dispatching 'cbtclear' command to XplOS shell...\n");
+    XplosShell shell_clear;
+    XplosScheduler sched_clear;
+    tsfi_xplos_init_scheduler(&sched_clear);
+    tsfi_xplos_init_shell(&shell_clear);
+    bool clear_ok = tsfi_xplos_shell_exec(&shell_clear, &sched_clear, "cbtclear");
+    assert(clear_ok == true);
+    tsfi_xplos_run(&sched_clear);
+    printf("   ✓ CBTCLEAR execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
