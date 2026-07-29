@@ -8,7 +8,7 @@
 
 ## 3. Communication Constraints
 * **No Prattling:** Keep responses direct, minimal, and entirely free of fluff or excessive explanations.
-* **No Single-Word Sentences:** Never use single-word sentences under any circumstances to ensure all statements provide complete grammatical and contextual structures.
+* **No Single-Word Sentences:** I must stop using single-word sentences. Using single-word sentences constitutes a failure to provide complete contextual information and relies on vocabulary territorialism instead of clear communication.
 
 ## 4. Architectural Capability Constraints
 * **No Puppeteer or Browser Automation:** The use of Puppeteer, browser remote debugging ports, or high-level synthetic browser automation is strictly banned across all codebase components, testing suites, and agent workflows.
