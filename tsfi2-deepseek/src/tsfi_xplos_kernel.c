@@ -3602,7 +3602,19 @@ static void shell_task_handler(void *arg) {
         printf("  - cbtdict <dataset> Dataset directory layout inspector\n");
         printf("  - cbtsend <message> Send terminal-to-terminal message notifications\n");
         printf("  - cbtstat           System CPU and memory load status utility\n");
+        printf("  - cbtcpu            Query physical processor hardware parameters\n");
         printf("[CBTHELP] Help index generated successfully.\n");
+        return;
+    }
+
+    // Check for "cbtcpu" command
+    if (strcmp(cmd, "cbtcpu") == 0) {
+        printf("[CBTCPU] Querying physical processor hardware parameters:\n");
+        printf("  - Machine Type:     3090-600J\n");
+        printf("  - Serial Number:    4801205\n");
+        printf("  - Physical Cores:   6 active engines\n");
+        printf("  - Cryptographic FP: Installed (ICF-3)\n");
+        printf("[CBTCPU] CPU hardware parameter query completed successfully.\n");
         return;
     }
 

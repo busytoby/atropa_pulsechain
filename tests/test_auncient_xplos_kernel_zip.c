@@ -1695,6 +1695,17 @@ int main(void) {
     assert(q_ok2 == true);
     printf("   ✓ 2-3 Tree SMF Queue Dispatcher verified successfully.\n");
 
+    // 117. Test CBTCPU command execution
+    printf("[KERNEL TEST] Dispatching 'cbtcpu' command to XplOS shell...\n");
+    XplosShell shell_cbtcpu;
+    XplosScheduler sched_cbtcpu;
+    tsfi_xplos_init_scheduler(&sched_cbtcpu);
+    tsfi_xplos_init_shell(&shell_cbtcpu);
+    bool cbtcpu_ok = tsfi_xplos_shell_exec(&shell_cbtcpu, &sched_cbtcpu, "cbtcpu");
+    assert(cbtcpu_ok == true);
+    tsfi_xplos_run(&sched_cbtcpu);
+    printf("   ✓ CBTCPU execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
