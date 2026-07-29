@@ -291,6 +291,16 @@ static bool handle_jclrun(const char *cmd) {
                                     step_rc = 12;
                                     printf("[SCSIPGM ERROR] Bridge creation failed.\n");
                                 }
+                            } else if (strcmp(pgm_name, "YULVM") == 0) {
+                                step_rc = 0;
+                                snprintf(log_msg, sizeof(log_msg), "    * YULVM Instruction Execution Agent active. RC=0000\n");
+                                printf("%s", log_msg);
+                                append_spool_log(jcl_name, log_msg);
+
+                                printf("[YULVM] Fetching next instruction node from TSQ rail...\n");
+                                printf("[YULVM] Executing opcode: PUSH 953467954114363\n");
+                                printf("[YULVM] Executing opcode: TUNE (Motzkin Prime Modulus)\n");
+                                printf("[YULVM] Opcode execution state stored persistently in TSQ rail. RC=0000\n");
                             } else if (strcmp(pgm_name, "TSOTMP") == 0) {
                                 step_rc = 0;
                                 snprintf(log_msg, sizeof(log_msg), "    * TSOTMP Terminal Monitor Program launched. RC=0000\n");

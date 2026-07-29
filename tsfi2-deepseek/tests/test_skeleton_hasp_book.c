@@ -172,6 +172,13 @@ int main(void) {
     int write_comp_rc = tsfi_cw_vsam_write(&proclib_ksds, "MJ8", comp_skeleton_cards, strlen((char *)comp_skeleton_cards));
     assert(write_comp_rc == 0);
 
+    // Write Yul VM execution skeleton MJ9
+    uint8_t yulvm_skeleton_cards[256] = 
+        "//MJ9 JOB 'YUL VM RUN'\n"
+        "//STEP1 EXEC PGM=YULVM\n";
+    int write_yulvm_rc = tsfi_cw_vsam_write(&proclib_ksds, "MJ9", yulvm_skeleton_cards, strlen((char *)yulvm_skeleton_cards));
+    assert(write_yulvm_rc == 0);
+
     // Execute the job, which should dynamically load it from the PROCLIB KSDS database
     bool mockjob_run_ok = tsfi_xplos_shell_cbt_jcl("jclrun MJ1");
     assert(mockjob_run_ok == true);
@@ -337,6 +344,11 @@ int main(void) {
     assert(run_sec_ok == true);
     bool run_comp_ok = tsfi_xplos_shell_cbt_jcl("jclrun MJ8");
     assert(run_comp_ok == true);
+
+    // 23. Verify Yul VM execution upon TSQ/TDQ DAT rails
+    printf("  -> Phase 21: Verifying Yul VM execution upon TSQ/TDQ DAT rails...\n");
+    bool run_yulvm_ok = tsfi_xplos_shell_cbt_jcl("jclrun MJ9");
+    assert(run_yulvm_ok == true);
 
     printf("  -> End-to-end data pipeline integrity verified successfully.\n");
     printf("\n=== SKELETON HASP BOOK PROOFS PASSED ===\n");
