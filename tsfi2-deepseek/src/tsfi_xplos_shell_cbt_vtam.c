@@ -511,6 +511,17 @@ static bool handle_vtamrouterecignore(const char *cmd) {
     return true;
 }
 
+static bool handle_vtamrouterecignorelist(const char *cmd) {
+    char list[128] = "";
+    if (sscanf(cmd + 23, "%127[^\n]", list) < 1) {
+        printf("[VTAMROUTERECIGNORELIST ERROR] Syntax: vtamrouterecignorelist <path1>,<path2>,...\n");
+        return true;
+    }
+    printf("[VTAM] Gateway route recovery telemetry errors ignored on paths list: %s\n", list);
+    printf("  - Gateway paths recovery notifications suppressed. RC=0000\n");
+    return true;
+}
+
 static bool handle_vtamrouterecresetstat(void) {
     printf("[VTAM] Gateway route recovery telemetry counters reset to zero\n");
     printf("  - Scheduler statistics telemetry cleared. RC=0000\n");
@@ -557,5 +568,6 @@ bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "vtamrouterecignore ", 19) == 0) return handle_vtamrouterecignore(cmd);
     if (strcmp(cmd, "vtamrouterecresetstat") == 0) return handle_vtamrouterecresetstat();
     if (strncmp(cmd, "vtamrouterecresetlist ", 22) == 0) return handle_vtamrouterecresetlist(cmd);
+    if (strncmp(cmd, "vtamrouterecignorelist ", 23) == 0) return handle_vtamrouterecignorelist(cmd);
     return false;
 }

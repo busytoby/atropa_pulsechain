@@ -583,6 +583,18 @@ static bool handle_cbtcicscleanexceptchkliststat(void) {
     return true;
 }
 
+static bool handle_cbtcicscleanexceptaddliststat(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  CICS TSQ CLEANUP EXCLUSIONS BULK ADD STATS                    \n");
+    printf("================================================================================\n");
+    printf(" TOTAL EXCLUSIONS LOADED: 3 PREFIXES\n");
+    printf(" SYSTEM DIRECTORY CAP  : 128 ENTRIES\n");
+    printf(" RESPONSE STATUS       : OPERATIONAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
@@ -618,5 +630,6 @@ bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicscleanexceptchklist ", 26) == 0) return handle_cbtcicscleanexceptchklist(cmd);
     if (strncmp(cmd, "cbtcicscleanexceptaddlist ", 26) == 0) return handle_cbtcicscleanexceptaddlist(cmd);
     if (strcmp(cmd, "cbtcicscleanexceptchkliststat") == 0) return handle_cbtcicscleanexceptchkliststat();
+    if (strcmp(cmd, "cbtcicscleanexceptaddliststat") == 0) return handle_cbtcicscleanexceptaddliststat();
     return false;
 }

@@ -665,6 +665,18 @@ static bool handle_cbtsubwaitretryscriptchklist(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtsubwaitretryscriptchkliststat(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JES JOB SYNCHRONOUS WAIT TIMEOUT SCRIPTS AUDIT STATS          \n");
+    printf("================================================================================\n");
+    printf(" TOTAL SCRIPTS AUDITED: 2\n");
+    printf(" VERIFIED ACTIVE      : 2\n");
+    printf(" RESPONSE STATUS      : OPERATIONAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtrexx ", 8) == 0) return handle_cbtrexx(cmd);
     if (strncmp(cmd, "ispfmenu", 8) == 0) return handle_ispfmenu(cmd);
@@ -693,5 +705,6 @@ bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtsubwaitretryscriptdel ", 25) == 0) return handle_cbtsubwaitretryscriptdel(cmd);
     if (strncmp(cmd, "cbtsubwaitretryscriptchk ", 25) == 0) return handle_cbtsubwaitretryscriptchk(cmd);
     if (strncmp(cmd, "cbtsubwaitretryscriptchklist ", 29) == 0) return handle_cbtsubwaitretryscriptchklist(cmd);
+    if (strcmp(cmd, "cbtsubwaitretryscriptchkliststat") == 0) return handle_cbtsubwaitretryscriptchkliststat();
     return false;
 }
