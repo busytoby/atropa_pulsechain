@@ -1345,6 +1345,17 @@ int main(void) {
     tsfi_xplos_run(&sched_dmap);
     printf("   ✓ CBTDASDMAP execution verified successfully.\n");
 
+    // 88. Test CBTTSK command execution
+    printf("[KERNEL TEST] Dispatching 'cbttsk' command to XplOS shell...\n");
+    XplosShell shell_tsk;
+    XplosScheduler sched_tsk;
+    tsfi_xplos_init_scheduler(&sched_tsk);
+    tsfi_xplos_init_shell(&shell_tsk);
+    bool tsk_ok = tsfi_xplos_shell_exec(&shell_tsk, &sched_tsk, "cbttsk");
+    assert(tsk_ok == true);
+    tsfi_xplos_run(&sched_tsk);
+    printf("   ✓ CBTTSK execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

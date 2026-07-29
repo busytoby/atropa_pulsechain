@@ -3201,6 +3201,17 @@ static void shell_task_handler(void *arg) {
         }
         return;
     }
+
+    // Check for "cbttsk" command
+    if (strcmp(cmd, "cbttsk") == 0) {
+        printf("[CBTTSK] Active Task Control Blocks (TCBs) & Process Status:\n");
+        printf("  - TCB: 0x00A380   JOB: JES2     PRIORITY: 255   STATUS: ACTIVE (WAIT)\n");
+        printf("  - TCB: 0x00B240   JOB: CICS     PRIORITY: 220   STATUS: ACTIVE (RUN)\n");
+        printf("  - TCB: 0x00C7F0   JOB: TSO      PRIORITY: 180   STATUS: ACTIVE (WAIT)\n");
+        printf("  - TCB: 0x00D9E0   JOB: MYJOB    PRIORITY: 100   STATUS: TERMINATING\n");
+        printf("[CBTTSK] Task status display completed.\n");
+        return;
+    }
     
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
