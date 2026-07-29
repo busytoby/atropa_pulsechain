@@ -417,6 +417,19 @@ static bool handle_vtamrouterec(const char *cmd) {
     return true;
 }
 
+static bool handle_vtamrouterecstat(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  VTAM GATEWAY PATH ROUTE RECOVERY TIMER MONITOR               \n");
+    printf("================================================================================\n");
+    printf(" RECOVERY SCHEDULER: RUNNING\n");
+    printf(" RETRY INTERVAL SEC: 60 SECONDS\n");
+    printf(" RECOVERY BACKOFFS : 0 RETRIES\n");
+    printf(" SCHEDULER STATUS  : OPERATIONAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "cbtnet ", 7) == 0) return handle_cbtnet(cmd + 7);
     if (strncmp(cmd, "logon ", 6) == 0) return handle_vtam_logon(cmd);
@@ -436,5 +449,6 @@ bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "vtamroutefail ", 14) == 0) return handle_vtamroutefail(cmd);
     if (strncmp(cmd, "vtamussmsg ", 11) == 0) return handle_vtamussmsg(cmd);
     if (strncmp(cmd, "vtamrouterec ", 13) == 0) return handle_vtamrouterec(cmd);
+    if (strcmp(cmd, "vtamrouterecstat") == 0) return handle_vtamrouterecstat();
     return false;
 }

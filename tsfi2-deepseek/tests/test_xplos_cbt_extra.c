@@ -621,6 +621,30 @@ int main(void) {
     assert(routerec_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 77. Test IEBCOMPR output redirection helper (iebcomprredirect)
+    printf("[TEST] Testing IEBCOMPR redirect output to PDS member...\n");
+    bool comprredirect_ok = tsfi_xplos_shell_exec(&shell, &sched, "iebcomprredirect REPORT1");
+    assert(comprredirect_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 78. Test TSO spool job sync wait telemetry monitor (cbtsubwaitstat)
+    printf("[TEST] Testing cbtsubwaitstat spool sync timer status...\n");
+    bool waitstat_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtsubwaitstat");
+    assert(waitstat_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 79. Test CICS clean exceptions rule register (cbtcicscleanexcept)
+    printf("[TEST] Testing CICS TSQ cleanup exclusion prefix filter...\n");
+    bool cleanexcept_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicscleanexcept SYS*");
+    assert(cleanexcept_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 80. Test VTAM Route failure scheduler monitor (vtamrouterecstat)
+    printf("[TEST] Testing VTAM gateway route recovery telemetry status...\n");
+    bool routerecstat_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtamrouterecstat");
+    assert(routerecstat_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }

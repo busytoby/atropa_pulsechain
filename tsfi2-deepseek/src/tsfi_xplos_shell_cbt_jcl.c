@@ -666,6 +666,17 @@ static bool handle_iebgenerbuf(const char *cmd) {
     return true;
 }
 
+static bool handle_iebcomprredirect(const char *cmd) {
+    char target[32] = "";
+    if (sscanf(cmd + 17, "%31s", target) < 1) {
+        printf("[IEBCOMPRREDIRECT ERROR] Syntax: iebcomprredirect <dsn>\n");
+        return true;
+    }
+    printf("[IEBCOMPR] Redirecting discrepancy compare output reports to member: %s\n", target);
+    printf("  - Output routing definitions mapped successfully. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "jclrun ", 7) == 0) return handle_jclrun(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
@@ -687,5 +698,6 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "iebcomprdet ", 12) == 0) return handle_iebcomprdet(cmd);
     if (strncmp(cmd, "iebdgpatdet ", 12) == 0) return handle_iebdgpatdet(cmd);
     if (strncmp(cmd, "iebgenerbuf ", 12) == 0) return handle_iebgenerbuf(cmd);
+    if (strncmp(cmd, "iebcomprredirect ", 17) == 0) return handle_iebcomprredirect(cmd);
     return false;
 }

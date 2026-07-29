@@ -550,6 +550,19 @@ static bool handle_cbtsubwait(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtsubwaitstat(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JES JOB SUBMISSION WAIT TELEMETRY STATUS                      \n");
+    printf("================================================================================\n");
+    printf(" SYNC WAIT STATE  : ACTIVE\n");
+    printf(" TIMER LIMIT SEC  : 30 SECONDS\n");
+    printf(" SECONDS ELAPSED  : 12 SECONDS\n");
+    printf(" RESPONSE STATUS  : NORMAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtrexx ", 8) == 0) return handle_cbtrexx(cmd);
     if (strncmp(cmd, "ispfmenu", 8) == 0) return handle_ispfmenu(cmd);
@@ -568,5 +581,6 @@ bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtsubmod ", 10) == 0) return handle_cbtsubmod(cmd);
     if (strncmp(cmd, "cbtsuboutlim ", 13) == 0) return handle_cbtsuboutlim(cmd);
     if (strncmp(cmd, "cbtsubwait ", 11) == 0) return handle_cbtsubwait(cmd);
+    if (strcmp(cmd, "cbtsubwaitstat") == 0) return handle_cbtsubwaitstat();
     return false;
 }

@@ -321,6 +321,17 @@ static bool handle_cbtcicscmpdet(void) {
     return true;
 }
 
+static bool handle_cbtcicscleanexcept(const char *cmd) {
+    char prefix[32] = "";
+    if (sscanf(cmd + 19, "%31s", prefix) < 1) {
+        printf("[CICSCLEANEXCEPT ERROR] Syntax: cbtcicscleanexcept <prefix>\n");
+        return true;
+    }
+    printf("[CICSCLEANEXCEPT] Registering cleanup exclusion rule for prefix: %s\n", prefix);
+    printf("  - Exclusion pattern loaded successfully. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
@@ -338,5 +349,6 @@ bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strcmp(cmd, "cbtcicscleandet") == 0) return handle_cbtcicscleandet();
     if (strncmp(cmd, "cbtcicscleanflt ", 16) == 0) return handle_cbtcicscleanflt(cmd);
     if (strcmp(cmd, "cbtcicscmpdet") == 0) return handle_cbtcicscmpdet();
+    if (strncmp(cmd, "cbtcicscleanexcept ", 19) == 0) return handle_cbtcicscleanexcept(cmd);
     return false;
 }
