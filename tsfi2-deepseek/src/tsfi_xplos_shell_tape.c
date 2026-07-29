@@ -318,8 +318,75 @@ static bool handle_cbttape(const char *cmd) {
                 return true;
             }
         }
+        // 7. CAPSTAN KERMIT Implementation
+        if (strcasecmp(subcmd, "kermit") == 0) {
+            char hex_str[256] = "";
+            if (sscanf(cmd + 8 + 6, "%255s", hex_str) == 1) {
+                uint8_t packet[128];
+                int len = 0;
+                for (int i = 0; hex_str[i] != '\0' && hex_str[i+1] != '\0' && len < 128; i += 2) {
+                    unsigned int byte_val = 0;
+                    sscanf(hex_str + i, "%2x", &byte_val);
+                    packet[len++] = (uint8_t)byte_val;
+                }
+                if (len < 4) {
+                    printf("[CAPSTAN KERMIT ERROR] Packet too short.\n");
+                    return true;
+                }
+                
+                if (packet[0] != '#') {
+                    printf("[CAPSTAN KERMIT ERROR] Invalid start character: 0x%02X\n", packet[0]);
+                    return true;
+                }
+                
+                uint8_t seq = packet[2];
+                uint8_t type = packet[3];
+                
+                uint32_t sum = 0;
+                for (int i = 0; i < len - 1; i++) {
+                    sum += packet[i];
+                }
+                uint8_t computed_checksum = (uint8_t)((sum & 0x3F) + 0x20); 
+                uint8_t rx_checksum = packet[len - 1];
+                
+                printf("[CAPSTAN KERMIT] Received packet Type '%c', Seq %d, Checksum: Rx=0x%02X, Calc=0x%02X\n", 
+                    type, seq, rx_checksum, computed_checksum);
+                
+                if (computed_checksum != rx_checksum) {
+                    printf("[CAPSTAN KERMIT ERROR] Checksum mismatch! Parity error.\n");
+                    g_raw_head_status = 0; 
+                } else {
+                    g_raw_head_status = 1; 
+                }
+                
+                char cmd_buf[128];
+                snprintf(cmd_buf, sizeof(cmd_buf), "cbttape write %d %d", seq, type);
+                bool write_ok = handle_cbttape(cmd_buf);
+                
+                if (write_ok && g_capstan_brake == 1 && g_capstan_solenoid == 0) {
+                    if (g_raw_head_status == 1) {
+                        printf("[CAPSTAN KERMIT] Packet Seq %d ACKed successfully. Capstan moved to next sector.\n", seq);
+                        g_tape_journal_ids[seq] = seq;
+                        int payload_len = len - 5;
+                        if (payload_len > 0) {
+                            if (payload_len > 63) payload_len = 63;
+                            memcpy(g_tape_journal_payloads[seq], packet + 4, payload_len);
+                            g_tape_journal_payloads[seq][payload_len] = '\0';
+                        } else {
+                            strcpy(g_tape_journal_payloads[seq], "EMPTY");
+                        }
+                        g_tape_journal_valid[seq] = true;
+                    } else {
+                        printf("[CAPSTAN KERMIT] Packet Seq %d NACKed. Rolling back to expected state.\n", seq);
+                    }
+                } else {
+                    printf("[CAPSTAN KERMIT ERROR] Hardware write abort.\n");
+                }
+                return true;
+            }
+        }
     }
-    printf("[CAPSTAN ERROR] Syntax: cbttape [status | inject <0|1> | write <sector> <val> | rewind | bsf <count> | fsf <count> | journal <tx_id> <payload> | recover | writegroup <start> <count> | reconcile | lock <r|w> <sector> | unlock <sector>]\n");
+    printf("[CAPSTAN ERROR] Syntax: cbttape [status | inject <0|1> | write <sector> <val> | rewind | bsf <count> | fsf <count> | journal <tx_id> <payload> | recover | writegroup <start> <count> | reconcile | lock <r|w> <sector> | unlock <sector> | kermit <hex_packet>]\n");
     return true;
 }
 

@@ -148,6 +148,11 @@ int main(void) {
     assert(tsfi_xplos_shell_tape("cbttape inject 0") == true);
     assert(tsfi_xplos_shell_tape("cbttape reconcile") == true);
 
+    // 12. Verify CAPSTAN KERMIT packet transfer
+    printf("  -> Testing CAPSTAN KERMIT packet validation and commit...\n");
+    assert(tsfi_xplos_shell_tape("cbttape kermit 23061e44412c") == true);
+    assert(tsfi_xplos_shell_tape("cbttape kermit 23061e444100") == true);
+
     printf("\n=== INTEGRATION PROOFS PASSED ===\n");
     return 0;
 }
