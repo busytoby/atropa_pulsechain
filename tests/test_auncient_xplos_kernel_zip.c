@@ -1436,6 +1436,17 @@ int main(void) {
     printf("   ✓ CBTXREF execution verified successfully.\n");
     remove("tests/xref_lib.dat.bin");
 
+    // 95. Test CBTINV command execution
+    printf("[KERNEL TEST] Dispatching 'cbtinv' command to XplOS shell...\n");
+    XplosShell shell_inv;
+    XplosScheduler sched_inv;
+    tsfi_xplos_init_scheduler(&sched_inv);
+    tsfi_xplos_init_shell(&shell_inv);
+    bool inv_ok = tsfi_xplos_shell_exec(&shell_inv, &sched_inv, "cbtinv");
+    assert(inv_ok == true);
+    tsfi_xplos_run(&sched_inv);
+    printf("   ✓ CBTINV execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

@@ -3315,6 +3315,17 @@ static void shell_task_handler(void *arg) {
         return;
     }
 
+    // Check for "cbtinv" command
+    if (strcmp(cmd, "cbtinv") == 0) {
+        printf("[CBTINV] Scanning system libraries for installed software products:\n");
+        printf("  - PRODUCT: IBM OS/VS2 MVS    RELEASE: 03.8     STATUS: LICENSED\n");
+        printf("  - PRODUCT: IBM JES2          RELEASE: SP1.3    STATUS: LICENSED\n");
+        printf("  - PRODUCT: IBM CICS/OS/VS    RELEASE: 01.7     STATUS: LICENSED\n");
+        printf("  - PRODUCT: DYSNOMIA VM       RELEASE: EDO-22   STATUS: EVALUATION\n");
+        printf("[CBTINV] Product inventory scan completed successfully.\n");
+        return;
+    }
+
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
     if (tsfi_xplg_parse_semantic_action(cmd, &tx)) {
