@@ -1,0 +1,354 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <stdbool.h>
+#include <stdint.h>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+#define WIDTH 1280
+#define HEIGHT 692
+#define FPS 24
+
+static uint8_t frame_buffer[WIDTH * HEIGHT * 3];
+
+// Simple 8x8 font representation for retro console text rendering
+// Character mappings from ASCII 32 to 126
+static const uint8_t font8x8_basic[96][8] = {
+    {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}, // U+0020 (space)
+    {0x18,0x3c,0x3c,0x18,0x18,0x00,0x18,0x00}, // U+0021 (!)
+    {0x36,0x36,0x00,0x00,0x00,0x00,0x00,0x00}, // U+0022 (")
+    {0x36,0x36,0x7f,0x36,0x7f,0x36,0x36,0x00}, // U+0023 (#)
+    {0x0c,0x3e,0x03,0x1e,0x30,0x1f,0x0c,0x00}, // U+0024 ($)
+    {0x00,0x66,0x66,0x30,0x18,0x0c,0x66,0x66}, // U+0025 (%)
+    {0x3c,0x66,0x3c,0x38,0x67,0x66,0x3f,0x00}, // U+0026 (&)
+    {0x06,0x0c,0x18,0x00,0x00,0x00,0x00,0x00}, // U+0027 (')
+    {0x0c,0x18,0x30,0x30,0x30,0x18,0x0c,0x00}, // U+0028 (()
+    {0x30,0x18,0x0c,0x0c,0x0c,0x18,0x30,0x00}, // U+0029 ())
+    {0x00,0x66,0x3c,0xff,0x3c,0x66,0x00,0x00}, // U+002A (*)
+    {0x00,0x18,0x18,0x7e,0x18,0x18,0x00,0x00}, // U+002B (+)
+    {0x00,0x00,0x00,0x00,0x00,0x18,0x18,0x30}, // U+002C (,)
+    {0x00,0x00,0x00,0x7e,0x00,0x00,0x00,0x00}, // U+002D (-)
+    {0x00,0x00,0x00,0x00,0x00,0x18,0x18,0x00}, // U+002E (.)
+    {0x00,0x03,0x06,0x0c,0x18,0x30,0x60,0x00}, // U+002F (/)
+    {0x3c,0x66,0x6e,0x76,0x66,0x66,0x3c,0x00}, // U+0030 (0)
+    {0x18,0x1c,0x18,0x18,0x18,0x18,0x7e,0x00}, // U+0031 (1)
+    {0x3c,0x66,0x06,0x0c,0x30,0x60,0x7f,0x00}, // U+0032 (2)
+    {0x3c,0x66,0x06,0x1c,0x06,0x66,0x3c,0x00}, // U+0033 (3)
+    {0x06,0x0e,0x1e,0x66,0x7f,0x06,0x06,0x00}, // U+0034 (4)
+    {0x7f,0x60,0x7c,0x06,0x06,0x66,0x3c,0x00}, // U+0035 (5)
+    {0x3c,0x66,0x60,0x7c,0x66,0x66,0x3c,0x00}, // U+0036 (6)
+    {0x7f,0x66,0x06,0x0c,0x18,0x18,0x18,0x00}, // U+0037 (7)
+    {0x3c,0x66,0x66,0x3c,0x66,0x66,0x3c,0x00}, // U+0038 (8)
+    {0x3c,0x66,0x66,0x3e,0x06,0x66,0x3c,0x00}, // U+0039 (9)
+    {0x00,0x18,0x18,0x00,0x18,0x18,0x00,0x00}, // U+003A (:)
+    {0x00,0x18,0x18,0x00,0x18,0x18,0x30,0x00}, // U+003B (;)
+    {0x0c,0x18,0x30,0x60,0x30,0x18,0x0c,0x00}, // U+003C (<)
+    {0x00,0x00,0x7e,0x00,0x7e,0x00,0x00,0x00}, // U+003D (=)
+    {0x30,0x18,0x0c,0x06,0x0c,0x18,0x30,0x00}, // U+003E (>)
+    {0x3c,0x66,0x06,0x0c,0x18,0x00,0x18,0x00}, // U+003F (?)
+    {0x3c,0x66,0x6f,0x69,0x6e,0x60,0x3c,0x00}, // U+0040 (@)
+    {0x18,0x3c,0x66,0x66,0x7e,0x66,0x66,0x00}, // U+0041 (A)
+    {0x7c,0x66,0x66,0x7c,0x66,0x66,0x7c,0x00}, // U+0042 (B)
+    {0x3c,0x66,0x60,0x60,0x60,0x66,0x3c,0x00}, // U+0043 (C)
+    {0x78,0x6c,0x66,0x66,0x66,0x6c,0x78,0x00}, // U+0044 (D)
+    {0x7f,0x60,0x60,0x7c,0x60,0x60,0x7f,0x00}, // U+0045 (E)
+    {0x7f,0x60,0x60,0x7c,0x60,0x60,0x60,0x00}, // U+0046 (F)
+    {0x3c,0x66,0x60,0x6e,0x66,0x66,0x3d,0x00}, // U+0047 (G)
+    {0x66,0x66,0x66,0x7e,0x66,0x66,0x66,0x00}, // U+0048 (H)
+    {0x3e,0x18,0x18,0x18,0x18,0x18,0x3e,0x00}, // U+0049 (I)
+    {0x1f,0x0c,0x0c,0x0c,0x0c,0x6c,0x38,0x00}, // U+004A (J)
+    {0x66,0x6c,0x78,0x70,0x78,0x6c,0x66,0x00}, // U+004B (K)
+    {0x60,0x60,0x60,0x60,0x60,0x60,0x7f,0x00}, // U+004C (L)
+    {0x63,0x77,0x7f,0x6b,0x63,0x63,0x63,0x00}, // U+004D (M)
+    {0x66,0x6e,0x76,0x72,0x6a,0x66,0x66,0x00}, // U+004E (N)
+    {0x3c,0x66,0x66,0x66,0x66,0x66,0x3c,0x00}, // U+004F (O)
+    {0x7c,0x66,0x66,0x7c,0x60,0x60,0x60,0x00}, // U+0050 (P)
+    {0x3c,0x66,0x66,0x66,0x6e,0x6c,0x3a,0x00}, // U+0051 (Q)
+    {0x7c,0x66,0x66,0x7c,0x78,0x6c,0x66,0x00}, // U+0052 (R)
+    {0x3c,0x66,0x30,0x18,0x0c,0x66,0x3c,0x00}, // U+0053 (S)
+    {0x7e,0x5a,0x18,0x18,0x18,0x18,0x18,0x00}, // U+0054 (T)
+    {0x66,0x66,0x66,0x66,0x66,0x66,0x3c,0x00}, // U+0055 (U)
+    {0x66,0x66,0x66,0x66,0x66,0x3c,0x18,0x00}, // U+0056 (V)
+    {0x63,0x63,0x63,0x6b,0x7f,0x77,0x63,0x00}, // U+0057 (W)
+    {0x66,0x66,0x3c,0x18,0x3c,0x66,0x66,0x00}, // U+0058 (X)
+    {0x66,0x66,0x66,0x3c,0x18,0x18,0x18,0x00}, // U+0059 (Y)
+    {0x7f,0x66,0x0c,0x18,0x30,0x62,0x7f,0x00}, // U+005A (Z)
+    {0x3c,0x30,0x30,0x30,0x30,0x30,0x3c,0x00}, // U+005B ([)
+    {0x00,0x60,0x30,0x18,0x0c,0x06,0x03,0x00}, // U+005C (\)
+    {0x3c,0x0c,0x0c,0x0c,0x0c,0x0c,0x3c,0x00}, // U+005D (])
+    {0x18,0x3c,0x66,0x00,0x00,0x00,0x00,0x00}, // U+005E (^)
+    {0x00,0x00,0x00,0x00,0x00,0x00,0xff,0x00}, // U+005F (_)
+    {0x18,0x0c,0x06,0x00,0x00,0x00,0x00,0x00}, // U+0060 (`)
+    {0x00,0x00,0x3c,0x06,0x3e,0x66,0x3e,0x00}, // U+0061 (a)
+    {0x60,0x60,0x7c,0x66,0x66,0x66,0x7c,0x00}, // U+0062 (b)
+    {0x00,0x00,0x3c,0x60,0x60,0x66,0x3c,0x00}, // U+0063 (c)
+    {0x06,0x06,0x3e,0x66,0x66,0x66,0x3e,0x00}, // U+0064 (d)
+    {0x00,0x00,0x3c,0x66,0x7e,0x60,0x3c,0x00}, // U+0065 (e)
+    {0x1c,0x30,0x78,0x30,0x30,0x30,0x30,0x00}, // U+0066 (f)
+    {0x00,0x00,0x3e,0x66,0x66,0x3e,0x06,0x7c}, // U+0067 (g)
+    {0x60,0x60,0x7c,0x66,0x66,0x66,0x66,0x00}, // U+0068 (h)
+    {0x18,0x00,0x18,0x18,0x18,0x18,0x18,0x00}, // U+0069 (i)
+    {0x0c,0x00,0x0c,0x0c,0x0c,0x6c,0x38,0x00}, // U+006A (j)
+    {0x60,0x66,0x6c,0x78,0x70,0x6c,0x66,0x00}, // U+006B (k)
+    {0x18,0x18,0x18,0x18,0x18,0x18,0x18,0x00}, // U+006C (l)
+    {0x00,0x00,0x63,0x77,0x7f,0x6b,0x63,0x00}, // U+006D (m)
+    {0x00,0x00,0x7c,0x66,0x66,0x66,0x66,0x00}, // U+006E (n)
+    {0x00,0x00,0x3c,0x66,0x66,0x66,0x3c,0x00}, // U+006F (o)
+    {0x00,0x00,0x7c,0x66,0x66,0x7c,0x60,0x60}, // U+0070 (p)
+    {0x00,0x00,0x3e,0x66,0x66,0x3e,0x06,0x0f}, // U+0071 (q)
+    {0x00,0x00,0x7c,0x66,0x60,0x60,0x60,0x00}, // U+0072 (r)
+    {0x00,0x00,0x3e,0x60,0x3c,0x07,0x7e,0x00}, // U+0073 (s)
+    {0x30,0x30,0x7c,0x30,0x30,0x30,0x1c,0x00}, // U+0074 (t)
+    {0x00,0x00,0x66,0x66,0x66,0x66,0x3e,0x00}, // U+0075 (u)
+    {0x00,0x00,0x66,0x66,0x66,0x3c,0x18,0x00}, // U+0076 (v)
+    {0x00,0x00,0x63,0x6b,0x7f,0x3e,0x1c,0x00}, // U+0077 (w)
+    {0x00,0x00,0x66,0x3c,0x18,0x3c,0x66,0x00}, // U+0078 (x)
+    {0x00,0x00,0x66,0x66,0x66,0x3e,0x06,0x7c}, // U+0079 (y)
+    {0x00,0x00,0x7e,0x0c,0x18,0x30,0x7e,0x00}, // U+007A (z)
+    {0x0c,0x18,0x18,0x30,0x18,0x18,0x0c,0x00}, // U+007B ({)
+    {0x18,0x18,0x18,0x18,0x18,0x18,0x18,0x00}, // U+007C (|)
+    {0x30,0x18,0x18,0x0c,0x18,0x18,0x30,0x00}, // U+007D (})
+    {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}, // U+007E (~)
+    {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}  // DEL
+};
+
+// Draw a single character using the 8x8 font (scaled)
+static void draw_char(int x, int y, char c, uint8_t r, uint8_t g, uint8_t b, int scale) {
+    if (c < 32 || c > 127) return;
+    int glyph_idx = c - 32;
+    for (int row = 0; row < 8; row++) {
+        uint8_t byte = font8x8_basic[glyph_idx][row];
+        for (int col = 0; col < 8; col++) {
+            if (byte & (1 << col)) {
+                // Draw pixel box
+                for (int dy = 0; dy < scale; dy++) {
+                    for (int dx = 0; dx < scale; dx++) {
+                        int px = x + col * scale + dx;
+                        int py = y + row * scale + dy;
+                        if (px >= 0 && px < WIDTH && py >= 0 && py < HEIGHT) {
+                            int idx = (py * WIDTH + px) * 3;
+                            frame_buffer[idx] = r;
+                            frame_buffer[idx + 1] = g;
+                            frame_buffer[idx + 2] = b;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Draw string helper
+static void draw_string(int x, int y, const char *str, uint8_t r, uint8_t g, uint8_t b, int scale) {
+    int curr_x = x;
+    while (*str) {
+        draw_char(curr_x, y, *str, r, g, b, scale);
+        curr_x += 8 * scale;
+        str++;
+    }
+}
+
+// Generate organic hypotrochoid path (Auncient turtle curve family)
+static void draw_turtle_graphics(float time_val, float cam_yaw, float cam_pitch) {
+    double R_vals[3] = { 120.0, 80.0, 160.0 };
+    double r_vals[3] = { 55.0, 33.0, 72.0 };
+    double d_vals[3] = { 2.44, 1.82, 3.12 };
+    
+    double cz = 300.0;
+    int vx_center = WIDTH / 2;
+    int vy_center = HEIGHT / 2;
+    
+    for (int c = 0; c < 3; c++) {
+        double R_hyp = R_vals[c];
+        double r_hyp = r_vals[c];
+        double d_hyp = d_vals[c];
+        
+        double t_max = 6.0 * M_PI;
+        double t_step = 0.1;
+        
+        int prev_px = -1, prev_py = -1;
+        
+        for (double t = 0.0; t <= t_max; t += t_step) {
+            double x_3d = (R_hyp - r_hyp) * cos(t) + d_hyp * r_hyp * cos((R_hyp - r_hyp) * t / r_hyp);
+            double y_3d = (R_hyp - r_hyp) * sin(t) - d_hyp * r_hyp * sin((R_hyp - r_hyp) * t / r_hyp);
+            double z_3d = 60.0 * sin(1.618 * t + time_val) + (c - 1) * 40.0;
+            
+            double rad_yaw = cam_yaw * M_PI / 180.0;
+            double rad_pitch = cam_pitch * M_PI / 180.0;
+            
+            // Apply rotations
+            double x1 = x_3d * cos(rad_yaw) - z_3d * sin(rad_yaw);
+            double z1 = x_3d * sin(rad_yaw) + z_3d * cos(rad_yaw);
+            
+            double y2 = y_3d * cos(rad_pitch) - z1 * sin(rad_pitch);
+            double z2 = y_3d * sin(rad_pitch) + z1 * cos(rad_pitch);
+            
+            double distance = cz - z2;
+            if (distance > 10.0) {
+                double scale = 400.0 / distance;
+                int px = vx_center + (int)(x1 * scale);
+                int py = vy_center + (int)(y2 * scale);
+                
+                // Draw line segment
+                if (prev_px != -1 && prev_py != -1) {
+                    int x0 = prev_px, y0 = prev_py;
+                    int x1_line = px, y1_line = py;
+                    int dx = abs(x1_line - x0), sx = x0 < x1_line ? 1 : -1;
+                    int dy = -abs(y1_line - y0), sy = y0 < y1_line ? 1 : -1;
+                    int err = dx + dy, e2;
+                    
+                    while (1) {
+                        if (x0 >= 0 && x0 < WIDTH && y0 >= 0 && y0 < HEIGHT) {
+                            int idx = (y0 * WIDTH + x0) * 3;
+                            frame_buffer[idx] = 100 + c * 40;
+                            frame_buffer[idx + 1] = 200 - c * 30;
+                            frame_buffer[idx + 2] = 255 - c * 20;
+                        }
+                        if (x0 == x1_line && y0 == y1_line) break;
+                        e2 = 2 * err;
+                        if (e2 >= dy) { err += dy; x0 += sx; }
+                        if (e2 <= dx) { err += dx; y0 += sy; }
+                    }
+                }
+                prev_px = px;
+                prev_py = py;
+            }
+        }
+    }
+}
+
+int main(int argc, char **argv) {
+    if (argc < 3) {
+        fprintf(stderr, "Usage: tsfi_lore_syndicate <lore_filepath> <total_frames>\n");
+        return 1;
+    }
+    
+    const char *filepath = argv[1];
+    int total_frames = atoi(argv[2]);
+    if (total_frames <= 0) total_frames = 120;
+    
+    // Parse markdown page title and content
+    FILE *file = fopen(filepath, "r");
+    if (!file) {
+        fprintf(stderr, "Error opening file: %s\n", filepath);
+        return 1;
+    }
+    
+    char title[128] = "Auncient Lore Update";
+    char lines[10][128];
+    int line_count = 0;
+    
+    char temp[256];
+    if (fgets(temp, sizeof(temp), file)) {
+        // First line is title
+        temp[strcspn(temp, "\n")] = 0;
+        strncpy(title, temp, sizeof(title) - 1);
+    }
+    
+    while (fgets(temp, sizeof(temp), file) && line_count < 10) {
+        temp[strcspn(temp, "\n")] = 0;
+        // Trim leading spaces
+        char *ptr = temp;
+        while (*ptr == ' ') ptr++;
+        if (strlen(ptr) > 0) {
+            strncpy(lines[line_count], ptr, 127);
+            lines[line_count][127] = 0;
+            line_count++;
+        }
+    }
+    fclose(file);
+    
+    float time_val = 0.0f;
+    for (int frame = 0; frame < total_frames; frame++) {
+        time_val += 1.0f / FPS;
+        
+        // Clear background with deep dark space blue/purple
+        for (int i = 0; i < WIDTH * HEIGHT; i++) {
+            frame_buffer[i * 3] = 12;
+            frame_buffer[i * 3 + 1] = 10;
+            frame_buffer[i * 3 + 2] = 18;
+        }
+        
+        // Render background L-System hypotrochoids
+        float cam_yaw = 45.0f + sinf(time_val * 0.5f) * 30.0f;
+        float cam_pitch = 20.0f + cosf(time_val * 0.4f) * 15.0f;
+        draw_turtle_graphics(time_val, cam_yaw, cam_pitch);
+        
+        // Add random dust vertical scratches (Super 8 simulation)
+        if (rand() % 10 == 0) {
+            int scratch_x = rand() % WIDTH;
+            for (int y = 0; y < HEIGHT; y++) {
+                int idx = (y * WIDTH + scratch_x) * 3;
+                frame_buffer[idx] = 200;
+                frame_buffer[idx + 1] = 200;
+                frame_buffer[idx + 2] = 210;
+            }
+        }
+        
+        // Draw transparent card overlay background for text readability
+        for (int y = 40; y < 240; y++) {
+            for (int x = 60; x < WIDTH - 60; x++) {
+                int idx = (y * WIDTH + x) * 3;
+                frame_buffer[idx] = (frame_buffer[idx] * 2) / 10;     // 80% opacity overlay
+                frame_buffer[idx + 1] = (frame_buffer[idx + 1] * 2) / 10;
+                frame_buffer[idx + 2] = (frame_buffer[idx + 2] * 2) / 10;
+            }
+        }
+        
+        // Text slide animation page flipping calculations
+        // We have 2 pages: page 1 (lines 0-4), page 2 (lines 5-9)
+        int pages_total = (line_count + 3) / 4;
+        if (pages_total < 1) pages_total = 1;
+        float frames_per_page = (float)total_frames / pages_total;
+        
+        int current_page = (int)(frame / frames_per_page);
+        if (current_page >= pages_total) current_page = pages_total - 1;
+        
+        int frame_in_page = frame % (int)frames_per_page;
+        int trans_len = 12; // 12 frames slide duration
+        
+        int x_text_offset = 0;
+        int next_page = current_page + 1;
+        
+        if (frame_in_page > (int)frames_per_page - trans_len && current_page < pages_total - 1) {
+            float progress = (float)(frame_in_page - ((int)frames_per_page - trans_len)) / trans_len;
+            x_text_offset = (int)(-progress * (WIDTH - 120));
+        }
+        
+        // Render Title
+        draw_string(80, 60, "LORE: ", 255, 230, 150, 2);
+        draw_string(176, 60, title, 255, 230, 150, 2);
+        
+        // Render current page lines
+        int start_line = current_page * 4;
+        int y_offset = 100;
+        for (int l = 0; l < 4 && (start_line + l) < line_count; l++) {
+            draw_string(80 + x_text_offset, y_offset, lines[start_line + l], 220, 220, 220, 2);
+            y_offset += 30;
+        }
+        
+        // Render next page sliding in
+        if (x_text_offset != 0 && next_page < pages_total) {
+            int next_start = next_page * 4;
+            int y_next = 100;
+            for (int l = 0; l < 4 && (next_start + l) < line_count; l++) {
+                draw_string(80 + (WIDTH - 120) + x_text_offset, y_next, lines[next_start + l], 220, 220, 220, 2);
+                y_next += 30;
+            }
+        }
+        
+        // Draw page index indicator
+        char indicator[32];
+        snprintf(indicator, sizeof(indicator), "PAGE %d/%d", current_page + 1, pages_total);
+        draw_string(WIDTH - 220, 60, indicator, 150, 150, 150, 2);
+        
+        // Write raw RGB frame directly to stdout
+        fwrite(frame_buffer, 1, sizeof(frame_buffer), stdout);
+    }
+    
+    return 0;
+}
