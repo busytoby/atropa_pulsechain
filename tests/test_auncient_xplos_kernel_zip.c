@@ -1681,6 +1681,20 @@ int main(void) {
     tsfi_xplos_run(&sched_help);
     printf("   ✓ CBTHELP execution verified successfully.\n");
 
+    // 116. Test 2-3 Tree SMF Queue Dispatcher and Dynamic Spawning
+    printf("[KERNEL TEST] Verifying 2-3 Tree Queue Dispatcher...\n");
+    XplosShell shell_q;
+    XplosScheduler sched_q;
+    tsfi_xplos_init_scheduler(&sched_q);
+    tsfi_xplos_init_shell(&shell_q);
+    remove("tests/smf_log.dat.bin");
+    bool q_ok1 = tsfi_xplos_shell_exec(&shell_q, &sched_q, "cbtqdispatch 50 VAESEN_JOB");
+    assert(q_ok1 == true);
+    tsfi_xplos_run(&sched_q);
+    bool q_ok2 = tsfi_xplos_shell_exec(&shell_q, &sched_q, "cbtsmf tests/smf_log.dat.bin");
+    assert(q_ok2 == true);
+    printf("   ✓ 2-3 Tree SMF Queue Dispatcher verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
