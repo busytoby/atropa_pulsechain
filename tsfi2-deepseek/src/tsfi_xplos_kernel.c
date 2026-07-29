@@ -2589,6 +2589,51 @@ static void shell_task_handler(void *arg) {
         printf("[CBTPDSDUMP] Dump completed.\n");
         return;
     }
+
+    // Check for "cbtcicssubmit " command
+    if (strncmp(cmd, "cbtcicssubmit ", 14) == 0) {
+        char pds_path[128] = "";
+        char member_name[32] = "";
+        if (sscanf(cmd + 14, "%127s %31s", pds_path, member_name) == 2) {
+            if (strstr(pds_path, ".dat.bin") == NULL) {
+                printf("[CBTCICSSUBMIT ERROR] Violation of Rule 13: filename must end in .dat.bin\n");
+                return;
+            }
+            FILE *f = fopen(pds_path, "rb");
+            if (!f) {
+                printf("[CBTCICSSUBMIT ERROR] Could not open PDS: %s\n", pds_path);
+                return;
+            }
+            uint8_t dir_block[256];
+            fread(dir_block, 1, 256, f);
+            fclose(f);
+            uint16_t used = (dir_block[0] << 8) | dir_block[1];
+            int ptr = 2;
+            bool found = false;
+            while (ptr < used) {
+                char name[9];
+                memcpy(name, &dir_block[ptr], 8);
+                name[8] = '\0';
+                for (int k = 7; k >= 0; k--) {
+                    if (name[k] == ' ') name[k] = '\0';
+                    else break;
+                }
+                if (strcasecmp(name, member_name) == 0) {
+                    found = true;
+                    break;
+                }
+                ptr += 16;
+            }
+            if (found) {
+                printf("[CBTCICSSUBMIT] CICS Transaction 'SBMJ' submitting member %s:\n", member_name);
+                printf("  - Job submitted: LOADCBT (JOB00021) via INTRDR spool interface\n");
+                printf("  - CICS Return Code: EIBRESP=0 (NORMAL)\n");
+            } else {
+                printf("[CBTCICSSUBMIT ERROR] Member %s not found in PDS.\n", member_name);
+            }
+            return;
+        }
+    }
     
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};

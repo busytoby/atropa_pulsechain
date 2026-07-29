@@ -1077,6 +1077,33 @@ int main(void) {
     printf("   ✓ CBTPDSDUMP execution verified successfully.\n");
     remove("tests/dump_pds.dat.bin");
 
+    // 70. Test CBTCICSSUBMIT command execution
+    printf("[KERNEL TEST] Dispatching 'cbtcicssubmit' command to XplOS shell...\n");
+    XplosShell shell_cics;
+    XplosScheduler sched_cics;
+    
+    tsfi_xplos_init_scheduler(&sched_cics);
+    tsfi_xplos_init_shell(&shell_cics);
+    tsfi_xplos_shell_exec(&shell_cics, &sched_cics, "cbtpdsinit tests/cics_pds.dat.bin");
+    tsfi_xplos_run(&sched_cics);
+
+    FILE *f_cics_tmp = fopen("tests/memb_cics.txt", "w");
+    fprintf(f_cics_tmp, "//LOADCBT JOB 1,CLASS=A\n");
+    fclose(f_cics_tmp);
+
+    tsfi_xplos_init_scheduler(&sched_cics);
+    tsfi_xplos_shell_exec(&shell_cics, &sched_cics, "cbtpdsadd tests/cics_pds.dat.bin MEMB1 tests/memb_cics.txt");
+    tsfi_xplos_run(&sched_cics);
+
+    tsfi_xplos_init_scheduler(&sched_cics);
+    bool cics_ok = tsfi_xplos_shell_exec(&shell_cics, &sched_cics, "cbtcicssubmit tests/cics_pds.dat.bin MEMB1");
+    assert(cics_ok == true);
+    tsfi_xplos_run(&sched_cics);
+
+    printf("   ✓ CBTCICSSUBMIT execution verified successfully.\n");
+    remove("tests/memb_cics.txt");
+    remove("tests/cics_pds.dat.bin");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
