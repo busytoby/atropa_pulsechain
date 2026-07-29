@@ -783,6 +783,18 @@ static bool handle_iebgenerreftabstatresetlist(const char *cmd) {
     return true;
 }
 
+static bool handle_iebgenerreftabstatresetliststat(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  IEBGENER SEQUENTIAL DATA CONVERSION SELECTIVE RESET STATS     \n");
+    printf("================================================================================\n");
+    printf(" CLEARED PARTITIONS: EBCDIC, ASCII\n");
+    printf(" UNTOUCHED SYSTEMS : COMP-5\n");
+    printf(" RESPONSE STATUS   : OPERATIONAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "jclrun ", 7) == 0) return handle_jclrun(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
@@ -815,5 +827,6 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strcmp(cmd, "iebgenerreftabstat") == 0) return handle_iebgenerreftabstat();
     if (strcmp(cmd, "iebgenerreftabstatreset") == 0) return handle_iebgenerreftabstatreset();
     if (strncmp(cmd, "iebgenerreftabstatresetlist ", 28) == 0) return handle_iebgenerreftabstatresetlist(cmd);
+    if (strcmp(cmd, "iebgenerreftabstatresetliststat") == 0) return handle_iebgenerreftabstatresetliststat();
     return false;
 }

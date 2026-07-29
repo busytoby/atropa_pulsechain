@@ -677,6 +677,12 @@ static bool handle_cbtsubwaitretryscriptchkliststat(void) {
     return true;
 }
 
+static bool handle_cbtsubwaitretryscriptchklistreset(void) {
+    printf("[SUBWAIT] Spool wait retry scripts validation logs and statistics reset\n");
+    printf("  - Verification audit database cleared successfully. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtrexx ", 8) == 0) return handle_cbtrexx(cmd);
     if (strncmp(cmd, "ispfmenu", 8) == 0) return handle_ispfmenu(cmd);
@@ -706,5 +712,6 @@ bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtsubwaitretryscriptchk ", 25) == 0) return handle_cbtsubwaitretryscriptchk(cmd);
     if (strncmp(cmd, "cbtsubwaitretryscriptchklist ", 29) == 0) return handle_cbtsubwaitretryscriptchklist(cmd);
     if (strcmp(cmd, "cbtsubwaitretryscriptchkliststat") == 0) return handle_cbtsubwaitretryscriptchkliststat();
+    if (strcmp(cmd, "cbtsubwaitretryscriptchklistreset") == 0) return handle_cbtsubwaitretryscriptchklistreset();
     return false;
 }

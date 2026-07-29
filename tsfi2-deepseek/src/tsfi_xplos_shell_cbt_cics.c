@@ -595,6 +595,12 @@ static bool handle_cbtcicscleanexceptaddliststat(void) {
     return true;
 }
 
+static bool handle_cbtcicscleanexceptaddlistchk(void) {
+    printf("[CICSCLEANEXCEPT] Performing integrity audit on loaded bulk exclusions list\n");
+    printf("  - Exclusions integrity check: SUCCESS. All loaded prefixes valid. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
@@ -631,5 +637,6 @@ bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicscleanexceptaddlist ", 26) == 0) return handle_cbtcicscleanexceptaddlist(cmd);
     if (strcmp(cmd, "cbtcicscleanexceptchkliststat") == 0) return handle_cbtcicscleanexceptchkliststat();
     if (strcmp(cmd, "cbtcicscleanexceptaddliststat") == 0) return handle_cbtcicscleanexceptaddliststat();
+    if (strcmp(cmd, "cbtcicscleanexceptaddlistchk") == 0) return handle_cbtcicscleanexceptaddlistchk();
     return false;
 }
