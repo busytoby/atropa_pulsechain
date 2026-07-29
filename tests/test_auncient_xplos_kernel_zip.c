@@ -1516,6 +1516,17 @@ int main(void) {
     printf("   ✓ CBTCOMP execution verified successfully.\n");
     remove("tests/frag_pds.dat.bin");
 
+    // 101. Test CBTCVT command execution
+    printf("[KERNEL TEST] Dispatching 'cbtcvt' command to XplOS shell...\n");
+    XplosShell shell_cvt;
+    XplosScheduler sched_cvt;
+    tsfi_xplos_init_scheduler(&sched_cvt);
+    tsfi_xplos_init_shell(&shell_cvt);
+    bool cvt_ok = tsfi_xplos_shell_exec(&shell_cvt, &sched_cvt, "cbtcvt");
+    assert(cvt_ok == true);
+    tsfi_xplos_run(&sched_cvt);
+    printf("   ✓ CBTCVT execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
