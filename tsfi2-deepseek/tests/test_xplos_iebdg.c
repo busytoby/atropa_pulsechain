@@ -111,6 +111,44 @@ int main(void) {
     tsfi_xplos_run(&sched);
     printf("   ✓ CBTREXX pool processing verified.\n");
 
+    // Test Case 8: JES Spooler queue integration
+    printf("[TEST 8] Testing JES spooler queue with generated JCL streams...\n");
+    assert(tsfi_xplos_create_file(&g_vfs, "DGSUB.dat.bin", 2048) == true);
+    XplosFile *sub_file = &g_vfs.files[g_vfs.count - 1];
+    strcpy(sub_file->data,
+           "//DGSUB JOB 'SPOOL TEST',CLASS=A,PRTY=5\n"
+           "//STEP1 EXEC PGM=IEBCOPY\n");
+    sub_file->size_bytes = (uint32_t)strlen(sub_file->data);
+
+    bool sub_ok = tsfi_xplos_shell_exec(&shell, &sched, "submit DGSUB");
+    assert(sub_ok == true);
+    tsfi_xplos_run(&sched);
+    printf("   ✓ JES spooler queue integration verified.\n");
+
+    // Test Case 9: ISPF menu query check
+    printf("[TEST 9] Testing ISPF menu option views with generated dataset lists...\n");
+    bool ispf_ok = tsfi_xplos_shell_exec(&shell, &sched, "ispfmenu s");
+    assert(ispf_ok == true);
+    tsfi_xplos_run(&sched);
+    printf("   ✓ ISPF menu view integration verified.\n");
+
+    // Test Case 10: CICS Transient Data Queue buffering check
+    printf("[TEST 10] Testing CICS TDQ buffering of generated record streams...\n");
+    bool tdq_ok1 = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicstd write SBM1 //TDQJOB JOB 'CICS SUBMIT',CLASS=A");
+    assert(tdq_ok1 == true);
+    tsfi_xplos_run(&sched);
+    bool tdq_ok2 = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicstd write SBM1 //STEP1 EXEC PGM=IEBCOPY");
+    assert(tdq_ok2 == true);
+    tsfi_xplos_run(&sched);
+    printf("   ✓ CICS TDQ integration verified.\n");
+
+    // Test Case 11: VTAM 3270 screen formatting check
+    printf("[TEST 11] Testing VTAM 3270 layout formatting with data maps...\n");
+    bool v3270_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtam3270 CICS");
+    assert(v3270_ok == true);
+    tsfi_xplos_run(&sched);
+    printf("   ✓ VTAM 3270 layout integration verified.\n");
+
     printf("====================================================================\n");
     printf("ALL IEBDG DATASET GENERATOR UNIT TESTS PASSED SUCCESSFULLY\n");
     printf("====================================================================\n");
