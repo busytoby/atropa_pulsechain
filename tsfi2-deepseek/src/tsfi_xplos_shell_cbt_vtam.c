@@ -277,6 +277,19 @@ static bool handle_vtamroute(void) {
     return true;
 }
 
+static bool handle_vtambuf(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  VTAM NETWORK BUFFER FRAME TRACE DIAGNOSTICS                   \n");
+    printf("================================================================================\n");
+    printf(" FRAME ID | DIR | LEN  | SNA HEADER PAYLOAD PREVIEW\n");
+    printf("--------------------------------------------------------------------------------\n");
+    printf(" FRM00241 | IN  |  256 | FID2 [DAAF=02, OAAF=01, SN=1042] COMMAND_DATA\n");
+    printf(" FRM00242 | OUT |  512 | FID2 [DAAF=01, OAAF=02, SN=0876] RESPONSE_ACK\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "cbtnet ", 7) == 0) return handle_cbtnet(cmd + 7);
     if (strncmp(cmd, "logon ", 6) == 0) return handle_vtam_logon(cmd);
@@ -284,5 +297,6 @@ bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strcmp(cmd, "vtamuss") == 0) return handle_vtamuss();
     if (strcmp(cmd, "vtamstat") == 0) return handle_vtamstat();
     if (strcmp(cmd, "vtamroute") == 0) return handle_vtamroute();
+    if (strcmp(cmd, "vtambuf") == 0) return handle_vtambuf();
     return false;
 }

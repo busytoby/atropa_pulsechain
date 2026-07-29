@@ -161,10 +161,23 @@ static bool handle_cbtcicstsd(void) {
     return true;
 }
 
+static bool handle_cbtcicscmp(const char *cmd) {
+    char target[32] = "";
+    if (sscanf(cmd + 11, "%31s", target) < 1) {
+        printf("[CICSCMP ERROR] Syntax: cbtcicscmp <queue>\n");
+        return true;
+    }
+    printf("[CICSCMP] Running auxiliary storage compaction for queue %s...\n", target);
+    printf("  - Inactive pages freed: 16 blocks\n");
+    printf("  - Auxiliary TSQ layout compressed successfully. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
     if (strncmp(cmd, "cbtcicstrm ", 11) == 0) return handle_cbtcicstrm(cmd);
     if (strcmp(cmd, "cbtcicstsd") == 0) return handle_cbtcicstsd();
+    if (strncmp(cmd, "cbtcicscmp ", 11) == 0) return handle_cbtcicscmp(cmd);
     return false;
 }

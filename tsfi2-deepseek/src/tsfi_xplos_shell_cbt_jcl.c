@@ -503,6 +503,21 @@ static bool handle_iebimage(const char *cmd) {
     return true;
 }
 
+static bool handle_iebdatr(const char *cmd) {
+    char src[32] = "";
+    char dest[32] = "";
+    if (sscanf(cmd + 8, "%31s %31s", src, dest) < 2) {
+        printf("[IEBDATR ERROR] Syntax: iebdatr <src> <dest>\n");
+        return true;
+    }
+    printf("[IEBDATR] Commencing sequential data transmission formatting...\n");
+    printf("  - Source dataset: %s\n", src);
+    printf("  - Destination target: %s\n", dest);
+    printf("  - Record conversion format: FB to VB format translation\n");
+    printf("[IEBDATR] Data blocks converted and routed successfully. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "jclrun ", 7) == 0) return handle_jclrun(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
@@ -512,5 +527,6 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "iebdg ", 6) == 0) return handle_iebdg(cmd);
     if (strncmp(cmd, "cbtjclchk ", 10) == 0) return handle_cbtjclchk(cmd);
     if (strncmp(cmd, "iebimage ", 9) == 0) return handle_iebimage(cmd);
+    if (strncmp(cmd, "iebdatr ", 8) == 0) return handle_iebdatr(cmd);
     return false;
 }

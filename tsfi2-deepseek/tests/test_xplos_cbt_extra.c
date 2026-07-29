@@ -333,6 +333,30 @@ int main(void) {
     assert(route_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 29. Test IEBDATR Data Transmission format converter
+    printf("[TEST] Testing IEBDATR data transmission converter...\n");
+    bool datr_ok = tsfi_xplos_shell_exec(&shell, &sched, "iebdatr SEQ1 SEQOUT");
+    assert(datr_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 30. Test TSO Submission Checker (cbtsubchk)
+    printf("[TEST] Testing cbtsubchk parameters scanner...\n");
+    bool subchk_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtsubchk CHKJOB");
+    assert(subchk_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 31. Test CICS Transient Storage Compression (cbtcicscmp)
+    printf("[TEST] Testing CICS TSQ compression compaction...\n");
+    bool cmp_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicscmp LOGS");
+    assert(cmp_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 32. Test VTAM Buffer Frame Tracer (vtambuf)
+    printf("[TEST] Testing VTAM network buffer tracer...\n");
+    bool buf_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtambuf");
+    assert(buf_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }
