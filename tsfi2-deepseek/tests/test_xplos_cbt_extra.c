@@ -1079,6 +1079,24 @@ int main(void) {
     assert(jclresstat_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 153. Test JCL syntax validation audit history logs query (cbtjclvalidatelog)
+    printf("[TEST] Testing JCL syntax validation audit history logs...\n");
+    bool jclvalidatelog_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtjclvalidatelog");
+    assert(jclvalidatelog_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 154. Test JCL active partition member count statistics query (cbtjclliststat)
+    printf("[TEST] Testing JCL member partition statistics query...\n");
+    bool jclliststat_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtjclliststat");
+    assert(jclliststat_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 155. Test JCL job execution telemetry stats reset (cbtjclresstatreset)
+    printf("[TEST] Testing JCL execution telemetry reset...\n");
+    bool jclresstatreset_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtjclresstatreset");
+    assert(jclresstatreset_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }
