@@ -1498,6 +1498,24 @@ int main(void) {
     tsfi_xplos_run(&sched_qsum);
     printf("   ✓ CBTQSUM execution verified successfully.\n");
 
+    // 100. Test CBTCOMP command execution
+    printf("[KERNEL TEST] Dispatching 'cbtcomp' command to XplOS shell...\n");
+    XplosShell shell_comp_cbt;
+    XplosScheduler sched_comp_cbt;
+    tsfi_xplos_init_scheduler(&sched_comp_cbt);
+    tsfi_xplos_init_shell(&shell_comp_cbt);
+    
+    FILE *f_comp_tmp = fopen("tests/frag_pds.dat.bin", "wb");
+    uint8_t dummy_comp[8] = {0};
+    fwrite(dummy_comp, 1, 8, f_comp_tmp);
+    fclose(f_comp_tmp);
+
+    bool comp_ok = tsfi_xplos_shell_exec(&shell_comp_cbt, &sched_comp_cbt, "cbtcomp tests/frag_pds.dat.bin");
+    assert(comp_ok == true);
+    tsfi_xplos_run(&sched_comp_cbt);
+    printf("   ✓ CBTCOMP execution verified successfully.\n");
+    remove("tests/frag_pds.dat.bin");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
