@@ -741,6 +741,7 @@ static bool handle_cbtsubwaitretryscriptchklistresetstatsstatusdetails(void) {
 }
 
 bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
+    printf("[DEPRECATION WARNING] TSO shell command '%s' is deprecated and scheduled for removal due to WinchesterMQ redundancy.\n", cmd);
     if (strncmp(cmd, "cbtrexx ", 8) == 0) return handle_cbtrexx(cmd);
     if (strncmp(cmd, "ispfmenu", 8) == 0) return handle_ispfmenu(cmd);
     if (strncmp(cmd, "help ", 5) == 0 || strcmp(cmd, "help") == 0) return handle_cbthelp(cmd);
