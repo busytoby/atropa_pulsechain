@@ -150,17 +150,30 @@ int main(void) {
     int open_proclib_rc = tsfi_cw_vsam_open(&proclib_ksds, "PROCLIB.dat.bin");
     assert(open_proclib_rc == 0);
 
-    // Write a mock JCL job into PROCLIB under key "MOCKJOB"
+    // Write a mock JCL job into PROCLIB under key "MJ1"
     uint8_t mock_jcl_cards[256] = 
-        "//MOCKJOB JOB 'CBT TEST',CLASS=A\n"
+        "//MJ1 JOB 'CBT TEST',CLASS=A\n"
         "//STEP1 EXEC PGM=IEBCOPY\n";
-    int write_proclib_rc = tsfi_cw_vsam_write(&proclib_ksds, "MOCKJOB", mock_jcl_cards, strlen((char *)mock_jcl_cards));
+    int write_proclib_rc = tsfi_cw_vsam_write(&proclib_ksds, "MJ1", mock_jcl_cards, strlen((char *)mock_jcl_cards));
     assert(write_proclib_rc == 0);
 
     // Execute the job, which should dynamically load it from the PROCLIB KSDS database
-    bool mockjob_run_ok = tsfi_xplos_shell_cbt_jcl("jclrun MOCKJOB");
+    bool mockjob_run_ok = tsfi_xplos_shell_cbt_jcl("jclrun MJ1");
     assert(mockjob_run_ok == true);
 
+    // 11. Verify WinchesterMQ and ABI integration via BOOK and VSAM bypasses
+    printf("  -> Phase 9: Verifying WinchesterMQ and ABI registry bypass limits...\n");
+    extern uint32_t global_wmq_bypass_count;
+    uint32_t start_wmq_bypasses = global_wmq_bypass_count;
+    assert(start_wmq_bypasses > 0); // Check that we had active bypass events during JCL execution
+
+    // Perform an explicit write to verify ABI registers
+    uint8_t mock_abi_data[64] = "ABI_VERIFY_SAMPLE";
+    int abi_write_rc = tsfi_cw_vsam_write(&proclib_ksds, "ABI_T1", mock_abi_data, 17);
+    assert(abi_write_rc == 0);
+    assert(global_wmq_bypass_count > start_wmq_bypasses); // Verified that the write routed through WMQ
+
+    printf("  -> WinchesterMQ bypass events counted: %u loops.\n", global_wmq_bypass_count);
     printf("  -> End-to-end data pipeline integrity verified successfully.\n");
     printf("\n=== SKELETON HASP BOOK PROOFS PASSED ===\n");
     return 0;

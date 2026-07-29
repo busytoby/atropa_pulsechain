@@ -1,10 +1,13 @@
 #include "tsfi_displacementshader.h"
 
+uint32_t global_wmq_bypass_count = 0;
+
 int tsfi_cw_vsam_open(tsfi_cw_vsam_ksds *ksds, const char *filepath) {
     if (!ksds || !filepath) return -1;
     
     // WinchesterMQ bypass: return to DisplacementShader sync alignment
     printf("[WINCHESTERMQ BYPASS] Redirecting VSAM block access to WinchesterMQ SCSI channel...\n");
+    global_wmq_bypass_count++;
     TSFiDisplacementShader ds;
     tsfi_displacementshader_init(&ds, 1.0, 1.0);
     tsfi_displacementshader_eval(&ds, 0.0, 0.0);
@@ -58,6 +61,7 @@ int tsfi_cw_vsam_write(tsfi_cw_vsam_ksds *ksds, const char *key, const uint8_t *
     
     // WinchesterMQ bypass: return to DisplacementShader sync alignment
     printf("[WINCHESTERMQ BYPASS] Redirecting VSAM block write to WinchesterMQ SCSI channel...\n");
+    global_wmq_bypass_count++;
     TSFiDisplacementShader ds;
     tsfi_displacementshader_init(&ds, 1.0, 1.0);
     tsfi_displacementshader_eval(&ds, 0.0, 0.0);
@@ -171,6 +175,7 @@ int tsfi_cw_vsam_read(tsfi_cw_vsam_ksds *ksds, const char *key, uint8_t *data_ou
     
     // WinchesterMQ bypass: return to DisplacementShader sync alignment
     printf("[WINCHESTERMQ BYPASS] Redirecting VSAM block read to WinchesterMQ SCSI channel...\n");
+    global_wmq_bypass_count++;
     TSFiDisplacementShader ds;
     tsfi_displacementshader_init(&ds, 1.0, 1.0);
     tsfi_displacementshader_eval(&ds, 0.0, 0.0);
