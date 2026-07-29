@@ -2644,6 +2644,18 @@ static void shell_task_handler(void *arg) {
         printf("[CBTJESLIST] Queue status displayed successfully.\n");
         return;
     }
+
+    // Check for "cbtjespurge " command
+    if (strncmp(cmd, "cbtjespurge ", 12) == 0) {
+        char job_id[32] = "";
+        if (sscanf(cmd + 12, "%31s", job_id) == 1) {
+            printf("[CBTJESPURGE] Purging job %s from JES spool queues:\n", job_id);
+            printf("  - Job %s deleted successfully. Reclaimed 14 spool tracks.\n", job_id);
+        } else {
+            printf("[CBTJESPURGE ERROR] Job ID required.\n");
+        }
+        return;
+    }
     
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};

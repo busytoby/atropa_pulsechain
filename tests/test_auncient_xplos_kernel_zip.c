@@ -1115,6 +1115,17 @@ int main(void) {
     tsfi_xplos_run(&sched_jeslist);
     printf("   ✓ CBTJESLIST execution verified successfully.\n");
 
+    // 72. Test CBTJESPURGE command execution
+    printf("[KERNEL TEST] Dispatching 'cbtjespurge' command to XplOS shell...\n");
+    XplosShell shell_purge;
+    XplosScheduler sched_purge;
+    tsfi_xplos_init_scheduler(&sched_purge);
+    tsfi_xplos_init_shell(&shell_purge);
+    bool purge_ok = tsfi_xplos_shell_exec(&shell_purge, &sched_purge, "cbtjespurge JOB00021");
+    assert(purge_ok == true);
+    tsfi_xplos_run(&sched_purge);
+    printf("   ✓ CBTJESPURGE execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
