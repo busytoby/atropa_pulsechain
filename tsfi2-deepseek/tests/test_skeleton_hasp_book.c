@@ -282,6 +282,22 @@ int main(void) {
     assert(read_tape_len > 0);
     assert(strncmp((char *)read_tape_buf, "JOB_NAME=MJ5", 12) == 0);
 
+    // 18. Verify SCSIPGM execution for WinchesterMQ bridge & DisplacementShader vertex math
+    printf("  -> Phase 16: Verifying SCSIPGM execution for WinchesterMQ and DisplacementShader...\n");
+    remove("USERLIB.dat.bin");
+    int open_userlib_rc5 = tsfi_cw_vsam_open(&userlib_ksds, "USERLIB.dat.bin");
+    assert(open_userlib_rc5 == 0);
+
+    // Write JCL job MJ6 that runs SCSIPGM
+    uint8_t mock_scsi_cards[256] = 
+        "//MJ6 JOB 'CBT SCSI'\n"
+        "//STEP1 EXEC PGM=SCSIPGM\n";
+    int write_userlib_rc5 = tsfi_cw_vsam_write(&userlib_ksds, "MJ6", mock_scsi_cards, strlen((char *)mock_scsi_cards));
+    assert(write_userlib_rc5 == 0);
+
+    bool mockjob6_run_ok = tsfi_xplos_shell_cbt_jcl("jclrun MJ6");
+    assert(mockjob6_run_ok == true);
+
     printf("  -> End-to-end data pipeline integrity verified successfully.\n");
     printf("\n=== SKELETON HASP BOOK PROOFS PASSED ===\n");
     return 0;

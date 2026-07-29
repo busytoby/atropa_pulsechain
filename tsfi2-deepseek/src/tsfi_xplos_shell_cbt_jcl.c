@@ -15,6 +15,8 @@
 #include "tsfi_xplos_shell_cbt_vtam.h"
 #include "tsfi_mainframe_computerworld.h"
 #include "auncient_sdk.h"
+#include "tsfi_winchester_bridge.h"
+#include "tsfi_displacementshader.h"
 extern XplosVirtualDisk g_vfs;
 extern CbtSpoolJob cbt_job_table[10];
 extern XplosScheduler *g_active_sched;
@@ -261,6 +263,33 @@ static bool handle_jclrun(const char *cmd) {
                                 } else {
                                     step_rc = 12;
                                     printf("[RAUPGM ERROR] Failed to mount Coaxial RAU Backplane.\n");
+                                }
+                            } else if (strcmp(pgm_name, "SCSIPGM") == 0) {
+                                step_rc = 0;
+                                snprintf(log_msg, sizeof(log_msg), "    * SCSIPGM WinchesterMQ SCSI Accessor launched. RC=0000\n");
+                                printf("%s", log_msg);
+                                append_spool_log(jcl_name, log_msg);
+
+                                TSFiWinchesterBridge *bridge = tsfi_winchester_bridge_create(NULL);
+                                if (bridge) {
+                                    printf("[SCSIPGM] WinchesterMQ bridge initialized.\n");
+                                    int verify_rc = tsfi_winchester_bridge_loopback_verify(bridge, 32);
+                                    if (verify_rc == 0) {
+                                        printf("[SCSIPGM] Loopback verification verified successfully.\n");
+                                    } else {
+                                        step_rc = 8;
+                                        printf("[SCSIPGM ERROR] Loopback check failed.\n");
+                                    }
+                                    
+                                    TSFiDisplacementShader ds;
+                                    tsfi_displacementshader_init(&ds, 1.0, 2.0);
+                                    double val = tsfi_displacementshader_eval(&ds, 10.0, 5.0);
+                                    printf("[SCSIPGM] Displacement value calculated: %f\n", val);
+
+                                    tsfi_winchester_bridge_destroy(bridge);
+                                } else {
+                                    step_rc = 12;
+                                    printf("[SCSIPGM ERROR] Bridge creation failed.\n");
                                 }
                             } else if (strcmp(pgm_name, "TSOTMP") == 0) {
                                 step_rc = 0;
