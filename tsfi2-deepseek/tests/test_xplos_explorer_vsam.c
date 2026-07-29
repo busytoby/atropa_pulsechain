@@ -56,6 +56,11 @@ int main(void) {
     bool pdsrep_ok = tsfi_xplos_shell_explorer("cbtpdsrep test_vsam.dat.bin MEMBER FIND REPLACE");
     assert(pdsrep_ok == true);
 
+    // 10. Test explorer command "cbtdu" for dynamic DASD space utilization scanning
+    printf("  -> Testing cbtdu command for DASD space utilization...\n");
+    bool cbtdu_ok = tsfi_xplos_shell_explorer("cbtdu test_vsam.dat.bin");
+    assert(cbtdu_ok == true);
+
     printf("\n=== EXPLORER MAINFRAME VSAM TESTS PASSED ===\n");
     return 0;
 }

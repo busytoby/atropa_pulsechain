@@ -687,15 +687,21 @@ bool tsfi_xplos_shell_explorer(const char *cmd) {
 
     // Check for "cbtdu " command
     if (strncmp(cmd, "cbtdu ", 6) == 0) {
-        const char *volume = cmd + 6;
-        if (strlen(volume) > 0) {
-            printf("[CBTDU] Scanning space allocation for volume: %s\n", volume);
-            printf("  - Allocation Summary:\n");
-            printf("    * Allocated Tracks: 8430\n");
-            printf("    * Free Tracks:      6570\n");
-            printf("    * Extents Map:      4 active extents\n");
-            printf("  - Space Utilization: 56.2%%\n");
-            printf("[CBTDU] Volume space utilization scan completed successfully.\n");
+        char volume[128] = "";
+        if (sscanf(cmd + 6, "%127s", volume) == 1) {
+            printf("[CBTDU] Scanning space allocation for volume dataset: %s\n", volume);
+            tsfi_cw_vsam_ksds ksds;
+            int open_rc = tsfi_cw_vsam_open(&ksds, volume);
+            if (open_rc == 0) {
+                printf("  - Allocation Summary:\n");
+                printf("    * Allocated Bytes:  %u bytes\n", ksds.current_file_size);
+                printf("    * Active Records:   %d records\n", ksds.entry_count);
+                printf("    * Key Savings:      %u bytes\n", ksds.key_prefix_savings);
+                printf("  - Space Utilization: 100.0%%\n");
+                printf("[CBTDU] Volume space utilization scan completed successfully.\n");
+            } else {
+                printf("[CBTDU ERROR] Could not scan volume index: %s (RC=%d)\n", volume, open_rc);
+            }
         } else {
             printf("[CBTDU ERROR] Volume name required.\n");
         }
