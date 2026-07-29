@@ -1,0 +1,13 @@
+# COBOL ACH Batch Validator Strategy Example
+# Shifting processing queue thresholds for dynamic wire transit batches.
+
+SET depth 8;
+SET abductive 20;
+
+# Prioritize specific validator keycodes (e.g. 70 representing ACH total checksum calculations)
+WEIGHT 70 5;
+WEIGHT 71 2;
+
+# Prune processing priorities below limits
+PRUNE 10;
+EVAL;

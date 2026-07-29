@@ -1,0 +1,13 @@
+# COBOL Rounding Bias Strategy Example
+# Customizes precision thresholds and weights based on transaction depth.
+
+SET depth 6;
+SET abductive 15;
+
+# Assign weights prioritizing Bankers Rounding logic keys
+WEIGHT 60 4;
+WEIGHT 61 1;
+
+# Prune entries falling below low-priority bounds
+PRUNE 8;
+EVAL;

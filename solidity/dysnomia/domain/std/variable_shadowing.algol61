@@ -1,0 +1,10 @@
+begin
+  integer x;
+  x := 5;
+  begin
+    integer x;
+    x := 10;
+    comment local x is 10, global x is 5;
+  end;
+  comment global x is still 5;
+end

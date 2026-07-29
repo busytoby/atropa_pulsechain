@@ -1,0 +1,13 @@
+# Folklore BCD Bias Strategy Example
+# Adjusts processing weights prioritizing 256-bit hashes and 160-bit address formats.
+
+SET depth 10;
+SET abductive 25;
+
+# Prioritize hash total and key conversion registers (keycodes 80 and 81)
+WEIGHT 80 5;
+WEIGHT 81 3;
+
+# Prune queue priorities below target values
+PRUNE 14;
+EVAL;

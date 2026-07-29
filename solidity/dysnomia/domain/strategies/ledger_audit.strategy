@@ -1,0 +1,13 @@
+# COBOL Financial Ledger Audit Strategy Example
+# Sets evaluation scales and weights for account ledger validations.
+
+SET depth 4;
+SET abductive 10;
+
+# Adjust priorities for key bank registers and audit tracks
+WEIGHT 50 2;
+WEIGHT 51 3;
+
+# Prune inactive or low-priority account processing jobs
+PRUNE 12;
+EVAL;

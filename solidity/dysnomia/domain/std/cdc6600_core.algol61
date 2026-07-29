@@ -1,0 +1,10 @@
+begin
+  integer instId, destReg, stage;
+  instId := 1;
+  destReg := 2;
+  stage := 0; comment STAGE_ISSUE;
+  if stage = 0 then
+  begin
+    stage := 1 comment STAGE_READ_OPERANDS;
+  end
+end

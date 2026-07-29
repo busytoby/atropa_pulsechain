@@ -1,0 +1,10 @@
+begin
+  integer sensorVal, threshold;
+  sensorVal := 95;
+  threshold := 80;
+  if sensorVal > threshold then
+  begin
+    comment Alarm alert triggered;
+    sensorVal := 0
+  end
+end

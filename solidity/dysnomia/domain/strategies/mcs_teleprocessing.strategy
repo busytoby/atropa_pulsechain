@@ -1,0 +1,20 @@
+# COBOL MCS Teleprocessing Strategy
+# Prioritizes telecommunication queue segments over background routines.
+
+DATA DIVISION.
+01 SEGMENT-FLAG PIC 9 USAGE R0.
+01 STATUS-OK    PIC 9 USAGE R1.
+
+PROCEDURE DIVISION.
+    MOVE 1 TO SEGMENT-FLAG.
+    MOVE 1 TO STATUS-OK.
+    
+    IF SEGMENT-FLAG == STATUS-OK
+        SET depth 6.
+        # Set high weight for input event queue keycode
+        WEIGHT 32 8.
+    ELSE
+        SET depth 2.
+    END-IF.
+    
+    EVAL.

@@ -1,0 +1,12 @@
+begin
+  integer procedure search(pos, dest);
+  value pos, dest; integer pos, dest;
+  begin
+    comment Simulate heuristic search step on 4x4 matrix;
+    if pos = dest then search := 1
+    else search := 0
+  end;
+
+  integer found;
+  found := search(0, 15)
+end
