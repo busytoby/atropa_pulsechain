@@ -2877,6 +2877,92 @@ static void shell_task_handler(void *arg) {
         printf("[CBTTAPEMAP] Tape map completed successfully.\n");
         return;
     }
+
+    // Check for "cbtpdsrep " command
+    if (strncmp(cmd, "cbtpdsrep ", 10) == 0) {
+        char pds_path[128] = "";
+        char member_name[32] = "";
+        char search_str[32] = "";
+        char replace_str[32] = "";
+        if (sscanf(cmd + 10, "%127s %31s %31s %31s", pds_path, member_name, search_str, replace_str) == 4) {
+            if (strstr(pds_path, ".dat.bin") == NULL) {
+                printf("[CBTPDSREP ERROR] Violation of Rule 13: filename must end in .dat.bin\n");
+                return;
+            }
+            FILE *f = fopen(pds_path, "r+b");
+            if (!f) {
+                printf("[CBTPDSREP ERROR] Could not open PDS: %s\n", pds_path);
+                return;
+            }
+            uint8_t dir_block[256];
+            fread(dir_block, 1, 256, f);
+            uint16_t used = (dir_block[0] << 8) | dir_block[1];
+            int ptr = 2;
+            uint32_t offset = 0;
+            uint32_t size = 0;
+            bool found = false;
+            while (ptr < used) {
+                char name[9];
+                memcpy(name, &dir_block[ptr], 8);
+                name[8] = '\0';
+                for (int k = 7; k >= 0; k--) {
+                    if (name[k] == ' ') name[k] = '\0';
+                    else break;
+                }
+                if (strcasecmp(name, member_name) == 0) {
+                    offset = (dir_block[ptr + 8] << 16) | (dir_block[ptr + 9] << 8) | dir_block[ptr + 10];
+                    size = (dir_block[ptr + 12] << 24) | (dir_block[ptr + 13] << 16) | (dir_block[ptr + 14] << 8) | dir_block[ptr + 15];
+                    found = true;
+                    break;
+                }
+                ptr += 16;
+            }
+            if (found) {
+                fseek(f, offset, SEEK_SET);
+                uint8_t *member_data = malloc(size);
+                fread(member_data, 1, size, f);
+                
+                int replacements = 0;
+                uint32_t search_len = strlen(search_str);
+                uint32_t replace_len = strlen(replace_str);
+                
+                for (uint32_t r = 0; r < size; r += 80) {
+                    char card[81];
+                    memcpy(card, &member_data[r], 80);
+                    card[80] = '\0';
+                    
+                    char *pos = strstr(card, search_str);
+                    if (pos) {
+                        replacements++;
+                        char new_card[81];
+                        int prefix_len = pos - card;
+                        memcpy(new_card, card, prefix_len);
+                        memcpy(new_card + prefix_len, replace_str, replace_len);
+                        int suffix_len = 80 - (prefix_len + search_len);
+                        if (suffix_len > 0) {
+                            memcpy(new_card + prefix_len + replace_len, pos + search_len, suffix_len);
+                        }
+                        new_card[80] = '\0';
+                        int new_len = strlen(new_card);
+                        if (new_len > 80) new_len = 80;
+                        memcpy(&member_data[r], new_card, new_len);
+                        if (new_len < 80) {
+                            memset(&member_data[r + new_len], ' ', 80 - new_len);
+                        }
+                    }
+                }
+                
+                fseek(f, offset, SEEK_SET);
+                fwrite(member_data, 1, size, f);
+                free(member_data);
+                printf("[CBTPDSREP] Search and replace completed. Performed %d replacement(s) in member %s.\n", replacements, member_name);
+            } else {
+                printf("[CBTPDSREP ERROR] Member %s not found in PDS.\n", member_name);
+            }
+            fclose(f);
+            return;
+        }
+    }
     
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};

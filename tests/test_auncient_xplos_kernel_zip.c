@@ -1217,6 +1217,33 @@ int main(void) {
     printf("   ✓ CBTTAPEMAP execution verified successfully.\n");
     remove("tests/tape_vol.dat.bin");
 
+    // 80. Test CBTPDSREP command execution
+    printf("[KERNEL TEST] Dispatching 'cbtpdsrep' command to XplOS shell...\n");
+    XplosShell shell_rep;
+    XplosScheduler sched_rep;
+    
+    tsfi_xplos_init_scheduler(&sched_rep);
+    tsfi_xplos_init_shell(&shell_rep);
+    tsfi_xplos_shell_exec(&shell_rep, &sched_rep, "cbtpdsinit tests/rep_pds.dat.bin");
+    tsfi_xplos_run(&sched_rep);
+
+    FILE *f_rep_tmp = fopen("tests/memb_rep.txt", "w");
+    fprintf(f_rep_tmp, "FIND_ME AND REPLACE THIS\n");
+    fclose(f_rep_tmp);
+
+    tsfi_xplos_init_scheduler(&sched_rep);
+    tsfi_xplos_shell_exec(&shell_rep, &sched_rep, "cbtpdsadd tests/rep_pds.dat.bin MEMB1 tests/memb_rep.txt");
+    tsfi_xplos_run(&sched_rep);
+
+    tsfi_xplos_init_scheduler(&sched_rep);
+    bool rep_ok = tsfi_xplos_shell_exec(&shell_rep, &sched_rep, "cbtpdsrep tests/rep_pds.dat.bin MEMB1 FIND_ME FOUND_IT");
+    assert(rep_ok == true);
+    tsfi_xplos_run(&sched_rep);
+
+    printf("   ✓ CBTPDSREP execution verified successfully.\n");
+    remove("tests/memb_rep.txt");
+    remove("tests/rep_pds.dat.bin");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
