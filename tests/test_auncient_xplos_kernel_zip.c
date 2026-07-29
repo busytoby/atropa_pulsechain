@@ -1972,6 +1972,12 @@ int main(void) {
     assert(mv_ok == true);
     tsfi_xplos_run(&sched_bh2);
 
+    tsfi_xplos_init_scheduler(&sched_bh2);
+
+    bool tr_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "trtbl hello UPPER");
+    assert(tr_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
     printf("   ✓ Carmine Cannatello ASM book utilities execution verified successfully.\n");
 
     printf("=============================================================\n");

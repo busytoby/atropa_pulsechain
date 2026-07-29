@@ -4487,6 +4487,36 @@ static void shell_task_handler(void *arg) {
         return;
     }
 
+    // Check for "trtbl " command
+    if (strncmp(cmd, "trtbl ", 6) == 0) {
+        const char *args = cmd + 6;
+        char str[64] = "";
+        char map_type[32] = "";
+        sscanf(args, "%63s %31s", str, map_type);
+        printf("[TRTBL] Translate Table translation for string: '%s'\n", str);
+        if (strcasecmp(map_type, "UPPER") == 0) {
+            printf("  - Output: ");
+            for (size_t i = 0; str[i] != '\0'; i++) {
+                char c = str[i];
+                if (c >= 'a' && c <= 'z') c = c - 'a' + 'A';
+                putchar(c);
+            }
+            putchar('\n');
+        } else if (strcasecmp(map_type, "LOWER") == 0) {
+            printf("  - Output: ");
+            for (size_t i = 0; str[i] != '\0'; i++) {
+                char c = str[i];
+                if (c >= 'A' && c <= 'Z') c = c - 'A' + 'a';
+                putchar(c);
+            }
+            putchar('\n');
+        } else {
+            printf("  - Output: %s (No translation map matched)\n", str);
+        }
+        printf("[TRTBL] Character mapping translation completed.\n");
+        return;
+    }
+
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
     if (tsfi_xplg_parse_semantic_action(cmd, &tx)) {
