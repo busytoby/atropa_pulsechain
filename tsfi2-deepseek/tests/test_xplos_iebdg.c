@@ -68,6 +68,49 @@ int main(void) {
     tsfi_xplos_run(&sched);
     printf("   ✓ Error handling verified.\n");
 
+    // Test Case 4: IEBCOMPR integration testing
+    printf("[TEST 4] Testing IEBCOMPR with IEBDG generated datasets...\n");
+    bool dg_c1 = tsfi_xplos_shell_exec(&shell, &sched, "iebdg SEQ1 SEQ");
+    assert(dg_c1);
+    tsfi_xplos_run(&sched);
+    bool dg_c2 = tsfi_xplos_shell_exec(&shell, &sched, "iebdg SEQ2 SEQ");
+    assert(dg_c2);
+    tsfi_xplos_run(&sched);
+    bool cmp_ok = tsfi_xplos_shell_exec(&shell, &sched, "iebcompr SEQ1 SEQ2");
+    assert(cmp_ok == true);
+    tsfi_xplos_run(&sched);
+    printf("   ✓ IEBCOMPR comparison integration verified.\n");
+
+    // Test Case 5: IEBGENER copy integration testing
+    printf("[TEST 5] Testing IEBGENER copy of IEBDG generated dataset...\n");
+    bool gen_ok = tsfi_xplos_shell_exec(&shell, &sched, "iebgener SEQ1 SEQTGT");
+    assert(gen_ok == true);
+    tsfi_xplos_run(&sched);
+    printf("   ✓ IEBGENER copy integration verified.\n");
+
+    // Test Case 6: JCL pipeline conditional testing
+    printf("[TEST 6] Testing JCL run pipeline using IEBDG input...\n");
+    assert(tsfi_xplos_create_file(&g_vfs, "DGJCL.dat.bin", 2048) == true);
+    XplosFile *jcl_file = &g_vfs.files[g_vfs.count - 1];
+    strcpy(jcl_file->data,
+           "//DGJCL JOB 'PIPELINE TEST',CLASS=A\n"
+           "//STEP1 EXEC PGM=IEBCOPY\n"
+           "//SYSUT1 DD DSN=SEQ1,DISP=SHR\n"
+           "//SYSUT2 DD DSN=SEQ2,DISP=SHR\n");
+    jcl_file->size_bytes = (uint32_t)strlen(jcl_file->data);
+
+    bool jcl_ok = tsfi_xplos_shell_exec(&shell, &sched, "jclrun DGJCL");
+    assert(jcl_ok == true);
+    tsfi_xplos_run(&sched);
+    printf("   ✓ JCL pipeline integration verified.\n");
+
+    // Test Case 7: REXX Scripting variable mapping check
+    printf("[TEST 7] Testing CBTREXX pool processing of generated content...\n");
+    bool rx_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtrexx vput SYSVAR 953467954114363");
+    assert(rx_ok == true);
+    tsfi_xplos_run(&sched);
+    printf("   ✓ CBTREXX pool processing verified.\n");
+
     printf("====================================================================\n");
     printf("ALL IEBDG DATASET GENERATOR UNIT TESTS PASSED SUCCESSFULLY\n");
     printf("====================================================================\n");
