@@ -21,3 +21,11 @@ stateDiagram-v2
 ### 2. Physical Locking and State Isolation (Isolation & Durability)
 * **Mutex-Gated Solenoid Access:** Multiple concurrent write processes must acquire `MUTEX_REG` to gain permission to engage the solenoid clamp. Only one thread can activate the pinch roller at any time, preventing simultaneous tape dragging and interleaved sector corruption.
 * **Caliper Brake Locking for Durability:** Once committed, the caliper brake physically locks the capstan shaft to freeze the tape's linear position. Even in the event of an immediate power loss, the physical block sequence remains aligned under the head, preventing drift and ensuring database records are durable.
+
+### 3. Universal Capstan Transaction Primitive (Global Rollback Blueprint)
+The physical tape-drive model functions as XplOS's universal software transaction blueprint. Wherever memory verifiability or register state rollback is required (including JIT compilation buffers and process scheduling), the system maps the transition sequence onto this model:
+* **Prepare Phase (Solenoid Engagement):** The OS isolates target registers or memory segments, establishing a thread mutex gate.
+* **Execution Phase (Brake Release & Motor Spin):** Registers are mutated by the ALU or JIT thunks.
+* **Validation Phase (RAW Checksum):** The system checks logical consistency and checksum values.
+* **Commit Phase (Brake Locking):** The new state is committed and persisted to storage.
+* **Rollback Phase (Motor Rewind):** If validation fails, the processor rewinds the CPU's GPR skeleton back to the pre-transaction snapshot, guaranteeing absolute state consistency.
