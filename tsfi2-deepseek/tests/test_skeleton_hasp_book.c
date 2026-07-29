@@ -383,11 +383,11 @@ int main(void) {
     assert(tsfi_xplos_shell_cbt_cics("cbtcicsts write CHEON dynamic_0x0000000000000000000000000000000000000016") == true);
 
     // Deploy test LAU
-    bool tsq_lau_ok = tsfi_xplos_shell_cbt_cics("cbtcicsts write TestLAU dynamic_0x0000000000000000000000000000000000000099");
+    bool tsq_lau_ok = tsfi_xplos_shell_cbt_cics("cbtcicsts write TLAU dynamic_0x0000000000000000000000000000000000000099");
     assert(tsq_lau_ok == true);
     
     // Set username
-    bool tsq_user_ok = tsfi_xplos_shell_cbt_cics("cbtcicsts write USER_NAME HoganBear");
+    bool tsq_user_ok = tsfi_xplos_shell_cbt_cics("cbtcicsts write UNAME HoganBear");
     assert(tsq_user_ok == true);
     
     // Submit chat message to TDQ
@@ -395,7 +395,7 @@ int main(void) {
     assert(tdq_chat_ok == true);
 
     printf("[DEPLOYMENT CHECK] Querying active credentials from 2-3 Tree rails...\n");
-    bool tsq_read_user = tsfi_xplos_shell_cbt_cics("cbtcicsts read USER_NAME");
+    bool tsq_read_user = tsfi_xplos_shell_cbt_cics("cbtcicsts read UNAME");
     assert(tsq_read_user == true);
 
     // Live verification of SHA values for the deployed LAU token on HASP VM

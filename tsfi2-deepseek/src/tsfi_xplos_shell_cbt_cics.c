@@ -40,7 +40,7 @@ static void resolve_pds_name_helper(const char *member, char *out, size_t max_le
     snprintf(out, max_len, "%s.dat.bin", member);
 }
 
-static char g_cics_tdq_names[4][8] = {"AUTD", "SBM1", "LOG1", "OUT1"};
+static char g_cics_tdq_names[5][8] = {"AUTD", "SBM1", "LOG1", "OUT1", "CHAT"};
 static bool handle_cbtcicstd(const char *cmd) {
     char subcmd[16] = "";
     char tdq[16] = "";
@@ -48,7 +48,7 @@ static bool handle_cbtcicstd(const char *cmd) {
     int scanned = sscanf(cmd + 10, "%15s %15s %[^\n]", subcmd, tdq, val);
     if (scanned >= 2) {
         int tdq_idx = -1;
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 5; i++) {
             if (strcasecmp(g_cics_tdq_names[i], tdq) == 0) {
                 tdq_idx = i;
                 break;

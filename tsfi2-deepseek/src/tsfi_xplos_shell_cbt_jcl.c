@@ -17,6 +17,7 @@
 #include "auncient_sdk.h"
 #include "tsfi_winchester_bridge.h"
 #include "tsfi_displacementshader.h"
+#include "lau_thunk.h"
 extern XplosVirtualDisk g_vfs;
 extern CbtSpoolJob cbt_job_table[10];
 extern XplosScheduler *g_active_sched;
@@ -298,6 +299,21 @@ static bool handle_jclrun(const char *cmd) {
                                 append_spool_log(jcl_name, log_msg);
 
                                 printf("[YULVM] Fetching next instruction node from TSQ rail...\n");
+                                
+                                // Initialize identically to ZMM Thunk VM execution pipeline
+                                ThunkProxy *thunk = ThunkProxy_create();
+                                if (thunk) {
+                                    printf("[YULVM] Thunk JVM proxy context initialized at %p\n", thunk->thunk_pool);
+                                    // Emit JIT dynamic contract step thunk
+                                    extern bool tsfi_xplos_shell_cbt_cics(const char *cmd);
+                                    void *jit_fn = ThunkProxy_emit_baked(thunk, (void*)tsfi_xplos_shell_cbt_cics, 1, "cbtcicsts read UNAME");
+                                    printf("[YULVM] Emitted dynamic instruction execution thunk at %p\n", jit_fn);
+                                    
+                                    // Execute the emitted thunk
+                                    typedef void (*thunk_entry)(void);
+                                    ((thunk_entry)jit_fn)();
+                                }
+                                
                                 printf("[YULVM] Executing opcode: PUSH 953467954114363\n");
                                 printf("[YULVM] Executing opcode: TUNE (Motzkin Prime Modulus)\n");
                                 printf("[YULVM] Opcode execution state stored persistently in TSQ rail. RC=0000\n");
