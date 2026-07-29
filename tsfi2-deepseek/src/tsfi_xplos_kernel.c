@@ -9,6 +9,7 @@
 #include "tsfi_nadler_skeletonizer.h"
 #include "tsfi_nadler_syntactic_parser.h"
 #include "tsfi_parc_tape_catalog.h"
+#include "tsfi_cbt_inmemory.h"
 #include <ctype.h>
 #include <unistd.h>
 
@@ -3607,7 +3608,19 @@ static void shell_task_handler(void *arg) {
         printf("  - ibhwtorg          Retrieve pending console operator replies\n");
         printf("  - ocx <member>      Execute operator commands from a dataset member\n");
         printf("  - ibhlspac <volume> List DASD volume space parameters\n");
+        printf("  - cbtmountmem <pth> Retrieve remote zip tape via HTTP into memory & mount PDS\n");
         printf("[CBTHELP] Help index generated successfully.\n");
+        return;
+    }
+
+    // Check for "cbtmountmem " command
+    if (strncmp(cmd, "cbtmountmem ", 12) == 0) {
+        const char *path = cmd + 12;
+        if (strlen(path) > 0) {
+            tsfi_cbt_mount_inmemory_pds(&g_vfs, path);
+        } else {
+            printf("[CBTMOUNTMEM ERROR] Server path required.\n");
+        }
         return;
     }
 

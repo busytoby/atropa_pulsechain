@@ -113,7 +113,7 @@ typedef struct {
     bool active;
 } XplosFile;
 
-#define MAX_DISK_FILES 8
+#define MAX_DISK_FILES 2048
 
 typedef struct {
     XplosFile files[MAX_DISK_FILES];

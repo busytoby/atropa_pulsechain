@@ -1740,6 +1740,17 @@ int main(void) {
     tsfi_xplos_run(&sched_bh2);
     printf("   ✓ IBHLSPAC execution verified successfully.\n");
 
+    // 122. Test CBTMOUNTMEM in-memory download & mount
+    printf("[KERNEL TEST] Dispatching 'cbtmountmem' command to XplOS shell...\n");
+    XplosShell shell_mem;
+    XplosScheduler sched_mem;
+    tsfi_xplos_init_scheduler(&sched_mem);
+    tsfi_xplos_init_shell(&shell_mem);
+    bool mount_ok = tsfi_xplos_shell_exec(&shell_mem, &sched_mem, "cbtmountmem /ftp/cbt/CBT021.zip");
+    assert(mount_ok == true);
+    tsfi_xplos_run(&sched_mem);
+    printf("   ✓ CBTMOUNTMEM execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
