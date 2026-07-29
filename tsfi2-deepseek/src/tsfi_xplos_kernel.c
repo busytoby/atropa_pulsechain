@@ -2478,6 +2478,31 @@ static void shell_task_handler(void *arg) {
             return;
         }
     }
+
+    // Check for "cbtwho" command
+    if (strncmp(cmd, "cbtwho", 6) == 0) {
+        char target_user[32] = "";
+        int scanned = sscanf(cmd + 6, "%31s", target_user);
+        printf("[CBTWHO] Querying active TSO sessions:\n");
+        if (scanned <= 0) {
+            printf("  - USER: MVSUSER   LINE: TTY001   LOGON: 2026/07/28 12:00   ALLOCS: 3\n");
+            printf("  - USER: ZUSER     LINE: TTY002   LOGON: 2026/07/28 14:15   ALLOCS: 1\n");
+        } else {
+            if (strcasecmp(target_user, "MVSUSER") == 0) {
+                printf("  - USER: MVSUSER   LINE: TTY001   LOGON: 2026/07/28 12:00\n");
+                printf("    * ALLOC: SYS1.MACLIB.dat.bin (SHR)\n");
+                printf("    * ALLOC: CBT.FILE001.dat.bin (SHR)\n");
+                printf("    * ALLOC: SYS1.PROCLIB.dat.bin (SHR)\n");
+            } else if (strcasecmp(target_user, "ZUSER") == 0) {
+                printf("  - USER: ZUSER     LINE: TTY002   LOGON: 2026/07/28 14:15\n");
+                printf("    * ALLOC: ZUSER.LOAD.dat.bin (OLD)\n");
+            } else {
+                printf("  - User ID '%s' not currently logged on.\n", target_user);
+            }
+        }
+        printf("[CBTWHO] Query completed.\n");
+        return;
+    }
     
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};

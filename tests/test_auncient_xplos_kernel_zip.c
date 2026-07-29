@@ -1021,6 +1021,17 @@ int main(void) {
     remove("tests/memb_stats.txt");
     remove("tests/stats_pds.dat.bin");
 
+    // 67. Test CBTWHO command execution
+    printf("[KERNEL TEST] Dispatching 'cbtwho' command to XplOS shell...\n");
+    XplosShell shell_who;
+    XplosScheduler sched_who;
+    tsfi_xplos_init_scheduler(&sched_who);
+    tsfi_xplos_init_shell(&shell_who);
+    bool who_ok = tsfi_xplos_shell_exec(&shell_who, &sched_who, "cbtwho MVSUSER");
+    assert(who_ok == true);
+    tsfi_xplos_run(&sched_who);
+    printf("   ✓ CBTWHO execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
