@@ -7,6 +7,7 @@
 #include "tsfi_xplos_kernel.h"
 #include "tsfi_displacementshader.h"
 #include "lau_thunk.h"
+#include "tsfi_riinterface.h"
 
 // Simulated XPLSM Monitor State
 typedef struct {
@@ -152,7 +153,7 @@ int main(void) {
     assert(inject_ok == true);
     
     bool fail_ok = tsfi_xplos_shell_tape("cbttape write 5 187");
-    assert(fail_ok == true);
+    assert(fail_ok == false);
 
     // 6. Verify SAM Driver tape operations (rewind, bsf, fsf)
     printf("  -> Testing SAM Driver tape movements...\n");
@@ -223,7 +224,7 @@ int main(void) {
     extern uint32_t ce_gprs[16];
     ce_gprs[5] = 888;
     assert(tsfi_xplos_shell_tape("cbttape inject 0") == true);
-    assert(tsfi_xplos_shell_tape("cbttape write 5 187") == true);
+    assert(tsfi_xplos_shell_tape("cbttape write 5 187") == false);
     assert(ce_gprs[5] == 888);
     printf("  -> ZMM GPR register restoration verified successfully.\n");
 
@@ -235,6 +236,21 @@ int main(void) {
     execute_transactional_thunk(thunk, (void*)test_thunk_callback, "thunk_verify_test", 6);
     assert(ce_gprs[7] == 111);
     printf("  -> Transactional thunk execution rollback verified successfully.\n");
+
+    // 17. Verify support for GPR SKELETON bound to RenderMan camera speed
+    printf("  -> Testing GPR SKELETON bindings mapped to RenderMan interface...\n");
+    TSFiRiInterface ri;
+    tsfi_riinterface_init(&ri);
+    
+    ce_gprs[8] = 45; // Camera speed register mapping
+    double camera_velocity = (double)ce_gprs[8];
+    double verlet_x[3] = { 1.0, 2.0, 3.0 };
+    double prev_verlet_x[3] = { 0.9, 1.9, 2.9 };
+    
+    tsfi_riinterface_run_8step_loop(&ri, camera_velocity, verlet_x, prev_verlet_x, 3);
+    assert(ri.is_world_active == false);
+    assert(ri.psg_master_volume_l > 0 || ri.psg_master_volume_r > 0);
+    printf("  -> GPR SKELETON and RenderMan interface mapping verified successfully.\n");
 
     printf("\n=== INTEGRATION PROOFS PASSED ===\n");
     return 0;

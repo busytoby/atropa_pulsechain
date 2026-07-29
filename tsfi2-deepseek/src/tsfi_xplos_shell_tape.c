@@ -119,7 +119,7 @@ static bool handle_cbttape(const char *cmd) {
                 memcpy(ce_gprs, gprs_snapshot, sizeof(gprs_snapshot));
                 printf("[CAPSTAN ROLLBACK] Restored ZMM GPR registers to pre-transaction states.\n");
                 printf("[CAPSTAN ERROR] Transaction aborted: maximum rollback retries exceeded.\n");
-                return true;
+                return false;
             }
             
             // Commit transaction
