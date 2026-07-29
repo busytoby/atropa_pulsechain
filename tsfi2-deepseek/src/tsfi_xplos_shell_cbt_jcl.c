@@ -712,6 +712,18 @@ static bool handle_iebdgiterstat(void) {
     return true;
 }
 
+static bool handle_iebdgiterchange(const char *cmd) {
+    int threshold = 0;
+    char rule_name[32] = "";
+    if (sscanf(cmd + 16, "%d %31s", &threshold, rule_name) < 2) {
+        printf("[IEBDGITERCHANGE ERROR] Syntax: iebdgiterchange <threshold> <rule_name>\n");
+        return true;
+    }
+    printf("[IEBDG] Mapping pattern shift rule %s on reaching iteration: %d\n", rule_name, threshold);
+    printf("  - Generation shifter rule established. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "jclrun ", 7) == 0) return handle_jclrun(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
@@ -737,5 +749,6 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "iebcomprmaxexcl ", 16) == 0) return handle_iebcomprmaxexcl(cmd);
     if (strncmp(cmd, "iebdgiterlim ", 13) == 0) return handle_iebdgiterlim(cmd);
     if (strcmp(cmd, "iebdgiterstat") == 0) return handle_iebdgiterstat();
+    if (strncmp(cmd, "iebdgiterchange ", 16) == 0) return handle_iebdgiterchange(cmd);
     return false;
 }

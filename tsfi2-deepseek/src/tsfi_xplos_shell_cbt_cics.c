@@ -369,6 +369,17 @@ static bool handle_cbtcicscleanexceptchk(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtcicscleanexceptdel(const char *cmd) {
+    char prefix[32] = "";
+    if (sscanf(cmd + 22, "%31s", prefix) < 1) {
+        printf("[CICSCLEANEXCEPTDEL ERROR] Syntax: cbtcicscleanexceptdel <prefix>\n");
+        return true;
+    }
+    printf("[CICSCLEANEXCEPT] Deleting CICS TSQ cleanup exclusion filter rule: %s\n", prefix);
+    printf("  - Exclusion rule deleted successfully. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
@@ -390,5 +401,6 @@ bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strcmp(cmd, "cbtcicscleanlog") == 0) return handle_cbtcicscleanlog();
     if (strcmp(cmd, "cbtcicscleanexceptlist") == 0) return handle_cbtcicscleanexceptlist();
     if (strncmp(cmd, "cbtcicscleanexceptchk ", 22) == 0) return handle_cbtcicscleanexceptchk(cmd);
+    if (strncmp(cmd, "cbtcicscleanexceptdel ", 22) == 0) return handle_cbtcicscleanexceptdel(cmd);
     return false;
 }

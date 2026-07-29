@@ -465,6 +465,19 @@ static bool handle_vtamrouterecquery(const char *cmd) {
     return true;
 }
 
+static bool handle_vtamrouterecquerylist(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  VTAM ACTIVE GATEWAY ROUTE RECOVERY SCHEDULES                  \n");
+    printf("================================================================================\n");
+    printf(" PATH ID    | RETRY ATTEMPTS | TIME REMAINING SEC | RECOVERY STATE\n");
+    printf("--------------------------------------------------------------------------------\n");
+    printf(" LU_REMOTE  | 2 RETRIES      | 45 SECONDS         | BACKOFF_WAIT\n");
+    printf(" LU_LOCAL   | 0 RETRIES      | 0 SECONDS          | INACTIVE. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "cbtnet ", 7) == 0) return handle_cbtnet(cmd + 7);
     if (strncmp(cmd, "logon ", 6) == 0) return handle_vtam_logon(cmd);
@@ -488,5 +501,6 @@ bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "vtamroutereccount ", 17) == 0) return handle_vtamroutereccount(cmd);
     if (strcmp(cmd, "vtamrouterecreset") == 0) return handle_vtamrouterecreset();
     if (strncmp(cmd, "vtamrouterecquery ", 18) == 0) return handle_vtamrouterecquery(cmd);
+    if (strcmp(cmd, "vtamrouterecquerylist") == 0) return handle_vtamrouterecquerylist();
     return false;
 }

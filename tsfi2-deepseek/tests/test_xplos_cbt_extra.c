@@ -717,6 +717,30 @@ int main(void) {
     assert(routerecquery_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 93. Test IEBDG dynamic sequence rule changer (iebdgiterchange)
+    printf("[TEST] Testing IEBDG generator rule changer threshold...\n");
+    bool iterchange_ok = tsfi_xplos_shell_exec(&shell, &sched, "iebdgiterchange 2000 SHIFT1");
+    assert(iterchange_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 94. Test TSO spool job sync wait timeout custom handler command (cbtsubwaitretryscript)
+    printf("[TEST] Testing cbtsubwaitretryscript spool timeout action...\n");
+    bool retryscript_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtsubwaitretryscript SUBMIT2");
+    assert(retryscript_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 95. Test CICS clean exclusions rule deletion (cbtcicscleanexceptdel)
+    printf("[TEST] Testing CICS TSQ cleanup exclusion deletion...\n");
+    bool cleanexceptdel_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicscleanexceptdel SYS*");
+    assert(cleanexceptdel_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 96. Test VTAM Route failure recovery query list (vtamrouterecquerylist)
+    printf("[TEST] Testing VTAM gateway route recovery list query...\n");
+    bool routerecquerylist_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtamrouterecquerylist");
+    assert(routerecquerylist_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }
