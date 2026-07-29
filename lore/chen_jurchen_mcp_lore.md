@@ -40,3 +40,13 @@ The Chen Jurchen tactical coaxial transmission protocol defines how military-gra
 * **Mathematical Function:** The bijection mapping matrix $M_{RAU}$ projecting GPR variables to vector slots: $M_{RAU} \times \vec{V} \pmod{MotzkinPrime}$.
 * **Visual / Geometric Manifestation:** Controls the orbital rotation axes and shear parameters, warping the projected shape dynamically during live execution cycles.
 * **Cache-Level Integration:** Direct-mapped index caching (such as Aho-Corasick pipelines) acts as the accelerator loop for the RAU. By caching past register alias resolution hits, the RAU maintains sub-microsecond latency (< 1000 ns) on register lookups, preventing pipeline stalls during dynamic instruction compilation.
+
+#### BLACK RAU
+* **VM Register Context:** The low-level shadow register mapper on the CPU vector thunk pipeline that resolves and redirects calling GPR arguments to ZMM register banks conforming to ABI conventions.
+* **Mathematical Function:** Evaluates the compiler state dependency graph to compute instruction hazard mitigation paths: $Hazard\_Index = \prod_{i=1}^{T} Register\_ID_i \pmod{MotzkinPrime}$.
+* **Visual / Geometric Manifestation:** Modulates the opacity and coordinate line dash length of the projected 3D envelope, changing appearance states to indicate breakpoint triggers.
+
+#### RED GPU
+* **VM Register Context:** The display engine graphics execution cores (Vulkan pipelines) responsible for computing rasterization steps and soft body FET physics loops.
+* **Mathematical Function:** Evaluates the vertex displacement matrix synchronised with the WinchesterMQ SCSI boundary registers: $V_{disp} = \text{DisplacementShader}(V_{coord}) \pmod{256}$.
+* **Visual / Geometric Manifestation:** Emits the solid glowing cyan wireframe shapes, rendering the orbital trail trajectories on the screen.
