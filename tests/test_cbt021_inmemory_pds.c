@@ -182,7 +182,7 @@ static bool is_valid_name_char(uint8_t b) {
 
 int main(void) {
     printf("=============================================================\n");
-    printf("DISKLESS IN-MEMORY PDS MOUNT & ANALYSIS: FILE 021\n");
+    printf("DISKLESS IN-MEMORY PDS MOUNT & ANALYSIS: FILE 021 (C ONLY)\n");
     printf("=============================================================\n");
 
     MemoryBuffer zip_buf = {NULL, 0, 0};
@@ -219,33 +219,63 @@ int main(void) {
 
     if (is_xmi) {
         printf("  - Detected IBM Transmission format (XMIT/XMI) signature: INMR01\n");
+        
+        // Reassemble logical block data starting from record 10 (offset 800)
+        size_t start_offset = 800;
+        size_t clean_capacity = hdr->uncompressed_size;
+        uint8_t *clean_buf = malloc(clean_capacity);
+        size_t clean_size = 0;
+        
+        size_t p = start_offset;
+        size_t block_size = 8192;
+        while (p + 4 < hdr->uncompressed_size) {
+            p += 4;
+            size_t copy_len = block_size - 4;
+            if (p + copy_len > hdr->uncompressed_size) {
+                copy_len = hdr->uncompressed_size - p;
+            }
+            memcpy(clean_buf + clean_size, decompressed + p, copy_len);
+            clean_size += copy_len;
+            p += copy_len;
+        }
+
+        printf("  - Reassembled logical PDS payload: %zu bytes\n", clean_size);
         printf("  - Scanning member list from directory blocks:\n");
 
         char found_names[64][9];
         int count = 0;
 
-        for (size_t offset = 0; offset + 12 < hdr->uncompressed_size; offset++) {
-            uint8_t first_char = decompressed[offset];
+        for (size_t idx = 0; idx + 12 < 256 && idx + 12 < clean_size; idx++) {
+            uint8_t first_char = clean_buf[idx];
             if (!is_valid_name_start(first_char)) continue;
 
+            uint8_t name_bytes[8];
+            int chars_read = 0;
+            size_t cursor = idx;
             bool valid = true;
-            for (int j = 1; j < 8; j++) {
-                uint8_t b = decompressed[offset + j];
+
+            while (chars_read < 8 && cursor < clean_size) {
+                uint8_t b = clean_buf[cursor++];
+                if (b == 0xFF || b == 0x00) continue;
                 if (!is_valid_name_char(b)) {
                     valid = false;
                     break;
                 }
+                name_bytes[chars_read++] = b;
             }
-            if (!valid) continue;
 
-            uint8_t ttr0 = decompressed[offset + 8];
-            uint8_t ttr1 = decompressed[offset + 9];
-            uint8_t ttr2 = decompressed[offset + 10];
-            uint8_t flags = decompressed[offset + 11];
+            if (!valid || chars_read < 8) continue;
+
+            // Read TTR and flags directly without skipping binary zeroes/ones
+            if (cursor + 4 > clean_size) continue;
+            uint8_t ttr0 = clean_buf[cursor];
+            uint8_t ttr1 = clean_buf[cursor + 1];
+            uint8_t ttr2 = clean_buf[cursor + 2];
+            uint8_t flags = clean_buf[cursor + 3];
 
             if (ttr0 == 0 && ttr1 < 10 && ttr2 < 20 && flags < 0x20) {
                 char ascii_name[9];
-                ebcdic_to_ascii_buf(decompressed + offset, ascii_name, 8);
+                ebcdic_to_ascii_buf(name_bytes, ascii_name, 8);
 
                 // Strip trailing spaces
                 for (int s = 7; s >= 0; s--) {
@@ -283,6 +313,7 @@ int main(void) {
         printf("-------------------------------------------------------------\n");
         printf("[SUCCESS] In-memory PDS mount completed: %d active members identified.\n", count);
         printf("=============================================================\n");
+        free(clean_buf);
     } else {
         printf("[ERROR] Unrecognized payload format.\n");
     }

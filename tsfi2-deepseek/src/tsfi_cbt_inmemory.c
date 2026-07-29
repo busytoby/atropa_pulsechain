@@ -166,6 +166,20 @@ static void ebcdic_to_ascii_buf(const uint8_t *src, char *dest, size_t len) {
     dest[len] = '\0';
 }
 
+static bool is_valid_name_start(uint8_t b) {
+    if (b >= 0xC1 && b <= 0xC9) return true;
+    if (b >= 0xD1 && b <= 0xD9) return true;
+    if (b >= 0xE2 && b <= 0xE9) return true;
+    return false;
+}
+
+static bool is_valid_name_char(uint8_t b) {
+    if (is_valid_name_start(b)) return true;
+    if (b >= 0xF0 && b <= 0xF9) return true;
+    if (b == 0x40) return true;
+    return false;
+}
+
 bool tsfi_cbt_mount_inmemory_pds(XplosVirtualDisk *vfs, const char *server_path) {
     if (!vfs || !server_path) return false;
 
@@ -214,31 +228,115 @@ bool tsfi_cbt_mount_inmemory_pds(XplosVirtualDisk *vfs, const char *server_path)
 
     printf("[CBTMOUNTMEM] Successfully decompressed XMIT payload: %u bytes in RAM.\n", hdr->uncompressed_size);
 
-    const char *members[] = {
-        "IBHDRPLY", "IBHWTORG", "OCX", "IBHLSPAC",
-        "IBHJ2001", "IBHJ2005", "IBHJ2015", "IBHJESPM"
-    };
-    int num_members = sizeof(members) / sizeof(members[0]);
+    // Reassemble logical blocks starting from record 10 (offset 800)
+    size_t start_offset = 800;
+    if (start_offset + 4 > hdr->uncompressed_size) {
+        free(decompressed);
+        free(zip_buf.data);
+        return false;
+    }
+
+    size_t clean_capacity = hdr->uncompressed_size;
+    uint8_t *clean_buf = malloc(clean_capacity);
+    size_t clean_size = 0;
+    
+    size_t p = start_offset;
+    size_t block_size = 8192;
+    while (p + 4 < hdr->uncompressed_size) {
+        p += 4;
+        size_t copy_len = block_size - 4;
+        if (p + copy_len > hdr->uncompressed_size) {
+            copy_len = hdr->uncompressed_size - p;
+        }
+        memcpy(clean_buf + clean_size, decompressed + p, copy_len);
+        clean_size += copy_len;
+        p += copy_len;
+    }
+
+    char found_names[128][9];
+    int found_count = 0;
+
+    for (size_t idx = 0; idx + 12 < 256 && idx + 12 < clean_size; idx++) {
+        uint8_t first_char = clean_buf[idx];
+        if (!is_valid_name_start(first_char)) continue;
+
+        uint8_t name_bytes[8];
+        int chars_read = 0;
+        size_t cursor = idx;
+        bool valid = true;
+
+        while (chars_read < 8 && cursor < clean_size) {
+            uint8_t b = clean_buf[cursor++];
+            if (b == 0xFF || b == 0x00) continue;
+            if (!is_valid_name_char(b)) {
+                valid = false;
+                break;
+            }
+            name_bytes[chars_read++] = b;
+        }
+
+        if (!valid || chars_read < 8) continue;
+
+        if (cursor + 4 > clean_size) continue;
+        uint8_t ttr0 = clean_buf[cursor];
+        uint8_t ttr1 = clean_buf[cursor + 1];
+        uint8_t ttr2 = clean_buf[cursor + 2];
+        uint8_t flags = clean_buf[cursor + 3];
+
+        if (ttr0 == 0 && ttr1 < 10 && ttr2 < 20 && flags < 0x20) {
+            char ascii_name[9];
+            ebcdic_to_ascii_buf(name_bytes, ascii_name, 8);
+
+            for (int s = 7; s >= 0; s--) {
+                if (ascii_name[s] == ' ') ascii_name[s] = '\0';
+                else break;
+            }
+
+            bool ok = true;
+            for (size_t s = 0; s < strlen(ascii_name); s++) {
+                if (ascii_name[s] == ' ') ok = false;
+            }
+            if (strcmp(ascii_name, "MEMBER") == 0 || strcmp(ascii_name, "DSNAME") == 0 ||
+                strcmp(ascii_name, "RECFM") == 0 || strcmp(ascii_name, "LRECL") == 0) {
+                ok = false;
+            }
+
+            if (ok && strlen(ascii_name) >= 3) {
+                bool exists = false;
+                for (int m = 0; m < found_count; m++) {
+                    if (strcmp(found_names[m], ascii_name) == 0) {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists && found_count < 128) {
+                    strncpy(found_names[found_count++], ascii_name, 8);
+                    found_names[found_count - 1][8] = '\0';
+                    printf("[CBTMOUNTMEM] Dynamic PDS member identified: %s\n", ascii_name);
+                }
+            }
+        }
+    }
 
     int mounted = 0;
-    for (int i = 0; i < num_members; i++) {
+    for (int i = 0; i < found_count; i++) {
         char vfs_name[64];
-        snprintf(vfs_name, sizeof(vfs_name), "%s.dat.bin", members[i]);
+        snprintf(vfs_name, sizeof(vfs_name), "%s.dat.bin", found_names[i]);
 
         uint8_t name_ebcdic[16];
-        size_t m_len = strlen(members[i]);
+        size_t m_len = strlen(found_names[i]);
         memset(name_ebcdic, 0x40, sizeof(name_ebcdic));
         for (size_t k = 0; k < m_len; k++) {
-            name_ebcdic[k] = members[i][k];
-            if (members[i][k] >= 'A' && members[i][k] <= 'I') name_ebcdic[k] = 0xC1 + (members[i][k] - 'A');
-            else if (members[i][k] >= 'J' && members[i][k] <= 'R') name_ebcdic[k] = 0xD1 + (members[i][k] - 'J');
-            else if (members[i][k] >= 'S' && members[i][k] <= 'Z') name_ebcdic[k] = 0xE2 + (members[i][k] - 'S');
-            else if (members[i][k] >= '0' && members[i][k] <= '9') name_ebcdic[k] = 0xF0 + (members[i][k] - '0');
+            name_ebcdic[k] = found_names[i][k];
+            if (found_names[i][k] >= 'A' && found_names[i][k] <= 'I') name_ebcdic[k] = 0xC1 + (found_names[i][k] - 'A');
+            else if (found_names[i][k] >= 'J' && found_names[i][k] <= 'R') name_ebcdic[k] = 0xD1 + (found_names[i][k] - 'J');
+            else if (found_names[i][k] >= 'S' && found_names[i][k] <= 'Z') name_ebcdic[k] = 0xE2 + (found_names[i][k] - 'S');
+            else if (found_names[i][k] >= '0' && found_names[i][k] <= '9') name_ebcdic[k] = 0xF0 + (found_names[i][k] - '0');
         }
 
         size_t member_offset = 0;
-        for (size_t offset_loc = 0; offset_loc + 80 < hdr->uncompressed_size; offset_loc++) {
-            if (memcmp(decompressed + offset_loc, name_ebcdic, 8) == 0) {
+        for (size_t offset_loc = 0; offset_loc + 80 < clean_size; offset_loc++) {
+            if (memcmp(clean_buf + offset_loc, name_ebcdic, 8) == 0) {
                 member_offset = offset_loc;
                 break;
             }
@@ -253,10 +351,10 @@ bool tsfi_cbt_mount_inmemory_pds(XplosVirtualDisk *vfs, const char *server_path)
                 size_t dest_idx = 0;
                 for (size_t l = 0; l < 100; l++) {
                     size_t rec_offset = member_offset + l * 80;
-                    if (rec_offset + 80 > hdr->uncompressed_size) break;
+                    if (rec_offset + 80 > clean_size) break;
 
                     char ascii_line[81];
-                    ebcdic_to_ascii_buf(decompressed + rec_offset, ascii_line, 80);
+                    ebcdic_to_ascii_buf(clean_buf + rec_offset, ascii_line, 80);
 
                     if (l > 0 && (strncmp(ascii_line, "./ ADD ", 7) == 0 || strncmp(ascii_line, "INMR", 4) == 0)) {
                         break;
@@ -276,6 +374,7 @@ bool tsfi_cbt_mount_inmemory_pds(XplosVirtualDisk *vfs, const char *server_path)
 
     printf("[CBTMOUNTMEM] Mounted %d PDS members into active Virtual Disk VFS.\n", mounted);
 
+    free(clean_buf);
     free(decompressed);
     free(zip_buf.data);
     return true;
