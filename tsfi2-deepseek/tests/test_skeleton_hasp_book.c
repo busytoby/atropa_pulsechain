@@ -143,6 +143,24 @@ int main(void) {
     bool smfdump_ok = tsfi_xplos_shell_cbt_jes("smfdump");
     assert(smfdump_ok == true);
 
+    // 10. Verify Dynamic PROCLIB catalog PDS queries
+    printf("  -> Phase 8: Verifying dynamic PROCLIB catalog queries via VSAM...\n");
+    remove("PROCLIB.dat.bin");
+    tsfi_cw_vsam_ksds proclib_ksds;
+    int open_proclib_rc = tsfi_cw_vsam_open(&proclib_ksds, "PROCLIB.dat.bin");
+    assert(open_proclib_rc == 0);
+
+    // Write a mock JCL job into PROCLIB under key "MOCKJOB"
+    uint8_t mock_jcl_cards[256] = 
+        "//MOCKJOB JOB 'CBT TEST',CLASS=A\n"
+        "//STEP1 EXEC PGM=IEBCOPY\n";
+    int write_proclib_rc = tsfi_cw_vsam_write(&proclib_ksds, "MOCKJOB", mock_jcl_cards, strlen((char *)mock_jcl_cards));
+    assert(write_proclib_rc == 0);
+
+    // Execute the job, which should dynamically load it from the PROCLIB KSDS database
+    bool mockjob_run_ok = tsfi_xplos_shell_cbt_jcl("jclrun MOCKJOB");
+    assert(mockjob_run_ok == true);
+
     printf("  -> End-to-end data pipeline integrity verified successfully.\n");
     printf("\n=== SKELETON HASP BOOK PROOFS PASSED ===\n");
     return 0;

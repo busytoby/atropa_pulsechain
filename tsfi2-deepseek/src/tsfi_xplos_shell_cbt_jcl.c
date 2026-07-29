@@ -12,6 +12,7 @@
 #include "tsfi_xplos_shell_cbt_jcl.h"
 #include "tsfi_xplos_shell_cbt_jes.h"
 #include "tsfi_xplos_shell_cbt_tso.h"
+#include "tsfi_mainframe_computerworld.h"
 extern XplosVirtualDisk g_vfs;
 extern CbtSpoolJob cbt_job_table[10];
 extern XplosScheduler *g_active_sched;
@@ -34,7 +35,24 @@ static bool handle_jclrun(const char *cmd) {
         }
 
         char jcl_data[8192];
-        if (file_idx >= 0) {
+        int vsam_found = 0;
+        tsfi_cw_vsam_ksds proclib_ksds;
+        int open_rc = tsfi_cw_vsam_open(&proclib_ksds, "PROCLIB.dat.bin");
+        if (open_rc == 0) {
+            uint8_t read_buf[8192] = {0};
+            int read_len = 0;
+            int read_rc = tsfi_cw_vsam_read(&proclib_ksds, jcl_name, read_buf, sizeof(read_buf), &read_len);
+            if (read_rc == 0 && read_len > 0) {
+                strncpy(jcl_data, (char *)read_buf, sizeof(jcl_data) - 1);
+                jcl_data[sizeof(jcl_data) - 1] = '\0';
+                vsam_found = 1;
+                printf("[JCLRUN] Dynamic PDS library lookup: Loaded JCL member '%s' from PROCLIB.dat.bin VSAM index\n", jcl_name);
+            }
+        }
+
+        if (vsam_found) {
+            // Loaded successfully from VSAM PROCLIB
+        } else if (file_idx >= 0) {
             strncpy(jcl_data, g_vfs.files[file_idx].data, sizeof(jcl_data) - 1);
             jcl_data[sizeof(jcl_data) - 1] = '\0';
         } else {
