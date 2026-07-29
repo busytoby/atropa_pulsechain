@@ -52,7 +52,17 @@ async function main() {
         // Replicate deployment to the spooled Yul VM on 2-3 Tree DAT rails
         const execSync = require("child_process").execSync;
         console.log(` -> Replicating ${contractName} deployment to spooled Yul VM (TSQ 2-3 Tree DAT)...`);
-        execSync(`LD_LIBRARY_PATH=. ./bin/cics_cli write tsq ${contractName} dynamic_${address}`, { cwd: './tsfi2-deepseek', stdio: 'inherit' });
+        
+        let regName = contractName;
+        if (regName === "SHAFactory") regName = "SHA_F";
+        else if (regName === "SHIOFactory") regName = "SHIO_F";
+        else if (regName === "LAUFactory") regName = "LAU_F";
+        else if (regName === "COREREACTIONSLIB") regName = "CORE_R";
+        else if (regName === "VOID_QING") regName = "VOID_Q";
+        else if (regName === "ATTRIBUTE") regName = "ATTR";
+        else if (regName === "STRINGLIB") regName = "SLIB";
+
+        execSync(`LD_LIBRARY_PATH=. ./bin/cics_cli write tsq ${regName} dynamic_${address}`, { cwd: './tsfi2-deepseek', stdio: 'inherit' });
 
         deployedAddresses[contractName] = address;
         return null;
