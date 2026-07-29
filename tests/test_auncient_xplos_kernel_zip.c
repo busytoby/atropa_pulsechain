@@ -1104,6 +1104,17 @@ int main(void) {
     remove("tests/memb_cics.txt");
     remove("tests/cics_pds.dat.bin");
 
+    // 71. Test CBTJESLIST command execution
+    printf("[KERNEL TEST] Dispatching 'cbtjeslist' command to XplOS shell...\n");
+    XplosShell shell_jeslist;
+    XplosScheduler sched_jeslist;
+    tsfi_xplos_init_scheduler(&sched_jeslist);
+    tsfi_xplos_init_shell(&shell_jeslist);
+    bool jeslist_ok = tsfi_xplos_shell_exec(&shell_jeslist, &sched_jeslist, "cbtjeslist");
+    assert(jeslist_ok == true);
+    tsfi_xplos_run(&sched_jeslist);
+    printf("   ✓ CBTJESLIST execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

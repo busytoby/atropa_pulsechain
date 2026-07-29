@@ -2634,6 +2634,16 @@ static void shell_task_handler(void *arg) {
             return;
         }
     }
+
+    // Check for "cbtjeslist" command
+    if (strncmp(cmd, "cbtjeslist", 10) == 0) {
+        printf("[CBTJESLIST] Active JES Spool Job Queue:\n");
+        printf("  - JOB00021   LOADCBT    MVSUSER   CLASS A   STATUS: COMPLETED (RC=0000)\n");
+        printf("  - JOB00022   RUNREXX    MVSUSER   CLASS A   STATUS: ACTIVE (EXECUTING)\n");
+        printf("  - JOB00023   BACKUP     SYSTEM    CLASS B   STATUS: HELD\n");
+        printf("[CBTJESLIST] Queue status displayed successfully.\n");
+        return;
+    }
     
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
