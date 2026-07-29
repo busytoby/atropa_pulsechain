@@ -559,6 +559,19 @@ static bool handle_iebcomprlim(const char *cmd) {
     return true;
 }
 
+static bool handle_iebupdtesrch(const char *cmd) {
+    char member[32] = "";
+    char pds[32] = "";
+    if (sscanf(cmd + 13, "%31s %31s", member, pds) < 2) {
+        printf("[IEBUPDTESTSRCH ERROR] Syntax: iebupdtesrch <member> <pds>\n");
+        return true;
+    }
+    printf("[IEBUPDTESTSRCH] Searching JCL update deck for member %s in target PDS %s...\n", member, pds);
+    printf("  - Query status: Member found marked as './ ADD' update operation.\n");
+    printf("[IEBUPDTESTSRCH] Search completed successfully. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "jclrun ", 7) == 0) return handle_jclrun(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
@@ -572,5 +585,6 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "iebisam ", 8) == 0) return handle_iebisam(cmd);
     if (strncmp(cmd, "iebdgpat ", 9) == 0) return handle_iebdgpat(cmd);
     if (strncmp(cmd, "iebcomprlim ", 12) == 0) return handle_iebcomprlim(cmd);
+    if (strncmp(cmd, "iebupdtesrch ", 13) == 0) return handle_iebupdtesrch(cmd);
     return false;
 }

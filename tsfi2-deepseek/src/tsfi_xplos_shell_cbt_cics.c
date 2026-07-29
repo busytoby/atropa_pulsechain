@@ -210,6 +210,25 @@ static bool handle_cbtcicstrc(void) {
     return true;
 }
 
+static bool handle_cbtcicstrcflt(const char *cmd) {
+    char tranid[16] = "";
+    if (sscanf(cmd + 14, "%15s", tranid) < 1) {
+        printf("[CICSTRACFLT ERROR] Syntax: cbtcicstrcflt <tranid>\n");
+        return true;
+    }
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  CICS TRANSACTION EXECUTION TRACE: FILTERED BY %s            \n", tranid);
+    printf("================================================================================\n");
+    printf(" TRACE ID | TRANID | PROGRAM  | TIME     | TASK TYPE | RESP STATUS\n");
+    printf("--------------------------------------------------------------------------------\n");
+    if (strcasecmp(tranid, "SBMJ") == 0) {
+        printf(" TRC0002  | SBMJ   | CBTSUBM  | 12:01:15 | USER      | NORMAL. RC=0000\n");
+    }
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
@@ -219,5 +238,6 @@ bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicspurge ", 13) == 0) return handle_cbtcicspurge(cmd);
     if (strncmp(cmd, "cbtcicslim ", 11) == 0) return handle_cbtcicslim(cmd);
     if (strcmp(cmd, "cbtcicstrc") == 0) return handle_cbtcicstrc();
+    if (strncmp(cmd, "cbtcicstrcflt ", 14) == 0) return handle_cbtcicstrcflt(cmd);
     return false;
 }

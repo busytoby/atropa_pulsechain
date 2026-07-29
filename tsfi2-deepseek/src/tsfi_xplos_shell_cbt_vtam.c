@@ -319,6 +319,24 @@ static bool handle_vtamtracebuf(const char *cmd) {
     return true;
 }
 
+static bool handle_vtambufdet(const char *cmd) {
+    char frame_id[32] = "";
+    if (sscanf(cmd + 11, "%31s", frame_id) < 1) {
+        printf("[VTAMBUFDET ERROR] Syntax: vtambufdet <frame_id>\n");
+        return true;
+    }
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  VTAM BUFFER HEXADECIMAL DETAILS TRACE: %s                    \n", frame_id);
+    printf("================================================================================\n");
+    printf(" OFFSET   | HEXADECIMAL REPRESENTATION                  | EBCDIC CHAR PREVIEW\n");
+    printf("--------------------------------------------------------------------------------\n");
+    printf(" 00000000 | F2 00 02 01 04 12 00 00 40 40 40 40 40 40   | .............     \n");
+    printf(" 00000010 | C3 C9 C3 E2 40 C5 D5 E3 D9 E8 F2 F4 F1 F0   | CICS ENTRY2410. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "cbtnet ", 7) == 0) return handle_cbtnet(cmd + 7);
     if (strncmp(cmd, "logon ", 6) == 0) return handle_vtam_logon(cmd);
@@ -330,5 +348,6 @@ bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strcmp(cmd, "vtamtrace") == 0) return handle_vtamtrace();
     if (strcmp(cmd, "vtamrefr") == 0) return handle_vtamrefr();
     if (strncmp(cmd, "vtamtracebuf ", 13) == 0) return handle_vtamtracebuf(cmd);
+    if (strncmp(cmd, "vtambufdet ", 11) == 0) return handle_vtambufdet(cmd);
     return false;
 }

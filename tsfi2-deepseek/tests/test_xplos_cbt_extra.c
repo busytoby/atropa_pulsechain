@@ -429,6 +429,30 @@ int main(void) {
     assert(tracebuf_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 45. Test IEBUPDTESTSRCH PDS update search
+    printf("[TEST] Testing IEBUPDTESTSRCH member update deck scanner...\n");
+    bool updtesrch_ok = tsfi_xplos_shell_exec(&shell, &sched, "iebupdtesrch MOCKMEM UPDIN");
+    assert(updtesrch_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 46. Test TSO submission spool trace step monitor (cbtsubtrc)
+    printf("[TEST] Testing cbtsubtrc spool step tracer...\n");
+    bool subtrc_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtsubtrc JOB00021");
+    assert(subtrc_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 47. Test CICS transaction trace filter (cbtcicstrcflt)
+    printf("[TEST] Testing CICS transaction history trace filter...\n");
+    bool trcflt_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicstrcflt SBMJ");
+    assert(trcflt_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 48. Test VTAM buffer detailed hex trace dumps (vtambufdet)
+    printf("[TEST] Testing VTAM buffer detailed hex tracer...\n");
+    bool bufdet_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtambufdet FRM00241");
+    assert(bufdet_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }

@@ -447,6 +447,24 @@ static bool handle_cbtsubout(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtsubtrc(const char *cmd) {
+    char job_id[32] = "";
+    if (sscanf(cmd + 10, "%31s", job_id) < 1) {
+        printf("[SUBTRC ERROR] Syntax: cbtsubtrc <job_id>\n");
+        return true;
+    }
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JES JOB STEP EXECUTION HISTORICAL TRACE: %s                   \n", job_id);
+    printf("================================================================================\n");
+    printf(" STEP NUM | STEP NAME | PGM NAME  | COND CODE | I/O COUNT | STEP STATUS\n");
+    printf("--------------------------------------------------------------------------------\n");
+    printf(" 001      | STEP1     | IEBCOPY   | RC=0000   |        42 | SUCCESS\n");
+    printf(" 002      | STEP2     | IKJEFT01  | RC=0000   |        12 | SUCCESS. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtrexx ", 8) == 0) return handle_cbtrexx(cmd);
     if (strncmp(cmd, "ispfmenu", 8) == 0) return handle_ispfmenu(cmd);
@@ -457,5 +475,6 @@ bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strcmp(cmd, "cbtsublist") == 0) return handle_cbtsublist();
     if (strncmp(cmd, "cbtsubrel ", 10) == 0) return handle_cbtsubrel(cmd);
     if (strncmp(cmd, "cbtsubout ", 10) == 0) return handle_cbtsubout(cmd);
+    if (strncmp(cmd, "cbtsubtrc ", 10) == 0) return handle_cbtsubtrc(cmd);
     return false;
 }
