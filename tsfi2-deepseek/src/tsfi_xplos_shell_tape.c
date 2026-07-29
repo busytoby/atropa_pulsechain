@@ -30,8 +30,101 @@ extern uint8_t ce_memory[1024];
 extern uint32_t xdc_ip;
 
 
+static uint8_t g_capstan_control = 0;   // 0 = Stop, 1 = Forward, 2 = Reverse
+static uint8_t g_capstan_solenoid = 0;  // 0 = Disengaged, 1 = Engaged
+static uint8_t g_capstan_encoder = 0;   // Current sector ID
+static uint8_t g_capstan_brake = 1;     // 0 = Disengaged, 1 = Engaged
+static uint8_t g_raw_head_status = 1;   // 0 = Parity Mismatch, 1 = Pass
+static uint8_t g_sector_data_reg = 0;   // Data register
+
+static bool handle_cbttape(const char *cmd) {
+    char subcmd[16] = "";
+    int sector_id = 0;
+    int data_val = 0;
+    int scanned = sscanf(cmd + 8, "%15s %d %d", subcmd, &sector_id, &data_val);
+    if (scanned >= 1) {
+        if (strcasecmp(subcmd, "status") == 0) {
+            printf("[CAPSTAN STATUS] Emulated registers:\n");
+            printf("  - CAPSTAN_CONTROL  : %d (%s)\n", g_capstan_control, 
+                g_capstan_control == 1 ? "FORWARD" : (g_capstan_control == 2 ? "REVERSE" : "STOP"));
+            printf("  - CAPSTAN_SOLENOID : %d (%s)\n", g_capstan_solenoid, g_capstan_solenoid ? "ENGAGED" : "DISENGAGED");
+            printf("  - CAPSTAN_ENCODER  : %d (SECTOR)\n", g_capstan_encoder);
+            printf("  - CAPSTAN_BRAKE    : %d (%s)\n", g_capstan_brake, g_capstan_brake ? "ENGAGED" : "RELEASED");
+            printf("  - RAW_HEAD_STATUS  : %d (%s)\n", g_raw_head_status, g_raw_head_status ? "VERIFY_PASS" : "VERIFY_FAIL");
+            printf("  - SECTOR_DATA_REG  : %d (0x%02X)\n", g_sector_data_reg, g_sector_data_reg);
+            return true;
+        }
+        if (strcasecmp(subcmd, "inject") == 0 && scanned >= 2) {
+            g_raw_head_status = (uint8_t)sector_id;
+            printf("[CAPSTAN INJECT] RAW_HEAD_STATUS set to %d (%s)\n", 
+                g_raw_head_status, g_raw_head_status ? "PASS" : "FAIL");
+            return true;
+        }
+        if (strcasecmp(subcmd, "write") == 0 && scanned >= 3) {
+            int retries = 0;
+            printf("[CAPSTAN WRITE] Transaction initiated for sector %d with data %d\n", sector_id, data_val);
+            
+            write_attempt:
+            printf("[CAPSTAN] Activating pinch roller solenoid (clamp engaged)\n");
+            g_capstan_solenoid = 1;
+            
+            printf("[CAPSTAN] Releasing mechanical brake\n");
+            g_capstan_brake = 0;
+            
+            printf("[CAPSTAN] Spinning motor forward\n");
+            g_capstan_control = 1;
+            
+            // Advance encoder position
+            g_capstan_encoder = sector_id;
+            printf("[CAPSTAN] Encoder step matches target sector %d\n", g_capstan_encoder);
+            
+            // Write data to register
+            g_sector_data_reg = (uint8_t)data_val;
+            printf("[CAPSTAN] Writing data 0x%02X to SECTOR_DATA_REG\n", g_sector_data_reg);
+            
+            // Read-After-Write verification check
+            printf("[CAPSTAN] Performing Read-After-Write (RAW) verification...\n");
+            if (g_raw_head_status == 0) {
+                printf("[CAPSTAN ERROR] RAW parity check failed! Initiating abort / rollback...\n");
+                g_capstan_control = 0;
+                g_capstan_brake = 1;
+                g_capstan_solenoid = 0;
+                
+                retries++;
+                if (retries < 3) {
+                    printf("[CAPSTAN ROLLBACK] Reversing motor to rewind 1 sector width (Retry %d/3)\n", retries);
+                    g_capstan_solenoid = 1;
+                    g_capstan_brake = 0;
+                    g_capstan_control = 2; // Reverse
+                    
+                    // Rewind encoder state
+                    g_capstan_encoder = sector_id - 1;
+                    printf("[CAPSTAN] Rewind matched preceding sector IRG boundary at %d\n", g_capstan_encoder);
+                    
+                    g_capstan_control = 0;
+                    g_capstan_brake = 1;
+                    goto write_attempt;
+                }
+                printf("[CAPSTAN ERROR] Transaction aborted: maximum rollback retries exceeded.\n");
+                return true;
+            }
+            
+            // Commit transaction
+            g_capstan_control = 0;
+            g_capstan_brake = 1;
+            g_capstan_solenoid = 0;
+            printf("[CAPSTAN COMMIT] Transaction committed successfully. Brake engaged.\n");
+            return true;
+        }
+    }
+    printf("[CAPSTAN ERROR] Syntax: cbttape [status | inject <0|1> | write <sector> <val>]\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_tape(const char *cmd) {
-    (void)cmd;
+    if (strncmp(cmd, "cbttape ", 8) == 0) {
+        return handle_cbttape(cmd);
+    }
     // Check for "cbtdcb " command
     if (strncmp(cmd, "cbtdcb ", 7) == 0) {
         char file_num[16] = "";

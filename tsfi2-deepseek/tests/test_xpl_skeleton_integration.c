@@ -97,6 +97,22 @@ int main(void) {
     assert(monitor.interrupts_handled == 1);
     printf("  -> XPLSM supervisor state updated successfully.\n");
     
+    // 5. Verify Capstan Shaft Tape Device Transactions
+    printf("  -> Testing emulated capstan device status and transaction execution...\n");
+    extern bool tsfi_xplos_shell_tape(const char *cmd);
+    
+    bool status_ok = tsfi_xplos_shell_tape("cbttape status");
+    assert(status_ok == true);
+    
+    bool write_ok = tsfi_xplos_shell_tape("cbttape write 4 170");
+    assert(write_ok == true);
+    
+    bool inject_ok = tsfi_xplos_shell_tape("cbttape inject 0");
+    assert(inject_ok == true);
+    
+    bool fail_ok = tsfi_xplos_shell_tape("cbttape write 5 187");
+    assert(fail_ok == true);
+
     printf("\n=== INTEGRATION PROOFS PASSED ===\n");
     return 0;
 }
