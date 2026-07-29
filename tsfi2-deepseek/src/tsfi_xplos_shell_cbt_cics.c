@@ -527,6 +527,17 @@ static bool handle_cbtcicslock(void) {
     return true;
 }
 
+static bool handle_cbtcicsstatsreset(void) {
+    ensure_cics_initialized();
+    printf("[CICS] Resetting runtime system engine telemetry statistics\n");
+    g_cics_engine.active_task_number = 1001;
+    for (uint32_t i = 0; i < g_cics_engine.pct_count; i++) {
+        g_cics_engine.pct[i].execution_count = 0;
+    }
+    printf("  - Task and execution counters reset to zero. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
@@ -557,5 +568,6 @@ bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicswriteq ", 14) == 0) return handle_cbtcicswriteq(cmd);
     if (strncmp(cmd, "cbtcicsreadq ", 13) == 0) return handle_cbtcicsreadq(cmd);
     if (strcmp(cmd, "cbtcicslock") == 0) return handle_cbtcicslock();
+    if (strcmp(cmd, "cbtcicsstatsreset") == 0) return handle_cbtcicsstatsreset();
     return false;
 }

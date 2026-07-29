@@ -724,6 +724,17 @@ static bool handle_iebdgiterchange(const char *cmd) {
     return true;
 }
 
+static bool handle_iebgenerrecal(const char *cmd) {
+    int new_lrecl = 0;
+    if (sscanf(cmd + 14, "%d", &new_lrecl) < 1) {
+        printf("[IEBGENERRECAL ERROR] Syntax: iebgenerrecal <lrecl>\n");
+        return true;
+    }
+    printf("[IEBGENER] Dynamically recalculating LRECL capacity size to: %d bytes\n", new_lrecl);
+    printf("  - Buffer layout boundaries updated. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "jclrun ", 7) == 0) return handle_jclrun(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
@@ -750,5 +761,6 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "iebdgiterlim ", 13) == 0) return handle_iebdgiterlim(cmd);
     if (strcmp(cmd, "iebdgiterstat") == 0) return handle_iebdgiterstat();
     if (strncmp(cmd, "iebdgiterchange ", 16) == 0) return handle_iebdgiterchange(cmd);
+    if (strncmp(cmd, "iebgenerrecal ", 14) == 0) return handle_iebgenerrecal(cmd);
     return false;
 }

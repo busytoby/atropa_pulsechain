@@ -609,6 +609,18 @@ static bool handle_cbtsubwaitretryscript(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtsubwaitretryscriptlist(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JES JOB SYNCHRONOUS WAIT TIMEOUT RETRY SCRIPTS DIRECTORY      \n");
+    printf("================================================================================\n");
+    printf(" SCRIPT ID   | EXECUTION CONDITION   | ACTIVE ROUTING TRIGGER\n");
+    printf("--------------------------------------------------------------------------------\n");
+    printf(" SUBMIT2     | SYNCHRONOUS_TIMEOUT   | ROUTE_RECOVERY. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtrexx ", 8) == 0) return handle_cbtrexx(cmd);
     if (strncmp(cmd, "ispfmenu", 8) == 0) return handle_ispfmenu(cmd);
@@ -632,5 +644,6 @@ bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtsubwaitretrydelay ", 21) == 0) return handle_cbtsubwaitretrydelay(cmd);
     if (strncmp(cmd, "cbtsubwaitretrylimit ", 21) == 0) return handle_cbtsubwaitretrylimit(cmd);
     if (strncmp(cmd, "cbtsubwaitretryscript ", 22) == 0) return handle_cbtsubwaitretryscript(cmd);
+    if (strcmp(cmd, "cbtsubwaitretryscriptlist") == 0) return handle_cbtsubwaitretryscriptlist();
     return false;
 }

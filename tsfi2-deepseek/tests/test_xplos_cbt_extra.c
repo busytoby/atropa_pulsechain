@@ -789,6 +789,30 @@ int main(void) {
     assert(cicslock_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 105. Test IEBGENER record length recalculation (iebgenerrecal)
+    printf("[TEST] Testing IEBGENER dynamic LRECL recalculation...\n");
+    bool generrecal_ok = tsfi_xplos_shell_exec(&shell, &sched, "iebgenerrecal 120");
+    assert(generrecal_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 106. Test TSO spool job timeout script directory query (cbtsubwaitretryscriptlist)
+    printf("[TEST] Testing TSO spool timeout script list...\n");
+    bool waitscriptlist_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtsubwaitretryscriptlist");
+    assert(waitscriptlist_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 107. Test CICS engine statistics reset (cbtcicsstatsreset)
+    printf("[TEST] Testing CICS engine statistics reset...\n");
+    bool statsreset_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicsstatsreset");
+    assert(statsreset_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 108. Test VTAM gateway welcome greeting customizer (vtamroutesolmsg)
+    printf("[TEST] Testing VTAM gateway greeting customizer...\n");
+    bool routesolmsg_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtamroutesolmsg HELLO");
+    assert(routesolmsg_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }

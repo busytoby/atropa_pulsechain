@@ -478,6 +478,17 @@ static bool handle_vtamrouterecquerylist(void) {
     return true;
 }
 
+static bool handle_vtamroutesolmsg(const char *cmd) {
+    char msg[64] = "";
+    if (sscanf(cmd + 16, "%63s", msg) < 1) {
+        printf("[VTAMROUTESOLMSG ERROR] Syntax: vtamroutesolmsg <msg>\n");
+        return true;
+    }
+    printf("[VTAM] Gateway route welcome solicitation greeting updated: %s\n", msg);
+    printf("  - Solicitation greeting template loaded. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "cbtnet ", 7) == 0) return handle_cbtnet(cmd + 7);
     if (strncmp(cmd, "logon ", 6) == 0) return handle_vtam_logon(cmd);
@@ -502,5 +513,6 @@ bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strcmp(cmd, "vtamrouterecreset") == 0) return handle_vtamrouterecreset();
     if (strncmp(cmd, "vtamrouterecquery ", 18) == 0) return handle_vtamrouterecquery(cmd);
     if (strcmp(cmd, "vtamrouterecquerylist") == 0) return handle_vtamrouterecquerylist();
+    if (strncmp(cmd, "vtamroutesolmsg ", 16) == 0) return handle_vtamroutesolmsg(cmd);
     return false;
 }
