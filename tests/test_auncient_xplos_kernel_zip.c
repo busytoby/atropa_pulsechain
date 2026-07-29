@@ -2110,6 +2110,24 @@ int main(void) {
     assert(xdcb3_ok == true);
     tsfi_xplos_run(&sched_bh2);
 
+    tsfi_xplos_init_scheduler(&sched_bh2);
+
+    bool xdcut1_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "xdc step");
+    assert(xdcut1_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool xdcut2_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "xdc disasm");
+    assert(xdcut2_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool xdcut3_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "xdc modify 0 1812");
+    assert(xdcut3_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool xdcut4_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "xdc dump 0 16");
+    assert(xdcut4_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

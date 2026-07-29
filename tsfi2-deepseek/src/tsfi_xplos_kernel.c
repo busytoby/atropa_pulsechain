@@ -4790,11 +4790,51 @@ static void shell_task_handler(void *arg) {
         #define MAX_BREAKPOINTS 8
         static uint32_t xdc_breakpoints[MAX_BREAKPOINTS] = {0};
         static int xdc_breakpoint_count = 0;
+        static uint32_t xdc_ip = 0;
 
         if (strcmp(args, "halt") == 0) {
             printf("  - Intercepting raw SCSI handshake frames on WinchesterMQ interface...\n");
             printf("  - Execution halted. Visual trail opacity (alpha) locked. Coordinates solid cyan.\n");
             printf("  - Highlighted vertex spheres showing active instruction breakpoints.\n");
+        } else if (strcmp(args, "step") == 0) {
+            printf("  - Stepping instruction at IP: 0x%08X\n", xdc_ip);
+            xdc_ip += 4;
+            printf("  - Step completed. Next IP: 0x%08X\n", xdc_ip);
+        } else if (strncmp(args, "disasm", 6) == 0) {
+            uint32_t addr = xdc_ip;
+            const char *addr_str = args + 6;
+            while (*addr_str == ' ') addr_str++;
+            if (*addr_str != '\0') {
+                addr = (uint32_t)strtoul(addr_str, NULL, 0);
+            }
+            printf("  - Disassembly at address 0x%08X:\n", addr);
+            printf("    0x%08X:  18 12      LR    R1, R2\n", addr);
+            printf("    0x%08X:  5A 12      AR    R1, R2\n", addr + 2);
+        } else if (strncmp(args, "dump ", 5) == 0) {
+            char addr_s[32] = "";
+            uint32_t len = 16;
+            sscanf(args + 5, "%31s %u", addr_s, &len);
+            uint32_t addr = (uint32_t)strtoul(addr_s, NULL, 0);
+            printf("  - Hexadecimal memory dump at address 0x%08X (%u bytes):\n", addr, len);
+            printf("    * ");
+            for (uint32_t i = 0; i < len && (addr + i) < 1024; i++) {
+                printf("%02X ", ce_memory[addr + i]);
+            }
+            printf("\n");
+        } else if (strncmp(args, "modify ", 7) == 0) {
+            char addr_s[32] = "";
+            char hex_s[128] = "";
+            sscanf(args + 7, "%31s %127s", addr_s, hex_s);
+            uint32_t addr = (uint32_t)strtoul(addr_s, NULL, 0);
+            printf("  - Modifying memory at 0x%08X with bytes: %s\n", addr, hex_s);
+            for (size_t i = 0; i < strlen(hex_s); i += 2) {
+                unsigned int val = 0;
+                sscanf(hex_s + i, "%2x", &val);
+                if (addr + i/2 < 1024) {
+                    ce_memory[addr + i/2] = (uint8_t)val;
+                }
+            }
+            printf("  - Modification completed successfully.\n");
         } else if (strncmp(args, "bp ", 3) == 0) {
             const char *bp_arg = args + 3;
             if (strncmp(bp_arg, "add ", 4) == 0) {
