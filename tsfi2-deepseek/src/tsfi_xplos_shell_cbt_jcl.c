@@ -795,6 +795,12 @@ static bool handle_iebgenerreftabstatresetliststat(void) {
     return true;
 }
 
+static bool handle_iebgenerreftabstatresetliststatreset(void) {
+    printf("[IEBGENER] Selective reset telemetry statistics cleared to baseline\n");
+    printf("  - Selective reset telemetry log tables initialized. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "jclrun ", 7) == 0) return handle_jclrun(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
@@ -826,7 +832,8 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strcmp(cmd, "iebgenerreftab") == 0) return handle_iebgenerreftab();
     if (strcmp(cmd, "iebgenerreftabstat") == 0) return handle_iebgenerreftabstat();
     if (strcmp(cmd, "iebgenerreftabstatreset") == 0) return handle_iebgenerreftabstatreset();
-    if (strncmp(cmd, "iebgenerreftabstatresetlist ", 28) == 0) return handle_iebgenerreftabstatresetlist(cmd);
+    if (strcmp(cmd, "iebgenerreftabstatresetliststatreset") == 0) return handle_iebgenerreftabstatresetliststatreset();
     if (strcmp(cmd, "iebgenerreftabstatresetliststat") == 0) return handle_iebgenerreftabstatresetliststat();
+    if (strncmp(cmd, "iebgenerreftabstatresetlist ", 28) == 0) return handle_iebgenerreftabstatresetlist(cmd);
     return false;
 }

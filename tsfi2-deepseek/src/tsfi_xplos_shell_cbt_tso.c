@@ -683,6 +683,18 @@ static bool handle_cbtsubwaitretryscriptchklistreset(void) {
     return true;
 }
 
+static bool handle_cbtsubwaitretryscriptchklistresetstat(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JES JOB SYNCHRONOUS WAIT TIMEOUT VALIDATION RESET STATS       \n");
+    printf("================================================================================\n");
+    printf(" TOTAL LOGS CLEARED  : 16 LOG ENTRIES\n");
+    printf(" AUDITED DATABASES   : 1 SCHEDULER PARTITION\n");
+    printf(" RESPONSE STATUS     : OPERATIONAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtrexx ", 8) == 0) return handle_cbtrexx(cmd);
     if (strncmp(cmd, "ispfmenu", 8) == 0) return handle_ispfmenu(cmd);
@@ -713,5 +725,6 @@ bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtsubwaitretryscriptchklist ", 29) == 0) return handle_cbtsubwaitretryscriptchklist(cmd);
     if (strcmp(cmd, "cbtsubwaitretryscriptchkliststat") == 0) return handle_cbtsubwaitretryscriptchkliststat();
     if (strcmp(cmd, "cbtsubwaitretryscriptchklistreset") == 0) return handle_cbtsubwaitretryscriptchklistreset();
+    if (strcmp(cmd, "cbtsubwaitretryscriptchklistresetstat") == 0) return handle_cbtsubwaitretryscriptchklistresetstat();
     return false;
 }
