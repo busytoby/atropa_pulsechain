@@ -1978,6 +1978,14 @@ int main(void) {
     assert(tr_ok == true);
     tsfi_xplos_run(&sched_bh2);
 
+    bool pt2_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "puttbl 2");
+    assert(pt2_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool vnh_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "valnumb ABC HEX");
+    assert(vnh_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
     printf("   ✓ Carmine Cannatello ASM book utilities execution verified successfully.\n");
 
     printf("=============================================================\n");

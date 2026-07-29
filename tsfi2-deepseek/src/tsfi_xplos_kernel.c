@@ -4387,10 +4387,16 @@ static void shell_task_handler(void *arg) {
     }
 
     // Check for "puttbl" command
-    if (strcmp(cmd, "puttbl") == 0) {
-        printf("[PUTTBL] Displaying translate table contents:\n");
-        printf("  - 00-0F: 000102030405060708090A0B0C0D0E0F\n");
-        printf("  - F0-FF: F0F1F2F3F4F5F6F7F8F9FAFBFCFDFEFF\n");
+    if (strncmp(cmd, "puttbl", 6) == 0) {
+        const char *args = cmd + 6;
+        if (strstr(args, "2")) {
+            printf("[PUTTBL2] Displaying extended translate table contents:\n");
+            printf("  - 80-8F: 808182838485868788898A8B8C8D8E8F\n");
+        } else {
+            printf("[PUTTBL] Displaying translate table contents:\n");
+            printf("  - 00-0F: 000102030405060708090A0B0C0D0E0F\n");
+            printf("  - F0-FF: F0F1F2F3F4F5F6F7F8F9FAFBFCFDFEFF\n");
+        }
         printf("[PUTTBL] Translate table display completed.\n");
         return;
     }
@@ -4407,15 +4413,29 @@ static void shell_task_handler(void *arg) {
     // Check for "valnumb " command
     if (strncmp(cmd, "valnumb ", 8) == 0) {
         const char *args = cmd + 8;
-        bool is_numeric = true;
-        for (size_t i = 0; args[i] != '\0'; i++) {
-            if (args[i] < '0' || args[i] > '9') {
-                is_numeric = false;
-                break;
+        char val_str[64] = "";
+        char fmt[32] = "";
+        sscanf(args, "%63s %31s", val_str, fmt);
+        bool is_valid = true;
+        if (strcasecmp(fmt, "HEX") == 0) {
+            for (size_t i = 0; val_str[i] != '\0'; i++) {
+                char c = val_str[i];
+                if (!((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f'))) {
+                    is_valid = false;
+                    break;
+                }
             }
+            printf("[VALNUMB] Validating hexadecimal string format: '%s'\n", val_str);
+        } else {
+            for (size_t i = 0; val_str[i] != '\0'; i++) {
+                if (val_str[i] < '0' || val_str[i] > '9') {
+                    is_valid = false;
+                    break;
+                }
+            }
+            printf("[VALNUMB] Validating numerical string format: '%s'\n", val_str);
         }
-        printf("[VALNUMB] Validating numerical string format: '%s'\n", args);
-        printf("  - Validation Result: %s\n", is_numeric ? "VALID NUMERIC" : "INVALID CHARACTERS");
+        printf("  - Validation Result: %s\n", is_valid ? "VALID FORMAT" : "INVALID CHARACTERS");
         printf("[VALNUMB] Numerical validation completed.\n");
         return;
     }
