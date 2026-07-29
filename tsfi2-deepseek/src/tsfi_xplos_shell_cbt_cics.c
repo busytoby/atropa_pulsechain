@@ -13,6 +13,8 @@
 #include "tsfi_xplos_shell_cbt_jcl.h"
 #include "tsfi_parc_runcible_cics.h"
 #include "tsfi_mainframe_computerworld.h"
+#include "tsfi_hogan.h"
+#include "../src/auncient_cloth_material_bridge.h"
 
 tsfi_cics_engine_t g_cics_engine;
 extern XplosVirtualDisk g_vfs;
@@ -712,7 +714,39 @@ static bool handle_cbtcicsignorelistresetstat(void) {
     return true;
 }
 
+static bool handle_cbtcicsregister(const char *cmd) {
+    char entity_name[64] = "";
+    int scanned = sscanf(cmd + 17, "%63s", entity_name);
+    if (scanned >= 1) {
+        char ssn[16] = {0};
+        char site[64] = {0};
+        auncient_bridge_entity_to_ssa(entity_name, ssn, site, sizeof(site));
+
+        hogan_umbrella_system hogan_sys;
+        tsfi_hogan_init(&hogan_sys);
+
+        uint32_t account_id = 0x811C9DC5;
+        size_t name_len = strlen(entity_name);
+        for (size_t i = 0; i < name_len; i++) {
+            account_id = (account_id ^ entity_name[i]) * 0x01000193;
+        }
+        account_id = (account_id % 100000) + 100000;
+
+        tsfi_hogan_register_account(&hogan_sys, account_id, 1000000);
+
+        printf("[CICS REGISTER] Registered entity %s.\n", entity_name);
+        printf("  - Derived SSN  : %s\n", ssn);
+        printf("  - Region Site  : %s\n", site);
+        printf("  - Account ID   : %u\n", account_id);
+        printf("  - Balance      : 1,000,000 Saat. RC=0000\n");
+        return true;
+    }
+    printf("[CICS REGISTER ERROR] Syntax: cbtcicsregister <entity_name>\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
+    if (strncmp(cmd, "cbtcicsregister ", 16) == 0) return handle_cbtcicsregister(cmd);
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
     if (strncmp(cmd, "cbtcicstrm ", 11) == 0) return handle_cbtcicstrm(cmd);

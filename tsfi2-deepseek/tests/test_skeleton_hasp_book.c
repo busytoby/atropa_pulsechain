@@ -298,6 +298,12 @@ int main(void) {
     bool mockjob6_run_ok = tsfi_xplos_shell_cbt_jcl("jclrun MJ6");
     assert(mockjob6_run_ok == true);
 
+    // 19. Verify CICS Teddy Bear Participant Verification and Hogan registration
+    printf("  -> Phase 17: Verifying CICS Teddy Bear Participant Verification and Hogan registration...\n");
+    extern bool tsfi_xplos_shell_cbt_cics(const char *cmd);
+    bool register_ok = tsfi_xplos_shell_cbt_cics("cbtcicsregister TeddyBearSkelCharacter");
+    assert(register_ok == true);
+
     printf("  -> End-to-end data pipeline integrity verified successfully.\n");
     printf("\n=== SKELETON HASP BOOK PROOFS PASSED ===\n");
     return 0;
