@@ -4714,6 +4714,35 @@ static void shell_task_handler(void *arg) {
         return;
     }
 
+    static uint32_t ce_gprs[16] = {0};
+    static uint8_t ce_memory[1024] = {0};
+
+    // Check for "ce_run " command
+    if (strncmp(cmd, "ce_run ", 7) == 0) {
+        const char *arg = cmd + 7;
+        if (strcmp(arg, "status") == 0) {
+            printf("[CE_RUN] Persistent GPR Status:\n");
+            for (int i = 0; i < 16; i += 4) {
+                printf("  R%-2d: %-10u  R%-2d: %-10u  R%-2d: %-10u  R%-2d: %-10u\n",
+                       i, ce_gprs[i], i+1, ce_gprs[i+1], i+2, ce_gprs[i+2], i+3, ce_gprs[i+3]);
+            }
+            return;
+        } else if (strcmp(arg, "reset") == 0) {
+            memset(ce_gprs, 0, sizeof(ce_gprs));
+            memset(ce_memory, 0, sizeof(ce_memory));
+            printf("[CE_RUN] Simulator registers and memory reset successfully.\n");
+            return;
+        }
+        
+        printf("[CE_RUN] Executing: %s\n", arg);
+        if (tsfi_xpl_execute_assembler(arg, ce_gprs, ce_memory)) {
+            printf("  - Instruction executed successfully.\n");
+        } else {
+            printf("[CE_RUN ERROR] Failed to simulate instruction.\n");
+        }
+        return;
+    }
+
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
     if (tsfi_xplg_parse_semantic_action(cmd, &tx)) {

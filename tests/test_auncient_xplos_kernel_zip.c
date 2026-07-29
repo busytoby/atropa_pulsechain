@@ -2072,6 +2072,16 @@ int main(void) {
     assert(test_mem[500] == 66);
     printf("   ✓ System/370 inline assembler executor validated successfully.\n");
 
+    tsfi_xplos_init_scheduler(&sched_bh2);
+
+    bool ce1_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "ce_run AR R1, R2");
+    assert(ce1_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool ce2_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "ce_run status");
+    assert(ce2_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
