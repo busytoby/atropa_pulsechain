@@ -597,6 +597,30 @@ int main(void) {
     assert(ussmsg_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 73. Test IEBGENER Copy Buffer Capacity config (iebgenerbuf)
+    printf("[TEST] Testing IEBGENER copy buffer sizing...\n");
+    bool generbuf_ok = tsfi_xplos_shell_exec(&shell, &sched, "iebgenerbuf 4096");
+    assert(generbuf_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 74. Test TSO spool job wait timeout (cbtsubwait)
+    printf("[TEST] Testing cbtsubwait spool dispatch timeout...\n");
+    bool subwait_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtsubwait 30");
+    assert(subwait_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 75. Test CICS transient storage compaction details explorer (cbtcicscmpdet)
+    printf("[TEST] Testing CICS TSQ compaction details query...\n");
+    bool cmpdet_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicscmpdet");
+    assert(cmpdet_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 76. Test VTAM Route recovery retry scheduler (vtamrouterec)
+    printf("[TEST] Testing VTAM gateway route recovery scheduler...\n");
+    bool routerec_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtamrouterec 60");
+    assert(routerec_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }

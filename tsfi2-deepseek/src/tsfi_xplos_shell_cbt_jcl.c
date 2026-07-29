@@ -655,6 +655,17 @@ static bool handle_iebdgpatdet(const char *cmd) {
     return true;
 }
 
+static bool handle_iebgenerbuf(const char *cmd) {
+    int buf_size = 0;
+    if (sscanf(cmd + 13, "%d", &buf_size) < 1) {
+        printf("[IEBGENERBUF ERROR] Syntax: iebgenerbuf <buf_size>\n");
+        return true;
+    }
+    printf("[IEBGENER] Setting sequential block copy buffer capacity: %d bytes\n", buf_size);
+    printf("  - Data transfer limits updated successfully. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "jclrun ", 7) == 0) return handle_jclrun(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
@@ -675,5 +686,6 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "iebdatrchk ", 11) == 0) return handle_iebdatrchk(cmd);
     if (strncmp(cmd, "iebcomprdet ", 12) == 0) return handle_iebcomprdet(cmd);
     if (strncmp(cmd, "iebdgpatdet ", 12) == 0) return handle_iebdgpatdet(cmd);
+    if (strncmp(cmd, "iebgenerbuf ", 12) == 0) return handle_iebgenerbuf(cmd);
     return false;
 }

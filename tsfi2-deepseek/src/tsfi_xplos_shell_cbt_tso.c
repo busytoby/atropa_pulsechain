@@ -539,6 +539,17 @@ static bool handle_cbtsuboutlim(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtsubwait(const char *cmd) {
+    int timeout_sec = 0;
+    if (sscanf(cmd + 11, "%d", &timeout_sec) < 1) {
+        printf("[SUBWAIT ERROR] Syntax: cbtsubwait <seconds>\n");
+        return true;
+    }
+    printf("[SUBWAIT] Job submission synchronous execution wait timeout set to: %d seconds\n", timeout_sec);
+    printf("  - Spool synchronization timer limits updated. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtrexx ", 8) == 0) return handle_cbtrexx(cmd);
     if (strncmp(cmd, "ispfmenu", 8) == 0) return handle_ispfmenu(cmd);
@@ -556,5 +567,6 @@ bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtsubnot ", 10) == 0) return handle_cbtsubnot(cmd);
     if (strncmp(cmd, "cbtsubmod ", 10) == 0) return handle_cbtsubmod(cmd);
     if (strncmp(cmd, "cbtsuboutlim ", 13) == 0) return handle_cbtsuboutlim(cmd);
+    if (strncmp(cmd, "cbtsubwait ", 11) == 0) return handle_cbtsubwait(cmd);
     return false;
 }

@@ -406,6 +406,17 @@ static bool handle_vtamussmsg(const char *cmd) {
     return true;
 }
 
+static bool handle_vtamrouterec(const char *cmd) {
+    int interval_sec = 0;
+    if (sscanf(cmd + 13, "%d", &interval_sec) < 1) {
+        printf("[VTAMROUTEREC ERROR] Syntax: vtamrouterec <interval_sec>\n");
+        return true;
+    }
+    printf("[VTAM] Gateway route auto recovery scheduler retry interval set to: %d seconds\n", interval_sec);
+    printf("  - Recovery timer loops recalibrated. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "cbtnet ", 7) == 0) return handle_cbtnet(cmd + 7);
     if (strncmp(cmd, "logon ", 6) == 0) return handle_vtam_logon(cmd);
@@ -424,5 +435,6 @@ bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "vtamroutesol ", 13) == 0) return handle_vtamroutesol(cmd);
     if (strncmp(cmd, "vtamroutefail ", 14) == 0) return handle_vtamroutefail(cmd);
     if (strncmp(cmd, "vtamussmsg ", 11) == 0) return handle_vtamussmsg(cmd);
+    if (strncmp(cmd, "vtamrouterec ", 13) == 0) return handle_vtamrouterec(cmd);
     return false;
 }

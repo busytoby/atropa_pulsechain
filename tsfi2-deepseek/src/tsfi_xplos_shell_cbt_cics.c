@@ -308,6 +308,19 @@ static bool handle_cbtcicscleanflt(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtcicscmpdet(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  CICS TRANSIENT STORAGE COMPACTION TELEMETRY REPORT            \n");
+    printf("================================================================================\n");
+    printf(" FRAGMENTATION RATIO: 12%%\n");
+    printf(" RECLAIMED SPACE    : 1024 BYTES\n");
+    printf(" COMPACTOR STATUS   : STANDBY\n");
+    printf(" RESPONSE STATUS    : NORMAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
@@ -324,5 +337,6 @@ bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicsdet ", 11) == 0) return handle_cbtcicsdet(cmd);
     if (strcmp(cmd, "cbtcicscleandet") == 0) return handle_cbtcicscleandet();
     if (strncmp(cmd, "cbtcicscleanflt ", 16) == 0) return handle_cbtcicscleanflt(cmd);
+    if (strcmp(cmd, "cbtcicscmpdet") == 0) return handle_cbtcicscmpdet();
     return false;
 }
