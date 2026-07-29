@@ -1244,6 +1244,28 @@ int main(void) {
     remove("tests/memb_rep.txt");
     remove("tests/rep_pds.dat.bin");
 
+    // 81. Test CBTUNBLOCK command execution
+    printf("[KERNEL TEST] Dispatching 'cbtunblock' command to XplOS shell...\n");
+    XplosShell shell_unblock;
+    XplosScheduler sched_unblock;
+    tsfi_xplos_init_scheduler(&sched_unblock);
+    tsfi_xplos_init_shell(&shell_unblock);
+    
+    FILE *f_unblock_tmp = fopen("tests/ieb_seq.dat.bin", "w");
+    fprintf(f_unblock_tmp, "./ ADD NAME=MEMBERA\n");
+    fprintf(f_unblock_tmp, "RECORD ONE OF MEMBERA\n");
+    fprintf(f_unblock_tmp, "./ ADD NAME=MEMBERB\n");
+    fprintf(f_unblock_tmp, "RECORD ONE OF MEMBERB\n");
+    fclose(f_unblock_tmp);
+
+    bool unblock_ok = tsfi_xplos_shell_exec(&shell_unblock, &sched_unblock, "cbtunblock tests/ieb_seq.dat.bin tests");
+    assert(unblock_ok == true);
+    tsfi_xplos_run(&sched_unblock);
+    printf("   ✓ CBTUNBLOCK execution verified successfully.\n");
+    remove("tests/ieb_seq.dat.bin");
+    remove("tests/MEMBERA.txt");
+    remove("tests/MEMBERB.txt");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

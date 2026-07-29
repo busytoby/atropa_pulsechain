@@ -2959,7 +2959,60 @@ static void shell_task_handler(void *arg) {
             } else {
                 printf("[CBTPDSREP ERROR] Member %s not found in PDS.\n", member_name);
             }
+        }
+    }
+
+    // Check for "cbtunblock " command
+    if (strncmp(cmd, "cbtunblock ", 11) == 0) {
+        char seq_path[128] = "";
+        char out_dir[128] = "";
+        if (sscanf(cmd + 11, "%127s %127s", seq_path, out_dir) == 2) {
+            if (strstr(seq_path, ".dat.bin") == NULL) {
+                printf("[CBTUNBLOCK ERROR] Violation of Rule 13: filename must end in .dat.bin\n");
+                return;
+            }
+            FILE *f = fopen(seq_path, "r");
+            if (!f) {
+                printf("[CBTUNBLOCK ERROR] Could not open sequential input dataset: %s\n", seq_path);
+                return;
+            }
+            char line[256];
+            FILE *out_f = NULL;
+            int members_unpacked = 0;
+            while (fgets(line, sizeof(line), f)) {
+                if (strncmp(line, "./ ADD NAME=", 12) == 0 || strncmp(line, "./   ADD NAME=", 14) == 0) {
+                    if (out_f) {
+                        fclose(out_f);
+                        out_f = NULL;
+                    }
+                    char member_name[64] = "";
+                    char *name_ptr = strstr(line, "NAME=");
+                    if (name_ptr) {
+                        sscanf(name_ptr + 5, "%63s", member_name);
+                        char *comma = strchr(member_name, ',');
+                        if (comma) *comma = '\0';
+                        char *space = strchr(member_name, '\n');
+                        if (space) *space = '\0';
+                        space = strchr(member_name, '\r');
+                        if (space) *space = '\0';
+                    }
+                    if (strlen(member_name) > 0) {
+                        char out_path[256];
+                        sprintf(out_path, "%s/%s.txt", out_dir, member_name);
+                        out_f = fopen(out_path, "w");
+                        if (out_f) {
+                            members_unpacked++;
+                        }
+                    }
+                } else if (out_f) {
+                    fputs(line, out_f);
+                }
+            }
+            if (out_f) {
+                fclose(out_f);
+            }
             fclose(f);
+            printf("[CBTUNBLOCK] IEBUPDTE unpacker finished. Extracted %d member(s) to directory %s.\n", members_unpacked, out_dir);
             return;
         }
     }
