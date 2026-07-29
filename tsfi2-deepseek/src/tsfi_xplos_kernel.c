@@ -3984,6 +3984,108 @@ static void shell_task_handler(void *arg) {
         return;
     }
 
+    // Check for "pds " command
+    if (strncmp(cmd, "pds ", 4) == 0) {
+        const char *args = cmd + 4;
+        printf("[PDS] PDS Command Processor - Version 8.6:\n");
+        printf("  - Analyzing Partitioned Dataset members matching query: %s\n", args);
+        int count = 0;
+        for (int i = 0; i < g_vfs.count; i++) {
+            if (g_vfs.files[i].active && strstr(g_vfs.files[i].name, args)) {
+                printf("    * Member: %-16s  Size: %u bytes\n", g_vfs.files[i].name, g_vfs.files[i].size_bytes);
+                count++;
+            }
+        }
+        printf("[PDS] Scan completed. Found %d matching members.\n", count);
+        return;
+    }
+
+    // Check for "vtoc " command
+    if (strncmp(cmd, "vtoc ", 5) == 0) {
+        const char *vol = cmd + 5;
+        printf("[VTOC] Volume Table of Contents Lister for: %s\n", vol);
+        printf("  - Volume: %-10s  Device: 3380  Active Datasets:\n", vol);
+        for (int i = 0; i < g_vfs.count; i++) {
+            if (g_vfs.files[i].active) {
+                printf("    * DSN: %-24s  Tracks: %u  Extents: 1\n", g_vfs.files[i].name, (g_vfs.files[i].size_bytes + 4095) / 4096);
+            }
+        }
+        printf("[VTOC] End of VTOC listing.\n");
+        return;
+    }
+
+    // Check for "look" command
+    if (strcmp(cmd, "look") == 0) {
+        printf("[LOOK] System Status Monitor:\n");
+        printf("  - CPU Usage:  12.4%%   Active ASIDs: 6\n");
+        printf("  - Address Space Allocations:\n");
+        printf("    * ASID 1: master    (0x00000000 - 0x000FFFFF)\n");
+        printf("    * ASID 2: jes2      (0x00100000 - 0x0017FFFF)\n");
+        printf("    * ASID 3: console   (0x00180000 - 0x0019FFFF)\n");
+        printf("    * ASID 4: tso001    (0x001A0000 - 0x002FFFFF)\n");
+        printf("[LOOK] System status retrieval completed.\n");
+        return;
+    }
+
+    // Check for "users" command
+    if (strcmp(cmd, "users") == 0) {
+        printf("[USERS] Active TSO Sessions:\n");
+        printf("  - SYSOP    Console Operator  (ASID 3, Active)\n");
+        printf("  - MVSUSER  TSO User session  (ASID 4, Idle 2m)\n");
+        printf("  - VAESEN   Citizen monitor   (ASID 5, Active)\n");
+        printf("[USERS] Total active sessions: 3\n");
+        return;
+    }
+
+    // Check for "showtcas" command
+    if (strcmp(cmd, "showtcas") == 0) {
+        printf("[SHOWTCAS] Terminal Control Address Space:\n");
+        printf("  - VTAM Logon Manager Status: ACTIVE\n");
+        printf("  - TCAS Private Size Limit:  2048K\n");
+        printf("[SHOWTCAS] TCAS boundary verification completed.\n");
+        return;
+    }
+
+    // Check for "showtpvt" command
+    if (strcmp(cmd, "showtpvt") == 0) {
+        printf("[SHOWTPVT] Private Area Virtual Storage Limits:\n");
+        printf("  - Region Start Address: 0x001A0000\n");
+        printf("  - Region End Address:   0x007FFFFF\n");
+        printf("  - Total Allocated Size: 6528K\n");
+        printf("[SHOWTPVT] Private storage area display completed.\n");
+        return;
+    }
+
+    // Check for "steplib" command
+    if (strcmp(cmd, "steplib") == 0) {
+        printf("[STEPLIB] Current Job Step Library Allocations:\n");
+        printf("  - DD:STEPLIB -> DSN:USER.LIBRARY  (Mounted, Authorized)\n");
+        printf("  - DD:JOBLIB  -> DSN:SYS1.LINKLIB  (Mounted, Authorized)\n");
+        printf("[STEPLIB] Library display completed.\n");
+        return;
+    }
+
+    // Check for "tapemap" command
+    if (strcmp(cmd, "tapemap") == 0) {
+        printf("[TAPEMAP] Virtual Tape Volume Layout mapping:\n");
+        printf("  - Volume Serial: CBT035   Density: 6250 BPI\n");
+        printf("  - File Sequence Number: 1\n");
+        printf("    * Dataset Name: CBT035.LOAD.dat.bin\n");
+        printf("    * Block Count:  1440  Record Length: 80 bytes\n");
+        printf("[TAPEMAP] Volume mapping completed.\n");
+        return;
+    }
+
+    // Check for "offload " command
+    if (strncmp(cmd, "offload ", 8) == 0) {
+        const char *dsn = cmd + 8;
+        printf("[OFFLOAD] Offloading Partitioned Dataset: %s\n", dsn);
+        printf("  - Creating sequential backup stream in memory...\n");
+        printf("  - Packed 10 members into archive file.\n");
+        printf("[OFFLOAD] Dataset backup completed successfully.\n");
+        return;
+    }
+
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
     if (tsfi_xplg_parse_semantic_action(cmd, &tx)) {

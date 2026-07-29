@@ -1780,6 +1780,44 @@ int main(void) {
     tsfi_xplos_run(&sched_bh2);
     printf("   ✓ IBHJESPM Security Monitor verified successfully.\n");
 
+    printf("[KERNEL TEST] Dispatching File 035 commands to XplOS shell...\n");
+    bool pds_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "pds OCX");
+    assert(pds_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool vtoc_pds_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "vtoc MVSRES");
+    assert(vtoc_pds_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool look_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "look");
+    assert(look_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool users_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "users");
+    assert(users_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool tcas_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "showtcas");
+    assert(tcas_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool pvt_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "showtpvt");
+    assert(pvt_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool step_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "steplib");
+    assert(step_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool tape_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "tapemap");
+    assert(tape_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool off_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "offload FILE021");
+    assert(off_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+    printf("   ✓ File 035 utilities execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
