@@ -573,6 +573,30 @@ int main(void) {
     assert(routefail_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 69. Test IEBDG sequential patterns detail explorer (iebdgpatdet)
+    printf("[TEST] Testing iebdgpatdet pattern details explorer...\n");
+    bool patdet_ok = tsfi_xplos_shell_exec(&shell, &sched, "iebdgpatdet SEQ1");
+    assert(patdet_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 70. Test TSO spool output lines limiter (cbtsuboutlim)
+    printf("[TEST] Testing cbtsuboutlim spool redirect line limiter...\n");
+    bool outlim_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtsuboutlim JOB00021 1000");
+    assert(outlim_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 71. Test CICS clean operations filter details (cbtcicscleanflt)
+    printf("[TEST] Testing CICS TSQ cleanup log prefix filter...\n");
+    bool cleanflt_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicscleanflt Q");
+    assert(cleanflt_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 72. Test VTAM USS terminal Greeting welcome customizer (vtamussmsg)
+    printf("[TEST] Testing VTAM USS terminal welcome greeting message...\n");
+    bool ussmsg_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtamussmsg WELCOME");
+    assert(ussmsg_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }

@@ -526,6 +526,19 @@ static bool handle_cbtsubmod(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtsuboutlim(const char *cmd) {
+    char job_id[32] = "";
+    int limit_lines = 0;
+    if (sscanf(cmd + 13, "%31s %d", job_id, &limit_lines) < 2) {
+        printf("[SUBOUTLIM ERROR] Syntax: cbtsuboutlim <job_id> <limit>\n");
+        return true;
+    }
+    printf("[SUBOUTLIM] Spool redirect limit bounds loaded for job %s...\n", job_id);
+    printf("  - Maximum record lines constraint configured: %d lines\n", limit_lines);
+    printf("[SUBOUTLIM] Redirect limit thresholds established. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtrexx ", 8) == 0) return handle_cbtrexx(cmd);
     if (strncmp(cmd, "ispfmenu", 8) == 0) return handle_ispfmenu(cmd);
@@ -542,5 +555,6 @@ bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtsubfind ", 11) == 0) return handle_cbtsubfind(cmd);
     if (strncmp(cmd, "cbtsubnot ", 10) == 0) return handle_cbtsubnot(cmd);
     if (strncmp(cmd, "cbtsubmod ", 10) == 0) return handle_cbtsubmod(cmd);
+    if (strncmp(cmd, "cbtsuboutlim ", 13) == 0) return handle_cbtsuboutlim(cmd);
     return false;
 }

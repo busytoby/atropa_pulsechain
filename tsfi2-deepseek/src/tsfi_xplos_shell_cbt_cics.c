@@ -292,6 +292,22 @@ static bool handle_cbtcicscleandet(void) {
     return true;
 }
 
+static bool handle_cbtcicscleanflt(const char *cmd) {
+    char filter[32] = "";
+    if (sscanf(cmd + 16, "%31s", filter) < 1) {
+        printf("[CICSCLEANFLT ERROR] Syntax: cbtcicscleanflt <filter>\n");
+        return true;
+    }
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  CICS TRANSIENT STORAGE CLEANUP LOG: FILTER %s                 \n", filter);
+    printf("================================================================================\n");
+    printf(" MAIN TSQS PURGED   : Q1, Q2\n");
+    printf(" AUX TSQS PURGED    : LOGS. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
@@ -307,5 +323,6 @@ bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicscleanmask ", 17) == 0) return handle_cbtcicscleanmask(cmd);
     if (strncmp(cmd, "cbtcicsdet ", 11) == 0) return handle_cbtcicsdet(cmd);
     if (strcmp(cmd, "cbtcicscleandet") == 0) return handle_cbtcicscleandet();
+    if (strncmp(cmd, "cbtcicscleanflt ", 16) == 0) return handle_cbtcicscleanflt(cmd);
     return false;
 }

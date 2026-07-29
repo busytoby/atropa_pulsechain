@@ -637,6 +637,24 @@ static bool handle_iebcomprdet(const char *cmd) {
     return true;
 }
 
+static bool handle_iebdgpatdet(const char *cmd) {
+    char pat_name[32] = "";
+    if (sscanf(cmd + 13, "%31s", pat_name) < 1) {
+        printf("[IEBDGPATDET ERROR] Syntax: iebdgpatdet <pat_name>\n");
+        return true;
+    }
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  IEBDG SEQUENTIAL PATTERN DETAILS: %s                         \n", pat_name);
+    printf("================================================================================\n");
+    printf(" PATTERN FORMAT   : AAAA-9999\n");
+    printf(" MINIMUM LENGTH   : 9 BYTES\n");
+    printf(" SEED VALUE       : 953467954114363\n");
+    printf(" RESPONSE STATUS  : ACTIVE. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "jclrun ", 7) == 0) return handle_jclrun(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
@@ -656,5 +674,6 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "iebimagespc ", 12) == 0) return handle_iebimagespc(cmd);
     if (strncmp(cmd, "iebdatrchk ", 11) == 0) return handle_iebdatrchk(cmd);
     if (strncmp(cmd, "iebcomprdet ", 12) == 0) return handle_iebcomprdet(cmd);
+    if (strncmp(cmd, "iebdgpatdet ", 12) == 0) return handle_iebdgpatdet(cmd);
     return false;
 }

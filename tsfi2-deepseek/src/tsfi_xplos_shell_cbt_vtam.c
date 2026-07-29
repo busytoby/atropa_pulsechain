@@ -394,6 +394,18 @@ static bool handle_vtamroutefail(const char *cmd) {
     return true;
 }
 
+static bool handle_vtamussmsg(const char *cmd) {
+    char msg[64] = "";
+    if (sscanf(cmd + 11, "%63s", msg) < 1) {
+        // Wait, vtamussmsg has 10 characters. vtamussmsg is 10 chars. Plus space is 11 chars.
+        printf("[VTAMUSSMSG ERROR] Syntax: vtamussmsg <welcome_msg>\n");
+        return true;
+    }
+    printf("[VTAM] Custom solicit welcome greeting set: %s\n", msg);
+    printf("  - Soliciting greeting buffer formatted successfully. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "cbtnet ", 7) == 0) return handle_cbtnet(cmd + 7);
     if (strncmp(cmd, "logon ", 6) == 0) return handle_vtam_logon(cmd);
@@ -411,5 +423,6 @@ bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "vtamussdelay ", 13) == 0) return handle_vtamussdelay(cmd);
     if (strncmp(cmd, "vtamroutesol ", 13) == 0) return handle_vtamroutesol(cmd);
     if (strncmp(cmd, "vtamroutefail ", 14) == 0) return handle_vtamroutefail(cmd);
+    if (strncmp(cmd, "vtamussmsg ", 11) == 0) return handle_vtamussmsg(cmd);
     return false;
 }
