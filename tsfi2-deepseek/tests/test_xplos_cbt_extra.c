@@ -1367,6 +1367,12 @@ int main(void) {
     assert(jcljobstatlimitstatsstatusdetails_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 201. Verify JCL limit constraint: Batch 49 JCL commands must be rejected (return false)
+    printf("[TEST] Verifying JCL Batch 48 boundary limit constraint...\n");
+    bool batch49_handled = tsfi_xplos_shell_cbt_jcl("cbtjcljobstatlimitreset");
+    assert(batch49_handled == false);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }
