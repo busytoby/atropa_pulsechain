@@ -42,6 +42,13 @@ int main(void) {
     assert(boot_fail_analyzer == false);
     printf("   ✓ Analyzer classification block verified.\n");
 
+    // 3b. Verify 6-bit FIELDATA qualification values are correctly outputted
+    printf("[TEST] Performing 6-bit FIELDATA Initial Orders 1 primary data qualification...\n");
+    uint32_t sample_instruction = (('F' & 0xFF) << 24) | (80 << 2);
+    bool qualify_pass = auncient_analyzer_classify(&analyzer, &sample_instruction, 1);
+    assert(qualify_pass == true);
+    printf("   ✓ 6-bit data qualification verified.\n");
+
     // 4. Boot successfully with valid credentials and no prohibited opcodes (using NULL or empty analyzer)
     printf("[TEST] Booting firewall with valid credentials (expected pass)...\n");
     bool boot_pass = auncient_firewall_init(firewall_rules_tape, 500, valid_pki, 4, NULL);
