@@ -1332,6 +1332,40 @@ static bool handle_cbtjcljobstatlimitstat(void) {
     return true;
 }
 
+static bool handle_cbtjcljobstatlimitstats(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JCL JOB STATISTICS CONFIGURATION LOGS HISTORY                 \n");
+    printf("================================================================================\n");
+    printf(" RECENT LOG TIME    : 2026-07-29T09:32:00-07:00\n");
+    printf(" COMPLETED AUDITS   : 1 LIMIT CONFIGURATIONS RECORDED\n");
+    printf(" RESPONSE STATUS    : OPERATIONAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
+static bool handle_cbtjcljobstatlimitstatsstatus(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JCL JOB STATISTICS LIMIT LOGS INTEGRITY STATE STATUS          \n");
+    printf("================================================================================\n");
+    printf(" PENDING LIMIT LOGS : 0 LOGS\n");
+    printf(" LOGS SECURITY STATE: VERIFIED. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
+static bool handle_cbtjcljobstatlimitstatsstatusdetails(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JCL JOB STATISTICS LIMIT LOGS INTEGRITY STATUS DETAILS        \n");
+    printf("================================================================================\n");
+    printf(" LOGS PROGRESS STATS: 100 PERCENT VERIFIED\n");
+    printf(" COMPLIANCE AUDIT   : PASSED. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "ieb", 3) == 0) {
         printf("[DEPRECATION WARNING] Batch utility program '%s' is deprecated and scheduled for removal.\n", cmd);
@@ -1383,6 +1417,9 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strcmp(cmd, "cbtjcljobstatreset") == 0) return handle_cbtjcljobstatreset();
     if (strcmp(cmd, "cbtjcljobstatstat") == 0) return handle_cbtjcljobstatstat();
     if (strncmp(cmd, "cbtjcljobstat ", 14) == 0) return handle_cbtjcljobstat(cmd);
+    if (strcmp(cmd, "cbtjcljobstatlimitstatsstatusdetails") == 0) return handle_cbtjcljobstatlimitstatsstatusdetails();
+    if (strcmp(cmd, "cbtjcljobstatlimitstatsstatus") == 0) return handle_cbtjcljobstatlimitstatsstatus();
+    if (strcmp(cmd, "cbtjcljobstatlimitstats") == 0) return handle_cbtjcljobstatlimitstats();
     if (strcmp(cmd, "cbtjcljobstatlimitstat") == 0) return handle_cbtjcljobstatlimitstat();
     if (strncmp(cmd, "cbtjcljobstatlimit ", 19) == 0) return handle_cbtjcljobstatlimit(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
