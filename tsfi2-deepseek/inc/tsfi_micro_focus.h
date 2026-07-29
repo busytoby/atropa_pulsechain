@@ -142,6 +142,12 @@ int tsfi_mf_vulkan_appc_layout(uint32_t transaction_id, uint32_t state_flags, ch
 int tsfi_mf_pmg_handle_collision(uint8_t player_id, uint8_t playfield_id, uint8_t *storage_pool, uint32_t *allocated_offset);
 int tsfi_mf_cics_freemain(uint32_t offset, uint32_t length, uint8_t *storage_pool);
 
+// CBT Tape Ported Utilities for Micro Focus System
+int tsfi_mf_iebgener_comp5(const uint8_t *src_comp5_data, int src_len, uint8_t *dst_comp5_data, int *dst_len, int block_size);
+int tsfi_mf_iebcompr_isam(const char *file1_dat_bin, const char *file2_dat_bin, int *mismatch_count_out);
+int tsfi_mf_iebdg_generator(uint8_t *dst_comp5_data, int count, int pattern_shift_threshold);
+int tsfi_mf_iebupdte_source(const char *source_text, const char *target_copybook_name, const char *replacement_text, char *out_text, int max_len);
+
 int tsfi_mf_unified_dispatch(const char *subsystem, const char *action, const uint8_t *payload, size_t size, uint8_t *out_pdu, size_t *out_size);
 
 #endif // TSFI_MICRO_FOCUS_H

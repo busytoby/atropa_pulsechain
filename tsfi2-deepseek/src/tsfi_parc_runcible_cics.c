@@ -137,3 +137,79 @@ int tsfi_cics_render_terminal_screen(const tsfi_cics_engine_t *engine, char *out
     }
     return 0;
 }
+
+int tsfi_runcible_vtam_logon(tsfi_cics_engine_t *engine, const char *logon_cmd, char *out_msg, size_t max_len) {
+    if (!engine || !logon_cmd || !out_msg || max_len == 0) return -1;
+    char applid[32] = "";
+    if (sscanf(logon_cmd, "LOGON APPLID(%31[^)])", applid) < 1) {
+        snprintf(out_msg, max_len, "USSMSG10: COMMAND UNRECOGNIZED");
+        return -2;
+    }
+    snprintf(engine->terminal_identifier, sizeof(engine->terminal_identifier), "T002");
+    snprintf(out_msg, max_len, "DFS3649I: LOGON TO %s ACCEPTED", applid);
+    return 0;
+}
+
+int tsfi_runcible_tape_catalog(const char *filepath_dat_bin, char *out_catalog_info, size_t max_len) {
+    if (!filepath_dat_bin || !out_catalog_info || max_len == 0) return -1;
+
+    // Enforce Rule 13
+    int len = strlen(filepath_dat_bin);
+    if (len < 8 || strcmp(filepath_dat_bin + len - 8, ".dat.bin") != 0) {
+        return -2;
+    }
+
+    snprintf(out_catalog_info, max_len, "TAPE CATALOG DATA SET: %s | BLOCKS: 120 | DENSITY: 6250 BPI", filepath_dat_bin);
+    return 0;
+}
+
+int tsfi_runcible_vsam_ksds(tsfi_cics_engine_t *engine, const char *dataset_name, const char *key, const char *val, char *out_val, size_t max_len) {
+    if (!engine || !dataset_name || !key || !out_val || max_len == 0) return -1;
+    char tsq_name[16];
+    snprintf(tsq_name, sizeof(tsq_name), "VS_%s", dataset_name);
+    if (val) {
+        uint32_t item_id = 0;
+        char payload[256];
+        snprintf(payload, sizeof(payload), "KEY:%s VAL:%s", key, val);
+        tsfi_cics_exec_writeq_ts(engine, tsq_name, payload, strlen(payload), &item_id);
+        snprintf(out_val, max_len, "RECORD WRITTEN SUCCESSFULLY");
+    } else {
+        bool found = false;
+        for (uint32_t i = 0; i < engine->ts_queue_count; i++) {
+            if (strncmp(engine->ts_queues[i].queue_name, tsq_name, 8) == 0) {
+                for (uint32_t j = 0; j < engine->ts_queues[i].item_count; j++) {
+                    char record_key[64] = "";
+                    char record_val[64] = "";
+                    if (sscanf((char *)engine->ts_queues[i].items[j].payload, "KEY:%63s VAL:%63s", record_key, record_val) >= 2) {
+                        if (strcmp(record_key, key) == 0) {
+                            snprintf(out_val, max_len, "%s", record_val);
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        if (!found) {
+            snprintf(out_val, max_len, "RECORD NOT FOUND");
+            return -3;
+        }
+    }
+    return 0;
+}
+
+int tsfi_runcible_jcl_exec(tsfi_cics_engine_t *engine, const char *jcl_card_stream) {
+    if (!engine || !jcl_card_stream) return -1;
+    char step_name[32] = "";
+    char pgm_name[32] = "";
+    if (sscanf(jcl_card_stream, "//%31s EXEC PGM=%31s", step_name, pgm_name) < 2) {
+        return -2;
+    }
+    // Match registered transaction matching program
+    for (uint32_t i = 0; i < engine->pct_count; i++) {
+        if (strcmp(engine->pct[i].program_name, pgm_name) == 0) {
+            return tsfi_cics_exec_start_transid(engine, engine->pct[i].transaction_identifier, "JCL EXECUTION");
+        }
+    }
+    return -303;
+}

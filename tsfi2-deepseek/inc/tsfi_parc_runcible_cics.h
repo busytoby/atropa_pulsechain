@@ -87,4 +87,10 @@ int tsfi_cics_exec_return(tsfi_cics_engine_t *engine, const char *next_trans_id)
 /* Render Current CICS Terminal Screen to ANSI / Runcible TTY Output */
 int tsfi_cics_render_terminal_screen(const tsfi_cics_engine_t *engine, char *output_buffer, size_t buffer_max);
 
+/* CBT Tape Ported Utilities for Runcible CICS Engine */
+int tsfi_runcible_vtam_logon(tsfi_cics_engine_t *engine, const char *logon_cmd, char *out_msg, size_t max_len);
+int tsfi_runcible_tape_catalog(const char *filepath_dat_bin, char *out_catalog_info, size_t max_len);
+int tsfi_runcible_vsam_ksds(tsfi_cics_engine_t *engine, const char *dataset_name, const char *key, const char *val, char *out_val, size_t max_len);
+int tsfi_runcible_jcl_exec(tsfi_cics_engine_t *engine, const char *jcl_card_stream);
+
 #endif // TSFI_PARC_RUNCIBLE_CICS_H

@@ -912,6 +912,115 @@ int tsfi_mf_cics_vsam_write(const char *dataset_name, const char *record_key, co
     return 0;
 }
 
+int tsfi_mf_iebgener_comp5(const uint8_t *src_comp5_data, int src_len, uint8_t *dst_comp5_data, int *dst_len, int block_size) {
+    if (!src_comp5_data || !dst_comp5_data || !dst_len || src_len < 0 || block_size <= 0) {
+        return -1;
+    }
+    int copied = 0;
+    while (copied < src_len) {
+        int chunk = (src_len - copied < block_size) ? src_len - copied : block_size;
+        memcpy(dst_comp5_data + copied, src_comp5_data + copied, chunk);
+        copied += chunk;
+    }
+    *dst_len = copied;
+    return 0;
+}
+
+int tsfi_mf_iebcompr_isam(const char *file1_dat_bin, const char *file2_dat_bin, int *mismatch_count_out) {
+    if (!file1_dat_bin || !file2_dat_bin || !mismatch_count_out) return -1;
+
+    // Enforce Rule 13
+    int len1 = strlen(file1_dat_bin);
+    int len2 = strlen(file2_dat_bin);
+    if (len1 < 8 || strcmp(file1_dat_bin + len1 - 8, ".dat.bin") != 0) return -2;
+    if (len2 < 8 || strcmp(file2_dat_bin + len2 - 8, ".dat.bin") != 0) return -2;
+
+    FILE *f1 = fopen(file1_dat_bin, "rb");
+    FILE *f2 = fopen(file2_dat_bin, "rb");
+    if (!f1 || !f2) {
+        if (f1) fclose(f1);
+        if (f2) fclose(f2);
+        return -3;
+    }
+
+    int mismatches = 0;
+    uint32_t k1 = 0, k2 = 0;
+    int len_rec1 = 0, len_rec2 = 0;
+    uint8_t buf1[256], buf2[256];
+
+    while (true) {
+        size_t r1 = fread(&k1, 1, 4, f1);
+        size_t r2 = fread(&k2, 1, 4, f2);
+        if (r1 != r2) {
+            mismatches++;
+            break;
+        }
+        if (r1 == 0) break;
+
+        if (fread(&len_rec1, 1, 4, f1) != 4 || fread(&len_rec2, 1, 4, f2) != 4) {
+            mismatches++;
+            break;
+        }
+
+        memset(buf1, 0, sizeof(buf1));
+        memset(buf2, 0, sizeof(buf2));
+
+        if (fread(buf1, 1, (len_rec1 > 256) ? 256 : len_rec1, f1) != (size_t)((len_rec1 > 256) ? 256 : len_rec1) ||
+            fread(buf2, 1, (len_rec2 > 256) ? 256 : len_rec2, f2) != (size_t)((len_rec2 > 256) ? 256 : len_rec2)) {
+            mismatches++;
+            break;
+        }
+
+        if (k1 != k2 || len_rec1 != len_rec2 || memcmp(buf1, buf2, (len_rec1 > 256) ? 256 : len_rec1) != 0) {
+            mismatches++;
+        }
+    }
+
+    fclose(f1);
+    fclose(f2);
+    *mismatch_count_out = mismatches;
+    return 0;
+}
+
+int tsfi_mf_iebdg_generator(uint8_t *dst_comp5_data, int count, int pattern_shift_threshold) {
+    if (!dst_comp5_data || count <= 0) return -1;
+    for (int i = 0; i < count; i++) {
+        uint32_t val = (i >= pattern_shift_threshold) ? (uint32_t)(i * 2) : (uint32_t)i;
+        tsfi_mf_comp5_encode(val, dst_comp5_data + (i * 4), 4);
+    }
+    return 0;
+}
+
+int tsfi_mf_iebupdte_source(const char *source_text, const char *target_copybook_name, const char *replacement_text, char *out_text, int max_len) {
+    if (!source_text || !target_copybook_name || !replacement_text || !out_text || max_len <= 0) return -1;
+
+    const char *pos = strstr(source_text, target_copybook_name);
+    if (!pos) {
+        snprintf(out_text, max_len, "%s", source_text);
+        return 0;
+    }
+
+    int prefix_len = pos - source_text;
+    if (prefix_len >= max_len) prefix_len = max_len - 1;
+
+    memcpy(out_text, source_text, prefix_len);
+    out_text[prefix_len] = '\0';
+
+    int rep_len = strlen(replacement_text);
+    if (prefix_len + rep_len >= max_len) {
+        strncat(out_text, replacement_text, max_len - prefix_len - 1);
+        return 0;
+    }
+    strcat(out_text, replacement_text);
+
+    int copybook_len = strlen(target_copybook_name);
+    const char *suffix = pos + copybook_len;
+    int current_len = strlen(out_text);
+    strncat(out_text, suffix, max_len - current_len - 1);
+
+    return 0;
+}
+
 
 
 // Include modular BMS, Majordomo, and condition handling logic

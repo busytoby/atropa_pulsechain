@@ -1338,5 +1338,42 @@ int run_nato_stanag_tests_part5(void) {
     assert(tsfi_norad_lockout_active == 1);
     printf("  [PASS] ES EVM JES Spool JCL Guard verified via .strategy file.\n");
 
+    // Verify CBT Tape Ported Utilities
+    printf("[TEST] Validating CBT Tape Ported Utilities for Micro Focus...\n");
+    
+    // 1. Verify IEBGENER COMP-5 block copier
+    uint8_t src_comp5[16] = {1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4, 0, 0, 0};
+    uint8_t dst_comp5[16] = {0};
+    int copied_len = 0;
+    int iebgener_res = tsfi_mf_iebgener_comp5(src_comp5, 16, dst_comp5, &copied_len, 4);
+    assert(iebgener_res == 0);
+    assert(copied_len == 16);
+    assert(memcmp(src_comp5, dst_comp5, 16) == 0);
+    
+    // 2. Verify IEBDG generator
+    uint8_t gen_comp5[32] = {0};
+    int iebdg_res = tsfi_mf_iebdg_generator(gen_comp5, 8, 4);
+    assert(iebdg_res == 0);
+    assert(tsfi_mf_comp5_decode(gen_comp5 + 12, 4, 0) == 3); // index 3
+    assert(tsfi_mf_comp5_decode(gen_comp5 + 16, 4, 0) == 8); // index 4 (>= threshold 4, so i*2 = 8)
+    
+    // 3. Verify IEBCOMPR ISAM comparator
+    tsfi_mf_isam_write_record("file1.dat.bin", 100, (uint8_t *)"DATA1", 5);
+    tsfi_mf_isam_write_record("file2.dat.bin", 100, (uint8_t *)"DATA1", 5);
+    int mismatch_count = -1;
+    int iebcompr_res = tsfi_mf_iebcompr_isam("file1.dat.bin", "file2.dat.bin", &mismatch_count);
+    assert(iebcompr_res == 0);
+    assert(mismatch_count == 0);
+    remove("file1.dat.bin");
+    remove("file2.dat.bin");
+    
+    // 4. Verify IEBUPDTE copybook updater
+    const char *orig_src = "WORKING-STORAGE SECTION.\nCOPY MYCOPY.";
+    char out_src[128] = {0};
+    int iebupdte_res = tsfi_mf_iebupdte_source(orig_src, "MYCOPY", "01 VAR PIC X(10).", out_src, sizeof(out_src));
+    assert(iebupdte_res == 0);
+    assert(strstr(out_src, "01 VAR PIC X(10).") != NULL);
+    printf("  [PASS] CBT Tape Ported Utilities verified.\n");
+
     return 0;
 }
