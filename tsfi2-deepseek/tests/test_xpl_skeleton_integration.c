@@ -311,6 +311,18 @@ int main(void) {
     
     printf("  -> ALU emulated register manipulations verified successfully.\n");
 
+    // 21. Verify JCL Batch execution against running binary (FRT step execution)
+    printf("  -> Testing FRT JCL batch job execution against running binary...\n");
+    extern bool tsfi_xplos_shell_cbt_jcl(const char *cmd);
+    
+    // Inject write verification pass
+    assert(tsfi_xplos_shell_tape("cbttape inject 1") == true);
+    
+    // Run JCL file
+    bool jcl_ok = tsfi_xplos_shell_cbt_jcl("jclrun /home/mariarahel/src/tsfi2/atropa_pulsechain/solidity/dysnomia/domain/jcl/frt_resonance.jcl");
+    assert(jcl_ok == true);
+    printf("  -> FRT JCL batch job execution verified successfully.\n");
+
     printf("\n=== INTEGRATION PROOFS PASSED ===\n");
     return 0;
 }

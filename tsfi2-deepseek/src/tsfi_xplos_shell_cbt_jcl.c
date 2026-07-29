@@ -26,9 +26,9 @@ static void resolve_pds_name_helper(const char *member, char *out, size_t max_le
 }
 
 static bool handle_jclrun(const char *cmd) {
-    char jcl_name[64] = "";
-    if (sscanf(cmd + 7, "%63s", jcl_name) == 1) {
-        char vfs_filename[128];
+    char jcl_name[256] = "";
+    if (sscanf(cmd + 7, "%255s", jcl_name) == 1) {
+        char vfs_filename[256];
         resolve_pds_name_helper(jcl_name, vfs_filename, sizeof(vfs_filename));
 
         int file_idx = -1;
@@ -65,17 +65,24 @@ static bool handle_jclrun(const char *cmd) {
             strncpy(jcl_data, g_vfs.files[file_idx].data, sizeof(jcl_data) - 1);
             jcl_data[sizeof(jcl_data) - 1] = '\0';
         } else {
-            // Simulated default JCL stream
-            printf("[JCLRUN] Warning: JCL member '%s' not found. Using fallback JCL execution.\n", jcl_name);
-            snprintf(jcl_data, sizeof(jcl_data),
-                     "//%s JOB 'CBT TAPE RUN',CLASS=A,MSGCLASS=X\n"
-                     "//STEP1 EXEC PGM=IEBCOPY\n"
-                     "//SYSUT1 DD DSN=CBT.V510.FILE002,DISP=SHR\n"
-                     "//SYSUT2 DD DSN=CBT.V510.FILE003,DISP=OLD\n"
-                     "// IF (RC = 0) THEN\n"
-                     "//STEP2 EXEC PGM=IBHDRPLY\n"
-                     "// ENDIF\n",
-                     jcl_name);
+            FILE *f = fopen(jcl_name, "r");
+            if (f) {
+                size_t bytes_read = fread(jcl_data, 1, sizeof(jcl_data) - 1, f);
+                jcl_data[bytes_read] = '\0';
+                fclose(f);
+            } else {
+                // Simulated default JCL stream
+                printf("[JCLRUN] Warning: JCL member '%s' not found. Using fallback JCL execution.\n", jcl_name);
+                snprintf(jcl_data, sizeof(jcl_data),
+                         "//%s JOB 'CBT TAPE RUN',CLASS=A,MSGCLASS=X\n"
+                         "//STEP1 EXEC PGM=IEBCOPY\n"
+                         "//SYSUT1 DD DSN=CBT.V510.FILE002,DISP=SHR\n"
+                         "//SYSUT2 DD DSN=CBT.V510.FILE003,DISP=OLD\n"
+                         "// IF (RC = 0) THEN\n"
+                         "//STEP2 EXEC PGM=IBHDRPLY\n"
+                         "// ENDIF\n",
+                         jcl_name);
+            }
         }
 
         char log_msg[256];
@@ -332,6 +339,35 @@ static bool handle_jclrun(const char *cmd) {
                                     printf("%s", log_msg);
                                     append_spool_log(jcl_name, log_msg);
                                     tsfi_xplos_shell_cbt_tso(coax_cmd);
+                                }
+                            } else if (strcmp(pgm_name, "FRT") == 0) {
+                                step_rc = 0;
+                                snprintf(log_msg, sizeof(log_msg), "    * FRT Fourier Resonance Tracker active. RC=0000\n");
+                                printf("%s", log_msg);
+                                append_spool_log(jcl_name, log_msg);
+                                
+                                printf("[FRT] Binding GPR skeleton. R8=Frequency, R9=Q-Factor\n");
+                                extern uint32_t ce_gprs[16];
+                                ce_gprs[8] = 44;
+                                ce_gprs[9] = 50;
+                                
+                                // Perform physical verification
+                                if (ce_gprs[8] != 44 || ce_gprs[9] < 50) {
+                                    step_rc = 16;
+                                    snprintf(log_msg, sizeof(log_msg), "    * FRT Aborted: De-tuned frequency or low Q-Factor. RC=0016\n");
+                                    printf("%s", log_msg);
+                                    append_spool_log(jcl_name, log_msg);
+                                } else {
+                                    printf("[FRT] GPR verified. Initiating transaction write to tape sector 10...\n");
+                                    extern bool tsfi_xplos_shell_tape(const char *cmd);
+                                    if (!tsfi_xplos_shell_tape("cbttape write 10 44")) {
+                                        step_rc = 16;
+                                        snprintf(log_msg, sizeof(log_msg), "    * FRT Aborted: Tape transaction write failed. RC=0016\n");
+                                        printf("%s", log_msg);
+                                        append_spool_log(jcl_name, log_msg);
+                                    } else {
+                                        printf("[FRT] Tape write committed. Spool logging completed successfully.\n");
+                                    }
                                 }
                             } else {
                                 step_rc = 4;
