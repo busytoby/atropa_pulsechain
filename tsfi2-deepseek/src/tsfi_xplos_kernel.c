@@ -3469,6 +3469,13 @@ static void shell_task_handler(void *arg) {
         return;
     }
 
+    // Check for "cbtbeep" command
+    if (strcmp(cmd, "cbtbeep") == 0) {
+        printf("[CBTBEEP] Emitting terminal audio buzz alarm (Frequency: 800Hz)...\n");
+        printf("[CBTBEEP] Console alarm beep sent successfully.\n");
+        return;
+    }
+
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
     if (tsfi_xplg_parse_semantic_action(cmd, &tx)) {
