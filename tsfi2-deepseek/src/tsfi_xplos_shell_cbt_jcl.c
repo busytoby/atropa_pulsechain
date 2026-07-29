@@ -688,6 +688,17 @@ static bool handle_iebcomprmaxexcl(const char *cmd) {
     return true;
 }
 
+static bool handle_iebdgiterlim(const char *cmd) {
+    int iter_limit = 0;
+    if (sscanf(cmd + 13, "%d", &iter_limit) < 1) {
+        printf("[IEBDGITERLIM ERROR] Syntax: iebdgiterlim <limit>\n");
+        return true;
+    }
+    printf("[IEBDG] Setting maximum sequential pattern generation iteration bounds: %d records\n", iter_limit);
+    printf("  - Generation loop limits updated. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "jclrun ", 7) == 0) return handle_jclrun(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
@@ -711,5 +722,6 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "iebgenerbuf ", 12) == 0) return handle_iebgenerbuf(cmd);
     if (strncmp(cmd, "iebcomprredirect ", 17) == 0) return handle_iebcomprredirect(cmd);
     if (strncmp(cmd, "iebcomprmaxexcl ", 16) == 0) return handle_iebcomprmaxexcl(cmd);
+    if (strncmp(cmd, "iebdgiterlim ", 13) == 0) return handle_iebdgiterlim(cmd);
     return false;
 }

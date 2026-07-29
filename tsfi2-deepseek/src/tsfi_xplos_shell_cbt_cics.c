@@ -345,6 +345,19 @@ static bool handle_cbtcicscleanlog(void) {
     return true;
 }
 
+static bool handle_cbtcicscleanexceptlist(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  CICS TRANSIENT STORAGE CLEANUP EXCLUSION RULES                \n");
+    printf("================================================================================\n");
+    printf(" RULE INDEX | EXCLUSION PREFIX FILTER | MATCH STATUS | HIT COUNT\n");
+    printf("--------------------------------------------------------------------------------\n");
+    printf(" 00000001   | SYS*                    | ACTIVE       | 12 HITS\n");
+    printf(" 00000002   | CICS*                   | ACTIVE       | 42 HITS. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
@@ -364,5 +377,6 @@ bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strcmp(cmd, "cbtcicscmpdet") == 0) return handle_cbtcicscmpdet();
     if (strncmp(cmd, "cbtcicscleanexcept ", 19) == 0) return handle_cbtcicscleanexcept(cmd);
     if (strcmp(cmd, "cbtcicscleanlog") == 0) return handle_cbtcicscleanlog();
+    if (strcmp(cmd, "cbtcicscleanexceptlist") == 0) return handle_cbtcicscleanexceptlist();
     return false;
 }

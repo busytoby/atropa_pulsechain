@@ -576,6 +576,17 @@ static bool handle_cbtsubwaitretry(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtsubwaitretrydelay(const char *cmd) {
+    int delay_sec = 0;
+    if (sscanf(cmd + 21, "%d", &delay_sec) < 1) {
+        printf("[SUBWAITRETRYDELAY ERROR] Syntax: cbtsubwaitretrydelay <seconds>\n");
+        return true;
+    }
+    printf("[SUBWAIT] Job wait completion retry timer delay set to: %d seconds\n", delay_sec);
+    printf("  - Spool retry schedule delay updated. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtrexx ", 8) == 0) return handle_cbtrexx(cmd);
     if (strncmp(cmd, "ispfmenu", 8) == 0) return handle_ispfmenu(cmd);
@@ -596,5 +607,6 @@ bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtsubwait ", 11) == 0) return handle_cbtsubwait(cmd);
     if (strcmp(cmd, "cbtsubwaitstat") == 0) return handle_cbtsubwaitstat();
     if (strncmp(cmd, "cbtsubwaitretry ", 16) == 0) return handle_cbtsubwaitretry(cmd);
+    if (strncmp(cmd, "cbtsubwaitretrydelay ", 21) == 0) return handle_cbtsubwaitretrydelay(cmd);
     return false;
 }

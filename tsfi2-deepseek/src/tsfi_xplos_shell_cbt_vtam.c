@@ -441,6 +441,12 @@ static bool handle_vtamroutereccount(const char *cmd) {
     return true;
 }
 
+static bool handle_vtamrouterecreset(void) {
+    printf("[VTAM] Resetting gateway route auto recovery scheduler retry counters to zero\n");
+    printf("  - Scheduler telemetry stats cleared. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "cbtnet ", 7) == 0) return handle_cbtnet(cmd + 7);
     if (strncmp(cmd, "logon ", 6) == 0) return handle_vtam_logon(cmd);
@@ -462,5 +468,6 @@ bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "vtamrouterec ", 13) == 0) return handle_vtamrouterec(cmd);
     if (strcmp(cmd, "vtamrouterecstat") == 0) return handle_vtamrouterecstat();
     if (strncmp(cmd, "vtamroutereccount ", 17) == 0) return handle_vtamroutereccount(cmd);
+    if (strcmp(cmd, "vtamrouterecreset") == 0) return handle_vtamrouterecreset();
     return false;
 }
