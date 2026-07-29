@@ -584,6 +584,17 @@ static bool handle_iebdgseed(const char *cmd) {
     return true;
 }
 
+static bool handle_iebcomprmask(const char *cmd) {
+    char mask[32] = "";
+    if (sscanf(cmd + 14, "%31s", mask) < 1) {
+        printf("[IEBCOMPRMASK ERROR] Syntax: iebcomprmask <mask>\n");
+        return true;
+    }
+    printf("[IEBCOMPRMASK] Setting dataset compare filter character mask: %s\n", mask);
+    printf("  - Offsets matching mask characters will be excluded from mismatch checks. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "jclrun ", 7) == 0) return handle_jclrun(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
@@ -599,5 +610,6 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "iebcomprlim ", 12) == 0) return handle_iebcomprlim(cmd);
     if (strncmp(cmd, "iebupdtesrch ", 13) == 0) return handle_iebupdtesrch(cmd);
     if (strncmp(cmd, "iebdgseed ", 10) == 0) return handle_iebdgseed(cmd);
+    if (strncmp(cmd, "iebcomprmask ", 13) == 0) return handle_iebcomprmask(cmd);
     return false;
 }

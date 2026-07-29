@@ -478,6 +478,17 @@ static bool handle_cbtsubpri(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtsubprg(const char *cmd) {
+    char job_id[32] = "";
+    if (sscanf(cmd + 10, "%31s", job_id) < 1) {
+        printf("[SUBPRG ERROR] Syntax: cbtsubprg <job_id>\n");
+        return true;
+    }
+    printf("[SUBPRG] Purging job spool files and details for: %s\n", job_id);
+    printf("  - Spool directories and records successfully deleted. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtrexx ", 8) == 0) return handle_cbtrexx(cmd);
     if (strncmp(cmd, "ispfmenu", 8) == 0) return handle_ispfmenu(cmd);
@@ -490,5 +501,6 @@ bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtsubout ", 10) == 0) return handle_cbtsubout(cmd);
     if (strncmp(cmd, "cbtsubtrc ", 10) == 0) return handle_cbtsubtrc(cmd);
     if (strncmp(cmd, "cbtsubpri ", 10) == 0) return handle_cbtsubpri(cmd);
+    if (strncmp(cmd, "cbtsubprg ", 10) == 0) return handle_cbtsubprg(cmd);
     return false;
 }

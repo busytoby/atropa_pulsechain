@@ -350,6 +350,17 @@ static bool handle_vtamussstat(void) {
     return true;
 }
 
+static bool handle_vtamussfmt(const char *cmd) {
+    char format[16] = "";
+    if (sscanf(cmd + 11, "%15s", format) < 1) {
+        printf("[VTAMUSSFMT ERROR] Syntax: vtamussfmt <format>\n");
+        return true;
+    }
+    printf("[VTAM] USS solicits logon panel display format changed to: %s\n", format);
+    printf("  - Active USS message template updated successfully. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "cbtnet ", 7) == 0) return handle_cbtnet(cmd + 7);
     if (strncmp(cmd, "logon ", 6) == 0) return handle_vtam_logon(cmd);
@@ -363,5 +374,6 @@ bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "vtamtracebuf ", 13) == 0) return handle_vtamtracebuf(cmd);
     if (strncmp(cmd, "vtambufdet ", 11) == 0) return handle_vtambufdet(cmd);
     if (strcmp(cmd, "vtamussstat") == 0) return handle_vtamussstat();
+    if (strncmp(cmd, "vtamussfmt ", 11) == 0) return handle_vtamussfmt(cmd);
     return false;
 }

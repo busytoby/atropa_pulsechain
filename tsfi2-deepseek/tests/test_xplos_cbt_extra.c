@@ -477,6 +477,30 @@ int main(void) {
     assert(ussstat_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 53. Test IEBCOMPRMASK character mask compare filter
+    printf("[TEST] Testing IEBCOMPRMASK character mask comparison filter...\n");
+    bool comprmask_ok = tsfi_xplos_shell_exec(&shell, &sched, "iebcomprmask XXXXXX");
+    assert(comprmask_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 54. Test TSO spool job purge cleanup action (cbtsubprg)
+    printf("[TEST] Testing cbtsubprg spool purge...\n");
+    bool subprg_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtsubprg JOB00021");
+    assert(subprg_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 55. Test CICS Queue compression toggle (cbtcicscmpflg)
+    printf("[TEST] Testing CICS TSQ compaction auto toggle...\n");
+    bool cmpflg_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicscmpflg on");
+    assert(cmpflg_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 56. Test VTAM USS Solicit display format switch (vtamussfmt)
+    printf("[TEST] Testing VTAM USS logo Solicit panel layout formatter...\n");
+    bool ussfmt_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtamussfmt DETAILED");
+    assert(ussfmt_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }

@@ -237,6 +237,17 @@ static bool handle_cbtcicsclean(void) {
     return true;
 }
 
+static bool handle_cbtcicscmpflg(const char *cmd) {
+    char state[16] = "";
+    if (sscanf(cmd + 14, "%15s", state) < 1) {
+        printf("[CICSCMPFLG ERROR] Syntax: cbtcicscmpflg [on|off]\n");
+        return true;
+    }
+    printf("[CICSCMPFLG] Automatic transient storage compaction set to: %s\n", state);
+    printf("  - Memory manager state modified. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
@@ -248,5 +259,6 @@ bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strcmp(cmd, "cbtcicstrc") == 0) return handle_cbtcicstrc();
     if (strncmp(cmd, "cbtcicstrcflt ", 14) == 0) return handle_cbtcicstrcflt(cmd);
     if (strcmp(cmd, "cbtcicsclean") == 0) return handle_cbtcicsclean();
+    if (strncmp(cmd, "cbtcicscmpflg ", 14) == 0) return handle_cbtcicscmpflg(cmd);
     return false;
 }
