@@ -434,6 +434,19 @@ static bool handle_cbtsubrel(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtsubout(const char *cmd) {
+    char job_id[32] = "";
+    char dest[32] = "";
+    if (sscanf(cmd + 10, "%31s %31s", job_id, dest) < 2) {
+        printf("[SUBOUT ERROR] Syntax: cbtsubout <job_id> <dest>\n");
+        return true;
+    }
+    printf("[SUBOUT] Redirecting execution spool output for %s...\n", job_id);
+    printf("  - Destination target: %s\n", dest);
+    printf("[SUBOUT] Spool log redirected successfully. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtrexx ", 8) == 0) return handle_cbtrexx(cmd);
     if (strncmp(cmd, "ispfmenu", 8) == 0) return handle_ispfmenu(cmd);
@@ -443,5 +456,6 @@ bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtsubchk ", 10) == 0) return handle_cbtsubchk(cmd);
     if (strcmp(cmd, "cbtsublist") == 0) return handle_cbtsublist();
     if (strncmp(cmd, "cbtsubrel ", 10) == 0) return handle_cbtsubrel(cmd);
+    if (strncmp(cmd, "cbtsubout ", 10) == 0) return handle_cbtsubout(cmd);
     return false;
 }

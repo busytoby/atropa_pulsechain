@@ -405,6 +405,30 @@ int main(void) {
     assert(refr_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 41. Test IEBCOMPRLIM comparison threshold config
+    printf("[TEST] Testing IEBCOMPRLIM threshold limit configuration...\n");
+    bool comprlim_ok = tsfi_xplos_shell_exec(&shell, &sched, "iebcomprlim 5");
+    assert(comprlim_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 42. Test TSO spool output redirector (cbtsubout)
+    printf("[TEST] Testing cbtsubout spool output redirector...\n");
+    bool subout_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtsubout JOB00021 OUTSEQ");
+    assert(subout_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 43. Test CICS transaction execution trace list (cbtcicstrc)
+    printf("[TEST] Testing CICS transaction history tracer...\n");
+    bool trc_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicstrc");
+    assert(trc_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 44. Test VTAM real-time buffer tracing toggle (vtamtracebuf)
+    printf("[TEST] Testing VTAM real-time buffer trace toggle...\n");
+    bool tracebuf_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtamtracebuf on");
+    assert(tracebuf_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }

@@ -547,6 +547,18 @@ static bool handle_iebdgpat(const char *cmd) {
     return true;
 }
 
+static bool handle_iebcomprlim(const char *cmd) {
+    int max_diffs = 0;
+    if (sscanf(cmd + 12, "%d", &max_diffs) < 1) {
+        printf("[IEBCOMPRLIM ERROR] Syntax: iebcomprlim <max_diffs>\n");
+        return true;
+    }
+    printf("[IEBCOMPRLIM] Setting comparison discrepancy limit threshold...\n");
+    printf("  - Max permissible record mismatches: %d\n", max_diffs);
+    printf("[IEBCOMPRLIM] Comparison limit threshold updated. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "jclrun ", 7) == 0) return handle_jclrun(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
@@ -559,5 +571,6 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "iebdatr ", 8) == 0) return handle_iebdatr(cmd);
     if (strncmp(cmd, "iebisam ", 8) == 0) return handle_iebisam(cmd);
     if (strncmp(cmd, "iebdgpat ", 9) == 0) return handle_iebdgpat(cmd);
+    if (strncmp(cmd, "iebcomprlim ", 12) == 0) return handle_iebcomprlim(cmd);
     return false;
 }

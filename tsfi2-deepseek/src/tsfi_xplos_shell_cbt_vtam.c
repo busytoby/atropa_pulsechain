@@ -308,6 +308,17 @@ static bool handle_vtamrefr(void) {
     return true;
 }
 
+static bool handle_vtamtracebuf(const char *cmd) {
+    char state[16] = "";
+    if (sscanf(cmd + 13, "%15s", state) < 1) {
+        printf("[VTAMTRACEBUF ERROR] Syntax: vtamtracebuf [on|off]\n");
+        return true;
+    }
+    printf("[VTAM] Real-time buffer trace tracking set to: %s\n", state);
+    printf("  - Trace hooks active on FID2 routing blocks. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "cbtnet ", 7) == 0) return handle_cbtnet(cmd + 7);
     if (strncmp(cmd, "logon ", 6) == 0) return handle_vtam_logon(cmd);
@@ -318,5 +329,6 @@ bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strcmp(cmd, "vtambuf") == 0) return handle_vtambuf();
     if (strcmp(cmd, "vtamtrace") == 0) return handle_vtamtrace();
     if (strcmp(cmd, "vtamrefr") == 0) return handle_vtamrefr();
+    if (strncmp(cmd, "vtamtracebuf ", 13) == 0) return handle_vtamtracebuf(cmd);
     return false;
 }

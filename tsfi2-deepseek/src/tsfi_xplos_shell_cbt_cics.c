@@ -197,6 +197,19 @@ static bool handle_cbtcicslim(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtcicstrc(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  CICS AUXILIARY TRANSACTION EXECUTION TRACE                    \n");
+    printf("================================================================================\n");
+    printf(" TRACE ID | TRANID | PROGRAM  | TIME     | TASK TYPE | RESP STATUS\n");
+    printf("--------------------------------------------------------------------------------\n");
+    printf(" TRC0001  | CSKP   | DFHCKP   | 12:00:00 | SYSTEM    | NORMAL\n");
+    printf(" TRC0002  | SBMJ   | CBTSUBM  | 12:01:15 | USER      | NORMAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
@@ -205,5 +218,6 @@ bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicscmp ", 11) == 0) return handle_cbtcicscmp(cmd);
     if (strncmp(cmd, "cbtcicspurge ", 13) == 0) return handle_cbtcicspurge(cmd);
     if (strncmp(cmd, "cbtcicslim ", 11) == 0) return handle_cbtcicslim(cmd);
+    if (strcmp(cmd, "cbtcicstrc") == 0) return handle_cbtcicstrc();
     return false;
 }
