@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include "tsfi_xplos_kernel.h"
 #include "tsfi_displacementshader.h"
+#include "lau_thunk.h"
 
 // Simulated XPLSM Monitor State
 typedef struct {
@@ -54,6 +55,13 @@ bool analyzer_expand_skeleton(AnalyzerParser *parser, const char *skeleton_in, c
     strncpy(jcl_out, skeleton_in, max_len - 1);
     jcl_out[max_len - 1] = '\0';
     return true;
+}
+
+static int g_thunk_callback_val = 0;
+static void test_thunk_callback(const char *arg) {
+    if (strcmp(arg, "thunk_verify_test") == 0) {
+        g_thunk_callback_val = 42;
+    }
 }
 
 int main(void) {
@@ -162,6 +170,21 @@ int main(void) {
     double offset2 = tsfi_displacementshader_eval(&ds, 10.0 + 256.0, 20.0 + 512.0);
     assert(offset1 == offset2);
     printf("  -> DisplacementShader coordinate boundary wrap verified successfully.\n");
+
+    // 14. Verify JIT Thunk VM compilation and forwarding
+    printf("  -> Testing JIT Thunk VM context creation and execution...\n");
+    ThunkProxy *thunk = ThunkProxy_create();
+    assert(thunk != NULL);
+    assert(thunk->thunk_pool != NULL);
+    
+    void *jit_fn = ThunkProxy_emit_baked(thunk, (void*)test_thunk_callback, 1, "thunk_verify_test");
+    assert(jit_fn != NULL);
+    
+    typedef void (*thunk_entry)(void);
+    ((thunk_entry)jit_fn)();
+    
+    assert(g_thunk_callback_val == 42);
+    printf("  -> JIT Thunk dynamic execution verified successfully.\n");
 
     printf("\n=== INTEGRATION PROOFS PASSED ===\n");
     return 0;
