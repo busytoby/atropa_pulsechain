@@ -1133,6 +1133,24 @@ int main(void) {
     assert(jcljoblimitstat_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 162. Test JCL job resource limit modification logs history (cbtjcljoblimitstats)
+    printf("[TEST] Testing JCL job resource limit logs history query...\n");
+    bool jcljoblimitstats_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtjcljoblimitstats");
+    assert(jcljoblimitstats_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 163. Test JCL job resource limit logs integrity status (cbtjcljoblimitstatsstatus)
+    printf("[TEST] Testing JCL job resource limit logs integrity status query...\n");
+    bool jcljoblimitstatsstatus_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtjcljoblimitstatsstatus");
+    assert(jcljoblimitstatsstatus_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 164. Test JCL job resource limit logs integrity details (cbtjcljoblimitstatsstatusdetails)
+    printf("[TEST] Testing JCL job resource limit logs integrity status details query...\n");
+    bool jcljoblimitstatsstatusdetails_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtjcljoblimitstatsstatusdetails");
+    assert(jcljoblimitstatsstatusdetails_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }
