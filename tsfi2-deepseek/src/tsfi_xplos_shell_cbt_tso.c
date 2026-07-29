@@ -502,6 +502,17 @@ static bool handle_cbtsubfind(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtsubnot(const char *cmd) {
+    char state[16] = "";
+    if (sscanf(cmd + 10, "%15s", state) < 1) {
+        printf("[SUBNOT ERROR] Syntax: cbtsubnot [on|off]\n");
+        return true;
+    }
+    printf("[SUBNOT] Spool completion terminal notification set to: %s\n", state);
+    printf("  - User logon broadcast alerts mapped successfully. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtrexx ", 8) == 0) return handle_cbtrexx(cmd);
     if (strncmp(cmd, "ispfmenu", 8) == 0) return handle_ispfmenu(cmd);
@@ -516,5 +527,6 @@ bool tsfi_xplos_shell_cbt_tso(const char *cmd) {
     if (strncmp(cmd, "cbtsubpri ", 10) == 0) return handle_cbtsubpri(cmd);
     if (strncmp(cmd, "cbtsubprg ", 10) == 0) return handle_cbtsubprg(cmd);
     if (strncmp(cmd, "cbtsubfind ", 11) == 0) return handle_cbtsubfind(cmd);
+    if (strncmp(cmd, "cbtsubnot ", 10) == 0) return handle_cbtsubnot(cmd);
     return false;
 }

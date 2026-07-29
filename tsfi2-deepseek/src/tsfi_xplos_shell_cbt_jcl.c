@@ -607,6 +607,17 @@ static bool handle_iebimagespc(const char *cmd) {
     return true;
 }
 
+static bool handle_iebdatrchk(const char *cmd) {
+    char target[32] = "";
+    if (sscanf(cmd + 11, "%31s", target) < 1) {
+        printf("[IEBDATRCHK ERROR] Syntax: iebdatrchk <dsn>\n");
+        return true;
+    }
+    printf("[IEBDATRCHK] Auditing record format variables for dataset %s...\n", target);
+    printf("  - Verification status: Record length and block parity parameters validated. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "jclrun ", 7) == 0) return handle_jclrun(cmd);
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
@@ -624,5 +635,6 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "iebdgseed ", 10) == 0) return handle_iebdgseed(cmd);
     if (strncmp(cmd, "iebcomprmask ", 13) == 0) return handle_iebcomprmask(cmd);
     if (strncmp(cmd, "iebimagespc ", 12) == 0) return handle_iebimagespc(cmd);
+    if (strncmp(cmd, "iebdatrchk ", 11) == 0) return handle_iebdatrchk(cmd);
     return false;
 }

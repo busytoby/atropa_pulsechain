@@ -525,6 +525,30 @@ int main(void) {
     assert(ussdelay_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 61. Test IEBDATRCHK record format verification checker
+    printf("[TEST] Testing IEBDATRCHK record format checker...\n");
+    bool datrchk_ok = tsfi_xplos_shell_exec(&shell, &sched, "iebdatrchk OUTSEQ");
+    assert(datrchk_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 62. Test TSO spool job notify alert toggle (cbtsubnot)
+    printf("[TEST] Testing cbtsubnot spool Alert toggle...\n");
+    bool subnot_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtsubnot on");
+    assert(subnot_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 63. Test CICS Queue details explorer (cbtcicsdet)
+    printf("[TEST] Testing CICS TSQ detailed explorer...\n");
+    bool cicsdet_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtcicsdet Q1");
+    assert(cicsdet_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 64. Test VTAM Route stability control (vtamroutesol)
+    printf("[TEST] Testing VTAM path routing stability controller...\n");
+    bool routesol_ok = tsfi_xplos_shell_exec(&shell, &sched, "vtamroutesol 95");
+    assert(routesol_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }

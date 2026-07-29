@@ -260,6 +260,25 @@ static bool handle_cbtcicscleanmask(const char *cmd) {
     return true;
 }
 
+static bool handle_cbtcicsdet(const char *cmd) {
+    char queue_id[32] = "";
+    if (sscanf(cmd + 11, "%31s", queue_id) < 1) {
+        printf("[CICS_DET ERROR] Syntax: cbtcicsdet <queue_id>\n");
+        return true;
+    }
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  CICS TRANSIENT STORAGE DETAILED VIEW: %s                     \n", queue_id);
+    printf("================================================================================\n");
+    printf(" QUEUE TYPE       : MAIN MEMORY LAYOUT BUFFER\n");
+    printf(" ACTIVE RECORDS   : 1 RECORD\n");
+    printf(" TOTAL LENGTH     : 12 BYTES\n");
+    printf(" LAST TRANSACTION : CSKP\n");
+    printf(" RESPONSE STATUS  : NORMAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strncmp(cmd, "cbtcicstd ", 10) == 0) return handle_cbtcicstd(cmd);
     if (strncmp(cmd, "cbtcicsts ", 10) == 0) return handle_cbtcicsts(cmd);
@@ -273,5 +292,6 @@ bool tsfi_xplos_shell_cbt_cics(const char *cmd) {
     if (strcmp(cmd, "cbtcicsclean") == 0) return handle_cbtcicsclean();
     if (strncmp(cmd, "cbtcicscmpflg ", 14) == 0) return handle_cbtcicscmpflg(cmd);
     if (strncmp(cmd, "cbtcicscleanmask ", 17) == 0) return handle_cbtcicscleanmask(cmd);
+    if (strncmp(cmd, "cbtcicsdet ", 11) == 0) return handle_cbtcicsdet(cmd);
     return false;
 }

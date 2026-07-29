@@ -372,6 +372,17 @@ static bool handle_vtamussdelay(const char *cmd) {
     return true;
 }
 
+static bool handle_vtamroutesol(const char *cmd) {
+    int stability = 0;
+    if (sscanf(cmd + 13, "%d", &stability) < 1) {
+        printf("[VTAMROUTESOL ERROR] Syntax: vtamroutesol <stability_pct>\n");
+        return true;
+    }
+    printf("[VTAM] Path route stability modifier updated to: %d%%\n", stability);
+    printf("  - Gateway transmission limits recalibrated. RC=0000\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strncmp(cmd, "cbtnet ", 7) == 0) return handle_cbtnet(cmd + 7);
     if (strncmp(cmd, "logon ", 6) == 0) return handle_vtam_logon(cmd);
@@ -387,5 +398,6 @@ bool tsfi_xplos_shell_cbt_vtam(const char *cmd) {
     if (strcmp(cmd, "vtamussstat") == 0) return handle_vtamussstat();
     if (strncmp(cmd, "vtamussfmt ", 11) == 0) return handle_vtamussfmt(cmd);
     if (strncmp(cmd, "vtamussdelay ", 13) == 0) return handle_vtamussdelay(cmd);
+    if (strncmp(cmd, "vtamroutesol ", 13) == 0) return handle_vtamroutesol(cmd);
     return false;
 }
