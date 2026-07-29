@@ -324,6 +324,22 @@ static void cbt_node_worker_task_handler(void *arg) {
 
 static XplosScheduler *g_active_sched = NULL;
 
+static void resolve_pds_name(const char *input, char *output, size_t max_len) {
+    const char *open_paren = strchr(input, '(');
+    const char *close_paren = strchr(input, ')');
+    if (open_paren && close_paren && close_paren > open_paren) {
+        size_t len = close_paren - open_paren - 1;
+        if (len >= max_len) len = max_len - 1;
+        memcpy(output, open_paren + 1, len);
+        output[len] = '\0';
+        if (!strstr(output, ".dat.bin")) {
+            strncat(output, ".dat.bin", max_len - len - 1);
+        }
+    } else {
+        snprintf(output, max_len, "%s.dat.bin", input);
+    }
+}
+
 // Helper: Task entry that evaluates the shell command in task context
 static void shell_task_handler(void *arg) {
     const char *cmd = (const char *)arg;
@@ -3698,7 +3714,7 @@ static void shell_task_handler(void *arg) {
         const char *member = cmd + 4;
         if (strlen(member) > 0) {
             char target_name[80];
-            snprintf(target_name, sizeof(target_name), "%s.dat.bin", member);
+            resolve_pds_name(member, target_name, sizeof(target_name));
             int file_idx = -1;
             for (int i = 0; i < g_vfs.count; i++) {
                 if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, target_name) == 0) {
