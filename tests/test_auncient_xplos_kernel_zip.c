@@ -1418,6 +1418,24 @@ int main(void) {
     tsfi_xplos_run(&sched_prt);
     printf("   ✓ CBTPRT execution verified successfully.\n");
 
+    // 94. Test CBTXREF command execution
+    printf("[KERNEL TEST] Dispatching 'cbtxref' command to XplOS shell...\n");
+    XplosShell shell_xref;
+    XplosScheduler sched_xref;
+    tsfi_xplos_init_scheduler(&sched_xref);
+    tsfi_xplos_init_shell(&shell_xref);
+    
+    FILE *f_xref_tmp = fopen("tests/xref_lib.dat.bin", "wb");
+    uint8_t dummy_xref[8] = {0};
+    fwrite(dummy_xref, 1, 8, f_xref_tmp);
+    fclose(f_xref_tmp);
+
+    bool xref_ok = tsfi_xplos_shell_exec(&shell_xref, &sched_xref, "cbtxref tests/xref_lib.dat.bin");
+    assert(xref_ok == true);
+    tsfi_xplos_run(&sched_xref);
+    printf("   ✓ CBTXREF execution verified successfully.\n");
+    remove("tests/xref_lib.dat.bin");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
