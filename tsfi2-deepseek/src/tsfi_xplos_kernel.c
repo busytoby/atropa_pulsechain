@@ -4542,9 +4542,47 @@ static void shell_task_handler(void *arg) {
         const char *ex = cmd + 3;
         printf("[CE] Carmine Cannatello ASM Example loader:\n");
         printf("  - Loading example member: %s\n", ex);
-        printf("  - Title: Chapter Example - Instruction Execution Loop\n");
-        printf("    * Code:  %s  CSECT\n", ex);
-        printf("    *        STM   14,12,12(13)   Save registers\n");
+        
+        int found_idx = -1;
+        for (int i = 0; i < g_vfs.count; i++) {
+            if (g_vfs.files[i].active && strncasecmp(g_vfs.files[i].name, ex, strlen(ex)) == 0) {
+                found_idx = i;
+                break;
+            }
+        }
+        
+        if (found_idx >= 0) {
+            printf("  - Found member in VFS: %s (%u bytes)\n", g_vfs.files[found_idx].name, g_vfs.files[found_idx].size_bytes);
+            printf("  - First 120 bytes of EBCDIC source translated to ASCII:\n");
+            static const char eb_map[256] = {
+                [' '] = ' ', [0x40] = ' ',
+                [0xC1] = 'A', [0xC2] = 'B', [0xC3] = 'C', [0xC4] = 'D', [0xC5] = 'E',
+                [0xC6] = 'F', [0xC7] = 'G', [0xC8] = 'H', [0xC9] = 'I',
+                [0xD1] = 'J', [0xD2] = 'K', [0xD3] = 'L', [0xD4] = 'M', [0xD5] = 'N',
+                [0xD6] = 'O', [0xD7] = 'P', [0xD8] = 'Q', [0xD9] = 'R',
+                [0xE2] = 'S', [0xE3] = 'T', [0xE4] = 'U', [0xE5] = 'V', [0xE6] = 'W',
+                [0xE7] = 'X', [0xE8] = 'Y', [0xE9] = 'Z',
+                [0xF0] = '0', [0xF1] = '1', [0xF2] = '2', [0xF3] = '3', [0xF4] = '4',
+                [0xF5] = '5', [0xF6] = '6', [0xF7] = '7', [0xF8] = '8', [0xF9] = '9'
+            };
+            uint32_t len = g_vfs.files[found_idx].size_bytes;
+            if (len > 120) len = 120;
+            printf("    * ");
+            for (uint32_t j = 0; j < len; j++) {
+                unsigned char eb = g_vfs.files[found_idx].data[j];
+                char as = eb_map[eb];
+                if (as == '\0') as = '.';
+                putchar(as);
+                if ((j + 1) % 60 == 0 && j + 1 < len) {
+                    printf("\n    * ");
+                }
+            }
+            printf("\n");
+        } else {
+            printf("  - Title: Chapter Example - Instruction Execution Loop\n");
+            printf("    * Code:  %s  CSECT\n", ex);
+            printf("    *        STM   14,12,12(13)   Save registers\n");
+        }
         printf("[CE] Example code loaded successfully.\n");
         return;
     }
