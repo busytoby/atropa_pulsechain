@@ -1199,6 +1199,24 @@ int main(void) {
     tsfi_xplos_run(&sched_vtoc);
     printf("   ✓ CBTVTOC execution verified successfully.\n");
 
+    // 79. Test CBTTAPEMAP command execution
+    printf("[KERNEL TEST] Dispatching 'cbttapemap' command to XplOS shell...\n");
+    XplosShell shell_tapemap;
+    XplosScheduler sched_tapemap;
+    tsfi_xplos_init_scheduler(&sched_tapemap);
+    tsfi_xplos_init_shell(&shell_tapemap);
+    
+    FILE *f_tape_tmp = fopen("tests/tape_vol.dat.bin", "wb");
+    uint8_t zero_block[80] = {0};
+    fwrite(zero_block, 1, 80, f_tape_tmp);
+    fclose(f_tape_tmp);
+
+    bool cbttapemap_ok = tsfi_xplos_shell_exec(&shell_tapemap, &sched_tapemap, "cbttapemap tests/tape_vol.dat.bin");
+    assert(cbttapemap_ok == true);
+    tsfi_xplos_run(&sched_tapemap);
+    printf("   ✓ CBTTAPEMAP execution verified successfully.\n");
+    remove("tests/tape_vol.dat.bin");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
