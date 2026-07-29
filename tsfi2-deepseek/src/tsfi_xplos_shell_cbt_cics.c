@@ -22,8 +22,6 @@ static void resolve_pds_name_helper(const char *member, char *out, size_t max_le
     snprintf(out, max_len, "%s.dat.bin", member);
 }
 
-static char g_cics_tdqs[4][10][80];
-static int g_cics_tdq_counts[4];
 static char g_cics_tdq_names[4][8] = {"AUTD", "SBM1", "LOG1", "OUT1"};
 static bool handle_cbtcicstd(const char *cmd) {
     char subcmd[16] = "";
@@ -43,25 +41,68 @@ static bool handle_cbtcicstd(const char *cmd) {
             return true;
         }
 
+        tsfi_cw_vsam_ksds ksds;
+        int open_rc = tsfi_cw_vsam_open(&ksds, "CICS_QUEUE.dat.bin");
+        if (open_rc != 0) {
+            printf("[CICS TDQ ERROR] Failed to open CICS_QUEUE.dat.bin (RC=%d)\n", open_rc);
+            return true;
+        }
+
         if (strcasecmp(subcmd, "write") == 0) {
-            if (g_cics_tdq_counts[tdq_idx] >= 10) {
+            char count_key[32];
+            snprintf(count_key, sizeof(count_key), "%s:count", tdq);
+            uint8_t count_buf[32] = {0};
+            int count_len = 0;
+            int count_rc = tsfi_cw_vsam_read(&ksds, count_key, count_buf, sizeof(count_buf) - 1, &count_len);
+            int count = 0;
+            if (count_rc == 0 && count_len > 0) {
+                count = atoi((char *)count_buf);
+            }
+            if (count >= 10) {
                 printf("[CICS TDQ ERROR] TDQ %s is full.\n", tdq);
                 return true;
             }
-            strncpy(g_cics_tdqs[tdq_idx][g_cics_tdq_counts[tdq_idx]], val, 79);
-            g_cics_tdqs[tdq_idx][g_cics_tdq_counts[tdq_idx]][79] = '\0';
-            g_cics_tdq_counts[tdq_idx]++;
-            printf("[CICS TDQ] Written to TDQ %s: '%s'\n", tdq, val);
+
+            char item_key[32];
+            snprintf(item_key, sizeof(item_key), "%s:%d", tdq, count);
+            int write_rc = tsfi_cw_vsam_write(&ksds, item_key, (uint8_t *)val, strlen(val));
+            if (write_rc == 0) {
+                count++;
+                char new_count_buf[32];
+                snprintf(new_count_buf, sizeof(new_count_buf), "%d", count);
+                tsfi_cw_vsam_write(&ksds, count_key, (uint8_t *)new_count_buf, strlen(new_count_buf));
+                printf("[CICS TDQ] Written to TDQ %s: '%s'\n", tdq, val);
+            } else {
+                printf("[CICS TDQ ERROR] Write failed (RC=%d)\n", write_rc);
+            }
             return true;
         }
         if (strcasecmp(subcmd, "sbmj") == 0) {
             printf("[CICS TDQ] Executing Transaction SBMJ on Queue %s...\n", tdq);
-            char jcl_stream[2048] = "";
-            for (int i = 0; i < g_cics_tdq_counts[tdq_idx]; i++) {
-                strcat(jcl_stream, g_cics_tdqs[tdq_idx][i]);
-                strcat(jcl_stream, "\n");
+            char count_key[32];
+            snprintf(count_key, sizeof(count_key), "%s:count", tdq);
+            uint8_t count_buf[32] = {0};
+            int count_len = 0;
+            int count_rc = tsfi_cw_vsam_read(&ksds, count_key, count_buf, sizeof(count_buf) - 1, &count_len);
+            int count = 0;
+            if (count_rc == 0 && count_len > 0) {
+                count = atoi((char *)count_buf);
             }
-            g_cics_tdq_counts[tdq_idx] = 0;
+
+            char jcl_stream[2048] = "";
+            for (int i = 0; i < count; i++) {
+                char item_key[32];
+                snprintf(item_key, sizeof(item_key), "%s:%d", tdq, i);
+                uint8_t item_buf[128] = {0};
+                int item_len = 0;
+                int item_rc = tsfi_cw_vsam_read(&ksds, item_key, item_buf, sizeof(item_buf) - 1, &item_len);
+                if (item_rc == 0 && item_len > 0) {
+                    strcat(jcl_stream, (char *)item_buf);
+                    strcat(jcl_stream, "\n");
+                }
+            }
+
+            tsfi_cw_vsam_write(&ksds, count_key, (uint8_t *)"0", 1);
 
             char temp_member[] = "TDQJOB";
             char vfs_filename[128];
