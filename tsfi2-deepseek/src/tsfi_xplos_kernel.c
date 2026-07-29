@@ -4641,6 +4641,29 @@ static void shell_task_handler(void *arg) {
         return;
     }
 
+    // Check for "blokhd " command
+    if (strncmp(cmd, "blokhd ", 7) == 0) {
+        const char *text = cmd + 7;
+        printf("[BLOKHD] Block Letter Heading Generator:\n");
+        for (size_t i = 0; text[i] != '\0'; i++) {
+            char c = text[i];
+            if (c >= 'a' && c <= 'z') c = c - 'a' + 'A';
+            if (c == 'C') {
+                printf("  CCCC \n C    C\n C     \n C    C\n  CCCC \n\n");
+            } else if (c == 'O') {
+                printf("  OOOO \n O    O\n O    O\n O    O\n  OOOO \n\n");
+            } else if (c == 'P') {
+                printf(" PPPPP \n P    P\n PPPPP \n P     \n P     \n\n");
+            } else if (c == 'Y') {
+                printf(" Y   Y \n  Y Y  \n   Y   \n   Y   \n   Y   \n\n");
+            } else {
+                printf(" ***** \n *   * \n ***** \n *   * \n *   * \n\n");
+            }
+        }
+        printf("[BLOKHD] Heading generation completed.\n");
+        return;
+    }
+
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
     if (tsfi_xplg_parse_semantic_action(cmd, &tx)) {

@@ -2020,6 +2020,12 @@ int main(void) {
     assert(vk_ok == true);
     tsfi_xplos_run(&sched_bh2);
 
+    tsfi_xplos_init_scheduler(&sched_bh2);
+
+    bool bh_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "blokhd COPY");
+    assert(bh_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
     printf("   ✓ File 316 utilities execution verified successfully.\n");
 
     printf("=============================================================\n");
