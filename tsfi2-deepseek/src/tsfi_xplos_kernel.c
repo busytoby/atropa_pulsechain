@@ -11,8 +11,11 @@
 #include "tsfi_nadler_syntactic_parser.h"
 #include "tsfi_parc_tape_catalog.h"
 #include "tsfi_cbt_inmemory.h"
-#include "tsfi_xplos_shell_cbt_extra.h"
-#include "tsfi_xplos_shell_cbt_diagnostics.h"
+#include "tsfi_xplos_shell_cbt_jes.h"
+#include "tsfi_xplos_shell_cbt_jcl.h"
+#include "tsfi_xplos_shell_cbt_vtam.h"
+#include "tsfi_xplos_shell_cbt_cics.h"
+#include "tsfi_xplos_shell_cbt_tso.h"
 #include <ctype.h>
 #include <unistd.h>
 
@@ -335,8 +338,11 @@ void shell_task_handler(void *arg) {
         tsfi_xplos_init_vfs(&g_vfs);
         g_vfs_initialized = true;
     }
-    if (tsfi_xplos_shell_cbt_extra(cmd)) return;
-    if (tsfi_xplos_shell_cbt_diagnostics(cmd)) return;
+    if (tsfi_xplos_shell_cbt_jes(cmd)) return;
+    if (tsfi_xplos_shell_cbt_jcl(cmd)) return;
+    if (tsfi_xplos_shell_cbt_vtam(cmd)) return;
+    if (tsfi_xplos_shell_cbt_cics(cmd)) return;
+    if (tsfi_xplos_shell_cbt_tso(cmd)) return;
     if (tsfi_xplos_shell_legacy(cmd)) return;
     if (tsfi_xplos_shell_tape(cmd)) return;
     if (tsfi_xplos_shell_vsam(cmd)) return;

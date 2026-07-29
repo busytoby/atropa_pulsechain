@@ -3,7 +3,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include "tsfi_xplos_kernel.h"
-#include "tsfi_xplos_shell_cbt_extra.h"
+#include "tsfi_xplos_shell_cbt_jes.h"
+#include "tsfi_xplos_shell_cbt_jcl.h"
+#include "tsfi_xplos_shell_cbt_vtam.h"
+#include "tsfi_xplos_shell_cbt_cics.h"
+#include "tsfi_xplos_shell_cbt_tso.h"
 
 extern XplosVirtualDisk g_vfs;
 extern bool g_vfs_initialized;

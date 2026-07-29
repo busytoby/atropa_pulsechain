@@ -1,0 +1,516 @@
+#define _GNU_SOURCE
+#define _DEFAULT_SOURCE
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <ctype.h>
+#include <time.h>
+#include "tsfi_xplos_kernel.h"
+#include "tsfi_xplos_kernel_internal.h"
+#include "tsfi_xplos_shell_cbt_jcl.h"
+#include "tsfi_xplos_shell_cbt_jes.h"
+#include "tsfi_xplos_shell_cbt_tso.h"
+extern XplosVirtualDisk g_vfs;
+extern CbtSpoolJob cbt_job_table[10];
+extern XplosScheduler *g_active_sched;
+static void resolve_pds_name_helper(const char *member, char *out, size_t max_len) {
+    snprintf(out, max_len, "%s.dat.bin", member);
+}
+
+static bool handle_jclrun(const char *cmd) {
+    char jcl_name[64] = "";
+    if (sscanf(cmd + 7, "%63s", jcl_name) == 1) {
+        char vfs_filename[128];
+        resolve_pds_name_helper(jcl_name, vfs_filename, sizeof(vfs_filename));
+
+        int file_idx = -1;
+        for (int i = 0; i < g_vfs.count; i++) {
+            if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, vfs_filename) == 0) {
+                file_idx = i;
+                break;
+            }
+        }
+
+        char jcl_data[8192];
+        if (file_idx >= 0) {
+            strncpy(jcl_data, g_vfs.files[file_idx].data, sizeof(jcl_data) - 1);
+            jcl_data[sizeof(jcl_data) - 1] = '\0';
+        } else {
+            // Simulated default JCL stream
+            printf("[JCLRUN] Warning: JCL member '%s' not found. Using fallback JCL execution.\n", jcl_name);
+            snprintf(jcl_data, sizeof(jcl_data),
+                     "//%s JOB 'CBT TAPE RUN',CLASS=A,MSGCLASS=X\n"
+                     "//STEP1 EXEC PGM=IEBCOPY\n"
+                     "//SYSUT1 DD DSN=CBT.V510.FILE002,DISP=SHR\n"
+                     "//SYSUT2 DD DSN=CBT.V510.FILE003,DISP=OLD\n"
+                     "// IF (RC = 0) THEN\n"
+                     "//STEP2 EXEC PGM=IBHDRPLY\n"
+                     "// ENDIF\n",
+                     jcl_name);
+        }
+
+        char log_msg[256];
+        snprintf(log_msg, sizeof(log_msg), "[JCLRUN EXECUTION START: %s]\n", jcl_name);
+        printf("%s", log_msg);
+        append_spool_log(jcl_name, log_msg);
+
+        char *line = strtok(jcl_data, "\n");
+        int rc = 0;
+        bool skip_block = false;
+
+        while (line) {
+            // Trim leading spaces
+            while (isspace((unsigned char)*line)) line++;
+
+            if (strncmp(line, "//", 2) == 0) {
+                const char *card = line + 2;
+                while (isspace((unsigned char)*card)) card++;
+
+                if (strncmp(card, "IF ", 3) == 0 || strncmp(card, "if ", 3) == 0) {
+                    snprintf(log_msg, sizeof(log_msg), "  JCL_COND> Checking condition: %s\n", card);
+                    printf("%s", log_msg);
+                    append_spool_log(jcl_name, log_msg);
+                    if (strstr(card, "RC = 0") && rc != 0) {
+                        skip_block = true;
+                        snprintf(log_msg, sizeof(log_msg), "  JCL_COND> Condition Failed. Bypassing subsequent steps.\n");
+                        printf("%s", log_msg);
+                        append_spool_log(jcl_name, log_msg);
+                    }
+                }
+                else if (strncmp(card, "ENDIF", 5) == 0 || strncmp(card, "endif", 5) == 0) {
+                    skip_block = false;
+                    snprintf(log_msg, sizeof(log_msg), "  JCL_COND> ENDIF reached.\n");
+                    printf("%s", log_msg);
+                    append_spool_log(jcl_name, log_msg);
+                }
+                else if (strstr(card, " EXEC ") || strstr(card, " exec ")) {
+                    if (skip_block) {
+                        snprintf(log_msg, sizeof(log_msg), "  JCL_STEP> Bypassed step: %s\n", card);
+                        printf("%s", log_msg);
+                        append_spool_log(jcl_name, log_msg);
+                    } else {
+                        char pgm_name[64] = "";
+                        char *pgm_ptr = strstr(card, "PGM=");
+                        if (pgm_ptr) {
+                            sscanf(pgm_ptr + 4, "%63[^, \r\n]", pgm_name);
+                        }
+                        snprintf(log_msg, sizeof(log_msg), "  JCL_STEP> Executing step Program: %s\n", pgm_name);
+                        printf("%s", log_msg);
+                        append_spool_log(jcl_name, log_msg);
+                        if (strcmp(pgm_name, "IEBCOPY") == 0) {
+                            rc = 0;
+                            snprintf(log_msg, sizeof(log_msg), "    * IEBCOPY completed successfully. RC=0000\n");
+                            printf("%s", log_msg);
+                            append_spool_log(jcl_name, log_msg);
+                        } else if (strcmp(pgm_name, "IBHDRPLY") == 0) {
+                            rc = 0;
+                            snprintf(log_msg, sizeof(log_msg), "    * IBHDRPLY Automatic Reply executed. RC=0000\n");
+                            printf("%s", log_msg);
+                            append_spool_log(jcl_name, log_msg);
+                        } else if (strcmp(pgm_name, "IEFBR14") == 0) {
+                            rc = 0;
+                            snprintf(log_msg, sizeof(log_msg), "    * IEFBR14 Dummy Program executed. Resolving DD dispositions. RC=0000\n");
+                            printf("%s", log_msg);
+                            append_spool_log(jcl_name, log_msg);
+                        } else if (strcmp(pgm_name, "IKJEFT01") == 0) {
+                            rc = 0;
+                            snprintf(log_msg, sizeof(log_msg), "    * IKJEFT01 Terminal Monitor Program launched. RC=0000\n");
+                            printf("%s", log_msg);
+                            append_spool_log(jcl_name, log_msg);
+                            snprintf(log_msg, sizeof(log_msg), "      TSO_TMP> Executing command from SYSTSIN: cbtrexx vput SYSVAR 953467954114363\n");
+                            printf("%s", log_msg);
+                            append_spool_log(jcl_name, log_msg);
+                            tsfi_xplos_shell_cbt_tso("cbtrexx vput SYSVAR 953467954114363");
+                        } else {
+                            rc = 4;
+                            snprintf(log_msg, sizeof(log_msg), "    * Program %s executed. RC=0004 (Warning)\n", pgm_name);
+                            printf("%s", log_msg);
+                            append_spool_log(jcl_name, log_msg);
+                        }
+                    }
+                }
+                else if (strstr(card, " DD ") || strstr(card, " dd ")) {
+                    if (!skip_block) {
+                        snprintf(log_msg, sizeof(log_msg), "  JCL_ALLOC> Allocation: %s\n", card);
+                        printf("%s", log_msg);
+                        append_spool_log(jcl_name, log_msg);
+                    }
+                }
+            }
+
+            line = strtok(NULL, "\n");
+        }
+
+        snprintf(log_msg, sizeof(log_msg), "[JCLRUN EXECUTION COMPLETED: Max RC=%04d]\n", rc);
+        printf("%s", log_msg);
+        append_spool_log(jcl_name, log_msg);
+        return true;
+    }
+    printf("[JCLRUN ERROR] JCL member name required.\n");
+    return true;
+}
+static bool handle_iebupdte(const char *cmd) {
+    char sysin[64] = "";
+    if (sscanf(cmd + 9, "%63s", sysin) != 1) {
+        printf("[IEBUPDTE ERROR] SYSIN member name required.\n");
+        return true;
+    }
+    char vfs_filename[128];
+    resolve_pds_name_helper(sysin, vfs_filename, sizeof(vfs_filename));
+    int file_idx = -1;
+    for (int i = 0; i < g_vfs.count; i++) {
+        if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, vfs_filename) == 0) {
+            file_idx = i;
+            break;
+        }
+    }
+    if (file_idx < 0) {
+        printf("[IEBUPDTE ERROR] SYSIN member %s not found in VFS.\n", vfs_filename);
+        return true;
+    }
+    
+    printf("[IEBUPDTE] Commencing Partitioned Dataset Update from SYSIN: %s\n", sysin);
+    char temp_data[8192];
+    strncpy(temp_data, g_vfs.files[file_idx].data, sizeof(temp_data) - 1);
+    temp_data[sizeof(temp_data) - 1] = '\0';
+    
+    char *line = strtok(temp_data, "\n");
+    char current_member[64] = "";
+    char member_data[4096] = "";
+    bool collecting = false;
+    int members_updated = 0;
+    
+    while (line) {
+        size_t len = strlen(line);
+        while (len > 0 && isspace((unsigned char)line[len - 1])) {
+            line[len - 1] = '\0';
+            len--;
+        }
+        
+        if (strncmp(line, "./ ADD NAME=", 12) == 0) {
+            if (collecting && strlen(current_member) > 0) {
+                char mem_vfs[128];
+                resolve_pds_name_helper(current_member, mem_vfs, sizeof(mem_vfs));
+                int target_idx = -1;
+                for (int i = 0; i < g_vfs.count; i++) {
+                    if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, mem_vfs) == 0) {
+                        target_idx = i;
+                        break;
+                    }
+                }
+                if (target_idx < 0) {
+                    tsfi_xplos_create_file(&g_vfs, mem_vfs, 64 * 1024);
+                    target_idx = g_vfs.count - 1;
+                }
+                XplosFile *vf = &g_vfs.files[target_idx];
+                strcpy(vf->data, member_data);
+                vf->size_bytes = (uint32_t)strlen(vf->data);
+                printf("  - IEBUPDTE: Created/Updated PDS member %s (%d bytes)\n", current_member, vf->size_bytes);
+                members_updated++;
+            }
+            sscanf(line + 12, "%63[^, \r\n]", current_member);
+            memset(member_data, 0, sizeof(member_data));
+            collecting = true;
+        } else if (collecting) {
+            if (strncmp(line, "./", 2) == 0) {
+                collecting = false;
+            } else {
+                if (strlen(member_data) + strlen(line) + 2 < sizeof(member_data)) {
+                    strcat(member_data, line);
+                    strcat(member_data, "\n");
+                }
+            }
+        }
+        line = strtok(NULL, "\n");
+    }
+    if (collecting && strlen(current_member) > 0) {
+        char mem_vfs[128];
+        resolve_pds_name_helper(current_member, mem_vfs, sizeof(mem_vfs));
+        int target_idx = -1;
+        for (int i = 0; i < g_vfs.count; i++) {
+            if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, mem_vfs) == 0) {
+                target_idx = i;
+                break;
+            }
+        }
+        if (target_idx < 0) {
+            tsfi_xplos_create_file(&g_vfs, mem_vfs, 64 * 1024);
+            target_idx = g_vfs.count - 1;
+        }
+        XplosFile *vf = &g_vfs.files[target_idx];
+        strcpy(vf->data, member_data);
+        vf->size_bytes = (uint32_t)strlen(vf->data);
+        printf("  - IEBUPDTE: Created/Updated PDS member %s (%d bytes)\n", current_member, vf->size_bytes);
+        members_updated++;
+    }
+    printf("[IEBUPDTE] Completed. Updated %d members successfully.\n", members_updated);
+    return true;
+}
+static bool handle_submit(const char *cmd) {
+    char member[64] = "";
+    if (sscanf(cmd + 7, "%63s", member) != 1) {
+        printf("[SUBMIT ERROR] Member name required.\n");
+        return true;
+    }
+    char vfs_filename[128];
+    resolve_pds_name_helper(member, vfs_filename, sizeof(vfs_filename));
+    
+    int file_idx = -1;
+    for (int i = 0; i < g_vfs.count; i++) {
+        if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, vfs_filename) == 0) {
+            file_idx = i;
+            break;
+        }
+    }
+    if (file_idx < 0) {
+        printf("[SUBMIT WARNING] JCL member %s not found in VFS. Proceeding with virtual mock submission.\n", vfs_filename);
+    }
+    
+    int free_idx = -1;
+    for (int i = 0; i < 10; i++) {
+        if (!cbt_job_table[i].active) {
+            free_idx = i;
+            break;
+        }
+    }
+    if (free_idx == -1) {
+        printf("[SUBMIT ERROR] JES spool job queue full.\n");
+        return true;
+    }
+    
+    sprintf(cbt_job_table[free_idx].job_id, "JOB%04d", 100 + free_idx);
+    strncpy(cbt_job_table[free_idx].job_name, member, 15);
+    cbt_job_table[free_idx].job_name[15] = '\0';
+    
+    // Parse priority and held state from file content
+    int priority = 1;
+    bool held = false;
+    if (file_idx >= 0) {
+        char *prty_ptr = strstr(g_vfs.files[file_idx].data, "PRTY=");
+        if (prty_ptr) {
+            sscanf(prty_ptr + 5, "%d", &priority);
+        } else {
+            prty_ptr = strstr(g_vfs.files[file_idx].data, "PRIORITY=");
+            if (prty_ptr) {
+                sscanf(prty_ptr + 9, "%d", &priority);
+            }
+        }
+        if (strstr(g_vfs.files[file_idx].data, "TYPRUN=HOLD")) {
+            held = true;
+        }
+    }
+    g_hasp_job_priority[free_idx] = priority;
+
+    strcpy(cbt_job_table[free_idx].status, held ? "HELD" : "READY");
+    cbt_job_table[free_idx].class_char = 'A';
+    cbt_job_table[free_idx].active = true;
+    cbt_job_table[free_idx].cics_origin = false;
+    memset(g_hasp_spool_logs[free_idx], 0, sizeof(g_hasp_spool_logs[free_idx]));
+    
+    printf("[SUBMIT] Job %s (%s) submitted to JES Spool (PRTY=%d, STATUS=%s).\n", 
+           cbt_job_table[free_idx].job_id, cbt_job_table[free_idx].job_name, priority, cbt_job_table[free_idx].status);
+    
+    hasp_dispatch_highest_priority();
+    return true;
+}
+static bool handle_iebgener(const char *cmd) {
+    char sysut1[64] = "";
+    char sysut2[64] = "";
+    char mode[16] = "";
+    int scanned = sscanf(cmd + 9, "%63s %63s %15s", sysut1, sysut2, mode);
+    if (scanned >= 2) {
+        char vfs_ut1[128];
+        char vfs_ut2[128];
+        resolve_pds_name_helper(sysut1, vfs_ut1, sizeof(vfs_ut1));
+        resolve_pds_name_helper(sysut2, vfs_ut2, sizeof(vfs_ut2));
+
+        int file_idx = -1;
+        for (int i = 0; i < g_vfs.count; i++) {
+            if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, vfs_ut1) == 0) {
+                file_idx = i;
+                break;
+            }
+        }
+        if (file_idx < 0) {
+            printf("[IEBGENER ERROR] SYSUT1 source dataset '%s' not found.\n", sysut1);
+            return true;
+        }
+
+        int target_idx = -1;
+        for (int i = 0; i < g_vfs.count; i++) {
+            if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, vfs_ut2) == 0) {
+                target_idx = i;
+                break;
+            }
+        }
+        if (target_idx < 0) {
+            tsfi_xplos_create_file(&g_vfs, vfs_ut2, 64 * 1024);
+            target_idx = g_vfs.count - 1;
+        }
+
+        XplosFile *src = &g_vfs.files[file_idx];
+        XplosFile *dest = &g_vfs.files[target_idx];
+
+        // Format conversion if requested
+        if (strcasecmp(mode, "E2A") == 0) {
+            // EBCDIC to ASCII mock copy
+            printf("[IEBGENER] Copying %s -> %s with EBCDIC to ASCII translation.\n", sysut1, sysut2);
+            strcpy(dest->data, src->data);
+        } else if (strcasecmp(mode, "A2E") == 0) {
+            // ASCII to EBCDIC mock copy
+            printf("[IEBGENER] Copying %s -> %s with ASCII to EBCDIC translation.\n", sysut1, sysut2);
+            strcpy(dest->data, src->data);
+        } else {
+            printf("[IEBGENER] Sequential record copy completed: %s -> %s\n", sysut1, sysut2);
+            strcpy(dest->data, src->data);
+        }
+        dest->size_bytes = (uint32_t)strlen(dest->data);
+        printf("  - IEBGENER: Transferred %d bytes successfully. RC=0000\n", dest->size_bytes);
+        return true;
+    }
+    printf("[IEBGENER ERROR] SYSUT1 and SYSUT2 parameters required.\n");
+    return true;
+}
+static bool handle_iebcompr(const char *cmd) {
+    char sysut1[64] = "";
+    char sysut2[64] = "";
+    if (sscanf(cmd + 9, "%63s %63s", sysut1, sysut2) < 2) {
+        printf("[IEBCOMPR ERROR] SYSUT1 and SYSUT2 parameters required.\n");
+        return true;
+    }
+    char vfs_ut1[128];
+    char vfs_ut2[128];
+    resolve_pds_name_helper(sysut1, vfs_ut1, sizeof(vfs_ut1));
+    resolve_pds_name_helper(sysut2, vfs_ut2, sizeof(vfs_ut2));
+
+    int idx1 = -1, idx2 = -1;
+    for (int i = 0; i < g_vfs.count; i++) {
+        if (g_vfs.files[i].active) {
+            if (strcmp(g_vfs.files[i].name, vfs_ut1) == 0) idx1 = i;
+            if (strcmp(g_vfs.files[i].name, vfs_ut2) == 0) idx2 = i;
+        }
+    }
+
+    if (idx1 < 0 || idx2 < 0) {
+        printf("[IEBCOMPR ERROR] One or both datasets not found in VFS.\n");
+        return true;
+    }
+
+    printf("[IEBCOMPR] Comparing dataset %s vs %s...\n", sysut1, sysut2);
+    if (strcmp(g_vfs.files[idx1].data, g_vfs.files[idx2].data) == 0) {
+        printf("[IEBCOMPR] Success: Datasets are identical. RC=0000\n");
+    } else {
+        printf("[IEBCOMPR] Mismatch: Datasets differ in content. RC=0008\n");
+    }
+    return true;
+}
+static bool handle_iebdg(const char *cmd) {
+    char member[32] = "";
+    char pattern[16] = "";
+    if (sscanf(cmd + 6, "%31s %15s", member, pattern) < 2) {
+        printf("[IEBDG ERROR] Syntax: iebdg <member> <pattern>\n");
+        return true;
+    }
+    char vfs_name[128];
+    resolve_pds_name_helper(member, vfs_name, sizeof(vfs_name));
+
+    int f_idx = -1;
+    for (int i = 0; i < g_vfs.count; i++) {
+        if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, vfs_name) == 0) {
+            f_idx = i;
+            break;
+        }
+    }
+    if (f_idx < 0) {
+        tsfi_xplos_create_file(&g_vfs, vfs_name, 4096);
+        f_idx = g_vfs.count - 1;
+    }
+
+    XplosFile *f = &g_vfs.files[f_idx];
+    if (strcasecmp(pattern, "SEQ") == 0) {
+        strcpy(f->data, "LINE01\nLINE02\nLINE03\nLINE04\n");
+    } else {
+        strcpy(f->data, "AUNCIENT FIELDATA GENERATED DUMMY DATA\n");
+    }
+    f->size_bytes = (uint32_t)strlen(f->data);
+    printf("[IEBDG] Generated test data in %s using pattern %s. RC=0000\n", member, pattern);
+    return true;
+}
+
+static bool handle_cbtjclchk(const char *cmd) {
+    char member[32] = "";
+    if (sscanf(cmd + 10, "%31s", member) < 1) {
+        printf("[JCLCHK ERROR] Syntax: cbtjclchk <member>\n");
+        return true;
+    }
+    char vfs_filename[128];
+    resolve_pds_name_helper(member, vfs_filename, sizeof(vfs_filename));
+
+    int f_idx = -1;
+    for (int i = 0; i < g_vfs.count; i++) {
+        if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, vfs_filename) == 0) {
+            f_idx = i;
+            break;
+        }
+    }
+    if (f_idx < 0) {
+        printf("[JCLCHK ERROR] Member %s not found in VFS.\n", member);
+        return true;
+    }
+
+    printf("[JCLCHK] Auditing JCL member %s columns and cards...\n", member);
+    char *jcl_data = strdup(g_vfs.files[f_idx].data);
+    char *line = strtok(jcl_data, "\n");
+    int line_num = 1;
+    bool has_job_card = false;
+
+    while (line) {
+        char *ptr = line;
+        while (isspace((unsigned char)*ptr)) ptr++;
+
+        if (strncmp(ptr, "//", 2) == 0) {
+            if (strstr(ptr, " JOB ") || strstr(ptr, " job ")) {
+                has_job_card = true;
+            }
+        } else if (strlen(ptr) > 0 && strncmp(ptr, "/*", 2) != 0) {
+            printf("[JCLCHK WARNING] Line %d: Card missing '//' prefix.\n", line_num);
+        }
+        line = strtok(NULL, "\n");
+        line_num++;
+    }
+    free(jcl_data);
+
+    if (!has_job_card) {
+        printf("[JCLCHK WARNING] Missing valid JOB statement card at start.\n");
+    } else {
+        printf("[JCLCHK] Syntax check completed. No blocking errors found. RC=0000\n");
+    }
+    return true;
+}
+static bool handle_iebimage(const char *cmd) {
+    char member[32] = "";
+    int margins = 0;
+    if (sscanf(cmd + 9, "%31s %d", member, &margins) < 1) {
+        printf("[IEBIMAGE ERROR] Syntax: iebimage <member> [margins]\n");
+        return true;
+    }
+    printf("[IEBIMAGE] Formatting printer buffer image for %s...\n", member);
+    printf("  - Margin settings: %d columns\n", (margins > 0) ? margins : 8);
+    printf("  - Page breaks: 66 lines per page\n");
+    printf("[IEBIMAGE] Print image formatted successfully. RC=0000\n");
+    return true;
+}
+
+bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
+    if (strncmp(cmd, "jclrun ", 7) == 0) return handle_jclrun(cmd);
+    if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
+    if (strncmp(cmd, "submit ", 7) == 0) return handle_submit(cmd);
+    if (strncmp(cmd, "iebgener ", 9) == 0) return handle_iebgener(cmd);
+    if (strncmp(cmd, "iebcompr ", 9) == 0) return handle_iebcompr(cmd);
+    if (strncmp(cmd, "iebdg ", 6) == 0) return handle_iebdg(cmd);
+    if (strncmp(cmd, "cbtjclchk ", 10) == 0) return handle_cbtjclchk(cmd);
+    if (strncmp(cmd, "iebimage ", 9) == 0) return handle_iebimage(cmd);
+    return false;
+}
