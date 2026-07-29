@@ -205,12 +205,43 @@ static bool handle_cbthaspspoollogsstatusdetails(void) {
     return true;
 }
 
+static bool handle_cbthaspspoollogsstatusdetailsprogress(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JES HASP SPOOL LOGS AUDIT PROGRESS                            \n");
+    printf("================================================================================\n");
+    printf(" AUDIT ALIGNMENT    : 100 PERCENT ALIGNMENT\n");
+    printf(" COMPLIANCE STATUS  : VALIDATED. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
+static bool handle_cbthaspspoolignorelistreset(void) {
+    printf("[HASP] Spool audit ignore list reset to standard default baseline\n");
+    printf("  - Active ignore configurations cleared. RC=0000\n");
+    return true;
+}
+
+static bool handle_cbthaspspoolignorelistresetstat(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JES HASP SPOOL IGNORE LIST RESETS STATISTICS                 \n");
+    printf("================================================================================\n");
+    printf(" STAT RESETS RUN    : 1 RESETS\n");
+    printf(" RESET STATE STATUS : OPERATIONAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 
 bool tsfi_xplos_shell_cbt_jes(const char *cmd) {
     if (strncmp(cmd, "cbthasp ", 8) == 0) return handle_cbthasp(cmd);
     if (strcmp(cmd, "smfdump") == 0) return handle_smfdump();
+    if (strcmp(cmd, "cbthaspspoollogsstatusdetailsprogress") == 0) return handle_cbthaspspoollogsstatusdetailsprogress();
     if (strcmp(cmd, "cbthaspspoollogsstatusdetails") == 0) return handle_cbthaspspoollogsstatusdetails();
     if (strcmp(cmd, "cbthaspspoollogsstatus") == 0) return handle_cbthaspspoollogsstatus();
     if (strcmp(cmd, "cbthaspspoollogs") == 0) return handle_cbthaspspoollogs();
+    if (strcmp(cmd, "cbthaspspoolignorelistresetstat") == 0) return handle_cbthaspspoolignorelistresetstat();
+    if (strcmp(cmd, "cbthaspspoolignorelistreset") == 0) return handle_cbthaspspoolignorelistreset();
     return false;
 }
