@@ -37,11 +37,16 @@ static uint8_t g_capstan_brake = 1;     // 0 = Disengaged, 1 = Engaged
 static uint8_t g_raw_head_status = 1;   // 0 = Parity Mismatch, 1 = Pass
 static uint8_t g_sector_data_reg = 0;   // Data register
 
+static uint8_t g_tape_sectors[256];
+static char g_tape_journal_payloads[256][64];
+static uint32_t g_tape_journal_ids[256];
+static bool g_tape_journal_valid[256];
+
 static bool handle_cbttape(const char *cmd) {
     char subcmd[16] = "";
     int sector_id = 0;
-    int data_val = 0;
-    int scanned = sscanf(cmd + 8, "%15s %d %d", subcmd, &sector_id, &data_val);
+    char payload[64] = "";
+    int scanned = sscanf(cmd + 8, "%15s %d %63s", subcmd, &sector_id, payload);
     if (scanned >= 1) {
         if (strcasecmp(subcmd, "status") == 0) {
             printf("[CAPSTAN STATUS] Emulated registers:\n");
@@ -62,6 +67,7 @@ static bool handle_cbttape(const char *cmd) {
         }
         if (strcasecmp(subcmd, "write") == 0 && scanned >= 3) {
             int retries = 0;
+            int data_val = atoi(payload);
             printf("[CAPSTAN WRITE] Transaction initiated for sector %d with data %d\n", sector_id, data_val);
             
             write_attempt:
@@ -113,11 +119,103 @@ static bool handle_cbttape(const char *cmd) {
             g_capstan_control = 0;
             g_capstan_brake = 1;
             g_capstan_solenoid = 0;
+            g_tape_sectors[sector_id] = (uint8_t)data_val;
             printf("[CAPSTAN COMMIT] Transaction committed successfully. Brake engaged.\n");
             return true;
         }
+        
+        // 1. SAM Tape Driver Commands: rewind, bsf, fsf
+        if (strcasecmp(subcmd, "rewind") == 0) {
+            printf("[SAM DRIVER] Rewinding tape to beginning of volume (BOT)...\n");
+            printf("[CAPSTAN] Activating solenoid, releasing brake, reversing motor\n");
+            g_capstan_solenoid = 1;
+            g_capstan_brake = 0;
+            g_capstan_control = 2; // Reverse
+            
+            g_capstan_encoder = 0;
+            printf("[CAPSTAN] Encoder reached sector 0. Engaging mechanical lock.\n");
+            g_capstan_control = 0;
+            g_capstan_brake = 1;
+            g_capstan_solenoid = 0;
+            printf("[SAM DRIVER] Tape successfully positioned at sector 0 (BOT).\n");
+            return true;
+        }
+        if (strcasecmp(subcmd, "bsf") == 0 && scanned >= 2) {
+            printf("[SAM DRIVER] Backspacing tape by %d sectors...\n", sector_id);
+            g_capstan_solenoid = 1;
+            g_capstan_brake = 0;
+            g_capstan_control = 2; // Reverse
+            
+            int target = (int)g_capstan_encoder - sector_id;
+            if (target < 0) target = 0;
+            g_capstan_encoder = (uint8_t)target;
+            
+            g_capstan_control = 0;
+            g_capstan_brake = 1;
+            g_capstan_solenoid = 0;
+            printf("[SAM DRIVER] Tape positioned at sector %d.\n", g_capstan_encoder);
+            return true;
+        }
+        if (strcasecmp(subcmd, "fsf") == 0 && scanned >= 2) {
+            printf("[SAM DRIVER] Forward spacing tape by %d sectors...\n", sector_id);
+            g_capstan_solenoid = 1;
+            g_capstan_brake = 0;
+            g_capstan_control = 1; // Forward
+            
+            int target = (int)g_capstan_encoder + sector_id;
+            if (target > 255) target = 255;
+            g_capstan_encoder = (uint8_t)target;
+            
+            g_capstan_control = 0;
+            g_capstan_brake = 1;
+            g_capstan_solenoid = 0;
+            printf("[SAM DRIVER] Tape positioned at sector %d.\n", g_capstan_encoder);
+            return true;
+        }
+        
+        // 2. SMF Transaction Journal command
+        if (strcasecmp(subcmd, "journal") == 0 && scanned >= 3) {
+            uint32_t tx_id = (uint32_t)sector_id;
+            printf("[SMF JOURNAL] Writing transaction record to tape journal...\n");
+            
+            // Execute write cycle on current encoder sector
+            char cmd_buf[128];
+            snprintf(cmd_buf, sizeof(cmd_buf), "cbttape write %d %d", g_capstan_encoder, (int)(tx_id & 0xFF));
+            bool write_ok = handle_cbttape(cmd_buf);
+            if (write_ok && g_capstan_brake == 1 && g_capstan_solenoid == 0) {
+                // If write committed successfully, register transaction metadata
+                g_tape_journal_ids[g_capstan_encoder - 1] = tx_id;
+                strncpy(g_tape_journal_payloads[g_capstan_encoder - 1], payload, 63);
+                g_tape_journal_payloads[g_capstan_encoder - 1][63] = '\0';
+                g_tape_journal_valid[g_capstan_encoder - 1] = true;
+                printf("[SMF JOURNAL] Registered TX ID %u [%s] at sector %d\n", tx_id, payload, g_capstan_encoder - 1);
+            } else {
+                printf("[SMF JOURNAL ERROR] Transaction write failed or aborted.\n");
+            }
+            return true;
+        }
+        
+        // 3. Automatic Recovery Manager (ARM) command
+        if (strcasecmp(subcmd, "recover") == 0) {
+            printf("[ARM RECOVERY] Initiating automatic recovery scan...\n");
+            printf("[ARM RECOVERY] Scanning journal records backward from sector %d...\n", g_capstan_encoder);
+            int recovered_count = 0;
+            for (int i = (int)g_capstan_encoder; i >= 0; i--) {
+                if (g_tape_journal_valid[i]) {
+                    printf("  - [RECOVERED] Sector %d: TX ID %u -> payload: '%s'\n", 
+                        i, g_tape_journal_ids[i], g_tape_journal_payloads[i]);
+                    recovered_count++;
+                }
+            }
+            if (recovered_count == 0) {
+                printf("[ARM RECOVERY] No active transaction logs found on the tape.\n");
+            } else {
+                printf("[ARM RECOVERY] Recovery completed successfully. %d logs replayed.\n", recovered_count);
+            }
+            return true;
+        }
     }
-    printf("[CAPSTAN ERROR] Syntax: cbttape [status | inject <0|1> | write <sector> <val>]\n");
+    printf("[CAPSTAN ERROR] Syntax: cbttape [status | inject <0|1> | write <sector> <val> | rewind | bsf <count> | fsf <count> | journal <tx_id> <payload> | recover]\n");
     return true;
 }
 

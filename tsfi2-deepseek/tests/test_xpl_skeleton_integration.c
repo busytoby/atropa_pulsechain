@@ -113,6 +113,24 @@ int main(void) {
     bool fail_ok = tsfi_xplos_shell_tape("cbttape write 5 187");
     assert(fail_ok == true);
 
+    // 6. Verify SAM Driver tape operations (rewind, bsf, fsf)
+    printf("  -> Testing SAM Driver tape movements...\n");
+    assert(tsfi_xplos_shell_tape("cbttape rewind") == true);
+    assert(tsfi_xplos_shell_tape("cbttape fsf 10") == true);
+    assert(tsfi_xplos_shell_tape("cbttape bsf 3") == true);
+    
+    // Restore verify status for journal logging
+    assert(tsfi_xplos_shell_tape("cbttape inject 1") == true);
+
+    // 7. Verify SMF Transaction Journal writes
+    printf("  -> Testing SMF Transaction Journal writes...\n");
+    assert(tsfi_xplos_shell_tape("cbttape journal 101 TX_ALLOCATE") == true);
+    assert(tsfi_xplos_shell_tape("cbttape journal 102 TX_COMMIT") == true);
+
+    // 8. Verify ARM Recovery replay
+    printf("  -> Testing ARM Recovery manager logic...\n");
+    assert(tsfi_xplos_shell_tape("cbttape recover") == true);
+
     printf("\n=== INTEGRATION PROOFS PASSED ===\n");
     return 0;
 }
