@@ -8,7 +8,6 @@
 #include "tsfi_xplos_shell_cbt_vtam.h"
 #include "tsfi_xplos_shell_cbt_cics.h"
 #include "tsfi_xplos_shell_cbt_tso.h"
-#include "tsfi_xplos_shell_cbt_diagnostics.h"
 
 int main(void) {
     printf("====================================================================\n");
