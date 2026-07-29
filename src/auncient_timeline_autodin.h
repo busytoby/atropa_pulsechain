@@ -23,22 +23,26 @@ typedef struct {
     uint32_t balance_saat;
     uint32_t verified_dna_hash;
     bool is_active;
+    uint8_t chain_head[32];
+    uint32_t tx_sequence;
 } HoganAccount;
 
 typedef struct {
-    uint32_t sender_id;
-    uint32_t recipient_id;
+    uint32_t account_id;
+    uint8_t type; // 0 = OPEN/ENDOWMENT, 1 = SEND, 2 = RECEIVE
+    uint32_t balance;
     uint32_t amount;
     uint32_t sequence;
     uint8_t previous_hash[32];
     uint8_t current_hash[32];
-} HoganTransaction;
+    uint32_t link_account;
+} HoganBlock;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-bool auncient_hogan_record_tx(uint32_t sender_id, uint32_t recipient_id, uint32_t amount);
+bool auncient_hogan_record_block(HoganAccount *account, uint8_t type, uint32_t amount, uint32_t link_account);
 bool auncient_hogan_verify_chain(void);
 
 // Processes timeline events and coordinates lock scheduling via AUTODIN precedence locks
