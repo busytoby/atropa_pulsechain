@@ -4,8 +4,16 @@
 #include "tsfi_xplos_shell_cbt_cics.h"
 
 int main(int argc, char **argv) {
-    if (argc < 5) {
+    if (argc < 2) {
         fprintf(stderr, "Usage: cics_cli [write|read] [tsq|tdq] [name] [val]\n");
+        return 1;
+    }
+    if (strcmp(argv[1], "write") == 0 && argc < 5) {
+        fprintf(stderr, "Usage: cics_cli write [tsq|tdq] [name] [val]\n");
+        return 1;
+    }
+    if (strcmp(argv[1], "read") == 0 && argc < 4) {
+        fprintf(stderr, "Usage: cics_cli read [tsq|tdq] [name]\n");
         return 1;
     }
     char cmd[512];

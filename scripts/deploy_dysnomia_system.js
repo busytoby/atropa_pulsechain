@@ -52,7 +52,7 @@ async function main() {
         // Replicate deployment to the spooled Yul VM on 2-3 Tree DAT rails
         const execSync = require("child_process").execSync;
         console.log(` -> Replicating ${contractName} deployment to spooled Yul VM (TSQ 2-3 Tree DAT)...`);
-        execSync(`LD_LIBRARY_PATH=./tsfi2-deepseek ./tsfi2-deepseek/bin/cics_cli write tsq ${contractName} dynamic_${address}`, { stdio: 'inherit' });
+        execSync(`LD_LIBRARY_PATH=. ./bin/cics_cli write tsq ${contractName} dynamic_${address}`, { cwd: './tsfi2-deepseek', stdio: 'inherit' });
 
         deployedAddresses[contractName] = address;
         return null;
@@ -195,6 +195,22 @@ async function main() {
         };
         fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
         console.log("Saved deployed addresses to config/user_config.json under localhost.");
+    }
+
+    if (yulOnly) {
+        console.log("\n==================================================");
+        console.log("TESTING DYSNOMIA OPERATIONS ON HASP VM...");
+        console.log("==================================================");
+        
+        console.log("Setting username via LAU contract function on HASP VM...");
+        const execSync = require("child_process").execSync;
+        execSync(`LD_LIBRARY_PATH=. ./bin/cics_cli write tsq UNAME HoganBear`, { cwd: './tsfi2-deepseek', stdio: 'inherit' });
+        
+        console.log("Submitting chat via LAU contract function on HASP VM...");
+        execSync(`LD_LIBRARY_PATH=. ./bin/cics_cli write tdq CHAT "Auncient Wavelet deployed successfully under HASP!"`, { cwd: './tsfi2-deepseek', stdio: 'inherit' });
+        
+        console.log("Verifying UNAME state record on HASP VM TSQ rails...");
+        execSync(`LD_LIBRARY_PATH=. ./bin/cics_cli read tsq UNAME`, { cwd: './tsfi2-deepseek', stdio: 'inherit' });
     }
 }
 
