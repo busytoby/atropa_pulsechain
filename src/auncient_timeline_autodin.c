@@ -127,6 +127,7 @@ bool auncient_hogan_transfer(HoganAccount *sender, HoganAccount *recipient, uint
     // Execute double-entry transfer
     if (auncient_hogan_withdraw(sender, amount)) {
         auncient_hogan_deposit(recipient, amount);
+        auncient_hogan_record_tx(sender->account_id, recipient->account_id, amount);
         return true;
     }
 
@@ -1316,5 +1317,90 @@ bool auncient_autodin_speculative_prefetch_validate(uint32_t start_pc, const uin
     }
 
     printf("[AUTODIN SPECULATIVE COMMIT] All %d instructions in prefetch batch successfully validated.\n", count);
+    return true;
+}
+
+static HoganTransaction g_hogan_ledger[1024];
+static int g_hogan_ledger_count = 0;
+
+bool auncient_hogan_record_tx(uint32_t sender_id, uint32_t recipient_id, uint32_t amount) {
+    if (g_hogan_ledger_count >= 1024) return false;
+    
+    HoganTransaction tx;
+    memset(&tx, 0, sizeof(tx));
+    tx.sender_id = sender_id;
+    tx.recipient_id = recipient_id;
+    tx.amount = amount;
+    tx.sequence = g_hogan_ledger_count;
+    
+    if (g_hogan_ledger_count > 0) {
+        memcpy(tx.previous_hash, g_hogan_ledger[g_hogan_ledger_count - 1].current_hash, 32);
+    } else {
+        memset(tx.previous_hash, 0, 32);
+    }
+    
+    uint8_t temp_buf[48];
+    memcpy(temp_buf, tx.previous_hash, 32);
+    memcpy(temp_buf + 32, &tx.sender_id, 4);
+    memcpy(temp_buf + 36, &tx.recipient_id, 4);
+    memcpy(temp_buf + 40, &tx.amount, 4);
+    memcpy(temp_buf + 44, &tx.sequence, 4);
+    
+    uint32_t hash = 0x811C9DC5;
+    for (int i = 0; i < 48; i++) {
+        hash = (hash ^ temp_buf[i]) * 0x01000193;
+    }
+    
+    memset(tx.current_hash, 0, 32);
+    memcpy(tx.current_hash, &hash, 4);
+    uint32_t hash2 = hash * 0x01000193;
+    memcpy(tx.current_hash + 4, &hash2, 4);
+    uint32_t hash3 = hash2 * 0x01000193;
+    memcpy(tx.current_hash + 8, &hash3, 4);
+    
+    g_hogan_ledger[g_hogan_ledger_count++] = tx;
+    return true;
+}
+
+bool auncient_hogan_verify_chain(void) {
+    for (int i = 0; i < g_hogan_ledger_count; i++) {
+        HoganTransaction *tx = &g_hogan_ledger[i];
+        
+        if (tx->sequence != (uint32_t)i) return false;
+        
+        if (i > 0) {
+            if (memcmp(tx->previous_hash, g_hogan_ledger[i - 1].current_hash, 32) != 0) {
+                return false;
+            }
+        } else {
+            for (int b = 0; b < 32; b++) {
+                if (tx->previous_hash[b] != 0) return false;
+            }
+        }
+        
+        uint8_t temp_buf[48];
+        memcpy(temp_buf, tx->previous_hash, 32);
+        memcpy(temp_buf + 32, &tx->sender_id, 4);
+        memcpy(temp_buf + 36, &tx->recipient_id, 4);
+        memcpy(temp_buf + 40, &tx->amount, 4);
+        memcpy(temp_buf + 44, &tx->sequence, 4);
+        
+        uint32_t hash = 0x811C9DC5;
+        for (int b = 0; b < 48; b++) {
+            hash = (hash ^ temp_buf[b]) * 0x01000193;
+        }
+        
+        uint8_t expected_hash[32];
+        memset(expected_hash, 0, 32);
+        memcpy(expected_hash, &hash, 4);
+        uint32_t hash2 = hash * 0x01000193;
+        memcpy(expected_hash + 4, &hash2, 4);
+        uint32_t hash3 = hash2 * 0x01000193;
+        memcpy(expected_hash + 8, &hash3, 4);
+        
+        if (memcmp(tx->current_hash, expected_hash, 32) != 0) {
+            return false;
+        }
+    }
     return true;
 }

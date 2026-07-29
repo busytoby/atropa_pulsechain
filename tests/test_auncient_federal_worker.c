@@ -92,6 +92,27 @@ int main(void) {
     assert(sim.account.balance_saat == 1000000);
     printf("   ✓ Phase 3 (Selection) successful. Worker established with 1,000,000 Saat.\n");
 
+    // 10. Verify Immutable Hogan Transaction Ledger Chain
+    printf("[TEST] Testing Hogan double-entry transfer and immutable chain verification...\n");
+    HoganAccount recipient;
+    memset(&recipient, 0, sizeof(recipient));
+    recipient.account_id = 888;
+    recipient.is_active = true;
+    recipient.balance_saat = 0;
+    
+    extern bool auncient_hogan_transfer(HoganAccount *sender, HoganAccount *recipient, uint32_t amount);
+    extern bool auncient_hogan_verify_chain(void);
+    
+    // Transfer 10,000 Saat
+    bool transfer_ok = auncient_hogan_transfer(&sim.account, &recipient, 10000);
+    assert(transfer_ok == true);
+    assert(sim.account.balance_saat == 990000);
+    assert(recipient.balance_saat == 10000);
+    
+    // Verify the ledger chain
+    assert(auncient_hogan_verify_chain() == true);
+    printf("   ✓ Immutable Hogan transaction ledger chain verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL FEDERAL WORKER PHASE SIMULATION TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
