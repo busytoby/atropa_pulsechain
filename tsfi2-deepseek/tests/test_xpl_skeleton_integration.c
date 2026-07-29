@@ -284,6 +284,20 @@ int main(void) {
     assert(g_tape_journal_payloads[32][2] == '\0');
     printf("  -> CAPSTAN KERMIT quote prefix character decoding verified successfully.\n");
 
+    // 20. Verify ALU driving physical capstan tape emulation registers
+    printf("  -> Testing ALU driving emulated hardware registers via S/370 assembly...\n");
+    extern bool tsfi_xpl_execute_assembler(const char *asm_instruction, uint32_t *gprs, uint8_t *memory);
+    ce_gprs[1] = 65000; // CAPSTAN_CONTROL memory address
+    ce_gprs[2] = 2;     // R2 immediate value
+    bool alu_ok = tsfi_xpl_execute_assembler("MVI 0(R1),2", ce_gprs, ce_memory);
+    assert(alu_ok == true);
+    
+    ce_gprs[3] = 100;
+    ce_gprs[4] = 50;
+    assert(tsfi_xpl_execute_assembler("AR R3, R4", ce_gprs, ce_memory) == true);
+    assert(ce_gprs[3] == 150);
+    printf("  -> ALU emulated register manipulations verified successfully.\n");
+
     printf("\n=== INTEGRATION PROOFS PASSED ===\n");
     return 0;
 }
