@@ -358,15 +358,49 @@ static bool handle_jclrun(const char *cmd) {
                                     printf("%s", log_msg);
                                     append_spool_log(jcl_name, log_msg);
                                 } else {
-                                    printf("[FRT] GPR verified. Initiating transaction write to tape sector 10...\n");
+                                    printf("[FRT] GPR verified. Executing full CBT Tape operations loop...\n");
                                     extern bool tsfi_xplos_shell_tape(const char *cmd);
+                                    
+                                    // 1. Single Sector Write
                                     if (!tsfi_xplos_shell_tape("cbttape write 10 44")) {
                                         step_rc = 16;
-                                        snprintf(log_msg, sizeof(log_msg), "    * FRT Aborted: Tape transaction write failed. RC=0016\n");
+                                        printf("[FRT ERROR] Single sector write failed.\n");
+                                    }
+                                    
+                                    // 2. Lock Isolation & Aborted Group Commit
+                                    tsfi_xplos_shell_tape("cbttape lock write 20");
+                                    if (tsfi_xplos_shell_tape("cbttape writegroup 18 4")) {
+                                        step_rc = 16;
+                                        printf("[FRT ERROR] Group write succeeded despite exclusive write lock.\n");
+                                    }
+                                    
+                                    // 3. Unlock & Successful Group Commit
+                                    tsfi_xplos_shell_tape("cbttape unlock 20");
+                                    if (!tsfi_xplos_shell_tape("cbttape writegroup 18 4")) {
+                                        step_rc = 16;
+                                        printf("[FRT ERROR] Unlocked group write failed.\n");
+                                    }
+                                    
+                                    // 4. Journaling and ARM Recovery Replay
+                                    tsfi_xplos_shell_tape("cbttape journal 201 TX_ALLOCATE");
+                                    tsfi_xplos_shell_tape("cbttape journal 202 TX_COMMIT");
+                                    if (!tsfi_xplos_shell_tape("cbttape recover")) {
+                                        step_rc = 16;
+                                        printf("[FRT ERROR] Volume recovery replay failed.\n");
+                                    }
+                                    
+                                    // 5. Volume Reconciliation
+                                    if (!tsfi_xplos_shell_tape("cbttape reconcile")) {
+                                        step_rc = 16;
+                                        printf("[FRT ERROR] Volume reconciliation failed.\n");
+                                    }
+                                    
+                                    if (step_rc == 0) {
+                                        printf("[FRT] 100%% of CBT Tape operations executed successfully within batch job.\n");
+                                    } else {
+                                        snprintf(log_msg, sizeof(log_msg), "    * FRT Aborted: Transaction lifecycle failure. RC=0016\n");
                                         printf("%s", log_msg);
                                         append_spool_log(jcl_name, log_msg);
-                                    } else {
-                                        printf("[FRT] Tape write committed. Spool logging completed successfully.\n");
                                     }
                                 }
                             } else {
