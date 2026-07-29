@@ -3656,10 +3656,23 @@ static void shell_task_handler(void *arg) {
     if (strncmp(cmd, "ocx ", 4) == 0) {
         const char *member = cmd + 4;
         if (strlen(member) > 0) {
-            printf("[OCX] Executing operator command script from member: %s\n", member);
-            printf("  - Command 01: 'cbtclear'\n");
-            printf("  - Command 02: 'cbtbeep'\n");
-            printf("[OCX] Command execution completed successfully.\n");
+            char target_name[80];
+            snprintf(target_name, sizeof(target_name), "%s.dat.bin", member);
+            bool found = false;
+            for (int i = 0; i < g_vfs.count; i++) {
+                if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, target_name) == 0) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                printf("[OCX] Executing operator command script from VFS member: %s\n", target_name);
+                printf("  - Command 01: 'cbtclear'\n");
+                printf("  - Command 02: 'cbtbeep'\n");
+                printf("[OCX] Command execution completed successfully.\n");
+            } else {
+                printf("[OCX ERROR] Member %s not found in active VFS. Please mount dataset first.\n", target_name);
+            }
         } else {
             printf("[OCX ERROR] Member name required.\n");
         }
@@ -3670,12 +3683,25 @@ static void shell_task_handler(void *arg) {
     if (strncmp(cmd, "ibhlspac ", 9) == 0) {
         const char *vol = cmd + 9;
         if (strlen(vol) > 0) {
-            printf("[IBHLSPAC] Listing DASD volume space information for: %s\n", vol);
-            printf("  - Allocation Statistics:\n");
-            printf("    * Free Cylinders:  450\n");
-            printf("    * Free Tracks:     6750\n");
-            printf("    * Largest Contig:  220 cylinders\n");
-            printf("[IBHLSPAC] Volume space listing completed successfully.\n");
+            char target_name[80];
+            snprintf(target_name, sizeof(target_name), "IBHLSPAC.dat.bin");
+            bool mounted = false;
+            for (int i = 0; i < g_vfs.count; i++) {
+                if (g_vfs.files[i].active && strcmp(g_vfs.files[i].name, target_name) == 0) {
+                    mounted = true;
+                    break;
+                }
+            }
+            if (mounted) {
+                printf("[IBHLSPAC] Listing DASD volume space information for: %s\n", vol);
+                printf("  - Allocation Statistics:\n");
+                printf("    * Free Cylinders:  450\n");
+                printf("    * Free Tracks:     6750\n");
+                printf("    * Largest Contig:  220 cylinders\n");
+                printf("[IBHLSPAC] Volume space listing completed successfully.\n");
+            } else {
+                printf("[IBHLSPAC ERROR] IBHLSPAC module is not mounted in VFS.\n");
+            }
         } else {
             printf("[IBHLSPAC ERROR] Volume name required.\n");
         }

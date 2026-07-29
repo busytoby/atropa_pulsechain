@@ -1723,24 +1723,7 @@ int main(void) {
     tsfi_xplos_run(&sched_bh);
     printf("   ✓ IBHWTORG execution verified successfully.\n");
 
-    // 120. Test OCX and IBHLSPAC command executions
-    printf("[KERNEL TEST] Dispatching 'ocx' command to XplOS shell...\n");
-    XplosShell shell_bh2;
-    XplosScheduler sched_bh2;
-    tsfi_xplos_init_scheduler(&sched_bh2);
-    tsfi_xplos_init_shell(&shell_bh2);
-    bool ocx_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "ocx COMMANDS");
-    assert(ocx_ok == true);
-    tsfi_xplos_run(&sched_bh2);
-    printf("   ✓ OCX execution verified successfully.\n");
-
-    printf("[KERNEL TEST] Dispatching 'ibhlspac' command to XplOS shell...\n");
-    bool spac_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "ibhlspac MVSRES");
-    assert(spac_ok == true);
-    tsfi_xplos_run(&sched_bh2);
-    printf("   ✓ IBHLSPAC execution verified successfully.\n");
-
-    // 122. Test CBTMOUNTMEM in-memory download & mount
+    // 120. Test CBTMOUNTMEM in-memory download & mount
     printf("[KERNEL TEST] Dispatching 'cbtmountmem' command to XplOS shell...\n");
     XplosShell shell_mem;
     XplosScheduler sched_mem;
@@ -1750,6 +1733,23 @@ int main(void) {
     assert(mount_ok == true);
     tsfi_xplos_run(&sched_mem);
     printf("   ✓ CBTMOUNTMEM execution verified successfully.\n");
+
+    // 121. Test OCX and IBHLSPAC command executions operating on their own mounted files
+    printf("[KERNEL TEST] Dispatching 'ocx' command to XplOS shell...\n");
+    XplosShell shell_bh2;
+    XplosScheduler sched_bh2;
+    tsfi_xplos_init_scheduler(&sched_bh2);
+    tsfi_xplos_init_shell(&shell_bh2);
+    bool ocx_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "ocx OCX");
+    assert(ocx_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+    printf("   ✓ OCX execution verified successfully.\n");
+
+    printf("[KERNEL TEST] Dispatching 'ibhlspac' command to XplOS shell...\n");
+    bool spac_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "ibhlspac MVSRES");
+    assert(spac_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+    printf("   ✓ IBHLSPAC execution verified successfully.\n");
 
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
