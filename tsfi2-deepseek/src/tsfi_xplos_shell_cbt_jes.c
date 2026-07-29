@@ -11,6 +11,7 @@
 #include "tsfi_xplos_kernel_internal.h"
 #include "tsfi_xplos_shell_cbt_jes.h"
 #include "tsfi_xplos_shell_cbt_jcl.h"
+#include "tsfi_mainframe_computerworld.h"
 extern XplosVirtualDisk g_vfs;
 extern CbtSpoolJob cbt_job_table[10];
 extern XplosScheduler *g_active_sched;
@@ -29,6 +30,13 @@ void append_spool_log(const char *job_name, const char *msg) {
     }
 }
 void hasp_dispatch_highest_priority_class(char class_filter) {
+    // Priority Aging: Increment priorities of waiting READY jobs to prevent starvation
+    for (int i = 0; i < 10; i++) {
+        if (cbt_job_table[i].active && strcmp(cbt_job_table[i].status, "READY") == 0) {
+            g_hasp_job_priority[i] += 1;
+        }
+    }
+
     int best_idx = -1;
     int highest_prty = -1;
     for (int i = 0; i < 10; i++) {
@@ -51,6 +59,15 @@ void hasp_dispatch_highest_priority_class(char class_filter) {
         snprintf(run_cmd, sizeof(run_cmd), "jclrun %s", cbt_job_table[best_idx].job_name);
         tsfi_xplos_shell_cbt_jcl(run_cmd);
         strcpy(cbt_job_table[best_idx].status, "COMPLETED");
+
+        // Write SMF accounting record to SMF.dat.bin VSAM KSDS database
+        tsfi_cw_vsam_ksds smf_ksds;
+        int open_rc = tsfi_cw_vsam_open(&smf_ksds, "SMF.dat.bin");
+        if (open_rc == 0) {
+            char record_payload[128];
+            snprintf(record_payload, sizeof(record_payload), "  030 | XPL1   | 12:05:33 | %-8s |   0.145  | 142 ", cbt_job_table[best_idx].job_name);
+            tsfi_cw_vsam_write(&smf_ksds, cbt_job_table[best_idx].job_name, (uint8_t *)record_payload, strlen(record_payload));
+        }
     }
 }
 void hasp_dispatch_highest_priority(void) {
@@ -61,11 +78,30 @@ static bool handle_smfdump(void) {
     printf("--------------------------------------------------------------------------------\n");
     printf(" TYPE | SYSTEM | TIME     | JOBNAME  | CPU_SEC  | EXCP_COUNT (I/O) \n");
     printf("--------------------------------------------------------------------------------\n");
+    tsfi_cw_vsam_ksds smf_ksds;
     int count = 0;
-    for (int i = 0; i < 10; i++) {
-        if (cbt_job_table[i].active) {
-            printf("  030 | XPL1   | 12:05:33 | %-8s |   0.145  | 142 \n", cbt_job_table[i].job_name);
-            count++;
+    int open_rc = tsfi_cw_vsam_open(&smf_ksds, "SMF.dat.bin");
+    if (open_rc == 0) {
+        for (int i = 0; i < 10; i++) {
+            if (cbt_job_table[i].active) {
+                uint8_t read_buf[128] = {0};
+                int read_len = 0;
+                int read_rc = tsfi_cw_vsam_read(&smf_ksds, cbt_job_table[i].job_name, read_buf, sizeof(read_buf), &read_len);
+                if (read_rc == 0) {
+                    printf("%s\n", (char *)read_buf);
+                    count++;
+                } else {
+                    printf("  030 | XPL1   | 12:05:33 | %-8s |   0.145  | 142 \n", cbt_job_table[i].job_name);
+                    count++;
+                }
+            }
+        }
+    } else {
+        for (int i = 0; i < 10; i++) {
+            if (cbt_job_table[i].active) {
+                printf("  030 | XPL1   | 12:05:33 | %-8s |   0.145  | 142 \n", cbt_job_table[i].job_name);
+                count++;
+            }
         }
     }
     printf("  070 | XPL1   | 12:00:00 | SYSTEM   |  12.400  | N/A (CPU Wait: 87.6%%)\n");

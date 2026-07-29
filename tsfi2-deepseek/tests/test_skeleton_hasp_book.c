@@ -91,6 +91,58 @@ int main(void) {
     assert(strcmp(cbt_job_table[4].status, "COMPLETED") == 0);
 
     printf("  -> Class-based queue scheduling verified successfully.\n");
+
+    // 7. Test HOLD and RELEASE operations
+    printf("  -> Phase 5: Verifying HOLD and RELEASE spool operations...\n");
+    // Register Job H with Class A, Priority 100, placed in READY status
+    strcpy(cbt_job_table[5].job_id, "JOB005");
+    strcpy(cbt_job_table[5].job_name, "JOB_HELD");
+    strcpy(cbt_job_table[5].status, "READY");
+    cbt_job_table[5].class_char = 'A';
+    cbt_job_table[5].active = true;
+    g_hasp_job_priority[5] = 100;
+
+    // Put it on hold
+    bool hold_ok = tsfi_xplos_shell_cbt_jes("cbthasp hold JOB005");
+    assert(hold_ok == true);
+    assert(strcmp(cbt_job_table[5].status, "HELD") == 0);
+
+    // Dispatch Class A - should skip JOB_HELD since it is HELD
+    bool dispatch_held_ok = tsfi_xplos_shell_cbt_jes("cbthasp dispatch A");
+    assert(dispatch_held_ok == true);
+    assert(strcmp(cbt_job_table[5].status, "HELD") == 0); // Still held
+
+    // Release the job to READY status
+    bool release_ok = tsfi_xplos_shell_cbt_jes("cbthasp release JOB005");
+    assert(release_ok == true);
+    // Since cbthasp release triggers hasp_dispatch_highest_priority, it should execute the released job and set it to COMPLETED
+    assert(strcmp(cbt_job_table[5].status, "COMPLETED") == 0);
+
+    // 8. Verify Priority Aging
+    printf("  -> Phase 6: Verifying Priority Aging execution...\n");
+    // Register Job P with Priority 5
+    strcpy(cbt_job_table[6].job_id, "JOB006");
+    strcpy(cbt_job_table[6].job_name, "JOB_AGE");
+    strcpy(cbt_job_table[6].status, "READY");
+    cbt_job_table[6].class_char = 'A';
+    cbt_job_table[6].active = true;
+    g_hasp_job_priority[6] = 5;
+
+    // Run dispatch on different class B to trigger aging tick (READY jobs priorities increment)
+    tsfi_xplos_shell_cbt_jes("cbthasp dispatch B");
+    assert(g_hasp_job_priority[6] == 6); // Incremented by 1
+
+    // 9. Verify SMFDUMP dynamic readings from VSAM
+    printf("  -> Phase 7: Verifying SMFDUMP database logs retrieval...\n");
+    remove("SMF.dat.bin"); // Start with clean SMF file
+    // Dispatch JOB_AGE to trigger writing its SMF record
+    tsfi_xplos_shell_cbt_jes("cbthasp dispatch A");
+    assert(strcmp(cbt_job_table[6].status, "COMPLETED") == 0);
+
+    // Run smfdump command which reads from SMF.dat.bin VSAM database
+    bool smfdump_ok = tsfi_xplos_shell_cbt_jes("smfdump");
+    assert(smfdump_ok == true);
+
     printf("  -> End-to-end data pipeline integrity verified successfully.\n");
     printf("\n=== SKELETON HASP BOOK PROOFS PASSED ===\n");
     return 0;

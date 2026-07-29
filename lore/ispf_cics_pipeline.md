@@ -53,3 +53,27 @@ In the transaction processing monitor, CICS coordinates concurrent transaction q
 
 ### 6. BOOK (VSAM Database Adapter)
 `BOOK` maps database requests to target keys, mounting records directly into the mainframe VSAM index layouts.
+
+---
+
+## Part III: SMF (System Management Facility) - The Operator Control Input Layer
+
+Alongside user development portals (ISPF) and transaction managers (CICS), **SMF** functions as the third core operator control input layer, auditing performance, spool states, and virtual hardware telemetry.
+
+### 1. XCOM (Symbol Auditing)
+`XCOM` collects compilation and execution symbol history from the completed jobs table, routing telemetry parameters directly to target SMF memory fields.
+
+### 2. ANALYZER (RED Rail - Compilation Audits)
+`ANALYZER` audits SMF parameters and dump commands before printing to verify memory safety.
+
+### 3. XPLSM (Performance State Machine)
+`XPLSM` monitors operational states, checking that active CPU seconds and I/O counts do not overflow the VM's hardware limits.
+
+### 4. SKELETON (SMF Record Offsets)
+`SKELETON` maps relocatable record templates to format SMF logging sectors.
+
+### 5. HASP (Telemetry Spooler)
+`HASP` triggers the creation of SMF logging records on the active-high execution monitor whenever a job transitions to the `COMPLETED` state.
+
+### 6. BOOK (SMF VSAM Logger)
+`BOOK` writes the completed SMF records into the `"SMF.dat.bin"` KSDS VSAM database, allowing operators to run dynamic telemetry queries (`smfdump`) without disk locking bottlenecks.
