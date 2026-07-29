@@ -36,3 +36,11 @@ The paper defines specific methodologies for compiling the compiler itself and c
 * **Bootstrapping Strategy**: The system implements a multi-stage bootstrap. XCOM (written in XPL) compiles its own updated source code to produce the next iteration of the compiler executable. Porting to a new target host involves using the current working compiler to emit target machine code for the target environment.
 * **BNF Metalanguage Grammar**: Grammars are specified in standard Backus-Naur Form (BNF) metalanguage. The ANALYZER compiles these grammar rules, verifies syntactic correctness, and performs conflict checks (Mixed-Left Association / MLA) to generate shift-reduce parsing decision tables.
 * **Lexical and Semantic Actions**: Lexical analysis handles source scanning and tokenization, feeding terminal codes to the parser. As grammar rules are reduced, the SKELETON invokes semantic routines to perform stack assignments and generate instruction codes.
+
+## 5. Syntactic Error Recovery and Code Generation
+
+The compiler generator implements structured mechanisms to recover from syntactic errors and compile instruction sets:
+
+* **Syntax Error Recovery**: During parser parsing phases, if an invalid token sequence occurs, the SKELETON invokes automatic error recovery algorithms. It discards symbols on the parsing stack or skips input tokens until a synchronization terminal is found, preventing execution loops from halting.
+* **Intermediate Representation (IR)**: Semantic reduction routines generate an intermediate representation of the source program, mapping variable references to offset locations.
+* **Code Emission**: The compiler generator translates intermediate codes directly to instruction word formats (matching target registers), outputting ready card deck images or load modules.
