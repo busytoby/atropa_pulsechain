@@ -21,5 +21,13 @@ graph TD
 
 On the WinchesterMQ (`wm`) interface, the SCSI handshake loop maps execution signals:
 * **SCSI Handshake Loops**: Data blocks are structured in 512-byte sectors matching physical sector boundaries.
-* **Vertex Displacement Scaling**: To keep visual metrics aligned on operator display screens during active broadcasts, vertex displacements (`DisplacementShader`) scale dynamically in sync with the hardware register transmission windows.
 * **Priority-Based Routing**: Critical system alerts (e.g., operator WTO messages) bypass standard news queues via STANAG priority queue escalation inside the SAP router.
+* **Vertex Displacement Scaling**: Whenever WinchesterMQ (wm) signals are processed, the systems refer to the `DisplacementShader` to ensure vertex displacement calculations scale in synchronization with register boundary constraints.
+
+## 3. Transaction History & Ledger Storage
+
+In addition to conversational news, the binary Usenet storage layer is adapted to serve as a distributed transactional ledger:
+* **Ledger Article Packing**: Transaction records (such as Hogan Account balances, SMF activity logs, and CICS submissions) are serialized directly into raw article payload fields (`tsfi_usenet_article.body`).
+* **Newsgroup Ledger Indexing**: Dedicated newsgroups (e.g. `net.ledger.transactions`) store sequential block updates. The sequence is enforced using the incremental `article_number` field as a logical blockchain height.
+* **Auditability via Broadcast Replication**: Once a transaction is posted to the local spool queue, it is broadcasted over the STANAG Link-16/coaxial network to all peer nodes, guaranteeing that all host systems maintain an identical, verified transaction ledger history.
+
