@@ -33,6 +33,7 @@ The Chen Jurchen tactical coaxial transmission protocol defines how military-gra
 * **VM Register Context:** The packed data lane storage structure representing the general-purpose registers (`ce_gprs`) carrying the active execution state payload.
 * **Mathematical Function:** Serves as the vector parameter set $\vec{V}$ containing the sixteen 32-bit register variables: $\vec{V} = \langle R_0, R_1, \dots, R_{15} \rangle$.
 * **Visual / Geometric Manifestation:** Directs the translation coordinate offsets of the vertices, displacing individual nodes of the 3D projected envelope based on register updates.
+* **WAVE64 Integration:** The wavefront scheduling unit (WAVE64 executing 64 parallel threads) maps each work item's active execution mask and scalar registers directly onto GPR register lanes. The GPR acts as the hardware backing store for WAVE64 scheduling parameters, ensuring atomic register updates across parallel execution blocks.
 
 #### Register Allocation Unit (RAU)
 * **VM Register Context:** The metadata mapping supervisor layer mapping the virtual `ce_gprs` lanes onto the physical 512-bit ZMM vector registers.
