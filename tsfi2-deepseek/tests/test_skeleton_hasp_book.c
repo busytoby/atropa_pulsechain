@@ -169,11 +169,31 @@ int main(void) {
 
     // Perform an explicit write to verify ABI registers
     uint8_t mock_abi_data[64] = "ABI_VERIFY_SAMPLE";
-    int abi_write_rc = tsfi_cw_vsam_write(&proclib_ksds, "ABI_T1", mock_abi_data, 17);
+    int abi_write_rc = tsfi_cw_vsam_write(&proclib_ksds, "AB1", mock_abi_data, 17);
     assert(abi_write_rc == 0);
     assert(global_wmq_bypass_count > start_wmq_bypasses); // Verified that the write routed through WMQ
 
     printf("  -> WinchesterMQ bypass events counted: %u loops.\n", global_wmq_bypass_count);
+
+    // 12. Verify Multi-PDS search path and SET overrides
+    printf("  -> Phase 10: Verifying Multi-PDS concatenation and SET overrides...\n");
+    remove("USERLIB.dat.bin");
+    tsfi_cw_vsam_ksds userlib_ksds;
+    int open_userlib_rc = tsfi_cw_vsam_open(&userlib_ksds, "USERLIB.dat.bin");
+    assert(open_userlib_rc == 0);
+
+    // Write a mock JCL job into USERLIB under key "MJ2" which uses variable overrides
+    uint8_t mock_userlib_cards[256] = 
+        "//MJ2 JOB 'CBT TEST 2'\n"
+        "//SET MYPGM=IEFBR14\n"
+        "//STEP1 EXEC PGM=&MYPGM\n";
+    int write_userlib_rc = tsfi_cw_vsam_write(&userlib_ksds, "MJ2", mock_userlib_cards, strlen((char *)mock_userlib_cards));
+    assert(write_userlib_rc == 0);
+
+    // Execute the job: JCL runner should find it in USERLIB and process the SET symbols
+    bool mockjob2_run_ok = tsfi_xplos_shell_cbt_jcl("jclrun MJ2");
+    assert(mockjob2_run_ok == true);
+
     printf("  -> End-to-end data pipeline integrity verified successfully.\n");
     printf("\n=== SKELETON HASP BOOK PROOFS PASSED ===\n");
     return 0;

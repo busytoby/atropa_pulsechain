@@ -36,17 +36,21 @@ static bool handle_jclrun(const char *cmd) {
 
         char jcl_data[8192];
         int vsam_found = 0;
-        tsfi_cw_vsam_ksds proclib_ksds;
-        int open_rc = tsfi_cw_vsam_open(&proclib_ksds, "PROCLIB.dat.bin");
-        if (open_rc == 0) {
-            uint8_t read_buf[8192] = {0};
-            int read_len = 0;
-            int read_rc = tsfi_cw_vsam_read(&proclib_ksds, jcl_name, read_buf, sizeof(read_buf), &read_len);
-            if (read_rc == 0 && read_len > 0) {
-                strncpy(jcl_data, (char *)read_buf, sizeof(jcl_data) - 1);
-                jcl_data[sizeof(jcl_data) - 1] = '\0';
-                vsam_found = 1;
-                printf("[JCLRUN] Dynamic PDS library lookup: Loaded JCL member '%s' from PROCLIB.dat.bin VSAM index\n", jcl_name);
+        const char *search_pds[] = {"USERLIB.dat.bin", "JCLLIB.dat.bin", "PROCLIB.dat.bin"};
+        for (int p = 0; p < 3; p++) {
+            tsfi_cw_vsam_ksds proclib_ksds;
+            int open_rc = tsfi_cw_vsam_open(&proclib_ksds, search_pds[p]);
+            if (open_rc == 0) {
+                uint8_t read_buf[8192] = {0};
+                int read_len = 0;
+                int read_rc = tsfi_cw_vsam_read(&proclib_ksds, jcl_name, read_buf, sizeof(read_buf), &read_len);
+                if (read_rc == 0 && read_len > 0) {
+                    strncpy(jcl_data, (char *)read_buf, sizeof(jcl_data) - 1);
+                    jcl_data[sizeof(jcl_data) - 1] = '\0';
+                    vsam_found = 1;
+                    printf("[JCLRUN] Dynamic PDS library lookup: Loaded JCL member '%s' from %s VSAM index\n", jcl_name, search_pds[p]);
+                    break;
+                }
             }
         }
 
@@ -74,6 +78,10 @@ static bool handle_jclrun(const char *cmd) {
         printf("%s", log_msg);
         append_spool_log(jcl_name, log_msg);
 
+        char sym_names[10][32] = {0};
+        char sym_vals[10][64] = {0};
+        int sym_count = 0;
+
         char *line = strtok(jcl_data, "\n");
         int rc = 0;
         bool skip_block = false;
@@ -83,8 +91,47 @@ static bool handle_jclrun(const char *cmd) {
             while (isspace((unsigned char)*line)) line++;
 
             if (strncmp(line, "//", 2) == 0) {
-                const char *card = line + 2;
+                // Copy the card line to a buffer so we can modify it
+                char card_buf[1024];
+                strncpy(card_buf, line + 2, sizeof(card_buf) - 1);
+                card_buf[sizeof(card_buf) - 1] = '\0';
+                
+                // Trim leading spaces of the card content
+                char *card = card_buf;
                 while (isspace((unsigned char)*card)) card++;
+
+                // Replace any variable references (e.g. &VARNAME) with symbol values
+                for (int s = 0; s < sym_count; s++) {
+                    char ref_pattern[64];
+                    snprintf(ref_pattern, sizeof(ref_pattern), "&%s", sym_names[s]);
+                    char *pos;
+                    while ((pos = strstr(card, ref_pattern)) != NULL) {
+                        char temp[2048];
+                        int offset = pos - card;
+                        strncpy(temp, card, offset);
+                        temp[offset] = '\0';
+                        strcat(temp, sym_vals[s]);
+                        strcat(temp, pos + strlen(ref_pattern));
+                        strcpy(card_buf, temp);
+                        card = card_buf;
+                    }
+                }
+
+                // Check for SET symbol definition card
+                if (strncmp(card, "SET ", 4) == 0 || strncmp(card, "set ", 4) == 0) {
+                    char var_name[32] = {0};
+                    char var_val[64] = {0};
+                    if (sscanf(card + 4, "%31[^=]=%63s", var_name, var_val) == 2) {
+                        if (sym_count < 10) {
+                            strcpy(sym_names[sym_count], var_name);
+                            strcpy(sym_vals[sym_count], var_val);
+                            sym_count++;
+                            printf("[JCLRUN] Dynamic Symbol Table Override (XCOM): Set %s = %s\n", var_name, var_val);
+                        }
+                    }
+                    line = strtok(NULL, "\n");
+                    continue;
+                }
 
                 if (strncmp(card, "IF ", 3) == 0 || strncmp(card, "if ", 3) == 0) {
                     snprintf(log_msg, sizeof(log_msg), "  JCL_COND> Checking condition: %s\n", card);
