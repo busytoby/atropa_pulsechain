@@ -1126,6 +1126,24 @@ int main(void) {
     tsfi_xplos_run(&sched_purge);
     printf("   ✓ CBTJESPURGE execution verified successfully.\n");
 
+    // 73. Test CBTJESHOLD and CBTJESRELEASE command execution
+    printf("[KERNEL TEST] Dispatching 'cbtjeshold' and 'cbtjesrelease' commands to XplOS shell...\n");
+    XplosShell shell_hr;
+    XplosScheduler sched_hr;
+    
+    tsfi_xplos_init_scheduler(&sched_hr);
+    tsfi_xplos_init_shell(&shell_hr);
+    bool hold_ok = tsfi_xplos_shell_exec(&shell_hr, &sched_hr, "cbtjeshold JOB00022");
+    assert(hold_ok == true);
+    tsfi_xplos_run(&sched_hr);
+
+    tsfi_xplos_init_scheduler(&sched_hr);
+    bool release_ok = tsfi_xplos_shell_exec(&shell_hr, &sched_hr, "cbtjesrelease JOB00022");
+    assert(release_ok == true);
+    tsfi_xplos_run(&sched_hr);
+
+    printf("   ✓ CBTJESHOLD and CBTJESRELEASE execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

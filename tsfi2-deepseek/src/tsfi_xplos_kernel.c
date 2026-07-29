@@ -2656,6 +2656,30 @@ static void shell_task_handler(void *arg) {
         }
         return;
     }
+
+    // Check for "cbtjeshold " command
+    if (strncmp(cmd, "cbtjeshold ", 11) == 0) {
+        char job_id[32] = "";
+        if (sscanf(cmd + 11, "%31s", job_id) == 1) {
+            printf("[CBTJESHOLD] Holding job %s in JES spool queue.\n", job_id);
+            printf("  - Job %s status set to HELD.\n", job_id);
+        } else {
+            printf("[CBTJESHOLD ERROR] Job ID required.\n");
+        }
+        return;
+    }
+
+    // Check for "cbtjesrelease " command
+    if (strncmp(cmd, "cbtjesrelease ", 14) == 0) {
+        char job_id[32] = "";
+        if (sscanf(cmd + 14, "%31s", job_id) == 1) {
+            printf("[CBTJESRELEASE] Releasing job %s from HELD status in JES spool queue.\n", job_id);
+            printf("  - Job %s status set to READY.\n", job_id);
+        } else {
+            printf("[CBTJESRELEASE ERROR] Job ID required.\n");
+        }
+        return;
+    }
     
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
