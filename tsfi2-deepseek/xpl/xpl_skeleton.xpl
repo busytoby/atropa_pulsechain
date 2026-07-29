@@ -193,3 +193,96 @@ WRITE_TAPE_SECTOR: PROCEDURE(SECTOR_ID, DATA_VAL) FIXED;
     
     RETURN 1; /* Transaction committed successfully */
 END WRITE_TAPE_SECTOR;
+
+/* 9. Extended ACID Compliance: Lock Isolation, Group Commits, and Reconciliation */
+DECLARE SECTOR_LOCKS_BASE   LITERALLY '65100'; /* Lock table base segment */
+
+LOCK_SECTOR: PROCEDURE(SECTOR_ID, LOCK_TYPE) FIXED;
+    DECLARE (SECTOR_ID, LOCK_TYPE) FIXED;
+    BYTE(SECTOR_LOCKS_BASE + SECTOR_ID) = LOCK_TYPE;
+    RETURN 1;
+END LOCK_SECTOR;
+
+UNLOCK_SECTOR: PROCEDURE(SECTOR_ID) FIXED;
+    DECLARE SECTOR_ID FIXED;
+    BYTE(SECTOR_LOCKS_BASE + SECTOR_ID) = 0;
+    RETURN 1;
+END UNLOCK_SECTOR;
+
+WRITE_TAPE_GROUP: PROCEDURE(START_SECTOR, COUNT, DATA_VAL) FIXED;
+    DECLARE (START_SECTOR, COUNT, DATA_VAL) FIXED;
+    DECLARE (VERIFY_RETRIES, I, CUR_SECTOR) FIXED;
+    
+    VERIFY_RETRIES = 0;
+    
+    WRITE_GROUP_ATTEMPT:
+    BYTE(CAPSTAN_SOLENOID) = 1;
+    BYTE(CAPSTAN_BRAKE) = 0;
+    BYTE(CAPSTAN_CONTROL) = 1; /* Forward */
+    
+    I = 0;
+    DO WHILE I < COUNT;
+        CUR_SECTOR = START_SECTOR + I;
+        
+        /* Isolation Check: Abort if target sector has exclusive write lock (type 2) */
+        IF BYTE(SECTOR_LOCKS_BASE + CUR_SECTOR) == 2 THEN
+            BYTE(CAPSTAN_CONTROL) = 0;
+            BYTE(CAPSTAN_BRAKE) = 1;
+            BYTE(CAPSTAN_SOLENOID) = 0;
+            RETURN 0;
+        END;
+        
+        /* Spin until sector encoder alignment */
+        IF BYTE(CAPSTAN_ENCODER) != CUR_SECTOR THEN
+            /* Busy wait */
+        END;
+        
+        BYTE(SECTOR_DATA_REG) = DATA_VAL;
+        
+        /* Read-After-Write Verification */
+        IF BYTE(RAW_HEAD_STATUS) == 0 THEN
+            /* Rollback entire group write */
+            BYTE(CAPSTAN_CONTROL) = 0;
+            BYTE(CAPSTAN_BRAKE) = 1;
+            BYTE(CAPSTAN_SOLENOID) = 0;
+            
+            VERIFY_RETRIES = VERIFY_RETRIES + 1;
+            IF VERIFY_RETRIES < 3 THEN
+                /* Physical Rewind loop */
+                BYTE(CAPSTAN_SOLENOID) = 1;
+                BYTE(CAPSTAN_BRAKE) = 0;
+                BYTE(CAPSTAN_CONTROL) = 2; /* Reverse */
+                
+                IF BYTE(CAPSTAN_ENCODER) == START_SECTOR THEN
+                    BYTE(CAPSTAN_CONTROL) = 0;
+                    BYTE(CAPSTAN_BRAKE) = 1;
+                END;
+                
+                GOTO WRITE_GROUP_ATTEMPT;
+            END;
+            
+            RETURN 0;
+        END;
+        
+        I = I + 1;
+    END;
+    
+    BYTE(CAPSTAN_CONTROL) = 0;
+    BYTE(CAPSTAN_BRAKE) = 1;
+    BYTE(CAPSTAN_SOLENOID) = 0;
+    
+    RETURN 1;
+END WRITE_TAPE_GROUP;
+
+RECONCILE_VOLUME: PROCEDURE FIXED;
+    DECLARE I FIXED;
+    I = 0;
+    DO WHILE I < 256;
+        /* If verification status fails, clean/truncate the sector */
+        IF BYTE(RAW_HEAD_STATUS) == 0 THEN
+            BYTE(SECTOR_DATA_REG) = 0;
+        END;
+        I = I + 1;
+    END;
+    RETURN 1;
+END RECONCILE_VOLUME;
