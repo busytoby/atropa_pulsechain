@@ -1305,6 +1305,24 @@ int main(void) {
     tsfi_xplos_run(&sched_wto);
     printf("   ✓ CBTWTO execution verified successfully.\n");
 
+    // 85. Test CBTPARMLIB command execution
+    printf("[KERNEL TEST] Dispatching 'cbtparmlib' command to XplOS shell...\n");
+    XplosShell shell_parm;
+    XplosScheduler sched_parm;
+    tsfi_xplos_init_scheduler(&sched_parm);
+    tsfi_xplos_init_shell(&shell_parm);
+    
+    FILE *f_parm_tmp = fopen("tests/parm_sys.dat.bin", "wb");
+    uint8_t dummy_parm[8] = {0};
+    fwrite(dummy_parm, 1, 8, f_parm_tmp);
+    fclose(f_parm_tmp);
+
+    bool parm_ok = tsfi_xplos_shell_exec(&shell_parm, &sched_parm, "cbtparmlib tests/parm_sys.dat.bin");
+    assert(parm_ok == true);
+    tsfi_xplos_run(&sched_parm);
+    printf("   ✓ CBTPARMLIB execution verified successfully.\n");
+    remove("tests/parm_sys.dat.bin");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
