@@ -1706,6 +1706,23 @@ int main(void) {
     tsfi_xplos_run(&sched_cbtcpu);
     printf("   ✓ CBTCPU execution verified successfully.\n");
 
+    // 118. Test IBHDRPLY and IBHWTORG command executions
+    printf("[KERNEL TEST] Dispatching 'ibhdrply' command to XplOS shell...\n");
+    XplosShell shell_bh;
+    XplosScheduler sched_bh;
+    tsfi_xplos_init_scheduler(&sched_bh);
+    tsfi_xplos_init_shell(&shell_bh);
+    bool rply_ok = tsfi_xplos_shell_exec(&shell_bh, &sched_bh, "ibhdrply");
+    assert(rply_ok == true);
+    tsfi_xplos_run(&sched_bh);
+    printf("   ✓ IBHDRPLY execution verified successfully.\n");
+
+    printf("[KERNEL TEST] Dispatching 'ibhwtorg' command to XplOS shell...\n");
+    bool wtor_ok = tsfi_xplos_shell_exec(&shell_bh, &sched_bh, "ibhwtorg");
+    assert(wtor_ok == true);
+    tsfi_xplos_run(&sched_bh);
+    printf("   ✓ IBHWTORG execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
