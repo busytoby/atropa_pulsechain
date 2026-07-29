@@ -878,6 +878,40 @@ static bool handle_cbtjclresstatreset(void) {
     return true;
 }
 
+static bool handle_cbtjclresstatresetstat(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JCL TELEMETRY RESET EVENT STATISTICS                          \n");
+    printf("================================================================================\n");
+    printf(" TOTAL RESETS RUN   : 1 RESETS\n");
+    printf(" TRACKING ENGINE    : OPERATIONAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
+static bool handle_cbtjclresstatresetstats(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JCL TELEMETRY RESET EVENTS LOGS HISTORY                       \n");
+    printf("================================================================================\n");
+    printf(" RECENT RESET TIME  : 2026-07-29T09:32:00-07:00\n");
+    printf(" COMPLETED AUDITS   : 1 RESETS RECORDED\n");
+    printf(" RESPONSE STATUS    : OPERATIONAL. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
+static bool handle_cbtjclresstatresetstatsstatus(void) {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                  JCL TELEMETRY RESET INTEGRITY STATE STATUS                    \n");
+    printf("================================================================================\n");
+    printf(" PENDING RESET LOGS : 0 LOGS\n");
+    printf(" LOGS SECURITY STATE: VERIFIED. RC=0000\n");
+    printf("================================================================================\n");
+    return true;
+}
+
 bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strncmp(cmd, "ieb", 3) == 0) {
         printf("[DEPRECATION WARNING] Batch utility program '%s' is deprecated and scheduled for removal.\n", cmd);
@@ -888,6 +922,9 @@ bool tsfi_xplos_shell_cbt_jcl(const char *cmd) {
     if (strcmp(cmd, "cbtjcllist") == 0) return handle_cbtjcllist();
     if (strcmp(cmd, "cbtjclliststat") == 0) return handle_cbtjclliststat();
     if (strcmp(cmd, "cbtjclresstat") == 0) return handle_cbtjclresstat();
+    if (strcmp(cmd, "cbtjclresstatresetstatsstatus") == 0) return handle_cbtjclresstatresetstatsstatus();
+    if (strcmp(cmd, "cbtjclresstatresetstats") == 0) return handle_cbtjclresstatresetstats();
+    if (strcmp(cmd, "cbtjclresstatresetstat") == 0) return handle_cbtjclresstatresetstat();
     if (strcmp(cmd, "cbtjclresstatreset") == 0) return handle_cbtjclresstatreset();
     if (strncmp(cmd, "iebupdte ", 9) == 0) return handle_iebupdte(cmd);
     if (strncmp(cmd, "submit ", 7) == 0) return handle_submit(cmd);

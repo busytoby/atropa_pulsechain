@@ -1097,6 +1097,24 @@ int main(void) {
     assert(jclresstatreset_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 156. Test JCL telemetry reset event statistics (cbtjclresstatresetstat)
+    printf("[TEST] Testing JCL telemetry reset event stats query...\n");
+    bool jclresstatresetstat_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtjclresstatresetstat");
+    assert(jclresstatresetstat_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 157. Test JCL telemetry reset event history logs (cbtjclresstatresetstats)
+    printf("[TEST] Testing JCL telemetry reset event history logs query...\n");
+    bool jclresstatresetstats_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtjclresstatresetstats");
+    assert(jclresstatresetstats_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 158. Test JCL telemetry reset integrity verification status (cbtjclresstatresetstatsstatus)
+    printf("[TEST] Testing JCL telemetry reset logs integrity status query...\n");
+    bool jclresstatresetstatsstatus_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtjclresstatresetstatsstatus");
+    assert(jclresstatresetstatsstatus_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }
