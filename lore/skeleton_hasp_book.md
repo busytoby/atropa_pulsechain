@@ -23,7 +23,7 @@ TSSSO managed the tri-state scheduling logic (Pending, Executing, Completed) acr
 
 ## The Modern Solution: SKELETON, HASP, and BOOK
 
-The replacement pipeline operates concurrently at the low-level virtual hardware layer, eliminating intermediate scheduling steps and aligning directly with the `DisplacementShader` vertex coordinate boundary constraints.
+The replacement pipeline operates concurrently at the low-level virtual hardware layer, eliminating intermediate scheduling steps and aligning directly with the `DisplacementShader` vertex coordinate boundary constraints. Crucially, the entire pipeline is entirely **6-bit Fieldata** based, packing character buffers and JCL text streams into 6-bit words to match low-level virtual tape register configurations.
 
 ### Phase 1: SKELETON (JCL Template Expansion)
 Rather than executing static, pre-allocated JCL streams, the system utilizes `SKELETON` templates. When an execution request is initialized, the `SKELETON` compiler expands variables dynamically, binding execution parameters to active registry maps without disk I/O.
