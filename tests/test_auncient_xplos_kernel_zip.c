@@ -2120,8 +2120,20 @@ int main(void) {
     assert(xdcut2_ok == true);
     tsfi_xplos_run(&sched_bh2);
 
-    bool xdcut3_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "xdc modify 0 1812");
+    bool xdcut3_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "xdc modify 0 18125A12");
     assert(xdcut3_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool xdcbp_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "xdc bp add 2");
+    assert(xdcbp_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool xdcrun_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "xdc run");
+    assert(xdcrun_ok == true);
+    tsfi_xplos_run(&sched_bh2);
+
+    bool xdcst_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "xdc step");
+    assert(xdcst_ok == true);
     tsfi_xplos_run(&sched_bh2);
 
     bool xdcut4_ok = tsfi_xplos_shell_exec(&shell_bh2, &sched_bh2, "xdc dump 0 16");

@@ -4798,8 +4798,52 @@ static void shell_task_handler(void *arg) {
             printf("  - Highlighted vertex spheres showing active instruction breakpoints.\n");
         } else if (strcmp(args, "step") == 0) {
             printf("  - Stepping instruction at IP: 0x%08X\n", xdc_ip);
-            xdc_ip += 4;
+            uint8_t op1 = ce_memory[xdc_ip];
+            uint8_t op2 = ce_memory[xdc_ip + 1];
+            if (op1 == 0x18) {
+                int r1 = (op2 >> 4) & 0xF;
+                int r2 = op2 & 0xF;
+                ce_gprs[r1] = ce_gprs[r2];
+                xdc_ip += 2;
+            } else if (op1 == 0x5A) {
+                int r1 = (op2 >> 4) & 0xF;
+                int r2 = op2 & 0xF;
+                ce_gprs[r1] += ce_gprs[r2];
+                xdc_ip += 2;
+            } else {
+                xdc_ip += 2;
+            }
             printf("  - Step completed. Next IP: 0x%08X\n", xdc_ip);
+        } else if (strcmp(args, "run") == 0) {
+            printf("  - Running instructions from IP: 0x%08X...\n", xdc_ip);
+            bool bp_hit = false;
+            while (xdc_ip < 1024) {
+                for (int i = 0; i < xdc_breakpoint_count; i++) {
+                    if (xdc_breakpoints[i] == xdc_ip) {
+                        printf("  - Breakpoint hit at address: 0x%08X\n", xdc_ip);
+                        bp_hit = true;
+                        break;
+                    }
+                }
+                if (bp_hit) break;
+
+                uint8_t op1 = ce_memory[xdc_ip];
+                uint8_t op2 = ce_memory[xdc_ip + 1];
+                if (op1 == 0x18) {
+                    int r1 = (op2 >> 4) & 0xF;
+                    int r2 = op2 & 0xF;
+                    ce_gprs[r1] = ce_gprs[r2];
+                    xdc_ip += 2;
+                } else if (op1 == 0x5A) {
+                    int r1 = (op2 >> 4) & 0xF;
+                    int r2 = op2 & 0xF;
+                    ce_gprs[r1] += ce_gprs[r2];
+                    xdc_ip += 2;
+                } else {
+                    break;
+                }
+            }
+            printf("  - Execution stopped at IP: 0x%08X\n", xdc_ip);
         } else if (strncmp(args, "disasm", 6) == 0) {
             uint32_t addr = xdc_ip;
             const char *addr_str = args + 6;
