@@ -66,6 +66,16 @@ int main(void) {
     bool ibhlspac_ok = tsfi_xplos_shell_explorer("ibhlspac test_vsam.dat.bin");
     assert(ibhlspac_ok == true);
 
+    // 12. Test explorer command "cbtdate" for system calendar rendering
+    printf("  -> Testing cbtdate command...\n");
+    bool cbtdate_ok = tsfi_xplos_shell_explorer("cbtdate");
+    assert(cbtdate_ok == true);
+
+    // 13. Test explorer command "cbtsend" for operator broadcast parsing
+    printf("  -> Testing cbtsend command...\n");
+    bool cbtsend_ok = tsfi_xplos_shell_explorer("cbtsend Broadcast message to terminal");
+    assert(cbtsend_ok == true);
+
     printf("\n=== EXPLORER MAINFRAME VSAM TESTS PASSED ===\n");
     return 0;
 }
