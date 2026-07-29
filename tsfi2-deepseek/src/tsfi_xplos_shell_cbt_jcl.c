@@ -14,6 +14,7 @@
 #include "tsfi_xplos_shell_cbt_tso.h"
 #include "tsfi_xplos_shell_cbt_vtam.h"
 #include "tsfi_mainframe_computerworld.h"
+#include "auncient_sdk.h"
 extern XplosVirtualDisk g_vfs;
 extern CbtSpoolJob cbt_job_table[10];
 extern XplosScheduler *g_active_sched;
@@ -233,6 +234,34 @@ static bool handle_jclrun(const char *cmd) {
                                 snprintf(log_msg, sizeof(log_msg), "    * IEFBR14 Dummy Program executed. Resolving DD dispositions. RC=0000\n");
                                 printf("%s", log_msg);
                                 append_spool_log(jcl_name, log_msg);
+                            } else if (strcmp(pgm_name, "RAUPGM") == 0) {
+                                step_rc = 0;
+                                snprintf(log_msg, sizeof(log_msg), "    * RAUPGM Coaxial RAU Backplane Utility launched. RC=0000\n");
+                                printf("%s", log_msg);
+                                append_spool_log(jcl_name, log_msg);
+
+                                sdk_coaxial_env_t env;
+                                if (auncient_sdk_init_coaxial(&env)) {
+                                    printf("[RAUPGM] Coaxial RAU Backplane mounted successfully.\n");
+                                    bool reg_ok = true;
+                                    for (uint32_t reg_idx = 0; reg_idx < 8; reg_idx++) {
+                                        auncient_rau_poke(&env, reg_idx, 0xAA550000 + reg_idx);
+                                        uint32_t val = auncient_rau_peek(&env, reg_idx);
+                                        if (val != (0xAA550000 + reg_idx)) {
+                                            reg_ok = false;
+                                        }
+                                    }
+                                    if (reg_ok) {
+                                        printf("[RAUPGM] Verified read/write access to all RAU registers successfully.\n");
+                                    } else {
+                                        step_rc = 8;
+                                        printf("[RAUPGM ERROR] RAU register check failed.\n");
+                                    }
+                                    auncient_sdk_close_coaxial(&env);
+                                } else {
+                                    step_rc = 12;
+                                    printf("[RAUPGM ERROR] Failed to mount Coaxial RAU Backplane.\n");
+                                }
                             } else if (strcmp(pgm_name, "TSOTMP") == 0) {
                                 step_rc = 0;
                                 snprintf(log_msg, sizeof(log_msg), "    * TSOTMP Terminal Monitor Program launched. RC=0000\n");

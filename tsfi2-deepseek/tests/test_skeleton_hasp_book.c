@@ -240,6 +240,22 @@ int main(void) {
     bool mockjob4_run_ok = tsfi_xplos_shell_cbt_jcl("jclrun MJ4");
     assert(mockjob4_run_ok == true);
 
+    // 16. Verify RAUPGM execution to mount RAU and check registers
+    printf("  -> Phase 14: Verifying RAUPGM execution and RAU registers...\n");
+    remove("USERLIB.dat.bin");
+    int open_userlib_rc4 = tsfi_cw_vsam_open(&userlib_ksds, "USERLIB.dat.bin");
+    assert(open_userlib_rc4 == 0);
+
+    // Write JCL job MJ5 that runs RAUPGM
+    uint8_t mock_rau_cards[256] = 
+        "//MJ5 JOB 'CBT RAU'\n"
+        "//STEP1 EXEC PGM=RAUPGM\n";
+    int write_userlib_rc4 = tsfi_cw_vsam_write(&userlib_ksds, "MJ5", mock_rau_cards, strlen((char *)mock_rau_cards));
+    assert(write_userlib_rc4 == 0);
+
+    bool mockjob5_run_ok = tsfi_xplos_shell_cbt_jcl("jclrun MJ5");
+    assert(mockjob5_run_ok == true);
+
     printf("  -> End-to-end data pipeline integrity verified successfully.\n");
     printf("\n=== SKELETON HASP BOOK PROOFS PASSED ===\n");
     return 0;
