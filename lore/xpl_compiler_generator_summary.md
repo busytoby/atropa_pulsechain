@@ -52,3 +52,13 @@ The language design features are optimized for memory conservation and string ma
 * **XPL Data Types**: The language supports native data types tailored for system programming, including `FIXED` (word integers), `BIT` (logical byte flags), and `CHARACTER` (dynamic string byte descriptors).
 * **String Allocation and GC**: String values are managed dynamically using length-byte descriptors. Storage allocation uses a free-heap zone, executing garbage collection routines when memory boundaries are reached.
 * **Historical System Footprint**: The compiler is designed to run in highly constrained environments, compiling complex student programs within a `65,536` byte memory partition on IBM System/360 hardware. This modular efficiency matches the design philosophy of Auncient low-level register boundaries.
+
+## 7. Grammar Checking and Bootstrap Details
+
+The compiler generator implements advanced grammatical verification and system bootstrap procedures:
+
+* **MSP Parser Decision Tables**: Grammars processed by the ANALYZER are verified using Mixed-Left Association (MSP) rules. The parser constructs decision matrices mapping terminal and non-terminal state lookaheads, outputting compact parser tables.
+* **Bootstrap Generation Passes**: The compiler compiles itself through successive stages:
+  1. An initial compiler executable compiles the new compiler source code.
+  2. The compiled binary is loaded and runs to compile the grammar analyzer, validating compatibility.
+* **Semantic Code Emission**: Opcodes emitted during grammar rule reduction translate mathematical variables directly into machine registries, facilitating rapid porting to diverse backplanes.

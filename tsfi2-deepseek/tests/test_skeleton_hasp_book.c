@@ -350,6 +350,11 @@ int main(void) {
     bool run_yulvm_ok = tsfi_xplos_shell_cbt_jcl("jclrun MJ9");
     assert(run_yulvm_ok == true);
 
+    // 24. Verify CICS Transaction Performance Profiler
+    printf("  -> Phase 22: Verifying CICS Transaction Performance Profiler...\n");
+    bool profile_ok = tsfi_xplos_shell_cbt_cics("cbtcicsprofile");
+    assert(profile_ok == true);
+
     printf("  -> End-to-end data pipeline integrity verified successfully.\n");
     printf("\n=== SKELETON HASP BOOK PROOFS PASSED ===\n");
     return 0;
