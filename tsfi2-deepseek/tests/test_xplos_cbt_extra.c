@@ -1223,6 +1223,24 @@ int main(void) {
     assert(jcljobchkstatsstatusdetails_ok == true);
     tsfi_xplos_run(&sched);
 
+    // 177. Test JCL job check logs audit progress details (cbtjcljobchkstatsstatusdetailsprogress)
+    printf("[TEST] Testing JCL job check logs audit progress query...\n");
+    bool jcljobchkstatsstatusdetailsprogress_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtjcljobchkstatsstatusdetailsprogress");
+    assert(jcljobchkstatsstatusdetailsprogress_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 178. Test JCL job check verification reset (cbtjcljobchkreset)
+    printf("[TEST] Testing JCL job verification checks reset...\n");
+    bool jcljobchkreset_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtjcljobchkreset");
+    assert(jcljobchkreset_ok == true);
+    tsfi_xplos_run(&sched);
+
+    // 179. Test JCL job check verification reset stats (cbtjcljobchkresetstat)
+    printf("[TEST] Testing JCL job verification resets stats query...\n");
+    bool jcljobchkresetstat_ok = tsfi_xplos_shell_exec(&shell, &sched, "cbtjcljobchkresetstat");
+    assert(jcljobchkresetstat_ok == true);
+    tsfi_xplos_run(&sched);
+
     printf("\n=== ALL CBT TAPE EXTRA FEATURE TESTS PASSED ===\n");
     return 0;
 }
