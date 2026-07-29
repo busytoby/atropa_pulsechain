@@ -1447,6 +1447,24 @@ int main(void) {
     tsfi_xplos_run(&sched_inv);
     printf("   ✓ CBTINV execution verified successfully.\n");
 
+    // 96. Test CBTABEND command execution
+    printf("[KERNEL TEST] Dispatching 'cbtabend' command to XplOS shell...\n");
+    XplosShell shell_abend;
+    XplosScheduler sched_abend;
+    tsfi_xplos_init_scheduler(&sched_abend);
+    tsfi_xplos_init_shell(&shell_abend);
+    
+    FILE *f_abend_tmp = fopen("tests/dump_crash.dat.bin", "wb");
+    uint8_t dummy_abend[8] = {0};
+    fwrite(dummy_abend, 1, 8, f_abend_tmp);
+    fclose(f_abend_tmp);
+
+    bool abend_ok = tsfi_xplos_shell_exec(&shell_abend, &sched_abend, "cbtabend tests/dump_crash.dat.bin");
+    assert(abend_ok == true);
+    tsfi_xplos_run(&sched_abend);
+    printf("   ✓ CBTABEND execution verified successfully.\n");
+    remove("tests/dump_crash.dat.bin");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
