@@ -1706,7 +1706,18 @@ int main(void) {
     tsfi_xplos_run(&sched_cbtcpu);
     printf("   ✓ CBTCPU execution verified successfully.\n");
 
-    // 118. Test IBHDRPLY and IBHWTORG command executions
+    // 120. Test CBTMOUNTMEM in-memory download & mount
+    printf("[KERNEL TEST] Dispatching 'cbtmountmem' command to XplOS shell...\n");
+    XplosShell shell_mem;
+    XplosScheduler sched_mem;
+    tsfi_xplos_init_scheduler(&sched_mem);
+    tsfi_xplos_init_shell(&shell_mem);
+    bool mount_ok = tsfi_xplos_shell_exec(&shell_mem, &sched_mem, "cbtmountmem /ftp/cbt/CBT021.zip");
+    assert(mount_ok == true);
+    tsfi_xplos_run(&sched_mem);
+    printf("   ✓ CBTMOUNTMEM execution verified successfully.\n");
+
+    // 121. Test IBHDRPLY and IBHWTORG command executions
     printf("[KERNEL TEST] Dispatching 'ibhdrply' command to XplOS shell...\n");
     XplosShell shell_bh;
     XplosScheduler sched_bh;
@@ -1723,18 +1734,7 @@ int main(void) {
     tsfi_xplos_run(&sched_bh);
     printf("   ✓ IBHWTORG execution verified successfully.\n");
 
-    // 120. Test CBTMOUNTMEM in-memory download & mount
-    printf("[KERNEL TEST] Dispatching 'cbtmountmem' command to XplOS shell...\n");
-    XplosShell shell_mem;
-    XplosScheduler sched_mem;
-    tsfi_xplos_init_scheduler(&sched_mem);
-    tsfi_xplos_init_shell(&shell_mem);
-    bool mount_ok = tsfi_xplos_shell_exec(&shell_mem, &sched_mem, "cbtmountmem /ftp/cbt/CBT021.zip");
-    assert(mount_ok == true);
-    tsfi_xplos_run(&sched_mem);
-    printf("   ✓ CBTMOUNTMEM execution verified successfully.\n");
-
-    // 121. Test OCX and IBHLSPAC command executions operating on their own mounted files
+    // 122. Test OCX and IBHLSPAC command executions operating on their own mounted files
     printf("[KERNEL TEST] Dispatching 'ocx' command to XplOS shell...\n");
     XplosShell shell_bh2;
     XplosScheduler sched_bh2;
