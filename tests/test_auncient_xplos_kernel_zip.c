@@ -1476,6 +1476,17 @@ int main(void) {
     tsfi_xplos_run(&sched_patch);
     printf("   ✓ CBTPATCH execution verified successfully.\n");
 
+    // 98. Test CBTNET command execution
+    printf("[KERNEL TEST] Dispatching 'cbtnet' command to XplOS shell...\n");
+    XplosShell shell_net;
+    XplosScheduler sched_net;
+    tsfi_xplos_init_scheduler(&sched_net);
+    tsfi_xplos_init_shell(&shell_net);
+    bool net_ok = tsfi_xplos_shell_exec(&shell_net, &sched_net, "cbtnet");
+    assert(net_ok == true);
+    tsfi_xplos_run(&sched_net);
+    printf("   ✓ CBTNET execution verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL XPLOS KERNEL ZIP TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

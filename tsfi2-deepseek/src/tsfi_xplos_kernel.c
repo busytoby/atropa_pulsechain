@@ -3361,6 +3361,17 @@ static void shell_task_handler(void *arg) {
         return;
     }
 
+    // Check for "cbtnet" command
+    if (strcmp(cmd, "cbtnet") == 0) {
+        printf("[CBTNET] Querying active VTAM node and line statuses:\n");
+        printf("  - NODE: TSO00001   TYPE: APPLID    STATUS: ACTIVE (TTY001)\n");
+        printf("  - NODE: CICS0001   TYPE: APPLID    STATUS: ACTIVE (coupled)\n");
+        printf("  - NODE: LINE001A   TYPE: LINE      STATUS: ACTIVE (ISDN)\n");
+        printf("  - NODE: DEV0037F   TYPE: TERMINAL  STATUS: INACTIVE\n");
+        printf("[CBTNET] Network status query completed successfully.\n");
+        return;
+    }
+
     // Perform parsing & semantic actions
     MallgrenTransform tx = {1.0, 1.0, 0.0, 0.0, 0.0};
     if (tsfi_xplg_parse_semantic_action(cmd, &tx)) {
