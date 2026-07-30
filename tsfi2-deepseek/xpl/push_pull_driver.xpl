@@ -45,25 +45,25 @@ TICK_PUSH_PULL_DRIVER: PROCEDURE;
     BYTE(NPN_COLLECTOR_V) = BYTE(POS_POWER_RAIL);
     BYTE(PNP_COLLECTOR_V) = BYTE(NEG_POWER_RAIL);
     
-    /* Connect the bases to the shared input voltage node */
-    BYTE(NPN_BASE_VOLTAGE) = VIN;
-    BYTE(PNP_BASE_VOLTAGE) = VIN;
-
+    /* Connect the bases through two biasing diodes in series (Class AB bias) */
+    /* This shifts NPN base up by 700mV and PNP base down by 700mV relative to Vin */
+    BYTE(NPN_BASE_VOLTAGE) = VIN + 700;
+    BYTE(PNP_BASE_VOLTAGE) = VIN - 700;
     
-    /* 1. NPN Emitter Follower Conduction (Positive Half-Cycle) */
-    IF VIN > 700 THEN DO;
+    /* 1. Positive Half-Cycle Conduction (NPN active, PNP cutoff) */
+    IF VIN > 0 THEN DO;
         BYTE(NPN_STATE) = STATE_ACTIVE;
         BYTE(PNP_STATE) = STATE_CUTOFF;
-        VOUT = VIN - 700; /* Vout follows Vin minus diode drop */
+        VOUT = VIN; /* Crossover distortion eliminated: output follows Vin directly */
     END;
     ELSE DO;
-        /* 2. PNP Emitter Follower Conduction (Negative Half-Cycle) */
-        IF VIN < -700 THEN DO;
+        /* 2. Negative Half-Cycle Conduction (PNP active, NPN cutoff) */
+        IF VIN < 0 THEN DO;
             BYTE(NPN_STATE) = STATE_CUTOFF;
             BYTE(PNP_STATE) = STATE_ACTIVE;
-            VOUT = VIN + 700; /* Vout follows Vin plus diode drop */
+            VOUT = VIN; /* Output follows Vin directly */
         END;
-        /* 3. Dead Zone (Both transistors cut off) */
+        /* 3. Perfect Zero Cross Alignment (Coast state) */
         ELSE DO;
             BYTE(NPN_STATE) = STATE_CUTOFF;
             BYTE(PNP_STATE) = STATE_CUTOFF;
@@ -111,62 +111,63 @@ PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
             /* 1. Define physical state configurations (9 permutations) */
             IS_VALID_PHYSICAL = TRUE;
             
-            /* NPN Active Region (Positive Half-Cycle, VIN > 700 mV) */
+            /* NPN Active Region (Positive Half-Cycle, VIN > 0 mV) */
             IF P = 1 THEN DO; /* NPN Active, RL > 0 */
                 VIN = 5000; RL = 1000;
                 EXPECT_STATE_NPN = STATE_ACTIVE; EXPECT_STATE_PNP = STATE_CUTOFF;
-                EXPECT_VOLTAGE = 4300;
+                EXPECT_VOLTAGE = 5000;
             END;
             IF P = 2 THEN DO; /* NPN Active, RL = 0 (Invalid) */
                 VIN = 5000; RL = 0;
                 EXPECT_STATE_NPN = STATE_ACTIVE; EXPECT_STATE_PNP = STATE_CUTOFF;
-                EXPECT_VOLTAGE = 4300;
+                EXPECT_VOLTAGE = 5000;
                 IS_VALID_PHYSICAL = FALSE;
             END;
             IF P = 3 THEN DO; /* NPN Active, RL < 0 (Invalid) */
                 VIN = 5000; RL = -100;
                 EXPECT_STATE_NPN = STATE_ACTIVE; EXPECT_STATE_PNP = STATE_CUTOFF;
-                EXPECT_VOLTAGE = 4300;
+                EXPECT_VOLTAGE = 5000;
                 IS_VALID_PHYSICAL = FALSE;
             END;
             
-            /* PNP Active Region (Negative Half-Cycle, VIN < -700 mV) */
+            /* PNP Active Region (Negative Half-Cycle, VIN < 0 mV) */
             IF P = 4 THEN DO; /* PNP Active, RL > 0 */
                 VIN = -5000; RL = 1000;
                 EXPECT_STATE_NPN = STATE_CUTOFF; EXPECT_STATE_PNP = STATE_ACTIVE;
-                EXPECT_VOLTAGE = -4300;
+                EXPECT_VOLTAGE = -5000;
             END;
             IF P = 5 THEN DO; /* PNP Active, RL = 0 (Invalid) */
                 VIN = -5000; RL = 0;
                 EXPECT_STATE_NPN = STATE_CUTOFF; EXPECT_STATE_PNP = STATE_ACTIVE;
-                EXPECT_VOLTAGE = -4300;
+                EXPECT_VOLTAGE = -5000;
                 IS_VALID_PHYSICAL = FALSE;
             END;
             IF P = 6 THEN DO; /* PNP Active, RL < 0 (Invalid) */
                 VIN = -5000; RL = -100;
                 EXPECT_STATE_NPN = STATE_CUTOFF; EXPECT_STATE_PNP = STATE_ACTIVE;
-                EXPECT_VOLTAGE = -4300;
+                EXPECT_VOLTAGE = -5000;
                 IS_VALID_PHYSICAL = FALSE;
             END;
             
-            /* Dead Zone (Both Cutoff, -700 mV <= VIN <= 700 mV) */
-            IF P = 7 THEN DO; /* Dead Zone, RL > 0 */
+            /* Low Signal Conduction (Class AB elimination of Dead Zone) */
+            IF P = 7 THEN DO; /* Low positive signal, RL > 0 */
                 VIN = 100; RL = 1000;
-                EXPECT_STATE_NPN = STATE_CUTOFF; EXPECT_STATE_PNP = STATE_CUTOFF;
-                EXPECT_VOLTAGE = 0;
+                EXPECT_STATE_NPN = STATE_ACTIVE; EXPECT_STATE_PNP = STATE_CUTOFF;
+                EXPECT_VOLTAGE = 100;
             END;
-            IF P = 8 THEN DO; /* Dead Zone, RL = 0 (Invalid) */
+            IF P = 8 THEN DO; /* Low positive signal, RL = 0 (Invalid) */
                 VIN = 100; RL = 0;
-                EXPECT_STATE_NPN = STATE_CUTOFF; EXPECT_STATE_PNP = STATE_CUTOFF;
-                EXPECT_VOLTAGE = 0;
+                EXPECT_STATE_NPN = STATE_ACTIVE; EXPECT_STATE_PNP = STATE_CUTOFF;
+                EXPECT_VOLTAGE = 100;
                 IS_VALID_PHYSICAL = FALSE;
             END;
-            IF P = 9 THEN DO; /* Dead Zone, RL < 0 (Invalid) */
+            IF P = 9 THEN DO; /* Low positive signal, RL < 0 (Invalid) */
                 VIN = 100; RL = -100;
-                EXPECT_STATE_NPN = STATE_CUTOFF; EXPECT_STATE_PNP = STATE_CUTOFF;
-                EXPECT_VOLTAGE = 0;
+                EXPECT_STATE_NPN = STATE_ACTIVE; EXPECT_STATE_PNP = STATE_CUTOFF;
+                EXPECT_VOLTAGE = 100;
                 IS_VALID_PHYSICAL = FALSE;
             END;
+
 
             /* Apply test values to virtual hardware registers */
             BYTE(INPUT_VOLTAGE) = VIN;
