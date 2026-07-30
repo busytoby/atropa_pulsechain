@@ -192,6 +192,7 @@ COMMIT_XLOG_TRANSACTION: PROCEDURE(TX_ID, PAYLOAD_BYTE) FIXED;
         /* Run safety interlock consistency validation */
         IF VALIDATE_HBRIDGE_STATE = 1 THEN DO;
             BYTE(CAPSTAN_CONTROL) = 1; /* Forward spin */
+            CALL UPDATE_TONEWHEEL_CORE;
         END;
         
         /* Commit log buffer snapshot to sector 15 and write to non-preferential accumulator */
@@ -207,6 +208,7 @@ COMMIT_XLOG_TRANSACTION: PROCEDURE(TX_ID, PAYLOAD_BYTE) FIXED;
         BYTE(HBRIDGE_Q2_HSR) = 0;
         BYTE(HBRIDGE_Q3_LSL) = 0;
         BYTE(HBRIDGE_Q4_LSR) = 0;
+        CALL UPDATE_TONEWHEEL_CORE;
         
         /* Increment Log Sequence Number */
         BYTE(XLOG_LSN + 3) = BYTE(XLOG_LSN + 3) + 1;
@@ -253,6 +255,7 @@ ABORT_XLOG_TRANSACTION: PROCEDURE FIXED;
     /* Run safety interlock consistency validation before reverse power flow */
     IF VALIDATE_HBRIDGE_STATE = 1 THEN DO;
         BYTE(CAPSTAN_CONTROL) = 2; /* Reverse spin direction */
+        CALL UPDATE_TONEWHEEL_CORE;
     END;
     
     /* Shuttle tape backward until encoder matches preceding sector boundary 0 */
@@ -266,6 +269,7 @@ ABORT_XLOG_TRANSACTION: PROCEDURE FIXED;
     BYTE(HBRIDGE_Q3_LSL) = 0;
     BYTE(HBRIDGE_Q4_LSR) = 0;
     BYTE(CAPSTAN_SOLENOID) = 0;
+    CALL UPDATE_TONEWHEEL_CORE;
     
     /* Rollback write head pointer to discard uncommitted records */
     BYTE(XLOG_BUF_HEAD + 2) = 0;
