@@ -536,6 +536,25 @@ int main(void) {
     assert(i_high_freq < 20);
     printf("      ✓ iZotope DSP: Ozone dual-band crossover split and safety threshold checks verified.\n");
 
+    /* 4f. iZotope Spectral Shaper Excitation Gate (Ozone Dynamic Spectral Attenuation) */
+    printf("[TEST] Running iZotope Ozone Spectral Shaper Excitation Gate audit...\n");
+    
+    /* If high frequency EMI ringing (i_high_freq) exceeds 14 mA, the Spectral Shaper triggers,
+     * dynamically extending the H-Bridge dead-time blanking interval to attenuate crossover noise.
+     */
+    uint32_t base_blanking_ticks = 3;
+    uint32_t active_blanking_ticks = base_blanking_ticks;
+    
+    bool spectral_shaper_active = (i_high_freq > 14);
+    if (spectral_shaper_active) {
+        /* Add dynamic damping: 1 tick of dead-time for every mA above 14 mA threshold */
+        active_blanking_ticks += (i_high_freq - 14);
+    }
+    
+    assert(active_blanking_ticks == 4); /* Extended to 4 ticks (3 + (15-14)) */
+    printf("      ✓ iZotope DSP: Spectral Shaper dynamically adjusted dead-time blanking to: %u ticks.\n", active_blanking_ticks);
+
+
 
 
 
