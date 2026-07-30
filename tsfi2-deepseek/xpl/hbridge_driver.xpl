@@ -23,6 +23,7 @@ DECLARE HBRIDGE_Q4_LSR LITERALLY '65009'; /* Low-Side Right (NPN) */
 /* Output State Registers */
 DECLARE MOTOR_STATE    LITERALLY '65400'; /* Current motor operating mode */
 DECLARE FAULT_REGISTER LITERALLY '65404'; /* Active fault code */
+DECLARE INITIAL_ORDERS_PHASE LITERALLY '65408'; /* Boot phase status: 1 = Initial Orders 1 */
 
 /* Audits states to prevent shoot-through short circuits (ACID Consistency) */
 AUDIT_HBRIDGE_SAFETY: PROCEDURE FIXED;
@@ -45,12 +46,14 @@ TICK_HBRIDGE_DRIVER: PROCEDURE;
     DECLARE Q2 FIXED;
     DECLARE Q3 FIXED;
     DECLARE Q4 FIXED;
+    DECLARE BOOT_PHASE FIXED;
     
-    /* Load switch states from registers */
+    /* Load switch states and boot status from registers */
     Q1 = BYTE(HBRIDGE_Q1_HSL);
     Q2 = BYTE(HBRIDGE_Q2_HSR);
     Q3 = BYTE(HBRIDGE_Q3_LSL);
     Q4 = BYTE(HBRIDGE_Q4_LSR);
+    BOOT_PHASE = BYTE(INITIAL_ORDERS_PHASE);
     
     /* 1. Audit Shoot-Through Conditions */
     IF (Q1 = SWITCH_ON AND Q3 = SWITCH_ON) OR (Q2 = SWITCH_ON AND Q4 = SWITCH_ON) THEN DO;
@@ -75,10 +78,23 @@ TICK_HBRIDGE_DRIVER: PROCEDURE;
     
     /* Reverse Path (High-Side Right & Low-Side Left ON) */
     IF Q2 = SWITCH_ON AND Q3 = SWITCH_ON THEN DO;
+        /* Enforce "Initial Orders 1" transaction audit constraint */
+        IF BOOT_PHASE = 1 THEN DO;
+            /* Reverse movement is strictly prohibited during Initial Orders 1 */
+            BYTE(HBRIDGE_Q1_HSL) = SWITCH_OFF;
+            BYTE(HBRIDGE_Q2_HSR) = SWITCH_OFF;
+            BYTE(HBRIDGE_Q3_LSL) = SWITCH_OFF;
+            BYTE(HBRIDGE_Q4_LSR) = SWITCH_OFF;
+            BYTE(MOTOR_STATE) = MOTOR_FAULT;
+            BYTE(FAULT_REGISTER) = 2; /* Initial Orders 1 Audit Violation */
+            RETURN;
+        END;
+        
         BYTE(MOTOR_STATE) = MOTOR_REVERSE;
         BYTE(FAULT_REGISTER) = 0;
         RETURN;
     END;
+
     
     /* Brake Path (Both Low-Side switches ON to short terminals) */
     IF Q3 = SWITCH_ON AND Q4 = SWITCH_ON THEN DO;
@@ -103,14 +119,17 @@ END TICK_HBRIDGE_DRIVER;
 PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
     DECLARE (P, T, FAILS) FIXED;
     DECLARE (Q1, Q2, Q3, Q4) FIXED;
-    DECLARE (BACKUP_Q1, BACKUP_Q2, BACKUP_Q3, BACKUP_Q4) FIXED;
+    DECLARE (BACKUP_Q1, BACKUP_Q2, BACKUP_Q3, BACKUP_Q4, BACKUP_BOOT) FIXED;
     DECLARE (EXPECT_MSTATE, EXPECT_FAULT) FIXED;
     DECLARE (IS_VALID_PHYSICAL) FIXED;
     
     FAILS = 0;
     P = 1;
     
-    DO WHILE P <= 9;
+    /* Set default boot phase status */
+    BYTE(INITIAL_ORDERS_PHASE) = 0;
+    
+    DO WHILE P <= 10;
         T = 1;
         DO WHILE T <= 4;
             /* Backup baseline state prior to test */
@@ -118,8 +137,9 @@ PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
             BACKUP_Q2 = BYTE(HBRIDGE_Q2_HSR);
             BACKUP_Q3 = BYTE(HBRIDGE_Q3_LSL);
             BACKUP_Q4 = BYTE(HBRIDGE_Q4_LSR);
+            BACKUP_BOOT = BYTE(INITIAL_ORDERS_PHASE);
             
-            /* 1. Define physical switch configurations (9 permutations) */
+            /* 1. Define physical switch configurations (10 permutations) */
             IS_VALID_PHYSICAL = TRUE;
             
             /* Coast State */
@@ -180,6 +200,14 @@ PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
                 IS_VALID_PHYSICAL = FALSE;
             END;
 
+            /* Initial Orders 1 Phase - Blocked Reverse Command Case */
+            IF P = 10 THEN DO;
+                Q1 = 0; Q2 = 1; Q3 = 1; Q4 = 0; /* Requested Reverse */
+                BYTE(INITIAL_ORDERS_PHASE) = 1; /* Force boot-loader phase */
+                EXPECT_MSTATE = MOTOR_FAULT; EXPECT_FAULT = 2;
+                IS_VALID_PHYSICAL = FALSE;
+            END;
+
             /* Apply test values to virtual hardware registers */
             BYTE(HBRIDGE_Q1_HSL) = Q1;
             BYTE(HBRIDGE_Q2_HSR) = Q2;
@@ -196,6 +224,7 @@ PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
                     BYTE(HBRIDGE_Q2_HSR) = BACKUP_Q2;
                     BYTE(HBRIDGE_Q3_LSL) = BACKUP_Q3;
                     BYTE(HBRIDGE_Q4_LSR) = BACKUP_Q4;
+                    BYTE(INITIAL_ORDERS_PHASE) = BACKUP_BOOT;
                     IF BYTE(HBRIDGE_Q1_HSL) <> BACKUP_Q1 THEN FAILS = FAILS + 1;
                 END;
                 ELSE DO;
@@ -210,8 +239,10 @@ PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
                 BYTE(HBRIDGE_Q2_HSR) = BACKUP_Q2;
                 BYTE(HBRIDGE_Q3_LSL) = BACKUP_Q3;
                 BYTE(HBRIDGE_Q4_LSR) = BACKUP_Q4;
+                BYTE(INITIAL_ORDERS_PHASE) = BACKUP_BOOT;
                 IF BYTE(HBRIDGE_Q1_HSL) <> BACKUP_Q1 THEN FAILS = FAILS + 1;
             END;
+
             
             /* T3: Isolation Pathway (Tests calculation double-buffering safety) */
             IF T = 3 THEN DO;
