@@ -12,6 +12,7 @@ DECLARE XLOG_BUF_HEAD       LITERALLY '64021'; /* Write head pointer offset (3 b
 DECLARE XLOG_BUFFER0_START  LITERALLY '64024'; /* Transaction buffer 0 start */
 DECLARE XLOG_BUFFER1_START  LITERALLY '64536'; /* Transaction buffer 1 start (offset 512) */
 DECLARE XLOG_BUFFER_SIZE    LITERALLY '512';   /* Max memory log capacity per buffer */
+DECLARE XLOG_ACCUMULATOR    LITERALLY '64100'; /* Non-preferential accumulator output space */
 
 /* Transaction Lifecycle Metadata Markers */
 DECLARE TX_MARKER_START     LITERALLY '10';
@@ -96,6 +97,9 @@ INIT_XLOG_SKELETON: PROCEDURE FIXED;
         I = I + 1;
     END;
     
+    /* Clear non-preferential accumulator output space */
+    BYTE(XLOG_ACCUMULATOR) = 0;
+    
     RETURN 1; /* Initialization success */
 END;
 
@@ -174,9 +178,10 @@ COMMIT_XLOG_TRANSACTION: PROCEDURE(TX_ID, PAYLOAD_BYTE) FIXED;
             BYTE(CAPSTAN_CONTROL) = 1; /* Forward spin */
         END;
         
-        /* Commit log buffer snapshot to sector 15 */
+        /* Commit log buffer snapshot to sector 15 and write to non-preferential accumulator */
         IF BYTE(CAPSTAN_ENCODER) = 15 THEN DO;
             BYTE(SECTOR_DATA_REG) = PAYLOAD_BYTE;
+            BYTE(XLOG_ACCUMULATOR) = PAYLOAD_BYTE;
         END;
         
         /* Engage mechanical brake and return H-Bridge switches to idle */
