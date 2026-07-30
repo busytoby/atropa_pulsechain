@@ -36,15 +36,26 @@ DECLARE BLANKING_INTERVAL LITERALLY '65428'; /* Required dead-time steps between
 DECLARE LAST_CHANGE_TICK  LITERALLY '65432'; /* System tick of the last active state transition */
 DECLARE SYSTEM_TICK_REG   LITERALLY '65436'; /* Master system clock tick accumulator */
 
+/* Hardware Abstraction Layer (HAL) for memory-mapped register access */
+HAL_READ_REG: PROCEDURE(REG_ADDR) FIXED;
+    DECLARE REG_ADDR FIXED;
+    RETURN BYTE(REG_ADDR);
+END HAL_READ_REG;
+
+HAL_WRITE_REG: PROCEDURE(REG_ADDR, VAL);
+    DECLARE (REG_ADDR, VAL) FIXED;
+    BYTE(REG_ADDR) = VAL;
+END HAL_WRITE_REG;
+
 /* Audits states to prevent shoot-through short circuits (ACID Consistency) */
 AUDIT_HBRIDGE_SAFETY: PROCEDURE FIXED;
     /* Check Left Branch Shoot-Through (Q1 and Q3 both ON) */
-    IF BYTE(HBRIDGE_Q1_HSL) = SWITCH_ON AND BYTE(HBRIDGE_Q3_LSL) = SWITCH_ON THEN DO;
+    IF HAL_READ_REG(HBRIDGE_Q1_HSL) = SWITCH_ON AND HAL_READ_REG(HBRIDGE_Q3_LSL) = SWITCH_ON THEN DO;
         RETURN FALSE;
     END;
     
     /* Check Right Branch Shoot-Through (Q2 and Q4 both ON) */
-    IF BYTE(HBRIDGE_Q2_HSR) = SWITCH_ON AND BYTE(HBRIDGE_Q4_LSR) = SWITCH_ON THEN DO;
+    IF HAL_READ_REG(HBRIDGE_Q2_HSR) = SWITCH_ON AND HAL_READ_REG(HBRIDGE_Q4_LSR) = SWITCH_ON THEN DO;
         RETURN FALSE;
     END;
     
