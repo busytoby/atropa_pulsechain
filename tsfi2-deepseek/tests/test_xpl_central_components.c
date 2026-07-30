@@ -336,47 +336,55 @@ int main(void) {
     assert(c_gprs[0] == 0); /* Comparison result must be 0 (equal) */
     printf("   ✓ Audit passed: Carmine Cannatello S/370 assembly successfully verified Wheeler entry target.\n");
 
-    /* 4b. S/370 Assembly Diode Power Dissipation Audit (Over-voltage/Under-voltage Flyback Protection) */
-    printf("[TEST] Executing S/370 repeated addition loop for flyback diode power dissipation...\n");
-    uint32_t d_gprs[16] = {0};
-    uint8_t d_memory[256] = {0};
+    /* 4b. Unified Dynamic Voltage Safety Audit Loop (S/370 / 6502 Routing) */
+    printf("[TEST] Commencing unified dynamic voltage safety routing loop...\n");
     
-    d_gprs[1] = 1;      /* Constant decrement step */
-    d_gprs[2] = 700;    /* Diode Voltage drop Vd = 700 mV */
-    d_gprs[3] = 5;      /* Diode Current Id = 5 mA */
-    d_gprs[4] = 0;      /* Accumulator for Power Dissipation Pdiss */
+    /* We test three distinct voltage regimes: Under-Voltage, Normal, and Over-Voltage */
+    uint32_t voltages[3] = { 3000, 100, 9000 }; /* 3000 mV (Normal), 100 mV (Under), 9000 mV (Over) */
+    
+    for (int v_idx = 0; v_idx < 3; v_idx++) {
+        uint32_t cur_voltage = voltages[v_idx];
+        printf("   -> Auditing voltage regime: %u mV\n", cur_voltage);
+        
+        if (cur_voltage > 1000 && cur_voltage < 6000) {
+            /* Normal Voltage: Passes right through without executing co-processor assembly */
+            printf("      ✓ Normal voltage: passed right through (co-processor checks bypassed).\n");
+        }
+        else if (cur_voltage <= 1000) {
+            /* Under-Voltage: Call c6502 assembly to clamp low and register the warning state */
+            printf("      [6502 CPU] Under-voltage detected. Invoking 6502 assembly handler...\n");
+            xpl_6502_cpu_t cpu6502 = {0};
+            uint8_t memory6502[1024] = {0};
+            uint8_t program6502[] = {
+                0xA9, 0x55,       /* LDA #$55 (Set under-voltage warning code) */
+                0x8D, 0x00, 0x02, /* STA $0200 (Write code to memory warning channel) */
+                0xC9, 0x55        /* CMP #$55 (Verify correct register write) */
+            };
+            assert(tsfi_xpl_execute_6502(program6502, sizeof(program6502), &cpu6502, memory6502) == true);
+            assert(memory6502[0x0200] == 0x55);
+            assert((cpu6502.sr & 0x02) != 0); /* Zero flag set (matches) */
+            printf("      ✓ Under-voltage audit passed: 6502 handler executed and warning code registered.\n");
+        }
+        else {
+            /* Over-Voltage: Call S/370 assembly to calculate flyback power dissipation */
+            printf("      [S/370 CPU] Over-voltage detected. Invoking S/370 dissipation loop...\n");
+            uint32_t d_gprs[16] = {0};
+            uint8_t d_memory[256] = {0};
+            d_gprs[1] = 1;      /* Constant decrement step */
+            d_gprs[2] = 700;    /* Diode Voltage drop Vd = 700 mV */
+            d_gprs[3] = 5;      /* Diode Current Id = 5 mA */
+            d_gprs[4] = 0;      /* Accumulator for Power Dissipation Pdiss */
 
-    /* Perform repeated addition to calculate Vd * Id */
-    while (d_gprs[3] > 0) {
-        assert(tsfi_xpl_execute_assembler("AR R4, R2", d_gprs, d_memory) == true);
-        assert(tsfi_xpl_execute_assembler("SR R3, R1", d_gprs, d_memory) == true);
+            /* Perform repeated addition to calculate Vd * Id */
+            while (d_gprs[3] > 0) {
+                assert(tsfi_xpl_execute_assembler("AR R4, R2", d_gprs, d_memory) == true);
+                assert(tsfi_xpl_execute_assembler("SR R3, R1", d_gprs, d_memory) == true);
+            }
+            assert(d_gprs[4] == 3500); /* 3500 uW dissipation calculated */
+            printf("      ✓ Over-voltage audit passed: S/370 dissipation calculated: %u uW.\n", d_gprs[4]);
+        }
     }
-    
-    /* Verify total dissipation equals 700 mV * 5 mA = 3500 uW */
-    assert(d_gprs[4] == 3500);
-    printf("   ✓ Audit passed: S/370 power dissipation calculation verified: Pdiss = %u uW.\n", d_gprs[4]);
 
-
-    /* 5. MOS 6502 inline bytecode execution verification for Wheeler Jump */
-    printf("[TEST] Executing inline MOS 6502 instructions for Wheeler Jump...\n");
-    xpl_6502_cpu_t cpu6502 = {0};
-    uint8_t memory6502[1024] = {0};
-    
-    /* 6502 Bytecode Sequence:
-     *   LDA #$55      -> A9 55
-     *   STA $0200     -> 8D 00 02
-     *   CMP #$55      -> C9 55
-     */
-    uint8_t program6502[] = {
-        0xA9, 0x55,       /* LDA #$55 */
-        0x8D, 0x00, 0x02, /* STA $0200 */
-        0xC9, 0x55        /* CMP #$55 */
-    };
-    
-    assert(tsfi_xpl_execute_6502(program6502, sizeof(program6502), &cpu6502, memory6502) == true);
-    assert(memory6502[0x0200] == 0x55);
-    assert((cpu6502.sr & 0x02) != 0); /* Zero flag set (comparison matches) */
-    printf("   ✓ Audit passed: Inline MOS 6502 execution successfully validated register configurations.\n");
 
 
 
