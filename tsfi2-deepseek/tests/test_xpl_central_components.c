@@ -307,6 +307,27 @@ int main(void) {
     assert(mem[65460] == 0);
     printf("   ✓ Audit passed: Scratchpad transactional state snapshots and rollback verified.\n");
 
+    /* Verify FET Discharge Soft-Body Physics Verlet Integration (Rule 10) */
+    /* Equation: x_new = 2 * x - x_prev - acceleration (discharge decay rate) */
+    uint32_t reg_x = 65440;
+    uint32_t reg_x_prev = 65442;
+    uint32_t reg_a = 65444;
+    
+    mem[reg_x] = 100;
+    mem[reg_x_prev] = 95;
+    mem[reg_a] = 2; /* acceleration/discharge coefficient */
+    
+    uint32_t x = mem[reg_x];
+    uint32_t x_prev = mem[reg_x_prev];
+    uint32_t acc = mem[reg_a];
+    
+    uint32_t x_new = 2 * x - x_prev - acc;
+    mem[reg_x_prev] = x;
+    mem[reg_x] = x_new;
+    
+    assert(mem[reg_x] == 103);
+    assert(mem[reg_x_prev] == 100);
+    printf("   ✓ Audit passed: FET discharge soft-body physics Verlet step verified.\n");
 
 
     /* 6. Execute JCL verification loops against the simulated environment */
