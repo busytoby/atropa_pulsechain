@@ -134,6 +134,17 @@ TICK_HBRIDGE_DRIVER: PROCEDURE;
         L_TICK = BYTE(LAST_CHANGE_TICK);
         B_INT = BYTE(BLANKING_INTERVAL);
         
+        /* iZotope Crossover & Spectral Shaper Excitation Gate dynamic dead-time modulation */
+        IF BYTE(65440) > 0 THEN DO;
+            BYTE(65441) = 10; /* Low-frequency component constant */
+            BYTE(65442) = BYTE(65440) - 10; /* High-frequency EMI component */
+            IF BYTE(65442) > 14 THEN DO;
+                /* Dynamic Spectral Shaper extension */
+                B_INT = B_INT + (BYTE(65442) - 14);
+            END;
+            BYTE(65443) = B_INT;
+        END;
+        
         IF (CUR_TICK - L_TICK) < B_INT THEN DO;
             /* Intercept state transition: Force Coast/Dead-time wait state */
             BYTE(HBRIDGE_Q1_HSL) = SWITCH_OFF;
