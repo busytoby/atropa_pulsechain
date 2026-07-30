@@ -113,3 +113,13 @@ Relativistic coprogramming coordinates state updates across distinct temporal fr
 * **VM Transition Context:** The packetized communication transfer handshake routing blocks over the SCSI channel.
 * **Mathematical Operation:** Calculates frame checksum verifications and sequence matches: $Ack\_Seq = (Packet\_Seq + 1) \pmod{Window\_Size}$.
 * **Visual / Geometric Shift:** Triggers highlighted vector line dashes and coordinate point pulses to represent packet packet transmission, verify, and retry states.
+
+### BLACK Rail (Supply H-Bridge)
+* **VM Register Context:** The voltage rail control register regulating supply reel feed torque.
+* **Mathematical Function:** Serves as the source coordinate matrix $M_{black}$ feeding inputs.
+* **Visual / Geometric Manifestation:** Governs the line color depth and baseline layout density of the supply-side coordinate grid.
+
+### RED Rail (Take-up H-Bridge)
+* **VM Register Context:** The voltage rail control register regulating take-up reel collection torque.
+* **Mathematical Function:** Serves as the active accumulator matrix $M_{red}$ capturing outputs.
+* **Visual / Geometric Manifestation:** Modulates coordinate line bloom and translation offsets on the take-up rendering envelope.
