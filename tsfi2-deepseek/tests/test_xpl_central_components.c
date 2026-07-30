@@ -101,6 +101,14 @@ int main(void) {
     printf("   ✓ Scratchpad allocator compiled successfully.\n");
     remove("tests/scratchpad_allocator.dat.bin");
 
+    /* 4b. Compile Coaxial RAU Unit Test */
+    printf("[TEST] Compiling test_coax_rau.xpl via XCOM...\n");
+    ok = auncient_sdk_compile_xpl_to_dat_bin("xpl/test_coax_rau.xpl", "tests/test_coax_rau.dat.bin");
+    assert(ok == true);
+    printf("   ✓ Coaxial RAU unit test compiled successfully.\n");
+    remove("tests/test_coax_rau.dat.bin");
+
+
     /* 5. Perform Core Logic & ACID Verification Audits on virtual memory maps */
     printf("[TEST] Running expanded register audits on simulated hardware rails...\n");
 
