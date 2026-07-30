@@ -94,12 +94,12 @@ Relativistic coprogramming coordinates state updates across distinct temporal fr
 * **Mathematical Function:** Serves as the base value $B$ in WinchesterMQ modular exponentiations.
 * **Visual / Geometric Manifestation:** Alters the starting projection phase angle, defining the envelope's initial fold parameters.
 
-### NPN Exponent Transistor
-* **VM Register Context:** The gating loop timing control register regulating carrier cycles.
-* **Mathematical Function:** Serves as the exponent value $E$ (e.g. `Signal` or `Secret`).
-* **Visual / Geometric Manifestation:** Scales the coordinate orbital velocity, increasing line twist densities.
+### NPN Prime Transistor
+* **VM Register Context:** The threshold division voltage register defining current cut-off limits.
+* **Mathematical Function:** Serves as the prime modular divisor $P$ (e.g. `MotzkinPrime`).
+* **Visual / Geometric Manifestation:** Modulates the coordinate limits of the EDO-22 octave table, clipping values outside the bounds.
 
-### Capstan Modulo Operator
-* **VM Transition Context:** The modular sector wraparound transition bound by the encoder steps.
-* **Mathematical Operation:** Bounds the output within the modular prime divisor: $Result = B^E \pmod{MotzkinPrime}$.
-* **Visual / Geometric Shift:** Wraps coordinates past structural limits back to the starting sector origin, rendering looping Lissajous paths.
+### Capstan Exponent Steps
+* **VM Transition Context:** The sequential encoder steps incrementing the power calculation.
+* **Mathematical Operation:** Serves as the exponent value $E$ (e.g. `Signal` or `Secret`), yielding: $Result = B^{steps} \pmod{Prime}$.
+* **Visual / Geometric Shift:** Speeds up or slows down the orbital paths of projected vertices in direct relation to sector tape movement.
