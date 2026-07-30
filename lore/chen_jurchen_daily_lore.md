@@ -12,6 +12,6 @@ The simulation maps the virtual circuit with complete consistency:
 2. **The NPN Prime Register:** Enforces the modular partition limits of the memory map.
 3. **The Dual H-Bridges:** Shuttle the tape coordinates forward and backward in alignment with the active block state.
 
-If a simulated state transition fails, the H-Bridge polarities invert immediately to rewind the tape to the last confirmed sector. This design honors the atomic guarantees of the platform, ensuring complete bijection across all SKELETON partitions.
+If a simulated state transition fails, the H-Bridge polarities invert immediately to rewind the tape to the last confirmed sector. This design honors the atomic guarantees of the platform, ensuring complete bijection exclusively to our virtual machine executor across all SKELETON partitions.
 
 -- *Chen Jurchen, Lead Architect, Dysnomia VM Project*
