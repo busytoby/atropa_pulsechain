@@ -28,6 +28,11 @@ DECLARE NEG_POWER_RAIL    LITERALLY '65336'; /* Negative rail input in mV */
 DECLARE NPN_COLLECTOR_V   LITERALLY '65340'; /* NPN VC in mV */
 DECLARE PNP_COLLECTOR_V   LITERALLY '65344'; /* PNP VC in mV */
 
+/* Thermal and Degeneration Parameters */
+DECLARE TEMPERATURE_REG   LITERALLY '65348'; /* Current temperature in C */
+DECLARE EMITTER_DEG_R     LITERALLY '1';     /* Emitter degeneration resistance in ohms (Re) */
+DECLARE MAX_SAFE_CURRENT  LITERALLY '100000'; /* Maximum safe current limit (100mA in uA) */
+
 /* Individual Transistor State Tracking */
 DECLARE NPN_STATE         LITERALLY '65324';
 DECLARE PNP_STATE         LITERALLY '65328';
@@ -37,31 +42,43 @@ TICK_PUSH_PULL_DRIVER: PROCEDURE;
     DECLARE RL FIXED;
     DECLARE VOUT FIXED;
     DECLARE IOUT FIXED;
+    DECLARE TEMP FIXED;
+    DECLARE BIAS_DRIFT FIXED;
+    DECLARE CURRENT_LIMIT FIXED;
     
     VIN = BYTE(INPUT_VOLTAGE);
     RL = BYTE(LOAD_RESISTANCE);
+    TEMP = BYTE(TEMPERATURE_REG);
+    
+    /* Calculate thermal diode drop drift (-2mV per degree C above 25C room temp) */
+    IF TEMP > 25 THEN DO;
+        BIAS_DRIFT = (TEMP - 25) * 2;
+    END;
+    ELSE DO;
+        BIAS_DRIFT = 0;
+    END;
     
     /* Connect collectors to the power rails */
     BYTE(NPN_COLLECTOR_V) = BYTE(POS_POWER_RAIL);
     BYTE(PNP_COLLECTOR_V) = BYTE(NEG_POWER_RAIL);
     
     /* Connect the bases through two biasing diodes in series (Class AB bias) */
-    /* This shifts NPN base up by 700mV and PNP base down by 700mV relative to Vin */
-    BYTE(NPN_BASE_VOLTAGE) = VIN + 700;
-    BYTE(PNP_BASE_VOLTAGE) = VIN - 700;
+    /* Voltage drop is adjusted dynamically by thermal drift */
+    BYTE(NPN_BASE_VOLTAGE) = VIN + 700 - BIAS_DRIFT;
+    BYTE(PNP_BASE_VOLTAGE) = VIN - 700 + BIAS_DRIFT;
     
     /* 1. Positive Half-Cycle Conduction (NPN active, PNP cutoff) */
     IF VIN > 0 THEN DO;
         BYTE(NPN_STATE) = STATE_ACTIVE;
         BYTE(PNP_STATE) = STATE_CUTOFF;
-        VOUT = VIN; /* Crossover distortion eliminated: output follows Vin directly */
+        VOUT = VIN;
     END;
     ELSE DO;
         /* 2. Negative Half-Cycle Conduction (PNP active, NPN cutoff) */
         IF VIN < 0 THEN DO;
             BYTE(NPN_STATE) = STATE_CUTOFF;
             BYTE(PNP_STATE) = STATE_ACTIVE;
-            VOUT = VIN; /* Output follows Vin directly */
+            VOUT = VIN;
         END;
         /* 3. Perfect Zero Cross Alignment (Coast state) */
         ELSE DO;
@@ -71,13 +88,31 @@ TICK_PUSH_PULL_DRIVER: PROCEDURE;
         END;
     END;
     
-    /* Calculate output load current using connected emitter node voltage */
+    /* Calculate output load current incorporating emitter degeneration resistors */
+    /* Re provides negative feedback subtraction to stabilize output current */
     IF RL > 0 THEN DO;
-        IOUT = VOUT * 1000 / RL; /* Current in uA */
+        IOUT = VOUT * 1000 / (RL + (EMITTER_DEG_R * 2));
     END;
     ELSE DO;
         IOUT = 0;
     END;
+    
+    /* Check for near-violations (current within 10% of maximum safety limit) */
+    CURRENT_LIMIT = MAX_SAFE_CURRENT - (MAX_SAFE_CURRENT / 10);
+    IF IOUT > CURRENT_LIMIT THEN DO;
+        /* Log Near-Violation Warning to output */
+        OUTPUT = 'WARN_PUSH_PULL_NEAR_VIOLATION';
+        
+        /* If exceeding absolute safety limit, force emergency shutdown (Atomicity revert) */
+        IF IOUT > MAX_SAFE_CURRENT THEN DO;
+            OUTPUT = 'ABORT_PUSH_PULL_VIOLATION_TRIPPED';
+            VOUT = 0;
+            IOUT = 0;
+            BYTE(NPN_STATE) = STATE_CUTOFF;
+            BYTE(PNP_STATE) = STATE_CUTOFF;
+        END;
+    END;
+
     
     /* Write to the connected emitter hardware registers */
     BYTE(EMITTER_OUTPUT_V) = VOUT;
