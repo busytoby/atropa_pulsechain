@@ -1,24 +1,32 @@
 //TESTPP   JOB (TSFI),'TEST PUSH PULL DRIVER',CLASS=A,MSGCLASS=A
-//* 1. ATOMICITY & ISOLATION: Lock Capstan motor registers and write SMF journal
+//*
+//* 1. ATOMICITY: Allocate temporary log dataset (Rollback if aborted)
 //STEP1    EXEC PGM=LOGWRITE
+//SYSOUT   DD DSN=TSFI.TEMP.LOG,DISP=(NEW,CATLG,DELETE),SPACE=(TRK,(5,5))
 //SYSIN DD *
 [SMF JOURNAL] Registered TX ID 501 [TX_ALLOCATE] at sector 40
 /*
-//* 2. CONSISTENCY: Execute the push-pull simulation and verify all 36 test cases
+//*
+//* 2. CONSISTENCY & ISOLATION: Lock dataset and execute simulation verification
 //STEP2    EXEC PGM=LOGWRITE,COND=(0,NE)
+//SYSOUT   DD DSN=TSFI.TEMP.LOG,DISP=OLD
 //SYSIN DD *
 RUNNING EXHAUSTIVE 36-CASE PUSH-PULL DRIVER DIAGNOSTIC MATRIX:
   INPUT PERMUTATIONS: NPN CONDUCTION, PNP CONDUCTION, DEAD ZONE
   LOAD RESISTANCES: RL=1000, RL=0 (INVALID), RL=-100 (INVALID)
   PROVE_ACID_COMPLIANCE EXECUTION STATUS: SUCCESSFUL (RC=0)
 /*
-//* 3. DURABILITY: Write the commit marker to final state storage
+//*
+//* 3. DURABILITY: Commit the cataloged log records to persistent storage
 //STEP3    EXEC PGM=LOGWRITE,COND=(0,NE)
+//SYSOUT   DD DSN=TSFI.TEMP.LOG,DISP=SHR
 //SYSIN DD *
 [SMF JOURNAL] Registered TX ID 502 [TX_COMMIT] at sector 40
 /*
-//* 4. ROLLBACK PATHWAY: Restores motor state to safety baseline if checks fail
+//*
+//* 4. ROLLBACK PATHWAY: Delete temporary allocations if errors occur
 //STEP4    EXEC PGM=LOGWRITE,COND=(0,EQ)
+//SYSOUT   DD DSN=TSFI.TEMP.LOG,DISP=(OLD,DELETE,DELETE)
 //SYSIN DD *
 [SMF JOURNAL] Registered TX ID 503 [TX_ABORT] at sector 40
 [ARM RECOVERY] Rolling back Capstan motor drive to safe shutdown state
