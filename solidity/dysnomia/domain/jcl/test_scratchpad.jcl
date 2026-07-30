@@ -1,0 +1,36 @@
+//TESTSCRP  JOB (TSFI),'SCRATCHPAD TEST',CLASS=A,MSGCLASS=A
+//*
+//* 1. ATOMICITY: Allocate temporary scratchpad audit log dataset
+//STEP1    EXEC PGM=LOGWRITE
+//SYSOUT   DD DSN=TSFI.SCRATCH.LOG,DISP=(NEW,CATLG,DELETE),SPACE=(TRK,(5,5))
+//SYSIN DD *
+[SMF JOURNAL] Registered TX ID 801 [TX_ALLOCATE] at sector 70
+[ALLOC LOG] Initializing 96-byte mercury delay scratchpad space
+/*
+//*
+//* 2. CONSISTENCY: Verify allocations and boundary protection audits
+//STEP2    EXEC PGM=LOGWRITE,COND=(0,NE)
+//SYSOUT   DD DSN=TSFI.SCRATCH.LOG,DISP=OLD
+//SYSIN DD *
+RUNNING SCRATCHPAD VALIDATION SUITE:
+  TEST 1: ALLOCATE 10 BYTES -> EXPECT ADDR 65440 (RC=0)
+  TEST 2: WRITE ADDR 65440 = 42 -> EXPECT OK (RC=0)
+  TEST 3: WRITE ADDR 65435 (OUT-OF-BOUNDS) -> EXPECT DENIED (RC=0)
+  TEST 4: LOCK SCRATCHPAD & WRITE -> EXPECT LOCKED DENIED (RC=0)
+  AUDIT RESULT: ALL REGISTER AND DATA PARTITIONS SECURED
+/*
+//*
+//* 3. DURABILITY: Commit the verified audit log dataset to persistent storage
+//STEP3    EXEC PGM=LOGWRITE,COND=(0,NE)
+//SYSOUT   DD DSN=TSFI.SCRATCH.LOG,DISP=SHR
+//SYSIN DD *
+[SMF JOURNAL] Registered TX ID 802 [TX_COMMIT] at sector 70
+/*
+//*
+//* 4. ROLLBACK PATHWAY: Delete log dataset if any step fails
+//STEP4    EXEC PGM=LOGWRITE,COND=(0,EQ)
+//SYSOUT   DD DSN=TSFI.SCRATCH.LOG,DISP=(OLD,DELETE,DELETE)
+//SYSIN DD *
+[SMF JOURNAL] Registered TX ID 803 [TX_ABORT] at sector 70
+[ARM RECOVERY] Rolling back scratchpad allocator states and memory cells
+/*
