@@ -91,6 +91,10 @@ int main(void) {
     assert(sim.account.account_id == 999);
     assert(sim.account.balance_saat == 1000000);
     printf("   ✓ Phase 3 (Selection) successful. Worker established with 1,000,000 Saat.\n");
+    
+    printf("[DEBUG TEST] After selection: sim.account.chain_head = ");
+    for (int x = 0; x < 32; x++) printf("%02x", sim.account.chain_head[x]);
+    printf("\n");
 
     // 10. Verify Immutable Hogan Transaction Ledger Chain
     printf("[TEST] Testing Hogan double-entry transfer and immutable chain verification...\n");
@@ -103,11 +107,19 @@ int main(void) {
     extern bool auncient_hogan_transfer(HoganAccount *sender, HoganAccount *recipient, uint32_t amount);
     extern bool auncient_hogan_verify_chain(void);
     
+    printf("[DEBUG TEST] Before transfer: sim.account.chain_head = ");
+    for (int x = 0; x < 32; x++) printf("%02x", sim.account.chain_head[x]);
+    printf("\n");
+
     // Transfer 10,000 Saat
     bool transfer_ok = auncient_hogan_transfer(&sim.account, &recipient, 10000);
     assert(transfer_ok == true);
     assert(sim.account.balance_saat == 990000);
     assert(recipient.balance_saat == 10000);
+    
+    printf("[DEBUG TEST] After transfer: sim.account.chain_head = ");
+    for (int x = 0; x < 32; x++) printf("%02x", sim.account.chain_head[x]);
+    printf("\n");
     
     // Verify the ledger chain
     assert(auncient_hogan_verify_chain() == true);

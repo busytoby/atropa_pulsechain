@@ -4,6 +4,9 @@
 #include <string.h>
 #include <math.h>
 
+static HoganBlock g_hogan_blocks[4096];
+static int g_hogan_block_count = 0;
+
 void auncient_timeline_process(TimelineEvent *events, int count, float current_time, sdk_cics_context_t *ctx, const HoganAccount *accounts, int account_count, uint64_t expected_total_saat) {
     if (!events || !ctx) return;
 
@@ -64,6 +67,21 @@ bool auncient_hogan_register_account(uint32_t account_id, const uint8_t *dna_byt
     uint32_t hash = 0x811C9DC5;
     for (int i = 0; i < size; i++) {
         hash = (hash ^ dna_bytes[i]) * 0x01000193;
+    }
+
+    // Check if account already has an OPEN block registered in the ledger
+    for (int i = 0; i < g_hogan_block_count; i++) {
+        if (g_hogan_blocks[i].account_id == account_id && g_hogan_blocks[i].type == 0) {
+            account_out->account_id = account_id;
+            account_out->clearance_level = 1;
+            account_out->balance_saat = g_hogan_blocks[i].balance;
+            account_out->verified_dna_hash = hash;
+            account_out->is_active = true;
+            memcpy(account_out->chain_head, g_hogan_blocks[i].current_hash, 32);
+            account_out->tx_sequence = g_hogan_blocks[i].sequence + 1;
+            account_out->representative_id = account_id;
+            return true;
+        }
     }
 
     // Populate first-class Hogan account parameters
@@ -1325,8 +1343,6 @@ bool auncient_autodin_speculative_prefetch_validate(uint32_t start_pc, const uin
     printf("[AUTODIN SPECULATIVE COMMIT] All %d instructions in prefetch batch successfully validated.\n", count);
     return true;
 }
-static HoganBlock g_hogan_blocks[4096];
-static int g_hogan_block_count = 0;
 
 bool auncient_hogan_record_block(HoganAccount *account, uint8_t type, uint32_t amount, uint32_t link_account, uint32_t representative_id) {
     if (!account || !account->is_active || g_hogan_block_count >= 4096) return false;
@@ -1441,9 +1457,13 @@ bool auncient_hogan_verify_chain(void) {
             }
         } else {
             for (int k = 0; k < 32; k++) {
-                if (b->previous_hash[k] != 0) return false;
+                if (b->previous_hash[k] != 0) {
+                    return false;
+                }
             }
-            if (b->sequence != 0) return false;
+            if (b->sequence != 0) {
+                return false;
+            }
         }
 
         // 3. Dual-Block Correspondence Balance Flow Audit
