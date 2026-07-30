@@ -31,6 +31,11 @@ DECLARE CMD_BUFFER     LITERALLY '65416'; /* Base address of 4-byte instruction 
 DECLARE CMD_LENGTH     LITERALLY '65420'; /* Number of command bytes to process */
 DECLARE RUNNING_CHECKSUM LITERALLY '65424'; /* Cumulative checksum register */
 
+/* EDSAC Mercury Delay-Line Timing Sync Registers */
+DECLARE BLANKING_INTERVAL LITERALLY '65428'; /* Required dead-time steps between transitions */
+DECLARE LAST_CHANGE_TICK  LITERALLY '65432'; /* System tick of the last active state transition */
+DECLARE SYSTEM_TICK_REG   LITERALLY '65436'; /* Master system clock tick accumulator */
+
 /* Audits states to prevent shoot-through short circuits (ACID Consistency) */
 AUDIT_HBRIDGE_SAFETY: PROCEDURE FIXED;
     /* Check Left Branch Shoot-Through (Q1 and Q3 both ON) */
@@ -57,8 +62,17 @@ TICK_HBRIDGE_DRIVER: PROCEDURE;
     DECLARE CLEN FIXED;
     DECLARE CHKSUM FIXED;
     DECLARE I FIXED;
+    DECLARE CUR_TICK FIXED;
+    DECLARE L_TICK FIXED;
+    DECLARE B_INT FIXED;
+    DECLARE REQ_MSTATE FIXED;
+    DECLARE CUR_MSTATE FIXED;
     
-    /* 1. Check Hardware E-Stop Interrupt Line first */
+    /* 1. Increment Master System Clock Tick */
+    CUR_TICK = BYTE(SYSTEM_TICK_REG) + 1;
+    BYTE(SYSTEM_TICK_REG) = CUR_TICK;
+    
+    /* 2. Check Hardware E-Stop Interrupt Line first */
     ESTOP = BYTE(ESTOP_INTERRUPT);
     IF ESTOP = 1 THEN DO;
         BYTE(HBRIDGE_Q1_HSL) = SWITCH_OFF;
@@ -70,7 +84,7 @@ TICK_HBRIDGE_DRIVER: PROCEDURE;
         RETURN;
     END;
     
-    /* 2. Process and Checksum EDSAC Command Buffer */
+    /* 3. Process and Checksum EDSAC Command Buffer */
     CLEN = BYTE(CMD_LENGTH);
     IF CLEN > 0 THEN DO;
         CHKSUM = BYTE(RUNNING_CHECKSUM);
@@ -90,7 +104,7 @@ TICK_HBRIDGE_DRIVER: PROCEDURE;
     Q4 = BYTE(HBRIDGE_Q4_LSR);
     BOOT_PHASE = BYTE(INITIAL_ORDERS_PHASE);
     
-    /* 3. Audit Shoot-Through Conditions */
+    /* 4. Audit Shoot-Through Conditions */
     IF (Q1 = SWITCH_ON AND Q3 = SWITCH_ON) OR (Q2 = SWITCH_ON AND Q4 = SWITCH_ON) THEN DO;
         /* Emergency Shutdown: Turn all switches OFF immediately */
         BYTE(HBRIDGE_Q1_HSL) = SWITCH_OFF;
@@ -102,20 +116,54 @@ TICK_HBRIDGE_DRIVER: PROCEDURE;
         RETURN;
     END;
     
-    /* 4. Resolve normal motor driving configurations */
-    
-    /* Forward Path (High-Side Left & Low-Side Right ON) */
+    /* 5. Determine Requested Motor State */
+    REQ_MSTATE = MOTOR_COAST;
     IF Q1 = SWITCH_ON AND Q4 = SWITCH_ON THEN DO;
+        REQ_MSTATE = MOTOR_FORWARD;
+    END;
+    ELSE IF Q2 = SWITCH_ON AND Q3 = SWITCH_ON THEN DO;
+        REQ_MSTATE = MOTOR_REVERSE;
+    END;
+    ELSE IF Q3 = SWITCH_ON AND Q4 = SWITCH_ON THEN DO;
+        REQ_MSTATE = MOTOR_BRAKE;
+    END;
+    
+    /* 6. Enforce Mercury Delay-Line Timing Blanking (Acoustic Dead-Time) */
+    CUR_MSTATE = BYTE(MOTOR_STATE);
+    IF REQ_MSTATE <> CUR_MSTATE AND CUR_MSTATE <> MOTOR_COAST AND REQ_MSTATE <> MOTOR_COAST THEN DO;
+        L_TICK = BYTE(LAST_CHANGE_TICK);
+        B_INT = BYTE(BLANKING_INTERVAL);
+        
+        IF (CUR_TICK - L_TICK) < B_INT THEN DO;
+            /* Intercept state transition: Force Coast/Dead-time wait state */
+            BYTE(HBRIDGE_Q1_HSL) = SWITCH_OFF;
+            BYTE(HBRIDGE_Q2_HSR) = SWITCH_OFF;
+            BYTE(HBRIDGE_Q3_LSL) = SWITCH_OFF;
+            BYTE(HBRIDGE_Q4_LSR) = SWITCH_OFF;
+            BYTE(MOTOR_STATE) = MOTOR_COAST;
+            BYTE(FAULT_REGISTER) = 0; /* Normal transient wait, no fault */
+            RETURN;
+        END;
+    END;
+    
+    /* Update state change timestamp if active state is successfully resolved */
+    IF REQ_MSTATE <> CUR_MSTATE THEN DO;
+        BYTE(LAST_CHANGE_TICK) = CUR_TICK;
+    END;
+    
+    /* 7. Resolve normal motor driving configurations */
+    
+    /* Forward Path */
+    IF REQ_MSTATE = MOTOR_FORWARD THEN DO;
         BYTE(MOTOR_STATE) = MOTOR_FORWARD;
         BYTE(FAULT_REGISTER) = 0;
         RETURN;
     END;
     
-    /* Reverse Path (High-Side Right & Low-Side Left ON) */
-    IF Q2 = SWITCH_ON AND Q3 = SWITCH_ON THEN DO;
+    /* Reverse Path */
+    IF REQ_MSTATE = MOTOR_REVERSE THEN DO;
         /* Enforce "Initial Orders 1" transaction audit constraint */
         IF BOOT_PHASE = 1 THEN DO;
-            /* Reverse movement is strictly prohibited during Initial Orders 1 */
             BYTE(HBRIDGE_Q1_HSL) = SWITCH_OFF;
             BYTE(HBRIDGE_Q2_HSR) = SWITCH_OFF;
             BYTE(HBRIDGE_Q3_LSL) = SWITCH_OFF;
@@ -129,6 +177,7 @@ TICK_HBRIDGE_DRIVER: PROCEDURE;
         BYTE(FAULT_REGISTER) = 0;
         RETURN;
     END;
+
 
 
     
@@ -156,6 +205,7 @@ PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
     DECLARE (P, T, FAILS) FIXED;
     DECLARE (Q1, Q2, Q3, Q4) FIXED;
     DECLARE (BACKUP_Q1, BACKUP_Q2, BACKUP_Q3, BACKUP_Q4, BACKUP_BOOT, BACKUP_ESTOP) FIXED;
+    DECLARE (BACKUP_BLANKING, BACKUP_LCHANGE, BACKUP_STICK) FIXED;
     DECLARE (EXPECT_MSTATE, EXPECT_FAULT) FIXED;
     DECLARE (IS_VALID_PHYSICAL) FIXED;
     
@@ -168,7 +218,12 @@ PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
     BYTE(CMD_LENGTH) = 0;
     BYTE(RUNNING_CHECKSUM) = 0;
     
-    DO WHILE P <= 11;
+    /* Initialize timing registers */
+    BYTE(BLANKING_INTERVAL) = 0;
+    BYTE(LAST_CHANGE_TICK) = 0;
+    BYTE(SYSTEM_TICK_REG) = 0;
+    
+    DO WHILE P <= 12;
         T = 1;
         DO WHILE T <= 4;
             /* Backup baseline state prior to test */
@@ -178,12 +233,15 @@ PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
             BACKUP_Q4 = BYTE(HBRIDGE_Q4_LSR);
             BACKUP_BOOT = BYTE(INITIAL_ORDERS_PHASE);
             BACKUP_ESTOP = BYTE(ESTOP_INTERRUPT);
+            BACKUP_BLANKING = BYTE(BLANKING_INTERVAL);
+            BACKUP_LCHANGE = BYTE(LAST_CHANGE_TICK);
+            BACKUP_STICK = BYTE(SYSTEM_TICK_REG);
             
-            /* 1. Define physical switch configurations (11 permutations) */
-
+            /* 1. Define physical switch configurations (12 permutations) */
             IS_VALID_PHYSICAL = TRUE;
             
             /* Coast State */
+
             IF P = 1 THEN DO;
                 Q1 = 0; Q2 = 0; Q3 = 0; Q4 = 0;
                 EXPECT_MSTATE = MOTOR_COAST; EXPECT_FAULT = 0;
@@ -257,6 +315,17 @@ PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
                 IS_VALID_PHYSICAL = FALSE;
             END;
 
+            /* Mercury Delay-Line Timing Blanking (Acoustic Dead-Time) Case */
+            IF P = 12 THEN DO;
+                Q1 = 0; Q2 = 1; Q3 = 1; Q4 = 0; /* Request Reverse */
+                BYTE(SYSTEM_TICK_REG) = 5;
+                BYTE(LAST_CHANGE_TICK) = 4;
+                BYTE(BLANKING_INTERVAL) = 3;
+                BYTE(MOTOR_STATE) = MOTOR_FORWARD; /* Mock current state as Forward */
+                EXPECT_MSTATE = MOTOR_COAST; EXPECT_FAULT = 0; /* Should force Coast */
+                IS_VALID_PHYSICAL = FALSE;
+            END;
+
             /* Apply test values to virtual hardware registers */
             BYTE(HBRIDGE_Q1_HSL) = Q1;
             BYTE(HBRIDGE_Q2_HSR) = Q2;
@@ -275,6 +344,9 @@ PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
                     BYTE(HBRIDGE_Q4_LSR) = BACKUP_Q4;
                     BYTE(INITIAL_ORDERS_PHASE) = BACKUP_BOOT;
                     BYTE(ESTOP_INTERRUPT) = BACKUP_ESTOP;
+                    BYTE(BLANKING_INTERVAL) = BACKUP_BLANKING;
+                    BYTE(LAST_CHANGE_TICK) = BACKUP_LCHANGE;
+                    BYTE(SYSTEM_TICK_REG) = BACKUP_STICK;
                     IF BYTE(HBRIDGE_Q1_HSL) <> BACKUP_Q1 THEN FAILS = FAILS + 1;
                 END;
                 ELSE DO;
@@ -291,8 +363,12 @@ PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
                 BYTE(HBRIDGE_Q4_LSR) = BACKUP_Q4;
                 BYTE(INITIAL_ORDERS_PHASE) = BACKUP_BOOT;
                 BYTE(ESTOP_INTERRUPT) = BACKUP_ESTOP;
+                BYTE(BLANKING_INTERVAL) = BACKUP_BLANKING;
+                BYTE(LAST_CHANGE_TICK) = BACKUP_LCHANGE;
+                BYTE(SYSTEM_TICK_REG) = BACKUP_STICK;
                 IF BYTE(HBRIDGE_Q1_HSL) <> BACKUP_Q1 THEN FAILS = FAILS + 1;
             END;
+
 
 
             
