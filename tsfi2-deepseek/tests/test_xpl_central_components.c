@@ -5,11 +5,23 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <assert.h>
+#include <unistd.h>
+
 uint32_t ce_gprs[16] = {0};
 uint8_t ce_memory[1024] = {0};
 uint32_t xdc_ip = 0;
 
 int main(void) {
+    /* Dynamic Working Directory Resolver */
+    FILE *f_check = fopen("xpl/pnp_simulation.xpl", "r");
+    if (!f_check) {
+        if (chdir("tsfi2-deepseek") != 0) {
+            /* Ignore failure, fallback to current dir */
+        }
+    } else {
+        fclose(f_check);
+    }
+
     printf("=============================================================\n");
     printf("AUNCIENT XPL CENTRAL COMPONENTS COMPILATION & AUDIT SUITE\n");
     printf("=============================================================\n");
@@ -19,6 +31,7 @@ int main(void) {
     /* 1. Compile PNP Transistor Simulation */
     printf("[TEST] Compiling pnp_simulation.xpl via XCOM...\n");
     ok = auncient_sdk_compile_xpl_to_dat_bin("xpl/pnp_simulation.xpl", "tests/pnp_simulation.dat.bin");
+
     assert(ok == true);
     printf("   ✓ PNP simulation compiled successfully.\n");
     remove("tests/pnp_simulation.dat.bin");
