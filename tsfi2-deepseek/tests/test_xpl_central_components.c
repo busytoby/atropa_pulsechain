@@ -279,6 +279,29 @@ int main(void) {
     assert(mem[REG_FAULT_REGISTER] == 0);
     printf("   ✓ Audit passed: Wheeler Jump entry resolved. Bootstrap completed successfully.\n");
 
+    /* 4. Carmine Cannatello S/370 assembly integration for Wheeler Jump sequence */
+    printf("[TEST] Executing Carmine Cannatello S/370 assembly for Wheeler Jump...\n");
+    extern bool tsfi_xpl_execute_assembler(const char *asm_instruction, uint32_t *gprs, uint8_t *memory);
+    uint32_t c_gprs[16] = {0};
+    uint8_t c_memory[1024] = {0};
+    
+    /* Load jump base address 0 into R1 and target 0 into R5 */
+    c_gprs[1] = 0;
+    c_gprs[5] = 0x00000000; /* Wheeler target entry */
+    
+    /* Store the Wheeler Jump target into memory using ST assembly instruction */
+    assert(tsfi_xpl_execute_assembler("ST R5, 0(R1)", c_gprs, c_memory) == true);
+    
+    /* Load it back into R6 using L assembly instruction */
+    c_gprs[6] = 0xFFFFFFFF;
+    assert(tsfi_xpl_execute_assembler("L R6, 0(R1)", c_gprs, c_memory) == true);
+    
+    /* Compare R5 (original) and R6 (loaded target) using CR assembly instruction */
+    assert(tsfi_xpl_execute_assembler("CR R5, R6", c_gprs, c_memory) == true);
+    assert(c_gprs[0] == 0); /* Comparison result must be 0 (equal) */
+    printf("   ✓ Audit passed: Carmine Cannatello S/370 assembly successfully verified Wheeler entry target.\n");
+
+
 
     /* Verify Mercury Delay-Line Blanking constraints */
     mem[REG_BLANKING_INTERVAL] = 3;
