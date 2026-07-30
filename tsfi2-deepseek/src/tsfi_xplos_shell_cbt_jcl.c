@@ -26,6 +26,72 @@ static void resolve_pds_name_helper(const char *member, char *out, size_t max_le
     snprintf(out, max_len, "%s.dat.bin", member);
 }
 
+static bool tsfi_xlog_recover(const char *log_filepath) {
+    FILE *f = fopen(log_filepath, "rb");
+    if (!f) return false;
+
+    printf("[XLOG RECOVERY] Initiating binary log recovery scan from '%s'...\n", log_filepath);
+    uint8_t buffer[4096];
+    size_t bytes_read = fread(buffer, 1, sizeof(buffer), f);
+    fclose(f);
+
+    if (bytes_read < 24) {
+        printf("[XLOG RECOVERY ERROR] Log file too small to contain valid header.\n");
+        return false;
+    }
+
+    size_t offset = 0;
+    int record_index = 0;
+    while (offset + 24 <= bytes_read) {
+        if (buffer[offset] != 254 || buffer[offset + 1] != 237) {
+            printf("[XLOG RECOVERY ERROR] Invalid log magic prefix at record %d offset %zu.\n", record_index, offset);
+            return false;
+        }
+
+        uint32_t cycle = (buffer[offset + 4] << 24) | (buffer[offset + 5] << 16) | (buffer[offset + 6] << 8) | buffer[offset + 7];
+        uint32_t lsn = (buffer[offset + 8] << 24) | (buffer[offset + 9] << 16) | (buffer[offset + 10] << 8) | buffer[offset + 11];
+        uint32_t op_count = (buffer[offset + 12] << 24) | (buffer[offset + 13] << 16) | (buffer[offset + 14] << 8) | buffer[offset + 15];
+        uint32_t res_bytes = (buffer[offset + 16] << 24) | (buffer[offset + 17] << 16) | (buffer[offset + 18] << 8) | buffer[offset + 19];
+        uint8_t buf_active = buffer[offset + 20];
+        uint32_t buf_head = (buffer[offset + 21] << 16) | (buffer[offset + 22] << 8) | buffer[offset + 23];
+
+        printf("[XLOG RECOVERY] Record %d: Cycle=%u LSN=%u OpCount=%u ResBytes=%u ActiveBuffer=%u HeadOffset=%u\n",
+               record_index, cycle, lsn, op_count, res_bytes, buf_active, buf_head);
+
+        if (offset + 24 + buf_head > bytes_read) {
+            printf("[XLOG RECOVERY ERROR] Truncated payload for record %d.\n", record_index);
+            return false;
+        }
+
+        uint32_t hash = 2166136261U;
+        for (uint32_t i = 0; i < buf_head; i++) {
+            hash = (hash ^ buffer[offset + 24 + i]) * 16777619U;
+        }
+        printf("[XLOG RECOVERY] Record %d calculated FNV-1a checksum: 0x%08X\n", record_index, hash);
+
+        char text_payload[2048] = {0};
+        uint32_t text_len = 0;
+        for (uint32_t i = 0; i < buf_head; i++) {
+            uint8_t byte = buffer[offset + 24 + i];
+            if (byte >= 32 && byte < 127) {
+                text_payload[text_len++] = (char)byte;
+            } else if (byte == '\n') {
+                text_payload[text_len++] = ' ';
+            }
+        }
+        text_payload[text_len] = '\0';
+        if (strlen(text_payload) > 0) {
+            printf("[XLOG REPLAY] Replayed Log Message: \"%s\"\n", text_payload);
+        }
+
+        offset += 24 + buf_head;
+        record_index++;
+    }
+
+    printf("[XLOG RECOVERY SUCCESS] All %d binary log records successfully replayed.\n", record_index);
+    return true;
+}
+
 static bool handle_jclrun(const char *cmd) {
     char jcl_name[256] = "";
     if (sscanf(cmd + 7, "%255s", jcl_name) == 1) {
@@ -491,6 +557,7 @@ static bool handle_jclrun(const char *cmd) {
                                     
                                     rename("assets/LOG.dat.bin.tmp", "assets/LOG.dat.bin");
                                     printf("[LOGWRITE XPL SUCCESS] Committed %d bytes of xlog record structure to assets/LOG.dat.bin\n", 24 + write_offset);
+                                    tsfi_xlog_recover("assets/LOG.dat.bin");
                                 } else {
                                     step_rc = 16;
                                     printf("[LOGWRITE ERROR] Failed to open temporary commit log.\n");
