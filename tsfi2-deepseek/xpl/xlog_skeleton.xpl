@@ -33,9 +33,9 @@ DECLARE HBRIDGE_Q1_HSL      LITERALLY '65006'; /* High-Side Left PNP */
 DECLARE HBRIDGE_Q2_HSR      LITERALLY '65007'; /* High-Side Right PNP */
 DECLARE HBRIDGE_Q3_LSL      LITERALLY '65008'; /* Low-Side Left NPN */
 DECLARE HBRIDGE_Q4_LSR      LITERALLY '65009'; /* Low-Side Right NPN */
-
-/* Configurable Tonewheel Cores Level Array (111 cores) starting at 65010 */
-DECLARE TONEWHEEL_CORES_START LITERALLY '65010';
+/* Configurable Tonewheel Cores Virtual Registers starting at 65010 */
+DECLARE TONEWHEEL_CORES_COUNT LITERALLY '65010'; /* Dynamic count of active cores */
+DECLARE TONEWHEEL_CORES_START LITERALLY '65011'; /* Start of core levels array */
 
 /* Verify H-Bridge Consistency: Prevents shoot-through short circuits (ACID Integrity) */
 VALIDATE_HBRIDGE_STATE: PROCEDURE FIXED;
@@ -52,9 +52,9 @@ VALIDATE_HBRIDGE_STATE: PROCEDURE FIXED;
     RETURN 1; /* H-Bridge state is consistent */
 END;
 
-/* Update all 111 configurable tonewheel cores based on active H-Bridge transistor state */
+/* Update all active configurable tonewheel cores based on active H-Bridge transistor state */
 UPDATE_TONEWHEEL_CORES: PROCEDURE;
-    DECLARE (I, LEVEL) FIXED;
+    DECLARE (I, LEVEL, LIMIT) FIXED;
     
     /* Set level based on transistor power routing */
     IF BYTE(HBRIDGE_Q1_HSL) = 1 AND BYTE(HBRIDGE_Q4_LSR) = 1 THEN DO;
@@ -64,8 +64,9 @@ UPDATE_TONEWHEEL_CORES: PROCEDURE;
         LEVEL = 0; /* Muted */
     END;
     
+    LIMIT = BYTE(TONEWHEEL_CORES_COUNT);
     I = 0;
-    DO WHILE I < 111;
+    DO WHILE I < LIMIT;
         BYTE(TONEWHEEL_CORES_START + I) = LEVEL;
         I = I + 1;
     END;
@@ -121,6 +122,9 @@ INIT_XLOG_SKELETON: PROCEDURE FIXED;
     
     /* Clear non-preferential accumulator output space */
     BYTE(XLOG_ACCUMULATOR) = 0;
+    
+    /* Initialize configurable tonewheel cores count to 111 default */
+    BYTE(TONEWHEEL_CORES_COUNT) = 111;
     
     RETURN 1; /* Initialization success */
 END;
