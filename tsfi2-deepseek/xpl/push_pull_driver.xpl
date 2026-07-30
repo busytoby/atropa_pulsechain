@@ -34,6 +34,10 @@ DECLARE NPN_EMITTER_DEG_R LITERALLY '65352'; /* NPN Re in ohms */
 DECLARE PNP_EMITTER_DEG_R LITERALLY '65356'; /* PNP Re in ohms */
 DECLARE MAX_SAFE_CURRENT  LITERALLY '100000'; /* Maximum safe current limit (100mA in uA) */
 
+/* Diode Drop Registers for Bias Control */
+DECLARE NPN_DIODE_DROP_REG LITERALLY '65360'; /* NPN Diode drop in mV */
+DECLARE PNP_DIODE_DROP_REG LITERALLY '65364'; /* PNP Diode drop in mV */
+
 /* Individual Transistor State Tracking */
 DECLARE NPN_STATE         LITERALLY '65324';
 DECLARE PNP_STATE         LITERALLY '65328';
@@ -48,12 +52,16 @@ TICK_PUSH_PULL_DRIVER: PROCEDURE;
     DECLARE CURRENT_LIMIT FIXED;
     DECLARE RENPN FIXED;
     DECLARE REPNP FIXED;
+    DECLARE DNPN FIXED;
+    DECLARE DPNP FIXED;
     
     VIN = BYTE(INPUT_VOLTAGE);
     RL = BYTE(LOAD_RESISTANCE);
     TEMP = BYTE(TEMPERATURE_REG);
     RENPN = BYTE(NPN_EMITTER_DEG_R);
     REPNP = BYTE(PNP_EMITTER_DEG_R);
+    DNPN = BYTE(NPN_DIODE_DROP_REG);
+    DPNP = BYTE(PNP_DIODE_DROP_REG);
     
     /* Calculate thermal diode drop drift (-2mV per degree C above 25C room temp) */
     IF TEMP > 25 THEN DO;
@@ -68,9 +76,10 @@ TICK_PUSH_PULL_DRIVER: PROCEDURE;
     BYTE(PNP_COLLECTOR_V) = BYTE(NEG_POWER_RAIL);
     
     /* Connect the bases through two biasing diodes in series (Class AB bias) */
-    /* Voltage drop is adjusted dynamically by thermal drift */
-    BYTE(NPN_BASE_VOLTAGE) = VIN + 700 - BIAS_DRIFT;
-    BYTE(PNP_BASE_VOLTAGE) = VIN - 700 + BIAS_DRIFT;
+    /* Diode drops are configured via registers and adjusted dynamically by thermal drift */
+    BYTE(NPN_BASE_VOLTAGE) = VIN + DNPN - BIAS_DRIFT;
+    BYTE(PNP_BASE_VOLTAGE) = VIN - DPNP + BIAS_DRIFT;
+
     
     /* 1. Positive Half-Cycle Conduction (NPN active, PNP cutoff) */
     IF VIN > 0 THEN DO;
@@ -135,16 +144,18 @@ END TICK_PUSH_PULL_DRIVER;
 PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
     DECLARE (P, T, FAILS) FIXED;
     DECLARE (VIN, RL, VPOS, VNEG) FIXED;
-    DECLARE (BACKUP_VIN, BACKUP_RL, BACKUP_VPOS, BACKUP_VNEG) FIXED;
+    DECLARE (BACKUP_VIN, BACKUP_RL, BACKUP_VPOS, BACKUP_VNEG, BACKUP_DNPN, BACKUP_DPNP) FIXED;
     DECLARE (EXPECT_STATE_NPN, EXPECT_STATE_PNP, EXPECT_VOLTAGE) FIXED;
     DECLARE (IS_VALID_PHYSICAL) FIXED;
     
     FAILS = 0;
     P = 1;
     
-    /* Set baseline power rails */
+    /* Set baseline power rails and default diode drops */
     BYTE(POS_POWER_RAIL) = 12000;  /* +12V */
     BYTE(NEG_POWER_RAIL) = -12000; /* -12V */
+    BYTE(NPN_DIODE_DROP_REG) = 700;
+    BYTE(PNP_DIODE_DROP_REG) = 700;
     
     DO WHILE P <= 9;
         T = 1;
@@ -154,8 +165,11 @@ PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
             BACKUP_RL = BYTE(LOAD_RESISTANCE);
             BACKUP_VPOS = BYTE(POS_POWER_RAIL);
             BACKUP_VNEG = BYTE(NEG_POWER_RAIL);
+            BACKUP_DNPN = BYTE(NPN_DIODE_DROP_REG);
+            BACKUP_DPNP = BYTE(PNP_DIODE_DROP_REG);
             
             /* 1. Define physical state configurations (9 permutations) */
+
             IS_VALID_PHYSICAL = TRUE;
             
             /* NPN Active Region (Positive Half-Cycle, VIN > 0 mV) */
@@ -230,6 +244,8 @@ PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
                     BYTE(LOAD_RESISTANCE) = BACKUP_RL;
                     BYTE(POS_POWER_RAIL) = BACKUP_VPOS;
                     BYTE(NEG_POWER_RAIL) = BACKUP_VNEG;
+                    BYTE(NPN_DIODE_DROP_REG) = BACKUP_DNPN;
+                    BYTE(PNP_DIODE_DROP_REG) = BACKUP_DPNP;
                     IF BYTE(INPUT_VOLTAGE) <> BACKUP_VIN THEN FAILS = FAILS + 1;
                 END;
                 ELSE DO;
@@ -245,8 +261,11 @@ PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
                 BYTE(LOAD_RESISTANCE) = BACKUP_RL;
                 BYTE(POS_POWER_RAIL) = BACKUP_VPOS;
                 BYTE(NEG_POWER_RAIL) = BACKUP_VNEG;
+                BYTE(NPN_DIODE_DROP_REG) = BACKUP_DNPN;
+                BYTE(PNP_DIODE_DROP_REG) = BACKUP_DPNP;
                 IF BYTE(INPUT_VOLTAGE) <> BACKUP_VIN THEN FAILS = FAILS + 1;
             END;
+
             
             /* T3: Isolation Pathway (Tests calculation double-buffering safety) */
             IF T = 3 THEN DO;
