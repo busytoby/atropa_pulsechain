@@ -10,6 +10,41 @@
 uint32_t ce_gprs[16] = {0};
 uint8_t ce_memory[1024] = {0};
 uint32_t xdc_ip = 0;
+typedef struct {
+    uint8_t a;
+    uint8_t x;
+    uint8_t y;
+    uint16_t pc;
+    uint8_t sp;
+    uint8_t sr;
+} xpl_6502_cpu_t;
+
+bool tsfi_xpl_execute_6502(const uint8_t *bytecode, uint32_t len, xpl_6502_cpu_t *cpu, uint8_t *memory) {
+    if (!bytecode || !cpu || !memory) return false;
+    cpu->pc = 0;
+    while (cpu->pc < len) {
+        uint8_t opcode = bytecode[cpu->pc];
+        if (opcode == 0xA9) { /* LDA Immediate */
+            cpu->a = bytecode[cpu->pc + 1];
+            cpu->pc += 2;
+        } else if (opcode == 0x8D) { /* STA Absolute */
+            uint16_t addr = (bytecode[cpu->pc + 2] << 8) | bytecode[cpu->pc + 1];
+            memory[addr] = cpu->a;
+            cpu->pc += 3;
+        } else if (opcode == 0xC9) { /* CMP Immediate */
+            uint8_t val = bytecode[cpu->pc + 1];
+            if (cpu->a == val) {
+                cpu->sr |= 0x02; /* Set Zero flag */
+            } else {
+                cpu->sr &= ~0x02; /* Clear Zero flag */
+            }
+            cpu->pc += 2;
+        } else {
+            return false; /* Unknown opcode */
+        }
+    }
+    return true;
+}
 
 int main(void) {
     /* Dynamic Working Directory Resolver */
@@ -300,6 +335,28 @@ int main(void) {
     assert(tsfi_xpl_execute_assembler("CR R5, R6", c_gprs, c_memory) == true);
     assert(c_gprs[0] == 0); /* Comparison result must be 0 (equal) */
     printf("   ✓ Audit passed: Carmine Cannatello S/370 assembly successfully verified Wheeler entry target.\n");
+
+    /* 5. MOS 6502 inline bytecode execution verification for Wheeler Jump */
+    printf("[TEST] Executing inline MOS 6502 instructions for Wheeler Jump...\n");
+    xpl_6502_cpu_t cpu6502 = {0};
+    uint8_t memory6502[1024] = {0};
+    
+    /* 6502 Bytecode Sequence:
+     *   LDA #$55      -> A9 55
+     *   STA $0200     -> 8D 00 02
+     *   CMP #$55      -> C9 55
+     */
+    uint8_t program6502[] = {
+        0xA9, 0x55,       /* LDA #$55 */
+        0x8D, 0x00, 0x02, /* STA $0200 */
+        0xC9, 0x55        /* CMP #$55 */
+    };
+    
+    assert(tsfi_xpl_execute_6502(program6502, sizeof(program6502), &cpu6502, memory6502) == true);
+    assert(memory6502[0x0200] == 0x55);
+    assert((cpu6502.sr & 0x02) != 0); /* Zero flag set (comparison matches) */
+    printf("   ✓ Audit passed: Inline MOS 6502 execution successfully validated register configurations.\n");
+
 
 
 
