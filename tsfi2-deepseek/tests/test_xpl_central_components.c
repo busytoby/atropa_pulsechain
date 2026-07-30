@@ -20,7 +20,15 @@ int main(void) {
     printf("   ✓ NPN simulation compiled successfully.\n");
     remove("tests/npn_simulation.dat.bin");
 
+    /* 1b. Compile PNP Transistor Simulation */
+    printf("[TEST] Compiling pnp_simulation.xpl via XCOM...\n");
+    ok = auncient_sdk_compile_xpl_to_dat_bin("xpl/pnp_simulation.xpl", "tests/pnp_simulation.dat.bin");
+    assert(ok == true);
+    printf("   ✓ PNP simulation compiled successfully.\n");
+    remove("tests/pnp_simulation.dat.bin");
+
     /* 2. Compile Push-Pull Driver */
+
     printf("[TEST] Compiling push_pull_driver.xpl via XCOM...\n");
     ok = auncient_sdk_compile_xpl_to_dat_bin("xpl/push_pull_driver.xpl", "tests/push_pull_driver.dat.bin");
     assert(ok == true);
