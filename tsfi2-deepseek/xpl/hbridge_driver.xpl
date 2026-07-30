@@ -111,6 +111,15 @@ TICK_HBRIDGE_DRIVER: PROCEDURE;
         BYTE(HBRIDGE_Q2_HSR) = SWITCH_OFF;
         BYTE(HBRIDGE_Q3_LSL) = SWITCH_OFF;
         BYTE(HBRIDGE_Q4_LSR) = SWITCH_OFF;
+        
+        /* Transaction Rollback: Revert command buffer state to default baseline */
+        BYTE(CMD_LENGTH) = 0;
+        BYTE(RUNNING_CHECKSUM) = 0;
+        BYTE(CMD_BUFFER + 0) = 0;
+        BYTE(CMD_BUFFER + 1) = 0;
+        BYTE(CMD_BUFFER + 2) = 0;
+        BYTE(CMD_BUFFER + 3) = 0;
+        
         BYTE(MOTOR_STATE) = MOTOR_FAULT;
         BYTE(FAULT_REGISTER) = 1; /* Left or Right Branch Shoot-Through */
         RETURN;
