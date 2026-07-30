@@ -83,3 +83,8 @@ Relativistic coprogramming coordinates state updates across distinct temporal fr
 * **VM Register Context:** The sequential logging queue mapping out-of-band VTAM transmission registers.
 * **Mathematical Function:** Enforces strict sequential FIFO processing streams: $TDQ_{out} = Dequeue(TDQ)$.
 * **Visual / Geometric Manifestation:** Modulates the opacity decay rate of the trailing vector lines as transaction data is committed to disk.
+
+### Hogan Block-Lattice
+* **VM Register Context:** The block-lattice state registers storing the sequence number (`tx_sequence`), account ID, and the 32-byte hash boundaries (`chain_head`).
+* **Mathematical Function:** The hash congruence equation that calculates the PoW mining difficulty requirement for every block in the ledger: $hash \equiv 0 \pmod 8$.
+* **Visual / Geometric Manifestation:** Modulates the vertex offsets of the projected Soft Body coordinates, warping the coordinate grid mapping to visually reflect the transaction volume and balance flow patterns.
