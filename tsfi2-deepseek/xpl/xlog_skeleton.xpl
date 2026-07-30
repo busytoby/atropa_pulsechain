@@ -7,9 +7,17 @@ DECLARE XLOG_CYCLE          LITERALLY '64004'; /* Current loop cycle (4 bytes) *
 DECLARE XLOG_LSN            LITERALLY '64008'; /* Log Sequence Number (4 bytes) */
 DECLARE XLOG_OP_COUNT       LITERALLY '64012'; /* Operations count (4 bytes) */
 DECLARE XLOG_RES_BYTES      LITERALLY '64016'; /* Reserved log bytes (4 bytes) */
-DECLARE XLOG_BUF_HEAD       LITERALLY '64020'; /* Write head pointer offset (4 bytes) */
-DECLARE XLOG_BUFFER_START   LITERALLY '64024'; /* Transaction payload buffer start */
-DECLARE XLOG_BUFFER_SIZE    LITERALLY '512';   /* Max memory log capacity */
+DECLARE XLOG_BUF_ACTIVE     LITERALLY '64020'; /* Active buffer index: 0 or 1 */
+DECLARE XLOG_BUF_HEAD       LITERALLY '64021'; /* Write head pointer offset (3 bytes) */
+DECLARE XLOG_BUFFER0_START  LITERALLY '64024'; /* Transaction buffer 0 start */
+DECLARE XLOG_BUFFER1_START  LITERALLY '64536'; /* Transaction buffer 1 start (offset 512) */
+DECLARE XLOG_BUFFER_SIZE    LITERALLY '512';   /* Max memory log capacity per buffer */
+
+/* Transaction Lifecycle Metadata Markers */
+DECLARE TX_MARKER_START     LITERALLY '10';
+DECLARE TX_MARKER_OP        LITERALLY '11';
+DECLARE TX_MARKER_COMMIT    LITERALLY '12';
+DECLARE TX_MARKER_ABORT     LITERALLY '13';
 
 /* 2. Capstan Hardware Registers for Physical Sync commits */
 DECLARE CAPSTAN_CONTROL     LITERALLY '65000';
@@ -42,21 +50,22 @@ INIT_XLOG_SKELETON: PROCEDURE FIXED;
         I = I + 1;
     END;
     
-    /* Reset reservation bytes and write buffer pointer offset */
+    /* Reset reservation bytes, set active buffer to 0 */
     BYTE(XLOG_RES_BYTES) = 0;
     BYTE(XLOG_RES_BYTES + 1) = 0;
     BYTE(XLOG_RES_BYTES + 2) = 0;
     BYTE(XLOG_RES_BYTES + 3) = 0;
     
+    BYTE(XLOG_BUF_ACTIVE) = 0;
     BYTE(XLOG_BUF_HEAD) = 0;
     BYTE(XLOG_BUF_HEAD + 1) = 0;
     BYTE(XLOG_BUF_HEAD + 2) = 0;
-    BYTE(XLOG_BUF_HEAD + 3) = 0;
     
-    /* Clear active payload buffer memory space */
+    /* Clear active payload buffers */
     I = 0;
     DO WHILE I < XLOG_BUFFER_SIZE;
-        BYTE(XLOG_BUFFER_START + I) = 0;
+        BYTE(XLOG_BUFFER0_START + I) = 0;
+        BYTE(XLOG_BUFFER1_START + I) = 0;
         I = I + 1;
     END;
     
@@ -68,7 +77,7 @@ RESERVE_XLOG_SPACE: PROCEDURE(BYTES) FIXED;
     DECLARE (CURRENT_RES, MAX_AVAIL) FIXED;
     
     MAX_AVAIL = XLOG_BUFFER_SIZE;
-    CURRENT_RES = BYTE(XLOG_BUF_HEAD + 3) + BYTES;
+    CURRENT_RES = BYTE(XLOG_BUF_HEAD + 2) + BYTES;
     
     IF CURRENT_RES > MAX_AVAIL THEN DO;
         RETURN 0; /* Reservation rejected: Out of log space */
@@ -79,31 +88,50 @@ RESERVE_XLOG_SPACE: PROCEDURE(BYTES) FIXED;
     RETURN 1; /* Reservation successful */
 END;
 
-/* 5. Commit transaction payload record to the active log */
+/* 5. Commit transaction payload record to the active double buffer */
 COMMIT_XLOG_TRANSACTION: PROCEDURE(TX_ID, PAYLOAD_BYTE) FIXED;
-    DECLARE (WRITE_OFFSET, OP_COUNT) FIXED;
+    DECLARE (WRITE_OFFSET, OP_COUNT, BUF_START) FIXED;
     
-    /* Retrieve buffer head index and operations count */
-    WRITE_OFFSET = BYTE(XLOG_BUF_HEAD + 3);
+    /* Retrieve active buffer start address and head index */
+    IF BYTE(XLOG_BUF_ACTIVE) = 0 THEN DO;
+        BUF_START = XLOG_BUFFER0_START;
+    END;
+    ELSE DO;
+        BUF_START = XLOG_BUFFER1_START;
+    END;
+    
+    WRITE_OFFSET = BYTE(XLOG_BUF_HEAD + 2);
     OP_COUNT = BYTE(XLOG_OP_COUNT + 3);
     
-    /* Log transaction ID and payload byte */
-    BYTE(XLOG_BUFFER_START + WRITE_OFFSET) = TX_ID;
-    BYTE(XLOG_BUFFER_START + WRITE_OFFSET + 1) = PAYLOAD_BYTE;
+    /* Log transaction ID, operation marker, and payload byte */
+    BYTE(BUF_START + WRITE_OFFSET) = TX_MARKER_OP;
+    BYTE(BUF_START + WRITE_OFFSET + 1) = TX_ID;
+    BYTE(BUF_START + WRITE_OFFSET + 2) = PAYLOAD_BYTE;
     
     /* Advance buffer write head and increment log operations */
-    WRITE_OFFSET = WRITE_OFFSET + 2;
-    BYTE(XLOG_BUF_HEAD + 3) = WRITE_OFFSET;
+    WRITE_OFFSET = WRITE_OFFSET + 3;
+    BYTE(XLOG_BUF_HEAD + 2) = WRITE_OFFSET;
     BYTE(XLOG_OP_COUNT + 3) = OP_COUNT + 1;
     
     /* Implement circular log ring buffer wraparound */
     IF WRITE_OFFSET >= XLOG_BUFFER_SIZE THEN DO;
-        BYTE(XLOG_BUF_HEAD + 3) = 0; /* Wrap head back to start */
+        BYTE(XLOG_BUF_HEAD + 2) = 0; /* Wrap head back to start */
         BYTE(XLOG_CYCLE + 3) = BYTE(XLOG_CYCLE + 3) + 1; /* Increment cycle count */
     END;
     
-    /* If payload buffer reaches half-capacity threshold, flush to physical disk */
-    IF WRITE_OFFSET = 256 THEN DO;
+    /* If active buffer reaches threshold, trigger physical Sync flush and swap buffers */
+    IF WRITE_OFFSET >= 256 THEN DO;
+        /* Swap active buffer (ping-pong logic) */
+        IF BYTE(XLOG_BUF_ACTIVE) = 0 THEN DO;
+            BYTE(XLOG_BUF_ACTIVE) = 1;
+        END;
+        ELSE DO;
+            BYTE(XLOG_BUF_ACTIVE) = 0;
+        END;
+        
+        /* Reset write head of newly active buffer */
+        BYTE(XLOG_BUF_HEAD + 2) = 0;
+        
         /* Engage Solenoid Clamps and release brake mechanism */
         BYTE(CAPSTAN_SOLENOID) = 1;
         BYTE(CAPSTAN_BRAKE) = 0;
@@ -125,16 +153,23 @@ COMMIT_XLOG_TRANSACTION: PROCEDURE(TX_ID, PAYLOAD_BYTE) FIXED;
     RETURN 1; /* Commit recorded successfully */
 END;
 
-/* 6. Verify in-memory log block checksum using FNV-1a */
+/* 6. Verify in-memory active log block checksum using FNV-1a */
 VERIFY_XLOG_CHECKSUM: PROCEDURE FIXED;
-    DECLARE (HASH, I, LIMIT) FIXED;
+    DECLARE (HASH, I, LIMIT, BUF_START) FIXED;
+    
+    IF BYTE(XLOG_BUF_ACTIVE) = 0 THEN DO;
+        BUF_START = XLOG_BUFFER0_START;
+    END;
+    ELSE DO;
+        BUF_START = XLOG_BUFFER1_START;
+    END;
     
     HASH = 2166136261; /* FNV-1a Offset Basis */
-    LIMIT = BYTE(XLOG_BUF_HEAD + 3);
+    LIMIT = BYTE(XLOG_BUF_HEAD + 2);
     
     I = 0;
     DO WHILE I < LIMIT;
-        HASH = (HASH XOR BYTE(XLOG_BUFFER_START + I)) * 16777619;
+        HASH = (HASH XOR BYTE(BUF_START + I)) * 16777619;
         I = I + 1;
     END;
     
@@ -144,6 +179,6 @@ END;
 /* 7. Abort transaction and rollback buffer pointers */
 ABORT_XLOG_TRANSACTION: PROCEDURE FIXED;
     /* Rollback write head pointer to discard uncommitted records */
-    BYTE(XLOG_BUF_HEAD + 3) = 0;
+    BYTE(XLOG_BUF_HEAD + 2) = 0;
     RETURN 1; /* Abort recovery successful */
 END;
