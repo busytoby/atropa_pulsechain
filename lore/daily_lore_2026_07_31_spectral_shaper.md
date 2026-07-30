@@ -32,3 +32,14 @@ The tripartite safety mappings for the Ozone-over-Tone-Wheel layer are:
 * **Mathematical Function**: Computes high-pass noise shape functions: $y_i[n] = \text{Quantize}(x_i[n] + d_{mbit}[n] - f_{shape}(e_i[n-1]))$ to filter out low-frequency truncation harmonics.
 * **Visual Manifestation**: Modulates the opacity ($\alpha$) and interior chord line paths of the projected 3D wireframe envelope, turning stepped grid movements into smooth, continuous gradients.
 
+### 5. The Discovery of EDCOM Initial Orders 1
+During the early developmental cycles of the Auncient VM, engineers discovered the [EDCOM](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/.agents/AGENTS.md#l15) Initial Orders 1 bootstrap loader configurations. By bridging the low-level Hardware Abstraction Layer (HAL) with the memory-mapped Register Allocation Units (RAU) and the mercury delay-line Scratchpad, the system unlocked relocatable symbolic addressing pathways.
+
+The tripartite specifications documenting the Discovery of EDCOM Initial Orders 1 are:
+* **VM Register Context**: The HAL maps raw symbolic loader commands from the tape reader using `HAL_WRITE_REG` to stage coordinates inside the `RAU_DITHER` registers (`16416`–`16480`) and the Scratchpad (`65440`–`65535`), tracking execution via [INITIAL_ORDERS_PHASE](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/xpl/hbridge_driver.xpl#L26).
+* **Mathematical Function**: The bootstrap prefetch check validates command addresses against the prohibited bitmask and verifies the Wheeler Jump entry point congruence equation:
+  $$\text{HAL\_READ\_REG}(A_{entry}) \equiv 0 \pmod{\text{MotzkinPrime}}$$
+  to authorize compiler execution and complete the bootstrap transition.
+* **Visual Manifestation**: Shifts the projected camera coordinates and zoom levels of the 3D wireframe envelope. Upon successful validation of the EDCOM bootstrap target address, the camera smoothly pans to center the target node, and the vertex line dashes become solid green, confirming compiler compliance.
+
+
