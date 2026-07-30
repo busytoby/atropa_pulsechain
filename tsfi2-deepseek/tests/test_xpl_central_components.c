@@ -5,6 +5,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <assert.h>
+uint32_t ce_gprs[16] = {0};
+uint8_t ce_memory[1024] = {0};
+uint32_t xdc_ip = 0;
 
 int main(void) {
     printf("=============================================================\n");
@@ -110,9 +113,26 @@ int main(void) {
         ok = true;
     }
     assert(ok == false);
-    printf("   ✓ Audit passed: Scratchpad locks successfully guard calculation nodes.\n");
+    printf("   ✓ Audit passed: Scratchpad locks successfully guard calculation nodes. (Isolation)\n");
+
+    /* 6. Execute JCL verification loops against the simulated environment */
+    printf("[TEST] Executing transaction JCL scripts against the compiled core components...\n");
+    extern bool tsfi_xplos_shell_cbt_jcl(const char *cmd);
+    extern bool tsfi_xplos_shell_tape(const char *cmd);
+    
+    /* Inject write verification pass */
+    assert(tsfi_xplos_shell_tape("cbttape inject 1") == true);
+    
+    /* Run JCL files and assert success */
+    assert(tsfi_xplos_shell_cbt_jcl("jclrun /home/mariarahel/src/tsfi2/atropa_pulsechain/solidity/dysnomia/domain/jcl/compare_transistors.jcl") == true);
+    assert(tsfi_xplos_shell_cbt_jcl("jclrun /home/mariarahel/src/tsfi2/atropa_pulsechain/solidity/dysnomia/domain/jcl/test_push_pull.jcl") == true);
+    assert(tsfi_xplos_shell_cbt_jcl("jclrun /home/mariarahel/src/tsfi2/atropa_pulsechain/solidity/dysnomia/domain/jcl/test_hbridge.jcl") == true);
+    assert(tsfi_xplos_shell_cbt_jcl("jclrun /home/mariarahel/src/tsfi2/atropa_pulsechain/solidity/dysnomia/domain/jcl/test_initial_orders_hbridge.jcl") == true);
+    assert(tsfi_xplos_shell_cbt_jcl("jclrun /home/mariarahel/src/tsfi2/atropa_pulsechain/solidity/dysnomia/domain/jcl/test_scratchpad.jcl") == true);
+    printf("   ✓ JCL validation suite passed: all 5 JCL verification scripts executed successfully.\n");
 
     printf("=============================================================\n");
+
     printf("ALL XPL CENTRAL CORE COMPONENT AUDITS COMPLETED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
