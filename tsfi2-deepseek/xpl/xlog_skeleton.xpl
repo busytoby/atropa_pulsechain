@@ -371,3 +371,32 @@ RUN_SYNTH_JCL_TEST: PROCEDURE FIXED;
     
     RETURN 1; /* Test completed successfully */
 END;
+
+/* 12. Play a scale sequentially and write xlog records for each step */
+PLAY_SCALE_AND_LOG: PROCEDURE FIXED;
+    DECLARE (NOTE, TX_ID) FIXED;
+    
+    /* Play scale steps 1 through 7 (C, D, E, F, G, A, B) */
+    NOTE = 1;
+    DO WHILE NOTE <= 7;
+        /* Simulate active transistor state and update core level to represent scale step */
+        BYTE(HBRIDGE_Q1_HSL) = 1;
+        BYTE(HBRIDGE_Q4_LSR) = 1;
+        BYTE(TONEWHEEL_CORE_LEVEL) = NOTE; /* Mapped note scale index */
+        
+        /* Commit note to xlog binary output block */
+        TX_ID = 300 + NOTE;
+        CALL COMMIT_XLOG_TRANSACTION(TX_ID, 1, NOTE);
+        
+        OUTPUT = 'SCALE_NOTE_LOGGED';
+        
+        NOTE = NOTE + 1;
+    END;
+    
+    /* Restore transistors to idle */
+    BYTE(HBRIDGE_Q1_HSL) = 0;
+    BYTE(HBRIDGE_Q4_LSR) = 0;
+    CALL UPDATE_TONEWHEEL_CORE;
+    
+    RETURN 1; /* Scale played and logged successfully */
+END;
