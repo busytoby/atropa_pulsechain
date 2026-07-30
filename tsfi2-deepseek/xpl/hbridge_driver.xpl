@@ -24,6 +24,12 @@ DECLARE HBRIDGE_Q4_LSR LITERALLY '65009'; /* Low-Side Right (NPN) */
 DECLARE MOTOR_STATE    LITERALLY '65400'; /* Current motor operating mode */
 DECLARE FAULT_REGISTER LITERALLY '65404'; /* Active fault code */
 DECLARE INITIAL_ORDERS_PHASE LITERALLY '65408'; /* Boot phase status: 1 = Initial Orders 1 */
+DECLARE ESTOP_INTERRUPT LITERALLY '65412'; /* Virtual hardware E-Stop interrupt */
+
+/* EDSAC Command Buffer Registers */
+DECLARE CMD_BUFFER     LITERALLY '65416'; /* Base address of 4-byte instruction command buffer */
+DECLARE CMD_LENGTH     LITERALLY '65420'; /* Number of command bytes to process */
+DECLARE RUNNING_CHECKSUM LITERALLY '65424'; /* Cumulative checksum register */
 
 /* Audits states to prevent shoot-through short circuits (ACID Consistency) */
 AUDIT_HBRIDGE_SAFETY: PROCEDURE FIXED;
@@ -47,6 +53,35 @@ TICK_HBRIDGE_DRIVER: PROCEDURE;
     DECLARE Q3 FIXED;
     DECLARE Q4 FIXED;
     DECLARE BOOT_PHASE FIXED;
+    DECLARE ESTOP FIXED;
+    DECLARE CLEN FIXED;
+    DECLARE CHKSUM FIXED;
+    DECLARE I FIXED;
+    
+    /* 1. Check Hardware E-Stop Interrupt Line first */
+    ESTOP = BYTE(ESTOP_INTERRUPT);
+    IF ESTOP = 1 THEN DO;
+        BYTE(HBRIDGE_Q1_HSL) = SWITCH_OFF;
+        BYTE(HBRIDGE_Q2_HSR) = SWITCH_OFF;
+        BYTE(HBRIDGE_Q3_LSL) = SWITCH_OFF;
+        BYTE(HBRIDGE_Q4_LSR) = SWITCH_OFF;
+        BYTE(MOTOR_STATE) = MOTOR_FAULT;
+        BYTE(FAULT_REGISTER) = 3; /* Emergency Stop Interrupted */
+        RETURN;
+    END;
+    
+    /* 2. Process and Checksum EDSAC Command Buffer */
+    CLEN = BYTE(CMD_LENGTH);
+    IF CLEN > 0 THEN DO;
+        CHKSUM = BYTE(RUNNING_CHECKSUM);
+        I = 0;
+        DO WHILE I < CLEN;
+            /* Accumulate running checksum from command bytes */
+            CHKSUM = CHKSUM + BYTE(CMD_BUFFER + I);
+            I = I + 1;
+        END;
+        BYTE(RUNNING_CHECKSUM) = CHKSUM;
+    END;
     
     /* Load switch states and boot status from registers */
     Q1 = BYTE(HBRIDGE_Q1_HSL);
@@ -55,7 +90,7 @@ TICK_HBRIDGE_DRIVER: PROCEDURE;
     Q4 = BYTE(HBRIDGE_Q4_LSR);
     BOOT_PHASE = BYTE(INITIAL_ORDERS_PHASE);
     
-    /* 1. Audit Shoot-Through Conditions */
+    /* 3. Audit Shoot-Through Conditions */
     IF (Q1 = SWITCH_ON AND Q3 = SWITCH_ON) OR (Q2 = SWITCH_ON AND Q4 = SWITCH_ON) THEN DO;
         /* Emergency Shutdown: Turn all switches OFF immediately */
         BYTE(HBRIDGE_Q1_HSL) = SWITCH_OFF;
@@ -67,7 +102,7 @@ TICK_HBRIDGE_DRIVER: PROCEDURE;
         RETURN;
     END;
     
-    /* 2. Resolve normal motor driving configurations */
+    /* 4. Resolve normal motor driving configurations */
     
     /* Forward Path (High-Side Left & Low-Side Right ON) */
     IF Q1 = SWITCH_ON AND Q4 = SWITCH_ON THEN DO;
@@ -95,6 +130,7 @@ TICK_HBRIDGE_DRIVER: PROCEDURE;
         RETURN;
     END;
 
+
     
     /* Brake Path (Both Low-Side switches ON to short terminals) */
     IF Q3 = SWITCH_ON AND Q4 = SWITCH_ON THEN DO;
@@ -119,17 +155,20 @@ END TICK_HBRIDGE_DRIVER;
 PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
     DECLARE (P, T, FAILS) FIXED;
     DECLARE (Q1, Q2, Q3, Q4) FIXED;
-    DECLARE (BACKUP_Q1, BACKUP_Q2, BACKUP_Q3, BACKUP_Q4, BACKUP_BOOT) FIXED;
+    DECLARE (BACKUP_Q1, BACKUP_Q2, BACKUP_Q3, BACKUP_Q4, BACKUP_BOOT, BACKUP_ESTOP) FIXED;
     DECLARE (EXPECT_MSTATE, EXPECT_FAULT) FIXED;
     DECLARE (IS_VALID_PHYSICAL) FIXED;
     
     FAILS = 0;
     P = 1;
     
-    /* Set default boot phase status */
+    /* Set default boot phase, E-Stop, and checksum status */
     BYTE(INITIAL_ORDERS_PHASE) = 0;
+    BYTE(ESTOP_INTERRUPT) = 0;
+    BYTE(CMD_LENGTH) = 0;
+    BYTE(RUNNING_CHECKSUM) = 0;
     
-    DO WHILE P <= 10;
+    DO WHILE P <= 11;
         T = 1;
         DO WHILE T <= 4;
             /* Backup baseline state prior to test */
@@ -138,8 +177,10 @@ PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
             BACKUP_Q3 = BYTE(HBRIDGE_Q3_LSL);
             BACKUP_Q4 = BYTE(HBRIDGE_Q4_LSR);
             BACKUP_BOOT = BYTE(INITIAL_ORDERS_PHASE);
+            BACKUP_ESTOP = BYTE(ESTOP_INTERRUPT);
             
-            /* 1. Define physical switch configurations (10 permutations) */
+            /* 1. Define physical switch configurations (11 permutations) */
+
             IS_VALID_PHYSICAL = TRUE;
             
             /* Coast State */
@@ -208,6 +249,14 @@ PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
                 IS_VALID_PHYSICAL = FALSE;
             END;
 
+            /* Hardware E-Stop Interrupt Case */
+            IF P = 11 THEN DO;
+                Q1 = 1; Q2 = 0; Q3 = 0; Q4 = 1; /* Forward switches ON */
+                BYTE(ESTOP_INTERRUPT) = 1; /* Trigger active E-Stop */
+                EXPECT_MSTATE = MOTOR_FAULT; EXPECT_FAULT = 3;
+                IS_VALID_PHYSICAL = FALSE;
+            END;
+
             /* Apply test values to virtual hardware registers */
             BYTE(HBRIDGE_Q1_HSL) = Q1;
             BYTE(HBRIDGE_Q2_HSR) = Q2;
@@ -225,6 +274,7 @@ PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
                     BYTE(HBRIDGE_Q3_LSL) = BACKUP_Q3;
                     BYTE(HBRIDGE_Q4_LSR) = BACKUP_Q4;
                     BYTE(INITIAL_ORDERS_PHASE) = BACKUP_BOOT;
+                    BYTE(ESTOP_INTERRUPT) = BACKUP_ESTOP;
                     IF BYTE(HBRIDGE_Q1_HSL) <> BACKUP_Q1 THEN FAILS = FAILS + 1;
                 END;
                 ELSE DO;
@@ -240,8 +290,10 @@ PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
                 BYTE(HBRIDGE_Q3_LSL) = BACKUP_Q3;
                 BYTE(HBRIDGE_Q4_LSR) = BACKUP_Q4;
                 BYTE(INITIAL_ORDERS_PHASE) = BACKUP_BOOT;
+                BYTE(ESTOP_INTERRUPT) = BACKUP_ESTOP;
                 IF BYTE(HBRIDGE_Q1_HSL) <> BACKUP_Q1 THEN FAILS = FAILS + 1;
             END;
+
 
             
             /* T3: Isolation Pathway (Tests calculation double-buffering safety) */
