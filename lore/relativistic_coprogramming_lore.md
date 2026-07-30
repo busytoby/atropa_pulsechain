@@ -28,3 +28,33 @@ Relativistic coprogramming coordinates state updates across distinct temporal fr
 * **VM Register Context:** The log reservation status word (`XLOG_RES_BYTES`) indicating allocated log capacity prior to commits.
 * **Mathematical Function:** The inequality equation asserting that requested allocation space does not exceed circular buffer limits: $\text{Used\_Bytes} + \text{Req\_Bytes} \le \text{Max\_Log\_Size}$.
 * **Visual / Geometric Manifestation:** Modulates the scaling factor of individual vertex spheres on the Vulkan vector canvas, enlarging target coordinates to represent reserved slots.
+
+### JES Spool Queue (Job Entry Subsystem)
+* **VM Transition Context:** The job entry transaction scheduling and spooling batch workloads.
+* **Mathematical Operation:** Enqueues transaction parameters sequentially using a FIFO scheduler loop: $Queue_{next} = (Queue_{tail} + 1) \pmod{Max\_Queue}$.
+* **Visual / Geometric Shift:** Triggers an interface sweep, translating coordinate nodes along the vertical layout plane to represent their positions in the job execution stream.
+
+### JCL Step Allocator (Job Control Language)
+* **VM Transition Context:** The file and device allocation step initializing virtual dataset bindings.
+* **Mathematical Operation:** Matches dynamic symbolic variables to physical disk sector addresses using a translation mapping matrix.
+* **Visual / Geometric Shift:** Draws colored vector links connecting the memory address nodes to target virtual disk tracks on the phosphor screen.
+
+### SKELETON JCL Template
+* **VM Register Context:** The template variable buffer holding variable parameter bindings.
+* **Mathematical Function:** Performs substitution mapping replacing placeholder indices with values: $Template(Var\_Key) = Var\_Val$.
+* **Visual / Geometric Manifestation:** Projects dashed boundary boxes around uninitialized nodes, which turn solid as template variables resolve.
+
+### XPL Hardware Controller
+* **VM Register Context:** The low-level assembler register set regulating the motor speed and mechanical brakes.
+* **Mathematical Function:** Resolves real-time register mutations governing the motor velocity vectors: $\vec{V}_{motor} = g(\text{CONTROL}, \text{BRAKE}) \pmod{256}$.
+* **Visual / Geometric Manifestation:** Drives the rotation velocity and wireframe twist frequency of the Projected Envelope.
+
+### ALGOL-61 Transformer
+* **VM Register Context:** The mathematical DDL rod variables mapping multi-dimensional data boundaries.
+* **Mathematical Function:** Computes continuous spline transformations over vertex coordinates: $P_{out} = \text{Spline}(P_{in}, \text{Rods}) \pmod{MotzkinPrime}$.
+* **Visual / Geometric Manifestation:** Governs the smooth surface contours and depth layouts of projectedSoft Body objects.
+
+### COBOL RAU Strategy
+* **VM Register Context:** The strategy controller parameterizing the Register Allocation Unit (RAU).
+* **Mathematical Function:** Evaluates arithmetic balance trees to assign logical variables to physical hardware slots.
+* **Visual / Geometric Manifestation:** Dynamically shifts coordinate color values on the rendering interface to track active vs. idle registers.
