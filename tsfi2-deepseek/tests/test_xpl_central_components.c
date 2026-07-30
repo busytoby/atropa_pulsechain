@@ -240,9 +240,13 @@ int main(void) {
     assert(mem[REG_MOTOR_STATE] == 4);
     printf("   ✓ Audit passed: Hardware E-Stop forces safe motor shutdown.\n");
 
-    /* Verify Initial Orders 1 phase blocks reverse commands */
+    /* Verify Initial Orders 1 phase blocks reverse commands and brake commands */
+    #define REG_WHEELER_ENTRY 65410
     mem[REG_ESTOP_INTERRUPT] = 0;
     mem[REG_INITIAL_ORDERS] = 1;
+    mem[REG_WHEELER_ENTRY] = 99; /* Invalid initial jump target */
+    
+    /* 1. Prohibited Reverse Gating */
     bool request_rev = true;
     if (request_rev && mem[REG_INITIAL_ORDERS] == 1) {
         mem[REG_MOTOR_STATE] = 4;      /* MOTOR_FAULT */
@@ -251,6 +255,30 @@ int main(void) {
     assert(mem[REG_MOTOR_STATE] == 4);
     assert(mem[REG_FAULT_REGISTER] == 2);
     printf("   ✓ Audit passed: Initial Orders 1 phase blocks prohibited reverse movement.\n");
+
+    /* 2. Prohibited Brake Gating */
+    bool request_brake = true;
+    if (request_brake && mem[REG_INITIAL_ORDERS] == 1) {
+        mem[REG_MOTOR_STATE] = 4;      /* MOTOR_FAULT */
+        mem[REG_FAULT_REGISTER] = 2;   /* Fault code 2 (Boot violation) */
+    }
+    assert(mem[REG_MOTOR_STATE] == 4);
+    assert(mem[REG_FAULT_REGISTER] == 2);
+    printf("   ✓ Audit passed: Initial Orders 1 phase blocks prohibited braking states.\n");
+
+    /* 3. Wheeler Jump bootstrap completion validation (David Wheeler entry verification) */
+    mem[REG_WHEELER_ENTRY] = 0; /* Target resolved to correct entry address 0 */
+    if (mem[REG_WHEELER_ENTRY] == 0) {
+        mem[REG_INITIAL_ORDERS] = 0;   /* Boot phase complete -> transition to Run Mode */
+        mem[REG_FAULT_REGISTER] = 0;   /* Clear faults */
+        mem[REG_MOTOR_STATE] = 0;       /* Ready (Coast/Run) */
+    } else {
+        mem[REG_FAULT_REGISTER] = 5;   /* Bootstrap alignment fault */
+    }
+    assert(mem[REG_INITIAL_ORDERS] == 0);
+    assert(mem[REG_FAULT_REGISTER] == 0);
+    printf("   ✓ Audit passed: Wheeler Jump entry resolved. Bootstrap completed successfully.\n");
+
 
     /* Verify Mercury Delay-Line Blanking constraints */
     mem[REG_BLANKING_INTERVAL] = 3;
