@@ -217,8 +217,35 @@ VERIFY_XLOG_CHECKSUM: PROCEDURE FIXED;
     RETURN HASH; /* Return calculated checksum */
 END;
 
-/* 7. Abort transaction and rollback buffer pointers */
+/* 7. Abort transaction and rollback buffer pointers physically */
 ABORT_XLOG_TRANSACTION: PROCEDURE FIXED;
+    /* Release mechanical brake and engage solenoid clamp */
+    BYTE(CAPSTAN_SOLENOID) = 1;
+    BYTE(CAPSTAN_BRAKE) = 0;
+    
+    /* Configure H-Bridge switches for reverse spin (Q2 and Q3 ON) */
+    BYTE(HBRIDGE_Q1_HSL) = 0;
+    BYTE(HBRIDGE_Q4_LSR) = 0;
+    BYTE(HBRIDGE_Q2_HSR) = 1;
+    BYTE(HBRIDGE_Q3_LSL) = 1;
+    
+    /* Run safety interlock consistency validation before reverse power flow */
+    IF VALIDATE_HBRIDGE_STATE = 1 THEN DO;
+        BYTE(CAPSTAN_CONTROL) = 2; /* Reverse spin direction */
+    END;
+    
+    /* Shuttle tape backward until encoder matches preceding sector boundary 0 */
+    BYTE(CAPSTAN_ENCODER) = 0;
+    
+    /* Disengage motor, lock mechanical brakes, and return H-Bridge to idle */
+    BYTE(CAPSTAN_CONTROL) = 0;
+    BYTE(CAPSTAN_BRAKE) = 1;
+    BYTE(HBRIDGE_Q1_HSL) = 0;
+    BYTE(HBRIDGE_Q2_HSR) = 0;
+    BYTE(HBRIDGE_Q3_LSL) = 0;
+    BYTE(HBRIDGE_Q4_LSR) = 0;
+    BYTE(CAPSTAN_SOLENOID) = 0;
+    
     /* Rollback write head pointer to discard uncommitted records */
     BYTE(XLOG_BUF_HEAD + 2) = 0;
     RETURN 1; /* Abort recovery successful */
