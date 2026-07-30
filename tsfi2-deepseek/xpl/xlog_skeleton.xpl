@@ -92,11 +92,18 @@ COMMIT_XLOG_TRANSACTION: PROCEDURE(TX_ID, PAYLOAD_BYTE) FIXED;
     BYTE(XLOG_BUFFER_START + WRITE_OFFSET + 1) = PAYLOAD_BYTE;
     
     /* Advance buffer write head and increment log operations */
-    BYTE(XLOG_BUF_HEAD + 3) = WRITE_OFFSET + 2;
+    WRITE_OFFSET = WRITE_OFFSET + 2;
+    BYTE(XLOG_BUF_HEAD + 3) = WRITE_OFFSET;
     BYTE(XLOG_OP_COUNT + 3) = OP_COUNT + 1;
     
-    /* If payload buffer is half full, trigger physical Capstan Sync flush */
-    IF WRITE_OFFSET >= 256 THEN DO;
+    /* Implement circular log ring buffer wraparound */
+    IF WRITE_OFFSET >= XLOG_BUFFER_SIZE THEN DO;
+        BYTE(XLOG_BUF_HEAD + 3) = 0; /* Wrap head back to start */
+        BYTE(XLOG_CYCLE + 3) = BYTE(XLOG_CYCLE + 3) + 1; /* Increment cycle count */
+    END;
+    
+    /* If payload buffer reaches half-capacity threshold, flush to physical disk */
+    IF WRITE_OFFSET = 256 THEN DO;
         /* Engage Solenoid Clamps and release brake mechanism */
         BYTE(CAPSTAN_SOLENOID) = 1;
         BYTE(CAPSTAN_BRAKE) = 0;
@@ -111,9 +118,32 @@ COMMIT_XLOG_TRANSACTION: PROCEDURE(TX_ID, PAYLOAD_BYTE) FIXED;
         BYTE(CAPSTAN_CONTROL) = 0;
         BYTE(CAPSTAN_BRAKE) = 1;
         
-        /* Increment Log Sequence Number Cycle */
+        /* Increment Log Sequence Number */
         BYTE(XLOG_LSN + 3) = BYTE(XLOG_LSN + 3) + 1;
     END;
     
     RETURN 1; /* Commit recorded successfully */
+END;
+
+/* 6. Verify in-memory log block checksum using FNV-1a */
+VERIFY_XLOG_CHECKSUM: PROCEDURE FIXED;
+    DECLARE (HASH, I, LIMIT) FIXED;
+    
+    HASH = 2166136261; /* FNV-1a Offset Basis */
+    LIMIT = BYTE(XLOG_BUF_HEAD + 3);
+    
+    I = 0;
+    DO WHILE I < LIMIT;
+        HASH = (HASH XOR BYTE(XLOG_BUFFER_START + I)) * 16777619;
+        I = I + 1;
+    END;
+    
+    RETURN HASH; /* Return calculated checksum */
+END;
+
+/* 7. Abort transaction and rollback buffer pointers */
+ABORT_XLOG_TRANSACTION: PROCEDURE FIXED;
+    /* Rollback write head pointer to discard uncommitted records */
+    BYTE(XLOG_BUF_HEAD + 3) = 0;
+    RETURN 1; /* Abort recovery successful */
 END;
