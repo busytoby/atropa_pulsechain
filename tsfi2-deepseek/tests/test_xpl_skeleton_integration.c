@@ -318,15 +318,15 @@ int main(void) {
     // Inject write verification pass
     assert(tsfi_xplos_shell_tape("cbttape inject 1") == true);
     
-    // Run JCL file
-    bool jcl_ok = tsfi_xplos_shell_cbt_jcl("jclrun /home/mariarahel/src/tsfi2/atropa_pulsechain/solidity/dysnomia/domain/jcl/frt_resonance.jcl");
-    assert(jcl_ok == true);
-    printf("  -> FRT JCL batch job execution verified successfully.\n");
-
-    // 22. Verify LOGWRITE JCL step appending to assets/LOG.dat.bin
-    printf("  -> Testing LOGWRITE JCL batch job execution and assets/LOG.dat.bin verification...\n");
-    remove("assets/LOG.dat.bin"); // Clean start
+    // Run complete transaction compliance JCL scripts
+    assert(tsfi_xplos_shell_cbt_jcl("jclrun /home/mariarahel/src/tsfi2/atropa_pulsechain/solidity/dysnomia/domain/jcl/test_push_pull.jcl") == true);
+    assert(tsfi_xplos_shell_cbt_jcl("jclrun /home/mariarahel/src/tsfi2/atropa_pulsechain/solidity/dysnomia/domain/jcl/test_hbridge.jcl") == true);
+    assert(tsfi_xplos_shell_cbt_jcl("jclrun /home/mariarahel/src/tsfi2/atropa_pulsechain/solidity/dysnomia/domain/jcl/test_initial_orders_hbridge.jcl") == true);
+    assert(tsfi_xplos_shell_cbt_jcl("jclrun /home/mariarahel/src/tsfi2/atropa_pulsechain/solidity/dysnomia/domain/jcl/test_scratchpad.jcl") == true);
+    assert(tsfi_xplos_shell_cbt_jcl("jclrun /home/mariarahel/src/tsfi2/atropa_pulsechain/solidity/dysnomia/domain/jcl/frt_resonance.jcl") == true);
+    printf("  -> All transaction compliance JCL scripts executed successfully.\n");
     
+    remove("assets/LOG.dat.bin"); // Clean start
     bool log_jcl_ok = tsfi_xplos_shell_cbt_jcl("jclrun /home/mariarahel/src/tsfi2/atropa_pulsechain/solidity/dysnomia/domain/jcl/logwrite.jcl");
     assert(log_jcl_ok == true);
     
