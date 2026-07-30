@@ -33,9 +33,8 @@ DECLARE HBRIDGE_Q1_HSL      LITERALLY '65006'; /* High-Side Left PNP */
 DECLARE HBRIDGE_Q2_HSR      LITERALLY '65007'; /* High-Side Right PNP */
 DECLARE HBRIDGE_Q3_LSL      LITERALLY '65008'; /* Low-Side Left NPN */
 DECLARE HBRIDGE_Q4_LSR      LITERALLY '65009'; /* Low-Side Right NPN */
-/* Configurable Tonewheel Cores Virtual Registers starting at 65010 */
-DECLARE TONEWHEEL_CORES_COUNT LITERALLY '65010'; /* Dynamic count of active cores */
-DECLARE TONEWHEEL_CORES_START LITERALLY '65011'; /* Start of core levels array */
+/* Single Tonewheel Core level register associated with one synthesizer input */
+DECLARE TONEWHEEL_CORE_LEVEL LITERALLY '65010';
 
 /* Verify H-Bridge Consistency: Prevents shoot-through short circuits (ACID Integrity) */
 VALIDATE_HBRIDGE_STATE: PROCEDURE FIXED;
@@ -52,23 +51,14 @@ VALIDATE_HBRIDGE_STATE: PROCEDURE FIXED;
     RETURN 1; /* H-Bridge state is consistent */
 END;
 
-/* Update all active configurable tonewheel cores based on active H-Bridge transistor state */
-UPDATE_TONEWHEEL_CORES: PROCEDURE;
-    DECLARE (I, LEVEL, LIMIT) FIXED;
-    
+/* Update the single active tonewheel core based on H-Bridge transistor states */
+UPDATE_TONEWHEEL_CORE: PROCEDURE;
     /* Set level based on transistor power routing */
     IF BYTE(HBRIDGE_Q1_HSL) = 1 AND BYTE(HBRIDGE_Q4_LSR) = 1 THEN DO;
-        LEVEL = 8; /* Full drive */
+        BYTE(TONEWHEEL_CORE_LEVEL) = 8; /* Full drive */
     END;
     ELSE DO;
-        LEVEL = 0; /* Muted */
-    END;
-    
-    LIMIT = BYTE(TONEWHEEL_CORES_COUNT);
-    I = 0;
-    DO WHILE I < LIMIT;
-        BYTE(TONEWHEEL_CORES_START + I) = LEVEL;
-        I = I + 1;
+        BYTE(TONEWHEEL_CORE_LEVEL) = 0; /* Muted */
     END;
 END;
 
@@ -123,8 +113,8 @@ INIT_XLOG_SKELETON: PROCEDURE FIXED;
     /* Clear non-preferential accumulator output space */
     BYTE(XLOG_ACCUMULATOR) = 0;
     
-    /* Initialize configurable tonewheel cores count to 111 default */
-    BYTE(TONEWHEEL_CORES_COUNT) = 111;
+    /* Initialize single tonewheel core level to 0 */
+    BYTE(TONEWHEEL_CORE_LEVEL) = 0;
     
     RETURN 1; /* Initialization success */
 END;
