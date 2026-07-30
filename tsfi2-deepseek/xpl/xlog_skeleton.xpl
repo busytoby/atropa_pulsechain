@@ -320,3 +320,30 @@ VERIFY_SYNTH_INPUT: PROCEDURE FIXED;
     OUTPUT = 'XLOG_SYNTH_INPUT_FAILED';
     RETURN 0; /* Verification fail */
 END;
+
+/* 10. Live Polling Loop to track and log synthesizer inputs in real time */
+POLL_SYNTH_LIVE: PROCEDURE;
+    DECLARE (LAST_LEVEL, CURRENT_LEVEL) FIXED;
+    LAST_LEVEL = 255;
+    
+    DO WHILE 1;
+        /* Propagate current transistor switches to core level */
+        CALL UPDATE_TONEWHEEL_CORE;
+        CURRENT_LEVEL = BYTE(TONEWHEEL_CORE_LEVEL);
+        
+        IF CURRENT_LEVEL <> LAST_LEVEL THEN DO;
+            LAST_LEVEL = CURRENT_LEVEL;
+            IF CURRENT_LEVEL = 8 THEN DO;
+                OUTPUT = 'LIVE_SYNTH_INPUT_ACTIVE';
+            END;
+            ELSE DO;
+                OUTPUT = 'LIVE_SYNTH_INPUT_MUTED';
+            END;
+            
+            /* Break the loop in the test runner to prevent infinite loop hanging */
+            IF CURRENT_LEVEL = 99 THEN DO;
+                RETURN;
+            END;
+        END;
+    END;
+END;
