@@ -576,6 +576,19 @@ bool tsfi_xpl_execute_assembler(const char *asm_instruction, uint32_t *gprs, uin
             memory[addr1 + i] = memory[addr2 + code];
         }
         return true;
+    } else if (strcasecmp(op, "DITH") == 0) {
+        int r1 = atoi(arg1 + (arg1[0] == 'R' || arg1[0] == 'r' ? 1 : 0));
+        int r2 = atoi(arg2 + (arg2[0] == 'R' || arg2[0] == 'r' ? 1 : 0));
+        if (r1 >= 0 && r1 < 16 && r2 >= 0 && r2 < 16) {
+            /* MBIT+ Dither loop: R1 = R2 + dither_noise - prev_error */
+            uint32_t raw_val = gprs[r2];
+            uint32_t dither_noise = 2; /* Shaped dither */
+            uint32_t prev_error = gprs[0]; /* Stored in GPR0 */
+            uint32_t sum = raw_val + dither_noise - prev_error;
+            gprs[r1] = sum & 0xFF; /* Quantized output */
+            gprs[0] = sum - gprs[r1]; /* Update error in GPR0 */
+            return true;
+        }
     }
     
     return false;
