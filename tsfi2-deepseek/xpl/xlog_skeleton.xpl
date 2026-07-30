@@ -303,3 +303,20 @@ RUN_XLOG_SELF_TEST: PROCEDURE FIXED;
 
     RETURN 1; /* Self-test completed successfully */
 END;
+
+/* 9. Verify that incoming PNP/NPN transistor signals are successfully received by xlog */
+VERIFY_SYNTH_INPUT: PROCEDURE FIXED;
+    /* Propagate the current state of H-Bridge transistors to the active core */
+    CALL UPDATE_TONEWHEEL_CORE;
+
+    /* Verify if the core is active when both transistors are ON */
+    IF BYTE(HBRIDGE_Q1_HSL) = 1 AND BYTE(HBRIDGE_Q4_LSR) = 1 THEN DO;
+        IF BYTE(TONEWHEEL_CORE_LEVEL) = 8 THEN DO;
+            OUTPUT = 'XLOG_SYNTH_INPUT_VERIFIED';
+            RETURN 1; /* Verification pass */
+        END;
+    END;
+    
+    OUTPUT = 'XLOG_SYNTH_INPUT_FAILED';
+    RETURN 0; /* Verification fail */
+END;
