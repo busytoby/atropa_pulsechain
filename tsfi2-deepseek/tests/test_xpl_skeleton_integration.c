@@ -323,6 +323,33 @@ int main(void) {
     assert(jcl_ok == true);
     printf("  -> FRT JCL batch job execution verified successfully.\n");
 
+    // 22. Verify LOGWRITE JCL step appending to assets/LOG.dat.bin
+    printf("  -> Testing LOGWRITE JCL batch job execution and assets/LOG.dat.bin verification...\n");
+    remove("assets/LOG.dat.bin"); // Clean start
+    
+    bool log_jcl_ok = tsfi_xplos_shell_cbt_jcl("jclrun /home/mariarahel/src/tsfi2/atropa_pulsechain/solidity/dysnomia/domain/jcl/logwrite.jcl");
+    assert(log_jcl_ok == true);
+    
+    FILE *log_f = fopen("assets/LOG.dat.bin", "r");
+    assert(log_f != NULL);
+    char log_buf[256] = {0};
+    size_t n_read = fread(log_buf, 1, sizeof(log_buf) - 1, log_f);
+    fclose(log_f);
+    
+    assert(n_read > 0);
+    bool found_msg = false;
+    const char *pattern = "LOG MESSAGE: SUCCESSFUL SYSTEM STATE SNAPSHOT";
+    size_t pat_len = strlen(pattern);
+    for (size_t i = 0; i + pat_len <= n_read; i++) {
+        if (memcmp(log_buf + i, pattern, pat_len) == 0) {
+            found_msg = true;
+            break;
+        }
+    }
+    assert(found_msg == true);
+    printf("  -> assets/LOG.dat.bin verification successful: Found appended message in binary log record.\n");
+    remove("assets/LOG.dat.bin"); // Cleanup
+
     printf("\n=== INTEGRATION PROOFS PASSED ===\n");
     return 0;
 }

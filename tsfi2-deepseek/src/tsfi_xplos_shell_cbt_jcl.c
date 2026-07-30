@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <ctype.h>
 #include <time.h>
+#include <unistd.h>
 #include "tsfi_xplos_kernel.h"
 #include "tsfi_xplos_kernel_internal.h"
 #include "tsfi_xplos_shell_cbt_jcl.h"
@@ -97,6 +98,10 @@ static bool handle_jclrun(const char *cmd) {
         char step_names[10][32] = {0};
         int step_rcs[10] = {0};
         int step_rc_count = 0;
+
+        char jcl_data_copy[8192];
+        strncpy(jcl_data_copy, jcl_data, sizeof(jcl_data_copy) - 1);
+        jcl_data_copy[sizeof(jcl_data_copy) - 1] = '\0';
 
         char *line = strtok(jcl_data, "\n");
         int rc = 0;
@@ -402,6 +407,93 @@ static bool handle_jclrun(const char *cmd) {
                                         printf("%s", log_msg);
                                         append_spool_log(jcl_name, log_msg);
                                     }
+                                }
+                            } else if (strcmp(pgm_name, "LOGWRITE") == 0) {
+                                step_rc = 0;
+                                snprintf(log_msg, sizeof(log_msg), "    * LOGWRITE Active. Appending messages to assets/LOG.dat.bin. RC=0000\n");
+                                printf("%s", log_msg);
+                                append_spool_log(jcl_name, log_msg);
+                                
+                                const char *msg_to_write = "Default log message\n";
+                                char instream_data[2048] = {0};
+                                const char *sysin_ptr = strstr(jcl_data_copy, "SYSIN DD *");
+                                if (!sysin_ptr) {
+                                    sysin_ptr = strstr(jcl_data_copy, "sysin dd *");
+                                }
+                                if (sysin_ptr) {
+                                    const char *line_start = strchr(sysin_ptr, '\n');
+                                    if (line_start) {
+                                        line_start++;
+                                        while (*line_start && strncmp(line_start, "/*", 2) != 0 && strncmp(line_start, "//", 2) != 0) {
+                                            const char *line_end = strchr(line_start, '\n');
+                                            if (!line_end) break;
+                                            size_t line_len = line_end - line_start;
+                                            if (strlen(instream_data) + line_len + 1 < sizeof(instream_data)) {
+                                                strncat(instream_data, line_start, line_len);
+                                                strcat(instream_data, "\n");
+                                            }
+                                            line_start = line_end + 1;
+                                        }
+                                        if (strlen(instream_data) > 0) {
+                                            msg_to_write = instream_data;
+                                        }
+                                    }
+                                }
+                                
+                                // XPL XLOG Memory Emulator (simulating xlog_skeleton.xpl at address 64000)
+                                uint8_t xpl_mem[1024];
+                                memset(xpl_mem, 0, sizeof(xpl_mem));
+                                
+                                // 1. Simulate INIT_XLOG_SKELETON
+                                xpl_mem[0] = 254; // Magic 0xFEED (254, 237)
+                                xpl_mem[1] = 237;
+                                xpl_mem[7] = 1;   // Cycle number = 1
+                                
+                                // 2. Simulate RESERVE_XLOG_SPACE
+                                uint32_t msg_len = (uint32_t)strlen(msg_to_write);
+                                uint32_t reserved = msg_len + 4;
+                                xpl_mem[19] = reserved; // Write to XLOG_RES_BYTES
+                                printf("[XPL COPROGRAM] Space reserved: %d bytes (xlog ticket allocated)\n", reserved);
+                                
+                                // 3. Simulate COMMIT_XLOG_TRANSACTION
+                                uint32_t write_offset = 0;
+                                for (uint32_t c = 0; c < msg_len; c++) {
+                                    xpl_mem[24 + write_offset] = msg_to_write[c];
+                                    write_offset++;
+                                }
+                                xpl_mem[23] = write_offset; // Update XLOG_BUF_HEAD
+                                xpl_mem[15]++;              // Increment XLOG_OP_COUNT
+                                
+                                // 4. ACID-compliant append of xlog struct format
+                                FILE *lf = fopen("assets/LOG.dat.bin.tmp", "wb");
+                                if (lf) {
+                                    // Retain existing log records if any
+                                    FILE *existing = fopen("assets/LOG.dat.bin", "rb");
+                                    if (existing) {
+                                        char buffer[4096];
+                                        size_t bytes_read;
+                                        while ((bytes_read = fread(buffer, 1, sizeof(buffer), existing)) > 0) {
+                                            fwrite(buffer, 1, bytes_read, lf);
+                                        }
+                                        fclose(existing);
+                                    }
+                                    
+                                    // Append raw binary xlog block
+                                    fwrite(xpl_mem, 1, 24 + write_offset, lf);
+                                    
+                                    fflush(lf);
+                                    #ifdef _WIN32
+                                    _commit(_fileno(lf));
+                                    #else
+                                    fsync(fileno(lf));
+                                    #endif
+                                    fclose(lf);
+                                    
+                                    rename("assets/LOG.dat.bin.tmp", "assets/LOG.dat.bin");
+                                    printf("[LOGWRITE XPL SUCCESS] Committed %d bytes of xlog record structure to assets/LOG.dat.bin\n", 24 + write_offset);
+                                } else {
+                                    step_rc = 16;
+                                    printf("[LOGWRITE ERROR] Failed to open temporary commit log.\n");
                                 }
                             } else {
                                 step_rc = 4;
