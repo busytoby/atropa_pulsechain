@@ -88,3 +88,18 @@ Relativistic coprogramming coordinates state updates across distinct temporal fr
 * **VM Register Context:** The block-lattice state registers storing the sequence number (`tx_sequence`), account ID, and the 32-byte hash boundaries (`chain_head`).
 * **Mathematical Function:** The hash congruence equation that calculates the PoW mining difficulty requirement for every block in the ledger: $hash \equiv 0 \pmod 8$.
 * **Visual / Geometric Manifestation:** Modulates the vertex offsets of the projected Soft Body coordinates, warping the coordinate grid mapping to visually reflect the transaction volume and balance flow patterns.
+
+### PNP Base Transistor
+* **VM Register Context:** The input voltage carrier register modulating current inflow.
+* **Mathematical Function:** Serves as the base value $B$ in WinchesterMQ modular exponentiations.
+* **Visual / Geometric Manifestation:** Alters the starting projection phase angle, defining the envelope's initial fold parameters.
+
+### NPN Exponent Transistor
+* **VM Register Context:** The gating loop timing control register regulating carrier cycles.
+* **Mathematical Function:** Serves as the exponent value $E$ (e.g. `Signal` or `Secret`).
+* **Visual / Geometric Manifestation:** Scales the coordinate orbital velocity, increasing line twist densities.
+
+### Capstan Modulo Operator
+* **VM Transition Context:** The modular sector wraparound transition bound by the encoder steps.
+* **Mathematical Operation:** Bounds the output within the modular prime divisor: $Result = B^E \pmod{MotzkinPrime}$.
+* **Visual / Geometric Shift:** Wraps coordinates past structural limits back to the starting sector origin, rendering looping Lissajous paths.
