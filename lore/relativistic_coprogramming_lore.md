@@ -73,3 +73,13 @@ Relativistic coprogramming coordinates state updates across distinct temporal fr
 * **VM Transition Context:** The boundary interrupt swapping the active logging roles of the RED and BLACK buffers.
 * **Mathematical Operation:** Rotates active memory pointers: $P_{red} \longleftrightarrow P_{black}$.
 * **Visual / Geometric Shift:** Executes a rotation sweep animation on the projected layout, swapping coordinate color states from red to cyan.
+
+### TSQ (Temporary Storage Queue / RED Buffer)
+* **VM Register Context:** The random-access scratchpad queue register mapping active virtual stack allocations.
+* **Mathematical Function:** Serves as a dynamic index matrix allowing random read/write access: $TSQ[Index] = Value$.
+* **Visual / Geometric Manifestation:** Governs the size and scale of orbital nodes on the projected vector path during real-time transaction updates.
+
+### TDQ (Transient Data Queue / BLACK Buffer)
+* **VM Register Context:** The sequential logging queue mapping out-of-band VTAM transmission registers.
+* **Mathematical Function:** Enforces strict sequential FIFO processing streams: $TDQ_{out} = Dequeue(TDQ)$.
+* **Visual / Geometric Manifestation:** Modulates the opacity decay rate of the trailing vector lines as transaction data is committed to disk.
