@@ -58,3 +58,18 @@ Relativistic coprogramming coordinates state updates across distinct temporal fr
 * **VM Register Context:** The strategy controller parameterizing the Register Allocation Unit (RAU).
 * **Mathematical Function:** Evaluates arithmetic balance trees to assign logical variables to physical hardware slots.
 * **Visual / Geometric Manifestation:** Dynamically shifts coordinate color values on the rendering interface to track active vs. idle registers.
+
+### RED Buffer (Buffer 0)
+* **VM Register Context:** The active transaction log ingress buffer mapped to guest ALU GPR registers.
+* **Mathematical Function:** Serves as the primary coordinate plane $P_{red}$ capturing real-time register mutation logs.
+* **Visual / Geometric Manifestation:** Rendered as a vibrant red vector wireframe path that expands dynamically as new coordinates are logged.
+
+### BLACK Buffer (Buffer 1)
+* **VM Register Context:** The staging transaction log flush buffer mapped to the Register Allocation Unit (RAU) and WinchesterMQ SCSI.
+* **Mathematical Function:** Represents the immutable snapshot plane $P_{black}$ undergoing physical serialization checks.
+* **Visual / Geometric Manifestation:** Rendered as a dark cyan vector path showing static node alignments before they are committed to disk.
+
+### Buffer Swap (Ping-Pong Transition)
+* **VM Transition Context:** The boundary interrupt swapping the active logging roles of the RED and BLACK buffers.
+* **Mathematical Operation:** Rotates active memory pointers: $P_{red} \longleftrightarrow P_{black}$.
+* **Visual / Geometric Shift:** Executes a rotation sweep animation on the projected layout, swapping coordinate color states from red to cyan.
