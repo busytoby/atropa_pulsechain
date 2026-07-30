@@ -27,6 +27,27 @@ DECLARE CAPSTAN_BRAKE       LITERALLY '65003';
 DECLARE RAW_HEAD_STATUS     LITERALLY '65004';
 DECLARE SECTOR_DATA_REG     LITERALLY '65005';
 
+/* H-Bridge Four-Transistor Switch Registers */
+DECLARE HBRIDGE_Q1_HSL      LITERALLY '65006'; /* High-Side Left PNP */
+DECLARE HBRIDGE_Q2_HSR      LITERALLY '65007'; /* High-Side Right PNP */
+DECLARE HBRIDGE_Q3_LSL      LITERALLY '65008'; /* Low-Side Left NPN */
+DECLARE HBRIDGE_Q4_LSR      LITERALLY '65009'; /* Low-Side Right NPN */
+
+/* Verify H-Bridge Consistency: Prevents shoot-through short circuits (ACID Integrity) */
+VALIDATE_HBRIDGE_STATE: PROCEDURE FIXED;
+    /* If both top and bottom transistors on the left or right branch are ON, abort */
+    IF (BYTE(HBRIDGE_Q1_HSL) = 1 AND BYTE(HBRIDGE_Q3_LSL) = 1) OR
+       (BYTE(HBRIDGE_Q2_HSR) = 1 AND BYTE(HBRIDGE_Q4_LSR) = 1) THEN DO;
+        /* Emergency Shutdown: Turn all switches OFF to protect hardware */
+        BYTE(HBRIDGE_Q1_HSL) = 0;
+        BYTE(HBRIDGE_Q2_HSR) = 0;
+        BYTE(HBRIDGE_Q3_LSL) = 0;
+        BYTE(HBRIDGE_Q4_LSR) = 0;
+        RETURN 0; /* Consistency audit failed: shoot-through blocked */
+    END;
+    RETURN 1; /* H-Bridge state is consistent */
+END;
+
 /* 3. Initialize Empty xlog Header prior to the first transaction commit */
 INIT_XLOG_SKELETON: PROCEDURE FIXED;
     DECLARE I FIXED;
@@ -36,6 +57,12 @@ INIT_XLOG_SKELETON: PROCEDURE FIXED;
     BYTE(XLOG_MAGIC + 1) = 237;
     BYTE(XLOG_MAGIC + 2) = 0;
     BYTE(XLOG_MAGIC + 3) = 0;
+    
+    /* Initialize H-Bridge to safe coasting state (all switches OFF) */
+    BYTE(HBRIDGE_Q1_HSL) = 0;
+    BYTE(HBRIDGE_Q2_HSR) = 0;
+    BYTE(HBRIDGE_Q3_LSL) = 0;
+    BYTE(HBRIDGE_Q4_LSR) = 0;
     
     /* Set initial cycle sequence number to 1 */
     BYTE(XLOG_CYCLE) = 0;
@@ -135,16 +162,30 @@ COMMIT_XLOG_TRANSACTION: PROCEDURE(TX_ID, PAYLOAD_BYTE) FIXED;
         /* Engage Solenoid Clamps and release brake mechanism */
         BYTE(CAPSTAN_SOLENOID) = 1;
         BYTE(CAPSTAN_BRAKE) = 0;
-        BYTE(CAPSTAN_CONTROL) = 1; /* Forward spin */
+        
+        /* Configure H-Bridge switches for forward spin (Q1 and Q4 ON) */
+        BYTE(HBRIDGE_Q1_HSL) = 1;
+        BYTE(HBRIDGE_Q4_LSR) = 1;
+        BYTE(HBRIDGE_Q2_HSR) = 0;
+        BYTE(HBRIDGE_Q3_LSL) = 0;
+        
+        /* Run safety interlock consistency validation */
+        IF VALIDATE_HBRIDGE_STATE = 1 THEN DO;
+            BYTE(CAPSTAN_CONTROL) = 1; /* Forward spin */
+        END;
         
         /* Commit log buffer snapshot to sector 15 */
         IF BYTE(CAPSTAN_ENCODER) = 15 THEN DO;
             BYTE(SECTOR_DATA_REG) = PAYLOAD_BYTE;
         END;
         
-        /* Engage mechanical brake */
+        /* Engage mechanical brake and return H-Bridge switches to idle */
         BYTE(CAPSTAN_CONTROL) = 0;
         BYTE(CAPSTAN_BRAKE) = 1;
+        BYTE(HBRIDGE_Q1_HSL) = 0;
+        BYTE(HBRIDGE_Q2_HSR) = 0;
+        BYTE(HBRIDGE_Q3_LSL) = 0;
+        BYTE(HBRIDGE_Q4_LSR) = 0;
         
         /* Increment Log Sequence Number */
         BYTE(XLOG_LSN + 3) = BYTE(XLOG_LSN + 3) + 1;
