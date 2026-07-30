@@ -474,6 +474,55 @@ static bool handle_jclrun(const char *cmd) {
                                         append_spool_log(jcl_name, log_msg);
                                     }
                                 }
+                            } else if (strcmp(pgm_name, "SYNTHPLAY") == 0) {
+                                step_rc = 0;
+                                snprintf(log_msg, sizeof(log_msg), "    * SYNTHPLAY Active. Processing note patterns. RC=0000\n");
+                                printf("%s", log_msg);
+                                append_spool_log(jcl_name, log_msg);
+                                
+                                const char *sysin_ptr = strstr(jcl_data_copy, "SYSIN DD *");
+                                if (!sysin_ptr) {
+                                    sysin_ptr = strstr(jcl_data_copy, "sysin dd *");
+                                }
+                                if (sysin_ptr) {
+                                    const char *line_start = strchr(sysin_ptr, '\n');
+                                    if (line_start) {
+                                        line_start++;
+                                        while (*line_start && strncmp(line_start, "/*", 2) != 0 && strncmp(line_start, "//", 2) != 0) {
+                                            const char *line_end = strchr(line_start, '\n');
+                                            if (!line_end) break;
+                                            size_t line_len = line_end - line_start;
+                                            char command_line[128] = {0};
+                                            if (line_len < sizeof(command_line) - 1) {
+                                                strncpy(command_line, line_start, line_len);
+                                                while (line_len > 0 && (command_line[line_len - 1] == '\r' || command_line[line_len - 1] == ' ')) {
+                                                    command_line[line_len - 1] = '\0';
+                                                    line_len--;
+                                                }
+                                                if (strlen(command_line) > 0) {
+                                                    char note_name[32] = "";
+                                                    char state_name[32] = "";
+                                                    if (sscanf(command_line, "NOTE %31s %31s", note_name, state_name) == 2) {
+                                                        printf("[SYNTHPLAY] Processing JCL input: NOTE %s %s\n", note_name, state_name);
+                                                        extern uint8_t ce_memory[];
+                                                        if (strcmp(state_name, "ON") == 0) {
+                                                            ce_memory[65006] = 1; /* HBRIDGE_Q1_HSL */
+                                                            ce_memory[65009] = 1; /* HBRIDGE_Q4_LSR */
+                                                            ce_memory[65010] = 8; /* TONEWHEEL_CORE_LEVEL */
+                                                            printf("[SYNTHPLAY] Class B push-pull pair Q1/Q4 active. Synthesizer input driving level: 8\n");
+                                                        } else {
+                                                            ce_memory[65006] = 0; /* HBRIDGE_Q1_HSL */
+                                                            ce_memory[65009] = 0; /* HBRIDGE_Q4_LSR */
+                                                            ce_memory[65010] = 0; /* TONEWHEEL_CORE_LEVEL */
+                                                            printf("[SYNTHPLAY] Class B push-pull pair Q1/Q4 idle. Synthesizer input driving level: 0\n");
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            line_start = line_end + 1;
+                                        }
+                                    }
+                                }
                             } else if (strcmp(pgm_name, "LOGWRITE") == 0) {
                                 step_rc = 0;
                                 snprintf(log_msg, sizeof(log_msg), "    * LOGWRITE Active. Appending messages to assets/LOG.dat.bin. RC=0000\n");

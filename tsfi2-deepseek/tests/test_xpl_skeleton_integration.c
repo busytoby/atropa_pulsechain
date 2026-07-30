@@ -406,6 +406,12 @@ int main(void) {
     assert(ce_memory[65010] == 8);
     printf("  -> Synthesizer output successfully received as PNP/NPN hardware parameters by xlog.\n");
 
+    // 25. Verify JCL playsynth.jcl batch job execution driving the synthesizer inputs
+    printf("  -> Testing playsynth.jcl JCL batch job execution...\n");
+    bool playsynth_jcl_ok = tsfi_xplos_shell_cbt_jcl("jclrun /home/mariarahel/src/tsfi2/atropa_pulsechain/solidity/dysnomia/domain/jcl/playsynth.jcl");
+    assert(playsynth_jcl_ok == true);
+    printf("  -> playsynth.jcl JCL batch job execution verified successfully.\n");
+
     printf("\n=== INTEGRATION PROOFS PASSED ===\n");
     return 0;
 }
