@@ -103,3 +103,8 @@ Relativistic coprogramming coordinates state updates across distinct temporal fr
 * **VM Transition Context:** The sequential encoder steps incrementing the power calculation.
 * **Mathematical Operation:** Serves as the exponent value $E$ (e.g. `Signal` or `Secret`), yielding: $Result = B^{steps} \pmod{Prime}$.
 * **Visual / Geometric Shift:** Speeds up or slows down the orbital paths of projected vertices in direct relation to sector tape movement.
+
+### H-Bridge Controller
+* **VM Register Context:** The motor driver polarity control registers (`CAPSTAN_CONTROL` forward/reverse direction bits).
+* **Mathematical Function:** Evaluates the inequality comparator to resolve motor spin polarity: $\text{Sign}(Result - \text{Current\_Sector})$.
+* **Visual / Geometric Manifestation:** Reverses the rotation direction of the 3D projected wireframe envelope, mirroring orbital trajectories along the coordinate axes.
