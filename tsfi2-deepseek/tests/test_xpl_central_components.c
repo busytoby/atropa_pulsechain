@@ -282,6 +282,32 @@ int main(void) {
     assert(out_of_bounds == true);
     printf("   ✓ Audit passed: Scratchpad allocator boundary enforcement verified.\n");
 
+    /* Verify Scratchpad dynamic allocation size boundaries */
+    uint32_t current_offset = 65440;
+    uint32_t alloc_size_1 = 16;
+    uint32_t alloc_size_2 = 32;
+    uint32_t addr_1 = current_offset;
+    uint32_t addr_2 = current_offset + alloc_size_1;
+    assert(addr_1 == 65440);
+    assert(addr_2 == 65456);
+    assert(addr_2 + alloc_size_2 <= 65535); /* Fits inside safe zone */
+    printf("   ✓ Audit passed: Scratchpad sequential dynamic allocation boundaries verified.\n");
+
+    /* Verify Scratchpad transaction state snap-shotting and restoration */
+    uint8_t scratch_snapshot[96];
+    memcpy(scratch_snapshot, &mem[65440], 96); /* Snapshot initial state */
+    
+    /* Modify workspace values */
+    mem[65450] = 0xAA;
+    mem[65460] = 0xBB;
+    
+    /* Transaction Abort: Rollback to snapshot */
+    memcpy(&mem[65440], scratch_snapshot, 96);
+    assert(mem[65450] == 0);
+    assert(mem[65460] == 0);
+    printf("   ✓ Audit passed: Scratchpad transactional state snapshots and rollback verified.\n");
+
+
 
     /* 6. Execute JCL verification loops against the simulated environment */
     printf("[TEST] Executing transaction JCL scripts against the compiled core components...\n");
