@@ -56,17 +56,19 @@ TICK_PUSH_PULL_DRIVER: PROCEDURE;
         BYTE(PNP_STATE) = STATE_CUTOFF;
         VOUT = VIN - 700; /* Vout follows Vin minus diode drop */
     END;
-    /* 2. PNP Emitter Follower Conduction (Negative Half-Cycle) */
-    ELSE IF VIN < -700 THEN DO;
-        BYTE(NPN_STATE) = STATE_CUTOFF;
-        BYTE(PNP_STATE) = STATE_ACTIVE;
-        VOUT = VIN + 700; /* Vout follows Vin plus diode drop */
-    END;
-    /* 3. Dead Zone (Both transistors cut off) */
     ELSE DO;
-        BYTE(NPN_STATE) = STATE_CUTOFF;
-        BYTE(PNP_STATE) = STATE_CUTOFF;
-        VOUT = 0;
+        /* 2. PNP Emitter Follower Conduction (Negative Half-Cycle) */
+        IF VIN < -700 THEN DO;
+            BYTE(NPN_STATE) = STATE_CUTOFF;
+            BYTE(PNP_STATE) = STATE_ACTIVE;
+            VOUT = VIN + 700; /* Vout follows Vin plus diode drop */
+        END;
+        /* 3. Dead Zone (Both transistors cut off) */
+        ELSE DO;
+            BYTE(NPN_STATE) = STATE_CUTOFF;
+            BYTE(PNP_STATE) = STATE_CUTOFF;
+            VOUT = 0;
+        END;
     END;
     
     /* Calculate output load current using connected emitter node voltage */
@@ -80,4 +82,5 @@ TICK_PUSH_PULL_DRIVER: PROCEDURE;
     /* Write to the connected emitter hardware registers */
     BYTE(EMITTER_OUTPUT_V) = VOUT;
     BYTE(EMITTER_OUTPUT_I) = IOUT;
-END;
+END TICK_PUSH_PULL_DRIVER;
+
