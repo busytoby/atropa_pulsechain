@@ -108,3 +108,8 @@ Relativistic coprogramming coordinates state updates across distinct temporal fr
 * **VM Register Context:** The motor driver polarity control registers (`CAPSTAN_CONTROL` forward/reverse direction bits).
 * **Mathematical Function:** Evaluates the inequality comparator to resolve motor spin polarity: $\text{Sign}(Result - \text{Current\_Sector})$.
 * **Visual / Geometric Manifestation:** Reverses the rotation direction of the 3D projected wireframe envelope, mirroring orbital trajectories along the coordinate axes.
+
+### CAPSTAN KERMIT
+* **VM Transition Context:** The packetized communication transfer handshake routing blocks over the SCSI channel.
+* **Mathematical Operation:** Calculates frame checksum verifications and sequence matches: $Ack\_Seq = (Packet\_Seq + 1) \pmod{Window\_Size}$.
+* **Visual / Geometric Shift:** Triggers highlighted vector line dashes and coordinate point pulses to represent packet packet transmission, verify, and retry states.
