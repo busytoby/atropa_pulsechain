@@ -30,7 +30,8 @@ DECLARE PNP_COLLECTOR_V   LITERALLY '65344'; /* PNP VC in mV */
 
 /* Thermal and Degeneration Parameters */
 DECLARE TEMPERATURE_REG   LITERALLY '65348'; /* Current temperature in C */
-DECLARE EMITTER_DEG_R     LITERALLY '1';     /* Emitter degeneration resistance in ohms (Re) */
+DECLARE NPN_EMITTER_DEG_R LITERALLY '65352'; /* NPN Re in ohms */
+DECLARE PNP_EMITTER_DEG_R LITERALLY '65356'; /* PNP Re in ohms */
 DECLARE MAX_SAFE_CURRENT  LITERALLY '100000'; /* Maximum safe current limit (100mA in uA) */
 
 /* Individual Transistor State Tracking */
@@ -45,10 +46,14 @@ TICK_PUSH_PULL_DRIVER: PROCEDURE;
     DECLARE TEMP FIXED;
     DECLARE BIAS_DRIFT FIXED;
     DECLARE CURRENT_LIMIT FIXED;
+    DECLARE RENPN FIXED;
+    DECLARE REPNP FIXED;
     
     VIN = BYTE(INPUT_VOLTAGE);
     RL = BYTE(LOAD_RESISTANCE);
     TEMP = BYTE(TEMPERATURE_REG);
+    RENPN = BYTE(NPN_EMITTER_DEG_R);
+    REPNP = BYTE(PNP_EMITTER_DEG_R);
     
     /* Calculate thermal diode drop drift (-2mV per degree C above 25C room temp) */
     IF TEMP > 25 THEN DO;
@@ -72,6 +77,13 @@ TICK_PUSH_PULL_DRIVER: PROCEDURE;
         BYTE(NPN_STATE) = STATE_ACTIVE;
         BYTE(PNP_STATE) = STATE_CUTOFF;
         VOUT = VIN;
+        /* Calculate output load current incorporating NPN degeneration resistor */
+        IF RL > 0 THEN DO;
+            IOUT = VOUT * 1000 / (RL + RENPN);
+        END;
+        ELSE DO;
+            IOUT = 0;
+        END;
     END;
     ELSE DO;
         /* 2. Negative Half-Cycle Conduction (PNP active, NPN cutoff) */
@@ -79,23 +91,23 @@ TICK_PUSH_PULL_DRIVER: PROCEDURE;
             BYTE(NPN_STATE) = STATE_CUTOFF;
             BYTE(PNP_STATE) = STATE_ACTIVE;
             VOUT = VIN;
+            /* Calculate output load current incorporating PNP degeneration resistor */
+            IF RL > 0 THEN DO;
+                IOUT = VOUT * 1000 / (RL + REPNP);
+            END;
+            ELSE DO;
+                IOUT = 0;
+            END;
         END;
         /* 3. Perfect Zero Cross Alignment (Coast state) */
         ELSE DO;
             BYTE(NPN_STATE) = STATE_CUTOFF;
             BYTE(PNP_STATE) = STATE_CUTOFF;
             VOUT = 0;
+            IOUT = 0;
         END;
     END;
-    
-    /* Calculate output load current incorporating emitter degeneration resistors */
-    /* Re provides negative feedback subtraction to stabilize output current */
-    IF RL > 0 THEN DO;
-        IOUT = VOUT * 1000 / (RL + (EMITTER_DEG_R * 2));
-    END;
-    ELSE DO;
-        IOUT = 0;
-    END;
+
     
     /* Check for near-violations (current within 10% of maximum safety limit) */
     CURRENT_LIMIT = MAX_SAFE_CURRENT - (MAX_SAFE_CURRENT / 10);
