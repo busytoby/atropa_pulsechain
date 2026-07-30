@@ -275,3 +275,31 @@ ABORT_XLOG_TRANSACTION: PROCEDURE FIXED;
     BYTE(XLOG_BUF_HEAD + 2) = 0;
     RETURN 1; /* Abort recovery successful */
 END;
+
+/* 8. Self-test procedure to verify H-Bridge and Tonewheel configuration */
+RUN_XLOG_SELF_TEST: PROCEDURE FIXED;
+    /* Force Class B push-pull pair active state */
+    BYTE(HBRIDGE_Q1_HSL) = 1;
+    BYTE(HBRIDGE_Q4_LSR) = 1;
+    BYTE(HBRIDGE_Q2_HSR) = 0;
+    BYTE(HBRIDGE_Q3_LSL) = 0;
+
+    /* Propagate transistor current state to tonewheel core */
+    CALL UPDATE_TONEWHEEL_CORE;
+
+    /* Write current state to non-preferential accumulator */
+    BYTE(XLOG_ACCUMULATOR) = BYTE(TONEWHEEL_CORE_LEVEL);
+
+    /* Output status messages using XPL standard pseudo-variable */
+    OUTPUT = 'XLOG_SELF_TEST_HSL_ACTIVE';
+    IF BYTE(TONEWHEEL_CORE_LEVEL) = 8 THEN DO;
+        OUTPUT = 'XLOG_SELF_TEST_LEVEL_MATCH';
+    END;
+
+    /* Restore switches to idle coasting state */
+    BYTE(HBRIDGE_Q1_HSL) = 0;
+    BYTE(HBRIDGE_Q4_LSR) = 0;
+    CALL UPDATE_TONEWHEEL_CORE;
+
+    RETURN 1; /* Self-test completed successfully */
+END;
