@@ -336,6 +336,27 @@ int main(void) {
     assert(c_gprs[0] == 0); /* Comparison result must be 0 (equal) */
     printf("   ✓ Audit passed: Carmine Cannatello S/370 assembly successfully verified Wheeler entry target.\n");
 
+    /* 4b. S/370 Assembly Diode Power Dissipation Audit (Over-voltage/Under-voltage Flyback Protection) */
+    printf("[TEST] Executing S/370 repeated addition loop for flyback diode power dissipation...\n");
+    uint32_t d_gprs[16] = {0};
+    uint8_t d_memory[256] = {0};
+    
+    d_gprs[1] = 1;      /* Constant decrement step */
+    d_gprs[2] = 700;    /* Diode Voltage drop Vd = 700 mV */
+    d_gprs[3] = 5;      /* Diode Current Id = 5 mA */
+    d_gprs[4] = 0;      /* Accumulator for Power Dissipation Pdiss */
+
+    /* Perform repeated addition to calculate Vd * Id */
+    while (d_gprs[3] > 0) {
+        assert(tsfi_xpl_execute_assembler("AR R4, R2", d_gprs, d_memory) == true);
+        assert(tsfi_xpl_execute_assembler("SR R3, R1", d_gprs, d_memory) == true);
+    }
+    
+    /* Verify total dissipation equals 700 mV * 5 mA = 3500 uW */
+    assert(d_gprs[4] == 3500);
+    printf("   ✓ Audit passed: S/370 power dissipation calculation verified: Pdiss = %u uW.\n", d_gprs[4]);
+
+
     /* 5. MOS 6502 inline bytecode execution verification for Wheeler Jump */
     printf("[TEST] Executing inline MOS 6502 instructions for Wheeler Jump...\n");
     xpl_6502_cpu_t cpu6502 = {0};
