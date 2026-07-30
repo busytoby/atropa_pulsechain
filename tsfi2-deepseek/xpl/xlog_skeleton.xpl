@@ -34,6 +34,9 @@ DECLARE HBRIDGE_Q2_HSR      LITERALLY '65007'; /* High-Side Right PNP */
 DECLARE HBRIDGE_Q3_LSL      LITERALLY '65008'; /* Low-Side Left NPN */
 DECLARE HBRIDGE_Q4_LSR      LITERALLY '65009'; /* Low-Side Right NPN */
 
+/* Configurable Tonewheel Cores Level Array (111 cores) starting at 65010 */
+DECLARE TONEWHEEL_CORES_START LITERALLY '65010';
+
 /* Verify H-Bridge Consistency: Prevents shoot-through short circuits (ACID Integrity) */
 VALIDATE_HBRIDGE_STATE: PROCEDURE FIXED;
     /* If both top and bottom transistors on the left or right branch are ON, abort */
@@ -47,6 +50,25 @@ VALIDATE_HBRIDGE_STATE: PROCEDURE FIXED;
         RETURN 0; /* Consistency audit failed: shoot-through blocked */
     END;
     RETURN 1; /* H-Bridge state is consistent */
+END;
+
+/* Update all 111 configurable tonewheel cores based on active H-Bridge transistor state */
+UPDATE_TONEWHEEL_CORES: PROCEDURE;
+    DECLARE (I, LEVEL) FIXED;
+    
+    /* Set level based on transistor power routing */
+    IF BYTE(HBRIDGE_Q1_HSL) = 1 AND BYTE(HBRIDGE_Q4_LSR) = 1 THEN DO;
+        LEVEL = 8; /* Full drive */
+    END;
+    ELSE DO;
+        LEVEL = 0; /* Muted */
+    END;
+    
+    I = 0;
+    DO WHILE I < 111;
+        BYTE(TONEWHEEL_CORES_START + I) = LEVEL;
+        I = I + 1;
+    END;
 END;
 
 /* 3. Initialize Empty xlog Header prior to the first transaction commit */
