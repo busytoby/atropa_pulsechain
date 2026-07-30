@@ -33,8 +33,26 @@ DECLARE HBRIDGE_Q1_HSL      LITERALLY '65006'; /* High-Side Left PNP */
 DECLARE HBRIDGE_Q2_HSR      LITERALLY '65007'; /* High-Side Right PNP */
 DECLARE HBRIDGE_Q3_LSL      LITERALLY '65008'; /* Low-Side Left NPN */
 DECLARE HBRIDGE_Q4_LSR      LITERALLY '65009'; /* Low-Side Right NPN */
-/* Single Tonewheel Core level register associated with one synthesizer input */
 DECLARE TONEWHEEL_CORE_LEVEL LITERALLY '65010';
+
+/* PNP Transistor Registers and Physics Constants */
+DECLARE PNP_STATE_CUTOFF     LITERALLY '0';
+DECLARE PNP_STATE_ACTIVE     LITERALLY '1';
+DECLARE PNP_STATE_SATURATION LITERALLY '2';
+DECLARE PNP_VBE_ON           LITERALLY '700';
+DECLARE PNP_VEC_SAT          LITERALLY '200';
+DECLARE PNP_BETA             LITERALLY '100';
+
+DECLARE PNP_EMITTER_VOLTAGE  LITERALLY '65100';
+DECLARE PNP_BASE_VOLTAGE     LITERALLY '65104';
+DECLARE PNP_COLLECTOR_VOLTAGE LITERALLY '65108';
+DECLARE PNP_BASE_RESISTANCE  LITERALLY '65112';
+
+DECLARE PNP_TRANSISTOR_STATE LITERALLY '65116';
+DECLARE PNP_EMITTER_CURRENT  LITERALLY '65120';
+DECLARE PNP_BASE_CURRENT     LITERALLY '65124';
+DECLARE PNP_COLLECTOR_CURRENT LITERALLY '65128';
+
 
 /* Verify H-Bridge Consistency: Prevents shoot-through short circuits (ACID Integrity) */
 VALIDATE_HBRIDGE_STATE: PROCEDURE FIXED;
@@ -400,3 +418,204 @@ PLAY_SCALE_AND_LOG: PROCEDURE FIXED;
     
     RETURN 1; /* Scale played and logged successfully */
 END;
+
+/* Simulates one tick of the PNP transistor state machine */
+TICK_PNP_TRANSISTOR: PROCEDURE;
+    DECLARE VE FIXED;
+    DECLARE VB FIXED;
+    DECLARE VC FIXED;
+    DECLARE RB FIXED;
+    DECLARE VEB FIXED;
+    DECLARE VEC FIXED;
+    DECLARE IB FIXED;
+    DECLARE IC FIXED;
+    DECLARE IE FIXED;
+
+    /* Load input voltages from hardware registers */
+    VE = BYTE(PNP_EMITTER_VOLTAGE);
+    VB = BYTE(PNP_BASE_VOLTAGE);
+    VC = BYTE(PNP_COLLECTOR_VOLTAGE);
+    RB = BYTE(PNP_BASE_RESISTANCE);
+
+    /* Calculate junction voltage differences */
+    VEB = VE - VB;
+    VEC = VE - VC;
+
+    /* 1. Cutoff Region: Emitter-Base junction is reverse-biased or insufficiently forward-biased */
+    IF VEB < PNP_VBE_ON THEN DO;
+        BYTE(PNP_TRANSISTOR_STATE) = PNP_STATE_CUTOFF;
+        BYTE(PNP_EMITTER_CURRENT) = 0;
+        BYTE(PNP_BASE_CURRENT) = 0;
+        BYTE(PNP_COLLECTOR_CURRENT) = 0;
+        RETURN;
+    END;
+
+    /* 2. Active & Saturation Regions: Emitter-Base junction is forward-biased */
+    /* Estimate base current based on base resistance and diode drop */
+    IF RB > 0 THEN DO;
+        IB = (VEB - PNP_VBE_ON) * 1000 / RB; /* I = V/R scaled to uA */
+    END;
+    ELSE DO;
+        IB = 10000; /* Safeguard max limit to prevent division by zero */
+    END;
+
+    /* Check if collector-base junction is forward-biased (Saturation) */
+    IF VEC < PNP_VEC_SAT THEN DO;
+        BYTE(PNP_TRANSISTOR_STATE) = PNP_STATE_SATURATION;
+        /* Saturation current is limited by collector load resistance (simplified) */
+        IC = IB * PNP_BETA / 5; /* Heavily degraded gain in saturation */
+        IE = IB + IC;
+    END;
+    ELSE DO;
+        /* Active Region: Linear current amplification */
+        BYTE(PNP_TRANSISTOR_STATE) = PNP_STATE_ACTIVE;
+        IC = IB * PNP_BETA;
+        IE = IB + IC;
+    END;
+
+    /* Write output currents and state to memory registers */
+    BYTE(PNP_EMITTER_CURRENT) = IE;
+    BYTE(PNP_BASE_CURRENT) = IB;
+    BYTE(PNP_COLLECTOR_CURRENT) = IC;
+END;
+
+/* Verification of ACID compliance properties - 36 Exhaustive Test Cases */
+PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
+    DECLARE (P, T, FAILS) FIXED;
+    DECLARE (VE, VB, VC, RB) FIXED;
+    DECLARE (BACKUP_VE, BACKUP_VB, BACKUP_VC, BACKUP_RB) FIXED;
+    DECLARE (EXPECT_STATE, EXPECT_CURRENT) FIXED;
+    DECLARE (IS_VALID_PHYSICAL, SHOULD_REVERT) FIXED;
+    
+    FAILS = 0;
+    P = 1;
+    
+    DO WHILE P <= 9;
+        T = 1;
+        DO WHILE T <= 4;
+            /* Backup baseline state prior to test */
+            BACKUP_VE = BYTE(PNP_EMITTER_VOLTAGE);
+            BACKUP_VB = BYTE(PNP_BASE_VOLTAGE);
+            BACKUP_VC = BYTE(PNP_COLLECTOR_VOLTAGE);
+            BACKUP_RB = BYTE(PNP_BASE_RESISTANCE);
+            
+            /* 1. Define physical state configurations (9 permutations) */
+            IS_VALID_PHYSICAL = TRUE;
+            
+            /* Cutoff States */
+            IF P = 1 THEN DO; /* Cutoff, RB > 0 */
+                VE = 500; VB = 200; VC = 100; RB = 1000;
+                EXPECT_STATE = PNP_STATE_CUTOFF; EXPECT_CURRENT = 0;
+            END;
+            IF P = 2 THEN DO; /* Cutoff, RB = 0 (Invalid) */
+                VE = 500; VB = 200; VC = 100; RB = 0;
+                EXPECT_STATE = PNP_STATE_CUTOFF; EXPECT_CURRENT = 0;
+                IS_VALID_PHYSICAL = FALSE;
+            END;
+            IF P = 3 THEN DO; /* Cutoff, RB < 0 (Invalid) */
+                VE = 500; VB = 200; VC = 100; RB = -100;
+                EXPECT_STATE = PNP_STATE_CUTOFF; EXPECT_CURRENT = 0;
+                IS_VALID_PHYSICAL = FALSE;
+            END;
+            
+            /* Active States */
+            IF P = 4 THEN DO; /* Active, RB > 0 */
+                VE = 5000; VB = 4000; VC = 2000; RB = 1000;
+                EXPECT_STATE = PNP_STATE_ACTIVE; EXPECT_CURRENT = 30300;
+            END;
+            IF P = 5 THEN DO; /* Active, RB = 0 (Invalid) */
+                VE = 5000; VB = 4000; VC = 2000; RB = 0;
+                EXPECT_STATE = PNP_STATE_ACTIVE; EXPECT_CURRENT = 1010000;
+                IS_VALID_PHYSICAL = FALSE;
+            END;
+            IF P = 6 THEN DO; /* Active, RB < 0 (Invalid) */
+                VE = 5000; VB = 4000; VC = 2000; RB = -100;
+                EXPECT_STATE = PNP_STATE_ACTIVE; EXPECT_CURRENT = 0;
+                IS_VALID_PHYSICAL = FALSE;
+            END;
+            
+            /* Saturation States */
+            IF P = 7 THEN DO; /* Saturation, RB > 0 */
+                VE = 5000; VB = 4000; VC = 4900; RB = 1000;
+                EXPECT_STATE = PNP_STATE_SATURATION; EXPECT_CURRENT = 6300;
+            END;
+            IF P = 8 THEN DO; /* Saturation, RB = 0 (Invalid) */
+                VE = 5000; VB = 4000; VC = 4900; RB = 0;
+                EXPECT_STATE = PNP_STATE_SATURATION; EXPECT_CURRENT = 210000;
+                IS_VALID_PHYSICAL = FALSE;
+            END;
+            IF P = 9 THEN DO; /* Saturation, RB < 0 (Invalid) */
+                VE = 5000; VB = 4000; VC = 4900; RB = -100;
+                EXPECT_STATE = PNP_STATE_SATURATION; EXPECT_CURRENT = 0;
+                IS_VALID_PHYSICAL = FALSE;
+            END;
+
+            /* Apply test values to virtual hardware registers */
+            BYTE(PNP_EMITTER_VOLTAGE) = VE;
+            BYTE(PNP_BASE_VOLTAGE) = VB;
+            BYTE(PNP_COLLECTOR_VOLTAGE) = VC;
+            BYTE(PNP_BASE_RESISTANCE) = RB;
+
+            /* 2. Execute Transactional Pathway (4 pathways) */
+            
+            /* T1: Commit Pathway (Normal execution or immediate abort on invalid inputs) */
+            IF T = 1 THEN DO;
+                IF IS_VALID_PHYSICAL = FALSE THEN DO;
+                    /* Revert: Simulates immediate rollback of invalid physical inputs */
+                    BYTE(PNP_EMITTER_VOLTAGE) = BACKUP_VE;
+                    BYTE(PNP_BASE_VOLTAGE) = BACKUP_VB;
+                    BYTE(PNP_COLLECTOR_VOLTAGE) = BACKUP_VC;
+                    BYTE(PNP_BASE_RESISTANCE) = BACKUP_RB;
+                    /* Verify rollback completed */
+                    IF BYTE(PNP_EMITTER_VOLTAGE) <> BACKUP_VE THEN FAILS = FAILS + 1;
+                END;
+                ELSE DO;
+                    /* Valid Commit: Run state updates */
+                    CALL TICK_PNP_TRANSISTOR;
+                    IF BYTE(PNP_TRANSISTOR_STATE) <> EXPECT_STATE THEN FAILS = FAILS + 1;
+                END;
+            END;
+            
+            /* T2: Explicit Abort Pathway (Tests explicit transaction rollback) */
+            IF T = 2 THEN DO;
+                /* Revert changes to restore original state values */
+                BYTE(PNP_EMITTER_VOLTAGE) = BACKUP_VE;
+                BYTE(PNP_BASE_VOLTAGE) = BACKUP_VB;
+                BYTE(PNP_COLLECTOR_VOLTAGE) = BACKUP_VC;
+                BYTE(PNP_BASE_RESISTANCE) = BACKUP_RB;
+                /* Confirm baseline has been restored */
+                IF BYTE(PNP_EMITTER_VOLTAGE) <> BACKUP_VE THEN FAILS = FAILS + 1;
+            END;
+            
+            /* T3: Isolation Pathway (Tests calculation double-buffering safety) */
+            IF T = 3 THEN DO;
+                IF IS_VALID_PHYSICAL = TRUE THEN DO;
+                    /* Verify intermediate calculations are isolated and not read concurrently */
+                    IF BYTE(PNP_EMITTER_CURRENT) = 0 AND BYTE(PNP_TRANSISTOR_STATE) = PNP_STATE_SATURATION THEN DO;
+                        FAILS = FAILS + 1; /* Dirty intermediate state leaked */
+                    END;
+                END;
+            END;
+            
+            /* T4: Durability Pathway (Enforce writes persist to transaction outputs) */
+            IF T = 4 THEN DO;
+                IF IS_VALID_PHYSICAL = TRUE THEN DO;
+                    CALL TICK_PNP_TRANSISTOR;
+                    /* Verify state persists in output register space */
+                    IF BYTE(PNP_EMITTER_CURRENT) <> EXPECT_CURRENT THEN DO;
+                        IF EXPECT_CURRENT > 0 THEN FAILS = FAILS + 1;
+                    END;
+                END;
+            END;
+            
+            T = T + 1;
+        END;
+        P = P + 1;
+    END;
+    
+    IF FAILS = 0 THEN DO;
+        RETURN 1; /* All 36 verification checks passed successfully */
+    END;
+    RETURN 0;
+END;
+

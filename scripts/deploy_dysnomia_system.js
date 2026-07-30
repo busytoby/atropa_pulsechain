@@ -65,7 +65,11 @@ async function main() {
         execSync(`LD_LIBRARY_PATH=. ./bin/cics_cli write tsq ${regName} dynamic_${address}`, { cwd: './tsfi2-deepseek', stdio: 'inherit' });
 
         deployedAddresses[contractName] = address;
-        return null;
+        if (!yulOnly) {
+            const artifact = getContractArtifact(filename, contractName);
+            return new ethers.Contract(address, artifact.abi, deployer);
+        }
+        return { address };
     }
 
     // 1. VMREQ
