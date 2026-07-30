@@ -88,6 +88,54 @@ int main() {
     tsfi_zmm_vm_exec(&vm, cmd);
     printf("Register State (A, X, Y, SR, SP, PC):\n  %s\n", vm.output_buffer);
 
+    // 7. Verify live NPN/PNP pair state mapping to 6502 RAM space
+    printf("[ZMM] Injecting live synthesizer Class B pair state (value 8) into 6502 RAM space at $0210...\n");
+    // Write value 8 representing the live PNP/NPN active level to address 528 ($0210)
+    sprintf(cmd, "YULEXEC \"cpu6502\", \"8029e7c0"
+                  "%064x"
+                  "%064x\"", 
+            528, 8);
+    tsfi_zmm_vm_exec(&vm, cmd);
+
+    // Run 6502 assembly program to load from $0210 and store at $0200:
+    // LDA $0210 (AD 10 02)
+    // STA $0200 (8D 00 02)
+    // BRK       (00)
+    uint32_t live_addrs[] = {1536, 1537, 1538, 1539, 1540, 1541, 1542};
+    uint32_t live_vals[]  = {0xAD, 0x10, 0x02, 0x8D, 0x00, 0x02, 0x00};
+    int live_len = sizeof(live_addrs) / sizeof(live_addrs[0]);
+
+    printf("[ZMM] Loading 6502 program to read synthesizer hardware state...\n");
+    for (int i = 0; i < live_len; i++) {
+        sprintf(cmd, "YULEXEC \"cpu6502\", \"8029e7c0"
+                      "%064x"
+                      "%064x\"", 
+                live_addrs[i], live_vals[i]);
+        tsfi_zmm_vm_exec(&vm, cmd);
+    }
+
+    // Reset PC to $0600 (1536)
+    sprintf(cmd, "YULEXEC \"cpu6502\", \"8029e7c0"
+                  "%064x"
+                  "%064x\"", 
+            133, 1536);
+    tsfi_zmm_vm_exec(&vm, cmd);
+
+    printf("[ZMM] Executing 6502 read program...\n");
+    sprintf(cmd, "YULEXEC \"cpu6502\", \"c45b1808"
+                  "%064x\"", 10);
+    tsfi_zmm_vm_exec(&vm, cmd);
+
+    printf("[ZMM] Peeking result at address $0200...\n");
+    sprintf(cmd, "YULEXEC \"cpu6502\", \"7861d269"
+                  "%064x\"", 512);
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, cmd);
+    printf("Live Synthesizer State at $0200: %s\n", vm.output_buffer);
+    assert(strcmp(vm.output_buffer, expected) == 0);
+    printf("PASS: Live PNP/NPN synthesizer pair state verified successfully in 6502 execution space!\n");
+
     tsfi_zmm_vm_destroy(&vm);
     printf("=== ALL ZMM VM 6502 CPU TESTS PASSED ===\n");
     return 0;
