@@ -1,0 +1,9 @@
+begin
+  comment DDL Rod Transformer Model;
+  real base, cycle, channel;
+  integer array registers[0:15];
+  
+  base := 64000.0;
+  cycle := 1.0;
+  channel := base * cycle;
+end
