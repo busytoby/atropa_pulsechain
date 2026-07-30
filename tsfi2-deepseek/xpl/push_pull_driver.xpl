@@ -157,7 +157,7 @@ PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
     BYTE(NPN_DIODE_DROP_REG) = 700;
     BYTE(PNP_DIODE_DROP_REG) = 700;
     
-    DO WHILE P <= 9;
+    DO WHILE P <= 11;
         T = 1;
         DO WHILE T <= 4;
             /* Backup baseline state prior to test */
@@ -168,8 +168,7 @@ PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
             BACKUP_DNPN = BYTE(NPN_DIODE_DROP_REG);
             BACKUP_DPNP = BYTE(PNP_DIODE_DROP_REG);
             
-            /* 1. Define physical state configurations (9 permutations) */
-
+            /* 1. Define physical state configurations (11 permutations) */
             IS_VALID_PHYSICAL = TRUE;
             
             /* NPN Active Region (Positive Half-Cycle, VIN > 0 mV) */
@@ -229,10 +228,27 @@ PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
                 IS_VALID_PHYSICAL = FALSE;
             END;
 
+            /* Thermal Over-Current Risk Trigger Case */
+            IF P = 10 THEN DO;
+                VIN = 6000; RL = 10; /* High input voltage, very low load resistance */
+                BYTE(TEMPERATURE_REG) = 125; /* High temperature trigger */
+                EXPECT_STATE_NPN = STATE_CUTOFF; EXPECT_STATE_PNP = STATE_CUTOFF;
+                EXPECT_VOLTAGE = 0;
+            END;
+
+            /* Asymmetric Real-Time Diode Bias Adjustment Case */
+            IF P = 11 THEN DO;
+                VIN = 4000; RL = 1000;
+                BYTE(NPN_DIODE_DROP_REG) = 900; /* Increased NPN bias drop */
+                BYTE(PNP_DIODE_DROP_REG) = 500; /* Decreased PNP bias drop */
+                EXPECT_STATE_NPN = STATE_ACTIVE; EXPECT_STATE_PNP = STATE_CUTOFF;
+                EXPECT_VOLTAGE = 4000;
+            END;
 
             /* Apply test values to virtual hardware registers */
             BYTE(INPUT_VOLTAGE) = VIN;
             BYTE(LOAD_RESISTANCE) = RL;
+
 
             /* 2. Execute Transactional Pathway (4 pathways) */
             
