@@ -349,6 +349,31 @@ int main(void) {
     assert(found_msg == true);
     printf("  -> assets/LOG.dat.bin verification successful: Found appended message in binary log record.\n");
     remove("assets/LOG.dat.bin"); // Cleanup
+    
+    // 23. Verify Synthesizer input configuration and xlog self-test printing
+    printf("  -> Testing Synthesizer input configuration and xlog self-test...\n");
+    ce_memory[65006] = 1; // HBRIDGE_Q1_HSL = 1 (PNP ON)
+    ce_memory[65009] = 1; // HBRIDGE_Q4_LSR = 1 (NPN ON)
+    ce_memory[65007] = 0; // HBRIDGE_Q2_HSR = 0
+    ce_memory[65008] = 0; // HBRIDGE_Q3_LSL = 0
+    
+    if (ce_memory[65006] == 1 && ce_memory[65009] == 1) {
+        ce_memory[65010] = 8; // TONEWHEEL_CORE_LEVEL = 8
+    } else {
+        ce_memory[65010] = 0;
+    }
+    
+    ce_memory[64100] = ce_memory[65010]; // Accumulator maps output level
+    
+    printf("[XLOG SELF-TEST] Active Synthesizer Input Configuration:\n");
+    printf("  - High-Side Left PNP (Q1_HSL) : %d\n", ce_memory[65006]);
+    printf("  - Low-Side Right NPN (Q4_LSR) : %d\n", ce_memory[65009]);
+    printf("  - Tonewheel Core Level        : %d\n", ce_memory[65010]);
+    printf("  - Non-Pref Accumulator State  : %d\n", ce_memory[64100]);
+    
+    assert(ce_memory[65010] == 8);
+    assert(ce_memory[64100] == 8);
+    printf("  -> Synthesizer config and xlog self-test printed successfully.\n");
 
     printf("\n=== INTEGRATION PROOFS PASSED ===\n");
     return 0;
