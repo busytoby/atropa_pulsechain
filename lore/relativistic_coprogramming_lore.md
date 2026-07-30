@@ -123,3 +123,8 @@ Relativistic coprogramming coordinates state updates across distinct temporal fr
 * **VM Register Context:** The voltage rail control register regulating take-up reel collection torque.
 * **Mathematical Function:** Serves as the active accumulator matrix $M_{red}$ capturing outputs.
 * **Visual / Geometric Manifestation:** Modulates coordinate line bloom and translation offsets on the take-up rendering envelope.
+
+### Capstan Accumulator
+* **VM Register Context:** The final output coordinate storage structure resolving capstan track sequences.
+* **Mathematical Function:** Implements the non-preferential accumulator state map to isolate space-charge redirects.
+* **Visual / Geometric Manifestation:** Stabilizes coordinate offsets across the projected 3D wireframe envelope, ensuring geometric continuity during phase changes.
