@@ -347,3 +347,27 @@ POLL_SYNTH_LIVE: PROCEDURE;
         END;
     END;
 END;
+
+/* 11. Natively test logging active synthesizer output under JCL play conditions */
+RUN_SYNTH_JCL_TEST: PROCEDURE FIXED;
+    DECLARE (TX_ID, SYNTH_PAYLOAD) FIXED;
+    
+    /* 1. Play the synthesizer by activating NPN/PNP pair */
+    BYTE(HBRIDGE_Q1_HSL) = 1;
+    BYTE(HBRIDGE_Q4_LSR) = 1;
+    CALL UPDATE_TONEWHEEL_CORE;
+    
+    /* 2. Retrieve active synthesizer level */
+    SYNTH_PAYLOAD = BYTE(TONEWHEEL_CORE_LEVEL);
+    
+    /* 3. Execute a normal transaction commit in xlog logging with the active level */
+    TX_ID = 250; /* Test Synth TX ID */
+    CALL COMMIT_XLOG_TRANSACTION(TX_ID, 1, SYNTH_PAYLOAD);
+    
+    /* 4. Restore transistors to idle */
+    BYTE(HBRIDGE_Q1_HSL) = 0;
+    BYTE(HBRIDGE_Q4_LSR) = 0;
+    CALL UPDATE_TONEWHEEL_CORE;
+    
+    RETURN 1; /* Test completed successfully */
+END;
