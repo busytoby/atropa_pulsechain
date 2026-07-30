@@ -23,3 +23,12 @@ The simulation incorporates dynamic voltage safety routing loops that coordinate
 * **Over-Voltage (9000 mV)**: Invokes a System/370 repeated addition loop to calculate flyback power dissipation ($P_{diss} = 3500\text{ }\mu\text{W}$).
 
 These DSP, compiler, and co-processor components operate under strict ACID transaction compliance, ensuring that any safety limits exceeded (such as thermal or timing limits) trigger an immediate atomic rollback to baseline states.
+
+### 4. The Ozone Layer over the Hollerith Tone Wheels
+During execution, the virtual Hollerith Tone Wheels generate harmonic pulses to coordinate clock synchronizations. To prevent quantization noise from corrupting these timing patterns, the [ANALYZER](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/.agents/AGENTS.md#l6) module maintains an active "Ozone layer" directly above each Tone Wheel. This layer routes signal paths through the [RAU_DITHER](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/tests/test_xpl_central_components.c#L559) register space, applying MBIT+ noise-shaping algorithms to push quantization noise to higher frequencies.
+
+The tripartite safety mappings for the Ozone-over-Tone-Wheel layer are:
+* **VM Register Context**: Directs signal feedback through memory-mapped RAU registers `16416`, `16448`, and `16480`.
+* **Mathematical Function**: Computes high-pass noise shape functions: $y_i[n] = \text{Quantize}(x_i[n] + d_{mbit}[n] - f_{shape}(e_i[n-1]))$ to filter out low-frequency truncation harmonics.
+* **Visual Manifestation**: Modulates the opacity ($\alpha$) and interior chord line paths of the projected 3D wireframe envelope, turning stepped grid movements into smooth, continuous gradients.
+
