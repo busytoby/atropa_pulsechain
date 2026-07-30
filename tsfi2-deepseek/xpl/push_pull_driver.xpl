@@ -314,4 +314,70 @@ PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
     RETURN 0;
 END PROVE_ACID_COMPLIANCE;
 
+/* Diagnostic Routine for Kermit Protocol Errors and Crossover Distortion Source Classification */
+DIAGNOSE_KERMIT_ERROR: PROCEDURE(ERROR_CODE) FIXED;
+    DECLARE ERROR_CODE FIXED;
+    DECLARE TEMP FIXED;
+    DECLARE DNPN FIXED;
+    DECLARE DPNP FIXED;
+    DECLARE INPN FIXED;
+    DECLARE IPNP FIXED;
+    DECLARE CLASSIFICATION FIXED;
+    
+    /* Load real-time hardware status */
+    TEMP = BYTE(TEMPERATURE_REG);
+    DNPN = BYTE(NPN_DIODE_DROP_REG);
+    DPNP = BYTE(PNP_DIODE_DROP_REG);
+    INPN = BYTE(EMITTER_OUTPUT_I);
+    
+    /* 1. Classify Diode Short-Circuit Failure */
+    IF DNPN < 100 OR DPNP < 100 THEN DO;
+        CLASSIFICATION = 1; /* ERR_CLASS_DIODE_SHORT */
+        OUTPUT = 'ERR_DIODE_SHORT_DETECTED';
+        RETURN CLASSIFICATION;
+    END;
+    
+    /* 2. Classify Diode Open-Circuit Failure / Excessive Bias */
+    IF DNPN > 2000 OR DPNP > 2000 THEN DO;
+        CLASSIFICATION = 2; /* ERR_CLASS_DIODE_OPEN */
+        OUTPUT = 'ERR_DIODE_OPEN_DETECTED';
+        RETURN CLASSIFICATION;
+    END;
+    
+    /* 3. Classify Thermal Runaway */
+    IF TEMP > 85 AND INPN > 80000 THEN DO;
+        CLASSIFICATION = 3; /* ERR_CLASS_THERMAL_RUNAWAY */
+        OUTPUT = 'ERR_THERMAL_RUNAWAY_DETECTED';
+        RETURN CLASSIFICATION;
+    END;
+    
+    /* 4. Classify Diode Matching Asymmetry */
+    DECLARE DIFF FIXED;
+    IF DNPN > DPNP THEN DO;
+        DIFF = DNPN - DPNP;
+    END;
+    ELSE DO;
+        DIFF = DPNP - DNPN;
+    END;
+    
+    IF DIFF > 150 THEN DO;
+        CLASSIFICATION = 4; /* ERR_CLASS_ASYMMETRY */
+        OUTPUT = 'ERR_BIAS_ASYMMETRY_DETECTED';
+        RETURN CLASSIFICATION;
+    END;
+    
+    /* 5. Classify Bias Starvation under high load */
+    IF DNPN < 600 AND INPN > 50000 THEN DO;
+        CLASSIFICATION = 5; /* ERR_CLASS_BIAS_STARVATION */
+        OUTPUT = 'ERR_BIAS_STARVATION_DETECTED';
+        RETURN CLASSIFICATION;
+    END;
+    
+    /* Default Classification: Unknown analog line distortion */
+    CLASSIFICATION = 0;
+    OUTPUT = 'ERR_UNKNOWN_LINE_DISTORTION';
+    RETURN CLASSIFICATION;
+END DIAGNOSE_KERMIT_ERROR;
+
+
 
