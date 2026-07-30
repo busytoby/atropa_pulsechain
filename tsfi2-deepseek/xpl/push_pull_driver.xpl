@@ -145,6 +145,8 @@ PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
     DECLARE (P, T, FAILS) FIXED;
     DECLARE (VIN, RL, VPOS, VNEG) FIXED;
     DECLARE (BACKUP_VIN, BACKUP_RL, BACKUP_VPOS, BACKUP_VNEG, BACKUP_DNPN, BACKUP_DPNP) FIXED;
+    DECLARE (BACKUP_EV, BACKUP_EI, BACKUP_NBV, BACKUP_PBV, BACKUP_NCV, BACKUP_PCV) FIXED;
+    DECLARE (BACKUP_TEMP, BACKUP_REN, BACKUP_REP, BACKUP_NSTATE, BACKUP_PSTATE) FIXED;
     DECLARE (EXPECT_STATE_NPN, EXPECT_STATE_PNP, EXPECT_VOLTAGE) FIXED;
     DECLARE (IS_VALID_PHYSICAL) FIXED;
     
@@ -156,6 +158,13 @@ PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
     BYTE(NEG_POWER_RAIL) = -12000; /* -12V */
     BYTE(NPN_DIODE_DROP_REG) = 700;
     BYTE(PNP_DIODE_DROP_REG) = 700;
+    BYTE(NPN_EMITTER_DEG_R) = 1;
+    BYTE(PNP_EMITTER_DEG_R) = 1;
+    BYTE(TEMPERATURE_REG) = 25; /* Room temperature */
+    BYTE(EMITTER_OUTPUT_V) = 0;
+    BYTE(EMITTER_OUTPUT_I) = 0;
+    BYTE(NPN_STATE) = STATE_CUTOFF;
+    BYTE(PNP_STATE) = STATE_CUTOFF;
     
     DO WHILE P <= 11;
         T = 1;
@@ -167,11 +176,23 @@ PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
             BACKUP_VNEG = BYTE(NEG_POWER_RAIL);
             BACKUP_DNPN = BYTE(NPN_DIODE_DROP_REG);
             BACKUP_DPNP = BYTE(PNP_DIODE_DROP_REG);
+            BACKUP_EV = BYTE(EMITTER_OUTPUT_V);
+            BACKUP_EI = BYTE(EMITTER_OUTPUT_I);
+            BACKUP_NBV = BYTE(NPN_BASE_VOLTAGE);
+            BACKUP_PBV = BYTE(PNP_BASE_VOLTAGE);
+            BACKUP_NCV = BYTE(NPN_COLLECTOR_V);
+            BACKUP_PCV = BYTE(PNP_COLLECTOR_V);
+            BACKUP_TEMP = BYTE(TEMPERATURE_REG);
+            BACKUP_REN = BYTE(NPN_EMITTER_DEG_R);
+            BACKUP_REP = BYTE(PNP_EMITTER_DEG_R);
+            BACKUP_NSTATE = BYTE(NPN_STATE);
+            BACKUP_PSTATE = BYTE(PNP_STATE);
             
             /* 1. Define physical state configurations (11 permutations) */
             IS_VALID_PHYSICAL = TRUE;
             
             /* NPN Active Region (Positive Half-Cycle, VIN > 0 mV) */
+
             IF P = 1 THEN DO; /* NPN Active, RL > 0 */
                 VIN = 5000; RL = 1000;
                 EXPECT_STATE_NPN = STATE_ACTIVE; EXPECT_STATE_PNP = STATE_CUTOFF;
@@ -262,6 +283,17 @@ PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
                     BYTE(NEG_POWER_RAIL) = BACKUP_VNEG;
                     BYTE(NPN_DIODE_DROP_REG) = BACKUP_DNPN;
                     BYTE(PNP_DIODE_DROP_REG) = BACKUP_DPNP;
+                    BYTE(EMITTER_OUTPUT_V) = BACKUP_EV;
+                    BYTE(EMITTER_OUTPUT_I) = BACKUP_EI;
+                    BYTE(NPN_BASE_VOLTAGE) = BACKUP_NBV;
+                    BYTE(PNP_BASE_VOLTAGE) = BACKUP_PBV;
+                    BYTE(NPN_COLLECTOR_V) = BACKUP_NCV;
+                    BYTE(PNP_COLLECTOR_V) = BACKUP_PCV;
+                    BYTE(TEMPERATURE_REG) = BACKUP_TEMP;
+                    BYTE(NPN_EMITTER_DEG_R) = BACKUP_REN;
+                    BYTE(PNP_EMITTER_DEG_R) = BACKUP_REP;
+                    BYTE(NPN_STATE) = BACKUP_NSTATE;
+                    BYTE(PNP_STATE) = BACKUP_PSTATE;
                     IF BYTE(INPUT_VOLTAGE) <> BACKUP_VIN THEN FAILS = FAILS + 1;
                 END;
                 ELSE DO;
@@ -279,8 +311,20 @@ PROVE_ACID_COMPLIANCE: PROCEDURE FIXED;
                 BYTE(NEG_POWER_RAIL) = BACKUP_VNEG;
                 BYTE(NPN_DIODE_DROP_REG) = BACKUP_DNPN;
                 BYTE(PNP_DIODE_DROP_REG) = BACKUP_DPNP;
+                BYTE(EMITTER_OUTPUT_V) = BACKUP_EV;
+                BYTE(EMITTER_OUTPUT_I) = BACKUP_EI;
+                BYTE(NPN_BASE_VOLTAGE) = BACKUP_NBV;
+                BYTE(PNP_BASE_VOLTAGE) = BACKUP_PBV;
+                BYTE(NPN_COLLECTOR_V) = BACKUP_NCV;
+                BYTE(PNP_COLLECTOR_V) = BACKUP_PCV;
+                BYTE(TEMPERATURE_REG) = BACKUP_TEMP;
+                BYTE(NPN_EMITTER_DEG_R) = BACKUP_REN;
+                BYTE(PNP_EMITTER_DEG_R) = BACKUP_REP;
+                BYTE(NPN_STATE) = BACKUP_NSTATE;
+                BYTE(PNP_STATE) = BACKUP_PSTATE;
                 IF BYTE(INPUT_VOLTAGE) <> BACKUP_VIN THEN FAILS = FAILS + 1;
             END;
+
 
             
             /* T3: Isolation Pathway (Tests calculation double-buffering safety) */
