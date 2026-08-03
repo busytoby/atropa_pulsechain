@@ -353,8 +353,8 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
     float stem_base_x = 640.0f;
     float stem_base_y = (float)HEIGHT - 80.0f;
 
-    // Petal rest length expands ("blooms") in correlation with swap volume size
-    float petal_rest_len = 70.0f + (float)fminf(50.0f, (float)log10(usd_value + 1.0) * 6.0f);
+    // Petal rest length is small to cluster petals tightly around the central pod
+    float petal_rest_len = 22.0f + (float)fminf(15.0f, (float)log10(usd_value + 1.0) * 2.0f);
 
     for (int iter = 0; iter < 3; iter++) {
         // Central Pod to Stem Base (rest length = 220.0f)
@@ -385,18 +385,16 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
         }
     }
 
-
     // 4. Render the Verlet Poppy Flower components
     // Stem (Forest Green)
     draw_line((int)stem_base_x, (int)stem_base_y, (int)poppy_joints[0].x, (int)poppy_joints[0].y, 34, 139, 34);
 
-    // Petals (Crimson Red with Dark Red structural bones)
+    // Overlapping Petals (Crimson Red, drawn overlapping at radius 36.0f)
     for (int i = 1; i <= 4; i++) {
-        draw_line((int)poppy_joints[0].x, (int)poppy_joints[0].y, (int)poppy_joints[i].x, (int)poppy_joints[i].y, 139, 0, 0);
-        draw_flat_petal((int)poppy_joints[i].x, (int)poppy_joints[i].y, 22.0f, 220, 20, 60);
+        draw_flat_petal((int)poppy_joints[i].x, (int)poppy_joints[i].y, 36.0f, 220, 20, 60);
     }
 
-    // Central Pod (Deep Black/Gold core)
+    // Central Pod (Deep Black/Gold core, drawn on top)
     draw_glossy_bubble((int)poppy_joints[0].x, (int)poppy_joints[0].y, 14, 20, 20, 20);
     draw_glossy_bubble((int)poppy_joints[0].x - 2, (int)poppy_joints[0].y - 2, 4, 255, 215, 0);
 }
