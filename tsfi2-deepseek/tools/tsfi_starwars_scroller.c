@@ -291,7 +291,7 @@ static ScrollerPoppyJoint poppy_joints[5];
 static bool poppy_initialized = false;
 
 static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value, int color_scheme) {
-    (void)usd_value; // suppress unused warning
+    (void)color_scheme;
 
     // 1. Initialize Verlet joints at the center of the viewport (x = 640)
     if (!poppy_initialized) {
@@ -303,8 +303,9 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
         poppy_initialized = true;
     }
 
-    // 2. Apply Verlet Integration (Forces: Wind & Gravity)
-    float wind_x = 4.5f * sinf(time_val * 3.5f) + (float)(pulse * 8.0f);
+    // 2. Apply Verlet Integration (Forces: Wind scaled by USD transaction volume & Gravity)
+    float wind_boost = (float)log10(usd_value + 1.0) * 1.5f;
+    float wind_x = (4.5f + wind_boost) * sinf(time_val * 3.5f) + (float)(pulse * 8.0f);
     float gravity_y = 0.8f;
     float decay = 0.97f;
 
@@ -325,6 +326,9 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
     float stem_base_x = 640.0f;
     float stem_base_y = (float)HEIGHT - 80.0f;
 
+    // Petal rest length expands ("blooms") in correlation with swap volume size
+    float petal_rest_len = 70.0f + (float)fminf(50.0f, (float)log10(usd_value + 1.0) * 6.0f);
+
     for (int iter = 0; iter < 3; iter++) {
         // Central Pod to Stem Base (rest length = 220.0f)
         float dx = poppy_joints[0].x - stem_base_x;
@@ -337,13 +341,13 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
             poppy_joints[0].y += dy * percent;
         }
 
-        // Petals to Central Pod (rest length = 70.0f)
+        // Petals to Central Pod
         for (int i = 1; i <= 4; i++) {
             float pdx = poppy_joints[i].x - poppy_joints[0].x;
             float pdy = poppy_joints[i].y - poppy_joints[0].y;
             float pdist = sqrtf(pdx*pdx + pdy*pdy);
             if (pdist > 0.0f) {
-                float diff = 70.0f - pdist;
+                float diff = petal_rest_len - pdist;
                 float percent = (diff / pdist) * 0.45f * 0.5f;
 
                 poppy_joints[0].x -= pdx * percent;
@@ -353,6 +357,7 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
             }
         }
     }
+
 
     // 4. Render the Verlet Poppy Flower components
     // Stem (Forest Green)
