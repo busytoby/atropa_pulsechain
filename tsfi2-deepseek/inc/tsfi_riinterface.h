@@ -95,4 +95,8 @@ void tsfi_riinterface_check_sprite_collision(TSFiRiInterface *ri, double s1_x, d
 // Sets the scanline target parameter to trigger horizontal blanking (H-Blank) interrupts
 void tsfi_riinterface_set_raster_line(TSFiRiInterface *ri, uint16_t line);
 
+// Synchronizes the displacement shader amplitude with keyboard keycodes from the WinchesterMQ REU RAM
+void tsfi_riinterface_sync_winchester(TSFiRiInterface *ri, const void *vm_state);
+
 #endif // TSFI_RIINTERFACE_H
+

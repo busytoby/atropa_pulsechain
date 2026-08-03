@@ -3,6 +3,8 @@
 #include <math.h>
 #include <string.h>
 #include "../tsfi2-deepseek/inc/tsfi_riinterface.h"
+#include "../tsfi2-deepseek/inc/tsfi_zmm_vm.h"
+
 
 int main(void) {
     printf("=== RUNNING AUNCIENT RIINTERFACE TESTS ===\n");
@@ -120,8 +122,23 @@ int main(void) {
     tsfi_riinterface_world_end(&ri);
     assert(ri.is_world_active == false);
 
+    // Test WinchesterMQ sync pipeline
+    TsfiZmmVmState vm_state;
+    memset(&vm_state, 0, sizeof(vm_state));
+    uint8_t dummy_ram[0x10000];
+    memset(dummy_ram, 0, sizeof(dummy_ram));
+    vm_state.reu_ram = dummy_ram;
+    
+    // Simulate keypress event keycode 32 (space bar / 'd' / 'D')
+    dummy_ram[0xF002] = 32;
+    tsfi_riinterface_sync_winchester(&ri, &vm_state);
+    // scaled_amplitude = 0.1 + ((32 % 50) * 0.1) = 0.1 + 3.2 = 3.3
+    assert(fabs(ri.shader.amplitude - 3.3) < 1e-5);
+
     printf("   ✓ RiWorldBegin and RiSphere mirrored to Hudson VCE and VDC successfully.\n");
+    printf("   ✓ WinchesterMQ keycode sync driver pipeline verified successfully.\n");
     printf("   ✓ Tom Hudson clipLine boundary checks verified successfully.\n");
+
     printf("   ✓ Camera panning dynamic PSG frequency modulation verified successfully.\n");
     printf("   ✓ VDC hardware DMA block transfers verified successfully.\n");
     printf("   ✓ Soft body physics Verlet FET discharge integration verified successfully.\n");

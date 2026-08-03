@@ -1,7 +1,9 @@
 #include "tsfi_riinterface.h"
+#include "tsfi_zmm_vm.h"
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+
 
 void tsfi_riinterface_init(TSFiRiInterface *ri) {
     if (!ri) return;
@@ -273,3 +275,18 @@ void tsfi_riinterface_set_raster_line(TSFiRiInterface *ri, uint16_t line) {
     ri->vdc_raster_interrupt_line = line;
     ri->hblank_active = true; // Trigger H-Blank interrupt cycle simulation
 }
+
+void tsfi_riinterface_sync_winchester(TSFiRiInterface *ri, const void *vm_state) {
+    if (!ri || !vm_state) return;
+    
+    const TsfiZmmVmState *zmm = (const TsfiZmmVmState *)vm_state;
+    if (zmm->reu_ram) {
+        // Retrieve keycode from REU RAM slot F002 updated during handshakes
+        uint8_t keycode = zmm->reu_ram[0xF002];
+        if (keycode > 0) {
+            double scaled_amplitude = 0.1 + ((double)(keycode % 50) * 0.1);
+            ri->shader.amplitude = scaled_amplitude;
+        }
+    }
+}
+
