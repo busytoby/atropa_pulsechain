@@ -19,7 +19,11 @@ void tsfi_displacementshader_set_lfo_phase(TSFiDisplacementShader *ds, double lf
 // Computes the geometric displacement value for a vertex based on active AUTODIN timeline time
 double tsfi_displacementshader_eval(const TSFiDisplacementShader *ds, double autodin_time, double vertex_coord);
 
+// Computes the cubic phase plate wavefront displacement in synchronization with WinchesterMQ boundary constraints
+double tsfi_displacementshader_eval_cubic(const TSFiDisplacementShader *ds, double x, double y);
+
 // Registers the evaluator in the XPLSM dynamic symbol table
 void tsfi_displacementshader_register_xplsm(void (*register_func)(const char *, void *));
 
 #endif // TSFI_DISPLACEMENTSHADER_H
+

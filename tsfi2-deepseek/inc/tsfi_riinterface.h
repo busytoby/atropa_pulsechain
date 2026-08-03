@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "tsfi_displacementshader.h"
+#include "tsfi_depthoffield.h"
 
 typedef struct {
     uint16_t hudson_vce_color_reg[16];
@@ -29,7 +31,12 @@ typedef struct {
     uint8_t frame_buffer[256 * 256]; // Simulated VDC screen memory (256x256)
     uint32_t irq_counter; // hardware interrupt counter
     bool irq_active;
+    
+    // Joint Co-Design pipeline sub-contexts
+    TSFiDisplacementShader shader;
+    TSFiDepthOfField dof;
 } TSFiRiInterface;
+
 
 // Initialize the RiInterface context
 void tsfi_riinterface_init(TSFiRiInterface *ri);

@@ -28,6 +28,14 @@ int main(void) {
     double disp_wrap = tsfi_displacementshader_eval(&ds, 256.0 + M_PI / 3.0, 0.0);
     assert(fabs(disp_wrap - 2.5) < 1e-5);
 
+    // Verify cubic phase plate evaluations
+    double cubic_disp = tsfi_displacementshader_eval_cubic(&ds, 128.0, 128.0);
+    // x = 128 -> norm_x = 0.5; y = 128 -> norm_y = 0.5.
+    // norm_x^3 + norm_y^3 = 0.125 + 0.125 = 0.25.
+    // cubic_phase = 2.5 * 0.25 = 0.625.
+    // cubic_disp = 0.625 * 256.0 = 160.0.
+    assert(fabs(cubic_disp - 160.0) < 1e-5);
+
     // Verify registration callback gets execution pointer
     void *registered_ptr = NULL;
     void mock_register(const char *name, void *ptr) {
@@ -40,8 +48,10 @@ int main(void) {
 
     printf("   ✓ Displacement amplitude and frequency initialized.\n");
     printf("   ✓ AUTODIN lock-paced coordinate displacement evaluated successfully.\n");
+    printf("   ✓ Cubic phase plate wavefront displacement evaluated successfully.\n");
     printf("   ✓ WinchesterMQ register boundary constraint scaling verified successfully.\n");
     printf("   ✓ XPLSM dynamic symbol registration verified successfully.\n");
     printf("=== AUNCIENT DISPLACEMENTSHADER TESTS COMPLETE (PASS) ===\n");
     return 0;
 }
+

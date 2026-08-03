@@ -32,7 +32,12 @@ void tsfi_riinterface_init(TSFiRiInterface *ri) {
     memset(ri->frame_buffer, 0, sizeof(ri->frame_buffer));
     ri->irq_counter = 0;
     ri->irq_active = false;
+    
+    // Initialize co-design shader and dof contexts
+    tsfi_displacementshader_init(&ri->shader, 2.5, 1.5);
+    tsfi_depthoffield_init(&ri->dof, 10.0, 0.5, 10.0);
 }
+
 
 void tsfi_riinterface_world_begin(TSFiRiInterface *ri) {
     if (!ri) return;
@@ -59,6 +64,23 @@ bool tsfi_riinterface_sphere(TSFiRiInterface *ri, int sprite_id, double radius) 
     uint16_t color_intensity = (uint16_t)(radius * 2.0);
     if (color_intensity > 31) color_intensity = 31;
     ri->hudson_vce_color_reg[sprite_id % 16] = (color_intensity << 5);
+    
+    // Rasterize sphere on the 256x256 frame buffer centered at (128, 128) using displacement shader
+    int cx = 128;
+    int cy = 128;
+    for (int y = cy - (int)radius; y <= cy + (int)radius; y++) {
+        for (int x = cx - (int)radius; x <= cx + (int)radius; x++) {
+            if (x >= 0 && x < 256 && y >= 0 && y < 256) {
+                double dx = x - cx;
+                double dy = y - cy;
+                if (dx * dx + dy * dy <= radius * radius) {
+                    double disp = tsfi_displacementshader_eval_cubic(&ri->shader, (double)x, (double)y);
+                    int idx = y * 256 + x;
+                    ri->frame_buffer[idx] = (uint8_t)disp;
+                }
+            }
+        }
+    }
     return true;
 }
 
@@ -160,7 +182,24 @@ void tsfi_riinterface_run_8step_loop(TSFiRiInterface *ri, double camera_velocity
     // Stage 6: RiWorldEnd - Verlet FET discharge calculations written to display memory
     tsfi_riinterface_discharge_verlet(ri, pos_x, prev_pos_x, count, 0.1, 0.99);
     
-    // Stage 7: RiFrameEnd - Execute VDC DMA hardware block transfer
+    // Stage 7: RiFrameEnd - Execute Wiener deconvolution on the frame buffer before VDC DMA
+    double *temp_in = (double *)malloc(256 * 256 * sizeof(double));
+    double *temp_out = (double *)malloc(256 * 256 * sizeof(double));
+    if (temp_in && temp_out) {
+        for (int i = 0; i < 256 * 256; i++) {
+            temp_in[i] = (double)ri->frame_buffer[i];
+        }
+        tsfi_depthoffield_wiener_deconvolve(temp_in, temp_out, 256, 256, 0.01);
+        for (int i = 0; i < 256 * 256; i++) {
+            double val = temp_out[i];
+            if (val < 0.0) val = 0.0;
+            if (val > 255.0) val = 255.0;
+            ri->frame_buffer[i] = (uint8_t)val;
+        }
+    }
+    free(temp_in);
+    free(temp_out);
+    
     tsfi_riinterface_vdc_dma_copy(ri, 1, 5, 2);
     
     // Stage 8: RiEnd - Shutdown world scope
