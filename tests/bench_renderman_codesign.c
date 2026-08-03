@@ -8,6 +8,7 @@
 #include "../tsfi2-deepseek/inc/tsfi_depthoffield.h"
 #include "../tsfi2-deepseek/inc/tsfi_displacementshader.h"
 #include "../tsfi2-deepseek/inc/tsfi_zmm_vm.h"
+#include "../tsfi2-deepseek/inc/tsfi_ccx_pool.h"
 
 #define NUM_ITERATIONS 1000
 
@@ -94,6 +95,21 @@ int main(void) {
     end = get_time_ns();
     double avg_recovery = (end - start) / 100.0;
     printf("   - Avg CICS PMG Abend Recovery Latency: %.2f ms\n", avg_recovery / 1e6);
+
+    // 6. Benchmark CCX Parallel Wiener Deconvolution (256x256 buffer, 4 threads in CCX 0)
+    printf("[BENCH] CCX Parallel Deconvolution (4 threads, 256x256)...\n");
+    TSFiCCXPool ccx_pool;
+    tsfi_ccx_pool_init(&ccx_pool, 0, 4);
+
+    start = get_time_ns();
+    for (int i = 0; i < deconv_iters; i++) {
+        tsfi_ccx_deconvolve_parallel(&ccx_pool, temp_in, temp_out, 256, 256, 0.01);
+    }
+    end = get_time_ns();
+    double total_parallel_ms = (end - start) / 1e6;
+    double parallel_rate = (double)deconv_iters / (total_parallel_ms / 1000.0);
+    printf("   - CCX Parallel Throughput: %.2f deconvolutions/sec (Total Time: %.2f ms)\n", parallel_rate, total_parallel_ms);
+    tsfi_ccx_pool_destroy(&ccx_pool);
 
     free(temp_in);
     free(temp_out);
