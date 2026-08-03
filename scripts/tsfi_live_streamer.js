@@ -3,8 +3,10 @@ const path = require("path");
 const https = require("https");
 const net = require("net");
 const { execSync, spawn } = require("child_process");
+const WebSocket = require("ws");
 
 const STREAM_KEY = "b4p3-xpwp-yrab-9hxt-5ccz";
+
 // Bionika .bio sequencer reader
 const bioScorePath = path.join(__dirname, "../assets/bionika/tsfi_rb_score.bio");
 const bioScore = JSON.parse(fs.readFileSync(bioScorePath, "utf8"));
@@ -35,6 +37,8 @@ let coaxialState = {
         persistent_theme: true
     }
 };
+global.coaxialState = coaxialState;
+
 
 function writeScrollerBinaryConfig(sc) {
     const CONFIG_PATH = "/tmp/scroller_live_config.bin";
@@ -47,6 +51,8 @@ function writeScrollerBinaryConfig(sc) {
     buf.writeInt32LE(sc.bear_count !== undefined ? sc.bear_count : 3, 28);
     fs.writeFileSync(CONFIG_PATH, buf);
 }
+global.writeScrollerBinaryConfig = writeScrollerBinaryConfig;
+
 
 function reloadCoaxialState() {
     if (fs.existsSync(COAXIAL_STATE_PATH)) {
@@ -69,6 +75,58 @@ function reloadCoaxialState() {
         writeScrollerBinaryConfig(coaxialState.scroller);
     }
 }
+
+// Dedicated Coaxial WebSocket Server on Port 9999
+const wss = new WebSocket.Server({ port: 9999 });
+wss.on("connection", (ws) => {
+    console.log("[WEBSOCKET COAXIAL] Client connected to live broadcast control interface.");
+    ws.on("message", (message) => {
+        try {
+            const data = JSON.parse(message.toString());
+            console.log("[WEBSOCKET COAXIAL] Received instruction packet:", data);
+            
+            // 1. Modulate general parameters
+            if (data.tts_enabled !== undefined) coaxialState.tts_enabled = data.tts_enabled;
+            if (data.scroller) {
+                coaxialState.scroller = { ...coaxialState.scroller, ...data.scroller };
+                writeScrollerBinaryConfig(coaxialState.scroller);
+            }
+            if (data.audio) {
+                coaxialState.audio = { ...coaxialState.audio, ...data.audio };
+            }
+
+            // 2. Modulate camera/matrix effects if provided
+            if (data.camera) {
+                coaxialState.camera = { ...coaxialState.camera, ...data.camera };
+            }
+
+            // 3. Direct Framebuffer Content modification (draw_operations)
+            if (data.draw_operations && lastCompleteFrame) {
+                for (const op of data.draw_operations) {
+                    if (op.type === "draw_rect") {
+                        for (let dy = 0; dy < op.h; dy++) {
+                            for (let dx = 0; dx < op.w; dx++) {
+                                const px = op.x + dx;
+                                const py = op.y + dy;
+                                if (px >= 0 && px < 1280 && py >= 0 && py < 692) {
+                                    const idx = (py * 1280 + px) * 3;
+                                    lastCompleteFrame[idx] = op.r;
+                                    lastCompleteFrame[idx + 1] = op.g;
+                                    lastCompleteFrame[idx + 2] = op.b;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            ws.send(JSON.stringify({ status: "success", info: "Coaxial instruction packet applied live." }));
+        } catch (e) {
+            ws.send(JSON.stringify({ status: "error", info: e.message }));
+        }
+    });
+});
+
 
 
 function queryGoogleTranslateTTS(text) {
@@ -434,6 +492,7 @@ async function startPrefetchWorker(loreFiles) {
 
 const FRAME_SIZE = 1280 * 692 * 3;
 let lastCompleteFrame = Buffer.alloc(FRAME_SIZE);
+global.lastCompleteFrame = lastCompleteFrame;
 let frameAccumulator = Buffer.alloc(0);
 let gapInterval = null;
 let ffmpegStdin = null;

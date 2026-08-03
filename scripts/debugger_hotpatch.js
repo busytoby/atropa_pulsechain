@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const WebSocket = require("ws");
 
-const wsUrl = "ws://127.0.0.1:9229/9e37988c-896c-48f2-817b-51f6b88469ea";
+const wsUrl = "ws://127.0.0.1:9229/1fb95398-5584-4a05-8ce7-78cdb3a7ad4b";
 const ws = new WebSocket(wsUrl);
 
 ws.on("open", () => {
