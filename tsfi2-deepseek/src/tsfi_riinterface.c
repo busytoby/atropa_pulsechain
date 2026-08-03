@@ -290,3 +290,33 @@ void tsfi_riinterface_sync_winchester(TSFiRiInterface *ri, const void *vm_state)
     }
 }
 
+void tsfi_riinterface_run_co_design_loop(TSFiRiInterface *ri, void *vm_state, double *pos_x, double *prev_pos_x, int count) {
+    if (!ri || !vm_state) return;
+    
+    // 1. Initialize RiInterface context
+    tsfi_riinterface_init(ri);
+    
+    // 2. Synchronize displacement shader with WinchesterMQ keycode inputs
+    tsfi_riinterface_sync_winchester(ri, vm_state);
+    
+    // 3. Begin World
+    tsfi_riinterface_world_begin(ri);
+    
+    // 4. Geometry Traversal: draw displaced sphere primitive
+    tsfi_riinterface_sphere(ri, 1, 8.0);
+    
+    // 5. Verlet FET discharge calculations written to frame buffer
+    tsfi_riinterface_discharge_verlet(ri, pos_x, prev_pos_x, count, 0.1, 0.99);
+    
+    // 6. Execute SCSI-triggered deconvolution handshake loop
+    extern void tsfi_zmm_winchester_deconvolve_handshake(TsfiZmmVmState *vm_state, void *ri_void);
+    tsfi_zmm_winchester_deconvolve_handshake((TsfiZmmVmState *)vm_state, ri);
+    
+    // 7. Execute VDC DMA hardware block transfer
+    tsfi_riinterface_vdc_dma_copy(ri, 1, 5, 2);
+    
+    // 8. End World
+    tsfi_riinterface_world_end(ri);
+}
+
+
