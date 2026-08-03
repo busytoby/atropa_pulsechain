@@ -290,6 +290,26 @@ typedef struct {
 static ScrollerPoppyJoint poppy_joints[7];
 static bool poppy_initialized = false;
 
+static void draw_gothic_leaf(int bx, int by, float length, float angle_offset) {
+    int steps = 18;
+    for (int i = 0; i < steps; i++) {
+        float t = (float)i / (float)steps;
+        float r_len = length * t;
+        float angle = angle_offset + 0.15f * sinf(t * 8.0f);
+        int lx = bx + (int)(r_len * cosf(angle));
+        int ly = by + (int)(r_len * sinf(angle));
+        float lobe_w = 12.0f * (1.0f - t) * (0.8f + 0.4f * sinf(t * 22.0f));
+        for (int lw = 0; lw < (int)lobe_w; lw++) {
+            float perp_a = angle + M_PI / 2.0f;
+            int l_lx = lx + (int)(lw * cosf(perp_a));
+            int l_ly = ly + (int)(lw * sinf(perp_a));
+            int r_lx = lx - (int)(lw * cosf(perp_a));
+            int r_ly = ly - (int)(lw * sinf(perp_a));
+            draw_line(l_lx, l_ly, r_lx, r_ly, 46, 125, 50);
+        }
+    }
+}
+
 static void draw_flat_petal(int cx, int cy, float radius, uint8_t r, uint8_t g, uint8_t b) {
     int rad_int = (int)radius + 4;
     for (int y = -rad_int; y <= rad_int; y++) {
@@ -372,6 +392,10 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
     }
 
     // 4. Render the Verlet Poppy Flower components
+    // Base feathery leaves
+    draw_gothic_leaf((int)stem_base_x, (int)stem_base_y, 80.0f, -M_PI * 0.8f);
+    draw_gothic_leaf((int)stem_base_x, (int)stem_base_y, 80.0f, -M_PI * 0.2f);
+
     // Stem (Forest Green)
     draw_line((int)stem_base_x, (int)stem_base_y, (int)poppy_joints[0].x, (int)poppy_joints[0].y, 34, 139, 34);
 
@@ -394,6 +418,14 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
     // Central Pod (Deep Black/Gold core, drawn on top)
     draw_glossy_bubble((int)poppy_joints[0].x, (int)poppy_joints[0].y, 14, 20, 20, 20);
     draw_glossy_bubble((int)poppy_joints[0].x - 2, (int)poppy_joints[0].y - 2, 4, 255, 215, 0);
+
+    // Star-shaped Poppy seed crown (6 dark spikes on top of central pod)
+    for (int c = 0; c < 6; c++) {
+        float c_ang = c * (2.0f * M_PI / 6.0f) + time_val * 0.1f;
+        int csx = (int)(poppy_joints[0].x + 7.0f * cosf(c_ang));
+        int csy = (int)(poppy_joints[0].y + 7.0f * sinf(c_ang));
+        draw_line((int)poppy_joints[0].x, (int)poppy_joints[0].y, csx, csy, 5, 5, 5);
+    }
 }
 
 
