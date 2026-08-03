@@ -5,6 +5,10 @@
 #include "tsfi_xplos_kernel.h"
 #include "tsfi_xplos_shell_cbt_vtam.h"
 
+uint32_t ce_gprs[16] = {0};
+uint8_t ce_memory[1024] = {0};
+
+
 // Coaxial Adapter State Registers
 typedef struct {
     uint8_t tx_buffer[256];

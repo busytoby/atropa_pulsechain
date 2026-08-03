@@ -294,6 +294,12 @@ bench-renderman:
 	./tests/bench_renderman_codesign
 	@rm -f tests/bench_renderman_codesign
 
+test-ccx-pool:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -mavx2 -mfma -Iinc -Itsfi2-deepseek/inc tests/test_ccx_pool.c tsfi2-deepseek/src/tsfi_ccx_pool.c tsfi2-deepseek/src/tsfi_depthoffield.c -o tests/test_ccx_pool -lm -lrt -lpthread
+	./tests/test_ccx_pool
+	@rm -f tests/test_ccx_pool
+
+
 
 
 

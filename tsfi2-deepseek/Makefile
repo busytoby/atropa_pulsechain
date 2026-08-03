@@ -49,6 +49,10 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_zmm_traverse_driver.o \
             $(OBJ_DIR)/tsfi_gguf_loader.o \
             $(OBJ_DIR)/tsfi_zmm_winchester_handshake.o \
+            $(OBJ_DIR)/tsfi_depthoffield.o \
+            $(OBJ_DIR)/tsfi_riinterface.o \
+            $(OBJ_DIR)/tsfi_ccx_pool.o \
+            $(OBJ_DIR)/tsfi_ccx_pool.o \
             $(OBJ_DIR)/tsfi_sd_thunk.o \
             $(OBJ_DIR)/tsfi_taste_cache.o \
             $(OBJ_DIR)/tsfi_shading_manifold.o \
@@ -1442,13 +1446,13 @@ tests/test_nsa_tempest: tests/test_nsa_tempest.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_
 tests/test_mainframe_computerworld: tests/test_mainframe_computerworld.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-tests/test_wmq_tso_redundancy: tests/test_wmq_tso_redundancy.c src/tsfi_displacementshader.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+tests/test_wmq_tso_redundancy: tests/test_wmq_tso_redundancy.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 tests/test_coax_vtam_redundancy: tests/test_coax_vtam_redundancy.c src/tsfi_xplos_shell_cbt_vtam.c src/tsfi_xplos_kernel.c src/tsfi_xplos_shell_legacy.c src/tsfi_xplos_shell_tape.c src/tsfi_xplos_shell_explorer.c src/tsfi_xplos_shell_book.c src/tsfi_xplos_shell_xdc.c src/tsfi_cbt_inmemory.c src/tsfi_xpl_mallgren.c src/tsfi_xplos_shell_cbt_jes.c src/tsfi_xplos_shell_cbt_jcl.c src/tsfi_xplos_shell_cbt_cics.c src/tsfi_xplos_shell_cbt_tso.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(filter-out -Werror,$(CFLAGS)) -o $@ $^ $(LDFLAGS) -lz
 
-tests/test_xpl_skeleton_integration: tests/test_xpl_skeleton_integration.c src/tsfi_xplos_kernel.c src/tsfi_xplos_shell_legacy.c src/tsfi_xplos_shell_tape.c src/tsfi_xplos_shell_explorer.c src/tsfi_xplos_shell_book.c src/tsfi_xplos_shell_xdc.c src/tsfi_cbt_inmemory.c src/tsfi_xpl_mallgren.c src/tsfi_xplos_shell_cbt_jes.c src/tsfi_xplos_shell_cbt_jcl.c src/tsfi_xplos_shell_cbt_vtam.c src/tsfi_xplos_shell_cbt_cics.c src/tsfi_xplos_shell_cbt_tso.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o $(OBJ_DIR)/tsfi_riinterface.o
+tests/test_xpl_skeleton_integration: tests/test_xpl_skeleton_integration.c src/tsfi_xplos_kernel.c src/tsfi_xplos_shell_legacy.c src/tsfi_xplos_shell_tape.c src/tsfi_xplos_shell_explorer.c src/tsfi_xplos_shell_book.c src/tsfi_xplos_shell_xdc.c src/tsfi_cbt_inmemory.c src/tsfi_xpl_mallgren.c src/tsfi_xplos_shell_cbt_jes.c src/tsfi_xplos_shell_cbt_jcl.c src/tsfi_xplos_shell_cbt_vtam.c src/tsfi_xplos_shell_cbt_cics.c src/tsfi_xplos_shell_cbt_tso.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(filter-out -Werror,$(CFLAGS)) -o $@ $^ $(LDFLAGS) -lz
 
 tests/test_xpl_central_components: tests/test_xpl_central_components.c src/tsfi_xplos_kernel.c src/tsfi_xplos_shell_legacy.c src/tsfi_xplos_shell_tape.c src/tsfi_xplos_shell_explorer.c src/tsfi_xplos_shell_book.c src/tsfi_xplos_shell_xdc.c src/tsfi_cbt_inmemory.c src/tsfi_xpl_mallgren.c src/tsfi_xplos_shell_cbt_jes.c src/tsfi_xplos_shell_cbt_jcl.c src/tsfi_xplos_shell_cbt_vtam.c src/tsfi_xplos_shell_cbt_cics.c src/tsfi_xplos_shell_cbt_tso.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
