@@ -385,6 +385,28 @@ void tsfi_riinterface_resolve_pmg_cics_collision(TSFiRiInterface *ri, uint32_t p
     free(temp_out);
 }
 
+void tsfi_riinterface_adjust_hudson_focus(TSFiRiInterface *ri, const double *ideal_image, double target_rmse_threshold) {
+    if (!ri || !ideal_image) return;
+    
+    double sum_sq = 0.0;
+    for (int i = 0; i < 256 * 256; i++) {
+        double diff = (double)ri->frame_buffer[i] - ideal_image[i];
+        sum_sq += diff * diff;
+    }
+    double rmse = sqrt(sum_sq / (256.0 * 256.0));
+    
+    if (rmse > target_rmse_threshold) {
+        double step = 0.05 * (rmse - target_rmse_threshold);
+        ri->dof.focal_distance += step;
+        
+        if (ri->dof.focal_distance < 0.1) ri->dof.focal_distance = 0.1;
+        if (ri->dof.focal_distance > 100.0) ri->dof.focal_distance = 100.0;
+        
+        ri->shader.frequency = 0.01 + 0.001 * ri->dof.focal_distance;
+    }
+}
+
+
 
 
 

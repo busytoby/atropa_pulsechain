@@ -111,6 +111,9 @@ void tsfi_riinterface_run_co_design_loop(TSFiRiInterface *ri, void *vm_state, do
 // Resolves PMG sprite collision coordinates using EDoF deconvolution within the CICS transaction frame
 void tsfi_riinterface_resolve_pmg_cics_collision(TSFiRiInterface *ri, uint32_t player_id, int *health);
 
+// Adjusts the Hudson focal actuator parameters based on co-design RMSE metrics
+void tsfi_riinterface_adjust_hudson_focus(TSFiRiInterface *ri, const double *ideal_image, double target_rmse_threshold);
+
 #endif // TSFI_RIINTERFACE_H
 
 
