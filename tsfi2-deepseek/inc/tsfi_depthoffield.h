@@ -39,8 +39,12 @@ void tsfi_depthoffield_wiener_deconvolve(const double *input_image, double *outp
 // Performs channel-specific Wiener deconvolution to align and restore blurred color planes
 void tsfi_depthoffield_wiener_deconvolve_chromatic(const double *input_image, double *output_image, int width, int height, double noise_signal_ratio, int channel);
 
+// Runs an end-to-end joint optimization inner loop to minimize Mean Squared Error (MSE) on the restored image
+double tsfi_depthoffield_optimize_joint_loop(TSFiDepthOfField *dof, const double *original_image, const double *blurred_image, int width, int height, int max_iterations);
+
 // Calculates chromatic defocus blur coefficients for specific wavelength channels (0=Red, 1=Green, 2=Blue)
 double tsfi_depthoffield_eval_chromatic_blur(const TSFiDepthOfField *dof, double z_depth, int channel);
+
 
 
 // Registers a dynamic camera in the thread-safe interop registry to avoid mocks

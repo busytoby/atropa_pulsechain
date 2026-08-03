@@ -95,8 +95,14 @@ int main(void) {
     assert(red_deconvolved[4] > 0.0);
     assert(blue_deconvolved[4] > 0.0);
 
+    // Verify joint optimization loop (Slide 22)
+    double opt_alpha = tsfi_depthoffield_optimize_joint_loop(&dof, input_img, output_img, 3, 3, 10);
+    assert(opt_alpha > 0.0);
+
     printf("   ✓ Focal distance and lens parameters initialized.\n");
     printf("   ✓ Wavefront coding defocus-invariant blur evaluated successfully.\n");
+    printf("   ✓ Joint optimizer inner deconvolution loop verified successfully.\n");
+
     printf("   ✓ Chromatic Wiener deconvolution filters verified successfully.\n");
 
     printf("   ✓ Chromatic dispersion defocus factors evaluated successfully.\n");

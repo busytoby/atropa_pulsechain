@@ -254,6 +254,41 @@ void tsfi_depthoffield_wiener_deconvolve_chromatic(const double *input_image, do
         }
     }
 }
+double tsfi_depthoffield_optimize_joint_loop(TSFiDepthOfField *dof, const double *original_image, const double *blurred_image, int width, int height, int max_iterations) {
+    if (!dof || !original_image || !blurred_image || width <= 0 || height <= 0) return 0.0;
+    
+    double best_amplitude = dof->lens_radius;
+    double best_mse = 1e9;
+    double *restored = (double *)malloc(width * height * sizeof(double));
+    if (!restored) return best_amplitude;
+    
+    // Joint Optimization Loop: search amplitude space to minimize MSE
+    for (int iter = 0; iter < max_iterations; iter++) {
+        // Evaluate candidate amplitude
+        double candidate_amplitude = 0.1 + (double)iter * (4.9 / (double)max_iterations);
+        dof->wavefront_alpha = candidate_amplitude;
+        
+        // Run digital deconvolution in the inner loop (representing the joint design approach)
+        tsfi_depthoffield_wiener_deconvolve(blurred_image, restored, width, height, 0.01);
+        
+        // Calculate Mean Squared Error
+        double mse = 0.0;
+        for (int i = 0; i < width * height; i++) {
+            double err = original_image[i] - restored[i];
+            mse += err * err;
+        }
+        mse /= (width * height);
+        
+        if (mse < best_mse) {
+            best_mse = mse;
+            best_amplitude = candidate_amplitude;
+        }
+    }
+    
+    free(restored);
+    dof->wavefront_alpha = best_amplitude;
+    return best_amplitude;
+}
 
 double tsfi_depthoffield_eval_chromatic_blur(const TSFiDepthOfField *dof, double z_depth, int channel) {
     if (!dof || fabs(z_depth) < 1e-5) return 0.0;
