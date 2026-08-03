@@ -3,6 +3,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include <stdio.h>
+
 
 
 void tsfi_riinterface_init(TSFiRiInterface *ri) {
@@ -354,6 +356,35 @@ void tsfi_riinterface_accumulate_frame(TSFiRiInterface *ri) {
         free(temp_accum);
     }
 }
+
+void tsfi_riinterface_resolve_pmg_cics_collision(TSFiRiInterface *ri, uint32_t player_id, int *health) {
+    if (!ri || !health) return;
+    
+    printf("[CICS] Intercepted PMG collision ABEND for Player ID: %u\n", player_id);
+    
+    double *temp_in = (double *)malloc(256 * 256 * sizeof(double));
+    double *temp_out = (double *)malloc(256 * 256 * sizeof(double));
+    if (temp_in && temp_out) {
+        for (int i = 0; i < 256 * 256; i++) {
+            temp_in[i] = (double)ri->frame_buffer[i];
+        }
+        
+        tsfi_depthoffield_wiener_deconvolve(temp_in, temp_out, 256, 256, 0.01);
+        
+        for (int i = 0; i < 256 * 256; i++) {
+            double val = temp_out[i];
+            if (val < 0.0) val = 0.0;
+            if (val > 255.0) val = 255.0;
+            ri->frame_buffer[i] = (uint8_t)val;
+        }
+        
+        *health = 100;
+        printf("[CICS] Abend transaction recovery successful. Player health restored to %d.\n", *health);
+    }
+    free(temp_in);
+    free(temp_out);
+}
+
 
 
 

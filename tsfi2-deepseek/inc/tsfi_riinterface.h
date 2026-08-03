@@ -108,6 +108,10 @@ void tsfi_riinterface_sync_winchester(TSFiRiInterface *ri, const void *vm_state)
 // Executes the unified co-design RenderMan loop driven by WinchesterMQ and Yul thunks
 void tsfi_riinterface_run_co_design_loop(TSFiRiInterface *ri, void *vm_state, double *pos_x, double *prev_pos_x, int count);
 
+// Resolves PMG sprite collision coordinates using EDoF deconvolution within the CICS transaction frame
+void tsfi_riinterface_resolve_pmg_cics_collision(TSFiRiInterface *ri, uint32_t player_id, int *health);
+
 #endif // TSFI_RIINTERFACE_H
+
 
 

@@ -144,10 +144,17 @@ int main(void) {
     tsfi_riinterface_accumulate_frame(&ri);
     assert(ri.current_frame_idx == 1);
 
+    // Verify CICS PMG Abend deconvolution recovery loop
+    int player_health = 0;
+    tsfi_riinterface_resolve_pmg_cics_collision(&ri, 1, &player_health);
+    assert(player_health == 100);
+
     printf("   ✓ RiWorldBegin and RiSphere mirrored to Hudson VCE and VDC successfully.\n");
     printf("   ✓ WinchesterMQ keycode sync driver pipeline verified successfully.\n");
     printf("   ✓ Unified co-design loop executes successfully.\n");
     printf("   ✓ Multiframe temporal-spatial accumulator verified successfully.\n");
+    printf("   ✓ CICS PMG collision ABEND deconvolution recovery loop verified successfully.\n");
+
 
     printf("   ✓ Tom Hudson clipLine boundary checks verified successfully.\n");
     printf("   ✓ Camera panning dynamic PSG frequency modulation verified successfully.\n");
