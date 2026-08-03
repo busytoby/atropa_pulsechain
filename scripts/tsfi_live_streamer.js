@@ -19,6 +19,58 @@ const stepDurationSamples = Math.floor(SAMPLE_RATE * (60.0 / bioScore.tempo / 4.
 
 let globalSampleCounter = 0;
 
+const COAXIAL_STATE_PATH = "/tmp/tsfi_coaxial_state.json";
+let coaxialState = {
+    tts_enabled: true,
+    scroller: {
+        text: "TSFi/2",
+        color_scheme: -1,
+        shape_type: -1,
+        speed_scale: 1.0,
+        bear_count: 3
+    },
+    audio: {
+        tempo_scale: 1.0,
+        transpose_offset: 0,
+        persistent_theme: true
+    }
+};
+
+function writeScrollerBinaryConfig(sc) {
+    const CONFIG_PATH = "/tmp/scroller_live_config.bin";
+    const buf = Buffer.alloc(32);
+    const textBuf = Buffer.from((sc.text || "TSFi/2").substring(0, 15), "utf8");
+    textBuf.copy(buf, 0);
+    buf.writeInt32LE(sc.color_scheme !== undefined ? sc.color_scheme : -1, 16);
+    buf.writeInt32LE(sc.shape_type !== undefined ? sc.shape_type : -1, 20);
+    buf.writeFloatLE(sc.speed_scale !== undefined ? sc.speed_scale : 1.0, 24);
+    buf.writeInt32LE(sc.bear_count !== undefined ? sc.bear_count : 3, 28);
+    fs.writeFileSync(CONFIG_PATH, buf);
+}
+
+function reloadCoaxialState() {
+    if (fs.existsSync(COAXIAL_STATE_PATH)) {
+        try {
+            const data = fs.readFileSync(COAXIAL_STATE_PATH, "utf8");
+            const parsed = JSON.parse(data);
+            if (parsed.tts_enabled !== undefined) coaxialState.tts_enabled = parsed.tts_enabled;
+            if (parsed.scroller) {
+                coaxialState.scroller = { ...coaxialState.scroller, ...parsed.scroller };
+            }
+            if (parsed.audio) {
+                coaxialState.audio = { ...coaxialState.audio, ...parsed.audio };
+            }
+            writeScrollerBinaryConfig(coaxialState.scroller);
+        } catch (e) {
+            console.warn("[COAXIAL] Failed parsing state JSON:", e.message);
+        }
+    } else {
+        // Ensure default binary scroller config is written
+        writeScrollerBinaryConfig(coaxialState.scroller);
+    }
+}
+
+
 function queryGoogleTranslateTTS(text) {
     return new Promise((resolve, reject) => {
         const encodedText = encodeURIComponent(text);
@@ -347,11 +399,13 @@ async function startPrefetchWorker(loreFiles) {
                 }
                 if (!queueActive) break;
                 
+                reloadCoaxialState();
+
                 const blockId = `${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
                 const tempChunkPath = `/tmp/tsfi_chunk_${blockId}.mp3`;
                 const tempPcmPath = `/tmp/tsfi_chunk_${blockId}.pcm`;
                 
-                if (fs.existsSync("/tmp/tts_disable")) {
+                if (!coaxialState.tts_enabled) {
                     // Generate 1.5 seconds of silence (44100 * 2 bytes * 1.5 = 132300 bytes)
                     const silence = Buffer.alloc(132300);
                     fs.writeFileSync(tempPcmPath, silence);
@@ -361,6 +415,7 @@ async function startPrefetchWorker(loreFiles) {
                     execSync(`ffmpeg -y -i "${tempChunkPath}" -f s16le -ac 1 -ar 44100 "${tempPcmPath}" 2>/dev/null`);
                     fs.unlinkSync(tempChunkPath);
                 }
+
                 
                 ttsQueue.push({
                     textBlock,
@@ -708,6 +763,8 @@ async function main() {
             }
 
             stopGapFiller();
+
+            reloadCoaxialState();
 
             // Resolve current SFT telemetry entry using seed
             const activeSwap = resolvedSwaps[seed % resolvedSwaps.length];
