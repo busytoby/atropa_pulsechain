@@ -592,11 +592,11 @@ async function main() {
             
             currentFreqMultiplier = Math.pow(2, blockTranspose / 12.0);
             currentStepDurationSamples = Math.floor(SAMPLE_RATE * (60.0 / blockTempo / 4.0));
-            currentDispensation = persistentDispensation;
+            currentDispensation = (coaxialState.scroller.color_scheme !== -1) ? coaxialState.scroller.color_scheme : persistentDispensation;
 
+            const colorScheme = (coaxialState.scroller.color_scheme !== -1) ? coaxialState.scroller.color_scheme : (seed % 5);
+            const shapeType = (coaxialState.scroller.shape_type !== -1) ? coaxialState.scroller.shape_type : (seed % 3);
 
-            const colorScheme = seed % 5;
-            const shapeType = seed % 3;
 
             console.log(`[GENERATIVE MODEL] Seed: ${seed} | Key Transpose: ${blockTranspose} st | Tempo: ${blockTempo} BPM | Color Scheme: ${colorScheme} | Shape: ${shapeType} | Dispensation: ${DISPENSATION_NAMES[currentDispensation]}`);
             console.log(`[TTS] Loaded Pre-fetched Speech: ${duration.toFixed(2)}s | Total Video Frames (inc Intro): ${totalFrames}`);
