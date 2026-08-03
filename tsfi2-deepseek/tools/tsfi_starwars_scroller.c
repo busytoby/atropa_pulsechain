@@ -332,27 +332,28 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
         poppy_initialized = true;
     }
 
-    // 2. Sway the Central Pod smoothly in the wind
+    // 2. Sway the Central Pod gently and slowly in the wind (low frequency 0.6f)
     float stem_base_x = 640.0f;
     float stem_base_y = (float)HEIGHT - 80.0f;
-    float wind_boost = (float)log10(usd_value + 1.0) * 1.5f;
-    float wind_x = (8.0f + wind_boost) * sinf(time_val * 1.8f);
+    float wind_boost = (float)log10(usd_value + 1.0) * 0.8f;
+    float wind_x = (5.0f + wind_boost) * sinf(time_val * 0.6f);
 
-    poppy_joints[0].x = stem_base_x + wind_x * 4.0f;
-    poppy_joints[0].y = stem_base_y - 220.0f;
+    poppy_joints[0].x = stem_base_x + wind_x * 2.5f;
+    poppy_joints[0].y = stem_base_y - 250.0f; // Lift higher up on the screen
 
     // Petal rest length (bloom expansion) based on USD telemetry and beat pulse
     float petal_rest_len = 24.0f + (float)fminf(18.0f, (float)log10(usd_value + 1.0) * 3.0f) + pulse * 4.0f;
-    float decay = 0.96f;
+    // Set high damping decay (0.55f) to prevent runaway gravity drift
+    float decay = 0.55f;
 
-    // 3. Update Petals using Verlet and pull to their target radial angles around the Pod
+    // 3. Update Petals using Verlet and pull tightly to their target radial angles around the Pod
     for (int i = 1; i <= 6; i++) {
         float tx = poppy_joints[i].x;
         float ty = poppy_joints[i].y;
 
-        // Flutter force unique to each petal + wind sway
-        float petal_wind_x = 3.5f * sinf(time_val * 4.5f + i) + wind_x * 0.1f;
-        float petal_gravity_y = 0.3f;
+        // Slow, gentle fluttering force
+        float petal_wind_x = 1.5f * sinf(time_val * 1.5f + i) + wind_x * 0.05f;
+        float petal_gravity_y = 0.15f;
 
         poppy_joints[i].x += (poppy_joints[i].x - poppy_joints[i].px) * decay + petal_wind_x * 0.05f;
         poppy_joints[i].y += (poppy_joints[i].y - poppy_joints[i].py) * decay + petal_gravity_y * 0.05f;
@@ -365,9 +366,9 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
         float target_x = poppy_joints[0].x + petal_rest_len * cosf(target_angle);
         float target_y = poppy_joints[0].y + petal_rest_len * sinf(target_angle);
 
-        // Constrain to angular layout with spring stiffness
-        poppy_joints[i].x += (target_x - poppy_joints[i].x) * 0.40f;
-        poppy_joints[i].y += (target_y - poppy_joints[i].y) * 0.40f;
+        // Strong stiffness (0.85f) to prevent petals from drifting away from the pod
+        poppy_joints[i].x += (target_x - poppy_joints[i].x) * 0.85f;
+        poppy_joints[i].y += (target_y - poppy_joints[i].y) * 0.85f;
     }
 
     // 4. Render the Verlet Poppy Flower components
