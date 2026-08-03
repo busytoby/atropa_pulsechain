@@ -140,9 +140,15 @@ int main(void) {
     double prev_pos_x_co[6] = {145.0, 325.0, 505.0, 685.0, 865.0, 1045.0};
     tsfi_riinterface_run_co_design_loop(&ri, &vm_state, pos_x_co, prev_pos_x_co, 6);
 
+    // Verify multiframe temporal-spatial accumulator
+    tsfi_riinterface_accumulate_frame(&ri);
+    assert(ri.current_frame_idx == 1);
+
     printf("   ✓ RiWorldBegin and RiSphere mirrored to Hudson VCE and VDC successfully.\n");
     printf("   ✓ WinchesterMQ keycode sync driver pipeline verified successfully.\n");
     printf("   ✓ Unified co-design loop executes successfully.\n");
+    printf("   ✓ Multiframe temporal-spatial accumulator verified successfully.\n");
+
     printf("   ✓ Tom Hudson clipLine boundary checks verified successfully.\n");
     printf("   ✓ Camera panning dynamic PSG frequency modulation verified successfully.\n");
     printf("   ✓ VDC hardware DMA block transfers verified successfully.\n");

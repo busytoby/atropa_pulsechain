@@ -35,11 +35,18 @@ typedef struct {
     // Joint Co-Design pipeline sub-contexts
     TSFiDisplacementShader shader;
     TSFiDepthOfField dof;
+    
+    // Multiframe temporal-spatial accumulator
+    uint8_t multiframe_buffer[4][256 * 256];
+    int current_frame_idx;
 } TSFiRiInterface;
 
 
 // Initialize the RiInterface context
 void tsfi_riinterface_init(TSFiRiInterface *ri);
+
+// Accumulate current frame into multiframe buffer
+void tsfi_riinterface_accumulate_frame(TSFiRiInterface *ri);
 
 // RiWorldBegin callback: cycles/resets the mirrored Hudson VCE color palette registers
 void tsfi_riinterface_world_begin(TSFiRiInterface *ri);

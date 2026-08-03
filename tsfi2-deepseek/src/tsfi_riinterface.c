@@ -38,7 +38,10 @@ void tsfi_riinterface_init(TSFiRiInterface *ri) {
     // Initialize co-design shader and dof contexts
     tsfi_displacementshader_init(&ri->shader, 2.5, 1.5);
     tsfi_depthoffield_init(&ri->dof, 10.0, 0.5, 10.0);
+    memset(ri->multiframe_buffer, 0, sizeof(ri->multiframe_buffer));
+    ri->current_frame_idx = 0;
 }
+
 
 
 void tsfi_riinterface_world_begin(TSFiRiInterface *ri) {
@@ -318,5 +321,39 @@ void tsfi_riinterface_run_co_design_loop(TSFiRiInterface *ri, void *vm_state, do
     // 8. End World
     tsfi_riinterface_world_end(ri);
 }
+
+void tsfi_riinterface_accumulate_frame(TSFiRiInterface *ri) {
+    if (!ri) return;
+    
+    int idx = ri->current_frame_idx % 4;
+    memcpy(ri->multiframe_buffer[idx], ri->frame_buffer, 256 * 256);
+    ri->current_frame_idx++;
+    
+    double *temp_accum = (double *)calloc(256 * 256, sizeof(double));
+    if (temp_accum) {
+        for (int f = 0; f < 4; f++) {
+            for (int i = 0; i < 256 * 256; i++) {
+                temp_accum[i] += (double)ri->multiframe_buffer[f][i];
+            }
+        }
+        
+        double *temp_out = (double *)malloc(256 * 256 * sizeof(double));
+        if (temp_out) {
+            for (int i = 0; i < 256 * 256; i++) {
+                temp_accum[i] /= 4.0;
+            }
+            tsfi_depthoffield_wiener_deconvolve(temp_accum, temp_out, 256, 256, 0.005);
+            for (int i = 0; i < 256 * 256; i++) {
+                double val = temp_out[i];
+                if (val < 0.0) val = 0.0;
+                if (val > 255.0) val = 255.0;
+                ri->frame_buffer[i] = (uint8_t)val;
+            }
+            free(temp_out);
+        }
+        free(temp_accum);
+    }
+}
+
 
 
