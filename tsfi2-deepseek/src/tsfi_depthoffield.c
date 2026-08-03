@@ -188,72 +188,112 @@ void tsfi_depthoffield_wiener_deconvolve(const double *input_image, double *outp
     double k_center = 5.0 / (1.0 + noise_signal_ratio);
     double k_edge = -1.0 / (1.0 + noise_signal_ratio);
     
+#ifdef _OPENMP
+    #pragma omp parallel for
+#endif
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            double sum = 0.0;
-            for (int ky = -1; ky <= 1; ky++) {
-                for (int kx = -1; kx <= 1; kx++) {
-                    int px = x + kx;
-                    int py = y + ky;
-                    if (px < 0) px = 0;
-                    if (px >= width) px = width - 1;
-                    if (py < 0) py = 0;
-                    if (py >= height) py = height - 1;
-                    
-                    double weight = 0.0;
-                    if (kx == 0 && ky == 0) {
-                        weight = k_center;
-                    } else if (kx == 0 || ky == 0) {
-                        weight = k_edge;
+            if (x == 0 || x == width - 1 || y == 0 || y == height - 1) {
+                double sum = 0.0;
+                for (int ky = -1; ky <= 1; ky++) {
+                    for (int kx = -1; kx <= 1; kx++) {
+                        int px = x + kx;
+                        int py = y + ky;
+                        if (px < 0) px = 0;
+                        if (px >= width) px = width - 1;
+                        if (py < 0) py = 0;
+                        if (py >= height) py = height - 1;
+                        
+                        double weight = 0.0;
+                        if (kx == 0 && ky == 0) {
+                            weight = k_center;
+                        } else if (kx == 0 || ky == 0) {
+                            weight = k_edge;
+                        }
+                        sum += input_image[py * width + px] * weight;
                     }
-                    sum += input_image[py * width + px] * weight;
                 }
+                output_image[y * width + x] = sum;
             }
-            output_image[y * width + x] = sum;
+        }
+    }
+    
+#ifdef _OPENMP
+    #pragma omp parallel for collapse(2)
+#endif
+    for (int y = 1; y < height - 1; y++) {
+        for (int x = 1; x < width - 1; x++) {
+            int idx = y * width + x;
+            output_image[idx] = input_image[idx] * k_center +
+                                (input_image[idx - width] +
+                                 input_image[idx + width] +
+                                 input_image[idx - 1] +
+                                 input_image[idx + 1]) * k_edge;
         }
     }
 }
+
 void tsfi_depthoffield_wiener_deconvolve_chromatic(const double *input_image, double *output_image, int width, int height, double noise_signal_ratio, int channel) {
     if (!input_image || !output_image || width <= 0 || height <= 0) return;
     
-    // Channel-specific deconvolution kernel adjustments (dispersion alignment)
     double channel_scale = 1.0;
-    if (channel == 0) { // Red
+    if (channel == 0) {
         channel_scale = 1.05;
-    } else if (channel == 1) { // Green
+    } else if (channel == 1) {
         channel_scale = 1.00;
-    } else if (channel == 2) { // Blue
+    } else if (channel == 2) {
         channel_scale = 0.95;
     }
     
     double k_center = (5.0 * channel_scale) / (1.0 + noise_signal_ratio);
     double k_edge = (-1.0 * channel_scale) / (1.0 + noise_signal_ratio);
     
+#ifdef _OPENMP
+    #pragma omp parallel for
+#endif
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            double sum = 0.0;
-            for (int ky = -1; ky <= 1; ky++) {
-                for (int kx = -1; kx <= 1; kx++) {
-                    int px = x + kx;
-                    int py = y + ky;
-                    if (px < 0) px = 0;
-                    if (px >= width) px = width - 1;
-                    if (py < 0) py = 0;
-                    if (py >= height) py = height - 1;
-                    
-                    double weight = 0.0;
-                    if (kx == 0 && ky == 0) {
-                        weight = k_center;
-                    } else if (kx == 0 || ky == 0) {
-                        weight = k_edge;
+            if (x == 0 || x == width - 1 || y == 0 || y == height - 1) {
+                double sum = 0.0;
+                for (int ky = -1; ky <= 1; ky++) {
+                    for (int kx = -1; kx <= 1; kx++) {
+                        int px = x + kx;
+                        int py = y + ky;
+                        if (px < 0) px = 0;
+                        if (px >= width) px = width - 1;
+                        if (py < 0) py = 0;
+                        if (py >= height) py = height - 1;
+                        
+                        double weight = 0.0;
+                        if (kx == 0 && ky == 0) {
+                            weight = k_center;
+                        } else if (kx == 0 || ky == 0) {
+                            weight = k_edge;
+                        }
+                        sum += input_image[py * width + px] * weight;
                     }
-                    sum += input_image[py * width + px] * weight;
                 }
+                output_image[y * width + x] = sum;
             }
-            output_image[y * width + x] = sum;
+        }
+    }
+    
+#ifdef _OPENMP
+    #pragma omp parallel for collapse(2)
+#endif
+    for (int y = 1; y < height - 1; y++) {
+        for (int x = 1; x < width - 1; x++) {
+            int idx = y * width + x;
+            output_image[idx] = input_image[idx] * k_center +
+                                (input_image[idx - width] +
+                                 input_image[idx + width] +
+                                 input_image[idx - 1] +
+                                 input_image[idx + 1]) * k_edge;
         }
     }
 }
+
+
 double tsfi_depthoffield_optimize_joint_loop(TSFiDepthOfField *dof, const double *original_image, const double *blurred_image, int width, int height, int max_iterations) {
     if (!dof || !original_image || !blurred_image || width <= 0 || height <= 0) return 0.0;
     
