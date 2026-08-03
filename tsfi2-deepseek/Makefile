@@ -1046,6 +1046,10 @@ tests/validate_youtube_layout: tests/validate_youtube_layout.c $(OBJ_DIR)/tsfi_m
 bin/test_zmm_teddy_render: tests/test_zmm_teddy_render.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_verlet_poppy: tests/test_verlet_poppy.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+
 bin/test_sort: tests/test_sort.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
