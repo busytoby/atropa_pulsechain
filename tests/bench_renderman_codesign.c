@@ -203,10 +203,27 @@ int main(void) {
     double handshake_ns = (end - start) / handshake_iters;
     printf("   - Average Intercept Latency: %.2f ns\n", handshake_ns);
 
+    // 11. Benchmark DisplacementShader Vertex Math Latency
+    printf("[BENCH] DisplacementShader Wavefront Distortion (1,000,000 vertices)...\n");
+    TSFiDisplacementShader ds;
+    tsfi_displacementshader_init(&ds, 12.5, 0.05);
+    start = get_time_ns();
+    double dummy_displacement = 0.0;
+    for (int y = 0; y < 1000; y++) {
+        for (int x = 0; x < 1000; x++) {
+            dummy_displacement += tsfi_displacementshader_eval_cubic(&ds, (double)x, (double)y);
+            dummy_displacement += tsfi_displacementshader_eval_spherical(&ds, (double)x, (double)y);
+        }
+    }
+    end = get_time_ns();
+    double displacement_ns = (end - start) / 2000000.0;
+    printf("   - Average Displacement Latency: %.2f ns (Dummy Sum: %.2f)\n", displacement_ns, dummy_displacement);
+
     free(temp_in);
     free(temp_out);
     printf("=== RENDERMAN BENCHMARKS COMPLETE (PASS) ===\n");
     return 0;
+
 
 
 }
