@@ -5,17 +5,6 @@ const net = require("net");
 const { execSync, spawn } = require("child_process");
 
 const STREAM_KEY = "b4p3-xpwp-yrab-9hxt-5ccz";
-const ELEVEN_VOICE_ID = "iTvRNZPNPS0EiSgOCQG0"; // Graziella - Children Narrator
-
-const apikeyPath = path.join(process.env.HOME || "/home/mariarahel", ".config/ElevenLabs/apikey.dat");
-let ELEVEN_API_KEY = "";
-if (fs.existsSync(apikeyPath)) {
-    ELEVEN_API_KEY = fs.readFileSync(apikeyPath, "utf8").trim();
-}
-if (!ELEVEN_API_KEY) {
-    ELEVEN_API_KEY = process.env.ELEVEN_API_KEY || process.env.ELEVENLABS_API_KEY || "";
-}
-
 // Bionika .bio sequencer reader
 const bioScorePath = path.join(__dirname, "../assets/bionika/tsfi_rb_score.bio");
 const bioScore = JSON.parse(fs.readFileSync(bioScorePath, "utf8"));
@@ -51,54 +40,6 @@ function queryGoogleTranslateTTS(text) {
     });
 }
 
-function queryElevenLabs(text) {
-    return new Promise((resolve, reject) => {
-        const data = JSON.stringify({
-            text: text,
-            model_id: "eleven_multilingual_v2",
-            voice_settings: {
-                stability: 0.88,
-                similarity_boost: 0.85
-            }
-        });
-
-        const options = {
-            hostname: "api.elevenlabs.io",
-            path: `/v1/text-to-speech/${ELEVEN_VOICE_ID}`,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "xi-api-key": ELEVEN_API_KEY,
-                "Content-Length": Buffer.byteLength(data)
-            }
-        };
-
-        const req = https.request(options, (res) => {
-            if (res.statusCode !== 200) {
-                const errChunks = [];
-                res.on("data", (c) => errChunks.push(c));
-                res.on("end", () => {
-                    const errMsg = Buffer.concat(errChunks).toString("utf8");
-                    console.warn(`[ELEVENLABS EXHAUSTED / ERR] Status ${res.statusCode}. Falling back to Google Translate TTS.`);
-                    queryGoogleTranslateTTS(text).then(resolve).catch(reject);
-                });
-                return;
-            }
-            const chunks = [];
-            res.on("data", (chunk) => chunks.push(chunk));
-            res.on("end", () => {
-                resolve(Buffer.concat(chunks));
-            });
-        });
-
-        req.on("error", (e) => {
-            console.warn(`[ELEVENLABS CONNECTION ERR]. Falling back to Google Translate TTS.`);
-            queryGoogleTranslateTTS(text).then(resolve).catch(reject);
-        });
-        req.write(data);
-        req.end();
-    });
-}
 
 function splitIntoBiteSizedBlocks(text) {
     const sentences = text.match(/[^.!?]+[.!?]+(\s|$)/g) || [text];
@@ -406,8 +347,9 @@ async function startPrefetchWorker(loreFiles) {
                 const tempChunkPath = `/tmp/tsfi_chunk_${blockId}.mp3`;
                 const tempPcmPath = `/tmp/tsfi_chunk_${blockId}.pcm`;
                 
-                const audioData = await queryElevenLabs(textBlock);
+                const audioData = await queryGoogleTranslateTTS(textBlock);
                 fs.writeFileSync(tempChunkPath, audioData);
+
                 
                 execSync(`ffmpeg -y -i "${tempChunkPath}" -f s16le -ac 1 -ar 44100 "${tempPcmPath}" 2>/dev/null`);
                 fs.unlinkSync(tempChunkPath);
