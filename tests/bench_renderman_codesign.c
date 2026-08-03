@@ -74,6 +74,27 @@ int main(void) {
     double avg_chroma = (end - start) / NUM_ITERATIONS;
     printf("   - Avg Chromatic Defocus Latency: %.2f ns (Dummy Sum: %.4f)\n", avg_chroma, sum_coef);
 
+    // 4. Benchmark Multiframe Accumulator Latency
+    printf("[BENCH] Multiframe Accumulator Latency...\n");
+    start = get_time_ns();
+    for (int i = 0; i < 100; i++) {
+        tsfi_riinterface_accumulate_frame(&ri);
+    }
+    end = get_time_ns();
+    double avg_accum = (end - start) / 100.0;
+    printf("   - Avg Multiframe Accumulation Latency: %.2f ms\n", avg_accum / 1e6);
+
+    // 5. Benchmark CICS PMG Collision Abend Recovery Latency
+    printf("[BENCH] CICS PMG Collision Abend Recovery Latency...\n");
+    int health = 0;
+    start = get_time_ns();
+    for (int i = 0; i < 100; i++) {
+        tsfi_riinterface_resolve_pmg_cics_collision(&ri, 1, &health);
+    }
+    end = get_time_ns();
+    double avg_recovery = (end - start) / 100.0;
+    printf("   - Avg CICS PMG Abend Recovery Latency: %.2f ms\n", avg_recovery / 1e6);
+
     free(temp_in);
     free(temp_out);
     printf("=== RENDERMAN BENCHMARKS COMPLETE (PASS) ===\n");
