@@ -290,9 +290,10 @@ test-riinterface:
 	@rm -f tests/test_riinterface
 
 bench-renderman:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -mavx2 -mfma -Iinc -Itsfi2-deepseek/inc tests/bench_renderman_codesign.c tsfi2-deepseek/src/tsfi_riinterface.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_depthoffield.c -o tests/bench_renderman_codesign -lm -lrt -fopenmp
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -mavx2 -mfma -Iinc -Itsfi2-deepseek/inc tests/bench_renderman_codesign.c tsfi2-deepseek/src/tsfi_riinterface.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_depthoffield.c -o tests/bench_renderman_codesign -lm -lrt
 	./tests/bench_renderman_codesign
 	@rm -f tests/bench_renderman_codesign
+
 
 
 

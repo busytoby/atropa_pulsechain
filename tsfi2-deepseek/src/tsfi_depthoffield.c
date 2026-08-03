@@ -190,9 +190,6 @@ void tsfi_depthoffield_wiener_deconvolve(const double *input_image, double *outp
     double k_center = 5.0 / (1.0 + noise_signal_ratio);
     double k_edge = -1.0 / (1.0 + noise_signal_ratio);
     
-#ifdef _OPENMP
-    #pragma omp parallel for
-#endif
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             if (x == 0 || x == width - 1 || y == 0 || y == height - 1) {
@@ -224,9 +221,6 @@ void tsfi_depthoffield_wiener_deconvolve(const double *input_image, double *outp
     __m256d center_vec = _mm256_set1_pd(k_center);
     __m256d edge_vec = _mm256_set1_pd(k_edge);
     
-#ifdef _OPENMP
-    #pragma omp parallel for
-#endif
     for (int y = 1; y < height - 1; y++) {
         int x = 1;
         for (; x < width - 4; x += 4) {
@@ -251,9 +245,6 @@ void tsfi_depthoffield_wiener_deconvolve(const double *input_image, double *outp
         }
     }
 #else
-#ifdef _OPENMP
-    #pragma omp parallel for collapse(2)
-#endif
     for (int y = 1; y < height - 1; y++) {
         for (int x = 1; x < width - 1; x++) {
             int idx = y * width + x;
@@ -282,9 +273,6 @@ void tsfi_depthoffield_wiener_deconvolve_chromatic(const double *input_image, do
     double k_center = (5.0 * channel_scale) / (1.0 + noise_signal_ratio);
     double k_edge = (-1.0 * channel_scale) / (1.0 + noise_signal_ratio);
     
-#ifdef _OPENMP
-    #pragma omp parallel for
-#endif
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             if (x == 0 || x == width - 1 || y == 0 || y == height - 1) {
@@ -316,9 +304,6 @@ void tsfi_depthoffield_wiener_deconvolve_chromatic(const double *input_image, do
     __m256d center_vec = _mm256_set1_pd(k_center);
     __m256d edge_vec = _mm256_set1_pd(k_edge);
     
-#ifdef _OPENMP
-    #pragma omp parallel for
-#endif
     for (int y = 1; y < height - 1; y++) {
         int x = 1;
         for (; x < width - 4; x += 4) {
@@ -343,9 +328,6 @@ void tsfi_depthoffield_wiener_deconvolve_chromatic(const double *input_image, do
         }
     }
 #else
-#ifdef _OPENMP
-    #pragma omp parallel for collapse(2)
-#endif
     for (int y = 1; y < height - 1; y++) {
         for (int x = 1; x < width - 1; x++) {
             int idx = y * width + x;
@@ -358,6 +340,7 @@ void tsfi_depthoffield_wiener_deconvolve_chromatic(const double *input_image, do
     }
 #endif
 }
+
 
 
 
