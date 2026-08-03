@@ -284,9 +284,21 @@ void tsfi_riinterface_set_raster_line(TSFiRiInterface *ri, uint16_t line) {
 void tsfi_riinterface_sync_winchester(TSFiRiInterface *ri, const void *vm_state) {
     if (!ri || !vm_state) return;
     
+    extern uint32_t ce_gprs[16];
+    
+    // Bind optical configuration parameters from Yul virtual hardware registers
+    if (ce_gprs[12] > 0) {
+        ri->shader.amplitude = (double)ce_gprs[12] / 100.0;
+    }
+    if (ce_gprs[13] > 0) {
+        ri->shader.frequency = (double)ce_gprs[13] / 1000.0;
+    }
+    if (ce_gprs[14] > 0) {
+        ri->dof.focal_distance = (double)ce_gprs[14] / 100.0;
+    }
+
     const TsfiZmmVmState *zmm = (const TsfiZmmVmState *)vm_state;
     if (zmm->reu_ram) {
-        // Retrieve keycode from REU RAM slot F002 updated during handshakes
         uint8_t keycode = zmm->reu_ram[0xF002];
         if (keycode > 0) {
             double scaled_amplitude = 0.1 + ((double)(keycode % 50) * 0.1);
@@ -294,6 +306,7 @@ void tsfi_riinterface_sync_winchester(TSFiRiInterface *ri, const void *vm_state)
         }
     }
 }
+
 
 void tsfi_riinterface_run_co_design_loop(TSFiRiInterface *ri, void *vm_state, double *pos_x, double *prev_pos_x, int count) {
     if (!ri || !vm_state) return;

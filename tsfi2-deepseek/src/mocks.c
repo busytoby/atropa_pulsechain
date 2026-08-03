@@ -43,3 +43,6 @@ void tsfi_pool_release_bn(TSFiBigInt *b) { free(b); }
 LauMetadata* lau_registry_find(void *p) { (void)p; return NULL; }
 _Atomic int g_init_in_progress = 0;
 _Atomic int g_teardown_in_progress = 0;
+
+
+

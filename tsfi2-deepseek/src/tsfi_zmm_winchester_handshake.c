@@ -96,3 +96,7 @@ void tsfi_zmm_winchester_deconvolve_handshake(TsfiZmmVmState *vm_state, void *ri
     printf("[THUNK_MQ] WinchesterMQ SCSI Handshake: Deconvolution command 0xed0f5900 completed (SUCCESS)\n");
 }
 
+__attribute__((weak)) uint32_t ce_gprs[16] = {0};
+
+
+
