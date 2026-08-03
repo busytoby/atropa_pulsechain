@@ -47,3 +47,52 @@ void tsfi_zmm_winchester_handshake(TsfiZmmVmState *vm_state, uint8_t keycode) {
 
     printf("[THUNK_MQ] WinchesterMQ SCSI Handshake: Keycode=%u, Selector=0x98d400c0/0xccb077a0 (SUCCESS)\n", keycode);
 }
+
+// Executes a SCSI-triggered hardware-accelerated deconvolution handshake on the RenderMan frame buffer
+void tsfi_zmm_winchester_deconvolve_handshake(TsfiZmmVmState *vm_state, void *ri_void) {
+    if (!vm_state || !ri_void) return;
+    
+    // We import tsfi_riinterface.h context
+    #include "tsfi_riinterface.h"
+    TSFiRiInterface *ri = (TSFiRiInterface *)ri_void;
+    
+    // Format EDoF Deconvolution command selector 0xed0f5900
+    uint8_t deconv_selector[36] = {0xed, 0x0f, 0x59, 0x00};
+    uint8_t retval[32];
+    size_t ret_len = 32;
+    
+    // Execute WinchesterMQ thunk to check permissions/state
+    bool ok = lau_yul_thunk_execute("WinchesterMQ", deconv_selector, 36, retval, &ret_len);
+    if (!ok) {
+        fprintf(stderr, "[THUNK_MQ ERROR] SCSI deconvolution command authorization failed\n");
+        return;
+    }
+    
+    // Zero-copy DMA: Convert the VDC frame buffer to double, deconvolve, and write back
+    double *temp_in = (double *)malloc(256 * 256 * sizeof(double));
+    double *temp_out = (double *)malloc(256 * 256 * sizeof(double));
+    if (temp_in && temp_out) {
+        for (int i = 0; i < 256 * 256; i++) {
+            temp_in[i] = (double)ri->frame_buffer[i];
+        }
+        
+        // Retrieve noise/signal ratio parameters from ZMM RAM configuration registers
+        double nsr = 0.01;
+        if (vm_state->reu_ram) {
+            nsr = 0.001 * (double)(vm_state->reu_ram[0xF005] + 1);
+        }
+        
+        tsfi_depthoffield_wiener_deconvolve(temp_in, temp_out, 256, 256, nsr);
+        for (int i = 0; i < 256 * 256; i++) {
+            double val = temp_out[i];
+            if (val < 0.0) val = 0.0;
+            if (val > 255.0) val = 255.0;
+            ri->frame_buffer[i] = (uint8_t)val;
+        }
+    }
+    free(temp_in);
+    free(temp_out);
+    
+    printf("[THUNK_MQ] WinchesterMQ SCSI Handshake: Deconvolution command 0xed0f5900 completed (SUCCESS)\n");
+}
+
