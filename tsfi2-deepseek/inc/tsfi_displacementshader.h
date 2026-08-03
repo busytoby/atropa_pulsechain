@@ -22,8 +22,10 @@ double tsfi_displacementshader_eval(const TSFiDisplacementShader *ds, double aut
 // Computes the cubic phase plate wavefront displacement in synchronization with WinchesterMQ boundary constraints
 double tsfi_displacementshader_eval_cubic(const TSFiDisplacementShader *ds, double x, double y);
 
+// Evaluates radially symmetric spherical aberration phase displacement (Slide 71)
+double tsfi_displacementshader_eval_spherical(const TSFiDisplacementShader *ds, double x, double y);
+
 // Registers the evaluator in the XPLSM dynamic symbol table
 void tsfi_displacementshader_register_xplsm(void (*register_func)(const char *, void *));
 
 #endif // TSFI_DISPLACEMENTSHADER_H
-
