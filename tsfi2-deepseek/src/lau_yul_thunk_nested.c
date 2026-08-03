@@ -35,7 +35,7 @@ bool execute_nested_call(YulEvmContext *ctx, uint64_t target_addr, uint64_t args
             printf("[EVM_INTERPRETER] Intercepted WinchesterMQ contract call at address 0x%lx with selector 0x%08x\n", target_addr, selector);
             if (argsSize > 0 && argsOffset < 524288) {
                 bool is_io = false;
-                if (selector == 0x98d400c0) {
+                if (selector == 0x98d400c0 || selector == 0xed0f5900) {
                     is_io = true;
                 } else if (argsSize >= 36 && selector == 0xccb077a0) {
                     char cmd_str[33] = {0};
@@ -52,7 +52,11 @@ bool execute_nested_call(YulEvmContext *ctx, uint64_t target_addr, uint64_t args
                 }
                 
                 if (is_io) {
-                    printf("[EVM_INTERPRETER] WinchesterMQ keyboard/mouse event intercepted. Bypassing EVM RPC transaction.\n");
+                    if (selector == 0xed0f5900) {
+                        printf("[EVM_INTERPRETER] WinchesterMQ SCSI deconvolution command intercepted. Routing direct zero-copy DMA to Hudson VDC.\n");
+                    } else {
+                        printf("[EVM_INTERPRETER] WinchesterMQ keyboard/mouse event intercepted. Bypassing EVM RPC transaction.\n");
+                    }
                 } else {
                     char *data_hex = malloc(argsSize * 2 + 3);
                     if (data_hex) {
@@ -66,6 +70,7 @@ bool execute_nested_call(YulEvmContext *ctx, uint64_t target_addr, uint64_t args
                         free(data_hex);
                     }
                 }
+
             }
             success_out->d[0] = 1;
             return true;
