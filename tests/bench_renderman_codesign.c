@@ -172,9 +172,41 @@ int main(void) {
     free(large_in);
     free(large_out);
 
+    // 9. Benchmark Verlet Physics Integration (FET discharge cycles on 10,000 particles)
+    printf("[BENCH] Verlet Soft Body Physics Simulation (10,000 particles)...\n");
+    int particle_count = 10000;
+    double *pos_x = malloc(particle_count * sizeof(double));
+    double *prev_pos_x = malloc(particle_count * sizeof(double));
+    for (int i = 0; i < particle_count; i++) {
+        pos_x[i] = (double)i;
+        prev_pos_x[i] = (double)i - 0.1;
+    }
+    start = get_time_ns();
+    int verlet_iters = 1000;
+    for (int i = 0; i < verlet_iters; i++) {
+        tsfi_riinterface_discharge_verlet(&ri, pos_x, prev_pos_x, particle_count, 0.1, 0.99);
+    }
+    end = get_time_ns();
+    double verlet_ms = (end - start) / 1e6;
+    printf("   - Execution Time: %.2f ms (Total Steps: %d)\n", verlet_ms, verlet_iters);
+    free(pos_x);
+    free(prev_pos_x);
+
+    // 10. Benchmark WinchesterMQ Handshake Intercept Latency
+    printf("[BENCH] WinchesterMQ Handshake Intercept Latency...\n");
+    start = get_time_ns();
+    int handshake_iters = 10000;
+    for (int i = 0; i < handshake_iters; i++) {
+        tsfi_zmm_winchester_deconvolve_handshake(&vm_state, &ri);
+    }
+    end = get_time_ns();
+    double handshake_ns = (end - start) / handshake_iters;
+    printf("   - Average Intercept Latency: %.2f ns\n", handshake_ns);
+
     free(temp_in);
     free(temp_out);
     printf("=== RENDERMAN BENCHMARKS COMPLETE (PASS) ===\n");
     return 0;
+
 
 }
