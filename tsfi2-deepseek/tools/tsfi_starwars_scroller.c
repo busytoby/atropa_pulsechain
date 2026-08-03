@@ -287,7 +287,7 @@ typedef struct {
     float px, py, pz;
 } ScrollerPoppyJoint;
 
-static ScrollerPoppyJoint poppy_joints[5];
+static ScrollerPoppyJoint poppy_joints[7];
 static bool poppy_initialized = false;
 
 static void draw_flat_petal(int cx, int cy, float radius, uint8_t r, uint8_t g, uint8_t b) {
@@ -320,13 +320,15 @@ static void draw_flat_petal(int cx, int cy, float radius, uint8_t r, uint8_t g, 
 static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value, int color_scheme) {
     (void)color_scheme;
 
-    // 1. Initialize Verlet joints at the center of the viewport (x = 640), tightly clustered (offset = 22.0f)
+    // 1. Initialize Verlet joints: 1 central pod (0) + 6 radiating petals (1..6)
     if (!poppy_initialized) {
         poppy_joints[0] = (ScrollerPoppyJoint){ .x = 640.0f, .y = 300.0f, .z = 50.0f, .px = 640.0f, .py = 300.0f, .pz = 50.0f }; // central pod
-        poppy_joints[1] = (ScrollerPoppyJoint){ .x = 640.0f, .y = 278.0f, .z = 55.0f, .px = 640.0f, .py = 278.0f, .pz = 55.0f }; // top petal
-        poppy_joints[2] = (ScrollerPoppyJoint){ .x = 640.0f, .y = 322.0f, .z = 45.0f, .px = 640.0f, .py = 322.0f, .pz = 45.0f }; // bottom petal
-        poppy_joints[3] = (ScrollerPoppyJoint){ .x = 618.0f, .y = 300.0f, .z = 52.0f, .px = 618.0f, .py = 300.0f, .pz = 52.0f }; // left petal
-        poppy_joints[4] = (ScrollerPoppyJoint){ .x = 662.0f, .y = 300.0f, .z = 48.0f, .px = 662.0f, .py = 300.0f, .pz = 48.0f }; // right petal
+        for (int i = 1; i <= 6; i++) {
+            float ang = (i - 1) * (2.0f * M_PI / 6.0f);
+            float px = 640.0f + 22.0f * cosf(ang);
+            float py = 300.0f + 22.0f * sinf(ang);
+            poppy_joints[i] = (ScrollerPoppyJoint){ .x = px, .y = py, .z = 50.0f, .px = px, .py = py, .pz = 50.0f };
+        }
         poppy_initialized = true;
     }
 
@@ -344,7 +346,7 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
     float decay = 0.96f;
 
     // 3. Update Petals using Verlet and pull to their target radial angles around the Pod
-    for (int i = 1; i <= 4; i++) {
+    for (int i = 1; i <= 6; i++) {
         float tx = poppy_joints[i].x;
         float ty = poppy_joints[i].y;
 
@@ -358,8 +360,8 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
         poppy_joints[i].px = tx;
         poppy_joints[i].py = ty;
 
-        // Angular targets: top (-pi/2), right (0), bottom (pi/2), left (pi)
-        float target_angle = -M_PI / 2.0f + (i - 1) * M_PI / 2.0f;
+        // Angular targets: evenly spaced at 60 degree intervals
+        float target_angle = (i - 1) * (2.0f * M_PI / 6.0f);
         float target_x = poppy_joints[0].x + petal_rest_len * cosf(target_angle);
         float target_y = poppy_joints[0].y + petal_rest_len * sinf(target_angle);
 
@@ -368,14 +370,24 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
         poppy_joints[i].y += (target_y - poppy_joints[i].y) * 0.40f;
     }
 
-
     // 4. Render the Verlet Poppy Flower components
     // Stem (Forest Green)
     draw_line((int)stem_base_x, (int)stem_base_y, (int)poppy_joints[0].x, (int)poppy_joints[0].y, 34, 139, 34);
 
-    // Overlapping Petals (Crimson Red, drawn overlapping at radius 36.0f)
-    for (int i = 1; i <= 4; i++) {
+    // Overlapping Petals (Crimson Red, 6 petals drawn overlapping at radius 36.0f)
+    for (int i = 1; i <= 6; i++) {
         draw_flat_petal((int)poppy_joints[i].x, (int)poppy_joints[i].y, 36.0f, 220, 20, 60);
+    }
+
+    // Draw stamen filaments radiating from the center pod (black stems with gold tips)
+    float stamen_count = 16.0f;
+    for (int s = 0; s < (int)stamen_count; s++) {
+        float angle = (s / stamen_count) * 2.0f * M_PI;
+        float stamen_len = 16.0f + 2.0f * sinf(time_val * 6.0f + s);
+        int sx = (int)(poppy_joints[0].x + stamen_len * cosf(angle));
+        int sy = (int)(poppy_joints[0].y + stamen_len * sinf(angle));
+        draw_line((int)poppy_joints[0].x, (int)poppy_joints[0].y, sx, sy, 30, 30, 30);
+        draw_glossy_bubble(sx, sy, 2, 255, 215, 0); // Gold tips
     }
 
     // Central Pod (Deep Black/Gold core, drawn on top)
