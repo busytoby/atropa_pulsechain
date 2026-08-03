@@ -580,18 +580,20 @@ async function main() {
 
             const seed = getStringSeed(textBlock);
 
-            // Slowly transition musical parameters to form a long-running, continuous theme
-            if (Math.random() < 0.15) {
+            // Slowly transition musical parameters unless persistent_theme is locked
+            const isPersistent = coaxialState.audio.persistent_theme !== undefined ? coaxialState.audio.persistent_theme : true;
+            if (!isPersistent && Math.random() < 0.15) {
                 persistentTempo = 58 + (seed % 9);
                 persistentTranspose = [0, 2, -3, 5, -5][seed % 5];
                 persistentDispensation = seed % 5;
             }
 
-            const blockTranspose = persistentTranspose;
-            const blockTempo = persistentTempo;
+            const blockTranspose = persistentTranspose + (coaxialState.audio.transpose_offset || 0);
+            const blockTempo = persistentTempo * (coaxialState.audio.tempo_scale || 1.0);
             
             currentFreqMultiplier = Math.pow(2, blockTranspose / 12.0);
             currentStepDurationSamples = Math.floor(SAMPLE_RATE * (60.0 / blockTempo / 4.0));
+
             currentDispensation = (coaxialState.scroller.color_scheme !== -1) ? coaxialState.scroller.color_scheme : persistentDispensation;
 
             const colorScheme = (coaxialState.scroller.color_scheme !== -1) ? coaxialState.scroller.color_scheme : (seed % 5);
