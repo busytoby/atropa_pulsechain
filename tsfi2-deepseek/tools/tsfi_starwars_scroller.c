@@ -320,13 +320,13 @@ static void draw_flat_petal(int cx, int cy, float radius, uint8_t r, uint8_t g, 
 static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value, int color_scheme) {
     (void)color_scheme;
 
-    // 1. Initialize Verlet joints at the center of the viewport (x = 640)
+    // 1. Initialize Verlet joints at the center of the viewport (x = 640), tightly clustered (offset = 22.0f)
     if (!poppy_initialized) {
         poppy_joints[0] = (ScrollerPoppyJoint){ .x = 640.0f, .y = 300.0f, .z = 50.0f, .px = 640.0f, .py = 300.0f, .pz = 50.0f }; // central pod
-        poppy_joints[1] = (ScrollerPoppyJoint){ .x = 640.0f, .y = 230.0f, .z = 55.0f, .px = 640.0f, .py = 230.0f, .pz = 55.0f }; // top petal
-        poppy_joints[2] = (ScrollerPoppyJoint){ .x = 640.0f, .y = 370.0f, .z = 45.0f, .px = 640.0f, .py = 370.0f, .pz = 45.0f }; // bottom petal
-        poppy_joints[3] = (ScrollerPoppyJoint){ .x = 570.0f, .y = 300.0f, .z = 52.0f, .px = 570.0f, .py = 300.0f, .pz = 52.0f }; // left petal
-        poppy_joints[4] = (ScrollerPoppyJoint){ .x = 710.0f, .y = 300.0f, .z = 48.0f, .px = 710.0f, .py = 300.0f, .pz = 48.0f }; // right petal
+        poppy_joints[1] = (ScrollerPoppyJoint){ .x = 640.0f, .y = 278.0f, .z = 55.0f, .px = 640.0f, .py = 278.0f, .pz = 55.0f }; // top petal
+        poppy_joints[2] = (ScrollerPoppyJoint){ .x = 640.0f, .y = 322.0f, .z = 45.0f, .px = 640.0f, .py = 322.0f, .pz = 45.0f }; // bottom petal
+        poppy_joints[3] = (ScrollerPoppyJoint){ .x = 618.0f, .y = 300.0f, .z = 52.0f, .px = 618.0f, .py = 300.0f, .pz = 52.0f }; // left petal
+        poppy_joints[4] = (ScrollerPoppyJoint){ .x = 662.0f, .y = 300.0f, .z = 48.0f, .px = 662.0f, .py = 300.0f, .pz = 48.0f }; // right petal
         poppy_initialized = true;
     }
 
