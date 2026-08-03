@@ -30,18 +30,21 @@ typedef struct {
     int color_scheme;
     int shape_type;
     float speed_scale;
+    int bear_count;
 } TSFiScrollerLiveConfig;
 
 static char live_helix_text[16] = "TSFi/2";
+static float live_speed_scale = 1.0f;
+static int live_bear_count = 3;
 
 typedef struct {
     float x, y, z;
     float speed;
 } Star;
 
-
 #define MAX_STARS 120
 static Star stars[MAX_STARS];
+
 
 typedef struct {
     float x, y;
@@ -49,7 +52,9 @@ typedef struct {
     float size_scale;
 } TeddyBear;
 
-static TeddyBear bears[3];
+#define MAX_BEARS 100
+static TeddyBear bears[MAX_BEARS];
+
 
 // Biotika Spore Particle structure
 typedef struct {
@@ -71,13 +76,14 @@ static void init_stars_and_bears() {
         stars[i].speed = (rand() % 4) + 1.5f;
     }
 
-    for (int i = 0; i < 3; i++) {
-        bears[i].x = 100 + rand() % 280;
-        bears[i].y = HEIGHT + 100 + i * 220;
+    for (int i = 0; i < MAX_BEARS; i++) {
+        bears[i].x = 60 + rand() % 380;
+        bears[i].y = HEIGHT + 100 + i * 90;
         bears[i].speed = 0.6f + (rand() % 100) / 120.0f;
-        bears[i].size_scale = 0.5f + (rand() % 100) / 200.0f;
+        bears[i].size_scale = 0.3f + (rand() % 100) / 300.0f;
     }
 }
+
 
 static void draw_line(int x0, int y0, int x1, int y1, uint8_t r, uint8_t g, uint8_t b) {
     int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
@@ -99,7 +105,8 @@ static void draw_line(int x0, int y0, int x1, int y1, uint8_t r, uint8_t g, uint
 
 static void update_and_draw_stars(bool hyperspace) {
     for (int i = 0; i < MAX_STARS; i++) {
-        float speed = stars[i].speed * (hyperspace ? 20.0f : 1.0f);
+        float speed = stars[i].speed * live_speed_scale * (hyperspace ? 20.0f : 1.0f);
+
         float prev_z = stars[i].z;
         stars[i].z -= speed;
         if (stars[i].z <= 0) {
@@ -604,8 +611,27 @@ int main(int argc, char **argv) {
 
     float time_val = 0.0f;
     for (int frame = 0; frame < total_frames; frame++) {
+        // Load live configuration parameters from binary state file
+        FILE *cfg_f = fopen("/tmp/scroller_live_config.bin", "rb");
+        if (cfg_f) {
+            TSFiScrollerLiveConfig live_cfg;
+            if (fread(&live_cfg, sizeof(TSFiScrollerLiveConfig), 1, cfg_f) == 1) {
+                strncpy(live_helix_text, live_cfg.helix_text, 15);
+                live_helix_text[15] = '\0';
+                if (live_cfg.color_scheme >= 0) color_scheme = live_cfg.color_scheme;
+                if (live_cfg.shape_type >= 0) shape_type = live_cfg.shape_type;
+                if (live_cfg.speed_scale > 0.0f) live_speed_scale = live_cfg.speed_scale;
+                if (live_cfg.bear_count >= 0) {
+                    live_bear_count = live_cfg.bear_count;
+                    if (live_bear_count > MAX_BEARS) live_bear_count = MAX_BEARS;
+                }
+            }
+            fclose(cfg_f);
+        }
+
         time_val += 1.0f / FPS;
         float current_time_sec = start_time_sec + (float)frame / (float)FPS;
+
 
         float bulb_flicker = 1.0f + ((rand() % 100) - 50) / 1000.0f;
 
@@ -680,16 +706,17 @@ int main(int argc, char **argv) {
         draw_usd_spline_ribbon(time_val, pulse, usd_value, color_scheme);
 
         if (!in_hyperspace) {
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < live_bear_count; i++) {
                 bears[i].y -= bears[i].speed;
                 if (bears[i].y < -80) {
                     bears[i].y = HEIGHT + 80;
                     bears[i].x = 100 + rand() % 280;
                     bears[i].speed = 0.6f + (rand() % 100) / 120.0f;
-                    bears[i].size_scale = 0.5f + (rand() % 100) / 200.0f;
+                    bears[i].size_scale = 0.3f + (rand() % 100) / 300.0f;
                 }
                 draw_vector_teddy_bear((int)bears[i].x, (int)bears[i].y, bears[i].size_scale, pulse, color_scheme);
             }
+
         }
 
         draw_gothic_frame(100, 150, 180);

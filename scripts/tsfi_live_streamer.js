@@ -347,12 +347,16 @@ async function startPrefetchWorker(loreFiles) {
                 const tempChunkPath = `/tmp/tsfi_chunk_${blockId}.mp3`;
                 const tempPcmPath = `/tmp/tsfi_chunk_${blockId}.pcm`;
                 
-                const audioData = await queryGoogleTranslateTTS(textBlock);
-                fs.writeFileSync(tempChunkPath, audioData);
-
-                
-                execSync(`ffmpeg -y -i "${tempChunkPath}" -f s16le -ac 1 -ar 44100 "${tempPcmPath}" 2>/dev/null`);
-                fs.unlinkSync(tempChunkPath);
+                if (fs.existsSync("/tmp/tts_disable")) {
+                    // Generate 1.5 seconds of silence (44100 * 2 bytes * 1.5 = 132300 bytes)
+                    const silence = Buffer.alloc(132300);
+                    fs.writeFileSync(tempPcmPath, silence);
+                } else {
+                    const audioData = await queryGoogleTranslateTTS(textBlock);
+                    fs.writeFileSync(tempChunkPath, audioData);
+                    execSync(`ffmpeg -y -i "${tempChunkPath}" -f s16le -ac 1 -ar 44100 "${tempPcmPath}" 2>/dev/null`);
+                    fs.unlinkSync(tempChunkPath);
+                }
                 
                 ttsQueue.push({
                     textBlock,
