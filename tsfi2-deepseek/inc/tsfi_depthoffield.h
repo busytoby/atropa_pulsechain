@@ -42,8 +42,12 @@ void tsfi_depthoffield_wiener_deconvolve_chromatic(const double *input_image, do
 // Runs an end-to-end joint optimization inner loop to minimize Mean Squared Error (MSE) on the restored image
 double tsfi_depthoffield_optimize_joint_loop(TSFiDepthOfField *dof, const double *original_image, const double *blurred_image, int width, int height, int max_iterations);
 
+// Runs a resource-constrained joint optimization loop balancing MSE against computation power and lens cost
+double tsfi_depthoffield_optimize_constrained(TSFiDepthOfField *dof, const double *original_image, const double *blurred_image, int width, int height, double power_budget_mw, double *final_mse);
+
 // Calculates chromatic defocus blur coefficients for specific wavelength channels (0=Red, 1=Green, 2=Blue)
 double tsfi_depthoffield_eval_chromatic_blur(const TSFiDepthOfField *dof, double z_depth, int channel);
+
 
 
 

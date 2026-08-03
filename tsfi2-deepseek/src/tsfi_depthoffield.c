@@ -290,6 +290,54 @@ double tsfi_depthoffield_optimize_joint_loop(TSFiDepthOfField *dof, const double
     return best_amplitude;
 }
 
+double tsfi_depthoffield_optimize_constrained(TSFiDepthOfField *dof, const double *original_image, const double *blurred_image, int width, int height, double power_budget_mw, double *final_mse) {
+    if (!dof || !original_image || !blurred_image || width <= 0 || height <= 0) return 0.0;
+    
+    double best_amplitude = dof->lens_radius;
+    double best_merit = 1e9;
+    double best_mse = 1e9;
+    double *restored = (double *)malloc(width * height * sizeof(double));
+    if (!restored) return best_amplitude;
+    
+    for (int iter = 0; iter < 10; iter++) {
+        double candidate_amplitude = 0.1 + (double)iter * 0.5;
+        dof->wavefront_alpha = candidate_amplitude;
+        
+        double filter_radius = dof->lens_radius * dof->wavefront_alpha;
+        double compute_power = filter_radius * filter_radius * 12.0;
+        
+        tsfi_depthoffield_wiener_deconvolve(blurred_image, restored, width, height, 0.01);
+        
+        double mse = 0.0;
+        for (int i = 0; i < width * height; i++) {
+            double err = original_image[i] - restored[i];
+            mse += err * err;
+        }
+        mse /= (width * height);
+        
+        double lens_cost = dof->lens_radius * 50.0;
+        double power_penalty = 0.0;
+        if (compute_power > power_budget_mw) {
+            power_penalty = (compute_power - power_budget_mw) * 1000.0;
+        }
+        
+        double merit = mse + lens_cost * 0.01 + power_penalty;
+        if (merit < best_merit) {
+            best_merit = merit;
+            best_mse = mse;
+            best_amplitude = candidate_amplitude;
+        }
+    }
+    
+    free(restored);
+    dof->wavefront_alpha = best_amplitude;
+    if (final_mse) {
+        *final_mse = best_mse;
+    }
+    return best_amplitude;
+}
+
+
 double tsfi_depthoffield_eval_chromatic_blur(const TSFiDepthOfField *dof, double z_depth, int channel) {
     if (!dof || fabs(z_depth) < 1e-5) return 0.0;
     

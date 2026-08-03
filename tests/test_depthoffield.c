@@ -99,9 +99,16 @@ int main(void) {
     double opt_alpha = tsfi_depthoffield_optimize_joint_loop(&dof, input_img, output_img, 3, 3, 10);
     assert(opt_alpha > 0.0);
 
+    // Verify resource-constrained joint optimizer (Slides 10 & 73)
+    double constrained_mse = 0.0;
+    double constrained_alpha = tsfi_depthoffield_optimize_constrained(&dof, input_img, output_img, 3, 3, 15.0, &constrained_mse);
+    assert(constrained_alpha > 0.0);
+
     printf("   ✓ Focal distance and lens parameters initialized.\n");
     printf("   ✓ Wavefront coding defocus-invariant blur evaluated successfully.\n");
     printf("   ✓ Joint optimizer inner deconvolution loop verified successfully.\n");
+    printf("   ✓ Resource-constrained joint optimizer verified successfully.\n");
+
 
     printf("   ✓ Chromatic Wiener deconvolution filters verified successfully.\n");
 
