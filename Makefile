@@ -289,6 +289,12 @@ test-riinterface:
 	./tests/test_riinterface
 	@rm -f tests/test_riinterface
 
+bench-renderman:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/bench_renderman_codesign.c tsfi2-deepseek/src/tsfi_riinterface.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_depthoffield.c -o tests/bench_renderman_codesign -lm -lrt
+	./tests/bench_renderman_codesign
+	@rm -f tests/bench_renderman_codesign
+
+
 
 test-cinefex-adv:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_cinefex_adv.c tsfi2-deepseek/src/tsfi_fbm_landscape.c tsfi2-deepseek/src/tsfi_volumetric.c tsfi2-deepseek/src/tsfi_motionblur.c tsfi2-deepseek/src/tsfi_shadowmap.c -o tests/test_cinefex_adv -lm -lrt
