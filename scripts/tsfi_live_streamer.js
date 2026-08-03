@@ -794,7 +794,11 @@ async function main() {
                 while (frameAccumulator.length >= FRAME_SIZE) {
                     frameAccumulator.copy(lastCompleteFrame, 0, 0, FRAME_SIZE);
                     frameAccumulator = frameAccumulator.slice(FRAME_SIZE);
+                    try {
+                        fs.writeFileSync("/dev/shm/tsfi_live_frame.raw", lastCompleteFrame);
+                    } catch (e) {}
                 }
+
             });
 
             await new Promise((resolve) => {
