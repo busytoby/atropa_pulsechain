@@ -97,6 +97,10 @@ let filter_v0 = 0.0;
 let filter_v1 = 0.0;
 
 let currentDispensation = 0;
+let persistentTempo = 60;
+let persistentTranspose = 0;
+let persistentDispensation = 0;
+
 
 const DISPENSATION_NAMES = [
     "Classic Chiptune",
@@ -521,14 +525,20 @@ async function main() {
 
             const seed = getStringSeed(textBlock);
 
-            const transpositions = [0, 2, -3, 5, -5];
-            const blockTranspose = transpositions[seed % 5];
+            // Slowly transition musical parameters to form a long-running, continuous theme
+            if (Math.random() < 0.15) {
+                persistentTempo = 58 + (seed % 9);
+                persistentTranspose = [0, 2, -3, 5, -5][seed % 5];
+                persistentDispensation = seed % 5;
+            }
+
+            const blockTranspose = persistentTranspose;
+            const blockTempo = persistentTempo;
+            
             currentFreqMultiplier = Math.pow(2, blockTranspose / 12.0);
-
-            const blockTempo = 58 + (seed % 11);
             currentStepDurationSamples = Math.floor(SAMPLE_RATE * (60.0 / blockTempo / 4.0));
+            currentDispensation = persistentDispensation;
 
-            currentDispensation = seed % 5;
 
             const colorScheme = seed % 5;
             const shapeType = seed % 3;
