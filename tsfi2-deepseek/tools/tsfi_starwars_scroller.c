@@ -374,7 +374,7 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
             }
         }
 
-        // Draw dynamic sliding gold runes and leaf icons on the base spline path
+        // Draw dynamic sliding gold letters of TSFi/2 on the base spline path
         if (idx_count % 35 == 0) {
             double r_dist = cz - bz;
             if (r_dist > 10.0) {
@@ -382,11 +382,14 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
                 int rx = vx_center + (int)(bx * r_scale);
                 int ry = vy_center + (int)(by * r_scale);
                 if (rx >= 45 && rx < 480 && ry >= 10 && ry < HEIGHT - 20) {
-                    char sym = (idx_count % 70 == 0) ? '^' : '~';
+                    const char *tsfi_str = "TSFi/2";
+                    int char_idx = (idx_count / 35) % 6;
+                    char sym = tsfi_str[char_idx];
                     draw_char_direct(rx, ry, sym, 2, 255, 215, 0); // Gold
                 }
             }
         }
+
 
         // Biotika Spore particles initialization & emission
         if (!spores_initialized) {
