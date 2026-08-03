@@ -282,188 +282,93 @@ static void draw_vector_teddy_bear(int cx, int cy, float size_scale, float pulse
 }
 
 // 3D USD Spline Ribbon: Renders entwined Vaesen thorny/leafy vines, warped dynamically by SFT swap volume!
-static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value, int color_scheme) {
-    double px[5] = { -160.0, -80.0, 20.0, 90.0, 160.0 };
-    double py[5] = { -110.0, -40.0, 60.0, 110.0, -70.0 };
-    double pz[5] = { -40.0, 30.0, -20.0, 50.0, 10.0 };
+typedef struct {
+    float x, y, z;
+    float px, py, pz;
+} ScrollerPoppyJoint;
 
-    double sft_scale = log10(usd_value + 1.0) * 16.0;
-    if (sft_scale > 150.0) sft_scale = 150.0;
-    if (sft_scale < 5.0) sft_scale = 5.0;
+static ScrollerPoppyJoint poppy_joints[5];
+static bool poppy_initialized = false;
+
+static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value, int color_scheme) {
+    (void)usd_value; // suppress unused warning
+
+    // 1. Initialize Verlet joints at the center of the viewport (x = 640)
+    if (!poppy_initialized) {
+        poppy_joints[0] = (ScrollerPoppyJoint){ .x = 640.0f, .y = 300.0f, .z = 50.0f, .px = 640.0f, .py = 300.0f, .pz = 50.0f }; // central pod
+        poppy_joints[1] = (ScrollerPoppyJoint){ .x = 640.0f, .y = 230.0f, .z = 55.0f, .px = 640.0f, .py = 230.0f, .pz = 55.0f }; // top petal
+        poppy_joints[2] = (ScrollerPoppyJoint){ .x = 640.0f, .y = 370.0f, .z = 45.0f, .px = 640.0f, .py = 370.0f, .pz = 45.0f }; // bottom petal
+        poppy_joints[3] = (ScrollerPoppyJoint){ .x = 570.0f, .y = 300.0f, .z = 52.0f, .px = 570.0f, .py = 300.0f, .pz = 52.0f }; // left petal
+        poppy_joints[4] = (ScrollerPoppyJoint){ .x = 710.0f, .y = 300.0f, .z = 48.0f, .px = 710.0f, .py = 300.0f, .pz = 48.0f }; // right petal
+        poppy_initialized = true;
+    }
+
+    // 2. Apply Verlet Integration (Forces: Wind & Gravity)
+    float wind_x = 4.5f * sinf(time_val * 3.5f) + (float)(pulse * 8.0f);
+    float gravity_y = 0.8f;
+    float decay = 0.97f;
 
     for (int i = 0; i < 5; i++) {
-        px[i] += sin(time_val * 2.0 + i) * sft_scale * 0.4;
-        py[i] += cos(time_val * 1.7 + i) * sft_scale * 0.4;
-        pz[i] += sin(time_val * 1.3 + i) * sft_scale * 0.3;
+        float tx = poppy_joints[i].x;
+        float ty = poppy_joints[i].y;
+        float tz = poppy_joints[i].z;
+
+        poppy_joints[i].x += (poppy_joints[i].x - poppy_joints[i].px) * decay + wind_x * 0.05f;
+        poppy_joints[i].y += (poppy_joints[i].y - poppy_joints[i].py) * decay + gravity_y * 0.05f;
+
+        poppy_joints[i].px = tx;
+        poppy_joints[i].py = ty;
+        poppy_joints[i].pz = tz;
     }
 
-    double cz = 320.0;
-    int vx_center = 240;
-    int vy_center = HEIGHT / 2;
+    // 3. Resolve Springs Constraints (3 iterations)
+    float stem_base_x = 640.0f;
+    float stem_base_y = (float)HEIGHT - 80.0f;
 
-    float pulse_scale = 1.0f + pulse * 0.45f;
-    
-    // Biotika Heartbeat Dilation cycle (simulating cellular expand/contract respiration)
-    float heartbeat = 1.0f + 0.22f * sin(time_val * 4.2f) + pulse * 0.25f;
-
-    int prev_px1 = -1, prev_py1 = -1;
-    int prev_px2 = -1, prev_py2 = -1;
-
-    // Render entwined double-strand Vaesen rose/ivy vines
-    int idx_count = 0;
-    for (double t = 0.0; t <= 1.0; t += 0.006) {
-        idx_count++;
-        double omt = 1.0 - t;
-        double omt2 = omt * omt;
-        double omt3 = omt2 * omt;
-        double t2 = t * t;
-        double t3 = t2 * t;
-
-        // Base spline path
-        double bx = omt3 * px[0] + 3.0 * omt2 * t * px[1] + 3.0 * omt * t2 * px[2] + t3 * px[3];
-        double by = omt3 * py[0] + 3.0 * omt2 * t * py[1] + 3.0 * omt * t2 * py[2] + t3 * py[3];
-        double bz = omt3 * pz[0] + 3.0 * omt2 * t * pz[1] + 3.0 * omt * t2 * pz[2] + t3 * pz[3];
-
-        // DNA-like fiber thickness modulation along the path
-        double thick_mod = 0.8 + 0.35 * sin(t * 38.0);
-        int bubble_size = (int)(5 * pulse_scale * heartbeat * thick_mod);
-        if (bubble_size < 3) bubble_size = 3;
-
-        // 3D helical rotation offset to weave two vine strands
-        double helix_ang = t * 32.0 + time_val * 6.0;
-        double ox = 14.0 * sin(helix_ang) * heartbeat;
-        double oy = 14.0 * cos(helix_ang) * heartbeat;
-        double oz = 8.0 * sin(helix_ang * 0.5) * heartbeat;
-
-        // Strand 1: Ivy green vine
-        double x1 = bx + ox;
-        double y1 = by + oy;
-        double z1 = bz + oz;
-
-        // Strand 2: Thorny wood-brown vine
-        double x2 = bx - ox;
-        double y2 = by - oy;
-        double z2 = bz - oz;
-
-        // Project Strand 1
-        double dist1 = cz - z1;
-        if (dist1 > 10.0) {
-            double scale1 = 300.0 / dist1;
-            int sx1 = vx_center + (int)(x1 * scale1);
-            int sy1 = vy_center + (int)(y1 * scale1);
-
-            if (sx1 >= 45 && sx1 < 490 && sy1 >= 0 && sy1 < HEIGHT) {
-                if (prev_px1 != -1 && prev_py1 != -1) {
-                    draw_line(prev_px1, prev_py1, sx1, sy1, 35, 155, 65); // Leafy Ivy Green
-                }
-                if (idx_count % 8 == 0) {
-                    // Bio-luminescent green node
-                    draw_glossy_bubble(sx1, sy1, bubble_size, 45, 220, 110);
-                }
-                prev_px1 = sx1;
-                prev_py1 = sy1;
-            } else {
-                prev_px1 = -1;
-                prev_py1 = -1;
-            }
+    for (int iter = 0; iter < 3; iter++) {
+        // Central Pod to Stem Base (rest length = 220.0f)
+        float dx = poppy_joints[0].x - stem_base_x;
+        float dy = poppy_joints[0].y - stem_base_y;
+        float dist = sqrtf(dx*dx + dy*dy);
+        if (dist > 0.0f) {
+            float diff = 220.0f - dist;
+            float percent = (diff / dist) * 0.25f;
+            poppy_joints[0].x += dx * percent;
+            poppy_joints[0].y += dy * percent;
         }
 
-        // Project Strand 2
-        double dist2 = cz - z2;
-        if (dist2 > 10.0) {
-            double scale2 = 300.0 / dist2;
-            int sx2 = vx_center + (int)(x2 * scale2);
-            int sy2 = vy_center + (int)(y2 * scale2);
+        // Petals to Central Pod (rest length = 70.0f)
+        for (int i = 1; i <= 4; i++) {
+            float pdx = poppy_joints[i].x - poppy_joints[0].x;
+            float pdy = poppy_joints[i].y - poppy_joints[0].y;
+            float pdist = sqrtf(pdx*pdx + pdy*pdy);
+            if (pdist > 0.0f) {
+                float diff = 70.0f - pdist;
+                float percent = (diff / pdist) * 0.45f * 0.5f;
 
-            if (sx2 >= 45 && sx2 < 490 && sy2 >= 0 && sy2 < HEIGHT) {
-                if (prev_px2 != -1 && prev_py2 != -1) {
-                    draw_line(prev_px2, prev_py2, sx2, sy2, 145, 95, 35); // Thorny Wood Brown
-                }
-                if (idx_count % 10 == 0) {
-                    // Bio-luminescent ruby red/orange node
-                    draw_glossy_bubble(sx2, sy2, bubble_size - 1, 255, 70, 50);
-                }
-                prev_px2 = sx2;
-                prev_py2 = sy2;
-            } else {
-                prev_px2 = -1;
-                prev_py2 = -1;
-            }
-        }
-
-        // Draw dynamic sliding gold letters from live_helix_text on the base spline path
-        if (idx_count % 24 == 0) {
-            double r_dist = cz - bz;
-            if (r_dist > 10.0) {
-                double r_scale = 300.0 / r_dist;
-                int rx = vx_center + (int)(bx * r_scale);
-                int ry = vy_center + (int)(by * r_scale);
-                if (rx >= 45 && rx < 480 && ry >= 10 && ry < HEIGHT - 20) {
-                    int len = strlen(live_helix_text);
-                    if (len > 0) {
-                        int char_idx = ((idx_count / 24) - 1) % len;
-                        char sym = live_helix_text[char_idx];
-                        draw_char_direct(rx, ry, sym, 2, 255, 215, 0); // Gold
-                    }
-                }
-            }
-        }
-
-
-
-
-        // Biotika Spore particles initialization & emission
-        if (!spores_initialized) {
-            for (int s = 0; s < MAX_SPORES; s++) {
-                spores[s].age = 0.0f;
-            }
-            spores_initialized = true;
-        }
-
-        // Trigger spore launch at random locations along the spline
-        if (idx_count % 20 == 0 && rand() % 5 == 0) {
-            for (int s = 0; s < MAX_SPORES; s++) {
-                if (spores[s].age <= 0.0f) {
-                    spores[s].x = bx;
-                    spores[s].y = by;
-                    spores[s].z = bz;
-                    spores[s].vx = ((rand() % 100 - 50) / 100.0f) * 1.5f;
-                    spores[s].vy = -((rand() % 100) / 100.0f) * 2.0f - 0.5f; // Drifts upward
-                    spores[s].vz = ((rand() % 100 - 50) / 100.0f) * 1.0f;
-                    spores[s].max_age = 1.0f + (rand() % 100) / 50.0f;
-                    spores[s].age = spores[s].max_age;
-                    break;
-                }
+                poppy_joints[0].x -= pdx * percent;
+                poppy_joints[0].y -= pdy * percent;
+                poppy_joints[i].x += pdx * percent;
+                poppy_joints[i].y += pdy * percent;
             }
         }
     }
 
-    // Update and draw floating bio-luminescent spores
-    for (int s = 0; s < MAX_SPORES; s++) {
-        if (spores[s].age > 0.0f) {
-            spores[s].x += spores[s].vx;
-            spores[s].y += spores[s].vy;
-            spores[s].z += spores[s].vz;
-            spores[s].age -= 1.0f / FPS;
+    // 4. Render the Verlet Poppy Flower components
+    // Stem (Forest Green)
+    draw_line((int)stem_base_x, (int)stem_base_y, (int)poppy_joints[0].x, (int)poppy_joints[0].y, 34, 139, 34);
 
-            double sp_dist = cz - spores[s].z;
-            if (sp_dist > 10.0) {
-                double sp_scale = 300.0 / sp_dist;
-                int sp_sx = vx_center + (int)(spores[s].x * sp_scale);
-                int sp_sy = vy_center + (int)(spores[s].y * sp_scale);
-
-                if (sp_sx >= 45 && sp_sx < 490 && sp_sy >= 0 && sp_sy < HEIGHT) {
-                    float fade = spores[s].age / spores[s].max_age;
-                    int sp_size = (int)(4 * fade + 1);
-                    uint8_t sp_r = (uint8_t)(255 * fade);
-                    uint8_t sp_g = (uint8_t)(200 * fade);
-                    uint8_t sp_b = (uint8_t)(50 * fade); // Warm glowing amber spore
-                    draw_glossy_bubble(sp_sx, sp_sy, sp_size, sp_r, sp_g, sp_b);
-                }
-            }
-        }
+    // Petals (Crimson Red with Dark Red structural bones)
+    for (int i = 1; i <= 4; i++) {
+        draw_line((int)poppy_joints[0].x, (int)poppy_joints[0].y, (int)poppy_joints[i].x, (int)poppy_joints[i].y, 139, 0, 0);
+        draw_glossy_bubble((int)poppy_joints[i].x, (int)poppy_joints[i].y, 22, 220, 20, 60);
     }
+
+    // Central Pod (Deep Black/Gold core)
+    draw_glossy_bubble((int)poppy_joints[0].x, (int)poppy_joints[0].y, 14, 20, 20, 20);
+    draw_glossy_bubble((int)poppy_joints[0].x - 2, (int)poppy_joints[0].y - 2, 4, 255, 215, 0);
 }
+
 
 static void draw_char_direct(int x, int y, char c, int scale, uint8_t r, uint8_t g, uint8_t b) {
     const uint8_t *bitmap = NULL;
@@ -744,129 +649,11 @@ int main(int argc, char **argv) {
         draw_string_direct(55, HEIGHT - 55, sft_vol, 1, 0, 255, 120);
 
         if (in_hyperspace) {
-            draw_string_direct(700, 320, "DECODING NEURAL LORE MEMORY CARD...", 2, 0, 200, 255);
+            // No decoding text
         } else {
-            int start_y = 70;
-            char *line_start = block_text;
-            
-            while (*line_start && start_y < HEIGHT - 65) {
-                char *line_end = strchr(line_start, '\n');
-                char line[512];
-                memset(line, 0, sizeof(line));
-                if (line_end) {
-                    size_t len = line_end - line_start;
-                    if (len > sizeof(line) - 1) len = sizeof(line) - 1;
-                    strncpy(line, line_start, len);
-                    line_start = line_end + 1;
-                } else {
-                    strncpy(line, line_start, sizeof(line) - 1);
-                    line_start = "";
-                }
-
-                char *trimmed = line;
-                while (*trimmed == ' ' || *trimmed == '\t') trimmed++;
-                if (strlen(trimmed) == 0) {
-                    start_y += 12;
-                    continue;
-                }
-
-                if (trimmed[0] == '#') {
-                    int lvl = 0;
-                    while (trimmed[lvl] == '#') lvl++;
-                    char *h_text = trimmed + lvl;
-                    while (*h_text == ' ') h_text++;
-                    int text_scale = (lvl == 1) ? 3 : 2;
-                    draw_string_direct(545, start_y + 4, h_text, text_scale, 255, 215, 0);
-                    start_y += (text_scale == 3) ? 36 : 28;
-                } else if (trimmed[0] == '-' || trimmed[0] == '*') {
-                    char *item = trimmed + 1;
-                    while (*item == ' ') item++;
-                    draw_char_direct(545, start_y, '~', 2, 255, 215, 0);
-                    
-                    int len = strlen(item);
-                    int chars_per_line = 42;
-                    for (int offset = 0; offset < len && start_y < HEIGHT - 65; offset += chars_per_line) {
-                        char chunk[64];
-                        int to_copy = len - offset < chars_per_line ? len - offset : chars_per_line;
-                        strncpy(chunk, item + offset, to_copy);
-                        chunk[to_copy] = '\0';
-                        draw_string_direct(565, start_y, chunk, 2, 240, 240, 250);
-                        start_y += 22;
-                    }
-                } else if (strstr(trimmed, "[CHART:") == trimmed) {
-                    draw_string_direct(545, start_y, "PERFORMANCE TELEMETRY DIAGRAM", 1, 0, 200, 255);
-                    start_y += 18;
-                    
-                    draw_panel(545, start_y, 1220, start_y + 190, 10, 20, 30);
-                    draw_line(585, start_y + 10, 585, start_y + 160, 150, 150, 150);
-                    draw_line(585, start_y + 160, 1200, start_y + 160, 150, 150, 150);
-                    
-                    int chart_values[4] = { 120, 70, 140, 100 };
-                    const char *labels[4] = { "ZMM CORE", "Winchester", "WinchesterMQ", "Lissajous" };
-                    for (int col = 0; col < 4; col++) {
-                        int bar_h = chart_values[col];
-                        int bar_x = 640 + col * 130;
-                        int bar_y = start_y + 160 - bar_h;
-                        
-                        draw_panel(bar_x, bar_y, bar_x + 50, start_y + 159, 0, 160 + col * 20, 220);
-                        
-                        char val_str[16];
-                        sprintf(val_str, "%d", bar_h);
-                        draw_string_direct(bar_x + 10, bar_y - 12, val_str, 1, 255, 255, 255);
-                        draw_string_direct(bar_x - 10, start_y + 170, labels[col], 1, 180, 180, 180);
-                    }
-                    start_y += 210;
-                } else if (trimmed[0] == '|' && trimmed[1] == '-') {
-                    continue;
-                } else if (trimmed[0] == '|') {
-                    draw_panel(545, start_y - 2, 1220, start_y + 22, 20, 30, 45);
-                    char row_copy[512];
-                    strcpy(row_copy, trimmed + 1);
-                    char *cell = strtok(row_copy, "|");
-                    int col_x = 555;
-                    while (cell && col_x < 1200) {
-                        char *tc = cell;
-                        while (*tc == ' ') tc++;
-                        size_t l = strlen(tc);
-                        while (l > 0 && tc[l - 1] == ' ') { tc[l - 1] = '\0'; l--; }
-                        draw_string_direct(col_x, start_y, tc, 1, 240, 240, 240);
-                        col_x += 160;
-                        cell = strtok(NULL, "|");
-                    }
-                    start_y += 26;
-                } else {
-                    int len = strlen(trimmed);
-                    int chars_per_line = 46;
-                    
-                    char first_c = trimmed[0];
-                    int text_start_offset = 0;
-                    if ((first_c >= 'a' && first_c <= 'z') || (first_c >= 'A' && first_c <= 'Z')) {
-                        draw_char_direct(545, start_y, first_c, 3, 255, 215, 0);
-                        text_start_offset = 1;
-                    }
-                    
-                    for (int offset = 0; offset < len && start_y < HEIGHT - 65; offset += chars_per_line) {
-                        char chunk[64];
-                        int chunk_start = offset + (offset == 0 ? text_start_offset : 0);
-                        int to_copy = len - chunk_start < chars_per_line ? len - chunk_start : chars_per_line;
-                        if (to_copy <= 0) break;
-                        strncpy(chunk, trimmed + chunk_start, to_copy);
-                        chunk[to_copy] = '\0';
-                        
-                        int text_x = (offset == 0 && text_start_offset > 0) ? 570 : 545;
-                        draw_string_direct(text_x, start_y + (offset == 0 && text_start_offset > 0 ? 2 : 0), chunk, 2, 240, 240, 250);
-                        start_y += 22;
-                    }
-                }
-            }
-
-            // Playback progress bar
-            float progress = (float)frame / (float)total_frames;
-            int progress_w = (int)(690 * progress);
-            draw_string_direct(545, HEIGHT - 35, "PLAYBACK:", 1, 150, 150, 150);
-            draw_panel(625, HEIGHT - 33, 1220, HEIGHT - 27, 20, 30, 40);
-            draw_panel(625, HEIGHT - 33, 625 + progress_w, HEIGHT - 27, 0, 220, 120);
+            // No text layout
         }
+
 
         draw_super8_sprockets();
 
