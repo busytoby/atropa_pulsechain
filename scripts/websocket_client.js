@@ -12,7 +12,7 @@ ws.on("open", () => {
             text: "TSFi/2",
             color_scheme: 4,
             speed_scale: 1.2,
-            bear_count: 5
+            bear_count: 0
         },
         audio: {
             tempo_scale: 0.8,
