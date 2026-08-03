@@ -290,6 +290,33 @@ typedef struct {
 static ScrollerPoppyJoint poppy_joints[5];
 static bool poppy_initialized = false;
 
+static void draw_flat_petal(int cx, int cy, float radius, uint8_t r, uint8_t g, uint8_t b) {
+    int rad_int = (int)radius + 4;
+    for (int y = -rad_int; y <= rad_int; y++) {
+        for (int x = -rad_int; x <= rad_int; x++) {
+            float dist = sqrtf(x*x + y*y);
+            if (dist > 0.0f) {
+                float angle = atan2f(y, x);
+                // Ruffled petal edges using sin ripple
+                float ripple = 3.5f * sinf(angle * 5.0f);
+                if (dist <= radius + ripple) {
+                    int px = cx + x;
+                    int py = cy + y;
+                    if (px >= 0 && px < WIDTH && py >= 0 && py < HEIGHT) {
+                        int idx = (py * WIDTH + px) * 3;
+                        // Velvet lighting: darker color towards the ruffled margins
+                        float factor = 0.4f + 0.6f * (1.0f - (dist / (radius + ripple)));
+                        if (factor < 0.2f) factor = 0.2f;
+                        frame_buffer[idx] = (uint8_t)(r * factor);
+                        frame_buffer[idx+1] = (uint8_t)(g * factor);
+                        frame_buffer[idx+2] = (uint8_t)(b * factor);
+                    }
+                }
+            }
+        }
+    }
+}
+
 static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value, int color_scheme) {
     (void)color_scheme;
 
@@ -366,7 +393,7 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
     // Petals (Crimson Red with Dark Red structural bones)
     for (int i = 1; i <= 4; i++) {
         draw_line((int)poppy_joints[0].x, (int)poppy_joints[0].y, (int)poppy_joints[i].x, (int)poppy_joints[i].y, 139, 0, 0);
-        draw_glossy_bubble((int)poppy_joints[i].x, (int)poppy_joints[i].y, 22, 220, 20, 60);
+        draw_flat_petal((int)poppy_joints[i].x, (int)poppy_joints[i].y, 22.0f, 220, 20, 60);
     }
 
     // Central Pod (Deep Black/Gold core)
