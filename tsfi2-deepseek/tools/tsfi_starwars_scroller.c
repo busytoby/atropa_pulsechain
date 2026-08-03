@@ -330,60 +330,44 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
         poppy_initialized = true;
     }
 
-    // 2. Apply Verlet Integration (Forces: Wind scaled by USD transaction volume & Gravity)
+    // 2. Sway the Central Pod smoothly in the wind
+    float stem_base_x = 640.0f;
+    float stem_base_y = (float)HEIGHT - 80.0f;
     float wind_boost = (float)log10(usd_value + 1.0) * 1.5f;
-    float wind_x = (4.5f + wind_boost) * sinf(time_val * 3.5f) + (float)(pulse * 8.0f);
-    float gravity_y = 0.8f;
-    float decay = 0.97f;
+    float wind_x = (8.0f + wind_boost) * sinf(time_val * 1.8f);
 
-    for (int i = 0; i < 5; i++) {
+    poppy_joints[0].x = stem_base_x + wind_x * 4.0f;
+    poppy_joints[0].y = stem_base_y - 220.0f;
+
+    // Petal rest length (bloom expansion) based on USD telemetry and beat pulse
+    float petal_rest_len = 24.0f + (float)fminf(18.0f, (float)log10(usd_value + 1.0) * 3.0f) + pulse * 4.0f;
+    float decay = 0.96f;
+
+    // 3. Update Petals using Verlet and pull to their target radial angles around the Pod
+    for (int i = 1; i <= 4; i++) {
         float tx = poppy_joints[i].x;
         float ty = poppy_joints[i].y;
-        float tz = poppy_joints[i].z;
 
-        poppy_joints[i].x += (poppy_joints[i].x - poppy_joints[i].px) * decay + wind_x * 0.05f;
-        poppy_joints[i].y += (poppy_joints[i].y - poppy_joints[i].py) * decay + gravity_y * 0.05f;
+        // Flutter force unique to each petal + wind sway
+        float petal_wind_x = 3.5f * sinf(time_val * 4.5f + i) + wind_x * 0.1f;
+        float petal_gravity_y = 0.3f;
+
+        poppy_joints[i].x += (poppy_joints[i].x - poppy_joints[i].px) * decay + petal_wind_x * 0.05f;
+        poppy_joints[i].y += (poppy_joints[i].y - poppy_joints[i].py) * decay + petal_gravity_y * 0.05f;
 
         poppy_joints[i].px = tx;
         poppy_joints[i].py = ty;
-        poppy_joints[i].pz = tz;
+
+        // Angular targets: top (-pi/2), right (0), bottom (pi/2), left (pi)
+        float target_angle = -M_PI / 2.0f + (i - 1) * M_PI / 2.0f;
+        float target_x = poppy_joints[0].x + petal_rest_len * cosf(target_angle);
+        float target_y = poppy_joints[0].y + petal_rest_len * sinf(target_angle);
+
+        // Constrain to angular layout with spring stiffness
+        poppy_joints[i].x += (target_x - poppy_joints[i].x) * 0.40f;
+        poppy_joints[i].y += (target_y - poppy_joints[i].y) * 0.40f;
     }
 
-    // 3. Resolve Springs Constraints (3 iterations)
-    float stem_base_x = 640.0f;
-    float stem_base_y = (float)HEIGHT - 80.0f;
-
-    // Petal rest length is small to cluster petals tightly around the central pod
-    float petal_rest_len = 22.0f + (float)fminf(15.0f, (float)log10(usd_value + 1.0) * 2.0f);
-
-    for (int iter = 0; iter < 3; iter++) {
-        // Central Pod to Stem Base (rest length = 220.0f)
-        float dx = poppy_joints[0].x - stem_base_x;
-        float dy = poppy_joints[0].y - stem_base_y;
-        float dist = sqrtf(dx*dx + dy*dy);
-        if (dist > 0.0f) {
-            float diff = 220.0f - dist;
-            float percent = (diff / dist) * 0.25f;
-            poppy_joints[0].x += dx * percent;
-            poppy_joints[0].y += dy * percent;
-        }
-
-        // Petals to Central Pod
-        for (int i = 1; i <= 4; i++) {
-            float pdx = poppy_joints[i].x - poppy_joints[0].x;
-            float pdy = poppy_joints[i].y - poppy_joints[0].y;
-            float pdist = sqrtf(pdx*pdx + pdy*pdy);
-            if (pdist > 0.0f) {
-                float diff = petal_rest_len - pdist;
-                float percent = (diff / pdist) * 0.45f * 0.5f;
-
-                poppy_joints[0].x -= pdx * percent;
-                poppy_joints[0].y -= pdy * percent;
-                poppy_joints[i].x += pdx * percent;
-                poppy_joints[i].y += pdy * percent;
-            }
-        }
-    }
 
     // 4. Render the Verlet Poppy Flower components
     // Stem (Forest Green)
