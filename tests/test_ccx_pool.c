@@ -57,6 +57,16 @@ int main(void) {
     assert(img_out_parallel[100] == img_out0[100]);
     printf("   ✓ CCX direct parallel deconvolution driver output verified.\n");
     
+    // Test multi-CCX parallel deconvolution scheduler
+    double *img_out_multi = malloc(width * height * sizeof(double));
+    TSFiCCXPool *pools[2] = { &pool0, &pool1 };
+    tsfi_multi_ccx_deconvolve_parallel(pools, 2, img_in, img_out_multi, width, height, 0.01);
+
+    // Since region boundaries might differ slightly in convolution edge clamping, compare center pixels
+    assert(img_out_multi[width * 64 + 64] == img_out0[width * 64 + 64]);
+    printf("   ✓ Multi-CCX parallel deconvolution output verified.\n");
+    free(img_out_multi);
+    
     // Validate output is non-zero
     assert(img_out0[100] != 0.0);
     assert(img_out1[100] != 0.0);
@@ -66,6 +76,7 @@ int main(void) {
     tsfi_ccx_pool_destroy(&pool1);
     printf("   ✓ CCX pools shut down and destroyed cleanly.\n");
     free(img_out_parallel);
+
 
     
     free(img_in);

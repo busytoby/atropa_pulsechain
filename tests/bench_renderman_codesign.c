@@ -111,8 +111,70 @@ int main(void) {
     printf("   - CCX Parallel Throughput: %.2f deconvolutions/sec (Total Time: %.2f ms)\n", parallel_rate, total_parallel_ms);
     tsfi_ccx_pool_destroy(&ccx_pool);
 
+    // 7. Benchmark Multi-CCX Parallel Wiener Deconvolution (256x256 buffer, 2 pools, 4 threads each)
+    printf("[BENCH] Multi-CCX Parallel Deconvolution (2 pools, 8 threads total, 256x256)...\n");
+    TSFiCCXPool ccx_pool0, ccx_pool1;
+    tsfi_ccx_pool_init(&ccx_pool0, 0, 4);
+    tsfi_ccx_pool_init(&ccx_pool1, 1, 4);
+    TSFiCCXPool *pools[2] = { &ccx_pool0, &ccx_pool1 };
+    
+    start = get_time_ns();
+    for (int i = 0; i < deconv_iters; i++) {
+        tsfi_multi_ccx_deconvolve_parallel(pools, 2, temp_in, temp_out, 256, 256, 0.01);
+    }
+    end = get_time_ns();
+    double total_multi_ms = (end - start) / 1e6;
+    double multi_rate = (double)deconv_iters / (total_multi_ms / 1000.0);
+    printf("   - Multi-CCX Parallel Throughput: %.2f deconvolutions/sec (Total Time: %.2f ms)\n", multi_rate, total_multi_ms);
+    tsfi_ccx_pool_destroy(&ccx_pool0);
+    tsfi_ccx_pool_destroy(&ccx_pool1);
+
+
+    // 8. Large Buffer Benchmark (1024x1024 double precision)
+    printf("[BENCH] Large Buffer Deconvolution (1024x1024, 8MB dataset)...\n");
+    double *large_in = (double *)malloc(1024 * 1024 * sizeof(double));
+    double *large_out = (double *)malloc(1024 * 1024 * sizeof(double));
+    for (int i = 0; i < 1024 * 1024; i++) {
+        large_in[i] = (double)(i % 1024);
+    }
+    
+    // 1-thread baseline
+    start = get_time_ns();
+    for (int i = 0; i < 10; i++) {
+        tsfi_depthoffield_wiener_deconvolve(large_in, large_out, 1024, 1024, 0.01);
+    }
+    end = get_time_ns();
+    printf("   - Sequential AVX2: %.2f ms (average per iteration)\n", (end - start) / 1e7);
+    
+    // CCX pool (4 threads)
+    TSFiCCXPool large_pool0;
+    tsfi_ccx_pool_init(&large_pool0, 0, 4);
+    start = get_time_ns();
+    for (int i = 0; i < 10; i++) {
+        tsfi_ccx_deconvolve_parallel(&large_pool0, large_in, large_out, 1024, 1024, 0.01);
+    }
+    end = get_time_ns();
+    printf("   - CCX Parallel (4 threads): %.2f ms (average per iteration)\n", (end - start) / 1e7);
+    
+    // Multi-CCX pool (2 pools, 8 threads total)
+    TSFiCCXPool large_pool1;
+    tsfi_ccx_pool_init(&large_pool1, 1, 4);
+    TSFiCCXPool *large_pools[2] = { &large_pool0, &large_pool1 };
+    start = get_time_ns();
+    for (int i = 0; i < 10; i++) {
+        tsfi_multi_ccx_deconvolve_parallel(large_pools, 2, large_in, large_out, 1024, 1024, 0.01);
+    }
+    end = get_time_ns();
+    printf("   - Multi-CCX Parallel (2 pools, 8 threads): %.2f ms (average per iteration)\n", (end - start) / 1e7);
+    
+    tsfi_ccx_pool_destroy(&large_pool0);
+    tsfi_ccx_pool_destroy(&large_pool1);
+    free(large_in);
+    free(large_out);
+
     free(temp_in);
     free(temp_out);
     printf("=== RENDERMAN BENCHMARKS COMPLETE (PASS) ===\n");
     return 0;
+
 }

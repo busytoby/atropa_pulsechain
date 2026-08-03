@@ -32,6 +32,13 @@ static void *ccx_worker_thread(void *arg) {
         if (task.func) {
             task.func(task.arg);
         }
+        
+        pthread_mutex_lock(&pool->lock);
+        pool->active_tasks--;
+        if (pool->active_tasks == 0) {
+            pthread_cond_broadcast(&pool->cond_idle);
+        }
+        pthread_mutex_unlock(&pool->lock);
     }
     return NULL;
 }
@@ -44,11 +51,13 @@ int tsfi_ccx_pool_init(TSFiCCXPool *pool, int ccx_id, int num_threads) {
     pool->queue_head = 0;
     pool->queue_tail = 0;
     pool->queue_size = 0;
+    pool->active_tasks = 0;
     pool->shutdown = false;
     
     pthread_mutex_init(&pool->lock, NULL);
     pthread_cond_init(&pool->cond_empty, NULL);
     pthread_cond_init(&pool->cond_full, NULL);
+    pthread_cond_init(&pool->cond_idle, NULL);
     
     // Core allocation schema based on CCX:
     // CCX 0: Cores 0, 1, 2, 3
@@ -90,6 +99,7 @@ int tsfi_ccx_pool_enqueue(TSFiCCXPool *pool, void (*func)(void *), void *arg) {
     pool->task_queue[pool->queue_tail].arg = arg;
     pool->queue_tail = (pool->queue_tail + 1) % MAX_CCX_TASKS;
     pool->queue_size++;
+    pool->active_tasks++;
     
     pthread_cond_signal(&pool->cond_empty);
     pthread_mutex_unlock(&pool->lock);
@@ -101,8 +111,8 @@ void tsfi_ccx_pool_wait(TSFiCCXPool *pool) {
     if (!pool) return;
     
     pthread_mutex_lock(&pool->lock);
-    while (pool->queue_size > 0) {
-        pthread_cond_wait(&pool->cond_full, &pool->lock);
+    while (pool->active_tasks > 0) {
+        pthread_cond_wait(&pool->cond_idle, &pool->lock);
     }
     pthread_mutex_unlock(&pool->lock);
 }
@@ -122,7 +132,9 @@ void tsfi_ccx_pool_destroy(TSFiCCXPool *pool) {
     pthread_mutex_destroy(&pool->lock);
     pthread_cond_destroy(&pool->cond_empty);
     pthread_cond_destroy(&pool->cond_full);
+    pthread_cond_destroy(&pool->cond_idle);
 }
+
 
 typedef struct {
     const double *input;
@@ -280,4 +292,47 @@ void tsfi_ccx_deconvolve_parallel(TSFiCCXPool *pool, const double *input_image, 
     
     tsfi_ccx_pool_wait(pool);
 }
+
+
+
+void tsfi_multi_ccx_deconvolve_parallel(TSFiCCXPool **pools, int num_pools, const double *input_image, double *output_image, int width, int height, double noise_signal_ratio) {
+    if (!pools || num_pools <= 0 || !input_image || !output_image || width <= 0 || height <= 0) return;
+    
+    if (num_pools == 1) {
+        tsfi_ccx_deconvolve_parallel(pools[0], input_image, output_image, width, height, noise_signal_ratio);
+        return;
+    }
+    
+    int total_threads = 0;
+    for (int i = 0; i < num_pools; i++) {
+        total_threads += pools[i]->num_threads;
+    }
+    
+    TSFiDeconvWorkerArg args[MAX_CCX_THREADS];
+    int rows_per_thread = height / total_threads;
+    int arg_idx = 0;
+    
+    for (int p = 0; p < num_pools; p++) {
+        int pool_threads = pools[p]->num_threads;
+        for (int t = 0; t < pool_threads; t++) {
+            args[arg_idx].input = input_image;
+            args[arg_idx].output = output_image;
+            args[arg_idx].width = width;
+            args[arg_idx].height = height;
+            args[arg_idx].nsr = noise_signal_ratio;
+            args[arg_idx].start_y = arg_idx * rows_per_thread;
+            args[arg_idx].end_y = (arg_idx == total_threads - 1) ? height : (arg_idx + 1) * rows_per_thread;
+            
+            tsfi_ccx_pool_enqueue(pools[p], tsfi_deconv_worker_func, &args[arg_idx]);
+            arg_idx++;
+        }
+    }
+    
+    for (int p = 0; p < num_pools; p++) {
+        tsfi_ccx_pool_wait(pools[p]);
+    }
+}
+
+
+
 

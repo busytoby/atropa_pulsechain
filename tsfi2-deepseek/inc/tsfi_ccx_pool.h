@@ -27,8 +27,11 @@ typedef struct {
     pthread_mutex_t lock;
     pthread_cond_t cond_empty;
     pthread_cond_t cond_full;
+    pthread_cond_t cond_idle;
+    int active_tasks;
     bool shutdown;
 } TSFiCCXPool;
+
 
 // Initialize a CCX pool for a specific ccx_id (using 4 cores per CCX mapping)
 int tsfi_ccx_pool_init(TSFiCCXPool *pool, int ccx_id, int num_threads);
@@ -44,6 +47,11 @@ void tsfi_ccx_pool_destroy(TSFiCCXPool *pool);
 
 // Parallel deconvolution using CCX thread pool
 void tsfi_ccx_deconvolve_parallel(TSFiCCXPool *pool, const double *input_image, double *output_image, int width, int height, double noise_signal_ratio);
+
+// Parallel deconvolution scheduled across multiple CCX pools
+void tsfi_multi_ccx_deconvolve_parallel(TSFiCCXPool **pools, int num_pools, const double *input_image, double *output_image, int width, int height, double noise_signal_ratio);
+
+
 
 
 #endif /* TSFI_CCX_POOL_H */
