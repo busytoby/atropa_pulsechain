@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
+#include <immintrin.h>
+
 
 typedef struct {
     uint32_t address;
@@ -218,6 +220,37 @@ void tsfi_depthoffield_wiener_deconvolve(const double *input_image, double *outp
         }
     }
     
+#if defined(__AVX2__) && defined(__FMA__)
+    __m256d center_vec = _mm256_set1_pd(k_center);
+    __m256d edge_vec = _mm256_set1_pd(k_edge);
+    
+#ifdef _OPENMP
+    #pragma omp parallel for
+#endif
+    for (int y = 1; y < height - 1; y++) {
+        int x = 1;
+        for (; x < width - 4; x += 4) {
+            __m256d in_center = _mm256_loadu_pd(&input_image[y * width + x]);
+            __m256d in_up     = _mm256_loadu_pd(&input_image[(y - 1) * width + x]);
+            __m256d in_down   = _mm256_loadu_pd(&input_image[(y + 1) * width + x]);
+            __m256d in_left   = _mm256_loadu_pd(&input_image[y * width + x - 1]);
+            __m256d in_right  = _mm256_loadu_pd(&input_image[y * width + x + 1]);
+            
+            __m256d sum_edges = _mm256_add_pd(_mm256_add_pd(in_up, in_down), _mm256_add_pd(in_left, in_right));
+            __m256d res = _mm256_fmadd_pd(sum_edges, edge_vec, _mm256_mul_pd(in_center, center_vec));
+            
+            _mm256_storeu_pd(&output_image[y * width + x], res);
+        }
+        for (; x < width - 1; x++) {
+            int idx = y * width + x;
+            output_image[idx] = input_image[idx] * k_center +
+                                (input_image[idx - width] +
+                                 input_image[idx + width] +
+                                 input_image[idx - 1] +
+                                 input_image[idx + 1]) * k_edge;
+        }
+    }
+#else
 #ifdef _OPENMP
     #pragma omp parallel for collapse(2)
 #endif
@@ -231,6 +264,7 @@ void tsfi_depthoffield_wiener_deconvolve(const double *input_image, double *outp
                                  input_image[idx + 1]) * k_edge;
         }
     }
+#endif
 }
 
 void tsfi_depthoffield_wiener_deconvolve_chromatic(const double *input_image, double *output_image, int width, int height, double noise_signal_ratio, int channel) {
@@ -278,6 +312,37 @@ void tsfi_depthoffield_wiener_deconvolve_chromatic(const double *input_image, do
         }
     }
     
+#if defined(__AVX2__) && defined(__FMA__)
+    __m256d center_vec = _mm256_set1_pd(k_center);
+    __m256d edge_vec = _mm256_set1_pd(k_edge);
+    
+#ifdef _OPENMP
+    #pragma omp parallel for
+#endif
+    for (int y = 1; y < height - 1; y++) {
+        int x = 1;
+        for (; x < width - 4; x += 4) {
+            __m256d in_center = _mm256_loadu_pd(&input_image[y * width + x]);
+            __m256d in_up     = _mm256_loadu_pd(&input_image[(y - 1) * width + x]);
+            __m256d in_down   = _mm256_loadu_pd(&input_image[(y + 1) * width + x]);
+            __m256d in_left   = _mm256_loadu_pd(&input_image[y * width + x - 1]);
+            __m256d in_right  = _mm256_loadu_pd(&input_image[y * width + x + 1]);
+            
+            __m256d sum_edges = _mm256_add_pd(_mm256_add_pd(in_up, in_down), _mm256_add_pd(in_left, in_right));
+            __m256d res = _mm256_fmadd_pd(sum_edges, edge_vec, _mm256_mul_pd(in_center, center_vec));
+            
+            _mm256_storeu_pd(&output_image[y * width + x], res);
+        }
+        for (; x < width - 1; x++) {
+            int idx = y * width + x;
+            output_image[idx] = input_image[idx] * k_center +
+                                (input_image[idx - width] +
+                                 input_image[idx + width] +
+                                 input_image[idx - 1] +
+                                 input_image[idx + 1]) * k_edge;
+        }
+    }
+#else
 #ifdef _OPENMP
     #pragma omp parallel for collapse(2)
 #endif
@@ -291,7 +356,9 @@ void tsfi_depthoffield_wiener_deconvolve_chromatic(const double *input_image, do
                                  input_image[idx + 1]) * k_edge;
         }
     }
+#endif
 }
+
 
 
 double tsfi_depthoffield_optimize_joint_loop(TSFiDepthOfField *dof, const double *original_image, const double *blurred_image, int width, int height, int max_iterations) {
