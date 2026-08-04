@@ -245,6 +245,9 @@ bool calculate_diyat_tax_with_refractory(const teddy_geometry_t *geom, double sw
 // Calculates the nerve-like Gumbel transient diyat tax modulated by tremolo and sustain envelope dynamics.
 bool calculate_diyat_tax_with_envelope(const teddy_geometry_t *geom, double switching_frequency, double base_gas_cost, double tremolo_freq, double sustain_time, double *total_cost_out);
 
+// Simulates the phase-modulated flyback noise distortion index for izotope filtering.
+bool simulate_phase_flyback_noise(const teddy_geometry_t *geom, double phase_angle, double *noise_out);
+
 // Computes model selection diagnostics via AIC and BIC information criteria.
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out);
 

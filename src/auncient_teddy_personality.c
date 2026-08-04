@@ -932,6 +932,15 @@ bool calculate_diyat_tax_with_envelope(const teddy_geometry_t *geom, double swit
     return true;
 }
 
+bool simulate_phase_flyback_noise(const teddy_geometry_t *geom, double phase_angle, double *noise_out) {
+    if (!geom || !noise_out) {
+        return false;
+    }
+    double displacement_scale = 1.0 + (geom->head_fwhr * 0.5) - (geom->feature_vertical_offset * 0.3);
+    *noise_out = sin(phase_angle * displacement_scale) * geom->behavioral_mismatch * 2.0;
+    return true;
+}
+
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out) {
     if (!geom || param_count < 1 || sample_size < 2 || !aic_out || !bic_out) {
         return false;

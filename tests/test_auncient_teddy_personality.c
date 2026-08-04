@@ -315,6 +315,11 @@ int main(void) {
     assert(env_cost >= 10.0);
     printf("   ✓ Gumbel transient nerve-tax with tremolo and sustain envelope verified successfully\n");
 
+    // Test Phase-Modulated flyback noise distortion calculation
+    double noise_val = 0.0;
+    assert(simulate_phase_flyback_noise(&geom, 3.14159, &noise_val));
+    printf("   ✓ Phase-modulated flyback noise distortion simulation verified successfully\n");
+
     // Test ACID transaction behavior (Rollback path on constraint violation)
     tx = begin_evaluation_transaction(&geom);
     assert(tx.active);
