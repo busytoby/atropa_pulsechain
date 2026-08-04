@@ -24,6 +24,8 @@ typedef struct {
     double neck_thickness;   // Neck capsule thickness for formidability cues
     double focal_length;     // Camera lens focal length (35mm baby-face, 85mm flat/dominant)
     double camera_elevation; // Camera vertical translation offset (positive high, negative low)
+    double torso_ratio;      // Shoulder-to-hip width ratio (1.5 broad/formidable, 0.7 squat)
+    double fur_roughness;    // Specular roughness coefficient for hair shading
 } teddy_geometry_t;
 
 // Maps abstract traits to geometric parameters based on study results
@@ -42,6 +44,8 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->neck_thickness = 0.6;   // Thin neck
             geom->focal_length = 35.0;    // Exaggerated perspective
             geom->camera_elevation = 1.2; // High angle looking down
+            geom->torso_ratio = 0.7;      // Squat, stable center of gravity
+            geom->fur_roughness = 0.9;    // High roughness for soft, diffuse fur
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -56,6 +60,8 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->neck_thickness = 1.3;   // Thick, formidable neck connection
             geom->focal_length = 85.0;    // Flat perspective for dominance
             geom->camera_elevation = -0.8; // Low angle looking up
+            geom->torso_ratio = 1.5;      // Broad shoulders, dominant upper torso
+            geom->fur_roughness = 0.3;    // Glossy, slick fur
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -70,6 +76,8 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->neck_thickness = 1.2;   // Thick neck
             geom->focal_length = 85.0;    // Compressed perspective
             geom->camera_elevation = -0.8; // Low angle looking up
+            geom->torso_ratio = 1.4;      // Formidable upper body proportions
+            geom->fur_roughness = 0.3;    // Slick, high-specular sheen
             break;
     }
 }
