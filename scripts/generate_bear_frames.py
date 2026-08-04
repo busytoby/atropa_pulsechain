@@ -40,22 +40,33 @@ def render_frames():
     
     # Render exactly 313 frames corresponding to conversation steps
     for idx, step in enumerate(log_data):
-        # Parallax scrolling plum scanlines background
         t = idx / 10.0
         scroll_x = int(t * 30.0) % WIDTH
-        img = Image.new("RGB", (WIDTH, HEIGHT), color=(26, 20, 28))
+        img = Image.new("RGB", (WIDTH, HEIGHT), color=(12, 14, 20)) # Dark mode blue-gray canvas
         draw = ImageDraw.Draw(img)
         
-        # Grid lines background
-        for y_line in range(0, HEIGHT, 32):
-            draw.line([(0, y_line), (WIDTH, y_line)], fill=(44, 32, 48), width=1)
-        for x_line in range(-scroll_x, WIDTH + 32, 32):
-            draw.line([(x_line, 0), (x_line, HEIGHT)], fill=(44, 32, 48), width=1)
+        # Grid blueprint scanlines
+        for y_line in range(0, HEIGHT, 40):
+            draw.line([(0, y_line), (WIDTH, y_line)], fill=(18, 20, 28), width=1)
+        for x_line in range(-scroll_x, WIDTH + 40, 40):
+            draw.line([(x_line, 0), (x_line, HEIGHT)], fill=(18, 20, 28), width=1)
             
-        # Draw connections/conversational exchanges
+        # Draw Verlet Spline connection rope between speaker and listener
         speaker_pos = bears.get(step["speaker"], bears["Trusty"])
         listener_pos = bears.get(step["listener"], bears["Coop"])
-        draw.line([speaker_pos["x"], speaker_pos["y"], listener_pos["x"], listener_pos["y"]], fill=(255, 255, 255), width=3)
+        
+        rope_points = []
+        num_segments = 15
+        for s in range(num_segments + 1):
+            ratio = s / float(num_segments)
+            # Add dynamic gravity sag and wind sway (Rule 14)
+            sag = 40.0 * math.sin(ratio * math.pi) * (1.0 + 0.1 * math.sin(t * 2.0))
+            wind = 15.0 * math.sin(t * 3.0) * math.sin(ratio * math.pi)
+            rx = speaker_pos["x"] + (listener_pos["x"] - speaker_pos["x"]) * ratio + wind
+            ry = speaker_pos["y"] + (listener_pos["y"] - speaker_pos["y"]) * ratio + sag
+            rope_points.append((rx, ry))
+            
+        draw.line(rope_points, fill=(255, 255, 255, 180), width=3)
         
         # Draw each bear head sphere
         for name, bear in bears.items():
@@ -65,20 +76,18 @@ def render_frames():
             
             x, y = bear["x"], bear["y"]
             
-            # Draw Menorah-style vacuum tube backing glow
+            # Menorah-style vacuum tube backing glow
             for tube_idx in range(-3, 4):
                 tx = x + (tube_idx * 12)
                 ty = y + 50
-                # Glow brightness modulated by voltage
                 glow_val = int(min(100 + step["voltage"] * 15, 255))
                 draw.line([tx, ty, tx, ty - 30], fill=(glow_val, int(glow_val * 0.5), 0), width=3)
             
-            # Temporary mask to apply woven cloth fabric texture
+            # Woven cloth fabric shading mask
             mask = Image.new("L", (WIDTH, HEIGHT), 0)
             mask_draw = ImageDraw.Draw(mask)
             mask_draw.ellipse([x - base_radius, y - base_radius, x + base_radius, y + base_radius], fill=255)
             
-            # Generate procedural woven cloth texture
             img_arr = np.array(img)
             mask_arr = np.array(mask)
             y_coords, x_coords = np.where(mask_arr > 0)
@@ -100,6 +109,62 @@ def render_frames():
             
             draw.ellipse([x - base_radius, y - base_radius, x + base_radius, y + base_radius], outline=(255, 255, 255), width=2)
             
+            # Draw 3D Shaded Torus around active speaker (Pixar / RenderMan Ring Singularity)
+            if name == step["speaker"]:
+                torus_faces = []
+                R, r_torus = base_radius * 1.4, base_radius * 0.3
+                num_u, num_v = 12, 12
+                
+                # Orbit camera angle variables
+                cam_rot_y = t * 0.5
+                cam_rot_x = 0.5
+                
+                def project_torus(pt):
+                    x1 = pt[0] * math.cos(cam_rot_y) - pt[2] * math.sin(cam_rot_y)
+                    z1 = pt[0] * math.sin(cam_rot_y) + pt[2] * math.cos(cam_rot_y)
+                    y2 = pt[1] * math.cos(cam_rot_x) - z1 * math.sin(cam_rot_x)
+                    z2 = pt[1] * math.sin(cam_rot_x) + z1 * math.cos(cam_rot_x)
+                    
+                    scale = 200.0 / (180.0 + z2)
+                    cx = x + int(x1 * scale)
+                    cy = y + int(y2 * scale)
+                    return cx, cy, z2
+                
+                for u in range(num_u):
+                    for v_idx in range(num_v):
+                        u_val = u * 2.0 * math.pi / num_u
+                        v_val = v_idx * 2.0 * math.pi / num_v
+                        
+                        p00 = [(R + r_torus * math.cos(v_val)) * math.cos(u_val), (R + r_torus * math.cos(v_val)) * math.sin(u_val), r_torus * math.sin(v_val)]
+                        
+                        u_val1 = (u + 1) * 2.0 * math.pi / num_u
+                        p10 = [(R + r_torus * math.cos(v_val)) * math.cos(u_val1), (R + r_torus * math.cos(v_val)) * math.sin(u_val1), r_torus * math.sin(v_val)]
+                        
+                        v_val1 = (v_idx + 1) * 2.0 * math.pi / num_v
+                        p11 = [(R + r_torus * math.cos(v_val1)) * math.cos(u_val1), (R + r_torus * math.cos(v_val1)) * math.sin(u_val1), r_torus * math.sin(v_val1)]
+                        
+                        p01 = [(R + r_torus * math.cos(v_val1)) * math.cos(u_val), (R + r_torus * math.cos(v_val1)) * math.sin(u_val), r_torus * math.sin(v_val1)]
+                        
+                        c00_x, c00_y, z00 = project_torus(p00)
+                        c10_x, c10_y, z10 = project_torus(p10)
+                        c11_x, c11_y, z11 = project_torus(p11)
+                        c01_x, c01_y, z01 = project_torus(p01)
+                        
+                        avg_z = (z00 + z10 + z11 + z01) / 4.0
+                        
+                        # Flat shading dot product
+                        normal = [math.cos(u_val), math.sin(u_val), math.sin(v_val)]
+                        dot = 0.5 + 0.5 * (normal[0] * -0.577 + normal[1] * -0.577 + normal[2] * 0.577)
+                        
+                        torus_faces.append((avg_z, [(c00_x, c00_y), (c10_x, c10_y), (c11_x, c11_y), (c01_x, c01_y)], dot))
+                        
+                torus_faces.sort(key=lambda f: f[0], reverse=True)
+                for _, poly, sh in torus_faces:
+                    tr = int(255 * sh)
+                    tg = int(215 * sh)
+                    tb = int(0 * sh) # Glowing gold Ring Singularity
+                    draw.polygon(poly, fill=(tr, tg, tb), outline=(38, 42, 60))
+            
             # Draw Lissajous projection orbit loops around the head (Tripartite VM manifestation)
             orbit_points = []
             steps_count = 30
@@ -119,12 +184,9 @@ def render_frames():
             draw.text((x - 20, y - 5), name, fill="black")
             
         # Draw status info
-        draw.text((10, 10), "HUDSON BEAR CHORUS EMOTIONAL DIALOGUE", fill="white")
-        draw.text((10, 25), f"Step: {idx + 1}/313", fill="white")
-        draw.text((10, 40), f"Speaker: {step['speaker']}", fill="white")
-        draw.text((10, 55), f"Listener: {step['listener']}", fill="white")
-        draw.text((10, 70), f"Voltage: {step['voltage']:.3f} V", fill="white")
-        draw.text((10, 85), f"Pitch: {step['pitch']:.1f} Hz", fill="white")
+        draw.text((20, 20), "AUNCIENT DYSNOMIA VM: INTEGRATED USD VIEWPORT SIMULATOR", fill="white")
+        draw.text((20, 35), f"Step: {idx + 1}/313 | Speaker: {step['speaker']} -> Listener: {step['listener']}", fill="white")
+        draw.text((20, 50), f"Active Parameter: /auncient/voltage = {step['voltage']:.3f} V | pitch = {step['pitch']:.1f} Hz", fill="white")
         
         frame_path = os.path.join(output_dir, f"frame_{idx:04d}.png")
         img.save(frame_path)
