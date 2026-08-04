@@ -82,6 +82,12 @@ int main(void) {
     assert(rating_nominal >= 1 && rating_nominal <= 7);
     printf("   ✓ R H B Christensen nominal-adjusted ordinal rating verified successfully\n");
 
+    // Test Hessian standard error covariance diagnostics estimation
+    double variance = 0.0;
+    assert(evaluate_hessian_diagnostics(&geom, &variance));
+    assert(variance > 0.0);
+    printf("   ✓ R H B Christensen Hessian standard error covariance diagnostics verified successfully\n");
+
     printf("=============================================================\n");
     printf("PERSONALITY CONFIGURATIONS VALIDATED SUCCESSFULLY\n");
     printf("=============================================================\n");

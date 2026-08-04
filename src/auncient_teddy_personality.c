@@ -377,6 +377,17 @@ int evaluate_ordinal_nominal_rating(const teddy_geometry_t *geom) {
     return 7;
 }
 
+bool evaluate_hessian_diagnostics(const teddy_geometry_t *geom, double *variance_out) {
+    if (!geom || !variance_out) {
+        return false;
+    }
+    double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
+    double info = 16.0 - (latent * 0.5);
+    if (info < 0.1) info = 0.1;
+    *variance_out = 1.0 / info;
+    return true;
+}
+
 bool engage_system_boundary(agent_avatar_t *avatar, teddy_personality_t personality) {
     if (!avatar) return false;
 

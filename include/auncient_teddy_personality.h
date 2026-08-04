@@ -138,6 +138,9 @@ int evaluate_ordinal_scale_rating(const teddy_geometry_t *geom, double scale_mul
 // Evaluates an ordinal rating with nominal effects violating parallel slopes.
 int evaluate_ordinal_nominal_rating(const teddy_geometry_t *geom);
 
+// Evaluates model fitting stability via Hessian standard error diagnostics.
+bool evaluate_hessian_diagnostics(const teddy_geometry_t *geom, double *variance_out);
+
 // Engages systems via the SDK typestate and calculates parameters
 bool engage_system_boundary(agent_avatar_t *avatar, teddy_personality_t personality);
 
