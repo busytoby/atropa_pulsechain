@@ -329,6 +329,9 @@ bool execute_hbridge_thunk_with_feedback(const teddy_geometry_t *geom, double lo
 // Executes a complementary log-log gated thunk with real-time feedback logic (Christensen).
 bool execute_cloglog_thunk_with_feedback(const teddy_geometry_t *geom, double scale_covariate, double (*callback)(void), double *safety_margin_out);
 
+// Executes a maturity-adjusted cloglog gated thunk with feedback (Christensen).
+bool execute_maturity_cloglog_thunk_with_feedback(const teddy_geometry_t *geom, double (*callback)(void), double *safety_margin_out);
+
 // Evaluates the unpredictable micro-expression asymmetry uncanny response (Hyde et al.).
 bool evaluate_expression_asymmetry_uncanny(const teddy_geometry_t *geom, double asymmetry_deviation, double *uncanny_score_out);
 

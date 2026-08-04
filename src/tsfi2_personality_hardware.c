@@ -203,6 +203,17 @@ bool execute_cloglog_thunk_with_feedback(const teddy_geometry_t *geom, double sc
     return true;
 }
 
+bool execute_maturity_cloglog_thunk_with_feedback(const teddy_geometry_t *geom, double (*callback)(void), double *safety_margin_out) {
+    if (!geom || !callback || !safety_margin_out) {
+        return false;
+    }
+    double scale = 1.0;
+    if (!evaluate_scale_structured_covariates(geom, geom->maturity_index, &scale)) {
+        return false;
+    }
+    return execute_cloglog_thunk_with_feedback(geom, scale, callback, safety_margin_out);
+}
+
 evaluation_tx_t begin_evaluation_transaction(teddy_geometry_t *target) {
     evaluation_tx_t tx;
     tx.target = target;

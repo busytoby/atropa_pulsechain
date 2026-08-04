@@ -632,6 +632,15 @@ int main(void) {
     geom.head_fwhr = 1.0; // reset
     printf("   ✓ Cloglog gated thunk execution verified successfully\n");
 
+    // Test execute_maturity_cloglog_thunk_with_feedback (Successful execution case)
+    test_thunk_executed_flag = 0.0;
+    double maturity_cloglog_safety = 0.0;
+    geom.head_fwhr = 0.3;
+    assert(execute_maturity_cloglog_thunk_with_feedback(&geom, test_thunk_callback, &maturity_cloglog_safety));
+    assert(test_thunk_executed_flag == 1.0);
+    geom.head_fwhr = 1.0; // reset
+    printf("   ✓ Maturity-adjusted cloglog gated thunk execution verified successfully\n");
+
     // Test ACID transaction behavior (Rollback path on constraint violation)
     tx = begin_evaluation_transaction(&geom);
     assert(tx.active);
