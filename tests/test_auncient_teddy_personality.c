@@ -138,6 +138,11 @@ int main(void) {
     assert(rating_gumbel >= 1 && rating_gumbel <= 7);
     printf("   ✓ R H B Christensen Gumbel ordinal rating verified successfully\n");
 
+    // Test scale-adjusted Gumbel rating estimation
+    int rating_gumbel_scale = evaluate_ordinal_gumbel_scale_rating(&geom, 1.2);
+    assert(rating_gumbel_scale >= 1 && rating_gumbel_scale <= 7);
+    printf("   ✓ R H B Christensen scale-adjusted Gumbel ordinal rating verified successfully\n");
+
     // Test cumulative link probability estimation
     double link_prob = 0.0;
     assert(evaluate_ordinal_link_probability(1.0, 1.5, 0, &link_prob)); // Logit

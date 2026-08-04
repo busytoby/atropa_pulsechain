@@ -185,6 +185,9 @@ int evaluate_ordinal_loggamma_rating(const teddy_geometry_t *geom, double lambda
 // Evaluates an ordinal rating using a Gumbel link model.
 int evaluate_ordinal_gumbel_rating(const teddy_geometry_t *geom);
 
+// Evaluates an ordinal rating using a scale-adjusted Gumbel link model (Christensen).
+int evaluate_ordinal_gumbel_scale_rating(const teddy_geometry_t *geom, double scale_covariate);
+
 // Evaluates an ordinal rating using a customized flexible link mixture weight (0.0 cloglog, 1.0 logit).
 int evaluate_ordinal_flexible_rating(const teddy_geometry_t *geom, double link_mixture_weight);
 
