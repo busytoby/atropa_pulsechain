@@ -88,6 +88,7 @@ typedef struct {
     double relationship_fidelity;    // Perceived relationship fidelity (0.0 low fidelity/promiscuous, 1.0 high fidelity)
     double motor_fatigue_resistance; // Perceived motor fatigue resistance (0.0 low resistance, 1.0 high fatigue resistance)
     double work_ethic;               // Perceived work ethic (0.0 passive/lazy, 1.0 high work ethic/active labor)
+    double compliance;               // Perceived compliance (0.0 defiance/resistance, 1.0 naive compliance/obedience)
 } teddy_geometry_t;
 
 // Pixar RenderMan Avatar Agent definition upon the cooperative boundary
