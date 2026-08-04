@@ -18,7 +18,7 @@ The **Closure** language uses a declarative Lisp-based syntax to encapsulate job
 | Legacy JCL Card | Closure Language Equivalent | Description |
 | :--- | :--- | :--- |
 | `//JOBNAME JOB` | `:wmq-job "JOBNAME"` | Defines the job identifier. |
-| `//STEP EXEC PGM=IKFCBL00` | `:wmq-compiler "IKFCBL00"` | Identifies the compiler program pass. |
+| `//STEP EXEC PGM=IKFCBL00` | `:wmq-compiler "FOLKLORE"` | Identifies the compiler program pass. |
 | `//STEP EXEC PGM=GOSTINT` | `:wmq-mount "GOSTINT"` | Specifies the active program execution target. |
 | `//DD DSN=DATASET` | `:wmq-params {:key "VAL"}` | Maps data definitions directly to metadata map keys. |
 
@@ -40,7 +40,7 @@ Below is the standard representation of the [`gost_intrusion.strategy`](file:///
 
 ```clojure
 ^{:wmq-job "ESEVJOB"
-  :wmq-compiler "IKFCBL00"
+  :wmq-compiler "FOLKLORE"
   :wmq-mount "GOSTINT"
   :wmq-author "ADVERSARY"
   :wmq-params {:tin 950000000 :ssn 050051122 :gost-key "KGBKEY01"}}
