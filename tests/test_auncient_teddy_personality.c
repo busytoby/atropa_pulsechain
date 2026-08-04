@@ -29,6 +29,7 @@ typedef struct {
     double feature_vertical_offset; // Vertical feature placement (negative lower/baby-face)
     double behavioral_mismatch;     // Cognitive mismatch factor (0.0 aligned, 1.0 high discrepancy)
     double vocal_pitch;             // Vocal fundamental frequency in Hz (85Hz deep, 250Hz child-like)
+    double expression_scale;        // Animation expression sensitivity multiplier (e.g. 1.5 amplified)
 } teddy_geometry_t;
 
 // Maps abstract traits to geometric parameters based on study results
@@ -52,6 +53,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->feature_vertical_offset = -0.3; // Lower placement for baby-face warmth
             geom->behavioral_mismatch = 0.0;     // Fully aligned friendly profile
             geom->vocal_pitch = 250.0;           // High, warm pitch
+            geom->expression_scale = 1.5;        // Amplified expression
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -71,6 +73,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->feature_vertical_offset = 0.2; // Higher feature placement
             geom->behavioral_mismatch = 0.8;     // High mismatch to indicate threat
             geom->vocal_pitch = 85.0;            // Deep, formidable pitch
+            geom->expression_scale = 0.5;        // Deadpan expression
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -90,6 +93,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->feature_vertical_offset = 0.2; // Higher feature placement
             geom->behavioral_mismatch = 0.8;     // High mismatch
             geom->vocal_pitch = 85.0;            // Deep pitch
+            geom->expression_scale = 0.5;        // Deadpan expression
             break;
     }
 }
