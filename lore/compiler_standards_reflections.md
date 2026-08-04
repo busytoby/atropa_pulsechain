@@ -234,6 +234,16 @@ int main() {
 * **Compiler Built-in**: 23 characters (`__builtin_wmq_error();`).
 * **Source Size Reduction**: 64% character footprint decrease.
 
+### Host Checksum Verification Comparison
+* **Boilerplate Wrapper**: 67 characters.
+  ```c
+  int get_checksum() {
+      return *(volatile int*)(0x2098);
+  }
+  ```
+* **Compiler Built-in**: 26 characters (`__builtin_wmq_checksum();`).
+* **Source Size Reduction**: 61% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
