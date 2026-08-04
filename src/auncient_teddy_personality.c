@@ -59,6 +59,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->vocal_visual_harmony = 1.0;     // High friendliness/harmony
             geom->relationship_quality = 1.0;     // High relationship quality
             geom->immunological_strength = 0.0;   // Lower resistance
+            geom->relationship_length = 1.0;      // Long-term preference
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -116,6 +117,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->vocal_visual_harmony = 0.0;     // Low friendliness bias
             geom->relationship_quality = 0.0;     // Low relationship quality
             geom->immunological_strength = 1.0;   // Robust resistance
+            geom->relationship_length = 0.0;      // Short-term preference
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -173,6 +175,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->vocal_visual_harmony = 0.0;     // Low friendliness bias
             geom->relationship_quality = 0.0;     // Low relationship quality
             geom->immunological_strength = 1.0;   // Robust resistance
+            geom->relationship_length = 0.0;      // Short-term preference
             break;
     }
 }
