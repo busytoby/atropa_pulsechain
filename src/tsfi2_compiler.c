@@ -43,6 +43,12 @@ bool tsfi2_compile(
         out_bytecode[offset++] = 0xFC;
     }
     
+    // Emit custom wmq_wait_ready opcode if __builtin_wmq_wait_ready is requested
+    if (strstr(source_code, "__builtin_wmq_wait_ready")) {
+        out_bytecode[offset++] = 0x0F;
+        out_bytecode[offset++] = 0xFD;
+    }
+    
     // Emit x86 machine instructions: MOV EAX, imm32
     out_bytecode[offset++] = 0xB8;
     out_bytecode[offset++] = (uint8_t)(value & 0xFF);
