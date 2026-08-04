@@ -110,6 +110,7 @@ typedef struct {
     double spatial_orientation;      // Perceived spatial orientation capacity (0.0 disorientation-prone, 1.0 objective pathfinding)
     double defense_vigilance;        // Perceived defense vigilance (0.0 lower vigilance, 1.0 high protective action)
     double conflict_mediation;       // Perceived conflict mediation (0.0 escalatory, 1.0 cooperative de-escalation)
+    double command_authority;        // Perceived command authority (0.0 collaborative, 1.0 high command authority)
 } teddy_geometry_t;
 
 // Pixar RenderMan Avatar Agent definition upon the cooperative boundary
