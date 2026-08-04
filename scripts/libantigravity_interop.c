@@ -1199,3 +1199,26 @@ uint32_t interop_fee_decision_evaluate(const InteropDecisionNode *nodes, uint32_
     return interop_decision_tree_evaluate(nodes, root_idx, complexity);
 }
 
+bool antigravity_validate_response(const char *response) {
+    if (!response) return false;
+    
+    int words = 0;
+    bool in_word = false;
+    const char *ptr = response;
+    while (*ptr) {
+        if (*ptr == ' ' || *ptr == '\t' || *ptr == '\n' || *ptr == '\r' || *ptr == '_' || *ptr == '-') {
+            in_word = false;
+        } else if (!in_word) {
+            in_word = true;
+            words++;
+        }
+        ptr++;
+    }
+    
+    if (words <= 1 && strlen(response) > 0) {
+        return false;
+    }
+    
+    return true;
+}
+
