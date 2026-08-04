@@ -46,4 +46,9 @@ bool hathifile_parse_line(char *line, HathifileRow *row);
  */
 void hathifile_free_row(HathifileRow *row);
 
+/*
+ * Exports Hathifile records to a VSAM KSDS database.
+ */
+bool hathifile_export_to_vsam(const char *hathifile_path, const char *vsam_path);
+
 #endif /* HATHITRUST_HATHIFILE_H */

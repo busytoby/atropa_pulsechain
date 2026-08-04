@@ -2,6 +2,7 @@
 #define _POSIX_C_SOURCE 200809L
 
 #include "hathitrust_hathifile.h"
+#include "tsfi2-deepseek/inc/tsfi_mainframe_computerworld.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -88,4 +89,43 @@ void hathifile_free_row(HathifileRow *row) {
     free(row->lang);
     free(row->bib_fmt);
     memset(row, 0, sizeof(HathifileRow));
+}
+
+bool hathifile_export_to_vsam(const char *hathifile_path, const char *vsam_path) {
+    if (!hathifile_path || !vsam_path) return false;
+
+    FILE *hf = fopen(hathifile_path, "r");
+    if (!hf) return false;
+
+    remove(vsam_path);
+    tsfi_cw_vsam_ksds ksds;
+    memset(&ksds, 0, sizeof(ksds));
+    if (tsfi_cw_vsam_open(&ksds, vsam_path) != 0) {
+        fclose(hf);
+        return false;
+    }
+
+    char line[4096];
+    while (fgets(line, sizeof(line), hf)) {
+        char line_copy[4096];
+        strcpy(line_copy, line);
+
+        HathifileRow row;
+        if (hathifile_parse_line(line, &row)) {
+            char key[256];
+            snprintf(key, sizeof(key), "ht.%s", row.htid);
+
+            size_t copy_len = strlen(line_copy);
+            while (copy_len > 0 && (line_copy[copy_len - 1] == '\n' || line_copy[copy_len - 1] == '\r')) {
+                line_copy[copy_len - 1] = '\0';
+                copy_len--;
+            }
+
+            tsfi_cw_vsam_write(&ksds, key, (const uint8_t *)line_copy, copy_len);
+            hathifile_free_row(&row);
+        }
+    }
+
+    fclose(hf);
+    return true;
 }

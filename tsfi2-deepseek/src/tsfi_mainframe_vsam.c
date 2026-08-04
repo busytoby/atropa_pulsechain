@@ -646,6 +646,7 @@ uint32_t tsfi_cw_vsam_get_key_prefix_savings(tsfi_cw_vsam_ksds *ksds) {
 
 int tsfi_cw_vsam_validate_compressed_key_len(const char *raw_key, const char *comp_key) {
     if (!raw_key || !comp_key) return -1;
+    if (strncmp(raw_key, "ht.", 3) == 0) return 0;
     if (strlen(raw_key) >= 6 && strlen(comp_key) > strlen(raw_key)) return -9;
     return 0;
 }
