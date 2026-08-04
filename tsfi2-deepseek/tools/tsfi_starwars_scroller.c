@@ -392,17 +392,38 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
     }
 
     // 4. Render the Verlet Poppy Flower components
-    // Base feathery leaves
-    draw_gothic_leaf((int)stem_base_x, (int)stem_base_y, 80.0f, -M_PI * 0.8f);
-    draw_gothic_leaf((int)stem_base_x, (int)stem_base_y, 80.0f, -M_PI * 0.2f);
+    // Swaying feathery leaves
+    float leaf_sway = 0.04f * sinf(time_val * 1.5f);
+    draw_gothic_leaf((int)stem_base_x, (int)stem_base_y, 80.0f, -M_PI * 0.8f + leaf_sway);
+    draw_gothic_leaf((int)stem_base_x, (int)stem_base_y, 80.0f, -M_PI * 0.2f - leaf_sway);
 
-    // Stem (Forest Green)
-    draw_line((int)stem_base_x, (int)stem_base_y, (int)poppy_joints[0].x, (int)poppy_joints[0].y, 34, 139, 34);
+    // Curved Bezier Stem (forest green with darker shading)
+    int segments = 24;
+    int prev_x = (int)stem_base_x;
+    int prev_y = (int)stem_base_y;
+    float ctrl_x = (stem_base_x + poppy_joints[0].x) * 0.5f - wind_x * 2.0f;
+    float ctrl_y = (stem_base_y + poppy_joints[0].y) * 0.5f;
 
-    // Overlapping Petals (Crimson Red, 6 petals drawn overlapping at radius 36.0f)
-    for (int i = 1; i <= 6; i++) {
-        draw_flat_petal((int)poppy_joints[i].x, (int)poppy_joints[i].y, 36.0f, 220, 20, 60);
+    for (int j = 1; j <= segments; j++) {
+        float t = (float)j / (float)segments;
+        float omt = 1.0f - t;
+        int sx = (int)(omt * omt * stem_base_x + 2.0f * omt * t * ctrl_x + t * t * poppy_joints[0].x);
+        int sy = (int)(omt * omt * stem_base_y + 2.0f * omt * t * ctrl_y + t * t * poppy_joints[0].y);
+
+        draw_line(prev_x, prev_y, sx, sy, 34, 139, 34);
+        draw_line(prev_x + 1, prev_y, sx + 1, sy, 25, 110, 25); // darker shade for volume
+        prev_x = sx;
+        prev_y = sy;
     }
+
+    // Multilayered Petals: Outer layer (1, 3, 5) is larger & darker; Inner layer (2, 4, 6) is smaller & brighter
+    for (int i = 1; i <= 6; i += 2) {
+        draw_flat_petal((int)poppy_joints[i].x, (int)poppy_joints[i].y, 38.0f, 195, 15, 50); // Outer
+    }
+    for (int i = 2; i <= 6; i += 2) {
+        draw_flat_petal((int)poppy_joints[i].x, (int)poppy_joints[i].y, 32.0f, 235, 30, 70); // Inner
+    }
+
 
     // Draw stamen filaments radiating from the center pod (black stems with gold tips)
     float stamen_count = 16.0f;
