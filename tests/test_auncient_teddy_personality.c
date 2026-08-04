@@ -214,7 +214,12 @@ int main(void) {
     double rapid_threat = 0.0;
     assert(evaluate_exposure_threat_consistency(&geom, 25.0, &rapid_threat));
     assert(rapid_threat >= 0.0);
-    printf("   ✓ GENIOLE et al. fWHR threat, visual-vocal mismatch, reactive retaliation, and rapid exposure consistency verified successfully\n");
+
+    // Test Geniole cooperative cheating risk calculation
+    double cheating_risk = 0.0;
+    assert(evaluate_cooperative_cheating_risk(&geom, 1.5, &cheating_risk));
+    assert(cheating_risk >= 0.0);
+    printf("   ✓ GENIOLE et al. fWHR threat, visual-vocal mismatch, reactive retaliation, rapid exposure consistency, and cooperative cheating risk verified successfully\n");
 
     // Test Hyde uncanny mismatch index calculation
     double uncanny_val = 0.0;

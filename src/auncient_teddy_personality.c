@@ -663,6 +663,17 @@ bool evaluate_exposure_threat_consistency(const teddy_geometry_t *geom, double e
     return true;
 }
 
+bool evaluate_cooperative_cheating_risk(const teddy_geometry_t *geom, double social_trust_factor, double *cheating_risk_out) {
+    if (!geom || !cheating_risk_out) {
+        return false;
+    }
+    double physical_threat = evaluate_fw_threat_level(geom);
+    double risk = (physical_threat * (0.5 + geom->status_aggression)) - (social_trust_factor * 0.4);
+    if (risk < 0.0) risk = 0.0;
+    *cheating_risk_out = risk;
+    return true;
+}
+
 bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncanny_score_out) {
     if (!geom || !uncanny_score_out) {
         return false;
