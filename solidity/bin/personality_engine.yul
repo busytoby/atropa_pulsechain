@@ -440,6 +440,41 @@ object "PersonalityEngine" {
                 return(0x00, 32)
             }
 
+            // ----------------------------------------------------------------
+            // METHOD: evaluate_izotope_constrained_parameters (eye_eccentricity, symmetry, stiffness, group_id)
+            // Selector: 0xe399f0fd (integer scaled by 1000)
+            // ----------------------------------------------------------------
+            if eq(selector, 0xe399f0fd) {
+                let eye_eccentricity := calldataload(4)
+                let symmetry := calldataload(36)
+                let stiffness := calldataload(68)
+                let group_id := calldataload(100)
+                
+                // base_spacing = 500 + (eye_eccentricity * 200) / 1000
+                let base_spacing := add(500, div(mul(eye_eccentricity, 200), 1000))
+                let tremolo_spacing := div(mul(base_spacing, symmetry), 1000)
+                
+                let sustain_decay := 1000
+                if eq(group_id, 1) {
+                    // sustain_decay = 2500 + (stiffness * 500) / 1000
+                    sustain_decay := add(2500, div(mul(stiffness, 500), 1000))
+                }
+                if eq(group_id, 2) {
+                    // sustain_decay = 400 - (stiffness * 200) / 1000
+                    let decay_sub := div(mul(stiffness, 200), 1000)
+                    if lt(decay_sub, 400) {
+                        sustain_decay := sub(400, decay_sub)
+                    }
+                    if iszero(lt(decay_sub, 400)) {
+                        sustain_decay := 50
+                    }
+                }
+                
+                mstore(0x00, tremolo_spacing)
+                mstore(0x20, sustain_decay)
+                return(0x00, 64)
+            }
+
             revert(0, 0)
         }
     }
