@@ -203,6 +203,9 @@ bool evaluate_wald_nominal_test(const double *beta_vector, const double *covaria
 // Calculates surrogate residuals for model specification diagnostics.
 bool evaluate_surrogate_residuals(const teddy_geometry_t *geom, int observed_rating, double *residual_out);
 
+// Calculates surrogate residuals for nominal scale ordinal regression models.
+bool evaluate_nominal_surrogate_residuals(const teddy_geometry_t *geom, int observed_rating, double *residual_out);
+
 // Evaluates individual threshold parameters stability via the Wald test.
 bool evaluate_threshold_wald_test(double threshold_est, double baseline, double variance, double *wald_stat_out, double *p_value_out);
 

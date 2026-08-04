@@ -761,6 +761,19 @@ bool evaluate_surrogate_residuals(const teddy_geometry_t *geom, int observed_rat
     return true;
 }
 
+bool evaluate_nominal_surrogate_residuals(const teddy_geometry_t *geom, int observed_rating, double *residual_out) {
+    if (!geom || observed_rating < 1 || observed_rating > 7 || !residual_out) {
+        return false;
+    }
+    double scale = 1.0;
+    evaluate_scale_structured_covariates(geom, geom->maturity_index, &scale);
+    double latent = ((geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0)) / scale;
+    double thresholds[8] = {-10.0, 0.5, 1.2, 2.0, 2.8, 3.5, 4.2, 10.0};
+    double mid = (thresholds[observed_rating] + thresholds[observed_rating - 1]) / 2.0;
+    *residual_out = mid - latent;
+    return true;
+}
+
 bool evaluate_threshold_wald_test(double threshold_est, double baseline, double variance, double *wald_stat_out, double *p_value_out) {
     if (variance < 1e-9 || !wald_stat_out || !p_value_out) {
         return false;

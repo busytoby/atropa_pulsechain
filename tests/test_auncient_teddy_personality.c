@@ -213,6 +213,11 @@ int main(void) {
     assert(evaluate_surrogate_residuals(&geom, 4, &sur_resid));
     printf("   ✓ R H B Christensen surrogate residuals diagnostics verified successfully\n");
 
+    // Test nominal surrogate residuals calculation
+    double nom_sur_resid = 0.0;
+    assert(evaluate_nominal_surrogate_residuals(&geom, 4, &nom_sur_resid));
+    printf("   ✓ R H B Christensen nominal surrogate residuals verified successfully\n");
+
     // Test threshold parameter Wald test calculation
     double t_wstat = 0.0, t_wpval = 0.0;
     assert(evaluate_threshold_wald_test(1.2, 0.5, 0.04, &t_wstat, &t_wpval));
