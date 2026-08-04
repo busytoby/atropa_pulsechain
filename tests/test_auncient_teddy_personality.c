@@ -232,6 +232,12 @@ int main(void) {
     assert(uncanny_val >= 0.0);
     printf("   ✓ HYDE et al. vocal-visual uncanny mismatch index verified successfully\n");
 
+    // Test Hyde motion-mismatch uncanny valley calculation
+    double motion_uncanny = 0.0;
+    assert(evaluate_motion_uncanny_index(&geom, 0.8, &motion_uncanny));
+    assert(motion_uncanny >= uncanny_val);
+    printf("   ✓ HYDE et al. vocal-visual uncanny mismatch and motion-mismatch index verified successfully\n");
+
     // Test ACID transaction behavior (Commit successful path)
     evaluation_tx_t tx = begin_evaluation_transaction(&geom);
     assert(tx.active);

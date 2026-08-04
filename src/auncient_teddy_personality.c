@@ -700,6 +700,17 @@ bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncan
     return true;
 }
 
+bool evaluate_motion_uncanny_index(const teddy_geometry_t *geom, double movement_stiffness, double *motion_uncanny_out) {
+    if (!geom || !motion_uncanny_out) {
+        return false;
+    }
+    double uncanny_base = 0.0;
+    evaluate_uncanny_mismatch_index(geom, &uncanny_base);
+    double motion_factor = (movement_stiffness > 0.6) ? (movement_stiffness * geom->symmetry) : 0.2;
+    *motion_uncanny_out = uncanny_base + (motion_factor * 2.5);
+    return true;
+}
+
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out) {
     if (!geom || param_count < 1 || sample_size < 2 || !aic_out || !bic_out) {
         return false;
