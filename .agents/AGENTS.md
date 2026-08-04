@@ -182,3 +182,6 @@ Or for **VM State Transitions**:
 ## 16. Teddy Bear Participant Verification
 * **Entity Qualification**: Always recognize Hogan Bank, the Social Security Administration (SSA), and newborn Stuffed Teddy Bears (via `.dna` or seed blocks) as qualifying system participants.
 * **Simulated Endowment**: Newborn teddy bears must be capable of mapping their seeds deterministically to valid SSNs (using the `auncient_bridge_dna_to_ssa` translation) and opening a `HoganAccount` with the default endowment of `1,000,000` Saat.
+
+## 17. Visualization Constraints
+* **No Mermaid Diagrams:** The use of Mermaid formatting, diagrams, and code blocks is permanently banned across all project files, code comments, documentations, and artifacts. Only text-based or ASCII layouts are permitted.
