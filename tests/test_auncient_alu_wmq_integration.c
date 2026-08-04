@@ -74,7 +74,22 @@ bool alu_wmq_sys_step(alu_wmq_sys_t *sys, uint32_t phase_angle, uint8_t tag) {
             uint8_t data_buf[128] = {0};
             int data_len = 0;
             if (tsfi_cw_vsam_read(sys->alu_soft_reg, "DATA", data_buf, sizeof(data_buf) - 1, &data_len) == 0) {
-                tsfi_cw_vsam_write(sys->alu_soft_reg, "900", data_buf, data_len);
+                int words = 0;
+                bool in_word = false;
+                for (int i = 0; i < data_len; i++) {
+                    if (data_buf[i] == ' ' || data_buf[i] == '\t' || data_buf[i] == '\n' || data_buf[i] == '\r' || data_buf[i] == '_' || data_buf[i] == '-') {
+                        in_word = false;
+                    } else if (!in_word) {
+                        in_word = true;
+                        words++;
+                    }
+                }
+                if (words > 1) {
+                    tsfi_cw_vsam_write(sys->alu_soft_reg, "900", data_buf, data_len);
+                } else {
+                    printf("[BARRIER] Rejected single-word payload: %s\n", (char *)data_buf);
+                    fflush(stdout);
+                }
             }
         }
     }

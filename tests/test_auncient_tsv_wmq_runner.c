@@ -33,6 +33,19 @@ int main(void) {
     source_code[read_bytes] = '\0';
     fclose(sf);
 
+    // Verify source payload against the communication word-count loop barrier
+    int words = 0;
+    bool in_word = false;
+    for (size_t i = 0; i < read_bytes; i++) {
+        if (source_code[i] == ' ' || source_code[i] == '\t' || source_code[i] == '\n' || source_code[i] == '\r' || source_code[i] == '_' || source_code[i] == '-') {
+            in_word = false;
+        } else if (!in_word) {
+            in_word = true;
+            words++;
+        }
+    }
+    assert(words > 1);
+
     // Compile using our new tsfi2 compiler!
     uint8_t bytecode[256];
     size_t bytecode_len = 0;
