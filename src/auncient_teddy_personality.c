@@ -746,6 +746,17 @@ bool simulate_snubber_clamped_flyback(double peak_voltage, double inductance, do
     return true;
 }
 
+bool simulate_rcd_snubber_decay(double peak_voltage, double resistance, double capacitance, double inductance, double time_step, double *voltage_state) {
+    if (resistance < 1e-9 || capacitance < 1e-9 || inductance < 1e-9 || time_step < 1e-9 || !voltage_state) {
+        return false;
+    }
+    double tau = resistance * capacitance;
+    double damping = exp(-time_step / tau);
+    double resonance = cos(time_step / sqrt(inductance * capacitance));
+    *voltage_state = peak_voltage * damping * resonance;
+    return true;
+}
+
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out) {
     if (!geom || param_count < 1 || sample_size < 2 || !aic_out || !bic_out) {
         return false;

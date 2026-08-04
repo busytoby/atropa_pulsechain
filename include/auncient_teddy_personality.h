@@ -222,6 +222,9 @@ bool evaluate_hbridge_izotope_mismatch(const teddy_geometry_t *geom, double swit
 // Simulates the snubber-clamped inductive flyback transient voltage decay.
 bool simulate_snubber_clamped_flyback(double peak_voltage, double inductance, double snubber_resistance, double time_step, double *clamped_voltage_out);
 
+// Simulates the RCD snubber resonant capacitor decay stage.
+bool simulate_rcd_snubber_decay(double peak_voltage, double resistance, double capacitance, double inductance, double time_step, double *voltage_state);
+
 // Computes model selection diagnostics via AIC and BIC information criteria.
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out);
 

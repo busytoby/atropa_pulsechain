@@ -260,6 +260,12 @@ int main(void) {
     assert(clamped_volt > 0.0);
     printf("   ✓ Snubber-clamped H-bridge flyback transient simulation verified successfully\n");
 
+    // Test RCD Snubber resonant decay simulation
+    double rcd_volt = 0.0;
+    assert(simulate_rcd_snubber_decay(100.0, 10.0, 1e-6, 0.05, 0.00001, &rcd_volt));
+    assert(rcd_volt <= 100.0);
+    printf("   ✓ RCD snubber resonant capacitor decay simulation verified successfully\n");
+
     // Test ACID transaction behavior (Commit successful path)
     evaluation_tx_t tx = begin_evaluation_transaction(&geom);
     assert(tx.active);
