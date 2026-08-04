@@ -90,10 +90,11 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->competitive_persistence = 0.0;   // Lower competitive persistence
             geom->family_altruism = 1.0;          // High family altruism
             geom->social_conformity = 1.0;        // High social conformity
+            geom->status_aggression = 0.0;        // Low status aggression
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
-            geom->eye_eccentricity = 0.5; // Almond eyes are rated most aggressive (squinting)
+            geom->eye_eccentricity = 0.5; // Almond eyes are rated most eerie (squinting)
             geom->eye_scale = 1.0;        // Medium eyes
             geom->stiffness = 0.9;        // High stiffness for rigid, sudden movements
             geom->damping = 0.2;          // Low damping
@@ -178,6 +179,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->competitive_persistence = 1.0;   // High competitive persistence
             geom->family_altruism = 0.0;          // Lower family altruism
             geom->social_conformity = 0.0;        // Low social conformity
+            geom->status_aggression = 1.0;        // High status aggression
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -266,6 +268,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->competitive_persistence = 1.0;   // High competitive persistence
             geom->family_altruism = 0.0;          // Lower family altruism
             geom->social_conformity = 0.0;        // Low social conformity
+            geom->status_aggression = 1.0;        // High status aggression
             break;
     }
 }
