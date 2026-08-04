@@ -49,11 +49,37 @@ def render_frames():
         for name, bear in bears.items():
             base_radius = 40
             if name == step["listener"]:
-                # Modulate listener head size by emotional voltage
                 base_radius += int(min(step["voltage"] * 3, 60))
             
             x, y = bear["x"], bear["y"]
+            
+            # Draw Menorah-style vacuum tube backing glow
+            for tube_idx in range(-3, 4):
+                tx = x + (tube_idx * 12)
+                ty = y + 50
+                # Glow brightness modulated by voltage
+                glow_val = int(min(100 + step["voltage"] * 15, 255))
+                draw.line([tx, ty, tx, ty - 30], fill=(glow_val, int(glow_val * 0.5), 0), width=3)
+            
             draw.ellipse([x - base_radius, y - base_radius, x + base_radius, y + base_radius], fill=bear["color"], outline="white")
+            
+            # Draw Lissajous projection orbit loops around the head (Tripartite VM manifestation)
+            orbit_points = []
+            steps_count = 30
+            for pt in range(steps_count):
+                angle = (pt / steps_count) * 2.0 * math.pi
+                # Lissajous freq parameters modulated by pitch
+                fx = 3.0
+                fy = (step["pitch"] / 110.0)
+                ox = x + int(base_radius * 1.3 * math.sin(fx * angle))
+                oy = y + int(base_radius * 1.3 * math.cos(fy * angle + step["voltage"]))
+                orbit_points.append((ox, oy))
+            
+            for pt in range(steps_count):
+                p1 = orbit_points[pt]
+                p2 = orbit_points[(pt + 1) % steps_count]
+                draw.line([p1[0], p1[1], p2[0], p2[1]], fill=(0, 255, 200), width=1)
+                
             draw.text((x - 20, y - 5), name, fill="black")
             
         # Draw status info
