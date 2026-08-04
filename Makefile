@@ -672,3 +672,8 @@ test-auncient-xplos-kernel:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_xplos_kernel.c -o tests/test_auncient_xplos_kernel -lcrypto -lrt
 	./tests/test_auncient_xplos_kernel
 	@rm -f tests/test_auncient_xplos_kernel
+
+test-auncient-xplos-scheduler:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_xplos_scheduler.c -o tests/test_auncient_xplos_scheduler -lrt
+	./tests/test_auncient_xplos_scheduler
+	@rm -f tests/test_auncient_xplos_scheduler
