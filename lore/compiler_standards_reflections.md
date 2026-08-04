@@ -356,6 +356,16 @@ int main() {
 * **Compiler Built-in**: 27 characters (`__builtin_wmq_disconnect();`).
 * **Source Size Reduction**: 60% character footprint decrease.
 
+### Host Connection Keepalive Comparison
+* **Boilerplate Wrapper**: 76 characters.
+  ```c
+  void set_keepalive(int val) {
+      *(volatile int*)(0x2058) = val;
+  }
+  ```
+* **Compiler Built-in**: 29 characters (`__builtin_wmq_keepalive(30);`).
+* **Source Size Reduction**: 61% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection

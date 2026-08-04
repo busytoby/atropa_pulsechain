@@ -292,6 +292,17 @@ bool tsfi2_compile(
         out_bytecode[offset++] = 0xDD;
     }
     
+    // Emit custom wmq_keepalive if requested
+    const char *p_ka = strstr(source_code, "__builtin_wmq_keepalive(");
+    if (p_ka) {
+        int val = 0;
+        if (sscanf(p_ka, "__builtin_wmq_keepalive(%d)", &val) == 1) {
+            out_bytecode[offset++] = 0x0F;
+            out_bytecode[offset++] = 0xDC;
+            out_bytecode[offset++] = (uint8_t)val;
+        }
+    }
+    
     // Emit x86 machine instructions: MOV EAX, imm32
     out_bytecode[offset++] = 0xB8;
     out_bytecode[offset++] = (uint8_t)(value & 0xFF);
