@@ -20,9 +20,10 @@ rm -f /tmp/hasp_spool_audit.log
 
 # Define the test suites to run
 declare -a test_suites=(
+    "test-auncient-alu-wmq-integration:ALU WinchesterMQ Integration"
+    "test-auncient-tsv-wmq-integration:TSV WinchesterMQ Integration"
     "test-tsfi2-loader:Loader Platform"
     "test-tsfi2-compiler:Compiler Front-End"
-    "test-auncient-tsv-wmq-integration:WinchesterMQ Integration"
     "test-hathitrust-hathifile:HathiTrust VSAM Exporter"
     "test-auncient-quadtree-ksds:Quadtree KSDS Operations"
 )
