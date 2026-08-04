@@ -7,6 +7,23 @@
 #include <string.h>
 #include <ctype.h>
 
+typedef struct {
+    const char *pos;
+    uint8_t op1;
+    uint8_t op2;
+    int arg_count;
+    int val1;
+    int val2;
+} BuiltinCall;
+
+static int compare_calls(const void *a, const void *b) {
+    const BuiltinCall *ca = (const BuiltinCall *)a;
+    const BuiltinCall *cb = (const BuiltinCall *)b;
+    if (ca->pos < cb->pos) return -1;
+    if (ca->pos > cb->pos) return 1;
+    return 0;
+}
+
 bool tsfi2_compile(
     const char *source_code,
     uint8_t *out_bytecode,
@@ -15,363 +32,151 @@ bool tsfi2_compile(
 ) {
     if (!source_code || !out_bytecode || !out_bytecode_len || max_len < 6) return false;
     
-    // Parse "int main" signature
     if (!strstr(source_code, "int") || !strstr(source_code, "main")) {
         return false;
     }
     
-    // Find "return" keyword
     const char *ret_ptr = strstr(source_code, "return");
     if (!ret_ptr) return false;
     
-    ret_ptr += 6; // Move past "return"
+    ret_ptr += 6;
     while (*ret_ptr && isspace((unsigned char)*ret_ptr)) {
         ret_ptr++;
     }
     
-    // Extract integer constant value
     if (!isdigit((unsigned char)*ret_ptr)) {
         return false;
     }
-    
     int value = atoi(ret_ptr);
-    
-    // Emit custom wmq_send opcode if __builtin_wmq_send is requested
+
+    BuiltinCall calls[128];
+    int call_count = 0;
+
+    // Define table of simple built-ins (no arguments)
+    struct {
+        const char *name;
+        uint8_t op1;
+        uint8_t op2;
+    } simple_table[] = {
+        {"__builtin_wmq_send", 0x0F, 0xFC},
+        {"__builtin_wmq_wait_ready", 0x0F, 0xFD},
+        {"__builtin_wmq_reset", 0x0F, 0xFB},
+        {"__builtin_wmq_halt", 0x0F, 0xFA},
+        {"__builtin_wmq_status", 0x0F, 0xF9},
+        {"__builtin_wmq_peek", 0x0F, 0xF8},
+        {"__builtin_wmq_size", 0x0F, 0xF7},
+        {"__builtin_wmq_flush", 0x0F, 0xF6},
+        {"__builtin_wmq_abort", 0x0F, 0xF5},
+        {"__builtin_wmq_lock", 0x0F, 0xF2},
+        {"__builtin_wmq_unlock", 0x0F, 0xF1},
+        {"__builtin_wmq_owner", 0x0F, 0xF0},
+        {"__builtin_wmq_version", 0x0F, 0xEF},
+        {"__builtin_wmq_speed", 0x0F, 0xEE},
+        {"__builtin_wmq_mode", 0x0F, 0xED},
+        {"__builtin_wmq_irq", 0x0F, 0xEC},
+        {"__builtin_wmq_ack", 0x0F, 0xEB},
+        {"__builtin_wmq_busy", 0x0F, 0xEA},
+        {"__builtin_wmq_error", 0x0F, 0xE9},
+        {"__builtin_wmq_checksum", 0x0F, 0xE8},
+        {"__builtin_wmq_id", 0x0F, 0xE7},
+        {"__builtin_wmq_mac", 0x0F, 0xE6},
+        {"__builtin_wmq_ip", 0x0F, 0xE5},
+        {"__builtin_wmq_port", 0x0F, 0xE4},
+        {"__builtin_wmq_subnet", 0x0F, 0xE3},
+        {"__builtin_wmq_gateway", 0x0F, 0xE2},
+        {"__builtin_wmq_dns", 0x0F, 0xE1},
+        {"__builtin_wmq_dhcp", 0x0F, 0xE0},
+        {"__builtin_wmq_lease", 0x0F, 0xDF},
+        {"__builtin_wmq_disconnect", 0x0F, 0xDD},
+        {"__builtin_wmq_reconnect", 0x0F, 0xDB},
+        {"__builtin_wmq_proto", 0x0F, 0xDA},
+        {"__builtin_wmq_retransmit", 0x0F, 0xD6},
+        {"__builtin_wmq_window", 0x0F, 0xD5}
+    };
+    int simple_table_size = sizeof(simple_table) / sizeof(simple_table[0]);
+
+    // Find occurrences of simple built-ins
+    for (int i = 0; i < simple_table_size; i++) {
+        const char *p = source_code;
+        while ((p = strstr(p, simple_table[i].name)) != NULL) {
+            // Check that it's not a parameterized substring match
+            char next_char = p[strlen(simple_table[i].name)];
+            if (next_char == '_' || isalnum((unsigned char)next_char)) {
+                p++;
+                continue;
+            }
+            if (call_count < 128) {
+                calls[call_count++] = (BuiltinCall){p, simple_table[i].op1, simple_table[i].op2, 0, 0, 0};
+            }
+            p++;
+        }
+    }
+
+    // Find parameterized built-ins
+    struct {
+        const char *name;
+        uint8_t op1;
+        uint8_t op2;
+        int arg_count; // 1 or 2
+    } param_table[] = {
+        {"__builtin_wmq_reg_write", 0x0F, 0xFE, 2},
+        {"__builtin_wmq_reg_read", 0x0F, 0xFF, 1},
+        {"__builtin_wmq_peek_idx", 0x0F, 0xF4, 1},
+        {"__builtin_wmq_poke", 0x0F, 0xF3, 2},
+        {"__builtin_wmq_connect_idx", 0x0F, 0xDE, 1},
+        {"__builtin_wmq_keepalive", 0x0F, 0xDC, 1},
+        {"__builtin_wmq_auth_idx", 0x0F, 0xD9, 1},
+        {"__builtin_wmq_timeout_idx", 0x0F, 0xD8, 1},
+        {"__builtin_wmq_key_idx", 0x0F, 0xD7, 1},
+        {"__builtin_wmq_peer_idx", 0x0F, 0xD4, 1}
+    };
+    int param_table_size = sizeof(param_table) / sizeof(param_table[0]);
+
+    for (int i = 0; i < param_table_size; i++) {
+        const char *p = source_code;
+        while ((p = strstr(p, param_table[i].name)) != NULL) {
+            if (call_count < 128) {
+                int val1 = 0, val2 = 0;
+                const char *args = strchr(p, '(');
+                if (args) {
+                    args++;
+                    val1 = atoi(args);
+                    if (param_table[i].arg_count == 2) {
+                        const char *comma = strchr(args, ',');
+                        if (comma) {
+                            comma++;
+                            val2 = atoi(comma);
+                        }
+                    }
+                }
+                calls[call_count++] = (BuiltinCall){p, param_table[i].op1, param_table[i].op2, param_table[i].arg_count, val1, val2};
+            }
+            p++;
+        }
+    }
+
+    // Sort calls chronologically by order of appearance in source code
+    qsort(calls, call_count, sizeof(BuiltinCall), compare_calls);
+
+    // Emit sorted instructions
     size_t offset = 0;
-    if (strstr(source_code, "__builtin_wmq_send")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xFC;
-    }
-    
-    // Emit custom wmq_wait_ready opcode if __builtin_wmq_wait_ready is requested
-    if (strstr(source_code, "__builtin_wmq_wait_ready")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xFD;
-    }
-    
-    // Emit custom wmq_reg_write if requested
-    const char *reg_write_ptr = strstr(source_code, "__builtin_wmq_reg_write");
-    if (reg_write_ptr) {
-        reg_write_ptr = strchr(reg_write_ptr, '(');
-        if (reg_write_ptr) {
-            reg_write_ptr++;
-            int reg_idx = atoi(reg_write_ptr);
-            reg_write_ptr = strchr(reg_write_ptr, ',');
-            if (reg_write_ptr) {
-                reg_write_ptr++;
-                int reg_val = atoi(reg_write_ptr);
-                out_bytecode[offset++] = 0x0F;
-                out_bytecode[offset++] = 0xFE;
-                out_bytecode[offset++] = (uint8_t)reg_idx;
-                out_bytecode[offset++] = (uint8_t)(reg_val & 0xFF);
-                out_bytecode[offset++] = (uint8_t)((reg_val >> 8) & 0xFF);
-                out_bytecode[offset++] = (uint8_t)((reg_val >> 16) & 0xFF);
-                out_bytecode[offset++] = (uint8_t)((reg_val >> 24) & 0xFF);
-            }
+    for (int i = 0; i < call_count; i++) {
+        if (offset + 10 >= max_len) return false;
+        out_bytecode[offset++] = calls[i].op1;
+        out_bytecode[offset++] = calls[i].op2;
+        if (calls[i].arg_count >= 1) {
+            out_bytecode[offset++] = (uint8_t)calls[i].val1;
+        }
+        if (calls[i].arg_count >= 2) {
+            out_bytecode[offset++] = (uint8_t)(calls[i].val2 & 0xFF);
+            out_bytecode[offset++] = (uint8_t)((calls[i].val2 >> 8) & 0xFF);
+            out_bytecode[offset++] = (uint8_t)((calls[i].val2 >> 16) & 0xFF);
+            out_bytecode[offset++] = (uint8_t)((calls[i].val2 >> 24) & 0xFF);
         }
     }
-    
-    // Emit custom wmq_reg_read if requested
-    const char *reg_read_ptr = strstr(source_code, "__builtin_wmq_reg_read");
-    if (reg_read_ptr) {
-        reg_read_ptr = strchr(reg_read_ptr, '(');
-        if (reg_read_ptr) {
-            reg_read_ptr++;
-            int reg_idx = atoi(reg_read_ptr);
-            out_bytecode[offset++] = 0x0F;
-            out_bytecode[offset++] = 0xFF;
-            out_bytecode[offset++] = (uint8_t)reg_idx;
-        }
-    }
-    
-    // Emit custom wmq_reset if requested
-    if (strstr(source_code, "__builtin_wmq_reset")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xFB;
-    }
-    
-    // Emit custom wmq_halt if requested
-    if (strstr(source_code, "__builtin_wmq_halt")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xFA;
-    }
-    
-    // Emit custom wmq_status if requested
-    if (strstr(source_code, "__builtin_wmq_status")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xF9;
-    }
-    
-    // Emit custom wmq_peek_idx if requested
-    const char *peek_idx_ptr = strstr(source_code, "__builtin_wmq_peek_idx");
-    const char *poke_ptr = strstr(source_code, "__builtin_wmq_poke");
-    if (peek_idx_ptr) {
-        peek_idx_ptr = strchr(peek_idx_ptr, '(');
-        if (peek_idx_ptr) {
-            peek_idx_ptr++;
-            int idx = atoi(peek_idx_ptr);
-            out_bytecode[offset++] = 0x0F;
-            out_bytecode[offset++] = 0xF4;
-            out_bytecode[offset++] = (uint8_t)idx;
-        }
-    } else if (poke_ptr) {
-        poke_ptr = strchr(poke_ptr, '(');
-        if (poke_ptr) {
-            poke_ptr++;
-            int idx = atoi(poke_ptr);
-            poke_ptr = strchr(poke_ptr, ',');
-            if (poke_ptr) {
-                poke_ptr++;
-                int val = atoi(poke_ptr);
-                out_bytecode[offset++] = 0x0F;
-                out_bytecode[offset++] = 0xF3;
-                out_bytecode[offset++] = (uint8_t)idx;
-                out_bytecode[offset++] = (uint8_t)(val & 0xFF);
-                out_bytecode[offset++] = (uint8_t)((val >> 8) & 0xFF);
-                out_bytecode[offset++] = (uint8_t)((val >> 16) & 0xFF);
-                out_bytecode[offset++] = (uint8_t)((val >> 24) & 0xFF);
-            }
-        }
-    } else if (strstr(source_code, "__builtin_wmq_peek")) { // Emit custom wmq_peek
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xF8;
-    }
-    
-    // Emit custom wmq_size if requested
-    if (strstr(source_code, "__builtin_wmq_size")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xF7;
-    }
-    
-    // Emit custom wmq_flush if requested
-    if (strstr(source_code, "__builtin_wmq_flush")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xF6;
-    }
-    
-    // Emit custom wmq_abort if requested
-    if (strstr(source_code, "__builtin_wmq_abort")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xF5;
-    }
-    
-    // Emit custom wmq_lock if requested
-    if (strstr(source_code, "__builtin_wmq_lock")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xF2;
-    }
-    
-    // Emit custom wmq_unlock if requested
-    if (strstr(source_code, "__builtin_wmq_unlock")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xF1;
-    }
-    
-    // Emit custom wmq_owner if requested
-    if (strstr(source_code, "__builtin_wmq_owner")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xF0;
-    }
-    
-    // Emit custom wmq_version if requested
-    if (strstr(source_code, "__builtin_wmq_version")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xEF;
-    }
-    
-    // Emit custom wmq_speed if requested
-    if (strstr(source_code, "__builtin_wmq_speed")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xEE;
-    }
-    
-    // Emit custom wmq_mode if requested
-    if (strstr(source_code, "__builtin_wmq_mode")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xED;
-    }
-    
-    // Emit custom wmq_irq if requested
-    if (strstr(source_code, "__builtin_wmq_irq")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xEC;
-    }
-    
-    // Emit custom wmq_ack if requested
-    if (strstr(source_code, "__builtin_wmq_ack")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xEB;
-    }
-    
-    // Emit custom wmq_busy if requested
-    if (strstr(source_code, "__builtin_wmq_busy")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xEA;
-    }
-    
-    // Emit custom wmq_error if requested
-    if (strstr(source_code, "__builtin_wmq_error")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xE9;
-    }
-    
-    // Emit custom wmq_checksum if requested
-    if (strstr(source_code, "__builtin_wmq_checksum")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xE8;
-    }
-    
-    // Emit custom wmq_id if requested
-    if (strstr(source_code, "__builtin_wmq_id")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xE7;
-    }
-    
-    // Emit custom wmq_mac if requested
-    if (strstr(source_code, "__builtin_wmq_mac")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xE6;
-    }
-    
-    // Emit custom wmq_ip if requested
-    if (strstr(source_code, "__builtin_wmq_ip")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xE5;
-    }
-    
-    // Emit custom wmq_port if requested
-    if (strstr(source_code, "__builtin_wmq_port")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xE4;
-    }
-    
-    // Emit custom wmq_subnet if requested
-    if (strstr(source_code, "__builtin_wmq_subnet")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xE3;
-    }
-    
-    // Emit custom wmq_gateway if requested
-    if (strstr(source_code, "__builtin_wmq_gateway")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xE2;
-    }
-    
-    // Emit custom wmq_dns if requested
-    if (strstr(source_code, "__builtin_wmq_dns")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xE1;
-    }
-    
-    // Emit custom wmq_dhcp if requested
-    if (strstr(source_code, "__builtin_wmq_dhcp")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xE0;
-    }
-    
-    // Emit custom wmq_lease if requested
-    if (strstr(source_code, "__builtin_wmq_lease")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xDF;
-    }
-    
-    // Emit custom wmq_connect_idx if requested
-    const char *p_connect = strstr(source_code, "__builtin_wmq_connect_idx(");
-    if (p_connect) {
-        int idx = 0;
-        if (sscanf(p_connect, "__builtin_wmq_connect_idx(%d)", &idx) == 1) {
-            out_bytecode[offset++] = 0x0F;
-            out_bytecode[offset++] = 0xDE;
-            out_bytecode[offset++] = (uint8_t)idx;
-        }
-    }
-    
-    // Emit custom wmq_disconnect if requested
-    if (strstr(source_code, "__builtin_wmq_disconnect")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xDD;
-    }
-    
-    // Emit custom wmq_keepalive if requested
-    const char *p_ka = strstr(source_code, "__builtin_wmq_keepalive(");
-    if (p_ka) {
-        int val = 0;
-        if (sscanf(p_ka, "__builtin_wmq_keepalive(%d)", &val) == 1) {
-            out_bytecode[offset++] = 0x0F;
-            out_bytecode[offset++] = 0xDC;
-            out_bytecode[offset++] = (uint8_t)val;
-        }
-    }
-    
-    // Emit custom wmq_reconnect if requested
-    if (strstr(source_code, "__builtin_wmq_reconnect")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xDB;
-    }
-    
-    // Emit custom wmq_proto if requested
-    if (strstr(source_code, "__builtin_wmq_proto")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xDA;
-    }
-    
-    // Emit custom wmq_auth_idx if requested
-    const char *p_auth = strstr(source_code, "__builtin_wmq_auth_idx(");
-    if (p_auth) {
-        int idx = 0;
-        if (sscanf(p_auth, "__builtin_wmq_auth_idx(%d)", &idx) == 1) {
-            out_bytecode[offset++] = 0x0F;
-            out_bytecode[offset++] = 0xD9;
-            out_bytecode[offset++] = (uint8_t)idx;
-        }
-    }
-    
-    // Emit custom wmq_timeout_idx if requested
-    const char *p_timeout = strstr(source_code, "__builtin_wmq_timeout_idx(");
-    if (p_timeout) {
-        int idx = 0;
-        if (sscanf(p_timeout, "__builtin_wmq_timeout_idx(%d)", &idx) == 1) {
-            out_bytecode[offset++] = 0x0F;
-            out_bytecode[offset++] = 0xD8;
-            out_bytecode[offset++] = (uint8_t)idx;
-        }
-    }
-    
-    // Emit custom wmq_key_idx if requested
-    const char *p_key = strstr(source_code, "__builtin_wmq_key_idx(");
-    if (p_key) {
-        int idx = 0;
-        if (sscanf(p_key, "__builtin_wmq_key_idx(%d)", &idx) == 1) {
-            out_bytecode[offset++] = 0x0F;
-            out_bytecode[offset++] = 0xD7;
-            out_bytecode[offset++] = (uint8_t)idx;
-        }
-    }
-    
-    // Emit custom wmq_retransmit if requested
-    if (strstr(source_code, "__builtin_wmq_retransmit")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xD6;
-    }
-    
-    // Emit custom wmq_window if requested
-    if (strstr(source_code, "__builtin_wmq_window")) {
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xD5;
-    }
-    
-    // Emit custom wmq_peer_idx if requested
-    const char *p_peer = strstr(source_code, "__builtin_wmq_peer_idx(");
-    if (p_peer) {
-        int idx = 0;
-        if (sscanf(p_peer, "__builtin_wmq_peer_idx(%d)", &idx) == 1) {
-            out_bytecode[offset++] = 0x0F;
-            out_bytecode[offset++] = 0xD4;
-            out_bytecode[offset++] = (uint8_t)idx;
-        }
-    }
-    
+
     // Emit x86 machine instructions: MOV EAX, imm32
+    if (offset + 6 >= max_len) return false;
     out_bytecode[offset++] = 0xB8;
     out_bytecode[offset++] = (uint8_t)(value & 0xFF);
     out_bytecode[offset++] = (uint8_t)((value >> 8) & 0xFF);
