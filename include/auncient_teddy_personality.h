@@ -112,6 +112,7 @@ typedef struct {
     double conflict_mediation;       // Perceived conflict mediation (0.0 escalatory, 1.0 cooperative de-escalation)
     double command_authority;        // Perceived command authority (0.0 collaborative, 1.0 high command authority)
     double partner_caregiving;       // Perceived caregiving support (0.0 lower support, 1.0 high caregiving support)
+    double relationship_permanence_strategy; // Perceived permanence strategy (0.0 lower effort, 1.0 high partner retention)
 } teddy_geometry_t;
 
 // Pixar RenderMan Avatar Agent definition upon the cooperative boundary

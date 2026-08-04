@@ -105,6 +105,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->conflict_mediation = 1.0;       // High conflict mediation
             geom->command_authority = 0.0;        // Low command authority
             geom->partner_caregiving = 1.0;       // High partner caregiving
+            geom->relationship_permanence_strategy = 1.0; // High relationship permanence strategy
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -207,6 +208,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->conflict_mediation = 0.0;       // Low conflict mediation
             geom->command_authority = 1.0;        // High command authority
             geom->partner_caregiving = 0.0;       // Low partner caregiving
+            geom->relationship_permanence_strategy = 0.0; // Low relationship permanence strategy
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -309,6 +311,8 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->conflict_mediation = 0.0;       // Low conflict mediation
             geom->command_authority = 1.0;        // High command authority
             geom->partner_caregiving = 0.0;       // Low partner caregiving
+            geom->relationship_permanence_strategy = 0.0; // Low relationship permanence strategy
+            break;
     }
 }
 
