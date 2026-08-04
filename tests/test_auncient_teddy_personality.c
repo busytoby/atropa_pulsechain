@@ -298,6 +298,12 @@ int main(void) {
     assert(geom.head_fwhr == 1.0); // Rolled back
     printf("   ✓ ACID-compliant izotope flyback transaction safety limits and rollback verified successfully\n");
 
+    // Test Gumbel transient diyat tax calculation
+    double total_cost = 0.0;
+    assert(calculate_diyat_tax(&geom, 500.0, 10.0, &total_cost));
+    assert(total_cost >= 10.0);
+    printf("   ✓ Nerve-like Gumbel transient diyat tax calculations verified successfully\n");
+
     // Test ACID transaction behavior (Rollback path on constraint violation)
     tx = begin_evaluation_transaction(&geom);
     assert(tx.active);

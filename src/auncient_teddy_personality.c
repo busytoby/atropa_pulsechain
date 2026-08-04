@@ -879,6 +879,23 @@ bool commit_izotope_flyback_transaction(evaluation_tx_t *tx, double switching_fr
     return true;
 }
 
+bool calculate_diyat_tax(const teddy_geometry_t *geom, double switching_frequency, double base_gas_cost, double *total_cost_out) {
+    if (!geom || switching_frequency < 1.0 || base_gas_cost < 0.0 || !total_cost_out) {
+        return false;
+    }
+    double flyback_mismatch = 0.0;
+    if (!evaluate_hbridge_izotope_mismatch(geom, switching_frequency, &flyback_mismatch)) {
+        return false;
+    }
+    double threshold = 5.0;
+    double tax = 0.0;
+    if (flyback_mismatch > threshold) {
+        tax = 100.0 * exp(flyback_mismatch - threshold);
+    }
+    *total_cost_out = base_gas_cost + tax;
+    return true;
+}
+
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out) {
     if (!geom || param_count < 1 || sample_size < 2 || !aic_out || !bic_out) {
         return false;

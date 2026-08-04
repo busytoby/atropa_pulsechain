@@ -236,6 +236,9 @@ bool simulate_rcd_snubber_decay(double peak_voltage, double resistance, double c
 // Commits an izotope H-bridge flyback transaction under ACID safety constraints.
 bool commit_izotope_flyback_transaction(evaluation_tx_t *tx, double switching_frequency, double max_safe_voltage);
 
+// Calculates the nerve-like Gumbel transient diyat tax on top of base gas costs.
+bool calculate_diyat_tax(const teddy_geometry_t *geom, double switching_frequency, double base_gas_cost, double *total_cost_out);
+
 // Computes model selection diagnostics via AIC and BIC information criteria.
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out);
 
