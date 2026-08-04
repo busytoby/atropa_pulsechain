@@ -198,27 +198,46 @@ bool tsfi2_compile(
         out_bytecode[offset++] = (uint8_t)((ssn_val >> 16) & 0xFF);
         out_bytecode[offset++] = (uint8_t)((ssn_val >> 24) & 0xFF);
 
-        // Check for DISPLAY "EXECUTE COBOL ADVERSARY GOST LOOP..."
-        if (strstr(source_code, "DISPLAY \"EXECUTE COBOL ADVERSARY GOST LOOP...\"")) {
-            out_bytecode[offset++] = 0x0F;
-            out_bytecode[offset++] = 0x20;
-            const char *msg = "EXECUTE COBOL ADVERSARY GOST LOOP...";
-            uint8_t len = (uint8_t)strlen(msg);
-            out_bytecode[offset++] = len;
-            for (uint8_t i = 0; i < len; i++) {
-                out_bytecode[offset++] = msg[i];
-            }
-        }
-        
-        // Check for DISPLAY "PROCESSED IDENTITY: " WS-SSN-TIN
-        if (strstr(source_code, "DISPLAY \"PROCESSED IDENTITY: \" WS-SSN-TIN")) {
-            out_bytecode[offset++] = 0x0F;
-            out_bytecode[offset++] = 0x21;
-            const char *msg = "PROCESSED IDENTITY: ";
-            uint8_t len = (uint8_t)strlen(msg);
-            out_bytecode[offset++] = len;
-            for (uint8_t i = 0; i < len; i++) {
-                out_bytecode[offset++] = msg[i];
+        // Dynamically parse all JCL/COBOL DISPLAY statements
+        const char *disp_ptr = source_code;
+        while ((disp_ptr = strstr(disp_ptr, "DISPLAY")) != NULL) {
+            disp_ptr += 7;
+            while (*disp_ptr && isspace((unsigned char)*disp_ptr)) disp_ptr++;
+            if (*disp_ptr == '"') {
+                disp_ptr++; // skip quote
+                char msg[256] = {0};
+                int msg_len = 0;
+                while (*disp_ptr && *disp_ptr != '"' && msg_len < 255) {
+                    msg[msg_len++] = *disp_ptr++;
+                }
+                if (*disp_ptr == '"') disp_ptr++; // skip ending quote
+                while (*disp_ptr && (*disp_ptr == ' ' || *disp_ptr == '\t')) disp_ptr++;
+                
+                // Check if followed by an identifier (like WS-SSN-TIN) on the same line
+                bool has_var = false;
+                if (*disp_ptr && (isalnum((unsigned char)*disp_ptr) || *disp_ptr == '-')) {
+                    char var_name[64] = {0};
+                    int var_len = 0;
+                    while (*disp_ptr && (isalnum((unsigned char)*disp_ptr) || *disp_ptr == '-') && var_len < 63) {
+                        var_name[var_len++] = *disp_ptr++;
+                    }
+                    if (strcmp(var_name, "WS-SSN-TIN") == 0) {
+                        has_var = true;
+                    }
+                }
+                while (*disp_ptr && isspace((unsigned char)*disp_ptr)) disp_ptr++;
+                
+                if (has_var) {
+                    out_bytecode[offset++] = 0x0F;
+                    out_bytecode[offset++] = 0x21; // dynamic display referencing register 2 (SSN)
+                } else {
+                    out_bytecode[offset++] = 0x0F;
+                    out_bytecode[offset++] = 0x20; // static display
+                }
+                out_bytecode[offset++] = (uint8_t)msg_len;
+                for (int i = 0; i < msg_len; i++) {
+                    out_bytecode[offset++] = msg[i];
+                }
             }
         }
 
