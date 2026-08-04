@@ -41,6 +41,7 @@ typedef struct {
     double agility_index;            // Perceived physical agility/speed (0.0 lower, 1.0 higher)
     double safety_index;             // Perceived safety (0.0 dangerous/threat, 1.0 safe/harmless)
     double purity_index;             // Perceived purity/cleanliness (0.0 contaminated, 1.0 pure/clean)
+    double honesty_index;            // Perceived honesty/truthfulness (0.0 deceptive, 1.0 honest/sincere)
 } teddy_geometry_t;
 
 // Maps abstract traits to geometric parameters based on study results
@@ -76,6 +77,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->agility_index = 0.0;           // Perceived lower physical agility
             geom->safety_index = 1.0;            // Perceived safe/harmless
             geom->purity_index = 1.0;            // Perceived pure/clean
+            geom->honesty_index = 1.0;           // Perceived honest
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -107,6 +109,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->agility_index = 1.0;           // Perceived higher physical agility
             geom->safety_index = 0.0;            // Perceived dangerous
             geom->purity_index = 0.0;            // Perceived contaminated
+            geom->honesty_index = 0.0;           // Perceived deceptive
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -138,6 +141,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->agility_index = 1.0;           // Perceived higher physical agility
             geom->safety_index = 0.0;            // Perceived dangerous
             geom->purity_index = 0.0;            // Perceived contaminated
+            geom->honesty_index = 0.0;           // Perceived deceptive
             break;
     }
 }
