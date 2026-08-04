@@ -534,6 +534,24 @@ object "PersonalityEngine" {
                 return(0x00, 32)
             }
 
+            // ----------------------------------------------------------------
+            // METHOD: simulate_snubber_clamped_flyback (peak_voltage, decay_factor)
+            // Selector: 0xe399f100 (integer scaled by 1000)
+            // ----------------------------------------------------------------
+            if eq(selector, 0xe399f100) {
+                let peak_voltage := calldataload(4)
+                let decay_factor := calldataload(36)
+                
+                // clamped = (peak_voltage * (1000 - decay_factor)) / 1000
+                let clamped := 0
+                if lt(decay_factor, 1000) {
+                    clamped := div(mul(peak_voltage, sub(1000, decay_factor)), 1000)
+                }
+                
+                mstore(0x00, clamped)
+                return(0x00, 32)
+            }
+
             revert(0, 0)
         }
     }
