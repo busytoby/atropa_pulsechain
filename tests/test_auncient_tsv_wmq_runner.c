@@ -9,6 +9,7 @@
 #include <string.h>
 #include <assert.h>
 #include <math.h>
+#include <unistd.h>
 #include "tsfi2-deepseek/inc/tsfi_displacementshader.h"
 
 #ifndef M_PI
@@ -115,10 +116,44 @@ int main(void) {
     assert(ok == true);
 
     printf("[Runner] Executing compiled gost_intrusion strategy closure...\n");
+    
+    // Programmatically redirect stdout to verify DISPLAY output
+    fflush(stdout);
+    int stdout_fd = dup(1);
+    assert(stdout_fd >= 0);
+    FILE *temp_out = freopen("/tmp/captured_stdout.txt", "w", stdout);
+    assert(temp_out != NULL);
+
     ok = tsfi2_load_and_execute(gost_bin, &cpu);
+
+    fflush(stdout);
+    dup2(stdout_fd, 1);
+    close(stdout_fd);
+    
+    // Clear error state and reopen stdout
+    clearerr(stdout);
+    stdout = fdopen(1, "w");
+    assert(stdout != NULL);
+
+    // Read the captured stdout from file
+    FILE *rf = fopen("/tmp/captured_stdout.txt", "r");
+    assert(rf != NULL);
+    char out_buf[2048];
+    size_t r_bytes = fread(out_buf, 1, sizeof(out_buf) - 1, rf);
+    out_buf[r_bytes] = '\0';
+    fclose(rf);
+    remove("/tmp/captured_stdout.txt");
+
+    // Print captured log back to actual stdout so it remains visible
+    printf("%s", out_buf);
+
     assert(ok == true);
     assert(cpu.halted == true);
     assert(cpu.exit_code == 0);
+    
+    // Assert that the emulated JCL DISPLAY lines were actually printed during execution
+    assert(strstr(out_buf, "[JCL] EXECUTE COBOL ADVERSARY GOST LOOP...") != NULL);
+    assert(strstr(out_buf, "[JCL] PROCESSED IDENTITY: 050051122") != NULL);
     int is_valid = 1;
     int spool_res = tsfi_mf_es_evm_spool_guard(gost_source, &is_valid);
     int lockout = (spool_res == 1) ? 1 : 0;
