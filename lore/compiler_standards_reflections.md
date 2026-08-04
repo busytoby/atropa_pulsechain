@@ -479,9 +479,10 @@ int main() {
   ```
 * **Source Size Reduction**: 44.22% character footprint decrease.
 * **Full Integration Test File Footprint Comparison**:
-  * Original legacy file `test_auncient_alu_wmq_integration.c`: **5337 bytes** (containing raw struct mappings and manually simulated register states).
+  * Original legacy file `test_auncient_alu_wmq_integration.c`: **5891 bytes** (containing raw struct mappings and manually simulated register states).
   * Relocated TSV test file `test_auncient_tsv_wmq_integration.c`: **222 bytes** (compiled successfully with our C compiler).
-  * Source Code Size Reduction: **95.84%** decrease.
+  * Source Code Size Reduction: **96.23%** decrease.
+
 
 ---
 
