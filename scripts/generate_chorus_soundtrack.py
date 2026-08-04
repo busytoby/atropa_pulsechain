@@ -31,26 +31,14 @@ def generate_audio():
     duration_per_step = 0.5  # Polite response timing: 500 ms per conversational turn
     total_samples = int(sample_rate * duration_per_step * len(transitions))
     
-    # 1. Steady Drum & Bass Backing Soundtrack (120 BPM, 4/4)
+    audio_np = np.zeros(total_samples, dtype=np.float32)
+    noise_state = 12345
+    
+    # Backing Drum & Bass Track (120 BPM, 4/4)
     bpm = 120
     beat_dur = 60.0 / bpm
     step_dur = beat_dur / 4.0
     step_samples = int(sample_rate * step_dur)
-    
-    # Harmonic ratios for standard drawbars: sub-octave, 5th, octave, 12th, 15th, etc.
-    ratios = [0.5, 1.498, 1.0, 2.0, 2.996, 4.0, 5.039, 6.0]
-    
-    # Define drawbar profiles for the 5 bears
-    bear_drawbars = {
-        "Trusty":  [8, 8, 8, 4, 0, 0, 0, 0],
-        "Aggro":   [8, 5, 8, 8, 8, 8, 8, 8],
-        "Skeptic": [0, 8, 0, 8, 0, 8, 0, 8],
-        "Eerie":   [8, 0, 0, 0, 0, 0, 8, 8],
-        "Coop":    [8, 8, 8, 8, 8, 0, 0, 0]
-    }
-    
-    audio_np = np.zeros(total_samples, dtype=np.float32)
-    noise_state = 12345
     
     for s in range(total_samples):
         t_curr = s * dt
@@ -59,7 +47,6 @@ def generate_audio():
         step_in_beat = step_idx % 4
         sample_in_step = s % step_samples
         
-        # 1a. Kick drum on beats 0 and 2
         kick = 0.0
         if step_in_beat == 0:
             t_kick = sample_in_step * dt
@@ -67,7 +54,6 @@ def generate_audio():
                 k_freq = 110.0 * math.exp(-t_kick * 30.0) + 40.0
                 kick = 0.4 * math.sin(2.0 * math.pi * k_freq * t_kick) * math.exp(-t_kick * 9.0)
                 
-        # 1b. Snare drum on beats 1 and 3 (white noise)
         snare = 0.0
         if step_in_beat == 2:
             t_snare = sample_in_step * dt
@@ -76,51 +62,94 @@ def generate_audio():
                 noise_val = ((noise_state / 0x7fffffff) * 2.0) - 1.0
                 snare = 0.25 * noise_val * math.exp(-t_snare * 14.0)
                 
-        # 1c. Steady rolling backing Bassline
-        bass_freq = 55.0 # Low G/A baseline
+        bass_freq = 55.0
         if beat_idx % 4 == 1:
-            bass_freq = 65.4 # C
+            bass_freq = 65.4
         elif beat_idx % 4 == 2:
-            bass_freq = 73.4 # D
+            bass_freq = 73.4
         elif beat_idx % 4 == 3:
-            bass_freq = 58.2 # Bb
+            bass_freq = 58.2
             
         bass_phase = 2.0 * math.pi * bass_freq * t_curr
         bass = 0.3 * math.sin(bass_phase) + 0.1 * math.sin(bass_phase * 2.0)
         
         audio_np[s] += (kick + snare + bass) * 0.4
         
-    # 2. Add polite conversational tonewheel dialogue voices
-    # Each bear only speaks during their active step window
+    # Generate Bear voices utilizing Farfisa Slalom Organ and Hammond Tonewheels
     step_samples_turn = int(sample_rate * duration_per_step)
+    
+    hammond_ratios = [0.5, 1.498, 1.0, 2.0, 2.996, 4.0, 5.039, 6.0]
     
     for idx, step in enumerate(transitions):
         start_sample = idx * step_samples_turn
         end_sample = start_sample + step_samples_turn
         
-        db = bear_drawbars.get(step["speaker"], [8, 8, 8, 4, 0, 0, 0, 0])
-        contact_wear = 0.05 * (step["voltage"] / 10.0)
+        name = step["speaker"]
+        voltage = step["voltage"]
+        pitch = step["pitch"]
         
         for s in range(step_samples_turn):
             global_sample = start_sample + s
             if global_sample >= total_samples:
                 break
-            t_curr = global_sample * dt
+            t_local = s * dt
+            t_global = global_sample * dt
             
-            # Spin up to the speaker's pitch
-            base_freq = step["pitch"]
+            # Map emotional voltage to synthesizer modulation depth
+            slalom_time = min(0.3, voltage * 0.05) # highly emotional voltage results in slower pitch sweeps (slalom)
+            enable_perc = (voltage > 2.5) # click percussion active when bear is excited
             
-            # Mix drawbars
-            mixed_val = 0.0
-            for i in range(8):
-                if db[i] <= 0:
-                    continue
-                # Add contact wear grit
-                noise_val = (random.random() - 0.5) * contact_wear
-                level = max(0.0, (db[i] / 8.0) + noise_val)
-                mixed_val += level * math.sin(2.0 * math.pi * (base_freq * ratios[i]) * t_curr)
+            if name in ["Trusty", "Coop"]:
+                # --- Farfisa Organ Module ---
+                # Drawbars: [16', 8', 4', 2-2/3']
+                drawbars = [1.0, 0.8, 0.4, 0.2] if name == "Trusty" else [0.8, 0.8, 0.8, 0.0]
                 
-            # Apply smooth polite ADSR fade in/out envelope
+                mixed_val = 0.0
+                # 8' Fundamental with Slalom pitch sweep
+                active_freq = pitch
+                if t_local < slalom_time:
+                    start_freq = pitch * math.pow(2.0, -3.0/12.0)
+                    active_freq = start_freq + (pitch - start_freq) * (t_local / slalom_time)
+                    
+                # 8' wave
+                phase = (active_freq * t_local) % 1.0
+                mixed_val += (2.0 * phase - 1.0) * drawbars[1] * 0.25
+                
+                # 16' Sub-Octave
+                phase16 = ((active_freq * 0.5) * t_local) % 1.0
+                mixed_val += (2.0 * phase16 - 1.0) * drawbars[0] * 0.20
+                
+                # 4' Octave
+                phase4 = ((active_freq * 2.0) * t_local) % 1.0
+                mixed_val += (2.0 * phase4 - 1.0) * drawbars[2] * 0.15
+                
+                # 2-2/3' Quint
+                phase2 = ((active_freq * 3.0) * t_local) % 1.0
+                mixed_val += (2.0 * phase2 - 1.0) * drawbars[3] * 0.10
+                
+                # Farfisa Percussion Click
+                if enable_perc and t_local < 0.04:
+                    perc_freq = pitch * 4.0
+                    p_phase = (perc_freq * t_local) % 1.0
+                    tri = abs(2.0 * p_phase - 1.0) * 2.0 - 1.0
+                    decay = math.exp(-t_local / 0.012)
+                    mixed_val += tri * 0.20 * decay
+                    
+            else:
+                # --- Hammond Tonewheel Module ---
+                db_profile = [8, 5, 8, 8, 8, 8, 8, 8] if name == "Aggro" else [8, 0, 0, 0, 0, 0, 8, 8]
+                contact_wear = 0.05 * (voltage / 10.0)
+                
+                mixed_val = 0.0
+                base_freq = pitch
+                for i in range(8):
+                    if db_profile[i] <= 0:
+                        continue
+                    # Add contact wear grit
+                    noise_val = (random.random() - 0.5) * contact_wear
+                    level = max(0.0, (db_profile[i] / 8.0) + noise_val)
+                    mixed_val += level * math.sin(2.0 * math.pi * (base_freq * hammond_ratios[i]) * t_local)
+                    
             env = 1.0
             if s < 1000:
                 env = s / 1000.0
@@ -129,7 +158,7 @@ def generate_audio():
                 
             audio_np[global_sample] += math.tanh(mixed_val * 0.4) * 0.35 * env
             
-    # Normalize final mixed output
+    # Normalize output
     max_val = np.max(np.abs(audio_np))
     if max_val > 1.0:
         audio_np /= max_val
@@ -142,7 +171,7 @@ def generate_audio():
         w.setframerate(sample_rate)
         w.writeframes(struct.pack("<{}h".format(len(audio_int)), *audio_int))
         
-    print(f"Generated drum-and-bass tonewheel bear chorus soundtrack at '{audio_path}'")
+    print(f"Generated multi-synth bear chorus soundtrack at '{audio_path}'")
 
 if __name__ == "__main__":
     generate_audio()
