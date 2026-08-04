@@ -967,6 +967,16 @@ bool evaluate_threat_replication_consistency(const teddy_geometry_t *geom, const
     return true;
 }
 
+bool evaluate_reactive_retaliation_boundary(const teddy_geometry_t *geom, double provocation_scale, double *retaliation_boundary_out) {
+    if (!geom || provocation_scale < 0.0 || !retaliation_boundary_out) {
+        return false;
+    }
+    double base_retaliation = 0.0;
+    evaluate_reactive_retaliation_profile(geom, provocation_scale, &base_retaliation);
+    *retaliation_boundary_out = base_retaliation * (1.0 + (geom->head_fwhr * 0.5));
+    return true;
+}
+
 bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncanny_score_out) {
     if (!geom || !uncanny_score_out) {
         return false;
