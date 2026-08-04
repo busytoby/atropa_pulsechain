@@ -702,3 +702,8 @@ test-auncient-apdl-compiler:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_apdl_compiler.c -o tests/test_auncient_apdl_compiler -lrt
 	./tests/test_auncient_apdl_compiler
 	@rm -f tests/test_auncient_apdl_compiler
+
+test-auncient-teddy-personality:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_teddy_personality.c -o tests/test_auncient_teddy_personality -lrt
+	./tests/test_auncient_teddy_personality
+	@rm -f tests/test_auncient_teddy_personality

@@ -749,4 +749,5 @@ tests/test_cbt021_inmemory_pds
 /tsv_record_inspector
 /tests/test_auncient_cooperative_boundary
 /tests/verify_response
+/tests/test_auncient_teddy_personality
 
