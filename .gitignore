@@ -750,4 +750,5 @@ tests/test_cbt021_inmemory_pds
 /tests/test_auncient_cooperative_boundary
 /tests/verify_response
 /tests/test_auncient_teddy_personality
+/tests/test_auncient_hathitrust_stimuli
 
