@@ -290,7 +290,6 @@ static void ear_filter_worker(void *arg) {
     EarFilterWorkerArg *a = (EarFilterWorkerArg *)arg;
     int i = a->station_idx;
     int jam_ref_station_idx = a->jam_ref_station_idx;
-    double lambda = a->lambda;
     float *station_buffer = a->stations[i].buffer;
     float *cleaned_buffer = a->cleaned_buffers[i];
 
@@ -314,6 +313,12 @@ static void ear_filter_worker(void *arg) {
         }
         double alpha = (double)station_buffer[step] - y;
         
+        // Dynamic Variable Forgetting Factor (VFF-RLS) Update
+        double lambda_max = 0.995;
+        double lambda_min = 0.95;
+        double c_scale = 0.1;
+        double lambda_val = lambda_max - (lambda_max - lambda_min) * exp(-c_scale * alpha * alpha);
+
         double P_x[4];
         for (int row = 0; row < L; row++) {
             P_x[row] = 0.0;
@@ -325,7 +330,7 @@ static void ear_filter_worker(void *arg) {
         for (int j = 0; j < L; j++) {
             x_P_x += x[j] * P_x[j];
         }
-        double den = lambda + x_P_x;
+        double den = lambda_val + x_P_x;
         double k_gain[4];
         for (int j = 0; j < L; j++) {
             k_gain[j] = P_x[j] / den;
@@ -344,7 +349,7 @@ static void ear_filter_worker(void *arg) {
             }
         }
         for (int j = 0; j < L * L; j++) {
-            P[j] = (P[j] - k_x_P[j]) / lambda;
+            P[j] = (P[j] - k_x_P[j]) / lambda_val;
         }
         
         cleaned_buffer[step] = (float)(station_buffer[step] - (w[0]*x[0] + w[1]*x[1] + w[2]*x[2] + w[3]*x[3]));
@@ -617,6 +622,12 @@ int main() {
         }
         double alpha = (double)calibrated_out[step] - y_rls;
         
+        // Dynamic Variable Forgetting Factor (VFF-RLS) Update
+        double lambda_max = 0.995;
+        double lambda_min = 0.95;
+        double c_scale = 0.1;
+        double lambda_val = lambda_max - (lambda_max - lambda_min) * exp(-c_scale * alpha * alpha);
+
         double P_x[4];
         for (int row = 0; row < L_taps; row++) {
             P_x[row] = 0.0;
@@ -628,7 +639,7 @@ int main() {
         for (int j = 0; j < L_taps; j++) {
             x_P_x += x_rls[j] * P_x[j];
         }
-        double den = lambda + x_P_x;
+        double den = lambda_val + x_P_x;
         double k_gain[4];
         for (int j = 0; j < L_taps; j++) {
             k_gain[j] = P_x[j] / den;
@@ -647,7 +658,7 @@ int main() {
             }
         }
         for (int j = 0; j < L_taps * L_taps; j++) {
-            P_rls[j] = (P_rls[j] - k_x_P[j]) / lambda;
+            P_rls[j] = (P_rls[j] - k_x_P[j]) / lambda_val;
         }
         double y_rls_post = 0.0;
         for (int j = 0; j < L_taps; j++) {
@@ -662,6 +673,8 @@ int main() {
         }
         double alpha_jit = (double)jitter_out[step] - y_rls_jit;
         
+        double lambda_val_jit = lambda_max - (lambda_max - lambda_min) * exp(-c_scale * alpha_jit * alpha_jit);
+
         double P_x_jit[4];
         for (int row = 0; row < L_taps; row++) {
             P_x_jit[row] = 0.0;
@@ -673,7 +686,7 @@ int main() {
         for (int j = 0; j < L_taps; j++) {
             x_P_x_jit += x_rls_jit[j] * P_x_jit[j];
         }
-        double den_jit = lambda + x_P_x_jit;
+        double den_jit = lambda_val_jit + x_P_x_jit;
         double k_gain_jit[4];
         for (int j = 0; j < L_taps; j++) {
             k_gain_jit[j] = P_x_jit[j] / den_jit;
@@ -692,7 +705,7 @@ int main() {
             }
         }
         for (int j = 0; j < L_taps * L_taps; j++) {
-            P_rls_jit[j] = (P_rls_jit[j] - k_x_P_jit[j]) / lambda;
+            P_rls_jit[j] = (P_rls_jit[j] - k_x_P_jit[j]) / lambda_val_jit;
         }
         double y_rls_post_jit = 0.0;
         for (int j = 0; j < L_taps; j++) {
