@@ -83,9 +83,28 @@ bool simulate_conversational_step(conversational_bear_t *bears, int speaker_idx,
     // Recalculate retaliation boundaries under provocation
     evaluate_provocation_retaliation_boundary(&listener->geom, listener->current_voltage * 10.0, &listener->current_retaliation_boundary);
 
+    // Reflexive acoustic threshold response logic
+    double wstat = 0.0, wpval = 1.0;
+    evaluate_parameter_wald_test(listener->current_voltage, listener->current_retaliation_boundary, 0.25, &wstat, &wpval);
+    
+    bool reflex_triggered = false;
+    if (wpval < 0.05 && listener->current_voltage > listener->current_retaliation_boundary) {
+        // High reactive voltage triggers sudden pitch shift reflex
+        listener->sound_pitch *= 1.15;
+        reflex_triggered = true;
+    }
+
+    // Introduce flyback noise tremors on high-threat exposure
+    if (threat > 2.0) {
+        double noise = 0.0;
+        simulate_phase_flyback_noise(&listener->geom, listener->sound_pitch, &noise);
+        listener->sound_pitch += noise * 5.0;
+    }
+
     // Print acoustic shift
-    printf("[Conversation] Bear %s spoke to Bear %s -> %s current voltage: %.4f V (retaliation boundary: %.4f)\n",
-           speaker->name, listener->name, listener->name, listener->current_voltage, listener->current_retaliation_boundary);
+    printf("[Conversation] Bear %s spoke to Bear %s -> %s current voltage: %.4f V (retaliation boundary: %.4f) [Pitch: %.1f Hz]%s\n",
+           speaker->name, listener->name, listener->name, listener->current_voltage, listener->current_retaliation_boundary,
+           listener->sound_pitch, reflex_triggered ? " *REFLEX ACTIVE*" : "");
     
     return true;
 }
