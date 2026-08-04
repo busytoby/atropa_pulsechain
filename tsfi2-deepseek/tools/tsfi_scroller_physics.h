@@ -116,6 +116,14 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
         uint8_t g_col = (uint8_t)(85 * (1.0f - t) + 195 * t);
         uint8_t b_col = (uint8_t)(45 * (1.0f - t) + 65 * t);
 
+        // Leaf shadow overlay on the stem near the node connection point (t = 0.35)
+        float dist_to_node = fabsf(t - 0.35f);
+        if (dist_to_node < 0.04f) {
+            r_col = (uint8_t)(r_col * 0.55f);
+            g_col = (uint8_t)(g_col * 0.55f);
+            b_col = (uint8_t)(b_col * 0.55f);
+        }
+
         // 3D cylindrical chiascuro shading (left highlight, center body, right shadow)
         draw_line(prev_x - 1, prev_y, sx - 1, sy, (uint8_t)fminf(255, r_col * 1.3f), (uint8_t)fminf(255, g_col * 1.3f), (uint8_t)fminf(255, b_col * 1.3f)); // Left highlight
         draw_line(prev_x, prev_y, sx, sy, r_col, g_col, b_col); // Center body

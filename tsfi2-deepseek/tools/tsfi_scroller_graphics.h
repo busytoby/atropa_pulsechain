@@ -135,11 +135,14 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset, f
         float leaf_ang_left = angle + M_PI * 0.25f;
         float leaf_ang_right = angle - M_PI * 0.25f;
 
+        // High-frequency serration along the leaflet margins for organic texture
+        float serration = 1.0f + 0.08f * sinf(t * 50.0f + time_val * 6.0f);
+        
         for (int lw = 0; lw < (int)lobe_w; lw++) {
-            int l_lx = lx + (int)(lw * cosf(leaf_ang_left));
-            int l_ly = ly + (int)(lw * sinf(leaf_ang_left));
-            int r_lx = lx + (int)(lw * cosf(leaf_ang_right));
-            int r_ly = ly + (int)(lw * sinf(leaf_ang_right));
+            int l_lx = lx + (int)(lw * serration * cosf(leaf_ang_left));
+            int l_ly = ly + (int)(lw * serration * sinf(leaf_ang_left));
+            int r_lx = lx + (int)(lw * serration * cosf(leaf_ang_right));
+            int r_ly = ly + (int)(lw * serration * sinf(leaf_ang_right));
             draw_line(lx, ly, l_lx, l_ly, lf_r, lf_g, lf_b);
             draw_line(lx, ly, r_lx, r_ly, lf_r, lf_g, lf_b);
         }
