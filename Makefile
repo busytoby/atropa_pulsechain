@@ -652,3 +652,8 @@ test-auncient-cooperative-boundary:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_cooperative_boundary.c -o tests/test_auncient_cooperative_boundary -lcrypto -lrt
 	./tests/test_auncient_cooperative_boundary
 	@rm -f tests/test_auncient_cooperative_boundary
+
+test-auncient-apdl-xpl-integration:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_apdl_xpl_integration.c -o tests/test_auncient_apdl_xpl_integration -lm -lrt
+	./tests/test_auncient_apdl_xpl_integration
+	@rm -f tests/test_auncient_apdl_xpl_integration
