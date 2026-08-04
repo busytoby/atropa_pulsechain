@@ -203,6 +203,27 @@ object "WinchesterMQ" {
             }
 
             // ----------------------------------------------------------------
+            // METHOD: simulate_hbridge_flyback_transient (supply_voltage, load_inductance, switching_time_sec)
+            // Selector: 0xe399f0f2 (integer scaled by 1000)
+            // ----------------------------------------------------------------
+            if eq(selector, 0xe399f0f2) {
+                let supply_voltage := calldataload(4)
+                let load_inductance := calldataload(36)
+                let switching_time_sec := calldataload(68)
+                
+                let flyback_voltage := supply_voltage
+                if gt(switching_time_sec, 0) {
+                    // dI = 2 Amps nominal, scaled to 2000 milli-Amps
+                    let dI := 2000
+                    let term := div(mul(load_inductance, dI), switching_time_sec)
+                    flyback_voltage := add(supply_voltage, term)
+                }
+                
+                mstore(0x00, flyback_voltage)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
             // METHOD 1: writeSignalsOut(uint8 signals) -> void
             // Selector: 0x485301a0 (Simulates writing to $DF01)
             // ----------------------------------------------------------------
