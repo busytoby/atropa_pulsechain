@@ -27,6 +27,7 @@ typedef struct {
     double torso_ratio;      // Shoulder-to-hip width ratio (1.5 broad/formidable, 0.7 squat)
     double fur_roughness;    // Specular roughness coefficient for hair shading
     double feature_vertical_offset; // Vertical feature placement (negative lower/baby-face)
+    double behavioral_mismatch;     // Cognitive mismatch factor (0.0 aligned, 1.0 high discrepancy)
 } teddy_geometry_t;
 
 // Maps abstract traits to geometric parameters based on study results
@@ -48,6 +49,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->torso_ratio = 0.7;      // Squat, stable center of gravity
             geom->fur_roughness = 0.9;    // High roughness for soft, diffuse fur
             geom->feature_vertical_offset = -0.3; // Lower placement for baby-face warmth
+            geom->behavioral_mismatch = 0.0;     // Fully aligned friendly profile
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -65,6 +67,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->torso_ratio = 1.5;      // Broad shoulders, dominant upper torso
             geom->fur_roughness = 0.3;    // Glossy, slick fur
             geom->feature_vertical_offset = 0.2; // Higher feature placement
+            geom->behavioral_mismatch = 0.8;     // High mismatch to indicate threat
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -82,6 +85,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->torso_ratio = 1.4;      // Formidable upper body proportions
             geom->fur_roughness = 0.3;    // Slick, high-specular sheen
             geom->feature_vertical_offset = 0.2; // Higher feature placement
+            geom->behavioral_mismatch = 0.8;     // High mismatch
             break;
     }
 }
