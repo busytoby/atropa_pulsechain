@@ -157,6 +157,45 @@ function draw3DPolyHavenAsset(ops, cx, cy, angle) {
     }
 }
 
+function draw3DThrone(ops, cx, cy, angle, health) {
+    if (polyHavenVertices.length === 0) return;
+
+    const scale = 54.0; 
+    const projected = [];
+
+    const cosA = Math.cos(angle);
+    const sinA = Math.sin(angle);
+
+    for (let v of polyHavenVertices) {
+        let x1 = v.x * cosA - v.z * sinA;
+        let z1 = v.x * sinA + v.z * cosA;
+        let cosT = 0.866;
+        let sinT = 0.5;
+        let y2 = v.y * cosT - z1 * sinT;
+        
+        projected.push({
+            x: Math.floor(cx + x1 * scale),
+            y: Math.floor(cy - y2 * scale)
+        });
+    }
+
+    const flash = (health < 3 && frameCount % 6 < 3) ? 100 : 0;
+
+    for (let i = 0; i < polyHavenIndices.length; i += 4) {
+        const p1 = projected[polyHavenIndices[i]];
+        const p2 = projected[polyHavenIndices[i+1]];
+        const p3 = projected[polyHavenIndices[i+2]];
+        const p4 = projected[polyHavenIndices[i+3]];
+
+        if (!p1 || !p2 || !p3 || !p4) continue;
+
+        drawLine(ops, p1.x, p1.y, p2.x, p2.y, 255, 215 - flash, flash);
+        drawLine(ops, p2.x, p2.y, p3.x, p3.y, 255, 215 - flash, flash);
+        drawLine(ops, p3.x, p3.y, p4.x, p4.y, 255, 215 - flash, flash);
+        drawLine(ops, p4.x, p4.y, p1.x, p1.y, 255, 215 - flash, flash);
+    }
+}
+
 function draw3DSewnHeart(ops, cx, cy, angle) {
     if (sewnHeartVertices.length === 0) return;
 
@@ -592,29 +631,9 @@ function renderGame() {
         draw3DPolyHavenAsset(ops, t.x, t.y, trapRotation);
     }
 
-    // 6. Draw Spawner
+    // 6. Draw Spawner (Large Comfy Chair as the rotating Golden Throne)
     if (spawner.health > 0) {
-        const portalPulse = Math.floor(6 * Math.sin(frameCount * 0.35));
-        ops.push({
-            type: "draw_rect",
-            x: spawner.x - 18 - portalPulse/2,
-            y: spawner.y - 18 - portalPulse/2,
-            w: 36 + portalPulse,
-            h: 36 + portalPulse,
-            r: 220,
-            g: 40,
-            b: 20
-        });
-        ops.push({
-            type: "draw_rect",
-            x: spawner.x - 10,
-            y: spawner.y - 10,
-            w: 20,
-            h: 20,
-            r: 255,
-            g: 165,
-            b: 0
-        });
+        draw3DThrone(ops, spawner.x, spawner.y, frameCount * 0.03, spawner.health);
     }
 
     // 7. Draw Ghosts
