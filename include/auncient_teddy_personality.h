@@ -150,6 +150,9 @@ int evaluate_ordinal_probit_rating(const teddy_geometry_t *geom);
 // Evaluates an asymmetrical ordinal rating using a log-log link model.
 int evaluate_ordinal_loglog_rating(const teddy_geometry_t *geom);
 
+// Evaluates an ordinal rating using a Cauchy link model.
+int evaluate_ordinal_cauchy_rating(const teddy_geometry_t *geom);
+
 // Evaluates an ordinal rating using a customized flexible link mixture weight (0.0 cloglog, 1.0 logit).
 int evaluate_ordinal_flexible_rating(const teddy_geometry_t *geom, double link_mixture_weight);
 
