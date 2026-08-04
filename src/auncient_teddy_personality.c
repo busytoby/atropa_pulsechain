@@ -347,6 +347,21 @@ bool evaluate_profile_likelihood_bounds(const teddy_geometry_t *geom, int catego
     return true;
 }
 
+int evaluate_ordinal_scale_rating(const teddy_geometry_t *geom, double scale_multiplier) {
+    if (!geom) return 1;
+    double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
+    double scale = exp(geom->vocal_visual_mismatch * scale_multiplier);
+    if (scale < 0.01) scale = 0.01;
+    double thresholds[6] = {0.5, 1.2, 2.0, 2.8, 3.5, 4.2};
+    for (int i = 0; i < 6; ++i) {
+        double logit_prob = 1.0 / (1.0 + exp(-((thresholds[i] - latent) / scale)));
+        if (logit_prob >= 0.5) {
+            return i + 1;
+        }
+    }
+    return 7;
+}
+
 bool engage_system_boundary(agent_avatar_t *avatar, teddy_personality_t personality) {
     if (!avatar) return false;
 

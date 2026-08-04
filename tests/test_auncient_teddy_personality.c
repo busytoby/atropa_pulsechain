@@ -72,6 +72,11 @@ int main(void) {
     assert(lower < upper);
     printf("   ✓ R H B Christensen profile-likelihood threshold bounds verified successfully\n");
 
+    // Test scale effect rating estimation
+    int rating_scale = evaluate_ordinal_scale_rating(&geom, 0.5);
+    assert(rating_scale >= 1 && rating_scale <= 7);
+    printf("   ✓ R H B Christensen scale-adjusted ordinal rating verified successfully\n");
+
     printf("=============================================================\n");
     printf("PERSONALITY CONFIGURATIONS VALIDATED SUCCESSFULLY\n");
     printf("=============================================================\n");

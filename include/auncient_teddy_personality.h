@@ -132,6 +132,9 @@ int evaluate_ordinal_link_rating(const teddy_geometry_t *geom);
 // Evaluates profile-likelihood thresholds bounds for category validation.
 bool evaluate_profile_likelihood_bounds(const teddy_geometry_t *geom, int category, double *lower_bound, double *upper_bound);
 
+// Evaluates a scale-adjusted ordinal rating using a heteroscedastic cumulative link model.
+int evaluate_ordinal_scale_rating(const teddy_geometry_t *geom, double scale_multiplier);
+
 // Engages systems via the SDK typestate and calculates parameters
 bool engage_system_boundary(agent_avatar_t *avatar, teddy_personality_t personality);
 
