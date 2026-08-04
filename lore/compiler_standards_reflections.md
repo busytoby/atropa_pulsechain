@@ -101,6 +101,16 @@ int main() {
 * **Compiler Built-in**: 22 characters (`__builtin_wmq_size();`).
 * **Source Size Reduction**: 64% character footprint decrease.
 
+### Core Flush Comparison
+* **Boilerplate Wrapper**: 64 characters.
+  ```c
+  void flush_queue() {
+      *(volatile int*)(0x20B0) = 1;
+  }
+  ```
+* **Compiler Built-in**: 23 characters (`__builtin_wmq_flush();`).
+* **Source Size Reduction**: 64% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
