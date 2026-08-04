@@ -34,6 +34,7 @@ typedef struct {
     double maturity_index;           // Perceived age maturity (0.0 young, 1.0 mature/experienced)
     double persuasion_strategy;      // Persuasion strategy (0.0 sincerity/trust, 1.0 expertise/capability)
     double empathy_index;            // Perceived empathy and gentleness (0.0 low, 1.0 high/nurturing)
+    double protection_index;         // Perceived physical vulnerability (0.0 independent, 1.0 vulnerable)
 } teddy_geometry_t;
 
 // Maps abstract traits to geometric parameters based on study results
@@ -62,6 +63,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->maturity_index = 0.0;          // Young profile
             geom->persuasion_strategy = 0.0;     // Sincerity-based persuasion
             geom->empathy_index = 1.0;           // High empathy/nurturing
+            geom->protection_index = 1.0;        // Vulnerable, requires protection
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -86,6 +88,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->maturity_index = 1.0;          // Mature profile
             geom->persuasion_strategy = 1.0;     // Expertise-based persuasion
             geom->empathy_index = 0.0;           // Low empathy
+            geom->protection_index = 0.0;        // Independent
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -110,6 +113,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->maturity_index = 1.0;          // Mature profile
             geom->persuasion_strategy = 1.0;     // Expertise-based persuasion
             geom->empathy_index = 0.0;           // Low empathy
+            geom->protection_index = 0.0;        // Independent
             break;
     }
 }
