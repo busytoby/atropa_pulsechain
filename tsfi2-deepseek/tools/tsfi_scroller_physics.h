@@ -123,15 +123,15 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
             b_col = (uint8_t)(b_col * 0.55f);
         }
 
-        // 3D cylindrical chiascuro shading (14px width sweep loop)
-        for (int offset = -7; offset <= 7; offset++) {
+        // 3D cylindrical chiascuro shading (28px width sweep loop)
+        for (int offset = -14; offset <= 14; offset++) {
             float factor = 1.0f;
             if (offset < 0) {
                 // Highlight side: blend up to 1.6f
-                factor = 1.0f + 0.6f * ((float)(7 + offset) / 7.0f);
+                factor = 1.0f + 0.6f * ((float)(14 + offset) / 14.0f);
             } else {
                 // Shadow side: decay down to 0.25f
-                factor = 1.0f - 0.75f * ((float)offset / 7.0f);
+                factor = 1.0f - 0.75f * ((float)offset / 14.0f);
             }
             uint8_t r_draw = (uint8_t)fminf(255, r_col * factor);
             uint8_t g_draw = (uint8_t)fminf(255, g_col * factor);
