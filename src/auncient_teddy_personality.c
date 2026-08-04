@@ -72,6 +72,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->hazard_avoidance = 1.0;         // Cautious/avoidant
             geom->threat_confrontation = 0.0;     // Submissive/retreat
             geom->pain_tolerance = 0.0;           // Lower pain tolerance
+            geom->relationship_exclusivity = 1.0; // Monogamous/exclusive
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -142,6 +143,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->hazard_avoidance = 0.0;         // Risk-taking/hazard-seeking
             geom->threat_confrontation = 1.0;     // Confrontational
             geom->pain_tolerance = 1.0;           // High pain tolerance
+            geom->relationship_exclusivity = 0.0; // Low exclusivity/extra-pair
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -212,6 +214,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->hazard_avoidance = 0.0;         // Risk-taking/hazard-seeking
             geom->threat_confrontation = 1.0;     // Confrontational
             geom->pain_tolerance = 1.0;           // High pain tolerance
+            geom->relationship_exclusivity = 0.0; // Low exclusivity/extra-pair
             break;
     }
 }
