@@ -595,6 +595,8 @@ tests/demo_*
 tests/play_*
 tests/run_*
 tests/test_auncient_*
+!tests/test_auncient_*.c
+!tests/test_auncient_*.h
 tests/test_bear_*
 tests/test_cloth_*
 tests/test_final_*
