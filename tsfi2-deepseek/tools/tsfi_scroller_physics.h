@@ -94,12 +94,12 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
     float leaf_sway = 0.05f * sinf(time_val * 1.5f) + wind_x * 0.015f;
     
     // Base tier leaves
-    draw_gothic_leaf((int)stem_base_x, (int)stem_base_y, 80.0f, -M_PI * 0.8f + leaf_sway, time_val);
-    draw_gothic_leaf((int)stem_base_x, (int)stem_base_y, 80.0f, -M_PI * 0.2f - leaf_sway, time_val);
+    draw_gothic_leaf((int)stem_base_x, (int)stem_base_y, 80.0f, -M_PI * 0.8f + leaf_sway, time_val, wind_x);
+    draw_gothic_leaf((int)stem_base_x, (int)stem_base_y, 80.0f, -M_PI * 0.2f - leaf_sway, time_val, wind_x);
 
     // Mid-stem tier leaves (slightly smaller, growing from node joint)
-    draw_gothic_leaf(node_x, node_y, 55.0f, -M_PI * 0.85f + leaf_sway, time_val);
-    draw_gothic_leaf(node_x, node_y, 55.0f, -M_PI * 0.15f - leaf_sway, time_val);
+    draw_gothic_leaf(node_x, node_y, 55.0f, -M_PI * 0.85f + leaf_sway, time_val, wind_x);
+    draw_gothic_leaf(node_x, node_y, 55.0f, -M_PI * 0.15f - leaf_sway, time_val, wind_x);
 
     int segments = 24;
     int prev_x = (int)stem_base_x;

@@ -107,12 +107,13 @@ static void draw_glossy_bubble(int cx, int cy, int r_base, uint8_t base_r, uint8
     }
 }
 
-static void draw_gothic_leaf(int bx, int by, float length, float angle_offset, float time_val) {
+static void draw_gothic_leaf(int bx, int by, float length, float angle_offset, float time_val, float wind_x) {
     int steps = 18;
-    float l_ctrl_x = bx + length * 0.45f * cosf(angle_offset - 0.4f);
+    float wind_bend = wind_x * 0.45f;
+    float l_ctrl_x = bx + length * 0.45f * cosf(angle_offset - 0.4f) + wind_bend;
     float l_ctrl_y = by + length * 0.45f * sinf(angle_offset - 0.4f);
     float tip_flutter = 0.04f * sinf(time_val * 4.5f + angle_offset);
-    float l_tip_x = bx + length * cosf(angle_offset + 0.10f * sinf(time_val * 1.5f) + tip_flutter);
+    float l_tip_x = bx + length * cosf(angle_offset + 0.10f * sinf(time_val * 1.5f) + tip_flutter) + wind_bend * 0.7f;
     float l_tip_y = by + length * sinf(angle_offset + 0.10f * sinf(time_val * 1.5f) + tip_flutter);
 
     for (int i = 0; i < steps; i++) {
@@ -157,10 +158,11 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset, f
             draw_line(lx, ly, v_r_x, v_r_y, (uint8_t)(lf_r * 1.5f), (uint8_t)(lf_g * 1.3f), (uint8_t)(lf_b * 1.4f));
         }
 
-        // Draw glistening white-green dew drops resting on specific leaf tips for high fidelity
+        // Glistening dew drops sliding slowly along the leaflet tips (pinnule runoff)
         if (i == 6 || i == 12) {
-            int drop_x = lx + (int)(lobe_w * 0.85f * cosf(leaf_ang_left));
-            int drop_y = ly + (int)(lobe_w * 0.85f * sinf(leaf_ang_left));
+            float slide_t = fmodf(time_val * 0.12f + (i * 0.08f), 1.0f);
+            int drop_x = lx + (int)(lobe_w * slide_t * cosf(leaf_ang_left));
+            int drop_y = ly + (int)(lobe_w * slide_t * sinf(leaf_ang_left));
             draw_glossy_bubble(drop_x, drop_y, 2, 210, 255, 220); // Small shiny dew bubble
         }
 
