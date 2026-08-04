@@ -239,6 +239,12 @@ bool commit_izotope_flyback_transaction(evaluation_tx_t *tx, double switching_fr
 // Calculates the nerve-like Gumbel transient diyat tax on top of base gas costs.
 bool calculate_diyat_tax(const teddy_geometry_t *geom, double switching_frequency, double base_gas_cost, double *total_cost_out);
 
+// Calculates the nerve-like Gumbel transient diyat tax with biological refractory recovery periods.
+bool calculate_diyat_tax_with_refractory(const teddy_geometry_t *geom, double switching_frequency, double base_gas_cost, double time_since_last_event, double *total_cost_out);
+
+// Calculates the nerve-like Gumbel transient diyat tax modulated by tremolo and sustain envelope dynamics.
+bool calculate_diyat_tax_with_envelope(const teddy_geometry_t *geom, double switching_frequency, double base_gas_cost, double tremolo_freq, double sustain_time, double *total_cost_out);
+
 // Computes model selection diagnostics via AIC and BIC information criteria.
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out);
 

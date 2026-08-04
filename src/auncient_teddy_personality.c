@@ -896,6 +896,42 @@ bool calculate_diyat_tax(const teddy_geometry_t *geom, double switching_frequenc
     return true;
 }
 
+bool calculate_diyat_tax_with_refractory(const teddy_geometry_t *geom, double switching_frequency, double base_gas_cost, double time_since_last_event, double *total_cost_out) {
+    if (!geom || switching_frequency < 1.0 || base_gas_cost < 0.0 || !total_cost_out) {
+        return false;
+    }
+    double flyback_mismatch = 0.0;
+    if (!evaluate_hbridge_izotope_mismatch(geom, switching_frequency, &flyback_mismatch)) {
+        return false;
+    }
+    double threshold = 5.0;
+    double tax = 0.0;
+    if (flyback_mismatch > threshold) {
+        tax = 100.0 * exp(flyback_mismatch - threshold);
+    }
+    double recovery_factor = 1.0 - exp(-time_since_last_event / 2.0);
+    *total_cost_out = base_gas_cost + (tax * recovery_factor);
+    return true;
+}
+
+bool calculate_diyat_tax_with_envelope(const teddy_geometry_t *geom, double switching_frequency, double base_gas_cost, double tremolo_freq, double sustain_time, double *total_cost_out) {
+    if (!geom || switching_frequency < 1.0 || base_gas_cost < 0.0 || !total_cost_out) {
+        return false;
+    }
+    double flyback_mismatch = 0.0;
+    if (!evaluate_hbridge_izotope_mismatch(geom, switching_frequency, &flyback_mismatch)) {
+        return false;
+    }
+    double osc_threshold = 5.0 + 2.0 * sin(tremolo_freq);
+    double tax = 0.0;
+    if (flyback_mismatch > osc_threshold) {
+        tax = 100.0 * exp(flyback_mismatch - osc_threshold);
+    }
+    double sustain_factor = exp(-sustain_time / 5.0);
+    *total_cost_out = base_gas_cost + (tax * sustain_factor);
+    return true;
+}
+
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out) {
     if (!geom || param_count < 1 || sample_size < 2 || !aic_out || !bic_out) {
         return false;

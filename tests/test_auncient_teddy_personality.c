@@ -304,6 +304,17 @@ int main(void) {
     assert(total_cost >= 10.0);
     printf("   ✓ Nerve-like Gumbel transient diyat tax calculations verified successfully\n");
 
+    // Test Gumbel transient diyat tax with refractory recovery calculation
+    double ref_cost = 0.0;
+    assert(calculate_diyat_tax_with_refractory(&geom, 500.0, 10.0, 0.5, &ref_cost));
+    assert(ref_cost >= 10.0);
+
+    // Test Gumbel transient diyat tax with tremolo and sustain envelope calculation
+    double env_cost = 0.0;
+    assert(calculate_diyat_tax_with_envelope(&geom, 500.0, 10.0, 1.0, 2.0, &env_cost));
+    assert(env_cost >= 10.0);
+    printf("   ✓ Gumbel transient nerve-tax with tremolo and sustain envelope verified successfully\n");
+
     // Test ACID transaction behavior (Rollback path on constraint violation)
     tx = begin_evaluation_transaction(&geom);
     assert(tx.active);
