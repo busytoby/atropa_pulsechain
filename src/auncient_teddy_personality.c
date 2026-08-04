@@ -69,6 +69,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->hazard_resilience = 0.0;        // Fragile
             geom->routine_leadership = 1.0;       // Routine management
             geom->parental_investment = 1.0;      // Long-term parental investment
+            geom->hazard_avoidance = 1.0;         // Cautious/avoidant
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -136,6 +137,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->hazard_resilience = 1.0;        // Highly resilient
             geom->routine_leadership = 0.0;       // Crisis-only management
             geom->parental_investment = 0.0;      // Short-term parental investment
+            geom->hazard_avoidance = 0.0;         // Risk-taking/hazard-seeking
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -203,6 +205,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->hazard_resilience = 1.0;        // Highly resilient
             geom->routine_leadership = 0.0;       // Crisis-only management
             geom->parental_investment = 0.0;      // Short-term parental investment
+            geom->hazard_avoidance = 0.0;         // Risk-taking/hazard-seeking
             break;
     }
 }
