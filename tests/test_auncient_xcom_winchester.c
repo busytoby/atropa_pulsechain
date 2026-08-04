@@ -20,6 +20,8 @@ typedef struct {
     double propagation_delay_ns;
     bool parity_error;
     bool overcurrent_trap;
+    char last_payload[64];
+    bool infinite_loop_trap;
 } xcom_wmq_handshake_t;
 
 // Parity bit calculator (Odd parity)
@@ -41,6 +43,34 @@ bool xcom_wmq_step_handshake(xcom_wmq_handshake_t *state, const char *payload) {
     state->tx_gate = CUTOFF_STATE;
     state->rx_gate = CUTOFF_STATE;
     state->parity_error = false;
+
+    // Check communication loop constraints
+    int words = 0;
+    bool in_word = false;
+    const char *ptr = payload;
+    while (*ptr) {
+        if (*ptr == ' ' || *ptr == '\t' || *ptr == '\n' || *ptr == '\r') {
+            in_word = false;
+        } else if (!in_word) {
+            in_word = true;
+            words++;
+        }
+        ptr++;
+    }
+
+    if (words <= 1) {
+        if (state->infinite_loop_trap || (strcmp(state->last_payload, payload) == 0 && strlen(payload) > 0)) {
+            state->infinite_loop_trap = true;
+            return false;
+        }
+        strncpy(state->last_payload, payload, sizeof(state->last_payload) - 1);
+    } else {
+        strcpy(state->last_payload, "");
+    }
+
+    if (state->infinite_loop_trap) {
+        return false;
+    }
 
     // 1. Overcurrent Trap: Cut off immediately if voltage exceeds 12.0 V
     if (state->req_line > 12.0 || state->ack_line > 12.0) {
@@ -102,6 +132,7 @@ int main(void) {
     fflush(stdout);
 
     // 2. Assert REQ high (5.0V) and ACK low (0.0V)
+    strcpy(state.last_payload, "");
     state.req_line = 5.0;
     state.ack_line = 0.0;
     ok = xcom_wmq_step_handshake(&state, "XCOM_WMQ_PAYLOAD");
@@ -127,6 +158,24 @@ int main(void) {
     assert(ok == false);
     assert(state.overcurrent_trap == true);
     printf("[XCOM-WMQ-TEST] Overcurrent surge isolation trapped\n");
+    fflush(stdout);
+
+    // 5. Infinite Loop single-word repetition check
+    state.req_line = 5.0;
+    state.ack_line = 0.0;
+    state.overcurrent_trap = false;
+    state.infinite_loop_trap = false;
+    strcpy(state.last_payload, "");
+    
+    // First single-word transmission
+    ok = xcom_wmq_step_handshake(&state, "HALT1");
+    assert(ok == true);
+    
+    // Second consecutive single-word transmission
+    ok = xcom_wmq_step_handshake(&state, "HALT1");
+    assert(ok == false);
+    assert(state.infinite_loop_trap == true);
+    printf("[XCOM-WMQ-TEST] Infinite loop single-word repetition trapped\n");
     fflush(stdout);
 
     return 0;
