@@ -430,6 +430,12 @@ int main(void) {
     assert(sync_uncanny >= 0.0);
     printf("   ✓ HYDE et al. unpredictable micro-expression synchronization verified successfully\n");
 
+    // Test Hyde unpredictable micro-expression synchronization habituation decay calculation
+    double decayed_sync_uncanny = 0.0;
+    assert(evaluate_sync_habituation_decay(&geom, 8.0, &decayed_sync_uncanny));
+    assert(decayed_sync_uncanny < sync_uncanny);
+    printf("   ✓ HYDE et al. unpredictable micro-expression synchronization habituation decay verified successfully\n");
+
     // Test Hyde unpredictable micro-expression acceleration jitter calculation
     double acc_jitter_uncanny = 0.0;
     assert(evaluate_acceleration_jitter_uncanny(&geom, 0.3, &acc_jitter_uncanny));

@@ -320,6 +320,9 @@ bool evaluate_expression_asymmetry_duration(const teddy_geometry_t *geom, double
 // Evaluates the unpredictable micro-expression synchronization uncanny response (Hyde et al.).
 bool evaluate_expression_sync_uncanny(const teddy_geometry_t *geom, double sync_delay_ms, double *uncanny_score_out);
 
+// Evaluates the unpredictable micro-expression synchronization habituation decay (Hyde et al.).
+bool evaluate_sync_habituation_decay(const teddy_geometry_t *geom, double exposure_duration_sec, double *decayed_uncanny_out);
+
 // Evaluates the unpredictable micro-expression acceleration jitter uncanny response (Hyde et al.).
 bool evaluate_acceleration_jitter_uncanny(const teddy_geometry_t *geom, double acceleration_variance, double *uncanny_score_out);
 
