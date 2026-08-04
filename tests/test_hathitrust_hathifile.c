@@ -73,5 +73,63 @@ int main(void) {
     remove("/tmp/hathifile_ksds.dat.bin");
     printf("[Test] VSAM export validated successfully.\n");
 
+    // Test Quadtree KSDS and AIX Export
+    printf("[Test] Exporting Hathifile data to Quadtree KSDS with AIX...\n");
+    FILE *mqf = fopen("/tmp/mock_hathifile_qt.txt", "w");
+    assert(mqf != NULL);
+    char line_qt[] = "12345\tallow\tpd\t1002345\tvol. 1\tMIU\t\t01234567\t9780123456789\t\t2001-12345\tAuncient History of the VM\tAnn Arbor, MI\tbib\t2026-08-04 00:00:00\t0\t2026\tmi\teng\tBK\n";
+    fwrite(line_qt, 1, strlen(line_qt), mqf);
+    fclose(mqf);
+
+    bool export_qt_ok = hathifile_export_to_quadtree_ksds(
+        "/tmp/mock_hathifile_qt.txt",
+        "/tmp/ht_primary.dat.bin",
+        "/tmp/ht_aix_isbn.dat.bin",
+        "/tmp/ht_aix_oclc.dat.bin"
+    );
+    assert(export_qt_ok == true);
+
+    // Verify retrieval via ISBN AIX Quadtree path
+    // Helper to calculate coordinates
+    extern uint64_t hash_string(const char *str); // Declare helper
+    uint64_t h_isbn = hash_string("9780123456789");
+    uint32_t x_i = (h_isbn & 0xFFFFFFFF) % 100;
+    uint32_t y_i = ((h_isbn >> 32) & 0xFFFFFFFF) % 100;
+
+    uint8_t res_buf[1024] = {0};
+    int res_len = 0;
+    // Link query interface
+    extern bool tsfi_qt_ksds_aix_query(
+        const char *aix_filepath,
+        const char *primary_filepath,
+        uint32_t secondary_x,
+        uint32_t secondary_y,
+        uint8_t *record_out,
+        size_t max_record,
+        int *record_len_out
+    );
+
+    bool q_ok = tsfi_qt_ksds_aix_query(
+        "/tmp/ht_aix_isbn.dat.bin",
+        "/tmp/ht_primary.dat.bin",
+        x_i,
+        y_i,
+        res_buf,
+        sizeof(res_buf) - 1,
+        &res_len
+    );
+    assert(q_ok == true);
+    res_buf[res_len] = '\0';
+
+    char expected_qt[] = "12345\tallow\tpd\t1002345\tvol. 1\tMIU\t\t01234567\t9780123456789\t\t2001-12345\tAuncient History of the VM\tAnn Arbor, MI\tbib\t2026-08-04 00:00:00\t0\t2026\tmi\teng\tBK";
+    assert(strcmp((char *)res_buf, expected_qt) == 0);
+
+    remove("/tmp/mock_hathifile_qt.txt");
+    remove("/tmp/ht_primary.dat.bin");
+    remove("/tmp/ht_primary.dat.bin.qt.bin");
+    remove("/tmp/ht_aix_isbn.dat.bin");
+    remove("/tmp/ht_aix_oclc.dat.bin");
+    printf("[Test] Quadtree KSDS and AIX export validated successfully.\n");
+
     return 0;
 }

@@ -20,7 +20,7 @@ test-hathitrust:
 	@rm -f tests/test_hathitrust_client
 
 test-hathitrust-hathifile:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc tests/test_hathitrust_hathifile.c src/hathitrust_hathifile.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c -o tests/test_hathitrust_hathifile -lcrypto -lrt -lm
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc tests/test_hathitrust_hathifile.c src/hathitrust_hathifile.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_hathitrust_hathifile -lcrypto -lrt -lm
 	./tests/test_hathitrust_hathifile
 	@rm -f tests/test_hathitrust_hathifile
 

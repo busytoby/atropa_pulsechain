@@ -51,4 +51,11 @@ void hathifile_free_row(HathifileRow *row);
  */
 bool hathifile_export_to_vsam(const char *hathifile_path, const char *vsam_path);
 
+bool hathifile_export_to_quadtree_ksds(
+    const char *hathifile_path,
+    const char *primary_path,
+    const char *aix_isbn_path,
+    const char *aix_oclc_path
+);
+
 #endif /* HATHITRUST_HATHIFILE_H */

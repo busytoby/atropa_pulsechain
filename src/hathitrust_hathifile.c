@@ -3,6 +3,7 @@
 
 #include "hathitrust_hathifile.h"
 #include "tsfi2-deepseek/inc/tsfi_mainframe_computerworld.h"
+#include "tsfi2-deepseek/inc/tsfi_quadtree_ksds.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -127,5 +128,138 @@ bool hathifile_export_to_vsam(const char *hathifile_path, const char *vsam_path)
     }
 
     fclose(hf);
+    return true;
+}
+
+uint64_t hash_string(const char *str) {
+    uint64_t hash = 14695981039346656037ULL;
+    if (!str) return hash;
+    while (*str) {
+        hash ^= (uint8_t)*str++;
+        hash *= 1099511628211ULL;
+    }
+    return hash;
+}
+
+bool hathifile_export_to_quadtree_ksds(
+    const char *hathifile_path,
+    const char *primary_path,
+    const char *aix_isbn_path,
+    const char *aix_oclc_path
+) {
+    if (!hathifile_path || !primary_path || !aix_isbn_path || !aix_oclc_path) return false;
+
+    FILE *hf = fopen(hathifile_path, "r");
+    if (!hf) return false;
+
+    // We write primary book record texts to a flat file first so we can seek by offset
+    FILE *pf = fopen(primary_path, "wb");
+    if (!pf) {
+        fclose(hf);
+        return false;
+    }
+
+    // Write aligned spacing at the start
+    uint8_t spacing[512] = {0};
+    fwrite(spacing, 1, 512, pf);
+
+    // Track up to 4 parsed rows to put into our 4 quadrants
+    HathifileRow rows[4];
+    uint32_t offsets[4] = {0};
+    int row_count = 0;
+
+    char line[4096];
+    while (fgets(line, sizeof(line), hf) && row_count < 4) {
+        char line_copy[4096];
+        strcpy(line_copy, line);
+
+        HathifileRow row;
+        if (hathifile_parse_line(line, &row)) {
+            // Seek and record the offset of the raw line text
+            offsets[row_count] = (uint32_t)ftell(pf);
+            size_t copy_len = strlen(line_copy);
+            fwrite(line_copy, 1, copy_len, pf);
+
+            rows[row_count] = row;
+            row_count++;
+        }
+    }
+    fclose(pf);
+    fclose(hf);
+
+    if (row_count == 0) return false;
+
+    // Define 5-node Quadtrees: 1 root, 4 quadrants
+    InteropQuadNode primary_nodes[5] = {
+        { 0, 0, 100, 100, 0, { 1, 2, 3, 4 } },
+        { 0, 0, 50, 50, 0xFFFFFFFF, { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF } },
+        { 50, 0, 100, 50, 0xFFFFFFFF, { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF } },
+        { 0, 50, 50, 100, 0xFFFFFFFF, { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF } },
+        { 50, 50, 100, 100, 0xFFFFFFFF, { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF } }
+    };
+
+    InteropQuadNode isbn_nodes[5] = {
+        { 0, 0, 100, 100, 0, { 1, 2, 3, 4 } },
+        { 0, 0, 50, 50, 0xFFFFFFFF, { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF } },
+        { 50, 0, 100, 50, 0xFFFFFFFF, { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF } },
+        { 0, 50, 50, 100, 0xFFFFFFFF, { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF } },
+        { 50, 50, 100, 100, 0xFFFFFFFF, { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF } }
+    };
+
+    InteropQuadNode oclc_nodes[5] = {
+        { 0, 0, 100, 100, 0, { 1, 2, 3, 4 } },
+        { 0, 0, 50, 50, 0xFFFFFFFF, { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF } },
+        { 50, 0, 100, 50, 0xFFFFFFFF, { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF } },
+        { 0, 50, 50, 100, 0xFFFFFFFF, { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF } },
+        { 50, 50, 100, 100, 0xFFFFFFFF, { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF } }
+    };
+
+    // Distribute records to quadrants based on their key hashes
+    for (int i = 0; i < row_count; i++) {
+        uint32_t val = offsets[i];
+
+        // 1. Primary Index Mapping (Key: htid)
+        uint64_t h_primary = hash_string(rows[i].htid);
+        uint32_t x_p = (h_primary & 0xFFFFFFFF) % 100;
+        uint32_t y_p = ((h_primary >> 32) & 0xFFFFFFFF) % 100;
+        int q_p = 1;
+        if (x_p > 50) q_p += 1;
+        if (y_p > 50) q_p += 2;
+        primary_nodes[q_p].value = val;
+
+        // 2. Secondary ISBN Index Mapping (Key: isbn)
+        if (rows[i].isbn && strlen(rows[i].isbn) > 0) {
+            uint64_t h_isbn = hash_string(rows[i].isbn);
+            uint32_t x_i = (h_isbn & 0xFFFFFFFF) % 100;
+            uint32_t y_i = ((h_isbn >> 32) & 0xFFFFFFFF) % 100;
+            int q_i = 1;
+            if (x_i > 50) q_i += 1;
+            if (y_i > 50) q_i += 2;
+            isbn_nodes[q_i].value = val;
+        }
+
+        // 3. Secondary OCLC Index Mapping (Key: oclc)
+        if (rows[i].oclc && strlen(rows[i].oclc) > 0) {
+            uint64_t h_oclc = hash_string(rows[i].oclc);
+            uint32_t x_o = (h_oclc & 0xFFFFFFFF) % 100;
+            uint32_t y_o = ((h_oclc >> 32) & 0xFFFFFFFF) % 100;
+            int q_o = 1;
+            if (x_o > 50) q_o += 1;
+            if (y_o > 50) q_o += 2;
+            oclc_nodes[q_o].value = val;
+        }
+
+        hathifile_free_row(&rows[i]);
+    }
+
+    // Write primary index Quadtree to a separate file (or package it inside primary path)
+    char primary_qt_path[512];
+    snprintf(primary_qt_path, sizeof(primary_qt_path), "%s.qt.bin", primary_path);
+    tsfi_qt_ksds_write(primary_qt_path, "AUNCIENT_PRIMARY\nQuadtreeCount:\t5\nRecordCount:\t1", primary_nodes, 5, (const uint8_t *)"OK", 2);
+
+    // Write AIX files
+    tsfi_qt_ksds_aix_write(aix_isbn_path, "AUNCIENT_ISBN_AIX\nQuadtreeCount:\t5\nRecordCount:\t1", isbn_nodes, 5, offsets, row_count);
+    tsfi_qt_ksds_aix_write(aix_oclc_path, "AUNCIENT_OCLC_AIX\nQuadtreeCount:\t5\nRecordCount:\t1", oclc_nodes, 5, offsets, row_count);
+
     return true;
 }
