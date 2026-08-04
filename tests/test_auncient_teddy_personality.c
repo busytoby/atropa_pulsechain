@@ -114,6 +114,11 @@ int main(void) {
     assert(rating_loggamma >= 1 && rating_loggamma <= 7);
     printf("   ✓ R H B Christensen log-gamma ordinal rating verified successfully\n");
 
+    // Test Gumbel rating estimation
+    int rating_gumbel = evaluate_ordinal_gumbel_rating(&geom);
+    assert(rating_gumbel >= 1 && rating_gumbel <= 7);
+    printf("   ✓ R H B Christensen Gumbel ordinal rating verified successfully\n");
+
     // Test AIC and BIC information criteria diagnostics estimation
     double aic = 0.0, bic = 0.0;
     assert(evaluate_information_criteria(&geom, 3, 100, &aic, &bic));

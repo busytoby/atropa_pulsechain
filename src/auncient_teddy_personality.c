@@ -463,6 +463,19 @@ int evaluate_ordinal_loggamma_rating(const teddy_geometry_t *geom, double lambda
     return 7;
 }
 
+int evaluate_ordinal_gumbel_rating(const teddy_geometry_t *geom) {
+    if (!geom) return 1;
+    double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
+    double thresholds[6] = {0.5, 1.2, 2.0, 2.8, 3.5, 4.2};
+    for (int i = 0; i < 6; ++i) {
+        double gumbel_prob = 1.0 - exp(-exp(thresholds[i] - latent));
+        if (gumbel_prob >= 0.5) {
+            return i + 1;
+        }
+    }
+    return 7;
+}
+
 int evaluate_ordinal_flexible_rating(const teddy_geometry_t *geom, double link_mixture_weight) {
     if (!geom) return 1;
     double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
