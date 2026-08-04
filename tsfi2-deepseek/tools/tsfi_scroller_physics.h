@@ -123,14 +123,21 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
             b_col = (uint8_t)(b_col * 0.55f);
         }
 
-        // 3D cylindrical chiascuro shading (7px width: far-far-left, far-left, left, center, right, far-right, far-far-right)
-        draw_line(prev_x - 3, prev_y, sx - 3, sy, (uint8_t)fminf(255, r_col * 1.6f), (uint8_t)fminf(255, g_col * 1.6f), (uint8_t)fminf(255, b_col * 1.6f)); // Far-far-left highlight
-        draw_line(prev_x - 2, prev_y, sx - 2, sy, (uint8_t)fminf(255, r_col * 1.4f), (uint8_t)fminf(255, g_col * 1.4f), (uint8_t)fminf(255, b_col * 1.4f)); // Far-left highlight
-        draw_line(prev_x - 1, prev_y, sx - 1, sy, (uint8_t)fminf(255, r_col * 1.2f), (uint8_t)fminf(255, g_col * 1.2f), (uint8_t)fminf(255, b_col * 1.2f)); // Left highlight
-        draw_line(prev_x, prev_y, sx, sy, r_col, g_col, b_col); // Center body core
-        draw_line(prev_x + 1, prev_y, sx + 1, sy, (uint8_t)(r_col * 0.65f), (uint8_t)(g_col * 0.65f), (uint8_t)(b_col * 0.65f)); // Right shadow
-        draw_line(prev_x + 2, prev_y, sx + 2, sy, (uint8_t)(r_col * 0.45f), (uint8_t)(g_col * 0.45f), (uint8_t)(b_col * 0.45f)); // Far-right shadow
-        draw_line(prev_x + 3, prev_y, sx + 3, sy, (uint8_t)(r_col * 0.25f), (uint8_t)(g_col * 0.25f), (uint8_t)(b_col * 0.25f)); // Far-far-right shadow
+        // 3D cylindrical chiascuro shading (14px width sweep loop)
+        for (int offset = -7; offset <= 7; offset++) {
+            float factor = 1.0f;
+            if (offset < 0) {
+                // Highlight side: blend up to 1.6f
+                factor = 1.0f + 0.6f * ((float)(7 + offset) / 7.0f);
+            } else {
+                // Shadow side: decay down to 0.25f
+                factor = 1.0f - 0.75f * ((float)offset / 7.0f);
+            }
+            uint8_t r_draw = (uint8_t)fminf(255, r_col * factor);
+            uint8_t g_draw = (uint8_t)fminf(255, g_col * factor);
+            uint8_t b_draw = (uint8_t)fminf(255, b_col * factor);
+            draw_line(prev_x + offset, prev_y, sx + offset, sy, r_draw, g_draw, b_draw);
+        }
 
         // Tiny dynamic curved downy hairs projecting from both sides of the stem (pilosity)
         if (j % 2 == 0) {
