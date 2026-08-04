@@ -436,6 +436,12 @@ bool calculate_diyat_tax_with_refractory(const teddy_geometry_t *geom, double sw
 // Calculates the nerve-like Gumbel transient diyat tax modulated by tremolo and sustain envelope dynamics.
 bool calculate_diyat_tax_with_envelope(const teddy_geometry_t *geom, double switching_frequency, double base_gas_cost, double tremolo_freq, double sustain_time, double *total_cost_out);
 
+// Executes a maturity-adjusted cloglog gated thunk.
+bool execute_cloglog_gated_thunk_with_maturity(const teddy_geometry_t *geom, double scale_covariate, double age_months, double (*thunk_fn)(void), double *result_out);
+
+// Executes a Wald-gated cooperative validation check thunk (Christensen).
+bool execute_cooperative_wald_gated_thunk(const teddy_geometry_t *geom, const double *beta_vector, const double *covariance_matrix, int df, double (*thunk_fn)(void), double *result_out);
+
 // Simulates the phase-modulated flyback noise distortion index for izotope filtering.
 bool simulate_phase_flyback_noise(const teddy_geometry_t *geom, double phase_angle, double *noise_out);
 

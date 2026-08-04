@@ -226,6 +226,33 @@ bool execute_maturity_cloglog_thunk_with_feedback(const teddy_geometry_t *geom, 
     return execute_cloglog_thunk_with_feedback(geom, scale, callback, safety_margin_out);
 }
 
+bool execute_cloglog_gated_thunk_with_maturity(const teddy_geometry_t *geom, double scale_covariate, double age_months, double (*thunk_fn)(void), double *result_out) {
+    if (!geom || scale_covariate < 0.0 || age_months < 0.0 || !thunk_fn || !result_out) {
+        return false;
+    }
+    double safety_margin = 0.0;
+    if (!execute_cloglog_thunk_with_feedback(geom, scale_covariate, thunk_fn, &safety_margin)) {
+        return false;
+    }
+    *result_out = safety_margin * (1.0 + age_months * 0.01);
+    return true;
+}
+
+bool execute_cooperative_wald_gated_thunk(const teddy_geometry_t *geom, const double *beta_vector, const double *covariance_matrix, int df, double (*thunk_fn)(void), double *result_out) {
+    if (!geom || !beta_vector || !covariance_matrix || df < 1 || !thunk_fn || !result_out) {
+        return false;
+    }
+    double wstat = 0.0, wpval = 1.0;
+    if (!evaluate_mixture_link_nominal_wald(beta_vector, covariance_matrix, df, &wstat, &wpval)) {
+        return false;
+    }
+    if (wpval < 0.05) {
+        *result_out = thunk_fn();
+        return true;
+    }
+    return false;
+}
+
 evaluation_tx_t begin_evaluation_transaction(teddy_geometry_t *target) {
     evaluation_tx_t tx;
     tx.target = target;
