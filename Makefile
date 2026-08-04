@@ -166,8 +166,13 @@ test-tsfi2-compiler-standards:
 	./tests/test_tsfi2_compiler_standards
 	@rm -f tests/test_tsfi2_compiler_standards
 
+test-auncient-alu-wmq-integration:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc tests/test_auncient_alu_wmq_integration.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c -o tests/test_auncient_alu_wmq_integration -lcrypto -lrt -lm
+	./tests/test_auncient_alu_wmq_integration
+	@rm -f tests/test_auncient_alu_wmq_integration
+
 test-auncient-tsv-wmq-integration:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc tests/test_auncient_tsv_wmq_runner.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_displacementshader.c -o tests/test_auncient_tsv_wmq_runner -lcrypto -lrt -lm
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc tests/test_auncient_tsv_wmq_runner.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c -o tests/test_auncient_tsv_wmq_runner -lcrypto -lrt -lm
 	./tests/test_auncient_tsv_wmq_runner
 	@rm -f tests/test_auncient_tsv_wmq_runner
 

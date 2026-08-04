@@ -15,6 +15,7 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+int tsfi_mf_es_evm_spool_guard(const char *jcl_content, int *is_valid);
 
 int main(void) {
     printf("=============================================================\n");
@@ -118,9 +119,43 @@ int main(void) {
     assert(ok == true);
     assert(cpu.halted == true);
     assert(cpu.exit_code == 0);
-    printf("   ✓ gost_intrusion strategy closure compiled and executed successfully.\n");
+    int is_valid = 1;
+    int spool_res = tsfi_mf_es_evm_spool_guard(gost_source, &is_valid);
+    int lockout = (spool_res == 1) ? 1 : 0;
+    bool allowed = (is_valid == 1);
+    assert(allowed == false);
+    assert(lockout == 1);
+    printf("   ✓ Spool guard security lockout verified via real tsfi_mf_es_evm_spool_guard successfully.\n");
 
     remove(gost_bin);
+
+    // Phase 6: Compile and Execute the transitioned teddy_endowment strategy closure
+    printf("\n[Runner] Loading transitioned teddy_endowment strategy from disk...\n");
+    FILE *tf = fopen("solidity/dysnomia/domain/strategies/teddy_endowment.strategy", "r");
+    assert(tf != NULL);
+    char teddy_source[1024];
+    size_t teddy_bytes = fread(teddy_source, 1, sizeof(teddy_source) - 1, tf);
+    teddy_source[teddy_bytes] = '\0';
+    fclose(tf);
+
+    uint8_t teddy_bytecode[256];
+    size_t teddy_bytecode_len = 0;
+    ok = tsfi2_compile(teddy_source, teddy_bytecode, sizeof(teddy_bytecode), &teddy_bytecode_len);
+    assert(ok == true);
+
+    const char *teddy_bin = "/tmp/teddy_strategy_out.dat.bin";
+    ok = tsfi2_compile_to_dat_bin_ext(teddy_bin, 0x1000, 1, "TIN", "950000000", teddy_bytecode, teddy_bytecode_len);
+    assert(ok == true);
+
+    printf("[Runner] Executing compiled teddy_endowment strategy closure...\n");
+    memset(&cpu, 0, sizeof(cpu));
+    ok = tsfi2_load_and_execute(teddy_bin, &cpu);
+    assert(ok == true);
+    assert(cpu.halted == true);
+    assert(cpu.exit_code == 1000000);
+    printf("   ✓ Hogan newborn teddy bear 1,000,000 Saat endowment strategy verified successfully.\n");
+    remove(teddy_bin);
+
     remove(prog_file);
     return 0;
 }

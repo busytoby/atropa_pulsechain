@@ -651,3 +651,11 @@ int tsfi_mf_nato_verify_down_ramp_rate_factor_offset(int offset_db, int *is_vali
     *is_valid = (offset_db >= 0 && offset_db <= 5) ? 1 : 0;
     return 0;
 }
+
+#define X(enum_sfx, fn_sfx, min, max) \
+int tsfi_mf_nato_verify_##fn_sfx(int value, int *is_valid) { \
+    return tsfi_mf_nato_verify_parameter(TSFI_NATO_PARAM_##enum_sfx, value, is_valid); \
+}
+NATO_PARAMETER_TABLE
+#undef X
+

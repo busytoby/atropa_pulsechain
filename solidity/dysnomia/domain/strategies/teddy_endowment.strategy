@@ -1,0 +1,13 @@
+^{:wmq-job "TEDDYJOB"
+  :wmq-compiler "FOLKLORE"
+  :wmq-mount "TEDDY"
+  :wmq-author "HOGAN"
+  :wmq-params {:tin 950000000 :ssn 050051122}}
+
+(defn -main []
+  ;; Map registers for testing teddy bear endowment
+  (wmq-reg-write 1 950000000)
+  (wmq-reg-write 2 050051122)
+  ;; Initialize Saat balance to 1,000,000 via register write
+  (wmq-reg-write 3 1000000)
+  (exit 1000000))

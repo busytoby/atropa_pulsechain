@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include "tsfi_strategy_lang.h"
 #include "tsfi_anvil_vm.h"
 #include "tsfi_ramac_layout.h"
@@ -410,6 +411,88 @@ int tsfi_strategy_vm_execute_bytecode(TSFiStrategyVM *vm, TSFiPriorityQueue *pq,
 
 int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int max_len, int *len_out) {
     if (!script || !bytecode_out || !len_out || max_len <= 0) return -1;
+
+    if (script[0] == '^') {
+        int pc = 0;
+        const char *p = script;
+        const char *sd = strstr(p, "set-depth");
+        if (sd) {
+            sd += 9;
+            while (*sd && !isdigit((unsigned char)*sd)) sd++;
+            if (pc + 1 < max_len) {
+                bytecode_out[pc++] = 0x01;
+                bytecode_out[pc++] = (uint8_t)atoi(sd);
+            }
+        }
+        const char *rw = p;
+        while ((rw = strstr(rw, "wmq-reg-write")) != NULL) {
+            rw += 13;
+            while (*rw && isspace((unsigned char)*rw)) rw++;
+            int reg = atoi(rw);
+            while (*rw && isdigit((unsigned char)*rw)) rw++;
+            while (*rw && isspace((unsigned char)*rw)) rw++;
+            int val = atoi(rw);
+            if (pc + 2 < max_len) {
+                bytecode_out[pc++] = 0x14;
+                bytecode_out[pc++] = (uint8_t)reg;
+                bytecode_out[pc++] = (uint8_t)val;
+            }
+            rw++;
+        }
+        const char *ie = strstr(p, "if-eq");
+        if (ie) {
+            ie += 5;
+            while (*ie && isspace((unsigned char)*ie)) ie++;
+            int reg_a = atoi(ie);
+            while (*ie && isdigit((unsigned char)*ie)) ie++;
+            while (*ie && isspace((unsigned char)*ie)) ie++;
+            int reg_b = atoi(ie);
+            while (*ie && isdigit((unsigned char)*ie)) ie++;
+            while (*ie && isspace((unsigned char)*ie)) ie++;
+            int target = atoi(ie);
+            if (pc + 3 < max_len) {
+                bytecode_out[pc++] = 0x18;
+                bytecode_out[pc++] = (uint8_t)target;
+                bytecode_out[pc++] = (uint8_t)reg_a;
+                bytecode_out[pc++] = (uint8_t)reg_b;
+            }
+        }
+        const char *wt = p;
+        while ((wt = strstr(wt, "weight")) != NULL) {
+            if (wt > p && *(wt - 1) == '-') {
+                wt += 6;
+                continue;
+            }
+            wt += 6;
+            while (*wt && isspace((unsigned char)*wt)) wt++;
+            int key = atoi(wt);
+            while (*wt && isdigit((unsigned char)*wt)) wt++;
+            while (*wt && isspace((unsigned char)*wt)) wt++;
+            int val = atoi(wt);
+            if (pc + 2 < max_len) {
+                bytecode_out[pc++] = 0x05;
+                bytecode_out[pc++] = (uint8_t)key;
+                bytecode_out[pc++] = (uint8_t)val;
+            }
+            wt++;
+        }
+        if (strstr(p, "eval")) {
+            if (pc < max_len) {
+                bytecode_out[pc++] = 0x03;
+            }
+        }
+        const char *pr = strstr(p, "prune");
+        if (pr) {
+            pr += 5;
+            while (*pr && !isdigit((unsigned char)*pr)) pr++;
+            if (pc + 1 < max_len) {
+                bytecode_out[pc++] = 0x04;
+                bytecode_out[pc++] = (uint8_t)atoi(pr);
+            }
+        }
+        *len_out = pc;
+        return 0;
+    }
 
     char script_copy[2048];
     strncpy(script_copy, script, 2047);

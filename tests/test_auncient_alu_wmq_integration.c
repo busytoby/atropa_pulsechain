@@ -6,12 +6,16 @@
 #include <assert.h>
 #include <openssl/sha.h>
 #include <math.h>
+#include "inc/tsfi2_compiler.h"
+#include "inc/tsfi2_compiler_bin.h"
+#include "inc/tsfi2_loader.h"
 #include "../tsfi2-deepseek/inc/tsfi_displacementshader.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
 
+int tsfi_mf_es_evm_spool_guard(const char *jcl_content, int *is_valid);
 
 #define HASH_SIZE 32
 
@@ -274,6 +278,69 @@ int main(void) {
     fflush(stdout);
 
     free(soft_reg);
+
+    // 9. Strategy Execution Coverage: Gost Intrusion Strategy Closure
+    printf("\n[ALU Test] Loading transitioned gost_intrusion strategy from disk...\n");
+    FILE *gf = fopen("solidity/dysnomia/domain/strategies/gost_intrusion.strategy", "r");
+    assert(gf != NULL);
+    char gost_source[1024];
+    size_t gost_bytes = fread(gost_source, 1, sizeof(gost_source) - 1, gf);
+    gost_source[gost_bytes] = '\0';
+    fclose(gf);
+
+    uint8_t gost_bytecode[256];
+    size_t gost_bytecode_len = 0;
+    ok = tsfi2_compile(gost_source, gost_bytecode, sizeof(gost_bytecode), &gost_bytecode_len);
+    assert(ok == true);
+
+    const char *gost_bin = "/tmp/gost_strategy_alu.dat.bin";
+    ok = tsfi2_compile_to_dat_bin_ext(gost_bin, 0x1000, 1, "TIN", "950000000", gost_bytecode, gost_bytecode_len);
+    assert(ok == true);
+
+    Tsfi2CpuState cpu;
+    memset(&cpu, 0, sizeof(cpu));
+    printf("[ALU Test] Executing compiled gost_intrusion strategy closure...\n");
+    ok = tsfi2_load_and_execute(gost_bin, &cpu);
+    assert(ok == true);
+    assert(cpu.halted == true);
+    assert(cpu.exit_code == 0);
+    int is_valid = 1;
+    int spool_res = tsfi_mf_es_evm_spool_guard(gost_source, &is_valid);
+    int lockout = (spool_res == 1) ? 1 : 0;
+    bool allowed = (is_valid == 1);
+    assert(allowed == false);
+    assert(lockout == 1);
+    printf("   ✓ Spool guard security lockout verified via real tsfi_mf_es_evm_spool_guard successfully.\n");
+
+    remove(gost_bin);
+
+    // [ALU Test] Compile and Execute the transitioned teddy_endowment strategy closure
+    printf("\n[ALU Test] Loading transitioned teddy_endowment strategy from disk...\n");
+    FILE *tf = fopen("solidity/dysnomia/domain/strategies/teddy_endowment.strategy", "r");
+    assert(tf != NULL);
+    char teddy_source[1024];
+    size_t teddy_bytes = fread(teddy_source, 1, sizeof(teddy_source) - 1, tf);
+    teddy_source[teddy_bytes] = '\0';
+    fclose(tf);
+
+    uint8_t teddy_bytecode[256];
+    size_t teddy_bytecode_len = 0;
+    ok = tsfi2_compile(teddy_source, teddy_bytecode, sizeof(teddy_bytecode), &teddy_bytecode_len);
+    assert(ok == true);
+
+    const char *teddy_bin = "/tmp/teddy_strategy_alu.dat.bin";
+    ok = tsfi2_compile_to_dat_bin_ext(teddy_bin, 0x1000, 1, "TIN", "950000000", teddy_bytecode, teddy_bytecode_len);
+    assert(ok == true);
+
+    printf("[ALU Test] Executing compiled teddy_endowment strategy closure...\n");
+    memset(&cpu, 0, sizeof(cpu));
+    ok = tsfi2_load_and_execute(teddy_bin, &cpu);
+    assert(ok == true);
+    assert(cpu.halted == true);
+    assert(cpu.exit_code == 1000000);
+    printf("   ✓ Hogan newborn teddy bear 1,000,000 Saat endowment strategy verified successfully.\n");
+    remove(teddy_bin);
+
     printf("=============================================================\n");
     printf("ALU AND WINCHESTERMQ INTEGRATION TESTS PASSED\n");
     printf("=============================================================\n");

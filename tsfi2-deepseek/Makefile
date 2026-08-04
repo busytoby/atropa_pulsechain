@@ -146,8 +146,8 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
              $(OBJ_DIR)/tsfi_micro_focus.o \
               $(OBJ_DIR)/tsfi_majormud.o \
                $(OBJ_DIR)/tsfi_cade_imf.o \
-               $(OBJ_DIR)/tsfi_cade_imf_nato.o \
-               $(OBJ_DIR)/tsfi_cade_vulkan.o \
+                 $(OBJ_DIR)/tsfi_cade_imf_nato.o \
+                 $(OBJ_DIR)/tsfi_cade_vulkan.o \
                $(OBJ_DIR)/tsfi_eer_emergency.o \
               $(OBJ_DIR)/tsfi_nsa_tempest.o \
               $(OBJ_DIR)/tsfi_reuter_tx.o \
