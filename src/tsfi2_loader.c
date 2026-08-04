@@ -339,16 +339,27 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
                 putchar('\n');
             }
             pc += 3 + len;
-        } else if (opcode == 0x0F && pc + 2 < bytecode_len && bytecode[pc+1] == 0x21) { // JCL Display dynamic message
-            uint8_t len = bytecode[pc+2];
-            if (pc + 2 + len < bytecode_len) {
+        } else if (opcode == 0x0F && pc + 3 < bytecode_len && bytecode[pc+1] == 0x21) { // JCL Display dynamic message
+            uint8_t reg_idx = bytecode[pc+2];
+            uint8_t len = bytecode[pc+3];
+            if (pc + 3 + len < bytecode_len) {
                 printf("[JCL] ");
                 for (uint8_t i = 0; i < len; i++) {
-                    putchar(bytecode[pc + 3 + i]);
+                    putchar(bytecode[pc + 4 + i]);
                 }
-                printf("%09llu\n", (unsigned long long)wmq_secret);
+                uint64_t val = 0;
+                if (reg_idx == 1) val = wmq_base;
+                else if (reg_idx == 2) val = wmq_secret;
+                else if (reg_idx == 3) val = wmq_prime;
+                else if (reg_idx == 5) val = wmq_pole;
+                
+                if (reg_idx == 2) {
+                    printf("%09llu\n", (unsigned long long)val);
+                } else {
+                    printf("%llu\n", (unsigned long long)val);
+                }
             }
-            pc += 3 + len;
+            pc += 4 + len;
         } else if (opcode == 0x0F && pc + 6 < bytecode_len && bytecode[pc+1] == 0xFE) { // WinchesterMQ register write
             int reg_idx = bytecode[pc+2];
             uint32_t val = bytecode[pc+3] | (bytecode[pc+4] << 8) | (bytecode[pc+5] << 16) | (bytecode[pc+6] << 24);

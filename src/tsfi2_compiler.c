@@ -198,6 +198,41 @@ bool tsfi2_compile(
         out_bytecode[offset++] = (uint8_t)((ssn_val >> 16) & 0xFF);
         out_bytecode[offset++] = (uint8_t)((ssn_val >> 24) & 0xFF);
 
+        // Dynamically parse variables under WORKING-STORAGE SECTION
+        typedef struct {
+            char name[64];
+            int reg_idx;
+        } JclVariable;
+        JclVariable vars[16];
+        int var_count = 0;
+
+        const char *ws_ptr = strstr(source_code, "WORKING-STORAGE");
+        if (ws_ptr) {
+            ws_ptr += 15;
+            const char *line = ws_ptr;
+            const char *proc_ptr = strstr(source_code, "PROCED DIVISION");
+            while ((line = strstr(line, "01")) != NULL && (!proc_ptr || line < proc_ptr)) {
+                line += 2;
+                while (*line && isspace((unsigned char)*line)) line++;
+                char var_name[64] = {0};
+                int var_len = 0;
+                while (*line && (isalnum((unsigned char)*line) || *line == '-') && var_len < 63) {
+                    var_name[var_len++] = *line++;
+                }
+                if (var_len > 0 && var_count < 16) {
+                    strcpy(vars[var_count].name, var_name);
+                    if (strstr(var_name, "SSN")) {
+                        vars[var_count].reg_idx = 2;
+                    } else if (strstr(var_name, "TIN")) {
+                        vars[var_count].reg_idx = 1;
+                    } else {
+                        vars[var_count].reg_idx = 3 + var_count;
+                    }
+                    var_count++;
+                }
+            }
+        }
+
         // Dynamically parse all JCL/COBOL DISPLAY statements
         const char *disp_ptr = source_code;
         while ((disp_ptr = strstr(disp_ptr, "DISPLAY")) != NULL) {
@@ -213,23 +248,27 @@ bool tsfi2_compile(
                 if (*disp_ptr == '"') disp_ptr++; // skip ending quote
                 while (*disp_ptr && (*disp_ptr == ' ' || *disp_ptr == '\t')) disp_ptr++;
                 
-                // Check if followed by an identifier (like WS-SSN-TIN) on the same line
-                bool has_var = false;
+                // Check if followed by any parsed identifier on the same line
+                int target_reg = -1;
                 if (*disp_ptr && (isalnum((unsigned char)*disp_ptr) || *disp_ptr == '-')) {
                     char var_name[64] = {0};
                     int var_len = 0;
                     while (*disp_ptr && (isalnum((unsigned char)*disp_ptr) || *disp_ptr == '-') && var_len < 63) {
                         var_name[var_len++] = *disp_ptr++;
                     }
-                    if (strcmp(var_name, "WS-SSN-TIN") == 0) {
-                        has_var = true;
+                    for (int v = 0; v < var_count; v++) {
+                        if (strcmp(vars[v].name, var_name) == 0) {
+                            target_reg = vars[v].reg_idx;
+                            break;
+                        }
                     }
                 }
                 while (*disp_ptr && isspace((unsigned char)*disp_ptr)) disp_ptr++;
                 
-                if (has_var) {
+                if (target_reg != -1) {
                     out_bytecode[offset++] = 0x0F;
-                    out_bytecode[offset++] = 0x21; // dynamic display referencing register 2 (SSN)
+                    out_bytecode[offset++] = 0x21; // dynamic display
+                    out_bytecode[offset++] = (uint8_t)target_reg;
                 } else {
                     out_bytecode[offset++] = 0x0F;
                     out_bytecode[offset++] = 0x20; // static display
