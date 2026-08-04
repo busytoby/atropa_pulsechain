@@ -101,7 +101,8 @@ ws.on("open", () => {
     console.log("[GAUNTLET LIVE] Connected to Coaxial WebSocket Server.");
     console.log("Controls: Arrow keys / WASD to move, Spacebar to shoot, Ctrl+C to exit.");
     
-    // Start game loop (60ms tick for high speed responsiveness)
+    // Enable arcade mode (switches streamer to frame buffer display mode)
+    ws.send(JSON.stringify({ arcade_mode: true }));
     const interval = setInterval(() => {
         if (gameOver || gameWon) {
             clearInterval(interval);
