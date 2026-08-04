@@ -610,6 +610,14 @@ bool evaluate_behavioral_threat_mismatch(const teddy_geometry_t *geom, double *m
     return true;
 }
 
+double evaluate_reactive_mismatch_retaliation(const teddy_geometry_t *geom) {
+    if (!geom) return 0.0;
+    double physical_threat = evaluate_fw_threat_level(geom);
+    double score = physical_threat * (1.0 + geom->behavioral_mismatch) * (0.5 + geom->status_aggression);
+    if (score < 0.0) score = 0.0;
+    return score;
+}
+
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out) {
     if (!geom || param_count < 1 || sample_size < 2 || !aic_out || !bic_out) {
         return false;

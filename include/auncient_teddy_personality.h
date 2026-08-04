@@ -189,6 +189,9 @@ double evaluate_fw_threat_level(const teddy_geometry_t *geom);
 // Computes visual-vocal mismatch threat scores (Geniole et al.).
 bool evaluate_behavioral_threat_mismatch(const teddy_geometry_t *geom, double *mismatch_score);
 
+// Computes reactive mismatch retaliation scores based on fWHR and status aggression (Geniole et al.).
+double evaluate_reactive_mismatch_retaliation(const teddy_geometry_t *geom);
+
 // Computes model selection diagnostics via AIC and BIC information criteria.
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out);
 
