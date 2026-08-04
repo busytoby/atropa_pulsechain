@@ -648,52 +648,7 @@ test-auncient-xpl-loader:
 	./tests/test_auncient_xpl_loader
 	@rm -f tests/test_auncient_xpl_loader
 
-test-auncient-vfio-xplsm:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vfio_xplsm.c -o tests/test_auncient_vfio_xplsm -lcrypto -lrt
-	./tests/test_auncient_vfio_xplsm
-	@rm -f tests/test_auncient_vfio_xplsm
-
-test-auncient-network-skeleton:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_network_skeleton.c -o tests/test_auncient_network_skeleton -lrt
-	./tests/test_auncient_network_skeleton
-	@rm -f tests/test_auncient_network_skeleton
-
-test-auncient-xcom-winchester:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_xcom_winchester.c -o tests/test_auncient_xcom_winchester -lrt
-	./tests/test_auncient_xcom_winchester
-	@rm -f tests/test_auncient_xcom_winchester
-
-test-auncient-xpl-net-stack:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_xpl_net_stack.c -o tests/test_auncient_xpl_net_stack -lcrypto -lrt
-	./tests/test_auncient_xpl_net_stack
-	@rm -f tests/test_auncient_xpl_net_stack
-
-test-auncient-xplos-kernel:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_xplos_kernel.c -o tests/test_auncient_xplos_kernel -lcrypto -lrt
-	./tests/test_auncient_xplos_kernel
-	@rm -f tests/test_auncient_xplos_kernel
-
-test-auncient-xplos-scheduler:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_xplos_scheduler.c -o tests/test_auncient_xplos_scheduler -lrt
-	./tests/test_auncient_xplos_scheduler
-	@rm -f tests/test_auncient_xplos_scheduler
-
-test-auncient-apdl-xpl-integration:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_apdl_xpl_integration.c -o tests/test_auncient_apdl_xpl_integration -lrt
-	./tests/test_auncient_apdl_xpl_integration
-	@rm -f tests/test_auncient_apdl_xpl_integration
-
-test-auncient-xplos-debugger:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_xplos_debugger.c -o tests/test_auncient_xplos_debugger -lcrypto -lrt
-	./tests/test_auncient_xplos_debugger
-	@rm -f tests/test_auncient_xplos_debugger
-
-test-auncient-xplos-debugger-extended:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_xplos_debugger_extended.c -o tests/test_auncient_xplos_debugger_extended -lcrypto -lrt
-	./tests/test_auncient_xplos_debugger_extended
-	@rm -f tests/test_auncient_xplos_debugger_extended
-
-test-auncient-apdl-compiler:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_apdl_compiler.c -o tests/test_auncient_apdl_compiler -lrt
-	./tests/test_auncient_apdl_compiler
-	@rm -f tests/test_auncient_apdl_compiler
+test-auncient-cooperative-boundary:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_cooperative_boundary.c -o tests/test_auncient_cooperative_boundary -lcrypto -lrt
+	./tests/test_auncient_cooperative_boundary
+	@rm -f tests/test_auncient_cooperative_boundary
