@@ -18,67 +18,67 @@ echo -e "${BLUE}=============================================================${N
 # Ensure temporary files are clean
 rm -f /tmp/hasp_spool_audit.log
 
-# 1. Run Loader validation
-echo -e "\n${YELLOW}[Harness] Running TSFi2 Loader and TSV Binary Header verification...${NC}"
-if make test-tsfi2-loader > /tmp/harness_loader.log 2>&1; then
-    echo -e "  ${GREEN}[✔] Loader TSV Binary Header Parser passed${NC}"
-else
-    echo -e "  ${RED}[✘] Loader TSV Binary Header Parser failed${NC}"
-    cat /tmp/harness_loader.log
-    exit 1
-fi
+# Define the test suites to run
+declare -a test_suites=(
+    "test-tsfi2-loader:Loader Platform"
+    "test-tsfi2-compiler:Compiler Front-End"
+    "test-auncient-tsv-wmq-integration:WinchesterMQ Integration"
+    "test-hathitrust-hathifile:HathiTrust VSAM Exporter"
+    "test-auncient-quadtree-ksds:Quadtree KSDS Operations"
+)
 
-# 2. Run Compiler validation
-echo -e "${YELLOW}[Harness] Running TSFi2 Closure compiler validation...${NC}"
-if make test-tsfi2-compiler > /tmp/harness_compiler.log 2>&1; then
-    echo -e "  ${GREEN}[✔] Closure Compiler JCL Map Audit passed${NC}"
-else
-    echo -e "  ${RED}[✘] Closure Compiler JCL Map Audit failed${NC}"
-    cat /tmp/harness_compiler.log
-    exit 1
-fi
+exit_code=0
 
-# 3. Run Integration and Memory checks
-echo -e "${YELLOW}[Harness] Running WinchesterMQ & Spool Guard Integration...${NC}"
-if make test-auncient-tsv-wmq-integration > /tmp/harness_integration.log 2>&1; then
-    # Parse check results from log
-    if grep -q "COBOL/JCL compiler pass success" /tmp/harness_integration.log; then
-        echo -e "  ${GREEN}[✔] COBOL/JCL Spool Card Audit passed${NC}"
+for suite in "${test_suites[@]}"; do
+    target="${suite%%:*}"
+    description="${suite##*:}"
+    log_file="/tmp/harness_${target}.log"
+
+    echo -e "\n${YELLOW}[Harness] Running ${description} [${target}]...${NC}"
+    
+    if make "${target}" > "${log_file}" 2>&1; then
+        echo -e "  ${GREEN}[✔] Platform Execution passed${NC}"
+        
+        # Validate LAU memory metrics if tracked on this platform
+        if grep -q "LAU MEMORY METRICS" "${log_file}"; then
+            if grep -q "LAU MEMORY CLEAN" "${log_file}"; then
+                echo -e "  ${GREEN}[✔] Memory Leak Check passed (No leaks detected)${NC}"
+            else
+                echo -e "  ${RED}[✘] Memory Leak Check failed (Leaks detected)${NC}"
+                grep "LAU MEMORY" "${log_file}" || true
+                exit_code=1
+            fi
+        else
+            echo -e "  ${BLUE}[-] Memory Leak Check skipped (Not instrumented)${NC}"
+        fi
+
+        # Validate general diagnostics format
+        if grep -q -i "warning" "${log_file}"; then
+            echo -e "  ${YELLOW}[!] Diagnostics warning captured in log${NC}"
+        fi
     else
-        echo -e "  ${RED}[✘] COBOL/JCL Spool Card Audit failed${NC}"
+        echo -e "  ${RED}[✘] Platform Execution failed${NC}"
+        cat "${log_file}"
+        exit_code=1
     fi
+done
 
-    if grep -q "Spool guard security lockout verified" /tmp/harness_integration.log; then
-        echo -e "  ${GREEN}[✔] HASP Spool Guard Defcon Lockout passed${NC}"
-    else
-        echo -e "  ${RED}[✘] HASP Spool Guard Defcon Lockout failed${NC}"
-    fi
-
-    if grep -q "HathiTrust catalog record retrieved via AIX Quadtree" /tmp/harness_integration.log; then
-        echo -e "  ${GREEN}[✔] HathiTrust AIX Quadtree Query passed${NC}"
-    else
-        echo -e "  ${RED}[✘] HathiTrust AIX Quadtree Query failed${NC}"
-    fi
-
-    if grep -q "LAU MEMORY CLEAN" /tmp/harness_integration.log; then
-        echo -e "  ${GREEN}[✔] LAU memory leak detection passed (No leaks detected)${NC}"
-    else
-        echo -e "  ${RED}[✘] LAU memory leak detection failed (Leaks present)${NC}"
-        grep "LAU MEMORY" /tmp/harness_integration.log || true
-    fi
-else
-    echo -e "  ${RED}[✘] WinchesterMQ Integration Suite failed to run${NC}"
-    cat /tmp/harness_integration.log
-    exit 1
-fi
-
-# Check for Spool Trace log verification
+# Validate Spool Trace Log
 if [ -f /tmp/hasp_spool_audit.log ]; then
-    echo -e "  ${GREEN}[✔] HASP Spool Queue audit trace logging verified${NC}"
+    echo -e "\n${GREEN}[✔] Spool Queue Audit Trace verified successfully.${NC}"
 else
-    echo -e "  ${RED}[✘] HASP Spool Queue audit trace logging missing${NC}"
+    echo -e "\n${RED}[✘] Spool Queue Audit Trace is missing.${NC}"
+    exit_code=1
 fi
 
-echo -e "\n${GREEN}=============================================================${NC}"
-echo -e "${GREEN}             ALL SUBSYSTEM INTEGRATION TESTS PASSED          ${NC}"
-echo -e "${GREEN}=============================================================${NC}"
+if [ "${exit_code}" -eq 0 ]; then
+    echo -e "\n${GREEN}=============================================================${NC}"
+    echo -e "${GREEN}      ALL PLATFORMS VERIFIED SUCCESSFULLY UNDER CRITERIA     ${NC}"
+    echo -e "${GREEN}=============================================================${NC}"
+else
+    echo -e "\n${RED}=============================================================${NC}"
+    echo -e "${RED}             SOME INTEGRATION VERIFICATIONS FAILED           ${NC}"
+    echo -e "${RED}=============================================================${NC}"
+fi
+
+exit "${exit_code}"
