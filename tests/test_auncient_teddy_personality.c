@@ -418,6 +418,12 @@ int main(void) {
     assert(acc_jitter_uncanny >= 0.0);
     printf("   ✓ HYDE et al. unpredictable micro-expression acceleration jitter verified successfully\n");
 
+    // Test Hyde unpredictable animation acceleration jitter calculation
+    double anim_acc_jitter = 0.0;
+    assert(evaluate_animation_acceleration_jitter(&geom, 0.35, &anim_acc_jitter));
+    assert(anim_acc_jitter >= 0.0);
+    printf("   ✓ HYDE et al. unpredictable animation acceleration jitter verified successfully\n");
+
     // Test Hyde unpredictable micro-expression amplitude jitter calculation
     double amp_jitter_uncanny = 0.0;
     assert(evaluate_amplitude_jitter_uncanny(&geom, 0.25, &amp_jitter_uncanny));

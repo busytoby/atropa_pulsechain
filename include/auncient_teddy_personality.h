@@ -314,6 +314,9 @@ bool evaluate_expression_sync_uncanny(const teddy_geometry_t *geom, double sync_
 // Evaluates the unpredictable micro-expression acceleration jitter uncanny response (Hyde et al.).
 bool evaluate_acceleration_jitter_uncanny(const teddy_geometry_t *geom, double acceleration_variance, double *uncanny_score_out);
 
+// Evaluates the unpredictable animation acceleration jitter uncanny response (Hyde et al.).
+bool evaluate_animation_acceleration_jitter(const teddy_geometry_t *geom, double acceleration_jitter, double *uncanny_score_out);
+
 // Evaluates the unpredictable micro-expression amplitude jitter uncanny response (Hyde et al.).
 bool evaluate_amplitude_jitter_uncanny(const teddy_geometry_t *geom, double amplitude_variance, double *uncanny_score_out);
 

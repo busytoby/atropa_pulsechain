@@ -1195,6 +1195,16 @@ bool evaluate_acceleration_jitter_uncanny(const teddy_geometry_t *geom, double a
     return true;
 }
 
+bool evaluate_animation_acceleration_jitter(const teddy_geometry_t *geom, double acceleration_jitter, double *uncanny_score_out) {
+    if (!geom || acceleration_jitter < 0.0 || !uncanny_score_out) {
+        return false;
+    }
+    double base_uncanny = 0.0;
+    evaluate_uncanny_mismatch_index(geom, &base_uncanny);
+    *uncanny_score_out = base_uncanny + (acceleration_jitter * 6.0 * geom->behavioral_mismatch);
+    return true;
+}
+
 bool evaluate_amplitude_jitter_uncanny(const teddy_geometry_t *geom, double amplitude_variance, double *uncanny_score_out) {
     if (!geom || amplitude_variance < 0.0 || !uncanny_score_out) {
         return false;
