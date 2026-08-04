@@ -79,18 +79,31 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
         poppy_joints[i].y += (target_y - poppy_joints[i].y) * 0.85f;
     }
 
+    // Curved Bezier Stem calculations (forest green with darker shading)
+    float ctrl_x = (stem_base_x + poppy_joints[0].x) * 0.5f - wind_x * 2.0f;
+    float ctrl_y = (stem_base_y + poppy_joints[0].y) * 0.5f;
+
+    // Calculate mid-stem leaf node connection coordinates at t = 0.35 along the Bezier curve
+    float t_node = 0.35f;
+    float omt_node = 1.0f - t_node;
+    int node_x = (int)(omt_node * omt_node * stem_base_x + 2.0f * omt_node * t_node * ctrl_x + t_node * t_node * poppy_joints[0].x);
+    int node_y = (int)(omt_node * omt_node * stem_base_y + 2.0f * omt_node * t_node * ctrl_y + t_node * t_node * poppy_joints[0].y);
+
     // 4. Render the Verlet Poppy Flower components
-    // Swaying feathery leaves
-    float leaf_sway = 0.04f * sinf(time_val * 1.5f);
+    // Swaying feathery leaves influenced physically by wind deflection
+    float leaf_sway = 0.05f * sinf(time_val * 1.5f) + wind_x * 0.015f;
+    
+    // Base tier leaves
     draw_gothic_leaf((int)stem_base_x, (int)stem_base_y, 80.0f, -M_PI * 0.8f + leaf_sway, time_val);
     draw_gothic_leaf((int)stem_base_x, (int)stem_base_y, 80.0f, -M_PI * 0.2f - leaf_sway, time_val);
 
-    // Curved Bezier Stem (forest green with darker shading)
+    // Mid-stem tier leaves (slightly smaller, growing from node joint)
+    draw_gothic_leaf(node_x, node_y, 55.0f, -M_PI * 0.85f + leaf_sway, time_val);
+    draw_gothic_leaf(node_x, node_y, 55.0f, -M_PI * 0.15f - leaf_sway, time_val);
+
     int segments = 24;
     int prev_x = (int)stem_base_x;
     int prev_y = (int)stem_base_y;
-    float ctrl_x = (stem_base_x + poppy_joints[0].x) * 0.5f - wind_x * 2.0f;
-    float ctrl_y = (stem_base_y + poppy_joints[0].y) * 0.5f;
 
     for (int j = 1; j <= segments; j++) {
         float t = (float)j / (float)segments;
