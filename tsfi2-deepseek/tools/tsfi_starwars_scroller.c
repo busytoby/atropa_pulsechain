@@ -298,7 +298,8 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset) {
         float angle = angle_offset + 0.15f * sinf(t * 8.0f);
         int lx = bx + (int)(r_len * cosf(angle));
         int ly = by + (int)(r_len * sinf(angle));
-        float lobe_w = 12.0f * (1.0f - t) * (0.8f + 0.4f * sinf(t * 22.0f));
+        // Expanded lobe width and increased frequency for jagged serrations
+        float lobe_w = 17.0f * (1.0f - t) * (0.8f + 0.5f * sinf(t * 28.0f));
         for (int lw = 0; lw < (int)lobe_w; lw++) {
             float perp_a = angle + M_PI / 2.0f;
             int l_lx = lx + (int)(lw * cosf(perp_a));
@@ -363,8 +364,9 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
     poppy_joints[0].x = stem_base_x + wind_x * 2.5f;
     poppy_joints[0].y = stem_base_y - 250.0f; // Lift higher up on the screen
 
-    // Petal rest length (bloom expansion) based on USD telemetry and beat pulse
-    float petal_rest_len = 24.0f + (float)fminf(18.0f, (float)log10(usd_value + 1.0) * 3.0f) + pulse * 4.0f;
+    // Petal rest length (bloom expansion) based on USD telemetry, beat pulse, and breathing cycle
+    float breathe = 3.5f * sinf(time_val * 1.2f);
+    float petal_rest_len = 24.0f + (float)fminf(18.0f, (float)log10(usd_value + 1.0) * 3.0f) + pulse * 4.0f + breathe;
     // Set high damping decay (0.55f) to prevent runaway gravity drift
     float decay = 0.55f;
 
@@ -412,8 +414,13 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
         int sx = (int)(omt * omt * stem_base_x + 2.0f * omt * t * ctrl_x + t * t * poppy_joints[0].x);
         int sy = (int)(omt * omt * stem_base_y + 2.0f * omt * t * ctrl_y + t * t * poppy_joints[0].y);
 
-        draw_line(prev_x, prev_y, sx, sy, 34, 139, 34);
-        draw_line(prev_x + 1, prev_y, sx + 1, sy, 25, 110, 25); // darker shade for volume
+        // Organic color shading: brown near the base to fresh green at the top
+        uint8_t r_col = (uint8_t)(80 * (1.0f - t) + 34 * t);
+        uint8_t g_col = (uint8_t)(60 * (1.0f - t) + 139 * t);
+        uint8_t b_col = (uint8_t)(30 * (1.0f - t) + 34 * t);
+
+        draw_line(prev_x, prev_y, sx, sy, r_col, g_col, b_col);
+        draw_line(prev_x + 1, prev_y, sx + 1, sy, (uint8_t)(r_col * 0.7f), (uint8_t)(g_col * 0.7f), (uint8_t)(b_col * 0.7f)); // shadow line
 
         // Tiny structural bristles/hairs projecting perpendicular to the stem
         if (j % 2 == 0) {
