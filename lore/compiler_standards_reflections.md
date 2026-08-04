@@ -284,6 +284,16 @@ int main() {
 * **Compiler Built-in**: 22 characters (`__builtin_wmq_port();`).
 * **Source Size Reduction**: 64% character footprint decrease.
 
+### Host Subnet Mask Comparison
+* **Boilerplate Wrapper**: 64 characters.
+  ```c
+  int get_subnet() {
+      return *(volatile int*)(0x2070);
+  }
+  ```
+* **Compiler Built-in**: 24 characters (`__builtin_wmq_subnet();`).
+* **Source Size Reduction**: 62% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
