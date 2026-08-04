@@ -188,6 +188,44 @@ object "PersonalityEngine" {
                 return(0x00, 32)
             }
 
+            // ----------------------------------------------------------------
+            // METHOD: simulate_diode_capacitor_loop (input_voltage, resistance, capacitance, time_step, current_charge)
+            // Selector: 0xe399f0f5 (integer scaled by 1000)
+            // ----------------------------------------------------------------
+            if eq(selector, 0xe399f0f5) {
+                let input_voltage := calldataload(4)
+                let resistance := calldataload(36)
+                let capacitance := calldataload(68)
+                let time_step := calldataload(100)
+                let current_charge := calldataload(132)
+                
+                let next_charge := current_charge
+                let denom := mul(resistance, capacitance)
+                if gt(denom, 0) {
+                    // Forward charge path
+                    if gt(input_voltage, current_charge) {
+                        let diff := sub(input_voltage, current_charge)
+                        let chg := div(mul(time_step, diff), denom)
+                        next_charge := add(current_charge, chg)
+                    }
+                    // Reverse decay path
+                    if iszero(gt(input_voltage, current_charge)) {
+                        let X := div(mul(time_step, 1000000), denom)
+                        let factor := 1000
+                        if lt(X, 1000) {
+                            factor := sub(add(1000, div(mul(X, X), 2000)), X)
+                        }
+                        if iszero(lt(X, 1000)) {
+                            factor := 0
+                        }
+                        next_charge := div(mul(current_charge, factor), 1000)
+                    }
+                }
+                
+                mstore(0x00, next_charge)
+                return(0x00, 32)
+            }
+
             revert(0, 0)
         }
     }
