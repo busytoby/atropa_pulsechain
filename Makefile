@@ -664,7 +664,7 @@ test-auncient-xcom-winchester:
 	@rm -f tests/test_auncient_xcom_winchester
 
 test-auncient-xpl-net-stack:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_xpl_net_stack.c -o tests/test_auncient_xpl_net_stack -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_xpl_net_stack.c -o tests/test_auncient_xpl_net_stack -lcrypto -lrt
 	./tests/test_auncient_xpl_net_stack
 	@rm -f tests/test_auncient_xpl_net_stack
 
