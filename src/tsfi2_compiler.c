@@ -286,6 +286,12 @@ bool tsfi2_compile(
         }
     }
     
+    // Emit custom wmq_disconnect if requested
+    if (strstr(source_code, "__builtin_wmq_disconnect")) {
+        out_bytecode[offset++] = 0x0F;
+        out_bytecode[offset++] = 0xDD;
+    }
+    
     // Emit x86 machine instructions: MOV EAX, imm32
     out_bytecode[offset++] = 0xB8;
     out_bytecode[offset++] = (uint8_t)(value & 0xFF);

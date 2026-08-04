@@ -346,6 +346,16 @@ int main() {
 * **Compiler Built-in**: 31 characters (`__builtin_wmq_connect_idx(1);`).
 * **Source Size Reduction**: 73% character footprint decrease.
 
+### Host Connection Disconnect Comparison
+* **Boilerplate Wrapper**: 69 characters.
+  ```c
+  void close_conn() {
+      *(volatile int*)(0x205C) = 1;
+  }
+  ```
+* **Compiler Built-in**: 27 characters (`__builtin_wmq_disconnect();`).
+* **Source Size Reduction**: 60% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
