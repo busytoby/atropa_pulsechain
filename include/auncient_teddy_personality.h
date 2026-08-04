@@ -66,6 +66,7 @@ typedef struct {
     double health_robustness;        // Perceived health status (0.0 fragile health, 1.0 robust health/resistance)
     double vocal_visual_harmony;     // Vocal-visual harmony (0.0 low friendliness/competence bias, 1.0 high friendliness)
     double relationship_quality;     // Expected relationship quality (0.0 lower quality/cooperativeness, 1.0 higher)
+    double immunological_strength;   // Perceived immunological strength (0.0 lower resistance, 1.0 robust resistance)
 } teddy_geometry_t;
 
 // Pixar RenderMan Avatar Agent definition upon the cooperative boundary
