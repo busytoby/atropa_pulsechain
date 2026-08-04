@@ -130,6 +130,41 @@ object "MvsTapeCertifier" {
                 return(0, 32)
             }
             
+            // replayJournal(uint256 logCount) -> selector: 0x7a8e5200
+            // Calldata: selector (4), logCount (32), log1_sector (32), log1_val (32), log1_commit (32), ...
+            case 0x7a8e5200 {
+                let logCount := calldataload(4)
+                let success := 1
+                
+                let i := 0
+                for {} lt(i, logCount) { i := add(i, 1) } {
+                    let offset := add(36, mul(i, 96))
+                    let sector := calldataload(offset)
+                    let val := calldataload(add(offset, 32))
+                    let commit := calldataload(add(offset, 64))
+                    
+                    if eq(commit, 1) {
+                        mstore(0, sector)
+                        mstore(32, 0x100)
+                        let slot := keccak256(0, 64)
+                        sstore(slot, val)
+                    }
+                }
+                
+                mstore(0, success)
+                return(0, 32)
+            }
+            
+            // peekSector(uint256 sector) -> selector: 0x228cf01b
+            case 0x228cf01b {
+                let sector := calldataload(4)
+                mstore(0, sector)
+                mstore(32, 0x100)
+                let slot := keccak256(0, 64)
+                mstore(0, sload(slot))
+                return(0, 32)
+            }
+            
             default {
                 revert(0, 0)
             }

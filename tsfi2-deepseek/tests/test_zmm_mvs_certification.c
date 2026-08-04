@@ -100,6 +100,44 @@ int main() {
                           "0000000000000000000000000000000000000000000000000000000000000002\""); // callerId = 2
     assert(strstr(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000000") != NULL);
 
+    // 7. Validate SMF Spool Journal Recovery
+    // replayJournal(uint256 logCount) -> selector: 7a8e5200
+    // We pass 3 logs:
+    // Log 1: Sector 30, Value 100, Committed=1
+    // Log 2: Sector 31, Value 200, Committed=1
+    // Log 3: Sector 30, Value 999, Committed=0 (ignored)
+    printf("[ZMM] Replaying spooled SMF transaction logs...\n");
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, "YULEXEC \"mvs_tape_certifier\", \"7a8e5200"
+                          "0000000000000000000000000000000000000000000000000000000000000003" // logCount = 3
+                          "000000000000000000000000000000000000000000000000000000000000001e" // Log 1: sector = 30
+                          "0000000000000000000000000000000000000000000000000000000000000064" // Log 1: val = 100
+                          "0000000000000000000000000000000000000000000000000000000000000001" // Log 1: commit = 1
+                          "000000000000000000000000000000000000000000000000000000000000001f" // Log 2: sector = 31
+                          "00000000000000000000000000000000000000000000000000000000000000c8" // Log 2: val = 200
+                          "0000000000000000000000000000000000000000000000000000000000000001" // Log 2: commit = 1
+                          "000000000000000000000000000000000000000000000000000000000000001e" // Log 3: sector = 30
+                          "00000000000000000000000000000000000000000000000000000000000003e7" // Log 3: val = 999
+                          "0000000000000000000000000000000000000000000000000000000000000000\""); // Log 3: commit = 0
+    assert(strstr(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000001") != NULL);
+
+    // Verify Sector 30 is Value 100
+    printf("[ZMM] Verifying Sector 30 database consistency (Expected: 100)...\n");
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, "YULEXEC \"mvs_tape_certifier\", \"228cf01b"
+                          "000000000000000000000000000000000000000000000000000000000000001e\""); // sector = 30
+    assert(strstr(vm.output_buffer, "0000000000000000000000000000000000000000000000000000000000000064") != NULL);
+
+    // Verify Sector 31 is Value 200
+    printf("[ZMM] Verifying Sector 31 database consistency (Expected: 200)...\n");
+    vm.output_pos = 0;
+    memset(vm.output_buffer, 0, sizeof(vm.output_buffer));
+    tsfi_zmm_vm_exec(&vm, "YULEXEC \"mvs_tape_certifier\", \"228cf01b"
+                          "000000000000000000000000000000000000000000000000000000000000001f\""); // sector = 31
+    assert(strstr(vm.output_buffer, "00000000000000000000000000000000000000000000000000000000000000c8") != NULL);
+
     tsfi_zmm_vm_destroy(&vm);
     printf("=== ALL CBT MVS TAPE CERTIFICATION CHECKS PASSED ===\n");
     return 0;
