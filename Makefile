@@ -179,6 +179,12 @@ test-auncient-tsv-wmq-integration:
 tsfi2-compiler:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc src/tsfi2_compiler_cli.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c tsfi2-deepseek/src/tsfi_mainframe_jcl.c -o tsfi2_compiler -lrt
 
+tsv_format_converter:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc src/tsv_format_converter.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tsv_format_converter -lm -lrt
+
+tsv_record_inspector:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc src/tsv_record_inspector.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_displacementshader.c -o tsv_record_inspector -lm -lrt
+
 test-auncient-displacementshader-wmq-integration:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc tests/test_auncient_displacementshader_wmq_integration.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_mainframe_jcl.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c -o tests/test_auncient_displacementshader_wmq_integration -lcrypto -lrt -lm
 	./tests/test_auncient_displacementshader_wmq_integration

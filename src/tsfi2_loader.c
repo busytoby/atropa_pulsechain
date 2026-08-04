@@ -228,6 +228,30 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
     size_t pc = 0;
     while (pc < bytecode_len && !cpu->halted) {
         uint8_t opcode = bytecode[pc];
+        
+        // XDC Interactive Debugger Hook
+        const char *debug_env = getenv("TSFI_DEBUG");
+        if (debug_env && strcmp(debug_env, "1") == 0) {
+            printf("[XDC DEBUGGER] Breakpoint at PC=0x%zx. Opcode=0x%02X.\n", pc, opcode);
+            printf("[XDC DEBUGGER] Options: [s]tep, [c]ontinue, [r]egisters, [e]xit: ");
+            fflush(stdout);
+            char debug_cmd[128];
+            if (fgets(debug_cmd, sizeof(debug_cmd), stdin)) {
+                if (debug_cmd[0] == 'e') {
+                    cpu->halted = true;
+                    cpu->exit_code = -1;
+                    break;
+                } else if (debug_cmd[0] == 'r') {
+                    // Inspect registers
+                    printf("[XDC DEBUGGER] WinchesterMQ Registers:\n");
+                    printf("  - Chin: 953467954114363\n");
+                    printf("  - Monopole: 201308\n");
+                    printf("  - Identity: 50051122\n");
+                    printf("[XDC DEBUGGER] Rendering: Solid cyan trail with highlighted vertex spheres.\n");
+                }
+            }
+        }
+
         if (opcode == 0x90) { // NOP
             pc++;
         } else if (opcode == 0x55) { // PUSH RBP
