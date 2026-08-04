@@ -191,6 +191,12 @@ bool tsfi2_compile(
         out_bytecode[offset++] = 0xED;
     }
     
+    // Emit custom wmq_irq if requested
+    if (strstr(source_code, "__builtin_wmq_irq")) {
+        out_bytecode[offset++] = 0x0F;
+        out_bytecode[offset++] = 0xEC;
+    }
+    
     // Emit x86 machine instructions: MOV EAX, imm32
     out_bytecode[offset++] = 0xB8;
     out_bytecode[offset++] = (uint8_t)(value & 0xFF);

@@ -194,6 +194,16 @@ int main() {
 * **Compiler Built-in**: 22 characters (`__builtin_wmq_mode();`).
 * **Source Size Reduction**: 65% character footprint decrease.
 
+### Interrupt Request Comparison
+* **Boilerplate Wrapper**: 62 characters.
+  ```c
+  int get_irq() {
+      return *(volatile int*)(0x2084);
+  }
+  ```
+* **Compiler Built-in**: 21 characters (`__builtin_wmq_irq();`).
+* **Source Size Reduction**: 66% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
