@@ -439,6 +439,12 @@ bool evaluate_geniole_provocation_aggression_limit(const teddy_geometry_t *geom,
 // Models dynamic visual changes driven by baseline testosterone ratings (Geniole et al.).
 bool evaluate_geniole_testosterone_modulator(const teddy_geometry_t *geom, double baseline_testosterone, double *modulator_out);
 
+// Evaluates perceived dominance based on low/lowered eyebrows (Keating, C. F.).
+bool evaluate_keating_brow_dominance(const teddy_geometry_t *geom, double brow_height, double *brow_dominance_out);
+
+// Models the association between lip thickness/fullness and trustworthiness (Keating, C. F.).
+bool evaluate_keating_lip_trustworthiness(const teddy_geometry_t *geom, double lip_thickness, double *lip_trustworthiness_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 

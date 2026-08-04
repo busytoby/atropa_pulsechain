@@ -630,6 +630,15 @@ int main(void) {
     assert(testosterone_mod > 0.0);
     printf("   ✓ GENIOLE et al. provocation aggression limit and testosterone modulator verified successfully\n");
 
+    // Test Keating eyebrow dominance and lip trustworthiness calculations
+    double brow_dominance = 0.0;
+    double lip_trustworthiness = 0.0;
+    assert(evaluate_keating_brow_dominance(&geom, 0.4, &brow_dominance));
+    assert(brow_dominance > 0.0);
+    assert(evaluate_keating_lip_trustworthiness(&geom, 0.5, &lip_trustworthiness));
+    assert(lip_trustworthiness > 0.0);
+    printf("   ✓ KEATING, C. F. eyebrow dominance and lip trustworthiness verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge

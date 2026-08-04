@@ -985,3 +985,19 @@ bool evaluate_geniole_testosterone_modulator(const teddy_geometry_t *geom, doubl
     return true;
 }
 
+bool evaluate_keating_brow_dominance(const teddy_geometry_t *geom, double brow_height, double *brow_dominance_out) {
+    if (!geom || brow_height < 0.0 || !brow_dominance_out) {
+        return false;
+    }
+    *brow_dominance_out = (1.0 / (1.0 + brow_height)) * (1.2 + geom->leadership_profile * 0.4);
+    return true;
+}
+
+bool evaluate_keating_lip_trustworthiness(const teddy_geometry_t *geom, double lip_thickness, double *lip_trustworthiness_out) {
+    if (!geom || lip_thickness < 0.0 || !lip_trustworthiness_out) {
+        return false;
+    }
+    *lip_trustworthiness_out = lip_thickness * (0.8 + geom->empathy_index * 0.5);
+    return true;
+}
+
