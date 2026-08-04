@@ -77,6 +77,11 @@ int main(void) {
     assert(rating_scale >= 1 && rating_scale <= 7);
     printf("   ✓ R H B Christensen scale-adjusted ordinal rating verified successfully\n");
 
+    // Test nominal effects rating estimation
+    int rating_nominal = evaluate_ordinal_nominal_rating(&geom);
+    assert(rating_nominal >= 1 && rating_nominal <= 7);
+    printf("   ✓ R H B Christensen nominal-adjusted ordinal rating verified successfully\n");
+
     printf("=============================================================\n");
     printf("PERSONALITY CONFIGURATIONS VALIDATED SUCCESSFULLY\n");
     printf("=============================================================\n");

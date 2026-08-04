@@ -362,6 +362,21 @@ int evaluate_ordinal_scale_rating(const teddy_geometry_t *geom, double scale_mul
     return 7;
 }
 
+int evaluate_ordinal_nominal_rating(const teddy_geometry_t *geom) {
+    if (!geom) return 1;
+    double thresholds[6] = {0.5, 1.2, 2.0, 2.8, 3.5, 4.2};
+    double nominal_coefficients[6] = {0.1, 0.3, 0.6, 1.0, 1.5, 2.0};
+    double latent_base = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
+    for (int i = 0; i < 6; ++i) {
+        double latent = latent_base + (geom->symmetry * nominal_coefficients[i]);
+        double logit_prob = 1.0 / (1.0 + exp(-(thresholds[i] - latent)));
+        if (logit_prob >= 0.5) {
+            return i + 1;
+        }
+    }
+    return 7;
+}
+
 bool engage_system_boundary(agent_avatar_t *avatar, teddy_personality_t personality) {
     if (!avatar) return false;
 
