@@ -1,0 +1,126 @@
+#define _DEFAULT_SOURCE
+#define _POSIX_C_SOURCE 200809L
+
+#include "tsfi2_loader.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+static uint64_t calculate_fnv1a(const uint8_t *data, size_t len) {
+    uint64_t hash = 14695981039346656037ULL;
+    for (size_t i = 0; i < len; i++) {
+        hash ^= data[i];
+        hash *= 1099511628211ULL;
+    }
+    return hash;
+}
+
+bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
+    if (!filepath || !cpu) return false;
+    
+    FILE *f = fopen(filepath, "rb");
+    if (!f) return false;
+    
+    fseek(f, 0, SEEK_END);
+    long total_size = ftell(f);
+    if (total_size < 16) {
+        fclose(f);
+        return false;
+    }
+    
+    fseek(f, 0, SEEK_SET);
+    uint8_t *buffer = malloc(total_size);
+    if (!buffer) {
+        fclose(f);
+        return false;
+    }
+    size_t read_bytes = fread(buffer, 1, total_size, f);
+    (void)read_bytes;
+    fclose(f);
+    
+    // Verify FNV-1a checksum
+    size_t data_len = total_size - 8;
+    uint64_t file_checksum;
+    memcpy(&file_checksum, buffer + data_len, 8);
+    
+    uint64_t computed = calculate_fnv1a(buffer, data_len);
+    if (computed != file_checksum) {
+        free(buffer);
+        return false;
+    }
+    
+    // Find boundary separator
+    uint8_t *boundary = NULL;
+    for (size_t i = 0; i < data_len - 1; i++) {
+        if (buffer[i] == '\n' && buffer[i+1] == '\n') {
+            boundary = buffer + i;
+            break;
+        }
+    }
+    
+    if (!boundary) {
+        free(buffer);
+        return false;
+    }
+    
+    size_t header_len = boundary - buffer;
+    bool originally_ended_with_newline = (boundary + 2 < buffer + data_len && boundary[2] == '\n');
+    size_t total_written = originally_ended_with_newline ? header_len + 3 : header_len + 2;
+    size_t aligned_offset = ((total_written + 511) / 512) * 512;
+    
+    if (aligned_offset > data_len) {
+        free(buffer);
+        return false;
+    }
+    
+    // Parse Entry Address from TSV header
+    uint32_t entry_point = 0;
+    char *hdr = malloc(header_len + 1);
+    if (hdr) {
+        memcpy(hdr, buffer, header_len);
+        hdr[header_len] = '\0';
+        char *line2 = strchr(hdr, '\n');
+        if (line2) {
+            line2++;
+            sscanf(line2, "0x%X", &entry_point);
+        }
+        free(hdr);
+    }
+    
+    size_t bytecode_len = data_len - aligned_offset;
+    const uint8_t *bytecode = buffer + aligned_offset;
+    
+    // Initialize CPU state
+    cpu->rip = entry_point;
+    cpu->rbp = 0xFFFFFFFF;
+    cpu->rsp = 0xFFFFFFFF;
+    cpu->halted = false;
+    cpu->exit_code = 0;
+    
+    // Emulate instruction parsing
+    size_t pc = 0;
+    while (pc < bytecode_len && !cpu->halted) {
+        uint8_t opcode = bytecode[pc];
+        if (opcode == 0x90) { // NOP
+            pc++;
+        } else if (opcode == 0x55) { // PUSH RBP
+            cpu->rsp -= 8;
+            pc++;
+        } else if (opcode == 0x48 && pc + 2 < bytecode_len && bytecode[pc+1] == 0x89 && bytecode[pc+2] == 0xE5) { // MOV RBP, RSP
+            cpu->rbp = cpu->rsp;
+            pc += 3;
+        } else if (opcode == 0xC3) { // RET
+            cpu->halted = true;
+            cpu->exit_code = 0;
+            pc++;
+        } else {
+            // Unknown instruction crash simulation
+            cpu->halted = true;
+            cpu->exit_code = -1;
+            break;
+        }
+    }
+    
+    free(buffer);
+    return (cpu->exit_code == 0);
+}

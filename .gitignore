@@ -728,6 +728,7 @@ tests/test_cbt021_inmemory_pds
 /tests/test_hathitrust_extra_final
 /tests/test_hathitrust_bib_oauth
 /tests/test_tsfi2_compiler_bin
+/tests/test_tsfi2_loader
 
 # Prevent compiled objects and library binaries from entering Git
 *.o
