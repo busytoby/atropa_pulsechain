@@ -768,9 +768,20 @@ async function main() {
                     [4, 6, 8]  // Gm (G3, Bb3, D4)
                 ];
                 const progIdx_g = Math.floor(timeSec / 8.0) % 6;
-                const activeChord = currentDispensation === 4
+                let activeChord = currentDispensation === 4
                     ? chordProgressions_g[progIdx_g].map(idx => chordScale_g[idx])
                     : (Array.isArray(padNotes) ? padNotes : ["C3", "Eb3", "G3"]);
+
+                if (currentDispensation === 4) {
+                    // Smooth voice leading inversions shifting every 4 seconds
+                    const inversionIdx = Math.floor(timeSec / 4.0) % 3;
+                    if (inversionIdx === 1) {
+                        activeChord = [activeChord[1], activeChord[2], activeChord[0].replace("3", "4").replace("2", "3")];
+                    } else if (inversionIdx === 2) {
+                        activeChord = [activeChord[2], activeChord[0].replace("3", "4").replace("2", "3"), activeChord[1].replace("3", "4").replace("2", "3")];
+                    }
+                }
+
 
                 let estimatedPitchHz = 0;
                 if (s % 256 === 0) {
