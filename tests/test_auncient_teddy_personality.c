@@ -88,6 +88,11 @@ int main(void) {
     assert(variance > 0.0);
     printf("   ✓ R H B Christensen Hessian standard error covariance diagnostics verified successfully\n");
 
+    // Test complementary log-log rating estimation
+    int rating_cloglog = evaluate_ordinal_cloglog_rating(&geom);
+    assert(rating_cloglog >= 1 && rating_cloglog <= 7);
+    printf("   ✓ R H B Christensen complementary log-log ordinal rating verified successfully\n");
+
     printf("=============================================================\n");
     printf("PERSONALITY CONFIGURATIONS VALIDATED SUCCESSFULLY\n");
     printf("=============================================================\n");
