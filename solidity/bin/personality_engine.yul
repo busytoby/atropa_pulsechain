@@ -226,6 +226,73 @@ object "PersonalityEngine" {
                 return(0x00, 32)
             }
 
+            // ----------------------------------------------------------------
+            // METHOD: evaluate_sustain_adjusted_gumbel_tax (flyback_voltage, threshold_limit, sustain_voltage)
+            // Selector: 0xe399f0f6 (integer scaled by 1000)
+            // ----------------------------------------------------------------
+            if eq(selector, 0xe399f0f6) {
+                let flyback_voltage := calldataload(4)
+                let threshold_limit := calldataload(36)
+                let sustain_voltage := calldataload(68)
+                
+                // Adjust threshold_limit based on sustain envelope: threshold = threshold_limit * (1.0 + sustain_voltage/1000)
+                let adjusted_limit := threshold_limit
+                if gt(threshold_limit, 0) {
+                    let scale := add(1000, sustain_voltage)
+                    adjusted_limit := div(mul(threshold_limit, scale), 1000)
+                }
+                
+                let tax := 0
+                if gt(adjusted_limit, 0) {
+                    let x := div(mul(sub(flyback_voltage, adjusted_limit), 1000), adjusted_limit)
+                    
+                    let exp_x := 1000
+                    let sign := 1
+                    if slt(x, 0) {
+                        sign := sub(0, 1)
+                    }
+                    
+                    let abs_x := x
+                    if slt(x, 0) {
+                        abs_x := sub(0, x)
+                    }
+                    
+                    if lt(abs_x, 1500) {
+                        let term := add(1000, abs_x)
+                        let term2 := div(mul(abs_x, abs_x), 2000)
+                        if eq(sign, 1) {
+                            exp_x := add(term, term2)
+                        }
+                        if eq(sign, sub(0, 1)) {
+                            exp_x := add(sub(1000, abs_x), term2)
+                        }
+                    }
+                    if iszero(lt(abs_x, 1500)) {
+                        if eq(sign, 1) {
+                            exp_x := 4500
+                        }
+                        if eq(sign, sub(0, 1)) {
+                            exp_x := 220
+                        }
+                    }
+                    
+                    let exp_y := 1000
+                    if lt(exp_x, 1500) {
+                        exp_y := add(sub(1000, exp_x), div(mul(exp_x, exp_x), 2000))
+                    }
+                    if iszero(lt(exp_x, 1500)) {
+                        exp_y := 0
+                    }
+                    
+                    if lt(exp_y, 1000) {
+                        tax := sub(1000, exp_y)
+                    }
+                }
+                
+                mstore(0x00, tax)
+                return(0x00, 32)
+            }
+
             revert(0, 0)
         }
     }
