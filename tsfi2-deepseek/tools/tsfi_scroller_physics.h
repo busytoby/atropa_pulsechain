@@ -116,10 +116,12 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
         uint8_t g_col = (uint8_t)(60 * (1.0f - t) + 139 * t);
         uint8_t b_col = (uint8_t)(30 * (1.0f - t) + 34 * t);
 
-        draw_line(prev_x, prev_y, sx, sy, r_col, g_col, b_col);
-        draw_line(prev_x + 1, prev_y, sx + 1, sy, (uint8_t)(r_col * 0.7f), (uint8_t)(g_col * 0.7f), (uint8_t)(b_col * 0.7f)); // shadow line
+        // 3D cylindrical chiascuro shading (left highlight, center body, right shadow)
+        draw_line(prev_x - 1, prev_y, sx - 1, sy, (uint8_t)fminf(255, r_col * 1.3f), (uint8_t)fminf(255, g_col * 1.3f), (uint8_t)fminf(255, b_col * 1.3f)); // Left highlight
+        draw_line(prev_x, prev_y, sx, sy, r_col, g_col, b_col); // Center body
+        draw_line(prev_x + 1, prev_y, sx + 1, sy, (uint8_t)(r_col * 0.5f), (uint8_t)(g_col * 0.5f), (uint8_t)(b_col * 0.5f)); // Right shadow
 
-        // Tiny structural bristles/hairs projecting perpendicular to the stem
+        // Tiny dynamic curved downy hairs projecting from both sides of the stem (pilosity)
         if (j % 2 == 0) {
             float perp_x = -(float)(sy - prev_y);
             float perp_y = (float)(sx - prev_x);
@@ -127,9 +129,11 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
             if (len > 0.0f) {
                 perp_x /= len;
                 perp_y /= len;
-                int hx = sx + (int)(perp_x * 3.5f);
-                int hy = sy + (int)(perp_y * 3.5f);
-                draw_line(sx, sy, hx, hy, 80, 150, 90); // Muted green hair bristle
+                // Alternate left and right side of the Bezier spline
+                float side = (j % 4 == 0) ? 1.0f : -1.0f;
+                int hx = sx + (int)(side * perp_x * 5.0f + 1.2f * sinf(time_val * 3.0f + j));
+                int hy = sy + (int)(side * perp_y * 5.0f);
+                draw_line(sx, sy, hx, hy, 120, 195, 125); // Brighter downy green hair
             }
         }
 
@@ -205,6 +209,13 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
             frame_buffer[p_idx + 1] = (uint8_t)fminf(255, frame_buffer[p_idx + 1] + (215 * alpha / 255));
             frame_buffer[p_idx + 2] = (uint8_t)fminf(255, frame_buffer[p_idx + 2] + (0 * alpha / 255));
         }
+    }
+
+    // Share physical wind/sway deflection state with audio synthesizer process
+    FILE *f_phys = fopen("/tmp/poppy_physics.bin", "wb");
+    if (f_phys) {
+        fwrite(&wind_x, sizeof(float), 1, f_phys);
+        fclose(f_phys);
     }
 }
 
