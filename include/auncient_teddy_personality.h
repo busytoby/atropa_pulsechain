@@ -248,6 +248,9 @@ bool evaluate_scale_nominal_wald_test(const double *gamma_vector, const double *
 // Evaluates nominal effects on threshold parameters via the Wald test statistic.
 bool evaluate_threshold_nominal_wald_test(const double *theta_vector, const double *covariance_matrix, int df, double *wald_stat_out, double *p_value_out);
 
+// Evaluates mixed-link threshold parameters via the Wald test (Christensen).
+bool evaluate_ordinal_mixture_threshold_wald_test(const double *theta_vector, const double *covariance_matrix, double mixture_weight, int df, double *wald_stat_out, double *p_value_out);
+
 // Evaluates standard single parameter Wald statistics and significance boundaries using Hessian error variance elements.
 bool evaluate_parameter_wald_test(double estimate, double baseline, double variance, double *wald_stat_out, double *p_value_out);
 

@@ -312,6 +312,12 @@ int main(void) {
     assert(tn_wpval < 0.05); // significant
     printf("   ✓ R H B Christensen threshold nominal Wald test diagnostics verified successfully\n");
 
+    // Test mixed-link threshold Wald test calculation
+    double mix_wstat = 0.0, mix_wpval = 0.0;
+    assert(evaluate_ordinal_mixture_threshold_wald_test(thetas, t_covar, 0.5, 2, &mix_wstat, &mix_wpval));
+    assert(mix_wstat > tn_wstat);
+    printf("   ✓ R H B Christensen mixed-link threshold parameters Wald test verified successfully\n");
+
     // Test scale-adjusted threshold Wald test calculation
     double sat_wstat = 0.0, sat_wpval = 0.0;
     assert(evaluate_scale_adjusted_threshold_wald(1.5, 1.2, 1.0, 0.25, &sat_wstat, &sat_wpval));

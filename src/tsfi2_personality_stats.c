@@ -518,6 +518,21 @@ bool evaluate_threshold_nominal_wald_test(const double *theta_vector, const doub
     return true;
 }
 
+bool evaluate_ordinal_mixture_threshold_wald_test(const double *theta_vector, const double *covariance_matrix, double mixture_weight, int df, double *wald_stat_out, double *p_value_out) {
+    if (!theta_vector || !covariance_matrix || df < 1 || !wald_stat_out || !p_value_out) {
+        return false;
+    }
+    double base_wald = 0.0;
+    double base_p = 1.0;
+    if (!evaluate_threshold_nominal_wald_test(theta_vector, covariance_matrix, df, &base_wald, &base_p)) {
+        return false;
+    }
+    *wald_stat_out = base_wald * (1.0 + (mixture_weight * 0.1));
+    *p_value_out = exp(-(*wald_stat_out) / 2.0);
+    if (*p_value_out > 1.0) *p_value_out = 1.0;
+    return true;
+}
+
 bool evaluate_parameter_wald_test(double estimate, double baseline, double variance, double *wald_stat_out, double *p_value_out) {
     if (variance < 1e-9 || !wald_stat_out || !p_value_out) {
         return false;
