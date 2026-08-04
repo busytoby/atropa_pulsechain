@@ -1,11 +1,33 @@
+#define _POSIX_C_SOURCE 199309L
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <math.h>
 #include <string.h>
 #include <time.h>
-#include <omp.h>
 #include "tsfi_zener.h"
+#include "tsfi_ccx_pool.h"
+#include <pthread.h>
+
+static pthread_mutex_t print_lock = PTHREAD_MUTEX_INITIALIZER;
+static TSFiCCXPool g_gait_ccx_pool;
+static bool g_gait_ccx_pool_initialized = false;
+
+typedef struct {
+    const char *label;
+    int mode;
+    double vs_voltage;
+    double rs_resistance;
+    bool inject_jitter;
+} SweepWorkerArg;
+
+static void run_benchmark_sweep(const char *label, int mode, double vs_voltage, double rs_resistance, bool inject_jitter);
+
+static void sweep_worker_func(void *arg) {
+    SweepWorkerArg *a = (SweepWorkerArg *)arg;
+    run_benchmark_sweep(a->label, a->mode, a->vs_voltage, a->rs_resistance, a->inject_jitter);
+}
+
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -151,7 +173,7 @@ void run_benchmark_sweep(const char *label, int profile, double vs_voltage, doub
     double elapsed_ms = (end.tv_sec - start.tv_sec) * 1000.0 + (end.tv_nsec - start.tv_nsec) / 1000000.0;
     double throughput = (double)total_ticks / (elapsed_ms / 1000.0);
 
-// Removed OpenMP pragma
+    pthread_mutex_lock(&print_lock);
     {
         printf("%-20s | %5.1fV | %6.1f | %6.2f%% | %11d | ", 
                label, vs_voltage, rs_resistance, (double)trapped_ticks / total_ticks * 100.0, transitions);
@@ -163,6 +185,7 @@ void run_benchmark_sweep(const char *label, int profile, double vs_voltage, doub
         }
         printf("%10.2f MS/s\n", throughput / 1000000.0);
     }
+    pthread_mutex_unlock(&print_lock);
 }
 
 int main() {
@@ -174,24 +197,26 @@ int main() {
            "Gait Config", "Voltage", "Resist", "Trap %", "Transitions", "Lock Tick", "Throughput");
     printf("-----------------------------------------------------------------------------------------------\n");
 
-    // Parallel execution of sweeps to maximize core utility
-// Removed OpenMP pragma
-    {
-// Removed OpenMP pragma
-        run_benchmark_sweep("Nominal Walk (Fwd)",   0,   5.0, 1000.0, false);
-// Removed OpenMP pragma
-        run_benchmark_sweep("Nominal Walk (Rev)",   0, -12.0,   50.0, false);
-// Removed OpenMP pragma
-        run_benchmark_sweep("Decay-Frozen (Fwd)",   1,   5.0, 1000.0, false);
-// Removed OpenMP pragma
-        run_benchmark_sweep("Decay-Frozen (Rev)",   1, -12.0,   50.0, false);
-// Removed OpenMP pragma
-        run_benchmark_sweep("Chaotic J5 (Fwd)",      2,   5.0, 1000.0, false);
-// Removed OpenMP pragma
-        run_benchmark_sweep("Chaotic J5 (Rev)",      2, -12.0,   50.0, false);
-// Removed OpenMP pragma
-        run_benchmark_sweep("Chaotic J5 (Jitter)",   2, -12.0,   50.0, true);
+    if (!g_gait_ccx_pool_initialized) {
+        tsfi_ccx_pool_init(&g_gait_ccx_pool, 0, 4);
+        g_gait_ccx_pool_initialized = true;
     }
+
+    SweepWorkerArg sweeps[] = {
+        {"Nominal Walk (Fwd)",   0,   5.0, 1000.0, false},
+        {"Nominal Walk (Rev)",   0, -12.0,   50.0, false},
+        {"Decay-Frozen (Fwd)",   1,   5.0, 1000.0, false},
+        {"Decay-Frozen (Rev)",   1, -12.0,   50.0, false},
+        {"Chaotic J5 (Fwd)",      2,   5.0, 1000.0, false},
+        {"Chaotic J5 (Rev)",      2, -12.0,   50.0, false},
+        {"Chaotic J5 (Jitter)",   2, -12.0,   50.0, true}
+    };
+    int count = sizeof(sweeps) / sizeof(sweeps[0]);
+
+    for (int i = 0; i < count; i++) {
+        tsfi_ccx_pool_enqueue(&g_gait_ccx_pool, sweep_worker_func, &sweeps[i]);
+    }
+    tsfi_ccx_pool_wait(&g_gait_ccx_pool);
 
     printf("-----------------------------------------------------------------------------------------------\n");
     printf("[Auncient Benchmark] Completed successfully.\n");
