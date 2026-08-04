@@ -8,6 +8,52 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdatomic.h>
+
+static _Atomic size_t lau_active_allocs = 0;
+static _Atomic size_t lau_active_bytes = 0;
+static _Atomic size_t lau_peak_bytes = 0;
+
+static void* lau_tracked_malloc(size_t size) {
+    if (size == 0) return NULL;
+    void *ptr = malloc(size + sizeof(size_t));
+    if (!ptr) return NULL;
+    *(size_t*)ptr = size;
+    atomic_fetch_add(&lau_active_allocs, 1);
+    atomic_fetch_add(&lau_active_bytes, size);
+    size_t current = atomic_load(&lau_active_bytes);
+    size_t peak = atomic_load(&lau_peak_bytes);
+    while (current > peak) {
+        if (atomic_compare_exchange_weak(&lau_peak_bytes, &peak, current)) {
+            break;
+        }
+        peak = atomic_load(&lau_peak_bytes);
+    }
+    return (void*)((char*)ptr + sizeof(size_t));
+}
+
+static void lau_tracked_free(void *ptr) {
+    if (!ptr) return;
+    void *base = (void*)((char*)ptr - sizeof(size_t));
+    size_t size = *(size_t*)base;
+    atomic_fetch_sub(&lau_active_allocs, 1);
+    atomic_fetch_sub(&lau_active_bytes, size);
+    free(base);
+}
+
+static void report_lau_loader_memory_metrics(void) {
+    printf("[LAU MEMORY METRICS] Active Allocations: %zu\n", atomic_load(&lau_active_allocs));
+    printf("[LAU MEMORY METRICS] Active Bytes: %zu\n", atomic_load(&lau_active_bytes));
+    printf("[LAU MEMORY METRICS] Peak Active Bytes: %zu\n", atomic_load(&lau_peak_bytes));
+    if (atomic_load(&lau_active_allocs) > 0) {
+        printf("[LAU MEMORY LEAKS DETECTED] %zu memory blocks leaked!\n", atomic_load(&lau_active_allocs));
+    } else {
+        printf("[LAU MEMORY CLEAN] No leaks detected.\n");
+    }
+}
+
+#define malloc(sz) lau_tracked_malloc(sz)
+#define free(ptr) lau_tracked_free(ptr)
 
 static uint64_t calculate_fnv1a(const uint8_t *data, size_t len) {
     uint64_t hash = 14695981039346656037ULL;
@@ -498,6 +544,7 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
     printf("[ANALYZER] Execution profiling: completed %zu instructions, exit code %d\n", pc, cpu->exit_code);
     free(bytecode_payload);
     free(buffer);
+    report_lau_loader_memory_metrics();
     remove("TSV_REGISTRY.dat.bin");
     return (cpu->exit_code != -1);
 }
