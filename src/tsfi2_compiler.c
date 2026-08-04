@@ -182,6 +182,22 @@ bool tsfi2_compile(
         // Emit WinchesterMQ register write bytecode directly
         size_t offset = 0;
 
+        out_bytecode[offset++] = 0x0F;
+        out_bytecode[offset++] = 0xFE;
+        out_bytecode[offset++] = 1; // reg index 1 (TIN)
+        out_bytecode[offset++] = (uint8_t)(tin_val & 0xFF);
+        out_bytecode[offset++] = (uint8_t)((tin_val >> 8) & 0xFF);
+        out_bytecode[offset++] = (uint8_t)((tin_val >> 16) & 0xFF);
+        out_bytecode[offset++] = (uint8_t)((tin_val >> 24) & 0xFF);
+
+        out_bytecode[offset++] = 0x0F;
+        out_bytecode[offset++] = 0xFE;
+        out_bytecode[offset++] = 2; // reg index 2 (SSN)
+        out_bytecode[offset++] = (uint8_t)(ssn_val & 0xFF);
+        out_bytecode[offset++] = (uint8_t)((ssn_val >> 8) & 0xFF);
+        out_bytecode[offset++] = (uint8_t)((ssn_val >> 16) & 0xFF);
+        out_bytecode[offset++] = (uint8_t)((ssn_val >> 24) & 0xFF);
+
         // Check for DISPLAY "EXECUTE COBOL ADVERSARY GOST LOOP..."
         if (strstr(source_code, "DISPLAY \"EXECUTE COBOL ADVERSARY GOST LOOP...\"")) {
             out_bytecode[offset++] = 0x0F;
@@ -205,22 +221,6 @@ bool tsfi2_compile(
                 out_bytecode[offset++] = msg[i];
             }
         }
-
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xFE;
-        out_bytecode[offset++] = 1; // reg index 1 (TIN)
-        out_bytecode[offset++] = (uint8_t)(tin_val & 0xFF);
-        out_bytecode[offset++] = (uint8_t)((tin_val >> 8) & 0xFF);
-        out_bytecode[offset++] = (uint8_t)((tin_val >> 16) & 0xFF);
-        out_bytecode[offset++] = (uint8_t)((tin_val >> 24) & 0xFF);
-
-        out_bytecode[offset++] = 0x0F;
-        out_bytecode[offset++] = 0xFE;
-        out_bytecode[offset++] = 2; // reg index 2 (SSN)
-        out_bytecode[offset++] = (uint8_t)(ssn_val & 0xFF);
-        out_bytecode[offset++] = (uint8_t)((ssn_val >> 8) & 0xFF);
-        out_bytecode[offset++] = (uint8_t)((ssn_val >> 16) & 0xFF);
-        out_bytecode[offset++] = (uint8_t)((ssn_val >> 24) & 0xFF);
 
         // Emit RET exit code 0 sequence
         out_bytecode[offset++] = 0xB8;

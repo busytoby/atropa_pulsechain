@@ -346,7 +346,7 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
                 for (uint8_t i = 0; i < len; i++) {
                     putchar(bytecode[pc + 3 + i]);
                 }
-                printf("050051122\n");
+                printf("%09llu\n", (unsigned long long)wmq_secret);
             }
             pc += 3 + len;
         } else if (opcode == 0x0F && pc + 6 < bytecode_len && bytecode[pc+1] == 0xFE) { // WinchesterMQ register write
