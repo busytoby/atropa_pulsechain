@@ -108,6 +108,7 @@ typedef struct {
     double mismatch_retaliation;     // Perceived retaliation on mismatch (0.0 tolerant, 1.0 hostile retaliation)
     double resource_conservation;    // Perceived resource conservation (0.0 wasteful, 1.0 high conservation)
     double spatial_orientation;      // Perceived spatial orientation capacity (0.0 disorientation-prone, 1.0 objective pathfinding)
+    double defense_vigilance;        // Perceived defense vigilance (0.0 lower vigilance, 1.0 high protective action)
 } teddy_geometry_t;
 
 // Pixar RenderMan Avatar Agent definition upon the cooperative boundary
