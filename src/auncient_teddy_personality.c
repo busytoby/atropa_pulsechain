@@ -648,6 +648,17 @@ bool evaluate_scale_profile_bounds(const teddy_geometry_t *geom, double *lower_s
     return true;
 }
 
+bool evaluate_scale_structured_covariates(const teddy_geometry_t *geom, double age_covariate, double *scale_out) {
+    if (!geom || !scale_out) {
+        return false;
+    }
+    double gamma_1 = 0.4;
+    double gamma_2 = 0.15;
+    double log_scale = (gamma_1 * geom->vocal_visual_mismatch) + (gamma_2 * age_covariate);
+    *scale_out = exp(log_scale);
+    return true;
+}
+
 bool evaluate_threshold_profile_bounds(const teddy_geometry_t *geom, int threshold_index, double *lower_bound, double *upper_bound) {
     if (!geom || threshold_index < 0 || threshold_index >= 6 || !lower_bound || !upper_bound) {
         return false;

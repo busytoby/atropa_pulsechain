@@ -154,6 +154,12 @@ int main(void) {
     assert(l_scale < u_scale);
     printf("   ✓ R H B Christensen scale parameter likelihood profile bounds verified successfully\n");
 
+    // Test scale parameter under structured covariates calculation
+    double struct_scale = 0.0;
+    assert(evaluate_scale_structured_covariates(&geom, 30.0, &struct_scale));
+    assert(struct_scale > 0.0);
+    printf("   ✓ R H B Christensen scale parameter under structured covariates verified successfully\n");
+
     // Test threshold parameter likelihood profile calculation
     double l_thresh = 0.0, u_thresh = 0.0;
     assert(evaluate_threshold_profile_bounds(&geom, 2, &l_thresh, &u_thresh));
