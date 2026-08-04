@@ -756,6 +756,21 @@ bool evaluate_amplitude_jitter_uncanny(const teddy_geometry_t *geom, double ampl
     return true;
 }
 
+bool evaluate_expression_amplitude_jitter(const teddy_geometry_t *geom, double amplitude_variance, double *uncanny_score_out) {
+    return evaluate_amplitude_jitter_uncanny(geom, amplitude_variance, uncanny_score_out);
+}
+
+bool evaluate_amplitude_habituation_decay(const teddy_geometry_t *geom, double exposure_duration_sec, double *decayed_uncanny_out) {
+    if (!geom || exposure_duration_sec < 0.0 || !decayed_uncanny_out) {
+        return false;
+    }
+    double base_uncanny = 0.0;
+    evaluate_uncanny_mismatch_index(geom, &base_uncanny);
+    double tau = 16.0;
+    *decayed_uncanny_out = base_uncanny * exp(-exposure_duration_sec / tau);
+    return true;
+}
+
 bool evaluate_vocal_visual_sync_uncanny(const teddy_geometry_t *geom, double audio_lag_ms, double *uncanny_score_out) {
     if (!geom || audio_lag_ms < 0.0 || !uncanny_score_out) {
         return false;

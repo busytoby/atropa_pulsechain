@@ -339,6 +339,12 @@ bool evaluate_acceleration_habituation_decay(const teddy_geometry_t *geom, doubl
 bool evaluate_animation_acceleration_jitter(const teddy_geometry_t *geom, double acceleration_jitter, double *uncanny_score_out);
 
 // Evaluates the unpredictable micro-expression amplitude jitter uncanny response (Hyde et al.).
+bool evaluate_expression_amplitude_jitter(const teddy_geometry_t *geom, double amplitude_variance, double *uncanny_score_out);
+
+// Evaluates the unpredictable micro-expression amplitude jitter habituation decay (Hyde et al.).
+bool evaluate_amplitude_habituation_decay(const teddy_geometry_t *geom, double exposure_duration_sec, double *decayed_uncanny_out);
+
+// Evaluates the unpredictable micro-expression amplitude jitter uncanny response (Hyde et al.).
 bool evaluate_amplitude_jitter_uncanny(const teddy_geometry_t *geom, double amplitude_variance, double *uncanny_score_out);
 
 // Evaluates the vocal-visual synchronization uncanny response (Hyde et al.).

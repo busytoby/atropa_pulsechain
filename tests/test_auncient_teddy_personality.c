@@ -470,6 +470,12 @@ int main(void) {
     assert(amp_jitter_uncanny >= 0.0);
     printf("   ✓ HYDE et al. unpredictable micro-expression amplitude jitter verified successfully\n");
 
+    // Test Hyde unpredictable micro-expression amplitude jitter habituation decay calculation
+    double decayed_amp_uncanny = 0.0;
+    assert(evaluate_amplitude_habituation_decay(&geom, 12.0, &decayed_amp_uncanny));
+    assert(decayed_amp_uncanny < amp_jitter_uncanny);
+    printf("   ✓ HYDE et al. unpredictable micro-expression amplitude jitter habituation decay verified successfully\n");
+
     // Test Hyde vocal-visual synchronization delay calculation
     double vv_sync_uncanny = 0.0;
     assert(evaluate_vocal_visual_sync_uncanny(&geom, 90.0, &vv_sync_uncanny));
