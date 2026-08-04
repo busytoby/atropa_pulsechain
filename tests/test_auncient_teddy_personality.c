@@ -109,6 +109,11 @@ int main(void) {
     assert(rating_cauchy >= 1 && rating_cauchy <= 7);
     printf("   ✓ R H B Christensen Cauchy ordinal rating verified successfully\n");
 
+    // Test log-gamma rating estimation
+    int rating_loggamma = evaluate_ordinal_loggamma_rating(&geom, 0.5);
+    assert(rating_loggamma >= 1 && rating_loggamma <= 7);
+    printf("   ✓ R H B Christensen log-gamma ordinal rating verified successfully\n");
+
     // Test AIC and BIC information criteria diagnostics estimation
     double aic = 0.0, bic = 0.0;
     assert(evaluate_information_criteria(&geom, 3, 100, &aic, &bic));
