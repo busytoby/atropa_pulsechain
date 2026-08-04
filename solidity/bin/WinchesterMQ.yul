@@ -224,6 +224,31 @@ object "WinchesterMQ" {
             }
 
             // ----------------------------------------------------------------
+            // METHOD: simulate_snubber_flyback_transient (supply_voltage, load_inductance, switching_time_sec, snubber_resistance)
+            // Selector: 0xe399f0f3 (integer scaled by 1000)
+            // ----------------------------------------------------------------
+            if eq(selector, 0xe399f0f3) {
+                let supply_voltage := calldataload(4)
+                let load_inductance := calldataload(36)
+                let switching_time_sec := calldataload(68)
+                let snubber_resistance := calldataload(100)
+                
+                let flyback_voltage := supply_voltage
+                if gt(switching_time_sec, 0) {
+                    let dI := 2000
+                    let term := div(mul(load_inductance, dI), switching_time_sec)
+                    let peak := add(supply_voltage, term)
+                    // Attenuation: peak / (1.0 + (snubber_resistance * 0.02))
+                    // Scaled by 1000: factor = 1000 + (snubber_resistance * 20) / 1000 (scaled by 1000) -> denominator = 1000 + snubber_resistance * 20
+                    let denom := add(1000, mul(snubber_resistance, 20))
+                    flyback_voltage := div(mul(peak, 1000), denom)
+                }
+                
+                mstore(0x00, flyback_voltage)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
             // METHOD 1: writeSignalsOut(uint8 signals) -> void
             // Selector: 0x485301a0 (Simulates writing to $DF01)
             // ----------------------------------------------------------------
