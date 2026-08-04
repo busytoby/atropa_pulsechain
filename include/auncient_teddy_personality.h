@@ -415,6 +415,12 @@ bool evaluate_pitch_velocity_mismatch(const teddy_geometry_t *geom, double pitch
 // Evaluates the vocal-visual pitch transition velocity mismatch habituation decay (Hyde et al.).
 bool evaluate_pitch_mismatch_habituation_decay(const teddy_geometry_t *geom, double exposure_duration_sec, double *decayed_uncanny_out);
 
+// Evaluates the spatial interaction distance proximity uncanny response (Hyde et al.).
+bool evaluate_spatial_interaction_distance(const teddy_geometry_t *geom, double physical_distance_meters, double *interaction_uncanny_out);
+
+// Evaluates the dynamic auditory offset matching vocal gain to ambient noise levels (Hyde et al.).
+bool evaluate_dynamic_auditory_offset(const teddy_geometry_t *geom, double ambient_noise_db, double vocal_gain_db, double *auditory_offset_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 

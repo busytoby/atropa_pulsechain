@@ -915,3 +915,25 @@ bool evaluate_pitch_mismatch_habituation_decay(const teddy_geometry_t *geom, dou
     *decayed_uncanny_out = base_uncanny * exp(-exposure_duration_sec / tau);
     return true;
 }
+
+bool evaluate_spatial_interaction_distance(const teddy_geometry_t *geom, double physical_distance_meters, double *interaction_uncanny_out) {
+    if (!geom || physical_distance_meters < 0.0 || !interaction_uncanny_out) {
+        return false;
+    }
+    double proximity_factor = 0.0;
+    if (physical_distance_meters < 1.0) {
+        proximity_factor = (1.0 - physical_distance_meters) * 4.0;
+    }
+    *interaction_uncanny_out = proximity_factor * (1.2 + geom->eye_scale * 0.5);
+    return true;
+}
+
+bool evaluate_dynamic_auditory_offset(const teddy_geometry_t *geom, double ambient_noise_db, double vocal_gain_db, double *auditory_offset_out) {
+    if (!geom || ambient_noise_db < 0.0 || vocal_gain_db < 0.0 || !auditory_offset_out) {
+        return false;
+    }
+    double diff = fabs(vocal_gain_db - ambient_noise_db);
+    *auditory_offset_out = diff * (0.8 + geom->head_fwhr * 0.3);
+    return true;
+}
+

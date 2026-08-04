@@ -591,6 +591,18 @@ int main(void) {
     assert(motion_freeze_uncanny > 0.0);
     printf("   ✓ HYDE et al. vocal-visual motion-mismatch and micro-expression freeze index verified successfully\n");
 
+    // Test Hyde spatial interaction distance proximity uncanny calculation
+    double interaction_uncanny = 0.0;
+    assert(evaluate_spatial_interaction_distance(&geom, 0.5, &interaction_uncanny));
+    assert(interaction_uncanny > 0.0);
+    printf("   ✓ HYDE et al. spatial interaction distance proximity verified successfully\n");
+
+    // Test Hyde dynamic auditory offset calculation
+    double auditory_offset = 0.0;
+    assert(evaluate_dynamic_auditory_offset(&geom, 60.0, 75.0, &auditory_offset));
+    assert(auditory_offset > 0.0);
+    printf("   ✓ HYDE et al. dynamic auditory offset verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge
