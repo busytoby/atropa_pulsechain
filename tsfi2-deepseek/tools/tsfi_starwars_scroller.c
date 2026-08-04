@@ -308,6 +308,12 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset) {
         float angle = angle_offset + 0.15f * sinf(t * 8.0f);
         int lx = bx + (int)(r_len * cosf(angle));
         int ly = by + (int)(r_len * sinf(angle));
+        
+        // Base connection shading (t=0 is brownish-green, t=1 is vibrant fresh green)
+        uint8_t lf_r = (uint8_t)(34 * (1.0f - t) + 46 * t);
+        uint8_t lf_g = (uint8_t)(75 * (1.0f - t) + 165 * t);
+        uint8_t lf_b = (uint8_t)(30 * (1.0f - t) + 50 * t);
+
         // Expanded lobe width and increased frequency for jagged serrations
         float lobe_w = 17.0f * (1.0f - t) * (0.8f + 0.5f * sinf(t * 28.0f));
         for (int lw = 0; lw < (int)lobe_w; lw++) {
@@ -316,8 +322,20 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset) {
             int l_ly = ly + (int)(lw * sinf(perp_a));
             int r_lx = lx - (int)(lw * cosf(perp_a));
             int r_ly = ly - (int)(lw * sinf(perp_a));
-            draw_line(l_lx, l_ly, r_lx, r_ly, 46, 125, 50);
+            draw_line(l_lx, l_ly, r_lx, r_ly, lf_r, lf_g, lf_b);
         }
+
+        // Side veins radiating from spine to lobe margins for realism
+        if (i % 3 == 0) {
+            float perp_a = angle + M_PI / 2.0f;
+            int v_l_x = lx + (int)((lobe_w * 0.7f) * cosf(perp_a));
+            int v_l_y = ly + (int)((lobe_w * 0.7f) * sinf(perp_a));
+            int v_r_x = lx - (int)((lobe_w * 0.7f) * cosf(perp_a));
+            int v_r_y = ly - (int)((lobe_w * 0.7f) * sinf(perp_a));
+            draw_line(lx, ly, v_l_x, v_l_y, (uint8_t)(lf_r * 1.5f), (uint8_t)(lf_g * 1.3f), (uint8_t)(lf_b * 1.4f));
+            draw_line(lx, ly, v_r_x, v_r_y, (uint8_t)(lf_r * 1.5f), (uint8_t)(lf_g * 1.3f), (uint8_t)(lf_b * 1.4f));
+        }
+
         // Draw light green center spine vein
         draw_line(lx, ly, lx, ly, 100, 190, 105);
     }
@@ -535,7 +553,9 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
             pollen[p].life = 0.4f + (float)(rand() % 100) / 160.0f; // randomized lifetime
         }
 
-        pollen[p].x += pollen[p].vx;
+        // Adding miniature swirling eddies turbulence
+        float turbulence = 1.4f * cosf(time_val * 5.0f + p);
+        pollen[p].x += pollen[p].vx + turbulence * 0.05f;
         pollen[p].y += pollen[p].vy;
 
         // Draw glowing gold particle tip
