@@ -35,11 +35,39 @@ let score = 0;
 let gameOver = false;
 let gameWon = false;
 let frameCount = 0;
+let lastInputTime = Date.now();
+let resetTimer = -1;
 
 // AI Director state
 let activeDirective = "MONITORING LORE TELEMETRY...";
 let enemySpeedMultiplier = 1.0;
 let spawnRateInterval = 24;
+
+// Parse USDA rope spline path points (Pixar USD Asset Integration)
+let usdaSplineFrames = [];
+try {
+    const usdaPath = path.join(__dirname, "../tsfi2_remorse_scene.usda");
+    if (fs.existsSync(usdaPath)) {
+        const content = fs.readFileSync(usdaPath, "utf8");
+        // Regex to parse time-sampled Cubic Bezier curves with 5 control points
+        const regex = /(\d+):\s*\[\(([\d.-]+),\s*([\d.-]+),\s*([\d.-]+)\),\s*\(([\d.-]+),\s*([\d.-]+),\s*([\d.-]+)\),\s*\(([\d.-]+),\s*([\d.-]+),\s*([\d.-]+)\),\s*\(([\d.-]+),\s*([\d.-]+),\s*([\d.-]+)\),\s*\(([\d.-]+),\s*([\d.-]+),\s*([\d.-]+)\)\]/g;
+        let match;
+        while ((match = regex.exec(content)) !== null) {
+            const frameIdx = parseInt(match[1]);
+            const pts = [
+                { x: parseFloat(match[2]), y: parseFloat(match[3]) },
+                { x: parseFloat(match[5]), y: parseFloat(match[6]) },
+                { x: parseFloat(match[8]), y: parseFloat(match[9]) },
+                { x: parseFloat(match[11]), y: parseFloat(match[12]) },
+                { x: parseFloat(match[14]), y: parseFloat(match[15]) }
+            ];
+            usdaSplineFrames[frameIdx] = pts;
+        }
+        console.log(`[GAUNTLET LIVE] Successfully parsed ${usdaSplineFrames.length} USDA spline frames.`);
+    }
+} catch (e) {
+    console.error("[GAUNTLET LIVE] Failed parsing USDA asset:", e.message);
+}
 
 // Setup raw input to capture keystrokes from standard input
 readline.emitKeypressEvents(process.stdin);
@@ -53,6 +81,8 @@ process.stdin.on("keypress", (str, key) => {
     }
 
     if (gameOver || gameWon) return;
+
+    lastInputTime = Date.now();
 
     // Movement controls (WASD/Arrows)
     if (key.name === "w" || key.name === "up") {
@@ -70,22 +100,25 @@ process.stdin.on("keypress", (str, key) => {
 
     // Fire control (Spacebar)
     if (key.name === "space" || key.name === "f") {
-        projectiles.push({
-            x: hero.x,
-            y: hero.y,
-            vx: 22,
-            vy: 0,
-            life: 25
-        });
-        score = Math.max(0, score - 2); // Small consumption cost
+        fireAxe(22, 0);
     }
 });
+
+function fireAxe(vx, vy) {
+    projectiles.push({
+        x: hero.x,
+        y: hero.y,
+        vx: vx,
+        vy: vy,
+        life: 25
+    });
+    score = Math.max(0, score - 2); // Small consumption cost
+}
 
 function resolveWallCollisions() {
     for (let w of walls) {
         if (hero.x + hero.size/2 > w.x && hero.x - hero.size/2 < w.x + w.w &&
             hero.y + hero.size/2 > w.y && hero.y - hero.size/2 < w.y + w.h) {
-            // Push out based on overlap
             let overlapX = Math.min(hero.x + hero.size/2 - w.x, w.x + w.w - (hero.x - hero.size/2));
             let overlapY = Math.min(hero.y + hero.size/2 - w.y, w.y + w.h - (hero.y - hero.size/2));
             if (overlapX < overlapY) {
@@ -103,12 +136,21 @@ ws.on("open", () => {
     
     // Enable arcade mode (switches streamer to frame buffer display mode)
     ws.send(JSON.stringify({ arcade_mode: true }));
+
     const interval = setInterval(() => {
         if (gameOver || gameWon) {
-            clearInterval(interval);
+            if (resetTimer === -1) {
+                resetTimer = 80; // Wait 80 frames (~5 seconds) on screen before auto-restarting
+            }
+            resetTimer--;
+            if (resetTimer <= 0) {
+                resetGame();
+            }
+            renderGame();
             return;
         }
         aiDirectorTick();
+        autoplayPilotTick();
         updateGame();
         renderGame();
     }, 60);
@@ -118,6 +160,69 @@ ws.on("error", (err) => {
     console.error("[GAUNTLET LIVE ERROR]:", err.message);
     cleanupAndExit();
 });
+
+// Autoplay pilot triggers if no keyboard input is received for 3 seconds
+function autoplayPilotTick() {
+    if (Date.now() - lastInputTime < 3000) return;
+
+    // Direct movement toward target (prioritize Spawner, then closest Ghost)
+    let targetX = spawner.x;
+    let targetY = spawner.y;
+
+    if (spawner.health <= 0 && ghosts.length > 0) {
+        let closest = ghosts[0];
+        let minDist = Infinity;
+        for (let g of ghosts) {
+            let dx = g.x - hero.x;
+            let dy = g.y - hero.y;
+            let dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < minDist) {
+                minDist = dist;
+                closest = g;
+            }
+        }
+        targetX = closest.x;
+        targetY = closest.y;
+    }
+
+    // Move toward target
+    let dx = targetX - hero.x;
+    let dy = targetY - hero.y;
+    let dist = Math.sqrt(dx*dx + dy*dy);
+    if (dist > 15) {
+        hero.x += (dx / dist) * (hero.speed * 0.4);
+        hero.y += (dy / dist) * (hero.speed * 0.4);
+        resolveWallCollisions();
+    }
+
+    // Auto-fire axes towards target periodically
+    if (frameCount % 8 === 0) {
+        let vx = (dx / dist) * 20;
+        let vy = (dy / dist) * 20;
+        fireAxe(vx, vy);
+    }
+}
+
+function resetGame() {
+    hero = { x: 200, y: 300, vx: 0, vy: 0, size: 10, speed: 12 };
+    spawner = { x: 640, y: 280, health: 3 };
+    ghosts = [];
+    projectiles = [];
+    chests = [
+        { x: 300, y: 150, active: true },
+        { x: 900, y: 150, active: true },
+        { x: 640, y: 420, active: true }
+    ];
+    traps = [
+        { x: 450, y: 220, active: true },
+        { x: 800, y: 380, active: true }
+    ];
+    health = 1500;
+    score = 0;
+    gameOver = false;
+    gameWon = false;
+    resetTimer = -1;
+}
 
 // AI Director updates parameters dynamically by reading the live stream lore context
 function aiDirectorTick() {
@@ -141,7 +246,6 @@ function aiDirectorTick() {
             enemySpeedMultiplier = 0.95;
         } else if (text.includes("subpoena") || text.includes("dna") || text.includes("recall")) {
             activeDirective = "CITIZEN DIRECTIVE: DESTRUCTIVE DEEPSEEK EVOLVE ACTIVE";
-            // Spawn a powerful projectile sweep
             for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 4) {
                 projectiles.push({
                     x: hero.x,
@@ -162,13 +266,11 @@ function aiDirectorTick() {
 function updateGame() {
     frameCount++;
 
-    // Health timer decay
     health = Math.max(0, health - 1);
     if (health <= 0) {
         gameOver = true;
     }
 
-    // Spawn ghosts from active spawner
     if (frameCount % spawnRateInterval === 0 && ghosts.length < 15 && spawner.health > 0) {
         ghosts.push({
             x: spawner.x + (Math.random() * 40 - 20),
@@ -178,7 +280,6 @@ function updateGame() {
         });
     }
 
-    // Move ghosts towards hero with wall avoidance
     for (let g of ghosts) {
         let dx = hero.x - g.x;
         let dy = hero.y - g.y;
@@ -188,13 +289,11 @@ function updateGame() {
             g.y += (dy / dist) * g.speed;
         }
 
-        // Damage hero on contact
         if (dist < 14) {
             health = Math.max(0, health - 8);
         }
     }
 
-    // Collect chests
     for (let c of chests) {
         if (!c.active) continue;
         let dx = hero.x - c.x;
@@ -202,28 +301,25 @@ function updateGame() {
         if (Math.sqrt(dx*dx + dy*dy) < 22) {
             c.active = false;
             score += 500;
-            health = Math.min(1500, health + 200); // Chest chest provides food/health
+            health = Math.min(1500, health + 200);
         }
     }
 
-    // Trigger alchemical traps (damage hero if stepped on)
     for (let t of traps) {
         if (!t.active) continue;
         let dx = hero.x - t.x;
         let dy = hero.y - t.y;
         if (Math.sqrt(dx*dx + dy*dy) < 18) {
             t.active = false;
-            health = Math.max(0, health - 250); // Big explosion damage
+            health = Math.max(0, health - 250);
         }
     }
 
-    // Move projectiles and check collisions
     projectiles = projectiles.filter(p => {
         p.x += p.vx;
         p.y += p.vy;
         p.life--;
 
-        // Check collision with ghosts
         for (let i = ghosts.length - 1; i >= 0; i--) {
             let dx = p.x - ghosts[i].x;
             let dy = p.y - ghosts[i].y;
@@ -231,14 +327,13 @@ function updateGame() {
             if (dist < 16) {
                 ghosts.splice(i, 1);
                 score += 100;
-                return false; // destroy projectile
+                return false;
             }
         }
 
-        // Check collision with spawner
         if (spawner.health > 0) {
             let sdx = p.x - spawner.x;
-            let sdy = p.y - spawner.y;
+            let sdy = p.y - sdy;
             let sdist = Math.sqrt(sdx*sdx + sdy*sdy);
             if (sdist < 22) {
                 spawner.health--;
@@ -246,7 +341,7 @@ function updateGame() {
                     score += 1500;
                     gameWon = true;
                 }
-                return false; // destroy projectile
+                return false;
             }
         }
 
@@ -257,10 +352,9 @@ function updateGame() {
 function renderGame() {
     const ops = [];
 
-    // 1. Draw procedural Cobblestone floor texture overlay (repeating grid)
+    // 1. Draw Cobblestone floor background
     for (let y = 60; y < 520; y += 40) {
         for (let x = 60; x < 1210; x += 40) {
-            // Procedurally shade each cobble tile to look like grey stone
             const stoneVal = 20 + ((x * 7 + y * 13) % 15);
             ops.push({
                 type: "draw_rect",
@@ -275,7 +369,43 @@ function renderGame() {
         }
     }
 
-    // 2. Draw 3D-shaded alchemical Brick Walls
+    // 2. Draw Animating USDA Rope Spline (Pixar USD Asset Integration)
+    if (usdaSplineFrames.length > 0) {
+        const pts = usdaSplineFrames[frameCount % usdaSplineFrames.length];
+        if (pts) {
+            let prevX = pts[0].x;
+            let prevY = pts[0].y;
+            for (let t = 0.05; t <= 1.0; t += 0.05) {
+                // Bezier curve interpolation over 5 points
+                const omt = 1 - t;
+                const x = omt*omt*omt*omt*pts[0].x + 4*omt*omt*omt*t*pts[1].x + 6*omt*omt*t*t*pts[2].x + 4*omt*t*t*t*pts[3].x + t*t*t*t*pts[4].x;
+                const y = omt*omt*omt*omt*pts[0].y + 4*omt*omt*omt*t*pts[1].y + 6*omt*omt*t*t*pts[2].y + 4*omt*t*t*t*pts[3].y + t*t*t*t*pts[4].y;
+                
+                // Map/scale coordinate points onto the game board grid
+                const gameX1 = 60 + (prevX * 1.8);
+                const gameY1 = 60 + (prevY * 1.1);
+                const gameX2 = 60 + (x * 1.8);
+                const gameY2 = 60 + (y * 1.1);
+
+                // Draw thick glowing cyan laser curve segments
+                ops.push({
+                    type: "draw_rect",
+                    x: Math.floor(Math.min(gameX1, gameX2)),
+                    y: Math.floor(Math.min(gameY1, gameY2)),
+                    w: Math.floor(Math.abs(gameX2 - gameX1) + 2),
+                    h: Math.floor(Math.abs(gameY2 - gameY1) + 2),
+                    r: 0,
+                    g: 220,
+                    b: 255
+                });
+
+                prevX = x;
+                prevY = y;
+            }
+        }
+    }
+
+    // 3. Draw 3D-shaded alchemical Brick Walls
     for (let w of walls) {
         ops.push({
             type: "draw_rect",
@@ -285,9 +415,8 @@ function renderGame() {
             h: w.h,
             r: 105,
             g: 55,
-            b: 45 // Brick base color
+            b: 45
         });
-        // 3D highlights on the wall borders
         ops.push({
             type: "draw_rect",
             x: w.x,
@@ -296,11 +425,11 @@ function renderGame() {
             h: 3,
             r: 155,
             g: 95,
-            b: 85 // Highlight top
+            b: 85
         });
     }
 
-    // 3. Draw active chests (wooden boxes with gold lock)
+    // 4. Draw active chests
     for (let c of chests) {
         if (!c.active) continue;
         ops.push({
@@ -311,7 +440,7 @@ function renderGame() {
             h: 16,
             r: 139,
             g: 90,
-            b: 43 // Wood
+            b: 43
         });
         ops.push({
             type: "draw_rect",
@@ -321,11 +450,11 @@ function renderGame() {
             h: 4,
             r: 255,
             g: 215,
-            b: 0 // Gold latch
+            b: 0
         });
     }
 
-    // 4. Draw alchemical traps (pulsing purple traps)
+    // 5. Draw active traps
     const trapPulse = Math.floor(4 * Math.sin(frameCount * 0.2));
     for (let t of traps) {
         if (!t.active) continue;
@@ -337,11 +466,11 @@ function renderGame() {
             h: 16 + trapPulse,
             r: 147,
             g: 50,
-            b: 220 // Purple magic
+            b: 220
         });
     }
 
-    // 5. Draw Spawner (volumetric red/orange generator portal)
+    // 6. Draw Spawner
     if (spawner.health > 0) {
         const portalPulse = Math.floor(6 * Math.sin(frameCount * 0.35));
         ops.push({
@@ -352,7 +481,7 @@ function renderGame() {
             h: 36 + portalPulse,
             r: 220,
             g: 40,
-            b: 20 // Outer red glow
+            b: 20
         });
         ops.push({
             type: "draw_rect",
@@ -362,11 +491,11 @@ function renderGame() {
             h: 20,
             r: 255,
             g: 165,
-            b: 0 // Orange core
+            b: 0
         });
     }
 
-    // 6. Draw Ghosts (flashing grey sprites)
+    // 7. Draw Ghosts
     for (let g of ghosts) {
         const flash = (frameCount % 4 < 2) ? 20 : 0;
         ops.push({
@@ -381,7 +510,7 @@ function renderGame() {
         });
     }
 
-    // 7. Draw Hero (bright blue warrior box with glowing center)
+    // 8. Draw Hero
     ops.push({
         type: "draw_rect",
         x: Math.floor(hero.x - hero.size/2),
@@ -390,7 +519,7 @@ function renderGame() {
         h: hero.size,
         r: 0,
         g: 140,
-        b: 255 // Blue plate armor
+        b: 255
     });
     ops.push({
         type: "draw_rect",
@@ -400,10 +529,10 @@ function renderGame() {
         h: 6,
         r: 200,
         g: 240,
-        b: 255 // Glowing helmet visor
+        b: 255
     });
 
-    // 8. Draw Projectiles (axes / spinning yellow lines)
+    // 9. Draw Projectiles
     for (let p of projectiles) {
         ops.push({
             type: "draw_rect",
@@ -417,7 +546,7 @@ function renderGame() {
         });
     }
 
-    // 9. HUD panel overlay
+    // 10. HUD panel overlay
     ops.push({
         type: "draw_rect",
         x: 60,
@@ -429,7 +558,6 @@ function renderGame() {
         b: 28
     });
 
-    // Health bar representation
     const healthW = Math.floor(300 * (health / 1500));
     if (healthW > 0) {
         ops.push({
@@ -444,7 +572,6 @@ function renderGame() {
         });
     }
 
-    // HUD Text highlight indicators (draw purple bar for directives)
     ops.push({
         type: "draw_rect",
         x: 420,
@@ -453,10 +580,9 @@ function renderGame() {
         h: 12,
         r: 147,
         g: 50,
-        b: 220 // Directive purple bar
+        b: 220
     });
 
-    // Game Over / Victory banners
     if (gameWon) {
         ops.push({
             type: "draw_rect",
@@ -466,7 +592,7 @@ function renderGame() {
             h: 80,
             r: 46,
             g: 204,
-            b: 113 // Green victory
+            b: 113
         });
     } else if (gameOver) {
         ops.push({
@@ -477,11 +603,10 @@ function renderGame() {
             h: 80,
             r: 231,
             g: 76,
-            b: 60 // Red defeat
+            b: 60
         });
     }
 
-    // Package payload and dispatch
     const payload = {
         tts_enabled: false,
         draw_operations: ops
