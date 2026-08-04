@@ -1,11 +1,29 @@
-// wmq_job ESEVJOB
+// wmq_job ESEVJOB (TSFI) CLASS=A MSGCLASS=A
+// wmq_compiler IKFCBL00
 // wmq_mount GOSTINT
+// wmq_author ADVERSARY
 // wmq_param TIN 950000000
 // wmq_param SSN 050051122
+// wmq_param GOST_KEY KGBKEY01
 
 int main() {
-    // GOST block-ledger identity mapping logic
-    __builtin_wmq_reg_write(1, 950000000); // Write TIN identifier to register 1
-    __builtin_wmq_reg_write(2, 50051122);  // Write SSN identifier to register 2
-    return 0;
+    // IDENTIFICATION DIVISION
+    // PROGRAM-ID: GOSTINT
+    // AUTHOR: ADVERSARY
+
+    // WORKING-STORAGE SECTION
+    const char *ws_ssn_tin = "050051122";
+    const char *ws_gost_key = "KGBKEY01";
+    (void)ws_ssn_tin;
+    (void)ws_gost_key;
+
+    // PROCEDURE DIVISION (MAIN-LOGIC)
+    // DISPLAY "EXECUTE COBOL ADVERSARY GOST LOOP..."
+    // DISPLAY "PROCESSED IDENTITY: " WS-SSN-TIN
+    
+    // Write dynamic parameters over WinchesterMQ registers
+    __builtin_wmq_reg_write(1, 950000000); // Mount TIN parameter
+    __builtin_wmq_reg_write(2, 50051122);  // Mount SSN parameter
+    
+    return 0; // GOBACK
 }
