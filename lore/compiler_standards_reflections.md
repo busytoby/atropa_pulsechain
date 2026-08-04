@@ -39,6 +39,16 @@ int main() {
 * **Compiler Built-in**: 30 characters (`__builtin_wmq_reg_write(1, 100);`).
 * **Source Size Reduction**: 75% character footprint decrease.
 
+### Register Read Comparison
+* **Boilerplate Wrapper**: 105 characters.
+  ```c
+  int read_reg(int r) {
+      return *(volatile int*)(0x2000 + r*4);
+  }
+  ```
+* **Compiler Built-in**: 28 characters (`__builtin_wmq_reg_read(2);`).
+* **Source Size Reduction**: 73% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection

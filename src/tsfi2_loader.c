@@ -125,6 +125,10 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
             uint32_t val = bytecode[pc+3] | (bytecode[pc+4] << 8) | (bytecode[pc+5] << 16) | (bytecode[pc+6] << 24);
             printf("[SCSI/ZMM] Write virtual register %d with value %u successfully.\n", reg_idx, val);
             pc += 7;
+        } else if (opcode == 0x0F && pc + 2 < bytecode_len && bytecode[pc+1] == 0xFF) { // WinchesterMQ register read
+            int reg_idx = bytecode[pc+2];
+            printf("[SCSI/ZMM] Read virtual register %d successfully.\n", reg_idx);
+            pc += 3;
         } else if (opcode == 0xB8 && pc + 4 < bytecode_len) { // MOV EAX, imm32
             uint32_t val = bytecode[pc+1] | (bytecode[pc+2] << 8) | (bytecode[pc+3] << 16) | (bytecode[pc+4] << 24);
             cpu->exit_code = (int)val;

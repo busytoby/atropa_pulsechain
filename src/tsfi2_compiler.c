@@ -71,6 +71,19 @@ bool tsfi2_compile(
         }
     }
     
+    // Emit custom wmq_reg_read if requested
+    const char *reg_read_ptr = strstr(source_code, "__builtin_wmq_reg_read");
+    if (reg_read_ptr) {
+        reg_read_ptr = strchr(reg_read_ptr, '(');
+        if (reg_read_ptr) {
+            reg_read_ptr++;
+            int reg_idx = atoi(reg_read_ptr);
+            out_bytecode[offset++] = 0x0F;
+            out_bytecode[offset++] = 0xFF;
+            out_bytecode[offset++] = (uint8_t)reg_idx;
+        }
+    }
+    
     // Emit x86 machine instructions: MOV EAX, imm32
     out_bytecode[offset++] = 0xB8;
     out_bytecode[offset++] = (uint8_t)(value & 0xFF);
