@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <time.h>
 #include <openssl/sha.h>
+#include <math.h>
 
 #define HASH_SIZE 32
 
@@ -40,6 +41,8 @@ typedef struct {
     gate_state_t scheduler_write_gate;
     gate_state_t kernel_execution_gate;
     bool collision_flag;
+    uint32_t register_space[10];
+    bool parity_error;
 } scheduler_state_t;
 
 // 3. Merkle Registry Node
@@ -51,6 +54,13 @@ typedef struct TwoThreeNode {
     uint8_t node_hash[HASH_SIZE];
     struct TwoThreeNode *children[3];
 } TwoThreeNode;
+
+// 4. Coaxial Arbitration Structure
+typedef struct {
+    uint32_t active_token_node;
+    bool request_lines[4];
+    bool collision_flag;
+} coax_arbitration_t;
 
 static TwoThreeNode* create_leaf(uint32_t key1, const char *val1) {
     TwoThreeNode *node = (TwoThreeNode*)calloc(1, sizeof(TwoThreeNode));
@@ -86,14 +96,12 @@ static bool store_table_data(TwoThreeNode *node, uint32_t key, const char *new_v
 
 // Validation 1: Handshake Overcurrent Cutoff Propagation
 void validate_handshake_cutoff_propagation(wmq_state_t *wmq, scheduler_state_t *sched) {
-    // WinchesterMQ Overcurrent Check
     if (wmq->req_line > 12.0 || wmq->ack_line > 12.0) {
         wmq->overcurrent_trap = true;
         wmq->tx_gate = CUTOFF_STATE;
         wmq->rx_gate = CUTOFF_STATE;
     }
 
-    // Cascade: If WinchesterMQ is trapped, force scheduler cutoff and raise collision flag
     if (wmq->overcurrent_trap) {
         sched->collision_flag = true;
         sched->scheduler_write_gate = CUTOFF_STATE;
@@ -101,12 +109,11 @@ void validate_handshake_cutoff_propagation(wmq_state_t *wmq, scheduler_state_t *
     }
 }
 
-// Validation 2: Timing/Latency Path (Sysfs Update to Kernel Preemption)
+// Validation 2: Timing/Latency Path
 double measure_preemption_latency_ns(scheduler_state_t *sched, uint32_t target_pid, bool mutex_locked) {
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    // If mutex lock is active, preemption is blocked
     if (mutex_locked) {
         sched->scheduler_write_gate = CUTOFF_STATE;
     } else {
@@ -118,6 +125,48 @@ double measure_preemption_latency_ns(scheduler_state_t *sched, uint32_t target_p
     clock_gettime(CLOCK_MONOTONIC, &end);
     double elapsed_ns = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
     return elapsed_ns;
+}
+
+// Validation 3: Transistor Voltage Decay Simulation
+double simulate_voltage_decay(double initial_volts, double resistance, double capacitance, int cycles) {
+    double volts = initial_volts;
+    double dt = 1e-12; // 1ps cycles for numerical stability
+    double rc = resistance * capacitance * 1e-9; // RC time constant
+    for (int i = 0; i < cycles; i++) {
+        volts -= (volts * dt) / rc;
+    }
+    return volts;
+}
+
+// Validation 4: State Register Noise Parity Audit
+bool verify_register_parity(uint32_t val) {
+    int count = 0;
+    for (int i = 0; i < 32; i++) {
+        if ((val >> i) & 1) count++;
+    }
+    return (count % 2) != 0; // Odd parity
+}
+
+// Validation 5: Coaxial Arbitration loop
+void run_coax_arbitration(coax_arbitration_t *arb) {
+    int active_requests = 0;
+    int first_active = -1;
+    for (int i = 0; i < 4; i++) {
+        if (arb->request_lines[i]) {
+            active_requests++;
+            if (first_active == -1) first_active = i;
+        }
+    }
+    if (active_requests > 1) {
+        arb->collision_flag = true;
+        arb->active_token_node = 0xFFFFFFFF; // Collision locks bus
+    } else if (active_requests == 1) {
+        arb->collision_flag = false;
+        arb->active_token_node = first_active;
+    } else {
+        arb->collision_flag = false;
+        arb->active_token_node = 0xFFFFFFFF;
+    }
 }
 
 // -------------------------------------------------------------
@@ -141,7 +190,9 @@ int main(void) {
         .active_pid = 1,
         .scheduler_write_gate = CONDUC_STATE,
         .kernel_execution_gate = CONDUC_STATE,
-        .collision_flag = false
+        .collision_flag = false,
+        .register_space = { 0 },
+        .parity_error = false
     };
 
     TwoThreeNode *trace_registry = create_leaf(1, "PID=1,STATUS=RUNNING");
@@ -193,6 +244,44 @@ int main(void) {
     store_table_data(trace_registry, 1, "PID=2,STATUS=DISPATCHED");
     assert(memcmp(initial_hash, trace_registry->node_hash, HASH_SIZE) != 0);
     printf("   ✓ Transition cryptographically validated and logged to trace tree.\n");
+    fflush(stdout);
+
+    // 6. Fortification 1: Transistor Voltage Decay Simulation
+    printf("[TEST] Fortification: Simulating transistor voltage decay...\n");
+    double final_v = simulate_voltage_decay(5.0, 1.2, 0.05, 100); // 100 cycles decay
+    assert(final_v < 1.0); // Should discharge low below logic high threshold
+    printf("   ✓ Decay simulation verified: 5.0V discharged to %0.3fV.\n", final_v);
+    fflush(stdout);
+
+    // 7. Fortification 2: State Register Noise Parity Audit
+    printf("[TEST] Fortification: Injecting noise and verifying parity audit...\n");
+    sched.register_space[0] = 5; // binary 0101 (even count of set bits = 2)
+    assert(verify_register_parity(sched.register_space[0]) == false); // Parity error caught
+    sched.register_space[0] = 7; // binary 0111 (odd count of set bits = 3)
+    assert(verify_register_parity(sched.register_space[0]) == true); // Parity ok
+    printf("   ✓ Noise injection check verified. Parity errors caught successfully.\n");
+    fflush(stdout);
+
+    // 8. Fortification 3: Multi-Node Coaxial Collision Arbitration
+    printf("[TEST] Fortification: Testing 4-node coaxial collision arbitration...\n");
+    coax_arbitration_t arb = {
+        .active_token_node = 0xFFFFFFFF,
+        .request_lines = { false, false, false, false },
+        .collision_flag = false
+    };
+
+    // Single request should succeed
+    arb.request_lines[2] = true;
+    run_coax_arbitration(&arb);
+    assert(arb.active_token_node == 2);
+    assert(arb.collision_flag == false);
+
+    // Multiple simultaneous requests should cause collision and lock bus
+    arb.request_lines[1] = true;
+    run_coax_arbitration(&arb);
+    assert(arb.collision_flag == true);
+    assert(arb.active_token_node == 0xFFFFFFFF);
+    printf("   ✓ Coaxial arbitration and collision locking verified successfully.\n");
     fflush(stdout);
 
     free(trace_registry);
