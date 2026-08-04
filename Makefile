@@ -202,6 +202,11 @@ test-auncient-nested-streams:
 
 
 
+test-auncient-tsv-copybook:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc tests/test_auncient_tsv_copybook.c tsfi2-deepseek/src/tsfi_mainframe_cobol.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c -o tests/test_auncient_tsv_copybook -lm -lrt
+	./tests/test_auncient_tsv_copybook
+	@rm -f tests/test_auncient_tsv_copybook
+
 test-mann:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_mann_controller.c tsfi2-deepseek/src/tsfi_mann_controller.c -o tests/test_mann_controller -lm -lrt
 	./tests/test_mann_controller
