@@ -411,6 +411,35 @@ object "PersonalityEngine" {
                 return(0x00, 32)
             }
 
+            // ----------------------------------------------------------------
+            // METHOD: simulate_phase_flyback_noise (phase_angle, head_fwhr, feature_vertical_offset, behavioral_mismatch)
+            // Selector: 0xe399f0fc (integer scaled by 1000)
+            // ----------------------------------------------------------------
+            if eq(selector, 0xe399f0fc) {
+                let phase_angle := calldataload(4)
+                let head_fwhr := calldataload(36)
+                let feature_vertical_offset := calldataload(68)
+                let behavioral_mismatch := calldataload(100)
+                
+                // displacement_scale = 1000 + (head_fwhr * 500) / 1000 - (feature_vertical_offset * 300) / 1000
+                let scale := sub(add(1000, div(mul(head_fwhr, 500), 1000)), div(mul(feature_vertical_offset, 300), 1000))
+                let angle := div(mul(phase_angle, scale), 1000)
+                
+                let sin_val := 0
+                let term := mod(angle, 6283)
+                if lt(term, 3141) {
+                    sin_val := div(mul(term, sub(3141, term)), 2467)
+                }
+                if iszero(lt(term, 3141)) {
+                    let term2 := sub(term, 3141)
+                    sin_val := sub(0, div(mul(term2, sub(3141, term2)), 2467))
+                }
+                
+                let noise := div(mul(mul(sin_val, behavioral_mismatch), 2), 1000)
+                mstore(0x00, noise)
+                return(0x00, 32)
+            }
+
             revert(0, 0)
         }
     }
