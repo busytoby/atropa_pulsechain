@@ -605,6 +605,15 @@ bool evaluate_cheating_threat_index(const teddy_geometry_t *geom, double provoca
     return true;
 }
 
+bool evaluate_provocation_replication_consistency(const teddy_geometry_t *geom, double replication_scale, double *consistency_out) {
+    if (!geom || replication_scale < 0.0 || !consistency_out) {
+        return false;
+    }
+    double threat = evaluate_fw_threat_level(geom);
+    *consistency_out = threat * (1.0 + (replication_scale * geom->status_aggression * 0.15));
+    return true;
+}
+
 bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncanny_score_out) {
     if (!geom || !uncanny_score_out) {
         return false;

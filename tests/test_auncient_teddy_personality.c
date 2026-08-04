@@ -393,7 +393,12 @@ int main(void) {
     double cheating_threat = 0.0;
     assert(evaluate_cheating_threat_index(&geom, 2.5, &cheating_threat));
     assert(cheating_threat >= 0.0);
-    printf("   ✓ GENIOLE et al. fWHR threat, visual-vocal mismatch, reactive retaliation, rapid exposure consistency, cooperative cheating risk, rapid threat limit, retaliation profile, aggression threshold, exposure-adjusted threat, status-dominance threat, threat replication consistency, retaliation boundary, aggression scaling, threshold decay, provocation exposure decay, aggression ceiling, status-dominance multiplier, and cheating threat index verified successfully\n");
+
+    // Test Geniole threat replication consistency calculation
+    double consistency = 0.0;
+    assert(evaluate_provocation_replication_consistency(&geom, 1.5, &consistency));
+    assert(consistency >= 0.0);
+    printf("   ✓ GENIOLE et al. fWHR threat, visual-vocal mismatch, reactive retaliation, rapid exposure consistency, cooperative cheating risk, rapid threat limit, retaliation profile, aggression threshold, exposure-adjusted threat, status-dominance threat, threat replication consistency, retaliation boundary, aggression scaling, threshold decay, provocation exposure decay, aggression ceiling, status-dominance multiplier, cheating threat index, and provocation threat replication consistency verified successfully\n");
 
     // Test Hyde uncanny mismatch index calculation
     double uncanny_val = 0.0;
