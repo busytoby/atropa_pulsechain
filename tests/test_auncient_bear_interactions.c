@@ -7,6 +7,7 @@
 // GOST 28147-89 Russian block cipher functions from tsfi2-deepseek
 int tsfi_mf_ussr_gost_scramble(uint32_t *left_word, uint32_t *right_word, uint32_t key_word);
 int tsfi_mf_ussr_gost_encrypt_32(uint32_t *left, uint32_t *right, const uint32_t *key_8words);
+int tsfi_mf_ussr_gost_transliterate(const char *in_latin, char *out_cyrillic, int max_len);
 extern int tsfi_gost_is_broadcast_channel;
 extern int tsfi_norad_lockout_active;
 
@@ -138,6 +139,13 @@ int main(void) {
 
     tsfi_norad_lockout_active = 0;
     printf("   ✓ GOST system channel restrictions and NORAD emergency lockout verified successfully\n");
+
+    // 7. Test GOST Transliteration matching
+    char cyrillic_out[32];
+    int trans_rc = tsfi_mf_ussr_gost_transliterate("SOVIET", cyrillic_out, sizeof(cyrillic_out));
+    assert(trans_rc == 0);
+    assert(strcmp(cyrillic_out, "COVIET") == 0);
+    printf("   ✓ GOST transliteration verified successfully (Latin: SOVIET -> Cyrillic: %s)\n", cyrillic_out);
 
     printf("=============================================================\n");
     printf("TEDDY INTERACTION SUITE COMPLETED SUCCESSFULLY\n");
