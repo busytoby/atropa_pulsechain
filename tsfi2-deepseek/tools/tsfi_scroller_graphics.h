@@ -134,47 +134,65 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset, f
         // 3D leaf tip taper silhouette styling (broader solid blade with pointed, triangular lobes)
         float tip_curl = 1.0f - powf(t, 2.5f);
         float petiole_taper = fminf(1.0f, t / 0.14f); // Taper first 14% of the leaf base into a slender stalk (petiole)
-        float lobe_w = 32.0f * tip_curl * petiole_taper * (0.75f + 0.25f * sinf(t * 14.0f));
+        float base_lobe_w = 32.0f * tip_curl * petiole_taper * (0.75f + 0.25f * sinf(t * 14.0f));
+        
+        // Organic asymmetry: make left and right lobes slightly different widths
+        float left_lobe_w = base_lobe_w * (1.0f + 0.07f * sinf(t * 22.0f));
+        float right_lobe_w = base_lobe_w * (1.0f - 0.07f * sinf(t * 22.0f));
+
         float leaf_ang_left = angle + M_PI * 0.45f;
         float leaf_ang_right = angle - M_PI * 0.45f;
 
         // High-frequency serration along the leaflet margins for organic texture
         float serration = 1.0f + 0.08f * sinf(t * 50.0f + time_val * 6.0f);
         
-        for (int lw = 0; lw < (int)lobe_w; lw++) {
+        int max_lobe_w = (int)fmaxf(left_lobe_w, right_lobe_w);
+        for (int lw = 0; lw < max_lobe_w; lw++) {
             // Sweep an angular range with decay to form pointed, triangular lobes
             for (float ang_off = -0.22f; ang_off <= 0.22f; ang_off += 0.05f) {
                 float angular_decay = 1.0f - fabsf(ang_off) * 2.8f;
                 if (angular_decay < 0.0f) angular_decay = 0.0f;
 
-                int l_lx = lx + (int)(lw * angular_decay * serration * cosf(leaf_ang_left + ang_off));
-                int l_ly = ly + (int)(lw * angular_decay * serration * sinf(leaf_ang_left + ang_off));
-                int r_lx = lx + (int)(lw * angular_decay * serration * cosf(leaf_ang_right + ang_off));
-                int r_ly = ly + (int)(lw * angular_decay * serration * sinf(leaf_ang_right + ang_off));
-                
-                // Organic micro-texture vein cells
-                float texture_noise = 0.86f + 0.14f * sinf(lw * 2.5f + i * 1.8f);
-                uint8_t r_draw = (uint8_t)fminf(255, lf_r * texture_noise);
-                uint8_t g_draw = (uint8_t)fminf(255, lf_g * texture_noise);
-                uint8_t b_draw = (uint8_t)fminf(255, lf_b * texture_noise);
-                
-                draw_line(lx, ly, l_lx, l_ly, r_draw, g_draw, b_draw);
-                draw_line(lx, ly, r_lx, r_ly, r_draw, g_draw, b_draw);
+                // Draw left side if within left width limits
+                if (lw < (int)left_lobe_w) {
+                    int l_lx = lx + (int)(lw * angular_decay * serration * cosf(leaf_ang_left + ang_off));
+                    int l_ly = ly + (int)(lw * angular_decay * serration * sinf(leaf_ang_left + ang_off));
+                    float texture_noise = 0.86f + 0.14f * sinf(lw * 2.5f + i * 1.8f);
+                    uint8_t r_draw = (uint8_t)fminf(255, lf_r * texture_noise);
+                    uint8_t g_draw = (uint8_t)fminf(255, lf_g * texture_noise);
+                    uint8_t b_draw = (uint8_t)fminf(255, lf_b * texture_noise);
+                    draw_line(lx, ly, l_lx, l_ly, r_draw, g_draw, b_draw);
 
-                // Add volumetric 3D contour borders on the outer sweep edges
-                if (lw == (int)lobe_w - 1 && ang_off > 0.15f) {
-                    draw_line(l_lx, l_ly, l_lx, l_ly, (uint8_t)fminf(255, lf_r * 1.55f), (uint8_t)fminf(255, lf_g * 1.45f), (uint8_t)fminf(255, lf_b * 1.55f));
-                    draw_line(r_lx, r_ly, r_lx, r_ly, (uint8_t)(lf_r * 0.45f), (uint8_t)(lf_g * 0.4f), (uint8_t)(lf_b * 0.45f));
+                    // Left highlight contour
+                    if (lw == (int)left_lobe_w - 1 && ang_off > 0.15f) {
+                        draw_line(l_lx, l_ly, l_lx, l_ly, (uint8_t)fminf(255, lf_r * 1.55f), (uint8_t)fminf(255, lf_g * 1.45f), (uint8_t)fminf(255, lf_b * 1.55f));
+                    }
+                }
+
+                // Draw right side if within right width limits
+                if (lw < (int)right_lobe_w) {
+                    int r_lx = lx + (int)(lw * angular_decay * serration * cosf(leaf_ang_right + ang_off));
+                    int r_ly = ly + (int)(lw * angular_decay * serration * sinf(leaf_ang_right + ang_off));
+                    float texture_noise = 0.86f + 0.14f * sinf(lw * 2.5f + i * 1.8f);
+                    uint8_t r_draw = (uint8_t)fminf(255, lf_r * texture_noise);
+                    uint8_t g_draw = (uint8_t)fminf(255, lf_g * texture_noise);
+                    uint8_t b_draw = (uint8_t)fminf(255, lf_b * texture_noise);
+                    draw_line(lx, ly, r_lx, r_ly, r_draw, g_draw, b_draw);
+
+                    // Right shadow contour
+                    if (lw == (int)right_lobe_w - 1 && ang_off > 0.15f) {
+                        draw_line(r_lx, r_ly, r_lx, r_ly, (uint8_t)(lf_r * 0.45f), (uint8_t)(lf_g * 0.4f), (uint8_t)(lf_b * 0.45f));
+                    }
                 }
             }
         }
 
         // Draw fine, wind-blown hairy bristles (trichomes) on the lobe margin tips
-        if (i % 6 == 0 && lobe_w > 5.0f) {
-            int tip_l_x = lx + (int)(lobe_w * 0.95f * cosf(leaf_ang_left));
-            int tip_l_y = ly + (int)(lobe_w * 0.95f * sinf(leaf_ang_left));
-            int tip_r_x = lx + (int)(lobe_w * 0.95f * cosf(leaf_ang_right));
-            int tip_r_y = ly + (int)(lobe_w * 0.95f * sinf(leaf_ang_right));
+        if (i % 6 == 0 && max_lobe_w > 5) {
+            int tip_l_x = lx + (int)(left_lobe_w * 0.95f * cosf(leaf_ang_left));
+            int tip_l_y = ly + (int)(left_lobe_w * 0.95f * sinf(leaf_ang_left));
+            int tip_r_x = lx + (int)(right_lobe_w * 0.95f * cosf(leaf_ang_right));
+            int tip_r_y = ly + (int)(right_lobe_w * 0.95f * sinf(leaf_ang_right));
 
             float hair_ang_l = leaf_ang_left + 0.15f * sinf(time_val * 2.5f + i);
             float hair_ang_r = leaf_ang_right - 0.15f * sinf(time_val * 2.5f + i);
@@ -184,19 +202,19 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset, f
         }
 
         // Draw bright secondary highlight veins down the center of each leaflet
-        int mid_lx = lx + (int)((lobe_w * 0.45f) * cosf(leaf_ang_left));
-        int mid_ly = ly + (int)((lobe_w * 0.45f) * sinf(leaf_ang_left));
-        int mid_rx = lx + (int)((lobe_w * 0.45f) * cosf(leaf_ang_right));
-        int mid_ry = ly + (int)((lobe_w * 0.45f) * sinf(leaf_ang_right));
+        int mid_lx = lx + (int)((left_lobe_w * 0.45f) * cosf(leaf_ang_left));
+        int mid_ly = ly + (int)((left_lobe_w * 0.45f) * sinf(leaf_ang_left));
+        int mid_rx = lx + (int)((right_lobe_w * 0.45f) * cosf(leaf_ang_right));
+        int mid_ry = ly + (int)((right_lobe_w * 0.45f) * sinf(leaf_ang_right));
         draw_line(lx, ly, mid_lx, mid_ly, (uint8_t)fminf(255, lf_r * 1.25f), (uint8_t)fminf(255, lf_g * 1.2f), (uint8_t)fminf(255, lf_b * 1.25f));
         draw_line(lx, ly, mid_rx, mid_ry, (uint8_t)fminf(255, lf_r * 1.25f), (uint8_t)fminf(255, lf_g * 1.2f), (uint8_t)fminf(255, lf_b * 1.25f));
 
         // Detailed pinnate vein ribs branching out
         if (i % 3 == 0) {
-            int v_l_x = lx + (int)((lobe_w * 0.7f) * cosf(leaf_ang_left));
-            int v_l_y = ly + (int)((lobe_w * 0.7f) * sinf(leaf_ang_left));
-            int v_r_x = lx + (int)((lobe_w * 0.7f) * cosf(leaf_ang_right));
-            int v_r_y = ly + (int)((lobe_w * 0.7f) * sinf(leaf_ang_right));
+            int v_l_x = lx + (int)((left_lobe_w * 0.7f) * cosf(leaf_ang_left));
+            int v_l_y = ly + (int)((left_lobe_w * 0.7f) * sinf(leaf_ang_left));
+            int v_r_x = lx + (int)((right_lobe_w * 0.7f) * cosf(leaf_ang_right));
+            int v_r_y = ly + (int)((right_lobe_w * 0.7f) * sinf(leaf_ang_right));
             draw_line(lx, ly, v_l_x, v_l_y, (uint8_t)(lf_r * 1.5f), (uint8_t)(lf_g * 1.3f), (uint8_t)(lf_b * 1.4f));
             draw_line(lx, ly, v_r_x, v_r_y, (uint8_t)(lf_r * 1.5f), (uint8_t)(lf_g * 1.3f), (uint8_t)(lf_b * 1.4f));
         }
@@ -204,12 +222,15 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset, f
         // Glistening dew drops sliding slowly along the leaflet tips (pinnule runoff)
         if (i == 18 || i == 36) {
             float slide_t = fmodf(time_val * 0.12f + (i * 0.08f), 1.0f);
-            int drop_x = lx + (int)(lobe_w * slide_t * cosf(leaf_ang_left));
-            int drop_y = ly + (int)(lobe_w * slide_t * sinf(leaf_ang_left));
+            int drop_x = lx + (int)(left_lobe_w * slide_t * cosf(leaf_ang_left));
+            int drop_y = ly + (int)(left_lobe_w * slide_t * sinf(leaf_ang_left));
             draw_glossy_bubble(drop_x, drop_y, 2, 210, 255, 220); // Small shiny dew bubble
         }
 
-        draw_line(lx, ly, lx, ly, 100, 190, 105);
+        // 3D structural midrib (spine vein: left highlight, center core, right shadow)
+        draw_line(lx - 1, ly, lx - 1, ly, 160, 225, 150); // Left highlight edge
+        draw_line(lx, ly, lx, ly, 185, 245, 175); // Bright pale-green core
+        draw_line(lx + 1, ly, lx + 1, ly, 95, 150, 90); // Right shadow edge
     }
 }
 
