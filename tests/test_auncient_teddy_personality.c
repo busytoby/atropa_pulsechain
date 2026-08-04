@@ -66,6 +66,12 @@ int main(void) {
     assert(rating_aggr >= 1 && rating_aggr <= 7);
     printf("   ✓ R H B Christensen cumulative ordinal link rating verified successfully\n");
 
+    // Test profile likelihood bounds calculation
+    double lower = 0.0, upper = 0.0;
+    assert(evaluate_profile_likelihood_bounds(&geom, rating_aggr, &lower, &upper));
+    assert(lower < upper);
+    printf("   ✓ R H B Christensen profile-likelihood threshold bounds verified successfully\n");
+
     printf("=============================================================\n");
     printf("PERSONALITY CONFIGURATIONS VALIDATED SUCCESSFULLY\n");
     printf("=============================================================\n");

@@ -333,6 +333,20 @@ int evaluate_ordinal_link_rating(const teddy_geometry_t *geom) {
     return 7;
 }
 
+bool evaluate_profile_likelihood_bounds(const teddy_geometry_t *geom, int category, double *lower_bound, double *upper_bound) {
+    if (!geom || category < 1 || category > 7 || !lower_bound || !upper_bound) {
+        return false;
+    }
+    double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
+    double thresholds[6] = {0.5, 1.2, 2.0, 2.8, 3.5, 4.2};
+    double t_val = (category == 7) ? thresholds[5] : thresholds[category - 1];
+    double se = 0.25;
+    double z = 1.96;
+    *lower_bound = t_val - (z * se) + (latent * 0.05);
+    *upper_bound = t_val + (z * se) + (latent * 0.05);
+    return true;
+}
+
 bool engage_system_boundary(agent_avatar_t *avatar, teddy_personality_t personality) {
     if (!avatar) return false;
 
