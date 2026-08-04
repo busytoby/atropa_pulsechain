@@ -290,6 +290,16 @@ typedef struct {
 static ScrollerPoppyJoint poppy_joints[7];
 static bool poppy_initialized = false;
 
+#define MAX_POLLEN 16
+typedef struct {
+    float x, y;
+    float vx, vy;
+    float life;
+} PollenParticle;
+
+static PollenParticle pollen[MAX_POLLEN];
+static bool pollen_initialized = false;
+
 static void draw_gothic_leaf(int bx, int by, float length, float angle_offset) {
     int steps = 18;
     for (int i = 0; i < steps; i++) {
@@ -506,6 +516,38 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
         int csy = (int)(poppy_joints[0].y + 7.0f * sinf(c_ang));
         draw_line((int)poppy_joints[0].x, (int)poppy_joints[0].y, csx, csy, 5, 5, 5);
     }
+
+    // 5. Update and render 16 dynamic gold pollen particles drifting in the wind
+    if (!pollen_initialized) {
+        for (int p = 0; p < MAX_POLLEN; p++) {
+            pollen[p].life = 0.0f;
+        }
+        pollen_initialized = true;
+    }
+
+    for (int p = 0; p < MAX_POLLEN; p++) {
+        pollen[p].life -= 0.012f;
+        if (pollen[p].life <= 0.0f) {
+            pollen[p].x = poppy_joints[0].x + (float)(rand() % 14 - 7);
+            pollen[p].y = poppy_joints[0].y + (float)(rand() % 14 - 7);
+            pollen[p].vx = (wind_x * 0.15f) + (float)(rand() % 100 - 50) / 120.0f;
+            pollen[p].vy = 0.4f + (float)(rand() % 100) / 250.0f;
+            pollen[p].life = 0.4f + (float)(rand() % 100) / 160.0f; // randomized lifetime
+        }
+
+        pollen[p].x += pollen[p].vx;
+        pollen[p].y += pollen[p].vy;
+
+        // Draw glowing gold particle tip
+        if (pollen[p].x >= 0 && pollen[p].x < WIDTH && pollen[p].y >= 0 && pollen[p].y < HEIGHT) {
+            uint8_t alpha = (uint8_t)(255.0f * pollen[p].life);
+            // Blend gold color with current background pixels
+            int p_idx = ((int)pollen[p].y * WIDTH + (int)pollen[p].x) * 3;
+            frame_buffer[p_idx] = (uint8_t)fminf(255, frame_buffer[p_idx] + (255 * alpha / 255));
+            frame_buffer[p_idx + 1] = (uint8_t)fminf(255, frame_buffer[p_idx + 1] + (215 * alpha / 255));
+            frame_buffer[p_idx + 2] = (uint8_t)fminf(255, frame_buffer[p_idx + 2] + (0 * alpha / 255));
+        }
+}
 }
 
 
