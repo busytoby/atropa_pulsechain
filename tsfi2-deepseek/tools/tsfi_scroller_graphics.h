@@ -148,6 +148,14 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset, f
             draw_line(lx, ly, r_lx, r_ly, lf_r, lf_g, lf_b);
         }
 
+        // Draw bright secondary highlight veins down the center of each leaflet
+        int mid_lx = lx + (int)((lobe_w * 0.45f) * cosf(leaf_ang_left));
+        int mid_ly = ly + (int)((lobe_w * 0.45f) * sinf(leaf_ang_left));
+        int mid_rx = lx + (int)((lobe_w * 0.45f) * cosf(leaf_ang_right));
+        int mid_ry = ly + (int)((lobe_w * 0.45f) * sinf(leaf_ang_right));
+        draw_line(lx, ly, mid_lx, mid_ly, (uint8_t)fminf(255, lf_r * 1.25f), (uint8_t)fminf(255, lf_g * 1.2f), (uint8_t)fminf(255, lf_b * 1.25f));
+        draw_line(lx, ly, mid_rx, mid_ry, (uint8_t)fminf(255, lf_r * 1.25f), (uint8_t)fminf(255, lf_g * 1.2f), (uint8_t)fminf(255, lf_b * 1.25f));
+
         // Detailed pinnate vein ribs branching out
         if (i % 3 == 0) {
             int v_l_x = lx + (int)((lobe_w * 0.7f) * cosf(leaf_ang_left));

@@ -93,13 +93,12 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
     // Swaying feathery leaves influenced physically by wind deflection
     float leaf_sway = 0.05f * sinf(time_val * 1.5f) + wind_x * 0.015f;
     
-    // Base tier leaves
+    // Base tier leaves (rendered behind the stem)
     draw_gothic_leaf((int)stem_base_x, (int)stem_base_y, 80.0f, -M_PI * 0.8f + leaf_sway, time_val, wind_x);
     draw_gothic_leaf((int)stem_base_x, (int)stem_base_y, 80.0f, -M_PI * 0.2f - leaf_sway, time_val, wind_x);
 
-    // Mid-stem tier leaves (slightly smaller, growing from node joint)
+    // Left mid-stem tier leaf (rendered behind the stem)
     draw_gothic_leaf(node_x, node_y, 55.0f, -M_PI * 0.85f + leaf_sway, time_val, wind_x);
-    draw_gothic_leaf(node_x, node_y, 55.0f, -M_PI * 0.15f - leaf_sway, time_val, wind_x);
 
     int segments = 24;
     int prev_x = (int)stem_base_x;
@@ -148,6 +147,9 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
         prev_x = sx;
         prev_y = sy;
     }
+
+    // Right mid-stem tier leaf (rendered in front of the stem for 3D depth overlap)
+    draw_gothic_leaf(node_x, node_y, 55.0f, -M_PI * 0.15f - leaf_sway, time_val, wind_x);
 
     // Calyx / Receptacle (forest green bud cup at the bottom base of the flower head)
     draw_glossy_bubble((int)poppy_joints[0].x, (int)poppy_joints[0].y + 12, 10, 46, 125, 50);
