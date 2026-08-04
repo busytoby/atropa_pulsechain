@@ -311,6 +311,24 @@ object "PersonalityEngine" {
                 return(0x00, 32)
             }
 
+            // ----------------------------------------------------------------
+            // METHOD: evaluate_cheating_risk (head_fwhr, social_trust_factor)
+            // Selector: 0xe399f0f8 (integer scaled by 1000)
+            // ----------------------------------------------------------------
+            if eq(selector, 0xe399f0f8) {
+                let head_fwhr := calldataload(4)
+                let social_trust_factor := calldataload(36)
+                
+                let risk := 0
+                if gt(social_trust_factor, 0) {
+                    // risk = (head_fwhr * 1000) / social_trust_factor (scaled by 1000)
+                    risk := div(mul(head_fwhr, 1000), social_trust_factor)
+                }
+                
+                mstore(0x00, risk)
+                return(0x00, 32)
+            }
+
             revert(0, 0)
         }
     }
