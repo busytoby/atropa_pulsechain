@@ -49,6 +49,28 @@ bool tsfi2_compile(
         out_bytecode[offset++] = 0xFD;
     }
     
+    // Emit custom wmq_reg_write if requested
+    const char *reg_write_ptr = strstr(source_code, "__builtin_wmq_reg_write");
+    if (reg_write_ptr) {
+        reg_write_ptr = strchr(reg_write_ptr, '(');
+        if (reg_write_ptr) {
+            reg_write_ptr++;
+            int reg_idx = atoi(reg_write_ptr);
+            reg_write_ptr = strchr(reg_write_ptr, ',');
+            if (reg_write_ptr) {
+                reg_write_ptr++;
+                int reg_val = atoi(reg_write_ptr);
+                out_bytecode[offset++] = 0x0F;
+                out_bytecode[offset++] = 0xFE;
+                out_bytecode[offset++] = (uint8_t)reg_idx;
+                out_bytecode[offset++] = (uint8_t)(reg_val & 0xFF);
+                out_bytecode[offset++] = (uint8_t)((reg_val >> 8) & 0xFF);
+                out_bytecode[offset++] = (uint8_t)((reg_val >> 16) & 0xFF);
+                out_bytecode[offset++] = (uint8_t)((reg_val >> 24) & 0xFF);
+            }
+        }
+    }
+    
     // Emit x86 machine instructions: MOV EAX, imm32
     out_bytecode[offset++] = 0xB8;
     out_bytecode[offset++] = (uint8_t)(value & 0xFF);
