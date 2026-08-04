@@ -362,7 +362,12 @@ int main(void) {
     double decayed_exp_threat = 0.0;
     assert(evaluate_provocation_exposure_decay(&geom, 1.5, 90.0, &decayed_exp_threat));
     assert(decayed_exp_threat >= 0.0);
-    printf("   ✓ GENIOLE et al. fWHR threat, visual-vocal mismatch, reactive retaliation, rapid exposure consistency, cooperative cheating risk, rapid threat limit, retaliation profile, aggression threshold, exposure-adjusted threat, status-dominance threat, threat replication consistency, retaliation boundary, aggression scaling, threshold decay, and provocation exposure decay verified successfully\n");
+
+    // Test Geniole provocation-modulated retaliation aggression ceiling calculation
+    double aggression_ceiling = 0.0;
+    assert(evaluate_retaliation_aggression_ceiling(&geom, 2.5, &aggression_ceiling));
+    assert(aggression_ceiling >= 0.0);
+    printf("   ✓ GENIOLE et al. fWHR threat, visual-vocal mismatch, reactive retaliation, rapid exposure consistency, cooperative cheating risk, rapid threat limit, retaliation profile, aggression threshold, exposure-adjusted threat, status-dominance threat, threat replication consistency, retaliation boundary, aggression scaling, threshold decay, provocation exposure decay, and aggression ceiling verified successfully\n");
 
     // Test Hyde uncanny mismatch index calculation
     double uncanny_val = 0.0;

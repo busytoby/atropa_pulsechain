@@ -284,6 +284,9 @@ bool evaluate_retaliation_threshold_decay(const teddy_geometry_t *geom, double e
 // Evaluates threat threshold incorporating interaction decay over exposure durations (Geniole et al.).
 bool evaluate_provocation_exposure_decay(const teddy_geometry_t *geom, double provocation_scale, double exposure_ms, double *decayed_threat_out);
 
+// Evaluates the provocation-modulated fWHR retaliation aggression ceiling (Geniole et al.).
+bool evaluate_retaliation_aggression_ceiling(const teddy_geometry_t *geom, double provocation_scale, double *aggression_ceiling_out);
+
 // Evaluates the vocal-visual uncanny mismatch index based on geometry and pitch (Hyde et al.).
 bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncanny_score_out);
 

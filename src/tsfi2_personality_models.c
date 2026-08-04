@@ -575,6 +575,15 @@ bool evaluate_provocation_exposure_decay(const teddy_geometry_t *geom, double pr
     return true;
 }
 
+bool evaluate_retaliation_aggression_ceiling(const teddy_geometry_t *geom, double provocation_scale, double *aggression_ceiling_out) {
+    if (!geom || provocation_scale < 0.0 || !aggression_ceiling_out) {
+        return false;
+    }
+    double threat_level = evaluate_fw_threat_level(geom);
+    *aggression_ceiling_out = (threat_level * 2.0) + (provocation_scale * 1.5 * geom->status_aggression);
+    return true;
+}
+
 bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncanny_score_out) {
     if (!geom || !uncanny_score_out) {
         return false;
