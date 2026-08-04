@@ -5,6 +5,13 @@
 #include <string.h>
 #include <assert.h>
 #include <openssl/sha.h>
+#include <math.h>
+#include "../tsfi2-deepseek/inc/tsfi_displacementshader.h"
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 
 #define HASH_SIZE 32
 
@@ -138,6 +145,14 @@ int main(void) {
     assert(strcmp(soft_reg->values[0], "SCSI_COMMAND_CODE_0xFA") == 0);
     assert(memcmp(initial_hash, soft_reg->node_hash, HASH_SIZE) != 0);
     printf("   ✓ Phase-locked interrupt asserted. Mapped register updated successfully.\n");
+    fflush(stdout);
+
+    // 3. Verify DisplacementShader integration Pacings driven by WinchesterMQ boundary constraints
+    TSFiDisplacementShader ds;
+    tsfi_displacementshader_init(&ds, 2.5, 1.5);
+    double disp_wrap = tsfi_displacementshader_eval(&ds, 256.0 + M_PI / 3.0, 0.0);
+    assert(fabs(disp_wrap - 2.5) < 1e-5);
+    printf("   ✓ WinchesterMQ vertex displacement math scaling verified successfully.\n");
     fflush(stdout);
 
     free(soft_reg);

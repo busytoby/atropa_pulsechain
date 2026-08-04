@@ -8,6 +8,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <math.h>
+#include "tsfi2-deepseek/inc/tsfi_displacementshader.h"
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 
 int main(void) {
     printf("=============================================================\n");
@@ -42,6 +49,13 @@ int main(void) {
     assert(ok == true);
     assert(cpu.halted == true);
     assert(cpu.exit_code == 42);
+
+    // Verify DisplacementShader integration Pacings driven by WinchesterMQ boundary constraints
+    TSFiDisplacementShader ds;
+    tsfi_displacementshader_init(&ds, 2.5, 1.5);
+    double disp_wrap = tsfi_displacementshader_eval(&ds, 256.0 + M_PI / 3.0, 0.0);
+    assert(fabs(disp_wrap - 2.5) < 1e-5);
+    printf("   ✓ WinchesterMQ vertex displacement math scaling verified successfully.\n");
 
     printf("   ✓ TSV-mounted validation finished successfully.\n");
     
