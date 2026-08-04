@@ -802,3 +802,18 @@ bool evaluate_pitch_velocity_mismatch(const teddy_geometry_t *geom, double pitch
     *uncanny_score_out = base_uncanny + (pitch_velocity_mismatch * 3.5 * geom->behavioral_mismatch);
     return true;
 }
+
+bool evaluate_vocal_visual_pitch_mismatch(const teddy_geometry_t *geom, double pitch_velocity_mismatch, double *uncanny_score_out) {
+    return evaluate_pitch_velocity_mismatch(geom, pitch_velocity_mismatch, uncanny_score_out);
+}
+
+bool evaluate_pitch_mismatch_habituation_decay(const teddy_geometry_t *geom, double exposure_duration_sec, double *decayed_uncanny_out) {
+    if (!geom || exposure_duration_sec < 0.0 || !decayed_uncanny_out) {
+        return false;
+    }
+    double base_uncanny = 0.0;
+    evaluate_uncanny_mismatch_index(geom, &base_uncanny);
+    double tau = 18.0;
+    *decayed_uncanny_out = base_uncanny * exp(-exposure_duration_sec / tau);
+    return true;
+}
