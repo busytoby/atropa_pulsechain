@@ -742,4 +742,9 @@ tests/test_cbt021_inmemory_pds
 *.so
 *.a
 /tsfi2_compiler
+/copybook_schema_validator
+/hathitrust_preservation_query
+/sna_appc_peer
+/tsv_format_converter
+/tsv_record_inspector
 
