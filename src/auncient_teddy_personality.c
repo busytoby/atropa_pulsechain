@@ -74,6 +74,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->pain_tolerance = 0.0;           // Lower pain tolerance
             geom->relationship_exclusivity = 1.0; // Monogamous/exclusive
             geom->exhaustion_vulnerability = 1.0; // High exhaustion vulnerability
+            geom->offspring_survival = 1.0;       // High offspring survival
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -146,6 +147,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->pain_tolerance = 1.0;           // High pain tolerance
             geom->relationship_exclusivity = 0.0; // Low exclusivity/extra-pair
             geom->exhaustion_vulnerability = 0.0; // Low exhaustion vulnerability/high stamina
+            geom->offspring_survival = 0.0;       // Lower offspring survival
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -218,6 +220,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->pain_tolerance = 1.0;           // High pain tolerance
             geom->relationship_exclusivity = 0.0; // Low exclusivity/extra-pair
             geom->exhaustion_vulnerability = 0.0; // Low exhaustion vulnerability/high stamina
+            geom->offspring_survival = 0.0;       // Lower offspring survival
             break;
     }
 }
