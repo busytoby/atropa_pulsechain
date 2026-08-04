@@ -360,6 +360,17 @@ bool tsfi2_compile(
         out_bytecode[offset++] = 0xD5;
     }
     
+    // Emit custom wmq_peer_idx if requested
+    const char *p_peer = strstr(source_code, "__builtin_wmq_peer_idx(");
+    if (p_peer) {
+        int idx = 0;
+        if (sscanf(p_peer, "__builtin_wmq_peer_idx(%d)", &idx) == 1) {
+            out_bytecode[offset++] = 0x0F;
+            out_bytecode[offset++] = 0xD4;
+            out_bytecode[offset++] = (uint8_t)idx;
+        }
+    }
+    
     // Emit x86 machine instructions: MOV EAX, imm32
     out_bytecode[offset++] = 0xB8;
     out_bytecode[offset++] = (uint8_t)(value & 0xFF);

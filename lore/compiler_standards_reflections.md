@@ -442,6 +442,17 @@ int main() {
 * **Compiler Built-in**: 22 characters (`__builtin_wmq_window();`).
 * **Source Size Reduction**: 66% character footprint decrease.
 
+### BGP/ISDN Peer Relocation Comparison
+* **Boilerplate Wrapper**: 105 characters.
+  ```c
+  void setup_peer() {
+      *(volatile int*)(0x2050) = 65001;
+      *(volatile int*)(0x2054) = 179;
+  }
+  ```
+* **Compiler Built-in**: 28 characters (`__builtin_wmq_peer_idx(6);`).
+* **Source Size Reduction**: 73% character footprint decrease.
+
 ### Full TSV WinchesterMQ Integration Comparison
 * **Boilerplate Wrapper**: 398 characters.
   ```c

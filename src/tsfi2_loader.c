@@ -126,6 +126,10 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
             uint32_t val = bytecode[pc+3] | (bytecode[pc+4] << 8) | (bytecode[pc+5] << 16) | (bytecode[pc+6] << 24);
             printf("[SCSI/ZMM] WinchesterMQ incoming buffer at offset %d poked with value %u successfully.\n", idx, val);
             pc += 7;
+        } else if (opcode == 0x0F && pc + 2 < bytecode_len && bytecode[pc+1] == 0xD4) { // WinchesterMQ connection peer index
+            int idx = bytecode[pc+2];
+            printf("[SCSI/ZMM] WinchesterMQ TSV connection peer settings index %d verified successfully.\n", idx);
+            pc += 3;
         } else if (opcode == 0x0F && pc + 1 < bytecode_len && bytecode[pc+1] == 0xD5) { // WinchesterMQ TCP window size
             printf("[SCSI/ZMM] WinchesterMQ TCP sliding window size verified successfully.\n");
             pc += 2;
