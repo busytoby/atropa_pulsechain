@@ -106,6 +106,7 @@ typedef struct {
     double neighborhood_altruism;    // Perceived neighborhood altruism (0.0 lower support, 1.0 high neighborhood support/altruism)
     double rescue_compliance;        // Perceived rescue compliance (0.0 independent action, 1.0 high compliance)
     double mismatch_retaliation;     // Perceived retaliation on mismatch (0.0 tolerant, 1.0 hostile retaliation)
+    double resource_conservation;    // Perceived resource conservation (0.0 wasteful, 1.0 high conservation)
 } teddy_geometry_t;
 
 // Pixar RenderMan Avatar Agent definition upon the cooperative boundary

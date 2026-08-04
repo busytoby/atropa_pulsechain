@@ -98,6 +98,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->neighborhood_altruism = 1.0;    // High neighborhood support
             geom->rescue_compliance = 1.0;        // High compliance
             geom->mismatch_retaliation = 0.0;     // Low retaliation
+            geom->resource_conservation = 1.0;    // High conservation
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -194,6 +195,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->neighborhood_altruism = 0.0;    // Lower neighborhood support
             geom->rescue_compliance = 0.0;        // Low compliance
             geom->mismatch_retaliation = 1.0;     // High retaliation
+            geom->resource_conservation = 0.0;    // Low conservation
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -290,6 +292,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->neighborhood_altruism = 0.0;    // Lower neighborhood support
             geom->rescue_compliance = 0.0;        // Low compliance
             geom->mismatch_retaliation = 1.0;     // High retaliation
+            geom->resource_conservation = 0.0;    // Low conservation
             break;
     }
 }
