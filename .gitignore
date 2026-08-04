@@ -725,6 +725,7 @@ tests/test_cbt021_inmemory_pds
 /tests/test_hathitrust_solr_rdbms
 /tests/test_hathitrust_tsv_bin
 /tests/test_hathitrust_window
+/tests/test_hathitrust_extra_final
 
 # Prevent compiled objects and library binaries from entering Git
 *.o
