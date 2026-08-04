@@ -169,6 +169,15 @@ void run_coax_arbitration(coax_arbitration_t *arb) {
     }
 }
 
+// Validation 6: Privilege Tag Escalation Lockout
+bool validate_privilege_escalation(uint32_t active_pid, uint8_t process_tag, uint32_t target_address) {
+    if (target_address >= 0xF000 && process_tag != 0x01) {
+        printf("   [SECURITY] SECURITY EXCEPTION: PID %u with tag 0x%02X attempted to access privileged address 0x%X\n", active_pid, process_tag, target_address);
+        return false;
+    }
+    return true;
+}
+
 // -------------------------------------------------------------
 // Unit Tests
 // -------------------------------------------------------------
@@ -282,6 +291,18 @@ int main(void) {
     assert(arb.collision_flag == true);
     assert(arb.active_token_node == 0xFFFFFFFF);
     printf("   ✓ Coaxial arbitration and collision locking verified successfully.\n");
+    fflush(stdout);
+
+    // 9. Intrusion Fortification: Privilege Tag Escalation lockout check
+    printf("[TEST] Intrusion: Testing privilege tag escalation lockout...\n");
+    fflush(stdout);
+    // Authorized write to kernel address space by kernel process
+    bool priv_ok = validate_privilege_escalation(1, 0x01, 0xF100);
+    assert(priv_ok == true);
+    // Unauthorized write attempt by user process to kernel address space
+    priv_ok = validate_privilege_escalation(7, 0x02, 0xF100);
+    assert(priv_ok == false);
+    printf("   ✓ Privilege tag escalation attempt blocked and trapped successfully.\n");
     fflush(stdout);
 
     free(trace_registry);
