@@ -90,6 +90,7 @@ typedef struct {
     double work_ethic;               // Perceived work ethic (0.0 passive/lazy, 1.0 high work ethic/active labor)
     double compliance;               // Perceived compliance (0.0 defiance/resistance, 1.0 naive compliance/obedience)
     double industriousness;          // Perceived industriousness (0.0 low/opportunism, 1.0 high industriousness)
+    double gullibility;              // Perceived gullibility (0.0 shrewd skepticism, 1.0 naive gullibility)
 } teddy_geometry_t;
 
 // Pixar RenderMan Avatar Agent definition upon the cooperative boundary
