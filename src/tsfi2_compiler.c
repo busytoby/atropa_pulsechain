@@ -84,6 +84,12 @@ bool tsfi2_compile(
         }
     }
     
+    // Emit custom wmq_reset if requested
+    if (strstr(source_code, "__builtin_wmq_reset")) {
+        out_bytecode[offset++] = 0x0F;
+        out_bytecode[offset++] = 0xFB;
+    }
+    
     // Emit x86 machine instructions: MOV EAX, imm32
     out_bytecode[offset++] = 0xB8;
     out_bytecode[offset++] = (uint8_t)(value & 0xFF);

@@ -49,6 +49,18 @@ int main() {
 * **Compiler Built-in**: 28 characters (`__builtin_wmq_reg_read(2);`).
 * **Source Size Reduction**: 73% character footprint decrease.
 
+### Register Reset Comparison
+* **Boilerplate Wrapper**: 118 characters.
+  ```c
+  void reset_regs() {
+      for (int i = 0; i < 16; i++) {
+          *(volatile int*)(0x2000 + i*4) = 0;
+      }
+  }
+  ```
+* **Compiler Built-in**: 23 characters (`__builtin_wmq_reset();`).
+* **Source Size Reduction**: 80% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection

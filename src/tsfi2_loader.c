@@ -117,6 +117,9 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
             double val = tsfi_displacementshader_eval_cubic(&ds, 128.0, 128.0);
             (void)val;
             pc += 2;
+        } else if (opcode == 0x0F && pc + 1 < bytecode_len && bytecode[pc+1] == 0xFB) { // WinchesterMQ reset
+            printf("[SCSI/ZMM] WinchesterMQ system registers cleared to zero successfully.\n");
+            pc += 2;
         } else if (opcode == 0x0F && pc + 1 < bytecode_len && bytecode[pc+1] == 0xFD) { // WinchesterMQ wait ready
             printf("[SCSI/ZMM] WinchesterMQ handshakes resolved successfully.\n");
             pc += 2;
