@@ -131,6 +131,16 @@ int main() {
 * **Compiler Built-in**: 30 characters (`__builtin_wmq_peek_idx(3);`).
 * **Source Size Reduction**: 60% character footprint decrease.
 
+### Core Poke Comparison
+* **Boilerplate Wrapper**: 79 characters.
+  ```c
+  void poke_idx(int i, int v) {
+      *(volatile int*)(0x20D0 + i*4) = v;
+  }
+  ```
+* **Compiler Built-in**: 28 characters (`__builtin_wmq_poke(4, 500);`).
+* **Source Size Reduction**: 64% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection

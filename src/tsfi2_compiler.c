@@ -104,6 +104,7 @@ bool tsfi2_compile(
     
     // Emit custom wmq_peek_idx if requested
     const char *peek_idx_ptr = strstr(source_code, "__builtin_wmq_peek_idx");
+    const char *poke_ptr = strstr(source_code, "__builtin_wmq_poke");
     if (peek_idx_ptr) {
         peek_idx_ptr = strchr(peek_idx_ptr, '(');
         if (peek_idx_ptr) {
@@ -112,6 +113,24 @@ bool tsfi2_compile(
             out_bytecode[offset++] = 0x0F;
             out_bytecode[offset++] = 0xF4;
             out_bytecode[offset++] = (uint8_t)idx;
+        }
+    } else if (poke_ptr) {
+        poke_ptr = strchr(poke_ptr, '(');
+        if (poke_ptr) {
+            poke_ptr++;
+            int idx = atoi(poke_ptr);
+            poke_ptr = strchr(poke_ptr, ',');
+            if (poke_ptr) {
+                poke_ptr++;
+                int val = atoi(poke_ptr);
+                out_bytecode[offset++] = 0x0F;
+                out_bytecode[offset++] = 0xF3;
+                out_bytecode[offset++] = (uint8_t)idx;
+                out_bytecode[offset++] = (uint8_t)(val & 0xFF);
+                out_bytecode[offset++] = (uint8_t)((val >> 8) & 0xFF);
+                out_bytecode[offset++] = (uint8_t)((val >> 16) & 0xFF);
+                out_bytecode[offset++] = (uint8_t)((val >> 24) & 0xFF);
+            }
         }
     } else if (strstr(source_code, "__builtin_wmq_peek")) { // Emit custom wmq_peek
         out_bytecode[offset++] = 0x0F;
