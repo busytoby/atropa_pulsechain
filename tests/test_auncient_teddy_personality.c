@@ -612,6 +612,15 @@ int main(void) {
     assert(dominance > 0.0);
     printf("   ✓ KEATING, C. F. babyfacedness and dominance physiognomy indices verified successfully\n");
 
+    // Test Hyde gaze direction and vocal tempo variance index calculations
+    double gaze_alignment = 0.0;
+    double vocal_tempo_uncanny = 0.0;
+    assert(evaluate_hyde_gaze_direction_index(&geom, 0.5, &gaze_alignment));
+    assert(gaze_alignment > 0.0);
+    assert(evaluate_hyde_vocal_tempo_variance(&geom, 140.0, &vocal_tempo_uncanny));
+    assert(vocal_tempo_uncanny > 0.0);
+    printf("   ✓ HYDE et al. gaze direction and vocal tempo variance indices verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge

@@ -953,3 +953,19 @@ bool evaluate_keating_dominance_cue_index(const teddy_geometry_t *geom, double *
     return true;
 }
 
+bool evaluate_hyde_gaze_direction_index(const teddy_geometry_t *geom, double target_angle, double *gaze_alignment_out) {
+    if (!geom || !gaze_alignment_out) {
+        return false;
+    }
+    *gaze_alignment_out = fabs(sin(target_angle)) * (1.0 + (1.0 - geom->symmetry) * 2.0);
+    return true;
+}
+
+bool evaluate_hyde_vocal_tempo_variance(const teddy_geometry_t *geom, double vocal_tempo_bpm, double *vocal_uncanny_out) {
+    if (!geom || vocal_tempo_bpm < 0.0 || !vocal_uncanny_out) {
+        return false;
+    }
+    *vocal_uncanny_out = fabs(vocal_tempo_bpm - 120.0) * (0.05 + geom->behavioral_mismatch * 0.2);
+    return true;
+}
+

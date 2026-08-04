@@ -427,6 +427,12 @@ bool evaluate_keating_babyfacedness_index(const teddy_geometry_t *geom, double *
 // Evaluates the dominance physiognomy cue index based on high features, small eyes, and wide jaw (Keating, C. F.).
 bool evaluate_keating_dominance_cue_index(const teddy_geometry_t *geom, double *dominance_out);
 
+// Evaluates gaze alignment deviations relative to target interaction coordinates (Hyde et al.).
+bool evaluate_hyde_gaze_direction_index(const teddy_geometry_t *geom, double target_angle, double *gaze_alignment_out);
+
+// Evaluates vocal speed/pitch stability variations against nominal values (Hyde et al.).
+bool evaluate_hyde_vocal_tempo_variance(const teddy_geometry_t *geom, double vocal_tempo_bpm, double *vocal_uncanny_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 
