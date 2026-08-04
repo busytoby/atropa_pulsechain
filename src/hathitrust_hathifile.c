@@ -107,6 +107,7 @@ bool hathifile_export_to_vsam(const char *hathifile_path, const char *vsam_path)
         return false;
     }
 
+    bool start_collecting = false;
     char line[4096];
     while (fgets(line, sizeof(line), hf)) {
         char line_copy[4096];
@@ -114,6 +115,15 @@ bool hathifile_export_to_vsam(const char *hathifile_path, const char *vsam_path)
 
         HathifileRow row;
         if (hathifile_parse_line(line, &row)) {
+            if (!start_collecting) {
+                if (row.bib_fmt && (strcmp(row.bib_fmt, "BK") == 0 || strcmp(row.bib_fmt, "BK ") == 0)) {
+                    start_collecting = true;
+                } else {
+                    hathifile_free_row(&row);
+                    continue;
+                }
+            }
+
             char key[256];
             snprintf(key, sizeof(key), "ht.%s", row.htid);
 
@@ -169,6 +179,7 @@ bool hathifile_export_to_quadtree_ksds(
     uint32_t offsets[4] = {0};
     int row_count = 0;
 
+    bool start_collecting = false;
     char line[4096];
     while (fgets(line, sizeof(line), hf) && row_count < 4) {
         char line_copy[4096];
@@ -176,6 +187,15 @@ bool hathifile_export_to_quadtree_ksds(
 
         HathifileRow row;
         if (hathifile_parse_line(line, &row)) {
+            if (!start_collecting) {
+                if (row.bib_fmt && (strcmp(row.bib_fmt, "BK") == 0 || strcmp(row.bib_fmt, "BK ") == 0)) {
+                    start_collecting = true;
+                } else {
+                    hathifile_free_row(&row);
+                    continue;
+                }
+            }
+
             // Seek and record the offset of the raw line text
             offsets[row_count] = (uint32_t)ftell(pf);
             size_t copy_len = strlen(line_copy);
