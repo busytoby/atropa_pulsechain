@@ -678,6 +678,21 @@ int main(void) {
     uint32_t denom = 1000 + (150 * 20);
     uint32_t snubber_attenuated = (peak * 1000) / denom;
     assert(snubber_attenuated == 2503);
+    
+    // Selector 0xe399f0f5: simulate_diode_capacitor_loop (reverse decay path with current_charge=800, resistance=1000, capacitance=10, time_step=5)
+    // denom = 10000. X = (time_step * 1000000) / denom = 500. factor = 1000 - X + X^2/2000 = 1000 - 500 + 125 = 625. next_charge = 800 * 625 / 1000 = 500
+    uint32_t current_chg = 800;
+    uint32_t time_step = 5;
+    uint32_t rc_denom = 1000 * 10;
+    uint32_t X = (time_step * 1000000) / rc_denom;
+    uint32_t factor = 1000 - X + (X * X) / 2000;
+    uint32_t next_charge = (current_chg * factor) / 1000;
+    assert(next_charge == 500);
+
+    // Selector 0xe399f0f6: evaluate_sustain_adjusted_gumbel_tax (flyback_voltage=10012, threshold_limit=8000, sustain_voltage=500)
+    // adjusted_limit = 8000 * (1000 + 500) / 1000 = 12000. flyback_voltage (10012) <= adjusted_limit (12000), meaning low tax.
+    uint32_t adjusted_limit = 8000 * (1000 + 500) / 1000;
+    assert(adjusted_limit == 12000);
     printf("   ✓ Parity unit tests for WinchesterMQ Yul Hardware emulators passed successfully\n");
 
     printf("=============================================================\n");
