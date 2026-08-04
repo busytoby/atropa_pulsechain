@@ -127,9 +127,10 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset, f
         // Angle of the tangent vector along the spine
         float angle = atan2f((float)(ly - by), (float)(lx - bx));
         
-        uint8_t lf_r = (uint8_t)(55 * (1.0f - t) + 80 * t);
-        uint8_t lf_g = (uint8_t)(135 * (1.0f - t) + 225 * t);
-        uint8_t lf_b = (uint8_t)(45 * (1.0f - t) + 95 * t);
+        // Organic transition color: blends from stem's brown-green at the base (t=0) to fresh leaf green at the tip
+        uint8_t lf_r = (uint8_t)(((105 * (1.0f - t) + 55 * t) * (1.0f - t) + 80 * t) * 0.72f);
+        uint8_t lf_g = (uint8_t)((85 * (1.0f - t) + 135 * t) * (1.0f - t) + 225 * t);
+        uint8_t lf_b = (uint8_t)((45 * (1.0f - t) + 45 * t) * (1.0f - t) + 95 * t);
 
         // 3D leaf tip taper silhouette styling (broader solid blade with pointed, triangular lobes)
         float tip_curl = 1.0f - powf(t, 2.5f);
@@ -209,14 +210,35 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset, f
         draw_line(lx, ly, mid_lx, mid_ly, (uint8_t)fminf(255, lf_r * 1.25f), (uint8_t)fminf(255, lf_g * 1.2f), (uint8_t)fminf(255, lf_b * 1.25f));
         draw_line(lx, ly, mid_rx, mid_ry, (uint8_t)fminf(255, lf_r * 1.25f), (uint8_t)fminf(255, lf_g * 1.2f), (uint8_t)fminf(255, lf_b * 1.25f));
 
-        // Detailed pinnate vein ribs branching out
+        // Detailed pinnate vein ribs branching out with reticulated sub-veins
         if (i % 3 == 0) {
             int v_l_x = lx + (int)((left_lobe_w * 0.7f) * cosf(leaf_ang_left));
             int v_l_y = ly + (int)((left_lobe_w * 0.7f) * sinf(leaf_ang_left));
             int v_r_x = lx + (int)((right_lobe_w * 0.7f) * cosf(leaf_ang_right));
             int v_r_y = ly + (int)((right_lobe_w * 0.7f) * sinf(leaf_ang_right));
-            draw_line(lx, ly, v_l_x, v_l_y, (uint8_t)(lf_r * 1.5f), (uint8_t)(lf_g * 1.3f), (uint8_t)(lf_b * 1.4f));
-            draw_line(lx, ly, v_r_x, v_r_y, (uint8_t)(lf_r * 1.5f), (uint8_t)(lf_g * 1.3f), (uint8_t)(lf_b * 1.4f));
+            
+            uint8_t vein_r = (uint8_t)fminf(255, lf_r * 1.45f);
+            uint8_t vein_g = (uint8_t)fminf(255, lf_g * 1.25f);
+            uint8_t vein_b = (uint8_t)fminf(255, lf_b * 1.35f);
+
+            draw_line(lx, ly, v_l_x, v_l_y, vein_r, vein_g, vein_b);
+            draw_line(lx, ly, v_r_x, v_r_y, vein_r, vein_g, vein_b);
+
+            // Reticulate secondary sub-veins branching from the mid-point of the main ribs
+            if (left_lobe_w > 12.0f) {
+                int sub_l_x = lx + (int)((left_lobe_w * 0.35f) * cosf(leaf_ang_left));
+                int sub_l_y = ly + (int)((left_lobe_w * 0.35f) * sinf(leaf_ang_left));
+                int sub_l_tip_x = sub_l_x + (int)(6.0f * cosf(leaf_ang_left + 0.32f));
+                int sub_l_tip_y = sub_l_y + (int)(6.0f * sinf(leaf_ang_left + 0.32f));
+                draw_line(sub_l_x, sub_l_y, sub_l_tip_x, sub_l_tip_y, (uint8_t)(vein_r * 0.9f), (uint8_t)(vein_g * 0.9f), (uint8_t)(vein_b * 0.9f));
+            }
+            if (right_lobe_w > 12.0f) {
+                int sub_r_x = lx + (int)((right_lobe_w * 0.35f) * cosf(leaf_ang_right));
+                int sub_r_y = ly + (int)((right_lobe_w * 0.35f) * sinf(leaf_ang_right));
+                int sub_r_tip_x = sub_r_x + (int)(6.0f * cosf(leaf_ang_right - 0.32f));
+                int sub_r_tip_y = sub_r_y + (int)(6.0f * sinf(leaf_ang_right - 0.32f));
+                draw_line(sub_r_x, sub_r_y, sub_r_tip_x, sub_r_tip_y, (uint8_t)(vein_r * 0.9f), (uint8_t)(vein_g * 0.9f), (uint8_t)(vein_b * 0.9f));
+            }
         }
 
         // Glistening dew drops sliding slowly along the leaflet tips (pinnule runoff)
