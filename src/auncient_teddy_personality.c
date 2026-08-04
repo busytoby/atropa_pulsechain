@@ -726,6 +726,17 @@ bool simulate_diode_capacitor_loop(double input_voltage, double resistance, doub
     return true;
 }
 
+bool evaluate_hbridge_izotope_mismatch(const teddy_geometry_t *geom, double switching_frequency, double *flyback_mismatch_out) {
+    if (!geom || switching_frequency < 1.0 || !flyback_mismatch_out) {
+        return false;
+    }
+    double t_factor = (geom->head_fwhr * 1.2) - (geom->feature_vertical_offset * 0.8);
+    double input_val = (switching_frequency / 1000.0) - t_factor;
+    double gumbel_transient = 1.0 - exp(-exp(input_val));
+    *flyback_mismatch_out = gumbel_transient * 15.0 + (geom->behavioral_mismatch * 3.0);
+    return true;
+}
+
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out) {
     if (!geom || param_count < 1 || sample_size < 2 || !aic_out || !bic_out) {
         return false;

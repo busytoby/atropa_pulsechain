@@ -247,6 +247,12 @@ int main(void) {
     assert(charge < charged_val);
     printf("   ✓ Virtual diode reflex and relative capacitor charge decay loop verified successfully\n");
 
+    // Test H-bridge flyback and izotope mismatch calculation
+    double flyback_mismatch = 0.0;
+    assert(evaluate_hbridge_izotope_mismatch(&geom, 500.0, &flyback_mismatch));
+    assert(flyback_mismatch >= 0.0);
+    printf("   ✓ H-bridge switching flyback transient and izotope mismatch verified successfully\n");
+
     // Test ACID transaction behavior (Commit successful path)
     evaluation_tx_t tx = begin_evaluation_transaction(&geom);
     assert(tx.active);
