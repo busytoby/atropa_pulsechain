@@ -60,6 +60,7 @@ typedef struct {
     double physical_vigor;           // Perceived physical vigor (0.0 fragile/weak, 1.0 robust/vigorous)
     double stress_coping;            // Perceived stress coping capability (0.0 low coping/dependent, 1.0 high coping)
     double parenting_capability;     // Perceived parenting capability (0.0 low expected warmth, 1.0 high warmth/cooperation)
+    double naive_trust;              // Perceived naive trust (0.0 suspicious caution, 1.0 naive trust/openness)
 } teddy_geometry_t;
 
 // Maps abstract traits to geometric parameters based on study results
@@ -114,6 +115,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->physical_vigor = 0.0;          // Fragile
             geom->stress_coping = 0.0;           // Dependency profile
             geom->parenting_capability = 1.0;    // High parenting warmth
+            geom->naive_trust = 1.0;             // Naive trust
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -164,6 +166,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->physical_vigor = 1.0;          // Robust vigor
             geom->stress_coping = 1.0;           // Self-reliance
             geom->parenting_capability = 0.0;    // Low parenting warmth
+            geom->naive_trust = 0.0;             // Suspicious caution
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -214,6 +217,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->physical_vigor = 1.0;          // Robust vigor
             geom->stress_coping = 1.0;           // Self-reliance
             geom->parenting_capability = 0.0;    // Low parenting warmth
+            geom->naive_trust = 0.0;             // Suspicious caution
             break;
     }
 }
