@@ -43,6 +43,216 @@ bool tsfi_sd_thunk_init(TsfiSdContext* ctx, const char* safetensors_path) {
     return true;
 }
 
+
+#include "tsfi_ccx_pool.h"
+
+static TSFiCCXPool g_sd_ccx_pool;
+static bool g_sd_ccx_pool_initialized = false;
+
+typedef struct {
+    int start_y;
+    int end_y;
+    const uint8_t *in_dna_mask;
+    uint8_t *out_pixels;
+    float *skip_connection;
+    float *latent;
+    float *latent_att;
+    float *decoder_half;
+    int w, h, hw, hh, lw, lh;
+    float r_hw, r_hh, r_lw, r_lh;
+    int start_i;
+    int end_i;
+} SDWorkerArg;
+
+static void sd_downsample_phase1_worker(void *arg) {
+    SDWorkerArg *a = (SDWorkerArg *)arg;
+    for (int y = a->start_y; y < a->end_y; y++) {
+        for (int x = 0; x < a->hw; x++) {
+            int sx = (int)(x * a->r_hw);
+            int sy = (int)(y * a->r_hh);
+            int src_idx = (sy * a->w + sx) * 3;
+            int dst_idx = (y * a->hw + x) * 3;
+            a->skip_connection[dst_idx + 0] = a->in_dna_mask[src_idx + 0] / 255.0f;
+            a->skip_connection[dst_idx + 1] = a->in_dna_mask[src_idx + 1] / 255.0f;
+            a->skip_connection[dst_idx + 2] = a->in_dna_mask[src_idx + 2] / 255.0f;
+        }
+    }
+}
+
+static void sd_downsample_phase2_worker(void *arg) {
+    SDWorkerArg *a = (SDWorkerArg *)arg;
+    for (int y = a->start_y; y < a->end_y; y++) {
+        for (int x = 0; x < a->lw; x++) {
+            int sx = (int)(x * a->r_lw);
+            int sy = (int)(y * a->r_lh);
+            int src_idx = (sy * a->hw + sx) * 3;
+            int dst_idx = (y * a->lw + x) * 3;
+            a->latent[dst_idx + 0] = a->skip_connection[src_idx + 0];
+            a->latent[dst_idx + 1] = a->skip_connection[src_idx + 1];
+            a->latent[dst_idx + 2] = a->skip_connection[src_idx + 2];
+        }
+    }
+}
+
+static void sd_self_attention_a_fast_worker(void *arg) {
+    SDWorkerArg *a = (SDWorkerArg *)arg;
+    for (int y = a->start_y; y < a->end_y; y++) {
+        for (int x = 1; x < a->lw - 1; x++) {
+            float r_sum = 0.0f, g_sum = 0.0f, b_sum = 0.0f;
+            for (int dy = -1; dy <= 1; dy++) {
+                int ny = y + dy;
+                int row_idx = ny * a->lw;
+                for (int dx = -1; dx <= 1; dx++) {
+                    int nx = x + dx;
+                    int idx = (row_idx + nx) * 3;
+                    r_sum += a->latent[idx + 0];
+                    g_sum += a->latent[idx + 1];
+                    b_sum += a->latent[idx + 2];
+                }
+            }
+            int dst_idx = (y * a->lw + x) * 3;
+            a->latent_att[dst_idx + 0] = r_sum * 0.11111111f;
+            a->latent_att[dst_idx + 1] = g_sum * 0.11111111f;
+            a->latent_att[dst_idx + 2] = b_sum * 0.11111111f;
+        }
+    }
+}
+
+static void sd_self_attention_a_slow_worker(void *arg) {
+    SDWorkerArg *a = (SDWorkerArg *)arg;
+    for (int y = a->start_y; y < a->end_y; y++) {
+        for (int x = 0; x < a->lw; x++) {
+            if (y > 0 && y < a->lh - 1 && x > 0 && x < a->lw - 1) {
+                continue;
+            }
+            float r_sum = 0.0f, g_sum = 0.0f, b_sum = 0.0f;
+            int count = 0;
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int dx = -1; dx <= 1; dx++) {
+                    int nx = x + dx;
+                    int ny = y + dy;
+                    if (nx >= 0 && nx < a->lw && ny >= 0 && ny < a->lh) {
+                        int idx = (ny * a->lw + nx) * 3;
+                        r_sum += a->latent[idx + 0];
+                        g_sum += a->latent[idx + 1];
+                        b_sum += a->latent[idx + 2];
+                        count++;
+                    }
+                }
+            }
+            int dst_idx = (y * a->lw + x) * 3;
+            a->latent_att[dst_idx + 0] = r_sum / count;
+            a->latent_att[dst_idx + 1] = g_sum / count;
+            a->latent_att[dst_idx + 2] = b_sum / count;
+        }
+    }
+}
+
+static void sd_self_attention_b_simd_worker(void *arg) {
+    SDWorkerArg *a = (SDWorkerArg *)arg;
+    __m512 c_07 = _mm512_set1_ps(0.7f);
+    __m512 c_03 = _mm512_set1_ps(0.3f);
+    __m512 c_01 = _mm512_set1_ps(0.1f);
+    __m512 zero = _mm512_setzero_ps();
+    for (int i = a->start_i; i < a->end_i; i += 16) {
+        __m512 l_val = _mm512_load_ps(&a->latent[i]);
+        __m512 m_val = _mm512_load_ps(&a->latent_att[i]);
+        __m512 val = _mm512_add_ps(_mm512_mul_ps(l_val, c_07), _mm512_mul_ps(m_val, c_03));
+        __mmask16 pos_mask = _mm512_cmp_ps_mask(val, zero, _CMP_GT_OQ);
+        __m512 scaled_val = _mm512_mul_ps(val, c_01);
+        __m512 activated = _mm512_mask_blend_ps(pos_mask, scaled_val, val);
+        _mm512_store_ps(&a->latent_att[i], activated);
+    }
+}
+
+static void sd_upsample_phase1_worker(void *arg) {
+    SDWorkerArg *a = (SDWorkerArg *)arg;
+    for (int y = a->start_y; y < a->end_y; y++) {
+        for (int x = 0; x < a->hw; x++) {
+            int lx = (int)(x / a->r_lw);
+            int ly = (int)(y / a->r_lh);
+            if (lx >= a->lw) lx = a->lw - 1;
+            if (ly >= a->lh) ly = a->lh - 1;
+            int src_idx = (ly * a->lw + lx) * 3;
+            int dst_idx = (y * a->hw + x) * 3;
+            a->decoder_half[dst_idx + 0] = a->latent_att[src_idx + 0];
+            a->decoder_half[dst_idx + 1] = a->latent_att[src_idx + 1];
+            a->decoder_half[dst_idx + 2] = a->latent_att[src_idx + 2];
+        }
+    }
+}
+
+static void sd_skip_blend_worker(void *arg) {
+    SDWorkerArg *a = (SDWorkerArg *)arg;
+    __m512 half_vec = _mm512_set1_ps(0.5f);
+    for (int i = a->start_i; i < a->end_i; i += 16) {
+        __m512 dec = _mm512_load_ps(&a->decoder_half[i]);
+        __m512 skip = _mm512_load_ps(&a->skip_connection[i]);
+        __m512 blended = _mm512_mul_ps(_mm512_add_ps(dec, skip), half_vec);
+        _mm512_store_ps(&a->decoder_half[i], blended);
+    }
+}
+
+static void sd_upsample_phase2_worker(void *arg) {
+    SDWorkerArg *a = (SDWorkerArg *)arg;
+    for (int y = a->start_y; y < a->end_y; y++) {
+        for (int x = 0; x < a->w; x++) {
+            int lx = (int)(x / a->r_hw);
+            int ly = (int)(y / a->r_hh);
+            if (lx >= a->hw) lx = a->hw - 1;
+            if (ly >= a->hh) ly = a->hh - 1;
+            int src_idx = (ly * a->hw + lx) * 3;
+            int dst_idx = (y * a->w + x) * 3;
+            a->out_pixels[dst_idx + 0] = (uint8_t)(a->decoder_half[src_idx + 0] * 255.0f);
+            a->out_pixels[dst_idx + 1] = (uint8_t)(a->decoder_half[src_idx + 1] * 255.0f);
+            a->out_pixels[dst_idx + 2] = (uint8_t)(a->decoder_half[src_idx + 2] * 255.0f);
+        }
+    }
+}
+
+static void enqueue_sd_y_loop(TSFiCCXPool *pool, void (*func)(void *), SDWorkerArg *base_arg, int height) {
+    int num_threads = pool->num_threads;
+    int rows_per_thread = height / num_threads;
+    if (rows_per_thread < 1) rows_per_thread = 1;
+    
+    SDWorkerArg args[MAX_CCX_THREADS];
+    for (int i = 0; i < num_threads; i++) {
+        int start = i * rows_per_thread;
+        if (start >= height) break;
+        int end = (i == num_threads - 1) ? height : (i + 1) * rows_per_thread;
+        if (end > height) end = height;
+        
+        args[i] = *base_arg;
+        args[i].start_y = start;
+        args[i].end_y = end;
+        
+        tsfi_ccx_pool_enqueue(pool, func, &args[i]);
+    }
+    tsfi_ccx_pool_wait(pool);
+}
+
+static void enqueue_sd_i_loop(TSFiCCXPool *pool, void (*func)(void *), SDWorkerArg *base_arg, int total) {
+    int num_threads = pool->num_threads;
+    int chunks = (total / 16);
+    int chunks_per_thread = chunks / num_threads;
+    if (chunks_per_thread < 1) chunks_per_thread = 1;
+    
+    SDWorkerArg args[MAX_CCX_THREADS];
+    for (int i = 0; i < num_threads; i++) {
+        int start_chunk = i * chunks_per_thread;
+        if (start_chunk >= chunks) break;
+        int end_chunk = (i == num_threads - 1) ? chunks : (i + 1) * chunks_per_thread;
+        if (end_chunk > chunks) end_chunk = chunks;
+        
+        args[i] = *base_arg;
+        args[i].start_i = start_chunk * 16;
+        args[i].end_i = end_chunk * 16;
+        
+        tsfi_ccx_pool_enqueue(pool, func, &args[i]);
+    }
+    tsfi_ccx_pool_wait(pool);
+}
+
 void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, uint8_t* out_pixels, int w, int h) {
     // 1. Advance the Timeline Semaphore (tsfi_zhong implementation)
     ctx->current_inference_tick++;
@@ -66,7 +276,11 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
         return;
     }
 
-    // U-Net Two-Path Downsample -> Skip Connection -> Attention -> Upsample Synthesis
+    if (!g_sd_ccx_pool_initialized) {
+        tsfi_ccx_pool_init(&g_sd_ccx_pool, 0, 4);
+        g_sd_ccx_pool_initialized = true;
+    }
+
     int hw = w / 2;
     int hh = h / 2;
     int lw = 64;
@@ -78,179 +292,66 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
     float* decoder_half = ctx->decoder_half_buf;
     
     if (skip_connection && latent && latent_att && decoder_half) {
+        SDWorkerArg base_arg;
+        base_arg.in_dna_mask = in_dna_mask;
+        base_arg.out_pixels = out_pixels;
+        base_arg.skip_connection = skip_connection;
+        base_arg.latent = latent;
+        base_arg.latent_att = latent_att;
+        base_arg.decoder_half = decoder_half;
+        base_arg.w = w;
+        base_arg.h = h;
+        base_arg.hw = hw;
+        base_arg.hh = hh;
+        base_arg.lw = lw;
+        base_arg.lh = lh;
+        base_arg.r_hw = (float)w / hw;
+        base_arg.r_hh = (float)h / hh;
+        base_arg.r_lw = (float)hw / lw;
+        base_arg.r_lh = (float)hh / lh;
+
         // --- 1. Downsampling Path: Phase 1 (Full -> Intermediate Skip Resolution) ---
         printf("[ENCODER] Phase 1: Downsampling features to intermediate skip resolution (%dx%d)\n", hw, hh);
-        float r_hw = (float)w / hw;
-        float r_hh = (float)h / hh;
-// Removed OpenMP pragma
-        for (int y = 0; y < hh; y++) {
-            for (int x = 0; x < hw; x++) {
-                int sx = (int)(x * r_hw);
-                int sy = (int)(y * r_hh);
-                int src_idx = (sy * w + sx) * 3;
-                int dst_idx = (y * hw + x) * 3;
-                skip_connection[dst_idx + 0] = in_dna_mask[src_idx + 0] / 255.0f;
-                skip_connection[dst_idx + 1] = in_dna_mask[src_idx + 1] / 255.0f;
-                skip_connection[dst_idx + 2] = in_dna_mask[src_idx + 2] / 255.0f;
-            }
-        }
+        enqueue_sd_y_loop(&g_sd_ccx_pool, sd_downsample_phase1_worker, &base_arg, hh);
         
         // --- 2. Downsampling Path: Phase 2 (Intermediate -> Bottleneck) ---
         printf("[ENCODER] Phase 2: Downsampling to bottleneck resolution (%dx%d)\n", lw, lh);
-        float r_lw = (float)hw / lw;
-        float r_lh = (float)hh / lh;
-// Removed OpenMP pragma
-        for (int y = 0; y < lh; y++) {
-            for (int x = 0; x < lw; x++) {
-                int sx = (int)(x * r_lw);
-                int sy = (int)(y * r_lh);
-                int src_idx = (sy * hw + sx) * 3;
-                int dst_idx = (y * lw + x) * 3;
-                latent[dst_idx + 0] = skip_connection[src_idx + 0];
-                latent[dst_idx + 1] = skip_connection[src_idx + 1];
-                latent[dst_idx + 2] = skip_connection[src_idx + 2];
-            }
-        }
-
+        enqueue_sd_y_loop(&g_sd_ccx_pool, sd_downsample_phase2_worker, &base_arg, lh);
+ 
         // --- 3. Bottleneck Self-Attention (Spatial Blending / Mixing) ---
         // Step A: Calculate neighborhood averages and store in latent_att
-        // Fast path for core region (x and y in [1, 62])
-// Removed OpenMP pragma
-        for (int y = 1; y < lh - 1; y++) {
-            for (int x = 1; x < lw - 1; x++) {
-                float r_sum = 0.0f, g_sum = 0.0f, b_sum = 0.0f;
-                
-                // Unrolled 3x3 neighborhood (guaranteed in-bounds)
-                for (int dy = -1; dy <= 1; dy++) {
-                    int ny = y + dy;
-                    int row_idx = ny * lw;
-                    for (int dx = -1; dx <= 1; dx++) {
-                        int nx = x + dx;
-                        int idx = (row_idx + nx) * 3;
-                        r_sum += latent[idx + 0];
-                        g_sum += latent[idx + 1];
-                        b_sum += latent[idx + 2];
-                    }
-                }
-                
-                int dst_idx = (y * lw + x) * 3;
-                latent_att[dst_idx + 0] = r_sum * 0.11111111f;
-                latent_att[dst_idx + 1] = g_sum * 0.11111111f;
-                latent_att[dst_idx + 2] = b_sum * 0.11111111f;
-            }
-        }
-
-        // Slow path for border regions (y = 0, y = 63, x = 0, x = 63)
-// Removed OpenMP pragma
-        for (int y = 0; y < lh; y++) {
-            for (int x = 0; x < lw; x++) {
-                if (y > 0 && y < lh - 1 && x > 0 && x < lw - 1) {
-                    continue;
-                }
-                
-                float r_sum = 0.0f, g_sum = 0.0f, b_sum = 0.0f;
-                int count = 0;
-                
-                for (int dy = -1; dy <= 1; dy++) {
-                    for (int dx = -1; dx <= 1; dx++) {
-                        int nx = x + dx;
-                        int ny = y + dy;
-                        if (nx >= 0 && nx < lw && ny >= 0 && ny < lh) {
-                            int idx = (ny * lw + nx) * 3;
-                            r_sum += latent[idx + 0];
-                            g_sum += latent[idx + 1];
-                            b_sum += latent[idx + 2];
-                            count++;
-                        }
-                    }
-                }
-                
-                int dst_idx = (y * lw + x) * 3;
-                latent_att[dst_idx + 0] = r_sum / count;
-                latent_att[dst_idx + 1] = g_sum / count;
-                latent_att[dst_idx + 2] = b_sum / count;
-            }
-        }
+        enqueue_sd_y_loop(&g_sd_ccx_pool, sd_self_attention_a_fast_worker, &base_arg, lh - 1);
+        enqueue_sd_y_loop(&g_sd_ccx_pool, sd_self_attention_a_slow_worker, &base_arg, lh);
 
         // Step B: Vectorized Linear Blend and Leaky ReLU (AVX-512)
         int total_elements = lw * lh * 3;
         int simd_end = (total_elements / 16) * 16;
-        __m512 c_07 = _mm512_set1_ps(0.7f);
-        __m512 c_03 = _mm512_set1_ps(0.3f);
-        __m512 c_01 = _mm512_set1_ps(0.1f);
-        __m512 zero = _mm512_setzero_ps();
+        enqueue_sd_i_loop(&g_sd_ccx_pool, sd_self_attention_b_simd_worker, &base_arg, simd_end);
 
-// Removed OpenMP pragma
-        for (int i = 0; i < simd_end; i += 16) {
-            __m512 l_val = _mm512_load_ps(&latent[i]);
-            __m512 m_val = _mm512_load_ps(&latent_att[i]);
-            __m512 val = _mm512_add_ps(_mm512_mul_ps(l_val, c_07), _mm512_mul_ps(m_val, c_03));
-            __mmask16 pos_mask = _mm512_cmp_ps_mask(val, zero, _CMP_GT_OQ);
-            __m512 scaled_val = _mm512_mul_ps(val, c_01);
-            __m512 activated = _mm512_mask_blend_ps(pos_mask, scaled_val, val);
-            _mm512_store_ps(&latent_att[i], activated);
-        }
-
-        // Tail cleanup
+        // Tail cleanup (Sequential)
         for (int i = simd_end; i < total_elements; i++) {
             float val = 0.7f * latent[i] + 0.3f * latent_att[i];
             latent_att[i] = val > 0.0f ? val : val * 0.1f;
         }
-
+ 
         // --- 4. Upsampling Path: Phase 1 (Bottleneck -> Intermediate) ---
         printf("[DECODER] Phase 1: Upsampling to intermediate expanding resolution (%dx%d)\n", hw, hh);
-// Removed OpenMP pragma
-        for (int y = 0; y < hh; y++) {
-            for (int x = 0; x < hw; x++) {
-                int lx = (int)(x / r_lw);
-                int ly = (int)(y / r_lh);
-                if (lx >= lw) lx = lw - 1;
-                if (ly >= lh) ly = lh - 1;
-                
-                int src_idx = (ly * lw + lx) * 3;
-                int dst_idx = (y * hw + x) * 3;
-                decoder_half[dst_idx + 0] = latent_att[src_idx + 0];
-                decoder_half[dst_idx + 1] = latent_att[src_idx + 1];
-                decoder_half[dst_idx + 2] = latent_att[src_idx + 2];
-            }
-        }
+        enqueue_sd_y_loop(&g_sd_ccx_pool, sd_upsample_phase1_worker, &base_arg, hh);
         
         // --- 5. Skip Connection Blending (Vectorized via AVX-512) ---
         printf("[SKIP_CONNECTION] Blending encoder skip maps with decoder expanding features at resolution (%dx%d) [AVX-512 ACTIVE]\n", hw, hh);
         int total_floats = hw * hh * 3;
         int simd_end_skip = (total_floats / 16) * 16;
-        __m512 half_vec = _mm512_set1_ps(0.5f);
+        enqueue_sd_i_loop(&g_sd_ccx_pool, sd_skip_blend_worker, &base_arg, simd_end_skip);
         
-// Removed OpenMP pragma
-        for (int i = 0; i < simd_end_skip; i += 16) {
-            __m512 dec = _mm512_load_ps(&decoder_half[i]);
-            __m512 skip = _mm512_load_ps(&skip_connection[i]);
-            __m512 blended = _mm512_mul_ps(_mm512_add_ps(dec, skip), half_vec);
-            _mm512_store_ps(&decoder_half[i], blended);
-        }
-        
-        // Cleanup scalar tail
+        // Cleanup scalar tail (Sequential)
         for (int i = simd_end_skip; i < total_floats; i++) {
             decoder_half[i] = (decoder_half[i] + skip_connection[i]) * 0.5f;
         }
-
+ 
         // --- 6. Upsampling Path: Phase 2 (Intermediate -> Final Output) ---
         printf("[DECODER] Phase 2: Generating final photorealistic frame to target resolution (%dx%d)\n", w, h);
-// Removed OpenMP pragma
-        for (int y = 0; y < h; y++) {
-            for (int x = 0; x < w; x++) {
-                int lx = (int)(x / r_hw);
-                int ly = (int)(y / r_hh);
-                if (lx >= hw) lx = hw - 1;
-                if (ly >= hh) ly = hh - 1;
-                
-                int src_idx = (ly * hw + lx) * 3;
-                int dst_idx = (y * w + x) * 3;
-                out_pixels[dst_idx + 0] = (uint8_t)(decoder_half[src_idx + 0] * 255.0f);
-                out_pixels[dst_idx + 1] = (uint8_t)(decoder_half[src_idx + 1] * 255.0f);
-                out_pixels[dst_idx + 2] = (uint8_t)(decoder_half[src_idx + 2] * 255.0f);
-            }
-        }
+        enqueue_sd_y_loop(&g_sd_ccx_pool, sd_upsample_phase2_worker, &base_arg, h);
     } else {
         // Fallback in case of allocation failure
         size_t pixel_mass = w * h * 3;
