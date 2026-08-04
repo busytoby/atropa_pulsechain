@@ -131,8 +131,9 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset, f
         uint8_t lf_g = (uint8_t)(135 * (1.0f - t) + 225 * t);
         uint8_t lf_b = (uint8_t)(45 * (1.0f - t) + 95 * t);
 
-        // Serrated pinnate leaflets projecting forward (at 45 degree angles)
-        float lobe_w = 17.0f * (1.0f - t) * (0.8f + 0.5f * sinf(t * 28.0f));
+        // 3D leaf tip taper silhouette styling
+        float tip_curl = 1.0f - powf(t, 3.5f);
+        float lobe_w = 17.0f * tip_curl * (0.8f + 0.5f * sinf(t * 28.0f));
         float leaf_ang_left = angle + M_PI * 0.25f;
         float leaf_ang_right = angle - M_PI * 0.25f;
 
@@ -144,8 +145,15 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset, f
             int l_ly = ly + (int)(lw * serration * sinf(leaf_ang_left));
             int r_lx = lx + (int)(lw * serration * cosf(leaf_ang_right));
             int r_ly = ly + (int)(lw * serration * sinf(leaf_ang_right));
-            draw_line(lx, ly, l_lx, l_ly, lf_r, lf_g, lf_b);
-            draw_line(lx, ly, r_lx, r_ly, lf_r, lf_g, lf_b);
+            
+            // Organic micro-texture vein cells
+            float texture_noise = 0.86f + 0.14f * sinf(lw * 2.5f + i * 1.8f);
+            uint8_t r_draw = (uint8_t)fminf(255, lf_r * texture_noise);
+            uint8_t g_draw = (uint8_t)fminf(255, lf_g * texture_noise);
+            uint8_t b_draw = (uint8_t)fminf(255, lf_b * texture_noise);
+            
+            draw_line(lx, ly, l_lx, l_ly, r_draw, g_draw, b_draw);
+            draw_line(lx, ly, r_lx, r_ly, r_draw, g_draw, b_draw);
         }
 
         // Draw bright secondary highlight veins down the center of each leaflet
