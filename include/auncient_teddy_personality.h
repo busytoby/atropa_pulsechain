@@ -99,6 +99,7 @@ typedef struct {
     double family_altruism;          // Perceived family altruism (0.0 lower support, 1.0 high family support/altruism)
     double social_conformity;        // Perceived social conformity (0.0 non-conformity, 1.0 convention conformity)
     double status_aggression;        // Perceived status aggression (0.0 submissive, 1.0 aggressive retaliation)
+    double workplace_mentorship;     // Perceived workplace mentorship (0.0 individual competitive, 1.0 patient mentoring)
 } teddy_geometry_t;
 
 // Pixar RenderMan Avatar Agent definition upon the cooperative boundary

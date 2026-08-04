@@ -91,6 +91,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->family_altruism = 1.0;          // High family altruism
             geom->social_conformity = 1.0;        // High social conformity
             geom->status_aggression = 0.0;        // Low status aggression
+            geom->workplace_mentorship = 1.0;     // High workplace mentorship
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -180,6 +181,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->family_altruism = 0.0;          // Lower family altruism
             geom->social_conformity = 0.0;        // Low social conformity
             geom->status_aggression = 1.0;        // High status aggression
+            geom->workplace_mentorship = 0.0;     // Individual competitive
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -269,6 +271,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->family_altruism = 0.0;          // Lower family altruism
             geom->social_conformity = 0.0;        // Low social conformity
             geom->status_aggression = 1.0;        // High status aggression
+            geom->workplace_mentorship = 0.0;     // Individual competitive
             break;
     }
 }
