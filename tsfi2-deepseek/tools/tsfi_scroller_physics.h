@@ -123,12 +123,14 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
             b_col = (uint8_t)(b_col * 0.55f);
         }
 
-        // 3D cylindrical chiascuro shading (5px width: far-left highlight, left highlight, center, right shadow, far-right shadow)
-        draw_line(prev_x - 2, prev_y, sx - 2, sy, (uint8_t)fminf(255, r_col * 1.5f), (uint8_t)fminf(255, g_col * 1.5f), (uint8_t)fminf(255, b_col * 1.5f)); // Far-left highlight
-        draw_line(prev_x - 1, prev_y, sx - 1, sy, (uint8_t)fminf(255, r_col * 1.25f), (uint8_t)fminf(255, g_col * 1.25f), (uint8_t)fminf(255, b_col * 1.25f)); // Left highlight
+        // 3D cylindrical chiascuro shading (7px width: far-far-left, far-left, left, center, right, far-right, far-far-right)
+        draw_line(prev_x - 3, prev_y, sx - 3, sy, (uint8_t)fminf(255, r_col * 1.6f), (uint8_t)fminf(255, g_col * 1.6f), (uint8_t)fminf(255, b_col * 1.6f)); // Far-far-left highlight
+        draw_line(prev_x - 2, prev_y, sx - 2, sy, (uint8_t)fminf(255, r_col * 1.4f), (uint8_t)fminf(255, g_col * 1.4f), (uint8_t)fminf(255, b_col * 1.4f)); // Far-left highlight
+        draw_line(prev_x - 1, prev_y, sx - 1, sy, (uint8_t)fminf(255, r_col * 1.2f), (uint8_t)fminf(255, g_col * 1.2f), (uint8_t)fminf(255, b_col * 1.2f)); // Left highlight
         draw_line(prev_x, prev_y, sx, sy, r_col, g_col, b_col); // Center body core
-        draw_line(prev_x + 1, prev_y, sx + 1, sy, (uint8_t)(r_col * 0.60f), (uint8_t)(g_col * 0.60f), (uint8_t)(b_col * 0.60f)); // Right shadow
-        draw_line(prev_x + 2, prev_y, sx + 2, sy, (uint8_t)(r_col * 0.35f), (uint8_t)(g_col * 0.35f), (uint8_t)(b_col * 0.35f)); // Far-right shadow
+        draw_line(prev_x + 1, prev_y, sx + 1, sy, (uint8_t)(r_col * 0.65f), (uint8_t)(g_col * 0.65f), (uint8_t)(b_col * 0.65f)); // Right shadow
+        draw_line(prev_x + 2, prev_y, sx + 2, sy, (uint8_t)(r_col * 0.45f), (uint8_t)(g_col * 0.45f), (uint8_t)(b_col * 0.45f)); // Far-right shadow
+        draw_line(prev_x + 3, prev_y, sx + 3, sy, (uint8_t)(r_col * 0.25f), (uint8_t)(g_col * 0.25f), (uint8_t)(b_col * 0.25f)); // Far-far-right shadow
 
         // Tiny dynamic curved downy hairs projecting from both sides of the stem (pilosity)
         if (j % 2 == 0) {
