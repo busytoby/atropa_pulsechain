@@ -575,6 +575,23 @@ bool evaluate_scale_wald_test(double scale_est, double baseline, double variance
     return true;
 }
 
+double evaluate_fw_threat_level(const teddy_geometry_t *geom) {
+    if (!geom) return 0.0;
+    double threat = (geom->head_fwhr * 1.5) + (geom->jaw_scale * 0.8) - (geom->symmetry * 0.3);
+    if (threat < 0.0) threat = 0.0;
+    return threat;
+}
+
+bool evaluate_behavioral_threat_mismatch(const teddy_geometry_t *geom, double *mismatch_score) {
+    if (!geom || !mismatch_score) {
+        return false;
+    }
+    double physical_threat = evaluate_fw_threat_level(geom);
+    double vocal_factor = (geom->vocal_pitch > 200.0) ? (geom->vocal_pitch / 250.0) : 0.5;
+    *mismatch_score = physical_threat * vocal_factor + (geom->behavioral_mismatch * 1.2);
+    return true;
+}
+
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out) {
     if (!geom || param_count < 1 || sample_size < 2 || !aic_out || !bic_out) {
         return false;

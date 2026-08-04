@@ -180,6 +180,12 @@ bool evaluate_threshold_wald_test(double threshold_est, double baseline, double 
 // Evaluates scale parameter variance stability via the Wald test.
 bool evaluate_scale_wald_test(double scale_est, double baseline, double variance, double *wald_stat_out, double *p_value_out);
 
+// Calculates perceived threat level based on fWHR dominance cues (Geniole et al.).
+double evaluate_fw_threat_level(const teddy_geometry_t *geom);
+
+// Computes visual-vocal mismatch threat scores (Geniole et al.).
+bool evaluate_behavioral_threat_mismatch(const teddy_geometry_t *geom, double *mismatch_score);
+
 // Computes model selection diagnostics via AIC and BIC information criteria.
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out);
 

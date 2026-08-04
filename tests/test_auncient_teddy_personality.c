@@ -174,6 +174,16 @@ int main(void) {
     assert(s_wpval < 0.7);
     printf("   ✓ R H B Christensen scale parameter Wald test diagnostics verified successfully\n");
 
+    // Test Geniole fWHR threat level calculation
+    double threat_level = evaluate_fw_threat_level(&geom);
+    assert(threat_level >= 0.0);
+
+    // Test Geniole behavioral mismatch threat calculation
+    double threat_mismatch = 0.0;
+    assert(evaluate_behavioral_threat_mismatch(&geom, &threat_mismatch));
+    assert(threat_mismatch >= 0.0);
+    printf("   ✓ GENIOLE et al. fWHR threat and visual-vocal mismatch verified successfully\n");
+
     // Test ACID transaction behavior (Commit successful path)
     evaluation_tx_t tx = begin_evaluation_transaction(&geom);
     assert(tx.active);
