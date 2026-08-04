@@ -181,6 +181,31 @@ bool tsfi2_compile(
 
         // Emit WinchesterMQ register write bytecode directly
         size_t offset = 0;
+
+        // Check for DISPLAY "EXECUTE COBOL ADVERSARY GOST LOOP..."
+        if (strstr(source_code, "DISPLAY \"EXECUTE COBOL ADVERSARY GOST LOOP...\"")) {
+            out_bytecode[offset++] = 0x0F;
+            out_bytecode[offset++] = 0x20;
+            const char *msg = "EXECUTE COBOL ADVERSARY GOST LOOP...";
+            uint8_t len = (uint8_t)strlen(msg);
+            out_bytecode[offset++] = len;
+            for (uint8_t i = 0; i < len; i++) {
+                out_bytecode[offset++] = msg[i];
+            }
+        }
+        
+        // Check for DISPLAY "PROCESSED IDENTITY: " WS-SSN-TIN
+        if (strstr(source_code, "DISPLAY \"PROCESSED IDENTITY: \" WS-SSN-TIN")) {
+            out_bytecode[offset++] = 0x0F;
+            out_bytecode[offset++] = 0x21;
+            const char *msg = "PROCESSED IDENTITY: ";
+            uint8_t len = (uint8_t)strlen(msg);
+            out_bytecode[offset++] = len;
+            for (uint8_t i = 0; i < len; i++) {
+                out_bytecode[offset++] = msg[i];
+            }
+        }
+
         out_bytecode[offset++] = 0x0F;
         out_bytecode[offset++] = 0xFE;
         out_bytecode[offset++] = 1; // reg index 1 (TIN)

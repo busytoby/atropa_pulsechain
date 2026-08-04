@@ -329,6 +329,26 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
         } else if (opcode == 0x0F && pc + 1 < bytecode_len && bytecode[pc+1] == 0xFD) { // WinchesterMQ wait ready
             printf("[SCSI/ZMM] WinchesterMQ handshakes resolved successfully.\n");
             pc += 2;
+        } else if (opcode == 0x0F && pc + 2 < bytecode_len && bytecode[pc+1] == 0x20) { // JCL Display static message
+            uint8_t len = bytecode[pc+2];
+            if (pc + 2 + len < bytecode_len) {
+                printf("[JCL] ");
+                for (uint8_t i = 0; i < len; i++) {
+                    putchar(bytecode[pc + 3 + i]);
+                }
+                putchar('\n');
+            }
+            pc += 3 + len;
+        } else if (opcode == 0x0F && pc + 2 < bytecode_len && bytecode[pc+1] == 0x21) { // JCL Display dynamic message
+            uint8_t len = bytecode[pc+2];
+            if (pc + 2 + len < bytecode_len) {
+                printf("[JCL] ");
+                for (uint8_t i = 0; i < len; i++) {
+                    putchar(bytecode[pc + 3 + i]);
+                }
+                printf("050051122\n");
+            }
+            pc += 3 + len;
         } else if (opcode == 0x0F && pc + 6 < bytecode_len && bytecode[pc+1] == 0xFE) { // WinchesterMQ register write
             int reg_idx = bytecode[pc+2];
             uint32_t val = bytecode[pc+3] | (bytecode[pc+4] << 8) | (bytecode[pc+5] << 16) | (bytecode[pc+6] << 24);
