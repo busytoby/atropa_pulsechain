@@ -81,11 +81,6 @@ bool xcom_wmq_step_handshake(xcom_wmq_handshake_t *state, const char *payload) {
 // Unit Tests
 // -------------------------------------------------------------
 int main(void) {
-    printf("=============================================================\n");
-    printf("AUNCIENT XCOM WINCHESTERMQ SCSI HANDSHAKE VALIDATION SUITE\n");
-    printf("=============================================================\n");
-    fflush(stdout);
-
     xcom_wmq_handshake_t state = {
         .req_line = 0.0,
         .ack_line = 5.0, // High voltage initially (Cutoff)
@@ -97,56 +92,42 @@ int main(void) {
         .overcurrent_trap = false
     };
 
-    // 1. Attempt transfer without active REQ/ACK -> Should fail/remain empty
-    printf("[TEST] Attempting transfer with inactive REQ/ACK...\n");
-    fflush(stdout);
+    // 1. Attempt transfer without active REQ/ACK
     bool ok = xcom_wmq_step_handshake(&state, "XCOM_WMQ_PAYLOAD"); // Odd parity payload
     assert(ok == false);
     assert(state.tx_gate == CUTOFF_STATE);
     assert(state.rx_gate == CUTOFF_STATE);
     assert(strcmp(state.data_bus, "") == 0);
-    printf("   ✓ Transfer blocked successfully. Bus remains idle.\n");
+    printf("[XCOM-WMQ-TEST] Inactive transfer blocked successfully\n");
     fflush(stdout);
 
-    // 2. Assert REQ high (5.0V) and ACK low (0.0V) -> Handshake should execute with odd parity payload
-    printf("[TEST] Asserting REQ high (5.0V) and ACK low (0.0V) with valid parity...\n");
-    fflush(stdout);
+    // 2. Assert REQ high (5.0V) and ACK low (0.0V)
     state.req_line = 5.0;
     state.ack_line = 0.0;
-    // "XCOM_WMQ_PAYLOAD" has odd parity count
     ok = xcom_wmq_step_handshake(&state, "XCOM_WMQ_PAYLOAD");
     assert(ok == true);
     assert(state.tx_gate == CONDUC_STATE);
     assert(state.rx_gate == CONDUC_STATE);
     assert(strcmp(state.data_bus, "XCOM_WMQ_PAYLOAD") == 0);
     assert(state.propagation_delay_ns == 7.5);
-    printf("   ✓ Handshake successful: %s transmitted with delay %.1fns.\n", state.data_bus, state.propagation_delay_ns);
+    printf("[XCOM-WMQ-TEST] Conduction handshake successful\n");
     fflush(stdout);
 
     // 3. Parity failure check (even parity payload)
-    printf("[TEST] Testing bus parity violation handling...\n");
-    fflush(stdout);
     strcpy(state.data_bus, "");
-    // "XCOM_WMQ_PAYLOAE" has even parity count
     ok = xcom_wmq_step_handshake(&state, "XCOM_WMQ_PAYLOAE");
     assert(ok == false);
     assert(state.parity_error == true);
-    printf("   ✓ Parity failure correctly blocked bus registration.\n");
+    printf("[XCOM-WMQ-TEST] Frame parity failure trapped\n");
     fflush(stdout);
 
-    // 4. Overcurrent Surge -> Should trip trap and cut off transmission
-    printf("[TEST] Injecting overcurrent surge (>12V)...\n");
-    fflush(stdout);
+    // 4. Overcurrent Surge
     state.req_line = 15.0;
     ok = xcom_wmq_step_handshake(&state, "XCOM_WMQ_PAYLOAD");
     assert(ok == false);
     assert(state.overcurrent_trap == true);
-    printf("   ✓ Overcurrent trap tripped successfully, isolating SCSI bus.\n");
+    printf("[XCOM-WMQ-TEST] Overcurrent surge isolation trapped\n");
     fflush(stdout);
 
-    printf("=============================================================\n");
-    printf("XCOM WINCHESTERMQ SCSI HANDSHAKE TESTS PASSED\n");
-    printf("=============================================================\n");
-    fflush(stdout);
     return 0;
 }
