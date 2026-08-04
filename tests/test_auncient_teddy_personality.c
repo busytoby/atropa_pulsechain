@@ -39,6 +39,7 @@ typedef struct {
     double intellect_index;          // Perceived intellectual capability (0.0 lower, 1.0 higher)
     double resilience_index;         // Perceived physical resilience (0.0 lower, 1.0 higher)
     double agility_index;            // Perceived physical agility/speed (0.0 lower, 1.0 higher)
+    double safety_index;             // Perceived safety (0.0 dangerous/threat, 1.0 safe/harmless)
 } teddy_geometry_t;
 
 // Maps abstract traits to geometric parameters based on study results
@@ -72,6 +73,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->intellect_index = 0.0;         // Perceived lower capability
             geom->resilience_index = 0.0;        // Perceived lower physical resilience
             geom->agility_index = 0.0;           // Perceived lower physical agility
+            geom->safety_index = 1.0;            // Perceived safe/harmless
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -101,6 +103,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->intellect_index = 1.0;         // Perceived higher capability
             geom->resilience_index = 1.0;        // Perceived higher physical resilience
             geom->agility_index = 1.0;           // Perceived higher physical agility
+            geom->safety_index = 0.0;            // Perceived dangerous
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -130,6 +133,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->intellect_index = 1.0;         // Perceived higher capability
             geom->resilience_index = 1.0;        // Perceived higher physical resilience
             geom->agility_index = 1.0;           // Perceived higher physical agility
+            geom->safety_index = 0.0;            // Perceived dangerous
             break;
     }
 }
