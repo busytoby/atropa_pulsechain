@@ -937,3 +937,19 @@ bool evaluate_dynamic_auditory_offset(const teddy_geometry_t *geom, double ambie
     return true;
 }
 
+bool evaluate_keating_babyfacedness_index(const teddy_geometry_t *geom, double *babyfacedness_out) {
+    if (!geom || !babyfacedness_out) {
+        return false;
+    }
+    *babyfacedness_out = (geom->eye_scale * 0.4) + (-geom->feature_vertical_offset * 0.4) + ((1.0 / (1.0 + geom->jaw_scale)) * 0.2);
+    return true;
+}
+
+bool evaluate_keating_dominance_cue_index(const teddy_geometry_t *geom, double *dominance_out) {
+    if (!geom || !dominance_out) {
+        return false;
+    }
+    *dominance_out = (geom->jaw_scale * 0.4) + (geom->feature_vertical_offset * 0.4) + ((1.0 / (1.0 + geom->eye_scale)) * 0.2);
+    return true;
+}
+

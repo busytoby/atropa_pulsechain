@@ -603,6 +603,15 @@ int main(void) {
     assert(auditory_offset > 0.0);
     printf("   ✓ HYDE et al. dynamic auditory offset verified successfully\n");
 
+    // Test Keating babyfacedness and dominance cue index calculations
+    double babyfacedness = 0.0;
+    double dominance = 0.0;
+    assert(evaluate_keating_babyfacedness_index(&geom, &babyfacedness));
+    assert(babyfacedness > 0.0);
+    assert(evaluate_keating_dominance_cue_index(&geom, &dominance));
+    assert(dominance > 0.0);
+    printf("   ✓ KEATING, C. F. babyfacedness and dominance physiognomy indices verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge

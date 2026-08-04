@@ -421,6 +421,12 @@ bool evaluate_spatial_interaction_distance(const teddy_geometry_t *geom, double 
 // Evaluates the dynamic auditory offset matching vocal gain to ambient noise levels (Hyde et al.).
 bool evaluate_dynamic_auditory_offset(const teddy_geometry_t *geom, double ambient_noise_db, double vocal_gain_db, double *auditory_offset_out);
 
+// Evaluates the babyfacedness index based on large eyes, narrow jaw, and low vertical features (Keating, C. F.).
+bool evaluate_keating_babyfacedness_index(const teddy_geometry_t *geom, double *babyfacedness_out);
+
+// Evaluates the dominance physiognomy cue index based on high features, small eyes, and wide jaw (Keating, C. F.).
+bool evaluate_keating_dominance_cue_index(const teddy_geometry_t *geom, double *dominance_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 
