@@ -1105,6 +1105,17 @@ bool evaluate_expression_asymmetry_uncanny(const teddy_geometry_t *geom, double 
     return true;
 }
 
+bool evaluate_expression_asymmetry_duration(const teddy_geometry_t *geom, double asymmetry_duration_ms, double *uncanny_score_out) {
+    if (!geom || asymmetry_duration_ms < 0.0 || !uncanny_score_out) {
+        return false;
+    }
+    double base_uncanny = 0.0;
+    evaluate_uncanny_mismatch_index(geom, &base_uncanny);
+    double duration_factor = (asymmetry_duration_ms > 200.0) ? (asymmetry_duration_ms * 0.02) : 0.01;
+    *uncanny_score_out = base_uncanny + (duration_factor * (1.0 - geom->symmetry));
+    return true;
+}
+
 bool evaluate_expression_sync_uncanny(const teddy_geometry_t *geom, double sync_delay_ms, double *uncanny_score_out) {
     if (!geom || sync_delay_ms < 0.0 || !uncanny_score_out) {
         return false;

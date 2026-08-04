@@ -290,6 +290,9 @@ bool execute_hbridge_thunk_with_feedback(const teddy_geometry_t *geom, double sw
 // Evaluates the unpredictable micro-expression asymmetry uncanny response (Hyde et al.).
 bool evaluate_expression_asymmetry_uncanny(const teddy_geometry_t *geom, double asymmetry_deviation, double *uncanny_score_out);
 
+// Evaluates the unpredictable micro-expression asymmetry duration uncanny response (Hyde et al.).
+bool evaluate_expression_asymmetry_duration(const teddy_geometry_t *geom, double asymmetry_duration_ms, double *uncanny_score_out);
+
 // Evaluates the unpredictable micro-expression synchronization uncanny response (Hyde et al.).
 bool evaluate_expression_sync_uncanny(const teddy_geometry_t *geom, double sync_delay_ms, double *uncanny_score_out);
 

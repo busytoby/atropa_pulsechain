@@ -370,6 +370,12 @@ int main(void) {
     assert(asym_uncanny >= 0.0);
     printf("   ✓ HYDE et al. unpredictable micro-expression asymmetry verified successfully\n");
 
+    // Test Hyde unpredictable micro-expression asymmetry duration calculation
+    double asym_duration_uncanny = 0.0;
+    assert(evaluate_expression_asymmetry_duration(&geom, 250.0, &asym_duration_uncanny));
+    assert(asym_duration_uncanny >= 0.0);
+    printf("   ✓ HYDE et al. unpredictable micro-expression asymmetry duration verified successfully\n");
+
     // Test Hyde unpredictable micro-expression synchronization delay calculation
     double sync_uncanny = 0.0;
     assert(evaluate_expression_sync_uncanny(&geom, 60.0, &sync_uncanny));
