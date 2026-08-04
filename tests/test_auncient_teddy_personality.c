@@ -158,6 +158,13 @@ int main(void) {
     assert(expected_se > 0.0);
     printf("   ✓ R H B Christensen ordinal link expectation standard error verified successfully\n");
 
+    // Test ordinal link model log-likelihood calculation
+    int ratings[5] = {3, 5, 2, 6, 4};
+    double loglik = 0.0;
+    assert(evaluate_ordinal_link_loglik(&geom, ratings, 5, &loglik));
+    assert(loglik < 0.0);
+    printf("   ✓ R H B Christensen cumulative link model log-likelihood verified successfully\n");
+
     // Test AIC and BIC information criteria diagnostics estimation
     double aic = 0.0, bic = 0.0;
     assert(evaluate_information_criteria(&geom, 3, 100, &aic, &bic));

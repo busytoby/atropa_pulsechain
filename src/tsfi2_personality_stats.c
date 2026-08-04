@@ -229,6 +229,26 @@ bool evaluate_ordinal_link_expectation_se(const double *probabilities, const dou
     return true;
 }
 
+bool evaluate_ordinal_link_loglik(const teddy_geometry_t *geom, const int *observed_ratings, int count, double *loglik_out) {
+    if (!geom || !observed_ratings || count < 1 || !loglik_out) {
+        return false;
+    }
+    double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
+    double thresholds[8] = {-10.0, 0.5, 1.2, 2.0, 2.8, 3.5, 4.2, 10.0};
+    double loglik = 0.0;
+    for (int i = 0; i < count; ++i) {
+        int r = observed_ratings[i];
+        if (r < 1 || r > 7) return false;
+        double p_upper = 1.0 / (1.0 + exp(-(thresholds[r] - latent)));
+        double p_lower = 1.0 / (1.0 + exp(-(thresholds[r - 1] - latent)));
+        double prob = p_upper - p_lower;
+        if (prob < 1e-9) prob = 1e-9;
+        loglik += log(prob);
+    }
+    *loglik_out = loglik;
+    return true;
+}
+
 int evaluate_ordinal_flexible_rating(const teddy_geometry_t *geom, double link_mixture_weight) {
     if (!geom) return 1;
     double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
