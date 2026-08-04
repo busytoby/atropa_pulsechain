@@ -126,6 +126,12 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
             uint32_t val = bytecode[pc+3] | (bytecode[pc+4] << 8) | (bytecode[pc+5] << 16) | (bytecode[pc+6] << 24);
             printf("[SCSI/ZMM] WinchesterMQ incoming buffer at offset %d poked with value %u successfully.\n", idx, val);
             pc += 7;
+        } else if (opcode == 0x0F && pc + 1 < bytecode_len && bytecode[pc+1] == 0xF1) { // WinchesterMQ unlock
+            printf("[SCSI/ZMM] WinchesterMQ system register lock released successfully.\n");
+            pc += 2;
+        } else if (opcode == 0x0F && pc + 1 < bytecode_len && bytecode[pc+1] == 0xF2) { // WinchesterMQ lock
+            printf("[SCSI/ZMM] WinchesterMQ system register lock acquired successfully.\n");
+            pc += 2;
         } else if (opcode == 0x0F && pc + 1 < bytecode_len && bytecode[pc+1] == 0xF5) { // WinchesterMQ abort
             printf("[SCSI/ZMM] WinchesterMQ execution aborted due to error state.\n");
             cpu->exit_code = -1;

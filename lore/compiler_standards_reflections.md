@@ -141,6 +141,19 @@ int main() {
 * **Compiler Built-in**: 28 characters (`__builtin_wmq_poke(4, 500);`).
 * **Source Size Reduction**: 64% character footprint decrease.
 
+### Interface Lock Comparison
+* **Boilerplate Wrapper**: 120 characters.
+  ```c
+  void lock_wmq() {
+      *(volatile int*)(0x20E0) = 1;
+  }
+  void unlock_wmq() {
+      *(volatile int*)(0x20E0) = 0;
+  }
+  ```
+* **Compiler Built-in**: 44 characters (`__builtin_wmq_lock(); __builtin_wmq_unlock();`).
+* **Source Size Reduction**: 63% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
