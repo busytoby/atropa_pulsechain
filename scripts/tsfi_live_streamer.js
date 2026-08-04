@@ -50,6 +50,13 @@ function writeScrollerBinaryConfig(sc) {
     buf.writeFloatLE(sc.speed_scale !== undefined ? sc.speed_scale : 1.0, 24);
     buf.writeInt32LE(sc.bear_count !== undefined ? sc.bear_count : 3, 28);
     fs.writeFileSync(CONFIG_PATH, buf);
+    
+    // Save to the state JSON path to keep overrides persistent across story blocks
+    try {
+        fs.writeFileSync(COAXIAL_STATE_PATH, JSON.stringify(coaxialState, null, 2));
+    } catch (e) {
+        console.error("[COAXIAL] Failed writing state JSON:", e.message);
+    }
 }
 global.writeScrollerBinaryConfig = writeScrollerBinaryConfig;
 
