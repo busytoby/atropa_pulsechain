@@ -241,6 +241,83 @@ static void parallel_grid_search(double start_x, double end_x, double step_x,
     *out_y = global_best_y;
 }
 
+static void gradient_descent_localize(double start_x, double start_y,
+                                      const ReceiverStation *stations, double *weights,
+                                      double **R_mag, int max_lag, const int *active_mask,
+                                      double *out_x, double *out_y) {
+    double x = start_x;
+    double y = start_y;
+    double h = 0.001; // 1 meter perturbation for numerical gradient
+    double step_size = 1.0; // initial step size (km)
+    double min_step = 0.0001; // stopping criteria (10 cm)
+    int max_iters = 100;
+
+    // Helper macro to evaluate cost at (gx, gy)
+    #define EVAL_COST(gx, gy) ({ \
+        double cost = 0.0; \
+        double dist0 = sqrt((stations[0].x_true - (gx))*(stations[0].x_true - (gx)) + (stations[0].y_true - (gy))*(stations[0].y_true - (gy))) * 1000.0; \
+        double delay0 = dist0 / SPEED_OF_LIGHT; \
+        for (int i = 1; i < NUM_STATIONS; i++) { \
+            if (active_mask == NULL || active_mask[i]) { \
+                double disti = sqrt((stations[i].x_true - (gx))*(stations[i].x_true - (gx)) + (stations[i].y_true - (gy))*(stations[i].y_true - (gy))) * 1000.0; \
+                double delayi = disti / SPEED_OF_LIGHT; \
+                double model_tdoa = delayi - delay0; \
+                double model_lag = model_tdoa * SAMPLING_RATE; \
+                cost += weights[i] * interpolate_correlation(R_mag[i], model_lag, max_lag); \
+            } \
+        } \
+        cost; \
+    })
+
+    double current_cost = EVAL_COST(x, y);
+
+    for (int iter = 0; iter < max_iters && step_size > min_step; iter++) {
+        // Numerical gradient
+        double cost_xp = EVAL_COST(x + h, y);
+        double cost_xm = EVAL_COST(x - h, y);
+        double cost_yp = EVAL_COST(x, y + h);
+        double cost_ym = EVAL_COST(x, y - h);
+
+        double grad_x = (cost_xp - cost_xm) / (2.0 * h);
+        double grad_y = (cost_yp - cost_ym) / (2.0 * h);
+
+        // Normalize gradient
+        double grad_len = sqrt(grad_x * grad_x + grad_y * grad_y);
+        if (grad_len < 1e-9) break;
+
+        double dir_x = grad_x / grad_len;
+        double dir_y = grad_y / grad_len;
+
+        // Line search to find a step that increases the cost
+        double trial_step = step_size;
+        bool step_accepted = false;
+
+        while (trial_step > min_step / 10.0) {
+            double next_x = x + trial_step * dir_x;
+            double next_y = y + trial_step * dir_y;
+            double next_cost = EVAL_COST(next_x, next_y);
+
+            if (next_cost > current_cost) {
+                x = next_x;
+                y = next_y;
+                current_cost = next_cost;
+                step_size = trial_step * 1.2; // slightly increase step size for next iteration
+                step_accepted = true;
+                break;
+            }
+            trial_step *= 0.5; // Backtrack
+        }
+
+        if (!step_accepted) {
+            step_size *= 0.5; // shrink step size if no direction increases cost
+        }
+    }
+
+    *out_x = x;
+    *out_y = y;
+}
+
+
 typedef struct {
     int *individual;
     double tx_val_x;
@@ -932,10 +1009,10 @@ int main() {
     double best_x = 0.0, best_y = 0.0;
     parallel_grid_search(-100.0, 100.0, 2.0, -100.0, 100.0, 2.0, stations, weights, R_mag, max_lag, NULL, &best_x, &best_y);
 
-    // Fine grid search: search within +/- 5 km around best coarse estimate with 0.1 km steps
+    // Fine localization search via Gradient Descent:
     double coarse_x = best_x;
     double coarse_y = best_y;
-    parallel_grid_search(coarse_x - 5.0, coarse_x + 5.0, 0.1, coarse_y - 5.0, coarse_y + 5.0, 0.1, stations, weights, R_mag, max_lag, NULL, &best_x, &best_y);
+    gradient_descent_localize(coarse_x, coarse_y, stations, weights, R_mag, max_lag, NULL, &best_x, &best_y);
 
     double loc_error = sqrt((best_x - tx_x)*(best_x - tx_x) + (best_y - tx_y)*(best_y - tx_y));
     printf("[RESULTS] True TX coordinates: (%.1f, %.1f) km\n", tx_x, tx_y);
@@ -1114,7 +1191,7 @@ int main() {
 
     double coarse_x_ga = best_x_ga;
     double coarse_y_ga = best_y_ga;
-    parallel_grid_search(coarse_x_ga - 5.0, coarse_x_ga + 5.0, 0.1, coarse_y_ga - 5.0, coarse_y_ga + 5.0, 0.1, stations, weights, R_mag, max_lag, best_individual, &best_x_ga, &best_y_ga);
+    gradient_descent_localize(coarse_x_ga, coarse_y_ga, stations, weights, R_mag, max_lag, best_individual, &best_x_ga, &best_y_ga);
 
     double loc_error_ga = sqrt((best_x_ga - tx_x)*(best_x_ga - tx_x) + (best_y_ga - tx_y)*(best_y_ga - tx_y));
     printf("[RESULTS] GA Subset (8 stations) Localized TX coordinates: (%.1f, %.1f) km\n", best_x_ga, best_y_ga);
