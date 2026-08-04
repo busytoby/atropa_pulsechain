@@ -588,6 +588,13 @@ int main(void) {
     assert(sustain_decay > 0.0);
     printf("   ✓ Izotope symmetric threshold tremolo and group scale sustain verified successfully\n");
 
+    // Test Izotope/Ozone habituation decay calculation
+    double izotope_decay_out = 0.0;
+    assert(evaluate_izotope_ozone_habituation_decay(&geom, 1.5, &izotope_decay_out));
+    assert(izotope_decay_out < 1.5);
+    assert(izotope_decay_out > 0.0);
+    printf("   ✓ Izotope/Ozone habituation decay verified successfully\n");
+
     // Test execute_hbridge_thunk_with_feedback (Successful execution case)
     test_thunk_executed_flag = 0.0;
     double safety_margin = 0.0;

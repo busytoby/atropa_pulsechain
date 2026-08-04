@@ -397,6 +397,9 @@ bool simulate_phase_flyback_noise(const teddy_geometry_t *geom, double phase_ang
 // Evaluates symmetric threshold (tremolo) and group scale (sustain) constraints in the izotope system.
 bool evaluate_izotope_constrained_parameters(const teddy_geometry_t *geom, int group_id, double *tremolo_spacing_out, double *sustain_decay_out);
 
+// Evaluates the izotope/ozone-adjusted habituation decay logic (Christensen).
+bool evaluate_izotope_ozone_habituation_decay(const teddy_geometry_t *geom, double base_decay, double *decayed_out);
+
 // Computes model selection diagnostics via AIC and BIC information criteria.
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out);
 

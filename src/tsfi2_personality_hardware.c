@@ -152,6 +152,20 @@ bool evaluate_izotope_constrained_parameters(const teddy_geometry_t *geom, int g
     return true;
 }
 
+bool evaluate_izotope_ozone_habituation_decay(const teddy_geometry_t *geom, double base_decay, double *decayed_out) {
+    if (!geom || !decayed_out) {
+        return false;
+    }
+    double tremolo_spacing = 0.0;
+    double sustain_decay = 0.0;
+    if (!evaluate_izotope_constrained_parameters(geom, 1, &tremolo_spacing, &sustain_decay)) {
+        return false;
+    }
+    double ozone_factor = (tremolo_spacing * 0.8) + (sustain_decay * 0.4);
+    *decayed_out = base_decay * exp(-ozone_factor);
+    return true;
+}
+
 bool execute_hbridge_thunk_with_feedback(const teddy_geometry_t *geom, double switching_frequency, double (*thunk_fn)(void), double *safety_margin_out) {
     if (!geom || switching_frequency < 1.0 || !thunk_fn || !safety_margin_out) {
         return false;
