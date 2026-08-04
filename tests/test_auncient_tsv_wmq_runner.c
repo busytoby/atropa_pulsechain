@@ -11,6 +11,7 @@
 #include <math.h>
 #include <unistd.h>
 #include "tsfi2-deepseek/inc/tsfi_displacementshader.h"
+#include "tsfi2-deepseek/inc/tsfi_quadtree_ksds.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -59,12 +60,38 @@ int main(void) {
     }
     assert(ok == true);
 
+    printf("[Runner] Generating mock HathiTrust databases for wmq integration...\n");
+    FILE *ht_pf = fopen("/tmp/ht_primary.dat.bin", "wb");
+    assert(ht_pf != NULL);
+    uint8_t spacer[128] = {0};
+    fwrite(spacer, 1, 128, ht_pf);
+    const char *mock_line = "HT_CATALOG_RECORD_MATCH_SUCCESS\n";
+    fwrite(mock_line, 1, strlen(mock_line), ht_pf);
+    fclose(ht_pf);
+
+    uint32_t rec_offset = 128;
+    InteropQuadNode aix_nodes[1] = {
+        { 0, 0, 100, 100, rec_offset, { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF } }
+    };
+    bool aix_ok = tsfi_qt_ksds_aix_write(
+        "/tmp/ht_aix_isbn.dat.bin",
+        "AUNCIENT_AIX\nQuadtreeCount:\t1\nRecordCount:\t1",
+        aix_nodes,
+        1,
+        &rec_offset,
+        1
+    );
+    assert(aix_ok == true);
+
     printf("[Runner] Executing compiled TSV-mounted virtual hardware transaction...\n");
     Tsfi2CpuState cpu;
     ok = tsfi2_load_and_execute(prog_file, &cpu);
     assert(ok == true);
     assert(cpu.halted == true);
     assert(cpu.exit_code == 899025);
+
+    remove("/tmp/ht_primary.dat.bin");
+    remove("/tmp/ht_aix_isbn.dat.bin");
 
     // Verify DisplacementShader integration Pacings driven by WinchesterMQ boundary constraints
     TSFiDisplacementShader ds;

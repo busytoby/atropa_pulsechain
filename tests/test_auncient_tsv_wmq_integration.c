@@ -5,10 +5,9 @@
   :wmq-params {:tin 950000000 :ssn 050051122}}
 
 (defn -main []
-  (wmq-reg-write 1 5)
-  (wmq-reg-write 2 7)
-  (wmq-reg-write 3 953467)
-  (wmq-reg-write 4 1)
+  (wmq-reg-write 1 10)
+  (wmq-reg-write 2 10)
+  (wmq-hathitrust-lookup)
   (wmq-reg-read 5)
   
   (wmq-connect-idx 2)

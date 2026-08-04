@@ -395,6 +395,25 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
         } else if (opcode == 0x0F && pc + 1 < bytecode_len && bytecode[pc+1] == 0xFB) { // WinchesterMQ reset
             printf("[SCSI/ZMM] WinchesterMQ system registers cleared to zero successfully.\n");
             pc += 2;
+        } else if (opcode == 0x0F && pc + 1 < bytecode_len && bytecode[pc+1] == 0x22) { // WinchesterMQ HathiTrust lookup
+            uint32_t x = (uint32_t)read_tsv_vsam(&tsv_ksds, 1);
+            uint32_t y = (uint32_t)read_tsv_vsam(&tsv_ksds, 2);
+            uint8_t record_buf[256] = {0};
+            int record_len = 0;
+            // Execute AIX Quadtree Query
+            if (tsfi_qt_ksds_aix_query("/tmp/ht_aix_isbn.dat.bin", "/tmp/ht_primary.dat.bin", x, y, record_buf, sizeof(record_buf) - 1, &record_len)) {
+                record_buf[record_len] = '\0';
+                printf("[SCSI/ZMM] HathiTrust catalog record retrieved via AIX Quadtree: %s\n", (char *)record_buf);
+                write_tsv_vsam(&tsv_ksds, 5, record_len);
+                // Push data block directly over WinchesterMQ SCSI LUN link
+                InteropLUN lun;
+                memset(&lun, 0, sizeof(lun));
+                interop_mq_put(&lun, record_buf);
+            } else {
+                printf("[SCSI/ZMM] HathiTrust catalog record query failed at coordinate (%u, %u)\n", x, y);
+                write_tsv_vsam(&tsv_ksds, 5, 0);
+            }
+            pc += 2;
         } else if (opcode == 0x0F && pc + 1 < bytecode_len && bytecode[pc+1] == 0xFD) { // WinchesterMQ wait ready
             printf("[SCSI/ZMM] WinchesterMQ handshakes resolved successfully.\n");
             pc += 2;

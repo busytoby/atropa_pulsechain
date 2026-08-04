@@ -74,6 +74,15 @@ bool tsfi2_compile(
             p++;
         }
 
+        // Scan for wmq-hathitrust-lookup
+        p = source_code;
+        while ((p = strstr(p, "wmq-hathitrust-lookup")) != NULL) {
+            if (call_count < 128) {
+                calls[call_count++] = (BuiltinCall){p, 0x0F, 0x22, 0, 0, 0};
+            }
+            p++;
+        }
+
         // Scan for 1-arg and 2-arg functions
         struct {
             const char *name;
