@@ -185,6 +185,9 @@ bool evaluate_scale_profile_bounds(const teddy_geometry_t *geom, double *lower_s
 // Evaluates structured covariate scale parameters under custom link models.
 bool evaluate_scale_structured_covariates(const teddy_geometry_t *geom, double age_covariate, double *scale_out);
 
+// Evaluates nominal effects violating parallel scale parameter bounds.
+bool evaluate_scale_nominal_effects(const teddy_geometry_t *geom, const double *nominal_covariates, int df, double *effects_out);
+
 // Evaluates profile log-likelihood bounds for a specific threshold parameter.
 bool evaluate_threshold_profile_bounds(const teddy_geometry_t *geom, int threshold_index, double *lower_bound, double *upper_bound);
 

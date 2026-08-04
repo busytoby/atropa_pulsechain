@@ -172,6 +172,13 @@ int main(void) {
     assert(struct_scale > 0.0);
     printf("   ✓ R H B Christensen scale parameter under structured covariates verified successfully\n");
 
+    // Test scale parameter nominal effects calculation
+    double nom_cov[2] = {0.5, 1.2};
+    double nom_effects[2] = {0.0};
+    assert(evaluate_scale_nominal_effects(&geom, nom_cov, 2, nom_effects));
+    assert(nom_effects[0] > 0.0);
+    printf("   ✓ R H B Christensen scale parameter nominal effects verified successfully\n");
+
     // Test threshold parameter likelihood profile calculation
     double l_thresh = 0.0, u_thresh = 0.0;
     assert(evaluate_threshold_profile_bounds(&geom, 2, &l_thresh, &u_thresh));

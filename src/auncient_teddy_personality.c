@@ -679,6 +679,18 @@ bool evaluate_scale_structured_covariates(const teddy_geometry_t *geom, double a
     return true;
 }
 
+bool evaluate_scale_nominal_effects(const teddy_geometry_t *geom, const double *nominal_covariates, int df, double *effects_out) {
+    if (!geom || !nominal_covariates || df < 1 || !effects_out) {
+        return false;
+    }
+    double scale = 1.0;
+    evaluate_scale_structured_covariates(geom, geom->maturity_index, &scale);
+    for (int i = 0; i < df; ++i) {
+        effects_out[i] = nominal_covariates[i] * scale * (1.0 + geom->behavioral_mismatch);
+    }
+    return true;
+}
+
 bool evaluate_threshold_profile_bounds(const teddy_geometry_t *geom, int threshold_index, double *lower_bound, double *upper_bound) {
     if (!geom || threshold_index < 0 || threshold_index >= 6 || !lower_bound || !upper_bound) {
         return false;
