@@ -12,14 +12,13 @@ def generate_audio():
     sample_rate = 44100
     dt = 1.0 / sample_rate
     
-    # Read simulation logs to extract pitch transitions and voltage bounds
+    # Read simulation logs to extract conversational steps
     transitions = []
     pattern = re.compile(r"Bear (\w+) spoke to Bear (\w+) -> (\w+) current voltage: ([\d\.]+) V.*?Pitch: ([\d\.]+) Hz")
     with open(log_path, "r") as f:
         for line in f:
             match = pattern.search(line)
             if match:
-                # Limit to first 12 transitions to keep the demo video ~36 seconds long
                 if len(transitions) < 12:
                     transitions.append({
                         "speaker": match.group(1),
@@ -30,19 +29,18 @@ def generate_audio():
     if not transitions:
         transitions = [{"speaker": "Trusty", "voltage": 1.0, "pitch": 220.0}] * 12
         
-    duration_per_step = 2.5   # Organic speaking turn: 2.5 seconds
-    pause_duration = 0.5      # Cognitive pause gap: 0.5 seconds
+    duration_per_step = 2.5
+    pause_duration = 0.5
     
     step_samples = int(sample_rate * duration_per_step)
     pause_samples = int(sample_rate * pause_duration)
-    
     total_samples = (step_samples + pause_samples) * len(transitions)
     
     audio_np = np.zeros(total_samples, dtype=np.float32)
     noise_state = 12345
     
-    # Backing Drum & Bass Track (120 BPM, 4/4)
-    bpm = 120
+    # Steady biological backing rhythm at 72 BPM matching the ballad pacing
+    bpm = 72
     beat_dur = 60.0 / bpm
     beat_samples = int(sample_rate * beat_dur)
     
@@ -68,20 +66,36 @@ def generate_audio():
                 noise_val = ((noise_state / 0x7fffffff) * 2.0) - 1.0
                 snare = 0.25 * noise_val * math.exp(-t_snare * 14.0)
                 
-        bass_freq = 55.0
-        if beat_idx % 4 == 1:
-            bass_freq = 65.4
-        elif beat_idx % 4 == 2:
-            bass_freq = 73.4
-        elif beat_idx % 4 == 3:
-            bass_freq = 58.2
+        # Bb major / G minor ballad bassline
+        bass_freq = 116.54  # Bb2
+        if (beat_idx // 4) % 4 == 1:
+            bass_freq = 98.0  # G2
+        elif (beat_idx // 4) % 4 == 2:
+            bass_freq = 130.81  # C3
+        elif (beat_idx // 4) % 4 == 3:
+            bass_freq = 138.59  # Db3
             
         bass_phase = 2.0 * math.pi * bass_freq * t_curr
         bass = 0.3 * math.sin(bass_phase) + 0.1 * math.sin(bass_phase * 2.0)
         
         audio_np[s] += (kick + snare + bass) * 0.4
         
-    # Generate Bear voices utilizing Farfisa Slalom Organ and Hammond Tonewheels
+    # Melodic notes mapping "If You Don't Know Me by Now" chorus hook
+    melody_pitches = [
+        233.08,  # "If" (Bb3)
+        261.63,  # "you" (C4)
+        293.66,  # "don't" (D4)
+        233.08,  # "know" (Bb3)
+        196.00,  # "me" (G3)
+        261.63,  # "by" (C4)
+        220.00,  # "now" (A3)
+        233.08,  # "you" (Bb3)
+        261.63,  # "wanna" (C4)
+        293.66,  # "never" (D4)
+        349.23,  # "never" (F4)
+        392.00   # "know me" (G4)
+    ]
+    
     hammond_ratios = [0.5, 1.498, 1.0, 2.0, 2.996, 4.0, 5.039, 6.0]
     bear_drawbars = {
         "Trusty":  [8, 8, 8, 4, 0, 0, 0, 0],
@@ -97,7 +111,9 @@ def generate_audio():
         
         name = step["speaker"]
         voltage = step["voltage"]
-        pitch = step["pitch"]
+        
+        # Override logs to play the exact ballad melody pitches
+        pitch = melody_pitches[idx % len(melody_pitches)]
         
         db = bear_drawbars.get(name, [8, 8, 8, 4, 0, 0, 0, 0])
         contact_wear = 0.05 * (voltage / 10.0)
@@ -148,7 +164,6 @@ def generate_audio():
                     level = max(0.0, (db[i] / 8.0) + noise_val)
                     mixed_val += level * math.sin(2.0 * math.pi * (base_freq * hammond_ratios[i]) * t_local)
                     
-            # Fade envelope
             env = 1.0
             if s < 2000:
                 env = s / 2000.0
@@ -169,7 +184,7 @@ def generate_audio():
         w.setframerate(sample_rate)
         w.writeframes(struct.pack("<{}h".format(len(audio_int)), *audio_int))
         
-    print(f"Generated standard biological-paced bear chorus soundtrack at '{audio_path}'")
+    print(f"Generated ballad melody bear chorus soundtrack at '{audio_path}'")
 
 if __name__ == "__main__":
     generate_audio()
