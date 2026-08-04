@@ -360,6 +360,12 @@ int main(void) {
     assert(acc_jitter_uncanny >= 0.0);
     printf("   ✓ HYDE et al. unpredictable micro-expression acceleration jitter verified successfully\n");
 
+    // Test Hyde unpredictable micro-expression amplitude jitter calculation
+    double amp_jitter_uncanny = 0.0;
+    assert(evaluate_amplitude_jitter_uncanny(&geom, 0.25, &amp_jitter_uncanny));
+    assert(amp_jitter_uncanny >= 0.0);
+    printf("   ✓ HYDE et al. unpredictable micro-expression amplitude jitter verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge
