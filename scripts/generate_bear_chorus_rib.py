@@ -37,6 +37,7 @@ def generate_rib_sequence():
                 radius = 0.8 + displacement
                 
                 f.write("AttributeBegin\n")
+                f.write('Surface "plastic" "Kd" [.8] "Ks" [.2] "roughness" [.1] "specularcolor" [1 1 1]\n')
                 f.write('Color [{:.2f} {:.2f} {:.2f}]\n'.format(bear["color"][0], bear["color"][1], bear["color"][2]))
                 f.write('Translate {:.2f} {:.2f} {:.2f}\n'.format(bear["x"], bear["y"] + displacement, bear["z"]))
                 f.write(f"Sphere {radius:.4f} -{radius:.4f} {radius:.4f} 360\n")
