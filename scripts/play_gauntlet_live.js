@@ -201,7 +201,7 @@ function draw3DSewnHeart(ops, cx, cy, angle) {
 function drawLine(ops, x1, y1, x2, y2, r, g, b) {
     const steps = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1));
     if (steps === 0) return;
-    for (let i = 0; i <= steps; i += 4) {
+    for (let i = 0; i <= steps; i += 10) {
         const t = i / steps;
         const x = Math.floor(x1 * (1 - t) + x2 * t);
         const y = Math.floor(y1 * (1 - t) + y2 * t);
@@ -524,7 +524,7 @@ function renderGame() {
         if (pts) {
             let prevX = pts[0].x;
             let prevY = pts[0].y;
-            for (let t = 0.05; t <= 1.0; t += 0.05) {
+            for (let t = 0.12; t <= 1.0; t += 0.12) {
                 // Bezier curve interpolation over 5 points
                 const omt = 1 - t;
                 const x = omt*omt*omt*omt*pts[0].x + 4*omt*omt*omt*t*pts[1].x + 6*omt*omt*t*t*pts[2].x + 4*omt*t*t*t*pts[3].x + t*t*t*t*pts[4].x;
