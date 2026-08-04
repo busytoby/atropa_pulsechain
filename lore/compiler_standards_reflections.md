@@ -479,9 +479,10 @@ int main() {
   ```
 * **Source Size Reduction**: 44.22% character footprint decrease.
 * **Full Integration Test File Footprint Comparison**:
-  * Original legacy file `test_auncient_alu_wmq_integration.c`: **9931 bytes** (containing raw struct mappings, manually simulated register states, local state machine transitions, complex STANAG standard SAP routing and Non-ARQ configurations, and Diffie-Hellman handshake negotiation).
-  * Relocated TSV test file `test_auncient_tsv_wmq_integration.c`: **1027 bytes** (compiled successfully with our C compiler).
-  * Source Code Size Reduction: **89.66%** decrease.
+  * Original legacy file `test_auncient_alu_wmq_integration.c`: **10671 bytes** (containing raw struct mappings, manually simulated register states, local state machine transitions, complex STANAG standard SAP routing and Non-ARQ configurations, Diffie-Hellman handshake negotiation, and direct SCSI keycode state checks).
+  * Relocated TSV test file `test_auncient_tsv_wmq_integration.c`: **1117 bytes** (compiled successfully with our C compiler).
+  * Source Code Size Reduction: **89.53%** decrease.
+
 
 
 

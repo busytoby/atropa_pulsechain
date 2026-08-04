@@ -136,7 +136,8 @@ bool tsfi2_compile(
         {"__builtin_wmq_auth_idx", 0x0F, 0xD9, 1},
         {"__builtin_wmq_timeout_idx", 0x0F, 0xD8, 1},
         {"__builtin_wmq_key_idx", 0x0F, 0xD7, 1},
-        {"__builtin_wmq_peer_idx", 0x0F, 0xD4, 1}
+        {"__builtin_wmq_peer_idx", 0x0F, 0xD4, 1},
+        {"__builtin_wmq_keycodes", 0x0F, 0xD3, 2}
     };
     int param_table_size = sizeof(param_table) / sizeof(param_table[0]);
 

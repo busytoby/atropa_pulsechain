@@ -19,6 +19,7 @@ int main() {
     __builtin_wmq_reg_write(4, 1);      // Execute Polarize again
     __builtin_wmq_reg_read(5);          // Shared Secret derived
     
+    __builtin_wmq_keycodes(32, 30);     // Direct SCSI keycode state checks (d/D and a/A)
     __builtin_wmq_disconnect();
     return 899025;
 }
