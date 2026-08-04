@@ -31,6 +31,7 @@ typedef struct {
     double vocal_pitch;             // Vocal fundamental frequency in Hz (85Hz deep, 250Hz child-like)
     double expression_scale;        // Animation expression sensitivity multiplier (e.g. 1.5 amplified)
     double leadership_profile;       // Leadership divergence (0.0 supportive, 1.0 dominant)
+    double maturity_index;           // Perceived age maturity (0.0 young, 1.0 mature/experienced)
 } teddy_geometry_t;
 
 // Maps abstract traits to geometric parameters based on study results
@@ -56,6 +57,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->vocal_pitch = 250.0;           // High, warm pitch
             geom->expression_scale = 1.5;        // Amplified expression
             geom->leadership_profile = 0.0;      // Supportive profile
+            geom->maturity_index = 0.0;          // Young profile
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -77,6 +79,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->vocal_pitch = 85.0;            // Deep, formidable pitch
             geom->expression_scale = 0.5;        // Deadpan expression
             geom->leadership_profile = 1.0;      // Dominant profile
+            geom->maturity_index = 1.0;          // Mature profile
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -98,6 +101,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->vocal_pitch = 85.0;            // Deep pitch
             geom->expression_scale = 0.5;        // Deadpan expression
             geom->leadership_profile = 1.0;      // Dominant profile
+            geom->maturity_index = 1.0;          // Mature profile
             break;
     }
 }
