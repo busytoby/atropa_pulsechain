@@ -3,6 +3,12 @@
 #include <assert.h>
 #include <math.h>
 
+static double test_thunk_executed_flag = 0.0;
+static double test_thunk_callback(void) {
+    test_thunk_executed_flag = 1.0;
+    return 1.0;
+}
+
 int main(void) {
     printf("=============================================================\n");
     printf("AUNCIENT RENDERMAN TEDDY BEAR PERSONALITY CONFIGURATION TEST\n");
@@ -395,6 +401,23 @@ int main(void) {
     assert(tremolo_spacing > 0.0);
     assert(sustain_decay > 0.0);
     printf("   ✓ Izotope symmetric threshold tremolo and group scale sustain verified successfully\n");
+
+    // Test execute_hbridge_thunk_with_feedback (Successful execution case)
+    test_thunk_executed_flag = 0.0;
+    double safety_margin = 0.0;
+    geom.head_fwhr = 1.0;
+    geom.behavioral_mismatch = 0.1;
+    assert(execute_hbridge_thunk_with_feedback(&geom, 200.0, test_thunk_callback, &safety_margin));
+    assert(test_thunk_executed_flag == 1.0);
+
+    // Test execute_hbridge_thunk_with_feedback (Deferred rollback case on Gumbel safety threshold violation)
+    test_thunk_executed_flag = 0.0;
+    geom.head_fwhr = 1.8;
+    geom.behavioral_mismatch = 1.0;
+    assert(!execute_hbridge_thunk_with_feedback(&geom, 2500.0, test_thunk_callback, &safety_margin));
+    assert(test_thunk_executed_flag == 0.0); // deferred
+    geom.head_fwhr = 1.0; // reset
+    printf("   ✓ H-bridge thunk execution under Gumbel flyback and emotional Wald tests verified successfully\n");
 
     // Test ACID transaction behavior (Rollback path on constraint violation)
     tx = begin_evaluation_transaction(&geom);

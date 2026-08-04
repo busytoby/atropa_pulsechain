@@ -964,6 +964,30 @@ bool evaluate_expression_freeze_uncanny(const teddy_geometry_t *geom, double fre
     return true;
 }
 
+bool execute_hbridge_thunk_with_feedback(const teddy_geometry_t *geom, double switching_frequency, double (*thunk_fn)(void), double *safety_margin_out) {
+    if (!geom || switching_frequency < 1.0 || !thunk_fn || !safety_margin_out) {
+        return false;
+    }
+    double flyback_mismatch = 0.0;
+    if (!evaluate_hbridge_izotope_mismatch(geom, switching_frequency, &flyback_mismatch)) {
+        return false;
+    }
+    double scale = 1.0;
+    if (!evaluate_scale_structured_covariates(geom, geom->maturity_index, &scale)) {
+        return false;
+    }
+    double wstat = 0.0, wpval = 0.0;
+    if (!evaluate_scale_adjusted_threshold_wald(flyback_mismatch, scale, 5.0, 0.25, &wstat, &wpval)) {
+        return false;
+    }
+    *safety_margin_out = 1.0 - wpval;
+    if (flyback_mismatch > 5.0 && wpval < 0.05) {
+        return false;
+    }
+    thunk_fn();
+    return true;
+}
+
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state) {
     if (resistance < 1e-9 || capacitance < 1e-9 || time_step < 1e-9 || !charge_state) {
         return false;
