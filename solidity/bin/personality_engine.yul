@@ -293,6 +293,24 @@ object "PersonalityEngine" {
                 return(0x00, 32)
             }
 
+            // ----------------------------------------------------------------
+            // METHOD: evaluate_hbridge_izotope_mismatch (head_fwhr, switching_frequency)
+            // Selector: 0xe399f0f7 (integer scaled by 1000)
+            // ----------------------------------------------------------------
+            if eq(selector, 0xe399f0f7) {
+                let head_fwhr := calldataload(4)
+                let switching_frequency := calldataload(36)
+                
+                let mismatch := 0
+                if gt(switching_frequency, 0) {
+                    // mismatch = (switching_frequency * head_fwhr) / 1000 (scaled by 1000)
+                    mismatch := div(mul(switching_frequency, head_fwhr), 1000)
+                }
+                
+                mstore(0x00, mismatch)
+                return(0x00, 32)
+            }
+
             revert(0, 0)
         }
     }
