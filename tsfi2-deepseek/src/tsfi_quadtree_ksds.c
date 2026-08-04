@@ -390,7 +390,7 @@ bool tsfi_qt_ksds_read_dual(
     return true;
 }
 
-char tsfi_tsv_separator = '\t';
+char tsfi_tsv_separator = '\x1F';
 
 bool tsfi_qt_ksds_get_metadata(const char *header, const char *key, char *val_out, size_t val_max) {
     if (!header || !key || !val_out || val_max == 0) return false;
