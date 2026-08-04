@@ -19,7 +19,6 @@
 #include "xdg-shell-client-protocol.h"
 #include <linux/input.h>
 #include <time.h>
-#include <omp.h>
 #include <alsa/asoundlib.h>
 #include <pthread.h>
 #include "tsfi_vm_dft_bridge.h"
