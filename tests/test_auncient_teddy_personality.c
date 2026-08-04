@@ -599,6 +599,15 @@ int main(void) {
     geom.head_fwhr = 1.0; // reset
     printf("   ✓ H-bridge thunk execution under Gumbel flyback and emotional Wald tests verified successfully\n");
 
+    // Test execute_cloglog_thunk_with_feedback (Successful execution case)
+    test_thunk_executed_flag = 0.0;
+    double cloglog_safety_margin = 0.0;
+    geom.head_fwhr = 0.4;
+    assert(execute_cloglog_thunk_with_feedback(&geom, 0.5, test_thunk_callback, &cloglog_safety_margin));
+    assert(test_thunk_executed_flag == 1.0);
+    geom.head_fwhr = 1.0; // reset
+    printf("   ✓ Cloglog gated thunk execution verified successfully\n");
+
     // Test ACID transaction behavior (Rollback path on constraint violation)
     tx = begin_evaluation_transaction(&geom);
     assert(tx.active);

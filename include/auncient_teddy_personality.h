@@ -317,8 +317,11 @@ bool evaluate_expression_freeze_uncanny(const teddy_geometry_t *geom, double fre
 // Evaluates the unpredictable micro-expression freeze frequency uncanny response (Hyde et al.).
 bool evaluate_expression_freeze_frequency(const teddy_geometry_t *geom, double freeze_frequency_hz, double *uncanny_score_out);
 
-// Executes a deferred H-bridge thunk under Gumbel flyback and emotional-scale adjusted Wald test bounds.
-bool execute_hbridge_thunk_with_feedback(const teddy_geometry_t *geom, double switching_frequency, double (*thunk_fn)(void), double *safety_margin_out);
+// Executes an H-bridge switching thunk with real-time safety feedback logic.
+bool execute_hbridge_thunk_with_feedback(const teddy_geometry_t *geom, double load_inductance, double (*callback)(void), double *safety_margin_out);
+
+// Executes a complementary log-log gated thunk with real-time feedback logic (Christensen).
+bool execute_cloglog_thunk_with_feedback(const teddy_geometry_t *geom, double scale_covariate, double (*callback)(void), double *safety_margin_out);
 
 // Evaluates the unpredictable micro-expression asymmetry uncanny response (Hyde et al.).
 bool evaluate_expression_asymmetry_uncanny(const teddy_geometry_t *geom, double asymmetry_deviation, double *uncanny_score_out);

@@ -176,6 +176,19 @@ bool execute_hbridge_thunk_with_feedback(const teddy_geometry_t *geom, double sw
     return true;
 }
 
+bool execute_cloglog_thunk_with_feedback(const teddy_geometry_t *geom, double scale_covariate, double (*callback)(void), double *safety_margin_out) {
+    if (!geom || !callback || !safety_margin_out) {
+        return false;
+    }
+    int cloglog_rating = evaluate_ordinal_cloglog_scale_rating(geom, scale_covariate);
+    *safety_margin_out = (7.0 - (double)cloglog_rating) / 6.0;
+    if (cloglog_rating > 5) {
+        return false;
+    }
+    callback();
+    return true;
+}
+
 evaluation_tx_t begin_evaluation_transaction(teddy_geometry_t *target) {
     evaluation_tx_t tx;
     tx.target = target;
