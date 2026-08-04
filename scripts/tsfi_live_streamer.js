@@ -407,12 +407,19 @@ function generateMusicSample(pattern, stepIndex, stepSampleIdx, stepAge) {
         const progIdx_g = Math.floor(timeSec_g / 8.0) % 6;
         const activeChord_g = chordProgressions_g[progIdx_g].map(idx => chordScale_g[idx]);
 
-        // Arpeggiate notes of the active chord over 16-step patterns
-        const arpNote = activeChord_g[(stepIndex + Math.floor(timeSec_g / 2.0)) % activeChord_g.length];
-        const arpFreq = (arpNote && NOTE_FREQS[arpNote]) ? (NOTE_FREQS[arpNote] * currentFreqMultiplier) : 523.25;
+        // Syncopated melodic motif pattern selector
+        const melodyPattern = [0, 2, 1, 2, 0, 1, 2, 1, 0, 2, 1, 2, 0, 2, 1, 2];
+        const stepNoteIdx = melodyPattern[stepIndex % melodyPattern.length];
+        const arpNote = activeChord_g[stepNoteIdx % activeChord_g.length];
+        let arpFreq = (arpNote && NOTE_FREQS[arpNote]) ? (NOTE_FREQS[arpNote] * currentFreqMultiplier) : 523.25;
         
-        // Rhythmic gate: trigger plucks on specific steps
-        const isArpTrigger = (stepIndex % 4 === 0 || stepIndex % 6 === 2);
+        // Add octave shifts on syncopated steps for melodic highlights
+        if (stepIndex % 6 === 2 || stepIndex % 8 === 4) {
+            arpFreq *= 2.0;
+        }
+
+        // Rhythmic gate: trigger plucks on specific syncopated steps
+        const isArpTrigger = (stepIndex % 3 === 0 || stepIndex % 8 === 2 || stepIndex % 8 === 5);
         if (isArpTrigger && stepAge < 0.35) {
             const vibrato = 1.0 + 0.005 * Math.sin(2.0 * Math.PI * 6.0 * timeSec_g);
             leadPhase += (arpFreq * 1.5 * vibrato) / SAMPLE_RATE; // pitched up for bell/chime style
