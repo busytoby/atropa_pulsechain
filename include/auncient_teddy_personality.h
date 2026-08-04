@@ -186,6 +186,9 @@ bool evaluate_scale_wald_test(double scale_est, double baseline, double variance
 // Evaluates nominal effects on scale parameters via the Wald test statistic.
 bool evaluate_scale_nominal_wald_test(const double *gamma_vector, const double *covariance_matrix, int df, double *wald_stat_out, double *p_value_out);
 
+// Evaluates nominal effects on threshold parameters via the Wald test statistic.
+bool evaluate_threshold_nominal_wald_test(const double *theta_vector, const double *covariance_matrix, int df, double *wald_stat_out, double *p_value_out);
+
 // Calculates perceived threat level based on fWHR dominance cues (Geniole et al.).
 double evaluate_fw_threat_level(const teddy_geometry_t *geom);
 

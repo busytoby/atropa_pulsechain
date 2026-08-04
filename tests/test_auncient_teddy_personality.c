@@ -188,6 +188,15 @@ int main(void) {
     assert(sn_wpval < 0.05); // significant
     printf("   ✓ R H B Christensen scale nominal Wald test diagnostics verified successfully\n");
 
+    // Test threshold nominal Wald test calculation
+    double thetas[2] = {1.2, -1.0};
+    double t_covar[4] = {0.25, 0.0, 0.0, 0.25};
+    double tn_wstat = 0.0, tn_wpval = 0.0;
+    assert(evaluate_threshold_nominal_wald_test(thetas, t_covar, 2, &tn_wstat, &tn_wpval));
+    assert(tn_wstat > 0.0);
+    assert(tn_wpval < 0.05); // significant
+    printf("   ✓ R H B Christensen threshold nominal Wald test diagnostics verified successfully\n");
+
     // Test Geniole fWHR threat level calculation
     double threat_level = evaluate_fw_threat_level(&geom);
     assert(threat_level >= 0.0);
