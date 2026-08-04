@@ -709,7 +709,7 @@ test-auncient-teddy-personality:
 	@rm -f tests/test_auncient_teddy_personality
 
 test-auncient-bear-interactions:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_bear_interactions.c -o tests/test_auncient_bear_interactions -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/inc tests/test_auncient_bear_interactions.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c -o tests/test_auncient_bear_interactions -lrt -lm
 	./tests/test_auncient_bear_interactions
 	@rm -f tests/test_auncient_bear_interactions
 

@@ -4,6 +4,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+// GOST 28147-89 Russian block cipher functions from tsfi2-deepseek
+int tsfi_mf_ussr_gost_scramble(uint32_t *left_word, uint32_t *right_word, uint32_t key_word);
+int tsfi_mf_ussr_gost_encrypt_32(uint32_t *left, uint32_t *right, const uint32_t *key_8words);
+extern int tsfi_gost_is_broadcast_channel;
+
 // Struct representing a qualifying system participant (Rule 16)
 typedef struct {
     uint64_t dna_seed;
@@ -105,6 +110,18 @@ int main(void) {
     assert(!transfer_saat(&account_a, &ghost_account, 100000));
     assert(account_a.balance_saat == 750000); // Rollback verified, balance unchanged
     printf("   ✓ Transfer to unregistered Ghost Bear blocked and rolled back successfully\n");
+
+    // 5. Secure GOST handshake between Registered Bear A and Unregistered GOST Bear
+    tsfi_gost_is_broadcast_channel = 1;
+    uint32_t shared_gost_key[8] = {0x01234567, 0x89ABCDEF, 0xFEDCBA98, 0x76543210, 
+                                   0x55555555, 0xAAAAAAAA, 0x11111111, 0x99999999};
+    uint32_t handshake_left = 0xAA55AA55;
+    uint32_t handshake_right = 0x55AA55AA;
+    int gost_status = tsfi_mf_ussr_gost_encrypt_32(&handshake_left, &handshake_right, shared_gost_key);
+    assert(gost_status == 0);
+    assert(handshake_left != 0xAA55AA55 || handshake_right != 0x55AA55AA);
+    printf("   ✓ GOST 28147-89 secure handshake payload encrypted successfully (L: 0x%08X, R: 0x%08X)\n", 
+           handshake_left, handshake_right);
 
     printf("=============================================================\n");
     printf("TEDDY INTERACTION SUITE COMPLETED SUCCESSFULLY\n");
