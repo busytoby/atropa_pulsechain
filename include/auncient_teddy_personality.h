@@ -170,6 +170,9 @@ int evaluate_ordinal_gumbel_rating(const teddy_geometry_t *geom);
 // Evaluates an ordinal rating using a customized flexible link mixture weight (0.0 cloglog, 1.0 logit).
 int evaluate_ordinal_flexible_rating(const teddy_geometry_t *geom, double link_mixture_weight);
 
+// Evaluates an ordinal rating using a Cauchy and Gumbel mixture link model.
+int evaluate_ordinal_cauchy_gumbel_mixture(const teddy_geometry_t *geom, double cauchy_weight);
+
 // Diagnoses whether ordinal thresholds fit equidistant constraints.
 bool evaluate_threshold_equidistancy(const teddy_geometry_t *geom, double tolerance, double *spacing_error);
 

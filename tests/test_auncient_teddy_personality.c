@@ -137,6 +137,11 @@ int main(void) {
     assert(rating_flex >= 1 && rating_flex <= 7);
     printf("   ✓ R H B Christensen flexible mixture link ordinal rating verified successfully\n");
 
+    // Test Cauchy/Gumbel mixture link rating
+    int rating_cg = evaluate_ordinal_cauchy_gumbel_mixture(&geom, 0.5);
+    assert(rating_cg >= 1 && rating_cg <= 7);
+    printf("   ✓ R H B Christensen Cauchy/Gumbel mixture link ordinal rating verified successfully\n");
+
     // Test threshold equidistancy diagnostics calculation
     double spacing_err = 0.0;
     assert(evaluate_threshold_equidistancy(&geom, 1.0, &spacing_err));

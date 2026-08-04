@@ -597,6 +597,24 @@ int evaluate_ordinal_flexible_rating(const teddy_geometry_t *geom, double link_m
     return 7;
 }
 
+int evaluate_ordinal_cauchy_gumbel_mixture(const teddy_geometry_t *geom, double cauchy_weight) {
+    if (!geom) return 1;
+    double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
+    double thresholds[6] = {0.5, 1.2, 2.0, 2.8, 3.5, 4.2};
+    double w = cauchy_weight;
+    if (w < 0.0) w = 0.0;
+    if (w > 1.0) w = 1.0;
+    for (int i = 0; i < 6; ++i) {
+        double cauchy_prob = atan(thresholds[i] - latent) / 3.141592653589793 + 0.5;
+        double gumbel_prob = exp(-exp(-(thresholds[i] - latent)));
+        double mix_prob = (w * cauchy_prob) + ((1.0 - w) * gumbel_prob);
+        if (mix_prob >= 0.5) {
+            return i + 1;
+        }
+    }
+    return 7;
+}
+
 bool evaluate_threshold_equidistancy(const teddy_geometry_t *geom, double tolerance, double *spacing_error) {
     if (!geom || !spacing_error) {
         return false;
