@@ -95,6 +95,7 @@ typedef struct {
     double work_output;              // Perceived work output during campaigns (0.0 low/avoidance, 1.0 high output)
     double reassurance_capability;   // Perceived reassurance capability (0.0 stoic/low comfort, 1.0 high comfort/warmth)
     double paternal_protection_style; // Perceived protection style (0.0 aggressive over-protection, 1.0 cooperative care)
+    double competitive_persistence;   // Perceived competitive persistence (0.0 lower, 1.0 high competitive persistence)
 } teddy_geometry_t;
 
 // Pixar RenderMan Avatar Agent definition upon the cooperative boundary

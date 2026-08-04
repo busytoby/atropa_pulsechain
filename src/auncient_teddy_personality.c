@@ -87,6 +87,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->work_output = 1.0;              // High work output
             geom->reassurance_capability = 1.0;   // High reassurance
             geom->paternal_protection_style = 1.0; // Gentle care
+            geom->competitive_persistence = 0.0;   // Lower competitive persistence
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -172,6 +173,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->work_output = 0.0;              // Lower expected work output
             geom->reassurance_capability = 0.0;   // Stoic/low comfort
             geom->paternal_protection_style = 0.0; // Aggressive over-protection
+            geom->competitive_persistence = 1.0;   // High competitive persistence
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -257,6 +259,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->work_output = 0.0;              // Lower expected work output
             geom->reassurance_capability = 0.0;   // Stoic/low comfort
             geom->paternal_protection_style = 0.0; // Aggressive over-protection
+            geom->competitive_persistence = 1.0;   // High competitive persistence
             break;
     }
 }
