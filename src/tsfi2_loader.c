@@ -3,6 +3,7 @@
 
 #include "tsfi2_loader.h"
 #include "tsfi2-deepseek/inc/tsfi_displacementshader.h"
+#include "tsfi2-deepseek/inc/tsfi_mainframe_computerworld.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,6 +26,27 @@ static uint64_t mod_pow(uint64_t base, uint64_t exp, uint64_t mod) {
         exp >>= 1;
     }
     return res;
+}
+
+static void write_tsv_vsam(tsfi_cw_vsam_ksds *ksds, int reg_idx, uint64_t val) {
+    char key[16];
+    snprintf(key, sizeof(key), "R%d", reg_idx);
+    char val_str[32];
+    snprintf(val_str, sizeof(val_str), "%llu", (unsigned long long)val);
+    int rc = tsfi_cw_vsam_write(ksds, key, (const uint8_t *)val_str, strlen(val_str));
+    (void)rc;
+}
+
+static uint64_t read_tsv_vsam(tsfi_cw_vsam_ksds *ksds, int reg_idx) {
+    char key[16];
+    snprintf(key, sizeof(key), "R%d", reg_idx);
+    uint8_t data[32] = {0};
+    int len = 0;
+    if (tsfi_cw_vsam_read(ksds, key, data, sizeof(data) - 1, &len) == 0) {
+        data[len] = '\0';
+        return strtoull((char *)data, NULL, 10);
+    }
+    return 0;
 }
 
 
@@ -110,10 +132,15 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
     cpu->halted = false;
     cpu->exit_code = 0;
     
-    uint64_t wmq_base = 0;
-    uint64_t wmq_secret = 0;
-    uint64_t wmq_prime = 953467ULL;
-    uint64_t wmq_pole = 0;
+    tsfi_cw_vsam_ksds tsv_ksds;
+    memset(&tsv_ksds, 0, sizeof(tsv_ksds));
+    remove("TSV_REGISTRY.dat.bin");
+    tsfi_cw_vsam_open(&tsv_ksds, "TSV_REGISTRY.dat.bin");
+    write_tsv_vsam(&tsv_ksds, 1, 0);
+    write_tsv_vsam(&tsv_ksds, 2, 0);
+    write_tsv_vsam(&tsv_ksds, 3, 953467ULL);
+    write_tsv_vsam(&tsv_ksds, 4, 0);
+    write_tsv_vsam(&tsv_ksds, 5, 0);
 
     FILE *init_shm = fopen("/tmp/stanag_coax_loopback.bin", "w+b");
     if (init_shm) {
@@ -343,16 +370,11 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
             uint8_t reg_idx = bytecode[pc+2];
             uint8_t len = bytecode[pc+3];
             if (pc + 3 + len < bytecode_len) {
+                uint64_t val = read_tsv_vsam(&tsv_ksds, reg_idx);
                 printf("[JCL] ");
                 for (uint8_t i = 0; i < len; i++) {
                     putchar(bytecode[pc + 4 + i]);
                 }
-                uint64_t val = 0;
-                if (reg_idx == 1) val = wmq_base;
-                else if (reg_idx == 2) val = wmq_secret;
-                else if (reg_idx == 3) val = wmq_prime;
-                else if (reg_idx == 5) val = wmq_pole;
-                
                 if (reg_idx == 2) {
                     printf("%09llu\n", (unsigned long long)val);
                 } else {
@@ -364,18 +386,20 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
             int reg_idx = bytecode[pc+2];
             uint32_t val = bytecode[pc+3] | (bytecode[pc+4] << 8) | (bytecode[pc+5] << 16) | (bytecode[pc+6] << 24);
             printf("[SCSI/ZMM] Write virtual register %d with value %u successfully.\n", reg_idx, val);
-            if (reg_idx == 1) wmq_base = val;
-            else if (reg_idx == 2) wmq_secret = val;
-            else if (reg_idx == 3) wmq_prime = val;
-            else if (reg_idx == 4 && val == 1) {
-                wmq_pole = mod_pow(wmq_base, wmq_secret, wmq_prime);
+            write_tsv_vsam(&tsv_ksds, reg_idx, val);
+            if (reg_idx == 4 && val == 1) {
+                uint64_t base = read_tsv_vsam(&tsv_ksds, 1);
+                uint64_t secret = read_tsv_vsam(&tsv_ksds, 2);
+                uint64_t prime = read_tsv_vsam(&tsv_ksds, 3);
+                uint64_t pole = mod_pow(base, secret, prime);
+                write_tsv_vsam(&tsv_ksds, 5, pole);
             }
             pc += 7;
         } else if (opcode == 0x0F && pc + 2 < bytecode_len && bytecode[pc+1] == 0xFF) { // WinchesterMQ register read
             int reg_idx = bytecode[pc+2];
             printf("[SCSI/ZMM] Read virtual register %d successfully.\n", reg_idx);
             if (reg_idx == 5) {
-                cpu->exit_code = (int)wmq_pole;
+                cpu->exit_code = (int)read_tsv_vsam(&tsv_ksds, 5);
             }
             pc += 3;
         } else if (opcode == 0xB8 && pc + 4 < bytecode_len) { // MOV EAX, imm32
@@ -402,5 +426,6 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
     }
     
     free(buffer);
+    remove("TSV_REGISTRY.dat.bin");
     return (cpu->exit_code != -1);
 }
