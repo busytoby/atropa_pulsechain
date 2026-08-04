@@ -469,6 +469,12 @@ bool evaluate_hyde_vocal_amplitude_mismatch(const teddy_geometry_t *geom, double
 // Evaluates the alignment of mouth animation speed to vocal fundamental frequency acceleration curves (Hyde et al.).
 bool evaluate_hyde_mouth_speed_synchrony(const teddy_geometry_t *geom, double mouth_speed, double pitch_acceleration, double *sync_mismatch_out);
 
+// Calculates perceived dominance based on the brow-to-chin vertical distance proportion (Keating, C. F.).
+bool evaluate_keating_brow_chin_proportion(const teddy_geometry_t *geom, double brow_chin_distance, double *proportion_dominance_out);
+
+// Maps fWHR dominance ratings to micro-expression coordinate jitter bounds (Geniole et al.).
+bool evaluate_geniole_fwhr_jitter_mod(const teddy_geometry_t *geom, double base_jitter, double *mapped_jitter_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 

@@ -1065,3 +1065,19 @@ bool evaluate_hyde_mouth_speed_synchrony(const teddy_geometry_t *geom, double mo
     return true;
 }
 
+bool evaluate_keating_brow_chin_proportion(const teddy_geometry_t *geom, double brow_chin_distance, double *proportion_dominance_out) {
+    if (!geom || brow_chin_distance < 0.0 || !proportion_dominance_out) {
+        return false;
+    }
+    *proportion_dominance_out = (1.0 / (1.0 + brow_chin_distance)) * (1.3 + geom->leadership_profile * 0.3);
+    return true;
+}
+
+bool evaluate_geniole_fwhr_jitter_mod(const teddy_geometry_t *geom, double base_jitter, double *mapped_jitter_out) {
+    if (!geom || base_jitter < 0.0 || !mapped_jitter_out) {
+        return false;
+    }
+    *mapped_jitter_out = base_jitter * (0.9 + geom->head_fwhr * 0.5);
+    return true;
+}
+

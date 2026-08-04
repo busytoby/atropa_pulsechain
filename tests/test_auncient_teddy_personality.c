@@ -675,6 +675,15 @@ int main(void) {
     assert(sync_mismatch > 0.0);
     printf("   ✓ HYDE et al. vocal amplitude mismatch and mouth speed synchrony verified successfully\n");
 
+    // Test Keating brow-chin proportion and Geniole fWHR jitter modulator calculations
+    double brow_chin_dominance = 0.0;
+    double fwhr_jitter = 0.0;
+    assert(evaluate_keating_brow_chin_proportion(&geom, 0.4, &brow_chin_dominance));
+    assert(brow_chin_dominance > 0.0);
+    assert(evaluate_geniole_fwhr_jitter_mod(&geom, 0.1, &fwhr_jitter));
+    assert(fwhr_jitter > 0.0);
+    printf("   ✓ Keating brow-chin proportion and Geniole fWHR jitter modulation verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge
