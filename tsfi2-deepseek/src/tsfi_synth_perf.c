@@ -65,19 +65,49 @@ void tsfi_synth_perf_sync_vram(TSFiSynthPerfEngine *engine) {
     }
 }
 
+#include "tsfi_ccx_pool.h"
+
+static TSFiCCXPool g_sp_ccx_pool;
+static bool g_sp_ccx_pool_initialized = false;
+
+typedef struct {
+    const int *bytecode;
+    size_t len;
+    int branch_idx;
+    int *results;
+} SPWorkerArg;
+
+static void sp_solve_worker(void *arg) {
+    SPWorkerArg *a = (SPWorkerArg *)arg;
+    TSFiMarkovVM local_vm;
+    memset(&local_vm, 0, sizeof(TSFiMarkovVM));
+    tsfi_markov_vm_execute(&local_vm, a->bytecode, a->len);
+    a->results[a->branch_idx] = (local_vm.stack_len > 0) ? local_vm.stack[0] : 0;
+}
+
 void tsfi_synth_perf_parallel_solve(TSFiSynthPerfEngine *engine, const int *bytecode, size_t len, int branch_count, int *results) {
     if (!engine || !bytecode || !results || branch_count <= 0) return;
 
-    // Execute multiple logical deduction branches concurrently using OpenMP threads
-// Removed OpenMP pragma
+    if (!g_sp_ccx_pool_initialized) {
+        tsfi_ccx_pool_init(&g_sp_ccx_pool, 0, 4);
+        g_sp_ccx_pool_initialized = true;
+    }
+
+    SPWorkerArg args[MAX_CCX_THREADS];
+    int active = 0;
     for (int i = 0; i < branch_count; i++) {
-        TSFiMarkovVM local_vm;
-        memset(&local_vm, 0, sizeof(TSFiMarkovVM));
-        
-        // Spawn local solver execution
-        tsfi_markov_vm_execute(&local_vm, bytecode, len);
-        
-        results[i] = (local_vm.stack_len > 0) ? local_vm.stack[0] : 0;
+        args[active].bytecode = bytecode;
+        args[active].len = len;
+        args[active].branch_idx = i;
+        args[active].results = results;
+
+        tsfi_ccx_pool_enqueue(&g_sp_ccx_pool, sp_solve_worker, &args[active]);
+        active++;
+
+        if (active == MAX_CCX_THREADS || i == branch_count - 1) {
+            tsfi_ccx_pool_wait(&g_sp_ccx_pool);
+            active = 0;
+        }
     }
 }
 

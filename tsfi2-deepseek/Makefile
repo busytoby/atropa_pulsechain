@@ -955,7 +955,7 @@ bin/tsfi_mcp_worker: src/tsfi_mcp_worker.c $(CORE_OBJS) $(OBJ_DIR)/tsfi_zmm_rpc.
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 bin/tsfi_sd_worker: src/tsfi_native_sd.cpp $(filter-out $(OBJ_DIR)/main.o, $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)) | $(BIN_DIR)
-	$(CXX) $(CXXFLAGS) -o $@ src/tsfi_native_sd.cpp $(filter-out src/tsfi_native_sd.cpp, $^) -Lassets/sd_cpp/build -Lassets/sd_cpp/build/ggml/src -Lassets/sd_cpp/build/ggml/src/ggml-vulkan -lstable-diffusion -lggml -lggml-cpu -lggml-base -lggml-vulkan $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -o $@ src/tsfi_native_sd.cpp $(filter-out src/tsfi_native_sd.cpp, $^) -Lassets/sd_cpp/build -Lassets/sd_cpp/build/ggml/src -Lassets/sd_cpp/build/ggml/src/ggml-vulkan -lstable-diffusion -lggml -lggml-cpu -lggml-base -lggml-vulkan $(LDFLAGS) -lgomp
 
 # --- Tool Realization ---
 bin/tsfi_v2c: tools/tsfi_v2c.c | $(BIN_DIR)

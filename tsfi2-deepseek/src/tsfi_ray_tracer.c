@@ -100,42 +100,43 @@ static int intersect_sphere(tsfi_rt_vec3 orig, tsfi_rt_vec3 dir, tsfi_rt_vec3 ce
     return 0;
 }
 
-static int intersect_plane(tsfi_rt_vec3 orig, tsfi_rt_vec3 dir, tsfi_rt_vec3 normal, float d, float *t_out) {
-    float denom = vec3_dot(normal, dir);
-    if (fabsf(denom) > 1e-6) {
-        float t = (d - vec3_dot(normal, orig)) / denom;
-        if (t >= 0.001f) {
-            *t_out = t;
-            return 1;
-        }
-    }
-    return 0;
-}
+#include "tsfi_ccx_pool.h"
 
-int tsfi_ray_tracer_render(const tsfi_cgm_scene *scene, uint32_t *image_out, int width, int height) {
-    if (!scene || !image_out || width <= 0 || height <= 0) return -1;
+static int intersect_plane(tsfi_rt_vec3 orig, tsfi_rt_vec3 dir, tsfi_rt_vec3 normal, float d, float *t_out);
 
-    tsfi_rt_vec3 orig = {0.0f, 0.0f, 0.0f};
+static TSFiCCXPool g_rt_ccx_pool;
+static bool g_rt_ccx_pool_initialized = false;
 
-// Removed OpenMP pragma
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
+typedef struct {
+    int start_y;
+    int end_y;
+    const tsfi_cgm_scene *scene;
+    uint32_t *image_out;
+    int width;
+    int height;
+    tsfi_rt_vec3 orig;
+} RTWorkerArg;
+
+static void rt_render_worker(void *arg) {
+    RTWorkerArg *a = (RTWorkerArg *)arg;
+    for (int y = a->start_y; y < a->end_y; y++) {
+        for (int x = 0; x < a->width; x++) {
             // Map pixel to normalized device coordinates (-1 to 1)
-            float px = (2.0f * ((float)x + 0.5f) / (float)width - 1.0f) * ((float)width / (float)height);
-            float py = 1.0f - 2.0f * ((float)y + 0.5f) / (float)height;
+            float px = (2.0f * ((float)x + 0.5f) / (float)a->width - 1.0f) * ((float)a->width / (float)a->height);
+            float py = 1.0f - 2.0f * ((float)y + 0.5f) / (float)a->height;
 
             tsfi_rt_vec3 dir = vec3_normalize((tsfi_rt_vec3){px, py, 1.0f});
 
             float t_min = 1e9f;
             int hit_idx = -1;
 
-            for (int i = 0; i < scene->primitive_count; i++) {
+            for (int i = 0; i < a->scene->primitive_count; i++) {
                 float t = 0.0f;
                 int hit = 0;
-                if (scene->primitives[i].type == CGM_PRIM_SPHERE) {
-                    hit = intersect_sphere(orig, dir, scene->primitives[i].position, scene->primitives[i].param1, &t);
-                } else if (scene->primitives[i].type == CGM_PRIM_PLANE) {
-                    hit = intersect_plane(orig, dir, scene->primitives[i].position, scene->primitives[i].param1, &t);
+                if (a->scene->primitives[i].type == CGM_PRIM_SPHERE) {
+                    hit = intersect_sphere(a->orig, dir, a->scene->primitives[i].position, a->scene->primitives[i].param1, &t);
+                } else if (a->scene->primitives[i].type == CGM_PRIM_PLANE) {
+                    hit = intersect_plane(a->orig, dir, a->scene->primitives[i].position, a->scene->primitives[i].param1, &t);
                 }
 
                 if (hit && t < t_min) {
@@ -145,9 +146,9 @@ int tsfi_ray_tracer_render(const tsfi_cgm_scene *scene, uint32_t *image_out, int
             }
 
             if (hit_idx != -1) {
-                const tsfi_cgm_primitive *prim = &scene->primitives[hit_idx];
+                const tsfi_cgm_primitive *prim = &a->scene->primitives[hit_idx];
                 // Intersection point
-                tsfi_rt_vec3 hit_pt = {orig.x + dir.x * t_min, orig.y + dir.y * t_min, orig.z + dir.z * t_min};
+                tsfi_rt_vec3 hit_pt = {a->orig.x + dir.x * t_min, a->orig.y + dir.y * t_min, a->orig.z + dir.z * t_min};
                 tsfi_rt_vec3 color = prim->color;
                 tsfi_rt_vec3 normal = {0,0,0};
                 if (prim->type == CGM_PRIM_SPHERE) {
@@ -176,7 +177,7 @@ int tsfi_ray_tracer_render(const tsfi_cgm_scene *scene, uint32_t *image_out, int
                 }
 
                 // Diffuse lighting with Subsurface Scattering (SSS / Triple S) wrap-around approximation
-                float diffuse = vec3_dot(normal, scene->light_dir);
+                float diffuse = vec3_dot(normal, a->scene->light_dir);
                 float wrap = 0.0f;
                 if (prim->param_vec.x > 0.001f) {
                     wrap = prim->param_vec.x;
@@ -189,9 +190,9 @@ int tsfi_ray_tracer_render(const tsfi_cgm_scene *scene, uint32_t *image_out, int
                 if (diffuse < 0.0f) diffuse = 0.0f;
                 if (scatter_diffuse < 0.0f) scatter_diffuse = 0.0f;
 
-                float r = color.x * (scene->ambient_color.x + diffuse);
-                float g = color.y * (scene->ambient_color.y + diffuse);
-                float b = color.z * (scene->ambient_color.z + diffuse);
+                float r = color.x * (a->scene->ambient_color.x + diffuse);
+                float g = color.y * (a->scene->ambient_color.y + diffuse);
+                float b = color.z * (a->scene->ambient_color.z + diffuse);
 
                 if (wrap > 0.0f) {
                     float sss_r = prim->param_vec.y > 0.001f ? prim->param_vec.y : 1.0f;
@@ -211,17 +212,66 @@ int tsfi_ray_tracer_render(const tsfi_cgm_scene *scene, uint32_t *image_out, int
                 uint8_t ig = (uint8_t)(g * 255.0f);
                 uint8_t ib = (uint8_t)(b * 255.0f);
 
-                image_out[y * width + x] = (0xFFULL << 24) | (ir << 16) | (ig << 8) | ib;
+                a->image_out[y * a->width + x] = (0xFFULL << 24) | (ir << 16) | (ig << 8) | ib;
             } else {
                 // Background color (sky gradient)
                 float factor = 0.5f * (dir.y + 1.0f);
                 uint8_t r = (uint8_t)((1.0f - factor) * 30.0f + factor * 100.0f);
                 uint8_t g = (uint8_t)((1.0f - factor) * 30.0f + factor * 150.0f);
                 uint8_t b = (uint8_t)((1.0f - factor) * 40.0f + factor * 220.0f);
-                image_out[y * width + x] = (0xFFULL << 24) | (r << 16) | (g << 8) | b;
+                a->image_out[y * a->width + x] = (0xFFULL << 24) | (r << 16) | (g << 8) | b;
             }
         }
     }
+}
+
+static int intersect_plane(tsfi_rt_vec3 orig, tsfi_rt_vec3 dir, tsfi_rt_vec3 normal, float d, float *t_out) {
+    float denom = vec3_dot(normal, dir);
+    if (fabsf(denom) > 1e-6) {
+        float t = (d - vec3_dot(normal, orig)) / denom;
+        if (t >= 0.001f) {
+            *t_out = t;
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int tsfi_ray_tracer_render(const tsfi_cgm_scene *scene, uint32_t *image_out, int width, int height) {
+    if (!scene || !image_out || width <= 0 || height <= 0) return -1;
+
+    tsfi_rt_vec3 orig = {0.0f, 0.0f, 0.0f};
+
+    if (!g_rt_ccx_pool_initialized) {
+        tsfi_ccx_pool_init(&g_rt_ccx_pool, 0, 4);
+        g_rt_ccx_pool_initialized = true;
+    }
+
+    RTWorkerArg base_arg;
+    base_arg.scene = scene;
+    base_arg.image_out = image_out;
+    base_arg.width = width;
+    base_arg.height = height;
+    base_arg.orig = orig;
+
+    int num_threads = g_rt_ccx_pool.num_threads;
+    int rows_per_thread = height / num_threads;
+    if (rows_per_thread < 1) rows_per_thread = 1;
+
+    RTWorkerArg args[MAX_CCX_THREADS];
+    for (int i = 0; i < num_threads; i++) {
+        int start = i * rows_per_thread;
+        if (start >= height) break;
+        int end = (i == num_threads - 1) ? height : (i + 1) * rows_per_thread;
+        if (end > height) end = height;
+
+        args[i] = base_arg;
+        args[i].start_y = start;
+        args[i].end_y = end;
+
+        tsfi_ccx_pool_enqueue(&g_rt_ccx_pool, rt_render_worker, &args[i]);
+    }
+    tsfi_ccx_pool_wait(&g_rt_ccx_pool);
 
     return 0;
 }
