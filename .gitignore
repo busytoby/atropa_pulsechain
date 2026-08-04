@@ -751,4 +751,5 @@ tests/test_cbt021_inmemory_pds
 /tests/verify_response
 /tests/test_auncient_teddy_personality
 /tests/test_auncient_hathitrust_stimuli
+/tests/test_auncient_avatar_reflexes
 
