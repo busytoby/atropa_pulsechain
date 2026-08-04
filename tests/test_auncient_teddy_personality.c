@@ -320,6 +320,14 @@ int main(void) {
     assert(simulate_phase_flyback_noise(&geom, 3.14159, &noise_val));
     printf("   ✓ Phase-modulated flyback noise distortion simulation verified successfully\n");
 
+    // Test Izotope constrained parameters calculation
+    double tremolo_spacing = 0.0;
+    double sustain_decay = 0.0;
+    assert(evaluate_izotope_constrained_parameters(&geom, 1, &tremolo_spacing, &sustain_decay));
+    assert(tremolo_spacing > 0.0);
+    assert(sustain_decay > 0.0);
+    printf("   ✓ Izotope symmetric threshold tremolo and group scale sustain verified successfully\n");
+
     // Test ACID transaction behavior (Rollback path on constraint violation)
     tx = begin_evaluation_transaction(&geom);
     assert(tx.active);

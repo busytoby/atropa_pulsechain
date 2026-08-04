@@ -941,6 +941,25 @@ bool simulate_phase_flyback_noise(const teddy_geometry_t *geom, double phase_ang
     return true;
 }
 
+bool evaluate_izotope_constrained_parameters(const teddy_geometry_t *geom, int group_id, double *tremolo_spacing_out, double *sustain_decay_out) {
+    if (!geom || !tremolo_spacing_out || !sustain_decay_out) {
+        return false;
+    }
+    double base_spacing = 0.5 + (geom->eye_eccentricity * 0.2);
+    *tremolo_spacing_out = base_spacing * geom->symmetry;
+    double group_scale = 1.0;
+    if (group_id == 1) {
+        group_scale = 2.5 + (geom->stiffness * 0.5);
+    } else if (group_id == 2) {
+        group_scale = 0.4 - (geom->stiffness * 0.2);
+        if (group_scale < 0.05) group_scale = 0.05;
+    } else {
+        group_scale = 1.0;
+    }
+    *sustain_decay_out = group_scale;
+    return true;
+}
+
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out) {
     if (!geom || param_count < 1 || sample_size < 2 || !aic_out || !bic_out) {
         return false;
