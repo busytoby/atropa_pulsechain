@@ -58,6 +58,7 @@ typedef struct {
     double head_tilt;                // Perceived head tilt (negative downward/aggressive, positive upward/submissive)
     double emotional_stability;      // Perceived emotional stability (0.0 unstable/unpredictable, 1.0 stable/predictable)
     double physical_vigor;           // Perceived physical vigor (0.0 fragile/weak, 1.0 robust/vigorous)
+    double stress_coping;            // Perceived stress coping capability (0.0 low coping/dependent, 1.0 high coping)
 } teddy_geometry_t;
 
 // Maps abstract traits to geometric parameters based on study results
@@ -110,6 +111,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->head_tilt = 1.0;               // Upward tilt
             geom->emotional_stability = 1.0;     // Stable
             geom->physical_vigor = 0.0;          // Fragile
+            geom->stress_coping = 0.0;           // Dependency profile
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -158,6 +160,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->head_tilt = -1.0;              // Downward tilt
             geom->emotional_stability = 0.0;     // Unstable
             geom->physical_vigor = 1.0;          // Robust vigor
+            geom->stress_coping = 1.0;           // Self-reliance
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -206,6 +209,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->head_tilt = -1.0;              // Downward tilt
             geom->emotional_stability = 0.0;     // Unstable
             geom->physical_vigor = 1.0;          // Robust vigor
+            geom->stress_coping = 1.0;           // Self-reliance
             break;
     }
 }
