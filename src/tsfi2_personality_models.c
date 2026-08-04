@@ -850,6 +850,19 @@ bool evaluate_pitch_freeze_uncanny(const teddy_geometry_t *geom, double pitch_ve
     return true;
 }
 
+bool evaluate_pitch_jitter_uncanny(const teddy_geometry_t *geom, double pitch_velocity_mismatch, double jitter_deviation, double *uncanny_score_out) {
+    if (!geom || pitch_velocity_mismatch < 0.0 || jitter_deviation < 0.0 || !uncanny_score_out) {
+        return false;
+    }
+    double base_mismatch = 0.0;
+    if (!evaluate_vocal_visual_pitch_mismatch(geom, pitch_velocity_mismatch, &base_mismatch)) {
+        return false;
+    }
+    double jitter_factor = (jitter_deviation > 0.05) ? (jitter_deviation * 2.5) : 0.05;
+    *uncanny_score_out = base_mismatch + (jitter_factor * (1.0 + geom->behavioral_mismatch));
+    return true;
+}
+
 bool evaluate_pitch_mismatch_habituation_decay(const teddy_geometry_t *geom, double exposure_duration_sec, double *decayed_uncanny_out) {
     if (!geom || exposure_duration_sec < 0.0 || !decayed_uncanny_out) {
         return false;
