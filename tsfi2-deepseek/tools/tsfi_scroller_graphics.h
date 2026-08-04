@@ -154,6 +154,12 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset, f
             
             draw_line(lx, ly, l_lx, l_ly, r_draw, g_draw, b_draw);
             draw_line(lx, ly, r_lx, r_ly, r_draw, g_draw, b_draw);
+
+            // Add volumetric 3D contour borders (rim-light highlight left, shadow outline right)
+            if (lw == (int)lobe_w - 1) {
+                draw_line(l_lx, l_ly, l_lx, l_ly, (uint8_t)fminf(255, lf_r * 1.55f), (uint8_t)fminf(255, lf_g * 1.45f), (uint8_t)fminf(255, lf_b * 1.55f));
+                draw_line(r_lx, r_ly, r_lx, r_ly, (uint8_t)(lf_r * 0.45f), (uint8_t)(lf_g * 0.4f), (uint8_t)(lf_b * 0.45f));
+            }
         }
 
         // Draw bright secondary highlight veins down the center of each leaflet
