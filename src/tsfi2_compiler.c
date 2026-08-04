@@ -43,6 +43,7 @@ bool tsfi2_compile(
         const char *ssn_key = strstr(source_code, ":ssn");
         if (!job || !comp || !mnt || !auth || !tin_key || !ssn_key) {
             printf("[ANALYZER] Closure Audit abort: missing required Closure metadata map keys.\n");
+            printf("[USER-DIAGNOSTIC] Make sure your Clojure source begins with a metadata map specifying job keys, e.g.: ^{:wmq-job \"NAME\" :wmq-compiler \"FOLKLORE\" :wmq-mount \"STANAG\" :wmq-params {:tin 950000000 :ssn 050051122}}\n");
             return false;
         }
 
@@ -50,6 +51,7 @@ bool tsfi2_compile(
         const char *tin_val_ptr = strstr(tin_key, "950000000");
         if (!tin_val_ptr) {
             printf("[ANALYZER] Closure Audit abort: invalid or missing TIN metadata value.\n");
+            printf("[USER-DIAGNOSTIC] The :wmq-params map must contain a valid 9-digit tax identifier: :tin 950000000\n");
             return false;
         }
         // Parse SSN value
@@ -59,6 +61,7 @@ bool tsfi2_compile(
         }
         if (!ssn_val_ptr) {
             printf("[ANALYZER] Closure Audit abort: invalid or missing SSN metadata value.\n");
+            printf("[USER-DIAGNOSTIC] The :wmq-params map must contain a valid 9-digit social security identifier: :ssn 050051122\n");
             return false;
         }
 

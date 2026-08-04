@@ -1634,6 +1634,17 @@ int tsfi_mf_es_evm_spool_guard(const char *jcl_content, int *is_valid) {
         }
     }
     
+    FILE *log = fopen("/tmp/hasp_spool_audit.log", "a");
+    if (log) {
+        fprintf(log, "[HASP Spool Trace] Auditing JCL content, length %zu...\n", len);
+        if (has_identity) {
+            fprintf(log, "[HASP Spool Trace] Audit FAILED: Spool guard triggered Defcon Norad Lockout (Identity detected).\n");
+        } else {
+            fprintf(log, "[HASP Spool Trace] Audit PASSED: JCL spool entry authorized.\n");
+        }
+        fclose(log);
+    }
+
     if (has_identity) {
         *is_valid = 0;
         tsfi_gost_emergency_defcon_level = 0;
