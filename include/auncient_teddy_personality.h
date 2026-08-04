@@ -272,6 +272,9 @@ bool evaluate_reactive_retaliation_boundary(const teddy_geometry_t *geom, double
 // Evaluates the fWHR retaliation aggression scaling parameter (Geniole et al.).
 bool evaluate_retaliation_aggression_scaling(const teddy_geometry_t *geom, double baseline_aggression, double *scaled_aggression_out);
 
+// Evaluates the fWHR retaliation threshold decay over exposure duration (Geniole et al.).
+bool evaluate_retaliation_threshold_decay(const teddy_geometry_t *geom, double exposure_ms, double *decayed_threshold_out);
+
 // Evaluates the vocal-visual uncanny mismatch index based on geometry and pitch (Hyde et al.).
 bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncanny_score_out);
 

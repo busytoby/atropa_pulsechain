@@ -1025,6 +1025,16 @@ bool evaluate_retaliation_aggression_scaling(const teddy_geometry_t *geom, doubl
     return true;
 }
 
+bool evaluate_retaliation_threshold_decay(const teddy_geometry_t *geom, double exposure_ms, double *decayed_threshold_out) {
+    if (!geom || exposure_ms < 0.0 || !decayed_threshold_out) {
+        return false;
+    }
+    double base_threshold = 2.0 / (1.0 + (geom->head_fwhr * 0.8));
+    double decay_factor = exp(-exposure_ms * 0.005);
+    *decayed_threshold_out = base_threshold * decay_factor;
+    return true;
+}
+
 bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncanny_score_out) {
     if (!geom || !uncanny_score_out) {
         return false;
