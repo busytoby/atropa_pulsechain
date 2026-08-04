@@ -447,6 +447,12 @@ int main(void) {
     assert(acc_jitter_uncanny >= 0.0);
     printf("   ✓ HYDE et al. unpredictable micro-expression acceleration jitter verified successfully\n");
 
+    // Test Hyde unpredictable micro-expression acceleration jitter habituation decay calculation
+    double decayed_acc_uncanny = 0.0;
+    assert(evaluate_acceleration_habituation_decay(&geom, 10.0, &decayed_acc_uncanny));
+    assert(decayed_acc_uncanny < acc_jitter_uncanny);
+    printf("   ✓ HYDE et al. unpredictable micro-expression acceleration jitter habituation decay verified successfully\n");
+
     // Test Hyde unpredictable animation acceleration jitter calculation
     double anim_acc_jitter = 0.0;
     assert(evaluate_animation_acceleration_jitter(&geom, 0.35, &anim_acc_jitter));
