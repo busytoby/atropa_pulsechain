@@ -218,6 +218,32 @@ int main(void) {
     printf("   ✓ Hogan newborn teddy bear 1,000,000 Saat endowment strategy verified successfully.\n");
     remove(teddy_bin);
 
+    // Phase 7: Compile and Execute the transitioned xpl_test strategy
+    printf("\n[Runner] Loading transitioned xpl_test strategy from disk...\n");
+    FILE *xf = fopen("solidity/dysnomia/domain/strategies/xpl_test.strategy", "r");
+    assert(xf != NULL);
+    char xpl_source[1024];
+    size_t xpl_bytes = fread(xpl_source, 1, sizeof(xpl_source) - 1, xf);
+    xpl_source[xpl_bytes] = '\0';
+    fclose(xf);
+
+    uint8_t xpl_bytecode[256];
+    size_t xpl_bytecode_len = 0;
+    ok = tsfi2_compile(xpl_source, xpl_bytecode, sizeof(xpl_bytecode), &xpl_bytecode_len);
+    assert(ok == true);
+
+    const char *xpl_bin = "/tmp/xpl_strategy_out.dat.bin";
+    ok = tsfi2_compile_to_dat_bin_ext(xpl_bin, 0x1000, 1, "TIN", "950000000", xpl_bytecode, xpl_bytecode_len);
+    assert(ok == true);
+
+    printf("[Runner] Executing compiled xpl_test strategy...\n");
+    memset(&cpu, 0, sizeof(cpu));
+    ok = tsfi2_load_and_execute(xpl_bin, &cpu);
+    assert(ok == true);
+    assert(cpu.halted == true);
+    printf("   ✓ XPL strategy validation finished successfully.\n");
+    remove(xpl_bin);
+
     remove(prog_file);
     return 0;
 }
