@@ -141,8 +141,8 @@ function draw3DPolyHavenAsset(ops, cx, cy, angle) {
         });
     }
 
-    // Draw edges
-    for (let i = 0; i < polyHavenIndices.length; i += 4) {
+    // Draw edges (optimized downsampled wireframe for performance)
+    for (let i = 0; i < polyHavenIndices.length; i += 12) {
         const p1 = projected[polyHavenIndices[i]];
         const p2 = projected[polyHavenIndices[i+1]];
         const p3 = projected[polyHavenIndices[i+2]];
@@ -181,7 +181,7 @@ function draw3DThrone(ops, cx, cy, angle, health) {
 
     const flash = (health < 3 && frameCount % 6 < 3) ? 100 : 0;
 
-    for (let i = 0; i < polyHavenIndices.length; i += 4) {
+    for (let i = 0; i < polyHavenIndices.length; i += 12) {
         const p1 = projected[polyHavenIndices[i]];
         const p2 = projected[polyHavenIndices[i+1]];
         const p3 = projected[polyHavenIndices[i+2]];
