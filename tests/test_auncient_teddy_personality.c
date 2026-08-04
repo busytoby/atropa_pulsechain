@@ -48,6 +48,7 @@ typedef struct {
     double naivety_index;            // Perceived naivety/gullibility (0.0 shrewd, 1.0 naive/gullible)
     double approachability_index;    // Perceived approachability (0.0 unapproachable, 1.0 approachable)
     double vocal_visual_mismatch;    // Vocal-visual cue incongruence (0.0 congruent, 1.0 high mismatch)
+    double cooperative_negotiation;  // Cooperative negotiation style (0.0 competitive, 1.0 cooperative)
 } teddy_geometry_t;
 
 // Maps abstract traits to geometric parameters based on study results
@@ -90,6 +91,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->naivety_index = 1.0;           // Perceived naive
             geom->approachability_index = 1.0;    // Perceived approachable
             geom->vocal_visual_mismatch = 0.0;   // Congruent
+            geom->cooperative_negotiation = 1.0; // Cooperative
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -128,6 +130,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->naivety_index = 0.0;           // Perceived shrewd
             geom->approachability_index = 0.0;    // Perceived unapproachable
             geom->vocal_visual_mismatch = 0.5;   // Moderate mismatch
+            geom->cooperative_negotiation = 0.0; // Competitive
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -166,6 +169,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->naivety_index = 0.0;           // Perceived shrewd
             geom->approachability_index = 0.0;    // Perceived unapproachable
             geom->vocal_visual_mismatch = 1.0;   // Highly incongruent (eerie)
+            geom->cooperative_negotiation = 0.0; // Competitive
             break;
     }
 }
