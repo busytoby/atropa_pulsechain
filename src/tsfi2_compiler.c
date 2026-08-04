@@ -145,6 +145,23 @@ bool tsfi2_compile(
         size_t offset = 0;
         for (int i = 0; i < call_count; i++) {
             if (offset + 10 >= max_len) return false;
+            
+            if (calls[i].op1 == 0x0F && calls[i].op2 == 0xFE && calls[i].val2 >= 0 && calls[i].val2 <= 0xFF) {
+                out_bytecode[offset++] = 0x0F;
+                out_bytecode[offset++] = 0x1C;
+                out_bytecode[offset++] = (uint8_t)calls[i].val1;
+                out_bytecode[offset++] = (uint8_t)calls[i].val2;
+                continue;
+            }
+            
+            if (calls[i].op1 == 0x0F && calls[i].op2 == 0xD3 && calls[i].val1 >= 0 && calls[i].val1 <= 0xFF && calls[i].val2 >= 0 && calls[i].val2 <= 0xFF) {
+                out_bytecode[offset++] = 0x0F;
+                out_bytecode[offset++] = 0xD1;
+                out_bytecode[offset++] = (uint8_t)calls[i].val1;
+                out_bytecode[offset++] = (uint8_t)calls[i].val2;
+                continue;
+            }
+
             out_bytecode[offset++] = calls[i].op1;
             out_bytecode[offset++] = calls[i].op2;
             if (calls[i].arg_count >= 1) {

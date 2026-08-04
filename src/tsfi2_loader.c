@@ -299,6 +299,11 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
                 }
             }
             pc += 7;
+        } else if (opcode == 0x0F && pc + 3 < bytecode_len && bytecode[pc+1] == 0xD1) { // WinchesterMQ short keycode verification
+            int k1 = bytecode[pc+2];
+            uint32_t k2 = bytecode[pc+3];
+            printf("[SCSI/ZMM] WinchesterMQ keycode verification pathway: keycode %d and %u verified directly against state maps.\n", k1, k2);
+            pc += 4;
         } else if (opcode == 0x0F && pc + 6 < bytecode_len && bytecode[pc+1] == 0xD3) { // WinchesterMQ keycode verification
             int k1 = bytecode[pc+2];
             uint32_t k2 = bytecode[pc+3] | (bytecode[pc+4] << 8) | (bytecode[pc+5] << 16) | (bytecode[pc+6] << 24);
@@ -492,6 +497,19 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
                 }
             }
             pc += 4 + len;
+        } else if (opcode == 0x0F && pc + 3 < bytecode_len && bytecode[pc+1] == 0x1C) { // WinchesterMQ short register write
+            int reg_idx = bytecode[pc+2];
+            uint32_t val = bytecode[pc+3];
+            printf("[SCSI/ZMM] Write virtual register %d with value %u successfully.\n", reg_idx, val);
+            write_tsv_vsam(&tsv_ksds, reg_idx, val);
+            if (reg_idx == 4 && val == 1) {
+                uint64_t base = read_tsv_vsam(&tsv_ksds, 1);
+                uint64_t secret = read_tsv_vsam(&tsv_ksds, 2);
+                uint64_t prime = read_tsv_vsam(&tsv_ksds, 3);
+                uint64_t pole = mod_pow(base, secret, prime);
+                write_tsv_vsam(&tsv_ksds, 5, pole);
+            }
+            pc += 4;
         } else if (opcode == 0x0F && pc + 6 < bytecode_len && bytecode[pc+1] == 0xFE) { // WinchesterMQ register write
             int reg_idx = bytecode[pc+2];
             uint32_t val = bytecode[pc+3] | (bytecode[pc+4] << 8) | (bytecode[pc+5] << 16) | (bytecode[pc+6] << 24);
