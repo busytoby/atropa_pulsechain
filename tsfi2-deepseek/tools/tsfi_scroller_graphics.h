@@ -107,35 +107,48 @@ static void draw_glossy_bubble(int cx, int cy, int r_base, uint8_t base_r, uint8
     }
 }
 
-static void draw_gothic_leaf(int bx, int by, float length, float angle_offset) {
+static void draw_gothic_leaf(int bx, int by, float length, float angle_offset, float time_val) {
     int steps = 18;
+    float l_ctrl_x = bx + length * 0.45f * cosf(angle_offset - 0.4f);
+    float l_ctrl_y = by + length * 0.45f * sinf(angle_offset - 0.4f);
+    float l_tip_x = bx + length * cosf(angle_offset + 0.10f * sinf(time_val * 1.5f));
+    float l_tip_y = by + length * sinf(angle_offset + 0.10f * sinf(time_val * 1.5f));
+
     for (int i = 0; i < steps; i++) {
         float t = (float)i / (float)steps;
-        float r_len = length * t;
-        float angle = angle_offset + 0.15f * sinf(t * 8.0f);
-        int lx = bx + (int)(r_len * cosf(angle));
-        int ly = by + (int)(r_len * sinf(angle));
+        float omt = 1.0f - t;
+        
+        // Quadratic Bezier interpolation for the leaf spine
+        int lx = (int)(omt * omt * bx + 2.0f * omt * t * l_ctrl_x + t * t * l_tip_x);
+        int ly = (int)(omt * omt * by + 2.0f * omt * t * l_ctrl_y + t * t * l_tip_y);
+
+        // Angle of the tangent vector along the spine
+        float angle = atan2f((float)(ly - by), (float)(lx - bx));
         
         uint8_t lf_r = (uint8_t)(34 * (1.0f - t) + 46 * t);
         uint8_t lf_g = (uint8_t)(75 * (1.0f - t) + 165 * t);
         uint8_t lf_b = (uint8_t)(30 * (1.0f - t) + 50 * t);
 
+        // Serrated pinnate leaflets projecting forward (at 45 degree angles)
         float lobe_w = 17.0f * (1.0f - t) * (0.8f + 0.5f * sinf(t * 28.0f));
+        float leaf_ang_left = angle + M_PI * 0.25f;
+        float leaf_ang_right = angle - M_PI * 0.25f;
+
         for (int lw = 0; lw < (int)lobe_w; lw++) {
-            float perp_a = angle + M_PI / 2.0f;
-            int l_lx = lx + (int)(lw * cosf(perp_a));
-            int l_ly = ly + (int)(lw * sinf(perp_a));
-            int r_lx = lx - (int)(lw * cosf(perp_a));
-            int r_ly = ly - (int)(lw * sinf(perp_a));
-            draw_line(l_lx, l_ly, r_lx, r_ly, lf_r, lf_g, lf_b);
+            int l_lx = lx + (int)(lw * cosf(leaf_ang_left));
+            int l_ly = ly + (int)(lw * sinf(leaf_ang_left));
+            int r_lx = lx + (int)(lw * cosf(leaf_ang_right));
+            int r_ly = ly + (int)(lw * sinf(leaf_ang_right));
+            draw_line(lx, ly, l_lx, l_ly, lf_r, lf_g, lf_b);
+            draw_line(lx, ly, r_lx, r_ly, lf_r, lf_g, lf_b);
         }
 
+        // Detailed pinnate vein ribs branching out
         if (i % 3 == 0) {
-            float perp_a = angle + M_PI / 2.0f;
-            int v_l_x = lx + (int)((lobe_w * 0.7f) * cosf(perp_a));
-            int v_l_y = ly + (int)((lobe_w * 0.7f) * sinf(perp_a));
-            int v_r_x = lx - (int)((lobe_w * 0.7f) * cosf(perp_a));
-            int v_r_y = ly - (int)((lobe_w * 0.7f) * sinf(perp_a));
+            int v_l_x = lx + (int)((lobe_w * 0.7f) * cosf(leaf_ang_left));
+            int v_l_y = ly + (int)((lobe_w * 0.7f) * sinf(leaf_ang_left));
+            int v_r_x = lx + (int)((lobe_w * 0.7f) * cosf(leaf_ang_right));
+            int v_r_y = ly + (int)((lobe_w * 0.7f) * sinf(leaf_ang_right));
             draw_line(lx, ly, v_l_x, v_l_y, (uint8_t)(lf_r * 1.5f), (uint8_t)(lf_g * 1.3f), (uint8_t)(lf_b * 1.4f));
             draw_line(lx, ly, v_r_x, v_r_y, (uint8_t)(lf_r * 1.5f), (uint8_t)(lf_g * 1.3f), (uint8_t)(lf_b * 1.4f));
         }
@@ -143,6 +156,7 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset) {
         draw_line(lx, ly, lx, ly, 100, 190, 105);
     }
 }
+
 
 static void draw_flat_petal(int cx, int cy, float radius, uint8_t r, uint8_t g, uint8_t b, int cx_center, int cy_center, float time_val) {
     int rad_int = (int)radius + 4;

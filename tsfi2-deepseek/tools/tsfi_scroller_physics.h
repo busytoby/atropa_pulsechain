@@ -82,8 +82,8 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
     // 4. Render the Verlet Poppy Flower components
     // Swaying feathery leaves
     float leaf_sway = 0.04f * sinf(time_val * 1.5f);
-    draw_gothic_leaf((int)stem_base_x, (int)stem_base_y, 80.0f, -M_PI * 0.8f + leaf_sway);
-    draw_gothic_leaf((int)stem_base_x, (int)stem_base_y, 80.0f, -M_PI * 0.2f - leaf_sway);
+    draw_gothic_leaf((int)stem_base_x, (int)stem_base_y, 80.0f, -M_PI * 0.8f + leaf_sway, time_val);
+    draw_gothic_leaf((int)stem_base_x, (int)stem_base_y, 80.0f, -M_PI * 0.2f - leaf_sway, time_val);
 
     // Curved Bezier Stem (forest green with darker shading)
     int segments = 24;
