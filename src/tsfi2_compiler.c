@@ -326,6 +326,17 @@ bool tsfi2_compile(
         }
     }
     
+    // Emit custom wmq_timeout_idx if requested
+    const char *p_timeout = strstr(source_code, "__builtin_wmq_timeout_idx(");
+    if (p_timeout) {
+        int idx = 0;
+        if (sscanf(p_timeout, "__builtin_wmq_timeout_idx(%d)", &idx) == 1) {
+            out_bytecode[offset++] = 0x0F;
+            out_bytecode[offset++] = 0xD8;
+            out_bytecode[offset++] = (uint8_t)idx;
+        }
+    }
+    
     // Emit x86 machine instructions: MOV EAX, imm32
     out_bytecode[offset++] = 0xB8;
     out_bytecode[offset++] = (uint8_t)(value & 0xFF);

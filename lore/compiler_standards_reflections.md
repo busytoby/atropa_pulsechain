@@ -398,6 +398,16 @@ int main() {
 * **Compiler Built-in**: 28 characters (`__builtin_wmq_auth_idx(3);`).
 * **Source Size Reduction**: 79% character footprint decrease.
 
+### Host Connection Timeout Relocation Comparison
+* **Boilerplate Wrapper**: 75 characters.
+  ```c
+  void set_timeout() {
+      *(volatile int*)(0x2048) = 15;
+  }
+  ```
+* **Compiler Built-in**: 31 characters (`__builtin_wmq_timeout_idx(4);`).
+* **Source Size Reduction**: 58% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
