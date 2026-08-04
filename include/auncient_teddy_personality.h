@@ -153,6 +153,9 @@ bool evaluate_threshold_equidistancy(const teddy_geometry_t *geom, double tolera
 // Evaluates profile log-likelihood bounds for scale parameter estimation.
 bool evaluate_scale_profile_bounds(const teddy_geometry_t *geom, double *lower_scale_bound, double *upper_scale_bound);
 
+// Evaluates nested models via Likelihood Ratio Test (LRT) diagnostics.
+bool evaluate_lrt_nested_models(double null_loglik, double alt_loglik, int df_diff, double *chi_sq_out, double *p_value_out);
+
 // Computes model selection diagnostics via AIC and BIC information criteria.
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out);
 

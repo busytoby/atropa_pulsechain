@@ -452,6 +452,17 @@ bool evaluate_scale_profile_bounds(const teddy_geometry_t *geom, double *lower_s
     return true;
 }
 
+bool evaluate_lrt_nested_models(double null_loglik, double alt_loglik, int df_diff, double *chi_sq_out, double *p_value_out) {
+    if (df_diff < 1 || !chi_sq_out || !p_value_out) {
+        return false;
+    }
+    *chi_sq_out = -2.0 * (null_loglik - alt_loglik);
+    if (*chi_sq_out < 0.0) *chi_sq_out = 0.0;
+    *p_value_out = exp(-(*chi_sq_out) / 2.0);
+    if (*p_value_out > 1.0) *p_value_out = 1.0;
+    return true;
+}
+
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out) {
     if (!geom || param_count < 1 || sample_size < 2 || !aic_out || !bic_out) {
         return false;

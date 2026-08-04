@@ -116,6 +116,13 @@ int main(void) {
     assert(l_scale < u_scale);
     printf("   ✓ R H B Christensen scale parameter likelihood profile bounds verified successfully\n");
 
+    // Test Likelihood Ratio Test (LRT) nested model comparison
+    double chi_sq = 0.0, p_val = 0.0;
+    assert(evaluate_lrt_nested_models(-150.0, -145.0, 1, &chi_sq, &p_val));
+    assert(chi_sq == 10.0);
+    assert(p_val > 0.0 && p_val < 0.05); // statistically significant difference
+    printf("   ✓ R H B Christensen nested model Likelihood Ratio Test diagnostics verified successfully\n");
+
     // Test ACID transaction behavior (Commit successful path)
     evaluation_tx_t tx = begin_evaluation_transaction(&geom);
     assert(tx.active);
