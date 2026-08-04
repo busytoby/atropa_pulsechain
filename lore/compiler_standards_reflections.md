@@ -304,6 +304,16 @@ int main() {
 * **Compiler Built-in**: 25 characters (`__builtin_wmq_gateway();`).
 * **Source Size Reduction**: 61% character footprint decrease.
 
+### Host DNS Server Comparison
+* **Boilerplate Wrapper**: 61 characters.
+  ```c
+  int get_dns() {
+      return *(volatile int*)(0x2068);
+  }
+  ```
+* **Compiler Built-in**: 21 characters (`__builtin_wmq_dns();`).
+* **Source Size Reduction**: 65% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
