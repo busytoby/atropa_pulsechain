@@ -94,13 +94,13 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
     float leaf_sway_left = 0.05f * sinf(time_val * 1.35f) + wind_x * 0.015f;
     float leaf_sway_right = 0.05f * sinf(time_val * 1.65f + 0.4f) + wind_x * 0.015f;
     
-    // Base tier leaves (rendered behind the stem) - First pair (outer, slightly larger)
-    draw_gothic_leaf((int)stem_base_x, (int)stem_base_y, 85.0f, -M_PI * 0.85f + leaf_sway_left, time_val, wind_x);
-    draw_gothic_leaf((int)stem_base_x, (int)stem_base_y, 85.0f, -M_PI * 0.15f - leaf_sway_right, time_val, wind_x);
+    // Base tier leaves (rendered behind the stem) - First pair (outer, significantly larger)
+    draw_gothic_leaf((int)stem_base_x, (int)stem_base_y, 115.0f, -M_PI * 0.85f + leaf_sway_left, time_val, wind_x);
+    draw_gothic_leaf((int)stem_base_x, (int)stem_base_y, 115.0f, -M_PI * 0.15f - leaf_sway_right, time_val, wind_x);
 
-    // Base tier leaves - Second pair (inner, slightly smaller, angled closer to the stem)
-    draw_gothic_leaf((int)stem_base_x, (int)stem_base_y, 65.0f, -M_PI * 0.65f + leaf_sway_left * 0.8f, time_val, wind_x);
-    draw_gothic_leaf((int)stem_base_x, (int)stem_base_y, 65.0f, -M_PI * 0.35f - leaf_sway_right * 0.8f, time_val, wind_x);
+    // Base tier leaves - Second pair (inner, mid-sized, angled closer to the stem)
+    draw_gothic_leaf((int)stem_base_x, (int)stem_base_y, 90.0f, -M_PI * 0.65f + leaf_sway_left * 0.8f, time_val, wind_x);
+    draw_gothic_leaf((int)stem_base_x, (int)stem_base_y, 90.0f, -M_PI * 0.35f - leaf_sway_right * 0.8f, time_val, wind_x);
 
     // Left mid-stem tier leaf (rendered behind the stem)
     draw_gothic_leaf(node_x, node_y, 55.0f, -M_PI * 0.85f + leaf_sway_left, time_val, wind_x);
