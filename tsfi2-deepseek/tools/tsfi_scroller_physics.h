@@ -123,10 +123,12 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
             b_col = (uint8_t)(b_col * 0.55f);
         }
 
-        // 3D cylindrical chiascuro shading (left highlight, center body, right shadow)
-        draw_line(prev_x - 1, prev_y, sx - 1, sy, (uint8_t)fminf(255, r_col * 1.3f), (uint8_t)fminf(255, g_col * 1.3f), (uint8_t)fminf(255, b_col * 1.3f)); // Left highlight
-        draw_line(prev_x, prev_y, sx, sy, r_col, g_col, b_col); // Center body
-        draw_line(prev_x + 1, prev_y, sx + 1, sy, (uint8_t)(r_col * 0.5f), (uint8_t)(g_col * 0.5f), (uint8_t)(b_col * 0.5f)); // Right shadow
+        // 3D cylindrical chiascuro shading (5px width: far-left highlight, left highlight, center, right shadow, far-right shadow)
+        draw_line(prev_x - 2, prev_y, sx - 2, sy, (uint8_t)fminf(255, r_col * 1.5f), (uint8_t)fminf(255, g_col * 1.5f), (uint8_t)fminf(255, b_col * 1.5f)); // Far-left highlight
+        draw_line(prev_x - 1, prev_y, sx - 1, sy, (uint8_t)fminf(255, r_col * 1.25f), (uint8_t)fminf(255, g_col * 1.25f), (uint8_t)fminf(255, b_col * 1.25f)); // Left highlight
+        draw_line(prev_x, prev_y, sx, sy, r_col, g_col, b_col); // Center body core
+        draw_line(prev_x + 1, prev_y, sx + 1, sy, (uint8_t)(r_col * 0.60f), (uint8_t)(g_col * 0.60f), (uint8_t)(b_col * 0.60f)); // Right shadow
+        draw_line(prev_x + 2, prev_y, sx + 2, sy, (uint8_t)(r_col * 0.35f), (uint8_t)(g_col * 0.35f), (uint8_t)(b_col * 0.35f)); // Far-right shadow
 
         // Tiny dynamic curved downy hairs projecting from both sides of the stem (pilosity)
         if (j % 2 == 0) {
