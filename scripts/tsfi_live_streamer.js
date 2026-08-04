@@ -445,7 +445,10 @@ function generateMusicSample(pattern, stepIndex, stepSampleIdx, stepAge) {
         if (isArpTrigger && stepAge < 0.35) {
             const vibrato = 1.0 + 0.005 * Math.sin(2.0 * Math.PI * 6.0 * timeSec_g);
             leadPhase += (arpFreq * 1.5 * vibrato) / SAMPLE_RATE; // pitched up for bell/chime style
-            const bellVal = Math.sin(2.0 * Math.PI * leadPhase) * Math.exp(-stepAge / 0.42) * 0.065;
+            // 5ms smooth linear attack scale to eliminate transient pops/clicks
+            const attackSamples = Math.floor(SAMPLE_RATE * 0.005);
+            const attackScale = Math.min(1.0, stepSampleIdx / attackSamples);
+            const bellVal = Math.sin(2.0 * Math.PI * leadPhase) * Math.exp(-stepAge / 0.42) * attackScale * 0.065;
             
             // Modulate filter cutoff using physical sway wind_x (coupled physics!)
             const cutoffHz = 850.0 + Math.abs(currentWindX) * 90.0;
