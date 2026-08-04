@@ -22,6 +22,8 @@ typedef struct {
     double symmetry;         // Bilateral face/eye symmetry (1.0 symmetric, 0.8 crooked-face)
     double jaw_scale;        // Lower jaw width scaling for perceived strength
     double neck_thickness;   // Neck capsule thickness for formidability cues
+    double focal_length;     // Camera lens focal length (35mm baby-face, 85mm flat/dominant)
+    double camera_elevation; // Camera vertical translation offset (positive high, negative low)
 } teddy_geometry_t;
 
 // Maps abstract traits to geometric parameters based on study results
@@ -38,6 +40,8 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->symmetry = 1.0;         // Perfect symmetry for perceived honesty
             geom->jaw_scale = 0.8;        // Slender jaw for non-threatening silhouette
             geom->neck_thickness = 0.6;   // Thin neck
+            geom->focal_length = 35.0;    // Exaggerated perspective
+            geom->camera_elevation = 1.2; // High angle looking down
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -50,6 +54,8 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->symmetry = 0.8;         // Crooked asymmetry
             geom->jaw_scale = 1.4;        // Wide jaw denoting high physical strength
             geom->neck_thickness = 1.3;   // Thick, formidable neck connection
+            geom->focal_length = 85.0;    // Flat perspective for dominance
+            geom->camera_elevation = -0.8; // Low angle looking up
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -62,6 +68,8 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->symmetry = 0.8;         // Crooked asymmetry
             geom->jaw_scale = 1.3;        // Heavy jaw
             geom->neck_thickness = 1.2;   // Thick neck
+            geom->focal_length = 85.0;    // Compressed perspective
+            geom->camera_elevation = -0.8; // Low angle looking up
             break;
     }
 }
