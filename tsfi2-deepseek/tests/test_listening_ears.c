@@ -138,6 +138,43 @@ static void run_safety_benchmarks() {
 }
 
 typedef struct {
+    int *individual;
+    double tx_val_x;
+    double tx_val_y;
+    double *fitness_out;
+    const ReceiverStation *stations;
+} GAEvalWorkerArg;
+
+static void ga_eval_worker(void *arg) {
+    GAEvalWorkerArg *a = (GAEvalWorkerArg *)arg;
+    int *ind = a->individual;
+    double tx_val_x = a->tx_val_x;
+    double tx_val_y = a->tx_val_y;
+    const ReceiverStation *stations = a->stations;
+
+    double g00 = 0.0, g11 = 0.0, g01 = 0.0;
+    double c_light = 1.0;
+    double dx_ref = tx_val_x - stations[0].x_true;
+    double dy_ref = tx_val_y - stations[0].y_true;
+    double d0_ref = sqrt(dx_ref*dx_ref + dy_ref*dy_ref);
+    for (int i = 1; i < NUM_STATIONS; i++) {
+        if (ind[i]) {
+            double dx_i = tx_val_x - stations[i].x_true;
+            double dy_i = tx_val_y - stations[i].y_true;
+            double di = sqrt(dx_i*dx_i + dy_i*dy_i);
+            double H_i0 = (dx_i / di - dx_ref / d0_ref) / c_light;
+            double H_i1 = (dy_i / di - dy_ref / d0_ref) / c_light;
+            g00 += H_i0 * H_i0;
+            g11 += H_i1 * H_i1;
+            g01 += H_i0 * H_i1;
+        }
+    }
+    double det_val = g00 * g11 - g01 * g01;
+    double gdop = (det_val > 1e-9) ? sqrt((g00 + g11) / det_val) : 1e15;
+    *(a->fitness_out) = 1.0 / (gdop + 1e-9);
+}
+
+typedef struct {
     int station_idx;
     int jam_ref_station_idx;
     double lambda;
@@ -885,10 +922,19 @@ int main() {
     })
 
     for (int gen = 0; gen < GENS; gen++) {
-        // 1. Evaluate fitness
+        // 1. Evaluate fitness in parallel
+        GAEvalWorkerArg eval_args[POP_SIZE];
         for (int p = 0; p < POP_SIZE; p++) {
-            double gdop = EVALUATE_INDIVIDUAL_GDOP(population[p], best_x, best_y);
-            fitness[p] = 1.0 / (gdop + 1e-9);
+            eval_args[p].individual = population[p];
+            eval_args[p].tx_val_x = best_x;
+            eval_args[p].tx_val_y = best_y;
+            eval_args[p].fitness_out = &fitness[p];
+            eval_args[p].stations = stations;
+            tsfi_ccx_pool_enqueue(&g_ears_ccx_pool, ga_eval_worker, &eval_args[p]);
+        }
+        tsfi_ccx_pool_wait(&g_ears_ccx_pool);
+
+        for (int p = 0; p < POP_SIZE; p++) {
             if (fitness[p] > best_fitness) {
                 best_fitness = fitness[p];
                 memcpy(best_individual, population[p], NUM_STATIONS * sizeof(int));
