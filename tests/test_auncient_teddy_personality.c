@@ -46,6 +46,7 @@ typedef struct {
     double strength_index;           // Perceived physical strength (0.0 weaker, 1.0 stronger)
     double dominance_index;          // Perceived dominance/authority (0.0 submissive, 1.0 dominant)
     double naivety_index;            // Perceived naivety/gullibility (0.0 shrewd, 1.0 naive/gullible)
+    double approachability_index;    // Perceived approachability (0.0 unapproachable, 1.0 approachable)
 } teddy_geometry_t;
 
 // Maps abstract traits to geometric parameters based on study results
@@ -86,6 +87,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->strength_index = 0.0;          // Perceived weaker
             geom->dominance_index = 0.0;         // Perceived submissive
             geom->naivety_index = 1.0;           // Perceived naive
+            geom->approachability_index = 1.0;    // Perceived approachable
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -122,6 +124,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->strength_index = 1.0;          // Perceived stronger
             geom->dominance_index = 1.0;         // Perceived dominant
             geom->naivety_index = 0.0;           // Perceived shrewd
+            geom->approachability_index = 0.0;    // Perceived unapproachable
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -158,6 +161,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->strength_index = 1.0;          // Perceived stronger
             geom->dominance_index = 1.0;         // Perceived dominant
             geom->naivety_index = 0.0;           // Perceived shrewd
+            geom->approachability_index = 0.0;    // Perceived unapproachable
             break;
     }
 }
