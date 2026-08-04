@@ -171,6 +171,10 @@ test-auncient-tsv-wmq-integration:
 	./tests/test_auncient_tsv_wmq_runner
 	@rm -f tests/test_auncient_tsv_wmq_runner
 
+tsfi2-compiler:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc src/tsfi2_compiler_cli.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c -o tsfi2_compiler -lrt
+
+
 
 test-mann:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_mann_controller.c tsfi2-deepseek/src/tsfi_mann_controller.c -o tests/test_mann_controller -lm -lrt
