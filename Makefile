@@ -184,6 +184,12 @@ test-auncient-dat-bin-accumulator:
 	./tests/test_auncient_dat_bin_accumulator
 	@rm -f tests/test_auncient_dat_bin_accumulator
 
+test-auncient-compiler-prefilter:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc tests/test_auncient_compiler_prefilter.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_displacementshader.c -o tests/test_auncient_compiler_prefilter -lcrypto -lrt -lm
+	./tests/test_auncient_compiler_prefilter
+	@rm -f tests/test_auncient_compiler_prefilter
+
+
 
 test-mann:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_mann_controller.c tsfi2-deepseek/src/tsfi_mann_controller.c -o tests/test_mann_controller -lm -lrt

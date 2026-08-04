@@ -168,6 +168,21 @@ bool tsfi2_compile(
     // Sort calls chronologically by order of appearance in source code
     qsort(calls, call_count, sizeof(BuiltinCall), compare_calls);
 
+    // Phase 1: Compile-Time JCL Pre-Filtering (ANALYZER)
+    uint64_t prohibited_opcodes[4] = {0ULL};
+    if (strstr(source_code, "// audit_prohibit")) {
+        uint8_t op_val = 0xD9;
+        prohibited_opcodes[op_val / 64] |= (1ULL << (op_val % 64));
+    }
+    for (int i = 0; i < call_count; i++) {
+        uint8_t op = calls[i].op2;
+        uint64_t bit = (prohibited_opcodes[op / 64] >> (op % 64)) & 1ULL;
+        if (bit != 0ULL) {
+            printf("[ANALYZER] Compile abort: prohibited opcode 0x%02X detected.\n", op);
+            return false;
+        }
+    }
+
     // Emit sorted instructions
     size_t offset = 0;
     for (int i = 0; i < call_count; i++) {
