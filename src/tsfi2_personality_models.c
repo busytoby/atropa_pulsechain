@@ -614,6 +614,15 @@ bool evaluate_provocation_replication_consistency(const teddy_geometry_t *geom, 
     return true;
 }
 
+bool evaluate_provocation_rapid_threat_limit(const teddy_geometry_t *geom, double provocation_scale, double *limit_out) {
+    if (!geom || provocation_scale < 0.0 || !limit_out) {
+        return false;
+    }
+    double threat = evaluate_fw_threat_level(geom);
+    *limit_out = threat * (1.5 + (provocation_scale * geom->status_aggression * 0.25));
+    return true;
+}
+
 bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncanny_score_out) {
     if (!geom || !uncanny_score_out) {
         return false;

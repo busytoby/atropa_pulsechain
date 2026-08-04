@@ -314,6 +314,9 @@ bool evaluate_cheating_threat_index(const teddy_geometry_t *geom, double provoca
 // Evaluates threat replication consistency under provocation (Geniole et al.).
 bool evaluate_provocation_replication_consistency(const teddy_geometry_t *geom, double replication_scale, double *consistency_out);
 
+// Evaluates the rapid threat limit boundary under provocation (Geniole et al.).
+bool evaluate_provocation_rapid_threat_limit(const teddy_geometry_t *geom, double provocation_scale, double *limit_out);
+
 // Evaluates the vocal-visual uncanny mismatch index based on geometry and pitch (Hyde et al.).
 bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncanny_score_out);
 
