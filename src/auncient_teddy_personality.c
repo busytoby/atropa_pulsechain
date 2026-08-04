@@ -711,6 +711,21 @@ bool evaluate_motion_uncanny_index(const teddy_geometry_t *geom, double movement
     return true;
 }
 
+bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state) {
+    if (resistance < 1e-9 || capacitance < 1e-9 || time_step < 1e-9 || !charge_state) {
+        return false;
+    }
+    double charge_voltage = *charge_state / capacitance;
+    if (input_voltage > charge_voltage) {
+        double delta_q = ((input_voltage - charge_voltage) / resistance) * time_step;
+        *charge_state += delta_q;
+    } else {
+        double tau = resistance * capacitance;
+        *charge_state = (*charge_state) * exp(-time_step / tau);
+    }
+    return true;
+}
+
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out) {
     if (!geom || param_count < 1 || sample_size < 2 || !aic_out || !bic_out) {
         return false;

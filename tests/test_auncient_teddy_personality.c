@@ -238,6 +238,15 @@ int main(void) {
     assert(motion_uncanny >= uncanny_val);
     printf("   ✓ HYDE et al. vocal-visual uncanny mismatch and motion-mismatch index verified successfully\n");
 
+    // Test Diode-Capacitor loop simulation
+    double charge = 0.0;
+    assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge
+    assert(charge > 0.0);
+    double charged_val = charge;
+    assert(simulate_diode_capacitor_loop(0.0, 1000.0, 1e-6, 0.1, &charge)); // Reverse discharge decay
+    assert(charge < charged_val);
+    printf("   ✓ Virtual diode reflex and relative capacitor charge decay loop verified successfully\n");
+
     // Test ACID transaction behavior (Commit successful path)
     evaluation_tx_t tx = begin_evaluation_transaction(&geom);
     assert(tx.active);
