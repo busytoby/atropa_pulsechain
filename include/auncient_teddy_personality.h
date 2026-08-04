@@ -64,6 +64,7 @@ typedef struct {
     double social_submissiveness;    // Perceived submissiveness (0.0 mature dominance/assertiveness, 1.0 submissiveness)
     double relationship_commitment;  // Perceived commitment (0.0 low expected fidelity, 1.0 high commitment/fidelity)
     double health_robustness;        // Perceived health status (0.0 fragile health, 1.0 robust health/resistance)
+    double vocal_visual_harmony;     // Vocal-visual harmony (0.0 low friendliness/competence bias, 1.0 high friendliness)
 } teddy_geometry_t;
 
 // Pixar RenderMan Avatar Agent definition upon the cooperative boundary
