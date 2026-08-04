@@ -390,7 +390,7 @@ bool tsfi_qt_ksds_read_dual(
     return true;
 }
 
-char tsfi_tsv_separator = '\x1F';
+char tsfi_tab_separation_variable = '\x1F';
 
 bool tsfi_qt_ksds_get_metadata(const char *header, const char *key, char *val_out, size_t val_max) {
     if (!header || !key || !val_out || val_max == 0) return false;
@@ -403,7 +403,7 @@ bool tsfi_qt_ksds_get_metadata(const char *header, const char *key, char *val_ou
         if (p == header || *(p - 1) == '\n' || *(p - 1) == '\r') {
             const char *val_start = p + key_len;
             // Skip optional colon, spaces, or the configured separator character
-            while (*val_start == ':' || *val_start == ' ' || *val_start == tsfi_tsv_separator) {
+            while (*val_start == ':' || *val_start == ' ' || *val_start == tsfi_tab_separation_variable) {
                 val_start++;
             }
             // Copy characters until newline
