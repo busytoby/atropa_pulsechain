@@ -139,6 +139,11 @@ int main(void) {
     assert(w_pval < 0.05); // statistically significant violation
     printf("   ✓ R H B Christensen nominal effect Wald test diagnostics verified successfully\n");
 
+    // Test surrogate residuals calculation
+    double sur_resid = 0.0;
+    assert(evaluate_surrogate_residuals(&geom, 4, &sur_resid));
+    printf("   ✓ R H B Christensen surrogate residuals diagnostics verified successfully\n");
+
     // Test ACID transaction behavior (Commit successful path)
     evaluation_tx_t tx = begin_evaluation_transaction(&geom);
     assert(tx.active);

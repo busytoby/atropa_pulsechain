@@ -502,6 +502,17 @@ bool evaluate_wald_nominal_test(const double *beta_vector, const double *covaria
     return true;
 }
 
+bool evaluate_surrogate_residuals(const teddy_geometry_t *geom, int observed_rating, double *residual_out) {
+    if (!geom || observed_rating < 1 || observed_rating > 7 || !residual_out) {
+        return false;
+    }
+    double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
+    double thresholds[8] = {-10.0, 0.5, 1.2, 2.0, 2.8, 3.5, 4.2, 10.0};
+    double mid = (thresholds[observed_rating] + thresholds[observed_rating - 1]) / 2.0;
+    *residual_out = mid - latent;
+    return true;
+}
+
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out) {
     if (!geom || param_count < 1 || sample_size < 2 || !aic_out || !bic_out) {
         return false;
