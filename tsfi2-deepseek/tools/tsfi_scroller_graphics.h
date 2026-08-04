@@ -134,8 +134,8 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset, f
         // 3D leaf tip taper silhouette styling (broader base, lower frequency larger lobes)
         float tip_curl = 1.0f - powf(t, 2.8f);
         float lobe_w = 34.0f * tip_curl * (0.8f + 0.35f * sinf(t * 9.0f));
-        float leaf_ang_left = angle + M_PI * 0.25f;
-        float leaf_ang_right = angle - M_PI * 0.25f;
+        float leaf_ang_left = angle + M_PI * 0.45f;
+        float leaf_ang_right = angle - M_PI * 0.45f;
 
         // High-frequency serration along the leaflet margins for organic texture
         float serration = 1.0f + 0.08f * sinf(t * 50.0f + time_val * 6.0f);
