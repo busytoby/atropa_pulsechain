@@ -313,7 +313,7 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset) {
     }
 }
 
-static void draw_flat_petal(int cx, int cy, float radius, uint8_t r, uint8_t g, uint8_t b, int cx_center, int cy_center) {
+static void draw_flat_petal(int cx, int cy, float radius, uint8_t r, uint8_t g, uint8_t b, int cx_center, int cy_center, float time_val) {
     int rad_int = (int)radius + 4;
     for (int y = -rad_int; y <= rad_int; y++) {
         for (int x = -rad_int; x <= rad_int; x++) {
@@ -350,6 +350,22 @@ static void draw_flat_petal(int cx, int cy, float radius, uint8_t r, uint8_t g, 
                         frame_buffer[idx+2] = pb;
                     }
                 }
+            }
+        }
+    }
+
+    // Draw 12 delicate crinkled radial vein lines radiating outwards from petal center
+    for (int v = 0; v < 12; v++) {
+        float v_ang = v * (2.0f * M_PI / 12.0f) + 0.08f * sinf(time_val * 2.0f + v);
+        for (float step = 2.0f; step < radius; step += 2.5f) {
+            int vx = cx + (int)(step * cosf(v_ang));
+            int vy = cy + (int)(step * sinf(v_ang));
+            if (vx >= 0 && vx < WIDTH && vy >= 0 && vy < HEIGHT) {
+                // Subtle overlay shading
+                int idx = (vy * WIDTH + vx) * 3;
+                frame_buffer[idx] = (uint8_t)(frame_buffer[idx] * 0.82f + r * 0.13f);
+                frame_buffer[idx+1] = (uint8_t)(frame_buffer[idx+1] * 0.82f + g * 0.13f);
+                frame_buffer[idx+2] = (uint8_t)(frame_buffer[idx+2] * 0.82f + b * 0.13f);
             }
         }
     }
@@ -400,8 +416,8 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
         poppy_joints[i].px = tx;
         poppy_joints[i].py = ty;
 
-        // Angular targets: evenly spaced at 60 degree intervals
-        float target_angle = (i - 1) * (2.0f * M_PI / 6.0f);
+        // Angular targets: evenly spaced at 60 degree intervals, tilted based on stem deflection velocity
+        float target_angle = (i - 1) * (2.0f * M_PI / 6.0f) + wind_x * 0.035f;
         float target_x = poppy_joints[0].x + petal_rest_len * cosf(target_angle);
         float target_y = poppy_joints[0].y + petal_rest_len * sinf(target_angle);
 
@@ -461,10 +477,10 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
 
     // Multilayered Petals: Outer layer (1, 3, 5) is larger & darker; Inner layer (2, 4, 6) is smaller & brighter
     for (int i = 1; i <= 6; i += 2) {
-        draw_flat_petal((int)poppy_joints[i].x, (int)poppy_joints[i].y, 38.0f, 195, 15, 50, (int)poppy_joints[0].x, (int)poppy_joints[0].y); // Outer
+        draw_flat_petal((int)poppy_joints[i].x, (int)poppy_joints[i].y, 38.0f, 195, 15, 50, (int)poppy_joints[0].x, (int)poppy_joints[0].y, time_val); // Outer
     }
     for (int i = 2; i <= 6; i += 2) {
-        draw_flat_petal((int)poppy_joints[i].x, (int)poppy_joints[i].y, 32.0f, 235, 30, 70, (int)poppy_joints[0].x, (int)poppy_joints[0].y); // Inner
+        draw_flat_petal((int)poppy_joints[i].x, (int)poppy_joints[i].y, 32.0f, 235, 30, 70, (int)poppy_joints[0].x, (int)poppy_joints[0].y, time_val); // Inner
     }
 
 
