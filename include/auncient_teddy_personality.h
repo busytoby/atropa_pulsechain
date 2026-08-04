@@ -81,6 +81,7 @@ typedef struct {
     double threat_confrontation;     // Perceived threat confrontation (0.0 submissive/retreat, 1.0 confrontational)
     double pain_tolerance;           // Perceived pain tolerance (0.0 lower tolerance/toughness, 1.0 high pain tolerance)
     double relationship_exclusivity; // Perceived relationship exclusivity (0.0 low/extra-pair, 1.0 monogamous/exclusive)
+    double exhaustion_vulnerability; // Perceived exhaustion vulnerability (0.0 low/high stamina, 1.0 high fatigue)
 } teddy_geometry_t;
 
 // Pixar RenderMan Avatar Agent definition upon the cooperative boundary
