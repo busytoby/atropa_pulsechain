@@ -687,3 +687,8 @@ test-auncient-xplos-debugger:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_xplos_debugger.c -o tests/test_auncient_xplos_debugger -lcrypto -lrt
 	./tests/test_auncient_xplos_debugger
 	@rm -f tests/test_auncient_xplos_debugger
+
+test-auncient-xplos-debugger-extended:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_xplos_debugger_extended.c -o tests/test_auncient_xplos_debugger_extended -lcrypto -lrt
+	./tests/test_auncient_xplos_debugger_extended
+	@rm -f tests/test_auncient_xplos_debugger_extended
