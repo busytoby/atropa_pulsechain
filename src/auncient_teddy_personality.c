@@ -815,6 +815,17 @@ bool evaluate_threshold_nominal_wald_test(const double *theta_vector, const doub
     return true;
 }
 
+bool evaluate_parameter_wald_test(double estimate, double baseline, double variance, double *wald_stat_out, double *p_value_out) {
+    if (variance < 1e-9 || !wald_stat_out || !p_value_out) {
+        return false;
+    }
+    double diff = estimate - baseline;
+    *wald_stat_out = (diff * diff) / variance;
+    *p_value_out = exp(-(*wald_stat_out) / 2.0);
+    if (*p_value_out > 1.0) *p_value_out = 1.0;
+    return true;
+}
+
 bool evaluate_scale_adjusted_threshold_wald(double threshold_est, double scale_multiplier, double baseline, double variance, double *wald_stat_out, double *p_value_out) {
     if (variance < 1e-9 || scale_multiplier < 1e-9 || !wald_stat_out || !p_value_out) {
         return false;

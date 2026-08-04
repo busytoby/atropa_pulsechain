@@ -227,6 +227,12 @@ int main(void) {
     assert(s_wpval < 0.7);
     printf("   ✓ R H B Christensen scale parameter Wald test diagnostics verified successfully\n");
 
+    // Test standard parameter Wald test calculation
+    double p_wstat = 0.0, p_wpval = 0.0;
+    assert(evaluate_parameter_wald_test(2.0, 1.0, 0.25, &p_wstat, &p_wpval));
+    assert(p_wstat > 0.0);
+    printf("   ✓ R H B Christensen standard parameter Wald test verified successfully\n");
+
     // Test scale nominal Wald test calculation
     double gammas[2] = {0.8, -0.6};
     double g_covar[4] = {0.16, 0.0, 0.0, 0.09};
