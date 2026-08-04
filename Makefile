@@ -179,6 +179,12 @@ test-auncient-displacementshader-wmq-integration:
 	./tests/test_auncient_displacementshader_wmq_integration
 	@rm -f tests/test_auncient_displacementshader_wmq_integration
 
+test-auncient-dat-bin-accumulator:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc tests/test_auncient_dat_bin_accumulator.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_displacementshader.c -o tests/test_auncient_dat_bin_accumulator -lcrypto -lrt -lm
+	./tests/test_auncient_dat_bin_accumulator
+	@rm -f tests/test_auncient_dat_bin_accumulator
+
+
 test-mann:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_mann_controller.c tsfi2-deepseek/src/tsfi_mann_controller.c -o tests/test_mann_controller -lm -lrt
 	./tests/test_mann_controller
