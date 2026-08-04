@@ -62,6 +62,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->relationship_length = 1.0;      // Long-term preference
             geom->physical_aggression = 0.0;      // Cooperative non-violent
             geom->task_diligence = 0.0;           // Lower/emotional profile
+            geom->social_supportiveness = 1.0;    // High support/altruism
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -122,6 +123,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->relationship_length = 0.0;      // Short-term preference
             geom->physical_aggression = 1.0;      // Aggressive
             geom->task_diligence = 1.0;           // Diligent/systematic
+            geom->social_supportiveness = 0.0;    // Low support/altruism
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -182,6 +184,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->relationship_length = 0.0;      // Short-term preference
             geom->physical_aggression = 1.0;      // Aggressive
             geom->task_diligence = 1.0;           // Diligent/systematic
+            geom->social_supportiveness = 0.0;    // Low support/altruism
             break;
     }
 }

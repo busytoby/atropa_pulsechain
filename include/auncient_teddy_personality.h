@@ -70,6 +70,7 @@ typedef struct {
     double relationship_length;      // Perceived relationship length preference (0.0 short-term, 1.0 long-term)
     double physical_aggression;      // Perceived physical aggression (0.0 cooperative non-violent, 1.0 aggressive/violent)
     double task_diligence;           // Perceived task diligence (0.0 lower/emotional, 1.0 high systematic diligence)
+    double social_supportiveness;    // Perceived social supportiveness (0.0 lower altruism, 1.0 high altruism/support)
 } teddy_geometry_t;
 
 // Pixar RenderMan Avatar Agent definition upon the cooperative boundary
