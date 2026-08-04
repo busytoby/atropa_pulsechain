@@ -68,6 +68,7 @@ typedef struct {
     double relationship_quality;     // Expected relationship quality (0.0 lower quality/cooperativeness, 1.0 higher)
     double immunological_strength;   // Perceived immunological strength (0.0 lower resistance, 1.0 robust resistance)
     double relationship_length;      // Perceived relationship length preference (0.0 short-term, 1.0 long-term)
+    double physical_aggression;      // Perceived physical aggression (0.0 cooperative non-violent, 1.0 aggressive/violent)
 } teddy_geometry_t;
 
 // Pixar RenderMan Avatar Agent definition upon the cooperative boundary
