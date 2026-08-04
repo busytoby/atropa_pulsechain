@@ -78,6 +78,7 @@ typedef struct {
     double routine_leadership;       // Perceived routine leadership efficiency (0.0 crisis-only, 1.0 routine management)
     double parental_investment;      // Perceived parental investment duration (0.0 short-term, 1.0 long-term)
     double hazard_avoidance;         // Perceived hazard avoidance (0.0 risk-taking/hazard-seeking, 1.0 cautious/avoidant)
+    double threat_confrontation;     // Perceived threat confrontation (0.0 submissive/retreat, 1.0 confrontational)
 } teddy_geometry_t;
 
 // Pixar RenderMan Avatar Agent definition upon the cooperative boundary
