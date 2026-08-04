@@ -433,6 +433,12 @@ bool evaluate_hyde_gaze_direction_index(const teddy_geometry_t *geom, double tar
 // Evaluates vocal speed/pitch stability variations against nominal values (Hyde et al.).
 bool evaluate_hyde_vocal_tempo_variance(const teddy_geometry_t *geom, double vocal_tempo_bpm, double *vocal_uncanny_out);
 
+// Evaluates the provocation aggression limit based on fWHR and status-dominance (Geniole et al.).
+bool evaluate_geniole_provocation_aggression_limit(const teddy_geometry_t *geom, double provocation_scale, double *aggression_limit_out);
+
+// Models dynamic visual changes driven by baseline testosterone ratings (Geniole et al.).
+bool evaluate_geniole_testosterone_modulator(const teddy_geometry_t *geom, double baseline_testosterone, double *modulator_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 

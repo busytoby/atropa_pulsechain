@@ -969,3 +969,19 @@ bool evaluate_hyde_vocal_tempo_variance(const teddy_geometry_t *geom, double voc
     return true;
 }
 
+bool evaluate_geniole_provocation_aggression_limit(const teddy_geometry_t *geom, double provocation_scale, double *aggression_limit_out) {
+    if (!geom || provocation_scale < 0.0 || !aggression_limit_out) {
+        return false;
+    }
+    *aggression_limit_out = provocation_scale * (0.5 + geom->head_fwhr * 1.5 + geom->leadership_profile * 0.5);
+    return true;
+}
+
+bool evaluate_geniole_testosterone_modulator(const teddy_geometry_t *geom, double baseline_testosterone, double *modulator_out) {
+    if (!geom || baseline_testosterone < 0.0 || !modulator_out) {
+        return false;
+    }
+    *modulator_out = baseline_testosterone * (0.8 + geom->head_fwhr * 0.4 + geom->jaw_scale * 0.2);
+    return true;
+}
+

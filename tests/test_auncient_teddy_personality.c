@@ -621,6 +621,15 @@ int main(void) {
     assert(vocal_tempo_uncanny > 0.0);
     printf("   ✓ HYDE et al. gaze direction and vocal tempo variance indices verified successfully\n");
 
+    // Test Geniole provocation limit and testosterone modulator calculations
+    double aggression_limit = 0.0;
+    double testosterone_mod = 0.0;
+    assert(evaluate_geniole_provocation_aggression_limit(&geom, 1.5, &aggression_limit));
+    assert(aggression_limit > 0.0);
+    assert(evaluate_geniole_testosterone_modulator(&geom, 2.5, &testosterone_mod));
+    assert(testosterone_mod > 0.0);
+    printf("   ✓ GENIOLE et al. provocation aggression limit and testosterone modulator verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge
