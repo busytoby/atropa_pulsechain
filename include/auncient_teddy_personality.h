@@ -97,6 +97,7 @@ typedef struct {
     double paternal_protection_style; // Perceived protection style (0.0 aggressive over-protection, 1.0 cooperative care)
     double competitive_persistence;   // Perceived competitive persistence (0.0 lower, 1.0 high competitive persistence)
     double family_altruism;          // Perceived family altruism (0.0 lower support, 1.0 high family support/altruism)
+    double social_conformity;        // Perceived social conformity (0.0 non-conformity, 1.0 convention conformity)
 } teddy_geometry_t;
 
 // Pixar RenderMan Avatar Agent definition upon the cooperative boundary
