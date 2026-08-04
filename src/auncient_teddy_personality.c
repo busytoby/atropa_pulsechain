@@ -94,6 +94,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->workplace_mentorship = 1.0;     // High workplace mentorship
             geom->verbal_arbitration = 0.0;       // Low verbal arbitration
             geom->isolation_resilience = 0.0;     // Low isolation resilience
+            geom->confrontational_assertiveness = 0.0; // Low assertiveness
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -186,6 +187,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->workplace_mentorship = 0.0;     // Individual competitive
             geom->verbal_arbitration = 1.0;       // High verbal arbitration
             geom->isolation_resilience = 1.0;     // High isolation resilience
+            geom->confrontational_assertiveness = 1.0; // High assertiveness
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -278,6 +280,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->workplace_mentorship = 0.0;     // Individual competitive
             geom->verbal_arbitration = 1.0;       // High verbal arbitration
             geom->isolation_resilience = 1.0;     // High isolation resilience
+            geom->confrontational_assertiveness = 1.0; // High assertiveness
             break;
     }
 }
