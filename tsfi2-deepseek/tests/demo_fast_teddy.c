@@ -11,15 +11,24 @@
 #define FRAMES 300 // 10 seconds @ 30 FPS
 
 // Render a single frame using AVX-512 density fields
-void render_bear_frame(uint8_t *frame_buffer, int f_idx) {
-    float time_val = f_idx * (1.0f / 30.0f);
-    
-    // Wave calculations for natural arm movement
-    float arm_wave = sinf(time_val * M_PI * 1.5f);
-    
-    // ZMM parallelization across X (16 pixels at a time) and OpenMP multi-processing across Y
-// Removed OpenMP pragma
-    for (int y = 0; y < HEIGHT; y++) {
+#include "../inc/tsfi_ccx_pool.h"
+
+static TSFiCCXPool g_teddy_ccx_pool;
+static bool g_teddy_ccx_pool_initialized = false;
+
+typedef struct {
+    int start_y;
+    int end_y;
+    uint8_t *frame_buffer;
+    float time_val;
+    float arm_wave;
+} TeddyWorkerArg;
+
+static void render_bear_worker(void *arg) {
+    TeddyWorkerArg *a = (TeddyWorkerArg *)arg;
+    float arm_wave = a->arm_wave;
+    uint8_t *frame_buffer = a->frame_buffer;
+    for (int y = a->start_y; y < a->end_y; y++) {
         float ny = (float)y / HEIGHT * 2.0f - 1.0f;
         __m512 vy = _mm512_set1_ps(ny);
         
@@ -83,7 +92,7 @@ void render_bear_frame(uint8_t *frame_buffer, int f_idx) {
             // Eyes
             DRAW_SPHERE(-0.15f, -0.15f, 0.04f, 2.8f, 0.0f, 0.0f, 0.0f);
             DRAW_SPHERE( 0.15f, -0.15f, 0.04f, 2.8f, 0.0f, 0.0f, 0.0f);
-
+ 
             // Convert and store
             __m512 scale = _mm512_set1_ps(255.0f);
             out_r = _mm512_mul_ps(out_r, scale);
@@ -103,6 +112,37 @@ void render_bear_frame(uint8_t *frame_buffer, int f_idx) {
             }
         }
     }
+}
+ 
+void render_bear_frame(uint8_t *frame_buffer, int f_idx) {
+    float time_val = f_idx * (1.0f / 30.0f);
+    float arm_wave = sinf(time_val * M_PI * 1.5f);
+ 
+    if (!g_teddy_ccx_pool_initialized) {
+        tsfi_ccx_pool_init(&g_teddy_ccx_pool, 0, 4);
+        g_teddy_ccx_pool_initialized = true;
+    }
+ 
+    int num_threads = g_teddy_ccx_pool.num_threads;
+    int rows_per_thread = HEIGHT / num_threads;
+    if (rows_per_thread < 1) rows_per_thread = 1;
+ 
+    TeddyWorkerArg args[MAX_CCX_THREADS];
+    for (int i = 0; i < num_threads; i++) {
+        int start = i * rows_per_thread;
+        if (start >= HEIGHT) break;
+        int end = (i == num_threads - 1) ? HEIGHT : (i + 1) * rows_per_thread;
+        if (end > HEIGHT) end = HEIGHT;
+ 
+        args[i].start_y = start;
+        args[i].end_y = end;
+        args[i].frame_buffer = frame_buffer;
+        args[i].time_val = time_val;
+        args[i].arm_wave = arm_wave;
+ 
+        tsfi_ccx_pool_enqueue(&g_teddy_ccx_pool, render_bear_worker, &args[i]);
+    }
+    tsfi_ccx_pool_wait(&g_teddy_ccx_pool);
 }
 
 int main() {
