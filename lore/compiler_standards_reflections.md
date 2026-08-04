@@ -432,6 +432,16 @@ int main() {
 * **Compiler Built-in**: 26 characters (`__builtin_wmq_retransmit();`).
 * **Source Size Reduction**: 65% character footprint decrease.
 
+### Host Connection Window Comparison
+* **Boilerplate Wrapper**: 66 characters.
+  ```c
+  int get_window() {
+      return *(volatile int*)(0x2040);
+  }
+  ```
+* **Compiler Built-in**: 22 characters (`__builtin_wmq_window();`).
+* **Source Size Reduction**: 66% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
