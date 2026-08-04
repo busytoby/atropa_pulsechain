@@ -365,7 +365,18 @@ function generateMusicSample(pattern, stepIndex, stepSampleIdx, stepAge) {
         const panL = 0.5 + 0.35 * Math.sin(2.0 * Math.PI * 0.15 * timeSec);
         leadSampleL = rawLeadFiltered * panL;
         leadSampleR = rawLeadFiltered * (1.0 - panL);
+    } else if (currentDispensation === 4) {
+        const arpNote = pattern.arpeggiator_filter.sequence[stepIndex];
+        const arpFreq = (arpNote && NOTE_FREQS[arpNote]) ? (NOTE_FREQS[arpNote] * currentFreqMultiplier) : 523.25;
+        if (arpNote && arpNote !== "0" && stepAge < 0.3) {
+            leadPhase += arpFreq / SAMPLE_RATE;
+            const bellVal = Math.sin(2.0 * Math.PI * leadPhase) * Math.exp(-stepAge / 0.45) * 0.082;
+            const panL = 0.5 + 0.4 * Math.sin(2.0 * Math.PI * 0.25 * timeSec + stepIndex);
+            leadSampleL = bellVal * panL;
+            leadSampleR = bellVal * (1.0 - panL);
+        }
     }
+
 
     // Lush Chord Pad (3-voice string polyphony)
     let padSample = 0.0;
