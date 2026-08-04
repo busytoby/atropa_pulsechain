@@ -1071,6 +1071,17 @@ bool evaluate_amplitude_jitter_uncanny(const teddy_geometry_t *geom, double ampl
     return true;
 }
 
+bool evaluate_vocal_visual_sync_uncanny(const teddy_geometry_t *geom, double audio_lag_ms, double *uncanny_score_out) {
+    if (!geom || audio_lag_ms < 0.0 || !uncanny_score_out) {
+        return false;
+    }
+    double base_uncanny = 0.0;
+    evaluate_uncanny_mismatch_index(geom, &base_uncanny);
+    double lag_factor = (audio_lag_ms > 80.0) ? (audio_lag_ms * 0.05) : 0.05;
+    *uncanny_score_out = base_uncanny + (lag_factor * (1.0 + geom->behavioral_mismatch));
+    return true;
+}
+
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state) {
     if (resistance < 1e-9 || capacitance < 1e-9 || time_step < 1e-9 || !charge_state) {
         return false;
