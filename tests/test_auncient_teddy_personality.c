@@ -17,6 +17,8 @@ typedef struct {
     double eye_scale;        // Eye size scaling factor (1.0 medium, 1.8 large)
     double stiffness;        // Soft body spring stiffness for clothing/fur dynamics
     double damping;          // Soft body motion damping coefficient
+    double taper;            // Taper factor for sharp primitive deformations (cylinders/cones)
+    double curvature;        // Surface curvature rounding factor (1.0 round, 0.2 flat/sharp)
 } teddy_geometry_t;
 
 // Maps abstract traits to geometric parameters based on study results
@@ -28,6 +30,8 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->eye_scale = 1.0;        // Medium eyes are rated most trustworthy
             geom->stiffness = 0.3;        // Low stiffness for fluid, friendly movements
             geom->damping = 0.8;          // High damping for controlled motion
+            geom->taper = 0.0;            // Zero taper for uniform primitives
+            geom->curvature = 1.0;        // Fully rounded shapes
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -35,6 +39,8 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->eye_scale = 1.0;        // Medium eyes
             geom->stiffness = 0.9;        // High stiffness for rigid, sudden movements
             geom->damping = 0.2;          // Low damping
+            geom->taper = 0.4;            // Pointed taper for sharp silhouettes
+            geom->curvature = 0.2;        // Flattened, angular surfaces
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -42,6 +48,8 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->eye_scale = 1.8;        // Large eyes are rated most eerie
             geom->stiffness = 0.8;        // Rigid mesh constraints
             geom->damping = 0.1;          // Erratic motion decay
+            geom->taper = 0.3;            // Tapered joints
+            geom->curvature = 0.3;        // Sharp boundary edges
             break;
     }
 }
