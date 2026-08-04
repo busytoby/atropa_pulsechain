@@ -178,6 +178,17 @@ bool validate_privilege_escalation(uint32_t active_pid, uint8_t process_tag, uin
     return true;
 }
 
+// Validation 7: Agent Reactive Retaliation Boundary
+bool validate_agent_reactive_retaliation_boundary(double provocation_scale, double status_aggression, double head_fwhr, double jaw_scale) {
+    double formidability = jaw_scale * 1.5;
+    double base_retaliation = provocation_scale * formidability * (1.0 + status_aggression);
+    double boundary = base_retaliation * (1.0 + (head_fwhr * 0.5));
+    if (boundary > 5.0) {
+        return false;
+    }
+    return true;
+}
+
 // -------------------------------------------------------------
 // Unit Tests
 // -------------------------------------------------------------
@@ -303,6 +314,14 @@ int main(void) {
     priv_ok = validate_privilege_escalation(7, 0x02, 0xF100);
     assert(priv_ok == false);
     printf("   ✓ Privilege tag escalation attempt blocked and trapped successfully.\n");
+    fflush(stdout);
+
+    // 10. Agent Retaliation Boundary: verify collapse of cooperation
+    printf("[TEST] Agent: Testing reactive retaliation boundary on cooperation...\n");
+    fflush(stdout);
+    assert(validate_agent_reactive_retaliation_boundary(1.0, 0.2, 1.0, 0.8) == true); // Cooperating
+    assert(validate_agent_reactive_retaliation_boundary(4.0, 1.0, 1.5, 1.2) == false); // Collapsed
+    printf("   ✓ Agent reactive retaliation boundary limits checked successfully.\n");
     fflush(stdout);
 
     free(trace_registry);
