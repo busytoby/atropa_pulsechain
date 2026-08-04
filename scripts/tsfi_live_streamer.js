@@ -367,9 +367,11 @@ function generateMusicSample(pattern, stepIndex, stepSampleIdx, stepAge) {
         leadSampleR = rawLeadFiltered * (1.0 - panL);
     } else if (currentDispensation === 4) {
         const arpNote = pattern.arpeggiator_filter.sequence[stepIndex];
-        const arpFreq = (arpNote && NOTE_FREQS[arpNote]) ? (NOTE_FREQS[arpNote] * currentFreqMultiplier) : 523.25;
+                const arpFreq = (arpNote && NOTE_FREQS[arpNote]) ? (NOTE_FREQS[arpNote] * currentFreqMultiplier) : 523.25;
         if (arpNote && arpNote !== "0" && stepAge < 0.3) {
-            leadPhase += arpFreq / SAMPLE_RATE;
+            // Apply 6Hz vibrato frequency modulation for organic warmth
+            const vibrato = 1.0 + 0.005 * Math.sin(2.0 * Math.PI * 6.0 * timeSec);
+            leadPhase += (arpFreq * vibrato) / SAMPLE_RATE;
             const bellVal = Math.sin(2.0 * Math.PI * leadPhase) * Math.exp(-stepAge / 0.45) * 0.082;
             const panL = 0.5 + 0.4 * Math.sin(2.0 * Math.PI * 0.25 * timeSec + stepIndex);
             leadSampleL = bellVal * panL;
@@ -392,7 +394,13 @@ function generateMusicSample(pattern, stepIndex, stepSampleIdx, stepAge) {
             if (padFreqs[v] > 0) {
                 padPhases[v] += padFreqs[v] / SAMPLE_RATE;
                 if (padPhases[v] > 1.0) padPhases[v] -= 2.0;
-                padRawAccum += Math.sin(2 * Math.PI * padPhases[v]);
+                
+                // detuned multi-oscillators for a warm string chorus effect
+                const osc1 = Math.sin(2.0 * Math.PI * padPhases[v]);
+                const osc2 = Math.sin(2.0 * Math.PI * padPhases[v] * 1.005);
+                const osc3 = Math.sin(2.0 * Math.PI * padPhases[v] * 0.995);
+                
+                padRawAccum += (osc1 + osc2 * 0.35 + osc3 * 0.35) * 0.7;
             }
         }
         
