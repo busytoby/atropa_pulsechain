@@ -154,6 +154,12 @@ int main(void) {
     assert(l_scale < u_scale);
     printf("   ✓ R H B Christensen scale parameter likelihood profile bounds verified successfully\n");
 
+    // Test threshold parameter likelihood profile calculation
+    double l_thresh = 0.0, u_thresh = 0.0;
+    assert(evaluate_threshold_profile_bounds(&geom, 2, &l_thresh, &u_thresh));
+    assert(l_thresh < u_thresh);
+    printf("   ✓ R H B Christensen threshold parameter likelihood profile bounds verified successfully\n");
+
     // Test Likelihood Ratio Test (LRT) nested model comparison
     double chi_sq = 0.0, p_val = 0.0;
     assert(evaluate_lrt_nested_models(-150.0, -145.0, 1, &chi_sq, &p_val));

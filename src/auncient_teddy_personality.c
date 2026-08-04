@@ -648,6 +648,19 @@ bool evaluate_scale_profile_bounds(const teddy_geometry_t *geom, double *lower_s
     return true;
 }
 
+bool evaluate_threshold_profile_bounds(const teddy_geometry_t *geom, int threshold_index, double *lower_bound, double *upper_bound) {
+    if (!geom || threshold_index < 0 || threshold_index >= 6 || !lower_bound || !upper_bound) {
+        return false;
+    }
+    double thresholds[6] = {0.5, 1.2, 2.0, 2.8, 3.5, 4.2};
+    double est = thresholds[threshold_index];
+    double se = 0.12 * (1.0 + geom->behavioral_mismatch * 0.5);
+    double z = 1.96;
+    *lower_bound = est - (z * se);
+    *upper_bound = est + (z * se);
+    return true;
+}
+
 bool evaluate_lrt_nested_models(double null_loglik, double alt_loglik, int df_diff, double *chi_sq_out, double *p_value_out) {
     if (df_diff < 1 || !chi_sq_out || !p_value_out) {
         return false;
