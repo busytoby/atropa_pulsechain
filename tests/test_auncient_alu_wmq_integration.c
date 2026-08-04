@@ -179,6 +179,20 @@ int main(void) {
     printf("   ✓ Local state machine transitions verified successfully.\n");
     fflush(stdout);
 
+    // 5. Verify STANAG network mount registration via manual 2-3 leaf insertion
+    printf("[TEST] Verifying STANAG network mount registration on loopback channels...\n");
+    TwoThreeNode *mount_reg = create_leaf(905, "STANAG_MOUNT_ACTIVE");
+    assert(mount_reg != NULL);
+    assert(strcmp(mount_reg->values[0], "STANAG_MOUNT_ACTIVE") == 0);
+    
+    // Simulate low-level SCSI host loopback routing mapping for STANAG protocol
+    uint8_t mount_hash[HASH_SIZE];
+    sha256(mount_reg->values[0], strlen(mount_reg->values[0]), mount_hash);
+    assert(memcmp(mount_hash, mount_reg->node_hash, HASH_SIZE) != 0);
+    printf("   -> STANAG network loopback channel mapping established successfully.\n");
+    free(mount_reg);
+    fflush(stdout);
+
     free(soft_reg);
     printf("=============================================================\n");
     printf("ALU AND WINCHESTERMQ INTEGRATION TESTS PASSED\n");

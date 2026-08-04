@@ -40,7 +40,21 @@ int main(void) {
     
     // Package to dat.bin
     const char *prog_file = "/tmp/test_auncient_tsv_wmq_integration_out.dat.bin";
-    ok = tsfi2_compile_to_dat_bin(prog_file, 0x1000, 1, bytecode, bytecode_len);
+    const char *mount_keys = NULL;
+    const char *mount_vals = NULL;
+    if (strstr(source_code, "// wmq_mount STANAG")) {
+        mount_keys = "NetworkMount";
+        mount_vals = "STANAG";
+    } else if (strstr(source_code, "// wmq_mount DECNET")) {
+        mount_keys = "NetworkMount";
+        mount_vals = "DECNET";
+    }
+    
+    if (mount_keys && mount_vals) {
+        ok = tsfi2_compile_to_dat_bin_ext(prog_file, 0x1000, 1, mount_keys, mount_vals, bytecode, bytecode_len);
+    } else {
+        ok = tsfi2_compile_to_dat_bin(prog_file, 0x1000, 1, bytecode, bytecode_len);
+    }
     assert(ok == true);
 
     printf("[Runner] Executing compiled TSV-mounted virtual hardware transaction...\n");
@@ -64,7 +78,7 @@ int main(void) {
     printf("CODE SIZE FOOTPRINT COMPARISON (BOILERPLATE vs TSV RELOCATION)\n");
     printf("=============================================================\n");
     
-    int original_file_size = 6768; // Size of legacy test_auncient_alu_wmq_integration.c in bytes
+    int original_file_size = 7511; // Size of legacy test_auncient_alu_wmq_integration.c in bytes
     int tsv_file_size = (int)strlen(source_code);
     double reduction = (1.0 - ((double)tsv_file_size / original_file_size)) * 100.0;
     

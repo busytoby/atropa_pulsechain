@@ -37,18 +37,33 @@ int main(int argc, char *argv[]) {
     source_code[read_bytes] = '\0';
     fclose(f);
 
+    const char *mount_keys = NULL;
+    const char *mount_vals = NULL;
+    if (strstr(source_code, "// wmq_mount STANAG")) {
+        mount_keys = "NetworkMount";
+        mount_vals = "STANAG";
+    } else if (strstr(source_code, "// wmq_mount DECNET")) {
+        mount_keys = "NetworkMount";
+        mount_vals = "DECNET";
+    }
+
     uint8_t bytecode[4096];
     size_t bytecode_len = 0;
 
     bool ok = tsfi2_compile(source_code, bytecode, sizeof(bytecode), &bytecode_len);
-    free(source_code);
 
     if (!ok) {
+        free(source_code);
         fprintf(stderr, "Error: TSFi2 compilation failed\n");
         return 1;
     }
 
-    ok = tsfi2_compile_to_dat_bin(output_path, 0x1000, 1, bytecode, bytecode_len);
+    if (mount_keys && mount_vals) {
+        ok = tsfi2_compile_to_dat_bin_ext(output_path, 0x1000, 1, mount_keys, mount_vals, bytecode, bytecode_len);
+    } else {
+        ok = tsfi2_compile_to_dat_bin(output_path, 0x1000, 1, bytecode, bytecode_len);
+    }
+    free(source_code);
     if (!ok) {
         fprintf(stderr, "Error: Packaging to dat.bin failed (ensure file extension is .dat.bin)\n");
         return 1;

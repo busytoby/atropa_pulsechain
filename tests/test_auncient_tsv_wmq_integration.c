@@ -1,3 +1,4 @@
+// wmq_mount STANAG
 int main() {
     // State 1: Initializing Connection
     __builtin_wmq_connect_idx(2);
