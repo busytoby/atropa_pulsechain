@@ -406,6 +406,12 @@ int main(void) {
     assert(vv_acc_sync >= 0.0);
     printf("   ✓ HYDE et al. vocal-visual acceleration synchronization verified successfully\n");
 
+    // Test Hyde vocal-visual pitch transition velocity mismatch calculation
+    double pitch_vel_mismatch = 0.0;
+    assert(evaluate_pitch_velocity_mismatch(&geom, 0.4, &pitch_vel_mismatch));
+    assert(pitch_vel_mismatch >= 0.0);
+    printf("   ✓ HYDE et al. vocal-visual pitch transition velocity mismatch verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge

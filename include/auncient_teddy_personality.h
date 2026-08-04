@@ -308,6 +308,9 @@ bool evaluate_vocal_visual_sync_uncanny(const teddy_geometry_t *geom, double aud
 // Evaluates vocal-visual acceleration synchrony uncanny response (Hyde et al.).
 bool evaluate_vocal_visual_acceleration_sync(const teddy_geometry_t *geom, double acceleration_delay_ms, double *uncanny_score_out);
 
+// Evaluates vocal-visual pitch transition velocity mismatch uncanny response (Hyde et al.).
+bool evaluate_pitch_velocity_mismatch(const teddy_geometry_t *geom, double pitch_velocity_mismatch, double *uncanny_score_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 
