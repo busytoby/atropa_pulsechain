@@ -299,6 +299,9 @@ bool evaluate_retaliation_aggression_ceiling(const teddy_geometry_t *geom, doubl
 // Evaluates status challenge threat multipliers (Geniole et al.).
 bool evaluate_status_dominance_multiplier(const teddy_geometry_t *geom, double provocation_scale, double *multiplier_out);
 
+// Evaluates the provocation-modulated cheating threat index (Geniole et al.).
+bool evaluate_cheating_threat_index(const teddy_geometry_t *geom, double provocation_scale, double *cheating_threat_out);
+
 // Evaluates the vocal-visual uncanny mismatch index based on geometry and pitch (Hyde et al.).
 bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncanny_score_out);
 

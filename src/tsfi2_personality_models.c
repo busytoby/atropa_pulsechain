@@ -593,6 +593,18 @@ bool evaluate_status_dominance_multiplier(const teddy_geometry_t *geom, double p
     return true;
 }
 
+bool evaluate_cheating_threat_index(const teddy_geometry_t *geom, double provocation_scale, double *cheating_threat_out) {
+    if (!geom || provocation_scale < 0.0 || !cheating_threat_out) {
+        return false;
+    }
+    double base_cheat = 0.0;
+    if (!evaluate_cooperative_cheating_risk(geom, 0.5, &base_cheat)) {
+        return false;
+    }
+    *cheating_threat_out = base_cheat + (provocation_scale * 0.35 * geom->head_fwhr);
+    return true;
+}
+
 bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncanny_score_out) {
     if (!geom || !uncanny_score_out) {
         return false;
