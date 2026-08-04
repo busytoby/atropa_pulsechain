@@ -244,6 +244,16 @@ int main() {
 * **Compiler Built-in**: 26 characters (`__builtin_wmq_checksum();`).
 * **Source Size Reduction**: 61% character footprint decrease.
 
+### Host Device Unique ID Comparison
+* **Boilerplate Wrapper**: 60 characters.
+  ```c
+  int get_id() {
+      return *(volatile int*)(0x209C);
+  }
+  ```
+* **Compiler Built-in**: 20 characters (`__builtin_wmq_id();`).
+* **Source Size Reduction**: 66% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
