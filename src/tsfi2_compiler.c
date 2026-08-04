@@ -17,6 +17,15 @@ typedef struct {
     int val2;
 } BuiltinCall;
 
+static int get_line_number(const char *source, const char *pos) {
+    if (!pos) return 1;
+    int lines = 1;
+    for (const char *c = source; c < pos; c++) {
+        if (*c == '\n') lines++;
+    }
+    return lines;
+}
+
 static int compare_calls(const void *a, const void *b) {
     const BuiltinCall *ca = (const BuiltinCall *)a;
     const BuiltinCall *cb = (const BuiltinCall *)b;
@@ -42,7 +51,7 @@ bool tsfi2_compile(
         const char *tin_key = strstr(source_code, ":tin");
         const char *ssn_key = strstr(source_code, ":ssn");
         if (!job || !comp || !mnt || !auth || !tin_key || !ssn_key) {
-            printf("[ANALYZER] Closure Audit abort: missing required Closure metadata map keys.\n");
+            printf("[ANALYZER] Closure Audit abort: missing required Closure metadata map keys on line %d.\n", get_line_number(source_code, source_code));
             printf("[USER-DIAGNOSTIC] Make sure your Clojure source begins with a metadata map specifying job keys, e.g.: ^{:wmq-job \"NAME\" :wmq-compiler \"FOLKLORE\" :wmq-mount \"STANAG\" :wmq-params {:tin 950000000 :ssn 050051122}}\n");
             return false;
         }
@@ -50,7 +59,7 @@ bool tsfi2_compile(
         // Parse TIN value
         const char *tin_val_ptr = strstr(tin_key, "950000000");
         if (!tin_val_ptr) {
-            printf("[ANALYZER] Closure Audit abort: invalid or missing TIN metadata value.\n");
+            printf("[ANALYZER] Closure Audit abort: invalid or missing TIN metadata value on line %d.\n", get_line_number(source_code, tin_key));
             printf("[USER-DIAGNOSTIC] The :wmq-params map must contain a valid 9-digit tax identifier: :tin 950000000\n");
             return false;
         }
@@ -60,7 +69,7 @@ bool tsfi2_compile(
             ssn_val_ptr = strstr(ssn_key, "050051122");
         }
         if (!ssn_val_ptr) {
-            printf("[ANALYZER] Closure Audit abort: invalid or missing SSN metadata value.\n");
+            printf("[ANALYZER] Closure Audit abort: invalid or missing SSN metadata value on line %d.\n", get_line_number(source_code, ssn_key));
             printf("[USER-DIAGNOSTIC] The :wmq-params map must contain a valid 9-digit social security identifier: :ssn 050051122\n");
             return false;
         }

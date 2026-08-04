@@ -183,7 +183,16 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
     write_tsv_vsam(&tsv_ksds, 3, 953467ULL);
     write_tsv_vsam(&tsv_ksds, 4, 0);
     write_tsv_vsam(&tsv_ksds, 5, 0);
-
+    uint8_t mky_buf[256] = {0};
+    uint8_t mvl_buf[256] = {0};
+    int mky_len = 0, mvl_len = 0;
+    tsfi_cw_vsam_read(&prog_ksds, "MKY", mky_buf, sizeof(mky_buf)-1, &mky_len);
+    tsfi_cw_vsam_read(&prog_ksds, "MVL", mvl_buf, sizeof(mvl_buf)-1, &mvl_len);
+    mky_buf[mky_len] = '\0';
+    mvl_buf[mvl_len] = '\0';
+    if (mky_len > 0 && mvl_len > 0) {
+        printf("[SCSI/ZMM] Initializing network loopback interface with mount type: %s\n", (char *)mvl_buf);
+    }
     FILE *init_shm = fopen("/tmp/stanag_coax_loopback.bin", "w+b");
     if (init_shm) {
         uint32_t zero_buf[16] = {0};
@@ -486,6 +495,7 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
         }
     }
     
+    printf("[ANALYZER] Execution profiling: completed %zu instructions, exit code %d\n", pc, cpu->exit_code);
     free(bytecode_payload);
     free(buffer);
     remove("TSV_REGISTRY.dat.bin");
