@@ -313,7 +313,7 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset) {
     }
 }
 
-static void draw_flat_petal(int cx, int cy, float radius, uint8_t r, uint8_t g, uint8_t b) {
+static void draw_flat_petal(int cx, int cy, float radius, uint8_t r, uint8_t g, uint8_t b, int cx_center, int cy_center) {
     int rad_int = (int)radius + 4;
     for (int y = -rad_int; y <= rad_int; y++) {
         for (int x = -rad_int; x <= rad_int; x++) {
@@ -330,9 +330,24 @@ static void draw_flat_petal(int cx, int cy, float radius, uint8_t r, uint8_t g, 
                         // Velvet lighting: darker color towards the ruffled margins
                         float factor = 0.4f + 0.6f * (1.0f - (dist / (radius + ripple)));
                         if (factor < 0.2f) factor = 0.2f;
-                        frame_buffer[idx] = (uint8_t)(r * factor);
-                        frame_buffer[idx+1] = (uint8_t)(g * factor);
-                        frame_buffer[idx+2] = (uint8_t)(b * factor);
+
+                        uint8_t pr = (uint8_t)(r * factor);
+                        uint8_t pg = (uint8_t)(g * factor);
+                        uint8_t pb = (uint8_t)(b * factor);
+
+                        // Black/dark blotch near the botanical base of the petal
+                        float dist_from_center = sqrtf((px - cx_center)*(px - cx_center) + (py - cy_center)*(py - cy_center));
+                        if (dist_from_center < 22.0f) {
+                            float blotch_factor = (dist_from_center - 10.0f) / 12.0f;
+                            if (blotch_factor < 0.0f) blotch_factor = 0.0f;
+                            pr = (uint8_t)(pr * blotch_factor + 12 * (1.0f - blotch_factor));
+                            pg = (uint8_t)(pg * blotch_factor + 8 * (1.0f - blotch_factor));
+                            pb = (uint8_t)(pb * blotch_factor + 16 * (1.0f - blotch_factor));
+                        }
+
+                        frame_buffer[idx] = pr;
+                        frame_buffer[idx+1] = pg;
+                        frame_buffer[idx+2] = pb;
                     }
                 }
             }
@@ -446,10 +461,10 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
 
     // Multilayered Petals: Outer layer (1, 3, 5) is larger & darker; Inner layer (2, 4, 6) is smaller & brighter
     for (int i = 1; i <= 6; i += 2) {
-        draw_flat_petal((int)poppy_joints[i].x, (int)poppy_joints[i].y, 38.0f, 195, 15, 50); // Outer
+        draw_flat_petal((int)poppy_joints[i].x, (int)poppy_joints[i].y, 38.0f, 195, 15, 50, (int)poppy_joints[0].x, (int)poppy_joints[0].y); // Outer
     }
     for (int i = 2; i <= 6; i += 2) {
-        draw_flat_petal((int)poppy_joints[i].x, (int)poppy_joints[i].y, 32.0f, 235, 30, 70); // Inner
+        draw_flat_petal((int)poppy_joints[i].x, (int)poppy_joints[i].y, 32.0f, 235, 30, 70, (int)poppy_joints[0].x, (int)poppy_joints[0].y); // Inner
     }
 
 
