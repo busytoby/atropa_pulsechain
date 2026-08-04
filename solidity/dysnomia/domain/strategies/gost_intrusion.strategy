@@ -8,5 +8,7 @@
 (def ws-gost-key "KGBKEY01")
 
 (defn -main []
+  (println "EXECUTE COBOL ADVERSARY GOST LOOP...")
+  (println "PROCESSED IDENTITY: " ws-ssn-tin)
   (wmq-reg-write 1 950000000)
   (wmq-reg-write 2 050051122))
