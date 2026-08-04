@@ -401,6 +401,24 @@ int evaluate_ordinal_cloglog_rating(const teddy_geometry_t *geom) {
     return 7;
 }
 
+int evaluate_ordinal_flexible_rating(const teddy_geometry_t *geom, double link_mixture_weight) {
+    if (!geom) return 1;
+    double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
+    double thresholds[6] = {0.5, 1.2, 2.0, 2.8, 3.5, 4.2};
+    double w = link_mixture_weight;
+    if (w < 0.0) w = 0.0;
+    if (w > 1.0) w = 1.0;
+    for (int i = 0; i < 6; ++i) {
+        double logit_prob = 1.0 / (1.0 + exp(-(thresholds[i] - latent)));
+        double cloglog_prob = 1.0 - exp(-exp(thresholds[i] - latent));
+        double mix_prob = (w * logit_prob) + ((1.0 - w) * cloglog_prob);
+        if (mix_prob >= 0.5) {
+            return i + 1;
+        }
+    }
+    return 7;
+}
+
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out) {
     if (!geom || param_count < 1 || sample_size < 2 || !aic_out || !bic_out) {
         return false;

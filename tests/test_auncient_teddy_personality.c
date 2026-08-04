@@ -99,6 +99,11 @@ int main(void) {
     assert(aic > 0.0 && bic > 0.0);
     printf("   ✓ R H B Christensen AIC and BIC model selection criteria verified successfully\n");
 
+    // Test flexible link rating estimation (mixture logit/cloglog)
+    int rating_flex = evaluate_ordinal_flexible_rating(&geom, 0.5);
+    assert(rating_flex >= 1 && rating_flex <= 7);
+    printf("   ✓ R H B Christensen flexible mixture link ordinal rating verified successfully\n");
+
     // Test ACID transaction behavior (Commit successful path)
     evaluation_tx_t tx = begin_evaluation_transaction(&geom);
     assert(tx.active);

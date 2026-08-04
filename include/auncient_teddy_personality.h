@@ -144,6 +144,9 @@ bool evaluate_hessian_diagnostics(const teddy_geometry_t *geom, double *variance
 // Evaluates an asymmetrical ordinal rating using a complementary log-log (cloglog) link model.
 int evaluate_ordinal_cloglog_rating(const teddy_geometry_t *geom);
 
+// Evaluates an ordinal rating using a customized flexible link mixture weight (0.0 cloglog, 1.0 logit).
+int evaluate_ordinal_flexible_rating(const teddy_geometry_t *geom, double link_mixture_weight);
+
 // Computes model selection diagnostics via AIC and BIC information criteria.
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out);
 
