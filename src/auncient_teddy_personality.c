@@ -81,6 +81,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->motor_fatigue_resistance = 0.0; // Low fatigue resistance
             geom->work_ethic = 1.0;               // High work ethic
             geom->compliance = 1.0;               // High compliance
+            geom->industriousness = 1.0;          // High industriousness
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -160,6 +161,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->motor_fatigue_resistance = 1.0; // High fatigue resistance
             geom->work_ethic = 0.0;               // Passive/lazy work ethic
             geom->compliance = 0.0;               // Defiant/independent compliance
+            geom->industriousness = 0.0;          // Lower industriousness
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -239,6 +241,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->motor_fatigue_resistance = 1.0; // High fatigue resistance
             geom->work_ethic = 0.0;               // Passive/lazy work ethic
             geom->compliance = 0.0;               // Defiant/independent compliance
+            geom->industriousness = 0.0;          // Lower industriousness
             break;
     }
 }
