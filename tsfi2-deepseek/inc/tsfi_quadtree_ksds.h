@@ -74,4 +74,6 @@ bool tsfi_qt_ksds_read_dual(
     int *utf8_len_out
 );
 
+bool tsfi_qt_ksds_get_metadata(const char *header, const char *key, char *val_out, size_t val_max);
+
 #endif /* TSFI_QUADTREE_KSDS_H */

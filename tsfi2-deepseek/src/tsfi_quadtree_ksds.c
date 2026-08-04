@@ -109,16 +109,16 @@ bool tsfi_qt_ksds_read(
     if (hdr) {
         memcpy(hdr, buffer, header_len);
         hdr[header_len] = '\0';
-        char *line = strstr(hdr, "QuadtreeCount:");
-        if (line) {
-            sscanf(line, "QuadtreeCount:\t%d", &quad_count);
+        char val[128];
+        if (tsfi_qt_ksds_get_metadata(hdr, "QuadtreeCount", val, sizeof(val))) {
+            quad_count = atoi(val);
         }
-        line = strstr(hdr, "RecordCount:");
-        if (line) {
-            sscanf(line, "RecordCount:\t%d", &record_len);
+        if (tsfi_qt_ksds_get_metadata(hdr, "RecordCount", val, sizeof(val))) {
+            record_len = atoi(val);
         }
         free(hdr);
     }
+    (void)record_len;
 
     if (quad_count <= 0) {
         free(buffer);
@@ -388,4 +388,31 @@ bool tsfi_qt_ksds_read_dual(
     }
 
     return true;
+}
+
+bool tsfi_qt_ksds_get_metadata(const char *header, const char *key, char *val_out, size_t val_max) {
+    if (!header || !key || !val_out || val_max == 0) return false;
+
+    size_t key_len = strlen(key);
+    const char *p = header;
+
+    while ((p = strstr(p, key)) != NULL) {
+        // Confirm this matches the exact key (either at start of header or preceded by newline)
+        if (p == header || *(p - 1) == '\n' || *(p - 1) == '\r') {
+            const char *val_start = p + key_len;
+            // Skip optional colon or spaces, and must find a tab or space separator
+            while (*val_start == ':' || *val_start == ' ' || *val_start == '\t') {
+                val_start++;
+            }
+            // Copy characters until newline
+            size_t j = 0;
+            while (*val_start != '\0' && *val_start != '\n' && *val_start != '\r' && j < val_max - 1) {
+                val_out[j++] = *val_start++;
+            }
+            val_out[j] = '\0';
+            return true;
+        }
+        p += key_len;
+    }
+    return false;
 }

@@ -161,6 +161,21 @@ int main(void) {
     remove(uni_file);
     printf("   ✓ Unicode dual-encoding and normalization verified successfully.\n");
 
+    // Generic TSV Metadata Lookup Test
+    printf("[Test] Validating Generic TSV Metadata Lookup...\n");
+    const char *custom_header = "AUNCIENT_TEST\nQuadtreeCount\t1\nRecordCount\t1\nFederalCompliance\tverified\nCustomKey\tCustomValue";
+    char val_out[128] = {0};
+
+    ok = tsfi_qt_ksds_get_metadata(custom_header, "FederalCompliance", val_out, sizeof(val_out));
+    assert(ok == true);
+    assert(strcmp(val_out, "verified") == 0);
+
+    ok = tsfi_qt_ksds_get_metadata(custom_header, "CustomKey", val_out, sizeof(val_out));
+    assert(ok == true);
+    assert(strcmp(val_out, "CustomValue") == 0);
+
+    printf("   ✓ Generic TSV metadata lookup verified successfully.\n");
+
     printf("=============================================================\n");
     printf("TSV QUADTREE KSDS TESTS PASSED\n");
     printf("=============================================================\n");
