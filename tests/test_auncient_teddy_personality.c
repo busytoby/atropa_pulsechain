@@ -639,6 +639,15 @@ int main(void) {
     assert(lip_trustworthiness > 0.0);
     printf("   ✓ KEATING, C. F. eyebrow dominance and lip trustworthiness verified successfully\n");
 
+    // Test Hyde conversational latency and vocal size mismatch calculations
+    double conversational_latency = 0.0;
+    double vocal_size_mismatch = 0.0;
+    assert(evaluate_hyde_conversational_latency(&geom, 1.2, &conversational_latency));
+    assert(conversational_latency > 0.0);
+    assert(evaluate_hyde_vocal_size_mismatch(&geom, 180.0, &vocal_size_mismatch));
+    assert(vocal_size_mismatch > 0.0);
+    printf("   ✓ HYDE et al. conversational latency and vocal size mismatch verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge

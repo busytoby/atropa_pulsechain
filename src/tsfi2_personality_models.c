@@ -1001,3 +1001,19 @@ bool evaluate_keating_lip_trustworthiness(const teddy_geometry_t *geom, double l
     return true;
 }
 
+bool evaluate_hyde_conversational_latency(const teddy_geometry_t *geom, double lag_seconds, double *latency_uncanny_out) {
+    if (!geom || lag_seconds < 0.0 || !latency_uncanny_out) {
+        return false;
+    }
+    *latency_uncanny_out = lag_seconds * (0.6 + geom->behavioral_mismatch * 0.5);
+    return true;
+}
+
+bool evaluate_hyde_vocal_size_mismatch(const teddy_geometry_t *geom, double voice_pitch_hz, double *size_mismatch_out) {
+    if (!geom || voice_pitch_hz < 0.0 || !size_mismatch_out) {
+        return false;
+    }
+    *size_mismatch_out = fabs(voice_pitch_hz - (300.0 - geom->torso_ratio * 100.0)) * 0.05;
+    return true;
+}
+

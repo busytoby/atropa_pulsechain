@@ -445,6 +445,12 @@ bool evaluate_keating_brow_dominance(const teddy_geometry_t *geom, double brow_h
 // Models the association between lip thickness/fullness and trustworthiness (Keating, C. F.).
 bool evaluate_keating_lip_trustworthiness(const teddy_geometry_t *geom, double lip_thickness, double *lip_trustworthiness_out);
 
+// Evaluates conversational turn-taking reaction delays and response lag (Hyde et al.).
+bool evaluate_hyde_conversational_latency(const teddy_geometry_t *geom, double lag_seconds, double *latency_uncanny_out);
+
+// Models the discrepancy between physical body size indicators and vocal pitch (Hyde et al.).
+bool evaluate_hyde_vocal_size_mismatch(const teddy_geometry_t *geom, double voice_pitch_hz, double *size_mismatch_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 
