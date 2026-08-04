@@ -257,6 +257,18 @@ bool evaluate_ordinal_link_expectation_se(const double *probabilities, const dou
     return true;
 }
 
+bool evaluate_ordinal_mixture_expectation_se(const double *probabilities, const double *covariance_matrix, double mixture_weight, int count, double *se_out) {
+    if (!probabilities || !covariance_matrix || count < 1 || !se_out) {
+        return false;
+    }
+    double base_se = 0.0;
+    if (!evaluate_ordinal_link_expectation_se(probabilities, covariance_matrix, count, &base_se)) {
+        return false;
+    }
+    *se_out = base_se * (1.0 + (mixture_weight * 0.1));
+    return true;
+}
+
 bool evaluate_ordinal_link_loglik(const teddy_geometry_t *geom, const int *observed_ratings, int count, double *loglik_out) {
     if (!geom || !observed_ratings || count < 1 || !loglik_out) {
         return false;

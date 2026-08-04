@@ -168,6 +168,12 @@ int main(void) {
     assert(expected_se > 0.0);
     printf("   ✓ R H B Christensen ordinal link expectation standard error verified successfully\n");
 
+    // Test mixture link expectation standard error estimation
+    double mixture_se = 0.0;
+    assert(evaluate_ordinal_mixture_expectation_se(probs, prob_covar, 0.5, 3, &mixture_se));
+    assert(mixture_se > expected_se);
+    printf("   ✓ R H B Christensen mixture link expectation standard error verified successfully\n");
+
     // Test ordinal link model log-likelihood calculation
     int ratings[5] = {3, 5, 2, 6, 4};
     double loglik = 0.0;

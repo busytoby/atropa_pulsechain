@@ -176,6 +176,9 @@ bool evaluate_ordinal_link_expectation(const double *probabilities, int count, d
 // Evaluates the standard error of the expected response value.
 bool evaluate_ordinal_link_expectation_se(const double *probabilities, const double *covariance_matrix, int count, double *se_out);
 
+// Evaluates the mixture link expectation standard error (Christensen).
+bool evaluate_ordinal_mixture_expectation_se(const double *probabilities, const double *covariance_matrix, double mixture_weight, int count, double *se_out);
+
 // Evaluates the log-likelihood of the cumulative link model given observations.
 bool evaluate_ordinal_link_loglik(const teddy_geometry_t *geom, const int *observed_ratings, int count, double *loglik_out);
 
