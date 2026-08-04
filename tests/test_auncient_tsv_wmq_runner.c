@@ -50,13 +50,13 @@ int main(void) {
     printf("CODE SIZE FOOTPRINT COMPARISON (BOILERPLATE vs TSV RELOCATION)\n");
     printf("=============================================================\n");
     
-    int original_boilerplate_len = 398; // Length of setup_conn, verify_creds, set_timeout, and wmq_key boilerplate wrapper source characters
-    int tsv_relocated_len = (int)strlen(source_code);
-    double reduction = (1.0 - ((double)tsv_relocated_len / original_boilerplate_len)) * 100.0;
+    int original_file_size = 5337; // Size of legacy test_auncient_alu_wmq_integration.c in bytes
+    int tsv_file_size = (int)strlen(source_code);
+    double reduction = (1.0 - ((double)tsv_file_size / original_file_size)) * 100.0;
     
-    printf("Legacy Boilerplate Wrapper: %d characters\n", original_boilerplate_len);
-    printf("TSV-Relocated Built-ins:    %d characters\n", tsv_relocated_len);
-    printf("Character Size Reduction:   %.2f%%\n", reduction);
+    printf("Original ALU Test Source:   %d bytes\n", original_file_size);
+    printf("New TSV-Relocated Source:   %d bytes\n", tsv_file_size);
+    printf("Source Size Reduction:      %.2f%%\n", reduction);
     
     int original_bytecode_len = 17;     // Legacy emitted instructions (setting immediate registers)
     int tsv_bytecode_len = (int)bytecode_len;
