@@ -2,6 +2,7 @@
 #define _POSIX_C_SOURCE 200809L
 
 #include "tsfi2_compiler.h"
+#include "tsfi2-deepseek/inc/tsfi_mainframe_computerworld.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -152,36 +153,108 @@ bool tsfi2_compile(
 
     // Native COBOL/JCL strategy compilation pass
     if (strstr(source_code, "IDENTIFICATION DIVISION")) {
-        // Enforce 100% duplicate validation checks of JCL specifications
-        const char *job = strstr(source_code, "JOB");
-        const char *exec1 = strstr(source_code, "EXEC PGM=IKFCBL00");
-        const char *exec2 = strstr(source_code, "EXEC PGM=GOSTINT");
-        const char *tin_card = strstr(source_code, "TIN");
-        const char *ssn_card = strstr(source_code, "SSN");
-        if (!job || !exec1 || !exec2 || !tin_card || !ssn_card) {
-            printf("[ANALYZER] JCL Audit abort: missing required JOB, EXEC, or DD cards.\n");
+        // Split source_code into cards dynamically by lines
+        char *src_copy = strdup(source_code);
+        if (!src_copy) return false;
+        const char *cards[128];
+        int card_count = 0;
+        char *line_tok = strtok(src_copy, "\r\n");
+        while (line_tok && card_count < 128) {
+            if (strstr(line_tok, "SYSIN") && strstr(line_tok, "DD") && strstr(line_tok, "*")) {
+                cards[card_count++] = "//SYSIN DD *";
+            } else if (strncmp(line_tok, "//TIN", 5) == 0) {
+                cards[card_count++] = line_tok + 2;
+            } else if (strncmp(line_tok, "//SSN", 5) == 0) {
+                cards[card_count++] = line_tok + 2;
+            } else {
+                cards[card_count++] = line_tok;
+            }
+            line_tok = strtok(NULL, "\r\n");
+        }
+
+        // Find the index of EXEC PGM=IKFCBL00 and EXEC PGM=GOSTINT
+        int cobol_idx = -1;
+        int gostint_idx = -1;
+        for (int i = 0; i < card_count; i++) {
+            if (strstr(cards[i], "EXEC PGM=IKFCBL00")) cobol_idx = i;
+            if (strstr(cards[i], "EXEC PGM=GOSTINT")) gostint_idx = i;
+        }
+
+        if (cobol_idx == -1 || gostint_idx == -1) {
+            printf("[ANALYZER] JCL Audit abort: missing required EXEC PGM steps.\n");
+            free(src_copy);
             return false;
         }
 
-        // Dynamically parse TIN value from card image (TIN 950000000)
-        const char *tin_ptr = strstr(tin_card, "950000000");
-        if (!tin_ptr) {
-            printf("[ANALYZER] JCL Audit abort: invalid or missing TIN identity.\n");
+        // Extract COBOL source block using existing mainframe JCL interpreter
+        char cobol_buf[2048] = {0};
+        tsfi_cw_run_jcl_sysin(cards + cobol_idx, card_count - cobol_idx, cobol_buf, sizeof(cobol_buf));
+
+        // Extract data card block (TIN & SSN) using existing mainframe JCL interpreter
+        char data_buf[1024] = {0};
+        tsfi_cw_run_jcl_sysin(cards + gostint_idx, card_count - gostint_idx, data_buf, sizeof(data_buf));
+
+        // Dynamically parse TIN and SSN from data_buf
+        uint32_t tin_val = 0;
+        uint32_t ssn_val = 0;
+        const char *tin_ptr = strstr(data_buf, "TIN");
+        if (tin_ptr) {
+            tin_ptr += 3;
+            while (*tin_ptr && isspace((unsigned char)*tin_ptr)) tin_ptr++;
+            tin_val = strtoul(tin_ptr, NULL, 10);
+        }
+        const char *ssn_ptr = strstr(data_buf, "SSN");
+        if (ssn_ptr) {
+            ssn_ptr += 3;
+            while (*ssn_ptr && isspace((unsigned char)*ssn_ptr)) ssn_ptr++;
+            ssn_val = strtoul(ssn_ptr, NULL, 10);
+        }
+
+        if (tin_val == 0 || ssn_val == 0) {
+            printf("[ANALYZER] JCL Audit abort: invalid or missing TIN/SSN identities.\n");
+            free(src_copy);
             return false;
         }
-        uint32_t tin_val = 950000000;
 
-        // Dynamically parse SSN value from card image (SSN 050051122)
-        const char *ssn_ptr = strstr(ssn_card, "050051122");
-        if (!ssn_ptr) {
-            printf("[ANALYZER] JCL Audit abort: invalid or missing SSN identity.\n");
-            return false;
+        // Dynamically parse variables under WORKING-STORAGE SECTION from cobol_buf
+        typedef struct {
+            char name[64];
+            int reg_idx;
+        } JclVariable;
+        JclVariable vars[16];
+        int var_count = 0;
+
+        const char *ws_ptr = strstr(cobol_buf, "WORKING-STORAGE");
+        if (ws_ptr) {
+            ws_ptr += 15;
+            const char *line_ptr = ws_ptr;
+            const char *proc_ptr = strstr(cobol_buf, "PROC DIVISION");
+            while ((line_ptr = strstr(line_ptr, "01")) != NULL && (!proc_ptr || line_ptr < proc_ptr)) {
+                line_ptr += 2;
+                while (*line_ptr && isspace((unsigned char)*line_ptr)) line_ptr++;
+                char var_name[64] = {0};
+                int var_len = 0;
+                while (*line_ptr && (isalnum((unsigned char)*line_ptr) || *line_ptr == '-') && var_len < 63) {
+                    var_name[var_len++] = *line_ptr++;
+                }
+                if (var_len > 0 && var_count < 16) {
+                    strcpy(vars[var_count].name, var_name);
+                    if (strstr(var_name, "SSN")) {
+                        vars[var_count].reg_idx = 2;
+                    } else if (strstr(var_name, "TIN")) {
+                        vars[var_count].reg_idx = 1;
+                    } else {
+                        vars[var_count].reg_idx = 3 + var_count;
+                    }
+                    var_count++;
+                }
+            }
         }
-        uint32_t ssn_val = 50051122;
 
-        // Emit WinchesterMQ register write bytecode directly
+        // Dynamically parse all JCL/COBOL DISPLAY statements from cobol_buf
         size_t offset = 0;
 
+        // Emit register write bytecode first (TIN and SSN)
         out_bytecode[offset++] = 0x0F;
         out_bytecode[offset++] = 0xFE;
         out_bytecode[offset++] = 1; // reg index 1 (TIN)
@@ -198,43 +271,7 @@ bool tsfi2_compile(
         out_bytecode[offset++] = (uint8_t)((ssn_val >> 16) & 0xFF);
         out_bytecode[offset++] = (uint8_t)((ssn_val >> 24) & 0xFF);
 
-        // Dynamically parse variables under WORKING-STORAGE SECTION
-        typedef struct {
-            char name[64];
-            int reg_idx;
-        } JclVariable;
-        JclVariable vars[16];
-        int var_count = 0;
-
-        const char *ws_ptr = strstr(source_code, "WORKING-STORAGE");
-        if (ws_ptr) {
-            ws_ptr += 15;
-            const char *line = ws_ptr;
-            const char *proc_ptr = strstr(source_code, "PROCED DIVISION");
-            while ((line = strstr(line, "01")) != NULL && (!proc_ptr || line < proc_ptr)) {
-                line += 2;
-                while (*line && isspace((unsigned char)*line)) line++;
-                char var_name[64] = {0};
-                int var_len = 0;
-                while (*line && (isalnum((unsigned char)*line) || *line == '-') && var_len < 63) {
-                    var_name[var_len++] = *line++;
-                }
-                if (var_len > 0 && var_count < 16) {
-                    strcpy(vars[var_count].name, var_name);
-                    if (strstr(var_name, "SSN")) {
-                        vars[var_count].reg_idx = 2;
-                    } else if (strstr(var_name, "TIN")) {
-                        vars[var_count].reg_idx = 1;
-                    } else {
-                        vars[var_count].reg_idx = 3 + var_count;
-                    }
-                    var_count++;
-                }
-            }
-        }
-
-        // Dynamically parse all JCL/COBOL DISPLAY statements
-        const char *disp_ptr = source_code;
+        const char *disp_ptr = cobol_buf;
         while ((disp_ptr = strstr(disp_ptr, "DISPLAY")) != NULL) {
             disp_ptr += 7;
             while (*disp_ptr && isspace((unsigned char)*disp_ptr)) disp_ptr++;
@@ -289,7 +326,8 @@ bool tsfi2_compile(
         out_bytecode[offset++] = 0xC3;
 
         *out_bytecode_len = offset;
-        printf("[ANALYZER] COBOL/JCL compiler pass success: 100%% of card audit checks verified.\n");
+        free(src_copy);
+        printf("[ANALYZER] COBOL/JCL compiler pass success: 100%% of card audit checks verified via mainframe parser.\n");
         return true;
     }
 
