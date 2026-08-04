@@ -94,6 +94,11 @@ int main(void) {
     assert(rating_cloglog >= 1 && rating_cloglog <= 7);
     printf("   ✓ R H B Christensen complementary log-log ordinal rating verified successfully\n");
 
+    // Test probit rating estimation
+    int rating_probit = evaluate_ordinal_probit_rating(&geom);
+    assert(rating_probit >= 1 && rating_probit <= 7);
+    printf("   ✓ R H B Christensen probit ordinal rating verified successfully\n");
+
     // Test AIC and BIC information criteria diagnostics estimation
     double aic = 0.0, bic = 0.0;
     assert(evaluate_information_criteria(&geom, 3, 100, &aic, &bic));
