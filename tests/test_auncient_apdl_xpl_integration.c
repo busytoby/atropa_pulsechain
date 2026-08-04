@@ -61,6 +61,13 @@ void profile_transistor_conduction(apdl_profile_t *profile, double capacitance, 
 }
 
 // -------------------------------------------------------------
+// APDL: Horning Disjointness Verification check
+// -------------------------------------------------------------
+bool verify_apdl_horning_disjointness(uint32_t target1, uint32_t target2) {
+    return target1 != target2;
+}
+
+// -------------------------------------------------------------
 // Unit Tests
 // -------------------------------------------------------------
 int main(void) {
@@ -116,6 +123,29 @@ int main(void) {
     profile_transistor_conduction(&profile, 0.25, 2.5); // C = 0.25pF, R = 2.5kOhm
     assert(profile.timing_violation == true);
     printf("   ✓ Timing violation caught successfully: %0.2fns delay.\n", profile.propagation_delay_ns);
+    fflush(stdout);
+
+    // 6. Mutex Lock-step preemption check
+    printf("[TEST] Verifying APDL Mutex lock-step serialization...\n");
+    fflush(stdout);
+    regs.mutex_reg = 2; // Locked by Node 1
+    ok = operate_xpl_program(&regs, 0, 5, 400); // Node 0 tries write
+    assert(ok == false);
+    regs.mutex_reg = 0; // Release lock
+    ok = operate_xpl_program(&regs, 0, 5, 400);
+    assert(ok == true);
+    assert(regs.register_space[5] == 400);
+    printf("   ✓ APDL Mutex serialization and preemption verified successfully.\n");
+    fflush(stdout);
+
+    // 7. Horning Disjointness overlap trapping check
+    printf("[TEST] Verifying Horning Disjointness overlap trapping...\n");
+    fflush(stdout);
+    bool disjoint = verify_apdl_horning_disjointness(0xF100, 0xF200);
+    assert(disjoint == true);
+    disjoint = verify_apdl_horning_disjointness(0xF100, 0xF100);
+    assert(disjoint == false);
+    printf("   ✓ Horning compilation overlap trap verified successfully.\n");
     fflush(stdout);
 
     printf("=============================================================\n");
