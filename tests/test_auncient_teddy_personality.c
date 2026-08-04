@@ -383,6 +383,12 @@ int main(void) {
     assert(vv_sync_uncanny >= 0.0);
     printf("   ✓ HYDE et al. vocal-visual synchronization verified successfully\n");
 
+    // Test Hyde vocal-visual acceleration synchrony delay calculation
+    double vv_acc_sync = 0.0;
+    assert(evaluate_vocal_visual_acceleration_sync(&geom, 50.0, &vv_acc_sync));
+    assert(vv_acc_sync >= 0.0);
+    printf("   ✓ HYDE et al. vocal-visual acceleration synchronization verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge
