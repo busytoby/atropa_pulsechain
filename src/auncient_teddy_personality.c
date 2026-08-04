@@ -638,6 +638,23 @@ bool evaluate_ordinal_link_expectation(const double *probabilities, int count, d
     return true;
 }
 
+bool evaluate_ordinal_link_expectation_se(const double *probabilities, const double *covariance_matrix, int count, double *se_out) {
+    if (!probabilities || !covariance_matrix || count < 1 || !se_out) {
+        return false;
+    }
+    double variance_sum = 0.0;
+    for (int i = 0; i < count; ++i) {
+        double g_i = (double)(i + 1);
+        for (int j = 0; j < count; ++j) {
+            double g_j = (double)(j + 1);
+            variance_sum += g_i * covariance_matrix[i * count + j] * g_j;
+        }
+    }
+    if (variance_sum < 0.0) variance_sum = 0.0;
+    *se_out = sqrt(variance_sum);
+    return true;
+}
+
 int evaluate_ordinal_flexible_rating(const teddy_geometry_t *geom, double link_mixture_weight) {
     if (!geom) return 1;
     double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);

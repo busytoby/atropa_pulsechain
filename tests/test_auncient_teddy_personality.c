@@ -151,6 +151,13 @@ int main(void) {
     assert(fabs(expected_response - 2.1) < 1e-9);
     printf("   ✓ R H B Christensen ordinal link response expectation verified successfully\n");
 
+    // Test ordinal link expectation standard error estimation
+    double prob_covar[9] = {0.04, 0.0, 0.0, 0.0, 0.09, 0.0, 0.0, 0.0, 0.16};
+    double expected_se = 0.0;
+    assert(evaluate_ordinal_link_expectation_se(probs, prob_covar, 3, &expected_se));
+    assert(expected_se > 0.0);
+    printf("   ✓ R H B Christensen ordinal link expectation standard error verified successfully\n");
+
     // Test AIC and BIC information criteria diagnostics estimation
     double aic = 0.0, bic = 0.0;
     assert(evaluate_information_criteria(&geom, 3, 100, &aic, &bic));

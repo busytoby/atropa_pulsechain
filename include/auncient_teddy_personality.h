@@ -170,6 +170,9 @@ bool evaluate_ordinal_link_probability(double latent_val, double threshold_val, 
 // Evaluates the expected response value from link probabilities.
 bool evaluate_ordinal_link_expectation(const double *probabilities, int count, double *expectation_out);
 
+// Evaluates the standard error of the expected response value.
+bool evaluate_ordinal_link_expectation_se(const double *probabilities, const double *covariance_matrix, int count, double *se_out);
+
 // Evaluates an ordinal rating using a Cauchy link model.
 int evaluate_ordinal_cauchy_rating(const teddy_geometry_t *geom);
 
