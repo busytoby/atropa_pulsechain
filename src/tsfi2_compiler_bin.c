@@ -44,27 +44,10 @@ bool tsfi2_compile_to_dat_bin_ext(
 
     uint64_t hash = calculate_fnv1a(bytecode, bytecode_len);
 
-    // Build the binary TSV header
-    char tsv_bin_hdr[512];
-    snprintf(tsv_bin_hdr, sizeof(tsv_bin_hdr),
-             "AUNCIENT_BIN\nEntrypoint\t0x%X\nInstructionCount\t%u\nChecksum\t%llu\n\n",
-             entry_point, instruction_count, (unsigned long long)hash);
-
-    size_t hdr_len = strlen(tsv_bin_hdr);
-    size_t payload_len = hdr_len + bytecode_len;
-    uint8_t *payload = malloc(payload_len);
-    if (!payload) {
-        return false;
-    }
-    memcpy(payload, tsv_bin_hdr, hdr_len);
-    memcpy(payload + hdr_len, bytecode, bytecode_len);
-
     // Write binary program bytecode under key "PROG"
-    if (tsfi_cw_vsam_write(&ksds, "PROG", payload, payload_len) != 0) {
-        free(payload);
+    if (tsfi_cw_vsam_write(&ksds, "PROG", bytecode, bytecode_len) != 0) {
         return false;
     }
-    free(payload);
 
     // Write metadata
     char entry_str[32];
