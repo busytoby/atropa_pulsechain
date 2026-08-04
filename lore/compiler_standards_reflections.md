@@ -376,6 +376,16 @@ int main() {
 * **Compiler Built-in**: 25 characters (`__builtin_wmq_reconnect();`).
 * **Source Size Reduction**: 66% character footprint decrease.
 
+### Host Protocol Configuration Comparison
+* **Boilerplate Wrapper**: 64 characters.
+  ```c
+  int get_proto() {
+      return *(volatile int*)(0x204C);
+  }
+  ```
+* **Compiler Built-in**: 21 characters (`__builtin_wmq_proto();`).
+* **Source Size Reduction**: 67% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
