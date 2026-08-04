@@ -451,6 +451,12 @@ bool evaluate_hyde_conversational_latency(const teddy_geometry_t *geom, double l
 // Models the discrepancy between physical body size indicators and vocal pitch (Hyde et al.).
 bool evaluate_hyde_vocal_size_mismatch(const teddy_geometry_t *geom, double voice_pitch_hz, double *size_mismatch_out);
 
+// Calculates perceived dominance based on the brow-to-eye spatial distance ratio (Keating, C. F.).
+bool evaluate_keating_brow_eye_ratio(const teddy_geometry_t *geom, double brow_eye_distance, double *ratio_dominance_out);
+
+// Maps fWHR threat ratings to dynamic geometry projection dilation rates (Geniole et al.).
+bool evaluate_geniole_fwhr_dilation_map(const teddy_geometry_t *geom, double base_dilation, double *mapped_dilation_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 

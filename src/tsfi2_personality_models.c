@@ -1017,3 +1017,19 @@ bool evaluate_hyde_vocal_size_mismatch(const teddy_geometry_t *geom, double voic
     return true;
 }
 
+bool evaluate_keating_brow_eye_ratio(const teddy_geometry_t *geom, double brow_eye_distance, double *ratio_dominance_out) {
+    if (!geom || brow_eye_distance < 0.0 || !ratio_dominance_out) {
+        return false;
+    }
+    *ratio_dominance_out = (1.0 / (1.0 + brow_eye_distance)) * (1.1 + geom->leadership_profile * 0.5);
+    return true;
+}
+
+bool evaluate_geniole_fwhr_dilation_map(const teddy_geometry_t *geom, double base_dilation, double *mapped_dilation_out) {
+    if (!geom || base_dilation < 0.0 || !mapped_dilation_out) {
+        return false;
+    }
+    *mapped_dilation_out = base_dilation * (1.0 + geom->head_fwhr * 0.6);
+    return true;
+}
+

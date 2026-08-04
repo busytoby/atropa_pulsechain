@@ -648,6 +648,15 @@ int main(void) {
     assert(vocal_size_mismatch > 0.0);
     printf("   ✓ HYDE et al. conversational latency and vocal size mismatch verified successfully\n");
 
+    // Test Keating brow-eye ratio and Geniole fWHR dilation calculations
+    double brow_eye_dominance = 0.0;
+    double fwhr_dilation = 0.0;
+    assert(evaluate_keating_brow_eye_ratio(&geom, 0.3, &brow_eye_dominance));
+    assert(brow_eye_dominance > 0.0);
+    assert(evaluate_geniole_fwhr_dilation_map(&geom, 1.2, &fwhr_dilation));
+    assert(fwhr_dilation > 0.0);
+    printf("   ✓ Keating brow-eye ratio and Geniole fWHR dilation mapping verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge
