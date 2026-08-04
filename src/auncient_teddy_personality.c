@@ -67,6 +67,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->defense_capability = 0.0;       // Lower defense capability
             geom->social_extraversion = 1.0;      // Extraverted
             geom->hazard_resilience = 0.0;        // Fragile
+            geom->routine_leadership = 1.0;       // Routine management
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -132,6 +133,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->defense_capability = 1.0;       // High defense capability
             geom->social_extraversion = 0.0;      // Reticent/introverted
             geom->hazard_resilience = 1.0;        // Highly resilient
+            geom->routine_leadership = 0.0;       // Crisis-only management
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -197,6 +199,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->defense_capability = 1.0;       // High defense capability
             geom->social_extraversion = 0.0;      // Reticent/introverted
             geom->hazard_resilience = 1.0;        // Highly resilient
+            geom->routine_leadership = 0.0;       // Crisis-only management
             break;
     }
 }

@@ -75,6 +75,7 @@ typedef struct {
     double defense_capability;       // Perceived defense capability (0.0 lower self-defense/vulnerable, 1.0 high self-defense)
     double social_extraversion;      // Perceived social extraversion (0.0 reticent/introverted, 1.0 extraverted)
     double hazard_resilience;        // Perceived hazard resilience (0.0 fragile/low trauma resilience, 1.0 highly resilient)
+    double routine_leadership;       // Perceived routine leadership efficiency (0.0 crisis-only, 1.0 routine management)
 } teddy_geometry_t;
 
 // Pixar RenderMan Avatar Agent definition upon the cooperative boundary
