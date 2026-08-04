@@ -85,6 +85,7 @@ typedef struct {
     double offspring_survival;       // Perceived offspring survival probability (0.0 lower, 1.0 higher survival)
     double stress_expressiveness;    // Perceived stress expressiveness (0.0 analytical detachment, 1.0 emotional expressiveness)
     double parental_effort;          // Perceived parental effort (0.0 lower effort, 1.0 high parental effort/investment)
+    double relationship_fidelity;    // Perceived relationship fidelity (0.0 low fidelity/promiscuous, 1.0 high fidelity)
 } teddy_geometry_t;
 
 // Pixar RenderMan Avatar Agent definition upon the cooperative boundary

@@ -77,6 +77,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->offspring_survival = 1.0;       // High offspring survival
             geom->stress_expressiveness = 1.0;    // Expressive panic
             geom->parental_effort = 1.0;          // High parental effort
+            geom->relationship_fidelity = 1.0;    // High relationship fidelity
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -152,6 +153,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->offspring_survival = 0.0;       // Lower offspring survival
             geom->stress_expressiveness = 0.0;    // Analytical detachment
             geom->parental_effort = 0.0;          // Lower parental effort
+            geom->relationship_fidelity = 0.0;    // Low relationship fidelity
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -227,6 +229,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->offspring_survival = 0.0;       // Lower offspring survival
             geom->stress_expressiveness = 0.0;    // Analytical detachment
             geom->parental_effort = 0.0;          // Lower parental effort
+            geom->relationship_fidelity = 0.0;    // Low relationship fidelity
             break;
     }
 }
