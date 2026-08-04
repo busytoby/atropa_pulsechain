@@ -95,6 +95,32 @@ int main(void) {
     printf("Bytecode Size Reduction:    %.2f%%\n", bytecode_reduction);
     printf("=============================================================\n");
 
+    // Phase 5: Compile and Execute the transitioned gost_intrusion strategy closure
+    printf("\n[Runner] Loading transitioned gost_intrusion strategy from disk...\n");
+    FILE *gf = fopen("solidity/dysnomia/domain/strategies/gost_intrusion.strategy", "r");
+    assert(gf != NULL);
+    char gost_source[1024];
+    size_t gost_bytes = fread(gost_source, 1, sizeof(gost_source) - 1, gf);
+    gost_source[gost_bytes] = '\0';
+    fclose(gf);
+
+    uint8_t gost_bytecode[256];
+    size_t gost_bytecode_len = 0;
+    ok = tsfi2_compile(gost_source, gost_bytecode, sizeof(gost_bytecode), &gost_bytecode_len);
+    assert(ok == true);
+
+    const char *gost_bin = "/tmp/gost_strategy_out.dat.bin";
+    ok = tsfi2_compile_to_dat_bin_ext(gost_bin, 0x1000, 1, "TIN", "950000000", gost_bytecode, gost_bytecode_len);
+    assert(ok == true);
+
+    printf("[Runner] Executing compiled gost_intrusion strategy closure...\n");
+    ok = tsfi2_load_and_execute(gost_bin, &cpu);
+    assert(ok == true);
+    assert(cpu.halted == true);
+    assert(cpu.exit_code == 0);
+    printf("   ✓ gost_intrusion strategy closure compiled and executed successfully.\n");
+
+    remove(gost_bin);
     remove(prog_file);
     return 0;
 }
