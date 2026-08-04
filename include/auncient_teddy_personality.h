@@ -73,6 +73,7 @@ typedef struct {
     double social_supportiveness;    // Perceived social supportiveness (0.0 lower altruism, 1.0 high altruism/support)
     double relationship_permanence;  // Perceived relationship permanence (0.0 opportunistic dissolution, 1.0 stable)
     double defense_capability;       // Perceived defense capability (0.0 lower self-defense/vulnerable, 1.0 high self-defense)
+    double social_extraversion;      // Perceived social extraversion (0.0 reticent/introverted, 1.0 extraverted)
 } teddy_geometry_t;
 
 // Pixar RenderMan Avatar Agent definition upon the cooperative boundary
