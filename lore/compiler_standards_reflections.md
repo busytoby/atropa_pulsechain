@@ -121,6 +121,16 @@ int main() {
 * **Compiler Built-in**: 23 characters (`__builtin_wmq_abort();`).
 * **Source Size Reduction**: 65% character footprint decrease.
 
+### Core Peek Index Comparison
+* **Boilerplate Wrapper**: 75 characters.
+  ```c
+  int peek_idx(int i) {
+      return *(volatile int*)(0x20D0 + i*4);
+  }
+  ```
+* **Compiler Built-in**: 30 characters (`__builtin_wmq_peek_idx(3);`).
+* **Source Size Reduction**: 60% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection

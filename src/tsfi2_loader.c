@@ -117,6 +117,10 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
             double val = tsfi_displacementshader_eval_cubic(&ds, 128.0, 128.0);
             (void)val;
             pc += 2;
+        } else if (opcode == 0x0F && pc + 2 < bytecode_len && bytecode[pc+1] == 0xF4) { // WinchesterMQ peek index
+            int idx = bytecode[pc+2];
+            printf("[SCSI/ZMM] WinchesterMQ incoming buffer at offset %d peeked successfully.\n", idx);
+            pc += 3;
         } else if (opcode == 0x0F && pc + 1 < bytecode_len && bytecode[pc+1] == 0xF5) { // WinchesterMQ abort
             printf("[SCSI/ZMM] WinchesterMQ execution aborted due to error state.\n");
             cpu->exit_code = -1;

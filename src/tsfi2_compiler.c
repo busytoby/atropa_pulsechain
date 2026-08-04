@@ -102,8 +102,18 @@ bool tsfi2_compile(
         out_bytecode[offset++] = 0xF9;
     }
     
-    // Emit custom wmq_peek if requested
-    if (strstr(source_code, "__builtin_wmq_peek")) {
+    // Emit custom wmq_peek_idx if requested
+    const char *peek_idx_ptr = strstr(source_code, "__builtin_wmq_peek_idx");
+    if (peek_idx_ptr) {
+        peek_idx_ptr = strchr(peek_idx_ptr, '(');
+        if (peek_idx_ptr) {
+            peek_idx_ptr++;
+            int idx = atoi(peek_idx_ptr);
+            out_bytecode[offset++] = 0x0F;
+            out_bytecode[offset++] = 0xF4;
+            out_bytecode[offset++] = (uint8_t)idx;
+        }
+    } else if (strstr(source_code, "__builtin_wmq_peek")) { // Emit custom wmq_peek
         out_bytecode[offset++] = 0x0F;
         out_bytecode[offset++] = 0xF8;
     }
