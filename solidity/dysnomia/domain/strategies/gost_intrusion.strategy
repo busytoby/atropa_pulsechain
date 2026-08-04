@@ -1,14 +1,26 @@
-^{:wmq-job "ESEVJOB"
-  :wmq-compiler "FOLKLORE"
-  :wmq-mount "GOSTINT"
-  :wmq-author "ADVERSARY"
-  :wmq-params {:tin 950000000 :ssn 050051122 :gost-key "KGBKEY01"}}
-
-(def ws-ssn-tin "050051122")
-(def ws-gost-key "KGBKEY01")
-
-(defn -main []
-  (println "EXECUTE COBOL ADVERSARY GOST LOOP...")
-  (println "PROCESSED IDENTITY: " ws-ssn-tin)
-  (wmq-reg-write 1 950000000)
-  (wmq-reg-write 2 050051122))
+//ESEVJOB  JOB (TSFI),'GOST COBOL',CLASS=A,MSGCLASS=A
+//*
+//COBCOMP  EXEC PGM=IKFCBL00
+//SYSIN    DD *
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. GOSTINT.
+       AUTHOR. ADVERSARY.
+       
+       ENVIRONMENT DIVISION.
+       
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  WS-SSN-TIN      PIC X(9)  VALUE "050051122".
+       01  WS-GOST-KEY     PIC X(8)  VALUE "KGBKEY01".
+       
+       PROCED DIVISION.
+       MAIN-LOGIC.
+           DISPLAY "EXECUTE COBOL ADVERSARY GOST LOOP..."
+           DISPLAY "PROCESSED IDENTITY: " WS-SSN-TIN
+           GOBACK.
+/*
+//STEP1    EXEC PGM=GOSTINT
+//SYSIN    DD *
+//TIN      950000000
+//SSN      050051122
+/*
