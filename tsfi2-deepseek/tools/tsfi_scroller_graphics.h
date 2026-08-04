@@ -159,9 +159,13 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset, f
                     int l_lx = lx + (int)(lw * angular_decay * serration * cosf(leaf_ang_left + ang_off));
                     int l_ly = ly + (int)(lw * angular_decay * serration * sinf(leaf_ang_left + ang_off));
                     float texture_noise = 0.86f + 0.14f * sinf(lw * 2.5f + i * 1.8f);
-                    uint8_t r_draw = (uint8_t)fminf(255, lf_r * texture_noise);
-                    uint8_t g_draw = (uint8_t)fminf(255, lf_g * texture_noise);
-                    uint8_t b_draw = (uint8_t)fminf(255, lf_b * texture_noise);
+                    
+                    // Radial gradient: lighter sunlit lime green at the margins
+                    float radial_scale = (float)lw / (float)left_lobe_w;
+                    uint8_t r_draw = (uint8_t)fminf(255, lf_r * texture_noise * (1.0f - radial_scale * 0.15f) + radial_scale * 30.0f);
+                    uint8_t g_draw = (uint8_t)fminf(255, lf_g * texture_noise * (1.0f - radial_scale * 0.1f) + radial_scale * 40.0f);
+                    uint8_t b_draw = (uint8_t)fminf(255, lf_b * texture_noise * (1.0f - radial_scale * 0.2f));
+                    
                     draw_line(lx, ly, l_lx, l_ly, r_draw, g_draw, b_draw);
 
                     // Left highlight contour
@@ -175,9 +179,13 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset, f
                     int r_lx = lx + (int)(lw * angular_decay * serration * cosf(leaf_ang_right + ang_off));
                     int r_ly = ly + (int)(lw * angular_decay * serration * sinf(leaf_ang_right + ang_off));
                     float texture_noise = 0.86f + 0.14f * sinf(lw * 2.5f + i * 1.8f);
-                    uint8_t r_draw = (uint8_t)fminf(255, lf_r * texture_noise);
-                    uint8_t g_draw = (uint8_t)fminf(255, lf_g * texture_noise);
-                    uint8_t b_draw = (uint8_t)fminf(255, lf_b * texture_noise);
+                    
+                    // Radial gradient: lighter sunlit lime green at the margins
+                    float radial_scale = (float)lw / (float)right_lobe_w;
+                    uint8_t r_draw = (uint8_t)fminf(255, lf_r * texture_noise * (1.0f - radial_scale * 0.15f) + radial_scale * 30.0f);
+                    uint8_t g_draw = (uint8_t)fminf(255, lf_g * texture_noise * (1.0f - radial_scale * 0.1f) + radial_scale * 40.0f);
+                    uint8_t b_draw = (uint8_t)fminf(255, lf_b * texture_noise * (1.0f - radial_scale * 0.2f));
+                    
                     draw_line(lx, ly, r_lx, r_ly, r_draw, g_draw, b_draw);
 
                     // Right shadow contour
@@ -221,6 +229,11 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset, f
             uint8_t vein_g = (uint8_t)fminf(255, lf_g * 1.25f);
             uint8_t vein_b = (uint8_t)fminf(255, lf_b * 1.35f);
 
+            // Embossed 3D vein shadows (drawn offset by 1px down)
+            draw_line(lx, ly + 1, v_l_x, v_l_y + 1, (uint8_t)(vein_r * 0.45f), (uint8_t)(vein_g * 0.4f), (uint8_t)(vein_b * 0.45f));
+            draw_line(lx, ly + 1, v_r_x, v_r_y + 1, (uint8_t)(vein_r * 0.45f), (uint8_t)(vein_g * 0.4f), (uint8_t)(vein_b * 0.45f));
+
+            // Main vein core lines
             draw_line(lx, ly, v_l_x, v_l_y, vein_r, vein_g, vein_b);
             draw_line(lx, ly, v_r_x, v_r_y, vein_r, vein_g, vein_b);
 
