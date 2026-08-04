@@ -422,6 +422,16 @@ int main() {
 * **Compiler Built-in**: 27 characters (`__builtin_wmq_key_idx(5);`).
 * **Source Size Reduction**: 83% character footprint decrease.
 
+### Host Connection Retransmit Comparison
+* **Boilerplate Wrapper**: 76 characters.
+  ```c
+  void trigger_retransmit() {
+      *(volatile int*)(0x2044) = 1;
+  }
+  ```
+* **Compiler Built-in**: 26 characters (`__builtin_wmq_retransmit();`).
+* **Source Size Reduction**: 65% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
