@@ -254,6 +254,9 @@ bool evaluate_ordinal_mixture_threshold_wald_test(const double *theta_vector, co
 // Evaluates threshold parameters under scale-adjusted Wald tests (Christensen).
 bool evaluate_scale_adjusted_threshold_wald(double threshold_est, double scale_multiplier, double baseline, double variance, double *wald_stat_out, double *p_value_out);
 
+// Evaluates nominal parameters under flexible mixture link Wald tests (Christensen).
+bool evaluate_mixture_link_nominal_wald(const double *beta_vector, const double *covariance_matrix, int df, double *wald_stat_out, double *p_value_out);
+
 // Evaluates standard single parameter Wald statistics.
 bool evaluate_parameter_wald_test(double estimate, double baseline, double variance, double *wald_stat_out, double *p_value_out);
 

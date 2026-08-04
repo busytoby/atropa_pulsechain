@@ -556,6 +556,22 @@ bool evaluate_scale_adjusted_threshold_wald(double threshold_est, double scale_m
     return true;
 }
 
+bool evaluate_mixture_link_nominal_wald(const double *beta_vector, const double *covariance_matrix, int df, double *wald_stat_out, double *p_value_out) {
+    if (!beta_vector || !covariance_matrix || df < 1 || !wald_stat_out || !p_value_out) {
+        return false;
+    }
+    double sum_w = 0.0;
+    for (int i = 0; i < df; ++i) {
+        double var = covariance_matrix[i * df + i];
+        if (var < 1e-9) var = 1e-9;
+        sum_w += (beta_vector[i] * beta_vector[i]) / (var * 1.05);
+    }
+    *wald_stat_out = sum_w;
+    *p_value_out = exp(-(*wald_stat_out) / 2.0);
+    if (*p_value_out > 1.0) *p_value_out = 1.0;
+    return true;
+}
+
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out) {
     if (!geom || param_count < 1 || sample_size < 2 || !aic_out || !bic_out) {
         return false;

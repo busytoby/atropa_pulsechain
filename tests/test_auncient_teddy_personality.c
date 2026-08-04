@@ -330,6 +330,12 @@ int main(void) {
     assert(sat_wstat > 0.0);
     printf("   ✓ R H B Christensen scale-adjusted threshold Wald test verified successfully\n");
 
+    // Test mixture-link nominal effects Wald test calculation
+    double mn_wstat = 0.0, mn_wpval = 0.0;
+    assert(evaluate_mixture_link_nominal_wald(thetas, t_covar, 2, &mn_wstat, &mn_wpval));
+    assert(mn_wstat > 0.0);
+    printf("   ✓ R H B Christensen flexible mixture link nominal effects Wald test verified successfully\n");
+
     // Test Geniole fWHR threat level calculation
     double threat_level = evaluate_fw_threat_level(&geom);
     assert(threat_level >= 0.0);
