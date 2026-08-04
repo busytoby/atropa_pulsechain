@@ -337,6 +337,12 @@ int main(void) {
     assert(asym_uncanny >= 0.0);
     printf("   ✓ HYDE et al. unpredictable micro-expression asymmetry verified successfully\n");
 
+    // Test Hyde unpredictable micro-expression synchronization delay calculation
+    double sync_uncanny = 0.0;
+    assert(evaluate_expression_sync_uncanny(&geom, 60.0, &sync_uncanny));
+    assert(sync_uncanny >= 0.0);
+    printf("   ✓ HYDE et al. unpredictable micro-expression synchronization verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge

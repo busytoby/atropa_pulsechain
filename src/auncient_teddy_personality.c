@@ -1020,6 +1020,17 @@ bool evaluate_expression_asymmetry_uncanny(const teddy_geometry_t *geom, double 
     return true;
 }
 
+bool evaluate_expression_sync_uncanny(const teddy_geometry_t *geom, double sync_delay_ms, double *uncanny_score_out) {
+    if (!geom || sync_delay_ms < 0.0 || !uncanny_score_out) {
+        return false;
+    }
+    double base_uncanny = 0.0;
+    evaluate_uncanny_mismatch_index(geom, &base_uncanny);
+    double sync_factor = (sync_delay_ms > 50.0) ? (sync_delay_ms * 0.08) : 0.05;
+    *uncanny_score_out = base_uncanny + (sync_factor * (1.0 + geom->behavioral_mismatch));
+    return true;
+}
+
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state) {
     if (resistance < 1e-9 || capacitance < 1e-9 || time_step < 1e-9 || !charge_state) {
         return false;
