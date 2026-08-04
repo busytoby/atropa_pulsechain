@@ -203,6 +203,13 @@ let lp_growl_prev = 0;
 let currentStepDurationSamples = stepDurationSamples;
 let currentFreqMultiplier = 1.0;
 
+// Tape Delay Feedback Buffer for spacious chimes
+const delayBufferLen = Math.floor(SAMPLE_RATE * 0.35);
+const delayBufferL = new Float32Array(delayBufferLen);
+const delayBufferR = new Float32Array(delayBufferLen);
+let delayWriteIdx = 0;
+
+
 let filter_v0 = 0.0;
 let filter_v1 = 0.0;
 
@@ -448,9 +455,22 @@ function generateMusicSample(pattern, stepIndex, stepSampleIdx, stepAge) {
 
     globalSampleCounter++;
     
+    // Tape delay effect for the lead/chimes
+    let wetL = delayBufferL[delayWriteIdx];
+    let wetR = delayBufferR[delayWriteIdx];
+
+    // Mix dry lead signal with delay feedback
+    delayBufferL[delayWriteIdx] = leadSampleL + wetL * 0.48;
+    delayBufferR[delayWriteIdx] = leadSampleR + wetR * 0.48;
+
+    delayWriteIdx = (delayWriteIdx + 1) % delayBufferLen;
+
+    const delaySampleL = wetL * 0.42;
+    const delaySampleR = wetR * 0.42;
+
     return {
-        left: drumL + bassSample + growlSample + leadSampleL + padSample,
-        right: drumR + bassSample + growlSample + leadSampleR + padSample
+        left: drumL + bassSample + growlSample + leadSampleL + padSample + delaySampleL,
+        right: drumR + bassSample + growlSample + leadSampleR + padSample + delaySampleR
     };
 }
 
