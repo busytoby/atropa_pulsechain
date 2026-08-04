@@ -189,6 +189,12 @@ test-auncient-compiler-prefilter:
 	./tests/test_auncient_compiler_prefilter
 	@rm -f tests/test_auncient_compiler_prefilter
 
+test-auncient-nested-streams:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc tests/test_auncient_nested_streams.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_displacementshader.c -o tests/test_auncient_nested_streams -lcrypto -lrt -lm
+	./tests/test_auncient_nested_streams
+	@rm -f tests/test_auncient_nested_streams
+
+
 
 
 test-mann:

@@ -232,6 +232,7 @@ libtsfi2.so
 /tests/test_auncient_displacementshader_wmq_integration
 /tests/test_auncient_dat_bin_accumulator
 /tests/test_auncient_compiler_prefilter
+/tests/test_auncient_nested_streams
 /tests/test_auncient_cics_pll
 /tests/test_auncient_tty_device
 /tests/test_auncient_vdm_isolation

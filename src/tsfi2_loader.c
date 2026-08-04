@@ -122,6 +122,14 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
         fclose(init_shm);
     }
 
+    typedef struct {
+        size_t pc;
+        const uint8_t *bytecode;
+        size_t bytecode_len;
+    } ExecutionFrame;
+    ExecutionFrame stack[16];
+    int stack_ptr = 0;
+
     // Emulate instruction parsing
     size_t pc = 0;
     while (pc < bytecode_len && !cpu->halted) {
@@ -181,6 +189,18 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
         } else if (opcode == 0x0F && pc + 2 < bytecode_len && bytecode[pc+1] == 0xD2) { // WinchesterMQ load stream
             int stream_idx = bytecode[pc+2];
             printf("[SCSI/ZMM] WinchesterMQ loaded stream index %d into co-processor memory successfully.\n", stream_idx);
+            if (stack_ptr < 16) {
+                stack[stack_ptr].pc = pc + 3;
+                stack[stack_ptr].bytecode = bytecode;
+                stack[stack_ptr].bytecode_len = bytecode_len;
+                stack_ptr++;
+                
+                static const uint8_t mock_substream[] = {0x90, 0x90, 0xC3};
+                bytecode = mock_substream;
+                bytecode_len = sizeof(mock_substream);
+                pc = 0;
+                continue;
+            }
             pc += 3;
         } else if (opcode == 0x0F && pc + 2 < bytecode_len && bytecode[pc+1] == 0xD4) { // WinchesterMQ connection peer index
             int idx = bytecode[pc+2];
@@ -332,8 +352,16 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
             cpu->exit_code = (int)val;
             pc += 5;
         } else if (opcode == 0xC3) { // RET
-            cpu->halted = true;
-            pc++;
+            if (stack_ptr > 0) {
+                stack_ptr--;
+                pc = stack[stack_ptr].pc;
+                bytecode = stack[stack_ptr].bytecode;
+                bytecode_len = stack[stack_ptr].bytecode_len;
+                printf("[SCSI/ZMM] Returning from nested sub-stream to parent context.\n");
+            } else {
+                cpu->halted = true;
+                pc++;
+            }
         } else {
             // Unknown instruction crash simulation
             cpu->halted = true;
