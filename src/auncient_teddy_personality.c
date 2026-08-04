@@ -821,6 +821,19 @@ bool evaluate_cooperative_cheating_risk(const teddy_geometry_t *geom, double soc
     return true;
 }
 
+bool evaluate_rapid_threat_limit(const teddy_geometry_t *geom, double exposure_ms, double *detected_threat_out) {
+    if (!geom || exposure_ms < 0.0 || !detected_threat_out) {
+        return false;
+    }
+    double base_threat = evaluate_fw_threat_level(geom);
+    double scale = 1.0;
+    if (exposure_ms < 100.0) {
+        scale = exposure_ms / 100.0;
+    }
+    *detected_threat_out = base_threat * scale;
+    return true;
+}
+
 bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncanny_score_out) {
     if (!geom || !uncanny_score_out) {
         return false;

@@ -242,7 +242,12 @@ int main(void) {
     double cheating_risk = 0.0;
     assert(evaluate_cooperative_cheating_risk(&geom, 1.5, &cheating_risk));
     assert(cheating_risk >= 0.0);
-    printf("   ✓ GENIOLE et al. fWHR threat, visual-vocal mismatch, reactive retaliation, rapid exposure consistency, and cooperative cheating risk verified successfully\n");
+
+    // Test Geniole rapid exposure threat limit calculation
+    double limit_threat = 0.0;
+    assert(evaluate_rapid_threat_limit(&geom, 50.0, &limit_threat));
+    assert(limit_threat >= 0.0);
+    printf("   ✓ GENIOLE et al. fWHR threat, visual-vocal mismatch, reactive retaliation, rapid exposure consistency, cooperative cheating risk, and rapid threat limit verified successfully\n");
 
     // Test Hyde uncanny mismatch index calculation
     double uncanny_val = 0.0;

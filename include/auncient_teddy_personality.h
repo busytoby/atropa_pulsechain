@@ -221,6 +221,9 @@ bool evaluate_exposure_threat_consistency(const teddy_geometry_t *geom, double e
 // Evaluates cooperative cheating risk and trustworthiness index (Geniole et al.).
 bool evaluate_cooperative_cheating_risk(const teddy_geometry_t *geom, double social_trust_factor, double *cheating_risk_out);
 
+// Evaluates the rapid exposure threat detection limit (Geniole et al.).
+bool evaluate_rapid_threat_limit(const teddy_geometry_t *geom, double exposure_ms, double *detected_threat_out);
+
 // Evaluates the vocal-visual uncanny mismatch index based on geometry and pitch (Hyde et al.).
 bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncanny_score_out);
 
