@@ -291,7 +291,24 @@ function generateMusicSample(pattern, stepIndex, stepSampleIdx, stepAge) {
     }
 
     // Bass
-    const bassNote = pattern.bass.sequence[stepIndex];
+    // Generative chord progression shifting every 8 seconds: Cm (0) -> Ab (1) -> Bb (2) -> Gm (3)
+    const timeSec_g = globalSampleCounter / SAMPLE_RATE;
+    const chordScale_g = ["C3", "D3", "Eb3", "F3", "G3", "Ab3", "Bb3", "C4", "D4", "Eb4"];
+    const chordProgressions_g = [
+        [0, 2, 4], // Cm (C3, Eb3, G3)
+        [5, 7, 9], // Ab (Ab3, C4, Eb4)
+        [6, 8, 1], // Bb (Bb3, D4, F3)
+        [4, 6, 8]  // Gm (G3, Bb3, D4)
+    ];
+    const progIdx_g = Math.floor(timeSec_g / 8.0) % 4;
+    const activeChord_g = chordProgressions_g[progIdx_g].map(idx => chordScale_g[idx]);
+
+    let bassNote = pattern.bass.sequence[stepIndex];
+    if (currentDispensation === 4) {
+        // Transpose the root note of generative chord down one octave for bass
+        bassNote = activeChord_g[0].replace("3", "2").replace("4", "3");
+    }
+
     const bassTargetFreq = (bassNote && NOTE_FREQS[bassNote]) ? (NOTE_FREQS[bassNote] * currentFreqMultiplier) : 0.0;
     const isAccent = pattern.bass.accents[stepIndex];
     const isSlide = pattern.bass.slides[stepIndex];
@@ -306,7 +323,8 @@ function generateMusicSample(pattern, stepIndex, stepSampleIdx, stepAge) {
     
     let bassSample = Math.sin(2 * Math.PI * bassPhase) * 0.6;
     if (isAccent) bassSample *= 1.35;
-    if (currentDispensation === 4) bassSample *= 0.4;
+    if (currentDispensation === 4) bassSample *= 0.45;
+
 
     // Sub Growl
     const growlNote = pattern.sub_growl.sequence[stepIndex];
@@ -366,14 +384,29 @@ function generateMusicSample(pattern, stepIndex, stepSampleIdx, stepAge) {
         leadSampleL = rawLeadFiltered * panL;
         leadSampleR = rawLeadFiltered * (1.0 - panL);
     } else if (currentDispensation === 4) {
-        const arpNote = pattern.arpeggiator_filter.sequence[stepIndex];
-                const arpFreq = (arpNote && NOTE_FREQS[arpNote]) ? (NOTE_FREQS[arpNote] * currentFreqMultiplier) : 523.25;
-        if (arpNote && arpNote !== "0" && stepAge < 0.3) {
-            // Apply 6Hz vibrato frequency modulation for organic warmth
-            const vibrato = 1.0 + 0.005 * Math.sin(2.0 * Math.PI * 6.0 * timeSec);
-            leadPhase += (arpFreq * vibrato) / SAMPLE_RATE;
-            const bellVal = Math.sin(2.0 * Math.PI * leadPhase) * Math.exp(-stepAge / 0.45) * 0.082;
-            const panL = 0.5 + 0.4 * Math.sin(2.0 * Math.PI * 0.25 * timeSec + stepIndex);
+        // Generative chord progression chimes arpeggiator
+        const timeSec_g = globalSampleCounter / SAMPLE_RATE;
+        const chordScale_g = ["C3", "D3", "Eb3", "F3", "G3", "Ab3", "Bb3", "C4", "D4", "Eb4"];
+        const chordProgressions_g = [
+            [0, 2, 4], // Cm (C3, Eb3, G3)
+            [5, 7, 9], // Ab (Ab3, C4, Eb4)
+            [6, 8, 1], // Bb (Bb3, D4, F3)
+            [4, 6, 8]  // Gm (G3, Bb3, D4)
+        ];
+        const progIdx_g = Math.floor(timeSec_g / 8.0) % 4;
+        const activeChord_g = chordProgressions_g[progIdx_g].map(idx => chordScale_g[idx]);
+
+        // Arpeggiate notes of the active chord over 16-step patterns
+        const arpNote = activeChord_g[(stepIndex + Math.floor(timeSec_g / 2.0)) % activeChord_g.length];
+        const arpFreq = (arpNote && NOTE_FREQS[arpNote]) ? (NOTE_FREQS[arpNote] * currentFreqMultiplier) : 523.25;
+        
+        // Rhythmic gate: trigger plucks on specific steps
+        const isArpTrigger = (stepIndex % 4 === 0 || stepIndex % 6 === 2);
+        if (isArpTrigger && stepAge < 0.35) {
+            const vibrato = 1.0 + 0.005 * Math.sin(2.0 * Math.PI * 6.0 * timeSec_g);
+            leadPhase += (arpFreq * 1.5 * vibrato) / SAMPLE_RATE; // pitched up for bell/chime style
+            const bellVal = Math.sin(2.0 * Math.PI * leadPhase) * Math.exp(-stepAge / 0.42) * 0.065;
+            const panL = 0.5 + 0.4 * Math.sin(2.0 * Math.PI * 0.25 * timeSec_g + stepIndex);
             leadSampleL = bellVal * panL;
             leadSampleR = bellVal * (1.0 - panL);
         }
@@ -720,7 +753,18 @@ async function main() {
                 const stepAge = stepSampleIdx / SAMPLE_RATE;
 
                 const padNotes = pattern.pad ? pattern.pad.sequence[stepIndex] : null;
-                const activeChord = Array.isArray(padNotes) ? padNotes : ["C3", "Eb3", "G3"];
+                // Shifting generative chord progression for Dispensation 4
+                const chordScale_g = ["C3", "D3", "Eb3", "F3", "G3", "Ab3", "Bb3", "C4", "D4", "Eb4"];
+                const chordProgressions_g = [
+                    [0, 2, 4], // Cm (C3, Eb3, G3)
+                    [5, 7, 9], // Ab (Ab3, C4, Eb4)
+                    [6, 8, 1], // Bb (Bb3, D4, F3)
+                    [4, 6, 8]  // Gm (G3, Bb3, D4)
+                ];
+                const progIdx_g = Math.floor(timeSec / 8.0) % 4;
+                const activeChord = currentDispensation === 4
+                    ? chordProgressions_g[progIdx_g].map(idx => chordScale_g[idx])
+                    : (Array.isArray(padNotes) ? padNotes : ["C3", "Eb3", "G3"]);
 
                 let estimatedPitchHz = 0;
                 if (s % 256 === 0) {
