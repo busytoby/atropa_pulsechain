@@ -117,7 +117,7 @@ int tsfi_ray_tracer_render(const tsfi_cgm_scene *scene, uint32_t *image_out, int
 
     tsfi_rt_vec3 orig = {0.0f, 0.0f, 0.0f};
 
-    #pragma omp parallel for collapse(2)
+// Removed OpenMP pragma
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             // Map pixel to normalized device coordinates (-1 to 1)

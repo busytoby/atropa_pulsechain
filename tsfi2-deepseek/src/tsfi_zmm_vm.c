@@ -385,7 +385,7 @@ typedef struct {
     char memo[256];        // Annotation memo
 } ZmmCpuCheckpoint;
 
-static void zmm_vm_save_checkpoint(TsfiZmmVmState *state) {
+void zmm_vm_save_checkpoint(TsfiZmmVmState *state) {
     if (state->checkpoint_count >= state->checkpoint_capacity) {
         state->checkpoint_capacity = state->checkpoint_capacity == 0 ? 8 : state->checkpoint_capacity * 2;
         state->checkpoints = realloc(state->checkpoints, state->checkpoint_capacity * sizeof(ZmmCpuCheckpoint));
@@ -431,7 +431,7 @@ static void zmm_vm_save_checkpoint(TsfiZmmVmState *state) {
     printf("[FLIPTRACK] Checkpoint %d saved successfully.\n", state->checkpoint_count - 1);
 }
 
-static void zmm_vm_load_checkpoint(TsfiZmmVmState *state, int index) {
+void zmm_vm_load_checkpoint(TsfiZmmVmState *state, int index) {
     if (!state->checkpoints || index < 0 || index >= state->checkpoint_count) {
         printf("[FLIPTRACK] ERROR: Invalid checkpoint index %d (Total: %d)\n", index, state->checkpoint_count);
         return;

@@ -82,7 +82,7 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
         printf("[ENCODER] Phase 1: Downsampling features to intermediate skip resolution (%dx%d)\n", hw, hh);
         float r_hw = (float)w / hw;
         float r_hh = (float)h / hh;
-        #pragma omp parallel for schedule(static)
+// Removed OpenMP pragma
         for (int y = 0; y < hh; y++) {
             for (int x = 0; x < hw; x++) {
                 int sx = (int)(x * r_hw);
@@ -99,7 +99,7 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
         printf("[ENCODER] Phase 2: Downsampling to bottleneck resolution (%dx%d)\n", lw, lh);
         float r_lw = (float)hw / lw;
         float r_lh = (float)hh / lh;
-        #pragma omp parallel for schedule(static)
+// Removed OpenMP pragma
         for (int y = 0; y < lh; y++) {
             for (int x = 0; x < lw; x++) {
                 int sx = (int)(x * r_lw);
@@ -115,7 +115,7 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
         // --- 3. Bottleneck Self-Attention (Spatial Blending / Mixing) ---
         // Step A: Calculate neighborhood averages and store in latent_att
         // Fast path for core region (x and y in [1, 62])
-        #pragma omp parallel for schedule(static)
+// Removed OpenMP pragma
         for (int y = 1; y < lh - 1; y++) {
             for (int x = 1; x < lw - 1; x++) {
                 float r_sum = 0.0f, g_sum = 0.0f, b_sum = 0.0f;
@@ -141,7 +141,7 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
         }
 
         // Slow path for border regions (y = 0, y = 63, x = 0, x = 63)
-        #pragma omp parallel for schedule(static)
+// Removed OpenMP pragma
         for (int y = 0; y < lh; y++) {
             for (int x = 0; x < lw; x++) {
                 if (y > 0 && y < lh - 1 && x > 0 && x < lw - 1) {
@@ -180,7 +180,7 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
         __m512 c_01 = _mm512_set1_ps(0.1f);
         __m512 zero = _mm512_setzero_ps();
 
-        #pragma omp parallel for schedule(static)
+// Removed OpenMP pragma
         for (int i = 0; i < simd_end; i += 16) {
             __m512 l_val = _mm512_load_ps(&latent[i]);
             __m512 m_val = _mm512_load_ps(&latent_att[i]);
@@ -199,7 +199,7 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
 
         // --- 4. Upsampling Path: Phase 1 (Bottleneck -> Intermediate) ---
         printf("[DECODER] Phase 1: Upsampling to intermediate expanding resolution (%dx%d)\n", hw, hh);
-        #pragma omp parallel for schedule(static)
+// Removed OpenMP pragma
         for (int y = 0; y < hh; y++) {
             for (int x = 0; x < hw; x++) {
                 int lx = (int)(x / r_lw);
@@ -221,7 +221,7 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
         int simd_end_skip = (total_floats / 16) * 16;
         __m512 half_vec = _mm512_set1_ps(0.5f);
         
-        #pragma omp parallel for schedule(static)
+// Removed OpenMP pragma
         for (int i = 0; i < simd_end_skip; i += 16) {
             __m512 dec = _mm512_load_ps(&decoder_half[i]);
             __m512 skip = _mm512_load_ps(&skip_connection[i]);
@@ -236,7 +236,7 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
 
         // --- 6. Upsampling Path: Phase 2 (Intermediate -> Final Output) ---
         printf("[DECODER] Phase 2: Generating final photorealistic frame to target resolution (%dx%d)\n", w, h);
-        #pragma omp parallel for schedule(static)
+// Removed OpenMP pragma
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
                 int lx = (int)(x / r_hw);

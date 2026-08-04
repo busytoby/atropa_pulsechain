@@ -69,7 +69,7 @@ void tsfi_synth_perf_parallel_solve(TSFiSynthPerfEngine *engine, const int *byte
     if (!engine || !bytecode || !results || branch_count <= 0) return;
 
     // Execute multiple logical deduction branches concurrently using OpenMP threads
-    #pragma omp parallel for
+// Removed OpenMP pragma
     for (int i = 0; i < branch_count; i++) {
         TSFiMarkovVM local_vm;
         memset(&local_vm, 0, sizeof(TSFiMarkovVM));

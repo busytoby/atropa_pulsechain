@@ -151,7 +151,7 @@ void run_benchmark_sweep(const char *label, int profile, double vs_voltage, doub
     double elapsed_ms = (end.tv_sec - start.tv_sec) * 1000.0 + (end.tv_nsec - start.tv_nsec) / 1000000.0;
     double throughput = (double)total_ticks / (elapsed_ms / 1000.0);
 
-    #pragma omp critical
+// Removed OpenMP pragma
     {
         printf("%-20s | %5.1fV | %6.1f | %6.2f%% | %11d | ", 
                label, vs_voltage, rs_resistance, (double)trapped_ticks / total_ticks * 100.0, transitions);
@@ -175,21 +175,21 @@ int main() {
     printf("-----------------------------------------------------------------------------------------------\n");
 
     // Parallel execution of sweeps to maximize core utility
-    #pragma omp parallel sections
+// Removed OpenMP pragma
     {
-        #pragma omp section
+// Removed OpenMP pragma
         run_benchmark_sweep("Nominal Walk (Fwd)",   0,   5.0, 1000.0, false);
-        #pragma omp section
+// Removed OpenMP pragma
         run_benchmark_sweep("Nominal Walk (Rev)",   0, -12.0,   50.0, false);
-        #pragma omp section
+// Removed OpenMP pragma
         run_benchmark_sweep("Decay-Frozen (Fwd)",   1,   5.0, 1000.0, false);
-        #pragma omp section
+// Removed OpenMP pragma
         run_benchmark_sweep("Decay-Frozen (Rev)",   1, -12.0,   50.0, false);
-        #pragma omp section
+// Removed OpenMP pragma
         run_benchmark_sweep("Chaotic J5 (Fwd)",      2,   5.0, 1000.0, false);
-        #pragma omp section
+// Removed OpenMP pragma
         run_benchmark_sweep("Chaotic J5 (Rev)",      2, -12.0,   50.0, false);
-        #pragma omp section
+// Removed OpenMP pragma
         run_benchmark_sweep("Chaotic J5 (Jitter)",   2, -12.0,   50.0, true);
     }
 

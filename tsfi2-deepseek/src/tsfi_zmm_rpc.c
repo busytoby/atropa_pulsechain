@@ -39,6 +39,11 @@ int g_seq_store_count = 0;
 pthread_mutex_t g_seq_store_mutex = PTHREAD_MUTEX_INITIALIZER;
 bool g_seq_store_loaded = false;
 
+static int g_transaction_active = 0;
+static int g_transaction_checkpoint = -1;
+static uint64_t g_locked_sector = 0;
+static uint64_t g_caller_id = 0;
+
 
 void save_seq_store(void) {
     FILE *f = fopen("tmp/mcp_sequential_store.json", "w");
@@ -731,6 +736,98 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
             snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Attached to %s\", \"id\": %d}\n", shm_id, id);
             return 1;
         }
+    }
+    if (method_type == 90) { // vm.flipsave
+        zmm_vm_save_checkpoint(state);
+        int cp_idx = state->checkpoint_count - 1;
+        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"status\": \"success\", \"checkpoint_index\": %d}, \"id\": %d}\n", cp_idx, id);
+        return 1;
+    }
+    if (method_type == 91) { // vm.flipload
+        int idx = extract_json_int(min_ptr, "\"index\"", -1);
+        if (idx >= 0 && idx < state->checkpoint_count) {
+            zmm_vm_load_checkpoint(state, idx);
+            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"status\": \"success\", \"loaded_index\": %d}, \"id\": %d}\n", idx, id);
+        } else {
+            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32002, \"message\": \"Invalid checkpoint index\"}, \"id\": %d}\n", id);
+        }
+        return 1;
+    }
+    if (method_type == 92) { // spool.begin_transaction
+        uint64_t sector = (uint64_t)extract_json_int(min_ptr, "\"sector\"", 0);
+        uint64_t callerId = (uint64_t)extract_json_int(min_ptr, "\"callerId\"", 0);
+        
+        // 1. FlipSave checkpoint
+        zmm_vm_save_checkpoint(state);
+        int cp_idx = state->checkpoint_count - 1;
+        
+        // 2. Call mvs_tape_certifier acquireLock
+        char exec_cmd[512];
+        snprintf(exec_cmd, sizeof(exec_cmd), "YULEXEC \"mvs_tape_certifier\", \"902d3412%064lx%064lx\"", sector, callerId);
+        state->output_pos = 0;
+        memset(state->output_buffer, 0, sizeof(state->output_buffer));
+        tsfi_zmm_vm_exec(state, exec_cmd);
+        
+        if (strstr(state->output_buffer, "0000000000000000000000000000000000000000000000000000000000000001") != NULL) {
+            g_transaction_active = 1;
+            g_transaction_checkpoint = cp_idx;
+            g_locked_sector = sector;
+            g_caller_id = callerId;
+            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"status\": \"success\", \"checkpoint_index\": %d}, \"id\": %d}\n", cp_idx, id);
+        } else {
+            // Restore checkpoint and clean up
+            zmm_vm_load_checkpoint(state, cp_idx);
+            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32003, \"message\": \"Lock acquisition failed\"}, \"id\": %d}\n", id);
+        }
+        return 1;
+    }
+    if (method_type == 93) { // spool.write_sectors
+        if (!g_transaction_active) {
+            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32004, \"message\": \"No active transaction\"}, \"id\": %d}\n", id);
+            return 1;
+        }
+        uint64_t startSec = (uint64_t)extract_json_int(min_ptr, "\"startSec\"", 0);
+        uint64_t count = (uint64_t)extract_json_int(min_ptr, "\"count\"", 0);
+        uint64_t dataVal = (uint64_t)extract_json_int(min_ptr, "\"dataVal\"", 0);
+        uint64_t failIndex = (uint64_t)extract_json_int(min_ptr, "\"failIndex\"", -1);
+        
+        char exec_cmd[1024];
+        snprintf(exec_cmd, sizeof(exec_cmd), "YULEXEC \"mvs_tape_certifier\", \"e39fa210%064lx%064lx%064lx%064lx\"", startSec, count, dataVal, failIndex);
+        state->output_pos = 0;
+        memset(state->output_buffer, 0, sizeof(state->output_buffer));
+        tsfi_zmm_vm_exec(state, exec_cmd);
+        
+        if (strstr(state->output_buffer, "0000000000000000000000000000000000000000000000000000000000000001") != NULL) {
+            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"status\": \"success\"}, \"id\": %d}\n", id);
+        } else {
+            // Auto-rollback
+            zmm_vm_load_checkpoint(state, g_transaction_checkpoint);
+            g_transaction_active = 0;
+            g_transaction_checkpoint = -1;
+            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32005, \"message\": \"Write transaction failed, rolled back\"}, \"id\": %d}\n", id);
+        }
+        return 1;
+    }
+    if (method_type == 94) { // spool.rollback_transaction
+        if (!g_transaction_active) {
+            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32004, \"message\": \"No active transaction\"}, \"id\": %d}\n", id);
+            return 1;
+        }
+        zmm_vm_load_checkpoint(state, g_transaction_checkpoint);
+        g_transaction_active = 0;
+        g_transaction_checkpoint = -1;
+        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"status\": \"rolled_back\"}, \"id\": %d}\n", id);
+        return 1;
+    }
+    if (method_type == 95) { // spool.commit_transaction
+        if (!g_transaction_active) {
+            snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32004, \"message\": \"No active transaction\"}, \"id\": %d}\n", id);
+            return 1;
+        }
+        g_transaction_active = 0;
+        g_transaction_checkpoint = -1;
+        snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": {\"status\": \"committed\"}, \"id\": %d}\n", id);
+        return 1;
     }
     if (method_type == 35) { // QUERY_KNOWLEDGE_GRAPH
         char address_hex[128] = {0};

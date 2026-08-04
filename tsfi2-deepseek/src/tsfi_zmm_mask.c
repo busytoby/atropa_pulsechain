@@ -35,7 +35,7 @@ void generate_zmm_mask(uint8_t* pixels, int w, int h, int frame, int total_frame
         
         int row_idx = y * w * 3;
         
-        #pragma omp simd
+// Removed OpenMP pragma
         for (int x = 0; x < w; x++) {
             float px = (float)x / w;
             if (px < 0.1f || px > 0.9f) continue;

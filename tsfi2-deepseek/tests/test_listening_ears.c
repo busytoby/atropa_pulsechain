@@ -557,7 +557,7 @@ int main() {
         cleaned_buffers[i] = (float*)malloc_safe(TOTAL_SAMPLES * sizeof(float));
     }
 
-    #pragma omp parallel for
+// Removed OpenMP pragma
     for (int i = 0; i < NUM_STATIONS; i++) {
         int L = 4;
         double *w = (double*)calloc_safe(L, sizeof(double));
@@ -650,7 +650,7 @@ int main() {
         R_mag[i] = (double*)calloc_safe(2 * max_lag + 1, sizeof(double));
     }
 
-    #pragma omp parallel for
+// Removed OpenMP pragma
     for (int i = 1; i < NUM_STATIONS; i++) {
         for (int lag = -max_lag; lag <= max_lag; lag++) {
             double sum_real = 0.0;

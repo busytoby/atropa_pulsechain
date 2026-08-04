@@ -55,7 +55,7 @@ int main(void) {
         
         // Multi-Agent Epistemic Consensus Bridge Check:
         // Validate beliefs of multiple peer agents concurrently using OpenMP
-        #pragma omp parallel for
+// Removed OpenMP pragma
         for (int i = 0; i < NUM_PEERS; i++) {
             // Perform simulated constraint checking
             double stress = 0.5;
@@ -63,7 +63,7 @@ int main(void) {
                 stress = stress * 1.0001;
             }
             // Thread-safe update of trie
-            #pragma omp critical
+// Removed OpenMP pragma
             {
                 char consensus_key[128];
                 snprintf(consensus_key, sizeof(consensus_key), "consensus/peer_%d/fact_%d", i, loops);

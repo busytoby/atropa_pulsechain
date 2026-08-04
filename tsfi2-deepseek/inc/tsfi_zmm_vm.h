@@ -58,6 +58,9 @@ void tsfi_zmm_vm_init(TsfiZmmVmState *state);
 void tsfi_zmm_vm_destroy(TsfiZmmVmState *state); 
 void tsfi_zmm_vm_exec(TsfiZmmVmState *state, const char *code);
 
+void zmm_vm_save_checkpoint(TsfiZmmVmState *state);
+void zmm_vm_load_checkpoint(TsfiZmmVmState *state, int index);
+
 // Instruction Pipelining (Fused Execution)
 void* tsfi_zmm_vm_compile_block(const char *code);
 size_t tsfi_zmm_vm_compile_block_buffer(const char *code, void *buffer, size_t max_len);

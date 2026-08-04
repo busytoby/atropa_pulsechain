@@ -120,6 +120,12 @@ tsfi_tst_node* tsfi_tst_init_rpc_router(void) {
     root = tsfi_tst_insert(root, "cics.issue_atm_card", "76");
     root = tsfi_tst_insert(root, "cics.omp_feilong_command", "77");
     root = tsfi_tst_insert(root, "cics.omp_galasa_run_suite", "78");
+    root = tsfi_tst_insert(root, "vm.flipsave", "90");
+    root = tsfi_tst_insert(root, "vm.flipload", "91");
+    root = tsfi_tst_insert(root, "spool.begin_transaction", "92");
+    root = tsfi_tst_insert(root, "spool.write_sectors", "93");
+    root = tsfi_tst_insert(root, "spool.rollback_transaction", "94");
+    root = tsfi_tst_insert(root, "spool.commit_transaction", "95");
 
     return root;
 }

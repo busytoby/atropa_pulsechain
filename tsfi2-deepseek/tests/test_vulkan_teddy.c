@@ -2264,7 +2264,7 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
     }
 
     if (!is_benchmark_active) {
-        #pragma omp parallel for schedule(dynamic, 8) shared(frame_jitter_x, frame_jitter_y, bear_min_x, bear_max_x, bear_min_y, bear_max_y, blend_min_x, blend_max_x, blend_min_y, blend_max_y, shadow_min_x, shadow_max_x, shadow_min_y, shadow_max_y)
+// Removed OpenMP pragma
         for (int y = 0; y < 720; y++) {
             for (int x = 0; x < 800; x++) {
             if (boost_active && ((x % 2 != 0) || (y % 2 != 0))) {
@@ -3014,7 +3014,7 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
 
     // 2.5 Viewport Boost reconstruction pass
     if (boost_active) {
-        #pragma omp parallel for collapse(2)
+// Removed OpenMP pragma
         for (int y = 0; y < 720; y += 2) {
             for (int x = 0; x < 800; x += 2) {
                 Ab4hPixel *p00 = (Ab4hPixel *)((char *)canvas->data + y * canvas->stride) + x;
