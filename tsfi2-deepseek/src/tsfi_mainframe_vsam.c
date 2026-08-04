@@ -45,6 +45,13 @@ int tsfi_cw_vsam_open(tsfi_cw_vsam_ksds *ksds, const char *filepath) {
         return 0;
     }
     fclose(f);
+
+    tsfi_cw_vsam_ci_init(&ksds->ci_set);
+    for (int i = 0; i < ksds->entry_count; i++) {
+        if (ksds->index[i].active) {
+            tsfi_cw_vsam_ci_insert(&ksds->ci_set, 0, ksds->index[i].key);
+        }
+    }
     
     // Integrity audit
     for (int i = 0; i < ksds->entry_count; i++) {
@@ -107,9 +114,6 @@ int tsfi_cw_vsam_write(tsfi_cw_vsam_ksds *ksds, const char *key, const uint8_t *
         }
         idx = insert_pos;
         ksds->entry_count++;
-        if (ksds->entry_count > 2) {
-            ksds->ci_splits++;
-        }
         ksds->raw_key_bytes += strlen(key);
         char comp_key[32];
         const char *prev_key = NULL;
@@ -134,6 +138,8 @@ int tsfi_cw_vsam_write(tsfi_cw_vsam_ksds *ksds, const char *key, const uint8_t *
         strncpy(ksds->index[idx].key, key, sizeof(ksds->index[idx].key) - 1);
         ksds->index[idx].key[sizeof(ksds->index[idx].key) - 1] = '\0';
         ksds->index[idx].active = 1;
+        tsfi_cw_vsam_ci_insert(&ksds->ci_set, 0, key);
+        ksds->ci_splits = ksds->ci_set.ci_count - 1;
     }
 
     ksds->index[idx].checksum = tsfi_cw_vsam_calculate_checksum(data, len);

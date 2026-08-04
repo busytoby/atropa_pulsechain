@@ -122,6 +122,18 @@ typedef struct {
     uint32_t checksum;
 } tsfi_cw_vsam_entry;
 
+// VSAM Control Interval Split Emulator
+typedef struct {
+    uint32_t ci_id;
+    uint32_t record_count;
+    char keys[4][16];
+} tsfi_cw_vsam_ci;
+
+typedef struct {
+    tsfi_cw_vsam_ci cis[8];
+    int ci_count;
+} tsfi_cw_vsam_ci_set;
+
 typedef struct {
     char filepath[256];
     tsfi_cw_vsam_entry index[128];
@@ -135,23 +147,12 @@ typedef struct {
     char cache_keys[4][16];
     int cache_hits;
     uint32_t key_prefix_savings;
+    tsfi_cw_vsam_ci_set ci_set;
 } tsfi_cw_vsam_ksds;
 
 int tsfi_cw_vsam_open(tsfi_cw_vsam_ksds *ksds, const char *filepath);
 int tsfi_cw_vsam_write(tsfi_cw_vsam_ksds *ksds, const char *key, const uint8_t *data, int len);
 int tsfi_cw_vsam_read(tsfi_cw_vsam_ksds *ksds, const char *key, uint8_t *data_out, int max_len, int *out_len);
-
-// VSAM Control Interval Split Emulator
-typedef struct {
-    uint32_t ci_id;
-    uint32_t record_count;
-    char keys[4][16];
-} tsfi_cw_vsam_ci;
-
-typedef struct {
-    tsfi_cw_vsam_ci cis[8];
-    int ci_count;
-} tsfi_cw_vsam_ci_set;
 
 void tsfi_cw_vsam_ci_init(tsfi_cw_vsam_ci_set *set);
 int tsfi_cw_vsam_ci_insert(tsfi_cw_vsam_ci_set *set, uint32_t ci_idx, const char *key);
