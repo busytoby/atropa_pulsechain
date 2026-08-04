@@ -27,13 +27,7 @@ typedef enum {
 
 // Mapped ALU & WinchesterMQ Unified Integration Context
 typedef struct {
-    uint32_t pll_phase;        // 0 to 359 degrees
-    double wmq_req_v;          // WinchesterMQ REQ line voltage (V)
-    double wmq_ack_v;          // WinchesterMQ ACK line voltage (V)
-    char wmq_data_reg[64];     // WinchesterMQ SCSI data register
     tsfi_cw_vsam_ksds *alu_soft_reg;// Mapped ALU software register index (VSAM database)
-    bool interrupt_asserted;
-    gate_state_t task_gate;
 } alu_wmq_sys_t;
 
 #define TAG_KERNEL 0x01
@@ -43,25 +37,51 @@ typedef struct {
 // Unified ALU & WinchesterMQ System Step
 // -------------------------------------------------------------
 bool alu_wmq_sys_step(alu_wmq_sys_t *sys, uint32_t phase_angle, uint8_t tag) {
-    sys->interrupt_asserted = false;
-    sys->task_gate = CUTOFF_STATE;
-
     if (tag != TAG_KERNEL) return false;
 
-    sys->pll_phase = phase_angle % 360;
-    bool pll_locked = (sys->pll_phase == 0);
+    // Write PLL phase to KSDS database
+    char phase_str[32];
+    snprintf(phase_str, sizeof(phase_str), "%u", phase_angle % 360);
+    tsfi_cw_vsam_write(sys->alu_soft_reg, "PHASE", (const uint8_t *)phase_str, strlen(phase_str));
 
-    // Hardware sync runs ONLY when PLL is phase-locked
+    // Read REQ and ACK from KSDS
+    uint8_t req_buf[32] = {0};
+    int req_len = 0;
+    double req_v = 0;
+    if (tsfi_cw_vsam_read(sys->alu_soft_reg, "REQ", req_buf, sizeof(req_buf) - 1, &req_len) == 0) {
+        req_buf[req_len] = '\0';
+        req_v = strtod((char *)req_buf, NULL);
+    }
+
+    uint8_t ack_buf[32] = {0};
+    int ack_len = 0;
+    double ack_v = 0;
+    if (tsfi_cw_vsam_read(sys->alu_soft_reg, "ACK", ack_buf, sizeof(ack_buf) - 1, &ack_len) == 0) {
+        ack_buf[ack_len] = '\0';
+        ack_v = strtod((char *)ack_buf, NULL);
+    }
+
+    bool pll_locked = ((phase_angle % 360) == 0);
+    bool interrupt_asserted = false;
+    const char *gate_str = "CUTOFF";
+
     if (pll_locked) {
-        // Assert interrupt event if SCSI request handshake matches: REQ high (>0.7V) and ACK low (<0.2V)
-        if (sys->wmq_req_v > 0.7 && sys->wmq_ack_v < 0.2) {
-            sys->interrupt_asserted = true;
-            sys->task_gate = CONDUC_STATE;
+        if (req_v > 0.7 && ack_v < 0.2) {
+            interrupt_asserted = true;
+            gate_str = "CONDUC";
 
-            // Copy physical SCSI data directly to mapped ALU software register inside VSAM
-            tsfi_cw_vsam_write(sys->alu_soft_reg, "900", (const uint8_t *)sys->wmq_data_reg, strlen(sys->wmq_data_reg));
+            // Copy physical SCSI data directly to register "900" inside VSAM
+            uint8_t data_buf[128] = {0};
+            int data_len = 0;
+            if (tsfi_cw_vsam_read(sys->alu_soft_reg, "DATA", data_buf, sizeof(data_buf) - 1, &data_len) == 0) {
+                tsfi_cw_vsam_write(sys->alu_soft_reg, "900", data_buf, data_len);
+            }
         }
     }
+
+    // Write results back to KSDS database
+    tsfi_cw_vsam_write(sys->alu_soft_reg, "INTR", (const uint8_t *)(interrupt_asserted ? "1" : "0"), 1);
+    tsfi_cw_vsam_write(sys->alu_soft_reg, "GATE", (const uint8_t *)gate_str, strlen(gate_str));
 
     return true;
 }
@@ -84,14 +104,16 @@ int main(void) {
     rc = tsfi_cw_vsam_write(&alu_soft_reg, "900", (const uint8_t *)"INIT_STATE", strlen("INIT_STATE"));
     assert(rc == 0);
 
+    // Populate hardware keys in the KSDS database
+    rc = tsfi_cw_vsam_write(&alu_soft_reg, "REQ", (const uint8_t *)"5.0", 3);
+    assert(rc == 0);
+    rc = tsfi_cw_vsam_write(&alu_soft_reg, "ACK", (const uint8_t *)"0.0", 3);
+    assert(rc == 0);
+    rc = tsfi_cw_vsam_write(&alu_soft_reg, "DATA", (const uint8_t *)"SCSI_COMMAND_CODE_0xFA", strlen("SCSI_COMMAND_CODE_0xFA"));
+    assert(rc == 0);
+
     alu_wmq_sys_t sys = {
-        .pll_phase = 0,
-        .wmq_req_v = 5.0, // Request active
-        .wmq_ack_v = 0.0, // Acknowledge active
-        .wmq_data_reg = "SCSI_COMMAND_CODE_0xFA",
-        .alu_soft_reg = &alu_soft_reg,
-        .interrupt_asserted = false,
-        .task_gate = CUTOFF_STATE
+        .alu_soft_reg = &alu_soft_reg
     };
 
     // 1. Run out-of-phase step (180 deg) -> Should not trigger interrupt or register map
@@ -99,8 +121,20 @@ int main(void) {
     fflush(stdout);
     bool ok = alu_wmq_sys_step(&sys, 180, TAG_KERNEL);
     assert(ok == true);
-    assert(sys.interrupt_asserted == false);
-    assert(sys.task_gate == CUTOFF_STATE);
+
+    uint8_t intr_buf[32] = {0};
+    int intr_len = 0;
+    rc = tsfi_cw_vsam_read(&alu_soft_reg, "INTR", intr_buf, sizeof(intr_buf) - 1, &intr_len);
+    assert(rc == 0);
+    intr_buf[intr_len] = '\0';
+    assert(strcmp((char *)intr_buf, "0") == 0);
+
+    uint8_t gate_buf[32] = {0};
+    int gate_len = 0;
+    rc = tsfi_cw_vsam_read(&alu_soft_reg, "GATE", gate_buf, sizeof(gate_buf) - 1, &gate_len);
+    assert(rc == 0);
+    gate_buf[gate_len] = '\0';
+    assert(strcmp((char *)gate_buf, "CUTOFF") == 0);
     
     uint8_t read_val[128] = {0};
     int read_len = 0;
@@ -116,8 +150,16 @@ int main(void) {
     fflush(stdout);
     ok = alu_wmq_sys_step(&sys, 360, TAG_KERNEL);
     assert(ok == true);
-    assert(sys.interrupt_asserted == true);
-    assert(sys.task_gate == CONDUC_STATE);
+
+    rc = tsfi_cw_vsam_read(&alu_soft_reg, "INTR", intr_buf, sizeof(intr_buf) - 1, &intr_len);
+    assert(rc == 0);
+    intr_buf[intr_len] = '\0';
+    assert(strcmp((char *)intr_buf, "1") == 0);
+
+    rc = tsfi_cw_vsam_read(&alu_soft_reg, "GATE", gate_buf, sizeof(gate_buf) - 1, &gate_len);
+    assert(rc == 0);
+    gate_buf[gate_len] = '\0';
+    assert(strcmp((char *)gate_buf, "CONDUC") == 0);
     
     rc = tsfi_cw_vsam_read(&alu_soft_reg, "900", read_val, sizeof(read_val), &read_len);
     assert(rc == 0);
