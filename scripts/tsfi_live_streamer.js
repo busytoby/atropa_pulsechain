@@ -24,6 +24,7 @@ let globalSampleCounter = 0;
 const COAXIAL_STATE_PATH = "/tmp/tsfi_coaxial_state.json";
 let coaxialState = {
     tts_enabled: true,
+    arcade_mode: false,
     scroller: {
         text: "TSFi/2",
         color_scheme: -1,
@@ -67,6 +68,7 @@ function reloadCoaxialState() {
             const data = fs.readFileSync(COAXIAL_STATE_PATH, "utf8");
             const parsed = JSON.parse(data);
             if (parsed.tts_enabled !== undefined) coaxialState.tts_enabled = parsed.tts_enabled;
+            if (parsed.arcade_mode !== undefined) coaxialState.arcade_mode = parsed.arcade_mode;
             if (parsed.scroller) {
                 coaxialState.scroller = { ...coaxialState.scroller, ...parsed.scroller };
             }
@@ -94,6 +96,12 @@ wss.on("connection", (ws) => {
             
             // 1. Modulate general parameters
             if (data.tts_enabled !== undefined) coaxialState.tts_enabled = data.tts_enabled;
+            if (data.arcade_mode !== undefined) {
+                coaxialState.arcade_mode = data.arcade_mode;
+                try {
+                    fs.writeFileSync(COAXIAL_STATE_PATH, JSON.stringify(coaxialState, null, 2));
+                } catch (e) {}
+            }
             if (data.scroller) {
                 coaxialState.scroller = { ...coaxialState.scroller, ...data.scroller };
                 writeScrollerBinaryConfig(coaxialState.scroller);
@@ -963,46 +971,58 @@ async function main() {
 
             reloadCoaxialState();
 
-            // Resolve current SFT telemetry entry using seed
-            const activeSwap = resolvedSwaps[seed % resolvedSwaps.length];
-            const usdVal = activeSwap.usd_value || 0.0;
-            const tokenSym = `${activeSwap.token0.symbol}/${activeSwap.token1.symbol}`;
-            const txHash = activeSwap.tx_hash || "00000";
-
-            const scroller = spawn(binC, [
-                tempMd,
-                String(totalFrames),
-                path.basename(lorePath),
-                String(musicTimeStartSec),
-                String(colorScheme),
-                String(shapeType),
-                String(blockTempo),
-                String(usdVal),
-                tokenSym,
-                txHash
-            ]);
-
-            scroller.stdout.on("data", (chunk) => {
-                if (ffmpegStdin && !ffmpegStdin.destroyed) {
-                    ffmpegStdin.write(chunk);
-                }
-
-                frameAccumulator = Buffer.concat([frameAccumulator, chunk]);
-                while (frameAccumulator.length >= FRAME_SIZE) {
-                    frameAccumulator.copy(lastCompleteFrame, 0, 0, FRAME_SIZE);
-                    frameAccumulator = frameAccumulator.slice(FRAME_SIZE);
+            if (coaxialState.arcade_mode) {
+                console.log(`[STREAMER] Rendering Arcade Mode block (${totalFrames} frames) synchronously.`);
+                for (let f = 0; f < totalFrames; f++) {
+                    if (ffmpegStdin && !ffmpegStdin.destroyed) {
+                        ffmpegStdin.write(lastCompleteFrame);
+                    }
                     try {
                         fs.writeFileSync("/dev/shm/tsfi_live_frame.raw", lastCompleteFrame);
                     } catch (e) {}
+                    await new Promise(r => setTimeout(r, 1000 / 24));
                 }
+            } else {
+                // Resolve current SFT telemetry entry using seed
+                const activeSwap = resolvedSwaps[seed % resolvedSwaps.length];
+                const usdVal = activeSwap.usd_value || 0.0;
+                const tokenSym = `${activeSwap.token0.symbol}/${activeSwap.token1.symbol}`;
+                const txHash = activeSwap.tx_hash || "00000";
 
-            });
+                const scroller = spawn(binC, [
+                    tempMd,
+                    String(totalFrames),
+                    path.basename(lorePath),
+                    String(musicTimeStartSec),
+                    String(colorScheme),
+                    String(shapeType),
+                    String(blockTempo),
+                    String(usdVal),
+                    tokenSym,
+                    txHash
+                ]);
 
-            await new Promise((resolve) => {
-                scroller.on("close", () => {
-                    resolve();
+                scroller.stdout.on("data", (chunk) => {
+                    if (ffmpegStdin && !ffmpegStdin.destroyed) {
+                        ffmpegStdin.write(chunk);
+                    }
+
+                    frameAccumulator = Buffer.concat([frameAccumulator, chunk]);
+                    while (frameAccumulator.length >= FRAME_SIZE) {
+                        frameAccumulator.copy(lastCompleteFrame, 0, 0, FRAME_SIZE);
+                        frameAccumulator = frameAccumulator.slice(FRAME_SIZE);
+                        try {
+                            fs.writeFileSync("/dev/shm/tsfi_live_frame.raw", lastCompleteFrame);
+                        } catch (e) {}
+                    }
                 });
-            });
+
+                await new Promise((resolve) => {
+                    scroller.on("close", () => {
+                        resolve();
+                    });
+                });
+            }
 
             startGapFiller();
 
