@@ -737,6 +737,15 @@ bool evaluate_hbridge_izotope_mismatch(const teddy_geometry_t *geom, double swit
     return true;
 }
 
+bool simulate_snubber_clamped_flyback(double peak_voltage, double inductance, double snubber_resistance, double time_step, double *clamped_voltage_out) {
+    if (inductance < 1e-9 || snubber_resistance < 1e-9 || time_step < 1e-9 || !clamped_voltage_out) {
+        return false;
+    }
+    double tau = inductance / snubber_resistance;
+    *clamped_voltage_out = peak_voltage * exp(-time_step / tau);
+    return true;
+}
+
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out) {
     if (!geom || param_count < 1 || sample_size < 2 || !aic_out || !bic_out) {
         return false;

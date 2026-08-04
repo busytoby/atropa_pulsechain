@@ -253,6 +253,13 @@ int main(void) {
     assert(flyback_mismatch >= 0.0);
     printf("   ✓ H-bridge switching flyback transient and izotope mismatch verified successfully\n");
 
+    // Test Snubber-Clamped inductive flyback decay simulation
+    double clamped_volt = 0.0;
+    assert(simulate_snubber_clamped_flyback(100.0, 0.05, 10.0, 0.01, &clamped_volt));
+    assert(clamped_volt < 100.0);
+    assert(clamped_volt > 0.0);
+    printf("   ✓ Snubber-clamped H-bridge flyback transient simulation verified successfully\n");
+
     // Test ACID transaction behavior (Commit successful path)
     evaluation_tx_t tx = begin_evaluation_transaction(&geom);
     assert(tx.active);

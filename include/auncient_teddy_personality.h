@@ -219,6 +219,9 @@ bool simulate_diode_capacitor_loop(double input_voltage, double resistance, doub
 // Evaluates the H-bridge switching flyback transient mismatch for izotope filtering.
 bool evaluate_hbridge_izotope_mismatch(const teddy_geometry_t *geom, double switching_frequency, double *flyback_mismatch_out);
 
+// Simulates the snubber-clamped inductive flyback transient voltage decay.
+bool simulate_snubber_clamped_flyback(double peak_voltage, double inductance, double snubber_resistance, double time_step, double *clamped_voltage_out);
+
 // Computes model selection diagnostics via AIC and BIC information criteria.
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out);
 
