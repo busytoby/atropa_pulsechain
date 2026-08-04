@@ -747,4 +747,5 @@ tests/test_cbt021_inmemory_pds
 /sna_appc_peer
 /tsv_format_converter
 /tsv_record_inspector
+/tests/test_auncient_cooperative_boundary
 
