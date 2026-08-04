@@ -408,6 +408,20 @@ int main() {
 * **Compiler Built-in**: 31 characters (`__builtin_wmq_timeout_idx(4);`).
 * **Source Size Reduction**: 58% character footprint decrease.
 
+### Host Connection Key Relocation Comparison
+* **Boilerplate Wrapper**: 162 characters.
+  ```c
+  const uint8_t* get_pk() {
+      static const uint8_t pk[16] = {
+          0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+          0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10
+      };
+      return pk;
+  }
+  ```
+* **Compiler Built-in**: 27 characters (`__builtin_wmq_key_idx(5);`).
+* **Source Size Reduction**: 83% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
