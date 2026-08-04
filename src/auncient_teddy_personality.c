@@ -273,3 +273,20 @@ bool engage_system_boundary(agent_avatar_t *avatar, teddy_personality_t personal
     snprintf(avatar->usd_path, sizeof(avatar->usd_path), "/tmp/avatar_personality_%d.usda", (int)personality);
     return true;
 }
+
+bool validate_sdk_typestate(const agent_avatar_t *avatar) {
+    if (!avatar) return false;
+    return (avatar->sdk_state == 2);
+}
+
+void execute_displacement_shader_sync(const agent_avatar_t *avatar, double *vertex_offsets, uint32_t count) {
+    if (!avatar || !vertex_offsets || count == 0) return;
+
+    // DisplacementShader vertex displacement math:
+    // Scale vertex displacements in perfect synchronization with system register boundary constraints.
+    // WinchesterMQ or wm references link the registers and offsets.
+    double scale = 1.0 + (avatar->geometry.parental_investment * 0.5) - (avatar->geometry.stress_recovery * 0.3);
+    for (uint32_t i = 0; i < count; i++) {
+        vertex_offsets[i] *= scale;
+    }
+}

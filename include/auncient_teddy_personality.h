@@ -109,4 +109,10 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom);
 // Engages systems via the SDK typestate and calculates parameters
 bool engage_system_boundary(agent_avatar_t *avatar, teddy_personality_t personality);
 
+// Validates the SDK typestate sequence
+bool validate_sdk_typestate(const agent_avatar_t *avatar);
+
+// Synchronizes vertex displacement math scales with WinchesterMQ register boundary constraints
+void execute_displacement_shader_sync(const agent_avatar_t *avatar, double *vertex_offsets, uint32_t count);
+
 #endif // AUNCIENT_TEDDY_PERSONALITY_H

@@ -31,6 +31,21 @@ int main(void) {
     assert(geom.damping == 0.1);
     printf("   ✓ Eerie parameters resolved: Narrow Head (0.7), Eerie Dynamics (Damping: 0.1)\n");
 
+    // Test system boundary engagement and typestate validation
+    agent_avatar_t avatar;
+    assert(engage_system_boundary(&avatar, PERSONALITY_TRUSTWORTHY));
+    assert(validate_sdk_typestate(&avatar));
+    printf("   ✓ System boundary engaged: Typestate executing asserted successfully\n");
+
+    // Test WinchesterMQ DisplacementShader alignment sync
+    double vertex_offsets[3] = {1.0, 2.0, 3.0};
+    execute_displacement_shader_sync(&avatar, vertex_offsets, 3);
+    // scale = 1.0 + (1.0 * 0.5) - (0.0 * 0.3) = 1.5
+    assert(vertex_offsets[0] == 1.5);
+    assert(vertex_offsets[1] == 3.0);
+    assert(vertex_offsets[2] == 4.5);
+    printf("   ✓ WinchesterMQ DisplacementShader alignment sync verified successfully\n");
+
     printf("=============================================================\n");
     printf("PERSONALITY CONFIGURATIONS VALIDATED SUCCESSFULLY\n");
     printf("=============================================================\n");
