@@ -343,6 +343,12 @@ int main(void) {
     assert(sync_uncanny >= 0.0);
     printf("   ✓ HYDE et al. unpredictable micro-expression synchronization verified successfully\n");
 
+    // Test Hyde unpredictable micro-expression acceleration jitter calculation
+    double acc_jitter_uncanny = 0.0;
+    assert(evaluate_acceleration_jitter_uncanny(&geom, 0.3, &acc_jitter_uncanny));
+    assert(acc_jitter_uncanny >= 0.0);
+    printf("   ✓ HYDE et al. unpredictable micro-expression acceleration jitter verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge

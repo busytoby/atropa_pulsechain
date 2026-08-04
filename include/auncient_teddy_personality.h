@@ -272,6 +272,9 @@ bool evaluate_expression_asymmetry_uncanny(const teddy_geometry_t *geom, double 
 // Evaluates the unpredictable micro-expression synchronization uncanny response (Hyde et al.).
 bool evaluate_expression_sync_uncanny(const teddy_geometry_t *geom, double sync_delay_ms, double *uncanny_score_out);
 
+// Evaluates the unpredictable micro-expression acceleration jitter uncanny response (Hyde et al.).
+bool evaluate_acceleration_jitter_uncanny(const teddy_geometry_t *geom, double acceleration_variance, double *uncanny_score_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 
