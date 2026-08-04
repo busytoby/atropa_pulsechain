@@ -708,6 +708,11 @@ test-auncient-teddy-personality:
 	./tests/test_auncient_teddy_personality
 	@rm -f tests/test_auncient_teddy_personality
 
+test-auncient-bear-interactions:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_bear_interactions.c -o tests/test_auncient_bear_interactions -lrt
+	./tests/test_auncient_bear_interactions
+	@rm -f tests/test_auncient_bear_interactions
+
 test-auncient-hathitrust-stimuli:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc tests/test_auncient_hathitrust_stimuli.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_auncient_hathitrust_stimuli -lcrypto -lm -lrt
 	./tests/test_auncient_hathitrust_stimuli
