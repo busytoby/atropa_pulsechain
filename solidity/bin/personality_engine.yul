@@ -584,6 +584,40 @@ object "PersonalityEngine" {
                 return(0x00, 32)
             }
 
+            // ----------------------------------------------------------------
+            // METHOD: evaluate_gumbel_nerve_tax (location, scale, voltage)
+            // Selector: 0xe399f102 (integer scaled by 1000)
+            // ----------------------------------------------------------------
+            if eq(selector, 0xe399f102) {
+                let location := calldataload(4)
+                let scale := calldataload(36)
+                let voltage := calldataload(68)
+                
+                let tax := 0
+                if gt(scale, 0) {
+                    // z = (voltage - location) / scale
+                    let z := 0
+                    if gt(voltage, location) {
+                        z := div(mul(sub(voltage, location), 1000), scale)
+                    }
+                    // Simple Taylor expansion for double exponential Gumbel CDF approximation:
+                    // Gumbel_CDF(z) = exp(-exp(-z))
+                    let factor := 1000
+                    if lt(z, 3000) {
+                        // exp(-z) approx
+                        let exp_neg_z := sub(1000, z)
+                        if gt(z, 1000) {
+                            exp_neg_z := 367
+                        }
+                        factor := sub(1000, exp_neg_z)
+                    }
+                    tax := div(mul(voltage, factor), 1000)
+                }
+                
+                mstore(0x00, tax)
+                return(0x00, 32)
+            }
+
             revert(0, 0)
         }
     }
