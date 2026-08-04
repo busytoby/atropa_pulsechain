@@ -216,6 +216,12 @@ int main(void) {
     assert(rapid_threat >= 0.0);
     printf("   ✓ GENIOLE et al. fWHR threat, visual-vocal mismatch, reactive retaliation, and rapid exposure consistency verified successfully\n");
 
+    // Test Hyde uncanny mismatch index calculation
+    double uncanny_val = 0.0;
+    assert(evaluate_uncanny_mismatch_index(&geom, &uncanny_val));
+    assert(uncanny_val >= 0.0);
+    printf("   ✓ HYDE et al. vocal-visual uncanny mismatch index verified successfully\n");
+
     // Test ACID transaction behavior (Commit successful path)
     evaluation_tx_t tx = begin_evaluation_transaction(&geom);
     assert(tx.active);

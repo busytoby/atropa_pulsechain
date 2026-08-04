@@ -663,6 +663,19 @@ bool evaluate_exposure_threat_consistency(const teddy_geometry_t *geom, double e
     return true;
 }
 
+bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncanny_score_out) {
+    if (!geom || !uncanny_score_out) {
+        return false;
+    }
+    double asymmetry_score = 1.0 - geom->symmetry;
+    double pitch_mismatch = 0.0;
+    if (geom->head_fwhr > 1.0 && geom->vocal_pitch > 220.0) {
+        pitch_mismatch = (geom->head_fwhr - 1.0) * (geom->vocal_pitch - 220.0) / 100.0;
+    }
+    *uncanny_score_out = (asymmetry_score * 2.0) + pitch_mismatch + (geom->behavioral_mismatch * 1.5);
+    return true;
+}
+
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out) {
     if (!geom || param_count < 1 || sample_size < 2 || !aic_out || !bic_out) {
         return false;
