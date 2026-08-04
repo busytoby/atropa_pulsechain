@@ -970,6 +970,31 @@ static void test_compiler_wmq_proto(void) {
     printf("[Test] Compiler __builtin_wmq_proto pipeline tests passed.\n");
 }
 
+static void test_compiler_wmq_auth_idx(void) {
+    printf("[Test] Running compiler __builtin_wmq_auth_idx pipeline tests...\n");
+    
+    const char *source = "int main() { __builtin_wmq_auth_idx(3); return 23; }";
+    uint8_t bytecode[32];
+    size_t bytecode_len = 0;
+    
+    bool ok = tsfi2_compile(source, bytecode, sizeof(bytecode), &bytecode_len);
+    assert(ok == true);
+    assert(bytecode_len == 9); // 3 bytes for auth_idx + 5 bytes for mov eax + 1 byte ret
+    
+    const char *prog_file = "/tmp/test_compiler_auth_idx_out.dat.bin";
+    ok = tsfi2_compile_to_dat_bin(prog_file, 0x1000, 1, bytecode, bytecode_len);
+    assert(ok == true);
+    
+    Tsfi2CpuState cpu;
+    ok = tsfi2_load_and_execute(prog_file, &cpu);
+    assert(ok == true);
+    assert(cpu.halted == true);
+    assert(cpu.exit_code == 23);
+    
+    remove(prog_file);
+    printf("[Test] Compiler __builtin_wmq_auth_idx pipeline tests passed.\n");
+}
+
 int main(void) {
     printf("[Test] Running TSFi2 compiler front-end tests...\n");
     test_compiler_pipeline();
@@ -1010,6 +1035,7 @@ int main(void) {
     test_compiler_wmq_keepalive();
     test_compiler_wmq_reconnect();
     test_compiler_wmq_proto();
+    test_compiler_wmq_auth_idx();
     printf("[Test] All compiler front-end tests completed successfully.\n");
     return 0;
 }

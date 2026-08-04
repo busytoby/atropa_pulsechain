@@ -386,6 +386,18 @@ int main() {
 * **Compiler Built-in**: 21 characters (`__builtin_wmq_proto();`).
 * **Source Size Reduction**: 67% character footprint decrease.
 
+### Host Connection Credential Relocation Comparison
+* **Boilerplate Wrapper**: 136 characters.
+  ```c
+  int verify_creds() {
+      const char *user = "admin";
+      const char *pass = "secret123";
+      return wmq_auth(user, pass);
+  }
+  ```
+* **Compiler Built-in**: 28 characters (`__builtin_wmq_auth_idx(3);`).
+* **Source Size Reduction**: 79% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
