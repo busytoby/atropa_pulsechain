@@ -568,6 +568,12 @@ int main(void) {
     assert(pitch_jitter_uncanny > pitch_vel_mismatch);
     printf("   ✓ HYDE et al. vocal-visual pitch transition velocity mismatch and micro-expression jitter index verified successfully\n");
 
+    // Test Hyde vocal-visual motion acceleration mismatch calculation
+    double accel_uncanny = 0.0;
+    assert(evaluate_motion_acceleration_mismatch(&geom, 0.5, &accel_uncanny));
+    assert(accel_uncanny > 0.0);
+    printf("   ✓ HYDE et al. vocal-visual motion acceleration mismatch and jitter index verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge

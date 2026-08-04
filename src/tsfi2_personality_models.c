@@ -872,6 +872,14 @@ bool evaluate_pitch_jitter_uncanny(const teddy_geometry_t *geom, double pitch_ve
     return true;
 }
 
+bool evaluate_motion_acceleration_mismatch(const teddy_geometry_t *geom, double acceleration_mismatch, double *uncanny_score_out) {
+    if (!geom || acceleration_mismatch < 0.0 || !uncanny_score_out) {
+        return false;
+    }
+    *uncanny_score_out = acceleration_mismatch * (1.2 + geom->behavioral_mismatch * 0.4);
+    return true;
+}
+
 bool evaluate_pitch_mismatch_habituation_decay(const teddy_geometry_t *geom, double exposure_duration_sec, double *decayed_uncanny_out) {
     if (!geom || exposure_duration_sec < 0.0 || !decayed_uncanny_out) {
         return false;
