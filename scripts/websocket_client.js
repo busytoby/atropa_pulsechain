@@ -10,7 +10,7 @@ ws.on("open", () => {
         tts_enabled: false,
         scroller: {
             text: "TSFi/2",
-            color_scheme: 4,
+            color_scheme: 0,
             speed_scale: 1.2,
             bear_count: 0
         },
