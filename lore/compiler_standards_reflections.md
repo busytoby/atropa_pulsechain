@@ -61,6 +61,16 @@ int main() {
 * **Compiler Built-in**: 23 characters (`__builtin_wmq_reset();`).
 * **Source Size Reduction**: 80% character footprint decrease.
 
+### Core Halt Comparison
+* **Boilerplate Wrapper**: 49 characters.
+  ```c
+  void halt() {
+      asm("hlt");
+  }
+  ```
+* **Compiler Built-in**: 22 characters (`__builtin_wmq_halt();`).
+* **Source Size Reduction**: 55% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
