@@ -112,9 +112,9 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
         int sy = (int)(omt * omt * stem_base_y + 2.0f * omt * t * ctrl_y + t * t * poppy_joints[0].y);
 
         // Organic color shading: brown near the base to fresh green at the top
-        uint8_t r_col = (uint8_t)(80 * (1.0f - t) + 34 * t);
-        uint8_t g_col = (uint8_t)(60 * (1.0f - t) + 139 * t);
-        uint8_t b_col = (uint8_t)(30 * (1.0f - t) + 34 * t);
+        uint8_t r_col = (uint8_t)(105 * (1.0f - t) + 55 * t);
+        uint8_t g_col = (uint8_t)(85 * (1.0f - t) + 195 * t);
+        uint8_t b_col = (uint8_t)(45 * (1.0f - t) + 65 * t);
 
         // 3D cylindrical chiascuro shading (left highlight, center body, right shadow)
         draw_line(prev_x - 1, prev_y, sx - 1, sy, (uint8_t)fminf(255, r_col * 1.3f), (uint8_t)fminf(255, g_col * 1.3f), (uint8_t)fminf(255, b_col * 1.3f)); // Left highlight

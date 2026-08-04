@@ -126,9 +126,9 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset, f
         // Angle of the tangent vector along the spine
         float angle = atan2f((float)(ly - by), (float)(lx - bx));
         
-        uint8_t lf_r = (uint8_t)(34 * (1.0f - t) + 46 * t);
-        uint8_t lf_g = (uint8_t)(75 * (1.0f - t) + 165 * t);
-        uint8_t lf_b = (uint8_t)(30 * (1.0f - t) + 50 * t);
+        uint8_t lf_r = (uint8_t)(55 * (1.0f - t) + 80 * t);
+        uint8_t lf_g = (uint8_t)(135 * (1.0f - t) + 225 * t);
+        uint8_t lf_b = (uint8_t)(45 * (1.0f - t) + 95 * t);
 
         // Serrated pinnate leaflets projecting forward (at 45 degree angles)
         float lobe_w = 17.0f * (1.0f - t) * (0.8f + 0.5f * sinf(t * 28.0f));
