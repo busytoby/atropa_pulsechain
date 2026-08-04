@@ -92,6 +92,7 @@ typedef struct {
     double industriousness;          // Perceived industriousness (0.0 low/opportunism, 1.0 high industriousness)
     double gullibility;              // Perceived gullibility (0.0 shrewd skepticism, 1.0 naive gullibility)
     double stress_recovery;          // Perceived stress recovery (0.0 group-reliant/low recovery, 1.0 self-reliant/fast recovery)
+    double work_output;              // Perceived work output during campaigns (0.0 low/avoidance, 1.0 high output)
 } teddy_geometry_t;
 
 // Pixar RenderMan Avatar Agent definition upon the cooperative boundary

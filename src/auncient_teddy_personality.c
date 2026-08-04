@@ -84,6 +84,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->industriousness = 1.0;          // High industriousness
             geom->gullibility = 1.0;              // High gullibility
             geom->stress_recovery = 0.0;          // Low recovery/group-reliant
+            geom->work_output = 1.0;              // High work output
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -166,6 +167,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->industriousness = 0.0;          // Lower industriousness
             geom->gullibility = 0.0;              // Shrewd skepticism
             geom->stress_recovery = 1.0;          // High recovery/self-reliant
+            geom->work_output = 0.0;              // Lower expected work output
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -248,6 +250,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->industriousness = 0.0;          // Lower industriousness
             geom->gullibility = 0.0;              // Shrewd skepticism
             geom->stress_recovery = 1.0;          // High recovery/self-reliant
+            geom->work_output = 0.0;              // Lower expected work output
             break;
     }
 }
