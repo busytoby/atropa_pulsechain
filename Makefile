@@ -713,6 +713,11 @@ test-auncient-bear-interactions:
 	./tests/test_auncient_bear_interactions
 	@rm -f tests/test_auncient_bear_interactions
 
+test-auncient-bear-chorus:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinclude -Itsfi2-deepseek/inc src/auncient_bear_chorus.c src/auncient_teddy_personality.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c -o src/auncient_bear_chorus -lm -lrt
+	./src/auncient_bear_chorus
+	@rm -f src/auncient_bear_chorus
+
 test-auncient-hathitrust-stimuli:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc tests/test_auncient_hathitrust_stimuli.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_auncient_hathitrust_stimuli -lcrypto -lm -lrt
 	./tests/test_auncient_hathitrust_stimuli
