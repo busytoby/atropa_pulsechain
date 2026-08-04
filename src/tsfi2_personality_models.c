@@ -623,6 +623,18 @@ bool evaluate_provocation_rapid_threat_limit(const teddy_geometry_t *geom, doubl
     return true;
 }
 
+bool evaluate_provocation_retaliation_boundary(const teddy_geometry_t *geom, double exposure_ms, double *boundary_out) {
+    if (!geom || exposure_ms < 0.0 || !boundary_out) {
+        return false;
+    }
+    double base_boundary = 0.0;
+    if (!evaluate_reactive_retaliation_boundary(geom, exposure_ms, &base_boundary)) {
+        return false;
+    }
+    *boundary_out = base_boundary * (1.1 + geom->status_aggression * 0.1);
+    return true;
+}
+
 bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncanny_score_out) {
     if (!geom || !uncanny_score_out) {
         return false;

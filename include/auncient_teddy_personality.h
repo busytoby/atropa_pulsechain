@@ -320,6 +320,9 @@ bool evaluate_provocation_replication_consistency(const teddy_geometry_t *geom, 
 // Evaluates the rapid threat limit boundary under provocation (Geniole et al.).
 bool evaluate_provocation_rapid_threat_limit(const teddy_geometry_t *geom, double provocation_scale, double *limit_out);
 
+// Evaluates the provocation-modulated reactive retaliation boundary (Geniole et al.).
+bool evaluate_provocation_retaliation_boundary(const teddy_geometry_t *geom, double exposure_ms, double *boundary_out);
+
 // Evaluates the vocal-visual uncanny mismatch index based on geometry and pitch (Hyde et al.).
 bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncanny_score_out);
 

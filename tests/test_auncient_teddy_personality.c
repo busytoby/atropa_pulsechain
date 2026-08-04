@@ -428,7 +428,12 @@ int main(void) {
     double rapid_limit = 0.0;
     assert(evaluate_provocation_rapid_threat_limit(&geom, 2.0, &rapid_limit));
     assert(rapid_limit >= 0.0);
-    printf("   ✓ GENIOLE et al. fWHR threat, visual-vocal mismatch, reactive retaliation, rapid exposure consistency, cooperative cheating risk, rapid threat limit, retaliation profile, aggression threshold, exposure-adjusted threat, status-dominance threat, threat replication consistency, retaliation boundary, aggression scaling, threshold decay, provocation exposure decay, aggression ceiling, status-dominance multiplier, cheating threat index, provocation threat replication consistency, and rapid threat limit verified successfully\n");
+
+    // Test Geniole provocation retaliation boundary calculation
+    double retaliation_boundary = 0.0;
+    assert(evaluate_provocation_retaliation_boundary(&geom, 100.0, &retaliation_boundary));
+    assert(retaliation_boundary >= 0.0);
+    printf("   ✓ GENIOLE et al. fWHR threat, visual-vocal mismatch, reactive retaliation, rapid exposure consistency, cooperative cheating risk, rapid threat limit, retaliation profile, aggression threshold, exposure-adjusted threat, status-dominance threat, threat replication consistency, retaliation boundary, aggression scaling, threshold decay, provocation exposure decay, aggression ceiling, status-dominance multiplier, cheating threat index, provocation threat replication consistency, rapid threat limit, and provocation retaliation boundary verified successfully\n");
 
     // Test Hyde uncanny mismatch index calculation
     double uncanny_val = 0.0;
