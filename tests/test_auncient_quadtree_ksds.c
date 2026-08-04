@@ -112,6 +112,55 @@ int main(void) {
     remove(aix_file);
     printf("   ✓ Alternate Index (AIX) Quadtree query verified successfully.\n");
 
+    // Unicode Dual-Encoding and Normalization Test
+    printf("[Test] Validating Unicode Dual-Encoding and Normalization...\n");
+    const char *uni_file = "/tmp/test_unicode.dat.bin";
+    const char *utf8_in = "HathiTrust Café: Auncient History of the VM (öé)";
+
+    InteropQuadNode uni_nodes[1] = {
+        { 0, 0, 100, 100, 42, { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF } }
+    };
+
+    ok = tsfi_qt_ksds_write_dual(uni_file, "AUNCIENT_UNI\nQuadtreeCount:\t1\nRecordCount:\t1", uni_nodes, 1, utf8_in);
+    assert(ok == true);
+
+    char ebcdic_out[256] = {0};
+    int ebcdic_len = 0;
+    char utf8_out[256] = {0};
+    int utf8_len = 0;
+
+    ok = tsfi_qt_ksds_read_dual(
+        uni_file,
+        header_out,
+        sizeof(header_out),
+        nodes_out,
+        1,
+        &node_count,
+        ebcdic_out,
+        sizeof(ebcdic_out),
+        &ebcdic_len,
+        utf8_out,
+        sizeof(utf8_out),
+        &utf8_len
+    );
+    assert(ok == true);
+
+    printf("[Test] Validating Raw UTF-8 Segment...\n");
+    utf8_out[utf8_len] = '\0';
+    assert(strcmp(utf8_out, utf8_in) == 0);
+
+    printf("[Test] Validating Normalized EBCDIC Segment...\n");
+    // Translate EBCDIC back to ASCII using tsfi_cw_ebcdic_to_ascii_buf to assert normalization
+    extern int tsfi_cw_ebcdic_to_ascii_buf(const uint8_t *ebcdic_in, char *ascii_out, int len);
+    char ascii_back[256] = {0};
+    tsfi_cw_ebcdic_to_ascii_buf((const uint8_t *)ebcdic_out, ascii_back, ebcdic_len);
+    ascii_back[ebcdic_len] = '\0';
+
+    assert(strcmp(ascii_back, "HathiTrust Cafe: Auncient History of the VM (oe)") == 0);
+
+    remove(uni_file);
+    printf("   ✓ Unicode dual-encoding and normalization verified successfully.\n");
+
     printf("=============================================================\n");
     printf("TSV QUADTREE KSDS TESTS PASSED\n");
     printf("=============================================================\n");

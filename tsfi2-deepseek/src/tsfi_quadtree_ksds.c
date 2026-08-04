@@ -2,6 +2,7 @@
 #define _POSIX_C_SOURCE 200809L
 
 #include "tsfi_quadtree_ksds.h"
+#include "tsfi_mainframe_computerworld.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -245,4 +246,146 @@ bool tsfi_qt_ksds_aix_query(
 
     fclose(pf);
     return false;
+}
+
+void tsfi_qt_ksds_normalize_unicode(const char *utf8_in, char *ascii_out, size_t max_len) {
+    if (!utf8_in || !ascii_out || max_len == 0) return;
+    size_t i = 0;
+    size_t j = 0;
+    while (utf8_in[i] != '\0' && j < max_len - 1) {
+        uint8_t c = (uint8_t)utf8_in[i];
+        if (c < 128) {
+            ascii_out[j++] = utf8_in[i++];
+        } else {
+            // Accent normalization fallbacks
+            if (c == 0xC3) {
+                uint8_t next = (uint8_t)utf8_in[i+1];
+                if (next == 0xA9) { ascii_out[j++] = 'e'; i += 2; }
+                else if (next == 0xB6) { ascii_out[j++] = 'o'; i += 2; }
+                else if (next == 0xBC) { ascii_out[j++] = 'u'; i += 2; }
+                else if (next == 0xA4) { ascii_out[j++] = 'a'; i += 2; }
+                else { ascii_out[j++] = '?'; i += 2; }
+            } else {
+                ascii_out[j++] = '?';
+                // Skip UTF-8 sequence
+                if ((c & 0xE0) == 0xC0) i += 2;
+                else if ((c & 0xF0) == 0xE0) i += 3;
+                else if ((c & 0xF8) == 0xF0) i += 4;
+                else i++;
+            }
+        }
+    }
+    ascii_out[j] = '\0';
+}
+
+bool tsfi_qt_ksds_write_dual(
+    const char *filepath,
+    const char *tsv_header,
+    const InteropQuadNode *nodes,
+    size_t node_count,
+    const char *utf8_record
+) {
+    if (!utf8_record) return false;
+
+    // Normalize Unicode to ASCII fallback
+    size_t record_len = strlen(utf8_record);
+    char *normalized = malloc(record_len + 1);
+    if (!normalized) return false;
+    tsfi_qt_ksds_normalize_unicode(utf8_record, normalized, record_len + 1);
+
+    // Encode to EBCDIC
+    size_t norm_len = strlen(normalized);
+    uint8_t *ebcdic_buf = malloc(norm_len);
+    if (!ebcdic_buf) {
+        free(normalized);
+        return false;
+    }
+    tsfi_cw_ascii_to_ebcdic_buf(normalized, ebcdic_buf, norm_len);
+
+    // Construct dual-encoding payload
+    size_t payload_len = 4 + norm_len + 4 + record_len;
+    uint8_t *payload = malloc(payload_len);
+    if (!payload) {
+        free(ebcdic_buf);
+        free(normalized);
+        return false;
+    }
+
+    uint32_t ebcdic_len_32 = (uint32_t)norm_len;
+    uint32_t utf8_len_32 = (uint32_t)record_len;
+    memcpy(payload, &ebcdic_len_32, 4);
+    memcpy(payload + 4, ebcdic_buf, norm_len);
+    memcpy(payload + 4 + norm_len, &utf8_len_32, 4);
+    memcpy(payload + 8 + norm_len, utf8_record, record_len);
+
+    bool ok = tsfi_qt_ksds_write(filepath, tsv_header, nodes, node_count, payload, payload_len);
+
+    free(payload);
+    free(ebcdic_buf);
+    free(normalized);
+    return ok;
+}
+
+bool tsfi_qt_ksds_read_dual(
+    const char *filepath,
+    char *header_out,
+    size_t header_max,
+    InteropQuadNode *nodes_out,
+    size_t max_nodes,
+    int *node_count_out,
+    char *ebcdic_out,
+    size_t ebcdic_max,
+    int *ebcdic_len_out,
+    char *utf8_out,
+    size_t utf8_max,
+    int *utf8_len_out
+) {
+    uint8_t records_buf[4096];
+    int records_len = 0;
+
+    if (!tsfi_qt_ksds_read(
+        filepath,
+        header_out,
+        header_max,
+        nodes_out,
+        max_nodes,
+        node_count_out,
+        records_buf,
+        sizeof(records_buf),
+        &records_len
+    )) {
+        return false;
+    }
+
+    if (records_len < 8) return false;
+
+    // Parse EBCDIC segment
+    uint32_t ebcdic_len = 0;
+    memcpy(&ebcdic_len, records_buf, 4);
+    if (4 + ebcdic_len > (uint32_t)records_len) return false;
+
+    if (ebcdic_out && ebcdic_max > 0) {
+        size_t cpy = (ebcdic_len < ebcdic_max - 1) ? ebcdic_len : ebcdic_max - 1;
+        memcpy(ebcdic_out, records_buf + 4, cpy);
+        ebcdic_out[cpy] = '\0';
+    }
+    if (ebcdic_len_out) {
+        *ebcdic_len_out = (int)ebcdic_len;
+    }
+
+    // Parse UTF-8 Unicode segment
+    uint32_t utf8_len = 0;
+    memcpy(&utf8_len, records_buf + 4 + ebcdic_len, 4);
+    if (8 + ebcdic_len + utf8_len > (uint32_t)records_len) return false;
+
+    if (utf8_out && utf8_max > 0) {
+        size_t cpy = (utf8_len < utf8_max - 1) ? utf8_len : utf8_max - 1;
+        memcpy(utf8_out, records_buf + 8 + ebcdic_len, cpy);
+        utf8_out[cpy] = '\0';
+    }
+    if (utf8_len_out) {
+        *utf8_len_out = (int)utf8_len;
+    }
+
+    return true;
 }

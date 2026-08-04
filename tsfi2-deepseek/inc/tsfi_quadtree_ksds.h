@@ -49,4 +49,29 @@ bool tsfi_qt_ksds_aix_query(
     int *record_len_out
 );
 
+void tsfi_qt_ksds_normalize_unicode(const char *utf8_in, char *ascii_out, size_t max_len);
+
+bool tsfi_qt_ksds_write_dual(
+    const char *filepath,
+    const char *tsv_header,
+    const InteropQuadNode *nodes,
+    size_t node_count,
+    const char *utf8_record
+);
+
+bool tsfi_qt_ksds_read_dual(
+    const char *filepath,
+    char *header_out,
+    size_t header_max,
+    InteropQuadNode *nodes_out,
+    size_t max_nodes,
+    int *node_count_out,
+    char *ebcdic_out,
+    size_t ebcdic_max,
+    int *ebcdic_len_out,
+    char *utf8_out,
+    size_t utf8_max,
+    int *utf8_len_out
+);
+
 #endif /* TSFI_QUADTREE_KSDS_H */
