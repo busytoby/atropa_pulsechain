@@ -381,6 +381,12 @@ int main(void) {
     assert(decayed_uncanny < uncanny_val);
     printf("   ✓ HYDE et al. exposure duration habituation decay verified successfully\n");
 
+    // Test Hyde unpredictable micro-expression freeze habituation decay calculation
+    double decayed_freeze_uncanny = 0.0;
+    assert(evaluate_freeze_habituation_decay(&geom, 7.5, &decayed_freeze_uncanny));
+    assert(decayed_freeze_uncanny < uncanny_val);
+    printf("   ✓ HYDE et al. unpredictable micro-expression freeze habituation decay verified successfully\n");
+
     // Test Hyde unpredictable animation velocity jitter calculation
     double vel_jitter_uncanny = 0.0;
     assert(evaluate_velocity_jitter_uncanny(&geom, 0.4, &vel_jitter_uncanny));

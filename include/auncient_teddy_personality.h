@@ -290,8 +290,11 @@ bool evaluate_motion_uncanny_index(const teddy_geometry_t *geom, double movement
 // Evaluates the micro-expression jitter uncanny response (Hyde et al.).
 bool evaluate_expression_jitter_uncanny(const teddy_geometry_t *geom, double jitter_frequency, double *uncanny_score_out);
 
-// Evaluates the exposure duration habituation decay of the uncanny response (Hyde et al.).
+// Evaluates the exposure decay uncanny response (Hyde et al.).
 bool evaluate_exposure_decay_uncanny(const teddy_geometry_t *geom, double exposure_duration_sec, double *decayed_uncanny_out);
+
+// Evaluates uncanny habituation decay over animation freeze durations (Hyde et al.).
+bool evaluate_freeze_habituation_decay(const teddy_geometry_t *geom, double exposure_duration_sec, double *decayed_uncanny_out);
 
 // Evaluates the velocity jitter pacing uncanny response (Hyde et al.).
 bool evaluate_velocity_jitter_uncanny(const teddy_geometry_t *geom, double velocity_variance, double *uncanny_score_out);

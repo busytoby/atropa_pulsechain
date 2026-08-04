@@ -621,6 +621,17 @@ bool evaluate_exposure_decay_uncanny(const teddy_geometry_t *geom, double exposu
     return true;
 }
 
+bool evaluate_freeze_habituation_decay(const teddy_geometry_t *geom, double exposure_duration_sec, double *decayed_uncanny_out) {
+    if (!geom || exposure_duration_sec < 0.0 || !decayed_uncanny_out) {
+        return false;
+    }
+    double base_uncanny = 0.0;
+    evaluate_uncanny_mismatch_index(geom, &base_uncanny);
+    double tau = 15.0;
+    *decayed_uncanny_out = base_uncanny * exp(-exposure_duration_sec / tau);
+    return true;
+}
+
 bool evaluate_velocity_jitter_uncanny(const teddy_geometry_t *geom, double velocity_variance, double *uncanny_score_out) {
     if (!geom || velocity_variance < 0.0 || !uncanny_score_out) {
         return false;
