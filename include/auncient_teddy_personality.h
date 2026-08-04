@@ -115,4 +115,10 @@ bool validate_sdk_typestate(const agent_avatar_t *avatar);
 // Synchronizes vertex displacement math scales with WinchesterMQ register boundary constraints
 void execute_displacement_shader_sync(const agent_avatar_t *avatar, double *vertex_offsets, uint32_t count);
 
+// Emulates low-level WinchesterMQ SCSI register boundary handshake loop
+bool emulate_winchester_scsi_loop(agent_avatar_t *avatar);
+
+// Simulates Verlet soft-body dynamics of FET discharge cycles
+void simulate_fet_verlet_discharge(agent_avatar_t *avatar, double time_step);
+
 #endif // AUNCIENT_TEDDY_PERSONALITY_H

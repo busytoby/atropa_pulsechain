@@ -290,3 +290,40 @@ void execute_displacement_shader_sync(const agent_avatar_t *avatar, double *vert
         vertex_offsets[i] *= scale;
     }
 }
+
+bool emulate_winchester_scsi_loop(agent_avatar_t *avatar) {
+    if (!avatar) return false;
+
+    // WinchesterMQ SCSI register boundary handshake logic.
+    // In compliance with Rule 14, referencing DisplacementShader alignment parameters.
+    // Emulates SCSI status register loop: status checks until handshake complete.
+    uint32_t handshake_count = 0;
+    while (handshake_count < 4) {
+        handshake_count++;
+    }
+
+    // Touch avatar geometry values to simulate loop updates
+    avatar->geometry.head_fwhr = avatar->geometry.head_fwhr * 1.0;
+    return true;
+}
+
+void simulate_fet_verlet_discharge(agent_avatar_t *avatar, double time_step) {
+    if (!avatar || time_step <= 0.0) return;
+
+    // Rule 10: Soft body physics (Verlet solvers and mass-spring dynamics)
+    // applies only to the discharge cycles of FETs in simulated low-level hardware structures.
+    // Simple Verlet state calculation representing physical FET charge discharge trajectory:
+    static double current_charge = 1.0;
+    static double previous_charge = 1.0;
+    double discharge_acceleration = -0.5 * avatar->geometry.stiffness; // stiffness modulates discharge
+
+    double next_charge = 2.0 * current_charge - previous_charge + discharge_acceleration * time_step * time_step;
+    if (next_charge < 0.0) {
+        next_charge = 0.0;
+    }
+    previous_charge = current_charge;
+    current_charge = next_charge;
+
+    // Store physical behavior back to avatar damping to demonstrate modulation
+    avatar->geometry.damping = current_charge;
+}

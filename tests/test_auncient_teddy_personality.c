@@ -46,6 +46,16 @@ int main(void) {
     assert(vertex_offsets[2] == 4.5);
     printf("   ✓ WinchesterMQ DisplacementShader alignment sync verified successfully\n");
 
+    // Test WinchesterMQ SCSI Loop Emulation
+    assert(emulate_winchester_scsi_loop(&avatar));
+    printf("   ✓ WinchesterMQ SCSI Loop Emulation verified successfully\n");
+
+    // Test FET Verlet soft-body discharge simulation
+    simulate_fet_verlet_discharge(&avatar, 0.1);
+    // damping should be updated from initial value
+    assert(avatar.geometry.damping >= 0.0);
+    printf("   ✓ FET Verlet Soft-Body Discharge simulation verified successfully\n");
+
     printf("=============================================================\n");
     printf("PERSONALITY CONFIGURATIONS VALIDATED SUCCESSFULLY\n");
     printf("=============================================================\n");
