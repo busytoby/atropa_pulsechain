@@ -652,3 +652,8 @@ test-auncient-vfio-xplsm:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vfio_xplsm.c -o tests/test_auncient_vfio_xplsm -lcrypto -lrt
 	./tests/test_auncient_vfio_xplsm
 	@rm -f tests/test_auncient_vfio_xplsm
+
+test-auncient-network-skeleton:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_network_skeleton.c -o tests/test_auncient_network_skeleton -lrt
+	./tests/test_auncient_network_skeleton
+	@rm -f tests/test_auncient_network_skeleton
