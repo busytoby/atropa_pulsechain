@@ -131,9 +131,9 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset, f
         uint8_t lf_g = (uint8_t)(135 * (1.0f - t) + 225 * t);
         uint8_t lf_b = (uint8_t)(45 * (1.0f - t) + 95 * t);
 
-        // 3D leaf tip taper silhouette styling (broader base, lower frequency larger lobes)
-        float tip_curl = 1.0f - powf(t, 2.8f);
-        float lobe_w = 34.0f * tip_curl * (0.8f + 0.35f * sinf(t * 9.0f));
+        // 3D leaf tip taper silhouette styling (broader solid blade with minor undulating edges)
+        float tip_curl = 1.0f - powf(t, 2.5f);
+        float lobe_w = 38.0f * tip_curl * (0.86f + 0.14f * sinf(t * 8.0f));
         float leaf_ang_left = angle + M_PI * 0.45f;
         float leaf_ang_right = angle - M_PI * 0.45f;
 
@@ -141,8 +141,8 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset, f
         float serration = 1.0f + 0.08f * sinf(t * 50.0f + time_val * 6.0f);
         
         for (int lw = 0; lw < (int)lobe_w; lw++) {
-            // Sweep an angular range to give the lobes physical width/surface area (preventing needle look)
-            for (float ang_off = -0.12f; ang_off <= 0.12f; ang_off += 0.06f) {
+            // Widen angular sweep to create a solid, continuous leaf blade surface rather than separate needle divisions
+            for (float ang_off = -0.28f; ang_off <= 0.28f; ang_off += 0.07f) {
                 int l_lx = lx + (int)(lw * serration * cosf(leaf_ang_left + ang_off));
                 int l_ly = ly + (int)(lw * serration * sinf(leaf_ang_left + ang_off));
                 int r_lx = lx + (int)(lw * serration * cosf(leaf_ang_right + ang_off));
@@ -158,7 +158,7 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset, f
                 draw_line(lx, ly, r_lx, r_ly, r_draw, g_draw, b_draw);
 
                 // Add volumetric 3D contour borders on the outer sweep edges
-                if (lw == (int)lobe_w - 1 && ang_off > 0.08f) {
+                if (lw == (int)lobe_w - 1 && ang_off > 0.20f) {
                     draw_line(l_lx, l_ly, l_lx, l_ly, (uint8_t)fminf(255, lf_r * 1.55f), (uint8_t)fminf(255, lf_g * 1.45f), (uint8_t)fminf(255, lf_b * 1.55f));
                     draw_line(r_lx, r_ly, r_lx, r_ly, (uint8_t)(lf_r * 0.45f), (uint8_t)(lf_g * 0.4f), (uint8_t)(lf_b * 0.45f));
                 }
