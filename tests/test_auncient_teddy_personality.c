@@ -32,6 +32,13 @@ int main(void) {
     assert(geom.damping == 0.1);
     printf("   ✓ Eerie parameters resolved: Narrow Head (0.7), Eerie Dynamics (Damping: 0.1)\n");
 
+    // Test Skeptical Mapping
+    resolve_teddy_geometry(PERSONALITY_SKEPTICAL, &geom);
+    assert(geom.head_fwhr == 0.8);
+    assert(geom.symmetry == 0.6);
+    assert(geom.naivety_index == 0.0);
+    printf("   ✓ Skeptical parameters resolved: Narrow Head (0.8), Crooked Symmetry (0.6), Naivety (0.0)\n");
+
     // Test system boundary engagement and typestate validation
     agent_avatar_t avatar;
     assert(engage_system_boundary(&avatar, PERSONALITY_TRUSTWORTHY));

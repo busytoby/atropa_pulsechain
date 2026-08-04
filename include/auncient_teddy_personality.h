@@ -8,7 +8,8 @@
 typedef enum {
     PERSONALITY_TRUSTWORTHY, // Round head, round eyes, medium eye size
     PERSONALITY_AGGRESSIVE,   // Narrow head, almond eyes, medium eye size
-    PERSONALITY_EERIE         // Narrow head, almond eyes, large eye size
+    PERSONALITY_EERIE,         // Narrow head, almond eyes, large eye size
+    PERSONALITY_SKEPTICAL      // Narrow head, crooked-face symmetry
 } teddy_personality_t;
 
 typedef struct {
