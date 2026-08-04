@@ -891,6 +891,16 @@ bool evaluate_exposure_decay_uncanny(const teddy_geometry_t *geom, double exposu
     return true;
 }
 
+bool evaluate_velocity_jitter_uncanny(const teddy_geometry_t *geom, double velocity_variance, double *uncanny_score_out) {
+    if (!geom || velocity_variance < 0.0 || !uncanny_score_out) {
+        return false;
+    }
+    double base_uncanny = 0.0;
+    evaluate_uncanny_mismatch_index(geom, &base_uncanny);
+    *uncanny_score_out = base_uncanny + (velocity_variance * 3.5 * geom->behavioral_mismatch);
+    return true;
+}
+
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state) {
     if (resistance < 1e-9 || capacitance < 1e-9 || time_step < 1e-9 || !charge_state) {
         return false;

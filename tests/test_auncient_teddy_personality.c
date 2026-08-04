@@ -279,6 +279,12 @@ int main(void) {
     assert(decayed_uncanny < uncanny_val);
     printf("   ✓ HYDE et al. exposure duration habituation decay verified successfully\n");
 
+    // Test Hyde unpredictable animation velocity jitter calculation
+    double vel_jitter_uncanny = 0.0;
+    assert(evaluate_velocity_jitter_uncanny(&geom, 0.4, &vel_jitter_uncanny));
+    assert(vel_jitter_uncanny >= 0.0);
+    printf("   ✓ HYDE et al. unpredictable animation velocity jitter verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge
