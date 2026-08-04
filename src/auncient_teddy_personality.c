@@ -634,6 +634,19 @@ double evaluate_reactive_mismatch_retaliation(const teddy_geometry_t *geom) {
     return score;
 }
 
+bool evaluate_exposure_threat_consistency(const teddy_geometry_t *geom, double exposure_ms, double *perceived_threat_out) {
+    if (!geom || exposure_ms < 1.0 || !perceived_threat_out) {
+        return false;
+    }
+    double stable_threat = evaluate_fw_threat_level(geom);
+    double exposure_factor = 1.0;
+    if (exposure_ms < 39.0) {
+        exposure_factor = 0.7 + (exposure_ms / 39.0) * 0.3;
+    }
+    *perceived_threat_out = stable_threat * exposure_factor;
+    return true;
+}
+
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out) {
     if (!geom || param_count < 1 || sample_size < 2 || !aic_out || !bic_out) {
         return false;

@@ -195,6 +195,9 @@ bool evaluate_behavioral_threat_mismatch(const teddy_geometry_t *geom, double *m
 // Computes reactive mismatch retaliation scores based on fWHR and status aggression (Geniole et al.).
 double evaluate_reactive_mismatch_retaliation(const teddy_geometry_t *geom);
 
+// Evaluates rapid exposure threat judgment consistency under exposure constraints (Geniole et al.).
+bool evaluate_exposure_threat_consistency(const teddy_geometry_t *geom, double exposure_ms, double *perceived_threat_out);
+
 // Computes model selection diagnostics via AIC and BIC information criteria.
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out);
 

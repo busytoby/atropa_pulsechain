@@ -200,7 +200,12 @@ int main(void) {
     // Test Geniole reactive mismatch retaliation calculation
     double reactive_aggr = evaluate_reactive_mismatch_retaliation(&geom);
     assert(reactive_aggr >= 0.0);
-    printf("   ✓ GENIOLE et al. fWHR threat, visual-vocal mismatch, and reactive retaliation verified successfully\n");
+
+    // Test Geniole rapid exposure threat consistency calculation
+    double rapid_threat = 0.0;
+    assert(evaluate_exposure_threat_consistency(&geom, 25.0, &rapid_threat));
+    assert(rapid_threat >= 0.0);
+    printf("   ✓ GENIOLE et al. fWHR threat, visual-vocal mismatch, reactive retaliation, and rapid exposure consistency verified successfully\n");
 
     // Test ACID transaction behavior (Commit successful path)
     evaluation_tx_t tx = begin_evaluation_transaction(&geom);
