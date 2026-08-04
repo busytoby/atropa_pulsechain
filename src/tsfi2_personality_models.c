@@ -584,6 +584,15 @@ bool evaluate_retaliation_aggression_ceiling(const teddy_geometry_t *geom, doubl
     return true;
 }
 
+bool evaluate_status_dominance_multiplier(const teddy_geometry_t *geom, double provocation_scale, double *multiplier_out) {
+    if (!geom || provocation_scale < 0.0 || !multiplier_out) {
+        return false;
+    }
+    double base_multiplier = 1.0 + (geom->status_aggression * 0.5);
+    *multiplier_out = base_multiplier * (1.0 + (provocation_scale * geom->head_fwhr * 0.4));
+    return true;
+}
+
 bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncanny_score_out) {
     if (!geom || !uncanny_score_out) {
         return false;
