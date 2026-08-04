@@ -45,6 +45,10 @@ typedef struct TwoThreeNode {
 typedef struct {
     TwoThreeNode *root;
     gate_state_t write_gate;
+    uint64_t dma_base_addr;
+    uint64_t dma_limit_addr;
+    bool cache_invalidated;
+    char audit_log[256];
 } xplsm_vfio_t;
 
 #define TAG_KERNEL 0x01
@@ -88,17 +92,41 @@ static bool store_table_data(TwoThreeNode *node, uint32_t key, const char *new_v
     return store_table_data(node->children[0], key, new_value);
 }
 
+// Helper to parse ADDR from payload
+static uint64_t parse_addr_from_payload(const char *payload) {
+    const char *p = strstr(payload, "ADDR=");
+    if (p) {
+        return strtoull(p + 5, NULL, 16);
+    }
+    return 0;
+}
+
 // -------------------------------------------------------------
 // XPLSM VFIO DMA Operations
 // -------------------------------------------------------------
 bool xplsm_vfio_dma_write(xplsm_vfio_t *vfio, uint32_t desc_idx, const char *payload, uint8_t tag) {
-    // Write access is physically gated: conducts only if tag == TAG_KERNEL
+    // 1. Memory Range Protection
+    uint64_t target_addr = parse_addr_from_payload(payload);
+    if (target_addr != 0 && (target_addr < vfio->dma_base_addr || target_addr > vfio->dma_limit_addr)) {
+        snprintf(vfio->audit_log, sizeof(vfio->audit_log), "BLOCKED: Address 0x%llX out of bounds", (unsigned long long)target_addr);
+        return false; // Out of bounds access blocked
+    }
+
+    // 2. Privilege level write gate check
     vfio->write_gate = (tag == TAG_KERNEL) ? CONDUC_STATE : CUTOFF_STATE;
 
     if (vfio->write_gate == CONDUC_STATE) {
-        return store_table_data(vfio->root, desc_idx, payload);
+        bool ok = store_table_data(vfio->root, desc_idx, payload);
+        if (ok) {
+            // Cache Coherency Audit: successfully writing invalidates matching cache descriptor
+            vfio->cache_invalidated = true;
+        }
+        return ok;
     }
-    return false; // Decoupled/Blocked by BJT gate
+
+    // 3. Blocked Write Auditing: log blocked write attempt
+    snprintf(vfio->audit_log, sizeof(vfio->audit_log), "BLOCKED: Unauthorized write by tag 0x%02X", tag);
+    return false;
 }
 
 // -------------------------------------------------------------
@@ -114,37 +142,53 @@ int main(void) {
     TwoThreeNode *leaf = create_leaf(0, "DESC0:ADDR=0x1000,LEN=64,STATUS=FREE");
     xplsm_vfio_t vfio = {
         .root = leaf,
-        .write_gate = CUTOFF_STATE
+        .write_gate = CUTOFF_STATE,
+        .dma_base_addr = 0x1000,
+        .dma_limit_addr = 0x2000,
+        .cache_invalidated = false,
+        .audit_log = ""
     };
 
     uint8_t initial_hash[HASH_SIZE];
     memcpy(initial_hash, vfio.root->node_hash, HASH_SIZE);
 
-    // 1. Authorized VFIO write (TAG_KERNEL) -> Should update state and root hash
+    // 1. Authorized VFIO write (TAG_KERNEL) -> Should update state, root hash, and invalidate cache
     printf("[TEST] Writing to VFIO descriptor with TAG_KERNEL...\n");
     fflush(stdout);
     bool write_ok = xplsm_vfio_dma_write(&vfio, 0, "DESC0:ADDR=0x1000,LEN=64,STATUS=READY", TAG_KERNEL);
     assert(write_ok == true);
     assert(strcmp(vfio.root->values[0], "DESC0:ADDR=0x1000,LEN=64,STATUS=READY") == 0);
     assert(memcmp(initial_hash, vfio.root->node_hash, HASH_SIZE) != 0);
-    printf("   ✓ Write completed and root hash updated successfully.\n");
+    assert(vfio.cache_invalidated == true);
+    printf("   ✓ Write completed, root hash updated, and cache coherency invalidated successfully.\n");
     fflush(stdout);
 
     // Save updated hash state
     uint8_t updated_hash[HASH_SIZE];
     memcpy(updated_hash, vfio.root->node_hash, HASH_SIZE);
 
-    // 2. Unauthorized VFIO write (TAG_USER) -> Should be blocked and hash remain constant
+    // 2. Unauthorized VFIO write (TAG_USER) -> Should be blocked, hash constant, and logged
     printf("[TEST] Writing to VFIO descriptor with TAG_USER...\n");
     fflush(stdout);
     write_ok = xplsm_vfio_dma_write(&vfio, 0, "TAMPERED_DESC_DATA", TAG_USER);
     assert(write_ok == false);
     assert(strcmp(vfio.root->values[0], "DESC0:ADDR=0x1000,LEN=64,STATUS=READY") == 0); // Unchanged
     assert(memcmp(updated_hash, vfio.root->node_hash, HASH_SIZE) == 0); // Unchanged
-    printf("   ✓ Write blocked at transistor gate level.\n");
+    assert(strlen(vfio.audit_log) > 0);
+    assert(strstr(vfio.audit_log, "Unauthorized") != NULL);
+    printf("   ✓ Write blocked and unauthorized write correctly logged.\n");
     fflush(stdout);
 
-    // 3. Simulated direct hardware tampering (IOMMU bypass simulation) -> Hash must mismatch
+    // 3. Memory Bounds Violation -> Should be blocked and logged
+    printf("[TEST] Writing to VFIO descriptor with Out of Bounds Address...\n");
+    fflush(stdout);
+    write_ok = xplsm_vfio_dma_write(&vfio, 0, "DESC0:ADDR=0x99000,LEN=64,STATUS=READY", TAG_KERNEL);
+    assert(write_ok == false);
+    assert(strstr(vfio.audit_log, "out of bounds") != NULL);
+    printf("   ✓ Address out of bounds check trapped and logged successfully.\n");
+    fflush(stdout);
+
+    // 4. Simulated direct hardware tampering (IOMMU bypass simulation) -> Hash must mismatch
     printf("[TEST] Simulating direct hardware tampering audit...\n");
     fflush(stdout);
     strcpy(vfio.root->values[0], "HARDWARE_TAMPER_ATTEMPT");
