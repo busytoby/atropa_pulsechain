@@ -182,17 +182,34 @@ function draw3DThrone(ops, cx, cy, angle, health) {
     const flash = (health < 3 && frameCount % 6 < 3) ? 100 : 0;
 
     for (let i = 0; i < polyHavenIndices.length; i += 48) {
-        const p1 = projected[polyHavenIndices[i]];
-        const p2 = projected[polyHavenIndices[i+1]];
-        const p3 = projected[polyHavenIndices[i+2]];
-        const p4 = projected[polyHavenIndices[i+3]];
+        const idx1 = polyHavenIndices[i];
+        const idx2 = polyHavenIndices[i+1];
+        const idx3 = polyHavenIndices[i+2];
+        const idx4 = polyHavenIndices[i+3];
+
+        const p1 = projected[idx1];
+        const p2 = projected[idx2];
+        const p3 = projected[idx3];
+        const p4 = projected[idx4];
 
         if (!p1 || !p2 || !p3 || !p4) continue;
 
-        drawLine(ops, p1.x, p1.y, p2.x, p2.y, 255, 215 - flash, flash);
-        drawLine(ops, p2.x, p2.y, p3.x, p3.y, 255, 215 - flash, flash);
-        drawLine(ops, p3.x, p3.y, p4.x, p4.y, 255, 215 - flash, flash);
-        drawLine(ops, p4.x, p4.y, p1.x, p1.y, 255, 215 - flash, flash);
+        // Determine if vertex belongs to seat cushion region by 3D coordinates
+        const v1 = polyHavenVertices[idx1];
+        const v2 = polyHavenVertices[idx2];
+        const avgY = (v1.y + v2.y) / 2;
+        const avgX = (v1.x + v2.x) / 2;
+        const avgZ = (v1.z + v2.z) / 2;
+
+        let r = 255, g = 215 - flash, b = flash; // Gold frame
+        if (avgY > 0.05 && avgY < 0.45 && Math.abs(avgX) < 0.35 && Math.abs(avgZ) < 0.35) {
+            r = 186; g = 85; b = 211; // Royal Purple Velvet cushion
+        }
+
+        drawLine(ops, p1.x, p1.y, p2.x, p2.y, r, g, b);
+        drawLine(ops, p2.x, p2.y, p3.x, p3.y, r, g, b);
+        drawLine(ops, p3.x, p3.y, p4.x, p4.y, r, g, b);
+        drawLine(ops, p4.x, p4.y, p1.x, p1.y, r, g, b);
     }
 }
 
@@ -631,9 +648,11 @@ function renderGame() {
         draw3DPolyHavenAsset(ops, t.x, t.y, trapRotation);
     }
 
-    // 6. Draw Spawner (Large Comfy Chair as the rotating Golden Throne)
-    if (spawner.health > 0) {
-        draw3DThrone(ops, spawner.x, spawner.y, frameCount * 0.03, spawner.health);
+    // 6. Draw Spawner (Large Comfy Chair as the rotating Golden Throne, preserved on victory)
+    if (spawner.health > 0 || gameWon) {
+        const spinSpeed = gameWon ? 0.09 : 0.03;
+        const displayHealth = gameWon ? 3 : spawner.health;
+        draw3DThrone(ops, spawner.x, spawner.y, frameCount * spinSpeed, displayHealth);
     }
 
     // 7. Draw Ghosts
@@ -725,27 +744,17 @@ function renderGame() {
     });
 
     if (gameWon) {
-        ops.push({
-            type: "draw_rect",
-            x: 440,
-            y: 200,
-            w: 400,
-            h: 80,
-            r: 46,
-            g: 204,
-            b: 113
-        });
+        // Draw elegant glowing green border instead of a giant blocking box
+        ops.push({ type: "draw_rect", x: 60, y: 60, w: 1160, h: 6, r: 46, g: 204, b: 113 });
+        ops.push({ type: "draw_rect", x: 60, y: 520, w: 1160, h: 6, r: 46, g: 204, b: 113 });
+        ops.push({ type: "draw_rect", x: 60, y: 60, w: 6, h: 470, r: 46, g: 204, b: 113 });
+        ops.push({ type: "draw_rect", x: 1210, y: 60, w: 6, h: 470, r: 46, g: 204, b: 113 });
     } else if (gameOver) {
-        ops.push({
-            type: "draw_rect",
-            x: 440,
-            y: 200,
-            w: 400,
-            h: 80,
-            r: 231,
-            g: 76,
-            b: 60
-        });
+        // Draw elegant glowing red border
+        ops.push({ type: "draw_rect", x: 60, y: 60, w: 1160, h: 6, r: 231, g: 76, b: 60 });
+        ops.push({ type: "draw_rect", x: 60, y: 520, w: 1160, h: 6, r: 231, g: 76, b: 60 });
+        ops.push({ type: "draw_rect", x: 60, y: 60, w: 6, h: 470, r: 231, g: 76, b: 60 });
+        ops.push({ type: "draw_rect", x: 1210, y: 60, w: 6, h: 470, r: 231, g: 76, b: 60 });
     }
 
     const payload = {
