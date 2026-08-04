@@ -209,6 +209,9 @@ const delayBufferL = new Float32Array(delayBufferLen);
 const delayBufferR = new Float32Array(delayBufferLen);
 let delayWriteIdx = 0;
 
+let currentWindX = 0.0;
+
+
 
 let filter_v0 = 0.0;
 let filter_v1 = 0.0;
@@ -236,6 +239,18 @@ function applyResonantLPF(sample, cutoffHz, resonance) {
 }
 
 function generateMusicSample(pattern, stepIndex, stepSampleIdx, stepAge) {
+    // Read current physical stem sway wind_x from shared memory file every 1024 samples
+    if (globalSampleCounter % 1024 === 0) {
+        try {
+            const buf = fs.readFileSync("/tmp/poppy_physics.bin");
+            if (buf.length >= 4) {
+                currentWindX = buf.readFloatLE(0);
+            }
+        } catch (e) {
+            // file not yet written or lock contention
+        }
+    }
+
     let drumL = 0.0, drumR = 0.0;
 
     const hasDrums = (currentDispensation !== 4);
@@ -424,9 +439,14 @@ function generateMusicSample(pattern, stepIndex, stepSampleIdx, stepAge) {
             const vibrato = 1.0 + 0.005 * Math.sin(2.0 * Math.PI * 6.0 * timeSec_g);
             leadPhase += (arpFreq * 1.5 * vibrato) / SAMPLE_RATE; // pitched up for bell/chime style
             const bellVal = Math.sin(2.0 * Math.PI * leadPhase) * Math.exp(-stepAge / 0.42) * 0.065;
+            
+            // Modulate filter cutoff using physical sway wind_x (coupled physics!)
+            const cutoffHz = 850.0 + Math.abs(currentWindX) * 90.0;
+            const filteredBell = applyResonantLPF(bellVal, cutoffHz, 0.45);
+            
             const panL = 0.5 + 0.4 * Math.sin(2.0 * Math.PI * 0.25 * timeSec_g + stepIndex);
-            leadSampleL = bellVal * panL;
-            leadSampleR = bellVal * (1.0 - panL);
+            leadSampleL = filteredBell * panL;
+            leadSampleR = filteredBell * (1.0 - panL);
         }
     }
 
