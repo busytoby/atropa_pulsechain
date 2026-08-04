@@ -52,7 +52,7 @@ bool tsfi2_compile(
         const char *ssn_key = strstr(source_code, ":ssn");
         if (!job || !comp || !mnt || !auth || !tin_key || !ssn_key) {
             printf("[ANALYZER] Closure Audit abort: missing required Closure metadata map keys on line %d.\n", get_line_number(source_code, source_code));
-            printf("[USER-DIAGNOSTIC] Make sure your Clojure source begins with a metadata map specifying job keys, e.g.: ^{:wmq-job \"NAME\" :wmq-compiler \"FOLKLORE\" :wmq-mount \"STANAG\" :wmq-params {:tin 950000000 :ssn 050051122}}\n");
+            printf("[USER-DIAGNOSTIC] Make sure your Closure source begins with a metadata map specifying job keys, e.g.: ^{:wmq-job \"NAME\" :wmq-compiler \"FOLKLORE\" :wmq-mount \"STANAG\" :wmq-params {:tin 950000000 :ssn 050051122}}\n");
             return false;
         }
 

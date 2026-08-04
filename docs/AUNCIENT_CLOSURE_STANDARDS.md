@@ -38,7 +38,7 @@ The compiler validates 100% of the JCL parameters parsed from the **Closure** me
 ## 4. Standard Strategy Example
 Below is the standard representation of the [`gost_intrusion.strategy`](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/solidity/dysnomia/domain/strategies/gost_intrusion.strategy) file:
 
-```clojure
+```lisp
 ^{:wmq-job "ESEVJOB"
   :wmq-compiler "FOLKLORE"
   :wmq-mount "GOSTINT"

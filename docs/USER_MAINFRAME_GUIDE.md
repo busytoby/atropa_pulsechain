@@ -3,7 +3,7 @@
 This document describes how to compile, execute, and monitor batch jobs, transmission vectors, and Quadtree index databases within the simulated **Auncient** Dysnomia VM environment.
 
 ## 1. Batch Job Compilation & Spooling (HASP / JCL)
-To compile the Clojure-style strategy closure programs and execute them within the batch runner environment:
+To compile the Closure-style strategy closure programs and execute them within the batch runner environment:
 ```bash
 make test-auncient-tsv-wmq-integration
 ```
