@@ -144,6 +144,13 @@ int main(void) {
     assert(link_prob > 0.0 && link_prob < 1.0);
     printf("   ✓ R H B Christensen cumulative link probability verified successfully\n");
 
+    // Test ordinal link expectation estimation
+    double probs[3] = {0.2, 0.5, 0.3};
+    double expected_response = 0.0;
+    assert(evaluate_ordinal_link_expectation(probs, 3, &expected_response));
+    assert(fabs(expected_response - 2.1) < 1e-9);
+    printf("   ✓ R H B Christensen ordinal link response expectation verified successfully\n");
+
     // Test AIC and BIC information criteria diagnostics estimation
     double aic = 0.0, bic = 0.0;
     assert(evaluate_information_criteria(&geom, 3, 100, &aic, &bic));

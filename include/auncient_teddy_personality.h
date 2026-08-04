@@ -167,6 +167,9 @@ int evaluate_ordinal_loglog_rating(const teddy_geometry_t *geom);
 // Evaluates the cumulative probability under a chosen ordinal link model type.
 bool evaluate_ordinal_link_probability(double latent_val, double threshold_val, int link_type, double *probability_out);
 
+// Evaluates the expected response value from link probabilities.
+bool evaluate_ordinal_link_expectation(const double *probabilities, int count, double *expectation_out);
+
 // Evaluates an ordinal rating using a Cauchy link model.
 int evaluate_ordinal_cauchy_rating(const teddy_geometry_t *geom);
 

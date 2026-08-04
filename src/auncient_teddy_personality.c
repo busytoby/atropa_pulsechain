@@ -626,6 +626,18 @@ bool evaluate_ordinal_link_probability(double latent_val, double threshold_val, 
     return true;
 }
 
+bool evaluate_ordinal_link_expectation(const double *probabilities, int count, double *expectation_out) {
+    if (!probabilities || count < 1 || !expectation_out) {
+        return false;
+    }
+    double sum = 0.0;
+    for (int i = 0; i < count; ++i) {
+        sum += probabilities[i] * (i + 1);
+    }
+    *expectation_out = sum;
+    return true;
+}
+
 int evaluate_ordinal_flexible_rating(const teddy_geometry_t *geom, double link_mixture_weight) {
     if (!geom) return 1;
     double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
