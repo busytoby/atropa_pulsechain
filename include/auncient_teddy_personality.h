@@ -116,6 +116,13 @@ typedef struct {
     double relationship_permanence_strategy; // Perceived permanence strategy (0.0 lower effort, 1.0 high partner retention)
 } teddy_geometry_t;
 
+// ACID Transaction container for evaluation stability.
+typedef struct {
+    teddy_geometry_t *target;
+    teddy_geometry_t backup;
+    bool active;
+} evaluation_tx_t;
+
 // Pixar RenderMan Avatar Agent definition upon the cooperative boundary
 typedef struct {
     uint32_t sdk_state;          // SDK typestate transition tracker
@@ -226,15 +233,11 @@ bool simulate_snubber_clamped_flyback(double peak_voltage, double inductance, do
 // Simulates the RCD snubber resonant capacitor decay stage.
 bool simulate_rcd_snubber_decay(double peak_voltage, double resistance, double capacitance, double inductance, double time_step, double *voltage_state);
 
+// Commits an izotope H-bridge flyback transaction under ACID safety constraints.
+bool commit_izotope_flyback_transaction(evaluation_tx_t *tx, double switching_frequency, double max_safe_voltage);
+
 // Computes model selection diagnostics via AIC and BIC information criteria.
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out);
-
-// ACID Transaction container for evaluation stability.
-typedef struct {
-    teddy_geometry_t *target;
-    teddy_geometry_t backup;
-    bool active;
-} evaluation_tx_t;
 
 evaluation_tx_t begin_evaluation_transaction(teddy_geometry_t *target);
 bool commit_evaluation_transaction(evaluation_tx_t *tx);

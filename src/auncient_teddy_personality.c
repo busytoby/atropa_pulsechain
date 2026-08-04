@@ -860,6 +860,25 @@ bool simulate_rcd_snubber_decay(double peak_voltage, double resistance, double c
     return true;
 }
 
+bool commit_izotope_flyback_transaction(evaluation_tx_t *tx, double switching_frequency, double max_safe_voltage) {
+    if (!tx || !tx->active || !tx->target) {
+        return false;
+    }
+    double flyback_mismatch = 0.0;
+    if (!evaluate_hbridge_izotope_mismatch(tx->target, switching_frequency, &flyback_mismatch)) {
+        *tx->target = tx->backup;
+        tx->active = false;
+        return false;
+    }
+    if (flyback_mismatch > max_safe_voltage) {
+        *tx->target = tx->backup;
+        tx->active = false;
+        return false;
+    }
+    tx->active = false;
+    return true;
+}
+
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out) {
     if (!geom || param_count < 1 || sample_size < 2 || !aic_out || !bic_out) {
         return false;

@@ -281,12 +281,29 @@ int main(void) {
     assert(!tx.active);
     assert(geom.head_fwhr == 1.2);
 
+    // Test ACID-compliant izotope flyback transaction behavior (Commit path)
+    tx = begin_evaluation_transaction(&geom);
+    assert(tx.active);
+    geom.head_fwhr = 1.0;
+    assert(commit_izotope_flyback_transaction(&tx, 500.0, 50.0));
+    assert(!tx.active);
+    assert(geom.head_fwhr == 1.0);
+
+    // Test ACID-compliant izotope flyback transaction behavior (Rollback path)
+    tx = begin_evaluation_transaction(&geom);
+    assert(tx.active);
+    geom.head_fwhr = 1.5; // Modify state
+    assert(!commit_izotope_flyback_transaction(&tx, 1500.0, 5.0)); // Should trigger safety violation and rollback
+    assert(!tx.active);
+    assert(geom.head_fwhr == 1.0); // Rolled back
+    printf("   ✓ ACID-compliant izotope flyback transaction safety limits and rollback verified successfully\n");
+
     // Test ACID transaction behavior (Rollback path on constraint violation)
     tx = begin_evaluation_transaction(&geom);
     assert(tx.active);
     geom.head_fwhr = -5.0; // Invalid fWHR constraint
     assert(!commit_evaluation_transaction(&tx)); // Must fail and rollback
-    assert(geom.head_fwhr == 1.2); // Restored
+    assert(geom.head_fwhr == 1.0); // Restored
     printf("   ✓ ACID transactions (commit, constraint verification, and rollback) verified successfully\n");
 
     // Test End-to-End ACID Transaction
