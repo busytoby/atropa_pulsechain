@@ -919,6 +919,15 @@ bool evaluate_exposure_adjusted_threat_threshold(const teddy_geometry_t *geom, d
     return true;
 }
 
+bool evaluate_status_dominance_provocation(const teddy_geometry_t *geom, double provocation_scale, double *dominance_threat_out) {
+    if (!geom || provocation_scale < 0.0 || !dominance_threat_out) {
+        return false;
+    }
+    double formidability = evaluate_fw_threat_level(geom);
+    *dominance_threat_out = formidability * provocation_scale * (1.0 + geom->status_aggression);
+    return true;
+}
+
 bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncanny_score_out) {
     if (!geom || !uncanny_score_out) {
         return false;

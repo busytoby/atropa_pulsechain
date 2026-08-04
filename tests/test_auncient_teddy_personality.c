@@ -293,7 +293,12 @@ int main(void) {
     double exp_adjusted_threat = 0.0;
     assert(evaluate_exposure_adjusted_threat_threshold(&geom, 150.0, &exp_adjusted_threat));
     assert(exp_adjusted_threat >= 0.0);
-    printf("   ✓ GENIOLE et al. fWHR threat, visual-vocal mismatch, reactive retaliation, rapid exposure consistency, cooperative cheating risk, rapid threat limit, retaliation profile, aggression threshold, and exposure-adjusted threat verified successfully\n");
+
+    // Test Geniole status dominance threat interaction calculation
+    double status_dom_threat = 0.0;
+    assert(evaluate_status_dominance_provocation(&geom, 2.5, &status_dom_threat));
+    assert(status_dom_threat >= 0.0);
+    printf("   ✓ GENIOLE et al. fWHR threat, visual-vocal mismatch, reactive retaliation, rapid exposure consistency, cooperative cheating risk, rapid threat limit, retaliation profile, aggression threshold, exposure-adjusted threat, and status-dominance threat verified successfully\n");
 
     // Test Hyde uncanny mismatch index calculation
     double uncanny_val = 0.0;
