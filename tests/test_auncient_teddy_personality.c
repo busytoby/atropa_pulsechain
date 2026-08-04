@@ -264,7 +264,12 @@ int main(void) {
     double ret_prof = 0.0;
     assert(evaluate_reactive_retaliation_profile(&geom, 2.0, &ret_prof));
     assert(ret_prof >= 0.0);
-    printf("   ✓ GENIOLE et al. fWHR threat, visual-vocal mismatch, reactive retaliation, rapid exposure consistency, cooperative cheating risk, rapid threat limit, and retaliation profile verified successfully\n");
+
+    // Test Geniole provocation aggression threshold calculation
+    double agg_thresh = 0.0;
+    assert(evaluate_provocation_aggression_threshold(&geom, 5.0, &agg_thresh));
+    assert(agg_thresh >= 0.0);
+    printf("   ✓ GENIOLE et al. fWHR threat, visual-vocal mismatch, reactive retaliation, rapid exposure consistency, cooperative cheating risk, rapid threat limit, retaliation profile, and aggression threshold verified successfully\n");
 
     // Test Hyde uncanny mismatch index calculation
     double uncanny_val = 0.0;

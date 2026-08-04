@@ -233,6 +233,9 @@ bool evaluate_rapid_threat_limit(const teddy_geometry_t *geom, double exposure_m
 // Evaluates the reactive retaliation aggression profile (Geniole et al.).
 bool evaluate_reactive_retaliation_profile(const teddy_geometry_t *geom, double provocation_intensity, double *retaliation_out);
 
+// Evaluates the provocation aggression threshold boundary (Geniole et al.).
+bool evaluate_provocation_aggression_threshold(const teddy_geometry_t *geom, double base_provocation, double *aggression_threshold_out);
+
 // Evaluates the vocal-visual uncanny mismatch index based on geometry and pitch (Hyde et al.).
 bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncanny_score_out);
 

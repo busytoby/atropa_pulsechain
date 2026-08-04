@@ -874,6 +874,17 @@ bool evaluate_reactive_retaliation_profile(const teddy_geometry_t *geom, double 
     return true;
 }
 
+bool evaluate_provocation_aggression_threshold(const teddy_geometry_t *geom, double base_provocation, double *aggression_threshold_out) {
+    if (!geom || base_provocation < 0.0 || !aggression_threshold_out) {
+        return false;
+    }
+    double sensitivity = (geom->head_fwhr * 1.5) + (geom->status_aggression * 2.0);
+    double threshold = base_provocation / (1.0 + sensitivity);
+    if (threshold < 0.0) threshold = 0.0;
+    *aggression_threshold_out = threshold;
+    return true;
+}
+
 bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncanny_score_out) {
     if (!geom || !uncanny_score_out) {
         return false;
