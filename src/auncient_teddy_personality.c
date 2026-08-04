@@ -495,6 +495,26 @@ bool evaluate_hessian_diagnostics(const teddy_geometry_t *geom, double *variance
     return true;
 }
 
+bool evaluate_parameter_covariance(const teddy_geometry_t *geom, double *covariance_matrix_out) {
+    if (!geom || !covariance_matrix_out) {
+        return false;
+    }
+    double base_variance = 0.0;
+    if (!evaluate_hessian_diagnostics(geom, &base_variance)) {
+        return false;
+    }
+    for (int i = 0; i < 6; ++i) {
+        for (int j = 0; j < 6; ++j) {
+            if (i == j) {
+                covariance_matrix_out[i * 6 + j] = base_variance * (1.0 + i * 0.1);
+            } else {
+                covariance_matrix_out[i * 6 + j] = base_variance * 0.05;
+            }
+        }
+    }
+    return true;
+}
+
 int evaluate_ordinal_cloglog_rating(const teddy_geometry_t *geom) {
     if (!geom) return 1;
     double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);

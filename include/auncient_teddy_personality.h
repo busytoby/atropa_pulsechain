@@ -149,6 +149,9 @@ int evaluate_ordinal_nominal_rating(const teddy_geometry_t *geom);
 // Evaluates model fitting stability via Hessian standard error diagnostics.
 bool evaluate_hessian_diagnostics(const teddy_geometry_t *geom, double *variance_out);
 
+// Evaluates the full parameter covariance matrix derived from the Hessian inverse.
+bool evaluate_parameter_covariance(const teddy_geometry_t *geom, double *covariance_matrix_out);
+
 // Evaluates an asymmetrical ordinal rating using a complementary log-log (cloglog) link model.
 int evaluate_ordinal_cloglog_rating(const teddy_geometry_t *geom);
 

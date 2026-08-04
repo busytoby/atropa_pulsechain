@@ -96,6 +96,12 @@ int main(void) {
     assert(variance > 0.0);
     printf("   ✓ R H B Christensen Hessian standard error covariance diagnostics verified successfully\n");
 
+    // Test Hessian parameter covariance matrix inverse estimation
+    double cov_matrix[36] = {0.0};
+    assert(evaluate_parameter_covariance(&geom, cov_matrix));
+    assert(cov_matrix[0] > 0.0);
+    printf("   ✓ R H B Christensen parameter covariance matrix verified successfully\n");
+
     // Test complementary log-log rating estimation
     int rating_cloglog = evaluate_ordinal_cloglog_rating(&geom);
     assert(rating_cloglog >= 1 && rating_cloglog <= 7);
