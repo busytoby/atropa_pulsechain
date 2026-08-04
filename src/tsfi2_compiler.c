@@ -107,11 +107,8 @@ bool tsfi2_compile(
         free(src_copy);
 
         if (offset + 6 >= max_len) return false;
-        out_bytecode[offset++] = 0xB8;
-        out_bytecode[offset++] = 0;
-        out_bytecode[offset++] = 0;
-        out_bytecode[offset++] = 0;
-        out_bytecode[offset++] = 0;
+        out_bytecode[offset++] = 0x31;
+        out_bytecode[offset++] = 0xC0;
         out_bytecode[offset++] = 0xC3;
 
         *out_bytecode_len = offset;
@@ -252,13 +249,17 @@ bool tsfi2_compile(
             }
         }
 
-        // Emit exit status B8
         if (offset + 6 >= max_len) return false;
-        out_bytecode[offset++] = 0xB8;
-        out_bytecode[offset++] = (uint8_t)(value & 0xFF);
-        out_bytecode[offset++] = (uint8_t)((value >> 8) & 0xFF);
-        out_bytecode[offset++] = (uint8_t)((value >> 16) & 0xFF);
-        out_bytecode[offset++] = (uint8_t)((value >> 24) & 0xFF);
+        if (value == 0) {
+            out_bytecode[offset++] = 0x31;
+            out_bytecode[offset++] = 0xC0;
+        } else {
+            out_bytecode[offset++] = 0xB8;
+            out_bytecode[offset++] = (uint8_t)(value & 0xFF);
+            out_bytecode[offset++] = (uint8_t)((value >> 8) & 0xFF);
+            out_bytecode[offset++] = (uint8_t)((value >> 16) & 0xFF);
+            out_bytecode[offset++] = (uint8_t)((value >> 24) & 0xFF);
+        }
         out_bytecode[offset++] = 0xC3;
 
         *out_bytecode_len = offset;

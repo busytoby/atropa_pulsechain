@@ -530,6 +530,9 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
                 cpu->exit_code = (int)read_tsv_vsam(&tsv_ksds, 5);
             }
             pc += 3;
+        } else if (opcode == 0x31 && pc + 1 < bytecode_len && bytecode[pc+1] == 0xC0) { // XOR EAX, EAX
+            cpu->exit_code = 0;
+            pc += 2;
         } else if (opcode == 0xB8 && pc + 4 < bytecode_len) { // MOV EAX, imm32
             uint32_t val = bytecode[pc+1] | (bytecode[pc+2] << 8) | (bytecode[pc+3] << 16) | (bytecode[pc+4] << 24);
             cpu->exit_code = (int)val;
