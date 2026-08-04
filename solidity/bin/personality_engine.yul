@@ -552,6 +552,38 @@ object "PersonalityEngine" {
                 return(0x00, 32)
             }
 
+            // ----------------------------------------------------------------
+            // METHOD: simulate_rcd_snubber_decay_step (current_voltage, resistance, capacitance, time_step, initial_voltage)
+            // Selector: 0xe399f101 (integer scaled by 1000)
+            // ----------------------------------------------------------------
+            if eq(selector, 0xe399f101) {
+                let current_voltage := calldataload(4)
+                let resistance := calldataload(36)
+                let capacitance := calldataload(68)
+                let time_step := calldataload(100)
+                let initial_voltage := calldataload(132)
+                
+                let next_voltage := current_voltage
+                let denom := mul(resistance, capacitance)
+                if gt(denom, 0) {
+                    let X := div(mul(time_step, 1000000), denom)
+                    let factor := 1000
+                    if lt(X, 1000) {
+                        factor := sub(add(1000, div(mul(X, X), 2000)), X)
+                    }
+                    if iszero(lt(X, 1000)) {
+                        factor := 0
+                    }
+                    // next = current * factor/1000 + initial * (1000 - factor)/1000
+                    let decay_part := div(mul(current_voltage, factor), 1000)
+                    let charge_part := div(mul(initial_voltage, sub(1000, factor)), 1000)
+                    next_voltage := add(decay_part, charge_part)
+                }
+                
+                mstore(0x00, next_voltage)
+                return(0x00, 32)
+            }
+
             revert(0, 0)
         }
     }
