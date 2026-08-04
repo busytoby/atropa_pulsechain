@@ -55,6 +55,7 @@ typedef struct {
     double transgression_intent;     // Perceived transgression intent (0.0 accidental, 1.0 intentional/hostile)
     double affordance_profile;       // Ecological affordance (0.0 nurturing/protective, 1.0 threat avoidance)
     double social_status;            // Perceived social status (0.0 lower status/authority, 1.0 higher status)
+    double head_tilt;                // Perceived head tilt (negative downward/aggressive, positive upward/submissive)
 } teddy_geometry_t;
 
 // Maps abstract traits to geometric parameters based on study results
@@ -104,6 +105,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->transgression_intent = 0.0;    // Accidental
             geom->affordance_profile = 0.0;      // Nurturing/protective affordance
             geom->social_status = 0.0;           // Lower perceived status
+            geom->head_tilt = 1.0;               // Upward tilt
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -149,6 +151,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->transgression_intent = 1.0;    // Intentional
             geom->affordance_profile = 1.0;      // Threat avoidance affordance
             geom->social_status = 1.0;           // Higher perceived status
+            geom->head_tilt = -1.0;              // Downward tilt
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -194,6 +197,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->transgression_intent = 1.0;    // Intentional
             geom->affordance_profile = 1.0;      // Threat avoidance affordance
             geom->social_status = 1.0;           // Higher perceived status
+            geom->head_tilt = -1.0;              // Downward tilt
             break;
     }
 }
