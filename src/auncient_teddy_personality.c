@@ -845,6 +845,15 @@ bool evaluate_rapid_threat_limit(const teddy_geometry_t *geom, double exposure_m
     return true;
 }
 
+bool evaluate_reactive_retaliation_profile(const teddy_geometry_t *geom, double provocation_intensity, double *retaliation_out) {
+    if (!geom || provocation_intensity < 0.0 || !retaliation_out) {
+        return false;
+    }
+    double formidability = geom->jaw_scale * 1.5;
+    *retaliation_out = provocation_intensity * formidability * (1.0 + geom->status_aggression);
+    return true;
+}
+
 bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncanny_score_out) {
     if (!geom || !uncanny_score_out) {
         return false;

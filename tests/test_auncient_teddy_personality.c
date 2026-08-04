@@ -253,7 +253,12 @@ int main(void) {
     double limit_threat = 0.0;
     assert(evaluate_rapid_threat_limit(&geom, 50.0, &limit_threat));
     assert(limit_threat >= 0.0);
-    printf("   ✓ GENIOLE et al. fWHR threat, visual-vocal mismatch, reactive retaliation, rapid exposure consistency, cooperative cheating risk, and rapid threat limit verified successfully\n");
+
+    // Test Geniole reactive retaliation profile calculation
+    double ret_prof = 0.0;
+    assert(evaluate_reactive_retaliation_profile(&geom, 2.0, &ret_prof));
+    assert(ret_prof >= 0.0);
+    printf("   ✓ GENIOLE et al. fWHR threat, visual-vocal mismatch, reactive retaliation, rapid exposure consistency, cooperative cheating risk, rapid threat limit, and retaliation profile verified successfully\n");
 
     // Test Hyde uncanny mismatch index calculation
     double uncanny_val = 0.0;
