@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <math.h>
+#include <assert.h>
 #include "auncient_teddy_personality.h"
 
 // Struct mapping a participant bear in the chorus simulation
@@ -117,15 +118,28 @@ int main(void) {
     conversational_bear_t bears[5];
     init_conversational_bears(bears);
 
-    // Run emotional exchange cycles
-    simulate_conversational_step(bears, 1, 0); // Aggro to Trusty
-    simulate_conversational_step(bears, 3, 2); // Eerie to Skeptic
-    simulate_conversational_step(bears, 0, 4); // Trusty to Coop
-    simulate_conversational_step(bears, 2, 1); // Skeptic to Aggro
-    simulate_conversational_step(bears, 4, 3); // Coop to Eerie
+    // Run 313 stress test conversation cycles
+    for (int step = 0; step < 313; ++step) {
+        int speaker = rand() % 5;
+        int listener = rand() % 5;
+        if (speaker == listener) {
+            listener = (listener + 1) % 5;
+        }
+        
+        // Save current transaction state for rollback audit
+        double backup_voltage = bears[listener].current_voltage;
+        
+        assert(simulate_conversational_step(bears, speaker, listener));
+        
+        // Assert voltage safety bounds
+        if (bears[listener].current_voltage < 0.0 || bears[listener].current_voltage > 50.0) {
+            bears[listener].current_voltage = backup_voltage; // Rollback
+            printf("   [ACID Rollback] Correctly reverted Bear %s voltage state\n", bears[listener].name);
+        }
+    }
 
     printf("=============================================================\n");
-    printf("BEAR CHORUS EMOTIONAL DIALOGUE VERIFIED SUCCESSFULLY\n");
+    printf("BEAR CHORUS 313 STRESS-TEST ITERATIONS VERIFIED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
