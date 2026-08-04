@@ -230,6 +230,9 @@ bool evaluate_motion_uncanny_index(const teddy_geometry_t *geom, double movement
 // Evaluates the micro-expression jitter uncanny response (Hyde et al.).
 bool evaluate_expression_jitter_uncanny(const teddy_geometry_t *geom, double jitter_frequency, double *uncanny_score_out);
 
+// Evaluates the exposure duration habituation decay of the uncanny response (Hyde et al.).
+bool evaluate_exposure_decay_uncanny(const teddy_geometry_t *geom, double exposure_duration_sec, double *decayed_uncanny_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 

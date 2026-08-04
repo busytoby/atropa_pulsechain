@@ -262,6 +262,12 @@ int main(void) {
     assert(jitter_uncanny > uncanny_val);
     printf("   ✓ HYDE et al. vocal-visual uncanny mismatch and micro-expression jitter verified successfully\n");
 
+    // Test Hyde exposure duration habituation decay calculation
+    double decayed_uncanny = 0.0;
+    assert(evaluate_exposure_decay_uncanny(&geom, 5.0, &decayed_uncanny));
+    assert(decayed_uncanny < uncanny_val);
+    printf("   ✓ HYDE et al. exposure duration habituation decay verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge
