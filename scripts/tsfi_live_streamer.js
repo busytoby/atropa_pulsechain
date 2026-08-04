@@ -755,8 +755,7 @@ async function main() {
             
             currentFreqMultiplier = Math.pow(2, blockTranspose / 12.0);
             currentStepDurationSamples = Math.floor(SAMPLE_RATE * (60.0 / blockTempo / 4.0));
-
-            currentDispensation = (coaxialState.scroller.color_scheme !== -1) ? coaxialState.scroller.color_scheme : persistentDispensation;
+            currentDispensation = 4; // Enforce Cosmic Ambient for high-fidelity soundtrack
 
             const colorScheme = (coaxialState.scroller.color_scheme !== -1) ? coaxialState.scroller.color_scheme : (seed % 5);
             const shapeType = (coaxialState.scroller.shape_type !== -1) ? coaxialState.scroller.shape_type : (seed % 3);
