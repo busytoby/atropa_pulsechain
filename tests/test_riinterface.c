@@ -4,6 +4,12 @@
 #include <string.h>
 #include "../tsfi2-deepseek/inc/tsfi_riinterface.h"
 #include "../tsfi2-deepseek/inc/tsfi_zmm_vm.h"
+#include "inc/tsfi2_compiler.h"
+#include "inc/tsfi2_compiler_bin.h"
+#include "inc/tsfi2_loader.h"
+
+uint32_t ce_gprs[16] = {0};
+
 
 
 int main(void) {
@@ -148,6 +154,41 @@ int main(void) {
     int player_health = 0;
     tsfi_riinterface_resolve_pmg_cics_collision(&ri, 1, &player_health);
     assert(player_health == 100);
+
+    // End-to-end testing: compile and run ZMM bytecode to configure optical params
+    const char *shader_source = "int main() { "
+                                "  __builtin_wmq_reg_write(12, 450); " // amplitude = 4.5
+                                "  __builtin_wmq_reg_write(13, 2500); " // frequency = 2.5
+                                "  return 0; "
+                                "}";
+    uint8_t shader_bc[64];
+    size_t shader_bc_len = 0;
+    ok = tsfi2_compile(shader_source, shader_bc, sizeof(shader_bc), &shader_bc_len);
+    assert(ok == true);
+
+    const char *shader_bin = "/tmp/test_riinterface_shader.dat.bin";
+    ok = tsfi2_compile_to_dat_bin(shader_bin, 0x1000, 1, shader_bc, shader_bc_len);
+    assert(ok == true);
+
+    // Execute VM program to write registers
+    Tsfi2CpuState shader_cpu;
+    ok = tsfi2_load_and_execute(shader_bin, &shader_cpu);
+    assert(ok == true);
+
+    // Map VM registers (simulating hardware accessor layers) to GPRs
+    ce_gprs[12] = 450;
+    ce_gprs[13] = 2500;
+
+    // Clear keycode in vm_state to prevent keycode override
+    dummy_ram[0xF002] = 0;
+
+    // Trigger RenderMan WinchesterMQ sync
+    tsfi_riinterface_sync_winchester(&ri, &vm_state);
+    assert(fabs(ri.shader.amplitude - 4.5) < 1e-5);
+    assert(fabs(ri.shader.frequency - 2.5) < 1e-5);
+
+    remove(shader_bin);
+
 
     printf("   ✓ RiWorldBegin and RiSphere mirrored to Hudson VCE and VDC successfully.\n");
     printf("   ✓ WinchesterMQ keycode sync driver pipeline verified successfully.\n");

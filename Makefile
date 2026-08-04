@@ -450,9 +450,10 @@ test-quadtreeslicer:
 	@rm -f tests/test_quadtreeslicer
 
 test-riinterface:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_riinterface.c tsfi2-deepseek/src/tsfi_riinterface.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_depthoffield.c -o tests/test_riinterface -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc tests/test_riinterface.c tsfi2-deepseek/src/tsfi_riinterface.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_depthoffield.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c src/tsfi2_loader.c -o tests/test_riinterface -lcrypto -lm -lrt
 	./tests/test_riinterface
 	@rm -f tests/test_riinterface
+
 
 bench-renderman:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -mavx2 -mfma -Iinc -Itsfi2-deepseek/inc tests/bench_renderman_codesign.c tsfi2-deepseek/src/tsfi_riinterface.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_depthoffield.c tsfi2-deepseek/src/tsfi_ccx_pool.c -o tests/bench_renderman_codesign -lm -lrt -lpthread
