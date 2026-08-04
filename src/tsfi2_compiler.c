@@ -42,27 +42,61 @@ bool tsfi2_compile(
         const char *comp = strstr(source_code, "wmq_compiler");
         const char *mnt = strstr(source_code, "wmq_mount");
         const char *auth = strstr(source_code, "wmq_author");
-        const char *tin = strstr(source_code, "TIN");
-        const char *ssn = strstr(source_code, "SSN");
-        if (!job || !comp || !mnt || !auth || !tin || !ssn) {
+        if (!job || !comp || !mnt || !auth) {
             printf("[ANALYZER] JCL Audit abort: missing required JCL closure metadata cards.\n");
             return false;
         }
         
-        // Validate TIN value format (950000000 -> 9 digits)
-        const char *tin_val = strstr(tin, "950000000");
-        if (!tin_val) {
-            printf("[ANALYZER] JCL Audit abort: invalid or missing TIN card value.\n");
+        // Dynamically parse all parameter cards (// wmq_param <name> <value>)
+        const char *p = source_code;
+        bool has_tin = false;
+        bool has_ssn = false;
+        while ((p = strstr(p, "wmq_param")) != NULL) {
+            p += 9;
+            while (*p && isspace((unsigned char)*p)) p++;
+            char name[32] = {0};
+            int name_len = 0;
+            while (*p && !isspace((unsigned char)*p) && name_len < 31) {
+                name[name_len++] = *p++;
+            }
+            while (*p && isspace((unsigned char)*p)) p++;
+            char val[32] = {0};
+            int val_len = 0;
+            while (*p && !isspace((unsigned char)*p) && val_len < 31) {
+                val[val_len++] = *p++;
+            }
+            
+            if (strcmp(name, "TIN") == 0) {
+                has_tin = true;
+                if (val_len != 9) {
+                    printf("[ANALYZER] JCL Audit abort: TIN parameter value must be exactly 9 characters.\n");
+                    return false;
+                }
+                for (int j = 0; j < val_len; j++) {
+                    if (!isdigit((unsigned char)val[j])) {
+                        printf("[ANALYZER] JCL Audit abort: TIN parameter value must be numeric.\n");
+                        return false;
+                    }
+                }
+            } else if (strcmp(name, "SSN") == 0) {
+                has_ssn = true;
+                if (val_len != 9) {
+                    printf("[ANALYZER] JCL Audit abort: SSN parameter value must be exactly 9 characters.\n");
+                    return false;
+                }
+                for (int j = 0; j < val_len; j++) {
+                    if (!isdigit((unsigned char)val[j])) {
+                        printf("[ANALYZER] JCL Audit abort: SSN parameter value must be numeric.\n");
+                        return false;
+                    }
+                }
+            }
+        }
+        if (!has_tin || !has_ssn) {
+            printf("[ANALYZER] JCL Audit abort: missing required TIN or SSN parameters.\n");
             return false;
         }
-        
-        // Validate SSN value format (50051122 or 050051122 -> numeric identity)
-        const char *ssn_val = strstr(ssn, "50051122");
-        if (!ssn_val) {
-            printf("[ANALYZER] JCL Audit abort: invalid or missing SSN card value.\n");
-            return false;
-        }
-        printf("[ANALYZER] JCL Audit success: all 100%% of JCL validation checks passed.\n");
+        printf("[ANALYZER] JCL Audit success: all 100%% of dynamic JCL validation checks passed.\n");
     }
     
     const char *ret_ptr = source_code;
