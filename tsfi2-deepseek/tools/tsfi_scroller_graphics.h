@@ -133,7 +133,8 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset, f
 
         // 3D leaf tip taper silhouette styling (broader solid blade with pointed, triangular lobes)
         float tip_curl = 1.0f - powf(t, 2.5f);
-        float lobe_w = 32.0f * tip_curl * (0.75f + 0.25f * sinf(t * 14.0f));
+        float petiole_taper = fminf(1.0f, t / 0.14f); // Taper first 14% of the leaf base into a slender stalk (petiole)
+        float lobe_w = 32.0f * tip_curl * petiole_taper * (0.75f + 0.25f * sinf(t * 14.0f));
         float leaf_ang_left = angle + M_PI * 0.45f;
         float leaf_ang_right = angle - M_PI * 0.45f;
 
@@ -166,6 +167,20 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset, f
                     draw_line(r_lx, r_ly, r_lx, r_ly, (uint8_t)(lf_r * 0.45f), (uint8_t)(lf_g * 0.4f), (uint8_t)(lf_b * 0.45f));
                 }
             }
+        }
+
+        // Draw fine, wind-blown hairy bristles (trichomes) on the lobe margin tips
+        if (i % 6 == 0 && lobe_w > 5.0f) {
+            int tip_l_x = lx + (int)(lobe_w * 0.95f * cosf(leaf_ang_left));
+            int tip_l_y = ly + (int)(lobe_w * 0.95f * sinf(leaf_ang_left));
+            int tip_r_x = lx + (int)(lobe_w * 0.95f * cosf(leaf_ang_right));
+            int tip_r_y = ly + (int)(lobe_w * 0.95f * sinf(leaf_ang_right));
+
+            float hair_ang_l = leaf_ang_left + 0.15f * sinf(time_val * 2.5f + i);
+            float hair_ang_r = leaf_ang_right - 0.15f * sinf(time_val * 2.5f + i);
+
+            draw_line(tip_l_x, tip_l_y, tip_l_x + (int)(4.5f * cosf(hair_ang_l)), tip_l_y + (int)(4.5f * sinf(hair_ang_l)), 160, 220, 165);
+            draw_line(tip_r_x, tip_r_y, tip_r_x + (int)(4.5f * cosf(hair_ang_r)), tip_r_y + (int)(4.5f * sinf(hair_ang_r)), 160, 220, 165);
         }
 
         // Draw bright secondary highlight veins down the center of each leaflet
