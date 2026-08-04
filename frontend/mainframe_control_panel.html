@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auncient Mainframe Controller & Spool Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --glass-bg: rgba(20, 30, 55, 0.45);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --accent-cyan: #00f0ff;
+            --accent-green: #39ff14;
+            --accent-red: #ff3131;
+            --text-primary: #f0f4f8;
+            --text-secondary: #8c9cb2;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(57, 255, 20, 0.05) 0%, transparent 40%);
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100/vh;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 1.5rem;
+        }
+
+        h1 {
+            font-weight: 800;
+            font-size: 2.2rem;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, var(--accent-cyan), var(--accent-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(57, 255, 20, 0.1);
+            border: 1px solid var(--accent-green);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--accent-green);
+            box-shadow: 0 0 15px rgba(57, 255, 20, 0.2);
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+
+        .panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        .panel-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 0.5rem;
+        }
+
+        .console-output {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(5, 8, 16, 0.85);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 1rem;
+            height: 300px;
+            overflow-y: auto;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .console-line {
+            margin-bottom: 6px;
+        }
+
+        .console-line.success { color: var(--accent-green); }
+        .console-line.warn { color: var(--accent-cyan); }
+        .console-line.system { color: var(--text-secondary); }
+
+        .form-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        input, button, select {
+            font-family: inherit;
+            font-size: 1rem;
+            padding: 10px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.25);
+        }
+
+        button {
+            cursor: pointer;
+            background: linear-gradient(135deg, var(--accent-cyan), #00a8ff);
+            color: #050810;
+            font-weight: 600;
+            border: none;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 240, 255, 0.4);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--accent-cyan);
+            margin-top: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1 id="app-title">Auncient Mainframe Controller</h1>
+        <div class="status-badge" id="system-status-badge">
+            <span style="display: inline-block; width: 8px; height: 8px; background: var(--accent-green); border-radius: 50%;"></span>
+            SYSTEM DEFCON ONLINE
+        </div>
+    </header>
+
+    <main class="grid-container">
+        <section class="panel">
+            <h2 class="panel-title" id="sec-console">HASP Spool & WinchesterMQ Handshake Logs</h2>
+            <div class="console-output" id="console-log">
+                <div class="console-line system">[SYSTEM] Mainframe kernel initialized successfully.</div>
+                <div class="console-line warn">[SCSI/ZMM] WinchesterMQ loopback route established at port 8026.</div>
+                <div class="console-line warn">[DisplacementShader] Scaling vertex boundaries matching Monopole registers.</div>
+                <div class="console-line success">[JCL] Spool card verification: SSN (050051122) and TIN (950000000) verified.</div>
+                <div class="console-line success">[LAU] Memory metrics: Active Bytes: 0 | Peak Active Bytes: 5063 | CLEAN.</div>
+            </div>
+            <div class="form-group">
+                <input type="text" id="query-input" placeholder="Query HathiTrust catalog by ISBN or OCLC..." style="flex: 1;">
+                <button id="btn-search" onclick="searchCatalog()">Query & Preserve</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2 class="panel-title" id="sec-stats">VSAM & KSDS Storage metrics</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="val-splits">0</div>
+                    <div class="stat-label">CI Splits</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="val-hits">12</div>
+                    <div class="stat-label">Cache Hits</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="val-compression">1.8x</div>
+                    <div class="stat-label">VSAM Compression</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="val-key-savings">42%</div>
+                    <div class="stat-label">Key Savings</div>
+                </div>
+            </div>
+
+            <div class="form-group" style="flex-direction: column; gap: 8px;">
+                <label for="sep-selector" style="font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase;">Tab Separation Delimiter</label>
+                <select id="sep-selector" onchange="updateSeparator()">
+                    <option value="1F">ASCII Unit Separator (0x1F - Default)</option>
+                    <option value="09">Horizontal Tab (0x09)</option>
+                    <option value="2C">Comma (0x2C)</option>
+                </select>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        function searchCatalog() {
+            const input = document.getElementById("query-input").value;
+            const consoleLog = document.getElementById("console-log");
+            if (!input) return;
+
+            const timeStr = new Date().toLocaleTimeString();
+            consoleLog.innerHTML += `<div class="console-line system">[${timeStr}] [HathiTrust] Querying database for reference: ${input}</div>`;
+            
+            // Mock matching
+            setTimeout(() => {
+                consoleLog.innerHTML += `<div class="console-line success">[${timeStr}] [Preservation] Matching HathiTrust Book record found! Reference appended to assets/hathitrust_references.txt</div>`;
+                consoleLog.scrollTop = consoleLog.scrollHeight;
+            }, 600);
+        }
+
+        function updateSeparator() {
+            const sep = document.getElementById("sep-selector").value;
+            const consoleLog = document.getElementById("console-log");
+            consoleLog.innerHTML += `<div class="console-line warn">[CONFIG] tsfi_tab_separation_variable updated to character code 0x${sep}</div>`;
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+        }
+    </script>
+</body>
+</html>

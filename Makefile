@@ -185,6 +185,15 @@ tsv_format_converter:
 tsv_record_inspector:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc src/tsv_record_inspector.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_displacementshader.c -o tsv_record_inspector -lm -lrt
 
+copybook_schema_validator:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc src/copybook_schema_validator.c -o copybook_schema_validator -lrt
+
+sna_appc_peer:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc src/sna_appc_peer.c -o sna_appc_peer -lrt
+
+hathitrust_preservation_query:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc src/hathitrust_preservation_query.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_displacementshader.c -o hathitrust_preservation_query -lm -lrt
+
 test-auncient-displacementshader-wmq-integration:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc tests/test_auncient_displacementshader_wmq_integration.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_mainframe_jcl.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c -o tests/test_auncient_displacementshader_wmq_integration -lcrypto -lrt -lm
 	./tests/test_auncient_displacementshader_wmq_integration
