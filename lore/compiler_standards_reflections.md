@@ -111,6 +111,16 @@ int main() {
 * **Compiler Built-in**: 23 characters (`__builtin_wmq_flush();`).
 * **Source Size Reduction**: 64% character footprint decrease.
 
+### Core Abort Comparison
+* **Boilerplate Wrapper**: 66 characters.
+  ```c
+  void abort_run() {
+      *(volatile int*)(0x20C0) = 0xFF;
+  }
+  ```
+* **Compiler Built-in**: 23 characters (`__builtin_wmq_abort();`).
+* **Source Size Reduction**: 65% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
