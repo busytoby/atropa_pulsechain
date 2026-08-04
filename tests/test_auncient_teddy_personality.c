@@ -38,6 +38,7 @@ typedef struct {
     double size_index;               // Perceived height/size (0.0 smaller/shorter, 1.0 larger/taller)
     double intellect_index;          // Perceived intellectual capability (0.0 lower, 1.0 higher)
     double resilience_index;         // Perceived physical resilience (0.0 lower, 1.0 higher)
+    double agility_index;            // Perceived physical agility/speed (0.0 lower, 1.0 higher)
 } teddy_geometry_t;
 
 // Maps abstract traits to geometric parameters based on study results
@@ -70,6 +71,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->size_index = 0.0;              // Perceived smaller/shorter stature
             geom->intellect_index = 0.0;         // Perceived lower capability
             geom->resilience_index = 0.0;        // Perceived lower physical resilience
+            geom->agility_index = 0.0;           // Perceived lower physical agility
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -98,6 +100,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->size_index = 1.0;              // Perceived larger/taller stature
             geom->intellect_index = 1.0;         // Perceived higher capability
             geom->resilience_index = 1.0;        // Perceived higher physical resilience
+            geom->agility_index = 1.0;           // Perceived higher physical agility
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -126,6 +129,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->size_index = 1.0;              // Perceived larger/taller stature
             geom->intellect_index = 1.0;         // Perceived higher capability
             geom->resilience_index = 1.0;        // Perceived higher physical resilience
+            geom->agility_index = 1.0;           // Perceived higher physical agility
             break;
     }
 }
