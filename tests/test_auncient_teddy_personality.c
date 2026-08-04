@@ -44,6 +44,7 @@ typedef struct {
     double honesty_index;            // Perceived honesty/truthfulness (0.0 deceptive, 1.0 honest/sincere)
     double friendliness_index;       // Perceived friendliness/warmth (0.0 hostile, 1.0 friendly/approachable)
     double strength_index;           // Perceived physical strength (0.0 weaker, 1.0 stronger)
+    double dominance_index;          // Perceived dominance/authority (0.0 submissive, 1.0 dominant)
 } teddy_geometry_t;
 
 // Maps abstract traits to geometric parameters based on study results
@@ -82,6 +83,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->honesty_index = 1.0;           // Perceived honest
             geom->friendliness_index = 1.0;      // Perceived friendly
             geom->strength_index = 0.0;          // Perceived weaker
+            geom->dominance_index = 0.0;         // Perceived submissive
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -116,6 +118,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->honesty_index = 0.0;           // Perceived deceptive
             geom->friendliness_index = 0.0;      // Perceived hostile
             geom->strength_index = 1.0;          // Perceived stronger
+            geom->dominance_index = 1.0;         // Perceived dominant
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -150,6 +153,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->honesty_index = 0.0;           // Perceived deceptive
             geom->friendliness_index = 0.0;      // Perceived hostile
             geom->strength_index = 1.0;          // Perceived stronger
+            geom->dominance_index = 1.0;         // Perceived dominant
             break;
     }
 }
