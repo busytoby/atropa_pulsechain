@@ -290,6 +290,9 @@ bool evaluate_velocity_jitter_uncanny(const teddy_geometry_t *geom, double veloc
 // Evaluates the unpredictable micro-expression freeze uncanny response (Hyde et al.).
 bool evaluate_expression_freeze_uncanny(const teddy_geometry_t *geom, double freeze_duration_sec, double *uncanny_score_out);
 
+// Evaluates the unpredictable micro-expression freeze frequency uncanny response (Hyde et al.).
+bool evaluate_expression_freeze_frequency(const teddy_geometry_t *geom, double freeze_frequency_hz, double *uncanny_score_out);
+
 // Executes a deferred H-bridge thunk under Gumbel flyback and emotional-scale adjusted Wald test bounds.
 bool execute_hbridge_thunk_with_feedback(const teddy_geometry_t *geom, double switching_frequency, double (*thunk_fn)(void), double *safety_margin_out);
 

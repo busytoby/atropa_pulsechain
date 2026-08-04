@@ -1092,6 +1092,16 @@ bool evaluate_expression_freeze_uncanny(const teddy_geometry_t *geom, double fre
     return true;
 }
 
+bool evaluate_expression_freeze_frequency(const teddy_geometry_t *geom, double freeze_frequency_hz, double *uncanny_score_out) {
+    if (!geom || freeze_frequency_hz < 0.0 || !uncanny_score_out) {
+        return false;
+    }
+    double base_uncanny = 0.0;
+    evaluate_uncanny_mismatch_index(geom, &base_uncanny);
+    *uncanny_score_out = base_uncanny + (freeze_frequency_hz * 1.5 * (1.0 + geom->behavioral_mismatch));
+    return true;
+}
+
 bool execute_hbridge_thunk_with_feedback(const teddy_geometry_t *geom, double switching_frequency, double (*thunk_fn)(void), double *safety_margin_out) {
     if (!geom || switching_frequency < 1.0 || !thunk_fn || !safety_margin_out) {
         return false;

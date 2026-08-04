@@ -376,6 +376,12 @@ int main(void) {
     assert(freeze_uncanny > uncanny_val);
     printf("   ✓ HYDE et al. unpredictable micro-expression freeze verified successfully\n");
 
+    // Test Hyde unpredictable micro-expression freeze frequency calculation
+    double freeze_freq_uncanny = 0.0;
+    assert(evaluate_expression_freeze_frequency(&geom, 3.5, &freeze_freq_uncanny));
+    assert(freeze_freq_uncanny >= 0.0);
+    printf("   ✓ HYDE et al. unpredictable micro-expression freeze frequency verified successfully\n");
+
     // Test Hyde unpredictable micro-expression asymmetry calculation
     double asym_uncanny = 0.0;
     assert(evaluate_expression_asymmetry_uncanny(&geom, 0.5, &asym_uncanny));
