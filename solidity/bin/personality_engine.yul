@@ -380,6 +380,37 @@ object "PersonalityEngine" {
                 return(0x00, 32)
             }
 
+            // ----------------------------------------------------------------
+            // METHOD: simulate_hudson_snubber_decay (current_voltage, resistance, capacitance, time_step, hudson_frame_rate)
+            // Selector: 0xe399f0fb (integer scaled by 1000)
+            // ----------------------------------------------------------------
+            if eq(selector, 0xe399f0fb) {
+                let current_voltage := calldataload(4)
+                let resistance := calldataload(36)
+                let capacitance := calldataload(68)
+                let time_step := calldataload(100)
+                let hudson_frame_rate := calldataload(132)
+                
+                let next_voltage := current_voltage
+                let denom := mul(resistance, capacitance)
+                if gt(denom, 0) {
+                    // Adjust time_step based on Hudson frame rate: step = (time_step * hudson_frame_rate) / 24
+                    let adjusted_step := div(mul(time_step, hudson_frame_rate), 24)
+                    let X := div(mul(adjusted_step, 1000000), denom)
+                    let factor := 1000
+                    if lt(X, 1000) {
+                        factor := sub(add(1000, div(mul(X, X), 2000)), X)
+                    }
+                    if iszero(lt(X, 1000)) {
+                        factor := 0
+                    }
+                    next_voltage := div(mul(current_voltage, factor), 1000)
+                }
+                
+                mstore(0x00, next_voltage)
+                return(0x00, 32)
+            }
+
             revert(0, 0)
         }
     }
