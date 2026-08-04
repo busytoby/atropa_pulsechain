@@ -291,16 +291,18 @@ function generateMusicSample(pattern, stepIndex, stepSampleIdx, stepAge) {
     }
 
     // Bass
-    // Generative chord progression shifting every 8 seconds: Cm (0) -> Ab (1) -> Bb (2) -> Gm (3)
+    // Generative chord progression shifting every 8 seconds: Cm (0) -> Ab (1) -> Eb (2) -> Bb (3) -> Fm (4) -> Gm (5)
     const timeSec_g = globalSampleCounter / SAMPLE_RATE;
     const chordScale_g = ["C3", "D3", "Eb3", "F3", "G3", "Ab3", "Bb3", "C4", "D4", "Eb4"];
     const chordProgressions_g = [
         [0, 2, 4], // Cm (C3, Eb3, G3)
         [5, 7, 9], // Ab (Ab3, C4, Eb4)
+        [2, 4, 6], // Eb (Eb3, G3, Bb3)
         [6, 8, 1], // Bb (Bb3, D4, F3)
+        [3, 5, 7], // Fm (F3, Ab3, C4)
         [4, 6, 8]  // Gm (G3, Bb3, D4)
     ];
-    const progIdx_g = Math.floor(timeSec_g / 8.0) % 4;
+    const progIdx_g = Math.floor(timeSec_g / 8.0) % 6;
     const activeChord_g = chordProgressions_g[progIdx_g].map(idx => chordScale_g[idx]);
 
     let bassNote = pattern.bass.sequence[stepIndex];
@@ -390,10 +392,12 @@ function generateMusicSample(pattern, stepIndex, stepSampleIdx, stepAge) {
         const chordProgressions_g = [
             [0, 2, 4], // Cm (C3, Eb3, G3)
             [5, 7, 9], // Ab (Ab3, C4, Eb4)
+            [2, 4, 6], // Eb (Eb3, G3, Bb3)
             [6, 8, 1], // Bb (Bb3, D4, F3)
+            [3, 5, 7], // Fm (F3, Ab3, C4)
             [4, 6, 8]  // Gm (G3, Bb3, D4)
         ];
-        const progIdx_g = Math.floor(timeSec_g / 8.0) % 4;
+        const progIdx_g = Math.floor(timeSec_g / 8.0) % 6;
         const activeChord_g = chordProgressions_g[progIdx_g].map(idx => chordScale_g[idx]);
 
         // Arpeggiate notes of the active chord over 16-step patterns
@@ -758,10 +762,12 @@ async function main() {
                 const chordProgressions_g = [
                     [0, 2, 4], // Cm (C3, Eb3, G3)
                     [5, 7, 9], // Ab (Ab3, C4, Eb4)
+                    [2, 4, 6], // Eb (Eb3, G3, Bb3)
                     [6, 8, 1], // Bb (Bb3, D4, F3)
+                    [3, 5, 7], // Fm (F3, Ab3, C4)
                     [4, 6, 8]  // Gm (G3, Bb3, D4)
                 ];
-                const progIdx_g = Math.floor(timeSec / 8.0) % 4;
+                const progIdx_g = Math.floor(timeSec / 8.0) % 6;
                 const activeChord = currentDispensation === 4
                     ? chordProgressions_g[progIdx_g].map(idx => chordScale_g[idx])
                     : (Array.isArray(padNotes) ? padNotes : ["C3", "Eb3", "G3"]);

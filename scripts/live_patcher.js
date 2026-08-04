@@ -80,22 +80,46 @@ function applyPatch(wsUrl) {
 }
 
 async function main() {
+    const args = process.argv.slice(2);
+    const watchMode = args.includes("--watch");
+
     const pid = getStreamerPid();
     if (!pid) {
         console.error(`[PATCHER ERROR] Could not find running ${TARGET_SCRIPT} process.`);
         process.exit(1);
     }
 
-    try {
-        await enableInspector(pid);
-        const wsUrl = await fetchDebuggerUrl();
-        console.log(`[PATCHER] Discovered active WebSocket url: ${wsUrl}`);
-        await applyPatch(wsUrl);
-        console.log("[PATCHER SUCCESS] Streamer code updated live in V8 memory!");
+    const runPatch = async () => {
+        try {
+            await enableInspector(pid);
+            const wsUrl = await fetchDebuggerUrl();
+            await applyPatch(wsUrl);
+            console.log("[PATCHER SUCCESS] Streamer code updated live in V8 memory!");
+        } catch (err) {
+            console.error("[PATCHER ERROR] Hotpatch failed:", err.message);
+            if (!watchMode) process.exit(1);
+        }
+    };
+
+    if (watchMode) {
+        console.log(`[PATCHER] Watch mode active. Monitoring ${TARGET_SCRIPT} for changes...`);
+        let debounceTimeout;
+        fs.watch(path.join(__dirname, TARGET_SCRIPT), (event) => {
+            if (event === "change") {
+                clearTimeout(debounceTimeout);
+                debounceTimeout = setTimeout(() => {
+                    console.log("[PATCHER] Detected save change. Applying hotpatch...");
+                    runPatch();
+                }, 250);
+            }
+        });
+        // Run once on startup
+        await runPatch();
+        // Keep active
+        setInterval(() => {}, 1000 * 60);
+    } else {
+        await runPatch();
         process.exit(0);
-    } catch (err) {
-        console.error("[PATCHER ERROR] Hotpatch failed:", err.message);
-        process.exit(1);
     }
 }
 
