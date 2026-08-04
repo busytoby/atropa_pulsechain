@@ -220,6 +220,31 @@ static void test_compiler_wmq_status(void) {
     printf("[Test] Compiler __builtin_wmq_status pipeline tests passed.\n");
 }
 
+static void test_compiler_wmq_peek(void) {
+    printf("[Test] Running compiler __builtin_wmq_peek pipeline tests...\n");
+    
+    const char *source = "int main() { __builtin_wmq_peek(); return 44; }";
+    uint8_t bytecode[32];
+    size_t bytecode_len = 0;
+    
+    bool ok = tsfi2_compile(source, bytecode, sizeof(bytecode), &bytecode_len);
+    assert(ok == true);
+    assert(bytecode_len == 8); // 2 bytes for peek + 5 bytes for mov eax + 1 byte ret
+    
+    const char *prog_file = "/tmp/test_compiler_peek_out.dat.bin";
+    ok = tsfi2_compile_to_dat_bin(prog_file, 0x1000, 1, bytecode, bytecode_len);
+    assert(ok == true);
+    
+    Tsfi2CpuState cpu;
+    ok = tsfi2_load_and_execute(prog_file, &cpu);
+    assert(ok == true);
+    assert(cpu.halted == true);
+    assert(cpu.exit_code == 44);
+    
+    remove(prog_file);
+    printf("[Test] Compiler __builtin_wmq_peek pipeline tests passed.\n");
+}
+
 int main(void) {
     printf("[Test] Running TSFi2 compiler front-end tests...\n");
     test_compiler_pipeline();
@@ -230,6 +255,7 @@ int main(void) {
     test_compiler_wmq_reset();
     test_compiler_wmq_halt();
     test_compiler_wmq_status();
+    test_compiler_wmq_peek();
     printf("[Test] All compiler front-end tests completed successfully.\n");
     return 0;
 }
