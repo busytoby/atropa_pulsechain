@@ -207,6 +207,11 @@ test-auncient-tsv-copybook:
 	./tests/test_auncient_tsv_copybook
 	@rm -f tests/test_auncient_tsv_copybook
 
+test-auncient-quadtree-ksds:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc tests/test_auncient_quadtree_ksds.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c scripts/libantigravity_interop.c scripts/libantigravity_extra.c scripts/abi_dispatch_map.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c -o tests/test_auncient_quadtree_ksds -lcrypto -lm -lrt
+	./tests/test_auncient_quadtree_ksds
+	@rm -f tests/test_auncient_quadtree_ksds
+
 test-mann:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_mann_controller.c tsfi2-deepseek/src/tsfi_mann_controller.c -o tests/test_mann_controller -lm -lrt
 	./tests/test_mann_controller

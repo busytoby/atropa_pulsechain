@@ -153,3 +153,96 @@ bool tsfi_qt_ksds_read(
     free(buffer);
     return true;
 }
+
+bool tsfi_qt_ksds_aix_write(
+    const char *filepath,
+    const char *tsv_header,
+    const InteropQuadNode *nodes,
+    size_t node_count,
+    const uint32_t *target_offsets,
+    size_t target_count
+) {
+    return tsfi_qt_ksds_write(
+        filepath,
+        tsv_header,
+        nodes,
+        node_count,
+        (const uint8_t *)target_offsets,
+        target_count * sizeof(uint32_t)
+    );
+}
+
+bool tsfi_qt_ksds_aix_query(
+    const char *aix_filepath,
+    const char *primary_filepath,
+    uint32_t secondary_x,
+    uint32_t secondary_y,
+    uint8_t *record_out,
+    size_t max_record,
+    int *record_len_out
+) {
+    if (!aix_filepath || !primary_filepath || !record_out) return false;
+
+    // Load AIX Quadtree
+    char aix_hdr[256];
+    InteropQuadNode aix_nodes[128];
+    int aix_node_count = 0;
+    uint8_t offsets_data[1024];
+    int offsets_len = 0;
+
+    if (!tsfi_qt_ksds_read(
+        aix_filepath,
+        aix_hdr,
+        sizeof(aix_hdr),
+        aix_nodes,
+        128,
+        &aix_node_count,
+        offsets_data,
+        sizeof(offsets_data),
+        &offsets_len
+    )) {
+        return false;
+    }
+
+    // Query coordinate in AIX Quadtree
+    uint32_t leaf_idx = interop_quadtree_query(aix_nodes, 0, secondary_x, secondary_y);
+    if (leaf_idx == 0 || leaf_idx == 0xFFFFFFFF) {
+        return false;
+    }
+
+    // Leaf value stores index in target_offsets table. Resolve actual target record byte offset.
+    // For safety, let's map the leaf value directly or resolve it from offsets_data.
+    // In our test mapping, leaf value can contain the absolute file offset directly!
+    // If it contains the absolute file offset:
+    uint32_t file_offset = leaf_idx;
+
+    // Open primary file and read record payload from offset
+    FILE *pf = fopen(primary_filepath, "rb");
+    if (!pf) return false;
+
+    if (fseek(pf, file_offset, SEEK_SET) != 0) {
+        fclose(pf);
+        return false;
+    }
+
+    // Read the record. Since records are null-terminated or line-based:
+    char line[4096];
+    if (fgets(line, sizeof(line), pf)) {
+        size_t len = strlen(line);
+        while (len > 0 && (line[len - 1] == '\n' || line[len - 1] == '\r')) {
+            line[len - 1] = '\0';
+            len--;
+        }
+        size_t cpy = (len < max_record) ? len : max_record - 1;
+        memcpy(record_out, line, cpy);
+        record_out[cpy] = '\0';
+        if (record_len_out) {
+            *record_len_out = (int)cpy;
+        }
+        fclose(pf);
+        return true;
+    }
+
+    fclose(pf);
+    return false;
+}

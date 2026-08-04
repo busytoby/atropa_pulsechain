@@ -15,10 +15,10 @@ int main(void) {
     // Initialize 5 quadtree nodes representing spatial divisions
     InteropQuadNode nodes[5] = {
         { 0, 0, 100, 100, 12345, { 1, 2, 3, 4 } },  // Root node pointing to 4 quadrants
-        { 0, 0, 50, 50, 999, { 0, 0, 0, 0 } },      // Quadrant 0 (Leaf)
-        { 50, 0, 100, 50, 888, { 0, 0, 0, 0 } },    // Quadrant 1 (Leaf)
-        { 0, 50, 50, 100, 777, { 0, 0, 0, 0 } },    // Quadrant 2 (Leaf)
-        { 50, 50, 100, 100, 666, { 0, 0, 0, 0 } }   // Quadrant 3 (Leaf)
+        { 0, 0, 50, 50, 999, { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF } },      // Quadrant 0 (Leaf)
+        { 50, 0, 100, 50, 888, { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF } },    // Quadrant 1 (Leaf)
+        { 0, 50, 50, 100, 777, { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF } },    // Quadrant 2 (Leaf)
+        { 50, 50, 100, 100, 666, { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF } }   // Quadrant 3 (Leaf)
     };
 
     // TSV Header defining the database index configuration
@@ -75,6 +75,43 @@ int main(void) {
 
     remove(filepath);
     printf("   ✓ TSV-header Quadtree KSDS format validated successfully.\n");
+
+    // AIX Quadtree Index Test
+    printf("[Test] Validating Alternate Index (AIX) Quadtree Query...\n");
+    const char *primary_file = "/tmp/test_primary.dat.bin";
+    const char *aix_file = "/tmp/test_aix.dat.bin";
+
+    FILE *pf = fopen(primary_file, "wb");
+    assert(pf != NULL);
+    // Write padding
+    uint8_t zero_pad[256] = {0};
+    fwrite(zero_pad, 1, 256, pf);
+
+    uint32_t rec_offset = (uint32_t)ftell(pf);
+    const char *record_text = "12345\tallow\tpd\t1002345\tvol. 1\n";
+    fwrite(record_text, 1, strlen(record_text), pf);
+    fclose(pf);
+
+    // AIX node mapping coordinate (10, 10) to the primary record offset
+    InteropQuadNode aix_nodes[1] = {
+        { 0, 0, 100, 100, rec_offset, { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF } }
+    };
+
+    ok = tsfi_qt_ksds_aix_write(aix_file, "AUNCIENT_AIX\nQuadtreeCount:\t1\nRecordCount:\t1", aix_nodes, 1, &rec_offset, 1);
+    assert(ok == true);
+
+    uint8_t aix_res[256] = {0};
+    int aix_res_len = 0;
+    ok = tsfi_qt_ksds_aix_query(aix_file, primary_file, 10, 10, aix_res, sizeof(aix_res), &aix_res_len);
+    assert(ok == true);
+    aix_res[aix_res_len] = '\0';
+
+    assert(strcmp((char *)aix_res, "12345\tallow\tpd\t1002345\tvol. 1") == 0);
+
+    remove(primary_file);
+    remove(aix_file);
+    printf("   ✓ Alternate Index (AIX) Quadtree query verified successfully.\n");
+
     printf("=============================================================\n");
     printf("TSV QUADTREE KSDS TESTS PASSED\n");
     printf("=============================================================\n");
