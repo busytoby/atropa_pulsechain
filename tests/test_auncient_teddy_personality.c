@@ -516,6 +516,12 @@ int main(void) {
     assert(decayed_pitch_uncanny < pitch_vel_mismatch);
     printf("   ✓ HYDE et al. vocal-visual pitch transition velocity mismatch habituation decay verified successfully\n");
 
+    // Test Hyde combined pitch mismatch and micro-expression freeze uncanny calculation
+    double pitch_freeze_uncanny = 0.0;
+    assert(evaluate_pitch_freeze_uncanny(&geom, 0.4, 2.0, &pitch_freeze_uncanny));
+    assert(pitch_freeze_uncanny > pitch_vel_mismatch);
+    printf("   ✓ HYDE et al. vocal-visual pitch transition velocity mismatch and micro-expression freeze index verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge
