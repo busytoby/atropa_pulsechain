@@ -1,0 +1,15 @@
+# XCOM Transmission Control Cards for HathiTrust Catalog Sync
+#
+# Coordinates remote secure FTP transmission of raw library catalog records
+# over simulated SNA/APPC communication layers before Quadtree processing.
+#
+TYPE=SEND
+FILETYPE=FILE
+LOCAL_FILE=HT.RAW.TSV
+REMOTE_FILE=hathifiles/hathi_full.txt
+SECURE_SOCKET=YES
+COMPRESS=YES
+INITIATE=YES
+PORT=8026
+LUN_NAME=AUNCIENT_LUN0
+LOG_FILE=/tmp/xcom_hathitrust.log

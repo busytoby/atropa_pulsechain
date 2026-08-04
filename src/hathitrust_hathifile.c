@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 static char* safe_strdup(const char *s) {
     if (!s) return NULL;
@@ -216,6 +217,9 @@ bool hathifile_export_to_quadtree_ksds(
 
     // Distribute records to quadrants based on their key hashes
     for (int i = 0; i < row_count; i++) {
+        struct timespec start, end;
+        clock_gettime(CLOCK_MONOTONIC, &start);
+
         uint32_t val = offsets[i];
 
         // 1. Primary Index Mapping (Key: htid)
@@ -250,6 +254,12 @@ bool hathifile_export_to_quadtree_ksds(
         }
 
         hathifile_free_row(&rows[i]);
+
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        double elapsed_ns = (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
+        if (elapsed_ns > 1000.0) {
+            fprintf(stderr, "[ANALYZER] Latency warning: HathiTrust record distribution took %.2f ns (> 1000 ns limit)\n", elapsed_ns);
+        }
     }
 
     // Write primary index Quadtree to a separate file (or package it inside primary path)
