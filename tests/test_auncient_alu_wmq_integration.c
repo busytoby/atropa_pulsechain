@@ -10,6 +10,7 @@
 #include "inc/tsfi2_compiler_bin.h"
 #include "inc/tsfi2_loader.h"
 #include "../tsfi2-deepseek/inc/tsfi_displacementshader.h"
+#include "../tsfi2-deepseek/inc/tsfi_mainframe_computerworld.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -17,32 +18,12 @@
 
 int tsfi_mf_es_evm_spool_guard(const char *jcl_content, int *is_valid);
 
-#define HASH_SIZE 32
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-static void sha256(const void *data, size_t len, uint8_t *out) {
-    SHA256_CTX ctx;
-    SHA256_Init(&ctx);
-    SHA256_Update(&ctx, data, len);
-    SHA256_Final(out, &ctx);
-}
-#pragma GCC diagnostic pop
 
 typedef enum {
     CUTOFF_STATE,
     CONDUC_STATE
 } gate_state_t;
-
-// 2-3 Merkle Tree Node
-typedef struct TwoThreeNode {
-    bool is_leaf;
-    int num_keys;
-    uint32_t keys[2];
-    char values[2][128];
-    uint8_t node_hash[HASH_SIZE];
-    struct TwoThreeNode *children[3];
-} TwoThreeNode;
 
 // Mapped ALU & WinchesterMQ Unified Integration Context
 typedef struct {
@@ -50,27 +31,13 @@ typedef struct {
     double wmq_req_v;          // WinchesterMQ REQ line voltage (V)
     double wmq_ack_v;          // WinchesterMQ ACK line voltage (V)
     char wmq_data_reg[64];     // WinchesterMQ SCSI data register
-    TwoThreeNode *alu_soft_reg;// Mapped ALU software register node
+    tsfi_cw_vsam_ksds *alu_soft_reg;// Mapped ALU software register index (VSAM database)
     bool interrupt_asserted;
     gate_state_t task_gate;
 } alu_wmq_sys_t;
 
 #define TAG_KERNEL 0x01
 #define TAG_USER   0x02
-
-// Helper to create leaf node
-static TwoThreeNode* create_leaf(uint32_t key1, const char *val1) {
-    TwoThreeNode *node = (TwoThreeNode*)calloc(1, sizeof(TwoThreeNode));
-    node->is_leaf = true;
-    node->num_keys = 1;
-    node->keys[0] = key1;
-    strcpy(node->values[0], val1);
-    
-    uint8_t temp[256];
-    int len = snprintf((char*)temp, sizeof(temp), "%u:%s", node->keys[0], node->values[0]);
-    sha256(temp, len, node->node_hash);
-    return node;
-}
 
 // -------------------------------------------------------------
 // Unified ALU & WinchesterMQ System Step
@@ -91,13 +58,8 @@ bool alu_wmq_sys_step(alu_wmq_sys_t *sys, uint32_t phase_angle, uint8_t tag) {
             sys->interrupt_asserted = true;
             sys->task_gate = CONDUC_STATE;
 
-            // Copy physical SCSI data directly to mapped ALU software register inside 2-3 tree DAT
-            strcpy(sys->alu_soft_reg->values[0], sys->wmq_data_reg);
-
-            // Recompute Merkle root hash of the registry node
-            uint8_t temp[256];
-            int len = snprintf((char*)temp, sizeof(temp), "%u:%s", sys->alu_soft_reg->keys[0], sys->alu_soft_reg->values[0]);
-            sha256(temp, len, sys->alu_soft_reg->node_hash);
+            // Copy physical SCSI data directly to mapped ALU software register inside VSAM
+            tsfi_cw_vsam_write(sys->alu_soft_reg, "900", (const uint8_t *)sys->wmq_data_reg, strlen(sys->wmq_data_reg));
         }
     }
 
@@ -113,19 +75,24 @@ int main(void) {
     printf("=============================================================\n");
     fflush(stdout);
 
-    TwoThreeNode *soft_reg = create_leaf(900, "INIT_STATE");
+    remove("/tmp/alu_test_vsam.dat.bin");
+    tsfi_cw_vsam_ksds alu_soft_reg;
+    memset(&alu_soft_reg, 0, sizeof(alu_soft_reg));
+    int rc = tsfi_cw_vsam_open(&alu_soft_reg, "/tmp/alu_test_vsam.dat.bin");
+    assert(rc == 0);
+    
+    rc = tsfi_cw_vsam_write(&alu_soft_reg, "900", (const uint8_t *)"INIT_STATE", strlen("INIT_STATE"));
+    assert(rc == 0);
+
     alu_wmq_sys_t sys = {
         .pll_phase = 0,
         .wmq_req_v = 5.0, // Request active
         .wmq_ack_v = 0.0, // Acknowledge active
         .wmq_data_reg = "SCSI_COMMAND_CODE_0xFA",
-        .alu_soft_reg = soft_reg,
+        .alu_soft_reg = &alu_soft_reg,
         .interrupt_asserted = false,
         .task_gate = CUTOFF_STATE
     };
-
-    uint8_t initial_hash[HASH_SIZE];
-    memcpy(initial_hash, soft_reg->node_hash, HASH_SIZE);
 
     // 1. Run out-of-phase step (180 deg) -> Should not trigger interrupt or register map
     printf("[TEST] Running out-of-phase step (180 deg)...\n");
@@ -134,8 +101,13 @@ int main(void) {
     assert(ok == true);
     assert(sys.interrupt_asserted == false);
     assert(sys.task_gate == CUTOFF_STATE);
-    assert(strcmp(soft_reg->values[0], "INIT_STATE") == 0);
-    assert(memcmp(initial_hash, soft_reg->node_hash, HASH_SIZE) == 0);
+    
+    uint8_t read_val[128] = {0};
+    int read_len = 0;
+    rc = tsfi_cw_vsam_read(&alu_soft_reg, "900", read_val, sizeof(read_val), &read_len);
+    assert(rc == 0);
+    read_val[read_len] = '\0';
+    assert(strcmp((char *)read_val, "INIT_STATE") == 0);
     printf("   ✓ Out-of-phase cycle ignored SCSI transaction successfully.\n");
     fflush(stdout);
 
@@ -146,8 +118,11 @@ int main(void) {
     assert(ok == true);
     assert(sys.interrupt_asserted == true);
     assert(sys.task_gate == CONDUC_STATE);
-    assert(strcmp(soft_reg->values[0], "SCSI_COMMAND_CODE_0xFA") == 0);
-    assert(memcmp(initial_hash, soft_reg->node_hash, HASH_SIZE) != 0);
+    
+    rc = tsfi_cw_vsam_read(&alu_soft_reg, "900", read_val, sizeof(read_val), &read_len);
+    assert(rc == 0);
+    read_val[read_len] = '\0';
+    assert(strcmp((char *)read_val, "SCSI_COMMAND_CODE_0xFA") == 0);
     printf("   ✓ Phase-locked interrupt asserted. Mapped register updated successfully.\n");
     fflush(stdout);
 
@@ -185,30 +160,36 @@ int main(void) {
 
     // 5. Verify STANAG network mount registration via manual 2-3 leaf insertion
     printf("[TEST] Verifying STANAG network mount registration on loopback channels...\n");
-    TwoThreeNode *mount_reg = create_leaf(905, "STANAG_MOUNT_ACTIVE");
-    assert(mount_reg != NULL);
-    assert(strcmp(mount_reg->values[0], "STANAG_MOUNT_ACTIVE") == 0);
+    tsfi_cw_vsam_ksds mount_reg;
+    memset(&mount_reg, 0, sizeof(mount_reg));
+    rc = tsfi_cw_vsam_open(&mount_reg, "/tmp/mount_test_vsam.dat.bin");
+    assert(rc == 0);
+    rc = tsfi_cw_vsam_write(&mount_reg, "905", (const uint8_t *)"STANAG_MOUNT_ACTIVE", strlen("STANAG_MOUNT_ACTIVE"));
+    assert(rc == 0);
     
-    // Simulate low-level SCSI host loopback routing mapping for STANAG protocol
-    uint8_t mount_hash[HASH_SIZE];
-    sha256(mount_reg->values[0], strlen(mount_reg->values[0]), mount_hash);
-    assert(memcmp(mount_hash, mount_reg->node_hash, HASH_SIZE) != 0);
+    rc = tsfi_cw_vsam_read(&mount_reg, "905", read_val, sizeof(read_val), &read_len);
+    assert(rc == 0);
+    read_val[read_len] = '\0';
+    assert(strcmp((char *)read_val, "STANAG_MOUNT_ACTIVE") == 0);
     printf("   -> STANAG network loopback channel mapping established successfully.\n");
-    free(mount_reg);
+    remove("/tmp/mount_test_vsam.dat.bin");
     fflush(stdout);
 
     // 6. Demonstrate STANAG standards: SAP priority routing & Non-ARQ broadcast loops
     printf("[TEST] Verifying STANAG standard SAP routing and Non-ARQ broadcast rules...\n");
-    TwoThreeNode *sap_reg = create_leaf(908, "SAP_0x08_QOS_2");
-    assert(sap_reg != NULL);
-    assert(strcmp(sap_reg->values[0], "SAP_0x08_QOS_2") == 0);
+    tsfi_cw_vsam_ksds sap_reg;
+    memset(&sap_reg, 0, sizeof(sap_reg));
+    rc = tsfi_cw_vsam_open(&sap_reg, "/tmp/sap_test_vsam.dat.bin");
+    assert(rc == 0);
+    rc = tsfi_cw_vsam_write(&sap_reg, "908", (const uint8_t *)"SAP_0x08_QOS_2", strlen("SAP_0x08_QOS_2"));
+    assert(rc == 0);
     
-    // Simulate priority routing escalation logic (Aging) inside SAP router
-    uint8_t sap_hash[HASH_SIZE];
-    sha256(sap_reg->values[0], strlen(sap_reg->values[0]), sap_hash);
-    assert(memcmp(sap_hash, sap_reg->node_hash, HASH_SIZE) != 0);
+    rc = tsfi_cw_vsam_read(&sap_reg, "908", read_val, sizeof(read_val), &read_len);
+    assert(rc == 0);
+    read_val[read_len] = '\0';
+    assert(strcmp((char *)read_val, "SAP_0x08_QOS_2") == 0);
     printf("   -> STANAG priority queue escalation resolved successfully.\n");
-    free(sap_reg);
+    remove("/tmp/sap_test_vsam.dat.bin");
     
     // Verify that Non-ARQ Broadcast Mode disables standard ACK waiting loops
     int retry_count = 0;
@@ -266,18 +247,21 @@ int main(void) {
     int k1 = 32;
     int k2 = 30;
     
-    // Simulate low-level SCSI handshake loops routing keycodes
-    TwoThreeNode *key_reg1 = create_leaf(932, "KEY_D_ACTIVE");
-    TwoThreeNode *key_reg2 = create_leaf(930, "KEY_A_ACTIVE");
-    assert(key_reg1 != NULL && key_reg2 != NULL);
+    // Simulate low-level SCSI handshake loops routing keycodes using active VSAM
+    tsfi_cw_vsam_ksds key_reg;
+    memset(&key_reg, 0, sizeof(key_reg));
+    rc = tsfi_cw_vsam_open(&key_reg, "/tmp/key_test_vsam.dat.bin");
+    assert(rc == 0);
+    rc = tsfi_cw_vsam_write(&key_reg, "932", (const uint8_t *)"KEY_D_ACTIVE", strlen("KEY_D_ACTIVE"));
+    assert(rc == 0);
+    rc = tsfi_cw_vsam_write(&key_reg, "930", (const uint8_t *)"KEY_A_ACTIVE", strlen("KEY_A_ACTIVE"));
+    assert(rc == 0);
+    
     assert(k1 == 32 && k2 == 30);
     printf("   -> Keycode 32 (d/D) verified directly against state map successfully.\n");
     printf("   -> Keycode 30 (a/A) verified directly against state map successfully.\n");
-    free(key_reg1);
-    free(key_reg2);
+    remove("/tmp/key_test_vsam.dat.bin");
     fflush(stdout);
-
-    free(soft_reg);
 
     // 9. Strategy Execution Coverage: Gost Intrusion Strategy Closure
     printf("\n[ALU Test] Loading transitioned gost_intrusion strategy from disk...\n");
@@ -340,6 +324,7 @@ int main(void) {
     assert(cpu.exit_code == 1000000);
     printf("   ✓ Hogan newborn teddy bear 1,000,000 Saat endowment strategy verified successfully.\n");
     remove(teddy_bin);
+    remove("/tmp/alu_test_vsam.dat.bin");
 
     printf("=============================================================\n");
     printf("ALU AND WINCHESTERMQ INTEGRATION TESTS PASSED\n");

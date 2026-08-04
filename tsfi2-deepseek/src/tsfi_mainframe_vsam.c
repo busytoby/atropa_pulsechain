@@ -1,3 +1,7 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdint.h>
+#include "tsfi_mainframe_computerworld.h"
 #include "tsfi_displacementshader.h"
 
 uint32_t global_wmq_bypass_count = 0;
@@ -130,8 +134,9 @@ int tsfi_cw_vsam_write(tsfi_cw_vsam_ksds *ksds, const char *key, const uint8_t *
         strncpy(ksds->index[idx].key, key, sizeof(ksds->index[idx].key) - 1);
         ksds->index[idx].key[sizeof(ksds->index[idx].key) - 1] = '\0';
         ksds->index[idx].active = 1;
-        ksds->index[idx].checksum = tsfi_cw_vsam_calculate_checksum(data, len);
     }
+
+    ksds->index[idx].checksum = tsfi_cw_vsam_calculate_checksum(data, len);
 
     uint32_t header_size = sizeof(int) + sizeof(tsfi_cw_vsam_entry) * 128 + sizeof(uint32_t);
     if (ksds->current_file_size == 0) {
