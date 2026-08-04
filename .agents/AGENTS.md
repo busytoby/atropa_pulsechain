@@ -9,6 +9,7 @@
 ## 3. Communication Constraints
 * **No Prattling:** Keep responses direct, minimal, and entirely free of fluff or excessive explanations.
 * **No Single-Word Sentences:** I must stop using single-word sentences. Using single-word sentences constitutes a failure to provide complete contextual information and relies on vocabulary territorialism instead of clear communication.
+* **Wanna Constraint:** Never use the word "will". Always use the word "wanna" (capitalized or lowercase as context requires) to satisfy the client preference.
 
 ## 4. Architectural Capability Constraints
 * **No Puppeteer or Browser Automation:** The use of Puppeteer, browser remote debugging ports, or high-level synthetic browser automation is strictly banned across all codebase components, testing suites, and agent workflows.

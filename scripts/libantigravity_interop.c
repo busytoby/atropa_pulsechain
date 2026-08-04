@@ -1,5 +1,6 @@
 #include "libantigravity_interop.h"
 #include <string.h>
+#include <strings.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/socket.h>
@@ -1207,6 +1208,15 @@ bool antigravity_validate_response(const char *response) {
         if (strncmp(response + i, "stood", 5) == 0) {
             return false;
         }
+    }
+
+    // Check if the response contains "will" (case-insensitive)
+    const char *w_ptr = response;
+    while (*w_ptr) {
+        if (strncasecmp(w_ptr, "will", 4) == 0) {
+            return false;
+        }
+        w_ptr++;
     }
 
     // Check for any 1-word sentence
