@@ -63,6 +63,7 @@ typedef struct {
     double naive_trust;              // Perceived naive trust (0.0 suspicious caution, 1.0 naive trust/openness)
     double social_submissiveness;    // Perceived submissiveness (0.0 mature dominance/assertiveness, 1.0 submissiveness)
     double relationship_commitment;  // Perceived commitment (0.0 low expected fidelity, 1.0 high commitment/fidelity)
+    double health_robustness;        // Perceived health status (0.0 fragile health, 1.0 robust health/resistance)
 } teddy_geometry_t;
 
 // Maps abstract traits to geometric parameters based on study results
@@ -120,6 +121,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->naive_trust = 1.0;             // Naive trust
             geom->social_submissiveness = 1.0;   // Submissive
             geom->relationship_commitment = 1.0; // Committed
+            geom->health_robustness = 0.0;        // Fragile health
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -173,6 +175,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->naive_trust = 0.0;             // Suspicious caution
             geom->social_submissiveness = 0.0;   // Assertive/dominant
             geom->relationship_commitment = 0.0; // Uncommitted
+            geom->health_robustness = 1.0;        // Robust health
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -226,6 +229,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->naive_trust = 0.0;             // Suspicious caution
             geom->social_submissiveness = 0.0;   // Assertive/dominant
             geom->relationship_commitment = 0.0; // Uncommitted
+            geom->health_robustness = 1.0;        // Robust health
             break;
     }
 }
