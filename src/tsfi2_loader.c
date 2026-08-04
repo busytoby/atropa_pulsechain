@@ -109,9 +109,12 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
         } else if (opcode == 0x48 && pc + 2 < bytecode_len && bytecode[pc+1] == 0x89 && bytecode[pc+2] == 0xE5) { // MOV RBP, RSP
             cpu->rbp = cpu->rsp;
             pc += 3;
+        } else if (opcode == 0xB8 && pc + 4 < bytecode_len) { // MOV EAX, imm32
+            uint32_t val = bytecode[pc+1] | (bytecode[pc+2] << 8) | (bytecode[pc+3] << 16) | (bytecode[pc+4] << 24);
+            cpu->exit_code = (int)val;
+            pc += 5;
         } else if (opcode == 0xC3) { // RET
             cpu->halted = true;
-            cpu->exit_code = 0;
             pc++;
         } else {
             // Unknown instruction crash simulation
@@ -122,5 +125,5 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
     }
     
     free(buffer);
-    return (cpu->exit_code == 0);
+    return (cpu->exit_code != -1);
 }
