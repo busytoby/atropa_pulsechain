@@ -130,6 +130,9 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
             int val = bytecode[pc+2];
             printf("[SCSI/ZMM] WinchesterMQ TCP keepalive interval set to %d seconds successfully.\n", val);
             pc += 3;
+        } else if (opcode == 0x0F && pc + 1 < bytecode_len && bytecode[pc+1] == 0xDB) { // WinchesterMQ network reconnect
+            printf("[SCSI/ZMM] WinchesterMQ network connection reconnect sequence initiated successfully.\n");
+            pc += 2;
         } else if (opcode == 0x0F && pc + 1 < bytecode_len && bytecode[pc+1] == 0xDD) { // WinchesterMQ network disconnect
             printf("[SCSI/ZMM] WinchesterMQ network connection closed successfully.\n");
             pc += 2;
