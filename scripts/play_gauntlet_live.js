@@ -69,6 +69,98 @@ try {
     console.error("[GAUNTLET LIVE] Failed parsing USDA asset:", e.message);
 }
 
+// Parse Sewn Heart USDA mesh (Pixar USD Asset Integration)
+let sewnHeartVertices = [];
+let sewnHeartIndices = [];
+try {
+    const heartPath = path.join(__dirname, "../tsfi2-deepseek/assets/teddy_sewnheart.usda");
+    if (fs.existsSync(heartPath)) {
+        const content = fs.readFileSync(heartPath, "utf8");
+        // Extract points
+        const pointsSection = content.match(/point3f\[\] points = \[\s*([\s\S]*?)\]/);
+        if (pointsSection) {
+            const ptsRegex = /\(([\d.-]+),\s*([\d.-]+),\s*([\d.-]+)\)/g;
+            let match;
+            while ((match = ptsRegex.exec(pointsSection[1])) !== null) {
+                sewnHeartVertices.push({
+                    x: parseFloat(match[1]),
+                    y: parseFloat(match[2]),
+                    z: parseFloat(match[3])
+                });
+            }
+        }
+        // Extract indices
+        const indicesSection = content.match(/int\[\] faceVertexIndices = \[\s*([\s\S]*?)\]/);
+        if (indicesSection) {
+            sewnHeartIndices = indicesSection[1].split(",").map(x => parseInt(x.trim())).filter(x => !isNaN(x));
+        }
+        console.log(`[GAUNTLET LIVE] Successfully parsed SewnHeart mesh: ${sewnHeartVertices.length} vertices, ${sewnHeartIndices.length / 4} quads.`);
+    }
+} catch (e) {
+    console.error("[GAUNTLET LIVE] Failed parsing SewnHeart USDA asset:", e.message);
+}
+
+function draw3DSewnHeart(ops, cx, cy, angle) {
+    if (sewnHeartVertices.length === 0) return;
+
+    const scale = 36.0; // scale factor
+    const projected = [];
+
+    // Rotate and project vertices
+    const cosA = Math.cos(angle);
+    const sinA = Math.sin(angle);
+
+    for (let v of sewnHeartVertices) {
+        // Rotate around Y axis
+        let x1 = v.x * cosA - v.z * sinA;
+        let z1 = v.x * sinA + v.z * cosA;
+        // Rotate around X axis slightly for 3D tilt
+        let cosT = 0.866;
+        let sinT = 0.5;
+        let y2 = v.y * cosT - z1 * sinT;
+        
+        projected.push({
+            x: Math.floor(cx + x1 * scale),
+            y: Math.floor(cy - y2 * scale)
+        });
+    }
+
+    // Draw quad edges
+    for (let i = 0; i < sewnHeartIndices.length; i += 4) {
+        const p1 = projected[sewnHeartIndices[i]];
+        const p2 = projected[sewnHeartIndices[i+1]];
+        const p3 = projected[sewnHeartIndices[i+2]];
+        const p4 = projected[sewnHeartIndices[i+3]];
+
+        if (!p1 || !p2 || !p3 || !p4) continue;
+
+        drawLine(ops, p1.x, p1.y, p2.x, p2.y, 255, 60, 100);
+        drawLine(ops, p2.x, p2.y, p3.x, p3.y, 255, 60, 100);
+        drawLine(ops, p3.x, p3.y, p4.x, p4.y, 255, 60, 100);
+        drawLine(ops, p4.x, p4.y, p1.x, p1.y, 255, 60, 100);
+    }
+}
+
+function drawLine(ops, x1, y1, x2, y2, r, g, b) {
+    const steps = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1));
+    if (steps === 0) return;
+    for (let i = 0; i <= steps; i += 4) {
+        const t = i / steps;
+        const x = Math.floor(x1 * (1 - t) + x2 * t);
+        const y = Math.floor(y1 * (1 - t) + y2 * t);
+        ops.push({
+            type: "draw_rect",
+            x: x,
+            y: y,
+            w: 2,
+            h: 2,
+            r: r,
+            g: g,
+            b: b
+        });
+    }
+}
+
 // Setup raw input to capture keystrokes from standard input
 readline.emitKeypressEvents(process.stdin);
 if (process.stdin.isTTY) {
@@ -429,29 +521,11 @@ function renderGame() {
         });
     }
 
-    // 4. Draw active chests
+    // 4. Draw active chests (rotating 3D Pixar USD SewnHeart models)
+    const heartRotation = frameCount * 0.08;
     for (let c of chests) {
         if (!c.active) continue;
-        ops.push({
-            type: "draw_rect",
-            x: c.x - 10,
-            y: c.y - 8,
-            w: 20,
-            h: 16,
-            r: 139,
-            g: 90,
-            b: 43
-        });
-        ops.push({
-            type: "draw_rect",
-            x: c.x - 4,
-            y: c.y - 2,
-            w: 8,
-            h: 4,
-            r: 255,
-            g: 215,
-            b: 0
-        });
+        draw3DSewnHeart(ops, c.x, c.y, heartRotation);
     }
 
     // 5. Draw active traps
