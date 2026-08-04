@@ -647,3 +647,8 @@ test-auncient-xpl-loader:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_xpl_loader.c -o tests/test_auncient_xpl_loader -lm -lrt
 	./tests/test_auncient_xpl_loader
 	@rm -f tests/test_auncient_xpl_loader
+
+test-auncient-vfio-xplsm:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vfio_xplsm.c -o tests/test_auncient_vfio_xplsm -lcrypto -lrt
+	./tests/test_auncient_vfio_xplsm
+	@rm -f tests/test_auncient_vfio_xplsm
