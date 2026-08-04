@@ -152,6 +152,13 @@ int main(void) {
     assert(t_wpval < 0.01);
     printf("   ✓ R H B Christensen threshold parameter Wald test diagnostics verified successfully\n");
 
+    // Test scale parameter Wald test calculation
+    double s_wstat = 0.0, s_wpval = 0.0;
+    assert(evaluate_scale_wald_test(1.5, 1.0, 0.25, &s_wstat, &s_wpval));
+    assert(fabs(s_wstat - 1.0) < 1e-9);
+    assert(s_wpval < 0.7);
+    printf("   ✓ R H B Christensen scale parameter Wald test diagnostics verified successfully\n");
+
     // Test ACID transaction behavior (Commit successful path)
     evaluation_tx_t tx = begin_evaluation_transaction(&geom);
     assert(tx.active);
