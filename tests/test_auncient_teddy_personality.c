@@ -657,6 +657,15 @@ int main(void) {
     assert(fwhr_dilation > 0.0);
     printf("   ✓ Keating brow-eye ratio and Geniole fWHR dilation mapping verified successfully\n");
 
+    // Test Keating head roundness and symmetry trustworthiness calculations
+    double head_roundness = 0.0;
+    double symmetry_trust = 0.0;
+    assert(evaluate_keating_head_roundness_index(&geom, &head_roundness));
+    assert(head_roundness > 0.0);
+    assert(evaluate_keating_symmetry_trust(&geom, &symmetry_trust));
+    assert(symmetry_trust > 0.0);
+    printf("   ✓ KEATING, C. F. head roundness and symmetry trustworthiness verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge

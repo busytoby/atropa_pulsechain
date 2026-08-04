@@ -1033,3 +1033,19 @@ bool evaluate_geniole_fwhr_dilation_map(const teddy_geometry_t *geom, double bas
     return true;
 }
 
+bool evaluate_keating_head_roundness_index(const teddy_geometry_t *geom, double *roundness_out) {
+    if (!geom || !roundness_out) {
+        return false;
+    }
+    *roundness_out = geom->head_fwhr * (1.1 + geom->empathy_index * 0.4);
+    return true;
+}
+
+bool evaluate_keating_symmetry_trust(const teddy_geometry_t *geom, double *trust_out) {
+    if (!geom || !trust_out) {
+        return false;
+    }
+    *trust_out = geom->symmetry * (1.0 + geom->honesty_index * 0.5);
+    return true;
+}
+

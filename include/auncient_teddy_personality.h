@@ -457,6 +457,12 @@ bool evaluate_keating_brow_eye_ratio(const teddy_geometry_t *geom, double brow_e
 // Maps fWHR threat ratings to dynamic geometry projection dilation rates (Geniole et al.).
 bool evaluate_geniole_fwhr_dilation_map(const teddy_geometry_t *geom, double base_dilation, double *mapped_dilation_out);
 
+// Evaluates head roundness babyface index (Keating, C. F.).
+bool evaluate_keating_head_roundness_index(const teddy_geometry_t *geom, double *roundness_out);
+
+// Models the relationship between bilateral facial symmetry and perceived babyfacedness (Keating, C. F.).
+bool evaluate_keating_symmetry_trust(const teddy_geometry_t *geom, double *trust_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 
