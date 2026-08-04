@@ -463,6 +463,12 @@ bool evaluate_keating_head_roundness_index(const teddy_geometry_t *geom, double 
 // Models the relationship between bilateral facial symmetry and perceived babyfacedness (Keating, C. F.).
 bool evaluate_keating_symmetry_trust(const teddy_geometry_t *geom, double *trust_out);
 
+// Models the discrepancy between turn-taking conversational status and vocal amplitude (Hyde et al.).
+bool evaluate_hyde_vocal_amplitude_mismatch(const teddy_geometry_t *geom, double voice_amplitude_db, double *amplitude_mismatch_out);
+
+// Evaluates the alignment of mouth animation speed to vocal fundamental frequency acceleration curves (Hyde et al.).
+bool evaluate_hyde_mouth_speed_synchrony(const teddy_geometry_t *geom, double mouth_speed, double pitch_acceleration, double *sync_mismatch_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 

@@ -1049,3 +1049,19 @@ bool evaluate_keating_symmetry_trust(const teddy_geometry_t *geom, double *trust
     return true;
 }
 
+bool evaluate_hyde_vocal_amplitude_mismatch(const teddy_geometry_t *geom, double voice_amplitude_db, double *amplitude_mismatch_out) {
+    if (!geom || voice_amplitude_db < 0.0 || !amplitude_mismatch_out) {
+        return false;
+    }
+    *amplitude_mismatch_out = fabs(voice_amplitude_db - 60.0) * (0.4 + geom->behavioral_mismatch * 0.4);
+    return true;
+}
+
+bool evaluate_hyde_mouth_speed_synchrony(const teddy_geometry_t *geom, double mouth_speed, double pitch_acceleration, double *sync_mismatch_out) {
+    if (!geom || mouth_speed < 0.0 || !sync_mismatch_out) {
+        return false;
+    }
+    *sync_mismatch_out = fabs(mouth_speed - fabs(pitch_acceleration)) * (0.8 + geom->stiffness * 0.5);
+    return true;
+}
+

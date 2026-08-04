@@ -666,6 +666,15 @@ int main(void) {
     assert(symmetry_trust > 0.0);
     printf("   ✓ KEATING, C. F. head roundness and symmetry trustworthiness verified successfully\n");
 
+    // Test Hyde vocal amplitude mismatch and mouth speed synchrony calculations
+    double amplitude_mismatch = 0.0;
+    double sync_mismatch = 0.0;
+    assert(evaluate_hyde_vocal_amplitude_mismatch(&geom, 75.0, &amplitude_mismatch));
+    assert(amplitude_mismatch > 0.0);
+    assert(evaluate_hyde_mouth_speed_synchrony(&geom, 2.5, 3.0, &sync_mismatch));
+    assert(sync_mismatch > 0.0);
+    printf("   ✓ HYDE et al. vocal amplitude mismatch and mouth speed synchrony verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge
