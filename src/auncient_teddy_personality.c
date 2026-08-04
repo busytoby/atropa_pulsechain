@@ -439,6 +439,19 @@ bool evaluate_threshold_equidistancy(const teddy_geometry_t *geom, double tolera
     return (*spacing_error <= tolerance);
 }
 
+bool evaluate_scale_profile_bounds(const teddy_geometry_t *geom, double *lower_scale_bound, double *upper_scale_bound) {
+    if (!geom || !lower_scale_bound || !upper_scale_bound) {
+        return false;
+    }
+    double scale = exp(geom->vocal_visual_mismatch * 0.5);
+    double z = 1.96;
+    double se = 0.15;
+    *lower_scale_bound = scale - (z * se);
+    *upper_scale_bound = scale + (z * se);
+    if (*lower_scale_bound < 0.01) *lower_scale_bound = 0.01;
+    return true;
+}
+
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out) {
     if (!geom || param_count < 1 || sample_size < 2 || !aic_out || !bic_out) {
         return false;

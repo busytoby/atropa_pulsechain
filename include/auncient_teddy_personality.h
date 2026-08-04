@@ -150,6 +150,9 @@ int evaluate_ordinal_flexible_rating(const teddy_geometry_t *geom, double link_m
 // Diagnoses whether ordinal thresholds fit equidistant constraints.
 bool evaluate_threshold_equidistancy(const teddy_geometry_t *geom, double tolerance, double *spacing_error);
 
+// Evaluates profile log-likelihood bounds for scale parameter estimation.
+bool evaluate_scale_profile_bounds(const teddy_geometry_t *geom, double *lower_scale_bound, double *upper_scale_bound);
+
 // Computes model selection diagnostics via AIC and BIC information criteria.
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out);
 

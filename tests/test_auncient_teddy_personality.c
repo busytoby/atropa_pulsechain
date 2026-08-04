@@ -110,6 +110,12 @@ int main(void) {
     assert(spacing_err >= 0.0);
     printf("   ✓ R H B Christensen threshold equidistancy diagnostics verified successfully\n");
 
+    // Test scale parameter likelihood profile calculation
+    double l_scale = 0.0, u_scale = 0.0;
+    assert(evaluate_scale_profile_bounds(&geom, &l_scale, &u_scale));
+    assert(l_scale < u_scale);
+    printf("   ✓ R H B Christensen scale parameter likelihood profile bounds verified successfully\n");
+
     // Test ACID transaction behavior (Commit successful path)
     evaluation_tx_t tx = begin_evaluation_transaction(&geom);
     assert(tx.active);
