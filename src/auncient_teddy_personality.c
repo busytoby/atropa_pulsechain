@@ -513,6 +513,17 @@ bool evaluate_surrogate_residuals(const teddy_geometry_t *geom, int observed_rat
     return true;
 }
 
+bool evaluate_threshold_wald_test(double threshold_est, double baseline, double variance, double *wald_stat_out, double *p_value_out) {
+    if (variance < 1e-9 || !wald_stat_out || !p_value_out) {
+        return false;
+    }
+    double diff = threshold_est - baseline;
+    *wald_stat_out = (diff * diff) / variance;
+    *p_value_out = exp(-(*wald_stat_out) / 2.0);
+    if (*p_value_out > 1.0) *p_value_out = 1.0;
+    return true;
+}
+
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out) {
     if (!geom || param_count < 1 || sample_size < 2 || !aic_out || !bic_out) {
         return false;

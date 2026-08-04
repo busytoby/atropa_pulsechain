@@ -1,6 +1,7 @@
 #include "../include/auncient_teddy_personality.h"
 #include <stdio.h>
 #include <assert.h>
+#include <math.h>
 
 int main(void) {
     printf("=============================================================\n");
@@ -143,6 +144,13 @@ int main(void) {
     double sur_resid = 0.0;
     assert(evaluate_surrogate_residuals(&geom, 4, &sur_resid));
     printf("   ✓ R H B Christensen surrogate residuals diagnostics verified successfully\n");
+
+    // Test threshold parameter Wald test calculation
+    double t_wstat = 0.0, t_wpval = 0.0;
+    assert(evaluate_threshold_wald_test(1.2, 0.5, 0.04, &t_wstat, &t_wpval));
+    assert(fabs(t_wstat - 12.25) < 1e-9);
+    assert(t_wpval < 0.01);
+    printf("   ✓ R H B Christensen threshold parameter Wald test diagnostics verified successfully\n");
 
     // Test ACID transaction behavior (Commit successful path)
     evaluation_tx_t tx = begin_evaluation_transaction(&geom);
