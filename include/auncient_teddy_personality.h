@@ -103,6 +103,7 @@ typedef struct {
     double verbal_arbitration;       // Perceived verbal arbitration capacity (0.0 emotional, 1.0 objective arbiter)
     double isolation_resilience;     // Perceived isolation resilience (0.0 lower, 1.0 high coping under isolation)
     double confrontational_assertiveness; // Perceived assertiveness (0.0 cooperative/submissive, 1.0 confrontational)
+    double neighborhood_altruism;    // Perceived neighborhood altruism (0.0 lower support, 1.0 high neighborhood support/altruism)
 } teddy_geometry_t;
 
 // Pixar RenderMan Avatar Agent definition upon the cooperative boundary
