@@ -152,12 +152,12 @@ test-tsfi2-compiler-bin:
 	@rm -f tests/test_tsfi2_compiler_bin
 
 test-tsfi2-loader:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc tests/test_tsfi2_loader.c src/tsfi2_loader.c src/tsfi2_compiler_bin.c -o tests/test_tsfi2_loader -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc tests/test_tsfi2_loader.c src/tsfi2_loader.c src/tsfi2_compiler_bin.c tsfi2-deepseek/src/tsfi_displacementshader.c -o tests/test_tsfi2_loader -lm -lrt
 	./tests/test_tsfi2_loader
 	@rm -f tests/test_tsfi2_loader
 
 test-tsfi2-compiler:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc tests/test_tsfi2_compiler.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c src/tsfi2_loader.c -o tests/test_tsfi2_compiler -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc tests/test_tsfi2_compiler.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_displacementshader.c -o tests/test_tsfi2_compiler -lm -lrt
 	./tests/test_tsfi2_compiler
 	@rm -f tests/test_tsfi2_compiler
 

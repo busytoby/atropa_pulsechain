@@ -36,16 +36,23 @@ bool tsfi2_compile(
     
     int value = atoi(ret_ptr);
     
+    // Emit custom wmq_send opcode if __builtin_wmq_send is requested
+    size_t offset = 0;
+    if (strstr(source_code, "__builtin_wmq_send")) {
+        out_bytecode[offset++] = 0x0F;
+        out_bytecode[offset++] = 0xFC;
+    }
+    
     // Emit x86 machine instructions: MOV EAX, imm32
-    out_bytecode[0] = 0xB8;
-    out_bytecode[1] = (uint8_t)(value & 0xFF);
-    out_bytecode[2] = (uint8_t)((value >> 8) & 0xFF);
-    out_bytecode[3] = (uint8_t)((value >> 16) & 0xFF);
-    out_bytecode[4] = (uint8_t)((value >> 24) & 0xFF);
+    out_bytecode[offset++] = 0xB8;
+    out_bytecode[offset++] = (uint8_t)(value & 0xFF);
+    out_bytecode[offset++] = (uint8_t)((value >> 8) & 0xFF);
+    out_bytecode[offset++] = (uint8_t)((value >> 16) & 0xFF);
+    out_bytecode[offset++] = (uint8_t)((value >> 24) & 0xFF);
     
     // Emit: RET
-    out_bytecode[5] = 0xC3;
+    out_bytecode[offset++] = 0xC3;
     
-    *out_bytecode_len = 6;
+    *out_bytecode_len = offset;
     return true;
 }

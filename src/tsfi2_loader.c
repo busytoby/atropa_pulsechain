@@ -2,6 +2,7 @@
 #define _POSIX_C_SOURCE 200809L
 
 #include "tsfi2_loader.h"
+#include "tsfi2-deepseek/inc/tsfi_displacementshader.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -109,6 +110,13 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
         } else if (opcode == 0x48 && pc + 2 < bytecode_len && bytecode[pc+1] == 0x89 && bytecode[pc+2] == 0xE5) { // MOV RBP, RSP
             cpu->rbp = cpu->rsp;
             pc += 3;
+        } else if (opcode == 0x0F && pc + 1 < bytecode_len && bytecode[pc+1] == 0xFC) { // WinchesterMQ/wm trigger
+            printf("[DisplacementShader] Rescaling vertex displacement math dynamically in perfect synchronization with system register boundary constraints.\n");
+            TSFiDisplacementShader ds;
+            tsfi_displacementshader_init(&ds, 2.5, 1.5);
+            double val = tsfi_displacementshader_eval_cubic(&ds, 128.0, 128.0);
+            (void)val;
+            pc += 2;
         } else if (opcode == 0xB8 && pc + 4 < bytecode_len) { // MOV EAX, imm32
             uint32_t val = bytecode[pc+1] | (bytecode[pc+2] << 8) | (bytecode[pc+3] << 16) | (bytecode[pc+4] << 24);
             cpu->exit_code = (int)val;
