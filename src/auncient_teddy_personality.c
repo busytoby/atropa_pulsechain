@@ -1,5 +1,6 @@
 #include "auncient_teddy_personality.h"
 #include <stdio.h>
+#include <math.h>
 
 void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
     switch (trait) {
@@ -308,8 +309,24 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->conflict_mediation = 0.0;       // Low conflict mediation
             geom->command_authority = 1.0;        // High command authority
             geom->partner_caregiving = 0.0;       // Low partner caregiving
-            break;
     }
+}
+
+int evaluate_ordinal_link_rating(const teddy_geometry_t *geom) {
+    if (!geom) return 1;
+    // Calculate latent score based on physical traits (wider head fWHR increases rating, feature offset decreases it)
+    double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
+    // Cumulative link model thresholds (Christensen style, mapping to Likert scale 1 to 7)
+    double thresholds[6] = {0.5, 1.2, 2.0, 2.8, 3.5, 4.2};
+    
+    // Evaluate probability profile to find ordinal category threshold
+    for (int i = 0; i < 6; ++i) {
+        double logit_prob = 1.0 / (1.0 + exp(-(thresholds[i] - latent)));
+        if (logit_prob >= 0.5) {
+            return i + 1;
+        }
+    }
+    return 7;
 }
 
 bool engage_system_boundary(agent_avatar_t *avatar, teddy_personality_t personality) {

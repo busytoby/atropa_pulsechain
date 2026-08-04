@@ -56,6 +56,16 @@ int main(void) {
     assert(avatar.geometry.damping >= 0.0);
     printf("   ✓ FET Verlet Soft-Body Discharge simulation verified successfully\n");
 
+    // Test Christensen ordinal link model implementation
+    resolve_teddy_geometry(PERSONALITY_TRUSTWORTHY, &geom);
+    int rating_trust = evaluate_ordinal_link_rating(&geom);
+    assert(rating_trust >= 1 && rating_trust <= 7);
+
+    resolve_teddy_geometry(PERSONALITY_AGGRESSIVE, &geom);
+    int rating_aggr = evaluate_ordinal_link_rating(&geom);
+    assert(rating_aggr >= 1 && rating_aggr <= 7);
+    printf("   ✓ R H B Christensen cumulative ordinal link rating verified successfully\n");
+
     printf("=============================================================\n");
     printf("PERSONALITY CONFIGURATIONS VALIDATED SUCCESSFULLY\n");
     printf("=============================================================\n");

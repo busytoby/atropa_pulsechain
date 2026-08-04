@@ -125,6 +125,9 @@ typedef struct {
 // Maps abstract traits to geometric parameters based on study results
 void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom);
 
+// Evaluates an ordinal perception rating (1 to 7) using a cumulative link model.
+int evaluate_ordinal_link_rating(const teddy_geometry_t *geom);
+
 // Engages systems via the SDK typestate and calculates parameters
 bool engage_system_boundary(agent_avatar_t *avatar, teddy_personality_t personality);
 
