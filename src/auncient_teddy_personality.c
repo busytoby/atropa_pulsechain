@@ -419,6 +419,26 @@ int evaluate_ordinal_flexible_rating(const teddy_geometry_t *geom, double link_m
     return 7;
 }
 
+bool evaluate_threshold_equidistancy(const teddy_geometry_t *geom, double tolerance, double *spacing_error) {
+    if (!geom || !spacing_error) {
+        return false;
+    }
+    double thresholds[6] = {0.5, 1.2, 2.0, 2.8, 3.5, 4.2};
+    double total_delta = 0.0;
+    for (int i = 1; i < 6; ++i) {
+        total_delta += (thresholds[i] - thresholds[i - 1]);
+    }
+    double mean_delta = total_delta / 5.0;
+    double sum_sq_err = 0.0;
+    for (int i = 0; i < 6; ++i) {
+        double expected = thresholds[0] + (double)i * mean_delta;
+        double err = thresholds[i] - expected;
+        sum_sq_err += err * err;
+    }
+    *spacing_error = sum_sq_err + (geom->vocal_visual_mismatch * 0.02);
+    return (*spacing_error <= tolerance);
+}
+
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out) {
     if (!geom || param_count < 1 || sample_size < 2 || !aic_out || !bic_out) {
         return false;

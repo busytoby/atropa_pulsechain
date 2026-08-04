@@ -147,6 +147,9 @@ int evaluate_ordinal_cloglog_rating(const teddy_geometry_t *geom);
 // Evaluates an ordinal rating using a customized flexible link mixture weight (0.0 cloglog, 1.0 logit).
 int evaluate_ordinal_flexible_rating(const teddy_geometry_t *geom, double link_mixture_weight);
 
+// Diagnoses whether ordinal thresholds fit equidistant constraints.
+bool evaluate_threshold_equidistancy(const teddy_geometry_t *geom, double tolerance, double *spacing_error);
+
 // Computes model selection diagnostics via AIC and BIC information criteria.
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out);
 

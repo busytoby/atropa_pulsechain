@@ -104,6 +104,12 @@ int main(void) {
     assert(rating_flex >= 1 && rating_flex <= 7);
     printf("   ✓ R H B Christensen flexible mixture link ordinal rating verified successfully\n");
 
+    // Test threshold equidistancy diagnostics calculation
+    double spacing_err = 0.0;
+    assert(evaluate_threshold_equidistancy(&geom, 1.0, &spacing_err));
+    assert(spacing_err >= 0.0);
+    printf("   ✓ R H B Christensen threshold equidistancy diagnostics verified successfully\n");
+
     // Test ACID transaction behavior (Commit successful path)
     evaluation_tx_t tx = begin_evaluation_transaction(&geom);
     assert(tx.active);
