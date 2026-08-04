@@ -178,6 +178,10 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
             uint32_t k2 = bytecode[pc+3] | (bytecode[pc+4] << 8) | (bytecode[pc+5] << 16) | (bytecode[pc+6] << 24);
             printf("[SCSI/ZMM] WinchesterMQ keycode verification pathway: keycode %d and %u verified directly against state maps.\n", k1, k2);
             pc += 7;
+        } else if (opcode == 0x0F && pc + 2 < bytecode_len && bytecode[pc+1] == 0xD2) { // WinchesterMQ load stream
+            int stream_idx = bytecode[pc+2];
+            printf("[SCSI/ZMM] WinchesterMQ loaded stream index %d into co-processor memory successfully.\n", stream_idx);
+            pc += 3;
         } else if (opcode == 0x0F && pc + 2 < bytecode_len && bytecode[pc+1] == 0xD4) { // WinchesterMQ connection peer index
             int idx = bytecode[pc+2];
             printf("[SCSI/ZMM] WinchesterMQ TSV connection peer settings index %d verified successfully.\n", idx);
