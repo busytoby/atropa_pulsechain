@@ -86,7 +86,24 @@ else
     exit_code=1
 fi
 
+# Extract and display side-by-side performance metrics
 if [ "${exit_code}" -eq 0 ]; then
+    # Helper to parse values
+    alu_instructions=$(grep -o "completed [0-9]* instructions" "${log_file_alu}" | awk '{sum+=$2} END {print sum}')
+    tsv_instructions=$(grep -o "completed [0-9]* instructions" "${log_file_tsv}" | awk '{sum+=$2} END {print sum}')
+    
+    alu_peak_mem=$(grep -o "Peak Active Bytes: [0-9]*" "${log_file_alu}" | awk '{if($4>max) max=$4} END {print max}')
+    tsv_peak_mem=$(grep -o "Peak Active Bytes: [0-9]*" "${log_file_tsv}" | awk '{if($4>max) max=$4} END {print max}')
+
+    echo -e "\n${BLUE}=============================================================${NC}"
+    echo -e "${BLUE}          CORE SUITE SIDE-BY-SIDE METRICS COMPARISON         ${NC}"
+    echo -e "${BLUE}=============================================================${NC}"
+    printf "  %-30s | %-12s | %-12s\n" "Metric Descriptor" "ALU Core" "TSV Core"
+    echo -e "  -------------------------------------------------------------"
+    printf "  %-30s | %-12s | %-12s\n" "Total Instructions Executed" "${alu_instructions:-0}" "${tsv_instructions:-0}"
+    printf "  %-30s | %-12s | %-12s\n" "Peak Active Heap Load (Bytes)" "${alu_peak_mem:-0}" "${tsv_peak_mem:-0}"
+    echo -e "  ============================================================="
+
     echo -e "\n${GREEN}=============================================================${NC}"
     echo -e "${GREEN}      ALL PLATFORMS VERIFIED SUCCESSFULLY UNDER CRITERIA     ${NC}"
     echo -e "${GREEN}=============================================================${NC}"
