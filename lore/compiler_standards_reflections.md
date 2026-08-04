@@ -214,6 +214,16 @@ int main() {
 * **Compiler Built-in**: 21 characters (`__builtin_wmq_ack();`).
 * **Source Size Reduction**: 67% character footprint decrease.
 
+### Host Busy State Comparison
+* **Boilerplate Wrapper**: 63 characters.
+  ```c
+  int is_busy() {
+      return *(volatile int*)(0x208C);
+  }
+  ```
+* **Compiler Built-in**: 22 characters (`__builtin_wmq_busy();`).
+* **Source Size Reduction**: 65% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
