@@ -307,6 +307,8 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset) {
             int r_ly = ly - (int)(lw * sinf(perp_a));
             draw_line(l_lx, l_ly, r_lx, r_ly, 46, 125, 50);
         }
+        // Draw light green center spine vein
+        draw_line(lx, ly, lx, ly, 100, 190, 105);
     }
 }
 
@@ -412,9 +414,28 @@ static void draw_usd_spline_ribbon(float time_val, float pulse, double usd_value
 
         draw_line(prev_x, prev_y, sx, sy, 34, 139, 34);
         draw_line(prev_x + 1, prev_y, sx + 1, sy, 25, 110, 25); // darker shade for volume
+
+        // Tiny structural bristles/hairs projecting perpendicular to the stem
+        if (j % 2 == 0) {
+            float perp_x = -(float)(sy - prev_y);
+            float perp_y = (float)(sx - prev_x);
+            float len = sqrtf(perp_x*perp_x + perp_y*perp_y);
+            if (len > 0.0f) {
+                perp_x /= len;
+                perp_y /= len;
+                int hx = sx + (int)(perp_x * 3.5f);
+                int hy = sy + (int)(perp_y * 3.5f);
+                draw_line(sx, sy, hx, hy, 80, 150, 90); // Muted green hair bristle
+            }
+        }
+
         prev_x = sx;
         prev_y = sy;
     }
+
+    // Calyx / Receptacle (forest green bud cup at the bottom base of the flower head)
+    draw_glossy_bubble((int)poppy_joints[0].x, (int)poppy_joints[0].y + 12, 10, 46, 125, 50);
+
 
     // Multilayered Petals: Outer layer (1, 3, 5) is larger & darker; Inner layer (2, 4, 6) is smaller & brighter
     for (int i = 1; i <= 6; i += 2) {
