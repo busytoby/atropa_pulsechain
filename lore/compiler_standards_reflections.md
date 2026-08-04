@@ -314,6 +314,16 @@ int main() {
 * **Compiler Built-in**: 21 characters (`__builtin_wmq_dns();`).
 * **Source Size Reduction**: 65% character footprint decrease.
 
+### Host DHCP Server Comparison
+* **Boilerplate Wrapper**: 62 characters.
+  ```c
+  int get_dhcp() {
+      return *(volatile int*)(0x2064);
+  }
+  ```
+* **Compiler Built-in**: 22 characters (`__builtin_wmq_dhcp();`).
+* **Source Size Reduction**: 64% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
