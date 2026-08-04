@@ -101,6 +101,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->resource_conservation = 1.0;    // High conservation
             geom->spatial_orientation = 0.0;      // Low spatial orientation
             geom->defense_vigilance = 0.0;        // Low defense vigilance
+            geom->conflict_mediation = 1.0;       // High conflict mediation
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -200,6 +201,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->resource_conservation = 0.0;    // Low conservation
             geom->spatial_orientation = 1.0;      // High spatial orientation
             geom->defense_vigilance = 1.0;        // High defense vigilance
+            geom->conflict_mediation = 0.0;       // Low conflict mediation
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -299,6 +301,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->resource_conservation = 0.0;    // Low conservation
             geom->spatial_orientation = 1.0;      // High spatial orientation
             geom->defense_vigilance = 1.0;        // High defense vigilance
+            geom->conflict_mediation = 0.0;       // Low conflict mediation
             break;
     }
 }
