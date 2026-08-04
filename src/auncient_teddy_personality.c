@@ -939,6 +939,21 @@ bool evaluate_status_dominance_provocation(const teddy_geometry_t *geom, double 
     return true;
 }
 
+bool evaluate_threat_replication_consistency(const teddy_geometry_t *geom, const double *threat_observations, int count, double *consistency_out) {
+    if (!geom || !threat_observations || count < 1 || !consistency_out) {
+        return false;
+    }
+    double expected_threat = evaluate_fw_threat_level(geom);
+    double error_sum = 0.0;
+    for (int i = 0; i < count; ++i) {
+        double diff = threat_observations[i] - expected_threat;
+        error_sum += diff * diff;
+    }
+    double variance = error_sum / count;
+    *consistency_out = 1.0 / (1.0 + variance);
+    return true;
+}
+
 bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncanny_score_out) {
     if (!geom || !uncanny_score_out) {
         return false;

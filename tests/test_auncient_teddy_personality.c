@@ -304,7 +304,13 @@ int main(void) {
     double status_dom_threat = 0.0;
     assert(evaluate_status_dominance_provocation(&geom, 2.5, &status_dom_threat));
     assert(status_dom_threat >= 0.0);
-    printf("   ✓ GENIOLE et al. fWHR threat, visual-vocal mismatch, reactive retaliation, rapid exposure consistency, cooperative cheating risk, rapid threat limit, retaliation profile, aggression threshold, exposure-adjusted threat, and status-dominance threat verified successfully\n");
+
+    // Test Geniole threat replication consistency calculation
+    double observations[3] = {1.5, 1.6, 1.4};
+    double rep_consistency = 0.0;
+    assert(evaluate_threat_replication_consistency(&geom, observations, 3, &rep_consistency));
+    assert(rep_consistency > 0.0);
+    printf("   ✓ GENIOLE et al. fWHR threat, visual-vocal mismatch, reactive retaliation, rapid exposure consistency, cooperative cheating risk, rapid threat limit, retaliation profile, aggression threshold, exposure-adjusted threat, status-dominance threat, and threat replication consistency verified successfully\n");
 
     // Test Hyde uncanny mismatch index calculation
     double uncanny_val = 0.0;

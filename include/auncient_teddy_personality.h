@@ -251,6 +251,9 @@ bool evaluate_exposure_adjusted_threat_threshold(const teddy_geometry_t *geom, d
 // Evaluates status-dominance threat interaction under provocation (Geniole et al.).
 bool evaluate_status_dominance_provocation(const teddy_geometry_t *geom, double provocation_scale, double *dominance_threat_out);
 
+// Evaluates statistical threat assessment consistency across repeated dominance trials (Geniole et al.).
+bool evaluate_threat_replication_consistency(const teddy_geometry_t *geom, const double *threat_observations, int count, double *consistency_out);
+
 // Evaluates the vocal-visual uncanny mismatch index based on geometry and pitch (Hyde et al.).
 bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncanny_score_out);
 
