@@ -695,6 +695,31 @@ static void test_compiler_wmq_ip(void) {
     printf("[Test] Compiler __builtin_wmq_ip pipeline tests passed.\n");
 }
 
+static void test_compiler_wmq_port(void) {
+    printf("[Test] Running compiler __builtin_wmq_port pipeline tests...\n");
+    
+    const char *source = "int main() { __builtin_wmq_port(); return 45; }";
+    uint8_t bytecode[32];
+    size_t bytecode_len = 0;
+    
+    bool ok = tsfi2_compile(source, bytecode, sizeof(bytecode), &bytecode_len);
+    assert(ok == true);
+    assert(bytecode_len == 8); // 2 bytes for port + 5 bytes for mov eax + 1 byte ret
+    
+    const char *prog_file = "/tmp/test_compiler_port_out.dat.bin";
+    ok = tsfi2_compile_to_dat_bin(prog_file, 0x1000, 1, bytecode, bytecode_len);
+    assert(ok == true);
+    
+    Tsfi2CpuState cpu;
+    ok = tsfi2_load_and_execute(prog_file, &cpu);
+    assert(ok == true);
+    assert(cpu.halted == true);
+    assert(cpu.exit_code == 45);
+    
+    remove(prog_file);
+    printf("[Test] Compiler __builtin_wmq_port pipeline tests passed.\n");
+}
+
 int main(void) {
     printf("[Test] Running TSFi2 compiler front-end tests...\n");
     test_compiler_pipeline();
@@ -724,6 +749,7 @@ int main(void) {
     test_compiler_wmq_id();
     test_compiler_wmq_mac();
     test_compiler_wmq_ip();
+    test_compiler_wmq_port();
     printf("[Test] All compiler front-end tests completed successfully.\n");
     return 0;
 }

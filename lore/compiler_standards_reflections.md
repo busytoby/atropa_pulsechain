@@ -274,6 +274,16 @@ int main() {
 * **Compiler Built-in**: 20 characters (`__builtin_wmq_ip();`).
 * **Source Size Reduction**: 66% character footprint decrease.
 
+### Host Socket Port Comparison
+* **Boilerplate Wrapper**: 62 characters.
+  ```c
+  int get_port() {
+      return *(volatile int*)(0x2074);
+  }
+  ```
+* **Compiler Built-in**: 22 characters (`__builtin_wmq_port();`).
+* **Source Size Reduction**: 64% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
