@@ -114,7 +114,13 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
     uint64_t wmq_secret = 0;
     uint64_t wmq_prime = 953467ULL;
     uint64_t wmq_pole = 0;
-    uint32_t wmq_buffer[16] = {0};
+
+    FILE *init_shm = fopen("/tmp/stanag_coax_loopback.bin", "w+b");
+    if (init_shm) {
+        uint32_t zero_buf[16] = {0};
+        fwrite(zero_buf, sizeof(uint32_t), 16, init_shm);
+        fclose(init_shm);
+    }
 
     // Emulate instruction parsing
     size_t pc = 0;
@@ -140,7 +146,13 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
             printf("[SCSI/ZMM] WinchesterMQ incoming buffer at offset %d peeked successfully.\n", idx);
             uint32_t ret_val = 0;
             if (idx < 16) {
-                ret_val = wmq_buffer[idx];
+                FILE *shm = fopen("/tmp/stanag_coax_loopback.bin", "rb");
+                if (shm) {
+                    fseek(shm, idx * sizeof(uint32_t), SEEK_SET);
+                    size_t read_cnt = fread(&ret_val, sizeof(uint32_t), 1, shm);
+                    (void)read_cnt;
+                    fclose(shm);
+                }
                 if (idx == 0 && ret_val == 78125) {
                     ret_val = 201308;
                 }
@@ -152,7 +164,13 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
             uint32_t val = bytecode[pc+3] | (bytecode[pc+4] << 8) | (bytecode[pc+5] << 16) | (bytecode[pc+6] << 24);
             printf("[SCSI/ZMM] WinchesterMQ incoming buffer at offset %d poked with value %u successfully.\n", idx, val);
             if (idx < 16) {
-                wmq_buffer[idx] = val;
+                FILE *shm = fopen("/tmp/stanag_coax_loopback.bin", "r+b");
+                if (shm) {
+                    fseek(shm, idx * sizeof(uint32_t), SEEK_SET);
+                    size_t write_cnt = fwrite(&val, sizeof(uint32_t), 1, shm);
+                    (void)write_cnt;
+                    fclose(shm);
+                }
             }
             pc += 7;
         } else if (opcode == 0x0F && pc + 2 < bytecode_len && bytecode[pc+1] == 0xD4) { // WinchesterMQ connection peer index
