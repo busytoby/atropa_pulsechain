@@ -249,6 +249,75 @@ object "WinchesterMQ" {
             }
 
             // ----------------------------------------------------------------
+            // METHOD: evaluate_gumbel_flyback_transient_tax (flyback_voltage, threshold_limit)
+            // Selector: 0xe399f0f4 (integer scaled by 1000)
+            // ----------------------------------------------------------------
+            if eq(selector, 0xe399f0f4) {
+                let flyback_voltage := calldataload(4)
+                let threshold_limit := calldataload(36)
+                
+                let tax := 0
+                if gt(threshold_limit, 0) {
+                    // x = (flyback_voltage - threshold_limit) * 1000 / threshold_limit (scaled by 1000)
+                    let x := div(mul(sub(flyback_voltage, threshold_limit), 1000), threshold_limit)
+                    
+                    // Gumbel tax: 1.0 - exp(-exp(x))
+                    // Let's approximate exp(x) where x can be negative or positive.
+                    // If x < 0: exp(x) = 1000 + x + x^2/2000
+                    // If x >= 0: exp(x) = 1000 + x + x^2/2000
+                    let exp_x := 1000
+                    let sign := 1
+                    if slt(x, 0) {
+                        sign := sub(0, 1)
+                    }
+                    
+                    let abs_x := x
+                    if slt(x, 0) {
+                        abs_x := sub(0, x)
+                    }
+                    
+                    if lt(abs_x, 1500) {
+                        let term := add(1000, abs_x)
+                        let term2 := div(mul(abs_x, abs_x), 2000)
+                        if eq(sign, 1) {
+                            exp_x := add(term, term2)
+                        }
+                        if eq(sign, sub(0, 1)) {
+                            // exp(-abs_x) = 1000 - abs_x + abs_x^2/2000
+                            exp_x := add(sub(1000, abs_x), term2)
+                        }
+                    }
+                    if iszero(lt(abs_x, 1500)) {
+                        if eq(sign, 1) {
+                            exp_x := 4500
+                        }
+                        if eq(sign, sub(0, 1)) {
+                            exp_x := 220
+                        }
+                    }
+                    
+                    // neg_exp_exp = -exp_x / 1000 (scaled exp_x)
+                    // Let's compute exp(-exp_x/1000)
+                    // y = exp_x (scaled by 1000)
+                    let exp_y := 1000
+                    if lt(exp_x, 1500) {
+                        exp_y := add(sub(1000, exp_x), div(mul(exp_x, exp_x), 2000))
+                    }
+                    if iszero(lt(exp_x, 1500)) {
+                        exp_y := 0
+                    }
+                    
+                    // tax = 1000 - exp_y (scaled by 1000)
+                    if lt(exp_y, 1000) {
+                        tax := sub(1000, exp_y)
+                    }
+                }
+                
+                mstore(0x00, tax)
+                return(0x00, 32)
+            }
+
+            // ----------------------------------------------------------------
             // METHOD 1: writeSignalsOut(uint8 signals) -> void
             // Selector: 0x485301a0 (Simulates writing to $DF01)
             // ----------------------------------------------------------------
