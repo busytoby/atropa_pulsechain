@@ -511,6 +511,29 @@ object "PersonalityEngine" {
                 return(0x00, 32)
             }
 
+            // ----------------------------------------------------------------
+            // METHOD: simulate_snubber_flyback_transient (supply_voltage, load_inductance, switching_time_sec, snubber_resistance)
+            // Selector: 0xe399f0ff (integer scaled by 1000)
+            // ----------------------------------------------------------------
+            if eq(selector, 0xe399f0ff) {
+                let supply_voltage := calldataload(4)
+                let load_inductance := calldataload(36)
+                let switching_time_sec := calldataload(68)
+                let snubber_resistance := calldataload(100)
+                
+                let peak := supply_voltage
+                if gt(switching_time_sec, 0) {
+                    peak := add(supply_voltage, div(mul(load_inductance, 2000), switching_time_sec))
+                }
+                
+                // attenuated = (peak * 1000) / (1000 + snubber_resistance * 20)
+                let denom := add(1000, mul(snubber_resistance, 20))
+                let attenuated := div(mul(peak, 1000), denom)
+                
+                mstore(0x00, attenuated)
+                return(0x00, 32)
+            }
+
             revert(0, 0)
         }
     }
