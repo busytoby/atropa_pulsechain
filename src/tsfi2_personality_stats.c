@@ -551,3 +551,26 @@ bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count
     *bic_out = -2.0 * log_lik + (double)param_count * log((double)sample_size);
     return true;
 }
+
+bool evaluate_ordinal_flexible_mixture_link(const teddy_geometry_t *geom, double mixture_weight, int *rating_out) {
+    if (!geom || mixture_weight < 0.0 || mixture_weight > 1.0 || !rating_out) {
+        return false;
+    }
+    int logit_rating = evaluate_ordinal_flexible_rating(geom, 1.0);
+    int cloglog_rating = evaluate_ordinal_flexible_rating(geom, 0.0);
+    double blended = ((double)logit_rating * mixture_weight) + ((double)cloglog_rating * (1.0 - mixture_weight));
+    *rating_out = (int)(blended + 0.5);
+    return true;
+}
+
+bool evaluate_ordinal_mixture_nominal_thresholds(const teddy_geometry_t *geom, double mixture_weight, const double *nominal_covariates, double *thresholds_out) {
+    if (!geom || mixture_weight < 0.0 || mixture_weight > 1.0 || !nominal_covariates || !thresholds_out) {
+        return false;
+    }
+    for (int i = 0; i < 5; ++i) {
+        double baseline = -2.0 + (double)i * 1.0;
+        double nominal_adjustment = nominal_covariates[i] * (1.0 + mixture_weight);
+        thresholds_out[i] = baseline - (geom->behavioral_mismatch * 0.5) + nominal_adjustment;
+    }
+    return true;
+}

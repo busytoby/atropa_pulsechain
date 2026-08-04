@@ -192,6 +192,19 @@ int main(void) {
     assert(rating_flex >= 1 && rating_flex <= 7);
     printf("   ✓ R H B Christensen flexible mixture link ordinal rating verified successfully\n");
 
+    // Test flexible mixture link function mapping ordinal boundaries
+    int rating_mixture = 0;
+    assert(evaluate_ordinal_flexible_mixture_link(&geom, 0.5, &rating_mixture));
+    assert(rating_mixture >= 1 && rating_mixture <= 7);
+    printf("   ✓ R H B Christensen flexible mixture link mapping verified successfully\n");
+
+    // Test mixture link nominal-adjusted threshold bounds calculation
+    double nominal_covs[5] = {0.1, -0.2, 0.3, -0.1, 0.2};
+    double mixture_thresholds[5];
+    assert(evaluate_ordinal_mixture_nominal_thresholds(&geom, 0.5, nominal_covs, mixture_thresholds));
+    assert(mixture_thresholds[0] < mixture_thresholds[4]);
+    printf("   ✓ R H B Christensen flexible mixture link nominal-adjusted thresholds verified successfully\n");
+
     // Test Cauchy/Gumbel mixture link rating
     int rating_cg = evaluate_ordinal_cauchy_gumbel_mixture(&geom, 0.5);
     assert(rating_cg >= 1 && rating_cg <= 7);

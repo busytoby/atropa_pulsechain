@@ -191,14 +191,20 @@ int evaluate_ordinal_loggamma_rating(const teddy_geometry_t *geom, double lambda
 // Evaluates an ordinal rating using a Gumbel link model.
 int evaluate_ordinal_gumbel_rating(const teddy_geometry_t *geom);
 
-// Evaluates an ordinal rating using a scale-adjusted Gumbel link model (Christensen).
-int evaluate_ordinal_gumbel_scale_rating(const teddy_geometry_t *geom, double scale_covariate);
+// Evaluates the flexible mixture link function mapping ordinal boundaries (Christensen).
+bool evaluate_ordinal_flexible_mixture_link(const teddy_geometry_t *geom, double mixture_weight, int *rating_out);
 
-// Evaluates an ordinal rating using a customized flexible link mixture weight (0.0 cloglog, 1.0 logit).
+// Evaluates the mixture link nominal-adjusted threshold bounds (Christensen).
+bool evaluate_ordinal_mixture_nominal_thresholds(const teddy_geometry_t *geom, double mixture_weight, const double *nominal_covariates, double *thresholds_out);
+
+// Evaluates Cauchy/Gumbel mixture link mappings. a customized flexible link mixture weight (0.0 cloglog, 1.0 logit).
 int evaluate_ordinal_flexible_rating(const teddy_geometry_t *geom, double link_mixture_weight);
 
 // Evaluates an ordinal rating using a Cauchy and Gumbel mixture link model.
 int evaluate_ordinal_cauchy_gumbel_mixture(const teddy_geometry_t *geom, double cauchy_weight);
+
+// Evaluates an ordinal rating using a scale-adjusted Gumbel link model (Christensen).
+int evaluate_ordinal_gumbel_scale_rating(const teddy_geometry_t *geom, double scale_covariate);
 
 // Diagnoses whether ordinal thresholds fit equidistant constraints.
 bool evaluate_threshold_equidistancy(const teddy_geometry_t *geom, double tolerance, double *spacing_error);
