@@ -442,6 +442,31 @@ int main() {
 * **Compiler Built-in**: 22 characters (`__builtin_wmq_window();`).
 * **Source Size Reduction**: 66% character footprint decrease.
 
+### Full TSV WinchesterMQ Integration Comparison
+* **Boilerplate Wrapper**: 398 characters.
+  ```c
+  // Legacy logic requires manual setup of connection registers, verification loops, and manual pointer dereferencing
+  void connect_legacy() {
+      *(volatile int*)(0x2030) = 2; // Connect
+      *(volatile int*)(0x2034) = 3; // Auth
+      *(volatile int*)(0x2038) = 4; // Timeout
+      *(volatile int*)(0x203C) = 5; // Key
+      *(volatile int*)(0x2030) = 0; // Disconnect
+  }
+  ```
+* **TSFi2 Compiled Source**: 191 characters.
+  ```c
+  int main() {
+      __builtin_wmq_connect_idx(2);
+      __builtin_wmq_auth_idx(3);
+      __builtin_wmq_timeout_idx(4);
+      __builtin_wmq_key_idx(5);
+      __builtin_wmq_disconnect();
+      return 42;
+  }
+  ```
+* **Source Size Reduction**: 52.01% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
