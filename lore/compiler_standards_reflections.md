@@ -164,6 +164,16 @@ int main() {
 * **Compiler Built-in**: 23 characters (`__builtin_wmq_owner();`).
 * **Source Size Reduction**: 64% character footprint decrease.
 
+### Firmware Version Comparison
+* **Boilerplate Wrapper**: 66 characters.
+  ```c
+  int get_version() {
+      return *(volatile int*)(0x20F4);
+  }
+  ```
+* **Compiler Built-in**: 25 characters (`__builtin_wmq_version();`).
+* **Source Size Reduction**: 62% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
