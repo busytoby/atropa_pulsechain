@@ -1202,21 +1202,47 @@ uint32_t interop_fee_decision_evaluate(const InteropDecisionNode *nodes, uint32_
 bool antigravity_validate_response(const char *response) {
     if (!response) return false;
     
-    int words = 0;
-    bool in_word = false;
-    const char *ptr = response;
-    while (*ptr) {
-        if (*ptr == ' ' || *ptr == '\t' || *ptr == '\n' || *ptr == '\r' || *ptr == '_' || *ptr == '-') {
-            in_word = false;
-        } else if (!in_word) {
-            in_word = true;
-            words++;
+    // Check if "stood" is in the first 15 characters
+    for (int i = 0; i <= 10 && response[i] != '\0'; i++) {
+        if (strncmp(response + i, "stood", 5) == 0) {
+            return false;
         }
-        ptr++;
     }
-    
-    if (words <= 1 && strlen(response) > 0) {
-        return false;
+
+    // Check for any 1-word sentence
+    const char *s_start = response;
+    while (*s_start) {
+        while (*s_start && (*s_start == ' ' || *s_start == '\t' || *s_start == '\n' || *s_start == '\r')) {
+            s_start++;
+        }
+        if (!*s_start) break;
+        
+        const char *s_end = s_start;
+        while (*s_end && *s_end != '.' && *s_end != '?' && *s_end != '!') {
+            s_end++;
+        }
+        
+        int sentence_words = 0;
+        bool in_word = false;
+        const char *p = s_start;
+        while (p < s_end) {
+            if (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r' || *p == ',' || *p == ';' || *p == '_' || *p == '-') {
+                in_word = false;
+            } else if (!in_word) {
+                in_word = true;
+                sentence_words++;
+            }
+            p++;
+        }
+        
+        if (sentence_words == 1) {
+            return false;
+        }
+        
+        s_start = s_end;
+        if (*s_start) {
+            s_start++;
+        }
     }
     
     return true;
