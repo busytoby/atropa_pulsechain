@@ -100,6 +100,63 @@ try {
     console.error("[GAUNTLET LIVE] Failed parsing SewnHeart USDA asset:", e.message);
 }
 
+// Parse Poly Haven CC0 3D model (Poly Haven Asset Integration)
+let polyHavenVertices = [];
+let polyHavenIndices = [];
+let polyHavenAssetName = "None";
+try {
+    const polyPath = "/tmp/poly_haven_model.json";
+    if (fs.existsSync(polyPath)) {
+        const content = JSON.parse(fs.readFileSync(polyPath, "utf8"));
+        polyHavenVertices = content.vertices || [];
+        polyHavenIndices = content.indices || [];
+        polyHavenAssetName = content.name || "Unknown";
+        console.log(`[GAUNTLET LIVE] Successfully loaded Poly Haven asset "${polyHavenAssetName}": ${polyHavenVertices.length} vertices.`);
+    }
+} catch (e) {
+    console.error("[GAUNTLET LIVE] Failed loading Poly Haven asset:", e.message);
+}
+
+function draw3DPolyHavenAsset(ops, cx, cy, angle) {
+    if (polyHavenVertices.length === 0) return;
+
+    const scale = 22.0; // scale factor
+    const projected = [];
+
+    const cosA = Math.cos(angle);
+    const sinA = Math.sin(angle);
+
+    for (let v of polyHavenVertices) {
+        // Rotate around Y axis
+        let x1 = v.x * cosA - v.z * sinA;
+        let z1 = v.x * sinA + v.z * cosA;
+        // Rotate around X axis slightly for 3D tilt
+        let cosT = 0.866;
+        let sinT = 0.5;
+        let y2 = v.y * cosT - z1 * sinT;
+        
+        projected.push({
+            x: Math.floor(cx + x1 * scale),
+            y: Math.floor(cy - y2 * scale)
+        });
+    }
+
+    // Draw edges
+    for (let i = 0; i < polyHavenIndices.length; i += 4) {
+        const p1 = projected[polyHavenIndices[i]];
+        const p2 = projected[polyHavenIndices[i+1]];
+        const p3 = projected[polyHavenIndices[i+2]];
+        const p4 = projected[polyHavenIndices[i+3]];
+
+        if (!p1 || !p2 || !p3 || !p4) continue;
+
+        drawLine(ops, p1.x, p1.y, p2.x, p2.y, 147, 50, 220);
+        drawLine(ops, p2.x, p2.y, p3.x, p3.y, 147, 50, 220);
+        drawLine(ops, p3.x, p3.y, p4.x, p4.y, 147, 50, 220);
+        drawLine(ops, p4.x, p4.y, p1.x, p1.y, 147, 50, 220);
+    }
+}
+
 function draw3DSewnHeart(ops, cx, cy, angle) {
     if (sewnHeartVertices.length === 0) return;
 
@@ -528,20 +585,11 @@ function renderGame() {
         draw3DSewnHeart(ops, c.x, c.y, heartRotation);
     }
 
-    // 5. Draw active traps
-    const trapPulse = Math.floor(4 * Math.sin(frameCount * 0.2));
+    // 5. Draw active traps (rotating 3D Poly Haven assets, e.g. ArmChair_01 / Concrete Barrier)
+    const trapRotation = frameCount * 0.05;
     for (let t of traps) {
         if (!t.active) continue;
-        ops.push({
-            type: "draw_rect",
-            x: t.x - 8 - trapPulse/2,
-            y: t.y - 8 - trapPulse/2,
-            w: 16 + trapPulse,
-            h: 16 + trapPulse,
-            r: 147,
-            g: 50,
-            b: 220
-        });
+        draw3DPolyHavenAsset(ops, t.x, t.y, trapRotation);
     }
 
     // 6. Draw Spawner
