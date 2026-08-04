@@ -248,6 +248,9 @@ bool evaluate_exposure_decay_uncanny(const teddy_geometry_t *geom, double exposu
 // Evaluates the velocity jitter pacing uncanny response (Hyde et al.).
 bool evaluate_velocity_jitter_uncanny(const teddy_geometry_t *geom, double velocity_variance, double *uncanny_score_out);
 
+// Evaluates the unpredictable micro-expression freeze uncanny response (Hyde et al.).
+bool evaluate_expression_freeze_uncanny(const teddy_geometry_t *geom, double freeze_duration_sec, double *uncanny_score_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 

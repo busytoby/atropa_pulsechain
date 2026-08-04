@@ -296,6 +296,12 @@ int main(void) {
     assert(vel_jitter_uncanny >= 0.0);
     printf("   ✓ HYDE et al. unpredictable animation velocity jitter verified successfully\n");
 
+    // Test Hyde unpredictable micro-expression freeze calculation
+    double freeze_uncanny = 0.0;
+    assert(evaluate_expression_freeze_uncanny(&geom, 2.0, &freeze_uncanny));
+    assert(freeze_uncanny > uncanny_val);
+    printf("   ✓ HYDE et al. unpredictable micro-expression freeze verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge
