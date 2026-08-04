@@ -138,6 +138,12 @@ int main(void) {
     assert(rating_gumbel >= 1 && rating_gumbel <= 7);
     printf("   ✓ R H B Christensen Gumbel ordinal rating verified successfully\n");
 
+    // Test cumulative link probability estimation
+    double link_prob = 0.0;
+    assert(evaluate_ordinal_link_probability(1.0, 1.5, 0, &link_prob)); // Logit
+    assert(link_prob > 0.0 && link_prob < 1.0);
+    printf("   ✓ R H B Christensen cumulative link probability verified successfully\n");
+
     // Test AIC and BIC information criteria diagnostics estimation
     double aic = 0.0, bic = 0.0;
     assert(evaluate_information_criteria(&geom, 3, 100, &aic, &bic));

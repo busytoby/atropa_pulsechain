@@ -158,8 +158,14 @@ int evaluate_ordinal_cloglog_rating(const teddy_geometry_t *geom);
 // Evaluates an ordinal rating using a probit link model.
 int evaluate_ordinal_probit_rating(const teddy_geometry_t *geom);
 
+// Evaluates an asymmetrical ordinal rating using a Gumbel (extreme value) link model.
+int evaluate_ordinal_gumbel_rating(const teddy_geometry_t *geom);
+
 // Evaluates an asymmetrical ordinal rating using a log-log link model.
 int evaluate_ordinal_loglog_rating(const teddy_geometry_t *geom);
+
+// Evaluates the cumulative probability under a chosen ordinal link model type.
+bool evaluate_ordinal_link_probability(double latent_val, double threshold_val, int link_type, double *probability_out);
 
 // Evaluates an ordinal rating using a Cauchy link model.
 int evaluate_ordinal_cauchy_rating(const teddy_geometry_t *geom);

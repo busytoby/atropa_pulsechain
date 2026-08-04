@@ -599,6 +599,33 @@ int evaluate_ordinal_gumbel_rating(const teddy_geometry_t *geom) {
     return 7;
 }
 
+bool evaluate_ordinal_link_probability(double latent_val, double threshold_val, int link_type, double *probability_out) {
+    if (!probability_out) {
+        return false;
+    }
+    double diff = threshold_val - latent_val;
+    switch (link_type) {
+        case 0: // Logit
+            *probability_out = 1.0 / (1.0 + exp(-diff));
+            break;
+        case 1: // Probit
+            *probability_out = 0.5 * (1.0 + erf(diff / sqrt(2.0)));
+            break;
+        case 2: // Cloglog
+            *probability_out = 1.0 - exp(-exp(diff));
+            break;
+        case 3: // Loglog
+            *probability_out = exp(-exp(-diff));
+            break;
+        case 4: // Gumbel
+            *probability_out = 1.0 - exp(-exp(diff));
+            break;
+        default:
+            return false;
+    }
+    return true;
+}
+
 int evaluate_ordinal_flexible_rating(const teddy_geometry_t *geom, double link_mixture_weight) {
     if (!geom) return 1;
     double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
