@@ -144,6 +144,9 @@ bool evaluate_hessian_diagnostics(const teddy_geometry_t *geom, double *variance
 // Evaluates an asymmetrical ordinal rating using a complementary log-log (cloglog) link model.
 int evaluate_ordinal_cloglog_rating(const teddy_geometry_t *geom);
 
+// Computes model selection diagnostics via AIC and BIC information criteria.
+bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out);
+
 // Engages systems via the SDK typestate and calculates parameters
 bool engage_system_boundary(agent_avatar_t *avatar, teddy_personality_t personality);
 

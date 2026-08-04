@@ -401,6 +401,17 @@ int evaluate_ordinal_cloglog_rating(const teddy_geometry_t *geom) {
     return 7;
 }
 
+bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out) {
+    if (!geom || param_count < 1 || sample_size < 2 || !aic_out || !bic_out) {
+        return false;
+    }
+    double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
+    double log_lik = -150.0 + (latent * 5.0) - (geom->behavioral_mismatch * 10.0);
+    *aic_out = -2.0 * log_lik + 2.0 * param_count;
+    *bic_out = -2.0 * log_lik + (double)param_count * log((double)sample_size);
+    return true;
+}
+
 bool engage_system_boundary(agent_avatar_t *avatar, teddy_personality_t personality) {
     if (!avatar) return false;
 

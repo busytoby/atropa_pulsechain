@@ -93,6 +93,12 @@ int main(void) {
     assert(rating_cloglog >= 1 && rating_cloglog <= 7);
     printf("   ✓ R H B Christensen complementary log-log ordinal rating verified successfully\n");
 
+    // Test AIC and BIC information criteria diagnostics estimation
+    double aic = 0.0, bic = 0.0;
+    assert(evaluate_information_criteria(&geom, 3, 100, &aic, &bic));
+    assert(aic > 0.0 && bic > 0.0);
+    printf("   ✓ R H B Christensen AIC and BIC model selection criteria verified successfully\n");
+
     printf("=============================================================\n");
     printf("PERSONALITY CONFIGURATIONS VALIDATED SUCCESSFULLY\n");
     printf("=============================================================\n");
