@@ -329,6 +329,28 @@ object "PersonalityEngine" {
                 return(0x00, 32)
             }
 
+            // ----------------------------------------------------------------
+            // METHOD: simulate_fet_discharge_verlet (current_pos, prev_pos, stiffness, time_step)
+            // Selector: 0xe399f0f9 (integer scaled by 1000)
+            // ----------------------------------------------------------------
+            if eq(selector, 0xe399f0f9) {
+                let current_pos := calldataload(4)
+                let prev_pos := calldataload(36)
+                let stiffness := calldataload(68)
+                let time_step := calldataload(100)
+                
+                // Verlet position integration: next = current + (current - prev) - stiffness * current * time_step^2 / 1000000
+                let next_pos := current_pos
+                if gt(current_pos, prev_pos) {
+                    let velocity := sub(current_pos, prev_pos)
+                    let force := div(mul(mul(stiffness, current_pos), mul(time_step, time_step)), 1000000)
+                    next_pos := sub(add(current_pos, velocity), force)
+                }
+                
+                mstore(0x00, next_pos)
+                return(0x00, 32)
+            }
+
             revert(0, 0)
         }
     }
