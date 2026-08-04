@@ -224,6 +224,16 @@ int main() {
 * **Compiler Built-in**: 22 characters (`__builtin_wmq_busy();`).
 * **Source Size Reduction**: 65% character footprint decrease.
 
+### Host Error Code Comparison
+* **Boilerplate Wrapper**: 64 characters.
+  ```c
+  int get_error() {
+      return *(volatile int*)(0x2094);
+  }
+  ```
+* **Compiler Built-in**: 23 characters (`__builtin_wmq_error();`).
+* **Source Size Reduction**: 64% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
