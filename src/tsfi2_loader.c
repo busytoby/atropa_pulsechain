@@ -117,6 +117,10 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
             double val = tsfi_displacementshader_eval_cubic(&ds, 128.0, 128.0);
             (void)val;
             pc += 2;
+        } else if (opcode == 0x0F && pc + 1 < bytecode_len && bytecode[pc+1] == 0xF9) { // WinchesterMQ status
+            printf("[SCSI/ZMM] WinchesterMQ status queried: active connection.\n");
+            cpu->exit_code = 1;
+            pc += 2;
         } else if (opcode == 0x0F && pc + 1 < bytecode_len && bytecode[pc+1] == 0xFA) { // WinchesterMQ halt
             printf("[SCSI/ZMM] WinchesterMQ processing core halted successfully.\n");
             cpu->halted = true;

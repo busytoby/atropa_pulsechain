@@ -71,6 +71,16 @@ int main() {
 * **Compiler Built-in**: 22 characters (`__builtin_wmq_halt();`).
 * **Source Size Reduction**: 55% character footprint decrease.
 
+### Core Status Comparison
+* **Boilerplate Wrapper**: 64 characters.
+  ```c
+  int get_status() {
+      return *(volatile int*)(0x2080);
+  }
+  ```
+* **Compiler Built-in**: 24 characters (`__builtin_wmq_status();`).
+* **Source Size Reduction**: 62% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
