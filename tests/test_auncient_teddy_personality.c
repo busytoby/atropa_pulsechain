@@ -33,6 +33,7 @@ typedef struct {
     double leadership_profile;       // Leadership divergence (0.0 supportive, 1.0 dominant)
     double maturity_index;           // Perceived age maturity (0.0 young, 1.0 mature/experienced)
     double persuasion_strategy;      // Persuasion strategy (0.0 sincerity/trust, 1.0 expertise/capability)
+    double empathy_index;            // Perceived empathy and gentleness (0.0 low, 1.0 high/nurturing)
 } teddy_geometry_t;
 
 // Maps abstract traits to geometric parameters based on study results
@@ -60,6 +61,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->leadership_profile = 0.0;      // Supportive profile
             geom->maturity_index = 0.0;          // Young profile
             geom->persuasion_strategy = 0.0;     // Sincerity-based persuasion
+            geom->empathy_index = 1.0;           // High empathy/nurturing
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -83,6 +85,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->leadership_profile = 1.0;      // Dominant profile
             geom->maturity_index = 1.0;          // Mature profile
             geom->persuasion_strategy = 1.0;     // Expertise-based persuasion
+            geom->empathy_index = 0.0;           // Low empathy
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -106,6 +109,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->leadership_profile = 1.0;      // Dominant profile
             geom->maturity_index = 1.0;          // Mature profile
             geom->persuasion_strategy = 1.0;     // Expertise-based persuasion
+            geom->empathy_index = 0.0;           // Low empathy
             break;
     }
 }
