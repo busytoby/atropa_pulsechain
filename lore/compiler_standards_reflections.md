@@ -174,6 +174,16 @@ int main() {
 * **Compiler Built-in**: 25 characters (`__builtin_wmq_version();`).
 * **Source Size Reduction**: 62% character footprint decrease.
 
+### Transfer Speed Comparison
+* **Boilerplate Wrapper**: 64 characters.
+  ```c
+  int get_speed() {
+      return *(volatile int*)(0x20F8);
+  }
+  ```
+* **Compiler Built-in**: 23 characters (`__builtin_wmq_speed();`).
+* **Source Size Reduction**: 64% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
