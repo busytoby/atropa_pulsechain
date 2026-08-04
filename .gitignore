@@ -699,4 +699,8 @@ Dysnomia/bin/
 tests/test_displacementshader
 tests/CBT021.zip
 tests/test_cbt021_inmemory_pds
-tests/test_cbt021_pds
+
+# Prevent compiled objects and library binaries from entering Git
+*.o
+*.so
+*.a
