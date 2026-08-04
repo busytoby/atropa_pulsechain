@@ -86,6 +86,41 @@ else
     exit_code=1
 fi
 
+# =====================================================================
+# GROUP 3: Toolchain and Integration Validations
+# =====================================================================
+echo -e "\n${BLUE}-------------------------------------------------------------${NC}"
+echo -e "${BLUE} GROUP 3: Toolchain and Integration Validations               ${NC}"
+echo -e "${BLUE}-------------------------------------------------------------${NC}"
+
+if ./sna_appc_peer assets/hathitrust_xcom.tmpl > /dev/null 2>&1; then
+    echo -e "  ${GREEN}[✔] SNA/APPC Communications Peer validation passed${NC}"
+else
+    echo -e "  ${RED}[✘] SNA/APPC Communications Peer validation failed${NC}"
+    exit_code=1
+fi
+
+echo -e "miua.4919149.0001.001\tallow\tpd\t1002345\tvol. 1\tMIU\t\t01234567\t9780123456789\t\t2001-12345\tAuncient History of the VM\tAnn Arbor, MI\tbib\t2026-08-04 00:00:00\t0\t2026\tmi\teng\tBK" > /tmp/test_schema.tsv
+if ./copybook_schema_validator assets/hathitrust_copybook.cpy /tmp/test_schema.tsv > /dev/null 2>&1; then
+    echo -e "  ${GREEN}[✔] COBOL Copybook Schema Validator validation passed${NC}"
+else
+    echo -e "  ${RED}[✘] COBOL Copybook Schema Validator validation failed${NC}"
+    exit_code=1
+fi
+rm -f /tmp/test_schema.tsv
+
+if [ -f /tmp/ht_primary.dat.bin ]; then
+    if ./hathitrust_preservation_query /tmp/ht_primary.dat.bin 9780123456789 > /dev/null 2>&1; then
+        echo -e "  ${GREEN}[✔] HathiTrust Reference Preservation Query validation passed${NC}"
+    else
+        echo -e "  ${RED}[✘] HathiTrust Reference Preservation Query validation failed${NC}"
+        exit_code=1
+    fi
+else
+    echo -e "  ${YELLOW}[-] HathiTrust Preservation Query validation skipped (No active DB)${NC}"
+fi
+
+
 # Extract and display side-by-side performance metrics
 if [ "${exit_code}" -eq 0 ]; then
     # Helper to parse values
