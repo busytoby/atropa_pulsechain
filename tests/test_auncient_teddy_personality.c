@@ -115,6 +115,30 @@ int main(void) {
     assert(geom.head_fwhr == 1.2); // Restored
     printf("   ✓ ACID transactions (commit, constraint verification, and rollback) verified successfully\n");
 
+    // Test End-to-End ACID Transaction
+    avatar_tx_t av_tx = begin_avatar_transaction(&avatar);
+    assert(av_tx.active);
+    avatar.geometry.head_fwhr = 2.0;
+    
+    // Commit to temporary binary file (Rule 13: .dat.bin extension only)
+    const char *tmp_bin = "/tmp/test_avatar_state.dat.bin";
+    assert(commit_avatar_transaction(&av_tx, tmp_bin));
+    assert(!av_tx.active);
+    assert(avatar.geometry.head_fwhr == 2.0);
+    
+    // Verify file created and clean up
+    FILE *bin_check = fopen(tmp_bin, "rb");
+    assert(bin_check != NULL);
+    fclose(bin_check);
+    remove(tmp_bin);
+    
+    // Rollback test
+    av_tx = begin_avatar_transaction(&avatar);
+    avatar.geometry.head_fwhr = -10.0;
+    assert(!commit_avatar_transaction(&av_tx, NULL));
+    assert(avatar.geometry.head_fwhr == 2.0);
+    printf("   ✓ End-to-End ACID transactions (durability writes to .dat.bin) verified successfully\n");
+
     printf("=============================================================\n");
     printf("PERSONALITY CONFIGURATIONS VALIDATED SUCCESSFULLY\n");
     printf("=============================================================\n");

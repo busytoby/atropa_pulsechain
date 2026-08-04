@@ -158,7 +158,18 @@ evaluation_tx_t begin_evaluation_transaction(teddy_geometry_t *target);
 bool commit_evaluation_transaction(evaluation_tx_t *tx);
 void rollback_evaluation_transaction(evaluation_tx_t *tx);
 
-// Engages systems via the SDK typestate and calculates parameters
+// ACID Transaction container for end-to-end avatar state.
+typedef struct {
+    agent_avatar_t *target;
+    agent_avatar_t backup;
+    bool active;
+} avatar_tx_t;
+
+avatar_tx_t begin_avatar_transaction(agent_avatar_t *avatar);
+bool commit_avatar_transaction(avatar_tx_t *tx, const char *bin_filepath);
+void rollback_avatar_transaction(avatar_tx_t *tx);
+
+// Engages systems via the SDK typestate and calculates parameters.
 bool engage_system_boundary(agent_avatar_t *avatar, teddy_personality_t personality);
 
 // Validates the SDK typestate sequence

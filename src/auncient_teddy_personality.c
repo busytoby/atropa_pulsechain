@@ -443,6 +443,51 @@ void rollback_evaluation_transaction(evaluation_tx_t *tx) {
     }
 }
 
+avatar_tx_t begin_avatar_transaction(agent_avatar_t *avatar) {
+    avatar_tx_t tx;
+    tx.target = avatar;
+    tx.active = false;
+    if (avatar) {
+        tx.backup = *avatar;
+        tx.active = true;
+    }
+    return tx;
+}
+
+bool commit_avatar_transaction(avatar_tx_t *tx, const char *bin_filepath) {
+    if (!tx || !tx->active || !tx->target) {
+        return false;
+    }
+    if (tx->target->geometry.head_fwhr < 0.1 || tx->target->geometry.head_fwhr > 3.0 ||
+        tx->target->geometry.stiffness < 0.0 || tx->target->geometry.stiffness > 1.0 ||
+        tx->target->sdk_state > 5) {
+        rollback_avatar_transaction(tx);
+        return false;
+    }
+    if (bin_filepath) {
+        FILE *f = fopen(bin_filepath, "wb");
+        if (!f) {
+            rollback_avatar_transaction(tx);
+            return false;
+        }
+        size_t written = fwrite(tx->target, sizeof(agent_avatar_t), 1, f);
+        fclose(f);
+        if (written != 1) {
+            rollback_avatar_transaction(tx);
+            return false;
+        }
+    }
+    tx->active = false;
+    return true;
+}
+
+void rollback_avatar_transaction(avatar_tx_t *tx) {
+    if (tx && tx->active && tx->target) {
+        *tx->target = tx->backup;
+        tx->active = false;
+    }
+}
+
 bool engage_system_boundary(agent_avatar_t *avatar, teddy_personality_t personality) {
     if (!avatar) return false;
 
