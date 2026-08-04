@@ -294,6 +294,16 @@ int main() {
 * **Compiler Built-in**: 24 characters (`__builtin_wmq_subnet();`).
 * **Source Size Reduction**: 62% character footprint decrease.
 
+### Host Gateway Address Comparison
+* **Boilerplate Wrapper**: 65 characters.
+  ```c
+  int get_gateway() {
+      return *(volatile int*)(0x206C);
+  }
+  ```
+* **Compiler Built-in**: 25 characters (`__builtin_wmq_gateway();`).
+* **Source Size Reduction**: 61% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
