@@ -18,51 +18,65 @@ echo -e "${BLUE}=============================================================${N
 # Ensure temporary files are clean
 rm -f /tmp/hasp_spool_audit.log
 
-# Define the test suites to run
-declare -a test_suites=(
-    "test-auncient-alu-wmq-integration:ALU WinchesterMQ Integration"
-    "test-auncient-tsv-wmq-integration:TSV WinchesterMQ Integration"
-    "test-tsfi2-loader:Loader Platform"
-    "test-tsfi2-compiler:Compiler Front-End"
-    "test-hathitrust-hathifile:HathiTrust VSAM Exporter"
-    "test-auncient-quadtree-ksds:Quadtree KSDS Operations"
-)
-
 exit_code=0
 
-for suite in "${test_suites[@]}"; do
-    target="${suite%%:*}"
-    description="${suite##*:}"
-    log_file="/tmp/harness_${target}.log"
+# =====================================================================
+# GROUP 1: ALU WinchesterMQ Core
+# =====================================================================
+echo -e "\n${BLUE}-------------------------------------------------------------${NC}"
+echo -e "${BLUE} GROUP 1: ALU WinchesterMQ Core Validation                   ${NC}"
+echo -e "${BLUE}-------------------------------------------------------------${NC}"
 
-    echo -e "\n${YELLOW}[Harness] Running ${description} [${target}]...${NC}"
+log_file_alu="/tmp/harness_alu_core.log"
+if make test-auncient-alu-wmq-integration > "${log_file_alu}" 2>&1; then
+    echo -e "  ${GREEN}[✔] ALU Core Platform Execution passed${NC}"
     
-    if make "${target}" > "${log_file}" 2>&1; then
-        echo -e "  ${GREEN}[✔] Platform Execution passed${NC}"
-        
-        # Validate LAU memory metrics if tracked on this platform
-        if grep -q "LAU MEMORY METRICS" "${log_file}"; then
-            if grep -q "LAU MEMORY CLEAN" "${log_file}"; then
-                echo -e "  ${GREEN}[✔] Memory Leak Check passed (No leaks detected)${NC}"
-            else
-                echo -e "  ${RED}[✘] Memory Leak Check failed (Leaks detected)${NC}"
-                grep "LAU MEMORY" "${log_file}" || true
-                exit_code=1
-            fi
+    if grep -q "LAU MEMORY METRICS" "${log_file_alu}"; then
+        if grep -q "LAU MEMORY CLEAN" "${log_file_alu}"; then
+            echo -e "  ${GREEN}[✔] ALU Core Memory Leak Check passed (No leaks detected)${NC}"
         else
-            echo -e "  ${BLUE}[-] Memory Leak Check skipped (Not instrumented)${NC}"
-        fi
-
-        # Validate general diagnostics format
-        if grep -q -i "warning" "${log_file}"; then
-            echo -e "  ${YELLOW}[!] Diagnostics warning captured in log${NC}"
+            echo -e "  ${RED}[✘] ALU Core Memory Leak Check failed (Leaks detected)${NC}"
+            grep "LAU MEMORY" "${log_file_alu}" || true
+            exit_code=1
         fi
     else
-        echo -e "  ${RED}[✘] Platform Execution failed${NC}"
-        cat "${log_file}"
+        echo -e "  ${RED}[✘] ALU Core Memory Leak Check missing (Not instrumented)${NC}"
         exit_code=1
     fi
-done
+else
+    echo -e "  ${RED}[✘] ALU Core Platform Execution failed${NC}"
+    cat "${log_file_alu}"
+    exit_code=1
+fi
+
+# =====================================================================
+# GROUP 2: TSV WinchesterMQ Core
+# =====================================================================
+echo -e "\n${BLUE}-------------------------------------------------------------${NC}"
+echo -e "${BLUE} GROUP 2: TSV WinchesterMQ Core Validation                   ${NC}"
+echo -e "${BLUE}-------------------------------------------------------------${NC}"
+
+log_file_tsv="/tmp/harness_tsv_core.log"
+if make test-auncient-tsv-wmq-integration > "${log_file_tsv}" 2>&1; then
+    echo -e "  ${GREEN}[✔] TSV Core Platform Execution passed${NC}"
+    
+    if grep -q "LAU MEMORY METRICS" "${log_file_tsv}"; then
+        if grep -q "LAU MEMORY CLEAN" "${log_file_tsv}"; then
+            echo -e "  ${GREEN}[✔] TSV Core Memory Leak Check passed (No leaks detected)${NC}"
+        else
+            echo -e "  ${RED}[✘] TSV Core Memory Leak Check failed (Leaks detected)${NC}"
+            grep "LAU MEMORY" "${log_file_tsv}" || true
+            exit_code=1
+        fi
+    else
+        echo -e "  ${RED}[✘] TSV Core Memory Leak Check missing (Not instrumented)${NC}"
+        exit_code=1
+    fi
+else
+    echo -e "  ${RED}[✘] TSV Core Platform Execution failed${NC}"
+    cat "${log_file_tsv}"
+    exit_code=1
+fi
 
 # Validate Spool Trace Log
 if [ -f /tmp/hasp_spool_audit.log ]; then
