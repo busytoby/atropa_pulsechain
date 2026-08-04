@@ -1004,6 +1004,15 @@ bool evaluate_reactive_retaliation_boundary(const teddy_geometry_t *geom, double
     return true;
 }
 
+bool evaluate_retaliation_aggression_scaling(const teddy_geometry_t *geom, double baseline_aggression, double *scaled_aggression_out) {
+    if (!geom || baseline_aggression < 0.0 || !scaled_aggression_out) {
+        return false;
+    }
+    double threat_level = evaluate_fw_threat_level(geom);
+    *scaled_aggression_out = baseline_aggression * (1.0 + (threat_level * 0.4));
+    return true;
+}
+
 bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncanny_score_out) {
     if (!geom || !uncanny_score_out) {
         return false;

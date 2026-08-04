@@ -326,7 +326,12 @@ int main(void) {
     double ret_boundary = 0.0;
     assert(evaluate_reactive_retaliation_boundary(&geom, 2.0, &ret_boundary));
     assert(ret_boundary >= 0.0);
-    printf("   ✓ GENIOLE et al. fWHR threat, visual-vocal mismatch, reactive retaliation, rapid exposure consistency, cooperative cheating risk, rapid threat limit, retaliation profile, aggression threshold, exposure-adjusted threat, status-dominance threat, threat replication consistency, and retaliation boundary verified successfully\n");
+
+    // Test Geniole fWHR retaliation aggression scaling calculation
+    double scaled_agg = 0.0;
+    assert(evaluate_retaliation_aggression_scaling(&geom, 1.5, &scaled_agg));
+    assert(scaled_agg > 1.5);
+    printf("   ✓ GENIOLE et al. fWHR threat, visual-vocal mismatch, reactive retaliation, rapid exposure consistency, cooperative cheating risk, rapid threat limit, retaliation profile, aggression threshold, exposure-adjusted threat, status-dominance threat, threat replication consistency, retaliation boundary, and aggression scaling verified successfully\n");
 
     // Test Hyde uncanny mismatch index calculation
     double uncanny_val = 0.0;
