@@ -159,6 +159,9 @@ bool evaluate_lrt_nested_models(double null_loglik, double alt_loglik, int df_di
 // Computes category predicted probability and confidence interval bounds.
 bool evaluate_predicted_probability_bounds(const teddy_geometry_t *geom, int category, double *prob_out, double *lower_prob_bound, double *upper_prob_bound);
 
+// Evaluates nominal effect parameter violations via the Wald test statistic.
+bool evaluate_wald_nominal_test(const double *beta_vector, const double *covariance_matrix, int df, double *wald_stat_out, double *p_value_out);
+
 // Computes model selection diagnostics via AIC and BIC information criteria.
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out);
 

@@ -130,6 +130,15 @@ int main(void) {
     assert(low_p <= high_p);
     printf("   ✓ R H B Christensen predicted class probability and standard error bounds verified successfully\n");
 
+    // Test Wald nominal effect test calculation
+    double betas[3] = {1.5, -2.0, 0.5};
+    double covar[9] = {0.25, 0.0, 0.0, 0.0, 0.16, 0.0, 0.0, 0.0, 0.09};
+    double w_stat = 0.0, w_pval = 0.0;
+    assert(evaluate_wald_nominal_test(betas, covar, 3, &w_stat, &w_pval));
+    assert(w_stat > 0.0);
+    assert(w_pval < 0.05); // statistically significant violation
+    printf("   ✓ R H B Christensen nominal effect Wald test diagnostics verified successfully\n");
+
     // Test ACID transaction behavior (Commit successful path)
     evaluation_tx_t tx = begin_evaluation_transaction(&geom);
     assert(tx.active);
