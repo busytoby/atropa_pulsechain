@@ -126,6 +126,9 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
             uint32_t val = bytecode[pc+3] | (bytecode[pc+4] << 8) | (bytecode[pc+5] << 16) | (bytecode[pc+6] << 24);
             printf("[SCSI/ZMM] WinchesterMQ incoming buffer at offset %d poked with value %u successfully.\n", idx, val);
             pc += 7;
+        } else if (opcode == 0x0F && pc + 1 < bytecode_len && bytecode[pc+1] == 0xE5) { // WinchesterMQ IP address
+            printf("[SCSI/ZMM] WinchesterMQ hardware IP address verified successfully.\n");
+            pc += 2;
         } else if (opcode == 0x0F && pc + 1 < bytecode_len && bytecode[pc+1] == 0xE6) { // WinchesterMQ MAC address
             printf("[SCSI/ZMM] WinchesterMQ hardware MAC address verified successfully.\n");
             pc += 2;

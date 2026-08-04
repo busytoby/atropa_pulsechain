@@ -264,6 +264,16 @@ int main() {
 * **Compiler Built-in**: 21 characters (`__builtin_wmq_mac();`).
 * **Source Size Reduction**: 65% character footprint decrease.
 
+### Host IP Address Comparison
+* **Boilerplate Wrapper**: 60 characters.
+  ```c
+  int get_ip() {
+      return *(volatile int*)(0x2078);
+  }
+  ```
+* **Compiler Built-in**: 20 characters (`__builtin_wmq_ip();`).
+* **Source Size Reduction**: 66% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
