@@ -19,6 +19,7 @@ typedef struct {
     double damping;          // Soft body motion damping coefficient
     double taper;            // Taper factor for sharp primitive deformations (cylinders/cones)
     double curvature;        // Surface curvature rounding factor (1.0 round, 0.2 flat/sharp)
+    double symmetry;         // Bilateral face/eye symmetry (1.0 symmetric, 0.8 crooked-face)
 } teddy_geometry_t;
 
 // Maps abstract traits to geometric parameters based on study results
@@ -32,6 +33,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->damping = 0.8;          // High damping for controlled motion
             geom->taper = 0.0;            // Zero taper for uniform primitives
             geom->curvature = 1.0;        // Fully rounded shapes
+            geom->symmetry = 1.0;         // Perfect symmetry for perceived honesty
             break;
         case PERSONALITY_AGGRESSIVE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most aggressive
@@ -41,6 +43,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->damping = 0.2;          // Low damping
             geom->taper = 0.4;            // Pointed taper for sharp silhouettes
             geom->curvature = 0.2;        // Flattened, angular surfaces
+            geom->symmetry = 0.8;         // Crooked asymmetry
             break;
         case PERSONALITY_EERIE:
             geom->head_fwhr = 0.7;        // Narrow head shape is rated most eerie
@@ -50,6 +53,7 @@ void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
             geom->damping = 0.1;          // Erratic motion decay
             geom->taper = 0.3;            // Tapered joints
             geom->curvature = 0.3;        // Sharp boundary edges
+            geom->symmetry = 0.8;         // Crooked asymmetry
             break;
     }
 }
