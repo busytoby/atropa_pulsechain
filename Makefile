@@ -704,7 +704,7 @@ test-auncient-apdl-compiler:
 	@rm -f tests/test_auncient_apdl_compiler
 
 test-auncient-teddy-personality:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinclude tests/test_auncient_teddy_personality.c src/auncient_teddy_personality.c -o tests/test_auncient_teddy_personality -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinclude -Itsfi2-deepseek/inc tests/test_auncient_teddy_personality.c src/auncient_teddy_personality.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c -o tests/test_auncient_teddy_personality -lm -lrt
 	./tests/test_auncient_teddy_personality
 	@rm -f tests/test_auncient_teddy_personality
 

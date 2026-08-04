@@ -2,6 +2,10 @@
 #include <stdio.h>
 #include <math.h>
 
+// GOST 28147-89 Russian block cipher functions from tsfi2-deepseek
+int tsfi_mf_ussr_gost_encrypt_32(uint32_t *left, uint32_t *right, const uint32_t *key_8words);
+extern int tsfi_gost_is_broadcast_channel;
+
 void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
     switch (trait) {
         case PERSONALITY_TRUSTWORTHY:
@@ -586,6 +590,27 @@ bool engage_system_boundary(agent_avatar_t *avatar, teddy_personality_t personal
 
     snprintf(avatar->usd_path, sizeof(avatar->usd_path), "/tmp/avatar_personality_%d.usda", (int)personality);
     return true;
+}
+
+bool authorize_boundary_via_gost(agent_avatar_t *avatar, const uint32_t *key_8words, uint32_t token_left, uint32_t token_right) {
+    if (!avatar || !key_8words) {
+        return false;
+    }
+    uint32_t left = token_left;
+    uint32_t right = token_right;
+    int old_channel_state = tsfi_gost_is_broadcast_channel;
+    tsfi_gost_is_broadcast_channel = 1;
+    int status = tsfi_mf_ussr_gost_encrypt_32(&left, &right, key_8words);
+    tsfi_gost_is_broadcast_channel = old_channel_state;
+    if (status != 0) {
+        return false;
+    }
+    if (left != token_left || right != token_right) {
+        avatar->sdk_state = 2;
+        avatar->dna_seed = ((uint64_t)left << 32) | right;
+        return true;
+    }
+    return false;
 }
 
 bool validate_sdk_typestate(const agent_avatar_t *avatar) {

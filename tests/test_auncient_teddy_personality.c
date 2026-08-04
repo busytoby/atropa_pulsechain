@@ -170,6 +170,14 @@ int main(void) {
     assert(avatar.geometry.head_fwhr == 2.0);
     printf("   ✓ End-to-End ACID transactions (durability writes to .dat.bin) verified successfully\n");
 
+    // Test GOST fallback authorization channel
+    uint32_t gost_key[8] = {0x01234567, 0x89ABCDEF, 0xFEDCBA98, 0x76543210, 
+                            0x55555555, 0xAAAAAAAA, 0x11111111, 0x99999999};
+    avatar.sdk_state = 0; // Reset to Unlocked
+    assert(authorize_boundary_via_gost(&avatar, gost_key, 0xAA55AA55, 0x55AA55AA));
+    assert(avatar.sdk_state == 2); // Transitioned to Executing
+    printf("   ✓ GOST fallback boundary authorization verified successfully\n");
+
     printf("=============================================================\n");
     printf("PERSONALITY CONFIGURATIONS VALIDATED SUCCESSFULLY\n");
     printf("=============================================================\n");
