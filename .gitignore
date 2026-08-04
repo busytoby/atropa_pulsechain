@@ -730,6 +730,7 @@ tests/test_cbt021_inmemory_pds
 /tests/test_tsfi2_compiler_bin
 /tests/test_tsfi2_loader
 /tests/test_tsfi2_compiler
+/tests/test_tsfi2_compiler_standards
 
 # Prevent compiled objects and library binaries from entering Git
 *.o
