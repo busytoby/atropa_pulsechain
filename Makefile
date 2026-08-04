@@ -637,3 +637,13 @@ test-cbt021-inmemory-pds:
 	gcc -Wall -Wextra -std=c11 -O3 tests/test_cbt021_inmemory_pds.c -o tests/test_cbt021_inmemory_pds -lssl -lcrypto -lz
 	./tests/test_cbt021_inmemory_pds
 	@rm -f tests/test_cbt021_inmemory_pds
+
+test-auncient-xpl-compiler:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_xpl_compiler.c -o tests/test_auncient_xpl_compiler -lm -lrt
+	./tests/test_auncient_xpl_compiler
+	@rm -f tests/test_auncient_xpl_compiler
+
+test-auncient-xpl-loader:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_xpl_loader.c -o tests/test_auncient_xpl_loader -lm -lrt
+	./tests/test_auncient_xpl_loader
+	@rm -f tests/test_auncient_xpl_loader
