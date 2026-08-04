@@ -3,12 +3,14 @@ import re
 import wave
 import struct
 import math
+import random
 import numpy as np
 
 def generate_audio():
     log_path = "chorus_simulation.log"
     audio_path = "bear_chorus_track.wav"
     sample_rate = 44100
+    dt = 1.0 / sample_rate
     
     # Read simulation logs to extract pitch transitions and voltage bounds
     transitions = []
@@ -26,68 +28,110 @@ def generate_audio():
     if not transitions:
         transitions = [{"speaker": "Trusty", "voltage": 1.0, "pitch": 220.0}] * 313
         
-    duration_per_step = 0.08  # 80 ms per conversational step
-    total_samples_per_step = int(sample_rate * duration_per_step)
-    total_audio = []
+    duration_per_step = 0.5  # Polite response timing: 500 ms per conversational turn
+    total_samples = int(sample_rate * duration_per_step * len(transitions))
     
-    # LPC reflection coefficient vowel profiles from standard synthesizer
-    k_ee = [0.60, -0.13, 0.34, -0.10, 0.05, -0.08, -0.04, -0.02, -0.01]
-    k_ah = [0.25, -0.35, 0.20, -0.15, 0.08, -0.04, 0.02, -0.01, 0.00]
-    k_oo = [0.75, -0.45, 0.50, -0.25, 0.12, -0.06, 0.03, -0.01, 0.00]
+    # 1. Steady Drum & Bass Backing Soundtrack (120 BPM, 4/4)
+    bpm = 120
+    beat_dur = 60.0 / bpm
+    step_dur = beat_dur / 4.0
+    step_samples = int(sample_rate * step_dur)
     
-    # LPC recursive filter state
-    delay_line = np.zeros(10)
+    # Harmonic ratios for standard drawbars: sub-octave, 5th, octave, 12th, 15th, etc.
+    ratios = [0.5, 1.498, 1.0, 2.0, 2.996, 4.0, 5.039, 6.0]
     
-    # Pre-generate noise excitation
-    noise = np.random.uniform(-1.0, 1.0, total_samples_per_step * len(transitions))
+    # Define drawbar profiles for the 5 bears
+    bear_drawbars = {
+        "Trusty":  [8, 8, 8, 4, 0, 0, 0, 0],
+        "Aggro":   [8, 5, 8, 8, 8, 8, 8, 8],
+        "Skeptic": [0, 8, 0, 8, 0, 8, 0, 8],
+        "Eerie":   [8, 0, 0, 0, 0, 0, 8, 8],
+        "Coop":    [8, 8, 8, 8, 8, 0, 0, 0]
+    }
+    
+    audio_np = np.zeros(total_samples, dtype=np.float32)
+    noise_state = 12345
+    
+    for s in range(total_samples):
+        t_curr = s * dt
+        step_idx = s // step_samples
+        beat_idx = step_idx // 4
+        step_in_beat = step_idx % 4
+        sample_in_step = s % step_samples
+        
+        # 1a. Kick drum on beats 0 and 2
+        kick = 0.0
+        if step_in_beat == 0:
+            t_kick = sample_in_step * dt
+            if t_kick < 0.15:
+                k_freq = 110.0 * math.exp(-t_kick * 30.0) + 40.0
+                kick = 0.4 * math.sin(2.0 * math.pi * k_freq * t_kick) * math.exp(-t_kick * 9.0)
+                
+        # 1b. Snare drum on beats 1 and 3 (white noise)
+        snare = 0.0
+        if step_in_beat == 2:
+            t_snare = sample_in_step * dt
+            if t_snare < 0.2:
+                noise_state = (noise_state * 1103515245 + 12345) & 0x7fffffff
+                noise_val = ((noise_state / 0x7fffffff) * 2.0) - 1.0
+                snare = 0.25 * noise_val * math.exp(-t_snare * 14.0)
+                
+        # 1c. Steady rolling backing Bassline
+        bass_freq = 55.0 # Low G/A baseline
+        if beat_idx % 4 == 1:
+            bass_freq = 65.4 # C
+        elif beat_idx % 4 == 2:
+            bass_freq = 73.4 # D
+        elif beat_idx % 4 == 3:
+            bass_freq = 58.2 # Bb
+            
+        bass_phase = 2.0 * math.pi * bass_freq * t_curr
+        bass = 0.3 * math.sin(bass_phase) + 0.1 * math.sin(bass_phase * 2.0)
+        
+        audio_np[s] += (kick + snare + bass) * 0.4
+        
+    # 2. Add polite conversational tonewheel dialogue voices
+    # Each bear only speaks during their active step window
+    step_samples_turn = int(sample_rate * duration_per_step)
     
     for idx, step in enumerate(transitions):
-        step_signal = []
+        start_sample = idx * step_samples_turn
+        end_sample = start_sample + step_samples_turn
         
-        # Select coefficient based on bear speaker personality
-        if step["speaker"] == "Trusty":
-            K = k_ee
-        elif step["speaker"] == "Aggro":
-            K = k_ah
-        elif step["speaker"] == "Skeptic":
-            K = k_oo
-        else:
-            K = [0.5 * (k_ee[i] + k_ah[i]) for i in range(9)]
-            
-        for s in range(total_samples_per_step):
-            global_sample = idx * total_samples_per_step + s
-            time_sec = global_sample / sample_rate
-            
-            # Voiced excitation with vibrato/sweep
-            f_carrier = step["pitch"]
-            f_mod = 6.0
-            beta = 0.08
-            vibrato = beta * math.cos(2.0 * math.pi * f_mod * time_sec)
-            period = int(sample_rate / (f_carrier * (1.0 + vibrato)))
-            
-            # Simple glottal impulse flow excitation
-            excitation = 1.0 if (global_sample % period == 0) else 0.0
-            
-            # Recursive Lattice Filter
-            forward = excitation
-            for i in range(8, -1, -1):
-                forward = forward - K[i] * delay_line[i]
-                delay_line[i + 1] = delay_line[i] + K[i] * forward
-            delay_line[0] = forward
-            
-            step_signal.append(forward)
-            
-        total_audio.extend(step_signal)
+        db = bear_drawbars.get(step["speaker"], [8, 8, 8, 4, 0, 0, 0, 0])
+        contact_wear = 0.05 * (step["voltage"] / 10.0)
         
-    audio_np = np.array(total_audio)
-    
-    # Lip radiation filter differentiator
-    for s in range(len(audio_np) - 1, 0, -1):
-        audio_np[s] = audio_np[s] - 0.95 * audio_np[s - 1]
-        
-    audio_np -= np.mean(audio_np)
+        for s in range(step_samples_turn):
+            global_sample = start_sample + s
+            if global_sample >= total_samples:
+                break
+            t_curr = global_sample * dt
+            
+            # Spin up to the speaker's pitch
+            base_freq = step["pitch"]
+            
+            # Mix drawbars
+            mixed_val = 0.0
+            for i in range(8):
+                if db[i] <= 0:
+                    continue
+                # Add contact wear grit
+                noise_val = (random.random() - 0.5) * contact_wear
+                level = max(0.0, (db[i] / 8.0) + noise_val)
+                mixed_val += level * math.sin(2.0 * math.pi * (base_freq * ratios[i]) * t_curr)
+                
+            # Apply smooth polite ADSR fade in/out envelope
+            env = 1.0
+            if s < 1000:
+                env = s / 1000.0
+            elif s > step_samples_turn - 1000:
+                env = (step_samples_turn - s) / 1000.0
+                
+            audio_np[global_sample] += math.tanh(mixed_val * 0.4) * 0.35 * env
+            
+    # Normalize final mixed output
     max_val = np.max(np.abs(audio_np))
-    if max_val > 0.0:
+    if max_val > 1.0:
         audio_np /= max_val
         
     audio_int = (audio_np * 32767).astype(np.int16)
@@ -98,7 +142,7 @@ def generate_audio():
         w.setframerate(sample_rate)
         w.writeframes(struct.pack("<{}h".format(len(audio_int)), *audio_int))
         
-    print(f"Generated standard LPC lattice bear chorus speech at '{audio_path}'")
+    print(f"Generated drum-and-bass tonewheel bear chorus soundtrack at '{audio_path}'")
 
 if __name__ == "__main__":
     generate_audio()

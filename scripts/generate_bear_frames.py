@@ -2,118 +2,8 @@
 import os
 import re
 import math
-import numpy as np
+import hashlib
 from PIL import Image, ImageDraw
-
-def generate_3d_teddy_wireframe():
-    vertices = []
-    edges = []
-    
-    # 1. Head (Sphere)
-    head_center = (0.0, 1.4, 0.0)
-    head_rad = 0.5
-    head_v_start = len(vertices)
-    for latitude in range(-4, 5):
-        lat_angle = (latitude / 5.0) * (math.pi / 2.0)
-        cos_lat = math.cos(lat_angle)
-        sin_lat = math.sin(lat_angle)
-        for longitude in range(8):
-            lon_angle = (longitude / 8.0) * 2.0 * math.pi
-            vx = head_center[0] + head_rad * cos_lat * math.cos(lon_angle)
-            vy = head_center[1] + head_rad * sin_lat
-            vz = head_center[2] + head_rad * cos_lat * math.sin(lon_angle)
-            vertices.append((vx, vy, vz, 0))
-            
-    for lat in range(9):
-        for lon in range(8):
-            curr = head_v_start + lat * 8 + lon
-            nxt_lon = head_v_start + lat * 8 + ((lon + 1) % 8)
-            edges.append((curr, nxt_lon))
-            if lat < 8:
-                nxt_lat = head_v_start + (lat + 1) * 8 + lon
-                edges.append((curr, nxt_lat))
-                
-    # 2. Lower Jaw / Mouth
-    jaw_v_start = len(vertices)
-    jaw_center = (0.0, 1.1, 0.25)
-    jaw_rad = 0.2
-    for lon in range(6):
-        lon_angle = (lon / 6.0) * math.pi + math.pi
-        vx = jaw_center[0] + jaw_rad * math.cos(lon_angle)
-        vy = jaw_center[1] + jaw_rad * math.sin(lon_angle)
-        vz = jaw_center[2]
-        vertices.append((vx, vy, vz, 1)) # joint type 1: moving jaw
-        
-    for lon in range(5):
-        edges.append((jaw_v_start + lon, jaw_v_start + lon + 1))
-        
-    # 3. Body (Ellipsoid)
-    body_center = (0.0, 0.3, 0.0)
-    body_rad_x, body_rad_y, body_rad_z = 0.7, 0.8, 0.5
-    body_v_start = len(vertices)
-    for latitude in range(-4, 5):
-        lat_angle = (latitude / 5.0) * (math.pi / 2.0)
-        cos_lat = math.cos(lat_angle)
-        sin_lat = math.sin(lat_angle)
-        for longitude in range(8):
-            lon_angle = (longitude / 8.0) * 2.0 * math.pi
-            vx = body_center[0] + body_rad_x * cos_lat * math.cos(lon_angle)
-            vy = body_center[1] + body_rad_y * sin_lat
-            vz = body_center[2] + body_rad_z * cos_lat * math.sin(lon_angle)
-            vertices.append((vx, vy, vz, 0))
-            
-    for lat in range(9):
-        for lon in range(8):
-            curr = body_v_start + lat * 8 + lon
-            nxt_lon = body_v_start + lat * 8 + ((lon + 1) % 8)
-            edges.append((curr, nxt_lon))
-            if lat < 8:
-                nxt_lat = body_v_start + (lat + 1) * 8 + lon
-                edges.append((curr, nxt_lat))
-                
-    # 4. Ears
-    for sign in [-1, 1]:
-        ear_center = (sign * 0.45, 1.8, 0.0)
-        ear_rad = 0.2
-        ear_v_start = len(vertices)
-        for lat in range(-2, 3):
-            lat_angle = (lat / 3.0) * (math.pi / 2.0)
-            cos_lat = math.cos(lat_angle)
-            sin_lat = math.sin(lat_angle)
-            for lon in range(6):
-                lon_angle = (lon / 6.0) * 2.0 * math.pi
-                vx = ear_center[0] + ear_rad * cos_lat * math.cos(lon_angle)
-                vy = ear_center[1] + ear_rad * sin_lat
-                vz = ear_center[2] + ear_rad * cos_lat * math.sin(lon_angle)
-                vertices.append((vx, vy, vz, 0))
-                
-        for lat in range(5):
-            for lon in range(6):
-                curr = ear_v_start + lat * 6 + lon
-                nxt_lon = ear_v_start + lat * 6 + ((lon + 1) % 6)
-                edges.append((curr, nxt_lon))
-                if lat < 4:
-                    nxt_lat = ear_v_start + (lat + 1) * 6 + lon
-                    edges.append((curr, nxt_lat))
-                    
-    return vertices, edges
-
-def quaternion_multiply(q1, q2):
-    w1, x1, y1, z1 = q1
-    w2, x2, y2, z2 = q2
-    return (
-        w1*w2 - x1*x2 - y1*y2 - z1*z2,
-        w1*x2 + x1*w2 + y1*z2 - z1*y2,
-        w1*y2 - x1*z2 + y1*w2 + z1*x2,
-        w1*z2 + x1*y2 - y1*x2 + z1*w2
-    )
-
-def rotate_vector_by_quaternion(v, q):
-    q_vec = (0, v[0], v[1], v[2])
-    q_conj = (q[0], -q[1], -q[2], -q[3])
-    temp = quaternion_multiply(q, q_vec)
-    result = quaternion_multiply(temp, q_conj)
-    return (result[1], result[2], result[3])
 
 def render_frames():
     log_path = "chorus_simulation.log"
@@ -137,83 +27,96 @@ def render_frames():
         log_data = [{"speaker": "Trusty", "listener": "Coop", "voltage": 1.0, "pitch": 220.0}] * 313
         
     bears = {
-        "Trusty":  {"x": 120, "y": 240, "color": "#0099ff"},
-        "Aggro":   {"x": 520, "y": 240, "color": "#ff3333"},
-        "Skeptic": {"x": 220, "y": 120, "color": "#e6e600"},
-        "Eerie":   {"x": 420, "y": 120, "color": "#9933ff"},
-        "Coop":    {"x": 320, "y": 360, "color": "#33cc66"}
+        "Trusty":  {"x": 120, "y": 240, "color": (50, 150, 255)},
+        "Aggro":   {"x": 520, "y": 240, "color": (255, 50, 50)},
+        "Skeptic": {"x": 220, "y": 120, "color": (200, 200, 5)},
+        "Eerie":   {"x": 420, "y": 120, "color": (150, 50, 200)},
+        "Coop":    {"x": 320, "y": 360, "color": (50, 200, 100)}
+    }
+    
+    # Mock token address hashes to derive unique LAU signatures for the 5 bears
+    bear_addresses = {
+        "Trusty":  "0x1111111111111111111111111111111111111111",
+        "Aggro":   "0x2222222222222222222222222222222222222222",
+        "Skeptic": "0x3333333333333333333333333333333333333333",
+        "Eerie":   "0x4444444444444444444444444444444444444444",
+        "Coop":    "0x5555555555555555555555555555555555555555"
     }
     
     WIDTH, HEIGHT = 640, 480
-    vertices, edges = generate_3d_teddy_wireframe()
-    
-    # 3D Starfield background
-    np.random.seed(420)
-    stars = [{'x': np.random.uniform(-150, 150), 'y': np.random.uniform(-200, 200), 'z': np.random.uniform(20, 300)} for _ in range(30)]
     
     for idx, step in enumerate(log_data):
-        time_sec = idx / 10.0
-        progress = idx / len(log_data)
+        img = Image.new("RGB", (WIDTH, HEIGHT), (12, 14, 20)) # Dark blueprint background
+        draw = ImageDraw.Draw(img, "RGBA")
         
-        bg = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)
-        img = Image.fromarray(bg)
-        draw = ImageDraw.Draw(img)
-        
-        # 1. Draw Starfield
-        for star in stars:
-            z_pos = (star['z'] - idx * 2.0) % 280 + 20
-            factor = 140.0 / z_pos
-            sx = int(WIDTH / 2) + int(star['x'] * factor)
-            sy = int(HEIGHT / 2) + int(star['y'] * factor)
-            if 0 <= sx < WIDTH and 0 <= sy < HEIGHT:
-                draw.ellipse([sx, sy, sx + 2, sy + 2], fill=(130, 130, 255))
-                
-        # 2. Draw 3D Perspective Grid
-        draw.line([(0, 380), (WIDTH, 380)], fill="#003366", width=2)
-        for i in range(12):
-            x_bottom = (i / 11.0) * 840.0 - 100.0
-            draw.line([(WIDTH / 2, 380), (x_bottom, 480)], fill=(0, 30, 90), width=1)
+        # Grid overlay
+        for x_line in range(0, WIDTH, 40):
+            draw.line([(x_line, 0), (x_line, HEIGHT)], fill=(18, 20, 28), width=1)
+        for y_line in range(0, HEIGHT, 40):
+            draw.line([(0, y_line), (WIDTH, y_line)], fill=(18, 20, 28), width=1)
             
-        # 3. Rotate and Render 5 Teddy Bears in 3D wireframe layout
+        # Draw active connection line
+        speaker_pos = bears.get(step["speaker"], bears["Trusty"])
+        listener_pos = bears.get(step["listener"], bears["Coop"])
+        draw.line([speaker_pos["x"], speaker_pos["y"], listener_pos["x"], listener_pos["y"]], fill=(255, 255, 255, 100), width=2)
+        
+        # Draw 5 Teddy Bears
         for name, bear in bears.items():
             cx, cy = bear["x"], bear["y"]
+            color = bear["color"]
             
-            # Rotation angles based on conversation step
-            angle_y = progress * 2.0 * math.pi + (hash(name) % 100) / 10.0
-            angle_x = 0.1 * math.sin(time_sec * 2.0 * math.pi)
+            # Procedural 2D Teddy Bear Drawing outlines (from standard art director fallback)
+            # Body
+            draw.ellipse([cx - 30, cy + 10, cx + 30, cy + 50], fill=color, outline=(255, 255, 255), width=1)
+            # Head
+            draw.ellipse([cx - 25, cy - 30, cx + 25, cy + 20], fill=color, outline=(255, 255, 255), width=1)
+            # Ears
+            draw.ellipse([cx - 28, cy - 35, cx - 12, cy - 19], fill=color, outline=(255, 255, 255), width=1)
+            draw.ellipse([cx + 12, cy - 35, cx + 28, cy - 19], fill=color, outline=(255, 255, 255), width=1)
+            # Eyes
+            draw.ellipse([cx - 10, cy - 10, cx - 6, cy - 6], fill=(0, 0, 0))
+            draw.ellipse([cx + 6, cy - 10, cx + 10, cy - 6], fill=(0, 0, 0))
+            # Nose
+            draw.ellipse([cx - 4, cy, cx + 4, cy + 6], fill=(30, 30, 30))
             
-            qy = (math.cos(angle_y / 2.0), 0.0, math.sin(angle_y / 2.0), 0.0)
-            qx = (math.cos(angle_x / 2.0), math.sin(angle_x / 2.0), 0.0, 0.0)
-            q_rot = quaternion_multiply(qy, qx)
+            draw.text((cx - 18, cy + 55), name, fill="white")
             
-            # Active speaker mouth moves
-            amp_flow = 0.0
+            # If active speaker, draw quality LAU Lissajous rendering orbiting their drawing
             if name == step["speaker"]:
-                amp_flow = 0.8 + 0.2 * math.sin(time_sec * 30.0)
+                address = bear_addresses.get(name, "0x1111111111111111111111111111111111111111")
+                addr_hash = hashlib.md5(address.encode('utf-8')).hexdigest()
                 
-            projected = []
-            for vx, vy, vz, joint in vertices:
-                if joint == 1:
-                    vy = vy - 0.15 * amp_flow
+                # Derive f_x, f_y, f_z from token address hash
+                fx = 1.0 + (int(addr_hash[0:2], 16) % 5)
+                fy = 1.0 + (int(addr_hash[2:4], 16) % 5)
+                fz = 1.0 + (int(addr_hash[4:6], 16) % 5)
+                phi = (int(addr_hash[6:8], 16) % 100) / 100.0 * 2.0 * math.pi
+                
+                # Render the Lissajous points
+                num_points = 100
+                proj_points = []
+                for pt_idx in range(num_points):
+                    theta = pt_idx * 2.0 * math.pi / num_points
+                    lx = 60.0 * math.sin(fx * theta + phi + idx * 0.1) # slow rotation animate
+                    ly = 60.0 * math.sin(fy * theta)
+                    lz = 60.0 * math.cos(fz * theta)
                     
-                rx, ry, rz = rotate_vector_by_quaternion((vx, vy, vz), q_rot)
-                rz += 3.8
-                factor = 120.0 / rz
-                
-                proj_x = cx + int(rx * factor * 50.0)
-                proj_y = cy - int(ry * factor * 50.0)
-                projected.append((proj_x, proj_y))
-                
-            # Draw bear wireframe edges
-            for edge in edges:
-                p1 = projected[edge[0]]
-                p2 = projected[edge[1]]
-                draw.line([p1, p2], fill=bear["color"], width=1)
-                
-        # Draw status overlay
-        draw.text((20, 20), "TSFi/2: 5-VOICE BEAR CONVERSATION WIREFRAME", fill="#ff007f")
-        draw.text((20, 35), f"Step: {idx + 1}/313 | Speaker: {step['speaker']} -> Listener: {step['listener']}", fill="#00f2fe")
-        draw.text((20, 50), f"Active Parameter: /auncient/voltage = {step['voltage']:.3f} V | pitch = {step['pitch']:.1f} Hz", fill="#ffd700")
+                    # 3D perspective projection
+                    zoom = 0.90
+                    z_new = lz + 200.0
+                    px = cx + int((lx * 200.0) / z_new * zoom)
+                    py = cy + int((ly * 200.0) / z_new * zoom)
+                    proj_points.append((px, py))
+                    
+                for pt_idx in range(num_points):
+                    p1 = proj_points[pt_idx]
+                    p2 = proj_points[(pt_idx + 1) % num_points]
+                    draw.line([p1, p2], fill=(0, 255, 200, 180), width=2)
+                    
+        # Overlay Status labels
+        draw.text((20, 20), "AUNCIENT LAU TONEWHEEL CHORUS", fill="#ff007f")
+        draw.text((20, 35), f"Step: {idx + 1}/313 | Active: {step['speaker']} -> {step['listener']}", fill="#00f2fe")
+        draw.text((20, 50), f"Frequency Mod: {step['pitch']:.1f} Hz | Voltage: {step['voltage']:.3f} V", fill="#ffd700")
         
         frame_path = os.path.join(output_dir, f"frame_{idx:04d}.png")
         img.save(frame_path)
