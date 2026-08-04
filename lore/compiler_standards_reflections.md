@@ -204,6 +204,16 @@ int main() {
 * **Compiler Built-in**: 21 characters (`__builtin_wmq_irq();`).
 * **Source Size Reduction**: 66% character footprint decrease.
 
+### Handshake Acknowledgment Comparison
+* **Boilerplate Wrapper**: 64 characters.
+  ```c
+  void send_ack() {
+      *(volatile int*)(0x2088) = 1;
+  }
+  ```
+* **Compiler Built-in**: 21 characters (`__builtin_wmq_ack();`).
+* **Source Size Reduction**: 67% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
