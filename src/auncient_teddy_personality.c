@@ -1052,6 +1052,17 @@ bool evaluate_retaliation_threshold_decay(const teddy_geometry_t *geom, double e
     return true;
 }
 
+bool evaluate_provocation_exposure_decay(const teddy_geometry_t *geom, double provocation_scale, double exposure_ms, double *decayed_threat_out) {
+    if (!geom || provocation_scale < 0.0 || exposure_ms < 0.0 || !decayed_threat_out) {
+        return false;
+    }
+    double base_threat = 0.0;
+    evaluate_status_dominance_provocation(geom, provocation_scale, &base_threat);
+    double decay_factor = exp(-exposure_ms * 0.003);
+    *decayed_threat_out = base_threat * decay_factor;
+    return true;
+}
+
 bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncanny_score_out) {
     if (!geom || !uncanny_score_out) {
         return false;
