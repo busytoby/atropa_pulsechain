@@ -8,6 +8,7 @@
 int tsfi_mf_ussr_gost_scramble(uint32_t *left_word, uint32_t *right_word, uint32_t key_word);
 int tsfi_mf_ussr_gost_encrypt_32(uint32_t *left, uint32_t *right, const uint32_t *key_8words);
 extern int tsfi_gost_is_broadcast_channel;
+extern int tsfi_norad_lockout_active;
 
 // Struct representing a qualifying system participant (Rule 16)
 typedef struct {
@@ -122,6 +123,21 @@ int main(void) {
     assert(handshake_left != 0xAA55AA55 || handshake_right != 0x55AA55AA);
     printf("   ✓ GOST 28147-89 secure handshake payload encrypted successfully (L: 0x%08X, R: 0x%08X)\n", 
            handshake_left, handshake_right);
+
+    // 6. Test GOST Scrambler restrictions
+    tsfi_gost_is_broadcast_channel = 0;
+    uint32_t test_l = 0xAA55AA55;
+    uint32_t test_r = 0x55AA55AA;
+    int rc = tsfi_mf_ussr_gost_scramble(&test_l, &test_r, 0x1234);
+    assert(rc == -4);
+
+    tsfi_gost_is_broadcast_channel = 1;
+    tsfi_norad_lockout_active = 1;
+    rc = tsfi_mf_ussr_gost_scramble(&test_l, &test_r, 0x1234);
+    assert(rc == -6);
+
+    tsfi_norad_lockout_active = 0;
+    printf("   ✓ GOST system channel restrictions and NORAD emergency lockout verified successfully\n");
 
     printf("=============================================================\n");
     printf("TEDDY INTERACTION SUITE COMPLETED SUCCESSFULLY\n");
