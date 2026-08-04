@@ -667,3 +667,8 @@ test-auncient-xpl-net-stack:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_xpl_net_stack.c -o tests/test_auncient_xpl_net_stack -lrt
 	./tests/test_auncient_xpl_net_stack
 	@rm -f tests/test_auncient_xpl_net_stack
+
+test-auncient-xplos-kernel:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_xplos_kernel.c -o tests/test_auncient_xplos_kernel -lcrypto -lrt
+	./tests/test_auncient_xplos_kernel
+	@rm -f tests/test_auncient_xplos_kernel
