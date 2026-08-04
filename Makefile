@@ -682,3 +682,8 @@ test-auncient-apdl-xpl-integration:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_apdl_xpl_integration.c -o tests/test_auncient_apdl_xpl_integration -lrt
 	./tests/test_auncient_apdl_xpl_integration
 	@rm -f tests/test_auncient_apdl_xpl_integration
+
+test-auncient-xplos-debugger:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_xplos_debugger.c -o tests/test_auncient_xplos_debugger -lcrypto -lrt
+	./tests/test_auncient_xplos_debugger
+	@rm -f tests/test_auncient_xplos_debugger
