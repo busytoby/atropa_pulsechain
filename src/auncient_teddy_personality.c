@@ -803,6 +803,18 @@ bool evaluate_threshold_nominal_wald_test(const double *theta_vector, const doub
     return true;
 }
 
+bool evaluate_scale_adjusted_threshold_wald(double threshold_est, double scale_multiplier, double baseline, double variance, double *wald_stat_out, double *p_value_out) {
+    if (variance < 1e-9 || scale_multiplier < 1e-9 || !wald_stat_out || !p_value_out) {
+        return false;
+    }
+    double adjusted_var = variance * (scale_multiplier * scale_multiplier);
+    double diff = threshold_est - baseline;
+    *wald_stat_out = (diff * diff) / adjusted_var;
+    *p_value_out = exp(-(*wald_stat_out) / 2.0);
+    if (*p_value_out > 1.0) *p_value_out = 1.0;
+    return true;
+}
+
 double evaluate_fw_threat_level(const teddy_geometry_t *geom) {
     if (!geom) return 0.0;
     double threat = (geom->head_fwhr * 1.5) + (geom->jaw_scale * 0.8) - (geom->symmetry * 0.3);

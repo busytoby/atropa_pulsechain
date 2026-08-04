@@ -232,6 +232,12 @@ int main(void) {
     assert(tn_wpval < 0.05); // significant
     printf("   ✓ R H B Christensen threshold nominal Wald test diagnostics verified successfully\n");
 
+    // Test scale-adjusted threshold Wald test calculation
+    double sat_wstat = 0.0, sat_wpval = 0.0;
+    assert(evaluate_scale_adjusted_threshold_wald(1.5, 1.2, 1.0, 0.25, &sat_wstat, &sat_wpval));
+    assert(sat_wstat > 0.0);
+    printf("   ✓ R H B Christensen scale-adjusted threshold Wald test verified successfully\n");
+
     // Test Geniole fWHR threat level calculation
     double threat_level = evaluate_fw_threat_level(&geom);
     assert(threat_level >= 0.0);

@@ -212,6 +212,9 @@ bool evaluate_scale_nominal_wald_test(const double *gamma_vector, const double *
 // Evaluates nominal effects on threshold parameters via the Wald test statistic.
 bool evaluate_threshold_nominal_wald_test(const double *theta_vector, const double *covariance_matrix, int df, double *wald_stat_out, double *p_value_out);
 
+// Evaluates scale-adjusted threshold parameter Wald tests under link model constraints.
+bool evaluate_scale_adjusted_threshold_wald(double threshold_est, double scale_multiplier, double baseline, double variance, double *wald_stat_out, double *p_value_out);
+
 // Calculates perceived threat level based on fWHR dominance cues (Geniole et al.).
 double evaluate_fw_threat_level(const teddy_geometry_t *geom);
 
