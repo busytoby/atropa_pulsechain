@@ -333,7 +333,7 @@ function updateGame() {
 
         if (spawner.health > 0) {
             let sdx = p.x - spawner.x;
-            let sdy = p.y - sdy;
+            let sdy = p.y - spawner.y;
             let sdist = Math.sqrt(sdx*sdx + sdy*sdy);
             if (sdist < 22) {
                 spawner.health--;
