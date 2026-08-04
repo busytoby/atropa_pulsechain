@@ -407,6 +407,9 @@ bool evaluate_pitch_jitter_uncanny(const teddy_geometry_t *geom, double pitch_ve
 // Evaluates the vocal-visual motion acceleration mismatch uncanny response (Hyde et al.).
 bool evaluate_motion_acceleration_mismatch(const teddy_geometry_t *geom, double acceleration_mismatch, double *uncanny_score_out);
 
+// Evaluates the combined motion mismatch and micro-expression freeze uncanny response (Hyde et al.).
+bool evaluate_motion_freeze_uncanny(const teddy_geometry_t *geom, double motion_mismatch, double freeze_duration_sec, double *uncanny_score_out);
+
 bool evaluate_pitch_velocity_mismatch(const teddy_geometry_t *geom, double pitch_velocity_mismatch, double *uncanny_score_out);
 
 // Evaluates the vocal-visual pitch transition velocity mismatch habituation decay (Hyde et al.).

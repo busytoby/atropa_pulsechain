@@ -585,6 +585,12 @@ int main(void) {
     assert(accel_uncanny > 0.0);
     printf("   ✓ HYDE et al. vocal-visual motion acceleration mismatch and jitter index verified successfully\n");
 
+    // Test Hyde combined motion mismatch and micro-expression freeze uncanny calculation
+    double motion_freeze_uncanny = 0.0;
+    assert(evaluate_motion_freeze_uncanny(&geom, 0.4, 2.0, &motion_freeze_uncanny));
+    assert(motion_freeze_uncanny > 0.0);
+    printf("   ✓ HYDE et al. vocal-visual motion-mismatch and micro-expression freeze index verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge

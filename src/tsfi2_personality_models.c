@@ -892,6 +892,19 @@ bool evaluate_motion_acceleration_mismatch(const teddy_geometry_t *geom, double 
     return true;
 }
 
+bool evaluate_motion_freeze_uncanny(const teddy_geometry_t *geom, double motion_mismatch, double freeze_duration_sec, double *uncanny_score_out) {
+    if (!geom || motion_mismatch < 0.0 || freeze_duration_sec < 0.0 || !uncanny_score_out) {
+        return false;
+    }
+    double base_mismatch = 0.0;
+    if (!evaluate_motion_uncanny_index(geom, motion_mismatch, &base_mismatch)) {
+        return false;
+    }
+    double freeze_factor = (freeze_duration_sec > 1.5) ? (freeze_duration_sec * 0.45) : 0.12;
+    *uncanny_score_out = base_mismatch + (freeze_factor * (1.0 + geom->behavioral_mismatch));
+    return true;
+}
+
 bool evaluate_pitch_mismatch_habituation_decay(const teddy_geometry_t *geom, double exposure_duration_sec, double *decayed_uncanny_out) {
     if (!geom || exposure_duration_sec < 0.0 || !decayed_uncanny_out) {
         return false;
