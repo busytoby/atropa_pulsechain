@@ -108,7 +108,7 @@ static void draw_glossy_bubble(int cx, int cy, int r_base, uint8_t base_r, uint8
 }
 
 static void draw_gothic_leaf(int bx, int by, float length, float angle_offset, float time_val, float wind_x) {
-    int steps = 18;
+    int steps = 60; // High density steps to fill all gaps for a solid leaf blade
     float wind_bend = wind_x * 0.45f;
     float l_ctrl_x = bx + length * 0.45f * cosf(angle_offset - 0.4f) + wind_bend;
     float l_ctrl_y = by + length * 0.45f * sinf(angle_offset - 0.4f);
@@ -133,7 +133,7 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset, f
 
         // 3D leaf tip taper silhouette styling (broader base, lower frequency larger lobes)
         float tip_curl = 1.0f - powf(t, 2.8f);
-        float lobe_w = 26.0f * tip_curl * (0.7f + 0.45f * sinf(t * 12.0f));
+        float lobe_w = 34.0f * tip_curl * (0.8f + 0.35f * sinf(t * 9.0f));
         float leaf_ang_left = angle + M_PI * 0.25f;
         float leaf_ang_right = angle - M_PI * 0.25f;
 
@@ -184,7 +184,7 @@ static void draw_gothic_leaf(int bx, int by, float length, float angle_offset, f
         }
 
         // Glistening dew drops sliding slowly along the leaflet tips (pinnule runoff)
-        if (i == 6 || i == 12) {
+        if (i == 18 || i == 36) {
             float slide_t = fmodf(time_val * 0.12f + (i * 0.08f), 1.0f);
             int drop_x = lx + (int)(lobe_w * slide_t * cosf(leaf_ang_left));
             int drop_y = ly + (int)(lobe_w * slide_t * sinf(leaf_ang_left));
