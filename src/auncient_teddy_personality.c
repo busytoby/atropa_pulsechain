@@ -832,6 +832,17 @@ bool evaluate_motion_uncanny_index(const teddy_geometry_t *geom, double movement
     return true;
 }
 
+bool evaluate_expression_jitter_uncanny(const teddy_geometry_t *geom, double jitter_frequency, double *uncanny_score_out) {
+    if (!geom || !uncanny_score_out) {
+        return false;
+    }
+    double base_uncanny = 0.0;
+    evaluate_uncanny_mismatch_index(geom, &base_uncanny);
+    double jitter_factor = (jitter_frequency > 10.0) ? (jitter_frequency * 0.15) : 0.05;
+    *uncanny_score_out = base_uncanny + (jitter_factor * (1.0 + geom->behavioral_mismatch));
+    return true;
+}
+
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state) {
     if (resistance < 1e-9 || capacitance < 1e-9 || time_step < 1e-9 || !charge_state) {
         return false;

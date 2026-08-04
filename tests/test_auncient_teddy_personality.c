@@ -250,6 +250,12 @@ int main(void) {
     assert(motion_uncanny >= uncanny_val);
     printf("   ✓ HYDE et al. vocal-visual uncanny mismatch and motion-mismatch index verified successfully\n");
 
+    // Test Hyde micro-expression jitter uncanny calculation
+    double jitter_uncanny = 0.0;
+    assert(evaluate_expression_jitter_uncanny(&geom, 15.0, &jitter_uncanny));
+    assert(jitter_uncanny > uncanny_val);
+    printf("   ✓ HYDE et al. vocal-visual uncanny mismatch and micro-expression jitter verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge
