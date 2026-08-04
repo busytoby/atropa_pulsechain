@@ -152,8 +152,11 @@ bool evaluate_hessian_diagnostics(const teddy_geometry_t *geom, double *variance
 // Evaluates the full parameter covariance matrix derived from the Hessian inverse.
 bool evaluate_parameter_covariance(const teddy_geometry_t *geom, double *covariance_matrix_out);
 
-// Evaluates an asymmetrical ordinal rating using a complementary log-log (cloglog) link model.
+// Evaluates an ordinal rating using a complementary log-log (cloglog) link model.
 int evaluate_ordinal_cloglog_rating(const teddy_geometry_t *geom);
+
+// Evaluates an ordinal rating using a scale-adjusted cloglog link model (Christensen).
+int evaluate_ordinal_cloglog_scale_rating(const teddy_geometry_t *geom, double scale_covariate);
 
 // Evaluates an ordinal rating using a probit link model.
 int evaluate_ordinal_probit_rating(const teddy_geometry_t *geom);

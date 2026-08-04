@@ -113,6 +113,11 @@ int main(void) {
     assert(rating_cloglog >= 1 && rating_cloglog <= 7);
     printf("   ✓ R H B Christensen complementary log-log ordinal rating verified successfully\n");
 
+    // Test scale-adjusted cloglog rating estimation
+    int rating_cloglog_scale = evaluate_ordinal_cloglog_scale_rating(&geom, -0.8);
+    assert(rating_cloglog_scale >= 1 && rating_cloglog_scale <= 7);
+    printf("   ✓ R H B Christensen scale-adjusted cloglog ordinal rating verified successfully\n");
+
     // Test probit rating estimation
     int rating_probit = evaluate_ordinal_probit_rating(&geom);
     assert(rating_probit >= 1 && rating_probit <= 7);
