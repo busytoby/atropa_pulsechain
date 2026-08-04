@@ -154,6 +154,16 @@ int main() {
 * **Compiler Built-in**: 44 characters (`__builtin_wmq_lock(); __builtin_wmq_unlock();`).
 * **Source Size Reduction**: 63% character footprint decrease.
 
+### Registry Owner Comparison
+* **Boilerplate Wrapper**: 64 characters.
+  ```c
+  int get_owner() {
+      return *(volatile int*)(0x20F0);
+  }
+  ```
+* **Compiler Built-in**: 23 characters (`__builtin_wmq_owner();`).
+* **Source Size Reduction**: 64% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
