@@ -138,6 +138,110 @@ static void run_safety_benchmarks() {
 }
 
 typedef struct {
+    double start_x;
+    double end_x;
+    double step_x;
+    double start_y;
+    double end_y;
+    double step_y;
+    int num_stations;
+    const ReceiverStation *stations;
+    double *weights;
+    double **R_mag;
+    int max_lag;
+    const int *active_mask; // For GA subset (if NULL, all stations are active)
+    
+    // Output
+    double best_x;
+    double best_y;
+    double max_cost;
+} GridSearchWorkerArg;
+
+static void grid_search_worker(void *arg) {
+    GridSearchWorkerArg *a = (GridSearchWorkerArg *)arg;
+    double max_cost = -1.0;
+    double best_x = 0.0;
+    double best_y = 0.0;
+    int max_lag = a->max_lag;
+    int num_stations = a->num_stations;
+    const ReceiverStation *stations = a->stations;
+    double *weights = a->weights;
+    double **R_mag = a->R_mag;
+    const int *active_mask = a->active_mask;
+
+    for (double gx = a->start_x; gx <= a->end_x; gx += a->step_x) {
+        for (double gy = a->start_y; gy <= a->end_y; gy += a->step_y) {
+            double cost = 0.0;
+            double dist0 = sqrt((stations[0].x_true - gx)*(stations[0].x_true - gx) + (stations[0].y_true - gy)*(stations[0].y_true - gy)) * 1000.0;
+            double delay0 = dist0 / SPEED_OF_LIGHT;
+
+            for (int i = 1; i < num_stations; i++) {
+                if (active_mask == NULL || active_mask[i]) {
+                    double disti = sqrt((stations[i].x_true - gx)*(stations[i].x_true - gx) + (stations[i].y_true - gy)*(stations[i].y_true - gy)) * 1000.0;
+                    double delayi = disti / SPEED_OF_LIGHT;
+                    double model_tdoa = delayi - delay0;
+                    double model_lag = model_tdoa * SAMPLING_RATE;
+                    cost += weights[i] * interpolate_correlation(R_mag[i], model_lag, max_lag);
+                }
+            }
+
+            if (cost > max_cost) {
+                max_cost = cost;
+                best_x = gx;
+                best_y = gy;
+            }
+        }
+    }
+
+    a->best_x = best_x;
+    a->best_y = best_y;
+    a->max_cost = max_cost;
+}
+
+static void parallel_grid_search(double start_x, double end_x, double step_x,
+                                 double start_y, double end_y, double step_y,
+                                 const ReceiverStation *stations, double *weights,
+                                 double **R_mag, int max_lag, const int *active_mask,
+                                 double *out_x, double *out_y) {
+    int num_threads = g_ears_ccx_pool.num_threads;
+    double range_x = end_x - start_x;
+    double chunk_x = range_x / num_threads;
+
+    GridSearchWorkerArg args[MAX_CCX_THREADS];
+    for (int i = 0; i < num_threads; i++) {
+        args[i].start_x = start_x + i * chunk_x;
+        args[i].end_x = (i == num_threads - 1) ? end_x : start_x + (i + 1) * chunk_x;
+        args[i].step_x = step_x;
+        args[i].start_y = start_y;
+        args[i].end_y = end_y;
+        args[i].step_y = step_y;
+        args[i].num_stations = NUM_STATIONS;
+        args[i].stations = stations;
+        args[i].weights = weights;
+        args[i].R_mag = R_mag;
+        args[i].max_lag = max_lag;
+        args[i].active_mask = active_mask;
+        args[i].max_cost = -1.0;
+
+        tsfi_ccx_pool_enqueue(&g_ears_ccx_pool, grid_search_worker, &args[i]);
+    }
+    tsfi_ccx_pool_wait(&g_ears_ccx_pool);
+
+    double global_max_cost = -1.0;
+    double global_best_x = 0.0;
+    double global_best_y = 0.0;
+    for (int i = 0; i < num_threads; i++) {
+        if (args[i].max_cost > global_max_cost) {
+            global_max_cost = args[i].max_cost;
+            global_best_x = args[i].best_x;
+            global_best_y = args[i].best_y;
+        }
+    }
+    *out_x = global_best_x;
+    *out_y = global_best_y;
+}
+
+typedef struct {
     int *individual;
     double tx_val_x;
     double tx_val_y;
@@ -813,56 +917,12 @@ int main() {
 
     // Coarse grid search: -100 km to 100 km with 2 km steps
     double best_x = 0.0, best_y = 0.0;
-    double max_cost = -1.0;
-
-    for (double gx = -100.0; gx <= 100.0; gx += 2.0) {
-        for (double gy = -100.0; gy <= 100.0; gy += 2.0) {
-            double cost = 0.0;
-            double dist0 = sqrt((stations[0].x_true - gx)*(stations[0].x_true - gx) + (stations[0].y_true - gy)*(stations[0].y_true - gy)) * 1000.0;
-            double delay0 = dist0 / SPEED_OF_LIGHT;
-
-            for (int i = 1; i < NUM_STATIONS; i++) {
-                double disti = sqrt((stations[i].x_true - gx)*(stations[i].x_true - gx) + (stations[i].y_true - gy)*(stations[i].y_true - gy)) * 1000.0;
-                double delayi = disti / SPEED_OF_LIGHT;
-                double model_tdoa = delayi - delay0;
-                double model_lag = model_tdoa * SAMPLING_RATE;
-                cost += weights[i] * interpolate_correlation(R_mag[i], model_lag, max_lag);
-            }
-
-            if (cost > max_cost) {
-                max_cost = cost;
-                best_x = gx;
-                best_y = gy;
-            }
-        }
-    }
+    parallel_grid_search(-100.0, 100.0, 2.0, -100.0, 100.0, 2.0, stations, weights, R_mag, max_lag, NULL, &best_x, &best_y);
 
     // Fine grid search: search within +/- 5 km around best coarse estimate with 0.1 km steps
     double coarse_x = best_x;
     double coarse_y = best_y;
-    max_cost = -1.0;
-
-    for (double gx = coarse_x - 5.0; gx <= coarse_x + 5.0; gx += 0.1) {
-        for (double gy = coarse_y - 5.0; gy <= coarse_y + 5.0; gy += 0.1) {
-            double cost = 0.0;
-            double dist0 = sqrt((stations[0].x_true - gx)*(stations[0].x_true - gx) + (stations[0].y_true - gy)*(stations[0].y_true - gy)) * 1000.0;
-            double delay0 = dist0 / SPEED_OF_LIGHT;
-
-            for (int i = 1; i < NUM_STATIONS; i++) {
-                double disti = sqrt((stations[i].x_true - gx)*(stations[i].x_true - gx) + (stations[i].y_true - gy)*(stations[i].y_true - gy)) * 1000.0;
-                double delayi = disti / SPEED_OF_LIGHT;
-                double model_tdoa = delayi - delay0;
-                double model_lag = model_tdoa * SAMPLING_RATE;
-                cost += weights[i] * interpolate_correlation(R_mag[i], model_lag, max_lag);
-            }
-
-            if (cost > max_cost) {
-                max_cost = cost;
-                best_x = gx;
-                best_y = gy;
-            }
-        }
-    }
+    parallel_grid_search(coarse_x - 5.0, coarse_x + 5.0, 0.1, coarse_y - 5.0, coarse_y + 5.0, 0.1, stations, weights, R_mag, max_lag, NULL, &best_x, &best_y);
 
     double loc_error = sqrt((best_x - tx_x)*(best_x - tx_x) + (best_y - tx_y)*(best_y - tx_y));
     printf("[RESULTS] True TX coordinates: (%.1f, %.1f) km\n", tx_x, tx_y);
@@ -1037,59 +1097,11 @@ int main() {
 
     // Evaluate localization error using only the GA selected 8 stations
     double best_x_ga = 0.0, best_y_ga = 0.0;
-    double max_cost_ga = -1.0;
-
-    for (double gx = -100.0; gx <= 100.0; gx += 2.0) {
-        for (double gy = -100.0; gy <= 100.0; gy += 2.0) {
-            double cost = 0.0;
-            double dist0 = sqrt((stations[0].x_true - gx)*(stations[0].x_true - gx) + (stations[0].y_true - gy)*(stations[0].y_true - gy)) * 1000.0;
-            double delay0 = dist0 / SPEED_OF_LIGHT;
-
-            for (int i = 1; i < NUM_STATIONS; i++) {
-                if (best_individual[i]) {
-                    double disti = sqrt((stations[i].x_true - gx)*(stations[i].x_true - gx) + (stations[i].y_true - gy)*(stations[i].y_true - gy)) * 1000.0;
-                    double delayi = disti / SPEED_OF_LIGHT;
-                    double model_tdoa = delayi - delay0;
-                    double model_lag = model_tdoa * SAMPLING_RATE;
-                    cost += weights[i] * interpolate_correlation(R_mag[i], model_lag, max_lag);
-                }
-            }
-
-            if (cost > max_cost_ga) {
-                max_cost_ga = cost;
-                best_x_ga = gx;
-                best_y_ga = gy;
-            }
-        }
-    }
+    parallel_grid_search(-100.0, 100.0, 2.0, -100.0, 100.0, 2.0, stations, weights, R_mag, max_lag, best_individual, &best_x_ga, &best_y_ga);
 
     double coarse_x_ga = best_x_ga;
     double coarse_y_ga = best_y_ga;
-    max_cost_ga = -1.0;
-
-    for (double gx = coarse_x_ga - 5.0; gx <= coarse_x_ga + 5.0; gx += 0.1) {
-        for (double gy = coarse_y_ga - 5.0; gy <= coarse_y_ga + 5.0; gy += 0.1) {
-            double cost = 0.0;
-            double dist0 = sqrt((stations[0].x_true - gx)*(stations[0].x_true - gx) + (stations[0].y_true - gy)*(stations[0].y_true - gy)) * 1000.0;
-            double delay0 = dist0 / SPEED_OF_LIGHT;
-
-            for (int i = 1; i < NUM_STATIONS; i++) {
-                if (best_individual[i]) {
-                    double disti = sqrt((stations[i].x_true - gx)*(stations[i].x_true - gx) + (stations[i].y_true - gy)*(stations[i].y_true - gy)) * 1000.0;
-                    double delayi = disti / SPEED_OF_LIGHT;
-                    double model_tdoa = delayi - delay0;
-                    double model_lag = model_tdoa * SAMPLING_RATE;
-                    cost += weights[i] * interpolate_correlation(R_mag[i], model_lag, max_lag);
-                }
-            }
-
-            if (cost > max_cost_ga) {
-                max_cost_ga = cost;
-                best_x_ga = gx;
-                best_y_ga = gy;
-            }
-        }
-    }
+    parallel_grid_search(coarse_x_ga - 5.0, coarse_x_ga + 5.0, 0.1, coarse_y_ga - 5.0, coarse_y_ga + 5.0, 0.1, stations, weights, R_mag, max_lag, best_individual, &best_x_ga, &best_y_ga);
 
     double loc_error_ga = sqrt((best_x_ga - tx_x)*(best_x_ga - tx_x) + (best_y_ga - tx_y)*(best_y_ga - tx_y));
     printf("[RESULTS] GA Subset (8 stations) Localized TX coordinates: (%.1f, %.1f) km\n", best_x_ga, best_y_ga);
