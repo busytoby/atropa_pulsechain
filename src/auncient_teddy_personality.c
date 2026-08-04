@@ -897,6 +897,16 @@ bool evaluate_provocation_aggression_threshold(const teddy_geometry_t *geom, dou
     return true;
 }
 
+bool evaluate_exposure_adjusted_threat_threshold(const teddy_geometry_t *geom, double exposure_ms, double *adjusted_threat_threshold_out) {
+    if (!geom || exposure_ms < 0.0 || !adjusted_threat_threshold_out) {
+        return false;
+    }
+    double base_threshold = evaluate_fw_threat_level(geom);
+    double duration_scale = (exposure_ms > 300.0) ? 1.0 : (exposure_ms / 300.0);
+    *adjusted_threat_threshold_out = base_threshold * duration_scale;
+    return true;
+}
+
 bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncanny_score_out) {
     if (!geom || !uncanny_score_out) {
         return false;

@@ -281,7 +281,12 @@ int main(void) {
     double agg_thresh = 0.0;
     assert(evaluate_provocation_aggression_threshold(&geom, 5.0, &agg_thresh));
     assert(agg_thresh >= 0.0);
-    printf("   ✓ GENIOLE et al. fWHR threat, visual-vocal mismatch, reactive retaliation, rapid exposure consistency, cooperative cheating risk, rapid threat limit, retaliation profile, and aggression threshold verified successfully\n");
+
+    // Test Geniole exposure duration adjusted threat threshold calculation
+    double exp_adjusted_threat = 0.0;
+    assert(evaluate_exposure_adjusted_threat_threshold(&geom, 150.0, &exp_adjusted_threat));
+    assert(exp_adjusted_threat >= 0.0);
+    printf("   ✓ GENIOLE et al. fWHR threat, visual-vocal mismatch, reactive retaliation, rapid exposure consistency, cooperative cheating risk, rapid threat limit, retaliation profile, aggression threshold, and exposure-adjusted threat verified successfully\n");
 
     // Test Hyde uncanny mismatch index calculation
     double uncanny_val = 0.0;
