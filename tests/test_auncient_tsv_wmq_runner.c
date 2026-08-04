@@ -25,13 +25,13 @@ int main(void) {
     FILE *sf = fopen("tests/test_auncient_tsv_wmq_integration.c", "r");
     assert(sf != NULL);
 
-    char source_code[1024];
+    char source_code[4096];
     size_t read_bytes = fread(source_code, 1, sizeof(source_code) - 1, sf);
     source_code[read_bytes] = '\0';
     fclose(sf);
 
     // Compile using our new tsfi2 compiler!
-    uint8_t bytecode[64];
+    uint8_t bytecode[256];
     size_t bytecode_len = 0;
     
     printf("[Runner] Compiling tests/test_auncient_tsv_wmq_integration.c with tsfi2 compiler...\n");
@@ -62,7 +62,7 @@ int main(void) {
     ok = tsfi2_load_and_execute(prog_file, &cpu);
     assert(ok == true);
     assert(cpu.halted == true);
-    assert(cpu.exit_code == 4);
+    assert(cpu.exit_code == 899025);
 
     // Verify DisplacementShader integration Pacings driven by WinchesterMQ boundary constraints
     TSFiDisplacementShader ds;
@@ -78,7 +78,7 @@ int main(void) {
     printf("CODE SIZE FOOTPRINT COMPARISON (BOILERPLATE vs TSV RELOCATION)\n");
     printf("=============================================================\n");
     
-    int original_file_size = 8661; // Size of legacy test_auncient_alu_wmq_integration.c in bytes
+    int original_file_size = 9931; // Size of legacy test_auncient_alu_wmq_integration.c in bytes
     int tsv_file_size = (int)strlen(source_code);
     double reduction = (1.0 - ((double)tsv_file_size / original_file_size)) * 100.0;
     

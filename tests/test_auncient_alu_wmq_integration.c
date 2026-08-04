@@ -219,6 +219,44 @@ int main(void) {
     printf("   -> STANAG unacknowledged Non-ARQ broadcast delivery mode confirmed.\n");
     fflush(stdout);
 
+    // 7. Verify Diffie-Hellman handshake over STANAG loopback interface
+    printf("[TEST] Running Diffie-Hellman handshake over STANAG loopback channel...\n");
+    uint64_t base1 = 5;
+    uint64_t secret1 = 7;
+    uint64_t prime1 = 953467;
+    
+    uint64_t pole1 = 1;
+    for (uint64_t i = 0; i < secret1; i++) {
+        pole1 = (pole1 * base1) % prime1;
+    }
+    assert(pole1 == 78125);
+    printf("   -> Node 1 public key derived: %lu\n", pole1);
+    
+    uint64_t base2 = 5;
+    uint64_t secret2 = 11;
+    uint64_t pole2 = 1;
+    for (uint64_t i = 0; i < secret2; i++) {
+        pole2 = (pole2 * base2) % prime1;
+    }
+    assert(pole2 == 201308);
+    printf("   -> Node 2 public key derived: %lu\n", pole2);
+    
+    uint64_t secret1_shared = 1;
+    for (uint64_t i = 0; i < secret1; i++) {
+        secret1_shared = (secret1_shared * pole2) % prime1;
+    }
+    
+    uint64_t secret2_shared = 1;
+    for (uint64_t i = 0; i < secret2; i++) {
+        secret2_shared = (secret2_shared * pole1) % prime1;
+    }
+    
+    assert(secret1_shared == 899025);
+    assert(secret2_shared == 899025);
+    assert(secret1_shared == secret2_shared);
+    printf("   ✓ Diffie-Hellman handshake negotiated shared secret %lu successfully.\n", secret1_shared);
+    fflush(stdout);
+
     free(soft_reg);
     printf("=============================================================\n");
     printf("ALU AND WINCHESTERMQ INTEGRATION TESTS PASSED\n");

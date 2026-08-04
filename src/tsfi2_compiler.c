@@ -36,7 +36,15 @@ bool tsfi2_compile(
         return false;
     }
     
-    const char *ret_ptr = strstr(source_code, "return");
+    const char *ret_ptr = source_code;
+    while ((ret_ptr = strstr(ret_ptr, "return")) != NULL) {
+        char next_char = ret_ptr[6];
+        if (next_char == '_' || isalnum((unsigned char)next_char)) {
+            ret_ptr++;
+            continue;
+        }
+        break;
+    }
     if (!ret_ptr) return false;
     
     ret_ptr += 6;

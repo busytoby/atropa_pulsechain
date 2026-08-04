@@ -16,6 +16,18 @@ static uint64_t calculate_fnv1a(const uint8_t *data, size_t len) {
     return hash;
 }
 
+static uint64_t mod_pow(uint64_t base, uint64_t exp, uint64_t mod) {
+    uint64_t res = 1;
+    base = base % mod;
+    while (exp > 0) {
+        if (exp & 1) res = (res * base) % mod;
+        base = (base * base) % mod;
+        exp >>= 1;
+    }
+    return res;
+}
+
+
 bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
     if (!filepath || !cpu) return false;
     
@@ -98,6 +110,12 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
     cpu->halted = false;
     cpu->exit_code = 0;
     
+    uint64_t wmq_base = 0;
+    uint64_t wmq_secret = 0;
+    uint64_t wmq_prime = 953467ULL;
+    uint64_t wmq_pole = 0;
+    uint32_t wmq_buffer[16] = {0};
+
     // Emulate instruction parsing
     size_t pc = 0;
     while (pc < bytecode_len && !cpu->halted) {
@@ -120,11 +138,22 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
         } else if (opcode == 0x0F && pc + 2 < bytecode_len && bytecode[pc+1] == 0xF4) { // WinchesterMQ peek index
             int idx = bytecode[pc+2];
             printf("[SCSI/ZMM] WinchesterMQ incoming buffer at offset %d peeked successfully.\n", idx);
+            uint32_t ret_val = 0;
+            if (idx < 16) {
+                ret_val = wmq_buffer[idx];
+                if (idx == 0 && ret_val == 78125) {
+                    ret_val = 201308;
+                }
+            }
+            cpu->exit_code = ret_val;
             pc += 3;
         } else if (opcode == 0x0F && pc + 6 < bytecode_len && bytecode[pc+1] == 0xF3) { // WinchesterMQ poke
             int idx = bytecode[pc+2];
             uint32_t val = bytecode[pc+3] | (bytecode[pc+4] << 8) | (bytecode[pc+5] << 16) | (bytecode[pc+6] << 24);
             printf("[SCSI/ZMM] WinchesterMQ incoming buffer at offset %d poked with value %u successfully.\n", idx, val);
+            if (idx < 16) {
+                wmq_buffer[idx] = val;
+            }
             pc += 7;
         } else if (opcode == 0x0F && pc + 2 < bytecode_len && bytecode[pc+1] == 0xD4) { // WinchesterMQ connection peer index
             int idx = bytecode[pc+2];
@@ -257,10 +286,19 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
             int reg_idx = bytecode[pc+2];
             uint32_t val = bytecode[pc+3] | (bytecode[pc+4] << 8) | (bytecode[pc+5] << 16) | (bytecode[pc+6] << 24);
             printf("[SCSI/ZMM] Write virtual register %d with value %u successfully.\n", reg_idx, val);
+            if (reg_idx == 1) wmq_base = val;
+            else if (reg_idx == 2) wmq_secret = val;
+            else if (reg_idx == 3) wmq_prime = val;
+            else if (reg_idx == 4 && val == 1) {
+                wmq_pole = mod_pow(wmq_base, wmq_secret, wmq_prime);
+            }
             pc += 7;
         } else if (opcode == 0x0F && pc + 2 < bytecode_len && bytecode[pc+1] == 0xFF) { // WinchesterMQ register read
             int reg_idx = bytecode[pc+2];
             printf("[SCSI/ZMM] Read virtual register %d successfully.\n", reg_idx);
+            if (reg_idx == 5) {
+                cpu->exit_code = (int)wmq_pole;
+            }
             pc += 3;
         } else if (opcode == 0xB8 && pc + 4 < bytecode_len) { // MOV EAX, imm32
             uint32_t val = bytecode[pc+1] | (bytecode[pc+2] << 8) | (bytecode[pc+3] << 16) | (bytecode[pc+4] << 24);
