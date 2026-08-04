@@ -179,6 +179,15 @@ int main(void) {
     assert(s_wpval < 0.7);
     printf("   ✓ R H B Christensen scale parameter Wald test diagnostics verified successfully\n");
 
+    // Test scale nominal Wald test calculation
+    double gammas[2] = {0.8, -0.6};
+    double g_covar[4] = {0.16, 0.0, 0.0, 0.09};
+    double sn_wstat = 0.0, sn_wpval = 0.0;
+    assert(evaluate_scale_nominal_wald_test(gammas, g_covar, 2, &sn_wstat, &sn_wpval));
+    assert(sn_wstat > 0.0);
+    assert(sn_wpval < 0.05); // significant
+    printf("   ✓ R H B Christensen scale nominal Wald test diagnostics verified successfully\n");
+
     // Test Geniole fWHR threat level calculation
     double threat_level = evaluate_fw_threat_level(&geom);
     assert(threat_level >= 0.0);

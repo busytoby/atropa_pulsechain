@@ -593,6 +593,22 @@ bool evaluate_scale_wald_test(double scale_est, double baseline, double variance
     return true;
 }
 
+bool evaluate_scale_nominal_wald_test(const double *gamma_vector, const double *covariance_matrix, int df, double *wald_stat_out, double *p_value_out) {
+    if (!gamma_vector || !covariance_matrix || df < 1 || !wald_stat_out || !p_value_out) {
+        return false;
+    }
+    double sum_w = 0.0;
+    for (int i = 0; i < df; ++i) {
+        double var = covariance_matrix[i * df + i];
+        if (var < 1e-9) var = 1e-9;
+        sum_w += (gamma_vector[i] * gamma_vector[i]) / var;
+    }
+    *wald_stat_out = sum_w;
+    *p_value_out = exp(-(*wald_stat_out) / 2.0);
+    if (*p_value_out > 1.0) *p_value_out = 1.0;
+    return true;
+}
+
 double evaluate_fw_threat_level(const teddy_geometry_t *geom) {
     if (!geom) return 0.0;
     double threat = (geom->head_fwhr * 1.5) + (geom->jaw_scale * 0.8) - (geom->symmetry * 0.3);
