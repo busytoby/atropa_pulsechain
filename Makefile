@@ -174,7 +174,10 @@ test-auncient-tsv-wmq-integration:
 tsfi2-compiler:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc src/tsfi2_compiler_cli.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c -o tsfi2_compiler -lrt
 
-
+test-auncient-displacementshader-wmq-integration:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc tests/test_auncient_displacementshader_wmq_integration.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_displacementshader.c -o tests/test_auncient_displacementshader_wmq_integration -lcrypto -lrt -lm
+	./tests/test_auncient_displacementshader_wmq_integration
+	@rm -f tests/test_auncient_displacementshader_wmq_integration
 
 test-mann:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_mann_controller.c tsfi2-deepseek/src/tsfi_mann_controller.c -o tests/test_mann_controller -lm -lrt
