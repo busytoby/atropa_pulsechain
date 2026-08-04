@@ -91,6 +91,16 @@ int main() {
 * **Compiler Built-in**: 22 characters (`__builtin_wmq_peek();`).
 * **Source Size Reduction**: 64% character footprint decrease.
 
+### Core Size Comparison
+* **Boilerplate Wrapper**: 62 characters.
+  ```c
+  int queue_size() {
+      return *(volatile int*)(0x20A0);
+  }
+  ```
+* **Compiler Built-in**: 22 characters (`__builtin_wmq_size();`).
+* **Source Size Reduction**: 64% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
