@@ -684,6 +684,15 @@ int main(void) {
     assert(fwhr_jitter > 0.0);
     printf("   ✓ Keating brow-chin proportion and Geniole fWHR jitter modulation verified successfully\n");
 
+    // Test Keating gaze dominance and brow gesture calculations
+    double gaze_dom = 0.0;
+    double brow_sub = 0.0;
+    assert(evaluate_keating_gaze_dominance(&geom, 5.0, 0.2, &gaze_dom));
+    assert(gaze_dom > 0.0);
+    assert(evaluate_keating_brow_gesture(&geom, 0.3, &brow_sub));
+    assert(brow_sub > 0.0);
+    printf("   ✓ KEATING, C. F. gaze dominance and brow gesture verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge

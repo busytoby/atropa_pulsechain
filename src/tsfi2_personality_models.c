@@ -1081,3 +1081,19 @@ bool evaluate_geniole_fwhr_jitter_mod(const teddy_geometry_t *geom, double base_
     return true;
 }
 
+bool evaluate_keating_gaze_dominance(const teddy_geometry_t *geom, double gaze_duration_sec, double aversion_angle, double *gaze_dominance_out) {
+    if (!geom || gaze_duration_sec < 0.0 || aversion_angle < 0.0 || !gaze_dominance_out) {
+        return false;
+    }
+    *gaze_dominance_out = (gaze_duration_sec / (1.0 + aversion_angle)) * (1.1 + geom->leadership_profile * 0.4);
+    return true;
+}
+
+bool evaluate_keating_brow_gesture(const teddy_geometry_t *geom, double brow_raise_amplitude, double *brow_submissiveness_out) {
+    if (!geom || brow_raise_amplitude < 0.0 || !brow_submissiveness_out) {
+        return false;
+    }
+    *brow_submissiveness_out = brow_raise_amplitude * (0.9 + geom->empathy_index * 0.5);
+    return true;
+}
+

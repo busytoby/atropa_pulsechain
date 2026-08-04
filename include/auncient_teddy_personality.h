@@ -475,6 +475,12 @@ bool evaluate_keating_brow_chin_proportion(const teddy_geometry_t *geom, double 
 // Maps fWHR dominance ratings to micro-expression coordinate jitter bounds (Geniole et al.).
 bool evaluate_geniole_fwhr_jitter_mod(const teddy_geometry_t *geom, double base_jitter, double *mapped_jitter_out);
 
+// Evaluates perceived dominance based on direct gaze duration versus eye aversion angles (Keating, C. F.).
+bool evaluate_keating_gaze_dominance(const teddy_geometry_t *geom, double gaze_duration_sec, double aversion_angle, double *gaze_dominance_out);
+
+// Models how brow-raise gestures scale perceived submissiveness and babyfacedness (Keating, C. F.).
+bool evaluate_keating_brow_gesture(const teddy_geometry_t *geom, double brow_raise_amplitude, double *brow_submissiveness_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 
