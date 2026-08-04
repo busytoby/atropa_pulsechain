@@ -7,23 +7,36 @@
 // wmq_param GOST_KEY KGBKEY01
 
 int main() {
-    // IDENTIFICATION DIVISION
-    // PROGRAM-ID: GOSTINT
-    // AUTHOR: ADVERSARY
-
-    // WORKING-STORAGE SECTION
-    const char *ws_ssn_tin = "050051122";
-    const char *ws_gost_key = "KGBKEY01";
-    (void)ws_ssn_tin;
-    (void)ws_gost_key;
-
-    // PROCEDURE DIVISION (MAIN-LOGIC)
-    // DISPLAY "EXECUTE COBOL ADVERSARY GOST LOOP..."
-    // DISPLAY "PROCESSED IDENTITY: " WS-SSN-TIN
-    
-    // Write dynamic parameters over WinchesterMQ registers
-    __builtin_wmq_reg_write(1, 950000000); // Mount TIN parameter
-    __builtin_wmq_reg_write(2, 50051122);  // Mount SSN parameter
-    
-    return 0; // GOBACK
+    __builtin_wmq_reg_write(1, 950000000); // Process TIN
+    __builtin_wmq_reg_write(2, 50051122);  // Process SSN
+    return 0;
 }
+
+/* ORIGINAL JCL/COBOL SPECIFICATION - PRESERVED VERBATIM WITH ZERO LOSS
+//ESEVJOB  JOB (TSFI),'GOST COBOL',CLASS=A,MSGCLASS=A
+//*
+//COBCOMP  EXEC PGM=IKFCBL00
+//SYSIN    DD *
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. GOSTINT.
+       AUTHOR. ADVERSARY.
+       
+       ENVIRONMENT DIVISION.
+       
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  WS-SSN-TIN      PIC X(9)  VALUE "050051122".
+       01  WS-GOST-KEY     PIC X(8)  VALUE "KGBKEY01".
+       
+       PROCED DIVISION.
+       MAIN-LOGIC.
+           DISPLAY "EXECUTE COBOL ADVERSARY GOST LOOP..."
+           DISPLAY "PROCESSED IDENTITY: " WS-SSN-TIN
+           GOBACK.
+/*
+//STEP1    EXEC PGM=GOSTINT
+//SYSIN    DD *
+//TIN      950000000
+//SSN      050051122
+/*
+*/
