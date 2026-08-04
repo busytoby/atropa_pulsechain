@@ -52,79 +52,86 @@ static uint64_t read_tsv_vsam(tsfi_cw_vsam_ksds *ksds, int reg_idx) {
 
 bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
     if (!filepath || !cpu) return false;
-    
-    FILE *f = fopen(filepath, "rb");
-    if (!f) return false;
-    
-    fseek(f, 0, SEEK_END);
-    long total_size = ftell(f);
-    if (total_size < 16) {
-        fclose(f);
+
+    tsfi_cw_vsam_ksds prog_ksds;
+    memset(&prog_ksds, 0, sizeof(prog_ksds));
+    if (tsfi_cw_vsam_open(&prog_ksds, filepath) != 0) {
         return false;
     }
-    
+
+    // Verify FNV-1a checksum of the KSDS database file
+    FILE *f = fopen(filepath, "rb");
+    if (!f) return false;
+    fseek(f, 0, SEEK_END);
+    long total_size = ftell(f);
     fseek(f, 0, SEEK_SET);
     uint8_t *buffer = malloc(total_size);
     if (!buffer) {
         fclose(f);
         return false;
     }
-    size_t read_bytes = fread(buffer, 1, total_size, f);
-    (void)read_bytes;
+    size_t r = fread(buffer, 1, total_size, f);
+    (void)r;
     fclose(f);
-    
-    // Verify FNV-1a checksum
-    size_t data_len = total_size - 8;
-    uint64_t file_checksum;
-    memcpy(&file_checksum, buffer + data_len, 8);
-    
-    uint64_t computed = calculate_fnv1a(buffer, data_len);
-    if (computed != file_checksum) {
+
+    // Read stored hash from "HSH" record
+    uint8_t hash_buf[32] = {0};
+    int hash_len = 0;
+    if (tsfi_cw_vsam_read(&prog_ksds, "HSH", hash_buf, sizeof(hash_buf) - 1, &hash_len) != 0) {
         free(buffer);
         return false;
     }
-    
-    // Find boundary separator
-    uint8_t *boundary = NULL;
-    for (size_t i = 0; i < data_len - 1; i++) {
-        if (buffer[i] == '\n' && buffer[i+1] == '\n') {
-            boundary = buffer + i;
+    hash_buf[hash_len] = '\0';
+    uint64_t stored_hash = strtoull((char *)hash_buf, NULL, 10);
+
+
+
+    // Read Entrypoint
+    uint8_t entry_buf[32] = {0};
+    int entry_len = 0;
+    if (tsfi_cw_vsam_read(&prog_ksds, "ENT", entry_buf, sizeof(entry_buf) - 1, &entry_len) != 0) {
+        free(buffer);
+        return false;
+    }
+    entry_buf[entry_len] = '\0';
+    uint32_t entry_point = 0;
+    sscanf((char *)entry_buf, "0x%X", &entry_point);
+
+    // Read Bytecode
+    int prog_idx = -1;
+    for (int i = 0; i < prog_ksds.entry_count; i++) {
+        if (strcmp(prog_ksds.index[i].key, "PROG") == 0) {
+            prog_idx = i;
             break;
         }
     }
-    
-    if (!boundary) {
+    if (prog_idx == -1) {
         free(buffer);
         return false;
     }
-    
-    size_t header_len = boundary - buffer;
-    bool originally_ended_with_newline = (boundary + 2 < buffer + data_len && boundary[2] == '\n');
-    size_t total_written = originally_ended_with_newline ? header_len + 3 : header_len + 2;
-    size_t aligned_offset = ((total_written + 511) / 512) * 512;
-    
-    if (aligned_offset > data_len) {
+
+    size_t bytecode_len = prog_ksds.index[prog_idx].length;
+    uint8_t *bytecode_payload = malloc(bytecode_len);
+    if (!bytecode_payload) {
         free(buffer);
         return false;
     }
-    
-    // Parse Entry Address from TSV header
-    uint32_t entry_point = 0;
-    char *hdr = malloc(header_len + 1);
-    if (hdr) {
-        memcpy(hdr, buffer, header_len);
-        hdr[header_len] = '\0';
-        char *line2 = strchr(hdr, '\n');
-        if (line2) {
-            line2++;
-            sscanf(line2, "0x%X", &entry_point);
-        }
-        free(hdr);
+    int read_prog_len = 0;
+    if (tsfi_cw_vsam_read(&prog_ksds, "PROG", bytecode_payload, bytecode_len, &read_prog_len) != 0) {
+        free(bytecode_payload);
+        free(buffer);
+        return false;
     }
-    
-    size_t bytecode_len = data_len - aligned_offset;
-    const uint8_t *bytecode = buffer + aligned_offset;
-    
+
+    uint64_t computed = calculate_fnv1a(bytecode_payload, bytecode_len);
+    if (computed != stored_hash) {
+        free(bytecode_payload);
+        free(buffer);
+        return false;
+    }
+
+    const uint8_t *bytecode = bytecode_payload;
+
     // Initialize CPU state
     cpu->rip = entry_point;
     cpu->rbp = 0xFFFFFFFF;
@@ -425,6 +432,7 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
         }
     }
     
+    free((void *)bytecode);
     free(buffer);
     remove("TSV_REGISTRY.dat.bin");
     return (cpu->exit_code != -1);

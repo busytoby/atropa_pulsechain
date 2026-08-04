@@ -2,6 +2,7 @@
 #define _POSIX_C_SOURCE 200809L
 
 #include "tsfi2_compiler_bin.h"
+#include "tsfi2-deepseek/inc/tsfi_mainframe_computerworld.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,61 +22,6 @@ static bool verify_extension(const char *filepath) {
     return (strcmp(filepath + len - 8, ".dat.bin") == 0);
 }
 
-bool tsfi2_compile_to_dat_bin(
-    const char *filepath,
-    uint32_t entry_point,
-    uint32_t instruction_count,
-    const uint8_t *bytecode,
-    size_t bytecode_len
-) {
-    if (!filepath || !bytecode || bytecode_len == 0 || !verify_extension(filepath)) {
-        return false;
-    }
-    
-    char tsv_header[256];
-    int written = snprintf(tsv_header, sizeof(tsv_header),
-                           "EntryAddress\tInstructionCount\n0x%X\t%u\n",
-                           entry_point, instruction_count);
-                           
-    if (written <= 0 || (size_t)written >= sizeof(tsv_header)) {
-        return false;
-    }
-    
-    size_t header_len = strlen(tsv_header);
-    size_t total_written = header_len + 2;
-    size_t aligned_offset = ((total_written + 511) / 512) * 512;
-    size_t data_size = aligned_offset + bytecode_len;
-    
-    uint8_t *buffer = calloc(1, data_size);
-    if (!buffer) return false;
-    
-    // Copy TSV header
-    memcpy(buffer, tsv_header, header_len);
-    buffer[header_len] = '\n';
-    buffer[header_len + 1] = '\n';
-    
-    // Copy bytecode payload after alignment padding
-    memcpy(buffer + aligned_offset, bytecode, bytecode_len);
-    
-    // Calculate checksum of complete data block
-    uint64_t checksum = calculate_fnv1a(buffer, data_size);
-    
-    FILE *f = fopen(filepath, "wb");
-    if (!f) {
-        free(buffer);
-        return false;
-    }
-    
-    // Write data block and checksum
-    fwrite(buffer, 1, data_size, f);
-    free(buffer);
-    
-    fwrite(&checksum, 1, sizeof(checksum), f);
-    fclose(f);
-    
-    return true;
-}
-
 bool tsfi2_compile_to_dat_bin_ext(
     const char *filepath,
     uint32_t entry_point,
@@ -88,50 +34,58 @@ bool tsfi2_compile_to_dat_bin_ext(
     if (!filepath || !bytecode || bytecode_len == 0 || !verify_extension(filepath)) {
         return false;
     }
-    
-    char tsv_header[512];
-    int written;
+
+    remove(filepath);
+    tsfi_cw_vsam_ksds ksds;
+    memset(&ksds, 0, sizeof(ksds));
+    if (tsfi_cw_vsam_open(&ksds, filepath) != 0) {
+        return false;
+    }
+
+    // Write binary program bytecode under key "PROG"
+    if (tsfi_cw_vsam_write(&ksds, "PROG", bytecode, bytecode_len) != 0) {
+        return false;
+    }
+
+    // Write metadata
+    char entry_str[32];
+    snprintf(entry_str, sizeof(entry_str), "0x%X", entry_point);
+    if (tsfi_cw_vsam_write(&ksds, "ENT", (const uint8_t *)entry_str, strlen(entry_str)) != 0) {
+        return false;
+    }
+
+    char count_str[32];
+    snprintf(count_str, sizeof(count_str), "%u", instruction_count);
+    if (tsfi_cw_vsam_write(&ksds, "CNT", (const uint8_t *)count_str, strlen(count_str)) != 0) {
+        return false;
+    }
+
     if (custom_keys && custom_values) {
-        written = snprintf(tsv_header, sizeof(tsv_header),
-                           "EntryAddress\tInstructionCount\t%s\n0x%X\t%u\t%s\n",
-                           custom_keys, entry_point, instruction_count, custom_values);
-    } else {
-        written = snprintf(tsv_header, sizeof(tsv_header),
-                           "EntryAddress\tInstructionCount\n0x%X\t%u\n",
-                           entry_point, instruction_count);
+        if (tsfi_cw_vsam_write(&ksds, "MKY", (const uint8_t *)custom_keys, strlen(custom_keys)) != 0) {
+            return false;
+        }
+        if (tsfi_cw_vsam_write(&ksds, "MVL", (const uint8_t *)custom_values, strlen(custom_values)) != 0) {
+            return false;
+        }
     }
-                           
-    if (written <= 0 || (size_t)written >= sizeof(tsv_header)) {
+
+    uint64_t hash = calculate_fnv1a(bytecode, bytecode_len);
+
+    char hash_str[32];
+    snprintf(hash_str, sizeof(hash_str), "%llu", (unsigned long long)hash);
+    if (tsfi_cw_vsam_write(&ksds, "HSH", (const uint8_t *)hash_str, strlen(hash_str)) != 0) {
         return false;
     }
-    
-    size_t header_len = strlen(tsv_header);
-    size_t total_written = header_len + 2;
-    size_t aligned_offset = ((total_written + 511) / 512) * 512;
-    size_t data_size = aligned_offset + bytecode_len;
-    
-    uint8_t *buffer = calloc(1, data_size);
-    if (!buffer) return false;
-    
-    memcpy(buffer, tsv_header, header_len);
-    buffer[header_len] = '\n';
-    buffer[header_len + 1] = '\n';
-    
-    memcpy(buffer + aligned_offset, bytecode, bytecode_len);
-    
-    uint64_t checksum = calculate_fnv1a(buffer, data_size);
-    
-    FILE *f = fopen(filepath, "wb");
-    if (!f) {
-        free(buffer);
-        return false;
-    }
-    
-    fwrite(buffer, 1, data_size, f);
-    free(buffer);
-    
-    fwrite(&checksum, 1, sizeof(checksum), f);
-    fclose(f);
-    
+
     return true;
+}
+
+bool tsfi2_compile_to_dat_bin(
+    const char *filepath,
+    uint32_t entry_point,
+    uint32_t instruction_count,
+    const uint8_t *bytecode,
+    size_t bytecode_len
+) {
+    return tsfi2_compile_to_dat_bin_ext(filepath, entry_point, instruction_count, NULL, NULL, bytecode, bytecode_len);
 }
