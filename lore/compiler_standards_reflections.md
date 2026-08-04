@@ -454,7 +454,7 @@ int main() {
 * **Source Size Reduction**: 73% character footprint decrease.
 
 ### Full TSV WinchesterMQ Integration Comparison
-* **Boilerplate Wrapper**: 398 characters.
+* **Legacy Boilerplate Wrapper**: 398 characters.
   ```c
   // Legacy logic requires manual setup of connection registers, verification loops, and manual pointer dereferencing
   void connect_legacy() {
@@ -465,18 +465,23 @@ int main() {
       *(volatile int*)(0x2030) = 0; // Disconnect
   }
   ```
-* **TSFi2 Compiled Source**: 191 characters.
+* **TSFi2 Compiled Source**: 222 characters.
   ```c
   int main() {
       __builtin_wmq_connect_idx(2);
       __builtin_wmq_auth_idx(3);
       __builtin_wmq_timeout_idx(4);
       __builtin_wmq_key_idx(5);
+      __builtin_wmq_peer_idx(6);
       __builtin_wmq_disconnect();
       return 42;
   }
   ```
-* **Source Size Reduction**: 52.01% character footprint decrease.
+* **Source Size Reduction**: 44.22% character footprint decrease.
+* **Full Integration Test File Footprint Comparison**:
+  * Original legacy file `test_auncient_alu_wmq_integration.c`: **5337 bytes** (containing raw struct mappings and manually simulated register states).
+  * Relocated TSV test file `test_auncient_tsv_wmq_integration.c`: **222 bytes** (compiled successfully with our C compiler).
+  * Source Code Size Reduction: **95.84%** decrease.
 
 ---
 
