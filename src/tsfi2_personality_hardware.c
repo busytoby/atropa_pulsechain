@@ -166,6 +166,18 @@ bool evaluate_izotope_ozone_habituation_decay(const teddy_geometry_t *geom, doub
     return true;
 }
 
+bool simulate_cloglog_verlet_physics(const teddy_geometry_t *geom, double scale_covariate, double current_pos, double prev_pos, double time_step, double *next_pos_out) {
+    if (!geom || scale_covariate < 0.0 || !next_pos_out) {
+        return false;
+    }
+    int cloglog_rating = evaluate_ordinal_cloglog_scale_rating(geom, scale_covariate);
+    double stiffness = geom->stiffness * (1.0 + (double)cloglog_rating * 0.25);
+    double velocity = current_pos - prev_pos;
+    double acceleration = -stiffness * current_pos;
+    *next_pos_out = current_pos + velocity + (acceleration * time_step * time_step);
+    return true;
+}
+
 bool execute_hbridge_thunk_with_feedback(const teddy_geometry_t *geom, double switching_frequency, double (*thunk_fn)(void), double *safety_margin_out) {
     if (!geom || switching_frequency < 1.0 || !thunk_fn || !safety_margin_out) {
         return false;

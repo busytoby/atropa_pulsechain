@@ -70,6 +70,12 @@ int main(void) {
     assert(avatar.geometry.damping >= 0.0);
     printf("   ✓ FET Verlet Soft-Body Discharge simulation verified successfully\n");
 
+    // Test Cloglog-modulated Verlet physics simulation
+    double next_verlet_pos = 0.0;
+    assert(simulate_cloglog_verlet_physics(&geom, 0.5, 1.0, 0.9, 0.1, &next_verlet_pos));
+    assert(next_verlet_pos < 1.1);
+    printf("   ✓ Cloglog-modulated Verlet soft-body physics verified successfully\n");
+
     // Test Christensen ordinal link model implementation
     resolve_teddy_geometry(PERSONALITY_TRUSTWORTHY, &geom);
     int rating_trust = evaluate_ordinal_link_rating(&geom);

@@ -427,6 +427,9 @@ bool evaluate_izotope_constrained_parameters(const teddy_geometry_t *geom, int g
 // Evaluates the izotope/ozone-adjusted habituation decay logic (Christensen).
 bool evaluate_izotope_ozone_habituation_decay(const teddy_geometry_t *geom, double base_decay, double *decayed_out);
 
+// Simulates cloglog-modulated Verlet physics (Christensen).
+bool simulate_cloglog_verlet_physics(const teddy_geometry_t *geom, double scale_covariate, double current_pos, double prev_pos, double time_step, double *next_pos_out);
+
 // Computes model selection diagnostics via AIC and BIC information criteria.
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out);
 
