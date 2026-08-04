@@ -334,6 +334,18 @@ int main() {
 * **Compiler Built-in**: 23 characters (`__builtin_wmq_lease();`).
 * **Source Size Reduction**: 63% character footprint decrease.
 
+### Host Connection Index Relocation Comparison
+* **Boilerplate Wrapper**: 118 characters.
+  ```c
+  int setup_conn() {
+      const char *host = "10.0.0.15";
+      int port = 80;
+      return wmq_connect(host, port);
+  }
+  ```
+* **Compiler Built-in**: 31 characters (`__builtin_wmq_connect_idx(1);`).
+* **Source Size Reduction**: 73% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection

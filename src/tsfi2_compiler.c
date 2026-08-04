@@ -275,6 +275,17 @@ bool tsfi2_compile(
         out_bytecode[offset++] = 0xDF;
     }
     
+    // Emit custom wmq_connect_idx if requested
+    const char *p_connect = strstr(source_code, "__builtin_wmq_connect_idx(");
+    if (p_connect) {
+        int idx = 0;
+        if (sscanf(p_connect, "__builtin_wmq_connect_idx(%d)", &idx) == 1) {
+            out_bytecode[offset++] = 0x0F;
+            out_bytecode[offset++] = 0xDE;
+            out_bytecode[offset++] = (uint8_t)idx;
+        }
+    }
+    
     // Emit x86 machine instructions: MOV EAX, imm32
     out_bytecode[offset++] = 0xB8;
     out_bytecode[offset++] = (uint8_t)(value & 0xFF);
