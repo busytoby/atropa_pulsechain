@@ -699,6 +699,32 @@ Dysnomia/bin/
 tests/test_displacementshader
 tests/CBT021.zip
 tests/test_cbt021_inmemory_pds
+/tests/test_hathitrust_client
+/tests/test_hathitrust_hathifile
+/tests/test_hathitrust_oai
+/tests/test_hathitrust_oai_util
+/tests/test_hathitrust_harvester
+/tests/test_hathitrust_ef
+/tests/test_hathitrust_extended
+/tests/test_hathitrust_xml
+/tests/test_hathitrust_cache_alto_qt
+/tests/test_hathitrust_extra2
+/tests/test_hathitrust_extra3
+/tests/test_hathitrust_render
+/tests/hathitrust_prman_procedural
+/tests/test_hathitrust_prman
+/tests/test_hathitrust_lore
+/tests/test_hathitrust_prman_extra
+/tests/test_hathitrust_prman_anim
+/tests/test_hathitrust_prman_blur
+/tests/test_hathitrust_prman_final
+/tests/test_hathitrust_teddy
+/tests/hathitrust_cli
+/tests/test_hathitrust_final_extra
+/tests/test_hathitrust_tsv_extra
+/tests/test_hathitrust_solr_rdbms
+/tests/test_hathitrust_tsv_bin
+/tests/test_hathitrust_window
 
 # Prevent compiled objects and library binaries from entering Git
 *.o

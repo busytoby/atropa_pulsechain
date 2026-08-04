@@ -11,8 +11,130 @@ help:
 	@echo "  make curves-benchmark - Run Curves schema latency benchmarks"
 
 
-test-all: test-dashboard test-container test-git-ci test-unit test-mann test-comp-pass test-mvarsel test-reroute test-delegate-sig test-stagecomp test-ar test-sdfformat test-hydrascene test-renderdelegate test-stagelock test-renderindex test-usdshade test-teddy-loader test-geomcamera test-geomcurves test-geompoints test-luxlight test-geomxform test-stageroot test-primroot test-stagepop test-attributeroot test-stagecache test-stagemask test-geomsubset test-stagearc test-stageinherits test-stagepayloads test-stagevariants test-stagetraverser test-stagemetadata test-camerafrustum test-stagereferences test-stagespecializes test-stagerelationship test-stagetimecodes test-vactrolpickup test-npnpnpvalve test-curvesbasis test-singularityring test-subdivcurves test-subdivscheme test-curvestension test-curveswidths test-curveswrap test-timesamples test-micropolygonmesh test-shadowmap test-quasirandomsampler test-displacementshader test-texgensample test-depthoffield test-quadtreeslicer test-riinterface test-cinefex-adv test-sss test-envmap test-hairshading test-proximity-occlusion test-krowz-sickness
+test-all: test-dashboard test-container test-git-ci test-unit test-hathitrust test-hathitrust-hathifile test-hathitrust-oai test-hathitrust-oai-util test-hathitrust-harvester test-hathitrust-ef test-hathitrust-extended test-hathitrust-xml test-hathitrust-cache-alto-qt test-hathitrust-extra2 test-hathitrust-extra3 test-hathitrust-render test-hathitrust-prman test-hathitrust-lore test-hathitrust-prman-extra test-hathitrust-prman-anim test-hathitrust-prman-blur test-hathitrust-prman-final test-hathitrust-teddy test-hathitrust-final-extra test-hathitrust-tsv-extra test-hathitrust-solr-rdbms test-hathitrust-tsv-bin test-hathitrust-window test-mann test-comp-pass test-mvarsel test-reroute test-delegate-sig test-stagecomp test-ar test-sdfformat test-hydrascene test-renderdelegate test-stagelock test-renderindex test-usdshade test-teddy-loader test-geomcamera test-geomcurves test-geompoints test-luxlight test-geomxform test-stageroot test-primroot test-stagepop test-attributeroot test-stagecache test-stagemask test-geomsubset test-stagearc test-stageinherits test-stagepayloads test-stagevariants test-stagetraverser test-stagemetadata test-camerafrustum test-stagereferences test-stagespecializes test-stagerelationship test-stagetimecodes test-vactrolpickup test-npnpnpvalve test-curvesbasis test-singularityring test-subdivcurves test-subdivscheme test-curvestension test-curveswidths test-curveswrap test-timesamples test-micropolygonmesh test-shadowmap test-quasirandomsampler test-displacementshader test-texgensample test-depthoffield test-quadtreeslicer test-riinterface test-cinefex-adv test-sss test-envmap test-hairshading test-proximity-occlusion test-krowz-sickness
 	@echo "All tests completed successfully."
+
+test-hathitrust:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc tests/test_hathitrust_client.c src/hathitrust_client.c -o tests/test_hathitrust_client -lssl -lcrypto -lrt
+	./tests/test_hathitrust_client
+	@rm -f tests/test_hathitrust_client
+
+test-hathitrust-hathifile:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc tests/test_hathitrust_hathifile.c src/hathitrust_hathifile.c -o tests/test_hathitrust_hathifile -lrt
+	./tests/test_hathitrust_hathifile
+	@rm -f tests/test_hathitrust_hathifile
+
+test-hathitrust-oai:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc tests/test_hathitrust_oai.c src/hathitrust_oai.c -o tests/test_hathitrust_oai -lssl -lcrypto -lrt
+	./tests/test_hathitrust_oai
+	@rm -f tests/test_hathitrust_oai
+
+test-hathitrust-oai-util:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc tests/test_hathitrust_oai_util.c src/hathitrust_oai_util.c src/hathitrust_oai.c -o tests/test_hathitrust_oai_util -lssl -lcrypto -lrt
+	./tests/test_hathitrust_oai_util
+	@rm -f tests/test_hathitrust_oai_util
+
+test-hathitrust-harvester:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc tests/test_hathitrust_harvester.c src/hathitrust_harvester.c src/hathitrust_oai_util.c src/hathitrust_oai.c -o tests/test_hathitrust_harvester -lssl -lcrypto -lrt
+	./tests/test_hathitrust_harvester
+	@rm -f tests/test_hathitrust_harvester
+
+test-hathitrust-ef:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc tests/test_hathitrust_ef.c src/hathitrust_ef.c -o tests/test_hathitrust_ef -lz -lrt
+	./tests/test_hathitrust_ef
+	@rm -f tests/test_hathitrust_ef
+
+test-hathitrust-extended:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc tests/test_hathitrust_extended.c src/hathitrust_oauth.c src/hathitrust_solr.c src/hathitrust_image.c -o tests/test_hathitrust_extended -lssl -lcrypto -lrt
+	./tests/test_hathitrust_extended
+	@rm -f tests/test_hathitrust_extended
+
+test-hathitrust-xml:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc tests/test_hathitrust_xml.c src/hathitrust_mets.c src/hathitrust_marc.c -o tests/test_hathitrust_xml -lrt
+	./tests/test_hathitrust_xml
+	@rm -f tests/test_hathitrust_xml
+
+test-hathitrust-cache-alto-qt:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc tests/test_hathitrust_cache_alto_qt.c src/hathitrust_quadtree.c src/hathitrust_alto.c src/hathitrust_cache.c -o tests/test_hathitrust_cache_alto_qt -lrt
+	./tests/test_hathitrust_cache_alto_qt
+	@rm -f tests/test_hathitrust_cache_alto_qt
+
+test-hathitrust-extra2:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc tests/test_hathitrust_extra2.c src/hathitrust_alto.c src/hathitrust_alto_consolidate.c src/hathitrust_speedometer.c src/hathitrust_marc.c src/hathitrust_marc_jsonld.c -o tests/test_hathitrust_extra2 -lrt
+	./tests/test_hathitrust_extra2
+	@rm -f tests/test_hathitrust_extra2
+
+test-hathitrust-extra3:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc tests/test_hathitrust_extra3.c src/hathitrust_mets.c src/hathitrust_iiif.c src/hathitrust_alto.c src/hathitrust_region.c src/hathitrust_hathifile.c src/hathitrust_hathifile_search.c -o tests/test_hathitrust_extra3 -lrt
+	./tests/test_hathitrust_extra3
+	@rm -f tests/test_hathitrust_extra3
+
+test-hathitrust-render:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc tests/test_hathitrust_render.c src/hathitrust_render.c -o tests/test_hathitrust_render -lm -lrt
+	./tests/test_hathitrust_render
+	@rm -f tests/test_hathitrust_render
+
+test-hathitrust-prman:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 src/hathitrust_prman_procedural.c -o tests/hathitrust_prman_procedural -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc tests/test_hathitrust_prman.c src/hathitrust_mets.c src/hathitrust_rib.c src/hathitrust_osl.c -o tests/test_hathitrust_prman -lrt
+	./tests/test_hathitrust_prman
+	@rm -f tests/hathitrust_prman_procedural tests/test_hathitrust_prman
+
+test-hathitrust-lore:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc tests/test_hathitrust_lore.c src/hathitrust_mets.c src/hathitrust_rib.c src/hathitrust_osl.c src/hathitrust_hathifile.c -o tests/test_hathitrust_lore -lrt
+	./tests/test_hathitrust_lore
+	@rm -f tests/test_hathitrust_lore
+
+test-hathitrust-prman-extra:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc tests/test_hathitrust_prman_extra.c src/hathitrust_osl_bleed.c src/hathitrust_alto.c src/hathitrust_camera_path.c src/hathitrust_rib_to_iiif.c -o tests/test_hathitrust_prman_extra -lrt
+	./tests/test_hathitrust_prman_extra
+	@rm -f tests/test_hathitrust_prman_extra
+
+test-hathitrust-prman-anim:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc tests/test_hathitrust_prman_anim.c src/hathitrust_osl_double_sided.c src/hathitrust_animator.c src/hathitrust_spine.c -o tests/test_hathitrust_prman_anim -lm -lrt
+	./tests/test_hathitrust_prman_anim
+	@rm -f tests/test_hathitrust_prman_anim
+
+test-hathitrust-prman-blur:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc tests/test_hathitrust_prman_blur.c src/hathitrust_prman_velocity.c src/hathitrust_render.c src/hathitrust_osl_gilding.c src/hathitrust_specular.c src/hathitrust_alto.c -o tests/test_hathitrust_prman_blur -lm -lrt
+	./tests/test_hathitrust_prman_blur
+	@rm -f tests/test_hathitrust_prman_blur
+
+test-hathitrust-prman-final:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc tests/test_hathitrust_prman_final.c src/hathitrust_osl_impression.c src/hathitrust_ao_pass.c src/hathitrust_pxrmaterial.c -o tests/test_hathitrust_prman_final -lrt
+	./tests/test_hathitrust_prman_final
+	@rm -f tests/test_hathitrust_prman_final
+
+test-hathitrust-teddy:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc tests/test_hathitrust_teddy.c src/hathitrust_lore_interop.c src/hathitrust_teddy_bridge.c -o tests/test_hathitrust_teddy -lpthread -lrt
+	./tests/test_hathitrust_teddy
+	@rm -f tests/test_hathitrust_teddy
+
+test-hathitrust-final-extra:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc src/hathitrust_cli.c src/hathitrust_hathifile_search.c src/hathitrust_hathifile.c src/hathitrust_cache_profiler.c src/hathitrust_cache.c -o tests/hathitrust_cli -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc tests/test_hathitrust_final_extra.c src/hathitrust_solr_transcoder.c src/hathitrust_cache_profiler.c src/hathitrust_cache.c -o tests/test_hathitrust_final_extra -lrt
+	./tests/test_hathitrust_final_extra
+	@rm -f tests/hathitrust_cli tests/test_hathitrust_final_extra
+
+test-hathitrust-tsv-extra:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc tests/test_hathitrust_tsv_extra.c src/hathitrust_oai_identify.c src/hathitrust_solr_sql.c src/hathitrust_tsv_scanner.c -o tests/test_hathitrust_tsv_extra -lrt
+	./tests/test_hathitrust_tsv_extra
+	@rm -f tests/test_hathitrust_tsv_extra
+
+test-hathitrust-solr-rdbms:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc tests/test_hathitrust_solr_rdbms.c scripts/abi_dispatch_map.c scripts/libantigravity_interop.c src/hathitrust_solr.c -o tests/test_hathitrust_solr_rdbms -lssl -lcrypto -lrt
+	./tests/test_hathitrust_solr_rdbms
+	@rm -f tests/test_hathitrust_solr_rdbms
+
+test-hathitrust-tsv-bin:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc tests/test_hathitrust_tsv_bin.c src/hathitrust_tsv_bin.c -o tests/test_hathitrust_tsv_bin -lrt
+	./tests/test_hathitrust_tsv_bin
+	@rm -f tests/test_hathitrust_tsv_bin
+
+test-hathitrust-window:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc tests/test_hathitrust_window.c src/hathitrust_window.c tsfi2-deepseek/src/tsfi_parc_window.c tsfi2-deepseek/src/tsfi_paintbox.c tsfi2-deepseek/src/tsfi_paint_core.c tsfi2-deepseek/src/tsfi_harry.c -o tests/test_hathitrust_window -lm -lrt
+	./tests/test_hathitrust_window
+	@rm -f tests/test_hathitrust_window
 
 test-mann:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Itsfi2-deepseek/inc tests/test_mann_controller.c tsfi2-deepseek/src/tsfi_mann_controller.c -o tests/test_mann_controller -lm -lrt
