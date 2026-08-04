@@ -152,12 +152,12 @@ test-tsfi2-compiler-bin:
 	@rm -f tests/test_tsfi2_compiler_bin
 
 test-tsfi2-loader:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc tests/test_tsfi2_loader.c src/tsfi2_loader.c src/tsfi2_compiler_bin.c tsfi2-deepseek/src/tsfi_displacementshader.c -o tests/test_tsfi2_loader -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc tests/test_tsfi2_loader.c src/tsfi2_loader.c src/tsfi2_compiler_bin.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_tsfi2_loader -lcrypto -lm -lrt
 	./tests/test_tsfi2_loader
 	@rm -f tests/test_tsfi2_loader
 
 test-tsfi2-compiler:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc tests/test_tsfi2_compiler.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_displacementshader.c -o tests/test_tsfi2_compiler -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Iinc -Itsfi2-deepseek/inc tests/test_tsfi2_compiler.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_mainframe_jcl.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_tsfi2_compiler -lcrypto -lm -lrt
 	./tests/test_tsfi2_compiler
 	@rm -f tests/test_tsfi2_compiler
 

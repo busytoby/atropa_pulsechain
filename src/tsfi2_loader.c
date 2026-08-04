@@ -4,6 +4,7 @@
 #include "tsfi2_loader.h"
 #include "tsfi2-deepseek/inc/tsfi_displacementshader.h"
 #include "tsfi2-deepseek/inc/tsfi_mainframe_computerworld.h"
+#include "tsfi2-deepseek/inc/tsfi_quadtree_ksds.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -74,28 +75,9 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
     (void)r;
     fclose(f);
 
-    // Read stored hash from "HSH" record
-    uint8_t hash_buf[32] = {0};
-    int hash_len = 0;
-    if (tsfi_cw_vsam_read(&prog_ksds, "HSH", hash_buf, sizeof(hash_buf) - 1, &hash_len) != 0) {
-        free(buffer);
-        return false;
-    }
-    hash_buf[hash_len] = '\0';
-    uint64_t stored_hash = strtoull((char *)hash_buf, NULL, 10);
 
 
 
-    // Read Entrypoint
-    uint8_t entry_buf[32] = {0};
-    int entry_len = 0;
-    if (tsfi_cw_vsam_read(&prog_ksds, "ENT", entry_buf, sizeof(entry_buf) - 1, &entry_len) != 0) {
-        free(buffer);
-        return false;
-    }
-    entry_buf[entry_len] = '\0';
-    uint32_t entry_point = 0;
-    sscanf((char *)entry_buf, "0x%X", &entry_point);
 
     // Read Bytecode
     int prog_idx = -1;
@@ -123,14 +105,67 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
         return false;
     }
 
-    uint64_t computed = calculate_fnv1a(bytecode_payload, bytecode_len);
-    if (computed != stored_hash) {
-        free(bytecode_payload);
-        free(buffer);
-        return false;
-    }
-
+    uint32_t entry_point = 0;
     const uint8_t *bytecode = bytecode_payload;
+
+    if (read_prog_len > 12 && memcmp(bytecode_payload, "AUNCIENT_BIN", 12) == 0) {
+        char *boundary = strstr((char *)bytecode_payload, "\n\n");
+        if (boundary) {
+            size_t header_len = boundary - (char *)bytecode_payload;
+            char *hdr = malloc(header_len + 1);
+            if (hdr) {
+                memcpy(hdr, bytecode_payload, header_len);
+                hdr[header_len] = '\0';
+                char val[128];
+                if (tsfi_qt_ksds_get_metadata(hdr, "Entrypoint", val, sizeof(val))) {
+                    sscanf(val, "0x%X", &entry_point);
+                }
+                uint64_t expected_hash = 0;
+                if (tsfi_qt_ksds_get_metadata(hdr, "Checksum", val, sizeof(val))) {
+                    expected_hash = strtoull(val, NULL, 10);
+                }
+                free(hdr);
+
+                size_t raw_code_len = read_prog_len - (boundary + 2 - (char *)bytecode_payload);
+                uint64_t computed = calculate_fnv1a((const uint8_t *)boundary + 2, raw_code_len);
+                if (computed != expected_hash) {
+                    free(bytecode_payload);
+                    free(buffer);
+                    return false;
+                }
+                bytecode = (const uint8_t *)boundary + 2;
+            }
+        }
+    } else {
+        // Read stored hash from "HSH" record (Fallback)
+        uint8_t hash_buf[32] = {0};
+        int hash_len = 0;
+        if (tsfi_cw_vsam_read(&prog_ksds, "HSH", hash_buf, sizeof(hash_buf) - 1, &hash_len) != 0) {
+            free(bytecode_payload);
+            free(buffer);
+            return false;
+        }
+        hash_buf[hash_len] = '\0';
+        uint64_t stored_hash = strtoull((char *)hash_buf, NULL, 10);
+
+        uint64_t computed = calculate_fnv1a(bytecode_payload, bytecode_len);
+        if (computed != stored_hash) {
+            free(bytecode_payload);
+            free(buffer);
+            return false;
+        }
+
+        // Read Entrypoint (Fallback)
+        uint8_t entry_buf[32] = {0};
+        int entry_len = 0;
+        if (tsfi_cw_vsam_read(&prog_ksds, "ENT", entry_buf, sizeof(entry_buf) - 1, &entry_len) != 0) {
+            free(bytecode_payload);
+            free(buffer);
+            return false;
+        }
+        entry_buf[entry_len] = '\0';
+        sscanf((char *)entry_buf, "0x%X", &entry_point);
+    }
 
     // Initialize CPU state
     cpu->rip = entry_point;
@@ -432,7 +467,7 @@ bool tsfi2_load_and_execute(const char *filepath, Tsfi2CpuState *cpu) {
         }
     }
     
-    free((void *)bytecode);
+    free(bytecode_payload);
     free(buffer);
     remove("TSV_REGISTRY.dat.bin");
     return (cpu->exit_code != -1);
