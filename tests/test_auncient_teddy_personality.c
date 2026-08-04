@@ -99,6 +99,22 @@ int main(void) {
     assert(aic > 0.0 && bic > 0.0);
     printf("   ✓ R H B Christensen AIC and BIC model selection criteria verified successfully\n");
 
+    // Test ACID transaction behavior (Commit successful path)
+    evaluation_tx_t tx = begin_evaluation_transaction(&geom);
+    assert(tx.active);
+    geom.head_fwhr = 1.2;
+    assert(commit_evaluation_transaction(&tx));
+    assert(!tx.active);
+    assert(geom.head_fwhr == 1.2);
+
+    // Test ACID transaction behavior (Rollback path on constraint violation)
+    tx = begin_evaluation_transaction(&geom);
+    assert(tx.active);
+    geom.head_fwhr = -5.0; // Invalid fWHR constraint
+    assert(!commit_evaluation_transaction(&tx)); // Must fail and rollback
+    assert(geom.head_fwhr == 1.2); // Restored
+    printf("   ✓ ACID transactions (commit, constraint verification, and rollback) verified successfully\n");
+
     printf("=============================================================\n");
     printf("PERSONALITY CONFIGURATIONS VALIDATED SUCCESSFULLY\n");
     printf("=============================================================\n");

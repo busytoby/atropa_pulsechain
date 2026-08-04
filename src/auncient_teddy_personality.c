@@ -412,6 +412,37 @@ bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count
     return true;
 }
 
+evaluation_tx_t begin_evaluation_transaction(teddy_geometry_t *target) {
+    evaluation_tx_t tx;
+    tx.target = target;
+    tx.active = false;
+    if (target) {
+        tx.backup = *target;
+        tx.active = true;
+    }
+    return tx;
+}
+
+bool commit_evaluation_transaction(evaluation_tx_t *tx) {
+    if (!tx || !tx->active || !tx->target) {
+        return false;
+    }
+    if (tx->target->head_fwhr < 0.1 || tx->target->head_fwhr > 3.0 ||
+        tx->target->stiffness < 0.0 || tx->target->stiffness > 1.0) {
+        rollback_evaluation_transaction(tx);
+        return false;
+    }
+    tx->active = false;
+    return true;
+}
+
+void rollback_evaluation_transaction(evaluation_tx_t *tx) {
+    if (tx && tx->active && tx->target) {
+        *tx->target = tx->backup;
+        tx->active = false;
+    }
+}
+
 bool engage_system_boundary(agent_avatar_t *avatar, teddy_personality_t personality) {
     if (!avatar) return false;
 

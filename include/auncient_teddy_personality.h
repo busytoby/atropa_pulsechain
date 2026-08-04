@@ -147,6 +147,17 @@ int evaluate_ordinal_cloglog_rating(const teddy_geometry_t *geom);
 // Computes model selection diagnostics via AIC and BIC information criteria.
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out);
 
+// ACID Transaction container for evaluation stability.
+typedef struct {
+    teddy_geometry_t *target;
+    teddy_geometry_t backup;
+    bool active;
+} evaluation_tx_t;
+
+evaluation_tx_t begin_evaluation_transaction(teddy_geometry_t *target);
+bool commit_evaluation_transaction(evaluation_tx_t *tx);
+void rollback_evaluation_transaction(evaluation_tx_t *tx);
+
 // Engages systems via the SDK typestate and calculates parameters
 bool engage_system_boundary(agent_avatar_t *avatar, teddy_personality_t personality);
 
