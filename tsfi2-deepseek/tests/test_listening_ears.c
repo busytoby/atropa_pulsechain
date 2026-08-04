@@ -4,6 +4,10 @@
 #include <string.h>
 #include <assert.h>
 #include "lau_memory.h"
+#include "tsfi_ccx_pool.h"
+
+static TSFiCCXPool g_ears_ccx_pool;
+static bool g_ears_ccx_pool_initialized = false;
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -131,6 +135,117 @@ static void run_safety_benchmarks() {
     printf("[SAFE] NaN/Inf lag input handled gracefully (nan lookup: %.2f, inf lookup: %.2f)\n", val_nan, val_inf);
 
     printf("[SUCCESS] All listening ears safety benchmarks passed successfully!\n\n");
+}
+
+typedef struct {
+    int station_idx;
+    int jam_ref_station_idx;
+    double lambda;
+    float **cleaned_buffers;
+    ReceiverStation *stations;
+} EarFilterWorkerArg;
+
+static void ear_filter_worker(void *arg) {
+    EarFilterWorkerArg *a = (EarFilterWorkerArg *)arg;
+    int i = a->station_idx;
+    int jam_ref_station_idx = a->jam_ref_station_idx;
+    double lambda = a->lambda;
+    float *station_buffer = a->stations[i].buffer;
+    float *cleaned_buffer = a->cleaned_buffers[i];
+
+    int L = 4;
+    double *w = (double*)calloc(L, sizeof(double));
+    double *x = (double*)calloc(L, sizeof(double));
+    double *P = (double*)calloc(L * L, sizeof(double));
+    for (int k = 0; k < L; k++) P[k * L + k] = 100.0;
+    
+    for (int step = 0; step < TOTAL_SAMPLES; step++) {
+        double ref_val = (double)a->stations[jam_ref_station_idx].buffer[step];
+        
+        for (int j = L - 1; j > 0; j--) {
+            x[j] = x[j-1];
+        }
+        x[0] = ref_val;
+        
+        double y = 0.0;
+        for (int j = 0; j < L; j++) {
+            y += w[j] * x[j];
+        }
+        double alpha = (double)station_buffer[step] - y;
+        
+        double P_x[4];
+        for (int row = 0; row < L; row++) {
+            P_x[row] = 0.0;
+            for (int col = 0; col < L; col++) {
+                P_x[row] += P[row * L + col] * x[col];
+            }
+        }
+        double x_P_x = 0.0;
+        for (int j = 0; j < L; j++) {
+            x_P_x += x[j] * P_x[j];
+        }
+        double den = lambda + x_P_x;
+        double k_gain[4];
+        for (int j = 0; j < L; j++) {
+            k_gain[j] = P_x[j] / den;
+        }
+        for (int j = 0; j < L; j++) {
+            w[j] += k_gain[j] * alpha;
+        }
+        double k_x_P[16];
+        for (int row = 0; row < L; row++) {
+            for (int col = 0; col < L; col++) {
+                double x_P_col = 0.0;
+                for (int m = 0; m < L; m++) {
+                    x_P_col += x[m] * P[m * L + col];
+                }
+                k_x_P[row * L + col] = k_gain[row] * x_P_col;
+            }
+        }
+        for (int j = 0; j < L * L; j++) {
+            P[j] = (P[j] - k_x_P[j]) / lambda;
+        }
+        
+        cleaned_buffer[step] = (float)(station_buffer[step] - (w[0]*x[0] + w[1]*x[1] + w[2]*x[2] + w[3]*x[3]));
+    }
+    
+    free(w);
+    free(x);
+    free(P);
+}
+
+typedef struct {
+    int station_idx;
+    int max_lag;
+    double **I_sig;
+    double **Q_sig;
+    double **R_mag;
+} EarCorrWorkerArg;
+
+static void ear_corr_worker(void *arg) {
+    EarCorrWorkerArg *a = (EarCorrWorkerArg *)arg;
+    int i = a->station_idx;
+    int max_lag = a->max_lag;
+    double *I_i = a->I_sig[i];
+    double *Q_i = a->Q_sig[i];
+    double *I_0 = a->I_sig[0];
+    double *Q_0 = a->Q_sig[0];
+    double *R_i = a->R_mag[i];
+
+    for (int lag = -max_lag; lag <= max_lag; lag++) {
+        double sum_real = 0.0;
+        double sum_imag = 0.0;
+        for (int n = max_lag; n < TOTAL_SAMPLES - max_lag; n++) {
+            double ii = I_i[n];
+            double qq = Q_i[n];
+            double i0 = I_0[n - lag];
+            double q0 = Q_0[n - lag];
+            
+            sum_real += (ii * i0 + qq * q0);
+            sum_imag += (qq * i0 - ii * q0);
+        }
+        R_i[lag + max_lag] = sqrt(sum_real * sum_real + sum_imag * sum_imag);
+    }
 }
 
 int main() {
@@ -557,68 +672,21 @@ int main() {
         cleaned_buffers[i] = (float*)malloc_safe(TOTAL_SAMPLES * sizeof(float));
     }
 
-// Removed OpenMP pragma
-    for (int i = 0; i < NUM_STATIONS; i++) {
-        int L = 4;
-        double *w = (double*)calloc_safe(L, sizeof(double));
-        double *x = (double*)calloc_safe(L, sizeof(double));
-        double *P = (double*)calloc_safe(L * L, sizeof(double));
-        for (int k = 0; k < L; k++) P[k * L + k] = 100.0;
-        
-        for (int step = 0; step < TOTAL_SAMPLES; step++) {
-            double ref_val = (double)stations[jam_ref_station_idx].buffer[step];
-            
-            for (int j = L - 1; j > 0; j--) {
-                x[j] = x[j-1];
-            }
-            x[0] = ref_val;
-            
-            double y = 0.0;
-            for (int j = 0; j < L; j++) {
-                y += w[j] * x[j];
-            }
-            double alpha = (double)stations[i].buffer[step] - y;
-            
-            double P_x[4];
-            for (int row = 0; row < L; row++) {
-                P_x[row] = 0.0;
-                for (int col = 0; col < L; col++) {
-                    P_x[row] += P[row * L + col] * x[col];
-                }
-            }
-            double x_P_x = 0.0;
-            for (int j = 0; j < L; j++) {
-                x_P_x += x[j] * P_x[j];
-            }
-            double den = lambda + x_P_x;
-            double k_gain[4];
-            for (int j = 0; j < L; j++) {
-                k_gain[j] = P_x[j] / den;
-            }
-            for (int j = 0; j < L; j++) {
-                w[j] += k_gain[j] * alpha;
-            }
-            double k_x_P[16];
-            for (int row = 0; row < L; row++) {
-                for (int col = 0; col < L; col++) {
-                    double x_P_col = 0.0;
-                    for (int m = 0; m < L; m++) {
-                        x_P_col += x[m] * P[m * L + col];
-                    }
-                    k_x_P[row * L + col] = k_gain[row] * x_P_col;
-                }
-            }
-            for (int j = 0; j < L * L; j++) {
-                P[j] = (P[j] - k_x_P[j]) / lambda;
-            }
-            
-            cleaned_buffers[i][step] = (float)(stations[i].buffer[step] - (w[0]*x[0] + w[1]*x[1] + w[2]*x[2] + w[3]*x[3]));
-        }
-        
-        free(w);
-        free(x);
-        free(P);
+    if (!g_ears_ccx_pool_initialized) {
+        tsfi_ccx_pool_init(&g_ears_ccx_pool, 0, 4);
+        g_ears_ccx_pool_initialized = true;
     }
+
+    EarFilterWorkerArg filter_args[NUM_STATIONS];
+    for (int i = 0; i < NUM_STATIONS; i++) {
+        filter_args[i].station_idx = i;
+        filter_args[i].jam_ref_station_idx = jam_ref_station_idx;
+        filter_args[i].lambda = lambda;
+        filter_args[i].cleaned_buffers = cleaned_buffers;
+        filter_args[i].stations = stations;
+        tsfi_ccx_pool_enqueue(&g_ears_ccx_pool, ear_filter_worker, &filter_args[i]);
+    }
+    tsfi_ccx_pool_wait(&g_ears_ccx_pool);
     
     // Allocate IQ buffers for all stations using the cleaned RF signals
     double **I_sig = (double**)malloc_safe(NUM_STATIONS * sizeof(double*));
@@ -650,23 +718,16 @@ int main() {
         R_mag[i] = (double*)calloc_safe(2 * max_lag + 1, sizeof(double));
     }
 
-// Removed OpenMP pragma
+    EarCorrWorkerArg corr_args[NUM_STATIONS];
     for (int i = 1; i < NUM_STATIONS; i++) {
-        for (int lag = -max_lag; lag <= max_lag; lag++) {
-            double sum_real = 0.0;
-            double sum_imag = 0.0;
-            for (int n = max_lag; n < TOTAL_SAMPLES - max_lag; n++) {
-                double I_i = I_sig[i][n];
-                double Q_i = Q_sig[i][n];
-                double I_0 = I_sig[0][n - lag];
-                double Q_0 = Q_sig[0][n - lag];
-                
-                sum_real += (I_i * I_0 + Q_i * Q_0);
-                sum_imag += (Q_i * I_0 - I_i * Q_0);
-            }
-            R_mag[i][lag + max_lag] = sqrt(sum_real * sum_real + sum_imag * sum_imag);
-        }
+        corr_args[i].station_idx = i;
+        corr_args[i].max_lag = max_lag;
+        corr_args[i].I_sig = I_sig;
+        corr_args[i].Q_sig = Q_sig;
+        corr_args[i].R_mag = R_mag;
+        tsfi_ccx_pool_enqueue(&g_ears_ccx_pool, ear_corr_worker, &corr_args[i]);
     }
+    tsfi_ccx_pool_wait(&g_ears_ccx_pool);
 
     for (int i = 0; i < NUM_STATIONS; i++) {
         free(I_sig[i]);
