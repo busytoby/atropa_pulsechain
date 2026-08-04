@@ -75,3 +75,63 @@ bool tsfi2_compile_to_dat_bin(
     
     return true;
 }
+
+bool tsfi2_compile_to_dat_bin_ext(
+    const char *filepath,
+    uint32_t entry_point,
+    uint32_t instruction_count,
+    const char *custom_keys,
+    const char *custom_values,
+    const uint8_t *bytecode,
+    size_t bytecode_len
+) {
+    if (!filepath || !bytecode || bytecode_len == 0 || !verify_extension(filepath)) {
+        return false;
+    }
+    
+    char tsv_header[512];
+    int written;
+    if (custom_keys && custom_values) {
+        written = snprintf(tsv_header, sizeof(tsv_header),
+                           "EntryAddress\tInstructionCount\t%s\n0x%X\t%u\t%s\n",
+                           custom_keys, entry_point, instruction_count, custom_values);
+    } else {
+        written = snprintf(tsv_header, sizeof(tsv_header),
+                           "EntryAddress\tInstructionCount\n0x%X\t%u\n",
+                           entry_point, instruction_count);
+    }
+                           
+    if (written <= 0 || (size_t)written >= sizeof(tsv_header)) {
+        return false;
+    }
+    
+    size_t header_len = strlen(tsv_header);
+    size_t total_written = header_len + 2;
+    size_t aligned_offset = ((total_written + 511) / 512) * 512;
+    size_t data_size = aligned_offset + bytecode_len;
+    
+    uint8_t *buffer = calloc(1, data_size);
+    if (!buffer) return false;
+    
+    memcpy(buffer, tsv_header, header_len);
+    buffer[header_len] = '\n';
+    buffer[header_len + 1] = '\n';
+    
+    memcpy(buffer + aligned_offset, bytecode, bytecode_len);
+    
+    uint64_t checksum = calculate_fnv1a(buffer, data_size);
+    
+    FILE *f = fopen(filepath, "wb");
+    if (!f) {
+        free(buffer);
+        return false;
+    }
+    
+    fwrite(buffer, 1, data_size, f);
+    free(buffer);
+    
+    fwrite(&checksum, 1, sizeof(checksum), f);
+    fclose(f);
+    
+    return true;
+}

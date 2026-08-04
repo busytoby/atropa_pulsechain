@@ -24,4 +24,14 @@ bool tsfi2_compile_to_dat_bin(
     size_t bytecode_len
 );
 
+bool tsfi2_compile_to_dat_bin_ext(
+    const char *filepath,
+    uint32_t entry_point,
+    uint32_t instruction_count,
+    const char *custom_keys,
+    const char *custom_values,
+    const uint8_t *bytecode,
+    size_t bytecode_len
+);
+
 #endif /* TSFI2_COMPILER_BIN_H */
