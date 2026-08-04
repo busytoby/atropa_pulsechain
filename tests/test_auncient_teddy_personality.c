@@ -123,6 +123,13 @@ int main(void) {
     assert(p_val > 0.0 && p_val < 0.05); // statistically significant difference
     printf("   ✓ R H B Christensen nested model Likelihood Ratio Test diagnostics verified successfully\n");
 
+    // Test predicted class probability confidence bounds calculation
+    double pred_prob = 0.0, low_p = 0.0, high_p = 0.0;
+    assert(evaluate_predicted_probability_bounds(&geom, 4, &pred_prob, &low_p, &high_p));
+    assert(pred_prob >= 0.0 && pred_prob <= 1.0);
+    assert(low_p <= high_p);
+    printf("   ✓ R H B Christensen predicted class probability and standard error bounds verified successfully\n");
+
     // Test ACID transaction behavior (Commit successful path)
     evaluation_tx_t tx = begin_evaluation_transaction(&geom);
     assert(tx.active);

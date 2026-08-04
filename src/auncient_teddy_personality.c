@@ -463,6 +463,25 @@ bool evaluate_lrt_nested_models(double null_loglik, double alt_loglik, int df_di
     return true;
 }
 
+bool evaluate_predicted_probability_bounds(const teddy_geometry_t *geom, int category, double *prob_out, double *lower_prob_bound, double *upper_prob_bound) {
+    if (!geom || category < 1 || category > 7 || !prob_out || !lower_prob_bound || !upper_prob_bound) {
+        return false;
+    }
+    double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
+    double thresholds[8] = {-10.0, 0.5, 1.2, 2.0, 2.8, 3.5, 4.2, 10.0};
+    double p_upper = 1.0 / (1.0 + exp(-(thresholds[category] - latent)));
+    double p_lower = 1.0 / (1.0 + exp(-(thresholds[category - 1] - latent)));
+    *prob_out = p_upper - p_lower;
+    if (*prob_out < 0.0) *prob_out = 0.0;
+    double se = 0.05;
+    double z = 1.96;
+    *lower_prob_bound = *prob_out - (z * se);
+    *upper_prob_bound = *prob_out + (z * se);
+    if (*lower_prob_bound < 0.0) *lower_prob_bound = 0.0;
+    if (*upper_prob_bound > 1.0) *upper_prob_bound = 1.0;
+    return true;
+}
+
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out) {
     if (!geom || param_count < 1 || sample_size < 2 || !aic_out || !bic_out) {
         return false;
