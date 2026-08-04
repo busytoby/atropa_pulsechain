@@ -86,6 +86,7 @@ typedef struct {
     double stress_expressiveness;    // Perceived stress expressiveness (0.0 analytical detachment, 1.0 emotional expressiveness)
     double parental_effort;          // Perceived parental effort (0.0 lower effort, 1.0 high parental effort/investment)
     double relationship_fidelity;    // Perceived relationship fidelity (0.0 low fidelity/promiscuous, 1.0 high fidelity)
+    double motor_fatigue_resistance; // Perceived motor fatigue resistance (0.0 low resistance, 1.0 high fatigue resistance)
 } teddy_geometry_t;
 
 // Pixar RenderMan Avatar Agent definition upon the cooperative boundary
