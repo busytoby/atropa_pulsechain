@@ -988,6 +988,16 @@ bool execute_hbridge_thunk_with_feedback(const teddy_geometry_t *geom, double sw
     return true;
 }
 
+bool evaluate_expression_asymmetry_uncanny(const teddy_geometry_t *geom, double asymmetry_deviation, double *uncanny_score_out) {
+    if (!geom || asymmetry_deviation < 0.0 || !uncanny_score_out) {
+        return false;
+    }
+    double base_uncanny = 0.0;
+    evaluate_uncanny_mismatch_index(geom, &base_uncanny);
+    *uncanny_score_out = base_uncanny + (asymmetry_deviation * 4.5 * (1.0 - geom->symmetry));
+    return true;
+}
+
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state) {
     if (resistance < 1e-9 || capacitance < 1e-9 || time_step < 1e-9 || !charge_state) {
         return false;

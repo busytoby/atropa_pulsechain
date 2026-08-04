@@ -260,6 +260,9 @@ bool evaluate_expression_freeze_uncanny(const teddy_geometry_t *geom, double fre
 // Executes a deferred H-bridge thunk under Gumbel flyback and emotional-scale adjusted Wald test bounds.
 bool execute_hbridge_thunk_with_feedback(const teddy_geometry_t *geom, double switching_frequency, double (*thunk_fn)(void), double *safety_margin_out);
 
+// Evaluates the unpredictable micro-expression asymmetry uncanny response (Hyde et al.).
+bool evaluate_expression_asymmetry_uncanny(const teddy_geometry_t *geom, double asymmetry_deviation, double *uncanny_score_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 
