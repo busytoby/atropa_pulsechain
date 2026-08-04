@@ -1329,6 +1329,9 @@ int run_nato_stanag_tests_part5(void) {
     size_t bytes = fread(buf, 1, sizeof(buf) - 1, f);
     buf[bytes] = '\0';
     fclose(f);
+
+    assert(strstr(buf, "DISPLAY \"EXECUTE COBOL ADVERSARY GOST LOOP...\"") != NULL);
+    assert(strstr(buf, "DISPLAY \"PROCESSED IDENTITY: \" WS-SSN-TIN") != NULL);
     
     tsfi_mf_norad_reset_lockout();
     spool_res = tsfi_mf_es_evm_spool_guard(buf, &jcl_valid);
