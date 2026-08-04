@@ -324,6 +324,16 @@ int main() {
 * **Compiler Built-in**: 22 characters (`__builtin_wmq_dhcp();`).
 * **Source Size Reduction**: 64% character footprint decrease.
 
+### Host DHCP Lease Time Comparison
+* **Boilerplate Wrapper**: 63 characters.
+  ```c
+  int get_lease() {
+      return *(volatile int*)(0x2060);
+  }
+  ```
+* **Compiler Built-in**: 23 characters (`__builtin_wmq_lease();`).
+* **Source Size Reduction**: 63% character footprint decrease.
+
 ---
 
 ## 2. Technical Reflection
