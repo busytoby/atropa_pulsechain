@@ -324,6 +324,9 @@ bool simulate_diode_capacitor_loop(double input_voltage, double resistance, doub
 // QR Decomposition implemented directly at the H-bridge izotope ozone circuit near the RED sustain flyback diode.
 bool hbridge_izotope_ozone_diode_qr(const double *A, double *Q, double *R, int n, const char *method);
 
+// QR-Rotations implemented on a Tremolo (Hessenberg) matrix, connected to the BLACK flyback diode with a 2-3 tree.
+bool hbridge_izotope_black_diode_graph_qr(const double *Tremolo_in, double *Tremolo_out, int n);
+
 // Evaluates the H-bridge switching flyback transient mismatch for izotope filtering.
 bool evaluate_hbridge_izotope_mismatch(const teddy_geometry_t *geom, double switching_frequency, double *flyback_mismatch_out);
 

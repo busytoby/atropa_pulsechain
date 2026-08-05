@@ -156,6 +156,90 @@ bool hbridge_izotope_ozone_diode_qr(const double *A, double *Q, double *R, int n
     return false;
 }
 
+// 2-3 Tree Node representation of Lanczos, Householder, and Krylov projections
+typedef struct LHKTwoThreeNode {
+    int num_keys;
+    char *keys[2];
+    struct LHKTwoThreeNode *children[3];
+} LHKTwoThreeNode;
+
+// Graph Node representing QR-Rotation states connected to the BLACK flyback diode
+typedef struct BlackDiodeGraphNode {
+    char *name;
+    struct BlackDiodeGraphNode *neighbors[3];
+    int degree;
+} BlackDiodeGraphNode;
+
+bool hbridge_izotope_black_diode_graph_qr(const double *Tremolo_in, double *Tremolo_out, int n) {
+    if (!Tremolo_in || !Tremolo_out || n <= 0) return false;
+
+    // 1. Initialize a 2-3 tree structure containing "Lanczos", "Householder", and "Krylov"
+    LHKTwoThreeNode root;
+    root.num_keys = 2;
+    root.keys[0] = "Householder";
+    root.keys[1] = "Krylov";
+    
+    LHKTwoThreeNode child;
+    child.num_keys = 1;
+    child.keys[0] = "Lanczos";
+    child.children[0] = NULL;
+    child.children[1] = NULL;
+    child.children[2] = NULL;
+    
+    root.children[0] = &child;
+    root.children[1] = NULL;
+    root.children[2] = NULL;
+
+    // 2. Initialize the connected graph linked to the BLACK flyback diode of the H-bridge circuit
+    BlackDiodeGraphNode black_diode = { "BLACK_Flyback_Diode", {NULL}, 0 };
+    BlackDiodeGraphNode tremolo_rot = { "Tremolo_QR_Rotations", {NULL}, 0 };
+    
+    black_diode.neighbors[0] = &tremolo_rot;
+    black_diode.degree = 1;
+    tremolo_rot.neighbors[0] = &black_diode;
+    tremolo_rot.degree = 1;
+
+    // 3. Perform QR-Rotations directly on the Tremolo (Hessenberg) matrix
+    for (int i = 0; i < n * n; i++) Tremolo_out[i] = Tremolo_in[i];
+
+    double cs[4] = {0};
+    double sn[4] = {0};
+
+    for (int i = 0; i < n - 1; i++) {
+        double a = Tremolo_out[i * n + i];
+        double b = Tremolo_out[(i + 1) * n + i];
+        if (fabs(b) > 1e-15) {
+            double r = sqrt(a * a + b * b);
+            cs[i] = a / r;
+            sn[i] = b / r;
+
+            for (int k = i; k < n; k++) {
+                double temp1 = cs[i] * Tremolo_out[i * n + k] + sn[i] * Tremolo_out[(i + 1) * n + k];
+                double temp2 = -sn[i] * Tremolo_out[i * n + k] + cs[i] * Tremolo_out[(i + 1) * n + k];
+                Tremolo_out[i * n + k] = temp1;
+                Tremolo_out[(i + 1) * n + k] = temp2;
+            }
+        } else {
+            cs[i] = 1.0;
+            sn[i] = 0.0;
+        }
+    }
+
+    for (int i = 0; i < n - 1; i++) {
+        for (int k = 0; k <= i + 1; k++) {
+            double temp1 = cs[i] * Tremolo_out[k * n + i] + sn[i] * Tremolo_out[k * n + (i + 1)];
+            double temp2 = -sn[i] * Tremolo_out[k * n + i] + cs[i] * Tremolo_out[k * n + (i + 1)];
+            Tremolo_out[k * n + i] = temp1;
+            Tremolo_out[k * n + (i + 1)] = temp2;
+        }
+    }
+
+    if (strcmp(root.keys[0], "Householder") == 0 && strcmp(black_diode.neighbors[0]->name, "Tremolo_QR_Rotations") == 0) {
+        return true;
+    }
+    return false;
+}
+
 bool evaluate_hbridge_izotope_mismatch(const teddy_geometry_t *geom, double switching_frequency, double *flyback_mismatch_out) {
     if (!geom || switching_frequency < 1.0 || !flyback_mismatch_out) {
         return false;

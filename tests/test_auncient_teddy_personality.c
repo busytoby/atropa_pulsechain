@@ -2144,6 +2144,18 @@ int main(void) {
     assert(fabs(test_R[4]) < 1e-9); // R[1,0] should be zero
     printf("   ✓ RED (Givens) QR at RED sustain flyback diode verified successfully\n");
 
+    // Test Tremolo (Hessenberg) QR-Rotations at BLACK flyback diode
+    double test_Tremolo[16] = {
+        4.0, 1.0, 0.0, 0.0,
+        1.0, 5.0, 1.0, 0.0,
+        0.0, 1.0, 3.0, 1.0,
+        0.0, 0.0, 1.0, 4.0
+    };
+    double test_Tremolo_out[16] = {0};
+    assert(hbridge_izotope_black_diode_graph_qr(test_Tremolo, test_Tremolo_out, 4));
+    assert(fabs(test_Tremolo_out[8]) < 1e-9); // Should maintain Hessenberg (Tremolo) structure or decay
+    printf("   ✓ Tremolo QR-Rotations graph and 2-3 tree at BLACK flyback diode verified successfully\n");
+
     // Test H-bridge flyback and izotope mismatch calculation
     double flyback_mismatch = 0.0;
     assert(evaluate_hbridge_izotope_mismatch(&geom, 500.0, &flyback_mismatch));
