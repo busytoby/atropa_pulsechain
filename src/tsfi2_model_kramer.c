@@ -67,3 +67,20 @@ bool evaluate_kramer_ward_fwhr_cooperation_decay_variance(const teddy_geometry_t
     *decay_variance_out = exp(-duration_sec / (15.0 + geom->resilience_index * 5.0));
     return true;
 }
+
+bool evaluate_kramer_ward_fwhr_3d_scan_discrepancy(const teddy_geometry_t *geom, double fwhr_val, double *discrepancy_out) {
+    if (!geom || fwhr_val < 0.0 || !discrepancy_out) {
+        return false;
+    }
+    *discrepancy_out = fwhr_val * 0.08 * (1.0 + geom->behavioral_mismatch * 0.1);
+    return true;
+}
+
+bool evaluate_kramer_ward_fwhr_sexual_dimorphism_null_hypothesis(const teddy_geometry_t *geom, double male_fwhr, double female_fwhr, double *p_value_out) {
+    if (!geom || male_fwhr < 0.0 || female_fwhr < 0.0 || !p_value_out) {
+        return false;
+    }
+    double diff = fabs(male_fwhr - female_fwhr);
+    *p_value_out = exp(-diff * 5.0) * (0.8 + geom->cooperative_negotiation * 0.1);
+    return true;
+}

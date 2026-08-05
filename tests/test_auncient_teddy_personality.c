@@ -1717,7 +1717,15 @@ int main(void) {
     assert(kramer_threat_decay_variance > 0.0);
     assert(evaluate_kramer_ward_fwhr_cooperation_decay_variance(&geom, 14.5, &kramer_cooperation_decay_variance));
     assert(kramer_cooperation_decay_variance > 0.0);
-    printf("   ✓ KRAMER & WARD FWHR dominance, trustworthiness, threat, cooperation, and decay variances verified successfully\n");
+    
+    double kramer_discrepancy = 0.0;
+    double kramer_p_value = 0.0;
+    assert(evaluate_kramer_ward_fwhr_3d_scan_discrepancy(&geom, 1.85, &kramer_discrepancy));
+    assert(kramer_discrepancy > 0.0);
+    assert(evaluate_kramer_ward_fwhr_sexual_dimorphism_null_hypothesis(&geom, 1.90, 1.85, &kramer_p_value));
+    assert(kramer_p_value > 0.0);
+    
+    printf("   ✓ KRAMER & WARD FWHR dominance, trustworthiness, threat, cooperation, discrepancy, dimorphism null-hypothesis, and decay variances verified successfully\n");
 
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
