@@ -559,6 +559,12 @@ bool evaluate_keating_fwhr_dominance(const teddy_geometry_t *geom, double fwhr_v
 // Models perceived submissiveness based on mouth-to-jaw width ratios (Keating, C. F.).
 bool evaluate_keating_mouth_width_ratio(const teddy_geometry_t *geom, double mouth_width, double jaw_width, double *submissiveness_out);
 
+// Evaluates playfulness and design novelty effects on perceived emotional arousal (Scarpi).
+bool evaluate_scarpi_hedonic_arousal(const teddy_geometry_t *geom, double playfulness_scale, double novelty_index, double *arousal_out);
+
+// Models utilitarian quality evaluation based on physical layout symmetry and stability indices (Scarpi).
+bool evaluate_scarpi_utilitarian_quality(const teddy_geometry_t *geom, double stability_index, double *quality_rating_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 

@@ -810,6 +810,15 @@ int main(void) {
     assert(mouth_width_sub > 0.0);
     printf("   ✓ KEATING, C. F. fWHR dominance and mouth width ratio verified successfully\n");
 
+    // Test Scarpi hedonic arousal and utilitarian quality calculations
+    double hedonic_arousal = 0.0;
+    double utilitarian_quality = 0.0;
+    assert(evaluate_scarpi_hedonic_arousal(&geom, 1.2, 0.8, &hedonic_arousal));
+    assert(hedonic_arousal > 0.0);
+    assert(evaluate_scarpi_utilitarian_quality(&geom, 0.95, &utilitarian_quality));
+    assert(utilitarian_quality > 0.0);
+    printf("   ✓ Scarpi hedonic arousal and utilitarian quality verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge

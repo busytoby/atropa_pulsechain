@@ -1305,3 +1305,19 @@ bool evaluate_keating_mouth_width_ratio(const teddy_geometry_t *geom, double mou
     return true;
 }
 
+bool evaluate_scarpi_hedonic_arousal(const teddy_geometry_t *geom, double playfulness_scale, double novelty_index, double *arousal_out) {
+    if (!geom || playfulness_scale < 0.0 || novelty_index < 0.0 || !arousal_out) {
+        return false;
+    }
+    *arousal_out = playfulness_scale * novelty_index * (0.9 + geom->symmetry * 0.3);
+    return true;
+}
+
+bool evaluate_scarpi_utilitarian_quality(const teddy_geometry_t *geom, double stability_index, double *quality_rating_out) {
+    if (!geom || stability_index < 0.0 || !quality_rating_out) {
+        return false;
+    }
+    *quality_rating_out = stability_index * (0.8 + geom->leadership_profile * 0.4 + geom->symmetry * 0.2);
+    return true;
+}
+
