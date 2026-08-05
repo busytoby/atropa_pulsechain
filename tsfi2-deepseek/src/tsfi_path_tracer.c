@@ -127,7 +127,9 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
                         accum_b += pbr.b * transmit * opacity;
                         transmit *= (1.0f - opacity);
                         float dist_to_face = sqrtf(current_pos.x * current_pos.x + current_pos.y * current_pos.y);
-                        sample_emot = expf(-dist_to_face * dist_to_face);
+                        float shading_factor = fabsf(N.y);
+                        float excitation = 0.5f + 0.5f * jitter;
+                        sample_emot = expf(-dist_to_face * dist_to_face) * shading_factor * excitation;
                         if (transmit < 0.01f) break;
                     }
                 }
@@ -206,7 +208,9 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
                             accum_b += pbr.b * transmit * opacity;
                             transmit *= (1.0f - opacity);
                             float dist_to_face = sqrtf(current_pos.x * current_pos.x + current_pos.y * current_pos.y);
-                            sample_emot = expf(-dist_to_face * dist_to_face);
+                            float shading_factor = fabsf(N.y);
+                            float excitation = 0.5f + 0.5f * jitter;
+                            sample_emot = expf(-dist_to_face * dist_to_face) * shading_factor * excitation;
                             if (transmit < 0.01f) break;
                         }
                     }
