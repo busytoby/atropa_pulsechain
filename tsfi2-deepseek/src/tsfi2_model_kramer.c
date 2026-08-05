@@ -295,3 +295,28 @@ bool evaluate_kramer_king_ward_neuroticism_threat_mapping(const teddy_geometry_t
     return true;
 }
 
+bool evaluate_kramer_king_ward_perceived_conscientiousness_consensus(const teddy_geometry_t *geom, double symmetry_val, double forehead_proportion, double *consensus_out) {
+    if (!geom || symmetry_val < 0.0 || forehead_proportion < 0.0 || !consensus_out) {
+        return false;
+    }
+    *consensus_out = (symmetry_val * 0.5 + forehead_proportion * 0.5) * (0.9 + geom->honesty_index * 0.25);
+    return true;
+}
+
+bool evaluate_kramer_king_ward_perceived_openness_morphological_mapping(const teddy_geometry_t *geom, double eye_size, double elongation_val, double *openness_score_out) {
+    if (!geom || eye_size < 0.0 || elongation_val < 0.0 || !openness_score_out) {
+        return false;
+    }
+    *openness_score_out = (eye_size * 0.7 + (1.0 / (1.0 + elongation_val)) * 0.3) * (0.85 + geom->intellect_index * 0.3);
+    return true;
+}
+
+bool evaluate_kramer_king_ward_actual_agreeableness_correlation(const teddy_geometry_t *geom, double mouth_upturn, double fwhr_val, double *agreeableness_score_out) {
+    if (!geom || mouth_upturn < 0.0 || fwhr_val < 0.0 || !agreeableness_score_out) {
+        return false;
+    }
+    *agreeableness_score_out = (mouth_upturn * 0.8 + (1.0 / (1.0 + fwhr_val)) * 0.2) * (0.9 + geom->empathy_index * 0.25);
+    return true;
+}
+
+

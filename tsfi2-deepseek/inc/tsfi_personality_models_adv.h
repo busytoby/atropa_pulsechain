@@ -554,5 +554,14 @@ bool evaluate_keating_babyfacedness_leadership_decoupling(const teddy_geometry_t
 // Models torso asymmetry status attribution metrics (Keating).
 bool evaluate_keating_torso_asymmetry_status(const teddy_geometry_t *geom, double torso_asymmetry_val, double *status_score_out);
 
+// Models the consensus of perceived conscientiousness rating (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_perceived_conscientiousness_consensus(const teddy_geometry_t *geom, double symmetry_val, double forehead_proportion, double *consensus_out);
+
+// Models the relationship between perceived openness and static facial metrics (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_perceived_openness_morphological_mapping(const teddy_geometry_t *geom, double eye_size, double elongation_val, double *openness_score_out);
+
+// Models actual agreeableness correlation metrics against facial curvature metrics (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_actual_agreeableness_correlation(const teddy_geometry_t *geom, double mouth_upturn, double fwhr_val, double *agreeableness_score_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H
 

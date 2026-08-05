@@ -1838,6 +1838,18 @@ int main(void) {
     assert(kramer_neuroticism_threat > 0.0);
     printf("   ✓ KRAMER, KING & WARD perceived agreeableness, actual extraversion, and neuroticism threat mapping verified successfully\n");
 
+    double kramer_conscientiousness_consensus = 0.0;
+    double kramer_openness_mapping = 0.0;
+    double kramer_agreeableness_correlation = 0.0;
+    assert(evaluate_kramer_king_ward_perceived_conscientiousness_consensus(&geom, 0.85, 0.45, &kramer_conscientiousness_consensus));
+    assert(kramer_conscientiousness_consensus > 0.0);
+    assert(evaluate_kramer_king_ward_perceived_openness_morphological_mapping(&geom, 0.22, 1.25, &kramer_openness_mapping));
+    assert(kramer_openness_mapping > 0.0);
+    assert(evaluate_kramer_king_ward_actual_agreeableness_correlation(&geom, 0.4, 1.85, &kramer_agreeableness_correlation));
+    assert(kramer_agreeableness_correlation > 0.0);
+    printf("   ✓ KRAMER, KING & WARD conscientiousness consensus, openness mapping, and actual agreeableness correlation verified successfully\n");
+
+
     printf("   ✓ KRAMER & WARD FWHR dominance, trustworthiness, threat, cooperation, discrepancy, dimorphism null-hypothesis, head tilt, perceived-actual mismatch, noise sensitivity, adaptation bias, hemiface bias, ambient shading, temporal smoothing, confidence calibration, perceived-actual health mismatch, cheekbone prominence modulation, perspective distortion, micro-exposure resolution, human fWHR trustworthiness, human face asymmetry aggression, human eye-to-face proportion, human fWHR dominance, human face elongation, human eye-to-brow trust, human fWHR trustworthiness decay, human face symmetry trust, human eye dilation arousal, and decay variances verified successfully\n");
 
     // Test Diode-Capacitor loop simulation
