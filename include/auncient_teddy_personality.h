@@ -499,6 +499,12 @@ bool evaluate_keating_eye_dilation_sync(const teddy_geometry_t *geom, double lef
 // Models how head pitch tilt modulates perceived social rank and submissiveness (Keating, C. F.).
 bool evaluate_keating_posture_pitch(const teddy_geometry_t *geom, double pitch_angle, double *submissiveness_out);
 
+// Evaluates the coordination rate between visual chin vibrations and audio frequency tremors (Hyde et al.).
+bool evaluate_hyde_tremor_frequency_sync(const teddy_geometry_t *geom, double chin_vibration_hz, double audio_tremor_hz, double *sync_rating_out);
+
+// Models perceived conversational engagement based on pitch range variations (Hyde et al.).
+bool evaluate_hyde_pitch_range_engagement(const teddy_geometry_t *geom, double pitch_range_hz, double *engagement_rating_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 

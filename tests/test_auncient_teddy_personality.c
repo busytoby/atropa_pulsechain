@@ -720,6 +720,15 @@ int main(void) {
     assert(posture_pitch > 0.0);
     printf("   ✓ KEATING, C. F. eye dilation sync and posture pitch verified successfully\n");
 
+    // Test Hyde tremor frequency sync and pitch range engagement calculations
+    double tremor_sync = 0.0;
+    double pitch_range_engage = 0.0;
+    assert(evaluate_hyde_tremor_frequency_sync(&geom, 6.0, 6.0, &tremor_sync));
+    assert(tremor_sync > 0.0);
+    assert(evaluate_hyde_pitch_range_engagement(&geom, 120.0, &pitch_range_engage));
+    assert(pitch_range_engage > 0.0);
+    printf("   ✓ HYDE et al. tremor frequency sync and pitch range engagement verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge

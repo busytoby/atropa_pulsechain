@@ -1145,3 +1145,19 @@ bool evaluate_keating_posture_pitch(const teddy_geometry_t *geom, double pitch_a
     return true;
 }
 
+bool evaluate_hyde_tremor_frequency_sync(const teddy_geometry_t *geom, double chin_vibration_hz, double audio_tremor_hz, double *sync_rating_out) {
+    if (!geom || chin_vibration_hz < 0.0 || audio_tremor_hz < 0.0 || !sync_rating_out) {
+        return false;
+    }
+    *sync_rating_out = (1.0 / (1.0 + fabs(chin_vibration_hz - audio_tremor_hz))) * (0.8 + geom->symmetry * 0.4);
+    return true;
+}
+
+bool evaluate_hyde_pitch_range_engagement(const teddy_geometry_t *geom, double pitch_range_hz, double *engagement_rating_out) {
+    if (!geom || pitch_range_hz < 0.0 || !engagement_rating_out) {
+        return false;
+    }
+    *engagement_rating_out = pitch_range_hz * (0.5 + geom->behavioral_mismatch * 0.5);
+    return true;
+}
+
