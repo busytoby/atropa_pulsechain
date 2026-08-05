@@ -1757,6 +1757,9 @@ int main(void) {
     double kramer_primate_consc_spec = 0.0;
     double kramer_primate_dom_spec = 0.0;
     double kramer_primate_sex_consc = 0.0;
+    double kramer_primate_neuro_markers = 0.0;
+    double kramer_primate_sex_neuro = 0.0;
+    double kramer_primate_retention = 0.0;
     assert(evaluate_kramer_ward_fwhr_3d_scan_discrepancy(&geom, 1.85, &kramer_discrepancy));
     assert(kramer_discrepancy > 0.0);
     assert(evaluate_kramer_ward_fwhr_sexual_dimorphism_null_hypothesis(&geom, 1.90, 1.85, &kramer_p_value));
@@ -1836,8 +1839,15 @@ int main(void) {
     assert(kramer_primate_dom_spec > 0.0);
     assert(evaluate_kramer_king_ward_sex_modulated_conscientiousness(&geom, 0.85, 1, 1, &kramer_primate_sex_consc));
     assert(kramer_primate_sex_consc > 0.0);
+    assert(evaluate_kramer_king_ward_neuroticism_markers(&geom, 1.45, &kramer_primate_neuro_markers));
+    assert(kramer_primate_neuro_markers > 0.0);
+    assert(evaluate_kramer_king_ward_sex_modulated_neuroticism(&geom, 0.85, 1, 1, &kramer_primate_sex_neuro));
+    assert(kramer_primate_sex_neuro > 0.0);
+    double s_vals[5] = { 10.0, 5.0, 3.0, 1.0, 0.5 };
+    assert(evaluate_kramer_king_ward_pca_variance_retention(&geom, s_vals, 5, &kramer_primate_retention));
+    assert(kramer_primate_retention > 0.0);
     
-    printf("   ✓ KRAMER & WARD FWHR dominance, trustworthiness, threat, cooperation, discrepancy, dimorphism null-hypothesis, head tilt, perceived-actual mismatch, noise sensitivity, adaptation bias, hemiface bias, ambient shading, temporal smoothing, confidence calibration, perceived-actual health mismatch, cheekbone prominence modulation, perspective distortion, micro-exposure resolution, primate extraversion signaling, cross-species congruence, shared evolutionary threat, agreeableness and conscientiousness signaling, species general cues, sex modulated accuracy, inter-rater consensus, group dominance rank, species distance matrix, primate openness index, primate neuroticism, agreeableness specificity, sex modulated extraversion decoding, morphological PCA axes, dominance assertiveness decoupling, neuroticism specificity, centroid alignment, extraversion specificity, openness specificity, sex modulated dominance aggression, conscientiousness specificity, dominance specificity, sex modulated conscientiousness decoding, and decay variances verified successfully\n");
+    printf("   ✓ KRAMER & WARD FWHR dominance, trustworthiness, threat, cooperation, discrepancy, dimorphism null-hypothesis, head tilt, perceived-actual mismatch, noise sensitivity, adaptation bias, hemiface bias, ambient shading, temporal smoothing, confidence calibration, perceived-actual health mismatch, cheekbone prominence modulation, perspective distortion, micro-exposure resolution, primate extraversion signaling, cross-species congruence, shared evolutionary threat, agreeableness and conscientiousness signaling, species general cues, sex modulated accuracy, inter-rater consensus, group dominance rank, species distance matrix, primate openness index, primate neuroticism, agreeableness specificity, sex modulated extraversion decoding, morphological PCA axes, dominance assertiveness decoupling, neuroticism specificity, centroid alignment, extraversion specificity, openness specificity, sex modulated dominance aggression, conscientiousness specificity, dominance specificity, sex modulated conscientiousness decoding, neuroticism markers, sex modulated neuroticism, PCA variance retention, and decay variances verified successfully\n");
 
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;

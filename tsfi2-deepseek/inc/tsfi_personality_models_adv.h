@@ -557,4 +557,13 @@ bool evaluate_kramer_king_ward_dominance_specificity(const teddy_geometry_t *geo
 // Models sex-modulated Conscientiousness decoding accuracy (Kramer, King & Ward).
 bool evaluate_kramer_king_ward_sex_modulated_conscientiousness(const teddy_geometry_t *geom, double base_accuracy, int observer_sex, int primate_sex, double *accuracy_out);
 
+// Models primate species-specific vs species-general Neuroticism markers (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_neuroticism_markers(const teddy_geometry_t *geom, double aspect_ratio, double *neuro_marker_out);
+
+// Models sex-modulated Neuroticism decoding accuracy (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_sex_modulated_neuroticism(const teddy_geometry_t *geom, double base_accuracy, int observer_sex, int primate_sex, double *accuracy_out);
+
+// Evaluates PCA variance retention ratios for the top three components (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_pca_variance_retention(const teddy_geometry_t *geom, const double *singular_values, int count, double *retention_ratio_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H

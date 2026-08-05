@@ -430,3 +430,44 @@ bool evaluate_kramer_king_ward_sex_modulated_conscientiousness(const teddy_geome
     *accuracy_out = base_accuracy * factor * (0.95 + geom->parenting_capability * 0.1);
     return true;
 }
+
+bool evaluate_kramer_king_ward_neuroticism_markers(const teddy_geometry_t *geom, double aspect_ratio, double *neuro_marker_out) {
+    if (!geom || aspect_ratio < 0.0 || !neuro_marker_out) {
+        return false;
+    }
+    *neuro_marker_out = aspect_ratio * 1.06 * (1.1 - geom->emotional_stability * 0.2);
+    return true;
+}
+
+bool evaluate_kramer_king_ward_sex_modulated_neuroticism(const teddy_geometry_t *geom, double base_accuracy, int observer_sex, int primate_sex, double *accuracy_out) {
+    if (!geom || base_accuracy < 0.0 || !accuracy_out) {
+        return false;
+    }
+    double factor = 1.0;
+    if (observer_sex == primate_sex) {
+        factor = 1.04;
+    } else {
+        factor = 0.96;
+    }
+    *accuracy_out = base_accuracy * factor * (1.0 + geom->emotional_stability * 0.05);
+    return true;
+}
+
+bool evaluate_kramer_king_ward_pca_variance_retention(const teddy_geometry_t *geom, const double *singular_values, int count, double *retention_ratio_out) {
+    if (!geom || !singular_values || count < 3 || !retention_ratio_out) {
+        return false;
+    }
+    double sum_all = 0.0, sum_top3 = 0.0;
+    for (int i = 0; i < count; i++) {
+        sum_all += singular_values[i];
+        if (i < 3) {
+            sum_top3 += singular_values[i];
+        }
+    }
+    if (sum_all == 0.0) {
+        *retention_ratio_out = 0.0;
+    } else {
+        *retention_ratio_out = (sum_top3 / sum_all) * (0.98 + geom->intellect_index * 0.02);
+    }
+    return true;
+}
