@@ -66,3 +66,19 @@ bool evaluate_castle_policy_target_engagement_variance(const teddy_geometry_t *g
     return true;
 }
 
+bool evaluate_castle_diplomatic_trust_bounds_variance(const teddy_geometry_t *geom, double visual_symmetry, double vocal_symmetry, double *bounds_variance_out) {
+    if (!geom || visual_symmetry < 0.0 || vocal_symmetry < 0.0 || !bounds_variance_out) {
+        return false;
+    }
+    *bounds_variance_out = visual_symmetry * vocal_symmetry * (0.8 + geom->empathy_index * 0.4);
+    return true;
+}
+
+bool evaluate_castle_policy_target_engagement_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_engagement_out) {
+    if (!geom || duration_sec < 0.0 || !decayed_engagement_out) {
+        return false;
+    }
+    *decayed_engagement_out = exp(-duration_sec / (16.0 + geom->resilience_index * 6.0));
+    return true;
+}
+
