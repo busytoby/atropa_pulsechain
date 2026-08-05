@@ -482,3 +482,19 @@ bool evaluate_keating_sclera_submissiveness_variance_mod(const teddy_geometry_t 
     return true;
 }
 
+bool evaluate_keating_sclera_dominance_variance_mod_single(const teddy_geometry_t *geom, double sclera_val, double *variance_out) {
+    if (!geom || sclera_val < 0.0 || !variance_out) {
+        return false;
+    }
+    *variance_out = sclera_val * (1.1 + geom->leadership_profile * 0.4);
+    return true;
+}
+
+bool evaluate_keating_eyebrow_asymmetry_dominance_variance_mod(const teddy_geometry_t *geom, double eyebrow_asym_val, double *variance_out) {
+    if (!geom || eyebrow_asym_val < 0.0 || !variance_out) {
+        return false;
+    }
+    *variance_out = eyebrow_asym_val * (1.1 + geom->leadership_profile * 0.4);
+    return true;
+}
+

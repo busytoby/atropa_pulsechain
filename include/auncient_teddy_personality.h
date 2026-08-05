@@ -811,6 +811,12 @@ bool evaluate_keating_eyebrow_asymmetry_trust_decay_variance_single(const teddy_
 // Models the variance in sclera submissiveness modulator ratings under dynamic layout symmetry variations (Keating).
 bool evaluate_keating_sclera_submissiveness_variance_mod(const teddy_geometry_t *geom, double sclera_val, double *variance_out);
 
+// Models the variance in sclera dominance modulator ratings under dynamic layout symmetry variations (Keating).
+bool evaluate_keating_sclera_dominance_variance_mod_single(const teddy_geometry_t *geom, double sclera_val, double *variance_out);
+
+// Models the variance in eyebrow asymmetry dominance modulator ratings under dynamic layout symmetry variations (Keating).
+bool evaluate_keating_eyebrow_asymmetry_dominance_variance_mod(const teddy_geometry_t *geom, double eyebrow_asym_val, double *variance_out);
+
 // Models the variance in trustworthiness ratings based on visual mouth asymmetry ratio variations (Keating, C. F.).
 bool evaluate_keating_mouth_asymmetry_trust_variance(const teddy_geometry_t *geom, double mouth_asymmetry_val, double *trust_variance_out);
 
