@@ -1170,6 +1170,15 @@ int main(void) {
     assert(mouth_asymmetry_trust_variance_val > 0.0);
     printf("   ✓ KEATING, C. F. eyebrow asymmetry dominance decay variance and mouth asymmetry trust variance verified successfully\n");
 
+    // Test Keating sclera submissiveness decay variance and width asymmetry trustworthiness variance calculations
+    double sclera_sub_decay_variance = 0.0;
+    double width_asymmetry_trust_variance_val = 0.0;
+    assert(evaluate_keating_sclera_submissiveness_decay_variance(&geom, 15.0, &sclera_sub_decay_variance));
+    assert(sclera_sub_decay_variance > 0.0);
+    assert(evaluate_keating_width_asymmetry_trust_variance(&geom, 0.25, &width_asymmetry_trust_variance_val));
+    assert(width_asymmetry_trust_variance_val > 0.0);
+    printf("   ✓ KEATING, C. F. eyebrow asymmetry dominance decay variance and mouth asymmetry trust variance verified successfully\n");
+
     // Test Scarpi hedonic playfulness and utilitarian trust calculations
     double playfulness_val = 0.0;
     double utilitarian_trust_val = 0.0;
