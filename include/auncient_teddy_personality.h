@@ -511,6 +511,12 @@ bool evaluate_keating_chin_asymmetry(const teddy_geometry_t *geom, double left_j
 // Models the relationship between upturned mouth curvature and perceived babyfacedness (Keating, C. F.).
 bool evaluate_keating_mouth_curvature(const teddy_geometry_t *geom, double upturn_curvature, double *warmth_rating_out);
 
+// Evaluates how average voice pitch values align with dynamic warmth perception offsets (Hyde et al.).
+bool evaluate_hyde_vocal_warmth_pitch(const teddy_geometry_t *geom, double average_pitch_hz, double *warmth_offset_out);
+
+// Models user aversion ratings based on conversational collision frequencies (Hyde et al.).
+bool evaluate_hyde_interruption_frequency(const teddy_geometry_t *geom, double collision_rate, double *aversion_rating_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 

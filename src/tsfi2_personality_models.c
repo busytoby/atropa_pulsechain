@@ -1177,3 +1177,19 @@ bool evaluate_keating_mouth_curvature(const teddy_geometry_t *geom, double uptur
     return true;
 }
 
+bool evaluate_hyde_vocal_warmth_pitch(const teddy_geometry_t *geom, double average_pitch_hz, double *warmth_offset_out) {
+    if (!geom || average_pitch_hz < 0.0 || !warmth_offset_out) {
+        return false;
+    }
+    *warmth_offset_out = average_pitch_hz * (0.6 + geom->empathy_index * 0.4) * 0.01;
+    return true;
+}
+
+bool evaluate_hyde_interruption_frequency(const teddy_geometry_t *geom, double collision_rate, double *aversion_rating_out) {
+    if (!geom || collision_rate < 0.0 || !aversion_rating_out) {
+        return false;
+    }
+    *aversion_rating_out = collision_rate * (1.1 + geom->behavioral_mismatch * 0.5);
+    return true;
+}
+

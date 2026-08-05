@@ -738,6 +738,15 @@ int main(void) {
     assert(mouth_curvature > 0.0);
     printf("   ✓ KEATING, C. F. chin asymmetry and mouth curvature verified successfully\n");
 
+    // Test Hyde vocal warmth pitch and conversational interruption frequency calculations
+    double vocal_warmth_pitch = 0.0;
+    double interruption_freq = 0.0;
+    assert(evaluate_hyde_vocal_warmth_pitch(&geom, 220.0, &vocal_warmth_pitch));
+    assert(vocal_warmth_pitch > 0.0);
+    assert(evaluate_hyde_interruption_frequency(&geom, 0.6, &interruption_freq));
+    assert(interruption_freq > 0.0);
+    printf("   ✓ HYDE et al. vocal warmth pitch and conversational interruption frequency verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge
