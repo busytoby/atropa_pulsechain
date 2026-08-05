@@ -697,6 +697,12 @@ bool evaluate_keating_eyebrow_asymmetry_decay(const teddy_geometry_t *geom, doub
 // Models submissiveness ratings based on exposed sclera size ratio variations (Keating, C. F.).
 bool evaluate_keating_sclera_submissiveness_mod(const teddy_geometry_t *geom, double sclera_size_ratio, double *submissiveness_out);
 
+// Models the decay rate of dominance ratings based on prolonged eyebrow gesture asymmetry durations (Keating, C. F.).
+bool evaluate_keating_eyebrow_asymmetry_dominance_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_dominance_out);
+
+// Models perceived social dominance variance based on exposed sclera size ratio variations (Keating, C. F.).
+bool evaluate_keating_sclera_dominance_variance(const teddy_geometry_t *geom, double sclera_size_ratio, double *dominance_variance_out);
+
 // Evaluates friendly visual parameters scaling on playfulness ratings (Scarpi).
 bool evaluate_scarpi_hedonic_playfulness(const teddy_geometry_t *geom, double base_playfulness, double *playfulness_out);
 
