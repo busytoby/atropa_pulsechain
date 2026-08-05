@@ -10,6 +10,8 @@
 #include "tsfi_hair.h"
 #include "tsfi_c_math.h"
 #include "tsfi_montecarlo.h"
+#include "auncient_teddy_personality.h"
+#include "tsfi_personality_models_adv.h"
 
 
 // Helmholtz Voxel-Path Tracer (VLM-Enhanced + Ultra PBR + Hair + Sovereign Secrets + Depth)
@@ -23,8 +25,37 @@ static inline Vector3 v_normalize(Vector3 v) {
     return (Vector3){v.x / mag, v.y / mag, v.z / mag};
 }
 
+static float calculate_personality_guidance_weight(const teddy_geometry_t *geom, float base_emot) {
+    double babyfacedness = 1.0;
+    evaluate_keating_babyfacedness_index(geom, &babyfacedness);
+
+    double playfulness = 1.0;
+    evaluate_scarpi_hedonic_playfulness(geom, 0.5, &playfulness);
+
+    double alignment = 1.0;
+    evaluate_castle_diplomatic_alignment(geom, 0.5, 0.5, &alignment);
+
+    double agreeableness = 1.0;
+    evaluate_kramer_king_ward_perceived_agreeableness_consensus(geom, 0.5, 0.5, &agreeableness);
+
+    double warmth = 1.0;
+    evaluate_wang_geigel_character_warmth(geom, 1.5, 0.2, &warmth);
+
+    double naturalness = 1.0;
+    evaluate_masuda_perceived_naturalness(geom, 120.0, 0.6, &naturalness);
+
+    double fwhr_dom = 1.0;
+    evaluate_kramer_ward_fwhr_dominance(geom, 1.85, &fwhr_dom);
+
+    float combined_weight = (float)(babyfacedness * playfulness * alignment * agreeableness * warmth * naturalness * fwhr_dom);
+    return base_emot * combined_weight;
+}
+
 void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelmholtzSVDAG *dag_flower, const TSFiHelmholtzSVDAG *dag_bear, int w, int h, float t, float melanin, float roughness, float iridescence) {
     if (!pixels || !dag_flower || !dag_bear) return;
+
+    teddy_geometry_t geom;
+    resolve_teddy_geometry(PERSONALITY_TRUSTWORTHY, &geom);
 
     TSFiMCAuxFeatures *aux_features = malloc(sizeof(TSFiMCAuxFeatures) * w * h);
 
@@ -129,7 +160,8 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
                         float dist_to_face = sqrtf(current_pos.x * current_pos.x + current_pos.y * current_pos.y);
                         float shading_factor = fabsf(N.y);
                         float excitation = 0.5f + 0.5f * jitter;
-                        sample_emot = expf(-dist_to_face * dist_to_face) * shading_factor * excitation;
+                        float base_emot = expf(-dist_to_face * dist_to_face) * shading_factor * excitation;
+                        sample_emot = calculate_personality_guidance_weight(&geom, base_emot);
                         if (transmit < 0.01f) break;
                     }
                 }
@@ -210,7 +242,8 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
                             float dist_to_face = sqrtf(current_pos.x * current_pos.x + current_pos.y * current_pos.y);
                             float shading_factor = fabsf(N.y);
                             float excitation = 0.5f + 0.5f * jitter;
-                            sample_emot = expf(-dist_to_face * dist_to_face) * shading_factor * excitation;
+                            float base_emot = expf(-dist_to_face * dist_to_face) * shading_factor * excitation;
+                            sample_emot = calculate_personality_guidance_weight(&geom, base_emot);
                             if (transmit < 0.01f) break;
                         }
                     }
