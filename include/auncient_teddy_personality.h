@@ -784,6 +784,21 @@ bool evaluate_keating_sclera_dominance_decay(const teddy_geometry_t *geom, doubl
 // Models the variance in dominance ratings based on visual mouth asymmetry ratio variations (Keating, C. F.).
 bool evaluate_keating_mouth_asymmetry_dominance_variance(const teddy_geometry_t *geom, double mouth_asymmetry_val, double *variance_out);
 
+// Models the variance in eyebrow asymmetry dominance decay ratings based on prolonged tracking intervals (Keating).
+bool evaluate_keating_eyebrow_asymmetry_dominance_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out);
+
+// Models the variance in decay rates of mouth asymmetry dominance ratings based on prolonged tracking intervals (Keating).
+bool evaluate_keating_mouth_asymmetry_dominance_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out);
+
+// Models the variance in width asymmetry trust modulator ratings under dynamic layout symmetry variations (Keating).
+bool evaluate_keating_width_asymmetry_trust_variance_mod(const teddy_geometry_t *geom, double width_asym_val, double *variance_out);
+
+// Models the variance in trustworthiness ratings based on visual mouth asymmetry ratio variations (Keating, C. F.).
+bool evaluate_keating_mouth_asymmetry_trust_variance(const teddy_geometry_t *geom, double mouth_asymmetry_val, double *trust_variance_out);
+
+// Models the variance in submissiveness decay rates based on prolonged exposed sclera size ratio durations (Keating, C. F.).
+bool evaluate_keating_sclera_submissiveness_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out);
+
 // Models the variance in dominance decay rates based on prolonged eyebrow asymmetry duration variations (Keating, C. F.).
 bool evaluate_keating_eyebrow_asymmetry_dominance_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out);
 
