@@ -536,5 +536,14 @@ bool evaluate_keating_dynamic_pose_asymmetry_consensus(const teddy_geometry_t *g
 // Models dominance metrics derived from sclera exposure changes during rapid gaze aversion (Keating).
 bool evaluate_keating_sclera_gaze_decoupling(const teddy_geometry_t *geom, double sclera_exposure, double aversion_speed, double *dominance_score_out);
 
+// Models the consensus of perceived agreeableness rating (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_perceived_agreeableness_consensus(const teddy_geometry_t *geom, double mouth_curvature, double eye_size, double *consensus_out);
+
+// Models extraversion correlation metrics from face elongation parameters (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_actual_extraversion_modulator(const teddy_geometry_t *geom, double elongation_val, double cheekbone_prominence, double *extraversion_mod_out);
+
+// Models perceived threat mapped from static asymmetry index metrics (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_neuroticism_threat_mapping(const teddy_geometry_t *geom, double asymmetry_val, double vertical_offset, double *threat_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H
 

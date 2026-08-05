@@ -270,3 +270,28 @@ bool evaluate_kramer_ward_human_eye_dilation_arousal(const teddy_geometry_t *geo
     *arousal_out = (eye_size_val * 0.5 + pupil_dilation_val * 0.5) * (0.95 + geom->social_extraversion * 0.1);
     return true;
 }
+
+bool evaluate_kramer_king_ward_perceived_agreeableness_consensus(const teddy_geometry_t *geom, double mouth_curvature, double eye_size, double *consensus_out) {
+    if (!geom || mouth_curvature < 0.0 || eye_size < 0.0 || !consensus_out) {
+        return false;
+    }
+    *consensus_out = (mouth_curvature * 0.6 + eye_size * 0.4) * (0.9 + geom->empathy_index * 0.2);
+    return true;
+}
+
+bool evaluate_kramer_king_ward_actual_extraversion_modulator(const teddy_geometry_t *geom, double elongation_val, double cheekbone_prominence, double *extraversion_mod_out) {
+    if (!geom || elongation_val < 0.0 || cheekbone_prominence < 0.0 || !extraversion_mod_out) {
+        return false;
+    }
+    *extraversion_mod_out = (cheekbone_prominence / (elongation_val > 0.0 ? elongation_val : 1.0)) * (0.8 + geom->social_extraversion * 0.35);
+    return true;
+}
+
+bool evaluate_kramer_king_ward_neuroticism_threat_mapping(const teddy_geometry_t *geom, double asymmetry_val, double vertical_offset, double *threat_out) {
+    if (!geom || asymmetry_val < 0.0 || vertical_offset < 0.0 || !threat_out) {
+        return false;
+    }
+    *threat_out = (asymmetry_val * 0.7 + vertical_offset * 0.3) * (1.1 + geom->behavioral_mismatch * 0.25);
+    return true;
+}
+
