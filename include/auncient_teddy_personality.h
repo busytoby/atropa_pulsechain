@@ -667,6 +667,12 @@ bool evaluate_scarpi_hedonic_arousal_mod(const teddy_geometry_t *geom, double no
 // Models interaction performance indices based on spatial alignment boundary metrics (Scarpi).
 bool evaluate_scarpi_utilitarian_quality_control(const teddy_geometry_t *geom, double spatial_alignment, double *quality_control_out);
 
+// Evaluates playfulness ratings based on dynamic aesthetic alignment parameters (Scarpi).
+bool evaluate_scarpi_hedonic_aesthetic_quality(const teddy_geometry_t *geom, double aesthetic_alignment, double *quality_out);
+
+// Models user interaction ratings based on layout consistency checks (Scarpi).
+bool evaluate_scarpi_utilitarian_consistency(const teddy_geometry_t *geom, double consistency_score, double *consistency_mod_out);
+
 // Evaluates interaction trust based on visual aesthetics and novelty parameters (Scarpi).
 bool evaluate_scarpi_hedonic_trust(const teddy_geometry_t *geom, double aesthetic_rating, double novelty_scale, double *trust_out);
 

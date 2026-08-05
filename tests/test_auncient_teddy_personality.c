@@ -981,6 +981,15 @@ int main(void) {
     assert(utilitarian_qc_val > 0.0);
     printf("   ✓ Scarpi hedonic arousal mod and utilitarian quality control verified successfully\n");
 
+    // Test Scarpi hedonic aesthetic quality and utilitarian structural consistency calculations
+    double aesthetic_quality_val = 0.0;
+    double consistency_mod_val = 0.0;
+    assert(evaluate_scarpi_hedonic_aesthetic_quality(&geom, 0.78, &aesthetic_quality_val));
+    assert(aesthetic_quality_val > 0.0);
+    assert(evaluate_scarpi_utilitarian_consistency(&geom, 0.84, &consistency_mod_val));
+    assert(consistency_mod_val > 0.0);
+    printf("   ✓ Scarpi aesthetic quality and structural consistency verified successfully\n");
+
     // Test Scarpi hedonic trust and utilitarian efficiency calculations
     double hedonic_trust_val = 0.0;
     double utilitarian_efficiency_val = 0.0;

@@ -1609,6 +1609,22 @@ bool evaluate_scarpi_utilitarian_quality_control(const teddy_geometry_t *geom, d
     return true;
 }
 
+bool evaluate_scarpi_hedonic_aesthetic_quality(const teddy_geometry_t *geom, double aesthetic_alignment, double *quality_out) {
+    if (!geom || aesthetic_alignment < 0.0 || !quality_out) {
+        return false;
+    }
+    *quality_out = aesthetic_alignment * (0.8 + geom->empathy_index * 0.4);
+    return true;
+}
+
+bool evaluate_scarpi_utilitarian_consistency(const teddy_geometry_t *geom, double consistency_score, double *consistency_mod_out) {
+    if (!geom || consistency_score < 0.0 || !consistency_mod_out) {
+        return false;
+    }
+    *consistency_mod_out = consistency_score * (0.9 + geom->leadership_profile * 0.3);
+    return true;
+}
+
 bool evaluate_scarpi_hedonic_trust(const teddy_geometry_t *geom, double aesthetic_rating, double novelty_scale, double *trust_out) {
     if (!geom || aesthetic_rating < 0.0 || novelty_scale < 0.0 || !trust_out) {
         return false;
