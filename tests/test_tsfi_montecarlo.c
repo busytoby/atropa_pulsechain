@@ -1,0 +1,67 @@
+#include "tsfi_montecarlo.h"
+#include <assert.h>
+#include <stdio.h>
+#include <math.h>
+
+int main(void) {
+    printf("[Test] Running standalone TSFi Monte Carlo Denoising tests...\n");
+
+    // 1. Test Variance Estimation
+    float samples[5] = {0.1f, 0.15f, 0.08f, 0.12f, 0.9f}; // high variance sample set
+    double variance = 0.0;
+    assert(tsfi_montecarlo_estimate_variance(samples, 5, 0.05, &variance));
+    assert(variance > 0.05);
+
+    // Test error boundaries for variance estimator
+    assert(!tsfi_montecarlo_estimate_variance(NULL, 5, 0.05, &variance));
+    assert(!tsfi_montecarlo_estimate_variance(samples, 1, 0.05, &variance));
+    assert(!tsfi_montecarlo_estimate_variance(samples, 5, 0.05, NULL));
+    printf("   ✓ Monte Carlo local variance estimation verified successfully\n");
+
+    // 2. Test Cross-Bilateral Denoising Filter
+    uint32_t noisy[4] = {0xFF102030, 0xFF122232, 0xFF8090A0, 0xFF8292A2};
+    TSFiMCAuxFeatures features[4] = {
+        {{0.0f, 1.0f, 0.0f}, 1.0f, {0.1f, 0.1f, 0.1f}},
+        {{0.0f, 1.0f, 0.0f}, 1.05f, {0.11f, 0.11f, 0.11f}},
+        {{1.0f, 0.0f, 0.0f}, 5.0f, {0.8f, 0.8f, 0.8f}}, // edge boundary
+        {{1.0f, 0.0f, 0.0f}, 5.02f, {0.81f, 0.81f, 0.81f}}
+    };
+    uint32_t denoised[4] = {0};
+
+    assert(tsfi_montecarlo_cross_bilateral_filter(noisy, features, denoised, 2, 2, 1.0f, 0.5f));
+    assert(denoised[0] != 0);
+
+    // Test error boundaries for cross-bilateral filter
+    assert(!tsfi_montecarlo_cross_bilateral_filter(NULL, features, denoised, 2, 2, 1.0f, 0.5f));
+    assert(!tsfi_montecarlo_cross_bilateral_filter(noisy, NULL, denoised, 2, 2, 1.0f, 0.5f));
+    assert(!tsfi_montecarlo_cross_bilateral_filter(noisy, features, NULL, 2, 2, 1.0f, 0.5f));
+    assert(!tsfi_montecarlo_cross_bilateral_filter(noisy, features, denoised, 0, 2, 1.0f, 0.5f));
+    assert(!tsfi_montecarlo_cross_bilateral_filter(noisy, features, denoised, 2, -2, 1.0f, 0.5f));
+    assert(!tsfi_montecarlo_cross_bilateral_filter(noisy, features, denoised, 2, 2, -1.0f, 0.5f));
+    assert(!tsfi_montecarlo_cross_bilateral_filter(noisy, features, denoised, 2, 2, 1.0f, -0.5f));
+    printf("   ✓ Monte Carlo cross-bilateral filter verified successfully\n");
+
+    // 3. Test Non-Local Means Reconstruction
+    float noisy_float[9] = {
+        0.5f, 0.52f, 0.49f,
+        0.51f, 0.9f, 0.5f, // spike noise in the center
+        0.48f, 0.53f, 0.51f
+    };
+    float clean_float[9] = {0};
+
+    assert(tsfi_montecarlo_non_local_means(noisy_float, clean_float, 3, 3, 0.2f, 1, 1));
+    assert(clean_float[4] < 0.8f); // the center spike is smoothed out by surrounding matches
+
+    // Test error boundaries for NLM
+    assert(!tsfi_montecarlo_non_local_means(NULL, clean_float, 3, 3, 0.2f, 1, 1));
+    assert(!tsfi_montecarlo_non_local_means(noisy_float, NULL, 3, 3, 0.2f, 1, 1));
+    assert(!tsfi_montecarlo_non_local_means(noisy_float, clean_float, -3, 3, 0.2f, 1, 1));
+    assert(!tsfi_montecarlo_non_local_means(noisy_float, clean_float, 3, 0, 0.2f, 1, 1));
+    assert(!tsfi_montecarlo_non_local_means(noisy_float, clean_float, 3, 3, -0.2f, 1, 1));
+    assert(!tsfi_montecarlo_non_local_means(noisy_float, clean_float, 3, 3, 0.2f, -1, 1));
+    assert(!tsfi_montecarlo_non_local_means(noisy_float, clean_float, 3, 3, 0.2f, 1, -1));
+    printf("   ✓ Monte Carlo Non-Local Means reconstruction verified successfully\n");
+
+    printf("[Test] All Monte Carlo Denoising tests completed successfully.\n");
+    return 0;
+}
