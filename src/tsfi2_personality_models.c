@@ -1097,3 +1097,19 @@ bool evaluate_keating_brow_gesture(const teddy_geometry_t *geom, double brow_rai
     return true;
 }
 
+bool evaluate_hyde_turn_interruption(const teddy_geometry_t *geom, double overlap_duration_sec, double *interruption_uncanny_out) {
+    if (!geom || overlap_duration_sec < 0.0 || !interruption_uncanny_out) {
+        return false;
+    }
+    *interruption_uncanny_out = overlap_duration_sec * (0.5 + geom->behavioral_mismatch * 0.4);
+    return true;
+}
+
+bool evaluate_hyde_vocal_tremor_index(const teddy_geometry_t *geom, double pitch_variance, double *tremor_uncanny_out) {
+    if (!geom || pitch_variance < 0.0 || !tremor_uncanny_out) {
+        return false;
+    }
+    *tremor_uncanny_out = pitch_variance * (0.8 + (1.0 - geom->resilience_index) * 0.5);
+    return true;
+}
+

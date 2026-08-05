@@ -481,6 +481,12 @@ bool evaluate_keating_gaze_dominance(const teddy_geometry_t *geom, double gaze_d
 // Models how brow-raise gestures scale perceived submissiveness and babyfacedness (Keating, C. F.).
 bool evaluate_keating_brow_gesture(const teddy_geometry_t *geom, double brow_raise_amplitude, double *brow_submissiveness_out);
 
+// Evaluates turn-taking overlap and conversational collision ratings (Hyde et al.).
+bool evaluate_hyde_turn_interruption(const teddy_geometry_t *geom, double overlap_duration_sec, double *interruption_uncanny_out);
+
+// Models micro-tremors in voice pitch associated with submissiveness or distress (Hyde et al.).
+bool evaluate_hyde_vocal_tremor_index(const teddy_geometry_t *geom, double pitch_variance, double *tremor_uncanny_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 

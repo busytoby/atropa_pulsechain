@@ -693,6 +693,15 @@ int main(void) {
     assert(brow_sub > 0.0);
     printf("   ✓ KEATING, C. F. gaze dominance and brow gesture verified successfully\n");
 
+    // Test Hyde vocal turn interruption and vocal micro-tremor calculations
+    double turn_interruption = 0.0;
+    double vocal_tremor = 0.0;
+    assert(evaluate_hyde_turn_interruption(&geom, 1.5, &turn_interruption));
+    assert(turn_interruption > 0.0);
+    assert(evaluate_hyde_vocal_tremor_index(&geom, 0.8, &vocal_tremor));
+    assert(vocal_tremor > 0.0);
+    printf("   ✓ HYDE et al. vocal turn interruption and vocal micro-tremor verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge
