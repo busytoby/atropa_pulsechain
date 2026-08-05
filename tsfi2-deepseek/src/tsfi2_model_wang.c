@@ -126,6 +126,33 @@ bool evaluate_wang_geigel_avatar_gaze_submissiveness(const teddy_geometry_t *geo
     return true;
 }
 
+bool evaluate_wang_geigel_avatar_smile_attractiveness(const teddy_geometry_t *geom, double smile_intensity, double head_tilt_val, double *attractiveness_score_out) {
+    if (!geom || smile_intensity < 0.0 || head_tilt_val < 0.0 || !attractiveness_score_out) {
+        return false;
+    }
+    *attractiveness_score_out = (smile_intensity * 0.65 + head_tilt_val * 0.35) * (0.9 + geom->empathy_index * 0.3);
+    return true;
+}
+
+bool evaluate_wang_geigel_avatar_eyebrow_furrow_threat(const teddy_geometry_t *geom, double furrow_intensity, double direct_gaze_ratio, double *threat_score_out) {
+    if (!geom || furrow_intensity < 0.0 || direct_gaze_ratio < 0.0 || !threat_score_out) {
+        return false;
+    }
+    *threat_score_out = (furrow_intensity * 0.7 + direct_gaze_ratio * 0.3) * (1.1 + geom->behavioral_mismatch * 0.25);
+    return true;
+}
+
+bool evaluate_wang_geigel_avatar_realism_warmth_interaction(const teddy_geometry_t *geom, double realism_index, double smile_intensity, double *warmth_score_out) {
+    if (!geom || realism_index < 0.0 || smile_intensity < 0.0 || !warmth_score_out) {
+        return false;
+    }
+    // High realism interacts positively with smile to create high warmth; low realism creates Uncanny valley dampening
+    double multiplier = (realism_index >= 0.7) ? 1.25 : 0.65;
+    *warmth_score_out = (smile_intensity * multiplier) * (0.9 + geom->reassurance_capability * 0.35);
+    return true;
+}
+
+
 
 
 

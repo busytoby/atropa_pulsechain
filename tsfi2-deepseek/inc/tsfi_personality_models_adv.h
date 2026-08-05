@@ -626,5 +626,14 @@ bool evaluate_wang_geigel_avatar_head_shake(const teddy_geometry_t *geom, double
 // Models gaze-avoidance induced submissiveness in virtual actors (Wang, Geigel & Herbert).
 bool evaluate_wang_geigel_avatar_gaze_submissiveness(const teddy_geometry_t *geom, double averted_gaze_ratio, double posture_pitch, double *submissiveness_score_out);
 
+// Models avatar smile attractiveness modulator (Wang, Geigel & Herbert).
+bool evaluate_wang_geigel_avatar_smile_attractiveness(const teddy_geometry_t *geom, double smile_intensity, double head_tilt_val, double *attractiveness_score_out);
+
+// Models perceived threat from avatar eyebrow furrow (Wang, Geigel & Herbert).
+bool evaluate_wang_geigel_avatar_eyebrow_furrow_threat(const teddy_geometry_t *geom, double furrow_intensity, double direct_gaze_ratio, double *threat_score_out);
+
+// Models realism warmth interaction in virtual agents (Wang, Geigel & Herbert).
+bool evaluate_wang_geigel_avatar_realism_warmth_interaction(const teddy_geometry_t *geom, double realism_index, double smile_intensity, double *warmth_score_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H
 

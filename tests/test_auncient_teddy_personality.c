@@ -1926,6 +1926,17 @@ int main(void) {
     assert(wang_gaze_submissiveness > 0.0);
     printf("   ✓ WANG, GEIGEL & HERBERT avatar blink trust, head shake, and gaze submissiveness verified successfully\n");
 
+    double wang_smile_attr = 0.0;
+    double wang_furrow_threat = 0.0;
+    double wang_realism_warmth = 0.0;
+    assert(evaluate_wang_geigel_avatar_smile_attractiveness(&geom, 0.75, 0.25, &wang_smile_attr));
+    assert(wang_smile_attr > 0.0);
+    assert(evaluate_wang_geigel_avatar_eyebrow_furrow_threat(&geom, 0.85, 0.65, &wang_furrow_threat));
+    assert(wang_furrow_threat > 0.0);
+    assert(evaluate_wang_geigel_avatar_realism_warmth_interaction(&geom, 0.8, 0.7, &wang_realism_warmth));
+    assert(wang_realism_warmth > 0.0);
+    printf("   ✓ WANG, GEIGEL & HERBERT avatar smile attractiveness, eyebrow furrow threat, and realism warmth interaction verified successfully\n");
+
     // Error validation tests for Wang models
     double dummy_out = 0.0;
     assert(!evaluate_wang_geigel_character_warmth(NULL, 0.65, 0.45, &dummy_out));
@@ -1997,6 +2008,21 @@ int main(void) {
     assert(!evaluate_wang_geigel_avatar_gaze_submissiveness(&geom, -0.45, 0.22, &dummy_out));
     assert(!evaluate_wang_geigel_avatar_gaze_submissiveness(&geom, 0.45, -0.22, &dummy_out));
     assert(!evaluate_wang_geigel_avatar_gaze_submissiveness(&geom, 0.45, 0.22, NULL));
+
+    assert(!evaluate_wang_geigel_avatar_smile_attractiveness(NULL, 0.75, 0.25, &dummy_out));
+    assert(!evaluate_wang_geigel_avatar_smile_attractiveness(&geom, -0.75, 0.25, &dummy_out));
+    assert(!evaluate_wang_geigel_avatar_smile_attractiveness(&geom, 0.75, -0.25, &dummy_out));
+    assert(!evaluate_wang_geigel_avatar_smile_attractiveness(&geom, 0.75, 0.25, NULL));
+
+    assert(!evaluate_wang_geigel_avatar_eyebrow_furrow_threat(NULL, 0.85, 0.65, &dummy_out));
+    assert(!evaluate_wang_geigel_avatar_eyebrow_furrow_threat(&geom, -0.85, 0.65, &dummy_out));
+    assert(!evaluate_wang_geigel_avatar_eyebrow_furrow_threat(&geom, 0.85, -0.65, &dummy_out));
+    assert(!evaluate_wang_geigel_avatar_eyebrow_furrow_threat(&geom, 0.85, 0.65, NULL));
+
+    assert(!evaluate_wang_geigel_avatar_realism_warmth_interaction(NULL, 0.8, 0.7, &dummy_out));
+    assert(!evaluate_wang_geigel_avatar_realism_warmth_interaction(&geom, -0.8, 0.7, &dummy_out));
+    assert(!evaluate_wang_geigel_avatar_realism_warmth_interaction(&geom, 0.8, -0.7, &dummy_out));
+    assert(!evaluate_wang_geigel_avatar_realism_warmth_interaction(&geom, 0.8, 0.7, NULL));
 
     printf("   ✓ WANG, GEIGEL & HERBERT error validation and bounds checking verified successfully\n");
 
