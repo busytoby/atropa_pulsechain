@@ -140,3 +140,24 @@ bool evaluate_kramer_ward_fwhr_ambient_shading_effect(const teddy_geometry_t *ge
     *apparent_fwhr_out = original_fwhr * (1.0 + sin(rad) * 0.04 * (1.0 - geom->fur_roughness * 0.2));
     return true;
 }
+
+bool evaluate_kramer_ward_fwhr_dynamic_temporal_smoothing(const teddy_geometry_t *geom, const double *frame_fwhr_sequence, int sequence_len, double *smoothed_fwhr_out) {
+    if (!geom || !frame_fwhr_sequence || sequence_len <= 0 || !smoothed_fwhr_out) {
+        return false;
+    }
+    double sum = 0.0;
+    for (int i = 0; i < sequence_len; i++) {
+        sum += frame_fwhr_sequence[i];
+    }
+    *smoothed_fwhr_out = (sum / (double)sequence_len) * (1.0 + geom->behavioral_mismatch * 0.05);
+    return true;
+}
+
+bool evaluate_kramer_ward_fwhr_judgment_confidence_calibration(const teddy_geometry_t *geom, double fwhr_val, double *confidence_rating_out) {
+    if (!geom || fwhr_val < 0.0 || !confidence_rating_out) {
+        return false;
+    }
+    double deviation = fabs(fwhr_val - 1.85);
+    *confidence_rating_out = (1.0 / (1.0 + deviation * 1.5)) * (0.9 + geom->intellect_index * 0.1);
+    return true;
+}
