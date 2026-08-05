@@ -927,6 +927,15 @@ int main(void) {
     assert(mouth_asym_decay > 0.0);
     printf("   ✓ KEATING, C. F. width asymmetry dominance and mouth asymmetry trust decay verified successfully\n");
 
+    // Test Keating width asymmetry trust and mouth asymmetry dominance calculations
+    double width_asym_trust = 0.0;
+    double mouth_asym_dom = 0.0;
+    assert(evaluate_keating_width_asymmetry_trust(&geom, 0.15, &width_asym_trust));
+    assert(width_asym_trust > 0.0);
+    assert(evaluate_keating_mouth_asymmetry_dominance(&geom, 0.25, &mouth_asym_dom));
+    assert(mouth_asym_dom > 0.0);
+    printf("   ✓ KEATING, C. F. width asymmetry trust and mouth asymmetry dominance verified successfully\n");
+
     // Test Scarpi hedonic playfulness and utilitarian trust calculations
     double playfulness_val = 0.0;
     double utilitarian_trust_val = 0.0;

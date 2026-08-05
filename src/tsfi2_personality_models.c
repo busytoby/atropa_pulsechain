@@ -1513,6 +1513,22 @@ bool evaluate_keating_mouth_asymmetry_decay(const teddy_geometry_t *geom, double
     return true;
 }
 
+bool evaluate_keating_width_asymmetry_trust(const teddy_geometry_t *geom, double width_asymmetry_val, double *trustworthiness_out) {
+    if (!geom || width_asymmetry_val < 0.0 || !trustworthiness_out) {
+        return false;
+    }
+    *trustworthiness_out = (1.0 / (1.0 + width_asymmetry_val)) * (0.8 + geom->empathy_index * 0.4);
+    return true;
+}
+
+bool evaluate_keating_mouth_asymmetry_dominance(const teddy_geometry_t *geom, double mouth_asymmetry_val, double *dominance_out) {
+    if (!geom || mouth_asymmetry_val < 0.0 || !dominance_out) {
+        return false;
+    }
+    *dominance_out = mouth_asymmetry_val * (1.1 + geom->leadership_profile * 0.4);
+    return true;
+}
+
 bool evaluate_scarpi_hedonic_playfulness(const teddy_geometry_t *geom, double base_playfulness, double *playfulness_out) {
     if (!geom || base_playfulness < 0.0 || !playfulness_out) {
         return false;
