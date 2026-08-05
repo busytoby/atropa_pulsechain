@@ -1189,6 +1189,15 @@ bool evaluate_castle_policy_target_engagement_decay_variance(const teddy_geometr
 // Models the variance in policy consistency decay modulator ratings over prolonged tracking intervals (Castle).
 bool evaluate_castle_policy_consistency_decay_variance_mod(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out);
 
+// Models the variance in decay rates of diplomatic alignment modulator ratings under dynamic layout symmetry variations (Castle).
+bool evaluate_castle_diplomatic_alignment_decay_variance_mod(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out);
+
+// Models the variance in decay rates of diplomatic trust bounds modulator ratings under dynamic layout symmetry variations (Castle).
+bool evaluate_castle_diplomatic_trust_bounds_decay_variance_mod(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out);
+
+// Models the variance in decay rates of policy target engagement modulator ratings under dynamic layout symmetry variations (Castle).
+bool evaluate_castle_policy_target_engagement_decay_variance_mod(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out);
+
 evaluation_tx_t begin_evaluation_transaction(teddy_geometry_t *target);
 bool commit_evaluation_transaction(evaluation_tx_t *tx);
 void rollback_evaluation_transaction(evaluation_tx_t *tx);
