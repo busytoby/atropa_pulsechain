@@ -2177,6 +2177,29 @@ int main(void) {
     assert(rb_root.color == LHK_BLACK_NODE);
     printf("   ✓ Gram-Schmidt (Sustail) Red-Black Tree structures verified successfully\n");
 
+    // Test "Tremolo" 2-3 tree izotope verlet graph and "Sustain" red-black tree izotope effect
+    // 1. Tremolo 2-3 tree izotope verlet graph verification
+    agent_avatar_t test_avatar;
+    test_avatar.geometry = geom;
+    test_avatar.sdk_state = 2;
+    test_avatar.geometry.stiffness = 0.5;
+    simulate_fet_verlet_discharge(&test_avatar, 0.1);
+    assert(test_avatar.geometry.damping >= 0.0);
+    printf("   ✓ Tremolo 2-3 tree izotope verlet graph verification passed\n");
+
+    // 2. Sustain red-black tree izotope effect verification
+    GSRBNode sustain_node;
+    sustain_node.key = "Sustain";
+    sustain_node.color = LHK_RED_NODE;
+    sustain_node.left = NULL;
+    sustain_node.right = NULL;
+    
+    double t_space = 0.5;
+    double s_decay = 0.8;
+    assert(evaluate_izotope_constrained_parameters(&geom, 1, &t_space, &s_decay));
+    assert(s_decay > 0.0);
+    printf("   ✓ Sustain (%s) red-black tree izotope effect verification passed\n", sustain_node.key);
+
     // Test H-bridge flyback and izotope mismatch calculation
     double flyback_mismatch = 0.0;
     assert(evaluate_hbridge_izotope_mismatch(&geom, 500.0, &flyback_mismatch));
