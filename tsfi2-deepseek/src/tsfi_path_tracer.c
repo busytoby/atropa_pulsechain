@@ -12,6 +12,7 @@
 #include "tsfi_montecarlo.h"
 #include "auncient_teddy_personality.h"
 #include "tsfi_personality_models_adv.h"
+#include "tsfi_zorse_eval.h"
 
 
 // Helmholtz Voxel-Path Tracer (VLM-Enhanced + Ultra PBR + Hair + Sovereign Secrets + Depth)
@@ -26,32 +27,57 @@ static inline Vector3 v_normalize(Vector3 v) {
 }
 
 static float calculate_personality_guidance_weight(const teddy_geometry_t *geom, float base_emot, float db, float jitter, float elevation, float t) {
+    char type_buf[64];
+    char status_buf[64];
+    int risk = 0;
+
     double babyfacedness = 1.0;
     evaluate_keating_babyfacedness_index(geom, &babyfacedness);
+    if (tsfi_vsen_vaesen_lookup("Tomte", type_buf, &risk, status_buf, sizeof(type_buf)) == 0) {
+        babyfacedness *= (1.0 + 0.1 * (double)risk);
+    }
 
     double playfulness = 1.0;
     evaluate_scarpi_hedonic_playfulness(geom, 0.5, &playfulness);
+    if (tsfi_vsen_vaesen_lookup("Nacken", type_buf, &risk, status_buf, sizeof(type_buf)) == 0) {
+        playfulness *= (1.0 + 0.1 * (double)risk);
+    }
 
     double alignment = 1.0;
     evaluate_castle_diplomatic_alignment(geom, 0.5, 0.5, &alignment);
+    if (tsfi_vsen_vaesen_lookup("Vaettir", type_buf, &risk, status_buf, sizeof(type_buf)) == 0) {
+        alignment *= (1.0 + 0.1 * (double)risk);
+    }
 
     double agreeableness = 1.0;
     evaluate_kramer_king_ward_perceived_agreeableness_consensus(geom, 0.5, 0.5, &agreeableness);
+    if (tsfi_vsen_vaesen_lookup("Mara", type_buf, &risk, status_buf, sizeof(type_buf)) == 0) {
+        agreeableness *= (1.0 + 0.1 * (double)risk);
+    }
 
     // Wang model character warmth modulated dynamically by time and camera tilt (elevation)
     double warmth = 1.0;
     double gaze_shift_freq = 1.0 + 0.5 * sin((double)t);
     double head_tilt_val = (double)elevation;
     evaluate_wang_geigel_character_warmth(geom, gaze_shift_freq, head_tilt_val, &warmth);
+    if (tsfi_vsen_vaesen_lookup("Huldra", type_buf, &risk, status_buf, sizeof(type_buf)) == 0) {
+        warmth *= (1.0 + 0.1 * (double)risk);
+    }
 
     // Masuda model perceived naturalness modulated dynamically by noise jitter and bear SVDAG density (db)
     double naturalness = 1.0;
     double sync_delay_ms = 100.0 * (1.0 + (double)jitter);
     double smile_intensity = (double)db;
     evaluate_masuda_perceived_naturalness(geom, sync_delay_ms, smile_intensity, &naturalness);
+    if (tsfi_vsen_vaesen_lookup("Myling", type_buf, &risk, status_buf, sizeof(type_buf)) == 0) {
+        naturalness *= (1.0 + 0.1 * (double)risk);
+    }
 
     double fwhr_dom = 1.0;
     evaluate_kramer_ward_fwhr_dominance(geom, 1.85, &fwhr_dom);
+    if (tsfi_vsen_vaesen_lookup("Varulv", type_buf, &risk, status_buf, sizeof(type_buf)) == 0) {
+        fwhr_dom *= (1.0 + 0.1 * (double)risk);
+    }
 
     float combined_weight = (float)(babyfacedness * playfulness * alignment * agreeableness * warmth * naturalness * fwhr_dom);
     return base_emot * combined_weight;
@@ -59,6 +85,15 @@ static float calculate_personality_guidance_weight(const teddy_geometry_t *geom,
 
 void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelmholtzSVDAG *dag_flower, const TSFiHelmholtzSVDAG *dag_bear, int w, int h, float t, float melanin, float roughness, float iridescence) {
     if (!pixels || !dag_flower || !dag_bear) return;
+
+    // Register each of our 7 Vaesen models into the system registry
+    tsfi_vsen_vaesen_register("Tomte", "Nisse", 3, "Friendly");
+    tsfi_vsen_vaesen_register("Nacken", "Neck", 9, "Active");
+    tsfi_vsen_vaesen_register("Vaettir", "Land Spirit", 4, "Neutral");
+    tsfi_vsen_vaesen_register("Mara", "Nightmare", 6, "Active");
+    tsfi_vsen_vaesen_register("Huldra", "Skogsra", 5, "Alluring");
+    tsfi_vsen_vaesen_register("Myling", "Ghost", 7, "Restless");
+    tsfi_vsen_vaesen_register("Varulv", "Werewolf", 8, "Aggressive");
 
     teddy_geometry_t geom;
     resolve_teddy_geometry(PERSONALITY_TRUSTWORTHY, &geom);
