@@ -1009,6 +1009,9 @@ bool evaluate_hyde_vocal_size_jitter_decay_variance(const teddy_geometry_t *geom
 // Models the variance in conversational synchronization ratings based on speech size sync variations (Hyde et al.).
 bool evaluate_hyde_vocal_size_sync_variance_mod(const teddy_geometry_t *geom, double size_sync_val, double *variance_out);
 
+// Models the variance in vocal size jitter modulator ratings under dynamic layout symmetry variations (Hyde et al.).
+bool evaluate_hyde_vocal_size_jitter_variance_mod(const teddy_geometry_t *geom, double size_jitter_val, double *variance_out);
+
 // Models the variance in vocal warmth modulator ratings under dynamic layout symmetry variations (Hyde et al.).
 bool evaluate_hyde_vocal_warmth_variance_mod(const teddy_geometry_t *geom, double warmth_val, double *variance_out);
 
