@@ -5,3 +5,4 @@
 #include "tsfi2_model_scarpi.c"
 #include "tsfi2_model_cellarius.c"
 #include "tsfi2_model_castle.c"
+#include "tsfi2_model_kramer.c"

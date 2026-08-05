@@ -1231,4 +1231,16 @@ bool emulate_winchester_scsi_loop(agent_avatar_t *avatar);
 // Simulates Verlet soft-body dynamics of FET discharge cycles
 void simulate_fet_verlet_discharge(agent_avatar_t *avatar, double time_step);
 
+// Models the relationship between facial width-to-height ratio variations and social dominance ratings (Kramer & Ward).
+bool evaluate_kramer_ward_fwhr_dominance(const teddy_geometry_t *geom, double fwhr_val, double *dominance_out);
+
+// Models the relationship between facial width-to-height ratio variations and trustworthiness ratings (Kramer & Ward).
+bool evaluate_kramer_ward_fwhr_trustworthiness(const teddy_geometry_t *geom, double fwhr_val, double *trustworthiness_out);
+
+// Models the variance in decay rates of FWHR dominance modulator ratings under dynamic layout symmetry variations (Kramer & Ward).
+bool evaluate_kramer_ward_fwhr_dominance_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out);
+
+// Models the variance in decay rates of FWHR trustworthiness modulator ratings under dynamic layout symmetry variations (Kramer & Ward).
+bool evaluate_kramer_ward_fwhr_trustworthiness_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out);
+
 #endif // AUNCIENT_TEDDY_PERSONALITY_H

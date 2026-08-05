@@ -1692,6 +1692,21 @@ int main(void) {
     assert(policy_target_engagement_decay_variance_mod > 0.0);
     printf("   ✓ Castle diplomatic alignment, diplomatic trust bounds, and policy target engagement modulator decay variance mod verified successfully\n");
 
+    // Test Kramer-Ward FWHR dominance, trustworthiness, and decay variance calculations
+    double kramer_dominance = 0.0;
+    double kramer_trustworthiness = 0.0;
+    double kramer_dominance_decay_variance = 0.0;
+    double kramer_trustworthiness_decay_variance = 0.0;
+    assert(evaluate_kramer_ward_fwhr_dominance(&geom, 1.85, &kramer_dominance));
+    assert(kramer_dominance > 0.0);
+    assert(evaluate_kramer_ward_fwhr_trustworthiness(&geom, 1.85, &kramer_trustworthiness));
+    assert(kramer_trustworthiness > 0.0);
+    assert(evaluate_kramer_ward_fwhr_dominance_decay_variance(&geom, 15.0, &kramer_dominance_decay_variance));
+    assert(kramer_dominance_decay_variance > 0.0);
+    assert(evaluate_kramer_ward_fwhr_trustworthiness_decay_variance(&geom, 14.5, &kramer_trustworthiness_decay_variance));
+    assert(kramer_trustworthiness_decay_variance > 0.0);
+    printf("   ✓ KRAMER & WARD FWHR dominance, trustworthiness, and decay variances verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge
