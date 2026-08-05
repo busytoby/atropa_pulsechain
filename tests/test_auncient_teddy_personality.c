@@ -954,6 +954,15 @@ int main(void) {
     assert(mouth_asym_dom > 0.0);
     printf("   ✓ KEATING, C. F. width asymmetry trust and mouth asymmetry dominance verified successfully\n");
 
+    // Test Keating eyebrow asymmetry dominance and sclera submissiveness calculations
+    double eyebrow_asym_dom = 0.0;
+    double sclera_sub_val = 0.0;
+    assert(evaluate_keating_eyebrow_asymmetry_dominance(&geom, 0.14, &eyebrow_asym_dom));
+    assert(eyebrow_asym_dom > 0.0);
+    assert(evaluate_keating_sclera_submissiveness(&geom, 0.35, &sclera_sub_val));
+    assert(sclera_sub_val > 0.0);
+    printf("   ✓ KEATING, C. F. eyebrow asymmetry dominance and sclera submissiveness verified successfully\n");
+
     // Test Scarpi hedonic playfulness and utilitarian trust calculations
     double playfulness_val = 0.0;
     double utilitarian_trust_val = 0.0;
