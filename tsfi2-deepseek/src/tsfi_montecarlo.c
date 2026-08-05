@@ -467,4 +467,30 @@ bool tsfi_montecarlo_regression_denoise(
     return true;
 }
 
+bool tsfi_montecarlo_aposteriori_error_estimate(
+    const float *samples,
+    int count,
+    double target_error,
+    double *error_out
+) {
+    if (!samples || count <= 1 || !error_out) {
+        return false;
+    }
+    double sum = 0.0;
+    for (int i = 0; i < count; i++) {
+        sum += samples[i];
+    }
+    double mean = sum / count;
+    double sq_diff_sum = 0.0;
+    for (int i = 0; i < count; i++) {
+        double diff = samples[i] - mean;
+        sq_diff_sum += diff * diff;
+    }
+    double variance = sq_diff_sum / (count - 1);
+    double std_dev = sqrt(variance);
+    double error = std_dev / (mean * sqrt((double)count) + 1e-5);
+    *error_out = error;
+    return (error > target_error);
+}
+
 

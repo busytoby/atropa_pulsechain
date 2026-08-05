@@ -92,4 +92,12 @@ bool tsfi_montecarlo_render_maniac_mansion(
     float time
 );
 
+// Estimates a posteriori relative error of the mean for image-space adaptive sampling.
+bool tsfi_montecarlo_aposteriori_error_estimate(
+    const float *samples,
+    int count,
+    double target_error,
+    double *error_out
+);
+
 #endif // TSFI_MONTECARLO_H

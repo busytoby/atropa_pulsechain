@@ -246,9 +246,9 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
                 sample_luminance[s] = accum_r * 0.2126f + accum_g * 0.7152f + accum_b * 0.0722f;
             }
 
-            // Estimate variance; if above threshold, sample 2 more rays
-            double variance = 0.0;
-            bool need_more = tsfi_montecarlo_estimate_variance(sample_luminance, 2, 0.005, &variance);
+            // Estimate a posteriori relative standard error; if above threshold (e.g. 0.05), sample 2 more rays
+            double rel_error = 0.0;
+            bool need_more = tsfi_montecarlo_aposteriori_error_estimate(sample_luminance, 2, 0.05, &rel_error);
 
             if (need_more) {
                 for (int s = 2; s < 4; s++) {

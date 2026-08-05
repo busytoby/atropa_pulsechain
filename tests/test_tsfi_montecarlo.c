@@ -107,6 +107,18 @@ int main(void) {
     assert(!tsfi_montecarlo_regression_denoise(noisy_float, features, clean_regression, 2, 2, -1, 1.5f, 0.5f));
     printf("   ✓ Monte Carlo local regression denoiser verified successfully\n");
 
+    // 7. Test a posteriori relative standard error of the mean
+    double rel_err = 0.0;
+    float test_samples[2] = {1.0f, 1.2f};
+    assert(tsfi_montecarlo_aposteriori_error_estimate(test_samples, 2, 0.05, &rel_err));
+    assert(rel_err > 0.05);
+
+    // Test error boundaries
+    assert(!tsfi_montecarlo_aposteriori_error_estimate(NULL, 2, 0.05, &rel_err));
+    assert(!tsfi_montecarlo_aposteriori_error_estimate(test_samples, 1, 0.05, &rel_err));
+    assert(!tsfi_montecarlo_aposteriori_error_estimate(test_samples, 2, 0.05, NULL));
+    printf("   ✓ Monte Carlo a posteriori relative error estimator verified successfully\n");
+
     printf("[Test] All Monte Carlo Denoising tests completed successfully.\n");
     return 0;
 }
