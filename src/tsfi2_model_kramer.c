@@ -101,3 +101,24 @@ bool evaluate_kramer_ward_fwhr_actual_vs_perceived_aggression_mismatch(const ted
     *mismatch_out = fabs(perceived_dominance - actual_aggression) * (1.2 + geom->behavioral_mismatch * 0.4);
     return true;
 }
+
+bool evaluate_kramer_ward_fwhr_perceptual_noise_sensitivity(const teddy_geometry_t *geom, double noise_level, double *threshold_se_multiplier_out) {
+    if (!geom || noise_level < 0.0 || !threshold_se_multiplier_out) {
+        return false;
+    }
+    *threshold_se_multiplier_out = (1.0 + noise_level * 2.5) * (1.0 + geom->behavioral_mismatch * 0.2);
+    return true;
+}
+
+bool evaluate_kramer_ward_fwhr_sequential_adaptation_bias(const teddy_geometry_t *geom, const double *recent_fwhr_history, int history_len, double *adaptation_offset_out) {
+    if (!geom || !recent_fwhr_history || history_len <= 0 || !adaptation_offset_out) {
+        return false;
+    }
+    double sum = 0.0;
+    for (int i = 0; i < history_len; i++) {
+        sum += recent_fwhr_history[i];
+    }
+    double avg = sum / (double)history_len;
+    *adaptation_offset_out = (avg - 1.8) * 0.15 * (1.0 + geom->head_fwhr * 0.1);
+    return true;
+}
