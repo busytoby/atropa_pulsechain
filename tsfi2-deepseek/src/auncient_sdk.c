@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L
 #include "auncient_sdk.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -1295,6 +1296,38 @@ bool auncient_sdk_tpu_execute_recurrent_step(const auncient_transfluxor_registry
     );
 
     return ok;
+}
+
+bool auncient_sdk_apply_deepseek_guide(sdk_cics_context_t *ctx, const char *deepseek_response, int width, int height) {
+    if (!ctx || !deepseek_response || width <= 0 || height <= 0) {
+        return false;
+    }
+
+    int total_pixels = width * height;
+    int count = 0;
+    
+    char *dup = strdup(deepseek_response);
+    if (!dup) return false;
+
+    double sum = 0.0;
+    char *token = strtok(dup, " ,\t\n\r");
+    while (token && count < total_pixels) {
+        float val = (float)atof(token);
+        sum += val;
+        count++;
+        token = strtok(NULL, " ,\t\n\r");
+    }
+    free(dup);
+
+    if (count > 0) {
+        double avg_att = sum / count;
+        if (ctx->env) {
+            ctx->env->registers[0].value = (uint32_t)(avg_att * 1000.0);
+            ctx->env->registers[0].ts.counter++;
+        }
+        return true;
+    }
+    return false;
 }
 
 

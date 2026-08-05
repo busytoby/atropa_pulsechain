@@ -276,5 +276,8 @@ bool auncient_sdk_dispatch_transfluxor_word(const auncient_transfluxor_registry_
 bool auncient_sdk_tpu_execute_layer(const auncient_transfluxor_registry_t *reg, const auncient_transfluxor_word_t *inputs, int num_inputs, auncient_transfluxor_word_t *output);
 bool auncient_sdk_tpu_execute_recurrent_step(const auncient_transfluxor_registry_t *reg, const auncient_transfluxor_word_t *input, auncient_transfluxor_word_t *state_in_out);
 
+// Apply DeepSeek cognitive guide to agent context
+bool auncient_sdk_apply_deepseek_guide(sdk_cics_context_t *ctx, const char *deepseek_response, int width, int height);
+
 #endif // AUNCIENT_SDK_H
 
