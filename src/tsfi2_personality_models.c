@@ -1129,3 +1129,19 @@ bool evaluate_geniole_fwhr_boundary_map(const teddy_geometry_t *geom, double thr
     return true;
 }
 
+bool evaluate_keating_eye_dilation_sync(const teddy_geometry_t *geom, double left_dilation, double right_dilation, double *babyface_sync_out) {
+    if (!geom || left_dilation < 0.0 || right_dilation < 0.0 || !babyface_sync_out) {
+        return false;
+    }
+    *babyface_sync_out = (1.0 / (1.0 + fabs(left_dilation - right_dilation))) * (0.8 + geom->symmetry * 0.4);
+    return true;
+}
+
+bool evaluate_keating_posture_pitch(const teddy_geometry_t *geom, double pitch_angle, double *submissiveness_out) {
+    if (!geom || !submissiveness_out) {
+        return false;
+    }
+    *submissiveness_out = (pitch_angle + 1.0) * (0.9 + geom->empathy_index * 0.4);
+    return true;
+}
+

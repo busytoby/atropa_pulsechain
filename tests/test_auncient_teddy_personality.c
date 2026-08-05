@@ -711,6 +711,15 @@ int main(void) {
     assert(fwhr_boundary > 0.0);
     printf("   ✓ Keating torso-to-head ratio and Geniole fWHR boundary mapping verified successfully\n");
 
+    // Test Keating eye dilation sync and posture pitch calculations
+    double eye_dilation_sync = 0.0;
+    double posture_pitch = 0.0;
+    assert(evaluate_keating_eye_dilation_sync(&geom, 0.4, 0.4, &eye_dilation_sync));
+    assert(eye_dilation_sync > 0.0);
+    assert(evaluate_keating_posture_pitch(&geom, 0.2, &posture_pitch));
+    assert(posture_pitch > 0.0);
+    printf("   ✓ KEATING, C. F. eye dilation sync and posture pitch verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge

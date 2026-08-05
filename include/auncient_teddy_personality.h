@@ -493,6 +493,12 @@ bool evaluate_keating_torso_head_ratio(const teddy_geometry_t *geom, double tors
 // Maps fWHR aggression thresholds directly to WinchesterMQ register boundary constraints (Geniole et al.).
 bool evaluate_geniole_fwhr_boundary_map(const teddy_geometry_t *geom, double threshold_scale, double *mapped_boundary_out);
 
+// Evaluates symmetrical eye dilation balances on perceived babyfacedness (Keating, C. F.).
+bool evaluate_keating_eye_dilation_sync(const teddy_geometry_t *geom, double left_dilation, double right_dilation, double *babyface_sync_out);
+
+// Models how head pitch tilt modulates perceived social rank and submissiveness (Keating, C. F.).
+bool evaluate_keating_posture_pitch(const teddy_geometry_t *geom, double pitch_angle, double *submissiveness_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 
