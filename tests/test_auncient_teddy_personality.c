@@ -783,6 +783,15 @@ int main(void) {
     assert(utilitarian_decay > 0.0);
     printf("   ✓ Scarpi aesthetic trust and utilitarian decay verified successfully\n");
 
+    // Test Cellarius heliocentric alignment and constellation boundary calculations
+    double cellarius_align = 0.0;
+    double cellarius_boundary = 0.0;
+    assert(evaluate_cellarius_heliocentric_alignment(&geom, 1.0, &cellarius_align));
+    assert(cellarius_align > 0.0);
+    assert(evaluate_cellarius_constellation_boundary(&geom, 0.5, &cellarius_boundary));
+    assert(cellarius_boundary > 0.0);
+    printf("   ✓ Cellarius orbital alignment and constellation boundary verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge

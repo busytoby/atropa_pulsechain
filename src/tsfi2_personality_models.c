@@ -1257,3 +1257,19 @@ bool evaluate_scarpi_utilitarian_decay(const teddy_geometry_t *geom, double inte
     return true;
 }
 
+bool evaluate_cellarius_heliocentric_alignment(const teddy_geometry_t *geom, double orbital_phase, double *alignment_offset_out) {
+    if (!geom || !alignment_offset_out) {
+        return false;
+    }
+    *alignment_offset_out = sin(orbital_phase) * (1.5 + geom->symmetry * 0.5);
+    return true;
+}
+
+bool evaluate_cellarius_constellation_boundary(const teddy_geometry_t *geom, double celestial_longitude, double *boundary_limit_out) {
+    if (!geom || !boundary_limit_out) {
+        return false;
+    }
+    *boundary_limit_out = cos(celestial_longitude) * (0.8 + geom->head_fwhr * 0.4);
+    return true;
+}
+

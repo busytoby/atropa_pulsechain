@@ -541,6 +541,12 @@ bool evaluate_scarpi_aesthetic_trust(const teddy_geometry_t *geom, double base_t
 // Models task-oriented utilitarian efficiency decay and user fatigue over time (Scarpi).
 bool evaluate_scarpi_utilitarian_decay(const teddy_geometry_t *geom, double interaction_duration_sec, double *decayed_efficiency_out);
 
+// Models coordinate projection offsets based on heliocentric orbital phases and planetary scale ratios (Cellarius).
+bool evaluate_cellarius_heliocentric_alignment(const teddy_geometry_t *geom, double orbital_phase, double *alignment_offset_out);
+
+// Calculates boundary limits mapping 3D coordinate paths to star-envelope constraints (Cellarius).
+bool evaluate_cellarius_constellation_boundary(const teddy_geometry_t *geom, double celestial_longitude, double *boundary_limit_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 
