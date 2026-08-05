@@ -400,3 +400,33 @@ bool evaluate_kramer_king_ward_sex_modulated_dominance_aggression(const teddy_ge
     *aggression_out = perceived_dom * factor * (0.9 + geom->confrontational_assertiveness * 0.2);
     return true;
 }
+
+bool evaluate_kramer_king_ward_conscientiousness_specificity(const teddy_geometry_t *geom, double species_factor, double *specificity_out) {
+    if (!geom || species_factor < 0.0 || !specificity_out) {
+        return false;
+    }
+    *specificity_out = species_factor * 1.04 * (0.9 + geom->vocal_visual_harmony * 0.2);
+    return true;
+}
+
+bool evaluate_kramer_king_ward_dominance_specificity(const teddy_geometry_t *geom, double species_factor, double *specificity_out) {
+    if (!geom || species_factor < 0.0 || !specificity_out) {
+        return false;
+    }
+    *specificity_out = species_factor * 1.12 * (0.9 + geom->command_authority * 0.2);
+    return true;
+}
+
+bool evaluate_kramer_king_ward_sex_modulated_conscientiousness(const teddy_geometry_t *geom, double base_accuracy, int observer_sex, int primate_sex, double *accuracy_out) {
+    if (!geom || base_accuracy < 0.0 || !accuracy_out) {
+        return false;
+    }
+    double factor = 1.0;
+    if (observer_sex == primate_sex) {
+        factor = 1.05; // same-sex decoding advantage
+    } else {
+        factor = 0.98;
+    }
+    *accuracy_out = base_accuracy * factor * (0.95 + geom->parenting_capability * 0.1);
+    return true;
+}

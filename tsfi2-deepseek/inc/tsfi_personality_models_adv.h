@@ -548,4 +548,13 @@ bool evaluate_kramer_king_ward_openness_specificity(const teddy_geometry_t *geom
 // Models sex-modulated correlation between perceived dominance and physical aggression ratings (Kramer, King & Ward).
 bool evaluate_kramer_king_ward_sex_modulated_dominance_aggression(const teddy_geometry_t *geom, double perceived_dom, int primate_sex, double *aggression_out);
 
+// Evaluates species-specific vs species-general Conscientiousness indicators (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_conscientiousness_specificity(const teddy_geometry_t *geom, double species_factor, double *specificity_out);
+
+// Evaluates species-specific vs species-general Dominance indicators (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_dominance_specificity(const teddy_geometry_t *geom, double species_factor, double *specificity_out);
+
+// Models sex-modulated Conscientiousness decoding accuracy (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_sex_modulated_conscientiousness(const teddy_geometry_t *geom, double base_accuracy, int observer_sex, int primate_sex, double *accuracy_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H
