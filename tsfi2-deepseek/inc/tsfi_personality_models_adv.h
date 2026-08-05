@@ -581,5 +581,14 @@ bool evaluate_kramer_king_ward_perceived_neuroticism_consensus(const teddy_geome
 // Models actual self-reported conscientiousness scores against static facial metrics (Kramer, King & Ward).
 bool evaluate_kramer_king_ward_actual_conscientiousness_correlation(const teddy_geometry_t *geom, double elongation_val, double symmetry_val, double *conscientiousness_score_out);
 
+// Models perceived virtual character warmth from interactive cues (Wang, Geigel & Herbert).
+bool evaluate_wang_geigel_character_warmth(const teddy_geometry_t *geom, double gaze_shift_freq, double head_tilt_val, double *warmth_score_out);
+
+// Models perceived competence in virtual actors based on postures and cues (Wang, Geigel & Herbert).
+bool evaluate_wang_geigel_competence_projection(const teddy_geometry_t *geom, double posture_pitch, double dominance_cue_val, double *competence_score_out);
+
+// Models emotional contagion factor based on expression cues (Wang, Geigel & Herbert).
+bool evaluate_wang_geigel_emotional_contagion(const teddy_geometry_t *geom, double expression_intensity, double pupil_dilation_sync, double *contagion_score_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H
 

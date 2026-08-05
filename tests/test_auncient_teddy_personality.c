@@ -1871,6 +1871,18 @@ int main(void) {
     assert(kramer_conscientiousness_correlation > 0.0);
     printf("   ✓ KRAMER, KING & WARD extraversion and neuroticism consensus, and actual conscientiousness correlation verified successfully\n");
 
+    double wang_warmth = 0.0;
+    double wang_competence = 0.0;
+    double wang_contagion = 0.0;
+    assert(evaluate_wang_geigel_character_warmth(&geom, 0.65, 0.45, &wang_warmth));
+    assert(wang_warmth > 0.0);
+    assert(evaluate_wang_geigel_competence_projection(&geom, 0.22, 0.85, &wang_competence));
+    assert(wang_competence > 0.0);
+    assert(evaluate_wang_geigel_emotional_contagion(&geom, 0.75, 0.95, &wang_contagion));
+    assert(wang_contagion > 0.0);
+    printf("   ✓ WANG, GEIGEL & HERBERT virtual character warmth, competence projection, and emotional contagion verified successfully\n");
+
+
 
 
     printf("   ✓ KRAMER & WARD FWHR dominance, trustworthiness, threat, cooperation, discrepancy, dimorphism null-hypothesis, head tilt, perceived-actual mismatch, noise sensitivity, adaptation bias, hemiface bias, ambient shading, temporal smoothing, confidence calibration, perceived-actual health mismatch, cheekbone prominence modulation, perspective distortion, micro-exposure resolution, human fWHR trustworthiness, human face asymmetry aggression, human eye-to-face proportion, human fWHR dominance, human face elongation, human eye-to-brow trust, human fWHR trustworthiness decay, human face symmetry trust, human eye dilation arousal, and decay variances verified successfully\n");
