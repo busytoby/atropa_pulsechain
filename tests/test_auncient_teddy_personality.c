@@ -1071,6 +1071,15 @@ int main(void) {
     assert(size_pitch_variance_val > 0.0);
     printf("   ✓ Hyde vocal turn interruption variance and size pitch variance verified successfully\n");
 
+    // Test Hyde vocal tempo range decay variance and size sync variance calculations
+    double tempo_range_decay_variance = 0.0;
+    double size_sync_variance_val = 0.0;
+    assert(evaluate_hyde_vocal_tempo_range_decay_variance(&geom, 15.0, &tempo_range_decay_variance));
+    assert(tempo_range_decay_variance > 0.0);
+    assert(evaluate_hyde_vocal_size_sync_variance(&geom, 0.82, 0.24, &size_sync_variance_val));
+    assert(size_sync_variance_val > 0.0);
+    printf("   ✓ Hyde vocal tempo range decay variance and size sync variance verified successfully\n");
+
     // Test Keating gaze shift dominance and lip compression trust calculations
     double gaze_shift_dom = 0.0;
     double lip_compress_trust = 0.0;
