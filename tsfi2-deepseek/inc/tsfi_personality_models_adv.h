@@ -518,4 +518,16 @@ bool evaluate_kramer_king_ward_species_distance_matrix(const teddy_geometry_t *g
 // Models primate Openness/Curiosity index from eye and face elongation geometry (Kramer, King & Ward).
 bool evaluate_kramer_king_ward_primate_openness(const teddy_geometry_t *geom, double eye_height_width_ratio, double face_elongation, double *openness_out);
 
+// Models primate Neuroticism/stability using facial aspect ratio and orbital asymmetry (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_primate_neuroticism(const teddy_geometry_t *geom, double aspect_ratio, double orbital_asymmetry, double *neuroticism_out);
+
+// Evaluates species-specific vs species-general Agreeableness indicators (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_agreeableness_specificity(const teddy_geometry_t *geom, double species_factor, double *specificity_out);
+
+// Models sex-modulated Extraversion decoding accuracy (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_sex_modulated_extraversion(const teddy_geometry_t *geom, double base_accuracy, int observer_sex, int primate_sex, double *accuracy_out);
+
+// Extracts the primary 3 axes from the morphological PCA coordinate matrix (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_morphological_pca_axes(const teddy_geometry_t *geom, const double *morpho_matrix, int size, double *pca1, double *pca2, double *pca3);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H

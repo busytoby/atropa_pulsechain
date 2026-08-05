@@ -295,3 +295,49 @@ bool evaluate_kramer_king_ward_primate_openness(const teddy_geometry_t *geom, do
     *openness_out = (eye_height_width_ratio * 0.7 + (1.0 / (1.0 + face_elongation)) * 0.3) * (0.95 + geom->intellect_index * 0.1);
     return true;
 }
+
+bool evaluate_kramer_king_ward_primate_neuroticism(const teddy_geometry_t *geom, double aspect_ratio, double orbital_asymmetry, double *neuroticism_out) {
+    if (!geom || aspect_ratio < 0.0 || orbital_asymmetry < 0.0 || !neuroticism_out) {
+        return false;
+    }
+    *neuroticism_out = (aspect_ratio * 0.45 + orbital_asymmetry * 0.55) * (1.1 - geom->emotional_stability * 0.2);
+    return true;
+}
+
+bool evaluate_kramer_king_ward_agreeableness_specificity(const teddy_geometry_t *geom, double species_factor, double *specificity_out) {
+    if (!geom || species_factor < 0.0 || !specificity_out) {
+        return false;
+    }
+    *specificity_out = species_factor * 1.08 * (0.9 + geom->parenting_capability * 0.15);
+    return true;
+}
+
+bool evaluate_kramer_king_ward_sex_modulated_extraversion(const teddy_geometry_t *geom, double base_accuracy, int observer_sex, int primate_sex, double *accuracy_out) {
+    if (!geom || base_accuracy < 0.0 || !accuracy_out) {
+        return false;
+    }
+    double factor = 1.0;
+    if (observer_sex == primate_sex) {
+        factor = 1.08; // same-sex decoding advantage
+    } else {
+        factor = 0.95;
+    }
+    *accuracy_out = base_accuracy * factor * (0.95 + geom->social_extraversion * 0.1);
+    return true;
+}
+
+bool evaluate_kramer_king_ward_morphological_pca_axes(const teddy_geometry_t *geom, const double *morpho_matrix, int size, double *pca1, double *pca2, double *pca3) {
+    if (!geom || !morpho_matrix || size < 3 || !pca1 || !pca2 || !pca3) {
+        return false;
+    }
+    // Speculative linear combination projection representing the three main dimensions
+    *pca1 = morpho_matrix[0] * 0.5 + morpho_matrix[1] * 0.3 + morpho_matrix[2] * 0.2;
+    *pca2 = morpho_matrix[0] * -0.2 + morpho_matrix[1] * 0.6 + morpho_matrix[2] * 0.2;
+    *pca3 = morpho_matrix[0] * 0.1 + morpho_matrix[1] * -0.1 + morpho_matrix[2] * 0.8;
+    
+    // Scale by geometry metrics
+    *pca1 *= (1.0 + geom->leadership_profile * 0.1);
+    *pca2 *= (1.0 + geom->social_extraversion * 0.1);
+    *pca3 *= (1.0 + geom->behavioral_mismatch * 0.1);
+    return true;
+}
