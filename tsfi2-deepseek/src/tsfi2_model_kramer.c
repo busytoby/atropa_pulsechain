@@ -319,4 +319,29 @@ bool evaluate_kramer_king_ward_actual_agreeableness_correlation(const teddy_geom
     return true;
 }
 
+bool evaluate_kramer_king_ward_perceived_extraversion_consensus(const teddy_geometry_t *geom, double forehead_proportion, double eye_size, double *consensus_out) {
+    if (!geom || forehead_proportion < 0.0 || eye_size < 0.0 || !consensus_out) {
+        return false;
+    }
+    *consensus_out = (forehead_proportion * 0.4 + eye_size * 0.6) * (0.8 + geom->social_extraversion * 0.3);
+    return true;
+}
+
+bool evaluate_kramer_king_ward_perceived_neuroticism_consensus(const teddy_geometry_t *geom, double asymmetry_val, double eyebrow_height, double *consensus_out) {
+    if (!geom || asymmetry_val < 0.0 || eyebrow_height < 0.0 || !consensus_out) {
+        return false;
+    }
+    *consensus_out = (asymmetry_val * 0.5 + (1.0 / (1.0 + eyebrow_height)) * 0.5) * (1.1 + geom->behavioral_mismatch * 0.2);
+    return true;
+}
+
+bool evaluate_kramer_king_ward_actual_conscientiousness_correlation(const teddy_geometry_t *geom, double elongation_val, double symmetry_val, double *conscientiousness_score_out) {
+    if (!geom || elongation_val < 0.0 || symmetry_val < 0.0 || !conscientiousness_score_out) {
+        return false;
+    }
+    *conscientiousness_score_out = (symmetry_val * 0.7 + (1.0 / (1.0 + elongation_val)) * 0.3) * (0.9 + geom->honesty_index * 0.2);
+    return true;
+}
+
+
 

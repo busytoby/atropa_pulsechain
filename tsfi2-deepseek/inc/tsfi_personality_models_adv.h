@@ -572,5 +572,14 @@ bool evaluate_keating_eyebrow_dominance_decoupling(const teddy_geometry_t *geom,
 // Models the interaction between jaw scale and babyfacedness attractiveness (Keating).
 bool evaluate_keating_jaw_attractiveness_interaction(const teddy_geometry_t *geom, double jaw_scale, int target_gender, double *attractiveness_score_out);
 
+// Models the consensus of perceived extraversion rating (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_perceived_extraversion_consensus(const teddy_geometry_t *geom, double forehead_proportion, double eye_size, double *consensus_out);
+
+// Models the consensus of perceived neuroticism rating (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_perceived_neuroticism_consensus(const teddy_geometry_t *geom, double asymmetry_val, double eyebrow_height, double *consensus_out);
+
+// Models actual self-reported conscientiousness scores against static facial metrics (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_actual_conscientiousness_correlation(const teddy_geometry_t *geom, double elongation_val, double symmetry_val, double *conscientiousness_score_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H
 
