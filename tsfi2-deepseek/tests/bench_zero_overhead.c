@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -9,7 +10,16 @@
 #include <poll.h>
 #include <sys/time.h>
 #include <time.h>
+#include <stdalign.h>
+#include <sched.h>
 #include "tsfi_raw.h"
+
+static void pin_to_core(int core_id) {
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(core_id, &cpuset);
+    pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+}
 
 #define ITERATIONS_LOCK 100000 // 100 Thousand
 #define ITERATIONS_SYS  10000  // 10 Thousand
@@ -29,15 +39,16 @@ static inline uint64_t get_time_ns() {
 // ==========================================
 typedef struct {
     char buffer[BUFFER_SIZE];
-    uint32_t head;
-    uint32_t tail;
-    _Atomic uint32_t lock;
+    alignas(64) uint32_t head;
+    alignas(64) uint32_t tail;
+    alignas(64) _Atomic uint32_t lock;
 } SpinLockQueue;
 
 static SpinLockQueue g_spin_q;
 
 void* spinlock_producer(void* arg) {
     (void)arg;
+    pin_to_core(0);
     for (int i = 0; i < ITERATIONS_LOCK; i++) {
         while (atomic_exchange_explicit(&g_spin_q.lock, 1, memory_order_acquire)) {
             __builtin_ia32_pause();
@@ -54,6 +65,7 @@ void* spinlock_producer(void* arg) {
 
 void* spinlock_consumer(void* arg) {
     (void)arg;
+    pin_to_core(1);
     int consumed = 0;
     while (consumed < ITERATIONS_LOCK) {
         while (atomic_exchange_explicit(&g_spin_q.lock, 1, memory_order_acquire)) {
@@ -70,14 +82,15 @@ void* spinlock_consumer(void* arg) {
 
 typedef struct {
     char buffer[BUFFER_SIZE];
-    _Atomic uint32_t head;
-    _Atomic uint32_t tail;
+    alignas(64) _Atomic uint32_t head;
+    alignas(64) _Atomic uint32_t tail;
 } LockFreeQueue;
 
 static LockFreeQueue g_lf_q;
 
 void* lockfree_producer(void* arg) {
     (void)arg;
+    pin_to_core(0);
     for (int i = 0; i < ITERATIONS_LOCK; i++) {
         uint32_t current_head = atomic_load_explicit(&g_lf_q.head, memory_order_relaxed);
         uint32_t next = (current_head + 1) % BUFFER_SIZE;
@@ -92,6 +105,7 @@ void* lockfree_producer(void* arg) {
 
 void* lockfree_consumer(void* arg) {
     (void)arg;
+    pin_to_core(1);
     int consumed = 0;
     while (consumed < ITERATIONS_LOCK) {
         uint32_t current_tail = atomic_load_explicit(&g_lf_q.tail, memory_order_relaxed);
