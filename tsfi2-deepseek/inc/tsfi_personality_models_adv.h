@@ -518,4 +518,13 @@ bool evaluate_kramer_ward_human_face_elongation(const teddy_geometry_t *geom, do
 // Models how human eye-to-brow distance signals perceived trust or aggression (Kramer & Ward).
 bool evaluate_kramer_ward_human_eye_to_brow_trust(const teddy_geometry_t *geom, double eye_to_brow_distance, double *trust_out);
 
+// Models perceived trustworthiness decay over repeated interactions (Kramer & Ward).
+bool evaluate_kramer_ward_human_fwhr_trustworthiness_decay(const teddy_geometry_t *geom, double initial_trust, double duration_sec, double *decayed_trust_out);
+
+// Models how static facial symmetry in humans relates to perceived trustworthiness (Kramer & Ward).
+bool evaluate_kramer_ward_human_face_symmetry_trust(const teddy_geometry_t *geom, double symmetry_val, double *trustworthiness_out);
+
+// Models eye size and pupil dilation modulating perceived attractiveness and social interest (Kramer & Ward).
+bool evaluate_kramer_ward_human_eye_dilation_arousal(const teddy_geometry_t *geom, double eye_size_val, double pupil_dilation_val, double *arousal_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H

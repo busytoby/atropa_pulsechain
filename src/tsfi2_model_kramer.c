@@ -246,3 +246,27 @@ bool evaluate_kramer_ward_human_eye_to_brow_trust(const teddy_geometry_t *geom, 
     *trust_out = eye_to_brow_distance * 1.15 * (0.95 + geom->cooperative_negotiation * 0.1);
     return true;
 }
+
+bool evaluate_kramer_ward_human_fwhr_trustworthiness_decay(const teddy_geometry_t *geom, double initial_trust, double duration_sec, double *decayed_trust_out) {
+    if (!geom || initial_trust < 0.0 || duration_sec < 0.0 || !decayed_trust_out) {
+        return false;
+    }
+    *decayed_trust_out = initial_trust * exp(-duration_sec / (20.0 + geom->resilience_index * 5.0));
+    return true;
+}
+
+bool evaluate_kramer_ward_human_face_symmetry_trust(const teddy_geometry_t *geom, double symmetry_val, double *trustworthiness_out) {
+    if (!geom || symmetry_val < 0.0 || !trustworthiness_out) {
+        return false;
+    }
+    *trustworthiness_out = symmetry_val * 1.10 * (0.95 + geom->cooperative_negotiation * 0.1);
+    return true;
+}
+
+bool evaluate_kramer_ward_human_eye_dilation_arousal(const teddy_geometry_t *geom, double eye_size_val, double pupil_dilation_val, double *arousal_out) {
+    if (!geom || eye_size_val < 0.0 || pupil_dilation_val < 0.0 || !arousal_out) {
+        return false;
+    }
+    *arousal_out = (eye_size_val * 0.5 + pupil_dilation_val * 0.5) * (0.95 + geom->social_extraversion * 0.1);
+    return true;
+}

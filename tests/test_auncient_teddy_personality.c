@@ -1755,6 +1755,9 @@ int main(void) {
     double kramer_human_dominance = 0.0;
     double kramer_human_elongation = 0.0;
     double kramer_human_eye_brow_trust = 0.0;
+    double kramer_human_trust_decay = 0.0;
+    double kramer_human_symmetry_trust = 0.0;
+    double kramer_human_dilation_arousal = 0.0;
     assert(evaluate_kramer_ward_fwhr_3d_scan_discrepancy(&geom, 1.85, &kramer_discrepancy));
     assert(kramer_discrepancy > 0.0);
     assert(evaluate_kramer_ward_fwhr_sexual_dimorphism_null_hypothesis(&geom, 1.90, 1.85, &kramer_p_value));
@@ -1794,8 +1797,14 @@ int main(void) {
     assert(kramer_human_elongation > 0.0);
     assert(evaluate_kramer_ward_human_eye_to_brow_trust(&geom, 0.12, &kramer_human_eye_brow_trust));
     assert(kramer_human_eye_brow_trust > 0.0);
+    assert(evaluate_kramer_ward_human_fwhr_trustworthiness_decay(&geom, 0.85, 12.0, &kramer_human_trust_decay));
+    assert(kramer_human_trust_decay > 0.0);
+    assert(evaluate_kramer_ward_human_face_symmetry_trust(&geom, 0.95, &kramer_human_symmetry_trust));
+    assert(kramer_human_symmetry_trust > 0.0);
+    assert(evaluate_kramer_ward_human_eye_dilation_arousal(&geom, 0.22, 0.06, &kramer_human_dilation_arousal));
+    assert(kramer_human_dilation_arousal > 0.0);
     
-    printf("   ✓ KRAMER & WARD FWHR dominance, trustworthiness, threat, cooperation, discrepancy, dimorphism null-hypothesis, head tilt, perceived-actual mismatch, noise sensitivity, adaptation bias, hemiface bias, ambient shading, temporal smoothing, confidence calibration, perceived-actual health mismatch, cheekbone prominence modulation, perspective distortion, micro-exposure resolution, human fWHR trustworthiness, human face asymmetry aggression, human eye-to-face proportion, human fWHR dominance, human face elongation, human eye-to-brow trust, and decay variances verified successfully\n");
+    printf("   ✓ KRAMER & WARD FWHR dominance, trustworthiness, threat, cooperation, discrepancy, dimorphism null-hypothesis, head tilt, perceived-actual mismatch, noise sensitivity, adaptation bias, hemiface bias, ambient shading, temporal smoothing, confidence calibration, perceived-actual health mismatch, cheekbone prominence modulation, perspective distortion, micro-exposure resolution, human fWHR trustworthiness, human face asymmetry aggression, human eye-to-face proportion, human fWHR dominance, human face elongation, human eye-to-brow trust, human fWHR trustworthiness decay, human face symmetry trust, human eye dilation arousal, and decay variances verified successfully\n");
 
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
