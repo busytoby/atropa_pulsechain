@@ -1455,6 +1455,15 @@ int main(void) {
     assert(operational_trust_variance_mod_val > 0.0);
     printf("   ✓ Scarpi playful arousal decay variance mod and operational trust variance mod verified successfully\n");
 
+    // Test Scarpi playful engagement variance mod and operational consistency variance mod calculations
+    double playful_engagement_variance_mod = 0.0;
+    double consistency_variance_mod_single = 0.0;
+    assert(evaluate_scarpi_hedonic_playful_engagement_variance_mod(&geom, 0.90, &playful_engagement_variance_mod));
+    assert(playful_engagement_variance_mod > 0.0);
+    assert(evaluate_scarpi_utilitarian_consistency_variance_mod_single(&geom, 0.88, &consistency_variance_mod_single));
+    assert(consistency_variance_mod_single > 0.0);
+    printf("   ✓ Scarpi playful engagement variance mod and operational consistency variance mod verified successfully\n");
+
     // Test Castle diplomatic alignment and policy consistency calculations
     double diplomatic_alignment_val = 0.0;
     double policy_consistency_val = 0.0;

@@ -298,3 +298,19 @@ bool evaluate_scarpi_utilitarian_operational_trust_variance_mod(const teddy_geom
     return true;
 }
 
+bool evaluate_scarpi_hedonic_playful_engagement_variance_mod(const teddy_geometry_t *geom, double engagement_score, double *variance_out) {
+    if (!geom || engagement_score < 0.0 || !variance_out) {
+        return false;
+    }
+    *variance_out = engagement_score * (0.8 + geom->empathy_index * 0.4);
+    return true;
+}
+
+bool evaluate_scarpi_utilitarian_consistency_variance_mod_single(const teddy_geometry_t *geom, double consistency_score, double *variance_out) {
+    if (!geom || consistency_score < 0.0 || !variance_out) {
+        return false;
+    }
+    *variance_out = consistency_score * (0.9 + geom->leadership_profile * 0.3);
+    return true;
+}
+
