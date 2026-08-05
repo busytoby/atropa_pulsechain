@@ -667,6 +667,12 @@ bool evaluate_keating_eyebrow_asymmetry_dominance(const teddy_geometry_t *geom, 
 // Models submissiveness ratings based on exposed sclera size ratios (Keating, C. F.).
 bool evaluate_keating_sclera_submissiveness(const teddy_geometry_t *geom, double sclera_size_ratio, double *submissiveness_out);
 
+// Evaluates perceived trustworthiness based on eyebrow asymmetries (Keating, C. F.).
+bool evaluate_keating_eyebrow_asymmetry_trust(const teddy_geometry_t *geom, double eyebrow_asymmetry_val, double *trustworthiness_out);
+
+// Models perceived social dominance based on exposed sclera size ratios (Keating, C. F.).
+bool evaluate_keating_sclera_dominance(const teddy_geometry_t *geom, double sclera_size_ratio, double *dominance_out);
+
 // Evaluates friendly visual parameters scaling on playfulness ratings (Scarpi).
 bool evaluate_scarpi_hedonic_playfulness(const teddy_geometry_t *geom, double base_playfulness, double *playfulness_out);
 
