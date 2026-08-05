@@ -70,12 +70,22 @@ bool tsfi_montecarlo_cross_bilateral_filter(
                     float d_spatial_sq = (float)(dx * dx + dy * dy);
                     float w_spatial = expf(-d_spatial_sq / spatial_denom);
 
-                    // Feature distance weight (combines normal difference and depth difference)
-                    float d_depth = fabsf(center_feat.depth - n_feat.depth);
-                    float dot_normal = center_feat.normal.x * n_feat.normal.x +
-                                       center_feat.normal.y * n_feat.normal.y +
-                                       center_feat.normal.z * n_feat.normal.z;
-                    float d_normal_sq = 2.0f * (1.0f - fmaxf(-1.0f, fminf(1.0f, dot_normal)));
+                    // Feature distance weight (combines Markov transition differences for depth and normal vectors)
+                    float c_depth_trans = center_feat.depth - ((idx > 0) ? features[idx - 1].depth : center_feat.depth);
+                    float n_depth_trans = n_feat.depth - ((n_idx > 0) ? features[n_idx - 1].depth : n_feat.depth);
+                    float d_depth = c_depth_trans - n_depth_trans;
+
+                    float c_norm_x_trans = center_feat.normal.x - ((idx > 0) ? features[idx - 1].normal.x : center_feat.normal.x);
+                    float n_norm_x_trans = n_feat.normal.x - ((n_idx > 0) ? features[n_idx - 1].normal.x : n_feat.normal.x);
+                    float c_norm_y_trans = center_feat.normal.y - ((idx > 0) ? features[idx - 1].normal.y : center_feat.normal.y);
+                    float n_norm_y_trans = n_feat.normal.y - ((n_idx > 0) ? features[n_idx - 1].normal.y : n_feat.normal.y);
+                    float c_norm_z_trans = center_feat.normal.z - ((idx > 0) ? features[idx - 1].normal.z : center_feat.normal.z);
+                    float n_norm_z_trans = n_feat.normal.z - ((n_idx > 0) ? features[n_idx - 1].normal.z : n_feat.normal.z);
+
+                    float diff_norm_x = c_norm_x_trans - n_norm_x_trans;
+                    float diff_norm_y = c_norm_y_trans - n_norm_y_trans;
+                    float diff_norm_z = c_norm_z_trans - n_norm_z_trans;
+                    float d_normal_sq = diff_norm_x * diff_norm_x + diff_norm_y * diff_norm_y + diff_norm_z * diff_norm_z;
                     
                     float d_range_sq = d_depth * d_depth + d_normal_sq;
                     float w_range = expf(-d_range_sq / range_denom);
