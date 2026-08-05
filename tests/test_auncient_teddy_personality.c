@@ -864,6 +864,15 @@ int main(void) {
     assert(radial_freq > 0.0);
     printf("   ✓ Cellarius eccentricity velocity and radial frequency verified successfully\n");
 
+    // Test Cellarius alignment boundary and epicycle radius calculations
+    double alignment_boundary = 0.0;
+    double epicycle_radius_val = 0.0;
+    assert(evaluate_cellarius_alignment_boundary(&geom, 8.4, &alignment_boundary));
+    assert(alignment_boundary > 0.0);
+    assert(evaluate_cellarius_epicycle_radius(&geom, 1.25, &epicycle_radius_val));
+    assert(epicycle_radius_val > 0.0);
+    printf("   ✓ Cellarius alignment boundary and epicycle radius verified successfully\n");
+
     // Test Hyde vocal jitter naturalness and intonation amplitude calculations
     double vocal_jitter = 0.0;
     double intonation_amp = 0.0;

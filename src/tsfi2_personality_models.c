@@ -1417,6 +1417,22 @@ bool evaluate_cellarius_radial_frequency(const teddy_geometry_t *geom, double ra
     return true;
 }
 
+bool evaluate_cellarius_alignment_boundary(const teddy_geometry_t *geom, double constellation_distance, double *boundary_out) {
+    if (!geom || constellation_distance < 0.0 || !boundary_out) {
+        return false;
+    }
+    *boundary_out = constellation_distance * (1.1 + geom->symmetry * 0.4);
+    return true;
+}
+
+bool evaluate_cellarius_epicycle_radius(const teddy_geometry_t *geom, double epicycle_radius, double *frequency_scale_out) {
+    if (!geom || epicycle_radius < 0.0 || !frequency_scale_out) {
+        return false;
+    }
+    *frequency_scale_out = epicycle_radius * (0.8 + geom->head_fwhr * 0.4);
+    return true;
+}
+
 bool evaluate_hyde_dynamic_intonation(const teddy_geometry_t *geom, double intonation_range, double brow_movement, double *intonation_out) {
     if (!geom || intonation_range < 0.0 || brow_movement < 0.0 || !intonation_out) {
         return false;

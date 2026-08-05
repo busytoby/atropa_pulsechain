@@ -595,6 +595,12 @@ bool evaluate_cellarius_eccentricity_velocity(const teddy_geometry_t *geom, doub
 // Calculates coordinate frequency scale shifts based on radial orbital distances (Cellarius).
 bool evaluate_cellarius_radial_frequency(const teddy_geometry_t *geom, double radial_distance, double *frequency_shift_out);
 
+// Models spatial boundary alignment based on constellation distance constraints (Cellarius).
+bool evaluate_cellarius_alignment_boundary(const teddy_geometry_t *geom, double constellation_distance, double *boundary_out);
+
+// Calculates coordinate frequency scale shifts based on epicycle orbit radius ratios (Cellarius).
+bool evaluate_cellarius_epicycle_radius(const teddy_geometry_t *geom, double epicycle_radius, double *frequency_scale_out);
+
 // Evaluates dynamic changes in vocal intonation range alignment with eyebrow movements (Hyde et al.).
 bool evaluate_hyde_dynamic_intonation(const teddy_geometry_t *geom, double intonation_range, double brow_movement, double *intonation_out);
 
