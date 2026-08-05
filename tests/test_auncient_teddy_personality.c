@@ -1053,6 +1053,15 @@ int main(void) {
     assert(size_pitch_decay_mod > 0.0);
     printf("   ✓ Hyde vocal warmth variance and size pitch decay mod verified successfully\n");
 
+    // Test Hyde vocal turn interruption variance and size pitch variance calculations
+    double turn_interruption_variance = 0.0;
+    double size_pitch_variance_val = 0.0;
+    assert(evaluate_hyde_vocal_turn_interruption_variance(&geom, 0.45, &turn_interruption_variance));
+    assert(turn_interruption_variance > 0.0);
+    assert(evaluate_hyde_vocal_size_pitch_variance(&geom, 2.5, 12.5, &size_pitch_variance_val));
+    assert(size_pitch_variance_val > 0.0);
+    printf("   ✓ Hyde vocal turn interruption variance and size pitch variance verified successfully\n");
+
     // Test Keating gaze shift dominance and lip compression trust calculations
     double gaze_shift_dom = 0.0;
     double lip_compress_trust = 0.0;

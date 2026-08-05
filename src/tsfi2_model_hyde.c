@@ -306,3 +306,19 @@ bool evaluate_hyde_vocal_size_jitter_decay_mod_variance(const teddy_geometry_t *
     return true;
 }
 
+bool evaluate_hyde_vocal_turn_interruption_variance(const teddy_geometry_t *geom, double interruption_freq, double *variance_out) {
+    if (!geom || interruption_freq < 0.0 || !variance_out) {
+        return false;
+    }
+    *variance_out = interruption_freq * (0.8 + geom->empathy_index * 0.4);
+    return true;
+}
+
+bool evaluate_hyde_vocal_size_pitch_variance(const teddy_geometry_t *geom, double size_pitch_val, double pitch_range, double *variance_out) {
+    if (!geom || size_pitch_val < 0.0 || pitch_range < 0.0 || !variance_out) {
+        return false;
+    }
+    *variance_out = size_pitch_val * pitch_range * (0.8 + geom->symmetry * 0.4);
+    return true;
+}
+
