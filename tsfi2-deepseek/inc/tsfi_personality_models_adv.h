@@ -497,4 +497,16 @@ bool evaluate_kramer_king_ward_cross_species_congruence(const teddy_geometry_t *
 // Models shared evolutionary threat cues (fWHR + brow prominence) across primates (Kramer, King & Ward).
 bool evaluate_kramer_king_ward_shared_evolutionary_threat(const teddy_geometry_t *geom, double fwhr_val, double brow_val, double *threat_out);
 
+// Models Agreeableness and Conscientiousness based on eye-orbit and jaw/muzzle geometry (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_agreeableness_conscientiousness(const teddy_geometry_t *geom, double eye_orbit_val, double jaw_val, double *rating_out);
+
+// Evaluates species-specific vs. species-general cue markers in personality decoding (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_species_general_cues(const teddy_geometry_t *geom, double general_cue_weight, double *marker_val_out);
+
+// Models sex-modulated accuracy of static face personality decoding (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_sex_modulated_accuracy(const teddy_geometry_t *geom, double base_accuracy, int biological_sex, double *accuracy_out);
+
+// Calculates inter-rater consensus among observers decoding primate traits (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_inter_rater_consensus(const teddy_geometry_t *geom, const double *rater_judgments, int rater_count, double *consensus_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H

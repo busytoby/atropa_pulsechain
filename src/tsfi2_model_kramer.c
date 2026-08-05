@@ -222,3 +222,47 @@ bool evaluate_kramer_king_ward_shared_evolutionary_threat(const teddy_geometry_t
     *threat_out = (fwhr_val * 0.6 + brow_val * 0.4) * (1.1 + geom->behavioral_mismatch * 0.3);
     return true;
 }
+
+bool evaluate_kramer_king_ward_agreeableness_conscientiousness(const teddy_geometry_t *geom, double eye_orbit_val, double jaw_val, double *rating_out) {
+    if (!geom || eye_orbit_val < 0.0 || jaw_val < 0.0 || !rating_out) {
+        return false;
+    }
+    *rating_out = (eye_orbit_val * 0.5 + jaw_val * 0.5) * (0.95 + geom->parenting_capability * 0.1);
+    return true;
+}
+
+bool evaluate_kramer_king_ward_species_general_cues(const teddy_geometry_t *geom, double general_cue_weight, double *marker_val_out) {
+    if (!geom || general_cue_weight < 0.0 || !marker_val_out) {
+        return false;
+    }
+    *marker_val_out = general_cue_weight * 1.05 * (0.9 + geom->social_status * 0.2);
+    return true;
+}
+
+bool evaluate_kramer_king_ward_sex_modulated_accuracy(const teddy_geometry_t *geom, double base_accuracy, int biological_sex, double *accuracy_out) {
+    if (!geom || base_accuracy < 0.0 || !accuracy_out) {
+        return false;
+    }
+    double factor = (biological_sex == 1) ? 1.05 : 0.98;
+    *accuracy_out = base_accuracy * factor * (1.0 + geom->emotional_stability * 0.05);
+    return true;
+}
+
+bool evaluate_kramer_king_ward_inter_rater_consensus(const teddy_geometry_t *geom, const double *rater_judgments, int rater_count, double *consensus_out) {
+    if (!geom || !rater_judgments || rater_count <= 1 || !consensus_out) {
+        return false;
+    }
+    double sum = 0.0;
+    for (int i = 0; i < rater_count; i++) {
+        sum += rater_judgments[i];
+    }
+    double mean = sum / rater_count;
+    double var_sum = 0.0;
+    for (int i = 0; i < rater_count; i++) {
+        double d = rater_judgments[i] - mean;
+        var_sum += d * d;
+    }
+    double variance = var_sum / (rater_count - 1);
+    *consensus_out = (1.0 / (1.0 + variance)) * (0.9 + geom->intellect_index * 0.1);
+    return true;
+}
