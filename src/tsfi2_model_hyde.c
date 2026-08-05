@@ -242,3 +242,19 @@ bool evaluate_hyde_interruption_recovery(const teddy_geometry_t *geom, double re
     return true;
 }
 
+bool evaluate_hyde_vocal_naturalness_variance(const teddy_geometry_t *geom, double vocal_jitter, double amplitude_mismatch, double *naturalness_variance_out) {
+    if (!geom || vocal_jitter < 0.0 || amplitude_mismatch < 0.0 || !naturalness_variance_out) {
+        return false;
+    }
+    *naturalness_variance_out = vocal_jitter * amplitude_mismatch * (0.8 + geom->empathy_index * 0.4);
+    return true;
+}
+
+bool evaluate_hyde_intonation_amplitude_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_amplitude_out) {
+    if (!geom || duration_sec < 0.0 || !decayed_amplitude_out) {
+        return false;
+    }
+    *decayed_amplitude_out = exp(-duration_sec / (16.0 + geom->resilience_index * 6.0));
+    return true;
+}
+
