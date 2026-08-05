@@ -1289,3 +1289,19 @@ bool evaluate_hyde_vocal_energy_variance(const teddy_geometry_t *geom, double en
     return true;
 }
 
+bool evaluate_keating_fwhr_dominance(const teddy_geometry_t *geom, double fwhr_value, double *dominance_out) {
+    if (!geom || fwhr_value < 0.0 || !dominance_out) {
+        return false;
+    }
+    *dominance_out = fwhr_value * (1.1 + geom->leadership_profile * 0.4);
+    return true;
+}
+
+bool evaluate_keating_mouth_width_ratio(const teddy_geometry_t *geom, double mouth_width, double jaw_width, double *submissiveness_out) {
+    if (!geom || mouth_width < 0.0 || jaw_width < 0.0 || !submissiveness_out) {
+        return false;
+    }
+    *submissiveness_out = (mouth_width / (jaw_width > 0.0 ? jaw_width : 1.0)) * (0.8 + geom->empathy_index * 0.4);
+    return true;
+}
+

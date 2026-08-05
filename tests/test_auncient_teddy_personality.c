@@ -801,6 +801,15 @@ int main(void) {
     assert(vocal_energy_var > 0.0);
     printf("   ✓ Hyde audio-visual latency jitter and vocal energy variance verified successfully\n");
 
+    // Test Keating fWHR dominance and mouth width ratio calculations
+    double fwhr_dominance = 0.0;
+    double mouth_width_sub = 0.0;
+    assert(evaluate_keating_fwhr_dominance(&geom, 1.85, &fwhr_dominance));
+    assert(fwhr_dominance > 0.0);
+    assert(evaluate_keating_mouth_width_ratio(&geom, 0.35, 0.7, &mouth_width_sub));
+    assert(mouth_width_sub > 0.0);
+    printf("   ✓ KEATING, C. F. fWHR dominance and mouth width ratio verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge

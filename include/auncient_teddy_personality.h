@@ -553,6 +553,12 @@ bool evaluate_hyde_av_latency_jitter(const teddy_geometry_t *geom, double latenc
 // Models engagement levels based on conversational vocal energy delivery variance (Hyde et al.).
 bool evaluate_hyde_vocal_energy_variance(const teddy_geometry_t *geom, double energy_variance, double *engagement_out);
 
+// Evaluates perceived social dominance and babyfacedness based on facial width-to-height ratio (Keating, C. F.).
+bool evaluate_keating_fwhr_dominance(const teddy_geometry_t *geom, double fwhr_value, double *dominance_out);
+
+// Models perceived submissiveness based on mouth-to-jaw width ratios (Keating, C. F.).
+bool evaluate_keating_mouth_width_ratio(const teddy_geometry_t *geom, double mouth_width, double jaw_width, double *submissiveness_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 
