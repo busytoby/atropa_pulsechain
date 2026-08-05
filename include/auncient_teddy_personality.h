@@ -685,6 +685,12 @@ bool evaluate_cellarius_planetary_velocity_variance_mod(const teddy_geometry_t *
 // Models the variance in heliocentric alignment modulator ratings under dynamic layout symmetry variations (Cellarius).
 bool evaluate_cellarius_heliocentric_alignment_variance_mod(const teddy_geometry_t *geom, double alignment_val, double *variance_out);
 
+// Models the variance in constellation scale modulator ratings under dynamic layout symmetry variations (Cellarius).
+bool evaluate_cellarius_constellation_scale_variance_mod_single(const teddy_geometry_t *geom, double scale_val, double *variance_out);
+
+// Models the variance in decay rates of epicycle orbital radius modulator ratings under dynamic layout symmetry variations (Cellarius).
+bool evaluate_cellarius_epicycle_radius_decay_variance_mod(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out);
+
 // Evaluates dynamic changes in vocal intonation range alignment with eyebrow movements (Hyde et al.).
 bool evaluate_hyde_dynamic_intonation(const teddy_geometry_t *geom, double intonation_range, double brow_movement, double *intonation_out);
 
