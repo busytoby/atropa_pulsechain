@@ -1720,12 +1720,18 @@ int main(void) {
     
     double kramer_discrepancy = 0.0;
     double kramer_p_value = 0.0;
+    double kramer_apparent = 0.0;
+    double kramer_mismatch = 0.0;
     assert(evaluate_kramer_ward_fwhr_3d_scan_discrepancy(&geom, 1.85, &kramer_discrepancy));
     assert(kramer_discrepancy > 0.0);
     assert(evaluate_kramer_ward_fwhr_sexual_dimorphism_null_hypothesis(&geom, 1.90, 1.85, &kramer_p_value));
     assert(kramer_p_value > 0.0);
+    assert(evaluate_kramer_ward_fwhr_head_tilt_effect(&geom, 1.85, 10.0, &kramer_apparent));
+    assert(kramer_apparent > 0.0);
+    assert(evaluate_kramer_ward_fwhr_actual_vs_perceived_aggression_mismatch(&geom, 4.5, 2.1, &kramer_mismatch));
+    assert(kramer_mismatch > 0.0);
     
-    printf("   ✓ KRAMER & WARD FWHR dominance, trustworthiness, threat, cooperation, discrepancy, dimorphism null-hypothesis, and decay variances verified successfully\n");
+    printf("   ✓ KRAMER & WARD FWHR dominance, trustworthiness, threat, cooperation, discrepancy, dimorphism null-hypothesis, head tilt, perceived-actual mismatch, and decay variances verified successfully\n");
 
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;

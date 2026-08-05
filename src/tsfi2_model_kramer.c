@@ -84,3 +84,20 @@ bool evaluate_kramer_ward_fwhr_sexual_dimorphism_null_hypothesis(const teddy_geo
     *p_value_out = exp(-diff * 5.0) * (0.8 + geom->cooperative_negotiation * 0.1);
     return true;
 }
+
+bool evaluate_kramer_ward_fwhr_head_tilt_effect(const teddy_geometry_t *geom, double fwhr_val, double pitch_degrees, double *apparent_fwhr_out) {
+    if (!geom || fwhr_val < 0.0 || !apparent_fwhr_out) {
+        return false;
+    }
+    double rad = pitch_degrees * 3.141592653589793 / 180.0;
+    *apparent_fwhr_out = fwhr_val / cos(rad * 0.5) * (1.0 + geom->head_tilt * 0.05);
+    return true;
+}
+
+bool evaluate_kramer_ward_fwhr_actual_vs_perceived_aggression_mismatch(const teddy_geometry_t *geom, double perceived_dominance, double actual_aggression, double *mismatch_out) {
+    if (!geom || perceived_dominance < 0.0 || actual_aggression < 0.0 || !mismatch_out) {
+        return false;
+    }
+    *mismatch_out = fabs(perceived_dominance - actual_aggression) * (1.2 + geom->behavioral_mismatch * 0.4);
+    return true;
+}

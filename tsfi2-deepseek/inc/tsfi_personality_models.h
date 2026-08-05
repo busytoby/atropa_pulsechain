@@ -195,5 +195,7 @@ bool evaluate_kramer_ward_fwhr_threat_decay_variance(const teddy_geometry_t *geo
 bool evaluate_kramer_ward_fwhr_cooperation_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out);
 bool evaluate_kramer_ward_fwhr_3d_scan_discrepancy(const teddy_geometry_t *geom, double fwhr_val, double *discrepancy_out);
 bool evaluate_kramer_ward_fwhr_sexual_dimorphism_null_hypothesis(const teddy_geometry_t *geom, double male_fwhr, double female_fwhr, double *p_value_out);
+bool evaluate_kramer_ward_fwhr_head_tilt_effect(const teddy_geometry_t *geom, double fwhr_val, double pitch_degrees, double *apparent_fwhr_out);
+bool evaluate_kramer_ward_fwhr_actual_vs_perceived_aggression_mismatch(const teddy_geometry_t *geom, double perceived_dominance, double actual_aggression, double *mismatch_out);
 
 #endif // TSFI_PERSONALITY_MODELS_H
