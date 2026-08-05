@@ -546,3 +546,43 @@ bool evaluate_keating_sclera_dominance_decay_variance_mod(const teddy_geometry_t
     return true;
 }
 
+bool evaluate_keating_cross_cultural_dominance_consensus(const teddy_geometry_t *geom, double gesture_prominence, double *consensus_out) {
+    if (!geom || gesture_prominence < 0.0 || !consensus_out) {
+        return false;
+    }
+    *consensus_out = gesture_prominence * 0.95 * (0.9 + geom->social_status * 0.2);
+    return true;
+}
+
+bool evaluate_keating_gender_status_interaction(const teddy_geometry_t *geom, double status_cue, int observer_gender, double *dominance_out) {
+    if (!geom || status_cue < 0.0 || !dominance_out) {
+        return false;
+    }
+    double multiplier = (observer_gender == 1) ? 1.08 : 0.95;
+    *dominance_out = status_cue * multiplier * (0.95 + geom->command_authority * 0.1);
+    return true;
+}
+
+bool evaluate_keating_babyfacedness_attractiveness_decoupling(const teddy_geometry_t *geom, double babyface_index, int target_gender, double *attractiveness_out) {
+    if (!geom || babyface_index < 0.0 || !attractiveness_out) {
+        return false;
+    }
+    double baseline = babyface_index * 1.15;
+    if (target_gender == 1) { // females
+        *attractiveness_out = baseline * (1.0 + geom->empathy_index * 0.15);
+    } else { // males
+        *attractiveness_out = baseline * (0.85 + geom->parenting_capability * 0.1);
+    }
+    return true;
+}
+
+bool evaluate_keating_smile_status_congruence(const teddy_geometry_t *geom, double smile_intensity, double status_rank, double *trust_score_out) {
+    if (!geom || smile_intensity < 0.0 || status_rank <= 0.0 || !trust_score_out) {
+        return false;
+    }
+    // Trust score is modulated by congruence between status (lower rank = higher status) and smiling behavior
+    double congruence = fabs(smile_intensity - (1.0 / status_rank));
+    *trust_score_out = (1.0 / (1.0 + congruence)) * (0.9 + geom->cooperative_negotiation * 0.2);
+    return true;
+}
+

@@ -1419,6 +1419,21 @@ int main(void) {
     assert(sclera_dominance_decay_variance_mod > 0.0);
     printf("   ✓ KEATING, C. F. sclera submissiveness decay variance mod and sclera dominance decay variance mod verified successfully\n");
 
+    // Test new Keating models
+    double keating_consensus = 0.0;
+    double keating_interaction_dom = 0.0;
+    double keating_decoupled_attr = 0.0;
+    double keating_smile_trust = 0.0;
+    assert(evaluate_keating_cross_cultural_dominance_consensus(&geom, 0.85, &keating_consensus));
+    assert(keating_consensus > 0.0);
+    assert(evaluate_keating_gender_status_interaction(&geom, 0.75, 1, &keating_interaction_dom));
+    assert(keating_interaction_dom > 0.0);
+    assert(evaluate_keating_babyfacedness_attractiveness_decoupling(&geom, 0.65, 1, &keating_decoupled_attr));
+    assert(keating_decoupled_attr > 0.0);
+    assert(evaluate_keating_smile_status_congruence(&geom, 0.8, 2.0, &keating_smile_trust));
+    assert(keating_smile_trust > 0.0);
+    printf("   ✓ KEATING, C. F. cross-cultural consensus, gender status interaction, babyfacedness attractiveness decoupling, and smile status congruence verified successfully\n");
+
     // Test Scarpi hedonic playfulness and utilitarian trust calculations
     double playfulness_val = 0.0;
     double utilitarian_trust_val = 0.0;

@@ -497,4 +497,16 @@ bool evaluate_kramer_ward_human_face_asymmetry_aggression(const teddy_geometry_t
 // Models how relative eye size and pupil dilation dimensions modulate perceived social traits (Kramer & Ward).
 bool evaluate_kramer_ward_human_eye_to_face_proportion(const teddy_geometry_t *geom, double eye_size_val, double pupil_dilation_val, double *social_trait_rating_out);
 
+// Models the cross-cultural consensus in dominance attribution from facial gestures (Keating).
+bool evaluate_keating_cross_cultural_dominance_consensus(const teddy_geometry_t *geom, double gesture_prominence, double *consensus_out);
+
+// Models how the interaction of target status and observer gender affects dominance perception (Keating).
+bool evaluate_keating_gender_status_interaction(const teddy_geometry_t *geom, double status_cue, int observer_gender, double *dominance_out);
+
+// Models the babyfacedness attraction decoupling effect where dominance is traded for warmth/attractiveness (Keating).
+bool evaluate_keating_babyfacedness_attractiveness_decoupling(const teddy_geometry_t *geom, double babyface_index, int target_gender, double *attractiveness_out);
+
+// Models the smile-status congruence effect on observer trust (Keating).
+bool evaluate_keating_smile_status_congruence(const teddy_geometry_t *geom, double smile_intensity, double status_rank, double *trust_score_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H
