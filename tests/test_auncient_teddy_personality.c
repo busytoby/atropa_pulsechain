@@ -803,6 +803,18 @@ int main(void) {
     assert(sustain_decay > 0.0);
     printf("   ✓ Izotope symmetric threshold tremolo and group scale sustain verified successfully\n");
 
+    // Test Izotope transactional/ACID rollback for sustain/tremolo parameters
+    double test_t_space = 2.2;
+    double test_s_decay = 3.3;
+    // Create invalid geometry (e.g. negative or zero symmetry) to trigger validation failure
+    teddy_geometry_t invalid_geom = geom;
+    invalid_geom.symmetry = -0.5;
+    bool status_iz = evaluate_izotope_constrained_parameters(&invalid_geom, 1, &test_t_space, &test_s_decay);
+    assert(status_iz == false);
+    assert(test_t_space == 2.2); // Rollback verified
+    assert(test_s_decay == 3.3); // Rollback verified
+    printf("   ✓ ACID compliance and rollback for sustain parameter calculations verified successfully\n");
+
     // Test Izotope/Ozone habituation decay calculation
     double izotope_decay_out = 0.0;
     assert(evaluate_izotope_ozone_habituation_decay(&geom, 1.5, &izotope_decay_out));

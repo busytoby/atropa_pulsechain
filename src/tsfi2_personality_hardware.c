@@ -139,8 +139,11 @@ bool evaluate_izotope_constrained_parameters(const teddy_geometry_t *geom, int g
     if (!geom || !tremolo_spacing_out || !sustain_decay_out) {
         return false;
     }
+    double orig_tremolo = *tremolo_spacing_out;
+    double orig_sustain = *sustain_decay_out;
+
     double base_spacing = 0.5 + (geom->eye_eccentricity * 0.2);
-    *tremolo_spacing_out = base_spacing * geom->symmetry;
+    double temp_tremolo = base_spacing * geom->symmetry;
     double group_scale = 1.0;
     if (group_id == 1) {
         group_scale = 2.5 + (geom->stiffness * 0.5);
@@ -150,7 +153,16 @@ bool evaluate_izotope_constrained_parameters(const teddy_geometry_t *geom, int g
     } else {
         group_scale = 1.0;
     }
-    *sustain_decay_out = group_scale;
+    double temp_sustain = group_scale;
+
+    if (temp_tremolo <= 0.0 || temp_sustain <= 0.0) {
+        *tremolo_spacing_out = orig_tremolo;
+        *sustain_decay_out = orig_sustain;
+        return false;
+    }
+
+    *tremolo_spacing_out = temp_tremolo;
+    *sustain_decay_out = temp_sustain;
     return true;
 }
 
