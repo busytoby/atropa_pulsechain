@@ -100,5 +100,32 @@ bool evaluate_wang_geigel_gaze_realism_mismatch(const teddy_geometry_t *geom, do
     return true;
 }
 
+bool evaluate_wang_geigel_avatar_blink_trust(const teddy_geometry_t *geom, double blink_rate, double *trust_score_out) {
+    if (!geom || blink_rate < 0.0 || !trust_score_out) {
+        return false;
+    }
+    // Moderate blinks are perceived as trustful; high blink rates reduce trust
+    double optimal_diff = fabs(blink_rate - 0.25);
+    *trust_score_out = (1.0 / (1.0 + optimal_diff * 1.5)) * (0.95 + geom->cooperative_negotiation * 0.2);
+    return true;
+}
+
+bool evaluate_wang_geigel_avatar_head_shake(const teddy_geometry_t *geom, double head_shake_intensity, double *negativity_score_out) {
+    if (!geom || head_shake_intensity < 0.0 || !negativity_score_out) {
+        return false;
+    }
+    *negativity_score_out = head_shake_intensity * 1.35 * (1.0 + geom->behavioral_mismatch * 0.25);
+    return true;
+}
+
+bool evaluate_wang_geigel_avatar_gaze_submissiveness(const teddy_geometry_t *geom, double averted_gaze_ratio, double posture_pitch, double *submissiveness_score_out) {
+    if (!geom || averted_gaze_ratio < 0.0 || posture_pitch < 0.0 || !submissiveness_score_out) {
+        return false;
+    }
+    *submissiveness_score_out = (averted_gaze_ratio * 0.6 + (1.0 / (1.0 + posture_pitch)) * 0.4) * (0.9 + geom->confrontational_assertiveness * -0.2);
+    return true;
+}
+
+
 
 

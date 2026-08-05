@@ -617,5 +617,14 @@ bool evaluate_wang_geigel_competence_decay_variance(const teddy_geometry_t *geom
 // Models mismatch metrics between gaze frequency and realism index (Wang, Geigel & Herbert).
 bool evaluate_wang_geigel_gaze_realism_mismatch(const teddy_geometry_t *geom, double gaze_shift_freq, double realism_index, double *mismatch_score_out);
 
+// Models avatar blink rate effect on perceived trust (Wang, Geigel & Herbert).
+bool evaluate_wang_geigel_avatar_blink_trust(const teddy_geometry_t *geom, double blink_rate, double *trust_score_out);
+
+// Models perceived negativity from avatar head shake gestures (Wang, Geigel & Herbert).
+bool evaluate_wang_geigel_avatar_head_shake(const teddy_geometry_t *geom, double head_shake_intensity, double *negativity_score_out);
+
+// Models gaze-avoidance induced submissiveness in virtual actors (Wang, Geigel & Herbert).
+bool evaluate_wang_geigel_avatar_gaze_submissiveness(const teddy_geometry_t *geom, double averted_gaze_ratio, double posture_pitch, double *submissiveness_score_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H
 
