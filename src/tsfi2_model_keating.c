@@ -450,3 +450,19 @@ bool evaluate_keating_width_asymmetry_trust_variance_mod(const teddy_geometry_t 
     return true;
 }
 
+bool evaluate_keating_mouth_asymmetry_trust_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+    if (!geom || duration_sec < 0.0 || !decay_variance_out) {
+        return false;
+    }
+    *decay_variance_out = exp(-duration_sec / (18.0 + geom->resilience_index * 8.0));
+    return true;
+}
+
+bool evaluate_keating_width_asymmetry_dominance_variance_mod(const teddy_geometry_t *geom, double width_asym_val, double *variance_out) {
+    if (!geom || width_asym_val < 0.0 || !variance_out) {
+        return false;
+    }
+    *variance_out = width_asym_val * (1.1 + geom->leadership_profile * 0.4);
+    return true;
+}
+
