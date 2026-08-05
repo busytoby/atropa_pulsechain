@@ -25,3 +25,29 @@ bool evaluate_wang_geigel_emotional_contagion(const teddy_geometry_t *geom, doub
     *contagion_score_out = (expression_intensity * 0.6 + pupil_dilation_sync * 0.4) * (0.85 + geom->empathy_index * 0.35);
     return true;
 }
+
+bool evaluate_wang_geigel_warmth_attenuation(const teddy_geometry_t *geom, double gaze_erraticness, double *attenuated_warmth_out) {
+    if (!geom || gaze_erraticness < 0.0 || !attenuated_warmth_out) {
+        return false;
+    }
+    *attenuated_warmth_out = (1.0 / (1.0 + gaze_erraticness * 0.8)) * (1.15 + geom->empathy_index * 0.3);
+    return true;
+}
+
+bool evaluate_wang_geigel_gaze_dominance_modulator(const teddy_geometry_t *geom, double direct_gaze_ratio, double *dominance_score_out) {
+    if (!geom || direct_gaze_ratio < 0.0 || !dominance_score_out) {
+        return false;
+    }
+    *dominance_score_out = direct_gaze_ratio * (1.1 + geom->leadership_profile * 0.45);
+    return true;
+}
+
+bool evaluate_wang_geigel_realism_attraction_congruence(const teddy_geometry_t *geom, double realism_index, double expression_intensity, double *attraction_score_out) {
+    if (!geom || realism_index < 0.0 || expression_intensity < 0.0 || !attraction_score_out) {
+        return false;
+    }
+    double uncanny_factor = fabs(realism_index - 0.8) * expression_intensity;
+    *attraction_score_out = (1.0 / (1.0 + uncanny_factor)) * (0.95 + geom->social_extraversion * 0.3);
+    return true;
+}
+

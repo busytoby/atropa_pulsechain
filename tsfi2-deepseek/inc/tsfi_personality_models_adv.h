@@ -590,5 +590,14 @@ bool evaluate_wang_geigel_competence_projection(const teddy_geometry_t *geom, do
 // Models emotional contagion factor based on expression cues (Wang, Geigel & Herbert).
 bool evaluate_wang_geigel_emotional_contagion(const teddy_geometry_t *geom, double expression_intensity, double pupil_dilation_sync, double *contagion_score_out);
 
+// Models warmth attenuation from erratic gaze shift parameters (Wang, Geigel & Herbert).
+bool evaluate_wang_geigel_warmth_attenuation(const teddy_geometry_t *geom, double gaze_erraticness, double *attenuated_warmth_out);
+
+// Models gaze-induced dominance metrics in virtual agents (Wang, Geigel & Herbert).
+bool evaluate_wang_geigel_gaze_dominance_modulator(const teddy_geometry_t *geom, double direct_gaze_ratio, double *dominance_score_out);
+
+// Models character realism and expression attraction interactions (Wang, Geigel & Herbert).
+bool evaluate_wang_geigel_realism_attraction_congruence(const teddy_geometry_t *geom, double realism_index, double expression_intensity, double *attraction_score_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H
 
