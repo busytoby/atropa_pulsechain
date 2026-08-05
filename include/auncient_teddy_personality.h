@@ -988,6 +988,12 @@ bool evaluate_castle_diplomatic_trust_bounds_decay_variance(const teddy_geometry
 // Models the variance in policy target engagement ratings based on visual design asymmetry (Castle).
 bool evaluate_castle_policy_target_engagement_variance_mod(const teddy_geometry_t *geom, double engagement_score, double *variance_out);
 
+// Models the variance in diplomatic alignment ratings under dynamic boundary variations based on design layout symmetry (Castle).
+bool evaluate_castle_diplomatic_alignment_variance_mod(const teddy_geometry_t *geom, double alignment_score, double *variance_out);
+
+// Models the variance in decay rates of policy consistency ratings based on prolonged tracking intervals (Castle).
+bool evaluate_castle_policy_consistency_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out);
+
 evaluation_tx_t begin_evaluation_transaction(teddy_geometry_t *target);
 bool commit_evaluation_transaction(evaluation_tx_t *tx);
 void rollback_evaluation_transaction(evaluation_tx_t *tx);
