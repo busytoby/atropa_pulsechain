@@ -57,16 +57,18 @@ bool auncient_analyzer_classify(const AuncientAnalyzer *analyzer, const uint32_t
                i, fieldata_op, (op >= 32 && op < 127) ? op : '?');
     }
 
+    uint32_t permitted = 1;
     for (int i = 0; i < count; i++) {
         uint32_t raw = instructions[i];
         char op = (char)((raw >> 24) & 0xFF);
         if (op >= 'A' && op <= 'Z') {
-            uint32_t mask = 1 << (op - 'A');
-            if (analyzer->prohibited_opcodes & mask) {
-                printf("[ANALYZER CLASSIFY] Instruction %d (Opcode '%c') classified as IMPERMISSIBLE.\n", i, op);
-                return false;
-            }
+            uint32_t term = 1 - ((analyzer->prohibited_opcodes >> (op - 'A')) & 1);
+            permitted *= term;
         }
+    }
+    if (permitted == 0) {
+        printf("[ANALYZER CLASSIFY] Prohibited opcode detected. Classification: IMPERMISSIBLE.\n");
+        return false;
     }
     return true;
 }
