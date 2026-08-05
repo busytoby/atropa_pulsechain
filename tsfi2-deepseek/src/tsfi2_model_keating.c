@@ -638,5 +638,31 @@ bool evaluate_keating_torso_asymmetry_status(const teddy_geometry_t *geom, doubl
     return true;
 }
 
+bool evaluate_keating_smile_cooperation_modulator(const teddy_geometry_t *geom, double smile_intensity, double *cooperation_score_out) {
+    if (!geom || smile_intensity < 0.0 || !cooperation_score_out) {
+        return false;
+    }
+    *cooperation_score_out = smile_intensity * 1.25 * (0.9 + geom->empathy_index * 0.35);
+    return true;
+}
+
+bool evaluate_keating_eyebrow_dominance_decoupling(const teddy_geometry_t *geom, double eyebrow_asymmetry, double fwhr_val, double *dominance_score_out) {
+    if (!geom || eyebrow_asymmetry < 0.0 || fwhr_val < 0.0 || !dominance_score_out) {
+        return false;
+    }
+    *dominance_score_out = (fwhr_val / (1.0 + eyebrow_asymmetry * 0.5)) * (0.95 + geom->leadership_profile * 0.3);
+    return true;
+}
+
+bool evaluate_keating_jaw_attractiveness_interaction(const teddy_geometry_t *geom, double jaw_scale, int target_gender, double *attractiveness_score_out) {
+    if (!geom || jaw_scale < 0.0 || !attractiveness_score_out) {
+        return false;
+    }
+    double factor = (target_gender == 1) ? 0.85 : 1.25; // Smaller jaws preferred for female attractiveness
+    *attractiveness_score_out = (factor / (1.0 + jaw_scale * 0.4)) * (0.9 + geom->empathy_index * 0.3);
+    return true;
+}
+
+
 
 

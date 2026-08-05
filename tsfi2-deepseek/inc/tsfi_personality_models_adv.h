@@ -563,5 +563,14 @@ bool evaluate_kramer_king_ward_perceived_openness_morphological_mapping(const te
 // Models actual agreeableness correlation metrics against facial curvature metrics (Kramer, King & Ward).
 bool evaluate_kramer_king_ward_actual_agreeableness_correlation(const teddy_geometry_t *geom, double mouth_upturn, double fwhr_val, double *agreeableness_score_out);
 
+// Models the effect of smiling behavior on perceived cooperative intent (Keating).
+bool evaluate_keating_smile_cooperation_modulator(const teddy_geometry_t *geom, double smile_intensity, double *cooperation_score_out);
+
+// Models how eyebrow gestures decouple or highlight fWHR dominance markers (Keating).
+bool evaluate_keating_eyebrow_dominance_decoupling(const teddy_geometry_t *geom, double eyebrow_asymmetry, double fwhr_val, double *dominance_score_out);
+
+// Models the interaction between jaw scale and babyfacedness attractiveness (Keating).
+bool evaluate_keating_jaw_attractiveness_interaction(const teddy_geometry_t *geom, double jaw_scale, int target_gender, double *attractiveness_score_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H
 

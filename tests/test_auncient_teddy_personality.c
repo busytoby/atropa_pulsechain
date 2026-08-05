@@ -1455,6 +1455,17 @@ int main(void) {
     assert(keating_torso_asymmetry_status > 0.0);
     printf("   ✓ KEATING, C. F. smile dominance attenuation, babyfacedness leadership decoupling, and torso asymmetry status verified successfully\n");
 
+    double keating_smile_cooperation = 0.0;
+    double keating_eyebrow_decoupling = 0.0;
+    double keating_jaw_attractiveness = 0.0;
+    assert(evaluate_keating_smile_cooperation_modulator(&geom, 0.75, &keating_smile_cooperation));
+    assert(keating_smile_cooperation > 0.0);
+    assert(evaluate_keating_eyebrow_dominance_decoupling(&geom, 0.25, 1.85, &keating_eyebrow_decoupling));
+    assert(keating_eyebrow_decoupling > 0.0);
+    assert(evaluate_keating_jaw_attractiveness_interaction(&geom, 0.45, 1, &keating_jaw_attractiveness));
+    assert(keating_jaw_attractiveness > 0.0);
+    printf("   ✓ KEATING, C. F. smile cooperation, eyebrow dominance decoupling, and jaw attractiveness interaction verified successfully\n");
+
     printf("   ✓ KEATING, C. F. cross-cultural consensus, gender status interaction, babyfacedness attractiveness decoupling, and smile status congruence verified successfully\n");
 
     // Test Scarpi hedonic playfulness and utilitarian trust calculations
