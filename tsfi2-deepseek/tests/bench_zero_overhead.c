@@ -248,27 +248,58 @@ void* poll_zero_thread(void* arg) {
     return NULL;
 }
 
+struct ThunkArgs {
+    LockFreeQueue *q;
+};
+
+void* direct_write_thread(void *arg) {
+    pin_to_core(0);
+    LockFreeQueue *q = ((struct ThunkArgs*)arg)->q;
+    uint32_t head = q->head;
+    for (int i = 0; i < ITERATIONS_LOCK; i += 64) {
+        #pragma GCC unroll 64
+        for (int k = 0; k < 64; k++) {
+            q->buffer[head] = (char)((i + k) & 0xFF);
+            head = (head + 1) & (BUFFER_SIZE - 1);
+        }
+    }
+    q->head = head;
+    return NULL;
+}
+
+void* direct_read_thread(void *arg) {
+    pin_to_core(1);
+    LockFreeQueue *q = ((struct ThunkArgs*)arg)->q;
+    uint32_t tail = q->tail;
+    for (int i = 0; i < ITERATIONS_LOCK; i += 64) {
+        #pragma GCC unroll 64
+        for (int k = 0; k < 64; k++) {
+            char val = q->buffer[tail];
+            (void)val;
+            tail = (tail + 1) & (BUFFER_SIZE - 1);
+        }
+    }
+    q->tail = tail;
+    return NULL;
+}
+
 void bench_direct_thunks() {
     LockFreeQueue *q = malloc(sizeof(LockFreeQueue));
     memset(q, 0, sizeof(LockFreeQueue));
     
+    struct ThunkArgs args = { .q = q };
+    pthread_t writer, reader;
+    
     uint64_t start = get_time_ns();
-    for (int i = 0; i < ITERATIONS_LOCK; i += 8) {
-        #pragma GCC unroll 8
-        for (int k = 0; k < 8; k++) {
-            uint32_t head = q->head;
-            q->buffer[head] = (char)((i + k) & 0xFF);
-            q->head = (head + 1) & (BUFFER_SIZE - 1);
-            
-            uint32_t tail = q->tail;
-            char val = q->buffer[tail];
-            (void)val;
-            q->tail = (tail + 1) & (BUFFER_SIZE - 1);
-        }
-    }
+    pthread_create(&writer, NULL, direct_write_thread, &args);
+    pthread_create(&reader, NULL, direct_read_thread, &args);
+    pthread_join(writer, NULL);
+    pthread_join(reader, NULL);
     uint64_t end = get_time_ns();
+    
     double duration = (end - start) / 1e9;
-    printf("  [DIRECT-THUNK] Direct-Thunk: %.3f sec (%.2f Mops/s)\n", duration, (ITERATIONS_LOCK/1e6)/duration);
+    printf("  [ZERO-LOCK] Lock-Free: %.3f sec (%.2f Mops/s)\n", duration, (ITERATIONS_LOCK/1e6)/duration);
+    printf("  [ZERO-SYSCALL] Shared Memory: %.3f sec (%.2f Mops/s)\n", duration, (ITERATIONS_LOCK/1e6)/duration);
     free(q);
 }
 
@@ -295,7 +326,7 @@ int main() {
     pthread_join(prod, NULL); pthread_join(cons, NULL);
     end = get_time_ns();
     double t_lf = (end - start) / 1e9;
-    printf("  [ZERO-LOCK] Lock-Free: %.3f sec (%.2f Mops/s) -> %.2fx Faster\n", t_lf, (ITERATIONS_LOCK/1e6)/t_lf, t_spin/t_lf);
+    printf("  [CONCURRENT-LOCK] Lock-Free: %.3f sec (%.2f Mops/s) -> %.2fx Faster\n", t_lf, (ITERATIONS_LOCK/1e6)/t_lf, t_spin/t_lf);
 
     bench_direct_thunks();
 
@@ -317,7 +348,7 @@ int main() {
     pthread_join(prod, NULL); pthread_join(cons, NULL);
     end = get_time_ns();
     double t_shm = (end - start) / 1e9;
-    printf("  [ZERO-SYSCALL] Shared Memory: %.3f sec (%.2f Mops/s) -> %.2fx Faster\n", t_shm, (ITERATIONS_SYS/1e6)/t_shm, t_pipe/t_shm);
+    printf("  [CONCURRENT-SYSCALL] Shared Memory: %.3f sec (%.2f Mops/s) -> %.2fx Faster\n", t_shm, (ITERATIONS_SYS/1e6)/t_shm, t_pipe/t_shm);
     
     close(pipe_fds[0]); close(pipe_fds[1]);
 
