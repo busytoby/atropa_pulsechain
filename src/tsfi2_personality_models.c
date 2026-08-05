@@ -1769,6 +1769,22 @@ bool evaluate_scarpi_utilitarian_operational_trust_mod(const teddy_geometry_t *g
     return true;
 }
 
+bool evaluate_scarpi_hedonic_playful_engagement(const teddy_geometry_t *geom, double novelty_scale, double aesthetic_alignment, double *engagement_out) {
+    if (!geom || novelty_scale < 0.0 || aesthetic_alignment < 0.0 || !engagement_out) {
+        return false;
+    }
+    *engagement_out = novelty_scale * aesthetic_alignment * (0.8 + geom->empathy_index * 0.4);
+    return true;
+}
+
+bool evaluate_scarpi_utilitarian_consistency_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_consistency_out) {
+    if (!geom || duration_sec < 0.0 || !decayed_consistency_out) {
+        return false;
+    }
+    *decayed_consistency_out = exp(-duration_sec / (16.0 + geom->resilience_index * 6.0));
+    return true;
+}
+
 bool evaluate_scarpi_hedonic_trust(const teddy_geometry_t *geom, double aesthetic_rating, double novelty_scale, double *trust_out) {
     if (!geom || aesthetic_rating < 0.0 || novelty_scale < 0.0 || !trust_out) {
         return false;

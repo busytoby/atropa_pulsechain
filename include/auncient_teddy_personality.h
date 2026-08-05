@@ -727,6 +727,12 @@ bool evaluate_scarpi_hedonic_interface_trust(const teddy_geometry_t *geom, doubl
 // Models transaction trust ratings based on operational efficiency bounds (Scarpi).
 bool evaluate_scarpi_utilitarian_operational_trust_mod(const teddy_geometry_t *geom, double efficiency_val, double *operational_trust_out);
 
+// Evaluates playfulness ratings based on dynamic novelty scales and aesthetic alignment (Scarpi).
+bool evaluate_scarpi_hedonic_playful_engagement(const teddy_geometry_t *geom, double novelty_scale, double aesthetic_alignment, double *engagement_out);
+
+// Models user interaction consistency decay rates over prolonged tracking cycles (Scarpi).
+bool evaluate_scarpi_utilitarian_consistency_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_consistency_out);
+
 // Evaluates interaction trust based on visual aesthetics and novelty parameters (Scarpi).
 bool evaluate_scarpi_hedonic_trust(const teddy_geometry_t *geom, double aesthetic_rating, double novelty_scale, double *trust_out);
 
