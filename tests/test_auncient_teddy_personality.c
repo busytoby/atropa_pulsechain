@@ -1305,6 +1305,15 @@ int main(void) {
     assert(quality_control_variance_val > 0.0);
     printf("   ✓ Scarpi playful arousal mod variance and quality control variance verified successfully\n");
 
+    // Test Scarpi playful arousal decay variance and quality control decay variance calculations
+    double playful_arousal_decay_variance = 0.0;
+    double quality_control_decay_variance = 0.0;
+    assert(evaluate_scarpi_hedonic_playful_arousal_decay_variance(&geom, 15.0, &playful_arousal_decay_variance));
+    assert(playful_arousal_decay_variance > 0.0);
+    assert(evaluate_scarpi_utilitarian_quality_control_decay_variance(&geom, 16.0, &quality_control_decay_variance));
+    assert(quality_control_decay_variance > 0.0);
+    printf("   ✓ Scarpi playful arousal decay variance and quality control decay variance verified successfully\n");
+
     // Test Castle diplomatic alignment and policy consistency calculations
     double diplomatic_alignment_val = 0.0;
     double policy_consistency_val = 0.0;

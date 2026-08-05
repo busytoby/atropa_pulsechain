@@ -841,6 +841,12 @@ bool evaluate_scarpi_hedonic_playful_arousal_mod_variance(const teddy_geometry_t
 // Models the variance in quality control ratings based on task complexity levels (Scarpi).
 bool evaluate_scarpi_utilitarian_quality_control_variance(const teddy_geometry_t *geom, double complexity_level, double *variance_out);
 
+// Models the variance in playful arousal decay rates based on dynamic novelty shifts (Scarpi).
+bool evaluate_scarpi_hedonic_playful_arousal_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out);
+
+// Models the variance in quality control decay rates over prolonged testing durations (Scarpi).
+bool evaluate_scarpi_utilitarian_quality_control_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out);
+
 // Evaluates interaction trust based on visual aesthetics and novelty parameters (Scarpi).
 bool evaluate_scarpi_hedonic_trust(const teddy_geometry_t *geom, double aesthetic_rating, double novelty_scale, double *trust_out);
 
