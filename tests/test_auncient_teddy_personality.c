@@ -918,6 +918,15 @@ int main(void) {
     assert(epicycle_accel_variance > 0.0);
     printf("   ✓ Cellarius heliocentric alignment scale and epicycle acceleration variance verified successfully\n");
 
+    // Test Cellarius heliocentric phase variance and epicycle velocity decay calculations
+    double heliocentric_phase_variance = 0.0;
+    double epicycle_velocity_decay_val = 0.0;
+    assert(evaluate_cellarius_heliocentric_phase_variance(&geom, 1.25, &heliocentric_phase_variance));
+    assert(heliocentric_phase_variance > 0.0);
+    assert(evaluate_cellarius_epicycle_velocity_decay(&geom, 15.0, &epicycle_velocity_decay_val));
+    assert(epicycle_velocity_decay_val > 0.0);
+    printf("   ✓ Cellarius heliocentric phase variance and epicycle velocity decay verified successfully\n");
+
     // Test Hyde vocal jitter naturalness and intonation amplitude calculations
     double vocal_jitter = 0.0;
     double intonation_amp = 0.0;

@@ -631,6 +631,12 @@ bool evaluate_cellarius_heliocentric_alignment_scale(const teddy_geometry_t *geo
 // Models the variance in epicycle velocity changes under dynamic gravity perturbations (Cellarius).
 bool evaluate_cellarius_epicycle_acceleration_variance(const teddy_geometry_t *geom, double velocity_val, double eccentricity_val, double *variance_out);
 
+// Models the variance in phase angle values under dynamic trajectory shifts (Cellarius).
+bool evaluate_cellarius_heliocentric_phase_variance(const teddy_geometry_t *geom, double orbital_phase, double *variance_out);
+
+// Models the decay rate of epicycle coordinate offset velocities over prolonged tracking durations (Cellarius).
+bool evaluate_cellarius_epicycle_velocity_decay(const teddy_geometry_t *geom, double tracking_duration, double *decayed_velocity_out);
+
 // Evaluates dynamic changes in vocal intonation range alignment with eyebrow movements (Hyde et al.).
 bool evaluate_hyde_dynamic_intonation(const teddy_geometry_t *geom, double intonation_range, double brow_movement, double *intonation_out);
 
