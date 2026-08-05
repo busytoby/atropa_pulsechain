@@ -2449,6 +2449,15 @@ int main(void) {
     assert(mock_ctx.env->registers[0].value > 0); // Verify registers updated successfully
     printf("   ✓ tsfi_riinterface_bridge_to_sdk and auncient_sdk_apply_deepseek_guide verified successfully\n");
 
+    // Test WinchesterMQ DisplacementShader alignment
+    TSFiDisplacementShader mock_ds;
+    tsfi_displacementshader_init(&mock_ds, 1.0, 0.5);
+    uint32_t aligned_off = tsfi_displacementshader_align_ahocorasick_offset(&mock_ds, 123);
+    assert(aligned_off == 256);
+    uint32_t aligned_zero = tsfi_displacementshader_align_ahocorasick_offset(&mock_ds, 256);
+    assert(aligned_zero == 256);
+    printf("   ✓ tsfi_displacementshader_align_ahocorasick_offset verified successfully\n");
+
     printf("=============================================================\n");
     printf("PERSONALITY CONFIGURATIONS VALIDATED SUCCESSFULLY\n");
     printf("=============================================================\n");

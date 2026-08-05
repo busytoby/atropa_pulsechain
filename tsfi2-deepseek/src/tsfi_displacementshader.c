@@ -88,3 +88,14 @@ bool tsfi_displacementshader_eval_page_curl(const TSFiDisplacementShader *ds, do
     }
     return true;
 }
+
+uint32_t tsfi_displacementshader_align_ahocorasick_offset(const TSFiDisplacementShader *ds, uint32_t unaligned_offset) {
+    if (!ds) return unaligned_offset;
+    
+    // WinchesterMQ SCSI register boundary constraints align memory access offsets to 256-byte cache boundaries
+    uint32_t alignment = 256;
+    uint32_t remainder = unaligned_offset % alignment;
+    if (remainder == 0) return unaligned_offset;
+    
+    return unaligned_offset + (alignment - remainder);
+}

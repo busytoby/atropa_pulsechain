@@ -31,4 +31,7 @@ void tsfi_displacementshader_register_xplsm(void (*register_func)(const char *, 
 // Computes the geometric page-curl displacement for a vertex in synchronization with WinchesterMQ boundary constraints
 bool tsfi_displacementshader_eval_page_curl(const TSFiDisplacementShader *ds, double u, double v, double curl_angle, double *displaced_y, double *displaced_z);
 
+// Aligns the Aho-Corasick pattern offset to WinchesterMQ SCSI register boundary constraints
+uint32_t tsfi_displacementshader_align_ahocorasick_offset(const TSFiDisplacementShader *ds, uint32_t unaligned_offset);
+
 #endif // TSFI_DISPLACEMENTSHADER_H
