@@ -1107,6 +1107,15 @@ int main(void) {
     assert(tempo_sync_variance_mod_val > 0.0);
     printf("   ✓ Hyde vocal warmth decay variance and vocal tempo sync variance mod verified successfully\n");
 
+    // Test Hyde vocal warmth range decay variance and vocal warmth modulation variance mod calculations
+    double warmth_range_decay_variance = 0.0;
+    double warmth_modulation_variance_mod_val = 0.0;
+    assert(evaluate_hyde_vocal_warmth_range_decay_variance(&geom, 15.0, &warmth_range_decay_variance));
+    assert(warmth_range_decay_variance > 0.0);
+    assert(evaluate_hyde_vocal_warmth_modulation_variance_mod(&geom, 0.88, &warmth_modulation_variance_mod_val));
+    assert(warmth_modulation_variance_mod_val > 0.0);
+    printf("   ✓ Hyde vocal warmth range decay variance and vocal warmth modulation variance mod verified successfully\n");
+
     // Test Keating gaze shift dominance and lip compression trust calculations
     double gaze_shift_dom = 0.0;
     double lip_compress_trust = 0.0;
