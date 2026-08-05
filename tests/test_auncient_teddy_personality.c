@@ -819,6 +819,15 @@ int main(void) {
     assert(utilitarian_quality > 0.0);
     printf("   ✓ Scarpi hedonic arousal and utilitarian quality verified successfully\n");
 
+    // Test Cellarius planetary eccentricity and epicycle modulation calculations
+    double planet_eccentricity = 0.0;
+    double epicycle_mod = 0.0;
+    assert(evaluate_cellarius_planetary_eccentricity(&geom, 0.048, &planet_eccentricity));
+    assert(planet_eccentricity > 0.0);
+    assert(evaluate_cellarius_epicycle_modulation(&geom, 0.25, &epicycle_mod));
+    assert(epicycle_mod > 0.0);
+    printf("   ✓ Cellarius planetary eccentricity and epicycle modulation verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge

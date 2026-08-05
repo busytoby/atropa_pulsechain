@@ -1321,3 +1321,19 @@ bool evaluate_scarpi_utilitarian_quality(const teddy_geometry_t *geom, double st
     return true;
 }
 
+bool evaluate_cellarius_planetary_eccentricity(const teddy_geometry_t *geom, double eccentricity_ratio, double *translation_offset_out) {
+    if (!geom || eccentricity_ratio < 0.0 || !translation_offset_out) {
+        return false;
+    }
+    *translation_offset_out = eccentricity_ratio * (1.2 + geom->symmetry * 0.4);
+    return true;
+}
+
+bool evaluate_cellarius_epicycle_modulation(const teddy_geometry_t *geom, double epicycle_ratio, double *frequency_modifier_out) {
+    if (!geom || epicycle_ratio < 0.0 || !frequency_modifier_out) {
+        return false;
+    }
+    *frequency_modifier_out = epicycle_ratio * (0.8 + geom->head_fwhr * 0.4);
+    return true;
+}
+

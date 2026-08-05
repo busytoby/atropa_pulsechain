@@ -565,6 +565,12 @@ bool evaluate_scarpi_hedonic_arousal(const teddy_geometry_t *geom, double playfu
 // Models utilitarian quality evaluation based on physical layout symmetry and stability indices (Scarpi).
 bool evaluate_scarpi_utilitarian_quality(const teddy_geometry_t *geom, double stability_index, double *quality_rating_out);
 
+// Models coordinate translation offsets derived from planetary orbit eccentricity ratios (Cellarius).
+bool evaluate_cellarius_planetary_eccentricity(const teddy_geometry_t *geom, double eccentricity_ratio, double *translation_offset_out);
+
+// Calculates frequency modifiers based on epicycle-to-deferent planetary orbit ratios (Cellarius).
+bool evaluate_cellarius_epicycle_modulation(const teddy_geometry_t *geom, double epicycle_ratio, double *frequency_modifier_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 
