@@ -1915,6 +1915,67 @@ int main(void) {
     assert(wang_gaze_realism_mismatch >= 0.0);
     printf("   ✓ WANG, GEIGEL & HERBERT contagion decay, competence decay variance, and gaze realism mismatch verified successfully\n");
 
+    // Error validation tests for Wang models
+    double dummy_out = 0.0;
+    assert(!evaluate_wang_geigel_character_warmth(NULL, 0.65, 0.45, &dummy_out));
+    assert(!evaluate_wang_geigel_character_warmth(&geom, -0.65, 0.45, &dummy_out));
+    assert(!evaluate_wang_geigel_character_warmth(&geom, 0.65, -0.45, &dummy_out));
+    assert(!evaluate_wang_geigel_character_warmth(&geom, 0.65, 0.45, NULL));
+
+    assert(!evaluate_wang_geigel_competence_projection(NULL, 0.22, 0.85, &dummy_out));
+    assert(!evaluate_wang_geigel_competence_projection(&geom, -0.22, 0.85, &dummy_out));
+    assert(!evaluate_wang_geigel_competence_projection(&geom, 0.22, -0.85, &dummy_out));
+    assert(!evaluate_wang_geigel_competence_projection(&geom, 0.22, 0.85, NULL));
+
+    assert(!evaluate_wang_geigel_emotional_contagion(NULL, 0.75, 0.95, &dummy_out));
+    assert(!evaluate_wang_geigel_emotional_contagion(&geom, -0.75, 0.95, &dummy_out));
+    assert(!evaluate_wang_geigel_emotional_contagion(&geom, 0.75, -0.95, &dummy_out));
+    assert(!evaluate_wang_geigel_emotional_contagion(&geom, 0.75, 0.95, NULL));
+
+    assert(!evaluate_wang_geigel_warmth_attenuation(NULL, 0.35, &dummy_out));
+    assert(!evaluate_wang_geigel_warmth_attenuation(&geom, -0.35, &dummy_out));
+    assert(!evaluate_wang_geigel_warmth_attenuation(&geom, 0.35, NULL));
+
+    assert(!evaluate_wang_geigel_gaze_dominance_modulator(NULL, 0.65, &dummy_out));
+    assert(!evaluate_wang_geigel_gaze_dominance_modulator(&geom, -0.65, &dummy_out));
+    assert(!evaluate_wang_geigel_gaze_dominance_modulator(&geom, 0.65, NULL));
+
+    assert(!evaluate_wang_geigel_realism_attraction_congruence(NULL, 0.75, 0.45, &dummy_out));
+    assert(!evaluate_wang_geigel_realism_attraction_congruence(&geom, -0.75, 0.45, &dummy_out));
+    assert(!evaluate_wang_geigel_realism_attraction_congruence(&geom, 0.75, -0.45, &dummy_out));
+    assert(!evaluate_wang_geigel_realism_attraction_congruence(&geom, 0.75, 0.45, NULL));
+
+    assert(!evaluate_wang_geigel_gaze_competence_modulator(NULL, 0.75, 0.45, &dummy_out));
+    assert(!evaluate_wang_geigel_gaze_competence_modulator(&geom, -0.75, 0.45, &dummy_out));
+    assert(!evaluate_wang_geigel_gaze_competence_modulator(&geom, 0.75, -0.45, &dummy_out));
+    assert(!evaluate_wang_geigel_gaze_competence_modulator(&geom, 0.75, 0.45, NULL));
+
+    assert(!evaluate_wang_geigel_contagion_arousal(NULL, 0.85, 0.25, &dummy_out));
+    assert(!evaluate_wang_geigel_contagion_arousal(&geom, -0.85, 0.25, &dummy_out));
+    assert(!evaluate_wang_geigel_contagion_arousal(&geom, 0.85, -0.25, &dummy_out));
+    assert(!evaluate_wang_geigel_contagion_arousal(&geom, 0.85, 0.25, NULL));
+
+    assert(!evaluate_wang_geigel_realism_trust_congruence(NULL, 0.65, 0.55, &dummy_out));
+    assert(!evaluate_wang_geigel_realism_trust_congruence(&geom, -0.65, 0.55, &dummy_out));
+    assert(!evaluate_wang_geigel_realism_trust_congruence(&geom, 0.65, -0.55, &dummy_out));
+    assert(!evaluate_wang_geigel_realism_trust_congruence(&geom, 0.65, 0.55, NULL));
+
+    assert(!evaluate_wang_geigel_emotional_contagion_decay(NULL, 0.75, 12.0, &dummy_out));
+    assert(!evaluate_wang_geigel_emotional_contagion_decay(&geom, -0.75, 12.0, &dummy_out));
+    assert(!evaluate_wang_geigel_emotional_contagion_decay(&geom, 0.75, -12.0, &dummy_out));
+    assert(!evaluate_wang_geigel_emotional_contagion_decay(&geom, 0.75, 12.0, NULL));
+
+    assert(!evaluate_wang_geigel_competence_decay_variance(NULL, 15.0, &dummy_out));
+    assert(!evaluate_wang_geigel_competence_decay_variance(&geom, -15.0, &dummy_out));
+    assert(!evaluate_wang_geigel_competence_decay_variance(&geom, 15.0, NULL));
+
+    assert(!evaluate_wang_geigel_gaze_realism_mismatch(NULL, 0.65, 0.75, &dummy_out));
+    assert(!evaluate_wang_geigel_gaze_realism_mismatch(&geom, -0.65, 0.75, &dummy_out));
+    assert(!evaluate_wang_geigel_gaze_realism_mismatch(&geom, 0.65, -0.75, &dummy_out));
+    assert(!evaluate_wang_geigel_gaze_realism_mismatch(&geom, 0.65, 0.75, NULL));
+
+    printf("   ✓ WANG, GEIGEL & HERBERT error validation and bounds checking verified successfully\n");
+
 
 
 
