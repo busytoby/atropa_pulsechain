@@ -306,3 +306,19 @@ bool evaluate_keating_sclera_dominance_variance(const teddy_geometry_t *geom, do
     return true;
 }
 
+bool evaluate_keating_gaze_shift_dominance_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_dominance_out) {
+    if (!geom || duration_sec < 0.0 || !decayed_dominance_out) {
+        return false;
+    }
+    *decayed_dominance_out = exp(-duration_sec / (18.0 + geom->resilience_index * 8.0));
+    return true;
+}
+
+bool evaluate_keating_lip_compression_trust_variance(const teddy_geometry_t *geom, double compression_ratio, double *trust_variance_out) {
+    if (!geom || compression_ratio < 0.0 || !trust_variance_out) {
+        return false;
+    }
+    *trust_variance_out = (1.0 / (1.0 + compression_ratio)) * (0.8 + geom->empathy_index * 0.4);
+    return true;
+}
+

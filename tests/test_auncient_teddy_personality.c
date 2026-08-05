@@ -1062,6 +1062,15 @@ int main(void) {
     assert(sclera_sub_var_val > 0.0);
     printf("   ✓ KEATING, C. F. eyebrow asymmetry trust decay and sclera submissiveness variance verified successfully\n");
 
+    // Test Keating gaze shift dominance decay and lip compression trust variance calculations
+    double gaze_shift_dom_decay = 0.0;
+    double lip_compression_trust_var = 0.0;
+    assert(evaluate_keating_gaze_shift_dominance_decay(&geom, 14.5, &gaze_shift_dom_decay));
+    assert(gaze_shift_dom_decay > 0.0);
+    assert(evaluate_keating_lip_compression_trust_variance(&geom, 0.28, &lip_compression_trust_var));
+    assert(lip_compression_trust_var > 0.0);
+    printf("   ✓ KEATING, C. F. gaze shift dominance decay and lip compression trust variance verified successfully\n");
+
     // Test Scarpi hedonic playfulness and utilitarian trust calculations
     double playfulness_val = 0.0;
     double utilitarian_trust_val = 0.0;
