@@ -1542,6 +1542,12 @@ int main(void) {
     assert(quality_control_variance_mod_val > 0.0);
     printf("   ✓ Scarpi quality control variance mod verified successfully\n");
 
+    // Test Scarpi quality control decay variance mod calculations
+    double quality_control_decay_variance_mod = 0.0;
+    assert(evaluate_scarpi_utilitarian_quality_control_decay_variance_mod(&geom, 15.0, &quality_control_decay_variance_mod));
+    assert(quality_control_decay_variance_mod > 0.0);
+    printf("   ✓ Scarpi quality control decay variance mod verified successfully\n");
+
     // Test Scarpi playful arousal decay variance mod and operational trust variance mod calculations
     double playful_arousal_decay_variance_mod = 0.0;
     double operational_trust_variance_mod_val = 0.0;

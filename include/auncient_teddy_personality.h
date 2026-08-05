@@ -967,6 +967,9 @@ bool evaluate_scarpi_hedonic_playful_engagement_variance_mod(const teddy_geometr
 // Models the variance in utilitarian operational consistency modulator ratings under dynamic layout symmetry variations (Scarpi).
 bool evaluate_scarpi_utilitarian_consistency_variance_mod_single(const teddy_geometry_t *geom, double consistency_score, double *variance_out);
 
+// Models the variance in decay rates of quality control modulator ratings based on prolonged tracking intervals (Scarpi).
+bool evaluate_scarpi_utilitarian_quality_control_decay_variance_mod(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out);
+
 // Evaluates interaction trust based on visual aesthetics and novelty parameters (Scarpi).
 bool evaluate_scarpi_hedonic_trust(const teddy_geometry_t *geom, double aesthetic_rating, double novelty_scale, double *trust_out);
 
