@@ -1,6 +1,8 @@
+#define _POSIX_C_SOURCE 200809L
 #include "auncient_teddy_personality.h"
 #include <stdio.h>
 #include <math.h>
+#include <unistd.h>
 
 // GOST 28147-89 Russian block cipher functions from tsfi2-deepseek
 int tsfi_mf_ussr_gost_encrypt_32(uint32_t *left, uint32_t *right, const uint32_t *key_8words);
@@ -306,14 +308,26 @@ bool commit_avatar_transaction(avatar_tx_t *tx, const char *bin_filepath) {
         return false;
     }
     if (bin_filepath) {
-        FILE *f = fopen(bin_filepath, "wb");
+        char temp_path[1024];
+        snprintf(temp_path, sizeof(temp_path), "%s.tmp", bin_filepath);
+        FILE *f = fopen(temp_path, "wb");
         if (!f) {
             rollback_avatar_transaction(tx);
             return false;
         }
         size_t written = fwrite(tx->target, sizeof(agent_avatar_t), 1, f);
+        if (written == 1) {
+            fflush(f);
+            fsync(fileno(f));
+        }
         fclose(f);
         if (written != 1) {
+            unlink(temp_path);
+            rollback_avatar_transaction(tx);
+            return false;
+        }
+        if (rename(temp_path, bin_filepath) != 0) {
+            unlink(temp_path);
             rollback_avatar_transaction(tx);
             return false;
         }
