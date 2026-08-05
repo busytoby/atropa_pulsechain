@@ -589,6 +589,12 @@ bool evaluate_cellarius_planet_velocity(const teddy_geometry_t *geom, double vel
 // Calculates coordinate offsets based on epicycle angular phase rotations (Cellarius).
 bool evaluate_cellarius_epicycle_phase(const teddy_geometry_t *geom, double phase_angle, double *phase_offset_out);
 
+// Models changes in planetary orbital velocity coordinates based on eccentricity ratios (Cellarius).
+bool evaluate_cellarius_eccentricity_velocity(const teddy_geometry_t *geom, double eccentricity_ratio, double *velocity_mod_out);
+
+// Calculates coordinate frequency scale shifts based on radial orbital distances (Cellarius).
+bool evaluate_cellarius_radial_frequency(const teddy_geometry_t *geom, double radial_distance, double *frequency_shift_out);
+
 // Evaluates vocal warmth alignment with visual chin curvature adjustments (Hyde et al.).
 bool evaluate_hyde_vocal_warmth_modulation(const teddy_geometry_t *geom, double pitch_hz, double chin_curvature, double *warmth_out);
 

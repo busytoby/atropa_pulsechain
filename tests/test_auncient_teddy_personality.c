@@ -855,6 +855,15 @@ int main(void) {
     assert(epicycle_phase > 0.0);
     printf("   ✓ Cellarius planet velocity and epicycle phase verified successfully\n");
 
+    // Test Cellarius eccentricity velocity and radial frequency calculations
+    double eccentricity_vel = 0.0;
+    double radial_freq = 0.0;
+    assert(evaluate_cellarius_eccentricity_velocity(&geom, 0.054, &eccentricity_vel));
+    assert(eccentricity_vel > 0.0);
+    assert(evaluate_cellarius_radial_frequency(&geom, 4.2, &radial_freq));
+    assert(radial_freq > 0.0);
+    printf("   ✓ Cellarius eccentricity velocity and radial frequency verified successfully\n");
+
     // Test Hyde vocal jitter naturalness and intonation amplitude calculations
     double vocal_jitter = 0.0;
     double intonation_amp = 0.0;

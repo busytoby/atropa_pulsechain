@@ -1401,6 +1401,22 @@ bool evaluate_cellarius_epicycle_phase(const teddy_geometry_t *geom, double phas
     return true;
 }
 
+bool evaluate_cellarius_eccentricity_velocity(const teddy_geometry_t *geom, double eccentricity_ratio, double *velocity_mod_out) {
+    if (!geom || eccentricity_ratio < 0.0 || !velocity_mod_out) {
+        return false;
+    }
+    *velocity_mod_out = eccentricity_ratio * (1.1 + geom->symmetry * 0.4);
+    return true;
+}
+
+bool evaluate_cellarius_radial_frequency(const teddy_geometry_t *geom, double radial_distance, double *frequency_shift_out) {
+    if (!geom || radial_distance < 0.0 || !frequency_shift_out) {
+        return false;
+    }
+    *frequency_shift_out = radial_distance * (0.8 + geom->head_fwhr * 0.4);
+    return true;
+}
+
 bool evaluate_hyde_vocal_warmth_modulation(const teddy_geometry_t *geom, double pitch_hz, double chin_curvature, double *warmth_out) {
     if (!geom || pitch_hz < 0.0 || chin_curvature < 0.0 || !warmth_out) {
         return false;
