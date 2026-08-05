@@ -391,6 +391,7 @@ bool tsfi_montecarlo_regression_denoise_lnr(
             TSFiMCAuxFeatures c_feat = features[idx];
             float c_albedo = (c_feat.albedo.x + c_feat.albedo.y + c_feat.albedo.z) * 0.3333f;
 
+            // Pass 1: Build standard regression matrices
             for (int wy = -window_radius; wy <= window_radius; wy++) {
                 int ny = y + wy;
                 if (ny < 0 || ny >= height) continue;
@@ -413,10 +414,8 @@ bool tsfi_montecarlo_regression_denoise_lnr(
                     float d_albedo = c_albedo - n_albedo;
 
                     float f_dist_sq = d_depth * d_depth + d_emot * d_emot + d_norm_sq + d_albedo * d_albedo;
-
                     double w = exp((double)(-s_dist_sq / spatial_sig_sq - f_dist_sq / feature_sig_sq));
 
-                    // Build regression covariates based on local Markov transition rates (derivatives)
                     double v[4];
                     v[0] = 1.0;
                     v[1] = (double)(n_feat.depth - ((n_idx > 0) ? features[n_idx - 1].depth : n_feat.depth));
@@ -449,8 +448,76 @@ bool tsfi_montecarlo_regression_denoise_lnr(
                 solved = lnr_solve_lu(A, B, coeffs, 4);
             }
 
+            // Pass 2: Iteratively Reweighted Least Squares (IRLS) for outlier robustness
             if (solved) {
-                clean_output[idx] = (float)coeffs[0];
+                double A_rob[16] = {0};
+                double B_rob[4] = {0};
+
+                for (int wy = -window_radius; wy <= window_radius; wy++) {
+                    int ny = y + wy;
+                    if (ny < 0 || ny >= height) continue;
+                    for (int wx = -window_radius; wx <= window_radius; wx++) {
+                        int nx = x + wx;
+                        if (nx < 0 || nx >= width) continue;
+
+                        int n_idx = ny * width + nx;
+                        TSFiMCAuxFeatures n_feat = features[n_idx];
+
+                        float s_dist_sq = (float)(wx * wx + wy * wy);
+                        float d_depth = c_feat.depth - n_feat.depth;
+                        float d_emot = c_feat.emotional_weight - n_feat.emotional_weight;
+                        float dot_norm = c_feat.normal.x * n_feat.normal.x +
+                                         c_feat.normal.y * n_feat.normal.y +
+                                         c_feat.normal.z * n_feat.normal.z;
+                        float d_norm_sq = fmaxf(0.0f, 1.0f - dot_norm);
+
+                        float n_albedo = (n_feat.albedo.x + n_feat.albedo.y + n_feat.albedo.z) * 0.3333f;
+                        float d_albedo = c_albedo - n_albedo;
+
+                        float f_dist_sq = d_depth * d_depth + d_emot * d_emot + d_norm_sq + d_albedo * d_albedo;
+                        double w = exp((double)(-s_dist_sq / spatial_sig_sq - f_dist_sq / feature_sig_sq));
+
+                        double v[4];
+                        v[0] = 1.0;
+                        v[1] = (double)(n_feat.depth - ((n_idx > 0) ? features[n_idx - 1].depth : n_feat.depth));
+                        v[2] = (double)(n_feat.emotional_weight - ((n_idx > 0) ? features[n_idx - 1].emotional_weight : n_feat.emotional_weight));
+                        float prev_albedo = (n_idx > 0) ? (features[n_idx - 1].albedo.x + features[n_idx - 1].albedo.y + features[n_idx - 1].albedo.z) * 0.3333f : n_albedo;
+                        v[3] = (double)(n_albedo - prev_albedo);
+
+                        double est = coeffs[0] * v[0] + coeffs[1] * v[1] + coeffs[2] * v[2] + coeffs[3] * v[3];
+                        double res = (double)noisy_input[n_idx] - est;
+                        double w_robust = exp(-fabs(res) / 0.15); // Suppression of outliers
+
+                        double w_total = w * w_robust;
+
+                        for (int i = 0; i < 4; i++) {
+                            for (int j = 0; j < 4; j++) {
+                                A_rob[i * 4 + j] += w_total * v[i] * v[j];
+                            }
+                            B_rob[i] += w_total * v[i] * (double)noisy_input[n_idx];
+                        }
+                    }
+                }
+
+                double coeffs_rob[4] = {0};
+                bool solved_rob = false;
+                if (g_val < 0.1f) {
+                    solved_rob = lnr_solve_svd(A_rob, B_rob, coeffs_rob, 4);
+                } else if (g_val < 0.4f) {
+                    solved_rob = lnr_solve_cg(A_rob, B_rob, coeffs_rob, 4);
+                } else if (g_val < 0.7f) {
+                    solved_rob = lnr_solve_qr(A_rob, B_rob, coeffs_rob, 4);
+                } else if (g_val < 0.9f) {
+                    solved_rob = lnr_solve_gmres(A_rob, B_rob, coeffs_rob, 4);
+                } else {
+                    solved_rob = lnr_solve_lu(A_rob, B_rob, coeffs_rob, 4);
+                }
+
+                if (solved_rob) {
+                    clean_output[idx] = (float)coeffs_rob[0];
+                } else {
+                    clean_output[idx] = (float)coeffs[0];
+                }
             } else {
                 clean_output[idx] = noisy_input[idx];
             }
