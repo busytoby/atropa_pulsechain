@@ -488,4 +488,13 @@ bool evaluate_kramer_ward_fwhr_perspective_distortion(const teddy_geometry_t *ge
 // Models the accuracy limit of fWHR trait resolution under rapid micro-exposure (Kramer & Ward).
 bool evaluate_kramer_ward_fwhr_micro_exposure_resolution(const teddy_geometry_t *geom, double exposure_ms, double *resolution_accuracy_out);
 
+// Models perceived trustworthiness and cooperation from human static face fWHR structures (Kramer & Ward).
+bool evaluate_kramer_ward_human_fwhr_trustworthiness(const teddy_geometry_t *geom, double fwhr_val, double *trustworthiness_out);
+
+// Evaluates how left-right asymmetry on human faces modulates perceived dominance and aggression (Kramer & Ward).
+bool evaluate_kramer_ward_human_face_asymmetry_aggression(const teddy_geometry_t *geom, double asymmetry_val, double *aggression_rating_out);
+
+// Models how relative eye size and pupil dilation dimensions modulate perceived social traits (Kramer & Ward).
+bool evaluate_kramer_ward_human_eye_to_face_proportion(const teddy_geometry_t *geom, double eye_size_val, double pupil_dilation_val, double *social_trait_rating_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H

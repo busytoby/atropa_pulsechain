@@ -197,3 +197,28 @@ bool evaluate_kramer_ward_fwhr_micro_exposure_resolution(const teddy_geometry_t 
     *resolution_accuracy_out = (1.0 / (1.0 + exp(-k * (exposure_ms - 100.0)))) * (0.85 + geom->intellect_index * 0.1);
     return true;
 }
+
+bool evaluate_kramer_ward_human_fwhr_trustworthiness(const teddy_geometry_t *geom, double fwhr_val, double *trustworthiness_out) {
+    if (!geom || fwhr_val < 0.0 || !trustworthiness_out) {
+        return false;
+    }
+    // Higher fWHR (wider face) tends to be associated with lower perceived trustworthiness in certain scenarios
+    *trustworthiness_out = (1.0 / (1.0 + fwhr_val * 0.2)) * (0.95 + geom->cooperative_negotiation * 0.1);
+    return true;
+}
+
+bool evaluate_kramer_ward_human_face_asymmetry_aggression(const teddy_geometry_t *geom, double asymmetry_val, double *aggression_rating_out) {
+    if (!geom || asymmetry_val < 0.0 || !aggression_rating_out) {
+        return false;
+    }
+    *aggression_rating_out = asymmetry_val * 1.12 * (1.0 + geom->confrontational_assertiveness * 0.15);
+    return true;
+}
+
+bool evaluate_kramer_ward_human_eye_to_face_proportion(const teddy_geometry_t *geom, double eye_size_val, double pupil_dilation_val, double *social_trait_rating_out) {
+    if (!geom || eye_size_val < 0.0 || pupil_dilation_val < 0.0 || !social_trait_rating_out) {
+        return false;
+    }
+    *social_trait_rating_out = (eye_size_val * 0.65 + pupil_dilation_val * 0.35) * (0.9 + geom->social_extraversion * 0.1);
+    return true;
+}
