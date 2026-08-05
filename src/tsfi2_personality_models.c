@@ -1417,3 +1417,19 @@ bool evaluate_hyde_interruption_recovery(const teddy_geometry_t *geom, double re
     return true;
 }
 
+bool evaluate_keating_gaze_shift_dominance(const teddy_geometry_t *geom, double shift_frequency, double *dominance_out) {
+    if (!geom || shift_frequency < 0.0 || !dominance_out) {
+        return false;
+    }
+    *dominance_out = shift_frequency * (1.1 + geom->leadership_profile * 0.4);
+    return true;
+}
+
+bool evaluate_keating_lip_compression_trust(const teddy_geometry_t *geom, double compression_ratio, double *trustworthiness_out) {
+    if (!geom || compression_ratio < 0.0 || !trustworthiness_out) {
+        return false;
+    }
+    *trustworthiness_out = (1.0 / (1.0 + compression_ratio)) * (0.8 + geom->empathy_index * 0.4);
+    return true;
+}
+

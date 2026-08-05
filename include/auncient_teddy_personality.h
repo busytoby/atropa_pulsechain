@@ -595,6 +595,12 @@ bool evaluate_hyde_vocal_warmth_modulation(const teddy_geometry_t *geom, double 
 // Models interaction recovery perception based on the timing duration of conversational resumption after collision events (Hyde et al.).
 bool evaluate_hyde_interruption_recovery(const teddy_geometry_t *geom, double recovery_time_sec, double *recovery_rating_out);
 
+// Evaluates perceived social dominance based on dynamic gaze shifts (Keating, C. F.).
+bool evaluate_keating_gaze_shift_dominance(const teddy_geometry_t *geom, double shift_frequency, double *dominance_out);
+
+// Models perceived trustworthiness based on lip compression and mouth surface area changes (Keating, C. F.).
+bool evaluate_keating_lip_compression_trust(const teddy_geometry_t *geom, double compression_ratio, double *trustworthiness_out);
+
 // Evaluates perceived conversational naturalness based on vocal pitch frequency jitter (Hyde et al.).
 bool evaluate_hyde_vocal_jitter_naturalness(const teddy_geometry_t *geom, double pitch_jitter, double *naturalness_out);
 

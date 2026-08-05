@@ -873,6 +873,15 @@ int main(void) {
     assert(interruption_rec > 0.0);
     printf("   ✓ Hyde vocal warmth modulation and interruption recovery verified successfully\n");
 
+    // Test Keating gaze shift dominance and lip compression trust calculations
+    double gaze_shift_dom = 0.0;
+    double lip_compress_trust = 0.0;
+    assert(evaluate_keating_gaze_shift_dominance(&geom, 2.5, &gaze_shift_dom));
+    assert(gaze_shift_dom > 0.0);
+    assert(evaluate_keating_lip_compression_trust(&geom, 0.35, &lip_compress_trust));
+    assert(lip_compress_trust > 0.0);
+    printf("   ✓ KEATING, C. F. gaze shift dominance and lip compression trust verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge
