@@ -1385,3 +1385,19 @@ bool evaluate_scarpi_utilitarian_loyalty(const teddy_geometry_t *geom, double su
     return true;
 }
 
+bool evaluate_cellarius_planet_velocity(const teddy_geometry_t *geom, double velocity_val, double *radial_offset_out) {
+    if (!geom || velocity_val < 0.0 || !radial_offset_out) {
+        return false;
+    }
+    *radial_offset_out = velocity_val * (1.1 + geom->symmetry * 0.4);
+    return true;
+}
+
+bool evaluate_cellarius_epicycle_phase(const teddy_geometry_t *geom, double phase_angle, double *phase_offset_out) {
+    if (!geom || !phase_offset_out) {
+        return false;
+    }
+    *phase_offset_out = sin(phase_angle) * (0.9 + geom->head_fwhr * 0.3);
+    return true;
+}
+

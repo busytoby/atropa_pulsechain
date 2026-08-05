@@ -583,6 +583,12 @@ bool evaluate_cellarius_planetary_eccentricity(const teddy_geometry_t *geom, dou
 // Calculates frequency modifiers based on epicycle-to-deferent planetary orbit ratios (Cellarius).
 bool evaluate_cellarius_epicycle_modulation(const teddy_geometry_t *geom, double epicycle_ratio, double *frequency_modifier_out);
 
+// Models coordinate radial offsets based on orbital velocity variations (Cellarius).
+bool evaluate_cellarius_planet_velocity(const teddy_geometry_t *geom, double velocity_val, double *radial_offset_out);
+
+// Calculates coordinate offsets based on epicycle angular phase rotations (Cellarius).
+bool evaluate_cellarius_epicycle_phase(const teddy_geometry_t *geom, double phase_angle, double *phase_offset_out);
+
 // Evaluates perceived conversational naturalness based on vocal pitch frequency jitter (Hyde et al.).
 bool evaluate_hyde_vocal_jitter_naturalness(const teddy_geometry_t *geom, double pitch_jitter, double *naturalness_out);
 
