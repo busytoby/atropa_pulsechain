@@ -949,6 +949,12 @@ bool evaluate_hyde_vocal_warmth_range_decay_variance(const teddy_geometry_t *geo
 // Models the variance in conversational synchronization ratings based on speech warmth modulation variations (Hyde et al.).
 bool evaluate_hyde_vocal_warmth_modulation_variance_mod(const teddy_geometry_t *geom, double warmth_mod_val, double *variance_out);
 
+// Models the variance in vocal warmth range ratings under dynamic layout symmetry variations (Hyde et al.).
+bool evaluate_hyde_vocal_warmth_range_variance_mod(const teddy_geometry_t *geom, double warmth_range_val, double *variance_out);
+
+// Models the variance in conversational synchronization ratings based on speech size pitch variations (Hyde et al.).
+bool evaluate_hyde_vocal_size_pitch_variance_mod(const teddy_geometry_t *geom, double size_pitch_val, double *variance_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 

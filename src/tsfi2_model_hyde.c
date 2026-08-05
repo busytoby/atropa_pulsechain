@@ -370,3 +370,19 @@ bool evaluate_hyde_vocal_warmth_modulation_variance_mod(const teddy_geometry_t *
     return true;
 }
 
+bool evaluate_hyde_vocal_warmth_range_variance_mod(const teddy_geometry_t *geom, double warmth_range_val, double *variance_out) {
+    if (!geom || warmth_range_val < 0.0 || !variance_out) {
+        return false;
+    }
+    *variance_out = warmth_range_val * (0.8 + geom->symmetry * 0.4);
+    return true;
+}
+
+bool evaluate_hyde_vocal_size_pitch_variance_mod(const teddy_geometry_t *geom, double size_pitch_val, double *variance_out) {
+    if (!geom || size_pitch_val < 0.0 || !variance_out) {
+        return false;
+    }
+    *variance_out = size_pitch_val * (0.8 + geom->symmetry * 0.4);
+    return true;
+}
+
