@@ -82,3 +82,19 @@ bool evaluate_castle_policy_target_engagement_decay(const teddy_geometry_t *geom
     return true;
 }
 
+bool evaluate_castle_diplomatic_alignment_variance(const teddy_geometry_t *geom, double visual_symmetry, double vocal_symmetry, double *alignment_variance_out) {
+    if (!geom || visual_symmetry < 0.0 || vocal_symmetry < 0.0 || !alignment_variance_out) {
+        return false;
+    }
+    *alignment_variance_out = visual_symmetry * vocal_symmetry * (0.8 + geom->empathy_index * 0.4);
+    return true;
+}
+
+bool evaluate_castle_policy_consistency_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_consistency_out) {
+    if (!geom || duration_sec < 0.0 || !decayed_consistency_out) {
+        return false;
+    }
+    *decayed_consistency_out = exp(-duration_sec / (16.0 + geom->resilience_index * 6.0));
+    return true;
+}
+
