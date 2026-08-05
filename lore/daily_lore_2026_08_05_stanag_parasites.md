@@ -15,3 +15,9 @@ PARASITES represent external unauthorized nodes or parasitic signal taps that se
 * **VM Register Context**: Latches onto the WinchesterMQ external debug control word (`XDC`) to halt SCSI program loops and inspect memory boundaries.
 * **Mathematical Operation**: Measures signal-to-noise ratio degradation through Tropospheric ducting channels, attempting to inject phase-aligned noise congruences to trigger false H-bridge rollbacks.
 * **Visual / Geometric Shift**: When PARASITES successfully obstruct the network, the projected coordinate grid flashes bright green to indicate authorization lockout, before rendering solid cyan vector trails with highlighted vertex spheres indicating breakpoint coordinates.
+
+### 3. Modulator Manipulation of the Cooperative Barrier
+Adversaries exploit the OZONE network's automated response logic by injecting micro-modulated signals designed to warp and influence the cooperative security boundary.
+* **VM Register Context**: Directs signal feedback through memory-mapped `RAU_DITHER` registers `16416`, `16448`, and `16480`, coordinating with the WinchesterMQ SCSI control handshake loop.
+* **Mathematical Function**: Skews the regional trust bounds metrics using a modular congruence translation based on verification key parity alignments.
+* **Visual / Geometric Shift**: Dynamically warps the projected wireframe envelope coordinates by panning the visual camera offsets and increasing the line bloom radius on the presenter display.
