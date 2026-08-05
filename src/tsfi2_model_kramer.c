@@ -341,3 +341,37 @@ bool evaluate_kramer_king_ward_morphological_pca_axes(const teddy_geometry_t *ge
     *pca3 *= (1.0 + geom->behavioral_mismatch * 0.1);
     return true;
 }
+
+bool evaluate_kramer_king_ward_dominance_assertiveness_decoupling(const teddy_geometry_t *geom, double dominance_cue, double assertiveness_cue, double *decoupled_val_out) {
+    if (!geom || dominance_cue < 0.0 || assertiveness_cue < 0.0 || !decoupled_val_out) {
+        return false;
+    }
+    *decoupled_val_out = fabs(dominance_cue - assertiveness_cue) * (0.95 + geom->confrontational_assertiveness * 0.1);
+    return true;
+}
+
+bool evaluate_kramer_king_ward_neuroticism_specificity(const teddy_geometry_t *geom, double species_factor, double *specificity_out) {
+    if (!geom || species_factor < 0.0 || !specificity_out) {
+        return false;
+    }
+    *specificity_out = species_factor * 1.12 * (1.1 - geom->emotional_stability * 0.15);
+    return true;
+}
+
+bool evaluate_kramer_king_ward_centroid_alignment(const teddy_geometry_t *geom, const double *human_centroid, const double *primate_centroid, int size, double *alignment_val_out) {
+    if (!geom || !human_centroid || !primate_centroid || size <= 0 || !alignment_val_out) {
+        return false;
+    }
+    double dot = 0.0, mag_h = 0.0, mag_p = 0.0;
+    for (int i = 0; i < size; i++) {
+        dot += human_centroid[i] * primate_centroid[i];
+        mag_h += human_centroid[i] * human_centroid[i];
+        mag_p += primate_centroid[i] * primate_centroid[i];
+    }
+    if (mag_h == 0.0 || mag_p == 0.0) {
+        *alignment_val_out = 0.0;
+    } else {
+        *alignment_val_out = (dot / (sqrt(mag_h) * sqrt(mag_p))) * (0.95 + geom->vocal_visual_harmony * 0.05);
+    }
+    return true;
+}

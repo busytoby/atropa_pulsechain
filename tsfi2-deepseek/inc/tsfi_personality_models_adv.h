@@ -530,4 +530,13 @@ bool evaluate_kramer_king_ward_sex_modulated_extraversion(const teddy_geometry_t
 // Extracts the primary 3 axes from the morphological PCA coordinate matrix (Kramer, King & Ward).
 bool evaluate_kramer_king_ward_morphological_pca_axes(const teddy_geometry_t *geom, const double *morpho_matrix, int size, double *pca1, double *pca2, double *pca3);
 
+// Decouples dominance and assertiveness morphological cues in primates (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_dominance_assertiveness_decoupling(const teddy_geometry_t *geom, double dominance_cue, double assertiveness_cue, double *decoupled_val_out);
+
+// Evaluates species-specific vs species-general Neuroticism indicators (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_neuroticism_specificity(const teddy_geometry_t *geom, double species_factor, double *specificity_out);
+
+// Evaluates centroid vector alignment between species personality spaces (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_centroid_alignment(const teddy_geometry_t *geom, const double *human_centroid, const double *primate_centroid, int size, double *alignment_val_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H
