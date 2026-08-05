@@ -266,3 +266,32 @@ bool evaluate_kramer_king_ward_inter_rater_consensus(const teddy_geometry_t *geo
     *consensus_out = (1.0 / (1.0 + variance)) * (0.9 + geom->intellect_index * 0.1);
     return true;
 }
+
+bool evaluate_kramer_king_ward_intra_group_dominance(const teddy_geometry_t *geom, double group_rank, double *dominance_out) {
+    if (!geom || group_rank <= 0.0 || !dominance_out) {
+        return false;
+    }
+    *dominance_out = (1.0 / group_rank) * 1.5 * (0.9 + geom->command_authority * 0.2);
+    return true;
+}
+
+bool evaluate_kramer_king_ward_species_distance_matrix(const teddy_geometry_t *geom, const double *human_coords, const double *primate_coords, int coords_len, double *distance_out) {
+    if (!geom || !human_coords || !primate_coords || coords_len <= 0 || !distance_out) {
+        return false;
+    }
+    double sq_sum = 0.0;
+    for (int i = 0; i < coords_len; i++) {
+        double diff = human_coords[i] - primate_coords[i];
+        sq_sum += diff * diff;
+    }
+    *distance_out = sqrt(sq_sum) * (1.0 - geom->vocal_visual_harmony * 0.05);
+    return true;
+}
+
+bool evaluate_kramer_king_ward_primate_openness(const teddy_geometry_t *geom, double eye_height_width_ratio, double face_elongation, double *openness_out) {
+    if (!geom || eye_height_width_ratio < 0.0 || face_elongation < 0.0 || !openness_out) {
+        return false;
+    }
+    *openness_out = (eye_height_width_ratio * 0.7 + (1.0 / (1.0 + face_elongation)) * 0.3) * (0.95 + geom->intellect_index * 0.1);
+    return true;
+}

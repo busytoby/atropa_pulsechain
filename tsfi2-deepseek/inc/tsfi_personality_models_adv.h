@@ -509,4 +509,13 @@ bool evaluate_kramer_king_ward_sex_modulated_accuracy(const teddy_geometry_t *ge
 // Calculates inter-rater consensus among observers decoding primate traits (Kramer, King & Ward).
 bool evaluate_kramer_king_ward_inter_rater_consensus(const teddy_geometry_t *geom, const double *rater_judgments, int rater_count, double *consensus_out);
 
+// Models group dominance rank convergence using facial features (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_intra_group_dominance(const teddy_geometry_t *geom, double group_rank, double *dominance_out);
+
+// Evaluates morphological species distance based on trait coordinates (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_species_distance_matrix(const teddy_geometry_t *geom, const double *human_coords, const double *primate_coords, int coords_len, double *distance_out);
+
+// Models primate Openness/Curiosity index from eye and face elongation geometry (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_primate_openness(const teddy_geometry_t *geom, double eye_height_width_ratio, double face_elongation, double *openness_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H

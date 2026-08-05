@@ -1741,6 +1741,9 @@ int main(void) {
     double kramer_primate_species_general = 0.0;
     double kramer_primate_sex_accuracy = 0.0;
     double kramer_primate_consensus = 0.0;
+    double kramer_primate_intra_dominance = 0.0;
+    double kramer_primate_species_dist = 0.0;
+    double kramer_primate_openness = 0.0;
     assert(evaluate_kramer_ward_fwhr_3d_scan_discrepancy(&geom, 1.85, &kramer_discrepancy));
     assert(kramer_discrepancy > 0.0);
     assert(evaluate_kramer_ward_fwhr_sexual_dimorphism_null_hypothesis(&geom, 1.90, 1.85, &kramer_p_value));
@@ -1783,8 +1786,16 @@ int main(void) {
     double judgments[3] = { 0.8, 0.85, 0.78 };
     assert(evaluate_kramer_king_ward_inter_rater_consensus(&geom, judgments, 3, &kramer_primate_consensus));
     assert(kramer_primate_consensus > 0.0);
+    assert(evaluate_kramer_king_ward_intra_group_dominance(&geom, 2.0, &kramer_primate_intra_dominance));
+    assert(kramer_primate_intra_dominance > 0.0);
+    double h_coords[3] = { 0.5, 0.7, 0.1 };
+    double p_coords[3] = { 0.48, 0.69, 0.12 };
+    assert(evaluate_kramer_king_ward_species_distance_matrix(&geom, h_coords, p_coords, 3, &kramer_primate_species_dist));
+    assert(kramer_primate_species_dist > 0.0);
+    assert(evaluate_kramer_king_ward_primate_openness(&geom, 0.78, 1.25, &kramer_primate_openness));
+    assert(kramer_primate_openness > 0.0);
     
-    printf("   ✓ KRAMER & WARD FWHR dominance, trustworthiness, threat, cooperation, discrepancy, dimorphism null-hypothesis, head tilt, perceived-actual mismatch, noise sensitivity, adaptation bias, hemiface bias, ambient shading, temporal smoothing, confidence calibration, perceived-actual health mismatch, cheekbone prominence modulation, perspective distortion, micro-exposure resolution, primate extraversion signaling, cross-species congruence, shared evolutionary threat, agreeableness and conscientiousness signaling, species general cues, sex modulated accuracy, inter-rater consensus, and decay variances verified successfully\n");
+    printf("   ✓ KRAMER & WARD FWHR dominance, trustworthiness, threat, cooperation, discrepancy, dimorphism null-hypothesis, head tilt, perceived-actual mismatch, noise sensitivity, adaptation bias, hemiface bias, ambient shading, temporal smoothing, confidence calibration, perceived-actual health mismatch, cheekbone prominence modulation, perspective distortion, micro-exposure resolution, primate extraversion signaling, cross-species congruence, shared evolutionary threat, agreeableness and conscientiousness signaling, species general cues, sex modulated accuracy, inter-rater consensus, group dominance rank, species distance matrix, primate openness index, and decay variances verified successfully\n");
 
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
