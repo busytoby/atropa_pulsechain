@@ -717,4 +717,99 @@ bool tsfi_montecarlo_parse_deepseek_guide(
     return true;
 }
 
+bool tsfi_montecarlo_spatiotemporal_bilateral_filter(
+    const float *current_noisy,
+    const float *prev_clean,
+    const float *motion_vectors,
+    const TSFiMCAuxFeatures *features,
+    float *clean_output,
+    int width,
+    int height,
+    float spatial_sigma,
+    float feature_sigma,
+    float temporal_sigma
+) {
+    if (!current_noisy || !prev_clean || !motion_vectors || !features || !clean_output ||
+        width <= 0 || height <= 0 || spatial_sigma <= 0.0f || feature_sigma <= 0.0f || temporal_sigma <= 0.0f) {
+        return false;
+    }
+
+    float spatial_denom = 2.0f * spatial_sigma * spatial_sigma;
+    float feature_denom = 2.0f * feature_sigma * feature_sigma;
+    float temporal_denom = 2.0f * temporal_sigma * temporal_sigma;
+    int radius = (int)(spatial_sigma * 2.0f);
+    if (radius < 1) radius = 1;
+
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            int idx = y * width + x;
+            TSFiMCAuxFeatures center_feat = features[idx];
+
+            float total_weight = 0.0f;
+            float filtered_val = 0.0f;
+
+            // 1. Spatial & Feature Cross-Bilateral loop
+            for (int dy = -radius; dy <= radius; dy++) {
+                int ny = y + dy;
+                if (ny < 0 || ny >= height) continue;
+
+                for (int dx = -radius; dx <= radius; dx++) {
+                    int nx = x + dx;
+                    if (nx < 0 || nx >= width) continue;
+
+                    int n_idx = ny * width + nx;
+                    TSFiMCAuxFeatures n_feat = features[n_idx];
+
+                    float d_spatial_sq = (float)(dx * dx + dy * dy);
+                    float w_spatial = expf(-d_spatial_sq / spatial_denom);
+
+                    float c_depth_trans = center_feat.depth - ((idx > 0) ? features[idx - 1].depth : center_feat.depth);
+                    float n_depth_trans = n_feat.depth - ((n_idx > 0) ? features[n_idx - 1].depth : n_feat.depth);
+                    float d_depth = c_depth_trans - n_depth_trans;
+
+                    float c_norm_x_trans = center_feat.normal.x - ((idx > 0) ? features[idx - 1].normal.x : center_feat.normal.x);
+                    float n_norm_x_trans = n_feat.normal.x - ((n_idx > 0) ? features[n_idx - 1].normal.x : n_feat.normal.x);
+                    float c_norm_y_trans = center_feat.normal.y - ((idx > 0) ? features[idx - 1].normal.y : center_feat.normal.y);
+                    float n_norm_y_trans = n_feat.normal.y - ((n_idx > 0) ? features[n_idx - 1].normal.y : n_feat.normal.y);
+                    float c_norm_z_trans = center_feat.normal.z - ((idx > 0) ? features[idx - 1].normal.z : center_feat.normal.z);
+                    float n_norm_z_trans = n_feat.normal.z - ((n_idx > 0) ? features[n_idx - 1].normal.z : n_feat.normal.z);
+
+                    float diff_norm_x = c_norm_x_trans - n_norm_x_trans;
+                    float diff_norm_y = c_norm_y_trans - n_norm_y_trans;
+                    float diff_norm_z = c_norm_z_trans - n_norm_z_trans;
+                    float d_normal_sq = diff_norm_x * diff_norm_x + diff_norm_y * diff_norm_y + diff_norm_z * diff_norm_z;
+
+                    float d_range_sq = d_depth * d_depth + d_normal_sq;
+                    float w_range = expf(-d_range_sq / feature_denom);
+
+                    float w = w_spatial * w_range;
+                    total_weight += w;
+                    filtered_val += w * current_noisy[n_idx];
+                }
+            }
+
+            // 2. Temporal Reprojection Weight via Motion Vectors
+            float mv_x = motion_vectors[idx * 2 + 0];
+            float mv_y = motion_vectors[idx * 2 + 1];
+            int prev_x = (int)roundf((float)x - mv_x);
+            int prev_y = (int)roundf((float)y - mv_y);
+
+            if (prev_x >= 0 && prev_x < width && prev_y >= 0 && prev_y < height) {
+                int prev_idx = prev_y * width + prev_x;
+                float current_val = (total_weight > 0.0f) ? filtered_val / total_weight : current_noisy[idx];
+                
+                float d_temp = current_val - prev_clean[prev_idx];
+                float w_temp = expf(-(d_temp * d_temp) / temporal_denom);
+
+                // Blend temporal reprojected value with spatial filter
+                clean_output[idx] = (1.0f - w_temp) * current_val + w_temp * prev_clean[prev_idx];
+            } else {
+                clean_output[idx] = (total_weight > 0.0f) ? filtered_val / total_weight : current_noisy[idx];
+            }
+        }
+    }
+
+    return true;
+}
+
 

@@ -156,4 +156,18 @@ bool tsfi_montecarlo_parse_deepseek_guide(
     int height
 );
 
+// Spatio-Temporal Cross-Bilateral Filter for video sequence denoising
+bool tsfi_montecarlo_spatiotemporal_bilateral_filter(
+    const float *current_noisy,
+    const float *prev_clean,
+    const float *motion_vectors,
+    const TSFiMCAuxFeatures *features,
+    float *clean_output,
+    int width,
+    int height,
+    float spatial_sigma,
+    float feature_sigma,
+    float temporal_sigma
+);
+
 #endif // TSFI_MONTECARLO_H

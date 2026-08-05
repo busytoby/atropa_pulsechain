@@ -204,6 +204,22 @@ int main(void) {
     assert(!tsfi_montecarlo_parse_deepseek_guide(mock_response, parsed_guide, -2, 2));
     printf("   ✓ Monte Carlo local DeepSeek guide response parser verified successfully\n");
 
+    // 13. Test Spatio-Temporal Cross-Bilateral filter
+    float prev_clean[4] = {1.0f, 1.1f, 0.9f, 1.0f};
+    float motion_vectors[8] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    float clean_st[4] = {0.0f};
+    assert(tsfi_montecarlo_spatiotemporal_bilateral_filter(noisy_float, prev_clean, motion_vectors, features, clean_st, 2, 2, 1.5f, 0.5f, 0.5f));
+    assert(clean_st[0] > 0.0f);
+
+    // Test error boundaries
+    assert(!tsfi_montecarlo_spatiotemporal_bilateral_filter(NULL, prev_clean, motion_vectors, features, clean_st, 2, 2, 1.5f, 0.5f, 0.5f));
+    assert(!tsfi_montecarlo_spatiotemporal_bilateral_filter(noisy_float, NULL, motion_vectors, features, clean_st, 2, 2, 1.5f, 0.5f, 0.5f));
+    assert(!tsfi_montecarlo_spatiotemporal_bilateral_filter(noisy_float, prev_clean, NULL, features, clean_st, 2, 2, 1.5f, 0.5f, 0.5f));
+    assert(!tsfi_montecarlo_spatiotemporal_bilateral_filter(noisy_float, prev_clean, motion_vectors, NULL, clean_st, 2, 2, 1.5f, 0.5f, 0.5f));
+    assert(!tsfi_montecarlo_spatiotemporal_bilateral_filter(noisy_float, prev_clean, motion_vectors, features, NULL, 2, 2, 1.5f, 0.5f, 0.5f));
+    assert(!tsfi_montecarlo_spatiotemporal_bilateral_filter(noisy_float, prev_clean, motion_vectors, features, clean_st, -2, 2, 1.5f, 0.5f, 0.5f));
+    printf("   ✓ Monte Carlo Spatio-Temporal Cross-Bilateral filter verified successfully\n");
+
     printf("[Test] All Monte Carlo Denoising tests completed successfully.\n");
     return 0;
 }
