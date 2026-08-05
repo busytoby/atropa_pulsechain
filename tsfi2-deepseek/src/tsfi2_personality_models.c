@@ -7,4 +7,6 @@
 #include "tsfi2_model_castle.c"
 #include "tsfi2_model_kramer.c"
 #include "tsfi2_model_wang.c"
+#include "tsfi2_model_masuda.c"
+
 

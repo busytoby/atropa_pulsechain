@@ -635,5 +635,14 @@ bool evaluate_wang_geigel_avatar_eyebrow_furrow_threat(const teddy_geometry_t *g
 // Models realism warmth interaction in virtual agents (Wang, Geigel & Herbert).
 bool evaluate_wang_geigel_avatar_realism_warmth_interaction(const teddy_geometry_t *geom, double realism_index, double smile_intensity, double *warmth_score_out);
 
+// Models perceived avatar naturalness from expression synchronization metrics (Masuda, Kunizawa & Takahashi).
+bool evaluate_masuda_perceived_naturalness(const teddy_geometry_t *geom, double sync_delay_ms, double smile_intensity, double *naturalness_out);
+
+// Models conversational familiarity from gaze feedback sync and symmetry (Masuda, Kunizawa & Takahashi).
+bool evaluate_masuda_conversational_familiarity(const teddy_geometry_t *geom, double reciprocal_gaze_sync, double symmetry_val, double *familiarity_out);
+
+// Models perceived empathy from gesture and pupil sync rate (Masuda, Kunizawa & Takahashi).
+bool evaluate_masuda_empathic_synchronization(const teddy_geometry_t *geom, double blink_sync_rate, double pupil_dilation_sync, double *empathy_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H
 
