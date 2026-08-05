@@ -613,6 +613,12 @@ bool evaluate_keating_gaze_shift_dominance(const teddy_geometry_t *geom, double 
 // Models perceived trustworthiness based on lip compression and mouth surface area changes (Keating, C. F.).
 bool evaluate_keating_lip_compression_trust(const teddy_geometry_t *geom, double compression_ratio, double *trustworthiness_out);
 
+// Evaluates perceived social dominance based on facial width asymmetries (Keating, C. F.).
+bool evaluate_keating_width_asymmetry_dominance(const teddy_geometry_t *geom, double width_asymmetry_val, double *dominance_out);
+
+// Models trustworthiness decay rates based on mouth asymmetry values (Keating, C. F.).
+bool evaluate_keating_mouth_asymmetry_decay(const teddy_geometry_t *geom, double mouth_asymmetry_val, double *trust_decay_out);
+
 // Evaluates friendly visual parameters scaling on playfulness ratings (Scarpi).
 bool evaluate_scarpi_hedonic_playfulness(const teddy_geometry_t *geom, double base_playfulness, double *playfulness_out);
 

@@ -900,6 +900,15 @@ int main(void) {
     assert(lip_compress_trust > 0.0);
     printf("   ✓ KEATING, C. F. gaze shift dominance and lip compression trust verified successfully\n");
 
+    // Test Keating width asymmetry dominance and mouth asymmetry trust decay calculations
+    double width_asym_dom = 0.0;
+    double mouth_asym_decay = 0.0;
+    assert(evaluate_keating_width_asymmetry_dominance(&geom, 0.18, &width_asym_dom));
+    assert(width_asym_dom > 0.0);
+    assert(evaluate_keating_mouth_asymmetry_decay(&geom, 0.22, &mouth_asym_decay));
+    assert(mouth_asym_decay > 0.0);
+    printf("   ✓ KEATING, C. F. width asymmetry dominance and mouth asymmetry trust decay verified successfully\n");
+
     // Test Scarpi hedonic playfulness and utilitarian trust calculations
     double playfulness_val = 0.0;
     double utilitarian_trust_val = 0.0;
