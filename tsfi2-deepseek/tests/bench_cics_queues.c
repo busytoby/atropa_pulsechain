@@ -10,6 +10,8 @@
 
 extern bool tsfi_xplos_shell_cbt_cics(const char *cmd);
 
+uint8_t ce_memory[65536] = {0};
+
 int main(void) {
     printf("=== RUNNING CICS QUEUES PERFORMANCE BENCHMARK ===\n");
 

@@ -5,7 +5,7 @@ CFLAGS   = -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -I../i
            -fstack-protector-strong -D_FORTIFY_SOURCE=3 -fPIC \
            -DTSFI_PROVENANCE_KEY=\"SIG_2026_USLM_AFFIRMED\"
 CXXFLAGS = -Wall -Wextra -Wno-error -std=c++17 -O3 -g -march=native -fPIC -Iinc -Iplugins -Iplugins/vulkan -Iassets/sd_cpp/include
-LDFLAGS  = -L/usr/local/lib -ljpeg -rdynamic -lwayland-client -lvulkan -Wl,-z,noexecstack -lm -lrt -lpthread -ldl -lstdc++ -lasound -lssl -lcrypto -lpulse-simple -lpulse ../src/auncient_sdk.o
+LDFLAGS  = -L/usr/local/lib -ljpeg -rdynamic -lwayland-client -lvulkan -Wl,-z,noexecstack -lm -lrt -lpthread -ldl -lstdc++ -lasound -lssl -lcrypto -lpulse-simple -lpulse
 
 OBJ_DIR  = obj
 BIN_DIR  = bin
@@ -51,6 +51,7 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_zmm_winchester_handshake.o \
             $(OBJ_DIR)/tsfi_depthoffield.o \
             $(OBJ_DIR)/tsfi_riinterface.o \
+            $(OBJ_DIR)/auncient_sdk.o \
             $(OBJ_DIR)/tsfi_ccx_pool.o \
             $(OBJ_DIR)/tsfi_ccx_pool.o \
             $(OBJ_DIR)/tsfi_sd_thunk.o \

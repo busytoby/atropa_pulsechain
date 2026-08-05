@@ -446,10 +446,12 @@ bool auncient_sdk_autodin_spin_unlock(sdk_cics_context_t *ctx, uint32_t lock_tok
         .writer_id = ctx->writer_id
     };
 
-    write(ctx->env->socket_fds[0], &packet, sizeof(auncient_abi_packet_t));
+    ssize_t w_rc = write(ctx->env->socket_fds[0], &packet, sizeof(auncient_abi_packet_t));
+    (void)w_rc;
     
     auncient_abi_packet_t rx_packet;
-    read(ctx->env->socket_fds[1], &rx_packet, sizeof(auncient_abi_packet_t));
+    ssize_t r_rc = read(ctx->env->socket_fds[1], &rx_packet, sizeof(auncient_abi_packet_t));
+    (void)r_rc;
     assert(rx_packet.payload_value == 0);
 
     // Restore previous lock precedence level if locks are still held
@@ -656,9 +658,10 @@ static bool verify_subtyping(const sdk_cics_context_t *ctx, const char *path) {
 
     uint32_t sym_sig = 0, max_clearance = 1, requires_lock = 0, dependent_parity = 0;
     if (fread(&sym_sig, sizeof(uint32_t), 1, bin) == 1 && sym_sig == 0x53594D42) {
-        fread(&max_clearance, sizeof(uint32_t), 1, bin);
-        fread(&requires_lock, sizeof(uint32_t), 1, bin);
-        fread(&dependent_parity, sizeof(uint32_t), 1, bin);
+        size_t r1 = fread(&max_clearance, sizeof(uint32_t), 1, bin);
+        size_t r2 = fread(&requires_lock, sizeof(uint32_t), 1, bin);
+        size_t r3 = fread(&dependent_parity, sizeof(uint32_t), 1, bin);
+        (void)r1; (void)r2; (void)r3;
     }
 
     // Static Pre-condition checks via symbolic metadata
@@ -1086,11 +1089,13 @@ bool auncient_sdk_cics_exec(sdk_cics_context_t *ctx, uint32_t value, const bool 
     };
 
     // Write packet to Coaxial socket
-    write(ctx->env->socket_fds[0], &packet, sizeof(auncient_abi_packet_t));
+    ssize_t w_rc = write(ctx->env->socket_fds[0], &packet, sizeof(auncient_abi_packet_t));
+    (void)w_rc;
     
     // Read and verify packet content on receiving side
     auncient_abi_packet_t rx_packet;
-    read(ctx->env->socket_fds[1], &rx_packet, sizeof(auncient_abi_packet_t));
+    ssize_t r_rc = read(ctx->env->socket_fds[1], &rx_packet, sizeof(auncient_abi_packet_t));
+    (void)r_rc;
     assert(rx_packet.alu_opcode == ALU_OP_WRITE_ABD);
     assert(rx_packet.status_flag == SDK_STATUS_OK);
     assert(rx_packet.payload_value == value);
@@ -1123,7 +1128,8 @@ bool auncient_sdk_batch_exec(sdk_cics_context_t *ctx, const sdk_batched_op_t *op
             .timestamp_counter = 0,
             .writer_id = ctx->writer_id
         };
-        write(ctx->env->socket_fds[0], &packet, sizeof(auncient_abi_packet_t));
+        ssize_t w_rc = write(ctx->env->socket_fds[0], &packet, sizeof(auncient_abi_packet_t));
+        (void)w_rc;
     }
 
     for (int i = 0; i < num_ops; i++) {
