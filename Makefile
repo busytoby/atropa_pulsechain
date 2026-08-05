@@ -498,7 +498,7 @@ test-quadtreeslicer:
 	@rm -f tests/test_quadtreeslicer
 
 test-riinterface:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_riinterface.c tsfi2-deepseek/src/tsfi_riinterface.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_depthoffield.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c src/tsfi2_loader.c -o tests/test_riinterface -lcrypto -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_riinterface.c tsfi2-deepseek/src/tsfi_riinterface.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_depthoffield.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_mainframe_jcl.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_riinterface -lcrypto -lm -lrt
 	./tests/test_riinterface
 	@rm -f tests/test_riinterface
 
