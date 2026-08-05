@@ -64,6 +64,9 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_moon_chuuker.o \
             $(OBJ_DIR)/tsfi_dream_streamer.o \
             $(OBJ_DIR)/tsfi_path_tracer.o \
+            $(OBJ_DIR)/tsfi_montecarlo.o \
+            $(OBJ_DIR)/tsfi_lnr_solvers.o \
+            $(OBJ_DIR)/auncient_teddy_personality.o \
             $(OBJ_DIR)/tsfi_pbr.o \
             $(OBJ_DIR)/tsfi_hair.o \
             $(OBJ_DIR)/tsfi_merkle_fast.o $(OBJ_DIR)/tsfi_scramble_fast.o $(OBJ_DIR)/tsfi_jpeg_encoder.o \

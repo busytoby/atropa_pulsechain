@@ -7,6 +7,7 @@
 #include <math.h>
 #include <immintrin.h>
 #include "tsfi_sd_thunk.h"
+#include "tsfi_montecarlo.h"
 
 bool tsfi_sd_thunk_init(TsfiSdContext* ctx, const char* safetensors_path) {
     printf("[THUNK] Initializing Stable Diffusion Matrix directly into Above-4G ReBAR...\n");
@@ -333,6 +334,23 @@ void tsfi_sd_thunk_paint_frame(TsfiSdContext* ctx, const uint8_t* in_dna_mask, u
             float val = 0.7f * latent[i] + 0.3f * latent_att[i];
             latent_att[i] = val > 0.0f ? val : val * 0.1f;
         }
+
+        // Apply Latent-space Collaborative Non-Local Means (L-CNLM) filtering to bottleneck latents
+        float* ch_in = (float*)malloc(lw * lh * sizeof(float));
+        float* ch_out = (float*)malloc(lw * lh * sizeof(float));
+        if (ch_in && ch_out) {
+            for (int c = 0; c < 3; c++) {
+                for (int i = 0; i < lw * lh; i++) {
+                    ch_in[i] = latent_att[i * 3 + c];
+                }
+                tsfi_montecarlo_collaborative_block_matching_filter(ch_in, ch_out, lw, lh, 0.15f, 1, 2);
+                for (int i = 0; i < lw * lh; i++) {
+                    latent_att[i * 3 + c] = ch_out[i];
+                }
+            }
+        }
+        if (ch_in) free(ch_in);
+        if (ch_out) free(ch_out);
  
         // --- 4. Upsampling Path: Phase 1 (Bottleneck -> Intermediate) ---
         printf("[DECODER] Phase 1: Upsampling to intermediate expanding resolution (%dx%d)\n", hw, hh);
