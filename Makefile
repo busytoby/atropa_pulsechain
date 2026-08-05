@@ -20,7 +20,7 @@ test-tsfi-montecarlo:
 	@rm -f tests/test_tsfi_montecarlo
 
 test-zmachine-maniac-mansion:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -mavx512f -mclflushopt -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek/src/firmware -Itsfi2-deepseek/plugins tests/test_zmachine_maniac_mansion.c tsfi2-deepseek/src/tsfi_path_tracer.c tsfi2-deepseek/src/tsfi_montecarlo.c tsfi2-deepseek/src/tsfi_pbr.c tsfi2-deepseek/src/tsfi_hair.c tsfi2-deepseek/src/tsfi_zorse_eval_cobol.c tsfi2-deepseek/src/tsfi_svdag.c tsfi2-deepseek/src/auncient_teddy_personality.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_c_math.c tsfi2-deepseek/src/tsfi_vec_math.c -o tests/test_zmachine_maniac_mansion -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -mavx512f -mclflushopt -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek/src/firmware -Itsfi2-deepseek/plugins tests/test_zmachine_maniac_mansion.c tsfi2-deepseek/src/tsfi_path_tracer.c tsfi2-deepseek/src/tsfi_montecarlo.c tsfi2-deepseek/src/tsfi_lnr_solvers.c tsfi2-deepseek/src/tsfi_pbr.c tsfi2-deepseek/src/tsfi_hair.c tsfi2-deepseek/src/tsfi_zorse_eval_cobol.c tsfi2-deepseek/src/tsfi_svdag.c tsfi2-deepseek/src/auncient_teddy_personality.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_c_math.c tsfi2-deepseek/src/tsfi_vec_math.c -o tests/test_zmachine_maniac_mansion -lm -lrt
 	./tests/test_zmachine_maniac_mansion
 	@rm -f tests/test_zmachine_maniac_mansion
 

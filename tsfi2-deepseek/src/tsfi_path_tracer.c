@@ -13,6 +13,7 @@
 #include "auncient_teddy_personality.h"
 #include "tsfi_personality_models_adv.h"
 #include "tsfi_zorse_eval.h"
+#include "tsfi_lnr_solvers.h"
 
 
 // Helmholtz Voxel-Path Tracer (VLM-Enhanced + Ultra PBR + Hair + Sovereign Secrets + Depth)
@@ -398,6 +399,45 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
             }
             free(denoised_pixels);
         }
+    }
+
+    if (aux_features && guidance_map) {
+        float *chan_in_lnr = malloc(sizeof(float) * w * h);
+        float *chan_out_lnr = malloc(sizeof(float) * w * h);
+        if (chan_in_lnr && chan_out_lnr) {
+            // Red Channel
+            for (int i = 0; i < w * h; i++) {
+                chan_in_lnr[i] = (float)((pixels[i] >> 16) & 0xFF) / 255.0f;
+            }
+            if (tsfi_montecarlo_regression_denoise_lnr(chan_in_lnr, aux_features, guidance_map, chan_out_lnr, w, h, 2, 1.5f, 0.5f)) {
+                for (int i = 0; i < w * h; i++) {
+                    uint32_t val = (uint32_t)(fmaxf(0.0f, fminf(1.0f, chan_out_lnr[i])) * 255.0f);
+                    pixels[i] = (pixels[i] & 0xFF00FFFF) | (val << 16);
+                }
+            }
+            // Green Channel
+            for (int i = 0; i < w * h; i++) {
+                chan_in_lnr[i] = (float)((pixels[i] >> 8) & 0xFF) / 255.0f;
+            }
+            if (tsfi_montecarlo_regression_denoise_lnr(chan_in_lnr, aux_features, guidance_map, chan_out_lnr, w, h, 2, 1.5f, 0.5f)) {
+                for (int i = 0; i < w * h; i++) {
+                    uint32_t val = (uint32_t)(fmaxf(0.0f, fminf(1.0f, chan_out_lnr[i])) * 255.0f);
+                    pixels[i] = (pixels[i] & 0xFFFF00FF) | (val << 8);
+                }
+            }
+            // Blue Channel
+            for (int i = 0; i < w * h; i++) {
+                chan_in_lnr[i] = (float)(pixels[i] & 0xFF) / 255.0f;
+            }
+            if (tsfi_montecarlo_regression_denoise_lnr(chan_in_lnr, aux_features, guidance_map, chan_out_lnr, w, h, 2, 1.5f, 0.5f)) {
+                for (int i = 0; i < w * h; i++) {
+                    uint32_t val = (uint32_t)(fmaxf(0.0f, fminf(1.0f, chan_out_lnr[i])) * 255.0f);
+                    pixels[i] = (pixels[i] & 0xFFFFFF00) | val;
+                }
+            }
+        }
+        if (chan_in_lnr) free(chan_in_lnr);
+        if (chan_out_lnr) free(chan_out_lnr);
     }
 
     // Apply Non-Local Means (NLM) with guided path selection to reconstruct complex high-frequency patterns
