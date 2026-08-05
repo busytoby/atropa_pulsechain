@@ -562,16 +562,12 @@ bool tsfi_montecarlo_adaptive_sigma(
         return false;
     }
 
-    if (local_error > 0.1) {
-        *adaptive_spatial = base_spatial_sigma * 1.5f;
-        *adaptive_range = base_range_sigma * 0.7f;
-    } else if (local_error > 0.03) {
-        *adaptive_spatial = base_spatial_sigma * 1.1f;
-        *adaptive_range = base_range_sigma * 0.9f;
-    } else {
-        *adaptive_spatial = base_spatial_sigma * 0.8f;
-        *adaptive_range = base_range_sigma * 1.2f;
-    }
+    // Model the response as a continuous Darlington comparator transconductance curve
+    // using the tanh activation to simulate the cascaded base-emitter saturation loop.
+    double gain = tanh(20.0 * local_error); // High transconductance gain scaling
+
+    *adaptive_spatial = base_spatial_sigma * (float)(0.8 + 0.7 * gain);
+    *adaptive_range = base_range_sigma * (float)(1.2 - 0.5 * gain);
     return true;
 }
 
