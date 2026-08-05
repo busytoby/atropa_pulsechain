@@ -1,0 +1,3419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSFi Tournament 3D Engine - Alpha</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #030408;
+            --panel-bg: rgba(6, 9, 20, 0.85);
+            --border-glow: rgba(0, 240, 255, 0.4);
+            --glow-cyan: #00f0ff;
+            --glow-green: #39ff14;
+            --glow-magenta: #ff007f;
+            --glow-yellow: #ffea00;
+            --text-color: #e2e8f0;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Outfit', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image: 
+                radial-gradient(circle at 50% 30%, rgba(10, 20, 45, 0.3) 0%, transparent 80%);
+        }
+
+        /* CRT Screen Scanline Effect Disabled */
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 32px;
+            background: rgba(4, 6, 12, 0.95);
+            border-bottom: 1px solid #101626;
+            backdrop-filter: blur(20px);
+            z-index: 10;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.8);
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            background: linear-gradient(90deg, var(--glow-cyan), var(--glow-magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            font-family: 'Outfit', sans-serif;
+            text-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+        }
+
+        #main-layout {
+            display: grid;
+            grid-template-columns: 340px 1fr 360px;
+            flex: 1;
+            height: calc(100vh - 60px);
+            overflow: hidden;
+        }
+
+        .side-panel {
+            background: var(--panel-bg);
+            border-right: 1px solid #141d33;
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            gap: 20px;
+            overflow-y: auto;
+            box-shadow: 4px 0 24px rgba(0,0,0,0.6);
+        }
+
+        .side-panel.right {
+            border-right: none;
+            border-left: 1px solid #141d33;
+            box-shadow: -4px 0 24px rgba(0,0,0,0.6);
+        }
+
+        .panel-header {
+            font-size: 13px;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 1px solid #1e293b;
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-header span {
+            color: var(--glow-cyan);
+            font-family: 'Share Tech Mono', monospace;
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+        }
+
+        .card {
+            background: rgba(9, 13, 27, 0.55);
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 12px rgba(255,255,255,0.02);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--glow-cyan), transparent);
+            opacity: 0.5;
+        }
+
+        .card:hover {
+            border-color: var(--glow-cyan);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.2), inset 0 0 12px rgba(255,255,255,0.02);
+        }
+
+        .card-title {
+            font-weight: 700;
+            font-size: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .meter {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .meter-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--glow-cyan), var(--glow-green));
+            width: 100%;
+            transition: width 0.15s ease-out;
+            box-shadow: 0 0 8px var(--glow-cyan);
+        }
+
+        .meter-fill.hp-bar {
+            background: linear-gradient(90deg, var(--glow-magenta), #ff5d00);
+            box-shadow: 0 0 10px rgba(255, 0, 127, 0.5);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 8px;
+            font-size: 12px;
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        .stat-label {
+            color: #64748b;
+        }
+
+        .stat-value {
+            color: #e2e8f0;
+            text-align: right;
+        }
+
+        #arena-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at center, #070914 0%, #010204 100%);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .btn {
+            background: rgba(0, 240, 255, 0.03);
+            border: 1px solid var(--glow-cyan);
+            color: var(--glow-cyan);
+            padding: 12px 20px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.1);
+        }
+
+        .btn:hover {
+            background: var(--glow-cyan);
+            color: #000;
+            box-shadow: 0 0 25px var(--glow-cyan);
+            text-shadow: none;
+        }
+
+        .btn.btn-magenta {
+            border-color: var(--glow-magenta);
+            color: var(--glow-magenta);
+            background: rgba(255, 0, 127, 0.03);
+            text-shadow: 0 0 8px rgba(255, 0, 127, 0.4);
+            box-shadow: 0 0 10px rgba(255, 0, 127, 0.1);
+        }
+
+        .btn.btn-magenta:hover {
+            background: var(--glow-magenta);
+            color: #fff;
+            box-shadow: 0 0 25px var(--glow-magenta);
+            text-shadow: none;
+        }
+
+        #console-log {
+            flex: 1;
+            background: #010103;
+            border: 1px solid #141d33;
+            border-radius: 8px;
+            padding: 14px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            color: var(--glow-green);
+            overflow-y: auto;
+            white-space: pre-wrap;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.95);
+        }
+
+        /* Bracket connect lines */
+        .bracket-node {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-left: 2px solid #1e293b;
+            padding-left: 14px;
+            position: relative;
+        }
+
+        .bracket-node.active {
+            border-left-color: var(--glow-cyan);
+        }
+
+        .bracket-bear {
+            font-size: 13px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid #1e293b;
+            transition: all 0.3s ease;
+        }
+
+        .bracket-bear.winner {
+            color: var(--glow-green);
+            border-color: rgba(57, 255, 20, 0.4);
+            background: rgba(57, 255, 20, 0.05);
+            text-shadow: 0 0 6px rgba(57, 255, 20, 0.3);
+        }
+
+        .bracket-bear.active {
+            color: var(--glow-cyan);
+            border-color: rgba(0, 240, 255, 0.4);
+            background: rgba(0, 240, 255, 0.05);
+            text-shadow: 0 0 6px rgba(0, 240, 255, 0.3);
+        }
+
+        /* Oscilloscope Waveform Display */
+        #oscilloscope-container {
+            height: 90px;
+            background: #000;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #oscilloscope {
+            width: 100%;
+            height: 100%;
+        }
+
+        .control-panel {
+            position: absolute;
+            bottom: 24px;
+            left: 24px;
+            background: rgba(6, 9, 20, 0.95);
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            gap: 12px;
+            backdrop-filter: blur(12px);
+            z-index: 5;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+        }
+
+        .ctrl-btn {
+            background: transparent;
+            border: 1px solid #334155;
+            color: #64748b;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .ctrl-btn:hover {
+            border-color: var(--glow-cyan);
+            color: var(--glow-cyan);
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+        }
+
+        /* Card Thumbnails in Deck */
+        .deck-card-thumb {
+            width: 100px;
+            height: 140px;
+            background: #000;
+            border: 2px solid #1e293b;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            flex-shrink: 0;
+        }
+        .deck-card-thumb:hover {
+            border-color: #ffd700;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(255, 196, 0, 0.25);
+        }
+        .deck-card-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .deck-card-badge {
+            position: absolute;
+            bottom: 4px;
+            left: 4px;
+            background: rgba(0,0,0,0.85);
+            color: var(--glow-cyan);
+            font-size: 7px;
+            padding: 1px 3px;
+            border-radius: 3px;
+            font-family: 'Share Tech Mono', monospace;
+            border: 1px solid rgba(0,240,255,0.2);
+        }
+        .deck-card-delete {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(255,0,127,0.85);
+            color: #fff;
+            font-size: 8px;
+            width: 14px;
+            height: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 3px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 10;
+        }
+        .deck-card-thumb:hover .deck-card-delete {
+            opacity: 1;
+        }
+        /* Flat-Pastel Neo-Brutalist Performance Diagnostics Styles */
+        .btn-diagnostics {
+            background-color: #bde0fe;
+            color: #000000;
+            border: 2px solid #000000;
+            padding: 6px 12px;
+            font-family: 'Share Tech Mono', monospace;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            box-shadow: 2px 2px 0px #000000;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .btn-diagnostics:active {
+            transform: translate(2px, 2px);
+            box-shadow: 0px 0px 0px #000000;
+        }
+        .btn-diagnostics:hover {
+            background-color: #ffd1dc;
+        }
+
+        #diagnostics-drawer {
+            position: fixed;
+            top: 0;
+            right: -450px;
+            width: 420px;
+            height: 100vh;
+            background-color: #faf0d2;
+            border-left: 3px solid #000000;
+            box-shadow: -5px 0px 0px rgba(0,0,0,0.15);
+            z-index: 9999;
+            transition: right 0.3s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Share Tech Mono', monospace;
+            color: #000000;
+            box-sizing: border-box;
+        }
+        #diagnostics-drawer.open {
+            right: 0;
+        }
+        .diagnostics-header {
+            background-color: #ffd1dc;
+            border-bottom: 3px solid #000000;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .diagnostics-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #000000;
+            margin: 0;
+        }
+        .diagnostics-close {
+            background-color: #ffccd5;
+            color: #000000;
+            border: 2px solid #000000;
+            padding: 4px 8px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 1px 1px 0px #000000;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .diagnostics-close:active {
+            transform: translate(1px, 1px);
+            box-shadow: 0px 0px 0px #000000;
+        }
+        .diagnostics-body {
+            padding: 16px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+        .diagnostics-metrics {
+            display: flex;
+            gap: 12px;
+        }
+        .diagnostics-card {
+            flex: 1;
+            border: 2px solid #000000;
+            padding: 12px;
+            box-shadow: 2px 2px 0px #000000;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .diagnostics-card.fps {
+            background-color: #bde0fe;
+        }
+        .diagnostics-card.latency {
+            background-color: #ffd1dc;
+        }
+        .diagnostics-card-label {
+            font-size: 12px;
+            font-weight: bold;
+            color: #333333;
+        }
+        .diagnostics-card-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #000000;
+        }
+        .diagnostics-iframe-container {
+            flex: 1;
+            background-color: #e8aeef;
+            border: 2px solid #000000;
+            box-shadow: 3px 3px 0px #000000;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+        .diagnostics-iframe-header {
+            background-color: #e8aeef;
+            border-bottom: 2px solid #000000;
+            padding: 6px 12px;
+            font-size: 11px;
+            font-weight: bold;
+            color: #000000;
+        }
+        #diagnostics-iframe {
+            width: 100%;
+            flex: 1;
+            border: none;
+            background-color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">TSFi Tournament 3D Engine</div>
+        <button class="btn-diagnostics" onclick="toggleDiagnosticsDrawer()">Performance Diagnostics</button>
+        <div class="subtitle" id="synth-status">SYNTHESIS SYNAPSE ENGINE: ACTIVE</div>
+    </header>
+
+    <div id="main-layout">
+        <!-- Left Panel: Match Statistics & Active Combatants -->
+        <div class="side-panel">
+            <div class="panel-header">
+                ACTIVE FIGHTERS <span>OBBBA-2026</span>
+            </div>
+
+            <!-- Bear 1 Card -->
+            <div class="card" id="card-bear1">
+                <div class="card-title">
+                    <span id="name-b1" style="color: var(--glow-cyan)">Mercenary Alpha</span>
+                    <span id="type-b1" style="font-family: 'Share Tech Mono', monospace; font-size:11px;">GENOME: BESSEL</span>
+                </div>
+                <div class="meter">
+                    <div id="hp-b1" class="meter-fill hp-bar" style="width: 100%"></div>
+                </div>
+                <div class="stats-grid">
+                    <span class="stat-label">Biotika Spikes:</span>
+                    <span class="stat-value" id="spike-b1">0.00V</span>
+                    <span class="stat-label">Bessel Phase:</span>
+                    <span class="stat-value" id="phase-b1">0.00 rad</span>
+                    <span class="stat-label">Decay Sickness:</span>
+                    <span class="stat-value" id="sick-b1">0.00%</span>
+                </div>
+            </div>
+
+            <div style="text-align: center; color: var(--glow-magenta); font-weight: bold; font-family: 'Share Tech Mono', monospace;">VS</div>
+
+            <!-- Bear 2 Card -->
+            <div class="card" id="card-bear2">
+                <div class="card-title">
+                    <span id="name-b2" style="color: var(--glow-magenta)">Bessel Surf Bear</span>
+                    <span id="type-b2" style="font-family: 'Share Tech Mono', monospace; font-size:11px;">GENOME: WAVEFRONT</span>
+                </div>
+                <div class="meter">
+                    <div id="hp-b2" class="meter-fill hp-bar" style="width: 100%"></div>
+                </div>
+                <div class="stats-grid">
+                    <span class="stat-label">Biotika Spikes:</span>
+                    <span class="stat-value" id="spike-b2">0.00V</span>
+                    <span class="stat-label">Bessel Phase:</span>
+                    <span class="stat-value" id="phase-b2">0.00 rad</span>
+                    <span class="stat-label">Decay Sickness:</span>
+                    <span class="stat-value" id="sick-b2">0.00%</span>
+                </div>
+            </div>
+
+            <button class="btn btn-magenta" id="btn-start-match">Initiate Arena Match</button>
+            <button class="btn" id="btn-next-round">Next Tournament Stage</button>
+
+            <!-- EVM Consensus PKI & Arena Dashboard -->
+            <div class="card" style="margin-top: 10px; border-color: rgba(0, 240, 255, 0.35);">
+                <div class="card-title" style="color: var(--glow-cyan); font-size: 13px; font-family: 'Share Tech Mono', monospace;">⛓️ EVM PKI & ARENA CORE</div>
+                <div style="font-size: 11px; color: #94a3b8; display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                    <div>Target Qing: <span id="evm-target-qing" style="color: var(--glow-cyan); font-family: monospace;">-</span></div>
+                    <div>Cursor: <span id="evm-cursor" style="color: var(--glow-cyan); font-family: monospace;">-</span></div>
+                    <div>Leader ID: <span id="evm-leader" style="color: var(--glow-cyan); font-family: monospace;">-</span></div>
+                    <div>Max Width: <span id="evm-max-width" style="color: var(--glow-cyan); font-family: monospace;">-</span></div>
+                    <div>Completed: <span id="evm-completed" style="color: var(--glow-cyan); font-family: monospace;">-</span></div>
+                    <div>Registered: <span id="evm-total-players" style="color: var(--glow-cyan); font-family: monospace;">-</span></div>
+                </div>
+                <div style="border-top: 1px solid rgba(0, 240, 255, 0.15); margin-top: 6px; padding-top: 6px; display: flex; flex-direction: column; gap: 8px;">
+                    <button class="btn" id="btn-evm-init" style="padding: 6px; font-size: 11px; width: 100%;">Initialize PKI & Arena</button>
+                    
+                    <div style="display: flex; gap: 4px; align-items: center;">
+                        <span style="font-size: 11px; color: #94a3b8; white-space: nowrap;">Qing ID:</span>
+                        <input type="number" id="evm-qing-input" value="4" style="width: 50px; background: #000; border: 1px solid rgba(0, 240, 255, 0.25); color: #fff; padding: 2px 4px; font-size: 11px; text-align: center;">
+                        <button class="btn" id="btn-evm-set-target" style="flex: 1; padding: 4px; font-size: 11px; width: 100%;">Set Target via PKI</button>
+                    </div>
+                    
+                    <div style="display: flex; gap: 4px; align-items: center;">
+                        <span style="font-size: 11px; color: #94a3b8; white-space: nowrap;">Batch:</span>
+                        <input type="number" id="evm-batch-input" value="2" style="width: 50px; background: #000; border: 1px solid rgba(0, 240, 255, 0.25); color: #fff; padding: 2px 4px; font-size: 11px; text-align: center;">
+                        <button class="btn" id="btn-evm-process" style="flex: 1; padding: 4px; font-size: 11px; border-color: var(--glow-magenta); color: var(--glow-magenta); width: 100%;">Process Batch</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DNA & AI Synthesis Suite Controls -->
+            <div class="card" style="margin-top: 10px; border-color: rgba(0, 240, 255, 0.25);">
+                <div class="card-title" style="color: var(--glow-cyan); font-size: 13px; font-family: 'Share Tech Mono', monospace;">🧬 DNA & AUDIO SYNTHESIS SUITE</div>
+                <div style="font-size: 11px; color: #94a3b8; margin-bottom: 8px;">Modify active fighter genome traits & audio synthesizer parameters:</div>
+                <div style="display: flex; gap: 4px; margin-bottom: 8px; font-family: 'Share Tech Mono', monospace; font-size: 11px;">
+                    <span style="color: #94a3b8; align-self: center;">Preset:</span>
+                    <select id="preset-select" style="flex: 1; background: #000; border: 1px solid rgba(0, 240, 255, 0.25); color: #fff; font-size: 10px; font-family: monospace; padding: 2px;">
+                        <option value="none">-- Custom / Manual --</option>
+                        <option value="fuzzby_mcd">Fuzzby MCD (Fuzzion)</option>
+                        <option value="fuzzby_savage">Fuzzby Savage (Fuzzion)</option>
+                        <option value="fuzzby_dsk">Fuzzby DSK (Fuzzion)</option>
+                        <option value="wilby_spock">Wilby Spock (Wild Bits)</option>
+                        <option value="wilby_spock2">Wilby #2 Spock (RLE/VGA)</option>
+                        <option value="wilby_spock3">Wilby #3 Spock (SMC/FPU)</option>
+                        <option value="wilby_ritz">Wilby #4 Ritz (Tesseract)</option>
+                    </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px;">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                            <span>Head Scale</span>
+                            <span id="val-head">1.00x</span>
+                        </div>
+                        <input type="range" id="synth-head" min="0.6" max="1.6" step="0.05" value="1.00" style="width: 100%;">
+                    </div>
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                            <span>Torso Width</span>
+                            <span id="val-torso">1.00x</span>
+                        </div>
+                        <input type="range" id="synth-torso" min="0.6" max="1.6" step="0.05" value="1.00" style="width: 100%;">
+                    </div>
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                            <span>Ear Scale</span>
+                            <span id="val-ears">1.00x</span>
+                        </div>
+                        <input type="range" id="synth-ears" min="0.5" max="1.8" step="0.05" value="1.00" style="width: 100%;">
+                    </div>
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                            <span>Muzzle Scale</span>
+                            <span id="val-muzzle">1.00x</span>
+                        </div>
+                        <input type="range" id="synth-muzzle" min="0.5" max="1.8" step="0.05" value="1.00" style="width: 100%;">
+                    </div>
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                            <span>Arm Thickness</span>
+                            <span id="val-arms">1.00x</span>
+                        </div>
+                        <input type="range" id="synth-arms" min="0.5" max="1.8" step="0.05" value="1.00" style="width: 100%;">
+                    </div>
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                            <span>Leg Thickness</span>
+                            <span id="val-legs">1.00x</span>
+                        </div>
+                        <input type="range" id="synth-legs" min="0.5" max="1.8" step="0.05" value="1.00" style="width: 100%;">
+                    </div>
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                            <span>Fur Density / Length</span>
+                            <span id="val-fur">1.00x</span>
+                        </div>
+                        <input type="range" id="synth-fur" min="0.0" max="2.0" step="0.1" value="1.0" style="width: 100%;">
+                    </div>
+
+                    <!-- Audio Synth ADSR Subsection -->
+                    <div style="border-top: 1px solid rgba(0, 240, 255, 0.15); margin-top: 4px; padding-top: 8px; display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>Timbre Voice</span>
+                            <select id="synth-timbre" style="background: #000; border: 1px solid rgba(0, 240, 255, 0.25); color: #fff; font-size: 10px; font-family: monospace; padding: 2px;">
+                                <option value="sine" selected>Chime (Sine/Tri)</option>
+                                <option value="sawtooth">Strings (Saw/Tri)</option>
+                                <option value="triangle">Brass (Saw/Pulse)</option>
+                                <option value="square">Organ (Square Mix)</option>
+                                <option value="pc_speaker">PC Speaker (PIT 8253)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                <span>Attack Time</span>
+                                <span id="val-attack">0.02s</span>
+                            </div>
+                            <input type="range" id="synth-attack" min="0.005" max="0.5" step="0.01" value="0.02" style="width: 100%;">
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                <span>Decay Time</span>
+                                <span id="val-decay">0.30s</span>
+                            </div>
+                            <input type="range" id="synth-decay" min="0.05" max="1.5" step="0.05" value="0.30" style="width: 100%;">
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                <span>Sustain Level</span>
+                                <span id="val-sustain">20%</span>
+                            </div>
+                            <input type="range" id="synth-sustain" min="0.0" max="1.0" step="0.05" value="0.20" style="width: 100%;">
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                <span>Release Time</span>
+                                <span id="val-release">0.15s</span>
+                            </div>
+                            <input type="range" id="synth-release" min="0.05" max="1.0" step="0.05" value="0.15" style="width: 100%;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Puppet Control Panel -->
+            <div class="card" style="margin-top: 10px; border-color: rgba(255, 234, 0, 0.25);">
+                <div class="card-title" style="color: var(--glow-yellow); font-size: 13px; font-family: 'Share Tech Mono', monospace;">🤖 AI PUPPET CONSOLE</div>
+                <div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px;">Prompt:</div>
+                <textarea id="ai-prompt" rows="3" style="width: 100%; box-sizing: border-box; background: #000; border: 1px solid #1e293b; color: #fff; padding: 8px; border-radius: 6px; font-size: 12px; font-family: 'Outfit', sans-serif; resize: none; margin-bottom: 8px;">A highly detailed photorealistic teddy bear plush standing pose, brown fur, masterpiece, 8k resolution, cinematic lighting, isolated on a solid black background</textarea>
+                <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px;">
+                    <label style="font-size: 11px; display: flex; align-items: center; gap: 4px; color: #94a3b8;">
+                        <input type="checkbox" id="show-ai-overlay" checked> Overlay on Arena
+                    </label>
+                    <label style="font-size: 11px; display: flex; align-items: center; gap: 4px; color: #94a3b8;">
+                        <input type="checkbox" id="canny-edge-outline"> Canny Edge Outline (Sobel)
+                    </label>
+                </div>
+                <button class="btn" id="btn-ai-render" style="border-color: var(--glow-yellow); color: var(--glow-yellow); text-shadow: 0 0 8px rgba(255, 234, 0, 0.4); background: rgba(255, 234, 0, 0.02); padding: 8px 12px; width: 100%;">AI Render Pose</button>
+                <button class="btn" id="btn-save-card" onclick="saveCurrentCardToDeck()" style="border-color: var(--glow-cyan); color: var(--glow-cyan); text-shadow: 0 0 8px rgba(0, 240, 255, 0.4); background: rgba(0, 240, 255, 0.02); padding: 8px 12px; margin-top: 4px; width: 100%;">💾 Save Fight Card to Deck</button>
+                <div id="ai-status" style="font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #8c92a0; margin-top: 6px; word-break: break-all;">Status: Idle</div>
+            </div>
+
+            <!-- ControlNet Map Debugger Crossover -->
+            <div class="card" style="border-color: rgba(0, 240, 255, 0.25);">
+                <div class="card-title" style="color: var(--glow-cyan); font-size: 13px; font-family: 'Share Tech Mono', monospace;">🔍 CONTROLNET MAP DEBUGGER</div>
+                <div style="display: flex; gap: 8px; margin-top: 8px;">
+                    <div style="flex: 1; text-align: center;">
+                        <div style="font-size: 9px; color: #94a3b8; margin-bottom: 4px; font-family: 'Share Tech Mono', monospace;">DEPTH/SOBEL MAP</div>
+                        <div style="width: 100%; aspect-ratio: 1; background: #000; border: 1px solid #141c30; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                            <img id="dbg-depth-preview" style="max-width: 100%; max-height: 100%; display: none; object-fit: contain;">
+                            <span id="dbg-depth-placeholder" style="font-size: 9px; color: #475569; font-family: 'Share Tech Mono', monospace;">No Data</span>
+                        </div>
+                    </div>
+                    <div style="flex: 1; text-align: center;">
+                        <div style="font-size: 9px; color: #94a3b8; margin-bottom: 4px; font-family: 'Share Tech Mono', monospace;">OPENPOSE MAP</div>
+                        <div style="width: 100%; aspect-ratio: 1; background: #000; border: 1px solid #141c30; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                            <img id="dbg-pose-preview" style="max-width: 100%; max-height: 100%; display: none; object-fit: contain;">
+                            <span id="dbg-pose-placeholder" style="font-size: 9px; color: #475569; font-family: 'Share Tech Mono', monospace;">No Data</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center Viewport: Canvas 3D Engine -->
+        <div id="arena-container">
+            <canvas id="canvas3d"></canvas>
+            
+            <div class="control-panel">
+                <button class="ctrl-btn" id="btn-orbit-l">↺</button>
+                <button class="ctrl-btn" id="btn-orbit-r">↻</button>
+                <button class="ctrl-btn" id="btn-orbit-u">▲</button>
+                <button class="ctrl-btn" id="btn-orbit-d">▼</button>
+                <button class="ctrl-btn" id="btn-zoom-i">+</button>
+                <button class="ctrl-btn" id="btn-zoom-o">-</button>
+            </div>
+        </div>
+
+        <!-- Right Panel: Tournament Brackets & Console log -->
+        <div class="side-panel right">
+            <div class="panel-header">
+                TOURNAMENT BRACKET <span>STAGE A</span>
+            </div>
+
+            <div class="card" style="gap: 12px;">
+                <div class="bracket-node active">
+                    <div>
+                        <div class="bracket-bear active" id="node-b1">Mercenary Alpha</div>
+                        <div class="bracket-vs">VS</div>
+                        <div class="bracket-bear" id="node-b2">Bessel Surf Bear</div>
+                    </div>
+                </div>
+
+                <div class="bracket-node">
+                    <div>
+                        <div class="bracket-bear" id="node-b3">Biotika Spike Bear</div>
+                        <div class="bracket-vs">VS</div>
+                        <div class="bracket-bear" id="node-b4">Atropa Kr0wZ</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-header">
+                HOT-WIRE AMMETER <span>BALLANTINE</span>
+            </div>
+            <div class="card" style="border-color: rgba(255, 0, 127, 0.3); padding: 12px; background: rgba(5, 2, 8, 0.9);">
+                <div style="text-align: center; margin-bottom: 6px;">
+                    <canvas id="ammeter-canvas" style="width: 100%; height: 95px; background: #000; border: 1px solid rgba(255, 0, 127, 0.2); border-radius: 6px;"></canvas>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 10px; font-family: 'Share Tech Mono', monospace; color: #94a3b8;">
+                    <span>HEATER TEMP: <span id="ammeter-temp" style="color: #ff007f;">20.0°C</span></span>
+                    <span>DEFLECTION: <span id="ammeter-val" style="color: #ff007f;">0.00A</span></span>
+                </div>
+            </div>
+
+            <div class="panel-header">
+                HAMMOND H111 HYPERVISOR <span>OPEN HW</span>
+            </div>
+            <div class="card" style="border-color: var(--glow-cyan); padding: 12px; background: rgba(3, 8, 20, 0.95); display: flex; flex-direction: column; gap: 8px;">
+                <div style="font-size: 11px; color: #94a3b8; font-family: 'Share Tech Mono', monospace;">
+                    <div>ACTIVE TONEWHEELS: <span style="color: var(--glow-green);">111 / 111</span></div>
+                    <div style="margin-top: 4px;">TEMPERAMENT: <span style="color: var(--glow-cyan);">EDO-22 Microtonal</span></div>
+                    <div style="margin-top: 4px;">METAL PIPE RESONATOR: <span style="color: var(--glow-magenta);">Limitless Open Tube</span></div>
+                </div>
+                
+                <div style="border-top: 1px solid rgba(0, 240, 255, 0.15); padding-top: 6px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 10px; font-family: 'Share Tech Mono', monospace; margin-bottom: 2px;">
+                        <span>Drawbar Sub-Octave:</span>
+                        <span style="color: var(--glow-cyan);">88%</span>
+                    </div>
+                    <div class="meter"><div class="meter-fill" style="width: 88%; background: linear-gradient(90deg, var(--glow-cyan), var(--glow-green))"></div></div>
+                </div>
+                
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 10px; font-family: 'Share Tech Mono', monospace; margin-bottom: 2px;">
+                        <span>Drawbar Octave:</span>
+                        <span style="color: var(--glow-magenta);">65%</span>
+                    </div>
+                    <div class="meter"><div class="meter-fill" style="width: 65%; background: linear-gradient(90deg, var(--glow-magenta), #ff5d00)"></div></div>
+                </div>
+
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 10px; font-family: 'Share Tech Mono', monospace; margin-bottom: 2px;">
+                        <span>Pipe Open-Acoustic Reflection:</span>
+                        <span style="color: var(--glow-yellow);">99.5%</span>
+                    </div>
+                    <div class="meter"><div class="meter-fill" style="width: 99.5%; background: linear-gradient(90deg, var(--glow-yellow), var(--glow-green))"></div></div>
+                </div>
+            </div>
+
+            <div class="panel-header">
+                SOVEREIGN AUDIO WAVEFORM
+            </div>
+            <div id="oscilloscope-container">
+                <canvas id="oscilloscope"></canvas>
+            </div>
+
+            <div class="panel-header">
+                ARENA LOG <span>STDERR/STDOUT</span>
+            </div>
+            <div id="console-log">Initializing tournament subsystem...
+System: Loaded 4 physical DNA models.
+Vector engine: 3D Shader pipeline aligned.
+Synth: AudioContext initialized on user interaction.
+Ready to initiate tournament match.</div>
+        </div>
+    </div>
+
+    <!-- Collapsible Card Deck Tray Crossover -->
+    <div id="deck-drawer" style="height: 40px; background: rgba(4, 6, 12, 0.95); border-top: 1px solid #141d33; transition: height 0.3s ease; display: flex; flex-direction: column; overflow: hidden; z-index: 50; box-shadow: 0 -4px 25px rgba(0,0,0,0.85); backdrop-filter: blur(20px);">
+        <div onclick="toggleDeckDrawer()" style="height: 40px; display: flex; justify-content: space-between; align-items: center; padding: 0 30px; cursor: pointer; border-bottom: 1px solid #1a2333; user-select: none;">
+            <div style="font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--glow-yellow); font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                🎴 COLLECTED SPORTS CARDS DECK (<span id="deck-count">0</span> Cards Saved)
+            </div>
+            <div id="drawer-toggle-icon" style="color: #94a3b8; font-size: 10px; font-family: 'Share Tech Mono', monospace;">▲ EXPAND DECK Tray</div>
+        </div>
+        <div id="deck-list-container" style="flex: 1; padding: 12px 30px; display: flex; gap: 16px; overflow-x: auto; align-items: center; background: rgba(1, 2, 5, 0.4);">
+            <div style="font-size: 11px; color: #475569; font-family: 'Share Tech Mono', monospace;">Your card album is currently empty. Synthesize a card and save it!</div>
+        </div>
+    </div>
+
+    <!-- Viewport-Overlay Slide-Out Drawer for Performance Diagnostics -->
+    <div id="diagnostics-drawer">
+        <div class="diagnostics-header">
+            <span class="diagnostics-title">PERFORMANCE DIAGNOSTICS</span>
+            <button class="diagnostics-close" onclick="toggleDiagnosticsDrawer()">[X] CLOSE</button>
+        </div>
+        <div class="diagnostics-body">
+            <div class="diagnostics-metrics">
+                <div class="diagnostics-card fps">
+                    <span class="diagnostics-card-label">Avg FPS</span>
+                    <span class="diagnostics-card-value" id="diag-fps-val">--</span>
+                </div>
+                <div class="diagnostics-card latency">
+                    <span class="diagnostics-card-label">Audio Latency</span>
+                    <span class="diagnostics-card-value" id="diag-latency-val">--</span>
+                </div>
+            </div>
+            <div class="diagnostics-iframe-container">
+                <div class="diagnostics-iframe-header">PROFILER DETAILED REPORT</div>
+                <iframe id="diagnostics-iframe" src="../benchmarks/profiler_suite/benchmark_report.html" onload="onDiagnosticsIframeLoad()"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Custom 3D Projection Engine
+        window.addEventListener("error", (e) => {
+            const errorMsg = `❌ CLIENT JS ERROR: ${e.message} at ${e.filename}:${e.lineno}`;
+            if (typeof logEvent === "function") {
+                logEvent(errorMsg);
+            } else {
+                console.error(errorMsg);
+                fetch('/api/dilemma-log', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ event: 'CLIENT_LOG', source: 'BrowserEarly', details: errorMsg })
+                }).catch(() => {});
+            }
+        });
+
+        let matchActive = false;
+        let fighter1 = null;
+        let fighter2 = null;
+
+        const canvas = document.getElementById("canvas3d");
+        const ctx = canvas.getContext("2d");
+
+        // Camera state
+        const camera = {
+            yaw: -Math.PI / 4,
+            pitch: Math.PI / 6,
+            distance: 1300,
+            x: 0,
+            y: 0,
+            z: 0,
+            fov: 1100
+        };
+
+        // Resize handler
+        function resize() {
+            const container = document.getElementById("arena-container");
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+        window.addEventListener("resize", resize);
+        resize();
+
+        // 3D Point class
+        class Point3D {
+            constructor(x, y, z) {
+                this.x = x;
+                this.y = y;
+                this.z = z;
+            }
+        }
+
+        // Emulate low-level Auncient Yul virtual hardware register state machine (WinchesterMQ.yul & MusicMaker.yul)
+        const yulStorage = {
+            97: 0,   // MusicMaker: Port $61 PIT speaker audio envelope sample latch
+            100: 0,  // WinchesterMQ: SCSI Status/Handshake Phase (0=IDLE, 1=REQ, 2=ACK, 3=DATA_IN, 4=DATA_OUT)
+            101: 0,  // WinchesterMQ: SCSI Data latch register
+            102: 0,  // WinchesterMQ: AT keyboard keycode register (e.g. 30 for 'a', 32 for 'd')
+            103: 1000, // WinchesterMQ: Clock divisor/Tesseract rotation damping factor (higher = slower)
+            104: 2300, // WinchesterMQ: Hyper-perspective projection focal distance (e.g. 2300 / 1000 = 2.3)
+            105: 0   // WinchesterMQ: Local loopback transaction counter
+        };
+
+        // Keycode emulation routing for Auncient SCSI WinchesterMQ loopback handshake
+        document.addEventListener("keydown", (e) => {
+            let scanCode = 0;
+            if (e.key === "a" || e.key === "A") {
+                scanCode = 30; // AT Scancode for A
+            } else if (e.key === "d" || e.key === "D") {
+                scanCode = 32; // AT Scancode for D
+            }
+            if (scanCode > 0) {
+                yulStorage[102] = scanCode;
+                runSCSIHandshakeLoop(scanCode);
+            }
+        });
+
+        function runSCSIHandshakeLoop(scanCode) {
+            yulStorage[100] = 1; // REQ: Request phase initiated
+            yulStorage[101] = scanCode; // Latch keycode data into SCSI bus buffer
+
+            // Simulate local loopback bridging raw SCSI outputs for WinchesterMQ state verification
+            if (yulStorage[100] === 1 && yulStorage[101] === scanCode) {
+                yulStorage[100] = 2; // ACK: Acknowledge handshake response
+
+                // Verify register maps & process command
+                if (scanCode === 30) {
+                    // Keycode 30 (A): Increase rotation speed by decreasing damping divisor
+                    yulStorage[103] = Math.max(200, yulStorage[103] - 100);
+                    // Pulsate hyper-perspective depth
+                    yulStorage[104] = Math.max(1500, yulStorage[104] - 100);
+                    logEvent(`SCSI WinchesterMQ loopback ACK: Keycode 30 mapped. Storage[103]=${yulStorage[103]}, Storage[104]=${yulStorage[104]}`);
+                } else if (scanCode === 32) {
+                    // Keycode 32 (D): Decrease rotation speed by increasing damping divisor
+                    yulStorage[103] = Math.min(3000, yulStorage[103] + 100);
+                    // Push hyper-perspective depth outward
+                    yulStorage[104] = Math.min(4000, yulStorage[104] + 100);
+                    logEvent(`SCSI WinchesterMQ loopback ACK: Keycode 32 mapped. Storage[103]=${yulStorage[103]}, Storage[104]=${yulStorage[104]}`);
+                }
+                
+                yulStorage[105]++; // Increment SCSI transaction loopback count
+                yulStorage[100] = 0; // Return to IDLE
+            }
+        }
+
+        // 4D Tesseract Geometry Setup (Wilby #4 Ritz-inspired visual projection demo)
+        const tesseractVertices = [];
+        for (let x of [-1, 1]) {
+            for (let y of [-1, 1]) {
+                for (let z of [-1, 1]) {
+                    for (let w of [-1, 1]) {
+                        tesseractVertices.push({ x, y, z, w });
+                    }
+                }
+            }
+        }
+
+        const tesseractEdges = [];
+        for (let i = 0; i < 16; i++) {
+            for (let j = i + 1; j < 16; j++) {
+                let diff = 0;
+                if (tesseractVertices[i].x !== tesseractVertices[j].x) diff++;
+                if (tesseractVertices[i].y !== tesseractVertices[j].y) diff++;
+                if (tesseractVertices[i].z !== tesseractVertices[j].z) diff++;
+                if (tesseractVertices[i].w !== tesseractVertices[j].w) diff++;
+                if (diff === 1) {
+                    tesseractEdges.push([i, j]);
+                }
+            }
+        }
+
+        // Generate 24 Square Faces of the Tesseract in cyclic order
+        const tesseractFaces = [];
+        const cycle = [
+            [-1, -1],
+            [1, -1],
+            [1, 1],
+            [-1, 1]
+        ];
+        for (let i = 0; i < 4; i++) {
+            for (let j = i + 1; j < 4; j++) {
+                const fixedDims = [];
+                for (let k = 0; k < 4; k++) {
+                    if (k !== i && k !== j) fixedDims.push(k);
+                }
+                for (let val1 of [-1, 1]) {
+                    for (let val2 of [-1, 1]) {
+                        const faceVertices = [];
+                        for (let step = 0; step < 4; step++) {
+                            const v = { x: 0, y: 0, z: 0, w: 0 };
+                            const dims = ['x', 'y', 'z', 'w'];
+                            v[dims[i]] = cycle[step][0];
+                            v[dims[j]] = cycle[step][1];
+                            v[dims[fixedDims[0]]] = val1;
+                            v[dims[fixedDims[1]]] = val2;
+
+                            const idx = tesseractVertices.findIndex(tv => 
+                                Math.abs(tv.x - v.x) < 0.01 && 
+                                Math.abs(tv.y - v.y) < 0.01 && 
+                                Math.abs(tv.z - v.z) < 0.01 && 
+                                Math.abs(tv.w - v.w) < 0.01
+                            );
+                            faceVertices.push(idx);
+                        }
+                        tesseractFaces.push(faceVertices);
+                    }
+                }
+            }
+        }
+
+        // Pre-computed Sine/Cosine Lookup Tables (LUTs) for high-speed Auncient 4D rotation math (Hugi #16)
+        const LUT_SIZE = 262144;
+        const LUT_MASK = 262143;
+        const sinLUT = new Float64Array(LUT_SIZE);
+        const cosLUT = new Float64Array(LUT_SIZE);
+        const LUT_FACTOR = LUT_SIZE / (2 * Math.PI);
+
+        for (let i = 0; i < LUT_SIZE; i++) {
+            const angle = (i * 2 * Math.PI) / LUT_SIZE;
+            sinLUT[i] = Math.sin(angle);
+            cosLUT[i] = Math.cos(angle);
+        }
+
+        function lutSin(a) {
+            const val = a * LUT_FACTOR;
+            const idx1 = Math.floor(val);
+            const fract = val - idx1;
+            const idx2 = idx1 + 1;
+            
+            const s1 = sinLUT[idx1 & LUT_MASK];
+            const s2 = sinLUT[idx2 & LUT_MASK];
+            return s1 + fract * (s2 - s1);
+        }
+
+        function lutCos(a) {
+            const val = a * LUT_FACTOR;
+            const idx1 = Math.floor(val);
+            const fract = val - idx1;
+            const idx2 = idx1 + 1;
+            
+            const c1 = cosLUT[idx1 & LUT_MASK];
+            const c2 = cosLUT[idx2 & LUT_MASK];
+            return c1 + fract * (c2 - c1);
+        }
+
+        // 3D Cube Geometry Setup for Medium Level of Detail (LOD 1) (Hugi #13)
+        const cubeVertices = [];
+        for (let x of [-1, 1]) {
+            for (let y of [-1, 1]) {
+                for (let z of [-1, 1]) {
+                    cubeVertices.push({ x, y, z });
+                }
+            }
+        }
+        const cubeFaces = [
+            [0, 1, 3, 2],
+            [4, 5, 7, 6],
+            [0, 1, 5, 4],
+            [2, 3, 7, 6],
+            [0, 2, 6, 4],
+            [1, 3, 7, 5]
+        ];
+
+        function rotate3D(p, aXY, aXZ, aYZ) {
+            let x = p.x;
+            let y = p.y;
+            let z = p.z;
+
+            if (aXY !== 0) {
+                let cos = lutCos(aXY), sin = lutSin(aXY);
+                let xNew = x * cos - y * sin;
+                let yNew = x * sin + y * cos;
+                x = xNew; y = yNew;
+            }
+            if (aXZ !== 0) {
+                let cos = lutCos(aXZ), sin = lutSin(aXZ);
+                let xNew = x * cos - z * sin;
+                let zNew = x * sin + z * cos;
+                x = xNew; z = zNew;
+            }
+            if (aYZ !== 0) {
+                let cos = lutCos(aYZ), sin = lutSin(aYZ);
+                let yNew = y * cos - z * sin;
+                let zNew = y * sin + z * cos;
+                y = yNew; z = zNew;
+            }
+
+            return { x, y, z };
+        }
+
+        function rotate4D(p, aXY, aXZ, aXW, aYZ, aYW, aZW) {
+            let x = p.x;
+            let y = p.y;
+            let z = p.z;
+            let w = p.w;
+
+            if (aXY !== 0) {
+                let cos = lutCos(aXY), sin = lutSin(aXY);
+                let xNew = x * cos - y * sin;
+                let yNew = x * sin + y * cos;
+                x = xNew; y = yNew;
+            }
+            if (aXZ !== 0) {
+                let cos = lutCos(aXZ), sin = lutSin(aXZ);
+                let xNew = x * cos - z * sin;
+                let zNew = x * sin + z * cos;
+                x = xNew; z = zNew;
+            }
+            if (aXW !== 0) {
+                let cos = lutCos(aXW), sin = lutSin(aXW);
+                let xNew = x * cos - w * sin;
+                let wNew = x * sin + w * cos;
+                x = xNew; w = wNew;
+            }
+            if (aYZ !== 0) {
+                let cos = lutCos(aYZ), sin = lutSin(aYZ);
+                let yNew = y * cos - z * sin;
+                let zNew = y * sin + z * cos;
+                y = yNew; z = zNew;
+            }
+            if (aYW !== 0) {
+                let cos = lutCos(aYW), sin = lutSin(aYW);
+                let yNew = y * cos - w * sin;
+                let wNew = y * sin + w * cos;
+                y = yNew; w = wNew;
+            }
+            if (aZW !== 0) {
+                let cos = lutCos(aZW), sin = lutSin(aZW);
+                let zNew = z * cos - w * sin;
+                let wNew = z * sin + w * cos;
+                z = zNew; w = wNew;
+            }
+
+            return { x, y, z, w };
+        }
+
+        function project4D(p, distance4D = 2.0) {
+            let denom = distance4D - p.w;
+            if (denom < 0.05) denom = 0.05; // Z-Clipping / Hyper-frustum near plane clipping (Hugi #12)
+            let factor = 1 / denom;
+            return {
+                x: p.x * factor,
+                y: p.y * factor,
+                z: p.z * factor
+            };
+        }
+
+        function drawTesseract4D(time) {
+            let speedMult = 1000 / (yulStorage[103] || 1000);
+            let angleXY = time * 0.00015 * speedMult;
+            let angleXZ = time * 0.00025 * speedMult;
+            let angleXW = time * 0.0006 * speedMult;
+            let angleYZ = time * 0.00035 * speedMult;
+            let angleYW = time * 0.00045 * speedMult;
+            let angleZW = time * 0.0005 * speedMult;
+
+            let fDepth = (yulStorage[104] || 2300) / 1000.0;
+            let audioMod = 0;
+            if (analyser) {
+                let dataArray = new Uint8Array(analyser.frequencyBinCount);
+                analyser.getByteFrequencyData(dataArray);
+                let sum = 0;
+                for (let i = 0; i < dataArray.length; i++) {
+                    sum += dataArray[i];
+                }
+                audioMod = sum / dataArray.length / 255.0;
+            }
+            let speakerVol = yulStorage[97] / 63.0;
+            let currentDepth4D = fDepth - speakerVol * 0.3 - audioMod * 0.2;
+            let sizeScale = 250 + speakerVol * 50 + audioMod * 30;
+
+            let projectedPts = [];
+            for (let i = 0; i < 16; i++) {
+                let rotated = rotate4D(tesseractVertices[i], angleXY, angleXZ, angleXW, angleYZ, angleYW, angleZW);
+                let p3d = project4D(rotated, currentDepth4D);
+                let p2d = project({
+                    x: p3d.x * sizeScale,
+                    y: p3d.y * sizeScale + 200, // Float above the grid floor
+                    z: p3d.z * sizeScale
+                });
+                projectedPts.push(p2d);
+            }
+
+            // Depth sorting the 24 square faces for correct painter's algorithm rendering
+            let validFaces = [];
+            for (let i = 0; i < tesseractFaces.length; i++) {
+                let face = tesseractFaces[i];
+                let p1 = projectedPts[face[0]];
+                let p2 = projectedPts[face[1]];
+                let p3 = projectedPts[face[2]];
+                let p4 = projectedPts[face[3]];
+                if (p1 && p2 && p3 && p4) {
+                    let depthAvg = (p1.depth + p2.depth + p3.depth + p4.depth) / 4;
+                    validFaces.push({ pts: [p1, p2, p3, p4], depth: depthAvg, index: i });
+                }
+            }
+            validFaces.sort((a, b) => b.depth - a.depth);
+
+            for (let f of validFaces) {
+                let hue = (time * 0.02 + f.index * 15) % 360;
+                let alpha = Math.max(0.02, Math.min(0.20, 800 / f.depth));
+                
+                // Draw filled polygon face
+                ctx.fillStyle = `hsla(${hue}, 100%, 60%, ${alpha})`;
+                ctx.beginPath();
+                ctx.moveTo(f.pts[0].x, f.pts[0].y);
+                ctx.lineTo(f.pts[1].x, f.pts[1].y);
+                ctx.lineTo(f.pts[2].x, f.pts[2].y);
+                ctx.lineTo(f.pts[3].x, f.pts[3].y);
+                ctx.closePath();
+                ctx.fill();
+
+                // Draw edge outlines with glow mapping to depth
+                let strokeAlpha = Math.max(0.1, Math.min(0.7, 1000 / f.depth));
+                ctx.strokeStyle = `hsla(${(hue + 180) % 360}, 100%, 70%, ${strokeAlpha})`;
+                ctx.lineWidth = 1.0;
+                ctx.stroke();
+            }
+        }
+
+        // Web Audio Synthesizer Subsystem
+        let audioCtx = null;
+        let analyser = null;
+        let ambientOsc = null;
+        let ambientGain = null;
+
+        function initAudio() {
+            if (audioCtx) return;
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 256;
+                analyser.connect(audioCtx.destination);
+
+                // Set up ambient analog synth drone
+                ambientOsc = audioCtx.createOscillator();
+                ambientGain = audioCtx.createGain();
+                ambientOsc.type = "sawtooth";
+                ambientOsc.frequency.setValueAtTime(55, audioCtx.currentTime); // Low A note
+                
+                // Low-pass filter for analog warmth
+                let filter = audioCtx.createBiquadFilter();
+                filter.type = "lowpass";
+                filter.frequency.setValueAtTime(120, audioCtx.currentTime);
+                
+                ambientOsc.connect(filter);
+                filter.connect(ambientGain);
+                ambientGain.connect(analyser);
+                
+                ambientGain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                ambientOsc.start();
+                
+                document.getElementById("synth-status").innerText = "SYNTHESIS SYNAPSE ENGINE: ONLINE";
+                logEvent("Synth: Audio drone started successfully.");
+            } catch (e) {
+                console.error("Failed to initialize audio", e);
+            }
+        }
+
+        // Trigger combat impact sound
+        function playHitSound(strength = 1) {
+            if (!audioCtx) initAudio();
+            if (!audioCtx) return;
+
+            let now = audioCtx.currentTime;
+            
+            // Emulate Sound Blaster DMA buffer injection (Scenial #2) by intercepting the background drone
+            if (ambientOsc) {
+                ambientOsc.frequency.setValueAtTime(55, now);
+                ambientOsc.frequency.linearRampToValueAtTime(110 * strength, now + 0.05); // Sabotage frequency/pitch spike
+                ambientOsc.frequency.exponentialRampToValueAtTime(55, now + 0.40); // Smooth recovery
+            }
+
+            // Read active synthesizer parameters
+            const attack = parseFloat(document.getElementById("synth-attack")?.value || 0.02);
+            const decay = parseFloat(document.getElementById("synth-decay")?.value || 0.30);
+            const sustain = parseFloat(document.getElementById("synth-sustain")?.value || 0.20);
+            const release = parseFloat(document.getElementById("synth-release")?.value || 0.15);
+            const activeTimbre = document.getElementById("synth-timbre")?.value || "sine";
+
+            const totalDuration = attack + decay + release + 0.1;
+
+            if (activeTimbre === "pc_speaker") {
+                // Emulate low-level Auncient Yul virtual hardware register state machine (MusicMaker.yul)
+                // playRealSoundSample(sampleVal) -> sstore(97, and(val, 0x3F))
+                const yulPlayRealSoundSample = (val) => { yulStorage[97] = val & 0x3F; };
+                // peek(97) -> sload(97)
+                const yulPeekSpeaker = () => yulStorage[97];
+
+                // Procedural Sound Clip generator from musicMaker.yul (Clip 1 & Clip 3)
+                // Use Clip 3 ("Ouch!" speech indicator) for harder hits, Clip 1 ("Tee Hit") for normal hits
+                const clipId = strength > 1.25 ? 3 : 1;
+                
+                const generateAssemblySample = (id) => {
+                    let samples = [];
+                    if (id === 1) {
+                        let seed = 0xABCDEF12;
+                        for (let i = 0; i < 800; i++) {
+                            let sample = 0;
+                            if (i < 80) {
+                                let p = i % 2;
+                                let vol = Math.floor(((80 - i) * 63) / 80);
+                                if (p) sample = vol;
+                                seed = (Math.imul(seed, 1103515245) + 12345) | 0;
+                                let click = Math.floor((seed & 0x3F) / 4);
+                                sample += click;
+                                if (sample > 63) sample = 63;
+                            } else if (i < 400) {
+                                let p = Math.floor(i / 2) % 2;
+                                let vol = Math.floor(((400 - i) * 35) / 320);
+                                if (p) sample = vol;
+                            } else if (i < 800) {
+                                let p = Math.floor(i / 4) % 2;
+                                let vol = Math.floor(((800 - i) * 15) / 400);
+                                if (p) sample = vol;
+                            }
+                            samples.push(sample);
+                        }
+                    } else if (id === 3) {
+                        let seed = 0x99887766;
+                        for (let i = 0; i < 1600; i++) {
+                            let sample = 0;
+                            if (i < 600) {
+                                let period = 4 + Math.floor((i * 3) / 600);
+                                let p = Math.floor(i / period) % 2;
+                                if (p) sample = 45;
+                            } else if (i < 1100) {
+                                let p = Math.floor(i / 7) % 2;
+                                if (p) sample = 30;
+                            } else if (i < 1600) {
+                                seed = (Math.imul(seed, 1103515245) + 12345) | 0;
+                                sample = seed & 0x27;
+                            }
+                            samples.push(sample);
+                        }
+                    }
+                    return samples;
+                };
+
+                const rawSamples = generateAssemblySample(clipId);
+
+                // Emulate low-level sequential write/read speaker state register update loop
+                let sampleIndex = 0;
+                const updateInterval = setInterval(() => {
+                    if (sampleIndex < rawSamples.length) {
+                        yulPlayRealSoundSample(rawSamples[sampleIndex]);
+                        sampleIndex++;
+                    } else {
+                        clearInterval(updateInterval);
+                    }
+                }, 1);
+
+                const volume = yulPeekSpeaker() / 63.0;
+
+                // Procedural audio node playback via Web Audio API using AudioBuffer
+                const sampleRate = 11025; // standard retro speech/audio sample rate
+                const buffer = audioCtx.createBuffer(1, rawSamples.length, sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < rawSamples.length; i++) {
+                    data[i] = ((rawSamples[i] / 31.5) - 1.0) * 0.45 * volume * strength;
+                }
+
+                let source = audioCtx.createBufferSource();
+                source.buffer = buffer;
+
+                let filter = audioCtx.createBiquadFilter();
+                filter.type = "lowpass";
+                filter.frequency.setValueAtTime(3200, now); // Emulate low-level PC speaker frequency limits
+
+                source.connect(filter);
+                filter.connect(analyser);
+                source.start(now);
+            } else {
+                // Sub-bass sine wave boom
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
+                
+                gain.gain.setValueAtTime(0.5 * strength, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                
+                osc.connect(gain);
+                gain.connect(analyser);
+                osc.start();
+                osc.stop(now + 0.35);
+
+                // Synthesized timbre sweep based on envelope values
+                let fmOsc = audioCtx.createOscillator();
+                let fmGain = audioCtx.createGain();
+                fmOsc.type = activeTimbre;
+                fmOsc.frequency.setValueAtTime(800 * strength, now);
+                fmOsc.frequency.exponentialRampToValueAtTime(150 * strength, now + attack + decay);
+                
+                // Apply ADSR Envelope
+                fmGain.gain.setValueAtTime(0, now);
+                fmGain.gain.linearRampToValueAtTime(0.25 * strength, now + attack);
+                fmGain.gain.exponentialRampToValueAtTime(Math.max(0.001, 0.25 * strength * sustain), now + attack + decay);
+                fmGain.gain.setValueAtTime(Math.max(0.001, 0.25 * strength * sustain), now + attack + decay + 0.1);
+                fmGain.gain.exponentialRampToValueAtTime(0.0001, now + attack + decay + 0.1 + release);
+                
+                fmOsc.connect(fmGain);
+                fmGain.connect(analyser);
+                fmOsc.start();
+                fmOsc.stop(now + totalDuration);
+            }
+        }
+
+        // Oscilloscope drawing
+        const oscCanvas = document.getElementById("oscilloscope");
+        const oscCtx = oscCanvas.getContext("2d");
+        
+        function drawOscilloscope() {
+            requestAnimationFrame(drawOscilloscope);
+            
+            oscCanvas.width = oscCanvas.clientWidth;
+            oscCanvas.height = oscCanvas.clientHeight;
+            
+            oscCtx.fillStyle = "#020204";
+            oscCtx.fillRect(0, 0, oscCanvas.width, oscCanvas.height);
+            
+            if (!analyser) {
+                // Idle horizontal wave
+                oscCtx.strokeStyle = "rgba(0, 240, 255, 0.2)";
+                oscCtx.lineWidth = 2;
+                oscCtx.beginPath();
+                oscCtx.moveTo(0, oscCanvas.height / 2);
+                oscCtx.lineTo(oscCanvas.width, oscCanvas.height / 2);
+                oscCtx.stroke();
+                return;
+            }
+            
+            let bufferLength = analyser.frequencyBinCount;
+            let dataArray = new Uint8Array(bufferLength);
+            analyser.getByteTimeDomainData(dataArray);
+            
+            oscCtx.strokeStyle = "rgba(0, 240, 255, 0.85)";
+            oscCtx.lineWidth = 2;
+            oscCtx.beginPath();
+            
+            let sliceWidth = oscCanvas.width / bufferLength;
+            let x = 0;
+            
+            for (let i = 0; i < bufferLength; i++) {
+                let v = dataArray[i] / 128.0;
+                let y = (v * oscCanvas.height) / 2;
+                
+                if (i === 0) {
+                    oscCtx.moveTo(x, y);
+                } else {
+                    oscCtx.lineTo(x, y);
+                }
+                
+                x += sliceWidth;
+            }
+            
+            oscCtx.lineTo(oscCanvas.width, oscCanvas.height / 2);
+            oscCtx.stroke();
+        }
+        drawOscilloscope();
+
+        // Hot-Wire Ammeter Card Tool drawing
+        const ammCanvas = document.getElementById("ammeter-canvas");
+        const ammCtx = ammCanvas.getContext("2d");
+        
+        let ammeterState = {
+            T: 20.0,      // Temperature in Celsius
+            theta: 0.0,   // Pointer angle deflection
+            omega: 0.0,   // Pointer speed
+            targetCurrent: 0.0
+        };
+
+        function drawAmmeter() {
+            requestAnimationFrame(drawAmmeter);
+
+            ammCanvas.width = ammCanvas.clientWidth;
+            ammCanvas.height = ammCanvas.clientHeight;
+
+            // Clear panel background
+            ammCtx.fillStyle = "#020204";
+            ammCtx.fillRect(0, 0, ammCanvas.width, ammCanvas.height);
+
+            // Fetch dynamic audio current level (linked to analyser output if playing, or decay to baseline)
+            let currentRf = 0.0;
+            if (analyser) {
+                let bufferLength = analyser.frequencyBinCount;
+                let dataArray = new Uint8Array(bufferLength);
+                analyser.getByteTimeDomainData(dataArray);
+                let sumSq = 0.0;
+                for (let i = 0; i < bufferLength; i++) {
+                    let norm = (dataArray[i] - 128.0) / 128.0;
+                    sumSq += norm * norm;
+                }
+                currentRf = Math.sqrt(sumSq / bufferLength) * 8.5; // Scale to Amps
+            } else if (matchActive) {
+                // Combat spark current simulation
+                currentRf = Math.sin(Date.now() * 0.05) * 1.5 + 1.5;
+            }
+
+            // Ballantine ODE Step (dt = 0.016s frame rate)
+            const dt_frame = 0.016;
+            const thermal_mass = 0.015;
+            const k_loss = 0.05;
+            const R0 = 4.5;
+            const alpha = 0.00393;
+            
+            // Heat delta
+            let R = R0 * (1.0 + alpha * (ammeterState.T - 20.0));
+            let Joule_power = currentRf * currentRf * R;
+            let cooling_power = k_loss * (ammeterState.T - 20.0);
+            let dT = (Joule_power - cooling_power) / thermal_mass;
+            ammeterState.T += dT * dt_frame;
+            if (ammeterState.T < 20.0) ammeterState.T = 20.0;
+
+            // Display pointer mechanics
+            const M_needle = 0.002;
+            const B_needle = 0.01;
+            const K_spring = 0.5;
+            const K_torque = 0.0025;
+
+            let torque = K_torque * (ammeterState.T - 20.0);
+            let d_omega = (torque - B_needle * ammeterState.omega - K_spring * ammeterState.theta) / M_needle;
+            ammeterState.omega += d_omega * dt_frame;
+            ammeterState.theta += ammeterState.omega * dt_frame;
+
+            if (ammeterState.theta < 0.0) {
+                ammeterState.theta = 0.0;
+                ammeterState.omega = 0.0;
+            }
+            if (ammeterState.theta > 2.0) {
+                ammeterState.theta = 2.0; // max stop peg
+                ammeterState.omega = 0.0;
+            }
+
+            // Update UI readout cards
+            document.getElementById("ammeter-temp").innerText = `${ammeterState.T.toFixed(1)}°C`;
+            document.getElementById("ammeter-val").innerText = `${(ammeterState.theta * 1.5).toFixed(2)}A`;
+
+            // Draw Gauge Arc
+            let cx = ammCanvas.width / 2;
+            let cy = ammCanvas.height - 15;
+            let radius = ammCanvas.height * 0.75;
+
+            ammCtx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+            ammCtx.lineWidth = 4;
+            ammCtx.beginPath();
+            ammCtx.arc(cx, cy, radius, -Math.PI * 0.8, -Math.PI * 0.2);
+            ammCtx.stroke();
+
+            // Draw Tick Marks
+            ammCtx.strokeStyle = "#475569";
+            ammCtx.lineWidth = 2;
+            for (let i = 0; i <= 10; i++) {
+                let fraction = i / 10;
+                let angle = -Math.PI * 0.8 + fraction * (Math.PI * 0.6);
+                let xStart = cx + Math.cos(angle) * (radius - 4);
+                let yStart = cy + Math.sin(angle) * (radius - 4);
+                let xEnd = cx + Math.cos(angle) * (radius + 4);
+                let yEnd = cy + Math.sin(angle) * (radius + 4);
+                ammCtx.beginPath();
+                ammCtx.moveTo(xStart, yStart);
+                ammCtx.lineTo(xEnd, yEnd);
+                ammCtx.stroke();
+            }
+
+            // Draw Needle (Warm Neon Red Glow)
+            let needleAngle = -Math.PI * 0.8 + (ammeterState.theta / 2.0) * (Math.PI * 0.6);
+            let needleLen = radius * 0.95;
+            let nx = cx + Math.cos(needleAngle) * needleLen;
+            let ny = cy + Math.sin(needleAngle) * needleLen;
+
+            ammCtx.save();
+            ammCtx.strokeStyle = "#ff007f";
+            ammCtx.shadowBlur = 8;
+            ammCtx.shadowColor = "#ff007f";
+            ammCtx.lineWidth = 3;
+            ammCtx.beginPath();
+            ammCtx.moveTo(cx, cy);
+            ammCtx.lineTo(nx, ny);
+            ammCtx.stroke();
+            ammCtx.restore();
+
+            // Center Pin
+            ammCtx.fillStyle = "#ffffff";
+            ammCtx.beginPath();
+            ammCtx.arc(cx, cy, 6, 0, Math.PI * 2);
+            ammCtx.fill();
+        }
+        drawAmmeter();
+
+        // Bessel math helper for ground grid distortion
+        function bessel_j0(x) {
+            let val = 0.0;
+            let term = 1.0;
+            for (let k = 0; k < 12; k++) {
+                if (k > 0) {
+                    term *= - (x * x) / (4.0 * k * k);
+                }
+                val += term;
+            }
+            return val;
+        }
+
+        // Project 3D coordinate to 2D screen coordinate
+        function project(p) {
+            let x = p.x - camera.x;
+            let y = p.y - camera.y;
+            let z = p.z - camera.z;
+
+            // Rotate around Y-axis (Yaw)
+            let cosY = Math.cos(camera.yaw);
+            let sinY = Math.sin(camera.yaw);
+            let x1 = x * cosY - z * sinY;
+            let z1 = x * sinY + z * cosY;
+
+            // Rotate around X-axis (Pitch)
+            let cosP = Math.cos(camera.pitch);
+            let sinP = Math.sin(camera.pitch);
+            let y2 = y * cosP - z1 * sinP;
+            let z2 = y * sinP + z1 * cosP;
+
+            // Offset camera distance
+            z2 += camera.distance;
+
+            if (z2 <= 10) return null; // Behind camera clipping
+
+            let scX = (x1 * camera.fov) / z2 + canvas.width / 2;
+            let scY = (-y2 * camera.fov) / z2 + canvas.height / 2;
+
+            return { x: scX, y: scY, depth: z2 };
+        }
+
+        // Draw 3D Line
+        function drawLine3D(p1, p2, color, width = 1) {
+            let sc1 = project(p1);
+            let sc2 = project(p2);
+            if (!sc1 || !sc2) return;
+
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.beginPath();
+            ctx.moveTo(sc1.x, sc1.y);
+            ctx.lineTo(sc2.x, sc2.y);
+            ctx.stroke();
+        }
+
+        // 3D Particles Subsystem
+        let particles = [];
+        function createExplosion(pos, color) {
+            for (let i = 0; i < 20; i++) {
+                particles.push({
+                    x: pos.x,
+                    y: pos.y,
+                    z: pos.z,
+                    vx: (Math.random() - 0.5) * 12,
+                    vy: Math.random() * 10 + 5,
+                    vz: (Math.random() - 0.5) * 12,
+                    life: 1.0,
+                    decay: 0.03 + Math.random() * 0.02,
+                    color: color
+                });
+            }
+        }
+
+        function updateAndDrawParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.z += p.vz;
+                p.vy -= 0.35; // Gravity
+                p.life -= p.decay;
+
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+
+                let proj = project(new Point3D(p.x, p.y, p.z));
+                if (proj) {
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(proj.x, proj.y, Math.max(1, 4 * p.life * (camera.fov / proj.depth)), 0, Math.PI*2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        // Bear model definition (3D skeleton nodes)
+        // Quaternion math helper for stable 3D rotation math (Hugi #12)
+        function rotateVectorByQuaternion(v, axis, angle) {
+            let halfAngle = angle / 2;
+            let sin = lutSin(halfAngle);
+            let cos = lutCos(halfAngle);
+            
+            let qx = axis.x * sin;
+            let qy = axis.y * sin;
+            let qz = axis.z * sin;
+            let qw = cos;
+            
+            let vx = v.x, vy = v.y, vz = v.z;
+            
+            let tx = 2 * (qy * vz - qz * vy);
+            let ty = 2 * (qz * vx - qx * vz);
+            let tz = 2 * (qx * vy - qy * vx);
+            
+            let rx = vx + qw * tx + (qy * tz - qz * ty);
+            let ry = vy + qw * ty + (qz * tx - qx * tz);
+            let rz = vz + qw * tz + (qx * ty - qy * tx);
+            
+            return { x: rx, y: ry, z: rz };
+        }
+
+        // Bear model definition (3D skeleton nodes using Quaternion limb rotations)
+        function getBearSkeleton(offset3D, scale, angles, pulse, sickness) {
+            const { leftArm, rightArm, leftLeg, rightLeg } = angles;
+            
+            let head = new Point3D(offset3D.x, offset3D.y + 160 * scale, offset3D.z);
+            let neck = new Point3D(offset3D.x, offset3D.y + 110 * scale, offset3D.z);
+            let lShoulder = new Point3D(offset3D.x - 70 * scale, offset3D.y + 90 * scale, offset3D.z);
+            let rShoulder = new Point3D(offset3D.x + 70 * scale, offset3D.y + 90 * scale, offset3D.z);
+            let midHip = new Point3D(offset3D.x, offset3D.y - 20 * scale, offset3D.z);
+
+            // Arm paw rotations via Quaternions to prevent gimbal lock
+            let armOffsetL = { x: 0, y: -90 * scale, z: 0 };
+            armOffsetL = rotateVectorByQuaternion(armOffsetL, { x: 0, y: 0, z: 1 }, leftArm);
+            armOffsetL = rotateVectorByQuaternion(armOffsetL, { x: 1, y: 0, z: 0 }, Math.sin(pulse * 0.5) * 0.22);
+            let lPaw = new Point3D(
+                lShoulder.x + armOffsetL.x,
+                lShoulder.y + armOffsetL.y,
+                lShoulder.z + armOffsetL.z
+            );
+
+            let armOffsetR = { x: 0, y: -90 * scale, z: 0 };
+            armOffsetR = rotateVectorByQuaternion(armOffsetR, { x: 0, y: 0, z: 1 }, -rightArm);
+            armOffsetR = rotateVectorByQuaternion(armOffsetR, { x: 1, y: 0, z: 0 }, -Math.sin(pulse * 0.5) * 0.22);
+            let rPaw = new Point3D(
+                rShoulder.x + armOffsetR.x,
+                rShoulder.y + armOffsetR.y,
+                rShoulder.z + armOffsetR.z
+            );
+
+            // Leg foot rotations via Quaternions
+            let legOffsetL = { x: 0, y: -80 * scale, z: 10 * scale };
+            legOffsetL = rotateVectorByQuaternion(legOffsetL, { x: 0, y: 0, z: 1 }, leftLeg);
+            let lFoot = new Point3D(
+                offset3D.x - 50 * scale + legOffsetL.x,
+                midHip.y + legOffsetL.y,
+                offset3D.z + legOffsetL.z
+            );
+
+            let legOffsetR = { x: 0, y: -80 * scale, z: -10 * scale };
+            legOffsetR = rotateVectorByQuaternion(legOffsetR, { x: 0, y: 0, z: 1 }, -rightLeg);
+            let rFoot = new Point3D(
+                offset3D.x + 50 * scale + legOffsetR.x,
+                midHip.y + legOffsetR.y,
+                offset3D.z + legOffsetR.z
+            );
+
+            return { head, neck, lShoulder, rShoulder, midHip, lPaw, rPaw, lFoot, rFoot };
+        }
+
+        // Shaded 3D Sphere Helper
+        function drawVolumetricSphere(p3d, radius, baseColor) {
+            let proj = project(p3d);
+            if (!proj) return;
+            let screenRadius = radius * (camera.fov / proj.depth);
+            if (screenRadius <= 1) return;
+
+            ctx.save();
+            // Radial gradient offset for specular light highlight
+            let highlightX = proj.x - screenRadius * 0.25;
+            let highlightY = proj.y - screenRadius * 0.25;
+            let grad = ctx.createRadialGradient(highlightX, highlightY, screenRadius * 0.05, proj.x, proj.y, screenRadius);
+            
+            grad.addColorStop(0, "rgba(255, 255, 255, 0.9)");
+            grad.addColorStop(0.25, baseColor);
+            grad.addColorStop(1, "rgba(5, 8, 20, 0.95)");
+            
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(proj.x, proj.y, screenRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // Render a localized 4D Tesseract joint representing a genetic node
+        // Render a localized 4D Tesseract joint representing a genetic node (LOD optimized)
+        function drawTesseractJoint(p3d, radius, baseColor, time, jointIndex, sickness = 0) {
+            let projCenter = project(p3d);
+            if (!projCenter) return; // Behind camera clipping
+            
+            let depth = projCenter.depth;
+            
+            // LOD 2: Low Detail (Far away)
+            // Render a single simple volumetric circle, bypassing all 3D/4D calculations
+            if (depth >= 2200) {
+                let size = (radius * camera.fov) / depth;
+                if (size < 0.5) return; // Too small to render
+                
+                let dx = 0, dy = 0;
+                if (sickness > 0.05) {
+                    let jitterScale = size * 0.3 * sickness;
+                    dx = Math.sin(time * 0.05 + jointIndex) * jitterScale;
+                    dy = Math.cos(time * 0.04 + jointIndex) * jitterScale;
+                }
+                
+                ctx.beginPath();
+                ctx.arc(projCenter.x + dx, projCenter.y + dy, size * (1 - sickness * 0.2), 0, Math.PI * 2);
+                
+                let alpha = Math.max(0.01, Math.min(0.12, 800 / depth));
+                ctx.fillStyle = baseColor.replace(/[^,]+(?=\))/, alpha);
+                ctx.fill();
+                
+                let strokeAlpha = Math.max(0.05, Math.min(0.4, 800 / depth));
+                ctx.strokeStyle = baseColor.replace(/[^,]+(?=\))/, strokeAlpha);
+                ctx.lineWidth = 0.8;
+                ctx.stroke();
+                return;
+            }
+
+            // WinchesterMQ port mapping per tesseract joint index (bypassing global memory sharing)
+            let baseRegisterOffset = jointIndex * 10;
+            let speedDamping = yulStorage[103 + baseRegisterOffset] || yulStorage[103] || 1000;
+            let speedMult = 1000 / speedDamping;
+            let angleXY = time * 0.00015 * speedMult + jointIndex * 0.25;
+            let angleXZ = time * 0.00025 * speedMult + jointIndex * 0.15;
+            let angleYZ = time * 0.00035 * speedMult;
+
+            // LOD 1: Medium Detail (Medium distance)
+            // Render a simplified 3D cube (8 vertices, 6 faces)
+            if (depth >= 1200) {
+                let projectedPts = [];
+                for (let i = 0; i < 8; i++) {
+                    let v = cubeVertices[i];
+                    let localV = { x: v.x * radius * 0.65, y: v.y * radius * 0.65, z: v.z * radius * 0.65 };
+                    if (sickness > 0.05) {
+                        let jitterScale = radius * 0.12 * sickness;
+                        localV.x += Math.sin(time * 0.05 + i) * jitterScale;
+                        localV.y += Math.cos(time * 0.04 + i) * jitterScale;
+                        localV.z += Math.sin(time * 0.03 - i) * jitterScale;
+                    }
+                    let rotated = rotate3D(localV, angleXY, angleXZ, angleYZ);
+                    let final3D = {
+                        x: p3d.x + rotated.x,
+                        y: p3d.y + rotated.y,
+                        z: p3d.z + rotated.z
+                    };
+                    projectedPts.push(project(final3D));
+                }
+
+                let validFaces = [];
+                for (let i = 0; i < cubeFaces.length; i++) {
+                    let face = cubeFaces[i];
+                    let p1 = projectedPts[face[0]];
+                    let p2 = projectedPts[face[1]];
+                    let p3 = projectedPts[face[2]];
+                    let p4 = projectedPts[face[3]];
+                    if (p1 && p2 && p3 && p4) {
+                        let cp = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
+                        if (cp < 0) continue; // Back-face culling (Hugi #15)
+                        let depthAvg = (p1.depth + p2.depth + p3.depth + p4.depth) / 4;
+                        validFaces.push({ pts: [p1, p2, p3, p4], depth: depthAvg, index: i });
+                    }
+                }
+                validFaces.sort((a, b) => b.depth - a.depth);
+
+                for (let f of validFaces) {
+                    let alpha = Math.max(0.01, Math.min(0.15, 800 / f.depth));
+                    ctx.fillStyle = baseColor.replace(/[^,]+(?=\))/, alpha);
+                    ctx.beginPath();
+                    ctx.moveTo(f.pts[0].x, f.pts[0].y);
+                    ctx.lineTo(f.pts[1].x, f.pts[1].y);
+                    ctx.lineTo(f.pts[2].x, f.pts[2].y);
+                    ctx.lineTo(f.pts[3].x, f.pts[3].y);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    let strokeAlpha = Math.max(0.05, Math.min(0.5, 800 / f.depth));
+                    ctx.strokeStyle = baseColor.replace(/[^,]+(?=\))/, strokeAlpha);
+                    ctx.lineWidth = 0.8;
+                    ctx.stroke();
+                }
+                return;
+            }
+
+            // LOD 0: High Detail (Close distance)
+            // Render the full 4D tesseract (16 vertices, 24 faces)
+            let angleXW = time * 0.0006 * speedMult;
+            let angleYW = time * 0.00045 * speedMult + jointIndex * 0.1;
+            let angleZW = time * 0.0005 * speedMult;
+
+            let projectedPts = [];
+            for (let i = 0; i < 16; i++) {
+                let v = tesseractVertices[i];
+                let localV = { x: v.x * radius * 0.65, y: v.y * radius * 0.65, z: v.z * radius * 0.65, w: v.w * radius * 0.65 };
+                if (sickness > 0.05) {
+                    let jitterScale = radius * 0.12 * sickness;
+                    localV.x += Math.sin(time * 0.05 + i) * jitterScale;
+                    localV.y += Math.cos(time * 0.04 + i) * jitterScale;
+                    localV.z += Math.sin(time * 0.03 - i) * jitterScale;
+                    localV.w += Math.cos(time * 0.02 + i) * jitterScale;
+                }
+                let rotated = rotate4D(localV, angleXY, angleXZ, angleXW, angleYZ, angleYW, angleZW);
+                
+                // Focal depth control per tesseract joint via WinchesterMQ segment offsets
+                let focalDepthVal = yulStorage[104 + baseRegisterOffset] || yulStorage[104] || 2300;
+                let denom = (focalDepthVal / 1000.0) - rotated.w / (radius * 0.65 + 0.01);
+                if (denom < 0.05) denom = 0.05; // Z-Clipping / Hyper-frustum near plane clipping (Hugi #12)
+                let factor = 1 / denom;
+                let p3dLocal = { x: rotated.x * factor, y: rotated.y * factor, z: rotated.z * factor };
+                
+                let final3D = {
+                    x: p3d.x + p3dLocal.x,
+                    y: p3d.y + p3dLocal.y,
+                    z: p3d.z + p3dLocal.z
+                };
+                projectedPts.push(project(final3D));
+            }
+
+            let validFaces = [];
+            for (let i = 0; i < tesseractFaces.length; i++) {
+                let face = tesseractFaces[i];
+                let p1 = projectedPts[face[0]];
+                let p2 = projectedPts[face[1]];
+                let p3 = projectedPts[face[2]];
+                let p4 = projectedPts[face[3]];
+                if (p1 && p2 && p3 && p4) {
+                    let cp = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
+                    if (cp < 0) continue; // Back-face culling (Hugi #15)
+                    let depthAvg = (p1.depth + p2.depth + p3.depth + p4.depth) / 4;
+                    validFaces.push({ pts: [p1, p2, p3, p4], depth: depthAvg, index: i });
+                }
+            }
+            validFaces.sort((a, b) => b.depth - a.depth);
+
+            for (let f of validFaces) {
+                let alpha = Math.max(0.01, Math.min(0.15, 800 / f.depth));
+                ctx.fillStyle = baseColor.replace(/[^,]+(?=\))/, alpha);
+                ctx.beginPath();
+                ctx.moveTo(f.pts[0].x, f.pts[0].y);
+                ctx.lineTo(f.pts[1].x, f.pts[1].y);
+                ctx.lineTo(f.pts[2].x, f.pts[2].y);
+                ctx.lineTo(f.pts[3].x, f.pts[3].y);
+                ctx.closePath();
+                ctx.fill();
+
+                let strokeAlpha = Math.max(0.05, Math.min(0.5, 800 / f.depth));
+                ctx.strokeStyle = baseColor.replace(/[^,]+(?=\))/, strokeAlpha);
+                ctx.lineWidth = 0.8;
+                ctx.stroke();
+            }
+        }
+
+        // Shaded 3D Capsule Helper (Limbs & Torso)
+        function drawVolumetricCapsule(p1, p2, radius, baseColor) {
+            let sc1 = project(p1);
+            let sc2 = project(p2);
+            if (!sc1 || !sc2) return;
+
+            let r1 = radius * (camera.fov / sc1.depth);
+            let r2 = radius * (camera.fov / sc2.depth);
+            let avgRadius = (r1 + r2) / 2;
+
+            let dx = sc2.x - sc1.x;
+            let dy = sc2.y - sc1.y;
+            let len = Math.sqrt(dx*dx + dy*dy);
+            if (len < 1) return;
+
+            let nx = -dy / len;
+            let ny = dx / len;
+
+            ctx.save();
+            // Perpendicular linear gradient to shade cylinders
+            let grad = ctx.createLinearGradient(sc1.x - nx * avgRadius, sc1.y - ny * avgRadius, sc1.x + nx * avgRadius, sc1.y + ny * avgRadius);
+            grad.addColorStop(0, "rgba(4, 6, 15, 0.95)");
+            grad.addColorStop(0.3, baseColor);
+            grad.addColorStop(0.55, "rgba(255, 255, 255, 0.8)");
+            grad.addColorStop(0.75, baseColor);
+            grad.addColorStop(1, "rgba(4, 6, 15, 0.95)");
+
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = avgRadius * 2;
+            ctx.lineCap = "round";
+
+            ctx.beginPath();
+            ctx.moveTo(sc1.x, sc1.y);
+            ctx.lineTo(sc2.x, sc2.y);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // UV Coordinates mapping regions of the generated photorealistic bear template
+        const segments = {
+            head: { x: 180, y: 20, w: 152, h: 152 },
+            torso: { x: 170, y: 172, w: 172, h: 190 },
+            arm: { x: 100, y: 170, w: 70, h: 140 },
+            leg: { x: 130, y: 320, w: 80, h: 150 }
+        };
+
+        // Renders a photorealistic sprite segment stretched along a 3D bone vector
+        function drawSegmentAlongBone(p1, p2, srcRect, widthScale = 1.0) {
+            if (!sdImage) return;
+            let sc1 = project(p1);
+            let sc2 = project(p2);
+            if (!sc1 || !sc2) return;
+
+            let dx = sc2.x - sc1.x;
+            let dy = sc2.y - sc1.y;
+            let len = Math.sqrt(dx*dx + dy*dy);
+            if (len < 1) return;
+
+            let angle = Math.atan2(dy, dx);
+            let avgDepth = (sc1.depth + sc2.depth) / 2;
+            let thickness = srcRect.w * (camera.fov / avgDepth) * widthScale * 1.5;
+
+            ctx.save();
+            ctx.translate((sc1.x + sc2.x) / 2, (sc1.y + sc2.y) / 2);
+            ctx.rotate(angle - Math.PI / 2); // Rotate to align with bone vector
+            
+            ctx.drawImage(
+                sdImage,
+                srcRect.x, srcRect.y, srcRect.w, srcRect.h,
+                -thickness / 2, -len / 2, thickness, len
+            );
+            ctx.restore();
+        }
+
+        // Renders a photorealistic sprite segment centered at a 3D joint point
+        function drawSegmentAtJoint(p, srcRect, scaleVal, radiusScale = 1.0) {
+            if (!sdImage) return;
+            let proj = project(p);
+            if (!proj) return;
+            let size = srcRect.w * (camera.fov / proj.depth) * radiusScale * scaleVal * 1.35;
+
+            ctx.save();
+            ctx.translate(proj.x, proj.y);
+            ctx.drawImage(
+                sdImage,
+                srcRect.x, srcRect.y, srcRect.w, srcRect.h,
+                -size / 2, -size / 2, size, size
+            );
+            ctx.restore();
+        }
+
+        function drawFloorShadows(offset3D, jointsRaw, scale) {
+            ctx.save();
+            ctx.shadowBlur = 0;
+            
+            // Center drop shadow
+            let centerFloor = new Point3D(offset3D.x, -90, offset3D.z);
+            let scCenter = project(centerFloor);
+            if (scCenter) {
+                let rX = 85 * scale * (camera.fov / scCenter.depth);
+                let rY = 32 * scale * (camera.fov / scCenter.depth);
+                let grad = ctx.createRadialGradient(scCenter.x, scCenter.y, 0, scCenter.x, scCenter.y, rX);
+                grad.addColorStop(0, "rgba(0, 0, 0, 0.55)");
+                grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.ellipse(scCenter.x, scCenter.y, rX, rY, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Foot shadows
+            if (jointsRaw.lFoot) {
+                let lFootFloor = new Point3D(jointsRaw.lFoot.x, -95, jointsRaw.lFoot.z);
+                let scL = project(lFootFloor);
+                if (scL) {
+                    let rX = 28 * scale * (camera.fov / scL.depth);
+                    let rY = 12 * scale * (camera.fov / scL.depth);
+                    let grad = ctx.createRadialGradient(scL.x, scL.y, 0, scL.x, scL.y, rX);
+                    grad.addColorStop(0, "rgba(0, 0, 0, 0.65)");
+                    grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.ellipse(scL.x, scL.y, rX, rY, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            if (jointsRaw.rFoot) {
+                let rFootFloor = new Point3D(jointsRaw.rFoot.x, -95, jointsRaw.rFoot.z);
+                let scR = project(rFootFloor);
+                if (scR) {
+                    let rX = 28 * scale * (camera.fov / scR.depth);
+                    let rY = 12 * scale * (camera.fov / scR.depth);
+                    let grad = ctx.createRadialGradient(scR.x, scR.y, 0, scR.x, scR.y, rX);
+                    grad.addColorStop(0, "rgba(0, 0, 0, 0.65)");
+                    grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.ellipse(scR.x, scR.y, rX, rY, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            ctx.restore();
+        }
+
+        function drawFurTexture(ctx, joints, scale) {
+            ctx.save();
+            ctx.strokeStyle = "rgba(120, 80, 50, 0.25)";
+            ctx.lineWidth = 1 * scale;
+            
+            function drawFuzzyOutline(p3d, radius) {
+                let proj = project(p3d);
+                if (!proj) return;
+                let screenRadius = radius * (camera.fov / proj.depth);
+                if (screenRadius <= 5) return;
+                
+                ctx.beginPath();
+                for (let i = 0; i < 45; i++) {
+                    let angle = (i / 45) * Math.PI * 2;
+                    let len = screenRadius + (Math.random() * 5 - 2.5) * scale;
+                    let x1 = proj.x + Math.cos(angle) * screenRadius;
+                    let y1 = proj.y + Math.sin(angle) * screenRadius;
+                    let x2 = proj.x + Math.cos(angle) * len;
+                    let y2 = proj.y + Math.sin(angle) * len;
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                }
+                ctx.stroke();
+            }
+
+            drawFuzzyOutline(joints.head, 35);
+            let lEar = new Point3D(joints.head.x - 28 * scale, joints.head.y + 28 * scale, joints.head.z - 8 * scale);
+            let rEar = new Point3D(joints.head.x + 28 * scale, joints.head.y + 28 * scale, joints.head.z + 8 * scale);
+            drawFuzzyOutline(lEar, 14);
+            drawFuzzyOutline(rEar, 14);
+            ctx.restore();
+        }
+
+        // Draw 3D wireframe bear
+        function drawBear3D(offset3D, scale, angles, pulse, sickness, palette) {
+            let projBear = project(offset3D);
+            let depth = projBear ? projBear.depth : 1000;
+
+            // Read active genome traits from DNA Synthesis Suite
+            const headScale = parseFloat(document.getElementById("synth-head")?.value || 1.0);
+            const torsoWidth = parseFloat(document.getElementById("synth-torso")?.value || 1.0);
+            const earScale = parseFloat(document.getElementById("synth-ears")?.value || 1.0);
+            const muzzleScale = parseFloat(document.getElementById("synth-muzzle")?.value || 1.0);
+            const armWidth = parseFloat(document.getElementById("synth-arms")?.value || 1.0);
+            const legWidth = parseFloat(document.getElementById("synth-legs")?.value || 1.0);
+            const furLen = parseFloat(document.getElementById("synth-fur")?.value || 1.0);
+
+            const joints = getBearSkeleton(offset3D, scale, angles, pulse, sickness);
+
+            const baseCol = palette.head || "rgba(0, 240, 255, 0.85)";
+            const webCol = palette.web || "rgba(255, 0, 127, 0.4)";
+
+            // LOD 2: Low Detail (Far away)
+            // Render a highly simplified 2D/3D flat skeleton with direct fills, bypassing shadows, halos, volumetric logic, and fur
+            if (depth >= 1800) {
+                const drawSimpleLimb = (p1, p2, width) => {
+                    let sc1 = project(p1);
+                    let sc2 = project(p2);
+                    if (!sc1 || !sc2) return;
+                    ctx.beginPath();
+                    ctx.moveTo(sc1.x, sc1.y);
+                    ctx.lineTo(sc2.x, sc2.y);
+                    ctx.strokeStyle = baseCol;
+                    ctx.lineWidth = width * scale * (camera.fov / ((sc1.depth + sc2.depth)/2));
+                    ctx.lineCap = "round";
+                    ctx.stroke();
+                };
+
+                const drawSimpleJoint = (p3d, radius, col = baseCol) => {
+                    let proj = project(p3d);
+                    if (!proj) return;
+                    let size = radius * scale * (camera.fov / proj.depth);
+                    ctx.beginPath();
+                    ctx.arc(proj.x, proj.y, size, 0, Math.PI * 2);
+                    ctx.fillStyle = col;
+                    ctx.fill();
+                };
+
+                // Draw simple lines for limbs
+                drawSimpleLimb(joints.neck, joints.lShoulder, 14 * armWidth);
+                drawSimpleLimb(joints.lShoulder, joints.lPaw, 12 * armWidth);
+                drawSimpleLimb(joints.neck, joints.rShoulder, 14 * armWidth);
+                drawSimpleLimb(joints.rShoulder, joints.rPaw, 12 * armWidth);
+                drawSimpleLimb(joints.midHip, joints.lFoot, 13 * legWidth);
+                drawSimpleLimb(joints.midHip, joints.rFoot, 13 * legWidth);
+                drawSimpleLimb(joints.neck, joints.midHip, 40 * torsoWidth);
+
+                // Draw simple circles for head components
+                let lEar = new Point3D(joints.head.x - 30 * scale * headScale, joints.head.y + 30 * scale * headScale, joints.head.z - 10 * scale);
+                let rEar = new Point3D(joints.head.x + 30 * scale * headScale, joints.head.y + 30 * scale * headScale, joints.head.z + 10 * scale);
+                drawSimpleJoint(lEar, 15 * earScale);
+                drawSimpleJoint(rEar, 15 * earScale);
+                drawSimpleJoint(joints.head, 38 * headScale);
+                let snout = new Point3D(joints.head.x, joints.head.y - 8 * scale * headScale, joints.head.z + 25 * scale);
+                drawSimpleJoint(snout, 12 * muzzleScale, "rgba(255, 255, 255, 0.95)");
+
+                // Draw simple circles for paws
+                drawSimpleJoint(joints.lPaw, 14 * armWidth);
+                drawSimpleJoint(joints.rPaw, 14 * armWidth);
+                drawSimpleJoint(joints.lFoot, 16 * legWidth);
+                drawSimpleJoint(joints.rFoot, 16 * legWidth);
+                return;
+            }
+
+            // LOD 1: Medium Detail (Medium distance)
+            // Render volumetric solid shading, standard shadows, standard capsules, but skip fur fluffiness and glows
+            if (depth >= 1200) {
+                // 1. Draw floor shadows (simplified)
+                drawFloorShadows(offset3D, joints, scale * 0.8);
+
+                // 2. Draw Limbs (Capsules)
+                drawVolumetricCapsule(joints.neck, joints.lShoulder, 16 * scale * armWidth, baseCol);
+                drawVolumetricCapsule(joints.lShoulder, joints.lPaw, 14 * scale * armWidth, baseCol);
+                drawVolumetricCapsule(joints.neck, joints.rShoulder, 16 * scale * armWidth, baseCol);
+                drawVolumetricCapsule(joints.rShoulder, joints.rPaw, 14 * scale * armWidth, baseCol);
+                drawVolumetricCapsule(joints.midHip, joints.lFoot, 15 * scale * legWidth, baseCol);
+                drawVolumetricCapsule(joints.midHip, joints.rFoot, 15 * scale * legWidth, baseCol);
+
+                // 3. Draw Torso
+                drawVolumetricCapsule(joints.neck, joints.midHip, 45 * scale * torsoWidth, baseCol);
+
+                // 4. Draw Ears, Head, Snout & Paws via drawTesseractJoint (LOD 1 / 2 handles them dynamically)
+                let lEar = new Point3D(joints.head.x - 30 * scale * headScale, joints.head.y + 30 * scale * headScale, joints.head.z - 10 * scale);
+                let rEar = new Point3D(joints.head.x + 30 * scale * headScale, joints.head.y + 30 * scale * headScale, joints.head.z + 10 * scale);
+                drawTesseractJoint(lEar, 15 * scale * earScale, baseCol, time, 1, sickness);
+                drawTesseractJoint(rEar, 15 * scale * earScale, baseCol, time, 2, sickness);
+                drawTesseractJoint(joints.head, 38 * scale * headScale, baseCol, time, 3, sickness);
+                let snout = new Point3D(joints.head.x, joints.head.y - 8 * scale * headScale, joints.head.z + 25 * scale);
+                drawTesseractJoint(snout, 12 * scale * muzzleScale, "rgba(255, 255, 255, 0.95)", time, 4, sickness);
+
+                drawTesseractJoint(joints.lPaw, 14 * scale * armWidth, baseCol, time, 5, sickness);
+                drawTesseractJoint(joints.rPaw, 14 * scale * armWidth, baseCol, time, 6, sickness);
+                drawTesseractJoint(joints.lFoot, 16 * scale * legWidth, baseCol, time, 7, sickness);
+                drawTesseractJoint(joints.rFoot, 16 * scale * legWidth, baseCol, time, 8, sickness);
+                return;
+            }
+
+            // LOD 0: High Detail (Close distance)
+            // Render shadows, halos, capsules, highlight overlay, and fur textures
+            drawFloorShadows(offset3D, joints, scale);
+
+            ctx.save();
+            ctx.shadowBlur = 24;
+            ctx.shadowColor = baseCol.replace("0.85", "1.0");
+            drawVolumetricSphere(joints.head, 39 * scale * headScale, "rgba(255, 255, 255, 0.08)");
+            drawVolumetricCapsule(joints.neck, joints.midHip, 46 * scale * torsoWidth, "rgba(255, 255, 255, 0.08)");
+            ctx.restore();
+
+            const isOverlayEnabled = document.getElementById("show-ai-overlay").checked;
+            const useSD = sdImage && isOverlayEnabled && (palette === fighter1.color);
+
+            if (useSD) {
+                // Draw rigged photorealistic segments on top of active 3D joints
+                drawSegmentAlongBone(joints.neck, joints.midHip, segments.torso, scale * torsoWidth);
+                drawSegmentAlongBone(joints.lShoulder, joints.lPaw, segments.arm, scale * armWidth);
+                drawSegmentAlongBone(joints.rShoulder, joints.rPaw, segments.arm, scale * armWidth);
+                drawSegmentAlongBone(joints.midHip, joints.lFoot, segments.leg, scale * legWidth);
+                drawSegmentAlongBone(joints.midHip, joints.rFoot, segments.leg, scale * legWidth);
+                drawSegmentAtJoint(joints.head, segments.head, scale, headScale);
+
+                ctx.save();
+                ctx.globalCompositeOperation = "multiply";
+                const shadingColor = "rgba(180, 170, 160, 0.65)";
+                drawVolumetricCapsule(joints.neck, joints.lShoulder, 16 * scale * armWidth, shadingColor);
+                drawVolumetricCapsule(joints.lShoulder, joints.lPaw, 14 * scale * armWidth, shadingColor);
+                drawVolumetricCapsule(joints.neck, joints.rShoulder, 16 * scale * armWidth, shadingColor);
+                drawVolumetricCapsule(joints.rShoulder, joints.rPaw, 14 * scale * armWidth, shadingColor);
+                drawVolumetricCapsule(joints.midHip, joints.lFoot, 15 * scale * legWidth, shadingColor);
+                drawVolumetricCapsule(joints.midHip, joints.rFoot, 15 * scale * legWidth, shadingColor);
+                drawVolumetricCapsule(joints.neck, joints.midHip, 45 * scale * torsoWidth, shadingColor);
+
+                let lEar = new Point3D(joints.head.x - 30 * scale * headScale, joints.head.y + 30 * scale * headScale, joints.head.z - 10 * scale);
+                let rEar = new Point3D(joints.head.x + 30 * scale * headScale, joints.head.y + 30 * scale * headScale, joints.head.z + 10 * scale);
+                drawVolumetricSphere(lEar, 15 * scale * earScale, shadingColor);
+                drawVolumetricSphere(rEar, 15 * scale * earScale, shadingColor);
+                drawVolumetricSphere(joints.head, 38 * scale * headScale, shadingColor);
+                ctx.restore();
+
+                ctx.save();
+                ctx.globalCompositeOperation = "overlay";
+                const highlightColor = "rgba(255, 230, 200, 0.4)";
+                drawVolumetricSphere(joints.head, 38 * scale * headScale, highlightColor);
+                drawVolumetricCapsule(joints.neck, joints.midHip, 45 * scale * torsoWidth, highlightColor);
+                ctx.restore();
+            } else {
+                drawVolumetricCapsule(joints.neck, joints.lShoulder, 16 * scale * armWidth, baseCol);
+                drawVolumetricCapsule(joints.lShoulder, joints.lPaw, 14 * scale * armWidth, baseCol);
+                drawVolumetricCapsule(joints.neck, joints.rShoulder, 16 * scale * armWidth, baseCol);
+                drawVolumetricCapsule(joints.rShoulder, joints.rPaw, 14 * scale * armWidth, baseCol);
+                drawVolumetricCapsule(joints.midHip, joints.lFoot, 15 * scale * legWidth, baseCol);
+                drawVolumetricCapsule(joints.midHip, joints.rFoot, 15 * scale * legWidth, baseCol);
+
+                drawVolumetricCapsule(joints.neck, joints.midHip, 45 * scale * torsoWidth, baseCol);
+
+                let lEar = new Point3D(joints.head.x - 30 * scale * headScale, joints.head.y + 30 * scale * headScale, joints.head.z - 10 * scale);
+                let rEar = new Point3D(joints.head.x + 30 * scale * headScale, joints.head.y + 30 * scale * headScale, joints.head.z + 10 * scale);
+                drawTesseractJoint(lEar, 15 * scale * earScale, baseCol, time, 1, sickness);
+                drawTesseractJoint(rEar, 15 * scale * earScale, baseCol, time, 2, sickness);
+                drawTesseractJoint(joints.head, 38 * scale * headScale, baseCol, time, 3, sickness);
+                let snout = new Point3D(joints.head.x, joints.head.y - 8 * scale * headScale, joints.head.z + 25 * scale);
+                drawTesseractJoint(snout, 12 * scale * muzzleScale, "rgba(255, 255, 255, 0.95)", time, 4, sickness);
+
+                drawTesseractJoint(joints.lPaw, 14 * scale * armWidth, baseCol, time, 5, sickness);
+                drawTesseractJoint(joints.rPaw, 14 * scale * armWidth, baseCol, time, 6, sickness);
+                drawTesseractJoint(joints.lFoot, 16 * scale * legWidth, baseCol, time, 7, sickness);
+                drawTesseractJoint(joints.rFoot, 16 * scale * legWidth, baseCol, time, 8, sickness);
+            }
+
+            drawFurTexture(ctx, joints, scale * furLen);
+
+            // Draw connecting cobwebs under sickness decay
+            if (sickness > 0.35) {
+                const websCount = 6;
+                for (let i = 0; i <= websCount; i++) {
+                    let t = i / websCount;
+                    let p1 = new Point3D(
+                        joints.lFoot.x + (joints.rFoot.x - joints.lFoot.x) * t,
+                        joints.lFoot.y + (joints.rFoot.y - joints.lFoot.y) * t - Math.sin(t * Math.PI) * 15 * scale,
+                        joints.lFoot.z + (joints.rFoot.z - joints.lFoot.z) * t
+                    );
+                    let p2 = new Point3D(p1.x, p1.y - 12 * scale * sickness, p1.z);
+                    drawLine3D(p1, p2, webCol, 1.5);
+                }
+            }
+        }
+
+        // Draw 3D Arena Ground Grid with Bessel Distortion
+        function drawArenaGrid(timeMs) {
+            const gridLimit = 850;
+            const step = 85;
+            
+            ctx.save();
+            ctx.shadowBlur = 10;
+            
+            // Calculate parasitic ammeter load damping from ammeterState
+            const ammeter_damping = 1.0 / (1.0 + (ammeterState ? ammeterState.theta : 0.0) * 1.5);
+            
+            // VGA Color-Cycling Palette Fade Simulation (Auncient Fuzzby #0 VGA port rasterbar cycle)
+            let hue = (timeMs * 0.05) % 360;
+            
+            // Draw grid lines modulated by Bessel gravity wave
+            for (let i = -gridLimit; i <= gridLimit; i += step) {
+                // Parallel to Z-axis
+                ctx.strokeStyle = `hsla(${hue}, 100%, 60%, 0.25)`;
+                ctx.shadowColor = `hsla(${hue}, 100%, 60%, 0.3)`;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                for (let j = -gridLimit; j <= gridLimit; j += 40) {
+                    let dist = Math.sqrt(i*i + j*j);
+                    // Bessel wave ripple outward from center, damped parasitically
+                    let ripple = bessel_j0((dist / 140) - (timeMs * 0.002)) * 32 * ammeter_damping;
+                    let sc = project(new Point3D(i, -100 + ripple, j));
+                    if (sc) {
+                        if (j === -gridLimit) ctx.moveTo(sc.x, sc.y);
+                        else ctx.lineTo(sc.x, sc.y);
+                    }
+                }
+                ctx.stroke();
+
+                // Parallel to X-axis
+                ctx.beginPath();
+                for (let j = -gridLimit; j <= gridLimit; j += 40) {
+                    let dist = Math.sqrt(j*j + i*i);
+                    let ripple = bessel_j0((dist / 140) - (timeMs * 0.002)) * 32 * ammeter_damping;
+                    let sc = project(new Point3D(j, -100 + ripple, i));
+                    if (sc) {
+                        if (j === -gridLimit) ctx.moveTo(sc.x, sc.y);
+                        else ctx.lineTo(sc.x, sc.y);
+                    }
+                }
+                ctx.stroke();
+            }
+
+            // Draw outer perimeter boundary ring
+            ctx.strokeStyle = "rgba(255, 0, 127, 0.4)";
+            ctx.shadowColor = "rgba(255, 0, 127, 0.5)";
+            ctx.lineWidth = 3;
+            const circleSteps = 48;
+            let prevPt = null;
+            for (let i = 0; i <= circleSteps; i++) {
+                let theta = (i / circleSteps) * Math.PI * 2;
+                let rx = Math.cos(theta) * 750;
+                let rz = Math.sin(theta) * 750;
+                let dist = Math.sqrt(rx*rx + rz*rz);
+                let ripple = bessel_j0((dist / 140) - (timeMs * 0.002)) * 32 * ammeter_damping;
+                let pt = new Point3D(rx, -100 + ripple, rz);
+                if (prevPt) {
+                    drawLine3D(prevPt, pt, "rgba(255, 0, 127, 0.4)", 3);
+                }
+                prevPt = pt;
+            }
+            ctx.restore();
+        }
+
+        // Tournament participants genome specs
+        const participants = [
+            { id: "b1", name: "Mercenary Alpha", type: "BESSEL", hp: 100, spike: 0.25, phase: 0.1, sick: 0.25, pos: new Point3D(-280, 0, 0), color: { head: "rgba(0, 240, 255, 0.85)", bone: "#fff", web: "rgba(0, 240, 255, 0.3)" } },
+            { id: "b2", name: "Bessel Surf Bear", type: "WAVEFRONT", hp: 100, spike: 0.15, phase: 1.45, sick: 0.45, pos: new Point3D(280, 0, 0), color: { head: "rgba(57, 255, 20, 0.85)", bone: "#fff", web: "rgba(57, 255, 20, 0.3)" } },
+            { id: "b3", name: "Biotika Spike", type: "BIOTIKA", hp: 100, spike: 0.85, phase: 0.35, sick: 0.55, pos: new Point3D(-280, 0, 0), color: { head: "rgba(255, 0, 127, 0.85)", bone: "#fff", web: "rgba(255, 0, 127, 0.3)" } },
+            { id: "b4", name: "Atropa Kr0wZ", type: "MUTATION", hp: 100, spike: 0.95, phase: 1.95, sick: 0.75, pos: new Point3D(280, 0, 0), color: { head: "rgba(255, 234, 0, 0.85)", bone: "#fff", web: "rgba(255, 234, 0, 0.3)" } }
+        ];
+
+        fighter1 = participants[0];
+        fighter2 = participants[1];
+        matchActive = false;
+        let time = 0;
+        let sdImage = null;
+
+        // Hidden canvases for pose / depth extraction
+        const depthCanvas = document.createElement("canvas");
+        depthCanvas.width = 512;
+        depthCanvas.height = 512;
+        const dCtx = depthCanvas.getContext("2d");
+
+        const poseCanvas = document.createElement("canvas");
+        poseCanvas.width = 512;
+        poseCanvas.height = 512;
+        const pCtx = poseCanvas.getContext("2d");
+
+        function projectToViewport512(p, centerOffset) {
+            let x = p.x - centerOffset.x;
+            let y = p.y - centerOffset.y;
+            let z = p.z - centerOffset.z;
+
+            let cosY = Math.cos(camera.yaw);
+            let sinY = Math.sin(camera.yaw);
+            let x1 = x * cosY - z * sinY;
+            let z1 = x * sinY + z * cosY;
+
+            let cosP = Math.cos(camera.pitch);
+            let sinP = Math.sin(camera.pitch);
+            let y2 = y * cosP - z1 * sinP;
+            let z2 = y * sinP + z1 * cosP;
+
+            z2 += 650; 
+
+            if (z2 <= 10) return null;
+
+            let scX = (x1 * 900) / z2 + 256;
+            let scY = (-y2 * 900) / z2 + 256;
+
+            return { x: scX, y: scY, depth: z2 };
+        }
+
+        function applySobelFilter(ctx, width, height) {
+            const imgData = ctx.getImageData(0, 0, width, height);
+            const data = imgData.data;
+            const output = ctx.createImageData(width, height);
+            const outData = output.data;
+
+            function getGray(x, y) {
+                if (x < 0 || x >= width || y < 0 || y >= height) return 0;
+                const idx = (y * width + x) * 4;
+                return 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+            }
+
+            const gx = [
+                [-1, 0, 1],
+                [-2, 0, 2],
+                [-1, 0, 1]
+            ];
+            const gy = [
+                [-1, -2, -1],
+                [ 0,  0,  0],
+                [ 1,  2,  1]
+            ];
+
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    let valX = 0;
+                    let valY = 0;
+
+                    for (let ky = -1; ky <= 1; ky++) {
+                        for (let kx = -1; kx <= 1; kx++) {
+                            const pixel = getGray(x + kx, y + ky);
+                            valX += pixel * gx[ky + 1][kx + 1];
+                            valY += pixel * gy[ky + 1][kx + 1];
+                        }
+                    }
+
+                    const magnitude = Math.min(255, Math.sqrt(valX * valX + valY * valY));
+                    const idx = (y * width + x) * 4;
+                    outData[idx] = magnitude;     // R
+                    outData[idx + 1] = magnitude; // G
+                    outData[idx + 2] = magnitude; // B
+                    outData[idx + 3] = 255;       // A
+                }
+            }
+
+            ctx.putImageData(output, 0, 0);
+        }
+
+        function extractControlNetPoses(angles, offset, palette) {
+            dCtx.fillStyle = "#000000";
+            dCtx.fillRect(0, 0, 512, 512);
+
+            pCtx.fillStyle = "#000000";
+            pCtx.fillRect(0, 0, 512, 512);
+
+            const jointsRaw = getBearSkeleton(offset, 1.2, angles, 0.0, 0.0);
+            
+            const joints = {
+                head: projectToViewport512(jointsRaw.head, offset),
+                neck: projectToViewport512(jointsRaw.neck, offset),
+                lShoulder: projectToViewport512(jointsRaw.lShoulder, offset),
+                rShoulder: projectToViewport512(jointsRaw.rShoulder, offset),
+                lPaw: projectToViewport512(jointsRaw.lPaw, offset),
+                rPaw: projectToViewport512(jointsRaw.rPaw, offset),
+                midHip: projectToViewport512(jointsRaw.midHip, offset),
+                lFoot: projectToViewport512(jointsRaw.lFoot, offset),
+                rFoot: projectToViewport512(jointsRaw.rFoot, offset)
+            };
+
+            function drawBone(ctxType, j1, j2, isDepth, color, width) {
+                if (!j1 || !j2) return;
+                ctxType.save();
+                if (isDepth) {
+                    let avgDepth = (j1.depth + j2.depth) / 2;
+                    let dVal = Math.max(0, Math.min(255, 255 - Math.floor((avgDepth - 350) / 600 * 255)));
+                    ctxType.strokeStyle = `rgb(${dVal},${dVal},${dVal})`;
+                } else {
+                    ctxType.strokeStyle = color;
+                }
+                ctxType.lineWidth = width;
+                ctxType.lineCap = "round";
+                ctxType.beginPath();
+                ctxType.moveTo(j1.x, j1.y);
+                ctxType.lineTo(j2.x, j2.y);
+                ctxType.stroke();
+                ctxType.restore();
+            }
+
+            if (joints.head) {
+                dCtx.save();
+                let rad = 35 * 1.2 * (900 / joints.head.depth);
+                let grad = dCtx.createRadialGradient(joints.head.x, joints.head.y, rad * 0.2, joints.head.x, joints.head.y, rad);
+                let dVal = Math.max(0, Math.min(255, 255 - Math.floor((joints.head.depth - 350) / 600 * 255)));
+                let cStr1 = `rgb(${dVal},${dVal},${dVal})`;
+                let cStr2 = `rgb(${Math.max(0, dVal-80)},${Math.max(0, dVal-80)},${Math.max(0, dVal-80)})`;
+                grad.addColorStop(0, cStr1);
+                grad.addColorStop(1, cStr2);
+                dCtx.fillStyle = grad;
+                dCtx.beginPath();
+                dCtx.arc(joints.head.x, joints.head.y, rad, 0, Math.PI * 2);
+                dCtx.fill();
+                dCtx.restore();
+            }
+
+            drawBone(dCtx, joints.head, joints.neck, true, null, 14);
+            drawBone(dCtx, joints.neck, joints.lShoulder, true, null, 10);
+            drawBone(dCtx, joints.lShoulder, joints.lPaw, true, null, 10);
+            drawBone(dCtx, joints.neck, joints.rShoulder, true, null, 10);
+            drawBone(dCtx, joints.rShoulder, joints.rPaw, true, null, 10);
+            drawBone(dCtx, joints.neck, joints.midHip, true, null, 14);
+            drawBone(dCtx, joints.midHip, joints.lFoot, true, null, 10);
+            drawBone(dCtx, joints.midHip, joints.rFoot, true, null, 10);
+
+            if (joints.head) {
+                pCtx.fillStyle = "#ff00ff";
+                pCtx.beginPath();
+                pCtx.arc(joints.head.x, joints.head.y, 14, 0, Math.PI*2);
+                pCtx.fill();
+            }
+            drawBone(pCtx, joints.head, joints.neck, false, "#ff0000", 8);
+            drawBone(pCtx, joints.neck, joints.lShoulder, false, "#0000ff", 6);
+            drawBone(pCtx, joints.lShoulder, joints.lPaw, false, "#00ffff", 6);
+            drawBone(pCtx, joints.neck, joints.rShoulder, false, "#ff0000", 6);
+            drawBone(pCtx, joints.rShoulder, joints.rPaw, false, "#ff8000", 6);
+            drawBone(pCtx, joints.neck, joints.midHip, false, "#ffff00", 8);
+            drawBone(pCtx, joints.midHip, joints.lFoot, false, "#00ff00", 6);
+            drawBone(pCtx, joints.midHip, joints.rFoot, false, "#80ff00", 6);
+
+            if (document.getElementById("canny-edge-outline") && document.getElementById("canny-edge-outline").checked) {
+                applySobelFilter(dCtx, 512, 512);
+            }
+
+            return {
+                depthData: depthCanvas.toDataURL("image/png"),
+                poseData: poseCanvas.toDataURL("image/png")
+            };
+        }
+
+        function updateUI() {
+            document.getElementById("name-b1").innerText = fighter1.name;
+            document.getElementById("type-b1").innerText = "GENOME: " + fighter1.type;
+            document.getElementById("hp-b1").style.width = fighter1.hp + "%";
+            document.getElementById("spike-b1").innerText = fighter1.spike.toFixed(2) + "V";
+            document.getElementById("phase-b1").innerText = fighter1.phase.toFixed(2) + " rad";
+            document.getElementById("sick-b1").innerText = (fighter1.sick * 100).toFixed(0) + "%";
+
+            document.getElementById("name-b2").innerText = fighter2.name;
+            document.getElementById("type-b2").innerText = "GENOME: " + fighter2.type;
+            document.getElementById("hp-b2").style.width = fighter2.hp + "%";
+            document.getElementById("spike-b2").innerText = fighter2.spike.toFixed(2) + "V";
+            document.getElementById("phase-b2").innerText = fighter2.phase.toFixed(2) + " rad";
+            document.getElementById("sick-b2").innerText = (fighter2.sick * 100).toFixed(0) + "%";
+        }
+
+        function logEvent(msg) {
+            const consoleBox = document.getElementById("console-log");
+            const timestamp = new Date().toLocaleTimeString();
+            consoleBox.innerHTML += `\n[${timestamp}] ${msg}`;
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+            fetch('/api/dilemma-log', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ event: 'CLIENT_LOG', source: 'Browser', details: msg })
+            }).catch(() => {});
+        }
+
+        // Camera control event bindings
+        document.getElementById("btn-orbit-l").onclick = () => { initAudio(); camera.yaw -= 0.15; };
+        document.getElementById("btn-orbit-r").onclick = () => { initAudio(); camera.yaw += 0.15; };
+        document.getElementById("btn-orbit-u").onclick = () => { initAudio(); camera.pitch = Math.min(Math.PI/2, camera.pitch + 0.1); };
+        document.getElementById("btn-orbit-d").onclick = () => { initAudio(); camera.pitch = Math.max(-Math.PI/2, camera.pitch - 0.1); };
+        document.getElementById("btn-zoom-i").onclick = () => { initAudio(); camera.distance = Math.max(300, camera.distance - 100); };
+        document.getElementById("btn-zoom-o").onclick = () => { initAudio(); camera.distance = Math.min(2200, camera.distance + 100); };
+
+        // Orbit via drag mouse
+        let isDragging = false;
+        let prevMouseX = 0;
+        let prevMouseY = 0;
+        canvas.onmousedown = (e) => {
+            initAudio();
+            isDragging = true;
+            prevMouseX = e.clientX;
+            prevMouseY = e.clientY;
+        };
+        window.onmouseup = () => isDragging = false;
+        window.onmousemove = (e) => {
+            if (!isDragging) return;
+            let dx = e.clientX - prevMouseX;
+            let dy = e.clientY - prevMouseY;
+            camera.yaw += dx * 0.005;
+            camera.pitch = Math.max(-Math.PI/3, Math.min(Math.PI/3, camera.pitch - dy * 0.005));
+            prevMouseX = e.clientX;
+            prevMouseY = e.clientY;
+        };
+
+        // Match Simulation
+        document.getElementById("btn-start-match").onclick = () => {
+            initAudio();
+            if (matchActive) return;
+            fighter1.hp = 100;
+            fighter2.hp = 100;
+            matchActive = true;
+            logEvent(`⚔️ Arena Match Commencing: ${fighter1.name} vs ${fighter2.name}!`);
+        };
+
+        let currentStage = 0;
+        document.getElementById("btn-next-round").onclick = () => {
+            initAudio();
+            if (matchActive) return;
+            if (currentStage === 0) {
+                fighter1 = participants[0]; // Mercenary Alpha
+                fighter2 = participants[2]; // Biotika Spike
+                document.getElementById("node-b1").className = "bracket-bear winner";
+                document.getElementById("node-b3").className = "bracket-bear active";
+                document.getElementById("node-b4").className = "bracket-bear winner";
+                currentStage = 1;
+                logEvent("🏆 Semifinals Configured. Stage B Brackets updated.");
+                updateUI();
+            } else {
+                fighter1 = participants[0];
+                fighter2 = participants[3]; // Atropa Kr0wZ
+                logEvent("🏆 Tournament Grand Finale configured!");
+                updateUI();
+            }
+        };
+
+        // Trigger request to backend Python server
+        document.getElementById("btn-ai-render").onclick = () => {
+            initAudio();
+            
+            const btn = document.getElementById("btn-ai-render");
+            const statusBox = document.getElementById("ai-status");
+            const promptText = document.getElementById("ai-prompt").value;
+            
+            btn.disabled = true;
+            btn.innerText = "Extracting pose...";
+            statusBox.innerText = "Status: Rendering depth/pose maps...";
+
+            // Get current active angles for fighter 1
+            let b1Angles = {
+                leftArm: Math.sin(time * 0.0025) * (40 * Math.PI / 180),
+                rightArm: -Math.sin(time * 0.0025) * (40 * Math.PI / 180),
+                leftLeg: Math.cos(time * 0.0025) * (20 * Math.PI / 180),
+                rightLeg: -Math.cos(time * 0.0025) * (20 * Math.PI / 180)
+            };
+
+            // Extract pose base64 strings
+            const cnData = extractControlNetPoses(b1Angles, fighter1.pos, fighter1.color);
+
+            // Update ControlNet debugger previews
+            const dbgDepthImg = document.getElementById("dbg-depth-preview");
+            const dbgDepthPh = document.getElementById("dbg-depth-placeholder");
+            const dbgPoseImg = document.getElementById("dbg-pose-preview");
+            const dbgPosePh = document.getElementById("dbg-pose-placeholder");
+            
+            if (dbgDepthImg && dbgDepthPh) {
+                dbgDepthImg.src = cnData.depthData;
+                dbgDepthImg.style.display = "block";
+                dbgDepthPh.style.display = "none";
+            }
+            if (dbgPoseImg && dbgPosePh) {
+                dbgPoseImg.src = cnData.poseData;
+                dbgPoseImg.style.display = "block";
+                dbgPosePh.style.display = "none";
+            }
+
+            statusBox.innerText = "Status: Generating on Vulkan Server...";
+            logEvent("AI Puppet: Sending pose & depth maps to ControlNet worker...");
+
+            // Send to python server on port 8000
+            fetch("http://127.0.0.1:8000/generate-bear", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    prompt: promptText,
+                    profile: "dream", // use dream/turbo profile for faster generation
+                    steps: 6,
+                    cfg: 1.5,
+                    use_controlnet: true,
+                    controlnet_image: cnData.depthData,
+                    controlnet_pose: cnData.poseData
+                })
+            })
+            .then(res => {
+                if (!res.ok) throw new Error("HTTP error " + res.status);
+                return res.json();
+            })
+            .then(data => {
+                if (data.status === "success") {
+                    logEvent("AI Puppet: Generation complete! Loading texture...");
+                    statusBox.innerText = "Status: Loading texture...";
+                    
+                    const newImg = new Image();
+                    newImg.onload = () => {
+                        // Dynamically extract the bear and make background transparent
+                        const tempCanvas = document.createElement("canvas");
+                        tempCanvas.width = newImg.width;
+                        tempCanvas.height = newImg.height;
+                        const tempCtx = tempCanvas.getContext("2d");
+                        tempCtx.drawImage(newImg, 0, 0);
+                        
+                        const imgData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+                        const px = imgData.data;
+                        for (let i = 0; i < px.length; i += 4) {
+                            let r = px[i];
+                            let g = px[i+1];
+                            let b = px[i+2];
+                            // Compute brightness
+                            let brightness = (r + g + b) / 3;
+                            if (brightness < 40) {
+                                // Clean edge feathering based on luminance
+                                px[i+3] = Math.max(0, Math.min(255, (brightness - 10) / 30 * 255));
+                            }
+                        }
+                        tempCtx.putImageData(imgData, 0, 0);
+
+                        sdImage = tempCanvas;
+                        btn.disabled = false;
+                        btn.innerText = "AI Render Pose";
+                        statusBox.innerText = "Status: Active (Overlaid)";
+                        logEvent("AI Puppet: Photorealistic texture loaded onto fighter.");
+                    };
+                    // Load relative to the python server
+                    newImg.src = "http://127.0.0.1:8000/" + data.url + "?t=" + Date.now();
+                } else {
+                    throw new Error(data.message);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                btn.disabled = false;
+                btn.innerText = "AI Render Pose";
+                statusBox.innerText = "Status: Error - " + err.message;
+                logEvent("AI Puppet [ERROR]: " + err.message);
+            });
+        };
+
+        // Main Simulation Loop
+        function loop() {
+            time += 16; 
+
+            // Clear Canvas
+            ctx.fillStyle = "#030408";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grid & floor warping
+            drawArenaGrid(time);
+
+            // Modulations for fighter 1 limbs (Bessel movement)
+            let b1Angles = {
+                leftArm: Math.sin(time * 0.0025) * (40 * Math.PI / 180),
+                rightArm: -Math.sin(time * 0.0025) * (40 * Math.PI / 180),
+                leftLeg: Math.cos(time * 0.0025) * (20 * Math.PI / 180),
+                rightLeg: -Math.cos(time * 0.0025) * (20 * Math.PI / 180)
+            };
+
+            // Modulations for fighter 2 limbs (Biotika spiking movement)
+            // Dynamically controlled by the ADSR/DNA synthesizer sliders to link Biotika's physical reflection characteristics
+            const armsScale = parseFloat(document.getElementById("synth-arms")?.value || 1.0);
+            const legsScale = parseFloat(document.getElementById("synth-legs")?.value || 1.0);
+            const attackTime = parseFloat(document.getElementById("synth-attack")?.value || 0.02);
+
+            let b2Angles = {
+                leftArm: Math.cos(time * 0.0035 * attackTime * 50) * (50 * Math.PI / 180) * armsScale,
+                rightArm: -Math.cos(time * 0.0035 * attackTime * 50) * (50 * Math.PI / 180) * armsScale,
+                leftLeg: Math.sin(time * 0.0035 * attackTime * 50) * (15 * Math.PI / 180) * legsScale,
+                rightLeg: -Math.sin(time * 0.0035 * attackTime * 50) * (15 * Math.PI / 180) * legsScale
+            };
+
+            // Bind Biotika Spike's active parameters directly to synthesis sliders (e.g. envelope decay controls spike decay threshold)
+            if (fighter2 && fighter2.name === "Biotika Spike") {
+                const decayVal = parseFloat(document.getElementById("synth-decay")?.value || 0.30);
+                const furScale = parseFloat(document.getElementById("synth-fur")?.value || 1.0);
+                fighter2.spike = 0.5 + decayVal * 0.5;
+                fighter2.phase = 0.1 + furScale * 0.25;
+            }
+
+            // Process Combat/AI
+            if (matchActive) {
+                if (time % 750 < 16) {
+                    let attacker = Math.random() > 0.5 ? fighter1 : fighter2;
+                    let defender = attacker === fighter1 ? fighter2 : fighter1;
+                    
+                    let dmg = Math.round(12 + attacker.spike * 10 - defender.sick * 4);
+                    defender.hp = Math.max(0, defender.hp - dmg);
+                    
+                    // Select a random joint to receive WinchesterMQ register damage mapping
+                    // 1=lEar, 2=rEar, 3=head, 4=snout, 5=lPaw, 6=rPaw, 7=lFoot, 8=rFoot
+                    let targetJointIndex = Math.floor(Math.random() * 8) + 1;
+                    let targetOffset = targetJointIndex * 10;
+                    
+                    // Sabotage the specific tesseract joint register via WinchesterMQ
+                    yulStorage[103 + targetOffset] = 160; // Temporarily spin wildly (low damping)
+                    yulStorage[104 + targetOffset] = 1350; // Warp focal depth (deflate joint)
+                    
+                    // Schedule restoration of the joint registers after 450ms
+                    setTimeout(() => {
+                        yulStorage[103 + targetOffset] = 1000;
+                        yulStorage[104 + targetOffset] = 2300;
+                    }, 450);
+
+                    // Trigger Audio & Visual Sparks
+                    playHitSound(1.0 + attacker.spike * 0.5);
+                    createExplosion(defender.pos, attacker.color.head);
+
+                    logEvent(`💥 ${attacker.name} triggers a ${attacker.type} pulse strike! Deals ${dmg} dmg to ${defender.name}. Joint ${targetJointIndex} warped.`);
+
+                    // Check win condition
+                    if (defender.hp <= 0) {
+                        matchActive = false;
+                        logEvent(`🏆 Match Complete! ${attacker.name} defeats ${defender.name} in the arena.`);
+                    }
+                }
+            }
+
+            // Render 3D fighters in dynamic positions
+            drawBear3D(fighter1.pos, 1.2, b1Angles, Math.sin(time*0.005), fighter1.sick, fighter1.color);
+            drawBear3D(fighter2.pos, 1.2, b2Angles, Math.sin(time*0.005), fighter2.sick, fighter2.color);
+
+            // Render 3D combat particles
+            updateAndDrawParticles();
+
+            // Render 4D Tesseract (Hypercube) using Auncient perspective projection
+            drawTesseract4D(time);
+
+            updateUI();
+            requestAnimationFrame(loop);
+        }
+
+        // Initialize display
+        updateUI();
+
+        // Collapsible Card Deck Tray Javascript Crossover
+        let drawerExpanded = false;
+        function toggleDeckDrawer() {
+            const drawer = document.getElementById("deck-drawer");
+            const toggleIcon = document.getElementById("drawer-toggle-icon");
+            drawerExpanded = !drawerExpanded;
+            if (drawerExpanded) {
+                drawer.style.height = "200px";
+                toggleIcon.innerText = "▼ COLLAPSE DECK Tray";
+            } else {
+                drawer.style.height = "40px";
+                toggleIcon.innerText = "▲ EXPAND DECK Tray";
+            }
+        }
+
+        function saveCurrentCardToDeck() {
+            const cardCanvas = document.createElement("canvas");
+            cardCanvas.width = 320;
+            cardCanvas.height = 448;
+            const cCtx = cardCanvas.getContext("2d");
+
+            // Dark metallic border theme
+            const grad = cCtx.createLinearGradient(0, 0, 320, 448);
+            grad.addColorStop(0, "#334155"); // slate grey
+            grad.addColorStop(0.5, "#0f172a"); // dark slate
+            grad.addColorStop(1, "#1e293b"); // medium slate
+            cCtx.fillStyle = grad;
+            cCtx.fillRect(0, 0, 320, 448);
+            
+            cCtx.strokeStyle = "#94a3b8";
+            cCtx.lineWidth = 2;
+            cCtx.strokeRect(6, 6, 308, 436);
+            cCtx.strokeRect(10, 10, 300, 428);
+
+            // Draw current arena snapshot
+            cCtx.fillStyle = "#000";
+            cCtx.fillRect(16, 16, 288, 288);
+            cCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 16, 16, 288, 288);
+
+            // Dark info section at bottom
+            cCtx.fillStyle = "#090d16";
+            cCtx.fillRect(16, 314, 288, 118);
+            cCtx.strokeStyle = "#e2e8f0";
+            cCtx.lineWidth = 1.5;
+            cCtx.strokeRect(16, 314, 288, 118);
+
+            cCtx.fillStyle = "#ffffff";
+            cCtx.font = "bold 13px monospace";
+            cCtx.fillText("TSFI ARENA TOURNAMENT", 26, 336);
+            
+            cCtx.fillStyle = "#ffea00";
+            cCtx.font = "10px monospace";
+            cCtx.fillText("VS: " + (fighter1.name + " vs " + fighter2.name).toUpperCase(), 26, 356);
+
+            cCtx.fillStyle = "#94a3b8";
+            cCtx.font = "9px monospace";
+            cCtx.fillText("FIGHTER 1 HP: " + fighter1.hp + " | SPIKE: " + fighter1.spike.toFixed(2), 26, 376);
+            cCtx.fillText("FIGHTER 2 HP: " + fighter2.hp + " | SPIKE: " + fighter2.spike.toFixed(2), 26, 392);
+            cCtx.fillText("ARENA ACTIVE: " + (matchActive ? "COMBAT MODE" : "MATCH ENDED"), 26, 408);
+
+            const cardBase64 = cardCanvas.toDataURL("image/png");
+
+            let savedDeck = [];
+            try {
+                const stored = localStorage.getItem("tsfi_hardball_deck");
+                if (stored) savedDeck = JSON.parse(stored);
+            } catch (e) { console.error(e); }
+
+            savedDeck.push({
+                image: cardBase64,
+                timestamp: Date.now(),
+                score: "TOURNAMENT",
+                style: "Arena Battle",
+                dnaTraits: {
+                    head: parseFloat(document.getElementById("synth-head")?.value || 1.0),
+                    torso: parseFloat(document.getElementById("synth-torso")?.value || 1.0),
+                    ears: parseFloat(document.getElementById("synth-ears")?.value || 1.0),
+                    muzzle: parseFloat(document.getElementById("synth-muzzle")?.value || 1.0),
+                    arms: parseFloat(document.getElementById("synth-arms")?.value || 1.0),
+                    legs: parseFloat(document.getElementById("synth-legs")?.value || 1.0),
+                    fur: parseFloat(document.getElementById("synth-fur")?.value || 1.0)
+                },
+                audioTraits: {
+                    timbre: document.getElementById("synth-timbre")?.value || "sine",
+                    attack: parseFloat(document.getElementById("synth-attack")?.value || 0.02),
+                    decay: parseFloat(document.getElementById("synth-decay")?.value || 0.30),
+                    sustain: parseFloat(document.getElementById("synth-sustain")?.value || 0.20),
+                    release: parseFloat(document.getElementById("synth-release")?.value || 0.15)
+                },
+                bag: {
+                    type: "tournament_bear",
+                    fighter1: {
+                        name: fighter1.name,
+                        hp: fighter1.hp,
+                        spike: fighter1.spike,
+                        phase: fighter1.phase,
+                        sick: fighter1.sick
+                    },
+                    fighter2: {
+                        name: fighter2.name,
+                        hp: fighter2.hp,
+                        spike: fighter2.spike,
+                        phase: fighter2.phase,
+                        sick: fighter2.sick
+                    }
+                },
+                // ZIL story preview compiler output
+                zilSource: `<OBJECT TOURNAMENT-BEAR-${fighter1.name.toUpperCase().replace(/\s+/g, "-")}\n      (IN ROOM-10) ; Void\n      (DESC "${fighter1.name} Tournament Card")\n      (FLAGS TAKEBIT CONTBIT)\n      (SIZE ${Math.round(fighter1.hp)})\n      (VALUE ${Math.round(fighter1.spike * 100)})\n      (TIMBRE "${document.getElementById("synth-timbre")?.value || "sine"}")\n      (ADSR <ADSR-ENVELOPE\n            (ATTACK ${parseFloat(document.getElementById("synth-attack")?.value || 0.02)})\n            (DECAY ${parseFloat(document.getElementById("synth-decay")?.value || 0.30)})\n            (SUSTAIN ${parseFloat(document.getElementById("synth-sustain")?.value || 0.20)})\n            (RELEASE ${parseFloat(document.getElementById("synth-release")?.value || 0.15)})>)\n      (DNA <GENOME-SCALES\n            (HEAD ${parseFloat(document.getElementById("synth-head")?.value || 1.0)})\n            (TORSO ${parseFloat(document.getElementById("synth-torso")?.value || 1.0)})\n            (EARS ${parseFloat(document.getElementById("synth-ears")?.value || 1.0)})\n            (MUZZLE ${parseFloat(document.getElementById("synth-muzzle")?.value || 1.0)})\n            (ARMS ${parseFloat(document.getElementById("synth-arms")?.value || 1.0)})\n            (LEGS ${parseFloat(document.getElementById("synth-legs")?.value || 1.0)})\n            (FUR ${parseFloat(document.getElementById("synth-fur")?.value || 1.0)})>)\n>`,
+                // C64 assembly machine bin bytecode mapping to virtual DFS sectors
+                assemblyBin: (() => {
+                    // Pre-compile 6502 assembly instruction sets (e.g. LDA #headScale, STA $D000)
+                    const headVal = Math.round(parseFloat(document.getElementById("synth-head")?.value || 1.0) * 100);
+                    const bodyVal = Math.round(parseFloat(document.getElementById("synth-torso")?.value || 1.0) * 100);
+                    const earsVal = Math.round(parseFloat(document.getElementById("synth-ears")?.value || 1.0) * 100);
+                    
+                    // LDA #headVal ($A9 xx), STA $D000 ($8D 00 D0), LDA #bodyVal ($A9 xx), STA $D001 ($8D 01 D0), RTS ($60)
+                    let hex = "a9" + headVal.toString(16).padStart(2, '0');
+                    hex += "8d00d0";
+                    hex += "a9" + bodyVal.toString(16).padStart(2, '0');
+                    hex += "8d01d0";
+                    hex += "a9" + earsVal.toString(16).padStart(2, '0');
+                    hex += "8d02d0";
+                    hex += "60"; // Return from Subroutine
+                    
+                    // Standard counter.bin test bytes (LDA $10, ADC #$01, STA $10, RTS) -> a5106901851060
+                    hex += "a5106901851060";
+                    
+                    return hex.padEnd(512, "0"); // Pad block payload size to full floppy sectors
+                })()
+            });
+
+            localStorage.setItem("tsfi_hardball_deck", JSON.stringify(savedDeck));
+            logEvent("💾 Saved tournament battle card successfully with DNA, Audio & Z-Machine Bag traits!");
+            loadDeckList();
+
+            if (!drawerExpanded) toggleDeckDrawer();
+        }
+
+        function restoreDnaTraits(traits, audioTraits) {
+            if (!traits) return;
+            const mappings = [
+                { id: "synth-head", valId: "val-head", key: "head" },
+                { id: "synth-torso", valId: "val-torso", key: "torso" },
+                { id: "synth-ears", valId: "val-ears", key: "ears" },
+                { id: "synth-muzzle", valId: "val-muzzle", key: "muzzle" },
+                { id: "synth-arms", valId: "val-arms", key: "arms" },
+                { id: "synth-legs", valId: "val-legs", key: "legs" },
+                { id: "synth-fur", valId: "val-fur", key: "fur" }
+            ];
+            mappings.forEach(m => {
+                const el = document.getElementById(m.id);
+                const valEl = document.getElementById(m.valId);
+                if (el && traits[m.key] !== undefined) {
+                    el.value = traits[m.key];
+                    if (valEl) valEl.innerText = `${parseFloat(traits[m.key]).toFixed(2)}x`;
+                }
+            });
+
+            if (audioTraits) {
+                const audioMappings = [
+                    { id: "synth-attack", valId: "val-attack", key: "attack", suffix: "s" },
+                    { id: "synth-decay", valId: "val-decay", key: "decay", suffix: "s" },
+                    { id: "synth-sustain", valId: "val-sustain", key: "sustain", isPercent: true },
+                    { id: "synth-release", valId: "val-release", key: "release", suffix: "s" }
+                ];
+                audioMappings.forEach(am => {
+                    const el = document.getElementById(am.id);
+                    const valEl = document.getElementById(am.valId);
+                    if (el && audioTraits[am.key] !== undefined) {
+                        el.value = audioTraits[am.key];
+                        if (valEl) {
+                            if (am.isPercent) {
+                                valEl.innerText = `${Math.round(parseFloat(audioTraits[am.key]) * 100)}%`;
+                            } else {
+                                valEl.innerText = `${parseFloat(audioTraits[am.key]).toFixed(2)}${am.suffix}`;
+                            }
+                        }
+                    }
+                });
+                const timbreEl = document.getElementById("synth-timbre");
+                if (timbreEl && audioTraits.timbre !== undefined) {
+                    timbreEl.value = audioTraits.timbre;
+                }
+            }
+            logEvent("🧬 Restored 3D volumetric scale & audio synthesizer traits from selected DNA card!");
+        }
+
+        function loadDeckList() {
+            let savedDeck = [];
+            try {
+                const stored = localStorage.getItem("tsfi_hardball_deck");
+                if (stored) savedDeck = JSON.parse(stored);
+            } catch (e) { console.error(e); }
+
+            const deckCountEl = document.getElementById("deck-count");
+            if (deckCountEl) deckCountEl.innerText = savedDeck.length;
+
+            const listContainer = document.getElementById("deck-list-container");
+            if (listContainer) {
+                listContainer.innerHTML = "";
+
+                if (savedDeck.length === 0) {
+                    listContainer.innerHTML = `<div style="font-size: 11px; color: #475569; font-family: 'Share Tech Mono', monospace;">Your card album is currently empty. Synthesize a card and save it!</div>`;
+                    return;
+                }
+
+                savedDeck.forEach((card, idx) => {
+                    const cardNode = document.createElement("div");
+                    cardNode.className = "deck-card-thumb";
+                    cardNode.title = "Single-click to preview. Double-click to load DNA Synthesis scales.";
+                    cardNode.onclick = (e) => {
+                        if (e.target.className === "deck-card-delete") return;
+                        openCardLightbox(card.image);
+                    };
+                    cardNode.ondblclick = (e) => {
+                        if (e.target.className === "deck-card-delete") return;
+                        restoreDnaTraits(card.dnaTraits, card.audioTraits);
+                    };
+
+                    cardNode.innerHTML = `
+                        <img src="${card.image}">
+                        <div class="deck-card-delete" onclick="deleteCardFromDeck(${idx}); event.stopPropagation();">X</div>
+                        <div class="deck-card-badge">${card.score}</div>
+                    `;
+                    listContainer.appendChild(cardNode);
+                });
+            }
+        }
+
+        function deleteCardFromDeck(index) {
+            let savedDeck = [];
+            try {
+                const stored = localStorage.getItem("tsfi_hardball_deck");
+                if (stored) savedDeck = JSON.parse(stored);
+            } catch (e) { console.error(e); }
+
+            savedDeck.splice(index, 1);
+            localStorage.setItem("tsfi_hardball_deck", JSON.stringify(savedDeck));
+            logEvent("🗑️ Card deleted from collection.");
+            loadDeckList();
+        }
+
+        function openCardLightbox(imgSrc) {
+            let overlay = document.getElementById("card-lightbox");
+            if (!overlay) {
+                overlay = document.createElement("div");
+                overlay.id = "card-lightbox";
+                overlay.style = "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 100; display: flex; align-items: center; justify-content: center; cursor: pointer;";
+                overlay.onclick = () => overlay.style.display = "none";
+                document.body.appendChild(overlay);
+            }
+            overlay.innerHTML = `<img src="${imgSrc}" style="max-height: 85vh; border: 5px solid #d2b48c; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.9);">`;
+            overlay.style.display = "flex";
+        }
+
+        // DNA Synthesis Suite UI Bindings
+        document.getElementById("synth-head").addEventListener("input", (e) => {
+            document.getElementById("val-head").innerText = `${parseFloat(e.target.value).toFixed(2)}x`;
+        });
+        document.getElementById("synth-torso").addEventListener("input", (e) => {
+            document.getElementById("val-torso").innerText = `${parseFloat(e.target.value).toFixed(2)}x`;
+        });
+        document.getElementById("synth-ears").addEventListener("input", (e) => {
+            document.getElementById("val-ears").innerText = `${parseFloat(e.target.value).toFixed(2)}x`;
+        });
+        document.getElementById("synth-muzzle").addEventListener("input", (e) => {
+            document.getElementById("val-muzzle").innerText = `${parseFloat(e.target.value).toFixed(2)}x`;
+        });
+        document.getElementById("synth-arms").addEventListener("input", (e) => {
+            document.getElementById("val-arms").innerText = `${parseFloat(e.target.value).toFixed(2)}x`;
+        });
+        document.getElementById("synth-legs").addEventListener("input", (e) => {
+            document.getElementById("val-legs").innerText = `${parseFloat(e.target.value).toFixed(2)}x`;
+        });
+        document.getElementById("synth-fur").addEventListener("input", (e) => {
+            document.getElementById("val-fur").innerText = `${parseFloat(e.target.value).toFixed(2)}x`;
+        });
+        document.getElementById("synth-attack").addEventListener("input", (e) => {
+            document.getElementById("val-attack").innerText = `${parseFloat(e.target.value).toFixed(2)}s`;
+        });
+        document.getElementById("synth-decay").addEventListener("input", (e) => {
+            document.getElementById("val-decay").innerText = `${parseFloat(e.target.value).toFixed(2)}s`;
+        });
+        document.getElementById("synth-sustain").addEventListener("input", (e) => {
+            document.getElementById("val-sustain").innerText = `${Math.round(parseFloat(e.target.value) * 100)}%`;
+        });
+        document.getElementById("synth-release").addEventListener("input", (e) => {
+            document.getElementById("val-release").innerText = `${parseFloat(e.target.value).toFixed(2)}s`;
+        });
+        
+        // Preset select handler mapping Fuzzby #0 & Wilby #1 codes directly into scales & ADSR
+        document.getElementById("preset-select").addEventListener("change", (e) => {
+            const preset = e.target.value;
+            let traits = null;
+            let audioTraits = null;
+            if (preset === "fuzzby_mcd") {
+                traits = { head: 1.40, torso: 1.30, ears: 1.00, muzzle: 1.00, arms: 1.00, legs: 1.00, fur: 1.20 };
+                audioTraits = { attack: 0.10, decay: 0.80, sustain: 0.50, release: 0.60, timbre: "sawtooth" };
+                logEvent("🧬 Preset: Loaded MCD Fuzzion (Fuzzby #0) characteristics.");
+            } else if (preset === "fuzzby_savage") {
+                traits = { head: 1.00, torso: 1.00, ears: 1.50, muzzle: 1.20, arms: 0.90, legs: 0.90, fur: 0.80 };
+                audioTraits = { attack: 0.02, decay: 0.15, sustain: 0.20, release: 0.10, timbre: "square" };
+                logEvent("🧬 Preset: Loaded Savage Fuzzion (Fuzzby #0) characteristics.");
+            } else if (preset === "fuzzby_dsk") {
+                traits = { head: 1.00, torso: 1.00, ears: 1.00, muzzle: 1.00, arms: 1.40, legs: 1.40, fur: 1.50 };
+                audioTraits = { attack: 0.40, decay: 1.00, sustain: 0.80, release: 0.80, timbre: "sine" };
+                logEvent("🧬 Preset: Loaded DSK Fuzzion (Fuzzby #0) characteristics.");
+            } else if (preset === "wilby_spock") {
+                traits = { head: 0.70, torso: 0.80, ears: 0.60, muzzle: 0.70, arms: 0.75, legs: 0.75, fur: 0.50 };
+                audioTraits = { attack: 0.005, decay: 0.05, sustain: 0.00, release: 0.05, timbre: "square" };
+                logEvent("🧬 Preset: Loaded Spock Wild Bits (Wilby #1) 4k characteristics.");
+            } else if (preset === "wilby_spock2") {
+                traits = { head: 0.85, torso: 0.90, ears: 0.80, muzzle: 0.75, arms: 0.85, legs: 0.85, fur: 0.70 };
+                audioTraits = { attack: 0.01, decay: 0.10, sustain: 0.30, release: 0.08, timbre: "triangle" };
+                logEvent("🧬 Preset: Loaded Spock RLE/VGA (Wilby #2) size-coding characteristics.");
+            } else if (preset === "wilby_spock3") {
+                traits = { head: 1.10, torso: 1.00, ears: 0.90, muzzle: 0.95, arms: 1.10, legs: 1.10, fur: 1.00 };
+                audioTraits = { attack: 0.20, decay: 0.40, sustain: 0.60, release: 0.30, timbre: "sine" };
+                logEvent("🧬 Preset: Loaded Spock SMC/FPU (Wilby #3) procedural math sweeps.");
+            } else if (preset === "wilby_ritz") {
+                traits = { head: 1.25, torso: 1.15, ears: 1.10, muzzle: 1.05, arms: 1.20, legs: 1.20, fur: 0.60 };
+                audioTraits = { attack: 0.05, decay: 0.25, sustain: 0.40, release: 0.20, timbre: "sawtooth" };
+                logEvent("🧬 Preset: Loaded Ritz (Wilby #4) Auncient 4D Tesseract projection characteristics.");
+            }
+            if (traits) {
+                restoreDnaTraits(traits, audioTraits);
+            }
+        });
+
+        // Performance Diagnostics Drawer Logic
+        function toggleDiagnosticsDrawer() {
+            const drawer = document.getElementById("diagnostics-drawer");
+            if (drawer) {
+                drawer.classList.toggle("open");
+            }
+        }
+
+        function onDiagnosticsIframeLoad() {
+            try {
+                const iframe = document.getElementById("diagnostics-iframe");
+                if (!iframe) return;
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                if (!iframeDoc) return;
+
+                const statCards = iframeDoc.querySelectorAll(".stat-card");
+                let fpsVal = "";
+                let latencyVal = "";
+
+                statCards.forEach(card => {
+                    const titleEl = card.querySelector(".stat-title");
+                    if (titleEl) {
+                        const titleText = titleEl.textContent.trim().toLowerCase();
+                        const valueEl = card.querySelector(".stat-value");
+                        if (valueEl) {
+                            const valueText = valueEl.textContent.trim();
+                            if (titleText.includes("render") || titleText.includes("fps")) {
+                                fpsVal = valueText;
+                            } else if (titleText.includes("audio latency") || titleText.includes("latency")) {
+                                latencyVal = valueText;
+                            }
+                        }
+                    }
+                });
+
+                if (!fpsVal || !latencyVal) {
+                    const iframeWin = iframe.contentWindow;
+                    if (iframeWin && iframeWin.BENCHMARK_DATA) {
+                        const data = iframeWin.BENCHMARK_DATA;
+                        if (data.summary) {
+                            if (data.summary.average_fps && !fpsVal) {
+                                fpsVal = parseFloat(data.summary.average_fps).toFixed(1) + " FPS";
+                            }
+                        }
+                        if (data.audio_latency_records && data.audio_latency_records.length > 0 && !latencyVal) {
+                            const latencies = data.audio_latency_records.map(r => r.total_latency_seconds);
+                            const avgLat = latencies.reduce((a, b) => a + b, 0) / latencies.length;
+                            latencyVal = (avgLat * 1000).toFixed(3) + " ms";
+                        }
+                    }
+                }
+
+                if (fpsVal) {
+                    document.getElementById("diag-fps-val").innerText = fpsVal;
+                }
+                if (latencyVal) {
+                    document.getElementById("diag-latency-val").innerText = latencyVal;
+                }
+            } catch (e) {
+                console.warn("Unable to read diagnostics iframe content:", e);
+            }
+        }
+
+        // EVM / PKI Dashboard functions
+        async function updateEvmStatus() {
+            try {
+                const response = await fetch("/api/arena/status");
+                if (!response.ok) return;
+                const status = await response.json();
+                if (status.error) return;
+                
+                document.getElementById("evm-target-qing").innerText = status.targetQing !== undefined ? status.targetQing : "-";
+                document.getElementById("evm-cursor").innerText = status.cursor !== undefined ? status.cursor : "-";
+                document.getElementById("evm-leader").innerText = (status.leader !== null && status.leader !== undefined) ? status.leader : "None";
+                document.getElementById("evm-max-width").innerText = status.maxWidth !== undefined ? status.maxWidth : "-";
+                document.getElementById("evm-completed").innerText = status.completed === 1 ? "Yes (1)" : "No (0)";
+                document.getElementById("evm-total-players").innerText = status.totalPlayers !== undefined ? status.totalPlayers : "-";
+            } catch (err) {
+                console.error("Error fetching EVM Arena status:", err);
+            }
+        }
+
+        document.getElementById("btn-evm-init").onclick = async () => {
+            initAudio();
+            logEvent("⛓️ EVM: Initializing validators and registering players...");
+            try {
+                const response = await fetch("/api/arena/init", { method: "POST" });
+                const result = await response.json();
+                if (result.status === "success") {
+                    logEvent(`✅ EVM: Successfully initialized ${result.playersRegistered} players and 11 validators!`);
+                } else {
+                    logEvent(`❌ EVM Init Error: ${result.error}`);
+                }
+                await updateEvmStatus();
+            } catch (err) {
+                logEvent(`❌ EVM Init Error: ${err.message}`);
+            }
+        };
+
+        document.getElementById("btn-evm-set-target").onclick = async () => {
+            initAudio();
+            const qingId = parseInt(document.getElementById("evm-qing-input").value) || 0;
+            logEvent(`⛓️ EVM: Setting target Qing ID to ${qingId} via ConsensusPKI signature bundle...`);
+            try {
+                const response = await fetch("/api/arena/set-target", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ qingId })
+                });
+                const result = await response.json();
+                if (result.status === "success") {
+                    logEvent(`✅ EVM Target Configured! Tx: ${result.txHash.slice(0, 18)}...`);
+                } else {
+                    logEvent(`❌ EVM Target Error: ${result.error}`);
+                }
+                await updateEvmStatus();
+            } catch (err) {
+                logEvent(`❌ EVM Target Error: ${err.message}`);
+            }
+        };
+
+        document.getElementById("btn-evm-process").onclick = async () => {
+            initAudio();
+            const batchSize = parseInt(document.getElementById("evm-batch-input").value) || 2;
+            logEvent(`⛓️ EVM: Processing next batch of ${batchSize} players...`);
+            try {
+                const response = await fetch("/api/arena/process-batch", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ batchSize })
+                });
+                const result = await response.json();
+                if (result.status === "success") {
+                    logEvent(`✅ EVM Batch Executed! Cursor: ${result.cursor}, Completed: ${result.completed}`);
+                    if (result.completed === 1) {
+                        logEvent(`🏆 EVM Arena Finished! Winning Player ID: ${result.leader} with Width: ${result.maxWidth}`);
+                    }
+                } else {
+                    logEvent(`❌ EVM Process Error: ${result.error}`);
+                }
+                await updateEvmStatus();
+            } catch (err) {
+                logEvent(`❌ EVM Process Error: ${err.message}`);
+            }
+        };
+
+        // Fetch initial EVM status
+        updateEvmStatus();
+
+        loadDeckList();
+        requestAnimationFrame(loop);
+    </script>
+</body>
+</html>
