@@ -864,6 +864,15 @@ int main(void) {
     assert(intonation_amp > 0.0);
     printf("   ✓ Hyde vocal jitter naturalness and intonation amplitude verified successfully\n");
 
+    // Test Hyde vocal warmth modulation and interruption recovery calculations
+    double vocal_warmth_mod = 0.0;
+    double interruption_rec = 0.0;
+    assert(evaluate_hyde_vocal_warmth_modulation(&geom, 200.0, 0.25, &vocal_warmth_mod));
+    assert(vocal_warmth_mod > 0.0);
+    assert(evaluate_hyde_interruption_recovery(&geom, 1.5, &interruption_rec));
+    assert(interruption_rec > 0.0);
+    printf("   ✓ Hyde vocal warmth modulation and interruption recovery verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge

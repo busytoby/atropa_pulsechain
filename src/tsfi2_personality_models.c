@@ -1401,3 +1401,19 @@ bool evaluate_cellarius_epicycle_phase(const teddy_geometry_t *geom, double phas
     return true;
 }
 
+bool evaluate_hyde_vocal_warmth_modulation(const teddy_geometry_t *geom, double pitch_hz, double chin_curvature, double *warmth_out) {
+    if (!geom || pitch_hz < 0.0 || chin_curvature < 0.0 || !warmth_out) {
+        return false;
+    }
+    *warmth_out = pitch_hz * chin_curvature * (0.8 + geom->empathy_index * 0.4) * 0.01;
+    return true;
+}
+
+bool evaluate_hyde_interruption_recovery(const teddy_geometry_t *geom, double recovery_time_sec, double *recovery_rating_out) {
+    if (!geom || recovery_time_sec < 0.0 || !recovery_rating_out) {
+        return false;
+    }
+    *recovery_rating_out = (1.0 / (1.0 + recovery_time_sec)) * (0.9 + geom->resilience_index * 0.3);
+    return true;
+}
+

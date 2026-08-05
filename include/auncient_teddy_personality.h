@@ -589,6 +589,12 @@ bool evaluate_cellarius_planet_velocity(const teddy_geometry_t *geom, double vel
 // Calculates coordinate offsets based on epicycle angular phase rotations (Cellarius).
 bool evaluate_cellarius_epicycle_phase(const teddy_geometry_t *geom, double phase_angle, double *phase_offset_out);
 
+// Evaluates vocal warmth alignment with visual chin curvature adjustments (Hyde et al.).
+bool evaluate_hyde_vocal_warmth_modulation(const teddy_geometry_t *geom, double pitch_hz, double chin_curvature, double *warmth_out);
+
+// Models interaction recovery perception based on the timing duration of conversational resumption after collision events (Hyde et al.).
+bool evaluate_hyde_interruption_recovery(const teddy_geometry_t *geom, double recovery_time_sec, double *recovery_rating_out);
+
 // Evaluates perceived conversational naturalness based on vocal pitch frequency jitter (Hyde et al.).
 bool evaluate_hyde_vocal_jitter_naturalness(const teddy_geometry_t *geom, double pitch_jitter, double *naturalness_out);
 
