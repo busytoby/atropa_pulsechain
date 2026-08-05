@@ -9,8 +9,8 @@ int main(int argc, char **argv) {
     if (!f) return 1;
 
     if (strstr(argv[1], "Genesis") != NULL) {
-        FILE *h = fopen("src/firmware/Genesis_rtl.h", "w");
-        FILE *c = fopen("src/firmware/Genesis_rtl.c", "w");
+        FILE *h = fopen("tsfi2-deepseek/src/firmware/Genesis_rtl.h", "w");
+        FILE *c = fopen("tsfi2-deepseek/src/firmware/Genesis_rtl.c", "w");
         if (!h || !c) { fclose(f); return 1; }
 
         fprintf(h, "#ifndef GENESIS_RTL_H\n#define GENESIS_RTL_H\n#include <stdint.h>\n#include <stdbool.h>\n");
@@ -41,8 +41,8 @@ int main(int argc, char **argv) {
         fprintf(c, "      s->ready = 1;\n    } else { s->ready = 0; }\n  }\n}\n");
         fclose(c);
     } else {
-        FILE *h = fopen("src/firmware/LauWireFirmware_rtl.h", "w");
-        FILE *c = fopen("src/firmware/LauWireFirmware_rtl.c", "w");
+        FILE *h = fopen("tsfi2-deepseek/src/firmware/LauWireFirmware_rtl.h", "w");
+        FILE *c = fopen("tsfi2-deepseek/src/firmware/LauWireFirmware_rtl.c", "w");
         if (!h || !c) { fclose(f); return 1; }
 
         fprintf(h, "#ifndef RTL_H\n#define RTL_H\n#include <stdint.h>\n#include <stdbool.h>\n#include <immintrin.h>\n");

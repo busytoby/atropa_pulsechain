@@ -1,5 +1,5 @@
-#include "../src/auncient_xdc_debugger.h"
-#include "../src/auncient_timeline_autodin.h"
+#include "../tsfi2-deepseek/src/auncient_xdc_debugger.h"
+#include "../tsfi2-deepseek/src/auncient_timeline_autodin.h"
 #include <stdio.h>
 #include <assert.h>
 

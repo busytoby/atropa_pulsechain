@@ -1,4 +1,4 @@
-#include "../src/auncient_federal_worker_sim.h"
+#include "../tsfi2-deepseek/src/auncient_federal_worker_sim.h"
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>

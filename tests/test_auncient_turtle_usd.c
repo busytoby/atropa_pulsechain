@@ -1,4 +1,4 @@
-#include "../src/auncient_turtle_usd.h"
+#include "../tsfi2-deepseek/src/auncient_turtle_usd.h"
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>

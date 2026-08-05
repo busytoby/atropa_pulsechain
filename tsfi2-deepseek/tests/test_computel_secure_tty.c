@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <string.h>
-#include "../src/tsfi_computel_secure_tty.c"
+#include "../tsfi2-deepseek/src/tsfi_computel_secure_tty.c"
 
 int main(void) {
     printf("[TEST] Initializing Auncient Computel Secure TTY Console test suite...\n");

@@ -80,7 +80,7 @@ struct YANG {
     struct Dai* Iota;
 };
 
-// Lifecycle Prototypes (Implemented in src/tsfi_dysnomia.c)
+// Lifecycle Prototypes (Implemented in tsfi2-deepseek/src/tsfi_dysnomia.c)
 struct Fa* allocFa(void);
 struct SHA* allocSHA(void);
 struct SHAO* allocSHAO(void);

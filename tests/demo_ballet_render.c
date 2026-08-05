@@ -1,7 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
-#include "../src/auncient_stl_loader.h"
-#include "../src/auncient_usd_stl_bridge.h"
-#include "../src/auncient_ballet_animator.h"
+#include "../tsfi2-deepseek/src/auncient_stl_loader.h"
+#include "../tsfi2-deepseek/src/auncient_usd_stl_bridge.h"
+#include "../tsfi2-deepseek/src/auncient_ballet_animator.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

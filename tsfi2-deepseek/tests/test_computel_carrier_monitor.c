@@ -7,7 +7,7 @@
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
-#include "../src/tsfi_computel_carrier_monitor.c"
+#include "../tsfi2-deepseek/src/tsfi_computel_carrier_monitor.c"
 
 int main(void) {
     printf("[TEST] Initializing Auncient Computel Carrier Monitor test suite...\n");

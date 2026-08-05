@@ -1,5 +1,5 @@
-#include "../src/auncient_xdg_debug_portal.h"
-#include "../src/auncient_xdc_debugger.h"
+#include "../tsfi2-deepseek/src/auncient_xdg_debug_portal.h"
+#include "../tsfi2-deepseek/src/auncient_xdc_debugger.h"
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>

@@ -15,202 +15,202 @@ test-all: test-hathitrust test-hathitrust-hathifile test-hathitrust-oai test-hat
 	@echo "All tests completed successfully."
 
 test-hathitrust:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_client.c src/hathitrust_client.c -o tests/test_hathitrust_client -lssl -lcrypto -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_client.c tsfi2-deepseek/src/hathitrust_client.c -o tests/test_hathitrust_client -lssl -lcrypto -lrt
 	./tests/test_hathitrust_client
 	@rm -f tests/test_hathitrust_client
 
 test-hathitrust-hathifile:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_hathifile.c src/hathitrust_hathifile.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_hathitrust_hathifile -lcrypto -lrt -lm
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_hathifile.c tsfi2-deepseek/src/hathitrust_hathifile.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_hathitrust_hathifile -lcrypto -lrt -lm
 	./tests/test_hathitrust_hathifile
 	@rm -f tests/test_hathitrust_hathifile
 
 test-hathitrust-oai:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_oai.c src/hathitrust_oai.c -o tests/test_hathitrust_oai -lssl -lcrypto -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_oai.c tsfi2-deepseek/src/hathitrust_oai.c -o tests/test_hathitrust_oai -lssl -lcrypto -lrt
 	./tests/test_hathitrust_oai
 	@rm -f tests/test_hathitrust_oai
 
 test-hathitrust-oai-util:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_oai_util.c src/hathitrust_oai_util.c src/hathitrust_oai.c -o tests/test_hathitrust_oai_util -lssl -lcrypto -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_oai_util.c tsfi2-deepseek/src/hathitrust_oai_util.c tsfi2-deepseek/src/hathitrust_oai.c -o tests/test_hathitrust_oai_util -lssl -lcrypto -lrt
 	./tests/test_hathitrust_oai_util
 	@rm -f tests/test_hathitrust_oai_util
 
 test-hathitrust-harvester:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_harvester.c src/hathitrust_harvester.c src/hathitrust_oai_util.c src/hathitrust_oai.c -o tests/test_hathitrust_harvester -lssl -lcrypto -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_harvester.c tsfi2-deepseek/src/hathitrust_harvester.c tsfi2-deepseek/src/hathitrust_oai_util.c tsfi2-deepseek/src/hathitrust_oai.c -o tests/test_hathitrust_harvester -lssl -lcrypto -lrt
 	./tests/test_hathitrust_harvester
 	@rm -f tests/test_hathitrust_harvester
 
 test-hathitrust-ef:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_ef.c src/hathitrust_ef.c -o tests/test_hathitrust_ef -lz -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_ef.c tsfi2-deepseek/src/hathitrust_ef.c -o tests/test_hathitrust_ef -lz -lrt
 	./tests/test_hathitrust_ef
 	@rm -f tests/test_hathitrust_ef
 
 test-hathitrust-extended:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_extended.c src/hathitrust_oauth.c src/hathitrust_solr.c src/hathitrust_image.c -o tests/test_hathitrust_extended -lssl -lcrypto -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_extended.c tsfi2-deepseek/src/hathitrust_oauth.c tsfi2-deepseek/src/hathitrust_solr.c tsfi2-deepseek/src/hathitrust_image.c -o tests/test_hathitrust_extended -lssl -lcrypto -lrt
 	./tests/test_hathitrust_extended
 	@rm -f tests/test_hathitrust_extended
 
 test-hathitrust-xml:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_xml.c src/hathitrust_mets.c src/hathitrust_marc.c -o tests/test_hathitrust_xml -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_xml.c tsfi2-deepseek/src/hathitrust_mets.c tsfi2-deepseek/src/hathitrust_marc.c -o tests/test_hathitrust_xml -lrt
 	./tests/test_hathitrust_xml
 	@rm -f tests/test_hathitrust_xml
 
 test-hathitrust-cache-alto-qt:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_cache_alto_qt.c src/hathitrust_quadtree.c src/hathitrust_alto.c src/hathitrust_cache.c -o tests/test_hathitrust_cache_alto_qt -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_cache_alto_qt.c tsfi2-deepseek/src/hathitrust_quadtree.c tsfi2-deepseek/src/hathitrust_alto.c tsfi2-deepseek/src/hathitrust_cache.c -o tests/test_hathitrust_cache_alto_qt -lrt
 	./tests/test_hathitrust_cache_alto_qt
 	@rm -f tests/test_hathitrust_cache_alto_qt
 
 test-hathitrust-extra2:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_extra2.c src/hathitrust_alto.c src/hathitrust_alto_consolidate.c src/hathitrust_speedometer.c src/hathitrust_marc.c src/hathitrust_marc_jsonld.c -o tests/test_hathitrust_extra2 -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_extra2.c tsfi2-deepseek/src/hathitrust_alto.c tsfi2-deepseek/src/hathitrust_alto_consolidate.c tsfi2-deepseek/src/hathitrust_speedometer.c tsfi2-deepseek/src/hathitrust_marc.c tsfi2-deepseek/src/hathitrust_marc_jsonld.c -o tests/test_hathitrust_extra2 -lrt
 	./tests/test_hathitrust_extra2
 	@rm -f tests/test_hathitrust_extra2
 
 test-hathitrust-extra3:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_extra3.c src/hathitrust_mets.c src/hathitrust_iiif.c src/hathitrust_alto.c src/hathitrust_region.c src/hathitrust_hathifile.c src/hathitrust_hathifile_search.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_hathitrust_extra3 -lcrypto -lrt -lm
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_extra3.c tsfi2-deepseek/src/hathitrust_mets.c tsfi2-deepseek/src/hathitrust_iiif.c tsfi2-deepseek/src/hathitrust_alto.c tsfi2-deepseek/src/hathitrust_region.c tsfi2-deepseek/src/hathitrust_hathifile.c tsfi2-deepseek/src/hathitrust_hathifile_search.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_hathitrust_extra3 -lcrypto -lrt -lm
 	./tests/test_hathitrust_extra3
 	@rm -f tests/test_hathitrust_extra3
 
 test-hathitrust-render:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_render.c src/hathitrust_render.c -o tests/test_hathitrust_render -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_render.c tsfi2-deepseek/src/hathitrust_render.c -o tests/test_hathitrust_render -lm -lrt
 	./tests/test_hathitrust_render
 	@rm -f tests/test_hathitrust_render
 
 test-hathitrust-prman:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 src/hathitrust_prman_procedural.c -o tests/hathitrust_prman_procedural -lrt
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_prman.c src/hathitrust_mets.c src/hathitrust_rib.c src/hathitrust_osl.c -o tests/test_hathitrust_prman -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/hathitrust_prman_procedural.c -o tests/hathitrust_prman_procedural -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_prman.c tsfi2-deepseek/src/hathitrust_mets.c tsfi2-deepseek/src/hathitrust_rib.c tsfi2-deepseek/src/hathitrust_osl.c -o tests/test_hathitrust_prman -lrt
 	./tests/test_hathitrust_prman
 	@rm -f tests/hathitrust_prman_procedural tests/test_hathitrust_prman
 
 test-hathitrust-lore:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_lore.c src/hathitrust_mets.c src/hathitrust_rib.c src/hathitrust_osl.c src/hathitrust_hathifile.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_hathitrust_lore -lcrypto -lrt -lm
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_lore.c tsfi2-deepseek/src/hathitrust_mets.c tsfi2-deepseek/src/hathitrust_rib.c tsfi2-deepseek/src/hathitrust_osl.c tsfi2-deepseek/src/hathitrust_hathifile.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_hathitrust_lore -lcrypto -lrt -lm
 	./tests/test_hathitrust_lore
 	@rm -f tests/test_hathitrust_lore
 
 test-hathitrust-prman-extra:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_prman_extra.c src/hathitrust_osl_bleed.c src/hathitrust_alto.c src/hathitrust_camera_path.c src/hathitrust_rib_to_iiif.c -o tests/test_hathitrust_prman_extra -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_prman_extra.c tsfi2-deepseek/src/hathitrust_osl_bleed.c tsfi2-deepseek/src/hathitrust_alto.c tsfi2-deepseek/src/hathitrust_camera_path.c tsfi2-deepseek/src/hathitrust_rib_to_iiif.c -o tests/test_hathitrust_prman_extra -lrt
 	./tests/test_hathitrust_prman_extra
 	@rm -f tests/test_hathitrust_prman_extra
 
 test-hathitrust-prman-anim:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_prman_anim.c src/hathitrust_osl_double_sided.c src/hathitrust_animator.c src/hathitrust_spine.c tsfi2-deepseek/src/tsfi_displacementshader.c -o tests/test_hathitrust_prman_anim -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_prman_anim.c tsfi2-deepseek/src/hathitrust_osl_double_sided.c tsfi2-deepseek/src/hathitrust_animator.c tsfi2-deepseek/src/hathitrust_spine.c tsfi2-deepseek/src/tsfi_displacementshader.c -o tests/test_hathitrust_prman_anim -lm -lrt
 	./tests/test_hathitrust_prman_anim
 	@rm -f tests/test_hathitrust_prman_anim
 
 test-hathitrust-prman-blur:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_prman_blur.c src/hathitrust_prman_velocity.c src/hathitrust_render.c src/hathitrust_osl_gilding.c src/hathitrust_specular.c src/hathitrust_alto.c -o tests/test_hathitrust_prman_blur -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_prman_blur.c tsfi2-deepseek/src/hathitrust_prman_velocity.c tsfi2-deepseek/src/hathitrust_render.c tsfi2-deepseek/src/hathitrust_osl_gilding.c tsfi2-deepseek/src/hathitrust_specular.c tsfi2-deepseek/src/hathitrust_alto.c -o tests/test_hathitrust_prman_blur -lm -lrt
 	./tests/test_hathitrust_prman_blur
 	@rm -f tests/test_hathitrust_prman_blur
 
 test-hathitrust-prman-final:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_prman_final.c src/hathitrust_osl_impression.c src/hathitrust_ao_pass.c src/hathitrust_pxrmaterial.c -o tests/test_hathitrust_prman_final -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_prman_final.c tsfi2-deepseek/src/hathitrust_osl_impression.c tsfi2-deepseek/src/hathitrust_ao_pass.c tsfi2-deepseek/src/hathitrust_pxrmaterial.c -o tests/test_hathitrust_prman_final -lrt
 	./tests/test_hathitrust_prman_final
 	@rm -f tests/test_hathitrust_prman_final
 
 test-hathitrust-teddy:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_teddy.c src/hathitrust_lore_interop.c src/hathitrust_teddy_bridge.c -o tests/test_hathitrust_teddy -lpthread -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_teddy.c tsfi2-deepseek/src/hathitrust_lore_interop.c tsfi2-deepseek/src/hathitrust_teddy_bridge.c -o tests/test_hathitrust_teddy -lpthread -lrt
 	./tests/test_hathitrust_teddy
 	@rm -f tests/test_hathitrust_teddy
 
 test-hathitrust-final-extra:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc src/hathitrust_cli.c src/hathitrust_hathifile_search.c src/hathitrust_hathifile.c src/hathitrust_cache_profiler.c src/hathitrust_cache.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/hathitrust_cli -lcrypto -lrt -lm
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_final_extra.c src/hathitrust_solr_transcoder.c src/hathitrust_cache_profiler.c src/hathitrust_cache.c -o tests/test_hathitrust_final_extra -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tsfi2-deepseek/src/hathitrust_cli.c tsfi2-deepseek/src/hathitrust_hathifile_search.c tsfi2-deepseek/src/hathitrust_hathifile.c tsfi2-deepseek/src/hathitrust_cache_profiler.c tsfi2-deepseek/src/hathitrust_cache.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/hathitrust_cli -lcrypto -lrt -lm
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_final_extra.c tsfi2-deepseek/src/hathitrust_solr_transcoder.c tsfi2-deepseek/src/hathitrust_cache_profiler.c tsfi2-deepseek/src/hathitrust_cache.c -o tests/test_hathitrust_final_extra -lrt
 	./tests/test_hathitrust_final_extra
 	@rm -f tests/hathitrust_cli tests/test_hathitrust_final_extra
 
 test-hathitrust-tsv-extra:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_tsv_extra.c src/hathitrust_oai_identify.c src/hathitrust_solr_sql.c src/hathitrust_tsv_scanner.c -o tests/test_hathitrust_tsv_extra -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_tsv_extra.c tsfi2-deepseek/src/hathitrust_oai_identify.c tsfi2-deepseek/src/hathitrust_solr_sql.c tsfi2-deepseek/src/hathitrust_tsv_scanner.c -o tests/test_hathitrust_tsv_extra -lrt
 	./tests/test_hathitrust_tsv_extra
 	@rm -f tests/test_hathitrust_tsv_extra
 
 test-hathitrust-solr-rdbms:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_solr_rdbms.c scripts/abi_dispatch_map.c scripts/libantigravity_interop.c src/hathitrust_solr.c -o tests/test_hathitrust_solr_rdbms -lssl -lcrypto -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_solr_rdbms.c scripts/abi_dispatch_map.c scripts/libantigravity_interop.c tsfi2-deepseek/src/hathitrust_solr.c -o tests/test_hathitrust_solr_rdbms -lssl -lcrypto -lrt
 	./tests/test_hathitrust_solr_rdbms
 	@rm -f tests/test_hathitrust_solr_rdbms
 
 test-hathitrust-tsv-bin:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_tsv_bin.c src/hathitrust_tsv_bin.c -o tests/test_hathitrust_tsv_bin -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_tsv_bin.c tsfi2-deepseek/src/hathitrust_tsv_bin.c -o tests/test_hathitrust_tsv_bin -lrt
 	./tests/test_hathitrust_tsv_bin
 	@rm -f tests/test_hathitrust_tsv_bin
 
 test-hathitrust-window:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_window.c src/hathitrust_window.c tsfi2-deepseek/src/tsfi_parc_window.c tsfi2-deepseek/src/tsfi_paintbox.c tsfi2-deepseek/src/tsfi_paint_core.c tsfi2-deepseek/src/tsfi_harry.c -o tests/test_hathitrust_window -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_window.c tsfi2-deepseek/src/hathitrust_window.c tsfi2-deepseek/src/tsfi_parc_window.c tsfi2-deepseek/src/tsfi_paintbox.c tsfi2-deepseek/src/tsfi_paint_core.c tsfi2-deepseek/src/tsfi_harry.c -o tests/test_hathitrust_window -lm -lrt
 	./tests/test_hathitrust_window
 	@rm -f tests/test_hathitrust_window
 
 test-hathitrust-extra-final:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_extra_final.c src/hathitrust_mets_range.c src/hathitrust_solr_facet.c src/hathitrust_hathifile_diff.c -o tests/test_hathitrust_extra_final -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_extra_final.c tsfi2-deepseek/src/hathitrust_mets_range.c tsfi2-deepseek/src/hathitrust_solr_facet.c tsfi2-deepseek/src/hathitrust_hathifile_diff.c -o tests/test_hathitrust_extra_final -lrt
 	./tests/test_hathitrust_extra_final
 	@rm -f tests/test_hathitrust_extra_final
 
 test-hathitrust-bib-oauth:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_bib_oauth.c src/hathitrust_oauth_callback.c src/hathitrust_bibframe.c -o tests/test_hathitrust_bib_oauth -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_bib_oauth.c tsfi2-deepseek/src/hathitrust_oauth_callback.c tsfi2-deepseek/src/hathitrust_bibframe.c -o tests/test_hathitrust_bib_oauth -lrt
 	./tests/test_hathitrust_bib_oauth
 	@rm -f tests/test_hathitrust_bib_oauth
 
 test-tsfi2-compiler-bin:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_tsfi2_compiler_bin.c src/tsfi2_compiler_bin.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_tsfi2_compiler_bin -lcrypto -lrt -lm
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_tsfi2_compiler_bin.c tsfi2-deepseek/src/tsfi2_compiler_bin.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_tsfi2_compiler_bin -lcrypto -lrt -lm
 	./tests/test_tsfi2_compiler_bin
 	@rm -f tests/test_tsfi2_compiler_bin
 
 test-tsfi2-loader:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_tsfi2_loader.c src/tsfi2_loader.c src/tsfi2_compiler_bin.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_tsfi2_loader -lcrypto -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_tsfi2_loader.c tsfi2-deepseek/src/tsfi2_loader.c tsfi2-deepseek/src/tsfi2_compiler_bin.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_tsfi2_loader -lcrypto -lm -lrt
 	./tests/test_tsfi2_loader
 	@rm -f tests/test_tsfi2_loader
 
 test-tsfi2-compiler:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_tsfi2_compiler.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_mainframe_jcl.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_tsfi2_compiler -lcrypto -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_tsfi2_compiler.c tsfi2-deepseek/src/tsfi2_compiler.c tsfi2-deepseek/src/tsfi2_compiler_bin.c tsfi2-deepseek/src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_mainframe_jcl.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_tsfi2_compiler -lcrypto -lm -lrt
 	./tests/test_tsfi2_compiler
 	@rm -f tests/test_tsfi2_compiler
 
 test-tsfi2-compiler-standards:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_tsfi2_compiler_standards.c src/tsfi2_compiler.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_mainframe_jcl.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_tsfi2_compiler_standards -lcrypto -lrt -lm
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_tsfi2_compiler_standards.c tsfi2-deepseek/src/tsfi2_compiler.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_mainframe_jcl.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_tsfi2_compiler_standards -lcrypto -lrt -lm
 	./tests/test_tsfi2_compiler_standards
 	@rm -f tests/test_tsfi2_compiler_standards
 
 test-auncient-alu-wmq-integration:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_alu_wmq_integration.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_mainframe_jcl.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_auncient_alu_wmq_integration -lcrypto -lrt -lm
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_alu_wmq_integration.c tsfi2-deepseek/src/tsfi2_compiler.c tsfi2-deepseek/src/tsfi2_compiler_bin.c tsfi2-deepseek/src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_mainframe_jcl.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_auncient_alu_wmq_integration -lcrypto -lrt -lm
 	./tests/test_auncient_alu_wmq_integration
 	@rm -f tests/test_auncient_alu_wmq_integration
 
 test-auncient-tsv-wmq-integration:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_tsv_wmq_runner.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_mainframe_jcl.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_auncient_tsv_wmq_runner -lcrypto -lrt -lm
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_tsv_wmq_runner.c tsfi2-deepseek/src/tsfi2_compiler.c tsfi2-deepseek/src/tsfi2_compiler_bin.c tsfi2-deepseek/src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_mainframe_jcl.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_auncient_tsv_wmq_runner -lcrypto -lrt -lm
 	./tests/test_auncient_tsv_wmq_runner
 	@rm -f tests/test_auncient_tsv_wmq_runner
 
 tsfi2-compiler:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc src/tsfi2_compiler_cli.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c tsfi2-deepseek/src/tsfi_mainframe_jcl.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tsfi2_compiler -lcrypto -lrt -lm
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tsfi2-deepseek/src/tsfi2_compiler_cli.c tsfi2-deepseek/src/tsfi2_compiler.c tsfi2-deepseek/src/tsfi2_compiler_bin.c tsfi2-deepseek/src/tsfi_mainframe_jcl.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tsfi2_compiler -lcrypto -lrt -lm
 
 tsv_format_converter:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc src/tsv_format_converter.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tsv_format_converter -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tsfi2-deepseek/src/tsv_format_converter.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tsv_format_converter -lm -lrt
 
 tsv_record_inspector:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc src/tsv_record_inspector.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_displacementshader.c -o tsv_record_inspector -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tsfi2-deepseek/src/tsv_record_inspector.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_displacementshader.c -o tsv_record_inspector -lm -lrt
 
 copybook_schema_validator:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc src/copybook_schema_validator.c -o copybook_schema_validator -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tsfi2-deepseek/src/copybook_schema_validator.c -o copybook_schema_validator -lrt
 
 sna_appc_peer:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc src/sna_appc_peer.c -o sna_appc_peer -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tsfi2-deepseek/src/sna_appc_peer.c -o sna_appc_peer -lrt
 
 hathitrust_preservation_query:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc src/hathitrust_preservation_query.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_displacementshader.c -o hathitrust_preservation_query -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tsfi2-deepseek/src/hathitrust_preservation_query.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_displacementshader.c -o hathitrust_preservation_query -lm -lrt
 
 test-auncient-displacementshader-wmq-integration:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_displacementshader_wmq_integration.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_mainframe_jcl.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c -o tests/test_auncient_displacementshader_wmq_integration -lcrypto -lrt -lm
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_displacementshader_wmq_integration.c tsfi2-deepseek/src/tsfi2_compiler.c tsfi2-deepseek/src/tsfi2_compiler_bin.c tsfi2-deepseek/src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_mainframe_jcl.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c -o tests/test_auncient_displacementshader_wmq_integration -lcrypto -lrt -lm
 	./tests/test_auncient_displacementshader_wmq_integration
 	@rm -f tests/test_auncient_displacementshader_wmq_integration
 
 test-auncient-dat-bin-accumulator:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_dat_bin_accumulator.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_mainframe_jcl.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c -o tests/test_auncient_dat_bin_accumulator -lcrypto -lrt -lm
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_dat_bin_accumulator.c tsfi2-deepseek/src/tsfi2_compiler.c tsfi2-deepseek/src/tsfi2_compiler_bin.c tsfi2-deepseek/src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_mainframe_jcl.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c -o tests/test_auncient_dat_bin_accumulator -lcrypto -lrt -lm
 	./tests/test_auncient_dat_bin_accumulator
 	@rm -f tests/test_auncient_dat_bin_accumulator
 
 test-auncient-compiler-prefilter:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_compiler_prefilter.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_mainframe_jcl.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c -o tests/test_auncient_compiler_prefilter -lcrypto -lrt -lm
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_compiler_prefilter.c tsfi2-deepseek/src/tsfi2_compiler.c tsfi2-deepseek/src/tsfi2_compiler_bin.c tsfi2-deepseek/src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_mainframe_jcl.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c -o tests/test_auncient_compiler_prefilter -lcrypto -lrt -lm
 	./tests/test_auncient_compiler_prefilter
 	@rm -f tests/test_auncient_compiler_prefilter
 
 test-auncient-nested-streams:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_nested_streams.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_mainframe_jcl.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c -o tests/test_auncient_nested_streams -lcrypto -lrt -lm
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_nested_streams.c tsfi2-deepseek/src/tsfi2_compiler.c tsfi2-deepseek/src/tsfi2_compiler_bin.c tsfi2-deepseek/src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_mainframe_jcl.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c -o tests/test_auncient_nested_streams -lcrypto -lrt -lm
 	./tests/test_auncient_nested_streams
 	@rm -f tests/test_auncient_nested_streams
 
@@ -498,7 +498,7 @@ test-quadtreeslicer:
 	@rm -f tests/test_quadtreeslicer
 
 test-riinterface:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_riinterface.c tsfi2-deepseek/src/tsfi_riinterface.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_depthoffield.c src/tsfi2_compiler.c src/tsfi2_compiler_bin.c src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_mainframe_jcl.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_riinterface -lcrypto -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_riinterface.c tsfi2-deepseek/src/tsfi_riinterface.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_depthoffield.c tsfi2-deepseek/src/tsfi2_compiler.c tsfi2-deepseek/src/tsfi2_compiler_bin.c tsfi2-deepseek/src/tsfi2_loader.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_mainframe_jcl.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_riinterface -lcrypto -lm -lrt
 	./tests/test_riinterface
 	@rm -f tests/test_riinterface
 
@@ -551,7 +551,7 @@ test-krowz-sickness:
 	@rm -f tests/test_krowz_sickness
 
 sdk-benchmark:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc src/auncient_sdk.c tests/test_auncient_sdk_benchmarks.c -o tests/test_auncient_sdk_benchmarks -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tsfi2-deepseek/src/auncient_sdk.c tests/test_auncient_sdk_benchmarks.c -o tests/test_auncient_sdk_benchmarks -lm -lrt
 	./tests/test_auncient_sdk_benchmarks
 
 livrps-benchmark:
@@ -564,29 +564,29 @@ curves-benchmark:
 	@rm -f tests/test_auncient_curves_benchmarks
 
 tpu-benchmarks: sdk-build
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_fast_inference_benchmark.c src/auncient_sdk.o -o tests/test_auncient_fast_inference_benchmark -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_fast_inference_benchmark.c tsfi2-deepseek/src/auncient_sdk.o -o tests/test_auncient_fast_inference_benchmark -lm -lrt
 	./tests/test_auncient_fast_inference_benchmark
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_tpu_neural_benchmark.c src/auncient_sdk.o -o tests/test_auncient_tpu_neural_benchmark -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_tpu_neural_benchmark.c tsfi2-deepseek/src/auncient_sdk.o -o tests/test_auncient_tpu_neural_benchmark -lm -lrt
 	./tests/test_auncient_tpu_neural_benchmark
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_tpu_recurrent_benchmark.c src/auncient_sdk.o -o tests/test_auncient_tpu_recurrent_benchmark -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_tpu_recurrent_benchmark.c tsfi2-deepseek/src/auncient_sdk.o -o tests/test_auncient_tpu_recurrent_benchmark -lm -lrt
 	./tests/test_auncient_tpu_recurrent_benchmark
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_tpu_polyphonic_benchmark.c src/auncient_sdk.o -o tests/test_auncient_tpu_polyphonic_benchmark -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_tpu_polyphonic_benchmark.c tsfi2-deepseek/src/auncient_sdk.o -o tests/test_auncient_tpu_polyphonic_benchmark -lm -lrt
 	./tests/test_auncient_tpu_polyphonic_benchmark
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_tpu_security_benchmark.c src/auncient_sdk.o -o tests/test_auncient_tpu_security_benchmark -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_tpu_security_benchmark.c tsfi2-deepseek/src/auncient_sdk.o -o tests/test_auncient_tpu_security_benchmark -lm -lrt
 	./tests/test_auncient_tpu_security_benchmark
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_tpu_gating_benchmark.c src/auncient_sdk.o -o tests/test_auncient_tpu_gating_benchmark -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_tpu_gating_benchmark.c tsfi2-deepseek/src/auncient_sdk.o -o tests/test_auncient_tpu_gating_benchmark -lm -lrt
 	./tests/test_auncient_tpu_gating_benchmark
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_tpu_mesh_benchmark.c src/auncient_sdk.o -o tests/test_auncient_tpu_mesh_benchmark -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_tpu_mesh_benchmark.c tsfi2-deepseek/src/auncient_sdk.o -o tests/test_auncient_tpu_mesh_benchmark -lm -lrt
 	./tests/test_auncient_tpu_mesh_benchmark
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_tpu_decay_benchmark.c src/auncient_sdk.o -o tests/test_auncient_tpu_decay_benchmark -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_tpu_decay_benchmark.c tsfi2-deepseek/src/auncient_sdk.o -o tests/test_auncient_tpu_decay_benchmark -lm -lrt
 	./tests/test_auncient_tpu_decay_benchmark
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_tpu_spelling_benchmark.c src/auncient_sdk.o -o tests/test_auncient_tpu_spelling_benchmark -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_tpu_spelling_benchmark.c tsfi2-deepseek/src/auncient_sdk.o -o tests/test_auncient_tpu_spelling_benchmark -lm -lrt
 	./tests/test_auncient_tpu_spelling_benchmark
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_tpu_bond_benchmark.c src/auncient_sdk.o -o tests/test_auncient_tpu_bond_benchmark -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_tpu_bond_benchmark.c tsfi2-deepseek/src/auncient_sdk.o -o tests/test_auncient_tpu_bond_benchmark -lm -lrt
 	./tests/test_auncient_tpu_bond_benchmark
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_swarm_consensus.c src/auncient_sdk.o -o tests/test_auncient_swarm_consensus -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_swarm_consensus.c tsfi2-deepseek/src/auncient_sdk.o -o tests/test_auncient_swarm_consensus -lm -lrt
 	./tests/test_auncient_swarm_consensus
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_swarm_metaprogramming.c src/auncient_sdk.o -o tests/test_auncient_swarm_metaprogramming -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_swarm_metaprogramming.c tsfi2-deepseek/src/auncient_sdk.o -o tests/test_auncient_swarm_metaprogramming -lm -lrt
 	./tests/test_auncient_swarm_metaprogramming
 	@rm -f tests/test_auncient_fast_inference_benchmark tests/test_auncient_tpu_neural_benchmark tests/test_auncient_tpu_recurrent_benchmark tests/test_auncient_tpu_polyphonic_benchmark tests/test_auncient_tpu_security_benchmark tests/test_auncient_tpu_gating_benchmark tests/test_auncient_tpu_mesh_benchmark tests/test_auncient_tpu_decay_benchmark tests/test_auncient_tpu_spelling_benchmark tests/test_auncient_tpu_bond_benchmark tests/test_auncient_swarm_consensus tests/test_auncient_swarm_metaprogramming
 
@@ -622,12 +622,12 @@ test-unit:
 
 sdk-build:
 	mkdir -p dist
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -fPIC -Itsfi2-deepseek -Itsfi2-deepseek/inc -c src/auncient_sdk.c -o src/auncient_sdk.o
-	ar rcs libauncient_sdk.a src/auncient_sdk.o
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -fPIC -Itsfi2-deepseek -Itsfi2-deepseek/inc -c tsfi2-deepseek/src/auncient_sdk.c -o tsfi2-deepseek/src/auncient_sdk.o
+	ar rcs libauncient_sdk.a tsfi2-deepseek/src/auncient_sdk.o
 
 sdk-minify: sdk-build
-	strip --strip-unneeded src/auncient_sdk.o
-	ar rcs libauncient_sdk.a src/auncient_sdk.o
+	strip --strip-unneeded tsfi2-deepseek/src/auncient_sdk.o
+	ar rcs libauncient_sdk.a tsfi2-deepseek/src/auncient_sdk.o
 	strip -S libauncient_sdk.a
 
 sdk-package: sdk-minify
@@ -639,12 +639,12 @@ test-cbt021-inmemory-pds:
 	@rm -f tests/test_cbt021_inmemory_pds
 
 test-auncient-xpl-compiler:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc src/auncient_sdk.c tests/test_auncient_xpl_compiler.c -o tests/test_auncient_xpl_compiler -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tsfi2-deepseek/src/auncient_sdk.c tests/test_auncient_xpl_compiler.c -o tests/test_auncient_xpl_compiler -lm -lrt
 	./tests/test_auncient_xpl_compiler
 	@rm -f tests/test_auncient_xpl_compiler
 
 test-auncient-xpl-loader:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc src/auncient_sdk.c tests/test_auncient_xpl_loader.c -o tests/test_auncient_xpl_loader -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tsfi2-deepseek/src/auncient_sdk.c tests/test_auncient_xpl_loader.c -o tests/test_auncient_xpl_loader -lm -lrt
 	./tests/test_auncient_xpl_loader
 	@rm -f tests/test_auncient_xpl_loader
 
@@ -654,7 +654,7 @@ test-auncient-cooperative-boundary:
 	@rm -f tests/test_auncient_cooperative_boundary
 
 test-auncient-apdl-xpl-integration:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc src/auncient_sdk.c tests/test_auncient_apdl_xpl_integration.c -o tests/test_auncient_apdl_xpl_integration -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tsfi2-deepseek/src/auncient_sdk.c tests/test_auncient_apdl_xpl_integration.c -o tests/test_auncient_apdl_xpl_integration -lm -lrt
 	./tests/test_auncient_apdl_xpl_integration
 	@rm -f tests/test_auncient_apdl_xpl_integration
 
@@ -704,7 +704,7 @@ test-auncient-apdl-compiler:
 	@rm -f tests/test_auncient_apdl_compiler
 
 test-auncient-teddy-personality:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_teddy_personality.c src/auncient_teddy_personality.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c -o tests/test_auncient_teddy_personality -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_teddy_personality.c tsfi2-deepseek/src/auncient_teddy_personality.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c -o tests/test_auncient_teddy_personality -lm -lrt
 	./tests/test_auncient_teddy_personality
 	@rm -f tests/test_auncient_teddy_personality
 
@@ -714,9 +714,9 @@ test-auncient-bear-interactions:
 	@rm -f tests/test_auncient_bear_interactions
 
 test-auncient-bear-chorus:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc src/auncient_bear_chorus.c src/auncient_teddy_personality.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c -o src/auncient_bear_chorus -lm -lrt
-	./src/auncient_bear_chorus
-	@rm -f src/auncient_bear_chorus
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tsfi2-deepseek/src/auncient_bear_chorus.c tsfi2-deepseek/src/auncient_teddy_personality.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c -o tsfi2-deepseek/src/auncient_bear_chorus -lm -lrt
+	./tsfi2-deepseek/src/auncient_bear_chorus
+	@rm -f tsfi2-deepseek/src/auncient_bear_chorus
 
 test-auncient-hathitrust-stimuli:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_hathitrust_stimuli.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_auncient_hathitrust_stimuli -lcrypto -lm -lrt

@@ -433,12 +433,12 @@ int main(void) {
     printf("[C-Trace] Compiling G-15D Rail Yul object...\n");
     char *g15d_hex = malloc(131072);
     assert(g15d_hex != NULL);
-    compile_yul_to_bytecode("src/firmware/g15d_rail.yul", g15d_hex, 131072);
+    compile_yul_to_bytecode("tsfi2-deepseek/src/firmware/g15d_rail.yul", g15d_hex, 131072);
 
     printf("[C-Trace] Compiling NCR 304 Rail Yul object...\n");
     char *ncr_hex = malloc(131072);
     assert(ncr_hex != NULL);
-    compile_yul_to_bytecode("src/firmware/ncr304_rail.yul", ncr_hex, 131072);
+    compile_yul_to_bytecode("tsfi2-deepseek/src/firmware/ncr304_rail.yul", ncr_hex, 131072);
 
     // Dynamic Deployment of contracts to Anvil
     printf("[C-Trace] Deploying G-15D contract dynamically from C...\n");

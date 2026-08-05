@@ -9,7 +9,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include "tsfi_raw.h"
-#include "../src/lau_yul_thunk.h"
+#include "../tsfi2-deepseek/src/lau_yul_thunk.h"
 
 // Define globals declared in the header (so they are allocated in this compilation unit)
 uint32_t global_compositor_id = 0;

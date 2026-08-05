@@ -26,7 +26,7 @@
 #include "window_inc/vulkan_struct.h"
 #include "tsfi_dom.h"
 #include "tsfi_zmm_vm.h"
-#include "../src/lau_yul_thunk.h"
+#include "../tsfi2-deepseek/src/lau_yul_thunk.h"
 
 extern PFN_vkVoidFunction tsfi_vkGetInstanceProcAddr(VkInstance instance, const char* pName);
 extern void tsfi_wire_firmware_init(void);

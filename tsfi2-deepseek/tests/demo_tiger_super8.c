@@ -907,7 +907,7 @@ int main() {
 
     // Xerox PARC: Load and parse Algol61 and COBOL strategy shaders at runtime
     tsfi_parc_shader_params_t shader_params;
-    tsfi_parc_load_shaders("src/alto_video.algol61", "src/alto_video.strategy", &shader_params);
+    tsfi_parc_load_shaders("tsfi2-deepseek/src/alto_video.algol61", "tsfi2-deepseek/src/alto_video.strategy", &shader_params);
     // Xerox PARC: Initialize video playback deck
     tsfi_parc_video_deck_t deck;
     tsfi_parc_deck_init(&deck, FRAMES, 3);

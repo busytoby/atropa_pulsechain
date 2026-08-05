@@ -1770,4 +1770,4 @@ int tsfi_eer_journal_pop(TSFiEerJournalEntry *entry) {
     return 0;
 }
 
-// Moved functions to src/tsfi_encodings_opt.c to respect 68KB file size limit.
+// Moved functions to tsfi2-deepseek/src/tsfi_encodings_opt.c to respect 68KB file size limit.

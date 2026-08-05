@@ -1,4 +1,4 @@
-#include "../src/cloth_simulator.h"
+#include "../tsfi2-deepseek/src/cloth_simulator.h"
 #include <stdio.h>
 #include <assert.h>
 

@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <math.h>
-#include "../src/tsfi_computel_dtmf_progress_tones.c"
+#include "../tsfi2-deepseek/src/tsfi_computel_dtmf_progress_tones.c"
 
 int main(void) {
     printf("[TEST] Initializing Auncient Computel DTMF Progress Tones test suite...\n");

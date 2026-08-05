@@ -2,8 +2,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <assert.h>
-#include "../src/tsfi_computel_dtmf_encoder.c"
-#include "../src/tsfi_computel_dtmf_decoder.c"
+#include "../tsfi2-deepseek/src/tsfi_computel_dtmf_encoder.c"
+#include "../tsfi2-deepseek/src/tsfi_computel_dtmf_decoder.c"
 
 int main(void) {
     printf("[TEST] Initializing Auncient Computel DTMF Encoder/Decoder loopback test suite...\n");

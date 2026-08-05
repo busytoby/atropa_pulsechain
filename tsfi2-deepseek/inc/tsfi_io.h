@@ -59,7 +59,7 @@ int tsfi_monitor(int *fds, int fd_count, void **mem_addrs, uint32_t *mem_masks, 
 // Thread-safe binary write
 size_t tsfi_io_write(FILE *stream, const void *ptr, size_t size);
 
-// K0Rn Persistence API (Implemented in src/tsfi_io.c)
+// K0Rn Persistence API (Implemented in tsfi2-deepseek/src/tsfi_io.c)
 K0RnStream* tsfi_k0rn_load(const char *name);
 bool tsfi_k0rn_save(const char *name, const K0RnStream *s);
 

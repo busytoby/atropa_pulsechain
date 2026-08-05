@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <string.h>
-#include "../src/tsfi_computel_advanced_kermit.c"
+#include "../tsfi2-deepseek/src/tsfi_computel_advanced_kermit.c"
 
 int main(void) {
     printf("[TEST] Initializing Auncient Computel Advanced Kermit test suite...\n");

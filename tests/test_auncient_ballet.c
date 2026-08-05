@@ -1,4 +1,4 @@
-#include "../src/auncient_ballet_animator.h"
+#include "../tsfi2-deepseek/src/auncient_ballet_animator.h"
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>

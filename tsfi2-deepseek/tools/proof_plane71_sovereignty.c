@@ -8,7 +8,7 @@
 #include "vulkan_init.h"
 #include "vulkan_render.h"
 
-// Note: Function defined in src/tsfi_drm_lease_thunk.c
+// Note: Function defined in tsfi2-deepseek/src/tsfi_drm_lease_thunk.c
 extern int tsfi_acquire_hardware_lease(void);
 
 int main() {

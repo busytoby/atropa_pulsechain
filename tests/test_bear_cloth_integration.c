@@ -1,10 +1,10 @@
 #include "../../../ds/apEx-public/apEx/Phoenix/dna_teddy_sculptor_c.h"
-#include "../src/cloth_simulator.h"
+#include "../tsfi2-deepseek/src/cloth_simulator.h"
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
 
-#include "../src/auncient_cloth_material_bridge.h"
+#include "../tsfi2-deepseek/src/auncient_cloth_material_bridge.h"
 #include <string.h>
 
 int main(void) {

@@ -1,5 +1,5 @@
-#include "../src/auncient_turtle_usd.h"
-#include "../src/cloth_simulator.h"
+#include "../tsfi2-deepseek/src/auncient_turtle_usd.h"
+#include "../tsfi2-deepseek/src/cloth_simulator.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>

@@ -7,7 +7,7 @@
 #include <immintrin.h>
 
 // Link against the Thetan Kernel
-// Defined in src/tsfi_yang.c
+// Defined in tsfi2-deepseek/src/tsfi_yang.c
 extern void tsfi_yang_process(const TSFiSGP *sgp, TSFiVGP *vgp);
 
 int main() {

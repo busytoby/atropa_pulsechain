@@ -18,7 +18,7 @@ int main() {
     printf("=== TSFi Unit Test: PPO Pre-flight Sentinel ===\n");
 
     // Scenario 1: Vetted
-    const char *vetted_file = "src/tsfi_io.c";
+    const char *vetted_file = "tsfi2-deepseek/src/tsfi_io.c";
     if (simulate_ppo_preflight(vetted_file)) {
         printf("[PASS] Vetted proposal advanced to Epoch 0.\n");
     } else {
@@ -27,7 +27,7 @@ int main() {
     }
 
     // Scenario 2: Unvetted Noise
-    const char *noise_file = "src/missing_logic.c";
+    const char *noise_file = "tsfi2-deepseek/src/missing_logic.c";
     if (!simulate_ppo_preflight(noise_file)) {
         printf("[PASS] Noise proposal blocked by sentinel. Safety margin preserved.\n");
     } else {

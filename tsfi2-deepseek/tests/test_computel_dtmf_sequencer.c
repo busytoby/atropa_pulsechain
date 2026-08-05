@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <assert.h>
-#include "../src/tsfi_computel_dtmf_sequencer.c"
+#include "../tsfi2-deepseek/src/tsfi_computel_dtmf_sequencer.c"
 
 int main(void) {
     printf("[TEST] Initializing Auncient Computel DTMF Sequencer test suite...\n");

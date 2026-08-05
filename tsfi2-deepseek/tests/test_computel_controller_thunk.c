@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <string.h>
-#include "../src/tsfi_computel_controller_thunk.c"
+#include "../tsfi2-deepseek/src/tsfi_computel_controller_thunk.c"
 
 int main(void) {
     printf("[TEST] Initializing Auncient Computel Controller Thunk test suite...\n");

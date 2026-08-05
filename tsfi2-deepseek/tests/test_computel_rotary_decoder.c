@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <assert.h>
-#include "../src/tsfi_computel_rotary_decoder.c"
+#include "../tsfi2-deepseek/src/tsfi_computel_rotary_decoder.c"
 
 bool digit_fired = false;
 char final_digit = '\0';

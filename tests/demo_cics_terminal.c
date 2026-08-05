@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
-#include "../src/auncient_timeline_autodin.h"
+#include "../tsfi2-deepseek/src/auncient_timeline_autodin.h"
 
 int main(void) {
     printf("=============================================================\n");

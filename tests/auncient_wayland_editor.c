@@ -13,7 +13,7 @@
 #include <dlfcn.h>
 #include <wayland-client.h>
 #include "xdg-shell-client-protocol.h"
-#include "../src/auncient_timeline_autodin.h"
+#include "../tsfi2-deepseek/src/auncient_timeline_autodin.h"
 
 // Include global state data component
 #include "auncient_wayland_data.c"

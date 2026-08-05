@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <math.h>
 #include "auncient_cactus_schema.h"
-#include "../src/auncient_timeline_autodin.h"
+#include "../tsfi2-deepseek/src/auncient_timeline_autodin.h"
 
 
 #define STACK_CAPACITY 32

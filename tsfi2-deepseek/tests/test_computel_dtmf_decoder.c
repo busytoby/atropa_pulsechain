@@ -7,7 +7,7 @@
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
-#include "../src/tsfi_computel_dtmf_decoder.c"
+#include "../tsfi2-deepseek/src/tsfi_computel_dtmf_decoder.c"
 
 int main(void) {
     printf("[TEST] Initializing Auncient Computel DTMF Goertzel Decoder test suite...\n");

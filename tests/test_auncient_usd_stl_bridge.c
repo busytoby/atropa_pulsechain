@@ -1,4 +1,4 @@
-#include "../src/auncient_usd_stl_bridge.h"
+#include "../tsfi2-deepseek/src/auncient_usd_stl_bridge.h"
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>

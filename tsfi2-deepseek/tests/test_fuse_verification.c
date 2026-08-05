@@ -63,6 +63,6 @@ int main() {
     tsfi_bn_free(Prime); tsfi_bn_free(Xi); tsfi_bn_free(Alpha); tsfi_bn_free(Beta);
     // freeYI calls freeSHIO which tries to free the members
     // but shoot_yi->Psi->Rho->Rod is actually shared or was allocated?
-    // In src/tsfi_reaction.c STAT allocates new Fa.
+    // In tsfi2-deepseek/src/tsfi_reaction.c STAT allocates new Fa.
     return 0;
 }

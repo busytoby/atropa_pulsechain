@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <string.h>
-#include "../src/tsfi_computel_trunk_selector.c"
+#include "../tsfi2-deepseek/src/tsfi_computel_trunk_selector.c"
 
 int main(void) {
     printf("[TEST] Initializing Auncient Computel Trunk Selector test suite...\n");

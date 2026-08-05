@@ -12,7 +12,7 @@
 #include <dlfcn.h>
 #include <wayland-client.h>
 #include "xdg-shell-client-protocol.h"
-#include "../src/auncient_timeline_autodin.h"
+#include "../tsfi2-deepseek/src/auncient_timeline_autodin.h"
 
 // Font definition (5x7 bits per character)
 static const uint8_t font5x7[128][5] = {

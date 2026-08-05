@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <stdlib.h>
-#include "../src/tsfi_computel_dmt_udp_benchmark.c"
+#include "../tsfi2-deepseek/src/tsfi_computel_dmt_udp_benchmark.c"
 
 int main(void) {
     printf("[BENCHMARK] Initializing Auncient Computel DMT-over-UDP Bit-Loading Benchmark...\n");

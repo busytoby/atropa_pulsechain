@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "../tsfi2-deepseek/inc/tsfi_riinterface.h"
+#include "../inc/tsfi_riinterface.h"
 
 // Struct representing a 3D coordinate point
 typedef struct {

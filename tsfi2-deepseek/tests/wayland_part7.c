@@ -1268,7 +1268,7 @@
         } else if (similarity3 > similarity1 && similarity3 > similarity2) {
             target_x = 400; target_y = 300;
             doc_idx = 3;
-            doc_name = "src/tsfi_zmm_vm.c [ZMM VM State]";
+            doc_name = "tsfi2-deepseek/src/tsfi_zmm_vm.c [ZMM VM State]";
             doc_context = "ZMM VM provides sandboxed, high-performance CPU simulation\r\nwith registered memory banks and page translation tables.";
         }
         

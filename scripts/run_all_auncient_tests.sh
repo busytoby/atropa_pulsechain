@@ -314,11 +314,11 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_kermit_abd_ackerman.c
 ./tests/test_auncient_kermit_abd_ackerman
 
 # Compile and run SDK CICS-ALU Coaxial Integration
-gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_sdk_integration.c -o tests/test_auncient_sdk_integration -lm -lrt
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc tsfi2-deepseek/src/auncient_sdk.c tests/test_auncient_sdk_integration.c -o tests/test_auncient_sdk_integration -lm -lrt
 ./tests/test_auncient_sdk_integration
 
 # Compile and run SDK Usage Demonstration
-gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_sdk_usage.c -o tests/test_auncient_sdk_usage -lm -lrt
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc tsfi2-deepseek/src/auncient_sdk.c tests/test_auncient_sdk_usage.c -o tests/test_auncient_sdk_usage -lm -lrt
 ./tests/test_auncient_sdk_usage
 
 # Compile and run Self-Stabilizing BFS Spanning Tree
@@ -358,15 +358,15 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_autodin_contract.c -o
 ./tests/test_auncient_autodin_contract
 
 # Compile and run SDK Precedence Locks and Security
-gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_sdk_precedence_locks.c -o tests/test_auncient_sdk_precedence_locks -lm -lrt
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc tsfi2-deepseek/src/auncient_sdk.c tests/test_auncient_sdk_precedence_locks.c -o tests/test_auncient_sdk_precedence_locks -lm -lrt
 ./tests/test_auncient_sdk_precedence_locks
 
 # Compile and run XPL Loader Simulator
-gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_xpl_loader.c -o tests/test_auncient_xpl_loader -lm -lrt
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc tsfi2-deepseek/src/auncient_sdk.c tests/test_auncient_xpl_loader.c -o tests/test_auncient_xpl_loader -lm -lrt
 ./tests/test_auncient_xpl_loader
 
 # Compile and run XPL Compiler Simulator
-gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_xpl_compiler.c -o tests/test_auncient_xpl_compiler -lm -lrt
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc tsfi2-deepseek/src/auncient_sdk.c tests/test_auncient_xpl_compiler.c -o tests/test_auncient_xpl_compiler -lm -lrt
 ./tests/test_auncient_xpl_compiler
 
 # Compile and run Integration Benchmarks
@@ -374,7 +374,7 @@ gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=199309L -O3 tests/test_aunc
 ./tests/test_auncient_integration_bench
 
 # Compile and run SDK DbC Latency Benchmarks
-gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc src/auncient_sdk.c tests/test_auncient_sdk_benchmarks.c -o tests/test_auncient_sdk_benchmarks -lm -lrt
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc tsfi2-deepseek/src/auncient_sdk.c tests/test_auncient_sdk_benchmarks.c -o tests/test_auncient_sdk_benchmarks -lm -lrt
 ./tests/test_auncient_sdk_benchmarks
 
 # Compile and run SIGGRAPH 3D Coordinate Projection Generator
@@ -514,31 +514,31 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_consensus_optimizer_v
 ./tests/test_auncient_consensus_optimizer_v2
 
 # Compile and run Auncient HuCOcean Loader Simulation
-gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_ocean_loader.c src/auncient_timeline_autodin.c src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c src/auncient_sdk.c src/auncient_vulkan_materials.c src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_auncient_ocean_loader -lm -lrt -lssl -lcrypto
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_ocean_loader.c tsfi2-deepseek/src/auncient_timeline_autodin.c tsfi2-deepseek/src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/auncient_sdk.c tsfi2-deepseek/src/auncient_vulkan_materials.c tsfi2-deepseek/src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_auncient_ocean_loader -lm -lrt -lssl -lcrypto
 ./tests/test_auncient_ocean_loader
 
 # Compile and run Auncient EDSAC-AUTODIN Compiler Firewall Simulation
-gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_edsac_firewall.c src/auncient_edsac_firewall.c src/auncient_timeline_autodin.c src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c src/auncient_sdk.c src/auncient_vulkan_materials.c src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_auncient_edsac_firewall -lm -lrt -lssl -lcrypto
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_edsac_firewall.c tsfi2-deepseek/src/auncient_edsac_firewall.c tsfi2-deepseek/src/auncient_timeline_autodin.c tsfi2-deepseek/src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/auncient_sdk.c tsfi2-deepseek/src/auncient_vulkan_materials.c tsfi2-deepseek/src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_auncient_edsac_firewall -lm -lrt -lssl -lcrypto
 ./tests/test_auncient_edsac_firewall
 
 # Compile and run Auncient XDC Debugger Simulation
-gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_xdc_debugger.c src/auncient_xdc_debugger.c src/auncient_timeline_autodin.c src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c src/auncient_sdk.c src/auncient_vulkan_materials.c src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_auncient_xdc_debugger -lm -lrt -lssl -lcrypto
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_xdc_debugger.c tsfi2-deepseek/src/auncient_xdc_debugger.c tsfi2-deepseek/src/auncient_timeline_autodin.c tsfi2-deepseek/src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/auncient_sdk.c tsfi2-deepseek/src/auncient_vulkan_materials.c tsfi2-deepseek/src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_auncient_xdc_debugger -lm -lrt -lssl -lcrypto
 ./tests/test_auncient_xdc_debugger
 
 # Compile and run Auncient XDG Debug Portal Simulation
-gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_xdg_debug_portal.c src/auncient_xdg_debug_portal.c src/auncient_xdc_debugger.c src/auncient_timeline_autodin.c src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c src/auncient_sdk.c src/auncient_vulkan_materials.c src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_auncient_xdg_debug_portal -lm -lrt -lssl -lcrypto
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_xdg_debug_portal.c tsfi2-deepseek/src/auncient_xdg_debug_portal.c tsfi2-deepseek/src/auncient_xdc_debugger.c tsfi2-deepseek/src/auncient_timeline_autodin.c tsfi2-deepseek/src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/auncient_sdk.c tsfi2-deepseek/src/auncient_vulkan_materials.c tsfi2-deepseek/src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_auncient_xdg_debug_portal -lm -lrt -lssl -lcrypto
 ./tests/test_auncient_xdg_debug_portal
 
 # Compile and run Auncient Teddy Bear Walk-Again Simulation
-gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_teddy_walk_again.c src/auncient_timeline_autodin.c src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c src/auncient_sdk.c src/auncient_vulkan_materials.c src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_auncient_teddy_walk_again -lm -lrt -lssl -lcrypto
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_teddy_walk_again.c tsfi2-deepseek/src/auncient_timeline_autodin.c tsfi2-deepseek/src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/auncient_sdk.c tsfi2-deepseek/src/auncient_vulkan_materials.c tsfi2-deepseek/src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_auncient_teddy_walk_again -lm -lrt -lssl -lcrypto
 ./tests/test_auncient_teddy_walk_again
 
 # Compile and run Auncient EDSAC System Wide Firewall Simulation
-gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_edsac_system_firewall.c src/auncient_edsac_firewall.c src/auncient_timeline_autodin.c src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c src/auncient_sdk.c src/auncient_vulkan_materials.c src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_auncient_edsac_system_firewall -lm -lrt -lssl -lcrypto
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_edsac_system_firewall.c tsfi2-deepseek/src/auncient_edsac_firewall.c tsfi2-deepseek/src/auncient_timeline_autodin.c tsfi2-deepseek/src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/auncient_sdk.c tsfi2-deepseek/src/auncient_vulkan_materials.c tsfi2-deepseek/src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_auncient_edsac_system_firewall -lm -lrt -lssl -lcrypto
 ./tests/test_auncient_edsac_system_firewall
 
 # Compile and run Auncient Federal Worker Phase Simulation
-gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_federal_worker.c src/auncient_federal_worker_sim.c src/auncient_edsac_firewall.c src/auncient_timeline_autodin.c src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c src/auncient_sdk.c src/auncient_vulkan_materials.c src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_auncient_federal_worker -lm -lrt -lssl -lcrypto
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_federal_worker.c tsfi2-deepseek/src/auncient_federal_worker_sim.c tsfi2-deepseek/src/auncient_edsac_firewall.c tsfi2-deepseek/src/auncient_timeline_autodin.c tsfi2-deepseek/src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/auncient_sdk.c tsfi2-deepseek/src/auncient_vulkan_materials.c tsfi2-deepseek/src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_auncient_federal_worker -lm -lrt -lssl -lcrypto
 ./tests/test_auncient_federal_worker
 
 # Compile and run Auncient Hudson Soft to VGPR Register Mirroring
@@ -654,7 +654,7 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_bgp_peering.c -o test
 ./tests/test_auncient_bgp_peering
 
 # Compile and run Auncient SDK BGP Demo
-gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_sdk_bgp_demo.c src/auncient_sdk.c src/auncient_edsac_firewall.c src/auncient_timeline_autodin.c src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c src/auncient_vulkan_materials.c src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_auncient_sdk_bgp_demo -lm -lrt -lssl -lcrypto
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_sdk_bgp_demo.c tsfi2-deepseek/src/auncient_sdk.c tsfi2-deepseek/src/auncient_edsac_firewall.c tsfi2-deepseek/src/auncient_timeline_autodin.c tsfi2-deepseek/src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/auncient_vulkan_materials.c tsfi2-deepseek/src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_auncient_sdk_bgp_demo -lm -lrt -lssl -lcrypto
 ./tests/test_auncient_sdk_bgp_demo
 
 # Compile and run Auncient BGP Route Reflector & Broadcast
@@ -678,7 +678,7 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vppd_avail.c -o tests
 ./tests/test_auncient_vppd_avail
 
 # Compile and run Auncient Turtle Graphics to Pixar USD Bridge
-gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_turtle_usd.c src/auncient_turtle_usd.c src/auncient_timeline_autodin.c src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_riinterface.c src/auncient_sdk.c src/auncient_vulkan_materials.c src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c src/auncient_usd_stl_bridge.c -o tests/test_auncient_turtle_usd -lm -lrt -lssl -lcrypto
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_turtle_usd.c tsfi2-deepseek/src/auncient_turtle_usd.c tsfi2-deepseek/src/auncient_timeline_autodin.c tsfi2-deepseek/src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_riinterface.c tsfi2-deepseek/src/auncient_sdk.c tsfi2-deepseek/src/auncient_vulkan_materials.c tsfi2-deepseek/src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c tsfi2-deepseek/src/auncient_usd_stl_bridge.c -o tests/test_auncient_turtle_usd -lm -lrt -lssl -lcrypto
 ./tests/test_auncient_turtle_usd
 
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="

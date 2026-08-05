@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <math.h>
-#include "../src/tsfi_computel_fsk_modulator.c"
+#include "../tsfi2-deepseek/src/tsfi_computel_fsk_modulator.c"
 
 int main(void) {
     printf("[TEST] Initializing Auncient Computel Bell 202 FSK Modulator test suite...\n");

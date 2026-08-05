@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "../src/tsfi_ast_optimizer.c"
+#include "../tsfi2-deepseek/src/tsfi_ast_optimizer.c"
 
 int main(void) {
     printf("=============================================================\n");

@@ -330,7 +330,7 @@ void test_division() {
     
     // Check A = B*Q + R
     // We need Mul. tsfi_bn_mul_avx512 is available (hybrid/stub? I implemented hybrid but commented out parts? No, I implemented scalar loop in it.)
-    // Let's check src/tsfi_math.c to see if mul is implemented correctly.
+    // Let's check tsfi2-deepseek/src/tsfi_math.c to see if mul is implemented correctly.
     // I implemented avx512_mont_mul. I did NOT implement general tsfi_bn_mul_avx512.
     // It's currently: "memset(r->limbs, 0, ...)" (Stub).
     

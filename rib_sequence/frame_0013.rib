@@ -1,0 +1,40 @@
+##RenderMan RIB-Structure 1.0
+FrameBegin 13
+Display "frame_0013.tiff" "file" "rgba"
+Format 640 480 1.0
+Projection "perspective" "fov" [45]
+Translate 0 0 0
+WorldBegin
+LightSource "distantlight" 1 "intensity" [1.5] "from" [0 5 -5] "to" [0 0 5]
+AttributeBegin
+Surface "plastic" "Kd" [.8] "Ks" [.2] "roughness" [.1] "specularcolor" [1 1 1]
+Color [0.20 0.60 1.00]
+Translate -2.00 -0.01 5.00
+Sphere 0.7892 -0.7892 0.7892 360
+AttributeEnd
+AttributeBegin
+Surface "plastic" "Kd" [.8] "Ks" [.2] "roughness" [.1] "specularcolor" [1 1 1]
+Color [1.00 0.20 0.20]
+Translate 2.00 -0.09 5.00
+Sphere 0.7105 -0.7105 0.7105 360
+AttributeEnd
+AttributeBegin
+Surface "plastic" "Kd" [.8] "Ks" [.2] "roughness" [.1] "specularcolor" [1 1 1]
+Color [0.80 0.80 0.20]
+Translate -1.00 1.41 6.00
+Sphere 0.7141 -0.7141 0.7141 360
+AttributeEnd
+AttributeBegin
+Surface "plastic" "Kd" [.8] "Ks" [.2] "roughness" [.1] "specularcolor" [1 1 1]
+Color [0.60 0.20 0.80]
+Translate 1.00 1.50 6.00
+Sphere 0.7967 -0.7967 0.7967 360
+AttributeEnd
+AttributeBegin
+Surface "plastic" "Kd" [.8] "Ks" [.2] "roughness" [.1] "specularcolor" [1 1 1]
+Color [0.20 0.80 0.40]
+Translate 0.00 -1.42 4.50
+Sphere 0.8823 -0.8823 0.8823 360
+AttributeEnd
+WorldEnd
+FrameEnd

@@ -1,4 +1,4 @@
-#include "../src/firmware/LauWireFirmware_rtl.h"
+#include "../tsfi2-deepseek/src/firmware/LauWireFirmware_rtl.h"
 #include "tsfi_math.h"
 #include "tsfi_io.h"
 #include <stdio.h>

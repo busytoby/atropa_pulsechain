@@ -1,4 +1,4 @@
-#include "../src/auncient_timeline_autodin.h"
+#include "../tsfi2-deepseek/src/auncient_timeline_autodin.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

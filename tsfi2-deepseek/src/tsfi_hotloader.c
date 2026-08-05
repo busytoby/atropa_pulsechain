@@ -63,7 +63,7 @@ int tsfi_compile_plugin(const char *source_path, const char *output_so) {
         args[i++] = "-Iplugins";
         args[i++] = "-Iplugins/vulkan";
         args[i++] = "-Iplugins/window_inc";
-        args[i++] = "-Isrc/firmware";
+        args[i++] = "-Itsfi2-deepseek/src/firmware";
         args[i++] = "-Isrc";
         args[i++] = "-I.";
         args[i++] = "-o";
@@ -86,12 +86,12 @@ int tsfi_compile_plugin(const char *source_path, const char *output_so) {
             args[i++] = "plugins/linux-explicit-synchronization-unstable-v1-protocol.c";
             args[i++] = "plugins/xdg-shell-protocol.c";
             args[i++] = "plugins/drm-lease-v1-protocol.c";
-            args[i++] = "plugins/window_src/tsfi_input.c";
-            args[i++] = "src/tsfi_vision.c";
-            args[i++] = "src/tsfi_wiring.c";
-            args[i++] = "src/tsfi_wire_firmware.c";
-            args[i++] = "src/firmware/LauWireFirmware_rtl.c";
-            args[i++] = "src/lau_thunk.c";
+            args[i++] = "plugins/window_tsfi2-deepseek/src/tsfi_input.c";
+            args[i++] = "tsfi2-deepseek/src/tsfi_vision.c";
+            args[i++] = "tsfi2-deepseek/src/tsfi_wiring.c";
+            args[i++] = "tsfi2-deepseek/src/tsfi_wire_firmware.c";
+            args[i++] = "tsfi2-deepseek/src/firmware/LauWireFirmware_rtl.c";
+            args[i++] = "tsfi2-deepseek/src/lau_thunk.c";
             args[i++] = "-lwayland-client";
             args[i++] = "-lvulkan";
             args[i++] = "-ldl";
@@ -102,12 +102,12 @@ int tsfi_compile_plugin(const char *source_path, const char *output_so) {
             args[i++] = "plugins/vulkan/vulkan_render.c";
             args[i++] = "plugins/tsfi_staging.c";
             args[i++] = "plugins/vulkan_init.c";
-            args[i++] = "plugins/window_src/tsfi_input.c";
-            args[i++] = "src/tsfi_vision.c";
-            args[i++] = "src/tsfi_wiring.c";
-            args[i++] = "src/tsfi_wire_firmware.c";
-            args[i++] = "src/firmware/LauWireFirmware_rtl.c";
-            args[i++] = "src/lau_thunk.c";
+            args[i++] = "plugins/window_tsfi2-deepseek/src/tsfi_input.c";
+            args[i++] = "tsfi2-deepseek/src/tsfi_vision.c";
+            args[i++] = "tsfi2-deepseek/src/tsfi_wiring.c";
+            args[i++] = "tsfi2-deepseek/src/tsfi_wire_firmware.c";
+            args[i++] = "tsfi2-deepseek/src/firmware/LauWireFirmware_rtl.c";
+            args[i++] = "tsfi2-deepseek/src/lau_thunk.c";
             args[i++] = "-lvulkan";
             args[i++] = "-ldl";
         } else {

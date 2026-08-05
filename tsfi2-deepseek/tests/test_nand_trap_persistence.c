@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "../src/tsfi_nand_trap_firmware.c"
+#include "../tsfi2-deepseek/src/tsfi_nand_trap_firmware.c"
 
 int main() {
     printf("=== TSFi NAND Trap Persistence Audit ===\n");
