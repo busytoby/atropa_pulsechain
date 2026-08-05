@@ -50,3 +50,19 @@ bool evaluate_castle_diplomatic_trust_bounds(const teddy_geometry_t *geom, doubl
     return true;
 }
 
+bool evaluate_castle_diplomatic_trust_bounds_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_bounds_out) {
+    if (!geom || duration_sec < 0.0 || !decayed_bounds_out) {
+        return false;
+    }
+    *decayed_bounds_out = exp(-duration_sec / (16.0 + geom->resilience_index * 6.0));
+    return true;
+}
+
+bool evaluate_castle_policy_target_engagement_variance(const teddy_geometry_t *geom, double target_metric, double *variance_out) {
+    if (!geom || target_metric < 0.0 || !variance_out) {
+        return false;
+    }
+    *variance_out = target_metric * (1.1 + geom->leadership_profile * 0.4);
+    return true;
+}
+

@@ -838,6 +838,12 @@ bool evaluate_castle_policy_target_engagement(const teddy_geometry_t *geom, doub
 // Models trust boundary configurations based on visual and vocal symmetry matching (Castle).
 bool evaluate_castle_diplomatic_trust_bounds(const teddy_geometry_t *geom, double visual_symmetry, double vocal_symmetry, double *bounds_out);
 
+// Models the decay rate of diplomatic trust boundary configurations over prolonged lack of verification (Castle).
+bool evaluate_castle_diplomatic_trust_bounds_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_bounds_out);
+
+// Models the variance in progress ratings based on dynamic target metrics (Castle).
+bool evaluate_castle_policy_target_engagement_variance(const teddy_geometry_t *geom, double target_metric, double *variance_out);
+
 evaluation_tx_t begin_evaluation_transaction(teddy_geometry_t *target);
 bool commit_evaluation_transaction(evaluation_tx_t *tx);
 void rollback_evaluation_transaction(evaluation_tx_t *tx);
