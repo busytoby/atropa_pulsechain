@@ -756,6 +756,15 @@ int main(void) {
     assert(fwhr_retaliation_decay > 0.0);
     printf("   ✓ Keating chin asymmetry dilation and Geniole fWHR retaliation decay verified successfully\n");
 
+    // Test Keating sclera size and facial width asymmetry calculations
+    double sclera_sub = 0.0;
+    double width_asymmetry = 0.0;
+    assert(evaluate_keating_sclera_size(&geom, 0.45, &sclera_sub));
+    assert(sclera_sub > 0.0);
+    assert(evaluate_keating_width_asymmetry(&geom, 2.2, 2.4, &width_asymmetry));
+    assert(width_asymmetry > 0.0);
+    printf("   ✓ KEATING, C. F. sclera size and facial width asymmetry verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge

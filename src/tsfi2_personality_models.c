@@ -1209,3 +1209,19 @@ bool evaluate_geniole_fwhr_retaliation_decay(const teddy_geometry_t *geom, doubl
     return true;
 }
 
+bool evaluate_keating_sclera_size(const teddy_geometry_t *geom, double sclera_ratio, double *submissiveness_out) {
+    if (!geom || sclera_ratio < 0.0 || !submissiveness_out) {
+        return false;
+    }
+    *submissiveness_out = sclera_ratio * (0.9 + geom->empathy_index * 0.4);
+    return true;
+}
+
+bool evaluate_keating_width_asymmetry(const teddy_geometry_t *geom, double left_width, double right_width, double *asymmetry_dominance_out) {
+    if (!geom || left_width < 0.0 || right_width < 0.0 || !asymmetry_dominance_out) {
+        return false;
+    }
+    *asymmetry_dominance_out = fabs(left_width - right_width) * (1.1 + geom->leadership_profile * 0.5);
+    return true;
+}
+

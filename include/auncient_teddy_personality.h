@@ -523,6 +523,12 @@ bool evaluate_keating_chin_asymmetry_dilation(const teddy_geometry_t *geom, doub
 // Models the habituation and decay of retaliation limits in response to provocation exposure based on fWHR (Geniole et al.).
 bool evaluate_geniole_fwhr_retaliation_decay(const teddy_geometry_t *geom, double exposure_duration_sec, double *decayed_retaliation_out);
 
+// Evaluates visible white sclera ratio effects on perceived submissiveness (Keating, C. F.).
+bool evaluate_keating_sclera_size(const teddy_geometry_t *geom, double sclera_ratio, double *submissiveness_out);
+
+// Models perceived dominance based on bilateral facial width deviations (Keating, C. F.).
+bool evaluate_keating_width_asymmetry(const teddy_geometry_t *geom, double left_width, double right_width, double *asymmetry_dominance_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 
