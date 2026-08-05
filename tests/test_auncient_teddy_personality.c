@@ -882,6 +882,15 @@ int main(void) {
     assert(radial_scale_shift > 0.0);
     printf("   ✓ Cellarius velocity phase and radial scale verified successfully\n");
 
+    // Test Cellarius eccentricity scale and epicycle phase decay calculations
+    double eccentricity_scale_val = 0.0;
+    double epicycle_phase_decay = 0.0;
+    assert(evaluate_cellarius_eccentricity_scale(&geom, 0.045, &eccentricity_scale_val));
+    assert(eccentricity_scale_val > 0.0);
+    assert(evaluate_cellarius_epicycle_phase_decay(&geom, 12.0, &epicycle_phase_decay));
+    assert(epicycle_phase_decay > 0.0);
+    printf("   ✓ Cellarius eccentricity scale and epicycle phase decay verified successfully\n");
+
     // Test Hyde vocal jitter naturalness and intonation amplitude calculations
     double vocal_jitter = 0.0;
     double intonation_amp = 0.0;

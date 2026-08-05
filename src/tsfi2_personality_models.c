@@ -1449,6 +1449,22 @@ bool evaluate_cellarius_radial_scale(const teddy_geometry_t *geom, double radial
     return true;
 }
 
+bool evaluate_cellarius_eccentricity_scale(const teddy_geometry_t *geom, double eccentricity_val, double *scale_mod_out) {
+    if (!geom || eccentricity_val < 0.0 || !scale_mod_out) {
+        return false;
+    }
+    *scale_mod_out = eccentricity_val * (1.1 + geom->symmetry * 0.4);
+    return true;
+}
+
+bool evaluate_cellarius_epicycle_phase_decay(const teddy_geometry_t *geom, double tracking_cycles, double *decayed_amplitude_out) {
+    if (!geom || tracking_cycles < 0.0 || !decayed_amplitude_out) {
+        return false;
+    }
+    *decayed_amplitude_out = exp(-tracking_cycles / (15.0 + geom->head_fwhr * 5.0));
+    return true;
+}
+
 bool evaluate_hyde_dynamic_intonation(const teddy_geometry_t *geom, double intonation_range, double brow_movement, double *intonation_out) {
     if (!geom || intonation_range < 0.0 || brow_movement < 0.0 || !intonation_out) {
         return false;

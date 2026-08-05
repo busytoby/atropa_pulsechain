@@ -607,6 +607,12 @@ bool evaluate_cellarius_velocity_phase(const teddy_geometry_t *geom, double velo
 // Calculates coordinate scale shifts based on radial orbital distances (Cellarius).
 bool evaluate_cellarius_radial_scale(const teddy_geometry_t *geom, double radial_distance, double *scale_shift_out);
 
+// Models coordinate scale shifts based on orbital eccentricity values (Cellarius).
+bool evaluate_cellarius_eccentricity_scale(const teddy_geometry_t *geom, double eccentricity_val, double *scale_mod_out);
+
+// Models the decay rate of epicycle coordinate offset amplitudes over prolonged tracking cycles (Cellarius).
+bool evaluate_cellarius_epicycle_phase_decay(const teddy_geometry_t *geom, double tracking_cycles, double *decayed_amplitude_out);
+
 // Evaluates dynamic changes in vocal intonation range alignment with eyebrow movements (Hyde et al.).
 bool evaluate_hyde_dynamic_intonation(const teddy_geometry_t *geom, double intonation_range, double brow_movement, double *intonation_out);
 
