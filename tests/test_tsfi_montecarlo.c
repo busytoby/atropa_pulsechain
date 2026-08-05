@@ -220,6 +220,19 @@ int main(void) {
     assert(!tsfi_montecarlo_spatiotemporal_bilateral_filter(noisy_float, prev_clean, motion_vectors, features, clean_st, -2, 2, 1.5f, 0.5f, 0.5f));
     printf("   ✓ Monte Carlo Spatio-Temporal Cross-Bilateral filter verified successfully\n");
 
+    // 14. Test global standard deviation estimation for G-buffer auxiliary features
+    double d_sig = 0.0, n_sig = 0.0, a_sig = 0.0;
+    assert(tsfi_montecarlo_estimate_feature_sigmas(features, 2, 2, &d_sig, &n_sig, &a_sig));
+    assert(d_sig > 0.0);
+    assert(n_sig > 0.0);
+    assert(a_sig > 0.0);
+
+    // Test error boundaries
+    assert(!tsfi_montecarlo_estimate_feature_sigmas(NULL, 2, 2, &d_sig, &n_sig, &a_sig));
+    assert(!tsfi_montecarlo_estimate_feature_sigmas(features, -2, 2, &d_sig, &n_sig, &a_sig));
+    assert(!tsfi_montecarlo_estimate_feature_sigmas(features, 2, 2, NULL, &n_sig, &a_sig));
+    printf("   ✓ Monte Carlo G-buffer feature standard deviation estimation verified successfully\n");
+
     printf("[Test] All Monte Carlo Denoising tests completed successfully.\n");
     return 0;
 }

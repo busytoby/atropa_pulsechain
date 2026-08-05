@@ -170,4 +170,14 @@ bool tsfi_montecarlo_spatiotemporal_bilateral_filter(
     float temporal_sigma
 );
 
+// Estimates global standard deviation (sigma) of depth, normal, and albedo features
+bool tsfi_montecarlo_estimate_feature_sigmas(
+    const TSFiMCAuxFeatures *features,
+    int width,
+    int height,
+    double *depth_sigma_out,
+    double *normal_sigma_out,
+    double *albedo_sigma_out
+);
+
 #endif // TSFI_MONTECARLO_H

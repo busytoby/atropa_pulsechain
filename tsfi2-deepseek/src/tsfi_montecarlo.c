@@ -812,4 +812,73 @@ bool tsfi_montecarlo_spatiotemporal_bilateral_filter(
     return true;
 }
 
+bool tsfi_montecarlo_estimate_feature_sigmas(
+    const TSFiMCAuxFeatures *features,
+    int width,
+    int height,
+    double *depth_sigma_out,
+    double *normal_sigma_out,
+    double *albedo_sigma_out
+) {
+    if (!features || width <= 0 || height <= 0 || !depth_sigma_out || !normal_sigma_out || !albedo_sigma_out) {
+        return false;
+    }
+
+    int total_pixels = width * height;
+
+    // 1. Calculate means
+    double depth_sum = 0.0;
+    double norm_x_sum = 0.0, norm_y_sum = 0.0, norm_z_sum = 0.0;
+    double alb_x_sum = 0.0, alb_y_sum = 0.0, alb_z_sum = 0.0;
+
+    for (int i = 0; i < total_pixels; i++) {
+        depth_sum += features[i].depth;
+        norm_x_sum += features[i].normal.x;
+        norm_y_sum += features[i].normal.y;
+        norm_z_sum += features[i].normal.z;
+        alb_x_sum += features[i].albedo.x;
+        alb_y_sum += features[i].albedo.y;
+        alb_z_sum += features[i].albedo.z;
+    }
+
+    double depth_mean = depth_sum / total_pixels;
+    double norm_x_mean = norm_x_sum / total_pixels;
+    double norm_y_mean = norm_y_sum / total_pixels;
+    double norm_z_mean = norm_z_sum / total_pixels;
+    double alb_x_mean = alb_x_sum / total_pixels;
+    double alb_y_mean = alb_y_sum / total_pixels;
+    double alb_z_mean = alb_z_sum / total_pixels;
+
+    // 2. Calculate standard deviations
+    double depth_sq_diff_sum = 0.0;
+    double norm_sq_diff_sum = 0.0;
+    double alb_sq_diff_sum = 0.0;
+
+    for (int i = 0; i < total_pixels; i++) {
+        double d_diff = features[i].depth - depth_mean;
+        depth_sq_diff_sum += d_diff * d_diff;
+
+        double nx_diff = features[i].normal.x - norm_x_mean;
+        double ny_diff = features[i].normal.y - norm_y_mean;
+        double nz_diff = features[i].normal.z - norm_z_mean;
+        norm_sq_diff_sum += (nx_diff * nx_diff + ny_diff * ny_diff + nz_diff * nz_diff);
+
+        double ax_diff = features[i].albedo.x - alb_x_mean;
+        double ay_diff = features[i].albedo.y - alb_y_mean;
+        double az_diff = features[i].albedo.z - alb_z_mean;
+        alb_sq_diff_sum += (ax_diff * ax_diff + ay_diff * ay_diff + az_diff * az_diff);
+    }
+
+    *depth_sigma_out = sqrt(depth_sq_diff_sum / (total_pixels - 1));
+    *normal_sigma_out = sqrt(norm_sq_diff_sum / (total_pixels - 1));
+    *albedo_sigma_out = sqrt(alb_sq_diff_sum / (total_pixels - 1));
+
+    // Guard against zero standard deviation to prevent division-by-zero
+    if (*depth_sigma_out < 1e-5) *depth_sigma_out = 1e-5;
+    if (*normal_sigma_out < 1e-5) *normal_sigma_out = 1e-5;
+    if (*albedo_sigma_out < 1e-5) *albedo_sigma_out = 1e-5;
+
+    return true;
+}
+
 
