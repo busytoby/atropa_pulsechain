@@ -954,6 +954,15 @@ int main(void) {
     assert(heliocentric_velocity_variance > 0.0);
     printf("   ✓ Cellarius constellation boundary variance and heliocentric velocity variance verified successfully\n");
 
+    // Test Cellarius planetary velocity decay variance and epicycle acceleration variance mod calculations
+    double planetary_velocity_decay_variance = 0.0;
+    double epicycle_acceleration_variance_mod_val = 0.0;
+    assert(evaluate_cellarius_planetary_velocity_decay_variance(&geom, 15.0, &planetary_velocity_decay_variance));
+    assert(planetary_velocity_decay_variance > 0.0);
+    assert(evaluate_cellarius_epicycle_acceleration_variance_mod(&geom, 10.8, &epicycle_acceleration_variance_mod_val));
+    assert(epicycle_acceleration_variance_mod_val > 0.0);
+    printf("   ✓ Cellarius planetary velocity decay variance and epicycle acceleration variance mod verified successfully\n");
+
     // Test Hyde vocal jitter naturalness and intonation amplitude calculations
     double vocal_jitter = 0.0;
     double intonation_amp = 0.0;

@@ -226,3 +226,19 @@ bool evaluate_cellarius_heliocentric_velocity_variance(const teddy_geometry_t *g
     return true;
 }
 
+bool evaluate_cellarius_planetary_velocity_decay_variance(const teddy_geometry_t *geom, double tracking_duration, double *decay_variance_out) {
+    if (!geom || tracking_duration < 0.0 || !decay_variance_out) {
+        return false;
+    }
+    *decay_variance_out = exp(-tracking_duration / (15.0 + geom->head_fwhr * 5.0));
+    return true;
+}
+
+bool evaluate_cellarius_epicycle_acceleration_variance_mod(const teddy_geometry_t *geom, double acceleration_val, double *variance_out) {
+    if (!geom || acceleration_val < 0.0 || !variance_out) {
+        return false;
+    }
+    *variance_out = acceleration_val * (0.8 + geom->head_fwhr * 0.4);
+    return true;
+}
+
