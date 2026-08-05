@@ -31,9 +31,10 @@ bool tsfi_montecarlo_cross_bilateral_filter(
     float range_sigma
 );
 
-// Performs a patch-based Non-Local Means (NLM) reconstruction on a noisy float color buffer.
+// Performs a patch-based Non-Local Means (NLM) reconstruction guided by an auxiliary features map.
 bool tsfi_montecarlo_non_local_means(
     const float *noisy_input,
+    const float *guidance_map,
     float *clean_output,
     int width,
     int height,

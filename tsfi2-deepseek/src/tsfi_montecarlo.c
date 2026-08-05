@@ -103,6 +103,7 @@ bool tsfi_montecarlo_cross_bilateral_filter(
 
 bool tsfi_montecarlo_non_local_means(
     const float *noisy_input,
+    const float *guidance_map,
     float *clean_output,
     int width,
     int height,
@@ -110,7 +111,7 @@ bool tsfi_montecarlo_non_local_means(
     int patch_radius,
     int search_radius
 ) {
-    if (!noisy_input || !clean_output || width <= 0 || height <= 0) {
+    if (!noisy_input || !guidance_map || !clean_output || width <= 0 || height <= 0) {
         return false;
     }
     if (filter_strength <= 0.0f || patch_radius < 0 || search_radius < 0) {
@@ -132,7 +133,7 @@ bool tsfi_montecarlo_non_local_means(
                     int nx = x + sx;
                     if (nx < 0 || nx >= width) continue;
 
-                    // Compute patch similarity distance
+                    // Compute patch similarity distance using the guidance map
                     float patch_dist_sq = 0.0f;
                     int patch_pixels = 0;
 
@@ -146,7 +147,7 @@ bool tsfi_montecarlo_non_local_means(
                             int n_px = nx + px;
                             if (c_px < 0 || c_px >= width || n_px < 0 || n_px >= width) continue;
 
-                            float diff = noisy_input[c_py * width + c_px] - noisy_input[n_py * width + n_px];
+                            float diff = guidance_map[c_py * width + c_px] - guidance_map[n_py * width + n_px];
                             patch_dist_sq += diff * diff;
                             patch_pixels++;
                         }

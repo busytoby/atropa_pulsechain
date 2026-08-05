@@ -49,17 +49,18 @@ int main(void) {
     };
     float clean_float[9] = {0};
 
-    assert(tsfi_montecarlo_non_local_means(noisy_float, clean_float, 3, 3, 0.2f, 1, 1));
+    assert(tsfi_montecarlo_non_local_means(noisy_float, noisy_float, clean_float, 3, 3, 0.2f, 1, 1));
     assert(clean_float[4] < 0.8f); // the center spike is smoothed out by surrounding matches
 
     // Test error boundaries for NLM
-    assert(!tsfi_montecarlo_non_local_means(NULL, clean_float, 3, 3, 0.2f, 1, 1));
-    assert(!tsfi_montecarlo_non_local_means(noisy_float, NULL, 3, 3, 0.2f, 1, 1));
-    assert(!tsfi_montecarlo_non_local_means(noisy_float, clean_float, -3, 3, 0.2f, 1, 1));
-    assert(!tsfi_montecarlo_non_local_means(noisy_float, clean_float, 3, 0, 0.2f, 1, 1));
-    assert(!tsfi_montecarlo_non_local_means(noisy_float, clean_float, 3, 3, -0.2f, 1, 1));
-    assert(!tsfi_montecarlo_non_local_means(noisy_float, clean_float, 3, 3, 0.2f, -1, 1));
-    assert(!tsfi_montecarlo_non_local_means(noisy_float, clean_float, 3, 3, 0.2f, 1, -1));
+    assert(!tsfi_montecarlo_non_local_means(NULL, noisy_float, clean_float, 3, 3, 0.2f, 1, 1));
+    assert(!tsfi_montecarlo_non_local_means(noisy_float, NULL, clean_float, 3, 3, 0.2f, 1, 1));
+    assert(!tsfi_montecarlo_non_local_means(noisy_float, noisy_float, NULL, 3, 3, 0.2f, 1, 1));
+    assert(!tsfi_montecarlo_non_local_means(noisy_float, noisy_float, clean_float, -3, 3, 0.2f, 1, 1));
+    assert(!tsfi_montecarlo_non_local_means(noisy_float, noisy_float, clean_float, 3, 0, 0.2f, 1, 1));
+    assert(!tsfi_montecarlo_non_local_means(noisy_float, noisy_float, clean_float, 3, 3, -0.2f, 1, 1));
+    assert(!tsfi_montecarlo_non_local_means(noisy_float, noisy_float, clean_float, 3, 3, 0.2f, -1, 1));
+    assert(!tsfi_montecarlo_non_local_means(noisy_float, noisy_float, clean_float, 3, 3, 0.2f, 1, -1));
     printf("   ✓ Monte Carlo Non-Local Means reconstruction verified successfully\n");
 
     // 4. Test Emotional Non-Local Means Reconstruction
