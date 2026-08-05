@@ -46,7 +46,7 @@ static void test_compile_dat_bin_ext(void) {
     FILE *f = fopen(out_file, "rb");
     assert(f != NULL);
     
-    char header_buf[256];
+    char header_buf[32768];
     size_t read_bytes = fread(header_buf, 1, sizeof(header_buf) - 1, f);
     header_buf[read_bytes] = '\0';
     
