@@ -4,6 +4,14 @@
 #include <math.h>
 #include <string.h>
 #include "tsfi_montecarlo.h"
+#include "tsfi_riinterface.h"
+#include "auncient_sdk.h"
+
+#ifdef __GNUC__
+__attribute__((weak)) void tsfi_zmm_winchester_deconvolve_handshake(void) {}
+__attribute__((weak)) void tsfi_zmm_winchester_handshake(void) {}
+__attribute__((weak)) uint16_t ce_gprs[64] = {0};
+#endif
 
 static double test_thunk_executed_flag = 0.0;
 static double test_thunk_callback(void) {
@@ -2424,6 +2432,22 @@ int main(void) {
     uint32_t adjusted_limit = 8000 * (1000 + 500) / 1000;
     assert(adjusted_limit == 12000);
     printf("   ✓ Parity unit tests for WinchesterMQ Yul Hardware emulators passed successfully\n");
+
+    // Test RenderMan SDK Bridge and DeepSeek Apply function
+    TSFiRiInterface mock_ri;
+    tsfi_riinterface_init(&mock_ri);
+    mock_ri.frame_buffer[0] = 255; // Set some pixels in the framebuffer
+
+    sdk_coaxial_env_t mock_env;
+    auncient_sdk_init_coaxial(&mock_env);
+
+    sdk_cics_context_t mock_ctx;
+    mock_ctx.env = &mock_env;
+    mock_ctx.state = SDK_STATE_UNLOCKED;
+
+    assert(tsfi_riinterface_bridge_to_sdk(&mock_ri, &mock_ctx));
+    assert(mock_ctx.env->registers[0].value > 0); // Verify registers updated successfully
+    printf("   ✓ tsfi_riinterface_bridge_to_sdk and auncient_sdk_apply_deepseek_guide verified successfully\n");
 
     printf("=============================================================\n");
     printf("PERSONALITY CONFIGURATIONS VALIDATED SUCCESSFULLY\n");
