@@ -1641,6 +1641,22 @@ bool evaluate_keating_sclera_dominance(const teddy_geometry_t *geom, double scle
     return true;
 }
 
+bool evaluate_keating_eyebrow_asymmetry_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_trust_out) {
+    if (!geom || duration_sec < 0.0 || !decayed_trust_out) {
+        return false;
+    }
+    *decayed_trust_out = exp(-duration_sec / (18.0 + geom->resilience_index * 8.0));
+    return true;
+}
+
+bool evaluate_keating_sclera_submissiveness_mod(const teddy_geometry_t *geom, double sclera_size_ratio, double *submissiveness_out) {
+    if (!geom || sclera_size_ratio < 0.0 || !submissiveness_out) {
+        return false;
+    }
+    *submissiveness_out = sclera_size_ratio * (0.9 + geom->symmetry * 0.3);
+    return true;
+}
+
 bool evaluate_scarpi_hedonic_playfulness(const teddy_geometry_t *geom, double base_playfulness, double *playfulness_out) {
     if (!geom || base_playfulness < 0.0 || !playfulness_out) {
         return false;
