@@ -58,6 +58,7 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
             }
 
             float total_r = 0, total_g = 0, total_b = 0;
+            float total_emot = 0.0f;
             float samples_depth[4] = {10.0f, 10.0f, 10.0f, 10.0f};
             float sample_luminance[2] = {0.0f, 0.0f};
 
@@ -74,6 +75,7 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
                 
                 Vector3 current_pos = cam_pos;
                 float accum_r = 0.01f, accum_g = 0.01f, accum_b = 0.02f;
+                float sample_emot = 0.0f;
                 float transmit = 1.0f;
                 float first_hit_dist = 10.0f;
                 bool hit = false;
@@ -124,10 +126,13 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
                         accum_g += pbr.g * transmit * opacity;
                         accum_b += pbr.b * transmit * opacity;
                         transmit *= (1.0f - opacity);
+                        float dist_to_face = sqrtf(current_pos.x * current_pos.x + current_pos.y * current_pos.y);
+                        sample_emot = expf(-dist_to_face * dist_to_face);
                         if (transmit < 0.01f) break;
                     }
                 }
                 total_r += accum_r; total_g += accum_g; total_b += accum_b;
+                total_emot += sample_emot;
                 samples_depth[s] = first_hit_dist;
                 sample_luminance[s] = accum_r * 0.2126f + accum_g * 0.7152f + accum_b * 0.0722f;
             }
@@ -149,6 +154,7 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
                     
                     Vector3 current_pos = cam_pos;
                     float accum_r = 0.01f, accum_g = 0.01f, accum_b = 0.02f;
+                    float sample_emot = 0.0f;
                     float transmit = 1.0f;
                     float first_hit_dist = 10.0f;
                     bool hit = false;
@@ -199,10 +205,13 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
                             accum_g += pbr.g * transmit * opacity;
                             accum_b += pbr.b * transmit * opacity;
                             transmit *= (1.0f - opacity);
+                            float dist_to_face = sqrtf(current_pos.x * current_pos.x + current_pos.y * current_pos.y);
+                            sample_emot = expf(-dist_to_face * dist_to_face);
                             if (transmit < 0.01f) break;
                         }
                     }
                     total_r += accum_r; total_g += accum_g; total_b += accum_b;
+                    total_emot += sample_emot;
                     samples_depth[s] = first_hit_dist;
                 }
             } else {
@@ -210,6 +219,7 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
                 total_r *= 2.0f;
                 total_g *= 2.0f;
                 total_b *= 2.0f;
+                total_emot *= 2.0f;
                 samples_depth[2] = samples_depth[0];
                 samples_depth[3] = samples_depth[1];
             }
@@ -223,6 +233,7 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
                 aux_features[idx].depth = final_depth;
                 aux_features[idx].normal = (TSFiMCVec3){0.0f, 1.0f, 0.0f};
                 aux_features[idx].albedo = (TSFiMCVec3){0.4f, 0.25f, 0.15f};
+                aux_features[idx].emotional_weight = total_emot * 0.25f;
             }
 
             uint8_t final_r = (uint8_t)(fminf(1.0f, powf(total_r * 0.25f, 0.4545f)) * 255);
@@ -235,7 +246,7 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
     float *guidance_map = malloc(sizeof(float) * w * h);
     if (guidance_map) {
         for (int i = 0; i < w * h; i++) {
-            guidance_map[i] = aux_features ? aux_features[i].depth : 0.0f;
+            guidance_map[i] = aux_features ? aux_features[i].emotional_weight : 0.0f;
         }
     }
 

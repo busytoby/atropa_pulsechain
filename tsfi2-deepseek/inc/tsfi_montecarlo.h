@@ -14,6 +14,7 @@ typedef struct {
     TSFiMCVec3 normal;
     float depth;
     TSFiMCVec3 albedo;
+    float emotional_weight;
 } TSFiMCAuxFeatures;
 
 // Estimates local variance in a pixel patch to determine if adaptive sampling is needed.
