@@ -242,4 +242,42 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
         }
         free(aux_features);
     }
+
+    // Apply Non-Local Means (NLM) to reconstruct complex high-frequency patterns
+    float *chan_in = malloc(sizeof(float) * w * h);
+    float *chan_out = malloc(sizeof(float) * w * h);
+    if (chan_in && chan_out) {
+        // Red Channel
+        for (int i = 0; i < w * h; i++) {
+            chan_in[i] = (float)((pixels[i] >> 16) & 0xFF) / 255.0f;
+        }
+        if (tsfi_montecarlo_non_local_means(chan_in, chan_out, w, h, 0.15f, 1, 2)) {
+            for (int i = 0; i < w * h; i++) {
+                uint32_t val = (uint32_t)(fmaxf(0.0f, fminf(1.0f, chan_out[i])) * 255.0f);
+                pixels[i] = (pixels[i] & 0xFF00FFFF) | (val << 16);
+            }
+        }
+        // Green Channel
+        for (int i = 0; i < w * h; i++) {
+            chan_in[i] = (float)((pixels[i] >> 8) & 0xFF) / 255.0f;
+        }
+        if (tsfi_montecarlo_non_local_means(chan_in, chan_out, w, h, 0.15f, 1, 2)) {
+            for (int i = 0; i < w * h; i++) {
+                uint32_t val = (uint32_t)(fmaxf(0.0f, fminf(1.0f, chan_out[i])) * 255.0f);
+                pixels[i] = (pixels[i] & 0xFFFF00FF) | (val << 8);
+            }
+        }
+        // Blue Channel
+        for (int i = 0; i < w * h; i++) {
+            chan_in[i] = (float)(pixels[i] & 0xFF) / 255.0f;
+        }
+        if (tsfi_montecarlo_non_local_means(chan_in, chan_out, w, h, 0.15f, 1, 2)) {
+            for (int i = 0; i < w * h; i++) {
+                uint32_t val = (uint32_t)(fmaxf(0.0f, fminf(1.0f, chan_out[i])) * 255.0f);
+                pixels[i] = (pixels[i] & 0xFFFFFF00) | val;
+            }
+        }
+    }
+    if (chan_in) free(chan_in);
+    if (chan_out) free(chan_out);
 }
