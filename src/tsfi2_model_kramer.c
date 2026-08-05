@@ -222,3 +222,27 @@ bool evaluate_kramer_ward_human_eye_to_face_proportion(const teddy_geometry_t *g
     *social_trait_rating_out = (eye_size_val * 0.65 + pupil_dilation_val * 0.35) * (0.9 + geom->social_extraversion * 0.1);
     return true;
 }
+
+bool evaluate_kramer_ward_human_fwhr_dominance(const teddy_geometry_t *geom, double fwhr_val, double *dominance_out) {
+    if (!geom || fwhr_val < 0.0 || !dominance_out) {
+        return false;
+    }
+    *dominance_out = fwhr_val * 1.05 * (0.95 + geom->command_authority * 0.1);
+    return true;
+}
+
+bool evaluate_kramer_ward_human_face_elongation(const teddy_geometry_t *geom, double elongation_val, double *elongation_score_out) {
+    if (!geom || elongation_val < 0.0 || !elongation_score_out) {
+        return false;
+    }
+    *elongation_score_out = (1.0 / (1.0 + elongation_val)) * 1.4 * (0.9 + geom->intellect_index * 0.15);
+    return true;
+}
+
+bool evaluate_kramer_ward_human_eye_to_brow_trust(const teddy_geometry_t *geom, double eye_to_brow_distance, double *trust_out) {
+    if (!geom || eye_to_brow_distance < 0.0 || !trust_out) {
+        return false;
+    }
+    *trust_out = eye_to_brow_distance * 1.15 * (0.95 + geom->cooperative_negotiation * 0.1);
+    return true;
+}

@@ -1752,6 +1752,9 @@ int main(void) {
     double kramer_human_trustworthiness = 0.0;
     double kramer_human_aggression = 0.0;
     double kramer_human_eye_proportion = 0.0;
+    double kramer_human_dominance = 0.0;
+    double kramer_human_elongation = 0.0;
+    double kramer_human_eye_brow_trust = 0.0;
     assert(evaluate_kramer_ward_fwhr_3d_scan_discrepancy(&geom, 1.85, &kramer_discrepancy));
     assert(kramer_discrepancy > 0.0);
     assert(evaluate_kramer_ward_fwhr_sexual_dimorphism_null_hypothesis(&geom, 1.90, 1.85, &kramer_p_value));
@@ -1785,8 +1788,14 @@ int main(void) {
     assert(kramer_human_aggression > 0.0);
     assert(evaluate_kramer_ward_human_eye_to_face_proportion(&geom, 0.22, 0.05, &kramer_human_eye_proportion));
     assert(kramer_human_eye_proportion > 0.0);
+    assert(evaluate_kramer_ward_human_fwhr_dominance(&geom, 1.85, &kramer_human_dominance));
+    assert(kramer_human_dominance > 0.0);
+    assert(evaluate_kramer_ward_human_face_elongation(&geom, 1.35, &kramer_human_elongation));
+    assert(kramer_human_elongation > 0.0);
+    assert(evaluate_kramer_ward_human_eye_to_brow_trust(&geom, 0.12, &kramer_human_eye_brow_trust));
+    assert(kramer_human_eye_brow_trust > 0.0);
     
-    printf("   ✓ KRAMER & WARD FWHR dominance, trustworthiness, threat, cooperation, discrepancy, dimorphism null-hypothesis, head tilt, perceived-actual mismatch, noise sensitivity, adaptation bias, hemiface bias, ambient shading, temporal smoothing, confidence calibration, perceived-actual health mismatch, cheekbone prominence modulation, perspective distortion, micro-exposure resolution, human fWHR trustworthiness, human face asymmetry aggression, human eye-to-face proportion, and decay variances verified successfully\n");
+    printf("   ✓ KRAMER & WARD FWHR dominance, trustworthiness, threat, cooperation, discrepancy, dimorphism null-hypothesis, head tilt, perceived-actual mismatch, noise sensitivity, adaptation bias, hemiface bias, ambient shading, temporal smoothing, confidence calibration, perceived-actual health mismatch, cheekbone prominence modulation, perspective distortion, micro-exposure resolution, human fWHR trustworthiness, human face asymmetry aggression, human eye-to-face proportion, human fWHR dominance, human face elongation, human eye-to-brow trust, and decay variances verified successfully\n");
 
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;

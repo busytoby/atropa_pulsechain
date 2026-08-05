@@ -509,4 +509,13 @@ bool evaluate_keating_babyfacedness_attractiveness_decoupling(const teddy_geomet
 // Models the smile-status congruence effect on observer trust (Keating).
 bool evaluate_keating_smile_status_congruence(const teddy_geometry_t *geom, double smile_intensity, double status_rank, double *trust_score_out);
 
+// Models how human fWHR predicts perceived dominance and threat in human faces (Kramer & Ward).
+bool evaluate_kramer_ward_human_fwhr_dominance(const teddy_geometry_t *geom, double fwhr_val, double *dominance_out);
+
+// Models the relationship between human facial elongation and perceived attractiveness or dominance (Kramer & Ward).
+bool evaluate_kramer_ward_human_face_elongation(const teddy_geometry_t *geom, double elongation_val, double *elongation_score_out);
+
+// Models how human eye-to-brow distance signals perceived trust or aggression (Kramer & Ward).
+bool evaluate_kramer_ward_human_eye_to_brow_trust(const teddy_geometry_t *geom, double eye_to_brow_distance, double *trust_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H
