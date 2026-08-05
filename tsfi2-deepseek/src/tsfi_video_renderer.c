@@ -1,4 +1,6 @@
+#define _POSIX_C_SOURCE 200809L
 #include "tsfi_c_math.h"
+#include "tsfi_montecarlo.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -117,7 +119,6 @@ void render_frame(int frame, uint8_t *pixels) {
     float eye2_radius = 0.045f + (pulse * 0.01f);
 
     __m512 vInvW = _mm512_set1_ps(1.0f / (float)W);
-    __m512 vInvH = _mm512_set1_ps(1.0f / (float)H);
     __m512 vHalf = _mm512_set1_ps(0.5f);
     
     // 1. Render AVX-512 Procedural Background Bear
@@ -310,13 +311,63 @@ int main() {
 
     uint8_t *pixels = (uint8_t*)malloc(W * H * 3);
     
+    // Allocate spatio-temporal helper buffers
+    float *cur_ch = (float*)malloc(W * H * sizeof(float));
+    float *prev_ch = (float*)malloc(W * H * sizeof(float));
+    float *clean_ch = (float*)malloc(W * H * sizeof(float));
+    float *motion_vecs = (float*)calloc(W * H * 2, sizeof(float));
+    TSFiMCAuxFeatures *aux_feats = (TSFiMCAuxFeatures*)malloc(W * H * sizeof(TSFiMCAuxFeatures));
+    
+    if (cur_ch && prev_ch && clean_ch && motion_vecs && aux_feats) {
+        // Initialize flat auxiliary features
+        for (int i = 0; i < W * H; i++) {
+            aux_feats[i].depth = 1.0f;
+            aux_feats[i].normal.x = 0.0f;
+            aux_feats[i].normal.y = 0.0f;
+            aux_feats[i].normal.z = 1.0f;
+            aux_feats[i].albedo.x = 1.0f;
+            aux_feats[i].albedo.y = 1.0f;
+            aux_feats[i].albedo.z = 1.0f;
+        }
+    }
+    
     for (int f = 0; f < TOTAL_FRAMES; f++) {
         memset(pixels, 0, W * H * 3);
         render_frame(f, pixels);
+
+        if (cur_ch && prev_ch && clean_ch && motion_vecs && aux_feats) {
+            // Apply Spatio-Temporal Cross-Bilateral Filter channel-by-channel
+            for (int c = 0; c < 3; c++) {
+                for (int i = 0; i < W * H; i++) {
+                    cur_ch[i] = pixels[i * 3 + c] / 255.0f;
+                }
+                
+                if (f > 0) {
+                    tsfi_montecarlo_spatiotemporal_bilateral_filter(cur_ch, prev_ch, motion_vecs, aux_feats, clean_ch, W, H, 1.0f, 0.5f, 0.5f);
+                } else {
+                    memcpy(clean_ch, cur_ch, W * H * sizeof(float));
+                }
+                
+                // Save clean output for next frame temporal reprojection
+                memcpy(prev_ch, clean_ch, W * H * sizeof(float));
+                
+                // Write clean values back to pixels
+                for (int i = 0; i < W * H; i++) {
+                    float val = clean_ch[i] * 255.0f;
+                    pixels[i * 3 + c] = (uint8_t)fmaxf(0.0f, fminf(255.0f, val));
+                }
+            }
+        }
+
         fwrite(pixels, 1, W * H * 3, pipe);
         if (f % 20 == 0) printf("  -> Frame %d/%d rendered.\n", f, TOTAL_FRAMES);
     }
 
+    if (cur_ch) free(cur_ch);
+    if (prev_ch) free(prev_ch);
+    if (clean_ch) free(clean_ch);
+    if (motion_vecs) free(motion_vecs);
+    if (aux_feats) free(aux_feats);
     free(pixels);
     pclose(pipe);
     printf("[SUCCESS] Render Complete: assets/atropa_glsl_phase3_fast.mp4\n");
