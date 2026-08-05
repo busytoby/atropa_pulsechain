@@ -755,3 +755,6 @@ tests/test_cbt021_inmemory_pds
 /tests/test_auncient_hathitrust_stimuli
 /tests/test_auncient_avatar_reflexes
 
+# Ignore HathiTrust client cache files
+hathitrust_cache_*.json
+

@@ -33,6 +33,24 @@ static void append_response_buffer(ResponseBuffer *buf, const char *new_data, si
 }
 
 static char* hathitrust_query_endpoint(const char *endpoint_type, const char *id_type, const char *id_val) {
+    char cache_filename[256];
+    snprintf(cache_filename, sizeof(cache_filename), "hathitrust_cache_%s_%s_%s.json", endpoint_type, id_type, id_val);
+    
+    FILE *cache_file = fopen(cache_filename, "r");
+    if (cache_file) {
+        fseek(cache_file, 0, SEEK_END);
+        long size = ftell(cache_file);
+        fseek(cache_file, 0, SEEK_SET);
+        char *cached_data = malloc(size + 1);
+        if (cached_data) {
+            size_t read_bytes = fread(cached_data, 1, size, cache_file);
+            cached_data[read_bytes] = '\0';
+            fclose(cache_file);
+            return cached_data;
+        }
+        fclose(cache_file);
+    }
+
     const char *host = "catalog.hathitrust.org";
     const char *port = "443";
     
@@ -136,6 +154,14 @@ static char* hathitrust_query_endpoint(const char *endpoint_type, const char *id
     body += 4;
     char *result = strdup(body);
     free(recv_buf.data);
+
+    if (result) {
+        FILE *write_cache = fopen(cache_filename, "w");
+        if (write_cache) {
+            fputs(result, write_cache);
+            fclose(write_cache);
+        }
+    }
     return result;
 }
 
