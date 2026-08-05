@@ -147,7 +147,7 @@ test-hathitrust-bib-oauth:
 	@rm -f tests/test_hathitrust_bib_oauth
 
 test-tsfi2-compiler-bin:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_tsfi2_compiler_bin.c src/tsfi2_compiler_bin.c -o tests/test_tsfi2_compiler_bin -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_tsfi2_compiler_bin.c src/tsfi2_compiler_bin.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_tsfi2_compiler_bin -lcrypto -lrt -lm
 	./tests/test_tsfi2_compiler_bin
 	@rm -f tests/test_tsfi2_compiler_bin
 
