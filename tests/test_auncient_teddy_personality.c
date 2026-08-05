@@ -2119,6 +2119,31 @@ int main(void) {
     assert(charge < charged_val);
     printf("   ✓ Virtual diode reflex and relative capacitor charge decay loop verified successfully\n");
 
+    // Test QR Decomposition modes (Sustail, BLACK, RED) directly at the H-bridge izotope diode circuit
+    double test_A[16] = {
+        4.0, 1.0, 0.0, 0.0,
+        1.0, 5.0, 1.0, 0.0,
+        0.0, 1.0, 3.0, 1.0,
+        0.0, 0.0, 1.0, 4.0
+    };
+    double test_Q[16] = {0};
+    double test_R[16] = {0};
+
+    // Test Sustail (Gram-Schmidt)
+    assert(hbridge_izotope_ozone_diode_qr(test_A, test_Q, test_R, 4, "Sustail"));
+    assert(fabs(test_R[4]) < 1e-9); // R[1,0] should be zero
+    printf("   ✓ Sustail (Gram-Schmidt) QR at RED sustain flyback diode verified successfully\n");
+
+    // Test BLACK (Householder)
+    assert(hbridge_izotope_ozone_diode_qr(test_A, test_Q, test_R, 4, "BLACK"));
+    assert(fabs(test_R[4]) < 1e-9); // R[1,0] should be zero
+    printf("   ✓ BLACK (Householder) QR at RED sustain flyback diode verified successfully\n");
+
+    // Test RED (Givens)
+    assert(hbridge_izotope_ozone_diode_qr(test_A, test_Q, test_R, 4, "RED"));
+    assert(fabs(test_R[4]) < 1e-9); // R[1,0] should be zero
+    printf("   ✓ RED (Givens) QR at RED sustain flyback diode verified successfully\n");
+
     // Test H-bridge flyback and izotope mismatch calculation
     double flyback_mismatch = 0.0;
     assert(evaluate_hbridge_izotope_mismatch(&geom, 500.0, &flyback_mismatch));

@@ -321,6 +321,9 @@ bool evaluate_hyde_vocal_size_sync_decay_variance_mod(const teddy_geometry_t *ge
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 
+// QR Decomposition implemented directly at the H-bridge izotope ozone circuit near the RED sustain flyback diode.
+bool hbridge_izotope_ozone_diode_qr(const double *A, double *Q, double *R, int n, const char *method);
+
 // Evaluates the H-bridge switching flyback transient mismatch for izotope filtering.
 bool evaluate_hbridge_izotope_mismatch(const teddy_geometry_t *geom, double switching_frequency, double *flyback_mismatch_out);
 

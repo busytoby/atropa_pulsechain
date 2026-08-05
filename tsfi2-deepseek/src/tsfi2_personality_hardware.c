@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <unistd.h>
+#include <string.h>
 
 // GOST 28147-89 Russian block cipher functions from tsfi2-deepseek
 int tsfi_mf_ussr_gost_encrypt_32(uint32_t *left, uint32_t *right, const uint32_t *key_8words);
@@ -21,6 +22,138 @@ bool simulate_diode_capacitor_loop(double input_voltage, double resistance, doub
         *charge_state = (*charge_state) * exp(-time_step / tau);
     }
     return true;
+}
+
+bool hbridge_izotope_ozone_diode_qr(const double *A, double *Q, double *R, int n, const char *method) {
+    if (!A || !Q || !R || n <= 0 || !method) return false;
+
+    if (strcmp(method, "Sustail") == 0) {
+        for (int j = 0; j < n; j++) {
+            for (int i = 0; i < n; i++) {
+                Q[i * n + j] = A[i * n + j];
+            }
+            for (int k = 0; k < j; k++) {
+                double r_kj = 0.0;
+                for (int i = 0; i < n; i++) {
+                    r_kj += Q[i * n + k] * A[i * n + j];
+                }
+                R[k * n + j] = r_kj;
+                for (int i = 0; i < n; i++) {
+                    Q[i * n + j] -= r_kj * Q[i * n + k];
+                }
+            }
+            double norm = 0.0;
+            for (int i = 0; i < n; i++) {
+                norm += Q[i * n + j] * Q[i * n + j];
+            }
+            norm = sqrt(norm);
+            if (norm < 1e-15) {
+                R[j * n + j] = 0.0;
+            } else {
+                R[j * n + j] = norm;
+                for (int i = 0; i < n; i++) {
+                    Q[i * n + j] /= norm;
+                }
+            }
+        }
+        return true;
+    } else if (strcmp(method, "BLACK") == 0) {
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                Q[i * n + j] = (i == j) ? 1.0 : 0.0;
+            }
+        }
+        for (int i = 0; i < n * n; i++) R[i] = A[i];
+
+        for (int k = 0; k < n - 1; k++) {
+            double x[4] = {0};
+            double norm_x = 0.0;
+            for (int i = k; i < n; i++) {
+                x[i - k] = R[i * n + k];
+                norm_x += x[i - k] * x[i - k];
+            }
+            norm_x = sqrt(norm_x);
+            if (norm_x < 1e-15) continue;
+
+            double g = (x[0] >= 0.0) ? -norm_x : norm_x;
+            double v[4] = {0};
+            v[0] = x[0] - g;
+            for (int i = 1; i < n - k; i++) {
+                v[i] = x[i];
+            }
+            double norm_v = 0.0;
+            for (int i = 0; i < n - k; i++) {
+                norm_v += v[i] * v[i];
+            }
+            norm_v = sqrt(norm_v);
+            if (norm_v < 1e-15) continue;
+            for (int i = 0; i < n - k; i++) {
+                v[i] /= norm_v;
+            }
+
+            for (int j = k; j < n; j++) {
+                double dot = 0.0;
+                for (int i = k; i < n; i++) {
+                    dot += v[i - k] * R[i * n + j];
+                }
+                for (int i = k; i < n; i++) {
+                    R[i * n + j] -= 2.0 * v[i - k] * dot;
+                }
+            }
+
+            for (int i = 0; i < n; i++) {
+                double dot = 0.0;
+                for (int j = k; j < n; j++) {
+                    dot += v[j - k] * Q[i * n + j];
+                }
+                for (int j = k; j < n; j++) {
+                    Q[i * n + j] -= 2.0 * v[j - k] * dot;
+                }
+            }
+        }
+        return true;
+    } else if (strcmp(method, "RED") == 0) {
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                Q[i * n + j] = (i == j) ? 1.0 : 0.0;
+            }
+        }
+        for (int i = 0; i < n * n; i++) R[i] = A[i];
+
+        for (int j = 0; j < n; j++) {
+            for (int i = n - 1; i > j; i--) {
+                double a = R[(i - 1) * n + j];
+                double b = R[i * n + j];
+                if (fabs(b) < 1e-15) continue;
+
+                double c, s;
+                if (fabs(a) < 1e-15) {
+                    c = 0.0;
+                    s = (b >= 0.0) ? 1.0 : -1.0;
+                } else {
+                    double r = sqrt(a * a + b * b);
+                    c = a / r;
+                    s = b / r;
+                }
+
+                for (int k = j; k < n; k++) {
+                    double temp1 = c * R[(i - 1) * n + k] + s * R[i * n + k];
+                    double temp2 = -s * R[(i - 1) * n + k] + c * R[i * n + k];
+                    R[(i - 1) * n + k] = temp1;
+                    R[i * n + k] = temp2;
+                }
+
+                for (int k = 0; k < n; k++) {
+                    double temp1 = c * Q[k * n + (i - 1)] + s * Q[k * n + i];
+                    double temp2 = -s * Q[k * n + (i - 1)] + c * Q[k * n + i];
+                    Q[k * n + (i - 1)] = temp1;
+                    Q[k * n + i] = temp2;
+                }
+            }
+        }
+        return true;
+    }
+    return false;
 }
 
 bool evaluate_hbridge_izotope_mismatch(const teddy_geometry_t *geom, double switching_frequency, double *flyback_mismatch_out) {
