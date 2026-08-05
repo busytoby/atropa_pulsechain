@@ -199,5 +199,7 @@ bool evaluate_kramer_ward_fwhr_head_tilt_effect(const teddy_geometry_t *geom, do
 bool evaluate_kramer_ward_fwhr_actual_vs_perceived_aggression_mismatch(const teddy_geometry_t *geom, double perceived_dominance, double actual_aggression, double *mismatch_out);
 bool evaluate_kramer_ward_fwhr_perceptual_noise_sensitivity(const teddy_geometry_t *geom, double noise_level, double *threshold_se_multiplier_out);
 bool evaluate_kramer_ward_fwhr_sequential_adaptation_bias(const teddy_geometry_t *geom, const double *recent_fwhr_history, int history_len, double *adaptation_offset_out);
+bool evaluate_kramer_ward_fwhr_hemiface_asymmetry_bias(const teddy_geometry_t *geom, double left_fwhr, double right_fwhr, double *weighted_fwhr_out);
+bool evaluate_kramer_ward_fwhr_ambient_shading_effect(const teddy_geometry_t *geom, double original_fwhr, double light_angle_degrees, double *apparent_fwhr_out);
 
 #endif // TSFI_PERSONALITY_MODELS_H

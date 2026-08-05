@@ -122,3 +122,21 @@ bool evaluate_kramer_ward_fwhr_sequential_adaptation_bias(const teddy_geometry_t
     *adaptation_offset_out = (avg - 1.8) * 0.15 * (1.0 + geom->head_fwhr * 0.1);
     return true;
 }
+
+bool evaluate_kramer_ward_fwhr_hemiface_asymmetry_bias(const teddy_geometry_t *geom, double left_fwhr, double right_fwhr, double *weighted_fwhr_out) {
+    if (!geom || left_fwhr < 0.0 || right_fwhr < 0.0 || !weighted_fwhr_out) {
+        return false;
+    }
+    // Weighted towards the right hemiface due to left visual field bias
+    *weighted_fwhr_out = (left_fwhr * 0.4 + right_fwhr * 0.6) * (1.0 + (1.0 - geom->symmetry) * 0.05);
+    return true;
+}
+
+bool evaluate_kramer_ward_fwhr_ambient_shading_effect(const teddy_geometry_t *geom, double original_fwhr, double light_angle_degrees, double *apparent_fwhr_out) {
+    if (!geom || original_fwhr < 0.0 || !apparent_fwhr_out) {
+        return false;
+    }
+    double rad = light_angle_degrees * 3.141592653589793 / 180.0;
+    *apparent_fwhr_out = original_fwhr * (1.0 + sin(rad) * 0.04 * (1.0 - geom->fur_roughness * 0.2));
+    return true;
+}

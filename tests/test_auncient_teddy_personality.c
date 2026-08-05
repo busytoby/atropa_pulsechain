@@ -1721,6 +1721,8 @@ int main(void) {
     double kramer_noise_se = 0.0;
     double kramer_adapt_offset = 0.0;
     double recent_history[3] = {1.85, 1.95, 1.75};
+    double kramer_weighted = 0.0;
+    double kramer_shaded = 0.0;
     assert(evaluate_kramer_ward_fwhr_3d_scan_discrepancy(&geom, 1.85, &kramer_discrepancy));
     assert(kramer_discrepancy > 0.0);
     assert(evaluate_kramer_ward_fwhr_sexual_dimorphism_null_hypothesis(&geom, 1.90, 1.85, &kramer_p_value));
@@ -1732,8 +1734,12 @@ int main(void) {
     assert(evaluate_kramer_ward_fwhr_perceptual_noise_sensitivity(&geom, 0.2, &kramer_noise_se));
     assert(kramer_noise_se > 0.0);
     assert(evaluate_kramer_ward_fwhr_sequential_adaptation_bias(&geom, recent_history, 3, &kramer_adapt_offset));
+    assert(evaluate_kramer_ward_fwhr_hemiface_asymmetry_bias(&geom, 1.80, 1.90, &kramer_weighted));
+    assert(kramer_weighted > 0.0);
+    assert(evaluate_kramer_ward_fwhr_ambient_shading_effect(&geom, 1.85, 45.0, &kramer_shaded));
+    assert(kramer_shaded > 0.0);
     
-    printf("   ✓ KRAMER & WARD FWHR dominance, trustworthiness, threat, cooperation, discrepancy, dimorphism null-hypothesis, head tilt, perceived-actual mismatch, noise sensitivity, adaptation bias, and decay variances verified successfully\n");
+    printf("   ✓ KRAMER & WARD FWHR dominance, trustworthiness, threat, cooperation, discrepancy, dimorphism null-hypothesis, head tilt, perceived-actual mismatch, noise sensitivity, adaptation bias, hemiface bias, ambient shading, and decay variances verified successfully\n");
 
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
