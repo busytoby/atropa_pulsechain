@@ -232,6 +232,13 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
         }
     }
 
+    float *guidance_map = malloc(sizeof(float) * w * h);
+    if (guidance_map) {
+        for (int i = 0; i < w * h; i++) {
+            guidance_map[i] = aux_features ? aux_features[i].depth : 0.0f;
+        }
+    }
+
     if (aux_features) {
         uint32_t *denoised_pixels = malloc(sizeof(uint32_t) * w * h);
         if (denoised_pixels) {
@@ -240,18 +247,17 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
             }
             free(denoised_pixels);
         }
-        free(aux_features);
     }
 
-    // Apply Non-Local Means (NLM) to reconstruct complex high-frequency patterns
+    // Apply Non-Local Means (NLM) with guided path selection to reconstruct complex high-frequency patterns
     float *chan_in = malloc(sizeof(float) * w * h);
     float *chan_out = malloc(sizeof(float) * w * h);
-    if (chan_in && chan_out) {
+    if (chan_in && chan_out && guidance_map) {
         // Red Channel
         for (int i = 0; i < w * h; i++) {
             chan_in[i] = (float)((pixels[i] >> 16) & 0xFF) / 255.0f;
         }
-        if (tsfi_montecarlo_non_local_means(chan_in, chan_out, w, h, 0.15f, 1, 2)) {
+        if (tsfi_montecarlo_guided_path_non_local_means(chan_in, guidance_map, chan_out, w, h, 0.15f, 1, 2, 0.8f)) {
             for (int i = 0; i < w * h; i++) {
                 uint32_t val = (uint32_t)(fmaxf(0.0f, fminf(1.0f, chan_out[i])) * 255.0f);
                 pixels[i] = (pixels[i] & 0xFF00FFFF) | (val << 16);
@@ -261,7 +267,7 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
         for (int i = 0; i < w * h; i++) {
             chan_in[i] = (float)((pixels[i] >> 8) & 0xFF) / 255.0f;
         }
-        if (tsfi_montecarlo_non_local_means(chan_in, chan_out, w, h, 0.15f, 1, 2)) {
+        if (tsfi_montecarlo_guided_path_non_local_means(chan_in, guidance_map, chan_out, w, h, 0.15f, 1, 2, 0.8f)) {
             for (int i = 0; i < w * h; i++) {
                 uint32_t val = (uint32_t)(fmaxf(0.0f, fminf(1.0f, chan_out[i])) * 255.0f);
                 pixels[i] = (pixels[i] & 0xFFFF00FF) | (val << 8);
@@ -271,7 +277,7 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
         for (int i = 0; i < w * h; i++) {
             chan_in[i] = (float)(pixels[i] & 0xFF) / 255.0f;
         }
-        if (tsfi_montecarlo_non_local_means(chan_in, chan_out, w, h, 0.15f, 1, 2)) {
+        if (tsfi_montecarlo_guided_path_non_local_means(chan_in, guidance_map, chan_out, w, h, 0.15f, 1, 2, 0.8f)) {
             for (int i = 0; i < w * h; i++) {
                 uint32_t val = (uint32_t)(fmaxf(0.0f, fminf(1.0f, chan_out[i])) * 255.0f);
                 pixels[i] = (pixels[i] & 0xFFFFFF00) | val;
@@ -280,4 +286,6 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
     }
     if (chan_in) free(chan_in);
     if (chan_out) free(chan_out);
+    if (guidance_map) free(guidance_map);
+    if (aux_features) free(aux_features);
 }
