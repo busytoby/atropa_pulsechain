@@ -1039,7 +1039,16 @@ void draw_frame(VulkanSystem *s) {
         fflush(stdout);
     } else {
         // Mode A: Standard Wayland Window
+        struct timespec t_start, t_end;
+        clock_gettime(CLOCK_MONOTONIC, &t_start);
         VkResult res_present = vk->vkQueuePresentKHR(vk->queue, &presentInfo);
+        clock_gettime(CLOCK_MONOTONIC, &t_end);
+
+        double present_ns = (double)(t_end.tv_sec - t_start.tv_sec) * 1e9 + (double)(t_end.tv_nsec - t_start.tv_nsec);
+        if (present_ns > 10000000.0) { // Pacing warning if PRESENT queue blocks for > 10ms (latency gate spike)
+            fprintf(stderr, "[PACING WARNING] PRESENT queue blocked for %.2f ms\n", present_ns / 1e6);
+        }
+
         if (res_present != VK_SUCCESS) {
             printf("[VULKAN] vkQueuePresentKHR returned status: %d\n", res_present);
             if (res_present == VK_ERROR_OUT_OF_DATE_KHR || res_present == VK_SUBOPTIMAL_KHR) {
