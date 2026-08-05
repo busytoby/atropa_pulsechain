@@ -539,4 +539,13 @@ bool evaluate_kramer_king_ward_neuroticism_specificity(const teddy_geometry_t *g
 // Evaluates centroid vector alignment between species personality spaces (Kramer, King & Ward).
 bool evaluate_kramer_king_ward_centroid_alignment(const teddy_geometry_t *geom, const double *human_centroid, const double *primate_centroid, int size, double *alignment_val_out);
 
+// Evaluates species-specific vs species-general Extraversion indicators (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_extraversion_specificity(const teddy_geometry_t *geom, double species_factor, double *specificity_out);
+
+// Evaluates species-specific vs species-general Openness indicators (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_openness_specificity(const teddy_geometry_t *geom, double species_factor, double *specificity_out);
+
+// Models sex-modulated correlation between perceived dominance and physical aggression ratings (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_sex_modulated_dominance_aggression(const teddy_geometry_t *geom, double perceived_dom, int primate_sex, double *aggression_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H

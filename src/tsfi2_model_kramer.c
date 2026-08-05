@@ -375,3 +375,28 @@ bool evaluate_kramer_king_ward_centroid_alignment(const teddy_geometry_t *geom, 
     }
     return true;
 }
+
+bool evaluate_kramer_king_ward_extraversion_specificity(const teddy_geometry_t *geom, double species_factor, double *specificity_out) {
+    if (!geom || species_factor < 0.0 || !specificity_out) {
+        return false;
+    }
+    *specificity_out = species_factor * 1.05 * (0.9 + geom->social_extraversion * 0.2);
+    return true;
+}
+
+bool evaluate_kramer_king_ward_openness_specificity(const teddy_geometry_t *geom, double species_factor, double *specificity_out) {
+    if (!geom || species_factor < 0.0 || !specificity_out) {
+        return false;
+    }
+    *specificity_out = species_factor * 1.10 * (0.95 + geom->intellect_index * 0.1);
+    return true;
+}
+
+bool evaluate_kramer_king_ward_sex_modulated_dominance_aggression(const teddy_geometry_t *geom, double perceived_dom, int primate_sex, double *aggression_out) {
+    if (!geom || perceived_dom < 0.0 || !aggression_out) {
+        return false;
+    }
+    double factor = (primate_sex == 1) ? 1.15 : 0.85; // sex differences in dominance-aggression linkage
+    *aggression_out = perceived_dom * factor * (0.9 + geom->confrontational_assertiveness * 0.2);
+    return true;
+}
