@@ -26,21 +26,25 @@ static inline Vector3 v_normalize(Vector3 v) {
     return (Vector3){v.x / mag, v.y / mag, v.z / mag};
 }
 
-static float calculate_personality_guidance_weight(const teddy_geometry_t *geom, float base_emot, float db, float jitter, float elevation, float t) {
+static float calculate_personality_guidance_weight(const teddy_geometry_t *geom, float base_emot, float db, float jitter, float elevation, float t, int fear_level) {
     char type_buf[64];
     char status_buf[64];
     int risk = 0;
 
+    // Scale threat models up and safety models down if regional fear telemetry is active
+    double threat_multiplier = 1.0 + 0.15 * (double)fear_level;
+    double safety_multiplier = 1.0 / (1.0 + 0.15 * (double)fear_level);
+
     double babyfacedness = 1.0;
     evaluate_keating_babyfacedness_index(geom, &babyfacedness);
     if (tsfi_vsen_vaesen_lookup("Tomte", type_buf, &risk, status_buf, sizeof(type_buf)) == 0) {
-        babyfacedness *= (1.0 + 0.1 * (double)risk);
+        babyfacedness *= (1.0 + 0.1 * (double)risk) * safety_multiplier;
     }
 
     double playfulness = 1.0;
     evaluate_scarpi_hedonic_playfulness(geom, 0.5, &playfulness);
     if (tsfi_vsen_vaesen_lookup("Nacken", type_buf, &risk, status_buf, sizeof(type_buf)) == 0) {
-        playfulness *= (1.0 + 0.1 * (double)risk);
+        playfulness *= (1.0 + 0.1 * (double)risk) * safety_multiplier;
     }
 
     double alignment = 1.0;
@@ -52,7 +56,7 @@ static float calculate_personality_guidance_weight(const teddy_geometry_t *geom,
     double agreeableness = 1.0;
     evaluate_kramer_king_ward_perceived_agreeableness_consensus(geom, 0.5, 0.5, &agreeableness);
     if (tsfi_vsen_vaesen_lookup("Mara", type_buf, &risk, status_buf, sizeof(type_buf)) == 0) {
-        agreeableness *= (1.0 + 0.1 * (double)risk);
+        agreeableness *= (1.0 + 0.1 * (double)risk) * threat_multiplier;
     }
 
     // Wang model character warmth modulated dynamically by time and camera tilt (elevation)
@@ -61,7 +65,7 @@ static float calculate_personality_guidance_weight(const teddy_geometry_t *geom,
     double head_tilt_val = (double)elevation;
     evaluate_wang_geigel_character_warmth(geom, gaze_shift_freq, head_tilt_val, &warmth);
     if (tsfi_vsen_vaesen_lookup("Huldra", type_buf, &risk, status_buf, sizeof(type_buf)) == 0) {
-        warmth *= (1.0 + 0.1 * (double)risk);
+        warmth *= (1.0 + 0.1 * (double)risk) * safety_multiplier;
     }
 
     // Masuda model perceived naturalness modulated dynamically by noise jitter and bear SVDAG density (db)
@@ -70,13 +74,13 @@ static float calculate_personality_guidance_weight(const teddy_geometry_t *geom,
     double smile_intensity = (double)db;
     evaluate_masuda_perceived_naturalness(geom, sync_delay_ms, smile_intensity, &naturalness);
     if (tsfi_vsen_vaesen_lookup("Myling", type_buf, &risk, status_buf, sizeof(type_buf)) == 0) {
-        naturalness *= (1.0 + 0.1 * (double)risk);
+        naturalness *= (1.0 + 0.1 * (double)risk) * threat_multiplier;
     }
 
     double fwhr_dom = 1.0;
     evaluate_kramer_ward_fwhr_dominance(geom, 1.85, &fwhr_dom);
     if (tsfi_vsen_vaesen_lookup("Varulv", type_buf, &risk, status_buf, sizeof(type_buf)) == 0) {
-        fwhr_dom *= (1.0 + 0.1 * (double)risk);
+        fwhr_dom *= (1.0 + 0.1 * (double)risk) * threat_multiplier;
     }
 
     float combined_weight = (float)(babyfacedness * playfulness * alignment * agreeableness * warmth * naturalness * fwhr_dom);
@@ -94,6 +98,9 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
     tsfi_vsen_vaesen_register("Huldra", "Skogsra", 5, "Alluring");
     tsfi_vsen_vaesen_register("Myling", "Ghost", 7, "Restless");
     tsfi_vsen_vaesen_register("Varulv", "Werewolf", 8, "Aggressive");
+
+    int fear_level = 0;
+    tsfi_vsen_vaesen_get_aggregate_fear("Upsala", &fear_level);
 
     teddy_geometry_t geom;
     resolve_teddy_geometry(PERSONALITY_TRUSTWORTHY, &geom);
@@ -216,7 +223,7 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
                         float shading_factor = fabsf(N.y);
                         float excitation = 0.5f + 0.5f * jitter;
                         float base_emot = expf(-dist_to_face * dist_to_face) * shading_factor * excitation;
-                        sample_emot = calculate_personality_guidance_weight(&geom, base_emot, db, jitter, elevation, t);
+                        sample_emot = calculate_personality_guidance_weight(&geom, base_emot, db, jitter, elevation, t, fear_level);
                         if (transmit < 0.01f) break;
                     }
                 }
@@ -316,7 +323,7 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
                             float shading_factor = fabsf(N.y);
                             float excitation = 0.5f + 0.5f * jitter;
                             float base_emot = expf(-dist_to_face * dist_to_face) * shading_factor * excitation;
-                            sample_emot = calculate_personality_guidance_weight(&geom, base_emot, db, jitter, elevation, t);
+                            sample_emot = calculate_personality_guidance_weight(&geom, base_emot, db, jitter, elevation, t, fear_level);
                             if (transmit < 0.01f) break;
                         }
                     }
