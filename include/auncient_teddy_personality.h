@@ -769,6 +769,12 @@ bool evaluate_scarpi_hedonic_playful_arousal_variance(const teddy_geometry_t *ge
 // Models the decay rate of operational trust ratings based on prolonged transaction latency intervals (Scarpi).
 bool evaluate_scarpi_utilitarian_operational_trust_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_operational_trust_out);
 
+// Models the variance in user interaction consistency ratings under dynamic boundary conditions (Scarpi).
+bool evaluate_scarpi_utilitarian_consistency_variance(const teddy_geometry_t *geom, double consistency_score, double *variance_out);
+
+// Models the decay rate of interface trust ratings based on prolonged visual interaction durations (Scarpi).
+bool evaluate_scarpi_hedonic_interface_trust_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_trust_out);
+
 // Evaluates interaction trust based on visual aesthetics and novelty parameters (Scarpi).
 bool evaluate_scarpi_hedonic_trust(const teddy_geometry_t *geom, double aesthetic_rating, double novelty_scale, double *trust_out);
 
