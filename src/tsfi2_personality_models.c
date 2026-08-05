@@ -1449,6 +1449,22 @@ bool evaluate_hyde_intonation_decay(const teddy_geometry_t *geom, double duratio
     return true;
 }
 
+bool evaluate_hyde_tempo_sync(const teddy_geometry_t *geom, double tempo_sync_val, double *rating_out) {
+    if (!geom || tempo_sync_val < 0.0 || !rating_out) {
+        return false;
+    }
+    *rating_out = tempo_sync_val * (0.8 + geom->empathy_index * 0.4);
+    return true;
+}
+
+bool evaluate_hyde_tempo_jitter_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_jitter_out) {
+    if (!geom || duration_sec < 0.0 || !decayed_jitter_out) {
+        return false;
+    }
+    *decayed_jitter_out = exp(-duration_sec / (16.0 + geom->resilience_index * 6.0));
+    return true;
+}
+
 bool evaluate_hyde_vocal_warmth_modulation(const teddy_geometry_t *geom, double pitch_hz, double chin_curvature, double *warmth_out) {
     if (!geom || pitch_hz < 0.0 || chin_curvature < 0.0 || !warmth_out) {
         return false;

@@ -607,6 +607,12 @@ bool evaluate_hyde_dynamic_intonation(const teddy_geometry_t *geom, double inton
 // Models the decay rate of intonation amplitude ranges over prolonged interaction durations (Hyde et al.).
 bool evaluate_hyde_intonation_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_intonation_out);
 
+// Evaluates conversational speech tempo synchronization scaling on interaction ratings (Hyde et al.).
+bool evaluate_hyde_tempo_sync(const teddy_geometry_t *geom, double tempo_sync_val, double *rating_out);
+
+// Models vocal tempo variations decay over dynamic interaction durations (Hyde et al.).
+bool evaluate_hyde_tempo_jitter_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_jitter_out);
+
 // Evaluates vocal warmth alignment with visual chin curvature adjustments (Hyde et al.).
 bool evaluate_hyde_vocal_warmth_modulation(const teddy_geometry_t *geom, double pitch_hz, double chin_curvature, double *warmth_out);
 
