@@ -338,3 +338,19 @@ bool evaluate_keating_width_asymmetry_dominance_variance(const teddy_geometry_t 
     return true;
 }
 
+bool evaluate_keating_sclera_dominance_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_dominance_out) {
+    if (!geom || duration_sec < 0.0 || !decayed_dominance_out) {
+        return false;
+    }
+    *decayed_dominance_out = exp(-duration_sec / (18.0 + geom->resilience_index * 8.0));
+    return true;
+}
+
+bool evaluate_keating_mouth_asymmetry_dominance_variance(const teddy_geometry_t *geom, double mouth_asymmetry_val, double *variance_out) {
+    if (!geom || mouth_asymmetry_val < 0.0 || !variance_out) {
+        return false;
+    }
+    *variance_out = mouth_asymmetry_val * (1.1 + geom->leadership_profile * 0.4);
+    return true;
+}
+

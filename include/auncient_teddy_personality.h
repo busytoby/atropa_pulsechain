@@ -736,6 +736,12 @@ bool evaluate_keating_sclera_submissiveness_decay(const teddy_geometry_t *geom, 
 // Models the variance in social dominance ratings based on visual width asymmetry ratio variations (Keating, C. F.).
 bool evaluate_keating_width_asymmetry_dominance_variance(const teddy_geometry_t *geom, double width_asymmetry_val, double *variance_out);
 
+// Models the decay rate of dominance ratings based on prolonged exposed sclera size ratio durations (Keating, C. F.).
+bool evaluate_keating_sclera_dominance_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_dominance_out);
+
+// Models the variance in dominance ratings based on visual mouth asymmetry ratio variations (Keating, C. F.).
+bool evaluate_keating_mouth_asymmetry_dominance_variance(const teddy_geometry_t *geom, double mouth_asymmetry_val, double *variance_out);
+
 // Models perceived social dominance variance based on exposed sclera size ratio variations (Keating, C. F.).
 bool evaluate_keating_sclera_dominance_variance(const teddy_geometry_t *geom, double sclera_size_ratio, double *dominance_variance_out);
 

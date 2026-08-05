@@ -1116,6 +1116,15 @@ int main(void) {
     assert(width_asymmetry_dom_var > 0.0);
     printf("   ✓ KEATING, C. F. sclera submissiveness decay and width asymmetry dominance variance verified successfully\n");
 
+    // Test Keating sclera dominance decay and mouth asymmetry dominance variance calculations
+    double sclera_dom_decay_val = 0.0;
+    double mouth_asymmetry_dom_var_val = 0.0;
+    assert(evaluate_keating_sclera_dominance_decay(&geom, 15.5, &sclera_dom_decay_val));
+    assert(sclera_dom_decay_val > 0.0);
+    assert(evaluate_keating_mouth_asymmetry_dominance_variance(&geom, 0.32, &mouth_asymmetry_dom_var_val));
+    assert(mouth_asymmetry_dom_var_val > 0.0);
+    printf("   ✓ KEATING, C. F. sclera dominance decay and mouth asymmetry dominance variance verified successfully\n");
+
     // Test Scarpi hedonic playfulness and utilitarian trust calculations
     double playfulness_val = 0.0;
     double utilitarian_trust_val = 0.0;
