@@ -1243,4 +1243,16 @@ bool evaluate_kramer_ward_fwhr_dominance_decay_variance(const teddy_geometry_t *
 // Models the variance in decay rates of FWHR trustworthiness modulator ratings under dynamic layout symmetry variations (Kramer & Ward).
 bool evaluate_kramer_ward_fwhr_trustworthiness_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out);
 
+// Models the relationship between facial width-to-height ratio variations and perceived threat ratings (Kramer & Ward).
+bool evaluate_kramer_ward_fwhr_threat(const teddy_geometry_t *geom, double fwhr_val, double *threat_out);
+
+// Models the relationship between facial width-to-height ratio variations and expected cooperation ratings (Kramer & Ward).
+bool evaluate_kramer_ward_fwhr_cooperation(const teddy_geometry_t *geom, double fwhr_val, double *cooperation_out);
+
+// Models the variance in decay rates of FWHR threat modulator ratings under dynamic layout symmetry variations (Kramer & Ward).
+bool evaluate_kramer_ward_fwhr_threat_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out);
+
+// Models the variance in decay rates of FWHR cooperation modulator ratings under dynamic layout symmetry variations (Kramer & Ward).
+bool evaluate_kramer_ward_fwhr_cooperation_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out);
+
 #endif // AUNCIENT_TEDDY_PERSONALITY_H

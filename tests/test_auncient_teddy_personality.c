@@ -1697,6 +1697,10 @@ int main(void) {
     double kramer_trustworthiness = 0.0;
     double kramer_dominance_decay_variance = 0.0;
     double kramer_trustworthiness_decay_variance = 0.0;
+    double kramer_threat = 0.0;
+    double kramer_cooperation = 0.0;
+    double kramer_threat_decay_variance = 0.0;
+    double kramer_cooperation_decay_variance = 0.0;
     assert(evaluate_kramer_ward_fwhr_dominance(&geom, 1.85, &kramer_dominance));
     assert(kramer_dominance > 0.0);
     assert(evaluate_kramer_ward_fwhr_trustworthiness(&geom, 1.85, &kramer_trustworthiness));
@@ -1705,7 +1709,15 @@ int main(void) {
     assert(kramer_dominance_decay_variance > 0.0);
     assert(evaluate_kramer_ward_fwhr_trustworthiness_decay_variance(&geom, 14.5, &kramer_trustworthiness_decay_variance));
     assert(kramer_trustworthiness_decay_variance > 0.0);
-    printf("   ✓ KRAMER & WARD FWHR dominance, trustworthiness, and decay variances verified successfully\n");
+    assert(evaluate_kramer_ward_fwhr_threat(&geom, 1.85, &kramer_threat));
+    assert(kramer_threat > 0.0);
+    assert(evaluate_kramer_ward_fwhr_cooperation(&geom, 1.85, &kramer_cooperation));
+    assert(kramer_cooperation > 0.0);
+    assert(evaluate_kramer_ward_fwhr_threat_decay_variance(&geom, 15.0, &kramer_threat_decay_variance));
+    assert(kramer_threat_decay_variance > 0.0);
+    assert(evaluate_kramer_ward_fwhr_cooperation_decay_variance(&geom, 14.5, &kramer_cooperation_decay_variance));
+    assert(kramer_cooperation_decay_variance > 0.0);
+    printf("   ✓ KRAMER & WARD FWHR dominance, trustworthiness, threat, cooperation, and decay variances verified successfully\n");
 
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
