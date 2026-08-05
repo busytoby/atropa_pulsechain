@@ -637,6 +637,12 @@ bool evaluate_hyde_vocal_size_sync(const teddy_geometry_t *geom, double tempo_sy
 // Models the decay rate of vocal size variation range over prolonged interaction durations (Hyde et al.).
 bool evaluate_hyde_vocal_size_jitter_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_size_jitter_out);
 
+// Evaluates conversational vocal size variance alignment with pitch range indicators (Hyde et al.).
+bool evaluate_hyde_vocal_size_pitch(const teddy_geometry_t *geom, double size_variance, double pitch_range, double *pitch_out);
+
+// Models the decay rate of vocal size pitch variation range over prolonged interaction durations (Hyde et al.).
+bool evaluate_hyde_vocal_size_pitch_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_size_pitch_out);
+
 // Evaluates vocal warmth alignment with visual chin curvature adjustments (Hyde et al.).
 bool evaluate_hyde_vocal_warmth_modulation(const teddy_geometry_t *geom, double pitch_hz, double chin_curvature, double *warmth_out);
 

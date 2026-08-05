@@ -936,6 +936,15 @@ int main(void) {
     assert(size_jitter_decay_val > 0.0);
     printf("   ✓ Hyde vocal size sync and size jitter decay verified successfully\n");
 
+    // Test Hyde vocal size pitch and pitch range decay calculations
+    double size_pitch_val = 0.0;
+    double size_pitch_decay_val = 0.0;
+    assert(evaluate_hyde_vocal_size_pitch(&geom, 2.45, 12.0, &size_pitch_val));
+    assert(size_pitch_val > 0.0);
+    assert(evaluate_hyde_vocal_size_pitch_decay(&geom, 14.5, &size_pitch_decay_val));
+    assert(size_pitch_decay_val > 0.0);
+    printf("   ✓ Hyde vocal size pitch and pitch range decay verified successfully\n");
+
     // Test Hyde vocal warmth modulation and interruption recovery calculations
     double vocal_warmth_mod = 0.0;
     double interruption_rec = 0.0;
