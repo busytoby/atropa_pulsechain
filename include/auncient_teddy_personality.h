@@ -631,6 +631,12 @@ bool evaluate_hyde_tempo_range(const teddy_geometry_t *geom, double tempo_range_
 // Models the decay rate of vocal tempo variation range over prolonged interaction durations (Hyde et al.).
 bool evaluate_hyde_tempo_range_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_range_out);
 
+// Evaluates conversational speech tempo synchronization alignment with vocal size mismatch indicators (Hyde et al.).
+bool evaluate_hyde_vocal_size_sync(const teddy_geometry_t *geom, double tempo_sync_val, double size_mismatch, double *sync_out);
+
+// Models the decay rate of vocal size variation range over prolonged interaction durations (Hyde et al.).
+bool evaluate_hyde_vocal_size_jitter_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_size_jitter_out);
+
 // Evaluates vocal warmth alignment with visual chin curvature adjustments (Hyde et al.).
 bool evaluate_hyde_vocal_warmth_modulation(const teddy_geometry_t *geom, double pitch_hz, double chin_curvature, double *warmth_out);
 
