@@ -828,6 +828,15 @@ int main(void) {
     assert(epicycle_mod > 0.0);
     printf("   ✓ Cellarius planetary eccentricity and epicycle modulation verified successfully\n");
 
+    // Test Hyde vocal jitter naturalness and intonation amplitude calculations
+    double vocal_jitter = 0.0;
+    double intonation_amp = 0.0;
+    assert(evaluate_hyde_vocal_jitter_naturalness(&geom, 0.04, &vocal_jitter));
+    assert(vocal_jitter > 0.0);
+    assert(evaluate_hyde_intonation_amplitude(&geom, 12.0, &intonation_amp));
+    assert(intonation_amp > 0.0);
+    printf("   ✓ Hyde vocal jitter naturalness and intonation amplitude verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge

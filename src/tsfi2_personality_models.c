@@ -1337,3 +1337,19 @@ bool evaluate_cellarius_epicycle_modulation(const teddy_geometry_t *geom, double
     return true;
 }
 
+bool evaluate_hyde_vocal_jitter_naturalness(const teddy_geometry_t *geom, double pitch_jitter, double *naturalness_out) {
+    if (!geom || pitch_jitter < 0.0 || !naturalness_out) {
+        return false;
+    }
+    *naturalness_out = (1.0 / (1.0 + pitch_jitter)) * (0.9 + geom->symmetry * 0.3);
+    return true;
+}
+
+bool evaluate_hyde_intonation_amplitude(const teddy_geometry_t *geom, double intonation_variance, double *engagement_out) {
+    if (!geom || intonation_variance < 0.0 || !engagement_out) {
+        return false;
+    }
+    *engagement_out = intonation_variance * (0.8 + geom->behavioral_mismatch * 0.4);
+    return true;
+}
+

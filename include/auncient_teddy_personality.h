@@ -571,6 +571,12 @@ bool evaluate_cellarius_planetary_eccentricity(const teddy_geometry_t *geom, dou
 // Calculates frequency modifiers based on epicycle-to-deferent planetary orbit ratios (Cellarius).
 bool evaluate_cellarius_epicycle_modulation(const teddy_geometry_t *geom, double epicycle_ratio, double *frequency_modifier_out);
 
+// Evaluates perceived conversational naturalness based on vocal pitch frequency jitter (Hyde et al.).
+bool evaluate_hyde_vocal_jitter_naturalness(const teddy_geometry_t *geom, double pitch_jitter, double *naturalness_out);
+
+// Models engagement rates based on vocal intonation amplitude variance (Hyde et al.).
+bool evaluate_hyde_intonation_amplitude(const teddy_geometry_t *geom, double intonation_variance, double *engagement_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 
