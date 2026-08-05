@@ -1,4 +1,4 @@
-#include "../include/auncient_teddy_personality.h"
+#include "../tsfi2-deepseek/inc/auncient_teddy_personality.h"
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
