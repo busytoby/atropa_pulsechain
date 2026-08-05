@@ -757,4 +757,5 @@ tests/test_cbt021_inmemory_pds
 
 # Ignore HathiTrust client cache files
 hathitrust_cache_*.json
+hathitrust_cache_oai_*.xml
 

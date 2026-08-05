@@ -59,6 +59,38 @@ char* hathitrust_oai_query(const char *verb,
                            const char *resumption_token,
                            const char *from_date,
                            const char *until_date) {
+    char cache_filename[512];
+    snprintf(cache_filename, sizeof(cache_filename),
+             "hathitrust_cache_oai_%s_%s_%s_%s_%s_%s_%s.xml",
+             verb ? verb : "null",
+             metadata_prefix ? metadata_prefix : "null",
+             set ? set : "null",
+             identifier ? identifier : "null",
+             resumption_token ? resumption_token : "null",
+             from_date ? from_date : "null",
+             until_date ? until_date : "null");
+             
+    for (char *p = cache_filename; *p; p++) {
+        if (!((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') || (*p >= '0' && *p <= '9') || *p == '.' || *p == '-')) {
+            *p = '_';
+        }
+    }
+    
+    FILE *cache_file = fopen(cache_filename, "r");
+    if (cache_file) {
+        fseek(cache_file, 0, SEEK_END);
+        long size = ftell(cache_file);
+        fseek(cache_file, 0, SEEK_SET);
+        char *cached_data = malloc(size + 1);
+        if (cached_data) {
+            size_t read_bytes = fread(cached_data, 1, size, cache_file);
+            cached_data[read_bytes] = '\0';
+            fclose(cache_file);
+            return cached_data;
+        }
+        fclose(cache_file);
+    }
+
     const char *host = "oai.hathitrust.org";
     const char *port = "443";
     
@@ -202,5 +234,13 @@ char* hathitrust_oai_query(const char *verb,
     body += 4;
     char *result = strdup(body);
     free(recv_buf.data);
+
+    if (result) {
+        FILE *write_cache = fopen(cache_filename, "w");
+        if (write_cache) {
+            fputs(result, write_cache);
+            fclose(write_cache);
+        }
+    }
     return result;
 }
