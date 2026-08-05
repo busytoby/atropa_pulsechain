@@ -873,6 +873,15 @@ int main(void) {
     assert(intonation_amp > 0.0);
     printf("   ✓ Hyde vocal jitter naturalness and intonation amplitude verified successfully\n");
 
+    // Test Hyde dynamic intonation and amplitude decay calculations
+    double dynamic_intonation = 0.0;
+    double intonation_decay = 0.0;
+    assert(evaluate_hyde_dynamic_intonation(&geom, 15.0, 0.35, &dynamic_intonation));
+    assert(dynamic_intonation > 0.0);
+    assert(evaluate_hyde_intonation_decay(&geom, 12.0, &intonation_decay));
+    assert(intonation_decay > 0.0);
+    printf("   ✓ Hyde dynamic intonation and amplitude decay verified successfully\n");
+
     // Test Hyde vocal warmth modulation and interruption recovery calculations
     double vocal_warmth_mod = 0.0;
     double interruption_rec = 0.0;

@@ -1417,6 +1417,22 @@ bool evaluate_cellarius_radial_frequency(const teddy_geometry_t *geom, double ra
     return true;
 }
 
+bool evaluate_hyde_dynamic_intonation(const teddy_geometry_t *geom, double intonation_range, double brow_movement, double *intonation_out) {
+    if (!geom || intonation_range < 0.0 || brow_movement < 0.0 || !intonation_out) {
+        return false;
+    }
+    *intonation_out = intonation_range * brow_movement * (0.8 + geom->symmetry * 0.4);
+    return true;
+}
+
+bool evaluate_hyde_intonation_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_intonation_out) {
+    if (!geom || duration_sec < 0.0 || !decayed_intonation_out) {
+        return false;
+    }
+    *decayed_intonation_out = exp(-duration_sec / (18.0 + geom->resilience_index * 8.0));
+    return true;
+}
+
 bool evaluate_hyde_vocal_warmth_modulation(const teddy_geometry_t *geom, double pitch_hz, double chin_curvature, double *warmth_out) {
     if (!geom || pitch_hz < 0.0 || chin_curvature < 0.0 || !warmth_out) {
         return false;

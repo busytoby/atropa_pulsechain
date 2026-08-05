@@ -595,6 +595,12 @@ bool evaluate_cellarius_eccentricity_velocity(const teddy_geometry_t *geom, doub
 // Calculates coordinate frequency scale shifts based on radial orbital distances (Cellarius).
 bool evaluate_cellarius_radial_frequency(const teddy_geometry_t *geom, double radial_distance, double *frequency_shift_out);
 
+// Evaluates dynamic changes in vocal intonation range alignment with eyebrow movements (Hyde et al.).
+bool evaluate_hyde_dynamic_intonation(const teddy_geometry_t *geom, double intonation_range, double brow_movement, double *intonation_out);
+
+// Models the decay rate of intonation amplitude ranges over prolonged interaction durations (Hyde et al.).
+bool evaluate_hyde_intonation_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_intonation_out);
+
 // Evaluates vocal warmth alignment with visual chin curvature adjustments (Hyde et al.).
 bool evaluate_hyde_vocal_warmth_modulation(const teddy_geometry_t *geom, double pitch_hz, double chin_curvature, double *warmth_out);
 
