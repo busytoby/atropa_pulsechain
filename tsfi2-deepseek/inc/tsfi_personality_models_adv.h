@@ -608,5 +608,14 @@ bool evaluate_wang_geigel_contagion_arousal(const teddy_geometry_t *geom, double
 // Models realism trust congruence metrics in virtual agents (Wang, Geigel & Herbert).
 bool evaluate_wang_geigel_realism_trust_congruence(const teddy_geometry_t *geom, double realism_index, double smile_intensity, double *trustworthiness_out);
 
+// Models emotional contagion decay over duration (Wang, Geigel & Herbert).
+bool evaluate_wang_geigel_emotional_contagion_decay(const teddy_geometry_t *geom, double initial_contagion, double duration_sec, double *decayed_contagion_out);
+
+// Models competence projection decay over duration (Wang, Geigel & Herbert).
+bool evaluate_wang_geigel_competence_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out);
+
+// Models mismatch metrics between gaze frequency and realism index (Wang, Geigel & Herbert).
+bool evaluate_wang_geigel_gaze_realism_mismatch(const teddy_geometry_t *geom, double gaze_shift_freq, double realism_index, double *mismatch_score_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H
 

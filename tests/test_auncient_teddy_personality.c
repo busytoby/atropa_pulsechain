@@ -1904,6 +1904,18 @@ int main(void) {
     assert(wang_realism_trust > 0.0);
     printf("   ✓ WANG, GEIGEL & HERBERT virtual character gaze competence, contagion arousal, and realism trust congruence verified successfully\n");
 
+    double wang_contagion_decay = 0.0;
+    double wang_competence_decay_var = 0.0;
+    double wang_gaze_realism_mismatch = 0.0;
+    assert(evaluate_wang_geigel_emotional_contagion_decay(&geom, 0.75, 12.0, &wang_contagion_decay));
+    assert(wang_contagion_decay > 0.0);
+    assert(evaluate_wang_geigel_competence_decay_variance(&geom, 15.0, &wang_competence_decay_var));
+    assert(wang_competence_decay_var > 0.0);
+    assert(evaluate_wang_geigel_gaze_realism_mismatch(&geom, 0.65, 0.75, &wang_gaze_realism_mismatch));
+    assert(wang_gaze_realism_mismatch >= 0.0);
+    printf("   ✓ WANG, GEIGEL & HERBERT contagion decay, competence decay variance, and gaze realism mismatch verified successfully\n");
+
+
 
 
 

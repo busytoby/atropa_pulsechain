@@ -76,4 +76,29 @@ bool evaluate_wang_geigel_realism_trust_congruence(const teddy_geometry_t *geom,
     return true;
 }
 
+bool evaluate_wang_geigel_emotional_contagion_decay(const teddy_geometry_t *geom, double initial_contagion, double duration_sec, double *decayed_contagion_out) {
+    if (!geom || initial_contagion < 0.0 || duration_sec < 0.0 || !decayed_contagion_out) {
+        return false;
+    }
+    *decayed_contagion_out = initial_contagion * exp(-duration_sec / (18.0 + geom->resilience_index * 6.0));
+    return true;
+}
+
+bool evaluate_wang_geigel_competence_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+    if (!geom || duration_sec < 0.0 || !decay_variance_out) {
+        return false;
+    }
+    *decay_variance_out = exp(-duration_sec / (16.0 + geom->resilience_index * 5.0));
+    return true;
+}
+
+bool evaluate_wang_geigel_gaze_realism_mismatch(const teddy_geometry_t *geom, double gaze_shift_freq, double realism_index, double *mismatch_score_out) {
+    if (!geom || gaze_shift_freq < 0.0 || realism_index < 0.0 || !mismatch_score_out) {
+        return false;
+    }
+    *mismatch_score_out = fabs(gaze_shift_freq - realism_index) * (1.1 + geom->behavioral_mismatch * 0.3);
+    return true;
+}
+
+
 
