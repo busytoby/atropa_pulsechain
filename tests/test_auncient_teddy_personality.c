@@ -1017,6 +1017,15 @@ int main(void) {
     assert(interruption_rec > 0.0);
     printf("   ✓ Hyde vocal warmth modulation and interruption recovery verified successfully\n");
 
+    // Test Hyde vocal warmth variance and size pitch decay mod calculations
+    double warmth_variance_val = 0.0;
+    double size_pitch_decay_mod = 0.0;
+    assert(evaluate_hyde_vocal_warmth_variance(&geom, 0.44, 220.0, &warmth_variance_val));
+    assert(warmth_variance_val > 0.0);
+    assert(evaluate_hyde_vocal_size_pitch_decay_mod(&geom, 15.0, &size_pitch_decay_mod));
+    assert(size_pitch_decay_mod > 0.0);
+    printf("   ✓ Hyde vocal warmth variance and size pitch decay mod verified successfully\n");
+
     // Test Keating gaze shift dominance and lip compression trust calculations
     double gaze_shift_dom = 0.0;
     double lip_compress_trust = 0.0;

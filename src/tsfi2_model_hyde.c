@@ -274,3 +274,19 @@ bool evaluate_hyde_vocal_size_jitter_decay_mod(const teddy_geometry_t *geom, dou
     return true;
 }
 
+bool evaluate_hyde_vocal_warmth_variance(const teddy_geometry_t *geom, double interruption_freq, double pitch_hz, double *warmth_variance_out) {
+    if (!geom || interruption_freq < 0.0 || pitch_hz < 0.0 || !warmth_variance_out) {
+        return false;
+    }
+    *warmth_variance_out = interruption_freq * pitch_hz * (0.8 + geom->empathy_index * 0.4) * 0.01;
+    return true;
+}
+
+bool evaluate_hyde_vocal_size_pitch_decay_mod(const teddy_geometry_t *geom, double duration_sec, double *decayed_size_pitch_out) {
+    if (!geom || duration_sec < 0.0 || !decayed_size_pitch_out) {
+        return false;
+    }
+    *decayed_size_pitch_out = exp(-duration_sec / (16.0 + geom->resilience_index * 6.0));
+    return true;
+}
+
