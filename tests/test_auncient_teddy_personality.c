@@ -900,6 +900,15 @@ int main(void) {
     assert(alignment_decay_val > 0.0);
     printf("   ✓ Cellarius velocity eccentricity and alignment boundary decay verified successfully\n");
 
+    // Test Cellarius planet orbital velocity scale variance and epicycle orbit phase decay calculations
+    double velocity_scale_var = 0.0;
+    double epicycle_phase_decay_mod_val = 0.0;
+    assert(evaluate_cellarius_velocity_scale_variance(&geom, 8.5, 0.05, &velocity_scale_var));
+    assert(velocity_scale_var > 0.0);
+    assert(evaluate_cellarius_epicycle_phase_decay_mod(&geom, 18.0, &epicycle_phase_decay_mod_val));
+    assert(epicycle_phase_decay_mod_val > 0.0);
+    printf("   ✓ Cellarius velocity scale variance and epicycle phase decay mod verified successfully\n");
+
     // Test Hyde vocal jitter naturalness and intonation amplitude calculations
     double vocal_jitter = 0.0;
     double intonation_amp = 0.0;
