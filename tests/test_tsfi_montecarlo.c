@@ -161,6 +161,20 @@ int main(void) {
     assert(!tsfi_montecarlo_commit_filter_transaction(&tx, -1.0f, 0.4f));
     assert(filter_state.spatial_sigma == 2.5f); // preserved
     assert(tx.active == false);
+
+    // Verify Durability: Check that the .dat.bin transaction file is written and read back correctly
+    FILE *f_check = fopen("mc_filter_transaction.dat.bin", "rb");
+    assert(f_check != NULL);
+    TSFiMCFilterState read_back;
+    size_t read_bytes = fread(&read_back, sizeof(TSFiMCFilterState), 1, f_check);
+    assert(read_bytes == 1);
+    assert(read_back.spatial_sigma == 2.5f);
+    assert(read_back.range_sigma == 0.4f);
+    fclose(f_check);
+    
+    // Clean up transaction log
+    remove("mc_filter_transaction.dat.bin");
+
     printf("   ✓ Monte Carlo ACID filter parameters transaction lifecycle verified successfully\n");
 
     printf("[Test] All Monte Carlo Denoising tests completed successfully.\n");

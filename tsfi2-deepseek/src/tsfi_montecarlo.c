@@ -2,6 +2,7 @@
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 bool tsfi_montecarlo_estimate_variance(const float *samples, int count, double threshold, double *variance_out) {
     if (!samples || count <= 1 || !variance_out) {
@@ -597,6 +598,13 @@ bool tsfi_montecarlo_commit_filter_transaction(TSFiMCFilterTx *tx, float next_sp
     tx->target->spatial_sigma = next_spatial;
     tx->target->range_sigma = next_range;
     tx->active = false;
+
+    // Durability: Persist the committed parameters to a binary transaction log file
+    FILE *f = fopen("mc_filter_transaction.dat.bin", "wb");
+    if (f) {
+        fwrite(tx->target, sizeof(TSFiMCFilterState), 1, f);
+        fclose(f);
+    }
     return true;
 }
 
