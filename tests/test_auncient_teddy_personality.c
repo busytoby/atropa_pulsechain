@@ -1017,6 +1017,15 @@ int main(void) {
     assert(consistency_mod_val > 0.0);
     printf("   ✓ Scarpi aesthetic quality and structural consistency verified successfully\n");
 
+    // Test Scarpi hedonic interface trust and utilitarian operational trust calculations
+    double interface_trust_val = 0.0;
+    double operational_trust_mod_val = 0.0;
+    assert(evaluate_scarpi_hedonic_interface_trust(&geom, 0.65, &interface_trust_val));
+    assert(interface_trust_val > 0.0);
+    assert(evaluate_scarpi_utilitarian_operational_trust_mod(&geom, 0.72, &operational_trust_mod_val));
+    assert(operational_trust_mod_val > 0.0);
+    printf("   ✓ Scarpi interface trust and operational trust mod verified successfully\n");
+
     // Test Scarpi hedonic trust and utilitarian efficiency calculations
     double hedonic_trust_val = 0.0;
     double utilitarian_efficiency_val = 0.0;

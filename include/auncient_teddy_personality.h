@@ -691,6 +691,12 @@ bool evaluate_scarpi_hedonic_aesthetic_quality(const teddy_geometry_t *geom, dou
 // Models user interaction ratings based on layout consistency checks (Scarpi).
 bool evaluate_scarpi_utilitarian_consistency(const teddy_geometry_t *geom, double consistency_score, double *consistency_mod_out);
 
+// Evaluates playfulness ratings based on dynamic aesthetic trust parameters (Scarpi).
+bool evaluate_scarpi_hedonic_interface_trust(const teddy_geometry_t *geom, double aesthetic_trust_val, double *interface_trust_out);
+
+// Models transaction trust ratings based on operational efficiency bounds (Scarpi).
+bool evaluate_scarpi_utilitarian_operational_trust_mod(const teddy_geometry_t *geom, double efficiency_val, double *operational_trust_out);
+
 // Evaluates interaction trust based on visual aesthetics and novelty parameters (Scarpi).
 bool evaluate_scarpi_hedonic_trust(const teddy_geometry_t *geom, double aesthetic_rating, double novelty_scale, double *trust_out);
 
