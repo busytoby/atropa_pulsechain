@@ -954,6 +954,15 @@ int main(void) {
     assert(size_pitch_decay_val > 0.0);
     printf("   ✓ Hyde vocal size pitch and pitch range decay verified successfully\n");
 
+    // Test Hyde vocal warmth range and warmth range decay calculations
+    double warmth_range_val = 0.0;
+    double warmth_range_decay_val = 0.0;
+    assert(evaluate_hyde_vocal_warmth_range(&geom, 14.2, 0.35, &warmth_range_val));
+    assert(warmth_range_val > 0.0);
+    assert(evaluate_hyde_vocal_warmth_range_decay(&geom, 16.5, &warmth_range_decay_val));
+    assert(warmth_range_decay_val > 0.0);
+    printf("   ✓ Hyde vocal warmth range and warmth range decay verified successfully\n");
+
     // Test Hyde vocal warmth modulation and interruption recovery calculations
     double vocal_warmth_mod = 0.0;
     double interruption_rec = 0.0;
