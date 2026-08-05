@@ -945,6 +945,15 @@ int main(void) {
     assert(utilitarian_trust_val > 0.0);
     printf("   ✓ Scarpi playfulness and utilitarian operational trust verified successfully\n");
 
+    // Test Scarpi hedonic arousal modulator and utilitarian quality control calculations
+    double hedonic_arousal_mod_val = 0.0;
+    double utilitarian_qc_val = 0.0;
+    assert(evaluate_scarpi_hedonic_arousal_mod(&geom, 0.45, 0.75, &hedonic_arousal_mod_val));
+    assert(hedonic_arousal_mod_val > 0.0);
+    assert(evaluate_scarpi_utilitarian_quality_control(&geom, 0.92, &utilitarian_qc_val));
+    assert(utilitarian_qc_val > 0.0);
+    printf("   ✓ Scarpi hedonic arousal mod and utilitarian quality control verified successfully\n");
+
     // Test Scarpi hedonic trust and utilitarian efficiency calculations
     double hedonic_trust_val = 0.0;
     double utilitarian_efficiency_val = 0.0;

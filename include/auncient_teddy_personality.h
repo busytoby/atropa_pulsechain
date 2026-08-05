@@ -643,6 +643,12 @@ bool evaluate_scarpi_hedonic_playfulness(const teddy_geometry_t *geom, double ba
 // Models transaction trust based on H-bridge switching stability and safety margins (Scarpi).
 bool evaluate_scarpi_utilitarian_trust(const teddy_geometry_t *geom, double safety_margin, double *operational_trust_out);
 
+// Evaluates playfulness arousal levels based on dynamic novelty shifts and eyebrow gestures (Scarpi).
+bool evaluate_scarpi_hedonic_arousal_mod(const teddy_geometry_t *geom, double novelty_shift, double brow_gesture_val, double *arousal_out);
+
+// Models interaction performance indices based on spatial alignment boundary metrics (Scarpi).
+bool evaluate_scarpi_utilitarian_quality_control(const teddy_geometry_t *geom, double spatial_alignment, double *quality_control_out);
+
 // Evaluates interaction trust based on visual aesthetics and novelty parameters (Scarpi).
 bool evaluate_scarpi_hedonic_trust(const teddy_geometry_t *geom, double aesthetic_rating, double novelty_scale, double *trust_out);
 
