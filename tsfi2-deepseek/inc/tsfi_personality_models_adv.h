@@ -653,5 +653,14 @@ bool evaluate_masuda_conversational_familiarity_decay(const teddy_geometry_t *ge
 // Models empathic synchronization variance based on interactants (Masuda, Kunizawa & Takahashi).
 bool evaluate_masuda_empathic_sync_variance(const teddy_geometry_t *geom, double blink_sync_rate, double pupil_dilation_sync, double *sync_variance_out);
 
+// Models naturalness variance based on gaze sync (Masuda, Kunizawa & Takahashi).
+bool evaluate_masuda_naturalness_variance(const teddy_geometry_t *geom, double reciprocal_gaze_sync, double *naturalness_variance_out);
+
+// Models reciprocal gaze attenuation ratings (Masuda, Kunizawa & Takahashi).
+bool evaluate_masuda_reciprocal_gaze_attenuation(const teddy_geometry_t *geom, double gaze_return_delay_ms, double *attenuated_gaze_score_out);
+
+// Models empathic contagion interactions (Masuda, Kunizawa & Takahashi).
+bool evaluate_masuda_empathic_contagion_interaction(const teddy_geometry_t *geom, double sync_level, double contagion_rate, double *interaction_score_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H
 

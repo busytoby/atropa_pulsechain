@@ -53,3 +53,28 @@ bool evaluate_masuda_empathic_sync_variance(const teddy_geometry_t *geom, double
     return true;
 }
 
+bool evaluate_masuda_naturalness_variance(const teddy_geometry_t *geom, double reciprocal_gaze_sync, double *naturalness_variance_out) {
+    if (!geom || reciprocal_gaze_sync < 0.0 || !naturalness_variance_out) {
+        return false;
+    }
+    *naturalness_variance_out = reciprocal_gaze_sync * (0.9 + geom->reassurance_capability * 0.3);
+    return true;
+}
+
+bool evaluate_masuda_reciprocal_gaze_attenuation(const teddy_geometry_t *geom, double gaze_return_delay_ms, double *attenuated_gaze_score_out) {
+    if (!geom || gaze_return_delay_ms < 0.0 || !attenuated_gaze_score_out) {
+        return false;
+    }
+    *attenuated_gaze_score_out = (1.0 / (1.0 + (gaze_return_delay_ms / 200.0))) * (0.95 + geom->empathy_index * 0.2);
+    return true;
+}
+
+bool evaluate_masuda_empathic_contagion_interaction(const teddy_geometry_t *geom, double sync_level, double contagion_rate, double *interaction_score_out) {
+    if (!geom || sync_level < 0.0 || contagion_rate < 0.0 || !interaction_score_out) {
+        return false;
+    }
+    *interaction_score_out = (sync_level * 0.5 + contagion_rate * 0.5) * (0.95 + geom->cooperative_negotiation * 0.35);
+    return true;
+}
+
+

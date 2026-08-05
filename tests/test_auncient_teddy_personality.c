@@ -1959,6 +1959,17 @@ int main(void) {
     assert(masuda_sync_var > 0.0);
     printf("   ✓ MASUDA, KUNIZAWA & TAKAHASHI naturalness attenuation, familiarity decay, and empathic sync variance verified successfully\n");
 
+    double masuda_nat_var = 0.0;
+    double masuda_gaze_att = 0.0;
+    double masuda_contagion_int = 0.0;
+    assert(evaluate_masuda_naturalness_variance(&geom, 0.65, &masuda_nat_var));
+    assert(masuda_nat_var > 0.0);
+    assert(evaluate_masuda_reciprocal_gaze_attenuation(&geom, 150.0, &masuda_gaze_att));
+    assert(masuda_gaze_att > 0.0);
+    assert(evaluate_masuda_empathic_contagion_interaction(&geom, 0.7, 0.8, &masuda_contagion_int));
+    assert(masuda_contagion_int > 0.0);
+    printf("   ✓ MASUDA, KUNIZAWA & TAKAHASHI naturalness variance, reciprocal gaze attenuation, and empathic contagion interaction verified successfully\n");
+
     // Error validation tests for Wang models
     double dummy_out = 0.0;
     assert(!evaluate_wang_geigel_character_warmth(NULL, 0.65, 0.45, &dummy_out));
@@ -2074,6 +2085,19 @@ int main(void) {
     assert(!evaluate_masuda_empathic_sync_variance(&geom, -0.75, 0.65, &dummy_out));
     assert(!evaluate_masuda_empathic_sync_variance(&geom, 0.75, -0.65, &dummy_out));
     assert(!evaluate_masuda_empathic_sync_variance(&geom, 0.75, 0.65, NULL));
+
+    assert(!evaluate_masuda_naturalness_variance(NULL, 0.65, &dummy_out));
+    assert(!evaluate_masuda_naturalness_variance(&geom, -0.65, &dummy_out));
+    assert(!evaluate_masuda_naturalness_variance(&geom, 0.65, NULL));
+
+    assert(!evaluate_masuda_reciprocal_gaze_attenuation(NULL, 150.0, &dummy_out));
+    assert(!evaluate_masuda_reciprocal_gaze_attenuation(&geom, -150.0, &dummy_out));
+    assert(!evaluate_masuda_reciprocal_gaze_attenuation(&geom, 150.0, NULL));
+
+    assert(!evaluate_masuda_empathic_contagion_interaction(NULL, 0.7, 0.8, &dummy_out));
+    assert(!evaluate_masuda_empathic_contagion_interaction(&geom, -0.7, 0.8, &dummy_out));
+    assert(!evaluate_masuda_empathic_contagion_interaction(&geom, 0.7, -0.8, &dummy_out));
+    assert(!evaluate_masuda_empathic_contagion_interaction(&geom, 0.7, 0.8, NULL));
 
     printf("   ✓ MASUDA, KUNIZAWA & TAKAHASHI error validation and bounds checking verified successfully\n");
     printf("   ✓ WANG, GEIGEL & HERBERT error validation and bounds checking verified successfully\n");
