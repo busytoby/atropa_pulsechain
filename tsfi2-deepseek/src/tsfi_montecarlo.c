@@ -551,4 +551,28 @@ int tsfi_montecarlo_apriori_sample_count(
     return base_samples;
 }
 
+bool tsfi_montecarlo_adaptive_sigma(
+    double local_error,
+    float base_spatial_sigma,
+    float base_range_sigma,
+    float *adaptive_spatial,
+    float *adaptive_range
+) {
+    if (!adaptive_spatial || !adaptive_range) {
+        return false;
+    }
+
+    if (local_error > 0.1) {
+        *adaptive_spatial = base_spatial_sigma * 1.5f;
+        *adaptive_range = base_range_sigma * 0.7f;
+    } else if (local_error > 0.03) {
+        *adaptive_spatial = base_spatial_sigma * 1.1f;
+        *adaptive_range = base_range_sigma * 0.9f;
+    } else {
+        *adaptive_spatial = base_spatial_sigma * 0.8f;
+        *adaptive_range = base_range_sigma * 1.2f;
+    }
+    return true;
+}
+
 

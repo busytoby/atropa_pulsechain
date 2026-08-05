@@ -110,4 +110,13 @@ int tsfi_montecarlo_apriori_sample_count(
     int base_samples
 );
 
+// Estimates adaptive filter sigmas based on local error metrics.
+bool tsfi_montecarlo_adaptive_sigma(
+    double local_error,
+    float base_spatial_sigma,
+    float base_range_sigma,
+    float *adaptive_spatial,
+    float *adaptive_range
+);
+
 #endif // TSFI_MONTECARLO_H

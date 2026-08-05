@@ -133,6 +133,18 @@ int main(void) {
     assert(count2 == 4);
     printf("   ✓ Monte Carlo a priori initial sample count estimator verified successfully\n");
 
+    // 9. Test adaptive filter sigma selection
+    float adapt_spatial = 0.0f;
+    float adapt_range = 0.0f;
+    assert(tsfi_montecarlo_adaptive_sigma(0.12, 2.0f, 0.5f, &adapt_spatial, &adapt_range));
+    assert(adapt_spatial > 2.0f);
+    assert(adapt_range < 0.5f);
+
+    // Test error boundaries
+    assert(!tsfi_montecarlo_adaptive_sigma(0.12, 2.0f, 0.5f, NULL, &adapt_range));
+    assert(!tsfi_montecarlo_adaptive_sigma(0.12, 2.0f, 0.5f, &adapt_spatial, NULL));
+    printf("   ✓ Monte Carlo adaptive filter sigma estimator verified successfully\n");
+
     printf("[Test] All Monte Carlo Denoising tests completed successfully.\n");
     return 0;
 }
