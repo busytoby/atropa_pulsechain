@@ -338,3 +338,19 @@ bool evaluate_hyde_vocal_size_sync_variance(const teddy_geometry_t *geom, double
     return true;
 }
 
+bool evaluate_hyde_vocal_warmth_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+    if (!geom || duration_sec < 0.0 || !decay_variance_out) {
+        return false;
+    }
+    *decay_variance_out = exp(-duration_sec / (16.0 + geom->resilience_index * 6.0));
+    return true;
+}
+
+bool evaluate_hyde_vocal_tempo_sync_variance_mod(const teddy_geometry_t *geom, double tempo_sync_val, double *variance_out) {
+    if (!geom || tempo_sync_val < 0.0 || !variance_out) {
+        return false;
+    }
+    *variance_out = tempo_sync_val * (0.8 + geom->symmetry * 0.4);
+    return true;
+}
+
