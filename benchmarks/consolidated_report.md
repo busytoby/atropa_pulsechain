@@ -1,7 +1,7 @@
 # Consolidated Benchmark Report
 
 * **Date**: 2026-08-05
-* **Target Environment**: Linux Native (march=native, -O3, OpenMP enabled)
+* **Target Environment**: Linux Native (march=native, -O3)
 
 ## 1. Core Component Metrics
 
