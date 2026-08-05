@@ -416,11 +416,13 @@ bool tsfi_montecarlo_regression_denoise_lnr(
 
                     double w = exp((double)(-s_dist_sq / spatial_sig_sq - f_dist_sq / feature_sig_sq));
 
+                    // Build regression covariates based on local Markov transition rates (derivatives)
                     double v[4];
                     v[0] = 1.0;
-                    v[1] = (double)(n_feat.depth - c_feat.depth);
-                    v[2] = (double)(n_feat.emotional_weight - c_feat.emotional_weight);
-                    v[3] = (double)(n_albedo - c_albedo);
+                    v[1] = (double)(n_feat.depth - ((n_idx > 0) ? features[n_idx - 1].depth : n_feat.depth));
+                    v[2] = (double)(n_feat.emotional_weight - ((n_idx > 0) ? features[n_idx - 1].emotional_weight : n_feat.emotional_weight));
+                    float prev_albedo = (n_idx > 0) ? (features[n_idx - 1].albedo.x + features[n_idx - 1].albedo.y + features[n_idx - 1].albedo.z) * 0.3333f : n_albedo;
+                    v[3] = (double)(n_albedo - prev_albedo);
 
                     for (int i = 0; i < 4; i++) {
                         for (int j = 0; j < 4; j++) {
