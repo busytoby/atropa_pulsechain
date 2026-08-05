@@ -322,3 +322,19 @@ bool evaluate_scarpi_utilitarian_quality_control_decay_variance_mod(const teddy_
     return true;
 }
 
+bool evaluate_scarpi_hedonic_playful_engagement_decay_variance_mod(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+    if (!geom || duration_sec < 0.0 || !decay_variance_out) {
+        return false;
+    }
+    *decay_variance_out = exp(-duration_sec / (15.0 + geom->empathy_index * 5.0));
+    return true;
+}
+
+bool evaluate_scarpi_utilitarian_consistency_decay_variance_mod(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+    if (!geom || duration_sec < 0.0 || !decay_variance_out) {
+        return false;
+    }
+    *decay_variance_out = exp(-duration_sec / (15.0 + geom->empathy_index * 5.0));
+    return true;
+}
+
