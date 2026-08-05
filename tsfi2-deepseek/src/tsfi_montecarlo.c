@@ -316,8 +316,14 @@ bool tsfi_montecarlo_guided_path_non_local_means(
                             int n_px = nx + px;
                             if (c_px < 0 || c_px >= width || n_px < 0 || n_px >= width) continue;
 
-                            float diff_color = noisy_input[c_py * width + c_px] - noisy_input[n_py * width + n_px];
-                            float diff_emotion = emotional_map[c_py * width + c_px] - emotional_map[n_py * width + n_px];
+                            // Compare transition difference states (first derivatives) along the Markov steps
+                            float c_color_trans = noisy_input[c_py * width + c_px] - ((c_px > 0) ? noisy_input[c_py * width + c_px - 1] : noisy_input[c_py * width + c_px]);
+                            float n_color_trans = noisy_input[n_py * width + n_px] - ((n_px > 0) ? noisy_input[n_py * width + n_px - 1] : noisy_input[n_py * width + n_px]);
+                            float diff_color = c_color_trans - n_color_trans;
+
+                            float c_emot_trans = emotional_map[c_py * width + c_px] - ((c_px > 0) ? emotional_map[c_py * width + c_px - 1] : emotional_map[c_py * width + c_px]);
+                            float n_emot_trans = emotional_map[n_py * width + n_px] - ((n_px > 0) ? emotional_map[n_py * width + n_px - 1] : emotional_map[n_py * width + n_px]);
+                            float diff_emotion = c_emot_trans - n_emot_trans;
 
                             patch_dist_sq += (1.0f - empathy_bias) * diff_color * diff_color +
                                              empathy_bias * diff_emotion * diff_emotion;
