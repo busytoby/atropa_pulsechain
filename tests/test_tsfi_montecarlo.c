@@ -94,6 +94,19 @@ int main(void) {
     assert(!tsfi_montecarlo_guided_path_non_local_means(noisy_float, emotional_map, clean_guided, 3, 3, -0.2f, 1, 1, 0.8f));
     printf("   ✓ Monte Carlo Guided Path Non-Local Means reconstruction verified successfully\n");
 
+    // 6. Test Local Linear Regression Denoising Pass
+    float clean_regression[4] = {0};
+    assert(tsfi_montecarlo_regression_denoise(noisy_float, features, clean_regression, 2, 2, 1, 1.5f, 0.5f));
+    assert(clean_regression[0] > 0.0f);
+
+    // Test error boundaries for regression denoiser
+    assert(!tsfi_montecarlo_regression_denoise(NULL, features, clean_regression, 2, 2, 1, 1.5f, 0.5f));
+    assert(!tsfi_montecarlo_regression_denoise(noisy_float, NULL, clean_regression, 2, 2, 1, 1.5f, 0.5f));
+    assert(!tsfi_montecarlo_regression_denoise(noisy_float, features, NULL, 2, 2, 1, 1.5f, 0.5f));
+    assert(!tsfi_montecarlo_regression_denoise(noisy_float, features, clean_regression, -2, 2, 1, 1.5f, 0.5f));
+    assert(!tsfi_montecarlo_regression_denoise(noisy_float, features, clean_regression, 2, 2, -1, 1.5f, 0.5f));
+    printf("   ✓ Monte Carlo local regression denoiser verified successfully\n");
+
     printf("[Test] All Monte Carlo Denoising tests completed successfully.\n");
     return 0;
 }

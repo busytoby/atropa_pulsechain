@@ -70,4 +70,16 @@ bool tsfi_montecarlo_guided_path_non_local_means(
     float empathy_bias
 );
 
+// Performs a local linear regression denoising pass using G-Buffer features as regression covariates.
+bool tsfi_montecarlo_regression_denoise(
+    const float *noisy_input,
+    const TSFiMCAuxFeatures *features,
+    float *clean_output,
+    int width,
+    int height,
+    int window_radius,
+    float spatial_sigma,
+    float feature_sigma
+);
+
 #endif // TSFI_MONTECARLO_H
