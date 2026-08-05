@@ -805,6 +805,12 @@ bool evaluate_scarpi_hedonic_trust_variance(const teddy_geometry_t *geom, double
 // Models the decay rate of quality ratings based on prolonged testing durations (Scarpi).
 bool evaluate_scarpi_utilitarian_quality_control_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_quality_out);
 
+// Models the variance in playfulness engagement ratings based on dynamic novelty and aesthetic alignment (Scarpi).
+bool evaluate_scarpi_hedonic_playful_engagement_variance(const teddy_geometry_t *geom, double novelty_scale, double aesthetic_alignment, double *engagement_variance_out);
+
+// Models the variance in consistency decay rates based on tracking duration variations (Scarpi).
+bool evaluate_scarpi_utilitarian_consistency_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out);
+
 // Evaluates interaction trust based on visual aesthetics and novelty parameters (Scarpi).
 bool evaluate_scarpi_hedonic_trust(const teddy_geometry_t *geom, double aesthetic_rating, double novelty_scale, double *trust_out);
 
