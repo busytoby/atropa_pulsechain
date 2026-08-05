@@ -402,3 +402,19 @@ bool evaluate_hyde_vocal_size_sync_variance_mod(const teddy_geometry_t *geom, do
     return true;
 }
 
+bool evaluate_hyde_vocal_warmth_variance_mod(const teddy_geometry_t *geom, double warmth_val, double *variance_out) {
+    if (!geom || warmth_val < 0.0 || !variance_out) {
+        return false;
+    }
+    *variance_out = warmth_val * (0.8 + geom->symmetry * 0.4);
+    return true;
+}
+
+bool evaluate_hyde_vocal_tempo_range_variance_mod(const teddy_geometry_t *geom, double tempo_range_val, double *variance_out) {
+    if (!geom || tempo_range_val < 0.0 || !variance_out) {
+        return false;
+    }
+    *variance_out = tempo_range_val * (0.8 + geom->symmetry * 0.4);
+    return true;
+}
+
