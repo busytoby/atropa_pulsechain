@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <math.h>
 #include <string.h>
+#include "tsfi_montecarlo.h"
 
 static double test_thunk_executed_flag = 0.0;
 static double test_thunk_callback(void) {
@@ -2185,6 +2186,17 @@ int main(void) {
     test_avatar.geometry.stiffness = 0.5;
     simulate_fet_verlet_discharge(&test_avatar, 0.1);
     assert(test_avatar.geometry.damping >= 0.0);
+
+    // Verify a priori samples mapped to Tremolo 2-3 tree node parameters
+    TSFiMCAuxFeatures test_nodes[3];
+    memset(test_nodes, 0, sizeof(test_nodes));
+    test_nodes[0].depth = (float)test_avatar.geometry.head_fwhr;
+    test_nodes[1].depth = (float)(test_avatar.geometry.head_fwhr + 1.5); // Steep gradient simulating a 3-node branch split
+    test_nodes[2].depth = (float)(test_avatar.geometry.head_fwhr + 1.6);
+    
+    int apriori_nodes = tsfi_montecarlo_apriori_sample_count(test_nodes, 1, 0, 3, 1, 4);
+    assert(apriori_nodes == 8); // 2x multiplier triggered by the node split gradient
+    
     printf("   ✓ Tremolo 2-3 tree izotope verlet graph verification passed\n");
 
     // 2. Sustain red-black tree izotope effect verification
