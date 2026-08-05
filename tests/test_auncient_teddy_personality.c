@@ -1948,6 +1948,17 @@ int main(void) {
     assert(masuda_empathy > 0.0);
     printf("   ✓ MASUDA, KUNIZAWA & TAKAHASHI perceived naturalness, familiarity, and empathic synchronization verified successfully\n");
 
+    double masuda_naturalness_att = 0.0;
+    double masuda_familiarity_decay = 0.0;
+    double masuda_sync_var = 0.0;
+    assert(evaluate_masuda_naturalness_attenuation(&geom, 120.0, &masuda_naturalness_att));
+    assert(masuda_naturalness_att > 0.0);
+    assert(evaluate_masuda_conversational_familiarity_decay(&geom, 0.8, 15.0, &masuda_familiarity_decay));
+    assert(masuda_familiarity_decay > 0.0);
+    assert(evaluate_masuda_empathic_sync_variance(&geom, 0.75, 0.65, &masuda_sync_var));
+    assert(masuda_sync_var > 0.0);
+    printf("   ✓ MASUDA, KUNIZAWA & TAKAHASHI naturalness attenuation, familiarity decay, and empathic sync variance verified successfully\n");
+
     // Error validation tests for Wang models
     double dummy_out = 0.0;
     assert(!evaluate_wang_geigel_character_warmth(NULL, 0.65, 0.45, &dummy_out));
@@ -2049,6 +2060,20 @@ int main(void) {
     assert(!evaluate_masuda_empathic_synchronization(&geom, -0.7, 0.8, &dummy_out));
     assert(!evaluate_masuda_empathic_synchronization(&geom, 0.7, -0.8, &dummy_out));
     assert(!evaluate_masuda_empathic_synchronization(&geom, 0.7, 0.8, NULL));
+
+    assert(!evaluate_masuda_naturalness_attenuation(NULL, 120.0, &dummy_out));
+    assert(!evaluate_masuda_naturalness_attenuation(&geom, -120.0, &dummy_out));
+    assert(!evaluate_masuda_naturalness_attenuation(&geom, 120.0, NULL));
+
+    assert(!evaluate_masuda_conversational_familiarity_decay(NULL, 0.8, 15.0, &dummy_out));
+    assert(!evaluate_masuda_conversational_familiarity_decay(&geom, -0.8, 15.0, &dummy_out));
+    assert(!evaluate_masuda_conversational_familiarity_decay(&geom, 0.8, -15.0, &dummy_out));
+    assert(!evaluate_masuda_conversational_familiarity_decay(&geom, 0.8, 15.0, NULL));
+
+    assert(!evaluate_masuda_empathic_sync_variance(NULL, 0.75, 0.65, &dummy_out));
+    assert(!evaluate_masuda_empathic_sync_variance(&geom, -0.75, 0.65, &dummy_out));
+    assert(!evaluate_masuda_empathic_sync_variance(&geom, 0.75, -0.65, &dummy_out));
+    assert(!evaluate_masuda_empathic_sync_variance(&geom, 0.75, 0.65, NULL));
 
     printf("   ✓ MASUDA, KUNIZAWA & TAKAHASHI error validation and bounds checking verified successfully\n");
     printf("   ✓ WANG, GEIGEL & HERBERT error validation and bounds checking verified successfully\n");

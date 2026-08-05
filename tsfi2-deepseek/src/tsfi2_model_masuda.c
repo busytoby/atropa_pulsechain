@@ -27,3 +27,29 @@ bool evaluate_masuda_empathic_synchronization(const teddy_geometry_t *geom, doub
     *empathy_out = (blink_sync_rate * 0.5 + pupil_dilation_sync * 0.5) * (0.85 + geom->empathy_index * 0.35);
     return true;
 }
+
+bool evaluate_masuda_naturalness_attenuation(const teddy_geometry_t *geom, double sync_delay_ms, double *attenuated_naturalness_out) {
+    if (!geom || sync_delay_ms < 0.0 || !attenuated_naturalness_out) {
+        return false;
+    }
+    *attenuated_naturalness_out = (1.0 / (1.0 + (sync_delay_ms / 150.0))) * (1.10 + geom->reassurance_capability * 0.25);
+    return true;
+}
+
+bool evaluate_masuda_conversational_familiarity_decay(const teddy_geometry_t *geom, double initial_familiarity, double duration_sec, double *decayed_familiarity_out) {
+    if (!geom || initial_familiarity < 0.0 || duration_sec < 0.0 || !decayed_familiarity_out) {
+        return false;
+    }
+    *decayed_familiarity_out = initial_familiarity * exp(-duration_sec / (24.0 + geom->resilience_index * 6.0));
+    return true;
+}
+
+bool evaluate_masuda_empathic_sync_variance(const teddy_geometry_t *geom, double blink_sync_rate, double pupil_dilation_sync, double *sync_variance_out) {
+    if (!geom || blink_sync_rate < 0.0 || pupil_dilation_sync < 0.0 || !sync_variance_out) {
+        return false;
+    }
+    double diff = fabs(blink_sync_rate - pupil_dilation_sync);
+    *sync_variance_out = (1.0 - diff * 0.85) * (0.95 + geom->empathy_index * 0.25);
+    return true;
+}
+

@@ -644,5 +644,14 @@ bool evaluate_masuda_conversational_familiarity(const teddy_geometry_t *geom, do
 // Models perceived empathy from gesture and pupil sync rate (Masuda, Kunizawa & Takahashi).
 bool evaluate_masuda_empathic_synchronization(const teddy_geometry_t *geom, double blink_sync_rate, double pupil_dilation_sync, double *empathy_out);
 
+// Models naturalness attenuation from expression sync delays (Masuda, Kunizawa & Takahashi).
+bool evaluate_masuda_naturalness_attenuation(const teddy_geometry_t *geom, double sync_delay_ms, double *attenuated_naturalness_out);
+
+// Models conversational familiarity decay over elapsed silent durations (Masuda, Kunizawa & Takahashi).
+bool evaluate_masuda_conversational_familiarity_decay(const teddy_geometry_t *geom, double initial_familiarity, double duration_sec, double *decayed_familiarity_out);
+
+// Models empathic synchronization variance based on interactants (Masuda, Kunizawa & Takahashi).
+bool evaluate_masuda_empathic_sync_variance(const teddy_geometry_t *geom, double blink_sync_rate, double pupil_dilation_sync, double *sync_variance_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H
 
