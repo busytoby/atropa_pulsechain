@@ -781,6 +781,12 @@ bool evaluate_hyde_vocal_naturalness_variance(const teddy_geometry_t *geom, doub
 // Models the decay rate of intonation amplitude variance over dynamic interaction durations (Hyde et al.).
 bool evaluate_hyde_intonation_amplitude_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_amplitude_out);
 
+// Models the variance in conversational synchronization ratings based on vocal tempo matching and size mismatch levels (Hyde et al.).
+bool evaluate_hyde_vocal_tempo_sync_variance(const teddy_geometry_t *geom, double tempo_sync_val, double size_mismatch, double *sync_variance_out);
+
+// Models the decay rate of vocal size jitter variation over dynamic interaction durations (Hyde et al.).
+bool evaluate_hyde_vocal_size_jitter_decay_mod(const teddy_geometry_t *geom, double duration_sec, double *decayed_size_jitter_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 
