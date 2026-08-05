@@ -31,6 +31,11 @@ static float calculate_personality_guidance_weight(const teddy_geometry_t *geom,
     char status_buf[64];
     int risk = 0;
 
+    // Modulate base emotional sensitivity based on the main character's (HoganBank) registered risk level
+    if (tsfi_vsen_vaesen_lookup("HoganBank", type_buf, &risk, status_buf, sizeof(type_buf)) == 0) {
+        base_emot *= (float)(1.0 + 0.1 * (double)risk);
+    }
+
     // Scale threat models up and safety models down if regional fear telemetry is active
     double threat_multiplier = 1.0 + 0.15 * (double)fear_level;
     double safety_multiplier = 1.0 / (1.0 + 0.15 * (double)fear_level);
@@ -98,6 +103,7 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
     tsfi_vsen_vaesen_register("Huldra", "Skogsra", 5, "Alluring");
     tsfi_vsen_vaesen_register("Myling", "Ghost", 7, "Restless");
     tsfi_vsen_vaesen_register("Varulv", "Werewolf", 8, "Aggressive");
+    tsfi_vsen_vaesen_register("HoganBank", "Teddy Bear", 5, "Active");
 
     int fear_level = 0;
     tsfi_vsen_vaesen_get_aggregate_fear("Upsala", &fear_level);
