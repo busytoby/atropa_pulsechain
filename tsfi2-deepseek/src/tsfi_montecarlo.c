@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L
 #include "tsfi_montecarlo.h"
 #include <math.h>
 #include <string.h>
@@ -677,6 +678,40 @@ bool tsfi_montecarlo_collaborative_block_matching_filter(
                 clean_output[y * width + x] = noisy_input[y * width + x];
             }
         }
+    }
+
+    return true;
+}
+
+bool tsfi_montecarlo_parse_deepseek_guide(
+    const char *deepseek_response,
+    float *guide_map_out,
+    int width,
+    int height
+) {
+    if (!deepseek_response || !guide_map_out || width <= 0 || height <= 0) {
+        return false;
+    }
+
+    int total_pixels = width * height;
+    int count = 0;
+    
+    // Copy response to parse tokens
+    char *dup = strdup(deepseek_response);
+    if (!dup) return false;
+
+    char *token = strtok(dup, " ,\t\n\r");
+    while (token && count < total_pixels) {
+        float val = (float)atof(token);
+        guide_map_out[count++] = val;
+        token = strtok(NULL, " ,\t\n\r");
+    }
+    free(dup);
+
+    // If response was short, pad remainder with the last valid value (or 0.0f)
+    float pad_val = (count > 0) ? guide_map_out[count - 1] : 0.0f;
+    while (count < total_pixels) {
+        guide_map_out[count++] = pad_val;
     }
 
     return true;

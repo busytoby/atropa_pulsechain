@@ -148,4 +148,12 @@ bool tsfi_montecarlo_collaborative_block_matching_filter(
     int search_radius
 );
 
+// Parses local DeepSeek text response to populate a 2D confidence/emotional guide map
+bool tsfi_montecarlo_parse_deepseek_guide(
+    const char *deepseek_response,
+    float *guide_map_out,
+    int width,
+    int height
+);
+
 #endif // TSFI_MONTECARLO_H

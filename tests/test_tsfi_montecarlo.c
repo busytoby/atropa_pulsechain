@@ -189,6 +189,21 @@ int main(void) {
     assert(!tsfi_montecarlo_collaborative_block_matching_filter(noisy_float, clean_cnlm, 2, 2, -1.5f, 1, 1));
     printf("   ✓ Monte Carlo Collaborative Block-Matching NLM verified successfully\n");
 
+    // 12. Test parsing local DeepSeek guide responses
+    float parsed_guide[4] = {0.0f};
+    const char *mock_response = "0.12 0.35 0.58 0.77";
+    assert(tsfi_montecarlo_parse_deepseek_guide(mock_response, parsed_guide, 2, 2));
+    assert(parsed_guide[0] == 0.12f);
+    assert(parsed_guide[1] == 0.35f);
+    assert(parsed_guide[2] == 0.58f);
+    assert(parsed_guide[3] == 0.77f);
+
+    // Test error boundaries
+    assert(!tsfi_montecarlo_parse_deepseek_guide(NULL, parsed_guide, 2, 2));
+    assert(!tsfi_montecarlo_parse_deepseek_guide(mock_response, NULL, 2, 2));
+    assert(!tsfi_montecarlo_parse_deepseek_guide(mock_response, parsed_guide, -2, 2));
+    printf("   ✓ Monte Carlo local DeepSeek guide response parser verified successfully\n");
+
     printf("[Test] All Monte Carlo Denoising tests completed successfully.\n");
     return 0;
 }
