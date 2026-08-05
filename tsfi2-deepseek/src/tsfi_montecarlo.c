@@ -476,19 +476,22 @@ bool tsfi_montecarlo_aposteriori_error_estimate(
     if (!samples || count <= 1 || !error_out) {
         return false;
     }
+    // We treat the sequential samples as states in a Markov chain.
+    // Rather than accumulating independent noise, we compute the transition variance
+    // representing the mutation step deviation of the Markov structure.
+    double transition_sum = 0.0;
+    for (int i = 1; i < count; i++) {
+        double diff = samples[i] - samples[i-1];
+        transition_sum += diff * diff;
+    }
+    double transition_variance = transition_sum / (count - 1);
+
     double sum = 0.0;
     for (int i = 0; i < count; i++) {
         sum += samples[i];
     }
     double mean = sum / count;
-    double sq_diff_sum = 0.0;
-    for (int i = 0; i < count; i++) {
-        double diff = samples[i] - mean;
-        sq_diff_sum += diff * diff;
-    }
-    double variance = sq_diff_sum / (count - 1);
-    double std_dev = sqrt(variance);
-    double error = std_dev / (mean * sqrt((double)count) + 1e-5);
+    double error = sqrt(transition_variance) / (mean + 1e-5);
     *error_out = error;
     return (error > target_error);
 }
