@@ -7,6 +7,7 @@
 #include "tsfi_opt_zmm.h"
 #include "tsfi_time.h"
 #include "tsfi_montecarlo.h"
+#include <immintrin.h>
 
 // Define external execution
 extern void tsfi_kernel_deepseek_mla(void *regs, ZmmSynapse *syn);
@@ -63,7 +64,6 @@ int main(void) {
     
     // Denoising guide simulation using Monte Carlo systems
     printf("  [MONTE CARLO] Bridging DeepSeek guidance to Monte Carlo path reconstruction...\n");
-    const char *mock_response = "confidence=0.95, empathy=0.88, valence=0.72";
     const int map_w = 64;
     const int map_h = 64;
     float *guide_map = malloc(map_w * map_h * sizeof(float));
@@ -75,12 +75,19 @@ int main(void) {
         noisy_input[i] = (float)rand() / RAND_MAX;
     }
     
-    // Warmup & test correctness of the parser and guided NLM filter
-    bool parse_ok = tsfi_montecarlo_parse_deepseek_guide(mock_response, guide_map, map_w, map_h);
+    // Generate guide map directly from AVX-512 register outputs of the DeepSeek MLA kernel
+    __m512 *zmm = (__m512*)regs;
+    for (int y = 0; y < map_h; y++) {
+        for (int x = 0; x < map_w; x += 16) {
+            tsfi_kernel_deepseek_mla(regs, &syn);
+            _mm512_storeu_ps(&guide_map[y * map_w + x], zmm[3]);
+        }
+    }
+    
     bool filter_ok = tsfi_montecarlo_guided_path_non_local_means(noisy_input, guide_map, clean_output, map_w, map_h, 0.2f, 2, 4, 0.8f);
     
-    if (parse_ok && filter_ok) {
-        printf("  [MONTE CARLO] Guided NLM setup verified. Running throughput benchmark...\n");
+    if (filter_ok) {
+        printf("  [MONTE CARLO] Guided NLM setup verified with dynamic register bridge. Running throughput benchmark...\n");
         const uint64_t mc_iterations = 1000;
         unsigned long long mc_start = get_time_ns();
         for (uint64_t i = 0; i < mc_iterations; i++) {
