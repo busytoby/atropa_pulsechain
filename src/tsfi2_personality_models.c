@@ -1161,3 +1161,19 @@ bool evaluate_hyde_pitch_range_engagement(const teddy_geometry_t *geom, double p
     return true;
 }
 
+bool evaluate_keating_chin_asymmetry(const teddy_geometry_t *geom, double left_jaw_width, double right_jaw_width, double *asymmetry_dominance_out) {
+    if (!geom || left_jaw_width < 0.0 || right_jaw_width < 0.0 || !asymmetry_dominance_out) {
+        return false;
+    }
+    *asymmetry_dominance_out = fabs(left_jaw_width - right_jaw_width) * (1.2 + geom->leadership_profile * 0.4);
+    return true;
+}
+
+bool evaluate_keating_mouth_curvature(const teddy_geometry_t *geom, double upturn_curvature, double *warmth_rating_out) {
+    if (!geom || upturn_curvature < 0.0 || !warmth_rating_out) {
+        return false;
+    }
+    *warmth_rating_out = upturn_curvature * (0.8 + geom->empathy_index * 0.5);
+    return true;
+}
+

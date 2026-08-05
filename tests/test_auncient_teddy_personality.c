@@ -729,6 +729,15 @@ int main(void) {
     assert(pitch_range_engage > 0.0);
     printf("   ✓ HYDE et al. tremor frequency sync and pitch range engagement verified successfully\n");
 
+    // Test Keating chin asymmetry and mouth curvature calculations
+    double chin_asymmetry = 0.0;
+    double mouth_curvature = 0.0;
+    assert(evaluate_keating_chin_asymmetry(&geom, 0.4, 0.5, &chin_asymmetry));
+    assert(chin_asymmetry > 0.0);
+    assert(evaluate_keating_mouth_curvature(&geom, 0.3, &mouth_curvature));
+    assert(mouth_curvature > 0.0);
+    printf("   ✓ KEATING, C. F. chin asymmetry and mouth curvature verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge

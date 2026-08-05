@@ -505,6 +505,12 @@ bool evaluate_hyde_tremor_frequency_sync(const teddy_geometry_t *geom, double ch
 // Models perceived conversational engagement based on pitch range variations (Hyde et al.).
 bool evaluate_hyde_pitch_range_engagement(const teddy_geometry_t *geom, double pitch_range_hz, double *engagement_rating_out);
 
+// Evaluates how unilateral jaw or chin asymmetry structures alter perceived dominance and threat ratings (Keating, C. F.).
+bool evaluate_keating_chin_asymmetry(const teddy_geometry_t *geom, double left_jaw_width, double right_jaw_width, double *asymmetry_dominance_out);
+
+// Models the relationship between upturned mouth curvature and perceived babyfacedness (Keating, C. F.).
+bool evaluate_keating_mouth_curvature(const teddy_geometry_t *geom, double upturn_curvature, double *warmth_rating_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 
