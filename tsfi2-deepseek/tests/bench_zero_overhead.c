@@ -111,19 +111,14 @@ static ShmQueue g_shm_q;
 void* shm_producer(void* arg) {
     (void)arg;
     pin_to_core(0);
-    uint32_t cached_tail = atomic_load_explicit(&g_shm_q.tail, memory_order_relaxed);
-    uint32_t current_head = atomic_load_explicit(&g_shm_q.head, memory_order_relaxed);
     for (int i = 0; i < ITERATIONS_SYS; i++) {
+        uint32_t current_head = atomic_load_explicit(&g_shm_q.head, memory_order_relaxed);
         uint32_t next = (current_head + 1) & (BUFFER_SIZE - 1);
-        while (next == cached_tail) {
+        while (next == atomic_load_explicit(&g_shm_q.tail, memory_order_acquire)) {
             __builtin_ia32_pause();
-            cached_tail = atomic_load_explicit(&g_shm_q.tail, memory_order_acquire);
         }
         g_shm_q.buffer[current_head] = (char)(i & 0xFF);
-        current_head = next;
-        if ((i & 511) == 511 || i == ITERATIONS_SYS - 1) {
-            atomic_store_explicit(&g_shm_q.head, current_head, memory_order_release);
-        }
+        atomic_store_explicit(&g_shm_q.head, next, memory_order_release);
     }
     return NULL;
 }
@@ -132,18 +127,13 @@ void* shm_consumer(void* arg) {
     (void)arg;
     pin_to_core(1);
     int consumed = 0;
-    uint32_t cached_head = atomic_load_explicit(&g_shm_q.head, memory_order_relaxed);
-    uint32_t current_tail = atomic_load_explicit(&g_shm_q.tail, memory_order_relaxed);
     while (consumed < ITERATIONS_SYS) {
-        while (current_tail == cached_head) {
+        uint32_t current_tail = atomic_load_explicit(&g_shm_q.tail, memory_order_relaxed);
+        while (current_tail == atomic_load_explicit(&g_shm_q.head, memory_order_acquire)) {
             __builtin_ia32_pause();
-            cached_head = atomic_load_explicit(&g_shm_q.head, memory_order_acquire);
         }
-        current_tail = (current_tail + 1) & (BUFFER_SIZE - 1);
+        atomic_store_explicit(&g_shm_q.tail, (current_tail + 1) & (BUFFER_SIZE - 1), memory_order_release);
         consumed++;
-        if ((consumed & 511) == 0 || consumed == ITERATIONS_SYS) {
-            atomic_store_explicit(&g_shm_q.tail, current_tail, memory_order_release);
-        }
     }
     return NULL;
 }
@@ -151,19 +141,14 @@ void* shm_consumer(void* arg) {
 void* lockfree_producer(void* arg) {
     (void)arg;
     pin_to_core(0);
-    uint32_t cached_tail = atomic_load_explicit(&g_lf_q.tail, memory_order_relaxed);
-    uint32_t current_head = atomic_load_explicit(&g_lf_q.head, memory_order_relaxed);
     for (int i = 0; i < ITERATIONS_LOCK; i++) {
+        uint32_t current_head = atomic_load_explicit(&g_lf_q.head, memory_order_relaxed);
         uint32_t next = (current_head + 1) & (BUFFER_SIZE - 1);
-        while (next == cached_tail) {
+        while (next == atomic_load_explicit(&g_lf_q.tail, memory_order_acquire)) {
             __builtin_ia32_pause();
-            cached_tail = atomic_load_explicit(&g_lf_q.tail, memory_order_acquire);
         }
         g_lf_q.buffer[current_head] = (char)(i & 0xFF);
-        current_head = next;
-        if ((i & 511) == 511 || i == ITERATIONS_LOCK - 1) {
-            atomic_store_explicit(&g_lf_q.head, current_head, memory_order_release);
-        }
+        atomic_store_explicit(&g_lf_q.head, next, memory_order_release);
     }
     return NULL;
 }
@@ -172,18 +157,13 @@ void* lockfree_consumer(void* arg) {
     (void)arg;
     pin_to_core(1);
     int consumed = 0;
-    uint32_t cached_head = atomic_load_explicit(&g_lf_q.head, memory_order_relaxed);
-    uint32_t current_tail = atomic_load_explicit(&g_lf_q.tail, memory_order_relaxed);
     while (consumed < ITERATIONS_LOCK) {
-        while (current_tail == cached_head) {
+        uint32_t current_tail = atomic_load_explicit(&g_lf_q.tail, memory_order_relaxed);
+        while (current_tail == atomic_load_explicit(&g_lf_q.head, memory_order_acquire)) {
             __builtin_ia32_pause();
-            cached_head = atomic_load_explicit(&g_lf_q.head, memory_order_acquire);
         }
-        current_tail = (current_tail + 1) & (BUFFER_SIZE - 1);
+        atomic_store_explicit(&g_lf_q.tail, (current_tail + 1) & (BUFFER_SIZE - 1), memory_order_release);
         consumed++;
-        if ((consumed & 511) == 0 || consumed == ITERATIONS_LOCK) {
-            atomic_store_explicit(&g_lf_q.tail, current_tail, memory_order_release);
-        }
     }
     return NULL;
 }
