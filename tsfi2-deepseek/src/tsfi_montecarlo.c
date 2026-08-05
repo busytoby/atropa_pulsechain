@@ -518,4 +518,37 @@ bool tsfi_montecarlo_aposteriori_error_estimate(
     return (error > target_error);
 }
 
+int tsfi_montecarlo_apriori_sample_count(
+    const TSFiMCAuxFeatures *features,
+    int x,
+    int y,
+    int width,
+    int height,
+    int base_samples
+) {
+    if (!features || width <= 0 || height <= 0 || x < 0 || x >= width || y < 0 || y >= height) {
+        return base_samples;
+    }
+
+    float grad_depth_x = 0.0f;
+    float grad_depth_y = 0.0f;
+    int idx = y * width + x;
+
+    if (x > 0 && x < width - 1) {
+        grad_depth_x = fabsf(features[idx + 1].depth - features[idx - 1].depth);
+    }
+    if (y > 0 && y < height - 1) {
+        grad_depth_y = fabsf(features[idx + width].depth - features[idx - width].depth);
+    }
+
+    float grad_mag = sqrtf(grad_depth_x * grad_depth_x + grad_depth_y * grad_depth_y);
+
+    if (grad_mag > 1.0f) {
+        return base_samples * 2;
+    } else if (grad_mag > 0.3f) {
+        return (int)((float)base_samples * 1.5f);
+    }
+    return base_samples;
+}
+
 

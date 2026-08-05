@@ -119,6 +119,20 @@ int main(void) {
     assert(!tsfi_montecarlo_aposteriori_error_estimate(test_samples, 2, 0.05, NULL));
     printf("   ✓ Monte Carlo a posteriori relative error estimator verified successfully\n");
 
+    // 8. Test a priori sample count estimation based on feature gradients
+    TSFiMCAuxFeatures grad_features[3] = {
+        {{0.0f, 1.0f, 0.0f}, 1.0f, {0.1f, 0.1f, 0.1f}, 0.0f},
+        {{0.0f, 1.0f, 0.0f}, 2.5f, {0.1f, 0.1f, 0.1f}, 0.0f}, // steep gradient
+        {{0.0f, 1.0f, 0.0f}, 2.6f, {0.1f, 0.1f, 0.1f}, 0.0f}
+    };
+    int count1 = tsfi_montecarlo_apriori_sample_count(grad_features, 1, 0, 3, 1, 4);
+    assert(count1 == 8); // Should scale up by 2x due to grad_depth > 1.0f
+
+    // Test default fallback count
+    int count2 = tsfi_montecarlo_apriori_sample_count(NULL, 1, 0, 3, 1, 4);
+    assert(count2 == 4);
+    printf("   ✓ Monte Carlo a priori initial sample count estimator verified successfully\n");
+
     printf("[Test] All Monte Carlo Denoising tests completed successfully.\n");
     return 0;
 }

@@ -100,4 +100,14 @@ bool tsfi_montecarlo_aposteriori_error_estimate(
     double *error_out
 );
 
+// Estimates a priori initial sample count based on local G-buffer gradients.
+int tsfi_montecarlo_apriori_sample_count(
+    const TSFiMCAuxFeatures *features,
+    int x,
+    int y,
+    int width,
+    int height,
+    int base_samples
+);
+
 #endif // TSFI_MONTECARLO_H
