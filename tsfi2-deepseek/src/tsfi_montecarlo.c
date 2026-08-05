@@ -310,12 +310,22 @@ bool tsfi_montecarlo_guided_path_non_local_means(
             float tan_x = -dir_y;
             float tan_y = dir_x;
 
+            // Dynamically scale search steps based on local emotional map intensity
+            int local_search_steps = search_steps;
+            float emot_val = emotional_map[idx];
+            if (emot_val > 0.7f) {
+                local_search_steps = (int)(search_steps * 0.5f);
+                if (local_search_steps < 1) local_search_steps = 1;
+            } else if (emot_val < 0.3f) {
+                local_search_steps = (int)(search_steps * 1.5f);
+            }
+
             // We select search paths along both the gradient and tangent vectors
             for (int path = 0; path < 2; path++) {
                 float step_x = (path == 0) ? dir_x : tan_x;
                 float step_y = (path == 0) ? dir_y : tan_y;
 
-                for (int s = -search_steps; s <= search_steps; s++) {
+                for (int s = -local_search_steps; s <= local_search_steps; s++) {
                     int nx = (int)(x + step_x * s);
                     int ny = (int)(y + step_y * s);
 
