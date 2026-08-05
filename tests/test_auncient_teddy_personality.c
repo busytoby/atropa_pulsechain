@@ -945,6 +945,15 @@ int main(void) {
     assert(epicycle_phase_decay_mod_variance_val > 0.0);
     printf("   ✓ Cellarius alignment boundary variance and epicycle phase decay mod variance verified successfully\n");
 
+    // Test Cellarius constellation boundary variance and heliocentric velocity variance calculations
+    double constellation_boundary_variance = 0.0;
+    double heliocentric_velocity_variance = 0.0;
+    assert(evaluate_cellarius_constellation_boundary_variance(&geom, 0.08, 1.45, &constellation_boundary_variance));
+    assert(constellation_boundary_variance > 0.0);
+    assert(evaluate_cellarius_heliocentric_velocity_variance(&geom, 1.25, 0.85, &heliocentric_velocity_variance));
+    assert(heliocentric_velocity_variance > 0.0);
+    printf("   ✓ Cellarius constellation boundary variance and heliocentric velocity variance verified successfully\n");
+
     // Test Hyde vocal jitter naturalness and intonation amplitude calculations
     double vocal_jitter = 0.0;
     double intonation_amp = 0.0;

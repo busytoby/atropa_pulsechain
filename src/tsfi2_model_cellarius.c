@@ -210,3 +210,19 @@ bool evaluate_cellarius_epicycle_phase_decay_mod_variance(const teddy_geometry_t
     return true;
 }
 
+bool evaluate_cellarius_constellation_boundary_variance(const teddy_geometry_t *geom, double eccentricity_val, double scale_factor, double *variance_out) {
+    if (!geom || eccentricity_val < 0.0 || scale_factor < 0.0 || !variance_out) {
+        return false;
+    }
+    *variance_out = eccentricity_val * scale_factor * (0.8 + geom->head_fwhr * 0.4);
+    return true;
+}
+
+bool evaluate_cellarius_heliocentric_velocity_variance(const teddy_geometry_t *geom, double phase_val, double alignment_factor, double *variance_out) {
+    if (!geom || phase_val < 0.0 || alignment_factor < 0.0 || !variance_out) {
+        return false;
+    }
+    *variance_out = phase_val * alignment_factor * (0.8 + geom->head_fwhr * 0.4);
+    return true;
+}
+

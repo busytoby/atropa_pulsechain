@@ -649,6 +649,12 @@ bool evaluate_cellarius_alignment_boundary_variance(const teddy_geometry_t *geom
 // Models the variance in epicycle offset decay rates based on tracking duration variations (Cellarius).
 bool evaluate_cellarius_epicycle_phase_decay_mod_variance(const teddy_geometry_t *geom, double tracking_duration, double *decay_variance_out);
 
+// Models the variance in constellation boundary settings based on orbital eccentricity variations and constellation scale factors (Cellarius).
+bool evaluate_cellarius_constellation_boundary_variance(const teddy_geometry_t *geom, double eccentricity_val, double scale_factor, double *variance_out);
+
+// Models the variance in heliocentric phase angle velocity settings under orbital alignment perturbations (Cellarius).
+bool evaluate_cellarius_heliocentric_velocity_variance(const teddy_geometry_t *geom, double phase_val, double alignment_factor, double *variance_out);
+
 // Evaluates dynamic changes in vocal intonation range alignment with eyebrow movements (Hyde et al.).
 bool evaluate_hyde_dynamic_intonation(const teddy_geometry_t *geom, double intonation_range, double brow_movement, double *intonation_out);
 
