@@ -177,6 +177,18 @@ int main(void) {
 
     printf("   ✓ Monte Carlo ACID filter parameters transaction lifecycle verified successfully\n");
 
+    // 11. Test Collaborative Block-Matching Non-Local Means (CNLM) filter
+    float clean_cnlm[4] = {0.0f};
+    assert(tsfi_montecarlo_collaborative_block_matching_filter(noisy_float, clean_cnlm, 2, 2, 1.5f, 1, 1));
+    assert(clean_cnlm[0] > 0.0f);
+
+    // Test error boundaries
+    assert(!tsfi_montecarlo_collaborative_block_matching_filter(NULL, clean_cnlm, 2, 2, 1.5f, 1, 1));
+    assert(!tsfi_montecarlo_collaborative_block_matching_filter(noisy_float, NULL, 2, 2, 1.5f, 1, 1));
+    assert(!tsfi_montecarlo_collaborative_block_matching_filter(noisy_float, clean_cnlm, -2, 2, 1.5f, 1, 1));
+    assert(!tsfi_montecarlo_collaborative_block_matching_filter(noisy_float, clean_cnlm, 2, 2, -1.5f, 1, 1));
+    printf("   ✓ Monte Carlo Collaborative Block-Matching NLM verified successfully\n");
+
     printf("[Test] All Monte Carlo Denoising tests completed successfully.\n");
     return 0;
 }

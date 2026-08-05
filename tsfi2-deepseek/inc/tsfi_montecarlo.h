@@ -137,4 +137,15 @@ TSFiMCFilterTx tsfi_montecarlo_begin_filter_transaction(TSFiMCFilterState *state
 bool tsfi_montecarlo_commit_filter_transaction(TSFiMCFilterTx *tx, float next_spatial, float next_range);
 void tsfi_montecarlo_rollback_filter_transaction(TSFiMCFilterTx *tx);
 
+// Collaborative Block-Matching Non-Local Means (CNLM) filter
+bool tsfi_montecarlo_collaborative_block_matching_filter(
+    const float *noisy_input,
+    float *clean_output,
+    int width,
+    int height,
+    float filter_strength,
+    int patch_radius,
+    int search_radius
+);
+
 #endif // TSFI_MONTECARLO_H

@@ -615,4 +615,71 @@ void tsfi_montecarlo_rollback_filter_transaction(TSFiMCFilterTx *tx) {
     }
 }
 
+bool tsfi_montecarlo_collaborative_block_matching_filter(
+    const float *noisy_input,
+    float *clean_output,
+    int width,
+    int height,
+    float filter_strength,
+    int patch_radius,
+    int search_radius
+) {
+    if (!noisy_input || !clean_output || width <= 0 || height <= 0 || filter_strength <= 0.0f) {
+        return false;
+    }
+
+    float h_sq = filter_strength * filter_strength;
+
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            float total_weight = 0.0f;
+            float filtered_pixel_val = 0.0f;
+
+            for (int sy = -search_radius; sy <= search_radius; sy++) {
+                int ny = y + sy;
+                if (ny < 0 || ny >= height) continue;
+
+                for (int sx = -search_radius; sx <= search_radius; sx++) {
+                    int nx = x + sx;
+                    if (nx < 0 || nx >= width) continue;
+
+                    float patch_dist_sq = 0.0f;
+                    int patch_pixels = 0;
+
+                    for (int py = -patch_radius; py <= patch_radius; py++) {
+                        int c_py = y + py;
+                        int n_py = ny + py;
+                        if (c_py < 0 || c_py >= height || n_py < 0 || n_py >= height) continue;
+
+                        for (int px = -patch_radius; px <= patch_radius; px++) {
+                            int c_px = x + px;
+                            int n_px = nx + px;
+                            if (c_px < 0 || c_px >= width || n_px < 0 || n_px >= width) continue;
+
+                            float diff = noisy_input[c_py * width + c_px] - noisy_input[n_py * width + n_px];
+                            patch_dist_sq += diff * diff;
+                            patch_pixels++;
+                        }
+                    }
+
+                    if (patch_pixels > 0) {
+                        float dist_normalized = patch_dist_sq / patch_pixels;
+                        float w = expf(-dist_normalized / h_sq);
+                        total_weight += w;
+                        filtered_pixel_val += w * noisy_input[ny * width + nx];
+                    }
+                }
+            }
+
+            if (total_weight > 0.0f) {
+                clean_output[y * width + x] = filtered_pixel_val / total_weight;
+            } else {
+                clean_output[y * width + x] = noisy_input[y * width + x];
+            }
+        }
+    }
+
+    return true;
+}
+
 
