@@ -981,23 +981,14 @@ int main(void) {
     assert(epicycle_radius_decay_variance > 0.0);
     printf("   ✓ Cellarius planetary eccentricity variance mod and epicycle radius decay variance verified successfully\n");
 
-    // Test Cellarius planetary eccentricity decay variance and epicycle radius variance mod variance calculations
+    // Test Cellarius planetary eccentricity decay variance and heliocentric alignment decay variance calculations
     double planetary_eccentricity_decay_variance = 0.0;
-    double epicycle_radius_variance_mod_variance = 0.0;
+    double heliocentric_alignment_decay_variance = 0.0;
     assert(evaluate_cellarius_planetary_eccentricity_decay_variance(&geom, 14.5, &planetary_eccentricity_decay_variance));
     assert(planetary_eccentricity_decay_variance > 0.0);
-    assert(evaluate_cellarius_epicycle_radius_variance_mod_variance(&geom, 10.5, &epicycle_radius_variance_mod_variance));
-    assert(epicycle_radius_variance_mod_variance > 0.0);
-    printf("   ✓ Cellarius planetary eccentricity decay variance and epicycle radius variance mod variance verified successfully\n");
-
-    // Test Cellarius heliocentric alignment decay variance and epicycle velocity variance mod variance calculations
-    double heliocentric_alignment_decay_variance = 0.0;
-    double epicycle_velocity_variance_mod_variance = 0.0;
     assert(evaluate_cellarius_heliocentric_alignment_decay_variance(&geom, 15.0, &heliocentric_alignment_decay_variance));
     assert(heliocentric_alignment_decay_variance > 0.0);
-    assert(evaluate_cellarius_epicycle_velocity_variance_mod_variance(&geom, 12.0, &epicycle_velocity_variance_mod_variance));
-    assert(epicycle_velocity_variance_mod_variance > 0.0);
-    printf("   ✓ Cellarius heliocentric alignment decay variance and epicycle velocity variance mod variance verified successfully\n");
+    printf("   ✓ Cellarius planetary eccentricity decay variance and heliocentric alignment decay variance verified successfully\n");
 
     // Test Hyde vocal jitter naturalness and intonation amplitude calculations
     double vocal_jitter = 0.0;
@@ -1440,14 +1431,11 @@ int main(void) {
     assert(structural_consistency_variance_mod_val > 0.0);
     printf("   ✓ Scarpi playful engagement decay variance and structural consistency variance verified successfully\n");
 
-    // Test Scarpi playful arousal mod variance mod and quality control variance mod calculations
-    double playful_arousal_mod_variance_mod = 0.0;
+    // Test Scarpi quality control variance mod calculations
     double quality_control_variance_mod_val = 0.0;
-    assert(evaluate_scarpi_hedonic_playful_arousal_mod_variance_mod(&geom, 0.82, 0.92, &playful_arousal_mod_variance_mod));
-    assert(playful_arousal_mod_variance_mod > 0.0);
     assert(evaluate_scarpi_utilitarian_quality_control_variance_mod(&geom, 2.2, &quality_control_variance_mod_val));
     assert(quality_control_variance_mod_val > 0.0);
-    printf("   ✓ Scarpi playful arousal mod variance mod and quality control variance mod verified successfully\n");
+    printf("   ✓ Scarpi quality control variance mod verified successfully\n");
 
     // Test Scarpi playful arousal decay variance mod and operational trust variance mod calculations
     double playful_arousal_decay_variance_mod = 0.0;
@@ -1548,23 +1536,11 @@ int main(void) {
     assert(policy_target_engagement_decay_variance_val > 0.0);
     printf("   ✓ Castle diplomatic trust bounds variance mod variance and policy target engagement decay variance verified successfully\n");
 
-    // Test Castle diplomatic alignment variance mod variance and policy consistency decay variance mod calculations
-    double diplomatic_alignment_variance_mod_variance = 0.0;
+    // Test Castle policy consistency decay variance mod calculations
     double policy_consistency_decay_variance_mod_val = 0.0;
-    assert(evaluate_castle_diplomatic_alignment_variance_mod_variance(&geom, 0.82, &diplomatic_alignment_variance_mod_variance));
-    assert(diplomatic_alignment_variance_mod_variance > 0.0);
     assert(evaluate_castle_policy_consistency_decay_variance_mod(&geom, 16.0, &policy_consistency_decay_variance_mod_val));
     assert(policy_consistency_decay_variance_mod_val > 0.0);
-    printf("   ✓ Castle diplomatic alignment variance mod variance and policy consistency decay variance mod verified successfully\n");
-
-    // Test Castle diplomatic alignment decay variance mod variance and policy consistency variance mod variance calculations
-    double diplomatic_alignment_decay_variance_mod_variance = 0.0;
-    double policy_consistency_variance_mod_variance = 0.0;
-    assert(evaluate_castle_diplomatic_alignment_decay_variance_mod_variance(&geom, 15.0, &diplomatic_alignment_decay_variance_mod_variance));
-    assert(diplomatic_alignment_decay_variance_mod_variance > 0.0);
-    assert(evaluate_castle_policy_consistency_variance_mod_variance(&geom, 0.75, &policy_consistency_variance_mod_variance));
-    assert(policy_consistency_variance_mod_variance > 0.0);
-    printf("   ✓ Castle diplomatic alignment decay variance mod variance and policy consistency variance mod variance verified successfully\n");
+    printf("   ✓ Castle policy consistency decay variance mod verified successfully\n");
 
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;

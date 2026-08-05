@@ -676,14 +676,8 @@ bool evaluate_cellarius_epicycle_radius_decay_variance(const teddy_geometry_t *g
 // Models the variance in planetary eccentricity decay rates based on prolonged tracking intervals (Cellarius).
 bool evaluate_cellarius_planetary_eccentricity_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out);
 
-// Models the variance in epicycle orbital radius modulator ratings under dynamic layout symmetry variations (Cellarius).
-bool evaluate_cellarius_epicycle_radius_variance_mod_variance(const teddy_geometry_t *geom, double radius_val, double *variance_out);
-
 // Models the variance in heliocentric alignment scale decay rates based on prolonged tracking intervals (Cellarius).
 bool evaluate_cellarius_heliocentric_alignment_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out);
-
-// Models the variance in epicycle velocity modulator ratings under dynamic layout symmetry variations (Cellarius).
-bool evaluate_cellarius_epicycle_velocity_variance_mod_variance(const teddy_geometry_t *geom, double velocity_val, double *variance_out);
 
 // Evaluates dynamic changes in vocal intonation range alignment with eyebrow movements (Hyde et al.).
 bool evaluate_hyde_dynamic_intonation(const teddy_geometry_t *geom, double intonation_range, double brow_movement, double *intonation_out);
@@ -910,9 +904,6 @@ bool evaluate_scarpi_hedonic_playful_engagement_decay_variance(const teddy_geome
 // Models the variance in utilitarian structural consistency ratings based on task complexity levels (Scarpi).
 bool evaluate_scarpi_utilitarian_consistency_variance_mod(const teddy_geometry_t *geom, double complexity_level, double *variance_out);
 
-// Models the variance in playful arousal modulator ratings under dynamic layout symmetry variations (Scarpi).
-bool evaluate_scarpi_hedonic_playful_arousal_mod_variance_mod(const teddy_geometry_t *geom, double novelty_scale, double design_symmetry, double *variance_out);
-
 // Models the variance in quality control modulator ratings based on task complexity levels (Scarpi).
 bool evaluate_scarpi_utilitarian_quality_control_variance_mod(const teddy_geometry_t *geom, double complexity_level, double *variance_out);
 
@@ -1105,17 +1096,8 @@ bool evaluate_castle_diplomatic_trust_bounds_variance_mod(const teddy_geometry_t
 // Models the variance in decay rates of policy target engagement ratings based on prolonged tracking intervals (Castle).
 bool evaluate_castle_policy_target_engagement_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out);
 
-// Models the variance in diplomatic alignment modulator ratings under dynamic layout symmetry variations (Castle).
-bool evaluate_castle_diplomatic_alignment_variance_mod_variance(const teddy_geometry_t *geom, double alignment_score, double *variance_out);
-
 // Models the variance in policy consistency decay modulator ratings over prolonged tracking intervals (Castle).
 bool evaluate_castle_policy_consistency_decay_variance_mod(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out);
-
-// Models the variance in diplomatic alignment decay modulator ratings under dynamic layout symmetry variations (Castle).
-bool evaluate_castle_diplomatic_alignment_decay_variance_mod_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out);
-
-// Models the variance in policy consistency modulator ratings under dynamic layout symmetry variations (Castle).
-bool evaluate_castle_policy_consistency_variance_mod_variance(const teddy_geometry_t *geom, double consistency_score, double *variance_out);
 
 evaluation_tx_t begin_evaluation_transaction(teddy_geometry_t *target);
 bool commit_evaluation_transaction(evaluation_tx_t *tx);
