@@ -29,6 +29,17 @@ static void test_compile_dat_bin(void) {
     printf("[Test] TSFi2 compiler .dat.bin packaging checks passed.\n");
 }
 
+static bool bin_strstr(const char *buf, size_t len, const char *sub) {
+    size_t sub_len = strlen(sub);
+    if (sub_len > len) return false;
+    for (size_t i = 0; i <= len - sub_len; i++) {
+        if (memcmp(buf + i, sub, sub_len) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static void test_compile_dat_bin_ext(void) {
     printf("[Test] Running extended TSFi2 compiler packaging checks...\n");
     
@@ -50,9 +61,9 @@ static void test_compile_dat_bin_ext(void) {
     size_t read_bytes = fread(header_buf, 1, sizeof(header_buf) - 1, f);
     header_buf[read_bytes] = '\0';
     
-    assert(strstr(header_buf, "StackSize") != NULL);
-    assert(strstr(header_buf, "RequiredPlugins") != NULL);
-    assert(strstr(header_buf, "physics_soft_body") != NULL);
+    assert(bin_strstr(header_buf, read_bytes, "StackSize") == true);
+    assert(bin_strstr(header_buf, read_bytes, "RequiredPlugins") == true);
+    assert(bin_strstr(header_buf, read_bytes, "physics_soft_body") == true);
     
     fclose(f);
     remove(out_file);
