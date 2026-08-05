@@ -67,8 +67,24 @@ double tsfi_displacementshader_eval_spherical(const TSFiDisplacementShader *ds, 
 
 
 void tsfi_displacementshader_register_xplsm(void (*register_func)(const char *, void *)) {
-
     if (register_func) {
         register_func("tsfi_displacementshader_eval", (void*)tsfi_displacementshader_eval);
     }
+}
+
+bool tsfi_displacementshader_eval_page_curl(const TSFiDisplacementShader *ds, double u, double v, double curl_angle, double *displaced_y, double *displaced_z) {
+    if (!ds || !displaced_y || !displaced_z) {
+        return false;
+    }
+    // WinchesterMQ boundary constraints clamp scale factor
+    double r = 0.5 + ds->amplitude * 0.1;
+    double theta = curl_angle * (1.0 - u);
+    if (theta > 0.0) {
+        *displaced_y = v - r * sin(theta);
+        *displaced_z = r * (1.0 - cos(theta));
+    } else {
+        *displaced_y = v;
+        *displaced_z = 0.0;
+    }
+    return true;
 }

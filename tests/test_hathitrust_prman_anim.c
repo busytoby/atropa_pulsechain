@@ -57,11 +57,32 @@ static void test_book_binding_generator(void) {
     printf("[Test] Book Binding & Spine Generator tests passed.\n");
 }
 
+#include "tsfi_displacementshader.h"
+
+static void test_page_curl_displacement(void) {
+    printf("[Test] Evaluating page-curl displacement math under WinchesterMQ boundary constraints...\n");
+    TSFiDisplacementShader ds;
+    tsfi_displacementshader_init(&ds, 2.0, 1.0);
+    
+    double dy = 0.0, dz = 0.0;
+    assert(tsfi_displacementshader_eval_page_curl(&ds, 0.5, 0.8, 1.05, &dy, &dz));
+    assert(dy != 0.8); // Should be curled/displaced
+    assert(dz > 0.0);
+    
+    // Test boundary conditions
+    assert(tsfi_displacementshader_eval_page_curl(&ds, 0.5, 0.8, 0.0, &dy, &dz));
+    assert(dy == 0.8); // Should remain flat when curl_angle is 0.0
+    assert(dz == 0.0);
+    
+    printf("[Test] Page-curl displacement evaluation verified successfully.\n");
+}
+
 int main(void) {
     printf("[Test] Running HathiTrust RenderMan Animation integration tests...\n");
     test_double_sided_shader();
     test_page_curl_animator();
     test_book_binding_generator();
+    test_page_curl_displacement();
     printf("[Test] All RenderMan Animation tests completed successfully.\n");
     return 0;
 }

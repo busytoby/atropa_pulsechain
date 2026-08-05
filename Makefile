@@ -91,7 +91,7 @@ test-hathitrust-prman-extra:
 	@rm -f tests/test_hathitrust_prman_extra
 
 test-hathitrust-prman-anim:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_prman_anim.c src/hathitrust_osl_double_sided.c src/hathitrust_animator.c src/hathitrust_spine.c -o tests/test_hathitrust_prman_anim -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_prman_anim.c src/hathitrust_osl_double_sided.c src/hathitrust_animator.c src/hathitrust_spine.c tsfi2-deepseek/src/tsfi_displacementshader.c -o tests/test_hathitrust_prman_anim -lm -lrt
 	./tests/test_hathitrust_prman_anim
 	@rm -f tests/test_hathitrust_prman_anim
 

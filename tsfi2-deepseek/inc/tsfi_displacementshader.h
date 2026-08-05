@@ -28,4 +28,7 @@ double tsfi_displacementshader_eval_spherical(const TSFiDisplacementShader *ds, 
 // Registers the evaluator in the XPLSM dynamic symbol table
 void tsfi_displacementshader_register_xplsm(void (*register_func)(const char *, void *));
 
+// Computes the geometric page-curl displacement for a vertex in synchronization with WinchesterMQ boundary constraints
+bool tsfi_displacementshader_eval_page_curl(const TSFiDisplacementShader *ds, double u, double v, double curl_angle, double *displaced_y, double *displaced_z);
+
 #endif // TSFI_DISPLACEMENTSHADER_H
