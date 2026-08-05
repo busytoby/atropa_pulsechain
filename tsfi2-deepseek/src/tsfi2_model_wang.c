@@ -51,3 +51,29 @@ bool evaluate_wang_geigel_realism_attraction_congruence(const teddy_geometry_t *
     return true;
 }
 
+bool evaluate_wang_geigel_gaze_competence_modulator(const teddy_geometry_t *geom, double direct_gaze_ratio, double aversion_speed, double *competence_score_out) {
+    if (!geom || direct_gaze_ratio < 0.0 || aversion_speed < 0.0 || !competence_score_out) {
+        return false;
+    }
+    *competence_score_out = (direct_gaze_ratio * 0.7 + (1.0 / (1.0 + aversion_speed)) * 0.3) * (0.95 + geom->leadership_profile * 0.25);
+    return true;
+}
+
+bool evaluate_wang_geigel_contagion_arousal(const teddy_geometry_t *geom, double pupil_dilation_sync, double head_tilt_val, double *arousal_score_out) {
+    if (!geom || pupil_dilation_sync < 0.0 || head_tilt_val < 0.0 || !arousal_score_out) {
+        return false;
+    }
+    *arousal_score_out = (pupil_dilation_sync * 0.5 + head_tilt_val * 0.5) * (0.9 + geom->social_extraversion * 0.35);
+    return true;
+}
+
+bool evaluate_wang_geigel_realism_trust_congruence(const teddy_geometry_t *geom, double realism_index, double smile_intensity, double *trustworthiness_out) {
+    if (!geom || realism_index < 0.0 || smile_intensity < 0.0 || !trustworthiness_out) {
+        return false;
+    }
+    double diff = fabs(realism_index - smile_intensity);
+    *trustworthiness_out = (1.0 / (1.0 + diff)) * (0.95 + geom->cooperative_negotiation * 0.2);
+    return true;
+}
+
+

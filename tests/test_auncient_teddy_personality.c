@@ -1893,6 +1893,18 @@ int main(void) {
     assert(wang_realism_attraction > 0.0);
     printf("   ✓ WANG, GEIGEL & HERBERT warmth attenuation, gaze dominance modulator, and realism attraction congruence verified successfully\n");
 
+    double wang_gaze_competence = 0.0;
+    double wang_contagion_arousal = 0.0;
+    double wang_realism_trust = 0.0;
+    assert(evaluate_wang_geigel_gaze_competence_modulator(&geom, 0.75, 0.45, &wang_gaze_competence));
+    assert(wang_gaze_competence > 0.0);
+    assert(evaluate_wang_geigel_contagion_arousal(&geom, 0.85, 0.25, &wang_contagion_arousal));
+    assert(wang_contagion_arousal > 0.0);
+    assert(evaluate_wang_geigel_realism_trust_congruence(&geom, 0.65, 0.55, &wang_realism_trust));
+    assert(wang_realism_trust > 0.0);
+    printf("   ✓ WANG, GEIGEL & HERBERT virtual character gaze competence, contagion arousal, and realism trust congruence verified successfully\n");
+
+
 
 
 

@@ -599,5 +599,14 @@ bool evaluate_wang_geigel_gaze_dominance_modulator(const teddy_geometry_t *geom,
 // Models character realism and expression attraction interactions (Wang, Geigel & Herbert).
 bool evaluate_wang_geigel_realism_attraction_congruence(const teddy_geometry_t *geom, double realism_index, double expression_intensity, double *attraction_score_out);
 
+// Models character competence from interactive gaze metrics (Wang, Geigel & Herbert).
+bool evaluate_wang_geigel_gaze_competence_modulator(const teddy_geometry_t *geom, double direct_gaze_ratio, double aversion_speed, double *competence_score_out);
+
+// Models contagion arousal scores from pupil and tilt inputs (Wang, Geigel & Herbert).
+bool evaluate_wang_geigel_contagion_arousal(const teddy_geometry_t *geom, double pupil_dilation_sync, double head_tilt_val, double *arousal_score_out);
+
+// Models realism trust congruence metrics in virtual agents (Wang, Geigel & Herbert).
+bool evaluate_wang_geigel_realism_trust_congruence(const teddy_geometry_t *geom, double realism_index, double smile_intensity, double *trustworthiness_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H
 
