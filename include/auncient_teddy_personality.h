@@ -808,6 +808,12 @@ bool evaluate_castle_diplomatic_alignment_decay(const teddy_geometry_t *geom, do
 // Models the variance in communication consistency ratings under dynamic boundary conditions (Castle).
 bool evaluate_castle_policy_consistency_variance(const teddy_geometry_t *geom, double consistency_score, double *variance_out);
 
+// Evaluates policy implementation progress ratings based on dynamic target metrics (Castle).
+bool evaluate_castle_policy_target_engagement(const teddy_geometry_t *geom, double target_metric, double *engagement_out);
+
+// Models trust boundary configurations based on visual and vocal symmetry matching (Castle).
+bool evaluate_castle_diplomatic_trust_bounds(const teddy_geometry_t *geom, double visual_symmetry, double vocal_symmetry, double *bounds_out);
+
 evaluation_tx_t begin_evaluation_transaction(teddy_geometry_t *target);
 bool commit_evaluation_transaction(evaluation_tx_t *tx);
 void rollback_evaluation_transaction(evaluation_tx_t *tx);

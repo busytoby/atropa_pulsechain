@@ -34,3 +34,19 @@ bool evaluate_castle_policy_consistency_variance(const teddy_geometry_t *geom, d
     return true;
 }
 
+bool evaluate_castle_policy_target_engagement(const teddy_geometry_t *geom, double target_metric, double *engagement_out) {
+    if (!geom || target_metric < 0.0 || !engagement_out) {
+        return false;
+    }
+    *engagement_out = target_metric * (0.9 + geom->leadership_profile * 0.3);
+    return true;
+}
+
+bool evaluate_castle_diplomatic_trust_bounds(const teddy_geometry_t *geom, double visual_symmetry, double vocal_symmetry, double *bounds_out) {
+    if (!geom || visual_symmetry < 0.0 || vocal_symmetry < 0.0 || !bounds_out) {
+        return false;
+    }
+    *bounds_out = visual_symmetry * vocal_symmetry * (0.8 + geom->empathy_index * 0.4);
+    return true;
+}
+
