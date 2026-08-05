@@ -918,6 +918,15 @@ int main(void) {
     assert(utilitarian_trust_val > 0.0);
     printf("   ✓ Scarpi playfulness and utilitarian operational trust verified successfully\n");
 
+    // Test Scarpi hedonic trust and utilitarian efficiency calculations
+    double hedonic_trust_val = 0.0;
+    double utilitarian_efficiency_val = 0.0;
+    assert(evaluate_scarpi_hedonic_trust(&geom, 0.85, 1.25, &hedonic_trust_val));
+    assert(hedonic_trust_val > 0.0);
+    assert(evaluate_scarpi_utilitarian_efficiency(&geom, 0.05, &utilitarian_efficiency_val));
+    assert(utilitarian_efficiency_val > 0.0);
+    printf("   ✓ Scarpi interface trust and utilitarian task efficiency verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge

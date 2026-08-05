@@ -625,6 +625,12 @@ bool evaluate_scarpi_hedonic_playfulness(const teddy_geometry_t *geom, double ba
 // Models transaction trust based on H-bridge switching stability and safety margins (Scarpi).
 bool evaluate_scarpi_utilitarian_trust(const teddy_geometry_t *geom, double safety_margin, double *operational_trust_out);
 
+// Evaluates interaction trust based on visual aesthetics and novelty parameters (Scarpi).
+bool evaluate_scarpi_hedonic_trust(const teddy_geometry_t *geom, double aesthetic_rating, double novelty_scale, double *trust_out);
+
+// Models user interaction ratings based on latency speeds and coordinate consistency checking times (Scarpi).
+bool evaluate_scarpi_utilitarian_efficiency(const teddy_geometry_t *geom, double latency_sec, double *efficiency_out);
+
 // Evaluates perceived conversational naturalness based on vocal pitch frequency jitter (Hyde et al.).
 bool evaluate_hyde_vocal_jitter_naturalness(const teddy_geometry_t *geom, double pitch_jitter, double *naturalness_out);
 

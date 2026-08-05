@@ -1497,3 +1497,19 @@ bool evaluate_scarpi_utilitarian_trust(const teddy_geometry_t *geom, double safe
     return true;
 }
 
+bool evaluate_scarpi_hedonic_trust(const teddy_geometry_t *geom, double aesthetic_rating, double novelty_scale, double *trust_out) {
+    if (!geom || aesthetic_rating < 0.0 || novelty_scale < 0.0 || !trust_out) {
+        return false;
+    }
+    *trust_out = aesthetic_rating * novelty_scale * (0.8 + geom->empathy_index * 0.4);
+    return true;
+}
+
+bool evaluate_scarpi_utilitarian_efficiency(const teddy_geometry_t *geom, double latency_sec, double *efficiency_out) {
+    if (!geom || latency_sec < 0.0 || !efficiency_out) {
+        return false;
+    }
+    *efficiency_out = (1.0 / (1.0 + latency_sec)) * (0.9 + geom->leadership_profile * 0.3);
+    return true;
+}
+
