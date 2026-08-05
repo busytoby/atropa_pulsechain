@@ -1365,6 +1365,15 @@ int main(void) {
     assert(sclera_submissiveness_decay_variance_single > 0.0);
     printf("   ✓ KEATING, C. F. eyebrow asymmetry trust variance mod and sclera submissiveness decay variance verified successfully\n");
 
+    // Test Keating sclera dominance decay variance and eyebrow asymmetry dominance decay variance calculations
+    double sclera_dominance_decay_variance_single = 0.0;
+    double eyebrow_asymmetry_dominance_decay_variance_single = 0.0;
+    assert(evaluate_keating_sclera_dominance_decay_variance_single(&geom, 15.0, &sclera_dominance_decay_variance_single));
+    assert(sclera_dominance_decay_variance_single > 0.0);
+    assert(evaluate_keating_eyebrow_asymmetry_dominance_decay_variance_single(&geom, 16.5, &eyebrow_asymmetry_dominance_decay_variance_single));
+    assert(eyebrow_asymmetry_dominance_decay_variance_single > 0.0);
+    printf("   ✓ KEATING, C. F. sclera dominance decay variance and eyebrow asymmetry dominance decay variance verified successfully\n");
+
     // Test Scarpi hedonic playfulness and utilitarian trust calculations
     double playfulness_val = 0.0;
     double utilitarian_trust_val = 0.0;

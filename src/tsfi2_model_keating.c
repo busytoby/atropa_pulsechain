@@ -514,3 +514,19 @@ bool evaluate_keating_sclera_submissiveness_decay_variance_single(const teddy_ge
     return true;
 }
 
+bool evaluate_keating_sclera_dominance_decay_variance_single(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+    if (!geom || duration_sec < 0.0 || !decay_variance_out) {
+        return false;
+    }
+    *decay_variance_out = exp(-duration_sec / (18.0 + geom->resilience_index * 8.0));
+    return true;
+}
+
+bool evaluate_keating_eyebrow_asymmetry_dominance_decay_variance_single(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+    if (!geom || duration_sec < 0.0 || !decay_variance_out) {
+        return false;
+    }
+    *decay_variance_out = exp(-duration_sec / (18.0 + geom->resilience_index * 8.0));
+    return true;
+}
+
