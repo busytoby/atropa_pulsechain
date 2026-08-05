@@ -613,4 +613,30 @@ bool evaluate_keating_sclera_gaze_decoupling(const teddy_geometry_t *geom, doubl
     return true;
 }
 
+bool evaluate_keating_smile_dominance_attenuation(const teddy_geometry_t *geom, double smile_intensity, int gender, double *attenuated_dominance_out) {
+    if (!geom || smile_intensity < 0.0 || !attenuated_dominance_out) {
+        return false;
+    }
+    double factor = (gender == 1) ? 0.75 : 0.90; // Larger reduction in perceived dominance for males
+    *attenuated_dominance_out = (1.0 - smile_intensity * factor) * (1.1 + geom->leadership_profile * 0.35);
+    return true;
+}
+
+bool evaluate_keating_babyfacedness_leadership_decoupling(const teddy_geometry_t *geom, double babyface_index, double *leadership_score_out) {
+    if (!geom || babyface_index < 0.0 || !leadership_score_out) {
+        return false;
+    }
+    *leadership_score_out = (1.0 / (1.0 + babyface_index)) * (1.2 + geom->leadership_profile * 0.45);
+    return true;
+}
+
+bool evaluate_keating_torso_asymmetry_status(const teddy_geometry_t *geom, double torso_asymmetry_val, double *status_score_out) {
+    if (!geom || torso_asymmetry_val < 0.0 || !status_score_out) {
+        return false;
+    }
+    *status_score_out = torso_asymmetry_val * (0.95 + geom->social_status * 0.3);
+    return true;
+}
+
+
 

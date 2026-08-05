@@ -545,5 +545,14 @@ bool evaluate_kramer_king_ward_actual_extraversion_modulator(const teddy_geometr
 // Models perceived threat mapped from static asymmetry index metrics (Kramer, King & Ward).
 bool evaluate_kramer_king_ward_neuroticism_threat_mapping(const teddy_geometry_t *geom, double asymmetry_val, double vertical_offset, double *threat_out);
 
+// Models smile dominance attenuation effects on status ratings (Keating).
+bool evaluate_keating_smile_dominance_attenuation(const teddy_geometry_t *geom, double smile_intensity, int gender, double *attenuated_dominance_out);
+
+// Models the negative correlation of babyfacedness with leadership potential (Keating).
+bool evaluate_keating_babyfacedness_leadership_decoupling(const teddy_geometry_t *geom, double babyface_index, double *leadership_score_out);
+
+// Models torso asymmetry status attribution metrics (Keating).
+bool evaluate_keating_torso_asymmetry_status(const teddy_geometry_t *geom, double torso_asymmetry_val, double *status_score_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H
 
