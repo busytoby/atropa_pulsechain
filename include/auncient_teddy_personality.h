@@ -535,6 +535,12 @@ bool evaluate_scarpi_hedonic_orientation(const teddy_geometry_t *geom, double pl
 // Models functional efficiency and task-oriented focus based on structured features (Scarpi).
 bool evaluate_scarpi_utilitarian_orientation(const teddy_geometry_t *geom, double efficiency_scale, double *utilitarian_out);
 
+// Evaluates how design symmetry and hedonic orientation interact to modify trust ratings (Scarpi).
+bool evaluate_scarpi_aesthetic_trust(const teddy_geometry_t *geom, double base_trust, double *aesthetic_trust_out);
+
+// Models task-oriented utilitarian efficiency decay and user fatigue over time (Scarpi).
+bool evaluate_scarpi_utilitarian_decay(const teddy_geometry_t *geom, double interaction_duration_sec, double *decayed_efficiency_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 

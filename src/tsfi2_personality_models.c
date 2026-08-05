@@ -1241,3 +1241,19 @@ bool evaluate_scarpi_utilitarian_orientation(const teddy_geometry_t *geom, doubl
     return true;
 }
 
+bool evaluate_scarpi_aesthetic_trust(const teddy_geometry_t *geom, double base_trust, double *aesthetic_trust_out) {
+    if (!geom || base_trust < 0.0 || !aesthetic_trust_out) {
+        return false;
+    }
+    *aesthetic_trust_out = base_trust * (0.9 + geom->symmetry * 0.3 + geom->empathy_index * 0.2);
+    return true;
+}
+
+bool evaluate_scarpi_utilitarian_decay(const teddy_geometry_t *geom, double interaction_duration_sec, double *decayed_efficiency_out) {
+    if (!geom || interaction_duration_sec < 0.0 || !decayed_efficiency_out) {
+        return false;
+    }
+    *decayed_efficiency_out = exp(-interaction_duration_sec / (20.0 + geom->resilience_index * 10.0));
+    return true;
+}
+

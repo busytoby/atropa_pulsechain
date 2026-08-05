@@ -774,6 +774,15 @@ int main(void) {
     assert(utilitarian_orient > 0.0);
     printf("   ✓ Scarpi hedonic and utilitarian orientations verified successfully\n");
 
+    // Test Scarpi aesthetic trust and utilitarian decay calculations
+    double aesthetic_trust = 0.0;
+    double utilitarian_decay = 0.0;
+    assert(evaluate_scarpi_aesthetic_trust(&geom, 0.85, &aesthetic_trust));
+    assert(aesthetic_trust > 0.0);
+    assert(evaluate_scarpi_utilitarian_decay(&geom, 10.0, &utilitarian_decay));
+    assert(utilitarian_decay > 0.0);
+    printf("   ✓ Scarpi aesthetic trust and utilitarian decay verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge
