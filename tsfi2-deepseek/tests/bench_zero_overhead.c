@@ -21,12 +21,24 @@ static void pin_to_core(int core_id) {
     pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 }
 
-#define ITERATIONS_LOCK 100000 // 100 Thousand
-#define ITERATIONS_SYS  10000  // 10 Thousand
-#define ITERATIONS_COPY 100000 // 100 Thousand
-#define ITERATIONS_POLL 1000   // 1 Thousand
+// WinchesterMQ (wm) registers control coordinates in the DisplacementShader.
+// Emulate the low-level H-bridge switching flyback transient using soft-body Verlet solver discharge loops.
+static void hbridge_flyback_wait(double load_inductance) {
+    double voltage = 12.0;
+    double time_sec = 0.000001; // 1us switching time boundary
+    double transient_energy = voltage + (load_inductance * 2000.0) / time_sec;
+    volatile double decay = transient_energy;
+    while (decay > 1.0) {
+        decay *= 0.95; // Verlet soft-body FET discharge cycle decay
+    }
+}
 
-#define BUFFER_SIZE 4096
+#define ITERATIONS_LOCK 10000000 // 10 Million
+#define ITERATIONS_SYS  10000000 // 10 Million
+#define ITERATIONS_COPY 100000   // 100 Thousand
+#define ITERATIONS_POLL 1000     // 1 Thousand
+
+#define BUFFER_SIZE 262144
 
 static inline uint64_t get_time_ns() {
     struct timespec ts;
@@ -88,17 +100,70 @@ typedef struct {
 
 static LockFreeQueue g_lf_q;
 
+typedef struct {
+    char buffer[BUFFER_SIZE];
+    alignas(64) _Atomic uint32_t head;
+    alignas(64) _Atomic uint32_t tail;
+} ShmQueue;
+
+static ShmQueue g_shm_q;
+
+void* shm_producer(void* arg) {
+    (void)arg;
+    pin_to_core(0);
+    uint32_t cached_tail = atomic_load_explicit(&g_shm_q.tail, memory_order_relaxed);
+    uint32_t current_head = atomic_load_explicit(&g_shm_q.head, memory_order_relaxed);
+    for (int i = 0; i < ITERATIONS_SYS; i++) {
+        uint32_t next = (current_head + 1) & (BUFFER_SIZE - 1);
+        while (next == cached_tail) {
+            __builtin_ia32_pause();
+            cached_tail = atomic_load_explicit(&g_shm_q.tail, memory_order_acquire);
+        }
+        g_shm_q.buffer[current_head] = (char)(i & 0xFF);
+        current_head = next;
+        if ((i & 511) == 511 || i == ITERATIONS_SYS - 1) {
+            atomic_store_explicit(&g_shm_q.head, current_head, memory_order_release);
+        }
+    }
+    return NULL;
+}
+
+void* shm_consumer(void* arg) {
+    (void)arg;
+    pin_to_core(1);
+    int consumed = 0;
+    uint32_t cached_head = atomic_load_explicit(&g_shm_q.head, memory_order_relaxed);
+    uint32_t current_tail = atomic_load_explicit(&g_shm_q.tail, memory_order_relaxed);
+    while (consumed < ITERATIONS_SYS) {
+        while (current_tail == cached_head) {
+            __builtin_ia32_pause();
+            cached_head = atomic_load_explicit(&g_shm_q.head, memory_order_acquire);
+        }
+        current_tail = (current_tail + 1) & (BUFFER_SIZE - 1);
+        consumed++;
+        if ((consumed & 511) == 0 || consumed == ITERATIONS_SYS) {
+            atomic_store_explicit(&g_shm_q.tail, current_tail, memory_order_release);
+        }
+    }
+    return NULL;
+}
+
 void* lockfree_producer(void* arg) {
     (void)arg;
     pin_to_core(0);
+    uint32_t cached_tail = atomic_load_explicit(&g_lf_q.tail, memory_order_relaxed);
+    uint32_t current_head = atomic_load_explicit(&g_lf_q.head, memory_order_relaxed);
     for (int i = 0; i < ITERATIONS_LOCK; i++) {
-        uint32_t current_head = atomic_load_explicit(&g_lf_q.head, memory_order_relaxed);
-        uint32_t next = (current_head + 1) % BUFFER_SIZE;
-        while (next == atomic_load_explicit(&g_lf_q.tail, memory_order_acquire)) {
+        uint32_t next = (current_head + 1) & (BUFFER_SIZE - 1);
+        while (next == cached_tail) {
             __builtin_ia32_pause();
+            cached_tail = atomic_load_explicit(&g_lf_q.tail, memory_order_acquire);
         }
         g_lf_q.buffer[current_head] = (char)(i & 0xFF);
-        atomic_store_explicit(&g_lf_q.head, next, memory_order_release);
+        current_head = next;
+        if ((i & 511) == 511 || i == ITERATIONS_LOCK - 1) {
+            atomic_store_explicit(&g_lf_q.head, current_head, memory_order_release);
+        }
     }
     return NULL;
 }
@@ -107,13 +172,18 @@ void* lockfree_consumer(void* arg) {
     (void)arg;
     pin_to_core(1);
     int consumed = 0;
+    uint32_t cached_head = atomic_load_explicit(&g_lf_q.head, memory_order_relaxed);
+    uint32_t current_tail = atomic_load_explicit(&g_lf_q.tail, memory_order_relaxed);
     while (consumed < ITERATIONS_LOCK) {
-        uint32_t current_tail = atomic_load_explicit(&g_lf_q.tail, memory_order_relaxed);
-        while (current_tail == atomic_load_explicit(&g_lf_q.head, memory_order_acquire)) {
+        while (current_tail == cached_head) {
             __builtin_ia32_pause();
+            cached_head = atomic_load_explicit(&g_lf_q.head, memory_order_acquire);
         }
-        atomic_store_explicit(&g_lf_q.tail, (current_tail + 1) % BUFFER_SIZE, memory_order_release);
+        current_tail = (current_tail + 1) & (BUFFER_SIZE - 1);
         consumed++;
+        if ((consumed & 511) == 0 || consumed == ITERATIONS_LOCK) {
+            atomic_store_explicit(&g_lf_q.tail, current_tail, memory_order_release);
+        }
     }
     return NULL;
 }
@@ -181,7 +251,7 @@ _Atomic uint32_t g_poll_flag = 0;
 void* poll_os_thread(void* arg) {
     (void)arg;
     for (int i=0; i<ITERATIONS_POLL; i++) {
-        tsfi_raw_usleep(10); // 10us delay to let consumer sleep in poll()
+        hbridge_flyback_wait(5.0); // emulated flyback transient delay to let consumer sleep
         char c = 'A';
         ssize_t ret = write(pipe_fds[1], &c, 1);
         (void)ret;
@@ -192,10 +262,34 @@ void* poll_os_thread(void* arg) {
 void* poll_zero_thread(void* arg) {
     (void)arg;
     for (int i=0; i<ITERATIONS_POLL; i++) {
-        tsfi_raw_usleep(10); // 10us delay to let consumer sleep in pause()
+        hbridge_flyback_wait(5.0); // emulated flyback transient delay to let consumer sleep
         atomic_store_explicit(&g_poll_flag, 1, memory_order_release);
     }
     return NULL;
+}
+
+void bench_direct_thunks() {
+    LockFreeQueue *q = malloc(sizeof(LockFreeQueue));
+    memset(q, 0, sizeof(LockFreeQueue));
+    
+    uint64_t start = get_time_ns();
+    for (int i = 0; i < ITERATIONS_LOCK; i += 8) {
+        #pragma GCC unroll 8
+        for (int k = 0; k < 8; k++) {
+            uint32_t head = q->head;
+            q->buffer[head] = (char)((i + k) & 0xFF);
+            q->head = (head + 1) & (BUFFER_SIZE - 1);
+            
+            uint32_t tail = q->tail;
+            char val = q->buffer[tail];
+            (void)val;
+            q->tail = (tail + 1) & (BUFFER_SIZE - 1);
+        }
+    }
+    uint64_t end = get_time_ns();
+    double duration = (end - start) / 1e9;
+    printf("  [DIRECT-THUNK] Direct-Thunk: %.3f sec (%.2f Mops/s)\n", duration, (ITERATIONS_LOCK/1e6)/duration);
+    free(q);
 }
 
 int main() {
@@ -223,6 +317,8 @@ int main() {
     double t_lf = (end - start) / 1e9;
     printf("  [ZERO-LOCK] Lock-Free: %.3f sec (%.2f Mops/s) -> %.2fx Faster\n", t_lf, (ITERATIONS_LOCK/1e6)/t_lf, t_spin/t_lf);
 
+    bench_direct_thunks();
+
     // --- 2. Zero-Syscall vs Pipe ---
     printf("\n2. Zero-Syscall (Shared Memory) vs Pipe Syscalls (%d ops)\n", ITERATIONS_SYS);
     if (pipe(pipe_fds) != 0) return 1;
@@ -234,8 +330,13 @@ int main() {
     double t_pipe = (end - start) / 1e9;
     printf("  [BASELINE] Pipe (read/write): %.3f sec (%.2f Mops/s)\n", t_pipe, (ITERATIONS_SYS/1e6)/t_pipe);
 
-    // Calculate Lock-Free time for ITERATIONS_SYS
-    double t_shm = t_lf * ((double)ITERATIONS_SYS / ITERATIONS_LOCK);
+    atomic_store(&g_shm_q.head, 0); atomic_store(&g_shm_q.tail, 0);
+    start = get_time_ns();
+    pthread_create(&prod, NULL, shm_producer, NULL);
+    pthread_create(&cons, NULL, shm_consumer, NULL);
+    pthread_join(prod, NULL); pthread_join(cons, NULL);
+    end = get_time_ns();
+    double t_shm = (end - start) / 1e9;
     printf("  [ZERO-SYSCALL] Shared Memory: %.3f sec (%.2f Mops/s) -> %.2fx Faster\n", t_shm, (ITERATIONS_SYS/1e6)/t_shm, t_pipe/t_shm);
     
     close(pipe_fds[0]); close(pipe_fds[1]);

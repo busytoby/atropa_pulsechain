@@ -6,6 +6,7 @@
 #include "tsfi_types.h"
 #include "tsfi_opt_zmm.h"
 #include "tsfi_time.h"
+#include "tsfi_montecarlo.h"
 
 // Define external execution
 extern void tsfi_kernel_deepseek_mla(void *regs, ZmmSynapse *syn);
@@ -60,6 +61,43 @@ int main(void) {
     printf("\n  [BENCHMARK] Throughput: %.2f Million Passes/sec", millions_per_sec);
     printf("\n  [BENCHMARK] Compute Bandwidth: %.2f GFLOPS/sec\n", gflops_per_sec);
     
+    // Denoising guide simulation using Monte Carlo systems
+    printf("  [MONTE CARLO] Bridging DeepSeek guidance to Monte Carlo path reconstruction...\n");
+    const char *mock_response = "confidence=0.95, empathy=0.88, valence=0.72";
+    const int map_w = 64;
+    const int map_h = 64;
+    float *guide_map = malloc(map_w * map_h * sizeof(float));
+    float *noisy_input = malloc(map_w * map_h * sizeof(float));
+    float *clean_output = malloc(map_w * map_h * sizeof(float));
+    
+    // Fill noisy input
+    for (int i = 0; i < map_w * map_h; i++) {
+        noisy_input[i] = (float)rand() / RAND_MAX;
+    }
+    
+    // Warmup & test correctness of the parser and guided NLM filter
+    bool parse_ok = tsfi_montecarlo_parse_deepseek_guide(mock_response, guide_map, map_w, map_h);
+    bool filter_ok = tsfi_montecarlo_guided_path_non_local_means(noisy_input, guide_map, clean_output, map_w, map_h, 0.2f, 2, 4, 0.8f);
+    
+    if (parse_ok && filter_ok) {
+        printf("  [MONTE CARLO] Guided NLM setup verified. Running throughput benchmark...\n");
+        const uint64_t mc_iterations = 1000;
+        unsigned long long mc_start = get_time_ns();
+        for (uint64_t i = 0; i < mc_iterations; i++) {
+            tsfi_montecarlo_guided_path_non_local_means(noisy_input, guide_map, clean_output, map_w, map_h, 0.2f, 2, 4, 0.8f);
+        }
+        unsigned long long mc_end = get_time_ns();
+        double mc_duration_ms = (mc_end - mc_start) / 1000000.0;
+        double mc_throughput = (double)mc_iterations / (mc_duration_ms / 1000.0);
+        printf("  [BENCHMARK] Monte Carlo Guided NLM Throughput: %.2f reconstructions/sec (%.3f ms avg)\n", mc_throughput, mc_duration_ms / mc_iterations);
+    } else {
+        printf("  [ERROR] Monte Carlo Guided NLM setup failed!\n");
+    }
+    
+    free(guide_map);
+    free(noisy_input);
+    free(clean_output);
+
     lau_free(regs);
     
     extern void lau_free_all_active(void);

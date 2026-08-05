@@ -1683,6 +1683,13 @@ bin/test_pulsechain_lp_matrix_suite: tests/test_pulsechain_lp_matrix_suite.c $(O
 	@mkdir -p bin
 	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LDFLAGS)
 
+tests/bench_zero_overhead: tests/bench_zero_overhead.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	@mkdir -p tests
+	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LDFLAGS)
+
+tests/bench_deepseek_mla: tests/bench_deepseek_mla.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	@mkdir -p tests
+	$(CC) $(filter-out -fstack-protector-strong -D_FORTIFY_SOURCE=3, $(CFLAGS)) -ffast-math -funroll-loops -fomit-frame-pointer $(INCLUDES) $^ -o $@ $(LDFLAGS)
 .PHONY: profile
 profile:
 	bash benchmarks/profiler_suite/run_benchmarks.sh

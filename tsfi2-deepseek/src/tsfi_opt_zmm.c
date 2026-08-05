@@ -251,10 +251,5 @@ void tsfi_kernel_deepseek_mla(void *regs, ZmmSynapse *syn) {
     scores = _mm512_mul_ps(scores, scale);
     
     zmm[3] = _mm512_mul_ps(scores, zmm[2]);
-    
-    float temp[16];
-    _mm512_storeu_ps(temp, zmm[3]);
-    float sum = 0;
-    for(int i=0; i<16; i++) sum += temp[i];
-    syn->mass_density = sum;
+    syn->mass_density = _mm512_reduce_add_ps(zmm[3]);
 }
