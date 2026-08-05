@@ -146,3 +146,19 @@ bool evaluate_castle_policy_consistency_decay_variance(const teddy_geometry_t *g
     return true;
 }
 
+bool evaluate_castle_diplomatic_trust_bounds_variance_mod(const teddy_geometry_t *geom, double bounds_score, double *variance_out) {
+    if (!geom || bounds_score < 0.0 || !variance_out) {
+        return false;
+    }
+    *variance_out = bounds_score * (1.1 + geom->leadership_profile * 0.4);
+    return true;
+}
+
+bool evaluate_castle_policy_target_engagement_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+    if (!geom || duration_sec < 0.0 || !decay_variance_out) {
+        return false;
+    }
+    *decay_variance_out = exp(-duration_sec / (16.0 + geom->resilience_index * 6.0));
+    return true;
+}
+
