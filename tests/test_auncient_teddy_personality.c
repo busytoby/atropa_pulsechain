@@ -765,6 +765,15 @@ int main(void) {
     assert(width_asymmetry > 0.0);
     printf("   ✓ KEATING, C. F. sclera size and facial width asymmetry verified successfully\n");
 
+    // Test Scarpi hedonic and utilitarian orientation index calculations
+    double hedonic_orient = 0.0;
+    double utilitarian_orient = 0.0;
+    assert(evaluate_scarpi_hedonic_orientation(&geom, 1.5, &hedonic_orient));
+    assert(hedonic_orient > 0.0);
+    assert(evaluate_scarpi_utilitarian_orientation(&geom, 2.0, &utilitarian_orient));
+    assert(utilitarian_orient > 0.0);
+    printf("   ✓ Scarpi hedonic and utilitarian orientations verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge

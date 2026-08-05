@@ -529,6 +529,12 @@ bool evaluate_keating_sclera_size(const teddy_geometry_t *geom, double sclera_ra
 // Models perceived dominance based on bilateral facial width deviations (Keating, C. F.).
 bool evaluate_keating_width_asymmetry(const teddy_geometry_t *geom, double left_width, double right_width, double *asymmetry_dominance_out);
 
+// Models playfulness, warmth, and visual pleasure based on friendly facial parameters (Scarpi).
+bool evaluate_scarpi_hedonic_orientation(const teddy_geometry_t *geom, double playfulness_scale, double *hedonic_out);
+
+// Models functional efficiency and task-oriented focus based on structured features (Scarpi).
+bool evaluate_scarpi_utilitarian_orientation(const teddy_geometry_t *geom, double efficiency_scale, double *utilitarian_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 

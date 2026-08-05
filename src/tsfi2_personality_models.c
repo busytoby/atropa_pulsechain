@@ -1225,3 +1225,19 @@ bool evaluate_keating_width_asymmetry(const teddy_geometry_t *geom, double left_
     return true;
 }
 
+bool evaluate_scarpi_hedonic_orientation(const teddy_geometry_t *geom, double playfulness_scale, double *hedonic_out) {
+    if (!geom || playfulness_scale < 0.0 || !hedonic_out) {
+        return false;
+    }
+    *hedonic_out = playfulness_scale * (0.8 + geom->empathy_index * 0.4 + (1.0 - geom->stiffness) * 0.2);
+    return true;
+}
+
+bool evaluate_scarpi_utilitarian_orientation(const teddy_geometry_t *geom, double efficiency_scale, double *utilitarian_out) {
+    if (!geom || efficiency_scale < 0.0 || !utilitarian_out) {
+        return false;
+    }
+    *utilitarian_out = efficiency_scale * (0.7 + geom->leadership_profile * 0.5 + geom->head_fwhr * 0.2);
+    return true;
+}
+
