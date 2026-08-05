@@ -21,10 +21,10 @@ int main(void) {
     // 2. Test Cross-Bilateral Denoising Filter
     uint32_t noisy[4] = {0xFF102030, 0xFF122232, 0xFF8090A0, 0xFF8292A2};
     TSFiMCAuxFeatures features[4] = {
-        {{0.0f, 1.0f, 0.0f}, 1.0f, {0.1f, 0.1f, 0.1f}},
-        {{0.0f, 1.0f, 0.0f}, 1.05f, {0.11f, 0.11f, 0.11f}},
-        {{1.0f, 0.0f, 0.0f}, 5.0f, {0.8f, 0.8f, 0.8f}}, // edge boundary
-        {{1.0f, 0.0f, 0.0f}, 5.02f, {0.81f, 0.81f, 0.81f}}
+        {{0.0f, 1.0f, 0.0f}, 1.0f, {0.1f, 0.1f, 0.1f}, 0.0f},
+        {{0.0f, 1.0f, 0.0f}, 1.05f, {0.11f, 0.11f, 0.11f}, 0.0f},
+        {{1.0f, 0.0f, 0.0f}, 5.0f, {0.8f, 0.8f, 0.8f}, 0.0f}, // edge boundary
+        {{1.0f, 0.0f, 0.0f}, 5.02f, {0.81f, 0.81f, 0.81f}, 0.0f}
     };
     uint32_t denoised[4] = {0};
 
