@@ -386,3 +386,19 @@ bool evaluate_keating_width_asymmetry_trust_variance(const teddy_geometry_t *geo
     return true;
 }
 
+bool evaluate_keating_gaze_shift_dominance_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+    if (!geom || duration_sec < 0.0 || !decay_variance_out) {
+        return false;
+    }
+    *decay_variance_out = exp(-duration_sec / (18.0 + geom->resilience_index * 8.0));
+    return true;
+}
+
+bool evaluate_keating_lip_compression_trust_variance_mod(const teddy_geometry_t *geom, double lip_compression_val, double *trust_variance_out) {
+    if (!geom || lip_compression_val < 0.0 || !trust_variance_out) {
+        return false;
+    }
+    *trust_variance_out = (1.0 / (1.0 + lip_compression_val)) * (0.8 + geom->empathy_index * 0.4);
+    return true;
+}
+

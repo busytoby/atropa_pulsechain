@@ -1197,6 +1197,15 @@ int main(void) {
     assert(width_asymmetry_trust_variance_val > 0.0);
     printf("   ✓ KEATING, C. F. eyebrow asymmetry dominance decay variance and mouth asymmetry trust variance verified successfully\n");
 
+    // Test Keating gaze shift dominance decay variance and lip compression trust variance mod calculations
+    double gaze_shift_dominance_decay_variance = 0.0;
+    double lip_compression_trust_variance_mod_val = 0.0;
+    assert(evaluate_keating_gaze_shift_dominance_decay_variance(&geom, 16.5, &gaze_shift_dominance_decay_variance));
+    assert(gaze_shift_dominance_decay_variance > 0.0);
+    assert(evaluate_keating_lip_compression_trust_variance_mod(&geom, 0.32, &lip_compression_trust_variance_mod_val));
+    assert(lip_compression_trust_variance_mod_val > 0.0);
+    printf("   ✓ KEATING, C. F. gaze shift dominance decay variance and lip compression trust variance mod verified successfully\n");
+
     // Test Scarpi hedonic playfulness and utilitarian trust calculations
     double playfulness_val = 0.0;
     double utilitarian_trust_val = 0.0;

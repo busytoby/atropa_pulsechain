@@ -772,6 +772,12 @@ bool evaluate_keating_sclera_submissiveness_decay_variance(const teddy_geometry_
 // Models the variance in trustworthiness ratings based on visual width asymmetry ratio variations (Keating, C. F.).
 bool evaluate_keating_width_asymmetry_trust_variance(const teddy_geometry_t *geom, double width_asymmetry_val, double *trust_variance_out);
 
+// Models the variance in social dominance decay rates based on prolonged gaze shift duration variations (Keating, C. F.).
+bool evaluate_keating_gaze_shift_dominance_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out);
+
+// Models the variance in trustworthiness ratings based on visual lip compression ratio variations (Keating, C. F.).
+bool evaluate_keating_lip_compression_trust_variance_mod(const teddy_geometry_t *geom, double lip_compression_val, double *trust_variance_out);
+
 // Models perceived social dominance variance based on exposed sclera size ratio variations (Keating, C. F.).
 bool evaluate_keating_sclera_dominance_variance(const teddy_geometry_t *geom, double sclera_size_ratio, double *dominance_variance_out);
 
