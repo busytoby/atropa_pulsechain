@@ -96,6 +96,8 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
 
             float total_r = 0, total_g = 0, total_b = 0;
             float total_emot = 0.0f;
+            float total_normal_x = 0.0f, total_normal_y = 0.0f, total_normal_z = 0.0f;
+            float total_albedo_r = 0.0f, total_albedo_g = 0.0f, total_albedo_b = 0.0f;
             float samples_depth[4] = {10.0f, 10.0f, 10.0f, 10.0f};
             float sample_luminance[2] = {0.0f, 0.0f};
 
@@ -113,6 +115,8 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
                 Vector3 current_pos = cam_pos;
                 float accum_r = 0.01f, accum_g = 0.01f, accum_b = 0.02f;
                 float sample_emot = 0.0f;
+                Vector3 sample_normal = {0.0f, 1.0f, 0.0f};
+                Color3 sample_albedo = {0.4f, 0.25f, 0.15f};
                 float transmit = 1.0f;
                 float first_hit_dist = 10.0f;
                 bool hit = false;
@@ -132,12 +136,17 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
                     // 1. FLOWER VOXELS
                     float df = tsfi_svdag_trace_point(dag_flower, vx, vy, vz);
                     if (df > 0.1f) {
-                        if (!hit) { first_hit_dist = current_dist; hit = true; }
                         float venation = 0.9f + 0.2f * sinf(current_pos.x * 50.0f + current_pos.y * 50.0f + (float)TSFI_SECRET_CORE);
                         Vector3 L = v_normalize(v_sub(light_pos, current_pos));
                         Vector3 V = v_normalize(v_sub(cam_pos, current_pos));
                         Vector3 N = {0, 1, 0}; Vector3 T = {1, 0, 0};
                         Color3 albedo = {1.0f * venation, 1.0f * venation, 0.95f};
+                        if (!hit) {
+                            first_hit_dist = current_dist;
+                            hit = true;
+                            sample_normal = N;
+                            sample_albedo = albedo;
+                        }
                         Color3 pbr = tsfi_sovereign_brdf(L, V, N, T, albedo, roughness * 0.8f, 0.0f, 0.0f, 0.0f, 0.4f, iridescence);
                         float opacity = fminf(1.0f, df * 0.8f);
                         accum_r += pbr.r * transmit * opacity;
@@ -150,12 +159,17 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
                     // 2. BEAR VOXELS
                     float db = tsfi_svdag_trace_point(dag_bear, vx, vy, vz);
                     if (db > 0.1f) {
-                        if (!hit) { first_hit_dist = current_dist; hit = true; }
                         float jitter = sinf(current_pos.x * 100.0f + current_pos.y * 100.0f + t * 10.0f);
                         Vector3 L = v_normalize(v_sub(light_pos, current_pos));
                         Vector3 V = v_normalize(v_sub(cam_pos, current_pos));
                         Vector3 N = {0, 1, 0}; Vector3 T = {0, 1, 0};
                         Color3 albedo = {0.4f + 0.1f * jitter, 0.25f, 0.15f};
+                        if (!hit) {
+                            first_hit_dist = current_dist;
+                            hit = true;
+                            sample_normal = N;
+                            sample_albedo = albedo;
+                        }
                         Color3 pbr = tsfi_hair_brdf(L, V, N, T, roughness, albedo);
                         pbr.r *= (1.0f - melanin * 0.5f); pbr.g *= (1.0f - melanin * 0.7f); pbr.b *= (1.0f - melanin * 0.9f);
                         float opacity = fminf(1.0f, db * 0.9f);
@@ -173,6 +187,12 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
                 }
                 total_r += accum_r; total_g += accum_g; total_b += accum_b;
                 total_emot += sample_emot;
+                total_normal_x += sample_normal.x;
+                total_normal_y += sample_normal.y;
+                total_normal_z += sample_normal.z;
+                total_albedo_r += sample_albedo.r;
+                total_albedo_g += sample_albedo.g;
+                total_albedo_b += sample_albedo.b;
                 samples_depth[s] = first_hit_dist;
                 sample_luminance[s] = accum_r * 0.2126f + accum_g * 0.7152f + accum_b * 0.0722f;
             }
@@ -195,6 +215,8 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
                     Vector3 current_pos = cam_pos;
                     float accum_r = 0.01f, accum_g = 0.01f, accum_b = 0.02f;
                     float sample_emot = 0.0f;
+                    Vector3 sample_normal = {0.0f, 1.0f, 0.0f};
+                    Color3 sample_albedo = {0.4f, 0.25f, 0.15f};
                     float transmit = 1.0f;
                     float first_hit_dist = 10.0f;
                     bool hit = false;
@@ -214,12 +236,17 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
                         // 1. FLOWER VOXELS
                         float df = tsfi_svdag_trace_point(dag_flower, vx, vy, vz);
                         if (df > 0.1f) {
-                            if (!hit) { first_hit_dist = current_dist; hit = true; }
                             float venation = 0.9f + 0.2f * sinf(current_pos.x * 50.0f + current_pos.y * 50.0f + (float)TSFI_SECRET_CORE);
                             Vector3 L = v_normalize(v_sub(light_pos, current_pos));
                             Vector3 V = v_normalize(v_sub(cam_pos, current_pos));
                             Vector3 N = {0, 1, 0}; Vector3 T = {1, 0, 0};
                             Color3 albedo = {1.0f * venation, 1.0f * venation, 0.95f};
+                            if (!hit) {
+                                first_hit_dist = current_dist;
+                                hit = true;
+                                sample_normal = N;
+                                sample_albedo = albedo;
+                            }
                             Color3 pbr = tsfi_sovereign_brdf(L, V, N, T, albedo, roughness * 0.8f, 0.0f, 0.0f, 0.0f, 0.4f, iridescence);
                             float opacity = fminf(1.0f, df * 0.8f);
                             accum_r += pbr.r * transmit * opacity;
@@ -232,12 +259,17 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
                         // 2. BEAR VOXELS
                         float db = tsfi_svdag_trace_point(dag_bear, vx, vy, vz);
                         if (db > 0.1f) {
-                            if (!hit) { first_hit_dist = current_dist; hit = true; }
                             float jitter = sinf(current_pos.x * 100.0f + current_pos.y * 100.0f + t * 10.0f);
                             Vector3 L = v_normalize(v_sub(light_pos, current_pos));
                             Vector3 V = v_normalize(v_sub(cam_pos, current_pos));
                             Vector3 N = {0, 1, 0}; Vector3 T = {0, 1, 0};
                             Color3 albedo = {0.4f + 0.1f * jitter, 0.25f, 0.15f};
+                            if (!hit) {
+                                first_hit_dist = current_dist;
+                                hit = true;
+                                sample_normal = N;
+                                sample_albedo = albedo;
+                            }
                             Color3 pbr = tsfi_hair_brdf(L, V, N, T, roughness, albedo);
                             pbr.r *= (1.0f - melanin * 0.5f); pbr.g *= (1.0f - melanin * 0.7f); pbr.b *= (1.0f - melanin * 0.9f);
                             float opacity = fminf(1.0f, db * 0.9f);
@@ -255,6 +287,12 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
                     }
                     total_r += accum_r; total_g += accum_g; total_b += accum_b;
                     total_emot += sample_emot;
+                    total_normal_x += sample_normal.x;
+                    total_normal_y += sample_normal.y;
+                    total_normal_z += sample_normal.z;
+                    total_albedo_r += sample_albedo.r;
+                    total_albedo_g += sample_albedo.g;
+                    total_albedo_b += sample_albedo.b;
                     samples_depth[s] = first_hit_dist;
                 }
             } else {
@@ -263,6 +301,12 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
                 total_g *= 2.0f;
                 total_b *= 2.0f;
                 total_emot *= 2.0f;
+                total_normal_x *= 2.0f;
+                total_normal_y *= 2.0f;
+                total_normal_z *= 2.0f;
+                total_albedo_r *= 2.0f;
+                total_albedo_g *= 2.0f;
+                total_albedo_b *= 2.0f;
                 samples_depth[2] = samples_depth[0];
                 samples_depth[3] = samples_depth[1];
             }
@@ -274,8 +318,13 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
 
             if (aux_features) {
                 aux_features[idx].depth = final_depth;
-                aux_features[idx].normal = (TSFiMCVec3){0.0f, 1.0f, 0.0f};
-                aux_features[idx].albedo = (TSFiMCVec3){0.4f, 0.25f, 0.15f};
+                float norm_mag = sqrtf(total_normal_x*total_normal_x + total_normal_y*total_normal_y + total_normal_z*total_normal_z) + 1e-6f;
+                aux_features[idx].normal.x = total_normal_x / norm_mag;
+                aux_features[idx].normal.y = total_normal_y / norm_mag;
+                aux_features[idx].normal.z = total_normal_z / norm_mag;
+                aux_features[idx].albedo.x = total_albedo_r * 0.25f;
+                aux_features[idx].albedo.y = total_albedo_g * 0.25f;
+                aux_features[idx].albedo.z = total_albedo_b * 0.25f;
                 aux_features[idx].emotional_weight = total_emot * 0.25f;
             }
 
