@@ -1197,6 +1197,15 @@ int main(void) {
     assert(utilitarian_efficiency_val > 0.0);
     printf("   ✓ Scarpi interface trust and utilitarian task efficiency verified successfully\n");
 
+    // Test Scarpi aesthetic trust variance and quality control decay calculations
+    double hedonic_trust_variance = 0.0;
+    double quality_control_decay_val = 0.0;
+    assert(evaluate_scarpi_hedonic_trust_variance(&geom, 0.82, 1.15, &hedonic_trust_variance));
+    assert(hedonic_trust_variance > 0.0);
+    assert(evaluate_scarpi_utilitarian_quality_control_decay(&geom, 15.0, &quality_control_decay_val));
+    assert(quality_control_decay_val > 0.0);
+    printf("   ✓ Scarpi aesthetic trust variance and quality control decay verified successfully\n");
+
     // Test Castle diplomatic alignment and policy consistency calculations
     double diplomatic_alignment_val = 0.0;
     double policy_consistency_val = 0.0;
