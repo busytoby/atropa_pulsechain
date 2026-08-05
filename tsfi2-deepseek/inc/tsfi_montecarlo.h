@@ -82,4 +82,14 @@ bool tsfi_montecarlo_regression_denoise(
     float feature_sigma
 );
 
+// Renders a Maniac Mansion frame built from the Z-machine using Vaesen guidance map based Monte Carlo path tracing.
+bool tsfi_montecarlo_render_maniac_mansion(
+    uint32_t room_id,
+    uint32_t *pixels_out,
+    float *depth_out,
+    int width,
+    int height,
+    float time
+);
+
 #endif // TSFI_MONTECARLO_H

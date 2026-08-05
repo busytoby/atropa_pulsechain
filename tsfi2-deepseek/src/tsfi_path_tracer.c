@@ -440,3 +440,73 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
     if (guidance_map) free(guidance_map);
     if (aux_features) free(aux_features);
 }
+
+bool tsfi_montecarlo_render_maniac_mansion(
+    uint32_t room_id,
+    uint32_t *pixels_out,
+    float *depth_out,
+    int width,
+    int height,
+    float time
+) {
+    if (!pixels_out || width <= 0 || height <= 0) {
+        return false;
+    }
+
+    TSFiHelmholtzSVDAG dag_mansion;
+    TSFiHelmholtzSVDAG dag_inhabitants;
+    memset(&dag_mansion, 0, sizeof(TSFiHelmholtzSVDAG));
+    memset(&dag_inhabitants, 0, sizeof(TSFiHelmholtzSVDAG));
+
+    // Allocate temporary intensity streams for voxel mapping
+    float *intensity_mansion = calloc(128 * 128 * 128, sizeof(float));
+    float *intensity_inhabitants = calloc(128 * 128 * 128, sizeof(float));
+    if (!intensity_mansion || !intensity_inhabitants) {
+        free(intensity_mansion);
+        free(intensity_inhabitants);
+        return false;
+    }
+
+    // Generate room floor structure at y = 0
+    for (int z = 0; z < 128; z++) {
+        for (int x = 0; x < 128; x++) {
+            intensity_mansion[0 * 16384 + z * 128 + x] = 1.0f;
+        }
+    }
+
+    // Place character box representing Z-Machine inhabitant in the center
+    for (int y = 2; y < 12; y++) {
+        for (int z = 60; z < 68; z++) {
+            for (int x = 60; x < 68; x++) {
+                intensity_inhabitants[y * 16384 + z * 128 + x] = 1.0f;
+            }
+        }
+    }
+
+    dag_mansion.intensity_stream = intensity_mansion;
+    dag_inhabitants.intensity_stream = intensity_inhabitants;
+
+    // Dynamically adjust Vaesen registry fear levels based on the active Z-machine room ID
+    if (room_id == 13) {
+        tsfi_vsen_vaesen_record_sight("Mara", "Upsala", 8);
+    } else {
+        tsfi_vsen_vaesen_record_sight("Tomte", "Upsala", 1);
+    }
+
+    tsfi_svdag_path_trace(
+        pixels_out,
+        depth_out,
+        &dag_mansion,
+        &dag_inhabitants,
+        width,
+        height,
+        time,
+        0.5f,
+        0.3f,
+        0.2f
+    );
+
+    free(intensity_mansion);
+    free(intensity_inhabitants);
+    return true;
+}
