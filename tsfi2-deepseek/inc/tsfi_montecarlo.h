@@ -42,4 +42,17 @@ bool tsfi_montecarlo_non_local_means(
     int search_radius
 );
 
+// Performs a patch-based Non-Local Means (NLM) reconstruction favoring emotional features (warmth/empathy geometry maps) over color gradients.
+bool tsfi_montecarlo_emotional_non_local_means(
+    const float *noisy_input,
+    const float *emotional_map,
+    float *clean_output,
+    int width,
+    int height,
+    float filter_strength,
+    int patch_radius,
+    int search_radius,
+    float empathy_bias
+);
+
 #endif // TSFI_MONTECARLO_H

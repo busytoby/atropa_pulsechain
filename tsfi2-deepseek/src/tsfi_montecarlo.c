@@ -170,3 +170,79 @@ bool tsfi_montecarlo_non_local_means(
     }
     return true;
 }
+
+bool tsfi_montecarlo_emotional_non_local_means(
+    const float *noisy_input,
+    const float *emotional_map,
+    float *clean_output,
+    int width,
+    int height,
+    float filter_strength,
+    int patch_radius,
+    int search_radius,
+    float empathy_bias
+) {
+    if (!noisy_input || !emotional_map || !clean_output || width <= 0 || height <= 0) {
+        return false;
+    }
+    if (filter_strength <= 0.0f || patch_radius < 0 || search_radius < 0) {
+        return false;
+    }
+
+    float h_sq = filter_strength * filter_strength;
+
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            int idx = y * width + x;
+            float sum_val = 0.0f;
+            float sum_w = 0.0f;
+
+            for (int sy = -search_radius; sy <= search_radius; sy++) {
+                int ny = y + sy;
+                if (ny < 0 || ny >= height) continue;
+                for (int sx = -search_radius; sx <= search_radius; sx++) {
+                    int nx = x + sx;
+                    if (nx < 0 || nx >= width) continue;
+
+                    // Compute patch similarity distance favoring emotional map features
+                    float patch_dist_sq = 0.0f;
+                    int patch_pixels = 0;
+
+                    for (int py = -patch_radius; py <= patch_radius; py++) {
+                        int c_py = y + py;
+                        int n_py = ny + py;
+                        if (c_py < 0 || c_py >= height || n_py < 0 || n_py >= height) continue;
+
+                        for (int px = -patch_radius; px <= patch_radius; px++) {
+                            int c_px = x + px;
+                            int n_px = nx + px;
+                            if (c_px < 0 || c_px >= width || n_px < 0 || n_px >= width) continue;
+
+                            float diff_color = noisy_input[c_py * width + c_px] - noisy_input[n_py * width + n_px];
+                            float diff_emotion = emotional_map[c_py * width + c_px] - emotional_map[n_py * width + n_px];
+
+                            patch_dist_sq += (1.0f - empathy_bias) * diff_color * diff_color +
+                                             empathy_bias * diff_emotion * diff_emotion;
+                            patch_pixels++;
+                        }
+                    }
+
+                    if (patch_pixels > 0) {
+                        float mean_dist_sq = patch_dist_sq / patch_pixels;
+                        float w = expf(-mean_dist_sq / h_sq);
+                        sum_val += noisy_input[ny * width + nx] * w;
+                        sum_w += w;
+                    }
+                }
+            }
+
+            if (sum_w > 0.0f) {
+                clean_output[idx] = sum_val / sum_w;
+            } else {
+                clean_output[idx] = noisy_input[idx];
+            }
+        }
+    }
+    return true;
+}
+

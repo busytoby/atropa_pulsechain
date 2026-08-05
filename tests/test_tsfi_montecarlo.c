@@ -62,6 +62,24 @@ int main(void) {
     assert(!tsfi_montecarlo_non_local_means(noisy_float, clean_float, 3, 3, 0.2f, 1, -1));
     printf("   ✓ Monte Carlo Non-Local Means reconstruction verified successfully\n");
 
+    // 4. Test Emotional Non-Local Means Reconstruction
+    float emotional_map[9] = {
+        0.1f, 0.1f, 0.1f,
+        0.1f, 0.9f, 0.1f, // high empathy/emotional feature in the center
+        0.1f, 0.1f, 0.1f
+    };
+    float clean_emotional[9] = {0};
+    assert(tsfi_montecarlo_emotional_non_local_means(noisy_float, emotional_map, clean_emotional, 3, 3, 0.2f, 1, 1, 0.8f));
+    assert(clean_emotional[4] > 0.0f);
+
+    // Test error boundaries for emotional NLM
+    assert(!tsfi_montecarlo_emotional_non_local_means(NULL, emotional_map, clean_emotional, 3, 3, 0.2f, 1, 1, 0.8f));
+    assert(!tsfi_montecarlo_emotional_non_local_means(noisy_float, NULL, clean_emotional, 3, 3, 0.2f, 1, 1, 0.8f));
+    assert(!tsfi_montecarlo_emotional_non_local_means(noisy_float, emotional_map, NULL, 3, 3, 0.2f, 1, 1, 0.8f));
+    assert(!tsfi_montecarlo_emotional_non_local_means(noisy_float, emotional_map, clean_emotional, -3, 3, 0.2f, 1, 1, 0.8f));
+    assert(!tsfi_montecarlo_emotional_non_local_means(noisy_float, emotional_map, clean_emotional, 3, 3, -0.2f, 1, 1, 0.8f));
+    printf("   ✓ Monte Carlo Emotional Non-Local Means reconstruction verified successfully\n");
+
     printf("[Test] All Monte Carlo Denoising tests completed successfully.\n");
     return 0;
 }
