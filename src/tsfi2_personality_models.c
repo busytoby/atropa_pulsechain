@@ -1817,3 +1817,19 @@ bool evaluate_castle_policy_consistency(const teddy_geometry_t *geom, double con
     return true;
 }
 
+bool evaluate_castle_diplomatic_alignment_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_alignment_out) {
+    if (!geom || duration_sec < 0.0 || !decayed_alignment_out) {
+        return false;
+    }
+    *decayed_alignment_out = exp(-duration_sec / (16.0 + geom->resilience_index * 6.0));
+    return true;
+}
+
+bool evaluate_castle_policy_consistency_variance(const teddy_geometry_t *geom, double consistency_score, double *variance_out) {
+    if (!geom || consistency_score < 0.0 || !variance_out) {
+        return false;
+    }
+    *variance_out = consistency_score * (1.1 + geom->leadership_profile * 0.4);
+    return true;
+}
+

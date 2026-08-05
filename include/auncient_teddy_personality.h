@@ -796,6 +796,12 @@ bool evaluate_castle_diplomatic_alignment(const teddy_geometry_t *geom, double t
 // Models communication consistency ratings based on message repetition and alignment bounds (Castle).
 bool evaluate_castle_policy_consistency(const teddy_geometry_t *geom, double consistency_score, double *policy_consistency_out);
 
+// Models the decay rate of relationship warmth ratings based on prolonged lack of interaction (Castle).
+bool evaluate_castle_diplomatic_alignment_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_alignment_out);
+
+// Models the variance in communication consistency ratings under dynamic boundary conditions (Castle).
+bool evaluate_castle_policy_consistency_variance(const teddy_geometry_t *geom, double consistency_score, double *variance_out);
+
 evaluation_tx_t begin_evaluation_transaction(teddy_geometry_t *target);
 bool commit_evaluation_transaction(evaluation_tx_t *tx);
 void rollback_evaluation_transaction(evaluation_tx_t *tx);
