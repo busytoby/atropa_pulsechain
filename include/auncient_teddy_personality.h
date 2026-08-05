@@ -487,6 +487,12 @@ bool evaluate_hyde_turn_interruption(const teddy_geometry_t *geom, double overla
 // Models micro-tremors in voice pitch associated with submissiveness or distress (Hyde et al.).
 bool evaluate_hyde_vocal_tremor_index(const teddy_geometry_t *geom, double pitch_variance, double *tremor_uncanny_out);
 
+// Calculates perceived maturity and dominance based on torso-to-head spatial scaling ratio (Keating, C. F.).
+bool evaluate_keating_torso_head_ratio(const teddy_geometry_t *geom, double torso_span, double *ratio_dominance_out);
+
+// Maps fWHR aggression thresholds directly to WinchesterMQ register boundary constraints (Geniole et al.).
+bool evaluate_geniole_fwhr_boundary_map(const teddy_geometry_t *geom, double threshold_scale, double *mapped_boundary_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 

@@ -702,6 +702,15 @@ int main(void) {
     assert(vocal_tremor > 0.0);
     printf("   ✓ HYDE et al. vocal turn interruption and vocal micro-tremor verified successfully\n");
 
+    // Test Keating torso-to-head ratio and Geniole fWHR boundary calculations
+    double torso_head_dominance = 0.0;
+    double fwhr_boundary = 0.0;
+    assert(evaluate_keating_torso_head_ratio(&geom, 1.5, &torso_head_dominance));
+    assert(torso_head_dominance > 0.0);
+    assert(evaluate_geniole_fwhr_boundary_map(&geom, 2.0, &fwhr_boundary));
+    assert(fwhr_boundary > 0.0);
+    printf("   ✓ Keating torso-to-head ratio and Geniole fWHR boundary mapping verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge

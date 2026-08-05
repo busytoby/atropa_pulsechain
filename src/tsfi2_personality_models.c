@@ -1113,3 +1113,19 @@ bool evaluate_hyde_vocal_tremor_index(const teddy_geometry_t *geom, double pitch
     return true;
 }
 
+bool evaluate_keating_torso_head_ratio(const teddy_geometry_t *geom, double torso_span, double *ratio_dominance_out) {
+    if (!geom || torso_span < 0.0 || !ratio_dominance_out) {
+        return false;
+    }
+    *ratio_dominance_out = torso_span * (0.8 + geom->torso_ratio * 0.4 + geom->leadership_profile * 0.3);
+    return true;
+}
+
+bool evaluate_geniole_fwhr_boundary_map(const teddy_geometry_t *geom, double threshold_scale, double *mapped_boundary_out) {
+    if (!geom || threshold_scale < 0.0 || !mapped_boundary_out) {
+        return false;
+    }
+    *mapped_boundary_out = threshold_scale * (1.1 + geom->head_fwhr * 0.5);
+    return true;
+}
+
