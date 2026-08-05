@@ -790,6 +790,12 @@ bool simulate_cloglog_verlet_physics(const teddy_geometry_t *geom, double scale_
 // Computes model selection diagnostics via AIC and BIC information criteria.
 bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out);
 
+// Evaluates relationship warmth ratings based on conversational turn-taking sync and posture pitch alignment metrics (Castle).
+bool evaluate_castle_diplomatic_alignment(const teddy_geometry_t *geom, double turn_taking_sync, double posture_alignment, double *alignment_out);
+
+// Models communication consistency ratings based on message repetition and alignment bounds (Castle).
+bool evaluate_castle_policy_consistency(const teddy_geometry_t *geom, double consistency_score, double *policy_consistency_out);
+
 evaluation_tx_t begin_evaluation_transaction(teddy_geometry_t *target);
 bool commit_evaluation_transaction(evaluation_tx_t *tx);
 void rollback_evaluation_transaction(evaluation_tx_t *tx);

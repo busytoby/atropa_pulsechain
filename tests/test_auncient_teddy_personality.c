@@ -1089,6 +1089,15 @@ int main(void) {
     assert(utilitarian_efficiency_val > 0.0);
     printf("   ✓ Scarpi interface trust and utilitarian task efficiency verified successfully\n");
 
+    // Test Castle diplomatic alignment and policy consistency calculations
+    double diplomatic_alignment_val = 0.0;
+    double policy_consistency_val = 0.0;
+    assert(evaluate_castle_diplomatic_alignment(&geom, 0.85, 0.74, &diplomatic_alignment_val));
+    assert(diplomatic_alignment_val > 0.0);
+    assert(evaluate_castle_policy_consistency(&geom, 0.82, &policy_consistency_val));
+    assert(policy_consistency_val > 0.0);
+    printf("   ✓ Castle diplomatic alignment and policy consistency verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge
