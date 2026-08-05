@@ -882,6 +882,15 @@ int main(void) {
     assert(lip_compress_trust > 0.0);
     printf("   ✓ KEATING, C. F. gaze shift dominance and lip compression trust verified successfully\n");
 
+    // Test Scarpi hedonic playfulness and utilitarian trust calculations
+    double playfulness_val = 0.0;
+    double utilitarian_trust_val = 0.0;
+    assert(evaluate_scarpi_hedonic_playfulness(&geom, 1.4, &playfulness_val));
+    assert(playfulness_val > 0.0);
+    assert(evaluate_scarpi_utilitarian_trust(&geom, 0.9, &utilitarian_trust_val));
+    assert(utilitarian_trust_val > 0.0);
+    printf("   ✓ Scarpi playfulness and utilitarian operational trust verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge

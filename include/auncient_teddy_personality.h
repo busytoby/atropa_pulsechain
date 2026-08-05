@@ -601,6 +601,12 @@ bool evaluate_keating_gaze_shift_dominance(const teddy_geometry_t *geom, double 
 // Models perceived trustworthiness based on lip compression and mouth surface area changes (Keating, C. F.).
 bool evaluate_keating_lip_compression_trust(const teddy_geometry_t *geom, double compression_ratio, double *trustworthiness_out);
 
+// Evaluates friendly visual parameters scaling on playfulness ratings (Scarpi).
+bool evaluate_scarpi_hedonic_playfulness(const teddy_geometry_t *geom, double base_playfulness, double *playfulness_out);
+
+// Models transaction trust based on H-bridge switching stability and safety margins (Scarpi).
+bool evaluate_scarpi_utilitarian_trust(const teddy_geometry_t *geom, double safety_margin, double *operational_trust_out);
+
 // Evaluates perceived conversational naturalness based on vocal pitch frequency jitter (Hyde et al.).
 bool evaluate_hyde_vocal_jitter_naturalness(const teddy_geometry_t *geom, double pitch_jitter, double *naturalness_out);
 

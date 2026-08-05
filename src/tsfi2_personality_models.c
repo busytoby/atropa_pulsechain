@@ -1433,3 +1433,19 @@ bool evaluate_keating_lip_compression_trust(const teddy_geometry_t *geom, double
     return true;
 }
 
+bool evaluate_scarpi_hedonic_playfulness(const teddy_geometry_t *geom, double base_playfulness, double *playfulness_out) {
+    if (!geom || base_playfulness < 0.0 || !playfulness_out) {
+        return false;
+    }
+    *playfulness_out = base_playfulness * (0.8 + geom->empathy_index * 0.4 + (1.0 - geom->stiffness) * 0.2);
+    return true;
+}
+
+bool evaluate_scarpi_utilitarian_trust(const teddy_geometry_t *geom, double safety_margin, double *operational_trust_out) {
+    if (!geom || safety_margin < 0.0 || !operational_trust_out) {
+        return false;
+    }
+    *operational_trust_out = safety_margin * (0.9 + geom->leadership_profile * 0.3);
+    return true;
+}
+
