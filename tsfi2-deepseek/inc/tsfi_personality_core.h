@@ -4,6 +4,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+
+#include <stdbool.h>
+#include <stdint.h>
+
 // Personality profiles matching the paper's findings
 typedef enum {
     PERSONALITY_TRUSTWORTHY, // Round head, round eyes, medium eye size
@@ -131,14 +135,13 @@ typedef struct {
     char usd_path[256];          // Target output USD asset path
 } agent_avatar_t;
 
-// ACID Transaction container for end-to-end avatar state.
+// Maps abstract traits to geometric parameters based on study results
+void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom);
+
+
 typedef struct {
     agent_avatar_t *target;
     agent_avatar_t backup;
     bool active;
 } avatar_tx_t;
-
-// Maps abstract traits to geometric parameters based on study results
-void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom);
-
 #endif // TSFI_PERSONALITY_CORE_H
