@@ -119,4 +119,22 @@ bool tsfi_montecarlo_adaptive_sigma(
     float *adaptive_range
 );
 
+// Transaction state container for filter parameters
+typedef struct {
+    float spatial_sigma;
+    float range_sigma;
+} TSFiMCFilterState;
+
+// ACID Transaction container for filter updates
+typedef struct {
+    TSFiMCFilterState *target;
+    TSFiMCFilterState backup;
+    bool active;
+} TSFiMCFilterTx;
+
+// ACID-compliant transaction lifecycle functions
+TSFiMCFilterTx tsfi_montecarlo_begin_filter_transaction(TSFiMCFilterState *state);
+bool tsfi_montecarlo_commit_filter_transaction(TSFiMCFilterTx *tx, float next_spatial, float next_range);
+void tsfi_montecarlo_rollback_filter_transaction(TSFiMCFilterTx *tx);
+
 #endif // TSFI_MONTECARLO_H

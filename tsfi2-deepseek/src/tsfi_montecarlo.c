@@ -571,4 +571,40 @@ bool tsfi_montecarlo_adaptive_sigma(
     return true;
 }
 
+TSFiMCFilterTx tsfi_montecarlo_begin_filter_transaction(TSFiMCFilterState *state) {
+    TSFiMCFilterTx tx;
+    memset(&tx, 0, sizeof(TSFiMCFilterTx));
+    if (state) {
+        tx.target = state;
+        tx.backup = *state;
+        tx.active = true;
+    }
+    return tx;
+}
+
+bool tsfi_montecarlo_commit_filter_transaction(TSFiMCFilterTx *tx, float next_spatial, float next_range) {
+    if (!tx || !tx->active || !tx->target) {
+        return false;
+    }
+
+    // Consistency Check: parameters must be strictly positive and finite
+    if (next_spatial <= 0.0f || next_range <= 0.0f || isnan(next_spatial) || isnan(next_range)) {
+        // Constraint failed: rollback (Atomicity check)
+        tsfi_montecarlo_rollback_filter_transaction(tx);
+        return false;
+    }
+
+    tx->target->spatial_sigma = next_spatial;
+    tx->target->range_sigma = next_range;
+    tx->active = false;
+    return true;
+}
+
+void tsfi_montecarlo_rollback_filter_transaction(TSFiMCFilterTx *tx) {
+    if (tx && tx->active && tx->target) {
+        *tx->target = tx->backup;
+        tx->active = false;
+    }
+}
+
 

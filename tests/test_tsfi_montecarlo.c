@@ -145,6 +145,24 @@ int main(void) {
     assert(!tsfi_montecarlo_adaptive_sigma(0.12, 2.0f, 0.5f, &adapt_spatial, NULL));
     printf("   ✓ Monte Carlo adaptive filter sigma estimator verified successfully\n");
 
+    // 10. Test ACID filter transactions
+    TSFiMCFilterState filter_state = { 2.0f, 0.5f };
+    TSFiMCFilterTx tx = tsfi_montecarlo_begin_filter_transaction(&filter_state);
+    assert(tx.active == true);
+    
+    // Commit a valid update
+    assert(tsfi_montecarlo_commit_filter_transaction(&tx, 2.5f, 0.4f));
+    assert(filter_state.spatial_sigma == 2.5f);
+    assert(filter_state.range_sigma == 0.4f);
+    assert(tx.active == false);
+
+    // Rollback an invalid update (e.g. negative sigma)
+    tx = tsfi_montecarlo_begin_filter_transaction(&filter_state);
+    assert(!tsfi_montecarlo_commit_filter_transaction(&tx, -1.0f, 0.4f));
+    assert(filter_state.spatial_sigma == 2.5f); // preserved
+    assert(tx.active == false);
+    printf("   ✓ Monte Carlo ACID filter parameters transaction lifecycle verified successfully\n");
+
     printf("[Test] All Monte Carlo Denoising tests completed successfully.\n");
     return 0;
 }
