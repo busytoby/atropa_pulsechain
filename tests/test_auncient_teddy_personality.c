@@ -1116,6 +1116,15 @@ int main(void) {
     assert(consistency_decay_val > 0.0);
     printf("   ✓ Scarpi playful engagement and structural consistency decay verified successfully\n");
 
+    // Test Scarpi hedonic playful arousal variance and utilitarian operational trust decay calculations
+    double arousal_variance_val = 0.0;
+    double operational_trust_decay = 0.0;
+    assert(evaluate_scarpi_hedonic_playful_arousal_variance(&geom, 0.55, 0.64, &arousal_variance_val));
+    assert(arousal_variance_val > 0.0);
+    assert(evaluate_scarpi_utilitarian_operational_trust_decay(&geom, 18.0, &operational_trust_decay));
+    assert(operational_trust_decay > 0.0);
+    printf("   ✓ Scarpi playful arousal variance and operational trust decay verified successfully\n");
+
     // Test Scarpi hedonic trust and utilitarian efficiency calculations
     double hedonic_trust_val = 0.0;
     double utilitarian_efficiency_val = 0.0;
