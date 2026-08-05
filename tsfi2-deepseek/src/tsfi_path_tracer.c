@@ -26,6 +26,8 @@ static inline Vector3 v_normalize(Vector3 v) {
 void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelmholtzSVDAG *dag_flower, const TSFiHelmholtzSVDAG *dag_bear, int w, int h, float t, float melanin, float roughness, float iridescence) {
     if (!pixels || !dag_flower || !dag_bear) return;
 
+    TSFiMCAuxFeatures *aux_features = malloc(sizeof(TSFiMCAuxFeatures) * w * h);
+
     // Spinning Genie Camera: Orbits and bobs to view the 3D manifold from all angles
     float angle = t * (float)TSFI_TAU * 2.0f; // Spin twice during the lifecycle
     float elevation = 0.5f + 1.5f * sinf(t * (float)TSFI_SECRET_CORE); // Bob up and down
@@ -217,10 +219,27 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
             
             if (depth_buffer) depth_buffer[idx] = final_depth;
 
+            if (aux_features) {
+                aux_features[idx].depth = final_depth;
+                aux_features[idx].normal = (TSFiMCVec3){0.0f, 1.0f, 0.0f};
+                aux_features[idx].albedo = (TSFiMCVec3){0.4f, 0.25f, 0.15f};
+            }
+
             uint8_t final_r = (uint8_t)(fminf(1.0f, powf(total_r * 0.25f, 0.4545f)) * 255);
             uint8_t final_g = (uint8_t)(fminf(1.0f, powf(total_g * 0.25f, 0.4545f)) * 255);
             uint8_t final_b = (uint8_t)(fminf(1.0f, powf(total_b * 0.25f, 0.4545f)) * 255);
             pixels[idx] = (0xFF << 24) | (final_r << 16) | (final_g << 8) | final_b;
         }
+    }
+
+    if (aux_features) {
+        uint32_t *denoised_pixels = malloc(sizeof(uint32_t) * w * h);
+        if (denoised_pixels) {
+            if (tsfi_montecarlo_cross_bilateral_filter(pixels, aux_features, denoised_pixels, w, h, 1.5f, 0.2f)) {
+                memcpy(pixels, denoised_pixels, sizeof(uint32_t) * w * h);
+            }
+            free(denoised_pixels);
+        }
+        free(aux_features);
     }
 }
