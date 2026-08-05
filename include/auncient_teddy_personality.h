@@ -517,6 +517,12 @@ bool evaluate_hyde_vocal_warmth_pitch(const teddy_geometry_t *geom, double avera
 // Models user aversion ratings based on conversational collision frequencies (Hyde et al.).
 bool evaluate_hyde_interruption_frequency(const teddy_geometry_t *geom, double collision_rate, double *aversion_rating_out);
 
+// Evaluates how unilateral chin asymmetry interacts with dynamic vertex dilation constraints (Keating, C. F.).
+bool evaluate_keating_chin_asymmetry_dilation(const teddy_geometry_t *geom, double base_dilation, double *asymmetry_dilation_out);
+
+// Models the habituation and decay of retaliation limits in response to provocation exposure based on fWHR (Geniole et al.).
+bool evaluate_geniole_fwhr_retaliation_decay(const teddy_geometry_t *geom, double exposure_duration_sec, double *decayed_retaliation_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 

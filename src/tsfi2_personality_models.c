@@ -1193,3 +1193,19 @@ bool evaluate_hyde_interruption_frequency(const teddy_geometry_t *geom, double c
     return true;
 }
 
+bool evaluate_keating_chin_asymmetry_dilation(const teddy_geometry_t *geom, double base_dilation, double *asymmetry_dilation_out) {
+    if (!geom || base_dilation < 0.0 || !asymmetry_dilation_out) {
+        return false;
+    }
+    *asymmetry_dilation_out = base_dilation * (1.0 + (1.0 - geom->symmetry) * 0.4);
+    return true;
+}
+
+bool evaluate_geniole_fwhr_retaliation_decay(const teddy_geometry_t *geom, double exposure_duration_sec, double *decayed_retaliation_out) {
+    if (!geom || exposure_duration_sec < 0.0 || !decayed_retaliation_out) {
+        return false;
+    }
+    *decayed_retaliation_out = exp(-exposure_duration_sec / (10.0 + geom->head_fwhr * 5.0));
+    return true;
+}
+

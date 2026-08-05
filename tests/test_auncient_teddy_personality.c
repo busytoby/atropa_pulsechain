@@ -747,6 +747,15 @@ int main(void) {
     assert(interruption_freq > 0.0);
     printf("   ✓ HYDE et al. vocal warmth pitch and conversational interruption frequency verified successfully\n");
 
+    // Test Keating chin asymmetry dilation and Geniole fWHR retaliation decay calculations
+    double asymmetry_dilation = 0.0;
+    double fwhr_retaliation_decay = 0.0;
+    assert(evaluate_keating_chin_asymmetry_dilation(&geom, 1.2, &asymmetry_dilation));
+    assert(asymmetry_dilation > 0.0);
+    assert(evaluate_geniole_fwhr_retaliation_decay(&geom, 5.0, &fwhr_retaliation_decay));
+    assert(fwhr_retaliation_decay > 0.0);
+    printf("   ✓ Keating chin asymmetry dilation and Geniole fWHR retaliation decay verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge
