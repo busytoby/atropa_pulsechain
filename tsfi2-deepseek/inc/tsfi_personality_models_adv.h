@@ -566,4 +566,13 @@ bool evaluate_kramer_king_ward_sex_modulated_neuroticism(const teddy_geometry_t 
 // Evaluates PCA variance retention ratios for the top three components (Kramer, King & Ward).
 bool evaluate_kramer_king_ward_pca_variance_retention(const teddy_geometry_t *geom, const double *singular_values, int count, double *retention_ratio_out);
 
+// Evaluates species-specific vs species-general threat markers (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_threat_specificity(const teddy_geometry_t *geom, double species_factor, double *specificity_out);
+
+// Models sex-modulated Openness decoding accuracy (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_sex_modulated_openness(const teddy_geometry_t *geom, double base_accuracy, int observer_sex, int primate_sex, double *accuracy_out);
+
+// Evaluates component loading projection of a trait vector (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_pca_component_loading(const teddy_geometry_t *geom, const double *trait_vector, const double *loading_weights, int size, double *loading_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H

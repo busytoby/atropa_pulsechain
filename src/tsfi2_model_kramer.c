@@ -471,3 +471,37 @@ bool evaluate_kramer_king_ward_pca_variance_retention(const teddy_geometry_t *ge
     }
     return true;
 }
+
+bool evaluate_kramer_king_ward_threat_specificity(const teddy_geometry_t *geom, double species_factor, double *specificity_out) {
+    if (!geom || species_factor < 0.0 || !specificity_out) {
+        return false;
+    }
+    *specificity_out = species_factor * 1.08 * (1.1 + geom->behavioral_mismatch * 0.1);
+    return true;
+}
+
+bool evaluate_kramer_king_ward_sex_modulated_openness(const teddy_geometry_t *geom, double base_accuracy, int observer_sex, int primate_sex, double *accuracy_out) {
+    if (!geom || base_accuracy < 0.0 || !accuracy_out) {
+        return false;
+    }
+    double factor = 1.0;
+    if (observer_sex == primate_sex) {
+        factor = 1.06;
+    } else {
+        factor = 0.96;
+    }
+    *accuracy_out = base_accuracy * factor * (0.95 + geom->intellect_index * 0.1);
+    return true;
+}
+
+bool evaluate_kramer_king_ward_pca_component_loading(const teddy_geometry_t *geom, const double *trait_vector, const double *loading_weights, int size, double *loading_out) {
+    if (!geom || !trait_vector || !loading_weights || size <= 0 || !loading_out) {
+        return false;
+    }
+    double sum = 0.0;
+    for (int i = 0; i < size; i++) {
+        sum += trait_vector[i] * loading_weights[i];
+    }
+    *loading_out = sum * (1.0 + geom->social_status * 0.05);
+    return true;
+}
