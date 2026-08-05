@@ -1465,6 +1465,22 @@ bool evaluate_cellarius_epicycle_phase_decay(const teddy_geometry_t *geom, doubl
     return true;
 }
 
+bool evaluate_cellarius_velocity_eccentricity(const teddy_geometry_t *geom, double velocity_val, double eccentricity_val, double *frequency_shift_out) {
+    if (!geom || velocity_val < 0.0 || eccentricity_val < 0.0 || !frequency_shift_out) {
+        return false;
+    }
+    *frequency_shift_out = velocity_val * eccentricity_val * (1.1 + geom->symmetry * 0.4);
+    return true;
+}
+
+bool evaluate_cellarius_alignment_decay(const teddy_geometry_t *geom, double tracking_duration, double *decayed_boundary_out) {
+    if (!geom || tracking_duration < 0.0 || !decayed_boundary_out) {
+        return false;
+    }
+    *decayed_boundary_out = exp(-tracking_duration / (15.0 + geom->head_fwhr * 5.0));
+    return true;
+}
+
 bool evaluate_hyde_dynamic_intonation(const teddy_geometry_t *geom, double intonation_range, double brow_movement, double *intonation_out) {
     if (!geom || intonation_range < 0.0 || brow_movement < 0.0 || !intonation_out) {
         return false;

@@ -613,6 +613,12 @@ bool evaluate_cellarius_eccentricity_scale(const teddy_geometry_t *geom, double 
 // Models the decay rate of epicycle coordinate offset amplitudes over prolonged tracking cycles (Cellarius).
 bool evaluate_cellarius_epicycle_phase_decay(const teddy_geometry_t *geom, double tracking_cycles, double *decayed_amplitude_out);
 
+// Models spatial coordinate frequency shifts based on planetary orbital velocity variations and eccentricity (Cellarius).
+bool evaluate_cellarius_velocity_eccentricity(const teddy_geometry_t *geom, double velocity_val, double eccentricity_val, double *frequency_shift_out);
+
+// Calculates boundary alignment stability decay rates over prolonged tracking durations (Cellarius).
+bool evaluate_cellarius_alignment_decay(const teddy_geometry_t *geom, double tracking_duration, double *decayed_boundary_out);
+
 // Evaluates dynamic changes in vocal intonation range alignment with eyebrow movements (Hyde et al.).
 bool evaluate_hyde_dynamic_intonation(const teddy_geometry_t *geom, double intonation_range, double brow_movement, double *intonation_out);
 

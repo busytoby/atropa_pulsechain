@@ -891,6 +891,15 @@ int main(void) {
     assert(epicycle_phase_decay > 0.0);
     printf("   ✓ Cellarius eccentricity scale and epicycle phase decay verified successfully\n");
 
+    // Test Cellarius velocity eccentricity and alignment decay calculations
+    double velocity_eccentricity_shift = 0.0;
+    double alignment_decay_val = 0.0;
+    assert(evaluate_cellarius_velocity_eccentricity(&geom, 10.5, 0.06, &velocity_eccentricity_shift));
+    assert(velocity_eccentricity_shift > 0.0);
+    assert(evaluate_cellarius_alignment_decay(&geom, 22.0, &alignment_decay_val));
+    assert(alignment_decay_val > 0.0);
+    printf("   ✓ Cellarius velocity eccentricity and alignment boundary decay verified successfully\n");
+
     // Test Hyde vocal jitter naturalness and intonation amplitude calculations
     double vocal_jitter = 0.0;
     double intonation_amp = 0.0;
