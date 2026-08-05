@@ -290,3 +290,19 @@ bool evaluate_scarpi_utilitarian_efficiency(const teddy_geometry_t *geom, double
     return true;
 }
 
+bool evaluate_scarpi_hedonic_playful_arousal_decay_variance_mod(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+    if (!geom || duration_sec < 0.0 || !decay_variance_out) {
+        return false;
+    }
+    *decay_variance_out = exp(-duration_sec / (15.0 + geom->empathy_index * 5.0));
+    return true;
+}
+
+bool evaluate_scarpi_utilitarian_operational_trust_variance_mod(const teddy_geometry_t *geom, double trust_score, double *variance_out) {
+    if (!geom || trust_score < 0.0 || !variance_out) {
+        return false;
+    }
+    *variance_out = trust_score * (0.8 + geom->leadership_profile * 0.4);
+    return true;
+}
+
