@@ -1539,6 +1539,15 @@ int main(void) {
     assert(policy_consistency_decay_variance_mod_val > 0.0);
     printf("   ✓ Castle diplomatic alignment variance mod variance and policy consistency decay variance mod verified successfully\n");
 
+    // Test Castle diplomatic alignment decay variance mod variance and policy consistency variance mod variance calculations
+    double diplomatic_alignment_decay_variance_mod_variance = 0.0;
+    double policy_consistency_variance_mod_variance = 0.0;
+    assert(evaluate_castle_diplomatic_alignment_decay_variance_mod_variance(&geom, 15.0, &diplomatic_alignment_decay_variance_mod_variance));
+    assert(diplomatic_alignment_decay_variance_mod_variance > 0.0);
+    assert(evaluate_castle_policy_consistency_variance_mod_variance(&geom, 0.75, &policy_consistency_variance_mod_variance));
+    assert(policy_consistency_variance_mod_variance > 0.0);
+    printf("   ✓ Castle diplomatic alignment decay variance mod variance and policy consistency variance mod variance verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge
