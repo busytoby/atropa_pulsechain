@@ -146,3 +146,19 @@ bool evaluate_cellarius_epicycle_phase_decay_mod(const teddy_geometry_t *geom, d
     return true;
 }
 
+bool evaluate_cellarius_heliocentric_alignment_scale(const teddy_geometry_t *geom, double orbital_phase, double *scale_out) {
+    if (!geom || !scale_out) {
+        return false;
+    }
+    *scale_out = sin(orbital_phase) * (1.5 + geom->symmetry * 0.5);
+    return true;
+}
+
+bool evaluate_cellarius_epicycle_acceleration_variance(const teddy_geometry_t *geom, double velocity_val, double eccentricity_val, double *variance_out) {
+    if (!geom || velocity_val < 0.0 || eccentricity_val < 0.0 || !variance_out) {
+        return false;
+    }
+    *variance_out = velocity_val * eccentricity_val * (0.8 + geom->head_fwhr * 0.4);
+    return true;
+}
+
