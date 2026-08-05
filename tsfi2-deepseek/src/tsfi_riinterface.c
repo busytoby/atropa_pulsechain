@@ -37,9 +37,10 @@ void tsfi_riinterface_init(TSFiRiInterface *ri) {
     ri->irq_counter = 0;
     ri->irq_active = false;
     
-    // Initialize co-design shader and dof contexts
+    // Initialize co-design shader, dof, and CCX pool contexts
     tsfi_displacementshader_init(&ri->shader, 2.5, 1.5);
     tsfi_depthoffield_init(&ri->dof, 10.0, 0.5, 10.0);
+    tsfi_ccx_pool_init(&ri->ccx_pool, 0, 4);
     memset(ri->multiframe_buffer, 0, sizeof(ri->multiframe_buffer));
     ri->current_frame_idx = 0;
 }
@@ -196,7 +197,7 @@ void tsfi_riinterface_run_8step_loop(TSFiRiInterface *ri, double camera_velocity
         for (int i = 0; i < 256 * 256; i++) {
             temp_in[i] = (double)ri->frame_buffer[i];
         }
-        tsfi_depthoffield_wiener_deconvolve(temp_in, temp_out, 256, 256, 0.01);
+        tsfi_ccx_deconvolve_parallel(&ri->ccx_pool, temp_in, temp_out, 256, 256, 0.01);
         for (int i = 0; i < 256 * 256; i++) {
             double val = temp_out[i];
             if (val < 0.0) val = 0.0;
@@ -357,7 +358,7 @@ void tsfi_riinterface_accumulate_frame(TSFiRiInterface *ri) {
             for (int i = 0; i < 256 * 256; i++) {
                 temp_accum[i] /= 4.0;
             }
-            tsfi_depthoffield_wiener_deconvolve(temp_accum, temp_out, 256, 256, 0.005);
+            tsfi_ccx_deconvolve_parallel(&ri->ccx_pool, temp_accum, temp_out, 256, 256, 0.005);
             for (int i = 0; i < 256 * 256; i++) {
                 double val = temp_out[i];
                 if (val < 0.0) val = 0.0;
@@ -382,7 +383,7 @@ void tsfi_riinterface_resolve_pmg_cics_collision(TSFiRiInterface *ri, uint32_t p
             temp_in[i] = (double)ri->frame_buffer[i];
         }
         
-        tsfi_depthoffield_wiener_deconvolve(temp_in, temp_out, 256, 256, 0.01);
+        tsfi_ccx_deconvolve_parallel(&ri->ccx_pool, temp_in, temp_out, 256, 256, 0.01);
         
         for (int i = 0; i < 256 * 256; i++) {
             double val = temp_out[i];

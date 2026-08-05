@@ -6,6 +6,8 @@
 #include "tsfi_displacementshader.h"
 #include "tsfi_depthoffield.h"
 
+#include "tsfi_ccx_pool.h"
+
 typedef struct {
     uint16_t hudson_vce_color_reg[16];
     int active_sprite_id;
@@ -35,6 +37,7 @@ typedef struct {
     // Joint Co-Design pipeline sub-contexts
     TSFiDisplacementShader shader;
     TSFiDepthOfField dof;
+    TSFiCCXPool ccx_pool;
     
     // Multiframe temporal-spatial accumulator
     uint8_t multiframe_buffer[4][256 * 256];
