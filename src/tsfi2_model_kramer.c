@@ -161,3 +161,39 @@ bool evaluate_kramer_ward_fwhr_judgment_confidence_calibration(const teddy_geome
     *confidence_rating_out = (1.0 / (1.0 + deviation * 1.5)) * (0.9 + geom->intellect_index * 0.1);
     return true;
 }
+
+bool evaluate_kramer_ward_fwhr_perceived_vs_actual_health(const teddy_geometry_t *geom, double perceived_health, double actual_health, double *mismatch_out) {
+    if (!geom || perceived_health < 0.0 || actual_health < 0.0 || !mismatch_out) {
+        return false;
+    }
+    *mismatch_out = fabs(perceived_health - actual_health) * (1.1 + geom->behavioral_mismatch * 0.2);
+    return true;
+}
+
+bool evaluate_kramer_ward_fwhr_cheekbone_prominence_modulation(const teddy_geometry_t *geom, double cheekbone_val, double *prominence_mod_out) {
+    if (!geom || cheekbone_val < 0.0 || !prominence_mod_out) {
+        return false;
+    }
+    *prominence_mod_out = cheekbone_val * 0.95 * (1.0 + (1.0 - geom->symmetry) * 0.15);
+    return true;
+}
+
+bool evaluate_kramer_ward_fwhr_perspective_distortion(const teddy_geometry_t *geom, double fwhr_val, double focal_length_mm, double *distorted_fwhr_out) {
+    if (!geom || fwhr_val < 0.0 || focal_length_mm <= 0.0 || !distorted_fwhr_out) {
+        return false;
+    }
+    // Shorter focal lengths distort (widen) the apparent fWHR
+    double distortion_factor = 1.0 + (35.0 / focal_length_mm) * 0.08;
+    *distorted_fwhr_out = fwhr_val * distortion_factor * (1.0 + geom->head_fwhr * 0.02);
+    return true;
+}
+
+bool evaluate_kramer_ward_fwhr_micro_exposure_resolution(const teddy_geometry_t *geom, double exposure_ms, double *resolution_accuracy_out) {
+    if (!geom || exposure_ms < 0.0 || !resolution_accuracy_out) {
+        return false;
+    }
+    // Trait resolution is sigmoid-gated by exposure duration up to ~500ms
+    double k = 0.015; // sigmoid slope constant
+    *resolution_accuracy_out = (1.0 / (1.0 + exp(-k * (exposure_ms - 100.0)))) * (0.85 + geom->intellect_index * 0.1);
+    return true;
+}

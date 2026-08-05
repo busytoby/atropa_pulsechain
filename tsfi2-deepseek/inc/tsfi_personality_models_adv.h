@@ -476,4 +476,16 @@ bool evaluate_kramer_ward_fwhr_dynamic_temporal_smoothing(const teddy_geometry_t
 // Models observer judgment confidence distributions relative to fWHR structural deviation from average (Kramer & Ward).
 bool evaluate_kramer_ward_fwhr_judgment_confidence_calibration(const teddy_geometry_t *geom, double fwhr_val, double *confidence_rating_out);
 
+// Models the discrepancy between perceived health and actual physiological health (Kramer & Ward).
+bool evaluate_kramer_ward_fwhr_perceived_vs_actual_health(const teddy_geometry_t *geom, double perceived_health, double actual_health, double *mismatch_out);
+
+// Models the geometric modulation of cheekbone prominence and cheek height (Kramer & Ward).
+bool evaluate_kramer_ward_fwhr_cheekbone_prominence_modulation(const teddy_geometry_t *geom, double cheekbone_val, double *prominence_mod_out);
+
+// Models perspective distortion of apparent fWHR as a function of lens focal length (Kramer & Ward).
+bool evaluate_kramer_ward_fwhr_perspective_distortion(const teddy_geometry_t *geom, double fwhr_val, double focal_length_mm, double *distorted_fwhr_out);
+
+// Models the accuracy limit of fWHR trait resolution under rapid micro-exposure (Kramer & Ward).
+bool evaluate_kramer_ward_fwhr_micro_exposure_resolution(const teddy_geometry_t *geom, double exposure_ms, double *resolution_accuracy_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H
