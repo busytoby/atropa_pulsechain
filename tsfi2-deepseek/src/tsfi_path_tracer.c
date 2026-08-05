@@ -25,7 +25,7 @@ static inline Vector3 v_normalize(Vector3 v) {
     return (Vector3){v.x / mag, v.y / mag, v.z / mag};
 }
 
-static float calculate_personality_guidance_weight(const teddy_geometry_t *geom, float base_emot) {
+static float calculate_personality_guidance_weight(const teddy_geometry_t *geom, float base_emot, float db, float jitter, float elevation, float t) {
     double babyfacedness = 1.0;
     evaluate_keating_babyfacedness_index(geom, &babyfacedness);
 
@@ -38,11 +38,17 @@ static float calculate_personality_guidance_weight(const teddy_geometry_t *geom,
     double agreeableness = 1.0;
     evaluate_kramer_king_ward_perceived_agreeableness_consensus(geom, 0.5, 0.5, &agreeableness);
 
+    // Wang model character warmth modulated dynamically by time and camera tilt (elevation)
     double warmth = 1.0;
-    evaluate_wang_geigel_character_warmth(geom, 1.5, 0.2, &warmth);
+    double gaze_shift_freq = 1.0 + 0.5 * sin((double)t);
+    double head_tilt_val = (double)elevation;
+    evaluate_wang_geigel_character_warmth(geom, gaze_shift_freq, head_tilt_val, &warmth);
 
+    // Masuda model perceived naturalness modulated dynamically by noise jitter and bear SVDAG density (db)
     double naturalness = 1.0;
-    evaluate_masuda_perceived_naturalness(geom, 120.0, 0.6, &naturalness);
+    double sync_delay_ms = 100.0 * (1.0 + (double)jitter);
+    double smile_intensity = (double)db;
+    evaluate_masuda_perceived_naturalness(geom, sync_delay_ms, smile_intensity, &naturalness);
 
     double fwhr_dom = 1.0;
     evaluate_kramer_ward_fwhr_dominance(geom, 1.85, &fwhr_dom);
@@ -161,7 +167,7 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
                         float shading_factor = fabsf(N.y);
                         float excitation = 0.5f + 0.5f * jitter;
                         float base_emot = expf(-dist_to_face * dist_to_face) * shading_factor * excitation;
-                        sample_emot = calculate_personality_guidance_weight(&geom, base_emot);
+                        sample_emot = calculate_personality_guidance_weight(&geom, base_emot, db, jitter, elevation, t);
                         if (transmit < 0.01f) break;
                     }
                 }
@@ -243,7 +249,7 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
                             float shading_factor = fabsf(N.y);
                             float excitation = 0.5f + 0.5f * jitter;
                             float base_emot = expf(-dist_to_face * dist_to_face) * shading_factor * excitation;
-                            sample_emot = calculate_personality_guidance_weight(&geom, base_emot);
+                            sample_emot = calculate_personality_guidance_weight(&geom, base_emot, db, jitter, elevation, t);
                             if (transmit < 0.01f) break;
                         }
                     }
