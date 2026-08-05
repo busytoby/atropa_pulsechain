@@ -828,6 +828,15 @@ int main(void) {
     assert(utilitarian_quality > 0.0);
     printf("   ✓ Scarpi hedonic arousal and utilitarian quality verified successfully\n");
 
+    // Test Scarpi hedonic arousal decay and utilitarian loyalty calculations
+    double hedonic_arousal_decay = 0.0;
+    double utilitarian_loyalty = 0.0;
+    assert(evaluate_scarpi_hedonic_arousal_decay(&geom, 15.0, &hedonic_arousal_decay));
+    assert(hedonic_arousal_decay > 0.0);
+    assert(evaluate_scarpi_utilitarian_loyalty(&geom, 0.88, &utilitarian_loyalty));
+    assert(utilitarian_loyalty > 0.0);
+    printf("   ✓ Scarpi hedonic arousal decay and utilitarian loyalty verified successfully\n");
+
     // Test Cellarius planetary eccentricity and epicycle modulation calculations
     double planet_eccentricity = 0.0;
     double epicycle_mod = 0.0;

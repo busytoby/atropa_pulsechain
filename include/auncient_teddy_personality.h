@@ -571,6 +571,12 @@ bool evaluate_scarpi_hedonic_arousal(const teddy_geometry_t *geom, double playfu
 // Models utilitarian quality evaluation based on physical layout symmetry and stability indices (Scarpi).
 bool evaluate_scarpi_utilitarian_quality(const teddy_geometry_t *geom, double stability_index, double *quality_rating_out);
 
+// Models playfulness arousal decay over dynamic interaction durations (Scarpi).
+bool evaluate_scarpi_hedonic_arousal_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_arousal_out);
+
+// Models user interaction loyalty ratings based on task success and structural consistency checks (Scarpi).
+bool evaluate_scarpi_utilitarian_loyalty(const teddy_geometry_t *geom, double success_rate, double *loyalty_out);
+
 // Models coordinate translation offsets derived from planetary orbit eccentricity ratios (Cellarius).
 bool evaluate_cellarius_planetary_eccentricity(const teddy_geometry_t *geom, double eccentricity_ratio, double *translation_offset_out);
 

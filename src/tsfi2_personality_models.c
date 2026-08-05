@@ -1369,3 +1369,19 @@ bool evaluate_keating_lip_submissiveness(const teddy_geometry_t *geom, double li
     return true;
 }
 
+bool evaluate_scarpi_hedonic_arousal_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_arousal_out) {
+    if (!geom || duration_sec < 0.0 || !decayed_arousal_out) {
+        return false;
+    }
+    *decayed_arousal_out = exp(-duration_sec / (15.0 + (1.0 - geom->stiffness) * 10.0));
+    return true;
+}
+
+bool evaluate_scarpi_utilitarian_loyalty(const teddy_geometry_t *geom, double success_rate, double *loyalty_out) {
+    if (!geom || success_rate < 0.0 || !loyalty_out) {
+        return false;
+    }
+    *loyalty_out = success_rate * (0.8 + geom->leadership_profile * 0.4);
+    return true;
+}
+
