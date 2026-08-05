@@ -1481,6 +1481,22 @@ bool evaluate_hyde_tempo_jitter_decay(const teddy_geometry_t *geom, double durat
     return true;
 }
 
+bool evaluate_hyde_tempo_range(const teddy_geometry_t *geom, double tempo_range_val, double brow_movement, double *tempo_range_out) {
+    if (!geom || tempo_range_val < 0.0 || brow_movement < 0.0 || !tempo_range_out) {
+        return false;
+    }
+    *tempo_range_out = tempo_range_val * brow_movement * (0.8 + geom->symmetry * 0.4);
+    return true;
+}
+
+bool evaluate_hyde_tempo_range_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_range_out) {
+    if (!geom || duration_sec < 0.0 || !decayed_range_out) {
+        return false;
+    }
+    *decayed_range_out = exp(-duration_sec / (16.0 + geom->resilience_index * 6.0));
+    return true;
+}
+
 bool evaluate_hyde_vocal_warmth_modulation(const teddy_geometry_t *geom, double pitch_hz, double chin_curvature, double *warmth_out) {
     if (!geom || pitch_hz < 0.0 || chin_curvature < 0.0 || !warmth_out) {
         return false;

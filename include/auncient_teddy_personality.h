@@ -619,6 +619,12 @@ bool evaluate_hyde_tempo_sync(const teddy_geometry_t *geom, double tempo_sync_va
 // Models vocal tempo variations decay over dynamic interaction durations (Hyde et al.).
 bool evaluate_hyde_tempo_jitter_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_jitter_out);
 
+// Evaluates conversational vocal tempo range alignment with eyebrow movements (Hyde et al.).
+bool evaluate_hyde_tempo_range(const teddy_geometry_t *geom, double tempo_range_val, double brow_movement, double *tempo_range_out);
+
+// Models the decay rate of vocal tempo variation range over prolonged interaction durations (Hyde et al.).
+bool evaluate_hyde_tempo_range_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_range_out);
+
 // Evaluates vocal warmth alignment with visual chin curvature adjustments (Hyde et al.).
 bool evaluate_hyde_vocal_warmth_modulation(const teddy_geometry_t *geom, double pitch_hz, double chin_curvature, double *warmth_out);
 
