@@ -197,3 +197,28 @@ bool evaluate_kramer_ward_fwhr_micro_exposure_resolution(const teddy_geometry_t 
     *resolution_accuracy_out = (1.0 / (1.0 + exp(-k * (exposure_ms - 100.0)))) * (0.85 + geom->intellect_index * 0.1);
     return true;
 }
+
+bool evaluate_kramer_king_ward_primate_extraversion_signaling(const teddy_geometry_t *geom, double face_proportion, double *extraversion_out) {
+    if (!geom || face_proportion < 0.0 || !extraversion_out) {
+        return false;
+    }
+    *extraversion_out = face_proportion * 1.15 * (0.9 + geom->social_extraversion * 0.2);
+    return true;
+}
+
+bool evaluate_kramer_king_ward_cross_species_congruence(const teddy_geometry_t *geom, double human_score, double primate_score, double *congruence_out) {
+    if (!geom || human_score < 0.0 || primate_score < 0.0 || !congruence_out) {
+        return false;
+    }
+    double diff = fabs(human_score - primate_score);
+    *congruence_out = (1.0 / (1.0 + diff)) * (0.95 + geom->cooperative_negotiation * 0.05);
+    return true;
+}
+
+bool evaluate_kramer_king_ward_shared_evolutionary_threat(const teddy_geometry_t *geom, double fwhr_val, double brow_val, double *threat_out) {
+    if (!geom || fwhr_val < 0.0 || brow_val < 0.0 || !threat_out) {
+        return false;
+    }
+    *threat_out = (fwhr_val * 0.6 + brow_val * 0.4) * (1.1 + geom->behavioral_mismatch * 0.3);
+    return true;
+}

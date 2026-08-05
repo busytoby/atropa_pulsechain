@@ -1734,6 +1734,9 @@ int main(void) {
     double kramer_prominence_mod = 0.0;
     double kramer_distorted_fwhr = 0.0;
     double kramer_exposure_accuracy = 0.0;
+    double kramer_primate_extraversion = 0.0;
+    double kramer_primate_congruence = 0.0;
+    double kramer_primate_threat = 0.0;
     assert(evaluate_kramer_ward_fwhr_3d_scan_discrepancy(&geom, 1.85, &kramer_discrepancy));
     assert(kramer_discrepancy > 0.0);
     assert(evaluate_kramer_ward_fwhr_sexual_dimorphism_null_hypothesis(&geom, 1.90, 1.85, &kramer_p_value));
@@ -1761,8 +1764,14 @@ int main(void) {
     assert(kramer_distorted_fwhr > 0.0);
     assert(evaluate_kramer_ward_fwhr_micro_exposure_resolution(&geom, 250.0, &kramer_exposure_accuracy));
     assert(kramer_exposure_accuracy > 0.0);
+    assert(evaluate_kramer_king_ward_primate_extraversion_signaling(&geom, 1.85, &kramer_primate_extraversion));
+    assert(kramer_primate_extraversion > 0.0);
+    assert(evaluate_kramer_king_ward_cross_species_congruence(&geom, 0.8, 0.75, &kramer_primate_congruence));
+    assert(kramer_primate_congruence > 0.0);
+    assert(evaluate_kramer_king_ward_shared_evolutionary_threat(&geom, 1.85, 0.8, &kramer_primate_threat));
+    assert(kramer_primate_threat > 0.0);
     
-    printf("   ✓ KRAMER & WARD FWHR dominance, trustworthiness, threat, cooperation, discrepancy, dimorphism null-hypothesis, head tilt, perceived-actual mismatch, noise sensitivity, adaptation bias, hemiface bias, ambient shading, temporal smoothing, confidence calibration, perceived-actual health mismatch, cheekbone prominence modulation, perspective distortion, micro-exposure resolution, and decay variances verified successfully\n");
+    printf("   ✓ KRAMER & WARD FWHR dominance, trustworthiness, threat, cooperation, discrepancy, dimorphism null-hypothesis, head tilt, perceived-actual mismatch, noise sensitivity, adaptation bias, hemiface bias, ambient shading, temporal smoothing, confidence calibration, perceived-actual health mismatch, cheekbone prominence modulation, perspective distortion, micro-exposure resolution, primate extraversion signaling, cross-species congruence, shared evolutionary threat, and decay variances verified successfully\n");
 
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;

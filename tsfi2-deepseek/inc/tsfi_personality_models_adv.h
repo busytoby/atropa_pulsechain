@@ -488,4 +488,13 @@ bool evaluate_kramer_ward_fwhr_perspective_distortion(const teddy_geometry_t *ge
 // Models the accuracy limit of fWHR trait resolution under rapid micro-exposure (Kramer & Ward).
 bool evaluate_kramer_ward_fwhr_micro_exposure_resolution(const teddy_geometry_t *geom, double exposure_ms, double *resolution_accuracy_out);
 
+// Models primate Extraversion traits based on facial proportions (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_primate_extraversion_signaling(const teddy_geometry_t *geom, double face_proportion, double *extraversion_out);
+
+// Models cross-species classifier congruence between humans and primates (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_cross_species_congruence(const teddy_geometry_t *geom, double human_score, double primate_score, double *congruence_out);
+
+// Models shared evolutionary threat cues (fWHR + brow prominence) across primates (Kramer, King & Ward).
+bool evaluate_kramer_king_ward_shared_evolutionary_threat(const teddy_geometry_t *geom, double fwhr_val, double brow_val, double *threat_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H
