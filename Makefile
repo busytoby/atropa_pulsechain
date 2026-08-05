@@ -65,7 +65,7 @@ test-hathitrust-extra2:
 	@rm -f tests/test_hathitrust_extra2
 
 test-hathitrust-extra3:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_extra3.c src/hathitrust_mets.c src/hathitrust_iiif.c src/hathitrust_alto.c src/hathitrust_region.c src/hathitrust_hathifile.c src/hathitrust_hathifile_search.c -o tests/test_hathitrust_extra3 -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_hathitrust_extra3.c src/hathitrust_mets.c src/hathitrust_iiif.c src/hathitrust_alto.c src/hathitrust_region.c src/hathitrust_hathifile.c src/hathitrust_hathifile_search.c tsfi2-deepseek/src/tsfi_mainframe_vsam.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c tsfi2-deepseek/src/tsfi_displacementshader.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_hathitrust_extra3 -lcrypto -lrt -lm
 	./tests/test_hathitrust_extra3
 	@rm -f tests/test_hathitrust_extra3
 
