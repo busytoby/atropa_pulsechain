@@ -55,4 +55,17 @@ bool tsfi_montecarlo_emotional_non_local_means(
     float empathy_bias
 );
 
+// Performs a patch-based Non-Local Means (NLM) using guided path selection along emotional map gradients.
+bool tsfi_montecarlo_guided_path_non_local_means(
+    const float *noisy_input,
+    const float *emotional_map,
+    float *clean_output,
+    int width,
+    int height,
+    float filter_strength,
+    int patch_radius,
+    int search_steps,
+    float empathy_bias
+);
+
 #endif // TSFI_MONTECARLO_H

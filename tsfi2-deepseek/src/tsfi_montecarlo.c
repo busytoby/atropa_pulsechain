@@ -246,3 +246,101 @@ bool tsfi_montecarlo_emotional_non_local_means(
     return true;
 }
 
+bool tsfi_montecarlo_guided_path_non_local_means(
+    const float *noisy_input,
+    const float *emotional_map,
+    float *clean_output,
+    int width,
+    int height,
+    float filter_strength,
+    int patch_radius,
+    int search_steps,
+    float empathy_bias
+) {
+    if (!noisy_input || !emotional_map || !clean_output || width <= 0 || height <= 0) {
+        return false;
+    }
+    if (filter_strength <= 0.0f || patch_radius < 0 || search_steps < 0) {
+        return false;
+    }
+
+    float h_sq = filter_strength * filter_strength;
+
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            int idx = y * width + x;
+            float sum_val = 0.0f;
+            float sum_w = 0.0f;
+
+            // Compute local emotional map gradient
+            float gx = 0.0f;
+            float gy = 0.0f;
+            if (x > 0 && x < width - 1) {
+                gx = emotional_map[idx + 1] - emotional_map[idx - 1];
+            }
+            if (y > 0 && y < height - 1) {
+                gy = emotional_map[idx + width] - emotional_map[idx - width];
+            }
+
+            // Normalize gradient
+            float mag = sqrtf(gx * gx + gy * gy) + 1e-6f;
+            float dir_x = gx / mag;
+            float dir_y = gy / mag;
+
+            // Perpendicular direction (tangent along features)
+            float tan_x = -dir_y;
+            float tan_y = dir_x;
+
+            // We select search paths along both the gradient and tangent vectors
+            for (int path = 0; path < 2; path++) {
+                float step_x = (path == 0) ? dir_x : tan_x;
+                float step_y = (path == 0) ? dir_y : tan_y;
+
+                for (int s = -search_steps; s <= search_steps; s++) {
+                    int nx = (int)(x + step_x * s);
+                    int ny = (int)(y + step_y * s);
+
+                    if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
+
+                    float patch_dist_sq = 0.0f;
+                    int patch_pixels = 0;
+
+                    for (int py = -patch_radius; py <= patch_radius; py++) {
+                        int c_py = y + py;
+                        int n_py = ny + py;
+                        if (c_py < 0 || c_py >= height || n_py < 0 || n_py >= height) continue;
+
+                        for (int px = -patch_radius; px <= patch_radius; px++) {
+                            int c_px = x + px;
+                            int n_px = nx + px;
+                            if (c_px < 0 || c_px >= width || n_px < 0 || n_px >= width) continue;
+
+                            float diff_color = noisy_input[c_py * width + c_px] - noisy_input[n_py * width + n_px];
+                            float diff_emotion = emotional_map[c_py * width + c_px] - emotional_map[n_py * width + n_px];
+
+                            patch_dist_sq += (1.0f - empathy_bias) * diff_color * diff_color +
+                                             empathy_bias * diff_emotion * diff_emotion;
+                            patch_pixels++;
+                        }
+                    }
+
+                    if (patch_pixels > 0) {
+                        float mean_dist_sq = patch_dist_sq / patch_pixels;
+                        float w = expf(-mean_dist_sq / h_sq);
+                        sum_val += noisy_input[ny * width + nx] * w;
+                        sum_w += w;
+                    }
+                }
+            }
+
+            if (sum_w > 0.0f) {
+                clean_output[idx] = sum_val / sum_w;
+            } else {
+                clean_output[idx] = noisy_input[idx];
+            }
+        }
+    }
+    return true;
+}
+
+

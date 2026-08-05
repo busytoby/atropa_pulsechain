@@ -80,6 +80,19 @@ int main(void) {
     assert(!tsfi_montecarlo_emotional_non_local_means(noisy_float, emotional_map, clean_emotional, 3, 3, -0.2f, 1, 1, 0.8f));
     printf("   ✓ Monte Carlo Emotional Non-Local Means reconstruction verified successfully\n");
 
+    // 5. Test Guided Path Non-Local Means Reconstruction
+    float clean_guided[9] = {0};
+    assert(tsfi_montecarlo_guided_path_non_local_means(noisy_float, emotional_map, clean_guided, 3, 3, 0.2f, 1, 1, 0.8f));
+    assert(clean_guided[4] > 0.0f);
+
+    // Test error boundaries for guided path NLM
+    assert(!tsfi_montecarlo_guided_path_non_local_means(NULL, emotional_map, clean_guided, 3, 3, 0.2f, 1, 1, 0.8f));
+    assert(!tsfi_montecarlo_guided_path_non_local_means(noisy_float, NULL, clean_guided, 3, 3, 0.2f, 1, 1, 0.8f));
+    assert(!tsfi_montecarlo_guided_path_non_local_means(noisy_float, emotional_map, NULL, 3, 3, 0.2f, 1, 1, 0.8f));
+    assert(!tsfi_montecarlo_guided_path_non_local_means(noisy_float, emotional_map, clean_guided, -3, 3, 0.2f, 1, 1, 0.8f));
+    assert(!tsfi_montecarlo_guided_path_non_local_means(noisy_float, emotional_map, clean_guided, 3, 3, -0.2f, 1, 1, 0.8f));
+    printf("   ✓ Monte Carlo Guided Path Non-Local Means reconstruction verified successfully\n");
+
     printf("[Test] All Monte Carlo Denoising tests completed successfully.\n");
     return 0;
 }
