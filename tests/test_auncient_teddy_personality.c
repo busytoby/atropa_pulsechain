@@ -873,6 +873,15 @@ int main(void) {
     assert(epicycle_radius_val > 0.0);
     printf("   ✓ Cellarius alignment boundary and epicycle radius verified successfully\n");
 
+    // Test Cellarius velocity phase and radial scale calculations
+    double velocity_phase_shift = 0.0;
+    double radial_scale_shift = 0.0;
+    assert(evaluate_cellarius_velocity_phase(&geom, 15.0, 1.2, &velocity_phase_shift));
+    assert(velocity_phase_shift > 0.0);
+    assert(evaluate_cellarius_radial_scale(&geom, 5.5, &radial_scale_shift));
+    assert(radial_scale_shift > 0.0);
+    printf("   ✓ Cellarius velocity phase and radial scale verified successfully\n");
+
     // Test Hyde vocal jitter naturalness and intonation amplitude calculations
     double vocal_jitter = 0.0;
     double intonation_amp = 0.0;

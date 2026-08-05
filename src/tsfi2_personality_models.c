@@ -1433,6 +1433,22 @@ bool evaluate_cellarius_epicycle_radius(const teddy_geometry_t *geom, double epi
     return true;
 }
 
+bool evaluate_cellarius_velocity_phase(const teddy_geometry_t *geom, double velocity_val, double phase_angle, double *shift_out) {
+    if (!geom || velocity_val < 0.0 || !shift_out) {
+        return false;
+    }
+    *shift_out = velocity_val * sin(phase_angle) * (1.1 + geom->symmetry * 0.4);
+    return true;
+}
+
+bool evaluate_cellarius_radial_scale(const teddy_geometry_t *geom, double radial_distance, double *scale_shift_out) {
+    if (!geom || radial_distance < 0.0 || !scale_shift_out) {
+        return false;
+    }
+    *scale_shift_out = radial_distance * (0.8 + geom->head_fwhr * 0.4);
+    return true;
+}
+
 bool evaluate_hyde_dynamic_intonation(const teddy_geometry_t *geom, double intonation_range, double brow_movement, double *intonation_out) {
     if (!geom || intonation_range < 0.0 || brow_movement < 0.0 || !intonation_out) {
         return false;
