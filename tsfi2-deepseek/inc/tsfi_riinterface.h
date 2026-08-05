@@ -114,6 +114,9 @@ void tsfi_riinterface_resolve_pmg_cics_collision(TSFiRiInterface *ri, uint32_t p
 // Adjusts the Hudson focal actuator parameters based on co-design RMSE metrics
 void tsfi_riinterface_adjust_hudson_focus(TSFiRiInterface *ri, const double *ideal_image, double target_rmse_threshold);
 
+struct sdk_cics_context;
+bool tsfi_riinterface_bridge_to_sdk(TSFiRiInterface *ri, struct sdk_cics_context *sdk_ctx);
+
 #endif // TSFI_RIINTERFACE_H
 
 

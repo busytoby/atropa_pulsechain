@@ -419,6 +419,24 @@ void tsfi_riinterface_adjust_hudson_focus(TSFiRiInterface *ri, const double *ide
     }
 }
 
+#include "auncient_sdk.h"
+
+bool tsfi_riinterface_bridge_to_sdk(TSFiRiInterface *ri, struct sdk_cics_context *sdk_ctx) {
+    if (!ri || !sdk_ctx) return false;
+
+    char guide_str[1024] = {0};
+    int offset = 0;
+    for (int y = 0; y < 8; y++) {
+        for (int x = 0; x < 8; x++) {
+            int px = (y * 32) * 256 + (x * 32);
+            float normalized_val = ri->frame_buffer[px] / 255.0f;
+            offset += snprintf(guide_str + offset, sizeof(guide_str) - offset, "%.3f ", normalized_val);
+        }
+    }
+
+    return auncient_sdk_apply_deepseek_guide(sdk_ctx, guide_str, 8, 8);
+}
+
 
 
 
