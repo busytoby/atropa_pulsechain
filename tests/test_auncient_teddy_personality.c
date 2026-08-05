@@ -1432,6 +1432,17 @@ int main(void) {
     assert(keating_decoupled_attr > 0.0);
     assert(evaluate_keating_smile_status_congruence(&geom, 0.8, 2.0, &keating_smile_trust));
     assert(keating_smile_trust > 0.0);
+    
+    double keating_pitch_congruence = 0.0;
+    double keating_pose_consensus = 0.0;
+    double keating_sclera_decoupling = 0.0;
+    assert(evaluate_keating_pitch_vocal_status_congruence(&geom, 0.45, 3.0, &keating_pitch_congruence));
+    assert(keating_pitch_congruence > 0.0);
+    assert(evaluate_keating_dynamic_pose_asymmetry_consensus(&geom, 0.6, 5.0, &keating_pose_consensus));
+    assert(keating_pose_consensus > 0.0);
+    assert(evaluate_keating_sclera_gaze_decoupling(&geom, 0.7, 1.2, &keating_sclera_decoupling));
+    assert(keating_sclera_decoupling > 0.0);
+    printf("   ✓ KEATING, C. F. pitch vocal status congruence, pose asymmetry consensus, and sclera gaze decoupling verified successfully\n");
     printf("   ✓ KEATING, C. F. cross-cultural consensus, gender status interaction, babyfacedness attractiveness decoupling, and smile status congruence verified successfully\n");
 
     // Test Scarpi hedonic playfulness and utilitarian trust calculations

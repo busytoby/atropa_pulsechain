@@ -527,4 +527,14 @@ bool evaluate_kramer_ward_human_face_symmetry_trust(const teddy_geometry_t *geom
 // Models eye size and pupil dilation modulating perceived attractiveness and social interest (Kramer & Ward).
 bool evaluate_kramer_ward_human_eye_dilation_arousal(const teddy_geometry_t *geom, double eye_size_val, double pupil_dilation_val, double *arousal_out);
 
+// Models the alignment of pitch fluctuations with status expectations (Keating).
+bool evaluate_keating_pitch_vocal_status_congruence(const teddy_geometry_t *geom, double pitch_variation, double status_rank, double *congruence_score_out);
+
+// Models status attribution based on asymmetrical arm/torso postures (Keating).
+bool evaluate_keating_dynamic_pose_asymmetry_consensus(const teddy_geometry_t *geom, double posture_asymmetry, double group_size, double *consensus_score_out);
+
+// Models dominance metrics derived from sclera exposure changes during rapid gaze aversion (Keating).
+bool evaluate_keating_sclera_gaze_decoupling(const teddy_geometry_t *geom, double sclera_exposure, double aversion_speed, double *dominance_score_out);
+
 #endif // TSFI_PERSONALITY_MODELS_ADV_H
+

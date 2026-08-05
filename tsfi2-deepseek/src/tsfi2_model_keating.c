@@ -586,3 +586,31 @@ bool evaluate_keating_smile_status_congruence(const teddy_geometry_t *geom, doub
     return true;
 }
 
+bool evaluate_keating_pitch_vocal_status_congruence(const teddy_geometry_t *geom, double pitch_variation, double status_rank, double *congruence_score_out) {
+    if (!geom || pitch_variation < 0.0 || status_rank <= 0.0 || !congruence_score_out) {
+        return false;
+    }
+    double target_pitch = 1.0 / (status_rank + 0.1);
+    double diff = fabs(pitch_variation - target_pitch);
+    *congruence_score_out = (1.0 / (1.0 + diff)) * (0.95 + geom->social_status * 0.15);
+    return true;
+}
+
+bool evaluate_keating_dynamic_pose_asymmetry_consensus(const teddy_geometry_t *geom, double posture_asymmetry, double group_size, double *consensus_score_out) {
+    if (!geom || posture_asymmetry < 0.0 || group_size <= 0.0 || !consensus_score_out) {
+        return false;
+    }
+    double factor = posture_asymmetry * (1.0 + (1.0 / group_size));
+    *consensus_score_out = factor * (0.85 + geom->leadership_profile * 0.3);
+    return true;
+}
+
+bool evaluate_keating_sclera_gaze_decoupling(const teddy_geometry_t *geom, double sclera_exposure, double aversion_speed, double *dominance_score_out) {
+    if (!geom || sclera_exposure < 0.0 || aversion_speed < 0.0 || !dominance_score_out) {
+        return false;
+    }
+    *dominance_score_out = (sclera_exposure * (1.0 + aversion_speed)) * (0.9 + geom->command_authority * 0.25);
+    return true;
+}
+
+
