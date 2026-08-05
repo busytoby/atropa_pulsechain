@@ -354,3 +354,19 @@ bool evaluate_keating_mouth_asymmetry_dominance_variance(const teddy_geometry_t 
     return true;
 }
 
+bool evaluate_keating_eyebrow_asymmetry_dominance_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+    if (!geom || duration_sec < 0.0 || !decay_variance_out) {
+        return false;
+    }
+    *decay_variance_out = exp(-duration_sec / (18.0 + geom->resilience_index * 8.0));
+    return true;
+}
+
+bool evaluate_keating_mouth_asymmetry_trust_variance(const teddy_geometry_t *geom, double mouth_asymmetry_val, double *trust_variance_out) {
+    if (!geom || mouth_asymmetry_val < 0.0 || !trust_variance_out) {
+        return false;
+    }
+    *trust_variance_out = (1.0 / (1.0 + mouth_asymmetry_val)) * (0.8 + geom->empathy_index * 0.4);
+    return true;
+}
+
