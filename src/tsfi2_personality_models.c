@@ -1353,3 +1353,19 @@ bool evaluate_hyde_intonation_amplitude(const teddy_geometry_t *geom, double int
     return true;
 }
 
+bool evaluate_keating_width_symmetry_trust(const teddy_geometry_t *geom, double symmetry_ratio, double *trustworthiness_out) {
+    if (!geom || symmetry_ratio < 0.0 || !trustworthiness_out) {
+        return false;
+    }
+    *trustworthiness_out = symmetry_ratio * (0.8 + geom->empathy_index * 0.4);
+    return true;
+}
+
+bool evaluate_keating_lip_submissiveness(const teddy_geometry_t *geom, double lip_height_ratio, double *submissiveness_out) {
+    if (!geom || lip_height_ratio < 0.0 || !submissiveness_out) {
+        return false;
+    }
+    *submissiveness_out = lip_height_ratio * (0.9 + geom->symmetry * 0.3);
+    return true;
+}
+

@@ -559,6 +559,12 @@ bool evaluate_keating_fwhr_dominance(const teddy_geometry_t *geom, double fwhr_v
 // Models perceived submissiveness based on mouth-to-jaw width ratios (Keating, C. F.).
 bool evaluate_keating_mouth_width_ratio(const teddy_geometry_t *geom, double mouth_width, double jaw_width, double *submissiveness_out);
 
+// Evaluates perceived trustworthiness based on dynamic facial width symmetry (Keating, C. F.).
+bool evaluate_keating_width_symmetry_trust(const teddy_geometry_t *geom, double symmetry_ratio, double *trustworthiness_out);
+
+// Models submissiveness and babyfacedness based on lip-to-facial height ratios (Keating, C. F.).
+bool evaluate_keating_lip_submissiveness(const teddy_geometry_t *geom, double lip_height_ratio, double *submissiveness_out);
+
 // Evaluates playfulness and design novelty effects on perceived emotional arousal (Scarpi).
 bool evaluate_scarpi_hedonic_arousal(const teddy_geometry_t *geom, double playfulness_scale, double novelty_index, double *arousal_out);
 

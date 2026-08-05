@@ -810,6 +810,15 @@ int main(void) {
     assert(mouth_width_sub > 0.0);
     printf("   ✓ KEATING, C. F. fWHR dominance and mouth width ratio verified successfully\n");
 
+    // Test Keating width symmetry trust and lip submissiveness calculations
+    double width_symmetry_trust = 0.0;
+    double lip_sub = 0.0;
+    assert(evaluate_keating_width_symmetry_trust(&geom, 0.95, &width_symmetry_trust));
+    assert(width_symmetry_trust > 0.0);
+    assert(evaluate_keating_lip_submissiveness(&geom, 0.15, &lip_sub));
+    assert(lip_sub > 0.0);
+    printf("   ✓ KEATING, C. F. width symmetry trust and lip submissiveness verified successfully\n");
+
     // Test Scarpi hedonic arousal and utilitarian quality calculations
     double hedonic_arousal = 0.0;
     double utilitarian_quality = 0.0;
