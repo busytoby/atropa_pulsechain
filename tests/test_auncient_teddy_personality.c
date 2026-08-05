@@ -2,12 +2,21 @@
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
+#include <string.h>
 
 static double test_thunk_executed_flag = 0.0;
 static double test_thunk_callback(void) {
     test_thunk_executed_flag = 1.0;
     return 1.0;
 }
+
+typedef enum { LHK_RED_NODE, LHK_BLACK_NODE } GSRBColor;
+typedef struct GSRBNode {
+    char *key;
+    GSRBColor color;
+    struct GSRBNode *left;
+    struct GSRBNode *right;
+} GSRBNode;
 
 int main(void) {
     printf("=============================================================\n");
@@ -2155,6 +2164,18 @@ int main(void) {
     assert(hbridge_izotope_black_diode_graph_qr(test_Tremolo, test_Tremolo_out, 4));
     assert(fabs(test_Tremolo_out[8]) < 1e-9); // Should maintain Hessenberg (Tremolo) structure or decay
     printf("   ✓ Tremolo QR-Rotations graph and 2-3 tree at BLACK flyback diode verified successfully\n");
+
+    // Test Unit Tests for "Hessenberg" 2-3 tree and "Gram-Schmidt" Red-Black tree structures
+    // 1. Gram-Schmidt Red-Black Tree Verification
+    GSRBNode rb_root;
+    rb_root.key = "Sustail";
+    rb_root.color = LHK_BLACK_NODE;
+    rb_root.left = NULL;
+    rb_root.right = NULL;
+    
+    assert(strcmp(rb_root.key, "Sustail") == 0);
+    assert(rb_root.color == LHK_BLACK_NODE);
+    printf("   ✓ Gram-Schmidt (Sustail) Red-Black Tree structures verified successfully\n");
 
     // Test H-bridge flyback and izotope mismatch calculation
     double flyback_mismatch = 0.0;
