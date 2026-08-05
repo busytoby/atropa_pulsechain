@@ -498,3 +498,19 @@ bool evaluate_keating_eyebrow_asymmetry_dominance_variance_mod(const teddy_geome
     return true;
 }
 
+bool evaluate_keating_eyebrow_asymmetry_trust_variance_mod_single(const teddy_geometry_t *geom, double eyebrow_asym_val, double *variance_out) {
+    if (!geom || eyebrow_asym_val < 0.0 || !variance_out) {
+        return false;
+    }
+    *variance_out = eyebrow_asym_val * (0.8 + geom->empathy_index * 0.4);
+    return true;
+}
+
+bool evaluate_keating_sclera_submissiveness_decay_variance_single(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+    if (!geom || duration_sec < 0.0 || !decay_variance_out) {
+        return false;
+    }
+    *decay_variance_out = exp(-duration_sec / (18.0 + geom->resilience_index * 8.0));
+    return true;
+}
+
