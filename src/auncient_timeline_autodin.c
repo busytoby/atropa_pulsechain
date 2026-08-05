@@ -894,14 +894,19 @@ void auncient_apply_tracker_portamento(float *freq, float target_freq, float sli
     }
 }
 
-void auncient_apply_tracker_tremolo(float *volume, float time, float depth, float rate) {
-    if (!volume || depth <= 0.0f) return;
+bool auncient_apply_tracker_tremolo(float *volume, float time, float depth, float rate) {
+    if (!volume || depth <= 0.0f) return false;
 
-    float base_val = *volume;
-    *volume = base_val + sinf(time * rate) * depth;
+    float original_volume = *volume;
+    float temp_volume = original_volume + sinf(time * rate) * depth;
 
-    if (*volume < 0.0f) *volume = 0.0f;
-    if (*volume > 1.0f) *volume = 1.0f;
+    if (temp_volume < 0.0f || temp_volume > 1.0f) {
+        // Rollback and fail transaction
+        return false;
+    }
+
+    *volume = temp_volume;
+    return true;
 }
 
 void auncient_apply_fourier_passengers(SplinePhysNode *nodes, int count, float time, float fundamental_freq) {

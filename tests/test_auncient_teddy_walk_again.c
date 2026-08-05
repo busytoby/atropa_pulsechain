@@ -73,6 +73,21 @@ int main(void) {
     }
     printf("   ✓ Walk and wave animation sequence executed successfully.\n");
 
+    // 5. Verify transactional tracker tremolo (ACID compliance & rollback)
+    float volume = 0.5f;
+    // Test successful transaction
+    bool status1 = auncient_apply_tracker_tremolo(&volume, 1.0f, 0.2f, 2.0f);
+    assert(status1 == true);
+    assert(volume >= 0.0f && volume <= 1.0f);
+
+    // Test transaction failure & rollback (volume would exceed 1.0f limit)
+    volume = 0.95f;
+    float expected_original_volume = volume;
+    bool status2 = auncient_apply_tracker_tremolo(&volume, 1.57f, 0.2f, 1.0f); // sin(1.57) ~ 1.0, 0.95 + 0.2 = 1.15 > 1.0
+    assert(status2 == false);
+    assert(volume == expected_original_volume); // Rollback verified
+    printf("   ✓ ACID tracker tremolo transactional bounds check & rollback verified successfully.\n");
+
     // Cleanup database file
     remove(db_path);
 

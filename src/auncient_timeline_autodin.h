@@ -238,7 +238,7 @@ void auncient_hudson_vdc_dma_palette_shift(uint16_t *vce_table, uint16_t src_add
 void auncient_apply_tracker_portamento(float *freq, float target_freq, float slide_speed);
 
 // Modulates audio volume level dynamically using a sinusoidal tremolo sweep
-void auncient_apply_tracker_tremolo(float *volume, float time, float depth, float rate);
+bool auncient_apply_tracker_tremolo(float *volume, float time, float depth, float rate);
 
 // Applies Fourier wave passengers to modulate Verlet spline coordinates dynamically
 void auncient_apply_fourier_passengers(SplinePhysNode *nodes, int count, float time, float fundamental_freq);
