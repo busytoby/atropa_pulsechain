@@ -290,3 +290,19 @@ bool evaluate_cellarius_heliocentric_alignment_decay_variance(const teddy_geomet
     return true;
 }
 
+bool evaluate_cellarius_planetary_velocity_variance_mod(const teddy_geometry_t *geom, double velocity_val, double *variance_out) {
+    if (!geom || velocity_val < 0.0 || !variance_out) {
+        return false;
+    }
+    *variance_out = velocity_val * (0.8 + geom->head_fwhr * 0.4);
+    return true;
+}
+
+bool evaluate_cellarius_heliocentric_alignment_variance_mod(const teddy_geometry_t *geom, double alignment_val, double *variance_out) {
+    if (!geom || alignment_val < 0.0 || !variance_out) {
+        return false;
+    }
+    *variance_out = alignment_val * (0.8 + geom->head_fwhr * 0.4);
+    return true;
+}
+

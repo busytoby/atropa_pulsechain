@@ -990,6 +990,15 @@ int main(void) {
     assert(heliocentric_alignment_decay_variance > 0.0);
     printf("   ✓ Cellarius planetary eccentricity decay variance and heliocentric alignment decay variance verified successfully\n");
 
+    // Test Cellarius planetary velocity variance mod and heliocentric alignment variance mod calculations
+    double planetary_velocity_variance_mod = 0.0;
+    double heliocentric_alignment_variance_mod = 0.0;
+    assert(evaluate_cellarius_planetary_velocity_variance_mod(&geom, 2.5, &planetary_velocity_variance_mod));
+    assert(planetary_velocity_variance_mod > 0.0);
+    assert(evaluate_cellarius_heliocentric_alignment_variance_mod(&geom, 0.85, &heliocentric_alignment_variance_mod));
+    assert(heliocentric_alignment_variance_mod > 0.0);
+    printf("   ✓ Cellarius planetary velocity variance mod and heliocentric alignment variance mod verified successfully\n");
+
     // Test Hyde vocal jitter naturalness and intonation amplitude calculations
     double vocal_jitter = 0.0;
     double intonation_amp = 0.0;
