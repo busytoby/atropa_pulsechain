@@ -210,6 +210,22 @@ bool evaluate_scarpi_utilitarian_consistency_decay_variance(const teddy_geometry
     return true;
 }
 
+bool evaluate_scarpi_hedonic_playful_arousal_mod_variance(const teddy_geometry_t *geom, double novelty_scale, double design_symmetry, double *variance_out) {
+    if (!geom || novelty_scale < 0.0 || design_symmetry < 0.0 || !variance_out) {
+        return false;
+    }
+    *variance_out = novelty_scale * design_symmetry * (0.8 + geom->empathy_index * 0.4);
+    return true;
+}
+
+bool evaluate_scarpi_utilitarian_quality_control_variance(const teddy_geometry_t *geom, double complexity_level, double *variance_out) {
+    if (!geom || complexity_level < 0.0 || !variance_out) {
+        return false;
+    }
+    *variance_out = complexity_level * (0.9 + geom->leadership_profile * 0.3);
+    return true;
+}
+
 bool evaluate_scarpi_hedonic_trust(const teddy_geometry_t *geom, double aesthetic_rating, double novelty_scale, double *trust_out) {
     if (!geom || aesthetic_rating < 0.0 || novelty_scale < 0.0 || !trust_out) {
         return false;
