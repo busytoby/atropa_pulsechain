@@ -274,3 +274,19 @@ bool evaluate_cellarius_epicycle_radius_decay_variance(const teddy_geometry_t *g
     return true;
 }
 
+bool evaluate_cellarius_planetary_eccentricity_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+    if (!geom || duration_sec < 0.0 || !decay_variance_out) {
+        return false;
+    }
+    *decay_variance_out = exp(-duration_sec / (15.0 + geom->head_fwhr * 5.0));
+    return true;
+}
+
+bool evaluate_cellarius_epicycle_radius_variance_mod_variance(const teddy_geometry_t *geom, double radius_val, double *variance_out) {
+    if (!geom || radius_val < 0.0 || !variance_out) {
+        return false;
+    }
+    *variance_out = radius_val * (0.8 + geom->head_fwhr * 0.4);
+    return true;
+}
+
