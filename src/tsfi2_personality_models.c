@@ -1273,3 +1273,19 @@ bool evaluate_cellarius_constellation_boundary(const teddy_geometry_t *geom, dou
     return true;
 }
 
+bool evaluate_hyde_av_latency_jitter(const teddy_geometry_t *geom, double latency_jitter_sec, double *naturalness_out) {
+    if (!geom || latency_jitter_sec < 0.0 || !naturalness_out) {
+        return false;
+    }
+    *naturalness_out = (1.0 / (1.0 + latency_jitter_sec)) * (0.8 + geom->symmetry * 0.4);
+    return true;
+}
+
+bool evaluate_hyde_vocal_energy_variance(const teddy_geometry_t *geom, double energy_variance, double *engagement_out) {
+    if (!geom || energy_variance < 0.0 || !engagement_out) {
+        return false;
+    }
+    *engagement_out = energy_variance * (0.7 + geom->behavioral_mismatch * 0.5);
+    return true;
+}
+

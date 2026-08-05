@@ -547,6 +547,12 @@ bool evaluate_cellarius_heliocentric_alignment(const teddy_geometry_t *geom, dou
 // Calculates boundary limits mapping 3D coordinate paths to star-envelope constraints (Cellarius).
 bool evaluate_cellarius_constellation_boundary(const teddy_geometry_t *geom, double celestial_longitude, double *boundary_limit_out);
 
+// Evaluates perceived conversational naturalness based on audio-visual latency jitter (Hyde et al.).
+bool evaluate_hyde_av_latency_jitter(const teddy_geometry_t *geom, double latency_jitter_sec, double *naturalness_out);
+
+// Models engagement levels based on conversational vocal energy delivery variance (Hyde et al.).
+bool evaluate_hyde_vocal_energy_variance(const teddy_geometry_t *geom, double energy_variance, double *engagement_out);
+
 // Simulates the low-level diode reflex and relative capacitor charge decay loop.
 bool simulate_diode_capacitor_loop(double input_voltage, double resistance, double capacitance, double time_step, double *charge_state);
 

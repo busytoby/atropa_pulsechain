@@ -792,6 +792,15 @@ int main(void) {
     assert(cellarius_boundary > 0.0);
     printf("   ✓ Cellarius orbital alignment and constellation boundary verified successfully\n");
 
+    // Test Hyde audio-visual latency jitter and vocal energy variance calculations
+    double av_latency_jitter = 0.0;
+    double vocal_energy_var = 0.0;
+    assert(evaluate_hyde_av_latency_jitter(&geom, 0.05, &av_latency_jitter));
+    assert(av_latency_jitter > 0.0);
+    assert(evaluate_hyde_vocal_energy_variance(&geom, 15.0, &vocal_energy_var));
+    assert(vocal_energy_var > 0.0);
+    printf("   ✓ Hyde audio-visual latency jitter and vocal energy variance verified successfully\n");
+
     // Test Diode-Capacitor loop simulation
     double charge = 0.0;
     assert(simulate_diode_capacitor_loop(5.0, 1000.0, 1e-6, 0.1, &charge)); // Forward charge
