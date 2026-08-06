@@ -20,6 +20,7 @@ bool evaluate_keating_mouth_curvature(const teddy_geometry_t *geom, double uptur
 bool evaluate_keating_babyfacedness_index(const teddy_geometry_t *geom, double *babyfacedness_out);
 bool evaluate_keating_posture_pitch(const teddy_geometry_t *geom, double pitch_angle, double *submissiveness_out);
 bool evaluate_keating_chin_asymmetry(const teddy_geometry_t *geom, double left_jaw_width, double right_jaw_width, double *asymmetry_dominance_out);
+bool evaluate_keating_sclera_size(const teddy_geometry_t *geom, double sclera_ratio, double *submissiveness_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -40,7 +41,11 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     double babyfacedness = 0.0;
     evaluate_keating_babyfacedness_index(&geom, &babyfacedness);
     
-    model->base_frequency = geom.vocal_pitch - pitch_adjustment + (warmth_offset * 10.0) + (babyfacedness * 20.0);
+    // Evaluate Keating sclera size submissiveness pitch modulation
+    double sclera_submissive = 0.0;
+    evaluate_keating_sclera_size(&geom, 0.35, &sclera_submissive);
+    
+    model->base_frequency = geom.vocal_pitch - pitch_adjustment + (warmth_offset * 10.0) + (babyfacedness * 20.0) + (sclera_submissive * 15.0);
     
     // Modulate formant resonance via Christensen cloglog link ordinal rating (1 to 7)
     int cloglog_rating = evaluate_ordinal_cloglog_rating(&geom);
