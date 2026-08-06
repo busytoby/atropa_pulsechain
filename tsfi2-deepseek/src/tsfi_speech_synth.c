@@ -22,6 +22,7 @@ bool evaluate_keating_posture_pitch(const teddy_geometry_t *geom, double pitch_a
 bool evaluate_keating_chin_asymmetry(const teddy_geometry_t *geom, double left_jaw_width, double right_jaw_width, double *asymmetry_dominance_out);
 bool evaluate_keating_sclera_size(const teddy_geometry_t *geom, double sclera_ratio, double *submissiveness_out);
 bool evaluate_keating_lip_trustworthiness(const teddy_geometry_t *geom, double lip_thickness, double *lip_trustworthiness_out);
+bool evaluate_keating_brow_gesture(const teddy_geometry_t *geom, double brow_raise_amplitude, double *brow_submissiveness_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -46,7 +47,11 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     double sclera_submissive = 0.0;
     evaluate_keating_sclera_size(&geom, 0.35, &sclera_submissive);
     
-    model->base_frequency = geom.vocal_pitch - pitch_adjustment + (warmth_offset * 10.0) + (babyfacedness * 20.0) + (sclera_submissive * 15.0);
+    // Evaluate Keating brow gesture submissiveness pitch modulation
+    double brow_submissive = 0.0;
+    evaluate_keating_brow_gesture(&geom, 0.5, &brow_submissive);
+    
+    model->base_frequency = geom.vocal_pitch - pitch_adjustment + (warmth_offset * 10.0) + (babyfacedness * 20.0) + (sclera_submissive * 15.0) + (brow_submissive * 15.0);
     
     // Modulate formant resonance via Christensen cloglog link ordinal rating (1 to 7)
     int cloglog_rating = evaluate_ordinal_cloglog_rating(&geom);
@@ -200,9 +205,9 @@ bool tsfi_speech_synth_generate(const tsfi_speech_model_t *model,
 
 teddy_personality_t tsfi_speech_classify_pitch(double pitch_frequency) {
     // Classification logic mapping pitch boundaries to profile sets
-    if (pitch_frequency > 200.0) {
+    if (pitch_frequency > 220.0) {
         return PERSONALITY_TRUSTWORTHY;
-    } else if (pitch_frequency > 130.0) {
+    } else if (pitch_frequency > 150.0) {
         return PERSONALITY_SKEPTICAL;
     } else {
         // Distinguish between aggressive and eerie using known profile values
