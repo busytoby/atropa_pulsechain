@@ -7,15 +7,21 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-// Forward declaration of link function
+// Forward declarations of link and models functions
 int evaluate_ordinal_cloglog_rating(const teddy_geometry_t *geom);
+bool evaluate_keating_brow_dominance(const teddy_geometry_t *geom, double brow_height, double *brow_dominance_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
     resolve_teddy_geometry(personality, &geom);
     
-    // Bind base parameters to personality engine
-    model->base_frequency = geom.vocal_pitch;
+    // Evaluate brow dominance gestural pitch shift
+    double brow_dominance = 0.0;
+    evaluate_keating_brow_dominance(&geom, 0.3, &brow_dominance);
+    
+    // Lower pitch for higher dominance ratings (lower brow coordinates)
+    double pitch_adjustment = brow_dominance * 15.0;
+    model->base_frequency = geom.vocal_pitch - pitch_adjustment;
     
     // Modulate formant resonance via Christensen cloglog link ordinal rating (1 to 7)
     int cloglog_rating = evaluate_ordinal_cloglog_rating(&geom);
