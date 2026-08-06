@@ -7,10 +7,11 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-// Forward declarations of link and models functions
+// Forward declarations of link, diagnostics, and models functions
 int evaluate_ordinal_cloglog_rating(const teddy_geometry_t *geom);
 bool evaluate_keating_brow_dominance(const teddy_geometry_t *geom, double brow_height, double *brow_dominance_out);
 bool evaluate_kramer_ward_human_face_elongation(const teddy_geometry_t *geom, double elongation_val, double *elongation_score_out);
+bool evaluate_surrogate_residuals(const teddy_geometry_t *geom, int observed_rating, double *residual_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -28,8 +29,12 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     int cloglog_rating = evaluate_ordinal_cloglog_rating(&geom);
     model->resonance_factor = (1.0 - (geom.jaw_scale * 0.2)) * (1.0 + (cloglog_rating - 4) * 0.05);
     
-    // Evaluate jitter from behavioral mismatch and exposure characteristics
-    model->jitter_factor = geom.behavioral_mismatch * 0.05;
+    // Evaluate surrogate residuals to scale up the frequency jitter factor
+    double surrogate_residual = 0.0;
+    evaluate_surrogate_residuals(&geom, 4, &surrogate_residual);
+    
+    // Evaluate jitter from behavioral mismatch and exposure characteristics, scaled by residuals
+    model->jitter_factor = (geom.behavioral_mismatch * 0.05) + (fabs(surrogate_residual) * 0.02);
     
     // Evaluate Kramer-Ward facial elongation to adjust vocal transition tempo envelope
     double face_elongation = 0.0;
