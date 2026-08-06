@@ -17,6 +17,7 @@ bool evaluate_cellarius_planetary_eccentricity(const teddy_geometry_t *geom, dou
 bool evaluate_hyde_vocal_warmth_pitch(const teddy_geometry_t *geom, double average_pitch_hz, double *warmth_offset_out);
 bool evaluate_hyde_vocal_tremor_index(const teddy_geometry_t *geom, double pitch_variance, double *tremor_uncanny_out);
 bool evaluate_keating_mouth_curvature(const teddy_geometry_t *geom, double upturn_curvature, double *warmth_rating_out);
+bool evaluate_keating_babyfacedness_index(const teddy_geometry_t *geom, double *babyfacedness_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -33,7 +34,11 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     double warmth_offset = 0.0;
     evaluate_hyde_vocal_warmth_pitch(&geom, geom.vocal_pitch, &warmth_offset);
     
-    model->base_frequency = geom.vocal_pitch - pitch_adjustment + (warmth_offset * 10.0);
+    // Evaluate babyfacedness index to shift pitch upward (simulating juvenile voice characteristics)
+    double babyfacedness = 0.0;
+    evaluate_keating_babyfacedness_index(&geom, &babyfacedness);
+    
+    model->base_frequency = geom.vocal_pitch - pitch_adjustment + (warmth_offset * 10.0) + (babyfacedness * 20.0);
     
     // Modulate formant resonance via Christensen cloglog link ordinal rating (1 to 7)
     int cloglog_rating = evaluate_ordinal_cloglog_rating(&geom);
