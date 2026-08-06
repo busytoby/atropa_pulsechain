@@ -74,6 +74,26 @@ int main(void) {
     assert(class_skept == PERSONALITY_SKEPTICAL);
     printf("   ✓ Skeptical speech synthesis and classification verified.\n");
 
+    // 4. Verify Wald-gate nominal failure diagnostics fallback
+    printf("[TEST] Testing Wald-gated nominal diagnostic parameter mismatch validation fallback...\n");
+    tsfi_speech_synth_init(&model, PERSONALITY_TRUSTWORTHY);
+    
+    // Inject highly mismatched beta values with small covariance variance to trigger Wald-nominal warning (p < 0.05)
+    model.wald_beta[0] = 15.0;
+    model.wald_beta[1] = -20.0;
+    model.wald_beta[2] = 50.0;
+    model.wald_covariance[0] = 0.01;
+    model.wald_covariance[4] = 0.01;
+    model.wald_covariance[8] = 0.01;
+    
+    assert(tsfi_speech_synth_generate(&model, 0.5, 44100, buffer, buffer_size));
+    
+    // Centroid should drop near the fallback 110Hz carrier frequency (with resonance formant)
+    double centroid_fallback = calculate_spectral_centroid(buffer, buffer_size, 44100);
+    printf("   ✓ Fallback Drone Spectral Centroid: %.2f Hz\n", centroid_fallback);
+    assert(centroid_fallback < 500.0);
+    printf("   ✓ Wald-gated nominal diagnostics verification and fallback drone verified.\n");
+
     printf("=============================================================\n");
     printf("ALL SPEECH SYNTHESIS & CLASSIFICATION TESTS PASSED\n");
     printf("=============================================================\n");

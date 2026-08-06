@@ -12,12 +12,16 @@ typedef struct {
     double jitter_factor;         // Jitter/shimmer variance offset
     double envelope_attack;       // Attack time envelope (seconds)
     double envelope_decay;        // Decay time envelope (seconds)
+    
+    // Wald-gated validation parameters
+    double wald_beta[3];          // Trait parameter beta vector
+    double wald_covariance[9];    // Parameter covariance matrix
 } tsfi_speech_model_t;
 
 // Initialize speech synthesis parameters based on personality traits
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality);
 
-// Generate synthesized speech buffer (sine carrier with formant modulation)
+// Generate synthesized speech buffer (gated by Wald nominal diagnostics)
 bool tsfi_speech_synth_generate(const tsfi_speech_model_t *model, 
                                 double duration, 
                                 uint32_t sample_rate, 
