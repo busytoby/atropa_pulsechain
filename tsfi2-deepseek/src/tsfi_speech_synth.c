@@ -24,6 +24,7 @@ bool evaluate_keating_sclera_size(const teddy_geometry_t *geom, double sclera_ra
 bool evaluate_keating_lip_trustworthiness(const teddy_geometry_t *geom, double lip_thickness, double *lip_trustworthiness_out);
 bool evaluate_keating_brow_gesture(const teddy_geometry_t *geom, double brow_raise_amplitude, double *brow_submissiveness_out);
 bool evaluate_keating_torso_head_ratio(const teddy_geometry_t *geom, double torso_span, double *ratio_dominance_out);
+bool evaluate_keating_width_asymmetry(const teddy_geometry_t *geom, double left_width, double right_width, double *asymmetry_dominance_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -83,10 +84,14 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     double chin_asymmetry = 0.0;
     evaluate_keating_chin_asymmetry(&geom, 0.8, 0.9, &chin_asymmetry);
     
-    // Evaluate jitter from behavioral mismatch and exposure characteristics, scaled by residuals, tremors, and jaw asymmetry
+    // Evaluate Keating width asymmetry
+    double width_asymmetry = 0.0;
+    evaluate_keating_width_asymmetry(&geom, 1.1, 1.2, &width_asymmetry);
+    
+    // Evaluate jitter from behavioral mismatch and exposure characteristics, scaled by residuals, tremors, jaw asymmetry, and width asymmetry
     double eccentric_vibrato = 0.0;
     evaluate_cellarius_planetary_eccentricity(&geom, 0.05, &eccentric_vibrato);
-    model->jitter_factor = (geom.behavioral_mismatch * 0.05) + (fabs(surrogate_residual) * 0.02) + (fabs(eccentric_vibrato) * 0.01) + (tremor_uncanny * 0.03) + (fabs(chin_asymmetry) * 0.02);
+    model->jitter_factor = (geom.behavioral_mismatch * 0.05) + (fabs(surrogate_residual) * 0.02) + (fabs(eccentric_vibrato) * 0.01) + (tremor_uncanny * 0.03) + (fabs(chin_asymmetry) * 0.02) + (fabs(width_asymmetry) * 0.02);
     
     // Evaluate Kramer-Ward facial elongation to adjust vocal transition tempo envelope
     double face_elongation = 0.0;
