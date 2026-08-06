@@ -18,6 +18,7 @@ bool evaluate_hyde_vocal_warmth_pitch(const teddy_geometry_t *geom, double avera
 bool evaluate_hyde_vocal_tremor_index(const teddy_geometry_t *geom, double pitch_variance, double *tremor_uncanny_out);
 bool evaluate_keating_mouth_curvature(const teddy_geometry_t *geom, double upturn_curvature, double *warmth_rating_out);
 bool evaluate_keating_babyfacedness_index(const teddy_geometry_t *geom, double *babyfacedness_out);
+bool evaluate_keating_posture_pitch(const teddy_geometry_t *geom, double pitch_angle, double *submissiveness_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -74,6 +75,13 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     // Set custom envelope curves based on physical dynamics
     model->envelope_attack = (0.02 + (geom.stiffness * 0.05)) * envelope_scale;
     model->envelope_decay = (0.05 + (geom.damping * 0.1)) * envelope_scale;
+    
+    // Evaluate head posture pitch tilt submissiveness to damp amplitude baseline
+    double submissive_rating = 0.0;
+    evaluate_keating_posture_pitch(&geom, -15.0, &submissive_rating);
+    
+    // Set dynamic baseline amplitude factor (softer/damped for submissive profiles)
+    model->amplitude_factor = 12000.0 * (1.0 - (submissive_rating * 0.25));
     
     // Initialize congruent parameters for Wald-gate validation (non-significant p-value)
     model->wald_beta[0] = 0.1;
@@ -139,7 +147,7 @@ bool tsfi_speech_synth_generate(const tsfi_speech_model_t *model,
     // Evaluate mouth speed synchrony (damps output volume if mismatch is high)
     double sync_mismatch = 0.0;
     evaluate_hyde_mouth_speed_synchrony(&dummy_geom, 2.0, 1.5, &sync_mismatch);
-    double amplitude_scale = (sync_mismatch > 0.5) ? 8000.0 : 12000.0;
+    double amplitude_scale = (sync_mismatch > 0.5) ? (model->amplitude_factor * 0.67) : model->amplitude_factor;
     
     uint32_t attack_samples = (uint32_t)(model->envelope_attack * sample_rate);
     uint32_t decay_samples = (uint32_t)(model->envelope_decay * sample_rate);

@@ -16,6 +16,9 @@ typedef struct {
     // Wald-gated validation parameters
     double wald_beta[3];          // Trait parameter beta vector
     double wald_covariance[9];    // Parameter covariance matrix
+    
+    // Submissiveness and synchrony volume factors
+    double amplitude_factor;      // Dynamic baseline speech volume factor
 } tsfi_speech_model_t;
 
 // Initialize speech synthesis parameters based on personality traits
