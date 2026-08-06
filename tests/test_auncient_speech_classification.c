@@ -35,7 +35,7 @@ int main(void) {
     printf("[TEST] Testing PERSONALITY_TRUSTWORTHY speech profile...\n");
     tsfi_speech_synth_init(&model, PERSONALITY_TRUSTWORTHY);
     assert(model.base_frequency > 200.0 && model.base_frequency < 280.0);
-    assert(model.jitter_factor >= 0.0); // Verify surrogate residual and planetary eccentricity addition
+    assert(model.jitter_factor >= 0.0); // Verify surrogate residual, planetary eccentricity, and tremor addition
     assert(model.resonance_factor > 0.5); // Verify cloglog rating modulation and hedonic boost
     assert(model.envelope_attack > 0.02); // Verify face-elongation scaling
     assert(tsfi_speech_synth_generate(&model, 0.5, 44100, buffer, buffer_size));

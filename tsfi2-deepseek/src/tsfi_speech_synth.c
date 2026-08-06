@@ -15,6 +15,7 @@ bool evaluate_surrogate_residuals(const teddy_geometry_t *geom, int observed_rat
 bool evaluate_scarpi_hedonic_orientation(const teddy_geometry_t *geom, double playfulness_scale, double *hedonic_out);
 bool evaluate_cellarius_planetary_eccentricity(const teddy_geometry_t *geom, double eccentricity_ratio, double *translation_offset_out);
 bool evaluate_hyde_vocal_warmth_pitch(const teddy_geometry_t *geom, double average_pitch_hz, double *warmth_offset_out);
+bool evaluate_hyde_vocal_tremor_index(const teddy_geometry_t *geom, double pitch_variance, double *tremor_uncanny_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -46,10 +47,14 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     double surrogate_residual = 0.0;
     evaluate_surrogate_residuals(&geom, 4, &surrogate_residual);
     
-    // Evaluate jitter from behavioral mismatch and exposure characteristics, scaled by residuals
+    // Evaluate Hyde vocal tremor index
+    double tremor_uncanny = 0.0;
+    evaluate_hyde_vocal_tremor_index(&geom, 0.2, &tremor_uncanny);
+    
+    // Evaluate jitter from behavioral mismatch and exposure characteristics, scaled by residuals and tremor indices
     double eccentric_vibrato = 0.0;
     evaluate_cellarius_planetary_eccentricity(&geom, 0.05, &eccentric_vibrato);
-    model->jitter_factor = (geom.behavioral_mismatch * 0.05) + (fabs(surrogate_residual) * 0.02) + (fabs(eccentric_vibrato) * 0.01);
+    model->jitter_factor = (geom.behavioral_mismatch * 0.05) + (fabs(surrogate_residual) * 0.02) + (fabs(eccentric_vibrato) * 0.01) + (tremor_uncanny * 0.03);
     
     // Evaluate Kramer-Ward facial elongation to adjust vocal transition tempo envelope
     double face_elongation = 0.0;
