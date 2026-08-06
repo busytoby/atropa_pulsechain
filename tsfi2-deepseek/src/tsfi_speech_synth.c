@@ -41,6 +41,7 @@ bool evaluate_hyde_pitch_range_engagement(const teddy_geometry_t *geom, double p
 bool evaluate_geniole_fwhr_boundary_map(const teddy_geometry_t *geom, double threshold_scale, double *mapped_boundary_out);
 bool evaluate_keating_chin_asymmetry_dilation(const teddy_geometry_t *geom, double base_dilation, double *asymmetry_dilation_out);
 bool evaluate_geniole_fwhr_retaliation_decay(const teddy_geometry_t *geom, double exposure_duration_sec, double *decayed_retaliation_out);
+bool evaluate_scarpi_aesthetic_trust(const teddy_geometry_t *geom, double base_trust, double *aesthetic_trust_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -114,7 +115,11 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     double pitch_engagement = 0.0;
     evaluate_hyde_pitch_range_engagement(&geom, 50.0, &pitch_engagement);
     
-    model->resonance_factor = (1.0 - (geom.jaw_scale * 0.2)) * (1.0 + (cloglog_rating - 4) * 0.05) + (hedonic_warmth * 0.15) + (mouth_warmth * 0.10) + (lip_warmth * 0.12) + (symmetry_trust * 0.15) + (pitch_engagement * 0.10);
+    // Evaluate Scarpi aesthetic trust boost
+    double aesthetic_trust = 0.0;
+    evaluate_scarpi_aesthetic_trust(&geom, 0.6, &aesthetic_trust);
+    
+    model->resonance_factor = (1.0 - (geom.jaw_scale * 0.2)) * (1.0 + (cloglog_rating - 4) * 0.05) + (hedonic_warmth * 0.15) + (mouth_warmth * 0.10) + (lip_warmth * 0.12) + (symmetry_trust * 0.15) + (pitch_engagement * 0.10) + (aesthetic_trust * 0.15);
     
     // Evaluate surrogate residuals to scale up the frequency jitter factor
     double surrogate_residual = 0.0;
