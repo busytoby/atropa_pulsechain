@@ -10,6 +10,7 @@
 // Forward declarations of link and models functions
 int evaluate_ordinal_cloglog_rating(const teddy_geometry_t *geom);
 bool evaluate_keating_brow_dominance(const teddy_geometry_t *geom, double brow_height, double *brow_dominance_out);
+bool evaluate_kramer_ward_human_face_elongation(const teddy_geometry_t *geom, double elongation_val, double *elongation_score_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -30,9 +31,14 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     // Evaluate jitter from behavioral mismatch and exposure characteristics
     model->jitter_factor = geom.behavioral_mismatch * 0.05;
     
+    // Evaluate Kramer-Ward facial elongation to adjust vocal transition tempo envelope
+    double face_elongation = 0.0;
+    evaluate_kramer_ward_human_face_elongation(&geom, 1.0, &face_elongation);
+    double envelope_scale = 1.0 + (face_elongation * 0.1);
+    
     // Set custom envelope curves based on physical dynamics
-    model->envelope_attack = 0.02 + (geom.stiffness * 0.05);
-    model->envelope_decay = 0.05 + (geom.damping * 0.1);
+    model->envelope_attack = (0.02 + (geom.stiffness * 0.05)) * envelope_scale;
+    model->envelope_decay = (0.05 + (geom.damping * 0.1)) * envelope_scale;
     
     // Initialize congruent parameters for Wald-gate validation (non-significant p-value)
     model->wald_beta[0] = 0.1;

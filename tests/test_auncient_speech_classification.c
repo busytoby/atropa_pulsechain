@@ -37,6 +37,7 @@ int main(void) {
     assert(model.base_frequency < 250.0);
     assert(model.jitter_factor == 0.0); 
     assert(model.resonance_factor > 0.0); // Verify cloglog rating modulation
+    assert(model.envelope_attack > 0.02); // Verify face-elongation scaling
     assert(tsfi_speech_synth_generate(&model, 0.5, 44100, buffer, buffer_size));
     
     // Verify classification & centroid bounds
