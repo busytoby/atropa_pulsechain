@@ -23,6 +23,7 @@ bool evaluate_keating_chin_asymmetry(const teddy_geometry_t *geom, double left_j
 bool evaluate_keating_sclera_size(const teddy_geometry_t *geom, double sclera_ratio, double *submissiveness_out);
 bool evaluate_keating_lip_trustworthiness(const teddy_geometry_t *geom, double lip_thickness, double *lip_trustworthiness_out);
 bool evaluate_keating_brow_gesture(const teddy_geometry_t *geom, double brow_raise_amplitude, double *brow_submissiveness_out);
+bool evaluate_keating_torso_head_ratio(const teddy_geometry_t *geom, double torso_span, double *ratio_dominance_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -92,9 +93,14 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     evaluate_kramer_ward_human_face_elongation(&geom, 1.0, &face_elongation);
     double envelope_scale = 1.0 + (face_elongation * 0.1);
     
+    // Evaluate torso to head ratio dominance scaling parameter to scale response envelopes
+    double torso_dominance = 0.0;
+    evaluate_keating_torso_head_ratio(&geom, 1.2, &torso_dominance);
+    double torso_scale = 1.0 / (1.0 + (torso_dominance * 0.3));
+    
     // Set custom envelope curves based on physical dynamics
-    model->envelope_attack = (0.02 + (geom.stiffness * 0.05)) * envelope_scale;
-    model->envelope_decay = (0.05 + (geom.damping * 0.1)) * envelope_scale;
+    model->envelope_attack = (0.02 + (geom.stiffness * 0.05)) * envelope_scale * torso_scale;
+    model->envelope_decay = (0.05 + (geom.damping * 0.1)) * envelope_scale * torso_scale;
     
     // Evaluate head posture pitch tilt submissiveness to damp amplitude baseline
     double submissive_rating = 0.0;
