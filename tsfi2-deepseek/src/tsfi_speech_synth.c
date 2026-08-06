@@ -39,6 +39,7 @@ bool evaluate_keating_eye_dilation_sync(const teddy_geometry_t *geom, double lef
 bool evaluate_hyde_tremor_frequency_sync(const teddy_geometry_t *geom, double chin_vibration_hz, double audio_tremor_hz, double *sync_rating_out);
 bool evaluate_hyde_pitch_range_engagement(const teddy_geometry_t *geom, double pitch_range_hz, double *engagement_rating_out);
 bool evaluate_geniole_fwhr_boundary_map(const teddy_geometry_t *geom, double threshold_scale, double *mapped_boundary_out);
+bool evaluate_keating_chin_asymmetry_dilation(const teddy_geometry_t *geom, double base_dilation, double *asymmetry_dilation_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -166,9 +167,14 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     evaluate_hyde_conversational_latency(&geom, 1.5, &conversational_latency);
     double latency_attack_delay = conversational_latency * 0.05;
     
+    // Evaluate Keating chin asymmetry dilation constraints to scale response envelopes
+    double chin_dilation = 0.0;
+    evaluate_keating_chin_asymmetry_dilation(&geom, 1.2, &chin_dilation);
+    double dilation_scale = 1.0 + (chin_dilation * 0.15);
+    
     // Set custom envelope curves based on physical dynamics
-    model->envelope_attack = (0.02 + (geom.stiffness * 0.05)) * envelope_scale * torso_scale + latency_attack_delay;
-    model->envelope_decay = (0.05 + (geom.damping * 0.1)) * envelope_scale * torso_scale;
+    model->envelope_attack = ((0.02 + (geom.stiffness * 0.05)) * envelope_scale * torso_scale + latency_attack_delay) * dilation_scale;
+    model->envelope_decay = (0.05 + (geom.damping * 0.1)) * envelope_scale * torso_scale * dilation_scale;
     
     // Evaluate head posture pitch tilt submissiveness to damp amplitude baseline
     double submissive_rating = 0.0;
