@@ -43,6 +43,7 @@ bool evaluate_keating_chin_asymmetry_dilation(const teddy_geometry_t *geom, doub
 bool evaluate_geniole_fwhr_retaliation_decay(const teddy_geometry_t *geom, double exposure_duration_sec, double *decayed_retaliation_out);
 bool evaluate_scarpi_aesthetic_trust(const teddy_geometry_t *geom, double base_trust, double *aesthetic_trust_out);
 bool evaluate_scarpi_utilitarian_orientation(const teddy_geometry_t *geom, double efficiency_scale, double *utilitarian_out);
+bool evaluate_cellarius_heliocentric_alignment(const teddy_geometry_t *geom, double orbital_phase, double *alignment_offset_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -91,7 +92,11 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     double brow_submissive = 0.0;
     evaluate_keating_brow_gesture(&geom, 0.5, &brow_submissive);
     
-    model->base_frequency = geom.vocal_pitch - pitch_adjustment + (warmth_offset * 10.0) + (babyfacedness * 20.0) + (head_roundness * 20.0) + (eye_dilation_sync * 15.0) + (sclera_submissive * 15.0) + (brow_submissive * 15.0);
+    // Evaluate Cellarius heliocentric alignment pitch modulation
+    double helio_alignment = 0.0;
+    evaluate_cellarius_heliocentric_alignment(&geom, 0.25, &helio_alignment);
+    
+    model->base_frequency = geom.vocal_pitch - pitch_adjustment + (warmth_offset * 10.0) + (babyfacedness * 20.0) + (head_roundness * 20.0) + (eye_dilation_sync * 15.0) + (sclera_submissive * 15.0) + (brow_submissive * 15.0) + (helio_alignment * 10.0);
     
     // Modulate formant resonance via Christensen cloglog link ordinal rating (1 to 7)
     int cloglog_rating = evaluate_ordinal_cloglog_rating(&geom);
