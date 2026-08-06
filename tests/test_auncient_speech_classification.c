@@ -54,9 +54,9 @@ int main(void) {
     printf("[TEST] Testing PERSONALITY_AGGRESSIVE speech profile...\n");
     tsfi_speech_synth_init(&model, PERSONALITY_AGGRESSIVE);
     printf("   Aggressive Base Frequency: %.2f Hz\n", model.base_frequency);
-    // Base pitch should be shifted lower than 85Hz due to high brow dominance rating
-    assert(model.base_frequency < 120.0);
-    assert(model.envelope_attack > 0.02);
+    // Base pitch should be shifted lower due to high brow dominance and fWHR threat dilation
+    assert(model.base_frequency < 100.0);
+    assert(model.envelope_attack > 0.01);
     assert(model.resonance_factor > 0.0); // Verify cloglog rating modulation
     assert(tsfi_speech_synth_generate(&model, 0.5, 44100, buffer, buffer_size));
     

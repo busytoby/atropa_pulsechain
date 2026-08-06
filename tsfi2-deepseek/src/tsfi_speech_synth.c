@@ -28,6 +28,7 @@ bool evaluate_keating_width_asymmetry(const teddy_geometry_t *geom, double left_
 bool evaluate_keating_brow_chin_proportion(const teddy_geometry_t *geom, double brow_chin_distance, double *proportion_dominance_out);
 bool evaluate_hyde_conversational_latency(const teddy_geometry_t *geom, double lag_seconds, double *latency_uncanny_out);
 bool evaluate_hyde_vocal_size_mismatch(const teddy_geometry_t *geom, double voice_pitch_hz, double *size_mismatch_out);
+bool evaluate_geniole_fwhr_dilation_map(const teddy_geometry_t *geom, double base_dilation, double *mapped_dilation_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -41,8 +42,12 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     double brow_chin_dominance = 0.0;
     evaluate_keating_brow_chin_proportion(&geom, 0.4, &brow_chin_dominance);
     
-    // Lower pitch for higher dominance ratings (lower brow coordinates or brow-to-chin scaling)
-    double pitch_adjustment = (brow_dominance * 15.0) + (brow_chin_dominance * 15.0);
+    // Evaluate Geniole fWHR dynamic threat dilation pitch modulation
+    double fwhr_dilation = 0.0;
+    evaluate_geniole_fwhr_dilation_map(&geom, 1.1, &fwhr_dilation);
+    
+    // Lower pitch for higher dominance ratings (lower brow coordinates, brow-to-chin scaling, or threat dilation mapping)
+    double pitch_adjustment = (brow_dominance * 15.0) + (brow_chin_dominance * 15.0) + (fwhr_dilation * 10.0);
     
     // Evaluate Hyde vocal warmth pitch offset (shifts fundamental pitch upward for warm profiles)
     double warmth_offset = 0.0;
