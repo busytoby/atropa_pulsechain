@@ -7,13 +7,19 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+// Forward declaration of link function
+int evaluate_ordinal_cloglog_rating(const teddy_geometry_t *geom);
+
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
     resolve_teddy_geometry(personality, &geom);
     
     // Bind base parameters to personality engine
     model->base_frequency = geom.vocal_pitch;
-    model->resonance_factor = 1.0 - (geom.jaw_scale * 0.2);
+    
+    // Modulate formant resonance via Christensen cloglog link ordinal rating (1 to 7)
+    int cloglog_rating = evaluate_ordinal_cloglog_rating(&geom);
+    model->resonance_factor = (1.0 - (geom.jaw_scale * 0.2)) * (1.0 + (cloglog_rating - 4) * 0.05);
     
     // Evaluate jitter from behavioral mismatch and exposure characteristics
     model->jitter_factor = geom.behavioral_mismatch * 0.05;

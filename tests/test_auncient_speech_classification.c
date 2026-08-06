@@ -36,6 +36,7 @@ int main(void) {
     tsfi_speech_synth_init(&model, PERSONALITY_TRUSTWORTHY);
     assert(model.base_frequency == 250.0);
     assert(model.jitter_factor == 0.0); 
+    assert(model.resonance_factor > 0.0); // Verify cloglog rating modulation
     assert(tsfi_speech_synth_generate(&model, 0.5, 44100, buffer, buffer_size));
     
     // Verify classification & centroid bounds
@@ -52,6 +53,7 @@ int main(void) {
     tsfi_speech_synth_init(&model, PERSONALITY_AGGRESSIVE);
     assert(model.base_frequency == 85.0);
     assert(model.envelope_attack > 0.02);
+    assert(model.resonance_factor > 0.0); // Verify cloglog rating modulation
     assert(tsfi_speech_synth_generate(&model, 0.5, 44100, buffer, buffer_size));
     
     // Verify classification & centroid bounds
