@@ -46,6 +46,7 @@ bool evaluate_scarpi_utilitarian_orientation(const teddy_geometry_t *geom, doubl
 bool evaluate_cellarius_heliocentric_alignment(const teddy_geometry_t *geom, double orbital_phase, double *alignment_offset_out);
 bool evaluate_cellarius_constellation_boundary(const teddy_geometry_t *geom, double celestial_longitude, double *boundary_limit_out);
 bool evaluate_hyde_av_latency_jitter(const teddy_geometry_t *geom, double latency_jitter_sec, double *naturalness_out);
+bool evaluate_hyde_vocal_energy_variance(const teddy_geometry_t *geom, double energy_variance, double *engagement_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -127,7 +128,11 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     double aesthetic_trust = 0.0;
     evaluate_scarpi_aesthetic_trust(&geom, 0.6, &aesthetic_trust);
     
-    model->resonance_factor = (1.0 - (geom.jaw_scale * 0.2)) * (1.0 + (cloglog_rating - 4) * 0.05) + (hedonic_warmth * 0.15) + (mouth_warmth * 0.10) + (lip_warmth * 0.12) + (symmetry_trust * 0.15) + (pitch_engagement * 0.10) + (aesthetic_trust * 0.15);
+    // Evaluate Hyde conversational vocal energy variance engagement boost
+    double energy_engagement = 0.0;
+    evaluate_hyde_vocal_energy_variance(&geom, 0.4, &energy_engagement);
+    
+    model->resonance_factor = (1.0 - (geom.jaw_scale * 0.2)) * (1.0 + (cloglog_rating - 4) * 0.05) + (hedonic_warmth * 0.15) + (mouth_warmth * 0.10) + (lip_warmth * 0.12) + (symmetry_trust * 0.15) + (pitch_engagement * 0.10) + (aesthetic_trust * 0.15) + (energy_engagement * 0.12);
     
     // Evaluate surrogate residuals to scale up the frequency jitter factor
     double surrogate_residual = 0.0;

@@ -37,7 +37,7 @@ int main(void) {
     printf("   Trustworthy Base Frequency: %.2f Hz\n", model.base_frequency);
     assert(model.base_frequency > 130.0 && model.base_frequency < 400.0);
     assert(model.jitter_factor >= 0.0); // Verify surrogate residual, planetary eccentricity, tremor, chin asymmetry, width asymmetry, size mismatch, fWHR threat jitter, turn interruption, tremor sync, and AV latency mismatch addition
-    assert(model.resonance_factor > 1.0); // Verify cloglog rating modulation, hedonic boost, mouth curvature boost, lip boost, symmetry trust, engagement boost, and aesthetic trust boost
+    assert(model.resonance_factor > 1.1); // Verify cloglog rating modulation, hedonic boost, mouth curvature boost, lip boost, symmetry trust, engagement boost, aesthetic trust, and energy variance boost
     assert(model.envelope_attack > 0.002); // Verify torso-head, face-elongation, conversational latency, chin asymmetry dilation, retaliation decay, and utilitarian scaling
     assert(tsfi_speech_synth_generate(&model, 0.5, 44100, buffer, buffer_size));
     
