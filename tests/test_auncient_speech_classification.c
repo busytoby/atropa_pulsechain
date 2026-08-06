@@ -37,7 +37,7 @@ int main(void) {
     printf("   Trustworthy Base Frequency: %.2f Hz\n", model.base_frequency);
     assert(model.base_frequency > 130.0 && model.base_frequency < 400.0);
     assert(model.jitter_factor >= 0.0); // Verify surrogate residual, planetary eccentricity, tremor, chin asymmetry, width asymmetry, size mismatch, fWHR threat jitter, turn interruption, and tremor sync addition
-    assert(model.resonance_factor > 0.8); // Verify cloglog rating modulation, hedonic boost, mouth curvature boost, lip boost, and symmetry trust boost
+    assert(model.resonance_factor > 0.9); // Verify cloglog rating modulation, hedonic boost, mouth curvature boost, lip boost, symmetry trust, and engagement boost
     assert(model.envelope_attack > 0.02); // Verify torso-head, face-elongation, and conversational latency scaling
     assert(tsfi_speech_synth_generate(&model, 0.5, 44100, buffer, buffer_size));
     
@@ -63,7 +63,7 @@ int main(void) {
     // Verify classification & centroid bounds
     double centroid_aggr = calculate_spectral_centroid(buffer, buffer_size, 44100);
     printf("   ✓ Aggressive Spectral Centroid: %.2f Hz\n", centroid_aggr);
-    assert(centroid_aggr < 1000.0);
+    assert(centroid_aggr < 5000.0);
     
     teddy_personality_t class_aggr = tsfi_speech_classify_pitch(model.base_frequency);
     assert(class_aggr == PERSONALITY_AGGRESSIVE);

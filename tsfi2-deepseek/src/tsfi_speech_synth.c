@@ -37,6 +37,7 @@ bool evaluate_keating_gaze_dominance(const teddy_geometry_t *geom, double gaze_d
 bool evaluate_hyde_turn_interruption(const teddy_geometry_t *geom, double overlap_duration_sec, double *interruption_uncanny_out);
 bool evaluate_keating_eye_dilation_sync(const teddy_geometry_t *geom, double left_dilation, double right_dilation, double *babyface_sync_out);
 bool evaluate_hyde_tremor_frequency_sync(const teddy_geometry_t *geom, double chin_vibration_hz, double audio_tremor_hz, double *sync_rating_out);
+bool evaluate_hyde_pitch_range_engagement(const teddy_geometry_t *geom, double pitch_range_hz, double *engagement_rating_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -106,7 +107,11 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     double symmetry_trust = 0.0;
     evaluate_keating_symmetry_trust(&geom, &symmetry_trust);
     
-    model->resonance_factor = (1.0 - (geom.jaw_scale * 0.2)) * (1.0 + (cloglog_rating - 4) * 0.05) + (hedonic_warmth * 0.15) + (mouth_warmth * 0.10) + (lip_warmth * 0.12) + (symmetry_trust * 0.15);
+    // Evaluate Hyde conversational pitch range engagement boost
+    double pitch_engagement = 0.0;
+    evaluate_hyde_pitch_range_engagement(&geom, 50.0, &pitch_engagement);
+    
+    model->resonance_factor = (1.0 - (geom.jaw_scale * 0.2)) * (1.0 + (cloglog_rating - 4) * 0.05) + (hedonic_warmth * 0.15) + (mouth_warmth * 0.10) + (lip_warmth * 0.12) + (symmetry_trust * 0.15) + (pitch_engagement * 0.10);
     
     // Evaluate surrogate residuals to scale up the frequency jitter factor
     double surrogate_residual = 0.0;
