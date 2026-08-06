@@ -16,6 +16,7 @@ bool evaluate_scarpi_hedonic_orientation(const teddy_geometry_t *geom, double pl
 bool evaluate_cellarius_planetary_eccentricity(const teddy_geometry_t *geom, double eccentricity_ratio, double *translation_offset_out);
 bool evaluate_hyde_vocal_warmth_pitch(const teddy_geometry_t *geom, double average_pitch_hz, double *warmth_offset_out);
 bool evaluate_hyde_vocal_tremor_index(const teddy_geometry_t *geom, double pitch_variance, double *tremor_uncanny_out);
+bool evaluate_keating_mouth_curvature(const teddy_geometry_t *geom, double upturn_curvature, double *warmth_rating_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -41,7 +42,11 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     double hedonic_warmth = 0.0;
     evaluate_scarpi_hedonic_orientation(&geom, 0.8, &hedonic_warmth);
     
-    model->resonance_factor = (1.0 - (geom.jaw_scale * 0.2)) * (1.0 + (cloglog_rating - 4) * 0.05) + (hedonic_warmth * 0.15);
+    // Query mouth curvature to scale up resonance factor (smiling mouth shapes shorten vocal tract)
+    double mouth_warmth = 0.0;
+    evaluate_keating_mouth_curvature(&geom, 0.4, &mouth_warmth);
+    
+    model->resonance_factor = (1.0 - (geom.jaw_scale * 0.2)) * (1.0 + (cloglog_rating - 4) * 0.05) + (hedonic_warmth * 0.15) + (mouth_warmth * 0.10);
     
     // Evaluate surrogate residuals to scale up the frequency jitter factor
     double surrogate_residual = 0.0;
