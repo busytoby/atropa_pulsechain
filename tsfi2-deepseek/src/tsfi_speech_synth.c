@@ -25,6 +25,7 @@ bool evaluate_keating_lip_trustworthiness(const teddy_geometry_t *geom, double l
 bool evaluate_keating_brow_gesture(const teddy_geometry_t *geom, double brow_raise_amplitude, double *brow_submissiveness_out);
 bool evaluate_keating_torso_head_ratio(const teddy_geometry_t *geom, double torso_span, double *ratio_dominance_out);
 bool evaluate_keating_width_asymmetry(const teddy_geometry_t *geom, double left_width, double right_width, double *asymmetry_dominance_out);
+bool evaluate_keating_brow_chin_proportion(const teddy_geometry_t *geom, double brow_chin_distance, double *proportion_dominance_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -34,8 +35,12 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     double brow_dominance = 0.0;
     evaluate_keating_brow_dominance(&geom, 0.3, &brow_dominance);
     
-    // Lower pitch for higher dominance ratings (lower brow coordinates)
-    double pitch_adjustment = brow_dominance * 15.0;
+    // Evaluate Keating brow chin proportion dominance pitch modulation
+    double brow_chin_dominance = 0.0;
+    evaluate_keating_brow_chin_proportion(&geom, 0.4, &brow_chin_dominance);
+    
+    // Lower pitch for higher dominance ratings (lower brow coordinates or brow-to-chin scaling)
+    double pitch_adjustment = (brow_dominance * 15.0) + (brow_chin_dominance * 15.0);
     
     // Evaluate Hyde vocal warmth pitch offset (shifts fundamental pitch upward for warm profiles)
     double warmth_offset = 0.0;
