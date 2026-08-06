@@ -35,6 +35,7 @@ bool evaluate_hyde_vocal_amplitude_mismatch(const teddy_geometry_t *geom, double
 bool evaluate_geniole_fwhr_jitter_mod(const teddy_geometry_t *geom, double base_jitter, double *mapped_jitter_out);
 bool evaluate_keating_gaze_dominance(const teddy_geometry_t *geom, double gaze_duration_sec, double aversion_angle, double *gaze_dominance_out);
 bool evaluate_hyde_turn_interruption(const teddy_geometry_t *geom, double overlap_duration_sec, double *interruption_uncanny_out);
+bool evaluate_keating_eye_dilation_sync(const teddy_geometry_t *geom, double left_dilation, double right_dilation, double *babyface_sync_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -71,6 +72,10 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     double head_roundness = 0.0;
     evaluate_keating_head_roundness_index(&geom, &head_roundness);
     
+    // Evaluate Keating eye dilation synchronization babyface pitch modulation
+    double eye_dilation_sync = 0.0;
+    evaluate_keating_eye_dilation_sync(&geom, 0.5, 0.5, &eye_dilation_sync);
+    
     // Evaluate Keating sclera size submissiveness pitch modulation
     double sclera_submissive = 0.0;
     evaluate_keating_sclera_size(&geom, 0.35, &sclera_submissive);
@@ -79,7 +84,7 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     double brow_submissive = 0.0;
     evaluate_keating_brow_gesture(&geom, 0.5, &brow_submissive);
     
-    model->base_frequency = geom.vocal_pitch - pitch_adjustment + (warmth_offset * 10.0) + (babyfacedness * 20.0) + (head_roundness * 20.0) + (sclera_submissive * 15.0) + (brow_submissive * 15.0);
+    model->base_frequency = geom.vocal_pitch - pitch_adjustment + (warmth_offset * 10.0) + (babyfacedness * 20.0) + (head_roundness * 20.0) + (eye_dilation_sync * 15.0) + (sclera_submissive * 15.0) + (brow_submissive * 15.0);
     
     // Modulate formant resonance via Christensen cloglog link ordinal rating (1 to 7)
     int cloglog_rating = evaluate_ordinal_cloglog_rating(&geom);

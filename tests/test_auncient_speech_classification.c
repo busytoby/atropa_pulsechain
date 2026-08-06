@@ -73,7 +73,7 @@ int main(void) {
     printf("[TEST] Testing PERSONALITY_SKEPTICAL speech profile...\n");
     tsfi_speech_synth_init(&model, PERSONALITY_SKEPTICAL);
     printf("   Skeptical Base Frequency: %.2f Hz\n", model.base_frequency);
-    assert(model.base_frequency > 100.0 && model.base_frequency < 300.0);
+    assert(model.base_frequency > 100.0 && model.base_frequency < 350.0);
     assert(tsfi_speech_synth_generate(&model, 0.5, 44100, buffer, buffer_size));
     
     // Verify classification
