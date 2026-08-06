@@ -42,6 +42,7 @@ bool evaluate_geniole_fwhr_boundary_map(const teddy_geometry_t *geom, double thr
 bool evaluate_keating_chin_asymmetry_dilation(const teddy_geometry_t *geom, double base_dilation, double *asymmetry_dilation_out);
 bool evaluate_geniole_fwhr_retaliation_decay(const teddy_geometry_t *geom, double exposure_duration_sec, double *decayed_retaliation_out);
 bool evaluate_scarpi_aesthetic_trust(const teddy_geometry_t *geom, double base_trust, double *aesthetic_trust_out);
+bool evaluate_scarpi_utilitarian_orientation(const teddy_geometry_t *geom, double efficiency_scale, double *utilitarian_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -183,9 +184,14 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     evaluate_geniole_fwhr_retaliation_decay(&geom, 10.0, &retaliation_decay);
     double decay_sustain_scale = 1.0 + (retaliation_decay * 0.20);
     
+    // Evaluate Scarpi utilitarian task-oriented orientation to scale response envelopes
+    double utilitarian_efficiency = 0.0;
+    evaluate_scarpi_utilitarian_orientation(&geom, 0.7, &utilitarian_efficiency);
+    double utilitarian_scale = 1.0 / (1.0 + (utilitarian_efficiency * 0.25));
+    
     // Set custom envelope curves based on physical dynamics
-    model->envelope_attack = ((0.02 + (geom.stiffness * 0.05)) * envelope_scale * torso_scale + latency_attack_delay) * dilation_scale;
-    model->envelope_decay = (0.05 + (geom.damping * 0.1)) * envelope_scale * torso_scale * dilation_scale * decay_sustain_scale;
+    model->envelope_attack = ((0.02 + (geom.stiffness * 0.05)) * envelope_scale * torso_scale + latency_attack_delay) * dilation_scale * utilitarian_scale;
+    model->envelope_decay = (0.05 + (geom.damping * 0.1)) * envelope_scale * torso_scale * dilation_scale * decay_sustain_scale * utilitarian_scale;
     
     // Evaluate head posture pitch tilt submissiveness to damp amplitude baseline
     double submissive_rating = 0.0;
