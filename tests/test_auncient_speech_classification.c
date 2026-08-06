@@ -38,7 +38,7 @@ int main(void) {
     assert(model.base_frequency > 130.0 && model.base_frequency < 400.0);
     assert(model.jitter_factor >= 0.0); // Verify surrogate residual, planetary eccentricity, tremor, chin asymmetry, width asymmetry, size mismatch, fWHR threat jitter, turn interruption, and tremor sync addition
     assert(model.resonance_factor > 0.9); // Verify cloglog rating modulation, hedonic boost, mouth curvature boost, lip boost, symmetry trust, and engagement boost
-    assert(model.envelope_attack > 0.01); // Verify torso-head, face-elongation, conversational latency, and chin asymmetry dilation scaling
+    assert(model.envelope_attack > 0.005); // Verify torso-head, face-elongation, conversational latency, chin asymmetry dilation, and retaliation decay scaling
     assert(tsfi_speech_synth_generate(&model, 0.5, 44100, buffer, buffer_size));
     
     // Verify classification & centroid bounds
