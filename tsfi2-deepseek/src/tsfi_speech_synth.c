@@ -13,6 +13,7 @@ bool evaluate_keating_brow_dominance(const teddy_geometry_t *geom, double brow_h
 bool evaluate_kramer_ward_human_face_elongation(const teddy_geometry_t *geom, double elongation_val, double *elongation_score_out);
 bool evaluate_surrogate_residuals(const teddy_geometry_t *geom, int observed_rating, double *residual_out);
 bool evaluate_scarpi_hedonic_orientation(const teddy_geometry_t *geom, double playfulness_scale, double *hedonic_out);
+bool evaluate_cellarius_planetary_eccentricity(const teddy_geometry_t *geom, double eccentricity_ratio, double *translation_offset_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -40,7 +41,9 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     evaluate_surrogate_residuals(&geom, 4, &surrogate_residual);
     
     // Evaluate jitter from behavioral mismatch and exposure characteristics, scaled by residuals
-    model->jitter_factor = (geom.behavioral_mismatch * 0.05) + (fabs(surrogate_residual) * 0.02);
+    double eccentric_vibrato = 0.0;
+    evaluate_cellarius_planetary_eccentricity(&geom, 0.05, &eccentric_vibrato);
+    model->jitter_factor = (geom.behavioral_mismatch * 0.05) + (fabs(surrogate_residual) * 0.02) + (fabs(eccentric_vibrato) * 0.01);
     
     // Evaluate Kramer-Ward facial elongation to adjust vocal transition tempo envelope
     double face_elongation = 0.0;
