@@ -33,6 +33,7 @@ bool evaluate_keating_head_roundness_index(const teddy_geometry_t *geom, double 
 bool evaluate_keating_symmetry_trust(const teddy_geometry_t *geom, double *trust_out);
 bool evaluate_hyde_vocal_amplitude_mismatch(const teddy_geometry_t *geom, double voice_amplitude_db, double *amplitude_mismatch_out);
 bool evaluate_geniole_fwhr_jitter_mod(const teddy_geometry_t *geom, double base_jitter, double *mapped_jitter_out);
+bool evaluate_keating_gaze_dominance(const teddy_geometry_t *geom, double gaze_duration_sec, double aversion_angle, double *gaze_dominance_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -50,8 +51,12 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     double fwhr_dilation = 0.0;
     evaluate_geniole_fwhr_dilation_map(&geom, 1.1, &fwhr_dilation);
     
-    // Lower pitch for higher dominance ratings (lower brow coordinates, brow-to-chin scaling, or threat dilation mapping)
-    double pitch_adjustment = (brow_dominance * 15.0) + (brow_chin_dominance * 15.0) + (fwhr_dilation * 10.0);
+    // Evaluate Keating gaze dominance pitch modulation
+    double gaze_dominance = 0.0;
+    evaluate_keating_gaze_dominance(&geom, 3.0, 10.0, &gaze_dominance);
+    
+    // Lower pitch for higher dominance ratings (lower brow coordinates, brow-to-chin scaling, threat dilation mapping, or gaze dominance)
+    double pitch_adjustment = (brow_dominance * 15.0) + (brow_chin_dominance * 15.0) + (fwhr_dilation * 10.0) + (gaze_dominance * 15.0);
     
     // Evaluate Hyde vocal warmth pitch offset (shifts fundamental pitch upward for warm profiles)
     double warmth_offset = 0.0;

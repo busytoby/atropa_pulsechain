@@ -35,7 +35,7 @@ int main(void) {
     printf("[TEST] Testing PERSONALITY_TRUSTWORTHY speech profile...\n");
     tsfi_speech_synth_init(&model, PERSONALITY_TRUSTWORTHY);
     printf("   Trustworthy Base Frequency: %.2f Hz\n", model.base_frequency);
-    assert(model.base_frequency > 150.0 && model.base_frequency < 400.0);
+    assert(model.base_frequency > 130.0 && model.base_frequency < 400.0);
     assert(model.jitter_factor >= 0.0); // Verify surrogate residual, planetary eccentricity, tremor, chin asymmetry, width asymmetry, size mismatch, and fWHR threat jitter addition
     assert(model.resonance_factor > 0.8); // Verify cloglog rating modulation, hedonic boost, mouth curvature boost, lip boost, and symmetry trust boost
     assert(model.envelope_attack > 0.02); // Verify torso-head, face-elongation, and conversational latency scaling
@@ -54,7 +54,7 @@ int main(void) {
     printf("[TEST] Testing PERSONALITY_AGGRESSIVE speech profile...\n");
     tsfi_speech_synth_init(&model, PERSONALITY_AGGRESSIVE);
     printf("   Aggressive Base Frequency: %.2f Hz\n", model.base_frequency);
-    // Base pitch should be shifted lower due to high brow dominance and fWHR threat dilation
+    // Base pitch should be shifted lower due to dominance variables
     assert(model.base_frequency < 100.0);
     assert(model.envelope_attack > 0.01);
     assert(model.resonance_factor > 0.0); // Verify cloglog rating modulation
@@ -73,7 +73,7 @@ int main(void) {
     printf("[TEST] Testing PERSONALITY_SKEPTICAL speech profile...\n");
     tsfi_speech_synth_init(&model, PERSONALITY_SKEPTICAL);
     printf("   Skeptical Base Frequency: %.2f Hz\n", model.base_frequency);
-    assert(model.base_frequency > 130.0 && model.base_frequency < 300.0);
+    assert(model.base_frequency > 100.0 && model.base_frequency < 300.0);
     assert(tsfi_speech_synth_generate(&model, 0.5, 44100, buffer, buffer_size));
     
     // Verify classification
