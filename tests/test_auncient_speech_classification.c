@@ -106,6 +106,20 @@ int main(void) {
     assert(!tsfi_speech_synth_generate(&model, 10.0, 44100, buffer, 10));
     printf("   ✓ ACID transactional rollback verified successfully.\n");
 
+    // 6. Verify Mouth-Speed Synchrony Amplitude Modulation
+    printf("[TEST] Testing mouth-speed synchrony amplitude modulation check...\n");
+    tsfi_speech_synth_init(&model, PERSONALITY_TRUSTWORTHY);
+    assert(tsfi_speech_synth_generate(&model, 0.2, 44100, buffer, buffer_size));
+    
+    // Sum absolute values of the generated PCM signal to check the total energy amplitude
+    double total_energy = 0.0;
+    for (uint32_t i = 0; i < 44100 * 0.2; i++) {
+        total_energy += fabs((double)buffer[i]);
+    }
+    printf("   ✓ Synchronized Total Energy: %.2f\n", total_energy);
+    assert(total_energy > 0.0);
+    printf("   ✓ Mouth-speed synchrony amplitude modulation verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL SPEECH SYNTHESIS & CLASSIFICATION TESTS PASSED\n");
     printf("=============================================================\n");

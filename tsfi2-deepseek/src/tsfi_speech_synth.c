@@ -89,6 +89,19 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
 // Forward declaration of the diagnostics function
 bool evaluate_wald_nominal_test(const double *beta_vector, const double *covariance_matrix, int df, double *wald_stat_out, double *p_value_out);
 
+// Forward declarations of link, diagnostics, and models functions
+int evaluate_ordinal_cloglog_rating(const teddy_geometry_t *geom);
+bool evaluate_keating_brow_dominance(const teddy_geometry_t *geom, double brow_height, double *brow_dominance_out);
+bool evaluate_kramer_ward_human_face_elongation(const teddy_geometry_t *geom, double elongation_val, double *elongation_score_out);
+bool evaluate_surrogate_residuals(const teddy_geometry_t *geom, int observed_rating, double *residual_out);
+bool evaluate_scarpi_hedonic_orientation(const teddy_geometry_t *geom, double playfulness_scale, double *hedonic_out);
+bool evaluate_cellarius_planetary_eccentricity(const teddy_geometry_t *geom, double eccentricity_ratio, double *translation_offset_out);
+bool evaluate_hyde_vocal_warmth_pitch(const teddy_geometry_t *geom, double average_pitch_hz, double *warmth_offset_out);
+bool evaluate_hyde_vocal_tremor_index(const teddy_geometry_t *geom, double pitch_variance, double *tremor_uncanny_out);
+bool evaluate_keating_mouth_curvature(const teddy_geometry_t *geom, double upturn_curvature, double *warmth_rating_out);
+bool evaluate_keating_babyfacedness_index(const teddy_geometry_t *geom, double *babyfacedness_out);
+bool evaluate_hyde_mouth_speed_synchrony(const teddy_geometry_t *geom, double mouth_speed, double pitch_acceleration, double *sync_mismatch_out);
+
 // Forward declarations of system transaction controls
 evaluation_tx_t begin_evaluation_transaction(teddy_geometry_t *target);
 bool commit_evaluation_transaction(evaluation_tx_t *tx);
@@ -104,6 +117,11 @@ bool tsfi_speech_synth_generate(const tsfi_speech_model_t *model,
     // Cast away const to begin evaluation transaction safeguard
     teddy_geometry_t dummy_geom;
     dummy_geom.vocal_pitch = model->base_frequency;
+    
+    // Aligned settings for simulated synchrony evaluation
+    dummy_geom.leadership_profile = 0.5;
+    dummy_geom.stiffness = model->envelope_attack;
+    
     evaluation_tx_t tx = begin_evaluation_transaction(&dummy_geom);
     
     if (total_samples > buffer_size) {
@@ -117,6 +135,11 @@ bool tsfi_speech_synth_generate(const tsfi_speech_model_t *model,
     evaluate_wald_nominal_test(model->wald_beta, model->wald_covariance, 3, &wald_stat, &p_val);
     
     bool wald_failed = (p_val < 0.05);
+    
+    // Evaluate mouth speed synchrony (damps output volume if mismatch is high)
+    double sync_mismatch = 0.0;
+    evaluate_hyde_mouth_speed_synchrony(&dummy_geom, 2.0, 1.5, &sync_mismatch);
+    double amplitude_scale = (sync_mismatch > 0.5) ? 8000.0 : 12000.0;
     
     uint32_t attack_samples = (uint32_t)(model->envelope_attack * sample_rate);
     uint32_t decay_samples = (uint32_t)(model->envelope_decay * sample_rate);
@@ -145,7 +168,7 @@ bool tsfi_speech_synth_generate(const tsfi_speech_model_t *model,
             envelope = (double)(total_samples - i) / decay_samples;
         }
         
-        buffer[i] = (int16_t)(signal * envelope * 12000.0);
+        buffer[i] = (int16_t)(signal * envelope * amplitude_scale);
     }
     
     commit_evaluation_transaction(&tx);
