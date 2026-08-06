@@ -36,7 +36,7 @@ int main(void) {
     tsfi_speech_synth_init(&model, PERSONALITY_TRUSTWORTHY);
     printf("   Trustworthy Base Frequency: %.2f Hz\n", model.base_frequency);
     assert(model.base_frequency > 130.0 && model.base_frequency < 400.0);
-    assert(model.jitter_factor >= 0.0); // Verify surrogate residual, planetary eccentricity, tremor, chin asymmetry, width asymmetry, size mismatch, fWHR threat jitter, and turn interruption addition
+    assert(model.jitter_factor >= 0.0); // Verify surrogate residual, planetary eccentricity, tremor, chin asymmetry, width asymmetry, size mismatch, fWHR threat jitter, turn interruption, and tremor sync addition
     assert(model.resonance_factor > 0.8); // Verify cloglog rating modulation, hedonic boost, mouth curvature boost, lip boost, and symmetry trust boost
     assert(model.envelope_attack > 0.02); // Verify torso-head, face-elongation, and conversational latency scaling
     assert(tsfi_speech_synth_generate(&model, 0.5, 44100, buffer, buffer_size));

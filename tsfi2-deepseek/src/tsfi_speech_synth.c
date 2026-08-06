@@ -36,6 +36,7 @@ bool evaluate_geniole_fwhr_jitter_mod(const teddy_geometry_t *geom, double base_
 bool evaluate_keating_gaze_dominance(const teddy_geometry_t *geom, double gaze_duration_sec, double aversion_angle, double *gaze_dominance_out);
 bool evaluate_hyde_turn_interruption(const teddy_geometry_t *geom, double overlap_duration_sec, double *interruption_uncanny_out);
 bool evaluate_keating_eye_dilation_sync(const teddy_geometry_t *geom, double left_dilation, double right_dilation, double *babyface_sync_out);
+bool evaluate_hyde_tremor_frequency_sync(const teddy_geometry_t *geom, double chin_vibration_hz, double audio_tremor_hz, double *sync_rating_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -135,10 +136,14 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     double turn_interruption = 0.0;
     evaluate_hyde_turn_interruption(&geom, 0.8, &turn_interruption);
     
-    // Evaluate jitter from behavioral mismatch and exposure characteristics, scaled by residuals, tremors, jaw asymmetry, width asymmetry, size mismatch, fWHR threat jitter, and turn interruption
+    // Evaluate Hyde tremor frequency sync to scale voice jitter under submissive tremors
+    double tremor_sync = 0.0;
+    evaluate_hyde_tremor_frequency_sync(&geom, 6.0, 6.2, &tremor_sync);
+    
+    // Evaluate jitter from behavioral mismatch and exposure characteristics, scaled by residuals, tremors, jaw asymmetry, width asymmetry, size mismatch, fWHR threat jitter, turn interruption, and tremor sync
     double eccentric_vibrato = 0.0;
     evaluate_cellarius_planetary_eccentricity(&geom, 0.05, &eccentric_vibrato);
-    model->jitter_factor = (geom.behavioral_mismatch * 0.05) + (fabs(surrogate_residual) * 0.02) + (fabs(eccentric_vibrato) * 0.01) + (tremor_uncanny * 0.03) + (fabs(chin_asymmetry) * 0.02) + (fabs(width_asymmetry) * 0.02) + (size_mismatch * 0.03) + (fwhr_jitter * 0.02) + (turn_interruption * 0.02);
+    model->jitter_factor = (geom.behavioral_mismatch * 0.05) + (fabs(surrogate_residual) * 0.02) + (fabs(eccentric_vibrato) * 0.01) + (tremor_uncanny * 0.03) + (fabs(chin_asymmetry) * 0.02) + (fabs(width_asymmetry) * 0.02) + (size_mismatch * 0.03) + (fwhr_jitter * 0.02) + (turn_interruption * 0.02) + (tremor_sync * 0.02);
     
     // Evaluate Kramer-Ward facial elongation to adjust vocal transition tempo envelope
     double face_elongation = 0.0;
