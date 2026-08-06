@@ -85,6 +85,7 @@ int main(void) {
     printf("[TEST] Testing Wald-gated nominal diagnostic parameter mismatch validation fallback...\n");
     tsfi_speech_synth_init(&model, PERSONALITY_TRUSTWORTHY);
     assert(model.wald_beta[0] >= 0.1);
+    assert(model.wald_beta[1] >= 0.1);
     
     // Inject highly mismatched beta values with small covariance variance to trigger Wald-nominal warning (p < 0.05)
     model.wald_beta[0] = 15.0;

@@ -44,6 +44,7 @@ bool evaluate_geniole_fwhr_retaliation_decay(const teddy_geometry_t *geom, doubl
 bool evaluate_scarpi_aesthetic_trust(const teddy_geometry_t *geom, double base_trust, double *aesthetic_trust_out);
 bool evaluate_scarpi_utilitarian_orientation(const teddy_geometry_t *geom, double efficiency_scale, double *utilitarian_out);
 bool evaluate_cellarius_heliocentric_alignment(const teddy_geometry_t *geom, double orbital_phase, double *alignment_offset_out);
+bool evaluate_cellarius_constellation_boundary(const teddy_geometry_t *geom, double celestial_longitude, double *boundary_limit_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -213,9 +214,13 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     double fwhr_boundary = 0.0;
     evaluate_geniole_fwhr_boundary_map(&geom, 1.5, &fwhr_boundary);
     
+    // Evaluate Cellarius constellation boundary mapping constraints
+    double constellation_boundary = 0.0;
+    evaluate_cellarius_constellation_boundary(&geom, 120.0, &constellation_boundary);
+    
     // Initialize congruent parameters for Wald-gate validation (non-significant p-value)
     model->wald_beta[0] = 0.1 + (fwhr_boundary * 0.05);
-    model->wald_beta[1] = 0.1;
+    model->wald_beta[1] = 0.1 + (constellation_boundary * 0.05);
     model->wald_beta[2] = 0.1;
     
     memset(model->wald_covariance, 0, sizeof(model->wald_covariance));
