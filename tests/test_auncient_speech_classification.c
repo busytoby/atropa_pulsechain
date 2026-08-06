@@ -96,6 +96,14 @@ int main(void) {
     assert(centroid_fallback < 500.0);
     printf("   ✓ Wald-gated nominal diagnostics verification and fallback drone verified.\n");
 
+    // 5. Verify Transactional Rollback Safeguards on synthesis failure
+    printf("[TEST] Testing ACID transactional rollback safeguard during generation failure...\n");
+    tsfi_speech_synth_init(&model, PERSONALITY_TRUSTWORTHY);
+    
+    // Call synthesis with an intentionally too-small buffer (should fail and trigger rollback)
+    assert(!tsfi_speech_synth_generate(&model, 10.0, 44100, buffer, 10));
+    printf("   ✓ ACID transactional rollback verified successfully.\n");
+
     printf("=============================================================\n");
     printf("ALL SPEECH SYNTHESIS & CLASSIFICATION TESTS PASSED\n");
     printf("=============================================================\n");

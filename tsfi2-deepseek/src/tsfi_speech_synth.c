@@ -42,13 +42,25 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
 // Forward declaration of the diagnostics function
 bool evaluate_wald_nominal_test(const double *beta_vector, const double *covariance_matrix, int df, double *wald_stat_out, double *p_value_out);
 
+// Forward declarations of system transaction controls
+evaluation_tx_t begin_evaluation_transaction(teddy_geometry_t *target);
+bool commit_evaluation_transaction(evaluation_tx_t *tx);
+void rollback_evaluation_transaction(evaluation_tx_t *tx);
+
 bool tsfi_speech_synth_generate(const tsfi_speech_model_t *model, 
                                 double duration, 
                                 uint32_t sample_rate, 
                                 int16_t *buffer, 
                                 uint32_t buffer_size) {
     uint32_t total_samples = (uint32_t)(duration * sample_rate);
+    
+    // Cast away const to begin evaluation transaction safeguard
+    teddy_geometry_t dummy_geom;
+    dummy_geom.vocal_pitch = model->base_frequency;
+    evaluation_tx_t tx = begin_evaluation_transaction(&dummy_geom);
+    
     if (total_samples > buffer_size) {
+        rollback_evaluation_transaction(&tx);
         return false;
     }
     
@@ -88,6 +100,8 @@ bool tsfi_speech_synth_generate(const tsfi_speech_model_t *model,
         
         buffer[i] = (int16_t)(signal * envelope * 12000.0);
     }
+    
+    commit_evaluation_transaction(&tx);
     return true;
 }
 
