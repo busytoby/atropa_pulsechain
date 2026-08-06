@@ -27,6 +27,7 @@ bool evaluate_keating_torso_head_ratio(const teddy_geometry_t *geom, double tors
 bool evaluate_keating_width_asymmetry(const teddy_geometry_t *geom, double left_width, double right_width, double *asymmetry_dominance_out);
 bool evaluate_keating_brow_chin_proportion(const teddy_geometry_t *geom, double brow_chin_distance, double *proportion_dominance_out);
 bool evaluate_hyde_conversational_latency(const teddy_geometry_t *geom, double lag_seconds, double *latency_uncanny_out);
+bool evaluate_hyde_vocal_size_mismatch(const teddy_geometry_t *geom, double voice_pitch_hz, double *size_mismatch_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -94,10 +95,14 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     double width_asymmetry = 0.0;
     evaluate_keating_width_asymmetry(&geom, 1.1, 1.2, &width_asymmetry);
     
-    // Evaluate jitter from behavioral mismatch and exposure characteristics, scaled by residuals, tremors, jaw asymmetry, and width asymmetry
+    // Evaluate Hyde vocal size mismatch
+    double size_mismatch = 0.0;
+    evaluate_hyde_vocal_size_mismatch(&geom, model->base_frequency, &size_mismatch);
+    
+    // Evaluate jitter from behavioral mismatch and exposure characteristics, scaled by residuals, tremors, jaw asymmetry, width asymmetry, and size mismatch
     double eccentric_vibrato = 0.0;
     evaluate_cellarius_planetary_eccentricity(&geom, 0.05, &eccentric_vibrato);
-    model->jitter_factor = (geom.behavioral_mismatch * 0.05) + (fabs(surrogate_residual) * 0.02) + (fabs(eccentric_vibrato) * 0.01) + (tremor_uncanny * 0.03) + (fabs(chin_asymmetry) * 0.02) + (fabs(width_asymmetry) * 0.02);
+    model->jitter_factor = (geom.behavioral_mismatch * 0.05) + (fabs(surrogate_residual) * 0.02) + (fabs(eccentric_vibrato) * 0.01) + (tremor_uncanny * 0.03) + (fabs(chin_asymmetry) * 0.02) + (fabs(width_asymmetry) * 0.02) + (size_mismatch * 0.03);
     
     // Evaluate Kramer-Ward facial elongation to adjust vocal transition tempo envelope
     double face_elongation = 0.0;
