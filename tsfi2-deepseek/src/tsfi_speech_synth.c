@@ -31,6 +31,7 @@ bool evaluate_hyde_vocal_size_mismatch(const teddy_geometry_t *geom, double voic
 bool evaluate_geniole_fwhr_dilation_map(const teddy_geometry_t *geom, double base_dilation, double *mapped_dilation_out);
 bool evaluate_keating_head_roundness_index(const teddy_geometry_t *geom, double *roundness_out);
 bool evaluate_keating_symmetry_trust(const teddy_geometry_t *geom, double *trust_out);
+bool evaluate_hyde_vocal_amplitude_mismatch(const teddy_geometry_t *geom, double voice_amplitude_db, double *amplitude_mismatch_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -142,8 +143,12 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     double submissive_rating = 0.0;
     evaluate_keating_posture_pitch(&geom, -15.0, &submissive_rating);
     
-    // Set dynamic baseline amplitude factor (softer/damped for submissive profiles)
-    model->amplitude_factor = 12000.0 * (1.0 - (submissive_rating * 0.25));
+    // Evaluate Hyde conversational amplitude mismatch to damp base audio levels
+    double amplitude_mismatch = 0.0;
+    evaluate_hyde_vocal_amplitude_mismatch(&geom, 75.0, &amplitude_mismatch);
+    
+    // Set dynamic baseline amplitude factor (softer/damped for submissive or mismatched profiles)
+    model->amplitude_factor = 12000.0 * (1.0 - (submissive_rating * 0.25)) * (1.0 - (amplitude_mismatch * 0.20));
     
     // Initialize congruent parameters for Wald-gate validation (non-significant p-value)
     model->wald_beta[0] = 0.1;
