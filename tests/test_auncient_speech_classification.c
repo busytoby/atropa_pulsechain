@@ -81,9 +81,10 @@ int main(void) {
     assert(class_skept == PERSONALITY_SKEPTICAL);
     printf("   ✓ Skeptical speech synthesis and classification verified.\n");
 
-    // 4. Verify Wald-gate nominal failure diagnostics fallback
+    // 4. Verify Wald-gated nominal diagnostics checks
     printf("[TEST] Testing Wald-gated nominal diagnostic parameter mismatch validation fallback...\n");
     tsfi_speech_synth_init(&model, PERSONALITY_TRUSTWORTHY);
+    assert(model.wald_beta[0] >= 0.1);
     
     // Inject highly mismatched beta values with small covariance variance to trigger Wald-nominal warning (p < 0.05)
     model.wald_beta[0] = 15.0;

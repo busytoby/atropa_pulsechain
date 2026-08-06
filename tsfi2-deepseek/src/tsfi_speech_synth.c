@@ -38,6 +38,7 @@ bool evaluate_hyde_turn_interruption(const teddy_geometry_t *geom, double overla
 bool evaluate_keating_eye_dilation_sync(const teddy_geometry_t *geom, double left_dilation, double right_dilation, double *babyface_sync_out);
 bool evaluate_hyde_tremor_frequency_sync(const teddy_geometry_t *geom, double chin_vibration_hz, double audio_tremor_hz, double *sync_rating_out);
 bool evaluate_hyde_pitch_range_engagement(const teddy_geometry_t *geom, double pitch_range_hz, double *engagement_rating_out);
+bool evaluate_geniole_fwhr_boundary_map(const teddy_geometry_t *geom, double threshold_scale, double *mapped_boundary_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -180,8 +181,12 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     // Set dynamic baseline amplitude factor (softer/damped for submissive or mismatched profiles)
     model->amplitude_factor = 12000.0 * (1.0 - (submissive_rating * 0.25)) * (1.0 - (amplitude_mismatch * 0.20));
     
+    // Evaluate Geniole fWHR boundary mapping constraints
+    double fwhr_boundary = 0.0;
+    evaluate_geniole_fwhr_boundary_map(&geom, 1.5, &fwhr_boundary);
+    
     // Initialize congruent parameters for Wald-gate validation (non-significant p-value)
-    model->wald_beta[0] = 0.1;
+    model->wald_beta[0] = 0.1 + (fwhr_boundary * 0.05);
     model->wald_beta[1] = 0.1;
     model->wald_beta[2] = 0.1;
     
