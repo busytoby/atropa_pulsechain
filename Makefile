@@ -728,6 +728,12 @@ test-auncient-bear-chorus:
 	./tsfi2-deepseek/src/auncient_bear_chorus
 	@rm -f tsfi2-deepseek/src/auncient_bear_chorus
 
+test-auncient-speech-classification:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_speech_classification.c tsfi2-deepseek/src/auncient_teddy_personality.c tsfi2-deepseek/src/tsfi_speech_synth.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c -o tests/test_auncient_speech_classification -lm -lrt
+	./tests/test_auncient_speech_classification
+	@rm -f tests/test_auncient_speech_classification
+
+
 test-auncient-hathitrust-stimuli:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_auncient_hathitrust_stimuli.c tsfi2-deepseek/src/tsfi_quadtree_ksds.c tsfi2-deepseek/src/tsfi_mainframe_ebcdic.c scripts/libantigravity_extra.c scripts/libantigravity_interop.c scripts/abi_dispatch_map.c -o tests/test_auncient_hathitrust_stimuli -lcrypto -lm -lrt
 	./tests/test_auncient_hathitrust_stimuli
