@@ -32,6 +32,7 @@ bool evaluate_geniole_fwhr_dilation_map(const teddy_geometry_t *geom, double bas
 bool evaluate_keating_head_roundness_index(const teddy_geometry_t *geom, double *roundness_out);
 bool evaluate_keating_symmetry_trust(const teddy_geometry_t *geom, double *trust_out);
 bool evaluate_hyde_vocal_amplitude_mismatch(const teddy_geometry_t *geom, double voice_amplitude_db, double *amplitude_mismatch_out);
+bool evaluate_geniole_fwhr_jitter_mod(const teddy_geometry_t *geom, double base_jitter, double *mapped_jitter_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -115,10 +116,14 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     double size_mismatch = 0.0;
     evaluate_hyde_vocal_size_mismatch(&geom, model->base_frequency, &size_mismatch);
     
-    // Evaluate jitter from behavioral mismatch and exposure characteristics, scaled by residuals, tremors, jaw asymmetry, width asymmetry, and size mismatch
+    // Evaluate Geniole fWHR dominance threat micro-expression jitter modulation
+    double fwhr_jitter = 0.0;
+    evaluate_geniole_fwhr_jitter_mod(&geom, 0.05, &fwhr_jitter);
+    
+    // Evaluate jitter from behavioral mismatch and exposure characteristics, scaled by residuals, tremors, jaw asymmetry, width asymmetry, size mismatch, and fWHR threat jitter
     double eccentric_vibrato = 0.0;
     evaluate_cellarius_planetary_eccentricity(&geom, 0.05, &eccentric_vibrato);
-    model->jitter_factor = (geom.behavioral_mismatch * 0.05) + (fabs(surrogate_residual) * 0.02) + (fabs(eccentric_vibrato) * 0.01) + (tremor_uncanny * 0.03) + (fabs(chin_asymmetry) * 0.02) + (fabs(width_asymmetry) * 0.02) + (size_mismatch * 0.03);
+    model->jitter_factor = (geom.behavioral_mismatch * 0.05) + (fabs(surrogate_residual) * 0.02) + (fabs(eccentric_vibrato) * 0.01) + (tremor_uncanny * 0.03) + (fabs(chin_asymmetry) * 0.02) + (fabs(width_asymmetry) * 0.02) + (size_mismatch * 0.03) + (fwhr_jitter * 0.02);
     
     // Evaluate Kramer-Ward facial elongation to adjust vocal transition tempo envelope
     double face_elongation = 0.0;
