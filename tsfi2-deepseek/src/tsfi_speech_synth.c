@@ -50,6 +50,7 @@ bool evaluate_hyde_vocal_energy_variance(const teddy_geometry_t *geom, double en
 bool evaluate_keating_fwhr_dominance(const teddy_geometry_t *geom, double fwhr_value, double *dominance_out);
 bool evaluate_keating_mouth_width_ratio(const teddy_geometry_t *geom, double mouth_width, double jaw_width, double *submissiveness_out);
 bool evaluate_keating_width_symmetry_trust(const teddy_geometry_t *geom, double symmetry_ratio, double *trustworthiness_out);
+bool evaluate_keating_lip_submissiveness(const teddy_geometry_t *geom, double lip_height_ratio, double *submissiveness_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -110,7 +111,11 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     double mouth_width_submissive = 0.0;
     evaluate_keating_mouth_width_ratio(&geom, 0.4, 0.8, &mouth_width_submissive);
     
-    model->base_frequency = geom.vocal_pitch - pitch_adjustment + (warmth_offset * 10.0) + (babyfacedness * 20.0) + (head_roundness * 20.0) + (eye_dilation_sync * 15.0) + (sclera_submissive * 15.0) + (brow_submissive * 15.0) + (helio_alignment * 10.0) + (mouth_width_submissive * 15.0);
+    // Evaluate Keating lip-to-facial height ratio submissiveness pitch modulation
+    double lip_submissive = 0.0;
+    evaluate_keating_lip_submissiveness(&geom, 0.15, &lip_submissive);
+    
+    model->base_frequency = geom.vocal_pitch - pitch_adjustment + (warmth_offset * 10.0) + (babyfacedness * 20.0) + (head_roundness * 20.0) + (eye_dilation_sync * 15.0) + (sclera_submissive * 15.0) + (brow_submissive * 15.0) + (helio_alignment * 10.0) + (mouth_width_submissive * 15.0) + (lip_submissive * 15.0);
     
     // Modulate formant resonance via Christensen cloglog link ordinal rating (1 to 7)
     int cloglog_rating = evaluate_ordinal_cloglog_rating(&geom);
