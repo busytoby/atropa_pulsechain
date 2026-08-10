@@ -49,6 +49,7 @@ bool evaluate_hyde_av_latency_jitter(const teddy_geometry_t *geom, double latenc
 bool evaluate_hyde_vocal_energy_variance(const teddy_geometry_t *geom, double energy_variance, double *engagement_out);
 bool evaluate_keating_fwhr_dominance(const teddy_geometry_t *geom, double fwhr_value, double *dominance_out);
 bool evaluate_keating_mouth_width_ratio(const teddy_geometry_t *geom, double mouth_width, double jaw_width, double *submissiveness_out);
+bool evaluate_keating_width_symmetry_trust(const teddy_geometry_t *geom, double symmetry_ratio, double *trustworthiness_out);
 
 void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
     teddy_geometry_t geom;
@@ -142,7 +143,11 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
     double energy_engagement = 0.0;
     evaluate_hyde_vocal_energy_variance(&geom, 0.4, &energy_engagement);
     
-    model->resonance_factor = (1.0 - (geom.jaw_scale * 0.2)) * (1.0 + (cloglog_rating - 4) * 0.05) + (hedonic_warmth * 0.15) + (mouth_warmth * 0.10) + (lip_warmth * 0.12) + (symmetry_trust * 0.15) + (pitch_engagement * 0.10) + (aesthetic_trust * 0.15) + (energy_engagement * 0.12);
+    // Evaluate Keating facial width symmetry trust boost
+    double width_symmetry_trust = 0.0;
+    evaluate_keating_width_symmetry_trust(&geom, 0.95, &width_symmetry_trust);
+    
+    model->resonance_factor = (1.0 - (geom.jaw_scale * 0.2)) * (1.0 + (cloglog_rating - 4) * 0.05) + (hedonic_warmth * 0.15) + (mouth_warmth * 0.10) + (lip_warmth * 0.12) + (symmetry_trust * 0.15) + (pitch_engagement * 0.10) + (aesthetic_trust * 0.15) + (energy_engagement * 0.12) + (width_symmetry_trust * 0.14);
     
     // Evaluate surrogate residuals to scale up the frequency jitter factor
     double surrogate_residual = 0.0;
