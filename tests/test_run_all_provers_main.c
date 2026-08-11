@@ -226,6 +226,7 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_lfm_sandbox_vm_engine_prover", "LFM Personal Sandbox VM Execution Engine") == 0);
 	assert(run_prover("./tests/test_cpm_lfm_vl_sandbox_display_prover", "LFM-VL Real-Time Sandbox Display Inspector") == 0);
 	assert(run_prover("./tests/test_standalone_lfm_agent_harness_prover", "Standalone Pure-C LFM Agent Execution Harness") == 0);
+	assert(run_prover("./tests/test_lfm_agent_daemon_prover", "Standalone LFM Agent Service Daemon") == 0);
 	assert(run_prover("./tests/test_cpm_telemetry_ring_crc32_persistence_prover", "BAAI CPM Model SMPL Telemetry Ring CRC32 Persistence Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_prover", "BAAI CPM / MANN Pixar RenderMan RIS Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_camera_prover", "BAAI CPM / MANN RenderMan Camera Engine") == 0);
