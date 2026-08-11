@@ -87,6 +87,21 @@ bool tsfi_lfm_agent_repl_execute_cmd(tsfi_lfm_repl_session_t *session, const cha
 		}
 	}
 
+	/* Natural Language Intent Parser: Recent Work Query ("working on last", "recent work", "last commit", "recent commits") */
+	if (strstr(cmd, "working on last") || strstr(cmd, "recent work") || strstr(cmd, "last commit") || strstr(cmd, "recent commits")) {
+		if (!request_user_permission("git log -n 5 --oneline (Query Recent Commit History)")) {
+			snprintf(out_buf, out_len, "[PERMISSION DENIED] User declined permission to query commit history.");
+			return true;
+		}
+		FILE *fp = popen("git log -n 5 --oneline", "r");
+		if (fp) {
+			size_t nread = fread(out_buf, 1, out_len - 1, fp);
+			out_buf[nread] = '\0';
+			pclose(fp);
+			return true;
+		}
+	}
+
 	/* Tool 1: File viewing (view <path>) */
 	if (strncmp(cmd, "view ", 5) == 0) {
 		const char *filepath = cmd + 5;
