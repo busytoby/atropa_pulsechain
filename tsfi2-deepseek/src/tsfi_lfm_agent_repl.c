@@ -27,6 +27,21 @@ bool tsfi_lfm_agent_repl_init(tsfi_lfm_repl_session_t *session, uint32_t session
 	return true; /* 0.18 ns LFM REPL shell initialization success */
 }
 
+static bool request_user_permission(const char *action)
+{
+	char reply[32] = {0};
+	printf("[PERMISSION REQUIRED] Allow execution of '%s'? [y/N]: ", action);
+	fflush(stdout);
+
+	if (fgets(reply, sizeof(reply), stdin)) {
+		reply[strcspn(reply, "\r\n")] = '\0';
+		if (reply[0] == 'y' || reply[0] == 'Y') {
+			return true;
+		}
+	}
+	return false;
+}
+
 bool tsfi_lfm_agent_repl_execute_cmd(tsfi_lfm_repl_session_t *session, const char *cmd, char *out_buf, size_t out_len)
 {
 	if (!session || !cmd || !out_buf || !session->is_active || out_len < 128)
@@ -54,6 +69,12 @@ bool tsfi_lfm_agent_repl_execute_cmd(tsfi_lfm_repl_session_t *session, const cha
 			snprintf(out_buf, out_len, "Error: Unable to open file '%s'.", filepath);
 			return true;
 		}
+	}
+
+	/* Request user permission prior to executing shell commands or code searches */
+	if (!request_user_permission(cmd)) {
+		snprintf(out_buf, out_len, "[PERMISSION DENIED] User declined permission for action '%s'.", cmd);
+		return true;
 	}
 
 	/* Tool 2: Code grep search (grep <pattern>) */
