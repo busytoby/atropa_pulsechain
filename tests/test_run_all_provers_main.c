@@ -63,6 +63,7 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_microkernel_prover", "BAAI CPM Standalone Hardware Microkernel") == 0);
 	assert(run_prover("./tests/test_cpm_model_frame_renderer_prover", "BAAI CPM Model Neural Weight Frame Renderer Engine") == 0);
 	assert(run_prover("./tests/test_cpm_model_renderman_full_pipeline_prover", "BAAI CPM Model RenderMan RIS Full Pipeline Engine") == 0);
+	assert(run_prover("./tests/test_cpm_model_renderman_multi_camera_prover", "BAAI CPM Model RenderMan Multi-Camera Rig Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_prover", "BAAI CPM / MANN Pixar RenderMan RIS Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_camera_prover", "BAAI CPM / MANN RenderMan Camera Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_material_prover", "BAAI CPM / MANN RenderMan PBR Material Engine") == 0);
