@@ -214,6 +214,7 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_stanag_vfio_net_bridge_prover", "Phase 3 Distributed STANAG VFIO Real-Time Network Bridge Engine") == 0);
 	assert(run_prover("./tests/test_cpm_accumulator_space_charge_isolator_prover", "Phase 3 Non-Preferential Accumulator & Space-Charge Isolation Engine") == 0);
 	assert(run_prover("./tests/test_cpm_dynamic_zmm_contract_resolver_prover", "Phase 3 Dynamic Contract ZMM Hardware Resolution Engine") == 0);
+	assert(run_prover("./tests/test_cpm_soft_body_fet_discharge_isolator_prover", "Phase 3 Soft Body Physics FET Discharge Isolation Engine") == 0);
 	assert(run_prover("./tests/test_cpm_telemetry_ring_crc32_persistence_prover", "BAAI CPM Model SMPL Telemetry Ring CRC32 Persistence Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_prover", "BAAI CPM / MANN Pixar RenderMan RIS Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_camera_prover", "BAAI CPM / MANN RenderMan Camera Engine") == 0);
