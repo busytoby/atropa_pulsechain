@@ -11,6 +11,7 @@ extern "C" {
 #endif
 
 bool tsfi_cpm_tomie_deepseek_async_dispatch_grid(uint32_t ring_id, uint32_t grid_x, uint32_t grid_y, uint64_t *zmm_grid_hash_out);
+bool tsfi_cpm_tomie_sd_async_dispatch_pipeline(uint32_t ring_id, uint32_t grid_x, uint32_t grid_y, uint32_t latent_steps, uint64_t *zmm_sd_grid_hash_out);
 bool tsfi_cpm_tomie_deepseek_async_wait_fence(uint64_t fence_seq_id, bool *fence_complete_out);
 
 #ifdef __cplusplus
