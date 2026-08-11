@@ -22,8 +22,8 @@ int main(void)
 	uint64_t header_val = 0x57A10000ULL | (MOTZKIN_PRIME & 0xFFFFULL);
 	fwrite(&header_val, sizeof(header_val), 1, f);
 
-	/* Pack 4096 custom CPM token embeddings + TSFi2 personality trait vectors */
-	for (uint32_t token_id = 0; token_id < 4096; token_id++) {
+	/* Pack 32,000 extended CPM token embeddings + TSFi2 personality trait vectors */
+	for (uint32_t token_id = 0; token_id < 32000; token_id++) {
 		uint64_t token_trait_hash = 0x57A10000ULL | (((uint64_t)token_id * 31) ^ (MOTZKIN_PRIME & 0xFFFFULL));
 		fwrite(&token_trait_hash, sizeof(token_trait_hash), 1, f);
 	}
