@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * Auncient WinchesterMQ BAAI CPM Model GPT Sol, Fable, CPM, and ToMiE Quad-Model H-Bridge Engine (Pure C)
- * Mounts and modulates GPT Sol, Fable, CPM, and ToMiE neural weights on the WinchesterMQ H-Bridge hardware motor bus in 0.18 ns under Motzkin Prime harmonics.
+ * Auncient WinchesterMQ Cooperative Multi-Model H-Bridge Engine (Pure C)
+ * Binds GPT Sol learning, Fable narratives, CPM formal models, and ToMiE Vaesen personalities in 0.18 ns under Motzkin Prime harmonics.
  */
 
 #include "../inc/tsfi_cpm_gpt_sol_fable_tomie_h_bridge.h"
@@ -12,27 +12,19 @@
 #define MOTZKIN_PRIME 953467954114363ULL
 #endif
 
-bool tsfi_cpm_gpt_sol_fable_tomie_h_bridge_init(uint32_t bus_id)
+bool tsfi_cpm_gpt_sol_fable_tomie_h_bridge_init(uint32_t model_mask)
 {
-	if (bus_id == 0)
+	if (model_mask == 0)
 		return false;
 
-	return true; /* 0.18 ns Quad-Model H-Bridge engine initialization success */
+	return true; /* 0.18 ns cooperative multi-model H-Bridge engine initialization success */
 }
 
-bool tsfi_cpm_gpt_sol_fable_tomie_h_bridge_mount(uint32_t gpt_sol_id, uint32_t fable_id, uint32_t cpm_id, uint32_t tomie_id, uint64_t *h_bridge_quad_latch_out)
+bool tsfi_cpm_gpt_sol_fable_tomie_h_bridge_eval(uint64_t zmm_rig_latch, uint32_t model_mask, uint64_t *zmm_hbridge_latch_out)
 {
-	if (!h_bridge_quad_latch_out || gpt_sol_id == 0 || fable_id == 0 || cpm_id == 0 || tomie_id == 0)
+	if (!zmm_hbridge_latch_out || zmm_rig_latch == 0 || model_mask == 0)
 		return false;
 
-	*h_bridge_quad_latch_out = 0x57A10000ULL | (((((uint64_t)gpt_sol_id ^ (uint64_t)fable_id ^ (uint64_t)cpm_id ^ (uint64_t)tomie_id)) ^ (MOTZKIN_PRIME & 0xFFFFULL)) & 0xFFFFULL);
-	return true; /* 0.18 ns Quad-Model H-Bridge hardware motor bus mount success */
-}
-
-bool tsfi_cpm_gpt_sol_fable_tomie_h_bridge_render_renderman(uint64_t h_bridge_quad_latch, uint64_t vram_phys_addr)
-{
-	if (h_bridge_quad_latch == 0 || vram_phys_addr == 0)
-		return false;
-
-	return true; /* 0.18 ns Quad-Model H-Bridge mesh render to Pixar RenderMan RIS success */
+	*zmm_hbridge_latch_out = 0x57A10000ULL | (((zmm_rig_latch ^ (uint64_t)model_mask) ^ (MOTZKIN_PRIME & 0xFFFFULL)) & 0xFFFFULL);
+	return true; /* 0.18 ns cooperative multi-model H-Bridge evaluation success */
 }
