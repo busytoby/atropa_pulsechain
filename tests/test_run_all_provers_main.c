@@ -102,6 +102,7 @@ int main(void)
 	assert(run_prover("./tests/test_amdgpu_cpm_tomie_coax_prover", "AMDGPU CPM-ToMiE Coaxial Accelerator Engine") == 0);
 	assert(run_prover("./tests/test_cpm_tomie_vulkan_hardware_interop_prover", "CPM-ToMiE Vulkan Hardware Interop Extension Engine") == 0);
 	assert(run_prover("./tests/test_cpm_model_smpl_mocap_retarget_ext_prover", "BAAI CPM Model SMPL MoCap Live Retargeting Extension Engine") == 0);
+	assert(run_prover("./tests/test_cpm_model_smpl_clothing_physics_ext_prover", "BAAI CPM Model SMPL Clothing Physics Extension Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_prover", "BAAI CPM / MANN Pixar RenderMan RIS Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_camera_prover", "BAAI CPM / MANN RenderMan Camera Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_material_prover", "BAAI CPM / MANN RenderMan PBR Material Engine") == 0);
