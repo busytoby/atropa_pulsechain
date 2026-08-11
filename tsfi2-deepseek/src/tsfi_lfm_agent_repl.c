@@ -71,6 +71,17 @@ bool tsfi_lfm_agent_repl_execute_cmd(tsfi_lfm_repl_session_t *session, const cha
 		}
 	}
 
+	/* Tool 2: File editing (edit <filepath> <old_text> <new_text>) */
+	if (strncmp(cmd, "edit ", 5) == 0) {
+		if (!request_user_permission(cmd)) {
+			snprintf(out_buf, out_len, "[PERMISSION DENIED] User declined permission for file modification '%s'.", cmd);
+			return true;
+		}
+		snprintf(out_buf, out_len, "[LFM-REPL Command %llu] File edit permission granted for '%s'.",
+		         (unsigned long long)session->command_count, cmd + 5);
+		return true;
+	}
+
 	/* Request user permission prior to executing shell commands or code searches */
 	if (!request_user_permission(cmd)) {
 		snprintf(out_buf, out_len, "[PERMISSION DENIED] User declined permission for action '%s'.", cmd);
