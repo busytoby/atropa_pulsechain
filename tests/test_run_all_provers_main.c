@@ -61,6 +61,7 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_personality_kernel_prover", "BAAI CPM Personality Kernel Module") == 0);
 	assert(run_prover("./tests/test_cpm_personality_acid_prover", "BAAI CPM Personality 4-Layer ACID Engine") == 0);
 	assert(run_prover("./tests/test_cpm_microkernel_prover", "BAAI CPM Standalone Hardware Microkernel") == 0);
+	assert(run_prover("./tests/test_cpm_mann_renderman_prover", "BAAI CPM / MANN Pixar RenderMan RIS Engine") == 0);
 	assert(run_prover("./tests/test_tomie_smpl_deformation_physics_prover", "ToMiE 3D SMPL Pose Deformation Physics Engine") == 0);
 	assert(run_prover("./tests/test_cpm_tomie_deepseek_prover", "WinchesterMQ CPM-ToMiE DeepSeek Engine") == 0);
 	assert(run_prover("./tests/test_cpm_tomie_deepseek_batch_prover", "WinchesterMQ CPM-ToMiE DeepSeek Batch Engine") == 0);
