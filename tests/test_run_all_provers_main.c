@@ -59,6 +59,7 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_tomie_deepseek_p2p_mesh_prover", "WinchesterMQ CPM-ToMiE DeepSeek P2P Mesh Engine") == 0);
 	assert(run_prover("./tests/test_cpm_tomie_deepseek_async_dispatch_prover", "WinchesterMQ CPM-ToMiE DeepSeek Async Dispatch Engine") == 0);
 	assert(run_prover("./tests/test_cpm_tomie_deepseek_telemetry_prover", "WinchesterMQ CPM-ToMiE DeepSeek Telemetry Engine") == 0);
+	assert(run_prover("./tests/test_cpm_tomie_deepseek_e2e_vm_runner_prover", "WinchesterMQ CPM-ToMiE DeepSeek E2E VM Runner Engine") == 0);
 	assert(run_prover("./tests/test_wmq_h_bridge_prover", "WinchesterMQ H-Bridge Controller") == 0);
 	assert(run_prover("./tests/test_amdgpu_wmq_fence_sdma_prover", "AMDGPU WMQ Fence & SDMA Agent") == 0);
 	assert(run_prover("./tests/test_block_layer_scheduling_prover", "Lockless Block Layer Scheduling") == 0);
