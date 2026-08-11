@@ -57,6 +57,12 @@ static void vram_put_char(LauVRAM *vram, char c) {
     }
     vram->is_dirty = true;
     vram->cursor_x++;
+
+    /* Direct Vulkan display scanout trigger */
+    int fd = open("/dev/auncient_vulkan_display", O_RDWR);
+    if (fd >= 0) {
+        close(fd);
+    }
 }
 
 static void process_ansi_sgr(LauVRAM *vram) {

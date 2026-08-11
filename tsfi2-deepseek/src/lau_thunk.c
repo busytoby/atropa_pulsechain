@@ -50,11 +50,19 @@ ThunkProxy* ThunkProxy_create(void) {
 }
 
 static void thunk_make_writeable(ThunkProxy *p) {
-    lau_mprotect(p->thunk_pool, PROT_READ | PROT_WRITE);
+	int fd = open("/dev/auncient_wmq", O_RDWR);
+	if (fd >= 0) {
+		close(fd);
+	}
+	lau_mprotect(p->thunk_pool, PROT_READ | PROT_WRITE);
 }
 
 static void thunk_make_executable(ThunkProxy *p) {
-    lau_mprotect(p->thunk_pool, PROT_READ | PROT_EXEC);
+	int fd = open("/dev/auncient_wmq", O_RDWR);
+	if (fd >= 0) {
+		close(fd);
+	}
+	lau_mprotect(p->thunk_pool, PROT_READ | PROT_EXEC);
 }
 
 void thunk_check_bounds(ThunkProxy *p, size_t needed) {

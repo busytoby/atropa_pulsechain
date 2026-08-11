@@ -27,12 +27,12 @@ int tsfi_coaxial_telemetry_transmit(TSFiCoaxialTelemetryScheduler *sched) {
     int keycode = 0;
     int status = tsfi_monotonic_buckets_pop(&sched->buckets, &keycode);
     if (status == 0) {
-        snprintf(sched->last_tx_packet, sizeof(sched->last_tx_packet), "TX_TELEMETRY_PACKET KEYCODE=%d ID=%d", keycode, sched->transmit_count);
+        snprintf(sched->last_tx_packet, sizeof(sched->last_tx_packet), "STANAG-4586 PKT KEY=%d SEQ=%d", keycode, sched->transmit_count);
         sched->transmit_count++;
         
         if (sched->zmm) {
             char log_cmd[256];
-            snprintf(log_cmd, sizeof(log_cmd), "CALL telemetry_logger log_packet %d", keycode);
+            snprintf(log_cmd, sizeof(log_cmd), "CALL telemetry_logger log_stanag %d", keycode);
             tsfi_zmm_vm_exec(sched->zmm, log_cmd);
         }
         return 1;
