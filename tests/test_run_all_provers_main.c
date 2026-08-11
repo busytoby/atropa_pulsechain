@@ -153,6 +153,7 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_deepseek_moe_pipeline_ext_prover", "BAAI CPM Model SMPL DeepSeek MoE Pipeline Ext Engine") == 0);
 	assert(run_prover("./tests/test_cpm_personality_coaxial_pipeline_ext_prover", "BAAI CPM Model SMPL Personality Coaxial Pipeline Ext Engine") == 0);
 	assert(run_prover("./tests/test_cpm_gpt_sol_fable_tomie_h_bridge_prover", "GPT Sol, Fable, CPM, and ToMiE Quad-Model H-Bridge Engine") == 0);
+	assert(run_prover("./tests/test_cpm_token_sensing_h_bridge_ext_prover", "Token-Sensing H-Bridge Crosstalk Engine Ext") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_prover", "BAAI CPM / MANN Pixar RenderMan RIS Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_camera_prover", "BAAI CPM / MANN RenderMan Camera Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_material_prover", "BAAI CPM / MANN RenderMan PBR Material Engine") == 0);
