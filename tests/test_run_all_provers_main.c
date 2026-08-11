@@ -133,6 +133,7 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_model_smpl_deepseek_moe_ext2_prover", "BAAI CPM Model SMPL DeepSeek-V3 MoE Extension Engine 2") == 0);
 	assert(run_prover("./tests/test_cpm_subpipelines_prover", "BAAI CPM Domain-Specific Hardware Sub-Pipelines Master Engine") == 0);
 	assert(run_prover("./tests/test_cpm_unet_vae_clip_pipeline_prover", "BAAI CPM Model SMPL UNet/VAE/CLIP Latent Texturing Engine") == 0);
+	assert(run_prover("./tests/test_cpm_vulkan_zero_copy_pipeline_prover", "BAAI CPM Model SMPL Vulkan Zero-Copy Display Interop Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_prover", "BAAI CPM / MANN Pixar RenderMan RIS Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_camera_prover", "BAAI CPM / MANN RenderMan Camera Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_material_prover", "BAAI CPM / MANN RenderMan PBR Material Engine") == 0);
