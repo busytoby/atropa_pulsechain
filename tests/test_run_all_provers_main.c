@@ -63,6 +63,7 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_microkernel_prover", "BAAI CPM Standalone Hardware Microkernel") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_prover", "BAAI CPM / MANN Pixar RenderMan RIS Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_camera_prover", "BAAI CPM / MANN RenderMan Camera Engine") == 0);
+	assert(run_prover("./tests/test_cpm_mann_renderman_full_archetype_prover", "Pixar RenderMan RIS Engine for MANN & ToMiE 3D Archetype") == 0);
 	assert(run_prover("./tests/test_tomie_cloth_simulator_prover", "ToMiE 3D SMPL Mass-Spring Cloth Simulator Engine") == 0);
 	assert(run_prover("./tests/test_tomie_smpl_mocap_retargeting_prover", "ToMiE 3D SMPL Facial Blendshape & MoCap Retargeting Engine") == 0);
 	assert(run_prover("./tests/test_tomie_smpl_collision_physics_prover", "ToMiE 3D SMPL Multi-Body Collision Physics Engine") == 0);
