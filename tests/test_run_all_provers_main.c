@@ -111,6 +111,7 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_model_smpl_caustics_physics_ext_prover", "BAAI CPM Model SMPL Caustics Physics Extension Engine") == 0);
 	assert(run_prover("./tests/test_cpm_model_smpl_motion_blur_physics_ext_prover", "BAAI CPM Model SMPL Motion Blur Physics Extension Engine") == 0);
 	assert(run_prover("./tests/test_cpm_model_smpl_denoiser_physics_ext_prover", "BAAI CPM Model SMPL AI Neural Denoiser Physics Extension Engine") == 0);
+	assert(run_prover("./tests/test_cpm_model_smpl_material_physics_ext_prover", "BAAI CPM Model SMPL Disney PBR BSDF Material Physics Extension Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_prover", "BAAI CPM / MANN Pixar RenderMan RIS Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_camera_prover", "BAAI CPM / MANN RenderMan Camera Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_material_prover", "BAAI CPM / MANN RenderMan PBR Material Engine") == 0);
