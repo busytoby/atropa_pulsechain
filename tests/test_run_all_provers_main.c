@@ -219,6 +219,7 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_quadtree_dat_bin_storage_prover", "Phase 3 Exclusive .dat.bin Quadtree Media Layout Storage Engine") == 0);
 	assert(run_prover("./tests/test_cpm_dynamic_pll_frequency_scaler_prover", "Phase 3 Dynamic Phase-Lock Frequency Scaling & Master Finalization Engine") == 0);
 	assert(run_prover("./tests/test_cpm_lfm_state_space_engine_prover", "Phase 4 LFM Continuous-Time State-Space Kernel Acceleration Engine") == 0);
+	assert(run_prover("./tests/test_cpm_lfm_vl_vision_pipeline_prover", "Phase 4 LFM-VL Real-Time Vulkan Video Perception Pipeline") == 0);
 	assert(run_prover("./tests/test_cpm_telemetry_ring_crc32_persistence_prover", "BAAI CPM Model SMPL Telemetry Ring CRC32 Persistence Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_prover", "BAAI CPM / MANN Pixar RenderMan RIS Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_camera_prover", "BAAI CPM / MANN RenderMan Camera Engine") == 0);
