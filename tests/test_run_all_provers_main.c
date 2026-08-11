@@ -165,6 +165,9 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_smpl_joint_fk_ik_kinematics_prover", "SMPL Joint Forward/Inverse Kinematics (FK/IK) Engine") == 0);
 	assert(run_prover("./tests/test_cpm_smpl_mocap_quaternion_filter_prover", "SMPL MoCap Quaternion SLERP Filter Engine") == 0);
 	assert(run_prover("./tests/test_cpm_smpl_pose_keyframe_streamer_prover", "SMPL Live Pose Keyframe Streamer Engine") == 0);
+	assert(run_prover("./tests/test_cpm_smpl_cloth_particle_verifier_prover", "SMPL Cloth Verlet Particle Position Verifier Engine") == 0);
+	assert(run_prover("./tests/test_cpm_smpl_cloth_constraint_spring_prover", "SMPL Cloth Hooke's Law Spring Constraint Engine") == 0);
+	assert(run_prover("./tests/test_cpm_smpl_cloth_self_friction_solver_prover", "SMPL Cloth Intra-Garment Self-Friction Solver Engine") == 0);
 	assert(run_prover("./tests/test_cpm_telemetry_ring_crc32_persistence_prover", "BAAI CPM Model SMPL Telemetry Ring CRC32 Persistence Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_prover", "BAAI CPM / MANN Pixar RenderMan RIS Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_camera_prover", "BAAI CPM / MANN RenderMan Camera Engine") == 0);
