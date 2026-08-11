@@ -72,6 +72,21 @@ bool tsfi_lfm_agent_repl_execute_cmd(tsfi_lfm_repl_session_t *session, const cha
 		return true;
 	}
 
+	/* Natural Language Intent Parser: Directory Examination ("examine files", "list files", "show directory") */
+	if (strstr(cmd, "examine") || strstr(cmd, "list files") || strstr(cmd, "local directory") || strstr(cmd, "show files")) {
+		if (!request_user_permission("ls -la (Examine Workspace Directory)")) {
+			snprintf(out_buf, out_len, "[PERMISSION DENIED] User declined permission to examine directory.");
+			return true;
+		}
+		FILE *fp = popen("ls -la", "r");
+		if (fp) {
+			size_t nread = fread(out_buf, 1, out_len - 1, fp);
+			out_buf[nread] = '\0';
+			pclose(fp);
+			return true;
+		}
+	}
+
 	/* Tool 1: File viewing (view <path>) */
 	if (strncmp(cmd, "view ", 5) == 0) {
 		const char *filepath = cmd + 5;
