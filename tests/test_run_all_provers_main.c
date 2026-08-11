@@ -224,6 +224,7 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_lfm_kv_cache_synapse_prover", "Phase 4 LFM Coaxial Multi-Agent Memory & KV-Cache Synapse Engine") == 0);
 	assert(run_prover("./tests/test_cpm_lfm_master_synthesis_prover", "Phase 4 Liquid Model Dynamic System Finalizer & Master Synthesis Engine") == 0);
 	assert(run_prover("./tests/test_cpm_lfm_sandbox_vm_engine_prover", "LFM Personal Sandbox VM Execution Engine") == 0);
+	assert(run_prover("./tests/test_cpm_lfm_vl_sandbox_display_prover", "LFM-VL Real-Time Sandbox Display Inspector") == 0);
 	assert(run_prover("./tests/test_cpm_telemetry_ring_crc32_persistence_prover", "BAAI CPM Model SMPL Telemetry Ring CRC32 Persistence Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_prover", "BAAI CPM / MANN Pixar RenderMan RIS Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_camera_prover", "BAAI CPM / MANN RenderMan Camera Engine") == 0);
