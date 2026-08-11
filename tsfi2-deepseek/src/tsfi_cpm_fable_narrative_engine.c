@@ -19,6 +19,10 @@ bool tsfi_cpm_fable_narrative_engine_init(tsfi_fable_narrative_ctx_t *ctx, uint3
 
 	ctx->session_id = session_id;
 	ctx->pasid = pasid;
+	ctx->identity_reg = 0x101ULL;
+	ctx->signal_reg = 0x202ULL;
+	ctx->foundation_reg = 0x303ULL;
+	ctx->dynamo_reg = 0x404ULL;
 	ctx->personality_latch = 0x57A10000ULL | (((uint64_t)session_id ^ (MOTZKIN_PRIME & 0xFFFFULL)) & 0xFFFFULL);
 	ctx->fable_pattern_active = true;
 
@@ -30,11 +34,17 @@ bool tsfi_cpm_fable_narrative_engine_harmonize(tsfi_fable_narrative_ctx_t *ctx, 
 	if (!ctx || !raw_prompt || !narrative_out || !ctx->fable_pattern_active || max_len < 128)
 		return false;
 
-	ctx->personality_latch ^= (uint64_t)strlen(raw_prompt);
+	ctx->personality_latch ^= (uint64_t)strlen(raw_prompt) + ctx->identity_reg + ctx->signal_reg;
 
 	snprintf(narrative_out, max_len,
-	         "CPM ToMiE FABLE Narrative Engine [PASID 0x%X] harmonized personality state vector 0x%016llX contextually for prompt '%s'.",
-	         ctx->pasid, (unsigned long long)ctx->personality_latch, raw_prompt);
+	         "CPM ToMiE FABLE Narrative Engine [PASID 0x%X] harmonized registers [Identity: 0x%llX, Signal: 0x%llX, Foundation: 0x%llX, Dynamo: 0x%llX] -> State Latch 0x%016llX contextually for prompt '%s'.",
+	         ctx->pasid,
+	         (unsigned long long)ctx->identity_reg,
+	         (unsigned long long)ctx->signal_reg,
+	         (unsigned long long)ctx->foundation_reg,
+	         (unsigned long long)ctx->dynamo_reg,
+	         (unsigned long long)ctx->personality_latch,
+	         raw_prompt);
 
 	return true; /* 0.18 ns FABLE narrative harmonization success */
 }

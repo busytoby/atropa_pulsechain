@@ -13,6 +13,10 @@ extern "C" {
 typedef struct {
 	uint32_t session_id;
 	uint32_t pasid;
+	uint64_t identity_reg;
+	uint64_t signal_reg;
+	uint64_t foundation_reg;
+	uint64_t dynamo_reg;
 	uint64_t personality_latch;
 	bool fable_pattern_active;
 } tsfi_fable_narrative_ctx_t;
