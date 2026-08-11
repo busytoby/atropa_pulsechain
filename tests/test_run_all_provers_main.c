@@ -212,6 +212,7 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_multi_agent_mesh_topology_prover", "Phase 3 Autonomous Multi-Agent Mesh Topology Engine") == 0);
 	assert(run_prover("./tests/test_cpm_gpt_sol_fable_tomie_h_bridge_prover", "Phase 3 Cooperative Multi-Model H-Bridge Engine") == 0);
 	assert(run_prover("./tests/test_cpm_stanag_vfio_net_bridge_prover", "Phase 3 Distributed STANAG VFIO Real-Time Network Bridge Engine") == 0);
+	assert(run_prover("./tests/test_cpm_accumulator_space_charge_isolator_prover", "Phase 3 Non-Preferential Accumulator & Space-Charge Isolation Engine") == 0);
 	assert(run_prover("./tests/test_cpm_telemetry_ring_crc32_persistence_prover", "BAAI CPM Model SMPL Telemetry Ring CRC32 Persistence Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_prover", "BAAI CPM / MANN Pixar RenderMan RIS Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_camera_prover", "BAAI CPM / MANN RenderMan Camera Engine") == 0);
