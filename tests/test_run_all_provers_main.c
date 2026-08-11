@@ -168,6 +168,9 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_smpl_cloth_particle_verifier_prover", "SMPL Cloth Verlet Particle Position Verifier Engine") == 0);
 	assert(run_prover("./tests/test_cpm_smpl_cloth_constraint_spring_prover", "SMPL Cloth Hooke's Law Spring Constraint Engine") == 0);
 	assert(run_prover("./tests/test_cpm_smpl_cloth_self_friction_solver_prover", "SMPL Cloth Intra-Garment Self-Friction Solver Engine") == 0);
+	assert(run_prover("./tests/test_cpm_smpl_sdf_volume_generator_prover", "SMPL Signed Distance Field (SDF) Volume Generator Engine") == 0);
+	assert(run_prover("./tests/test_cpm_smpl_bvh_tree_broadphase_prover", "SMPL Bounding Volume Hierarchy (BVH) Broadphase Query Engine") == 0);
+	assert(run_prover("./tests/test_cpm_smpl_contact_impulse_resolver_prover", "SMPL Narrowphase Contact Impulse Resolver Engine") == 0);
 	assert(run_prover("./tests/test_cpm_telemetry_ring_crc32_persistence_prover", "BAAI CPM Model SMPL Telemetry Ring CRC32 Persistence Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_prover", "BAAI CPM / MANN Pixar RenderMan RIS Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_camera_prover", "BAAI CPM / MANN RenderMan Camera Engine") == 0);
