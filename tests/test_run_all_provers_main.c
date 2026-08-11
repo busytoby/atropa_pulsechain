@@ -80,6 +80,7 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_model_smpl_ingerman_display_prover", "BAAI CPM Model SMPL Ingerman Display Engine") == 0);
 	assert(run_prover("./tests/test_cpm_tomie_sd_async_dispatch_prover", "CPM-ToMiE DeepSeek & SD Async Dispatch Engine") == 0);
 	assert(run_prover("./tests/test_cpm_model_smpl_deepseek_moe_prover", "BAAI CPM Model SMPL DeepSeek MoE Engine") == 0);
+	assert(run_prover("./tests/test_cpm_model_smpl_unet_vae_clip_prover", "BAAI CPM Model SMPL UNet/VAE/CLIP Texture Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_prover", "BAAI CPM / MANN Pixar RenderMan RIS Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_camera_prover", "BAAI CPM / MANN RenderMan Camera Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_material_prover", "BAAI CPM / MANN RenderMan PBR Material Engine") == 0);
