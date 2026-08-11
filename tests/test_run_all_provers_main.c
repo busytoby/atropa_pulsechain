@@ -205,6 +205,7 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_smpl_ingerman_conductivity_reconstruction_prover", "SMPL 3D Interior Conductivity Tensor Reconstruction Engine") == 0);
 	assert(run_prover("./tests/test_cpm_smpl_ingerman_mesh_tomography_display_prover", "SMPL Real-Time Volumetric Electrical Impedance Tomography Display Mesh Engine") == 0);
 	assert(run_prover("./tests/test_cpm_coaxial_pipeline_integration_prover", "Phase 2 Coaxial Multi-Model Pipeline Integration Engine") == 0);
+	assert(run_prover("./tests/test_tomie_vaesen_agent_prover", "ToMiE-Vaesen Autonomous Agent Perception Engine") == 0);
 	assert(run_prover("./tests/test_cpm_telemetry_ring_crc32_persistence_prover", "BAAI CPM Model SMPL Telemetry Ring CRC32 Persistence Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_prover", "BAAI CPM / MANN Pixar RenderMan RIS Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_camera_prover", "BAAI CPM / MANN RenderMan Camera Engine") == 0);
