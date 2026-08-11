@@ -145,6 +145,7 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_tomie_moe_expanded_benchmark_prover", "BAAI CPM ToMiE & DeepSeek MoE Expanded Benchmark Engine") == 0);
 	assert(run_prover("./tests/test_cpm_unet_vae_clip_pipeline_ext_prover", "BAAI CPM Model SMPL UNet VAE CLIP Pipeline Ext Engine") == 0);
 	assert(run_prover("./tests/test_cpm_vulkan_zero_copy_pipeline_ext_prover", "BAAI CPM Model SMPL Vulkan Zero-Copy Pipeline Ext Engine") == 0);
+	assert(run_prover("./tests/test_cpm_stanag_vision_personality_pipeline_prover", "BAAI CPM STANAG Vision Personality Unified Pipeline Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_prover", "BAAI CPM / MANN Pixar RenderMan RIS Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_camera_prover", "BAAI CPM / MANN RenderMan Camera Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_material_prover", "BAAI CPM / MANN RenderMan PBR Material Engine") == 0);
