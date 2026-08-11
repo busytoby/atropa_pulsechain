@@ -69,6 +69,7 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_mann_renderman_denoiser_prover", "BAAI CPM / MANN RenderMan AI Denoiser Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_atmosphere_prover", "BAAI CPM / MANN RenderMan Atmosphere & Fog Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_caustics_prover", "BAAI CPM / MANN RenderMan Photon Mapping Caustics Engine") == 0);
+	assert(run_prover("./tests/test_cpm_mann_renderman_motion_blur_prover", "BAAI CPM / MANN RenderMan 3D Motion Blur & DOF Engine") == 0);
 	assert(run_prover("./tests/test_cpm_tomie_vulkan_compositor_prover", "Zero-Copy Vulkan Hardware Display Compositor Engine") == 0);
 	assert(run_prover("./tests/test_cpm_tomie_master_renderman_suite_prover", "Master BAAI CPM MANN RenderMan Archetype Suite") == 0);
 	assert(run_prover("./tests/test_hudson_stanag_renderman_coax_prover", "Hudson & STANAG Dual-Coaxial RenderMan RIS Engine") == 0);
