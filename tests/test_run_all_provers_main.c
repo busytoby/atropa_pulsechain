@@ -53,6 +53,7 @@ int main(void)
 	assert(run_prover("./tests/test_tomie_smpl_engine_prover", "WinchesterMQ ToMiE 3D SMPL Skeleton Engine") == 0);
 	assert(run_prover("./tests/test_cpm_tomie_unified_prover", "WinchesterMQ Unified CPM-ToMiE Pipeline") == 0);
 	assert(run_prover("./tests/test_cpm_tomie_acid_prover", "WinchesterMQ CPM-ToMiE 4-Layer ACID Engine") == 0);
+	assert(run_prover("./tests/test_cpm_tomie_deepseek_prover", "WinchesterMQ CPM-ToMiE DeepSeek Engine") == 0);
 	assert(run_prover("./tests/test_wmq_h_bridge_prover", "WinchesterMQ H-Bridge Controller") == 0);
 	assert(run_prover("./tests/test_amdgpu_wmq_fence_sdma_prover", "AMDGPU WMQ Fence & SDMA Agent") == 0);
 	assert(run_prover("./tests/test_block_layer_scheduling_prover", "Lockless Block Layer Scheduling") == 0);
