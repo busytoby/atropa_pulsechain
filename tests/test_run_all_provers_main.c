@@ -201,6 +201,9 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_smpl_pbr_fresnel_schlick_prover", "SMPL Fresnel-Schlick Specular Reflection Engine") == 0);
 	assert(run_prover("./tests/test_cpm_smpl_pbr_metallic_roughness_shader_prover", "SMPL Metallic-Roughness BSDF Surface Shader Engine") == 0);
 	assert(run_prover("./tests/test_cpm_smpl_pbr_ambient_occlusion_integrator_prover", "SMPL Screen-Space Ambient Occlusion Surface Integrator Engine") == 0);
+	assert(run_prover("./tests/test_cpm_smpl_ingerman_boundary_current_prover", "SMPL Boundary Current Vector & Dirichlet-to-Neumann Map Engine") == 0);
+	assert(run_prover("./tests/test_cpm_smpl_ingerman_conductivity_reconstruction_prover", "SMPL 3D Interior Conductivity Tensor Reconstruction Engine") == 0);
+	assert(run_prover("./tests/test_cpm_smpl_ingerman_mesh_tomography_display_prover", "SMPL Real-Time Volumetric Electrical Impedance Tomography Display Mesh Engine") == 0);
 	assert(run_prover("./tests/test_cpm_telemetry_ring_crc32_persistence_prover", "BAAI CPM Model SMPL Telemetry Ring CRC32 Persistence Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_prover", "BAAI CPM / MANN Pixar RenderMan RIS Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_camera_prover", "BAAI CPM / MANN RenderMan Camera Engine") == 0);
