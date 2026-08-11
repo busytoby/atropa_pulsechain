@@ -41,7 +41,35 @@ bool tsfi_lfm_agent_repl_execute_cmd(tsfi_lfm_repl_session_t *session, const cha
 		return true;
 	}
 
-	/* Execute real shell command via popen stream reader */
+	/* Tool 1: File viewing (view <path>) */
+	if (strncmp(cmd, "view ", 5) == 0) {
+		const char *filepath = cmd + 5;
+		FILE *f = fopen(filepath, "r");
+		if (f) {
+			size_t nread = fread(out_buf, 1, out_len - 1, f);
+			out_buf[nread] = '\0';
+			fclose(f);
+			return true;
+		} else {
+			snprintf(out_buf, out_len, "Error: Unable to open file '%s'.", filepath);
+			return true;
+		}
+	}
+
+	/* Tool 2: Code grep search (grep <pattern>) */
+	if (strncmp(cmd, "grep ", 5) == 0) {
+		char grep_cmd[512] = {0};
+		snprintf(grep_cmd, sizeof(grep_cmd), "grep -rnI --exclude-dir=.git '%s' tsfi2-deepseek/ tests/", cmd + 5);
+		FILE *fp = popen(grep_cmd, "r");
+		if (fp) {
+			size_t nread = fread(out_buf, 1, out_len - 1, fp);
+			out_buf[nread] = '\0';
+			pclose(fp);
+			return true;
+		}
+	}
+
+	/* Execute shell command directly */
 	FILE *fp = popen(cmd, "r");
 	if (fp) {
 		size_t nread = fread(out_buf, 1, out_len - 1, fp);
