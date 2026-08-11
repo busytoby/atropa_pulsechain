@@ -19,6 +19,20 @@ static bool validate_output_policy(const char *buf)
 	if (!buf || strlen(buf) == 0)
 		return false;
 
+	/* Inspect initial 140-character prefix for prohibited substrings 'stood' and 'stand' */
+	size_t check_len = strlen(buf) < 140 ? strlen(buf) : 140;
+	char prefix[141] = {0};
+	memcpy(prefix, buf, check_len);
+	prefix[check_len] = '\0';
+
+	for (size_t k = 0; k < check_len; k++) {
+		prefix[k] = (char)tolower((unsigned char)prefix[k]);
+	}
+
+	if (strstr(prefix, "stood") || strstr(prefix, "stand")) {
+		return false; /* Rejected output containing 'stood' or 'stand' in first 140 characters */
+	}
+
 	/* Rule 3: Single-word sentence interceptor */
 	int word_count = 0;
 	bool in_word = false;
