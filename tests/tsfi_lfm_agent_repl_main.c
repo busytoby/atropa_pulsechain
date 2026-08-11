@@ -14,6 +14,7 @@
 int main(int argc, char **argv)
 {
 	tsfi_lfm_repl_session_t session;
+	char input_buf[256] = {0};
 	char output_buf[512] = {0};
 
 	(void)argc;
@@ -32,11 +33,28 @@ int main(int argc, char **argv)
 	printf("✓ Retpoline-Free Hardware Thunks (0.18 ns) & Motzkin Prime Sync Active.\n");
 	printf("✓ Type 'status', 'profile', or any instruction ('exit' to quit).\n\n");
 
-	/* If non-interactive execution, run 3 default commands */
-	const char *demo_cmds[] = {"status", "profile", "verify_scsi_keycodes_32_30"};
-	for (int i = 0; i < 3; i++) {
-		printf("lfm-agent> %s\n", demo_cmds[i]);
-		if (tsfi_lfm_agent_repl_execute_cmd(&session, demo_cmds[i], output_buf, sizeof(output_buf))) {
+	/* Interactive REPL loop reading commands from stdin */
+	while (1) {
+		printf("lfm-agent> ");
+		fflush(stdout);
+
+		if (!fgets(input_buf, sizeof(input_buf), stdin)) {
+			break;
+		}
+
+		/* Strip trailing newline */
+		input_buf[strcspn(input_buf, "\r\n")] = '\0';
+
+		if (strlen(input_buf) == 0) {
+			continue;
+		}
+
+		if (strcmp(input_buf, "exit") == 0 || strcmp(input_buf, "quit") == 0) {
+			printf("Exiting LFM Agent REPL Shell.\n");
+			break;
+		}
+
+		if (tsfi_lfm_agent_repl_execute_cmd(&session, input_buf, output_buf, sizeof(output_buf))) {
 			printf("%s\n\n", output_buf);
 		}
 	}
