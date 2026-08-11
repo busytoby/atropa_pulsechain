@@ -183,6 +183,9 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_smpl_volumetric_subsurface_scattering_prover", "SMPL Subsurface Scattering (SSS) BSSRDF Diffusion Engine") == 0);
 	assert(run_prover("./tests/test_cpm_smpl_volumetric_heterogeneous_fog_prover", "SMPL Heterogeneous Volumetric Fog Engine") == 0);
 	assert(run_prover("./tests/test_cpm_smpl_volumetric_light_shaft_marcher_prover", "SMPL Light Shaft Ray-Marching & Extinction Engine") == 0);
+	assert(run_prover("./tests/test_cpm_smpl_atmosphere_rayleigh_sky_prover", "SMPL Rayleigh Sky Dome Color Gradient Engine") == 0);
+	assert(run_prover("./tests/test_cpm_smpl_atmosphere_mie_aerosol_prover", "SMPL Mie Aerosol Particle Haze & Sun Glare Engine") == 0);
+	assert(run_prover("./tests/test_cpm_smpl_atmosphere_planetary_curvature_prover", "SMPL Multi-Layer Planetary Horizon Curvature Engine") == 0);
 	assert(run_prover("./tests/test_cpm_telemetry_ring_crc32_persistence_prover", "BAAI CPM Model SMPL Telemetry Ring CRC32 Persistence Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_prover", "BAAI CPM / MANN Pixar RenderMan RIS Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_camera_prover", "BAAI CPM / MANN RenderMan Camera Engine") == 0);
