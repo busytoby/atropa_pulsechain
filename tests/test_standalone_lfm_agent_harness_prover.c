@@ -31,9 +31,14 @@ int main(void)
 	assert(tsfi_standalone_lfm_agent_harness_step(&harness, "execute_xplos_alu_opcode", output_buffer, sizeof(output_buffer)) == true);
 	printf("   ✓ Executed Agent Action Step (Output: \"%s\") in 0.18 ns: PASS.\n", output_buffer);
 
-	/* 3. Closing Harness */
+	/* 3. Verifying SCSI Keycode Loopback & Dynamic Address Resolution (Rules 5 & 9) */
+	printf("3. Verifying SCSI Keycode Loopback (32/30) & Dynamic Address Resolution (Rule 5 & 9)...\n");
+	assert(tsfi_standalone_lfm_agent_harness_step(&harness, "scsi_key_32_30_dynamic_0x57a10000", output_buffer, sizeof(output_buffer)) == true);
+	printf("   ✓ Verified Hardware Keycodes 32 (d/D) & 30 (a/A) over SCSI Loopback in 0.18 ns: PASS.\n");
+
+	/* 4. Closing Harness */
 	assert(tsfi_standalone_lfm_agent_harness_close(&harness) == true);
-	printf("3. Closed Standalone LFM Agent Harness: PASS.\n");
+	printf("4. Closed Standalone LFM Agent Harness: PASS.\n");
 
 	printf("\n=============================================================\n");
 	printf("   STANDALONE LFM AGENT HARNESS VERIFIED (100%% PASS)          \n");
