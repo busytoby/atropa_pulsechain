@@ -151,6 +151,7 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_kv_cache_pipeline_ext_prover", "BAAI CPM Model SMPL KV Cache Pipeline Ext Engine") == 0);
 	assert(run_prover("./tests/test_cpm_async_dispatch_pipeline_ext_prover", "BAAI CPM Model SMPL Async Dispatch Pipeline Ext Engine") == 0);
 	assert(run_prover("./tests/test_cpm_deepseek_moe_pipeline_ext_prover", "BAAI CPM Model SMPL DeepSeek MoE Pipeline Ext Engine") == 0);
+	assert(run_prover("./tests/test_cpm_personality_coaxial_pipeline_ext_prover", "BAAI CPM Model SMPL Personality Coaxial Pipeline Ext Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_prover", "BAAI CPM / MANN Pixar RenderMan RIS Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_camera_prover", "BAAI CPM / MANN RenderMan Camera Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_material_prover", "BAAI CPM / MANN RenderMan PBR Material Engine") == 0);
