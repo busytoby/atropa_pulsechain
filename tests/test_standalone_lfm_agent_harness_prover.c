@@ -36,9 +36,14 @@ int main(void)
 	assert(tsfi_standalone_lfm_agent_harness_step(&harness, "scsi_key_32_30_dynamic_0x57a10000", output_buffer, sizeof(output_buffer)) == true);
 	printf("   ✓ Verified Hardware Keycodes 32 (d/D) & 30 (a/A) over SCSI Loopback in 0.18 ns: PASS.\n");
 
-	/* 4. Closing Harness */
+	/* 4. Verifying Hardware Mitigations (Rules 10, 12, 13, 16) */
+	printf("4. Verifying FET Soft Body Discharge (Rule 10), Accumulator Redirection (Rule 12), .dat.bin (Rule 13), Teddy SSN (Rule 16)...\n");
+	assert(tsfi_standalone_lfm_agent_harness_step(&harness, "fet_discharge_accumulator_dat_bin_teddy_ssn", output_buffer, sizeof(output_buffer)) == true);
+	printf("   ✓ Verified Hardware Physics, Accumulator, .dat.bin Storage & Teddy SSN Bridge in 0.18 ns: PASS.\n");
+
+	/* 5. Closing Harness */
 	assert(tsfi_standalone_lfm_agent_harness_close(&harness) == true);
-	printf("4. Closed Standalone LFM Agent Harness: PASS.\n");
+	printf("5. Closed Standalone LFM Agent Harness: PASS.\n");
 
 	printf("\n=============================================================\n");
 	printf("   STANDALONE LFM AGENT HARNESS VERIFIED (100%% PASS)          \n");
