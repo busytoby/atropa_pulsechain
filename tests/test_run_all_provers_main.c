@@ -67,6 +67,7 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_mann_renderman_volumetric_prover", "BAAI CPM / MANN RenderMan Volumetric SSS Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_hair_prover", "BAAI CPM / MANN RenderMan Marschner Hair Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_denoiser_prover", "BAAI CPM / MANN RenderMan AI Denoiser Engine") == 0);
+	assert(run_prover("./tests/test_cpm_tomie_vulkan_compositor_prover", "Zero-Copy Vulkan Hardware Display Compositor Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_full_archetype_prover", "Pixar RenderMan RIS Engine for MANN & ToMiE 3D Archetype") == 0);
 	assert(run_prover("./tests/test_hudson_renderman_mann_archetype_prover", "Hudson Mainframe RenderMan RIS MANN 3D Archetype Engine") == 0);
 	assert(run_prover("./tests/test_stanag_renderman_mann_archetype_prover", "STANAG 4586 RenderMan RIS MANN 3D Archetype Engine") == 0);
