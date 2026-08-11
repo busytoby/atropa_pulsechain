@@ -195,6 +195,9 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_smpl_denoiser_albedo_normal_guide_prover", "SMPL Albedo & Normal Guide Feature Buffer Extractor Engine") == 0);
 	assert(run_prover("./tests/test_cpm_smpl_denoiser_oidn_spatial_filter_prover", "SMPL OIDN Spatial Wavelet Bilateral Filter Engine") == 0);
 	assert(run_prover("./tests/test_cpm_smpl_denoiser_reprojection_blend_prover", "SMPL Temporal Reprojection & Luminance Blend Accumulator Engine") == 0);
+	assert(run_prover("./tests/test_cpm_smpl_material_skin_epidermis_layer_prover", "SMPL Epidermis & Dermis Skin Layer Absorption Engine") == 0);
+	assert(run_prover("./tests/test_cpm_smpl_material_microfacet_roughness_prover", "SMPL GGX Microfacet Surface Roughness Distribution Engine") == 0);
+	assert(run_prover("./tests/test_cpm_smpl_material_anisotropic_reflectance_prover", "SMPL Anisotropic Specular Highlight Reflectance Engine") == 0);
 	assert(run_prover("./tests/test_cpm_telemetry_ring_crc32_persistence_prover", "BAAI CPM Model SMPL Telemetry Ring CRC32 Persistence Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_prover", "BAAI CPM / MANN Pixar RenderMan RIS Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_camera_prover", "BAAI CPM / MANN RenderMan Camera Engine") == 0);
