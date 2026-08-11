@@ -68,6 +68,7 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_model_smpl_mocap_retarget_prover", "BAAI CPM Model SMPL MoCap Retargeting Engine") == 0);
 	assert(run_prover("./tests/test_cpm_model_smpl_clothing_physics_prover", "BAAI CPM Model SMPL Clothing Physics Engine") == 0);
 	assert(run_prover("./tests/test_cpm_model_smpl_collision_physics_prover", "BAAI CPM Model SMPL Collision Physics Engine") == 0);
+	assert(run_prover("./tests/test_cpm_model_smpl_lighting_physics_prover", "BAAI CPM Model SMPL Lighting Physics Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_prover", "BAAI CPM / MANN Pixar RenderMan RIS Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_camera_prover", "BAAI CPM / MANN RenderMan Camera Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_material_prover", "BAAI CPM / MANN RenderMan PBR Material Engine") == 0);
