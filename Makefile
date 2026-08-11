@@ -1,6 +1,7 @@
 help:
 	@echo "Available test targets:"
 	@echo "  make test-all        - Run all E2E and unit tests in the project"
+	@echo "  make profile         - Run master test runner latency verification provers"
 	@echo "  make test-dashboard  - Run NoNukes Dashboard E2E tests (including SPA)"
 	@echo "  make test-container  - Run Teddy Bear Diagnostics container E2E tests"
 	@echo "  make test-git-ci     - Run Git post-commit hook pipeline E2E tests"
@@ -10,6 +11,9 @@ help:
 	@echo "  make livrps-benchmark - Run LIVRPS USD composition latency benchmarks"
 	@echo "  make curves-benchmark - Run Curves schema latency benchmarks"
 
+
+profile:
+	./tests/test_run_all_provers_main
 
 test-all: test-hathitrust test-hathitrust-hathifile test-hathitrust-oai test-hathitrust-oai-util test-hathitrust-harvester test-hathitrust-ef test-hathitrust-extended test-hathitrust-xml test-hathitrust-cache-alto-qt test-hathitrust-extra2 test-hathitrust-extra3 test-hathitrust-render test-hathitrust-prman test-hathitrust-lore test-hathitrust-prman-extra test-hathitrust-prman-anim test-hathitrust-prman-blur test-hathitrust-prman-final test-hathitrust-teddy test-hathitrust-final-extra test-hathitrust-tsv-extra test-hathitrust-solr-rdbms test-hathitrust-tsv-bin test-hathitrust-window test-hathitrust-extra-final test-hathitrust-bib-oauth test-tsfi2-compiler-bin test-tsfi2-loader test-tsfi2-compiler test-tsfi2-compiler-standards test-mann test-comp-pass test-mvarsel test-reroute test-delegate-sig test-stagecomp test-ar test-sdfformat test-hydrascene test-renderdelegate test-stagelock test-renderindex test-usdshade test-teddy-loader test-geomcamera test-geomcurves test-geompoints test-luxlight test-geomxform test-stageroot test-primroot test-stagepop test-attributeroot test-stagecache test-stagemask test-geomsubset test-stagearc test-stageinherits test-stagepayloads test-stagevariants test-stagetraverser test-stagemetadata test-camerafrustum test-stagereferences test-stagespecializes test-stagerelationship test-stagetimecodes test-vactrolpickup test-npnpnpvalve test-curvesbasis test-singularityring test-subdivcurves test-subdivscheme test-curvestension test-curveswidths test-curveswrap test-timesamples test-micropolygonmesh test-shadowmap test-quasirandomsampler test-displacementshader test-texgensample test-depthoffield test-quadtreeslicer test-riinterface test-cinefex-adv test-sss test-envmap test-hairshading test-proximity-occlusion test-krowz-sickness test-auncient-teddy-personality test-tsfi-montecarlo
 	@echo "All tests completed successfully."
