@@ -118,6 +118,7 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_model_smpl_unet_vae_clip_ext_prover", "BAAI CPM Model SMPL UNet/VAE/CLIP Texture Extension Engine") == 0);
 	assert(run_prover("./tests/test_cpm_tomie_vulkan_hardware_interop_ext2_prover", "CPM-ToMiE Vulkan Hardware Interop Extension Engine 2") == 0);
 	assert(run_prover("./tests/test_cpm_model_smpl_mocap_retarget_ext2_prover", "BAAI CPM Model SMPL MoCap Live Retargeting Extension Engine 2") == 0);
+	assert(run_prover("./tests/test_cpm_model_smpl_clothing_physics_ext2_prover", "BAAI CPM Model SMPL Clothing Physics Extension Engine 2") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_prover", "BAAI CPM / MANN Pixar RenderMan RIS Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_camera_prover", "BAAI CPM / MANN RenderMan Camera Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_material_prover", "BAAI CPM / MANN RenderMan PBR Material Engine") == 0);
