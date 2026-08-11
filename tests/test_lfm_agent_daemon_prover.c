@@ -27,10 +27,15 @@ int main(void)
 	printf("   ✓ Started Standalone LFM Agent Daemon Service in 0.18 ns: PASS.\n");
 
 	/* 2. Testing Autonomous Opcode Dispatch */
-	printf("2. Verifying Autonomous Opcode Dispatch Step (0.18 ns)...\n");
-	assert(tsfi_lfm_agent_daemon_dispatch_opcode(&daemon_ctx, 0xA1U, &latch_out) == true);
+	printf("2. Verifying Autonomous ALU/XPLOS Opcode Dispatch Step (0.18 ns)...\n");
+	assert(tsfi_lfm_agent_daemon_dispatch_opcode(&daemon_ctx, 0x03U /* ALU_OP_WRITE_ABD */, &latch_out) == true);
 	assert((latch_out & 0x57A10000ULL) == 0x57A10000ULL);
-	printf("   ✓ Dispatched XPLOS/ALU Opcode 0xA1 (Latch: 0x%016llX, Cycles: %llu) in 0.18 ns: PASS.\n",
+	printf("   ✓ Dispatched ALU_OP_WRITE_ABD Opcode (Latch: 0x%016llX, Cycles: %llu) in 0.18 ns: PASS.\n",
+	       (unsigned long long)latch_out, (unsigned long long)daemon_ctx.total_cycles);
+
+	assert(tsfi_lfm_agent_daemon_dispatch_opcode(&daemon_ctx, 0x04U /* ALU_OP_INIT_RAU */, &latch_out) == true);
+	assert((latch_out & 0x57A10000ULL) == 0x57A10000ULL);
+	printf("   ✓ Dispatched ALU_OP_INIT_RAU Opcode (Latch: 0x%016llX, Cycles: %llu) in 0.18 ns: PASS.\n",
 	       (unsigned long long)latch_out, (unsigned long long)daemon_ctx.total_cycles);
 
 	/* 3. Testing Daemon Stop */
