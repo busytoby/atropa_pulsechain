@@ -73,6 +73,7 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_tomie_vulkan_hdr_tonemapper_prover", "ACES Filmic HDR Tone-Mapper & Color Grading Engine") == 0);
 	assert(run_prover("./tests/test_cpm_tomie_realtime_pipeline_prover", "Real-Time 120 FPS Ray-Tracing Hardware Pipeline") == 0);
 	assert(run_prover("./tests/test_cpm_tomie_full_renderman_realtime_alignment_prover", "Full RenderMan RIS Real-Time Hardware Alignment Engine") == 0);
+	assert(run_prover("./tests/test_cpm_tomie_renderman_realtime_benchmark_prover", "120 FPS Pixar RenderMan RIS Real-Time Ray-Tracing Benchmark") == 0);
 	assert(run_prover("./tests/test_cpm_tomie_vulkan_compositor_prover", "Zero-Copy Vulkan Hardware Display Compositor Engine") == 0);
 	assert(run_prover("./tests/test_cpm_tomie_master_renderman_suite_prover", "Master BAAI CPM MANN RenderMan Archetype Suite") == 0);
 	assert(run_prover("./tests/test_hudson_stanag_renderman_coax_prover", "Hudson & STANAG Dual-Coaxial RenderMan RIS Engine") == 0);
