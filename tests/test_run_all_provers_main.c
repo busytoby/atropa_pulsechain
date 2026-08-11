@@ -47,6 +47,7 @@ int main(void)
 	assert(run_prover("./tests/bench_amdgpu_thunk_vs_traditional_driver", "AMDGPU Thunk 10,000,000 Op Benchmark") == 0);
 	assert(run_prover("./tests/test_wmq_kallsyms_thunk_prover", "WinchesterMQ kallsyms Hardware Thunk Engine") == 0);
 	assert(run_prover("./tests/test_xplos_kallsyms_prover", "TSFi2 XPLOS Hardware kallsyms Engine") == 0);
+	assert(run_prover("./tests/test_cpm_tomie_engine_prover", "WinchesterMQ CPM-Tomie Concurrent Engine") == 0);
 	assert(run_prover("./tests/test_wmq_h_bridge_prover", "WinchesterMQ H-Bridge Controller") == 0);
 	assert(run_prover("./tests/test_amdgpu_wmq_fence_sdma_prover", "AMDGPU WMQ Fence & SDMA Agent") == 0);
 	assert(run_prover("./tests/test_block_layer_scheduling_prover", "Lockless Block Layer Scheduling") == 0);
