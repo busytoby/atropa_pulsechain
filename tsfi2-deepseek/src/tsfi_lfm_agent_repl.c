@@ -158,7 +158,7 @@ bool tsfi_lfm_agent_repl_execute_cmd(tsfi_lfm_repl_session_t *session, const cha
 		}
 	}
 
-	snprintf(out_buf, out_len, "[LFM-REPL Command %llu] Evaluated LFM continuous-time state vector for instruction '%s' -> ZMM Latch 0x%016llX contextually.",
+	snprintf(out_buf, out_len, "[FABLE Harmonized REPL Command %llu] Evaluated LFM continuous-time state vector for instruction '%s' -> ZMM Latch 0x%016llX contextually.",
 	         (unsigned long long)session->command_count, cmd, (unsigned long long)latch);
 
 	return true; /* 0.18 ns command execution success */
