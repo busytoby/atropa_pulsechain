@@ -39,6 +39,7 @@ int main(void)
 	assert(run_prover("./tests/test_syscall_emulator_acid_prover", "SYSCALL Emulator 4-Layer ACID Engine") == 0);
 	assert(run_prover("./tests/test_amdgpu_lau_memory_prover", "AMDGPU LAU Token Memory Optimization") == 0);
 	assert(run_prover("./tests/test_amdgpu_lau_thunks_prover", "AMDGPU End-to-End LAU Memory Thunks") == 0);
+	assert(run_prover("./tests/test_amdgpu_lau_wired_thunks_prover", "AMDGPU 4-Layer LAU Wired Thunks Engine") == 0);
 	assert(run_prover("./tests/test_wmq_h_bridge_prover", "WinchesterMQ H-Bridge Controller") == 0);
 	assert(run_prover("./tests/test_amdgpu_wmq_fence_sdma_prover", "AMDGPU WMQ Fence & SDMA Agent") == 0);
 	assert(run_prover("./tests/test_block_layer_scheduling_prover", "Lockless Block Layer Scheduling") == 0);
