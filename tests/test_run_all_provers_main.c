@@ -56,6 +56,7 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_tomie_stanag_bridge_prover", "WinchesterMQ CPM-ToMiE STANAG 4586 Bridge") == 0);
 	assert(run_prover("./tests/test_cpm_tomie_hudson_bridge_prover", "WinchesterMQ CPM-ToMiE Hudson Mainframe Bridge") == 0);
 	assert(run_prover("./tests/test_cpm_weights_dat_bin_prover", "BAAI/Tsinghua CPM .dat.bin Model Weight Prover") == 0);
+	assert(run_prover("./tests/test_cpm_personality_engine_prover", "BAAI CPM Model TSFi2 Personality Engine") == 0);
 	assert(run_prover("./tests/test_cpm_tomie_deepseek_prover", "WinchesterMQ CPM-ToMiE DeepSeek Engine") == 0);
 	assert(run_prover("./tests/test_cpm_tomie_deepseek_batch_prover", "WinchesterMQ CPM-ToMiE DeepSeek Batch Engine") == 0);
 	assert(run_prover("./tests/test_cpm_tomie_deepseek_kv_cache_prover", "WinchesterMQ CPM-ToMiE DeepSeek KV Cache Engine") == 0);
