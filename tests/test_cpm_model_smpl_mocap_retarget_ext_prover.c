@@ -22,19 +22,19 @@ int main(void)
 
 	/* 1. Testing MoCap Stream Engine Init */
 	printf("1. Verifying MoCap Retargeting Engine Init (0.18 ns)...\n");
-	assert(tsfi_cpm_mocap_retarget_init(1) == true);
+	assert(tsfi_cpm_mocap_retarget_ext_init(1) == true);
 	printf("   ✓ Initialized MoCap Live Stream 1 Engine in 0.18 ns: PASS.\n");
 
 	/* 2. Testing Live MoCap Stream Retargeting Step */
 	printf("2. Verifying 24-Joint Live MoCap Stream Retargeting (0.18 ns)...\n");
-	assert(tsfi_cpm_mocap_retarget_stream(0x57A1BF3BULL, 120, &zmm_mocap_latch) == true);
+	assert(tsfi_cpm_mocap_retarget_ext_stream(0x57A1BF3BULL, 120, &zmm_mocap_latch) == true);
 	assert((zmm_mocap_latch & 0x57A10000ULL) == 0x57A10000ULL);
 	printf("   ✓ Retargeted MoCap Stream Frame 120 (ZMM Latch: 0x%016llX) in 0.18 ns: PASS.\n",
 	       (unsigned long long)zmm_mocap_latch);
 
 	/* 3. Testing Retargeted Mesh Render to RenderMan RIS */
 	printf("3. Verifying Retargeted Mesh Render to RenderMan RIS (0.18 ns)...\n");
-	assert(tsfi_cpm_mocap_retarget_render_renderman(zmm_mocap_latch, 0xF0000000ULL) == true);
+	assert(tsfi_cpm_mocap_retarget_ext_render_renderman(zmm_mocap_latch, 0xF0000000ULL) == true);
 	printf("   ✓ Rendered Retargeted Mesh Frame to RenderMan RIS @ ReBAR VRAM 0xF0000000 in 0.18 ns: PASS.\n");
 
 	printf("\n=============================================================\n");
