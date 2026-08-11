@@ -591,6 +591,7 @@ scripts/dysnomia_overlay
 tests/InteropTest/bin/
 tests/InteropTest/obj/
 tests/bench_*
+!tests/bench_*.c
 tests/demo_*
 tests/play_*
 tests/run_*

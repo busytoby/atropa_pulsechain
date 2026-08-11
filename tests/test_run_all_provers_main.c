@@ -44,6 +44,7 @@ int main(void)
 	assert(run_prover("./tests/test_amdgpu_lau_advanced_thunks_prover", "AMDGPU Advanced LAU Memory Thunks Engine") == 0);
 	assert(run_prover("./tests/test_amdgpu_full_thunk_suite_prover", "AMDGPU Full Thunk Replacement Suite") == 0);
 	assert(run_prover("./tests/test_amdgpu_full_pipeline_prover", "AMDGPU Full Pipeline Extended Unit Test") == 0);
+	assert(run_prover("./tests/bench_amdgpu_thunk_vs_traditional_driver", "AMDGPU Thunk 10,000,000 Op Benchmark") == 0);
 	assert(run_prover("./tests/test_wmq_kallsyms_thunk_prover", "WinchesterMQ kallsyms Hardware Thunk Engine") == 0);
 	assert(run_prover("./tests/test_xplos_kallsyms_prover", "TSFi2 XPLOS Hardware kallsyms Engine") == 0);
 	assert(run_prover("./tests/test_wmq_h_bridge_prover", "WinchesterMQ H-Bridge Controller") == 0);
