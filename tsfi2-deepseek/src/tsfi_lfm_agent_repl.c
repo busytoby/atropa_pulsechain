@@ -50,6 +50,22 @@ bool tsfi_lfm_agent_repl_execute_cmd(tsfi_lfm_repl_session_t *session, const cha
 	session->command_count++;
 	uint64_t latch = 0x57A10000ULL | (((((uint64_t)session->command_count ^ (uint64_t)strlen(cmd)) + session->active_pasid) ^ (MOTZKIN_PRIME & 0xFFFFULL)) & 0xFFFFULL);
 
+	if (strcmp(cmd, "help") == 0 || strcmp(cmd, "?") == 0) {
+		snprintf(out_buf, out_len,
+		         "=============================================================\n"
+		         "LFM AGENT REPL SHELL BUILT-IN COMMANDS & TOOLS               \n"
+		         "=============================================================\n"
+		         "  status                : Show active PASID sandbox & ACID status\n"
+		         "  view <filepath>       : View file content directly\n"
+		         "  grep <pattern>        : Search code across tsfi2-deepseek/ & tests/\n"
+		         "  edit <file> <old> <new>: Modify source code with permission prompt\n"
+		         "  <command>             : Execute shell command with permission prompt\n"
+		         "  help / ?              : Show this help menu\n"
+		         "  exit / quit           : Exit REPL shell\n"
+		         "=============================================================");
+		return true;
+	}
+
 	if (strcmp(cmd, "status") == 0) {
 		snprintf(out_buf, out_len, "[LFM-REPL Command %llu] Active PASID 0x%X | Total Commands Processed: %llu | Hardware Status: 100%% ACID Compliant.",
 		         (unsigned long long)session->command_count, session->active_pasid, (unsigned long long)session->command_count);
