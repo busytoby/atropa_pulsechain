@@ -208,6 +208,7 @@ int main(void)
 	assert(run_prover("./tests/test_tomie_vaesen_agent_prover", "ToMiE-Vaesen Autonomous Agent Perception Engine") == 0);
 	assert(run_prover("./tests/test_cpm_avx512_zmm_vector_registration_prover", "Phase 2 AVX-512 & ZMM Vector Registration Mapping Engine") == 0);
 	assert(run_prover("./tests/test_cpm_multi_vm_acid_stress_prover", "Phase 2 Multi-VM Hardware ACID Isolation & Stress Suite Engine") == 0);
+	assert(run_prover("./tests/test_cpm_retpoline_fault_profiling_prover", "Phase 2 Retpoline-Free Hardware Fault Interception & Profiling Suite Engine") == 0);
 	assert(run_prover("./tests/test_cpm_telemetry_ring_crc32_persistence_prover", "BAAI CPM Model SMPL Telemetry Ring CRC32 Persistence Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_prover", "BAAI CPM / MANN Pixar RenderMan RIS Engine") == 0);
 	assert(run_prover("./tests/test_cpm_mann_renderman_camera_prover", "BAAI CPM / MANN RenderMan Camera Engine") == 0);
