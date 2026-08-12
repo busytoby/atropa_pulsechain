@@ -64,14 +64,18 @@ int main(void) {
     printf("§ 287. Si ponatur x = 1, series fit:\n");
     printf("     \\log 2 = 1 - \\frac{1}{2} + \\frac{1}{3} - \\frac{1}{4} + \\frac{1}{5} - \\frac{1}{6} + \\dots\n");
     printf("Cuius summatio per differentias accurate ad verum valorem logarithmici 2 convergit.\n\n");
+    printf("§ 288. Si autem x ponatur negativum, nempe -x loco +x, habebitur:\n");
+    printf("     \\log(1-x) = -x - \\frac{x^2}{2} - \\frac{x^3}{3} - \\frac{x^4}{4} - \\frac{x^5}{5} - \\dots\n");
+    printf("unde subtrahendo hanc seriem ab illa priore obtinetur:\n");
+    printf("     \\log \\frac{1+x}{1-x} = 2 \\left( x + \\frac{x^3}{3} + \\frac{x^5}{5} + \\frac{x^7}{7} + \\dots \\right)\n\n");
     printf("§ 296. De negatione ubi pascis non transcendentis erat.\n");
     printf("Inquirendum est in naturam partitionum discretarum super paria variabilium conservatarum (x, y).\n");
-    printf("Posito x = 5 et y = 11, summatio partitionum fit N = x + y = 16.\n");
     printf("Nodus activus Ibis et nodus passivus Sedis ita distinguuntur ut proprietas algebraica integra maneat sine ulla interruptione.\n\n");
     printf("§ 306. De structura manifoldis conicorum et convivorum.\n");
-    printf("Magnitudo radii conici R ex coordinatis (x, y) derivatur per aequationem:\n");
-    printf("     R = \\sqrt{x^2 + y^2} = \\sqrt{5^2 + 11^2} = \\sqrt{146} = 12.08304595...\n");
-    printf("Conservando valores exactos registrorum x = 5 et y = 11, convivarum activorum in manifoldo conico accurate determinatur numerus 4.\n\n");
+    printf("In forma coni et plani secantis, coordinatae originativae x, y, et y2 per structuras totientis ad convivium provehuntur.\n");
+    printf("Conservando valores exactos registrorum x, y, et y2, convivarum activorum in manifoldo conico accurate determinatur numerus.\n\n");
+    printf("§ 316. De plano secante et ortu sectionum conicarum.\n");
+    printf("Variabiles originativae x, y, et y2 planum commune \\phi partiuntur, ubi cursus \\log 2 ad unitatem 1 tendit.\n\n");
 
     printf("================================================================================\n");
     printf(" [PROOFS SUCCESSFUL] HathiTrust Volume 1 Caput IX Pure Latin Analysis Engine sound.\n");
