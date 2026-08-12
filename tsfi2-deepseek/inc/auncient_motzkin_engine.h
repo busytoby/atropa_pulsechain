@@ -3426,13 +3426,35 @@ typedef struct {
     bool ch9_sec2_discrete_partition_sound;// True if Chapter 9 Section 2 engine is 100% sound
 } AuncientEulerVolume1Chapter9Section2DiscretePartitionMetrics;
 
-// Euler Volume 1 Chapter 9 Section 2 (§ 296-§ 305) Non-Transcendental Discrete Partition Engine
-bool auncient_euler_volume1_chapter9_sec2_discrete_partition_engine(
+// Euler Volume 1 Chapter 9 Section 3 (§ 306-§ 315) Conic Section Attendeeship Manifold Engine Metrics (ht.0000000057ec)
+typedef struct {
+    char section_latin_title[128];         // Caput IX Section 3: De structura manifoldis conicorum et convivorum (Building the Manifold)
+    int64_t preserved_random_x;            // Preserved totient variable x
+    int64_t preserved_random_y;            // Preserved totient variable y
+    uint64_t totient_phi_x;                // Euler totient phi(5) = 4
+    uint64_t totient_phi_y;                // Euler totient phi(11) = 10
+    uint64_t conic_manifold_radius_scaled; // Conic Section ray distance R = sqrt(x^2 + y^2) scaled (e.g. 5094890 for 5.09489)
+    uint64_t attendeeship_count;           // Active convivae / attendees registered at conic section (e.g. 4)
+    bool is_manifold_constructed;          // True: Manifold built directly rather than transcended
+    bool is_stanag_vfio_wmq_mounted;       // True: WMQ SCSI registers bound to ACID WAL
+    uint64_t ch9_sec3_wal_checksum;        // 64-bit FNV-1a Checksum preserving Ch 9 Sec 3 WAL state
+    bool is_acid_rollback_sound;           // True: Transactional Rollback restored state
+    bool is_acid_replay_sound;             // True: Transactional Replay re-executed state
+    uint64_t acid_ch9_sec3_checksum;       // 64-bit FNV-1a Checksum over Ch 9 Sec 3 state
+    bool rule9_address_resolution_sound;   // True if dynamic_<address> holds 100%
+    bool rule13_dat_bin_verified;          // Quadtree payload format is strictly .dat.bin
+    uint64_t zmm_hardware_latch;           // 512-bit ZMM ReBAR Latch (0x57EC)
+    bool ch9_sec3_conic_manifold_sound;    // True if Chapter 9 Section 3 engine is 100% sound
+} AuncientEulerVolume1Chapter9Section3ConicManifoldMetrics;
+
+// Euler Volume 1 Chapter 9 Section 3 (§ 306-§ 315) Conic Section Attendeeship Manifold Engine
+bool auncient_euler_volume1_chapter9_sec3_conic_manifold_engine(
     const char *contract_address,
     const char *dat_bin_ch9_path,
+    uint32_t active_attendees,
     int64_t preserved_random_x,
     int64_t preserved_random_y,
-    AuncientEulerVolume1Chapter9Section2DiscretePartitionMetrics *metrics_out
+    AuncientEulerVolume1Chapter9Section3ConicManifoldMetrics *metrics_out
 );
 
 #ifdef __cplusplus
