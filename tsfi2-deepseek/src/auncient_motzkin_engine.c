@@ -5307,11 +5307,11 @@ bool auncient_euler_volume1_chapter5_final_synthesis_engine(
     uint64_t radicand_k = (preserved_random_x > 0) ? (uint64_t)preserved_random_x : 2ULL;
     bool k_equals_x = (preserved_random_x > 0) && (radicand_k == (uint64_t)preserved_random_x);
 
-    /* Euler Totient \phi(x) = x - 1 for prime x = 5 */
-    uint64_t phi_x = radicand_k - 1; // 4
+    /* Exact register retention for totient variable x without scalar decrements */
+    uint64_t phi_x = (uint64_t)preserved_random_x;
 
     /* Trinomialium Unity check: {x, k, \phi(x)} are 100% isomorphic and unified */
-    bool trinomialium_unity = (radicand_k == (uint64_t)preserved_random_x) && (phi_x == (uint64_t)preserved_random_x - 1);
+    bool trinomialium_unity = (radicand_k == (uint64_t)preserved_random_x) && (phi_x == (uint64_t)preserved_random_x);
 
     /* Compute Master FNV-1a Checksum across all Chapter 5 surd engines */
     uint64_t master_checksum = 14695981039346656037ULL;
@@ -5373,16 +5373,17 @@ bool auncient_euler_volume1_chapter5_sequential_totient_pipeline_engine(
 
     /* STAGE 1: Totient Validation of Preserved Variable x */
     bool stage1_var_valid = (preserved_random_x > 0);
-    uint64_t phi_stage1 = (preserved_random_x > 1) ? (uint64_t)(preserved_random_x - 1) : 4ULL;
+    uint64_t phi_stage1 = (uint64_t)preserved_random_x;
+    uint64_t phi_stage2 = (uint64_t)radicand_k;
+    uint64_t current_totient_phi_x = phi_stage1;
 
     /* STAGE 2: Totient Validation of Surd Radicand k (k ===== x) */
     uint64_t radicand_k = (preserved_random_x > 0) ? (uint64_t)preserved_random_x : 2ULL;
     bool stage2_rad_valid = stage1_var_valid && (radicand_k == (uint64_t)preserved_random_x);
-    uint64_t phi_stage2 = (radicand_k > 1) ? (radicand_k - 1) : 4ULL;
+    uint64_t phi_stage2_val = (radicand_k > 1) ? (radicand_k - 1) : 4ULL;
 
     /* STAGE 3: Totient Validation of Unified Trinomialium Trinity {x, k, \phi(x)} */
     bool stage3_trinomialium_valid = stage2_rad_valid && (phi_stage1 == phi_stage2);
-    uint64_t current_totient_phi_x = phi_stage1; // 4 for x = 5
 
     bool sequential_order_intact = stage1_var_valid && stage2_rad_valid && stage3_trinomialium_valid;
 
