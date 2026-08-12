@@ -97,3 +97,34 @@ bool hathitrust_quadtree_serialize(const char *filepath, const HtrcQuadtreePoint
     fclose(f);
     return true;
 }
+
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+const HtrcQuadtreeNode* hathitrust_quadtree_mmap_node(const char *filepath, size_t offset, size_t *out_file_size) {
+    if (!filepath || !has_dat_bin_extension(filepath)) return NULL;
+
+    int fd = open(filepath, O_RDONLY);
+    if (fd < 0) return NULL;
+
+    struct stat st;
+    if (fstat(fd, &st) < 0) {
+        close(fd);
+        return NULL;
+    }
+
+    if (out_file_size) *out_file_size = (size_t)st.st_size;
+
+    void *map = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
+    close(fd);
+
+    if (map == MAP_FAILED) return NULL;
+    if (offset + sizeof(HtrcQuadtreeNode) > (size_t)st.st_size) {
+        munmap(map, st.st_size);
+        return NULL;
+    }
+
+    return (const HtrcQuadtreeNode*)((const char*)map + offset);
+}

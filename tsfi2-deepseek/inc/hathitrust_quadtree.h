@@ -34,4 +34,9 @@ typedef struct {
  */
 bool hathitrust_quadtree_serialize(const char *filepath, const HtrcQuadtreePoint *points, size_t count);
 
+/*
+ * Zero-copy mmap reader for .dat.bin quadtree database files.
+ */
+const HtrcQuadtreeNode* hathitrust_quadtree_mmap_node(const char *filepath, size_t offset, size_t *out_file_size);
+
 #endif /* HATHITRUST_QUADTREE_H */
