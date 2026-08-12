@@ -34,4 +34,14 @@ bool tsfi_displacementshader_eval_page_curl(const TSFiDisplacementShader *ds, do
 // Aligns the Aho-Corasick pattern offset to WinchesterMQ SCSI register boundary constraints
 uint32_t tsfi_displacementshader_align_ahocorasick_offset(const TSFiDisplacementShader *ds, uint32_t unaligned_offset);
 
+// Evaluates W. M. McKeeman adaptive quadrature integration over plane phi for Euler Chapter 9 logarithmic convergence
+double tsfi_displacementshader_eval_mckeeman_adaptive_quadrature(
+    const TSFiDisplacementShader *ds,
+    double a,
+    double b,
+    double tol,
+    double (*func)(double x, void *user_data),
+    void *user_data
+);
+
 #endif // TSFI_DISPLACEMENTSHADER_H

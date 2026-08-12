@@ -99,3 +99,57 @@ uint32_t tsfi_displacementshader_align_ahocorasick_offset(const TSFiDisplacement
     
     return unaligned_offset + (alignment - remainder);
 }
+
+/* Internal recursive helper for McKeeman Adaptive Quadrature */
+static double mckeeman_quad_recursive(
+    double (*func)(double x, void *user_data),
+    void *user_data,
+    double a,
+    double b,
+    double tol,
+    double fa,
+    double fb,
+    double fc,
+    double area,
+    int depth
+) {
+    if (depth > 30) return area;
+
+    double c = (a + b) / 2.0;
+    double d = (a + c) / 2.0;
+    double e = (c + b) / 2.0;
+    double fd = func(d, user_data);
+    double fe = func(e, user_data);
+
+    double h = b - a;
+    double left_area = (h / 12.0) * (fa + 4.0 * fd + fc);
+    double right_area = (h / 12.0) * (fc + 4.0 * fe + fb);
+    double total_area = left_area + right_area;
+
+    if (fabs(total_area - area) <= 15.0 * tol || depth >= 20) {
+        return total_area + (total_area - area) / 15.0; // Richardson extrapolation correction
+    }
+
+    return mckeeman_quad_recursive(func, user_data, a, c, tol / 2.0, fa, fc, fd, left_area, depth + 1) +
+           mckeeman_quad_recursive(func, user_data, c, b, tol / 2.0, fc, fb, fe, right_area, depth + 1);
+}
+
+double tsfi_displacementshader_eval_mckeeman_adaptive_quadrature(
+    const TSFiDisplacementShader *ds,
+    double a,
+    double b,
+    double tol,
+    double (*func)(double x, void *user_data),
+    void *user_data
+) {
+    if (!func || a >= b) return 0.0;
+    if (tol <= 0.0) tol = 1e-6;
+
+    double c = (a + b) / 2.0;
+    double fa = func(a, user_data);
+    double fb = func(b, user_data);
+    double fc = func(c, user_data);
+    double initial_area = ((b - a) / 6.0) * (fa + 4.0 * fc + fb);
+
+    return mckeeman_quad_recursive(func, user_data, a, b, tol, fa, fb, fc, initial_area, 0);
+}
