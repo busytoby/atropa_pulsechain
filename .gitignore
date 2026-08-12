@@ -1,6 +1,13 @@
-################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
-################################################################################
+# Ignore all files under assets/ directory
+assets/
+
+# Ignore compiled binaries and native extensions in scripts/
+/scripts/mann_pixar_surd_monomial_demo
+/scripts/test_verlet
+/scripts/tsfi2_demo_papers
+/scripts/vulkan_interop.node
+/scripts/wm_toy
+
 
 /viewclient/bin/Debug/net8.0-windows
 /viewclient/obj/Debug/net8.0-windows/ref
