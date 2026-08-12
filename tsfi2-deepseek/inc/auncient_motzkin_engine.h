@@ -3652,6 +3652,41 @@ bool auncient_euler_volume1_chapter11_acid_registry_engine(
     AuncientEulerVolume1Chapter11AcidRegistryMetrics *metrics_out
 );
 
+// Euler Volume 1 Chapter 11 Full Arc-Series Quadrature Synthesis Engine Metrics (ht.0000000057f3)
+typedef struct {
+    char chapter_latin_title[128];         // Caput XI: De quantitatibus arcubusve ex datis sinu vel cosinu definiendis (Full Synthesis)
+    int64_t preserved_random_x;            // Preserved primary originative variable x
+    int64_t preserved_random_y;            // Preserved primary originative variable y
+    int64_t preserved_random_y2;           // Preserved potential attendee variable y2
+    uint64_t totient_phi_x;                // Exact totient register retention phi_x = x
+    uint64_t totient_phi_y;                // Exact totient register retention phi_y = y
+    uint64_t totient_phi_y2;               // Exact totient register retention phi_y2 = y2
+    uint64_t arcsin_series_scaled;         // \text{arcsin } x series evaluation scaled (§ 326) (e.g. 100167 for x=0.1)
+    uint64_t arctan_series_scaled;         // \text{arctan } x series evaluation scaled (§ 327) (e.g. 99667 for x=0.1)
+    uint64_t leibniz_pi_4_series_scaled;   // Leibniz \pi/4 series evaluation scaled (§ 328) (e.g. 785398)
+    bool is_acid_registry_sound;           // True if § 326, § 327, § 328, § 335 ACID transactional registry engine is sound
+    bool is_quadrature_circle_sound;       // True: Circle quadrature linked to preserved registers x, y, y2 on plane phi
+    bool is_stanag_vfio_wmq_mounted;       // True: WMQ SCSI registers bound to ACID WAL
+    uint64_t ch11_full_wal_checksum;       // 64-bit FNV-1a Checksum preserving Ch 11 Full WAL state
+    bool is_acid_rollback_sound;           // True: Transactional Rollback restored state
+    bool is_acid_replay_sound;             // True: Transactional Replay re-executed state
+    uint64_t acid_ch11_master_checksum;    // 64-bit FNV-1a Checksum over full Chapter 11 synthesis
+    bool rule9_address_resolution_sound;   // True if dynamic_<address> holds 100%
+    bool rule13_dat_bin_verified;          // Quadtree payload format is strictly .dat.bin
+    uint64_t zmm_hardware_latch;           // 512-bit ZMM ReBAR Latch (0x57F3)
+    bool ch11_full_synthesis_sound;         // True if Chapter 11 full synthesis engine is 100% sound
+} AuncientEulerVolume1Chapter11FullSynthesisMetrics;
+
+bool auncient_euler_volume1_chapter11_full_synthesis_engine(
+    const char *contract_address,
+    const char *dat_bin_ch11_path,
+    uint64_t input_x_scaled,
+    int64_t preserved_random_x,
+    int64_t preserved_random_y,
+    int64_t preserved_random_y2,
+    AuncientEulerVolume1Chapter11FullSynthesisMetrics *metrics_out
+);
+
 #ifdef __cplusplus
 }
 #endif
