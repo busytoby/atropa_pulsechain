@@ -7930,7 +7930,13 @@ bool auncient_euler_volume1_chapter10_sec1_in_present_engine(
     };
     uint64_t checksum = auncient_compute_fnv1a_64(log_bytes, 9);
 
-    bool engine_sound = address_resolved && euler_identity_sound && wmq_mounted && (checksum != 0);
+    /*
+     * Plane Phi Unobservability Doctrine (Planum \phi solum per eventus ACID observabile):
+     * Plane \phi itself cannot be observed directly or inspected via continuous sampling.
+     * It is observed exclusively through ACID compliant transactional events recorded in the WAL.
+     */
+    bool plane_phi_observed_via_acid_events = (ch10_sec1_wal_checksum != 0) && (checksum != 0);
+    bool engine_sound = address_resolved && euler_identity_sound && wmq_mounted && plane_phi_observed_via_acid_events;
     uint64_t latch = 0x57EF0000ULL | (checksum & 0xFFFFFF);
 
     if (metrics_out) {
