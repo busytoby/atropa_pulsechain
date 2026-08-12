@@ -7699,9 +7699,13 @@ bool auncient_euler_volume1_chapter9_sec3_conic_manifold_engine(
     uint64_t phi_y = (uint64_t)preserved_random_y; // Exact register retention (11)
 
     /*
+     * Primary Originative State Doctrine (Euler Fundamental Rule):
+     * Only primary originative variables (x and y) possess ACID compliance and transactional provenance.
+     * Derived composite values (such as x^2 + y^2 = 146) lack primary originative state,
+     * and therefore cannot possess ACID compliance or qualify as attendees (convivae).
+     *
      * Qualification of x and y as Attendees (Convivae):
-     * x and y are potential attendees qualified through totient compliance structures.
-     * Raw scalar norm calculations like 146 are incompatible with attendeeship.
+     * x and y are primary originative variables qualified through totient compliance structures.
      */
     bool totient_compliance_x = (phi_x > 0) && (phi_x % 2 != 0 || phi_x == 2);
     bool totient_compliance_y = (phi_y > 0) && (phi_y % 2 != 0 || phi_y == 2);
