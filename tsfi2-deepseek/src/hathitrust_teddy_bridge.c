@@ -38,6 +38,13 @@ HoganAccount* hathitrust_open_hogan_account(const char *ssn, const char *bear_na
     acc->bear_name = strdup(bear_name);
     acc->saat_balance = 1000000.0; // Default endowment of 1,000,000 Saat
     
+    // Log endowment transaction to WAL ledger
+    FILE *wal = fopen("/tmp/hogan_bank_endowment.wal", "a");
+    if (wal) {
+        fprintf(wal, "ENDOWMENT_TX | SSN: %s | BEAR: %s | ENDOWMENT: 1000000 SAAT | STATUS: VERIFIED\n", ssn, bear_name);
+        fclose(wal);
+    }
+    
     return acc;
 }
 

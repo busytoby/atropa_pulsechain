@@ -7,6 +7,21 @@
 #include <stdlib.h>
 #include <string.h>
 
+uint32_t interop_quadtree_query(const InteropQuadNode *nodes, uint32_t current_idx, uint32_t x, uint32_t y) {
+    if (!nodes || current_idx == 0xFFFFFFFF) return 0xFFFFFFFF;
+    const InteropQuadNode *node = &nodes[current_idx];
+    if (x < node->x_min || x > node->x_max || y < node->y_min || y > node->y_max) return 0xFFFFFFFF;
+    if (node->value != 0xFFFFFFFF) return node->value;
+
+    for (int i = 0; i < 4; i++) {
+        if (node->children[i] != 0xFFFFFFFF) {
+            uint32_t res = interop_quadtree_query(nodes, node->children[i], x, y);
+            if (res != 0xFFFFFFFF) return res;
+        }
+    }
+    return 0xFFFFFFFF;
+}
+
 bool tsfi_qt_ksds_write(
     const char *filepath,
     const char *tsv_header,

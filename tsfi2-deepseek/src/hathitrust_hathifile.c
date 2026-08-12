@@ -30,7 +30,7 @@ bool hathifile_parse_line(char *line, HathifileRow *row) {
     char *token;
     int index = 0;
     
-    // We use strsep to handle consecutive tab characters correctly
+    // We use strsep to handle consecutive tab characters efficiently
     while ((token = strsep(&curr, "\t")) != NULL) {
         switch (index) {
             case 0:  row->htid = safe_strdup(token); break;
@@ -59,7 +59,6 @@ bool hathifile_parse_line(char *line, HathifileRow *row) {
         index++;
     }
     
-    // A valid Hathifile line must have at least the basic metadata fields (e.g. 20 fields)
     if (index < 20) {
         hathifile_free_row(row);
         return false;
