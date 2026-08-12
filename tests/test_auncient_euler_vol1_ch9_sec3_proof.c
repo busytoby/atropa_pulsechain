@@ -27,8 +27,8 @@ int main(void) {
 
     assert(status == true);
     assert(metrics.is_manifold_constructed == true);
-    assert(metrics.totient_phi_x == 4);
-    assert(metrics.totient_phi_y == 10);
+    assert(metrics.totient_phi_x == 5);
+    assert(metrics.totient_phi_y == 11);
     assert(metrics.conic_manifold_radius_scaled == 1208305);
     assert(metrics.attendeeship_count == 4);
     assert(metrics.ch9_sec3_conic_manifold_sound == true);

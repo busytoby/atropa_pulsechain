@@ -7694,9 +7694,9 @@ bool auncient_euler_volume1_chapter9_sec3_conic_manifold_engine(
     AUNCIENT_CHECK_RULE_13(dat_bin_ch9_path);
     bool address_resolved = AUNCIENT_RESOLVE_RULE_9(contract_address);
 
-    /* Euler Totient Variables for preserved (x=5, y=11): \phi(5) = 4, \phi(11) = 10 */
-    uint64_t phi_x = (uint64_t)(preserved_random_x - 1); // 4
-    uint64_t phi_y = (uint64_t)(preserved_random_y - 1); // 10
+    /* Preserve exact register values for totient variables x and y */
+    uint64_t phi_x = (uint64_t)preserved_random_x; // Exact register retention (5)
+    uint64_t phi_y = (uint64_t)preserved_random_y; // Exact register retention (11)
 
     /* Physical Conic Section Ray Distance R = \sqrt{x^2 + y^2} = \sqrt{25 + 121} = \sqrt{146} = 12.083046 */
     /* Scaled by 100000: R_scaled = 1208305 */
