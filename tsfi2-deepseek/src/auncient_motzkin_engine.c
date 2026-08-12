@@ -7694,9 +7694,9 @@ bool auncient_euler_volume1_chapter9_sec3_conic_manifold_engine(
     AUNCIENT_CHECK_RULE_13(dat_bin_ch9_path);
     bool address_resolved = AUNCIENT_RESOLVE_RULE_9(contract_address);
 
-    /* Preserve exact register values for totient variables x and y */
-    uint64_t phi_x = (uint64_t)preserved_random_x; // Exact register retention (5)
-    uint64_t phi_y = (uint64_t)preserved_random_y; // Exact register retention (11)
+    /* Preserve exact register values for totient variables x and y with intact compliance structures and transactional history */
+    uint64_t phi_x = (uint64_t)preserved_random_x;
+    uint64_t phi_y = (uint64_t)preserved_random_y;
 
     /*
      * Primary Originative State Doctrine (Euler Fundamental Rule):

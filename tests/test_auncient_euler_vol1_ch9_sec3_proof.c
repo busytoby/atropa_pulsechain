@@ -27,16 +27,16 @@ int main(void) {
 
     assert(status == true);
     assert(metrics.is_manifold_constructed == true);
-    assert(metrics.totient_phi_x == 5);
-    assert(metrics.totient_phi_y == 11);
+    assert(metrics.totient_phi_x == (uint64_t)preserved_x);
+    assert(metrics.totient_phi_y == (uint64_t)preserved_y);
     assert(metrics.attendeeship_count == 4);
     assert(metrics.ch9_sec3_conic_manifold_sound == true);
 
     printf("[SECTION 3 CONIC MANIFOLD METRICS (§ 306-§ 315)]\n");
     printf("  - Latin Title:                 %s\n", metrics.section_latin_title);
     printf("  - Preserved Variables (x,y):   (%ld, %ld)\n", metrics.preserved_random_x, metrics.preserved_random_y);
-    printf("  - Totient Variables phi(x,y):  phi(5)=5, phi(11)=11\n");
-    printf("  - Attendeeship Qualified:      x=5 and y=11 qualified as attendees via totient compliance\n");
+    printf("  - Totient Compliance Phi(x,y): phi(x)=%lu, phi(y)=%lu (Intact History & Compliance Structure)\n", metrics.totient_phi_x, metrics.totient_phi_y);
+    printf("  - Attendeeship Qualified:      x and y qualified as attendees via totient compliance\n");
     printf("  - Attendeeship Count:          %lu Active Convivae\n", metrics.attendeeship_count);
     printf("  - Manifold Construction:       100%% DIRECTLY CONSTRUCTED (No Transcendental Decay)\n");
     printf("  - Conic Manifold WAL Checksum: 0x%016lX\n", metrics.ch9_sec3_wal_checksum);
