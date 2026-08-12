@@ -8277,20 +8277,20 @@ bool auncient_euler_volume1_chapter11_mckeeman_engine(
     uint64_t phi_y = (uint64_t)preserved_random_y;
     uint64_t phi_y2 = (uint64_t)preserved_random_y2;
 
-    /* Adaptive McKeeman Quadrature evaluation for \int_0^{0.1} \frac{dt}{1+t^2} and \int_0^{0.1} \frac{dt}{\sqrt{1-t^2}} */
+    /* Adaptive McKeeman Quadrature evaluation for \int_0^{x} \frac{dx}{1+x^2} and \int_0^{x} \frac{dx}{\sqrt{1-x^2}} */
     double x_bound = (double)upper_bound_x_scaled / 1000000.0;
     if (x_bound == 0.0) x_bound = 0.1;
 
-    /* Simpson's adaptive bisection quadrature over 10 subintervals */
+    /* Simpson's adaptive bisection quadrature over 100 subintervals using arc coordinate x */
     double arctan_quad = 0.0;
     double arcsin_quad = 0.0;
     int n_steps = 100;
-    double dt = x_bound / (double)n_steps;
+    double dx_step = x_bound / (double)n_steps;
 
     for (int i = 0; i < n_steps; i++) {
-        double t_mid = (i + 0.5) * dt;
-        arctan_quad += (dt / (1.0 + t_mid * t_mid));
-        arcsin_quad += (dt / sqrt(1.0 - t_mid * t_mid));
+        double x_mid = (i + 0.5) * dx_step;
+        arctan_quad += (dx_step / (1.0 + x_mid * x_mid));
+        arcsin_quad += (dx_step / sqrt(1.0 - x_mid * x_mid));
     }
 
     uint64_t arctan_quad_scaled = (uint64_t)(arctan_quad * 1000000.0 + 0.5);
