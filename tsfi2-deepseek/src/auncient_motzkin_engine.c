@@ -6,6 +6,47 @@
 #include <math.h>
 #include "../inc/auncient_motzkin_engine.h"
 
+/* Common Motzkin Prover Macro Helpers */
+#define AUNCIENT_CHECK_RULE_13(path) \
+    do { \
+        if (!(path)) return false; \
+        size_t _len = strlen(path); \
+        if (_len < 8 || strcmp((path) + _len - 8, ".dat.bin") != 0) return false; \
+    } while(0)
+
+#define AUNCIENT_RESOLVE_RULE_9(addr) \
+    ((addr) ? (strncmp((addr), "dynamic_", 8) == 0) : false)
+
+#define AUNCIENT_SET_COMMON_ACID_METRICS(m, title, px, py, wal_cksum, acid_cksum, sound_val, engine_sound_val, sound_field, engine_sound_field) \
+    do { \
+        if (m) { \
+            snprintf((m)->section_latin_title, sizeof((m)->section_latin_title), "%s", (title)); \
+            (m)->preserved_random_x = (px); \
+            (m)->preserved_random_y = (py); \
+            (m)->is_stanag_vfio_wmq_mounted = true; \
+            (m)->is_acid_rollback_sound = true; \
+            (m)->is_acid_replay_sound = true; \
+            (m)->rule9_address_resolution_sound = address_resolved; \
+            (m)->rule13_dat_bin_verified = true; \
+            (m)->zmm_hardware_latch = latch; \
+            (m)->sound_field = (sound_val); \
+            (m)->engine_sound_field = (engine_sound_val); \
+        } \
+    } while(0)
+
+static inline uint64_t auncient_compute_fnv1a_64(const uint64_t *words, size_t count) {
+    uint64_t checksum = 14695981039346656037ULL;
+    const uint64_t fnv_prime = 1099511628211ULL;
+    for (size_t idx = 0; idx < count; idx++) {
+        uint64_t val = words[idx];
+        for (int i = 0; i < 8; i++) {
+            checksum ^= (uint8_t)((val >> (i * 8)) & 0xFF);
+            checksum *= fnv_prime;
+        }
+    }
+    return checksum;
+}
+
 /* HathiTrust Motzkin Query Prover */
 bool auncient_hathitrust_motzkin_query_prover(
     const char *query_term,
@@ -70,17 +111,12 @@ bool auncient_motzkin_double_sequence_prover(
     const char *dat_bin_path,
     AuncientMotzkinDoubleSequenceMetrics *metrics_out
 ) {
-    if (!dat_bin_path || m == 0 || n == 0) return false;
-
-    /* Rule 13 Constraint Enforcement */
-    size_t len = strlen(dat_bin_path);
-    if (len < 8 || strcmp(dat_bin_path + len - 8, ".dat.bin") != 0) {
-        return false;
-    }
+    if (m == 0 || n == 0) return false;
+    AUNCIENT_CHECK_RULE_13(dat_bin_path);
 
     uint64_t motzkin_prime = 953467954114363ULL;
     uint64_t seq_val = (((uint64_t)m * m + (uint64_t)n * n + 1ULL) * 42ULL) % motzkin_prime;
-    float accumulator_charge = 4.50f; // Rule 12 non-preferential charge
+    float accumulator_charge = 4.50f;
     uint64_t latch = 0x57A10000ULL | ((uint64_t)m << 16) | (uint64_t)n;
     bool sound = (seq_val > 0) && (motzkin_prime == 953467954114363ULL);
 
@@ -218,13 +254,8 @@ bool auncient_motzkin_wheeler_relocation_prover(
     const char *dat_bin_reloc_path,
     AuncientMotzkinWheelerRelocationMetrics *metrics_out
 ) {
-    if (!dat_bin_reloc_path || m == 0 || n == 0) return false;
-
-    /* Rule 13 Constraint Enforcement */
-    size_t len = strlen(dat_bin_reloc_path);
-    if (len < 8 || strcmp(dat_bin_reloc_path + len - 8, ".dat.bin") != 0) {
-        return false;
-    }
+    if (m == 0 || n == 0) return false;
+    AUNCIENT_CHECK_RULE_13(dat_bin_reloc_path);
 
     uint64_t motzkin_prime = 953467954114363ULL;
     uint64_t seq_val = (((uint64_t)m * m + (uint64_t)n * n + 1ULL) * 42ULL) % motzkin_prime;
@@ -238,7 +269,7 @@ bool auncient_motzkin_wheeler_relocation_prover(
         metrics_out->sequence_cell_n = n;
         metrics_out->relocated_instruction_raw = relocated_opcode;
         metrics_out->wheeler_tag_invariants_sound = true;
-        metrics_out->rule9_address_resolution_sound = true; // Rule 9 address resolution verified
+        metrics_out->rule9_address_resolution_sound = true;
         metrics_out->rule13_dat_bin_verified = true;
         metrics_out->zmm_hardware_latch = latch;
         metrics_out->motzkin_wheeler_reloc_sound = sound;
@@ -7543,19 +7574,10 @@ bool auncient_euler_volume1_chapter9_sec1_log_series_engine(
     int64_t preserved_random_y,
     AuncientEulerVolume1Chapter9Section1LogSeriesMetrics *metrics_out
 ) {
-    if (!contract_address || !dat_bin_ch9_path || terms_count == 0) return false;
+    if (terms_count == 0) return false;
+    AUNCIENT_CHECK_RULE_13(dat_bin_ch9_path);
+    bool address_resolved = AUNCIENT_RESOLVE_RULE_9(contract_address);
 
-    /* Rule 13 Constraint Enforcement */
-    size_t len = strlen(dat_bin_ch9_path);
-    if (len < 8 || strcmp(dat_bin_ch9_path + len - 8, ".dat.bin") != 0) {
-        return false;
-    }
-
-    /* Rule 9 Dynamic Address Resolution Enforcement */
-    bool address_resolved = (strncmp(contract_address, "dynamic_", 8) == 0);
-
-    /* Explicit Iteration of Mercator Logarithmic Power Series (§ 286 - § 295): */
-    /* \ln(1+x) = x - \frac{x^2}{2} + \frac{x^3}{3} - \frac{x^4}{4} + \dots */
     double x_val = (double)input_x_scaled / 1000000.0;
     double log_sum = 0.0;
     double x_power = x_val;
@@ -7567,29 +7589,17 @@ bool auncient_euler_volume1_chapter9_sec1_log_series_engine(
         sign = -sign;
     }
 
-    uint64_t log_scaled = (uint64_t)(log_sum * 1000000.0 + 0.5); // 182322 for x = 0.2
-
+    uint64_t log_scaled = (uint64_t)(log_sum * 1000000.0 + 0.5);
     bool log_sound = (log_scaled > 0);
     bool wmq_mounted = true;
-
-    /* 64-bit FNV-1a WAL checksum preserving Ch 9 Sec 1 logarithmic state */
     uint64_t ch9_sec1_wal_checksum = 0x28629557A10057EAULL;
 
-    uint64_t checksum = 14695981039346656037ULL;
-    const uint64_t fnv_prime = 1099511628211ULL;
     uint64_t log_bytes[7] = {
         (uint64_t)preserved_random_x, (uint64_t)preserved_random_y,
         input_x_scaled, log_scaled, (uint64_t)terms_count,
         ch9_sec1_wal_checksum, 0x57EAULL
     };
-
-    for (int idx = 0; idx < 7; idx++) {
-        uint64_t val = log_bytes[idx];
-        for (int i = 0; i < 8; i++) {
-            checksum ^= (uint8_t)((val >> (i * 8)) & 0xFF);
-            checksum *= fnv_prime;
-        }
-    }
+    uint64_t checksum = auncient_compute_fnv1a_64(log_bytes, 7);
 
     bool engine_sound = address_resolved && log_sound && wmq_mounted && (checksum != 0);
     uint64_t latch = 0x57A10000ULL | (checksum & 0xFFFFFF);
@@ -7625,52 +7635,24 @@ bool auncient_euler_volume1_chapter9_sec2_discrete_partition_engine(
     int64_t preserved_random_y,
     AuncientEulerVolume1Chapter9Section2DiscretePartitionMetrics *metrics_out
 ) {
-    if (!contract_address || !dat_bin_ch9_path) return false;
+    AUNCIENT_CHECK_RULE_13(dat_bin_ch9_path);
+    bool address_resolved = AUNCIENT_RESOLVE_RULE_9(contract_address);
 
-    /* Rule 13 Constraint Enforcement */
-    size_t len = strlen(dat_bin_ch9_path);
-    if (len < 8 || strcmp(dat_bin_ch9_path + len - 8, ".dat.bin") != 0) {
-        return false;
-    }
-
-    /* Rule 9 Dynamic Address Resolution Enforcement */
-    bool address_resolved = (strncmp(contract_address, "dynamic_", 8) == 0);
-
-    /* Latin Principle: "pascis non transcendentis erat quas plus nuncupatur ibis ubi non sedis pars" */
-    /* Non-Transcendental Discrete Integer Partition Sum: P = x + y */
-    /* For preserved (x, y) = (5, 11): P = 5 + 11 = 16 */
     uint64_t partition_sum = (uint64_t)(preserved_random_x + preserved_random_y);
-
-    /* Active "ibis" partition node register (I_a): (x * y) mod P */
-    /* For (x,y) = (5,11), P = 16: (5 * 11) % 16 = 55 % 16 = 7 */
     uint64_t ibis_active_node = (uint64_t)((preserved_random_x * preserved_random_y) % (int64_t)partition_sum);
-
-    /* Passive "sedis" partition node register (S_p): (x^2 + y^2) mod P */
-    /* For (x,y) = (5,11), P = 16: (25 + 121) % 16 = 146 % 16 = 2 */
     int64_t sq_sum = (preserved_random_x * preserved_random_x) + (preserved_random_y * preserved_random_y);
     uint64_t sedis_passive_node = (uint64_t)(sq_sum % (int64_t)partition_sum);
 
     bool discrete_sound = (partition_sum > 0) && (ibis_active_node != sedis_passive_node);
     bool wmq_mounted = true;
-
-    /* 64-bit FNV-1a WAL checksum preserving Ch 9 Sec 2 discrete partition state */
     uint64_t ch9_sec2_wal_checksum = 0x29630557A10057EBULL;
 
-    uint64_t checksum = 14695981039346656037ULL;
-    const uint64_t fnv_prime = 1099511628211ULL;
     uint64_t log_bytes[7] = {
         (uint64_t)preserved_random_x, (uint64_t)preserved_random_y,
         partition_sum, ibis_active_node, sedis_passive_node,
         ch9_sec2_wal_checksum, 0x57EBULL
     };
-
-    for (int idx = 0; idx < 7; idx++) {
-        uint64_t val = log_bytes[idx];
-        for (int i = 0; i < 8; i++) {
-            checksum ^= (uint8_t)((val >> (i * 8)) & 0xFF);
-            checksum *= fnv_prime;
-        }
-    }
+    uint64_t checksum = auncient_compute_fnv1a_64(log_bytes, 7);
 
     bool engine_sound = address_resolved && discrete_sound && wmq_mounted && (checksum != 0);
     uint64_t latch = 0x57A10000ULL | (checksum & 0xFFFFFF);
@@ -7685,7 +7667,7 @@ bool auncient_euler_volume1_chapter9_sec2_discrete_partition_engine(
         metrics_out->sedis_passive_node_partition = sedis_passive_node;
         metrics_out->is_partition_negation_asserted = true;
         metrics_out->is_non_transcendental_discrete_sound = discrete_sound;
-        metrics_out->is_stanag_vfio_wmq_mounted = wmq_mounted;
+        metrics_out->is_stanag_vfio_wmq_mounted = true;
         metrics_out->ch9_sec2_wal_checksum = ch9_sec2_wal_checksum;
         metrics_out->is_acid_rollback_sound = true;
         metrics_out->is_acid_replay_sound = true;
