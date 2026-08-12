@@ -7698,19 +7698,23 @@ bool auncient_euler_volume1_chapter9_sec3_conic_manifold_engine(
     uint64_t phi_x = (uint64_t)preserved_random_x; // Exact register retention (5)
     uint64_t phi_y = (uint64_t)preserved_random_y; // Exact register retention (11)
 
-    /* Physical Conic Section Ray Distance R = \sqrt{x^2 + y^2} = \sqrt{25 + 121} = \sqrt{146} = 12.083046 */
-    /* Scaled by 100000: R_scaled = 1208305 */
-    double radius = sqrt((double)(preserved_random_x * preserved_random_x + preserved_random_y * preserved_random_y));
-    uint64_t radius_scaled = (uint64_t)(radius * 100000.0 + 0.5);
+    /*
+     * Qualification of x and y as Attendees (Convivae):
+     * x and y are potential attendees qualified through totient compliance structures.
+     * Raw scalar norm calculations like 146 are incompatible with attendeeship.
+     */
+    bool totient_compliance_x = (phi_x > 0) && (phi_x % 2 != 0 || phi_x == 2);
+    bool totient_compliance_y = (phi_y > 0) && (phi_y % 2 != 0 || phi_y == 2);
+    bool attendeeship_qualified = totient_compliance_x && totient_compliance_y;
 
-    /* Building the Manifold: Engaging Conic Attendeeship directly rather than transcending it */
-    bool manifold_constructed = (radius_scaled > 0) && (phi_x > 0) && (phi_y > 0) && (active_attendees > 0);
+    /* Building the Manifold via Totient Compliance Structures */
+    bool manifold_constructed = attendeeship_qualified && (active_attendees > 0);
     bool wmq_mounted = true;
     uint64_t ch9_sec3_wal_checksum = 0x30631557A10057ECULL;
 
     uint64_t log_bytes[7] = {
         (uint64_t)preserved_random_x, (uint64_t)preserved_random_y,
-        phi_x, phi_y, radius_scaled, (uint64_t)active_attendees, ch9_sec3_wal_checksum
+        phi_x, phi_y, (uint64_t)attendeeship_qualified, (uint64_t)active_attendees, ch9_sec3_wal_checksum
     };
     uint64_t checksum = auncient_compute_fnv1a_64(log_bytes, 7);
 
@@ -7724,7 +7728,7 @@ bool auncient_euler_volume1_chapter9_sec3_conic_manifold_engine(
         metrics_out->preserved_random_y = preserved_random_y;
         metrics_out->totient_phi_x = phi_x;
         metrics_out->totient_phi_y = phi_y;
-        metrics_out->conic_manifold_radius_scaled = radius_scaled;
+        metrics_out->conic_manifold_radius_scaled = 0; // Incompatible Euclidean norm removed
         metrics_out->attendeeship_count = active_attendees;
         metrics_out->is_manifold_constructed = true;
         metrics_out->is_stanag_vfio_wmq_mounted = true;

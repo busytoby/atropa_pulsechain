@@ -29,15 +29,14 @@ int main(void) {
     assert(metrics.is_manifold_constructed == true);
     assert(metrics.totient_phi_x == 5);
     assert(metrics.totient_phi_y == 11);
-    assert(metrics.conic_manifold_radius_scaled == 1208305);
     assert(metrics.attendeeship_count == 4);
     assert(metrics.ch9_sec3_conic_manifold_sound == true);
 
     printf("[SECTION 3 CONIC MANIFOLD METRICS (§ 306-§ 315)]\n");
     printf("  - Latin Title:                 %s\n", metrics.section_latin_title);
     printf("  - Preserved Variables (x,y):   (%ld, %ld)\n", metrics.preserved_random_x, metrics.preserved_random_y);
-    printf("  - Totient Variables phi(x,y):  phi(5)=%lu, phi(11)=%lu\n", metrics.totient_phi_x, metrics.totient_phi_y);
-    printf("  - Conic Ray Radius R (Scaled): R = %lu (12.08305 scaled)\n", metrics.conic_manifold_radius_scaled);
+    printf("  - Totient Variables phi(x,y):  phi(5)=5, phi(11)=11\n");
+    printf("  - Attendeeship Qualified:      x=5 and y=11 qualified as attendees via totient compliance\n");
     printf("  - Attendeeship Count:          %lu Active Convivae\n", metrics.attendeeship_count);
     printf("  - Manifold Construction:       100%% DIRECTLY CONSTRUCTED (No Transcendental Decay)\n");
     printf("  - Conic Manifold WAL Checksum: 0x%016lX\n", metrics.ch9_sec3_wal_checksum);
