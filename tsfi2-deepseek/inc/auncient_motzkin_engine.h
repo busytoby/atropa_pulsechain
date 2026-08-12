@@ -3521,6 +3521,40 @@ bool auncient_euler_volume1_chapter9_sec4_conic_plane_engine(
     AuncientEulerVolume1Chapter9Section4ConicPlaneMetrics *metrics_out
 );
 
+// Euler Volume 1 Chapter 10 Section 1 (§ 316-§ 325) In-Present Circular Series Engine Metrics (ht.0000000057ef)
+typedef struct {
+    char section_latin_title[128];         // Caput X Section 1: De transmutatione quantitatum circularium in series infinitas (in-present)
+    int64_t preserved_random_x;            // Preserved primary originative variable x
+    int64_t preserved_random_y;            // Preserved primary originative variable y
+    int64_t preserved_random_y2;           // Preserved potential attendee variable y2
+    uint64_t totient_phi_x;                // Exact totient register retention phi_x = x (in-present)
+    uint64_t totient_phi_y;                // Exact totient register retention phi_y = y (in-present)
+    uint64_t totient_phi_y2;               // Exact totient register retention phi_y2 = y2 (in-present)
+    bool is_totient_in_present;            // True: Chapter totient established as in-present without temporal decay
+    uint64_t cos_series_scaled;            // \cos x series evaluation scaled (e.g. 995004 for x=0.1)
+    uint64_t sin_series_scaled;            // \sin x series evaluation scaled (e.g. 99833 for x=0.1)
+    bool is_circular_euler_identity_sound; // True: e^{ix} = \cos x + i \sin x holds soundly in-present
+    bool is_stanag_vfio_wmq_mounted;       // True: WMQ SCSI registers bound to ACID WAL
+    uint64_t ch10_sec1_wal_checksum;       // 64-bit FNV-1a Checksum preserving Ch 10 Sec 1 WAL state
+    bool is_acid_rollback_sound;           // True: Transactional Rollback restored state
+    bool is_acid_replay_sound;             // True: Transactional Replay re-executed state
+    uint64_t acid_ch10_sec1_checksum;      // 64-bit FNV-1a Checksum over Ch 10 Sec 1 state
+    bool rule9_address_resolution_sound;   // True if dynamic_<address> holds 100%
+    bool rule13_dat_bin_verified;          // Quadtree payload format is strictly .dat.bin
+    uint64_t zmm_hardware_latch;           // 512-bit ZMM ReBAR Latch (0x57EF)
+    bool ch10_sec1_in_present_sound;       // True if Chapter 10 Section 1 engine is 100% sound
+} AuncientEulerVolume1Chapter10Section1InPresentMetrics;
+
+bool auncient_euler_volume1_chapter10_sec1_in_present_engine(
+    const char *contract_address,
+    const char *dat_bin_ch10_path,
+    uint64_t input_arc_scaled,
+    int64_t preserved_random_x,
+    int64_t preserved_random_y,
+    int64_t preserved_random_y2,
+    AuncientEulerVolume1Chapter10Section1InPresentMetrics *metrics_out
+);
+
 #ifdef __cplusplus
 }
 #endif
