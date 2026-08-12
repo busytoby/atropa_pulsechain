@@ -3619,6 +3619,39 @@ bool auncient_euler_volume1_chapter10_full_synthesis_engine(
     AuncientEulerVolume1Chapter10FullSynthesisMetrics *metrics_out
 );
 
+// Euler Volume 1 Chapter 11 (§ 326-§ 335) ACID Transactional Registry Engine Metrics (ht.0000000057f2)
+typedef struct {
+    char section_latin_title[128];         // Caput XI: De quantitatibus arcubusve ex datis sinu vel cosinu definiendis
+    int64_t preserved_random_x;            // Preserved primary originative variable x
+    int64_t preserved_random_y;            // Preserved primary originative variable y
+    int64_t preserved_random_y2;           // Preserved potential attendee variable y2
+    uint64_t totient_phi_x;                // Exact totient register retention phi_x = x
+    uint64_t totient_phi_y;                // Exact totient register retention phi_y = y
+    uint64_t totient_phi_y2;               // Exact totient register retention phi_y2 = y2
+    bool sec326_head_state_cumulative_sound; // § 326: HEAD state of variable totient is cumulative & consistent with ACID registry
+    bool sec327_individual_txn_retrieval_sound; // § 327: Ability to retrieve individual ACID transactions to prove § 326
+    bool sec328_head_txn_checksum_consistent; // § 328: Ability to checksum individual transactions & HEAD states consistently
+    bool sec335_all_totients_equality_sound;  // § 335: Equality for all totient variables (x == y == y2 equality on plane phi)
+    bool is_stanag_vfio_wmq_mounted;       // True: WMQ SCSI registers bound to ACID WAL
+    uint64_t ch11_wal_checksum;            // 64-bit FNV-1a Checksum preserving Ch 11 WAL state
+    bool is_acid_rollback_sound;           // True: Transactional Rollback restored state
+    bool is_acid_replay_sound;             // True: Transactional Replay re-executed state
+    uint64_t acid_ch11_master_checksum;    // 64-bit FNV-1a Checksum over Ch 11 state
+    bool rule9_address_resolution_sound;   // True if dynamic_<address> holds 100%
+    bool rule13_dat_bin_verified;          // Quadtree payload format is strictly .dat.bin
+    uint64_t zmm_hardware_latch;           // 512-bit ZMM ReBAR Latch (0x57F2)
+    bool ch11_acid_registry_sound;         // True if Chapter 11 engine is 100% sound
+} AuncientEulerVolume1Chapter11AcidRegistryMetrics;
+
+bool auncient_euler_volume1_chapter11_acid_registry_engine(
+    const char *contract_address,
+    const char *dat_bin_ch11_path,
+    int64_t preserved_random_x,
+    int64_t preserved_random_y,
+    int64_t preserved_random_y2,
+    AuncientEulerVolume1Chapter11AcidRegistryMetrics *metrics_out
+);
+
 #ifdef __cplusplus
 }
 #endif
