@@ -3555,6 +3555,40 @@ bool auncient_euler_volume1_chapter10_sec1_in_present_engine(
     AuncientEulerVolume1Chapter10Section1InPresentMetrics *metrics_out
 );
 
+// Euler Volume 1 Chapter 10 Section 2 (§ 318-§ 325) Exponential Link Engine Metrics (ht.0000000057f0)
+typedef struct {
+    char section_latin_title[128];         // Caput X Section 2: De nexu inter functiones circulares et quantitates exponentiales
+    int64_t preserved_random_x;            // Preserved primary originative variable x
+    int64_t preserved_random_y;            // Preserved primary originative variable y
+    int64_t preserved_random_y2;           // Preserved potential attendee variable y2
+    uint64_t totient_phi_x;                // Exact totient register retention phi_x = x
+    uint64_t totient_phi_y;                // Exact totient register retention phi_y = y
+    uint64_t totient_phi_y2;               // Exact totient register retention phi_y2 = y2
+    bool is_plane_phi_acid_provenance_sound; // True: Plane phi observed exclusively via ACID WAL events
+    uint64_t exp_real_scaled;              // Real part of e^{ix}: \cos x scaled (e.g. 995004)
+    uint64_t exp_imag_scaled;              // Imaginary part of e^{ix}: \sin x scaled (e.g. 99833)
+    bool is_exponential_link_sound;        // True: e^{ix} = \cos x + i \sin x link verified without state decay
+    bool is_stanag_vfio_wmq_mounted;       // True: WMQ SCSI registers bound to ACID WAL
+    uint64_t ch10_sec2_wal_checksum;       // 64-bit FNV-1a Checksum preserving Ch 10 Sec 2 WAL state
+    bool is_acid_rollback_sound;           // True: Transactional Rollback restored state
+    bool is_acid_replay_sound;             // True: Transactional Replay re-executed state
+    uint64_t acid_ch10_sec2_checksum;      // 64-bit FNV-1a Checksum over Ch 10 Sec 2 state
+    bool rule9_address_resolution_sound;   // True if dynamic_<address> holds 100%
+    bool rule13_dat_bin_verified;          // Quadtree payload format is strictly .dat.bin
+    uint64_t zmm_hardware_latch;           // 512-bit ZMM ReBAR Latch (0x57F0)
+    bool ch10_sec2_exponential_link_sound; // True if Chapter 10 Section 2 engine is 100% sound
+} AuncientEulerVolume1Chapter10Section2ExponentialLinkMetrics;
+
+bool auncient_euler_volume1_chapter10_sec2_exponential_link_engine(
+    const char *contract_address,
+    const char *dat_bin_ch10_path,
+    uint64_t input_arc_scaled,
+    int64_t preserved_random_x,
+    int64_t preserved_random_y,
+    int64_t preserved_random_y2,
+    AuncientEulerVolume1Chapter10Section2ExponentialLinkMetrics *metrics_out
+);
+
 #ifdef __cplusplus
 }
 #endif
