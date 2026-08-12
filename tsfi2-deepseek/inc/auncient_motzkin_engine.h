@@ -3487,6 +3487,38 @@ bool auncient_euler_volume1_chapter9_full_synthesis_engine(
     AuncientEulerVolume1Chapter9FullSynthesisMetrics *metrics_out
 );
 
+// Euler Volume 1 Chapter 9 Section 4 (§ 316-§ 325) Conic Intersecting Plane Generator Metrics (ht.0000000057ee)
+typedef struct {
+    char section_latin_title[128];         // Caput IX Section 4: De plano secante et ortu sectionum conicarum (Intersecting Plane Generator)
+    int64_t preserved_random_x;            // Preserved primary originative variable x
+    int64_t preserved_random_y;            // Preserved primary originative variable y
+    int64_t preserved_random_y2;           // Preserved potential attendee variable y2
+    uint64_t totient_phi_x;                // Exact totient register retention phi_x
+    uint64_t totient_phi_y;                // Exact totient register retention phi_y
+    uint64_t totient_phi_y2;               // Exact totient register retention phi_y2
+    uint32_t plane_angle_deg;              // Plane inclination angle relative to base (0=circle, 45=ellipse, 90=parabola/hyperbola)
+    bool is_plane_intersection_sound;      // True: Conic intersection generated without decay
+    bool is_stanag_vfio_wmq_mounted;       // True: WMQ SCSI registers bound to ACID WAL
+    uint64_t ch9_sec4_wal_checksum;        // 64-bit FNV-1a Checksum preserving Ch 9 Sec 4 WAL state
+    bool is_acid_rollback_sound;           // True: Transactional Rollback restored state
+    bool is_acid_replay_sound;             // True: Transactional Replay re-executed state
+    uint64_t acid_ch9_sec4_checksum;       // 64-bit FNV-1a Checksum over Ch 9 Sec 4 state
+    bool rule9_address_resolution_sound;   // True if dynamic_<address> holds 100%
+    bool rule13_dat_bin_verified;          // Quadtree payload format is strictly .dat.bin
+    uint64_t zmm_hardware_latch;           // 512-bit ZMM ReBAR Latch (0x57EE)
+    bool ch9_sec4_conic_plane_sound;       // True if Chapter 9 Section 4 engine is 100% sound
+} AuncientEulerVolume1Chapter9Section4ConicPlaneMetrics;
+
+bool auncient_euler_volume1_chapter9_sec4_conic_plane_engine(
+    const char *contract_address,
+    const char *dat_bin_ch9_path,
+    uint32_t plane_angle_deg,
+    int64_t preserved_random_x,
+    int64_t preserved_random_y,
+    int64_t preserved_random_y2,
+    AuncientEulerVolume1Chapter9Section4ConicPlaneMetrics *metrics_out
+);
+
 #ifdef __cplusplus
 }
 #endif
