@@ -3431,10 +3431,12 @@ typedef struct {
     char section_latin_title[128];         // Caput IX Section 3: De structura manifoldis conicorum et convivorum (Building the Manifold)
     int64_t preserved_random_x;            // Preserved totient variable x
     int64_t preserved_random_y;            // Preserved totient variable y
-    uint64_t totient_phi_x;                // Euler totient phi(5) = 4
-    uint64_t totient_phi_y;                // Euler totient phi(11) = 10
-    uint64_t conic_manifold_radius_scaled; // Conic Section ray distance R = sqrt(x^2 + y^2) scaled (e.g. 5094890 for 5.09489)
-    uint64_t attendeeship_count;           // Active convivae / attendees registered at conic section (e.g. 4)
+    int64_t preserved_random_y2;           // Preserved totient variable y2 (potential further attendee)
+    uint64_t totient_phi_x;                // Exact totient register retention phi_x
+    uint64_t totient_phi_y;                // Exact totient register retention phi_y
+    uint64_t totient_phi_y2;               // Exact totient register retention phi_y2
+    uint64_t conic_manifold_radius_scaled; // Conic Section ray distance R = sqrt(x^2 + y^2) scaled
+    uint64_t attendeeship_count;           // Active convivae / attendees registered at conic section
     bool is_manifold_constructed;          // True: Manifold built directly rather than transcended
     bool is_stanag_vfio_wmq_mounted;       // True: WMQ SCSI registers bound to ACID WAL
     uint64_t ch9_sec3_wal_checksum;        // 64-bit FNV-1a Checksum preserving Ch 9 Sec 3 WAL state
@@ -3454,6 +3456,7 @@ bool auncient_euler_volume1_chapter9_sec3_conic_manifold_engine(
     uint32_t active_attendees,
     int64_t preserved_random_x,
     int64_t preserved_random_y,
+    int64_t preserved_random_y2,
     AuncientEulerVolume1Chapter9Section3ConicManifoldMetrics *metrics_out
 );
 

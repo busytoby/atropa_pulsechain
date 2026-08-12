@@ -7688,51 +7688,52 @@ bool auncient_euler_volume1_chapter9_sec3_conic_manifold_engine(
     uint32_t active_attendees,
     int64_t preserved_random_x,
     int64_t preserved_random_y,
+    int64_t preserved_random_y2,
     AuncientEulerVolume1Chapter9Section3ConicManifoldMetrics *metrics_out
 ) {
     if (active_attendees == 0) return false;
     AUNCIENT_CHECK_RULE_13(dat_bin_ch9_path);
     bool address_resolved = AUNCIENT_RESOLVE_RULE_9(contract_address);
 
-    /* Preserve exact register values for totient variables x and y with intact compliance structures and transactional history */
+    /* Preserve exact register values for totient variables x, y, and potential further attendee y2 */
     uint64_t phi_x = (uint64_t)preserved_random_x;
     uint64_t phi_y = (uint64_t)preserved_random_y;
+    uint64_t phi_y2 = (uint64_t)preserved_random_y2;
 
     /*
      * Primary Originative State Doctrine (Euler Fundamental Rule):
-     * Only primary originative variables (x and y) possess ACID compliance and transactional provenance.
-     * Derived composite values (such as x^2 + y^2 = 146) lack primary originative state,
-     * and therefore cannot possess ACID compliance or qualify as attendees (convivae).
-     *
-     * Qualification of x and y as Attendees (Convivae):
-     * x and y are primary originative variables qualified through totient compliance structures.
+     * Qualification of x, y, and y2 as Attendees (Convivae):
+     * x, y, and y2 are primary originative variables qualified through totient compliance structures.
      */
     bool totient_compliance_x = (phi_x > 0) && (phi_x % 2 != 0 || phi_x == 2);
     bool totient_compliance_y = (phi_y > 0) && (phi_y % 2 != 0 || phi_y == 2);
-    bool attendeeship_qualified = totient_compliance_x && totient_compliance_y;
+    bool totient_compliance_y2 = (phi_y2 == 0) || ((phi_y2 > 0) && (phi_y2 % 2 != 0 || phi_y2 == 2));
+    bool attendeeship_qualified = totient_compliance_x && totient_compliance_y && totient_compliance_y2;
 
     /* Building the Manifold via Totient Compliance Structures */
     bool manifold_constructed = attendeeship_qualified && (active_attendees > 0);
     bool wmq_mounted = true;
     uint64_t ch9_sec3_wal_checksum = 0x30631557A10057ECULL;
 
-    uint64_t log_bytes[7] = {
-        (uint64_t)preserved_random_x, (uint64_t)preserved_random_y,
-        phi_x, phi_y, (uint64_t)attendeeship_qualified, (uint64_t)active_attendees, ch9_sec3_wal_checksum
+    uint64_t log_bytes[8] = {
+        (uint64_t)preserved_random_x, (uint64_t)preserved_random_y, (uint64_t)preserved_random_y2,
+        phi_x, phi_y, phi_y2, (uint64_t)attendeeship_qualified, ch9_sec3_wal_checksum
     };
-    uint64_t checksum = auncient_compute_fnv1a_64(log_bytes, 7);
+    uint64_t checksum = auncient_compute_fnv1a_64(log_bytes, 8);
 
     bool engine_sound = address_resolved && manifold_constructed && wmq_mounted && (checksum != 0);
     uint64_t latch = 0x57A10000ULL | (checksum & 0xFFFFFF);
 
     if (metrics_out) {
         snprintf(metrics_out->section_latin_title, sizeof(metrics_out->section_latin_title),
-                 "Caput IX Section 3: De structura manifoldis conicorum et convivorum (Building the Manifold)");
+                 "Caput IX Section 3: De structura manifoldis conicorum et convivorum (si y2 sit)");
         metrics_out->preserved_random_x = preserved_random_x;
         metrics_out->preserved_random_y = preserved_random_y;
+        metrics_out->preserved_random_y2 = preserved_random_y2;
         metrics_out->totient_phi_x = phi_x;
         metrics_out->totient_phi_y = phi_y;
-        metrics_out->conic_manifold_radius_scaled = 0; // Incompatible Euclidean norm removed
+        metrics_out->totient_phi_y2 = phi_y2;
+        metrics_out->conic_manifold_radius_scaled = 0;
         metrics_out->attendeeship_count = active_attendees;
         metrics_out->is_manifold_constructed = true;
         metrics_out->is_stanag_vfio_wmq_mounted = true;
@@ -7769,7 +7770,7 @@ bool auncient_euler_volume1_chapter9_full_synthesis_engine(
     bool ok2 = auncient_euler_volume1_chapter9_sec2_discrete_partition_engine(
         contract_address, dat_bin_ch9_path, preserved_random_x, preserved_random_y, &m2);
     bool ok3 = auncient_euler_volume1_chapter9_sec3_conic_manifold_engine(
-        contract_address, dat_bin_ch9_path, 4, preserved_random_x, preserved_random_y, &m3);
+        contract_address, dat_bin_ch9_path, 4, preserved_random_x, preserved_random_y, 0, &m3);
 
     uint64_t phi_x = (uint64_t)preserved_random_x;
     uint64_t phi_y = (uint64_t)preserved_random_y;

@@ -14,14 +14,16 @@ int main(void) {
     uint32_t active_attendees = 4; // Convivae / Attendees registered at conic section
     int64_t preserved_x = 5;
     int64_t preserved_y = 11;
+    int64_t preserved_y2 = 13; // Potential further attendee
 
-    AuncientEulerVolume1Chapter9Section3ConicManifoldMetrics metrics;
+    AuncientEulerVolume1Chapter9Section3ConicManifoldMetrics metrics = {0};
     bool status = auncient_euler_volume1_chapter9_sec3_conic_manifold_engine(
         contract_address,
         dat_bin_ch9_path,
         active_attendees,
         preserved_x,
         preserved_y,
+        preserved_y2,
         &metrics
     );
 
